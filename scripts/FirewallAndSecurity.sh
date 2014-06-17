@@ -45,13 +45,10 @@ case $1 in
 		StatusLSB
 		
 		if [ -f /etc/fail2ban/jail.local ]; then
-			log_daemon_msg "Stopping Fail2Ban Service"
 			service fail2ban stop
-			StatusLSB
 		fi		
 		
 		if [ -f /etc/pgl/pglcmd.conf ]; then
-			log_daemon_msg "Stoppin PeerGuardian Service"
 			pglcmd stop
 			StatusLSB
 		fi		
