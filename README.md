@@ -58,7 +58,7 @@ After that access your box using a SSH client, like PuTTY.
 ```
 Module 'xt_mark' is mandatory for PeerGuardian. Currently, I have not found solution. The subject is pending.
 ```
---> OpenVPN, you must follow this link before install 'MySB'.
+--> OpenVPN, you must follow this link BEFORE install 'MySB'.
 ```
 https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-access-server-on-a-vps-container.html
 ```
@@ -214,6 +214,5 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 * Make some thing for users with dynamic ip for update whitelist in PeerGuardian and Fail2ban.
 * generate log with ccze for web access (ftp, rtorrent, ...)
 * Gmail SMTP https://www.google.com/accounts/DisplayUnlockCaptcha
-* Fai2ban, duplicate entries + $MYIP
-* PeerGuardian, duplicate entries
+* Fai2ban $MYIP
 * Maybe add OwnCloud possiblity

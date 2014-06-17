@@ -29,94 +29,106 @@ echo -e "${CGREEN}##############################################################
 echo -e "${CGREEN}#$CEND	${CYELLOW}Now, I need some informations.$CEND"
 echo -e "${CGREEN}##########################################################################################$CEND"
 echo
-	
-#those passwords will be changed in the next steps
-GetString NO "What is you time zone ? (ex: Europe/Paris): " TIMEZONE "Europe/Paris"
 
+####Time Zone	
+GetString NO "What is your time zone ? (ex: Europe/Paris): " TIMEZONE "Europe/Paris"
+
+#### Primary Inet
 GetString NO "What is your primary network interface ? (ex: eth0, nic0, ...): " PRIMARYINET "eth0"
 
-GetString NO "Username for the first user for your seedbox (admin user): " NEWUSER
-while [ "`echo $NEWUSER | grep '@'`" != "" ]; do
-	GetString NO "Username for the first user for your seedbox (admin user): " NEWUSER
+#### Username
+while [ "`echo $NEWUSER | grep '@'`" != "" ] || [ "$NEWUSER" == "" ]; do
+	GetString NO "Username for the first user for your seedbox (main user): " NEWUSER
 done
 
+#### User password
 PASSWORD=`mkpasswd $NEWUSER`
 PASSWORD=`echo $PASSWORD | sed "s/\///g"`
 if [ -z $PASSWORD ]; then	
-	GetString YES "Password for user $NEWUSER: " PASSWORD
+	GetString YES "Password for user >$NEWUSER<: " PASSWORD
 fi
 
-echo -e "${CRED}If you have a dynamic public ip address, type '$CEND${CGREEN}none$CEND${CRED}'$CEND"
-#GetString NO  "What is your personnal IP address ? (to add in whitelist): " MYIP `who --ips | awk '{print $6}' | grep ^[0123456789]`
-if [ ! "$MYIP" = "none" ]; then
-	while [ ! "$CHECK_MYIP" = "$MYIP" ] || [ -z "$MYIP" ]; do
-		MYIP="`who --ips | awk '{print $6}' | grep ^[0123456789]`"
-		if [ "$MYIP" == "" ]; then
-			MYIP="`who --ips | awk '{print $5}' | grep ^[0123456789]`"
-		fi
-	
-		GetString NO "What are IP personal public addresses (separate by comma)? (to add in whitelist): " MYIP $MYIP
-		IFS=$','
-		for ip in $MYIP; do 
-			TEMP=`ValidateIP "$ip"`
-			if [ ! -z $TEMP ]; then CHECK_MYIP="$CHECK_MYIP $TEMP"; fi
-		done
-		unset IFS
-		CHECK_MYIP=`echo $CHECK_MYIP | sed -e "s/\ /\,/g;" | sed -e "s/^$//g;"`	
+#### User IP addresses
+while [ ! "$CHECK_MYIP" = "$MYIP" ] || [ -z "$MYIP" ]; do
+	MYIP="`who --ips | awk '{print $6}' | grep ^[0123456789]`"
+	if [ -z "$MYIP" == "" ]; then
+		MYIP="`who --ips | awk '{print $5}' | grep ^[0123456789]`"
+	fi
+
+	GetString NO "What are your personal IP public addresses (separate by comma)? (to add in whitelist): " MYIP $MYIP
+	IFS=$','
+	for ip in $MYIP; do 
+		TEMP=`ValidateIP "$ip"`
+		if [ ! -z $TEMP ]; then CHECK_MYIP="$CHECK_MYIP $TEMP"; fi
 	done
-fi
+	unset IFS
+	CHECK_MYIP=`echo $CHECK_MYIP | sed -e "s/\ /\,/g;" | sed -e "s/^$//g;"`	
+done
 
+#### SMTP ?
 echo -e "${CYELLOW}Do you want to use an external SMTP server? (Good for safe sending emails.).$CEND"
-echo -e "${CYELLOW}Choose between ${CGREEN}LOCAL$CEND${CYELLOW} or listed providers $CEND${CGREEN}FREE$CEND | $CEND${CGREEN}OVH$CEND${CYELLOW} | $CEND${CGREEN}GMAIL$CEND | $CEND${CGREEN}YAHOO$CEND"
+echo -e "${CYELLOW}Choose between ${CGREEN}LOCAL$CEND${CYELLOW} or listed providers $CEND${CGREEN}FREE$CEND|$CEND${CGREEN}OVH$CEND${CYELLOW}|$CEND${CGREEN}GMAIL$CEND|$CEND${CGREEN}YAHOO$CEND"
 echo -e "${CYELLOW}Only SSL transactions will be used (SSL/465).$CEND"
-GetString NO "What is you provider? " SMTP LOCAL
+GetString NO "What is your provider? " SMTP LOCAL
 
 SMTP=`echo $SMTP | tr '[:lower:]' '[:upper:]'`
 if [ "$SMTP" != "LOCAL" ]; then	
-	GetString NO "What is the username for ${CGREEN}$SMTP$CEND?" SMTP_USER
-	GetString YES "What is the password for ${CGREEN}$SMTP$CEND?" SMTP_PASS
+	GetString NO "What is the username for the SMTP server ${CGREEN}$SMTP$CEND?" SMTP_USER
+	GetString YES "What is the password for the SMTP server ${CGREEN}$SMTP$CEND?" SMTP_PASS
 fi
 
-#GetString NO  "What is the administrator's email for this seedbox? " EMAILUSER
+#### User e-mail
 while [ ! "`ValidateMail $EMAILUSER`" = "0" ]; do
 	GetString NO "What is the administrator's email for this seedbox?" EMAILUSER
 done
 
-#GetString NO  "IP address of your box: " IPADDRESS $IPADDRESS
+#### Box' IP
 while [ ! "$CHECK_IPADDRESS" = "$IPADDRESS" ] || [ -z "$MYIP" ]; do
 	GetString NO  "IP address of your box: " IPADDRESS $IPADDRESS
 	CHECK_IPADDRESS=`ValidateIP "$IPADDRESS"`
 done
 
+#### Box' hostname
 GetString NO "Hostname (FQDN) of your box: " HOSTFQDN $HOSTFQDN `hostname -f`
 
+#### NginX HTTP port
 GetString NO "NginX HTTP port (usually 80): " NGINXHTTPPORT 8888
 
+#### NginX HTTPs port
 GetString NO "NginX HTTPs port (usually 443): " NGINXHTTPSPORT 8889
 
+#### SSH port
 GetString NO "SSH port (usually 22): " NEWSSHPORT 8892
 
+#### FTP port
 GetString NO "FTP port (usually 21): " NEWFTPPORT 8891
 
+#### FTP Active data port
 GetString NO "FTP Active Data port (usually 20): " NEWFTPDATAPORT 8800
 
+#### Fail2Ban
 GetString NO "Install Fail2ban? " INSTALLFAIL2BAN YES
 
+#### Seedbox-Manager
 GetString NO "Install Seedbox-Manager? " INSTALLMANAGER YES
 
+#### Cakebox Light
 GetString NO "Install CakeBox Light? " INSTALLCAKEBOX YES
 if [ "$INSTALLCAKEBOX" == "YES" ]; then
 	GetString NO "CakeBox port: " CAKEBOXPORT 8887
 fi
 
+#### Plexmedia server
 GetString NO "Install Plex Media? " INSTALLPLEXMEDIA NO
 
+#### Webmin
 GetString NO "Install Webmin? " INSTALLWEBMIN YES
 if [ "$INSTALLWEBMIN" == "YES" ]; then
 	GetString NO "Webmin port  (usually 10000): " WEBMINPORT 8890
 fi
 
 #if [ -z $IFPVEKERNEL ]; then
+if [ "`ls -la /dev/net/tun &>2 /dev/null && echo $?`" == "0" ]; then
 	GetString NO "Install OpenVPN? " INSTALLOPENVPN YES
 	if [ "$INSTALLOPENVPN" == "YES" ]; then
 		GetString NO  "OpenVPN port: " OPENVPNPORT 8893
@@ -126,12 +138,13 @@ fi
 		echo -e "${CYELLOW}Which one you use therefore depends on whether reliability or speed is your primary concern, and in general ${CGREEN}UDP$CEND${CYELLOW} is better for media streaming, VoIP and playing games online.$CEND"
 		GetString NO "Which protocol, 'UDP' OR 'TCP' ? : " OPENVPNPROTO UDP
 	fi
-# else
-	# echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
-	# echo -e "${CYELLOW}It's not possible to install$CEND ${CGREEN}PeerGuardian$CEND${CYELLOW}.$CEND"
-	# INSTALLOPENVPN=NO
-# fi
+else
+	echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
+	echo -e "${CYELLOW}You must follow this link BEFORE install 'MySB'.$CEND"
+	INSTALLOPENVPN=NO
+fi
 
+#### Blocklist
 echo -e "${CYELLOW}How should we manage blocklists?$CEND"
 echo -e "${CYELLOW}With$CEND ${CGREEN}PeerGuardian$CEND${CYELLOW}, you completely protect your seedbox. You also use less RAM. $CEND"
 echo -e "${CYELLOW}While with$CEND ${CGREEN}rTorrent$CEND${CYELLOW}, you will only protect your use of rTorrent. And memory consumption will be dependent on the number of seedbox users.$CEND"
@@ -140,25 +153,22 @@ echo -e "${CYELLOW}Choose '$CEND${CGREEN}none$CEND${CYELLOW}' if you don't want 
 if [ -z $IFPVEKERNEL ]; then
 	if [ "$MEMORY" -lt "2048" ]; then
 		echo -e "${CYELLOW}Your system has ${CRED}$MEMORY$CEND ${CYELLOW}MB of RAM. I recommend using PeerGuardian.$CEND"
-		GetString NO "'PeerGuardian' OR 'rTorrent' OR 'none'?" MYBLOCKLIST "PeerGuardian"
 	else
 		echo -e "${CYELLOW}Your system has ${CRED}$MEMORY$CEND ${CYELLOW}MB of RAM. You can choose between PeerGuardian and rTorrent.$CEND"
-		GetString NO "'PeerGuardian' OR 'rTorrent' OR 'none'?" MYBLOCKLIST "PeerGuardian"
 	fi
+	GetString NO "'PeerGuardian' OR 'rTorrent' OR 'none'?" MYBLOCKLIST "PeerGuardian"
 else
 	echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
 	echo -e "${CYELLOW}It's not possible to install$CEND ${CGREEN}PeerGuardian$CEND${CYELLOW}.$CEND"
 	GetString NO "'rTorrent' OR 'none'?" MYBLOCKLIST "rTorrent"
 fi
 	
-#permanently adding scripts to PATH to all users and root
+#### permanently adding scripts to PATH to all users and root
 echo "PATH=$PATH:/etc/MySB/bin:/sbin" | tee -a /etc/profile &> /dev/null
 echo "export PATH" | tee -a /etc/profile &> /dev/null
 echo "PATH=$PATH:/etc/MySB/bin:/sbin" | tee -a /root/.bashrc &> /dev/null
 echo "export PATH" | tee -a /root/.bashrc &> /dev/null
 
-TEMPHOSTNAME=MySB
-CERTPASS=@@$TEMPHOSTNAME.$NEWUSER.ServerP7s$
 # -----
 echo "$NEWUSER" > /etc/MySB/infos/newuser.info		# Will be delete after first install
 echo "$PASSWORD" > /etc/MySB/infos/password.info	# Will be delete after first install
@@ -190,7 +200,7 @@ if [ "$INSTALLOPENVPN" == "YES" ]; then
 	echo "$OPENVPNPORT" > /etc/MySB/infos/port_openvpn.info
 	echo "$OPENVPNPROTO" | awk '{print tolower($0)}' > /etc/MySB/infos/proto_openvpn.info
 fi
-echo "$CERTPASS" > /etc/MySB/infos/certpass.info
+mkpasswd $HOSTFQDN > /etc/MySB/infos/certpass.info
 echo "$INSTALLMANAGER" > /etc/MySB/infos/install_manager.info
 echo "$INSTALLFAIL2BAN" > /etc/MySB/infos/install_fail2ban.info
 echo "$INSTALLWEBMIN" > /etc/MySB/infos/install_webmin.info
