@@ -185,8 +185,8 @@ case $1 in
 	#	StatusLSB
 		
 		#### rTorrent
-		IGNOREIP="127.0.0.1/8"
-		WHITELIST="127.0.0.1"
+		IGNOREIP="127.0.0.1/8 10.159.12.0/24"
+		WHITELIST="127.0.0.1 10.159.12.0"
 		LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
 		for seedUser in $LISTUSERS; do
 			log_daemon_msg "Allow use of rTorrent for $seedUser"
@@ -237,8 +237,7 @@ case $1 in
 			SEARCH=$(cat /etc/fail2ban/jail.local | grep "ignoreip =" | cut -d "=" -f 2)
 			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
 			IGNOREIP=`echo $IGNOREIP | sed s,/,\\\\\\\\\\/,g`
-echo $SEARCH	
-echo $IGNOREIP
+
 			perl -pi -e "s/$SEARCH/$IGNOREIP/g" /etc/fail2ban/jail.local
 			
 			StatusLSB
@@ -249,8 +248,7 @@ echo $IGNOREIP
 			log_daemon_msg "Add whitelist to PeerGuardian"
 			
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_IN=" | cut -d "=" -f 2)
-echo $SEARCH	
-echo $WHITELIST			
+		
 			perl -pi -e "s/$SEARCH/\"$WHITELIST\"/g" /etc/pgl/pglcmd.conf
 			
 			StatusLSB
