@@ -237,6 +237,8 @@ case $1 in
 			SEARCH=$(cat /etc/fail2ban/jail.local | grep "ignoreip =" | cut -d "=" -f 2)
 			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
 			IGNOREIP=`echo $IGNOREIP | sed s,/,\\\\\\\\\\/,g`
+echo $SEARCH	
+echo $IGNOREIP
 			perl -pi -e "s/$SEARCH/$IGNOREIP/g" /etc/fail2ban/jail.local
 			
 			StatusLSB
@@ -247,6 +249,8 @@ case $1 in
 			log_daemon_msg "Add whitelist to PeerGuardian"
 			
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_IN=" | cut -d "=" -f 2)
+echo $SEARCH	
+echo $WHITELIST			
 			perl -pi -e "s/$SEARCH/\"$WHITELIST\"/g" /etc/pgl/pglcmd.conf
 			
 			StatusLSB
