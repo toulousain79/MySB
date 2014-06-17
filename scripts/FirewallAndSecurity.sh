@@ -43,6 +43,18 @@ case $1 in
 		iptables -t filter -P FORWARD ACCEPT
 		iptables -t filter -P OUTPUT ACCEPT	
 		StatusLSB
+		
+		if [ -f /etc/fail2ban/jail.local ]; then
+			log_daemon_msg "Stopping Fail2Ban Service"
+			service fail2ban stop
+			StatusLSB
+		fi		
+		
+		if [ -f /etc/pgl/pglcmd.conf ]; then
+			log_daemon_msg "Stoppin PeerGuardian Service"
+			pglcmd stop
+			StatusLSB
+		fi		
 	;;
 	new)
 		# NO spoofing
@@ -244,7 +256,8 @@ case $1 in
 		fi
 		
 		#### PeerGuardian
-		if [ "$MYBLOCKLIST" == "PeerGuardian" ]; then
+		#if [ "$MYBLOCKLIST" == "PeerGuardian" ]; then
+		if [ -f /etc/pgl/pglcmd.conf ]; then
 			log_daemon_msg "Add whitelist to PeerGuardian"
 			
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_IN=" | cut -d "=" -f 2)
