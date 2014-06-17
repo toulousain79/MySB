@@ -50,7 +50,6 @@ case $1 in
 		
 		if [ -f /etc/pgl/pglcmd.conf ]; then
 			pglcmd stop
-			StatusLSB
 		fi		
 	;;
 	new)

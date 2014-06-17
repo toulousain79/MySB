@@ -195,6 +195,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 * Mondedie.fr script:		https://bitbucket.org/exrat/install-rutorrent		
 * rTorrent config info:		http://libtorrent.rakshasa.no/rtorrent/rtorrent.1.html
 * rTorrent tweaks:		https://calomel.org/rtorrent_mods.html
+* rTorrent SSL:	https://forums.gentoo.org/viewtopic-t-710876-start-0.html
 * OpenSSL configuration file:	http://www.eclectica.ca/howto/ssl-cert-howto.php
 * Text ASCII Art Generator:	http://patorjk.com/software/taag/
 * Why nginx-extras + infos:	https://wiki.debian.org/fr/Nginx
