@@ -1,0 +1,209 @@
+#!/bin/bash 
+# ----------------------------------
+source /etc/MySB/inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+PackagesManage install "fail2ban"
+	
+# conf fail2ban
+(
+cat <<'EOF'
+[DEFAULT]
+ignoreip = 127.0.0.1/8 <my_ip>
+banaction = iptables-multiport
+
+[ssh]
+enabled  = true
+port     = <NEWSSHPORT>
+filter   = sshd
+logpath  = /var/log/auth.log
+bantime = 600
+banaction = iptables-multiport
+maxretry = 3
+
+[nginx-auth]
+enabled  = true
+port  = <NGINXHTTPPORT>,<NGINXHTTPSPORT>
+filter   = nginx-auth
+logpath  = /var/log/nginx/*error.log
+bantime = 600
+banaction = iptables-multiport
+maxretry = 5
+
+[nginx-badbots]
+enabled  = true
+port  = <NGINXHTTPPORT>,<NGINXHTTPSPORT>
+filter = nginx-badbots
+logpath = /var/log/nginx/*access.log
+bantime = 600
+banaction = iptables-multiport
+maxretry = 3"
+
+[nginx-login]
+enabled = true
+filter = nginx-login
+action = iptables-multiport[name=NoLoginFailures, port="<NGINXHTTPPORT>,<NGINXHTTPSPORT>"]
+logpath = /var/log/nginx*/*access*.log
+bantime = 600 # 10 minutes
+maxretry = 6
+
+[nginx-noscript]
+enabled = true
+action = iptables-multiport[name=NoScript, port="<NGINXHTTPPORT>,<NGINXHTTPSPORT>"]
+filter = nginx-noscript
+logpath = /var/log/nginx*/*access*.log
+maxretry = 6
+bantime  = 86400 # 1 day
+
+[vsftpd]
+enabled = true
+port = <NEWFTPPORT>
+filter = vsftpd
+logpath = /var/log/vsftpd.log
+bantime  = 600
+banaction = iptables-multiport
+maxretry = 3"
+
+EOF
+) > /etc/fail2ban/jail.local
+
+IFS=$','
+for ip in $MYIP; do 
+	TEMP="$TEMP $ip/32"
+done
+unset IFS	
+MYIP=`echo $TEMP | sed s,/,\\\\\\\\\\/,g | sed ':a;s/^[ \t]*//;s/[ \t]*$//'`
+
+sed -i 's/<my_ip>/$MYIP/g;' /etc/fail2ban/jail.local
+sed -i 's/<NEWSSHPORT>/$NEWSSHPORT/g;' /etc/fail2ban/jail.local
+sed -i 's/<NGINXHTTPPORT>/$NGINXHTTPPORT/g;' /etc/fail2ban/jail.local
+sed -i 's/<NGINXHTTPSPORT>/$NGINXHTTPSPORT/g;' /etc/fail2ban/jail.local
+sed -i 's/<NEWFTPPORT>/$NEWFTPPORT/g;' /etc/fail2ban/jail.local
+
+(
+cat <<'EOF'
+## FICHIER /etc/fail2ban/filter.d/nginx-auth.conf ##
+[Definition]
+
+failregex = no user/password was provided for basic authentication.*client: <HOST>
+			user .* was not found in.*client: <HOST>
+			user .* password mismatch.*client: <HOST>
+
+ignoreregex =
+
+EOF
+) > /etc/fail2ban/filter.d/nginx-auth.conf
+
+(
+cat <<'EOF'
+# Fail2Ban configuration file nginx-badbots.conf
+# Author: Patrik 'Sikevux' Greco <sikevux@sikevux.se>
+
+[Definition]
+
+# Option: failregex
+# Notes.: regex to match access attempts to setup.php
+# Values: TEXT
+
+failregex = ^<HOST> .*?"GET.*?\/setup\.php.*?" .*?
+
+# Anti w00tw00t
+			^<HOST> .*?"GET .*w00tw00t.* 404
+
+# try to access to directory
+			^<HOST> .*?"GET .*admin.* 403
+			^<HOST> .*?"GET .*admin.* 404
+			^<HOST> .*?"GET .*install.* 404
+			^<HOST> .*?"GET .*dbadmin.* 404
+			^<HOST> .*?"GET .*myadmin.* 404
+			^<HOST> .*?"GET .*MyAdmin.* 404
+			^<HOST> .*?"GET .*mysql.* 404
+			^<HOST> .*?"GET .*websql.* 404
+			^<HOST> .*?"GET .*webdb.* 404
+			^<HOST> .*?"GET .*webadmin.* 404
+			^<HOST> .*?"GET \/pma\/.* 404
+			^<HOST> .*?"GET .*phppath.* 404
+			^<HOST> .*?"GET .*admm.* 404
+			^<HOST> .*?"GET .*databaseadmin.* 404
+			^<HOST> .*?"GET .*mysqlmanager.* 404
+			^<HOST> .*?"GET .*phpMyAdmin.* 404
+			^<HOST> .*?"GET .*xampp.* 404
+			^<HOST> .*?"GET .*sqlmanager.* 404
+			^<HOST> .*?"GET .*wp-content.* 404
+			^<HOST> .*?"GET .*wp-login.* 404
+			^<HOST> .*?"GET .*typo3.* 404
+			^<HOST> .*?"HEAD .*manager.* 404
+			^<HOST> .*?"GET .*manager.* 404
+			^<HOST> .*?"HEAD .*blackcat.* 404
+			^<HOST> .*?"HEAD .*sprawdza.php.* 404
+			^<HOST> .*?"GET .*HNAP1.* 404
+			^<HOST> .*?"GET .*vtigercrm.* 404
+			^<HOST> .*?"GET .*cgi-bin.* 404
+			^<HOST> .*?"GET .*webdav.* 404
+			^<HOST> .*?"GET .*web-console.* 404
+			^<HOST> .*?"GET .*manager.* 404
+# Option: ignoreregex
+# Notes.: regex to ignore. If this regex matches, the line is ignored.
+# Values: TEXT
+#
+ignoreregex =
+
+EOF
+) > /etc/fail2ban/filter.d/nginx-badbots.conf
+
+(
+cat <<'EOF'
+#
+# Login filter /etc/fail2ban/filter.d/nginx-login.conf:
+#
+# Blocks IPs that fail to authenticate using web application's log in page
+#
+# Scan access log for HTTP 200 + POST /sessions => failed log in
+[Definition]
+failregex = ^<HOST> -.*POST /sessions HTTP/1\.." 200
+ignoreregex =
+
+EOF
+) > /etc/fail2ban/filter.d/nginx-login.conf
+
+(
+cat <<'EOF'
+# Noscript filter /etc/fail2ban/filter.d/nginx-noscript.conf:
+#
+# Block IPs trying to execute scripts such as .php, .pl, .exe and other funny scripts.
+#
+# Matches e.g.
+# 192.168.1.1 - - "GET /something.php
+#
+[Definition]
+failregex = ^<HOST> -.*GET.*(\.php|\.asp|\.exe|\.pl|\.cgi|\scgi)
+ignoreregex =
+
+EOF
+) > /etc/fail2ban/filter.d/nginx-noscript.conf
+
+# -----------------------------------------
+source /etc/MySB/inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

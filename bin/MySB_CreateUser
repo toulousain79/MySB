@@ -1,0 +1,513 @@
+#!/bin/bash 
+# ----------------------------------
+source /etc/MySB/inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+
+if [ "$USAGE" == "ON" ]; then
+	if [ -z $NEWUSER ] || [ -z $PASSWORD ]; then
+		EMAILUSER=""
+	else
+		USERHASSSHACCESS=YES
+		USERINSUDOERS=YES	
+	fi
+
+	LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
+	for seedUser in $LISTUSERS; do
+		LIST="$LIST|$seedUser"
+	done
+	LIST="`echo \($LIST\) | sed -e 's/(|/(/g;'`"	
+	
+	if [ -z $NEWUSER ]; then
+		if [ ! -z $LIST ]; then
+			echo -e "${CBLUE}Available users: $CEND${CYELLOW}$LIST$CEND"
+		fi
+		GetString NO  "Username for your seedbox: " NEWUSER
+		while [ ! "`echo \"$LIST\" | grep $NEWUSER`" = "" ]; do
+			GetString NO  "Username for your seedbox: " NEWUSER
+		done	
+	fi
+	
+	PASSWORD=`mkpasswd $NEWUSER`
+	PASSWORD=`echo $PASSWORD | sed "s/\///g"`
+	if [ -z $PASSWORD ]; then
+		GetString YES "Password for user $NEWUSER: " PASSWORD
+	fi
+	if [ -z $USERHASSSHACCESS ]; then
+		GetString NO  "User can login via SSH? " USERHASSSHACCESS NO
+	fi
+	if [ -z $USERINSUDOERS ]; then
+		GetString NO  "Add user to sudoers? " USERINSUDOERS NO
+	fi
+	if [ -z $EMAILUSER ]; then
+		#GetString NO  "Email for this user? " EMAILUSER
+		while [ ! "`ValidateMail $EMAILUSER`" = "0" ]; do
+			GetString NO  "Email for this user? " EMAILUSER
+		done			
+	fi
+	if [ "$MYIP" == "" ]; then
+		echo -e "${CRED}If you have a dynamic public ip address, type 'none'$CEND"
+		MYIP="`who --ips | awk '{print $6}' | grep ^[0123456789]`"
+		if [ "$MYIP" == "" ]; then
+			MYIP="`who --ips | awk '{print $5}' | grep ^[0123456789]`"
+		fi		
+		GetString NO  "What is personnal IP address for this user? (to add in whitelist): " MYIP `who --ips | awk '{print $6}'`			
+		while [ ! "$CHECK_MYIP" = "$MYIP" ]; do	
+			GetString NO  "What is personnal IP address for this user? (to add in whitelist): " MYIP $MYIP
+			IFS=$','
+			for ip in $MYIP; do 
+				TEMP=`ValidateIP "$ip"`
+				if [ ! -z $TEMP ]; then CHECK_MYIP="$CHECK_MYIP $TEMP"; fi
+			done
+			unset IFS	
+			CHECK_MYIP=`echo $CHECK_MYIP | sed -e "s/\ /\,/g;" | sed -e "s/^$//g;"`				
+		done			
+	fi
+else
+	NEWUSER=$1
+	PASSWORD=$2
+	USERHASSSHACCESS=$3
+	USERINSUDOERS=$4
+fi
+
+#### Create ports listing
+if [ ! -f /etc/MySB/infos/ports.txt ]; then
+	for i in $(seq 51111 51199); do
+		echo "$i" >> /etc/MySB/infos/ports.txt
+	done
+fi
+
+touch /etc/MySB/users/$NEWUSER.info
+
+#### Users vars
+HOMEBASE=/home/$NEWUSER
+HOMEDIR=$HOMEBASE
+HOMEJAILED=$HOMEBASE
+JAILDIR=$HOMEBASE
+JAILDIR_ESCAPED=`echo $JAILDIR | sed s,/,\\\\\\\\\\/,g`
+HOMEDIR_ESCAPED=`echo $HOMEDIR | sed s,/,\\\\\\\\\\/,g`
+HOMEJAILED_ESCAPED=`echo $HOMEJAILED | sed s,/,\\\\\\\\\\/,g`
+UPPERNEWUSER=`echo $NEWUSER | tr '[:lower:]' '[:upper:]'`
+LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
+COUNTUSERS=$(ls -A1 /etc/MySB/users/*.info | wc -l)
+NEWRPC=$UPPERNEWUSER
+
+SCGIPORT=`head -n 1 /etc/MySB/infos/ports.txt | tail -n 1`
+perl -pi -e "s/^$SCGIPORT.*\n$//g" /etc/MySB/infos/ports.txt
+NETWORKPORT=`head -n 1 /etc/MySB/infos/ports.txt | tail -n 1`
+perl -pi -e "s/^$NETWORKPORT.*\n$//g" /etc/MySB/infos/ports.txt
+
+#### user infos
+log_daemon_msg "Info file creation for $NEWUSER"
+
+echo "-----" >> /etc/MySB/users/$NEWUSER.info
+echo "User personal info" >> /etc/MySB/users/$NEWUSER.info
+echo "-----" >> /etc/MySB/users/$NEWUSER.info
+echo "Username= 		$NEWUSER" >> /etc/MySB/users/$NEWUSER.info
+echo "Password= 		$PASSWORD" >> /etc/MySB/users/$NEWUSER.info
+echo "E-mail= 		$EMAILUSER" >> /etc/MySB/users/$NEWUSER.info
+if [ "$MYIP" == "none" ]; then
+	echo "IP Address= 		dynamic" >> /etc/MySB/users/$NEWUSER.info
+else
+	echo "IP Address= 		$MYIP" >> /etc/MySB/users/$NEWUSER.info
+fi
+echo "RPC= 			/$NEWRPC" >> /etc/MySB/users/$NEWUSER.info
+echo "SSH= 			$USERHASSSHACCESS" >> /etc/MySB/users/$NEWUSER.info
+echo "Sudo powers= 		$USERINSUDOERS" >> /etc/MySB/users/$NEWUSER.info
+
+echo "" >> /etc/MySB/users/$NEWUSER.info
+echo "-----" >> /etc/MySB/users/$NEWUSER.info
+echo "Directories" >> /etc/MySB/users/$NEWUSER.info
+echo "-----" >> /etc/MySB/users/$NEWUSER.info
+echo "Home dir= 		$HOMEDIR" >> /etc/MySB/users/$NEWUSER.info
+echo "rTorrent dir= 		$HOMEDIR/rtorrent" >> /etc/MySB/users/$NEWUSER.info
+echo "Share dir= 		$HOMEDIR/share" >> /etc/MySB/users/$NEWUSER.info
+
+echo "" >> /etc/MySB/users/$NEWUSER.info
+echo "-----" >> /etc/MySB/users/$NEWUSER.info
+echo "Ports" >> /etc/MySB/users/$NEWUSER.info
+echo "-----" >> /etc/MySB/users/$NEWUSER.info
+if [ "$USERHASSSHACCESS" == "YES" ]; then
+	echo "SSH port= 		$NEWSSHPORT" >> /etc/MySB/users/$NEWUSER.info
+	echo "SFTP port= 		$NEWSSHPORT" >> /etc/MySB/users/$NEWUSER.info
+fi
+echo "FTPs port (TLS)= 	$NEWFTPPORT" >> /etc/MySB/users/$NEWUSER.info
+echo "SCGI port= 		$SCGIPORT" >> /etc/MySB/users/$NEWUSER.info
+echo "rTorrent port= 	$NETWORKPORT" >> /etc/MySB/users/$NEWUSER.info
+
+echo "" >> /etc/MySB/users/$NEWUSER.info
+echo "-----" >> /etc/MySB/users/$NEWUSER.info
+echo "Links" >> /etc/MySB/users/$NEWUSER.info
+echo "-----" >> /etc/MySB/users/$NEWUSER.info
+echo "User Info=		https://$HOSTFQDN:$NGINXHTTPSPORT/MySB/seedboxInfo.php" >> /etc/MySB/users/$NEWUSER.info
+echo "ruTorrent= 		https://$HOSTFQDN:$NGINXHTTPSPORT/rutorrent/" >> /etc/MySB/users/$NEWUSER.info
+if [ "$INSTALLOPENVPN" == "YES" ]; then
+	echo "OpenVPN config= 	https://$HOSTFQDN:$NGINXHTTPSPORT/MySB/OpenVPN.php" >> /etc/MySB/users/$NEWUSER.info
+	echo "OpenVPN GUI= 	https://openvpn.net/index.php/open-source/downloads.html" >> /etc/MySB/users/$NEWUSER.info
+fi
+if [ "$INSTALLMANAGER" == "YES" ]; then
+	echo "Seedbox-Manager=	https://$HOSTFQDN:$NGINXHTTPSPORT/seedbox-manager/" >> /etc/MySB/users/$NEWUSER.info
+fi
+if [ "$INSTALLCAKEBOX" == "YES" ]; then
+	echo "CakeBox Light= 	https://$HOSTFQDN:$CAKEBOXPORT/" >> /etc/MySB/users/$NEWUSER.info
+fi
+echo "Change password=	https://$HOSTFQDN:$NGINXHTTPSPORT/MySB/changePassword.php" >> /etc/MySB/users/$NEWUSER.info
+if [ "$MAINUSER" == "$NEWUSER" ]; then
+	if [ "$INSTALLWEBMIN" == "YES" ] && [ "$MAINUSER" == "$NEWUSER" ]; then
+		echo "Webmin= 		https://$HOSTFQDN:$WEBMINPORT" >> /etc/MySB/users/$NEWUSER.info
+	fi
+	echo "Logs Install=		https://$HOSTFQDN:$NGINXHTTPSPORT/MySB/logs" >> /etc/MySB/users/$NEWUSER.info
+fi
+
+StatusLSB
+
+#### create directories
+log_daemon_msg "Create directories for $NEWUSER"
+mkdir $HOMEDIR
+mkdir $HOMEDIR/blocklist
+mkdir $HOMEDIR/logs
+mkdir $HOMEDIR/share
+mkdir $HOMEDIR/rtorrent
+mkdir $HOMEDIR/rtorrent/watch
+mkdir $HOMEDIR/rtorrent/torrents
+mkdir $HOMEDIR/rtorrent/complete
+mkdir $HOMEDIR/rtorrent/.session
+StatusLSB
+
+#### create the user
+log_daemon_msg "Creating the system account for $NEWUSER"
+#useradd -s /bin/bash --home $HOMEDIR $NEWUSER
+useradd -c "MySB user $NEWUSER" -d $HOMEDIR -s /bin/bash $NEWUSER &> /dev/null
+StatusLSB
+
+#### FTP
+log_daemon_msg "Authorise the use of FTP and share for $NEWUSER"
+echo "$NEWUSER" >> /etc/vsftpd.chroot_list
+mount --bind /home/MySB_share $HOMEDIR/share
+StatusLSB
+
+#### add to groups
+log_daemon_msg "Assigning user groups to $NEWUSER"
+addgroup $NEWUSER MySB_users &> /dev/null
+
+if [ "$USERINSUDOERS" == "YES" ]; then
+	addgroup $NEWUSER sudo &> /dev/null
+fi
+if [ "$USERHASSSHACCESS" == "YES" ]; then
+	addgroup $NEWUSER sshdusers &> /dev/null
+fi
+StatusLSB
+
+#### custumize profile
+if [ ! -f $HOMEDIR/.profile ]; then
+	log_daemon_msg "Customizing profile for $NEWUSER"
+	cp /etc/skel/.bashrc $HOMEDIR
+	cp /etc/skel/.bash_logout $HOMEDIR
+	cp /etc/skel/.profile $HOMEDIR
+	chown $NEWUSER:$NEWUSER $HOMEDIR/.bashrc
+	chown $NEWUSER:$NEWUSER $HOMEDIR/.bash_logout
+	chown $NEWUSER:$NEWUSER $HOMEDIR/.profile
+	StatusLSB
+fi
+
+#### rTorrent (.rtorrent.rc)
+log_daemon_msg "Creating the rTorrent configuration file for $NEWUSER"
+cp /etc/MySB/templates/rtorrent.rc.template  $HOMEDIR/.rtorrent.rc
+perl -pi -e "s/<username>/$NEWUSER/g" $HOMEDIR/.rtorrent.rc
+perl -pi -e "s/<homedir>/$HOMEDIR_ESCAPED/g" $HOMEDIR/.rtorrent.rc
+perl -pi -e "s/<scgi_port>/$SCGIPORT/g" $HOMEDIR/.rtorrent.rc
+perl -pi -e "s/<port_range>/$NETWORKPORT-$NETWORKPORT/g" $HOMEDIR/.rtorrent.rc
+if [ "$MYBLOCKLIST" == "rTorrent" ]; then
+	perl -pi -e "s/#ipv4_filter.load/ipv4_filter.load/g" $HOMEDIR/.rtorrent.rc
+	perl -pi -e "s/#print/print/g" $HOMEDIR/.rtorrent.rc
+fi
+StatusLSB
+
+#### logserver user config
+# mv /etc/MySB/scripts/LogServer.sh /etc/MySB/scripts/LogServer.tmp
+# head -n -6 /etc/MySB/scripts/LogServer.tmp > /etc/MySB/scripts/LogServer.sh
+# echo "sed -i '/$NEWUSER\ HTTP/d' /tmp/access.log" >> /etc/MySB/scripts/LogServer.sh
+# echo "ccze -h < /tmp/access.log > /etc/MySB/web/logs/access.html" >> /etc/MySB/scripts/LogServer.sh
+# echo >> /etc/MySB/scripts/LogServer.sh
+# echo "# -----------------------------------------" >> /etc/MySB/scripts/LogServer.sh
+# echo "source /etc/MySB/inc/includes_after" >> /etc/MySB/scripts/LogServer.sh
+# echo "# -----------------------------------------" >> /etc/MySB/scripts/LogServer.sh
+# echo "##################### LAST LINE ######################################" >> /etc/MySB/scripts/LogServer.sh
+# rm /etc/MySB/scripts/LogServer.tmp
+# /bin/bash /etc/MySB/scripts/LogServer.sh
+
+#### ruTorrent (user conf)
+log_daemon_msg "Creating ruTorrent config.php for $NEWUSER"
+mkdir -p /usr/share/nginx/html/rutorrent/conf/users/$NEWUSER/
+
+(
+cat <<'EOF'
+<?php
+        // configuration parameters
+
+        // for snoopy client
+        @define('HTTP_USER_AGENT', 'Mozilla/5.0 (Windows NT 6.0; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0', true);
+        @define('HTTP_TIME_OUT', 30, true);     // in seconds
+        @define('HTTP_USE_GZIP', true, true);
+        $httpIP = null;                         // IP string. Or null for any.
+
+        @define('RPC_TIME_OUT', 5, true);       // in seconds
+
+        @define('LOG_RPC_CALLS', false, true);
+        @define('LOG_RPC_FAULTS', true, true);
+
+        // for php
+        @define('PHP_USE_GZIP', false, true);
+        @define('PHP_GZIP_LEVEL', 2, true);
+
+        $schedule_rand = 10;                    // rand for schedulers start, +0..X seconds
+
+        $do_diagnostic = true;
+        $log_file = '<homedir>/logs/rutorrent.log';          // path to log file (comment or leave blank to disable logging)
+
+        $saveUploadedTorrents = true;           // Save uploaded torrents to profile/torrents directory or not
+        $overwriteUploadedTorrents = false;     // Overwrite existing uploaded torrents in profile/torrents directory or make unique name
+
+        $topDirectory = '<homedir>';                   // Upper available directory. Absolute path with trail slash.
+        $forbidUserSettings = false;
+
+        $scgi_port = <scgi_port>;
+        $scgi_host = "127.0.0.1";
+
+        // For web->rtorrent link through unix domain socket
+        // (scgi_local in rtorrent conf file), change variables
+        // above to something like this:
+        //
+        // $scgi_port = 0;
+        // $scgi_host = "unix:///tmp/rpc.socket";
+        $pathToExternals = array(
+                "php"   => '/usr/bin/php',                  // Something like /usr/bin/php. If empty, will be found in PATH.
+                "curl"  => '/usr/bin/curl',                     // Something like /usr/bin/curl. If empty, will be found in PATH.
+                "gzip"  => '/bin/gzip',                 // Something like /usr/bin/gzip. If empty, will be found in PATH.
+                "id"  => '/usr/bin/id',                 // Something like /usr/bin/id. If empty, will be found in PATH.
+                "stat"  => '/usr/bin/stat',                     // Something like /usr/bin/stat. If empty, will be found in PATH.
+        );
+
+        $localhosts = array(                    // list of local interfaces
+                "127.0.0.1",
+                "localhost",
+        );
+
+        $profilePath = '../share/';              // Path to user profiles
+        $profileMask = 0777;                    // Mask for files and directory creation in user profiles.
+                                                // Both Webserver and rtorrent users must have read-write access to it.
+                                                // For example, if Webserver and rtorrent users are in the same group then the value may be 0770.
+
+        $tempDirectory = null;                  // Temp directory. Absolute path with trail slash. If null, then autodetect will be used.
+
+        $XMLRPCMountPoint = '/<USERNAME>';           // DO NOT DELETE THIS LINE!!! DO NOT COMMENT THIS LINE!!!
+
+		
+EOF
+) > /usr/share/nginx/html/rutorrent/conf/users/$NEWUSER/config.php
+perl -pi -e "s/<homedir>/$HOMEDIR_ESCAPED/g" /usr/share/nginx/html/rutorrent/conf/users/$NEWUSER/config.php
+perl -pi -e "s/<scgi_port>/$SCGIPORT/g" /usr/share/nginx/html/rutorrent/conf/users/$NEWUSER/config.php
+perl -pi -e "s/<USERNAME>/$UPPERNEWUSER/g" /usr/share/nginx/html/rutorrent/conf/users/$NEWUSER/config.php
+StatusLSB
+
+#### access.ini
+log_daemon_msg "Creating ruTorrent access.ini for $NEWUSER"
+cp /usr/share/nginx/html/rutorrent/conf/access.ini /usr/share/nginx/html/rutorrent/conf/users/$NEWUSER/access.ini
+StatusLSB
+
+#### Plugins per users
+log_daemon_msg "Creating ruTorrent plugins directories for $NEWUSER"
+# create subdirectory plugins for user and copy all conf.php
+CreatePluginsDirUsers $NEWUSER
+StatusLSB
+
+#### stream
+log_daemon_msg "Creating ruTorrent plugin Stream (config.php) for $NEWUSER"
+if [ -f /usr/share/nginx/html/rutorrent/conf/users/$NEWUSER/plugins/stream/config.php ]; then
+	perl -pi -e "s/$auth = '';/$auth = '$NEWUSER:$PASSWORD';/g" /usr/share/nginx/html/rutorrent/conf/users/$NEWUSER/plugins/stream/config.php	
+fi
+StatusLSB
+	
+ldconfig
+chown -R www-data:www-data /usr/share/nginx/html/rutorrent
+
+#### NginX
+log_daemon_msg "Creating RPC file for $NEWUSER"
+(
+cat <<'EOF'
+location /<USERNAME> {
+	include scgi_params;
+	scgi_pass 127.0.0.1:5995;
+	auth_basic "MySB";
+	auth_basic_user_file "/etc/nginx/passwd/MySB_<username>";
+}
+
+EOF
+) > /etc/nginx/rpc/$NEWUSER.conf
+perl -pi -e "s/5995/$SCGIPORT/g" /etc/nginx/rpc/$NEWUSER.conf
+perl -pi -e "s/<username>/$NEWUSER/g" /etc/nginx/rpc/$NEWUSER.conf
+perl -pi -e "s/<USERNAME>/$UPPERNEWUSER/g" /etc/nginx/rpc/$NEWUSER.conf
+StatusLSB
+
+#### Seedbox-Manager
+if [ "$INSTALLMANAGER" == "YES" ]; then
+	log_daemon_msg "Creating Seedbox-Manager configuration for $NEWUSER"
+	
+	mkdir -p /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER
+
+	(
+	cat <<'EOF'
+; Manager de seedbox (adapté pour le tuto de mondedie.fr)
+;
+; Fichier de configuration :
+; yes ou no pour activer les modules
+; Si vous n'avez pas de nom de domaine, indiquez l'ip (ex: https://XX.XX.XX.XX/rutorrent)
+
+[user]
+active_bloc_info = yes
+user_directory = "<homedir>"
+scgi_folder = "/<USERNAME>"
+theme = "default"
+owner = no
+
+[nav]
+data_link = "url = https://212.83.153.106:8889/rutorrent/, name = ruTorrent
+url = https://212.83.153.106:8889/MySB/seedboxInfo.php, name = SeedboxInfo
+url = https://srv1.lig2p.com:8889/MySB/changePassword.php, name = Change Password
+url = https://srv1.lig2p.com:8889/MySB/OpenVPN.php, name = OpenVPN Config"
+
+
+[ftp]
+active_ftp = yes
+port_ftp = "<FTPPORT>"
+port_sftp = "<SSHPORT>"
+
+[rtorrent]
+active_reboot = yes
+
+[support]
+active_support = yes
+adresse_mail = "contact@exemple.com"
+
+[logout]
+url_redirect = "http://www.google.fr"
+
+EOF
+	) > /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER/config.ini
+	sed -i "s/<homedir>/$HOMEDIR_ESCAPED/g;" /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER/config.ini
+	sed -i "s/<USERNAME>/$UPPERNEWUSER/g;" /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER/config.ini
+	sed -i "s/rutorrent.domaine.fr/$HOSTFQDN:$NGINXHTTPSPORT/g;" /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER/config.ini
+	sed -i "s/<FTPPORT>/$NEWFTPPORT/g;" /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER/config.ini
+	sed -i "s/<SSHPORT>/$NEWSSHPORT/g;" /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER/config.ini
+	sed -i "s/contact@exemple.com/$EMAILUSER/g;" /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER/config.ini
+
+	if [ "$MAINUSER" == "$NEWUSER" ]; then	
+		sed -i "s/owner = no/owner = yes/g;" /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER/config.ini
+	fi
+	
+	chown -R www-data:www-data /usr/share/nginx/html/seedbox-manager/conf/users/
+	
+	StatusLSB
+fi
+
+#### CakeBox
+if [ "$INSTALLCAKEBOX" == "YES" ]; then
+	log_daemon_msg "Creating Cakebox configuration for $NEWUSER"
+
+	(
+	cat <<'EOF'
+location /<username>/ {
+		alias /home/<username>/;
+		add_header Content-Disposition "attachment";
+		satisfy any;
+		allow all;
+}
+
+EOF
+	) > /etc/nginx/rpc/$NEWUSER.cakebox
+	perl -pi -e "s/<username>/$NEWUSER/g" /etc/nginx/rpc/$NEWUSER.cakebox
+	
+	cp /usr/share/nginx/html/Cakebox-light/config/default.php.dist /usr/share/nginx/html/Cakebox-light/config/$NEWUSER.php
+	sed -i "s/\/var\/www\//\/home\/$NEWUSER\//g;" /usr/share/nginx/html/Cakebox-light/config/$NEWUSER.php
+	sed -i "s/\/access\//\/$NEWUSER\//g;" /usr/share/nginx/html/Cakebox-light/config/$NEWUSER.php
+	
+	StatusLSB
+fi
+
+#### script init
+log_daemon_msg "Creating init script for $NEWUSER"
+cp /etc/MySB/templates/etc.init.rtorrent.template /etc/init.d/rtorrent-$NEWUSER
+perl -pi -e "s/<username>/$NEWUSER/g" /etc/init.d/rtorrent-$NEWUSER
+chmod +x /etc/init.d/rtorrent-$NEWUSER
+update-rc.d rtorrent-$NEWUSER defaults 99 &> /dev/null
+StatusLSB
+
+#### cron
+log_daemon_msg "Add init script to cron for $NEWUSER"
+crontab -l > /tmp/crontab.tmp
+sed -i '/'$NEWUSER'/d' /tmp/crontab.tmp
+echo "* * * * * if ! ( /bin/ps U $NEWUSER | grep rtorrent > /dev/null ); then /etc/init.d/rtorrent-$NEWUSER restart &> /dev/null; fi" >> /tmp/crontab.tmp
+echo "0 12 1 * * /bin/bash /etc/MySB/scripts/PaymentReminder.sh $NEWUSER &> /dev/null" >> /tmp/crontab.tmp
+crontab /tmp/crontab.tmp
+rm /tmp/crontab.tmp
+StatusLSB
+
+#### rtorrent max memory
+for seedUser in $LISTUSERS; do
+	log_daemon_msg "Changing the parameter 'pieces.memory.max.set' for $seedUser"
+	LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$seedUser/.rtorrent.rc)
+	sed -i ''$LIGN'd' /home/$seedUser/.rtorrent.rc
+	sed -i ''$LIGN'i\#pieces.memory.max.set = '$(((($MEMORY/$COUNTUSERS)*1024)*1024))'\n' /home/$seedUser/.rtorrent.rc
+	StatusLSB
+	
+	if [ "$MYBLOCKLIST" == "rTorrent" ]; then	
+		if [ -f /etc/MySB/scripts/blocklist/blocklist_rtorrent.txt ]; then
+			log_daemon_msg "Copy the blocklist file for $seedUser"
+			cp /etc/MySB/scripts/blocklist/* $HOMEDIR/blocklist/
+			StatusLSB
+		else
+			log_daemon_msg "Creating a new blocklist file for $seedUser"
+			#screen -dmS BlockList /bin/bash /etc/MySB/scripts/BlockList.sh;
+			ScriptInvoke 'screen' '/etc/MySB/scripts/BlockList.sh'
+			StatusLSB	
+		fi
+	fi
+done
+
+#### OpenVPN
+if [ "$INSTALLOPENVPN" == "YES" ]; then
+	log_daemon_msg "Creating an OpenVPN account for $seedUser"
+	screen -dmS OpenVPN_Client /bin/bash /etc/MySB/install/OpenVPN client "$NEWUSER" "$PASSWORD";
+	WaitingSTD OpenVPN_Client	
+	StatusLSB
+fi
+
+#### iptables
+log_daemon_msg "Creating new rules for iptables"
+screen -dmS FirewallAndSecurity /bin/bash /etc/MySB/scripts/FirewallAndSecurity.sh new;
+WaitingSTD FirewallAndSecurity
+StatusLSB
+
+#### renting
+MonthlyPayment "$NEWUSER"
+
+#### Assign password
+##/bin/bash /etc/MySB/bin/MySB_ChangeUserPassword "$NEWUSER" "$PASSWORD"
+#source /etc/MySB/bin/MySB_ChangeUserPassword
+ScriptInvoke 'source' '/etc/MySB/bin/MySB_ChangeUserPassword' $NEWUSER $PASSWORD
+
+# -----------------------------------------
+source /etc/MySB/inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

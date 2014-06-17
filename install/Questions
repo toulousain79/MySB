@@ -1,0 +1,204 @@
+#!/bin/bash 
+# ----------------------------------
+source /etc/MySB/inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+echo
+echo -e "${CGREEN}##########################################################################################$CEND"
+echo -e "${CGREEN}#$CEND	${CYELLOW}Now, I need some informations.$CEND"
+echo -e "${CGREEN}##########################################################################################$CEND"
+echo
+	
+#those passwords will be changed in the next steps
+GetString NO "What is you time zone ? (ex: Europe/Paris): " TIMEZONE "Europe/Paris"
+
+GetString NO "What is your primary network interface ? (ex: eth0, nic0, ...): " PRIMARYINET "eth0"
+
+GetString NO "Username for the first user for your seedbox (admin user): " NEWUSER
+while [ "`echo $NEWUSER | grep '@'`" != "" ]; do
+	GetString NO "Username for the first user for your seedbox (admin user): " NEWUSER
+done
+
+PASSWORD=`mkpasswd $NEWUSER`
+PASSWORD=`echo $PASSWORD | sed "s/\///g"`
+if [ -z $PASSWORD ]; then	
+	GetString YES "Password for user $NEWUSER: " PASSWORD
+fi
+
+echo -e "${CRED}If you have a dynamic public ip address, type '$CEND${CGREEN}none$CEND${CRED}'$CEND"
+#GetString NO  "What is your personnal IP address ? (to add in whitelist): " MYIP `who --ips | awk '{print $6}' | grep ^[0123456789]`
+if [ ! "$MYIP" = "none" ]; then
+	while [ ! "$CHECK_MYIP" = "$MYIP" ] || [ -z "$MYIP" ]; do
+		MYIP="`who --ips | awk '{print $6}' | grep ^[0123456789]`"
+		if [ "$MYIP" == "" ]; then
+			MYIP="`who --ips | awk '{print $5}' | grep ^[0123456789]`"
+		fi
+	
+		GetString NO "What are IP personal public addresses (separate by comma)? (to add in whitelist): " MYIP $MYIP
+		IFS=$','
+		for ip in $MYIP; do 
+			TEMP=`ValidateIP "$ip"`
+			if [ ! -z $TEMP ]; then CHECK_MYIP="$CHECK_MYIP $TEMP"; fi
+		done
+		unset IFS
+		CHECK_MYIP=`echo $CHECK_MYIP | sed -e "s/\ /\,/g;" | sed -e "s/^$//g;"`	
+	done
+fi
+
+echo -e "${CYELLOW}Do you want to use an external SMTP server? (Good for safe sending emails.).$CEND"
+echo -e "${CYELLOW}Choose between ${CGREEN}LOCAL$CEND${CYELLOW} or listed providers $CEND${CGREEN}FREE$CEND | $CEND${CGREEN}OVH$CEND${CYELLOW} | $CEND${CGREEN}GMAIL$CEND | $CEND${CGREEN}YAHOO$CEND"
+echo -e "${CYELLOW}Only SSL transactions will be used (SSL/465).$CEND"
+GetString NO "What is you provider? " SMTP LOCAL
+
+SMTP=`echo $SMTP | tr '[:lower:]' '[:upper:]'`
+if [ "$SMTP" != "LOCAL" ]; then	
+	GetString NO "What is the username for ${CGREEN}$SMTP$CEND?" SMTP_USER
+	GetString YES "What is the password for ${CGREEN}$SMTP$CEND?" SMTP_PASS
+fi
+
+#GetString NO  "What is the administrator's email for this seedbox? " EMAILUSER
+while [ ! "`ValidateMail $EMAILUSER`" = "0" ]; do
+	GetString NO "What is the administrator's email for this seedbox?" EMAILUSER
+done
+
+#GetString NO  "IP address of your box: " IPADDRESS $IPADDRESS
+while [ ! "$CHECK_IPADDRESS" = "$IPADDRESS" ] || [ -z "$MYIP" ]; do
+	GetString NO  "IP address of your box: " IPADDRESS $IPADDRESS
+	CHECK_IPADDRESS=`ValidateIP "$IPADDRESS"`
+done
+
+GetString NO "Hostname (FQDN) of your box: " HOSTFQDN $HOSTFQDN `hostname -f`
+
+GetString NO "NginX HTTP port (usually 80): " NGINXHTTPPORT 8888
+
+GetString NO "NginX HTTPs port (usually 443): " NGINXHTTPSPORT 8889
+
+GetString NO "SSH port (usually 22): " NEWSSHPORT 8892
+
+GetString NO "FTP port (usually 21): " NEWFTPPORT 8891
+
+GetString NO "FTP Active Data port (usually 20): " NEWFTPDATAPORT 8800
+
+GetString NO "Install Fail2ban? " INSTALLFAIL2BAN YES
+
+GetString NO "Install Seedbox-Manager? " INSTALLMANAGER YES
+
+GetString NO "Install CakeBox Light? " INSTALLCAKEBOX YES
+if [ "$INSTALLCAKEBOX" == "YES" ]; then
+	GetString NO "CakeBox port: " CAKEBOXPORT 8887
+fi
+
+GetString NO "Install Plex Media? " INSTALLPLEXMEDIA NO
+
+GetString NO "Install Webmin? " INSTALLWEBMIN YES
+if [ "$INSTALLWEBMIN" == "YES" ]; then
+	GetString NO "Webmin port  (usually 10000): " WEBMINPORT 8890
+fi
+
+#if [ -z $IFPVEKERNEL ]; then
+	GetString NO "Install OpenVPN? " INSTALLOPENVPN YES
+	if [ "$INSTALLOPENVPN" == "YES" ]; then
+		GetString NO  "OpenVPN port: " OPENVPNPORT 8893
+		echo -e "${CYELLOW}You can use OpenVPN with TCP or UDP.$CEND"
+		echo -e "${CGREEN}TCP$CEND${CYELLOW}: Reliable, stateful protocol, offers error correction, most commonly used connection protocol.$CEND"
+		echo -e "${CGREEN}UDP$CEND${CYELLOW}: Fast, stateless protocol, no such error correction, less reliable.$CEND"
+		echo -e "${CYELLOW}Which one you use therefore depends on whether reliability or speed is your primary concern, and in general ${CGREEN}UDP$CEND${CYELLOW} is better for media streaming, VoIP and playing games online.$CEND"
+		GetString NO "Which protocol, 'UDP' OR 'TCP' ? : " OPENVPNPROTO UDP
+	fi
+# else
+	# echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
+	# echo -e "${CYELLOW}It's not possible to install$CEND ${CGREEN}PeerGuardian$CEND${CYELLOW}.$CEND"
+	# INSTALLOPENVPN=NO
+# fi
+
+echo -e "${CYELLOW}How should we manage blocklists?$CEND"
+echo -e "${CYELLOW}With$CEND ${CGREEN}PeerGuardian$CEND${CYELLOW}, you completely protect your seedbox. You also use less RAM. $CEND"
+echo -e "${CYELLOW}While with$CEND ${CGREEN}rTorrent$CEND${CYELLOW}, you will only protect your use of rTorrent. And memory consumption will be dependent on the number of seedbox users.$CEND"
+echo -e "${CYELLOW}Choose '$CEND${CGREEN}none$CEND${CYELLOW}' if you don't want to use a blocklist. It's not recommended.$CEND"
+
+if [ -z $IFPVEKERNEL ]; then
+	if [ "$MEMORY" -lt "2048" ]; then
+		echo -e "${CYELLOW}Your system has ${CRED}$MEMORY$CEND ${CYELLOW}MB of RAM. I recommend using PeerGuardian.$CEND"
+		GetString NO "'PeerGuardian' OR 'rTorrent' OR 'none'?" MYBLOCKLIST "PeerGuardian"
+	else
+		echo -e "${CYELLOW}Your system has ${CRED}$MEMORY$CEND ${CYELLOW}MB of RAM. You can choose between PeerGuardian and rTorrent.$CEND"
+		GetString NO "'PeerGuardian' OR 'rTorrent' OR 'none'?" MYBLOCKLIST "PeerGuardian"
+	fi
+else
+	echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
+	echo -e "${CYELLOW}It's not possible to install$CEND ${CGREEN}PeerGuardian$CEND${CYELLOW}.$CEND"
+	GetString NO "'rTorrent' OR 'none'?" MYBLOCKLIST "rTorrent"
+fi
+	
+#permanently adding scripts to PATH to all users and root
+echo "PATH=$PATH:/etc/MySB/bin:/sbin" | tee -a /etc/profile &> /dev/null
+echo "export PATH" | tee -a /etc/profile &> /dev/null
+echo "PATH=$PATH:/etc/MySB/bin:/sbin" | tee -a /root/.bashrc &> /dev/null
+echo "export PATH" | tee -a /root/.bashrc &> /dev/null
+
+TEMPHOSTNAME=MySB
+CERTPASS=@@$TEMPHOSTNAME.$NEWUSER.ServerP7s$
+# -----
+echo "$NEWUSER" > /etc/MySB/infos/newuser.info		# Will be delete after first install
+echo "$PASSWORD" > /etc/MySB/infos/password.info	# Will be delete after first install
+echo "$NEWUSER" > /etc/MySB/infos/mainuser.info
+echo "$EMAILUSER" > /etc/MySB/infos/email.info
+echo "$MYIP" > /etc/MySB/infos/myip.info
+echo "$SMTP" > /etc/MySB/infos/smtp.info
+echo "$SMTP_PASS" > /etc/MySB/infos/smtp_pass.info	# Will be delete after first install
+echo "$SMTP_USER" > /etc/MySB/infos/smtp_user.info
+# -----
+echo "$TIMEZONE" > /etc/MySB/infos/timezone.info
+echo "$PRIMARYINET" > /etc/MySB/infos/primaryinet.info
+echo "$NEWUSER" > /etc/MySB/infos/newuser.info
+echo "$IPADDRESS" > /etc/MySB/infos/ipaddress.info
+echo "$HOSTFQDN" > /etc/MySB/infos/hostfqdn.info
+echo "$MYBLOCKLIST" > /etc/MySB/infos/blocklist.info
+echo "$NGINXHTTPPORT" > /etc/MySB/infos/port_http.info
+echo "$NGINXHTTPSPORT" > /etc/MySB/infos/port_https.info
+echo "$NEWSSHPORT" > /etc/MySB/infos/port_ssh.info
+echo "$NEWFTPPORT" > /etc/MySB/infos/port_ftp.info
+echo "$NEWFTPDATAPORT" > /etc/MySB/infos/port_ftpdata.info
+if [ "$INSTALLCAKEBOX" == "YES" ]; then
+	echo "$CAKEBOXPORT" > /etc/MySB/infos/port_cakebox.info
+fi
+if [ "$INSTALLWEBMIN" == "YES" ]; then
+	echo "$WEBMINPORT" > /etc/MySB/infos/port_webmin.info
+fi
+if [ "$INSTALLOPENVPN" == "YES" ]; then
+	echo "$OPENVPNPORT" > /etc/MySB/infos/port_openvpn.info
+	echo "$OPENVPNPROTO" | awk '{print tolower($0)}' > /etc/MySB/infos/proto_openvpn.info
+fi
+echo "$CERTPASS" > /etc/MySB/infos/certpass.info
+echo "$INSTALLMANAGER" > /etc/MySB/infos/install_manager.info
+echo "$INSTALLFAIL2BAN" > /etc/MySB/infos/install_fail2ban.info
+echo "$INSTALLWEBMIN" > /etc/MySB/infos/install_webmin.info
+echo "$INSTALLOPENVPN" > /etc/MySB/infos/install_openvpn.info
+echo "$INSTALLPLEXMEDIA" > /etc/MySB/infos/install_plexmedia.info
+echo "$INSTALLCAKEBOX" > /etc/MySB/infos/install_cakebox.info
+	
+# -----------------------------------------
+source /etc/MySB/inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

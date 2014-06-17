@@ -1,0 +1,211 @@
+#!/bin/bash 
+# ----------------------------------
+source /etc/MySB/inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### Files & Directories
+if [ -f /etc/pgl/blocklists.list ] && [ ! -f /etc/pgl/blocklists.list.ORIGINAL ]; then
+	cp /etc/pgl/blocklists.list /etc/pgl/blocklists.list.ORIGINAL
+fi
+if [ -f /etc/pgl/blocklists.list ]; then
+	rm -f /etc/pgl/blocklists.list
+fi
+if [ -f /etc/pgl/pglcmd.conf ]; then
+	rm -f /etc/pgl/pglcmd.conf
+fi
+if [ -f /etc/pgl/allow.p2p ]; then
+	rm -f /etc/pgl/allow.p2p
+fi
+
+#### Sources list
+echo "# Moblock for ${DEBIAN_VERSION}
+deb http://moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main
+deb-src http://moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" \
+> '/etc/apt/sources.list.d/moblock.list'
+
+cd /etc/MySB/files
+until sudo gpg --keyserver keyserver.ubuntu.com --recv-keys C0145138; do
+	sleep 1
+done
+
+until sudo gpg --export --armor C0145138 | sudo apt-key add -; do
+	sleep 1
+done
+
+#### Install Packages
+PackagesManage install "pgld pglcmd"
+
+#### Create config file
+(
+cat <<'EOF'
+# pglcmd.conf - configuration file for pglcmd
+
+# This file is sourced by a shell script. Any line which starts with a # (hash)
+# is a comment and is ignored. If you set the same variable several times,
+# then only the last line will be used.
+
+# Refer to pglcmd.defaults (/usr/lib/pgl/pglcmd.defaults)
+# for the complete set of possible configuration variables with comments.
+
+# Do a "pglcmd restart" (sometimes even "reload" is enough) when you have
+# edited this file.
+
+# Turn on/off automatic start.
+# ignore this on Gentoo
+# Note: this tells the init script not to start pgl on "start".
+# The same behaviour can be achieved by removing/tweaking the init file and the
+# links pointing to it. You can do this manually or by using an application such
+# as rcconf.
+# 0 - Don't start pgl at system boot
+# 1 - Start pgl at system boot
+INIT="1"
+
+# Turn on/off automatic blocklist update.
+# 0 - Don't update the blocklists automatically
+# 1 - Update the blocklists automatically
+CRON="1"
+
+# Turn on/off pgld's logging to syslog and/or systemd journal
+# 0 - Don't log to syslog/systemd journal
+# 1 - Log to syslog/systemd journal
+LOG_SYSLOG="1"
+
+EOF
+) > /etc/pgl/pglcmd.conf
+
+IFS=$','
+for ip in $MYIP; do 
+	TEMP="$TEMP $ip"
+done
+unset IFS	
+MYIP=`echo $TEMP | sed -e "s/^//g;"`
+
+FTP_PASSIVE=""
+if [ -e '/etc/vsftpd.conf' ]; then
+	MIN_PORT=$(grep "^pasv_min_port=" '/etc/vsftpd.conf' | cut --delimiter="=" --fields=2)
+	MAX_PORT=$(grep "^pasv_max_port=" '/etc/vsftpd.conf' | cut --delimiter="=" --fields=2)
+	if [ -n "${MIN_PORT}" -a -n "${MAX_PORT}" ]; then
+		FTP_PASSIVE="${MIN_PORT}:${MAX_PORT}"
+	fi
+fi
+
+echo "
+WHITE_TCP_IN=\"${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${NEWSSHPORT} ${WEBMINPORT} ${OPENVPNPORT} ${NEWFTPPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE} ${CAKEBOXPORT}\"
+WHITE_TCP_OUT=\"${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${NEWSSHPORT} ${WEBMINPORT} ${OPENVPNPORT} ${NEWFTPPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE} ${CAKEBOXPORT}\"
+WHITE_IP_IN=\"${MYIP}\"
+" >> /etc/pgl/pglcmd.conf
+
+#### Create Blocklist file
+(
+cat <<'EOF'
+# blocklists.list - lists the blocklists that are handled automatically by pglcmd
+
+# Place one URL per line for every blocklist.
+# Any line which starts with a # (hash) is a comment and is ignored.
+
+# Have a look at /usr/share/doc/pglcmd/README.blocklists.gz for detailed
+# information about some available blocklists.
+
+# Instead or additionally to the blocklists that are specified in this file,
+# you can manually put lists in MASTER_BLOCKLIST_DIR (/var/lib/pgl).
+# All blocklists in that directory (except those which end in "~" or have a "."
+# prefix) are used by pgld. They may be in any supported format and have to be
+# either unpacked or gzipped. Note that these manually installed blocklists are
+# neither updated automatically, nore does IP_REMOVE work for them.
+
+# Do a "pglcmd reload" (or "restart" or "update") when you have edited
+# this file.
+
+list.iblocklist.com/lists/atma/atma
+list.iblocklist.com/lists/bluetack/ads-trackers-and-bad-pr0n
+list.iblocklist.com/lists/bluetack/bad-peers
+list.iblocklist.com/lists/bluetack/bogon
+list.iblocklist.com/lists/bluetack/dshield
+list.iblocklist.com/lists/bluetack/edu
+list.iblocklist.com/lists/bluetack/for-non-lan-computers
+list.iblocklist.com/lists/bluetack/forum-spam
+list.iblocklist.com/lists/bluetack/hijacked
+list.iblocklist.com/lists/bluetack/iana-multicast
+list.iblocklist.com/lists/bluetack/iana-private
+list.iblocklist.com/lists/bluetack/iana-reserved
+list.iblocklist.com/lists/bluetack/level-1
+list.iblocklist.com/lists/bluetack/level-2
+list.iblocklist.com/lists/bluetack/level-3
+list.iblocklist.com/lists/bluetack/microsoft
+list.iblocklist.com/lists/bluetack/proxy
+list.iblocklist.com/lists/bluetack/range-test
+list.iblocklist.com/lists/bluetack/spider
+list.iblocklist.com/lists/bluetack/spyware
+list.iblocklist.com/lists/bluetack/web-exploit
+list.iblocklist.com/lists/bluetack/webexploit-forumspam
+list.iblocklist.com/lists/cidr-report/bogon
+list.iblocklist.com/lists/dchubad/faker
+list.iblocklist.com/lists/dchubad/hacker
+list.iblocklist.com/lists/dchubad/pedophiles
+list.iblocklist.com/lists/dchubad/spammer
+list.iblocklist.com/lists/nexus23/ipfilterx
+list.iblocklist.com/lists/peerblock/rapidshare
+list.iblocklist.com/lists/spamhaus/drop
+list.iblocklist.com/lists/tbg/bogon
+list.iblocklist.com/lists/tbg/business-isps
+list.iblocklist.com/lists/tbg/educational-institutions
+list.iblocklist.com/lists/tbg/general-corporate-ranges
+list.iblocklist.com/lists/tbg/hijacked
+list.iblocklist.com/lists/tbg/primary-threats
+list.iblocklist.com/lists/tbg/search-engines
+
+EOF
+) > /etc/pgl/blocklists.list
+
+#### Create P2P file
+(
+cat <<'EOF'
+# allow.p2p - allow list for pglcmd
+#
+# This file contains IP ranges that shall not be checked.
+# They must be in the PeerGuardian .p2p text format like this:
+#   Some organization:1.0.0.0-1.255.255.255
+# This is also true if your blocklists are in another format.
+# Lines beginning with a hash (#) are comments and will be ignored.
+#
+# Do a "pglcmd restart" when you have edited this file.
+frenchtorrentdb.com:37.221.162.194-255.255.255.255
+EOF
+) > /etc/pgl/allow.p2p
+  
+ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
+for engine in ${ENGINES}; do
+	TRACKER=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "url =" | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
+	
+	TRACKER_IPV4="$(nslookup ${TRACKER} | grep Address: | awk '{ print $2 }' | sed -n 2p)"
+	if [ ! -z $TRACKER_IPV4 ]; then
+		echo ${TRACKER}
+		echo "${TRACKER}:${TRACKER_IPV4}-255.255.255.255" >> /etc/pgl/allow.p2p
+	fi
+done
+	
+# -----------------------------------------
+source /etc/MySB/inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

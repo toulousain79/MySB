@@ -1,0 +1,108 @@
+#!/bin/bash 
+# ----------------------------------
+source /etc/MySB/inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### xmlrpc-c
+if [ -d /etc/MySB/sources/xmlrpc-c ]; then
+	svn up /etc/MySB/sources/xmlrpc-c
+	cd /etc/MySB/sources/xmlrpc-c
+	make clean
+	cd /etc/MySB/sources/xmlrpc-c/tools
+	make clean
+else
+	if [ -d /etc/MySB/temp/xmlrpc* ]; then
+		mv /etc/MySB/temp/xmlrpc* /etc/MySB/sources/xmlrpc-c
+	else
+		svn co $SVN_xmlrpc /etc/MySB/sources/xmlrpc-c
+	fi
+	
+fi
+if [ -d /etc/MySB/sources/xmlrpc-c ]; then
+	cd /etc/MySB/sources/xmlrpc-c
+	./configure --disable-libxml2-backend --disable-libwww-client --disable-wininet-client --disable-abyss-server --disable-cgi-server --disable-cplusplus
+	make
+	make install
+	cd /etc/MySB/sources/xmlrpc-c/tools
+	make
+	make install
+fi
+
+#### libtorrent
+if [ -d /etc/MySB/temp/libtorrent* ]; then
+	mv /etc/MySB/temp/libtorrent* /etc/MySB/sources/
+	
+	REV_libtorrent=`ls /etc/MySB/sources/ | grep 'libtorrent' | cut -d "/" -f 5`
+	if [ -f /etc/MySB/files/libtorrent* ]; then
+		mv /etc/MySB/files/libtorrent* /etc/MySB/files/$REV_libtorrent.tar.gz
+	fi	
+else
+	if [ -d /etc/MySB/sources/libtorrent* ]; then
+		rm -rf /etc/MySB/sources/libtorrent*
+	fi
+	if [ -f /etc/MySB/files/libtorrent* ]; then
+		rm -f /etc/MySB/files/libtorrent*
+	fi
+	wget $TARGZ_libtorrent -O /etc/MySB/files/libtorrent-0.13.4.tar.gz
+	tar -zxvf /etc/MySB/files/libtorrent-0.13.4.tar.gz -C /etc/MySB/sources/
+fi
+
+cd /etc/MySB/sources/libtorrent*
+perl -pi -e "s/\"&uploaded=\" << uploaded_adjusted/\"&uploaded=\" << $TRACKER_UPLOAD_ADJUST*uploaded_adjusted/g" src/tracker/tracker_http.cc
+perl -pi -e "s/rak::timer::from_seconds\(240\)/rak::timer::from_seconds\(60\)/g" src/protocol/peer_connection_leech.cc
+perl -pi -e "s/ticks % 4 == 0/ticks % 1 == 0/g" src/download/download_wrapper.cc
+perl -pi -e "s/m_normal_interval\(1800\)/m_normal_interval\(900\)/g" src/torrent/tracker.cc
+perl -pi -e "s/std::min\(std::max\(600, v\), 3600\)/std::min\(std::max\(600, v\), 1800\)/g" src/torrent/tracker.h
+perl -pi -e "s/ std::min\(std::max\(300, v\), 1800\)/ std::min\(std::max\(300, v\), 900\)/g" src/torrent/tracker.h
+./configure
+make
+make install
+
+#### rtorrent
+if [ -d /etc/MySB/temp/rtorrent* ]; then
+	mv /etc/MySB/temp/rtorrent* /etc/MySB/sources/
+	
+	REV_rtorrent=`ls /etc/MySB/sources/ | grep 'rtorrent' | cut -d "/" -f 5`
+	if [ -f /etc/MySB/files/rtorrent* ]; then
+		mv /etc/MySB/files/rtorrent* /etc/MySB/files/$REV_rtorrent.tar.gz
+	fi	
+else
+	if [ -d /etc/MySB/sources/rtorrent ]; then
+		rm -rf /etc/MySB/sources/rtorrent
+	fi
+	if [ -f /etc/MySB/files/rtorrent-0.9.4.tar.gz]; then
+		rm -f /etc/MySB/files/rtorrent-0.9.4.tar.gz
+	fi
+	wget $TARGZ_rtorrent -O /etc/MySB/files/rtorrent-0.9.4.tar.gz
+	tar -zxvf /etc/MySB/files/rtorrent-0.9.4.tar.gz -C /etc/MySB/sources/
+fi
+cd /etc/MySB/sources/rtorrent*
+./configure --with-xmlrpc-c
+make
+make install
+
+# -----------------------------------------
+source /etc/MySB/inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

@@ -1,0 +1,138 @@
+#!/bin/bash 
+# ----------------------------------
+source /etc/MySB/inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+if [ "$USAGE" == "ON" ]; then
+	if [ "`screen -ls | grep SeedboxManager`" == "" ]; then
+		if [ "$INSTALLMANAGER" == "NO" ]; then
+			echo
+			echo -e "${CYELLOW}SeedBox-Manager is not installed!$CEND"
+			GetString NO  "Install Seedbox-Manager? " INSTALLMANAGER $INSTALLMANAGER
+			
+			if [ "$INSTALLMANAGER" == "YES" ]; then
+				echo "$INSTALLMANAGER" > /etc/MySB/infos/install_manager.info
+				GetString NO  "Contact email for Seedbox-Manager: " EMAILUSER
+			fi
+		fi
+	fi
+fi
+
+if [ "$INSTALLMANAGER" == "YES" ]; then
+	(
+cat <<'EOF'
+location ~ \.php$ {
+	root /usr/share/nginx/html/seedbox-manager/public;
+	include /etc/nginx/fastcgi_params;
+	fastcgi_index index.php;
+	fastcgi_pass unix:/var/run/php5-fpm.sock;
+	fastcgi_param SCRIPT_FILENAME $document_root/index.php;
+	fastcgi_param PHP_VALUE ""; #fastcgi_param PHP_ADMIN_VALUE  "open_basedir=$document_root\nsession.save_path=$session_root";
+	fastcgi_param HTTPS on;
+}
+EOF
+	) > /etc/nginx/conf.d/php-seedbox-manager
+
+	(
+cat <<'EOF'
+	location ^~ /seedbox-manager {
+		alias  /usr/share/nginx/html/seedbox-manager/public;
+		include /etc/nginx/conf.d/php-seedbox-manager;
+		include /etc/nginx/conf.d/cache;
+		access_log /var/log/nginx/seedbox-manager-access.log combined;
+		error_log /var/log/nginx/seedbox-manager-error.log error;	
+	}
+EOF
+	) > /etc/nginx/locations/seedbox-manager.conf
+
+	## app
+	if [ -d /usr/share/nginx/html/seedbox-manager ]; then
+		cd /usr/share/nginx/html/seedbox-manager/
+		git stash
+		git pull
+	else
+		if [ -d /etc/MySB/temp/seedbox-manager ]; then
+			mv /etc/MySB/temp/seedbox-manager /usr/share/nginx/html/
+		else
+			git clone $GIT_manager /usr/share/nginx/html/seedbox-manager
+		fi
+	fi
+	cd /usr/share/nginx/html/seedbox-manager
+
+(
+cat <<'EOF'
+#include "Bib.h"
+
+void supprLock (char nickname[])
+{
+    //Déclarations
+    char chaine [100] = {0};
+
+    snprintf(chaine, 100, "service rtorrent-%s stop\n", nickname);
+    printf("%s", chaine);
+    system (chaine);
+}
+EOF
+) > /usr/share/nginx/html/seedbox-manager/source-reboot-rtorrent/suppression.c
+
+	(
+	cat <<'EOF'
+#include "Bib.h"
+
+void reboot (char nickname[])
+{
+    //Déclarations
+    char chaine [100] = {0};
+
+    snprintf(chaine, 100, "service rtorrent-%s start\n", nickname);
+    printf("%s", chaine);
+    system (chaine);
+}
+EOF
+	) > /usr/share/nginx/html/seedbox-manager/source-reboot-rtorrent/reboot.c
+	
+	sed -i "s/http:\/\/{{ host }}/https:\/\/{{ host }}/g;" /usr/share/nginx/html/seedbox-manager/public/themes/default/template/bloc-ftp.html	
+	
+	composer install
+	bower install --allow-root --config.interactive=false
+	chown -R www-data:www-data /usr/share/nginx/html/seedbox-manager/
+	cd ./source-reboot-rtorrent/
+	chmod +x install.sh
+	./install.sh
+	
+	# seedbox-manager ruTorrent Plugin
+	if [ -d /usr/share/nginx/html/rutorrent/plugins/linkseedboxmanager ]; then
+		cd /usr/share/nginx/html/rutorrent/plugins/linkseedboxmanager 
+		git stash
+		git pull
+	else
+		git clone $GIT_rutorrent_plugins_MANAGER /usr/share/nginx/html/rutorrent/plugins/linkseedboxmanager
+	fi
+	sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$HOSTFQDN:$NGINXHTTPSPORT\/seedbox-manager\//g;" /usr/share/nginx/html/rutorrent/plugins/linkseedboxmanager/conf.php
+fi
+
+# -----------------------------------------
+source /etc/MySB/inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

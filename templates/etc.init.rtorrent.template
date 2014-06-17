@@ -1,0 +1,288 @@
+#!/bin/bash 
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+### BEGIN INIT INFO
+# Provides:          rtorrent-<username>
+# Required-Start:    $local_fs $remote_fs $network $syslog
+# Required-Stop:     $local_fs $remote_fs $network $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start/stop rtorrent-<username> daemon
+### END INIT INFO
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+## Username to run rtorrent under, make sure you have a .rtorrent.rc in the
+## home directory of this user!
+USER="<username>"
+
+## User home dir
+HOMEDIR="/home/$USER"
+
+## Absolute path to the rtorrent binary.
+RTORRENT="/usr/local/bin/rtorrent"
+
+## Absolute path to the screen binary.
+SCREEN="/usr/bin/screen"
+
+## the full path to the filename where you store your rtorrent configuration
+CONFIG="$HOMEDIR/.rtorrent.rc"
+
+## LOG
+LOG_FILE="$HOMEDIR/logs/rTorrentInit.log"
+
+NAME="rtorrent-$USER"
+DESC="rTorrent for $USER"
+
+## Absolute path to rtorrent's PID file.
+PID="/var/run/rtorrent-$USER.pid"
+
+. /lib/lsb/init-functions
+
+## rTorrent session directory
+getsession() {
+    SESSION=`cat "$CONFIG" | grep "^[[:space:]]*session.path.set[[:space:]]*=" | sed "s/^[[:space:]]*session.path.set[[:space:]]*=[[:space:]]*//" `
+    echo $SESSION
+}
+
+if ! [ -e $LOG_FILE ]; then
+	touch $LOG_FILE
+fi
+
+## Create PID file for rTorrent
+create_rtorrent_pid_file() {
+	SESSION=`getsession "$CONFIG"`
+	sleep 2
+	if [ -e $SESSION/rtorrent.lock ]; then
+		cat $SESSION/rtorrent.lock | awk -F: '{print($2)}' | sed "s/[^0-9]//g" > $SESSION/rtorrent.pid
+		echo "Create rTorrent PID file: "`date` >> $LOG_FILE
+	fi
+}
+
+## Delete rtorrent.lock
+delete_lock_file() {
+	SESSION=`getsession "$CONFIG"`
+    if [ -e $SESSION/rtorrent.lock ]; then
+        rm -f $SESSION/rtorrent.lock
+		echo "Delete rTorrent LOCK file: "`date` >> $LOG_FILE
+    fi
+    if [ -e $SESSION/rtorrent.pid ]; then
+        rm -f $SESSION/rtorrent.pid
+		echo "Delete rTorrent PID file: "`date` >> $LOG_FILE
+    fi	
+}
+
+## Delete user PID file
+delete_pid_file() {
+    if [ -e $PID ]; then
+        rm -f $PID
+		echo "Delete screen PID file: "`date` >> $LOG_FILE
+    fi
+}
+
+## mout share dir for seedbox users
+mount_share() {
+	MOUNT=`df -H | grep "$HOMEDIR/share"`
+	if [ -z "$MOUNT" ]; then
+		mount --bind /home/MySB_share $HOMEDIR/share 2>> $LOG_FILE
+	fi
+}
+
+#
+# Function that starts the daemon/service
+#
+do_start()
+{
+	# Delete ghost screen pid file
+	if [ -e /var/run/rtorrent-$USER.pid ]; then
+		pidofproc -p /var/run/rtorrent-$USER.pid /usr/bin/SCREEN &> /dev/null || rm -f /var/run/rtorrent-$USER.pid
+	fi
+	
+	# Delete ghost rtorrent lock file
+	if [ -e $SESSION/rtorrent.pid ]; then
+		SESSION=`getsession "$CONFIG"`
+		pidofproc -p $SESSION/rtorrent.pid /usr/bin/SCREEN &> /dev/null || rm -f $SESSION/rtorrent.pid $SESSION/rtorrent.lock 2>> $LOG_FILE
+	fi
+	
+	# Return
+	#   0 if daemon has been started
+	#   1 if daemon was already running
+	#   2 if daemon could not be started				
+	start-stop-daemon --start --quiet --background --make-pidfile --test \
+		--pidfile $PID\
+		--chuid $USER\
+		--exec $SCREEN\
+		-- -DmUS $NAME $RTORRENT\
+		 2>> $LOG_FILE || return 1
+		
+	start-stop-daemon --start --quiet --background --make-pidfile \
+		--pidfile $PID\
+		--chuid $USER\
+		--exec $SCREEN\
+		-- -DmUS $NAME $RTORRENT\
+		 2>> $LOG_FILE || return 2		
+}
+
+#
+# Function that stops the daemon/service
+#
+do_stop()
+{
+	# Return
+	#   0 if daemon has been stopped
+	#   1 if daemon was already stopped
+	#   2 if daemon could not be stopped
+	#   other if a failure occurred
+	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PID --exec "$SCREEN" 2>> $LOG_FILE
+	RETVAL="$?"	
+	
+	sleep 1
+	return "$RETVAL"
+}
+
+#
+# Function that sends a SIGHUP to the daemon/service
+#
+do_reload() {
+	echo "RELOAD: "`date` >> $LOG_FILE
+	# Delete ghost screen pid file
+	if [ -e /var/run/rtorrent-$USER.pid ]; then
+		pidofproc -p /var/run/rtorrent-$USER.pid /usr/bin/SCREEN &> /dev/null || rm -f /var/run/rtorrent-$USER.pid
+	fi
+	
+	# Delete ghost rtorrent lock file
+	if [ -e $SESSION/rtorrent.pid ]; then
+		SESSION=`getsession "$CONFIG"`
+		pidofproc -p $SESSION/rtorrent.pid /usr/bin/SCREEN &> /dev/null || rm -f $SESSION/rtorrent.pid $SESSION/rtorrent.lock 2>> $LOG_FILE
+	fi
+	
+	start-stop-daemon --stop --signal HUP --quiet --pidfile $PID --exec "$SCREEN" 2>> $LOG_FILE
+	return $?
+}
+
+#
+# Function stop case
+#
+restart_stop_case() {
+	do_start				
+	case "$?" in		
+		0)
+			echo "RESTART: "`date` >> $LOG_FILE
+			create_rtorrent_pid_file
+			log_end_msg 0
+		;;
+		1) # Old process is still running
+			echo "Could not be restarted, old process is still running: "`date` >> $LOG_FILE
+			create_rtorrent_pid_file
+			log_end_msg 1
+		;;
+		*) # Failed to start
+			echo "Could not be restarted: "`date` >> $LOG_FILE
+			delete_lock_file
+			delete_pid_file
+			log_end_msg 1
+		;;
+	esac	
+}
+
+case "$1" in
+	start)
+		log_daemon_msg "Starting $DESC" "$NAME"
+		mount_share
+		do_start
+		case "$?" in		
+			0)
+				echo "START: "`date` >> $LOG_FILE
+				create_rtorrent_pid_file
+				log_end_msg 0
+			;;
+			1)
+				echo "Already running: "`date` >> $LOG_FILE
+				create_rtorrent_pid_file
+				log_end_msg 0
+			;;
+			2)
+				echo "Could not be started: "`date` >> $LOG_FILE
+				delete_lock_file
+				delete_pid_file
+				log_end_msg 1
+			;;
+		esac
+	;;
+		
+	stop)
+		log_daemon_msg "Stopping $DESC" "$NAME"
+		do_stop
+		case "$?" in
+			0)
+				echo "STOP: "`date` >> $LOG_FILE
+				delete_lock_file
+				delete_pid_file
+				log_end_msg 0
+			;;
+			1)
+				echo "Already stopped: "`date` >> $LOG_FILE
+				delete_lock_file
+				delete_pid_file			
+				log_end_msg 0
+			;;
+			2)
+				echo "Could not be stopped: "`date` >> $LOG_FILE
+				log_end_msg 1
+			;;
+		esac
+	;;
+	
+	restart)
+		log_daemon_msg "Restarting $DESC" "$NAME"
+		do_stop
+		case "$?" in
+			0)
+				restart_stop_case	
+			;;
+			1)
+				restart_stop_case	
+			;;			
+			*) # Failed to stop
+				echo "Could not be restarted: "`date` >> $LOG_FILE
+				log_end_msg 1
+			;;
+		esac
+	;;
+		
+	reload)
+		log_daemon_msg "Reloading $DESC configuration" "$NAME"
+		do_reload
+		log_end_msg $?
+	;;
+		
+	status)
+		status_of_proc -p $PID "$SCREENy" "$NAME" && exit 0 || exit $?
+	;;
+	
+	*)
+		echo "Usage: $SCRIPT_name {start|stop|restart|reload|status}"
+		exit 3
+	;;
+esac

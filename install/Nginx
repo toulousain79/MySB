@@ -1,0 +1,356 @@
+#!/bin/bash 
+# ----------------------------------
+source /etc/MySB/inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### Install packages
+PackagesManage install "nginx-extras apache2-utils"
+
+#### Create certificates
+ScriptInvoke 'source' '/etc/MySB/install/Certificates' 'CreateServiceCertificate' 'nginx'
+
+#### Create directories
+if [ ! -d /etc/nginx/sites-available ]; then
+	mkdir /etc/nginx/sites-available
+fi
+if [ ! -d /etc/nginx/sites-enabled ]; then
+	mkdir /etc/nginx/sites-enabled
+fi
+if [ ! -d /etc/nginx/passwd ]; then
+	mkdir /etc/nginx/passwd
+fi
+if [ ! -d /etc/nginx/locations ]; then
+	mkdir /etc/nginx/locations
+fi
+if [ ! -d /etc/nginx/rpc ]; then
+	mkdir /etc/nginx/rpc
+fi
+
+#### Create files
+touch /etc/nginx/passwd/MySB
+chmod 640 /etc/nginx/passwd/MySB
+chown www-data:www-data /etc/nginx/passwd/MySB
+
+#### Create a dedicated user for MySB
+MYSBPASSD=`mkpasswd MySB` && MYSBPASSD=$MYSBPASSD`mkpasswd MySB`
+MYSBPASSD=`echo $MYSBPASSD | sed "s/\///g"`
+MYSBUSER=`mkpasswd MySB`
+MYSBUSER=`echo $MYSBUSER | sed "s/\///g"`
+echo "user $MYSBUSER" > /etc/MySB/infos/MySB_password.info
+echo "pass $MYSBPASSD" >> /etc/MySB/infos/MySB_password.info
+perl -pi -e "s/##MySB_User##/$MYSBUSER/g" /etc/MySB/web/seedboxInfo.php
+htpasswd -bs /etc/nginx/passwd/MySB $MYSBUSER $MYSBPASSD &> /dev/null
+
+#### Sudo
+echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword*" > /etc/sudoers.d/MySB_nginx
+
+#### nginx.con
+if [ -f /etc/nginx/nginx.conf ]; then
+	mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.ORIGINAL
+fi
+
+(
+cat <<'EOF'
+user www-data;
+worker_processes auto;
+
+pid /var/run/nginx.pid;
+
+events { worker_connections 10240; }
+
+http {
+	include /etc/nginx/mime.types;
+	default_type  application/octet-stream;
+
+	# LOG
+	error_log /var/log/nginx/error.log error;
+	access_log /var/log/nginx/access.log combined;	
+	
+	# SSL
+	ssl_session_cache shared:SSL:10m;
+	ssl_session_timeout 10m;
+	ssl_protocols SSLv3 TLSv1 TLSv1.1 TLSv1.2;
+	ssl_ciphers HIGH:!aNULL:!MD5;
+	ssl_prefer_server_ciphers on;
+	
+	# disable Nginx version
+	server_tokens off;	
+	
+	# HTTP cache
+	expires 12h;
+
+	# useful for multi-servers
+	add_header X-Server $hostname;	
+	
+	# GZIP
+	gzip on;
+	gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;	
+	gzip_comp_level 5;
+	gzip_buffers 16 8k;
+	gzip_disable "msie6";
+	gzip_min_length 20;
+	gzip_proxied any;
+	gzip_vary on;	
+    
+	sendfile on;
+	keepalive_disable msie6;
+	keepalive_requests 100;
+	tcp_nopush on;
+	tcp_nodelay off;
+    
+	include /etc/nginx/sites-enabled/*;
+}
+
+EOF
+) > /etc/nginx/nginx.conf
+perl -pi -e "s/worker_processes auto;/worker_processes $PROCESSOR;/g" /etc/nginx/nginx.conf
+
+#### PHP conf
+(
+cat <<'EOF'
+location ~ \.php$ {
+	fastcgi_index index.php;
+	fastcgi_pass unix:/var/run/php5-fpm.sock;
+	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+	include /etc/nginx/fastcgi_params;
+	fastcgi_param PHP_VALUE ""; #fastcgi_param PHP_ADMIN_VALUE  "open_basedir=$document_root\nsession.save_path=$session_root";
+}
+
+EOF
+) > /etc/nginx/conf.d/php
+
+(
+cat <<'EOF'
+location ~ \.php$ {
+	fastcgi_index index.php;
+	fastcgi_pass unix:/var/run/php5-fpm.sock;
+	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+	include /etc/nginx/fastcgi_params;
+	fastcgi_param PHP_VALUE ""; #fastcgi_param PHP_ADMIN_VALUE  "open_basedir=$document_root\nsession.save_path=$session_root";
+	fastcgi_param HTTPS on;
+}
+
+EOF
+) > /etc/nginx/conf.d/php-ssl
+
+(
+cat <<'EOF'
+location ~ \.php$ {
+	fastcgi_pass unix:/var/run/php5-fpm.sock;
+	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+	include /etc/nginx/fastcgi_params;
+	fastcgi_param PHP_VALUE ""; #fastcgi_param PHP_ADMIN_VALUE  "open_basedir=$document_root\nsession.save_path=$session_root";
+	fastcgi_param HTTPS on;
+}
+
+EOF
+) > /etc/nginx/conf.d/php-MySB-locations
+
+#### Cache conf
+(
+cat <<'EOF'
+location ~* \.(jpg|jpeg|gif|css|png|js|woff|ttf|svg|eot)$ {
+	expires 30d;
+	access_log off;
+}
+
+location ~* \.(eot|ttf|woff|svg)$ {
+	add_header Acccess-Control-Allow-Origin *;
+}
+
+EOF
+) > /etc/nginx/conf.d/cache
+
+#### Default Server
+if [ -f /etc/nginx/sites-enabled/default ]; then
+	rm /etc/nginx/sites-enabled/default
+fi
+if [ -f /etc/nginx/sites-available/default ]; then
+	mv /etc/nginx/sites-available/default /etc/nginx/sites-available/default.ORIGINAL
+fi
+cp /etc/MySB/templates/etc.nginx.site-enabled.default.template /etc/nginx/sites-available/default
+perl -pi -e "s/<PORT_HTTPS>/$NGINXHTTPSPORT/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<PORT_HTTP>/$NGINXHTTPPORT/g" /etc/nginx/sites-available/default
+# Enable Sites
+ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+
+#### Cache conf
+(
+cat <<'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+<title>Error</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>An error occurred.</h1>
+<p>Sorry, the page you are looking for is currently unavailable.<br/>
+Please try again later.</p>
+<p>If you are the system administrator of this resource then you should check
+the <a href="http://nginx.org/r/error_log">error log</a> for details.</p>
+<p><em>Faithfully yours, nginx.</em></p>
+</body>
+</html>
+EOF
+) > /usr/share/nginx/html/50x.html
+
+#### MySB locations (logs, ruTorrent plugins, seedboxinfo)
+(
+cat <<'EOF'
+	# Change IP for seedbox users
+	location /MySB/changeMyIP.php {
+		alias /etc/MySB/web/changeMyIP.php;
+		include /etc/nginx/conf.d/php-MySB-locations;
+	}
+	
+	# Seedbox User Infos
+	location /MySB/seedboxInfo.php {
+		alias /etc/MySB/web/seedboxInfo.php;
+		allow 127.0.0.1;
+		allow 127.0.1.1;
+		allow <server_ip>;
+		deny all;
+		include /etc/nginx/conf.d/php-MySB-locations;
+	}
+
+	# Change Password for seedbox users	
+	location /MySB/changePassword.php {
+		alias /etc/MySB/web/changePassword.php;
+		allow 127.0.0.1;
+		allow 127.0.1.1;
+		allow <server_ip>;
+		deny all;
+		include /etc/nginx/conf.d/php-MySB-locations;		
+	}	
+
+	# VPN Config for seedbox users
+	location /MySB/OpenVPN.php {
+		alias /etc/MySB/web/OpenVPN.php;
+		allow 127.0.0.1;
+		allow 127.0.1.1;
+		allow <server_ip>;
+		deny all;
+		include /etc/nginx/conf.d/php-MySB-locations;
+	}
+	
+	# log install access
+	location /MySB/logs {
+		alias /etc/MySB/web/logs;
+		autoindex on;
+		allow 127.0.0.1;
+		allow 127.0.1.1;
+		allow <server_ip>;
+		deny all;
+	}	
+	
+	# ruTorrent Plugin Fileshare
+	location /MySB/fileshare.php {
+		alias /etc/MySB/web/fileshare.php;
+		auth_basic off;
+		include /etc/nginx/conf.d/php-MySB-locations;		
+	}
+	
+	# ruTorrent Plugin Mediastream
+	location /MySB/view.php {
+		alias /etc/MySB/web/view.php;	
+		include /etc/nginx/conf.d/php-MySB-locations;
+	}	
+	
+	# ruTorrent Plugin Stream
+	location /MySB/stream.php {
+		alias /etc/MySB/web/stream.php;
+		include /etc/nginx/conf.d/php-MySB-locations;		
+	}
+	
+EOF
+) > /etc/nginx/locations/MySB.conf
+perl -pi -e "s/<server_ip>/$IPADDRESS/g" /etc/nginx/locations/MySB.conf
+
+#### ruTorrent
+(
+cat <<'EOF'
+	location /rutorrent {
+		access_log /var/log/nginx/rutorrent-access.log combined;
+		error_log /var/log/nginx/rutorrent-error.log error;
+
+		location ~ /favicon.ico {
+			alias /usr/share/nginx/html/rutorrent/images/favicon.ico;
+		}	
+		
+		include /etc/nginx/conf.d/php-MySB-locations;
+		
+		location ~ /\.svn {
+			deny all;
+		}
+
+		location ~ /\.ht {
+			deny all;
+		}
+	}
+
+	location ^~ /rutorrent/conf/ {
+		deny all;
+	}
+
+	location ^~ /rutorrent/share/ {
+		deny all;
+	}
+
+EOF
+) > /etc/nginx/locations/rutorrent.conf
+
+#### logrotate
+rm -f /etc/logrotate.d/nginx
+touch /etc/logrotate.d/nginx
+
+(
+cat <<'EOF'
+/var/log/nginx/*.log {
+	daily
+	missingok
+	rotate 7
+	compress
+	delaycompress
+	notifempty
+	create 640 root
+	sharedscripts
+	postrotate
+		[ -f /var/run/nginx.pid ] && kill -USR1 `cat /var/run/nginx.pid`
+	endscript
+}
+
+EOF
+) > /etc/logrotate.d/nginx
+
+# -----------------------------------------
+source /etc/MySB/inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

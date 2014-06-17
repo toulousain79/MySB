@@ -1,0 +1,136 @@
+#!/bin/bash 
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### 1 - includes
+source /etc/MySB/inc/vars
+source /etc/MySB/inc/repos
+source /etc/MySB/inc/funcs
+if [ -f /lib/lsb/init-functions ]; then
+	source /lib/lsb/init-functions
+fi
+
+#### 2 - SWITCHES
+# Apply choice by script name
+if [ "`screen -ls | grep MySB`" != "" ] || [ "`ps ax | grep 'MySB_Install.sh' | sed '/grep/d'`" != "" ]; then # MySB installation
+	# Default
+	BANNER=OFF		# Banner for all script (ON/OFF)
+	LOGSTD=STDOUT	# Standard Outpout et Error redicted to 'scriptname.log' (STDERR/STDOUT/NO)
+	USAGE=OFF		# All usage display to user (ON/OFF)	
+
+	case "$SCRIPT_name" in
+		"MySB_Install.sh"|"MySB_CleanAll.sh"|"MySB_UpgradeMe"|"MySB_RefreshMe")
+			LOGSTD=STDERR
+			BANNER=ON
+		;;	
+		"Questions")
+			LOGSTD=NO
+			BANNER=ON
+		;;	
+		"MySB.sh")
+			LOGSTD=NO
+			BANNER=ON
+		;;		
+		"MySB_ChangeUserPassword")
+			if [ "`screen -ls | grep MySB_CreateUser`" != "" ]; then
+				LOGSTD=NO
+			fi		
+		;;
+	esac	
+else # Simple use of scripts (by hand)
+	# Default
+	BANNER=ON		# Banner for all script (ON/OFF)
+	LOGSTD=STDERR	# Standard Outpout et Error redicted to 'scriptname.log' (STDERR/STDOUT/NO)
+	USAGE=ON		# All usage display to user (ON/OFF)	
+
+	case "$SCRIPT_name" in
+		"BlockList.sh")
+			if [ "`ps ax | grep 'compileBlocklist' | sed '/grep/d'`" != "" ]; then
+				BANNER=OFF
+				USAGE=OFF
+			else
+				BANNER=ON
+				USAGE=ON
+			fi
+		;;	
+		"MySB_ChangeUserPassword")
+			if [ "`ps ax | grep 'MySB_CreateUser' | sed '/grep/d'`" != "" ]; then
+				BANNER=OFF
+				USAGE=OFF
+			elif [ "`ps ax | grep 'MySB_ChangeUserPassword' | grep 'changePassword.php' | sed '/grep/d'`" != "" ]; then
+				BANNER=OFF
+			fi
+		;;
+		"LogServer.sh")
+			if [ ! -z $1 ]; then
+				BANNER=OFF
+				LOGSTD=STDOUT
+			else
+				LOGSTD=NO				
+			fi
+
+		;;			
+	esac
+fi
+
+#### 3 - Create MySB banner
+if [ "$BANNER" == "ON" ]; then
+	BannerGenerator
+fi	
+	
+#### 4 -STD Out/Err (after banner)
+if [ -f /tmp/MySB_Install.sh.log ]; then
+	if [ -d /etc/MySB/logs/ ]; then	
+		cat /tmp/MySB_Install.sh.log >> /etc/MySB/logs/MySB_Install.sh.log
+		rm /tmp/MySB_Install.sh.log	
+
+		exec 2>> /etc/MySB/logs/MySB_Install.sh.log
+	fi
+fi
+if [ -f /tmp/MySB_Install.sh.err ]; then
+	if [ -d /etc/MySB/logs/ ]; then	
+		cat /tmp/MySB_Install.sh.err >> /etc/MySB/logs/MySB_Install.sh.err
+		rm /tmp/MySB_Install.sh.err
+		
+		exec 2>> /etc/MySB/logs/MySB_Install.sh.err				
+	fi
+fi		
+
+if [ "$LOGSTD" != "NO" ] ; then
+	if [ "$LOGSTD" == "STDERR" ]; then
+		echo "--------------------" >> /etc/MySB/logs/$SCRIPT_name.log
+		echo "START Err: "`date` "-" $SCRIPT_name >> /etc/MySB/logs/$SCRIPT_name.log
+		echo "--------------------" >> /etc/MySB/logs/$SCRIPT_name.log
+		exec 2>> /etc/MySB/logs/$SCRIPT_name.log
+	else
+		echo "--------------------" >> /etc/MySB/logs/$SCRIPT_name.log
+		echo "START Out/Err: "`date` "-" $SCRIPT_name >> /etc/MySB/logs/$SCRIPT_name.log
+		echo "--------------------" >> /etc/MySB/logs/$SCRIPT_name.log
+		exec >> /etc/MySB/logs/$SCRIPT_name.log	2>&1		
+	fi
+fi
+
+#### 5 - stop/start/restart services
+ManageServices stop	
+
+##################### LAST LINE ######################################

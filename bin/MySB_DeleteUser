@@ -1,0 +1,149 @@
+#!/bin/bash 
+# ----------------------------------
+source /etc/MySB/inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+if [ "$USAGE" == "ON" ]; then		
+	if [ -z $NEWUSER ] || [ -z $PASSWORD ]; then
+		LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
+		for seedUser in $LISTUSERS; do
+			if [ "$seedUser" != "$MAINUSER" ]; then
+				LIST="$LIST|${CYELLOW}$seedUser$CEND"
+			fi
+		done
+		LIST="`echo \($LIST\) | sed -e 's/(|/(/g;'`"
+	
+		if [ ! -z $LIST ]; then
+			echo -e "${CBLUE}Available users:$CEND $LIST"
+		else
+			echo -e "${CRED}Any user to delete ...$CEND $LIST"
+			exit 0
+		fi	
+		
+		GetString NO  "Type username to DELETE: " NEWUSER
+		
+		while [ "$NEWUSER" == "$MAINUSER" ]; do
+			GetString NO  "Type username to DELETE: " NEWUSER
+		done	
+	fi
+fi
+
+#### crontab
+log_daemon_msg "Delete cron for $seedUser"
+crontab -l > /tmp/crontab.tmp
+sed -i '/'$NEWUSER'/d' /tmp/crontab.tmp
+crontab /tmp/crontab.tmp
+rm /tmp/crontab.tmp
+StatusLSB
+
+#### FTP
+log_daemon_msg "Delete FTP access & share for $seedUser"
+sed -i '/'$NEWUSER'/d' /etc/vsftpd.chroot_list
+umount /home/$NEWUSER/share
+StatusLSB
+
+#### NginX
+log_daemon_msg "Remove the access permission to the web server for $seedUser"
+IP=$(cat /etc/MySB/users/$NEWUSER.info | grep "IP Address=" | awk '{ print $3 }')
+IFS=$','
+for ip in $USERIP; do 
+	sed -i '/'$ip'/d' /etc/nginx/locations/MySB.conf
+done
+unset IFS
+StatusLSB
+
+#### remove current password from htpassword
+log_daemon_msg "Delete Web server account for $seedUser"
+sudo htpasswd -D /etc/nginx/passwd/MySB $NEWUSER
+sudo rm -f /etc/nginx/passwd/MySB_$NEWUSER
+StatusLSB
+
+#### remove files
+log_daemon_msg "Remove fils and init script for $seedUser"
+update-rc.d -f rtorrent-$NEWUSER.conf remove &> /dev/null
+if [ -f /etc/init.d/rtorrent-$NEWUSER.conf ]; then
+	sudo rm -f /etc/init.d/rtorrent-$NEWUSER.conf
+fi
+if [ -f /etc/MySB/users/$NEWUSER.info ]; then
+	sudo rm -f /etc/MySB/users/$NEWUSER.info
+fi
+if [ -f /etc/MySB/users/$NEWUSER.html ]; then
+	sudo rm -f /etc/MySB/users/$NEWUSER.html
+fi
+if [ -f /etc/nginx/rpc/$NEWUSER.conf ]; then
+	sudo rm -f /etc/nginx/rpc/$NEWUSER.conf
+fi
+if [ -f /etc/nginx/rpc/$NEWUSER.cakebox ]; then
+	sudo rm -f /etc/nginx/rpc/$NEWUSER.cakebox
+fi
+if [ -f /etc/MySB/web/openvpn/openvpn_$NEWUSER.zip ]; then
+	/etc/MySB/web/openvpn/openvpn_$NEWUSER.zip
+fi
+if [ -d /usr/share/nginx/html/rutorrent/conf/users/$NEWUSER ]; then
+	sudo rm -rf /usr/share/nginx/html/rutorrent/conf/users/$NEWUSER
+fi
+if [ -d /usr/share/nginx/html/rutorrent/share/users/$NEWUSER ]; then
+	sudo rm -rf /usr/share/nginx/html/rutorrent/share/users/$NEWUSER
+fi
+if [ -d /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER ]; then
+	sudo rm -rf /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER
+fi
+StatusLSB
+
+#### delete iptables rules
+l#og_daemon_msg "Creating new rules for iptables"
+#screen -dmS FirewallAndSecurity /bin/bash /etc/MySB/scripts/FirewallAndSecurity.sh new;
+#StatusLSB
+ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.sh' 'new'
+
+#### rtorrent max memory
+MEMORY=`free -m | grep Mem | awk '{ print $2 }'`
+COUNTUSERS=$(ls -A1 /etc/MySB/users/*.info | wc -l)
+LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
+for seedUser in $LISTUSERS; do
+	log_daemon_msg "Changing the parameter 'pieces.memory.max.set' for $seedUser"
+	LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$seedUser/.rtorrent.rc)
+	sudo sed -i ''$LIGN'd' /home/$seedUser/.rtorrent.rc
+	sed -i ''$LIGN'i\#pieces.memory.max.set = '$(((($MEMORY/$COUNTUSERS)*1024)*1024))'\n' /home/$seedUser/.rtorrent.rc
+	StatusLSB
+done
+
+#### system user
+log_daemon_msg "Delete $seedUser system account"
+sudo userdel --remove --force $NEWUSER &> /dev/null
+if [ -d /home/$NEWUSER ]; then
+	sudo rm -rf /home/$NEWUSER
+fi
+if [ -d /var/run/screen/S-$NEWUSER ]; then
+	sudo rm -rf /var/run/screen/S-$NEWUSER
+fi
+StatusLSB
+
+#### renting
+MonthlyPayment "$NEWUSER"
+
+# -----------------------------------------
+source /etc/MySB/inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

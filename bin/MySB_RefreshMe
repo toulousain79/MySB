@@ -1,0 +1,141 @@
+#!/bin/bash 
+# ----------------------------------
+source /etc/MySB/inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+#
+# Usage:	MySB_RefreshMe (system|rtorrent|rutorrent|manager|cakebox|all)
+#
+##################### FIRST LINE #####################################
+
+if [ "$USAGE" == "ON" ]; then
+	if [ "`screen -ls | grep MySB_RefreshMe`" == "" ]; then
+		if [ ! $1 ]; then
+			echo -e "${CBLUE}Usage:$CEND	${CYELLOW}MySB_RefreshMe$CEND ${CGREEN}(system|rtorrent|rutorrent|manager|cakebox|all)$CEND"
+			exit
+		fi
+	fi
+fi
+
+#### some functions
+refresh_manager() {
+	if [ "$INSTALLCAKEBOX" == "YES" ]; then
+		echo -e -n "${CBLUE}Refresh Seedbox-Manager$CEND..."
+		log_daemon_msg "Refresh Seedbox-Manager"
+		screen -dmS SeedboxManager /bin/bash /etc/MySB/install/SeedboxManager;
+		WaitingScreen SeedboxManager
+		StatusSTD
+	else
+		echo
+		echo -e "${CYELLOW}Seedbox-Manager is not installed!$CEND"
+		echo -e "${CYELLOW}To install it, please do this commande:$CEND"
+		echo -e "${CGREEN}	bash /etc/MySB/install/SeedboxManager$CEND"
+		echo
+	fi
+}
+
+refresh_cakebox() {
+	if [ "$INSTALLCAKEBOX" == "YES" ]; then
+		echo -e -n "${CBLUE}Refresh CakeBox Light$CEND..."
+		screen -dmS CakeboxLight /bin/bash /etc/MySB/install/CakeboxLight;
+		WaitingScreen CakeboxLight
+		StatusSTD
+	else
+		echo
+		echo -e "${CYELLOW}CakeBox Light is not installed!$CEND"
+		echo -e "${CYELLOW}To install it, please do this commande:$CEND"
+		echo -e "${CGREEN}	bash /etc/MySB/install/CakeboxLight$CEND"
+		echo
+	fi
+}
+
+#### do job
+case "$1" in
+	"system")
+		echo -e -n "${CBLUE}Upgrading your system$CEND..."
+		screen -dmS UpgradeSystem /bin/bash /etc/MySB/install/UpgradeSystem;
+		WaitingScreen UpgradeSystem
+		StatusSTD
+	;;
+	"rtorrent")
+		echo -e -n "${CBLUE}Refresh rTorrent$CEND..."
+		screen -dmS rTorrent /bin/bash /etc/MySB/install/rTorrent;
+		WaitingScreen rTorrent
+		StatusSTD
+	;;
+	"rutorrent")
+		echo -e -n "${CBLUE}Refresh ruTorrent$CEND..."
+		screen -dmS ruTorrent /bin/bash /etc/MySB/install/ruTorrent;
+		WaitingScreen ruTorrent
+		StatusSTD
+	;;
+	"manager"|"cakebox")
+		#### Tools for CakeBox and Seedbox-Manager
+		if [ "$INSTALLCAKEBOX" == "YES" ] || [ "$INSTALLMANAGER" == "YES" ]; then
+			echo -e -n "${CBLUE}Install and configure Composer, Bower and NodeJS$CEND..."
+			screen -dmS Tools /bin/bash /etc/MySB/install/Tools;
+			WaitingScreen Tools
+			StatusSTD
+		fi	
+		
+		if [ "$1" == "cakebox" ]; then
+			refresh_cakebox
+		fi
+		
+		if [ "$1" == "manager" ]; then
+			refresh_manager	
+		fi
+	;;	
+	"all"|*)
+		echo -e -n "${CBLUE}Upgrading your system$CEND..."
+		screen -dmS UpgradeSystem /bin/bash /etc/MySB/install/UpgradeSystem;
+		WaitingScreen UpgradeSystem
+		StatusSTD
+		
+		echo -e -n "${CBLUE}Refresh rTorrent$CEND..."
+		screen -dmS rTorrent /bin/bash /etc/MySB/install/rTorrent;
+		WaitingScreen rTorrent
+		StatusSTD		
+
+		echo -e -n "${CBLUE}Refresh ruTorrent$CEND..."
+		screen -dmS ruTorrent /bin/bash /etc/MySB/install/ruTorrent;
+		WaitingScreen ruTorrent
+		StatusSTD
+		
+		if [ "$INSTALLCAKEBOX" == "YES" ] || [ "$INSTALLMANAGER" == "YES" ]; then
+			echo -e -n "${CBLUE}Install and configure Composer, Bower and NodeJS$CEND..."
+			screen -dmS Tools /bin/bash /etc/MySB/install/Tools;
+			WaitingScreen Tools
+			StatusSTD
+		fi
+		
+		refresh_manager
+		
+		refresh_cakebox
+	;;
+esac
+
+# -----------------------------------------
+source /etc/MySB/inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################        

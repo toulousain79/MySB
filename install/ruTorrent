@@ -1,0 +1,323 @@
+#!/bin/bash 
+# ----------------------------------
+source /etc/MySB/inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+# ruTorrent + Official Plugins
+if [ -d /usr/share/nginx/html/rutorrent ]; then
+	svn up /usr/share/nginx/html/rutorrent
+	svn up /usr/share/nginx/html/rutorrent/plugins
+else
+	if [ -d /etc/MySB/temp/rutorrent ]; then
+		mv /etc/MySB/temp/rutorrent /usr/share/nginx/html/
+	else
+		svn co $SVN_rutorrent /usr/share/nginx/html/rutorrent
+		rm -rf /usr/share/nginx/html/rutorrent/plugins
+		svn co $SVN_rutorrent_plugins /usr/share/nginx/html/rutorrent/plugins	
+	fi
+fi
+
+# Plugin Chat
+if [ -d /usr/share/nginx/html/rutorrent/plugins/chat ]; then
+	svn up /usr/share/nginx/html/rutorrent/plugins/chat
+else
+	svn co $SVN_rutorrent_plugins_CHAT /usr/share/nginx/html/rutorrent/plugins/chat
+fi
+
+# Plugin Logoff
+if [ -d /usr/share/nginx/html/rutorrent/plugins/logoff ]; then
+	svn up /usr/share/nginx/html/rutorrent/plugins/logoff
+else
+	svn co $SVN_rutorrent_plugins_LOGOFF /usr/share/nginx/html/rutorrent/plugins/logoff
+fi
+
+# Plugin tAdd-Labels
+if [ -d /usr/share/nginx/html/rutorrent/plugins/lbll-suite/ ]; then
+	rm -rf /usr/share/nginx/html/rutorrent/plugins/lbll-suite/
+fi
+if [ -f /etc/MySB/files/lbll-suite.tar.gz ]; then
+	rm -f /etc/MySB/files/lbll-suite.tar.gz
+fi
+wget --no-check-certificate $TARGZ_rutorrent_plugins_TADDLABELS -O /etc/MySB/files/lbll-suite.tar.gz
+tar -zxvf /etc/MySB/files/lbll-suite.tar.gz -C /usr/share/nginx/html/rutorrent/plugins/
+
+# Plugin Filemanager
+if [ -d /usr/share/nginx/html/rutorrent/plugins/filemanager ]; then
+	svn up /usr/share/nginx/html/rutorrent/plugins/filemanager
+else
+	svn co $SVN_rutorrent_plugins_FILEMANAGER /usr/share/nginx/html/rutorrent/plugins/filemanager
+fi
+(
+cat <<'EOF'
+<?php
+$fm["tempdir"] = "/tmp";                // path were to store temporary data ; must be writable
+$fm["mkdperm"] = 775;           // default permission to set to new created directories
+
+// set with fullpath to binary or leave empty
+$pathToExternals["rar"] = "/usr/bin/rar";
+$pathToExternals["zip"] = "/usr/bin/zip";
+$pathToExternals["unzip"] = "/usr/bin/unzip";
+$pathToExternals["tar"] = "/bin/tar";
+$pathToExternals["gzip"] = "/bin/gzip";
+$pathToExternals["bzip2"] = "/bin/bzip2";
+
+// archive mangling, see archiver man page before editing
+$fm["archive"]["types"] = array("rar", "zip", "tar", "gzip", "bzip2");
+
+$fm["archive"]["compress"][0] = range(0, 5);
+$fm["archive"]["compress"][1] = array("-0", "-1", "-9");
+$fm["archive"]["compress"][2] = $fm["archive"]["compress"][3] = $fm["archive"]["compress"][4] = array(0);
+
+EOF
+) > /usr/share/nginx/html/rutorrent/plugins/filemanager/conf.php
+
+# Plugin Fileshare
+if [ -d /usr/share/nginx/html/rutorrent/plugins/fileshare ]; then
+	svn up /usr/share/nginx/html/rutorrent/plugins/fileshare
+else
+	svn co $SVN_plugins_FILESHARE /usr/share/nginx/html/rutorrent/plugins/fileshare
+	ln -s /usr/share/nginx/html/rutorrent/plugins/fileshare/share.php /etc/MySB/web/fileshare.php
+fi
+if [ ! -f /etc/MySB/web/fileshare.php ]; then
+	ln -s /usr/share/nginx/html/rutorrent/plugins/fileshare/share.php /etc/MySB/web/fileshare.php
+fi
+
+(
+cat <<'EOF'
+<?php
+// limits
+// 0 = unlimited
+$limits['duration'] = 0;        // maximum duration hours
+$limits['links'] = 0;   //maximum sharing links per user
+
+// path on domain where a symlink to share.php can be found
+// example: http://mydomain.com/share.php
+$downloadpath = 'https://<servername>:<port>/MySB/fileshare.php';
+
+EOF
+) > /usr/share/nginx/html/rutorrent/plugins/fileshare/conf.php
+perl -pi -e "s/<servername>/$HOSTFQDN/g" /usr/share/nginx/html/rutorrent/plugins/fileshare/conf.php
+perl -pi -e "s/<port>/$NGINXHTTPSPORT/g" /usr/share/nginx/html/rutorrent/plugins/fileshare/conf.php
+
+# Plugin NFO
+if [ -d /usr/share/nginx/html/rutorrent/plugins/nfo ]; then
+	rm -rf /usr/share/nginx/html/rutorrent/plugins/nfo
+fi
+if [ -f /etc/MySB/files/nfo.tar.gz ]; then
+	rm -f /etc/MySB/files/nfo.tar.gz
+fi
+wget $TARGZ_rutorrent_plugins_NFO -O /etc/MySB/files/nfo.tar.gz
+tar -zxvf /etc/MySB/files/nfo.tar.gz -C /usr/share/nginx/html/rutorrent/plugins/
+
+# Plugin Ratiocolor
+if [ -d /usr/share/nginx/html/rutorrent/plugins/rutorrent-ratiocolor ]; then
+	mv /usr/share/nginx/html/rutorrent/plugins/rutorrent-ratiocolor /usr/share/nginx/html/rutorrent/plugins/ratiocolor
+fi
+
+if [ -d /usr/share/nginx/html/rutorrent/plugins/ratiocolor ]; then
+	cd /usr/share/nginx/html/rutorrent/plugins/ratiocolor/
+	git stash
+	git pull
+else
+	git clone $GIT_rutorrent_plugins_RATIOCOLOR /usr/share/nginx/html/rutorrent/plugins/ratiocolor
+fi
+perl -pi -e "s/changeWhat = \"cell-background\";/changeWhat = \"font\";/g" /usr/share/nginx/html/rutorrent/plugins/ratiocolor/init.js
+
+# Plugin Theme
+if [ -d /usr/share/nginx/html/rutorrent/plugins/theme ]; then
+	svn up /usr/share/nginx/html/rutorrent/plugins/theme
+else
+	svn co $SVN_rutorrent_plugins_THEME /usr/share/nginx/html/rutorrent/plugins/
+fi
+echo "" | tee -a /usr/share/nginx/html/rutorrent/css/style.css
+echo "/* for Oblivion */" | tee -a /usr/share/nginx/html/rutorrent/css/style.css
+echo ".meter-value-start-color { background-color: #E05400 }" | tee -a /usr/share/nginx/html/rutorrent/css/style.css
+echo ".meter-value-end-color { background-color: #8FBC00 }" | tee -a /usr/share/nginx/html/rutorrent/css/style.css
+echo "::-webkit-scrollbar {width:12px;height:12px;padding:0px;margin:0px;}" | tee -a /usr/share/nginx/html/rutorrent/css/style.css
+perl -pi -e "s/\$defaultTheme \= \"\"\;/\$defaultTheme \= \"Oblivion\"\;/g" /usr/share/nginx/html/rutorrent/plugins/theme/conf.php
+
+# Plugin FileUpload
+if [ -d /usr/share/nginx/html/rutorrent/plugins/fileupload ]; then
+	svn up /usr/share/nginx/html/rutorrent/plugins/fileupload
+else
+	svn co $SVN_rutorrent_plugins_FILEUPLOAD /usr/share/nginx/html/rutorrent/plugins/fileupload
+	chmod 775 /usr/share/nginx/html/rutorrent/plugins/fileupload/scripts/upload
+fi
+
+# Plugin Stream
+if [ -d /usr/share/nginx/html/rutorrent/plugins/stream/ ]; then
+	rm -rf /usr/share/nginx/html/rutorrent/plugins/stream/
+fi
+if [ -f /etc/MySB/files/stream.tar.gz ]; then
+	rm -f /etc/MySB/files/stream.tar.gz
+fi
+wget --no-check-certificate $TARGZ_rutorrent_plugins_STREAM -O /etc/MySB/files/stream.tar.gz
+tar -zxvf /etc/MySB/files/stream.tar.gz -C /usr/share/nginx/html/rutorrent/plugins/
+perl -pi -e "s/\/stream.php/\/MySB\/stream.php/g" /usr/share/nginx/html/rutorrent/plugins/stream/action.php
+perl -pi -e "s/define\('USE_NGINX', false\);/define\('USE_NGINX', true\);/g" /usr/share/nginx/html/rutorrent/plugins/stream/config.php
+if [ ! -f /etc/MySB/web/stream.php ]; then
+	ln -s /usr/share/nginx/html/rutorrent/plugins/mediastream/stream.php /etc/MySB/web/stream.php
+fi
+
+# Plugin Mediastream
+if [ -d /usr/share/nginx/html/rutorrent/plugins/mediastream ]; then
+	svn up /usr/share/nginx/html/rutorrent/plugins/mediastream
+else
+	svn co $SVN_rutorrent_plugins_MEDIASTREAM /usr/share/nginx/html/rutorrent/plugins/mediastream
+fi
+echo "<?php \$streampath = 'https://$HOSTFQDN:$NGINXHTTPSPORT/MySB/view.php'; ?>" > /usr/share/nginx/html/rutorrent/plugins/mediastream/conf.php
+if [ ! -f /etc/MySB/web/view.php ]; then
+	ln -s /usr/share/nginx/html/rutorrent/plugins/mediastream/view.php /etc/MySB/web/view.php
+fi
+
+# favicons trackers
+cd /usr/share/nginx/html/rutorrent/plugins/tracklabels/trackers
+wget http://www.ratbox.nl/md/favicons-trackers/frenchtorrentdb.com.png
+wget http://www.ratbox.nl/md/favicons-trackers/gks.gs.png
+wget http://www.ratbox.nl/md/favicons-trackers/t411.me.png
+wget http://www.ratbox.nl/md/favicons-trackers/bluetigers.ca.png
+wget http://www.ratbox.nl/md/favicons-trackers/fnt.nu.png
+wget http://www.ratbox.nl/md/favicons-trackers/nyaatorrents.info.png
+wget http://www.ratbox.nl/md/favicons-trackers/quebec-team.net.png
+wget http://www.ratbox.nl/md/favicons-trackers/torrentday.com.png
+wget http://www.ratbox.nl/md/favicons-trackers/torrentleech.org.png
+wget http://www.ratbox.nl/md/favicons-trackers/webop.me.png
+
+# PlowShare4
+if [ -d /etc/MySB/sources/plowshare ]; then
+	cd /etc/MySB/sources/plowshare/
+	git stash
+	git pull
+else
+	if [ -d /etc/MySB/temp/plowshare* ]; then
+		mv /etc/MySB/temp/plowshare* /etc/MySB/sources/
+	else
+		git clone $GIT_plowshare /etc/MySB/sources/plowshare
+	fi
+	cd /etc/MySB/sources/plowshare
+fi
+make install
+
+# /usr/share/nginx/html/rutorrent/conf/config.php
+(
+cat <<'EOF'
+<?php
+        // configuration parameters
+
+        // for snoopy client
+        @define('HTTP_USER_AGENT', 'Mozilla/5.0 (Windows NT 6.0; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0', true);
+        @define('HTTP_TIME_OUT', 30, true);     // in seconds
+        @define('HTTP_USE_GZIP', true, true);
+        $httpIP = null;                         // IP string. Or null for any.
+
+        @define('RPC_TIME_OUT', 5, true);       // in seconds
+
+        @define('LOG_RPC_CALLS', false, true);
+        @define('LOG_RPC_FAULTS', true, true);
+
+        // for php
+        @define('PHP_USE_GZIP', false, true);
+        @define('PHP_GZIP_LEVEL', 2, true);
+
+        $schedule_rand = 10;                    // rand for schedulers start, +0..X seconds
+
+        $do_diagnostic = true;
+        $log_file = '/tmp/errors.log';          // path to log file (comment or leave blank to disable logging)
+
+        $saveUploadedTorrents = true;           // Save uploaded torrents to profile/torrents directory or not
+        $overwriteUploadedTorrents = false;     // Overwrite existing uploaded torrents in profile/torrents directory or make unique name
+
+        $topDirectory = '/home';                    // Upper available directory. Absolute path with trail slash.
+        $forbidUserSettings = false;
+
+        $scgi_port = 5000;
+        $scgi_host = "127.0.0.1";
+
+        // For web->rtorrent link through unix domain socket
+        // (scgi_local in rtorrent conf file), change variables
+        // above to something like this:
+        //
+        // $scgi_port = 0;
+        // $scgi_host = "unix:///tmp/rpc.socket";
+        $pathToExternals = array(
+                "php"   => '/usr/bin/php',                  // Something like /usr/bin/php. If empty, will be found in PATH.
+                "curl"  => '/usr/bin/curl',                     // Something like /usr/bin/curl. If empty, will be found in PATH.
+                "gzip"  => '/bin/gzip',                 // Something like /usr/bin/gzip. If empty, will be found in PATH.
+                "id"  => '/usr/bin/id',                 // Something like /usr/bin/id. If empty, will be found in PATH.
+                "stat"  => '/usr/bin/stat',                     // Something like /usr/bin/stat. If empty, will be found in PATH.
+        );
+
+        $localhosts = array(                    // list of local interfaces
+                "127.0.0.1",
+                "localhost",
+        );
+
+        $profilePath = '../share';              // Path to user profiles
+        $profileMask = 0777;                    // Mask for files and directory creation in user profiles.
+                                                // Both Webserver and rtorrent users must have read-write access to it.
+                                                // For example, if Webserver and rtorrent users are in the same group then the value may be 0770.
+
+        $tempDirectory = null;                  // Temp directory. Absolute path with trail slash. If null, then autodetect will be used.
+
+        $XMLRPCMountPoint = "/RPC2";            // DO NOT DELETE THIS LINE!!! DO NOT COMMENT THIS LINE!!!
+
+		
+EOF
+) > /usr/share/nginx/html/rutorrent/conf/config.php
+
+#### create/conf.php
+(
+cat <<'EOF'
+<?php
+// configuration parameters
+
+@define('MAX_CONSOLE_SIZE',25,true);
+	$useExternal = 'buildtorrent';			// Valid choices:
+					// false - use internal realization (may be too slow for large files)
+					// "transmissioncli" - use program transmissioncli (see http://www.transmissionbt.com/)
+					// "transmissioncreate" - use program transmissioncreate (see http://www.transmissionbt.com/)
+					// "createtorrent" - use program createtorrent (see http://www.createtorrent.com)
+					// "mktorrent" - use program createtorrent (see http://mktorrent.sourceforge.net)
+					// "buildtorrent" - use program buildtorrent (see http://claudiusmaximus.goto10.org/cm/torrent.html)
+$pathToCreatetorrent = '/usr/bin/buildtorrent';		// Something like /bin/createtorrent, or /bin/transmissioncli. If empty, program will be found in PATH.
+$pathToExternals["pgrep"] = '/usr/bin/pgrep';		// Something like /usr/bin/pgrep. If empty, will be found in PATH.
+
+EOF
+) > /usr/share/nginx/html/rutorrent/plugins/create/conf.php
+
+#### plugins.ini
+if [ -z $NEWUSER ] || [ -z $PASSWORD ]; then
+	LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
+	for seedUser in $LISTUSERS; do
+		CreatePluginsDirUsers $seedUser
+	done
+fi
+
+ldconfig
+chown -R www-data:www-data /usr/share/nginx/html/rutorrent
+
+# -----------------------------------------
+source /etc/MySB/inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################
