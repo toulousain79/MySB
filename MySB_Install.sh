@@ -128,14 +128,14 @@ if [ "`screen -ls | grep MySB 2>/dev/null`" == "" ]; then
 			if [ ! -d /etc/MySB/infos ]; then
 				mkdir -p /etc/MySB/infos >> /tmp/`basename $0`.log
 			fi
-			if [ ! -d /etc/MySB/logs/nginx ]; then
-				mkdir -p /etc/MySB/logs/nginx >> /tmp/`basename $0`.log
+			if [ ! -d /etc/MySB/logs ]; then
+				mkdir -p /etc/MySB/logs >> /tmp/`basename $0`.log
 			fi		
 			if [ ! -d /etc/MySB/files ]; then
 				mkdir -p /etc/MySB/files >> /tmp/`basename $0`.log
 			fi		
-			if [ ! -d /etc/MySB/web/logs/nginx ]; then
-				mkdir -p /etc/MySB/web/logs/nginx >> /tmp/`basename $0`.log
+			if [ ! -d /etc/MySB/web/logs/install ]; then
+				mkdir -p /etc/MySB/web/logs/install >> /tmp/`basename $0`.log
 			fi
 			
 			chmod +x /etc/MySB/MySB_Install.sh >> /tmp/`basename $0`.log

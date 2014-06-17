@@ -40,6 +40,7 @@ if [ ! -f /var/lib/stunnel4/stunnel.log ]; then
 	chmod 640 /var/lib/stunnel4/stunnel.log
 	chown stunnel4:stunnel4 /var/lib/stunnel4/stunnel.log
 fi
+ln -s /var/lib/stunnel4/stunnel.log /var/log/stunnel4/stunnel.log
 
 #### main.cf
 cp /etc/MySB/templates/etc.postfix.main.conf.template /etc/postfix/main.cf
@@ -48,7 +49,19 @@ perl -pi -e "s/<domain>/$(hostname -d)/g" /etc/postfix/main.cf
 echo "$HOSTNAME" > /etc/mailname
 
 #### Alias
-echo "mailer-daemon: root" >> /etc/aliases
+echo "# /etc/aliases" > /etc/aliases
+echo "mailer-daemon: postmaster" >> /etc/aliases
+echo "postmaster: root" >> /etc/aliases
+echo "nobody: root" >> /etc/aliases
+echo "hostmaster: root" >> /etc/aliases
+echo "usenet: root" >> /etc/aliases
+echo "news: root" >> /etc/aliases
+echo "webmaster: root" >> /etc/aliases
+echo "www: root" >> /etc/aliases
+echo "ftp: root" >> /etc/aliases
+echo "abuse: root" >> /etc/aliases
+echo "noc: root" >> /etc/aliases
+echo "security: root" >> /etc/aliases
 echo "root: $EMAILUSER" >> /etc/aliases
 newaliases
 
@@ -94,11 +107,11 @@ if [ "$SMTP" != "LOCAL" ]; then
 			cp /etc/MySB/templates/etc.stunnel.stunnel.conf.template /etc/stunnel/stunnel.conf		
 			perl -pi -e "s/<smtp_host>:<smtp_port>/$SMTP_HOST:$SMTP_PORT/g" /etc/stunnel/stunnel.conf
 			perl -pi -e "s/ENABLED=0/ENABLED=1/g" /etc/default/stunnel4
-			echo "localhost:23000              $SMTP_USER:$SMTP_PASS" > /etc/postfix/sasl_passwd
+			echo "localhost:23000              $SMTP_USER:$SMTP_PASS" > /etc/postfix/sasl/sasl_passwd
 			postconf -e "relayhost = localhost:23000"		
 			postconf -e "smtp_sasl_auth_enable = yes"
 			postconf -e "smtp_sasl_security_options = noanonymous"
-			postconf -e "smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd"
+			postconf -e "smtp_sasl_password_maps = hash:/etc/postfix/sasl/sasl_passwd"
 			postconf -e "smtp_sasl_mechanism_filter = plain"
 			postconf -e "smtp_tls_security_level = may"	
 		;;	
@@ -106,7 +119,7 @@ if [ "$SMTP" != "LOCAL" ]; then
 			perl -pi -e "s/ENABLED=1/ENABLED=0/g" /etc/default/stunnel4
 			postconf -e "smtp_sasl_auth_enable = yes"
 			postconf -e "smtp_sasl_security_options = noanonymous"
-			postconf -e "smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd"	
+			postconf -e "smtp_sasl_password_maps = hash:/etc/postfix/sasl/sasl_passwd"	
 			postconf -e "smtp_sasl_mechanism_filter = plain"
 			postconf -e "relayhost = $SMTP_HOST:$SMTP_PORT"
 			postconf -e "tls_random_source = dev:/dev/urandom"
@@ -125,7 +138,7 @@ if [ "$SMTP" != "LOCAL" ]; then
 	esac
 fi
 
-postmap /etc/postfix/sasl_passwd
+postmap /etc/postfix/sasl/sasl_passwd
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after

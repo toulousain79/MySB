@@ -35,7 +35,7 @@ else
 fi
 if [ -e /tmp/access.log ]; then
 	sed -i '/favicon.ico/d' /tmp/access.log
-	ccze -h < /tmp/access.log > /etc/MySB/web/logs/nginx/access.html
+	ccze -h < /tmp/access.log > /etc/MySB/web/logs/NginX-access.html
 	rm -f /tmp/access.log
 fi
 StatusLSB
@@ -50,7 +50,7 @@ else
 	fi
 fi
 if [ -e /tmp/error.log ]; then
-	ccze -h < /tmp/error.log > /etc/MySB/web/logs/nginx/error.html
+	ccze -h < /tmp/error.log > /etc/MySB/web/logs/NginX-error.html
 	rm -f /tmp/error.log
 fi
 StatusLSB
@@ -66,7 +66,7 @@ else
 fi
 if [ -e /tmp/MySB-access.log ]; then
 	sed -i '/favicon.ico/d' /tmp/MySB-access.log
-	ccze -h < /tmp/MySB-access.log > /etc/MySB/web/logs/nginx/MySB-access.html
+	ccze -h < /tmp/MySB-access.log > /etc/MySB/web/logs/NginX-MySB-access.html
 	rm -f /tmp/MySB-access.log
 fi
 StatusLSB
@@ -81,7 +81,7 @@ else
 	fi
 fi
 if [ -e /tmp/MySB-error.log ]; then
-	ccze -h < /tmp/MySB-error.log > /etc/MySB/web/logs/nginx/MySB-error.html
+	ccze -h < /tmp/MySB-error.log > /etc/MySB/web/logs/NginX-MySB-error.html
 	rm -f /tmp/MySB-error.log
 fi
 StatusLSB
@@ -96,7 +96,7 @@ else
 	fi
 fi
 if [ -e /tmp/cakebox-access.log ]; then
-	ccze -h < /tmp/cakebox-access.log > /etc/MySB/web/logs/nginx/cakebox-access.html
+	ccze -h < /tmp/cakebox-access.log > /etc/MySB/web/logs/NginX-cakebox-access.html
 	rm -f /tmp/cakebox-access.log
 fi
 StatusLSB
@@ -111,7 +111,7 @@ else
 	fi
 fi
 if [ -e /tmp/cakebox-error.log ]; then
-	ccze -h < /tmp/cakebox-error.log > /etc/MySB/web/logs/nginx/cakebox-error.html
+	ccze -h < /tmp/cakebox-error.log > /etc/MySB/web/logs/NginX-cakebox-error.html
 	rm -f /tmp/cakebox-error.log
 fi
 StatusLSB
@@ -126,7 +126,7 @@ else
 	fi
 fi
 if [ -e /tmp/seedbox-manager-access.log ]; then
-	ccze -h < /tmp/seedbox-manager-access.log > /etc/MySB/web/logs/nginx/seedbox-manager-access.html
+	ccze -h < /tmp/seedbox-manager-access.log > /etc/MySB/web/logs/NginX-seedbox-manager-access.html
 	rm -f /tmp/seedbox-manager-access.log
 fi
 StatusLSB
@@ -141,7 +141,7 @@ else
 	fi
 fi
 if [ -e /tmp/seedbox-manager-error.log ]; then
-	ccze -h < /tmp/seedbox-manager-error.log > /etc/MySB/web/logs/nginx/seedbox-manager-error.html
+	ccze -h < /tmp/seedbox-manager-error.log > /etc/MySB/web/logs/NginX-seedbox-manager-error.html
 	rm -f /tmp/seedbox-manager-error.log
 fi
 StatusLSB
@@ -159,7 +159,7 @@ if [ -e /tmp/rutorrent-access.log ]; then
 	sed -i '/plugins/d' /tmp/rutorrent-access.log
 	sed -i '/getsettings.php/d' /tmp/rutorrent-access.log
 	sed -i '/setsettings.php/d' /tmp/rutorrent-access.log
-	ccze -h < /tmp/rutorrent-access.log > /etc/MySB/web/logs/nginx/rutorrent-access.html
+	ccze -h < /tmp/rutorrent-access.log > /etc/MySB/web/logs/NginX-rutorrent-access.html
 	rm -f /tmp/rutorrent-access.log
 fi
 StatusLSB
@@ -174,10 +174,41 @@ else
 	fi
 fi
 if [ -e /tmp/rutorrent-error.log ]; then
-	ccze -h < /tmp/rutorrent-error.log > /etc/MySB/web/logs/nginx/rutorrent-error.html
+	ccze -h < /tmp/rutorrent-error.log > /etc/MySB/web/logs/NginX-rutorrent-error.html
 	rm -f /tmp/rutorrent-error.log
 fi
 StatusLSB
+
+#### PeerGuardian
+if [ "$MYBLOCKLIST" == "PeerGuardian" ]; then
+	log_daemon_msg "HTML Convert of PeerGuardian pglcmd log"
+	if [ -e /var/log/pgl/pglcmd.log.1 ]; then
+		cat /var/log/pgl/pglcmd.log.1 /var/log/pgl/pglcmd.log > /tmp/pglcmd.log
+	else
+		if [ -e /var/log/pgl/pglcmd.log ]; then
+			cp /var/log/pgl/pglcmd.log /tmp/pglcmd.log
+		fi
+	fi
+	if [ -e /tmp/pglcmd.log ]; then
+		ccze -h < /tmp/pglcmd.log > /etc/MySB/web/logs/PeerGuardian-pglcmd.html
+		rm -f /tmp/pglcmd.log
+	fi
+	StatusLSB
+	
+	log_daemon_msg "HTML Convert of PeerGuardian pgld log"
+	if [ -e /var/log/pgl/pgld.log.1 ]; then
+		cat /var/log/pgl/pgld.log.1 /var/log/pgl/pgld.log > /tmp/pgld.log
+	else
+		if [ -e /var/log/pgl/pgld.log ]; then
+			cp /var/log/pgl/pgld.log /tmp/pgld.log
+		fi
+	fi
+	if [ -e /tmp/pgld.log ]; then
+		ccze -h < /tmp/pgld.log > /etc/MySB/web/logs/PeerGuardian-pgld.html
+		rm -f /tmp/pgld.log
+	fi
+	StatusLSB	
+fi
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
