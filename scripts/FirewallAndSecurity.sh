@@ -201,12 +201,12 @@ case $1 in
 					TEMP="$TEMP $ip/32"
 					TEMP2="$TEMP2 $ip"
 				done
-			unset IFS	
-			IGNOREIP="$IGNOREIP `echo $TEMP | sed -e "s/^//g;"`"
-			WHITELIST="$WHITELIST `echo $TEMP2 | sed -e "s/^//g;"`"
-			
+			unset IFS
+	
 			StatusLSB
 		done
+		IGNOREIP="$IGNOREIP `echo $TEMP | sed -e "s/^//g;"`"
+		WHITELIST="$WHITELIST `echo $TEMP2 | sed -e "s/^//g;"`"		
 
 		#### NginX
 		if [ -f /etc/nginx/locations/MySB.conf ]; then
