@@ -186,6 +186,13 @@ case $1 in
 			iptables -t filter -I FORWARD -i tap0 -o $PRIMARYINET -s 192.168.254.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t filter -I FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t nat -I POSTROUTING -s 10.159.12.0/24 -j MASQUERADE -m comment --comment "OpenVPN"
+			
+			# DLNA
+			log_daemon_msg "Allow DLNA"
+			iptables -t filter -A INPUT -i tap0 -p tcp --dport 49200 -j ACCEPT -m comment --comment "DLNA"
+			iptables -t filter -A INPUT -i tap0 -p udp --dport 49200 -j ACCEPT -m comment --comment "DLNA"
+			StatusLSB			
+			
 			StatusLSB
 		fi
 
