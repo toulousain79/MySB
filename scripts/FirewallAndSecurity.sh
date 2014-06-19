@@ -179,36 +179,37 @@ case $1 in
 		
 		# OpenVPN
 		if [ "$INSTALLOPENVPN" == "YES" ]; then
-			log_daemon_msg "Allow use of OpenVPN"
-			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport 8894 -j ACCEPT -m comment --comment "OpenVPN"
+			log_daemon_msg "Allow use of OpenVPN TUN With Redirect Gateway"
 			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
-			#iptables -t filter -I FORWARD -i tun0 -o br0 -s 10.159.12.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t filter -I FORWARD -i tun0 -s 10.159.12.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t filter -I FORWARD -o br0 -s 10.159.12.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t filter -I FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t nat -I POSTROUTING -s 10.159.12.0/24 -j MASQUERADE -m comment --comment "OpenVPN"				
-			iptables -t nat -I POSTROUTING -s 192.168.0.0/24 -j MASQUERADE -m comment --comment "OpenVPN"		
+			iptables -t filter -I FORWARD -i tun0 -o $PRIMARYINET -s 10.0.1.0/24 -m conntrack --ctstate NEW,RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
+			iptables -t nat -I POSTROUTING -s 10.0.1.0/24 -o $PRIMARYINET -j MASQUERADE -m comment --comment "OpenVPN"
+			StatusLSB
+			
+			log_daemon_msg "Allow use of OpenVPN TUN Without Redirect Gateway"
+			(( OPENVPNPORT++ ))
+			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
+			iptables -t filter -I FORWARD -i tun0 -o $PRIMARYINET -s 10.0.2.0/24 -m conntrack --ctstate NEW,RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
+			StatusLSB				
 			
 			# Samba access but only in the LAN
-			iptables -A INPUT -i tun0 -m tcp -p tcp -s 10.159.12.0/24 --dport 139 -j ACCEPT
-			iptables -A INPUT -i tun0 -m tcp -p tcp -s 10.159.12.0/24 --dport 445 -j ACCEPT
-			iptables -A INPUT -i tun0 -s 10.159.12.0/24 -p udp -m udp --dport 137 -j ACCEPT
-			iptables -A INPUT -i tun0 -s 10.159.12.0/24 -p udp -m udp --dport 138 -j ACCEPT	
-			iptables -A INPUT -i br0 -m tcp -p tcp -s 192.168.0.0/24 --dport 139 -j ACCEPT
-			iptables -A INPUT -i br0 -m tcp -p tcp -s 192.168.0.0/24 --dport 445 -j ACCEPT
-			iptables -A INPUT -i br0 -s 192.168.0.0/24 -p udp -m udp --dport 137 -j ACCEPT
-			iptables -A INPUT -i br0 -s 192.168.0.0/24 -p udp -m udp --dport 138 -j ACCEPT	
+			# iptables -A INPUT -i tun0 -m tcp -p tcp -s 10.159.12.0/24 --dport 139 -j ACCEPT
+			# iptables -A INPUT -i tun0 -m tcp -p tcp -s 10.159.12.0/24 --dport 445 -j ACCEPT
+			# iptables -A INPUT -i tun0 -s 10.159.12.0/24 -p udp -m udp --dport 137 -j ACCEPT
+			# iptables -A INPUT -i tun0 -s 10.159.12.0/24 -p udp -m udp --dport 138 -j ACCEPT	
+			# iptables -A INPUT -i br0 -m tcp -p tcp -s 192.168.0.0/24 --dport 139 -j ACCEPT
+			# iptables -A INPUT -i br0 -m tcp -p tcp -s 192.168.0.0/24 --dport 445 -j ACCEPT
+			# iptables -A INPUT -i br0 -s 192.168.0.0/24 -p udp -m udp --dport 137 -j ACCEPT
+			# iptables -A INPUT -i br0 -s 192.168.0.0/24 -p udp -m udp --dport 138 -j ACCEPT	
 
 			#Ouverture des ports des services LAM
-			iptables -A INPUT -p tcp --dport 21 -j ACCEPT
-			iptables -A INPUT -p tcp --dport 20 -j ACCEPT
-			iptables -A INPUT -p udp --dport 500 -j ACCEPT
-			iptables -A INPUT -p tcp --dport 500 -j ACCEPT
-			iptables -A INPUT -p tcp --dport 80 -j ACCEPT
-			iptables -A INPUT -p tcp --dport 4500:4600 -j ACCEPT
-			iptables -A INPUT -p icmp -m limit --limit 30/minute -j ACCEPT
-			iptables -A INPUT -p icmp -j DROP
-			StatusLSB
+			# iptables -A INPUT -p tcp --dport 21 -j ACCEPT
+			# iptables -A INPUT -p tcp --dport 20 -j ACCEPT
+			# iptables -A INPUT -p udp --dport 500 -j ACCEPT
+			# iptables -A INPUT -p tcp --dport 500 -j ACCEPT
+			# iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+			# iptables -A INPUT -p tcp --dport 4500:4600 -j ACCEPT
+			# iptables -A INPUT -p icmp -m limit --limit 30/minute -j ACCEPT
+			# iptables -A INPUT -p icmp -j DROP
 		fi
 
 		# Mail SMTP:25
