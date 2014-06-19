@@ -154,7 +154,12 @@ if [ "$INSTALLOPENVPN" == "YES" ]; then
 	echo -e -n "${CBLUE}Install and configure OpenVPN$CEND..."
 	screen -dmS OpenVPN /bin/bash /etc/MySB/install/OpenVPN "server";	
 	WaitingScreen OpenVPN
-	StatusSTD		
+	StatusSTD	
+
+	echo -e -n "${CBLUE}Install and configure Samba$CEND..."
+	screen -dmS Samba /bin/bash /etc/MySB/install/Samba;	
+	WaitingScreen Samba
+	StatusSTD	
 fi
 
 #### fail2ban
