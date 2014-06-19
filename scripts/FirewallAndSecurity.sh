@@ -181,14 +181,14 @@ case $1 in
 		if [ "$INSTALLOPENVPN" == "YES" ]; then
 			log_daemon_msg "Allow use of OpenVPN TUN With Redirect Gateway"
 			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t filter -I FORWARD -i tun0 -o br0 -s 10.0.1.0/24 -m conntrack --ctstate NEW,RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t nat -I POSTROUTING -s 10.0.1.0/24 -o br0 -j MASQUERADE -m comment --comment "OpenVPN"
+			iptables -t filter -I FORWARD -i tun0 -o br0 -s 10.0.0.0/24 -m conntrack --ctstate NEW,RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
+			iptables -t nat -I POSTROUTING -s 10.0.0.0/24 -o br0 -j MASQUERADE -m comment --comment "OpenVPN"
 			StatusLSB
 			
 			log_daemon_msg "Allow use of OpenVPN TUN Without Redirect Gateway"
 			(( OPENVPNPORT++ ))
 			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t filter -I FORWARD -i tun1 -o br0 -s 10.0.2.0/24 -m conntrack --ctstate NEW,RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
+			iptables -t filter -I FORWARD -i tun1 -o br0 -s 10.0.1.0/24 -m conntrack --ctstate NEW,RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
 			StatusLSB				
 			
 			# Samba access but only in the LAN
