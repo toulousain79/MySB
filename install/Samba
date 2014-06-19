@@ -1,5 +1,7 @@
 #!/bin/bash 
 # ----------------------------------
+source /etc/MySB/inc/includes_before
+# ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
 #    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
@@ -22,19 +24,47 @@
 #
 ##################### FIRST LINE #####################################
 
-cron="crontab"
-nginx="/etc/nginx"
-ssh="/etc/ssh"
-vsftpd="/etc/vsftpd"
-php5_fpm="/etc/php5"
-postfix="/etc/postfix"
-stunnel4="/etc/stunnel"
-openvpn="/etc/openvpn"
-fail2ban="/etc/fail2ban"
-pglcmd="/etc/pgl"
-webmin="/etc/webmin"
-networking="/etc/network"
-minidlna="/etc/minidlna"
-samba="/etc/samba"
+#### install
+PackagesManage install "samba"
 
+#### smb.conf
+cp /etc/samba/smb.conf /etc/samba/smb.conf.ORIGINAL
+
+(
+cat <<'EOF'
+[global]
+   workgroup = MySB
+   server string = MySB
+   wins support = yes
+   wins server = 127.0.0.1   
+   dns proxy = no
+   interfaces = lo tun0 tun1
+   bind interfaces only = yes   
+   remote announce = 10.0.0.255/MySB 10.0.1.0.255/MySB   
+   log file = /var/log/samba/log.%m
+   max log size = 1000
+   syslog = 0
+   panic action = /usr/share/samba/panic-action %d
+   encrypt passwords = true
+   passdb backend = tdbsam
+   obey pam restrictions = yes
+   unix password sync = yes
+   passwd program = /usr/bin/passwd %u
+   passwd chat = *Enter\snew\s*\spassword:* %n\n *Retype\snew\s*\spassword:* %n\n *password\supdated\ssuccessfully* .
+   pam password change = yes
+   map to guest = bad user
+   usershare allow guests = yes
+[homes]
+   comment = Home Directories
+   browseable = no
+   read only = yes
+   create mask = 0700
+   directory mask = 0700
+   valid users = %S
+EOF
+) > /etc/samba/smb.conf
+
+# -----------------------------------------
+source /etc/MySB/inc/includes_after
+# -----------------------------------------
 ##################### LAST LINE ######################################

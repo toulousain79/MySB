@@ -192,6 +192,12 @@ case $1 in
 			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
 			StatusLSB				
 			
+			log_daemon_msg "Allow use of OpenVPN TAP Without Redirect Gateway"
+			(( OPENVPNPORT++ ))
+			iptables -t filter -I INPUT -i tap0 -j ACCEPT
+			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
+			StatusLSB				
+			
 			# Samba access but only in the LAN
 			#iptables -A INPUT -i tun0 -m tcp -p tcp -s 10.0.1.0/24 --dport 139 -j ACCEPT
 			#iptables -A INPUT -i tun0 -m tcp -p tcp -s 10.0.1.0/24 --dport 445 -j ACCEPT
