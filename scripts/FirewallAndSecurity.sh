@@ -181,7 +181,7 @@ case $1 in
 			log_daemon_msg "Allow use of OpenVPN TUN With Redirect Gateway"
 			iptables -t filter -I INPUT -i tun0 -j ACCEPT
 			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t filter -I FORWARD -i tun0 -o br0 -s 10.0.0.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
+			iptables -t filter -I FORWARD -i tun0 -o $PRIMARYINET -s 10.0.0.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t filter -I FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t nat -I POSTROUTING -s 10.0.0.0/24 -j MASQUERADE -m comment --comment "OpenVPN"			
 			StatusLSB
@@ -194,7 +194,7 @@ case $1 in
 			
 			log_daemon_msg "Allow use of OpenVPN TAP Without Redirect Gateway"
 			(( OPENVPNPORT++ ))
-			iptables -t filter -I INPUT -i tap0 -j ACCEPT
+			iptables -t filter -I INPUT -i br0 -j ACCEPT
 			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
 			StatusLSB				
 			
@@ -225,8 +225,8 @@ case $1 in
 	#	StatusLSB
 		
 		#### rTorrent
-		IGNOREIP="127.0.0.1/8 10.0.0.0/24 10.0.1.0/24"
-		WHITELIST="127.0.0.1 10.0.0.0 10.0.1.0"
+		IGNOREIP="127.0.0.1/8 10.0.0.0/24 10.0.1.0/24 10.0.2.0/24"
+		WHITELIST="127.0.0.1 10.0.0.0 10.0.1.0 10.0.2.0"
 		LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
 		for seedUser in $LISTUSERS; do
 			log_daemon_msg "Allow use of rTorrent for $seedUser"

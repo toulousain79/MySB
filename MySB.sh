@@ -159,6 +159,11 @@ if [ "$INSTALLOPENVPN" == "YES" ]; then
 	echo -e -n "${CBLUE}Install and configure Samba$CEND..."
 	screen -dmS Samba /bin/bash /etc/MySB/install/Samba;	
 	WaitingScreen Samba
+	StatusSTD
+
+	echo -e -n "${CBLUE}Install and configure NFS$CEND..."
+	screen -dmS NFS /bin/bash /etc/MySB/install/NFS;	
+	WaitingScreen NFS
 	StatusSTD	
 fi
 
