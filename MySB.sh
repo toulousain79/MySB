@@ -196,11 +196,16 @@ fi
 
 #### BlockList
 case $MYBLOCKLIST in
-	PeerGuardian)
+	"PeerGuardian"|"rTorrent")
 		echo -e -n "${CBLUE}Install and configure PeerGuardian$CEND..."
 		screen -dmS PeerGuardian /bin/bash /etc/MySB/install/PeerGuardian;		
 		WaitingScreen PeerGuardian
-		StatusSTD								
+		StatusSTD	
+
+		echo -e -n "${CBLUE}Compile the BlockList for rTorrent$CEND..."
+		screen -dmS Blocklist /bin/bash /etc/MySB/install/Blocklist;
+		WaitingScreen Blocklist
+		StatusSTD		
 	;;
 	rTorrent)
 		echo -e -n "${CBLUE}Compile the BlockList for rTorrent$CEND..."
