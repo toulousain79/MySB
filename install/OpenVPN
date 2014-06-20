@@ -44,7 +44,7 @@ fi
 COMMAND=$1
 USERNAME=$2
 USERPASSWORD=$3
-SERVERNAME="server_$HOSTFQDN"
+SERVERNAME="$HOSTFQDN"
 CLIENTNAME="${USERNAME}_$HOSTFQDN"
 TAKEY="ta_$HOSTFQDN.key"
 CACRT="ca_$HOSTFQDN.crt"
@@ -57,18 +57,15 @@ PortTunWithRedirectGW=$OPENVPNPORT
 (( OPENVPNPORT++ ))
 PortTunWithoutRedirectGW=$OPENVPNPORT
 (( OPENVPNPORT++ ))
-PortTapWithRedirectGW=$OPENVPNPORT
-(( OPENVPNPORT++ ))
 PortTapWithoutRedirectGW=$OPENVPNPORT
 NetTunWithRedirectGW="10.0.0"
 NetTunWithoutRedirectGW="10.0.1"
 NetTapWithtRedirectGW="10.0.2"
-NetTapWithtoutRedirectGW="10.0.3"
 
 
 CreateServer() {
 	#### install package
-	PackagesManage install "openvpn bridge-utils"
+#	PackagesManage install "openvpn bridge-utils"
 	
 	#### Files and Directory
 	if [ ! -d /var/log/openvpn ]; then
@@ -137,9 +134,6 @@ CreateServer() {
 	sed -i '/#/d' /etc/openvpn/Server_TUN_WithGW.conf
 	sed -i '/^;/d' /etc/openvpn/Server_TUN_WithGW.conf
 	sed -i '/^$/d' /etc/openvpn/Server_TUN_WithGW.conf
-	# add options in case
-	echo "# Uncomment this directive to allow different clients to be able to \"see\" each other." >> /etc/openvpn/Server_TUN_WithGW.conf
-	echo ";client-to-client" >> /etc/openvpn/Server_TUN_WithGW.conf
 
 	
 	#### Config file Server TUN - Without Redirect Gateway
@@ -150,25 +144,7 @@ CreateServer() {
 	
 	#### TAP
 	service openvpn stop
-	bash /etc/MySB/scripts/bridge-start.sh
-	
-	#### Config file Server TAP - With Redirect Gateway
-	cp /etc/MySB/templates/openvpn.server.conf.template /etc/openvpn/Server_TAP_WithGW.conf
-	# adapt this file
-	sed -i "s/<PORT>/$PortTapWithRedirectGW/g" /etc/openvpn/Server_TAP_WithGW.conf
-	sed -i "s/<PROTO>/$OPENVPNPROTO/g" /etc/openvpn/Server_TAP_WithGW.conf
-	sed -i "s/<TAKEY>/$TAKEY/g" /etc/openvpn/Server_TAP_WithGW.conf
-	sed -i "s/<CA>/$CACRT/g" /etc/openvpn/Server_TAP_WithGW.conf
-	sed -i "s/<CERT>/$CRT/g" /etc/openvpn/Server_TAP_WithGW.conf
-	sed -i "s/<KEY>/$KEY/g" /etc/openvpn/Server_TAP_WithGW.conf
-	sed -i "s/<DH>/$DH/g" /etc/openvpn/Server_TAP_WithGW.conf
-	sed -i "s/dev tun/dev tap0/g" /etc/openvpn/Server_TAP_WithGW.conf
-	sed -i "s/;server-bridge/server-bridge/g" /etc/openvpn/Server_TAP_WithGW.conf
-	sed -i '/server 10.0.0.0 255.255.255.0/d' /etc/openvpn/Server_TAP_WithGW.conf
-	# and clean it (delete comments, delete unused option, delete blank line)
-	sed -i '/#/d' /etc/openvpn/Server_TAP_WithGW.conf
-	sed -i '/^;/d' /etc/openvpn/Server_TAP_WithGW.conf
-	sed -i '/^$/d' /etc/openvpn/Server_TAP_WithGW.conf	
+	ScriptInvoke 'source' '/etc/MySB/scripts/bridge-start.sh'
 	
 	#### Config file Server TAP - Without Redirect Gateway
 	cp /etc/MySB/templates/openvpn.server.conf.template /etc/openvpn/Server_TAP_WithoutGW.conf
@@ -180,9 +156,11 @@ CreateServer() {
 	sed -i "s/<CERT>/$CRT/g" /etc/openvpn/Server_TAP_WithoutGW.conf
 	sed -i "s/<KEY>/$KEY/g" /etc/openvpn/Server_TAP_WithoutGW.conf
 	sed -i "s/<DH>/$DH/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i "s/dev tun/dev tap1/g" /etc/openvpn/Server_TAP_WithoutGW.conf	
+	sed -i "s/dev tun/dev tap0/g" /etc/openvpn/Server_TAP_WithoutGW.conf	
 	sed -i "s/$NetTunWithRedirectGW/$NetTapWithtoutRedirectGW/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-	#sed -i '/redirect-gateway/d' /etc/openvpn/Server_TAP_WithoutGW.conf	
+	sed -i "s/;server-bridge/server-bridge/g" /etc/openvpn/Server_TAP_WithGW.conf
+	sed -i '/server 10.0.0.0 255.255.255.0/d' /etc/openvpn/Server_TAP_WithGW.conf	
+	sed -i '/redirect-gateway/d' /etc/openvpn/Server_TAP_WithoutGW.conf	
 	# and clean it (delete comments, delete unused option, delete blank line)
 	sed -i '/#/d' /etc/openvpn/Server_TAP_WithoutGW.conf
 	sed -i '/^;/d' /etc/openvpn/Server_TAP_WithoutGW.conf
@@ -262,34 +240,10 @@ CreateClient() {
 	sed -i "s/$PortTunWithRedirectGW/$PortTunWithoutRedirectGW/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithoutGW.ovpn	
 
 	
-	#### Configuration file with separate files - TAP - With Redirect Gateway
-	cp /etc/MySB/templates/openvpn.client.conf.template /etc/openvpn/clients/${CLIENTNAME}_TAP_WithGW.ovpn
-	# adapt this file
-	sed -i "s/<PROTO>/$OPENVPNPROTO/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_WithGW.ovpn
-	sed -i "s/<IPADDRESS>/$IPADDRESS/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_WithGW.ovpn	
-	sed -i "s/<PORT>/$PortTapWithRedirectGW/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_WithGW.ovpn
-	# and clean it (delete comments, delete unused option, delete blank line)
-	sed -i '/#/d' /etc/openvpn/clients/${CLIENTNAME}_TAP_WithGW.ovpn
-	sed -i '/^;/d' /etc/openvpn/clients/${CLIENTNAME}_TAP_WithGW.ovpn
-	sed -i '/^$/d' /etc/openvpn/clients/${CLIENTNAME}_TAP_WithGW.ovpn
-	
-	#### Configuration file with separate files - TAP - Without Redirect Gateway
-	cp /etc/openvpn/clients/${CLIENTNAME}_TAP_WithGW.ovpn /etc/openvpn/clients/${CLIENTNAME}_TAP_WithoutGW.ovpn
-	sed -i "s/$PortTapWithRedirectGW/$PortTapWithoutRedirectGW/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_WithoutGW.ovpn
-	sed -i "s/$NetTunWithRedirectGW/$NetTunWithoutRedirectGW/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_WithoutGW.ovpn	
-	
-	
-	#### Single configuration file (all in one) - TAP - With Redirect Gateway
-	cp /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithGW.ovpn
-	sed -i "s/$PortTunWithRedirectGW/$PortTapWithRedirectGW/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithGW.ovpn
-	sed -i "s/dev tun/dev tap/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithGW.ovpn
-
-	
 	#### Single configuration file (all in one) - TAP - Without Redirect Gateway
 	cp /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithoutGW.ovpn
 	sed -i "s/$PortTunWithRedirectGW/$PortTapWithoutRedirectGW/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithoutGW.ovpn
 	sed -i "s/dev tun/dev tap/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithoutGW.ovpn
-
 	
 	#### Move created files
 	mv $CLIENTNAME.crt /etc/openvpn/clients/
@@ -307,7 +261,6 @@ ZipClientFiles() {
 		/etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithoutGW.ovpn\
 		/etc/openvpn/clients/${CLIENTNAME}_TUN_WithGW.ovpn\
 		/etc/openvpn/clients/${CLIENTNAME}_TUN_WithoutGW.ovpn\
-		/etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithGW.ovpn\
 		/etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithoutGW.ovpn\
 		/etc/openvpn/$CACRT\
 		/etc/openvpn/clients/$CLIENTNAME.crt\
