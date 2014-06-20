@@ -200,6 +200,18 @@ case $1 in
 			(( OPENVPNPORT++ ))
 			iptables -t filter -I INPUT -i br0 -j ACCEPT
 			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
+			iptables -t filter -I FORWARD -i br0 -o $PRIMARYINET -s 10.0.2.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
+			iptables -t filter -I FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
+			iptables -t nat -I POSTROUTING -s 10.0.2.0/24 -j MASQUERADE -m comment --comment "OpenVPN"				
+			StatusLSB
+
+			log_daemon_msg "Allow use of OpenVPN TAP Without Redirect Gateway"
+			(( OPENVPNPORT++ ))
+			iptables -t filter -I INPUT -i tap1 -j ACCEPT
+			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
+			iptables -t filter -I FORWARD -i tap1 -o $PRIMARYINET -s 10.0.3.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
+			iptables -t filter -I FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
+			iptables -t nat -I POSTROUTING -s 10.0.3.0/24 -j MASQUERADE -m comment --comment "OpenVPN"				
 			StatusLSB				
 	
 
