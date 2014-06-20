@@ -183,7 +183,8 @@ case $1 in
 			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t filter -I FORWARD -i tun0 -o $PRIMARYINET -s 10.0.0.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t filter -I FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t nat -I POSTROUTING -s 10.0.0.0/24 -j MASQUERADE -m comment --comment "OpenVPN"			
+			iptables -t nat -I POSTROUTING -s 10.0.0.0/24 -j MASQUERADE -m comment --comment "OpenVPN"
+			
 			StatusLSB
 			
 			log_daemon_msg "Allow use of OpenVPN TUN Without Redirect Gateway"
@@ -226,7 +227,12 @@ case $1 in
 	#	log_daemon_msg "Allow use of SMTP"
 	#	iptables -t filter -A INPUT -p tcp --dport 25 -j ACCEPT -m comment --comment "SMTP In"
 	#	StatusLSB
-		
+
+		# PlexMedia Server
+		if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver" ]; then
+			iptables -t filter -A INPUT -p tcp --dport 32400 -j ACCEPT -m comment --comment "PlexMediaServer"
+		fi
+	
 		#### rTorrent
 		IGNOREIP="127.0.0.1/8 10.0.0.0/24 10.0.1.0/24 10.0.2.0/24"
 		WHITELIST="127.0.0.1 10.0.0.0 10.0.1.0 10.0.2.0"
