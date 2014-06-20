@@ -56,8 +56,14 @@ DH="dh1024_$HOSTFQDN.pem"
 PortTunWithRedirectGW=$OPENVPNPORT
 (( OPENVPNPORT++ ))
 PortTunWithoutRedirectGW=$OPENVPNPORT
+(( OPENVPNPORT++ ))
+PortTapWithRedirectGW=$OPENVPNPORT
+(( OPENVPNPORT++ ))
+PortTapWithoutRedirectGW=$OPENVPNPORT
 NetTunWithRedirectGW="10.0.0"
 NetTunWithoutRedirectGW="10.0.1"
+NetTapWithtRedirectGW="10.0.2"
+NetTapWithtoutRedirectGW="10.0.3"
 
 
 CreateServer() {
@@ -129,7 +135,7 @@ CreateServer() {
 	sed -i "s/<CA>/$CACRT/g" /etc/openvpn/Server_TUN_WithGW.conf
 	sed -i "s/<CERT>/$CRT/g" /etc/openvpn/Server_TUN_WithGW.conf
 	sed -i "s/<KEY>/$KEY/g" /etc/openvpn/Server_TUN_WithGW.conf
-	sed -i "s/<DH>/$DH/g" /etc/openvpn/Server_TUN_WithGW.conf		
+	sed -i "s/<DH>/$DH/g" /etc/openvpn/Server_TUN_WithGW.conf	
 	# and clean it (delete comments, delete unused option, delete blank line)
 	sed -i '/#/d' /etc/openvpn/Server_TUN_WithGW.conf
 	sed -i '/^;/d' /etc/openvpn/Server_TUN_WithGW.conf
@@ -145,10 +151,22 @@ CreateServer() {
 	sed -i "s/$NetTunWithRedirectGW/$NetTunWithoutRedirectGW/g" /etc/openvpn/Server_TUN_WithoutGW.conf
 	sed -i '/redirect-gateway/d' /etc/openvpn/Server_TUN_WithoutGW.conf
 	
-	
-	#### For network
-	echo 1 > /proc/sys/net/ipv4/ip_forward
-	perl -pi -e "s/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g" /etc/sysctl.conf	
+	#### Config file Server TAP - With Redirect Gateway
+	cp /etc/MySB/templates/openvpn.server.conf.template /etc/openvpn/Server_TAP_WithGW.conf
+	# adapt this file
+	sed -i "s/<PORT>/$PortTapWithRedirectGW/g" /etc/openvpn/Server_TAP_WithGW.conf
+	sed -i "s/<PROTO>/$OPENVPNPROTO/g" /etc/openvpn/Server_TAP_WithGW.conf
+	sed -i "s/<TAKEY>/$TAKEY/g" /etc/openvpn/Server_TAP_WithGW.conf
+	sed -i "s/<CA>/$CACRT/g" /etc/openvpn/Server_TAP_WithGW.conf
+	sed -i "s/<CERT>/$CRT/g" /etc/openvpn/Server_TAP_WithGW.conf
+	sed -i "s/<KEY>/$KEY/g" /etc/openvpn/Server_TAP_WithGW.conf
+	sed -i "s/<DH>/$DH/g" /etc/openvpn/Server_TAP_WithGW.conf
+	sed -i "s/dev tun/dev tap0/g" /etc/openvpn/Server_TAP_WithGW.conf
+	sed -i "s/;server-bridge/server-bridge/g" /etc/openvpn/Server_TAP_WithGW.conf
+	# and clean it (delete comments, delete unused option, delete blank line)
+	sed -i '/#/d' /etc/openvpn/Server_TAP_WithGW.conf
+	sed -i '/^;/d' /etc/openvpn/Server_TAP_WithGW.conf
+	sed -i '/^$/d' /etc/openvpn/Server_TAP_WithGW.conf	
 }
 
 CreateClient() {
@@ -224,10 +242,15 @@ CreateClient() {
 	sed -n '/-----BEGIN OpenVPN Static key V1-----/,/-----END OpenVPN Static key V1-----/p' /etc/openvpn/$TAKEY >> /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
 	echo "</tls-auth>" >> /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn		
 	
-	#### Single configuration file (all in one) - TUN - Withou Redirect Gateway
+	#### Single configuration file (all in one) - TUN - Without Redirect Gateway
 	cp /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithoutGW.ovpn
 	sed -i "s/$PortTunWithRedirectGW/$PortTunWithoutRedirectGW/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithoutGW.ovpn	
-	sed -i "s/$NetTunWithRedirectGW/$NetTunWithoutRedirectGW/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithoutGW.ovpn
+
+
+	#### Single configuration file (all in one) - TAP - With Redirect Gateway
+	cp /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithGW.ovpn
+	sed -i "s/$PortTunWithoutRedirectGW/$PortTapWithRedirectGW/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithGW.ovpn
+	sed -i "s/dev tun/dev tap0/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithGW.ovpn
 
 	
 	#### Move created files
