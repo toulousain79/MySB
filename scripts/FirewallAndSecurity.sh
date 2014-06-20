@@ -203,8 +203,8 @@ case $1 in
 			StatusLSB				
 	
 
-# iptables -t filter -A INPUT -s 192.168.0.0/24 -d 192.168.0.200 -p tcp -m tcp --dport 8200 -j ACCEPT
-# iptables -t filter -A INPUT -s 192.168.0.0/24 -d 239.255.255.250 -p udp -m udp --dport 1900 -j ACCEPT	
+# iptables -t filter -A INPUT -s 10.0.2.0/24 -d 10.0.2.1 -p tcp -m tcp --dport 8200 -j ACCEPT
+# iptables -t filter -A INPUT -s 10.0.2.0/24 -d 239.255.255.250 -p udp -m udp --dport 1900 -j ACCEPT	
 			# Samba access but only in the LAN
 			#iptables -A INPUT -i tun0 -m tcp -p tcp -s 10.0.1.0/24 --dport 139 -j ACCEPT
 			#iptables -A INPUT -i tun0 -m tcp -p tcp -s 10.0.1.0/24 --dport 445 -j ACCEPT
