@@ -124,9 +124,6 @@ CreateServer() {
 	
 	#### Config file Server TUN - With Redirect Gateway
 	# start with a clean config file for a new user
-	if [ -f /etc/openvpn/Server_TUN_WithGW.conf ]; then
-		rm -f /etc/openvpn/Server_TUN_WithGW.conf
-	fi	
 	cp /etc/MySB/templates/openvpn.server.conf.template /etc/openvpn/Server_TUN_WithGW.conf
 	# adapt this file
 	sed -i "s/<PORT>/$PortTunWithRedirectGW/g" /etc/openvpn/Server_TUN_WithGW.conf
@@ -150,6 +147,10 @@ CreateServer() {
 	sed -i "s/$PortTunWithRedirectGW/$PortTunWithoutRedirectGW/g" /etc/openvpn/Server_TUN_WithoutGW.conf
 	sed -i "s/$NetTunWithRedirectGW/$NetTunWithoutRedirectGW/g" /etc/openvpn/Server_TUN_WithoutGW.conf
 	sed -i '/redirect-gateway/d' /etc/openvpn/Server_TUN_WithoutGW.conf
+	
+	#### TAP
+	service openvpn stop
+	bash /etc/MySB/scripts/bridge-start.sh
 	
 	#### Config file Server TAP - With Redirect Gateway
 	cp /etc/MySB/templates/openvpn.server.conf.template /etc/openvpn/Server_TAP_WithGW.conf
@@ -207,9 +208,6 @@ CreateClient() {
 
 	#### Configuration file with separate files - TUN - With Redirect Gateway
 	# start with a clean config file for a new user
-	if [ -f /etc/openvpn/clients/${CLIENTNAME}_TUN_WithGW.ovpn ]; then
-		rm -f /etc/openvpn/clients/${CLIENTNAME}_TUN_WithGW.ovpn
-	fi	
 	cp /etc/MySB/templates/openvpn.client.conf.template /etc/openvpn/clients/${CLIENTNAME}_TUN_WithGW.ovpn
 	# adapt this file
 	sed -i "s/<PROTO>/$OPENVPNPROTO/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_WithGW.ovpn
@@ -232,10 +230,7 @@ CreateClient() {
 	
 	
 	#### Single configuration file (all in one) - TUN - With Redirect Gateway
-	# start with a clean config file for a new user	
-	if [ -f /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn ]; then
-		rm -f /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
-	fi	
+	# start with a clean config file for a new user		
 	cp /etc/MySB/templates/openvpn.client.conf.template /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
 	# adapt this file
 	sed -i "s/<PROTO>/$OPENVPNPROTO/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
@@ -266,7 +261,24 @@ CreateClient() {
 	cp /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithoutGW.ovpn
 	sed -i "s/$PortTunWithRedirectGW/$PortTunWithoutRedirectGW/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithoutGW.ovpn	
 
-
+	
+	#### Configuration file with separate files - TAP - With Redirect Gateway
+	cp /etc/MySB/templates/openvpn.client.conf.template /etc/openvpn/clients/${CLIENTNAME}_TAP_WithGW.ovpn
+	# adapt this file
+	sed -i "s/<PROTO>/$OPENVPNPROTO/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_WithGW.ovpn
+	sed -i "s/<IPADDRESS>/$IPADDRESS/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_WithGW.ovpn	
+	sed -i "s/<PORT>/$PortTapWithRedirectGW/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_WithGW.ovpn
+	# and clean it (delete comments, delete unused option, delete blank line)
+	sed -i '/#/d' /etc/openvpn/clients/${CLIENTNAME}_TAP_WithGW.ovpn
+	sed -i '/^;/d' /etc/openvpn/clients/${CLIENTNAME}_TAP_WithGW.ovpn
+	sed -i '/^$/d' /etc/openvpn/clients/${CLIENTNAME}_TAP_WithGW.ovpn
+	
+	#### Configuration file with separate files - TAP - Without Redirect Gateway
+	cp /etc/openvpn/clients/${CLIENTNAME}_TAP_WithGW.ovpn /etc/openvpn/clients/${CLIENTNAME}_TAP_WithoutGW.ovpn
+	sed -i "s/$PortTapWithRedirectGW/$PortTapWithoutRedirectGW/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_WithoutGW.ovpn
+	sed -i "s/$NetTunWithRedirectGW/$NetTunWithoutRedirectGW/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_WithoutGW.ovpn	
+	
+	
 	#### Single configuration file (all in one) - TAP - With Redirect Gateway
 	cp /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithGW.ovpn
 	sed -i "s/$PortTunWithRedirectGW/$PortTapWithRedirectGW/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithGW.ovpn
