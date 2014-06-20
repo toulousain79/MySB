@@ -192,31 +192,36 @@ case $1 in
 			
 			log_daemon_msg "Allow use of OpenVPN TUN Without Redirect Gateway"
 			(( OPENVPNPORT++ ))
-			iptables -t filter -I INPUT -i tun1 -j ACCEPT
-			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
+			# iptables -t filter -I INPUT -i tun1 -j ACCEPT
+			# iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
 			StatusLSB				
 			
 			log_daemon_msg "Allow use of OpenVPN TAP Without Redirect Gateway"
 			(( OPENVPNPORT++ ))
-			iptables -t filter -I INPUT -i br0 -j ACCEPT
-			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t filter -I FORWARD -i br0 -o $PRIMARYINET -s 10.0.2.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t filter -I FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t nat -I POSTROUTING -s 10.0.2.0/24 -j MASQUERADE -m comment --comment "OpenVPN"				
+			# iptables -t filter -I INPUT -i br0 -j ACCEPT
+			# iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
+			# iptables -t filter -I FORWARD -i br0 -o $PRIMARYINET -s 10.0.2.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
+			# iptables -t filter -I FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
+			# iptables -t nat -I POSTROUTING -s 10.0.2.0/24 -j MASQUERADE -m comment --comment "OpenVPN"				
 			StatusLSB
 
 			log_daemon_msg "Allow use of OpenVPN TAP Without Redirect Gateway"
 			(( OPENVPNPORT++ ))
-			iptables -t filter -I INPUT -i tap1 -j ACCEPT
-			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t filter -I FORWARD -i tap1 -o $PRIMARYINET -s 10.0.3.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t filter -I FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t nat -I POSTROUTING -s 10.0.3.0/24 -j MASQUERADE -m comment --comment "OpenVPN"				
+			iptables -A INPUT -i tap0 -j ACCEPT
+			iptables -A INPUT -i br0 -j ACCEPT
+			iptables -A FORWARD -i br0 -j ACCEPT
+			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"			
+			
+			# iptables -t filter -I INPUT -i tap1 -j ACCEPT
+			# iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
+			# iptables -t filter -I FORWARD -i tap1 -o $PRIMARYINET -s 10.0.3.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
+			# iptables -t filter -I FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
+			# iptables -t nat -I POSTROUTING -s 10.0.3.0/24 -j MASQUERADE -m comment --comment "OpenVPN"				
 			StatusLSB				
 	
 
-# iptables -t filter -A INPUT -s 10.0.2.0/24 -d 10.0.2.1 -p tcp -m tcp --dport 8200 -j ACCEPT
-# iptables -t filter -A INPUT -s 10.0.2.0/24 -d 239.255.255.250 -p udp -m udp --dport 1900 -j ACCEPT	
+# iptables -t filter -A INPUT -s 10.0.3.0/24 -d 10.0.3.1 -p tcp -m tcp --dport 8200 -j ACCEPT
+# iptables -t filter -A INPUT -s 10.0.3.0/24 -d 239.255.255.250 -p udp -m udp --dport 1900 -j ACCEPT	
 			# Samba access but only in the LAN
 			#iptables -A INPUT -i tun0 -m tcp -p tcp -s 10.0.1.0/24 --dport 139 -j ACCEPT
 			#iptables -A INPUT -i tun0 -m tcp -p tcp -s 10.0.1.0/24 --dport 445 -j ACCEPT
