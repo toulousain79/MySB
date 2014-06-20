@@ -176,7 +176,7 @@ if [ "$INSTALLFAIL2BAN" == "YES" ]; then
 fi
 
 #### postfix
-echo -e -n "${CBLUE}Configure Postfix$CEND..."
+echo -e -n "${CBLUE}Install and configure Postfix$CEND..."
 screen -dmS Postfix /bin/bash /etc/MySB/install/Postfix;
 WaitingScreen Postfix
 StatusSTD	
