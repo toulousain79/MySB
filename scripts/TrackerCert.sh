@@ -84,7 +84,7 @@ for engine in ${ENGINES}; do
 done
 
 log_daemon_msg "Certificates Rehash"
-c_rehash
+c_rehash &> /dev/null
 StatusLSB
 
 # -----------------------------------------
