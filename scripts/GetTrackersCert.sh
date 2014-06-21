@@ -48,10 +48,19 @@ if [ ! -d /etc/MySB/ssl/trackers/ ]; then
 	mkdir /etc/MySB/ssl/trackers/
 fi
 
+echo "frenchtorrentdb.com" > /etc/MySB/trackers.list
+echo "www2.frenchtorrentdb.com" >> /etc/MySB/trackers.list
+
 ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
 for engine in ${ENGINES}; do
-	log_daemon_msg "Get certificate for $TRACKER"
 	TRACKER=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "url =" | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
+
+	echo $TRACKER >> /etc/MySB/trackers.list
+	unset TRACKER
+done
+
+while read TRACKER; do
+	log_daemon_msg "Get certificate for $TRACKER"
 
 	TRACKER_IPV4="$(nslookup ${TRACKER} | grep Address: | awk '{ print $2 }' | sed -n 2p)"
 	if [ ! -z $TRACKER_IPV4 ]; then
@@ -81,7 +90,7 @@ for engine in ${ENGINES}; do
 	unset TRACKER_IPV4
 	unset TRACKER
 	StatusLSB
-done
+done < /etc/MySB/trackers.list
 
 log_daemon_msg "Certificates Rehash"
 c_rehash &> /dev/null
