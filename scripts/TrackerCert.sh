@@ -24,6 +24,28 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+GetCertificate() {
+	TRACKER=$1
+	cd /etc/MySB/ssl/trackers/
+		
+	openssl s_client -connect $TRACKER:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$TRACKER.crt 
+	if [ ! -e ./$TRACKER.crt ]; then
+		log_daemon_msg "Get certificate for $TRACKER"
+		openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
+		openssl x509 -in ./$TRACKER.der -inform DER -out ./$TRACKER.pem -outform PEM
+		if [ ! -e ./$TRACKER.pem ]; then
+			if [ ! -f /etc/ssl/certs/$TRACKER.pem ]; then
+				ln -s ./$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
+			fi	
+		fi
+		
+		rm ./$TRACKER.der
+		StatusLSB
+	fi
+	
+	rm ./$TRACKER.crt
+}
+
 if [ ! -d /etc/MySB/ssl/trackers/ ]; then
 	mkdir /etc/MySB/ssl/trackers/
 fi
@@ -31,6 +53,13 @@ fi
 ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
 for engine in ${ENGINES}; do
 	TRACKER=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "url =" | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
+
+	TRACKER_IPV4="$(nslookup ${TRACKER} | grep Address: | awk '{ print $2 }' | sed -n 2p)"
+	if [ ! -z $TRACKER_IPV4 ]; then
+		GetCertificate $TRACKER
+	fi
+	unset TRACKER_IPV4
+
 	PART1=`echo ${TRACKER} | cut -d "." -f 1`
 	PART2=`echo ${TRACKER} | cut -d "." -f 2`
 	PART3=`echo ${TRACKER} | cut -d "." -f 3`
@@ -47,26 +76,10 @@ for engine in ${ENGINES}; do
 
 	TRACKER_IPV4="$(nslookup ${TRACKER} | grep Address: | awk '{ print $2 }' | sed -n 2p)"
 	if [ ! -z $TRACKER_IPV4 ]; then			
-		cd /etc/MySB/ssl/trackers/
-			
-		openssl s_client -connect $TRACKER:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$TRACKER.crt 
-		if [ ! -e ./$TRACKER.crt ]; then
-			log_daemon_msg "Get certificate for $TRACKER"
-			openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
-			openssl x509 -in ./$TRACKER.der -inform DER -out ./$TRACKER.pem -outform PEM
-			if [ ! -e ./$TRACKER.pem ]; then
-				if [ ! -f /etc/ssl/certs/$TRACKER.pem ]; then
-					ln -s ./$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
-				fi	
-			fi
-			
-			rm ./$TRACKER.der
-			StatusLSB
-		fi
-		
-		rm ./$TRACKER.crt
+		GetCertificate $TRACKER
 	fi
 
+	unset TRACKER_IPV4
 	unset TRACKER
 done
 
