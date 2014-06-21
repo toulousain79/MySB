@@ -53,9 +53,11 @@ for engine in ${ENGINES}; do
 		openssl s_client -connect $TRACKER:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$TRACKER.crt 
 		openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
 		openssl x509 -in ./$TRACKER.der -inform DER -out ./$TRACKER.pem -outform PEM
-		if [ ! -f /etc/ssl/certs/$TRACKER.pem ]; then
-			ln -s ./$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
-		fi	 
+		if [ ! -e ./$TRACKER.pem ]; then
+			if [ ! -f /etc/ssl/certs/$TRACKER.pem ]; then
+				ln -s ./$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
+			fi	
+		fi
 		unset TRACKER
 		StatusLSB
 	fi	
