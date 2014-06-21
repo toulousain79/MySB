@@ -85,7 +85,7 @@ WaitingScreen Tweaks
 StatusSTD
 
 #### configure php5-fpm
-echo -e -n "${CBLUE}Configure PHP5-FPM$CEND..."
+echo -e -n "${CBLUE}Install and configure PHP5-FPM$CEND..."
 screen -dmS PHP /bin/bash /etc/MySB/install/PHP;
 WaitingScreen PHP
 StatusSTD	
@@ -97,7 +97,7 @@ WaitingScreen Certificates
 StatusSTD
 
 #### configure nginx
-echo -e -n "${CBLUE}Configure NginX$CEND..."
+echo -e -n "${CBLUE}Install and configure NginX$CEND..."
 screen -dmS Nginx /bin/bash /etc/MySB/install/Nginx;
 WaitingScreen Nginx
 StatusSTD	
@@ -109,7 +109,7 @@ WaitingScreen SSH
 StatusSTD		
 
 #### vSFTPd
-echo -e -n "${CBLUE}Configure VSFTPd$CEND..."
+echo -e -n "${CBLUE}Install and configure VSFTPd$CEND..."
 screen -dmS VSFTP /bin/bash /etc/MySB/install/VSFTP;
 WaitingScreen VSFTP
 StatusSTD			
