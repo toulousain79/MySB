@@ -94,12 +94,12 @@ unset ENGINES
 
 LIST_CERTS=$(ls -la /etc/ssl/certs/)
 for Cert in ${LIST_CERTS}; do
-	NAME=$(ls -la /etc/ssl/certs/ | awk '{ print $9 }')
-	TARGET=$(ls -la /etc/ssl/certs/ | awk '{ print $11 }')
+	NAME=$(echo $Cert | awk '{ print $9 }')
+	TARGET=$(echo $Cert | awk '{ print $11 }')
 	
 	if [ ! -f $TARGET ];then
 		echo $NAME
-		#rm /etc/ssl/certs/$NAME
+		rm /etc/ssl/certs/$NAME
 	fi
 	
 	unset NAME
