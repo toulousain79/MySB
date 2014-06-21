@@ -55,7 +55,7 @@ ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
 for engine in ${ENGINES}; do
 	TRACKER=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "url =" | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
 
-	echo $TRACKER >> /etc/MySB/trackers.list
+	echo $TRACKER >> /etc/MySB/ssl/trackers/trackers.list
 	unset TRACKER
 done
 
