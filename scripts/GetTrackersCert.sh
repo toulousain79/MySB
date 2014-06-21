@@ -92,21 +92,22 @@ for engine in ${ENGINES}; do
 done
 unset ENGINES
 
-LIST_CERTS=$(ls -la /etc/ssl/certs/)
+LIST_CERTS=$(ls -la /etc/ssl/certs/ | awk '{ print $9 }')
 for Cert in ${LIST_CERTS}; do
-	NAME=$(echo $Cert | awk '{ print $9 }')
-	TARGET=$(echo $Cert | awk '{ print $11 }')
-	
-	if [ ! -f $TARGET ];then
-		echo $NAME
-		rm /etc/ssl/certs/$NAME
+	if [ "$Cert" != "" ] && [ "$Cert" != "." ] && [ "$Cert" != ".." ]; then
+
+		TARGET=$(ls -la /etc/ssl/certs/$Cert | awk '{ print $11 }')
+
+		if [ ! -f $TARGET ];then
+			echo "KO"
+			rm /etc/ssl/certs/$Cert
+		fi
+		
+		unset Cert
+		unset TARGET
 	fi
-	
-	unset NAME
-	unset TARGET
 done
 unset LIST_CERTS
-
 
 while read TRACKER; do
 	log_daemon_msg "Get certificate for $TRACKER"
