@@ -48,7 +48,7 @@ for engine in ${ENGINES}; do
 	TRACKER_IPV4="$(nslookup ${TRACKER} | grep Address: | awk '{ print $2 }' | sed -n 2p)"
 	if [ ! -z $TRACKER_IPV4 ]; then			
 		log_daemon_msg "Get certificate for $TRACKER"
-		cd mkdir /etc/MySB/ssl/trackers/
+		cd /etc/MySB/ssl/trackers/
 			
 		openssl s_client -connect $TRACKER:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$TRACKER.crt 
 		openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
