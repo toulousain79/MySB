@@ -53,6 +53,8 @@ echo "www2.frenchtorrentdb.com" >> /etc/MySB/ssl/trackers/trackers.list
 
 ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
 for engine in ${ENGINES}; do
+	log_daemon_msg "Check url for $engine"
+
 	TRACKER=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "url =" | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
 
 	TRACKER_IPV4="$(nslookup ${TRACKER} | grep Address: | awk '{ print $2 }' | sed -n 2p)"
@@ -85,7 +87,26 @@ for engine in ${ENGINES}; do
 	unset PART3
 	unset TRACKER_IPV4
 	unset TRACKER
+	
+	StatusLSB
 done
+unset ENGINES
+
+LIST_CERTS=$(ls -la /etc/ssl/certs/)
+for Cert in ${LIST_CERTS}; do
+	NAME=$(ls -la /etc/ssl/certs/ | awk '{ print $9 }')
+	TARGET=$(ls -la /etc/ssl/certs/ | awk '{ print $11 }')
+	
+	if [ ! -f $TARGET ];then
+		echo $NAME
+		#rm /etc/ssl/certs/$NAME
+	fi
+	
+	unset NAME
+	unset TARGET
+done
+unset LIST_CERTS
+
 
 while read TRACKER; do
 	log_daemon_msg "Get certificate for $TRACKER"
