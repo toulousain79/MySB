@@ -77,6 +77,7 @@ echo "193.107.243.0/24" >> /etc/MySB/scripts/blocklist/blocklist_rtorrent.tmp
 echo "193.107.244.0/24" >> /etc/MySB/scripts/blocklist/blocklist_rtorrent.tmp
 echo "193.107.245.0/24" >> /etc/MySB/scripts/blocklist/blocklist_rtorrent.tmp
 echo "193.105.197.0/24" >> /etc/MySB/scripts/blocklist/blocklist_rtorrent.tmp
+echo "195.191.244.0/24" >> /etc/MySB/scripts/blocklist/blocklist_rtorrent.tmp
 StatusLSB
 
 # delete blank line
