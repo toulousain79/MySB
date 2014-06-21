@@ -59,6 +59,8 @@ for engine in ${ENGINES}; do
 					ln -s ./$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
 				fi	
 			fi
+			
+			rm ./$TRACKER.der
 		fi
 		StatusLSB
 	else
