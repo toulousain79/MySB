@@ -60,6 +60,7 @@ for engine in ${ENGINES}; do
 				fi	
 			fi
 			
+			rm ./$TRACKER.crt
 			rm ./$TRACKER.der
 		fi
 		StatusLSB
