@@ -135,8 +135,8 @@ case "$OPENVPNPROTO" in
 	;;
 esac
 
-echo "WHITE_IP_IN=\"127.0.0.1 10.0.0.0 10.0.1.0 10.0.2.0 ${MYIP}\"" >> /etc/pgl/pglcmd.conf
-echo "WHITE_IP_OUT=\"127.0.0.1 10.0.0.0 10.0.1.0 10.0.2.0\"" >> /etc/pgl/pglcmd.conf
+echo "WHITE_IP_IN=\"127.0.0.1 10.0.0.0 10.0.1.0 192.168.0.0 ${MYIP}\"" >> /etc/pgl/pglcmd.conf
+echo "WHITE_IP_OUT=\"127.0.0.1 10.0.0.0 10.0.1.0 192.168.0.0\"" >> /etc/pgl/pglcmd.conf
 
 #### Create Blocklist file
 (
@@ -226,6 +226,26 @@ for engine in ${ENGINES}; do
 		echo ${TRACKER}
 		echo "${TRACKER}:${TRACKER_IPV4}-255.255.255.255" >> /etc/pgl/allow.p2p
 	fi
+	
+	PART1=`echo ${TRACKER} | cut -d "." -f 1`
+	PART2=`echo ${TRACKER} | cut -d "." -f 2`
+	PART3=`echo ${TRACKER} | cut -d "." -f 3`
+	
+	if [ -z $PART3 ]; then
+		PART3=$PART2
+		PART2=$PART1
+		PART1=tracker
+	else
+		PART1=tracker
+	fi
+	
+	TRACKER="`echo $PART1`.`echo $PART2`.`echo $PART3`"	
+
+	TRACKER_IPV4="$(nslookup ${TRACKER} | grep Address: | awk '{ print $2 }' | sed -n 2p)"
+	if [ ! -z $TRACKER_IPV4 ]; then
+		echo ${TRACKER}
+		echo "${TRACKER}:${TRACKER_IPV4}-255.255.255.255" >> /etc/pgl/allow.p2p	
+	fi	
 done
 	
 # -----------------------------------------

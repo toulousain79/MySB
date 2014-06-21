@@ -39,9 +39,9 @@ tap="tap0"
 # Define physical ethernet interface to be bridged
 # with TAP interface(s) above.
 eth="eth1"
-eth_ip="10.0.2.1"
+eth_ip="192.168.0.200"
 eth_netmask="255.255.255.0"
-eth_broadcast="10.0.3.255"
+eth_broadcast="192.168.0.255"
 
 for t in $tap; do
     openvpn --mktun --dev $t

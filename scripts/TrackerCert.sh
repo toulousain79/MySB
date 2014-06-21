@@ -23,36 +23,34 @@ source /etc/MySB/inc/includes_before
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
 ##################### FIRST LINE #####################################
+#
+# Usage:	TrackerCert.sh {tracker_url}
+#
+##################### FIRST LINE #####################################
 
-PackagesManage upgrade
-
-#### update certificates
-cd /usr/share/ca-certificates/
-if [ -f gd_intermediate.crt ]; then
-	rm gd_intermediate.crt
-fi
-if [ -f gd_cross_intermediate.crt ]; then
-	rm gd_cross_intermediate.crt
-fi
-wget --no-check-certificate https://certs.godaddy.com/repository/gd_intermediate.crt https://certs.godaddy.com/repository/gd_cross_intermediate.crt
-if [ ! -f /etc/ssl/certs/gd_intermediate.pem ]; then
-	ln -s /usr/share/ca-certificates/gd_intermediate.crt /etc/ssl/certs/gd_intermediate.pem
-fi
-if [ ! -f /etc/ssl/certs/gd_cross_intermediate.pem ]; then
-	ln -s /usr/share/ca-certificates/gd_cross_intermediate.crt /etc/ssl/certs/gd_cross_intermediate.pem
+if [ -z $1 ]; then
+	echo -e "${CBLUE}Usage:$CEND	${CYELLOW}bash /etc/MySB/scripts/TrackerCert.sh$CEND ${CGREEN}tracker_url$CEND"
+	exit	
 fi
 
-if [ -f Equifax_Secure_Global_eBusiness_CA-1.pem ]; then
-	rm Equifax_Secure_Global_eBusiness_CA-1.pem
-fi
-wget --no-check-certificate https://www.geotrust.com/resources/root_certificates/certificates/Equifax_Secure_Global_eBusiness_CA-1.cer
-mv Equifax_Secure_Global_eBusiness_CA-1.cer Equifax_Secure_Global_eBusiness_CA-1.crt
-if [ ! -f /etc/ssl/certs/Equifax_Secure_Global_eBusiness_CA-1.pem ]; then
-	ln -s /usr/share/ca-certificates/Equifax_Secure_Global_eBusiness_CA-1.crt /etc/ssl/certs/Equifax_Secure_Global_eBusiness_CA-1.pem
-fi
+TRACKER=$1
 
-update-ca-certificates
-c_rehash
+if [ ! -d /etc/MySB/ssl/trackers/ ]; then
+	mkdir /etc/MySB/ssl/trackers/
+fi	
+
+log_daemon_msg "Get certificate for $TRACKER"
+cd mkdir /etc/MySB/ssl/trackers/
+	
+openssl s_client -connect $TRACKER:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$TRACKER.crt 
+openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
+openssl x509 -in ./$TRACKER.der -inform DER -out ./$TRACKER.pem -outform PEM
+if [ ! -f /etc/ssl/certs/$TRACKER.pem ]; then
+	ln -s ./$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
+fi
+c_rehash 
+unset TRACKER
+StatusLSB
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
