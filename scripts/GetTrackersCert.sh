@@ -29,7 +29,7 @@ GetCertificate() {
 	cd /etc/MySB/ssl/trackers/
 		
 	openssl s_client -connect $TRACKER:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$TRACKER.crt 
-	if [ ! -e ./$TRACKER.crt ]; then
+	if [ -s ./$TRACKER.crt ]; then
 		openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
 		openssl x509 -in ./$TRACKER.der -inform DER -out ./$TRACKER.pem -outform PEM
 		if [ ! -e ./$TRACKER.pem ]; then
@@ -38,10 +38,10 @@ GetCertificate() {
 			fi	
 		fi
 		
-		#rm ./$TRACKER.der
+		rm ./$TRACKER.der
 	fi
 	
-	#rm ./$TRACKER.crt
+	rm ./$TRACKER.crt
 }
 
 if [ ! -d /etc/MySB/ssl/trackers/ ]; then
