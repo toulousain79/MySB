@@ -38,18 +38,18 @@ GetCertificate() {
 			fi	
 		fi
 		
-		rm ./$TRACKER.der
+		#rm ./$TRACKER.der
 	fi
 	
-	rm ./$TRACKER.crt
+	#rm ./$TRACKER.crt
 }
 
 if [ ! -d /etc/MySB/ssl/trackers/ ]; then
 	mkdir /etc/MySB/ssl/trackers/
 fi
 
-echo "frenchtorrentdb.com" > /etc/MySB/trackers.list
-echo "www2.frenchtorrentdb.com" >> /etc/MySB/trackers.list
+echo "frenchtorrentdb.com" > /etc/MySB/ssl/trackers/trackers.list
+echo "www2.frenchtorrentdb.com" >> /etc/MySB/ssl/trackers/trackers.list
 
 ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
 for engine in ${ENGINES}; do
@@ -90,7 +90,7 @@ while read TRACKER; do
 	unset TRACKER_IPV4
 	unset TRACKER
 	StatusLSB
-done < /etc/MySB/trackers.list
+done < /etc/MySB/ssl/trackers/trackers.list
 
 log_daemon_msg "Certificates Rehash"
 c_rehash &> /dev/null
