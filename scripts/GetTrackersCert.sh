@@ -30,7 +30,6 @@ GetCertificate() {
 		
 	openssl s_client -connect $TRACKER:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$TRACKER.crt 
 	if [ ! -e ./$TRACKER.crt ]; then
-		log_daemon_msg "Get certificate for $TRACKER"
 		openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
 		openssl x509 -in ./$TRACKER.der -inform DER -out ./$TRACKER.pem -outform PEM
 		if [ ! -e ./$TRACKER.pem ]; then
@@ -40,7 +39,6 @@ GetCertificate() {
 		fi
 		
 		rm ./$TRACKER.der
-		StatusLSB
 	fi
 	
 	rm ./$TRACKER.crt
@@ -52,6 +50,7 @@ fi
 
 ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
 for engine in ${ENGINES}; do
+	log_daemon_msg "Get certificate for $TRACKER"
 	TRACKER=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "url =" | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
 
 	TRACKER_IPV4="$(nslookup ${TRACKER} | grep Address: | awk '{ print $2 }' | sed -n 2p)"
@@ -81,6 +80,7 @@ for engine in ${ENGINES}; do
 
 	unset TRACKER_IPV4
 	unset TRACKER
+	StatusLSB
 done
 
 log_daemon_msg "Certificates Rehash"
