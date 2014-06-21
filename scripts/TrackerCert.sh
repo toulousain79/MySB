@@ -23,33 +23,46 @@ source /etc/MySB/inc/includes_before
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
 ##################### FIRST LINE #####################################
-#
-# Usage:	TrackerCert.sh {tracker_url}
-#
-##################### FIRST LINE #####################################
-
-if [ -z $1 ]; then
-	echo -e "${CBLUE}Usage:$CEND	${CYELLOW}bash /etc/MySB/scripts/TrackerCert.sh$CEND ${CGREEN}tracker_url$CEND"
-	exit	
-fi
-
-TRACKER=$1
 
 if [ ! -d /etc/MySB/ssl/trackers/ ]; then
 	mkdir /etc/MySB/ssl/trackers/
-fi	
-
-log_daemon_msg "Get certificate for $TRACKER"
-cd mkdir /etc/MySB/ssl/trackers/
-	
-openssl s_client -connect $TRACKER:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$TRACKER.crt 
-openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
-openssl x509 -in ./$TRACKER.der -inform DER -out ./$TRACKER.pem -outform PEM
-if [ ! -f /etc/ssl/certs/$TRACKER.pem ]; then
-	ln -s ./$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
 fi
-c_rehash 
-unset TRACKER
+
+ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
+for engine in ${ENGINES}; do
+	TRACKER=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "url =" | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
+	PART1=`echo ${TRACKER} | cut -d "." -f 1`
+	PART2=`echo ${TRACKER} | cut -d "." -f 2`
+	PART3=`echo ${TRACKER} | cut -d "." -f 3`
+	
+	if [ -z $PART3 ]; then
+		PART3=$PART2
+		PART2=$PART1
+		PART1=tracker
+	else
+		PART1=tracker
+	fi
+	
+	TRACKER="`echo $PART1`.`echo $PART2`.`echo $PART3`"	
+
+	TRACKER_IPV4="$(nslookup ${TRACKER} | grep Address: | awk '{ print $2 }' | sed -n 2p)"
+	if [ ! -z $TRACKER_IPV4 ]; then			
+		log_daemon_msg "Get certificate for $TRACKER"
+		cd mkdir /etc/MySB/ssl/trackers/
+			
+		openssl s_client -connect $TRACKER:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$TRACKER.crt 
+		openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
+		openssl x509 -in ./$TRACKER.der -inform DER -out ./$TRACKER.pem -outform PEM
+		if [ ! -f /etc/ssl/certs/$TRACKER.pem ]; then
+			ln -s ./$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
+		fi	 
+		unset TRACKER
+		StatusLSB
+	fi	
+done
+
+log_daemon_msg "Certificates Rehash"
+c_rehash
 StatusLSB
 
 # -----------------------------------------
