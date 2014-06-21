@@ -51,16 +51,21 @@ for engine in ${ENGINES}; do
 		cd /etc/MySB/ssl/trackers/
 			
 		openssl s_client -connect $TRACKER:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$TRACKER.crt 
-		openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
-		openssl x509 -in ./$TRACKER.der -inform DER -out ./$TRACKER.pem -outform PEM
 		if [ ! -e ./$TRACKER.pem ]; then
-			if [ ! -f /etc/ssl/certs/$TRACKER.pem ]; then
-				ln -s ./$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
-			fi	
+			openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
+			openssl x509 -in ./$TRACKER.der -inform DER -out ./$TRACKER.pem -outform PEM
+			if [ ! -e ./$TRACKER.pem ]; then
+				if [ ! -f /etc/ssl/certs/$TRACKER.pem ]; then
+					ln -s ./$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
+				fi	
+			fi
 		fi
-		unset TRACKER
 		StatusLSB
-	fi	
+	else
+		rm ./$TRACKER.crt
+	fi
+
+	unset TRACKER
 done
 
 log_daemon_msg "Certificates Rehash"
