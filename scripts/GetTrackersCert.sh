@@ -55,23 +55,16 @@ ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
 for engine in ${ENGINES}; do
 	TRACKER=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "url =" | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
 
-	echo $TRACKER >> /etc/MySB/ssl/trackers/trackers.list
-	unset TRACKER
-done
-
-while read TRACKER; do
-	log_daemon_msg "Get certificate for $TRACKER"
-
 	TRACKER_IPV4="$(nslookup ${TRACKER} | grep Address: | awk '{ print $2 }' | sed -n 2p)"
 	if [ ! -z $TRACKER_IPV4 ]; then
-		GetCertificate $TRACKER
+		echo $TRACKER >> /etc/MySB/ssl/trackers/trackers.list
 	fi
-	unset TRACKER_IPV4
-
+	unset TRACKER_IPV4	
+	
 	PART1=`echo ${TRACKER} | cut -d "." -f 1`
 	PART2=`echo ${TRACKER} | cut -d "." -f 2`
-	PART3=`echo ${TRACKER} | cut -d "." -f 3`
-	
+	PART3=`echo ${TRACKER} | cut -d "." -f 3`	
+
 	if [ -z $PART3 ]; then
 		PART3=$PART2
 		PART2=$PART1
@@ -84,11 +77,19 @@ while read TRACKER; do
 
 	TRACKER_IPV4="$(nslookup ${TRACKER} | grep Address: | awk '{ print $2 }' | sed -n 2p)"
 	if [ ! -z $TRACKER_IPV4 ]; then			
-		GetCertificate $TRACKER
+		echo $TRACKER >> /etc/MySB/ssl/trackers/trackers.list
 	fi
-
+	
+	unset PART1
+	unset PART2
+	unset PART3
 	unset TRACKER_IPV4
 	unset TRACKER
+done
+
+while read TRACKER; do
+	log_daemon_msg "Get certificate for $TRACKER"
+	GetCertificate $TRACKER
 	StatusLSB
 done < /etc/MySB/ssl/trackers/trackers.list
 
