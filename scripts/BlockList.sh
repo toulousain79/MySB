@@ -63,7 +63,7 @@ while read line; do
 done < /etc/MySB/inc/blocklist
 
 # Default IP of TMG
-log_daemon_msg "Add know TMG's IP to global blocklist" "$FILE"
+log_daemon_msg "Add know TMG's IP to global blocklist"
 echo "82.138.70.128/26" >> /etc/MySB/scripts/blocklist/blocklist_rtorrent.tmp
 echo "82.138.74.0/25" >> /etc/MySB/scripts/blocklist/blocklist_rtorrent.tmp
 echo "82.138.81.0/24" >> /etc/MySB/scripts/blocklist/blocklist_rtorrent.tmp
