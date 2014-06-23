@@ -1,4 +1,6 @@
-Under development, thank you not to use this script for now.
+#### Under development, thank you not to use this script for now.
+
+#### This script is not intended to solicit illegal actions! I can not be held responsible for the use that you could doing it! Thank you to reconsider the installation and use of MySB. I developed this script only for pleasure and passion for my job.
 ====
 
 My Perfect SeedBox
@@ -14,20 +16,25 @@ MySB is a seedbox platform for multi-users.
 ## Installed software
 
 * xmlrpc-c (SVN)
-* rTorrent (Git)
+* rTorrent (Git) with SSL
 * libTorrrent (Git)
 * ruTorrent (SVN) + official plugins (SVN)
-* Fail2ban (optionnal)
 * NginX (SSL, specific port and some customizations)
 * PHP5-FPM (php5-apcu, FastCGI, SSL)
 * SFTP with Chroot
 * vsftpd (TLS)
-* OpenVPN (optionnal)
+* Postfix with SMTP authentication (Gmail, Free, Ovh and Yahoo)
+
+## Services available
+* Fail2ban (optionnal but recommended)
+* Seedbox-Manager (optionnal but recommended)
+* OpenVPN (optionnal); Multi TUN and TAP configuration, with or without redirection of traffic.
 * Webmin (optionnal)
-* Seedbox-Manager (optionnal)
 * BlockList usage (optionnal) (PeerGuardian or rTorrent)
 * CakeBoxLight (optionnal)
 * PlexMedia Server (optionnal)
+* Samba share for each users (VPN access)
+* NFS share for each users (VPN access)
 
 ## Additional ruTorrent plugins
 
@@ -42,7 +49,7 @@ MySB is a seedbox platform for multi-users.
 * Theme: Oblivion
 * FileUpload
 * Stream
-* favicons trackers
+* Favicons trackers
 
 ## Before installation
 
@@ -98,6 +105,8 @@ After installing you will have access to the following commands to be used direc
 	* MySB_DeleteUser
 	* MySB_UpdateGitHubRepo (update actual repository)
 	* MySB_RefreshMe (refresh some parts of MySB)
+	* MySB_UpgradeMe (to migrate to a new version of MySB)
+	* MySB_UpgradeSystem (simply upgrade your system APT upgrade)
 
 #### While executing them, if sudo is needed, they will ask for a password.
 
@@ -132,14 +141,14 @@ BlockList usage (optionnal), PeerGuardian or directly via rTorrent.
 Depending on your system, it is possible to use: 
 * PeerGuardian
 
-	--> By default, all blocklist are activated. Check "/etc/pgl/blocklists.list".
+	--> By default, some list are activated. Check "/etc/pgl/blocklists.list".
 	--> Many tracker sites are allowed, but only private trackers. Check "/etc/pgl/allow.p2p".
 
 OR
 
 * rTorrent with ipv4_filter.load
 
-	--> By default, only list named LEVEL 1 is activated. Check "/etc/MySB/inc/blocklist".
+	--> By default, some list are activated. Check "/etc/MySB/inc/blocklist".
 	--> All list are avaible in "/etc/MySB/scripts/in/blocklist".
 	--> Comment the line with '#' if you want to exclude a list OR comment out the line with deleting '#' if you want to activate it.
 	--> Example: #BLUETACK_ADS="http://....." to exclude ADS Bluetack list.	
@@ -207,13 +216,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 * VSFTDs TLS:	http://www.howtoforge.com/setting-up-vsftpd-tls-on-debian-squeeze
 * VSFTPd Debian: https://howto.biapy.com/fr/debian-gnu-linux/serveurs/autres/installer-le-serveur-ftp-vsftpd-sur-debian
 * VSFTPd ManPage: https://security.appspot.com/vsftpd/vsftpd_conf.html
-* MailX Config:	https://coderwall.com/p/ez1x2w
 
 ## TODO
 
 * DLNA functionality (with OpenVPN)
 * Make some thing for users with dynamic ip for update whitelist in PeerGuardian and Fail2ban.
-* generate log with ccze for web access (ftp, rtorrent, ...)
 * Gmail SMTP https://www.google.com/accounts/DisplayUnlockCaptcha
-* Fai2ban $MYIP
 * Maybe add OwnCloud possiblity
