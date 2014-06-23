@@ -1,8 +1,6 @@
-<<<<<<< HEAD
 #### Under development, thank you not to use this script for now.
 
-=======
->>>>>>> origin/v1.0
+====
 #### This script is not intended to solicit illegal actions! I can not be held responsible for the use that you could doing it! Thank you to reconsider the installation and use of MySB. I developed this script only for pleasure and passion for my job.
 ====
 
@@ -225,8 +223,4 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 * DLNA functionality (with OpenVPN)
 * Make some thing for users with dynamic ip for update whitelist in PeerGuardian and Fail2ban.
 * Gmail SMTP https://www.google.com/accounts/DisplayUnlockCaptcha
-<<<<<<< HEAD
 * Maybe add OwnCloud possiblity
-=======
-* Maybe add OwnCloud possiblity
->>>>>>> origin/v1.0
