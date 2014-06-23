@@ -65,7 +65,7 @@ cat <<'EOF'
 # is a comment and is ignored. If you set the same variable several times,
 # then only the last line will be used.
 
-# Refer to pglcmd.defaults (/usr/lib/pgl/pglcmd.defaults)
+# Refer to pglcmd.defaults (/usr/lib/x86_64-linux-gnu/pgl/pglcmd.defaults)
 # for the complete set of possible configuration variables with comments.
 
 # Do a "pglcmd restart" (sometimes even "reload" is enough) when you have
@@ -90,6 +90,42 @@ CRON="1"
 # 0 - Don't log to syslog/systemd journal
 # 1 - Log to syslog/systemd journal
 LOG_SYSLOG="0"
+
+# Iptables logging of blocked packets
+# Set an iptables target for blocked packets. This will only work if marking
+# matched (IP is in the blocklist) packets is on (i.e. REJECT="1").
+# The iptables rules will be inserted directly before the iptables rule which
+# decides what happens to "marked block" packets.
+# Examples:
+# "" (empty string): no rule will be inserted
+# "LOG --log-level info": blocked packets will be logged to syslog with "info"
+#     log level. This allows to find out e.g. the port and to verify if a packet
+#     is really blocked and not just "marked block".
+LOG_IPTABLES="LOG --log-level info"
+
+# Email the result of the automatic (cron) blocklist update.
+# Specify the mail recipient.
+# If not set, cron will decide what happens with the output.
+CRON_MAILTO="root"
+
+# The path to the allow list for forwarded connections.
+# WARNING: Don't add your own IP / LAN to the forward allow list or pgl will not
+# work at all for FORWARD.
+ALLOW_FWD="/etc/pgl/allow.forward"
+
+# Whitelist ports (traffic on these ports will not be checked)
+# Valid values: port numbers or service names. Port ranges are specified in the
+# format "port:port".
+# Common ports - service names:
+#   80 - http
+#  443 - https
+#   22 - ssh
+#  993 - SSL IMAP
+# Separate several entries with whitespace (" ")
+# Technical implementation: iptables rules in the corresponding iptables chains,
+# matching protocol and --sport/dport PORT, target IPTABLES_TARGET_WHITELISTING.
+# This section works only for IPTABLES_SETTINGS="1"
+# Do a "pglcmd restart" when you have changed these settings.
 
 EOF
 ) > /etc/pgl/pglcmd.conf
@@ -123,6 +159,8 @@ case "$OPENVPNPROTO" in
 		WHITE_UDP_IN=\${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3} ${NEWFTPPORT}\"
 		WHITE_TCP_OUT=\"80 443 ${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"
 		WHITE_UDP_OUT=\${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3} ${NEWFTPPORT}\"
+		WHITE_TCP_FWD=\"\"
+		WHITE_UDP_FWD=\"\"
 		" >> /etc/pgl/pglcmd.conf
 	;;
 	"TCP")
@@ -131,12 +169,15 @@ case "$OPENVPNPROTO" in
 		WHITE_UDP_IN=\"\"
 		WHITE_TCP_OUT=\"80 443 ${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"
 		WHITE_UDP_OUT=\"\"
+		WHITE_TCP_FWD=\"\"
+		WHITE_UDP_FWD=\"\"		
 		" >> /etc/pgl/pglcmd.conf
 	;;
 esac
 
 echo "WHITE_IP_IN=\"127.0.0.1 10.0.0.0 10.0.1.0 192.168.0.0 ${MYIP}\"" >> /etc/pgl/pglcmd.conf
 echo "WHITE_IP_OUT=\"127.0.0.1 10.0.0.0 10.0.1.0 192.168.0.0\"" >> /etc/pgl/pglcmd.conf
+echo "WHITE_IP_FWD=\"\"" >> /etc/pgl/pglcmd.conf
 
 #### Create Blocklist file
 (

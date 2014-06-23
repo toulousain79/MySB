@@ -239,7 +239,7 @@ case $1 in
 	
 		#### rTorrent
 		IGNOREIP="127.0.0.1/8 10.0.0.0/24 10.0.1.0/24 10.0.2.0/24"
-		WHITELIST="127.0.0.1 10.0.0.0 10.0.1.0 10.0.2.0"
+		WHITELIST=""
 		LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
 		for seedUser in $LISTUSERS; do
 			log_daemon_msg "Allow use of rTorrent for $seedUser"
