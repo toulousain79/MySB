@@ -17,8 +17,8 @@ MySB is a seedbox platform for multi-users.
 ## Installed software
 
 * xmlrpc-c (SVN)
-* rTorrent (Git) with SSL
-* libTorrrent (Git)
+* rTorrent (rakshasa) v0.9.4 with SSL
+* libTorrrent (rakshasa) v13.4
 * ruTorrent (SVN) + official plugins (SVN)
 * NginX (SSL, specific port and some customizations)
 * PHP5-FPM (php5-apcu, FastCGI, SSL)
