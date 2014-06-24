@@ -202,7 +202,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ## Sources, inspiration and tools
 
 * Notos' script:		https://github.com/Notos/seedbox-from-scratch/
-* Mondedie.fr script:		https://bitbucket.org/exrat/install-rutorrent		
+* Mondedie.fr script:		https://bitbucket.org/exrat/install-rutorrent	
+* rTorrent Community:	http://community.rutorrent.org/	
 * rTorrent config info:		http://libtorrent.rakshasa.no/rtorrent/rtorrent.1.html
 * rTorrent tweaks:		https://calomel.org/rtorrent_mods.html
 * rTorrent SSL:	https://forums.gentoo.org/viewtopic-t-710876-start-0.html

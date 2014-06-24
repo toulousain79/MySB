@@ -41,7 +41,8 @@ else
 fi
 if [ -d /etc/MySB/sources/xmlrpc-c ]; then
 	cd /etc/MySB/sources/xmlrpc-c
-	./configure --disable-libxml2-backend --disable-libwww-client --disable-wininet-client --disable-abyss-server --disable-cgi-server --disable-cplusplus
+	#./configure --disable-libxml2-backend --disable-libwww-client --disable-wininet-client --disable-abyss-server --disable-cgi-server --disable-cplusplus
+	./configure --disable-wininet-client --disable-abyss-server --disable-cplusplus
 	make
 	make install
 	cd /etc/MySB/sources/xmlrpc-c/tools
@@ -68,14 +69,31 @@ else
 	tar -zxvf /etc/MySB/files/libtorrent-0.13.4.tar.gz -C /etc/MySB/sources/
 fi
 
+#### rTorrent compile - DO NOT ASSIGN A VALUE UNDER '1' (default), AND DO NOT ASSIGN TOO MUCH BIG VALUE !!!
+# https://calomel.org/rtorrent_mods.html
+TRACKER_UPLOAD_ADJUST=1.25
+#### rTorrent compile
+
 cd /etc/MySB/sources/libtorrent*
 perl -pi -e "s/\"&uploaded=\" << uploaded_adjusted/\"&uploaded=\" << $TRACKER_UPLOAD_ADJUST*uploaded_adjusted/g" src/tracker/tracker_http.cc
 perl -pi -e "s/rak::timer::from_seconds\(240\)/rak::timer::from_seconds\(60\)/g" src/protocol/peer_connection_leech.cc
 perl -pi -e "s/ticks % 4 == 0/ticks % 1 == 0/g" src/download/download_wrapper.cc
-perl -pi -e "s/m_normal_interval\(1800\)/m_normal_interval\(900\)/g" src/torrent/tracker.cc
-perl -pi -e "s/std::min\(std::max\(600, v\), 3600\)/std::min\(std::max\(600, v\), 1800\)/g" src/torrent/tracker.h
-perl -pi -e "s/ std::min\(std::max\(300, v\), 1800\)/ std::min\(std::max\(300, v\), 900\)/g" src/torrent/tracker.h
-./configure
+# perl -pi -e "s/m_normal_interval\(1800\)/m_normal_interval\(900\)/g" src/torrent/tracker.cc
+# perl -pi -e "s/std::min\(std::max\(600, v\), 3600\)/std::min\(std::max\(600, v\), 1800\)/g" src/torrent/tracker.h
+# perl -pi -e "s/ std::min\(std::max\(300, v\), 1800\)/ std::min\(std::max\(300, v\), 900\)/g" src/torrent/tracker.h
+
+export OPENSSL_CFLAGS=-I/usr/include
+export OPENSSL_LIBS=-lcrypto
+
+case "$FILESYSTEMTYPE" in
+	"ext4"|"xfs"|"btrfs")
+		./configure --with-posix-fallocate
+	;;	
+	*)
+		./configure
+	;;			
+esac
+
 make
 make install
 
