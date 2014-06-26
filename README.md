@@ -101,6 +101,7 @@ Beware, during installation, the SSH port will be changed. If a port session 22 
 ## Commands
 
 After installing you will have access to the following commands to be used directly in terminal.
+
 	* MySB_ChangeUserPassword
 	* MySB_CreateUser
 	* MySB_DeleteUser
