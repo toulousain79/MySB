@@ -143,8 +143,8 @@ BlockList usage (optionnal), PeerGuardian or directly via rTorrent.
 Depending on your system, it is possible to use: 
 * PeerGuardian
 
-	--> By default, some list are activated. Check "/etc/pgl/blocklists.list".
-	--> Many tracker sites are allowed, but only private trackers. Check "/etc/pgl/allow.p2p".
+--> By default, some list are activated. Check "/etc/pgl/blocklists.list".
+--> Many tracker sites are allowed, but only private trackers. Check "/etc/pgl/allow.p2p".
 
 OR
 
