@@ -141,20 +141,22 @@ https://github.com/Magicalex/seedbox-manager/
 ## BlockList
 BlockList usage (optionnal), PeerGuardian or directly via rTorrent.
 Depending on your system, it is possible to use: 
-* PeerGuardian
+
+#### PeerGuardian
 
 	* By default, some list are activated. Check "/etc/pgl/blocklists.list".
 	* Many tracker sites are allowed, but only private trackers. Check "/etc/pgl/allow.p2p".
 
 OR
 
-* rTorrent with ipv4_filter.load
+#### rTorrent with ipv4_filter.load
 
 	* By default, some list are activated. Check "/etc/MySB/inc/blocklist".
 	* All list are avaible in "/etc/MySB/scripts/in/blocklist".
 	* Comment the line with '#' if you want to exclude a list OR comment out the line with deleting '#' if you want to activate it.
 	* Example: #BLUETACK_ADS="http://....." to exclude ADS Bluetack list.	
 	* And do "bash /etc/MySB/scripts/BlockList.sh" for generate the new list for each users.
+
 	NB: The script compile one file with all list, and make cleaning rules.
 	NB: Beware, if you have not enough memory, choising too many list will make you system very slow!
 
