@@ -174,10 +174,12 @@ https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-acc
 
 ## Supported and tested servers
 
-* Debian 7 - x86_64 (Wheezy)
+#### Debian 7 - x86_64 (Wheezy)
+
   --> Tested on Online.net with "DEDIBOX® SC GEN2"
   --> Tested on OpenVZ Container with ProxMox, work fine ! (read comment in top of this page)
-* Ubuntu or older Debian may worked, but not tested...
+  
+#### Ubuntu or older Debian may worked, but not tested...
 
 
 ## Changelog
