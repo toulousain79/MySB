@@ -16,41 +16,42 @@ MySB is a seedbox platform for multi-users.
 
 ## Installed software
 
-* xmlrpc-c (SVN)
-* rTorrent (rakshasa) v0.9.4 with SSL
-* libTorrrent (rakshasa) v13.4
-* ruTorrent (SVN) + official plugins (SVN)
-* NginX (SSL, specific port and some customizations)
-* PHP5-FPM (php5-apcu, FastCGI, SSL)
-* SFTP with Chroot
-* vsftpd (TLS)
-* Postfix with SMTP authentication (Gmail, Free, Ovh and Yahoo)
+	* xmlrpc-c (SVN)
+	* rTorrent (rakshasa) v0.9.4 with SSL
+	* libTorrrent (rakshasa) v13.4
+	* ruTorrent (SVN) + official plugins (SVN)
+	* NginX (SSL, specific port and some customizations)
+	* PHP5-FPM (php5-apcu, FastCGI, SSL)
+	* SFTP with Chroot
+	* vsftpd (TLS)
+	* Postfix with SMTP authentication (Gmail, Free, Ovh and Yahoo)
 
 ## Services available
-* Fail2ban (optionnal but recommended)
-* Seedbox-Manager (optionnal but recommended)
-* OpenVPN (optionnal); Multi TUN and TAP configuration, with or without redirection of traffic.
-* Webmin (optionnal)
-* BlockList usage (optionnal) (PeerGuardian or rTorrent)
-* CakeBoxLight (optionnal)
-* PlexMedia Server (optionnal)
-* Samba share for each users (VPN access)
-* NFS share for each users (VPN access)
+
+	* Fail2ban (optionnal but recommended)
+	* Seedbox-Manager (optionnal but recommended)
+	* OpenVPN (optionnal); Multi TUN and TAP configuration, with or without redirection of traffic.
+	* Webmin (optionnal)
+	* BlockList usage (optionnal) (PeerGuardian or rTorrent)
+	* CakeBoxLight (optionnal)
+	* PlexMedia Server (optionnal)
+	* Samba share for each users (VPN access)
+	* NFS share for each users (VPN access)
 
 ## Additional ruTorrent plugins
 
-* Chat
-* Logoff
-* tAdd-Labels
-* Filemanager
-* Mediastream
-* Fileshare
-* NFO
-* RatioColor
-* Theme: Oblivion
-* FileUpload
-* Stream
-* Favicons trackers
+	* Chat
+	* Logoff
+	* tAdd-Labels
+	* Filemanager
+	* Mediastream
+	* Fileshare
+	* NFO
+	* RatioColor
+	* Theme: Oblivion
+	* FileUpload
+	* Stream
+	* Favicons trackers
 
 ## Before installation
 
@@ -176,8 +177,8 @@ https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-acc
 
 #### Debian 7 - x86_64 (Wheezy)
 
-  --> Tested on Online.net with "DEDIBOX® SC GEN2"
-  --> Tested on OpenVZ Container with ProxMox, work fine ! (read comment in top of this page)
+	--> Tested on Online.net with "DEDIBOX® SC GEN2"
+	--> Tested on OpenVZ Container with ProxMox, work fine ! (read comment in top of this page)
   
 #### Ubuntu or older Debian may worked, but not tested...
 
