@@ -50,7 +50,7 @@ if [ "$USAGE" == "ON" ]; then
 fi
 
 #### crontab
-log_daemon_msg "Delete cron for $seedUser"
+log_daemon_msg "Delete cron for $NEWUSER"
 crontab -l > /tmp/crontab.tmp
 sed -i '/'$NEWUSER'/d' /tmp/crontab.tmp
 crontab /tmp/crontab.tmp
@@ -58,13 +58,23 @@ rm /tmp/crontab.tmp
 StatusLSB
 
 #### FTP
-log_daemon_msg "Delete FTP access & share for $seedUser"
+log_daemon_msg "Delete FTP access & share for $NEWUSER"
 sed -i '/'$NEWUSER'/d' /etc/vsftpd.chroot_list
 umount /home/$NEWUSER/share
 StatusLSB
 
+#### NFS
+log_daemon_msg "Delete NFS access for $NEWUSER"
+sed -i '/'$NEWUSER'/d' /etc/exports
+StatusLSB
+
+#### Samba
+log_daemon_msg "Delete Samba access for $NEWUSER"
+smbpasswd -x $NEWUSER &> /dev/null
+StatusLSB
+
 #### NginX
-log_daemon_msg "Remove the access permission to the web server for $seedUser"
+log_daemon_msg "Remove the access permission to the web server for $NEWUSER"
 IP=$(cat /etc/MySB/users/$NEWUSER.info | grep "IP Address=" | awk '{ print $3 }')
 IFS=$','
 for ip in $USERIP; do 
@@ -74,13 +84,13 @@ unset IFS
 StatusLSB
 
 #### remove current password from htpassword
-log_daemon_msg "Delete Web server account for $seedUser"
+log_daemon_msg "Delete Web server account for $NEWUSER"
 sudo htpasswd -D /etc/nginx/passwd/MySB $NEWUSER
 sudo rm -f /etc/nginx/passwd/MySB_$NEWUSER
 StatusLSB
 
 #### remove files
-log_daemon_msg "Remove fils and init script for $seedUser"
+log_daemon_msg "Remove fils and init script for $NEWUSER"
 update-rc.d -f rtorrent-$NEWUSER.conf remove &> /dev/null
 if [ -f /etc/init.d/rtorrent-$NEWUSER.conf ]; then
 	sudo rm -f /etc/init.d/rtorrent-$NEWUSER.conf
