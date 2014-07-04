@@ -100,7 +100,6 @@ for Cert in ${LIST_CERTS}; do
 		TARGET=$(ls -la /etc/ssl/certs/$Cert | awk '{ print $11 }')
 
 		if [ ! -f $TARGET ];then
-			echo "KO"
 			rm /etc/ssl/certs/$Cert
 		fi
 		
