@@ -50,7 +50,6 @@ fi
 
 echo "frenchtorrentdb.com" > /etc/MySB/ssl/trackers/trackers.list
 echo "www2.frenchtorrentdb.com" >> /etc/MySB/ssl/trackers/trackers.list
-echo "share1underground.com" >> /etc/MySB/ssl/trackers/trackers.list
 
 ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
 for engine in ${ENGINES}; do
