@@ -179,13 +179,7 @@ fi
 echo -e -n "${CBLUE}Install and configure Postfix$CEND..."
 screen -dmS Postfix /bin/bash /etc/MySB/install/Postfix;
 WaitingScreen Postfix
-StatusSTD	
-
-#### MailX
-# echo -e -n "${CBLUE}Configure MailX$CEND..."
-# screen -dmS MailX /bin/bash /etc/MySB/install/MailX;
-# WaitingScreen MailX
-# StatusSTD	
+StatusSTD
 
 #### webmin
 if [ "$INSTALLWEBMIN" == "YES" ]; then
