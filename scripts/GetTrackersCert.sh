@@ -33,9 +33,10 @@ GetCertificate() {
 		openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
 		openssl x509 -in ./$TRACKER.der -inform DER -out ./$TRACKER.pem -outform PEM
 		if [ ! -e ./$TRACKER.pem ]; then
-			if [ ! -f /etc/ssl/certs/$TRACKER.pem ]; then
-				ln -s ./$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
+			if [ -f /etc/ssl/certs/$TRACKER.pem ]; then
+				rm /etc/ssl/certs/$TRACKER.pem
 			fi	
+			ln -s ./$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
 		fi
 		
 		rm ./$TRACKER.der
