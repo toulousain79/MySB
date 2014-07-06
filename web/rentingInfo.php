@@ -130,9 +130,8 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 			if ( (strtolower($payment_method) == 'paypal') && ($paypal_address == '') ) {
 				echo '<p class="FontInRed">Please, complete the Paypal address.</p>';
 			} else {
-				exec("sudo /bin/bash /etc/MySB/scripts/MakeRenting.sh '".$formula."' '".$tva."' '".$unit_price."' '".$payment_method."' '".$paypal_address."'", $output, $result);
-				
-				echo "sudo /bin/bash /etc/MySB/scripts/MakeRenting.sh '".$formula."' '".$tva."' '".$unit_price."' '".$payment_method."' '".$paypal_address."'";
+				exec("sudo /bin/bash /etc/MySB/scripts/MakeRenting.sh '".$_POST['formula']."' '".$_POST['tva']."' '".$_POST['unit_price']."' '".$_POST['payment_method']."' '".$_POST['paypal_address']."'", $output, $result);
+
 				foreach ($output as $item){
 					echo $item.'<br>';
 				}
