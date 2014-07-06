@@ -38,7 +38,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 		foreach($data as $index=>$line) {
 			$column = explode('=', $line, 2);
 			
-			if ( (isset($column[0])) && ((substr($column[0], 1, 1) != '#')) ) {
+			if ( (isset($column[0])) && (isset($column[1])) && ((substr($column[0], 1, 1) != '#')) ) {
 				switch ($column[0]) {
 					case 'FORMULA':
 						$formula = $column[1];
@@ -130,7 +130,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 			} else {
 				exec("sudo /bin/bash /etc/MySB/scripts/MakeRenting.sh '".$formula."' '".$tva."' '".$unit_price."' '".$payment_method."' '".$paypal_address."'", $output, $result);
 				
-				echo ".$formula."' '".$tva."' '".$unit_price."' '".$payment_method."' '".$paypal_address.".'<br>';
+				echo $formula.' '.$tva.' '.$unit_price.' '.$payment_method.' '.$paypal_address.'<br>';
 				foreach ($output as $item){
 					echo $item.'<br>';
 				}
