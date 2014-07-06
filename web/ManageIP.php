@@ -119,9 +119,11 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 		// }
 		
 		if ( ($current_list != '') && ($new_list != '') && ($confirm_list != '') ) {	
-			if ( (!empty($add_current_ip) && (strstr($confirm_list, $add_current_ip) == false) ) {
-				$new_list .= ','.$current_ip;
-				$confirm_list .= ','.$current_ip;
+			if ( !empty($add_current_ip) ) {
+				if ( strstr($confirm_list, $add_current_ip) == false ) {
+					$new_list .= ','.$current_ip;
+					$confirm_list .= ','.$current_ip;
+				}
 			}
 		
 			if ( $new_list == $confirm_list ) {			
