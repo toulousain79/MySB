@@ -121,14 +121,9 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 			}
 		
 			if ( $new_list == $confirm_list ) {
-				echo "sudo /usr/bin/perl -pi -e 's/" . $current_list . "/" . $confirm_list . "/g' " . $filename . "";
+				echo "sudo /bin/bash /etc/MySB/scripts/ManageIpList.sh '".$current_list."' '".$confirm_list."' '".$filename."'";
 			
-				if ( $current_list != $confirm_list ) {
-					exec("sudo /bin/bash /etc/MySB/scripts/ManageIpList.sh '".$current_list."' '".$confirm_list."' '".$filename."'" , $output, $result);
-				} else {
-					$result = 0;
-					$output = '';
-				}
+				exec("sudo /bin/bash /etc/MySB/scripts/ManageIpList.sh '".$current_list."' '".$confirm_list."' '".$filename."'", $output, $result);
 			
 				Form();
 				
