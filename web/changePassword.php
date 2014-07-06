@@ -55,15 +55,15 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 			<table border="0">	
 				<tr>
 					<td><span class="Title">Current password :</span></td>
-					<td><input name="current_pwd" type="password" ></td>
+					<td><input name="current_pwd" type="password" /></td>
 				</tr>
 				<tr>
 					<td><span class="Title">New password :</span></td>
-					<td><input name="new_pwd" type="password" ></td>
+					<td><input name="new_pwd" type="password" /></td>
 				</tr>
 				<tr>
 					<td><span class="Title">Confirm :</span></td>
-					<td><input name="confirm_pwd" type="password" ></td>
+					<td><input name="confirm_pwd" type="password" /></td>
 				</tr>
 				<tr>
 					<td colspan="2" align="center"><input name="submit" type="submit" value="Submit"></td>
@@ -72,22 +72,22 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 		</form>
 
 <?php
-	if (isset($_POST['submit'])) {
-		$current_pwd=$_POST['current_pwd'];
-		$new_pwd=$_POST['new_pwd'];
-		$confirm_pwd=$_POST['confirm_pwd'];
+	if ( isset($_POST['submit']) ) {
+		$current_pwd = $_POST['current_pwd'];
+		$new_pwd = $_POST['new_pwd'];
+		$confirm_pwd = $_POST['confirm_pwd'];
 		
-		if (($current_pwd!='')&&($new_pwd!='')&&($confirm_pwd!='')) {
-			if ($current_pwd==$_SERVER['PHP_AUTH_PW']){
-				if($new_pwd==$confirm_pwd){			
+		if ( ($current_pwd != '') && ($new_pwd != '') && ($confirm_pwd != '') ) {
+			if ( $current_pwd == $_SERVER['PHP_AUTH_PW'] ) {
+				if ( $new_pwd == $confirm_pwd ) {			
 					exec("sudo /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword '".$_SERVER['PHP_AUTH_USER']."' '".$new_pwd."' 'changePassword.php'", $output, $result);
 
-                    foreach ($output as $item){
+                    foreach ( $output as $item ) {
 						echo $item.'<br>';
 					}
 					
-					if( $result == 0 ){	
-						$_SERVER['PHP_AUTH_PW']=$new_pwd;
+					if ( $result == 0 ) {	
+						$_SERVER['PHP_AUTH_PW'] = $new_pwd;
 						echo '<p class="FontInGreen">Successfull !</p>';
 					}
 				} else {

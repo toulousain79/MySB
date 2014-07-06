@@ -23,29 +23,71 @@
 //#################### FIRST LINE #####################################
 
 if(isset($_SERVER['PHP_AUTH_USER'])){
+	$filename = "/etc/MySB/users/$SeedUser.info";
+	$SeedUser = $_SERVER['PHP_AUTH_USER'];
+	$current_ip = $_SERVER['REMOTE_ADDR'];
+	
 	function getScriptVersion() {
 		$data = file("/etc/MySB/infos/version.info");
 		return $data[0];
 	}
 
-	$SeedUser = $_SERVER['PHP_AUTH_USER'];
-	$dir = '/etc/MySB/users/';
+	function Form() {
+		global $filename, $SeedUser, $current_ip;
 	
-	foreach($data as $index=>$line) {
-
-		$column = explode('=', $line, 2);
+		$allip = '';
+		
+		if (file_exists($filename)) {
+			$data = file($filename);
 			
-		if (substr($column[0], 0, 11) == 'IP Address=') {
-			$allip = $column[1];
-		}
-	}	
+			foreach($data as $index=>$line) {
+				$column = explode('=', $line, 2);
+					
+				if (substr($column[0], 0, 11) == 'IP Address=') {
+					$allip = $column[1];
+				}
+			}	
+		}	
+	
+		echo '<form method="post" action="">
+			<table border="0">	
+				<tr>
+					<td><span class="Title">Actual IP list :</span></td>
+					<td><input name="current_list" type="text" value="' . $allip . '" /></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td><span class="Title">Your current IP address :</span></td>
+					<td><input name="current_ip" type="text" value="' . $current_ip . '" /></td>
+					<td><input name="add_current_ip" type="checkbox" value="1" checked="checked" /></td>
+					<td><span class="Comments"><em>Check this box for add this IP in your list.</em></span></td>
+				</tr>				
+				<tr>
+					<td><span class="Title">New wanted IP list :</span></td>
+					<td><input name="new_list" type="text" value="' . $allip . '" /></td>
+					<td></td>
+					<td><span class="Comments"><em>Add the appropriate IP separated by commas.</em></span></td>					
+				</tr>
+				<tr>
+					<td><span class="Title">Confirm the new list :</span></td>
+					<td><input name="confirm_list" type="text" value="' . $allip . '" /></td>
+					<td></td>
+					<td></td>						
+				</tr>
+				<tr>
+					<td colspan="4" align="center"><input name="submit" type="submit" value="Submit" /></td>
+				</tr>
+			</table>
+		</form>';
+	}
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
 		<meta charset="utf-8" />
-		<title>MySB <?php echo getScriptVersion() .' - Add IP'; ?></title>
+		<title>MySB <?php echo getScriptVersion() .' - Manage IP list'; ?></title>
 		<!-- non indexation moteur de recherche -->
 		<meta name="robots" content="noindex, nofollow">
 		<meta name="robots" content="noarchive">
@@ -54,54 +96,48 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 			.Global {font-family: Verdana, Arial, Helvetica, sans-serif; text-align: center;}
 			.FontInRed {color: #FF0000}
 			.FontInGreen {color: #00CC33}
+			.Comments {font-size: 11px;}
 			.Title {color: #0000FF;}
         </style>			
 </head>
 
 <body class="Global">
-	<h1>Hello <?php echo $_SERVER['PHP_AUTH_USER']; ?> !</h1>		
+	<h1>Hello <?php echo $SeedUser; ?> !</h1>		
 
 		<div align="center">
-		<form method="post" action="">
-			<table border="0">	
-				<tr>
-					<td><span class="Title">Actual IP list :</span></td>
-					<td><input name="current_list" type="text" value="<?php echo $allip; ?>" /></td>
-				</tr>
-				<tr>
-					<td><span class="Title">New wanted IP list :</span></td>
-					<td><input name="new_list" type="text" /></td>
-				</tr>
-				<tr>
-					<td><span class="Title">Confirm the new list :</span></td>
-					<td><input name="confirm_list" type="text" /></td>
-				</tr>
-				<tr>
-					<td colspan="2" align="center"><input name="submit" type="submit" value="Submit" /></td>
-				</tr>
-			</table>
-		</form>
 <?php
-	if (isset($_POST['submit'])) {
-		$current_list=$_POST['current_list'];
-		$new_list=$_POST['new_list'];
-		$confirm_list=$_POST['confirm_list'];
+	Form();
+
+	if ( isset($_POST['submit']) ) {
+		$current_list = $_POST['current_list'];
+		$new_list = $_POST['new_list'];
+		$confirm_list = $_POST['confirm_list'];
+		$add_current_ip = $_POST['add_current_ip'];
 		
-		if (($current_list!='')&&($new_list!='')&&($confirm_list!='')) {
-			if ($current_list==$_SERVER['PHP_AUTH_PW']){
-				if($new_list==$confirm_list){			
-					//exec("sudo /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword '".$_SERVER['PHP_AUTH_USER']."' '".$new_list."' 'changePassword.php'", $output, $result);
-
-                    foreach ($output as $item){
-						echo $item.'<br>';
-					}
-					
-
-				} else {
-					echo '<p class="FontInRed">Error between the new typed password and verification.</p>';
+		if ( ($current_list != '') && ($new_list != '') && ($confirm_list != '') ) {
+			if ( $add_current_ip == '1' ) {
+				$new_list .= ','.$current_ip;
+				$confirm_list .= ','.$current_ip;
+			}
+		
+			if ( $current_list == $confirm_list ) {
+			$filename
+				exec("sudo /usr/bin/perl -pi -e 's/" . $current_list . "/" . $confirm_list . "/g' " . $filename . "", $output, $result);
+			
+				Form();
+				
+				foreach ($output as $item){
+					echo $item.'<br>';
 				}
+					
+				if( $result == 0 ){						
+					echo '<p class="FontInGreen">Successfull !</p>';
+				} else {
+					echo '<p class="FontInRed">Failed !</p>';
+				}
+				
 			} else {
-				echo '<p class="FontInRed">The current password is not valid.</p>';
+				echo '<p class="FontInRed">Error between the new typed IP list and verification.</p>';
 			}
 		} else {
 			echo '<p class="FontInRed">Please, complete all fields</p>';
