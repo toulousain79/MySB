@@ -119,7 +119,13 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 		</form>
 
 <?php
-	if (isset($_POST['submit'])) {		
+	if (isset($_POST['submit'])) {	
+		$formula=$_POST['formula'];
+		$tva=$_POST['tva'];
+		$unit_price=$_POST['unit_price'];
+		$payment_method=$_POST['payment_method'];
+		$paypal_address=$_POST['paypal_address'];	
+	
 		if ( ($formula != '') && ($tva != '') && ($unit_price != '') && ($payment_method != '') ) {
 			if ( (strtolower($payment_method) == 'paypal') && ($paypal_address == '') ) {
 				echo '<p class="FontInRed">Please, complete the Paypal address.</p>';
