@@ -38,25 +38,27 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 			
 			foreach($data as $index=>$line) {
 				$column = explode('=', $line, 2);
-				//$column[1] = str_replace('"', '', $column[1]);
+				$Var = $column[0];
+				$Value = $column[1];
+				$Value = str_replace('"', '', $Value);
 				
-				if ( (isset($column[0])) && (isset(str_replace('"', '', $column[1]))) && ((substr($column[0], 0, 1) != '#')) ) {
+				if ( (isset($Var)) && (isset($Value)) && ((substr($Var, 0, 1) != '#')) ) {
 		
-					switch ($column[0]) {
+					switch ($Var) {
 						case 'FORMULA':
-							$formula = str_replace('"', '', $column[1]);
+							$formula = $Value;
 							break;
 						case 'PAYMENT_METHOD':
-							$payment_method = str_replace('"', '', $column[1]);
+							$payment_method = $Value;
 							break;
 						case 'TVA':
-							$tva = str_replace('"', '', $column[1]);
+							$tva = $Value;
 							break;
 						case 'PU':
-							$unit_price = str_replace('"', '', $column[1]);
+							$unit_price = $Value;
 							break;
 						case 'PAYPAL':
-							$paypal_address = str_replace('"', '', $column[1]);
+							$paypal_address = $Value;
 							break;						
 					}
 				}
