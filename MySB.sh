@@ -249,7 +249,7 @@ echo -e "${CGREEN}			MySB_UpgradeMe$CEND (if new versions)"
 echo
 echo
 echo -e "${CBLUE}You can check all informations for use your SeedBox here:$CEND"
-echo -e "	-->	${CYELLOW}https://$HOSTFQDN:$NGINXHTTPSPORT/MySB/seedboxInfo.php$CEND"
+echo -e "	-->	${CYELLOW}https://$HOSTFQDN:$NGINXHTTPSPORT/MySB/SeedboxInfo.php$CEND"
 
 #GetString NO  "Are you ready for reboot now? " REBOOT YES
 echo ""

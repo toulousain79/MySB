@@ -48,7 +48,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 			if (isset($column[0])) {
 				switch ($column[0]) {
 					case 'Password':
-						$comments = '<a target="_blank" href="https://' .$_SERVER['HTTP_HOST'].'/MySB/changePassword.php">Please promptly change your password HERE!</a>';
+						$comments = '<a target="_blank" href="https://' .$_SERVER['HTTP_HOST'].'/MySB/ChangePassword.php">Please promptly change your password HERE!</a>';
 						$opts = 'bgcolor="#FF6666"';
 						break;
 					case 'RPC':

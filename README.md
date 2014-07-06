@@ -114,7 +114,7 @@ After installing you will have access to the following commands to be used direc
 
 To access services installed on your new server, point your browser to the following address:
 ```
-https://<Server IP or Server Name>:<https NginX port>/MySB/seedboxInfo.php
+https://<Server IP or Server Name>:<https NginX port>/MySB/SeedboxInfo.php
 ```
 
 ## Seedbox-Manager

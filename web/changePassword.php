@@ -80,7 +80,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 		if ( ($current_pwd != '') && ($new_pwd != '') && ($confirm_pwd != '') ) {
 			if ( $current_pwd == $_SERVER['PHP_AUTH_PW'] ) {
 				if ( $new_pwd == $confirm_pwd ) {			
-					exec("sudo /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword '".$_SERVER['PHP_AUTH_USER']."' '".$new_pwd."' 'changePassword.php'", $output, $result);
+					exec("sudo /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword '".$_SERVER['PHP_AUTH_USER']."' '".$new_pwd."' 'ChangePassword.php'", $output, $result);
 
                     foreach ( $output as $item ) {
 						echo $item.'<br>';
