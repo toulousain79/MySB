@@ -112,7 +112,11 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 		$current_list = trim($_POST['current_list'], " \t\n\r\0\x0B");
 		$new_list = trim($_POST['new_list'], " \t\n\r\0\x0B");
 		$confirm_list = trim($_POST['confirm_list'], " \t\n\r\0\x0B");
-		$add_current_ip = trim($_POST['add_current_ip'], " \t\n\r\0\x0B");
+		if ( !empty($add_current_ip) ) {
+			$add_current_ip = $_POST['add_current_ip'];
+		} else {
+			$add_current_ip = '0';
+		}
 		
 		if ( ($current_list != '') && ($new_list != '') && ($confirm_list != '') ) {	
 			if ( ($add_current_ip == '1') && (strstr($confirm_list, $add_current_ip) == false) ) {

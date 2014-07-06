@@ -34,7 +34,7 @@ FILENAME="$3"
 
 perl -pi -e 's/'$CURRENT_LIST'/'$NEW_LIST'/g' $FILENAME
 
-ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.sh' 'new'
+ScriptInvoke 'bash' '/etc/MySB/scripts/FirewallAndSecurity.sh' 'new'
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
