@@ -114,8 +114,6 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 		$confirm_list = trim($_POST['confirm_list'], " \t\n\r\0\x0B");
 		$add_current_ip = trim($_POST['add_current_ip'], " \t\n\r\0\x0B");
 		
-		Form();
-		
 		if ( ($current_list != '') && ($new_list != '') && ($confirm_list != '') ) {	
 			if ( ($add_current_ip == '1') && (strstr($confirm_list, $add_current_ip) == false) ) {
 				$new_list .= ','.$current_ip;
@@ -126,6 +124,8 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 				echo "sudo /bin/bash /etc/MySB/scripts/ManageIpList.sh '".$current_list."' '".$confirm_list."' '".$filename."'";
 			
 				exec("sudo /bin/bash /etc/MySB/scripts/ManageIpList.sh '".$current_list."' '".$confirm_list."' '".$filename."'", $output, $result);
+				
+				Form();
 				
 				foreach ($output as $item){
 					echo $item.'<br>';
@@ -138,9 +138,13 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 				}
 				
 			} else {
+				Form();
+			
 				echo '<p class="FontInRed">Error between the new typed IP list and verification.</p>';
 			}
 		} else {
+			Form();
+		
 			echo '<p class="FontInRed">Please, complete all fields</p>';
 		}
 	} else {

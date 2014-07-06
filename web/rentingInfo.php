@@ -138,14 +138,14 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 		$payment_method=$_POST['payment_method'];
 		$paypal_address=$_POST['paypal_address'];	
 	
-		Form();
-	
 		if ( ($formula != '') && ($tva != '') && ($unit_price != '') && ($payment_method != '') ) {
 			if ( (strtolower($payment_method) == 'paypal') && ($paypal_address == '') ) {
 				echo '<p class="FontInRed">Please, complete the Paypal address.</p>';
 			} else {
 				exec("sudo /bin/bash /etc/MySB/scripts/MakeRenting.sh '".$_POST['formula']."' '".$_POST['tva']."' '".$_POST['unit_price']."' '".$_POST['payment_method']."' '".$_POST['paypal_address']."'", $output, $result);
 				
+				Form();
+			
 				foreach ($output as $item){
 					echo $item.'<br>';
 				}
@@ -157,6 +157,8 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 				}
 			}
 		} else {
+			Form();
+		
 			echo '<p class="FontInRed">Please, complete all fields.</p>';
 		}
 	} else {
