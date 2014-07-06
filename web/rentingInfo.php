@@ -126,6 +126,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 			} else {
 				exec("sudo /bin/bash /etc/MySB/scripts/MakeRenting.sh '".$_POST['formula']."' '".$_POST['tva']."' '".$_POST['unit_price']."' '".$_POST['payment_method']."' '".$_POST['paypal_address']."'", $output, $result);
 
+				echo "sudo /bin/bash /etc/MySB/scripts/MakeRenting.sh '".$_POST['formula']."' '".$_POST['tva']."' '".$_POST['unit_price']."' '".$_POST['payment_method']."' '".$_POST['paypal_address']."'";
 				foreach ($output as $item){
 					echo $item.'<br>';
 				}

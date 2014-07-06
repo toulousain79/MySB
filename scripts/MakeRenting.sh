@@ -26,27 +26,27 @@ source /etc/MySB/inc/includes_before
 
 cp /etc/MySB/templates/renting.template /etc/MySB/inc/renting
 
-if [ -z $1 ]; then
+if [ "$1" == "" ]; then
 	FORMULA=""
 else
 	FORMULA=$1
 fi
-if [ -z $2 ]; then
+if [ "$2" == "" ]; then
 	TVA=""
 else
 	TVA=$2
 fi
-if [ -z $3 ]; then
+if [ "$3" == "" ]; then
 	PU=""
 else
 	PU=$3
 fi
-if [ -z $4 ]; then
+if [ "$4" == "" ]; then
 	PAYMENT_METHOD=""
 else
 	PAYMENT_METHOD=$4
 fi
-if [ -z $5 ]; then
+if [ "$5" == "" ]; then
 	PAYPAL=""
 else
 	PAYPAL=$5
