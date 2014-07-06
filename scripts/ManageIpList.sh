@@ -32,11 +32,7 @@ CURRENT_LIST="$1"
 NEW_LIST="$2"
 FILENAME="$3"
 
-echo $CURRENT_LIST
-echo $NEW_LIST
-echo $FILENAME
-
-perl -pi -e 's/$CURRENT_LIST/$NEW_LIST/g' $FILENAME
+perl -pi -e 's/'$CURRENT_LIST'/'$NEW_LIST'/g' $FILENAME
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
