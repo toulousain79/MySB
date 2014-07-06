@@ -121,6 +121,8 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 			}
 		
 			if ( $new_list == $confirm_list ) {
+				echo "sudo /usr/bin/perl -pi -e 's/" . $current_list . "/" . $confirm_list . "/g' " . $filename . "";
+			
 				exec("sudo /usr/bin/perl -pi -e 's/" . $current_list . "/" . $confirm_list . "/g' " . $filename . "", $output, $result);
 			
 				Form();
