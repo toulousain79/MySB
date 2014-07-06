@@ -119,7 +119,7 @@ StatusLSB
 #### seedbox-manager-access
 log_daemon_msg "HTML Convert of seedbox-manager-access.log"
 if [ -e /var/log/nginx/seedbox-manager-access.log.1 ]; then
-	cat /var/log/nginx/seedbox-manager-access.log.1/var/log/nginx/seedbox-manager-access.log > /tmp/seedbox-manager-access.log
+	cat /var/log/nginx/seedbox-manager-access.log.1 /var/log/nginx/seedbox-manager-access.log > /tmp/seedbox-manager-access.log
 else
 	if [ -e /var/log/nginx/seedbox-manager-access.log ]; then
 		cp /var/log/nginx/seedbox-manager-access.log /tmp/seedbox-manager-access.log
