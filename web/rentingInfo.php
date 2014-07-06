@@ -30,36 +30,72 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 		return $data[0];
 	}
 
-	$filename = '/etc/MySB/inc/renting';
+	function Form() {
+		$filename = '/etc/MySB/inc/renting';
 
-	if (file_exists($filename)) {
-		$data = file($filename);
-		
-		foreach($data as $index=>$line) {
-			$column = explode('=', $line, 2);
-			$column[1] = str_replace('"', '', $column[1]);
+		if (file_exists($filename)) {
+			$data = file($filename);
 			
-			if ( (isset($column[0])) && (isset($column[1])) && ((substr($column[0], 0, 1) != '#')) ) {
-	
-				switch ($column[0]) {
-					case 'FORMULA':
-						$formula = $column[1];
-						break;
-					case 'PAYMENT_METHOD':
-						$payment_method = $column[1];
-						break;
-					case 'TVA':
-						$tva = $column[1];
-						break;
-					case 'PU':
-						$unit_price = $column[1];
-						break;
-					case 'PAYPAL':
-						$paypal_address = $column[1];
-						break;						
+			foreach($data as $index=>$line) {
+				$column = explode('=', $line, 2);
+				$column[1] = str_replace('"', '', $column[1]);
+				
+				if ( (isset($column[0])) && (isset($column[1])) && ((substr($column[0], 0, 1) != '#')) ) {
+		
+					switch ($column[0]) {
+						case 'FORMULA':
+							$formula = $column[1];
+							break;
+						case 'PAYMENT_METHOD':
+							$payment_method = $column[1];
+							break;
+						case 'TVA':
+							$tva = $column[1];
+							break;
+						case 'PU':
+							$unit_price = $column[1];
+							break;
+						case 'PAYPAL':
+							$paypal_address = $column[1];
+							break;						
+					}
 				}
 			}
-		}
+		}	
+	
+		echo '<form method="post" action="">
+			<table border="0">	
+				<tr>
+					<td><span class="Title">Formula :</span></td>
+					<td><input name="formula" type="text" value="' . $formula . '" ></td>
+					<td><span class="Comments"><em>Example:	Serveur Dedibox XC</em></span></td>
+				</tr>
+				<tr>
+					<td><span class="Title">TVA (%)  :</span></td>
+					<td><input name="tva" type="text" value="' . $tva . '" ></td>
+					<td><span class="Comments"><em>Example:	20</em></span></td>
+				</tr>
+				<tr>
+					<td><span class="Title">Unit price (per month)   :</span></td>
+					<td><input name="unit_price" type="text" value="' . $unit_price . '" ></td>
+					<td><span class="Comments"><em>Example:	19.99 (value without tax)</em></span></td>
+				</tr>
+				<tr>
+					<td><span class="Title">Payment method  :</span></td>
+					<td><input name="payment_method" type="text" value="' . $payment_method . '" ></td>
+					<td><span class="Comments"><em>Example:	Paypal</em></span></td>
+				</tr>								
+				<tr>
+					<td><span class="Title">Paypal address  :</span></td>
+					<td><input name="paypal_address" type="text" value="' . $paypal_address . '" ></td>
+					<td><span class="Comments"><em>Your Paypal address to receive payments.</em></span></td>
+				</tr>
+				<tr>
+					<td colspan="3" align="center"><input name="submit" type="submit" value="Submit"></td>
+				</tr>						
+			</table>
+		</form>';
+	
 	}
 ?>
 
@@ -105,56 +141,17 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 					echo $item.'<br>';
 				}
 					
-				if( $result == 0 ){	
-					$formula = $_POST['formula'];
-					$tva = $_POST['tva'];
-					$unit_price = $_POST['unit_price'];
-					$payment_method = $_POST['payment_method'];
-					$paypal_address = $_POST['paypal_address'];				
-					
+				if( $result == 0 ){						
 					echo '<p class="FontInGreen">Successfull !</p>';
+					
+					Form();
 				}				
 			}
 		} else {
 			echo '<p class="FontInRed">Please, complete all fields.</p>';
 		}
 	} else {
-?>
-
-		<form method="post" action="">
-			<table border="0">	
-				<tr>
-					<td><span class="Title">Formula :</span></td>
-					<td><input name="formula" type="text" value="<?php echo $formula; ?>" ></td>
-					<td><span class="Comments"><em>Example:	Serveur Dedibox XC</em></span></td>
-				</tr>
-				<tr>
-					<td><span class="Title">TVA (%)  :</span></td>
-					<td><input name="tva" type="text" value="<?php echo $tva; ?>" ></td>
-					<td><span class="Comments"><em>Example:	20</em></span></td>
-				</tr>
-				<tr>
-					<td><span class="Title">Unit price (per month)   :</span></td>
-					<td><input name="unit_price" type="text" value="<?php echo $unit_price; ?>" ></td>
-					<td><span class="Comments"><em>Example:	19.99 (value without tax)</em></span></td>
-				</tr>
-				<tr>
-					<td><span class="Title">Payment method  :</span></td>
-					<td><input name="payment_method" type="text" value="<?php echo $payment_method; ?>" ></td>
-					<td><span class="Comments"><em>Example:	Paypal</em></span></td>
-				</tr>								
-				<tr>
-					<td><span class="Title">Paypal address  :</span></td>
-					<td><input name="paypal_address" type="text" value="<?php echo $paypal_address; ?>" ></td>
-					<td><span class="Comments"><em>Your Paypal address to receive payments.</em></span></td>
-				</tr>
-				<tr>
-					<td colspan="3" align="center"><input name="submit" type="submit" value="Submit"></td>
-				</tr>						
-			</table>
-		</form>
-
-<?php	
+		Form();
 	}
 ?>
 		</div>		
