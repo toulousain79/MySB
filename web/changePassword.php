@@ -22,12 +22,12 @@
 //
 //#################### FIRST LINE #####################################
 
-function getScriptVersion() {
-	$data = file("/etc/MySB/infos/version.info");
-	return $data[0];
-}
-
 if(isset($_SERVER['PHP_AUTH_USER'])){
+
+	function getScriptVersion() {
+		$data = file("/etc/MySB/infos/version.info");
+		return $data[0];
+	}
 ?>
 
 <!DOCTYPE html>

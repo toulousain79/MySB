@@ -138,16 +138,17 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 			} else {
 				exec("sudo /bin/bash /etc/MySB/scripts/MakeRenting.sh '".$_POST['formula']."' '".$_POST['tva']."' '".$_POST['unit_price']."' '".$_POST['payment_method']."' '".$_POST['paypal_address']."'", $output, $result);
 
-				echo "sudo /bin/bash /etc/MySB/scripts/MakeRenting.sh '".$_POST['formula']."' '".$_POST['tva']."' '".$_POST['unit_price']."' '".$_POST['payment_method']."' '".$_POST['paypal_address']."'";
+				Form();
+				
 				foreach ($output as $item){
 					echo $item.'<br>';
 				}
 					
 				if( $result == 0 ){						
 					echo '<p class="FontInGreen">Successfull !</p>';
-					
-					Form();
-				}				
+				} else {
+					echo '<p class="FontInRed">Failed !</p>';
+				}
 			}
 		} else {
 			echo '<p class="FontInRed">Please, complete all fields.</p>';
