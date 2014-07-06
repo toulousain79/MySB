@@ -32,11 +32,11 @@ GetCertificate() {
 	if [ -s ./$TRACKER.crt ]; then
 		openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
 		openssl x509 -in ./$TRACKER.der -inform DER -out ./$TRACKER.pem -outform PEM
-		if [ ! -e ./$TRACKER.pem ]; then
+		if [ -e ./$TRACKER.pem ]; then
 			if [ -f /etc/ssl/certs/$TRACKER.pem ]; then
 				rm /etc/ssl/certs/$TRACKER.pem
 			fi	
-			ln -s ./$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
+			ln -s /etc/MySB/ssl/trackers/$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
 		fi
 		
 		rm ./$TRACKER.der
