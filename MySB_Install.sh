@@ -1,6 +1,6 @@
 #!/bin/bash 
 # -----------------------------------------
-MYSBCURRENTVERSION=v1.0
+MYSBCURRENTVERSION=v1.1
 # -----------------------------------------
 if [ -f /etc/MySB/inc/includes_before ]; then source /etc/MySB/inc/includes_before; fi
 # -----------------------------------------
@@ -56,12 +56,9 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 #### Must be Debian 7 (Wheezy) x86_64
-if [ `cut -c -1 /etc/debian_version` -ne "7" ]; then
-		echo -e "${CRED}MySB script is designed only for Debian 7 (Wheezy) x86_64, aborting !$CEND"
-		exit 1
-elif [ `getconf LONG_BIT` = "32" ]; then
-		echo -e "${CRED}A valid Internet connection is required, aborting !$CEND"
-		exit 1
+if [ `cut -c -1 /etc/debian_version` -ne "7" ] || [ `getconf LONG_BIT` = "32" ]; then
+	echo -e "${CRED}MySB script is designed only for Debian 7 (Wheezy) x86_64, aborting !$CEND"
+	exit 1
 fi
 
 #### Test Internet
@@ -74,6 +71,8 @@ fi
 if [ "`screen -ls | grep MySB 2>/dev/null`" == "" ]; then
 	if [ -f /etc/MySB/infos/version.info ]; then # Upgrade ?
 		echo -e -n "${CRED}MySB is already installed, aborting!$CEND"
+		echo -e -n "${CBLUE}To upgrade MySB, thank you use the following command.'$CEND"
+		echo -e -n "${CGREEN}	MySB_UpgradeMe <version>'$CEND"
 		exit 0
 	else # Install ?
 		#### Banner
