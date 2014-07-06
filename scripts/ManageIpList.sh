@@ -24,43 +24,15 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-cp /etc/MySB/templates/renting.template /etc/MySB/inc/renting
+CURRENT_LIST="$1"
+NEW_LIST="$2"
+FILENAME="$3"
 
-if [ "$1" == "" ]; then
-	FORMULA=""
-else
-	FORMULA=$1
-fi
-if [ "$2" == "" ]; then
-	TVA=""
-else
-	TVA=$2
-	TVA=`echo $TVA | sed s/%//g`
-fi
-if [ "$3" == "" ]; then
-	PU=""
-else
-	PU=$3
-fi
-if [ "$4" == "" ]; then
-	PAYMENT_METHOD=""
-else
-	PAYMENT_METHOD=$4
-fi
-if [ "$5" == "" ]; then
-	PAYPAL=""
-else
-	PAYPAL=$5
-	PAYPAL=`echo $PAYPAL | sed s/\@/\\\\\\\@/g`
+if [ -z $CURRENT_LIST ] || [ -z $NEW_LIST ] || [ -z $FILENAME ]; then
+	exit
 fi
 
-
-
-perl -pi -e "s/<formula>/$FORMULA/g" /etc/MySB/inc/renting
-perl -pi -e "s/<tva>/$TVA/g" /etc/MySB/inc/renting
-perl -pi -e "s/<unit_price>/$PU/g" /etc/MySB/inc/renting
-perl -pi -e "s/<payment_method>/$PAYMENT_METHOD/g" /etc/MySB/inc/renting
-perl -pi -e "s/<paypal_address>/$PAYPAL/g" /etc/MySB/inc/renting	
+perl -pi -e 's/$CURRENT_LIST/$NEW_LIST/g' $FILENAME
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after

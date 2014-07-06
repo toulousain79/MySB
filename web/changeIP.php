@@ -124,7 +124,7 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 				echo "sudo /usr/bin/perl -pi -e 's/" . $current_list . "/" . $confirm_list . "/g' " . $filename . "";
 			
 				if ( $current_list != $confirm_list ) {
-					exec("sudo /usr/bin/perl -pi -e 's/" . $current_list . "/" . $confirm_list . "/g' " . $filename . "", $output, $result);
+					exec("sudo /bin/bash /etc/MySB/scripts/ManageIpList.sh '".$current_list."' '".$confirm_list."' '".$filename."'" , $output, $result);
 				} else {
 					$result = 0;
 					$output = '';
