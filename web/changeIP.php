@@ -115,7 +115,7 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 		$add_current_ip = trim($_POST['add_current_ip'], " \t\n\r\0\x0B");
 		
 		if ( ($current_list != '') && ($new_list != '') && ($confirm_list != '') ) {	
-			if ( ($add_current_ip == '1') && (strstr($confirm_list, $add_current_ip) != false) ) {
+			if ( ($add_current_ip == '1') && (strstr($confirm_list, $add_current_ip) == false) ) {
 				$new_list .= ','.$current_ip;
 				$confirm_list .= ','.$current_ip;
 			}
@@ -123,7 +123,12 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 			if ( $new_list == $confirm_list ) {
 				echo "sudo /usr/bin/perl -pi -e 's/" . $current_list . "/" . $confirm_list . "/g' " . $filename . "";
 			
-				exec("sudo /usr/bin/perl -pi -e 's/" . $current_list . "/" . $confirm_list . "/g' " . $filename . "", $output, $result);
+				if ( $current_list != $confirm_list ) {
+					exec("sudo /usr/bin/perl -pi -e 's/" . $current_list . "/" . $confirm_list . "/g' " . $filename . "", $output, $result);
+				} else {
+					$result = 0;
+					$output = '';
+				}
 			
 				Form();
 				
