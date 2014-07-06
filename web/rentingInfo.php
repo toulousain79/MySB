@@ -31,17 +31,16 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 	}
 
 	$filename = '/etc/MySB/inc/renting';
-	$blank = true;
 
 	if (file_exists($filename)) {
 		$data = file($filename);
 		
 		foreach($data as $index=>$line) {
 			$column = explode('=', $line, 2);
+			$column[1] = str_replace('"', '', $column[1]);
 			
-			if ( (isset($column[0])) && (isset($column[1])) && ((substr($column[0], 1, 1) != '#')) ) {
-				$blank = false;
-			
+			if ( (isset($column[0])) && (isset($column[1])) && ((substr($column[0], 0, 1) != '#')) ) {
+	
 				switch ($column[0]) {
 					case 'FORMULA':
 						$formula = $column[1];
@@ -61,14 +60,6 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 				}
 			}
 		}
-	} 
-
-	if ( $blank == true ) {
-		$formula="Serveur Dedibox XC";
-		$tva="20";
-		$unit_price="19.99";
-		$payment_method="Paypal";
-		$paypal_address="";
 	}
 ?>
 
@@ -85,6 +76,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 			.Global {font-family: Verdana, Arial, Helvetica, sans-serif; text-align: center;}
 			.FontInRed {color: #FF0000}
 			.FontInGreen {color: #00CC33}
+			.Comments {font-size: 11px;}
 			.Title {color: #0000FF;}
         </style>			
 </head>
@@ -98,22 +90,27 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 				<tr>
 					<td><span class="Title">Formula :</span></td>
 					<td><input name="formula" type="text" value="<?php echo $formula; ?>" ></td>
+					<td><span class="Comments"><em>Serveur Dedibox XC</em></span></td>
 				</tr>
 				<tr>
 					<td><span class="Title">TVA (%)  :</span></td>
 					<td><input name="tva" type="text" value="<?php echo $tva; ?>" ></td>
+					<td><span class="Comments"><em>20</em></span></td>
 				</tr>
 				<tr>
 					<td><span class="Title">Unit price (per month)   :</span></td>
 					<td><input name="unit_price" type="text" value="<?php echo $unit_price; ?>" ></td>
+					<td><span class="Comments"><em>19.99 (value without tax)</em></span></td>
 				</tr>
 				<tr>
 					<td><span class="Title">Payment method  :</span></td>
 					<td><input name="payment_method" type="text" value="<?php echo $payment_method; ?>" ></td>
+					<td><span class="Comments"><em>Paypal</em></span></td>
 				</tr>								
 				<tr>
 					<td><span class="Title">Paypal address  :</span></td>
 					<td><input name="paypal_address" type="text" value="<?php echo $paypal_address; ?>" ></td>
+					<td><span class="Comments"><em>Your Paypal address to receive payments.</em></span></td>
 				</tr>
 				<tr>
 					<td colspan="2" align="center"><input name="submit" type="submit" value="Submit"></td>
@@ -147,8 +144,6 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 		} else {
 			echo '<p class="FontInRed">Please, complete all fields.</p>';
 		}
-	} else {
-		echo '<p class="FontInRed">Error occured!</p>';
 	}
 ?>
 		</div>		
