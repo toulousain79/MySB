@@ -43,11 +43,9 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 			foreach($data as $index=>$line) {
 				$column = explode('=', $line, 2);
 				
-				if ( (isset($column[0])) && (isset($column[1])) ) {	
-echo $column[0].' '.$column[1].'<br>';				
-				
+				if ( (isset($column[0])) && (isset($column[1])) ) {		
 					if (substr($column[0], 0, 11) == 'IP Address=') {
-						$allip = $column[1];
+						$allip = trim($column[1], " \t\n\r\0\x0B");
 					}
 				}
 			}	
@@ -113,10 +111,10 @@ echo $column[0].' '.$column[1].'<br>';
 	Form();
 
 	if ( isset($_POST['submit']) ) {
-		$current_list = $_POST['current_list'];
-		$new_list = $_POST['new_list'];
-		$confirm_list = $_POST['confirm_list'];
-		$add_current_ip = $_POST['add_current_ip'];
+		$current_list = trim($_POST['current_list'], " \t\n\r\0\x0B");
+		$new_list = trim($_POST['new_list'], " \t\n\r\0\x0B");
+		$confirm_list = trim($_POST['confirm_list'], " \t\n\r\0\x0B");
+		$add_current_ip = trim($_POST['add_current_ip'], " \t\n\r\0\x0B");
 		
 		if ( ($current_list != '') && ($new_list != '') && ($confirm_list != '') ) {	
 			if ( ($add_current_ip == '1') && (strstr($confirm_list, $add_current_ip) != false) ) {
