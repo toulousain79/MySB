@@ -228,3 +228,4 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 * Make some thing for users with dynamic ip for update whitelist in PeerGuardian and Fail2ban.
 * Gmail SMTP https://www.google.com/accounts/DisplayUnlockCaptcha
 * Maybe add OwnCloud possiblity
+* Maybe use of SQLight

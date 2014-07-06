@@ -31,20 +31,18 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 		$SeedUser = $_SERVER['PHP_AUTH_USER'];
 	}
 
-	$dir = '/etc/MySB/users/';
-
 	function getScriptVersion() {
 		$data = file("/etc/MySB/infos/version.info");
 		return $data[0];
 	}
 
-	function printUser($dir,$user) {
+	function printUser($user) {
 		echo '<table width="100%" border="0" align="left">';
 		echo '<tr align="left"><th colspan="3" scope="row"><h1>' . $user . '</h1></th></tr>';
 		
-		$OV_first_line = '';
+	//	$OV_first_line = '';
 		
-		$data = file($dir."$user.info");
+		$data = file("/etc/MySB/users/$user.info");
 		foreach($data as $index=>$line) {
 
 			$column = explode('=', $line, 2);

@@ -29,18 +29,48 @@ function getScriptVersion() {
 
 if(isset($_SERVER['PHP_AUTH_USER'])){
 
-	$formula="Serveur Dedibox XC";
-	$tva="20";
-	$unit_price="19.99";
-	$payment_method="Paypal";
-	$paypal_address="";
+	$filename = '/etc/MySB/inc/renting';
+
+	if (file_exists($filename)) {
+		$data = file($filename);
+		
+		foreach($data as $index=>$line) {
+			$column = explode('=', $line, 2);
+			
+			if ( (isset($column[0])) && ((substr($column[0], 1, 1) != '#')) ) {
+				switch ($column[0]) {
+					case 'FORMULA':
+						$formula = $column[1];
+						break;
+					case 'PAYMENT_METHOD':
+						$payment_method = $column[1];
+						break;
+					case 'TVA':
+						$tva = $column[1];
+						break;
+					case 'PU':
+						$unit_price = $column[1];
+						break;
+					case 'PAYPAL':
+						$paypal_address = $column[1];
+						break;						
+				}
+			}
+		}
+	} else {
+		$formula="Serveur Dedibox XC";
+		$tva="20";
+		$unit_price="19.99";
+		$payment_method="Paypal";
+		$paypal_address="";
+	}
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
 		<meta charset="utf-8" />
-		<title>MySB <?php echo getScriptVersion() .' - Password'; ?></title>
+		<title>MySB <?php echo getScriptVersion() .' - Renting'; ?></title>
 		<!-- non indexation moteur de recherche -->
 		<meta name="robots" content="noindex, nofollow">
 		<meta name="robots" content="noarchive">
@@ -61,23 +91,23 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 			<table border="0">	
 				<tr>
 					<td><span class="Title">Formula :</span></td>
-					<td><input name="formula" type="text" value="Serveur Dedibox XC" ></td>
+					<td><input name="formula" type="text" value="<?php echo $formula; ?>" ></td>
 				</tr>
 				<tr>
 					<td><span class="Title">TVA (%)  :</span></td>
-					<td><input name="tva" type="text" value="20" ></td>
+					<td><input name="tva" type="text" value="<?php echo $tva; ?>" ></td>
 				</tr>
 				<tr>
 					<td><span class="Title">Unit price (per month)   :</span></td>
-					<td><input name="unit_price" type="text" value="19.99" ></td>
+					<td><input name="unit_price" type="text" value="<?php echo $unit_price; ?>" ></td>
 				</tr>
 				<tr>
-					<td><span class="Title">Paypal method  :</span></td>
-					<td><input name="payment_method" type="text" value="Paypal" ></td>
+					<td><span class="Title">Payment method  :</span></td>
+					<td><input name="payment_method" type="text" value="<?php echo $payment_method; ?>" ></td>
 				</tr>								
 				<tr>
 					<td><span class="Title">Paypal address  :</span></td>
-					<td><input name="paypal_address" type="text" ></td>
+					<td><input name="paypal_address" type="text" value="<?php echo $paypal_address; ?>" ></td>
 				</tr>
 				<tr>
 					<td colspan="2" align="center"><input name="submit" type="submit" value="Submit"></td>
@@ -104,7 +134,6 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 				}
 					
 				if( $result == 0 ){	
-					$_SERVER['PHP_AUTH_PW']=$new_pwd;
 					echo '<p class="FontInGreen">Successfull !</p>';
 				}				
 			}
