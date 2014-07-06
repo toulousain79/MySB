@@ -28,6 +28,12 @@ function getScriptVersion() {
 }
 
 if(isset($_SERVER['PHP_AUTH_USER'])){
+
+	$formula="Serveur Dedibox XC";
+	$tva="20";
+	$unit_price="19.99";
+	$payment_method="Paypal";
+	$paypal_address="";
 ?>
 
 <!DOCTYPE html>
@@ -91,12 +97,16 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 			if ( (strtolower($payment_method) == 'paypal') && ($paypal_address == '') ) {
 				echo '<p class="FontInRed">Please, complete the Paypal address.</p>';
 			} else {
-				exec("/bin/cp /etc/MySB/templates/renting.template /etc/MySB/inc/renting", $output, $result);
-				exec("/usr/bin/perl -pi -e 's/<formula>/" . $formula . "/g' /etc/MySB/inc/renting", $output, $result);
-				exec("/usr/bin/perl -pi -e 's/<payment_method>/" . $payment_method . "/g' /etc/MySB/inc/renting", $output, $result);
-				exec("/usr/bin/perl -pi -e 's/<tva>/" . $tva . "/g' /etc/MySB/inc/renting", $output, $result);
-				exec("/usr/bin/perl -pi -e 's/<unit_price>/" . $unit_price . "/g' /etc/MySB/inc/renting", $output, $result);
-				exec("/usr/bin/perl -pi -e 's/<paypal_address>/" . $paypal_address . "/g' /etc/MySB/inc/renting", $output, $result);			
+				exec("sudo /bin/bash /etc/MySB/scripts/MakeRenting.sh '".$formula."' '".$tva."' '".$unit_price."' '".$payment_method."' '".$paypal_address."'", $output, $result);
+				
+				foreach ($output as $item){
+					echo $item.'<br>';
+				}
+					
+				if( $result == 0 ){	
+					$_SERVER['PHP_AUTH_PW']=$new_pwd;
+					echo '<p class="FontInGreen">Successfull !</p>';
+				}				
 			}
 		} else {
 			echo '<p class="FontInRed">Please, complete all fields.</p>';
