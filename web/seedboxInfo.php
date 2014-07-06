@@ -131,7 +131,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 
 <body class="Global" style="text-size-adjust: 100%; -webkit-text-size-adjust: 100% !important; padding:0px; margin: 0px;">
 
-<?php printUser($dir,$SeedUser); ?>
+<?php printUser($SeedUser); ?>
 
 </body>
 </html>
