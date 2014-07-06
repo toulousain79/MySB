@@ -88,7 +88,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 		$paypal_address=$_POST['paypal_address'];
 		
 		if ( ($formula != '') && ($tva != '') && ($unit_price != '') && ($payment_method != '') ) {
-			if ( (strtolower($payment_method) == 'paypal') && ($paypal_address != '') ) {
+			if ( (strtolower($payment_method) == 'paypal') && ($paypal_address == '') ) {
 				echo '<p class="FontInRed">Please, complete the Paypal address.</p>';
 			} else {
 				exec("/bin/cp /etc/MySB/templates/renting.template /etc/MySB/inc/renting", $output, $result);
