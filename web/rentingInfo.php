@@ -31,6 +31,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 	}
 
 	$filename = '/etc/MySB/inc/renting';
+	$blank = true;
 
 	if (file_exists($filename)) {
 		$data = file($filename);
@@ -39,6 +40,8 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 			$column = explode('=', $line, 2);
 			
 			if ( (isset($column[0])) && (isset($column[1])) && ((substr($column[0], 1, 1) != '#')) ) {
+				$blank = false;
+			
 				switch ($column[0]) {
 					case 'FORMULA':
 						$formula = $column[1];
@@ -58,7 +61,9 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 				}
 			}
 		}
-	} else {
+	} 
+
+	if ( $blank == true ) {
 		$formula="Serveur Dedibox XC";
 		$tva="20";
 		$unit_price="19.99";
