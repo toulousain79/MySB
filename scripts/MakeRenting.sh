@@ -25,11 +25,38 @@ source /etc/MySB/inc/includes_before
 ##################### FIRST LINE #####################################
 
 cp /etc/MySB/templates/renting.template /etc/MySB/inc/renting
-perl -pi -e 's/<formula>/'$1'/g' /etc/MySB/inc/renting
-perl -pi -e 's/<tva>/'$2'/g' /etc/MySB/inc/renting
-perl -pi -e 's/<unit_price>/'$3'/g' /etc/MySB/inc/renting
-perl -pi -e 's/<payment_method>/'$4'/g' /etc/MySB/inc/renting
-perl -pi -e 's/<paypal_address>/'$5'/g' /etc/MySB/inc/renting	
+
+if [ -z $1 ]; then
+	FORMULA=""
+else
+	FORMULA=$1
+fi
+if [ -z $2 ]; then
+	TVA=""
+else
+	TVA=$2
+fi
+if [ -z $3 ]; then
+	PU=""
+else
+	PU=$3
+fi
+if [ -z $4 ]; then
+	PAYMENT_METHOD=""
+else
+	PAYMENT_METHOD=$4
+fi
+if [ -z $5 ]; then
+	PAYPAL=""
+else
+	PAYPAL=$5
+fi
+
+perl -pi -e "s/<formula>/$FORMULA/g" /etc/MySB/inc/renting
+perl -pi -e "s/<tva>/$TVA/g" /etc/MySB/inc/renting
+perl -pi -e "s/<unit_price>/$PU/g" /etc/MySB/inc/renting
+perl -pi -e "s/<payment_method>/$PAYMENT_METHOD/g" /etc/MySB/inc/renting
+perl -pi -e "s/<paypal_address>/$PAYPAL/g" /etc/MySB/inc/renting	
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
