@@ -44,7 +44,7 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 				$column = explode('=', $line, 2);
 				
 				if ( (isset($column[0])) && (isset($column[1])) ) {		
-					if (substr($column[0], 0, 11) == 'IP Address=') {
+					if (substr($column[0], 0, 11) == 'IP Address') {
 						$allip = trim($column[1], " \t\n\r\0\x0B");
 					}
 				}
@@ -55,25 +55,25 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 			<table border="0">	
 				<tr>
 					<td><span class="Title">Actual IP list :</span></td>
-					<td><input name="current_list" type="text" value="' . $allip . '" /></td>
+					<td><input name="current_list" type="text" value="' . $allip . '" size="50" /></td>
 					<td></td>
 					<td></td>
 				</tr>
 				<tr>
 					<td><span class="Title">Your current IP address :</span></td>
-					<td><input name="current_ip" type="text" value="' . $current_ip . '" /></td>
+					<td><input name="current_ip" type="text" value="' . $current_ip . '" size="50" /></td>
 					<td><input name="add_current_ip" type="checkbox" value="1" checked="checked" /></td>
 					<td><span class="Comments"><em>Check this box for add this IP in your list.</em></span></td>
 				</tr>				
 				<tr>
 					<td><span class="Title">New wanted IP list :</span></td>
-					<td><input name="new_list" type="text" value="' . $allip . '" /></td>
+					<td><input name="new_list" type="text" value="' . $allip . '" size="50" /></td>
 					<td></td>
 					<td><span class="Comments"><em>Add the appropriate IP separated by commas.</em></span></td>					
 				</tr>
 				<tr>
 					<td><span class="Title">Confirm the new list :</span></td>
-					<td><input name="confirm_list" type="text" value="' . $allip . '" /></td>
+					<td><input name="confirm_list" type="text" value="' . $allip . '" size="50" /></td>
 					<td></td>
 					<td></td>						
 				</tr>
@@ -108,8 +108,6 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 
 		<div align="center">
 <?php
-	Form();
-
 	if ( isset($_POST['submit']) ) {
 		$current_list = trim($_POST['current_list'], " \t\n\r\0\x0B");
 		$new_list = trim($_POST['new_list'], " \t\n\r\0\x0B");
@@ -122,7 +120,7 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 				$confirm_list .= ','.$current_ip;
 			}
 		
-			if ( $current_list == $confirm_list ) {
+			if ( $new_list == $confirm_list ) {
 				exec("sudo /usr/bin/perl -pi -e 's/" . $current_list . "/" . $confirm_list . "/g' " . $filename . "", $output, $result);
 			
 				Form();
@@ -143,7 +141,9 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 		} else {
 			echo '<p class="FontInRed">Please, complete all fields</p>';
 		}
-	}		
+	} else {
+		Form();
+	}	
 ?>		
 
 		</div>		
