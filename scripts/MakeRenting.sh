@@ -35,6 +35,7 @@ if [ "$2" == "" ]; then
 	TVA=""
 else
 	TVA=$2
+	TVA=`echo $TVA | sed s/%//g`
 fi
 if [ "$3" == "" ]; then
 	PU=""
@@ -50,7 +51,10 @@ if [ "$5" == "" ]; then
 	PAYPAL=""
 else
 	PAYPAL=$5
+	PAYPAL=`echo $PAYPAL | sed s/\@/\\\\\\\@/g`
 fi
+
+
 
 perl -pi -e "s/<formula>/$FORMULA/g" /etc/MySB/inc/renting
 perl -pi -e "s/<tva>/$TVA/g" /etc/MySB/inc/renting
