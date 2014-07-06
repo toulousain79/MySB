@@ -61,7 +61,7 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 				</tr>
 				<tr>
 					<td><span class="Title">Your current IP address :</span></td>
-					<td><input name="current_ip" type="text" value="' . $current_ip . '" size="50" /></td>
+					<td><input name="current_ip" type="text" value="' . $current_ip . '" size="50" readonly="true" /></td>
 					<td><input name="add_current_ip" type="checkbox" value="1" /></td>
 					<td><span class="Comments"><em>Check this box for add this IP in your list.</em></span></td>
 				</tr>				
