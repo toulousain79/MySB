@@ -24,13 +24,17 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
+	exit
+fi
+
 CURRENT_LIST="$1"
 NEW_LIST="$2"
 FILENAME="$3"
 
-if [ -z $CURRENT_LIST ] || [ -z $NEW_LIST ] || [ -z $FILENAME ]; then
-	exit
-fi
+echo $CURRENT_LIST
+echo $NEW_LIST
+echo $FILENAME
 
 perl -pi -e 's/$CURRENT_LIST/$NEW_LIST/g' $FILENAME
 
