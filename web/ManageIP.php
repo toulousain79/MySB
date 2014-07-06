@@ -62,7 +62,7 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 				<tr>
 					<td><span class="Title">Your current IP address :</span></td>
 					<td><input name="current_ip" type="text" value="' . $current_ip . '" size="50" /></td>
-					<td><input name="add_current_ip" type="checkbox" value="1" checked="checked" /></td>
+					<td><input name="add_current_ip" type="checkbox" value="1" /></td>
 					<td><span class="Comments"><em>Check this box for add this IP in your list.</em></span></td>
 				</tr>				
 				<tr>
@@ -112,14 +112,14 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 		$current_list = trim($_POST['current_list'], " \t\n\r\0\x0B");
 		$new_list = trim($_POST['new_list'], " \t\n\r\0\x0B");
 		$confirm_list = trim($_POST['confirm_list'], " \t\n\r\0\x0B");
-		if ( !empty($add_current_ip) ) {
-			$add_current_ip = $_POST['add_current_ip'];
-		} else {
-			$add_current_ip = '0';
-		}
+		// if ( !empty($add_current_ip) ) {
+			// $add_current_ip = $_POST['add_current_ip'];
+		// } else {
+			// $add_current_ip = '0';
+		// }
 		
 		if ( ($current_list != '') && ($new_list != '') && ($confirm_list != '') ) {	
-			if ( ($add_current_ip == '1') && (strstr($confirm_list, $add_current_ip) == false) ) {
+			if ( (!empty($add_current_ip) && (strstr($confirm_list, $add_current_ip) == false) ) {
 				$new_list .= ','.$current_ip;
 				$confirm_list .= ','.$current_ip;
 			}
