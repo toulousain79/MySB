@@ -138,6 +138,12 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 				}
 					
 				if( $result == 0 ){	
+					$formula=$_POST['formula'];
+					$tva=$_POST['tva'];
+					$unit_price=$_POST['unit_price'];
+					$payment_method=$_POST['payment_method'];
+					$paypal_address=$_POST['paypal_address'];				
+					
 					echo '<p class="FontInGreen">Successfull !</p>';
 				}				
 			}
