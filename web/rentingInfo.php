@@ -43,6 +43,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 			
 			foreach($data as $index=>$line) {
 				$column = explode('=', $line, 2);
+				
 				if ( isset($column[1]) ) {
 					$column[1] = str_replace('"', '', $column[1]);
 				}

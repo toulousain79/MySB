@@ -22,9 +22,9 @@
 //
 //#################### FIRST LINE #####################################
 
-if(isset($_SERVER['PHP_AUTH_USER'])){
-	$filename = "/etc/MySB/users/$SeedUser.info";
+if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 	$SeedUser = $_SERVER['PHP_AUTH_USER'];
+	$filename = "/etc/MySB/users/$SeedUser.info";
 	$current_ip = $_SERVER['REMOTE_ADDR'];
 	
 	function getScriptVersion() {
@@ -42,9 +42,13 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 			
 			foreach($data as $index=>$line) {
 				$column = explode('=', $line, 2);
-					
-				if (substr($column[0], 0, 11) == 'IP Address=') {
-					$allip = $column[1];
+				
+				if ( (isset($column[0])) && (isset($column[1])) ) {	
+echo $column[0].' '.$column[1].'<br>';				
+				
+					if (substr($column[0], 0, 11) == 'IP Address=') {
+						$allip = $column[1];
+					}
 				}
 			}	
 		}	
@@ -114,14 +118,13 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 		$confirm_list = $_POST['confirm_list'];
 		$add_current_ip = $_POST['add_current_ip'];
 		
-		if ( ($current_list != '') && ($new_list != '') && ($confirm_list != '') ) {
-			if ( $add_current_ip == '1' ) {
+		if ( ($current_list != '') && ($new_list != '') && ($confirm_list != '') ) {	
+			if ( ($add_current_ip == '1') && (strstr($confirm_list, $add_current_ip) != false) ) {
 				$new_list .= ','.$current_ip;
 				$confirm_list .= ','.$current_ip;
 			}
 		
 			if ( $current_list == $confirm_list ) {
-			$filename
 				exec("sudo /usr/bin/perl -pi -e 's/" . $current_list . "/" . $confirm_list . "/g' " . $filename . "", $output, $result);
 			
 				Form();
