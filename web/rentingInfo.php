@@ -142,6 +142,8 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 		} else {
 			echo '<p class="FontInRed">Please, complete all fields.</p>';
 		}
+	} else {
+		echo '<p class="FontInRed">Error occured!</p>';
 	}
 ?>
 		</div>		
