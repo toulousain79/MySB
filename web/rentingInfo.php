@@ -38,9 +38,11 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 			
 			foreach($data as $index=>$line) {
 				$column = explode('=', $line, 2);
-				
-				if ( (isset($column[0])) && ((substr($column[0], 0, 1) != '#')) ) {
+				if ( isset($column[1]) ) {
 					$column[1] = str_replace('"', '', $column[1]);
+				}
+				
+				if ( (isset($column[0])) && (isset($column[1])) && ((substr($column[0], 0, 1) != '#')) ) {
 		
 					switch ($column[0]) {
 						case 'FORMULA':
