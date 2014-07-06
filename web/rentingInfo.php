@@ -85,6 +85,42 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 	<h1>Hello <?php echo $_SERVER['PHP_AUTH_USER']; ?> !</h1>		
 
 	<div align="center">
+
+<?php
+	if (isset($_POST['submit'])) {	
+		$formula=$_POST['formula'];
+		$tva=$_POST['tva'];
+		$unit_price=$_POST['unit_price'];
+		$payment_method=$_POST['payment_method'];
+		$paypal_address=$_POST['paypal_address'];	
+	
+		if ( ($formula != '') && ($tva != '') && ($unit_price != '') && ($payment_method != '') ) {
+			if ( (strtolower($payment_method) == 'paypal') && ($paypal_address == '') ) {
+				echo '<p class="FontInRed">Please, complete the Paypal address.</p>';
+			} else {
+				exec("sudo /bin/bash /etc/MySB/scripts/MakeRenting.sh '".$_POST['formula']."' '".$_POST['tva']."' '".$_POST['unit_price']."' '".$_POST['payment_method']."' '".$_POST['paypal_address']."'", $output, $result);
+
+				echo "sudo /bin/bash /etc/MySB/scripts/MakeRenting.sh '".$_POST['formula']."' '".$_POST['tva']."' '".$_POST['unit_price']."' '".$_POST['payment_method']."' '".$_POST['paypal_address']."'";
+				foreach ($output as $item){
+					echo $item.'<br>';
+				}
+					
+				if( $result == 0 ){	
+					$formula = $_POST['formula'];
+					$tva = $_POST['tva'];
+					$unit_price = $_POST['unit_price'];
+					$payment_method = $_POST['payment_method'];
+					$paypal_address = $_POST['paypal_address'];				
+					
+					echo '<p class="FontInGreen">Successfull !</p>';
+				}				
+			}
+		} else {
+			echo '<p class="FontInRed">Please, complete all fields.</p>';
+		}
+	} else {
+?>
+
 		<form method="post" action="">
 			<table border="0">	
 				<tr>
@@ -118,38 +154,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 			</table>
 		</form>
 
-<?php
-	if (isset($_POST['submit'])) {	
-		$formula=$_POST['formula'];
-		$tva=$_POST['tva'];
-		$unit_price=$_POST['unit_price'];
-		$payment_method=$_POST['payment_method'];
-		$paypal_address=$_POST['paypal_address'];	
-	
-		if ( ($formula != '') && ($tva != '') && ($unit_price != '') && ($payment_method != '') ) {
-			if ( (strtolower($payment_method) == 'paypal') && ($paypal_address == '') ) {
-				echo '<p class="FontInRed">Please, complete the Paypal address.</p>';
-			} else {
-				exec("sudo /bin/bash /etc/MySB/scripts/MakeRenting.sh '".$_POST['formula']."' '".$_POST['tva']."' '".$_POST['unit_price']."' '".$_POST['payment_method']."' '".$_POST['paypal_address']."'", $output, $result);
-
-				echo "sudo /bin/bash /etc/MySB/scripts/MakeRenting.sh '".$_POST['formula']."' '".$_POST['tva']."' '".$_POST['unit_price']."' '".$_POST['payment_method']."' '".$_POST['paypal_address']."'";
-				foreach ($output as $item){
-					echo $item.'<br>';
-				}
-					
-				if( $result == 0 ){	
-					$formula=$_POST['formula'];
-					$tva=$_POST['tva'];
-					$unit_price=$_POST['unit_price'];
-					$payment_method=$_POST['payment_method'];
-					$paypal_address=$_POST['paypal_address'];				
-					
-					echo '<p class="FontInGreen">Successfull !</p>';
-				}				
-			}
-		} else {
-			echo '<p class="FontInRed">Please, complete all fields.</p>';
-		}
+<?php	
 	}
 ?>
 		</div>		
