@@ -40,8 +40,6 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 		echo '<table width="100%" border="0" align="left">';
 		echo '<tr align="left"><th colspan="3" scope="row"><h1>' . $user . '</h1></th></tr>';
 		
-	//	$OV_first_line = '';
-		
 		$data = file("/etc/MySB/users/$user.info");
 		foreach($data as $index=>$line) {
 
