@@ -90,22 +90,22 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 				<tr>
 					<td><span class="Title">Formula :</span></td>
 					<td><input name="formula" type="text" value="<?php echo $formula; ?>" ></td>
-					<td><span class="Comments"><em>Serveur Dedibox XC</em></span></td>
+					<td><span class="Comments"><em>Example:	Serveur Dedibox XC</em></span></td>
 				</tr>
 				<tr>
 					<td><span class="Title">TVA (%)  :</span></td>
 					<td><input name="tva" type="text" value="<?php echo $tva; ?>" ></td>
-					<td><span class="Comments"><em>20</em></span></td>
+					<td><span class="Comments"><em>Example:	20</em></span></td>
 				</tr>
 				<tr>
 					<td><span class="Title">Unit price (per month)   :</span></td>
 					<td><input name="unit_price" type="text" value="<?php echo $unit_price; ?>" ></td>
-					<td><span class="Comments"><em>19.99 (value without tax)</em></span></td>
+					<td><span class="Comments"><em>Example:	19.99 (value without tax)</em></span></td>
 				</tr>
 				<tr>
 					<td><span class="Title">Payment method  :</span></td>
 					<td><input name="payment_method" type="text" value="<?php echo $payment_method; ?>" ></td>
-					<td><span class="Comments"><em>Paypal</em></span></td>
+					<td><span class="Comments"><em>Example:	Paypal</em></span></td>
 				</tr>								
 				<tr>
 					<td><span class="Title">Paypal address  :</span></td>
@@ -113,7 +113,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 					<td><span class="Comments"><em>Your Paypal address to receive payments.</em></span></td>
 				</tr>
 				<tr>
-					<td colspan="2" align="center"><input name="submit" type="submit" value="Submit"></td>
+					<td colspan="3" align="center"><input name="submit" type="submit" value="Submit"></td>
 				</tr>						
 			</table>
 		</form>
