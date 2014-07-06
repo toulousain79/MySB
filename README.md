@@ -169,6 +169,19 @@ http://<Server IP or Server Name>:<https NginX port>/MySB/OpenVPN.php` and use i
 ```
 https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-access-server-on-a-vps-container.html
 ```
+##### NFS and Samba share with OpenVPN
+For NFS, you can mount the /home/<username> like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
+```
+mount.nfs 10.0.1.1:/home/<username> <mount_dir> -o nolock
+```
+For Samba, you can mount the /home/<username> like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
+```
+mount - <mount_dir> -t cifs -o noatime,nodiratime,UNC=//10.0.1.1/<username>,username=<username>,password=<your_password>
+```
+
+NB: I personally use my router Asus RT-N16 (firmware TomatoUSB by Shibby) as OpenVPN client. From there, I mount the NFS share corresponding to my homedir on the MySB box.
+Then I add my mount point in the DLNA server on my RT-N16. 
+Miracle, I can stream my files with my Freebox Revolution!
 
 ## Supported and tested servers
 
