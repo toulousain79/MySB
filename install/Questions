@@ -30,25 +30,22 @@ echo -e "${CGREEN}#$CEND	${CYELLOW}Now, I need some informations.$CEND"
 echo -e "${CGREEN}##########################################################################################$CEND"
 echo
 
-####Time Zone	
-GetString NO "What is your time zone ? (ex: Europe/Paris): " TIMEZONE "Europe/Paris"
+#### MAIN USER INFO
+echo -e "${CYELLOW}#### Main User Info ####$CEND"
 
-#### Primary Inet
-GetString NO "What is your primary network interface ? (ex: eth0, nic0, ...): " PRIMARYINET "eth0"
-
-#### Username
+# Username
 while [ "`echo $NEWUSER | grep '@'`" != "" ] || [ "$NEWUSER" == "" ]; do
 	GetString NO "Username for the first user for your seedbox (main user): " NEWUSER
 done
 
-#### User password
+# User password
 PASSWORD=`mkpasswd $NEWUSER`
 PASSWORD=`echo $PASSWORD | sed "s/\///g"`
 if [ -z $PASSWORD ]; then	
 	GetString YES "Password for user >$NEWUSER<: " PASSWORD
 fi
 
-#### User IP addresses
+# User IP addresses
 while [ ! "$CHECK_MYIP" = "$MYIP" ] || [ -z "$MYIP" ]; do
 	MYIP="`who --ips | awk '{print $6}' | grep ^[0123456789]`"
 	if [ "$MYIP" == "" ]; then
@@ -65,7 +62,31 @@ while [ ! "$CHECK_MYIP" = "$MYIP" ] || [ -z "$MYIP" ]; do
 	CHECK_MYIP=`echo $CHECK_MYIP | sed -e "s/\ /\,/g;" | sed -e "s/^$//g;"`	
 done
 
-#### SMTP ?
+# User e-mail
+while [ ! "`ValidateMail $EMAILUSER`" = "0" ]; do
+	GetString NO "What is the administrator's email for this seedbox?" EMAILUSER
+done
+
+
+#### SERVER INFO
+echo -e "${CYELLOW}#### Server Info ####$CEND"
+
+#Time Zone	
+GetString NO "What is your time zone ? (ex: Europe/Paris): " TIMEZONE "Europe/Paris"
+
+# Primary Inet
+GetString NO "What is your primary network interface ? (ex: eth0, nic0, ...): " PRIMARYINET $PRIMARYINET
+
+# Box' IP
+while [ ! "$CHECK_IPADDRESS" = "$IPADDRESS" ] || [ -z "$MYIP" ]; do
+	GetString NO  "IP address of your box: " IPADDRESS $IPADDRESS
+	CHECK_IPADDRESS=`ValidateIP "$IPADDRESS"`
+done
+
+# Box' hostname
+GetString NO "Hostname (FQDN) of your box: " HOSTFQDN $HOSTFQDN $HOSTFQDN
+
+# SMTP ?
 echo -e "${CYELLOW}Do you want to use an external SMTP server? (Good for safe sending emails.).$CEND"
 echo -e "${CYELLOW}Choose between ${CGREEN}LOCAL$CEND${CYELLOW} or listed providers $CEND${CGREEN}FREE$CEND|$CEND${CGREEN}OVH$CEND${CYELLOW}|$CEND${CGREEN}GMAIL$CEND|$CEND${CGREEN}YAHOO$CEND"
 echo -e "${CYELLOW}Only SSL transactions will be used (SSL/465).$CEND"
@@ -77,51 +98,38 @@ if [ "$SMTP" != "LOCAL" ]; then
 	GetString YES "What is the password for the SMTP server ${CGREEN}$SMTP$CEND?" SMTP_PASS
 fi
 
-#### User e-mail
-while [ ! "`ValidateMail $EMAILUSER`" = "0" ]; do
-	GetString NO "What is the administrator's email for this seedbox?" EMAILUSER
-done
-
-#### Box' IP
-while [ ! "$CHECK_IPADDRESS" = "$IPADDRESS" ] || [ -z "$MYIP" ]; do
-	GetString NO  "IP address of your box: " IPADDRESS $IPADDRESS
-	CHECK_IPADDRESS=`ValidateIP "$IPADDRESS"`
-done
-
-#### Box' hostname
-GetString NO "Hostname (FQDN) of your box: " HOSTFQDN $HOSTFQDN `hostname -f`
-
-#### NginX HTTP port
+# NginX HTTP port
 GetString NO "NginX HTTP port (usually 80): " NGINXHTTPPORT 8888
 
-#### NginX HTTPs port
+# NginX HTTPs port
 GetString NO "NginX HTTPs port (usually 443): " NGINXHTTPSPORT 8889
 
-#### SSH port
+# SSH port
 GetString NO "SSH port (usually 22): " NEWSSHPORT 8892
 
-#### FTP port
+# FTP port
 GetString NO "FTP port (usually 21): " NEWFTPPORT 8891
 
-#### FTP Active data port
+# FTP Active data port
 GetString NO "FTP Active Data port (usually 20): " NEWFTPDATAPORT 8800
 
-#### Fail2Ban
-GetString NO "Install Fail2ban? " INSTALLFAIL2BAN YES
 
-#### Seedbox-Manager
-GetString NO "Install Seedbox-Manager? " INSTALLMANAGER YES
+#### SERVICES
+echo -e "${CYELLOW}#### Services ####$CEND"
 
-#### Cakebox Light
+# Seedbox-Manager
+GetString NO "Install Seedbox-Manager (recommended)? " INSTALLMANAGER YES
+
+# Cakebox Light
 GetString NO "Install CakeBox Light? " INSTALLCAKEBOX YES
 if [ "$INSTALLCAKEBOX" == "YES" ]; then
 	GetString NO "CakeBox port: " CAKEBOXPORT 8887
 fi
 
-#### Plexmedia server
+# Plexmedia server
 GetString NO "Install Plex Media? " INSTALLPLEXMEDIA NO
 
-#### Webmin
+# Webmin
 GetString NO "Install Webmin? " INSTALLWEBMIN YES
 if [ "$INSTALLWEBMIN" == "YES" ]; then
 	GetString NO "Webmin port  (usually 10000): " WEBMINPORT 8890
@@ -144,7 +152,13 @@ else
 	INSTALLOPENVPN=NO
 fi
 
-#### Blocklist
+#### SECURITY
+echo -e "${CYELLOW}#### Security ####$CEND"
+
+# Fail2Ban
+GetString NO "Install Fail2ban? " INSTALLFAIL2BAN YES
+
+# Blocklist
 echo -e "${CYELLOW}How should we manage blocklists?$CEND"
 echo -e "${CYELLOW}With$CEND ${CGREEN}PeerGuardian$CEND${CYELLOW}, you completely protect your seedbox. You also use less RAM. $CEND"
 echo -e "${CYELLOW}While with$CEND ${CGREEN}rTorrent$CEND${CYELLOW}, you will only protect your use of rTorrent. And memory consumption will be dependent on the number of seedbox users.$CEND"
@@ -162,6 +176,10 @@ else
 	echo -e "${CYELLOW}It's not possible to install$CEND ${CGREEN}PeerGuardian$CEND${CYELLOW}.$CEND"
 	GetString NO "'rTorrent' OR 'none'?" MYBLOCKLIST "rTorrent"
 fi
+	
+	
+	
+	
 	
 #### permanently adding scripts to PATH to all users and root
 echo "PATH=$PATH:/etc/MySB/bin:/sbin" | tee -a /etc/profile &> /dev/null
