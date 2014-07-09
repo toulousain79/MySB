@@ -319,6 +319,35 @@ case $1 in
 			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
 			perl -pi -e "s/$SEARCH/\"$WHITELIST\"/g" /etc/pgl/pglcmd.conf	
 			unset SEARCH WHITELIST			
+
+			case "$OPENVPNPROTO" in
+				"udp")
+					SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=" | cut -d "=" -f 2)
+					perl -pi -e "s/$SEARCH/\"${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"/g" /etc/pgl/pglcmd.conf	
+				
+					SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=" | cut -d "=" -f 2)
+					perl -pi -e "s/$SEARCH/\"${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3}\"/g" /etc/pgl/pglcmd.conf	
+					
+					SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=" | cut -d "=" -f 2)
+					perl -pi -e "s/$SEARCH/\"80 443 ${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"/g" /etc/pgl/pglcmd.conf	
+					
+					SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=" | cut -d "=" -f 2)
+					perl -pi -e "s/$SEARCH/\"${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3}\"/g" /etc/pgl/pglcmd.conf
+				;;
+				"tcp")
+					SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=" | cut -d "=" -f 2)
+					perl -pi -e "s/$SEARCH/\"${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"/g" /etc/pgl/pglcmd.conf
+				
+					SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=" | cut -d "=" -f 2)
+					perl -pi -e "s/$SEARCH/\"\"/g" /etc/pgl/pglcmd.conf
+					
+					SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=" | cut -d "=" -f 2)
+					perl -pi -e "s/$SEARCH/\"80 443 ${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"/g" /etc/pgl/pglcmd.conf					
+				
+					SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=" | cut -d "=" -f 2)
+					perl -pi -e "s/$SEARCH/\"\"/g" /etc/pgl/pglcmd.conf
+				;;
+			esac
 			
 			StatusLSB
 		fi

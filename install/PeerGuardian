@@ -108,11 +108,6 @@ LOG_IPTABLES="LOG --log-level info"
 # If not set, cron will decide what happens with the output.
 CRON_MAILTO="root"
 
-# The path to the allow list for forwarded connections.
-# WARNING: Don't add your own IP / LAN to the forward allow list or pgl will not
-# work at all for FORWARD.
-ALLOW_FWD="/etc/pgl/allow.forward"
-
 # Whitelist ports (traffic on these ports will not be checked)
 # Valid values: port numbers or service names. Port ranges are specified in the
 # format "port:port".
@@ -137,15 +132,6 @@ done
 unset IFS	
 MYIP=`echo $TEMP | sed -e "s/^//g;"`
 
-FTP_PASSIVE=""
-if [ -e '/etc/vsftpd.conf' ]; then
-	MIN_PORT=$(grep "^pasv_min_port=" '/etc/vsftpd.conf' | cut --delimiter="=" --fields=2)
-	MAX_PORT=$(grep "^pasv_max_port=" '/etc/vsftpd.conf' | cut --delimiter="=" --fields=2)
-	if [ -n "${MIN_PORT}" -a -n "${MAX_PORT}" ]; then
-		FTP_PASSIVE="${MIN_PORT}:${MAX_PORT}"
-	fi
-fi
-
 OVPNPORT1=$OPENVPNPORT
 (( OPENVPNPORT++ ))
 OVPNPORT2=$OPENVPNPORT
@@ -156,9 +142,9 @@ case "$OPENVPNPROTO" in
 	"udp")
 		echo "
 		WHITE_TCP_IN=\"${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"
-		WHITE_UDP_IN=\${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3} ${NEWFTPPORT}\"
+		WHITE_UDP_IN=\${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3}\"
 		WHITE_TCP_OUT=\"80 443 ${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"
-		WHITE_UDP_OUT=\${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3} ${NEWFTPPORT}\"
+		WHITE_UDP_OUT=\${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3}\"
 		WHITE_TCP_FWD=\"\"
 		WHITE_UDP_FWD=\"\"
 		" >> /etc/pgl/pglcmd.conf
