@@ -178,27 +178,31 @@ case $1 in
 		
 		# OpenVPN
 		if [ "$INSTALLOPENVPN" == "YES" ]; then
+			OVPNPORT1=$OPENVPNPORT
+			(( OPENVPNPORT++ ))
+			OVPNPORT2=$OPENVPNPORT
+			(( OPENVPNPORT++ ))
+			OVPNPORT3=$OPENVPNPORT		
+		
 			#### For network
 			echo 1 > /proc/sys/net/ipv4/ip_forward
 			perl -pi -e "s/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g" /etc/sysctl.conf			
 		
 			log_daemon_msg "Allow use of OpenVPN TUN With Redirect Gateway"
 			iptables -t filter -A INPUT -i tun0 -j ACCEPT
-			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
+			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OVPNPORT1 -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t filter -A FORWARD -i tun0 -o $PRIMARYINET -s 10.0.0.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t filter -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t nat -A POSTROUTING -s 10.0.0.0/24 -j MASQUERADE -m comment --comment "OpenVPN"	
 			StatusLSB
 			
 			log_daemon_msg "Allow use of OpenVPN TUN Without Redirect Gateway"
-			(( OPENVPNPORT++ ))
 			iptables -t filter -A INPUT -i tun1 -j ACCEPT
-			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
+			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OVPNPORT2 -j ACCEPT -m comment --comment "OpenVPN"
 			StatusLSB				
 
 			log_daemon_msg "Allow use of OpenVPN TAP Without Redirect Gateway"
-			(( OPENVPNPORT++ ))
-			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OPENVPNPORT -j ACCEPT -m comment --comment "OpenVPN"
+			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OVPNPORT3 -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t filter -A INPUT -i tap0 -j ACCEPT
 			iptables -t filter -A INPUT -i br0 -j ACCEPT
 			iptables -t filter -A FORWARD -i br0 -j ACCEPT			
@@ -318,42 +322,38 @@ case $1 in
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_OUT=")
 			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
 			perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"$WHITELIST\"/g" /etc/pgl/pglcmd.conf	
-			unset SEARCH WHITELIST			
-
-			OVPNPORT1=$OPENVPNPORT
-			(( OPENVPNPORT++ ))
-			OVPNPORT2=$OPENVPNPORT
-			(( OPENVPNPORT++ ))
-			OVPNPORT3=$OPENVPNPORT
+			unset SEARCH WHITELIST
 			
-			case "$OPENVPNPROTO" in
-				"udp")
-					SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
-					perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"/g" /etc/pgl/pglcmd.conf	
-				
-					SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=")
-					perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3}\"/g" /etc/pgl/pglcmd.conf	
+			if [ "$INSTALLOPENVPN" == "YES" ]; then
+				case "$OPENVPNPROTO" in
+					"udp")
+						SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
+						perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"/g" /etc/pgl/pglcmd.conf	
 					
-					SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
-					perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"80 443 ${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"/g" /etc/pgl/pglcmd.conf	
+						SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=")
+						perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3}\"/g" /etc/pgl/pglcmd.conf	
+						
+						SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
+						perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"80 443 ${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"/g" /etc/pgl/pglcmd.conf	
+						
+						SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
+						perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3}\"/g" /etc/pgl/pglcmd.conf
+					;;
+					"tcp")
+						SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
+						perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"/g" /etc/pgl/pglcmd.conf
 					
-					SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
-					perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3}\"/g" /etc/pgl/pglcmd.conf
-				;;
-				"tcp")
-					SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
-					perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"/g" /etc/pgl/pglcmd.conf
-				
-					SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=")
-					perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"\"/g" /etc/pgl/pglcmd.conf
+						SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=")
+						perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"\"/g" /etc/pgl/pglcmd.conf
+						
+						SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
+						perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"80 443 ${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"/g" /etc/pgl/pglcmd.conf					
 					
-					SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
-					perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"80 443 ${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"/g" /etc/pgl/pglcmd.conf					
-				
-					SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
-					perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"\"/g" /etc/pgl/pglcmd.conf
-				;;
-			esac
+						SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
+						perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"\"/g" /etc/pgl/pglcmd.conf
+					;;
+				esac
+			fi
 			
 			StatusLSB
 		fi
