@@ -79,6 +79,7 @@ SendMail() {
 	fi
 	cat /etc/MySB/users/$attach | mail -a "From: MySB <$MailFrom>" -a "MIME-Version: 1.0" -a "Content-Type: text/$type" -s "$Subject" $SeedUserMail
 	sleep 2
+	unset $Subject $User $Info
 	StatusLSB
 }
 
@@ -648,6 +649,92 @@ MonthlyPayment() {
 			done
 		fi
 	fi
+}
+
+#### Get Trackers Address
+TrackersGenerateAddress() {
+	TRACKER=$1
+	TRACKER_IPV4="$(nslookup ${TRACKER} | grep Address: | awk '{ print $2 }' | sed -n 2p)"
+
+	if [ ! -z $TRACKER_IPV4 ]; then
+		echo $TRACKER >> /etc/MySB/infos/trackers.list
+		if [ -f /etc/pgl/pglcmd.conf ]; then
+			echo "${TRACKER}:${TRACKER_IPV4}-255.255.255.255" >> /etc/pgl/allow.p2p
+		fi
+	fi
+	unset TRACKER_IPV4 TRACKER
+	
+	PART1=`echo ${TRACKER} | cut -d "." -f 1`
+	PART2=`echo ${TRACKER} | cut -d "." -f 2`
+	PART3=`echo ${TRACKER} | cut -d "." -f 3`	
+
+	if [ -z $PART3 ]; then
+		PART3=$PART2
+		PART2=$PART1
+		PART1=tracker
+	else
+		PART1=tracker
+	fi
+		
+	TRACKER="`echo $PART1`.`echo $PART2`.`echo $PART3`"	
+	TRACKER_IPV4="$(nslookup ${TRACKER} | grep Address: | awk '{ print $2 }' | sed -n 2p)"
+
+	if [ ! -z $TRACKER_IPV4 ]; then			
+		echo $TRACKER >> /etc/MySB/infos/trackers.list
+		if [ -f /etc/pgl/pglcmd.conf ]; then
+			echo "${TRACKER}:${TRACKER_IPV4}-255.255.255.255" >> /etc/pgl/allow.p2p
+		fi		
+	fi
+	
+	unset PART1 PART2 PART3 TRACKER_IPV4 TRACKER
+}
+
+#### Trackers Listing
+TrackersListing() {
+	log_daemon_msg "Creating trackers list"
+
+	if [ -f /etc/pgl/pglcmd.conf ]; then
+		#### Create PeerGuardian P2P file
+		(
+		cat <<'EOF'
+# allow.p2p - allow list for pglcmd
+#
+# This file contains IP ranges that shall not be checked.
+# They must be in the PeerGuardian .p2p text format like this:
+#   Some organization:1.0.0.0-1.255.255.255
+# This is also true if your blocklists are in another format.
+# Lines beginning with a hash (#) are comments and will be ignored.
+#
+# Do a "pglcmd restart" when you have edited this file.
+EOF
+		) > /etc/pgl/allow.p2p
+	fi		
+	
+	if [ -f /etc/MySB/infos/trackers.list ]; then
+		rm /etc/MySB/infos/trackers.list
+	fi	
+
+	ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
+	for engine in ${ENGINES}; do
+		TRACKER=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "url =" | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
+		TrackersGenerateAddress "$TRACKER"
+	done
+	unset ENGINES TRACKER
+	
+	# Import trackers manually added
+	source /etc/MySB/inc/trackers
+	
+	for Tracker in $TRACKERS_LIST; do 
+		IfExist=`cat /etc/MySB/infos/trackers.list | grep frenchtorrentdb.com`
+		
+		if [ -z $IfExist ]; then	
+			TrackersGenerateAddress "$Tracker"
+		fi
+		unset IfExist
+	done
+	unset TRACKER_IPV4 Tracker
+	
+	StatusLSB
 }
 
 #### Script Invocation

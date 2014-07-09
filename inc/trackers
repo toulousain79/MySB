@@ -1,7 +1,5 @@
 #!/bin/bash 
 # ----------------------------------
-source /etc/MySB/inc/includes_before
-# ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
 #    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
@@ -24,61 +22,11 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-GetCertificate() {
-	TRACKER=$1
-	cd /etc/MySB/ssl/trackers/
-		
-	openssl s_client -connect $TRACKER:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$TRACKER.crt 
-	if [ -s ./$TRACKER.crt ]; then
-		openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
-		openssl x509 -in ./$TRACKER.der -inform DER -out ./$TRACKER.pem -outform PEM
-		if [ -e ./$TRACKER.pem ]; then
-			if [ -f /etc/ssl/certs/$TRACKER.pem ]; then
-				rm /etc/ssl/certs/$TRACKER.pem
-			fi	
-			ln -s /etc/MySB/ssl/trackers/$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
-		fi
-		
-		rm ./$TRACKER.der
-	fi
-	
-	rm ./$TRACKER.crt
-	
-	unset TRACKER
-}
+TRACKERS_LIST="
+frenchtorrentdb.com
+share1underground.com
+empereur-team.net
+genration-rosco-tk.net
+"
 
-if [ ! -d /etc/MySB/ssl/trackers/ ]; then
-	mkdir /etc/MySB/ssl/trackers/
-fi
-
-LIST_CERTS=$(ls -la /etc/ssl/certs/ | awk '{ print $9 }')
-for Cert in ${LIST_CERTS}; do
-	if [ "$Cert" != "" ] && [ "$Cert" != "." ] && [ "$Cert" != ".." ]; then
-
-		TARGET=$(ls -la /etc/ssl/certs/$Cert | awk '{ print $11 }')
-
-		if [ ! -f $TARGET ];then
-			rm /etc/ssl/certs/$Cert
-		fi
-		
-		unset Cert TARGET
-	fi
-done
-unset LIST_CERTS
-
-TrackersListing
-
-while read TRACKER; do
-	log_daemon_msg "Get certificate for $TRACKER"
-	GetCertificate $TRACKER
-	StatusLSB
-done < /etc/MySB/infos/trackers.list
-
-log_daemon_msg "Certificates Rehash"
-c_rehash &> /dev/null
-StatusLSB
-
-# -----------------------------------------
-source /etc/MySB/inc/includes_after
-# -----------------------------------------
 ##################### LAST LINE ######################################

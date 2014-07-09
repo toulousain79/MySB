@@ -153,7 +153,7 @@ OVPNPORT2=$OPENVPNPORT
 OVPNPORT3=$OPENVPNPORT
 
 case "$OPENVPNPROTO" in
-	"UDP")
+	"udp")
 		echo "
 		WHITE_TCP_IN=\"${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"
 		WHITE_UDP_IN=\${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3} ${NEWFTPPORT}\"
@@ -163,7 +163,7 @@ case "$OPENVPNPROTO" in
 		WHITE_UDP_FWD=\"\"
 		" >> /etc/pgl/pglcmd.conf
 	;;
-	"TCP")
+	"tcp")
 		echo "
 		WHITE_TCP_IN=\"${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${OVPNPORT1} ${OVPNPORT2} ${OVPNPORT3} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"
 		WHITE_UDP_IN=\"\"
@@ -240,57 +240,6 @@ list.iblocklist.com/lists/tbg/search-engines
 
 EOF
 ) > /etc/pgl/blocklists.list
-
-#### Create P2P file
-(
-cat <<'EOF'
-# allow.p2p - allow list for pglcmd
-#
-# This file contains IP ranges that shall not be checked.
-# They must be in the PeerGuardian .p2p text format like this:
-#   Some organization:1.0.0.0-1.255.255.255
-# This is also true if your blocklists are in another format.
-# Lines beginning with a hash (#) are comments and will be ignored.
-#
-# Do a "pglcmd restart" when you have edited this file.
-frenchtorrentdb.com:37.221.162.194-255.255.255.255
-www2.frenchtorrentdb.com:5.254.100.154-255.255.255.255
-share1underground.com:142.4.216.76-255.255.255.255
-empereur-team.net:198.245.49.82-255.255.255.255
-genration-rosco-tk.net:173.209.63.67-255.255.255.255
-EOF
-) > /etc/pgl/allow.p2p
-  
-ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
-for engine in ${ENGINES}; do
-	TRACKER=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "url =" | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
-	
-	TRACKER_IPV4="$(nslookup ${TRACKER} | grep Address: | awk '{ print $2 }' | sed -n 2p)"
-	if [ ! -z $TRACKER_IPV4 ]; then
-		echo ${TRACKER}
-		echo "${TRACKER}:${TRACKER_IPV4}-255.255.255.255" >> /etc/pgl/allow.p2p
-	fi
-	
-	PART1=`echo ${TRACKER} | cut -d "." -f 1`
-	PART2=`echo ${TRACKER} | cut -d "." -f 2`
-	PART3=`echo ${TRACKER} | cut -d "." -f 3`
-	
-	if [ -z $PART3 ]; then
-		PART3=$PART2
-		PART2=$PART1
-		PART1=tracker
-	else
-		PART1=tracker
-	fi
-	
-	TRACKER="`echo $PART1`.`echo $PART2`.`echo $PART3`"	
-
-	TRACKER_IPV4="$(nslookup ${TRACKER} | grep Address: | awk '{ print $2 }' | sed -n 2p)"
-	if [ ! -z $TRACKER_IPV4 ]; then
-		echo ${TRACKER}
-		echo "${TRACKER}:${TRACKER_IPV4}-255.255.255.255" >> /etc/pgl/allow.p2p	
-	fi	
-done
 	
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
