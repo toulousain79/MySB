@@ -27,7 +27,7 @@ MySB is a seedbox platform for multi-users.
 
 	* Fail2ban (optionnal but recommended)
 	* Seedbox-Manager (optionnal but recommended)
-	* OpenVPN (optionnal); Multi TUN and TAP configuration, with or without redirection of traffic.
+	* OpenVPN (optionnal); Multi TUN and TAP configuration, with or without redirection of traffic. Add AES-NI support.
 	* Webmin (optionnal)
 	* BlockList usage (optionnal) (PeerGuardian or rTorrent)
 	* CakeBoxLight (optionnal)
@@ -218,6 +218,7 @@ Created by toulousain79
 * rTorrent tweaks:		https://calomel.org/rtorrent_mods.html
 * rTorrent SSL:	https://forums.gentoo.org/viewtopic-t-710876-start-0.html
 * OpenSSL configuration file:	http://www.eclectica.ca/howto/ssl-cert-howto.php
+* OpenSSL AES-NI support:	http://openssl.6102.n7.nabble.com/having-a-lot-of-troubles-trying-to-get-AES-NI-working-td44285.html
 * Text ASCII Art Generator:	http://patorjk.com/software/taag/
 * Why nginx-extras + infos:	https://wiki.debian.org/fr/Nginx
 * NginX config:	http://wiki.nginx.org/CoreModule#worker_rlimit_nofile
