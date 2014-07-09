@@ -320,6 +320,12 @@ case $1 in
 			perl -pi -e "s/$SEARCH/\"$WHITELIST\"/g" /etc/pgl/pglcmd.conf	
 			unset SEARCH WHITELIST			
 
+			OVPNPORT1=$OPENVPNPORT
+			(( OPENVPNPORT++ ))
+			OVPNPORT2=$OPENVPNPORT
+			(( OPENVPNPORT++ ))
+			OVPNPORT3=$OPENVPNPORT
+			
 			case "$OPENVPNPROTO" in
 				"udp")
 					SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=" | cut -d "=" -f 2)
