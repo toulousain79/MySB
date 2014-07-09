@@ -239,7 +239,7 @@ case $1 in
 	
 		#### rTorrent
 		IGNOREIP="127.0.0.1/8 10.0.0.0/24 10.0.1.0/24 10.0.2.0/24"
-		WHITELIST=""
+		WHITELIST="10.0.0.0 10.0.1.0 192.168.0.0"
 		LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
 		for seedUser in $LISTUSERS; do
 			log_daemon_msg "Allow use of rTorrent for $seedUser"
@@ -302,8 +302,11 @@ case $1 in
 			log_daemon_msg "Add whitelist to PeerGuardian"
 			
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_IN=" | cut -d "=" -f 2)
-		
 			perl -pi -e "s/$SEARCH/\"$WHITELIST\"/g" /etc/pgl/pglcmd.conf
+			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_OUT=" | cut -d "=" -f 2)
+			perl -pi -e "s/$SEARCH/\"$WHITELIST\"/g" /etc/pgl/pglcmd.conf
+			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_FWD=" | cut -d "=" -f 2)
+			perl -pi -e "s/$SEARCH/\"$WHITELIST\"/g" /etc/pgl/pglcmd.conf					
 			
 			StatusLSB
 		fi
