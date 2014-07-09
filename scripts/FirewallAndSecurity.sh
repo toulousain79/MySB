@@ -238,7 +238,7 @@ case $1 in
 		fi
 	
 		#### rTorrent
-		IGNOREIP="127.0.0.1/8 10.0.0.0/24 10.0.1.0/24 10.0.2.0/24"
+		IGNOREIP="127.0.0.1/8 10.0.0.0/24 10.0.1.0/24 10.0.2.0/24 192.168.0.0/24"
 		WHITELIST="10.0.0.0 10.0.1.0 192.168.0.0"
 		LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
 		for seedUser in $LISTUSERS; do
@@ -251,8 +251,15 @@ case $1 in
 
 			IFS=$','
 				for ip in $USERIP; do 
-					TEMP="$TEMP $ip/32"
-					TEMP2="$TEMP2 $ip"
+					IfExist=`echo $TEMP | grep $ip`
+					if [ -z $IfExist ]; then	
+						TEMP="$TEMP $ip/32"
+					fi
+					
+					IfExist=`echo $TEMP2 | grep $ip`
+					if [ -z $IfExist ]; then	
+						TEMP2="$TEMP2 $ip"
+					fi					
 				done
 			unset IFS
 	
