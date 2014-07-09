@@ -266,7 +266,7 @@ case $1 in
 			StatusLSB
 		done
 		IGNOREIP="$IGNOREIP `echo $TEMP | sed -e "s/^//g;"`"
-		WHITELIST="$WHITELIST `echo $TEMP2 | sed -e "s/^//g;"`"		
+		WHITELIST="$WHITELIST `echo $TEMP2 | sed -e "s/^//g;"`"
 
 		#### NginX
 		if [ -f /etc/nginx/locations/MySB.conf ]; then
@@ -297,8 +297,8 @@ case $1 in
 			SEARCH=$(cat /etc/fail2ban/jail.local | grep "ignoreip =" | cut -d "=" -f 2)
 			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
 			IGNOREIP=`echo $IGNOREIP | sed s,/,\\\\\\\\\\/,g`
-
 			perl -pi -e "s/$SEARCH/$IGNOREIP/g" /etc/fail2ban/jail.local
+			unset SEARCH IGNOREIP
 			
 			StatusLSB
 		fi
@@ -308,10 +308,17 @@ case $1 in
 		if [ -f /etc/pgl/pglcmd.conf ]; then
 			log_daemon_msg "Add whitelist to PeerGuardian"
 			
+			WHITELIST=`echo $WHITELIST | sed s,/,\\\\\\\\\\/,g`
+			
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_IN=" | cut -d "=" -f 2)
+			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
 			perl -pi -e "s/$SEARCH/\"$WHITELIST\"/g" /etc/pgl/pglcmd.conf
+			unset SEARCH
+			
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_OUT=" | cut -d "=" -f 2)
-			perl -pi -e "s/$SEARCH/\"$WHITELIST\"/g" /etc/pgl/pglcmd.conf					
+			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
+			perl -pi -e "s/$SEARCH/\"$WHITELIST\"/g" /etc/pgl/pglcmd.conf	
+			unset SEARCH WHITELIST			
 			
 			StatusLSB
 		fi
