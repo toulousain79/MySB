@@ -153,6 +153,7 @@ PeerGuardianFailed() {
 #### Auto Start services for each scripts
 ManageServices() {
 	ServicesToManage=""
+	Command=""
 
 	while read line; do
 		SERVICE=`echo $line | cut -d '=' -f 1`
@@ -169,12 +170,44 @@ ManageServices() {
 			fi			
 		fi
 	done < /etc/MySB/inc/services
+
+	case "$SCRIPT_name" in
+		"ruTorrent"|"rTorrent"|"MySB_CleanAll.sh"|"MySB_DeleteUser")	
+			Command="$1"
+		;;									
+	esac
 	
-	if [ "$ServicesToManage" != "" ]; then
+	if [ "$ServicesToManage" != "" ] || [ "$Command" != "" ]; then
 		echo "---- "`date +"%T"` >> /etc/MySB/logs/$SCRIPT_name.log
 		IFS=$' '
-		AllReadyStopped=false
+		AllReadyStopped="false"
 		ServicesToManage=`echo $ServicesToManage | sed ':a;s/^[ \t]*//;s/[ \t]*$//'`
+		
+		case "$SCRIPT_name" in
+			"ruTorrent"|"rTorrent"|"MySB_CleanAll.sh")
+				if [ "$AllReadyStopped" == "false" ];then
+					service cron $Command
+
+					LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
+					for seedUser in $LISTUSERS; do
+						if [ -e /etc/init.d/rtorrent-$seedUser ]; then
+							service rtorrent-$seedUser $Command
+						fi
+					done
+					AllReadyStopped=true
+				fi
+			;;	
+			"MySB_DeleteUser")
+				if [ "$AllReadyStopped" == "false" ]; then
+					service cron $Command
+					if [ "$Command" == "stop" ];then
+						service rtorrent-$NEWUSER stop
+					fi
+					AllReadyStopped=true
+				fi
+			;;														
+		esac		
+		
 		for Service in $ServicesToManage; do
 			if [ ! -z $Service ]; then
 				case "$1" in
@@ -183,60 +216,10 @@ ManageServices() {
 							if [ ! "`screen -ls | grep MySB`" = "" ]; then
 								service $Service stop
 							fi							
-						fi
-						
-						case "$SCRIPT_name" in
-							"ruTorrent"|"rTorrent"|"MySB_CleanAll.sh")
-								if [ "$AllReadyStopped" == "false" ];then
-									service cron stop
-
-									LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
-									for seedUser in $LISTUSERS; do
-										if [ -e /etc/init.d/rtorrent-$seedUser ]; then
-											service rtorrent-$seedUser stop
-										fi
-									done
-									AllReadyStopped=true
-								fi
-							;;	
-							"MySB_DeleteUser")
-								if [ "$AllReadyStopped" == "false" ];then
-									service cron stop
-									service rtorrent-$NEWUSER stop
-									AllReadyStopped=true
-								fi
-							;;
-							"MySB_ChangeUserPassword")
-								if [ "$SCRIPT_name" == "MySB_ChangeUserPassword" ] && [ "$Service" == "nginx" ]; then
-									sudo service $Service reload
-								else
-									sudo service $Service restart
-								fi	
-							;;														
-						esac						
+						fi						
 					;;
-					"start")
-						case "$SCRIPT_name" in
-							"ruTorrent"|"rTorrent"|"MySB_CleanAll.sh")
-								if [ "$AllReadyStopped" == "false" ];then
-									service cron start
-									
-									LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
-									for seedUser in $LISTUSERS; do
-										service rtorrent-$seedUser restart		
-									done
-									
-									AllReadyStopped=true
-								fi									
-							;;
-							"MySB_DeleteUser")	
-								if [ "$AllReadyStopped" == "false" ];then
-									service cron start
-									AllReadyStopped=true
-								fi										
-							;;
-						esac					
 					
+					"start")			
 						if [ "$Service" == "pglcmd" ]; then
 							pglcmd restart
 							if [ $? -gt 0 ]; then # if pgl don't start maybe its due to a list update
