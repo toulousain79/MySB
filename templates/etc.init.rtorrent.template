@@ -104,9 +104,19 @@ delete_pid_file() {
 ## mout share dir for seedbox users
 mount_share() {
 	MOUNT=`df -H | grep "$HOMEDIR/share"`
-	if [ -z "$MOUNT" ]; then
-		mount --bind /home/MySB_share $HOMEDIR/share 2>> $LOG_FILE
-	fi
+	
+	case "$1" in
+		"mount")
+			if [ -z "$MOUNT" ]; then
+				mount --bind /home/MySB_share $HOMEDIR/share 2>> $LOG_FILE
+			fi
+		;;	
+		"umount")
+			if [ ! -z "$MOUNT" ]; then
+				umount $HOMEDIR/share 2>> $LOG_FILE
+			fi		
+		;;			
+	esac
 }
 
 #
@@ -209,7 +219,7 @@ restart_stop_case() {
 case "$1" in
 	start)
 		log_daemon_msg "Starting $DESC" "$NAME"
-		mount_share
+		mount_share mount
 		do_start
 		case "$?" in		
 			0)
@@ -233,6 +243,7 @@ case "$1" in
 		
 	stop)
 		log_daemon_msg "Stopping $DESC" "$NAME"
+		mount_share umount
 		do_stop
 		case "$?" in
 			0)
