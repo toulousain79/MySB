@@ -54,18 +54,18 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 						case 'FORMULA':
 							$formula = $column[1];
 							break;
-						case 'PAYMENT_METHOD':
-							$payment_method = $column[1];
-							break;
+						// case 'PAYMENT_METHOD':
+							// $payment_method = $column[1];
+							// break;
 						case 'TVA':
 							$tva = $column[1];
 							break;
 						case 'PU':
 							$unit_price = $column[1];
 							break;
-						case 'PAYPAL':
-							$paypal_address = $column[1];
-							break;						
+						// case 'PAYPAL':
+							// $paypal_address = $column[1];
+							// break;						
 					}
 				}
 			}
