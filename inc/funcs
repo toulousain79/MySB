@@ -659,8 +659,8 @@ TrackersGenerateAddress() {
 
 	if [ ! -z $TRACKER_IPV4 ]; then
 		echo $TRACKER >> /etc/MySB/infos/trackers.list
-		if [ -f /etc/pgl/pglcmd.conf ]; then
-			echo "${TRACKER}:${TRACKER_IPV4}-255.255.255.255" >> /etc/pgl/allow.p2p
+		if [ "$MYBLOCKLIST" == "PeerGuardian" ]; then
+			echo "${TRACKER}:${TRACKER_IPV4}-255.255.255.255" >> /etc/MySB/infos/allow.p2p
 		fi
 	fi
 	unset TRACKER_IPV4 TRACKER
@@ -682,9 +682,9 @@ TrackersGenerateAddress() {
 
 	if [ ! -z $TRACKER_IPV4 ]; then			
 		echo $TRACKER >> /etc/MySB/infos/trackers.list
-		if [ -f /etc/pgl/pglcmd.conf ]; then
-			echo "${TRACKER}:${TRACKER_IPV4}-255.255.255.255" >> /etc/pgl/allow.p2p
-		fi		
+		if [ "$MYBLOCKLIST" == "PeerGuardian" ]; then
+			echo "${TRACKER}:${TRACKER_IPV4}-255.255.255.255" >> /etc/MySB/infos/allow.p2p
+		fi
 	fi
 	
 	unset PART1 PART2 PART3 TRACKER_IPV4 TRACKER
@@ -696,8 +696,25 @@ TrackersGenerateAddress() {
 TrackersListing() {	
 	if [ -f /etc/MySB/infos/trackers.list ]; then
 		rm /etc/MySB/infos/trackers.list
-	fi	
+	fi
 
+	#### Create PeerGuardian P2P file
+	if [ "$MYBLOCKLIST" == "PeerGuardian" ]; then	
+		(
+		cat <<'EOF'
+# allow.p2p - allow list for pglcmd
+#
+# This file contains IP ranges that shall not be checked.
+# They must be in the PeerGuardian .p2p text format like this:
+#   Some organization:1.0.0.0-1.255.255.255
+# This is also true if your blocklists are in another format.
+# Lines beginning with a hash (#) are comments and will be ignored.
+#
+# Do a "pglcmd restart" when you have edited this file.
+EOF
+		) > /etc/MySB/infos/allow.p2p
+	fi
+	
 	ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
 	for engine in ${ENGINES}; do
 		TRACKER=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "\$url" | grep "\=" | grep "http" | head -1 | sed 's/public//g;' | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
@@ -716,7 +733,7 @@ TrackersListing() {
 		fi
 		unset IfExist
 	done
-	unset TRACKER_IPV4 Tracker
+	unset TRACKER_IPV4 Tracker	
 }
 
 #### Script Invocation
