@@ -181,8 +181,8 @@ case $1 in
 			OVPNPORT1=$OPENVPNPORT
 			(( OPENVPNPORT++ ))
 			OVPNPORT2=$OPENVPNPORT
-			(( OPENVPNPORT++ ))
-			OVPNPORT3=$OPENVPNPORT		
+			# (( OPENVPNPORT++ ))
+			# OVPNPORT3=$OPENVPNPORT		
 		
 			#### For network
 			echo 1 > /proc/sys/net/ipv4/ip_forward
@@ -201,12 +201,12 @@ case $1 in
 			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OVPNPORT2 -j ACCEPT -m comment --comment "OpenVPN"
 			StatusLSB				
 
-			log_daemon_msg "Allow use of OpenVPN TAP Without Redirect Gateway"
-			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OVPNPORT3 -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t filter -A INPUT -i tap0 -j ACCEPT
-			iptables -t filter -A INPUT -i br0 -j ACCEPT
-			iptables -t filter -A FORWARD -i br0 -j ACCEPT			
-			StatusLSB				
+			# log_daemon_msg "Allow use of OpenVPN TAP Without Redirect Gateway"
+			# iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OVPNPORT3 -j ACCEPT -m comment --comment "OpenVPN"
+			# iptables -t filter -A INPUT -i tap0 -j ACCEPT
+			# iptables -t filter -A INPUT -i br0 -j ACCEPT
+			# iptables -t filter -A FORWARD -i br0 -j ACCEPT			
+			# StatusLSB				
 
 			# iptables -t filter -A INPUT -s 10.0.3.0/24 -d 10.0.3.1 -p tcp -m tcp --dport 8200 -j ACCEPT
 			# iptables -t filter -A INPUT -s 10.0.3.0/24 -d 239.255.255.250 -p udp -m udp --dport 1900 -j ACCEPT	
