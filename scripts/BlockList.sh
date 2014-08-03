@@ -38,18 +38,12 @@ fi
 rm -f /etc/MySB/scripts/blocklist/*
 StatusLSB
 
-#echo "source /etc/MySB/inc/includes_before" > /etc/MySB/scripts/blocklist/CleanBlockList
-#echo "CleanBlockList \$1 \$2 \$3" >> /etc/MySB/scripts/blocklist/CleanBlockList
-
 while read line; do
 	FILE=`echo $line | cut -d '=' -f 1`
 	URL=`echo $line | cut -d '"' -f 2`
 	
 	if [ "`echo ${FILE} | cut -c1`" != "#" ] && [ ! -z "$FILE" ] && [ ! -z "$URL" ]; then
 		log_daemon_msg "Download all selected list" "$FILE"
-		# download list		
-		#screen -dmS download /bin/bash /etc/MySB/scripts/blocklist/CleanBlockList download "$FILE" "$URL";
-		#WaitingScreen download
 		CleanBlockList download "$FILE" "$URL" &> /dev/null
 
 		# complete global list
@@ -82,46 +76,30 @@ StatusLSB
 
 # delete blank line
 log_daemon_msg "Delete lines with spaces in global blocklist"
-#screen -dmS del_spaces /bin/bash /etc/MySB/scripts/blocklist/CleanBlockList del_spaces blocklist_rtorrent;
-#WaitingScreen del_spaces
-#StatusLSB
 CleanBlockList del_spaces blocklist_rtorrent
 StatusLSB
 
 # delete all RC
 log_daemon_msg "Delete RC in global list"
-#screen -dmS del_RC /bin/bash /etc/MySB/scripts/blocklist/CleanBlockList del_RC blocklist_rtorrent;
-#WaitingScreen del_RC
-#StatusLSB	
 CleanBlockList del_RC blocklist_rtorrent
 StatusLSB
 
 # delete line not start with numeric
 log_daemon_msg "Delete lines not start with numeric in global list"
-#screen -dmS not_numeric /bin/bash /etc/MySB/scripts/blocklist/CleanBlockList not_numeric blocklist_rtorrent;
-#WaitingScreen not_numeric
-#StatusLSB
 CleanBlockList not_numeric blocklist_rtorrent
 StatusLSB
 
 # delete line without "/" (is not in CIDR format)
 log_daemon_msg "Delete lines without IP range in global list"
-#screen -dmS not_iprange /bin/bash /etc/MySB/scripts/blocklist/CleanBlockList not_iprange blocklist_rtorrent;
-#WaitingScreen not_iprange
-#StatusLSB	
 CleanBlockList not_iprange blocklist_rtorrent
 StatusLSB
 
 # sort by alpha and delete double line
 log_daemon_msg "Delete double lines & sort global list"
-#screen -dmS sort_uniq /bin/bash /etc/MySB/scripts/blocklist/CleanBlockList sort_uniq blocklist_rtorrent;
-#WaitingScreen sort_uniq
-#StatusLSB
 CleanBlockList sort_uniq blocklist_rtorrent
 StatusLSB
 
 rm -f /etc/MySB/scripts/blocklist/blocklist_rtorrent.tmp
-#rm -f /etc/MySB/scripts/blocklist/CleanBlockList
 
 LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
 for seedUser in $LISTUSERS; do
