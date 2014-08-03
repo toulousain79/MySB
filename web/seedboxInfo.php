@@ -70,7 +70,23 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 					case 'OpenVPN config':
 						$comments = '';
 						$opts = '';
-						break;					
+						break;
+					case 'Server IP GW':
+						$comments = 'Server IP with redirect traffic.';
+						$opts = '';
+						break;
+					case 'Server IP':
+						$comments = 'Server IP without redirect traffic.';
+						$opts = '';
+						break;							
+					case 'Samba share':
+						$comments = 'mount - [Destination_directory] -t cifs -o noatime,nodiratime,UNC=//[10.0.0.1|10.0.1.1]/'.$user.',username='.$user.',password=[your_password]';
+						$opts = '';
+						break;
+					case 'NFS share':
+						$comments = 'mount.nfs [10.0.0.1|10.0.1.1]:/home/'.$user.'/rtorrent [Destination_directory] -r';
+						$opts = '';
+						break;						
 					default:
 						$comments = '';
 						$opts = '';
