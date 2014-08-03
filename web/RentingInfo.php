@@ -54,18 +54,12 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 						case 'FORMULA':
 							$formula = $column[1];
 							break;
-						// case 'PAYMENT_METHOD':
-							// $payment_method = $column[1];
-							// break;
 						case 'TVA':
 							$tva = $column[1];
 							break;
 						case 'PU':
 							$unit_price = $column[1];
-							break;
-						// case 'PAYPAL':
-							// $paypal_address = $column[1];
-							// break;						
+							break;					
 					}
 				}
 			}
@@ -87,17 +81,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 					<td><span class="Title">Unit price (per month)   :</span></td>
 					<td><input name="unit_price" type="text" value="' . $unit_price . '" /></td>
 					<td><span class="Comments"><em>Example:	19.99 (value without tax)</em></span></td>
-				</tr>
-				<tr>
-					<td><span class="Title">Payment method  :</span></td>
-					<td><input name="payment_method" type="text" value="' . $payment_method . '" /></td>
-					<td><span class="Comments"><em>Example:	Paypal</em></span></td>
-				</tr>								
-				<tr>
-					<td><span class="Title">Paypal address  :</span></td>
-					<td><input name="paypal_address" type="text" value="' . $paypal_address . '" /></td>
-					<td><span class="Comments"><em>Your Paypal address to receive payments.</em></span></td>
-				</tr>
+				</tr>				
 				<tr>
 					<td colspan="3" align="center"><input name="submit" type="submit" value="Submit" /></td>
 				</tr>						
