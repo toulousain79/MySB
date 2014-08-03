@@ -42,25 +42,10 @@ if [ "$3" == "" ]; then
 else
 	PU=$3
 fi
-# if [ "$4" == "" ]; then
-	# PAYMENT_METHOD=""
-# else
-	# PAYMENT_METHOD=$4
-# fi
-# if [ "$5" == "" ]; then
-	# PAYPAL=""
-# else
-	# PAYPAL=$5
-	# PAYPAL=`echo $PAYPAL | sed s/\@/\\\\\\\@/g`
-# fi
-
-
 
 perl -pi -e "s/<formula>/$FORMULA/g" /etc/MySB/inc/renting
 perl -pi -e "s/<tva>/$TVA/g" /etc/MySB/inc/renting
 perl -pi -e "s/<unit_price>/$PU/g" /etc/MySB/inc/renting
-# perl -pi -e "s/<payment_method>/$PAYMENT_METHOD/g" /etc/MySB/inc/renting
-# perl -pi -e "s/<paypal_address>/$PAYPAL/g" /etc/MySB/inc/renting	
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
