@@ -84,29 +84,29 @@ screen -dmS Tweaks /bin/bash /etc/MySB/install/Tweaks;
 WaitingScreen Tweaks
 StatusSTD
 
-#### configure php5-fpm
-echo -e -n "${CBLUE}Install and configure PHP5-FPM$CEND..."
-screen -dmS PHP /bin/bash /etc/MySB/install/PHP;
-WaitingScreen PHP
-StatusSTD	
-
 #### certificates
 echo -e -n "${CBLUE}Create certificates$CEND..."
 screen -dmS Certificates /bin/bash /etc/MySB/install/Certificates 'CreateCACertificate';
 WaitingScreen Certificates
 StatusSTD
 
-#### configure nginx
-echo -e -n "${CBLUE}Install and configure NginX$CEND..."
-screen -dmS Nginx /bin/bash /etc/MySB/install/Nginx;
-WaitingScreen Nginx
-StatusSTD	
-
 #### SSH
 echo -e -n "${CBLUE}Configure SSHd$CEND..."
 screen -dmS SSH /bin/bash /etc/MySB/install/SSH;
 WaitingScreen SSH
-StatusSTD		
+StatusSTD
+
+#### configure php5-fpm
+echo -e -n "${CBLUE}Install and configure PHP5-FPM$CEND..."
+screen -dmS PHP /bin/bash /etc/MySB/install/PHP;
+WaitingScreen PHP
+StatusSTD	
+
+#### configure nginx
+echo -e -n "${CBLUE}Install and configure NginX$CEND..."
+screen -dmS Nginx /bin/bash /etc/MySB/install/Nginx;
+WaitingScreen Nginx
+StatusSTD			
 
 #### vSFTPd
 echo -e -n "${CBLUE}Install and configure VSFTPd$CEND..."
