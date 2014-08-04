@@ -95,7 +95,8 @@ screen -r MySB
 Beware, during installation, the SSH port will be changed. If a port session 22 does not work, try with the new port that you have selected.
 
 #### NOTE 1: You must be logged as root to run this installation or use sudo.
-#### NOTE 2: At the end of the installation, the server will restart automatically and you will receive an e-mail summarizing. The first thing to do once you have received the email, is to change your password.
+#### NOTE 2: At the end of the installation, the server will restart automatically and you will receive an e-mail summarizing.
+#### NOTE 3: The first thing to do once you have received the email, is to change your password.
 
 ## Commands
 
