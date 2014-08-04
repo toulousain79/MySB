@@ -119,20 +119,23 @@ if [ "`screen -ls | grep MySB 2>/dev/null`" == "" ]; then
 			exit 1
 		else
 			if [ ! -d /etc/MySB/sources ]; then
-				mkdir -p /etc/MySB/sources >> /tmp/`basename $0`.log
+				mkdir /etc/MySB/sources >> /tmp/`basename $0`.log
 			fi		
 			if [ ! -d /etc/MySB/users ]; then
-				mkdir -p /etc/MySB/users >> /tmp/`basename $0`.log
+				mkdir /etc/MySB/users >> /tmp/`basename $0`.log
 			fi
 			if [ ! -d /etc/MySB/infos ]; then
-				mkdir -p /etc/MySB/infos >> /tmp/`basename $0`.log
+				mkdir /etc/MySB/infos >> /tmp/`basename $0`.log
 			fi
 			if [ ! -d /etc/MySB/logs ]; then
-				mkdir -p /etc/MySB/logs >> /tmp/`basename $0`.log
+				mkdir /etc/MySB/logs >> /tmp/`basename $0`.log
 			fi		
 			if [ ! -d /etc/MySB/files ]; then
-				mkdir -p /etc/MySB/files >> /tmp/`basename $0`.log
-			fi		
+				mkdir /etc/MySB/files >> /tmp/`basename $0`.log
+			fi
+			if [ ! -d /etc/MySB/temp ]; then
+				mkdir /etc/MySB/temp >> /tmp/`basename $0`.log
+			fi				
 			if [ ! -d /etc/MySB/web/logs/install ]; then
 				mkdir -p /etc/MySB/web/logs/install >> /tmp/`basename $0`.log
 			fi
