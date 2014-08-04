@@ -13,9 +13,8 @@ MySB is a seedbox platform for multi-users.
 
 ## Installed software
 
-	* xmlrpc-c (SVN)
-	* rTorrent (rakshasa) v0.9.4 with SSL
-	* libTorrrent (rakshasa) v13.4
+	* rTorrent (rakshasa) v0.9.2 with SSL
+	* libTorrrent (rakshasa) v13.2
 	* ruTorrent (SVN) + official plugins (SVN)
 	* NginX (SSL, specific port and some customizations)
 	* PHP5-FPM (php5-apcu, FastCGI, SSL)
@@ -150,7 +149,7 @@ OR
 #### rTorrent with ipv4_filter.load
 
 	* By default, some list are activated. Check "/etc/MySB/inc/blocklist".
-	* All list are avaible in "/etc/MySB/scripts/in/blocklist".
+	* All list are avaible in "/etc/MySB/inc/blocklist".
 	* Comment the line with '#' if you want to exclude a list OR comment out the line with deleting '#' if you want to activate it.
 	* Example: #BLUETACK_ADS="http://....." to exclude ADS Bluetack list.	
 	* And do "bash /etc/MySB/scripts/BlockList.sh" for generate the new list for each users.
@@ -170,13 +169,13 @@ http://<Server IP or Server Name>:<https NginX port>/MySB/OpenVPN.php` and use i
 https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-access-server-on-a-vps-container.html
 ```
 ##### NFS and Samba share with OpenVPN
-For NFS, you can mount the /home/<username> like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
+For NFS, you can mount the /home/<username>/rtorrent like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
 ```
-mount.nfs 10.0.1.1:/home/<username> <mount_dir> -o nolock
+mount.nfs [10.0.0.1|10.0.1.1]:/home/<username>/rtorrent <mount_dir> -r
 ```
 For Samba, you can mount the /home/<username> like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
 ```
-mount - <mount_dir> -t cifs -o noatime,nodiratime,UNC=//10.0.1.1/<username>,username=<username>,password=<your_password>
+mount - <mount_dir> -t cifs -o noatime,nodiratime,UNC=//[10.0.0.1|10.0.1.1]/<username>,username=<username>,password=<your_password>
 ```
 
 NB: I personally use my router Asus RT-N16 (firmware TomatoUSB by Shibby) as OpenVPN client. From there, I mount the NFS share corresponding to my homedir on the MySB box.
@@ -187,7 +186,7 @@ Miracle, I can stream my files with my Freebox Revolution!
 
 #### Debian 7 - x86_64 (Wheezy)
 
-	--> Tested on Online.net with "DEDIBOX® SC GEN2"
+	--> Tested on Online.net with "DEDIBOX® SC GEN2" and "DEDIBOX® XC"
 	--> Tested on OpenVZ Container with ProxMox, work fine ! (read comment in top of this page)
   
 #### Ubuntu or older Debian may worked, but not tested...
@@ -232,7 +231,7 @@ Created by toulousain79
 
 ## TODO
 
-* DLNA functionality (with OpenVPN)
+* Maybe add DLNA functionality (with OpenVPN)
 * Make some thing for users with dynamic ip for update whitelist in PeerGuardian and Fail2ban.
 * Gmail SMTP https://www.google.com/accounts/DisplayUnlockCaptcha
 * Maybe add OwnCloud possiblity
