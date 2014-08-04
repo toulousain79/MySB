@@ -53,6 +53,24 @@ case $1 in
 		fi		
 	;;
 	new)
+		# Clean users IP Addresses
+		if [ ! -z "$2" ] && [ ! -z "$3" ] && [ ! -z "$4" ]; then
+			USER="$2"
+			CURRENT_LIST="$3"
+			NEW_LIST="$4"
+			
+			USERIP=$(cat /etc/MySB/users/$USER.info | grep "IP Address=" | awk '{ print $3 }')
+			IFS=$','
+			for ip in $USERIP; do 
+				sed -i '/'$ip'/d' /etc/nginx/locations/MySB.conf 
+			done
+			unset IFS	
+			
+			perl -pi -e 's/'$CURRENT_LIST'/'$NEW_LIST'/g' /etc/MySB/users/$USER.info
+			
+			unset USER CURRENT_LIST NEW_LIST
+		fi
+	
 		# NO spoofing
 		if [ -e /proc/sys/net/ipv4/conf/all/rp_filter ]; then
 			log_daemon_msg "No spoofing"
