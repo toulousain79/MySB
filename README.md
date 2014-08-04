@@ -33,6 +33,7 @@ MySB is a seedbox platform for multi-users.
 	* PlexMedia Server (optionnal)
 	* Samba share for each users (VPN access)
 	* NFS share for each users (VPN access)
+	* Get SSL certificates for each tracker avaible with ruTorrent
 
 ## Additional ruTorrent plugins
 
@@ -106,6 +107,14 @@ After installing you will have access to the following commands to be used direc
 	* MySB_RefreshMe (refresh some parts of MySB)
 	* MySB_UpgradeMe (to migrate to a new version of MySB)
 	* MySB_UpgradeSystem (simply upgrade your system APT upgrade)
+	
+Next scripts are avaible too.
+	
+	* /etc/MySB/scripts/BlockList.sh, use this for generate blocklist for rTorrent with 'ipv4_filter.load' command.
+	* /etc/MySB/scripts/FirewallAndSecurity.sh [clean|new], use this for generate all security options (PeerGuardian, IPtables, Nginx IP restricted access, ...)
+	* /etc/MySB/scripts/GetTrackersCert.sh, use this for get all SSL certificates for all tracker avaibled with ruTorrent. You can add more trackers in '/etc/MySB/inc/trackers'.
+
+You can find others scripts in '/etc/MySB/scripts/'. This others scripts are added in cron job.
 
 #### While executing them, if sudo is needed, they will ask for a password.
 
