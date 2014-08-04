@@ -127,7 +127,8 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 			}
 		
 			if ( $new_list == $confirm_list ) {			
-				exec("sudo /bin/bash /etc/MySB/scripts/ManageIpList.sh '".$current_list."' '".$confirm_list."' '".$SeedUser."'", $output, $result);
+				//exec("sudo /bin/bash /etc/MySB/scripts/ManageIpList.sh '".$current_list."' '".$confirm_list."' '".$SeedUser."'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.sh new '".$SeedUser."' '".$current_list."' '".$confirm_list."'", $output, $result);
 				
 				Form();
 				
