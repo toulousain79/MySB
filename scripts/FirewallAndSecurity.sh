@@ -297,7 +297,7 @@ case $1 in
 			for seedUser in $LISTUSERS; do				
 				USERIP=$(cat /etc/MySB/users/$seedUser.info | grep "IP Address=" | awk '{ print $3 }')
 
-				if [ $USERIP != 'none' ]; then
+				if [ $USERIP != 'blank' ]; then
 					log_daemon_msg "Allow access to web server for $seedUser"
 				
 					IFS=$','
