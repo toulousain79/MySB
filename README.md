@@ -8,8 +8,8 @@ This script is a fork of Notos' Script (base v2.1.9) avaible at https://github.c
 
 MySB is a seedbox platform for multi-users.
 
-#### Current version = v1.0
-#### Last stable version = v1.0
+##### Current version = v1.0
+###### Last stable version = v1.0
 
 ## Installed software
 
@@ -69,11 +69,11 @@ Module 'xt_mark' is mandatory for PeerGuardian. Currently, I have not found solu
 https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-access-server-on-a-vps-container.html
 ```
 
-##### NOTE: You must have a swap partition for systems with less than 2GB of RAM!
+###### NOTE: You must have a swap partition for systems with less than 2GB of RAM!
 
 	--> Your swap partition should be at least equal to your RAM.
 
-##### NOTE: If you don't know Linux ENOUGH:
+###### NOTE: If you don't know Linux ENOUGH:
 
 	--> DO NOT use capital letters, all your usernames should be written in lowercase.
 	--> DO NOT upgrade anything in your box, ask in the thread before even thinking about it.
@@ -95,8 +95,8 @@ screen -r MySB
 Beware, during installation, the SSH port will be changed. If a port session 22 does not work, try with the new port that you have selected.
 
 ###### NOTE 1: You must be logged as root to run this installation or use sudo.
-##### NOTE 2: At the end of the installation, the server will restart automatically and you will receive an e-mail summarizing.
-##### NOTE 3: The first thing to do once you have received the email, is to change your password.
+###### NOTE 2: At the end of the installation, the server will restart automatically and you will receive an e-mail summarizing.
+###### NOTE 3: The first thing to do once you have received the email, is to change your password.
 
 ## Commands
 
@@ -118,7 +118,7 @@ Next scripts are avaible too.
 
 You can find others scripts in '/etc/MySB/scripts/'. This others scripts are added in cron job.
 
-##### NOTE: While executing them, if sudo is needed, they will ask for a password.
+###### NOTE: While executing them, if sudo is needed, they will ask for a password.
 
 ## Services
 
@@ -189,7 +189,7 @@ For Samba, you can mount the /home/<username> like that. The IP address can be d
 mount - <mount_dir> -t cifs -o noatime,nodiratime,UNC=//[10.0.0.1|10.0.1.1]/<username>,username=<username>,password=<your_password>
 ```
 
-NB: I personally use my router Asus RT-N16 (firmware TomatoUSB by Shibby) as OpenVPN client. From there, I mount the NFS share corresponding to my homedir on the MySB box.
+###### NOTE: I personally use my router Asus RT-N16 (firmware TomatoUSB by Shibby) as OpenVPN client. From there, I mount the NFS share corresponding to my homedir on the MySB box.
 Then I add my mount point in the DLNA server on my RT-N16. 
 Miracle, I can stream my files with my Freebox Revolution!
 
