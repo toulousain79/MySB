@@ -74,13 +74,13 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 				</tr>				
 				<tr>
 					<td><span class="Title">New wanted IP list :</span></td>
-					<td><input name="new_list" type="text" value="' . $allip . '" size="50" /></td>
+					<td><input name="new_list" type="text" value="' . $temp_list . '" size="50" /></td>
 					<td></td>
 					<td><span class="Comments"><em>Add the appropriate IP separated by commas.</em></span></td>					
 				</tr>
 				<tr>
 					<td><span class="Title">Confirm the new list :</span></td>
-					<td><input name="confirm_list" type="text" value="' . $allip . '" size="50" /></td>
+					<td><input name="confirm_list" type="text" value="' . $temp_list . '" size="50" /></td>
 					<td></td>
 					<td></td>						
 				</tr>
