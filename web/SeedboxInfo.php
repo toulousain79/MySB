@@ -47,8 +47,17 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 			
 			if (isset($column[0])) {
 				switch ($column[0]) {
+					case 'IP Address':
+						if ( $column[1] == '' ) {
+							$comments = '<a target="_blank" href="https://' .$_SERVER['HTTP_HOST'].'/MySB/ManageIP.php">1 - Before changing your temporary password, thank you to confirm your IP address HERE!</a>';
+							$opts = 'bgcolor="#FF6666"';
+						} else {
+							$comments = 'Public IP addresses listed here will be allowed to access certain pages (SeedboxInfo, ChangePassword, OpenVPN config).';
+							$opts = '';
+						}
+						break;				
 					case 'Password':
-						$comments = '<a target="_blank" href="https://' .$_SERVER['HTTP_HOST'].'/MySB/ChangePassword.php">Please promptly change your password HERE!</a>';
+						$comments = '<a target="_blank" href="https://' .$_SERVER['HTTP_HOST'].'/MySB/ChangePassword.php">2 - Please, promptly change your password HERE!</a>';
 						$opts = 'bgcolor="#FF6666"';
 						break;
 					case 'RPC':
