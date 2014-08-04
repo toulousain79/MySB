@@ -47,7 +47,7 @@ if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 				if ( (isset($column[0])) && (isset($column[1])) ) {		
 					if (substr($column[0], 0, 11) == 'IP Address') {
 						if ( trim($column[1]) == 'blank' ) {
-							$allip = '';
+							$allip = 'blank';
 							$temp_list = $current_ip;
 						} else  {
 							$allip = trim($column[1], " \t\n\r\0\x0B");
