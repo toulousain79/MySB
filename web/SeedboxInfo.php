@@ -48,7 +48,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 			if (isset($column[0])) {
 				switch ($column[0]) {
 					case 'IP Address':
-						if ( $column[1] == 'none' ) {
+						if ( $column[1] == 'blank' ) {
 							$comments = '<a target="_blank" href="https://' .$_SERVER['HTTP_HOST'].'/MySB/ManageIP.php">1 - Before changing your temporary password, thank you to confirm your IP address HERE!</a>';
 							$opts = 'bgcolor="#FF6666"';
 						} else {
