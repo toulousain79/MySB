@@ -112,9 +112,9 @@ After installing you will have access to the following commands to be used direc
 	
 Next scripts are avaible too.
 	
-	* /etc/MySB/scripts/BlockList.sh, use this for generate blocklist for rTorrent with 'ipv4_filter.load' command.
-	* /etc/MySB/scripts/FirewallAndSecurity.sh [clean|new], use this for generate all security options (PeerGuardian, IPtables, Nginx IP restricted access, ...)
-	* /etc/MySB/scripts/GetTrackersCert.sh, use this for get all SSL certificates for all tracker avaibled with ruTorrent. You can add more trackers in '/etc/MySB/inc/trackers'.
+	* '/etc/MySB/scripts/BlockList.sh', use this for generate blocklist for rTorrent with 'ipv4_filter.load' command.
+	* '/etc/MySB/scripts/FirewallAndSecurity.sh [clean|new]', use this for generate all security options (PeerGuardian, IPtables, Fail2Ban, Nginx IP restricted access, ...)
+	* '/etc/MySB/scripts/GetTrackersCert.sh', use this for get all SSL certificates for all tracker avaibled with ruTorrent. You can add more trackers in '/etc/MySB/inc/trackers'.
 
 You can find others scripts in '/etc/MySB/scripts/'. This others scripts are added in cron job.
 
