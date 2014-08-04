@@ -24,13 +24,21 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
+if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ]; then
 	exit
 fi
 
 CURRENT_LIST="$1"
 NEW_LIST="$2"
 FILENAME="$3"
+USER="$4"
+
+USERIP=$(cat /etc/MySB/users/$USER.info | grep "IP Address=" | awk '{ print $3 }')
+IFS=$','
+for ip in $USERIP; do 
+	sed -i '/'$ip'/d' /etc/nginx/locations/MySB.conf 
+done
+unset IFS
 
 perl -pi -e 's/'$CURRENT_LIST'/'$NEW_LIST'/g' $FILENAME
 
