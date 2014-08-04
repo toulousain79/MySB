@@ -55,6 +55,7 @@ case $1 in
 	new)
 		# Clean users IP Addresses
 		if [ ! -z "$2" ] && [ ! -z "$3" ] && [ ! -z "$4" ]; then
+			log_daemon_msg "Clean IP for $2"
 			USER="$2"
 			CURRENT_LIST="$3"
 			NEW_LIST="$4"
@@ -69,6 +70,7 @@ case $1 in
 			perl -pi -e 's/'$CURRENT_LIST'/'$NEW_LIST'/g' /etc/MySB/users/$USER.info
 			
 			unset USER CURRENT_LIST NEW_LIST
+			StatusLSB
 		fi
 	
 		# NO spoofing
