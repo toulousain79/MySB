@@ -294,23 +294,25 @@ case $1 in
 
 		#### NginX
 		if [ -f /etc/nginx/locations/MySB.conf ]; then
-			for seedUser in $LISTUSERS; do
-				log_daemon_msg "Allow access to web server for $seedUser"
-				
+			for seedUser in $LISTUSERS; do				
 				USERIP=$(cat /etc/MySB/users/$seedUser.info | grep "IP Address=" | awk '{ print $3 }')
 
-				IFS=$','
-				for ip in $USERIP; do 
-					SEARCH=$(cat /etc/nginx/locations/MySB.conf | grep $ip)
-					if [ -z $SEARCH ]; then
-						awk '{ print } /allow 127.0.1.1;/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
-						perl -pi -e "s/<ip>/$ip/g" /etc/MySB/files/MySB_location.conf
-						mv /etc/MySB/files/MySB_location.conf /etc/nginx/locations/MySB.conf
-					fi
-				done
-				unset IFS
+				if [ $USERIP != 'none' ]; then
+					log_daemon_msg "Allow access to web server for $seedUser"
 				
-				StatusLSB
+					IFS=$','
+					for ip in $USERIP; do 
+						SEARCH=$(cat /etc/nginx/locations/MySB.conf | grep $ip)
+						if [ -z $SEARCH ]; then
+							awk '{ print } /allow 127.0.1.1;/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
+							perl -pi -e "s/<ip>/$ip/g" /etc/MySB/files/MySB_location.conf
+							mv /etc/MySB/files/MySB_location.conf /etc/nginx/locations/MySB.conf
+						fi
+					done
+					unset IFS
+					
+					StatusLSB
+				fi
 			done
 		fi
 		
