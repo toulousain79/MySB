@@ -276,12 +276,12 @@ case $1 in
 			IFS=$','
 				for ip in $USERIP; do 
 					IfExist=`echo $TEMP | grep $ip`
-					if [ -z $IfExist ]; then	
+					if [ -z $IfExist ] && [ $ip != "blank" ]; then	
 						TEMP="$TEMP $ip/32"
 					fi
 					
 					IfExist=`echo $TEMP2 | grep $ip`
-					if [ -z $IfExist ]; then	
+					if [ -z $IfExist ] && [ $ip != "blank" ]; then	
 						TEMP2="$TEMP2 $ip"
 					fi					
 				done
@@ -289,8 +289,8 @@ case $1 in
 	
 			StatusLSB
 		done
-		IGNOREIP="$IGNOREIP `echo $TEMP | sed -e "s/^//g;"`"
-		WHITELIST="$WHITELIST `echo $TEMP2 | sed -e "s/^//g;"`"
+		IGNOREIP="$IGNOREIP `echo $TEMP | sed -e 's/^//g;'`"
+		WHITELIST="$WHITELIST `echo $TEMP2 | sed -e 's/^//g;'`"
 
 		#### NginX
 		if [ -f /etc/nginx/locations/MySB.conf ]; then
