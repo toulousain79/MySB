@@ -94,7 +94,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 						$opts = '';
 						break;
 					case 'NFS share':
-						$comments = 'mount.nfs [10.0.0.1|10.0.1.1]:/home/'.$user.'/rtorrent [Destination_directory] -r';
+						$comments = 'mount.nfs [10.0.0.1|10.0.1.1]:/home/'.$user.'/rtorrent [Destination_directory]';
 						$opts = '';
 						break;						
 					default:

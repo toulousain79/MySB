@@ -182,7 +182,7 @@ https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-acc
 ##### NFS and Samba share with OpenVPN
 For NFS, you can mount the /home/<username>/rtorrent like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
 ```
-mount.nfs [10.0.0.1|10.0.1.1]:/home/<username>/rtorrent <mount_dir> -r
+mount.nfs [10.0.0.1|10.0.1.1]:/home/<username>/rtorrent <mount_dir>
 ```
 For Samba, you can mount the /home/<username> like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
 ```
