@@ -65,6 +65,22 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 						$comments = 'RPC value can be used to remotely connect to rTorrent via a smartphone. (see Seedbox-Manager)';
 						$opts = '';
 						break;
+					case 'Session dir':
+						$comments = 'The session directory allows rTorrent to save the progess of your torrents. (Accessible only by SSH.)';
+						$opts = '';
+						break;
+					case 'Complete dir':
+						$comments = 'Completed files will be move to this directory.';
+						$opts = '';
+						break;							
+					case 'Torrents dir':
+						$comments = 'Partial downloads are stored here.';
+						$opts = '';
+						break;							
+					case 'Watch dir':
+						$comments = 'Saving a torrent file to this directory will automatically start the download.';
+						$opts = '';
+						break;							
 					case 'Share dir':
 						$comments = 'The "share" folder is accessible by all users on the server. You can easily share what you want with any user.';
 						$opts = '';
