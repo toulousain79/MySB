@@ -73,7 +73,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 						$comments = 'Completed files will be move to this directory.';
 						$opts = '';
 						break;							
-					case 'Torrents dir':
+					case 'Incomplete dir':
 						$comments = 'Partial downloads are stored here.';
 						$opts = '';
 						break;							
