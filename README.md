@@ -182,7 +182,7 @@ https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-acc
 ##### NFS and Samba share with OpenVPN
 For NFS, you can mount the /home/<username>/rtorrent like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
 ```
-mount -t nfs [10.0.0.1|10.0.1.1]:/home/<username>/rtorrent <mount_dir> -o _netdev,timeo=15,rsize=16384,vers=3,udp
+mount -t nfs [10.0.0.1|10.0.1.1]:/home/<username>/rtorrent <mount_dir> -o  -o nocto,noacl,noatime,nodiratime,nolock,rsize=8192,vers=3,ro,udp
 ```
 For Samba, you can mount the /home/<username> like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
 ```
@@ -242,6 +242,7 @@ Created by toulousain79
 
 ## TODO
 
+* Change ruTorrent directory name (/rutorrent/)
 * Maybe add DLNA functionality (with OpenVPN)
 * Make some thing for users with dynamic ip for update whitelist in PeerGuardian and Fail2ban.
 * Gmail SMTP https://www.google.com/accounts/DisplayUnlockCaptcha
