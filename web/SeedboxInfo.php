@@ -110,7 +110,11 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 						$opts = '';
 						break;
 					case 'NFS share':
+<<<<<<< HEAD
 						$comments = 'mount -t nfs [10.0.0.1|10.0.1.1]:/home/'.$user.'/rtorrent [Destination_directory] -o nocto,noacl,noatime,nodiratime,nolock,rsize=8192,vers=3,ro,udp';
+=======
+						$comments = 'mount -t nfs [10.0.0.1|10.0.1.1]:/home/'.$user.'/rtorrent [Destination_directory] -o noatime,nodiratime,nolock,cto,rsize=8192,vers=3,ro,tcp';
+>>>>>>> origin/v1.0
 						$opts = '';
 						break;						
 					default:
