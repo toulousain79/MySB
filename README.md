@@ -249,4 +249,5 @@ Created by toulousain79
 * Maybe add OwnCloud possiblity
 * Maybe use of SQLight
 * NFS over sTunnel ? (https://w3.physics.illinois.edu/physwiki/doku.php?id=pcs:unix:nfs_over_stunnel)
-* 
+* SABnzbd option ?
+* Subsonic option ?
