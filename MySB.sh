@@ -26,7 +26,7 @@ if [ -f /etc/MySB/inc/includes_before ]; then source /etc/MySB/inc/includes_befo
 
 if [ "`screen -ls | grep MySB`" == "" ]; then
 	echo ""
-	echo -e "${CRED}I am sorry, but you must start installation with MySB_Install.sh, aborting!$CEND"
+	echo -e "${CRED}I am sorry, but you must start installation with$CEND ${CGREEN}MySB_Install.sh$CEND${CRED}, aborting!$CEND"
 	exit 1
 fi
 
@@ -35,7 +35,16 @@ echo -e "${CRED}If you lose connection during installation, restart the SSH sess
 echo -e "${CGREEN}	screen -r MySB$CEND"
 echo -e "${CRED}Beware, during installation, the SSH port will be changed. If a port session 22 does not work, try with the new port that you have selected.$CEND"
 echo
-		
+echo -e "${CBLUE}At the end of the installation, you should receive a confirmation email containing all the information about your account.$CEND"
+echo -e "${CBLUE}Remember to also check the SPAM folder...$CEND"
+echo
+echo -e "{CBLUE}When creating a new user, there are two additional steps to accomplish. $CEND"
+echo -e "${CGREEN}	1) add public IP address of the user"
+echo -e "${CGREEN}	2) change the temporary password to the user"
+echo -e "${CRED}NB: Steps will be reported in the e-mail confirmation that the user will receive.$CEND"
+
+
+
 echo -e "${CYELLOW}All is ok for start the install of MySB.$CEND"
 GetString NO  "Do you want to continue, type 'yes' ?" CONTINUE NO
 if [ "$CONTINUE" == "NO" ]; then

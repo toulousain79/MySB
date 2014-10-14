@@ -8,7 +8,7 @@ This script is a fork of Notos' Script (base v2.1.9) avaible at https://github.c
 
 MySB is a seedbox platform for multi-users.
 
-##### Current version = v1.0
+##### Current version = v1.1 (Development in progress, do not use this version !!!)
 ###### Last stable version = v1.0
 
 ## Installed software
