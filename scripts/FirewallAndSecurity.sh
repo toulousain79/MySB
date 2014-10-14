@@ -200,9 +200,7 @@ case $1 in
 		if [ "$INSTALLOPENVPN" == "YES" ]; then
 			OVPNPORT1=$OPENVPNPORT
 			(( OPENVPNPORT++ ))
-			OVPNPORT2=$OPENVPNPORT
-			# (( OPENVPNPORT++ ))
-			# OVPNPORT3=$OPENVPNPORT		
+			OVPNPORT2=$OPENVPNPORT	
 		
 			#### For network
 			echo 1 > /proc/sys/net/ipv4/ip_forward
@@ -219,42 +217,8 @@ case $1 in
 			log_daemon_msg "Allow use of OpenVPN TUN Without Redirect Gateway"
 			iptables -t filter -A INPUT -i tun1 -j ACCEPT
 			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OVPNPORT2 -j ACCEPT -m comment --comment "OpenVPN"
-			StatusLSB				
-
-			# log_daemon_msg "Allow use of OpenVPN TAP Without Redirect Gateway"
-			# iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OVPNPORT3 -j ACCEPT -m comment --comment "OpenVPN"
-			# iptables -t filter -A INPUT -i tap0 -j ACCEPT
-			# iptables -t filter -A INPUT -i br0 -j ACCEPT
-			# iptables -t filter -A FORWARD -i br0 -j ACCEPT			
-			# StatusLSB				
-
-			# iptables -t filter -A INPUT -s 10.0.3.0/24 -d 10.0.3.1 -p tcp -m tcp --dport 8200 -j ACCEPT
-			# iptables -t filter -A INPUT -s 10.0.3.0/24 -d 239.255.255.250 -p udp -m udp --dport 1900 -j ACCEPT	
-			# Samba access but only in the LAN
-			#iptables -A INPUT -i tun0 -m tcp -p tcp -s 10.0.1.0/24 --dport 139 -j ACCEPT
-			#iptables -A INPUT -i tun0 -m tcp -p tcp -s 10.0.1.0/24 --dport 445 -j ACCEPT
-			#iptables -A INPUT -i tun0 -s 10.0.1.0/24 -p udp -m udp --dport 137 -j ACCEPT
-			#iptables -A INPUT -i tun0 -s 10.0.1.0/24 -p udp -m udp --dport 138 -j ACCEPT	
-			# iptables -A INPUT -i br0 -m tcp -p tcp -s 192.168.0.0/24 --dport 139 -j ACCEPT
-			# iptables -A INPUT -i br0 -m tcp -p tcp -s 192.168.0.0/24 --dport 445 -j ACCEPT
-			# iptables -A INPUT -i br0 -s 192.168.0.0/24 -p udp -m udp --dport 137 -j ACCEPT
-			# iptables -A INPUT -i br0 -s 192.168.0.0/24 -p udp -m udp --dport 138 -j ACCEPT	
-
-			#Ouverture des ports des services LAM
-			#iptables -A INPUT -p tcp --dport 21 -j ACCEPT
-			#iptables -A INPUT -p tcp --dport 20 -j ACCEPT
-			#iptables -A INPUT -p udp --dport 500 -j ACCEPT
-			#iptables -A INPUT -p tcp --dport 500 -j ACCEPT
-			#iptables -A INPUT -p tcp --dport 80 -j ACCEPT
-			#iptables -A INPUT -p tcp --dport 4500:4600 -j ACCEPT
-			#iptables -A INPUT -p icmp -m limit --limit 30/minute -j ACCEPT
-			#iptables -A INPUT -p icmp -j DROP
+			StatusLSB
 		fi
-
-		# Mail SMTP:25
-	#	log_daemon_msg "Allow use of SMTP"
-	#	iptables -t filter -A INPUT -p tcp --dport 25 -j ACCEPT -m comment --comment "SMTP In"
-	#	StatusLSB
 
 		# PlexMedia Server
 		if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver" ]; then
@@ -262,7 +226,7 @@ case $1 in
 		fi
 	
 		#### rTorrent
-		IGNOREIP="127.0.0.1/8 10.0.0.0/24 10.0.1.0/24 10.0.2.0/24"
+		IGNOREIP="127.0.0.1/8 10.0.0.0/24 10.0.1.0/24"
 		WHITELIST="10.0.0.0/24 10.0.1.0/24"
 		LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
 		for seedUser in $LISTUSERS; do
@@ -330,7 +294,6 @@ case $1 in
 		fi
 		
 		#### PeerGuardian
-		#if [ "$MYBLOCKLIST" == "PeerGuardian" ]; then
 		if [ -f /etc/pgl/pglcmd.conf ]; then
 			log_daemon_msg "Add whitelist to PeerGuardian"
 			
