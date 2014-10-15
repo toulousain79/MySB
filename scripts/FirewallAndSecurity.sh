@@ -222,7 +222,15 @@ case $1 in
 
 		# PlexMedia Server
 		if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver" ]; then
-			iptables -t filter -A INPUT -p tcp --dport 32400 -j ACCEPT -m comment --comment "PlexMediaServer"
+			for TCP_PORT in $PLEXMEDIA_TCP_PORTS; do 
+				iptables -t filter -A INPUT -p tcp --dport $TCP_PORT -j ACCEPT -m comment --comment "PlexMediaServer TCP"
+			done
+			unset TCP_PORT
+
+			for UDP_PORT in $PLEXMEDIA_UDP_PORTS; do 
+				iptables -t filter -A INPUT -p tcp --dport $UDP_PORT -j ACCEPT -m comment --comment "PlexMediaServer UDP"
+			done
+			unset UDP_PORT			
 		fi
 	
 		#### rTorrent

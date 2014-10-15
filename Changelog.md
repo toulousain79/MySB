@@ -23,8 +23,8 @@
 ######################################################################
 Changelog for MySB
 
-	Version v1 (main branch)
-		May 04 2014 17:37 GMT-1 (by toulousain79)
+	Version v1.0 (main branch)
+		2014/05/04
 			- Use of repository list (SVN, GitHub, files)
 			- rTorrent v0.9.4 and libTorrent v0.13.4
 			- Use of SVN for Xmlrpc-c
@@ -34,8 +34,11 @@ Changelog for MySB
 			- Remove completly "Jailkit"
 			- Replace Apache2 by Nginx
 			- Add Iptables rules
+			
+	Version v1.1
+		2014/10/15
+			- "install/PeerGuardian", some modifications
+			- "scripts/FirewallAndSecurity.sh", some modifications
+			- add PlexMedia ports management
 
-# -----------------------------------------
-source /etc/MySB/inc/includes_after
-# -----------------------------------------
 ##################### LAST LINE ######################################
