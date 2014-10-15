@@ -53,6 +53,50 @@ case $1 in
 		fi		
 	;;
 	new)
+		# Seedbox users IPs
+		for seedUser in $LISTUSERS; do
+			log_daemon_msg "Creating white lists"
+			USERIP=$(cat /etc/MySB/users/$seedUser.info | grep "IP Address=" | awk '{ print $3 }')
+
+		IGNOREIP="127.0.0.1/8 10.0.0.0/24 10.0.1.0/24"
+		WHITELIST="10.0.0.0/24 10.0.1.0/24"
+		LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
+		
+		
+		for seedUser in $LISTUSERS; do
+			IFS=$','
+				for ip in $USERIP; do 
+					IfExist=`echo $TEMP | grep $ip`
+					if [ -z $IfExist ] && [ $ip != "blank" ]; then	
+						TEMP="$TEMP $ip/32"
+					fi
+					
+					IfExist=`echo $TEMP2 | grep $ip`
+					if [ -z $IfExist ] && [ $ip != "blank" ]; then	
+						TEMP2="$TEMP2 $ip"
+					fi					
+				done
+			unset IFS
+	
+			StatusLSB
+		done
+		IGNOREIP="$IGNOREIP `echo $TEMP | sed -e 's/^//g;'`"
+		WHITELIST="$WHITELIST `echo $TEMP2 | sed -e 's/^//g;'`"
+
+			
+			IFS=$','
+			for ip in $USERIP; do 
+				IfExist=`echo $TEMP | grep $ip`
+				if [ -z $IfExist ] && [ $ip != "blank" ]; then	
+					TEMP="$TEMP $ip"
+				fi				
+			done
+			unset IFS			
+	
+			SeedboxUsersIPs="${SeedboxUsersIPs} ${TEMP}"
+			StatusLSB
+		done	
+	
 		# Clean users IP Addresses
 		if [ ! -z "$2" ] && [ ! -z "$3" ] && [ ! -z "$4" ]; then
 			log_daemon_msg "Clean IP for $2"
@@ -234,35 +278,15 @@ case $1 in
 		fi
 	
 		#### rTorrent
-		IGNOREIP="127.0.0.1/8 10.0.0.0/24 10.0.1.0/24"
-		WHITELIST="10.0.0.0/24 10.0.1.0/24"
-		LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
 		for seedUser in $LISTUSERS; do
 			log_daemon_msg "Allow use of rTorrent for $seedUser"
 			
 			USERIP=$(cat /etc/MySB/users/$seedUser.info | grep "IP Address=" | awk '{ print $3 }')
 			PORT_START=$(cat /etc/MySB/users/$seedUser.info | grep "SCGI port=" | awk '{ print $3 }')
 			PORT_END=$(cat /etc/MySB/users/$seedUser.info | grep "rTorrent port=" | awk '{ print $3 }')
-			iptables -t filter -A INPUT -p tcp --dport $PORT_START:$PORT_END -j ACCEPT -m comment --comment "rTorrent $seedUser"
-
-			IFS=$','
-				for ip in $USERIP; do 
-					IfExist=`echo $TEMP | grep $ip`
-					if [ -z $IfExist ] && [ $ip != "blank" ]; then	
-						TEMP="$TEMP $ip/32"
-					fi
-					
-					IfExist=`echo $TEMP2 | grep $ip`
-					if [ -z $IfExist ] && [ $ip != "blank" ]; then	
-						TEMP2="$TEMP2 $ip"
-					fi					
-				done
-			unset IFS
-	
+			iptables -t filter -A INPUT -p tcp --dport $PORT_START:$PORT_END -j ACCEPT -m comment --comment "rTorrent $seedUser"	
 			StatusLSB
 		done
-		IGNOREIP="$IGNOREIP `echo $TEMP | sed -e 's/^//g;'`"
-		WHITELIST="$WHITELIST `echo $TEMP2 | sed -e 's/^//g;'`"
 
 		#### NginX
 		if [ -f /etc/nginx/locations/MySB.conf ]; then
