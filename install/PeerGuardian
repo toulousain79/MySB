@@ -132,32 +132,42 @@ done
 unset IFS	
 MYIP=`echo $TEMP | sed -e "s/^//g;"`
 
-OVPNPORT1=$OPENVPNPORT
-(( OPENVPNPORT++ ))
-OVPNPORT2=$OPENVPNPORT
+TCP_PORTS_LIST="${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}"
+UDP_PORTS_LIST=""
 
-case "$OPENVPNPROTO" in
-	"udp")
-		echo "WHITE_TCP_IN=\"${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"" >> /etc/pgl/pglcmd.conf
-		echo "WHITE_UDP_IN=\"${OVPNPORT1} ${OVPNPORT2}\"" >> /etc/pgl/pglcmd.conf
-		echo "WHITE_TCP_OUT=\"80 443 ${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"" >> /etc/pgl/pglcmd.conf
-		echo "WHITE_UDP_OUT=\"${OVPNPORT1} ${OVPNPORT2}\"" >> /etc/pgl/pglcmd.conf
-		echo "WHITE_TCP_FWD=\"\"" >> /etc/pgl/pglcmd.conf
-		echo "WHITE_UDP_FWD=\"\"" >> /etc/pgl/pglcmd.conf
-	;;
-	"tcp")
-		echo "WHITE_TCP_IN=\"${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${OVPNPORT1} ${OVPNPORT2} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"" >> /etc/pgl/pglcmd.conf
-		echo "WHITE_UDP_IN=\"\"" >> /etc/pgl/pglcmd.conf
-		echo "WHITE_TCP_OUT=\"80 443 ${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${OVPNPORT1} ${OVPNPORT2} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"" >> /etc/pgl/pglcmd.conf
-		echo "WHITE_UDP_OUT=\"\"" >> /etc/pgl/pglcmd.conf
-		echo "WHITE_TCP_FWD=\"\"" >> /etc/pgl/pglcmd.conf
-		echo "WHITE_UDP_FWD=\"\"" >> /etc/pgl/pglcmd.conf
-	;;
-esac
+if [ "$INSTALLOPENVPN" == "YES" ]; then
+	OVPNPORT1=$OPENVPNPORT
+	(( OPENVPNPORT++ ))
+	OVPNPORT2=$OPENVPNPORT
 
-echo "WHITE_IP_IN=\"10.0.0.0/24 10.0.1.0/24 ${MYIP}\"" >> /etc/pgl/pglcmd.conf
-echo "WHITE_IP_OUT=\"10.0.0.0/24 10.0.1.0/24 ${MYIP}\"" >> /etc/pgl/pglcmd.conf
-echo "WHITE_IP_FWD=\"10.0.0.0/24 10.0.1.0/24\"" >> /etc/pgl/pglcmd.conf
+	case "$OPENVPNPROTO" in
+		"udp")
+			UDP_PORTS_LIST="${UDP_PORTS_LIST} ${OVPNPORT1} ${OVPNPORT2}"
+		;;
+		"tcp")
+			TCP_PORTS_LIST="${TCP_PORTS_LIST} ${OVPNPORT1} ${OVPNPORT2}"
+		;;
+	esac
+
+	echo "WHITE_IP_FWD=\"10.0.0.0/24\"" >> /etc/pgl/pglcmd.conf
+fi
+
+if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver" ]; then
+	TCP_PORTS_LIST="${TCP_PORTS_LIST} ${CAKEBOXPORT}"
+fi
+
+if [ "$INSTALLWEBMIN" == "YES" ]; then
+	TCP_PORTS_LIST="${TCP_PORTS_LIST} ${WEBMINPORT}"
+fi
+
+echo "WHITE_IP_IN=\"${MYIP}\"" >> /etc/pgl/pglcmd.conf
+echo "WHITE_IP_OUT=\"127.0.0.1\"" >> /etc/pgl/pglcmd.conf
+echo "WHITE_TCP_IN=\"${TCP_PORTS_LIST}\"" >> /etc/pgl/pglcmd.conf
+echo "WHITE_UDP_IN=\"${UDP_PORTS_LIST}\"" >> /etc/pgl/pglcmd.conf
+echo "WHITE_TCP_OUT=\"80 443 ${TCP_PORTS_LIST}\"" >> /etc/pgl/pglcmd.conf
+echo "WHITE_UDP_OUT=\"80 443 ${UDP_PORTS_LIST}\"" >> /etc/pgl/pglcmd.conf
+echo "WHITE_TCP_FWD=\"\"" >> /etc/pgl/pglcmd.conf
+echo "WHITE_UDP_FWD=\"\"" >> /etc/pgl/pglcmd.conf
 
 #### Create Blocklist file
 (
