@@ -28,6 +28,10 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+#### VARs
+Modules="tun,iptable_filter,iptable_nat,iptable_mangle,ip_gre,ip_tables,ip_nat_ftp,ip_nat_irc,ip_conntrack,ip_conntrack_ftp,ip_conntrack_irc,ipt_REJECT,ipt_tos,ipt_TOS,ipt_limit,ipt_multiport,ipt_TCPMSS,ipt_tcpmss,ipt_ttl,ipt_length,ipt_LOG,ipt_conntrack,ipt_helper,ipt_state,ipt_recent,ipt_owner,ipt_mark,ipt_REDIRECT,ipt_MASQUERADE,ipt_MARK,xt_connlimit,xt_limit,xt_multiport,xt_state,xt_owner,xt_NFQUEUE"
+
+#### Begin
 case $1 in
 	clean)
 		# Vidage et suppression des règles existantes :
@@ -54,68 +58,36 @@ case $1 in
 	;;
 	new)
 		# Seedbox users IPs
+		log_daemon_msg "Creating IP white lists"
+		LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`	
 		for seedUser in $LISTUSERS; do
-			log_daemon_msg "Creating white lists"
 			USERIP=$(cat /etc/MySB/users/$seedUser.info | grep "IP Address=" | awk '{ print $3 }')
-
-		IGNOREIP="127.0.0.1/8 10.0.0.0/24 10.0.1.0/24"
-		WHITELIST="10.0.0.0/24 10.0.1.0/24"
-		LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
-		
-		
-		for seedUser in $LISTUSERS; do
-			IFS=$','
-				for ip in $USERIP; do 
-					IfExist=`echo $TEMP | grep $ip`
-					if [ -z $IfExist ] && [ $ip != "blank" ]; then	
-						TEMP="$TEMP $ip/32"
-					fi
-					
-					IfExist=`echo $TEMP2 | grep $ip`
-					if [ -z $IfExist ] && [ $ip != "blank" ]; then	
-						TEMP2="$TEMP2 $ip"
-					fi					
-				done
-			unset IFS
-	
-			StatusLSB
-		done
-		IGNOREIP="$IGNOREIP `echo $TEMP | sed -e 's/^//g;'`"
-		WHITELIST="$WHITELIST `echo $TEMP2 | sed -e 's/^//g;'`"
-
 			
 			IFS=$','
 			for ip in $USERIP; do 
-				IfExist=`echo $TEMP | grep $ip`
+				IfExist=`echo $Fail2banWhiteList | grep $ip`
 				if [ -z $IfExist ] && [ $ip != "blank" ]; then	
-					TEMP="$TEMP $ip"
+					Fail2banWhiteList="${Fail2banWhiteList} ${ip}/32"
+				fi
+				IfExist=`echo $SeedboxUsersIPs | grep $ip`
+				if [ -z $IfExist ] && [ $ip != "blank" ]; then	
+					SeedboxUsersIPs="${SeedboxUsersIPs} ${ip}"
 				fi				
 			done
-			unset IFS			
-	
-			SeedboxUsersIPs="${SeedboxUsersIPs} ${TEMP}"
-			StatusLSB
-		done	
-	
-		# Clean users IP Addresses
-		if [ ! -z "$2" ] && [ ! -z "$3" ] && [ ! -z "$4" ]; then
-			log_daemon_msg "Clean IP for $2"
-			USER="$2"
-			CURRENT_LIST="$3"
-			NEW_LIST="$4"
-			
-			USERIP=$(cat /etc/MySB/users/$USER.info | grep "IP Address=" | awk '{ print $3 }')
-			IFS=$','
-			for ip in $USERIP; do 
-				sed -i '/'$ip'/d' /etc/nginx/locations/MySB.conf 
+			unset IFS ip
+		done
+		if [ "$INSTALLOPENVPN" == "YES" ]; then
+			for ip in $VpnIPs; do 
+				IfExist=`echo $Fail2banWhiteList | grep $ip`
+				if [ -z $IfExist ] && [ $ip != "blank" ]; then	
+					Fail2banWhiteList="${Fail2banWhiteList} ${ip}"
+				fi			
 			done
-			unset IFS	
-			
-			perl -pi -e 's/'$CURRENT_LIST'/'$NEW_LIST'/g' /etc/MySB/users/$USER.info
-			
-			unset USER CURRENT_LIST NEW_LIST
-			StatusLSB
+			unset ip
 		fi
+		Fail2banWhiteList=`echo $Fail2banWhiteList | sed -e "s/^//g;"`
+		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed -e "s/^//g;"`
+		StatusLSB
 	
 		# NO spoofing
 		if [ -e /proc/sys/net/ipv4/conf/all/rp_filter ]; then
@@ -128,49 +100,14 @@ case $1 in
 		
 		# Modules
 		log_daemon_msg "Loading modules"
-		MODULES="	tun
-					iptable_filter
-					iptable_nat
-					iptable_mangle
-					ip_gre
-					ip_tables
-					ip_nat_ftp
-					ip_nat_irc
-					ip_conntrack
-					ip_conntrack_ftp
-					ip_conntrack_irc
-					ipt_REJECT
-					ipt_tos
-					ipt_TOS
-					ipt_limit
-					ipt_multiport
-					ipt_TCPMSS
-					ipt_tcpmss
-					ipt_ttl
-					ipt_length
-					ipt_LOG
-					ipt_conntrack
-					ipt_helper
-					ipt_state
-					ipt_recent
-					ipt_owner
-					ipt_mark
-					ipt_REDIRECT
-					ipt_MASQUERADE
-					ipt_MARK
-					xt_connlimit
-					xt_limit
-					xt_multiport
-					xt_state
-					xt_owner
-					xt_NFQUEUE"
-					
-		for item in $MODULES; do
-			IfExist=`lsmod | grep "$item"`
-			if [ $? -eq 0 ] ; then
-				modprobe $item
-			fi
-		done
+		IFS=$','
+			for item in $Modules; do
+				IfExist=`lsmod | grep "$item"`
+				if [ $? -eq 0 ] ; then
+					modprobe $item
+				fi
+			done
+		unset IFS
 		StatusLSB
 
 		# Vidage et suppression des règles existantes :
@@ -200,8 +137,13 @@ case $1 in
 		StatusLSB	
 
 		# ICMP
-		log_daemon_msg "Allow incoming ping"
-		iptables -t filter -A INPUT -p icmp -j ACCEPT -m comment --comment "ICMP"
+		log_daemon_msg "Allow incoming ping for seedbox users only"
+		for ip in $SeedboxUsersIPs; do 
+			iptables -t filter -A INPUT -p icmp -s $SeedboxUsersIPs/32 -j ACCEPT -m comment --comment "ICMP"
+		done
+		for ip in $VpnIPs; do 
+			iptables -t filter -A INPUT -p icmp -s $VpnIPs -j ACCEPT -m comment --comment "ICMP"
+		done		
 		StatusLSB
 
 		# CakeBox
@@ -266,22 +208,26 @@ case $1 in
 
 		# PlexMedia Server
 		if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver" ]; then
+			log_daemon_msg "Allow use of Plex Media Server on TCP"
 			for TCP_PORT in $PLEXMEDIA_TCP_PORTS; do 
-				iptables -t filter -A INPUT -p tcp --dport $TCP_PORT -j ACCEPT -m comment --comment "PlexMediaServer TCP"
+				iptables -t filter -A INPUT -p tcp --dport $TCP_PORT -j ACCEPT -m comment --comment "Plex Media Server TCP"
 			done
 			unset TCP_PORT
+			StatusLSB
 
-			for UDP_PORT in $PLEXMEDIA_UDP_PORTS; do 
-				iptables -t filter -A INPUT -p tcp --dport $UDP_PORT -j ACCEPT -m comment --comment "PlexMediaServer UDP"
-			done
-			unset UDP_PORT			
+			if [ "$INSTALLOPENVPN" == "YES" ]; then
+				log_daemon_msg "Allow use of Plex Media Server on UDP (OpenVPN)"
+				for UDP_PORT in $PLEXMEDIA_UDP_PORTS; do 
+					iptables -t filter -A INPUT -p tcp --dport $UDP_PORT -j ACCEPT -m comment --comment "Plex Media Server UDP"
+				done
+				unset UDP_PORT
+				StatusLSB
+			fi
 		fi
 	
 		#### rTorrent
 		for seedUser in $LISTUSERS; do
 			log_daemon_msg "Allow use of rTorrent for $seedUser"
-			
-			USERIP=$(cat /etc/MySB/users/$seedUser.info | grep "IP Address=" | awk '{ print $3 }')
 			PORT_START=$(cat /etc/MySB/users/$seedUser.info | grep "SCGI port=" | awk '{ print $3 }')
 			PORT_END=$(cat /etc/MySB/users/$seedUser.info | grep "rTorrent port=" | awk '{ print $3 }')
 			iptables -t filter -A INPUT -p tcp --dport $PORT_START:$PORT_END -j ACCEPT -m comment --comment "rTorrent $seedUser"	
@@ -290,88 +236,121 @@ case $1 in
 
 		#### NginX
 		if [ -f /etc/nginx/locations/MySB.conf ]; then
-			for seedUser in $LISTUSERS; do				
-				USERIP=$(cat /etc/MySB/users/$seedUser.info | grep "IP Address=" | awk '{ print $3 }')
-
-				if [ $USERIP != 'blank' ]; then
-					log_daemon_msg "Allow access to web server for $seedUser"
-				
-					IFS=$','
-					for ip in $USERIP; do 
-						SEARCH=$(cat /etc/nginx/locations/MySB.conf | grep $ip)
-						if [ -z $SEARCH ]; then
-							awk '{ print } /allow 127.0.1.1;/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
-							perl -pi -e "s/<ip>/$ip/g" /etc/MySB/files/MySB_location.conf
-							mv /etc/MySB/files/MySB_location.conf /etc/nginx/locations/MySB.conf
-						fi
-					done
-					unset IFS
-					
-					StatusLSB
-				fi
+			# Delete IP restriction for NginX
+			log_daemon_msg "Delete IP restriction for NginX"
+			for ip in $SeedboxUsersIPs; do 
+				sed -i '/'$ip'/d' /etc/nginx/locations/MySB.conf 
 			done
+			unset ip
+			StatusLSB
+			
+			for seedUser in $LISTUSERS; do
+				log_daemon_msg "Allow access to web server for $seedUser"
+				for ip in $SeedboxUsersIPs; do 
+					awk '{ print } /allow 127.0.1.1;/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
+					perl -pi -e "s/<ip>/$ip/g" /etc/MySB/files/MySB_location.conf
+					mv /etc/MySB/files/MySB_location.conf /etc/nginx/locations/MySB.conf
+				done
+				unset ip					
+				StatusLSB
+			done
+			
+			# Delete IP restriction for OpenVPN users
+			log_daemon_msg "Delete IP restriction for OpenVPN users"
+			for ip in $VpnIPs; do
+				ip=`echo $ip | sed s,/,\\\\\\\\\\/,g`
+				sed -i '/'$ip'/d' /etc/nginx/locations/MySB.conf		
+			done
+			unset ip
+			StatusLSB			
+			
+			if [ "$INSTALLOPENVPN" == "YES" ]; then
+				log_daemon_msg "Allow access to web server for OpenVPN users"
+				for ip in $VpnIPs; do
+					awk '{ print } /allow 127.0.1.1;/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
+					perl -pi -e "s/<ip>/$ip/g" /etc/MySB/files/MySB_location.conf
+					mv /etc/MySB/files/MySB_location.conf /etc/nginx/locations/MySB.conf	
+				done
+				unset ip
+				StatusLSB				
+			fi		
 		fi
 		
 		#### Fail2Ban
 		if [ -f /etc/fail2ban/jail.local ]; then
 			log_daemon_msg "Add whitelist to Fail2Ban"
-		
+			Fail2banWhiteList=`echo $Fail2banWhiteList | sed s,/,\\\\\\\\\\/,g`			
 			SEARCH=$(cat /etc/fail2ban/jail.local | grep "ignoreip =" | cut -d "=" -f 2)
 			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
-			IGNOREIP=`echo $IGNOREIP | sed s,/,\\\\\\\\\\/,g`
-			perl -pi -e "s/$SEARCH/$IGNOREIP/g" /etc/fail2ban/jail.local
-			unset SEARCH IGNOREIP
-			
+			perl -pi -e "s/$SEARCH/$Fail2banWhiteList/g" /etc/fail2ban/jail.local
+			unset SEARCH
 			StatusLSB
 		fi
 		
 		#### PeerGuardian
 		if [ -f /etc/pgl/pglcmd.conf ]; then
 			log_daemon_msg "Add whitelist to PeerGuardian"
-			
-			WHITELIST=`echo $WHITELIST | sed s,/,\\\\\\\\\\/,g`
-			
+			SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`	
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_IN=")
 			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
-			perl -pi -e "s/$SEARCH/WHITE_IP_IN=\"$WHITELIST\"/g" /etc/pgl/pglcmd.conf
+			perl -pi -e "s/$SEARCH/WHITE_IP_IN=\"$SeedboxUsersIPs\"/g" /etc/pgl/pglcmd.conf
+			unset SEARCH
+
+			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_OUT=")
+			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`			
+			if [ "$INSTALLOPENVPN" == "YES" ]; then
+				perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
+			else
+				perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"\"/g" /etc/pgl/pglcmd.conf
+			fi
 			unset SEARCH
 			
-			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_OUT=")
-			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
-			perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"$WHITELIST\"/g" /etc/pgl/pglcmd.conf	
-			unset SEARCH WHITELIST
-			
+			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_FWD=")
+			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`			
 			if [ "$INSTALLOPENVPN" == "YES" ]; then
+				perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
+			else
+				perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"\"/g" /etc/pgl/pglcmd.conf
+			fi
+			unset SEARCH
+			
+			if [ "$INSTALLCAKEBOX" == "YES" ]; then
+				TCP_PORTS_LIST="${TCP_PORTS_LIST} ${CAKEBOXPORT}"
+			fi
+			if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver" ]; then
+				TCP_PORTS_LIST="${TCP_PORTS_LIST} ${PLEXMEDIA_TCP_PORTS}"
+			fi
+			if [ "$INSTALLWEBMIN" == "YES" ]; then
+				TCP_PORTS_LIST="${TCP_PORTS_LIST} ${WEBMINPORT}"
+			fi
+			if [ "$INSTALLOPENVPN" == "YES" ]; then
+				OVPNPORT1=$OPENVPNPORT
+				(( OPENVPNPORT++ ))
+				OVPNPORT2=$OPENVPNPORT
+
 				case "$OPENVPNPROTO" in
 					"udp")
-						SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
-						perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"/g" /etc/pgl/pglcmd.conf	
-					
-						SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=")
-						perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"${OVPNPORT1} ${OVPNPORT2}\"/g" /etc/pgl/pglcmd.conf	
-						
-						SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
-						perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"80 443 ${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"/g" /etc/pgl/pglcmd.conf	
-						
-						SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
-						perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${OVPNPORT1} ${OVPNPORT2}\"/g" /etc/pgl/pglcmd.conf
+						UDP_PORTS_LIST="${UDP_PORTS_LIST} ${OVPNPORT1} ${OVPNPORT2}"
 					;;
 					"tcp")
-						SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
-						perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${OVPNPORT1} ${OVPNPORT2} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"/g" /etc/pgl/pglcmd.conf
-					
-						SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=")
-						perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"\"/g" /etc/pgl/pglcmd.conf
-						
-						SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
-						perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"80 443 ${CAKEBOXPORT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${WEBMINPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${OVPNPORT1} ${OVPNPORT2} ${NEWFTPDATAPORT} ${FTP_PASSIVE}\"/g" /etc/pgl/pglcmd.conf					
-					
-						SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
-						perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"\"/g" /etc/pgl/pglcmd.conf
+						TCP_PORTS_LIST="${TCP_PORTS_LIST} ${OVPNPORT1} ${OVPNPORT2}"
 					;;
 				esac
-			fi
-			
+
+				# PlexMedia UDP ports opened only with OpenVPN installed
+				if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver" ]; then
+					UDP_PORTS_LIST="${UDP_PORTS_LIST} ${PLEXMEDIA_UDP_PORTS}"
+				fi
+			fi			
+
+			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
+			perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${TCP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf
+			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=")
+			perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"${UDP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf
+			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
+			perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"80 443 ${TCP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf
+			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
+			perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"80 443 ${UDP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf			
 			StatusLSB
 		fi
 	;;

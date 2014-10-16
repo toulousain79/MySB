@@ -39,6 +39,6 @@ Changelog for MySB
 		2014/10/15
 			- "install/PeerGuardian", some modifications
 			- "scripts/FirewallAndSecurity.sh", some modifications
-			- add PlexMedia ports management
+			- Correcting PlexMedia ports management
 
 ##################### LAST LINE ######################################

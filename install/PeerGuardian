@@ -132,8 +132,17 @@ done
 unset IFS	
 MYIP=`echo $TEMP | sed -e "s/^//g;"`
 
-TCP_PORTS_LIST="${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}"
-UDP_PORTS_LIST=""
+if [ "$INSTALLCAKEBOX" == "YES" ]; then
+	TCP_PORTS_LIST="${TCP_PORTS_LIST} ${CAKEBOXPORT}"
+fi
+
+if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver" ]; then
+	TCP_PORTS_LIST="${TCP_PORTS_LIST} ${PLEXMEDIA_TCP_PORTS}"
+fi
+
+if [ "$INSTALLWEBMIN" == "YES" ]; then
+	TCP_PORTS_LIST="${TCP_PORTS_LIST} ${WEBMINPORT}"
+fi
 
 if [ "$INSTALLOPENVPN" == "YES" ]; then
 	OVPNPORT1=$OPENVPNPORT
@@ -149,24 +158,17 @@ if [ "$INSTALLOPENVPN" == "YES" ]; then
 		;;
 	esac
 
+	# PlexMedia UDP ports opened only with OpenVPN installed
+	if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver" ]; then
+		UDP_PORTS_LIST="${UDP_PORTS_LIST} ${PLEXMEDIA_UDP_PORTS}"
+	fi	
+	
+	# Forward IPs with OpenVPN and redirect GW
 	echo "WHITE_IP_FWD=\"10.0.0.0/24\"" >> /etc/pgl/pglcmd.conf
-fi
-
-if [ "$INSTALLCAKEBOX" == "YES" ]; then
-	TCP_PORTS_LIST="${TCP_PORTS_LIST} ${CAKEBOXPORT}"
-fi
-
-if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver" ]; then
-	TCP_PORTS_LIST="${TCP_PORTS_LIST} ${PLEXMEDIA_TCP_PORTS}"
-	UDP_PORTS_LIST="${UDP_PORTS_LIST} ${PLEXMEDIA_UDP_PORTS}"
-fi
-
-if [ "$INSTALLWEBMIN" == "YES" ]; then
-	TCP_PORTS_LIST="${TCP_PORTS_LIST} ${WEBMINPORT}"
+	echo "WHITE_IP_OUT=\"10.0.0.0/24\"" >> /etc/pgl/pglcmd.conf
 fi
 
 echo "WHITE_IP_IN=\"${MYIP}\"" >> /etc/pgl/pglcmd.conf
-echo "WHITE_IP_OUT=\"127.0.0.1\"" >> /etc/pgl/pglcmd.conf
 echo "WHITE_TCP_IN=\"${TCP_PORTS_LIST}\"" >> /etc/pgl/pglcmd.conf
 echo "WHITE_UDP_IN=\"${UDP_PORTS_LIST}\"" >> /etc/pgl/pglcmd.conf
 echo "WHITE_TCP_OUT=\"80 443 ${TCP_PORTS_LIST}\"" >> /etc/pgl/pglcmd.conf
