@@ -24,18 +24,45 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-PackagesManage install "subversion htop ntpdate build-essential pkg-config libcurl4-openssl-dev libsigc++-2.0-dev libncurses5-dev vim nano curl libxmlrpc-c3-dev unzip zip ffmpeg buildtorrent mediainfo automake libtool libcppunit-dev python ca-certificates libxml2-dev iperf xml-core"
+PackagesManage install "ldnsutils libldns-dev"
 
-PackagesManage install "rar"
-if [ $? -gt 0 ]; then
-	PackagesManage install "rar-free"
+if ! hash dnscrypt-proxy 2>/dev/null; then
+	# LIBsodium
+	if [ -d /etc/MySB/sources/libsodium ]; then
+		cd /etc/MySB/sources/libsodium/
+		git stash
+		git pull
+	else
+		if [ -d /etc/MySB/temp/libsodium ]; then
+			mv /etc/MySB/temp/libsodium /etc/MySB/sources/
+		else
+			git clone $GIT_libsodium /etc/MySB/sources/libsodium
+		fi
+	fi
+	cd /etc/MySB/sources/libsodium/
+	./configure
+	make -j$PROCESSOR
+	make install
+
+	# DNScrypt
+	if [ -d /etc/MySB/sources/dnscrypt ]; then
+		cd /etc/MySB/sources/dnscrypt/
+		git stash
+		git pull
+	else
+		if [ -d /etc/MySB/temp/dnscrypt ]; then
+			mv /etc/MySB/temp/dnscrypt /etc/MySB/sources/
+		else
+			git clone $GIT_dnscrypt /etc/MySB/sources/dnscrypt
+		fi
+	fi
+	cd /etc/MySB/sources/dnscrypt/
+	./autogen.sh
+	./configure --enable-plugins --enable-ltdl-install
+	make -j$PROCESSOR
+	make install
 fi
-
-PackagesManage install "unrar"
-if [ $? -gt 0 ]; then
-	PackagesManage install "unrar-free"
-fi
-
+	
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
 # -----------------------------------------

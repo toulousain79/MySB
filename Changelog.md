@@ -30,6 +30,7 @@ Changelog for MySB
 			- Correcting PlexMedia ports management
 			- Correcting SSL vulnerability (poodle) for Nginx and Postfix
 			- Changing the management of Logs (web)
+			- Adding DNScrypt and DNSbench
 
 	Version v1.0 (main branch)
 		2014/05/04

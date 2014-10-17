@@ -56,6 +56,7 @@ MySB is a seedbox platform for multi-users.
 
 ## Some custom settings
 	
+	* Using of DNSCrypt
 	* Using of 'Namebench' tool
 	
 ## Before installation
