@@ -35,7 +35,7 @@ else
 fi
 if [ -e /tmp/access.log ]; then
 	sed -i '/favicon.ico/d' /tmp/access.log
-	ccze -h < /tmp/access.log > /etc/MySB/web/logs/NginX-access.html
+	ccze -h < /tmp/access.log > /etc/MySB/web/logs/nginx/NginX-access.html
 	rm -f /tmp/access.log
 fi
 StatusLSB
@@ -50,7 +50,7 @@ else
 	fi
 fi
 if [ -e /tmp/error.log ]; then
-	ccze -h < /tmp/error.log > /etc/MySB/web/logs/NginX-error.html
+	ccze -h < /tmp/error.log > /etc/MySB/web/logs/nginx/NginX-error.html
 	rm -f /tmp/error.log
 fi
 StatusLSB
@@ -66,7 +66,7 @@ else
 fi
 if [ -e /tmp/MySB-access.log ]; then
 	sed -i '/favicon.ico/d' /tmp/MySB-access.log
-	ccze -h < /tmp/MySB-access.log > /etc/MySB/web/logs/NginX-MySB-access.html
+	ccze -h < /tmp/MySB-access.log > /etc/MySB/web/logs/nginx/NginX-MySB-access.html
 	rm -f /tmp/MySB-access.log
 fi
 StatusLSB
@@ -81,7 +81,7 @@ else
 	fi
 fi
 if [ -e /tmp/MySB-error.log ]; then
-	ccze -h < /tmp/MySB-error.log > /etc/MySB/web/logs/NginX-MySB-error.html
+	ccze -h < /tmp/MySB-error.log > /etc/MySB/web/logs/nginx/NginX-MySB-error.html
 	rm -f /tmp/MySB-error.log
 fi
 StatusLSB
@@ -96,7 +96,7 @@ else
 	fi
 fi
 if [ -e /tmp/cakebox-access.log ]; then
-	ccze -h < /tmp/cakebox-access.log > /etc/MySB/web/logs/NginX-cakebox-access.html
+	ccze -h < /tmp/cakebox-access.log > /etc/MySB/web/logs/nginx/NginX-cakebox-access.html
 	rm -f /tmp/cakebox-access.log
 fi
 StatusLSB
@@ -111,7 +111,7 @@ else
 	fi
 fi
 if [ -e /tmp/cakebox-error.log ]; then
-	ccze -h < /tmp/cakebox-error.log > /etc/MySB/web/logs/NginX-cakebox-error.html
+	ccze -h < /tmp/cakebox-error.log > /etc/MySB/web/logs/nginx/NginX-cakebox-error.html
 	rm -f /tmp/cakebox-error.log
 fi
 StatusLSB
@@ -126,7 +126,7 @@ else
 	fi
 fi
 if [ -e /tmp/seedbox-manager-access.log ]; then
-	ccze -h < /tmp/seedbox-manager-access.log > /etc/MySB/web/logs/NginX-seedbox-manager-access.html
+	ccze -h < /tmp/seedbox-manager-access.log > /etc/MySB/web/logs/nginx/NginX-seedbox-manager-access.html
 	rm -f /tmp/seedbox-manager-access.log
 fi
 StatusLSB
@@ -141,7 +141,7 @@ else
 	fi
 fi
 if [ -e /tmp/seedbox-manager-error.log ]; then
-	ccze -h < /tmp/seedbox-manager-error.log > /etc/MySB/web/logs/NginX-seedbox-manager-error.html
+	ccze -h < /tmp/seedbox-manager-error.log > /etc/MySB/web/logs/nginx/NginX-seedbox-manager-error.html
 	rm -f /tmp/seedbox-manager-error.log
 fi
 StatusLSB
@@ -159,7 +159,7 @@ if [ -e /tmp/rutorrent-access.log ]; then
 	sed -i '/plugins/d' /tmp/rutorrent-access.log
 	sed -i '/getsettings.php/d' /tmp/rutorrent-access.log
 	sed -i '/setsettings.php/d' /tmp/rutorrent-access.log
-	ccze -h < /tmp/rutorrent-access.log > /etc/MySB/web/logs/NginX-rutorrent-access.html
+	ccze -h < /tmp/rutorrent-access.log > /etc/MySB/web/logs/nginx/NginX-rutorrent-access.html
 	rm -f /tmp/rutorrent-access.log
 fi
 StatusLSB
@@ -174,7 +174,7 @@ else
 	fi
 fi
 if [ -e /tmp/rutorrent-error.log ]; then
-	ccze -h < /tmp/rutorrent-error.log > /etc/MySB/web/logs/NginX-rutorrent-error.html
+	ccze -h < /tmp/rutorrent-error.log > /etc/MySB/web/logs/nginx/NginX-rutorrent-error.html
 	rm -f /tmp/rutorrent-error.log
 fi
 StatusLSB
@@ -190,7 +190,7 @@ if [ "$MYBLOCKLIST" == "PeerGuardian" ]; then
 		fi
 	fi
 	if [ -e /tmp/pglcmd.log ]; then
-		ccze -h < /tmp/pglcmd.log > /etc/MySB/web/logs/PeerGuardian-pglcmd.html
+		ccze -h < /tmp/pglcmd.log > /etc/MySB/web/logs/security/PeerGuardian-pglcmd.html
 		rm -f /tmp/pglcmd.log
 	fi
 	StatusLSB
@@ -204,10 +204,27 @@ if [ "$MYBLOCKLIST" == "PeerGuardian" ]; then
 		fi
 	fi
 	if [ -e /tmp/pgld.log ]; then
-		ccze -h < /tmp/pgld.log > /etc/MySB/web/logs/PeerGuardian-pgld.html
+		ccze -h < /tmp/pgld.log > /etc/MySB/web/logs/security/PeerGuardian-pgld.html
 		rm -f /tmp/pgld.log
 	fi
 	StatusLSB	
+fi
+
+#### Fail2Ban
+if [ "$INSTALLFAIL2BAN" == "YES" ]; then
+	log_daemon_msg "HTML Convert of Fail2ban log"
+	if [ -e /var/log/fail2ban.log.1 ]; then
+		cat /var/log/fail2ban.log.1 /var/log/fail2ban.log > /tmp/fail2ban.log
+	else
+		if [ -e /var/log/fail2ban.log ]; then
+			cp /var/log/fail2ban.log /tmp/fail2ban.log
+		fi
+	fi
+	if [ -e /tmp/fail2ban.log ]; then
+		ccze -h < /tmp/fail2ban.log > /etc/MySB/web/logs/security/Fail2Ban.html
+		rm -f /tmp/fail2ban.log
+	fi
+	StatusLSB
 fi
 
 # -----------------------------------------

@@ -23,6 +23,14 @@
 ######################################################################
 Changelog for MySB
 
+	Version v1.1
+		2014/10/15
+			- "install/PeerGuardian", some modifications
+			- "scripts/FirewallAndSecurity.sh", some modifications
+			- Correcting PlexMedia ports management
+			- Correcting SSL vulnerability (poodle) for Nginx and Postfix
+			- Changing the management of Logs (web)
+
 	Version v1.0 (main branch)
 		2014/05/04
 			- Use of repository list (SVN, GitHub, files)
@@ -34,11 +42,5 @@ Changelog for MySB
 			- Remove completly "Jailkit"
 			- Replace Apache2 by Nginx
 			- Add Iptables rules
-			
-	Version v1.1
-		2014/10/15
-			- "install/PeerGuardian", some modifications
-			- "scripts/FirewallAndSecurity.sh", some modifications
-			- Correcting PlexMedia ports management
 
 ##################### LAST LINE ######################################

@@ -27,6 +27,7 @@ error_reporting(E_ALL);
 if(isset($_SERVER['PHP_AUTH_USER'])){
 	if ($_SERVER['PHP_AUTH_USER'] == '##MySB_User##') {
 		$SeedUser = $_GET['user'];
+		$TempUserPass = 
 	} else {
 		$SeedUser = $_SERVER['PHP_AUTH_USER'];
 	}
@@ -49,15 +50,15 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 				switch ($column[0]) {
 					case 'IP Address':
 						if ( trim($column[1]) == 'blank' ) {
-							$comments = '<a target="_blank" href="https://' .$_SERVER['HTTP_HOST'].'/MySB/ManageIP.php">1 - Before changing your temporary password, thank you to confirm your IP address HERE!</a>';
+							$comments = '<a target="_blank" href="https://' . $_SERVER['HTTP_HOST'] . '/MySB/ManageIP.php">1 - Before changing your temporary password, thank you to confirm your IP address HERE!</a>';
 							$opts = 'bgcolor="#FF6666"';
 						} else {
-							$comments = 'Public IP addresses listed here will be allowed to access certain pages (SeedboxInfo, ChangePassword, OpenVPN config).';
+							$comments = 'Public IP addresses listed here will be allowed to access to all pages located under "/MySB/" excepted "/MySB/ManageIP.php".';
 							$opts = '';
 						}
 						break;				
 					case 'Password':
-						$comments = '<a target="_blank" href="https://' .$_SERVER['HTTP_HOST'].'/MySB/ChangePassword.php">2 - Please, promptly change your temporary password HERE!</a>';
+						$comments = '<a target="_blank" href="https://' . $user . ':##TempPassword##@' . $_SERVER['HTTP_HOST'] . '/MySB/ChangePassword.php">2 - Please, promptly change your temporary password HERE!</a>';
 						$opts = 'bgcolor="#FF6666"';
 						break;
 					case 'RPC':
@@ -65,11 +66,11 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 						$opts = '';
 						break;
 					case 'Session dir':
-						$comments = 'The session directory allows rTorrent to save the progess of your torrents. (Accessible only by SSH.)';
+						$comments = 'The session directory allows rTorrent to save the progess of your torrents.';
 						$opts = '';
 						break;
 					case 'Complete dir':
-						$comments = 'Completed files will be move to this directory.';
+						$comments = 'Completed files will be move to this directory via Autotools in ruTorrent.';
 						$opts = '';
 						break;							
 					case 'Incomplete dir':
@@ -77,7 +78,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 						$opts = '';
 						break;							
 					case 'Watch dir':
-						$comments = 'Saving a torrent file to this directory will automatically start the download.';
+						$comments = 'Saving a torrent file to this directory will automatically start the download via Autotools in ruTorrent.';
 						$opts = '';
 						break;							
 					case 'Share dir':

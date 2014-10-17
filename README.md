@@ -26,7 +26,7 @@ MySB is a seedbox platform for multi-users.
 
 	* Fail2ban (optionnal but recommended)
 	* Seedbox-Manager (optionnal but recommended)
-	* OpenVPN (optionnal); Multi TUN and TAP configuration, with or without redirection of traffic. Add AES-NI support.
+	* OpenVPN (optionnal); Multi TUN configuration, with or without redirection of traffic. Add AES-NI support (Not valid for OpenVZ Container).
 	* Webmin (optionnal)
 	* BlockList usage (optionnal) (PeerGuardian or rTorrent)
 	* CakeBoxLight (optionnal)
@@ -50,6 +50,10 @@ MySB is a seedbox platform for multi-users.
 	* Stream
 	* Favicons trackers
 
+## Some custom settings
+	
+	* Using of 'Namebench' tool
+	
 ## Before installation
 
 You need to have a "blank" server installation.

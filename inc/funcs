@@ -53,6 +53,7 @@ SendMail() {
 	User="$2"
 	Info="$3"
 	SeedUserMail=$(cat /etc/MySB/users/$User.info | grep "E-mail=" | awk '{ print $2 }')
+	TempPassword=$(cat /etc/MySB/users/$User.info | grep "Password=" | awk '{ print $2 }')
 	MailFrom=`cat /etc/MySB/infos/email.info`
 	
 	log_daemon_msg "Generate HTML info for $User"
@@ -63,10 +64,11 @@ SendMail() {
 	fi
 	
 	curl --silent --retry 2 --user $MYSBUSER:$MYSBPASSD https://$HOSTFQDN:$NGINXHTTPSPORT/MySB/SeedboxInfo.php?user=$User --cacert /etc/MySB/ssl/nginx.cert > /etc/MySB/users/$User.html
-
+	
 	StatusLSB	
 
 	log_daemon_msg "Sending email to $User ($Info)"
+	perl -pi -e "s/##MySB_User##/$TempPassword/g" /etc/MySB/users/$User.html
 	if [ -s /etc/MySB/users/$User.html ]; then
 		attach="$User.html"
 		type="html"

@@ -68,7 +68,13 @@ if [ $? -gt 0 ]; then
 	exit 1
 fi
 
-if [ "`screen -ls | grep MySB 2>/dev/null`" == "" ]; then
+if ! hash screen 2>/dev/null; then
+	COMMAND=""
+else
+	COMMAND="`screen -ls | grep MySB 2>/dev/null`"
+fi
+
+if [ "$COMMAND" == "" ]; then
 	if [ -f /etc/MySB/infos/version.info ]; then # Upgrade ?
 		echo -e -n "${CRED}MySB is already installed, aborting!$CEND"
 		echo -e -n "${CBLUE}To upgrade MySB, thank you use the following command.'$CEND"
@@ -139,6 +145,15 @@ if [ "`screen -ls | grep MySB 2>/dev/null`" == "" ]; then
 			if [ ! -d /etc/MySB/web/logs/install ]; then
 				mkdir -p /etc/MySB/web/logs/install >> /tmp/`basename $0`.log
 			fi
+			if [ ! -d /etc/MySB/web/logs/scripts ]; then
+				mkdir -p /etc/MySB/web/logs/scripts >> /tmp/`basename $0`.log
+			fi
+			if [ ! -d /etc/MySB/web/logs/nginx ]; then
+				mkdir -p /etc/MySB/web/logs/nginx >> /tmp/`basename $0`.log
+			fi
+			if [ ! -d /etc/MySB/web/logs/security ]; then
+				mkdir -p /etc/MySB/web/logs/security >> /tmp/`basename $0`.log
+			fi			
 			
 			chmod +x /etc/MySB/MySB_Install.sh >> /tmp/`basename $0`.log
 			chmod +x /etc/MySB/MySB_CleanAll.sh >> /tmp/`basename $0`.log

@@ -1,7 +1,7 @@
 #!/bin/bash 
-# ----------------------------------
+# -----------------------------------------
 source /etc/MySB/inc/includes_before
-# ----------------------------------
+# -----------------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
 #    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
@@ -24,18 +24,39 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-#### Crontab
-log_daemon_msg "Creating Blocklist.sh cron"
+#### LOGs
+if [ ! -d /etc/MySB/web/logs/scripts ]; then
+	mkdir -p /etc/MySB/web/logs/scripts
+fi
+if [ ! -d /etc/MySB/web/logs/nginx ]; then
+	mkdir -p /etc/MySB/web/logs/nginx
+fi
+if [ ! -d /etc/MySB/web/logs/security ]; then
+	mkdir -p /etc/MySB/web/logs/security
+fi
+mv /etc/MySB/web/logs/NginX-* /etc/MySB/web/logs/nginx/
+mv /etc/MySB/web/logs/PeerGuardian-* /etc/MySB/web/logs/security/
+mv /etc/MySB/web/logs/install/*.sh-log.html /etc/MySB/web/logs/scripts/
+
+#### Blocklist.sh
 crontab -l > /tmp/crontab.tmp
 sed -i '/BlockList.sh/d' /tmp/crontab.tmp
 echo "0 23 * * * /bin/bash /etc/MySB/scripts/BlockList.sh NoBanner" >> /tmp/crontab.tmp
 crontab /tmp/crontab.tmp
 rm /tmp/crontab.tmp
-log_end_msg 0
 
-#### Create Blocklist
-ScriptInvoke 'source' '/etc/MySB/scripts/BlockList.sh'
-	
+#### Seedbox-Manager
+LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
+for seedUser in $LISTUSERS; do
+	sed -i '/OpenVPN/d' /usr/share/nginx/html/seedbox-manager/conf/users/$seedUser/config.ini
+done
+
+#### Correcting SSL vulnerability (poodle) for Nginx and Postfix
+perl -pi -e "s/ssl_protocols SSLv3 TLSv1 TLSv1.1 TLSv1.2;/ssl_protocols TLSv1 TLSv1.1 TLSv1.2;/g" /etc/nginx/nginx.conf
+echo "smtpd_tls_mandatory_protocols = !SSLv2,!SSLv3" >> /etc/postfix/main.cf
+echo "smtpd_tls_protocols = !SSLv2,!SSLv3" >> /etc/postfix/main.cf
+echo "smtp_tls_protocols = !SSLv2,!SSLv3" >> /etc/postfix/main.cf
+
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
 # -----------------------------------------
