@@ -206,12 +206,19 @@ By default, DNScrypt-proxy will use OpenDNS resolver (opendns).
 The full list of DNScrypt resolvers is available at: https://github.com/jedisct1/dnscrypt-proxy/blob/master/dnscrypt-resolvers.csv 
 
 It is possible to change the resolver name at any time using the following command: 
-dnscrypt-proxy service restart <resolver name>
+dnscrypt-proxy service restart <resolver_name>
 
 To clean Bind cache, just restart service.
 
-###### 1 - Clean Bind9 cache:	service bind9 restart
-###### 2 - Change DNScrypt resolver name:	service dnscrypt-proxy restart dnscrypt.eu-nl
+###### 1 - Clean Bind9 cache
+```
+service bind9 restart
+```
+###### 2 - Change DNScrypt resolver name
+```
+service dnscrypt-proxy restart dnscrypt.eu-nl
+```
+
 ###### IMPORTANT: With OpenVZ container, to complete the installation of DNScrypt-proxy, you must replace your existing DNS config (/etc/resolv.conf), by the loopback address.
 ###### IMPORTANT: It's necessary to make the change via the host (eg Proxmox), otherwise you will lose your configuration on next reboot.
 
