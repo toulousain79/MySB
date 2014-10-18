@@ -205,8 +205,10 @@ Miracle, I can stream my files with my Freebox Revolution!
 By default, DNScrypt-proxy will use OpenDNS resolver (opendns). 
 The full list of DNScrypt resolvers is available at: https://github.com/jedisct1/dnscrypt-proxy/blob/master/dnscrypt-resolvers.csv 
 
-It is possible to change the resolver name at any time using the following command: 
+It is possible to change the resolver name at any time using the following command:
+```
 dnscrypt-proxy service restart <resolver_name>
+```
 
 To clean Bind cache, just restart service.
 
