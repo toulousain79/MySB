@@ -24,67 +24,83 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-#### Install packages
-PackagesManage install "ldnsutils libldns-dev bind9"
-
-#### Correcting minor bug display in Bind9 init script
-sed -i "s/echo \"waiting for pid \$pid to die\"/break #echo \"waiting for pid \$pid to die\"/g" /etc/init.d/bind9
-sed -i "s/echo \"giving up on pid \$pid with kill -0; trying -9\"/#echo \"giving up on pid \$pid with kill -0; trying -9\"/g" /etc/init.d/bind9
-sed -i "s/echo \"giving up on pid \$pid\"/#echo \"giving up on pid \$pid\"/g" /etc/init.d/bind9
-
-# LIBsodium
-if [ -d /etc/MySB/sources/libsodium ]; then
-	cd /etc/MySB/sources/libsodium/
-	git stash
-	git pull
-	make clean
-else
-	if [ -d /etc/MySB/temp/libsodium ]; then
-		mv /etc/MySB/temp/libsodium /etc/MySB/sources/
-	else
-		git clone $GIT_libsodium /etc/MySB/sources/libsodium
+if [ "$USAGE" == "ON" ]; then
+	if [ "$INSTALLDNSCRYPT" == "NO" ]; then
+		echo
+		echo -e "${CYELLOW}DNScrypt-proxy is not installed!$CEND"
+		GetString NO "Install DNScrypt-proxy? " INSTALLDNSCRYPT YES
+		
+		if [ "$INSTALLDNSCRYPT" == "YES" ]; then
+			echo "$INSTALLDNSCRYPT" > /etc/MySB/infos/install_dnscrypt.info
+		else
+			exit 0
+		fi
 	fi
 fi
-cd /etc/MySB/sources/libsodium/
-./autogen.sh
-./configure --enable-minimal
-make -j$PROCESSOR
-make check
-make install
-ldconfig
 
-# DNScrypt
-if [ -d /etc/MySB/sources/dnscrypt/ ]; then
-	rm -rf /etc/MySB/sources/dnscrypt/
-fi
-if [ -f /etc/MySB/files/dnscrypt.tar.gz ]; then
-	rm -f /etc/MySB/files/dnscrypt.tar.gz
-fi
-wget --no-check-certificate $TARGZ_dnscrypt -O /etc/MySB/files/dnscrypt.tar.gz
-tar -zxvf /etc/MySB/files/dnscrypt.tar.gz -C /etc/MySB/sources/
-mv /etc/MySB/sources/dnscrypt-proxy-* /etc/MySB/sources/dnscrypt-proxy
-cd /etc/MySB/sources/dnscrypt-proxy/
-./autogen.sh
-./configure --enable-plugins
-make -j$PROCESSOR
-make check
-make install
-# Add dnscrypt user and homedir
-adduser --system --quiet --home /run/dnscrypt --shell /bin/false --group --disabled-password --disabled-login dnscrypt
+if [ "$INSTALLDNSCRYPT" == "YES" ]; then
+	#### Install packages
+	PackagesManage install "ldnsutils libldns-dev bind9"
 
-#### Bind Options
-sed -i '/forwarders/d' /etc/bind/named.conf.options
-awk '{ print } /dnssec-validation auto;/ { print "        forwarders { 127.0.0.1 port 52; };" }' /etc/bind/named.conf.options > /tmp/named.conf.options
-mv /tmp/named.conf.options /etc/bind/named.conf.options
+	#### Correcting minor bug display in Bind9 init script
+	sed -i "s/echo \"waiting for pid \$pid to die\"/break #echo \"waiting for pid \$pid to die\"/g" /etc/init.d/bind9
+	sed -i "s/echo \"giving up on pid \$pid with kill -0; trying -9\"/#echo \"giving up on pid \$pid with kill -0; trying -9\"/g" /etc/init.d/bind9
+	sed -i "s/echo \"giving up on pid \$pid\"/#echo \"giving up on pid \$pid\"/g" /etc/init.d/bind9
 
-#### init.d
-cp /etc/MySB/templates/etc.init.dnscrypt-proxy.template /etc/init.d/dnscrypt-proxy
-chmod +x /etc/init.d/dnscrypt-proxy
-update-rc.d dnscrypt-proxy defaults
+	# LIBsodium
+	if [ -d /etc/MySB/sources/libsodium ]; then
+		cd /etc/MySB/sources/libsodium/
+		git stash
+		git pull
+		make clean
+	else
+		if [ -d /etc/MySB/temp/libsodium ]; then
+			mv /etc/MySB/temp/libsodium /etc/MySB/sources/
+		else
+			git clone $GIT_libsodium /etc/MySB/sources/libsodium
+		fi
+	fi
+	cd /etc/MySB/sources/libsodium/
+	./autogen.sh
+	./configure --enable-minimal
+	make -j$PROCESSOR
+	make check
+	make install
+	ldconfig
 
-if [ -z $IFPVEKERNEL ]; then
-	sed -i '/nameserver/d' /etc/resolv.conf
-	echo "127.0.0.1" >> /etc/resolv.conf
+	# DNScrypt
+	if [ -d /etc/MySB/sources/dnscrypt/ ]; then
+		rm -rf /etc/MySB/sources/dnscrypt/
+	fi
+	if [ -f /etc/MySB/files/dnscrypt.tar.gz ]; then
+		rm -f /etc/MySB/files/dnscrypt.tar.gz
+	fi
+	wget --no-check-certificate $TARGZ_dnscrypt -O /etc/MySB/files/dnscrypt.tar.gz
+	tar -zxvf /etc/MySB/files/dnscrypt.tar.gz -C /etc/MySB/sources/
+	mv /etc/MySB/sources/dnscrypt-proxy-* /etc/MySB/sources/dnscrypt-proxy
+	cd /etc/MySB/sources/dnscrypt-proxy/
+	./autogen.sh
+	./configure --enable-plugins
+	make -j$PROCESSOR
+	make check
+	make install
+	# Add dnscrypt user and homedir
+	adduser --system --quiet --home /run/dnscrypt --shell /bin/false --group --disabled-password --disabled-login dnscrypt
+
+	#### Bind Options
+	sed -i '/forwarders/d' /etc/bind/named.conf.options
+	awk '{ print } /dnssec-validation auto;/ { print "        forwarders { 127.0.0.1 port 52; };" }' /etc/bind/named.conf.options > /tmp/named.conf.options
+	mv /tmp/named.conf.options /etc/bind/named.conf.options
+
+	#### init.d
+	cp /etc/MySB/templates/etc.init.dnscrypt-proxy.template /etc/init.d/dnscrypt-proxy
+	chmod +x /etc/init.d/dnscrypt-proxy
+	update-rc.d dnscrypt-proxy defaults
+
+	if [ -z $IFPVEKERNEL ]; then
+		sed -i '/nameserver/d' /etc/resolv.conf
+		echo "127.0.0.1" >> /etc/resolv.conf
+	fi
 fi
 	
 # -----------------------------------------

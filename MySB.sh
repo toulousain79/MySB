@@ -198,7 +198,7 @@ if [ "$INSTALLWEBMIN" == "YES" ]; then
 	StatusSTD				
 fi
 
-### install PlexMedia
+### PlexMedia
 if [ "$INSTALLPLEXMEDIA" == "YES" ]; then
 	echo -e -n "${CBLUE}Install and configure PlexMedia$CEND..."
 	screen -dmS PlexMedia /bin/bash /etc/MySB/install/PlexMedia;
@@ -231,6 +231,14 @@ case $MYBLOCKLIST in
 		StatusSTD
 	;;
 esac
+
+### DNScrypt-proxy
+if [ "$INSTALLDNSCRYPT" == "YES" ]; then
+	echo -e -n "${CBLUE}Install and configure DNScrypt-proxy$CEND..."
+	screen -dmS DNScrypt /bin/bash /etc/MySB/install/DNScrypt;
+	WaitingScreen DNScrypt
+	StatusSTD		
+fi
 
 #### MySB_CreateUser
 echo  -e -n "${CBLUE}Add the main user$CEND..."
