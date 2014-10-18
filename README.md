@@ -223,6 +223,7 @@ nameserver 127.0.0.1
 
 	--> Tested on Online.net with "DEDIBOX® SC GEN2" and "DEDIBOX® XC"
 	--> Tested on OpenVZ Container with ProxMox, work fine ! (read comment in top of this page)
+	--> Tested on OVH with "Kimsufi"
   
 #### Ubuntu or older Debian may worked, but not tested...
 
