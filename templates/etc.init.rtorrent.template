@@ -122,17 +122,16 @@ mount_share() {
 #
 # Function that starts the daemon/service
 #
-do_start()
-{
+do_start() {
 	# Delete ghost screen pid file
-	if [ -e /var/run/rtorrent-$USER.pid ]; then
-		pidofproc -p /var/run/rtorrent-$USER.pid /usr/bin/SCREEN &> /dev/null || rm -f /var/run/rtorrent-$USER.pid
+	if [ -e $PID ]; then
+		pidofproc -p $PID $SCREEN &> /dev/null || rm -f $PID
 	fi
 	
 	# Delete ghost rtorrent lock file
 	if [ -e $SESSION/rtorrent.pid ]; then
 		SESSION=`getsession "$CONFIG"`
-		pidofproc -p $SESSION/rtorrent.pid /usr/bin/SCREEN &> /dev/null || rm -f $SESSION/rtorrent.pid $SESSION/rtorrent.lock 2>> $LOG_FILE
+		pidofproc -p $SESSION/rtorrent.pid $SCREEN &> /dev/null || rm -f $SESSION/rtorrent.pid $SESSION/rtorrent.lock 2>> $LOG_FILE
 	fi
 	
 	# Return
@@ -157,8 +156,7 @@ do_start()
 #
 # Function that stops the daemon/service
 #
-do_stop()
-{
+do_stop() {
 	# Return
 	#   0 if daemon has been stopped
 	#   1 if daemon was already stopped
@@ -177,14 +175,14 @@ do_stop()
 do_reload() {
 	echo "RELOAD: "`date` >> $LOG_FILE
 	# Delete ghost screen pid file
-	if [ -e /var/run/rtorrent-$USER.pid ]; then
-		pidofproc -p /var/run/rtorrent-$USER.pid /usr/bin/SCREEN &> /dev/null || rm -f /var/run/rtorrent-$USER.pid
+	if [ -e $PID ]; then
+		pidofproc -p $PID $SCREEN &> /dev/null || rm -f $PID
 	fi
 	
 	# Delete ghost rtorrent lock file
 	if [ -e $SESSION/rtorrent.pid ]; then
 		SESSION=`getsession "$CONFIG"`
-		pidofproc -p $SESSION/rtorrent.pid /usr/bin/SCREEN &> /dev/null || rm -f $SESSION/rtorrent.pid $SESSION/rtorrent.lock 2>> $LOG_FILE
+		pidofproc -p $SESSION/rtorrent.pid $SCREEN &> /dev/null || rm -f $SESSION/rtorrent.pid $SESSION/rtorrent.lock 2>> $LOG_FILE
 	fi
 	
 	start-stop-daemon --stop --signal HUP --quiet --pidfile $PID --exec "$SCREEN" 2>> $LOG_FILE
@@ -289,11 +287,13 @@ case "$1" in
 	;;
 		
 	status)
-		status_of_proc -p $PID "$SCREENy" "$NAME" && exit 0 || exit $?
+		status_of_proc -p $PID "$SCREEN" "$NAME" && exit 0 || exit $?
 	;;
 	
 	*)
-		echo "Usage: $SCRIPT_name {start|stop|restart|reload|status}"
+		echo "Usage: service rtorrent-<username> {start|stop|restart|reload|status}"
 		exit 3
 	;;
 esac
+
+exit 0

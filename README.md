@@ -56,8 +56,7 @@ MySB is a seedbox platform for multi-users.
 
 ## Some custom settings
 	
-	* Using of DNSCrypt
-	* Using of 'Namebench' tool
+	* Using of DNSCrypt with Bind9 as dns caching
 	
 ## Before installation
 
@@ -93,7 +92,7 @@ https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-acc
 ## How to install
 Just copy and paste those commands on your terminal:
 ```
-wget --no-check-certificate -N https://raw.githubusercontent.com/toulousain79/MySB/v1.0/MySB_Install.sh
+wget --no-check-certificate -N https://raw.githubusercontent.com/toulousain79/MySB/v1.1/MySB_Install.sh
 bash MySB_Install.sh
 ```
 
@@ -202,6 +201,22 @@ mount - <mount_dir> -t cifs -o noatime,nodiratime,UNC=//[10.0.0.1|10.0.1.1]/<use
 Then I add my mount point in the DLNA server on my RT-N16. 
 Miracle, I can stream my files with my Freebox Revolution!
 
+## DNScrypt-proxy
+By default, DNScrypt-proxy will use OpenDNS resolver (opendns). 
+The full list of DNScrypt resolvers is available at: https://github.com/jedisct1/dnscrypt-proxy/blob/master/dnscrypt-resolvers.csv 
+
+It is possible to change the resolver name at any time using the following command: 
+dnscrypt-proxy service restart <resolver name>
+
+To clean Bind cache, just restart service.
+
+###### 1 - Clean Bind9 cache:	service bind9 restart
+###### 2 - Change DNScrypt resolver name:	service dnscrypt-proxy restart dnscrypt.eu-nl
+###### IMPORTANT: With OpenVZ container, to complete the installation of DNScrypt-proxy, you must replace your existing DNS config (/etc/resolv.conf), by the loopback address.
+###### IMPORTANT: It's necessary to make the change via the host (eg Proxmox), otherwise you will lose your configuration on next reboot.
+
+nameserver 127.0.0.1
+
 ## Supported and tested servers
 
 #### Debian 7 - x86_64 (Wheezy)
@@ -248,11 +263,15 @@ Created by toulousain79
 * VSFTDs TLS:	http://www.howtoforge.com/setting-up-vsftpd-tls-on-debian-squeeze
 * VSFTPd Debian: https://howto.biapy.com/fr/debian-gnu-linux/serveurs/autres/installer-le-serveur-ftp-vsftpd-sur-debian
 * VSFTPd ManPage: https://security.appspot.com/vsftpd/vsftpd_conf.html
+* DNS Server:	http://en.m.wikipedia.org/wiki/Comparison_of_DNS_server_software
+* DNScrypt infos:	http://antix.freeforums.org/secure-dns-with-dnscrypt-t3588.html
+* DNScrypt install:	https://github.com/simonclausen/dnscrypt-autoinstall/blob/master/dnscrypt-autoinstall.sh
+* DNScrypt + Bind9:	http://cavaencoreparlerdebits.fr/blog/2013/10/encrypt-your-dns-request-with-opendns-dnscrypt
 
 ## TODO
 
 * Change ruTorrent directory name (/rutorrent/)
-* Maybe add DLNA functionality (with OpenVPN)
+* Maybe add miniDLNA functionality (with OpenVPN)
 * Make some thing for users with dynamic ip for update whitelist in PeerGuardian and Fail2ban.
 * Gmail SMTP https://www.google.com/accounts/DisplayUnlockCaptcha
 * Maybe add OwnCloud possiblity
@@ -260,3 +279,5 @@ Created by toulousain79
 * NFS over sTunnel ? (https://w3.physics.illinois.edu/physwiki/doku.php?id=pcs:unix:nfs_over_stunnel)
 * SABnzbd option ?
 * Subsonic option ?
+* Monitoring services via Webmin
+* Namebench ?

@@ -25,12 +25,13 @@ Changelog for MySB
 
 	Version v1.1
 		2014/10/15
-			- "install/PeerGuardian", some modifications
-			- "scripts/FirewallAndSecurity.sh", some modifications
+			- "install/PeerGuardian", minor change
+			- "scripts/FirewallAndSecurity.sh", minor change
 			- Correcting PlexMedia ports management
 			- Correcting SSL vulnerability (poodle) for Nginx and Postfix
 			- Changing the management of Logs (web)
-			- Adding DNScrypt and DNSbench
+			- Adding DNScrypt with Bind9 caching
+			- Webmin, minor change
 
 	Version v1.0 (main branch)
 		2014/05/04

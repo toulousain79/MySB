@@ -57,6 +57,12 @@ echo "smtpd_tls_mandatory_protocols = !SSLv2,!SSLv3" >> /etc/postfix/main.cf
 echo "smtpd_tls_protocols = !SSLv2,!SSLv3" >> /etc/postfix/main.cf
 echo "smtp_tls_protocols = !SSLv2,!SSLv3" >> /etc/postfix/main.cf
 
+#### DNScrypt-proxy
+if [ -z $IFPVEKERNEL ]; then
+	sed -i '/nameserver/d' /etc/resolv.conf
+	echo "127.0.0.1" >> /etc/resolv.conf
+fi
+
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
 # -----------------------------------------

@@ -24,11 +24,22 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-PackagesManage install "namebench"
+#### Install packages
+PackagesManage install "namebench csvtool"
 
-namebench -x
+#### Extract informations from "dnscrypt-resolvers.csv"
+ResolversNames="`csvtool -t ',' col 1 /etc/MySB/files/dnscrypt-resolvers.txt | csvtool drop 1 -`"
 
-mv /tmp/namebench*.html /etc/MySB/web/logs/
+#### Start bench
+for Resolver in $ResolversNames; do
+	service bind9 restart &> /dev/null
+	service dnscrypt-proxy restart $Resolver &> /dev/null
+	namebench -x -S -q 10 -c /tmp/$Resolver.csv
+	
+	# Move results
+	mv /tmp/namebench*.html /etc/MySB/web/logs/$Resolver.html
+	mv /tmp/namebench*.csv /tmp/$Resolver.csv
+done
 	
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
