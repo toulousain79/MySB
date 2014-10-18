@@ -57,6 +57,14 @@ else
 	if [ "$BANNER" == "ON" ]; then
 		BannerGenerator
 	fi	
+
+	#### Advertising
+	echo
+	echo -e "${CRED}############################################################$CEND"
+	echo -e "${CRED}#$CEND	${CYELLOW}At the end of the installation, you will receive an email summarizing your account information.$CEND"
+	echo -e "${CRED}#$CEND	${CYELLOW}A temporary password will be assigned to your account. Perez you change upon receipt of email.$CEND"
+	echo -e "${CRED}############################################################$CEND"
+	echo
 	
 	REBOOT=NO
 fi	
