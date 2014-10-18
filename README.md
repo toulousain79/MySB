@@ -275,7 +275,6 @@ Created by toulousain79
 * VSFTPd ManPage: https://security.appspot.com/vsftpd/vsftpd_conf.html
 * DNS Server:	http://en.m.wikipedia.org/wiki/Comparison_of_DNS_server_software
 * DNScrypt infos:	http://antix.freeforums.org/secure-dns-with-dnscrypt-t3588.html
-* DNScrypt install:	https://github.com/simonclausen/dnscrypt-autoinstall/blob/master/dnscrypt-autoinstall.sh
 * DNScrypt + Bind9:	http://cavaencoreparlerdebits.fr/blog/2013/10/encrypt-your-dns-request-with-opendns-dnscrypt
 
 ## TODO
