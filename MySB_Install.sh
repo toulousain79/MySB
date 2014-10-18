@@ -79,11 +79,8 @@ echo
 echo
 echo -e "${CYELLOW}At the end of the installation, you will receive an email summarizing your account information.$CEND"
 echo -e "${CYELLOW}A temporary password will be assigned to your account. Perez you change upon receipt of email.$CEND"
-GetString NO  "Do you want to continue, type 'yes' ?" CONTINUE NO
-
-if [ "$CONTINUE" == "YES" ]; then
-	COMMAND="STOP"
-fi
+echo
+echo
 
 if [ "$COMMAND" == "" ]; then
 	if [ -f /etc/MySB/infos/version.info ]; then # Upgrade ?
