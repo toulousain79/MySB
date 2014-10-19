@@ -95,8 +95,8 @@ if [ "$COMMAND" == "" ]; then
 		#### Banner
 		echo -e "${CGREEN}############################################################$CEND"
 		echo -e "${CGREEN}#$CEND"
-		echo -e "${CGREEN}#$CEND	${CYELLOW}MySB$CEND ${CRED}$MYSBCURRENTVERSION$CEND"
-		echo -e "${CGREEN}#$CEND	${CYELLOW}by toulousain79$CEND ---> ${CBLUE}https://github.com/toulousain79/$CEND"
+		echo -e "${CGREEN}#$CEND ${CYELLOW}MySB$CEND ${CRED}$MYSBCURRENTVERSION$CEND"
+		echo -e "${CGREEN}#$CEND ${CYELLOW}by toulousain79$CEND ---> ${CBLUE}https://github.com/toulousain79/$CEND"
 		echo -e "${CGREEN}#$CEND"
 		echo -e "${CGREEN}############################################################$CEND"
 		echo	
