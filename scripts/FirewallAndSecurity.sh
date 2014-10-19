@@ -104,12 +104,12 @@ echo "SeedboxUsersIPs" $SeedboxUsersIPs
 		# Modules
 		log_daemon_msg "Loading modules"
 		IFS=$','
-			for item in $Modules; do
-				IfExist=`lsmod | grep "$item"`
-				if [ $? -eq 0 ] ; then
-					modprobe $item
-				fi
-			done
+		for item in $Modules; do
+			IfExist=`lsmod | grep "$item"`
+			if [ $? -eq 0 ] ; then
+				modprobe $item
+			fi
+		done
 		unset IFS
 		StatusLSB
 
@@ -144,10 +144,12 @@ echo "SeedboxUsersIPs" $SeedboxUsersIPs
 		for ip in $SeedboxUsersIPs; do 
 			iptables -t filter -A INPUT -p icmp -s $SeedboxUsersIPs/32 -j ACCEPT -m comment --comment "ICMP"
 		done
+		IFS=$' '
 		for ip in $VpnIPs; do 		
 			iptables -t filter -A INPUT -p icmp -s "$VpnIPs" -j ACCEPT -m comment --comment "ICMP"
 		done		
 		StatusLSB
+		unset IFS
 
 		# CakeBox
 		if [ "$INSTALLCAKEBOX" == "YES" ]; then
