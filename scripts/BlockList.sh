@@ -115,12 +115,6 @@ for seedUser in $LISTUSERS; do
 	StatusLSB
 done
 
-if [ -z $IFPVEKERNEL ]; then
-	log_daemon_msg "Drop caches system"
-	sync; echo 3 > /proc/sys/vm/drop_caches
-	StatusLSB
-fi
-
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
 # -----------------------------------------
