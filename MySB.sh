@@ -30,18 +30,29 @@ if [ "`screen -ls | grep MySB`" == "" ]; then
 	exit 1
 fi
 
+#### Advertising
+echo
+echo -e "${CRED}############################################################$CEND"
+echo -e "${CRED}#$CEND ${CYELLOW}At the end of the installation, you will receive an email.$CEND"
+echo -e "${CRED}#$CEND ${CYELLOW}It lists information about your account.$CEND"
+echo -e "${CRED}#$CEND ${CYELLOW}A temporary password will be assigned to your account.$CEND"
+echo -e "${CRED}#$CEND ${CYELLOW}You will need to change it when receiving email.$CEND"
+echo -e "${CRED}# IMPORTANT:$CEND ${CYELLOW}Remember to also check the SPAM folder...$CEND"
+echo -e "${CRED}############################################################$CEND"
+echo
+
 echo
 echo -e "${CRED}If you lose connection during installation, restart the SSH session and run the following command:$CEND"
 echo -e "${CGREEN}	screen -r MySB$CEND"
-echo -e "${CRED}Beware, during installation, the SSH port will be changed. If a port session 22 does not work, try with the new port that you have selected.$CEND"
+echo -e "${CRED}Beware, during installation, the SSH port will be changed. If a port session 22 does not work, try with the new port that you have selected (maybe is 8892).$CEND"
 echo
-echo -e "${CBLUE}At the end of the installation, you should receive a confirmation email containing all the information about your account.$CEND"
-echo -e "${CBLUE}Remember to also check the SPAM folder...$CEND"
+
 echo
-echo -e "${CBLUE}When creating a new user, there are two additional steps to accomplish. $CEND"
-echo -e "${CGREEN}	1) add public IP address of the user"
-echo -e "${CGREEN}	2) change the temporary password of the user"
-echo -e "${CRED}NB: Steps will be reported in the e-mail confirmation that the user will receive.$CEND"
+echo -e "${CBLUE}When a user is added, it will receive a confirmation email.$CEND"
+echo -e "${CBLUE}The new user must complete two additionnal steps.$CEND"
+echo -e "${CGREEN}	1) Add its own public IP addresses "
+echo -e "${CGREEN}	2) Change his password"
+echo -e "${CRED}NB: The two stages will be noted in the email confirmation that the user will receive.$CEND"
 echo
 echo
 
@@ -63,8 +74,11 @@ else
 	#### Advertising
 	echo
 	echo -e "${CRED}############################################################$CEND"
-	echo -e "${CRED}#$CEND	${CYELLOW}At the end of the installation, you will receive an email summarizing your account information.$CEND"
-	echo -e "${CRED}#$CEND	${CYELLOW}A temporary password will be assigned to your account. Perez you change upon receipt of email.$CEND"
+	echo -e "${CRED}#$CEND ${CYELLOW}At the end of the installation, you will receive an email.$CEND"
+	echo -e "${CRED}#$CEND ${CYELLOW}It lists information about your account.$CEND"
+	echo -e "${CRED}#$CEND ${CYELLOW}A temporary password will be assigned to your account.$CEND"
+	echo -e "${CRED}#$CEND ${CYELLOW}You will need to change it when receiving email.$CEND"
+	echo -e "${CRED}# IMPORTANT:$CEND ${CYELLOW}Remember to also check the SPAM folder...$CEND"
 	echo -e "${CRED}############################################################$CEND"
 	echo
 	

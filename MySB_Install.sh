@@ -76,10 +76,13 @@ fi
 
 #### Advertising
 echo
-echo
-echo -e "${CYELLOW}At the end of the installation, you will receive an email summarizing your account information.$CEND"
-echo -e "${CYELLOW}A temporary password will be assigned to your account. Perez you change upon receipt of email.$CEND"
-echo
+echo -e "${CRED}############################################################$CEND"
+echo -e "${CRED}#$CEND ${CYELLOW}At the end of the installation, you will receive an email.$CEND"
+echo -e "${CRED}#$CEND ${CYELLOW}It lists information about your account.$CEND"
+echo -e "${CRED}#$CEND ${CYELLOW}A temporary password will be assigned to your account.$CEND"
+echo -e "${CRED}#$CEND ${CYELLOW}You will need to change it when receiving email.$CEND"
+echo -e "${CRED}# IMPORTANT:$CEND ${CYELLOW}Remember to also check the SPAM folder...$CEND"
+echo -e "${CRED}############################################################$CEND"
 echo
 
 if [ "$COMMAND" == "" ]; then
