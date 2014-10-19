@@ -77,8 +77,7 @@ case $1 in
 			unset IFS ip
 		done
 		if [ "$INSTALLOPENVPN" == "YES" ]; then
-			for ip in $VpnIPs; do
-				ip=`echo $ip | sed s,/,\\\\\\\\\\/,g`
+			for ip in $VpnIPs; do 
 				IfExist=`echo $Fail2banWhiteList | grep $ip`
 				if [ -z $IfExist ] && [ $ip != "blank" ]; then	
 					Fail2banWhiteList="${Fail2banWhiteList} ${ip}"
@@ -142,13 +141,18 @@ case $1 in
 		for ip in $SeedboxUsersIPs; do 
 			iptables -t filter -A INPUT -p icmp -s $SeedboxUsersIPs/32 -j ACCEPT -m comment --comment "ICMP"
 		done
-		IFS=$' '
-		for ip in $VpnIPs; do 
-			ip=`echo $ip | sed s,/,\\\\\\\\\\/,g`
-			iptables -t filter -A INPUT -p icmp -s "$VpnIPs" -j ACCEPT -m comment --comment "ICMP"
+echo
+echo $VpnIPs
+VPN=`echo $VpnIPs | sed s,/,\\\\\\\\\\/,g`
+		for ip in $VpnIPs; do
+			echo $ip
+			#iptables -t filter -A INPUT -p icmp -s "$VpnIPs" -j ACCEPT -m comment --comment "ICMP"
+		done	
+		for ip in $VPN; do
+			echo $ip
+			#iptables -t filter -A INPUT -p icmp -s "$VpnIPs" -j ACCEPT -m comment --comment "ICMP"
 		done		
 		StatusLSB
-		unset IFS
 
 		# CakeBox
 		if [ "$INSTALLCAKEBOX" == "YES" ]; then
@@ -271,7 +275,6 @@ case $1 in
 			if [ "$INSTALLOPENVPN" == "YES" ]; then
 				log_daemon_msg "Allow access to web server for OpenVPN users"
 				for ip in $VpnIPs; do
-					ip=`echo $ip | sed s,/,\\\\\\\\\\/,g`
 					awk '{ print } /allow 127.0.1.1;/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
 					perl -pi -e "s/<ip>/$ip/g" /etc/MySB/files/MySB_location.conf
 					mv /etc/MySB/files/MySB_location.conf /etc/nginx/locations/MySB.conf	
