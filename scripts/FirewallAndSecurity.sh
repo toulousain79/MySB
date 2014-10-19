@@ -141,17 +141,9 @@ case $1 in
 		for ip in $SeedboxUsersIPs; do 
 			iptables -t filter -A INPUT -p icmp -s $SeedboxUsersIPs/32 -j ACCEPT -m comment --comment "ICMP"
 		done
-echo
-echo $VpnIPs
-VPN=`echo $VpnIPs | sed s,/,\\\\\\\\\\/,g`
 		for ip in $VpnIPs; do
-			echo $ip
-			#iptables -t filter -A INPUT -p icmp -s "$VpnIPs" -j ACCEPT -m comment --comment "ICMP"
-		done	
-		for ip in $VPN; do
-			echo $ip
-			#iptables -t filter -A INPUT -p icmp -s "$VpnIPs" -j ACCEPT -m comment --comment "ICMP"
-		done		
+			iptables -t filter -A INPUT -p icmp -s $ip -j ACCEPT -m comment --comment "ICMP"
+		done			
 		StatusLSB
 
 		# CakeBox
