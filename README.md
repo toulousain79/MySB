@@ -290,3 +290,4 @@ Created by toulousain79
 * Subsonic option ?
 * Monitoring services via Webmin
 * Namebench ?
+* Logwatch / Logcheck / Syslog2 / FWlogwatch ?

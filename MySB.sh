@@ -38,14 +38,16 @@ echo
 echo -e "${CBLUE}At the end of the installation, you should receive a confirmation email containing all the information about your account.$CEND"
 echo -e "${CBLUE}Remember to also check the SPAM folder...$CEND"
 echo
-echo -e "{CBLUE}When creating a new user, there are two additional steps to accomplish. $CEND"
+echo -e "${CBLUE}When creating a new user, there are two additional steps to accomplish. $CEND"
 echo -e "${CGREEN}	1) add public IP address of the user"
-echo -e "${CGREEN}	2) change the temporary password to the user"
+echo -e "${CGREEN}	2) change the temporary password of the user"
 echo -e "${CRED}NB: Steps will be reported in the e-mail confirmation that the user will receive.$CEND"
-
+echo
+echo
 
 
 echo -e "${CYELLOW}All is ok for start the install of MySB.$CEND"
+echo
 GetString NO  "Do you want to continue, type 'yes' ?" CONTINUE NO
 if [ "$CONTINUE" == "NO" ]; then
 	echo -e "${CYELLOW}OK, see you later...$CEND"
