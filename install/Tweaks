@@ -24,6 +24,12 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+#### Install packages
+PackagesManage install "vim nano systemd ntp apticron update-notifier-common debian-goodies logwatch rkhunter lynis"
+
+#### Color Bash Prompt for ROOT
+echo "PS1='\[\e[0;31m\]\u\[\e[m\] \[\e[1;34m\]\w\[\e[m\] \[\e[0;31m\]\$ \[\e[m\]\[\e[0;37m\]'" | tee -a /root/.bashrc &> /dev/null
+
 #### Coloration syntaxic for vim
 perl -pi -e "s/\"syntax on/syntax on/g" /etc/vim/vimrc
 
@@ -65,12 +71,26 @@ include \"/usr/share/nano/ini.nanorc\"
 ## Config Files (.conf)
 include \"/usr/share/nano/conf.nanorc\"">> /etc/nanorc
 
+#### SystemD
+SEARCH=$(cat /etc/default/grub | grep "GRUB_CMDLINE_LINUX_DEFAULT=" | cut -d "=" -f 2)
+NEW="$SEARCH init=/bin/systemd"
+NEW=`echo $NEW | sed s,/,\\\\\\\\\\/,g`
+SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
+perl -pi -e "s/$SEARCH/$NEW/g" /etc/default/grub
+update-grub
+
 #### Change timezone
 if [ ! -z $TIMEZONE ]; then
 	echo "$TIMEZONE" > /etc/timezone
 	sed -i "s/UTC/LOCAL/g;" /etc/adjtime
 	dpkg-reconfigure -f noninteractive tzdata
 fi
+
+#### Harden kernel using /etc/sysctl.conf
+# Protection SYN flood
+perl -pi -e "s/#net.ipv4.tcp_syncookies=1/net.ipv4.tcp_syncookies=1/g" /etc/sysctl.conf
+perl -pi -e "s/#net.ipv4.conf.all.rp_filter=1/net.ipv4.conf.all.rp_filter=1/g" /etc/sysctl.conf
+echo "net.ipv4.tcp_max_syn_backlog=1024" /etc/sysctl.conf
 
 #### locale
 locale > /etc/MySB/files/locale
@@ -158,6 +178,11 @@ if [ -z $IFPVEKERNEL ]; then
 		fi
 	fi
 fi
+
+# Logwatch
+mkdir /var/cache/logwatch
+cp /usr/share/logwatch/default.conf/logwatch.conf /etc/logwatch/conf/
+perl -pi -e "s/Output = stdout/Output = mail/g" /etc/logwatch/conf/logwatch.conf
 	
 # -----------------------------------------
 source /etc/MySB/inc/includes_after

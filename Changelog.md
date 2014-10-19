@@ -32,6 +32,9 @@ Changelog for MySB
 			- Changing the management of Logs (web)
 			- Adding DNScrypt with Bind9 caching
 			- Webmin, minor change
+			- Minor change for security (DDOS SYN flood protect, rkhunter)
+			- System tweaks (SystemD, Logwatch)
+			- Adding simple system monitoring tools (apticron, update-notifier-common, debian-goodies)
 
 	Version v1.0 (main branch)
 		2014/05/04

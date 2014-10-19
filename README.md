@@ -288,6 +288,5 @@ Created by toulousain79
 * NFS over sTunnel ? (https://w3.physics.illinois.edu/physwiki/doku.php?id=pcs:unix:nfs_over_stunnel)
 * SABnzbd option ?
 * Subsonic option ?
-* Monitoring services via Webmin
 * Namebench ?
-* Logwatch / Logcheck / Syslog2 / FWlogwatch ?
+* Maybe use of 'psad'

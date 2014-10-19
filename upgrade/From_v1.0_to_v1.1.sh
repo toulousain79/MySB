@@ -57,8 +57,11 @@ echo "smtpd_tls_mandatory_protocols = !SSLv2,!SSLv3" >> /etc/postfix/main.cf
 echo "smtpd_tls_protocols = !SSLv2,!SSLv3" >> /etc/postfix/main.cf
 echo "smtp_tls_protocols = !SSLv2,!SSLv3" >> /etc/postfix/main.cf
 
+#### PHP
+perl -pi -e "s/expose_php = On/expose_php = Off/g" /etc/php5/cli/php.ini
+
 #### DNScrypt-proxy
-if [ -z $IFPVEKERNEL ]; then
+if [ ! -z $IFPVEKERNEL ] && [ "$INSTALLDNSCRYPT" == "YES" ]; then
 	sed -i '/nameserver/d' /etc/resolv.conf
 	echo "127.0.0.1" >> /etc/resolv.conf
 fi
