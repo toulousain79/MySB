@@ -159,6 +159,9 @@ if [ "$COMMAND" == "" ]; then
 			if [ ! -d /etc/MySB/web/logs/scripts ]; then
 				mkdir -p /etc/MySB/web/logs/scripts >> /tmp/`basename $0`.log
 			fi
+			if [ ! -d /etc/MySB/web/logs/bin ]; then
+				mkdir -p /etc/MySB/web/logs/bin >> /tmp/`basename $0`.log
+			fi			
 			if [ ! -d /etc/MySB/web/logs/nginx ]; then
 				mkdir -p /etc/MySB/web/logs/nginx >> /tmp/`basename $0`.log
 			fi

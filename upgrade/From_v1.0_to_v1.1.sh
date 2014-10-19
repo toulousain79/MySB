@@ -28,6 +28,9 @@ source /etc/MySB/inc/includes_before
 if [ ! -d /etc/MySB/web/logs/scripts ]; then
 	mkdir -p /etc/MySB/web/logs/scripts
 fi
+if [ ! -d /etc/MySB/web/logs/bin ]; then
+	mkdir -p /etc/MySB/web/logs/bin
+fi
 if [ ! -d /etc/MySB/web/logs/nginx ]; then
 	mkdir -p /etc/MySB/web/logs/nginx
 fi
@@ -37,6 +40,7 @@ fi
 mv /etc/MySB/web/logs/NginX-* /etc/MySB/web/logs/nginx/
 mv /etc/MySB/web/logs/PeerGuardian-* /etc/MySB/web/logs/security/
 mv /etc/MySB/web/logs/install/*.sh-log.html /etc/MySB/web/logs/scripts/
+mv /etc/MySB/web/logs/MySB_* /etc/MySB/web/logs/bin/
 
 #### Blocklist.sh
 crontab -l > /tmp/crontab.tmp

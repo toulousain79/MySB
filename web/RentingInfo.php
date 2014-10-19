@@ -35,8 +35,6 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 		$formula = '';
 		$tva = '';
 		$unit_price = '';
-		$payment_method = '';
-		$paypal_address = '';
 
 		if (file_exists($filename)) {
 			$data = file($filename);
@@ -119,7 +117,6 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 		$formula=$_POST['formula'];
 		$tva=$_POST['tva'];
 		$unit_price=$_POST['unit_price'];
-		$payment_method=$_POST['payment_method'];
 	
 		if ( ($formula != '') && ($tva != '') && ($unit_price != '') ) {
 			exec("sudo /bin/bash /etc/MySB/scripts/MakeRenting.sh '".$_POST['formula']."' '".$_POST['tva']."' '".$_POST['unit_price']."'", $output, $result);
