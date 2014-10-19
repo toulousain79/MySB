@@ -48,24 +48,39 @@ if [ ! -d /etc/nginx/rpc ]; then
 fi
 
 #### Create files
-touch /etc/nginx/passwd/MySB
-chmod 640 /etc/nginx/passwd/MySB
-chown www-data:www-data /etc/nginx/passwd/MySB
-
-#### Create a dedicated user for MySB
 MYSBPASSD=`mkpasswd MySB` && MYSBPASSD=$MYSBPASSD`mkpasswd MySB`
 MYSBPASSD=`echo $MYSBPASSD | sed "s/\///g"`
 MYSBUSER=`mkpasswd MySB`
 MYSBUSER=`echo $MYSBUSER | sed "s/\///g"`
-echo "user $MYSBUSER" > /etc/MySB/infos/MySB_password.info
-echo "pass $MYSBPASSD" >> /etc/MySB/infos/MySB_password.info
+
+if [ ! -f /etc/nginx/passwd/MySB ]; then
+	touch /etc/nginx/passwd/MySB
+	htpasswd -bs /etc/nginx/passwd/MySB $MYSBUSER $MYSBPASSD &> /dev/null
+fi
+
+chmod 640 /etc/nginx/passwd/MySB
+chown www-data:www-data /etc/nginx/passwd/MySB
+
+#### Create a dedicated user for MySB
+if [ ! -f /etc/MySB/infos/MySB_password.info ]; then
+	echo "user $MYSBUSER" > /etc/MySB/infos/MySB_password.info
+	echo "pass $MYSBPASSD" >> /etc/MySB/infos/MySB_password.info
+fi
 perl -pi -e "s/##MySB_User##/$MYSBUSER/g" /etc/MySB/web/SeedboxInfo.php
-htpasswd -bs /etc/nginx/passwd/MySB $MYSBUSER $MYSBPASSD &> /dev/null
 
 #### Sudo
-echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword*" > /etc/sudoers.d/MySB_nginx
-echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/scripts/MakeRenting.sh*" >> /etc/sudoers.d/MySB_nginx
-echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/scripts/FirewallAndSecurity.sh*" >> /etc/sudoers.d/MySB_nginx
+if [ ! -f /etc/sudoers.d/MySB_nginx ]; then
+	touch /etc/sudoers.d/MySB_nginx
+fi
+if [ "`cat /etc/sudoers.d/MySB_nginx | grep 'MySB_ChangeUserPassword'`" == "" ];then
+	echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword*" > /etc/sudoers.d/MySB_nginx
+fi
+if [ "`cat /etc/sudoers.d/MySB_nginx | grep 'MakeRenting'`" == "" ];then
+	echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/scripts/MakeRenting.sh*" >> /etc/sudoers.d/MySB_nginx
+fi
+if [ "`cat /etc/sudoers.d/MySB_nginx | grep 'FirewallAndSecurity'`" == "" ];then
+	echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/scripts/FirewallAndSecurity.sh*" >> /etc/sudoers.d/MySB_nginx
+fi
 
 #### nginx.con
 if [ -f /etc/nginx/nginx.conf ]; then
@@ -195,7 +210,9 @@ cp /etc/MySB/templates/etc.nginx.site-enabled.default.template /etc/nginx/sites-
 perl -pi -e "s/<PORT_HTTPS>/$NGINXHTTPSPORT/g" /etc/nginx/sites-available/default
 perl -pi -e "s/<PORT_HTTP>/$NGINXHTTPPORT/g" /etc/nginx/sites-available/default
 # Enable Sites
-ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+if [ ! -f /etc/nginx/sites-enabled/default ]; then
+	ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+fi
 
 #### Cache conf
 (
@@ -343,8 +360,9 @@ EOF
 ) > /etc/nginx/locations/rutorrent.conf
 
 #### logrotate
-rm -f /etc/logrotate.d/nginx
-touch /etc/logrotate.d/nginx
+if [ -f /etc/logrotate.d/nginx ]; then
+	rm -f /etc/logrotate.d/nginx
+fi
 
 (
 cat <<'EOF'
