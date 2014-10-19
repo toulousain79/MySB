@@ -295,7 +295,7 @@ echo -e "	-->	${CYELLOW}https://$HOSTFQDN:$NGINXHTTPSPORT/MySB/SeedboxInfo.php$C
 #GetString NO  "Are you ready for reboot now? " REBOOT YES
 echo ""
 echo -e -n "${CRED}The server will restart in $CEND"
-for ((i = 10; i >= 0; i -= 1)); do
+for ((i = 20; i >= 0; i -= 1)); do
 	echo -n " $i"
 	sleep 1
 done
