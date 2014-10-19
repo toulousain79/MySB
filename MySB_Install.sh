@@ -109,7 +109,7 @@ if [ "$COMMAND" == "" ]; then
 			packetg="apt-get"
 		fi
 
-		TOOLS="sudo git-core dos2unix lsb-release screen ccze gnupg figlet"
+		TOOLS="sudo git-core dos2unix lsb-release screen ccze gnupg figlet mlocate"
 		$packetg -y install $TOOLS >> /tmp/`basename $0`.log
 
 		if [ $? -gt 0 ]; then
