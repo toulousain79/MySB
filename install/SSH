@@ -29,21 +29,40 @@ PackagesManage install "openssh-server"
 
 perl -pi -e "s/Port 22/Port $NEWSSHPORT/g" /etc/ssh/sshd_config
 perl -pi -e "s/#Protocol 2/Protocol 2/g" /etc/ssh/sshd_config
-echo "" >> /etc/ssh/sshd_config
-echo "AllowGroups sshdusers MySB_users" >> /etc/ssh/sshd_config
-echo "" >> /etc/ssh/sshd_config
-echo "Match Group MySB_users" >> /etc/ssh/sshd_config
-echo "        ChrootDirectory /home/%u" >> /etc/ssh/sshd_config
-echo "        ForceCommand internal-sftp" >> /etc/ssh/sshd_config
+if [ "`cat /etc/ssh/sshd_config | grep 'AllowGroups sshdusers MySB_users'`" == "" ];then
+	echo "" >> /etc/ssh/sshd_config
+	echo "AllowGroups sshdusers MySB_users" >> /etc/ssh/sshd_config
+fi
+if [ "`cat /etc/ssh/sshd_config | grep 'Match Group MySB_users'`" == "" ];then
+	echo "" >> /etc/ssh/sshd_config
+	echo "Match Group MySB_users" >> /etc/ssh/sshd_config
+fi
+if [ "`cat /etc/ssh/sshd_config | grep 'ChrootDirectory /home/%u'`" == "" ];then
+	echo "        ChrootDirectory /home/%u" >> /etc/ssh/sshd_config
+fi
+if [ "`cat /etc/ssh/sshd_config | grep 'ForceCommand internal-sftp'`" == "" ];then
+	echo "        ForceCommand internal-sftp" >> /etc/ssh/sshd_config
+fi
 
-groupadd sshdusers
-groupadd MySB_users
-usermod -a -G sshdusers root
+if [ "`cat /etc/group | grep sshdusers`" == "" ];then
+	groupadd sshdusers
+	usermod -a -G sshdusers root
+fi
+if [ "`cat /etc/group | grep MySB_users`" == "" ];then
+	groupadd MySB_users
+fi
 
-mkdir -p /usr/share/terminfo/l/
-cp /lib/terminfo/l/linux /usr/share/terminfo/l/
+if [ ! -d /usr/share/terminfo/l/ ];then
+	mkdir -p /usr/share/terminfo/l/
+fi
+if [ ! -f /usr/share/terminfo/l/linux ];then
+	cp /lib/terminfo/l/linux /usr/share/terminfo/l/
+fi
 
-mkdir /home/MySB_share
+if [ ! -d /home/MySB_share ];then
+	mkdir /home/MySB_share
+fi
+
 chown root:MySB_users /home/MySB_share
 chmod 776 /home/MySB_share
 
