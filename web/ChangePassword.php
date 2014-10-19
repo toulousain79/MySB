@@ -28,6 +28,8 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 		$data = file("/etc/MySB/infos/version.info");
 		return $data[0];
 	}
+	
+	$TempPass = $_GET['TempPass'];
 ?>
 
 <!DOCTYPE html>
@@ -55,7 +57,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 			<table border="0">	
 				<tr>
 					<td><span class="Title">Current password :</span></td>
-					<td><input name="current_pwd" type="password" /></td>
+					<td><input name="current_pwd" type="password" value="<?php echo $TempPass; ?>" /></td>
 				</tr>
 				<tr>
 					<td><span class="Title">New password :</span></td>
