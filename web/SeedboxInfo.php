@@ -81,7 +81,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 						$opts = '';
 						break;							
 					case 'Share dir':
-						$comments = 'The "share" folder is accessible by all users on the server. You can easily share what you want with any user.';
+						$comments = 'The "share" folder is accessible by all users on the server. You can easily share what you want with any user. You can use Filemanger plugin avaible in ruTorrent.';
 						$opts = '';
 						break;	
 					case 'FTPs port (TLS)':

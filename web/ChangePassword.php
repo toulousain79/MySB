@@ -57,7 +57,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 			<table border="0">	
 				<tr>
 					<td><span class="Title">Current password :</span></td>
-					<td><input name="current_pwd" type="password" <?php if ( isset($TempPass) ) { echo "value=" . $TempPass . ""; } ?> /></td>
+					<td><input name="current_pwd" type="password" <?php if ( isset($TempPass) ) { echo "readonly=\"true\" value=" . $TempPass . ""; } ?> /></td>
 				</tr>
 				<tr>
 					<td><span class="Title">New password :</span></td>

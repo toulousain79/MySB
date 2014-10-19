@@ -24,23 +24,30 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-#### install
-PackagesManage install "postfix stunnel4 libsasl2-2 libsasl2-modules gnutls-bin openssl mailutils"
+#### Install packages
+PackagesManage install "postfix mailutils"
  
 #### Create certificates
 ScriptInvoke 'source' '/etc/MySB/install/Certificates' 'CreateServiceCertificate' 'postfix'
-ScriptInvoke 'source' '/etc/MySB/install/Certificates' 'CreateServiceCertificate' 'stunnel'
 
-#### stunnel
-if [ -f /var/log/stunnel4/stunnel.log ]; then
-	rm -f /var/log/stunnel4/stunnel.log
+if [ "$SMTP" != "LOCAL" ]; then
+	#### Install packages
+	PackagesManage install "stunnel4 libsasl2-2 libsasl2-modules gnutls-bin openssl"
+	
+	#### Create certificates
+	ScriptInvoke 'source' '/etc/MySB/install/Certificates' 'CreateServiceCertificate' 'stunnel'
+	
+	#### stunnel
+	if [ -f /var/log/stunnel4/stunnel.log ]; then
+		rm -f /var/log/stunnel4/stunnel.log
+	fi
+	if [ ! -f /var/lib/stunnel4/stunnel.log ]; then
+		touch /var/lib/stunnel4/stunnel.log
+		chmod 640 /var/lib/stunnel4/stunnel.log
+		chown stunnel4:stunnel4 /var/lib/stunnel4/stunnel.log
+	fi
+	ln -s /var/lib/stunnel4/stunnel.log /var/log/stunnel4/stunnel.log	
 fi
-if [ ! -f /var/lib/stunnel4/stunnel.log ]; then
-	touch /var/lib/stunnel4/stunnel.log
-	chmod 640 /var/lib/stunnel4/stunnel.log
-	chown stunnel4:stunnel4 /var/lib/stunnel4/stunnel.log
-fi
-ln -s /var/lib/stunnel4/stunnel.log /var/log/stunnel4/stunnel.log
 
 #### main.cf
 cp /etc/MySB/templates/etc.postfix.main.conf.template /etc/postfix/main.cf
@@ -73,13 +80,15 @@ echo "$SMTP_PORT" > /etc/MySB/infos/smtp_port.info
 echo "$SMTP_SECURITY" > /etc/MySB/infos/smtp_security.info
 postconf -e "relayhost = "
 
+# Correcting SSL vulnerability (poodle)
+postconf -e 'smtpd_tls_mandatory_protocols=!SSLv2,!SSLv3'
+postconf -e 'smtpd_tls_protocols=!SSLv2,!SSLv3'
+postconf -e 'smtp_tls_protocols=!SSLv2,!SSLv3'
+
 #### Only by choise of user
 if [ "$SMTP" != "LOCAL" ]; then
 	postconf -e "smtp_host_lookup = dns, native"
 	postconf -e "default_transport = smtp"
-	postconf -e 'smtpd_tls_mandatory_protocols=!SSLv2,!SSLv3'
-	postconf -e 'smtpd_tls_protocols=!SSLv2,!SSLv3'
-	postconf -e 'smtp_tls_protocols=!SSLv2,!SSLv3'
 
 	case "$SMTP" in
 		"FREE")
@@ -139,9 +148,9 @@ if [ "$SMTP" != "LOCAL" ]; then
 			postconf -e "smtp_tls_CAfile = /etc/MySB/ssl/CA/certs/cacert.pem"			
 		;;		
 	esac
+	
+	postmap /etc/postfix/sasl/sasl_passwd
 fi
-
-postmap /etc/postfix/sasl/sasl_passwd
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
