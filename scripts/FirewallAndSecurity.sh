@@ -87,6 +87,9 @@ case $1 in
 		fi
 		Fail2banWhiteList=`echo $Fail2banWhiteList | sed -e "s/^//g;"`
 		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed -e "s/^//g;"`
+echo "VpnIPs" $VpnIPs
+echo "Fail2banWhiteList" $Fail2banWhiteList
+echo "SeedboxUsersIPs" $SeedboxUsersIPs
 		StatusLSB
 	
 		# NO spoofing
@@ -141,8 +144,8 @@ case $1 in
 		for ip in $SeedboxUsersIPs; do 
 			iptables -t filter -A INPUT -p icmp -s $SeedboxUsersIPs/32 -j ACCEPT -m comment --comment "ICMP"
 		done
-		for ip in $VpnIPs; do 
-			iptables -t filter -A INPUT -p icmp -s $VpnIPs -j ACCEPT -m comment --comment "ICMP"
+		for ip in $VpnIPs; do 		
+			iptables -t filter -A INPUT -p icmp -s "$VpnIPs" -j ACCEPT -m comment --comment "ICMP"
 		done		
 		StatusLSB
 
