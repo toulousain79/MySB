@@ -96,7 +96,6 @@ case $1 in
 			CurrentList="$3"
 			NewList="$4"
 			
-			log_daemon_msg "Delete IP restriction for NginX"
 			for ip in $SeedboxUsersIPs; do 
 				sed -i '/'$ip'/d' /etc/nginx/locations/MySB.conf
 			done
