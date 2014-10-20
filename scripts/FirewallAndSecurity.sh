@@ -57,17 +57,6 @@ case $1 in
 		fi		
 	;;
 	new)
-		# Clean users IP Addresses
-		if [ ! -z "$2" ] && [ ! -z "$3" ] && [ ! -z "$4" ]; then
-			log_daemon_msg "Clean IP for $2"
-			SeedboxUser="$2"
-			CurrentList="$3"
-			NewList="$4"
-			perl -pi -e 's/'$CurrentList'/'$NewList'/g' /etc/MySB/users/$SeedboxUser.info
-			unset SeedboxUser CurrentList NewList
-			StatusLSB
-		fi	
-	
 		# Seedbox users IPs
 		log_daemon_msg "Creating IP white lists"
 		LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`	
@@ -99,7 +88,19 @@ case $1 in
 		Fail2banWhiteList=`echo $Fail2banWhiteList | sed -e "s/^//g;"`
 		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed -e "s/^//g;"`
 		StatusLSB
-	
+
+		# Clean users IP Addresses
+		if [ ! -z "$2" ] && [ ! -z "$3" ] && [ ! -z "$4" ]; then
+			log_daemon_msg "Clean IP for $2"
+			SeedboxUser="$2"
+			CurrentList="$3"
+			NewList="$4"
+			
+			perl -pi -e 's/'$CurrentList'/'$NewList'/g' /etc/MySB/users/$SeedboxUser.info
+			unset SeedboxUser CurrentList NewList
+			StatusLSB
+		fi
+		
 		# NO spoofing
 		if [ -e /proc/sys/net/ipv4/conf/all/rp_filter ]; then
 			log_daemon_msg "No spoofing"
