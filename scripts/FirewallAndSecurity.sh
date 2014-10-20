@@ -57,11 +57,22 @@ case $1 in
 		fi		
 	;;
 	new)
+		# Clean users IP Addresses
+		if [ ! -z "$2" ] && [ ! -z "$3" ] && [ ! -z "$4" ]; then
+			log_daemon_msg "Clean IP for $2"
+			SeedboxUser="$2"
+			CurrentList="$3"
+			NewList="$4"
+			perl -pi -e 's/'$CurrentList'/'$NewList'/g' /etc/MySB/users/$SeedboxUser.info
+			unset SeedboxUser CurrentList NewList
+			StatusLSB
+		fi	
+	
 		# Seedbox users IPs
 		log_daemon_msg "Creating IP white lists"
 		LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`	
-		for seedUser in $LISTUSERS; do
-			USERIP=$(cat /etc/MySB/users/$seedUser.info | grep "IP Address=" | awk '{ print $3 }')
+		for SeedboxUser in $LISTUSERS; do
+			USERIP=$(cat /etc/MySB/users/$SeedboxUser.info | grep "IP Address=" | awk '{ print $3 }')
 			
 			IFS=$','
 			for ip in $USERIP; do 
@@ -226,11 +237,11 @@ case $1 in
 		fi
 	
 		#### rTorrent
-		for seedUser in $LISTUSERS; do
-			log_daemon_msg "Allow use of rTorrent for $seedUser"
-			PORT_START=$(cat /etc/MySB/users/$seedUser.info | grep "SCGI port=" | awk '{ print $3 }')
-			PORT_END=$(cat /etc/MySB/users/$seedUser.info | grep "rTorrent port=" | awk '{ print $3 }')
-			iptables -t filter -A INPUT -p tcp --dport $PORT_START:$PORT_END -j ACCEPT -m comment --comment "rTorrent $seedUser"	
+		for SeedboxUser in $LISTUSERS; do
+			log_daemon_msg "Allow use of rTorrent for $SeedboxUser"
+			PORT_START=$(cat /etc/MySB/users/$SeedboxUser.info | grep "SCGI port=" | awk '{ print $3 }')
+			PORT_END=$(cat /etc/MySB/users/$SeedboxUser.info | grep "rTorrent port=" | awk '{ print $3 }')
+			iptables -t filter -A INPUT -p tcp --dport $PORT_START:$PORT_END -j ACCEPT -m comment --comment "rTorrent $SeedboxUser"	
 			StatusLSB
 		done
 
@@ -244,8 +255,8 @@ case $1 in
 			unset ip
 			StatusLSB
 			
-			for seedUser in $LISTUSERS; do
-				log_daemon_msg "Allow access to web server for $seedUser"
+			for SeedboxUser in $LISTUSERS; do
+				log_daemon_msg "Allow access to web server for $SeedboxUser"
 				for ip in $SeedboxUsersIPs; do 
 					awk '{ print } /allow 127.0.1.1;/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
 					perl -pi -e "s/<ip>/$ip/g" /etc/MySB/files/MySB_location.conf
