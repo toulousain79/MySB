@@ -97,7 +97,7 @@ case $1 in
 			NewList="$4"
 			
 			perl -pi -e 's/'$CurrentList'/'$NewList'/g' /etc/MySB/users/$SeedboxUser.info
-			unset SeedboxUser CurrentList NewList
+			unset CurrentList NewList
 			StatusLSB
 		fi
 		
