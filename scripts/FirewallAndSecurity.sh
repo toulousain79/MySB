@@ -139,7 +139,7 @@ case $1 in
 		# ICMP
 		log_daemon_msg "Allow incoming ping for seedbox users only"
 		for ip in $SeedboxUsersIPs; do 
-			iptables -t filter -A INPUT -p icmp -s $SeedboxUsersIPs/32 -j ACCEPT -m comment --comment "ICMP"
+			iptables -t filter -A INPUT -p icmp -s $ip/32 -j ACCEPT -m comment --comment "ICMP"
 		done
 		for ip in $VpnIPs; do
 			iptables -t filter -A INPUT -p icmp -s $ip -j ACCEPT -m comment --comment "ICMP"
