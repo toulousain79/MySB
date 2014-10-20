@@ -65,6 +65,7 @@ if [ "$CONTINUE" == "NO" ]; then
 	echo
 	echo
 	if [ -f /etc/MySB/inc/includes_after ]; then source /etc/MySB/inc/includes_after; else exit 0; fi
+	exit 0
 else
 	#### 4 - Create MySB banner
 	if [ "$BANNER" == "ON" ]; then

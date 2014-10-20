@@ -91,6 +91,7 @@ if [ "$COMMAND" == "" ]; then
 		echo -e -n "${CBLUE}To upgrade MySB, thank you use the following command.'$CEND"
 		echo -e -n "${CGREEN}	MySB_UpgradeMe'$CEND"
 		source /etc/MySB/inc/includes_after
+		exit 0
 	else # Install ?
 		#### Banner
 		echo -e "${CGREEN}############################################################$CEND"
@@ -133,7 +134,8 @@ if [ "$COMMAND" == "" ]; then
 			echo ""
 			echo ""
 			echo -e "${CRED}Looks like somethig is wrong with git clone, aborting !$CEND"
-			exit 1
+			if [ -f /etc/MySB/inc/includes_after ]; then source /etc/MySB/inc/includes_after; fi
+			exit 0
 		else
 			source /etc/MySB/install/CreateDir
 			

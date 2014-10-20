@@ -33,6 +33,7 @@ if [ "$CONTINUE" == "NO" ]; then
 	echo
 	echo
 	source /etc/MySB/inc/includes_after
+	exit 0
 fi	
 
 TOREMOVE=""
