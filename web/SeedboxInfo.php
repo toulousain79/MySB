@@ -57,7 +57,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 						}
 						break;				
 					case 'Password':
-						$comments = '<a target="_blank" href="https://' . $user . ':##TempPassword##@' . $_SERVER['HTTP_HOST'] . '/MySB/ChangePassword.php">Please, promptly change your temporary password HERE!</a>';
+						$comments = '<a target="_blank" href="https://' . $user . ':##TempPassword##@' . $_SERVER['HTTP_HOST'] . '/MySB/ChangePassword.php?TempPass=##TempPassword##">Please, promptly change your temporary password HERE!</a>';
 						$opts = 'bgcolor="#FF6666"';
 						break;
 					case 'RPC':
