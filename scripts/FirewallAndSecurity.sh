@@ -97,7 +97,7 @@ case $1 in
 			NewList="$4"
 			
 			perl -pi -e 's/'$CurrentList'/'$NewList'/g' /etc/MySB/users/$SeedboxUser.info
-			unset CurrentList NewList
+			unset CurrentList NewList SeedboxUser
 			StatusLSB
 		fi
 		
@@ -250,7 +250,9 @@ case $1 in
 		if [ -f /etc/nginx/locations/MySB.conf ]; then
 			# Delete IP restriction for NginX
 			log_daemon_msg "Delete IP restriction for NginX"
+echo $SeedboxUsersIPs
 			for ip in $SeedboxUsersIPs; do 
+echo $ip
 				sed -i '/'$ip'/d' /etc/nginx/locations/MySB.conf 
 			done
 			unset ip
