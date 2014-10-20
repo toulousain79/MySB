@@ -77,7 +77,30 @@ if [ -d /etc/webmin/firewall/ ]; then
 	cp /etc/iptables.up.rules /etc/webmin/firewall/iptables.save
 fi
 
-#### 5 - create ccze files (HTML)
+#### 4 - Drop caches
+if [ -z $IFPVEKERNEL ] && [ "$SCRIPT_name" != "Questions" ]; then
+	log_daemon_msg "Drop caches system"
+	#### Free cache server
+	## To free pagecache
+	#sync; echo 1 > /proc/sys/vm/drop_caches
+	## To release dentries and inodes
+	#sync; echo 2 > /proc/sys/vm/drop_caches
+	## To free pagecache, dentries and inodes
+	sync; echo 3 > /proc/sys/vm/drop_caches
+	## Default
+	#sync; echo 0 > /proc/sys/vm/drop_caches
+	StatusLSB
+fi
+
+#### 5 - Update files database
+if hash updatedb 2>/dev/null; then
+	updatedb
+fi
+if hash ldconfig 2>/dev/null; then
+	ldconfig
+fi
+
+#### 6 - create ccze files (HTML)
 if [ "`screen -ls | grep MySB`" != "" ] || [ "`ps ax | grep 'MySB_Install.sh' | sed '/grep/d'`" != "" ]; then # MySB installation
 	DirLog="/etc/MySB/web/logs/install"
 elif [ "${SCRIPT_name:0:5}" = "MySB_" ]; then
@@ -106,29 +129,6 @@ if [ "$LOGSTD" != "NO" ] ; then
 			mv /etc/MySB/logs/*.html $DirLog/
 		fi
 	fi
-fi
-
-#### Drop caches
-if [ -z $IFPVEKERNEL ] && [ "$SCRIPT_name" != "Questions" ]; then
-	log_daemon_msg "Drop caches system"
-	#### Free cache server
-	## To free pagecache
-	#sync; echo 1 > /proc/sys/vm/drop_caches
-	## To release dentries and inodes
-	#sync; echo 2 > /proc/sys/vm/drop_caches
-	## To free pagecache, dentries and inodes
-	sync; echo 3 > /proc/sys/vm/drop_caches
-	## Default
-	#sync; echo 0 > /proc/sys/vm/drop_caches
-	StatusLSB
-fi
-
-#### Update files database
-if hash updatedb 2>/dev/null; then
-	updatedb
-fi
-if hash ldconfig 2>/dev/null; then
-	ldconfig
 fi
 
 #### Reboot after install
