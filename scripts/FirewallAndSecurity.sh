@@ -96,8 +96,17 @@ case $1 in
 			CurrentList="$3"
 			NewList="$4"
 			
+			log_daemon_msg "Delete IP restriction for NginX"
+			for ip in $SeedboxUsersIPs; do 
+				sed -i '/'$ip'/d' /etc/nginx/locations/MySB.conf
+			done
+			unset ip			
+			
 			perl -pi -e 's/'$CurrentList'/'$NewList'/g' /etc/MySB/users/$SeedboxUser.info
 			unset CurrentList NewList SeedboxUser
+			
+			SeedboxUsersIPs=`echo $NewList | sed -e "s/,/ /g;"`
+			
 			StatusLSB
 		fi
 		
@@ -248,16 +257,7 @@ case $1 in
 
 		#### NginX
 		if [ -f /etc/nginx/locations/MySB.conf ]; then
-			# Delete IP restriction for NginX
-			log_daemon_msg "Delete IP restriction for NginX"
-echo $SeedboxUsersIPs
-			for ip in $SeedboxUsersIPs; do 
-echo $ip
-				sed -i '/'$ip'/d' /etc/nginx/locations/MySB.conf 
-			done
-			unset ip
-			StatusLSB
-			
+			# Delete IP restriction for NginX			
 			for SeedboxUser in $LISTUSERS; do
 				log_daemon_msg "Allow access to web server for $SeedboxUser"
 				for ip in $SeedboxUsersIPs; do 
