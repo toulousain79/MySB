@@ -61,10 +61,10 @@ case $1 in
 		log_daemon_msg "Creating IP white lists"
 		LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`	
 		for SeedboxUser in $LISTUSERS; do
-			USERIP=$(cat /etc/MySB/users/$SeedboxUser.info | grep "IP Address=" | awk '{ print $3 }')
+			UserIPs=$(cat /etc/MySB/users/$SeedboxUser.info | grep "IP Address=" | awk '{ print $3 }')
 			
 			IFS=$','
-			for ip in $USERIP; do 
+			for ip in $UserIPs; do 
 				IfExist=`echo $Fail2banWhiteList | grep $ip`
 				if [ -z $IfExist ] && [ $ip != "blank" ]; then	
 					Fail2banWhiteList="${Fail2banWhiteList} ${ip}/32"
