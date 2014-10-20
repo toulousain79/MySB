@@ -59,8 +59,8 @@ case $1 in
 	new)
 		# Seedbox users IPs
 		log_daemon_msg "Creating IP white lists"
-		LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`	
-		for SeedboxUser in $LISTUSERS; do
+		UsersList=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`	
+		for SeedboxUser in $UsersList; do
 			UserIPs=$(cat /etc/MySB/users/$SeedboxUser.info | grep "IP Address=" | awk '{ print $3 }')
 			
 			IFS=$','
@@ -100,12 +100,10 @@ case $1 in
 				sed -i '/'$ip'/d' /etc/nginx/locations/MySB.conf
 			done
 			unset ip			
-			
+
 			perl -pi -e 's/'$CurrentList'/'$NewList'/g' /etc/MySB/users/$SeedboxUser.info
-			unset CurrentList NewList SeedboxUser
-			
 			SeedboxUsersIPs=`echo $NewList | sed -e "s/,/ /g;"`
-			
+			unset CurrentList NewList SeedboxUser
 			StatusLSB
 		fi
 		
@@ -246,7 +244,7 @@ case $1 in
 		fi
 	
 		#### rTorrent
-		for SeedboxUser in $LISTUSERS; do
+		for SeedboxUser in $UsersList; do
 			log_daemon_msg "Allow use of rTorrent for $SeedboxUser"
 			PORT_START=$(cat /etc/MySB/users/$SeedboxUser.info | grep "SCGI port=" | awk '{ print $3 }')
 			PORT_END=$(cat /etc/MySB/users/$SeedboxUser.info | grep "rTorrent port=" | awk '{ print $3 }')
@@ -257,7 +255,7 @@ case $1 in
 		#### NginX
 		if [ -f /etc/nginx/locations/MySB.conf ]; then
 			# Delete IP restriction for NginX			
-			for SeedboxUser in $LISTUSERS; do
+			for SeedboxUser in $UsersList; do
 				log_daemon_msg "Allow access to web server for $SeedboxUser"
 				for ip in $SeedboxUsersIPs; do 
 					awk '{ print } /allow 127.0.1.1;/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
