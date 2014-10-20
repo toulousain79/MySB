@@ -137,11 +137,12 @@ if [ "$COMMAND" == "" ]; then
 			if [ -f /etc/MySB/inc/includes_after ]; then source /etc/MySB/inc/includes_after; fi
 			exit 0
 		else
+			echo -e "${CGREEN}Done !$CEND"
+		
 			source /etc/MySB/install/CreateDir
 			
 			echo "$MYSBCURRENTVERSION" > /etc/MySB/infos/version.info
 			
-			echo -e "${CGREEN}Done !$CEND"
 			
 			#### Some questions
 			/bin/bash /etc/MySB/install/Questions			
