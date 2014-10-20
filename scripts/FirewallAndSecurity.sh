@@ -369,7 +369,7 @@ case $1 in
 	
 	*)
 		echo -e "${CBLUE}Usage:$CEND	${CYELLOW}bash /etc/MySB/scripts/FirewallAndSecurity.sh$CEND ${CGREEN}{clean|new}$CEND"
-		exit	
+		EndingScript 0	
 	;;
 esac
 

@@ -65,7 +65,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 		
 	} else {
 		echo "No OpenVPN config file for user ".$_SERVER['PHP_AUTH_USER']."...";
-		exit;
+		exit();
 	}
 
 } else {

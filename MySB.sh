@@ -64,8 +64,7 @@ if [ "$CONTINUE" == "NO" ]; then
 	echo -e "${CYELLOW}OK, see you later...$CEND"
 	echo
 	echo
-	if [ -f /etc/MySB/inc/includes_after ]; then source /etc/MySB/inc/includes_after; else exit 0; fi
-	exit 0
+	EndingScript 0
 else
 	#### 4 - Create MySB banner
 	if [ "$BANNER" == "ON" ]; then
@@ -109,7 +108,7 @@ if [ -f /etc/MySB/temp/continue ]; then
 	echo -e "${CRED}Important files could not be downloaded, aborting !$CEND"
 	echo
 	cat /etc/MySB/temp/continue
-	exit 1
+	EndingScript 1
 fi
 
 #### 3 - Sytem tweaks

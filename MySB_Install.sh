@@ -91,7 +91,7 @@ if [ "$COMMAND" == "" ]; then
 		echo -e -n "${CBLUE}To upgrade MySB, thank you use the following command.'$CEND"
 		echo -e -n "${CGREEN}	MySB_UpgradeMe'$CEND"
 		source /etc/MySB/inc/includes_after
-		exit 0
+		exit 1
 	else # Install ?
 		#### Banner
 		echo -e "${CGREEN}############################################################$CEND"

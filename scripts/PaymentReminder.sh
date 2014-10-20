@@ -26,7 +26,7 @@ source /etc/MySB/inc/includes_before
 
 if [ -z $1 ]; then
 	echo -e "${CBLUE}Usage:$CEND	${CYELLOW}$0$CEND ${CGREEN}<user>$CEND"
-	exit
+	EndingScript 0
 fi
 
 Subject="MySB - Payment Reminder for $1"

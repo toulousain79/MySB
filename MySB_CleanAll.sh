@@ -32,8 +32,7 @@ if [ "$CONTINUE" == "NO" ]; then
 	echo -e "${CYELLOW}OK, see you later...$CEND"
 	echo
 	echo
-	source /etc/MySB/inc/includes_after
-	exit 0
+	EndingScript 0
 fi	
 
 TOREMOVE=""
