@@ -28,68 +28,61 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-if [ "$USAGE" == "ON" ]; then
-	if [ "`screen -ls | grep MySB_UpgradeMe`" == "" ]; then
-		if [ ! $1 ]; then
-			echo -e "${CBLUE}Usage:$CEND	${CYELLOW}MySB_UpgradeMe$CEND ${CGREEN}<version>$CEND"
-			exit
-		else
-			# SI $1 > MYSBCURRENTVERSION
-			MYSBCURRENTVERSION=$1
-		fi
-	# else
-		# MYSBCURRENTVERSION=$1
-	fi
+#### Update actual repo
+ScriptInvoke 'source' '/etc/MySB/bin/MySB_UpdateGitHubRepo'
+
+#### Check if new version
+MySB_NewVersion="`cat /etc/MySB/version`"
+MySB_CurrentVersion=`cat /etc/MySB/infos/version.info`
+
+if [ "$MySB_CurrentVersion" == "$MySB_NewVersion" ]; then
+	echo -e -n "${CGREEN}MySB is up to date!$CEND"
+	echo
+	source /etc/MySB/inc/includes_after
 fi
 
-#### system
+#### Upgrade system
 ScriptInvoke 'source' '/etc/MySB/bin/MySB_UpgradeSystem'
 
-#### MySB Script GitHub
-MYSBOLDVERSION=`cat /etc/MySB/infos/version.info`
-mkdir -p /etc/MySB/upgrade/"$MYSBOLDVERSION"_""
+#### STOP some services
+service cron stop
+for seedUser in $LISTUSERS; do
+	log_daemon_msg "Stop rTorrent service for $seedUser"
+	service rtorrent-$seedUser stop
+	StatusLSB
+done
 
+#### Backup
+mkdir /etc/MySB/upgrade/backup
+mv /etc/MySB/upgrade /tmp/
+cp -R /etc/MySB /tmp/upgrade/Backup_$MySB_CurrentVersion-to-$MySB_NewVersion
+tar -zcvf Backup_$MySB_CurrentVersion-to-$MySB_NewVersion.tar.gz /tmp/upgrade/backup/
+rm -rf /tmp/upgrade/Backup_*
+mv /tmp/upgrade /etc/MySB/
+
+#### MySB Script GitHub
 cd /etc/MySB/
 sudo git fetch --all
 sudo git stash
-sudo git checkout -b $MYSBCURRENTVERSION origin/$MYSBCURRENTVERSION
+sudo git checkout -b $MySB_NewVersion origin/$MySB_NewVersion
 sudo git pull
 
-echo "$MYSBCURRENTVERSION" > /etc/MySB/infos/version.info
+#### Update version info
+echo "$MySB_NewVersion" > /etc/MySB/infos/version.info
 rm /etc/MySB/files/banner_*
 
-if [ ! -d /etc/MySB/sources ]; then
-	mkdir -p /etc/MySB/sources 1>> /tmp/$0.log
-fi		
-if [ ! -d /etc/MySB/users ]; then
-	mkdir -p /etc/MySB/users 1>> /tmp/$0.log
-fi
-if [ ! -d /etc/MySB/infos ]; then
-	mkdir -p /etc/MySB/infos 1>> /tmp/$0.log
-fi
-if [ ! -d /etc/MySB/logs ]; then
-	mkdir -p /etc/MySB/logs 1>> /tmp/$0.log
-fi		
-if [ ! -d /etc/MySB/files ]; then
-	mkdir -p /etc/MySB/files 1>> /tmp/$0.log
-fi		
-if [ ! -d /etc/MySB/web/logs ]; then
-	mkdir -p /etc/MySB/web/logs 1>> /tmp/$0.log
+#### Completing the upgrade
+if [ -f /etc/MySB/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh ]; then
+	ScriptInvoke 'source' '/etc/MySB/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh'
 fi
 
-chmod +x /etc/MySB/MySB_Install.sh
-chmod +x /etc/MySB/MySB_CleanAll.sh
-chmod +x /etc/MySB/bin/*
-chmod +x /etc/MySB/scripts/*
-chmod +x /etc/MySB/install/*
-
-dos2unix /etc/MySB/*
-dos2unix /etc/MySB/inc/*
-dos2unix /etc/MySB/bin/*
-dos2unix /etc/MySB/files/*
-dos2unix /etc/MySB/scripts/*
-dos2unix /etc/MySB/install/*
-dos2unix /etc/MySB/templates/*
+#### START some services
+service cron restart
+for seedUser in $LISTUSERS; do
+	log_daemon_msg "Stop rTorrent service for $seedUser"
+	service rtorrent-$seedUser restart
+	StatusLSB
+done
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after

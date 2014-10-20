@@ -89,8 +89,8 @@ if [ "$COMMAND" == "" ]; then
 	if [ -f /etc/MySB/infos/version.info ]; then # Upgrade ?
 		echo -e -n "${CRED}MySB is already installed, aborting!$CEND"
 		echo -e -n "${CBLUE}To upgrade MySB, thank you use the following command.'$CEND"
-		echo -e -n "${CGREEN}	MySB_UpgradeMe <version>'$CEND"
-		exit 0
+		echo -e -n "${CGREEN}	MySB_UpgradeMe'$CEND"
+		source /etc/MySB/inc/includes_after
 	else # Install ?
 		#### Banner
 		echo -e "${CGREEN}############################################################$CEND"
@@ -135,54 +135,10 @@ if [ "$COMMAND" == "" ]; then
 			echo -e "${CRED}Looks like somethig is wrong with git clone, aborting !$CEND"
 			exit 1
 		else
-			if [ ! -d /etc/MySB/sources ]; then
-				mkdir /etc/MySB/sources >> /tmp/`basename $0`.log
-			fi		
-			if [ ! -d /etc/MySB/users ]; then
-				mkdir /etc/MySB/users >> /tmp/`basename $0`.log
-			fi
-			if [ ! -d /etc/MySB/infos ]; then
-				mkdir /etc/MySB/infos >> /tmp/`basename $0`.log
-			fi
-			if [ ! -d /etc/MySB/logs ]; then
-				mkdir /etc/MySB/logs >> /tmp/`basename $0`.log
-			fi		
-			if [ ! -d /etc/MySB/files ]; then
-				mkdir /etc/MySB/files >> /tmp/`basename $0`.log
-			fi
-			if [ ! -d /etc/MySB/temp ]; then
-				mkdir /etc/MySB/temp >> /tmp/`basename $0`.log
-			fi				
-			if [ ! -d /etc/MySB/web/logs/install ]; then
-				mkdir -p /etc/MySB/web/logs/install >> /tmp/`basename $0`.log
-			fi
-			if [ ! -d /etc/MySB/web/logs/scripts ]; then
-				mkdir -p /etc/MySB/web/logs/scripts >> /tmp/`basename $0`.log
-			fi
-			if [ ! -d /etc/MySB/web/logs/bin ]; then
-				mkdir -p /etc/MySB/web/logs/bin >> /tmp/`basename $0`.log
-			fi			
-			if [ ! -d /etc/MySB/web/logs/nginx ]; then
-				mkdir -p /etc/MySB/web/logs/nginx >> /tmp/`basename $0`.log
-			fi
-			if [ ! -d /etc/MySB/web/logs/security ]; then
-				mkdir -p /etc/MySB/web/logs/security >> /tmp/`basename $0`.log
-			fi			
+			source /etc/MySB/install/CreateDir
 			
-			chmod +x /etc/MySB/MySB_Install.sh >> /tmp/`basename $0`.log
-			chmod +x /etc/MySB/MySB_CleanAll.sh >> /tmp/`basename $0`.log
-			chmod +x /etc/MySB/bin/* >> /tmp/`basename $0`.log
-			chmod +x /etc/MySB/scripts/* >> /tmp/`basename $0`.log
-			chmod +x /etc/MySB/install/* >> /tmp/`basename $0`.log
-			
-			dos2unix /etc/MySB/* >> /tmp/`basename $0`.log
-			dos2unix /etc/MySB/inc/* >> /tmp/`basename $0`.log
-			dos2unix /etc/MySB/bin/* >> /tmp/`basename $0`.log
-			dos2unix /etc/MySB/files/* >> /tmp/`basename $0`.log
-			dos2unix /etc/MySB/scripts/* >> /tmp/`basename $0`.log
-			dos2unix /etc/MySB/install/* >> /tmp/`basename $0`.log
-			dos2unix /etc/MySB/templates/* >> /tmp/`basename $0`.log
 			echo "$MYSBCURRENTVERSION" > /etc/MySB/infos/version.info
+			
 			echo -e "${CGREEN}Done !$CEND"
 			
 			#### Some questions

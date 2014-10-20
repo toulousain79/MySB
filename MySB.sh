@@ -64,7 +64,7 @@ if [ "$CONTINUE" == "NO" ]; then
 	echo -e "${CYELLOW}OK, see you later...$CEND"
 	echo
 	echo
-	exit 0
+	if [ -f /etc/MySB/inc/includes_after ]; then source /etc/MySB/inc/includes_after; else exit 0; fi
 else
 	#### 4 - Create MySB banner
 	if [ "$BANNER" == "ON" ]; then
@@ -261,7 +261,7 @@ if [ "$INSTALLDNSCRYPT" == "YES" ]; then
 	echo -e -n "${CBLUE}Install and configure DNScrypt-proxy$CEND..."
 	screen -dmS DNScrypt /bin/bash /etc/MySB/install/DNScrypt;
 	WaitingScreen DNScrypt
-	StatusSTD		
+	StatusSTD	
 fi
 
 #### MySB_CreateUser
