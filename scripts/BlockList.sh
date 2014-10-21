@@ -43,7 +43,7 @@ while read line; do
 	URL=`echo $line | cut -d '"' -f 2`
 	
 	if [ "`echo ${FILE} | cut -c1`" != "#" ] && [ ! -z "$FILE" ] && [ ! -z "$URL" ]; then
-		log_daemon_msg "Download all selected list" "$FILE"
+		log_daemon_msg "Download selected list" "$FILE"
 		CleanBlockList download "$FILE" "$URL" &> /dev/null
 
 		# complete global list
