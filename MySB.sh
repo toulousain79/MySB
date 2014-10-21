@@ -75,9 +75,6 @@ if [ "$CONTINUE" == "NO" ]; then
 	echo
 	EndingScript 0
 else
-	ScriptInvoke 'source' '/etc/MySB/install/CreateDir'
-	echo "$MYSBCURRENTVERSION" > /etc/MySB/infos/version.info
-
 	#### Create MySB banner
 	if [ "$BANNER" == "ON" ]; then
 		BannerGenerator
@@ -472,6 +469,13 @@ echo
 echo
 echo -e "${CBLUE}You can check all informations for use your SeedBox here:$CEND"
 echo -e "	-->	${CYELLOW}https://$HOSTFQDN:$NGINXHTTPSPORT/MySB/SeedboxInfo.php$CEND"
+
+#### Reboot after install
+if [ "$DevInstallMode" == "manual" ]; then
+	GetString NO  "Do you want to reboot now, type 'yes' or 'no' ?" REBOOT NO
+else
+	REBOOT=YES
+fi
 
 # -----------------------------------------
 if [ -f /etc/MySB/inc/includes_after ]; then source /etc/MySB/inc/includes_after; fi
