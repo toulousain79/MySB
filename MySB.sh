@@ -278,7 +278,7 @@ fi
 if [ "$INSTALLOPENVPN" == "YES" ]; then
 	if [ "$OngoingDevelopment" == "TRUE" ]; then
 		clean
-		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/OpenVPN$CEND"
+		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/OpenVPN \"server\"$CEND"
 		read -p "Press [Enter] key to continue..."
 	else
 		echo -e -n "${CBLUE}Install and configure OpenVPN$CEND..."
@@ -336,7 +336,7 @@ else
 	StatusSTD
 fi
 
-#### webmin
+#### Webmin
 if [ "$INSTALLWEBMIN" == "YES" ]; then
 	if [ "$OngoingDevelopment" == "TRUE" ]; then
 		clean
@@ -346,6 +346,20 @@ if [ "$INSTALLWEBMIN" == "YES" ]; then
 		echo -e -n "${CBLUE}Install and configure Webmin$CEND..."
 		screen -dmS Webmin /bin/bash /etc/MySB/install/Webmin;
 		WaitingScreen Webmin
+		StatusSTD
+	fi
+fi
+
+#### Logwatch
+if [ "$INSTALLLOGWATCH" == "YES" ]; then
+	if [ "$OngoingDevelopment" == "TRUE" ]; then
+		clean
+		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Logwatch$CEND"
+		read -p "Press [Enter] key to continue..."
+	else
+		echo -e -n "${CBLUE}Install and configure Logwatch$CEND..."
+		screen -dmS Logwatch /bin/bash /etc/MySB/install/Logwatch;
+		WaitingScreen Logwatch
 		StatusSTD
 	fi
 fi
