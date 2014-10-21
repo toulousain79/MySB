@@ -225,20 +225,20 @@ case $1 in
 		fi
 
 		# PlexMedia Server
-		if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver" ]; then
+		if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
 			log_daemon_msg "Allow use of Plex Media Server on TCP"
-			for TCP_PORT in $PLEXMEDIA_TCP_PORTS; do 
-				iptables -t filter -A INPUT -p tcp --dport $TCP_PORT -j ACCEPT -m comment --comment "Plex Media Server TCP"
+			for PlexTcpPort in $PLEXMEDIA_TCP_PORTS; do 
+				iptables -t filter -A INPUT -p tcp --dport $PlexTcpPort -j ACCEPT -m comment --comment "Plex Media Server TCP"
 			done
-			unset TCP_PORT
+			unset PlexTcpPort
 			StatusLSB
 
 			if [ "$INSTALLOPENVPN" == "YES" ]; then
 				log_daemon_msg "Allow use of Plex Media Server on UDP (OpenVPN)"
-				for UDP_PORT in $PLEXMEDIA_UDP_PORTS; do 
-					iptables -t filter -A INPUT -p tcp --dport $UDP_PORT -j ACCEPT -m comment --comment "Plex Media Server UDP"
+				for PlexUdpPort in $PLEXMEDIA_UDP_PORTS; do 
+					iptables -t filter -A INPUT -p tcp --dport $PlexUdpPort -j ACCEPT -m comment --comment "Plex Media Server UDP"
 				done
-				unset UDP_PORT
+				unset PlexUdpPort
 				StatusLSB
 			fi
 		fi
@@ -329,7 +329,7 @@ case $1 in
 			if [ "$INSTALLCAKEBOX" == "YES" ]; then
 				TCP_PORTS_LIST="${TCP_PORTS_LIST} ${CAKEBOXPORT}"
 			fi
-			if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver" ]; then
+			if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
 				TCP_PORTS_LIST="${TCP_PORTS_LIST} ${PLEXMEDIA_TCP_PORTS}"
 			fi
 			if [ "$INSTALLWEBMIN" == "YES" ]; then
@@ -350,7 +350,7 @@ case $1 in
 				esac
 
 				# PlexMedia UDP ports opened only with OpenVPN installed
-				if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver" ]; then
+				if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
 					UDP_PORTS_LIST="${UDP_PORTS_LIST} ${PLEXMEDIA_UDP_PORTS}"
 				fi
 			fi			
