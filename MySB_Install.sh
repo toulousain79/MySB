@@ -139,7 +139,53 @@ if [ "$COMMAND" == "" ]; then
 		else
 			echo -e "${CGREEN}Done !$CEND"
 		
-			source /etc/MySB/install/CreateDir
+			if [ ! -d /etc/MySB/sources ]; then
+				mkdir /etc/MySB/sources
+			fi		
+			if [ ! -d /etc/MySB/users ]; then
+				mkdir /etc/MySB/users
+			fi
+			if [ ! -d /etc/MySB/infos ]; then
+				mkdir /etc/MySB/infos
+			fi
+			if [ ! -d /etc/MySB/logs ]; then
+				mkdir /etc/MySB/logs
+			fi		
+			if [ ! -d /etc/MySB/files ]; then
+				mkdir /etc/MySB/files
+			fi
+			if [ ! -d /etc/MySB/temp ]; then
+				mkdir /etc/MySB/temp
+			fi	
+			if [ ! -d /etc/MySB/web/logs/install ]; then
+				mkdir -p /etc/MySB/web/logs/install
+			fi
+			if [ ! -d /etc/MySB/web/logs/scripts ]; then
+				mkdir -p /etc/MySB/web/logs/scripts
+			fi
+			if [ ! -d /etc/MySB/web/logs/bin ]; then
+				mkdir -p /etc/MySB/web/logs/bin
+			fi
+			if [ ! -d /etc/MySB/web/logs/nginx ]; then
+				mkdir -p /etc/MySB/web/logs/nginx
+			fi
+			if [ ! -d /etc/MySB/web/logs/security ]; then
+				mkdir -p /etc/MySB/web/logs/security
+			fi			
+						
+			chmod +x /etc/MySB/MySB_Install.sh
+			chmod +x /etc/MySB/MySB_CleanAll.sh
+			chmod +x /etc/MySB/bin/*
+			chmod +x /etc/MySB/scripts/*
+			chmod +x /etc/MySB/install/*
+						
+			dos2unix /etc/MySB/*
+			dos2unix /etc/MySB/inc/*
+			dos2unix /etc/MySB/bin/*
+			dos2unix /etc/MySB/files/*
+			dos2unix /etc/MySB/scripts/*
+			dos2unix /etc/MySB/install/*
+			dos2unix /etc/MySB/templates/*
 			
 			echo "$MYSBCURRENTVERSION" > /etc/MySB/infos/version.info
 			
