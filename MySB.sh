@@ -75,7 +75,10 @@ if [ "$CONTINUE" == "NO" ]; then
 	echo
 	EndingScript 0
 else
-	#### 4 - Create MySB banner
+	ScriptInvoke 'source' '/etc/MySB/install/CreateDir'
+	echo "$MYSBCURRENTVERSION" > /etc/MySB/infos/version.info
+
+	#### Create MySB banner
 	if [ "$BANNER" == "ON" ]; then
 		BannerGenerator
 	fi	
