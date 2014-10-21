@@ -30,7 +30,7 @@ if [ "`screen -ls | grep MySB`" == "" ]; then
 	exit 1
 else
 	if [ -f /etc/MySB/DEV ]; then
-		OngoingDevelopment="TRUE"
+		GetString NO  "How do you want to start the script ? Type 'manual' or 'auto' ?" DevInstallMode "manual"
 	fi
 	echo
 	echo -e "${CRED}############################################################$CEND"
@@ -94,7 +94,7 @@ else
 	REBOOT=NO
 fi	
 
-if [ "$OngoingDevelopment" == "TRUE" ]; then
+if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}/bin/bash /etc/MySB/install/SourcesList$CEND"
 	read -p "Press [Enter] key to continue..."
@@ -106,7 +106,7 @@ else
 	StatusSTD
 fi
 
-if [ "$OngoingDevelopment" == "TRUE" ]; then
+if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Packages$CEND"
 	read -p "Press [Enter] key to continue..."
@@ -118,7 +118,7 @@ else
 	StatusSTD
 fi
 
-if [ "$OngoingDevelopment" == "TRUE" ]; then
+if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/DownloadAll$CEND"
 	read -p "Press [Enter] key to continue..."
@@ -138,7 +138,7 @@ if [ -f /etc/MySB/temp/continue ]; then
 	EndingScript 1
 fi
 
-if [ "$OngoingDevelopment" == "TRUE" ]; then
+if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Tweaks$CEND"
 	read -p "Press [Enter] key to continue..."
@@ -150,7 +150,7 @@ else
 	StatusSTD
 fi
 
-if [ "$OngoingDevelopment" == "TRUE" ]; then
+if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Certificates 'CreateCACertificate'$CEND"
 	read -p "Press [Enter] key to continue..."
@@ -162,7 +162,7 @@ else
 	StatusSTD
 fi
 
-if [ "$OngoingDevelopment" == "TRUE" ]; then
+if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/SSH$CEND"
 else
@@ -173,7 +173,7 @@ else
 	StatusSTD
 fi
 
-if [ "$OngoingDevelopment" == "TRUE" ]; then
+if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/PHP$CEND"
 	read -p "Press [Enter] key to continue..."
@@ -185,7 +185,7 @@ else
 	StatusSTD
 fi
 
-if [ "$OngoingDevelopment" == "TRUE" ]; then
+if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Nginx$CEND"
 	read -p "Press [Enter] key to continue..."
@@ -198,7 +198,7 @@ else
 fi
 
 #### vSFTPd
-if [ "$OngoingDevelopment" == "TRUE" ]; then
+if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/VSFTP$CEND"
 	read -p "Press [Enter] key to continue..."
@@ -210,7 +210,7 @@ else
 fi
 
 #### install rTorrent and depends
-if [ "$OngoingDevelopment" == "TRUE" ]; then
+if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/rTorrent$CEND"
 	read -p "Press [Enter] key to continue..."
@@ -222,7 +222,7 @@ else
 fi
 
 #### install ruTorrent and plugins
-if [ "$OngoingDevelopment" == "TRUE" ]; then
+if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/ruTorrent$CEND"
 	read -p "Press [Enter] key to continue..."
@@ -235,7 +235,7 @@ fi
 
 #### Tools for CakeBox and Seedbox-Manager
 if [ "$INSTALLCAKEBOX" == "YES" ] || [ "$INSTALLMANAGER" == "YES" ]; then
-	if [ "$OngoingDevelopment" == "TRUE" ]; then
+	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Tools$CEND"
 		read -p "Press [Enter] key to continue..."
@@ -249,7 +249,7 @@ fi
 
 #### Seedbox-Manager
 if [ "$INSTALLMANAGER" == "YES" ]; then
-	if [ "$OngoingDevelopment" == "TRUE" ]; then
+	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/SeedboxManager$CEND"
 		read -p "Press [Enter] key to continue..."
@@ -263,7 +263,7 @@ fi
 
 #### CakeBox Light
 if [ "$INSTALLCAKEBOX" == "YES" ]; then
-	if [ "$OngoingDevelopment" == "TRUE" ]; then
+	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/CakeboxLight$CEND"
 		read -p "Press [Enter] key to continue..."
@@ -276,7 +276,7 @@ if [ "$INSTALLCAKEBOX" == "YES" ]; then
 fi
 
 if [ "$INSTALLOPENVPN" == "YES" ]; then
-	if [ "$OngoingDevelopment" == "TRUE" ]; then
+	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/OpenVPN \"server\"$CEND"
 		read -p "Press [Enter] key to continue..."
@@ -287,7 +287,7 @@ if [ "$INSTALLOPENVPN" == "YES" ]; then
 		StatusSTD
 	fi
 
-	if [ "$OngoingDevelopment" == "TRUE" ]; then
+	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Samba$CEND"
 		read -p "Press [Enter] key to continue..."
@@ -298,7 +298,7 @@ if [ "$INSTALLOPENVPN" == "YES" ]; then
 		StatusSTD
 	fi
 
-	if [ "$OngoingDevelopment" == "TRUE" ]; then
+	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/NFS$CEND"
 		read -p "Press [Enter] key to continue..."
@@ -312,7 +312,7 @@ fi
 
 #### fail2ban
 if [ "$INSTALLFAIL2BAN" == "YES" ]; then
-	if [ "$OngoingDevelopment" == "TRUE" ]; then
+	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Fail2Ban$CEND"
 		read -p "Press [Enter] key to continue..."
@@ -325,7 +325,7 @@ if [ "$INSTALLFAIL2BAN" == "YES" ]; then
 fi
 
 #### postfix
-if [ "$OngoingDevelopment" == "TRUE" ]; then
+if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Postfix$CEND"
 	read -p "Press [Enter] key to continue..."
@@ -338,7 +338,7 @@ fi
 
 #### Webmin
 if [ "$INSTALLWEBMIN" == "YES" ]; then
-	if [ "$OngoingDevelopment" == "TRUE" ]; then
+	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Webmin$CEND"
 		read -p "Press [Enter] key to continue..."
@@ -352,7 +352,7 @@ fi
 
 #### Logwatch
 if [ "$INSTALLLOGWATCH" == "YES" ]; then
-	if [ "$OngoingDevelopment" == "TRUE" ]; then
+	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Logwatch$CEND"
 		read -p "Press [Enter] key to continue..."
@@ -366,7 +366,7 @@ fi
 
 ### PlexMedia
 if [ "$INSTALLPLEXMEDIA" == "YES" ]; then
-	if [ "$OngoingDevelopment" == "TRUE" ]; then
+	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/PlexMedia$CEND"
 		read -p "Press [Enter] key to continue..."
@@ -382,7 +382,7 @@ fi
 #### BlockList
 case $MYBLOCKLIST in
 	PeerGuardian)
-		if [ "$OngoingDevelopment" == "TRUE" ]; then
+		if [ "$DevInstallMode" == "manual" ]; then
 			clean
 			echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/PeerGuardian$CEND"
 			read -p "Press [Enter] key to continue..."
@@ -393,7 +393,7 @@ case $MYBLOCKLIST in
 			StatusSTD
 		fi
 
-		if [ "$OngoingDevelopment" == "TRUE" ]; then
+		if [ "$DevInstallMode" == "manual" ]; then
 			clean
 			echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Blocklist$CEND"
 			read -p "Press [Enter] key to continue..."
@@ -405,7 +405,7 @@ case $MYBLOCKLIST in
 		fi
 	;;
 	rTorrent)
-		if [ "$OngoingDevelopment" == "TRUE" ]; then
+		if [ "$DevInstallMode" == "manual" ]; then
 			clean
 			echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Blocklist$CEND"
 			read -p "Press [Enter] key to continue..."
@@ -424,7 +424,7 @@ esac
 
 ### DNScrypt-proxy
 if [ "$INSTALLDNSCRYPT" == "YES" ]; then
-	if [ "$OngoingDevelopment" == "TRUE" ]; then
+	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/DNScrypt$CEND"
 		read -p "Press [Enter] key to continue..."
@@ -437,12 +437,12 @@ if [ "$INSTALLDNSCRYPT" == "YES" ]; then
 fi
 
 #### MySB_CreateUser
-if [ "$OngoingDevelopment" == "TRUE" ]; then
+if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/bin/MySB_CreateUser \"$NEWUSER\" \"$PASSWORD\" \"YES\" \"YES\"$CEND"
 	read -p "Press [Enter] key to continue..."
 else
-	echo  -e -n "${CBLUE}Add the main user$CEND..."
+	echo  -e -n "${CBLUE}Add the main user \"$NEWUSER\"$CEND..."
 	screen -dmS MySB_CreateUser /bin/bash /etc/MySB/bin/MySB_CreateUser "$NEWUSER" "$PASSWORD" "YES" "YES";
 	WaitingScreen MySB_CreateUser
 	StatusSTD
@@ -469,16 +469,6 @@ echo
 echo
 echo -e "${CBLUE}You can check all informations for use your SeedBox here:$CEND"
 echo -e "	-->	${CYELLOW}https://$HOSTFQDN:$NGINXHTTPSPORT/MySB/SeedboxInfo.php$CEND"
-
-#GetString NO  "Are you ready for reboot now? " REBOOT YES
-echo ""
-echo -e -n "${CRED}The server will restart in $CEND"
-for ((i = 20; i >= 0; i -= 1)); do
-	echo -n " $i"
-	sleep 1
-done
-
-REBOOT=YES
 
 # -----------------------------------------
 if [ -f /etc/MySB/inc/includes_after ]; then source /etc/MySB/inc/includes_after; fi
