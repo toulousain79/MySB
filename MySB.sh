@@ -95,8 +95,9 @@ else
 fi	
 
 if [ "$OngoingDevelopment" == "TRUE" ]; then
-	#clean
-	echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/SourcesList$CEND"
+	clean
+	echo -e "${CGREEN}/bin/bash /etc/MySB/install/SourcesList$CEND"
+	read -p "Press [Enter] key to continue..."
 else
 	#### 1 - sources.list
 	echo -e -n "${CBLUE}Prepare Sources$CEND..."
@@ -106,8 +107,9 @@ else
 fi
 
 if [ "$OngoingDevelopment" == "TRUE" ]; then
-	#clean
-	echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/Packages$CEND"
+	clean
+	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Packages$CEND"
+	read -p "Press [Enter] key to continue..."
 else
 	#### 2 - install all needed packages
 	echo -e -n "${CBLUE}Install all needed packages$CEND..."
@@ -117,8 +119,9 @@ else
 fi
 
 if [ "$OngoingDevelopment" == "TRUE" ]; then
-	#clean
-	echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/DownloadAll$CEND"
+	clean
+	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/DownloadAll$CEND"
+	read -p "Press [Enter] key to continue..."
 else
 	#### 3 - download all files now in one time (GIT, SVN, TAR.GZ, WBM)
 	echo -e -n "${CBLUE}Download all files now in one time (GIT, SVN, TAR.GZ, WBM)$CEND..."
@@ -136,8 +139,9 @@ if [ -f /etc/MySB/temp/continue ]; then
 fi
 
 if [ "$OngoingDevelopment" == "TRUE" ]; then
-	#clean
-	echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/Tweaks$CEND"
+	clean
+	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Tweaks$CEND"
+	read -p "Press [Enter] key to continue..."
 else
 	#### 3 - Sytem tweaks
 	echo -e -n "${CBLUE}Sytem optimization$CEND..."
@@ -147,8 +151,9 @@ else
 fi
 
 if [ "$OngoingDevelopment" == "TRUE" ]; then
-	#clean
-	echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/Certificates 'CreateCACertificate'$CEND"
+	clean
+	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Certificates 'CreateCACertificate'$CEND"
+	read -p "Press [Enter] key to continue..."
 else
 	#### certificates
 	echo -e -n "${CBLUE}Create certificates$CEND..."
@@ -158,8 +163,8 @@ else
 fi
 
 if [ "$OngoingDevelopment" == "TRUE" ]; then
-	#clean
-	echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/SSH$CEND"
+	clean
+	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/SSH$CEND"
 else
 	#### SSH
 	echo -e -n "${CBLUE}Configure SSHd$CEND..."
@@ -169,8 +174,9 @@ else
 fi
 
 if [ "$OngoingDevelopment" == "TRUE" ]; then
-	#clean
-	echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/PHP$CEND"
+	clean
+	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/PHP$CEND"
+	read -p "Press [Enter] key to continue..."
 else
 	#### configure php5-fpm
 	echo -e -n "${CBLUE}Install and configure PHP5-FPM$CEND..."
@@ -180,8 +186,9 @@ else
 fi
 
 if [ "$OngoingDevelopment" == "TRUE" ]; then
-	#clean
-	echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/Nginx$CEND"
+	clean
+	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Nginx$CEND"
+	read -p "Press [Enter] key to continue..."
 else
 	#### configure nginx
 	echo -e -n "${CBLUE}Install and configure NginX$CEND..."
@@ -192,8 +199,9 @@ fi
 
 #### vSFTPd
 if [ "$OngoingDevelopment" == "TRUE" ]; then
-	#clean
-	echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/VSFTP$CEND"
+	clean
+	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/VSFTP$CEND"
+	read -p "Press [Enter] key to continue..."
 else
 	echo -e -n "${CBLUE}Install and configure VSFTPd$CEND..."
 	screen -dmS VSFTP /bin/bash /etc/MySB/install/VSFTP;
@@ -203,8 +211,9 @@ fi
 
 #### install rTorrent and depends
 if [ "$OngoingDevelopment" == "TRUE" ]; then
-	#clean
-	echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/rTorrent$CEND"
+	clean
+	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/rTorrent$CEND"
+	read -p "Press [Enter] key to continue..."
 else
 	echo -e -n "${CBLUE}Install and configure rTorrent$CEND..."
 	screen -dmS rTorrent /bin/bash /etc/MySB/install/rTorrent;
@@ -214,8 +223,9 @@ fi
 
 #### install ruTorrent and plugins
 if [ "$OngoingDevelopment" == "TRUE" ]; then
-	#clean
-	echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/ruTorrent$CEND"
+	clean
+	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/ruTorrent$CEND"
+	read -p "Press [Enter] key to continue..."
 else
 	echo -e -n "${CBLUE}Install and configure ruTorrent & Plugins$CEND..."
 	screen -dmS ruTorrent /bin/bash /etc/MySB/install/ruTorrent;
@@ -226,8 +236,9 @@ fi
 #### Tools for CakeBox and Seedbox-Manager
 if [ "$INSTALLCAKEBOX" == "YES" ] || [ "$INSTALLMANAGER" == "YES" ]; then
 	if [ "$OngoingDevelopment" == "TRUE" ]; then
-		#clean
-		echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/Tools$CEND"
+		clean
+		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Tools$CEND"
+		read -p "Press [Enter] key to continue..."
 	else
 		echo -e -n "${CBLUE}Install and configure Composer, Bower and NodeJS$CEND..."
 		screen -dmS Tools /bin/bash /etc/MySB/install/Tools;
@@ -239,8 +250,9 @@ fi
 #### Seedbox-Manager
 if [ "$INSTALLMANAGER" == "YES" ]; then
 	if [ "$OngoingDevelopment" == "TRUE" ]; then
-		#clean
-		echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/SeedboxManager$CEND"
+		clean
+		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/SeedboxManager$CEND"
+		read -p "Press [Enter] key to continue..."
 	else
 		echo -e -n "${CBLUE}Install and configure Seedbox-Manager$CEND..."
 		screen -dmS SeedboxManager /bin/bash /etc/MySB/install/SeedboxManager;
@@ -252,8 +264,9 @@ fi
 #### CakeBox Light
 if [ "$INSTALLCAKEBOX" == "YES" ]; then
 	if [ "$OngoingDevelopment" == "TRUE" ]; then
-		#clean
-		echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/CakeboxLight$CEND"
+		clean
+		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/CakeboxLight$CEND"
+		read -p "Press [Enter] key to continue..."
 	else	
 		echo -e -n "${CBLUE}Install and configure CakeBox Light$CEND..."
 		screen -dmS CakeboxLight /bin/bash /etc/MySB/install/CakeboxLight;
@@ -264,8 +277,9 @@ fi
 
 if [ "$INSTALLOPENVPN" == "YES" ]; then
 	if [ "$OngoingDevelopment" == "TRUE" ]; then
-		#clean
-		echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/OpenVPN$CEND"
+		clean
+		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/OpenVPN$CEND"
+		read -p "Press [Enter] key to continue..."
 	else
 		echo -e -n "${CBLUE}Install and configure OpenVPN$CEND..."
 		screen -dmS OpenVPN /bin/bash /etc/MySB/install/OpenVPN "server";	
@@ -274,8 +288,9 @@ if [ "$INSTALLOPENVPN" == "YES" ]; then
 	fi
 
 	if [ "$OngoingDevelopment" == "TRUE" ]; then
-		#clean
-		echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/Samba$CEND"
+		clean
+		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Samba$CEND"
+		read -p "Press [Enter] key to continue..."
 	else
 		echo -e -n "${CBLUE}Install and configure Samba$CEND..."
 		screen -dmS Samba /bin/bash /etc/MySB/install/Samba;	
@@ -284,8 +299,9 @@ if [ "$INSTALLOPENVPN" == "YES" ]; then
 	fi
 
 	if [ "$OngoingDevelopment" == "TRUE" ]; then
-		#clean
-		echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/NFS$CEND"
+		clean
+		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/NFS$CEND"
+		read -p "Press [Enter] key to continue..."
 	else
 		echo -e -n "${CBLUE}Install and configure NFS$CEND..."
 		screen -dmS NFS /bin/bash /etc/MySB/install/NFS;	
@@ -297,8 +313,9 @@ fi
 #### fail2ban
 if [ "$INSTALLFAIL2BAN" == "YES" ]; then
 	if [ "$OngoingDevelopment" == "TRUE" ]; then
-		#clean
-		echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/Fail2Ban$CEND"
+		clean
+		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Fail2Ban$CEND"
+		read -p "Press [Enter] key to continue..."
 	else
 		echo -e -n "${CBLUE}Install and configure Fail2Ban$CEND..."
 		screen -dmS Fail2Ban /bin/bash /etc/MySB/install/Fail2Ban;
@@ -309,8 +326,9 @@ fi
 
 #### postfix
 if [ "$OngoingDevelopment" == "TRUE" ]; then
-	#clean
-	echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/Postfix$CEND"
+	clean
+	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Postfix$CEND"
+	read -p "Press [Enter] key to continue..."
 else
 	echo -e -n "${CBLUE}Install and configure Postfix$CEND..."
 	screen -dmS Postfix /bin/bash /etc/MySB/install/Postfix;
@@ -321,8 +339,9 @@ fi
 #### webmin
 if [ "$INSTALLWEBMIN" == "YES" ]; then
 	if [ "$OngoingDevelopment" == "TRUE" ]; then
-		#clean
-		echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/Webmin$CEND"
+		clean
+		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Webmin$CEND"
+		read -p "Press [Enter] key to continue..."
 	else
 		echo -e -n "${CBLUE}Install and configure Webmin$CEND..."
 		screen -dmS Webmin /bin/bash /etc/MySB/install/Webmin;
@@ -334,8 +353,9 @@ fi
 ### PlexMedia
 if [ "$INSTALLPLEXMEDIA" == "YES" ]; then
 	if [ "$OngoingDevelopment" == "TRUE" ]; then
-		#clean
-		echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/PlexMedia$CEND"
+		clean
+		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/PlexMedia$CEND"
+		read -p "Press [Enter] key to continue..."
 	else
 		echo -e -n "${CBLUE}Install and configure PlexMedia$CEND..."
 		screen -dmS PlexMedia /bin/bash /etc/MySB/install/PlexMedia;
@@ -349,8 +369,9 @@ fi
 case $MYBLOCKLIST in
 	PeerGuardian)
 		if [ "$OngoingDevelopment" == "TRUE" ]; then
-			#clean
-			echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/PeerGuardian$CEND"
+			clean
+			echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/PeerGuardian$CEND"
+			read -p "Press [Enter] key to continue..."
 		else
 			echo -e -n "${CBLUE}Install and configure PeerGuardian$CEND..."
 			screen -dmS PeerGuardian /bin/bash /etc/MySB/install/PeerGuardian;		
@@ -359,8 +380,9 @@ case $MYBLOCKLIST in
 		fi
 
 		if [ "$OngoingDevelopment" == "TRUE" ]; then
-			#clean
-			echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/Blocklist$CEND"
+			clean
+			echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Blocklist$CEND"
+			read -p "Press [Enter] key to continue..."
 		else		
 			echo -e -n "${CBLUE}Compile the BlockList for rTorrent$CEND..."
 			screen -dmS Blocklist /bin/bash /etc/MySB/install/Blocklist;
@@ -370,8 +392,9 @@ case $MYBLOCKLIST in
 	;;
 	rTorrent)
 		if [ "$OngoingDevelopment" == "TRUE" ]; then
-			#clean
-			echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/Blocklist$CEND"
+			clean
+			echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Blocklist$CEND"
+			read -p "Press [Enter] key to continue..."
 		else
 			echo -e -n "${CBLUE}Compile the BlockList for rTorrent$CEND..."
 			screen -dmS Blocklist /bin/bash /etc/MySB/install/Blocklist;
@@ -388,8 +411,9 @@ esac
 ### DNScrypt-proxy
 if [ "$INSTALLDNSCRYPT" == "YES" ]; then
 	if [ "$OngoingDevelopment" == "TRUE" ]; then
-		#clean
-		echo -e -n "${CGREEN}/bin/bash /etc/MySB/install/DNScrypt$CEND"
+		clean
+		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/DNScrypt$CEND"
+		read -p "Press [Enter] key to continue..."
 	else
 		echo -e -n "${CBLUE}Install and configure DNScrypt-proxy$CEND..."
 		screen -dmS DNScrypt /bin/bash /etc/MySB/install/DNScrypt;
@@ -400,8 +424,9 @@ fi
 
 #### MySB_CreateUser
 if [ "$OngoingDevelopment" == "TRUE" ]; then
-	#clean
-	echo -e -n "${CGREEN}/bin/bash /etc/MySB/bin/MySB_CreateUser \"$NEWUSER\" \"$PASSWORD\" \"YES\" \"YES\"$CEND"
+	clean
+	echo -e "${CGREEN}screen /bin/bash /etc/MySB/bin/MySB_CreateUser \"$NEWUSER\" \"$PASSWORD\" \"YES\" \"YES\"$CEND"
+	read -p "Press [Enter] key to continue..."
 else
 	echo  -e -n "${CBLUE}Add the main user$CEND..."
 	screen -dmS MySB_CreateUser /bin/bash /etc/MySB/bin/MySB_CreateUser "$NEWUSER" "$PASSWORD" "YES" "YES";
