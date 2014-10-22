@@ -360,9 +360,9 @@ case $1 in
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=")
 			perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"${UDP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
-			perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"80 443 ${TCP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf
+			perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"${TCP_PORTS_OUT} ${TCP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
-			perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"80 443 ${UDP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf			
+			perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${UDP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf			
 			StatusLSB
 		fi
 	;;
