@@ -236,7 +236,7 @@ case $1 in
 			if [ "$INSTALLOPENVPN" == "YES" ]; then
 				log_daemon_msg "Allow use of Plex Media Server on UDP (OpenVPN)"
 				for PlexUdpPort in $PLEXMEDIA_UDP_PORTS; do 
-					iptables -t filter -A INPUT -p tcp --dport $PlexUdpPort -j ACCEPT -m comment --comment "Plex Media Server UDP"
+					iptables -t filter -A INPUT -p udp --dport $PlexUdpPort -j ACCEPT -m comment --comment "Plex Media Server UDP"
 				done
 				unset PlexUdpPort
 				StatusLSB
