@@ -355,9 +355,10 @@ case $1 in
 				fi
 			fi
 			
-			TCP_PORTS_LIST=`echo $TCP_PORTS_LIST | sed -e "s/^//g;"`
-			UDP_PORTS_LIST=`echo $UDP_PORTS_LIST | sed -e "s/^//g;"`
-			TCP_PORTS_OUT=`echo $TCP_PORTS_OUT | sed -e "s/^//g;"`
+			TCP_PORTS_LIST=`echo $TCP_PORTS_LIST | sed -e 's/^//g;' | sed 's/\s+$//'`
+			UDP_PORTS_LIST=`echo $UDP_PORTS_LIST | sed -e 's/^//g;' | sed 's/\s+$//'`
+			TCP_PORTS_OUT=`echo $TCP_PORTS_OUT | sed -e 's/^//g;' | sed 's/\s+$//'`
+			UDP_PORTS_OUT=`echo $UDP_PORTS_OUT | sed -e 's/^//g;' | sed 's/\s+$//'`
 
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
 			perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${TCP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf
