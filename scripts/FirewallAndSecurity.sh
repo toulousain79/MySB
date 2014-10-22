@@ -353,7 +353,11 @@ case $1 in
 				if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
 					UDP_PORTS_LIST="${UDP_PORTS_LIST} ${PLEXMEDIA_UDP_PORTS}"
 				fi
-			fi			
+			fi
+			
+			TCP_PORTS_LIST=`echo $TCP_PORTS_LIST | sed -e "s/^//g;"`
+			UDP_PORTS_LIST=`echo $UDP_PORTS_LIST | sed -e "s/^//g;"`
+			TCP_PORTS_OUT=`echo $TCP_PORTS_OUT | sed -e "s/^//g;"`
 
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
 			perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${TCP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf
