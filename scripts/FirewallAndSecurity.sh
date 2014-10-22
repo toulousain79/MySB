@@ -288,6 +288,16 @@ case $1 in
 			fi		
 		fi
 		
+		#### DNScrypt-proxy resolvers UDP ports
+		if hash csvtool 2>/dev/null; then
+			ResolversPorts="`csvtool -t ',' col 11 /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv | csvtool drop 1 - | awk -F: '{print $NF}' | sort -g | uniq`"
+			#ResolverUsed="`ps ax | grep dnscrypt-proxy | sed -n 2p | awk '{ print $8 }' | cut -d "=" -f 2`"
+			for Port in $ResolversPorts; do
+				iptables -t filter -A INPUT -p tcp --dport $Port -j ACCEPT -m comment --comment "DNScrypt-proxy"
+			done
+			unset Port
+		fi
+		
 		#### Fail2Ban
 		if [ -f /etc/fail2ban/jail.local ]; then
 			log_daemon_msg "Add whitelist to Fail2Ban"
@@ -359,6 +369,7 @@ case $1 in
 			UDP_PORTS_LIST=`echo $UDP_PORTS_LIST | sed -e 's/^//g;' | sed 's/\s+$//'`
 			TCP_PORTS_OUT=`echo $TCP_PORTS_OUT | sed -e 's/^//g;' | sed 's/\s+$//'`
 			UDP_PORTS_OUT=`echo $UDP_PORTS_OUT | sed -e 's/^//g;' | sed 's/\s+$//'`
+			ResolversPorts=`echo $ResolversPorts | sed -e 's/^//g;' | sed 's/\s+$//'`
 
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
 			perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${TCP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf
@@ -367,7 +378,7 @@ case $1 in
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
 			perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"${TCP_PORTS_OUT} ${TCP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
-			perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${UDP_PORTS_OUT} ${UDP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf			
+			perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${ResolversPorts} ${UDP_PORTS_OUT} ${UDP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf			
 			StatusLSB
 		fi
 	;;
