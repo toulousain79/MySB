@@ -167,7 +167,7 @@ if [ "$DevInstallMode" == "manual" ]; then
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/SSH$CEND"
 else
 	#### SSH
-	echo -e -n "${CBLUE}Configure SSHd$CEND..."
+	echo -e -n "${CBLUE}Install and configure SSH$CEND..."
 	screen -dmS SSH /bin/bash /etc/MySB/install/SSH;
 	WaitingScreen SSH
 	StatusSTD

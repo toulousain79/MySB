@@ -820,4 +820,64 @@ EndingScript() {
 	exit $1
 }
 
+#### Network ports generator
+NetworkPortsGenerator() {
+	# OpenDNS DNScrypt-proxy resolvers
+	if [ "$INSTALLDNSCRYPT" == "YES" ] && [ -f /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv ] && hash csvtool 2>/dev/null; then
+		ResolversPorts="`csvtool -t ',' col 11 /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv | csvtool drop 1 - | awk -F: '{print $NF}' | sort -g | uniq`"
+		ResolversPorts=`echo $ResolversPorts | sed -e 's/^//g;' | sed 's/\s+$//'`
+	fi 
+	
+	# TCP In
+	WHITE_TCP_IN="${SMTP_PORT} ${WHITE_TCP_IN} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}"
+	
+	# UDP In
+	WHITE_UDP_IN="${WHITE_UDP_IN}"
+	
+	# TCP Out
+	WHITE_TCP_OUT="${WHITE_TCP_OUT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}"
+	
+	# UDP Out	
+	WHITE_UDP_OUT="${WHITE_UDP_OUT} ${ResolversPorts}"
+
+	# Services
+	if [ "$INSTALLCAKEBOX" == "YES" ]; then
+		WHITE_TCP_IN="${WHITE_TCP_IN} ${CAKEBOXPORT}"
+	fi
+	if [ "$INSTALLWEBMIN" == "YES" ]; then
+		WHITE_TCP_IN="${WHITE_TCP_IN} ${WEBMINPORT}"
+	fi	
+	if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
+		WHITE_TCP_IN="${WHITE_TCP_IN} ${PLEXMEDIA_TCP_PORTS}"
+	fi
+	if [ "$INSTALLOPENVPN" == "YES" ]; then
+		OVPNPORT1=$OPENVPNPORT
+		(( OPENVPNPORT++ ))
+		OVPNPORT2=$OPENVPNPORT
+
+		case "$OPENVPNPROTO" in
+			"udp")
+				WHITE_UDP_IN="${WHITE_UDP_IN} ${OVPNPORT1} ${OVPNPORT2}"
+			;;
+			"tcp")
+				WHITE_TCP_IN="${WHITE_TCP_IN} ${OVPNPORT1} ${OVPNPORT2}"
+			;;
+		esac
+
+		# PlexMedia UDP ports opened only with OpenVPN installed
+		if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
+			UDP_PORTS_LIST="${WHITE_UDP_IN} ${PLEXMEDIA_UDP_PORTS}"
+		fi	
+		
+		# Forward IPs with OpenVPN and redirect GW
+		echo "WHITE_IP_FWD=\"10.0.0.0/24\"" >> /etc/pgl/pglcmd.conf
+		echo "WHITE_IP_OUT=\"10.0.0.0/24\"" >> /etc/pgl/pglcmd.conf
+	fi
+	
+	WHITE_TCP_IN=`echo $WHITE_TCP_IN | sed -e 's/^//g;' | sed 's/\s+$//'`
+	WHITE_UDP_IN=`echo $WHITE_UDP_IN | sed -e 's/^//g;' | sed 's/\s+$//'`
+	WHITE_TCP_OUT=`echo $WHITE_TCP_OUT | sed -e 's/^//g;' | sed 's/\s+$//'`
+	WHITE_UDP_OUT=`echo $WHITE_UDP_OUT | sed -e 's/^//g;' | sed 's/\s+$//'`	
+}
+
 ##################### LAST LINE ######################################

@@ -338,49 +338,16 @@ case $1 in
 			fi
 			unset SEARCH
 			
-			if [ "$INSTALLCAKEBOX" == "YES" ]; then
-				TCP_PORTS_LIST="${TCP_PORTS_LIST} ${CAKEBOXPORT}"
-			fi
-			if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
-				TCP_PORTS_LIST="${TCP_PORTS_LIST} ${PLEXMEDIA_TCP_PORTS}"
-			fi
-			if [ "$INSTALLWEBMIN" == "YES" ]; then
-				TCP_PORTS_LIST="${TCP_PORTS_LIST} ${WEBMINPORT}"
-			fi
-			if [ "$INSTALLOPENVPN" == "YES" ]; then
-				OVPNPORT1=$OPENVPNPORT
-				(( OPENVPNPORT++ ))
-				OVPNPORT2=$OPENVPNPORT
-
-				case "$OPENVPNPROTO" in
-					"udp")
-						UDP_PORTS_LIST="${UDP_PORTS_LIST} ${OVPNPORT1} ${OVPNPORT2}"
-					;;
-					"tcp")
-						TCP_PORTS_LIST="${TCP_PORTS_LIST} ${OVPNPORT1} ${OVPNPORT2}"
-					;;
-				esac
-
-				# PlexMedia UDP ports opened only with OpenVPN installed
-				if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
-					UDP_PORTS_LIST="${UDP_PORTS_LIST} ${PLEXMEDIA_UDP_PORTS}"
-				fi
-			fi
+			NetworkPortsGenerator
 			
-			TCP_PORTS_LIST=`echo $TCP_PORTS_LIST | sed -e 's/^//g;' | sed 's/\s+$//'`
-			UDP_PORTS_LIST=`echo $UDP_PORTS_LIST | sed -e 's/^//g;' | sed 's/\s+$//'`
-			TCP_PORTS_OUT=`echo $TCP_PORTS_OUT | sed -e 's/^//g;' | sed 's/\s+$//'`
-			UDP_PORTS_OUT=`echo $UDP_PORTS_OUT | sed -e 's/^//g;' | sed 's/\s+$//'`
-			ResolversPorts=`echo $ResolversPorts | sed -e 's/^//g;' | sed 's/\s+$//'`
-
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
-			perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${TCP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf
+			perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${WHITE_TCP_IN}\"/g" /etc/pgl/pglcmd.conf
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=")
-			perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"${UDP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf
+			perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"${WHITE_UDP_IN}\"/g" /etc/pgl/pglcmd.conf
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
-			perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"${TCP_PORTS_OUT} ${TCP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf
+			perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"${WHITE_TCP_OUT}\"/g" /etc/pgl/pglcmd.conf
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
-			perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${ResolversPorts} ${UDP_PORTS_OUT} ${UDP_PORTS_LIST}\"/g" /etc/pgl/pglcmd.conf			
+			perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${WHITE_UDP_OUT}\"/g" /etc/pgl/pglcmd.conf			
 			StatusLSB
 		fi
 	;;

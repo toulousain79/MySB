@@ -50,6 +50,9 @@ ScriptInvoke 'source' '/etc/MySB/install/CreateDir'
 #### Packages
 ScriptInvoke 'source' '/etc/MySB/install/Packages'
 
+#### SSH
+ScriptInvoke 'source' '/etc/MySB/install/SSH'
+
 #### Tweaks
 ScriptInvoke 'source' '/etc/MySB/install/Tweaks'
 
@@ -97,11 +100,6 @@ echo "smtpd_tls_mandatory_protocols = !SSLv2,!SSLv3" >> /etc/postfix/main.cf
 echo "smtpd_tls_protocols = !SSLv2,!SSLv3" >> /etc/postfix/main.cf
 echo "smtp_tls_protocols = !SSLv2,!SSLv3" >> /etc/postfix/main.cf
 
-#### SSHd
-perl -pi -e "s/X11Forwarding yes/X11Forwarding no/g" /etc/ssh/sshd_config
-perl -pi -e "s/Subsystem sftp \/usr\/lib\/openssh\/sftp-server/Subsystem sftp internal-sftp -l ERROR/g" /etc/ssh/sshd_config
-perl -pi -e "s/ChrootDirectory \/home\/%u/ChrootDirectory %h/g" /etc/ssh/sshd_config
-
 #### LOGs
 mv /etc/MySB/web/logs/NginX-* /etc/MySB/web/logs/nginx/
 mv /etc/MySB/web/logs/PeerGuardian-* /etc/MySB/web/logs/security/
@@ -122,6 +120,35 @@ sed -i '/BlockList.sh/d' /tmp/crontab.tmp
 echo "0 23 * * * /bin/bash /etc/MySB/scripts/BlockList.sh NoBanner" >> /tmp/crontab.tmp
 crontab /tmp/crontab.tmp
 rm /tmp/crontab.tmp
+
+#### Postfix
+	case "$SMTP" in
+		"FREE")
+			echo "smtp.free.fr" > /etc/MySB/infos/smtp_host.info
+			echo "465" > /etc/MySB/infos/smtp_port.info
+			echo "SSL" > /etc/MySB/infos/smtp_security.info			
+		;;
+		"YAHOO")
+			echo "smtp.mail.yahoo.fr" > /etc/MySB/infos/smtp_host.info
+			echo "465" > /etc/MySB/infos/smtp_port.info
+			echo "SSL" > /etc/MySB/infos/smtp_security.info	
+		;;		
+		"OVH")
+			echo "ssl0.ovh.net" > /etc/MySB/infos/smtp_host.info
+			echo "465" > /etc/MySB/infos/smtp_port.info
+			echo "SSL" > /etc/MySB/infos/smtp_security.info	
+		;;
+		"GMAIL")
+			echo "smtp.gmail.com" > /etc/MySB/infos/smtp_host.info
+			echo "465" > /etc/MySB/infos/smtp_port.info
+			echo "SSL" > /etc/MySB/infos/smtp_security.info	
+		;;
+		"LOCAL")
+			echo "localhost" > /etc/MySB/infos/smtp_host.info
+			echo "25" > /etc/MySB/infos/smtp_port.info
+			echo "NOSSL" > /etc/MySB/infos/smtp_security.info	
+		;;		
+	esac
 
 #### Seedbox-Manager
 LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`

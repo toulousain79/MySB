@@ -25,11 +25,12 @@ source /etc/MySB/inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### install
-PackagesManage install "openssh-server"
+PackagesManage install "ssh openssh-server"
 
-perl -pi -e "s/Port 22/Port $NEWSSHPORT/g" /etc/ssh/sshd_config
-perl -pi -e "s/#Protocol 2/Protocol 2/g" /etc/ssh/sshd_config
-perl -pi -e "s/X11Forwarding yes/X11Forwarding no/g" /etc/ssh/sshd_config
+perl -pi -e "s/^Port 22/Port $NEWSSHPORT/g" /etc/ssh/sshd_config
+perl -pi -e "s/^#Protocol 2/Protocol 2/g" /etc/ssh/sshd_config
+perl -pi -e "s/^X11Forwarding yes/X11Forwarding no/g" /etc/ssh/sshd_config
+perl -pi -e "s/^X11Forwarding yes/X11Forwarding no/g" /etc/ssh/sshd_config
 perl -pi -e "s/Subsystem sftp \/usr\/lib\/openssh\/sftp-server/Subsystem sftp internal-sftp -l ERROR/g" /etc/ssh/sshd_config
 if [ "`cat /etc/ssh/sshd_config | grep 'DebianBanner'`" == "" ];then
 	echo "" >> /etc/ssh/sshd_config
@@ -49,24 +50,26 @@ fi
 if [ "`cat /etc/ssh/sshd_config | grep 'AllowTcpForwarding'`" == "" ];then
 	echo "        AllowTcpForwarding no" >> /etc/ssh/sshd_config
 fi
+if [ "`cat /etc/ssh/sshd_config | grep 'X11Forwarding'`" == "" ];then
+	echo "        X11Forwarding no" >> /etc/ssh/sshd_config
+fi
 if [ "`cat /etc/ssh/sshd_config | grep 'ForceCommand internal-sftp'`" == "" ];then
 	echo "        ForceCommand internal-sftp" >> /etc/ssh/sshd_config
 fi
 
 if [ "`cat /etc/group | grep sshdusers`" == "" ];then
 	groupadd sshdusers
-	usermod -a -G sshdusers root
 fi
 if [ "`cat /etc/group | grep MySB_users`" == "" ];then
 	groupadd MySB_users
 fi
-
+if [ "`cat /etc/group | grep sshdusers | grep root`" == "" ]; then
+	usermod -a -G sshdusers root
+fi
 if [ ! -d /usr/share/terminfo/l/ ];then
 	mkdir -p /usr/share/terminfo/l/
 fi
-if [ ! -f /usr/share/terminfo/l/linux ];then
-	cp /lib/terminfo/l/linux /usr/share/terminfo/l/
-fi
+cp /lib/terminfo/l/linux /usr/share/terminfo/l/
 
 if [ ! -d /home/MySB_share ];then
 	mkdir /home/MySB_share
