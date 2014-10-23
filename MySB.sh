@@ -173,6 +173,18 @@ else
 	StatusSTD
 fi
 
+#### postfix
+if [ "$DevInstallMode" == "manual" ]; then
+	clean
+	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Postfix$CEND"
+	read -p "Press [Enter] key to continue..."
+else
+	echo -e -n "${CBLUE}Install and configure Postfix$CEND..."
+	screen -dmS Postfix /bin/bash /etc/MySB/install/Postfix;
+	WaitingScreen Postfix
+	StatusSTD
+fi
+
 if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/PHP$CEND"
@@ -322,18 +334,6 @@ if [ "$INSTALLFAIL2BAN" == "YES" ]; then
 		WaitingScreen Fail2Ban
 		StatusSTD
 	fi
-fi
-
-#### postfix
-if [ "$DevInstallMode" == "manual" ]; then
-	clean
-	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Postfix$CEND"
-	read -p "Press [Enter] key to continue..."
-else
-	echo -e -n "${CBLUE}Install and configure Postfix$CEND..."
-	screen -dmS Postfix /bin/bash /etc/MySB/install/Postfix;
-	WaitingScreen Postfix
-	StatusSTD
 fi
 
 #### Webmin
