@@ -24,42 +24,10 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-#### Create dirs
-if [ ! -d /etc/MySB/web/logs/install ]; then
-	mkdir -p /etc/MySB/web/logs/install
-fi
-if [ ! -d /etc/MySB/web/logs/scripts ]; then
-	mkdir -p /etc/MySB/web/logs/scripts
-fi
-if [ ! -d /etc/MySB/web/logs/bin ]; then
-	mkdir -p /etc/MySB/web/logs/bin
-fi
-if [ ! -d /etc/MySB/web/logs/nginx ]; then
-	mkdir -p /etc/MySB/web/logs/nginx
-fi
-if [ ! -d /etc/MySB/web/logs/security ]; then
-	mkdir -p /etc/MySB/web/logs/security
-fi	
+#### VARs
+LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
 
-#### Reboot needed ?
-RebootNeededStart="`cat /etc/default/grub | grep 'init=/bin/systemd'`"
-
-#### Directories & Files
-ScriptInvoke 'source' '/etc/MySB/install/CreateDir'
-
-#### Packages
-ScriptInvoke 'source' '/etc/MySB/install/Packages'
-
-#### SSH
-ScriptInvoke 'source' '/etc/MySB/install/SSH'
-
-#### Tweaks
-ScriptInvoke 'source' '/etc/MySB/install/Tweaks'
-
-#### Packages
-ScriptInvoke 'source' '/etc/MySB/install/Packages'
-
-# DNScrypt-proxy
+#### Questions
 echo
 GetString NO "Install DNScrypt-proxy ? " INSTALLDNSCRYPT YES
 if [ ! -z $IFPVEKERNEL ] && [ "$INSTALLDNSCRYPT" == "YES" ]; then
@@ -68,6 +36,38 @@ if [ ! -z $IFPVEKERNEL ] && [ "$INSTALLDNSCRYPT" == "YES" ]; then
 	echo -e "${CYELLOW}Otherwise you will lose your configuration on the next reboot.$CEND"
 	sleep 10
 fi
+
+echo
+GetString NO "Install Logwatch ?" INSTALLLOGWATCH YES
+
+#### Reboot needed ?
+RebootNeededStart="`cat /etc/default/grub | grep 'init=/bin/systemd'`"
+
+#### Directories & Files
+echo -e -n "${CBLUE}Creating missing directories$CEND..."
+screen -dmS CreateDir /bin/bash /etc/MySB/install/CreateDir;
+WaitingScreen CreateDir
+StatusSTD
+
+#### Packages
+echo -e -n "${CBLUE}Installing missing packages$CEND..."
+screen -dmS Packages /bin/bash /etc/MySB/install/Packages;
+WaitingScreen Packages
+StatusSTD
+
+#### SSH
+echo -e -n "${CBLUE}Some fixes for SSH$CEND..."
+screen -dmS SSH /bin/bash /etc/MySB/install/SSH;
+WaitingScreen SSH
+StatusSTD
+
+#### Tweaks
+echo -e -n "${CBLUE}Sytem optimization$CEND..."
+screen -dmS Tweaks /bin/bash /etc/MySB/install/Tweaks;
+WaitingScreen Tweaks
+StatusSTD
+
+# DNScrypt-proxy
 if [ "$INSTALLDNSCRYPT" == "YES" ]; then
 	echo "$INSTALLDNSCRYPT" > /etc/MySB/infos/install_dnscrypt.info
 	
@@ -78,9 +78,6 @@ if [ "$INSTALLDNSCRYPT" == "YES" ]; then
 fi
 
 #### Logwatch
-echo
-GetString NO "Install Logwatch ?" INSTALLLOGWATCH YES
-
 if [ "$INSTALLLOGWATCH" == "YES" ]; then
 	echo "$INSTALLLOGWATCH" > /etc/MySB/infos/install_logwatch.info
 	
@@ -91,80 +88,80 @@ if [ "$INSTALLLOGWATCH" == "YES" ]; then
 fi
 
 #### PeerGuardian config edit for DNScrypt
-perl -pi -e "s/INIT=\"0\"/INIT=\"1\"/g" /etc/pgl/pglcmd.conf
-perl -pi -e "s/^list.iblocklist.com\/lists\/tbg\/general-corporate-ranges/#list.iblocklist.com\/lists\/tbg\/general-corporate-ranges/g" /etc/pgl/blocklists.list
+#perl -pi -e "s/INIT=\"0\"/INIT=\"1\"/g" /etc/pgl/pglcmd.conf
+#perl -pi -e "s/^list.iblocklist.com\/lists\/tbg\/general-corporate-ranges/#list.iblocklist.com\/lists\/tbg\/general-corporate-ranges/g" /etc/pgl/blocklists.list
 
 #### Correcting SSL vulnerability (poodle) for Nginx and Postfix
+echo -e -n "${CBLUE}Correcting SSL vulnerability (poodle) for Nginx and Postfix$CEND..."
 perl -pi -e "s/ssl_protocols SSLv3 TLSv1 TLSv1.1 TLSv1.2;/ssl_protocols TLSv1 TLSv1.1 TLSv1.2;/g" /etc/nginx/nginx.conf
 echo "smtpd_tls_mandatory_protocols = !SSLv2,!SSLv3" >> /etc/postfix/main.cf
 echo "smtpd_tls_protocols = !SSLv2,!SSLv3" >> /etc/postfix/main.cf
 echo "smtp_tls_protocols = !SSLv2,!SSLv3" >> /etc/postfix/main.cf
+StatusSTD
 
 #### LOGs
+echo -e -n "${CBLUE}Managing log files$CEND..."
 mv /etc/MySB/web/logs/NginX-* /etc/MySB/web/logs/nginx/
 mv /etc/MySB/web/logs/PeerGuardian-* /etc/MySB/web/logs/security/
 mv /etc/MySB/web/logs/install/*.sh-log.html /etc/MySB/web/logs/scripts/
 mv /etc/MySB/web/logs/MySB_* /etc/MySB/web/logs/bin/
-
-#### Webmin
-if [ "$INSTALLWEBMIN" == "YES" ]; then
-	echo -e -n "${CBLUE}Install and configure Webmin$CEND..."
-	screen -dmS Webmin /bin/bash /etc/MySB/install/Webmin "$WEBMINPORT";
-	WaitingScreen Webmin
-	StatusSTD				
-fi
+StatusSTD
 
 #### Blocklist.sh
+echo -e -n "${CBLUE}Crontab management$CEND..."
 crontab -l > /tmp/crontab.tmp
 sed -i '/BlockList.sh/d' /tmp/crontab.tmp
 echo "0 23 * * * /bin/bash /etc/MySB/scripts/BlockList.sh NoBanner" >> /tmp/crontab.tmp
 crontab /tmp/crontab.tmp
 rm /tmp/crontab.tmp
+StatusSTD
 
 #### Postfix
-	case "$SMTP" in
-		"FREE")
-			echo "smtp.free.fr" > /etc/MySB/infos/smtp_host.info
-			echo "465" > /etc/MySB/infos/smtp_port.info
-			echo "SSL" > /etc/MySB/infos/smtp_security.info			
-		;;
-		"YAHOO")
-			echo "smtp.mail.yahoo.fr" > /etc/MySB/infos/smtp_host.info
-			echo "465" > /etc/MySB/infos/smtp_port.info
-			echo "SSL" > /etc/MySB/infos/smtp_security.info	
-		;;		
-		"OVH")
-			echo "ssl0.ovh.net" > /etc/MySB/infos/smtp_host.info
-			echo "465" > /etc/MySB/infos/smtp_port.info
-			echo "SSL" > /etc/MySB/infos/smtp_security.info	
-		;;
-		"GMAIL")
-			echo "smtp.gmail.com" > /etc/MySB/infos/smtp_host.info
-			echo "465" > /etc/MySB/infos/smtp_port.info
-			echo "SSL" > /etc/MySB/infos/smtp_security.info	
-		;;
-		"LOCAL")
-			echo "localhost" > /etc/MySB/infos/smtp_host.info
-			echo "25" > /etc/MySB/infos/smtp_port.info
-			echo "NOSSL" > /etc/MySB/infos/smtp_security.info	
-		;;		
-	esac
+echo -e -n "${CBLUE}Some fixes for Postfix$CEND..."
+case "$SMTP" in
+	"FREE")
+		echo "smtp.free.fr" > /etc/MySB/infos/smtp_host.info
+		echo "465" > /etc/MySB/infos/smtp_port.info
+		echo "SSL" > /etc/MySB/infos/smtp_security.info			
+	;;
+	"YAHOO")
+		echo "smtp.mail.yahoo.fr" > /etc/MySB/infos/smtp_host.info
+		echo "465" > /etc/MySB/infos/smtp_port.info
+		echo "SSL" > /etc/MySB/infos/smtp_security.info	
+	;;		
+	"OVH")
+		echo "ssl0.ovh.net" > /etc/MySB/infos/smtp_host.info
+		echo "465" > /etc/MySB/infos/smtp_port.info
+		echo "SSL" > /etc/MySB/infos/smtp_security.info	
+	;;
+	"GMAIL")
+		echo "smtp.gmail.com" > /etc/MySB/infos/smtp_host.info
+		echo "465" > /etc/MySB/infos/smtp_port.info
+		echo "SSL" > /etc/MySB/infos/smtp_security.info	
+	;;
+	"LOCAL")
+		echo "localhost" > /etc/MySB/infos/smtp_host.info
+		echo "25" > /etc/MySB/infos/smtp_port.info
+		echo "NOSSL" > /etc/MySB/infos/smtp_security.info	
+	;;		
+esac
+StatusSTD
 
 #### Seedbox-Manager
-LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
+echo -e -n "${CBLUE}Some fixes for Seedbox-Manager$CEND..."
 for seedUser in $LISTUSERS; do
 	sed -i '/OpenVPN/d' /usr/share/nginx/html/seedbox-manager/conf/users/$seedUser/config.ini
 done
+StatusSTD
 
 #### PHP
+echo -e -n "${CBLUE}Some fixes for PHP5$CEND..."
 perl -pi -e "s/expose_php = On/expose_php = Off/g" /etc/php5/cli/php.ini
-
-#### Refresh tools
-ScriptInvoke 'source' '/etc/MySB/bin/MySB_RefreshMe' 'all'
+StatusSTD
 
 #### rTorrent (.rtorrent.rc)
 for seedUser in $LISTUSERS; do
-	log_daemon_msg "Creating '.rtorrent.rc' file and restart rTorrent for $seedUser"
+	log_daemon_msg "Creating '.rtorrent.rc' file for $seedUser"
 	HOMEDIR_ESCAPED=`echo /home/$seedUser | sed s,/,\\\\\\\\\\/,g`
 	SCGIPORT=$(cat /etc/MySB/users/$seedUser.info | grep "SCGI port=" | awk '{ print $3 }')
 	NETWORKPORT=$(cat /etc/MySB/users/$seedUser.info | grep "rTorrent port=" | awk '{ print $3 }')
@@ -192,7 +189,6 @@ for seedUser in $LISTUSERS; do
 		;;			
 	esac
 	
-	service rtorrent-$seedUser restart
 	StatusLSB
 done
 
@@ -200,6 +196,8 @@ done
 RebootNeededEnd="`cat /etc/default/grub | grep 'init=/bin/systemd'`"
 
 if [ -z "RebootNeededStart" ] && [ ! -z "RebootNeededStart" ]; then
+	echo
+	echo
 	GetString NO "I need to reboot your seedbox. Can I do it now ? " RebootNow YES
 	if [ "$RebootNow" == "YES" ]; then
 		reboot

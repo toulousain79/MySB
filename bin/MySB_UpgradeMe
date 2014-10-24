@@ -46,6 +46,7 @@ if [ "$MySB_CurrentVersion" == "$MySB_NewVersion" ]; then
 		EndingScript 0
 	fi	
 else
+	echo
 	echo -e "${CYELLOW}MySB$CEND ${CGREEN}$MySB_NewVersion$CEND ${CYELLOW}is avaible !$CEND"
 	echo -e "${CYELLOW}Do you want to continue and upgrade MySB to $CEND${CGREEN}$MySB_NewVersion$CEND ${CYELLOW}?$CEND"
 	echo
@@ -60,21 +61,10 @@ else
 	fi
 fi
 
-#### Upgrade system
-ScriptInvoke 'source' '/etc/MySB/bin/MySB_UpgradeSystem'
-
-#### STOP some services
-service cron stop
-
-LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
-for seedUser in $LISTUSERS; do
-	service rtorrent-$seedUser stop
-done
-
 #### Backup
-DateTime="`/bin/date +%y%m%d-%H%M%S`"	# NE PAS MODIFIER
+DateTime="`/bin/date +%Y%m%d-%H%M%S`"
 if [ ! -d /etc/MySB/upgrade/backup ]; then
-	mkdir /etc/MySB/upgrade/backup
+	mkdir -p /etc/MySB/upgrade/backup
 fi
 mv /etc/MySB/upgrade/backup /tmp/MySB_backup_$DateTime
 tar -zcvf /tmp/MySB_backup_$DateTime/Backup-$DateTime-$MySB_CurrentVersion.tar.gz /etc/MySB
@@ -93,14 +83,11 @@ rm /etc/MySB/files/banner_*
 
 #### Completing the upgrade
 if [ -f /etc/MySB/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh ]; then
-	ScriptInvoke 'source' '/etc/MySB/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh'
+	ScriptInvoke 'bash' '/etc/MySB/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh'
 fi
 
-#### START some services
-service cron restart
-for seedUser in $LISTUSERS; do
-	service rtorrent-$seedUser restart
-done
+#### Refresh tools
+ScriptInvoke 'bash' '/etc/MySB/bin/MySB_RefreshMe' 'all'
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
