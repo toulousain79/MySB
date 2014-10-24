@@ -36,17 +36,27 @@ MySB_NewVersion="`cat /etc/MySB/version`"
 MySB_CurrentVersion=`cat /etc/MySB/infos/version.info`
 
 if [ "$MySB_CurrentVersion" == "$MySB_NewVersion" ]; then
-	echo -e -n "${CGREEN}MySB is up to date!$CEND"
 	echo
-	source /etc/MySB/inc/includes_after
-	EndingScript 0
-else
-	echo -e -n "${CYELLOW}MySB$CEND ${CGREEN}$MySB_NewVersion$CEND ${CYELLOW}is avaible !$CEND"
-	echo -e -n "${CYELLOW}Do you want to continue and upgrade MySB to $CEND${CGREEN}$MySB_NewVersion$CEND ${CYELLOW}?$CEND"
-	GetString NO  "Type 'yes' to continue or 'no' to abort ?" CONTINUE YES
-	if [ "$CONTINUE" == "NO" ]; then
+	echo -e "${CGREEN}MySB is up to date !$CEND"
+	echo
+	if [ "`cat /etc/MySB/inc/funcs | grep 'EndingScript()'`" == "" ]; then
 		source /etc/MySB/inc/includes_after
+		exit 0
+	else
 		EndingScript 0
+	fi	
+else
+	echo -e "${CYELLOW}MySB$CEND ${CGREEN}$MySB_NewVersion$CEND ${CYELLOW}is avaible !$CEND"
+	echo -e "${CYELLOW}Do you want to continue and upgrade MySB to $CEND${CGREEN}$MySB_NewVersion$CEND ${CYELLOW}?$CEND"
+	echo
+	GetString NO  "Type 'yes' to continue or 'no' to abort ?" CONTINUE NO
+	if [ "$CONTINUE" == "NO" ]; then
+		if [ "`cat /etc/MySB/inc/funcs | grep 'EndingScript()'`" == "" ]; then
+			source /etc/MySB/inc/includes_after
+			exit 0
+		else
+			EndingScript 0
+		fi	
 	fi
 fi
 
@@ -55,19 +65,20 @@ ScriptInvoke 'source' '/etc/MySB/bin/MySB_UpgradeSystem'
 
 #### STOP some services
 service cron stop
+
+LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
 for seedUser in $LISTUSERS; do
-	log_daemon_msg "Stop rTorrent service for $seedUser"
 	service rtorrent-$seedUser stop
-	StatusLSB
 done
 
 #### Backup
-mkdir /etc/MySB/upgrade/backup
-mv /etc/MySB/upgrade /tmp/
-cp -R /etc/MySB /tmp/upgrade/Backup_$MySB_CurrentVersion-to-$MySB_NewVersion
-tar -zcvf Backup_$MySB_CurrentVersion-to-$MySB_NewVersion.tar.gz /tmp/upgrade/backup/
-rm -rf /tmp/upgrade/Backup_*
-mv /tmp/upgrade /etc/MySB/
+DateTime="`/bin/date +%y%m%d-%H%M%S`"	# NE PAS MODIFIER
+if [ ! -d /etc/MySB/upgrade/backup ]; then
+	mkdir /etc/MySB/upgrade/backup
+fi
+mv /etc/MySB/upgrade/backup /tmp/MySB_backup_$DateTime
+tar -zcvf /tmp/MySB_backup_$DateTime/Backup-$DateTime-$MySB_CurrentVersion.tar.gz /etc/MySB
+mv /tmp/MySB_backup_* /etc/MySB/upgrade/backup
 
 #### MySB Script GitHub
 cd /etc/MySB/
@@ -88,9 +99,7 @@ fi
 #### START some services
 service cron restart
 for seedUser in $LISTUSERS; do
-	log_daemon_msg "Stop rTorrent service for $seedUser"
 	service rtorrent-$seedUser restart
-	StatusLSB
 done
 
 # -----------------------------------------

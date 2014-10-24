@@ -162,6 +162,10 @@ Depending on your system, it is possible to use:
 
 	* By default, some list are activated. Check "/etc/pgl/blocklists.list".
 	* Many tracker sites are allowed, but only private trackers. Check "/etc/pgl/allow.p2p".
+###### NOTE: Do not try to add your rtorrents ports in the list of incoming ports allowed in PeerGuardian (pglcmd.conf) !!!
+###### Using PeerGuardian will not have much sense ...
+###### Rather prefer permission trackers via the "allow.p2p" PeerGuardian file. To do this, edit the "/etc/MySB/inc/trackers" file and add only the domain of your tracker.
+###### Then use the command "bash /etc/MySB/scripts/GetTrackersCert.sh." This will retrieve all SSL certificates (if available) and complete the list of PeerGuardian.
 
 OR
 

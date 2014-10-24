@@ -36,7 +36,7 @@ Changelog for MySB
 			- System tweaks (SystemD, Logwatch)
 			- Adding simple system monitoring tools (apticron, update-notifier-common, debian-goodies)
 			- Minor change in ruTorrent
-			- Correcting bug about sending confirmation email (purge of heirloom-mailx) (Sorry for the mistake)
+			- Correcting bug about sending confirmation email (purge of heirloom-mailx) and unreachable pages /MySB/* (Sorry for the mistake)
 
 	Version v1.0 (main branch)
 		2014/05/04
