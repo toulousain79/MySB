@@ -110,7 +110,7 @@ if [ "$COMMAND" == "" ]; then
 			packetg="apt-get"
 		fi
 
-		TOOLS="sudo git-core dos2unix lsb-release screen ccze gnupg figlet mlocate"
+		TOOLS="sudo git-core dos2unix lsb-release screen ccze gnupg figlet mlocate sqlite3"
 		
 		$packetg -y install $TOOLS >> /tmp/`basename $0`.log
 
