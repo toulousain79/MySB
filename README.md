@@ -8,7 +8,7 @@ This script is a fork of Notos' Script (base v2.1.9) avaible at https://github.c
 
 MySB is a seedbox platform for multi-users.
 
-##### Current version = v1.1 (Development in progress, do not use this version !!!)
+##### Current version = v1.1
 ###### Last stable version = v1.1
 
 ## Installed software
@@ -97,6 +97,13 @@ If you lose connection during installation, restart the SSH session and run the 
 screen -r MySB
 ```
 Beware, during installation, the SSH port will be changed. If a port session 22 does not work, try with the new port that you have selected.
+
+## How to upgrade from v1.0
+Just copy and paste those commands on your terminal:
+```
+MySB_UpdateGitHubRepo
+MySB_UpgradeMe
+```
 
 ###### NOTE 1: You must be logged as root to run this installation or use sudo.
 ###### NOTE 2: At the end of the installation, the server will restart automatically and you will receive an e-mail summarizing.
