@@ -1,6 +1,6 @@
 #!/bin/bash 
 # -----------------------------------------
-MYSBCURRENTVERSION=v1.1
+MYSBCURRENTVERSION=v1.2
 # -----------------------------------------
 if [ -f /etc/MySB/inc/includes_before ]; then source /etc/MySB/inc/includes_before; fi
 # -----------------------------------------
