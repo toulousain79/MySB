@@ -33,7 +33,7 @@ Changelog for MySB
 			- Adding DNScrypt with Bind9 caching
 			- Webmin, minor change
 			- Minor change for security (DDOS SYN flood protect, rkhunter)
-			- System tweaks (SystemD, Logwatch)
+			- System tweaks
 			- Adding simple system monitoring tools (apticron, update-notifier-common, debian-goodies)
 			- Minor change in ruTorrent
 			- Correcting bug about sending confirmation email (purge of heirloom-mailx) and unreachable pages /MySB/* (Sorry for the mistake)
