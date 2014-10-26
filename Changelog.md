@@ -1,7 +1,5 @@
-Changelog for MySB
-
-	Version v1.1
-		2014/10/15
+	Version v1.1 (main branch)
+		2014/10/26
 			- "install/PeerGuardian", minor change
 			- "scripts/FirewallAndSecurity.sh", minor change
 			- Correcting PlexMedia ports management
@@ -11,11 +9,11 @@ Changelog for MySB
 			- Webmin, minor change
 			- Minor change for security (DDOS SYN flood protect, rkhunter)
 			- System tweaks
-			- Adding simple system monitoring tools (apticron, update-notifier-common, debian-goodies)
+			- Adding simple system monitoring tools (update-notifier-common, debian-goodies)
 			- Minor change in ruTorrent
 			- Correcting bug about sending confirmation email (purge of heirloom-mailx) and unreachable pages /MySB/* (Sorry for the mistake)
 
-	Version v1.0 (main branch)
+	Version v1.0
 		2014/05/04
 			- Use of repository list (SVN, GitHub, files)
 			- rTorrent v0.9.4 and libTorrent v0.13.4
