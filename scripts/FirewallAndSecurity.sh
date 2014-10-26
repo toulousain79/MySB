@@ -292,7 +292,6 @@ case $1 in
 		if hash csvtool 2>/dev/null; then
 			log_daemon_msg "Allow response for DNScrypt resolvers"
 			ResolversPorts="`csvtool -t ',' col 11 /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv | csvtool drop 1 - | awk -F: '{print $NF}' | sort -g | uniq`"
-			#ResolverUsed="`ps ax | grep dnscrypt-proxy | sed -n 2p | awk '{ print $8 }' | cut -d "=" -f 2`"
 			for Port in $ResolversPorts; do
 				iptables -t filter -A INPUT -p tcp --dport $Port -j ACCEPT -m comment --comment "DNScrypt-proxy"
 			done
