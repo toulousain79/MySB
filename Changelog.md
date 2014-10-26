@@ -1,3 +1,6 @@
+	Version v1.2
+		2014/10/26
+
 	Version v1.1 (main branch)
 		2014/10/26
 			- "install/PeerGuardian", minor change

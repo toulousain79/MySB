@@ -1,4 +1,8 @@
 ====
+#### WORK IN PROGRESS, DON'T USE THIS VERSION !!!
+====
+
+====
 #### This script is not intended to solicit illegal actions! I can not be held responsible for the use that you could doing it! Thank you to reconsider the installation and use of MySB. I developed this script only for pleasure and passion for my job.
 ====
 My SeedBox
@@ -295,3 +299,5 @@ Created by toulousain79
 * Subsonic option ?
 * Namebench ?
 * Maybe use of 'psad' and 'systemd'
+* check plugin 'Mediastream', doesn't work ?
+* check Cakebox, doesn't work ?
