@@ -1,5 +1,5 @@
 ====
-Development in progress, do not use this version !!!
+Work in progress, do not use this version !!!
 ====
 
 ====
