@@ -230,7 +230,6 @@ service dnscrypt-proxy restart dnscrypt.eu-nl
 
 ###### IMPORTANT: With OpenVZ container, to complete the installation of DNScrypt-proxy, you must replace your existing DNS config (/etc/resolv.conf), by the loopback address.
 ###### IMPORTANT: It's necessary to make the change via the host (eg Proxmox), otherwise you will lose your configuration on next reboot. You must replace yours nameserver by 'nameserver 127.0.0.1' (/etc/resolv.conf).
-###### NOTE: With PeerGuardian, DNScrypt-proxy will not work if you use the blocklist "TBG General Corporate Ranges". The DNS requests will not answer.
 
 ## Supported and tested servers
 
