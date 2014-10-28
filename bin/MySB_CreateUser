@@ -56,7 +56,7 @@ if [ "$USAGE" == "ON" ]; then
 		done			
 	fi
 else
-	NEWUSER=$1
+	NEWUSER=$UserName
 	PASSWORD=$2
 	USERHASSSHACCESS=$3
 	USERINSUDOERS=$4
@@ -187,18 +187,18 @@ mkdir $HOMEDIR/rtorrent/.session
 StatusLSB
 
 #### create system user
-log_daemon_msg "Creating the system account for $NEWUSER"
+log_daemon_msg "Create the system account for $NEWUSER"
 useradd -c "MySB user $NEWUSER" -d $HOMEDIR -s /bin/bash $NEWUSER &> /dev/null
 StatusLSB
 
 #### FTP
-log_daemon_msg "Authorise the use of FTP and share for $NEWUSER"
+log_daemon_msg "Allow use of FTP and share for $NEWUSER"
 echo "$NEWUSER" >> /etc/vsftpd.chroot_list
 mount --bind /home/MySB_share $HOMEDIR/rtorrent/share
 StatusLSB
 
 #### add to groups
-log_daemon_msg "Assigning user groups to $NEWUSER"
+log_daemon_msg "Assign user groups to $NEWUSER"
 addgroup $NEWUSER MySB_users &> /dev/null
 
 if [ "$USERINSUDOERS" == "YES" ]; then
@@ -211,7 +211,7 @@ StatusLSB
 
 #### custumize profile
 if [ ! -f $HOMEDIR/.profile ]; then
-	log_daemon_msg "Customizing profile for $NEWUSER"
+	log_daemon_msg "Customize profile for $NEWUSER"
 	cp /etc/skel/.bashrc $HOMEDIR
 	cp /etc/skel/.bash_logout $HOMEDIR
 	cp /etc/skel/.profile $HOMEDIR
@@ -223,7 +223,7 @@ if [ ! -f $HOMEDIR/.profile ]; then
 fi
 
 #### rTorrent (.rtorrent.rc)
-log_daemon_msg "Creating the rTorrent configuration file for $NEWUSER"
+log_daemon_msg "Create the rTorrent configuration file for $NEWUSER"
 cp /etc/MySB/templates/rtorrent.rc.template  $HOMEDIR/.rtorrent.rc
 perl -pi -e "s/<server_ip>/$IPADDRESS/g" $HOMEDIR/.rtorrent.rc
 perl -pi -e "s/<username>/$NEWUSER/g" $HOMEDIR/.rtorrent.rc
@@ -247,7 +247,7 @@ esac
 StatusLSB
 
 #### ruTorrent (user conf)
-log_daemon_msg "Creating ruTorrent config.php for $NEWUSER"
+log_daemon_msg "Create ruTorrent config.php for $NEWUSER"
 mkdir -p /usr/share/nginx/html/rutorrent/conf/users/$NEWUSER/
 
 (
@@ -321,18 +321,18 @@ perl -pi -e "s/<USERNAME>/$UPPERNEWUSER/g" /usr/share/nginx/html/rutorrent/conf/
 StatusLSB
 
 #### access.ini
-log_daemon_msg "Creating ruTorrent access.ini for $NEWUSER"
+log_daemon_msg "Create ruTorrent access.ini for $NEWUSER"
 cp /usr/share/nginx/html/rutorrent/conf/access.ini /usr/share/nginx/html/rutorrent/conf/users/$NEWUSER/access.ini
 StatusLSB
 
 #### Plugins per users
-log_daemon_msg "Creating ruTorrent plugins directories for $NEWUSER"
+log_daemon_msg "Create ruTorrent plugins directories for $NEWUSER"
 # create subdirectory plugins for user and copy all conf.php
-CreatePluginsDirUsers $NEWUSER
+CreatePluginsDirUsers "$NEWUSER" "$PASSWORD"
 StatusLSB
 
 #### stream
-log_daemon_msg "Creating ruTorrent plugin Stream (config.php) for $NEWUSER"
+log_daemon_msg "Create ruTorrent plugin Stream (config.php) for $NEWUSER"
 if [ -f /usr/share/nginx/html/rutorrent/conf/users/$NEWUSER/plugins/stream/config.php ]; then
 	perl -pi -e "s/$auth = '';/$auth = '$NEWUSER:$PASSWORD';/g" /usr/share/nginx/html/rutorrent/conf/users/$NEWUSER/plugins/stream/config.php
 fi
@@ -382,7 +382,7 @@ StatusLSB
 
 #### Seedbox-Manager
 if [ "$INSTALLMANAGER" == "YES" ]; then
-	log_daemon_msg "Creating Seedbox-Manager configuration for $NEWUSER"
+	log_daemon_msg "Create Seedbox-Manager configuration for $NEWUSER"
 	
 	mkdir -p /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER
 
@@ -441,7 +441,7 @@ fi
 
 #### CakeBox
 if [ "$INSTALLCAKEBOX" == "YES" ]; then
-	log_daemon_msg "Creating Cakebox configuration for $NEWUSER"
+	log_daemon_msg "Create Cakebox configuration for $NEWUSER"
 
 	(
 	cat <<'EOF'
@@ -463,8 +463,16 @@ EOF
 	StatusLSB
 fi
 
+#### OpenVPN
+if [ "$INSTALLOPENVPN" == "YES" ]; then
+	log_daemon_msg "Create OpenVPN account for user $NEWUSER"
+	screen -dmS OpenVPN_Client /bin/bash /etc/MySB/install/OpenVPN client "$NEWUSER";
+	WaitingSTD OpenVPN_Client	
+	StatusLSB
+fi
+
 #### script init
-log_daemon_msg "Creating init script for $NEWUSER"
+log_daemon_msg "Create init script for $NEWUSER"
 cp /etc/MySB/templates/etc.init.rtorrent.template /etc/init.d/rtorrent-$NEWUSER
 perl -pi -e "s/<username>/$NEWUSER/g" /etc/init.d/rtorrent-$NEWUSER
 chmod +x /etc/init.d/rtorrent-$NEWUSER
@@ -483,7 +491,7 @@ StatusLSB
 
 #### rtorrent max memory & rTorrent Blocklist
 for seedUser in $LISTUSERS; do
-	log_daemon_msg "Changing parameter 'pieces.memory.max.set' for $seedUser"
+	log_daemon_msg "Change parameter 'pieces.memory.max.set' for $seedUser"
 	LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$seedUser/.rtorrent.rc)
 	sed -i ''$LIGN'd' /home/$seedUser/.rtorrent.rc
 	sed -i ''$LIGN'i\pieces.memory.max.set = '$(((($MEMORY/$COUNTUSERS)*1024)*1024))'\n' /home/$seedUser/.rtorrent.rc
@@ -502,16 +510,8 @@ for seedUser in $LISTUSERS; do
 	#fi
 done
 
-#### OpenVPN
-if [ "$INSTALLOPENVPN" == "YES" ]; then
-	log_daemon_msg "Creating an OpenVPN account for $seedUser"
-	screen -dmS OpenVPN_Client /bin/bash /etc/MySB/install/OpenVPN client "$NEWUSER" "$PASSWORD";
-	WaitingSTD OpenVPN_Client	
-	StatusLSB
-fi
-
 #### iptables
-log_daemon_msg "Creating new rules for iptables"
+log_daemon_msg "Create new rules for iptables"
 screen -dmS FirewallAndSecurity /bin/bash /etc/MySB/scripts/FirewallAndSecurity.sh new;
 WaitingSTD FirewallAndSecurity
 StatusLSB

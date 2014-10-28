@@ -90,16 +90,15 @@ case $1 in
 		StatusLSB
 
 		# Clean users IP Addresses
+		for ip in $SeedboxUsersIPs; do 
+			sed -i '/'$ip'/d' /etc/nginx/locations/MySB.conf
+		done
+		unset ip		
 		if [ ! -z "$2" ] && [ ! -z "$3" ] && [ ! -z "$4" ]; then
 			log_daemon_msg "Clean IP for $2"
 			SeedboxUser="$2"
 			CurrentList="$3"
-			NewList="$4"
-			
-			for ip in $SeedboxUsersIPs; do 
-				sed -i '/'$ip'/d' /etc/nginx/locations/MySB.conf
-			done
-			unset ip			
+			NewList="$4"			
 
 			perl -pi -e 's/'$CurrentList'/'$NewList'/g' /etc/MySB/users/$SeedboxUser.info
 			SeedboxUsersIPs=`echo $NewList | sed -e "s/,/ /g;"`
@@ -255,16 +254,14 @@ case $1 in
 		#### NginX
 		if [ -f /etc/nginx/locations/MySB.conf ]; then
 			# Delete IP restriction for NginX			
-			for SeedboxUser in $UsersList; do
-				log_daemon_msg "Allow access to web server for $SeedboxUser"
-				for ip in $SeedboxUsersIPs; do 
-					awk '{ print } /allow 127.0.1.1;/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
-					perl -pi -e "s/<ip>/$ip/g" /etc/MySB/files/MySB_location.conf
-					mv /etc/MySB/files/MySB_location.conf /etc/nginx/locations/MySB.conf
-				done
-				unset ip					
-				StatusLSB
+			log_daemon_msg "Allow access to web server for all users"
+			for ip in $SeedboxUsersIPs; do 
+				awk '{ print } /allow 127.0.1.1;/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
+				perl -pi -e "s/<ip>/$ip/g" /etc/MySB/files/MySB_location.conf
+				mv /etc/MySB/files/MySB_location.conf /etc/nginx/locations/MySB.conf
 			done
+			unset ip					
+			StatusLSB
 			
 			# Delete IP restriction for OpenVPN users
 			log_daemon_msg "Delete IP restriction for OpenVPN users"
