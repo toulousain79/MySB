@@ -302,7 +302,9 @@ case $1 in
 			Fail2banWhiteList=`echo $Fail2banWhiteList | sed s,/,\\\\\\\\\\/,g`			
 			SEARCH=$(cat /etc/fail2ban/jail.local | grep "ignoreip =" | cut -d "=" -f 2)
 			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
-			perl -pi -e "s/$SEARCH/$Fail2banWhiteList/g" /etc/fail2ban/jail.local
+			if [ ! -z "$SEARCH" ]; then	
+				perl -pi -e "s/$SEARCH/$Fail2banWhiteList/g" /etc/fail2ban/jail.local
+			fi
 			unset SEARCH
 			StatusLSB
 		fi
@@ -313,37 +315,51 @@ case $1 in
 			SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`	
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_IN=")
 			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
-			perl -pi -e "s/$SEARCH/WHITE_IP_IN=\"$SeedboxUsersIPs\"/g" /etc/pgl/pglcmd.conf
+			if [ ! -z "$SEARCH" ]; then	
+				perl -pi -e "s/$SEARCH/WHITE_IP_IN=\"$SeedboxUsersIPs\"/g" /etc/pgl/pglcmd.conf
+			fi
 			unset SEARCH
 
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_OUT=")
-			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`			
-			if [ "$INSTALLOPENVPN" == "YES" ]; then
-				perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
-			else
-				perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"\"/g" /etc/pgl/pglcmd.conf
+			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
+			if [ ! -z "$SEARCH" ]; then
+				if [ "$INSTALLOPENVPN" == "YES" ]; then
+					perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
+				else
+					perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"\"/g" /etc/pgl/pglcmd.conf
+				fi
 			fi
 			unset SEARCH
 			
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_FWD=")
-			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`			
-			if [ "$INSTALLOPENVPN" == "YES" ]; then
-				perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
-			else
-				perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"\"/g" /etc/pgl/pglcmd.conf
+			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
+			if [ ! -z "$SEARCH" ]; then			
+				if [ "$INSTALLOPENVPN" == "YES" ]; then
+					perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
+				else
+					perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"\"/g" /etc/pgl/pglcmd.conf
+				fi
 			fi
 			unset SEARCH
 			
 			NetworkPortsGenerator
 			
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
-			perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${WHITE_TCP_IN}\"/g" /etc/pgl/pglcmd.conf
+			if [ ! -z "$SEARCH" ]; then	
+				perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${WHITE_TCP_IN}\"/g" /etc/pgl/pglcmd.conf
+			fi
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=")
-			perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"${WHITE_UDP_IN}\"/g" /etc/pgl/pglcmd.conf
+			if [ ! -z "$SEARCH" ]; then	
+				perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"${WHITE_UDP_IN}\"/g" /etc/pgl/pglcmd.conf
+			fi
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
-			perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"${WHITE_TCP_OUT}\"/g" /etc/pgl/pglcmd.conf
+			if [ ! -z "$SEARCH" ]; then	
+				perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"${WHITE_TCP_OUT}\"/g" /etc/pgl/pglcmd.conf
+			fi
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
-			perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${WHITE_UDP_OUT}\"/g" /etc/pgl/pglcmd.conf			
+			if [ ! -z "$SEARCH" ]; then	
+				perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${WHITE_UDP_OUT}\"/g" /etc/pgl/pglcmd.conf
+			fi
 			StatusLSB
 		fi
 	;;

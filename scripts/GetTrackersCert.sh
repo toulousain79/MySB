@@ -79,7 +79,7 @@ c_rehash &> /dev/null
 StatusLSB
 
 #### Create PeerGuardian P2P file
-if [ -f /etc/pgl/allow.p2p ] && [ -f /etc/MySB/infos/allow.p2p ]; then
+if [ -f /etc/MySB/infos/allow.p2p ]; then
 	mv /etc/MySB/infos/allow.p2p /etc/pgl/allow.p2p
 fi
 

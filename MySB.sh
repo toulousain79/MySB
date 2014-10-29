@@ -44,8 +44,6 @@ echo
 echo -e "${CRED}############################################################$CEND"
 echo -e "${CRED}#$CEND ${CYELLOW}At the end of the installation, you will receive an email.$CEND"
 echo -e "${CRED}#$CEND ${CYELLOW}It lists information about your account.$CEND"
-#echo -e "${CRED}#$CEND ${CYELLOW}A temporary password will be assigned to your account.$CEND"
-#echo -e "${CRED}#$CEND ${CYELLOW}You will need to change it when receiving email.$CEND"
 echo -e "${CRED}# IMPORTANT:$CEND ${CYELLOW}Remember to also check the SPAM folder...$CEND"
 echo -e "${CRED}############################################################$CEND"
 echo
@@ -85,8 +83,6 @@ else
 	echo -e "${CRED}############################################################$CEND"
 	echo -e "${CRED}#$CEND ${CYELLOW}At the end of the installation, you will receive an email.$CEND"
 	echo -e "${CRED}#$CEND ${CYELLOW}It lists information about your account.$CEND"
-#	echo -e "${CRED}#$CEND ${CYELLOW}A temporary password will be assigned to your account.$CEND"
-#	echo -e "${CRED}#$CEND ${CYELLOW}You will need to change it when receiving email.$CEND"
 	echo -e "${CRED}# IMPORTANT:$CEND ${CYELLOW}Remember to also check the SPAM folder...$CEND"
 	echo -e "${CRED}############################################################$CEND"
 	echo
@@ -94,48 +90,48 @@ else
 	REBOOT=NO
 fi	
 
+#### 1 - SourcesList
 if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}/bin/bash /etc/MySB/install/SourcesList$CEND"
 	read -p "Press [Enter] key to continue..."
 else
-	#### 1 - sources.list
 	echo -e -n "${CBLUE}Prepare Sources$CEND..."
 	screen -dmS SourcesList /bin/bash /etc/MySB/install/SourcesList;
 	WaitingScreen SourcesList
 	StatusSTD
 fi
 
+#### 2 - Packages
 if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Packages$CEND"
 	read -p "Press [Enter] key to continue..."
 else
-	#### 2 - install all needed packages
 	echo -e -n "${CBLUE}Install all needed packages$CEND..."
 	screen -dmS Packages /bin/bash /etc/MySB/install/Packages;
 	WaitingScreen Packages
 	StatusSTD
 fi
 
+#### 3 - Tweaks
 if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Tweaks$CEND"
 	read -p "Press [Enter] key to continue..."
 else
-	#### 3 - Sytem tweaks
 	echo -e -n "${CBLUE}Sytem optimization$CEND..."
 	screen -dmS Tweaks /bin/bash /etc/MySB/install/Tweaks;
 	WaitingScreen Tweaks
 	StatusSTD
 fi
 
+#### 3 - DownloadAll
 if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/DownloadAll$CEND"
 	read -p "Press [Enter] key to continue..."
 else
-	#### 3 - download all files now in one time (GIT, SVN, TAR.GZ, WBM)
 	echo -e -n "${CBLUE}Download all files now in one time (GIT, SVN, TAR.GZ, WBM)$CEND..."
 	screen -dmS DownloadAll /bin/bash /etc/MySB/install/DownloadAll;
 	WaitingScreen DownloadAll
@@ -150,30 +146,30 @@ if [ -f /etc/MySB/temp/continue ]; then
 	EndingScript 1
 fi
 
+#### Certificates
 if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Certificates 'CreateCACertificate'$CEND"
 	read -p "Press [Enter] key to continue..."
 else
-	#### certificates
 	echo -e -n "${CBLUE}Create certificates$CEND..."
 	screen -dmS Certificates /bin/bash /etc/MySB/install/Certificates 'CreateCACertificate';
 	WaitingScreen Certificates
 	StatusSTD
 fi
 
+#### SSH
 if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/SSH$CEND"
 else
-	#### SSH
 	echo -e -n "${CBLUE}Install and configure SSH$CEND..."
 	screen -dmS SSH /bin/bash /etc/MySB/install/SSH;
 	WaitingScreen SSH
 	StatusSTD
 fi
 
-#### postfix
+#### Postfix
 if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Postfix$CEND"
@@ -185,31 +181,31 @@ else
 	StatusSTD
 fi
 
+#### PHP
 if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/PHP$CEND"
 	read -p "Press [Enter] key to continue..."
 else
-	#### configure php5-fpm
 	echo -e -n "${CBLUE}Install and configure PHP5-FPM$CEND..."
 	screen -dmS PHP /bin/bash /etc/MySB/install/PHP;
 	WaitingScreen PHP
 	StatusSTD
 fi
 
+#### Nginx
 if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Nginx$CEND"
 	read -p "Press [Enter] key to continue..."
 else
-	#### configure nginx
 	echo -e -n "${CBLUE}Install and configure NginX$CEND..."
 	screen -dmS Nginx /bin/bash /etc/MySB/install/Nginx;
 	WaitingScreen Nginx
 	StatusSTD
 fi
 
-#### vSFTPd
+#### VSFTP
 if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/VSFTP$CEND"
@@ -221,7 +217,7 @@ else
 	StatusSTD
 fi
 
-#### install rTorrent and depends
+#### rTorrent
 if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/rTorrent$CEND"
@@ -233,7 +229,7 @@ else
 	StatusSTD
 fi
 
-#### install ruTorrent and plugins
+#### ruTorrent
 if [ "$DevInstallMode" == "manual" ]; then
 	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/ruTorrent$CEND"
@@ -245,7 +241,7 @@ else
 	StatusSTD
 fi
 
-#### Tools for CakeBox and Seedbox-Manager
+#### Tools
 if [ "$INSTALLCAKEBOX" == "YES" ] || [ "$INSTALLMANAGER" == "YES" ]; then
 	if [ "$DevInstallMode" == "manual" ]; then
 		clean
@@ -259,7 +255,7 @@ if [ "$INSTALLCAKEBOX" == "YES" ] || [ "$INSTALLMANAGER" == "YES" ]; then
 	fi
 fi
 
-#### Seedbox-Manager
+#### SeedboxManager
 if [ "$INSTALLMANAGER" == "YES" ]; then
 	if [ "$DevInstallMode" == "manual" ]; then
 		clean
@@ -273,7 +269,7 @@ if [ "$INSTALLMANAGER" == "YES" ]; then
 	fi
 fi
 
-#### CakeBox Light
+#### CakeboxLight
 if [ "$INSTALLCAKEBOX" == "YES" ]; then
 	if [ "$DevInstallMode" == "manual" ]; then
 		clean
@@ -288,6 +284,7 @@ if [ "$INSTALLCAKEBOX" == "YES" ]; then
 fi
 
 if [ "$INSTALLOPENVPN" == "YES" ]; then
+	#### OpenVPN
 	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/OpenVPN \"server\"$CEND"
@@ -299,6 +296,7 @@ if [ "$INSTALLOPENVPN" == "YES" ]; then
 		StatusSTD
 	fi
 
+	#### Samba
 	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Samba$CEND"
@@ -310,6 +308,7 @@ if [ "$INSTALLOPENVPN" == "YES" ]; then
 		StatusSTD
 	fi
 
+	#### NFS
 	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/NFS$CEND"
@@ -322,7 +321,7 @@ if [ "$INSTALLOPENVPN" == "YES" ]; then
 	fi
 fi
 
-#### fail2ban
+#### Fail2Ban
 if [ "$INSTALLFAIL2BAN" == "YES" ]; then
 	if [ "$DevInstallMode" == "manual" ]; then
 		clean
@@ -379,7 +378,7 @@ if [ "$INSTALLPLEXMEDIA" == "YES" ]; then
 fi
 
 
-#### BlockList
+#### BlockList / PeerGuardian
 case $MYBLOCKLIST in
 	PeerGuardian)
 		if [ "$DevInstallMode" == "manual" ]; then
