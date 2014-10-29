@@ -32,11 +32,6 @@ else
 	if [ -f /etc/MySB/DEV ]; then
 		GetString NO  "How do you want to start the script ? Type 'manual' or 'auto' ?" DevInstallMode "manual"
 	fi
-	echo
-	echo -e "${CRED}############################################################$CEND"
-	echo -e "${CRED}#$CEND ${CYELLOW} Your are in manual installation mode.$CEND"
-	echo -e "${CRED}############################################################$CEND"
-	echo	
 fi
 
 #### Advertising
