@@ -120,6 +120,18 @@ fi
 
 if [ "$DevInstallMode" == "manual" ]; then
 	clean
+	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Tweaks$CEND"
+	read -p "Press [Enter] key to continue..."
+else
+	#### 3 - Sytem tweaks
+	echo -e -n "${CBLUE}Sytem optimization$CEND..."
+	screen -dmS Tweaks /bin/bash /etc/MySB/install/Tweaks;
+	WaitingScreen Tweaks
+	StatusSTD
+fi
+
+if [ "$DevInstallMode" == "manual" ]; then
+	clean
 	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/DownloadAll$CEND"
 	read -p "Press [Enter] key to continue..."
 else
@@ -136,18 +148,6 @@ if [ -f /etc/MySB/temp/continue ]; then
 	echo
 	cat /etc/MySB/temp/continue
 	EndingScript 1
-fi
-
-if [ "$DevInstallMode" == "manual" ]; then
-	clean
-	echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Tweaks$CEND"
-	read -p "Press [Enter] key to continue..."
-else
-	#### 3 - Sytem tweaks
-	echo -e -n "${CBLUE}Sytem optimization$CEND..."
-	screen -dmS Tweaks /bin/bash /etc/MySB/install/Tweaks;
-	WaitingScreen Tweaks
-	StatusSTD
 fi
 
 if [ "$DevInstallMode" == "manual" ]; then
