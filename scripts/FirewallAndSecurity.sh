@@ -286,7 +286,7 @@ case $1 in
 		fi
 		
 		#### DNScrypt-proxy resolvers UDP ports
-		if hash csvtool 2>/dev/null; then
+		if hash csvtool 2>/dev/null && hash dnscrypt-proxy 2>/dev/null; then
 			log_daemon_msg "Allow response for DNScrypt resolvers"
 			ResolversPorts="`csvtool -t ',' col 11 /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv | csvtool drop 1 - | awk -F: '{print $NF}' | sort -g | uniq`"
 			for Port in $ResolversPorts; do

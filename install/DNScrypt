@@ -65,6 +65,11 @@ if [ "$INSTALLDNSCRYPT" == "YES" ]; then
 			git clone $GIT_libsodium /etc/MySB/sources/libsodium
 		fi
 	fi
+	
+	if [ -d /etc/MySB/temp/libsodium ]; then
+		rm -rf /etc/MySB/temp/libsodium
+	fi	
+	
 	cd /etc/MySB/sources/libsodium/
 	./autogen.sh
 	./configure --enable-minimal
@@ -74,16 +79,18 @@ if [ "$INSTALLDNSCRYPT" == "YES" ]; then
 	ldconfig
 
 	# DNScrypt
-	if [ -d /etc/MySB/sources/dnscrypt/ ]; then
-		rm -rf /etc/MySB/sources/dnscrypt/
+	if [ -d /etc/MySB/temp/dnscrypt* ]; then
+		if [ -d /etc/MySB/sources/dnscrypt/ ]; then
+			rm -rf /etc/MySB/sources/dnscrypt/
+		fi	
+		mv /etc/MySB/temp/dnscrypt* /etc/MySB/sources/dnscrypt
 	fi
-	if [ -f /etc/MySB/files/dnscrypt.tar.gz ]; then
-		rm -f /etc/MySB/files/dnscrypt.tar.gz
+	if [ ! -d /etc/MySB/sources/dnscrypt/ ] && [ ! -f /etc/MySB/files/dnscrypt.tar.gz ]; then
+		wget --no-check-certificate $TARGZ_dnscrypt -O /etc/MySB/files/dnscrypt.tar.gz
+		tar -zxvf /etc/MySB/files/dnscrypt.tar.gz -C /etc/MySB/sources/
 	fi
-	wget --no-check-certificate $TARGZ_dnscrypt -O /etc/MySB/files/dnscrypt.tar.gz
-	tar -zxvf /etc/MySB/files/dnscrypt.tar.gz -C /etc/MySB/sources/
-	mv /etc/MySB/sources/dnscrypt-proxy-* /etc/MySB/sources/dnscrypt-proxy
-	cd /etc/MySB/sources/dnscrypt-proxy/
+	cd /etc/MySB/sources/dnscrypt/
+	make clean
 	./autogen.sh
 	./configure --enable-plugins
 	make -j$PROCESSOR
@@ -104,8 +111,10 @@ if [ "$INSTALLDNSCRYPT" == "YES" ]; then
 	update-rc.d dnscrypt-proxy defaults
 
 	#### /etc/resolv.conf
-	sed -i '/nameserver/d' /etc/resolv.conf
-	echo "nameserver 127.0.0.1" >> /etc/resolv.conf
+	if hash dnscrypt-proxy 2>/dev/null; then
+		sed -i '/nameserver/d' /etc/resolv.conf
+		echo "nameserver 127.0.0.1" >> /etc/resolv.conf
+	fi
 	
 	#### Add SMTP host in cache
 	if [ "$SMTP" != "LOCAL" ]; then
