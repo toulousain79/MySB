@@ -87,6 +87,10 @@ case $1 in
 		fi
 		Fail2banWhiteList=`echo $Fail2banWhiteList | sed -e "s/^//g;"`
 		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed -e "s/^//g;"`
+		
+		#### Main User IPs
+		MainUserIPs=$(cat /etc/MySB/users/$MAINUSER.info | grep "IP Address=" | awk '{ print $3 }' | sed 's/,/ /g;')
+		
 		StatusLSB
 
 		# Clean users IP Addresses
@@ -262,6 +266,16 @@ case $1 in
 			done
 			unset ip					
 			StatusLSB
+			
+			# Delete IP restriction for NginX			
+			log_daemon_msg "Allow access to some page for '$MAINUSER'"
+			for ip in $MainUserIPs; do 
+				awk '{ print } /## Restricted to mainuser ##/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
+				perl -pi -e "s/<ip>/$ip/g" /etc/MySB/files/MySB_location.conf
+				mv /etc/MySB/files/MySB_location.conf /etc/nginx/locations/MySB.conf
+			done
+			unset ip					
+			StatusLSB			
 			
 			# Delete IP restriction for OpenVPN users
 			log_daemon_msg "Delete IP restriction for OpenVPN users"
