@@ -28,7 +28,7 @@ GetCertificate() {
 	TRACKER=$1
 	cd /etc/MySB/ssl/trackers/
 
-	if [ ! -f /etc/ssl/certs/$TRACKER.pem ] && [ ! -f /etc/MySB/ssl/trackers/$TRACKER.pem ]; then
+	if [ ! -f /etc/MySB/ssl/trackers/$TRACKER.pem ]; then
 		openssl s_client -connect $TRACKER:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$TRACKER.crt 
 		if [ -s ./$TRACKER.crt ]; then
 			openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
@@ -53,20 +53,20 @@ if [ ! -d /etc/MySB/ssl/trackers/ ]; then
 	mkdir /etc/MySB/ssl/trackers/
 fi
 
-LIST_CERTS=$(ls -la /etc/ssl/certs/ | awk '{ print $9 }')
-for Cert in ${LIST_CERTS}; do
-	if [ "$Cert" != "" ] && [ "$Cert" != "." ] && [ "$Cert" != ".." ]; then
+# LIST_CERTS=$(ls -la /etc/ssl/certs/ | awk '{ print $9 }')
+# for Cert in ${LIST_CERTS}; do
+	# if [ "$Cert" != "" ] && [ "$Cert" != "." ] && [ "$Cert" != ".." ]; then
 
-		TARGET=$(ls -la /etc/ssl/certs/$Cert | awk '{ print $11 }')
+		# TARGET=$(ls -la /etc/ssl/certs/$Cert | awk '{ print $11 }')
 
-		if [ ! -f $TARGET ];then
-			rm /etc/ssl/certs/$Cert
-		fi
+		# if [ ! -f $TARGET ];then
+			# rm /etc/ssl/certs/$Cert
+		# fi
 		
-		unset Cert TARGET
-	fi
-done
-unset LIST_CERTS
+		# unset Cert TARGET
+	# fi
+# done
+# unset LIST_CERTS
 
 TrackersListing
 
