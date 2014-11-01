@@ -29,6 +29,168 @@ echo -e "${CRED}If you lose connection during installation, restart the SSH sess
 echo -e "${CGREEN}	screen -r MySB_UpgradeMe$CEND"
 echo
 
+# ----- Main user info
+if [ -f /etc/MySB/infos/email.info ]; then
+	EMAILUSER=`cat /etc/MySB/infos/email.info`
+fi
+if [ -f /etc/MySB/infos/mainuser.info ]; then
+	MAINUSER=`cat /etc/MySB/infos/mainuser.info`
+fi
+if [ -f /etc/MySB/infos/certpass.info ]; then
+	CERTPASS=`cat /etc/MySB/infos/certpass.info`
+else
+	if hash mkpasswd 2>/dev/null; then
+		mkpasswd $HOSTFQDN > /etc/MySB/infos/certpass.info
+	fi
+fi
+# ----- Main user info
+
+if [ -f /etc/MySB/infos/timezone.info ]; then
+	TIMEZONE=`cat /etc/MySB/infos/timezone.info`
+fi
+if [ -f /etc/MySB/infos/primaryinet.info ]; then
+	PRIMARYINET=`cat /etc/MySB/infos/primaryinet.info`
+else
+	PRIMARYINET=`ip route get 8.8.8.8 | grep 8.8.8.8 | awk '{ print $5 }'`
+fi
+if [ -f /etc/MySB/infos/version.info ]; then
+	MYSBCURRENTVERSION=`cat /etc/MySB/infos/version.info`
+fi
+if [ -f /etc/MySB/infos/blocklist.info ]; then
+	MYBLOCKLIST=`cat /etc/MySB/infos/blocklist.info`
+fi
+if [ -f /etc/MySB/infos/hostfqdn.info ]; then
+	HOSTFQDN=`cat /etc/MySB/infos/hostfqdn.info`
+else
+	HOSTFQDN=`hostname -f`
+fi
+if [ -f /etc/MySB/infos/ipaddress.info ]; then
+	IPADDRESS=`cat /etc/MySB/infos/ipaddress.info`
+else
+	IPADDRESS=$(wget -qO- ipv4.icanhazip.com)
+	if [ -z $IPADDRESS ]; then
+		IPADDRESS=`ifconfig | sed -n 's/.*inet addr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`
+		if [ -z $IPADDRESS ]; then
+			IPADDRESS=`ifconfig | sed -n 's/.*inet adr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`
+		fi	
+	fi
+fi
+if [ -f /etc/MySB/infos/port_http.info ]; then
+	NGINXHTTPPORT=`cat /etc/MySB/infos/port_http.info`
+fi
+if [ -f /etc/MySB/infos/port_https.info ]; then
+	NGINXHTTPSPORT=`cat /etc/MySB/infos/port_https.info`
+fi
+if [ -f /etc/MySB/infos/port_ssh.info ]; then
+	NEWSSHPORT=`cat /etc/MySB/infos/port_ssh.info`
+fi
+if [ -f /etc/MySB/infos/port_cakebox.info ]; then
+	CAKEBOXPORT=`cat /etc/MySB/infos/port_cakebox.info`
+fi
+if [ -f /etc/MySB/infos/port_ftp.info ]; then
+	NEWFTPPORT=`cat /etc/MySB/infos/port_ftp.info`
+	FTP_PASSIVE=""
+	if [ -e '/etc/vsftpd.conf' ]; then
+		MIN_PORT=$(grep "^pasv_min_port=" '/etc/vsftpd.conf' | cut --delimiter="=" --fields=2)
+		MAX_PORT=$(grep "^pasv_max_port=" '/etc/vsftpd.conf' | cut --delimiter="=" --fields=2)
+		if [ -n "${MIN_PORT}" -a -n "${MAX_PORT}" ]; then
+			FTP_PASSIVE="${MIN_PORT}:${MAX_PORT}"
+		fi
+	fi	
+fi
+if [ -f /etc/MySB/infos/port_ftpdata.info ]; then
+	NEWFTPDATAPORT=`cat /etc/MySB/infos/port_ftpdata.info`
+fi
+if [ -f /etc/MySB/infos/port_webmin.info ]; then
+	WEBMINPORT=`cat /etc/MySB/infos/port_webmin.info`
+fi
+if [ -f /etc/MySB/infos/port_openvpn.info ]; then
+	OPENVPNPORT=`cat /etc/MySB/infos/port_openvpn.info`
+fi
+if [ -f /etc/MySB/infos/proto_openvpn.info ]; then
+	OPENVPNPROTO=`cat /etc/MySB/infos/proto_openvpn.info`
+	OPENVPNPROTO=`echo $OPENVPNPROTO | tr '[:upper:]' '[:lower:]'`
+fi
+if [ -f /etc/MySB/infos/install_cakebox.info ]; then
+	INSTALLCAKEBOX=`cat /etc/MySB/infos/install_cakebox.info`
+fi
+if [ -f /etc/MySB/infos/install_manager.info ]; then
+	INSTALLMANAGER=`cat /etc/MySB/infos/install_manager.info`
+fi
+if [ -f /etc/MySB/infos/install_fail2ban.info ]; then
+	INSTALLFAIL2BAN=`cat /etc/MySB/infos/install_fail2ban.info`
+fi
+if [ -f /etc/MySB/infos/install_logwatch.info ]; then
+	INSTALLLOGWATCH=`cat /etc/MySB/infos/install_logwatch.info`
+fi
+if [ -f /etc/MySB/infos/install_plexmedia.info ]; then
+	INSTALLPLEXMEDIA=`cat /etc/MySB/infos/install_plexmedia.info`
+fi
+if [ -f /etc/MySB/infos/install_webmin.info ]; then
+	INSTALLWEBMIN=`cat /etc/MySB/infos/install_webmin.info`
+fi
+if [ -f /etc/MySB/infos/install_openvpn.info ]; then
+	INSTALLOPENVPN=`cat /etc/MySB/infos/install_openvpn.info`
+fi
+if [ -f /etc/MySB/infos/install_dnscrypt.info ]; then
+	INSTALLDNSCRYPT=`cat /etc/MySB/infos/install_dnscrypt.info`
+fi
+if [ -f /etc/MySB/infos/MySB_password.info ]; then
+	MYSBUSER=`cat /etc/MySB/infos/MySB_password.info | grep user | awk '{ print $2 }'`
+	MYSBPASSD=`cat /etc/MySB/infos/MySB_password.info | grep pass | awk '{ print $2 }'`
+fi
+if [ -f /etc/MySB/infos/smtp.info ]; then
+	SMTP=`cat /etc/MySB/infos/smtp.info`
+fi
+if [ -f /etc/MySB/infos/smtp_port.info ]; then
+	SMTP_PORT=`cat /etc/MySB/infos/smtp_port.info`
+fi
+if [ -f /etc/MySB/infos/smtp_host.info ]; then
+	SMTP_HOST=`cat /etc/MySB/infos/smtp_host.info`
+fi
+if [ -f /etc/MySB/infos/smtp_security.info ]; then
+	SMTP_SECURITY=`cat /etc/MySB/infos/smtp_security.info`
+fi
+
+# ----- Renting infos
+if [ -f /etc/MySB/inc/renting ]; then
+	source /etc/MySB/inc/renting
+fi
+# ----- Renting infos
+
+# ----- Tempory, used for the first install
+if [ -f /etc/MySB/infos/newuser.info ]; then
+	NEWUSER=`cat /etc/MySB/infos/newuser.info`
+	UPPERNEWUSER=`echo $NEWUSER | tr '[:lower:]' '[:upper:]'`
+fi
+if [ -f /etc/MySB/infos/password.info ]; then
+	PASSWORD=`cat /etc/MySB/infos/password.info`
+fi
+if [ -f /etc/MySB/infos/myip.info ]; then
+	MYIP=`cat /etc/MySB/infos/myip.info`
+fi
+if [ -f /etc/MySB/infos/smtp_pass.info ]; then
+	SMTP_PASS=`cat /etc/MySB/infos/smtp_pass.info`
+fi
+if [ -f /etc/MySB/infos/smtp_user.info ]; then
+	SMTP_USER=`cat /etc/MySB/infos/smtp_user.info`
+fi
+# ----- Tempory, used for the first install
+
+#### White IP addresses
+Fail2banWhiteList="127.0.0.1/32"
+VpnIPs="10.0.0.0/24 10.0.1.0/24"
+
+#### Networks ports (Services ports)
+PLEXMEDIA_TCP_PORTS="32400 32469"
+PLEXMEDIA_UDP_PORTS="1900 5353 2410 32412 32413 32414"
+
+#### Networks ports (Permanently opened ports)
+WHITE_TCP_IN=""
+WHITE_UDP_IN=""
+WHITE_TCP_OUT="80 443"
+WHITE_UDP_OUT=""
+
 #### CreateDir
 echo -e -n "${CBLUE}Create missing directories$CEND..."
 screen -dmS CreateDir /bin/bash /etc/MySB/install/CreateDir;
@@ -71,6 +233,8 @@ StatusSTD
 echo -e -n "${CBLUE}Some fixes for Certificates$CEND..."
 chmod 644 /etc/MySB/ssl/*.cert
 StatusSTD
+
+
 
 
 
