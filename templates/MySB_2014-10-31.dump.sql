@@ -1,7 +1,7 @@
 ----
 -- phpLiteAdmin database dump (http://phpliteadmin.googlecode.com)
 -- phpLiteAdmin version: 1.9.5
--- Exported: 4:32pm on October 30, 2014 (CET)
+-- Exported: 5:32pm on October 31, 2014 (CET)
 -- database file: ../db/MySB.db
 ----
 BEGIN TRANSACTION;
@@ -15,62 +15,6 @@ CREATE TABLE [vars] (
 
 ----
 -- Data dump for vars, a total of 0 rows
-----
-
-----
--- Table structure for system
-----
-CREATE TABLE [system] (
-[id_system] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
-[pve_kernel] BOOLEAN DEFAULT '0' NULL,
-[port_ftp] INTEGER DEFAULT '8891' UNIQUE NOT NULL,
-[port_ftp_data] INTEGER DEFAULT '8800' UNIQUE NOT NULL,
-[port_ftp_passive] VARCHAR(11) DEFAULT '65000:65535' UNIQUE NOT NULL,
-[port_ssh] INTEGER DEFAULT '8892' UNIQUE NOT NULL,
-[port_https] INTEGER DEFAULT '8889' UNIQUE NOT NULL,
-[port_http] INTEGER DEFAULT '8888' UNIQUE NOT NULL,
-[hostname] VARCHAR(128)  UNIQUE NOT NULL,
-[ipv4] VARCHAR(15)  UNIQUE NOT NULL,
-[primary_inet] VARCHAR(16)  UNIQUE NOT NULL,
-[timezone] VARCHAR(64) DEFAULT 'Europe/Paris' UNIQUE NOT NULL,
-[version] VARCHAR(6) DEFAULT 'v1.2' UNIQUE NOT NULL,
-[mysb_password] VARCHAR(32)  NULL
-);
-
-----
--- Data dump for system, a total of 0 rows
-----
-
-----
--- Table structure for users
-----
-CREATE TABLE [users] (
-[id_users] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
-[users_ident] VARCHAR(32)  UNIQUE NOT NULL,
-[users_email] VARCHAR(260)  UNIQUE NOT NULL,
-[users_passwd] VARCHAR(32)  NOT NULL,
-[sftp] BOOLEAN DEFAULT '1' NOT NULL,
-[sudo] BOOLEAN DEFAULT '0' NOT NULL,
-[admin] BOOLEAN DEFAULT '0' NOT NULL
-);
-
-----
--- Data dump for users, a total of 0 rows
-----
-
-----
--- Table structure for smtp
-----
-CREATE TABLE [smtp] (
-[id_smtp] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
-[smtp_username] VARCHAR(64)  UNIQUE NULL,
-[smtp_passwd] VARCHAR(64)  UNIQUE NULL,
-[smtp_port] INTEGER  NULL,
-[smtp_host] VARCHAR(64)  NULL
-);
-
-----
--- Data dump for smtp, a total of 0 rows
 ----
 
 ----
@@ -165,31 +109,6 @@ INSERT INTO "system_services" ("id_system_services","short_name","ident","comman
 INSERT INTO "system_services" ("id_system_services","short_name","ident","command","args") VALUES ('16','BIND','/etc/bind/named.conf','service bind9',NULL);
 
 ----
--- Table structure for services
-----
-CREATE TABLE [services] (
-[id_services] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
-[serv_name] VARCHAR(32)  UNIQUE NULL,
-[ports_tcp] VARCHAR(32)  NULL,
-[ports_udp] VARCHAR(32)  NULL,
-[is_installed] BOOLEAN  NULL
-);
-
-----
--- Data dump for services, a total of 10 rows
-----
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('1','Seedbox-Manager','',NULL,'Y');
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('2','CakeBox-Light','8887',NULL,'Y');
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('3','Plex Media Server','32400 32469','1900 5353 2410 32412 32413 32414','Y');
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('4','Webmin','8890',NULL,'Y');
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('5','OpenVPN','8893 8894',NULL,'Y');
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('6','LogWatch',NULL,NULL,'Y');
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('7','Fail2Ban',NULL,NULL,'Y');
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('8','PeerGuardian',NULL,NULL,'Y');
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('9','rTorrent Block List',NULL,NULL,NULL);
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('10','DNScrypt-proxy',NULL,'53 54 443 2053 5353','Y');
-
-----
 -- Table structure for list_peerguardian
 ----
 CREATE TABLE [list_peerguardian] (
@@ -212,6 +131,133 @@ CREATE TABLE [list_blocklists] (
 ----
 -- Data dump for list_blocklists, a total of 0 rows
 ----
+
+----
+-- Table structure for smtp
+----
+CREATE TABLE [smtp] (
+[id_smtp] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
+[smtp_provider] VARCHAR(5)  UNIQUE NULL,
+[smtp_username] VARCHAR(64)  UNIQUE NULL,
+[smtp_passwd] VARCHAR(64)  UNIQUE NULL
+);
+
+----
+-- Data dump for smtp, a total of 0 rows
+----
+
+----
+-- Table structure for users
+----
+CREATE TABLE [users] (
+[id_users] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[users_ident] VARCHAR(32)  UNIQUE NOT NULL,
+[users_email] VARCHAR(260)  UNIQUE NOT NULL,
+[users_passwd] VARCHAR(32)  NULL,
+[sftp] BOOLEAN DEFAULT '''''''1''''''' NOT NULL,
+[sudo] BOOLEAN DEFAULT '''''''0''''''' NOT NULL,
+[admin] BOOLEAN DEFAULT '''''''0''''''' NOT NULL,
+[fixed_ip] VARCHAR(128)  NULL,
+[no_ip] VARCHAR(128)  NULL
+);
+
+----
+-- Data dump for users, a total of 0 rows
+----
+
+----
+-- Table structure for services
+----
+CREATE TABLE [services] (
+[id_services] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[serv_name] VARCHAR(32)  UNIQUE NULL,
+[ports_tcp] VARCHAR(32)  NULL,
+[ports_udp] VARCHAR(32)  NULL,
+[is_installed] BOOLEAN DEFAULT 'N' NULL
+);
+
+----
+-- Data dump for services, a total of 10 rows
+----
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('1','Seedbox-Manager','',NULL,'N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('2','CakeBox-Light','8887',NULL,'N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('3','Plex Media Server','32400 32469','1900 5353 2410 32412 32413 32414','N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('4','Webmin','8890',NULL,'N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('5','OpenVPN','8893 8894',NULL,'N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('6','LogWatch',NULL,NULL,'N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('7','Fail2Ban',NULL,NULL,'N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('8','PeerGuardian',NULL,NULL,'N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('9','rTorrent Block List',NULL,NULL,'N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('10','DNScrypt-proxy',NULL,'53 54 443 2053 5353','N');
+
+----
+-- Table structure for system
+----
+CREATE TABLE [system] (
+[id_system] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[version] VARCHAR(6)  UNIQUE NOT NULL,
+[hostname] VARCHAR(128)  UNIQUE NULL,
+[ipv4] VARCHAR(15)  UNIQUE NULL,
+[primary_inet] VARCHAR(16)  UNIQUE NULL,
+[timezone] VARCHAR(64)  UNIQUE NULL,
+[mysb_user] VARCHAR(32)  UNIQUE NULL,
+[mysb_password] VARCHAR(32)  UNIQUE NULL,
+[port_ftp] INTEGER  UNIQUE NULL,
+[port_ftp_data] INTEGER  UNIQUE NULL,
+[port_ftp_passive] VARCHAR(11)  UNIQUE NULL,
+[port_ssh] INTEGER  UNIQUE NULL,
+[port_https] INTEGER  UNIQUE NULL,
+[port_http] INTEGER  UNIQUE NULL
+);
+
+----
+-- Data dump for system, a total of 0 rows
+----
+
+----
+-- structure for index sqlite_autoindex_system_services_1 on table system_services
+----
+;
+
+----
+-- structure for index sqlite_autoindex_system_services_2 on table system_services
+----
+;
+
+----
+-- structure for index sqlite_autoindex_list_peerguardian_1 on table list_peerguardian
+----
+;
+
+----
+-- structure for index sqlite_autoindex_smtp_1 on table smtp
+----
+;
+
+----
+-- structure for index sqlite_autoindex_smtp_2 on table smtp
+----
+;
+
+----
+-- structure for index sqlite_autoindex_smtp_3 on table smtp
+----
+;
+
+----
+-- structure for index sqlite_autoindex_users_1 on table users
+----
+;
+
+----
+-- structure for index sqlite_autoindex_users_2 on table users
+----
+;
+
+----
+-- structure for index sqlite_autoindex_services_1 on table services
+----
+;
 
 ----
 -- structure for index sqlite_autoindex_system_1 on table system
@@ -269,42 +315,12 @@ CREATE TABLE [list_blocklists] (
 ;
 
 ----
--- structure for index sqlite_autoindex_users_1 on table users
+-- structure for index sqlite_autoindex_system_12 on table system
 ----
 ;
 
 ----
--- structure for index sqlite_autoindex_users_2 on table users
-----
-;
-
-----
--- structure for index sqlite_autoindex_smtp_1 on table smtp
-----
-;
-
-----
--- structure for index sqlite_autoindex_smtp_2 on table smtp
-----
-;
-
-----
--- structure for index sqlite_autoindex_system_services_1 on table system_services
-----
-;
-
-----
--- structure for index sqlite_autoindex_system_services_2 on table system_services
-----
-;
-
-----
--- structure for index sqlite_autoindex_services_1 on table services
-----
-;
-
-----
--- structure for index sqlite_autoindex_list_peerguardian_1 on table list_peerguardian
+-- structure for index sqlite_autoindex_system_13 on table system
 ----
 ;
 COMMIT;

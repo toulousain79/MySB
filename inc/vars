@@ -32,31 +32,58 @@ CYELLOW="${CSI}1;33m"
 CBLUE="${CSI}1;34m"
 
 #### System
-HOSTNAME=$(hostname)
-DOMAINNAME=$(hostname -d)
-SCRIPT_name=`basename $0`
+SQLiteDB="/etc/MySB/db/MySB.db"
+ScriptName=`basename $0`
 PROCESSOR=`cat /proc/cpuinfo | grep processor | wc -l`
 MEMORY=`free -m | grep Mem | awk '{ print $2 }'`
 DEBIAN_VERSION=`lsb_release -cs`
 IFPVEKERNEL=`uname -r | grep pve`
 FILESYSTEMTYPE=`df -T "/home/" | awk '{print $2}' | tail -n1`
 
-if [ -z $DOMAINNAME ]; then
-	HOSTNAME="$HOSTNAME"
-else
-	if [ "$HOSTname" == "$DOMAINNAME" ]; then
-		HOSTNAME="$HOSTNAME"
-	else
-		echo $HOSTNAME | grep "$DOMAINNAME" &> /dev/null
-		if [ $? -eq 0 ];then
-			HOSTNAME="$HOSTNAME"
-		else
-			HOSTNAME="$HOSTNAME"."$DOMAINNAME"
-		fi
+#### All Variables
+# ----- System info
+sqlite3 $SQLiteDB "SELECT * FROM system WHERE 1" | while read ROW; do
+    # Parsing data (sqlite3 returns a pipe separated string)
+    MySB_CurrentVersion=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
+    HostNameFQDN=`echo $ROW | awk '{split($0,a,"|"); print a[3]}'`
+	SrvIpAddress=`echo $ROW | awk '{split($0,a,"|"); print a[4]}'`
+	PrimaryInet=`echo $ROW | awk '{split($0,a,"|"); print a[5]}'`
+	TimeZone=`echo $ROW | awk '{split($0,a,"|"); print a[6]}'`
+	MySB_User=`echo $ROW | awk '{split($0,a,"|"); print a[7]}'`
+	MySB_Password=`echo $ROW | awk '{split($0,a,"|"); print a[8]}'`
+	Port_FTP=`echo $ROW | awk '{split($0,a,"|"); print a[9]}'`
+	Port_FTP_Data=`echo $ROW | awk '{split($0,a,"|"); print a[10]}'`
+	Port_FTP_Passive=`echo $ROW | awk '{split($0,a,"|"); print a[11]}'`
+	Port_SSH=`echo $ROW | awk '{split($0,a,"|"); print a[12]}'`
+	Port_HTTPS=`echo $ROW | awk '{split($0,a,"|"); print a[13]}'`
+	Port_HTTP=`echo $ROW | awk '{split($0,a,"|"); print a[14]}'`
+done
+
+if [ -z "$HostNameFQDN" ]; then
+	HostNameFQDN=`hostname -f`
+fi
+
+if [ -z "$SrvIpAddress" ]; then
+	SrvIpAddress=$(wget -qO- ipv4.icanhazip.com)
+	if [ -z "$SrvIpAddress" ]; then
+		SrvIpAddress=`ifconfig | sed -n 's/.*inet addr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`
+		if [ -z "$SrvIpAddress" ]; then
+			SrvIpAddress=`ifconfig | sed -n 's/.*inet adr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`
+		fi	
 	fi
 fi
 
-#### All Variables
+if [ -z "$PrimaryInet" ]; then
+	PrimaryInet=`ip route get 8.8.8.8 | grep 8.8.8.8 | awk '{ print $5 }'`
+fi	
+# ----- System info
+
+
+
+
+
+
+
 
 # ----- Main user info
 if [ -f /etc/MySB/infos/email.info ]; then
@@ -69,66 +96,15 @@ if [ -f /etc/MySB/infos/certpass.info ]; then
 	CERTPASS=`cat /etc/MySB/infos/certpass.info`
 else
 	if hash mkpasswd 2>/dev/null; then
-		mkpasswd $HOSTFQDN > /etc/MySB/infos/certpass.info
+		mkpasswd $HostNameFQDN > /etc/MySB/infos/certpass.info
 	fi
 fi
 # ----- Main user info
-
-if [ -f /etc/MySB/infos/timezone.info ]; then
-	TIMEZONE=`cat /etc/MySB/infos/timezone.info`
-fi
-if [ -f /etc/MySB/infos/primaryinet.info ]; then
-	PRIMARYINET=`cat /etc/MySB/infos/primaryinet.info`
-else
-	PRIMARYINET=`ip route get 8.8.8.8 | grep 8.8.8.8 | awk '{ print $5 }'`
-fi
-if [ -f /etc/MySB/infos/version.info ]; then
-	MYSBCURRENTVERSION=`cat /etc/MySB/infos/version.info`
-fi
 if [ -f /etc/MySB/infos/blocklist.info ]; then
 	MYBLOCKLIST=`cat /etc/MySB/infos/blocklist.info`
 fi
-if [ -f /etc/MySB/infos/hostfqdn.info ]; then
-	HOSTFQDN=`cat /etc/MySB/infos/hostfqdn.info`
-else
-	HOSTFQDN=`hostname -f`
-fi
-if [ -f /etc/MySB/infos/ipaddress.info ]; then
-	IPADDRESS=`cat /etc/MySB/infos/ipaddress.info`
-else
-	IPADDRESS=$(wget -qO- ipv4.icanhazip.com)
-	if [ -z $IPADDRESS ]; then
-		IPADDRESS=`ifconfig | sed -n 's/.*inet addr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`
-		if [ -z $IPADDRESS ]; then
-			IPADDRESS=`ifconfig | sed -n 's/.*inet adr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`
-		fi	
-	fi
-fi
-if [ -f /etc/MySB/infos/port_http.info ]; then
-	NGINXHTTPPORT=`cat /etc/MySB/infos/port_http.info`
-fi
-if [ -f /etc/MySB/infos/port_https.info ]; then
-	NGINXHTTPSPORT=`cat /etc/MySB/infos/port_https.info`
-fi
-if [ -f /etc/MySB/infos/port_ssh.info ]; then
-	NEWSSHPORT=`cat /etc/MySB/infos/port_ssh.info`
-fi
 if [ -f /etc/MySB/infos/port_cakebox.info ]; then
 	CAKEBOXPORT=`cat /etc/MySB/infos/port_cakebox.info`
-fi
-if [ -f /etc/MySB/infos/port_ftp.info ]; then
-	NEWFTPPORT=`cat /etc/MySB/infos/port_ftp.info`
-	FTP_PASSIVE=""
-	if [ -e '/etc/vsftpd.conf' ]; then
-		MIN_PORT=$(grep "^pasv_min_port=" '/etc/vsftpd.conf' | cut --delimiter="=" --fields=2)
-		MAX_PORT=$(grep "^pasv_max_port=" '/etc/vsftpd.conf' | cut --delimiter="=" --fields=2)
-		if [ -n "${MIN_PORT}" -a -n "${MAX_PORT}" ]; then
-			FTP_PASSIVE="${MIN_PORT}:${MAX_PORT}"
-		fi
-	fi	
-fi
-if [ -f /etc/MySB/infos/port_ftpdata.info ]; then
-	NEWFTPDATAPORT=`cat /etc/MySB/infos/port_ftpdata.info`
 fi
 if [ -f /etc/MySB/infos/port_webmin.info ]; then
 	WEBMINPORT=`cat /etc/MySB/infos/port_webmin.info`
@@ -163,10 +139,6 @@ if [ -f /etc/MySB/infos/install_openvpn.info ]; then
 fi
 if [ -f /etc/MySB/infos/install_dnscrypt.info ]; then
 	INSTALLDNSCRYPT=`cat /etc/MySB/infos/install_dnscrypt.info`
-fi
-if [ -f /etc/MySB/infos/MySB_password.info ]; then
-	MYSBUSER=`cat /etc/MySB/infos/MySB_password.info | grep user | awk '{ print $2 }'`
-	MYSBPASSD=`cat /etc/MySB/infos/MySB_password.info | grep pass | awk '{ print $2 }'`
 fi
 if [ -f /etc/MySB/infos/smtp.info ]; then
 	SMTP=`cat /etc/MySB/infos/smtp.info`

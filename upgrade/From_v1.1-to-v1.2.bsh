@@ -29,21 +29,50 @@ echo -e "${CRED}If you lose connection during installation, restart the SSH sess
 echo -e "${CGREEN}	screen -r MySB_UpgradeMe$CEND"
 echo
 
-#### NginX
-cp /etc/MySB/templates/etc.nginx.locations.mysb.conf.template /etc/nginx/locations/MySB.conf
-perl -pi -e "s/<server_ip>/$IPADDRESS/g" /etc/nginx/locations/MySB.conf
-perl -pi -e "s/<mainuser>/$NEWUSER/g" /etc/nginx/locations/MySB.conf
-perl -pi -e "s/<mainuser_password>/$MYSBPASSD/g" /etc/MySB/web/phpLiteAdmin.php
+#### CreateDir
+echo -e -n "${CBLUE}Create missing directories$CEND..."
+screen -dmS CreateDir /bin/bash /etc/MySB/install/CreateDir;
+WaitingScreen CreateDir
+StatusSTD
 
-#### Directories & Files
-echo -e -n "${CBLUE}Install and configure SQLite$CEND..."
+#### Packages
+echo -e -n "${CBLUE}Install missing packages$CEND..."
+screen -dmS Packages /bin/bash /etc/MySB/install/Packages;
+WaitingScreen Packages
+StatusSTD
+
+#### PHP
+echo -e -n "${CBLUE}Some fixes for PHP$CEND..."
+screen -dmS PHP /bin/bash /etc/MySB/install/PHP;
+WaitingScreen PHP
+StatusSTD
+
+#### SQLite
+echo -e -n "${CBLUE}Create SQLite database$CEND..."
 screen -dmS SQLite /bin/bash /etc/MySB/install/SQLite;
 WaitingScreen SQLite
 StatusSTD
 
+#### NginX
+echo -e -n "${CBLUE}Some fixes for NginX$CEND..."
+cp /etc/MySB/templates/etc.nginx.locations.mysb.conf.template /etc/nginx/locations/MySB.conf
+perl -pi -e "s/<server_ip>/$SrvIpAddress/g" /etc/nginx/locations/MySB.conf
+perl -pi -e "s/<mainuser>/$NEWUSER/g" /etc/nginx/locations/MySB.conf
+perl -pi -e "s/<mainuser_password>/$MySB_Password/g" /etc/MySB/web/phpLiteAdmin.php
+StatusSTD
+
 #### LogWatch
+echo -e -n "${CBLUE}Some fixes for LogWatch$CEND..."
 perl -pi -e "s/^Range = All/Range = yesterday/g" /etc/logwatch/conf/logwatch.conf
 perl -pi -e "s/^Detail = High/Detail = Low/g" /etc/logwatch/conf/logwatch.conf
+StatusSTD
+
+#### Certificates
+echo -e -n "${CBLUE}Some fixes for Certificates$CEND..."
+chmod 644 /etc/MySB/ssl/*.cert
+StatusSTD
+
+
 
 #### Firewall And Security
 ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.sh' 'new'

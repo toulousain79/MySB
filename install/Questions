@@ -101,34 +101,34 @@ echo
 echo -e "${CYELLOW}#### Server Info ####$CEND"
 
 #Time Zone	
-GetString NO "What is your time zone ? (ex: Europe/Paris): " TIMEZONE "Europe/Paris"
+GetString NO "What is your time zone ? (ex: Europe/Paris): " TimeZone "Europe/Paris"
 
 # Primary Inet
-GetString NO "What is your primary network interface ? (ex: eth0, nic0, ...): " PRIMARYINET $PRIMARYINET
+GetString NO "What is your primary network interface ? (ex: eth0, nic0, ...): " PrimaryInet $PrimaryInet
 
 # Box' IP
-while [ ! "$CHECK_IPADDRESS" = "$IPADDRESS" ] || [ -z "$IPADDRESS" ]; do
-	GetString NO  "What is the IP address of your box: " IPADDRESS $IPADDRESS
-	CHECK_IPADDRESS=`ValidateIP "$IPADDRESS"`
+while [ ! "$CHECK_SrvIpAddress" = "$SrvIpAddress" ] || [ -z "$SrvIpAddress" ]; do
+	GetString NO  "What is the IP address of your box: " SrvIpAddress $SrvIpAddress
+	CHECK_SrvIpAddress=`ValidateIP "$SrvIpAddress"`
 done
 
 # Box' hostname
-GetString NO "What is the hostname (FQDN) of your box: " HOSTFQDN $HOSTFQDN $HOSTFQDN
+GetString NO "What is the hostname (FQDN) of your box: " HostNameFQDN $HostNameFQDN
 
 # NginX HTTP port
-GetString NO "NginX HTTP port (usually 80): " NGINXHTTPPORT 8888
+GetString NO "NginX HTTP port (usually 80): " Port_HTTP 8888
 
 # NginX HTTPs port
-GetString NO "NginX HTTPs port (usually 443): " NGINXHTTPSPORT 8889
+GetString NO "NginX HTTPs port (usually 443): " Port_HTTPS 8889
 
 # SSH port
-GetString NO "SSH port (usually 22): " NEWSSHPORT 8892
+GetString NO "SSH port (usually 22): " Port_SSH 8892
 
 # FTP port
-GetString NO "FTP port (usually 21): " NEWFTPPORT 8891
+GetString NO "FTP port (usually 21): " Port_FTP 8891
 
 # FTP Active data port
-GetString NO "FTP Active Data port (usually 20): " NEWFTPDATAPORT 8800
+GetString NO "FTP Active Data port (usually 20): " Port_FTP_Data 8800
 
 
 #### SERVICES
@@ -161,8 +161,9 @@ echo
 if [ "`ls -la /dev/net/tun &>2 /dev/null && echo $?`" == "0" ]; then
 	GetString NO "Install OpenVPN? " INSTALLOPENVPN YES
 	if [ "$INSTALLOPENVPN" == "YES" ]; then
-		GetString NO  "OpenVPN port: " OPENVPNPORT 8893
-		echo -e "${CYELLOW}You can use OpenVPN with TCP or UDP.$CEND"
+		GetString NO  "OpenVPN port with redirect gateway: " OPENVPNPORT_WITHGW 8893
+		GetString NO  "OpenVPN port without redirect gateway: " OPENVPNPORT_WITOUTHGW 8894
+		echo -e "${CYELLOW}You can use OpenVPN with TCP or UDP.$CEND ${CYELLOW}(TCP is recommended)$CEND"
 		GetString NO "Which protocol, 'UDP' OR 'TCP' ? : " OPENVPNPROTO TCP
 	fi
 else
@@ -227,45 +228,77 @@ echo "export PATH" | tee -a /etc/profile &> /dev/null
 echo "PATH=$PATH:/etc/MySB/bin:/sbin" | tee -a /root/.bashrc &> /dev/null
 echo "export PATH" | tee -a /root/.bashrc &> /dev/null
 
-# -----
-echo "$NEWUSER" > /etc/MySB/infos/newuser.info		# Will be delete after first install
-echo "$PASSWORD" > /etc/MySB/infos/password.info	# Will be delete after first install
-echo "$NEWUSER" > /etc/MySB/infos/mainuser.info
-echo "$EMAILUSER" > /etc/MySB/infos/email.info
-echo "$MYIP" > /etc/MySB/infos/myip.info			# Will be delete after first install
-echo "$SMTP" > /etc/MySB/infos/smtp.info
-echo "$SMTP_PASS" > /etc/MySB/infos/smtp_pass.info	# Will be delete after first install
-echo "$SMTP_USER" > /etc/MySB/infos/smtp_user.info
-# -----
-echo "$TIMEZONE" > /etc/MySB/infos/timezone.info
-echo "$PRIMARYINET" > /etc/MySB/infos/primaryinet.info
-echo "$NEWUSER" > /etc/MySB/infos/newuser.info
-echo "$IPADDRESS" > /etc/MySB/infos/ipaddress.info
-echo "$HOSTFQDN" > /etc/MySB/infos/hostfqdn.info
-echo "$MYBLOCKLIST" > /etc/MySB/infos/blocklist.info
-echo "$NGINXHTTPPORT" > /etc/MySB/infos/port_http.info
-echo "$NGINXHTTPSPORT" > /etc/MySB/infos/port_https.info
-echo "$NEWSSHPORT" > /etc/MySB/infos/port_ssh.info
-echo "$NEWFTPPORT" > /etc/MySB/infos/port_ftp.info
-echo "$NEWFTPDATAPORT" > /etc/MySB/infos/port_ftpdata.info
-if [ "$INSTALLCAKEBOX" == "YES" ]; then
-	echo "$CAKEBOXPORT" > /etc/MySB/infos/port_cakebox.info
-fi
-if [ "$INSTALLWEBMIN" == "YES" ]; then
-	echo "$WEBMINPORT" > /etc/MySB/infos/port_webmin.info
-fi
-if [ "$INSTALLOPENVPN" == "YES" ]; then
-	echo "$OPENVPNPORT" > /etc/MySB/infos/port_openvpn.info
-	echo "$OPENVPNPROTO" | awk '{print tolower($0)}' > /etc/MySB/infos/proto_openvpn.info
+#### Add answer to SQLite db
+# 'system' table
+sqlite3 $SQLiteDB\
+	"INSERT into system (hostname,ipv4,primary_inet,timezone,port_ftp,port_ftp_data,port_ftp_passive,port_ssh,port_https,port_http)\
+	VALUES (\"$HostNameFQDN\",\"$SrvIpAddress\",\"$PrimaryInet\",\"$TimeZone\",\"$Port_FTP\",\"$Port_FTP_Data\",\"65000:65535\",\"$Port_SSH\",\"$Port_HTTPS\",\"$Port_HTTP\");"
+
+# 'smtp' table
+sqlite3 $SQLiteDB\
+	"INSERT into smtp (smtp_provider,smtp_username,smtp_passwd)\
+	VALUES (\"$SMTP\",\"$SMTP_USER\",\"$SMTP_PASS\");"
+	
+# 'users' table (Main user)
+sqlite3 $SQLiteDB\
+	"INSERT into users (users_ident,users_email,users_passwd,sftp,sudo,admin,fixed_ip)\
+	VALUES (\"$NEWUSER\",\"$EMAILUSER\",\"$PASSWORD\",\"1\",\"1\",\"1\",\"$MYIP\");"
+	
+# 'services' table
+if [ "$INSTALLMANAGER" == "YES" ]; then
+	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1' WHERE serv_name = 'Seedbox-Manager';"
 fi
 
-echo "$INSTALLMANAGER" > /etc/MySB/infos/install_manager.info
-echo "$INSTALLFAIL2BAN" > /etc/MySB/infos/install_fail2ban.info
-echo "$INSTALLWEBMIN" > /etc/MySB/infos/install_webmin.info
-echo "$INSTALLOPENVPN" > /etc/MySB/infos/install_openvpn.info
-echo "$INSTALLPLEXMEDIA" > /etc/MySB/infos/install_plexmedia.info
-echo "$INSTALLCAKEBOX" > /etc/MySB/infos/install_cakebox.info
-echo "$INSTALLDNSCRYPT" > /etc/MySB/infos/install_dnscrypt.info
+if [ "$INSTALLCAKEBOX" == "YES" ]; then
+	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1', ports_tcp = '$CAKEBOXPORT' WHERE serv_name = 'CakeBox-Light';"
+fi
+
+if [ "$INSTALLPLEXMEDIA" == "YES" ]; then
+	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1' WHERE serv_name = 'Plex Media Server';"
+fi
+
+if [ "$INSTALLWEBMIN" == "YES" ]; then
+	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1', ports_tcp = '$WEBMINPORT' WHERE serv_name = 'Webmin';"
+fi
+
+if [ "$INSTALLOPENVPN" == "YES" ]; then
+	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1' WHERE serv_name = 'OpenVPN';"
+	case "$OPENVPNPROTO" in
+		"TCP")
+			sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1', ports_tcp = '$OPENVPNPORT_WITHGW $OPENVPNPORT_WITOUTHGW', ports_udp = '' WHERE serv_name = 'OpenVPN';"		
+		;;
+		"UDP")
+			sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1', ports_tcp = '', ports_udp = '$OPENVPNPORT_WITHGW $OPENVPNPORT_WITOUTHGW' WHERE serv_name = 'OpenVPN';"
+		;;				
+	esac	
+fi
+
+if [ "$INSTALLLOGWATCH" == "YES" ]; then
+	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1' WHERE serv_name = 'LogWatch';"
+fi
+
+if [ "$INSTALLFAIL2BAN" == "YES" ]; then
+	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1' WHERE serv_name = 'Fail2Ban';"
+fi
+
+if [ "$INSTALLDNSCRYPT" == "YES" ]; then
+	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1' WHERE serv_name = 'DNScrypt-proxy';"
+fi
+
+case "$MYBLOCKLIST" in
+	"PeerGuardian")
+		sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1' WHERE serv_name = 'PeerGuardian';"
+		sqlite3 $SQLiteDB "UPDATE services SET is_installed = '0' WHERE serv_name = 'rTorrent Block List';"
+	;;
+	"rTorrent")
+		sqlite3 $SQLiteDB "UPDATE services SET is_installed = '0' WHERE serv_name = 'PeerGuardian';"
+		sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1' WHERE serv_name = 'rTorrent Block List';"
+	;;
+	*)
+		sqlite3 $SQLiteDB "UPDATE services SET is_installed = '0' WHERE serv_name = 'PeerGuardian';"
+		sqlite3 $SQLiteDB "UPDATE services SET is_installed = '0' WHERE serv_name = 'rTorrent Block List';"		
+	;;
+esac
 	
 # -----------------------------------------
 source /etc/MySB/inc/includes_after

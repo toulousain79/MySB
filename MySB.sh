@@ -445,9 +445,9 @@ fi
 echo
 echo -e "${CGREEN}Looks like everything is set.$CEND"
 echo
-echo -e "${CYELLOW}Remember that your SSH port is now ======>$CEND ${CBLUE}$NEWSSHPORT$CEND"
+echo -e "${CYELLOW}Remember that your SSH port is now ======>$CEND ${CBLUE}$Port_SSH$CEND"
 echo
-echo -e "${CRED}System will reboot now, but don't close this window until you take note of the port number:$CEND ${CBLUE}$NEWSSHPORT$CEND"
+echo -e "${CRED}System will reboot now, but don't close this window until you take note of the port number:$CEND ${CBLUE}$Port_SSH$CEND"
 echo
 echo -e "${CBLUE}Available commands for your seedbox:$CEND"
 echo -e "${CYELLOW}	User Management:$CEND"
@@ -462,7 +462,7 @@ echo -e "${CGREEN}			MySB_UpgradeMe$CEND (if new versions)"
 echo
 echo
 echo -e "${CBLUE}You can check all informations for use your SeedBox here:$CEND"
-echo -e "	-->	${CYELLOW}https://$HOSTFQDN:$NGINXHTTPSPORT/MySB/SeedboxInfo.php$CEND"
+echo -e "	-->	${CYELLOW}https://$HostNameFQDN:$Port_HTTPS/MySB/SeedboxInfo.php$CEND"
 
 #### Reboot after install
 if [ "$DevInstallMode" == "manual" ]; then

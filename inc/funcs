@@ -24,25 +24,25 @@
 
 #### Banner
 BannerGenerator() {
-		figlet MySB $MYSBCURRENTVERSION > /etc/MySB/files/banner.tmp
-		echo "echo -e \"${CGREEN}############################################################$CEND" > /etc/MySB/files/banner_$MYSBCURRENTVERSION
+		figlet MySB $MySB_CurrentVersion > /etc/MySB/files/banner.tmp
+		echo "echo -e \"${CGREEN}############################################################$CEND" > /etc/MySB/files/banner_$MySB_CurrentVersion
 
 		NBLIGN=`wc -l /etc/MySB/files/banner.tmp | awk '{ print $1 }'`
 		for (( lign=1; lign<=$NBLIGN; lign++ )); do
 			MYLIGN=`head -n $lign /etc/MySB/files/banner.tmp | tail -n 1`
-			echo "${CGREEN}#$CEND	${CBLUE}$MYLIGN$CEND" >> /etc/MySB/files/banner_$MYSBCURRENTVERSION
+			echo "${CGREEN}#$CEND	${CBLUE}$MYLIGN$CEND" >> /etc/MySB/files/banner_$MySB_CurrentVersion
 		done
 		rm /etc/MySB/files/banner.tmp
 
-		echo "${CGREEN}#	by toulousain79$CEND ---> ${CYELLOW}https://github.com/toulousain79/$CEND" >> /etc/MySB/files/banner_$MYSBCURRENTVERSION
-		echo "${CGREEN}#$CEND" >> /etc/MySB/files/banner_$MYSBCURRENTVERSION
+		echo "${CGREEN}#	by toulousain79$CEND ---> ${CYELLOW}https://github.com/toulousain79/$CEND" >> /etc/MySB/files/banner_$MySB_CurrentVersion
+		echo "${CGREEN}#$CEND" >> /etc/MySB/files/banner_$MySB_CurrentVersion
 		if [ "`screen -ls | grep MySB`" == "" ]; then
-			echo "${CGREEN}#$CEND	Current file: ${CRED}$0$CEND" >> /etc/MySB/files/banner_$MYSBCURRENTVERSION
+			echo "${CGREEN}#$CEND	Current file: ${CRED}$0$CEND" >> /etc/MySB/files/banner_$MySB_CurrentVersion
 		fi
-		echo "${CGREEN}############################################################$CEND\"" >> /etc/MySB/files/banner_$MYSBCURRENTVERSION		
-	if [ -f /etc/MySB/files/banner_$MYSBCURRENTVERSION ]; then
+		echo "${CGREEN}############################################################$CEND\"" >> /etc/MySB/files/banner_$MySB_CurrentVersion		
+	if [ -f /etc/MySB/files/banner_$MySB_CurrentVersion ]; then
 		clear
-		source /etc/MySB/files/banner_$MYSBCURRENTVERSION
+		source /etc/MySB/files/banner_$MySB_CurrentVersion
 	fi
 	echo
 }
@@ -57,13 +57,13 @@ SendMail() {
 	MailFrom=`cat /etc/MySB/infos/email.info`
 	
 	log_daemon_msg "Generate HTML info for $User"
-	perl -pi -e "s/##MySB_User##/$MYSBUSER/g" /etc/MySB/web/SeedboxInfo.php
+	perl -pi -e "s/##MySB_User##/$MySB_User/g" /etc/MySB/web/SeedboxInfo.php
 	
 	if [ "`service nginx status | grep 'nginx is not running'`" != "" ]; then
 		service nginx restart &> /dev/null
 	fi
 	
-	curl --silent --retry 2 --user $MYSBUSER:$MYSBPASSD https://$HOSTFQDN:$NGINXHTTPSPORT/MySB/SeedboxInfo.php?user=$User --cacert /etc/MySB/ssl/nginx.cert > /etc/MySB/users/$User.html
+	curl --silent --retry 2 --user $MySB_User:$MySB_Password https://$HostNameFQDN:$Port_HTTPS/MySB/SeedboxInfo.php?user=$User --cacert /etc/MySB/ssl/nginx.cert > /etc/MySB/users/$User.html
 	
 	StatusLSB	
 
@@ -175,19 +175,19 @@ ManageServices() {
 		fi
 	done < /etc/MySB/inc/services
 
-	case "$SCRIPT_name" in
+	case "$ScriptName" in
 		"ruTorrent"|"rTorrent"|"MySB_CleanAll.sh"|"MySB_DeleteUser")	
 			Command="$1"
 		;;									
 	esac
 	
 	if [ "$ServicesToManage" != "" ] || [ "$Command" != "" ]; then
-		echo "---- "`date +"%T"` >> /etc/MySB/logs/$SCRIPT_name.log
+		echo "---- "`date +"%T"` >> /etc/MySB/logs/$ScriptName.log
 		IFS=$' '
 		AllReadyStopped="false"
 		ServicesToManage=`echo $ServicesToManage | sed ':a;s/^[ \t]*//;s/[ \t]*$//'`
 		
-		case "$SCRIPT_name" in
+		case "$ScriptName" in
 			"ruTorrent"|"rTorrent"|"MySB_CleanAll.sh")
 				if [ "$AllReadyStopped" == "false" ];then
 					service cron $Command
@@ -227,11 +227,11 @@ ManageServices() {
 						if [ "$Service" == "pglcmd" ]; then
 							pglcmd restart
 							if [ $? -gt 0 ]; then # if pgl don't start maybe its due to a list update
-								echo `date +"%T"`" --> The updated list of PGL may have failed." >> /etc/MySB/logs/$SCRIPT_name.log
-								echo `date +"%T"`" --> Attempting to clean lists error." >> /etc/MySB/logs/$SCRIPT_name.log
+								echo `date +"%T"`" --> The updated list of PGL may have failed." >> /etc/MySB/logs/$ScriptName.log
+								echo `date +"%T"`" --> Attempting to clean lists error." >> /etc/MySB/logs/$ScriptName.log
 								CheckLog=`cat /var/log/pgl/pglcmd.log | grep failed | grep list.iblocklist.com | awk '{ print $6 }'`		
 								for List in $CheckLog; do
-									echo `date +"%T"`" --> '$List' will be disabled." >> /etc/MySB/logs/$SCRIPT_name.log
+									echo `date +"%T"`" --> '$List' will be disabled." >> /etc/MySB/logs/$ScriptName.log
 									# Comment the list in '/etc/pgl/blocklists.list'
 									List=`echo $List | sed s,/,\\\\\\\\\\/,g`
 									sed -i "s/^$List/#$List/g" /etc/pgl/blocklists.list
@@ -253,7 +253,7 @@ ManageServices() {
 						else
 							case "$Service" in
 								"nginx")
-									case "$SCRIPT_name" in
+									case "$ScriptName" in
 										"MySB_ChangeUserPassword"|"MySB_CreateUser"|"MySB_DeleteUser"|"FirewallAndSecurity.sh")
 											if [ "`pidof nginx`" != "" ]; then
 												service $Service reload
@@ -276,7 +276,7 @@ ManageServices() {
 			fi
 		done
 		unset IFS
-		echo "---- "`date +"%T"` >> /etc/MySB/logs/$SCRIPT_name.log
+		echo "---- "`date +"%T"` >> /etc/MySB/logs/$ScriptName.log
 	fi
 }
 
@@ -391,7 +391,7 @@ StatusSTD() {
 	if [ $? -gt 0 ]; then
 		echo -e "${CRED}Failed !$CEND"
 		echo ""
-		echo -e "${CRED}Looks like somethig is wrong, check log in '/etc/MySB/logs/$SCRIPT_name.*', aborting.$CEND"
+		echo -e "${CRED}Looks like somethig is wrong, check log in '/etc/MySB/logs/$ScriptName.*', aborting.$CEND"
 		EndingScript 1
 	else
 		echo -e "${CGREEN}Done !$CEND"
@@ -808,28 +808,28 @@ ScriptInvoke() {
 		"source"|"bash")
 			#### Prepare our script
 			# vars & funcs
-			echo "source /etc/MySB/inc/vars" > /etc/MySB/temp/${SCRIPT_name}_${SCRIPT}.invoked
-			echo "source /etc/MySB/inc/repos" >> /etc/MySB/temp/${SCRIPT_name}_${SCRIPT}.invoked
-			echo "source /etc/MySB/inc/funcs" >> /etc/MySB/temp/${SCRIPT_name}_${SCRIPT}.invoked
+			echo "source /etc/MySB/inc/vars" > /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked
+			echo "source /etc/MySB/inc/repos" >> /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked
+			echo "source /etc/MySB/inc/funcs" >> /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked
 			if [ -f /lib/lsb/init-functions ]; then
-				echo "source /lib/lsb/init-functions" >> /etc/MySB/temp/${SCRIPT_name}_${SCRIPT}.invoked
+				echo "source /lib/lsb/init-functions" >> /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked
 			fi
 			# copy it
-			cat $MYSCRIPT >> /etc/MySB/temp/${SCRIPT_name}_${SCRIPT}.invoked
+			cat $MYSCRIPT >> /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked
 			# delete lign start with comments
-			sed -i '/^#/d' /etc/MySB/temp/${SCRIPT_name}_${SCRIPT}.invoked
+			sed -i '/^#/d' /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked
 			#delete includes before and after (on top and bottom of every script)
-			sed -i '/includes_before/d' /etc/MySB/temp/${SCRIPT_name}_${SCRIPT}.invoked
-			sed -i '/includes_after/d' /etc/MySB/temp/${SCRIPT_name}_${SCRIPT}.invoked		
+			sed -i '/includes_before/d' /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked
+			sed -i '/includes_after/d' /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked		
 		
-			$METHOD /etc/MySB/temp/${SCRIPT_name}_${SCRIPT}.invoked $Arguments
+			$METHOD /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked $Arguments
 		;;	
 		"screen")
 			# copy it
-			cat $MYSCRIPT > /etc/MySB/temp/${SCRIPT_name}_${SCRIPT}.invoked		
+			cat $MYSCRIPT > /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked		
 
-			screen -dmS ${SCRIPT_name}_${SCRIPT} /bin/bash /etc/MySB/temp/${SCRIPT_name}_${SCRIPT}.invoked $Arguments;
-			WaitingSTD ${SCRIPT_name}_${SCRIPT}
+			screen -dmS ${ScriptName}_${SCRIPT} /bin/bash /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked $Arguments;
+			WaitingSTD ${ScriptName}_${SCRIPT}
 		;;
 	esac
 }
@@ -849,13 +849,13 @@ NetworkPortsGenerator() {
 	fi 
 	
 	# TCP In
-	WHITE_TCP_IN="${SMTP_PORT} ${WHITE_TCP_IN} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}"
+	WHITE_TCP_IN="${SMTP_PORT} ${WHITE_TCP_IN} ${Port_HTTP} ${Port_HTTPS} ${Port_FTP} ${Port_SSH} ${Port_FTP_Data} ${Port_FTP_Passive}"
 	
 	# UDP In
 	WHITE_UDP_IN="${WHITE_UDP_IN}"
 	
 	# TCP Out
-	WHITE_TCP_OUT="${WHITE_TCP_OUT} ${NGINXHTTPPORT} ${NGINXHTTPSPORT} ${NEWFTPPORT} ${NEWSSHPORT} ${NEWFTPDATAPORT} ${FTP_PASSIVE}"
+	WHITE_TCP_OUT="${WHITE_TCP_OUT} ${Port_HTTP} ${Port_HTTPS} ${Port_FTP} ${Port_SSH} ${Port_FTP_Data} ${Port_FTP_Passive}"
 	
 	# UDP Out	
 	WHITE_UDP_OUT="${WHITE_UDP_OUT} ${ResolversPorts}"

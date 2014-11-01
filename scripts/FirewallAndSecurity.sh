@@ -176,12 +176,12 @@ case $1 in
 		
 		# HTTP
 		log_daemon_msg "Allow access to HTTP"
-		iptables -t filter -A INPUT -p tcp --dport $NGINXHTTPPORT -j ACCEPT -m comment --comment "HTTP"
+		iptables -t filter -A INPUT -p tcp --dport $Port_HTTP -j ACCEPT -m comment --comment "HTTP"
 		StatusLSB
 
 		# HTTPS
 		log_daemon_msg "Allow access to HTTPs"
-		iptables -t filter -A INPUT -p tcp --dport $NGINXHTTPSPORT -j ACCEPT -m comment --comment "HTTPs"
+		iptables -t filter -A INPUT -p tcp --dport $Port_HTTPS -j ACCEPT -m comment --comment "HTTPs"
 		StatusLSB
 
 		# Webmin
@@ -193,14 +193,14 @@ case $1 in
 
 		# FTP
 		log_daemon_msg "Allow use of FTP"
-		iptables -t filter -A INPUT -p tcp --dport $NEWFTPPORT -j ACCEPT -m comment --comment "FTP"
-		iptables -t filter -A INPUT -p tcp --dport $NEWFTPDATAPORT -j ACCEPT -m comment --comment "FTP Data"
+		iptables -t filter -A INPUT -p tcp --dport $Port_FTP -j ACCEPT -m comment --comment "FTP"
+		iptables -t filter -A INPUT -p tcp --dport $Port_FTP_Data -j ACCEPT -m comment --comment "FTP Data"
 		iptables -t filter -A INPUT -p tcp --dport 65000:65535 -j ACCEPT -m comment --comment "FTP Passive"
 		StatusLSB		
 
 		# SSH
 		log_daemon_msg "Allow access to SSH"
-		iptables -t filter -A INPUT -p tcp --dport $NEWSSHPORT -j ACCEPT -m comment --comment "SSH"
+		iptables -t filter -A INPUT -p tcp --dport $Port_SSH -j ACCEPT -m comment --comment "SSH"
 		StatusLSB
 		
 		# OpenVPN
@@ -216,7 +216,7 @@ case $1 in
 			log_daemon_msg "Allow use of OpenVPN TUN With Redirect Gateway"
 			iptables -t filter -A INPUT -i tun0 -j ACCEPT
 			iptables -t filter -A INPUT -p $OPENVPNPROTO --dport $OVPNPORT1 -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t filter -A FORWARD -i tun0 -o $PRIMARYINET -s 10.0.0.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
+			iptables -t filter -A FORWARD -i tun0 -o $PrimaryInet -s 10.0.0.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t filter -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t nat -A POSTROUTING -s 10.0.0.0/24 -j MASQUERADE -m comment --comment "OpenVPN"	
 			StatusLSB

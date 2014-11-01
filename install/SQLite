@@ -24,15 +24,106 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-#### Install packages
-PackagesManage install "sqlite3 php5-sqlite"
-
 #### Create DB
-cd /etc/MySB/db/
-sqlite3 MySB.db < /etc/MySB/templates/MySB_2014-10-30.dump.sql;
+if [ ! -f /etc/MySB/db/MySB.db ]; then
+	sqlite3 /etc/MySB/db/MySB.db < /etc/MySB/templates/MySB_2014-10-31.dump.sql;
+fi
 
+#### Import users files to database
+UsersList=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
+cd /etc/MySB/users/
+for SeedboxUser in $UsersList; do
+	UserName=$(cat $SeedboxUser.info | grep 'Username=' | awk '{ print $2 }')
+	UserEmail=$(cat $SeedboxUser.info | grep 'E-mail=' | awk '{ print $2 }')
+	UserPassword=$(cat $SeedboxUser.info | grep 'Password=' | awk '{ print $2 }')
+	UserRPC=$(cat $SeedboxUser.info | grep 'RPC=' | awk '{ print $2 }')
+	UserRPC=$(echo $UserRPC | sed 's,/,\\/,g;')
+	UserSSH=$(cat $SeedboxUser.info | grep 'SSH=' | awk '{ print $2 }')
+	UserSSH=$(echo $UserSSH | sed 's/YES/1/g;' | sed 's/NO/0/g;')
+	UserSudo=$(cat $SeedboxUser.info | grep 'Sudo powers=' | awk '{ print $3 }')
+	UserSudo=$(echo $UserSudo | sed 's/YES/1/g;' | sed 's/NO/0/g;')
+	UserIP=$(cat $SeedboxUser.info | grep 'IP Address=' | awk '{ print $3 }')
+	UserIP=$(echo $UserIP | sed 's/,/ /g;')
+	UserScgiPort=$(cat $SeedboxUser.info | grep 'SCGI port=' | awk '{ print $3 }')
+	UserRtorrentPort=$(cat $SeedboxUser.info | grep 'rTorrent port=' | awk '{ print $3 }')
+	UserHomeDir=$(cat $SeedboxUser.info | grep 'Home=' | awk '{ print $2 }')
+	
+	sqlite3 /etc/MySB/db/MySB.db\
+		"INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,fixed_ip,scgi_port,rtorrent_port,home_dir)\
+		VALUES (\"$UserName\",\"$UserEmail\",\"$UserPassword\",\"$UserRPC\",\"$UserSSH\",\"$UserSudo\",\"$UserIP\",\"$UserScgiPort\",\"$UserRtorrentPort\",\"$UserHomeDir\");"
+done
 
-
+#### Import files infos to database
+# ----- System info
+if [ -f /etc/MySB/infos/version.info ]; then
+	MySB_CurrentVersion=`cat /etc/MySB/infos/version.info`
+	sqlite3 $SQLiteDB "INSERT into system (version) VALUES (\"$(MySB_CurrentVersion)\");"
+	if [ $? -eq 0 ]; then
+		rm /etc/MySB/infos/version.info
+	fi
+fi
+if [ -f /etc/MySB/infos/hostfqdn.info ]; then
+	sqlite3 $SQLiteDB "UPDATE system SET hostname = '$(cat /etc/MySB/infos/hostfqdn.info)' WHERE version = '$(MySB_CurrentVersion)';"
+	if [ $? -eq 0 ]; then
+		rm /etc/MySB/infos/hostfqdn.info
+	fi
+fi
+if [ -f /etc/MySB/infos/ipaddress.info ]; then
+	sqlite3 $SQLiteDB "UPDATE system SET ipv4 = '$(cat /etc/MySB/infos/ipaddress.info)' WHERE version = '$(MySB_CurrentVersion)';"
+	if [ $? -eq 0 ]; then
+		rm /etc/MySB/infos/ipaddress.info
+	fi
+fi
+if [ -f /etc/MySB/infos/primaryinet.info ]; then
+	sqlite3 $SQLiteDB "UPDATE system SET primary_inet = '$(cat /etc/MySB/infos/primaryinet.info)' WHERE version = '$(MySB_CurrentVersion)';"
+	if [ $? -eq 0 ]; then
+		rm /etc/MySB/infos/primaryinet.info
+	fi
+fi
+if [ -f /etc/MySB/infos/timezone.info ]; then
+	sqlite3 $SQLiteDB "UPDATE system SET timezone = '$(cat /etc/MySB/infos/timezone.info)' WHERE version = '$(MySB_CurrentVersion)';"
+	if [ $? -eq 0 ]; then
+		rm /etc/MySB/infos/timezone.info
+	fi
+fi
+if [ -f /etc/MySB/infos/MySB_password.info ]; then
+	sqlite3 $SQLiteDB "UPDATE system SET mysb_user = '$(cat /etc/MySB/infos/MySB_password.info | grep user | awk '{ print $2 }')' WHERE version = '$(MySB_CurrentVersion)';"
+	sqlite3 $SQLiteDB "UPDATE system SET mysb_password = '$(cat /etc/MySB/infos/MySB_password.info | grep pass | awk '{ print $2 }')' WHERE version = '$(MySB_CurrentVersion)';"
+	if [ $? -eq 0 ]; then
+		rm /etc/MySB/infos/MySB_password.info
+	fi
+fi
+if [ -f /etc/MySB/infos/port_ftp.info ]; then
+	sqlite3 $SQLiteDB "UPDATE system SET port_ftp = '$(cat /etc/MySB/infos/port_ftp.info)' WHERE version = '$(MySB_CurrentVersion)';"
+	if [ $? -eq 0 ]; then
+		rm /etc/MySB/infos/port_ftp.info
+	fi
+fi
+if [ -f /etc/MySB/infos/port_ftpdata.info ]; then
+	sqlite3 $SQLiteDB "UPDATE system SET port_ftp_data = '$(cat /etc/MySB/infos/port_ftpdata.info)' WHERE version = '$(MySB_CurrentVersion)';"
+	if [ $? -eq 0 ]; then
+		rm /etc/MySB/infos/port_ftpdata.info
+	fi
+fi
+if [ -f /etc/MySB/infos/port_ssh.info ]; then
+	sqlite3 $SQLiteDB "UPDATE system SET port_ssh = '$(cat /etc/MySB/infos/port_ssh.info)' WHERE version = '$(MySB_CurrentVersion)';"
+	if [ $? -eq 0 ]; then
+		rm /etc/MySB/infos/port_ssh.info
+	fi
+fi
+if [ -f /etc/MySB/infos/port_https.info ]; then
+	sqlite3 $SQLiteDB "UPDATE system SET port_https = '$(cat /etc/MySB/infos/port_https.info)' WHERE version = '$(MySB_CurrentVersion)';"
+	if [ $? -eq 0 ]; then
+		rm /etc/MySB/infos/port_https.info
+	fi
+fi
+if [ -f /etc/MySB/infos/port_http.info ]; then
+	sqlite3 $SQLiteDB "UPDATE system SET port_http = '$(cat /etc/MySB/infos/port_http.info)' WHERE version = '$(MySB_CurrentVersion)';"
+	if [ $? -eq 0 ]; then
+		rm /etc/MySB/infos/port_http.info
+	fi
+fi
+# ----- System info
 
 
 # Créer la base via le script. En utilisant GitHub, la structure pourra être mise à jour, mais les données aussi ce qui aura pour conséquence de les supprimer.

@@ -1,6 +1,6 @@
 #!/bin/bash 
 # -----------------------------------------
-MYSBCURRENTVERSION=v1.2
+MySB_CurrentVersion=v1.2
 # -----------------------------------------
 if [ -f /etc/MySB/inc/includes_before ]; then source /etc/MySB/inc/includes_before; fi
 # -----------------------------------------
@@ -79,8 +79,6 @@ echo
 echo -e "${CRED}############################################################$CEND"
 echo -e "${CRED}#$CEND ${CYELLOW}At the end of the installation, you will receive an email.$CEND"
 echo -e "${CRED}#$CEND ${CYELLOW}It lists information about your account.$CEND"
-#echo -e "${CRED}#$CEND ${CYELLOW}A temporary password will be assigned to your account.$CEND"
-#echo -e "${CRED}#$CEND ${CYELLOW}You will need to change it when receiving email.$CEND"
 echo -e "${CRED}# IMPORTANT:$CEND ${CYELLOW}Remember to also check the SPAM folder...$CEND"
 echo -e "${CRED}############################################################$CEND"
 echo
@@ -96,7 +94,7 @@ if [ "$COMMAND" == "" ]; then
 		#### Banner
 		echo -e "${CGREEN}############################################################$CEND"
 		echo -e "${CGREEN}#$CEND"
-		echo -e "${CGREEN}#$CEND ${CYELLOW}MySB$CEND ${CRED}$MYSBCURRENTVERSION$CEND"
+		echo -e "${CGREEN}#$CEND ${CYELLOW}MySB$CEND ${CRED}$MySB_CurrentVersion$CEND"
 		echo -e "${CGREEN}#$CEND ${CYELLOW}by toulousain79$CEND ---> ${CBLUE}https://github.com/toulousain79/$CEND"
 		echo -e "${CGREEN}#$CEND"
 		echo -e "${CGREEN}############################################################$CEND"
@@ -128,7 +126,7 @@ if [ "$COMMAND" == "" ]; then
 		#### download files from Git
 		echo -e -n "${CBLUE}Download files from GitHub$CEND..."
 
-		git clone -b $MYSBCURRENTVERSION https://github.com/toulousain79/MySB.git /etc/MySB >> /tmp/`basename $0`.log
+		git clone -b $MySB_CurrentVersion https://github.com/toulousain79/MySB.git /etc/MySB >> /tmp/`basename $0`.log
 		
 		if [ $? -gt 0 ]; then
 			echo -e -n "${CRED}Failed !$CEND"
@@ -157,7 +155,10 @@ if [ "$COMMAND" == "" ]; then
 			fi
 			if [ ! -d /etc/MySB/temp ]; then
 				mkdir /etc/MySB/temp
-			fi	
+			fi
+			if [ ! -d /etc/MySB/db ]; then
+				mkdir /etc/MySB/db
+			fi			
 			if [ ! -d /etc/MySB/web/logs/install ]; then
 				mkdir -p /etc/MySB/web/logs/install
 			fi
@@ -188,7 +189,11 @@ if [ "$COMMAND" == "" ]; then
 			dos2unix /etc/MySB/install/*
 			dos2unix /etc/MySB/templates/*
 			
-			echo "$MYSBCURRENTVERSION" > /etc/MySB/infos/version.info
+			if [ ! -f /etc/MySB/db/MySB.db ]; then
+				sqlite3 /etc/MySB/db/MySB.db < /etc/MySB/templates/MySB_2014-10-31.dump.sql;
+			fi
+
+			sqlite3 /etc/MySB/db/MySB.db "INSERT into system (version) VALUES (\"$MySB_CurrentVersion\");"
 			
 			#### Some questions
 			/bin/bash /etc/MySB/install/Questions			
