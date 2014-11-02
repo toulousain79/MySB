@@ -1,21 +1,10 @@
 ----
 -- phpLiteAdmin database dump (http://phpliteadmin.googlecode.com)
 -- phpLiteAdmin version: 1.9.5
--- Exported: 5:32pm on October 31, 2014 (CET)
+-- Exported: 11:46am on November 2, 2014 (CET)
 -- database file: ../db/MySB.db
 ----
 BEGIN TRANSACTION;
-
-----
--- Table structure for vars
-----
-CREATE TABLE [vars] (
-[id_vars] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT
-);
-
-----
--- Data dump for vars, a total of 0 rows
-----
 
 ----
 -- Table structure for renting
@@ -62,20 +51,6 @@ CREATE TABLE [trakers_subdomains] (
 ----
 -- Data dump for trakers_subdomains, a total of 0 rows
 ----
-
-----
--- Table structure for whiteliste
-----
-CREATE TABLE [whiteliste] (
-[id_whitliste] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
-[fail2ban] VARCHAR(128) DEFAULT '''127.0.0.1/32''' NULL,
-[peerguadian] VARCHAR(128) DEFAULT '''10.0.0.0/24,10.0.1.0/24''' NULL
-);
-
-----
--- Data dump for whiteliste, a total of 1 rows
-----
-INSERT INTO "whiteliste" ("id_whitliste","fail2ban","peerguadian") VALUES ('1','127.0.0.1/32','10.0.0.0/24,10.0.1.0/24');
 
 ----
 -- Table structure for system_services
@@ -133,20 +108,6 @@ CREATE TABLE [list_blocklists] (
 ----
 
 ----
--- Table structure for smtp
-----
-CREATE TABLE [smtp] (
-[id_smtp] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
-[smtp_provider] VARCHAR(5)  UNIQUE NULL,
-[smtp_username] VARCHAR(64)  UNIQUE NULL,
-[smtp_passwd] VARCHAR(64)  UNIQUE NULL
-);
-
-----
--- Data dump for smtp, a total of 0 rows
-----
-
-----
 -- Table structure for users
 ----
 CREATE TABLE [users] (
@@ -154,15 +115,42 @@ CREATE TABLE [users] (
 [users_ident] VARCHAR(32)  UNIQUE NOT NULL,
 [users_email] VARCHAR(260)  UNIQUE NOT NULL,
 [users_passwd] VARCHAR(32)  NULL,
-[sftp] BOOLEAN DEFAULT '''''''1''''''' NOT NULL,
-[sudo] BOOLEAN DEFAULT '''''''0''''''' NOT NULL,
-[admin] BOOLEAN DEFAULT '''''''0''''''' NOT NULL,
+[rpc] VARCHAR(64)  NULL,
+[sftp] BOOLEAN DEFAULT '''''''''''''''''''''''''''''''1''''''''''''''''''''''''''''''' NOT NULL,
+[sudo] BOOLEAN DEFAULT '''''''''''''''''''''''''''''''0''''''''''''''''''''''''''''''' NOT NULL,
+[admin] BOOLEAN DEFAULT '''''''''''''''''''''''''''''''0''''''''''''''''''''''''''''''' NOT NULL,
 [fixed_ip] VARCHAR(128)  NULL,
-[no_ip] VARCHAR(128)  NULL
+[no_ip] VARCHAR(128)  NULL,
+[scgi_port] INTEGER  NULL
 );
 
 ----
 -- Data dump for users, a total of 0 rows
+----
+
+----
+-- Table structure for system
+----
+CREATE TABLE [system] (
+[id_system] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[version] VARCHAR(6)  UNIQUE NOT NULL,
+[hostname] VARCHAR(128)  UNIQUE NULL,
+[ipv4] VARCHAR(15)  UNIQUE NULL,
+[primary_inet] VARCHAR(16)  UNIQUE NULL,
+[timezone] VARCHAR(64)  UNIQUE NULL,
+[mysb_user] VARCHAR(32)  UNIQUE NULL,
+[mysb_password] VARCHAR(32)  UNIQUE NULL,
+[cert_password] VARCHAR(13)  NULL,
+[port_ftp] INTEGER  UNIQUE NULL,
+[port_ftp_data] INTEGER  UNIQUE NULL,
+[port_ftp_passive] VARCHAR(11)  UNIQUE NULL,
+[port_ssh] INTEGER  UNIQUE NULL,
+[port_https] INTEGER  UNIQUE NULL,
+[port_http] INTEGER  UNIQUE NULL
+);
+
+----
+-- Data dump for system, a total of 0 rows
 ----
 
 ----
@@ -173,7 +161,7 @@ CREATE TABLE [services] (
 [serv_name] VARCHAR(32)  UNIQUE NULL,
 [ports_tcp] VARCHAR(32)  NULL,
 [ports_udp] VARCHAR(32)  NULL,
-[is_installed] BOOLEAN DEFAULT 'N' NULL
+[is_installed] BOOLEAN DEFAULT '0' NULL
 );
 
 ----
@@ -191,28 +179,36 @@ INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_in
 INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('10','DNScrypt-proxy',NULL,'53 54 443 2053 5353','N');
 
 ----
--- Table structure for system
+-- Table structure for smtp
 ----
-CREATE TABLE [system] (
-[id_system] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
-[version] VARCHAR(6)  UNIQUE NOT NULL,
-[hostname] VARCHAR(128)  UNIQUE NULL,
-[ipv4] VARCHAR(15)  UNIQUE NULL,
-[primary_inet] VARCHAR(16)  UNIQUE NULL,
-[timezone] VARCHAR(64)  UNIQUE NULL,
-[mysb_user] VARCHAR(32)  UNIQUE NULL,
-[mysb_password] VARCHAR(32)  UNIQUE NULL,
-[port_ftp] INTEGER  UNIQUE NULL,
-[port_ftp_data] INTEGER  UNIQUE NULL,
-[port_ftp_passive] VARCHAR(11)  UNIQUE NULL,
-[port_ssh] INTEGER  UNIQUE NULL,
-[port_https] INTEGER  UNIQUE NULL,
-[port_http] INTEGER  UNIQUE NULL
+CREATE TABLE [smtp] (
+[id_smtp] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[smtp_provider] VARCHAR(5)  UNIQUE NULL,
+[smtp_username] VARCHAR(64)  UNIQUE NULL,
+[smtp_passwd] VARCHAR(64)  UNIQUE NULL,
+[smtp_host] VARCHAR(128)  UNIQUE NULL,
+[smtp_port] VARCHAR(5)  UNIQUE NULL
 );
 
 ----
--- Data dump for system, a total of 0 rows
+-- Data dump for smtp, a total of 0 rows
 ----
+
+----
+-- Table structure for vars
+----
+CREATE TABLE [vars] (
+[id_vars] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[fail2ban_whitelist] VARCHAR(12)  NULL,
+[vpn_ip] VARCHAR(37)  NULL,
+[white_tcp_port_out] VARCHAR(16)  NULL,
+[white_udp_port_out] VARCHAR(16)  NULL
+);
+
+----
+-- Data dump for vars, a total of 1 rows
+----
+INSERT INTO "vars" ("id_vars","fail2ban_whitelist","vpn_ip","white_tcp_port_out","white_udp_port_out") VALUES ('1','127.0.0.1/32','10.0.0.0/24,10.0.1.0/24','80 443',NULL);
 
 ----
 -- structure for index sqlite_autoindex_system_services_1 on table system_services
@@ -230,32 +226,12 @@ CREATE TABLE [system] (
 ;
 
 ----
--- structure for index sqlite_autoindex_smtp_1 on table smtp
-----
-;
-
-----
--- structure for index sqlite_autoindex_smtp_2 on table smtp
-----
-;
-
-----
--- structure for index sqlite_autoindex_smtp_3 on table smtp
-----
-;
-
-----
 -- structure for index sqlite_autoindex_users_1 on table users
 ----
 ;
 
 ----
 -- structure for index sqlite_autoindex_users_2 on table users
-----
-;
-
-----
--- structure for index sqlite_autoindex_services_1 on table services
 ----
 ;
 
@@ -321,6 +297,36 @@ CREATE TABLE [system] (
 
 ----
 -- structure for index sqlite_autoindex_system_13 on table system
+----
+;
+
+----
+-- structure for index sqlite_autoindex_services_1 on table services
+----
+;
+
+----
+-- structure for index sqlite_autoindex_smtp_1 on table smtp
+----
+;
+
+----
+-- structure for index sqlite_autoindex_smtp_2 on table smtp
+----
+;
+
+----
+-- structure for index sqlite_autoindex_smtp_3 on table smtp
+----
+;
+
+----
+-- structure for index sqlite_autoindex_smtp_4 on table smtp
+----
+;
+
+----
+-- structure for index sqlite_autoindex_smtp_5 on table smtp
 ----
 ;
 COMMIT;
