@@ -88,9 +88,6 @@ case $1 in
 		Fail2banWhiteList=`echo $Fail2banWhiteList | sed -e "s/^//g;"`
 		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed -e "s/^//g;"`
 		
-		#### Main User IPs
-		MainUserIPs=$(cat /etc/MySB/users/$MainUser.info | grep "IP Address=" | awk '{ print $3 }' | sed 's/,/ /g;')
-		
 		StatusLSB
 
 		# Clean users IP Addresses
@@ -226,7 +223,7 @@ case $1 in
 		# PlexMedia Server
 		if [ "$IsInstalled_PlexMedia" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
 			log_daemon_msg "Allow use of Plex Media Server on TCP"
-			for PlexTcpPort in $PLEXMEDIA_TCP_PORTS; do 
+			for PlexTcpPort in $Ports_TCP_PlexMedia; do 
 				iptables -t filter -A INPUT -p tcp --dport $PlexTcpPort -j ACCEPT -m comment --comment "Plex Media Server TCP"
 			done
 			unset PlexTcpPort
@@ -234,7 +231,7 @@ case $1 in
 
 			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 				log_daemon_msg "Allow use of Plex Media Server on UDP (OpenVPN)"
-				for PlexUdpPort in $PLEXMEDIA_UDP_PORTS; do 
+				for PlexUdpPort in $Ports_UDP_PlexMedia; do 
 					iptables -t filter -A INPUT -p udp --dport $PlexUdpPort -j ACCEPT -m comment --comment "Plex Media Server UDP"
 				done
 				unset PlexUdpPort
@@ -265,7 +262,8 @@ case $1 in
 			
 			# Delete IP restriction for NginX			
 			log_daemon_msg "Allow access to some page for '$MainUser'"
-			for ip in $MainUserIPs; do 
+
+			for ip in $(echo $MainUserIPs | sed 's/,/ /g;'); do 
 				awk '{ print } /## Restricted to mainuser ##/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
 				perl -pi -e "s/<ip>/$ip/g" /etc/MySB/files/MySB_location.conf
 				mv /etc/MySB/files/MySB_location.conf /etc/nginx/locations/MySB.conf
