@@ -78,12 +78,12 @@ done
 echo
 echo -e "${CYELLOW}Do you want to use an external SMTP server? (Good for safe sending emails.).$CEND"
 echo -e "${CYELLOW}Choose between ${CGREEN}LOCAL$CEND${CYELLOW} or listed providers $CEND${CGREEN}FREE$CEND|$CEND${CGREEN}OVH$CEND${CYELLOW}|$CEND${CGREEN}GMAIL$CEND|$CEND${CGREEN}YAHOO$CEND${CYELLOW}. Only SSL transactions will be used (SSL/465).$CEND"
-GetString NO "What is your provider? " SMTP LOCAL
+GetString NO "What is your provider? " Smtp_Provider LOCAL
 
-SMTP=`echo $SMTP | tr '[:lower:]' '[:upper:]'`
-if [ "$SMTP" != "LOCAL" ]; then	
-	GetString NO "What is the username for the SMTP server ${CGREEN}$SMTP$CEND?" SMTP_USER
-	GetString YES "What is the password for the SMTP server ${CGREEN}$SMTP$CEND?" SMTP_PASS
+Smtp_Provider=`echo $Smtp_Provider | tr '[:lower:]' '[:upper:]'`
+if [ "$Smtp_Provider" != "LOCAL" ]; then	
+	GetString NO "What is the username for the SMTP server ${CGREEN}$Smtp_Provider$CEND?" Smtp_Username
+	GetString YES "What is the password for the SMTP server ${CGREEN}$Smtp_Provider$CEND?" Smtp_Password
 fi
 
 # User e-mail
@@ -142,7 +142,7 @@ GetString NO "Install Seedbox-Manager (recommended)? " IsInstalled_Manager YES
 echo
 GetString NO "Install CakeBox Light? " IsInstalled_Cakebox YES
 if [ "$IsInstalled_Cakebox" == "YES" ]; then
-	GetString NO "CakeBox port: " Port_Cakebox 8887
+	GetString NO "CakeBox port: " Ports_Cakebox 8887
 fi
 
 # Plexmedia server
@@ -153,7 +153,7 @@ GetString NO "Install Plex Media? " IsInstalled_PlexMedia YES
 echo
 GetString NO "Install Webmin? " IsInstalled_Webmin YES
 if [ "$IsInstalled_Webmin" == "YES" ]; then
-	GetString NO "Webmin port  (usually 10000): " Port_Webmin 8890
+	GetString NO "Webmin port  (usually 10000): " Ports_Webmin 8890
 fi
 
 # OpenVPN
@@ -164,7 +164,7 @@ if [ "`ls -la /dev/net/tun &>2 /dev/null && echo $?`" == "0" ]; then
 		GetString NO  "OpenVPN port with redirect gateway: " Port_OpenVPN_WithGW 8893
 		GetString NO  "OpenVPN port without redirect gateway: " Port_OpenVPN_WithoutGW 8894
 		echo -e "${CYELLOW}You can use OpenVPN with TCP or UDP.$CEND ${CYELLOW}(TCP is recommended)$CEND"
-		GetString NO "Which protocol, 'UDP' OR 'TCP' ? : " OPENVPNPROTO TCP
+		GetString NO "Which protocol, 'UDP' OR 'TCP' ? : " OpenVPN_Proto TCP
 	fi
 else
 	echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
@@ -237,7 +237,7 @@ sqlite3 $SQLiteDB\
 # 'smtp' table
 sqlite3 $SQLiteDB\
 	"INSERT into smtp (smtp_provider,smtp_username,smtp_passwd)\
-	VALUES (\"$SMTP\",\"$SMTP_USER\",\"$SMTP_PASS\");"
+	VALUES (\"$Smtp_Provider\",\"$Smtp_Username\",\"$Smtp_Password\");"
 	
 # 'users' table (Main user)
 sqlite3 $SQLiteDB\
@@ -250,7 +250,7 @@ if [ "$IsInstalled_Manager" == "YES" ]; then
 fi
 
 if [ "$IsInstalled_Cakebox" == "YES" ]; then
-	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1', ports_tcp = '$Port_Cakebox' WHERE serv_name = 'CakeBox-Light';"
+	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1', ports_tcp = '$Ports_Cakebox' WHERE serv_name = 'CakeBox-Light';"
 fi
 
 if [ "$IsInstalled_PlexMedia" == "YES" ]; then
@@ -258,12 +258,12 @@ if [ "$IsInstalled_PlexMedia" == "YES" ]; then
 fi
 
 if [ "$IsInstalled_Webmin" == "YES" ]; then
-	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1', ports_tcp = '$Port_Webmin' WHERE serv_name = 'Webmin';"
+	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1', ports_tcp = '$Ports_Webmin' WHERE serv_name = 'Webmin';"
 fi
 
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1' WHERE serv_name = 'OpenVPN';"
-	case "$OPENVPNPROTO" in
+	case "$OpenVPN_Proto" in
 		"TCP")
 			sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1', ports_tcp = '$Port_OpenVPN_WithGW $Port_OpenVPN_WithoutGW', ports_udp = '' WHERE serv_name = 'OpenVPN';"		
 		;;

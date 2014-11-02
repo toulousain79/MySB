@@ -103,38 +103,35 @@ else
 	MySB_PeerBlock="none"
 fi
 
-Port_Cakebox="`sqlite3 $SQLiteDB \"SELECT ports_tcp FROM services WHERE serv_name = 'CakeBox-Light'\"`"
-Port_Webmin="`sqlite3 $SQLiteDB \"SELECT ports_tcp FROM services WHERE serv_name = 'Webmin'\"`"
+Ports_Cakebox="`sqlite3 $SQLiteDB \"SELECT ports_tcp FROM services WHERE serv_name = 'CakeBox-Light'\"`"
+Ports_Webmin="`sqlite3 $SQLiteDB \"SELECT ports_tcp FROM services WHERE serv_name = 'Webmin'\"`"
+Ports_OpenVPN="`sqlite3 $SQLiteDB \"SELECT ports_tcp FROM services WHERE serv_name = 'OpenVPN'\"`"
+if [ ! -z "$Ports_OpenVPN" ]; then
+	OpenVPN_Proto="tcp"
+	Port_OpenVPN_WithGW=$(echo $ports | awk '{ print $1 }')
+	Port_OpenVPN_WithoutGW=$(echo $ports | awk '{ print $2 }')
+else
+	Ports_OpenVPN="`sqlite3 $SQLiteDB \"SELECT ports_udp FROM services WHERE serv_name = 'OpenVPN'\"`"
+	OpenVPN_Proto="udp"
+	Port_OpenVPN_WithGW=$(echo $ports | awk '{ print $1 }')
+	Port_OpenVPN_WithoutGW=$(echo $ports | awk '{ print $2 }')	
+fi
 # ----- Services info
 
-Port_OpenVPN_WithGW
-Port_OpenVPN_WithoutGW
-
-if [ -f /etc/MySB/infos/port_openvpn.info ]; then
-	OPENVPNPORT=`cat /etc/MySB/infos/port_openvpn.info`
-fi
-if [ -f /etc/MySB/infos/proto_openvpn.info ]; then
-	OPENVPNPROTO=`cat /etc/MySB/infos/proto_openvpn.info`
-	OPENVPNPROTO=`echo $OPENVPNPROTO | tr '[:upper:]' '[:lower:]'`
-fi
-
-
+# ----- SMTP info
+sqlite3 $SQLiteDB "SELECT * FROM system WHERE 1" | while read ROW; do
+    # Parsing data (sqlite3 returns a pipe separated string)
+    Smtp_Provider="`echo $ROW | awk '{split($0,a,\"|\"); print a[2]}'`"
+    Smtp_Username="`echo $ROW | awk '{split($0,a,\"|\"); print a[3]}'`"
+	Smtp_Password="`echo $ROW | awk '{split($0,a,\"|\"); print a[4]}'`"
+	Smtp_Host="`echo $ROW | awk '{split($0,a,\"|\"); print a[5]}'`"
+	Smtp_Port="`echo $ROW | awk '{split($0,a,\"|\"); print a[6]}'`"
+done
+# ----- SMTP info
 
 
 
 
-if [ -f /etc/MySB/infos/smtp.info ]; then
-	SMTP=`cat /etc/MySB/infos/smtp.info`
-fi
-if [ -f /etc/MySB/infos/smtp_port.info ]; then
-	SMTP_PORT=`cat /etc/MySB/infos/smtp_port.info`
-fi
-if [ -f /etc/MySB/infos/smtp_host.info ]; then
-	SMTP_HOST=`cat /etc/MySB/infos/smtp_host.info`
-fi
-if [ -f /etc/MySB/infos/smtp_security.info ]; then
-	SMTP_SECURITY=`cat /etc/MySB/infos/smtp_security.info`
-fi
 
 # ----- Renting infos
 if [ -f /etc/MySB/inc/renting ]; then
@@ -152,12 +149,6 @@ if [ -f /etc/MySB/infos/password.info ]; then
 fi
 if [ -f /etc/MySB/infos/myip.info ]; then
 	MYIP=`cat /etc/MySB/infos/myip.info`
-fi
-if [ -f /etc/MySB/infos/smtp_pass.info ]; then
-	SMTP_PASS=`cat /etc/MySB/infos/smtp_pass.info`
-fi
-if [ -f /etc/MySB/infos/smtp_user.info ]; then
-	SMTP_USER=`cat /etc/MySB/infos/smtp_user.info`
 fi
 # ----- Tempory, used for the first install
 

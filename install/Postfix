@@ -30,7 +30,7 @@ PackagesManage install "postfix stunnel4 gnutls-bin"
 #### Create certificates
 ScriptInvoke 'source' '/etc/MySB/install/Certificates' 'CreateServiceCertificate' 'postfix'
 
-if [ "$SMTP" != "LOCAL" ]; then
+if [ "$Smtp_Provider" != "LOCAL" ]; then
 	#### Create certificates
 	ScriptInvoke 'source' '/etc/MySB/install/Certificates' 'CreateServiceCertificate' 'stunnel'
 	
@@ -69,9 +69,9 @@ echo "security: root" >> /etc/aliases
 echo "root: $MainUserEmail" >> /etc/aliases
 newaliases
 
-SMTP_HOST="localhost"
-SMTP_PORT="25"
-SMTP_SECURITY="NOSSL"
+Smtp_Host="localhost"
+Smtp_Port="25"
+Smtp_Security="NOSSL"
 postconf -e "relayhost = "
 
 # Correcting SSL vulnerability (poodle)
@@ -80,40 +80,40 @@ postconf -e 'smtpd_tls_protocols=!SSLv2,!SSLv3'
 postconf -e 'smtp_tls_protocols=!SSLv2,!SSLv3'
 
 #### Only by choise of user
-if [ "$SMTP" != "LOCAL" ]; then
+if [ "$Smtp_Provider" != "LOCAL" ]; then
 	postconf -e "smtp_host_lookup = dns, native"
 	postconf -e "default_transport = smtp"
 
-	case "$SMTP" in
+	case "$Smtp_Provider" in
 		"FREE")
-			SMTP_HOST="smtp.free.fr"
-			SMTP_PORT=465
-			SMTP_SECURITY=SSL			
+			Smtp_Host="smtp.free.fr"
+			Smtp_Port=465
+			Smtp_Security=SSL			
 		;;
 		"YAHOO")
-			SMTP_HOST="smtp.mail.yahoo.fr"
-			SMTP_PORT=465
-			SMTP_SECURITY=SSL	
+			Smtp_Host="smtp.mail.yahoo.fr"
+			Smtp_Port=465
+			Smtp_Security=SSL	
 		;;		
 		"OVH")
-			SMTP_HOST="ssl0.ovh.net"
-			SMTP_PORT=465
-			SMTP_SECURITY=SSL
+			Smtp_Host="ssl0.ovh.net"
+			Smtp_Port=465
+			Smtp_Security=SSL
 		;;
 		"GMAIL")
-			SMTP_HOST="smtp.gmail.com"
-			SMTP_PORT=465
-			SMTP_SECURITY=SSL
+			Smtp_Host="smtp.gmail.com"
+			Smtp_Port=465
+			Smtp_Security=SSL
 		;;		
 	esac
 	
-	case "$SMTP_SECURITY" in
+	case "$Smtp_Security" in
 		"SSL")
 			# stunnel.conf
 			cp /etc/MySB/templates/etc.stunnel.stunnel.conf.template /etc/stunnel/stunnel.conf		
-			perl -pi -e "s/<smtp_host>:<smtp_port>/$SMTP_HOST:$SMTP_PORT/g" /etc/stunnel/stunnel.conf
+			perl -pi -e "s/<smtp_host>:<smtp_port>/$Smtp_Host:$Smtp_Port/g" /etc/stunnel/stunnel.conf
 			perl -pi -e "s/ENABLED=0/ENABLED=1/g" /etc/default/stunnel4
-			echo "127.0.0.1:23000              $SMTP_USER:$SMTP_PASS" > /etc/postfix/sasl/sasl_passwd
+			echo "127.0.0.1:23000              $Smtp_Username:$Smtp_Password" > /etc/postfix/sasl/sasl_passwd
 			postconf -e "relayhost = 127.0.0.1:23000"		
 			postconf -e "smtp_sasl_auth_enable = yes"
 			postconf -e "smtp_sasl_security_options = noanonymous"
@@ -127,7 +127,7 @@ if [ "$SMTP" != "LOCAL" ]; then
 			postconf -e "smtp_sasl_security_options = noanonymous"
 			postconf -e "smtp_sasl_password_maps = hash:/etc/postfix/sasl/sasl_passwd"	
 			postconf -e "smtp_sasl_mechanism_filter = plain"
-			postconf -e "relayhost = $SMTP_HOST:$SMTP_PORT"
+			postconf -e "relayhost = $Smtp_Host:$Smtp_Port"
 			postconf -e "tls_random_source = dev:/dev/urandom"
 			postconf -e "smtp_use_tls = yes"
 			postconf -e "smtp_tls_note_starttls_offer = yes"		
@@ -146,9 +146,7 @@ if [ "$SMTP" != "LOCAL" ]; then
 	postmap /etc/postfix/sasl/sasl_passwd
 fi
 
-echo "$SMTP_HOST" > /etc/MySB/infos/smtp_host.info
-echo "$SMTP_PORT" > /etc/MySB/infos/smtp_port.info
-echo "$SMTP_SECURITY" > /etc/MySB/infos/smtp_security.info
+sqlite3 $SQLiteDB "UPDATE smtp SET smtp_host = '$(Smtp_Host)' and smtp_port = '$(Smtp_Port)' WHERE smtp_provider = '$(Smtp_Provider)';"
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
