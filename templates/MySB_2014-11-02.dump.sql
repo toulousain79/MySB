@@ -1,7 +1,7 @@
 ----
 -- phpLiteAdmin database dump (http://phpliteadmin.googlecode.com)
 -- phpLiteAdmin version: 1.9.5
--- Exported: 10:25pm on November 2, 2014 (CET)
+-- Exported: 10:40pm on November 2, 2014 (CET)
 -- database file: ../db/MySB.db
 ----
 BEGIN TRANSACTION;
@@ -99,31 +99,6 @@ CREATE TABLE [system] (
 ----
 -- Data dump for system, a total of 0 rows
 ----
-
-----
--- Table structure for services
-----
-CREATE TABLE [services] (
-[id_services] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
-[serv_name] VARCHAR(32)  UNIQUE NULL,
-[ports_tcp] VARCHAR(32)  NULL,
-[ports_udp] VARCHAR(32)  NULL,
-[is_installed] BOOLEAN DEFAULT '0' NULL
-);
-
-----
--- Data dump for services, a total of 10 rows
-----
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('1','Seedbox-Manager','',NULL,'N');
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('2','CakeBox-Light','8887',NULL,'N');
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('3','Plex Media Server','32400 32469','1900 5353 2410 32412 32413 32414','N');
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('4','Webmin','8890',NULL,'N');
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('5','OpenVPN','8893 8894',NULL,'N');
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('6','LogWatch',NULL,NULL,'N');
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('7','Fail2Ban',NULL,NULL,'N');
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('8','PeerGuardian',NULL,NULL,'N');
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('9','rTorrent Block List',NULL,NULL,'N');
-INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('10','DNScrypt-proxy',NULL,'53 54 443 2053 5353','N');
 
 ----
 -- Table structure for smtp
@@ -238,6 +213,31 @@ INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_activ
 INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('8','cool-tracker.be','0');
 
 ----
+-- Table structure for services
+----
+CREATE TABLE [services] (
+[id_services] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[serv_name] VARCHAR(32)  UNIQUE NULL,
+[ports_tcp] VARCHAR(32)  NULL,
+[ports_udp] VARCHAR(32)  NULL,
+[is_installed] BOOLEAN DEFAULT '''0''' NULL
+);
+
+----
+-- Data dump for services, a total of 10 rows
+----
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('1','Seedbox-Manager','','','N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('2','CakeBox-Light','8887',NULL,'N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('3','Plex Media Server','32400 32469','1900 5353 2410 32412 32413 32414','N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('4','Webmin','8890','','N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('5','OpenVPN','8893 8894',NULL,'N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('6','LogWatch',NULL,NULL,'N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('7','Fail2Ban',NULL,NULL,'N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('8','PeerGuardian',NULL,NULL,'N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('9','rTorrent Block List',NULL,NULL,'N');
+INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('10','DNScrypt-proxy',NULL,'53 54 443 2053 5353','N');
+
+----
 -- structure for index sqlite_autoindex_system_services_1 on table system_services
 ----
 ;
@@ -318,11 +318,6 @@ INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_activ
 ;
 
 ----
--- structure for index sqlite_autoindex_services_1 on table services
-----
-;
-
-----
 -- structure for index sqlite_autoindex_smtp_1 on table smtp
 ----
 ;
@@ -374,6 +369,11 @@ INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_activ
 
 ----
 -- structure for index sqlite_autoindex_trackers_domains_1 on table trackers_domains
+----
+;
+
+----
+-- structure for index sqlite_autoindex_services_1 on table services
 ----
 ;
 COMMIT;
