@@ -40,113 +40,112 @@ DEBIAN_VERSION=`lsb_release -cs`
 IFPVEKERNEL=`uname -r | grep pve`
 FILESYSTEMTYPE=`df -T "/home/" | awk '{print $2}' | tail -n1`
 
-if [ ! -f $SQLiteDB ]; then
-	source /etc/MySB/inc/includes_after
-	exit 0	
-fi
+if [ -f $SQLiteDB ]; then
 
-#### All Variables
-# ----- System info
-sqlite3 $SQLiteDB "SELECT * FROM system WHERE 1" | while read ROW; do
-    # Parsing data (sqlite3 returns a pipe separated string)
-    MySB_CurrentVersion="`echo $ROW | awk '{split($0,a,\"|\"); print a[2]}'`"
-    HostNameFQDN="`echo $ROW | awk '{split($0,a,\"|\"); print a[3]}'`"
-	SrvIpAddress="`echo $ROW | awk '{split($0,a,\"|\"); print a[4]}'`"
-	PrimaryInet="`echo $ROW | awk '{split($0,a,\"|\"); print a[5]}'`"
-	TimeZone="`echo $ROW | awk '{split($0,a,\"|\"); print a[6]}'`"
-	MySB_User="`echo $ROW | awk '{split($0,a,\"|\"); print a[7]}'`"
-	MySB_Password="`echo $ROW | awk '{split($0,a,\"|\"); print a[8]}'`"
-	Port_FTP="`echo $ROW | awk '{split($0,a,\"|\"); print a[9]}'`"
-	Port_FTP_Data="`echo $ROW | awk '{split($0,a,\"|\"); print a[10]}'`"
-	Port_FTP_Passive="`echo $ROW | awk '{split($0,a,\"|\"); print a[11]}'`"
-	Port_SSH="`echo $ROW | awk '{split($0,a,\"|\"); print a[12]}'`"
-	Port_HTTPS="`echo $ROW | awk '{split($0,a,\"|\"); print a[13]}'`"
-	Port_HTTP="`echo $ROW | awk '{split($0,a,\"|\"); print a[14]}'`"
-done
+	#### All Variables
+	# ----- System info
+	sqlite3 $SQLiteDB "SELECT * FROM system WHERE 1" | while read ROW; do
+		# Parsing data (sqlite3 returns a pipe separated string)
+		MySB_CurrentVersion="`echo $ROW | awk '{split($0,a,\"|\"); print a[2]}'`"
+		HostNameFQDN="`echo $ROW | awk '{split($0,a,\"|\"); print a[3]}'`"
+		SrvIpAddress="`echo $ROW | awk '{split($0,a,\"|\"); print a[4]}'`"
+		PrimaryInet="`echo $ROW | awk '{split($0,a,\"|\"); print a[5]}'`"
+		TimeZone="`echo $ROW | awk '{split($0,a,\"|\"); print a[6]}'`"
+		MySB_User="`echo $ROW | awk '{split($0,a,\"|\"); print a[7]}'`"
+		MySB_Password="`echo $ROW | awk '{split($0,a,\"|\"); print a[8]}'`"
+		Port_FTP="`echo $ROW | awk '{split($0,a,\"|\"); print a[9]}'`"
+		Port_FTP_Data="`echo $ROW | awk '{split($0,a,\"|\"); print a[10]}'`"
+		Port_FTP_Passive="`echo $ROW | awk '{split($0,a,\"|\"); print a[11]}'`"
+		Port_SSH="`echo $ROW | awk '{split($0,a,\"|\"); print a[12]}'`"
+		Port_HTTPS="`echo $ROW | awk '{split($0,a,\"|\"); print a[13]}'`"
+		Port_HTTP="`echo $ROW | awk '{split($0,a,\"|\"); print a[14]}'`"
+	done
 
-if [ -z "$HostNameFQDN" ]; then
-	HostNameFQDN="`hostname -f`"
-fi
-
-if [ -z "$SrvIpAddress" ]; then
-	SrvIpAddress=$(wget -qO- ipv4.icanhazip.com)
-	if [ -z "$SrvIpAddress" ]; then
-		SrvIpAddress="`ifconfig | sed -n 's/.*inet addr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
-		if [ -z "$SrvIpAddress" ]; then
-			SrvIpAddress="`ifconfig | sed -n 's/.*inet adr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
-		fi	
+	if [ -z "$HostNameFQDN" ]; then
+		HostNameFQDN="`hostname -f`"
 	fi
+
+	if [ -z "$SrvIpAddress" ]; then
+		SrvIpAddress=$(wget -qO- ipv4.icanhazip.com)
+		if [ -z "$SrvIpAddress" ]; then
+			SrvIpAddress="`ifconfig | sed -n 's/.*inet addr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
+			if [ -z "$SrvIpAddress" ]; then
+				SrvIpAddress="`ifconfig | sed -n 's/.*inet adr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
+			fi	
+		fi
+	fi
+
+	if [ -z "$PrimaryInet" ]; then
+		PrimaryInet="`ip route get 8.8.8.8 | grep 8.8.8.8 | awk '{ print $5 }'`"
+	fi	
+	# ----- System info
+
+	# ----- Main user info
+	MainUserEmail="`sqlite3 $SQLiteDB \"SELECT users_email FROM users WHERE admin = '1'\"`"
+	MainUser="`sqlite3 $SQLiteDB \"SELECT users_ident FROM users WHERE admin = '1'\"`"
+	MainUserIPs=$(sqlite3 $SQLiteDB \"SELECT fixed_ip FROM users WHERE admin = '1'\" | sed -e "s/^//g;" | sed 's/\s+$//')
+	# ----- Main user info
+
+	# ----- Services info
+	IsInstalled_Manager="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'Seedbox-Manager'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+	IsInstalled_Cakebox="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'CakeBox-Light'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+	IsInstalled_PlexMedia="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'Plex Media Server'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+	IsInstalled_Webmin="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'Webmin'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+	IsInstalled_OpenVPN="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'OpenVPN'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+	IsInstalled_LogWatch="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'LogWatch'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+	IsInstalled_Fail2Ban="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'Fail2Ban'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+	IsInstalled_PeerGuardian="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'PeerGuardian'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+	IsInstalled_Blocklist="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'rTorrent Block List'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+	IsInstalled_DNScrypt="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'DNScrypt-proxy'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+
+	if [ "$IsInstalled_PeerGuardian" == "YES" ] && [ "$IsInstalled_Blocklist" == "NO" ]; then
+		MySB_PeerBlock="PeerGuardian"
+	elif [ "$IsInstalled_PeerGuardian" == "NO" ] && [ "$IsInstalled_Blocklist" == "YES" ]; then
+		MySB_PeerBlock="rTorrent"
+	else
+		MySB_PeerBlock="none"
+	fi
+
+	Ports_Cakebox="`sqlite3 $SQLiteDB \"SELECT ports_tcp FROM services WHERE serv_name = 'CakeBox-Light'\"`"
+	Ports_Webmin="`sqlite3 $SQLiteDB \"SELECT ports_tcp FROM services WHERE serv_name = 'Webmin'\"`"
+	Ports_OpenVPN="`sqlite3 $SQLiteDB \"SELECT ports_tcp FROM services WHERE serv_name = 'OpenVPN'\"`"
+	if [ ! -z "$Ports_OpenVPN" ]; then
+		OpenVPN_Proto="tcp"
+		Port_OpenVPN_WithGW=$(echo $ports | awk '{ print $1 }')
+		Port_OpenVPN_WithoutGW=$(echo $ports | awk '{ print $2 }')
+	else
+		Ports_OpenVPN="`sqlite3 $SQLiteDB \"SELECT ports_udp FROM services WHERE serv_name = 'OpenVPN'\"`"
+		OpenVPN_Proto="udp"
+		Port_OpenVPN_WithGW=$(echo $ports | awk '{ print $1 }')
+		Port_OpenVPN_WithoutGW=$(echo $ports | awk '{ print $2 }')	
+	fi
+	# ----- Services info
+
+	# ----- SMTP info
+	sqlite3 $SQLiteDB "SELECT * FROM system WHERE 1" | while read ROW; do
+		# Parsing data (sqlite3 returns a pipe separated string)
+		Smtp_Provider="`echo $ROW | awk '{split($0,a,\"|\"); print a[2]}'`"
+		Smtp_Username="`echo $ROW | awk '{split($0,a,\"|\"); print a[3]}'`"
+		Smtp_Password="`echo $ROW | awk '{split($0,a,\"|\"); print a[4]}'`"
+		Smtp_Host="`echo $ROW | awk '{split($0,a,\"|\"); print a[5]}'`"
+		Smtp_Port="`echo $ROW | awk '{split($0,a,\"|\"); print a[6]}'`"
+	done
+	# ----- SMTP info
+
+	#### White IP addresses
+	Fail2banWhiteList="`sqlite3 $SQLiteDB \"SELECT fail2ban_whitelist FROM vars WHERE 1\"`"
+	VpnIPs="`sqlite3 $SQLiteDB \"SELECT vpn_ip FROM vars WHERE 1\" | sed 's/,/ /g;'`"
+
+	#### Networks ports (Services ports)
+	Ports_TCP_PlexMedia="`sqlite3 $SQLiteDB \"SELECT ports_tcp FROM services WHERE serv_name = 'Plex Media Server'\" | sed 's/,/ /g;'`"
+	Ports_UDP_PlexMedia="`sqlite3 $SQLiteDB \"SELECT ports_udp FROM services WHERE serv_name = 'Plex Media Server'\" | sed 's/,/ /g;'`"
+	
 fi
-
-if [ -z "$PrimaryInet" ]; then
-	PrimaryInet="`ip route get 8.8.8.8 | grep 8.8.8.8 | awk '{ print $5 }'`"
-fi	
-# ----- System info
-
-# ----- Main user info
-MainUserEmail="`sqlite3 $SQLiteDB \"SELECT users_email FROM users WHERE admin = '1'\"`"
-MainUser="`sqlite3 $SQLiteDB \"SELECT users_ident FROM users WHERE admin = '1'\"`"
-MainUserIPs=$(sqlite3 $SQLiteDB \"SELECT fixed_ip FROM users WHERE admin = '1'\" | sed -e "s/^//g;" | sed 's/\s+$//')
-# ----- Main user info
-
-# ----- Services info
-IsInstalled_Manager="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'Seedbox-Manager'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
-IsInstalled_Cakebox="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'CakeBox-Light'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
-IsInstalled_PlexMedia="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'Plex Media Server'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
-IsInstalled_Webmin="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'Webmin'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
-IsInstalled_OpenVPN="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'OpenVPN'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
-IsInstalled_LogWatch="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'LogWatch'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
-IsInstalled_Fail2Ban="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'Fail2Ban'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
-IsInstalled_PeerGuardian="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'PeerGuardian'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
-IsInstalled_Blocklist="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'rTorrent Block List'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
-IsInstalled_DNScrypt="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'DNScrypt-proxy'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
-
-if [ "$IsInstalled_PeerGuardian" == "YES" ] && [ "$IsInstalled_Blocklist" == "NO" ]; then
-	MySB_PeerBlock="PeerGuardian"
-elif [ "$IsInstalled_PeerGuardian" == "NO" ] && [ "$IsInstalled_Blocklist" == "YES" ]; then
-	MySB_PeerBlock="rTorrent"
-else
-	MySB_PeerBlock="none"
-fi
-
-Ports_Cakebox="`sqlite3 $SQLiteDB \"SELECT ports_tcp FROM services WHERE serv_name = 'CakeBox-Light'\"`"
-Ports_Webmin="`sqlite3 $SQLiteDB \"SELECT ports_tcp FROM services WHERE serv_name = 'Webmin'\"`"
-Ports_OpenVPN="`sqlite3 $SQLiteDB \"SELECT ports_tcp FROM services WHERE serv_name = 'OpenVPN'\"`"
-if [ ! -z "$Ports_OpenVPN" ]; then
-	OpenVPN_Proto="tcp"
-	Port_OpenVPN_WithGW=$(echo $ports | awk '{ print $1 }')
-	Port_OpenVPN_WithoutGW=$(echo $ports | awk '{ print $2 }')
-else
-	Ports_OpenVPN="`sqlite3 $SQLiteDB \"SELECT ports_udp FROM services WHERE serv_name = 'OpenVPN'\"`"
-	OpenVPN_Proto="udp"
-	Port_OpenVPN_WithGW=$(echo $ports | awk '{ print $1 }')
-	Port_OpenVPN_WithoutGW=$(echo $ports | awk '{ print $2 }')	
-fi
-# ----- Services info
-
-# ----- SMTP info
-sqlite3 $SQLiteDB "SELECT * FROM system WHERE 1" | while read ROW; do
-    # Parsing data (sqlite3 returns a pipe separated string)
-    Smtp_Provider="`echo $ROW | awk '{split($0,a,\"|\"); print a[2]}'`"
-    Smtp_Username="`echo $ROW | awk '{split($0,a,\"|\"); print a[3]}'`"
-	Smtp_Password="`echo $ROW | awk '{split($0,a,\"|\"); print a[4]}'`"
-	Smtp_Host="`echo $ROW | awk '{split($0,a,\"|\"); print a[5]}'`"
-	Smtp_Port="`echo $ROW | awk '{split($0,a,\"|\"); print a[6]}'`"
-done
-# ----- SMTP info
 
 # ----- Renting infos
 if [ -f /etc/MySB/inc/renting ]; then
 	source /etc/MySB/inc/renting
 fi
 # ----- Renting infos
-
-#### White IP addresses
-Fail2banWhiteList="`sqlite3 $SQLiteDB \"SELECT fail2ban_whitelist FROM vars WHERE 1\"`"
-VpnIPs="`sqlite3 $SQLiteDB \"SELECT vpn_ip FROM vars WHERE 1\" | sed 's/,/ /g;'`"
-
-#### Networks ports (Services ports)
-Ports_TCP_PlexMedia="`sqlite3 $SQLiteDB \"SELECT ports_tcp FROM services WHERE serv_name = 'Plex Media Server'\" | sed 's/,/ /g;'`"
-Ports_UDP_PlexMedia="`sqlite3 $SQLiteDB \"SELECT ports_udp FROM services WHERE serv_name = 'Plex Media Server'\" | sed 's/,/ /g;'`"
 
 ##################### LAST LINE ######################################
