@@ -1,7 +1,7 @@
 ----
 -- phpLiteAdmin database dump (http://phpliteadmin.googlecode.com)
 -- phpLiteAdmin version: 1.9.5
--- Exported: 2:11pm on November 2, 2014 (CET)
+-- Exported: 4:01pm on November 2, 2014 (CET)
 -- database file: ../db/MySB.db
 ----
 BEGIN TRANSACTION;
@@ -18,38 +18,6 @@ CREATE TABLE [renting] (
 
 ----
 -- Data dump for renting, a total of 0 rows
-----
-
-----
--- Table structure for trackers_domains
-----
-CREATE TABLE [trackers_domains] (
-[id_trackers_domains] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
-[tracker_domain] VARCHAR(128)  NULL
-);
-
-----
--- Data dump for trackers_domains, a total of 8 rows
-----
-INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain") VALUES ('1','frenchtorrentdb.com');
-INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain") VALUES ('2','share1underground.com');
-INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain") VALUES ('3','empereur-team.ovh');
-INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain") VALUES ('4','genration-rosco-tk.net');
-INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain") VALUES ('5','torrentreactor.net');
-INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain") VALUES ('6','afrbits.com');
-INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain") VALUES ('7','french-adn.com');
-INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain") VALUES ('8','cool-tracker.be');
-
-----
--- Table structure for trakers_subdomains
-----
-CREATE TABLE [trakers_subdomains] (
-[id_trakers_subdomains] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
-[id_trackers_domains] INTEGER  NULL
-);
-
-----
--- Data dump for trakers_subdomains, a total of 0 rows
 ----
 
 ----
@@ -213,6 +181,54 @@ CREATE TABLE [users] (
 ----
 
 ----
+-- Table structure for ports
+----
+CREATE TABLE [ports] (
+[id_ports] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
+[value] INTEGER  UNIQUE NOT NULL
+);
+
+----
+-- Data dump for ports, a total of 0 rows
+----
+
+----
+-- Table structure for trackers_domains
+----
+CREATE TABLE [trackers_domains] (
+[id_trackers_domains] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[tracker_domain] VARCHAR(128)  UNIQUE NOT NULL,
+[is_active] BOOLEAN DEFAULT '0' NULL
+);
+
+----
+-- Data dump for trackers_domains, a total of 8 rows
+----
+INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('1','frenchtorrentdb.com','0');
+INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('2','share1underground.com','0');
+INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('3','empereur-team.ovh','0');
+INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('4','genration-rosco-tk.net','0');
+INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('5','torrentreactor.net','0');
+INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('6','afrbits.com','0');
+INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('7','french-adn.com','0');
+INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('8','cool-tracker.be','0');
+
+----
+-- Table structure for trakers_subdomains
+----
+CREATE TABLE [trakers_subdomains] (
+[id_trakers_subdomains] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[value] VARCHAR(32)  UNIQUE NOT NULL
+);
+
+----
+-- Data dump for trakers_subdomains, a total of 3 rows
+----
+INSERT INTO "trakers_subdomains" ("id_trakers_subdomains","value") VALUES ('1','www');
+INSERT INTO "trakers_subdomains" ("id_trakers_subdomains","value") VALUES ('2','www2');
+INSERT INTO "trakers_subdomains" ("id_trakers_subdomains","value") VALUES ('3','tracker');
+
+----
 -- structure for index sqlite_autoindex_system_services_1 on table system_services
 ----
 ;
@@ -329,6 +345,21 @@ CREATE TABLE [users] (
 
 ----
 -- structure for index sqlite_autoindex_users_2 on table users
+----
+;
+
+----
+-- structure for index sqlite_autoindex_ports_1 on table ports
+----
+;
+
+----
+-- structure for index sqlite_autoindex_trackers_domains_1 on table trackers_domains
+----
+;
+
+----
+-- structure for index sqlite_autoindex_trakers_subdomains_1 on table trakers_subdomains
 ----
 ;
 COMMIT;
