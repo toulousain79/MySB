@@ -74,7 +74,38 @@ echo -e -n "${CBLUE}Some fixes for Certificates$CEND..."
 chmod 644 /etc/MySB/ssl/*.cert
 StatusSTD
 
+#### rTorrent (.rtorrent.rc)
+for seedUser in $LISTUSERS; do
+	log_daemon_msg "Creating '.rtorrent.rc' file for $seedUser"
+	HOMEDIR_ESCAPED=`echo /home/$seedUser | sed s,/,\\\\\\\\\\/,g`
+	SCGIPORT=$(cat /etc/MySB/users/$seedUser.info | grep "SCGI port=" | awk '{ print $3 }')
+	NETWORKPORT=$(cat /etc/MySB/users/$seedUser.info | grep "rTorrent port=" | awk '{ print $3 }')
+	
+	cp /home/$seedUser/.rtorrent.rc /home/$seedUser/.rtorrent.rc.bckp_v1.0_to_v1.1
+	cp /etc/MySB/templates/rtorrent.rc.template /home/$seedUser/.rtorrent.rc
+	perl -pi -e "s/<server_ip>/$SrvIpAddress/g" /home/$seedUser/.rtorrent.rc
+	perl -pi -e "s/<username>/$seedUser/g" /home/$seedUser/.rtorrent.rc
+	perl -pi -e "s/<homedir>/$HOMEDIR_ESCAPED/g" /home/$seedUser/.rtorrent.rc
+	perl -pi -e "s/<scgi_port>/$SCGIPORT/g" /home/$seedUser/.rtorrent.rc
+	perl -pi -e "s/<port_range>/$NETWORKPORT-$NETWORKPORT/g" /home/$seedUser/.rtorrent.rc
+	
+	if [ "$MySB_PeerBlock" == "rTorrent" ]; then
+		perl -pi -e "s/#{1}ipv4_filter.load/ipv4_filter.load/g" /home/$seedUser/.rtorrent.rc
+		perl -pi -e "s/#{1}print/print/g" /home/$seedUser/.rtorrent.rc
+		perl -pi -e "s/#{1}schedule=load_filter/schedule=load_filter/g" /home/$seedUser/.rtorrent.rc
+	fi
 
+	case "$FILESYSTEMTYPE" in
+		"ext4"|"xfs"|"btrfs")
+			perl -pi -e "s/system.file_allocate.set = no/system.file_allocate.set = yes/g" /home/$seedUser/.rtorrent.rc
+		;;	
+		*)
+			perl -pi -e "s/^system.file_allocate.set = yes/system.file_allocate.set = no/g" /home/$seedUser/.rtorrent.rc
+		;;			
+	esac
+	
+	StatusLSB
+done
 
 
 
