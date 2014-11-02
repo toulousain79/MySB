@@ -1,7 +1,7 @@
 ----
 -- phpLiteAdmin database dump (http://phpliteadmin.googlecode.com)
 -- phpLiteAdmin version: 1.9.5
--- Exported: 11:46am on November 2, 2014 (CET)
+-- Exported: 2:03pm on November 2, 2014 (CET)
 -- database file: ../db/MySB.db
 ----
 BEGIN TRANSACTION;
@@ -108,27 +108,6 @@ CREATE TABLE [list_blocklists] (
 ----
 
 ----
--- Table structure for users
-----
-CREATE TABLE [users] (
-[id_users] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
-[users_ident] VARCHAR(32)  UNIQUE NOT NULL,
-[users_email] VARCHAR(260)  UNIQUE NOT NULL,
-[users_passwd] VARCHAR(32)  NULL,
-[rpc] VARCHAR(64)  NULL,
-[sftp] BOOLEAN DEFAULT '''''''''''''''''''''''''''''''1''''''''''''''''''''''''''''''' NOT NULL,
-[sudo] BOOLEAN DEFAULT '''''''''''''''''''''''''''''''0''''''''''''''''''''''''''''''' NOT NULL,
-[admin] BOOLEAN DEFAULT '''''''''''''''''''''''''''''''0''''''''''''''''''''''''''''''' NOT NULL,
-[fixed_ip] VARCHAR(128)  NULL,
-[no_ip] VARCHAR(128)  NULL,
-[scgi_port] INTEGER  NULL
-);
-
-----
--- Data dump for users, a total of 0 rows
-----
-
-----
 -- Table structure for system
 ----
 CREATE TABLE [system] (
@@ -211,6 +190,28 @@ CREATE TABLE [vars] (
 INSERT INTO "vars" ("id_vars","fail2ban_whitelist","vpn_ip","white_tcp_port_out","white_udp_port_out") VALUES ('1','127.0.0.1/32','10.0.0.0/24,10.0.1.0/24','80 443',NULL);
 
 ----
+-- Table structure for users
+----
+CREATE TABLE [users] (
+[id_users] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[users_ident] VARCHAR(32)  UNIQUE NOT NULL,
+[users_email] VARCHAR(260)  UNIQUE NOT NULL,
+[users_passwd] VARCHAR(32)  NULL,
+[rpc] VARCHAR(64)  NULL,
+[sftp] BOOLEAN DEFAULT '''1''' NOT NULL,
+[sudo] BOOLEAN DEFAULT '''0''' NOT NULL,
+[admin] BOOLEAN DEFAULT '''0''' NOT NULL,
+[fixed_ip] VARCHAR(128)  NULL,
+[no_ip] VARCHAR(128)  NULL,
+[scgi_port] INTEGER  NULL,
+[rtorrent_port] INTEGER  NULL
+);
+
+----
+-- Data dump for users, a total of 0 rows
+----
+
+----
 -- structure for index sqlite_autoindex_system_services_1 on table system_services
 ----
 ;
@@ -222,16 +223,6 @@ INSERT INTO "vars" ("id_vars","fail2ban_whitelist","vpn_ip","white_tcp_port_out"
 
 ----
 -- structure for index sqlite_autoindex_list_peerguardian_1 on table list_peerguardian
-----
-;
-
-----
--- structure for index sqlite_autoindex_users_1 on table users
-----
-;
-
-----
--- structure for index sqlite_autoindex_users_2 on table users
 ----
 ;
 
@@ -327,6 +318,16 @@ INSERT INTO "vars" ("id_vars","fail2ban_whitelist","vpn_ip","white_tcp_port_out"
 
 ----
 -- structure for index sqlite_autoindex_smtp_5 on table smtp
+----
+;
+
+----
+-- structure for index sqlite_autoindex_users_1 on table users
+----
+;
+
+----
+-- structure for index sqlite_autoindex_users_2 on table users
 ----
 ;
 COMMIT;
