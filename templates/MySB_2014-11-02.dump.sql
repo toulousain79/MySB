@@ -1,7 +1,7 @@
 ----
 -- phpLiteAdmin database dump (http://phpliteadmin.googlecode.com)
 -- phpLiteAdmin version: 1.9.5
--- Exported: 4:01pm on November 2, 2014 (CET)
+-- Exported: 10:25pm on November 2, 2014 (CET)
 -- database file: ../db/MySB.db
 ----
 BEGIN TRANSACTION;
@@ -193,12 +193,36 @@ CREATE TABLE [ports] (
 ----
 
 ----
+-- Table structure for trakers_host
+----
+CREATE TABLE [trakers_host] (
+[id_trakers_subdomains] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
+[trakers_host] VARCHAR(32)  UNIQUE NOT NULL
+);
+
+----
+-- Data dump for trakers_host, a total of 0 rows
+----
+
+----
+-- Table structure for trakers_subdomains
+----
+CREATE TABLE [trakers_subdomains] (
+[id_trakers_subdomains] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[trakers_subdomains] VARCHAR(128)  UNIQUE NOT NULL
+);
+
+----
+-- Data dump for trakers_subdomains, a total of 0 rows
+----
+
+----
 -- Table structure for trackers_domains
 ----
 CREATE TABLE [trackers_domains] (
 [id_trackers_domains] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
 [tracker_domain] VARCHAR(128)  UNIQUE NOT NULL,
-[is_active] BOOLEAN DEFAULT '0' NULL
+[is_active] BOOLEAN DEFAULT '''0''' NULL
 );
 
 ----
@@ -212,21 +236,6 @@ INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_activ
 INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('6','afrbits.com','0');
 INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('7','french-adn.com','0');
 INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('8','cool-tracker.be','0');
-
-----
--- Table structure for trakers_subdomains
-----
-CREATE TABLE [trakers_subdomains] (
-[id_trakers_subdomains] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
-[value] VARCHAR(32)  UNIQUE NOT NULL
-);
-
-----
--- Data dump for trakers_subdomains, a total of 3 rows
-----
-INSERT INTO "trakers_subdomains" ("id_trakers_subdomains","value") VALUES ('1','www');
-INSERT INTO "trakers_subdomains" ("id_trakers_subdomains","value") VALUES ('2','www2');
-INSERT INTO "trakers_subdomains" ("id_trakers_subdomains","value") VALUES ('3','tracker');
 
 ----
 -- structure for index sqlite_autoindex_system_services_1 on table system_services
@@ -354,12 +363,17 @@ INSERT INTO "trakers_subdomains" ("id_trakers_subdomains","value") VALUES ('3','
 ;
 
 ----
--- structure for index sqlite_autoindex_trackers_domains_1 on table trackers_domains
+-- structure for index sqlite_autoindex_trakers_host_1 on table trakers_host
 ----
 ;
 
 ----
 -- structure for index sqlite_autoindex_trakers_subdomains_1 on table trakers_subdomains
+----
+;
+
+----
+-- structure for index sqlite_autoindex_trackers_domains_1 on table trackers_domains
 ----
 ;
 COMMIT;
