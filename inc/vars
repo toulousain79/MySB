@@ -44,71 +44,72 @@ FILESYSTEMTYPE=`df -T "/home/" | awk '{print $2}' | tail -n1`
 # ----- System info
 sqlite3 $SQLiteDB "SELECT * FROM system WHERE 1" | while read ROW; do
     # Parsing data (sqlite3 returns a pipe separated string)
-    MySB_CurrentVersion=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
-    HostNameFQDN=`echo $ROW | awk '{split($0,a,"|"); print a[3]}'`
-	SrvIpAddress=`echo $ROW | awk '{split($0,a,"|"); print a[4]}'`
-	PrimaryInet=`echo $ROW | awk '{split($0,a,"|"); print a[5]}'`
-	TimeZone=`echo $ROW | awk '{split($0,a,"|"); print a[6]}'`
-	MySB_User=`echo $ROW | awk '{split($0,a,"|"); print a[7]}'`
-	MySB_Password=`echo $ROW | awk '{split($0,a,"|"); print a[8]}'`
-	Port_FTP=`echo $ROW | awk '{split($0,a,"|"); print a[9]}'`
-	Port_FTP_Data=`echo $ROW | awk '{split($0,a,"|"); print a[10]}'`
-	Port_FTP_Passive=`echo $ROW | awk '{split($0,a,"|"); print a[11]}'`
-	Port_SSH=`echo $ROW | awk '{split($0,a,"|"); print a[12]}'`
-	Port_HTTPS=`echo $ROW | awk '{split($0,a,"|"); print a[13]}'`
-	Port_HTTP=`echo $ROW | awk '{split($0,a,"|"); print a[14]}'`
+    MySB_CurrentVersion="`echo $ROW | awk '{split($0,a,\"|\"); print a[2]}'`"
+    HostNameFQDN="`echo $ROW | awk '{split($0,a,\"|\"); print a[3]}'`"
+	SrvIpAddress="`echo $ROW | awk '{split($0,a,\"|\"); print a[4]}'`"
+	PrimaryInet="`echo $ROW | awk '{split($0,a,\"|\"); print a[5]}'`"
+	TimeZone="`echo $ROW | awk '{split($0,a,\"|\"); print a[6]}'`"
+	MySB_User="`echo $ROW | awk '{split($0,a,\"|\"); print a[7]}'`"
+	MySB_Password="`echo $ROW | awk '{split($0,a,\"|\"); print a[8]}'`"
+	Port_FTP="`echo $ROW | awk '{split($0,a,\"|\"); print a[9]}'`"
+	Port_FTP_Data="`echo $ROW | awk '{split($0,a,\"|\"); print a[10]}'`"
+	Port_FTP_Passive="`echo $ROW | awk '{split($0,a,\"|\"); print a[11]}'`"
+	Port_SSH="`echo $ROW | awk '{split($0,a,\"|\"); print a[12]}'`"
+	Port_HTTPS="`echo $ROW | awk '{split($0,a,\"|\"); print a[13]}'`"
+	Port_HTTP="`echo $ROW | awk '{split($0,a,\"|\"); print a[14]}'`"
 done
 
 if [ -z "$HostNameFQDN" ]; then
-	HostNameFQDN=`hostname -f`
+	HostNameFQDN="`hostname -f`"
 fi
 
 if [ -z "$SrvIpAddress" ]; then
 	SrvIpAddress=$(wget -qO- ipv4.icanhazip.com)
 	if [ -z "$SrvIpAddress" ]; then
-		SrvIpAddress=`ifconfig | sed -n 's/.*inet addr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`
+		SrvIpAddress="`ifconfig | sed -n 's/.*inet addr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
 		if [ -z "$SrvIpAddress" ]; then
-			SrvIpAddress=`ifconfig | sed -n 's/.*inet adr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`
+			SrvIpAddress="`ifconfig | sed -n 's/.*inet adr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
 		fi	
 	fi
 fi
 
 if [ -z "$PrimaryInet" ]; then
-	PrimaryInet=`ip route get 8.8.8.8 | grep 8.8.8.8 | awk '{ print $5 }'`
+	PrimaryInet="`ip route get 8.8.8.8 | grep 8.8.8.8 | awk '{ print $5 }'`"
 fi	
 # ----- System info
 
-
-
-
-
-
-
-
 # ----- Main user info
-if [ -f /etc/MySB/infos/email.info ]; then
-	EMAILUSER=`cat /etc/MySB/infos/email.info`
-fi
-if [ -f /etc/MySB/infos/mainuser.info ]; then
-	MAINUSER=`cat /etc/MySB/infos/mainuser.info`
-fi
-if [ -f /etc/MySB/infos/certpass.info ]; then
-	CERTPASS=`cat /etc/MySB/infos/certpass.info`
+MainUserEmail="`sqlite3 $SQLiteDB \"SELECT users_email FROM users WHERE admin = '1'\"`"
+MainUser="`sqlite3 $SQLiteDB \"SELECT users_ident FROM users WHERE admin = '1'\"`"
+# ----- Main user info
+
+# ----- Services info
+IsInstalled_Manager="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'Seedbox-Manager'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+IsInstalled_Cakebox="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'CakeBox-Light'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+IsInstalled_PlexMedia="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'Plex Media Server'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+IsInstalled_Webmin="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'Webmin'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+IsInstalled_OpenVPN="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'OpenVPN'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+IsInstalled_LogWatch="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'LogWatch'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+IsInstalled_Fail2Ban="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'Fail2Ban'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+IsInstalled_PeerGuardian="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'PeerGuardian'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+IsInstalled_Blocklist="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'rTorrent Block List'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+IsInstalled_DNScrypt="`sqlite3 $SQLiteDB \"SELECT is_installed FROM services WHERE serv_name = 'DNScrypt-proxy'\" | sed 's/N/NO/g;' | sed 's/Y/YES/g;'`"
+
+if [ "$IsInstalled_PeerGuardian" == "YES" ] && [ "$IsInstalled_Blocklist" == "NO" ]; then
+	MySB_PeerBlock="PeerGuardian"
+elif [ "$IsInstalled_PeerGuardian" == "NO" ] && [ "$IsInstalled_Blocklist" == "YES" ]; then
+	MySB_PeerBlock="rTorrent"
 else
-	if hash mkpasswd 2>/dev/null; then
-		mkpasswd $HostNameFQDN > /etc/MySB/infos/certpass.info
-	fi
+	MySB_PeerBlock="none"
 fi
-# ----- Main user info
-if [ -f /etc/MySB/infos/blocklist.info ]; then
-	MYBLOCKLIST=`cat /etc/MySB/infos/blocklist.info`
-fi
-if [ -f /etc/MySB/infos/port_cakebox.info ]; then
-	CAKEBOXPORT=`cat /etc/MySB/infos/port_cakebox.info`
-fi
-if [ -f /etc/MySB/infos/port_webmin.info ]; then
-	WEBMINPORT=`cat /etc/MySB/infos/port_webmin.info`
-fi
+
+Port_Cakebox="`sqlite3 $SQLiteDB \"SELECT ports_tcp FROM services WHERE serv_name = 'CakeBox-Light'\"`"
+Port_Webmin="`sqlite3 $SQLiteDB \"SELECT ports_tcp FROM services WHERE serv_name = 'Webmin'\"`"
+# ----- Services info
+
+Port_OpenVPN_WithGW
+Port_OpenVPN_WithoutGW
+
 if [ -f /etc/MySB/infos/port_openvpn.info ]; then
 	OPENVPNPORT=`cat /etc/MySB/infos/port_openvpn.info`
 fi
@@ -116,30 +117,12 @@ if [ -f /etc/MySB/infos/proto_openvpn.info ]; then
 	OPENVPNPROTO=`cat /etc/MySB/infos/proto_openvpn.info`
 	OPENVPNPROTO=`echo $OPENVPNPROTO | tr '[:upper:]' '[:lower:]'`
 fi
-if [ -f /etc/MySB/infos/install_cakebox.info ]; then
-	INSTALLCAKEBOX=`cat /etc/MySB/infos/install_cakebox.info`
-fi
-if [ -f /etc/MySB/infos/install_manager.info ]; then
-	INSTALLMANAGER=`cat /etc/MySB/infos/install_manager.info`
-fi
-if [ -f /etc/MySB/infos/install_fail2ban.info ]; then
-	INSTALLFAIL2BAN=`cat /etc/MySB/infos/install_fail2ban.info`
-fi
-if [ -f /etc/MySB/infos/install_logwatch.info ]; then
-	INSTALLLOGWATCH=`cat /etc/MySB/infos/install_logwatch.info`
-fi
-if [ -f /etc/MySB/infos/install_plexmedia.info ]; then
-	INSTALLPLEXMEDIA=`cat /etc/MySB/infos/install_plexmedia.info`
-fi
-if [ -f /etc/MySB/infos/install_webmin.info ]; then
-	INSTALLWEBMIN=`cat /etc/MySB/infos/install_webmin.info`
-fi
-if [ -f /etc/MySB/infos/install_openvpn.info ]; then
-	INSTALLOPENVPN=`cat /etc/MySB/infos/install_openvpn.info`
-fi
-if [ -f /etc/MySB/infos/install_dnscrypt.info ]; then
-	INSTALLDNSCRYPT=`cat /etc/MySB/infos/install_dnscrypt.info`
-fi
+
+
+
+
+
+
 if [ -f /etc/MySB/infos/smtp.info ]; then
 	SMTP=`cat /etc/MySB/infos/smtp.info`
 fi

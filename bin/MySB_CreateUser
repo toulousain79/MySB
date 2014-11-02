@@ -17,7 +17,7 @@ source /etc/MySB/inc/includes_before
 
 if [ "$USAGE" == "ON" ]; then
 	if [ -z $NEWUSER ] || [ -z $PASSWORD ]; then
-		EMAILUSER=""
+		MainUserEmail=""
 	else
 		USERHASSSHACCESS=YES
 		USERINSUDOERS=YES	
@@ -50,9 +50,9 @@ if [ "$USAGE" == "ON" ]; then
 	if [ -z $USERINSUDOERS ]; then
 		GetString NO  "Add user to sudoers? " USERINSUDOERS NO
 	fi
-	if [ -z $EMAILUSER ]; then
-		while [ ! "`ValidateMail $EMAILUSER`" = "0" ]; do
-			GetString NO  "Email for this user? " EMAILUSER
+	if [ -z $MainUserEmail ]; then
+		while [ ! "`ValidateMail $MainUserEmail`" = "0" ]; do
+			GetString NO  "Email for this user? " MainUserEmail
 		done			
 	fi
 else
@@ -103,10 +103,10 @@ else
 fi
 
 echo "Username= 		$NEWUSER" >> /etc/MySB/users/$NEWUSER.info
-if [ "$MAINUSER" != "$NEWUSER" ]; then
+if [ "$MainUser" != "$NEWUSER" ]; then
 	echo "Password= 		$PASSWORD" >> /etc/MySB/users/$NEWUSER.info
 fi
-echo "E-mail= 		$EMAILUSER" >> /etc/MySB/users/$NEWUSER.info
+echo "E-mail= 		$MainUserEmail" >> /etc/MySB/users/$NEWUSER.info
 echo "RPC= 			/$NEWRPC" >> /etc/MySB/users/$NEWUSER.info
 echo "SSH= 			$USERHASSSHACCESS" >> /etc/MySB/users/$NEWUSER.info
 echo "Sudo powers= 		$USERINSUDOERS" >> /etc/MySB/users/$NEWUSER.info
@@ -134,7 +134,7 @@ echo "FTPs port (TLS)= 	$Port_FTP" >> /etc/MySB/users/$NEWUSER.info
 echo "SCGI port= 		$SCGIPORT" >> /etc/MySB/users/$NEWUSER.info
 echo "rTorrent port= 	$NETWORKPORT" >> /etc/MySB/users/$NEWUSER.info
 
-if [ "$INSTALLOPENVPN" == "YES" ]; then	
+if [ "$IsInstalled_OpenVPN" == "YES" ]; then	
 	echo "" >> /etc/MySB/users/$NEWUSER.info
 	echo "-----" >> /etc/MySB/users/$NEWUSER.info
 	echo "OpenVPN" >> /etc/MySB/users/$NEWUSER.info
@@ -153,19 +153,19 @@ echo "User Info=		https://$HostNameFQDN:$Port_HTTPS/MySB/SeedboxInfo.php" >> /et
 echo "Change password=	https://$HostNameFQDN:$Port_HTTPS/MySB/ChangePassword.php" >> /etc/MySB/users/$NEWUSER.info
 echo "Manage IP=		https://$HostNameFQDN:$Port_HTTPS/MySB/ManageIP.php" >> /etc/MySB/users/$NEWUSER.info
 echo "ruTorrent= 		https://$HostNameFQDN:$Port_HTTPS/rutorrent/" >> /etc/MySB/users/$NEWUSER.info
-if [ "$INSTALLMANAGER" == "YES" ]; then
+if [ "$IsInstalled_Manager" == "YES" ]; then
 	echo "Seedbox-Manager=	https://$HostNameFQDN:$Port_HTTPS/seedbox-manager/" >> /etc/MySB/users/$NEWUSER.info
 fi
-if [ "$INSTALLOPENVPN" == "YES" ]; then
+if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	echo "OpenVPN config= 	https://$HostNameFQDN:$Port_HTTPS/MySB/OpenVPN.php" >> /etc/MySB/users/$NEWUSER.info
 	echo "OpenVPN GUI= 	https://openvpn.net/index.php/open-source/downloads.html" >> /etc/MySB/users/$NEWUSER.info
 fi
-if [ "$INSTALLCAKEBOX" == "YES" ]; then
-	echo "CakeBox Light= 	https://$HostNameFQDN:$CAKEBOXPORT/" >> /etc/MySB/users/$NEWUSER.info
+if [ "$IsInstalled_Cakebox" == "YES" ]; then
+	echo "CakeBox Light= 	https://$HostNameFQDN:$Port_Cakebox/" >> /etc/MySB/users/$NEWUSER.info
 fi
-if [ "$MAINUSER" == "$NEWUSER" ]; then
-	if [ "$INSTALLWEBMIN" == "YES" ] && [ "$MAINUSER" == "$NEWUSER" ]; then
-		echo "Webmin= 		https://$HostNameFQDN:$WEBMINPORT" >> /etc/MySB/users/$NEWUSER.info
+if [ "$MainUser" == "$NEWUSER" ]; then
+	if [ "$IsInstalled_Webmin" == "YES" ] && [ "$MainUser" == "$NEWUSER" ]; then
+		echo "Webmin= 		https://$HostNameFQDN:$Port_Webmin" >> /etc/MySB/users/$NEWUSER.info
 	fi
 	echo "Renting Info=		https://$HostNameFQDN:$Port_HTTPS/MySB/RentingInfo.php" >> /etc/MySB/users/$NEWUSER.info
 	echo "Logs=		https://$HostNameFQDN:$Port_HTTPS/MySB/logs" >> /etc/MySB/users/$NEWUSER.info
@@ -230,7 +230,7 @@ perl -pi -e "s/<username>/$NEWUSER/g" $HOMEDIR/.rtorrent.rc
 perl -pi -e "s/<homedir>/$HOMEDIR_ESCAPED/g" $HOMEDIR/.rtorrent.rc
 perl -pi -e "s/<scgi_port>/$SCGIPORT/g" $HOMEDIR/.rtorrent.rc
 perl -pi -e "s/<port_range>/$NETWORKPORT-$NETWORKPORT/g" $HOMEDIR/.rtorrent.rc
-if [ "$MYBLOCKLIST" == "rTorrent" ]; then
+if [ "$MySB_PeerBlock" == "rTorrent" ]; then
 	perl -pi -e "s/#{1}ipv4_filter.load/ipv4_filter.load/g" $HOMEDIR/.rtorrent.rc
 	perl -pi -e "s/#{1}print/print/g" $HOMEDIR/.rtorrent.rc
 	perl -pi -e "s/#{1}schedule=load_filter/schedule=load_filter/g" $HOMEDIR/.rtorrent.rc
@@ -382,7 +382,7 @@ perl -pi -e "s/<USERNAME>/$UPPERNEWUSER/g" /etc/nginx/rpc/$NEWUSER.conf
 StatusLSB
 
 #### Seedbox-Manager
-if [ "$INSTALLMANAGER" == "YES" ]; then
+if [ "$IsInstalled_Manager" == "YES" ]; then
 	log_daemon_msg "Create Seedbox-Manager configuration for $NEWUSER"
 	
 	mkdir -p /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER
@@ -430,9 +430,9 @@ EOF
 	sed -i "s/rutorrent.domaine.fr/$HostNameFQDN:$Port_HTTPS/g;" /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER/config.ini
 	sed -i "s/<FTPPORT>/$Port_FTP/g;" /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER/config.ini
 	sed -i "s/<SSHPORT>/$Port_SSH/g;" /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER/config.ini
-	sed -i "s/contact@exemple.com/$EMAILUSER/g;" /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER/config.ini
+	sed -i "s/contact@exemple.com/$MainUserEmail/g;" /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER/config.ini
 
-	if [ "$MAINUSER" == "$NEWUSER" ]; then	
+	if [ "$MainUser" == "$NEWUSER" ]; then	
 		sed -i "s/owner = no/owner = yes/g;" /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER/config.ini
 	fi
 	
@@ -441,7 +441,7 @@ EOF
 fi
 
 #### CakeBox
-if [ "$INSTALLCAKEBOX" == "YES" ]; then
+if [ "$IsInstalled_Cakebox" == "YES" ]; then
 	log_daemon_msg "Create Cakebox configuration for $NEWUSER"
 
 	(
@@ -465,7 +465,7 @@ EOF
 fi
 
 #### OpenVPN
-if [ "$INSTALLOPENVPN" == "YES" ]; then
+if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	log_daemon_msg "Create OpenVPN account for user $NEWUSER"
 	screen -dmS OpenVPN_Client /bin/bash /etc/MySB/install/OpenVPN client "$NEWUSER";
 	WaitingSTD OpenVPN_Client	
@@ -498,7 +498,7 @@ for seedUser in $LISTUSERS; do
 	sed -i ''$LIGN'i\pieces.memory.max.set = '$(((($MEMORY/$COUNTUSERS)*1024)*1024))'\n' /home/$seedUser/.rtorrent.rc
 	StatusLSB
 	
-	#if [ "$MYBLOCKLIST" == "rTorrent" ]; then	
+	#if [ "$MySB_PeerBlock" == "rTorrent" ]; then	
 		if [ -f /etc/MySB/scripts/blocklist/blocklist_rtorrent.txt ]; then
 			log_daemon_msg "Copy the blocklist file for $seedUser"
 			cp /etc/MySB/scripts/blocklist/* $HOMEDIR/blocklist/

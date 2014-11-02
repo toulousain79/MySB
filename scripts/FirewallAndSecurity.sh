@@ -76,7 +76,7 @@ case $1 in
 			done
 			unset IFS ip
 		done
-		if [ "$INSTALLOPENVPN" == "YES" ]; then
+		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 			for ip in $VpnIPs; do 
 				IfExist=`echo $Fail2banWhiteList | grep $ip`
 				if [ -z $IfExist ] && [ $ip != "blank" ]; then	
@@ -89,7 +89,7 @@ case $1 in
 		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed -e "s/^//g;"`
 		
 		#### Main User IPs
-		MainUserIPs=$(cat /etc/MySB/users/$MAINUSER.info | grep "IP Address=" | awk '{ print $3 }' | sed 's/,/ /g;')
+		MainUserIPs=$(cat /etc/MySB/users/$MainUser.info | grep "IP Address=" | awk '{ print $3 }' | sed 's/,/ /g;')
 		
 		StatusLSB
 
@@ -168,9 +168,9 @@ case $1 in
 		StatusLSB
 
 		# CakeBox
-		if [ "$INSTALLCAKEBOX" == "YES" ]; then
+		if [ "$IsInstalled_Cakebox" == "YES" ]; then
 			log_daemon_msg "Allow access to CakeBox"
-			iptables -t filter -A INPUT -p tcp --dport $CAKEBOXPORT -j ACCEPT -m comment --comment "CakeBox"
+			iptables -t filter -A INPUT -p tcp --dport $Port_Cakebox -j ACCEPT -m comment --comment "CakeBox"
 			StatusLSB
 		fi
 		
@@ -185,9 +185,9 @@ case $1 in
 		StatusLSB
 
 		# Webmin
-		if [ "$INSTALLWEBMIN" == "YES" ]; then
+		if [ "$IsInstalled_Webmin" == "YES" ]; then
 			log_daemon_msg "Allow access to Webmin"
-			iptables -t filter -A INPUT -p tcp --dport $WEBMINPORT -j ACCEPT -m comment --comment "Webmin"
+			iptables -t filter -A INPUT -p tcp --dport $Port_Webmin -j ACCEPT -m comment --comment "Webmin"
 			StatusLSB
 		fi		
 
@@ -204,7 +204,7 @@ case $1 in
 		StatusLSB
 		
 		# OpenVPN
-		if [ "$INSTALLOPENVPN" == "YES" ]; then
+		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 			OVPNPORT1=$OPENVPNPORT
 			(( OPENVPNPORT++ ))
 			OVPNPORT2=$OPENVPNPORT	
@@ -228,7 +228,7 @@ case $1 in
 		fi
 
 		# PlexMedia Server
-		if [ "$INSTALLPLEXMEDIA" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
+		if [ "$IsInstalled_PlexMedia" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
 			log_daemon_msg "Allow use of Plex Media Server on TCP"
 			for PlexTcpPort in $PLEXMEDIA_TCP_PORTS; do 
 				iptables -t filter -A INPUT -p tcp --dport $PlexTcpPort -j ACCEPT -m comment --comment "Plex Media Server TCP"
@@ -236,7 +236,7 @@ case $1 in
 			unset PlexTcpPort
 			StatusLSB
 
-			if [ "$INSTALLOPENVPN" == "YES" ]; then
+			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 				log_daemon_msg "Allow use of Plex Media Server on UDP (OpenVPN)"
 				for PlexUdpPort in $PLEXMEDIA_UDP_PORTS; do 
 					iptables -t filter -A INPUT -p udp --dport $PlexUdpPort -j ACCEPT -m comment --comment "Plex Media Server UDP"
@@ -268,7 +268,7 @@ case $1 in
 			StatusLSB
 			
 			# Delete IP restriction for NginX			
-			log_daemon_msg "Allow access to some page for '$MAINUSER'"
+			log_daemon_msg "Allow access to some page for '$MainUser'"
 			for ip in $MainUserIPs; do 
 				awk '{ print } /## Restricted to mainuser ##/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
 				perl -pi -e "s/<ip>/$ip/g" /etc/MySB/files/MySB_location.conf
@@ -286,7 +286,7 @@ case $1 in
 			unset ip
 			StatusLSB			
 			
-			if [ "$INSTALLOPENVPN" == "YES" ]; then
+			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 				log_daemon_msg "Allow access to web server for OpenVPN users"
 				for ip in $VpnIPs; do
 					ip=`echo $ip | sed s,/,\\\\\\\\\\/,g`
@@ -337,7 +337,7 @@ case $1 in
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_OUT=")
 			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
 			if [ ! -z "$SEARCH" ]; then
-				if [ "$INSTALLOPENVPN" == "YES" ]; then
+				if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 					perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
 				else
 					perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"\"/g" /etc/pgl/pglcmd.conf
@@ -348,7 +348,7 @@ case $1 in
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_FWD=")
 			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
 			if [ ! -z "$SEARCH" ]; then			
-				if [ "$INSTALLOPENVPN" == "YES" ]; then
+				if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 					perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
 				else
 					perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"\"/g" /etc/pgl/pglcmd.conf

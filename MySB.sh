@@ -237,7 +237,7 @@ else
 fi
 
 #### Tools
-if [ "$INSTALLCAKEBOX" == "YES" ] || [ "$INSTALLMANAGER" == "YES" ]; then
+if [ "$IsInstalled_Cakebox" == "YES" ] || [ "$IsInstalled_Manager" == "YES" ]; then
 	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Tools$CEND"
@@ -251,7 +251,7 @@ if [ "$INSTALLCAKEBOX" == "YES" ] || [ "$INSTALLMANAGER" == "YES" ]; then
 fi
 
 #### SeedboxManager
-if [ "$INSTALLMANAGER" == "YES" ]; then
+if [ "$IsInstalled_Manager" == "YES" ]; then
 	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/SeedboxManager$CEND"
@@ -265,7 +265,7 @@ if [ "$INSTALLMANAGER" == "YES" ]; then
 fi
 
 #### CakeboxLight
-if [ "$INSTALLCAKEBOX" == "YES" ]; then
+if [ "$IsInstalled_Cakebox" == "YES" ]; then
 	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/CakeboxLight$CEND"
@@ -278,7 +278,7 @@ if [ "$INSTALLCAKEBOX" == "YES" ]; then
 	fi
 fi
 
-if [ "$INSTALLOPENVPN" == "YES" ]; then
+if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	#### OpenVPN
 	if [ "$DevInstallMode" == "manual" ]; then
 		clean
@@ -317,7 +317,7 @@ if [ "$INSTALLOPENVPN" == "YES" ]; then
 fi
 
 #### Fail2Ban
-if [ "$INSTALLFAIL2BAN" == "YES" ]; then
+if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
 	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Fail2Ban$CEND"
@@ -331,7 +331,7 @@ if [ "$INSTALLFAIL2BAN" == "YES" ]; then
 fi
 
 #### Webmin
-if [ "$INSTALLWEBMIN" == "YES" ]; then
+if [ "$IsInstalled_Webmin" == "YES" ]; then
 	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Webmin$CEND"
@@ -345,7 +345,7 @@ if [ "$INSTALLWEBMIN" == "YES" ]; then
 fi
 
 #### Logwatch
-if [ "$INSTALLLOGWATCH" == "YES" ]; then
+if [ "$IsInstalled_LogWatch" == "YES" ]; then
 	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/Logwatch$CEND"
@@ -359,7 +359,7 @@ if [ "$INSTALLLOGWATCH" == "YES" ]; then
 fi
 
 ### PlexMedia
-if [ "$INSTALLPLEXMEDIA" == "YES" ]; then
+if [ "$IsInstalled_PlexMedia" == "YES" ]; then
 	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/PlexMedia$CEND"
@@ -374,7 +374,7 @@ fi
 
 
 #### BlockList / PeerGuardian
-case $MYBLOCKLIST in
+case $MySB_PeerBlock in
 	PeerGuardian)
 		if [ "$DevInstallMode" == "manual" ]; then
 			clean
@@ -417,7 +417,7 @@ case $MYBLOCKLIST in
 esac
 
 ### DNScrypt-proxy
-if [ "$INSTALLDNSCRYPT" == "YES" ]; then
+if [ "$IsInstalled_DNScrypt" == "YES" ]; then
 	if [ "$DevInstallMode" == "manual" ]; then
 		clean
 		echo -e "${CGREEN}screen /bin/bash /etc/MySB/install/DNScrypt$CEND"

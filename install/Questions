@@ -92,8 +92,8 @@ echo -e "${CYELLOW}Be careful when entering your e-mail address!$CEND"
 echo -e "${CYELLOW}If the input address is wrong, you will not receive the confirmation email ...$CEND"
 echo -e "${CYELLOW}If you selected a different provider that LOCAL to the previous question,$CEND"
 echo -e "${CYELLOW}you must enter here email address corresponding to the SMTP account you specified.$CEND"
-while [ ! "`ValidateMail $EMAILUSER`" = "0" ]; do
-	GetString NO "What's your e-mail address ?" EMAILUSER
+while [ ! "`ValidateMail $MainUserEmail`" = "0" ]; do
+	GetString NO "What's your e-mail address ?" MainUserEmail
 done
 
 #### SERVER INFO
@@ -136,33 +136,33 @@ echo
 echo -e "${CYELLOW}#### Services ####$CEND"
 
 # Seedbox-Manager
-GetString NO "Install Seedbox-Manager (recommended)? " INSTALLMANAGER YES
+GetString NO "Install Seedbox-Manager (recommended)? " IsInstalled_Manager YES
 
 # Cakebox Light
 echo
-GetString NO "Install CakeBox Light? " INSTALLCAKEBOX YES
-if [ "$INSTALLCAKEBOX" == "YES" ]; then
-	GetString NO "CakeBox port: " CAKEBOXPORT 8887
+GetString NO "Install CakeBox Light? " IsInstalled_Cakebox YES
+if [ "$IsInstalled_Cakebox" == "YES" ]; then
+	GetString NO "CakeBox port: " Port_Cakebox 8887
 fi
 
 # Plexmedia server
 echo
-GetString NO "Install Plex Media? " INSTALLPLEXMEDIA YES
+GetString NO "Install Plex Media? " IsInstalled_PlexMedia YES
 
 # Webmin
 echo
-GetString NO "Install Webmin? " INSTALLWEBMIN YES
-if [ "$INSTALLWEBMIN" == "YES" ]; then
-	GetString NO "Webmin port  (usually 10000): " WEBMINPORT 8890
+GetString NO "Install Webmin? " IsInstalled_Webmin YES
+if [ "$IsInstalled_Webmin" == "YES" ]; then
+	GetString NO "Webmin port  (usually 10000): " Port_Webmin 8890
 fi
 
 # OpenVPN
 echo
 if [ "`ls -la /dev/net/tun &>2 /dev/null && echo $?`" == "0" ]; then
-	GetString NO "Install OpenVPN? " INSTALLOPENVPN YES
-	if [ "$INSTALLOPENVPN" == "YES" ]; then
-		GetString NO  "OpenVPN port with redirect gateway: " OPENVPNPORT_WITHGW 8893
-		GetString NO  "OpenVPN port without redirect gateway: " OPENVPNPORT_WITOUTHGW 8894
+	GetString NO "Install OpenVPN? " IsInstalled_OpenVPN YES
+	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+		GetString NO  "OpenVPN port with redirect gateway: " Port_OpenVPN_WithGW 8893
+		GetString NO  "OpenVPN port without redirect gateway: " Port_OpenVPN_WithoutGW 8894
 		echo -e "${CYELLOW}You can use OpenVPN with TCP or UDP.$CEND ${CYELLOW}(TCP is recommended)$CEND"
 		GetString NO "Which protocol, 'UDP' OR 'TCP' ? : " OPENVPNPROTO TCP
 	fi
@@ -170,7 +170,7 @@ else
 	echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
 	echo -e "${CYELLOW}You must follow this link BEFORE install 'MySB'.$CEND"
 	echo -e "${CGREEN}https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-access-server-on-a-vps-container.html$CEND"
-	INSTALLOPENVPN=NO
+	IsInstalled_OpenVPN=NO
 	
 	GetString NO  "Do you want to continue without OpenVPN, type 'yes' ?" CONTINUE NO
 	if [ "$CONTINUE" == "NO" ]; then
@@ -186,11 +186,11 @@ echo
 echo -e "${CYELLOW}#### Security ####$CEND"
 
 # Logwatch
-GetString NO "Install Logwatch ?" INSTALLLOGWATCH YES
+GetString NO "Install Logwatch ?" IsInstalled_LogWatch YES
 
 # Fail2Ban
 echo
-GetString NO "Install Fail2ban? " INSTALLFAIL2BAN YES
+GetString NO "Install Fail2ban? " IsInstalled_Fail2Ban YES
 
 # Blocklist
 echo
@@ -205,17 +205,17 @@ if [ -z $IFPVEKERNEL ]; then
 	else
 		echo -e "${CYELLOW}Your system have ${CRED}$MEMORY$CEND ${CYELLOW}MB of RAM. You can choose between PeerGuardian and rTorrent.$CEND"
 	fi
-	GetString NO "'PeerGuardian' OR 'rTorrent' OR 'none'?" MYBLOCKLIST "PeerGuardian"
+	GetString NO "'PeerGuardian' OR 'rTorrent' OR 'none'?" MySB_PeerBlock "PeerGuardian"
 else
 	echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
 	echo -e "${CYELLOW}It's not possible to install$CEND ${CGREEN}PeerGuardian$CEND${CYELLOW}.$CEND"
-	GetString NO "'rTorrent' OR 'none'?" MYBLOCKLIST "rTorrent"
+	GetString NO "'rTorrent' OR 'none'?" MySB_PeerBlock "rTorrent"
 fi
 
 # DNScrypt-proxy
 echo
-GetString NO "Install DNScrypt-proxy? " INSTALLDNSCRYPT YES
-if [ ! -z $IFPVEKERNEL ] && [ "$INSTALLDNSCRYPT" == "YES" ]; then
+GetString NO "Install DNScrypt-proxy? " IsInstalled_DNScrypt YES
+if [ ! -z $IFPVEKERNEL ] && [ "$IsInstalled_DNScrypt" == "YES" ]; then
 	echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
 	echo -e "${CYELLOW}At the end of the installation, you should replace your DNS (/etc/resolv.conf) with ${CGREEN}nameserver 127.0.0.1$CEND${CYELLOW} through the OpenVZ host (eg Proxmox).$CEND"
 	echo -e "${CYELLOW}Otherwise you will lose your configuration on the next reboot.$CEND"
@@ -242,50 +242,50 @@ sqlite3 $SQLiteDB\
 # 'users' table (Main user)
 sqlite3 $SQLiteDB\
 	"INSERT into users (users_ident,users_email,users_passwd,sftp,sudo,admin,fixed_ip)\
-	VALUES (\"$NEWUSER\",\"$EMAILUSER\",\"$PASSWORD\",\"1\",\"1\",\"1\",\"$MYIP\");"
+	VALUES (\"$NEWUSER\",\"$MainUserEmail\",\"$PASSWORD\",\"1\",\"1\",\"1\",\"$MYIP\");"
 	
 # 'services' table
-if [ "$INSTALLMANAGER" == "YES" ]; then
+if [ "$IsInstalled_Manager" == "YES" ]; then
 	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1' WHERE serv_name = 'Seedbox-Manager';"
 fi
 
-if [ "$INSTALLCAKEBOX" == "YES" ]; then
-	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1', ports_tcp = '$CAKEBOXPORT' WHERE serv_name = 'CakeBox-Light';"
+if [ "$IsInstalled_Cakebox" == "YES" ]; then
+	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1', ports_tcp = '$Port_Cakebox' WHERE serv_name = 'CakeBox-Light';"
 fi
 
-if [ "$INSTALLPLEXMEDIA" == "YES" ]; then
+if [ "$IsInstalled_PlexMedia" == "YES" ]; then
 	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1' WHERE serv_name = 'Plex Media Server';"
 fi
 
-if [ "$INSTALLWEBMIN" == "YES" ]; then
-	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1', ports_tcp = '$WEBMINPORT' WHERE serv_name = 'Webmin';"
+if [ "$IsInstalled_Webmin" == "YES" ]; then
+	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1', ports_tcp = '$Port_Webmin' WHERE serv_name = 'Webmin';"
 fi
 
-if [ "$INSTALLOPENVPN" == "YES" ]; then
+if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1' WHERE serv_name = 'OpenVPN';"
 	case "$OPENVPNPROTO" in
 		"TCP")
-			sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1', ports_tcp = '$OPENVPNPORT_WITHGW $OPENVPNPORT_WITOUTHGW', ports_udp = '' WHERE serv_name = 'OpenVPN';"		
+			sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1', ports_tcp = '$Port_OpenVPN_WithGW $Port_OpenVPN_WithoutGW', ports_udp = '' WHERE serv_name = 'OpenVPN';"		
 		;;
 		"UDP")
-			sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1', ports_tcp = '', ports_udp = '$OPENVPNPORT_WITHGW $OPENVPNPORT_WITOUTHGW' WHERE serv_name = 'OpenVPN';"
+			sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1', ports_tcp = '', ports_udp = '$Port_OpenVPN_WithGW $Port_OpenVPN_WithoutGW' WHERE serv_name = 'OpenVPN';"
 		;;				
 	esac	
 fi
 
-if [ "$INSTALLLOGWATCH" == "YES" ]; then
+if [ "$IsInstalled_LogWatch" == "YES" ]; then
 	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1' WHERE serv_name = 'LogWatch';"
 fi
 
-if [ "$INSTALLFAIL2BAN" == "YES" ]; then
+if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
 	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1' WHERE serv_name = 'Fail2Ban';"
 fi
 
-if [ "$INSTALLDNSCRYPT" == "YES" ]; then
+if [ "$IsInstalled_DNScrypt" == "YES" ]; then
 	sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1' WHERE serv_name = 'DNScrypt-proxy';"
 fi
 
-case "$MYBLOCKLIST" in
+case "$MySB_PeerBlock" in
 	"PeerGuardian")
 		sqlite3 $SQLiteDB "UPDATE services SET is_installed = '1' WHERE serv_name = 'PeerGuardian';"
 		sqlite3 $SQLiteDB "UPDATE services SET is_installed = '0' WHERE serv_name = 'rTorrent Block List';"

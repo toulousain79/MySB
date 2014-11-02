@@ -180,7 +180,7 @@ fi
 StatusLSB
 
 #### PeerGuardian
-if [ "$MYBLOCKLIST" == "PeerGuardian" ]; then
+if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then
 	log_daemon_msg "HTML Convert of PeerGuardian pglcmd log"
 	if [ -e /var/log/pgl/pglcmd.log.1 ]; then
 		cat /var/log/pgl/pglcmd.log.1 /var/log/pgl/pglcmd.log > /tmp/pglcmd.log
@@ -211,7 +211,7 @@ if [ "$MYBLOCKLIST" == "PeerGuardian" ]; then
 fi
 
 #### Fail2Ban
-if [ "$INSTALLFAIL2BAN" == "YES" ]; then
+if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
 	log_daemon_msg "HTML Convert of Fail2ban log"
 	if [ -e /var/log/fail2ban.log.1 ]; then
 		cat /var/log/fail2ban.log.1 /var/log/fail2ban.log > /tmp/fail2ban.log
