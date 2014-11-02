@@ -1,7 +1,7 @@
 ----
 -- phpLiteAdmin database dump (http://phpliteadmin.googlecode.com)
 -- phpLiteAdmin version: 1.9.5
--- Exported: 2:03pm on November 2, 2014 (CET)
+-- Exported: 2:11pm on November 2, 2014 (CET)
 -- database file: ../db/MySB.db
 ----
 BEGIN TRANSACTION;
@@ -198,13 +198,14 @@ CREATE TABLE [users] (
 [users_email] VARCHAR(260)  UNIQUE NOT NULL,
 [users_passwd] VARCHAR(32)  NULL,
 [rpc] VARCHAR(64)  NULL,
-[sftp] BOOLEAN DEFAULT '''1''' NOT NULL,
-[sudo] BOOLEAN DEFAULT '''0''' NOT NULL,
-[admin] BOOLEAN DEFAULT '''0''' NOT NULL,
+[sftp] BOOLEAN DEFAULT '1' NOT NULL,
+[sudo] BOOLEAN DEFAULT '0' NOT NULL,
+[admin] BOOLEAN DEFAULT '0' NOT NULL,
 [fixed_ip] VARCHAR(128)  NULL,
 [no_ip] VARCHAR(128)  NULL,
 [scgi_port] INTEGER  NULL,
-[rtorrent_port] INTEGER  NULL
+[rtorrent_port] INTEGER  NULL,
+[home_dir] VARCHAR(128)  NULL
 );
 
 ----
