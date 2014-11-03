@@ -45,11 +45,39 @@ done
 unset LIST_CERTS
 
 #### Create trackers listing
-if [ -f /etc/MySB/files/trackers.list ]; then
-	rm /etc/MySB/files/trackers.list
-fi
+# Add ruTorrent trackers in db
+ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
+for engine in ${ENGINES}; do
+	TRACKER=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "\$url" | grep "\=" | grep "http" | head -1 | sed 's/public//g;' | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
+	if [ ! -z "$TRACKER" ]; then
+		PART1=`echo ${TRACKER} | cut -d "." -f 1`
+		PART2=`echo ${TRACKER} | cut -d "." -f 2`
+		PART3=`echo ${TRACKER} | cut -d "." -f 3`
 
-# Create PeerGuardian P2P file
+		if [ -z "$PART3" ]; then
+			TrackerDomain="`echo $PART1`.`echo $PART2`"
+		else
+			TrackerDomain="`echo $PART2`.`echo $PART3`"
+			TrackerHost="`echo $PART1`"
+		fi		
+
+		if [ ! -z "$TrackerDomain" ]; then
+			sqlite3 -echo $SQLiteDB "INSERT or IGNORE into trackers_domains (tracker_domain,is_active) VALUES (\"$TrackerDomain\",\"0\");"
+		fi
+
+		if [ ! -z "$TrackerHost" ]; then
+			sqlite3 -echo $SQLiteDB "INSERT or IGNORE into trakers_host (trakers_host) VALUES (\"$TrackerHost\");"
+		fi
+		
+		unset PART1 PART2 PART3	TrackerDomain TrackerHost
+	fi
+	
+	unset TRACKER
+done
+unset ENGINES
+
+
+# Create new PeerGuardian P2P file
 if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then	
 	(
 	cat <<'EOF'
@@ -66,41 +94,7 @@ EOF
 	) > /etc/MySB/infos/allow.p2p
 fi
 
-# Add ruTorrent trackers in db
-ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
-for engine in ${ENGINES}; do
-	TRACKER=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "\$url" | grep "\=" | grep "http" | head -1 | sed 's/public//g;' | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
-	if [ ! -z "$TRACKER" ]; then
-		PART1=`echo ${TRACKER} | cut -d "." -f 1`
-		PART2=`echo ${TRACKER} | cut -d "." -f 2`
-		PART3=`echo ${TRACKER} | cut -d "." -f 3`
 
-		if [ -z "$PART3" ]; then
-			TrackerDomain="`echo $PART1`.`echo $PART2`"
-		else
-			TrackerDomain="`echo $PART2`.`echo $PART3`"
-			TrackerSubDomain="`echo $PART1`.`echo $PART2`.`echo $PART3`"
-			TrackerHost="`echo $PART1`"
-		fi		
-
-		if [ ! -z "$TrackerDomain" ]; then
-			sqlite3 -echo $SQLiteDB "INSERT or IGNORE into trackers_domains (tracker_domain,is_active) VALUES (\"$TrackerDomain\",\"0\");"
-		fi
-		
-		if [ ! -z "$TrackerSubDomain" ]; then
-			sqlite3 -echo $SQLiteDB "INSERT or IGNORE into trakers_subdomains (trakers_subdomains) VALUES (\"$TrackerSubDomain\");"
-		fi
-
-		if [ ! -z "$TrackerHost" ]; then
-			sqlite3 -echo $SQLiteDB "INSERT or IGNORE into trakers_host (trakers_host) VALUES (\"$TrackerHost\");"
-		fi
-		
-		unset PART1 PART2 PART3	TrackerDomain TrackerSubDomain TrackerHost
-	fi
-	
-	unset TRACKER
-done
-unset ENGINES
 
 for Tracker in $TRACKERS_LIST; do 
 	IfExist=`cat /etc/MySB/files/trackers.list | grep $Tracker`

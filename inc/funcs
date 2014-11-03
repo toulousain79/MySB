@@ -682,68 +682,46 @@ MonthlyPayment() {
 
 #### Get Trackers Address
 TrackersGenerateAddress() {
-	TRACKER="$1"
+	TrackersHosts="`sqlite3 $SQLiteDB \"SELECT trakers_host FROM trakers_hosts WHERE 1`"
+	TrackersDomains="`sqlite3 $SQLiteDB \"SELECT tracker_domain FROM trackers_domains WHERE 1`"
 	
-	log_daemon_msg "Adding $TRACKER"
-
-	ping -c2 ${TRACKER} &> /dev/null
-
-
-
-	
-	#TRACKER_IPV4="$(nslookup ${TRACKER} | grep 'Address:' | awk '{ print $2 }' | sed -n 2p)"
-	#TRACKER_IPV4="$(nslookup ${TRACKER} | grep 'Address:' | awk '{ print $2 }' | sed '/#/d')"
-	TRACKER_IPV4="$(nslookup ${TRACKER} | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
-
-	if [ ! -z "$TRACKER_IPV4" ]; then
-		if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then
-			echo $TRACKER >> /etc/MySB/files/trackers.list
-			for TrackerIp in ${TRACKER_IPV4}; do
-				echo "${TRACKER}:${TrackerIp}-255.255.255.255" >> /etc/MySB/infos/allow.p2p
-			done
-			unset TrackerIp
-			if [ "`cat /etc/MySB/infos/allow.p2p | grep '0.0.0.0'`" != "" ]; then
-				sed -i '/0.0.0.0/d' /etc/MySB/infos/allow.p2p
-				sed -i '/'$TRACKER'/d' /etc/MySB/files/trackers.list
-			fi				
-		fi
-	fi
-	
-	PART1=`echo ${TRACKER} | cut -d "." -f 1`
-	PART2=`echo ${TRACKER} | cut -d "." -f 2`
-	PART3=`echo ${TRACKER} | cut -d "." -f 3`	
-
-	if [ -z $PART3 ]; then
-		PART3=$PART2
-		PART2=$PART1
-		PART1=tracker
-	else
-		PART1=tracker
-	fi
+	for Domain in ${TrackersDomains}; do
 		
-	TRACKER="`echo $PART1`.`echo $PART2`.`echo $PART3`"
 	
-	#TRACKER_IPV4="$(nslookup ${TRACKER} | grep 'Address:' | awk '{ print $2 }' | sed -n 2p)"
-	#TRACKER_IPV4="$(nslookup ${TRACKER} | grep 'Address:' | awk '{ print $2 }' | sed '/#/d')"
-	TRACKER_IPV4="$(nslookup ${TRACKER} | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
-
-	if [ ! -z "$TRACKER_IPV4" ]; then			
-		if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then
-			echo $TRACKER >> /etc/MySB/files/trackers.list
-			for TrackerIp in ${TRACKER_IPV4}; do
-				echo "${TRACKER}:${TrackerIp}-255.255.255.255" >> /etc/MySB/infos/allow.p2p
-			done
-			unset TrackerIp
-			if [ "`cat /etc/MySB/infos/allow.p2p | grep '0.0.0.0'`" != "" ]; then
-				sed -i '/0.0.0.0/d' /etc/MySB/infos/allow.p2p
-				sed -i '/'$TRACKER'/d' /etc/MySB/files/trackers.list
-			fi			
+		ping -c2 ${Domain} &> /dev/null
+		if [ $? -eq 0 ]; then
+			log_daemon_msg "Add tracker $Domain"
+			sqlite3 -echo $SQLiteDB "INSERT or IGNORE into trakers_list (trakers) VALUES (\"${Domain}\");"
+			LastId="`sqlite3 $SQLiteDB SELECT last_insert_rowid();`"
+			
+			DomainIPv4="$(nslookup ${Domain} | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
+			if [ ! -z "$DomainIPv4" ]; then
+				for Ip in ${DomainIPv4}; do
+					sqlite3 -echo $SQLiteDB "INSERT or IGNORE into trackers_address (id_trakers_list,trackers_address) VALUES (\"${LastId}\",\"${Ip}\");"
+				done
+				unset DomainIPv4
+			fi
+			StatusLSB
 		fi
-	fi
-	
-	unset PART1 PART2 PART3 TRACKER_IPV4 TRACKER
-	
-	StatusLSB
+		
+		for Host in ${TrackersHosts}; do
+			ping -c2 ${Host}.${Domain} &> /dev/null
+			if [ $? -eq 0 ]; then
+				log_daemon_msg "Add tracker $Domain"
+				sqlite3 -echo $SQLiteDB "INSERT or IGNORE into trakers_list (trakers) VALUES (\"${Host}.${Domain}\");"
+				LastId="`sqlite3 $SQLiteDB SELECT last_insert_rowid();`"
+				
+				DomainIPv4="$(nslookup ${Host}.${Domain} | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
+				if [ ! -z "$DomainIPv4" ]; then
+					for Ip in ${DomainIPv4}; do
+						sqlite3 -echo $SQLiteDB "INSERT or IGNORE into trackers_address (id_trakers_list,trackers_address) VALUES (\"${LastId}\",\"${Ip}\");"
+					done
+					unset DomainIPv4
+				fi
+				StatusLSB
+			fi		
+		done
+	done
 }
 
 #### Script Invocation
