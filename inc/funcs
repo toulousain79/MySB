@@ -54,8 +54,7 @@ SendMail() {
 	Info="$3"
 	SeedUserMail=$(cat /etc/MySB/users/$User.info | grep "E-mail=" | awk '{ print $2 }')
 	TempPassword=$(cat /etc/MySB/users/$User.info | grep "Password=" | awk '{ print $2 }')
-	MailFrom=`cat /etc/MySB/infos/email.info`
-	
+	MailFrom=$MainUserEmail
 	log_daemon_msg "Generate HTML info for $User"
 	perl -pi -e "s/##MySB_User##/$MySB_User/g" /etc/MySB/web/SeedboxInfo.php
 	
@@ -680,6 +679,7 @@ MonthlyPayment() {
 	fi
 }
 
+
 #### Get Trackers Address
 TrackersGenerateAddress() {
 	TRACKER="$1"
@@ -692,14 +692,14 @@ TrackersGenerateAddress() {
 
 	if [ ! -z "$TRACKER_IPV4" ]; then
 		if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then
-			echo $TRACKER >> /etc/MySB/infos/trackers.list
+			echo $TRACKER >> /etc/MySB/files/trackers.list
 			for TrackerIp in ${TRACKER_IPV4}; do
 				echo "${TRACKER}:${TrackerIp}-255.255.255.255" >> /etc/MySB/infos/allow.p2p
 			done
 			unset TrackerIp
 			if [ "`cat /etc/MySB/infos/allow.p2p | grep '0.0.0.0'`" != "" ]; then
 				sed -i '/0.0.0.0/d' /etc/MySB/infos/allow.p2p
-				sed -i '/'$TRACKER'/d' /etc/MySB/infos/trackers.list
+				sed -i '/'$TRACKER'/d' /etc/MySB/files/trackers.list
 			fi				
 		fi
 	fi
@@ -724,14 +724,14 @@ TrackersGenerateAddress() {
 
 	if [ ! -z "$TRACKER_IPV4" ]; then			
 		if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then
-			echo $TRACKER >> /etc/MySB/infos/trackers.list
+			echo $TRACKER >> /etc/MySB/files/trackers.list
 			for TrackerIp in ${TRACKER_IPV4}; do
 				echo "${TRACKER}:${TrackerIp}-255.255.255.255" >> /etc/MySB/infos/allow.p2p
 			done
 			unset TrackerIp
 			if [ "`cat /etc/MySB/infos/allow.p2p | grep '0.0.0.0'`" != "" ]; then
 				sed -i '/0.0.0.0/d' /etc/MySB/infos/allow.p2p
-				sed -i '/'$TRACKER'/d' /etc/MySB/infos/trackers.list
+				sed -i '/'$TRACKER'/d' /etc/MySB/files/trackers.list
 			fi			
 		fi
 	fi
@@ -739,52 +739,6 @@ TrackersGenerateAddress() {
 	unset PART1 PART2 PART3 TRACKER_IPV4 TRACKER
 	
 	StatusLSB
-}
-
-#### Trackers Listing
-TrackersListing() {	
-	if [ -f /etc/MySB/infos/trackers.list ]; then
-		rm /etc/MySB/infos/trackers.list
-	fi
-
-	#### Create PeerGuardian P2P file
-	if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then	
-		(
-		cat <<'EOF'
-# allow.p2p - allow list for pglcmd
-#
-# This file contains IP ranges that shall not be checked.
-# They must be in the PeerGuardian .p2p text format like this:
-#   Some organization:1.0.0.0-1.255.255.255
-# This is also true if your blocklists are in another format.
-# Lines beginning with a hash (#) are comments and will be ignored.
-#
-# Do a "pglcmd restart" when you have edited this file.
-EOF
-		) > /etc/MySB/infos/allow.p2p
-	fi
-	
-	ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
-	for engine in ${ENGINES}; do
-		TRACKER=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "\$url" | grep "\=" | grep "http" | head -1 | sed 's/public//g;' | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
-		if [ ! -z "$TRACKER" ]; then
-			TrackersGenerateAddress "$TRACKER"
-		fi
-	done
-	unset ENGINES TRACKER
-	
-	# Import trackers manually added
-	source /etc/MySB/inc/trackers
-	
-	for Tracker in $TRACKERS_LIST; do 
-		IfExist=`cat /etc/MySB/infos/trackers.list | grep $Tracker`
-		
-		if [ -z "$IfExist" ]; then	
-			TrackersGenerateAddress "$Tracker"
-		fi
-		unset IfExist
-	done
-	unset TRACKER_IPV4 Tracker	
 }
 
 #### Script Invocation

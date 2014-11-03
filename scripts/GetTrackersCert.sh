@@ -24,8 +24,73 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-GetCertificate() {
-	TRACKER=$1
+if [ ! -d /etc/MySB/ssl/trackers/ ]; then
+	mkdir /etc/MySB/ssl/trackers/
+fi
+
+#### Clean certificates with bad links
+LIST_CERTS=$(ls -la /etc/ssl/certs/ | awk '{ print $9 }')
+for Cert in ${LIST_CERTS}; do
+	if [ "$Cert" != "" ] && [ "$Cert" != "." ] && [ "$Cert" != ".." ]; then
+
+		TARGET=$(ls -la /etc/ssl/certs/$Cert | awk '{ print $11 }')
+
+		if [ ! -f $TARGET ];then
+			rm /etc/ssl/certs/$Cert
+		fi
+		
+		unset Cert TARGET
+	fi
+done
+unset LIST_CERTS
+
+#### Create trackers listing
+if [ -f /etc/MySB/files/trackers.list ]; then
+	rm /etc/MySB/files/trackers.list
+fi
+
+# Create PeerGuardian P2P file
+if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then	
+	(
+	cat <<'EOF'
+# allow.p2p - allow list for pglcmd
+#
+# This file contains IP ranges that shall not be checked.
+# They must be in the PeerGuardian .p2p text format like this:
+#   Some organization:1.0.0.0-1.255.255.255
+# This is also true if your blocklists are in another format.
+# Lines beginning with a hash (#) are comments and will be ignored.
+#
+# Do a "pglcmd restart" when you have edited this file.
+EOF
+	) > /etc/MySB/infos/allow.p2p
+fi
+	
+ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
+for engine in ${ENGINES}; do
+	TRACKER=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "\$url" | grep "\=" | grep "http" | head -1 | sed 's/public//g;' | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
+	if [ ! -z "$TRACKER" ]; then
+		TrackersGenerateAddress "$TRACKER"
+	fi
+done
+unset ENGINES TRACKER
+
+# Import trackers manually added
+source /etc/MySB/inc/trackers
+
+for Tracker in $TRACKERS_LIST; do 
+	IfExist=`cat /etc/MySB/files/trackers.list | grep $Tracker`
+	
+	if [ -z "$IfExist" ]; then	
+		TrackersGenerateAddress "$Tracker"
+	fi
+	unset IfExist
+done
+unset TRACKER_IPV4 Tracker	
+
+#### Get certificates
+while read TRACKER; do
+	log_daemon_msg "Get certificate for $TRACKER"
 	cd /etc/MySB/ssl/trackers/
 
 	openssl s_client -connect $TRACKER:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$TRACKER.crt 
@@ -45,35 +110,10 @@ GetCertificate() {
 	rm ./$TRACKER.crt
 	
 	unset TRACKER
-}
-
-if [ ! -d /etc/MySB/ssl/trackers/ ]; then
-	mkdir /etc/MySB/ssl/trackers/
-fi
-
-LIST_CERTS=$(ls -la /etc/ssl/certs/ | awk '{ print $9 }')
-for Cert in ${LIST_CERTS}; do
-	if [ "$Cert" != "" ] && [ "$Cert" != "." ] && [ "$Cert" != ".." ]; then
-
-		TARGET=$(ls -la /etc/ssl/certs/$Cert | awk '{ print $11 }')
-
-		if [ ! -f $TARGET ];then
-			rm /etc/ssl/certs/$Cert
-		fi
-		
-		unset Cert TARGET
-	fi
-done
-unset LIST_CERTS
-
-TrackersListing
-
-while read TRACKER; do
-	log_daemon_msg "Get certificate for $TRACKER"
-	GetCertificate $TRACKER
 	StatusLSB
-done < /etc/MySB/infos/trackers.list
+done < /etc/MySB/files/trackers.list
 
+#### Create again certificates listing in system
 log_daemon_msg "Certificates Rehash"
 c_rehash &> /dev/null
 StatusLSB

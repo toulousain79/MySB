@@ -84,7 +84,7 @@ echo -e "${CRED}############################################################$CEN
 echo
 
 if [ "$COMMAND" == "" ]; then
-	if [ -f /etc/MySB/infos/version.info ]; then # Upgrade ?
+	if [ -f /etc/MySB/version ]; then # Upgrade ?
 		echo -e -n "${CRED}MySB is already installed, aborting!$CEND"
 		echo -e -n "${CBLUE}To upgrade MySB, thank you use the following command.'$CEND"
 		echo -e -n "${CGREEN}	MySB_UpgradeMe'$CEND"
@@ -193,7 +193,7 @@ if [ "$COMMAND" == "" ]; then
 				sqlite3 -echo /etc/MySB/db/MySB.db < /etc/MySB/templates/MySB_2014-11-02.dump.sql;
 			fi
 
-			sqlite3 /etc/MySB/db/MySB.db "INSERT into system (version) VALUES (\"$MySB_CurrentVersion\");"
+			sqlite3 /etc/MySB/db/MySB.db "INSERT into system (mysb_version) VALUES (\"$MySB_CurrentVersion\");"
 			
 			#### Some questions
 			/bin/bash /etc/MySB/install/Questions			

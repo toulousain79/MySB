@@ -145,8 +145,8 @@ case $1 in
 		
 		# Ne pas casser les connexions etablies
 		log_daemon_msg "Do not break established connections"
-		iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-		iptables -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT	
+		iptables -A INPUT -m state --state RELATED,ESTABLISHED -i $PrimaryInet -j ACCEPT
+		iptables -A OUTPUT -m state --state RELATED,ESTABLISHED -o $PrimaryInet -j ACCEPT	
 		StatusLSB
 		
 		# Autoriser loopback
@@ -167,37 +167,37 @@ case $1 in
 		# CakeBox
 		if [ "$IsInstalled_Cakebox" == "YES" ]; then
 			log_daemon_msg "Allow access to CakeBox"
-			iptables -t filter -A INPUT -p tcp --dport $Ports_Cakebox -j ACCEPT -m comment --comment "CakeBox"
+			iptables -t filter -A INPUT -p tcp --dport $Ports_Cakebox -i $PrimaryInet -j ACCEPT -m comment --comment "CakeBox"
 			StatusLSB
 		fi
 		
 		# HTTP
 		log_daemon_msg "Allow access to HTTP"
-		iptables -t filter -A INPUT -p tcp --dport $Port_HTTP -j ACCEPT -m comment --comment "HTTP"
+		iptables -t filter -A INPUT -p tcp --dport $Port_HTTP -i $PrimaryInet -j ACCEPT -m comment --comment "HTTP"
 		StatusLSB
 
 		# HTTPS
 		log_daemon_msg "Allow access to HTTPs"
-		iptables -t filter -A INPUT -p tcp --dport $Port_HTTPS -j ACCEPT -m comment --comment "HTTPs"
+		iptables -t filter -A INPUT -p tcp --dport $Port_HTTPS -i $PrimaryInet -j ACCEPT -m comment --comment "HTTPs"
 		StatusLSB
 
 		# Webmin
 		if [ "$IsInstalled_Webmin" == "YES" ]; then
 			log_daemon_msg "Allow access to Webmin"
-			iptables -t filter -A INPUT -p tcp --dport $Ports_Webmin -j ACCEPT -m comment --comment "Webmin"
+			iptables -t filter -A INPUT -p tcp --dport $Ports_Webmin -i $PrimaryInet -j ACCEPT -m comment --comment "Webmin"
 			StatusLSB
 		fi		
 
 		# FTP
 		log_daemon_msg "Allow use of FTP"
-		iptables -t filter -A INPUT -p tcp --dport $Port_FTP -j ACCEPT -m comment --comment "FTP"
-		iptables -t filter -A INPUT -p tcp --dport $Port_FTP_Data -j ACCEPT -m comment --comment "FTP Data"
-		iptables -t filter -A INPUT -p tcp --dport 65000:65535 -j ACCEPT -m comment --comment "FTP Passive"
+		iptables -t filter -A INPUT -p tcp --dport $Port_FTP -i $PrimaryInet -j ACCEPT -m comment --comment "FTP"
+		iptables -t filter -A INPUT -p tcp --dport $Port_FTP_Data -i $PrimaryInet -j ACCEPT -m comment --comment "FTP Data"
+		iptables -t filter -A INPUT -p tcp --dport $Port_FTP_Passive -i $PrimaryInet -j ACCEPT -m comment --comment "FTP Passive"
 		StatusLSB		
 
 		# SSH
 		log_daemon_msg "Allow access to SSH"
-		iptables -t filter -A INPUT -p tcp --dport $Port_SSH -j ACCEPT -m comment --comment "SSH"
+		iptables -t filter -A INPUT -p tcp --dport $Port_SSH -i $PrimaryInet -j ACCEPT -m comment --comment "SSH"
 		StatusLSB
 		
 		# OpenVPN
@@ -208,7 +208,7 @@ case $1 in
 		
 			log_daemon_msg "Allow use of OpenVPN TUN With Redirect Gateway"
 			iptables -t filter -A INPUT -i tun0 -j ACCEPT
-			iptables -t filter -A INPUT -p ${OpenVPN_Proto} --dport ${Port_OpenVPN_WithGW} -j ACCEPT -m comment --comment "OpenVPN"
+			iptables -t filter -A INPUT -p ${OpenVPN_Proto} --dport ${Port_OpenVPN_WithGW} -i $PrimaryInet -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t filter -A FORWARD -i tun0 -o $PrimaryInet -s 10.0.0.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t filter -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t nat -A POSTROUTING -s 10.0.0.0/24 -j MASQUERADE -m comment --comment "OpenVPN"	
@@ -216,7 +216,7 @@ case $1 in
 			
 			log_daemon_msg "Allow use of OpenVPN TUN Without Redirect Gateway"
 			iptables -t filter -A INPUT -i tun1 -j ACCEPT
-			iptables -t filter -A INPUT -p ${OpenVPN_Proto} --dport ${Port_OpenVPN_WithoutGW} -j ACCEPT -m comment --comment "OpenVPN"
+			iptables -t filter -A INPUT -p ${OpenVPN_Proto} --dport ${Port_OpenVPN_WithoutGW} -i $PrimaryInet -j ACCEPT -m comment --comment "OpenVPN"
 			StatusLSB
 		fi
 
@@ -224,7 +224,7 @@ case $1 in
 		if [ "$IsInstalled_PlexMedia" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
 			log_daemon_msg "Allow use of Plex Media Server on TCP"
 			for PlexTcpPort in $Ports_TCP_PlexMedia; do 
-				iptables -t filter -A INPUT -p tcp --dport $PlexTcpPort -j ACCEPT -m comment --comment "Plex Media Server TCP"
+				iptables -t filter -A INPUT -p tcp --dport $PlexTcpPort -i $PrimaryInet -j ACCEPT -m comment --comment "Plex Media Server TCP"
 			done
 			unset PlexTcpPort
 			StatusLSB
@@ -244,7 +244,7 @@ case $1 in
 			log_daemon_msg "Allow use of rTorrent for $SeedboxUser"
 			PORT_START=$(cat /etc/MySB/users/$SeedboxUser.info | grep "SCGI port=" | awk '{ print $3 }')
 			PORT_END=$(cat /etc/MySB/users/$SeedboxUser.info | grep "rTorrent port=" | awk '{ print $3 }')
-			iptables -t filter -A INPUT -p tcp --dport $PORT_START:$PORT_END -j ACCEPT -m comment --comment "rTorrent $SeedboxUser"	
+			iptables -t filter -A INPUT -p tcp --dport $PORT_START:$PORT_END -i $PrimaryInet -j ACCEPT -m comment --comment "rTorrent $SeedboxUser"	
 			StatusLSB
 		done
 
@@ -298,7 +298,7 @@ case $1 in
 			log_daemon_msg "Allow response for DNScrypt resolvers"
 			ResolversPorts="`csvtool -t ',' col 11 /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv | csvtool drop 1 - | awk -F: '{print $NF}' | sort -g | uniq`"
 			for Port in $ResolversPorts; do
-				iptables -t filter -A INPUT -p tcp --dport $Port -j ACCEPT -m comment --comment "DNScrypt-proxy"
+				iptables -t filter -A INPUT -p tcp --dport $Port -i $PrimaryInet -j ACCEPT -m comment --comment "DNScrypt-proxy"
 			done
 			unset Port
 			StatusLSB
