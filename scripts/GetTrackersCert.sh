@@ -62,11 +62,11 @@ for engine in ${ENGINES}; do
 		fi		
 
 		if [ ! -z "$TrackerDomain" ]; then
-			sqlite3 -echo $SQLiteDB "INSERT or IGNORE into trackers_domains (tracker_domain,is_active) VALUES (\"$TrackerDomain\",\"0\");"
+			sqlite3 -echo $SQLiteDB "INSERT or IGNORE into trackers_domains (domain,is_active) VALUES (\"$TrackerDomain\",\"0\");"
 		fi
 
 		if [ ! -z "$TrackerHost" ]; then
-			sqlite3 -echo $SQLiteDB "INSERT or IGNORE into trakers_host (trakers_host) VALUES (\"$TrackerHost\");"
+			sqlite3 -echo $SQLiteDB "INSERT or IGNORE into trakers_hosts (host) VALUES (\"$TrackerHost\");"
 		fi
 		
 		unset PART1 PART2 PART3	TrackerDomain TrackerHost
