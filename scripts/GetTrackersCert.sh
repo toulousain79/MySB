@@ -81,9 +81,9 @@ TrackersGenerateAddress
 
 
 # Create new PeerGuardian P2P file
-if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then	
-	(
-	cat <<'EOF'
+# if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then	
+	# (
+	# cat <<'EOF'
 # allow.p2p - allow list for pglcmd
 #
 # This file contains IP ranges that shall not be checked.
@@ -93,34 +93,34 @@ if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then
 # Lines beginning with a hash (#) are comments and will be ignored.
 #
 # Do a "pglcmd restart" when you have edited this file.
-EOF
-	) > /etc/MySB/infos/allow.p2p
-fi
+#EOF
+	# ) > /etc/MySB/infos/allow.p2p
+# fi
 
 #### Get certificates
-while read TRACKER; do
-	log_daemon_msg "Get certificate for $TRACKER"
-	cd /etc/MySB/ssl/trackers/
+# while read TRACKER; do
+	# log_daemon_msg "Get certificate for $TRACKER"
+	# cd /etc/MySB/ssl/trackers/
 
-	openssl s_client -connect $TRACKER:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$TRACKER.crt 
-	if [ -s ./$TRACKER.crt ]; then
-		openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
-		openssl x509 -in ./$TRACKER.der -inform DER -out ./$TRACKER.pem -outform PEM
-		if [ -e ./$TRACKER.pem ]; then
-			if [ -f /etc/ssl/certs/$TRACKER.pem ]; then
-				rm /etc/ssl/certs/$TRACKER.pem
-			fi	
-			ln -s /etc/MySB/ssl/trackers/$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
-		fi
+	# openssl s_client -connect $TRACKER:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$TRACKER.crt 
+	# if [ -s ./$TRACKER.crt ]; then
+		# openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
+		# openssl x509 -in ./$TRACKER.der -inform DER -out ./$TRACKER.pem -outform PEM
+		# if [ -e ./$TRACKER.pem ]; then
+			# if [ -f /etc/ssl/certs/$TRACKER.pem ]; then
+				# rm /etc/ssl/certs/$TRACKER.pem
+			# fi	
+			# ln -s /etc/MySB/ssl/trackers/$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
+		# fi
 		
-		rm ./$TRACKER.der
-	fi
+		# rm ./$TRACKER.der
+	# fi
 	
-	rm ./$TRACKER.crt
+	# rm ./$TRACKER.crt
 	
-	unset TRACKER
-	StatusLSB
-done < /etc/MySB/files/trackers.list
+	# unset TRACKER
+	# StatusLSB
+# done < /etc/MySB/files/trackers.list
 
 #### Create again certificates listing in system
 log_daemon_msg "Certificates Rehash"
