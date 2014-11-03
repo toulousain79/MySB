@@ -1,24 +1,10 @@
 ----
 -- phpLiteAdmin database dump (http://phpliteadmin.googlecode.com)
 -- phpLiteAdmin version: 1.9.5
--- Exported: 10:40pm on November 2, 2014 (CET)
+-- Exported: 4:19pm on November 3, 2014 (CET)
 -- database file: ../db/MySB.db
 ----
 BEGIN TRANSACTION;
-
-----
--- Table structure for renting
-----
-CREATE TABLE [renting] (
-[id_renting] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
-[model] VARCHAR(64)  NULL,
-[tva] NUMERIC  NULL,
-[global_cost] NUMERIC  NULL
-);
-
-----
--- Data dump for renting, a total of 0 rows
-----
 
 ----
 -- Table structure for system_services
@@ -76,31 +62,6 @@ CREATE TABLE [list_blocklists] (
 ----
 
 ----
--- Table structure for system
-----
-CREATE TABLE [system] (
-[id_system] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
-[version] VARCHAR(6)  UNIQUE NOT NULL,
-[hostname] VARCHAR(128)  UNIQUE NULL,
-[ipv4] VARCHAR(15)  UNIQUE NULL,
-[primary_inet] VARCHAR(16)  UNIQUE NULL,
-[timezone] VARCHAR(64)  UNIQUE NULL,
-[mysb_user] VARCHAR(32)  UNIQUE NULL,
-[mysb_password] VARCHAR(32)  UNIQUE NULL,
-[cert_password] VARCHAR(13)  NULL,
-[port_ftp] INTEGER  UNIQUE NULL,
-[port_ftp_data] INTEGER  UNIQUE NULL,
-[port_ftp_passive] VARCHAR(11)  UNIQUE NULL,
-[port_ssh] INTEGER  UNIQUE NULL,
-[port_https] INTEGER  UNIQUE NULL,
-[port_http] INTEGER  UNIQUE NULL
-);
-
-----
--- Data dump for system, a total of 0 rows
-----
-
-----
 -- Table structure for smtp
 ----
 CREATE TABLE [smtp] (
@@ -133,41 +94,6 @@ CREATE TABLE [vars] (
 INSERT INTO "vars" ("id_vars","fail2ban_whitelist","vpn_ip","white_tcp_port_out","white_udp_port_out") VALUES ('1','127.0.0.1/32','10.0.0.0/24,10.0.1.0/24','80 443',NULL);
 
 ----
--- Table structure for users
-----
-CREATE TABLE [users] (
-[id_users] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
-[users_ident] VARCHAR(32)  UNIQUE NOT NULL,
-[users_email] VARCHAR(260)  UNIQUE NOT NULL,
-[users_passwd] VARCHAR(32)  NULL,
-[rpc] VARCHAR(64)  NULL,
-[sftp] BOOLEAN DEFAULT '1' NOT NULL,
-[sudo] BOOLEAN DEFAULT '0' NOT NULL,
-[admin] BOOLEAN DEFAULT '0' NOT NULL,
-[fixed_ip] VARCHAR(128)  NULL,
-[no_ip] VARCHAR(128)  NULL,
-[scgi_port] INTEGER  NULL,
-[rtorrent_port] INTEGER  NULL,
-[home_dir] VARCHAR(128)  NULL
-);
-
-----
--- Data dump for users, a total of 0 rows
-----
-
-----
--- Table structure for ports
-----
-CREATE TABLE [ports] (
-[id_ports] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
-[value] INTEGER  UNIQUE NOT NULL
-);
-
-----
--- Data dump for ports, a total of 0 rows
-----
-
-----
 -- Table structure for trakers_host
 ----
 CREATE TABLE [trakers_host] (
@@ -176,20 +102,11 @@ CREATE TABLE [trakers_host] (
 );
 
 ----
--- Data dump for trakers_host, a total of 0 rows
+-- Data dump for trakers_host, a total of 3 rows
 ----
-
-----
--- Table structure for trakers_subdomains
-----
-CREATE TABLE [trakers_subdomains] (
-[id_trakers_subdomains] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
-[trakers_subdomains] VARCHAR(128)  UNIQUE NOT NULL
-);
-
-----
--- Data dump for trakers_subdomains, a total of 0 rows
-----
+INSERT INTO "trakers_host" ("id_trakers_subdomains","trakers_host") VALUES ('1','www');
+INSERT INTO "trakers_host" ("id_trakers_subdomains","trakers_host") VALUES ('2','www2');
+INSERT INTO "trakers_host" ("id_trakers_subdomains","trakers_host") VALUES ('3','tracker');
 
 ----
 -- Table structure for trackers_domains
@@ -197,7 +114,7 @@ CREATE TABLE [trakers_subdomains] (
 CREATE TABLE [trackers_domains] (
 [id_trackers_domains] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
 [tracker_domain] VARCHAR(128)  UNIQUE NOT NULL,
-[is_active] BOOLEAN DEFAULT '''0''' NULL
+[is_active] BOOLEAN  NULL
 );
 
 ----
@@ -213,6 +130,29 @@ INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_activ
 INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('8','cool-tracker.be','0');
 
 ----
+-- Table structure for users
+----
+CREATE TABLE [users] (
+[id_users] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[users_ident] VARCHAR(32)  UNIQUE NOT NULL,
+[users_email] VARCHAR(260)  UNIQUE NOT NULL,
+[users_passwd] VARCHAR(32)  NULL,
+[rpc] VARCHAR(64)  NULL,
+[sftp] BOOLEAN  NOT NULL,
+[sudo] BOOLEAN  NOT NULL,
+[admin] BOOLEAN  NOT NULL,
+[fixed_ip] VARCHAR(128)  NULL,
+[no_ip] VARCHAR(128)  NULL,
+[scgi_port] INTEGER  NULL,
+[rtorrent_port] INTEGER  NULL,
+[home_dir] VARCHAR(128)  NULL
+);
+
+----
+-- Data dump for users, a total of 0 rows
+----
+
+----
 -- Table structure for services
 ----
 CREATE TABLE [services] (
@@ -220,7 +160,7 @@ CREATE TABLE [services] (
 [serv_name] VARCHAR(32)  UNIQUE NULL,
 [ports_tcp] VARCHAR(32)  NULL,
 [ports_udp] VARCHAR(32)  NULL,
-[is_installed] BOOLEAN DEFAULT '''0''' NULL
+[is_installed] BOOLEAN  NULL
 );
 
 ----
@@ -238,6 +178,82 @@ INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_in
 INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_installed") VALUES ('10','DNScrypt-proxy',NULL,'53 54 443 2053 5353','N');
 
 ----
+-- Table structure for renting
+----
+CREATE TABLE [renting] (
+[id_renting] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[model] VARCHAR(64)  NULL,
+[tva] NUMERIC  NULL,
+[global_cost] NUMERIC  NULL
+);
+
+----
+-- Data dump for renting, a total of 0 rows
+----
+
+----
+-- Table structure for ports
+----
+CREATE TABLE [ports] (
+[id_ports] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[value] INTEGER  UNIQUE NOT NULL
+);
+
+----
+-- Data dump for ports, a total of 0 rows
+----
+
+----
+-- Table structure for system
+----
+CREATE TABLE [system] (
+[id_system] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[mysb_version] VARCHAR(6)  UNIQUE NOT NULL,
+[mysb_user] VARCHAR(32)  UNIQUE NULL,
+[mysb_password] VARCHAR(32)  UNIQUE NULL,
+[hostname] VARCHAR(128)  UNIQUE NULL,
+[ipv4] VARCHAR(15)  UNIQUE NULL,
+[primary_inet] VARCHAR(16)  UNIQUE NULL,
+[timezone] VARCHAR(64)  UNIQUE NULL,
+[cert_password] VARCHAR(13)  NULL,
+[port_ftp] INTEGER  UNIQUE NULL,
+[port_ftp_data] INTEGER  UNIQUE NULL,
+[port_ftp_passive] VARCHAR(11)  UNIQUE NULL,
+[port_ssh] INTEGER  UNIQUE NULL,
+[port_https] INTEGER  UNIQUE NULL,
+[port_http] INTEGER  UNIQUE NULL
+);
+
+----
+-- Data dump for system, a total of 0 rows
+----
+
+----
+-- Table structure for trakers_list
+----
+CREATE TABLE [trakers_list] (
+[id_trakers_list] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
+[trakers] VARCHAR(128)  UNIQUE NOT NULL
+);
+
+----
+-- Data dump for trakers_list, a total of 0 rows
+----
+
+----
+-- Table structure for trackers_address
+----
+CREATE TABLE [trackers_address] (
+[id_trackers_address] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[id_trakers_list] INTEGER  NOT NULL,
+[trackers_address] VARCHAR(15)  UNIQUE NOT NULL
+);
+
+----
+-- Data dump for trackers_address, a total of 0 rows
+----
+
+----
 -- structure for index sqlite_autoindex_system_services_1 on table system_services
 ----
 ;
@@ -249,6 +265,61 @@ INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_in
 
 ----
 -- structure for index sqlite_autoindex_list_peerguardian_1 on table list_peerguardian
+----
+;
+
+----
+-- structure for index sqlite_autoindex_smtp_1 on table smtp
+----
+;
+
+----
+-- structure for index sqlite_autoindex_smtp_2 on table smtp
+----
+;
+
+----
+-- structure for index sqlite_autoindex_smtp_3 on table smtp
+----
+;
+
+----
+-- structure for index sqlite_autoindex_smtp_4 on table smtp
+----
+;
+
+----
+-- structure for index sqlite_autoindex_smtp_5 on table smtp
+----
+;
+
+----
+-- structure for index sqlite_autoindex_trakers_host_1 on table trakers_host
+----
+;
+
+----
+-- structure for index sqlite_autoindex_trackers_domains_1 on table trackers_domains
+----
+;
+
+----
+-- structure for index sqlite_autoindex_users_1 on table users
+----
+;
+
+----
+-- structure for index sqlite_autoindex_users_2 on table users
+----
+;
+
+----
+-- structure for index sqlite_autoindex_services_1 on table services
+----
+;
+
+----
+-- structure for index sqlite_autoindex_ports_1 on table ports
 ----
 ;
 
@@ -318,62 +389,12 @@ INSERT INTO "services" ("id_services","serv_name","ports_tcp","ports_udp","is_in
 ;
 
 ----
--- structure for index sqlite_autoindex_smtp_1 on table smtp
+-- structure for index sqlite_autoindex_trakers_list_1 on table trakers_list
 ----
 ;
 
 ----
--- structure for index sqlite_autoindex_smtp_2 on table smtp
-----
-;
-
-----
--- structure for index sqlite_autoindex_smtp_3 on table smtp
-----
-;
-
-----
--- structure for index sqlite_autoindex_smtp_4 on table smtp
-----
-;
-
-----
--- structure for index sqlite_autoindex_smtp_5 on table smtp
-----
-;
-
-----
--- structure for index sqlite_autoindex_users_1 on table users
-----
-;
-
-----
--- structure for index sqlite_autoindex_users_2 on table users
-----
-;
-
-----
--- structure for index sqlite_autoindex_ports_1 on table ports
-----
-;
-
-----
--- structure for index sqlite_autoindex_trakers_host_1 on table trakers_host
-----
-;
-
-----
--- structure for index sqlite_autoindex_trakers_subdomains_1 on table trakers_subdomains
-----
-;
-
-----
--- structure for index sqlite_autoindex_trackers_domains_1 on table trackers_domains
-----
-;
-
-----
--- structure for index sqlite_autoindex_services_1 on table services
+-- structure for index sqlite_autoindex_trackers_address_1 on table trackers_address
 ----
 ;
 COMMIT;
