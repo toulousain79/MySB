@@ -29,6 +29,7 @@ if [ ! -d /etc/MySB/ssl/trackers/ ]; then
 fi
 
 #### Clean certificates with bad links
+log_daemon_msg "Clean certificates with bad links"
 LIST_CERTS=$(ls -la /etc/ssl/certs/ | awk '{ print $9 }')
 for Cert in ${LIST_CERTS}; do
 	if [ "$Cert" != "" ] && [ "$Cert" != "." ] && [ "$Cert" != ".." ]; then
@@ -36,15 +37,14 @@ for Cert in ${LIST_CERTS}; do
 		TARGET=$(ls -la /etc/ssl/certs/$Cert | awk '{ print $11 }')
 
 		if [ ! -f $TARGET ];then
-			log_daemon_msg "Delete $Cert"
 			rm /etc/ssl/certs/$Cert
-			StatusLSB
 		fi
 		
 		unset Cert TARGET
 	fi
 done
 unset LIST_CERTS
+StatusLSB
 
 #### Create trackers listing
 # Add ruTorrent trackers in db
