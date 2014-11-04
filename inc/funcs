@@ -681,13 +681,6 @@ MonthlyPayment() {
 
 
 #### Get Trackers Address
-CreateUsersTrackersList() {
-	# User tracker ?
-	log_daemon_msg "Trackers, add to users list"
-	sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_users (trackers_users) VALUES (\"${1}\");"
-	StatusLSB
-}
-
 CreateGlobalTrackersList() {
 	Tracker=$1
 
@@ -710,25 +703,34 @@ CreateGlobalTrackersList() {
 			# Add tracker domain
 			DomainIPv4="$(nslookup ${TrackerDomain} | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 			if [ ! -z "$DomainIPv4" ]; then
-				log_daemon_msg "Trackers, add to domain list: ${TrackerDomain}"
+				log_daemon_msg "Add tracker to domain list: ${TrackerDomain}"
 				LastId="`sqlite3 $SQLiteDB 'INSERT or IGNORE into trackers_domains (domain,is_active) VALUES (\"${TrackerDomain}\",\"0\"); SELECT last_insert_rowid();'`"
 				StatusLSB
 				
 				if [ -z "$LastId" ]; then
-					CreateUsersTrackersList ${TrackerDomain}
+					# User tracker ?
+					log_daemon_msg "Add tracker to users list: ${TrackerDomain}"
+					sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_users (trackers_users) VALUES (\"${TrackerDomain}\");"
+					StatusLSB
 				else
 					unset LastId
 				fi
 
-				log_daemon_msg "Trackers, add to trackers list: ${TrackerDomain} --> ${DomainIPv4}"
+				log_daemon_msg "Add trackers to global list: ${TrackerDomain}"
 				LastId="`sqlite3 $SQLiteDB 'INSERT or IGNORE into trakers_list (trakers,is_ssl) VALUES (\"${TrackerDomain}\",\"0\"); SELECT last_insert_rowid();'`"
 				StatusLSB
 				if [ ! -z "$LastId" ]; then
+					ListIPv4=""
 					for Ip in ${DomainIPv4}; do
-						log_daemon_msg "Trackers, add to IPv4 list: ${TrackerDomain} --> ${Ip}"
-						sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_address (id_trakers_list,trackers_address) VALUES (\"${LastId}\",\"${Ip}\");"
-						StatusLSB
+						ListIPv4="$ListIPv4 $Ip"
 					done
+					ListIPv4=`echo $ListIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`				
+				
+					log_daemon_msg "Add tracker to IPv4 list: ${TrackerDomain} --> ${ListIPv4}"
+					for Ip in ${DomainIPv4}; do
+						sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_address (id_trakers_list,trackers_address) VALUES (\"${LastId}\",\"${Ip}\");"
+					done
+					StatusLSB
 				else
 					unset LastId
 				fi
@@ -740,16 +742,23 @@ CreateGlobalTrackersList() {
 			if [ "${TrackerHost}" != "tracker" ]; then
 				DomainIPv4="$(nslookup tracker.${TrackerDomain} | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 				if [ ! -z "$DomainIPv4" ]; then
-					log_daemon_msg "Trackers, add to trackers list: tracker.${TrackerDomain}"
+					log_daemon_msg "Add trackers to global list: tracker.${TrackerDomain}"
 					LastId="`sqlite3 $SQLiteDB 'INSERT or IGNORE into trakers_list (trakers,is_ssl) VALUES (\"tracker.${TrackerDomain}\",\"0\"); SELECT last_insert_rowid();'`"		
 					StatusLSB
-					for Ip in ${DomainIPv4}; do
-						log_daemon_msg "Trackers, add to IPv4 list: tracker.${TrackerDomain} --> ${Ip}"
-						sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_address (id_trakers_list,trackers_address) VALUES (\"${LastId}\",\"${Ip}\");"
-						StatusLSB
-					done
 					
-					unset DomainIPv4 LastId
+					ListIPv4=""
+					for Ip in ${DomainIPv4}; do
+						ListIPv4="$ListIPv4 $Ip"
+					done
+					ListIPv4=`echo $ListIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`
+					
+					log_daemon_msg "Add tracker to IPv4 list: tracker.${TrackerDomain} --> ${ListIPv4}"
+					for Ip in ${DomainIPv4}; do
+						sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_address (id_trakers_list,trackers_address) VALUES (\"${LastId}\",\"${Ip}\");"
+					done
+					StatusLSB
+					
+					unset DomainIPv4 LastId ListIPv4
 				fi
 			fi	
 		fi
