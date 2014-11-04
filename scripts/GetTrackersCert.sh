@@ -46,41 +46,31 @@ done
 unset LIST_CERTS
 StatusLSB
 
+#### Clean trackers tables
+sqlite3 $SQLiteDB "DELETE * FROM trackers_domains;"
+sqlite3 $SQLiteDB "DELETE * FROM trackers_address;"
+sqlite3 $SQLiteDB "DELETE * FROM trakers_list;"
+
 #### Create trackers listing
-# Add ruTorrent trackers in db
-ENGINES=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
-for engine in ${ENGINES}; do
-	TRACKER=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "\$url" | grep "\=" | grep "http" | head -1 | sed 's/public//g;' | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
-	if [ ! -z "$TRACKER" ]; then
-		PART1=`echo ${TRACKER} | cut -d "." -f 1`
-		PART2=`echo ${TRACKER} | cut -d "." -f 2`
-		PART3=`echo ${TRACKER} | cut -d "." -f 3`
-
-		if [ -z "$PART3" ]; then
-			TrackerDomain="`echo $PART1`.`echo $PART2`"
-		else
-			TrackerDomain="`echo $PART2`.`echo $PART3`"
-			TrackerHost="`echo $PART1`"
-		fi		
-
-		if [ ! -z "$TrackerDomain" ]; then
-			sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_domains (domain,is_active) VALUES (\"$TrackerDomain\",\"0\");"
-		fi
-
-		if [ ! -z "$TrackerHost" ]; then
-			sqlite3 $SQLiteDB "INSERT or IGNORE into trakers_hosts (host) VALUES (\"$TrackerHost\");"
-		fi
-		
-		unset PART1 PART2 PART3	TrackerDomain TrackerHost
+# Add users trackers in db
+UsersTrackers="`sqlite3 $SQLiteDB \"SELECT trackers_users FROM trackers_users WHERE 1\"`"
+for Tracker in ${UsersTrackers}; do
+	if [ ! -z "$Tracker" ]; then
+		TrackersGenerateAddress $Tracker
 	fi
-	
-	unset TRACKER
 done
-unset ENGINES
+unset Tracker
 
-TrackersGenerateAddress
-
-
+# Add ruTorrent trackers in db
+Engines=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
+for engine in ${Engines}; do
+	Tracker=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "\$url" | grep "\=" | grep "http" | head -1 | sed 's/public//g;' | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
+	if [ ! -z "$Tracker" ]; then
+		TrackersGenerateAddress $Tracker
+	fi
+	unset Tracker
+done
+unset Engines
 
 # Create new PeerGuardian P2P file
 # if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then	
