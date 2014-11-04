@@ -56,7 +56,7 @@ sqlite3 $SQLiteDB "DELETE FROM trakers_list;"
 UsersTrackers="`sqlite3 $SQLiteDB \"SELECT trackers_users FROM trackers_users WHERE 1\"`"
 for Tracker in ${UsersTrackers}; do
 	if [ ! -z "$Tracker" ]; then
-		TrackersGenerateAddress $Tracker
+		CreateGlobalTrackersList $Tracker
 	fi
 done
 unset Tracker
@@ -66,7 +66,7 @@ Engines=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
 for engine in ${Engines}; do
 	Tracker=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "\$url" | grep "\=" | grep "http" | head -1 | sed 's/public//g;' | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
 	if [ ! -z "$Tracker" ]; then
-		TrackersGenerateAddress $Tracker
+		CreateGlobalTrackersList $Tracker
 	fi
 	unset Tracker
 done
