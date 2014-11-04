@@ -47,21 +47,14 @@ unset LIST_CERTS
 StatusLSB
 
 #### Clean trackers tables
+log_daemon_msg "Clean trackers list"
 sqlite3 $SQLiteDB "DELETE FROM trackers_domains;"
 sqlite3 $SQLiteDB "DELETE FROM trackers_address;"
 sqlite3 $SQLiteDB "DELETE FROM trakers_list;"
+StatusLSB
 
 #### Create trackers listing
-# Add users trackers in db
-UsersTrackers="`sqlite3 $SQLiteDB \"SELECT trackers_users FROM trackers_users WHERE 1\"`"
-for Tracker in ${UsersTrackers}; do
-	if [ ! -z "$Tracker" ]; then
-		CreateGlobalTrackersList $Tracker
-	fi
-done
-unset Tracker
-
-# Add ruTorrent trackers in db
+# 1 - Add ruTorrent trackers in db
 Engines=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
 for engine in ${Engines}; do
 	Tracker=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "\$url" | grep "\=" | grep "http" | head -1 | sed 's/public//g;' | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
@@ -71,6 +64,15 @@ for engine in ${Engines}; do
 	unset Tracker
 done
 unset Engines
+
+# 2 - Add users trackers in db
+UsersTrackers="`sqlite3 $SQLiteDB \"SELECT trackers_users FROM trackers_users WHERE 1\"`"
+for Tracker in ${UsersTrackers}; do
+	if [ ! -z "$Tracker" ]; then
+		CreateGlobalTrackersList $Tracker
+	fi
+done
+unset Tracker
 
 # Create new PeerGuardian P2P file
 # if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then	
