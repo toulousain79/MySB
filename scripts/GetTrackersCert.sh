@@ -36,7 +36,9 @@ for Cert in ${LIST_CERTS}; do
 		TARGET=$(ls -la /etc/ssl/certs/$Cert | awk '{ print $11 }')
 
 		if [ ! -f $TARGET ];then
+			log_daemon_msg "Delete $Cert"
 			rm /etc/ssl/certs/$Cert
+			StatusLSB
 		fi
 		
 		unset Cert TARGET
