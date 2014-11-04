@@ -47,9 +47,9 @@ unset LIST_CERTS
 StatusLSB
 
 #### Clean trackers tables
-sqlite3 $SQLiteDB "DELETE * FROM trackers_domains;"
-sqlite3 $SQLiteDB "DELETE * FROM trackers_address;"
-sqlite3 $SQLiteDB "DELETE * FROM trakers_list;"
+sqlite3 $SQLiteDB "DELETE FROM trackers_domains;"
+sqlite3 $SQLiteDB "DELETE FROM trackers_address;"
+sqlite3 $SQLiteDB "DELETE FROM trakers_list;"
 
 #### Create trackers listing
 # Add users trackers in db
