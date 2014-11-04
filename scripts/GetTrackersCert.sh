@@ -74,10 +74,10 @@ for Tracker in ${UsersTrackers}; do
 done
 unset Tracker
 
-# Create new PeerGuardian P2P file
-# if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then	
-	# (
-	# cat <<'EOF'
+#### Create new PeerGuardian P2P file
+if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then	
+	(
+	cat <<'EOF'
 # allow.p2p - allow list for pglcmd
 #
 # This file contains IP ranges that shall not be checked.
@@ -87,9 +87,18 @@ unset Tracker
 # Lines beginning with a hash (#) are comments and will be ignored.
 #
 # Do a "pglcmd restart" when you have edited this file.
-#EOF
-	# ) > /etc/MySB/infos/allow.p2p
-# fi
+EOF
+	) > /etc/MySB/infos/allow.p2p
+fi
+
+AllowP2P="`sqlite3 $SQLiteDB \"SELECT trackers_users FROM trakers_list WHERE 1\"`"
+for Tracker in ${AllowP2P}; do
+
+done
+
+if [ -f /etc/MySB/infos/allow.p2p ]; then
+	mv /etc/MySB/infos/allow.p2p /etc/pgl/allow.p2p
+fi
 
 #### Get certificates
 # while read TRACKER; do
@@ -120,11 +129,6 @@ unset Tracker
 log_daemon_msg "Certificates Rehash"
 #c_rehash &> /dev/null
 StatusLSB
-
-#### Create PeerGuardian P2P file
-# if [ -f /etc/MySB/infos/allow.p2p ]; then
-	# mv /etc/MySB/infos/allow.p2p /etc/pgl/allow.p2p
-# fi
 
 #ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.sh' 'new'
 

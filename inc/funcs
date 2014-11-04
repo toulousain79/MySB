@@ -91,20 +91,16 @@ PackagesManage() {
 	BEFORE="sudo DEBIAN_FRONTEND=noninteractive"
 	OPTIONS="-y --assume-yes"
 	RETURN=0
-
-#	LastSourcesEdit="`cat /etc/MySB/files/LastSourcesEdit`"
-#	LastAptUpdate="`cat /etc/MySB/files/LastAptUpdate`"
 	
-#	if [ $LastSourcesEdit -gt $LastAptUpdate ]; then
-		$BEFORE $packetg $OPTIONS update
-#		if [ $? -eq 0 ]; then
-#			LastSourcesEdit="`stat -c %Y /etc/apt/sources.list | cut -d "." -f 1`"
-#			LastAptUpdate="`stat -c %Y /var/cache/apt/ | cut -d "." -f 1`"
-#			echo $LastSourcesEdit > /etc/MySB/files/LastSourcesEdit
-#			echo $LastAptUpdate > /etc/MySB/files/LastAptUpdate
-#		fi		
-#	fi
+	AptDate="`sqlite3 $SQLiteDB \"SELECT apt_date FROM system WHERE 1\"`"
+	AptDate=$(date -d $AptDate +"%y%m%d")
 	
+	$BEFORE $packetg $OPTIONS update
+	
+	if [ $? -eq 0 ]; then
+		sqlite3 $SQLiteDB "INSERT or IGNORE into system (apt_date) VALUES (DATETIME('NOW'));"
+	fi
+		
 	case "$1" in
 		"install")
 			$BEFORE $packetg $OPTIONS install $2
