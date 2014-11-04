@@ -1,7 +1,7 @@
 ----
 -- phpLiteAdmin database dump (http://phpliteadmin.googlecode.com)
 -- phpLiteAdmin version: 1.9.5
--- Exported: 4:19pm on November 3, 2014 (CET)
+-- Exported: 9:28am on November 4, 2014 (CET)
 -- database file: ../db/MySB.db
 ----
 BEGIN TRANSACTION;
@@ -92,42 +92,6 @@ CREATE TABLE [vars] (
 -- Data dump for vars, a total of 1 rows
 ----
 INSERT INTO "vars" ("id_vars","fail2ban_whitelist","vpn_ip","white_tcp_port_out","white_udp_port_out") VALUES ('1','127.0.0.1/32','10.0.0.0/24,10.0.1.0/24','80 443',NULL);
-
-----
--- Table structure for trakers_host
-----
-CREATE TABLE [trakers_host] (
-[id_trakers_subdomains] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
-[trakers_host] VARCHAR(32)  UNIQUE NOT NULL
-);
-
-----
--- Data dump for trakers_host, a total of 3 rows
-----
-INSERT INTO "trakers_host" ("id_trakers_subdomains","trakers_host") VALUES ('1','www');
-INSERT INTO "trakers_host" ("id_trakers_subdomains","trakers_host") VALUES ('2','www2');
-INSERT INTO "trakers_host" ("id_trakers_subdomains","trakers_host") VALUES ('3','tracker');
-
-----
--- Table structure for trackers_domains
-----
-CREATE TABLE [trackers_domains] (
-[id_trackers_domains] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
-[tracker_domain] VARCHAR(128)  UNIQUE NOT NULL,
-[is_active] BOOLEAN  NULL
-);
-
-----
--- Data dump for trackers_domains, a total of 8 rows
-----
-INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('1','frenchtorrentdb.com','0');
-INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('2','share1underground.com','0');
-INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('3','empereur-team.ovh','0');
-INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('4','genration-rosco-tk.net','0');
-INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('5','torrentreactor.net','0');
-INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('6','afrbits.com','0');
-INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('7','french-adn.com','0');
-INSERT INTO "trackers_domains" ("id_trackers_domains","tracker_domain","is_active") VALUES ('8','cool-tracker.be','0');
 
 ----
 -- Table structure for users
@@ -229,18 +193,6 @@ CREATE TABLE [system] (
 ----
 
 ----
--- Table structure for trakers_list
-----
-CREATE TABLE [trakers_list] (
-[id_trakers_list] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
-[trakers] VARCHAR(128)  UNIQUE NOT NULL
-);
-
-----
--- Data dump for trakers_list, a total of 0 rows
-----
-
-----
 -- Table structure for trackers_address
 ----
 CREATE TABLE [trackers_address] (
@@ -252,6 +204,53 @@ CREATE TABLE [trackers_address] (
 ----
 -- Data dump for trackers_address, a total of 0 rows
 ----
+
+----
+-- Table structure for trackers_domains
+----
+CREATE TABLE [trackers_domains] (
+[id_trackers_domains] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
+[domain] VARCHAR(128)  UNIQUE NOT NULL,
+[is_active] BOOLEAN  NULL
+);
+
+----
+-- Data dump for trackers_domains, a total of 8 rows
+----
+INSERT INTO "trackers_domains" ("id_trackers_domains","domain","is_active") VALUES ('1','frenchtorrentdb.com','N');
+INSERT INTO "trackers_domains" ("id_trackers_domains","domain","is_active") VALUES ('2','share1underground.com','N');
+INSERT INTO "trackers_domains" ("id_trackers_domains","domain","is_active") VALUES ('3','empereur-team.ovh','N');
+INSERT INTO "trackers_domains" ("id_trackers_domains","domain","is_active") VALUES ('4','genration-rosco-tk.net','N');
+INSERT INTO "trackers_domains" ("id_trackers_domains","domain","is_active") VALUES ('5','torrentreactor.net','N');
+INSERT INTO "trackers_domains" ("id_trackers_domains","domain","is_active") VALUES ('6','afrbits.com','N');
+INSERT INTO "trackers_domains" ("id_trackers_domains","domain","is_active") VALUES ('7','french-adn.com','N');
+INSERT INTO "trackers_domains" ("id_trackers_domains","domain","is_active") VALUES ('8','cool-tracker.be','N');
+
+----
+-- Table structure for trakers_list
+----
+CREATE TABLE [trakers_list] (
+[id_trakers_list] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[trakers] VARCHAR(128)  UNIQUE NOT NULL,
+[is_ssl] BOOLEAN  NULL
+);
+
+----
+-- Data dump for trakers_list, a total of 0 rows
+----
+
+----
+-- Table structure for trakers_hosts
+----
+CREATE TABLE [trakers_hosts] (
+[id_trakers_subdomains] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
+[host] VARCHAR(32)  UNIQUE NOT NULL
+);
+
+----
+-- Data dump for trakers_hosts, a total of 1 rows
+----
+INSERT INTO "trakers_hosts" ("id_trakers_subdomains","host") VALUES ('1','tracker');
 
 ----
 -- structure for index sqlite_autoindex_system_services_1 on table system_services
@@ -290,16 +289,6 @@ CREATE TABLE [trackers_address] (
 
 ----
 -- structure for index sqlite_autoindex_smtp_5 on table smtp
-----
-;
-
-----
--- structure for index sqlite_autoindex_trakers_host_1 on table trakers_host
-----
-;
-
-----
--- structure for index sqlite_autoindex_trackers_domains_1 on table trackers_domains
 ----
 ;
 
@@ -389,12 +378,22 @@ CREATE TABLE [trackers_address] (
 ;
 
 ----
+-- structure for index sqlite_autoindex_trackers_address_1 on table trackers_address
+----
+;
+
+----
+-- structure for index sqlite_autoindex_trackers_domains_1 on table trackers_domains
+----
+;
+
+----
 -- structure for index sqlite_autoindex_trakers_list_1 on table trakers_list
 ----
 ;
 
 ----
--- structure for index sqlite_autoindex_trackers_address_1 on table trackers_address
+-- structure for index sqlite_autoindex_trakers_hosts_1 on table trakers_hosts
 ----
 ;
 COMMIT;

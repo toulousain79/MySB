@@ -190,7 +190,7 @@ if [ "$COMMAND" == "" ]; then
 			dos2unix /etc/MySB/templates/*
 			
 			if [ ! -f /etc/MySB/db/MySB.db ]; then
-				sqlite3 -echo /etc/MySB/db/MySB.db < /etc/MySB/templates/MySB_2014-11-03.dump.sql;
+				sqlite3 -echo /etc/MySB/db/MySB.db < /etc/MySB/templates/MySB_2014-11-04.dump.sql;
 			fi
 
 			sqlite3 /etc/MySB/db/MySB.db "INSERT into system (mysb_version) VALUES (\"$MySB_CurrentVersion\");"
