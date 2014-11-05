@@ -48,7 +48,7 @@ StatusLSB
 
 #### Clean trackers tables
 log_daemon_msg "Clean trackers list"
-sqlite3 $SQLiteDB "DELETE FROM trackers_domains;"
+sqlite3 $SQLiteDB "DELETE FROM trackers_rutorrent;"
 sqlite3 $SQLiteDB "DELETE FROM trackers_address;"
 sqlite3 $SQLiteDB "DELETE FROM trakers_list;"
 StatusLSB
@@ -92,7 +92,7 @@ EOF
 fi
 
 AllowP2P="`sqlite3 $SQLiteDB \"SELECT trackers_users FROM trakers_list WHERE 1\"`"
-for Tracker in ${AllowP2P}; do
+for IpRange in ${AllowP2P}; do
 
 done
 

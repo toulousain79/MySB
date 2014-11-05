@@ -206,25 +206,25 @@ CREATE TABLE [trackers_address] (
 ----
 
 ----
--- Table structure for trackers_domains
+-- Table structure for trackers_rutorrent
 ----
-CREATE TABLE [trackers_domains] (
+CREATE TABLE [trackers_rutorrent] (
 [id_trackers_domains] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
 [domain] VARCHAR(128)  UNIQUE NOT NULL,
 [is_active] BOOLEAN  NULL
 );
 
 ----
--- Data dump for trackers_domains, a total of 8 rows
+-- Data dump for trackers_rutorrent, a total of 8 rows
 ----
-INSERT INTO "trackers_domains" ("id_trackers_domains","domain","is_active") VALUES ('1','frenchtorrentdb.com','N');
-INSERT INTO "trackers_domains" ("id_trackers_domains","domain","is_active") VALUES ('2','share1underground.com','N');
-INSERT INTO "trackers_domains" ("id_trackers_domains","domain","is_active") VALUES ('3','empereur-team.ovh','N');
-INSERT INTO "trackers_domains" ("id_trackers_domains","domain","is_active") VALUES ('4','genration-rosco-tk.net','N');
-INSERT INTO "trackers_domains" ("id_trackers_domains","domain","is_active") VALUES ('5','torrentreactor.net','N');
-INSERT INTO "trackers_domains" ("id_trackers_domains","domain","is_active") VALUES ('6','afrbits.com','N');
-INSERT INTO "trackers_domains" ("id_trackers_domains","domain","is_active") VALUES ('7','french-adn.com','N');
-INSERT INTO "trackers_domains" ("id_trackers_domains","domain","is_active") VALUES ('8','cool-tracker.be','N');
+INSERT INTO "trackers_rutorrent" ("id_trackers_domains","domain","is_active") VALUES ('1','frenchtorrentdb.com','N');
+INSERT INTO "trackers_rutorrent" ("id_trackers_domains","domain","is_active") VALUES ('2','share1underground.com','N');
+INSERT INTO "trackers_rutorrent" ("id_trackers_domains","domain","is_active") VALUES ('3','empereur-team.ovh','N');
+INSERT INTO "trackers_rutorrent" ("id_trackers_domains","domain","is_active") VALUES ('4','genration-rosco-tk.net','N');
+INSERT INTO "trackers_rutorrent" ("id_trackers_domains","domain","is_active") VALUES ('5','torrentreactor.net','N');
+INSERT INTO "trackers_rutorrent" ("id_trackers_domains","domain","is_active") VALUES ('6','afrbits.com','N');
+INSERT INTO "trackers_rutorrent" ("id_trackers_domains","domain","is_active") VALUES ('7','french-adn.com','N');
+INSERT INTO "trackers_rutorrent" ("id_trackers_domains","domain","is_active") VALUES ('8','cool-tracker.be','N');
 
 ----
 -- Table structure for trakers_list
@@ -383,7 +383,7 @@ INSERT INTO "trakers_hosts" ("id_trakers_subdomains","host") VALUES ('1','tracke
 ;
 
 ----
--- structure for index sqlite_autoindex_trackers_domains_1 on table trackers_domains
+-- structure for index sqlite_autoindex_trackers_domains_1 on table trackers_rutorrent
 ----
 ;
 
