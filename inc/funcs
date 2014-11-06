@@ -675,91 +675,96 @@ MonthlyPayment() {
 	fi
 }
 
+#### Get ruTorrent Trackers
+GetRutorrentTrackers() {
+	Engines=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
+	for engine in $Engines; do
+		Tracker=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "\$url" | grep "\=" | grep "http" | head -1 | sed 's/public//g;' | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
+		if [ ! -z "$Tracker" ]; then
+			AddTracker $Tracker "rutorrent"
+		fi
+		unset Tracker
+	done
+	unset Engines
+}
 
-#### Get Trackers Address
-CreateGlobalTrackersList() {
+#### Get Users Trackers
+GetUsersTrackers() {
+	UsersTrackers="`sqlite3 $SQLiteDB \"SELECT tracker_users FROM trackers_users WHERE 1\"`"
+	for Tracker in $UsersTrackers; do
+		if [ ! -z "$Tracker" ]; then
+			AddTracker $Tracker "users"
+		fi
+	done
+	unset Tracker
+}
+
+AddTracker() {
 	Tracker=$1
-
+	Origin=$2
+	
 	if [ ! -z "$Tracker" ]; then
 		PART1=`echo ${Tracker} | cut -d "." -f 1`
 		PART2=`echo ${Tracker} | cut -d "." -f 2`
 		PART3=`echo ${Tracker} | cut -d "." -f 3`
 		
 		if [ -z "$PART3" ]; then
-			TrackerHost=""
 			TrackerDomain="`echo $PART1`.`echo $PART2`"
 		else
-			TrackerHost="`echo $PART1`"
 			TrackerDomain="`echo $PART2`.`echo $PART3`"
 		fi
-		
 		unset PART1 PART2 PART3
-		
+
 		if [ ! -z "$TrackerDomain" ]; then
-			# Add tracker domain
-			DomainIPv4="$(nslookup ${TrackerDomain} | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
+			DomainIPv4="$(nslookup $TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 			if [ ! -z "$DomainIPv4" ]; then
-				log_daemon_msg "Add tracker to domain list: ${TrackerDomain}"
-				LastId="`sqlite3 $SQLiteDB 'INSERT or IGNORE into trackers_rutorrent (domain,is_active) VALUES (\"${TrackerDomain}\",\"0\"); SELECT last_insert_rowid();'`"
-				StatusLSB
-				
-				if [ -z "$LastId" ]; then
-					# User tracker ?
-					log_daemon_msg "Add tracker to users list: ${TrackerDomain}"
-					sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_users (trackers_users) VALUES (\"${TrackerDomain}\");"
-					StatusLSB
-				else
-					unset LastId
-				fi
+				case "$Origin" in
+					"rutorrent")
+						log_daemon_msg "Add tracker to ruTorrent list: $TrackerDomain"
+						sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_rutorrent (tracker_rutorrent,is_active) VALUES (\"$TrackerDomain\",\"0\");"
+						StatusLSB
+					;;
+					"users")
+						log_daemon_msg "Add tracker to users list: $TrackerDomain"
+						sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_users (tracker_users,is_active) VALUES (\"$TrackerDomain\",\"0\");"
+						StatusLSB						
+					;;
+				esac
 
-				log_daemon_msg "Add trackers to global list: ${TrackerDomain}"
-				LastId="`sqlite3 $SQLiteDB 'INSERT or IGNORE into trakers_list (trakers,is_ssl) VALUES (\"${TrackerDomain}\",\"0\"); SELECT last_insert_rowid();'`"
-				StatusLSB
-				if [ ! -z "$LastId" ]; then
-					ListIPv4=""
-					for Ip in ${DomainIPv4}; do
-						ListIPv4="$ListIPv4 $Ip"
-					done
-					ListIPv4=`echo $ListIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`				
-				
-					log_daemon_msg "Add tracker to IPv4 list: ${TrackerDomain} --> ${ListIPv4}"
-					for Ip in ${DomainIPv4}; do
-						sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_address (id_trakers_list,trackers_address) VALUES (\"${LastId}\",\"${Ip}\");"
-					done
-					StatusLSB
-				else
-					unset LastId
-				fi
 				unset DomainIPv4
-				StatusLSB
 			fi
-
-			# tracker.domain
-			if [ "${TrackerHost}" != "tracker" ]; then
-				DomainIPv4="$(nslookup tracker.${TrackerDomain} | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
-				if [ ! -z "$DomainIPv4" ]; then
-					log_daemon_msg "Add trackers to global list: tracker.${TrackerDomain}"
-					LastId="`sqlite3 $SQLiteDB 'INSERT or IGNORE into trakers_list (trakers,is_ssl) VALUES (\"tracker.${TrackerDomain}\",\"0\"); SELECT last_insert_rowid();'`"		
-					StatusLSB
-					
-					ListIPv4=""
-					for Ip in ${DomainIPv4}; do
+			
+			ListIPv4=""
+			for Ip in $DomainIPv4; do
+					ListIPv4="$ListIPv4 $Ip"
+				done
+			ListIPv4="`echo $ListIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`"
+			
+			DomainIPv4="$(nslookup tracker.$TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
+			if [ ! -z "$DomainIPv4" ]; then
+				ListIPv4=""
+				for Ip in $DomainIPv4; do
 						ListIPv4="$ListIPv4 $Ip"
 					done
-					ListIPv4=`echo $ListIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`
-					
-					log_daemon_msg "Add tracker to IPv4 list: tracker.${TrackerDomain} --> ${ListIPv4}"
-					for Ip in ${DomainIPv4}; do
-						sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_address (id_trakers_list,trackers_address) VALUES (\"${LastId}\",\"${Ip}\");"
-					done
-					StatusLSB
-					
-					unset DomainIPv4 LastId ListIPv4
-				fi
-			fi	
+				ListIPv4="`echo $ListIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`"
+				
+				log_daemon_msg "Add tracker to global list: tracker.$TrackerDomain"
+				sqlite3 $SQLiteDB "INSERT or IGNORE into trakers_list (traker,is_ssl,is_active) VALUES (\"tracker.$TrackerDomain\",\"0\",\"0\");"
+				StatusLSB
+				
+				log_daemon_msg "Update trackers IPv4: tracker.$TrackerDomain --> $ListIPv4"
+				sqlite3 $SQLiteDB "UPDATE trakers_list SET ipv4 = '$ListIPv4' WHERE traker = 'tracker.$TrackerDomain';"
+				StatusLSB				
+			else
+				log_daemon_msg "Add tracker to global list: $TrackerDomain"
+				sqlite3 $SQLiteDB "INSERT or IGNORE into trakers_list (traker,is_ssl,is_active) VALUES (\"$TrackerDomain\",\"0\",\"0\");"
+				StatusLSB
+				
+				log_daemon_msg "Update trackers IPv4: $TrackerDomain --> $ListIPv4"
+				sqlite3 $SQLiteDB "UPDATE trakers_list SET ipv4 = '$ListIPv4' WHERE traker = '$TrackerDomain';"
+				StatusLSB				
+			fi
 		fi
-		
-		unset Tracker TrackerDomain	TrackerHost
 	fi
 }
 

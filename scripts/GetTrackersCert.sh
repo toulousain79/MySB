@@ -46,33 +46,57 @@ done
 unset LIST_CERTS
 StatusLSB
 
-#### Clean trackers tables
-log_daemon_msg "Clean trackers list"
-sqlite3 $SQLiteDB "DELETE FROM trackers_rutorrent;"
-sqlite3 $SQLiteDB "DELETE FROM trackers_address;"
-sqlite3 $SQLiteDB "DELETE FROM trakers_list;"
-StatusLSB
-
 #### Create trackers listing
 # 1 - Add ruTorrent trackers in db
-Engines=$(ls -1r /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/)
-for engine in ${Engines}; do
-	Tracker=`cat /usr/share/nginx/html/rutorrent/plugins/extsearch/engines/$engine | grep "\$url" | grep "\=" | grep "http" | head -1 | sed 's/public//g;' | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
-	if [ ! -z "$Tracker" ]; then
-		CreateGlobalTrackersList $Tracker
-	fi
-	unset Tracker
-done
-unset Engines
+GetRutorrentTrackers
 
 # 2 - Add users trackers in db
-UsersTrackers="`sqlite3 $SQLiteDB \"SELECT trackers_users FROM trackers_users WHERE 1\"`"
-for Tracker in ${UsersTrackers}; do
-	if [ ! -z "$Tracker" ]; then
-		CreateGlobalTrackersList $Tracker
+GetUsersTrackers
+
+#### Clean global trackers list
+sqlite3 $SQLiteDB "SELECT tracker FROM trackers_list WHERE 1" | while read Tracker; do
+	TrackerDomain="`echo $Tracker | sed 's/tracker.//g;'`"
+
+	ExistInRutorrent="`sqlite3 $SQLiteDB \"SELECT tracker_rutorrent FROM trackers_rutorrent WHERE tracker_rutorrent = '$TrackerDomain'\"`"
+	
+	if [ ! -z "$ExistInRutorrent" ]; then
+		IsActive="`sqlite3 $SQLiteDB \"SELECT is_active FROM trackers_rutorrent WHERE tracker_rutorrent = '$TrackerDomain'\"`"
+		case "$IsActive" in
+			"0")
+				Message="Disable tracker: $Tracker"
+			;;
+			"1")
+				Message="Enable tracker: $Tracker"				
+			;;
+		esac		
+		
+		log_daemon_msg "$Message"
+		sqlite3 $SQLiteDB "UPDATE trakers_list SET is_active = '$IsActive' WHERE traker = '$Tracker';"
+		StatusLSB
+	else
+		ExistInUsers="`sqlite3 $SQLiteDB \"SELECT tracker_users FROM trackers_users WHERE tracker_users = '$TrackerDomain'\"`"
+		
+		if [ ! -z "$ExistInUsers" ]; then
+			IsActive="`sqlite3 $SQLiteDB \"SELECT is_active FROM trackers_users WHERE tracker_users = '$TrackerDomain'\"`"
+			case "$IsActive" in
+				"0")
+					Message="Disable tracker: $Tracker"
+				;;
+				"1")
+					Message="Enable tracker: $Tracker"				
+				;;
+			esac
+			
+			log_daemon_msg "$Message"			
+			sqlite3 $SQLiteDB "UPDATE trakers_list SET is_active = '$IsActive' WHERE traker = '$TrackerDomain';"
+			StatusLSB
+		else
+			log_daemon_msg "Delete old tracker: $Tracker"
+			sqlite3 $SQLiteDB "DELETE FROM trakers_list WHARE traker = '$Tracker';"
+			StatusLSB
+		fi
 	fi
 done
-unset Tracker
 
 #### Create new PeerGuardian P2P file
 if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then	
@@ -91,9 +115,11 @@ EOF
 	) > /etc/MySB/infos/allow.p2p
 fi
 
-AllowP2P="`sqlite3 $SQLiteDB \"SELECT trackers_users FROM trakers_list WHERE 1\"`"
-for IpRange in ${AllowP2P}; do
-
+sqlite3 $SQLiteDB "SELECT tracker,ipv4 FROM trakers_list WHERE is_active = '1'" | while read ROW; do
+	TrackerName=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
+	TrackerIPv4=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
+	
+	echo "$TrackerName:$TrackerIPv4-255.255.255.255" >> /etc/MySB/infos/allow.p2p
 done
 
 if [ -f /etc/MySB/infos/allow.p2p ]; then
