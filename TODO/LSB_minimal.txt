@@ -1,0 +1,73 @@
+# Imported from Debian
+# int log_end_message (int exitstatus)
+log_daemon_msg () {
+    if [ -z "${1:-}" ]; then
+        return 1
+    fi
+    log_daemon_msg_pre "$@"
+
+    if [ -z "${2:-}" ]; then
+        /bin/echo -n "$1:" || true
+        return
+    fi
+
+    /bin/echo -n "$1: $2" || true
+    log_daemon_msg_post "$@"
+}
+log_end_msg () {
+    # If no arguments were passed, return
+    if [ -z "${1:-}" ]; then
+        return 1
+    fi
+
+    local retval
+    retval=$1
+
+    log_end_msg_pre "$@"
+
+    # Only do the fancy stuff if we have an appropriate terminal
+    # and if /usr is already mounted
+    if log_use_fancy_output; then
+        RED=$( $TPUT setaf 1)
+        YELLOW=$( $TPUT setaf 3)
+        NORMAL=$( $TPUT op)
+    else
+        RED=''
+        YELLOW=''
+        NORMAL=''
+    fi
+
+    if [ $1 -eq 0 ]; then
+        echo "." || true
+    elif [ $1 -eq 255 ]; then
+        /bin/echo -e " ${YELLOW}(warning).${NORMAL}" || true
+    else
+        /bin/echo -e " ${RED}failed!${NORMAL}" || true
+    fi
+    log_end_msg_post "$@"
+    return $retval
+}
+log_use_fancy_output () {
+    TPUT=/usr/bin/tput
+    EXPR=/usr/bin/expr
+    if  [ -t 1 ] &&
+        [ "x${TERM:-}" != "x" ] &&
+        [ "x${TERM:-}" != "xdumb" ] &&
+        [ -x $TPUT ] && [ -x $EXPR ] &&
+        $TPUT hpa 60 >/dev/null 2>&1 &&
+        $TPUT setaf 1 >/dev/null 2>&1
+    then
+        [ -z $FANCYTTY ] && FANCYTTY=1 || true
+    else
+        FANCYTTY=0
+    fi
+    case "$FANCYTTY" in
+        1|Y|yes|true)   true;;
+        *)              false;;
+    esac
+}
+# Pre&Post empty function declaration, to be overriden from /lib/lsb/init-functions.d/*
+log_end_msg_pre () { :; }
+log_end_msg_post () { :; }
+log_daemon_msg_pre () { :; }
+log_daemon_msg_post () { :; }
