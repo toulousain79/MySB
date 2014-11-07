@@ -177,18 +177,6 @@ INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active])
 INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (8, 'neo-tk.com', 0);
 INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (9, 'cool-tracker.be', 0);
 
--- Table: trakers_list
-CREATE TABLE trakers_list ( 
-    id_trakers_list INTEGER         PRIMARY KEY AUTOINCREMENT
-                                    NOT NULL,
-    traker          VARCHAR( 128 )  NOT NULL
-                                    UNIQUE,
-    ipv4            VARCHAR( 128 ),
-    is_ssl          BOOLEAN( 1 )    DEFAULT ( 0 ),
-    is_active       BOOLEAN( 1 )    DEFAULT ( 0 ) 
-);
-
-
 -- Table: trackers_rutorrent
 CREATE TABLE trackers_rutorrent ( 
     id_trackers_domains INTEGER         PRIMARY KEY AUTOINCREMENT
@@ -304,3 +292,15 @@ INSERT INTO [rtorrent_blocklists] ([id_rtorrent_blocklists], [name], [blocklists
 INSERT INTO [rtorrent_blocklists] ([id_rtorrent_blocklists], [name], [blocklists], [is_active]) VALUES (36, 'YOYO_ADSERVERS', 'http://list.iblocklist.com/?list=zhogegszwduurnvsyhdf&fileformat=cidr&archiveformat=gz', 0);
 INSERT INTO [rtorrent_blocklists] ([id_rtorrent_blocklists], [name], [blocklists], [is_active]) VALUES (37, 'PBLOCK_RAPIDSHARE', 'http://list.iblocklist.com/?list=zfucwtjkfwkalytktyiw&fileformat=cidr&archiveformat=gz', 0);
 INSERT INTO [rtorrent_blocklists] ([id_rtorrent_blocklists], [name], [blocklists], [is_active]) VALUES (38, 'CIDR_BOGON', 'http://list.iblocklist.com/?list=lujdnbasfaaixitgmxpp&fileformat=cidr&archiveformat=gz', 0);
+
+-- Table: trackers_list
+CREATE TABLE trackers_list ( 
+    id_trackers_list INTEGER         PRIMARY KEY AUTOINCREMENT
+                                     NOT NULL,
+    traker           VARCHAR( 128 )  NOT NULL
+                                     UNIQUE,
+    ipv4             VARCHAR( 128 ),
+    is_ssl           BOOLEAN( 1 )    DEFAULT ( 0 ),
+    is_active        BOOLEAN( 1 )    DEFAULT ( 0 ) 
+);
+

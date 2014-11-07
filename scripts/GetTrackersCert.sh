@@ -71,7 +71,7 @@ sqlite3 $SQLiteDB "SELECT tracker FROM trackers_list WHERE 1" | while read Track
 		esac		
 		
 		log_daemon_msg "$Message"
-		sqlite3 $SQLiteDB "UPDATE trakers_list SET is_active = '$IsActive' WHERE traker = '$Tracker';"
+		sqlite3 $SQLiteDB "UPDATE trackers_list SET is_active = '$IsActive' WHERE traker = '$Tracker';"
 		StatusLSB
 	else
 		ExistInUsers="`sqlite3 $SQLiteDB \"SELECT tracker_users FROM trackers_users WHERE tracker_users = '$TrackerDomain'\"`"
@@ -88,11 +88,11 @@ sqlite3 $SQLiteDB "SELECT tracker FROM trackers_list WHERE 1" | while read Track
 			esac
 			
 			log_daemon_msg "$Message"			
-			sqlite3 $SQLiteDB "UPDATE trakers_list SET is_active = '$IsActive' WHERE traker = '$TrackerDomain';"
+			sqlite3 $SQLiteDB "UPDATE trackers_list SET is_active = '$IsActive' WHERE traker = '$TrackerDomain';"
 			StatusLSB
 		else
 			log_daemon_msg "Delete old tracker: $Tracker"
-			sqlite3 $SQLiteDB "DELETE FROM trakers_list WHARE traker = '$Tracker';"
+			sqlite3 $SQLiteDB "DELETE FROM trackers_list WHARE traker = '$Tracker';"
 			StatusLSB
 		fi
 	fi
@@ -115,7 +115,7 @@ EOF
 	) > /etc/MySB/infos/allow.p2p
 fi
 
-sqlite3 $SQLiteDB "SELECT tracker,ipv4 FROM trakers_list WHERE is_active = '1'" | while read ROW; do
+sqlite3 $SQLiteDB "SELECT tracker,ipv4 FROM trackers_list WHERE is_active = '1'" | while read ROW; do
 	TrackerName=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
 	TrackerIPv4=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
 	
@@ -127,33 +127,33 @@ if [ -f /etc/MySB/infos/allow.p2p ]; then
 fi
 
 #### Get certificates
-# while read TRACKER; do
-	# log_daemon_msg "Get certificate for $TRACKER"
-	# cd /etc/MySB/ssl/trackers/
-
-	# openssl s_client -connect $TRACKER:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$TRACKER.crt 
-	# if [ -s ./$TRACKER.crt ]; then
-		# openssl x509 -in ./$TRACKER.crt -out ./$TRACKER.der -outform DER 
-		# openssl x509 -in ./$TRACKER.der -inform DER -out ./$TRACKER.pem -outform PEM
-		# if [ -e ./$TRACKER.pem ]; then
-			# if [ -f /etc/ssl/certs/$TRACKER.pem ]; then
-				# rm /etc/ssl/certs/$TRACKER.pem
-			# fi	
-			# ln -s /etc/MySB/ssl/trackers/$TRACKER.pem /etc/ssl/certs/$TRACKER.pem
-		# fi
+sqlite3 $SQLiteDB "SELECT tracker FROM trackers_list WHERE is_active = '1'" | while read Tracker; do
+	log_daemon_msg "Get certificate for $Tracker"
+	cd /etc/MySB/ssl/trackers/
+	openssl s_client -connect $Tracker:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$Tracker.crt
+	if [ -s ./$Tracker.crt ]; then
+		openssl x509 -in ./$Tracker.crt -out ./$Tracker.der -outform DER 
+		openssl x509 -in ./$Tracker.der -inform DER -out ./$Tracker.pem -outform PEM
+		if [ -e ./$Tracker.pem ]; then
+			if [ -f /etc/ssl/certs/$Tracker.pem ]; then
+				rm /etc/ssl/certs/$Tracker.pem
+			fi	
+			ln -s /etc/MySB/ssl/trackers/$Tracker.pem /etc/ssl/certs/$Tracker.pem
+			sqlite3 $SQLiteDB "UPDATE trackers_list SET is_ssl = '1' WHERE traker = '$Tracker';"
+		else
+			sqlite3 $SQLiteDB "UPDATE trackers_list SET is_ssl = '0' WHERE traker = '$Tracker';"
+		fi
 		
-		# rm ./$TRACKER.der
-	# fi
+		rm ./$Tracker.der
+	fi
 	
-	# rm ./$TRACKER.crt
-	
-	# unset TRACKER
-	# StatusLSB
-# done < /etc/MySB/files/trackers.list
+	rm ./$Tracker.crt	
+	StatusLSB
+done
 
 #### Create again certificates listing in system
 log_daemon_msg "Certificates Rehash"
-#c_rehash &> /dev/null
+c_rehash &> /dev/null
 StatusLSB
 
 #ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.sh' 'new'
