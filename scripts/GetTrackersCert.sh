@@ -71,7 +71,7 @@ sqlite3 $SQLiteDB "SELECT tracker FROM trackers_list WHERE 1" | while read Track
 		esac		
 		
 		log_daemon_msg "$Message"
-		sqlite3 $SQLiteDB "UPDATE trackers_list SET is_active = '$IsActive' WHERE traker = '$Tracker';"
+		sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_list SET is_active = '$IsActive' WHERE traker = '$Tracker';"
 		StatusLSB
 	else
 		ExistInUsers="`sqlite3 $SQLiteDB \"SELECT tracker_users FROM trackers_users WHERE tracker_users = '$TrackerDomain'\"`"
@@ -88,7 +88,7 @@ sqlite3 $SQLiteDB "SELECT tracker FROM trackers_list WHERE 1" | while read Track
 			esac
 			
 			log_daemon_msg "$Message"			
-			sqlite3 $SQLiteDB "UPDATE trackers_list SET is_active = '$IsActive' WHERE traker = '$TrackerDomain';"
+			sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_list SET is_active = '$IsActive' WHERE traker = '$TrackerDomain';"
 			StatusLSB
 		else
 			log_daemon_msg "Delete old tracker: $Tracker"
@@ -139,9 +139,9 @@ sqlite3 $SQLiteDB "SELECT tracker FROM trackers_list WHERE is_active = '1'" | wh
 				rm /etc/ssl/certs/$Tracker.pem
 			fi	
 			ln -s /etc/MySB/ssl/trackers/$Tracker.pem /etc/ssl/certs/$Tracker.pem
-			sqlite3 $SQLiteDB "UPDATE trackers_list SET is_ssl = '1' WHERE traker = '$Tracker';"
+			sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_list SET is_ssl = '1' WHERE traker = '$Tracker';"
 		else
-			sqlite3 $SQLiteDB "UPDATE trackers_list SET is_ssl = '0' WHERE traker = '$Tracker';"
+			sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_list SET is_ssl = '0' WHERE traker = '$Tracker';"
 		fi
 		
 		rm ./$Tracker.der
