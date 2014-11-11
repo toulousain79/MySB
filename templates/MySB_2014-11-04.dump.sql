@@ -297,7 +297,7 @@ INSERT INTO [rtorrent_blocklists] ([id_rtorrent_blocklists], [name], [blocklists
 CREATE TABLE trackers_list ( 
     id_trackers_list INTEGER         PRIMARY KEY AUTOINCREMENT
                                      NOT NULL,
-    traker           VARCHAR( 128 )  NOT NULL
+    tracker          VARCHAR( 128 )  NOT NULL
                                      UNIQUE,
     ipv4             VARCHAR( 128 ),
     is_ssl           BOOLEAN( 1 )    DEFAULT ( 0 ),
