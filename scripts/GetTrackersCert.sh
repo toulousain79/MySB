@@ -112,18 +112,18 @@ if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then
 #
 # Do a "pglcmd restart" when you have edited this file.
 EOF
-	) > /etc/MySB/infos/allow.p2p
+	) > /etc/MySB/temp/allow.p2p
 fi
 
 sqlite3 $SQLiteDB "SELECT tracker,ipv4 FROM trackers_list WHERE is_active = '1'" | while read ROW; do
 	TrackerName=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
 	TrackerIPv4=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
 	
-	echo "$TrackerName:$TrackerIPv4-255.255.255.255" >> /etc/MySB/infos/allow.p2p
+	echo "$TrackerName:$TrackerIPv4-255.255.255.255" >> /etc/MySB/temp/allow.p2p
 done
 
-if [ -f /etc/MySB/infos/allow.p2p ]; then
-	mv /etc/MySB/infos/allow.p2p /etc/pgl/allow.p2p
+if [ -f /etc/MySB/temp/allow.p2p ]; then
+	mv /etc/MySB/temp/allow.p2p /etc/pgl/allow.p2p
 fi
 
 #### Get certificates
