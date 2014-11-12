@@ -717,55 +717,53 @@ AddTracker() {
 
 		if [ ! -z "$TrackerDomain" ]; then
 			DomainIPv4="$(nslookup $TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
-			if [ ! -z "$DomainIPv4" ]; then
-				case "$Origin" in
-					"rutorrent")
-						log_daemon_msg "Add tracker to ruTorrent list: $TrackerDomain"
-						sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_rutorrent (tracker_rutorrent,is_active) VALUES (\"$TrackerDomain\",\"0\");"
-						StatusLSB
-					;;
-					"users")
-						log_daemon_msg "Add tracker to users list: $TrackerDomain"
-						sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_users (tracker_users,is_active) VALUES (\"$TrackerDomain\",\"0\");"
-						StatusLSB						
-					;;
-				esac
-				
-				if [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
+			case "$Origin" in
+				"rutorrent")
+					log_daemon_msg "Add tracker to ruTorrent list: $TrackerDomain"
+					sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_rutorrent (tracker_rutorrent,is_active) VALUES (\"$TrackerDomain\",\"0\");"
+					StatusLSB
+				;;
+				"users")
+					log_daemon_msg "Add tracker to users list: $TrackerDomain"
+					sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_users (tracker_users,is_active) VALUES (\"$TrackerDomain\",\"0\");"
+					StatusLSB						
+				;;
+			esac			
+			
+			if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
+				ListIPv4=""
+				for Ip in $DomainIPv4; do
+						ListIPv4="$ListIPv4 $Ip"
+					done
+				ListIPv4="`echo $ListIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`"
+			
+				DomainIPv4="$(nslookup tracker.$TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
+				if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
 					ListIPv4=""
 					for Ip in $DomainIPv4; do
-							ListIPv4="$ListIPv4 $Ip"
-						done
+						ListIPv4="$ListIPv4 $Ip"
+					done
 					ListIPv4="`echo $ListIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`"
-				
-					DomainIPv4="$(nslookup tracker.$TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
-					if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
-						ListIPv4=""
-						for Ip in $DomainIPv4; do
-							ListIPv4="$ListIPv4 $Ip"
-						done
-						ListIPv4="`echo $ListIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`"
-						
-						log_daemon_msg "Add tracker to global list: tracker.$TrackerDomain"
-						sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_list (tracker,is_ssl,is_active) VALUES (\"tracker.$TrackerDomain\",\"0\",\"0\");"
-						StatusLSB
-						
-						log_daemon_msg "Update trackers IPv4: tracker.$TrackerDomain --> $ListIPv4"
-						sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_list SET ipv4 = '$ListIPv4' WHERE tracker = 'tracker.$TrackerDomain';"
-						StatusLSB				
-					else
-						log_daemon_msg "Add tracker to global list: $TrackerDomain"
-						sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_list (tracker,is_ssl,is_active) VALUES (\"$TrackerDomain\",\"0\",\"0\");"
-						StatusLSB
-						
-						log_daemon_msg "Update trackers IPv4: $TrackerDomain --> $ListIPv4"
-						sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_list SET ipv4 = '$ListIPv4' WHERE tracker = '$TrackerDomain';"
-						StatusLSB				
-					fi
+					
+					log_daemon_msg "Add tracker to global list: tracker.$TrackerDomain"
+					sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_list (tracker,is_ssl,is_active) VALUES (\"tracker.$TrackerDomain\",\"0\",\"0\");"
+					StatusLSB
+					
+					log_daemon_msg "Update trackers IPv4: tracker.$TrackerDomain --> $ListIPv4"
+					sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_list SET ipv4 = '$ListIPv4' WHERE tracker = 'tracker.$TrackerDomain';"
+					StatusLSB				
+				else
+					log_daemon_msg "Add tracker to global list: $TrackerDomain"
+					sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_list (tracker,is_ssl,is_active) VALUES (\"$TrackerDomain\",\"0\",\"0\");"
+					StatusLSB
+					
+					log_daemon_msg "Update trackers IPv4: $TrackerDomain --> $ListIPv4"
+					sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_list SET ipv4 = '$ListIPv4' WHERE tracker = '$TrackerDomain';"
+					StatusLSB				
 				fi
-
-				unset DomainIPv4 ListIPv4 TrackerDomain
 			fi
+
+			unset DomainIPv4 ListIPv4 TrackerDomain
 		fi
 	fi
 }
