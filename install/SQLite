@@ -261,15 +261,17 @@ fi
 # ----- SMTP info
 
 # ----- Ports listing
-Error=0
-while read line; do
-	sqlite3 -echo $SQLiteDB "INSERT into ports (value) VALUES (\"$line\");"
-	if [ $? -gt 0 ]; then
-		Error=$?
+if [ -f /etc/MySB/infos/ports.txt ]; then
+	Error=0
+	while read line; do
+		sqlite3 -echo $SQLiteDB "INSERT into ports (value) VALUES (\"$line\");"
+		if [ $? -gt 0 ]; then
+			Error=$?
+		fi
+	done < /etc/MySB/infos/ports.txt
+	if [ $Error -eq 0 ]; then
+		rm /etc/MySB/infos/ports.txt
 	fi
-done < /etc/MySB/infos/ports.txt
-if [ $Error -eq 0 ]; then
-	rm /etc/MySB/infos/ports.txt
 fi
 # ----- Ports listing
 
@@ -294,39 +296,38 @@ GetRutorrentTrackers
 GetUsersTrackers
 
 # Create users trackers listing (compare)
-while read line; do
-	if [ ! -z "$line" ]; then
-		PART1=`echo ${line} | cut -d "." -f 1`
-		PART2=`echo ${line} | cut -d "." -f 2`
-		PART3=`echo ${line} | cut -d "." -f 3`
-		
-		if [ -z "$PART3" ]; then
-			TrackerDomain="`echo $PART1`.`echo $PART2`"
-		else
-			TrackerDomain="`echo $PART2`.`echo $PART3`"
-		fi
-		unset PART1 PART2 PART3
-		
-		ExistInRutorrent="`sqlite3 $SQLiteDB \"SELECT tracker_rutorrent FROM trackers_rutorrent WHERE tracker_rutorrent = '$TrackerDomain'\"`"
-		if [ -z "$ExistInRutorrent" ]; then # Is User tracker ?
-			ExistInUsers="`sqlite3 $SQLiteDB \"SELECT tracker_users FROM trackers_users WHERE tracker_users = '$TrackerDomain'\"`"
+if [ -f /etc/MySB/infos/trackers.list ] ; then
+	while read line; do
+		if [ ! -z "$line" ]; then
+			PART1=`echo ${line} | cut -d "." -f 1`
+			PART2=`echo ${line} | cut -d "." -f 2`
+			PART3=`echo ${line} | cut -d "." -f 3`
 			
-			if [ -z "$ExistInUsers" ]; then
-				sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_users (tracker_users,is_active) VALUES (\"$TrackerDomain\",\"0\");"
+			if [ -z "$PART3" ]; then
+				TrackerDomain="`echo $PART1`.`echo $PART2`"
+			else
+				TrackerDomain="`echo $PART2`.`echo $PART3`"
 			fi
+			unset PART1 PART2 PART3
+			
+			ExistInRutorrent="`sqlite3 $SQLiteDB \"SELECT tracker_rutorrent FROM trackers_rutorrent WHERE tracker_rutorrent = '$TrackerDomain'\"`"
+			if [ -z "$ExistInRutorrent" ]; then # Is User tracker ?
+				ExistInUsers="`sqlite3 $SQLiteDB \"SELECT tracker_users FROM trackers_users WHERE tracker_users = '$TrackerDomain'\"`"
+				
+				if [ -z "$ExistInUsers" ]; then
+					sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_users (tracker_users,is_active) VALUES (\"$TrackerDomain\",\"0\");"
+				fi
+			fi
+			unset ExistInRutorrent
 		fi
-		unset ExistInRutorrent
-	fi
-done < /etc/MySB/infos/trackers.list
-rm /etc/MySB/infos/trackers.list
-
+	done < /etc/MySB/infos/trackers.list
+	rm /etc/MySB/infos/trackers.list
+fi
 # ----- Trackers listing
 
 if [ "`ls /etc/MySB/infos/`" == "" ]; then
 	rm -rf /etc/MySB/infos/
-fi
-	
-ScriptInvoke 'source' '/etc/MySB/scripts/GetTrackersCert.sh'	
+fi	
 	
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
