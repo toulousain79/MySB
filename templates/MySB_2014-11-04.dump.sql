@@ -82,31 +82,6 @@ CREATE TABLE vars (
 
 INSERT INTO [vars] ([id_vars], [fail2ban_whitelist], [vpn_ip], [white_tcp_port_out], [white_udp_port_out]) VALUES (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24', '80 443', null);
 
--- Table: users
-CREATE TABLE users ( 
-    id_users      INTEGER         PRIMARY KEY AUTOINCREMENT
-                                  NOT NULL,
-    users_ident   VARCHAR( 32 )   NOT NULL
-                                  UNIQUE,
-    users_email   VARCHAR( 260 )  NOT NULL
-                                  UNIQUE,
-    users_passwd  VARCHAR( 32 ),
-    rpc           VARCHAR( 64 ),
-    sftp          BOOLEAN( 1 )    NOT NULL
-                                  DEFAULT ( 1 ),
-    sudo          BOOLEAN( 1 )    NOT NULL
-                                  DEFAULT ( 0 ),
-    admin         BOOLEAN( 1 )    NOT NULL
-                                  DEFAULT ( 0 ),
-    fixed_ip      VARCHAR( 128 ),
-    no_ip         VARCHAR( 128 ),
-    scgi_port     INTEGER( 5 ),
-    rtorrent_port INTEGER( 5 ),
-    home_dir      VARCHAR( 128 ) 
-);
-
-INSERT INTO [users] ([id_users], [users_ident], [users_email], [users_passwd], [rpc], [sftp], [sudo], [admin], [fixed_ip], [no_ip], [scgi_port], [rtorrent_port], [home_dir]) VALUES (1, 'elohim13', 'toulousain79@gmail.com', '', '/ELOHIM13', 1, 1, 1, '82.231.218.239,192.168.13.1', null, 51111, 51112, '/home/elohim13');
-
 -- Table: system_services
 CREATE TABLE system_services ( 
     id_system_services INTEGER        PRIMARY KEY AUTOINCREMENT
@@ -302,5 +277,29 @@ CREATE TABLE trackers_list (
     ipv4             VARCHAR( 128 ),
     is_ssl           BOOLEAN( 1 )    DEFAULT ( 0 ),
     is_active        BOOLEAN( 1 )    DEFAULT ( 0 ) 
+);
+
+
+-- Table: users
+CREATE TABLE users ( 
+    id_users      INTEGER         PRIMARY KEY AUTOINCREMENT
+                                  NOT NULL,
+    users_ident   VARCHAR( 32 )   NOT NULL
+                                  UNIQUE,
+    users_email   VARCHAR( 260 )  NOT NULL
+                                  UNIQUE,
+    users_passwd  VARCHAR( 32 ),
+    rpc           VARCHAR( 64 ),
+    sftp          BOOLEAN( 1 )    NOT NULL
+                                  DEFAULT ( 1 ),
+    sudo          BOOLEAN( 1 )    NOT NULL
+                                  DEFAULT ( 0 ),
+    admin         BOOLEAN( 1 )    NOT NULL
+                                  DEFAULT ( 0 ),
+    fixed_ip      VARCHAR( 128 ),
+    no_ip         VARCHAR( 128 ),
+    scgi_port     INTEGER( 5 ),
+    rtorrent_port INTEGER( 5 ),
+    home_dir      VARCHAR( 128 ) 
 );
 
