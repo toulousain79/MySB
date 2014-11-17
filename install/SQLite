@@ -328,14 +328,20 @@ if [ "`ls /etc/MySB/infos/`" == "" ]; then
 fi	
 
 # ----- Activate trackers with actived torrents
+UsersList="`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`"
 for SeedboxUser in $UsersList; do
-	cd /home/$SeedboxUser/rtorrent/.session/
-	TorrentListing=$(ls -1r *.libtorrent_resume)
-	
-	for Torrent in $TorrentListing
-		Tracker=$(cat $Torrent | awk -F: '{ print $18 }' | cut -d '/' -f 3)
-		echo $Tracker
-	done
+	TorrentListing="`ls -1r /home/$SeedboxUser/rtorrent/.session/`"
+
+	if [ ! -z "$TorrentListing" ]; then
+		cd /home/$SeedboxUser/rtorrent/.session/
+		for Torrent in $TorrentListing; do
+			if [ "`echo $Torrent | grep '.libtorrent_resume'`" != "" ]; then
+				Tracker="`cat $Torrent | tr -cd '[:print:]' | sed 's/=//' | sed 's/:\/\//=/' | cut -d '=' -f 2 | cut -d '/' -f 1 | cut -d ':' -f 1`"
+				
+				sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_list SET is_active = '1' WHERE tracker = '$Tracker';"
+			fi
+		done
+	fi
 done
 # ----- Activate trackers with actived torrents
 
