@@ -320,6 +320,7 @@ case $1 in
 		
 		#### PeerGuardian
 		if [ -f /etc/pgl/pglcmd.conf ]; then
+			# /etc/pgl/pglcmd.conf
 			log_daemon_msg "Add whitelist to PeerGuardian"
 			SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`	
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_IN=")
@@ -370,6 +371,28 @@ case $1 in
 				perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${WHITE_UDP_OUT}\"/g" /etc/pgl/pglcmd.conf
 			fi
 			StatusLSB
+			
+			# /etc/pgl/allow.p2p
+			(
+			cat <<'EOF'
+# allow.p2p - allow list for pglcmd
+#
+# This file contains IP ranges that shall not be checked.
+# They must be in the PeerGuardian .p2p text format like this:
+#   Some organization:1.0.0.0-1.255.255.255
+# This is also true if your blocklists are in another format.
+# Lines beginning with a hash (#) are comments and will be ignored.
+#
+# Do a "pglcmd restart" when you have edited this file.
+EOF
+				) > /etc/pgl/allow.p2p
+
+				sqlite3 $SQLiteDB "SELECT tracker,ipv4 FROM trackers_list WHERE is_active = '1'" | while read ROW; do
+				TrackerName=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
+				TrackerIPv4=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
+				
+				echo "$TrackerName:$TrackerIPv4-255.255.255.255" >> /etc/pgl/allow.p2p
+			done			
 		fi
 	;;
 	

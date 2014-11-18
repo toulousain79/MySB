@@ -63,7 +63,7 @@ for SeedboxUser in $UsersList; do
 		for Torrent in $TorrentListing; do
 			if [ "`echo $Torrent | grep '.libtorrent_resume'`" != "" ]; then
 				Tracker="`cat $Torrent | tr -cd '[:print:]' | sed 's/=//' | sed 's/:\/\//=/' | cut -d '=' -f 2 | cut -d '/' -f 1 | cut -d ':' -f 1`"
-				if [ "`echo $TrackerList | grep '$Tracker'`" == "" ]; then
+				if [ "`echo $TrackerList | grep $Tracker`" == "" ]; then
 					TrackerList="$TrackerList $Tracker"
 				fi
 			fi
@@ -88,7 +88,7 @@ if [ ! -z "$TrackerList" ]; then
 			AddTracker $Tracker "users"
 		else
 			log_daemon_msg "Force activation of tracker: $Tracker"
-			sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_users SET is_active = '1' WHERE tracker_users = '$TrackerDomain';"
+			sqlite3 $SQLiteDB "UPDATE trackers_users SET is_active = '1' WHERE tracker_users = '$TrackerDomain';"
 			StatusLSB				
 		fi
 	done
@@ -112,7 +112,7 @@ sqlite3 $SQLiteDB "SELECT tracker FROM trackers_list WHERE 1" | while read Track
 		esac		
 		
 		log_daemon_msg "$Message"
-		sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_list SET is_active = '$IsActive' WHERE tracker = '$Tracker';"
+		sqlite3 $SQLiteDB "UPDATE trackers_list SET is_active = '$IsActive' WHERE tracker = '$Tracker';"
 		StatusLSB
 	else
 		ExistInUsers="`sqlite3 $SQLiteDB \"SELECT tracker_users FROM trackers_users WHERE tracker_users = '$TrackerDomain'\"`"
@@ -129,7 +129,7 @@ sqlite3 $SQLiteDB "SELECT tracker FROM trackers_list WHERE 1" | while read Track
 			esac
 			
 			log_daemon_msg "$Message"			
-			sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_list SET is_active = '$IsActive' WHERE tracker = '$TrackerDomain';"
+			sqlite3 $SQLiteDB "UPDATE trackers_list SET is_active = '$IsActive' WHERE tracker = '$TrackerDomain';"
 			StatusLSB
 		else
 			log_daemon_msg "Delete old tracker: $Tracker"
@@ -138,34 +138,6 @@ sqlite3 $SQLiteDB "SELECT tracker FROM trackers_list WHERE 1" | while read Track
 		fi
 	fi
 done
-
-#### Create new PeerGuardian P2P file
-if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then	
-	(
-	cat <<'EOF'
-# allow.p2p - allow list for pglcmd
-#
-# This file contains IP ranges that shall not be checked.
-# They must be in the PeerGuardian .p2p text format like this:
-#   Some organization:1.0.0.0-1.255.255.255
-# This is also true if your blocklists are in another format.
-# Lines beginning with a hash (#) are comments and will be ignored.
-#
-# Do a "pglcmd restart" when you have edited this file.
-EOF
-	) > /etc/MySB/temp/allow.p2p
-fi
-
-sqlite3 $SQLiteDB "SELECT tracker,ipv4 FROM trackers_list WHERE is_active = '1'" | while read ROW; do
-	TrackerName=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
-	TrackerIPv4=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
-	
-	echo "$TrackerName:$TrackerIPv4-255.255.255.255" >> /etc/MySB/temp/allow.p2p
-done
-
-if [ -f /etc/MySB/temp/allow.p2p ]; then
-	mv /etc/MySB/temp/allow.p2p /etc/pgl/allow.p2p
-fi
 
 #### Get certificates
 sqlite3 $SQLiteDB "SELECT tracker FROM trackers_list WHERE is_active = '1'" | while read Tracker; do
@@ -180,9 +152,9 @@ sqlite3 $SQLiteDB "SELECT tracker FROM trackers_list WHERE is_active = '1'" | wh
 				rm /etc/ssl/certs/$Tracker.pem
 			fi	
 			ln -s /etc/MySB/ssl/trackers/$Tracker.pem /etc/ssl/certs/$Tracker.pem
-			sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_list SET is_ssl = '1' WHERE tracker = '$Tracker';"
+			sqlite3 $SQLiteDB "UPDATE trackers_list SET is_ssl = '1' WHERE tracker = '$Tracker';"
 		else
-			sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_list SET is_ssl = '0' WHERE tracker = '$Tracker';"
+			sqlite3 $SQLiteDB "UPDATE trackers_list SET is_ssl = '0' WHERE tracker = '$Tracker';"
 		fi
 		
 		rm ./$Tracker.der
