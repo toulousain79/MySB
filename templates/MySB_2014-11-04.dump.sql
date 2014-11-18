@@ -307,7 +307,7 @@ CREATE TRIGGER ruTorrent_Tacker_Activation
        AFTER UPDATE OF is_active ON trackers_rutorrent
 BEGIN
     UPDATE OR IGNORE trackers_list
-       SET is_active = trackers_rutorrent.is_active
+       SET is_active = NEW.is_active
      WHERE tracker_domain = trackers_rutorrent.tracker_rutorrent;
 END;
 ;
@@ -318,7 +318,7 @@ CREATE TRIGGER Users_Tracker_Activation
        AFTER UPDATE OF is_active ON trackers_users
 BEGIN
     UPDATE OR IGNORE trackers_list
-       SET is_active = trackers_users.is_active
+       SET is_active = NEW.is_active
      WHERE tracker = trackers_users.tracker_users;
 END;
 ;
