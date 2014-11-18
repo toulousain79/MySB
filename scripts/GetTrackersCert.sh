@@ -74,10 +74,15 @@ for SeedboxUser in $UsersList; do
 					TrackerDomain="`echo $PART2`.`echo $PART3`"
 				fi
 				unset PART1 PART2 PART3
-				log_daemon_msg "Force activation of tracker: $Tracker"
-				sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_rutorrent SET is_active = '1' WHERE tracker_rutorrent = '$TrackerDomain';"
-				sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_users SET is_active = '1' WHERE tracker_users = '$TrackerDomain';"
-				StatusLSB
+				
+				IfExist="`sqlite3 $SQLiteDB \"SELECT tracker FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"
+				if [ -z "$IfExist" ]; then
+					AddTracker $Tracker "users"
+				else
+					log_daemon_msg "Force activation of tracker: $Tracker"
+					sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_users SET is_active = '1' WHERE tracker_users = '$TrackerDomain';"
+					StatusLSB				
+				fi
 			fi
 		done
 	fi
