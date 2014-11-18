@@ -293,70 +293,39 @@ ScriptInvoke 'source' '/etc/MySB/scripts/GetTrackersCert.sh'
 
 # Create users trackers listing (compare)
 if [ -f /etc/MySB/infos/trackers.list ] ; then
-	while read line; do
-		if [ ! -z "$line" ]; then
-			PART1=`echo ${line} | cut -d "." -f 1`
-			PART2=`echo ${line} | cut -d "." -f 2`
-			PART3=`echo ${line} | cut -d "." -f 3`
+	# while read line; do
+		# if [ ! -z "$line" ]; then
+			# PART1=`echo ${line} | cut -d "." -f 1`
+			# PART2=`echo ${line} | cut -d "." -f 2`
+			# PART3=`echo ${line} | cut -d "." -f 3`
 			
-			if [ -z "$PART3" ]; then
-				TrackerDomain="`echo $PART1`.`echo $PART2`"
-			else
-				TrackerDomain="`echo $PART2`.`echo $PART3`"
-			fi
-			unset PART1 PART2 PART3
+			# if [ -z "$PART3" ]; then
+				# TrackerDomain="`echo $PART1`.`echo $PART2`"
+			# else
+				# TrackerDomain="`echo $PART2`.`echo $PART3`"
+			# fi
+			# unset PART1 PART2 PART3
 			
-			ExistInRutorrent="`sqlite3 $SQLiteDB \"SELECT tracker_rutorrent FROM trackers_rutorrent WHERE tracker_rutorrent = '$TrackerDomain'\"`"
-			if [ -z "$ExistInRutorrent" ]; then # Is User tracker ?
-				ExistInUsers="`sqlite3 $SQLiteDB \"SELECT tracker_users FROM trackers_users WHERE tracker_users = '$TrackerDomain'\"`"
+			# ExistInRutorrent="`sqlite3 $SQLiteDB \"SELECT tracker_rutorrent FROM trackers_rutorrent WHERE tracker_rutorrent = '$TrackerDomain'\"`"
+			# if [ -z "$ExistInRutorrent" ]; then # Is User tracker ?
+				# ExistInUsers="`sqlite3 $SQLiteDB \"SELECT tracker_users FROM trackers_users WHERE tracker_users = '$TrackerDomain'\"`"
 				
-				if [ -z "$ExistInUsers" ]; then
-					sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_users (tracker_users,is_active) VALUES (\"$TrackerDomain\",\"0\");"
-				fi
+				# if [ -z "$ExistInUsers" ]; then
+					# sqlite3 $SQLiteDB "INSERT or IGNORE into trackers_users (tracker_users,is_active) VALUES (\"$TrackerDomain\",\"0\");"
+				# fi
 				
-				unset ExistInUsers
-			fi
-			unset ExistInRutorrent
-		fi
-	done < /etc/MySB/infos/trackers.list
+				# unset ExistInUsers
+			# fi
+			# unset ExistInRutorrent
+		# fi
+	# done < /etc/MySB/infos/trackers.list
 	rm /etc/MySB/infos/trackers.list
 fi
 # ----- Trackers listing
 
 if [ "`ls /etc/MySB/infos/`" == "" ]; then
 	rm -rf /etc/MySB/infos/
-fi	
-
-# ----- Activate trackers with actived torrents
-UsersList="`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`"
-for SeedboxUser in $UsersList; do
-	TorrentListing="`ls -1r /home/$SeedboxUser/rtorrent/.session/`"
-
-	if [ ! -z "$TorrentListing" ]; then
-		cd /home/$SeedboxUser/rtorrent/.session/
-		for Torrent in $TorrentListing; do
-			if [ "`echo $Torrent | grep '.libtorrent_resume'`" != "" ]; then
-				Tracker="`cat $Torrent | tr -cd '[:print:]' | sed 's/=//' | sed 's/:\/\//=/' | cut -d '=' -f 2 | cut -d '/' -f 1 | cut -d ':' -f 1`"
-				#sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_list SET is_active = '1' WHERE tracker = '$Tracker';"
-				
-				PART1=`echo ${Tracker} | cut -d "." -f 1`
-				PART2=`echo ${Tracker} | cut -d "." -f 2`
-				PART3=`echo ${Tracker} | cut -d "." -f 3`
-				if [ -z "$PART3" ]; then
-					TrackerDomain="`echo $PART1`.`echo $PART2`"
-				else
-					TrackerDomain="`echo $PART2`.`echo $PART3`"
-				fi
-				unset PART1 PART2 PART3
-				log_daemon_msg "Force activation of tracker: $Tracker"
-				sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_rutorrent SET is_active = '1' WHERE tracker_rutorrent = '$TrackerDomain';"
-				sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_users SET is_active = '1' WHERE tracker_users = '$TrackerDomain';"
-				StatusLSB
-			fi
-		done
-	fi
-done
-# ----- Activate trackers with actived torrents
+fi
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after

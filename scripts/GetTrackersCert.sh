@@ -53,6 +53,36 @@ GetRutorrentTrackers
 # 2 - Add users trackers in db
 GetUsersTrackers
 
+# 3 - Activate trackers with actived torrents
+UsersList="`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`"
+for SeedboxUser in $UsersList; do
+	TorrentListing="`ls -1r /home/$SeedboxUser/rtorrent/.session/`"
+
+	if [ ! -z "$TorrentListing" ]; then
+		cd /home/$SeedboxUser/rtorrent/.session/
+		for Torrent in $TorrentListing; do
+			if [ "`echo $Torrent | grep '.libtorrent_resume'`" != "" ]; then
+				Tracker="`cat $Torrent | tr -cd '[:print:]' | sed 's/=//' | sed 's/:\/\//=/' | cut -d '=' -f 2 | cut -d '/' -f 1 | cut -d ':' -f 1`"
+				#sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_list SET is_active = '1' WHERE tracker = '$Tracker';"
+				
+				PART1=`echo ${Tracker} | cut -d "." -f 1`
+				PART2=`echo ${Tracker} | cut -d "." -f 2`
+				PART3=`echo ${Tracker} | cut -d "." -f 3`
+				if [ -z "$PART3" ]; then
+					TrackerDomain="`echo $PART1`.`echo $PART2`"
+				else
+					TrackerDomain="`echo $PART2`.`echo $PART3`"
+				fi
+				unset PART1 PART2 PART3
+				log_daemon_msg "Force activation of tracker: $Tracker"
+				sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_rutorrent SET is_active = '1' WHERE tracker_rutorrent = '$TrackerDomain';"
+				sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_users SET is_active = '1' WHERE tracker_users = '$TrackerDomain';"
+				StatusLSB
+			fi
+		done
+	fi
+done
+
 #### Clean global trackers list
 sqlite3 $SQLiteDB "SELECT tracker FROM trackers_list WHERE 1" | while read Tracker; do
 	TrackerDomain="`echo $Tracker | sed 's/tracker.//g;'`"
