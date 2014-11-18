@@ -64,16 +64,16 @@ case $1 in
 			CurrentList="$3"
 			NewList="$4"			
 
-			perl -pi -e 's/'$CurrentList'/'$NewList'/g' /etc/MySB/users/$SeedboxUser.info
+			sqlite3 $SQLiteDB "UPDATE users SET fixed_ip = '$NewList' WHERE users_ident = '$SeedboxUser';"
 			unset CurrentList NewList SeedboxUser
 			StatusLSB
 		fi		
 	
 		#### Seedbox users IPs
 		log_daemon_msg "Creating IP white lists"
-		UsersList=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`	
+		ListingUsers	
 		for SeedboxUser in $UsersList; do
-			UserIPs=$(cat /etc/MySB/users/$SeedboxUser.info | grep "IP Address=" | awk '{ print $3 }')
+			UserIPs="`sqlite3 $SQLiteDB \"SELECT fixed_ip FROM users WHERE users_ident = '$SeedboxUser'\"`"
 			
 			IFS=$','
 			for ip in $UserIPs; do 
@@ -243,8 +243,8 @@ case $1 in
 		#### rTorrent
 		for SeedboxUser in $UsersList; do
 			log_daemon_msg "Allow use of rTorrent for $SeedboxUser"
-			PORT_START=$(cat /etc/MySB/users/$SeedboxUser.info | grep "SCGI port=" | awk '{ print $3 }')
-			PORT_END=$(cat /etc/MySB/users/$SeedboxUser.info | grep "rTorrent port=" | awk '{ print $3 }')
+			PORT_START="`sqlite3 $SQLiteDB \"SELECT scgi_port FROM users WHERE users_ident = '$SeedboxUser'\"`"
+			PORT_END="`sqlite3 $SQLiteDB \"SELECT rtorrent_port FROM users WHERE users_ident = '$SeedboxUser'\"`"
 			iptables -t filter -A INPUT -p tcp --dport $PORT_START:$PORT_END -i $PrimaryInet -j ACCEPT -m comment --comment "rTorrent $SeedboxUser"	
 			StatusLSB
 		done
@@ -385,9 +385,9 @@ case $1 in
 #
 # Do a "pglcmd restart" when you have edited this file.
 EOF
-				) > /etc/pgl/allow.p2p
+			) > /etc/pgl/allow.p2p
 
-				sqlite3 $SQLiteDB "SELECT tracker,ipv4 FROM trackers_list WHERE is_active = '1'" | while read ROW; do
+			sqlite3 $SQLiteDB "SELECT tracker,ipv4 FROM trackers_list WHERE is_active = '1'" | while read ROW; do
 				TrackerName=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
 				TrackerIPv4=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
 				

@@ -30,22 +30,26 @@ if [ ! -f $SQLiteDB ]; then
 fi
 
 #### Import users files to database
-UsersList="`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`"
-cd /etc/MySB/users/
-for SeedboxUser in $UsersList; do
-	UserName="$(cat $SeedboxUser.info | grep 'Username=' | awk '{ print $2 }')"
-	UserEmail="$(cat $SeedboxUser.info | grep 'E-mail=' | awk '{ print $2 }')"
-	UserPassword="$(cat $SeedboxUser.info | grep 'Password=' | awk '{ print $2 }')"
-	UserRPC="$(cat $SeedboxUser.info | grep 'RPC=' | awk '{ print $2 }')"
-	UserSSH="$(cat $SeedboxUser.info | grep 'SSH=' | awk '{ print $2 }' | sed 's/YES/1/g;' | sed 's/NO/0/g;')"
-	UserSudo="$(cat $SeedboxUser.info | grep 'Sudo powers=' | awk '{ print $3 }' | sed 's/YES/1/g;' | sed 's/NO/0/g;')"
-	UserIP="$(cat $SeedboxUser.info | grep 'IP Address=' | awk '{ print $3 }')"
-	UserScgiPort="$(cat $SeedboxUser.info | grep 'SCGI port=' | awk '{ print $3 }')"
-	UserRtorrentPort="$(cat $SeedboxUser.info | grep 'rTorrent port=' | awk '{ print $3 }')"
-	UserHomeDir="$(cat $SeedboxUser.info | grep 'Home=' | awk '{ print $2 }')"
+if [ -d /etc/MySB/users/ ]; then
+	UsersList="`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`"
+	cd /etc/MySB/users/
+	for SeedboxUser in $UsersList; do
+		UserName="$(cat $SeedboxUser.info | grep 'Username=' | awk '{ print $2 }')"
+		UserEmail="$(cat $SeedboxUser.info | grep 'E-mail=' | awk '{ print $2 }')"
+		UserPassword="$(cat $SeedboxUser.info | grep 'Password=' | awk '{ print $2 }')"
+		UserRPC="$(cat $SeedboxUser.info | grep 'RPC=' | awk '{ print $2 }')"
+		UserSSH="$(cat $SeedboxUser.info | grep 'SSH=' | awk '{ print $2 }' | sed 's/YES/1/g;' | sed 's/NO/0/g;')"
+		UserSudo="$(cat $SeedboxUser.info | grep 'Sudo powers=' | awk '{ print $3 }' | sed 's/YES/1/g;' | sed 's/NO/0/g;')"
+		UserIP="$(cat $SeedboxUser.info | grep 'IP Address=' | awk '{ print $3 }')"
+		UserScgiPort="$(cat $SeedboxUser.info | grep 'SCGI port=' | awk '{ print $3 }')"
+		UserRtorrentPort="$(cat $SeedboxUser.info | grep 'rTorrent port=' | awk '{ print $3 }')"
+		UserHomeDir="$(cat $SeedboxUser.info | grep 'Home=' | awk '{ print $2 }')"
+		
+		sqlite3 -echo $SQLiteDB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,admin,fixed_ip,scgi_port,rtorrent_port,home_dir) VALUES (\"$UserName\",\"$UserEmail\",\"$UserPassword\",\"$UserRPC\",\"$UserSSH\",\"$UserSudo\",\"0\",\"$UserIP\",\"$UserScgiPort\",\"$UserRtorrentPort\",\"$UserHomeDir\");"
+	done
 	
-	sqlite3 -echo $SQLiteDB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,admin,fixed_ip,scgi_port,rtorrent_port,home_dir) VALUES (\"$UserName\",\"$UserEmail\",\"$UserPassword\",\"$UserRPC\",\"$UserSSH\",\"$UserSudo\",\"0\",\"$UserIP\",\"$UserScgiPort\",\"$UserRtorrentPort\",\"$UserHomeDir\");"
-done
+	rm -rf /etc/MySB/users/
+fi
 
 # ----- Main user info
 if [ -f /etc/MySB/infos/email.info ] && [ -f /etc/MySB/infos/mainuser.info ]; then

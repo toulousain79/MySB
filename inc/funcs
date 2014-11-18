@@ -47,13 +47,26 @@ BannerGenerator() {
 	echo
 }
 
+#### Create user listing
+ListingUsers() {
+	sqlite3 $SQLiteDB "SELECT users_ident FROM users WHERE 1" | while read ROW; do
+		User=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
+		UsersList="$UsersList $User"
+	done
+}
+
+#### Count Users
+CountingUsers() {
+	TotalUsers="`sqlite3 $SQLiteDB \"SELECT count(*) FROM users\"`"
+}
+
 #### Send Mail
 SendMail() {
 	Subject="$1"
 	User="$2"
 	Info="$3"
-	SeedUserMail=$(cat /etc/MySB/users/$User.info | grep "E-mail=" | awk '{ print $2 }')
-	TempPassword=$(cat /etc/MySB/users/$User.info | grep "Password=" | awk '{ print $2 }')
+	SeedUserMail="`sqlite3 $SQLiteDB \"SELECT users_email FROM users WHERE users_ident = '$User'\"`"
+	TempPassword="`sqlite3 $SQLiteDB \"SELECT users_passwd FROM users WHERE users_ident = '$User'\"`"
 	MailFrom=$MainUserEmail
 	log_daemon_msg "Generate HTML info for $User"
 	perl -pi -e "s/##MySB_User##/$MySB_User/g" /etc/MySB/web/SeedboxInfo.php
@@ -62,20 +75,20 @@ SendMail() {
 		service nginx restart &> /dev/null
 	fi
 	
-	curl --silent --retry 2 --user $MySB_User:$MySB_Password https://$HostNameFQDN:$Port_HTTPS/MySB/SeedboxInfo.php?user=$User --cacert /etc/MySB/ssl/nginx.cert > /etc/MySB/users/$User.html
+	curl --silent --retry 2 --user $MySB_User:$MySB_Password https://$HostNameFQDN:$Port_HTTPS/MySB/SeedboxInfo.php?user=$User --cacert /etc/MySB/ssl/nginx.cert > /etc/MySB/temp/$User.html
 	
 	StatusLSB	
 
 	log_daemon_msg "Sending email to $User ($Info)"
-	if [ -s /etc/MySB/users/$User.html ]; then
-		perl -pi -e "s/##TempPassword##/$TempPassword/g" /etc/MySB/users/$User.html
+	if [ -s /etc/MySB/temp/$User.html ]; then
+		perl -pi -e "s/##TempPassword##/$TempPassword/g" /etc/MySB/temp/$User.html
 		attach="$User.html"
 		type="html"
 	else
 		attach="$User.info"
 		type="plain"
 	fi
-	cat /etc/MySB/users/$attach | mail -a "From: MySB <$MailFrom>" -a "MIME-Version: 1.0" -a "Content-Type: text/$type" -s "$Subject" $SeedUserMail
+	cat /etc/MySB/temp/$attach | mail -a "From: MySB <$MailFrom>" -a "MIME-Version: 1.0" -a "Content-Type: text/$type" -s "$Subject" $SeedUserMail
 	sleep 2
 	StatusLSB
 }
@@ -135,7 +148,8 @@ PackagesManage() {
 
 #### If PeerGuardian is failing
 PeerGuardianFailed() {
-	for seedUser in $LISTUSERS; do
+	ListingUsers
+	for seedUser in $UsersList; do
 		if [ -f /etc/MySB/scripts/blocklist/blocklist_rtorrent.txt ]; then
 			cp /etc/MySB/scripts/blocklist/* /home/$seedUser/blocklist/
 		else
@@ -153,6 +167,9 @@ PeerGuardianFailed() {
 ManageServices() {
 	ServicesToManage=""
 	Command=""
+	
+	# Create users list
+	ListingUsers
 
 	while read line; do
 		SERVICE=`echo $line | cut -d '=' -f 1`
@@ -187,8 +204,7 @@ ManageServices() {
 				if [ "$AllReadyStopped" == "false" ];then
 					service cron $Command
 
-					LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
-					for seedUser in $LISTUSERS; do
+					for seedUser in $UsersList; do
 						if [ -e /etc/init.d/rtorrent-$seedUser ]; then
 							service rtorrent-$seedUser $Command
 						fi
@@ -238,7 +254,7 @@ ManageServices() {
 									PeerGuardianFailed
 								fi
 							else
-								for seedUser in $LISTUSERS; do
+								for seedUser in $UsersList; do
 									perl -pi -e "s/ipv4_filter.load/#ipv4_filter.load/g" /home/$seedUser/.rtorrent.rc
 									perl -pi -e "s/print/#print/g" /home/$seedUser/.rtorrent.rc	
 									
@@ -636,36 +652,27 @@ MonthlyPayment() {
 		
 			log_daemon_msg "Calculate the monthly payment"
 			export LANG=""
-			COUNTUSERS=$(ls -A1 /etc/MySB/users/*.info | wc -l)
-			X=`echo "$PU/$COUNTUSERS" | bc -l`
+			CountingUsers
+			X=`echo "$PU/$TotalUsers" | bc -l`
 			Y=`echo "($X*$TVA)/100" | bc -l`
 			PriceByUser=`echo "$X+$Y" | bc -l`
 			PriceByUser=`printf '%.0f\n' $PriceByUser`	
 
 			# add new renting info
-			echo "" > /etc/MySB/infos/renting.info
-			echo "-----" >> /etc/MySB/infos/renting.info
-			echo "Price and Payment info" >> /etc/MySB/infos/renting.info
-			echo "-----" >> /etc/MySB/infos/renting.info
-			echo "Server model=		$FORMULA" >> /etc/MySB/infos/renting.info
-			echo "Global cost=		$PU Euros HT / month" >> /etc/MySB/infos/renting.info	
-			echo "TVA=			$TVA %" >> /etc/MySB/infos/renting.info
-			echo "-----" >> /etc/MySB/infos/renting.info
-			echo "Total users=		$COUNTUSERS" >> /etc/MySB/infos/renting.info		
-			echo "TOTAL per users=	$PriceByUser" >> /etc/MySB/infos/renting.info
-			echo "-----" >> /etc/MySB/infos/renting.info
+			IfExist="`sqlite3 $SQLiteDB \"SELECT count(*) FROM renting\"`"
+			case "$IfExist" in
+				0)
+					sqlite3 $SQLiteDB "INSERT into renting (model,tva,global_cost,nb_users,price_per_users) VALUES (\"$FORMULA\",\"$TVA\",\"$PU\",\"$TotalUsers\",\"$PriceByUser\");"
+				;;		
+				1)
+					sqlite3 $SQLiteDB "UPDATE renting SET model = '$FORMULA', tva = '$TVA', global_cost = '$PU', nb_users = '$TotalUsers', price_per_users = '$PriceByUser' WHERE id_renting = '1';"
+				;;		
+			esac
 			StatusLSB
-		
-			for seedUser in $LISTUSERS; do
-				SeedUserMail=$(cat /etc/MySB/users/$seedUser.info | grep "E-mail=" | awk '{ print $2 }')
-				
-				#### delete old renting info
-				if [ "`cat /etc/MySB/users/${seedUser}.info  | grep 'TOTAL per users'`" != "" ]; then
-					mv /etc/MySB/users/${seedUser}.info /tmp/${seedUser}.info
-					head -n -11 /tmp/${seedUser}.info > /etc/MySB/users/${seedUser}.info		
-				fi				
-				
-				cat /etc/MySB/infos/renting.info >> /etc/MySB/users/${seedUser}.info
+
+			ListingUsers
+			for seedUser in $UsersList; do
+				SeedUserMail="`sqlite3 $SQLiteDB \"SELECT users_email FROM users WHERE users_ident = '$seedUser'\"`"
 				
 				if [ ! "$1" = "${seedUser}" ]; then	
 					SendMail "MySB - Changing monthly" "${seedUser}" "Changing Monthly"
@@ -699,6 +706,7 @@ GetUsersTrackers() {
 	unset Tracker
 }
 
+#### Add new trackers
 AddTracker() {
 	Tracker=$1
 	Origin=$2

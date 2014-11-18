@@ -26,8 +26,8 @@ source /etc/MySB/inc/includes_before
 
 if [ "$USAGE" == "ON" ]; then		
 	if [ -z $NEWUSER ] || [ -z $PASSWORD ]; then
-		LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
-		for seedUser in $LISTUSERS; do
+		ListingUsers
+		for seedUser in $UsersList; do
 			if [ "$seedUser" != "$MainUser" ]; then
 				LIST="$LIST|${CYELLOW}$seedUser$CEND"
 			fi
@@ -76,7 +76,7 @@ StatusLSB
 
 #### NginX
 log_daemon_msg "Remove the access permission to the web server for $NEWUSER"
-IP=$(cat /etc/MySB/users/$NEWUSER.info | grep "IP Address=" | awk '{ print $3 }')
+IP="`sqlite3 $SQLiteDB \"SELECT fixed_ip FROM users WHERE users_ident = '$NEWUSER'\"`"
 IFS=$','
 for ip in $USERIP; do 
 	sed -i '/'$ip'/d' /etc/nginx/locations/MySB.conf
@@ -96,12 +96,6 @@ update-rc.d -f rtorrent-$NEWUSER.conf remove &> /dev/null
 if [ -f /etc/init.d/rtorrent-$NEWUSER.conf ]; then
 	sudo rm -f /etc/init.d/rtorrent-$NEWUSER.conf
 fi
-if [ -f /etc/MySB/users/$NEWUSER.info ]; then
-	sudo rm -f /etc/MySB/users/$NEWUSER.info
-fi
-if [ -f /etc/MySB/users/$NEWUSER.html ]; then
-	sudo rm -f /etc/MySB/users/$NEWUSER.html
-fi
 if [ -f /etc/nginx/rpc/$NEWUSER.conf ]; then
 	sudo rm -f /etc/nginx/rpc/$NEWUSER.conf
 fi
@@ -120,6 +114,7 @@ fi
 if [ -d /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER ]; then
 	sudo rm -rf /usr/share/nginx/html/seedbox-manager/conf/users/$NEWUSER
 fi
+sqlite3 $SQLiteDB "DELETE FROM users WHERE users_ident = '$NEWUSER';"
 StatusLSB
 
 #### delete iptables rules
@@ -127,13 +122,13 @@ ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.sh' 'new'
 
 #### rtorrent max memory
 MEMORY=`free -m | grep Mem | awk '{ print $2 }'`
-COUNTUSERS=$(ls -A1 /etc/MySB/users/*.info | wc -l)
-LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
-for seedUser in $LISTUSERS; do
+CountingUsers
+ListingUsers
+for seedUser in $UsersList; do
 	log_daemon_msg "Changing parameter 'pieces.memory.max.set' for $seedUser"
 	LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$seedUser/.rtorrent.rc)
 	sudo sed -i ''$LIGN'd' /home/$seedUser/.rtorrent.rc
-	sed -i ''$LIGN'i\#pieces.memory.max.set = '$(((($MEMORY/$COUNTUSERS)*1024)*1024))'\n' /home/$seedUser/.rtorrent.rc
+	sed -i ''$LIGN'i\#pieces.memory.max.set = '$(((($MEMORY/$TotalUsers)*1024)*1024))'\n' /home/$seedUser/.rtorrent.rc
 	StatusLSB
 done
 

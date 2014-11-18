@@ -54,7 +54,7 @@ GetRutorrentTrackers
 GetUsersTrackers
 
 # 3 - Activate trackers with users' actived torrents
-UsersList="`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`"
+ListingUsers
 for SeedboxUser in $UsersList; do
 	TorrentListing="`ls -1r /home/$SeedboxUser/rtorrent/.session/`"
 

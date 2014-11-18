@@ -64,16 +64,6 @@ CREATE TABLE ports (
 );
 
 
--- Table: renting
-CREATE TABLE renting ( 
-    id_renting  INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                               NOT NULL ON CONFLICT ABORT,
-    model       VARCHAR( 64 ),
-    tva         NUMERIC,
-    global_cost NUMERIC 
-);
-
-
 -- Table: rtorrent_blocklists
 CREATE TABLE rtorrent_blocklists ( 
     id_rtorrent_blocklists INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -299,6 +289,18 @@ CREATE TABLE trackers_list (
     ipv4             VARCHAR( 128 ),
     is_ssl           BOOLEAN( 1 )    DEFAULT ( 0 ),
     is_active        BOOLEAN( 1 )    DEFAULT ( 0 ) 
+);
+
+
+-- Table: renting
+CREATE TABLE renting ( 
+    id_renting      INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                   NOT NULL ON CONFLICT ABORT,
+    model           VARCHAR( 64 )  NOT NULL ON CONFLICT ABORT,
+    tva             NUMERIC        NOT NULL ON CONFLICT ABORT,
+    global_cost     NUMERIC        NOT NULL ON CONFLICT ABORT,
+    nb_users        NUMERIC( 2 )   NOT NULL ON CONFLICT ABORT,
+    price_per_users NUMERIC( 2 )   NOT NULL ON CONFLICT ABORT 
 );
 
 

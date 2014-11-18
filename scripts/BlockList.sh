@@ -101,8 +101,8 @@ StatusLSB
 
 rm -f /etc/MySB/scripts/blocklist/blocklist_rtorrent.tmp
 
-LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
-for seedUser in $LISTUSERS; do
+ListingUsers
+for seedUser in $UsersList; do
 	log_daemon_msg "Copy new global list for $seedUser"
 	if [ -d /home/$seedUser/blocklist ]; then
 		rm -f /home/$seedUser/blocklist/*

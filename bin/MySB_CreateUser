@@ -16,53 +16,44 @@ source /etc/MySB/inc/includes_before
 ######################################################################
 
 if [ "$USAGE" == "ON" ]; then
-	if [ -z $NEWUSER ] || [ -z $PASSWORD ]; then
-		MainUserEmail=""
-	else
-		USERHASSSHACCESS=YES
-		USERINSUDOERS=YES	
-	fi
-
-	LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
-	for seedUser in $LISTUSERS; do
+	ListingUsers
+	for seedUser in $UsersList; do
 		LIST="$LIST|$seedUser"
 	done
 	LIST="`echo \($LIST\) | sed -e 's/(|/(/g;'`"	
 	
-	if [ -z $NEWUSER ]; then
-		if [ ! -z $LIST ]; then
-			echo -e "${CBLUE}Available users: $CEND${CYELLOW}$LIST$CEND"
-		fi
-		GetString NO  "Username for your seedbox: " NEWUSER
-		while [ ! "`echo \"$LIST\" | grep $NEWUSER`" = "" ]; do
-			GetString NO  "Username for your seedbox: " NEWUSER
-		done	
+	if [ ! -z $LIST ]; then
+		echo -e "${CBLUE}Available users: $CEND${CYELLOW}$LIST$CEND"
 	fi
+	GetString NO  "Username for your seedbox: " NEWUSER
+	while [ ! "`echo \"$LIST\" | grep $NEWUSER`" = "" ]; do
+		GetString NO  "Username for your seedbox: " NEWUSER
+	done
 	
 	PASSWORD=`mkpasswd $NEWUSER`
 	PASSWORD=`echo $PASSWORD | sed "s/\///g"`
-	if [ -z $PASSWORD ]; then
-		GetString YES "Password for user $NEWUSER: " PASSWORD
-	fi
-	if [ -z $USERHASSSHACCESS ]; then
-		GetString NO  "User can login via SFTP? " USERHASSSHACCESS YES
-	fi
-	if [ -z $USERINSUDOERS ]; then
-		GetString NO  "Add user to sudoers? " USERINSUDOERS NO
-	fi
-	if [ -z $MainUserEmail ]; then
-		while [ ! "`ValidateMail $MainUserEmail`" = "0" ]; do
-			GetString NO  "Email for this user? " MainUserEmail
-		done			
-	fi
+	
+	GetString YES "Password for user $NEWUSER: " PASSWORD
+	GetString NO  "User can login via SFTP? " USERHASSSHACCESS YES
+	GetString NO  "Add user to sudoers? " USERINSUDOERS NO
+	while [ ! "`ValidateMail $UserEmail`" = "0" ]; do
+		GetString NO  "Email for this user? " UserEmail
+	done
+	
+	UserIPs="blank"
+	UserSFTP="$(echo $USERHASSSHACCESS | sed 's/YES/1/g;' | sed 's/NO/0/g;')"
+	UserSUDO="$(echo $USERINSUDOERS | sed 's/YES/1/g;' | sed 's/NO/0/g;')"
+	UserPASSWD=$PASSWORD
 else
+	# It is the main user creation
 	NEWUSER=$1
 	PASSWORD=$2
 	USERHASSSHACCESS=$3
 	USERINSUDOERS=$4
+	UserEmail=$MainUserEmail
+	UserIPs=$MainUserIPs
+	UserPASSWD=""
 fi
-
-touch /etc/MySB/users/$NEWUSER.info
 
 #### Users vars
 HOMEBASE=/home/$NEWUSER
@@ -73,9 +64,11 @@ JAILDIR_ESCAPED=`echo $JAILDIR | sed s,/,\\\\\\\\\\/,g`
 HOMEDIR_ESCAPED=`echo $HOMEDIR | sed s,/,\\\\\\\\\\/,g`
 HOMEJAILED_ESCAPED=`echo $HOMEJAILED | sed s,/,\\\\\\\\\\/,g`
 UPPERNEWUSER=`echo $NEWUSER | tr '[:lower:]' '[:upper:]'`
-LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
-COUNTUSERS=$(ls -A1 /etc/MySB/users/*.info | wc -l)
 NEWRPC=$UPPERNEWUSER
+
+#### Users infos
+ListingUsers
+CountingUsers
 
 SCGIPORT="`sqlite3 $SQLiteDB \"SELECT value FROM ports ORDER BY rowid DESC LIMIT 1\"`"
 sqlite3 $SQLiteDB "DELETE FROM ports WHERE value = '$SCGIPORT';"
@@ -84,86 +77,7 @@ sqlite3 $SQLiteDB "DELETE FROM ports WHERE value = '$NETWORKPORT';"
 
 #### user infos
 log_daemon_msg "Info file creation for $NEWUSER"
-
-echo "-----" >> /etc/MySB/users/$NEWUSER.info
-echo "User personal info" >> /etc/MySB/users/$NEWUSER.info
-echo "-----" >> /etc/MySB/users/$NEWUSER.info
-
-if [ "$MainUser" != "$NEWUSER" ]; then
-	echo "IP Address= 		blank" >> /etc/MySB/users/$NEWUSER.info
-else
-	echo "IP Address= 		$MainUserIPs" >> /etc/MySB/users/$NEWUSER.info
-fi
-
-echo "Username= 		$NEWUSER" >> /etc/MySB/users/$NEWUSER.info
-if [ "$MainUser" != "$NEWUSER" ]; then
-	echo "Password= 		$PASSWORD" >> /etc/MySB/users/$NEWUSER.info
-fi
-echo "E-mail= 		$MainUserEmail" >> /etc/MySB/users/$NEWUSER.info
-echo "RPC= 			/$NEWRPC" >> /etc/MySB/users/$NEWUSER.info
-echo "SSH= 			$USERHASSSHACCESS" >> /etc/MySB/users/$NEWUSER.info
-echo "Sudo powers= 		$USERINSUDOERS" >> /etc/MySB/users/$NEWUSER.info
-
-echo "" >> /etc/MySB/users/$NEWUSER.info
-echo "-----" >> /etc/MySB/users/$NEWUSER.info
-echo "Directories" >> /etc/MySB/users/$NEWUSER.info
-echo "-----" >> /etc/MySB/users/$NEWUSER.info
-echo "Home= 		$HOMEDIR" >> /etc/MySB/users/$NEWUSER.info
-echo "Session dir= 		$HOMEDIR/rtorrent/.session" >> /etc/MySB/users/$NEWUSER.info
-echo "Complete dir= 		$HOMEDIR/rtorrent/complete" >> /etc/MySB/users/$NEWUSER.info
-echo "Incomplete dir= 		$HOMEDIR/rtorrent/incomplete" >> /etc/MySB/users/$NEWUSER.info
-echo "Watch dir= 		$HOMEDIR/rtorrent/watch" >> /etc/MySB/users/$NEWUSER.info
-echo "Share dir= 		$HOMEDIR/rtorrent/share" >> /etc/MySB/users/$NEWUSER.info
-
-echo "" >> /etc/MySB/users/$NEWUSER.info
-echo "-----" >> /etc/MySB/users/$NEWUSER.info
-echo "Ports" >> /etc/MySB/users/$NEWUSER.info
-echo "-----" >> /etc/MySB/users/$NEWUSER.info
-if [ "$USERHASSSHACCESS" == "YES" ]; then
-	echo "SSH port= 		$Port_SSH" >> /etc/MySB/users/$NEWUSER.info
-	echo "SFTP port= 		$Port_SSH" >> /etc/MySB/users/$NEWUSER.info
-fi
-echo "FTPs port (TLS)= 	$Port_FTP" >> /etc/MySB/users/$NEWUSER.info
-echo "SCGI port= 		$SCGIPORT" >> /etc/MySB/users/$NEWUSER.info
-echo "rTorrent port= 	$NETWORKPORT" >> /etc/MySB/users/$NEWUSER.info
-
-if [ "$IsInstalled_OpenVPN" == "YES" ]; then	
-	echo "" >> /etc/MySB/users/$NEWUSER.info
-	echo "-----" >> /etc/MySB/users/$NEWUSER.info
-	echo "OpenVPN" >> /etc/MySB/users/$NEWUSER.info
-	echo "-----" >> /etc/MySB/users/$NEWUSER.info
-	echo "Server IP GW=           10.0.0.1" >> /etc/MySB/users/$NEWUSER.info
-	echo "Server IP=              10.0.1.1" >> /etc/MySB/users/$NEWUSER.info
-	echo "Samba share=            $HOMEDIR" >> /etc/MySB/users/$NEWUSER.info
-	echo "NFS share=              $HOMEDIR/rtorrent" >> /etc/MySB/users/$NEWUSER.info
-fi
-
-echo "" >> /etc/MySB/users/$NEWUSER.info
-echo "-----" >> /etc/MySB/users/$NEWUSER.info
-echo "Links" >> /etc/MySB/users/$NEWUSER.info
-echo "-----" >> /etc/MySB/users/$NEWUSER.info
-echo "User Info=		https://$HostNameFQDN:$Port_HTTPS/MySB/SeedboxInfo.php" >> /etc/MySB/users/$NEWUSER.info
-echo "Change password=	https://$HostNameFQDN:$Port_HTTPS/MySB/ChangePassword.php" >> /etc/MySB/users/$NEWUSER.info
-echo "Manage IP=		https://$HostNameFQDN:$Port_HTTPS/MySB/ManageIP.php" >> /etc/MySB/users/$NEWUSER.info
-echo "ruTorrent= 		https://$HostNameFQDN:$Port_HTTPS/rutorrent/" >> /etc/MySB/users/$NEWUSER.info
-if [ "$IsInstalled_Manager" == "YES" ]; then
-	echo "Seedbox-Manager=	https://$HostNameFQDN:$Port_HTTPS/seedbox-manager/" >> /etc/MySB/users/$NEWUSER.info
-fi
-if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-	echo "OpenVPN config= 	https://$HostNameFQDN:$Port_HTTPS/MySB/OpenVPN.php" >> /etc/MySB/users/$NEWUSER.info
-	echo "OpenVPN GUI= 	https://openvpn.net/index.php/open-source/downloads.html" >> /etc/MySB/users/$NEWUSER.info
-fi
-if [ "$IsInstalled_Cakebox" == "YES" ]; then
-	echo "CakeBox Light= 	https://$HostNameFQDN:$Ports_Cakebox/" >> /etc/MySB/users/$NEWUSER.info
-fi
-if [ "$MainUser" == "$NEWUSER" ]; then
-	if [ "$IsInstalled_Webmin" == "YES" ] && [ "$MainUser" == "$NEWUSER" ]; then
-		echo "Webmin= 		https://$HostNameFQDN:$Ports_Webmin" >> /etc/MySB/users/$NEWUSER.info
-	fi
-	echo "Renting Info=		https://$HostNameFQDN:$Port_HTTPS/MySB/RentingInfo.php" >> /etc/MySB/users/$NEWUSER.info
-	echo "Logs=		https://$HostNameFQDN:$Port_HTTPS/MySB/logs" >> /etc/MySB/users/$NEWUSER.info
-fi
-
+sqlite3 $SQLiteDB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,fixed_ip,scgi_port,rtorrent_port,home_dir) VALUES (\"$NEWUSER\",\"$UserEmail\",\"$UserPASSWD\",\"$NEWRPC\",\"$UserSFTP\",\"$UserSUDO\",\"$UserIPs\",\"$SCGIPORT\",\"$NETWORKPORT\",\"$HOMEDIR\");"
 StatusLSB
 
 #### create directories
@@ -484,11 +398,11 @@ rm /tmp/crontab.tmp
 StatusLSB
 
 #### rtorrent max memory & rTorrent Blocklist
-for seedUser in $LISTUSERS; do
+for seedUser in $UsersList; do
 	log_daemon_msg "Change parameter 'pieces.memory.max.set' for $seedUser"
 	LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$seedUser/.rtorrent.rc)
 	sed -i ''$LIGN'd' /home/$seedUser/.rtorrent.rc
-	sed -i ''$LIGN'i\pieces.memory.max.set = '$(((($MEMORY/$COUNTUSERS)*1024)*1024))'\n' /home/$seedUser/.rtorrent.rc
+	sed -i ''$LIGN'i\pieces.memory.max.set = '$(((($MEMORY/$TotalUsers)*1024)*1024))'\n' /home/$seedUser/.rtorrent.rc
 	StatusLSB
 	
 	#if [ "$MySB_PeerBlock" == "rTorrent" ]; then	

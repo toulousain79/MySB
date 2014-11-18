@@ -55,8 +55,8 @@ done
 
 crontab -l > /tmp/crontab.tmp
 
-LISTUSERS=`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`
-for seedUser in $LISTUSERS; do
+ListingUsers
+for seedUser in $UsersList; do
 	sed -i '/'$seedUser'/d' /tmp/crontab.tmp
 done
 
@@ -70,9 +70,6 @@ PackagesManage purge "$TOREMOVE"
 
 if [ -d /etc/MySB/sources ]; then
 	rm -f /etc/MySB/sources/*
-fi		
-if [ -d /etc/MySB/users ]; then
-	rm -f /etc/MySB/users/*
 fi
 if [ -d /etc/MySB/infos ]; then
 	rm -f /etc/MySB/infos/*
