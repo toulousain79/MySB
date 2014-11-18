@@ -1,173 +1,19 @@
 
--- Table: ports
-CREATE TABLE ports ( 
-    id_ports INTEGER NOT NULL
-                     PRIMARY KEY AUTOINCREMENT,
-    value    INTEGER UNIQUE
-                     NOT NULL 
-);
-
-
--- Table: renting
-CREATE TABLE renting ( 
-    id_renting  INTEGER        NOT NULL
-                               PRIMARY KEY AUTOINCREMENT,
-    model       VARCHAR( 64 )  NULL,
-    tva         NUMERIC        NULL,
-    global_cost NUMERIC        NULL 
-);
-
-
--- Table: smtp
-CREATE TABLE smtp ( 
-    id_smtp       INTEGER         NOT NULL
-                                  PRIMARY KEY AUTOINCREMENT,
-    smtp_provider VARCHAR( 5 )    UNIQUE
-                                  NOT NULL,
-    smtp_username VARCHAR( 64 )   UNIQUE
-                                  NULL,
-    smtp_passwd   VARCHAR( 64 )   UNIQUE
-                                  NULL,
-    smtp_host     VARCHAR( 128 )  UNIQUE
-                                  NULL,
-    smtp_port     VARCHAR( 5 )    UNIQUE
-                                  NULL 
-);
-
-
--- Table: system
-CREATE TABLE system ( 
-    id_system        INTEGER         NOT NULL
-                                     PRIMARY KEY AUTOINCREMENT,
-    mysb_version     VARCHAR( 6 )    UNIQUE
-                                     NOT NULL,
-    mysb_user        VARCHAR( 32 )   UNIQUE
-                                     NULL,
-    mysb_password    VARCHAR( 32 )   UNIQUE
-                                     NULL,
-    hostname         VARCHAR( 128 )  UNIQUE
-                                     NULL,
-    ipv4             VARCHAR( 15 )   UNIQUE
-                                     NULL,
-    primary_inet     VARCHAR( 16 )   UNIQUE
-                                     NULL,
-    timezone         VARCHAR( 64 )   UNIQUE
-                                     NULL,
-    cert_password    VARCHAR( 13 )   UNIQUE
-                                     NULL,
-    port_ftp         INTEGER         UNIQUE
-                                     NULL,
-    port_ftp_data    INTEGER         UNIQUE
-                                     NULL,
-    port_ftp_passive VARCHAR( 11 )   UNIQUE
-                                     NULL,
-    port_ssh         INTEGER         UNIQUE
-                                     NULL,
-    port_https       INTEGER         UNIQUE
-                                     NULL,
-    port_http        INTEGER         UNIQUE
-                                     NULL 
-);
-
-
--- Table: vars
-CREATE TABLE vars ( 
-    id_vars            INTEGER        PRIMARY KEY AUTOINCREMENT
-                                      NOT NULL,
-    fail2ban_whitelist VARCHAR( 12 ),
-    vpn_ip             VARCHAR( 37 ),
-    white_tcp_port_out VARCHAR( 16 ),
-    white_udp_port_out VARCHAR( 16 ) 
-);
-
-INSERT INTO [vars] ([id_vars], [fail2ban_whitelist], [vpn_ip], [white_tcp_port_out], [white_udp_port_out]) VALUES (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24', '80 443', null);
-
--- Table: system_services
-CREATE TABLE system_services ( 
-    id_system_services INTEGER        PRIMARY KEY AUTOINCREMENT
-                                      NOT NULL,
-    short_name         VARCHAR( 32 )  NOT NULL
-                                      UNIQUE,
-    ident              VARCHAR( 64 )  NOT NULL
-                                      UNIQUE,
-    command            VARCHAR( 32 )  NOT NULL,
-    args               VARCHAR( 64 ) 
-);
-
-INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (1, 'CRON', 'crontab', 'service cron', null);
-INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (2, 'NginX', '/etc/nginx', 'service nginx', null);
-INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (3, 'SSH', '/etc/ssh', 'service ssh', null);
-INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (4, 'VSFTPd', '/etc/vsftpd', 'service vsftpd', null);
-INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (5, 'PHP5-FPM', '/etc/php5', 'service php5-fpm', null);
-INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (6, 'Postfix', '/etc/postfix', 'service postfix', null);
-INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (7, 'Stunnel', '/etc/stunnel', 'service stunnel4', null);
-INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (8, 'OpenVPN', '/etc/openvpn', 'service openvpn', null);
-INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (9, 'Fail2Ban', '/etc/fail2ban', 'service fail2ban', null);
-INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (10, 'PeerGuardian', '/etc/pgl', 'pglcmd', null);
-INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (11, 'Webmin', '/etc/webmin', 'service webmin', null);
-INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (12, 'Network', '/etc/network', 'service networking', null);
-INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (13, 'Samba', '/etc/samba', 'service samba', null);
-INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (14, 'NFS', '/etc/exports', 'service nfs-kernel-server', null);
-INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (15, 'DNScrypt-proxy', 'dnscrypt-proxy', 'service dnscrypt-proxy', null);
-INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (16, 'BIND', '/etc/bind/named.conf', 'service bind9', null);
-
--- Table: services
-CREATE TABLE services ( 
-    id_services  INTEGER        PRIMARY KEY AUTOINCREMENT
-                                NOT NULL,
-    serv_name    VARCHAR( 32 )  NOT NULL
-                                UNIQUE,
-    ports_tcp    VARCHAR( 32 ),
-    ports_udp    VARCHAR( 32 ),
-    is_installed BOOLEAN        DEFAULT ( 0 ) 
-);
-
-INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (1, 'Seedbox-Manager', '', '', 1);
-INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (2, 'CakeBox-Light', 8887, null, 1);
-INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (3, 'Plex Media Server', '32400 32469', '1900 5353 2410 32412 32413 32414', 1);
-INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (4, 'Webmin', 8890, '', 1);
-INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (5, 'OpenVPN', '8893 8894', null, 1);
-INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (6, 'LogWatch', null, null, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (7, 'Fail2Ban', null, null, 1);
-INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (8, 'PeerGuardian', null, null, 1);
-INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (9, 'rTorrent Block List', null, null, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (10, 'DNScrypt-proxy', null, '53 54 443 2053 5353', 1);
-
--- Table: trackers_users
-CREATE TABLE trackers_users ( 
-    id_trackers_users INTEGER         PRIMARY KEY AUTOINCREMENT
-                                      NOT NULL,
-    tracker_users     VARCHAR( 128 )  NOT NULL
-                                      UNIQUE,
-    is_active         BOOLEAN( 1 )    DEFAULT ( 0 ) 
-);
-
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (1, 'frenchtorrentdb.com', 0);
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (2, 'share1underground.com', 0);
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (3, 'empereur-team.ovh', 0);
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (4, 'genration-rosco-tk.net', 0);
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (5, 'torrentreactor.net', 0);
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (6, 'afrbits.com', 0);
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (7, 'french-adn.com', 0);
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (8, 'neo-tk.com', 0);
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (9, 'cool-tracker.be', 0);
-
--- Table: trackers_rutorrent
-CREATE TABLE trackers_rutorrent ( 
-    id_trackers_domains INTEGER         PRIMARY KEY AUTOINCREMENT
-                                        NOT NULL,
-    tracker_rutorrent   VARCHAR( 128 )  NOT NULL
-                                        UNIQUE,
-    is_active           BOOLEAN( 1 )    DEFAULT ( 0 ) 
+-- Table: peerguardian_allowp2p
+CREATE TABLE peerguardian_allowp2p ( 
+    id_peerguardian_allowp2p INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                             NOT NULL ON CONFLICT ABORT,
+    allowp2p                 VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT
+                                             UNIQUE ON CONFLICT IGNORE 
 );
 
 
 -- Table: peerguardian_blocklists
 CREATE TABLE peerguardian_blocklists ( 
-    id_peerguardian_blocklists INTEGER         PRIMARY KEY AUTOINCREMENT
-                                               NOT NULL,
-    blocklists                 VARCHAR( 256 )  NOT NULL
-                                               UNIQUE,
+    id_peerguardian_blocklists INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                               NOT NULL ON CONFLICT ABORT,
+    blocklists                 VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT
+                                               UNIQUE ON CONFLICT IGNORE,
     is_active                  BOOLEAN( 1 )    DEFAULT ( 0 ) 
 );
 
@@ -209,23 +55,33 @@ INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists
 INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [is_active]) VALUES (36, 'list.iblocklist.com/lists/tbg/primary-threats', 1);
 INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [is_active]) VALUES (37, 'list.iblocklist.com/lists/tbg/search-engines', 1);
 
--- Table: peerguardian_allowp2p
-CREATE TABLE peerguardian_allowp2p ( 
-    id_peerguardian_allowp2p INTEGER         PRIMARY KEY AUTOINCREMENT
-                                             NOT NULL,
-    allowp2p                 VARCHAR( 256 )  NOT NULL
-                                             UNIQUE 
+-- Table: ports
+CREATE TABLE ports ( 
+    id_ports INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                     NOT NULL ON CONFLICT ABORT,
+    value    INTEGER NOT NULL ON CONFLICT ABORT
+                     UNIQUE ON CONFLICT IGNORE 
+);
+
+
+-- Table: renting
+CREATE TABLE renting ( 
+    id_renting  INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                               NOT NULL ON CONFLICT ABORT,
+    model       VARCHAR( 64 ),
+    tva         NUMERIC,
+    global_cost NUMERIC 
 );
 
 
 -- Table: rtorrent_blocklists
 CREATE TABLE rtorrent_blocklists ( 
-    id_rtorrent_blocklists INTEGER         PRIMARY KEY AUTOINCREMENT
-                                           NOT NULL,
-    name                   VARCHAR( 32 )   NOT NULL
-                                           UNIQUE,
-    blocklists             VARCHAR( 256 )  NOT NULL
-                                           UNIQUE,
+    id_rtorrent_blocklists INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                           NOT NULL ON CONFLICT ABORT,
+    name                   VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
+                                           UNIQUE ON CONFLICT IGNORE,
+    blocklists             VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT
+                                           UNIQUE ON CONFLICT IGNORE,
     is_active              BOOLEAN( 1 )    DEFAULT ( 0 ) 
 );
 
@@ -268,33 +124,138 @@ INSERT INTO [rtorrent_blocklists] ([id_rtorrent_blocklists], [name], [blocklists
 INSERT INTO [rtorrent_blocklists] ([id_rtorrent_blocklists], [name], [blocklists], [is_active]) VALUES (37, 'PBLOCK_RAPIDSHARE', 'http://list.iblocklist.com/?list=zfucwtjkfwkalytktyiw&fileformat=cidr&archiveformat=gz', 0);
 INSERT INTO [rtorrent_blocklists] ([id_rtorrent_blocklists], [name], [blocklists], [is_active]) VALUES (38, 'CIDR_BOGON', 'http://list.iblocklist.com/?list=lujdnbasfaaixitgmxpp&fileformat=cidr&archiveformat=gz', 0);
 
--- Table: trackers_list
-CREATE TABLE trackers_list ( 
-    id_trackers_list INTEGER         PRIMARY KEY AUTOINCREMENT
-                                     NOT NULL,
-    tracker          VARCHAR( 128 )  NOT NULL
-                                     UNIQUE,
-    ipv4             VARCHAR( 128 ),
-    is_ssl           BOOLEAN( 1 )    DEFAULT ( 0 ),
-    is_active        BOOLEAN( 1 )    DEFAULT ( 0 ) 
+-- Table: services
+CREATE TABLE services ( 
+    id_services  INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                NOT NULL ON CONFLICT ABORT,
+    serv_name    VARCHAR( 32 )  NOT NULL ON CONFLICT ABORT
+                                UNIQUE ON CONFLICT IGNORE,
+    ports_tcp    VARCHAR( 32 ),
+    ports_udp    VARCHAR( 32 ),
+    is_installed BOOLEAN        DEFAULT ( 0 ) 
+);
+
+INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (1, 'Seedbox-Manager', '', '', 1);
+INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (2, 'CakeBox-Light', 8887, null, 1);
+INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (3, 'Plex Media Server', '32400 32469', '1900 5353 2410 32412 32413 32414', 1);
+INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (4, 'Webmin', 8890, '', 1);
+INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (5, 'OpenVPN', '8893 8894', null, 1);
+INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (6, 'LogWatch', null, null, 0);
+INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (7, 'Fail2Ban', null, null, 1);
+INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (8, 'PeerGuardian', null, null, 1);
+INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (9, 'rTorrent Block List', null, null, 0);
+INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (10, 'DNScrypt-proxy', null, '53 54 443 2053 5353', 1);
+
+-- Table: smtp
+CREATE TABLE smtp ( 
+    id_smtp       INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                  NOT NULL ON CONFLICT ABORT,
+    smtp_provider VARCHAR( 5 )    NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT IGNORE,
+    smtp_username VARCHAR( 64 )   UNIQUE ON CONFLICT IGNORE,
+    smtp_passwd   VARCHAR( 64 )   UNIQUE ON CONFLICT IGNORE,
+    smtp_host     VARCHAR( 128 )  UNIQUE ON CONFLICT IGNORE,
+    smtp_port     VARCHAR( 5 )    UNIQUE ON CONFLICT IGNORE 
 );
 
 
+-- Table: system
+CREATE TABLE system ( 
+    id_system        INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                     NOT NULL ON CONFLICT ABORT,
+    mysb_version     VARCHAR( 6 )    NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE,
+    mysb_user        VARCHAR( 32 )   UNIQUE ON CONFLICT IGNORE,
+    mysb_password    VARCHAR( 32 )   UNIQUE ON CONFLICT IGNORE,
+    hostname         VARCHAR( 128 )  UNIQUE ON CONFLICT IGNORE,
+    ipv4             VARCHAR( 15 )   UNIQUE ON CONFLICT IGNORE,
+    primary_inet     VARCHAR( 16 )   UNIQUE ON CONFLICT IGNORE,
+    timezone         VARCHAR( 64 )   UNIQUE ON CONFLICT IGNORE,
+    cert_password    VARCHAR( 13 )   UNIQUE ON CONFLICT IGNORE,
+    port_ftp         INTEGER( 5 )    NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE
+                                     DEFAULT ( 8891 ),
+    port_ftp_data    INTEGER( 5 )    NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE
+                                     DEFAULT ( 8800 ),
+    port_ftp_passive VARCHAR( 11 )   NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE
+                                     DEFAULT ( '65000:65535' ),
+    port_ssh         INTEGER( 5 )    NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE
+                                     DEFAULT ( 8892 ),
+    port_https       INTEGER         NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE
+                                     DEFAULT ( 8889 ),
+    port_http        INTEGER         NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE
+                                     DEFAULT ( 8888 ) 
+);
+
+
+-- Table: system_services
+CREATE TABLE system_services ( 
+    id_system_services INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                      NOT NULL ON CONFLICT ABORT,
+    short_name         VARCHAR( 32 )  NOT NULL ON CONFLICT ABORT
+                                      UNIQUE ON CONFLICT IGNORE,
+    ident              VARCHAR( 64 )  NOT NULL ON CONFLICT ABORT
+                                      UNIQUE ON CONFLICT IGNORE,
+    command            VARCHAR( 32 )  NOT NULL ON CONFLICT ABORT,
+    args               VARCHAR( 64 ) 
+);
+
+INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (1, 'CRON', 'crontab', 'service cron', null);
+INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (2, 'NginX', '/etc/nginx', 'service nginx', null);
+INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (3, 'SSH', '/etc/ssh', 'service ssh', null);
+INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (4, 'VSFTPd', '/etc/vsftpd', 'service vsftpd', null);
+INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (5, 'PHP5-FPM', '/etc/php5', 'service php5-fpm', null);
+INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (6, 'Postfix', '/etc/postfix', 'service postfix', null);
+INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (7, 'Stunnel', '/etc/stunnel', 'service stunnel4', null);
+INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (8, 'OpenVPN', '/etc/openvpn', 'service openvpn', null);
+INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (9, 'Fail2Ban', '/etc/fail2ban', 'service fail2ban', null);
+INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (10, 'PeerGuardian', '/etc/pgl', 'pglcmd', null);
+INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (11, 'Webmin', '/etc/webmin', 'service webmin', null);
+INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (12, 'Network', '/etc/network', 'service networking', null);
+INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (13, 'Samba', '/etc/samba', 'service samba', null);
+INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (14, 'NFS', '/etc/exports', 'service nfs-kernel-server', null);
+INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (15, 'DNScrypt-proxy', 'dnscrypt-proxy', 'service dnscrypt-proxy', null);
+INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (16, 'BIND', '/etc/bind/named.conf', 'service bind9', null);
+
+-- Table: trackers_users
+CREATE TABLE trackers_users ( 
+    id_trackers_users INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                      NOT NULL ON CONFLICT ABORT,
+    tracker_users     VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT
+                                      UNIQUE ON CONFLICT IGNORE,
+    is_active         BOOLEAN( 1 )    DEFAULT ( 0 ) 
+);
+
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (1, 'frenchtorrentdb.com', 0);
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (2, 'share1underground.com', 0);
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (3, 'empereur-team.ovh', 0);
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (4, 'genration-rosco-tk.net', 0);
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (5, 'torrentreactor.net', 0);
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (6, 'afrbits.com', 0);
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (7, 'french-adn.com', 0);
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (8, 'neo-tk.com', 0);
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (9, 'cool-tracker.be', 0);
+
 -- Table: users
 CREATE TABLE users ( 
-    id_users      INTEGER         PRIMARY KEY AUTOINCREMENT
-                                  NOT NULL,
-    users_ident   VARCHAR( 32 )   NOT NULL
-                                  UNIQUE,
-    users_email   VARCHAR( 260 )  NOT NULL
-                                  UNIQUE,
+    id_users      INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                  NOT NULL ON CONFLICT ABORT,
+    users_ident   VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT IGNORE,
+    users_email   VARCHAR( 260 )  NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT IGNORE,
     users_passwd  VARCHAR( 32 ),
     rpc           VARCHAR( 64 ),
-    sftp          BOOLEAN( 1 )    NOT NULL
+    sftp          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
                                   DEFAULT ( 1 ),
-    sudo          BOOLEAN( 1 )    NOT NULL
+    sudo          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
                                   DEFAULT ( 0 ),
-    admin         BOOLEAN( 1 )    NOT NULL
+    admin         BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
                                   DEFAULT ( 0 ),
     fixed_ip      VARCHAR( 128 ),
     no_ip         VARCHAR( 128 ),
@@ -302,4 +263,63 @@ CREATE TABLE users (
     rtorrent_port INTEGER( 5 ),
     home_dir      VARCHAR( 128 ) 
 );
+
+
+-- Table: vars
+CREATE TABLE vars ( 
+    id_vars            INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                      NOT NULL ON CONFLICT ABORT,
+    fail2ban_whitelist VARCHAR( 12 ),
+    vpn_ip             VARCHAR( 37 ),
+    white_tcp_port_out VARCHAR( 16 ),
+    white_udp_port_out VARCHAR( 16 ) 
+);
+
+INSERT INTO [vars] ([id_vars], [fail2ban_whitelist], [vpn_ip], [white_tcp_port_out], [white_udp_port_out]) VALUES (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24', '80 443', null);
+
+-- Table: trackers_rutorrent
+CREATE TABLE trackers_rutorrent ( 
+    id_trackers_rutorrent INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                          NOT NULL ON CONFLICT ABORT,
+    tracker_rutorrent     VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT
+                                          UNIQUE ON CONFLICT IGNORE,
+    is_active             BOOLEAN( 1 )    DEFAULT ( 0 ) 
+);
+
+
+-- Table: trackers_list
+CREATE TABLE trackers_list ( 
+    id_trackers_list INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                     NOT NULL ON CONFLICT ABORT,
+    tracker          VARCHAR( 128 )  NOT NULL ON CONFLICT IGNORE
+                                     UNIQUE ON CONFLICT IGNORE,
+    tracker_domain   VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE,
+    origin           VARCHAR( 9 )    NOT NULL ON CONFLICT ABORT,
+    ipv4             VARCHAR( 128 ),
+    is_ssl           BOOLEAN( 1 )    DEFAULT ( 0 ),
+    is_active        BOOLEAN( 1 )    DEFAULT ( 0 ) 
+);
+
+
+-- Trigger: ruTorrent_Tacker_Activation
+CREATE TRIGGER ruTorrent_Tacker_Activation
+       AFTER UPDATE OF is_active ON trackers_rutorrent
+BEGIN
+    UPDATE OR IGNORE trackers_list
+       SET is_active = trackers_rutorrent.is_active
+     WHERE tracker_domain = trackers_rutorrent.tracker_rutorrent;
+END;
+;
+
+
+-- Trigger: Users_Tracker_Activation
+CREATE TRIGGER Users_Tracker_Activation
+       AFTER UPDATE OF is_active ON trackers_users
+BEGIN
+    UPDATE OR IGNORE trackers_list
+       SET is_active = trackers_users.is_active
+     WHERE tracker = trackers_users.tracker_users;
+END;
+;
 

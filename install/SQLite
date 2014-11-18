@@ -337,8 +337,19 @@ for SeedboxUser in $UsersList; do
 		for Torrent in $TorrentListing; do
 			if [ "`echo $Torrent | grep '.libtorrent_resume'`" != "" ]; then
 				Tracker="`cat $Torrent | tr -cd '[:print:]' | sed 's/=//' | sed 's/:\/\//=/' | cut -d '=' -f 2 | cut -d '/' -f 1 | cut -d ':' -f 1`"
+				#sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_list SET is_active = '1' WHERE tracker = '$Tracker';"
 				
-				sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_list SET is_active = '1' WHERE tracker = '$Tracker';"
+				PART1=`echo ${Tracker} | cut -d "." -f 1`
+				PART2=`echo ${Tracker} | cut -d "." -f 2`
+				PART3=`echo ${Tracker} | cut -d "." -f 3`
+				if [ -z "$PART3" ]; then
+					TrackerDomain="`echo $PART1`.`echo $PART2`"
+				else
+					TrackerDomain="`echo $PART2`.`echo $PART3`"
+				fi
+				unset PART1 PART2 PART3
+				sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_rutorrent SET is_active = '1' WHERE tracker_rutorrent = '$TrackerDomain';"
+				sqlite3 $SQLiteDB "UPDATE or IGNORE trackers_users SET is_active = '1' WHERE tracker_users = '$TrackerDomain';"
 			fi
 		done
 	fi
