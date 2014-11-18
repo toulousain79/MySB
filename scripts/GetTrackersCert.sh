@@ -92,7 +92,7 @@ sqlite3 $SQLiteDB "SELECT tracker FROM trackers_list WHERE 1" | while read Track
 			StatusLSB
 		else
 			log_daemon_msg "Delete old tracker: $Tracker"
-			sqlite3 $SQLiteDB "DELETE FROM trackers_list WHARE tracker = '$Tracker';"
+			sqlite3 $SQLiteDB "DELETE FROM trackers_list WHERE tracker = '$Tracker';"
 			StatusLSB
 		fi
 	fi
