@@ -22,15 +22,13 @@
 //
 //#################### FIRST LINE #####################################
 
+// Includes
+require  'inc/includes_before.php';
+
 if ( isset($_SERVER['PHP_AUTH_USER']) ) {
 	$SeedUser = $_SERVER['PHP_AUTH_USER'];
 	$filename = "/etc/MySB/users/$SeedUser.info";
 	$current_ip = $_SERVER['REMOTE_ADDR'];
-	
-	function getScriptVersion() {
-		$data = file("/etc/MySB/infos/version.info");
-		return $data[0];
-	}
 
 	function Form() {
 		global $filename, $SeedUser, $current_ip;

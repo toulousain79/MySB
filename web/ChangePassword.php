@@ -22,13 +22,10 @@
 //
 //#################### FIRST LINE #####################################
 
-if(isset($_SERVER['PHP_AUTH_USER'])){
+// Includes
+require  'inc/includes_before.php';
 
-	function getScriptVersion() {
-		$data = file("/etc/MySB/infos/version.info");
-		return $data[0];
-	}
-	
+if(isset($_SERVER['PHP_AUTH_USER'])){
 	$TempPass = $_GET['TempPass'];
 ?>
 

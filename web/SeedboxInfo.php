@@ -22,18 +22,14 @@
 //
 //#################### FIRST LINE #####################################
 
-error_reporting(E_ALL);
+// Includes
+require  'inc/includes_before.php';
 
 if(isset($_SERVER['PHP_AUTH_USER'])){
 	if ($_SERVER['PHP_AUTH_USER'] == '##MySB_User##') {
 		$SeedUser = $_GET['user'];
 	} else {
 		$SeedUser = $_SERVER['PHP_AUTH_USER'];
-	}
-
-	function getScriptVersion() {
-		$data = file("/etc/MySB/infos/version.info");
-		return $data[0];
 	}
 
 	function printUser($user) {
