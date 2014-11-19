@@ -288,6 +288,7 @@ Created by toulousain79
 
 ## TODO
 
+* Use of "Let's Encrypt" (https://letsencrypt.org/)
 * Change ruTorrent directory name (/rutorrent/)
 * Maybe add miniDLNA functionality (with OpenVPN)
 * Make some thing for users with dynamic ip for update whitelist in PeerGuardian and Fail2ban.
