@@ -28,14 +28,11 @@ source /etc/MySB/inc/includes_before
 if [ -f /etc/pgl/blocklists.list ] && [ ! -f /etc/pgl/blocklists.list.ORIGINAL ]; then
 	cp /etc/pgl/blocklists.list /etc/pgl/blocklists.list.ORIGINAL
 fi
-if [ -f /etc/pgl/blocklists.list ]; then
-	rm -f /etc/pgl/blocklists.list
+if [ -f /etc/pgl/pglcmd.conf ] && [ ! -f /etc/pgl/pglcmd.conf.ORIGINAL ]; then
+	cp /etc/pgl/pglcmd.conf /etc/pgl/pglcmd.conf.ORIGINAL
 fi
-if [ -f /etc/pgl/pglcmd.conf ]; then
-	rm -f /etc/pgl/pglcmd.conf
-fi
-if [ -f /etc/pgl/allow.p2p ]; then
-	rm -f /etc/pgl/allow.p2p
+if [ -f /etc/pgl/allow.p2p ] && [ ! -f /etc/pgl/allow.p2p.ORIGINAL ]; then
+	cp /etc/pgl/allow.p2p /etc/pgl/allow.p2p.ORIGINAL
 fi
 
 #### Sources list
@@ -57,153 +54,7 @@ done
 PackagesManage install "pgld pglcmd"
 
 #### Create config file
-(
-cat <<'EOF'
-# pglcmd.conf - configuration file for pglcmd
-
-# This file is sourced by a shell script. Any line which starts with a # (hash)
-# is a comment and is ignored. If you set the same variable several times,
-# then only the last line will be used.
-
-# Refer to pglcmd.defaults (/usr/lib/x86_64-linux-gnu/pgl/pglcmd.defaults)
-# for the complete set of possible configuration variables with comments.
-
-# Do a "pglcmd restart" (sometimes even "reload" is enough) when you have
-# edited this file.
-
-# Turn on/off automatic start.
-# ignore this on Gentoo
-# Note: this tells the init script not to start pgl on "start".
-# The same behaviour can be achieved by removing/tweaking the init file and the
-# links pointing to it. You can do this manually or by using an application such
-# as rcconf.
-# 0 - Don't start pgl at system boot
-# 1 - Start pgl at system boot
-INIT="1"
-
-# Turn on/off automatic blocklist update.
-# 0 - Don't update the blocklists automatically
-# 1 - Update the blocklists automatically
-CRON="1"
-
-# Turn on/off pgld's logging to syslog and/or systemd journal
-# 0 - Don't log to syslog/systemd journal
-# 1 - Log to syslog/systemd journal
-LOG_SYSLOG="1"
-
-# Iptables logging of blocked packets
-# Set an iptables target for blocked packets. This will only work if marking
-# matched (IP is in the blocklist) packets is on (i.e. REJECT="1").
-# The iptables rules will be inserted directly before the iptables rule which
-# decides what happens to "marked block" packets.
-# Examples:
-# "" (empty string): no rule will be inserted
-# "LOG --log-level info": blocked packets will be logged to syslog with "info"
-#     log level. This allows to find out e.g. the port and to verify if a packet
-#     is really blocked and not just "marked block".
-LOG_IPTABLES="LOG --log-level info"
-
-# Email the result of the automatic (cron) blocklist update.
-# Specify the mail recipient.
-# If not set, cron will decide what happens with the output.
-CRON_MAILTO=""
-
-# Whitelist ports (traffic on these ports will not be checked)
-# Valid values: port numbers or service names. Port ranges are specified in the
-# format "port:port".
-# Common ports - service names:
-#   80 - http
-#  443 - https
-#   22 - ssh
-#  993 - SSL IMAP
-# Separate several entries with whitespace (" ")
-# Technical implementation: iptables rules in the corresponding iptables chains,
-# matching protocol and --sport/dport PORT, target IPTABLES_TARGET_WHITELISTING.
-# This section works only for IPTABLES_SETTINGS="1"
-# Do a "pglcmd restart" when you have changed these settings.
-
-EOF
-) > /etc/pgl/pglcmd.conf
-
-NetworkPortsGenerator
-
-MainUserIPs=$(echo $MainUserIPs | sed 's/,/ /g;')
-
-echo "WHITE_IP_IN=\"${MainUserIPs}\"" >> /etc/pgl/pglcmd.conf
-echo "WHITE_IP_OUT=\"\"" >> /etc/pgl/pglcmd.conf
-echo "WHITE_TCP_IN=\"${WHITE_TCP_IN}\"" >> /etc/pgl/pglcmd.conf
-echo "WHITE_UDP_IN=\"${WHITE_UDP_IN}\"" >> /etc/pgl/pglcmd.conf
-echo "WHITE_TCP_OUT=\"${WHITE_TCP_OUT}\"" >> /etc/pgl/pglcmd.conf
-echo "WHITE_UDP_OUT=\"${WHITE_UDP_OUT}\"" >> /etc/pgl/pglcmd.conf
-echo "WHITE_TCP_FWD=\"\"" >> /etc/pgl/pglcmd.conf
-echo "WHITE_UDP_FWD=\"\"" >> /etc/pgl/pglcmd.conf
-
-#### Create Blocklist file
-(
-cat <<'EOF'
-# blocklists.list - lists the blocklists that are handled automatically by pglcmd
-
-# Place one URL per line for every blocklist.
-# Any line which starts with a # (hash) is a comment and is ignored.
-
-# Have a look at /usr/share/doc/pglcmd/README.blocklists.gz for detailed
-# information about some available blocklists.
-
-# Instead or additionally to the blocklists that are specified in this file,
-# you can manually put lists in MASTER_BLOCKLIST_DIR (/var/lib/pgl).
-# All blocklists in that directory (except those which end in "~" or have a "."
-# prefix) are used by pgld. They may be in any supported format and have to be
-# either unpacked or gzipped. Note that these manually installed blocklists are
-# neither updated automatically, nore does IP_REMOVE work for them.
-
-# Do a "pglcmd reload" (or "restart" or "update") when you have edited
-# this file.
-
-#list.iblocklist.com/lists/atma/atma
-list.iblocklist.com/lists/bluetack/ads-trackers-and-bad-pr0n
-list.iblocklist.com/lists/bluetack/bad-peers
-list.iblocklist.com/lists/bluetack/bogon
-#list.iblocklist.com/lists/bluetack/dshield
-#list.iblocklist.com/lists/bluetack/edu
-#list.iblocklist.com/lists/bluetack/for-non-lan-computers
-#list.iblocklist.com/lists/bluetack/forum-spam
-#list.iblocklist.com/lists/bluetack/hijacked
-#list.iblocklist.com/lists/bluetack/iana-multicast
-#list.iblocklist.com/lists/bluetack/iana-private
-#list.iblocklist.com/lists/bluetack/iana-reserved
-list.iblocklist.com/lists/bluetack/level-1
-list.iblocklist.com/lists/bluetack/level-2
-#list.iblocklist.com/lists/bluetack/level-3
-list.iblocklist.com/lists/bluetack/microsoft
-list.iblocklist.com/lists/bluetack/proxy
-list.iblocklist.com/lists/bluetack/range-test
-#list.iblocklist.com/lists/bluetack/spider
-#list.iblocklist.com/lists/bluetack/spyware
-#list.iblocklist.com/lists/bluetack/web-exploit
-#list.iblocklist.com/lists/bluetack/webexploit-forumspam
-#list.iblocklist.com/lists/cidr-report/bogon
-#list.iblocklist.com/lists/dchubad/faker
-#list.iblocklist.com/lists/dchubad/hacker
-list.iblocklist.com/lists/dchubad/pedophiles
-#list.iblocklist.com/lists/dchubad/spammer
-#list.iblocklist.com/lists/nexus23/ipfilterx
-#list.iblocklist.com/lists/peerblock/rapidshare
-#list.iblocklist.com/lists/spamhaus/drop
-#list.iblocklist.com/lists/tbg/bogon
-#list.iblocklist.com/lists/tbg/business-isps
-#list.iblocklist.com/lists/tbg/educational-institutions
-list.iblocklist.com/lists/tbg/general-corporate-ranges
-#list.iblocklist.com/lists/tbg/hijacked
-list.iblocklist.com/lists/tbg/primary-threats
-list.iblocklist.com/lists/tbg/search-engines
-
-EOF
-) > /etc/pgl/blocklists.list
-
-#### Create P2P file
-if [ -f /etc/MySB/infos/allow.p2p ]; then
-	mv /etc/MySB/infos/allow.p2p /etc/pgl/allow.p2p
-fi	
+cp /etc/MySB/templates/etc.pgl.pglcmd.conf.template /etc/pgl/pglcmd.conf
 	
 # -----------------------------------------
 source /etc/MySB/inc/includes_after

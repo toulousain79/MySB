@@ -70,10 +70,7 @@ PackagesManage purge "$TOREMOVE"
 
 if [ -d /etc/MySB/sources ]; then
 	rm -f /etc/MySB/sources/*
-fi
-if [ -d /etc/MySB/infos ]; then
-	rm -f /etc/MySB/infos/*
-fi		
+fi	
 if [ -d /etc/MySB/files ]; then
 	rm -f /etc/MySB/files/*
 fi		

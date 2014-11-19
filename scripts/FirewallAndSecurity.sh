@@ -371,6 +371,44 @@ case $1 in
 				perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${WHITE_UDP_OUT}\"/g" /etc/pgl/pglcmd.conf
 			fi
 			StatusLSB
+
+			# Create Blocklist file
+			(
+			cat <<'EOF'
+# blocklists.list - lists the blocklists that are handled automatically by pglcmd
+
+# Place one URL per line for every blocklist.
+# Any line which starts with a # (hash) is a comment and is ignored.
+
+# Have a look at /usr/share/doc/pglcmd/README.blocklists.gz for detailed
+# information about some available blocklists.
+
+# Instead or additionally to the blocklists that are specified in this file,
+# you can manually put lists in MASTER_BLOCKLIST_DIR (/var/lib/pgl).
+# All blocklists in that directory (except those which end in "~" or have a "."
+# prefix) are used by pgld. They may be in any supported format and have to be
+# either unpacked or gzipped. Note that these manually installed blocklists are
+# neither updated automatically, nore does IP_REMOVE work for them.
+
+# Do a "pglcmd reload" (or "restart" or "update") when you have edited
+# this file.
+
+EOF
+			) > /etc/pgl/blocklists.list
+			
+			sqlite3 $SQLiteDB "SELECT blocklists,is_active FROM peerguardian_blocklists WHERE 1" | while read ROW; do
+				Blocklist=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
+				IsActive=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
+
+				case "$IsActive" in
+					0)
+						echo "#$Blocklist" >> /etc/pgl/blocklists.list
+					;;	
+					1)
+						echo "$Blocklist" >> /etc/pgl/blocklists.list
+					;;			
+				esac
+			done			
 			
 			# /etc/pgl/allow.p2p
 			(
