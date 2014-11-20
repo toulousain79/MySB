@@ -78,7 +78,14 @@ done
 echo
 echo -e "${CYELLOW}Do you want to use an external SMTP server? (Good for safe sending emails.).$CEND"
 echo -e "${CYELLOW}Choose between ${CGREEN}LOCAL$CEND${CYELLOW} or listed providers $CEND${CGREEN}FREE$CEND|$CEND${CGREEN}OVH$CEND${CYELLOW}|$CEND${CGREEN}GMAIL$CEND|$CEND${CGREEN}YAHOO$CEND${CYELLOW}. Only SSL transactions will be used (SSL/465).$CEND"
-GetString NO "What is your provider? " Smtp_Provider LOCAL
+while [ ! "$Smtp_Provider" = "LOCAL" ] \
+	|| [ ! "$Smtp_Provider" = "FREE" ] \
+	|| [ ! "$Smtp_Provider" = "OVH" ] \
+	|| [ ! "$Smtp_Provider" = "GMAIL" ] \
+	|| [ ! "$Smtp_Provider" = "YAHOO" ]; do
+	
+	GetString NO "What is your provider? " Smtp_Provider LOCAL
+done
 
 Smtp_Provider=`echo $Smtp_Provider | tr '[:lower:]' '[:upper:]'`
 if [ "$Smtp_Provider" != "LOCAL" ]; then	
@@ -235,7 +242,7 @@ sqlite3 $SQLiteDB \
 	VALUES (\"$HostNameFQDN\",\"$SrvIpAddress\",\"$PrimaryInet\",\"$TimeZone\",\"$Port_FTP\",\"$Port_FTP_Data\",\"65000:65535\",\"$Port_SSH\",\"$Port_HTTPS\",\"$Port_HTTP\");"
 
 # 'smtp' table
-sqlite3 $SQLiteDB "INSERT into smtp (smtp_provider,smtp_username,smtp_passwd) VALUES (\"$Smtp_Provider\",\"$Smtp_Username\",\"$Smtp_Password\");"
+sqlite3 $SQLiteDB "UPDATE smtp SET smtp_provider = '$Smtp_Provider', smtp_username = '$Smtp_Username', smtp_passwd = '$Smtp_Password' WHERE id_smtp = '1';"
 	
 # 'users' table (Main user)
 sqlite3 $SQLiteDB "INSERT into users (users_ident,users_email,users_passwd,sftp,sudo,admin,fixed_ip) VALUES (\"$NEWUSER\",\"$MainUserEmail\",\"$PASSWORD\",\"1\",\"1\",\"1\",\"$MainUserIPs\");"

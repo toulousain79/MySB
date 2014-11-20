@@ -39,19 +39,6 @@ INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [i
 INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (9, 'rTorrent Block List', null, null, 0);
 INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (10, 'DNScrypt-proxy', null, '53 54 443 2053 5353', 1);
 
--- Table: smtp
-CREATE TABLE smtp ( 
-    id_smtp       INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                  NOT NULL ON CONFLICT ABORT,
-    smtp_provider VARCHAR( 5 )    NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT IGNORE,
-    smtp_username VARCHAR( 64 )   UNIQUE ON CONFLICT IGNORE,
-    smtp_passwd   VARCHAR( 64 )   UNIQUE ON CONFLICT IGNORE,
-    smtp_host     VARCHAR( 128 )  UNIQUE ON CONFLICT IGNORE,
-    smtp_port     VARCHAR( 5 )    UNIQUE ON CONFLICT IGNORE 
-);
-
-
 -- Table: system
 CREATE TABLE system ( 
     id_system        INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -195,18 +182,6 @@ CREATE TABLE trackers_list (
 );
 
 
--- Table: renting
-CREATE TABLE renting ( 
-    id_renting      INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                   NOT NULL ON CONFLICT ABORT,
-    model           VARCHAR( 64 )  NOT NULL ON CONFLICT ABORT,
-    tva             NUMERIC        NOT NULL ON CONFLICT ABORT,
-    global_cost     NUMERIC        NOT NULL ON CONFLICT ABORT,
-    nb_users        NUMERIC( 2 )   NOT NULL ON CONFLICT ABORT,
-    price_per_users NUMERIC( 2 )   NOT NULL ON CONFLICT ABORT 
-);
-
-
 -- Table: rtorrent_blocklists
 CREATE TABLE rtorrent_blocklists ( 
     id_rtorrent_blocklists INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -216,7 +191,7 @@ CREATE TABLE rtorrent_blocklists (
     blocklists             VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT
                                            UNIQUE ON CONFLICT IGNORE,
     url_info               VARCHAR( 256 ),
-    [default]              BOOLEAN( 1 ),
+    [default]              BOOLEAN( 1 )    DEFAULT ( 0 ),
     is_active              BOOLEAN( 1 )    DEFAULT ( 0 ) 
 );
 
@@ -266,7 +241,7 @@ CREATE TABLE peerguardian_blocklists (
     blocklists                 VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT
                                                UNIQUE ON CONFLICT IGNORE,
     url_info                   VARCHAR( 256 ),
-    [default]                  BOOLEAN( 1 ),
+    [default]                  BOOLEAN( 1 )    DEFAULT ( 0 ),
     is_active                  BOOLEAN( 1 )    DEFAULT ( 0 ) 
 );
 
@@ -307,6 +282,34 @@ INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists
 INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (35, 'list.iblocklist.com/lists/tbg/hijacked', 'https://www.iblocklist.com/list.php?list=tbnuqfclfkemqivekikv', 0, 0);
 INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (36, 'list.iblocklist.com/lists/tbg/primary-threats', 'https://www.iblocklist.com/list.php?list=ijfqtofzixtwayqovmxn', 1, 1);
 INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (37, 'list.iblocklist.com/lists/tbg/search-engines', 'https://www.iblocklist.com/list.php?list=pfefqteoxlfzopecdtyw', 1, 1);
+
+-- Table: renting
+CREATE TABLE renting ( 
+    id_renting      INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
+                                     NOT NULL ON CONFLICT ABORT,
+    model           VARCHAR( 64 ),
+    tva             NUMERIC,
+    global_cost     NUMERIC,
+    nb_users        NUMERIC( 2 ),
+    price_per_users NUMERIC( 2 ) 
+);
+
+INSERT INTO [renting] ([id_renting], [model], [tva], [global_cost], [nb_users], [price_per_users]) VALUES (1, null, null, null, null, null);
+
+-- Table: smtp
+CREATE TABLE smtp ( 
+    id_smtp       INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                  NOT NULL ON CONFLICT ABORT,
+    smtp_provider VARCHAR( 5 )    NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT IGNORE
+                                  DEFAULT ( 'LOCAL' ),
+    smtp_username VARCHAR( 64 )   UNIQUE ON CONFLICT IGNORE,
+    smtp_passwd   VARCHAR( 64 )   UNIQUE ON CONFLICT IGNORE,
+    smtp_host     VARCHAR( 128 )  UNIQUE ON CONFLICT IGNORE,
+    smtp_port     VARCHAR( 5 )    UNIQUE ON CONFLICT IGNORE 
+);
+
+INSERT INTO [smtp] ([id_smtp], [smtp_provider], [smtp_username], [smtp_passwd], [smtp_host], [smtp_port]) VALUES (1, 'LOCAL', null, null, null, null);
 
 -- Trigger: ruTorrent_Tacker_Activation
 CREATE TRIGGER ruTorrent_Tacker_Activation

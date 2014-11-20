@@ -647,40 +647,27 @@ ValidateMail() {
 
 #### Monthly payment
 MonthlyPayment() {
-	if [ -f /etc/MySB/inc/renting ]; then
-		source /etc/MySB/inc/renting
+	if [ ! -z "$RentingGlobalCost" ] && [ ! -z "$RentingTVA" ] && [ ! -z "$RentingModel" ]; then
+		log_daemon_msg "Calculate the monthly payment"
+		export LANG=""
+		CountingUsers
+		X=`echo "$RentingGlobalCost/$TotalUsers" | bc -l`
+		Y=`echo "($X*$RentingTVA)/100" | bc -l`
+		PriceByUser=`echo "$X+$Y" | bc -l`
+		PriceByUser=`printf '%.0f\n' $PriceByUser`	
 
-		if [ ! -z "$PU" ] && [ ! -z "$TVA" ] && [ ! -z "$FORMULA" ]; then
-		
-			log_daemon_msg "Calculate the monthly payment"
-			export LANG=""
-			CountingUsers
-			X=`echo "$PU/$TotalUsers" | bc -l`
-			Y=`echo "($X*$TVA)/100" | bc -l`
-			PriceByUser=`echo "$X+$Y" | bc -l`
-			PriceByUser=`printf '%.0f\n' $PriceByUser`	
+		# add new renting info
+		sqlite3 $SQLiteDB "UPDATE renting SET model = '$RentingModel', tva = '$RentingTVA', global_cost = '$RentingGlobalCost', nb_users = '$TotalUsers', price_per_users = '$PriceByUser' WHERE id_renting = '1';"
+		StatusLSB
 
-			# add new renting info
-			IfExist="`sqlite3 $SQLiteDB \"SELECT count(*) FROM renting\"`"
-			case "$IfExist" in
-				0)
-					sqlite3 $SQLiteDB "INSERT into renting (model,tva,global_cost,nb_users,price_per_users) VALUES (\"$FORMULA\",\"$TVA\",\"$PU\",\"$TotalUsers\",\"$PriceByUser\");"
-				;;		
-				1)
-					sqlite3 $SQLiteDB "UPDATE renting SET model = '$FORMULA', tva = '$TVA', global_cost = '$PU', nb_users = '$TotalUsers', price_per_users = '$PriceByUser' WHERE id_renting = '1';"
-				;;		
-			esac
-			StatusLSB
-
-			ListingUsers
-			for seedUser in $UsersList; do
-				SeedUserMail="`sqlite3 $SQLiteDB \"SELECT users_email FROM users WHERE users_ident = '$seedUser'\"`"
-				
-				if [ ! "$1" = "${seedUser}" ]; then	
-					SendMail "MySB - Changing monthly" "${seedUser}" "Changing Monthly"
-				fi				
-			done
-		fi
+		ListingUsers
+		for seedUser in $UsersList; do
+			SeedUserMail="`sqlite3 $SQLiteDB \"SELECT users_email FROM users WHERE users_ident = '$seedUser'\"`"
+			
+			if [ ! "$1" = "${seedUser}" ]; then	
+				SendMail "MySB - Changing monthly" "${seedUser}" "Changing Monthly"
+			fi				
+		done
 	fi
 }
 

@@ -114,9 +114,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])) {
 		$tva=$_POST['tva'];
 		$unit_price=$_POST['unit_price'];
 	
-		if ( ($formula != '') && ($tva != '') && ($unit_price != '') ) {
-			exec("sudo /bin/bash /etc/MySB/scripts/MakeRenting.sh '".$_POST['formula']."' '".$_POST['tva']."' '".$_POST['unit_price']."'", $output, $result);
-			
+		if ( ($formula != '') && ($tva != '') && ($unit_price != '') ) {			
 			Form();
 		
 			foreach ($output as $item){
