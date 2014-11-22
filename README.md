@@ -289,7 +289,7 @@ Created by toulousain79
 
 ## TODO
 
-* Use of "Let's Encrypt" (https://letsencrypt.org/)
+* Use of "Let's Encrypt" (https://letsencrypt.org/) (Summer 2015)
 * Maybe add miniDLNA functionality (with OpenVPN)
 * Make some thing for users with dynamic ip for update whitelist in PeerGuardian and Fail2ban.
 * Gmail SMTP https://www.google.com/accounts/DisplayUnlockCaptcha
