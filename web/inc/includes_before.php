@@ -27,4 +27,8 @@ require  'inc/functions.php';
 require  'inc/medoo.php';
 
 $database = new medoo();
+// On PHP 5.1
+//$data = array("foo", "bar");
+// On PHP 5.4+
+//$data = ["foo", "bar"];
 ?>

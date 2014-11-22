@@ -11,7 +11,7 @@ class medoo {
 	protected $password = '';
 
 	// For SQLite
-	protected $database_file = '../db/MySB.db';
+	protected $database_file = '../db/MySB.db3';
 
 	// Optional
 	protected $port = 3306;

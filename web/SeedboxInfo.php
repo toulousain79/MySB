@@ -36,9 +36,29 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 		echo '<table width="100%" border="0" align="left">';
 		echo '<tr align="left"><th colspan="3" scope="row"><h1>' . $user . '</h1></th></tr>';
 		
+		// Select all columns
+		$datas = $database->select("users", "*", [
+			"id_users[>]" = 1
+		]);
+		
+		if ( trim($data["fixed_ip"]) == 'blank' ) {
+			$comments = '<a target="_blank" href="https://' . $user . ':##TempPassword##@' . $_SERVER['HTTP_HOST'] . '/MySB/ManageIP.php?TempPass=##TempPassword##">Before changing your temporary password, thank you to confirm your IP address HERE!</a>';
+			$opts = 'bgcolor="#FF6666"';
+		} else {
+			$comments = 'Public IP addresses listed here will be allowed to access to all pages located under "/MySB/" excepted "/MySB/ManageIP.php".';
+			$opts = '';
+		}		
+		
+		echo '<tr align="left"><th colspan="3" scope="row"><hr /></th></tr>';
+		echo '<tr align="left"><th class="GroupTitle" colspan="3" scope="row">User personal info</th></tr>';
+		echo '<tr align="left"><th width="15%" scope="row">IP Address</th>';
+		echo '<td width="25%">' . $data["fixed_ip"] . '</td>';
+		echo '<td ' . $data["opts"] . '><span class="Comments">' . $data["comments"] . '</span></td></tr>';
+
+		
+
 		$data = file("/etc/MySB/users/$user.info");
 		foreach($data as $index=>$line) {
-
 			$column = explode('=', $line, 2);
 			
 			if (isset($column[0])) {
@@ -120,7 +140,7 @@ if(isset($_SERVER['PHP_AUTH_USER'])){
 			} elseif (substr($column[0], 1, 3) == '---') {	// HR
 				$line = '<tr align="left"><th colspan="3" scope="row"><hr /></th></tr>';
 			} elseif ((isset($column[0])) && (!isset($column[1]))) {	// group info title
-				$line = '<tr align="left"><th class="GroupTitle" colspan="3" scope="row">' . $column[0] . '</span></th></tr>';
+				$line = '<tr align="left"><th class="GroupTitle" colspan="3" scope="row">' . $column[0] . '</th></tr>';
 			} else {	// title + value
 				$line = '<tr align="left"><th width="15%" scope="row">' . $column[0]. '</th>';	// title
 				
