@@ -44,12 +44,14 @@ if [ "$IsInstalled_Manager" == "YES" ]; then
 	(
 cat <<'EOF'
 location ~ \.php$ {
-	root /usr/share/nginx/html/seedbox-manager/public;
+	root /etc/MySB/web/seedbox-manager/public;
 	include /etc/nginx/fastcgi_params;
 	fastcgi_index index.php;
 	fastcgi_pass unix:/var/run/php5-fpm.sock;
 	fastcgi_param SCRIPT_FILENAME $document_root/index.php;
-	fastcgi_param PHP_VALUE ""; #fastcgi_param PHP_ADMIN_VALUE  "open_basedir=$document_root\nsession.save_path=$session_root";
+	fastcgi_param APPLICATION_ENV production;
+	#fastcgi_param PHP_VALUE "";
+	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On";
 	fastcgi_param HTTPS on;
 }
 EOF
@@ -57,10 +59,13 @@ EOF
 
 	(
 cat <<'EOF'
-	location ^~ /seedbox-manager {
-		alias  /usr/share/nginx/html/seedbox-manager/public;
-		include /etc/nginx/conf.d/php-seedbox-manager;
+	location ^~ /sm {
+		alias /etc/MySB/web/seedbox-manager/public;
+		include /etc/nginx/conf.d/pagespeed;
+		include /etc/nginx/conf.d/php-ssl-ruTorrent;
 		include /etc/nginx/conf.d/cache;
+		include /etc/nginx/conf.d/static_files;
+		include /etc/nginx/conf.d/global_deny_access;
 		access_log /var/log/nginx/seedbox-manager-access.log combined;
 		error_log /var/log/nginx/seedbox-manager-error.log error;	
 	}
@@ -68,15 +73,15 @@ EOF
 	) > /etc/nginx/locations/seedbox-manager.conf
 
 	## app
-	if [ -d /usr/share/nginx/html/seedbox-manager ]; then
-		cd /usr/share/nginx/html/seedbox-manager/
+	if [ -d /etc/MySB/web/seedbox-manager ]; then
+		cd /etc/MySB/web/seedbox-manager/
 		git stash
 		git pull
 	else
 		if [ -d /etc/MySB/temp/seedbox-manager ]; then
-			mv /etc/MySB/temp/seedbox-manager /usr/share/nginx/html/
+			mv /etc/MySB/temp/seedbox-manager /etc/MySB/web/
 		else
-			git clone $GIT_manager /usr/share/nginx/html/seedbox-manager
+			git clone $GIT_manager /etc/MySB/web/seedbox-manager
 		fi
 	fi
 
@@ -84,7 +89,7 @@ EOF
 		rm -rf /etc/MySB/temp/seedbox-manager
 	fi	
 	
-	cd /usr/share/nginx/html/seedbox-manager
+	cd /etc/MySB/web/seedbox-manager
 
 (
 cat <<'EOF'
@@ -100,7 +105,7 @@ void supprLock (char nickname[])
     system (chaine);
 }
 EOF
-) > /usr/share/nginx/html/seedbox-manager/source-reboot-rtorrent/suppression.c
+) > /etc/MySB/web/seedbox-manager/source-reboot-rtorrent/suppression.c
 
 	(
 	cat <<'EOF'
@@ -116,26 +121,26 @@ void reboot (char nickname[])
     system (chaine);
 }
 EOF
-	) > /usr/share/nginx/html/seedbox-manager/source-reboot-rtorrent/reboot.c
+	) > /etc/MySB/web/seedbox-manager/source-reboot-rtorrent/reboot.c
 	
-	sed -i "s/http:\/\/{{ host }}/https:\/\/{{ host }}/g;" /usr/share/nginx/html/seedbox-manager/public/themes/default/template/bloc-ftp.html	
+	sed -i "s/http:\/\/{{ host }}/https:\/\/{{ host }}/g;" /etc/MySB/web/seedbox-manager/public/themes/default/template/bloc-ftp.html	
 	
 	composer install
 	bower install --allow-root --config.interactive=false
-	chown -R www-data:www-data /usr/share/nginx/html/seedbox-manager/
+	chown -R www-data:www-data /etc/MySB/web/seedbox-manager/
 	cd ./source-reboot-rtorrent/
 	chmod +x install.sh
 	./install.sh
 	
 	# seedbox-manager ruTorrent Plugin
-	if [ -d /usr/share/nginx/html/rutorrent/plugins/linkseedboxmanager ]; then
-		cd /usr/share/nginx/html/rutorrent/plugins/linkseedboxmanager 
+	if [ -d /etc/MySB/web/rutorrent/plugins/linkseedboxmanager ]; then
+		cd /etc/MySB/web/rutorrent/plugins/linkseedboxmanager 
 		git stash
 		git pull
 	else
-		git clone $GIT_rutorrent_plugins_MANAGER /usr/share/nginx/html/rutorrent/plugins/linkseedboxmanager
+		git clone $GIT_rutorrent_plugins_MANAGER /etc/MySB/web/rutorrent/plugins/linkseedboxmanager
 	fi
-	sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$HostNameFQDN:$Port_HTTPS\/seedbox-manager\//g;" /usr/share/nginx/html/rutorrent/plugins/linkseedboxmanager/conf.php
+	sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$HostNameFQDN:$Port_HTTPS\/sm\//g;" /etc/MySB/web/rutorrent/plugins/linkseedboxmanager/conf.php
 fi
 
 # -----------------------------------------

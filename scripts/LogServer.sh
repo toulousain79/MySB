@@ -55,6 +55,37 @@ if [ -e /tmp/error.log ]; then
 fi
 StatusLSB
 
+#### default-access
+log_daemon_msg "HTML Convert of default-access.log"
+if [ -e /var/log/nginx/default-access.log.1 ]; then
+	cat /var/log/nginx/default-access.log.1 /var/log/nginx/default-access.log > /tmp/default-access.log
+else
+	if [ -e /var/log/nginx/default-access.log ]; then
+		cp /var/log/nginx/default-access.log /tmp/default-access.log
+	fi
+fi
+if [ -e /tmp/default-access.log ]; then
+	sed -i '/favicon.ico/d' /tmp/default-access.log
+	ccze -h < /tmp/default-access.log > /etc/MySB/web/logs/nginx/NginX-default-access.html
+	rm -f /tmp/default-access.log
+fi
+StatusLSB
+
+#### MySB-error
+log_daemon_msg "HTML Convert of default-error.log"
+if [ -e /var/log/nginx/default-error.log.1 ]; then
+	cat /var/log/nginx/default-error.log.1 /var/log/nginx/default-error.log > /tmp/default-error.log
+else
+	if [ -e /var/log/nginx/default-error.log ]; then
+		cp /var/log/nginx/default-error.log /tmp/default-error.log
+	fi
+fi
+if [ -e /tmp/default-error.log ]; then
+	ccze -h < /tmp/default-error.log > /etc/MySB/web/logs/nginx/NginX-default-error.html
+	rm -f /tmp/default-error.log
+fi
+StatusLSB
+
 #### MySB-access
 log_daemon_msg "HTML Convert of MySB-access.log"
 if [ -e /var/log/nginx/MySB-access.log.1 ]; then

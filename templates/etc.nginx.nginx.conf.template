@@ -1,0 +1,68 @@
+user www-data;
+worker_processes auto;
+
+pid /var/run/nginx.pid;
+
+events { worker_connections 10240; }
+
+http {
+	include /etc/nginx/mime.types;
+	default_type  application/octet-stream;
+
+	# LOG
+	error_log /var/log/nginx/error.log error;
+	access_log /var/log/nginx/access.log combined;	
+	
+	# SSL
+	ssl_session_cache shared:SSL:10m;
+	ssl_session_timeout 10m;
+	ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+	ssl_ciphers HIGH:!aNULL:!MD5;
+	ssl_prefer_server_ciphers on;
+	
+	# disable Nginx version
+	server_tokens off;	
+	
+	# HTTP cache
+	expires 12h;
+
+	# useful for multi-servers
+	add_header X-Server $hostname;	
+ 
+	# PageSpeed
+	# Enable ngx_pagespeed
+	pagespeed on;
+	pagespeed FileCachePath /usr/share/nginx/pagespeed;
+	 
+	# Defer and minify Javascript
+	pagespeed EnableFilters defer_javascript;
+	pagespeed EnableFilters rewrite_javascript;
+	pagespeed EnableFilters combine_javascript;
+	pagespeed EnableFilters canonicalize_javascript_libraries;
+	 
+	# Inline and minimize css
+	pagespeed EnableFilters rewrite_css;
+	pagespeed EnableFilters fallback_rewrite_css_urls;
+	# Loads CSS faster
+	#pagespeed EnableFilters move_css_above_scripts;
+	pagespeed EnableFilters move_css_to_head;
+	 
+	# Rewrite, resize and recompress images
+	pagespeed EnableFilters rewrite_images;
+	 
+	# remove tags with default attributes
+	pagespeed EnableFilters elide_attributes;
+	 
+	# To enable Varnish
+	pagespeed DownstreamCachePurgeLocationPrefix http://127.0.0.1:80/;
+	pagespeed DownstreamCachePurgeMethod PURGE;
+	pagespeed DownstreamCacheRewrittenPercentageThreshold 95;
+ 
+	sendfile on;
+	keepalive_disable msie6;
+	keepalive_requests 100;
+	tcp_nopush on;
+	tcp_nodelay off;
+    
+	include /etc/nginx/sites-enabled/*;
+}

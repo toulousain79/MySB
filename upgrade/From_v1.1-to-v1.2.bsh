@@ -58,10 +58,123 @@ StatusSTD
 
 #### NginX
 echo -e -n "${CBLUE}Some fixes for NginX$CEND..."
+# /etc/nginx/locations/MySB.conf
 cp /etc/MySB/templates/etc.nginx.locations.mysb.conf.template /etc/nginx/locations/MySB.conf
 perl -pi -e "s/<server_ip>/$SrvIpAddress/g" /etc/nginx/locations/MySB.conf
 perl -pi -e "s/<mainuser>/$NEWUSER/g" /etc/nginx/locations/MySB.conf
 perl -pi -e "s/<mainuser_password>/$MySB_Password/g" /etc/MySB/web/phpLiteAdmin.php
+
+# /etc/nginx/nginx.conf
+cp /etc/MySB/templates/etc.nginx.nginx.conf.template /etc/nginx/nginx.conf
+perl -pi -e "s/worker_processes auto;/worker_processes $PROCESSOR;/g" /etc/nginx/nginx.conf
+
+# pagespeed
+cp /etc/MySB/templates/etc.nginx.conf.d.pagespeed.template /etc/nginx/conf.d/pagespeed
+echo "# Nginx PageSpeed" >> /etc/fstab
+echo "tmpfs   /usr/share/nginx/pagespeed      tmpfs   rw,mode=1777,size=512M 0 0" >> /etc/fstab
+if [ ! -d /usr/share/nginx/pagespeed ]; then
+	mkdir /usr/share/nginx/pagespeed
+fi
+if [ "`df -H | grep '/usr/share/nginx/pagespeed'`" == "" ]; then
+	mount /usr/share/nginx/pagespeed
+fi
+
+# conf.d
+(
+cat <<'EOF'
+location ~ \.php$ {
+	fastcgi_pass unix:/var/run/php5-fpm.sock;
+	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+	include /etc/nginx/fastcgi_params;
+	fastcgi_param APPLICATION_ENV production;
+	#fastcgi_param PHP_VALUE "";
+	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On";
+}
+
+EOF
+) > /etc/nginx/conf.d/php
+(
+cat <<'EOF'
+location ~ \.php$ {
+	fastcgi_pass unix:/var/run/php5-fpm.sock;
+	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+	include /etc/nginx/fastcgi_params;
+	fastcgi_param APPLICATION_ENV production;
+	#fastcgi_param PHP_VALUE "";
+	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On";
+	fastcgi_param HTTPS on;
+}
+
+EOF
+) > /etc/nginx/conf.d/php-ssl
+(
+cat <<'EOF'
+location ~ \.php$ {
+	fastcgi_pass unix:/var/run/php5-fpm.sock;
+	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+	include /etc/nginx/fastcgi_params;
+	fastcgi_param APPLICATION_ENV production;
+	#fastcgi_param PHP_VALUE "";
+	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On";
+	fastcgi_param HTTPS on;
+}
+
+EOF
+) > /etc/nginx/conf.d/php-MySB-locations
+(
+cat <<'EOF'
+location ~ \.php$ {
+	fastcgi_pass unix:/var/run/php5-fpm.sock;
+	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+	include /etc/nginx/fastcgi_params;
+	fastcgi_param APPLICATION_ENV production;
+	#fastcgi_param PHP_VALUE "";
+	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On";
+	fastcgi_param HTTPS on;
+}
+
+EOF
+) > /etc/nginx/conf.d/php-rutorrent-locations
+(
+cat <<'EOF'
+	# deny access to .htaccess file, hidden files, svn files and git files
+	location ~ /\.ht 	{ access_log off; log_not_found off; deny all; }	
+	location ~ /\.svn 	{ access_log off; log_not_found off; deny all; }
+	location ~ /\.git	{ access_log off; log_not_found off; deny all; }
+	location ~ /\. 		{ access_log off; log_not_found off; deny all; }	
+	#location ^~ / 		{ access_log off; log_not_found off; deny all; }
+	location ~ ~$		{ access_log off; log_not_found off; deny all; }
+EOF
+) > /etc/nginx/conf.d/global_deny_access
+(
+cat <<'EOF'
+	# This block will catch static file requests, such as images, css, js
+	# The ?: prefix is a 'non-capturing' mark, meaning we do not require
+	# the pattern to be captured into $1 which should help improve performance
+	location ~* \.(?:ico|css|js|gif|jpe?g|png)$ {
+		# Some basic cache-control for static files to be sent to the browser
+		expires max;
+		add_header Pragma public;
+		add_header Cache-Control "public, must-revalidate, proxy-revalidate";
+		access_log off;
+		log_not_found off;
+	}
+EOF
+) > /etc/nginx/conf.d/static_files
+
+# move files
+if [ -f /usr/share/nginx/html/50x.html ]; then
+	rm /usr/share/nginx/html/50x.html
+fi
+if [ -d /usr/share/nginx/html/seedbox-manager ]; then
+	mv /usr/share/nginx/html/seedbox-manager /etc/MySB/web/
+fi
+if [ -d /usr/share/nginx/html/rutorrent ]; then
+	mv /usr/share/nginx/html/rutorrent /etc/MySB/web/
+fi
+if [ -d /usr/share/nginx/html/Cakebox-light ]; then
+	mv /usr/share/nginx/html/Cakebox-light /etc/MySB/web/
+fi
 StatusSTD
 
 #### LogWatch
@@ -85,7 +198,7 @@ for seedUser in $UsersList; do
 	SCGIPORT="`sqlite3 $SQLiteDB \"SELECT scgi_port FROM users WHERE users_ident = '$seedUser'\"`"
 	NETWORKPORT="`sqlite3 $SQLiteDB \"SELECT rtorrent_port FROM users WHERE users_ident = '$seedUser'\"`"	
 	
-	cp /home/$seedUser/.rtorrent.rc /home/$seedUser/.rtorrent.rc.bckp_v1.0_to_v1.1
+	cp /home/$seedUser/.rtorrent.rc /home/$seedUser/.rtorrent.rc.bckp_v1.1_to_v1.2
 	cp /etc/MySB/templates/rtorrent.rc.template /home/$seedUser/.rtorrent.rc
 	perl -pi -e "s/<server_ip>/$SrvIpAddress/g" /home/$seedUser/.rtorrent.rc
 	perl -pi -e "s/<username>/$seedUser/g" /home/$seedUser/.rtorrent.rc
@@ -116,6 +229,9 @@ done
 
 #### Refresh tools
 #ScriptInvoke 'bash' '/etc/MySB/bin/MySB_RefreshMe' 'all'
+
+#### Upgrade System
+#ScriptInvoke 'bash' '/etc/MySB/bin/MySB_UpgradeSystem'
 
 clear
 echo -e "${CGREEN}Upgrade finished succesfully !$CEND"

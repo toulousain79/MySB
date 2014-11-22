@@ -79,71 +79,30 @@ if [ -f /etc/nginx/nginx.conf ]; then
 	mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.ORIGINAL
 fi
 
-(
-cat <<'EOF'
-user www-data;
-worker_processes auto;
-
-pid /var/run/nginx.pid;
-
-events { worker_connections 10240; }
-
-http {
-	include /etc/nginx/mime.types;
-	default_type  application/octet-stream;
-
-	# LOG
-	error_log /var/log/nginx/error.log error;
-	access_log /var/log/nginx/access.log combined;	
-	
-	# SSL
-	ssl_session_cache shared:SSL:10m;
-	ssl_session_timeout 10m;
-	ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
-	ssl_ciphers HIGH:!aNULL:!MD5;
-	ssl_prefer_server_ciphers on;
-	
-	# disable Nginx version
-	server_tokens off;	
-	
-	# HTTP cache
-	expires 12h;
-
-	# useful for multi-servers
-	add_header X-Server $hostname;	
-	
-	# GZIP
-	gzip on;
-	gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;	
-	gzip_comp_level 5;
-	gzip_buffers 16 8k;
-	gzip_disable "msie6";
-	gzip_min_length 20;
-	gzip_proxied any;
-	gzip_vary on;	
-    
-	sendfile on;
-	keepalive_disable msie6;
-	keepalive_requests 100;
-	tcp_nopush on;
-	tcp_nodelay off;
-    
-	include /etc/nginx/sites-enabled/*;
-}
-
-EOF
-) > /etc/nginx/nginx.conf
+cp /etc/MySB/templates/etc.nginx.nginx.conf.template /etc/nginx/nginx.conf
 perl -pi -e "s/worker_processes auto;/worker_processes $PROCESSOR;/g" /etc/nginx/nginx.conf
 
-#### PHP conf
+#### PageSpeed Conf
+cp /etc/MySB/templates/etc.nginx.conf.d.pagespeed.template /etc/nginx/conf.d/pagespeed
+echo "# Nginx PageSpeed" >> /etc/fstab
+echo "tmpfs   /usr/share/nginx/pagespeed      tmpfs   rw,mode=1777,size=512M 0 0" >> /etc/fstab
+if [ ! -d /usr/share/nginx/pagespeed ]; then
+	mkdir /usr/share/nginx/pagespeed
+fi    
+if [ "`df -H | grep '/usr/share/nginx/pagespeed'`" == "" ]; then
+	mount /usr/share/nginx/pagespeed
+fi
+
+#### PHP conf.d
 (
 cat <<'EOF'
 location ~ \.php$ {
-	fastcgi_index index.php;
 	fastcgi_pass unix:/var/run/php5-fpm.sock;
 	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
 	include /etc/nginx/fastcgi_params;
-	fastcgi_param PHP_VALUE ""; #fastcgi_param PHP_ADMIN_VALUE  "open_basedir=$document_root\nsession.save_path=$session_root";
+	fastcgi_param APPLICATION_ENV production;
+	#fastcgi_param PHP_VALUE "";
+	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On";
 }
 
 EOF
@@ -152,11 +111,12 @@ EOF
 (
 cat <<'EOF'
 location ~ \.php$ {
-	fastcgi_index index.php;
 	fastcgi_pass unix:/var/run/php5-fpm.sock;
 	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
 	include /etc/nginx/fastcgi_params;
-	fastcgi_param PHP_VALUE ""; #fastcgi_param PHP_ADMIN_VALUE  "open_basedir=$document_root\nsession.save_path=$session_root";
+	fastcgi_param APPLICATION_ENV production;
+	#fastcgi_param PHP_VALUE "";
+	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On";
 	fastcgi_param HTTPS on;
 }
 
@@ -169,14 +129,30 @@ location ~ \.php$ {
 	fastcgi_pass unix:/var/run/php5-fpm.sock;
 	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
 	include /etc/nginx/fastcgi_params;
-	fastcgi_param PHP_VALUE ""; #fastcgi_param PHP_ADMIN_VALUE  "open_basedir=$document_root\nsession.save_path=$session_root";
+	fastcgi_param APPLICATION_ENV production;
+	#fastcgi_param PHP_VALUE "";
+	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On";
 	fastcgi_param HTTPS on;
 }
 
 EOF
 ) > /etc/nginx/conf.d/php-MySB-locations
 
-#### Cache conf
+(
+cat <<'EOF'
+location ~ \.php$ {
+	fastcgi_pass unix:/var/run/php5-fpm.sock;
+	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+	include /etc/nginx/fastcgi_params;
+	fastcgi_param APPLICATION_ENV production;
+	#fastcgi_param PHP_VALUE "";
+	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On";
+	fastcgi_param HTTPS on;
+}
+
+EOF
+) > /etc/nginx/conf.d/php-rutorrent-locations
+
 (
 cat <<'EOF'
 location ~* \.(jpg|jpeg|gif|css|png|js|woff|ttf|svg|eot)$ {
@@ -190,6 +166,34 @@ location ~* \.(eot|ttf|woff|svg)$ {
 
 EOF
 ) > /etc/nginx/conf.d/cache
+
+(
+cat <<'EOF'
+	# deny access to .htaccess file, hidden files, svn files and git files
+	location ~ /\.ht 	{ access_log off; log_not_found off; deny all; }	
+	location ~ /\.svn 	{ access_log off; log_not_found off; deny all; }
+	location ~ /\.git	{ access_log off; log_not_found off; deny all; }
+	location ~ /\. 		{ access_log off; log_not_found off; deny all; }	
+	#location ^~ / 		{ access_log off; log_not_found off; deny all; }
+	location ~ ~$		{ access_log off; log_not_found off; deny all; }
+EOF
+) > /etc/nginx/conf.d/global_deny_access
+
+(
+cat <<'EOF'
+	# This block will catch static file requests, such as images, css, js
+	# The ?: prefix is a 'non-capturing' mark, meaning we do not require
+	# the pattern to be captured into $1 which should help improve performance
+	location ~* \.(?:ico|css|js|gif|jpe?g|png)$ {
+		# Some basic cache-control for static files to be sent to the browser
+		expires max;
+		add_header Pragma public;
+		add_header Cache-Control "public, must-revalidate, proxy-revalidate";
+		access_log off;
+		log_not_found off;
+	}
+EOF
+) > /etc/nginx/conf.d/static_files
 
 #### Default Server
 if [ -f /etc/nginx/sites-enabled/default ]; then
@@ -206,33 +210,6 @@ if [ ! -f /etc/nginx/sites-enabled/default ]; then
 	ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 fi
 
-#### Cache conf
-(
-cat <<'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-<title>Error</title>
-<style>
-    body {
-        width: 35em;
-        margin: 0 auto;
-        font-family: Tahoma, Verdana, Arial, sans-serif;
-    }
-</style>
-</head>
-<body>
-<h1>An error occurred.</h1>
-<p>Sorry, the page you are looking for is currently unavailable.<br/>
-Please try again later.</p>
-<p>If you are the system administrator of this resource then you should check
-the <a href="http://nginx.org/r/error_log">error log</a> for details.</p>
-<p><em>Faithfully yours, nginx.</em></p>
-</body>
-</html>
-EOF
-) > /usr/share/nginx/html/50x.html
-
 #### MySB locations (logs, ruTorrent plugins, seedboxinfo)
 cp /etc/MySB/templates/etc.nginx.locations.mysb.conf.template /etc/nginx/locations/MySB.conf
 perl -pi -e "s/<server_ip>/$SrvIpAddress/g" /etc/nginx/locations/MySB.conf
@@ -247,7 +224,7 @@ cat <<'EOF'
 		error_log /var/log/nginx/rutorrent-error.log error;
 
 		location ~ /favicon.ico {
-			alias /usr/share/nginx/html/rutorrent/images/favicon.ico;
+			alias /etc/MySB/web/rutorrent/images/favicon.ico;
 		}	
 		
 		include /etc/nginx/conf.d/php-MySB-locations;

@@ -278,6 +278,7 @@ Created by toulousain79
 * NginX config:	http://trac.evolix.net/infogerance/wiki/HowtoNginx
 * NginX config:	https://library.linode.com/web-servers/nginx/configuration/basic
 * NginX with SSL:	http://nginx.org/en/docs/http/configuring_https_servers.html
+* NginX with PageSpeed: https://wiki.deimos.fr/Page_Speed:_optimize_on_the_fly_your_rendered_code
 * OpenSSL CAconfig:	http://www.ulduzsoft.com/2012/01/creating-a-certificate-authority-and-signing-the-ssl-certificates-using-openssl/
 * VSFTDs TLS:	http://www.howtoforge.com/setting-up-vsftpd-tls-on-debian-squeeze
 * VSFTPd Debian: https://howto.biapy.com/fr/debian-gnu-linux/serveurs/autres/installer-le-serveur-ftp-vsftpd-sur-debian
