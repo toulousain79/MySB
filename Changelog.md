@@ -1,6 +1,8 @@
 	Version v1.2
 		2014/10/26
+			- Used of SQLite
 			- NginX, add PageSpeed functionnality
+			- NginX, change url access (ruTorrent, Seedbox-Manager)
 
 	Version v1.1 (main branch)
 		2014/10/26

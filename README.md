@@ -290,12 +290,10 @@ Created by toulousain79
 ## TODO
 
 * Use of "Let's Encrypt" (https://letsencrypt.org/)
-* Change ruTorrent directory name (/rutorrent/)
 * Maybe add miniDLNA functionality (with OpenVPN)
 * Make some thing for users with dynamic ip for update whitelist in PeerGuardian and Fail2ban.
 * Gmail SMTP https://www.google.com/accounts/DisplayUnlockCaptcha
 * Maybe add OwnCloud possiblity
-* Maybe use of SQLight
 * NFS over sTunnel ? (https://w3.physics.illinois.edu/physwiki/doku.php?id=pcs:unix:nfs_over_stunnel)
 * SABnzbd option ?
 * Subsonic option ?
