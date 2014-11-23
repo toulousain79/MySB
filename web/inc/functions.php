@@ -22,12 +22,6 @@
 //
 //#################### FIRST LINE #####################################
 
-// Get MySB version
-function getScriptVersion() {
-	$data = $database->get("system", "mysb_version", [
-		"id_system" => 1
-	]);
-	return $data;
-}
+
 
 ?>

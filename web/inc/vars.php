@@ -24,4 +24,10 @@
 
 //error_reporting(E_ALL);
 error_reporting(-1);
+
+// System table
+$system_datas = $database->get("system", "*", ["id_system" => 1]);
+
+// Users table
+$users_datas = $database->get("users", "*", ["id_system" => $_SERVER['PHP_AUTH_USER']]);
 ?>

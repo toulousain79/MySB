@@ -22,13 +22,10 @@
 //
 //#################### FIRST LINE #####################################
 
+// Medoo framework
+require  'inc/medoo.min.php';
+$database = new medoo();
+
 require  'inc/vars.php';
 require  'inc/functions.php';
-require  'inc/medoo.php';
-
-$database = new medoo();
-// On PHP 5.1
-//$data = array("foo", "bar");
-// On PHP 5.4+
-//$data = ["foo", "bar"];
 ?>
