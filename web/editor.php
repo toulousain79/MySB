@@ -10,13 +10,8 @@ function adminer_object() {
 		
 		function database() {
 			// database name, will be escaped by Adminer
-		return '../db/MySB.sq3';
-    }
-
-    function tableName($tableStatus) {
-      // tables without comments would return empty string and will be ignored by Adminer
-      return h($tableStatus["Comment"]);
-    }
+			return '../db/MySB.sq3';
+		}
 	
 		function loginForm() {
 			global $drivers;

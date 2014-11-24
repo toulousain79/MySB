@@ -38,23 +38,12 @@ function HeaderPage($Page) {
 		<!-- non indexation moteur de recherche -->
 		<meta name="robots" content="noindex, nofollow">
 		<meta name="robots" content="noarchive">
-		<meta name="googlebot" content="nosnippet">		
-		<title>MySB ' . GetVersion() . ' - ' . $Page . '</title>	
+		<meta name="googlebot" content="nosnippet">
+		<title>MySB ' . GetVersion() . ' - ' . $Page . '</title>
+		<link rel="stylesheet" type="text/css" href="inc/default.css" />
+		<script type="text/javascript" src="inc/script.js"></script>
 	</head>
-	<style type="text/css">
-		.Global {font-family: Verdana, Arial, Helvetica, sans-serif; text-align: left;}
-		th, td, tr, table {text-align: left;}
-		h1 { text-align: center; }
-		.Style1 {font-family: Verdana, Arial, Helvetica, sans-serif; color: #FF0000} 
-		.Style2 {font-family: Verdana, Arial, Helvetica, sans-serif; color: #00CC33}		
-		.FontInRed {color: #FF0000}
-		.FontInGreen {color: #00CC33}
-		.Comments {font-size: 11px;}
-		.Title {color: #0000FF;}
-		.GroupTitle {color: #0000FF;}
-	</style>
-
-	<body class="Global" style="text-size-adjust: 100%; -webkit-text-size-adjust: 100% !important; padding:0px; margin: 0px;">	
+	<body>
 	';
 
 	switch ($ScriptName) {			
