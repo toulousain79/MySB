@@ -24,35 +24,23 @@ require  'inc/includes_before.php';
 //
 //#################### FIRST LINE #####################################
 
-$SeedUser = $_SERVER['PHP_AUTH_USER'];
-$filename = "/etc/MySB/users/$SeedUser.info";
-$current_ip = $_SERVER['REMOTE_ADDR'];
-
 function Form() {
-	global $filename, $SeedUser, $current_ip;
+	global $UserName, $UserAddress;
 
+	$database = new medoo();
+	// Users table
+	$users_datas = $database->get("users", "*", ["users_ident" => $UserName]);	
+	
 	$allip = '';
 	$temp_list = '';
 	
-	if (file_exists($filename)) {
-		$data = file($filename);
-		
-		foreach($data as $index=>$line) {
-			$column = explode('=', $line, 2);
-			
-			if ( (isset($column[0])) && (isset($column[1])) ) {		
-				if (substr($column[0], 0, 11) == 'IP Address') {
-					if ( trim($column[1]) == 'blank' ) {
-						$allip = 'blank';
-						$temp_list = $current_ip;
-					} else  {
-						$allip = trim($column[1], " \t\n\r\0\x0B");
-						$temp_list = $allip;
-					}
-				}
-			}
-		}	
-	}	
+	if ( trim($users_datas["fixed_ip"]) == 'blank' ) {
+		$allip = 'blank';
+		$temp_list = $UserAddress;
+	} else  {
+		$allip = trim($users_datas["fixed_ip"], " \t\n\r\0\x0B");
+		$temp_list = $allip;
+	}
 
 	echo '<form method="post" action="">
 		<table border="0">	
@@ -64,7 +52,7 @@ function Form() {
 			</tr>
 			<tr>
 				<td><span class="Title">Your current IP address :</span></td>
-				<td><input name="current_ip" type="text" value="' . $current_ip . '" size="50" readonly="true" /></td>
+				<td><input name="current_ip" type="text" value="' . $UserAddress . '" size="50" readonly="true" /></td>
 				<td><input name="add_current_ip" type="checkbox" value="1" /></td>
 				<td><span class="Comments"><em>Check this box for add this IP in your list.</em></span></td>
 			</tr>				
@@ -81,7 +69,7 @@ function Form() {
 				<td></td>						
 			</tr>
 			<tr>
-				<td colspan="4" align="center"><input name="submit" type="submit" value="Submit" /></td>
+				<td colspan="4"><div align="center"><input name="submit" type="submit" value="Submit" /></div></td>
 			</tr>
 		</table>
 	</form>';
@@ -99,27 +87,29 @@ if ( isset($_POST['submit']) ) {
 	
 	if ( ($current_list != '') && ($new_list != '') && ($confirm_list != '') ) {	
 		if ( $add_current_ip == '1' ) {
-			if ( strpos($confirm_list, $current_ip) === false ) {
-				$new_list .= ','.$current_ip;
-				$confirm_list .= ','.$current_ip;
+			if ( strpos($confirm_list, $UserAddress) === false ) {
+				$new_list .= ','.$UserAddress;
+				$confirm_list .= ','.$UserAddress;
 			}
 		}
 	
 		if ( $new_list == $confirm_list ) {
-			exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.sh new '".$SeedUser."' '".$current_list."' '".$confirm_list."' 'ManageIP.php'", $output, $result);
+			$result = update("users", ["fixed_ip" => $confirm_list], ["users_ident" => $UserName]);		
 			
-			Form();
-			
-			foreach ($output as $item){
-				echo $item.'<br>';
-			}
+			if ( $result != 0 ) {
+				exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.sh new '".$UserName."' 'ManageIP.php'", $output, $result);
 				
-			if( $result == 0 ){						
+				Form();
+				
+				foreach ($output as $item){
+					echo $item.'<br>';
+				}
+
 				echo '<p class="FontInGreen">Successfull !</p>';
+				
 			} else {
-				echo '<p class="FontInRed">Failed !</p>';
-			}
-			
+				echo '<p class="FontInRed">Failed !</p>';				
+			}			
 		} else {
 			Form();
 		

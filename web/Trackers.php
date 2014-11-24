@@ -24,52 +24,7 @@ require  'inc/includes_before.php';
 //
 //#################### FIRST LINE #####################################
 
-function Form() {
-	// Users trackers
-	$trackers_datas = $database->get("trackers_users", "*", "");
 
-	echo '<form method="post" action=""><table border="0">';
-	
-	foreach ( $trackers_datas as $tracker ) {
-		echo '<tr>
-				<td><input name="' . $tracker["id_trackers_users"] . '" type="text" value="' . $tracker["tracker_users"] . '" /></td>
-				<td><input name="model" type="text" value="' . $renting_datas["model"] . '" /></td>
-			</tr>';		
-	}	
-
-	echo '</table></form>';
-}
-
-if (isset($_POST['submit'])) {	
-	$Model = $_POST['model'];
-	$TVA = $_POST['tva'];
-	$GlobalCost = $_POST['global_cost'];
-	$TotalUsers = $_POST['nb_users'];
-	$PricePerUsers = $_POST['price_per_users'];
-
-	if ( ($Model != '') && ($TVA != '') && ($GlobalCost != '') ) {
-		$result = update("renting", ["model" => $Model,
-									"tva" => $TVA,
-									"global_cost" => $GlobalCost,
-									"nb_users" => $TotalUsers,
-									"price_per_users" => $PricePerUsers],
-									["id_renting" => 1]);
-		
-		Form();
-			
-		if( $result != 0 ){						
-			echo '<p class="FontInGreen">Successfull !</p>';
-		} else {
-			echo '<p class="FontInRed">Failed !</p>';
-		}
-	} else {
-		Form();
-	
-		echo '<p class="FontInRed">Please, complete all fields.</p>';
-	}
-} else {
-	Form();
-}
 
 // -----------------------------------------
 require  'inc/includes_after.php';

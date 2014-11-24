@@ -24,7 +24,7 @@
 
 // Header
 function HeaderPage($Page) {
-	global $ScriptName;
+	global $ScriptName, $UserName;
 
 	echo '
 	<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
@@ -69,7 +69,7 @@ function HeaderPage($Page) {
 		// case 'ChangePassword.php':
 			// break;		
 		default:
-			echo '<h1>Hello ' . $_SERVER['PHP_AUTH_USER'] . '!</h1>';
+			echo '<h1>Hello ' . $UserName . '!</h1>';
 			echo '<div align="center">';
 			break;
 	}

@@ -25,15 +25,15 @@ require_once 'inc/includes_before.php';
 //#################### FIRST LINE #####################################
 
 if ($_SERVER['PHP_AUTH_USER'] == '##MySB_User##') {
-	$SeedUser = $_GET['user'];
+	$UserName = $_GET['user'];
 } else {
-	$SeedUser = $_SERVER['PHP_AUTH_USER'];
+	$UserName = $_SERVER['PHP_AUTH_USER'];
 }
 
 function printUser($user) {
 	$database = new medoo();
 	// Users table
-	$users_datas = $database->get("users", "*", ["id_system" => $_SERVER['PHP_AUTH_USER']]);	
+	$users_datas = $database->get("users", "*", ["users_ident" => $_SERVER['PHP_AUTH_USER']]);	
 	// System table
 	$system_datas = $database->get("system", "*", ["id_system" => 1]);
 
@@ -282,7 +282,7 @@ function printUser($user) {
 }
 
 if ( (CountingUsers() >= 1) && (GetVersion() != "") ) {
-	printUser($SeedUser);
+	printUser($UserName);
 } else {
 	echo '<p><h1 class="FontInRed">MySB is not installed !</h1></p>';
 }

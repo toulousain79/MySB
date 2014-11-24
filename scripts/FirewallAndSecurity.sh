@@ -58,16 +58,16 @@ case $1 in
 	;;
 	new)
 		#### ManageIP.php
-		if [ ! -z "$2" ] && [ ! -z "$3" ] && [ ! -z "$4" ]; then
-			log_daemon_msg "Manage IP for $2"
-			SeedboxUser="$2"
-			CurrentList="$3"
-			NewList="$4"			
+		# if [ ! -z "$2" ] && [ ! -z "$3" ] && [ ! -z "$4" ]; then
+			# log_daemon_msg "Manage IP for $2"
+			# SeedboxUser="$2"
+			# CurrentList="$3"
+			# NewList="$4"			
 
-			sqlite3 $SQLiteDB "UPDATE users SET fixed_ip = '$NewList' WHERE users_ident = '$SeedboxUser';"
-			unset CurrentList NewList SeedboxUser
-			StatusLSB
-		fi		
+			# sqlite3 $SQLiteDB "UPDATE users SET fixed_ip = '$NewList' WHERE users_ident = '$SeedboxUser';"
+			# unset CurrentList NewList SeedboxUser
+			# StatusLSB
+		# fi		
 	
 		#### Seedbox users IPs
 		log_daemon_msg "Creating IP white lists"

@@ -25,6 +25,12 @@
 //error_reporting(E_ALL);
 error_reporting(-1);
 
+// Seedbox user
+$UserName = $_SERVER['PHP_AUTH_USER'];
+
+// User IP
+$UserAddress = $_SERVER['REMOTE_ADDR'];
+
 // Script name
 $ScriptName = preg_replace('/\//', '', $_SERVER['PHP_SELF']);
 
