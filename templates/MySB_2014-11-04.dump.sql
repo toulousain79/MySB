@@ -102,25 +102,6 @@ INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [com
 INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (15, 'DNScrypt-proxy', 'dnscrypt-proxy', 'service dnscrypt-proxy', null);
 INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (16, 'BIND', '/etc/bind/named.conf', 'service bind9', null);
 
--- Table: trackers_users
-CREATE TABLE trackers_users ( 
-    id_trackers_users INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                      NOT NULL ON CONFLICT ABORT,
-    tracker_users     VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT
-                                      UNIQUE ON CONFLICT IGNORE,
-    is_active         BOOLEAN( 1 )    DEFAULT ( 0 ) 
-);
-
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (1, 'frenchtorrentdb.com', 0);
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (2, 'share1underground.com', 0);
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (3, 'empereur-team.ovh', 0);
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (4, 'genration-rosco-tk.net', 0);
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (5, 'torrentreactor.net', 0);
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (6, 'afrbits.com', 0);
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (7, 'french-adn.com', 0);
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (8, 'neo-tk.com', 0);
-INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (9, 'cool-tracker.be', 0);
-
 -- Table: users
 CREATE TABLE users ( 
     id_users      INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -310,6 +291,25 @@ CREATE TABLE smtp (
 );
 
 INSERT INTO [smtp] ([id_smtp], [smtp_provider], [smtp_username], [smtp_passwd], [smtp_host], [smtp_port]) VALUES (1, 'LOCAL', null, null, null, null);
+
+-- Table: trackers_users
+CREATE TABLE trackers_users ( 
+    id_trackers_users INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                      NOT NULL ON CONFLICT ABORT,
+    tracker_users     VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT
+                                      UNIQUE ON CONFLICT IGNORE,
+    is_active         BOOLEAN( 1 )    DEFAULT ( 0 ) 
+);
+
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (1, 'frenchtorrentdb.com', 0);
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (2, 'share1underground.com', 0);
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (3, 'empereur-team.ovh', 0);
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (4, 'genration-rosco-tk.net', 0);
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (5, 'torrentreactor.net', 0);
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (6, 'afrbits.com', 0);
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (7, 'french-adn.com', 0);
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (8, 'neo-tk.com', 0);
+INSERT INTO [trackers_users] ([id_trackers_users], [tracker_users], [is_active]) VALUES (9, 'cool-tracker.be', 0);
 
 -- Trigger: ruTorrent_Tacker_Activation
 CREATE TRIGGER ruTorrent_Tacker_Activation
