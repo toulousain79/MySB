@@ -23,9 +23,17 @@
 //#################### FIRST LINE #####################################
 
 // Medoo framework
-require  'inc/medoo.min.php';
-$database = new medoo();
+require_once 'inc/medoo.min.php';
 
-require  'inc/vars.php';
-require  'inc/functions.php';
+require_once 'inc/vars.php';
+require_once 'inc/functions.php';
+
+if(isset($_SERVER['PHP_AUTH_USER'])){
+	HeaderPage($PageTitle);
+} else {
+	echo '<p><h1 class="FontInRed">You must be logged in to continue !</h1></p>';
+	exit();
+}
+
+//#################### LAST LINE #####################################
 ?>

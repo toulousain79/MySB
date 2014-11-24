@@ -25,9 +25,30 @@
 //error_reporting(E_ALL);
 error_reporting(-1);
 
-// System table
-$system_datas = $database->get("system", "*", ["id_system" => 1]);
+// Script name
+$ScriptName = preg_replace('/\//', '', $_SERVER['PHP_SELF']);
 
-// Users table
-$users_datas = $database->get("users", "*", ["id_system" => $_SERVER['PHP_AUTH_USER']]);
+// Page title
+switch ($ScriptName) {			
+	case 'SeedboxInfo.php':
+		$PageTitle = 'User Infos';
+		break;
+	case 'RentingInfo.php':
+		$PageTitle = 'Renting Infos';
+		break;
+	case 'OpenVPN.php':
+		$PageTitle = 'OpenVPN';
+		break;
+	case 'ManageIP.php':
+		$PageTitle = 'Manage user addresses';
+		break;
+	case 'ChangePassword.php':
+		$PageTitle = 'Change user password';
+		break;		
+	default:
+		$PageTitle = 'You must be logged in to continue !';
+		break;
+}
+
+//#################### LAST LINE ######################################
 ?>

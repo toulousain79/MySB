@@ -22,6 +22,99 @@
 //
 //#################### FIRST LINE #####################################
 
+// Header
+function HeaderPage($Page) {
+	global $ScriptName;
 
+	echo '
+	<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+	<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta http-equiv="Content-Type" content="text/html; charset=[CHAR]" />
+		<meta name="HandheldFriendly" content="True">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<meta name="viewport" content="target-densitydpi=device-dpi" />
+		<!-- non indexation moteur de recherche -->
+		<meta name="robots" content="noindex, nofollow">
+		<meta name="robots" content="noarchive">
+		<meta name="googlebot" content="nosnippet">		
+		<title>MySB ' . GetVersion() . ' - ' . $Page . '</title>	
+	</head>
+	<style type="text/css">
+		.Global {font-family: Verdana, Arial, Helvetica, sans-serif; text-align: left;}
+		th, td, tr, table {text-align: left;}
+		h1 { text-align: center; }
+		.Style1 {font-family: Verdana, Arial, Helvetica, sans-serif; color: #FF0000} 
+		.Style2 {font-family: Verdana, Arial, Helvetica, sans-serif; color: #00CC33}		
+		.FontInRed {color: #FF0000}
+		.FontInGreen {color: #00CC33}
+		.Comments {font-size: 11px;}
+		.Title {color: #0000FF;}
+		.GroupTitle {color: #0000FF;}
+	</style>
 
+	<body class="Global" style="text-size-adjust: 100%; -webkit-text-size-adjust: 100% !important; padding:0px; margin: 0px;">	
+	';
+
+	switch ($ScriptName) {			
+		// case 'SeedboxInfo.php':
+			// break;
+		// case 'RentingInfo.php':
+			// break;
+		// case 'OpenVPN.php':
+			// break;
+		// case 'ManageIP.php':
+			// break;
+		// case 'ChangePassword.php':
+			// break;		
+		default:
+			echo '<h1>Hello ' . $_SERVER['PHP_AUTH_USER'] . '!</h1>';
+			echo '<div align="center">';
+			break;
+	}
+}
+
+// Footer
+function FooterPage() {
+	global $ScriptName;
+
+	switch ($ScriptName) {			
+		// case 'SeedboxInfo.php':
+			// break;
+		// case 'RentingInfo.php':
+			// break;
+		// case 'OpenVPN.php':
+			// break;
+		// case 'ManageIP.php':
+			// break;
+		// case 'ChangePassword.php':
+			// break;		
+		default:
+			echo '</div>';
+			break;
+	}	
+	
+	echo '</body></html>';
+}
+
+// CountingUsers
+function CountingUsers() {
+	$database = new medoo();
+
+	$result = $database->count("users", "");
+	
+	return $result;
+}
+
+// MySB version
+function GetVersion() {
+	$database = new medoo();
+	
+	$version = $database->get("system", "mysb_version", ["id_system" => 1]);
+	
+	return $version;
+}
+
+//#################### LAST LINE ######################################
 ?>

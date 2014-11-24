@@ -1,7 +1,5 @@
 <?php
-// ----------------------------------
-require  'inc/includes_before.php';
-// ----------------------------------
+// ---------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
@@ -24,35 +22,7 @@ require  'inc/includes_before.php';
 //
 //#################### FIRST LINE #####################################
 
-$full_path = './openvpn/openvpn_'.$_SERVER['PHP_AUTH_USER'].'.zip';
-$file_name = basename($full_path);
+FooterPage();
 
-if (file_exists($full_path)) { 
-	ini_set('zlib.output_compression', 0);
-	$date = gmdate(DATE_RFC1123);
-	
-	if (preg_match('/MSIE 5.5/', $_ENV['HTTP_USER_AGENT']) || preg_match('/MSIE 6.0/', $_ENV['HTTP_USER_AGENT'])) { 
-		header('Content-Disposition: filename = "'.$file_name.'"'); 
-	} else { 
-		header('Content-Disposition: attachment; filename = "'.$file_name.'"'); 
-	} 
-
-	header("Content-Type: application/zip"); 
-	header("Pragma: no-cache"); 
-	header("Cache-Control: must-revalidate, post-check=0, pre-check=0, public"); 
-	header("Expires: 0"); 
-	header("Content-Transfer-Encoding: binary"); 
-	header("Connection: close\r\n\r\n" ); 
-	ob_end_clean(); 
-	readfile($full_path); 
-	exit();		
-	
-} else {
-	echo "No OpenVPN config file for user ".$_SERVER['PHP_AUTH_USER']."...";
-}
-
-// -----------------------------------------
-require  'inc/includes_after.php';
-// -----------------------------------------
-//#################### LAST LINE ######################################
+//#################### LAST LINE #####################################
 ?>

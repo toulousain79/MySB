@@ -1,5 +1,7 @@
 <?php
-// ---------------------------
+// ----------------------------------
+require  'inc/includes_before.php';
+// ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
@@ -22,126 +24,89 @@
 //
 //#################### FIRST LINE #####################################
 
-// Includes
-require  'inc/includes_before.php';
+function Form() {
+	$database = new medoo();
+	// Users table
+	$renting_datas = $database->get("renting", "*", ["id_renting" => 1]);
 
-if(isset($_SERVER['PHP_AUTH_USER'])) {
-	function Form() {
-		$filename = '/etc/MySB/inc/renting';
-		$formula = '';
-		$tva = '';
-		$unit_price = '';
-
-		if (file_exists($filename)) {
-			$data = file($filename);
-			
-			foreach($data as $index=>$line) {
-				$column = explode('=', $line, 2);
-				
-				if ( isset($column[1]) ) {
-					$column[1] = str_replace('"', '', $column[1]);
-				}
-				
-				if ( (isset($column[0])) && (isset($column[1])) && ((substr($column[0], 0, 1) != '#')) ) {
-		
-					switch ($column[0]) {
-						case 'FORMULA':
-							$formula = $column[1];
-							break;
-						case 'TVA':
-							$tva = $column[1];
-							break;
-						case 'PU':
-							$unit_price = $column[1];
-							break;					
-					}
-				}
-			}
-		}	
+	$TotalUsers = CountingUsers();
+	$PricePerUser = 0;
 	
-		echo '<form method="post" action="">
-			<table border="0">	
-				<tr>
-					<td><span class="Title">Formula :</span></td>
-					<td><input name="formula" type="text" value="' . $formula . '" /></td>
-					<td><span class="Comments"><em>Example:	Serveur Dedibox XC</em></span></td>
-				</tr>
-				<tr>
-					<td><span class="Title">TVA (%)  :</span></td>
-					<td><input name="tva" type="text" value="' . $tva . '" /></td>
-					<td><span class="Comments"><em>Example:	20</em></span></td>
-				</tr>
-				<tr>
-					<td><span class="Title">Unit price (per month)   :</span></td>
-					<td><input name="unit_price" type="text" value="' . $unit_price . '" /></td>
-					<td><span class="Comments"><em>Example:	19.99 (value without tax)</em></span></td>
-				</tr>				
-				<tr>
-					<td colspan="3" align="center"><input name="submit" type="submit" value="Submit" /></td>
-				</tr>						
-			</table>
-		</form>';
-	
+	if ( (isset($renting_datas["global_cost"])) && (isset($renting_datas["tva"])) && ($unit_price != '') ) {
+		$X = $renting_datas["global_cost"] / $TotalUsers;
+		$Y = ($X * $renting_datas["tva"]) / 100;
+		$PricePerUser = $X + $Y;
 	}
-?>
 
-<!DOCTYPE html>
-<html>
-<head>
-		<meta charset="utf-8" />
-		<title>MySB <?php echo getScriptVersion() .' - Renting'; ?></title>
-		<!-- non indexation moteur de recherche -->
-		<meta name="robots" content="noindex, nofollow">
-		<meta name="robots" content="noarchive">
-		<meta name="googlebot" content="nosnippet">
-		<style>	
-			.Global {font-family: Verdana, Arial, Helvetica, sans-serif; text-align: center;}
-			.FontInRed {color: #FF0000}
-			.FontInGreen {color: #00CC33}
-			.Comments {font-size: 11px;}
-			.Title {color: #0000FF;}
-        </style>			
-</head>
+	echo '<form method="post" action="">
+		<table border="0">	
+			<tr>
+				<td><span class="Title">Model :</span></td>
+				<td><input name="model" type="text" value="' . $renting_datas["model"] . '" /></td>
+				<td><span class="Comments"><em>Example:	Serveur Dedibox XC</em></span></td>
+			</tr>
+			<tr>
+				<td><span class="Title">TVA (%)  :</span></td>
+				<td><input name="tva" type="text" value="' . $renting_datas["tva"] . '" /></td>
+				<td><span class="Comments"><em>Example:	20</em></span></td>
+			</tr>
+			<tr>
+				<td><span class="Title">Unit price (per month)   :</span></td>
+				<td><input name="global_cost" type="text" value="' . $renting_datas["global_cost"] . '" /></td>
+				<td><span class="Comments"><em>Example:	19.99 (value without tax)</em></span></td>
+			</tr>
+			<tr>
+				<td><span class="Title">Total users   :</span></td>
+				<td><input name="nb_users" readonly="true" type="text" value="' . $TotalUsers . '" /></td>
+				<td></td>
+			</tr>
+			<tr>
+				<td><span class="Title">Price per user   :</span></td>
+				<td><input name="price_per_users" readonly="true" type="text" value="' . $PricePerUser . '" /></td>
+				<td></td>
+			</tr>					
+			<tr>
+				<td colspan="3" align="center"><input name="submit" type="submit" value="Submit" /></td>
+			</tr>						
+		</table>
+	</form>';
 
-<body class="Global">
-	<h1>Hello <?php echo $_SERVER['PHP_AUTH_USER']; ?> !</h1>		
+}
 
-	<div align="center">
+if (isset($_POST['submit'])) {	
+	$Model = $_POST['model'];
+	$TVA = $_POST['tva'];
+	$GlobalCost = $_POST['global_cost'];
+	$TotalUsers = $_POST['nb_users'];
+	$PricePerUsers = $_POST['price_per_users'];
 
-<?php
-	if (isset($_POST['submit'])) {	
-		$formula=$_POST['formula'];
-		$tva=$_POST['tva'];
-		$unit_price=$_POST['unit_price'];
-	
-		if ( ($formula != '') && ($tva != '') && ($unit_price != '') ) {			
-			Form();
+	if ( ($Model != '') && ($TVA != '') && ($GlobalCost != '') ) {
+		$result = update("renting", ["model" => $Model,
+									"tva" => $TVA,
+									"global_cost" => $GlobalCost,
+									"nb_users" => $TotalUsers,
+									"price_per_users" => $PricePerUsers],
+									["id_renting" => 1]);
 		
-			foreach ($output as $item){
-				echo $item.'<br>';
-			}
-				
-			if( $result == 0 ){						
-				echo '<p class="FontInGreen">Successfull !</p>';
-			} else {
-				echo '<p class="FontInRed">Failed !</p>';
-			}
+		Form();
+			
+		if( $result != 0 ){						
+			echo '<p class="FontInGreen">Successfull !</p>';
 		} else {
-			Form();
-		
-			echo '<p class="FontInRed">Please, complete all fields.</p>';
+			echo '<p class="FontInRed">Failed !</p>';
 		}
 	} else {
 		Form();
+	
+		echo '<p class="FontInRed">Please, complete all fields.</p>';
 	}
-?>
-		</div>		
-
-	</body>
-</html>
-
-<?php
 } else {
-	echo '<p><h1 class="FontInRed">You must login in to continue !</h1></p>';
+	
+	Form();
 }
+
+// -----------------------------------------
+require  'inc/includes_after.php';
+// -----------------------------------------
+//#################### LAST LINE ######################################
 ?>

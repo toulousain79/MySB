@@ -24,31 +24,51 @@ require  'inc/includes_before.php';
 //
 //#################### FIRST LINE #####################################
 
-$full_path = './openvpn/openvpn_'.$_SERVER['PHP_AUTH_USER'].'.zip';
-$file_name = basename($full_path);
+function Form() {
+	// Users trackers
+	$trackers_datas = $database->get("trackers_users", "*", "");
 
-if (file_exists($full_path)) { 
-	ini_set('zlib.output_compression', 0);
-	$date = gmdate(DATE_RFC1123);
+	echo '<form method="post" action=""><table border="0">';
 	
-	if (preg_match('/MSIE 5.5/', $_ENV['HTTP_USER_AGENT']) || preg_match('/MSIE 6.0/', $_ENV['HTTP_USER_AGENT'])) { 
-		header('Content-Disposition: filename = "'.$file_name.'"'); 
-	} else { 
-		header('Content-Disposition: attachment; filename = "'.$file_name.'"'); 
-	} 
+	foreach ( $trackers_datas as $tracker ) {
+		echo '<tr>
+				<td><input name="' . $tracker["id_trackers_users"] . '" type="text" value="' . $tracker["tracker_users"] . '" /></td>
+				<td><input name="model" type="text" value="' . $renting_datas["model"] . '" /></td>
+			</tr>';		
+	}	
 
-	header("Content-Type: application/zip"); 
-	header("Pragma: no-cache"); 
-	header("Cache-Control: must-revalidate, post-check=0, pre-check=0, public"); 
-	header("Expires: 0"); 
-	header("Content-Transfer-Encoding: binary"); 
-	header("Connection: close\r\n\r\n" ); 
-	ob_end_clean(); 
-	readfile($full_path); 
-	exit();		
+	echo '</table></form>';
+}
+
+if (isset($_POST['submit'])) {	
+	$Model = $_POST['model'];
+	$TVA = $_POST['tva'];
+	$GlobalCost = $_POST['global_cost'];
+	$TotalUsers = $_POST['nb_users'];
+	$PricePerUsers = $_POST['price_per_users'];
+
+	if ( ($Model != '') && ($TVA != '') && ($GlobalCost != '') ) {
+		$result = update("renting", ["model" => $Model,
+									"tva" => $TVA,
+									"global_cost" => $GlobalCost,
+									"nb_users" => $TotalUsers,
+									"price_per_users" => $PricePerUsers],
+									["id_renting" => 1]);
+		
+		Form();
+			
+		if( $result != 0 ){						
+			echo '<p class="FontInGreen">Successfull !</p>';
+		} else {
+			echo '<p class="FontInRed">Failed !</p>';
+		}
+	} else {
+		Form();
 	
+		echo '<p class="FontInRed">Please, complete all fields.</p>';
+	}
 } else {
-	echo "No OpenVPN config file for user ".$_SERVER['PHP_AUTH_USER']."...";
+	Form();
 }
 
 // -----------------------------------------
