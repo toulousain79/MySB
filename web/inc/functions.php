@@ -105,5 +105,120 @@ function GetVersion() {
 	return $version;
 }
 
+////
+// The HTML image wrapper function
+  function tep_image($src, $alt = '', $width = '', $height = '', $params = '') {
+    $image = '<img src="' . $src . '" border="0" alt="' . $alt . '"';
+    if ($alt) {
+      $image .= ' title=" ' . $alt . ' "';
+    }
+    if ($width) {
+      $image .= ' width="' . $width . '"';
+    }
+    if ($height) {
+      $image .= ' height="' . $height . '"';
+    }
+    if ($params) {
+      $image .= ' ' . $params;
+    }
+    $image .= '>';
+
+    return $image;
+  }
+  
+    function tep_not_null($value) {
+    if (is_array($value)) {
+      if (sizeof($value) > 0) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      if ( (is_string($value) || is_int($value)) && ($value != '') && ($value != 'NULL') && (strlen(trim($value)) > 0)) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+  
+////
+// Redirect to another page or site
+function tep_redirect($url) {
+	header('Location: ' . $url);
+	exit;
+}
+
+////
+// Output a form
+  function tep_draw_form($name, $action, $parameters = '', $method = 'post', $params = '') {
+    $form = '<form name="' . tep_output_string($name) . '" action="';
+    if (tep_not_null($parameters)) {
+      $form .= tep_href_link($action, $parameters);
+    } else {
+      $form .= tep_href_link($action);
+    }
+    $form .= '" method="' . tep_output_string($method) . '"';
+    if (tep_not_null($params)) {
+      $form .= ' ' . $params;
+    }
+    $form .= '>';
+
+    return $form;
+  }
+  
+////
+// Output a form input field
+  function tep_draw_input_field($name, $value = '', $parameters = '', $required = false, $type = 'text', $reinsert_value = true) {
+    $field = '<input type="' . tep_output_string($type) . '" name="' . tep_output_string($name) . '"';
+
+    if (isset($GLOBALS[$name]) && ($reinsert_value == true) && is_string($GLOBALS[$name])) {
+      $field .= ' value="' . tep_output_string(stripslashes($GLOBALS[$name])) . '"';
+    } elseif (tep_not_null($value)) {
+      $field .= ' value="' . tep_output_string($value) . '"';
+    }
+
+    if (tep_not_null($parameters)) $field .= ' ' . $parameters;
+
+    $field .= '>';
+
+    if ($required == true) $field .= TEXT_FIELD_REQUIRED;
+
+    return $field;
+  }
+
+  ////
+// Output a selection field - alias function for tep_draw_checkbox_field() and tep_draw_radio_field()
+  function tep_draw_selection_field($name, $type, $value = '', $checked = false, $compare = '', $parameter = '') {
+    $selection = '<input type="' . $type . '" name="' . $name . '"';
+    if ($value != '') {
+      $selection .= ' value="' . $value . '"';
+    }
+    if ( ($checked == true) || ($GLOBALS[$name] == 'on') || ($value && ($GLOBALS[$name] == $value)) || ($value && ($value == $compare)) ) {
+      $selection .= ' CHECKED';
+    }
+    if ($parameter != '') {
+      $selection .= ' ' . $parameter;
+    }   
+    $selection .= '>';
+
+    return $selection;
+  }
+  
+////
+// Output a form radio field
+  function tep_draw_radio_field($name, $value = '', $checked = false, $compare = '', $parameter = '') {
+    return tep_draw_selection_field($name, 'radio', $value, $checked, $compare, $parameter);
+  }
+
+  ////
+// Output a function button in the selected language
+  function tep_image_button($image, $alt = '', $params = '') {
+    global $language;
+
+    return tep_image('img/' . $image, $alt, '', '', $params);
+  }
+ 
+
 //#################### LAST LINE ######################################
 ?>

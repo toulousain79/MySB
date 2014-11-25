@@ -690,7 +690,8 @@ GetRutorrentTrackers() {
 
 #### Get Users Trackers
 GetUsersTrackers() {
-	UsersTrackers="`sqlite3 $SQLiteDB \"SELECT tracker_users FROM trackers_users WHERE 1\"`"
+	#UsersTrackers="`sqlite3 $SQLiteDB \"SELECT tracker_users FROM trackers_users WHERE 1\"`"
+	UsersTrackers="`sqlite3 $SQLiteDB \"SELECT tracker FROM trackers_list WHERE origin = 'users'\"`"
 	for Tracker in $UsersTrackers; do
 		if [ ! -z "$Tracker" ]; then
 			AddTracker $Tracker "users"
@@ -717,18 +718,21 @@ AddTracker() {
 		unset PART1 PART2 PART3
 
 		if [ ! -z "$TrackerDomain" ]; then
-			case "$Origin" in
-				"rutorrent")
-					log_daemon_msg "Add tracker to ruTorrent list: $TrackerDomain"
-					sqlite3 $SQLiteDB "INSERT into trackers_rutorrent (tracker_rutorrent,is_active) VALUES (\"$TrackerDomain\",\"0\");"
-					StatusLSB
-				;;
-				"users")
-					log_daemon_msg "Add tracker to users list: $TrackerDomain"
-					sqlite3 $SQLiteDB "INSERT into trackers_users (tracker_users,is_active) VALUES (\"$TrackerDomain\",\"0\");"
-					StatusLSB						
-				;;
-			esac			
+			# case "$Origin" in
+				# "rutorrent")
+					# log_daemon_msg "Add tracker to ruTorrent list: $TrackerDomain"
+					# sqlite3 $SQLiteDB "INSERT into trackers_rutorrent (tracker_rutorrent,is_active) VALUES (\"$TrackerDomain\",\"0\");"
+					# StatusLSB
+				# ;;
+				# "users")
+					# log_daemon_msg "Add tracker to users list: $TrackerDomain"
+					# sqlite3 $SQLiteDB "INSERT into trackers_users (tracker_users,is_active) VALUES (\"$TrackerDomain\",\"0\");"
+					# StatusLSB						
+				# ;;
+			# esac
+			log_daemon_msg "Add tracker domain to list: $TrackerDomain"
+			sqlite3 $SQLiteDB "INSERT into trackers_list (tracker_domain,origin) VALUES (\"$TrackerDomain\",\"$Origin\");"
+			StatusLSB
 			
 			DomainIPv4="$(nslookup $TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 			if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
@@ -746,21 +750,29 @@ AddTracker() {
 					done
 					ListIPv4="`echo $ListIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`"
 					
-					log_daemon_msg "Add tracker to global list: tracker.$TrackerDomain"
-					sqlite3 $SQLiteDB "INSERT into trackers_list (tracker,tracker_domain,origin) VALUES (\"tracker.$TrackerDomain\",\"$TrackerDomain\",\"$Origin\");"
+					log_daemon_msg "Update trackers IPv4 for 'tracker.$TrackerDomain' --> '$ListIPv4'"
+					sqlite3 $SQLiteDB "UPDATE trackers_list SET tracker = 'tracker.$TrackerDomain', ipv4 = '$ListIPv4' WHERE tracker_domain = '$TrackerDomain';"
 					StatusLSB
 					
-					log_daemon_msg "Update trackers IPv4: tracker.$TrackerDomain --> $ListIPv4"
-					sqlite3 $SQLiteDB "UPDATE trackers_list SET ipv4 = '$ListIPv4' WHERE tracker = 'tracker.$TrackerDomain';"
-					StatusLSB				
+					# log_daemon_msg "Add tracker to global list: tracker.$TrackerDomain"
+					# sqlite3 $SQLiteDB "INSERT into trackers_list (tracker,tracker_domain,origin) VALUES (\"tracker.$TrackerDomain\",\"$TrackerDomain\",\"$Origin\");"
+					# StatusLSB					
+					
+					# log_daemon_msg "Update trackers IPv4: tracker.$TrackerDomain --> $ListIPv4"
+					# sqlite3 $SQLiteDB "UPDATE trackers_list SET ipv4 = '$ListIPv4' WHERE tracker = 'tracker.$TrackerDomain';"
+					# StatusLSB				
 				else
-					log_daemon_msg "Add tracker to global list: $TrackerDomain"
-					sqlite3 $SQLiteDB "INSERT into trackers_list (tracker,tracker_domain,origin) VALUES (\"$TrackerDomain\",\"$TrackerDomain\",\"$Origin\");"
-					StatusLSB
-					
-					log_daemon_msg "Update trackers IPv4: $TrackerDomain --> $ListIPv4"
-					sqlite3 $SQLiteDB "UPDATE trackers_list SET ipv4 = '$ListIPv4' WHERE tracker = '$TrackerDomain';"
+					log_daemon_msg "Update trackers IPv4 for '$TrackerDomain' --> '$ListIPv4'"
+					sqlite3 $SQLiteDB "UPDATE trackers_list SET tracker = '$TrackerDomain', ipv4 = '$ListIPv4' WHERE tracker_domain = '$TrackerDomain';"
 					StatusLSB				
+				
+					# log_daemon_msg "Add tracker to global list: $TrackerDomain"
+					# sqlite3 $SQLiteDB "INSERT into trackers_list (tracker,tracker_domain,origin) VALUES (\"$TrackerDomain\",\"$TrackerDomain\",\"$Origin\");"
+					# StatusLSB
+					
+					# log_daemon_msg "Update trackers IPv4: $TrackerDomain --> $ListIPv4"
+					# sqlite3 $SQLiteDB "UPDATE trackers_list SET ipv4 = '$ListIPv4' WHERE tracker = '$TrackerDomain';"
+					# StatusLSB				
 				fi
 			fi
 
