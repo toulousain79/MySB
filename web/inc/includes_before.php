@@ -26,7 +26,6 @@
 require_once 'inc/medoo.min.php';
 
 require_once 'inc/vars.php';
-require_once 'inc/class.php';
 require_once 'inc/functions.php';
 
 if(isset($_SERVER['PHP_AUTH_USER'])){

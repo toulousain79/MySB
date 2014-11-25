@@ -24,110 +24,115 @@ require  'inc/includes_before.php';
 //
 //#################### FIRST LINE #####################################
 
-function TrackersList() {
-	$database = new medoo();
-	// Users table
-	$TrackersList = $database->select("trackers_list", "*", "");
-	
-	echo '
-	<form action="process" class="register" method="POST">
-		<fieldset class="row1">
-			<legend>Global trackers list (ruTorrent + Users)</legend>
-			<div align="center">
-				<table id="dataTable" class="form" border="1">
-					<tbody>
-						<tr>
-							<th scope="col">Domain</th>
-							<th scope="col">Origin</th>
-							<th scope="col">IPv4</th>
-							<th scope="col">Is SSL ?</th>
-							<th scope="col">Is activated ?</th>
-						</tr>
-	';
-	
-	foreach($TrackersList as $Tracker) {
-		$IsSSL = $Tracker["is_ssl"];
-		$IsActivated = $Tracker["is_active"];
-	
-		switch ($IsSSL) {			
-			case '0':
-				$SSLChecked = '';
-				break;
-			case '1':
-				$SSLChecked = 'checked="checked"';
-				break;
-		}
-		switch ($IsActivated) {			
-			case '0':
-				$ActiveChecked = '';
-				break;
-			case '1':
-				$ActiveChecked = 'checked="checked"';
-				break;
-		}		
-	
-		echo '
-						<tr>
-							<td><div align="left"><input type="text" required="required" name="BX_NAME[$a]" style="width: 140px;" value="' . $Tracker["tracker_domain"] . '" /></div></td>
-							<td><div align="left"><input type="text" required="required" name="BX_NAME[$a]" style="width: 60px;" value="' . $Tracker["origin"] . '" /></div></td>
-							<td><div align="left"><input type="text" required="required" name="BX_NAME[$a]" style="width: 200;" value="' . $Tracker["ipv4"] . '" /></div></td>
-							<td><div align="center"><input type="checkbox" required="required" name="chk[]" ' . $SSLChecked . ' /></div></td>
-							<td><div align="center"><input type="checkbox" required="required" name="chk[]" ' . $ActiveChecked . ' /></div></td>
-						</tr>
-		';
-	}
-	
-	echo '
-					</tbody>
-				</table>
-			</div>
-		</fieldset>
-		<div class="clear"></div	
-	</form>
-	';
-}
-
-function FormUsersTrackers() {
-	echo '	<form action="process" class="register" method="POST">
-				<fieldset class="row1">
-					<legend>Users trackers list</legend>
-					<div align="center">
-						<table id="dataTable" class="form" border="1">
-							<tbody>
-								<tr>
-									<p>
-										<td><div align="left"><label>Tracker domain</label><input type="text" required="required" name="BX_NAME[$a]" /></div></td>
-										<td><div align="center"><label>Is activated ?</label><input type="checkbox" required="required" name="chk[]" checked="checked" /></div></td>
-									</p>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-				</fieldset>
-				<div class="clear"></div>
-
-				<fieldset class="row1">
-					<legend></legend>
-					<div align="center">
-						<p>
-							<input type="button" value="Add tracker" onClick="addRow(\'dataTable\')" /> 
-							<input type="button" value="Remove tracker" onClick="deleteRow(\'dataTable\')" /> 
-						</p>
-						<p>(All acions apply only to entries with check marked check boxes only.)</p>				
-						<p><input class="submit" type="submit" value="Confirm &raquo;" /></p>
-					</div>
-				</fieldset>
-			</form>
-';
-}
+// Users table
+$database = new medoo();
+$TrackersList = $database->select("trackers_list", "*");
 ?>
 
+<form action="process" class="register" method="POST">
+	<fieldset>
+		<legend>Global Trackers List (ruTorrent + User)</legend>
+		
+		<table class="form" border="1">
+			<tr>
+				<p>
+					<td><div class="delete"><label>Del ?</label></div></td>			
+					<td><div class="domain"><label>Domain</label></div></td>
+					<td><div class="address"><label for="BX_Address">Address</label></div></td>
+					<td><div class="origin"><label for="BX_Origin">Origin</label></div></td>
+					<td><div class="ipv4"><label for="BX_IPv4">IPv4</label></div></td>
+					<td><div class="ssl"><label for="BX_IsSSL">SSL ?</label></div></td>
+					<td><div class="active"><label for="BX_IsActive">Active ?</label></div></td>
+				</p>
+			</tr>
+		</table>		
+		
+		<table id="dataTable" class="form" border="1">
+			<tbody>
+			
+<?php
+foreach($TrackersList as $Tracker) {
+	switch ($Tracker["origin"]) {
+		case 'rutorrent':
+			$origin = 'disabled';
+			break;		
+		default:
+			$origin = ' ';
+			break;
+	}
 
+	switch ($Tracker["is_ssl"]) {
+		case '1':
+			$ssl = 'checked="checked"';
+			break;		
+		default:
+			$ssl = ' ';
+			break;
+	}
+	
+	switch ($Tracker["is_active"]) {
+		case '1':
+			$active = 'checked="checked"';
+			break;		
+		default:
+			$active = ' ';
+			break;
+	}
+	
+?>			
+			
+			<tr>
+				<p>
+					<td><input type="checkbox" required="required" class="delete" name="chk[]" <?php echo $origin; ?> /></td>
+					<td>
+						<input type="text" required="required" class="domain" name="BX_Domain[]" value="<?php echo $Tracker["tracker_domain"]; ?>" />
+					</td>
+					<td>
+						<input type="text" required="required" class="address"  name="BX_Address[]" readonly="readonly" value="<?php echo $Tracker["tracker"]; ?>" />
+					</td>
+					<td>
+						<input type="text" required="required" class="origin"  name="BX_Origin[]" readonly="readonly" value="<?php echo $Tracker["origin"]; ?>" />
+					</td>					
+					<td>
+						<select id="BX_IPv4" name="BX_IPv4" class="ipv4">
+<?php
+						foreach(array_map('trim', explode(" ",$Tracker["ipv4"])) as $IPv4) {					
+							echo '<option>' .$IPv4. '</option>';
+						}
+?>								
+						</select>
+					</td>
+					<td>
+						<input type="checkbox" class="ssl" name="BX_IsSSL" disabled <?php echo $ssl; ?> />
+					</td>
+					<td>
+						<input type="checkbox" class="active" name="BX_IsActive" <?php echo $active; ?> />
+					</td>						
+				</p>
+			</tr>
+			
+<?php
+} // foreach($TrackersList as $Tracker) {
+?>			
+			
+			</tbody>
+		</table>
+		<div class="clear"></div>               
+	</fieldset>
+	<fieldset>
+		<legend>Add / Remove some user tracker</legend>
+		<p> 
+			<input type="button" value="Add tracker" onClick="addRow('dataTable')" /> 
+			<input type="button" value="Remove tracker" onClick="deleteRow('dataTable')" /> 
+			<p>(All acions apply only to entries with check marked check boxes only.)</p>
+		</p>		
+		<input class="submit" type="submit" value="Confirm &raquo;" />
+		<div class="clear"></div>  
+	</fieldset>
+	<div class="clear"></div>
+</form>
 
 <?php
-//FormUsersTrackers();
-TrackersList();
-
 // -----------------------------------------
 require  'inc/includes_after.php';
 // -----------------------------------------
