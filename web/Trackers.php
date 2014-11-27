@@ -27,27 +27,45 @@ require  'inc/includes_before.php';
 // Users table
 $database = new medoo();
 $TrackersList = $database->select("trackers_list", "*");
-?>
 
-<form action="process" class="register" method="POST">
+if(isset($_POST)==true && empty($_POST)==false) {
+	for($i=0, $count = count($_POST['BX_Domain']);$i<$count;$i++) {
+		foreach($_POST as $key) {
+			echo $_POST["$BX_Domain"]["$i"].' '.$_POST["$BX_IsActive"]["$i"].'<br>';
+		}	
+	}
+	
+	// array_walk_recursive($_POST, function ($item, $key) {
+		// $BX_Domain=$_POST['BX_Domain']["$key"];
+		
+		// if(isset($_POST['BX_IsActive']["$key"])==true && empty($_POST['BX_IsActive']["$key"])==false) {
+			// $BX_IsActive=$_POST['BX_IsActive']["$key"];
+			// echo "$BX_Domain --> $BX_IsActive<br>";
+		// } else {
+			// echo "$BX_Domain --> off<br>";
+		// }
+	// });
+}
+?>
+<form action="Trackers.php" class="register" method="POST">
 	<fieldset>
 		<legend>Global Trackers List (ruTorrent + User)</legend>
 		
-		<table class="form" border="1">
+		<table class="title">
 			<tr>
 				<p>
-					<td><div class="delete"><label>Del ?</label></div></td>			
-					<td><div class="domain"><label>Domain</label></div></td>
-					<td><div class="address"><label for="BX_Address">Address</label></div></td>
-					<td><div class="origin"><label for="BX_Origin">Origin</label></div></td>
-					<td><div class="ipv4"><label for="BX_IPv4">IPv4</label></div></td>
-					<td><div class="ssl"><label for="BX_IsSSL">SSL ?</label></div></td>
-					<td><div class="active"><label for="BX_IsActive">Active ?</label></div></td>
+					<th scope="col"><div class="delete"><label>Del ?</label></div></th>			
+					<th scope="col"><div class="domain"><label>Domain</label></div></th>
+					<th scope="col"><div class="address"><label for="BX_Address">Address</label></div></th>
+					<th scope="col"><div class="origin"><label for="BX_Origin">Origin</label></div></th>
+					<th scope="col"><div class="ipv4"><label for="BX_IPv4">IPv4</label></div></th>
+					<th scope="col"><div class="ssl"><label for="BX_IsSSL">SSL ?</label></div></th>
+					<th scope="col"><div class="active"><label for="BX_IsActive">Active ?</label></div></th>
 				</p>
 			</tr>
 		</table>		
 		
-		<table id="dataTable" class="form" border="1">
+		<table id="TableGlobalTracker" class="form" border="1">
 			<tbody>
 			
 <?php
@@ -63,7 +81,7 @@ foreach($TrackersList as $Tracker) {
 
 	switch ($Tracker["is_ssl"]) {
 		case '1':
-			$ssl = 'checked="checked"';
+			$ssl = 'checked';
 			break;		
 		default:
 			$ssl = ' ';
@@ -72,7 +90,7 @@ foreach($TrackersList as $Tracker) {
 	
 	switch ($Tracker["is_active"]) {
 		case '1':
-			$active = 'checked="checked"';
+			$active = 'checked';
 			break;		
 		default:
 			$active = ' ';
@@ -83,18 +101,18 @@ foreach($TrackersList as $Tracker) {
 			
 			<tr>
 				<p>
-					<td><input type="checkbox" required="required" class="delete" name="chk[]" <?php echo $origin; ?> /></td>
+					<td><input type="checkbox" class="delete" name="chk[]" <?php echo $origin; ?> /></td>
 					<td>
-						<input type="text" required="required" class="domain" name="BX_Domain[]" value="<?php echo $Tracker["tracker_domain"]; ?>" />
+						<input type="text" required="required" class="domain" readonly="readonly" name="BX_Domain[]" value="<?php echo $Tracker["tracker_domain"]; ?>" />
 					</td>
 					<td>
-						<input type="text" required="required" class="address"  name="BX_Address[]" readonly="readonly" value="<?php echo $Tracker["tracker"]; ?>" />
+						<input type="text" required="required" class="address" readonly="readonly" value="<?php echo $Tracker["tracker"]; ?>" />
 					</td>
 					<td>
-						<input type="text" required="required" class="origin"  name="BX_Origin[]" readonly="readonly" value="<?php echo $Tracker["origin"]; ?>" />
+						<input type="text" required="required" class="origin" readonly="readonly" value="<?php echo $Tracker["origin"]; ?>" />
 					</td>					
 					<td>
-						<select id="BX_IPv4" name="BX_IPv4" class="ipv4">
+						<select id="BX_IPv4" class="ipv4">
 <?php
 						foreach(array_map('trim', explode(" ",$Tracker["ipv4"])) as $IPv4) {					
 							echo '<option>' .$IPv4. '</option>';
@@ -103,10 +121,10 @@ foreach($TrackersList as $Tracker) {
 						</select>
 					</td>
 					<td>
-						<input type="checkbox" class="ssl" name="BX_IsSSL" disabled <?php echo $ssl; ?> />
+						<input type="checkbox" disabled class="ssl" <?php echo $ssl; ?> />
 					</td>
 					<td>
-						<input type="checkbox" class="active" name="BX_IsActive" <?php echo $active; ?> />
+						<input type="checkbox" class="active" name="BX_IsActive[]" onClick="updateTracker('TableGlobalTracker')" <?php echo $active; ?> />
 					</td>						
 				</p>
 			</tr>
@@ -117,19 +135,50 @@ foreach($TrackersList as $Tracker) {
 			
 			</tbody>
 		</table>
-		<div class="clear"></div>               
-	</fieldset>
-	<fieldset>
-		<legend>Add / Remove some user tracker</legend>
+		<div class="clear"></div>  
 		<p> 
-			<input type="button" value="Add tracker" onClick="addRow('dataTable')" /> 
-			<input type="button" value="Remove tracker" onClick="deleteRow('dataTable')" /> 
+			<input type="button" value="Remove selected trackers" onClick="deleteRow('TableGlobalTracker')" /> 
 			<p>(All acions apply only to entries with check marked check boxes only.)</p>
 		</p>		
-		<input class="submit" type="submit" value="Confirm &raquo;" />
-		<div class="clear"></div>  
 	</fieldset>
-	<div class="clear"></div>
+	
+	
+	<fieldset>
+		<legend>Add new tracker domain</legend>		
+
+		<table class="title">
+			<tr>
+				<p>
+					<th scope="col"><div class="delete"><label>Del ?</label></div></th>			
+					<th scope="col"><div class="domain"><label>Domain</label></div></th>
+					<th scope="col"><div class="active"><label for="BX_IsActive">Active ?</label></div></th>
+				</p>
+			</tr>
+		</table>
+		
+		<table id="TableNewTracker" class="form" border="1">
+			<tbody>
+			<tr>
+				<p>
+					<td><input type="checkbox" class="delete" name="chk[]" /></td>
+					<td>
+						<input type="text" required="required" class="domain" name="BX_Domain[]" />
+					</td>				
+					<td>
+						<input type="checkbox" class="active" name="BX_IsActive[]" />
+					</td>						
+				</p>
+			</tr>
+			</tbody>
+		</table>
+		<p> 
+			<input type="button" value="Add tracker" onClick="addRow('TableNewTracker')" /> 
+			<input type="button" value="Remove tracker" onClick="deleteRow('TableNewTracker')" /> 
+			<p>(All acions apply only to entries with check marked check boxes only.)</p>
+		</p>
+		<input class="submit" type="submit" value="Confirm &raquo;" />		
+		<div class="clear"></div>               
+	</fieldset>	
 </form>
 
 <?php

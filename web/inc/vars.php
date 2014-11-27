@@ -50,6 +50,9 @@ switch ($ScriptName) {
 		break;
 	case 'ChangePassword.php':
 		$PageTitle = 'Change user password';
+		break;
+	case 'Trackers.php':
+		$PageTitle = 'Trackers List';
 		break;		
 	default:
 		$PageTitle = 'You must be logged in to continue !';

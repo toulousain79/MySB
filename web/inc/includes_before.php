@@ -28,7 +28,7 @@ require_once 'inc/medoo.min.php';
 require_once 'inc/vars.php';
 require_once 'inc/functions.php';
 
-if(isset($_SERVER['PHP_AUTH_USER'])){
+if(isset($UserName)){
 	HeaderPage($PageTitle);
 } else {
 	echo '<p><h1 class="FontInRed">You must be logged in to continue !</h1></p>';

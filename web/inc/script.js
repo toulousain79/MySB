@@ -42,3 +42,12 @@ function deleteRow(tableID) {
 		}
 	}
 }
+
+function updateTracker(tableID) {
+	var table = document.getElementById(tableID);
+	var rowCount = table.rows.length;
+	for(var i=0; i<rowCount; i++) {
+		var row = table.rows[i];
+		var domain = row.cells[1].childNodes[1];
+	}
+}
