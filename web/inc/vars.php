@@ -34,6 +34,9 @@ $UserAddress = $_SERVER['REMOTE_ADDR'];
 // Script name
 $ScriptName = preg_replace('/\//', '', $_SERVER['PHP_SELF']);
 
+// Actual link
+$ActualLink = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+
 // Page title
 switch ($ScriptName) {			
 	case 'SeedboxInfo.php':

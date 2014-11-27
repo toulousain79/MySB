@@ -1,6 +1,6 @@
 <?php
 // ----------------------------------
-require  'inc/includes_before.php';
+require  '/etc/MySB/web/inc/includes_before.php';
 // ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
@@ -27,48 +27,51 @@ require  'inc/includes_before.php';
 function Form() {
 	$database = new medoo();
 	// Users table
-	$renting_datas = $database->get("renting", "*", ["id_renting" => 1]);
-
+	$renting_datas = $database->select("renting", "*", ["id_renting" => 1]);
+	
 	$TotalUsers = CountingUsers();
 	$PricePerUser = 0;
-	
-	if ( (isset($renting_datas["global_cost"])) && (isset($renting_datas["tva"])) && ($unit_price != '') ) {
-		$X = $renting_datas["global_cost"] / $TotalUsers;
-		$Y = ($X * $renting_datas["tva"]) / 100;
-		$PricePerUser = $X + $Y;
-	}
+	$Model = '';
+	$TVA = '';
+	$GlobalCost = '';
 
-	echo '<form method="post" action="">
-		<table border="0">	
+	if ( (isset($renting_datas["model"])) && (isset($renting_datas["tva"])) && (isset($renting_datas["global_cost"])) ) {
+		$Model = $renting_datas["model"];
+		$TVA = $renting_datas["model"];
+		$GlobalCost = $renting_datas["global_cost"];
+	}
+	
+	echo '<form class="form_settings" method="post" action="">
+		<div align="center"><table border="0">	
 			<tr>
-				<td><span class="Title">Model :</span></td>
-				<td><input name="model" type="text" value="' . $renting_datas["model"] . '" /></td>
-				<td><span class="Comments"><em>Example:	Serveur Dedibox XC</em></span></td>
+				<td>Model :</td>
+				<td><input class="text_normal" name="model" type="text" value="' . $Model . '" required="required" /></td>
+				<td><span class="Comments">Example:	Serveur Dedibox XC</span></td>
 			</tr>
 			<tr>
-				<td><span class="Title">TVA (%)  :</span></td>
-				<td><input name="tva" type="text" value="' . $renting_datas["tva"] . '" /></td>
-				<td><span class="Comments"><em>Example:	20</em></span></td>
+				<td>TVA (%)  :</td>
+				<td><input class="text_small" name="tva" type="text" value="' . $TVA . '" required="required" /></td>
+				<td><span class="Comments">Example:	20</span></td>
 			</tr>
 			<tr>
-				<td><span class="Title">Unit price (per month)   :</span></td>
-				<td><input name="global_cost" type="text" value="' . $renting_datas["global_cost"] . '" /></td>
-				<td><span class="Comments"><em>Example:	19.99 (value without tax)</em></span></td>
+				<td>Unit price (per month)   :</td>
+				<td><input class="text_small" name="global_cost" type="text" value="' . $GlobalCost . '" required="required" /></td>
+				<td><span class="Comments">Example:	19.99 (value without tax)</span></td>
 			</tr>
 			<tr>
-				<td><span class="Title">Total users   :</span></td>
-				<td><input name="nb_users" readonly="true" type="text" value="' . $TotalUsers . '" /></td>
-				<td></td>
+				<td>Total users   :</td>
+				<td><input class="text_extra_small" readonly="readonly" type="text" value="' . $TotalUsers . '" /></td>
+				<td><span class="Comments">Readonly, only for information.</span></td>
 			</tr>
 			<tr>
-				<td><span class="Title">Price per user   :</span></td>
-				<td><input name="price_per_users" readonly="true" type="text" value="' . $PricePerUser . '" /></td>
-				<td></td>
+				<td>Price per user   :</td>
+				<td><input class="text_extra_small" readonly="readonly" type="text" value="' . $PricePerUser . '" /></td>
+				<td><span class="Comments">Readonly, only for information.</span></td>
 			</tr>					
 			<tr>
-				<td colspan="3" align="center"><input name="submit" type="submit" value="Submit" /></td>
+				<td colspan="3"><input class="submit" name="submit" type="submit" value="Submit" /></td>
 			</tr>						
-		</table>
+		</table></div>
 	</form>';
 
 }
@@ -77,36 +80,43 @@ if (isset($_POST['submit'])) {
 	$Model = $_POST['model'];
 	$TVA = $_POST['tva'];
 	$GlobalCost = $_POST['global_cost'];
-	$TotalUsers = $_POST['nb_users'];
-	$PricePerUsers = $_POST['price_per_users'];
-
-	if ( ($Model != '') && ($TVA != '') && ($GlobalCost != '') ) {
-		$result = update("renting", ["model" => $Model,
+	$TotalUsers = CountingUsers();
+	
+	if ( (isset($GlobalCost)) && (isset($TVA)) && (isset($TotalUsers)) && (isset($Model)) ) {
+		$X = $GlobalCost / $TotalUsers;
+		$Y = ($X * $TVA) / 100;
+		$PricePerUsers = $X + $Y;
+		$PricePerUsers = ceil($PricePerUsers);
+	
+		$database = new medoo();
+		$result = $database->update("renting", ["model" => $Model,
 									"tva" => $TVA,
 									"global_cost" => $GlobalCost,
 									"nb_users" => $TotalUsers,
 									"price_per_users" => $PricePerUsers],
 									["id_renting" => 1]);
 		
-		Form();
-			
+		
+		//Form();
+		
+		echo $result;
+		
 		if( $result != 0 ){						
-			echo '<p class="FontInGreen">Successfull !</p>';
+			echo '<p class="Successful">Successfull !</p>';
 		} else {
-			echo '<p class="FontInRed">Failed !</p>';
+			echo '<p class="Failed">Failed !</p>';
 		}
 	} else {
 		Form();
 	
-		echo '<p class="FontInRed">Please, complete all fields.</p>';
+		echo '<p class="Failed">Please, complete all fields.</p>';
 	}
 } else {
-	
 	Form();
 }
 
 // -----------------------------------------
-require  'inc/includes_after.php';
+require  '/etc/MySB/web/inc/includes_after.php';
 // -----------------------------------------
 //#################### LAST LINE ######################################
 ?>
