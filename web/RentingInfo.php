@@ -89,27 +89,48 @@ if (isset($_POST['submit'])) {
 		$PricePerUsers = ceil($PricePerUsers);
 	
 		$database = new medoo();
-		$result = $database->update("renting", ["model" => $Model,
-									"tva" => $TVA,
-									"global_cost" => $GlobalCost,
-									"nb_users" => $TotalUsers,
-									"price_per_users" => $PricePerUsers],
-									["id_renting" => 1]);
 		
-		
-		//Form();
-		
-		echo $result;
-		
-		if( $result != 0 ){						
-			echo '<p class="Successful">Successfull !</p>';
+		$exist = $database->get("renting", "id_renting", ["id_renting" => 1]);
+echo '94 '.$exist.'<br>';		
+		if ( ( $exist != 0 ) && (isset($TVA)) ) {
+			$result = $database->update("renting", ["model" => "$Model",
+										"tva" => "$TVA",
+										"global_cost" => "$GlobalCost",
+										"nb_users" => "$TotalUsers",
+										"price_per_users" => "$PricePerUsers"],
+										["id_renting" => 1]);
+
+			echo '103 '.$result.'<br>';
 		} else {
-			echo '<p class="Failed">Failed !</p>';
+			$result = $database->insert("renting", ["model" => "$Model",
+													"tva" => "$TVA",
+													"global_cost" => "$GlobalCost",
+													"nb_users" => "$TotalUsers",
+													"price_per_users" => "$PricePerUsers"]);	
+													
+			echo '111 '.$result.'<br>';
 		}
+ 
+		Form();
+		
+
+			
+/* 		if( $result != 0 ) {	
+			if( $result = 1 ) {
+				echo '<span class="Successful">Successfull 1 !</span>';
+			} else {
+				echo '<span class="Failed">Failed !</span>';
+			}
+													
+		} else {
+			echo '<p class="Successful">Successfull 2 !</p>';
+		} */
+		
+		
 	} else {
 		Form();
 	
-		echo '<p class="Failed">Please, complete all fields.</p>';
+		echo '<span class="Failed">Please, complete all fields.</span>';
 	}
 } else {
 	Form();
