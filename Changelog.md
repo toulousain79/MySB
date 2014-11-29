@@ -1,6 +1,7 @@
 	Version v1.2
 		2014/10/26
-			- Used of SQLite
+			- Used of SQLite instead of flat file (more convenient)
+			- Add Wolf CMS for manage web pages (more convenient)
 			- NginX, add PageSpeed functionnality
 			- NginX, change url access (ruTorrent, Seedbox-Manager)
 
