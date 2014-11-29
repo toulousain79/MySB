@@ -27,19 +27,21 @@ require  '/etc/MySB/web/inc/includes_before.php';
 function Form() {
 	$database = new medoo();
 	// Users table
-	$renting_datas = $database->select("renting", "*", ["id_renting" => 1]);
+	$renting_datas = $database->get("renting", [
+												"model",
+												"tva",
+												"global_cost",
+												"nb_users",
+												"price_per_users",
+											], [
+												"id_renting" => 1
+											]);	
 	
-	$TotalUsers = CountingUsers();
-	$PricePerUser = 0;
-	$Model = '';
-	$TVA = '';
-	$GlobalCost = '';
-
-	if ( (isset($renting_datas["model"])) && (isset($renting_datas["tva"])) && (isset($renting_datas["global_cost"])) ) {
-		$Model = $renting_datas["model"];
-		$TVA = $renting_datas["model"];
-		$GlobalCost = $renting_datas["global_cost"];
-	}
+	$TotalUsers = $renting_datas["nb_users"];
+	$PricePerUser = $renting_datas["price_per_users"];
+	$Model = $renting_datas["model"];
+	$TVA = $renting_datas["tva"];
+	$GlobalCost = $renting_datas["global_cost"];
 	
 	echo '<form class="form_settings" method="post" action="">
 		<div align="center"><table border="0">	
@@ -89,52 +91,25 @@ if (isset($_POST['submit'])) {
 		$PricePerUsers = ceil($PricePerUsers);
 	
 		$database = new medoo();
-		
-		$exist = $database->get("renting", "id_renting", ["id_renting" => 1]);
-echo '94 '.$exist.'<br>';		
-		if ( ( $exist != 0 ) && (isset($TVA)) ) {
-			$result = $database->update("renting", ["model" => "$Model",
+				
+		$result = $database->update("renting", ["model" => "$Model",
 										"tva" => "$TVA",
 										"global_cost" => "$GlobalCost",
 										"nb_users" => "$TotalUsers",
 										"price_per_users" => "$PricePerUsers"],
 										["id_renting" => 1]);
-
-			echo '103 '.$result.'<br>';
+		
+		if( $result = 1 ) {
+			?><script type="text/javascript">generate('success', 'Success !!');</script><?php
 		} else {
-			$result = $database->insert("renting", ["model" => "$Model",
-													"tva" => "$TVA",
-													"global_cost" => "$GlobalCost",
-													"nb_users" => "$TotalUsers",
-													"price_per_users" => "$PricePerUsers"]);	
-													
-			echo '111 '.$result.'<br>';
+			?><script type="text/javascript">generate('errot', 'Failed !');</script><?php
 		}
- 
-		Form();
-		
-
-			
-/* 		if( $result != 0 ) {	
-			if( $result = 1 ) {
-				echo '<span class="Successful">Successfull 1 !</span>';
-			} else {
-				echo '<span class="Failed">Failed !</span>';
-			}
-													
-		} else {
-			echo '<p class="Successful">Successfull 2 !</p>';
-		} */
-		
-		
 	} else {
-		Form();
-	
-		echo '<span class="Failed">Please, complete all fields.</span>';
+		?><script type="text/javascript">generate('errot', 'Please, complete all fields.');</script><?php
 	}
-} else {
-	Form();
 }
+
+Form();
 
 // -----------------------------------------
 require  '/etc/MySB/web/inc/includes_after.php';

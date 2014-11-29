@@ -23,17 +23,13 @@
 //#################### FIRST LINE #####################################
 
 // Medoo framework
-require_once 'inc/medoo.min.php';
+include_once($_SERVER['DOCUMENT_ROOT'] . '/inc/medoo.min.php');
 
-require_once 'inc/vars.php';
-require_once 'inc/functions.php';
+// Some Vars
+include_once $_SERVER['DOCUMENT_ROOT'] . '/inc/vars.php';
 
-if(isset($UserName)){
-	HeaderPage($PageTitle);
-} else {
-	echo '<p><h1 class="FontInRed">You must be logged in to continue !</h1></p>';
-	exit();
-}
+// Some Functions
+include_once $_SERVER['DOCUMENT_ROOT'] . '/inc/functions.php';
 
 //#################### LAST LINE #####################################
 ?>
