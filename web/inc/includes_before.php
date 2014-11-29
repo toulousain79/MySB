@@ -23,13 +23,13 @@
 //#################### FIRST LINE #####################################
 
 // Medoo framework
-include_once($_SERVER['DOCUMENT_ROOT'] . '/inc/medoo.min.php');
+include_once '/etc/MySB/web/inc/medoo.min.php';
 
 // Some Vars
-include_once $_SERVER['DOCUMENT_ROOT'] . '/inc/vars.php';
+include_once '/etc/MySB/web/inc/vars.php';
 
 // Some Functions
-include_once $_SERVER['DOCUMENT_ROOT'] . '/inc/functions.php';
+include_once '/etc/MySB/web/inc/functions.php';
 
 //#################### LAST LINE #####################################
 ?>

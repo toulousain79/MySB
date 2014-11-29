@@ -4,7 +4,7 @@ class medoo {
 	protected $database_type = 'sqlite';
 
 	// For SQLite
-	protected $database_file = '../db/MySB_WithData.sq3';
+	protected $database_file = '/etc/MySB/db/MySB_WithData.sq3';
 
 	// Optional
 	protected $port = 3306;
