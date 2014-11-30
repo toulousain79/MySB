@@ -100,12 +100,12 @@ if (isset($_POST['submit'])) {
 										["id_renting" => 1]);
 		
 		if( $result = 1 ) {
-			?><script type="text/javascript">generate('success', 'Success !!');</script><?php
+			?><script type="text/javascript">generate_message('success', 'Success !!');</script><?php
 		} else {
-			?><script type="text/javascript">generate('errot', 'Failed !');</script><?php
+			?><script type="text/javascript">generate_message('error', 'Failed !');</script><?php
 		}
 	} else {
-		?><script type="text/javascript">generate('errot', 'Please, complete all fields.');</script><?php
+		?><script type="text/javascript">generate_message('error', 'Please, complete all fields.');</script><?php
 	}
 }
 

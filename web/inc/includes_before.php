@@ -25,9 +25,6 @@
 // Medoo framework
 include_once '/etc/MySB/web/inc/medoo.min.php';
 
-// Some Vars
-include_once '/etc/MySB/web/inc/vars.php';
-
 // Some Functions
 include_once '/etc/MySB/web/inc/functions.php';
 

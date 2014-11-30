@@ -1,7 +1,30 @@
 // http://ned.im/noty/#/about
 
-function generate(type, text) {
-	noty({
+function generate_confirmation(layout, question) {
+	var n = noty({
+		text        : 'Confirmation',
+		type        : 'confirm',
+		dismissQueue: true,
+		layout      : layout,
+		theme       : 'relax',
+		buttons     : [
+			{addClass: 'btn btn-danger btn-primary', text: 'Yes', onClick: function ($noty) {
+				$noty.close();
+				noty({dismissQueue: true, force: true, layout: layout, theme: 'relax', text: 'You clicked "Edit" button', type: 'success'});
+			}
+			},
+			{addClass: 'btn btn-danger', text: 'No', onClick: function ($noty) {
+				$noty.close();
+				noty({dismissQueue: true, force: true, layout: layout, theme: 'relax', text: 'You clicked "Del" button', type: 'error'});
+			}
+			}
+		]
+	});
+	console.log('html: ' + n.options.id);
+}
+
+function generate_message(type, text) {
+	var n = noty({
 		layout      : 'bottomCenter',
 		theme       : 'relax',
 		text        : text,

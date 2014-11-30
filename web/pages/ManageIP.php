@@ -24,9 +24,9 @@ require  '/etc/MySB/web/inc/includes_before.php';
 //
 //#################### FIRST LINE #####################################
 
-function Form($UserName, $UserAddress) {
-
-	echo $UserAddress;
+function Form() {
+	$UserAddress = $_SERVER['REMOTE_ADDR'];
+	$UserName = $_SERVER['PHP_AUTH_USER'];
 	
 	$database = new medoo();
 	// Users table

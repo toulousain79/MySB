@@ -1,6 +1,6 @@
 <?php
 // ----------------------------------
-require  'inc/includes_before.php';
+require  '/etc/MySB/web/inc/includes_before.php';
 // ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
@@ -32,24 +32,24 @@ if ( isset($_GET['TempPass']) ) {
 }
 
 echo '
-	<form method="post" action="">
-		<table border="0">	
+	<form class="form_settings" method="post" action="">
+		<div align="center"><table border="0">	
 			<tr>
-				<td><span class="Title">Current password :</span></td>
+				<td>Current password :</td>
 				<td><input name="current_pwd" type="password" ' . $opts . '/></td>
 			</tr>
 			<tr>
-				<td><span class="Title">New password :</span></td>
+				<td>New password :</td>
 				<td><input name="new_pwd" type="password" /></td>
 			</tr>
 			<tr>
-				<td><span class="Title">Confirm :</span></td>
+				<td>Confirm :</td>
 				<td><input name="confirm_pwd" type="password" /></td>
 			</tr>
 			<tr>
-				<td colspan="2"><div align="center"><input name="submit" type="submit" value="Submit"></div></td>
+				<td colspan="2"><input class="submit" name="submit" type="submit" value="Submit"></td>
 			</tr>
-		</table>
+		</table></div>
 	</form>
 	';
 
@@ -69,21 +69,21 @@ if ( isset($_POST['submit']) ) {
 				
 				if ( $result == 0 ) {	
 					$_SERVER['PHP_AUTH_PW'] = $new_pwd;
-					echo '<p class="FontInGreen">Successfull !</p>';
+					?><script type="text/javascript">generate('success', 'Success !!');</script><?php
 				}
 			} else {
-				echo '<p class="FontInRed">Error between the new typed password and verification.</p>';
+				?><script type="text/javascript">generate('errot', 'Error between the new typed password and verification.');</script><?php
 			}
 		} else {
-			echo '<p class="FontInRed">The current password is not valid.</p>';
+			?><script type="text/javascript">generate('errot', 'The current password is not valid.');</script><?php
 		}
 	} else {
-		echo '<p class="FontInRed">Please, complete all fields</p>';
+		?><script type="text/javascript">generate('errot', 'Please, complete all fields.');</script><?php
 	}
 }
 
 // -----------------------------------------
-require  'inc/includes_after.php';
+require  '/etc/MySB/web/inc/includes_after.php';
 // -----------------------------------------
 //#################### LAST LINE ######################################
 ?>
