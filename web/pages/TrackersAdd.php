@@ -26,70 +26,129 @@ require  '/etc/MySB/web/inc/includes_before.php';
 
 // Users table
 $database = new medoo();
-$TrackersList = $database->select("trackers_list", "*", ["origin" => "users"]);
+
+if(isset($_POST)==true && empty($_POST)==false) {
+	$success = true;
+	
+	if (isset($_POST['add_tracker'])) {
+		$count = count($_POST['input_id']);
+		
+		for($i=1; $i<=$count; $i++) {
+			$last_id_trackers_list = $database->insert("trackers_list", [
+																			"tracker" => $_POST['tracker_domain'][$i],
+																			"tracker_domain" => $_POST['tracker_domain'][$i],
+																			"origin" => "users",
+																			"is_active" => $_POST['is_active'][$i]
+																		]);	
+																		
+			if (!isset($last_id_trackers_list)) {
+				$success = false;
+			}																		
+		}
+	}
+
+	if (isset($_POST['delete'])) {
+		$count = count($_POST['delete']);
+		
+		foreach($_POST['delete'] as $key => $value) {
+			$result = $database->delete("trackers_list", [
+				"AND" => [
+					"id_trackers_list" => $key
+				]
+			]);
+			
+			if ( $result = 0 ) {
+				$success = false;
+			}			
+		}
+	}
+	
+	if ( $success == true ) {
+		?><script type="text/javascript">generate_message('success', 'Success !!');</script><?php
+	} else {
+		?><script type="text/javascript">generate_message('error', 'Failed !');</script><?php
+	}		
+}
+
+$TrackersList = $database->select("trackers_list", "*", ["origin" => "users", "ORDER" => "trackers_list.tracker_domain ASC"]);
 ?>
 
-<form class="form_settings" method="post" action="">	
-	<div style="width:450px; margin-left: auto; margin-right: auto;">
-		<div style="margin-bottom:10px;" align="center"><input onclick="addRow(this.form);" type="button" value="Add tracker domain" style="cursor: pointer;" /></div>
-		<div id="itemRows">
-			<div style="margin-bottom:10px;">Tracker domain: <input style="width:150px;" type="text" required="required" readonly="readonly" name="tracker_domain" /> Is active ? <select style="width:60px;"><option value="1">Yes</option><option value="0">No</option></select></div>
+<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
+	<form id="myForm" class="form_settings" method="post" action="">
+		<div id="input1" class="clonedInput">
+			<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
+			Domain: <input class="input_tracker_domain" id="tracker_domain" name="tracker_domain[1]" type="text" required="required" />
+			Is active ?:	<select class="select_is_active" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required">
+								<option value="0" selected="selected">No</option>
+								<option value="1">Yes</option>
+							</select>
 		</div>
-		<div style="margin-bottom:10px;" align="center"><input style="cursor: pointer;" type="submit" name="ok" value="Save Changes"></div>
-	</div>
+	 
+		<div style="margin-top: 10px; margin-bottom: 20px;">
+			<input type="button" id="btnAdd" value="Add tracker domain" style="cursor: pointer;" />
+			<input type="button" id="btnDel" value="Remove last" style="cursor: pointer;" />
+		</div>
 		
+		<input class="submit" style="width:150px; margin-top: 10px; margin-bottom: 10px;" name="add_tracker" type="submit" value="Add my trackers now !">
+	</form>	
+</div>	
+
+<form class="form_settings" method="post" action="">	
 	<div align="center">
+	
 		<table style="border-spacing:1;">
 			<tr>
-				<th scope="col">Domain</th>
-				<th scope="col">Address</th>
-				<th scope="col">Origin</th>
-				<th scope="col">IPv4</th>
-				<th scope="col">SSL ?</th>
-				<th scope="col">Active ?</th>
-				<th scope="col">Delete ?</th>
+				<th style="text-align:center;">Domain</th>
+				<th style="text-align:center;">Address</th>
+				<th style="text-align:center;">Origin</th>
+				<th style="text-align:center;">IPv4</th>
+				<th style="text-align:center;">SSL ?</th>
+				<th style="text-align:center;">Active ?</th>
+				<th style="text-align:center;">Delete ?</th>
 			</tr>						
 				
 <?php
 foreach($TrackersList as $Tracker) {
-	switch ($Tracker["origin"]) {
-		case 'rutorrent':
-			$origin = 'disabled';
-			break;		
-		default:
-			$origin = ' ';
-			break;
-	}
-
 	switch ($Tracker["is_ssl"]) {
-		case '1':
-			$ssl = 'checked';
+		case '0':
+			$is_ssl = '	<select name="is_ssl[]" style="width:60px; background-color:#FEBABC;" disabled>
+							<option value="0" selected="selected">No</option>
+						</select>';
 			break;		
 		default:
-			$ssl = ' ';
+			$is_ssl = '	<select name="is_ssl[]" style="width:60px; background-color:#B3FEA5;" disabled>
+							<option value="1" selected="selected">Yes</option>
+						</select>';
 			break;
 	}
 	
 	switch ($Tracker["is_active"]) {
-		case '1':
-			$active = 'checked';
-			$value = '0';
+		case '0':
+			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer; background-color:#FEBABC;">
+								<option value="0" selected="selected">No</option>
+								<option value="1">Yes</option>
+							</select>';
 			break;		
 		default:
-			$active = ' ';
-			$value = '1';
+			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer; background-color:#B3FEA5;">
+								<option value="0">No</option>
+								<option value="1" selected="selected">Yes</option>
+							</select>';
 			break;
 	}
 ?>				
 			<tr>
 				<td>
-					<input style="width:150px;" type="text" required="required" readonly="readonly" name="tracker_domain" value="<?php echo $Tracker["tracker_domain"]; ?>" />
+					<input style="width:150px;" type="hidden" name="tracker_domain[]" value="<?php echo $Tracker["tracker_domain"]; ?>" />
+					<?php echo $Tracker["tracker_domain"]; ?>
 				</td>
 				<td>
-					<input style="width:180px;" type="text" required="required" readonly="readonly" value="<?php echo $Tracker["tracker"]; ?>" />
+					<input style="width:180px;" type="hidden" name="tracker[]" value="<?php echo $Tracker["tracker"]; ?>" />
+					<?php echo $Tracker["tracker"]; ?>
 				</td>
 				<td>
-					<input style="width:60px;" type="text" required="required" readonly="readonly" value="<?php echo $Tracker["origin"]; ?>" />
+					<input style="width:60px;" type="hidden" name="origin[]" value="<?php echo $Tracker["origin"]; ?>" />
+					<?php echo $Tracker["origin"]; ?>
 				</td>					
 				<td>
 					<select style="width:140px;">
@@ -101,13 +160,13 @@ foreach($TrackersList as $Tracker) {
 					</select>
 				</td>
 				<td>
-					<input style="width:60px;" type="checkbox" disabled <?php echo $ssl; ?> />
+					<?php echo $is_ssl; ?>	
 				</td>
 				<td>
-					<input style="width:60px; cursor: pointer;" type="checkbox" name="is_active" <?php echo $active; ?> />
+					<?php echo $is_active; ?>	
 				</td>
 				<td>
-					<input style="width:60px;" class="submit" name="delete" type="submit" value="Del" />
+					<input class="submit" name="delete[<?php echo $Tracker["id_trackers_list"]; ?>]" type="submit" value="Delete" />
 				</td>					
 			</tr>
 <?php
@@ -115,28 +174,20 @@ foreach($TrackersList as $Tracker) {
 ?>			
 
 		</table>
+		
+		<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
 	</div>
 </form>
 
-
-<script type="text/javascript">
-var rowNum = 0;
-function addRow(frm) {
-	rowNum ++;
-
-	var row = '<p id="rowNum'+rowNum+'" style="margin-bottom:10px;">Tracker domain: <input style="width:150px;" type="text" required="required" name="tracker_domain[]" value="'+frm.tracker_domain.value+'" /> Is active ? <select style="width:60px;" name="is_active[]" value="'+frm.is_active.value+'"><option value="1">Yes</option><option value="0">No</option></select><input type="button" value="Remove" onclick="removeRow('+rowNum+');" style="margin-left:5px; cursor: pointer;"></p>';
-		
-//	var row = '<p id="rowNum'+rowNum+'">Item quantity: <input type="text" name="qty[]" size="4" value="'+frm.add_qty.value+'"> Item name: <input type="text" name="name[]" value="'+frm.add_name.value+'"> <input type="button" value="Remove" onclick="removeRow('+rowNum+');"></p>';
-	jQuery('#itemRows').append(row);
-	frm.tracker_domain.value = '';
-	frm.is_active.value = '';
-}
-
-function removeRow(rnum) {
-	jQuery('#rowNum'+rnum).remove();
-}
-</script>
-
+<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-dynamically-adding-form-elements.js"></script>	
+	
+<?php
+// -----------------------------------------
+require  '/etc/MySB/web/inc/includes_after.php';
+// -----------------------------------------
+//#################### LAST LINE ######################################
+?>
+	
 <?php
 // -----------------------------------------
 require  '/etc/MySB/web/inc/includes_after.php';
