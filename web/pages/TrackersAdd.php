@@ -28,9 +28,8 @@ require  '/etc/MySB/web/inc/includes_before.php';
 $database = new medoo();
 
 if(isset($_POST)==true && empty($_POST)==false) {
-	$success = true;
-	
 	if (isset($_POST['add_tracker'])) {
+		$success = true;
 		$count = count($_POST['input_id']);
 		
 		for($i=1; $i<=$count; $i++) {
@@ -45,9 +44,16 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$success = false;
 			}																		
 		}
+		
+		if ( $success == true ) {
+			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
+		} else {
+			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to add trackers in the database.');</script><?php
+		}		
 	}
 
 	if (isset($_POST['delete'])) {
+		$success = true;
 		$count = count($_POST['delete']);
 		
 		foreach($_POST['delete'] as $key => $value) {
@@ -61,13 +67,13 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$success = false;
 			}			
 		}
-	}
-	
-	if ( $success == true ) {
-		?><script type="text/javascript">generate_message('success', 'Success !!');</script><?php
-	} else {
-		?><script type="text/javascript">generate_message('error', 'Failed !');</script><?php
-	}		
+		
+		if ( $success == true ) {
+			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
+		} else {
+			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to delete tracker.');</script><?php
+		}			
+	}	
 }
 
 $TrackersList = $database->select("trackers_list", "*", ["origin" => "users", "ORDER" => "trackers_list.tracker_domain ASC"]);
@@ -196,13 +202,6 @@ foreach($TrackersList as $Tracker) {
 </form>
 
 <script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-dynamically-adding-form-elements.js"></script>	
-	
-<?php
-// -----------------------------------------
-require  '/etc/MySB/web/inc/includes_after.php';
-// -----------------------------------------
-//#################### LAST LINE ######################################
-?>
 	
 <?php
 // -----------------------------------------

@@ -69,18 +69,18 @@ if ( isset($_POST['submit']) ) {
 				
 				if ( $result == 0 ) {	
 					$_SERVER['PHP_AUTH_PW'] = $new_pwd;
-					?><script type="text/javascript">generate_message('success', 'Success !!');</script><?php
+					?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
 				} else {
-					?><script type="text/javascript">generate_message('error', 'Error occured !');</script><?php
+					?><script type="text/javascript">generate_message('error', 5000, 'Error occured with "MySB_ChangeUserPassword" script !');</script><?php
 				}
 			} else {
-				?><script type="text/javascript">generate_message('error', 'Error between the new typed password and verification.');</script><?php
+				?><script type="text/javascript">generate_message('error', 5000, 'Error between the new typed password and verification.');</script><?php
 			}
 		} else {
-			?><script type="text/javascript">generate_message('error', 'The current password is not valid.');</script><?php
+			?><script type="text/javascript">generate_message('error', 5000, 'The current password is not valid.');</script><?php
 		}
 	} else {
-		?><script type="text/javascript">generate_message('error', 'Please, complete all fields.');</script><?php
+		?><script type="text/javascript">generate_message('information', 5000, 'Please, complete all fields.');</script><?php
 	}
 }
 

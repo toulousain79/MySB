@@ -139,7 +139,7 @@ You can find others scripts in '/etc/MySB/scripts/'. This others scripts are add
 
 To access services installed on your new server, point your browser to the following address:
 ```
-https://<Server IP or Server Name>:<https NginX port>/MySB/SeedboxInfo.php
+https://<Server IP or Server Name>:<https NginX port>/?user/user-infos.html
 ```
 
 ## Seedbox-Manager
@@ -192,7 +192,7 @@ OR
 
 To use your VPN you will need a VPN client compatible with [OpenVPN](http://openvpn.net/index.php?option=com_content&id=357), necessary files to configure your connection are in this link in your box:
 ```
-http://<Server IP or Server Name>:<https NginX port>/MySB/OpenVPN.php` and use it in any OpenVPN client.
+http://<Server IP or Server Name>:<https NginX port>/?user/openvpn-config-files.html` and use it in any OpenVPN client.
 ```
 #### For OpenVZ, you must validate the prerequisites on this page first. Otherwise, OpenVPN will not be functional.
 ```

@@ -462,7 +462,7 @@ echo -e "${CGREEN}			MySB_UpgradeMe$CEND (if new versions)"
 echo
 echo
 echo -e "${CBLUE}You can check all informations for use your SeedBox here:$CEND"
-echo -e "	-->	${CYELLOW}https://$HostNameFQDN:$Port_HTTPS/MySB/SeedboxInfo.php$CEND"
+echo -e "	-->	${CYELLOW}https://$HostNameFQDN:$Port_HTTPS/$CEND"
 
 #### Reboot after install
 if [ "$DevInstallMode" == "manual" ]; then

@@ -28,19 +28,26 @@ require  '/etc/MySB/web/inc/includes_before.php';
 $database = new medoo();
 
 if(isset($_POST)==true && empty($_POST)==false) {
-	$success = true;
-
 	if (isset($_POST['submit'])) {
+		$success = true;
+		
 		for($i=0, $count = count($_POST['tracker_domain']);$i<$count;$i++) {
 			$result = $database->update("trackers_list", ["is_active" => $_POST['is_active'][$i]], ["tracker_domain" => $_POST['tracker_domain'][$i]]);
 			
 			if ( $result != 1 ) {
 				$success = false;
 			}
+		}
+
+		if ( $success == true ) {
+			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
+		} else {
+			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to update tracker in the database.');</script><?php
 		}		
 	}
 	
 	if (isset($_POST['delete'])) {
+		$success = true;
 		$count = count($_POST['delete']);
 		
 		foreach($_POST['delete'] as $key => $value) {
@@ -54,13 +61,13 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$success = false;
 			}			
 		}
+		
+		if ( $success == true ) {
+			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
+		} else {
+			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to delete tracker.');</script><?php
+		}			
 	}
-
-	if ( $success == true ) {
-		?><script type="text/javascript">generate_message('success', 'Success !!');</script><?php
-	} else {
-		?><script type="text/javascript">generate_message('error', 'Failed !');</script><?php
-	}	
 }
 
 $TrackersList = $database->select("trackers_list", "*", ["ORDER" => "trackers_list.tracker_domain ASC"]);

@@ -35,9 +35,28 @@ function CountingUsers() {
 function GetVersion() {
 	$database = new medoo();
 	
-	$version = $database->get("system", "mysb_version", ["id_system" => 1]);
+	$Version = $database->get("system", "mysb_version", ["id_system" => 1]);
 	
-	return $version;
+	return $Version;
+}
+
+// Main user ?
+function MainUser() {
+	$database = new medoo();
+	
+	$MainUser = $database->get("users", "users_ident", ["admin" => 1]);
+	$CurrentUser = $_SERVER['PHP_AUTH_USER'];
+
+	switch ($MainUser) {
+		case "$CurrentUser":
+			$result = true;
+			break;		
+		default:
+			$result = false;
+			break;
+	}
+	
+	return $result;
 }
 
 //#################### LAST LINE ######################################

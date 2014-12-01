@@ -111,21 +111,21 @@ if ( isset($_POST['submit']) ) {
 
 				if ( $result == 0 ) {	
 					$_SERVER['PHP_AUTH_PW'] = $new_pwd;
-					?><script type="text/javascript">generate_message('success', 'Success !');</script><?php
+					?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
 				} else {
-					?><script type="text/javascript">generate_message('error', 'Error occured with "FirewallAndSecurity.sh" script...');</script><?php
+					?><script type="text/javascript">generate_message('error', 5000, 'Error occured with "FirewallAndSecurity.sh" script...');</script><?php
 				}
 			} else {
-				?><script type="text/javascript">generate_message('error', 'Failed ! It was not possible to update the database.');</script><?php
+				?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to update the database.');</script><?php
 			}			
 		} else {
 			Form($UserName, $UserAddress);
 		
-			?><script type="text/javascript">generate_message('error', 'Error between the new typed IP list and verification.');</script><?php
+			?><script type="text/javascript">generate_message('error', 5000, 'Error between the new typed IP list and verification.');</script><?php
 		}
 	} else {
 		Form($UserName, $UserAddress);
-		?><script type="text/javascript">generate_message('warning', 'Please, complete all fields.');</script><?php
+		?><script type="text/javascript">generate_message('information', 5000, 'Please, complete all fields.');</script><?php
 	}
 } else {
 	Form($UserName, $UserAddress);

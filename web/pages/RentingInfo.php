@@ -100,12 +100,12 @@ if (isset($_POST['submit'])) {
 										["id_renting" => 1]);
 		
 		if( $result = 1 ) {
-			?><script type="text/javascript">generate_message('success', 'Success !!');</script><?php
+			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
 		} else {
-			?><script type="text/javascript">generate_message('error', 'Failed !');</script><?php
+			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to update the database.');</script><?php
 		}
 	} else {
-		?><script type="text/javascript">generate_message('error', 'Please, complete all fields.');</script><?php
+		?><script type="text/javascript">generate_message('information', 5000, 'Please, complete all fields.');</script><?php
 	}
 }
 
