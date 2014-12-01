@@ -49,10 +49,10 @@ function printUser($user) {
 	echo '<td></td></tr>';		
 	// IP Address
 	if ( trim($users_datas["fixed_ip"]) == 'blank' ) {
-		$comments = '<a target="_blank" href="https://' . $user . ':##TempPassword##@' . $_SERVER['HTTP_HOST'] . '/ManageIP.php?TempPass=##TempPassword##">Before changing your temporary password, thank you to confirm your IP address HERE!</a>';
+		$comments .= '<a href="https://' . $user . ':##TempPassword##@' . $_SERVER['HTTP_HOST'] . '/?user/manage-ip.html">Before changing your temporary password, thank you to confirm your IP address HERE!</a>';
 		$opts = 'bgcolor="#FF6666"';
 	} else {
-		$comments = 'Public IP addresses listed here will be allowed to access to all pages located under "/" excepted "/ManageIP.php".';
+		$comments = 'Public IP addresses used for web access restriction. You can manage this list <a href="https://' . $_SERVER['HTTP_HOST'] . '/?user/manage-ip.html">here</a>.';
 		$opts = '';
 	}		
 	echo '<tr align="left"><th width="15%" scope="row">IP Address</th>';
@@ -62,7 +62,10 @@ function printUser($user) {
 	if ( isset($users_datas["users_passwd"]) ) {
 		echo '<tr align="left"><th width="15%" scope="row">Password</th>';
 		echo '<td>' . $users_datas["users_passwd"] . '</td>';
-		echo '<td bgcolor="#FF6666"><span class="Comments"><a target="_blank" href="https://' . $user . ':##TempPassword##@' . $_SERVER['HTTP_HOST'] . '/ChangePassword.php?TempPass=##TempPassword##">Please, promptly change your temporary password HERE!</a></span></td></tr>';		
+		echo '<td  style="background-color: #FF6666; text-align: center;"><form method="post" action="https://srv1.lig2p.com:8889/?user/change-password.html">';
+		echo '<input name="TempPass" type="hidden" value="##TempPassword##" />';
+		echo '<input style="cursor: pointer;" name="submit" type="submit" value="I want to change my password now !" />';
+		echo '</form></td></tr>';		
 	}	
 	// E-mail
 	echo '<tr align="left"><th width="15%" scope="row">E-mail</th>';
@@ -71,14 +74,30 @@ function printUser($user) {
 	// RPC
 	echo '<tr align="left"><th width="15%" scope="row">RPC</th>';
 	echo '<td>' . $users_datas["rpc"] . '</td>';
-	echo '<td><span class="Comments">RPC value can be used to remotely connect to rTorrent via a smartphone. (see Seedbox-Manager)</span></td></tr>';
+	echo '<td><span class="Comments">RPC value can be used to remotely connect to rTorrent via a smartphone. (see Seedbox-Manager)</span></td></tr>';	
 	// SFTP
+	switch ($users_datas["sftp"]) {
+		case '0':
+			$sftp = 'NO';
+			break;		
+		default:
+			$sftp = 'YES';
+			break;
+	}	
 	echo '<tr align="left"><th width="15%" scope="row">SFTP</th>';
-	echo '<td>' . $users_datas["sftp"] . '</td>';
+	echo '<td>' . $sftp . '</td>';
 	echo '<td></td></tr>';
 	// Sudo
+	switch ($users_datas["sudo"]) {
+		case '0':
+			$sudo = 'NO';
+			break;		
+		default:
+			$sudo = 'YES';
+			break;
+	}		
 	echo '<tr align="left"><th width="15%" scope="row">Sudo powers</th>';
-	echo '<td>' . $users_datas["sudo"] . '</td>';
+	echo '<td>' . $sudo . '</td>';
 	echo '<td></td></tr>';
 	
 	//////////////////////
@@ -161,79 +180,68 @@ function printUser($user) {
 	//////////////////////
 	echo '<tr align="left"><th colspan="3" scope="row"><h4>Links</h4></th></tr>';		
 	// User Info
-	$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?user-infos.html';
-	echo '<tr align="left"><th width="15%" scope="row">User Info</th>';
-	echo '<td><a href="' . $Link . '">' . $Link . '</a></td>';			
-	echo '<td><span class="Comments">Current page.</span></td></tr>';
+	$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?user/user-infos.html';
+	echo '<tr align="left"><th width="15%" scope="row">User Info</th>';			
+	echo '<td colspan="2"><a href="' . $Link . '"><span class="Comments">Current information page, also accessible here.</span></a></td></tr>';
 	// Change password
-	$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/';
-	echo '<tr align="left"><th width="15%" scope="row">Change password</th>';
-	echo '<td><a target="_blank" href="' . $Link . '"></a>' . $Link . '</td>';			
-	echo '<td><span class="Comments">You can change your password here.</span></td></tr>';
+	$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?user/change-password.html';
+	echo '<tr align="left"><th width="15%" scope="row">Change password</th>';	
+	echo '<td colspan="2"><a href="' . $Link . '"><span class="Comments">You can change your password here.</span></a></td></tr>';
 	// Manage IP
-	$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/ManageIP.php';
-	echo '<tr align="left"><th width="15%" scope="row">Manage IP</th>';
-	echo '<td><a target="_blank" href="' . $Link . '"></a>' . $Link . '</td>';			
-	echo '<td><span class="Comments">Add here your IPs addresses to add to whitelist.</span></td></tr>';		
+	$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?user/manage-ip.html';
+	echo '<tr align="left"><th width="15%" scope="row">Manage IP</th>';		
+	echo '<td colspan="2"><a href="' . $Link . '"><span class="Comments">Add here your IPs addresses to add to whitelist.</span></a></td></tr>';		
 	// ruTorrent
 	$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/ru';
-	echo '<tr align="left"><th width="15%" scope="row">ruTorrent</th>';
-	echo '<td><a target="_blank" href="' . $Link . '"></a>' . $Link . '</td>';			
-	echo '<td><span class="Comments">ruTorrent interface</span></td></tr>';
+	echo '<tr align="left"><th width="15%" scope="row">ruTorrent</th>';	
+	echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">ruTorrent interface</span></a></td></tr>';
 	// Seedbox-Manager
 	$is_installed = $database->get("services", "is_installed", ["serv_name" => "Seedbox-Manager"]);
 	if ( $is_installed == '1' ) {		
 		$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/sm';
 		echo '<tr align="left"><th width="15%" scope="row">Seedbox-Manager</th>';
-		echo '<td><a target="_blank" href="' . $Link . '"></a>' . $Link . '</td>';			
-		echo '<td><span class="Comments">Seedbox-Manager interface</span></td></tr>';
+		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Seedbox-Manager interface</span></a></td></tr>';
 	}
 	// OpenVPN
 	$is_installed = $database->get("services", "is_installed", ["serv_name" => "OpenVPN"]);
 	if ( $is_installed == '1' ) {
 		// OpenVPN config
-		$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/OpenVPN.php';
-		echo '<tr align="left"><th width="15%" scope="row">OpenVPN config</th>';
-		echo '<td><a target="_blank" href="' . $Link . '"></a>' . $Link . '</td>';			
-		echo '<td><span class="Comments">Download here configuration files for OpenVPN.</span></td></tr>';
+		$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?user/openvpn-config-files.html';
+		echo '<tr align="left"><th width="15%" scope="row">OpenVPN config</th>';		
+		echo '<td colspan="2"><a href="' . $Link . '"><span class="Comments">Download here configuration files for OpenVPN.</span></a></td></tr>';
 		// OpenVPN GUI
 		$Link = 'https://openvpn.net/index.php/open-source/downloads.html';
 		echo '<tr align="left"><th width="15%" scope="row">OpenVPN GUI</th>';
-		echo '<td><a target="_blank" href="' . $Link . '"></a>' . $Link . '</td>';			
-		echo '<td><span class="Comments">Download here GUI for OpenVPN.</span></td></tr>';
+		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Download here GUI for OpenVPN.</span></a></td></tr>';
 	}
 	// CakeBox Light
 	$CakeboxDatas = $database->get("services", "*", ["serv_name" => "CakeBox-Light"]);
 	if ( $CakeboxDatas["is_installed"] == '1' ) {
 		$Link = 'https://' . $system_datas["hostname"] . ':' . $CakeboxDatas["ports_tcp"] . '/';
-		echo '<tr align="left"><th width="15%" scope="row">CakeBox Light</th>';
-		echo '<td><a target="_blank" href="' . $Link . '"></a>' . $Link . '</td>';			
-		echo '<td><span class="Comments">Play here your media.</span></td></tr>';
+		echo '<tr align="left"><th width="15%" scope="row">CakeBox Light</th>';			
+		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Play here your media.</span></a></td></tr>';
 	}
 	if ( $users_datas["admin"] == '1' ) {
 		// Webmin
 		$WebminDatas = $database->get("services", "*", ["serv_name" => "Webmin"]);
 		if ( $WebminDatas["is_installed"] == '1' ) {
 			$Link = 'https://' . $system_datas["hostname"] . ':' . $WebminDatas["ports_tcp"] . '/';
-			echo '<tr align="left"><th width="15%" scope="row">Webmin</th>';
-			echo '<td><a target="_blank" href="' . $Link . '"></a>' . $Link . '</td>';			
-			echo '<td><span class="Comments">Interface management for your server.</span></td></tr>';
+			echo '<tr align="left"><th width="15%" scope="row">Webmin</th>';			
+			echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Admin interface for manage your server.</span></a></td></tr>';
 		}
 		// Logs
 		$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/logs/';
-		echo '<tr align="left"><th width="15%" scope="row">Logs</th>';
-		echo '<td><a target="_blank" href="' . $Link . '"></a>' . $Link . '</td>';			
-		echo '<td><span class="Comments">You can check logs of MySB install and security.</span></td></tr>';
+		echo '<tr align="left"><th width="15%" scope="row">Logs</th>';	
+		echo '<td colspan="2"><a href="' . $Link . '"><span class="Comments">You can check logs of MySB install and security.</span></a></td></tr>';
 		// Renting infos
-		$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/RentingInfo.php';
-		echo '<tr align="left"><th width="15%" scope="row">Renting infos</th>';
-		echo '<td><a target="_blank" href="' . $Link . '"></a>' . $Link . '</td>';			
-		echo '<td><span class="Comments">Manage your renting informations.</span></td></tr>';
+		$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?renting-infos.html';
+		echo '<tr align="left"><th width="15%" scope="row">Renting infos</th>';		
+		echo '<td colspan="2"><a href="' . $Link . '"><span class="Comments">Manage your renting informations.</span></a></td></tr>';
 		// Trackers
-		$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/Trackers.php';
-		echo '<tr align="left"><th width="15%" scope="row">Trackers list</th>.';
-		echo '<td><a target="_blank" href="' . $Link . '"></a>' . $Link . '</td>';			
-		echo '<td><span class="Comments">Manage your trackers.</span></td></tr>';		
+		$Link1 = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?trackers/trackers-list.html';
+		$Link2 = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?trackers/add-new-trackers.html';
+		echo '<tr align="left"><th width="15%" scope="row">Trackers list</th>.';		
+		echo '<td colspan="2"><span class="Comments"><a href="' . $Link1 . '">Manage your trackers here.</a> You can also <a href="' . $Link2 . '">add new tracker here</a>.</span></td></tr>';		
 	}
 
 	$RentingDatas = $database->get("renting", "*", ["id_renting" => 1]);

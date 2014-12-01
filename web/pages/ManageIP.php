@@ -24,10 +24,11 @@ require  '/etc/MySB/web/inc/includes_before.php';
 //
 //#################### FIRST LINE #####################################
 
-function Form() {
-	$UserAddress = $_SERVER['REMOTE_ADDR'];
-	$UserName = $_SERVER['PHP_AUTH_USER'];
-	
+$UserAddress = $_SERVER['REMOTE_ADDR'];
+$UserName = $_SERVER['PHP_AUTH_USER'];
+
+function Form($UserName, $UserAddress) {
+
 	$database = new medoo();
 	// Users table
 	$users_datas = $database->get("users", "*", ["users_ident" => $UserName]);	
@@ -80,6 +81,7 @@ if ( isset($_POST['submit']) ) {
 	$current_list = trim($_POST['current_list'], " \t\n\r\0\x0B");
 	$new_list = trim($_POST['new_list'], " \t\n\r\0\x0B");
 	$confirm_list = trim($_POST['confirm_list'], " \t\n\r\0\x0B");
+
 	if ( isset($_POST['add_current_ip']) ) {
 		$add_current_ip = $_POST['add_current_ip'];
 	} else {
@@ -95,7 +97,8 @@ if ( isset($_POST['submit']) ) {
 		}
 	
 		if ( $new_list == $confirm_list ) {
-			$result = update("users", ["fixed_ip" => $confirm_list], ["users_ident" => $UserName]);		
+			$database = new medoo();
+			$result = $database->update("users", ["fixed_ip" => "$confirm_list"], ["users_ident" => "$UserName"]);			
 			
 			if ( $result != 0 ) {
 				exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.sh new '".$UserName."' 'ManageIP.php'", $output, $result);
@@ -103,23 +106,26 @@ if ( isset($_POST['submit']) ) {
 				Form($UserName, $UserAddress);
 				
 				foreach ($output as $item){
-					echo $item.'<br>';
+					echo '<div class="Comments" align="center">'.$item.'</div>';
 				}
 
-				echo '<p class="FontInGreen">Successfull !</p>';
-				
+				if ( $result == 0 ) {	
+					$_SERVER['PHP_AUTH_PW'] = $new_pwd;
+					?><script type="text/javascript">generate_message('success', 'Success !');</script><?php
+				} else {
+					?><script type="text/javascript">generate_message('error', 'Error occured with "FirewallAndSecurity.sh" script...');</script><?php
+				}
 			} else {
-				echo '<p class="FontInRed">Failed !</p>';				
+				?><script type="text/javascript">generate_message('error', 'Failed ! It was not possible to update the database.');</script><?php
 			}			
 		} else {
 			Form($UserName, $UserAddress);
 		
-			echo '<p class="FontInRed">Error between the new typed IP list and verification.</p>';
+			?><script type="text/javascript">generate_message('error', 'Error between the new typed IP list and verification.');</script><?php
 		}
 	} else {
-		Form();
-	
-		echo '<p class="FontInRed">Please, complete all fields</p>';
+		Form($UserName, $UserAddress);
+		?><script type="text/javascript">generate_message('warning', 'Please, complete all fields.');</script><?php
 	}
 } else {
 	Form($UserName, $UserAddress);

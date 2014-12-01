@@ -24,8 +24,8 @@ require  '/etc/MySB/web/inc/includes_before.php';
 //
 //#################### FIRST LINE #####################################
 
-if ( isset($_GET['TempPass']) ) {
-	$TempPass = $_GET['TempPass'];
+if ( isset($_POST['TempPass']) ) {
+	$TempPass = $_POST['TempPass'];
 	$opts = "readonly=\"true\" value=" . $TempPass . "";
 } else {
 	$opts = '';
@@ -64,21 +64,23 @@ if ( isset($_POST['submit']) ) {
 				exec("sudo /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword '".$_SERVER['PHP_AUTH_USER']."' '".$new_pwd."' 'ChangePassword.php'", $output, $result);
 
 				foreach ( $output as $item ) {
-					echo $item.'<br>';
+					echo '<div class="Comments" align="center">'.$item.'</div>';
 				}
 				
 				if ( $result == 0 ) {	
 					$_SERVER['PHP_AUTH_PW'] = $new_pwd;
-					?><script type="text/javascript">generate('success', 'Success !!');</script><?php
+					?><script type="text/javascript">generate_message('success', 'Success !!');</script><?php
+				} else {
+					?><script type="text/javascript">generate_message('error', 'Error occured !');</script><?php
 				}
 			} else {
-				?><script type="text/javascript">generate('errot', 'Error between the new typed password and verification.');</script><?php
+				?><script type="text/javascript">generate_message('error', 'Error between the new typed password and verification.');</script><?php
 			}
 		} else {
-			?><script type="text/javascript">generate('errot', 'The current password is not valid.');</script><?php
+			?><script type="text/javascript">generate_message('error', 'The current password is not valid.');</script><?php
 		}
 	} else {
-		?><script type="text/javascript">generate('errot', 'Please, complete all fields.');</script><?php
+		?><script type="text/javascript">generate_message('error', 'Please, complete all fields.');</script><?php
 	}
 }
 

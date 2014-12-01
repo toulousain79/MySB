@@ -66,6 +66,22 @@ if(isset($_POST)==true && empty($_POST)==false) {
 $TrackersList = $database->select("trackers_list", "*", ["ORDER" => "trackers_list.tracker_domain ASC"]);
 ?>
 
+<style>
+.redText {
+    background-color:#FEBABC;
+}
+.greenText {
+    background-color:#B3FEA5;
+}
+</style>
+
+<script type="text/javascript" >
+	var select = document.getElementById('mySelect');
+	select.onchange = function () {
+		select.className = this.options[this.selectedIndex].className;
+	}     
+</script>
+
 <form class="form_settings" method="post" action="">	
 	<div align="center">
 		<input class="submit" style="width:120px; margin-bottom: 10px;" name="submit" type="submit" value="Save Changes">
@@ -107,15 +123,15 @@ foreach($TrackersList as $Tracker) {
 	
 	switch ($Tracker["is_active"]) {
 		case '0':
-			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer; background-color:#FEBABC;">
-								<option value="0" selected="selected">No</option>
-								<option value="1">Yes</option>
+			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+								<option value="0" selected="selected" class="redText">No</option>
+								<option value="1" class="greenText">Yes</option>
 							</select>';
 			break;		
 		default:
-			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer; background-color:#B3FEA5;">
-								<option value="0">No</option>
-								<option value="1" selected="selected">Yes</option>
+			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+								<option value="0" class="redText">No</option>
+								<option value="1" selected="selected" class="greenText">Yes</option>
 							</select>';
 			break;
 	}
@@ -146,7 +162,7 @@ foreach($TrackersList as $Tracker) {
 					<?php echo $is_ssl; ?>			
 				</td>
 				<td>
-					<?php echo $is_active; ?>	
+					<?php echo $is_active; ?>				
 				</td>
 				<td>
 					<?php echo $origin; ?>
@@ -161,14 +177,6 @@ foreach($TrackersList as $Tracker) {
 		<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
 	</div>
 </form>
-
-<script type="text/javascript" >
-  
-    $('#delete').click(function() {
-		generate_confirmation('center', 'Confimration');
-    });
-      
-</script>
 
 <?php
 // -----------------------------------------

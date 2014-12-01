@@ -21,7 +21,7 @@
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-1.11.1.min.js"></script>
     <!-- noty -->
     <script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/noty/packaged/jquery.noty.packaged.min.js"></script>	
-	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/create_message.js"></script>		
+	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.create_message.js"></script>	
 </head>
 
 <body>
