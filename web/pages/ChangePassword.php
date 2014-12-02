@@ -1,7 +1,5 @@
 <?php
 // ----------------------------------
-require  '/etc/MySB/web/inc/includes_before.php';
-// ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
@@ -67,9 +65,15 @@ if ( isset($_POST['submit']) ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';
 				}
 				
-				if ( $result == 0 ) {	
-					$_SERVER['PHP_AUTH_PW'] = $new_pwd;
-					?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
+				if ( $result == 0 ) {
+					$result = UpdateWolfDB($_SERVER['PHP_AUTH_USER'], $new_pwd);
+				
+					if ( $result > 0 ) {
+						?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
+						$_SERVER['PHP_AUTH_PW'] = $new_pwd;
+					} else {
+						?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to update the Wolf database.');</script><?php
+					}
 				} else {
 					?><script type="text/javascript">generate_message('error', 5000, 'Error occured with "MySB_ChangeUserPassword" script !');</script><?php
 				}
@@ -84,8 +88,5 @@ if ( isset($_POST['submit']) ) {
 	}
 }
 
-// -----------------------------------------
-require  '/etc/MySB/web/inc/includes_after.php';
-// -----------------------------------------
 //#################### LAST LINE ######################################
 ?>

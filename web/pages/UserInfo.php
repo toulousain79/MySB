@@ -1,7 +1,5 @@
 <?php
 // ----------------------------------
-require_once '/etc/MySB/web/inc/includes_before.php';
-// ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
@@ -31,7 +29,7 @@ if ($_SERVER['PHP_AUTH_USER'] == '##MySB_User##') {
 }
 
 function printUser($user) {
-	$database = new medoo();
+	$database = new medoo_MySB();
 	// Users table
 	$users_datas = $database->get("users", "*", ["users_ident" => $_SERVER['PHP_AUTH_USER']]);	
 	// System table
@@ -281,8 +279,5 @@ if ( (CountingUsers() >= 1) && (GetVersion() != "") ) {
 	echo '<p><h1 class="FontInRed">MySB is not installed !</h1></p>';
 }
 
-// -----------------------------------------
-require_once '/etc/MySB/web/inc/includes_after.php';
-// -----------------------------------------
 //#################### LAST LINE ######################################
 ?>

@@ -1,7 +1,5 @@
 <?php
 // ----------------------------------
-require  '/etc/MySB/web/inc/includes_before.php';
-// ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
@@ -25,7 +23,7 @@ require  '/etc/MySB/web/inc/includes_before.php';
 //#################### FIRST LINE #####################################
 
 function Form() {
-	$database = new medoo();
+	$database = new medoo_MySB();
 	// Users table
 	$renting_datas = $database->get("renting", [
 												"model",
@@ -90,7 +88,7 @@ if (isset($_POST['submit'])) {
 		$PricePerUsers = $X + $Y;
 		$PricePerUsers = ceil($PricePerUsers);
 	
-		$database = new medoo();
+		$database = new medoo_MySB();
 				
 		$result = $database->update("renting", ["model" => "$Model",
 										"tva" => "$TVA",
@@ -102,7 +100,7 @@ if (isset($_POST['submit'])) {
 		if( $result = 1 ) {
 			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
 		} else {
-			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to update the database.');</script><?php
+			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to update the MySB database.');</script><?php
 		}
 	} else {
 		?><script type="text/javascript">generate_message('information', 5000, 'Please, complete all fields.');</script><?php
@@ -111,8 +109,5 @@ if (isset($_POST['submit'])) {
 
 Form();
 
-// -----------------------------------------
-require  '/etc/MySB/web/inc/includes_after.php';
-// -----------------------------------------
 //#################### LAST LINE ######################################
 ?>

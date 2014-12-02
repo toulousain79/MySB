@@ -1,7 +1,5 @@
 <?php
 // ----------------------------------
-require  '/etc/MySB/web/inc/includes_before.php';
-// ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
@@ -28,8 +26,7 @@ $UserAddress = $_SERVER['REMOTE_ADDR'];
 $UserName = $_SERVER['PHP_AUTH_USER'];
 
 function Form($UserName, $UserAddress) {
-
-	$database = new medoo();
+	$database = new medoo_MySB();
 	// Users table
 	$users_datas = $database->get("users", "*", ["users_ident" => $UserName]);	
 	
@@ -97,7 +94,7 @@ if ( isset($_POST['submit']) ) {
 		}
 	
 		if ( $new_list == $confirm_list ) {
-			$database = new medoo();
+			$database = new medoo_MySB();
 			$result = $database->update("users", ["fixed_ip" => "$confirm_list"], ["users_ident" => "$UserName"]);			
 			
 			if ( $result != 0 ) {
@@ -131,8 +128,5 @@ if ( isset($_POST['submit']) ) {
 	Form($UserName, $UserAddress);
 }
 
-// -----------------------------------------
-require  '/etc/MySB/web/inc/includes_after.php';
-// -----------------------------------------
 //#################### LAST LINE ######################################
 ?>

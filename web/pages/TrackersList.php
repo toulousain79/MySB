@@ -1,7 +1,5 @@
 <?php
 // ----------------------------------
-require  '/etc/MySB/web/inc/includes_before.php';
-// ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
@@ -25,7 +23,7 @@ require  '/etc/MySB/web/inc/includes_before.php';
 //#################### FIRST LINE #####################################
 
 // Users table
-$database = new medoo();
+$database = new medoo_MySB();
 
 if(isset($_POST)==true && empty($_POST)==false) {
 	if (isset($_POST['submit'])) {
@@ -42,7 +40,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 		if ( $success == true ) {
 			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
 		} else {
-			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to update tracker in the database.');</script><?php
+			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to update tracker in the MySB database.');</script><?php
 		}		
 	}
 	
@@ -186,8 +184,5 @@ foreach($TrackersList as $Tracker) {
 </form>
 
 <?php
-// -----------------------------------------
-require  '/etc/MySB/web/inc/includes_after.php';
-// -----------------------------------------
 //#################### LAST LINE ######################################
 ?>

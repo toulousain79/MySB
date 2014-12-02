@@ -24,27 +24,27 @@
 
 // CountingUsers
 function CountingUsers() {
-	$database = new medoo();
+	$MySB_DB = new medoo_MySB();
 
-	$result = $database->count("users", "");
+	$result = $MySB_DB->count("users", "");
 	
 	return $result;
 }
 
 // MySB version
 function GetVersion() {
-	$database = new medoo();
+	$MySB_DB = new medoo_MySB();
 	
-	$Version = $database->get("system", "mysb_version", ["id_system" => 1]);
+	$Version = $MySB_DB->get("system", "mysb_version", ["id_system" => 1]);
 	
 	return $Version;
 }
 
 // Main user ?
 function MainUser() {
-	$database = new medoo();
+	$MySB_DB = new medoo_MySB();
 	
-	$MainUser = $database->get("users", "users_ident", ["admin" => 1]);
+	$MainUser = $MySB_DB->get("users", "users_ident", ["admin" => 1]);
 	$CurrentUser = $_SERVER['PHP_AUTH_USER'];
 
 	switch ($MainUser) {
@@ -54,6 +54,49 @@ function MainUser() {
 		default:
 			$result = false;
 			break;
+	}
+	
+	return $result;
+}
+
+// Create menu with submenu
+function displayChildren($page, $current, $startmenu = true) {
+	$hidden = (MainUser()) ? true : false;
+
+    if ($page && count($page->children()) > 0) {
+        echo ($startmenu) ? '<ul>' : '';
+
+        foreach($page->children(null, array(), $hidden) as $menu) :
+            echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title); 
+            displayChildren($menu, $current, true);
+            echo '</li>';
+            endforeach;
+        echo ($startmenu) ? '</ul>' : '';
+    }
+}
+
+// Update Wolf database
+function UpdateWolfDB($username, $password) {
+	if (!defined('IN_CMS')) { exit(); }
+	
+	if ( MainUser() == true ) {	
+		if ( (isset($password)) && (isset($username)) ) {
+			$PDO = Record::getConnection();
+			$MySB_DB = new medoo_MySB();
+			$sql_update = '';		
+		
+			$salt = AuthUser::generateSalt();
+			$password = AuthUser::generateHashedPassword($password, $salt);
+			$MainUserEmail = $MySB_DB->get("users", "users_email", ["admin" => 1]);
+			
+			$sql_update = "UPDATE ".TABLE_PREFIX."user SET name = '".$username."', email = '".$MainUserEmail."', username = '".$username."', password = '".$password."', salt = '".$salt."' WHERE id = 1";
+			
+			$result = $PDO->exec($sql_update);
+		} else {
+			$result = false;
+		}
+	} else {
+		$result = true;
 	}
 	
 	return $result;
