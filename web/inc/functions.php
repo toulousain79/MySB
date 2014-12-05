@@ -102,5 +102,34 @@ function UpdateWolfDB($username, $password) {
 	return $result;
 }
 
+// Insert/update/delete users addresses
+function ManageUsersAddresses($UserName, $UserAddress, $IsActive) {
+	$MySB_DB = new medoo_MySB();
+	$UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$UserName"]);
+	$value = false;
+	
+	if (isset($UserID)) {	
+		// Check if address exist		
+		$IdAddress = $MySB_DB->get("users_addresses", "id_users_addresses", [
+																			"AND" => [
+																				"id_users" => "$UserID",
+																				"address" => "$UserAddress"
+																			]
+																		]);		
+		echo $IdAddress;
+		if (isset($IdAddress)) {
+			$value = $MySB_DB->update("users_addresses", ["is_active" => "$IsActive"], ["id_users_addresses" => "$IdAddress"]);
+		} else {
+			$value = $MySB_DB->insert("users_addresses", [
+													"id_users" => "$UserID",
+													"address" => "$UserAddress",
+													"is_active" => "$IsActive"
+												]);			
+		}	
+	}
+	
+	return $value;
+}
+
 //#################### LAST LINE ######################################
 ?>

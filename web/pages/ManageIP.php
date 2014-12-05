@@ -22,111 +22,162 @@
 //
 //#################### FIRST LINE #####################################
 
+// Users table
+$MySB_DB = new medoo_MySB();
+
+// Vars
 $UserAddress = $_SERVER['REMOTE_ADDR'];
 $UserName = $_SERVER['PHP_AUTH_USER'];
+$UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$UserName"]);
+$CurrentIP = $MySB_DB->get("users_addresses", "id_users_addresses", [
+																	"AND" => [
+																		"id_users" => "$UserID",
+																		"address" => "$UserAddress"
+																	]
+																]);	
 
-function Form($UserName, $UserAddress) {
-	$database = new medoo_MySB();
-	// Users table
-	$users_datas = $database->get("users", "*", ["users_ident" => $UserName]);	
-	
-	$allip = '';
-	$temp_list = '';
-	
-	if ( trim($users_datas["fixed_ip"]) == 'blank' ) {
-		$allip = 'blank';
-		$temp_list = $UserAddress;
-	} else  {
-		$allip = trim($users_datas["fixed_ip"], " \t\n\r\0\x0B");
-		$temp_list = $allip;
-	}
 
-	echo '<form class="form_settings" method="post" action="">
-		<div align="center"><table border="0">	
-			<tr>
-				<td>Actual IP list :</td>
-				<td><input name="current_list" type="text" value="' . $allip . '" size="50" readonly="true" /></td>
-				<td></td>
-				<td></td>
-			</tr>
-			<tr>
-				<td>Your current IP address :</td>
-				<td><input name="current_ip" type="text" value="' . $UserAddress . '" size="50" readonly="true" /></td>
-				<td><input class="checkbox" name="add_current_ip" type="checkbox" value="1" /></td>
-				<td><span class="Comments">Check this box for add this IP in your list.</td>
-			</tr>				
-			<tr>
-				<td>New wanted IP list :</td>
-				<td><input name="new_list" type="text" value="' . $temp_list . '" size="50" /></td>
-				<td></td>
-				<td><span class="Comments">Add the appropriate IP separated by commas.</td>					
-			</tr>
-			<tr>
-				<td>Confirm the new list :</td>
-				<td><input name="confirm_list" type="text" value="' . $temp_list . '" size="50" /></td>
-				<td></td>
-				<td></td>						
-			</tr>
-			<tr>
-				<td colspan="4"><input class="submit" name="submit" type="submit" value="Submit" /></td>
-			</tr>
-		</table></div>
-	</form>';
-}
-
-if ( isset($_POST['submit']) ) {
-	$current_list = trim($_POST['current_list'], " \t\n\r\0\x0B");
-	$new_list = trim($_POST['new_list'], " \t\n\r\0\x0B");
-	$confirm_list = trim($_POST['confirm_list'], " \t\n\r\0\x0B");
-
-	if ( isset($_POST['add_current_ip']) ) {
-		$add_current_ip = $_POST['add_current_ip'];
-	} else {
-		$add_current_ip = '0';
-	}
-	
-	if ( ($current_list != '') && ($new_list != '') && ($confirm_list != '') ) {	
-		if ( $add_current_ip == '1' ) {
-			if ( strpos($confirm_list, $UserAddress) === false ) {
-				$new_list .= ','.$UserAddress;
-				$confirm_list .= ','.$UserAddress;
-			}
-		}
-	
-		if ( $new_list == $confirm_list ) {
-			$database = new medoo_MySB();
-			$result = $database->update("users", ["fixed_ip" => "$confirm_list"], ["users_ident" => "$UserName"]);			
-			
-			if ( $result != 0 ) {
-				exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.sh new '".$UserName."' 'ManageIP.php'", $output, $result);
-				
-				Form($UserName, $UserAddress);
-				
-				foreach ($output as $item){
-					echo '<div class="Comments" align="center">'.$item.'</div>';
-				}
-
-				if ( $result == 0 ) {	
-					$_SERVER['PHP_AUTH_PW'] = $new_pwd;
-					?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
-				} else {
-					?><script type="text/javascript">generate_message('error', 5000, 'Error occured with "FirewallAndSecurity.sh" script...');</script><?php
-				}
-			} else {
-				?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to update the database.');</script><?php
-			}			
-		} else {
-			Form($UserName, $UserAddress);
+if(isset($_POST)==true && empty($_POST)==false) {
+	if (isset($_POST['add_address'])) {
+		$success = true;
+		$count = count($_POST['input_id']);
 		
-			?><script type="text/javascript">generate_message('error', 5000, 'Error between the new typed IP list and verification.');</script><?php
+		for($i=1; $i<=$count; $i++) {
+			$last_id_trackers_list = ManageUsersAddresses($UserName, $_POST['address'][$i], $_POST['is_active'][$i]);
+																		
+			if ($last_id_trackers_list == false) {
+				$success = false;
+			}																		
 		}
-	} else {
-		Form($UserName, $UserAddress);
-		?><script type="text/javascript">generate_message('information', 5000, 'Please, complete all fields.');</script><?php
+		
+		if ( $success == true ) {
+			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
+		} else {
+			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to add addresses in the MySB database.');</script><?php
+		}		
 	}
-} else {
-	Form($UserName, $UserAddress);
+
+	if (isset($_POST['delete'])) {
+		$success = true;
+		$count = count($_POST['delete']);
+		
+		foreach($_POST['delete'] as $key => $value) {
+			$result = $MySB_DB->delete("users_addresses", [
+				"AND" => [
+					"id_users_addresses" => $key
+				]
+			]);
+			
+			if ( $result = 0 ) {
+				$success = false;
+			}			
+		}
+		
+		if ( $success == true ) {
+			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
+		} else {
+			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to delete address.');</script><?php
+		}			
+	}	
 }
 
+$AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserID"]);
+
+if (isset($CurrentIP)) {
+	
+	$add_current_ip = 'value="'.$UserAddress.'"';
+} else {
+	$add_current_ip = '';
+}
+?>
+
+<style>
+.redText {
+    background-color:#FEBABC;
+}
+.greenText {
+    background-color:#B3FEA5;
+}
+</style>
+
+<script type="text/javascript" >
+	var select = document.getElementById('mySelect');
+	select.onchange = function () {
+		select.className = this.options[this.selectedIndex].className;
+	}     
+</script>
+
+<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
+	<form id="myForm" class="form_settings" method="post" action="">
+		<div id="input1" class="clonedInput">
+			<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
+			Address (IP or Dynamic DNS): <input class="input_address" id="address" name="address[1]" type="text" required="required" <?php echo $add_current_ip; ?> />
+			Is active ?:	<select class="select_is_active" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required">
+								<option value="0" selected="selected">No</option>
+								<option value="1">Yes</option>
+							</select>
+		</div>
+	 
+		<div style="margin-top: 10px; margin-bottom: 20px;">
+			<input type="button" id="btnAdd" value="Add address" style="cursor: pointer;" />
+			<input type="button" id="btnDel" value="Remove last" style="cursor: pointer;" />
+		</div>
+		
+		<input class="submit" style="width:180px; margin-top: 10px; margin-bottom: 10px;" name="add_address" type="submit" value="Add my addresses now !">
+	</form>	
+</div>	
+
+<form class="form_settings" method="post" action="">	
+	<div align="center">
+	
+		<table style="border-spacing:1;">
+			<tr>
+				<th style="text-align:center;">Address</th>
+				<th style="text-align:center;">Active ?</th>
+				<th style="text-align:center;">Delete ?</th>
+			</tr>						
+				
+<?php
+foreach($AddressesList as $Address) {
+	switch ($Address["is_active"]) {
+		case '0':
+			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+								<option value="0" selected="selected" class="redText">No</option>
+								<option value="1" class="greenText">Yes</option>
+							</select>';
+			break;		
+		default:
+			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+								<option value="0" class="redText">No</option>
+								<option value="1" selected="selected" class="greenText">Yes</option>
+							</select>';
+			break;
+	}
+?>				
+			<tr>
+				<td>
+					<input style="width:150px;" type="hidden" name="address[]" value="<?php echo $Address["address"]; ?>" />
+					<?php echo $Address["address"]; ?>
+				</td>					
+				<td>
+					<?php echo $is_active; ?>	
+				</td>
+				<td>
+					<input class="submit" name="delete[<?php echo $Address["id_users_addresses"]; ?>]" type="submit" value="Delete" />
+				</td>					
+			</tr>
+<?php
+} // foreach($AddressesList as $Address) {
+?>			
+
+		</table>
+		
+		<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
+	</div>
+</form>
+
+<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-dynamically-adding-form-elements.js"></script>	
+	
+<?php
 //#################### LAST LINE ######################################
 ?>

@@ -281,20 +281,22 @@ CREATE TABLE smtp (
 
 INSERT INTO [smtp] ([id_smtp], [smtp_provider], [smtp_username], [smtp_passwd], [smtp_host], [smtp_port]) VALUES (1, 'LOCAL', null, null, null, null);
 
--- Table: users_addresses
-CREATE TABLE users_addresses ( 
-    id_users_addresses INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                       NOT NULL ON CONFLICT ABORT,
-    id_users           INTEGER         NOT NULL ON CONFLICT ABORT,
-    address            VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT 
-);
-
-
 -- Table: trackers_addresses
 CREATE TABLE trackers_addresses ( 
     id_trackers_addresses INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
                                           NOT NULL ON CONFLICT ABORT,
     id_trackers_list      INTEGER         NOT NULL ON CONFLICT ABORT,
     address               VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT 
+);
+
+
+-- Table: users_addresses
+CREATE TABLE users_addresses ( 
+    id_users_addresses INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                       NOT NULL ON CONFLICT ABORT,
+    id_users           INTEGER         NOT NULL ON CONFLICT ABORT,
+    address            VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT,
+    is_active          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
+                                       DEFAULT ( 0 ) 
 );
 

@@ -45,7 +45,14 @@ echo '
 				<td><input name="confirm_pwd" type="password" /></td>
 			</tr>
 			<tr>
-				<td colspan="2"><input class="submit" name="submit" type="submit" value="Submit"></td>
+				<td colspan="2">
+					<div id="formsubmitbutton">
+						<input class="submit" name="submit" type="submit" value="Submit" onclick="ButtonClicked()">
+					</div>
+					<div id="buttonreplacement" style="text-align:center; display:none; height: 33px;">
+						<img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading...">
+					</div>
+				</td>
 			</tr>
 		</table></div>
 	</form>
@@ -58,7 +65,8 @@ if ( isset($_POST['submit']) ) {
 	
 	if ( ($current_pwd != '') && ($new_pwd != '') && ($confirm_pwd != '') ) {
 		if ( $current_pwd == $_SERVER['PHP_AUTH_PW'] ) {
-			if ( $new_pwd == $confirm_pwd ) {			
+			if ( $new_pwd == $confirm_pwd ) {
+				
 				exec("sudo /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword '".$_SERVER['PHP_AUTH_USER']."' '".$new_pwd."' 'ChangePassword.php'", $output, $result);
 
 				foreach ( $output as $item ) {

@@ -41,14 +41,15 @@ require_once  '/etc/MySB/web/inc/includes_before.php';
 	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/print.css" media="print" type="text/css" />
 	<!-- Messages animated CSS -->
 	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/buttons.css" type="text/css" />
-	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/animate.css" type="text/css" />	
+	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/animate.css" type="text/css" />
+	<!-- jquery -->
+	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-1.11.1.min.js"></script>	
 	<!-- modernizr enables HTML5 elements and feature detects -->
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/modernizr-1.5.min.js"></script>
-	<!-- jquery -->
-	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-1.11.1.min.js"></script>
     <!-- noty -->
     <script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/noty/packaged/jquery.noty.packaged.min.js"></script>	
-	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.create_message.js"></script>	
+	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.create_message.js"></script>
+	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/waiting.js"></script>	
 </head>
 
 <body>
