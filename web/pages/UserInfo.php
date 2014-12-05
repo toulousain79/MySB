@@ -185,10 +185,10 @@ function printUser($user) {
 	$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?user/change-password.html';
 	echo '<tr align="left"><th width="15%" scope="row">Change password</th>';	
 	echo '<td colspan="2"><a href="' . $Link . '"><span class="Comments">You can change your password here.</span></a></td></tr>';
-	// Manage IP
-	$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?user/manage-ip.html';
-	echo '<tr align="left"><th width="15%" scope="row">Manage IP</th>';		
-	echo '<td colspan="2"><a href="' . $Link . '"><span class="Comments">Add here your IPs addresses to add to whitelist.</span></a></td></tr>';		
+	// Manage Addresses
+	$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?user/manage-addresses.html';
+	echo '<tr align="left"><th width="15%" scope="row">Manage Addresses</th>';		
+	echo '<td colspan="2"><a href="' . $Link . '"><span class="Comments">Add here your IPs addresses and/or your dynamic DNS to add to whitelist.</span></a></td></tr>';		
 	// ruTorrent
 	$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/ru';
 	echo '<tr align="left"><th width="15%" scope="row">ruTorrent</th>';	
@@ -204,7 +204,7 @@ function printUser($user) {
 	$is_installed = $database->get("services", "is_installed", ["serv_name" => "OpenVPN"]);
 	if ( $is_installed == '1' ) {
 		// OpenVPN config
-		$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?user/openvpn-config-files.html';
+		$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?user/openvpn-config-file.html';
 		echo '<tr align="left"><th width="15%" scope="row">OpenVPN config</th>';		
 		echo '<td colspan="2"><a href="' . $Link . '"><span class="Comments">Download here configuration files for OpenVPN.</span></a></td></tr>';
 		// OpenVPN GUI

@@ -85,8 +85,6 @@ require_once  '/etc/MySB/web/inc/includes_before.php';
 				<?php echo $this->content('sidebar', true); ?>			
 			</div>
 			<div class="content">
-				<h1><div align="center"><?php echo $this->title(); ?></div></h1>
-
 				<?php echo $this->content(); ?> 
 				<?php if ($this->hasContent('extended')) echo $this->content('extended'); ?> 			
 			</div>		

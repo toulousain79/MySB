@@ -63,7 +63,7 @@ function MainUser() {
 function displayChildren($page, $current, $startmenu = true) {
 	$hidden = (MainUser()) ? true : false;
 
-    if ($page && count($page->children()) > 0) {
+    if ($page && count($page->children(null, array(), $hidden)) > 0) {
         echo ($startmenu) ? '<ul>' : '';
 
         foreach($page->children(null, array(), $hidden) as $menu) :
@@ -102,30 +102,31 @@ function UpdateWolfDB($username, $password) {
 	return $result;
 }
 
-// Insert/update/delete users addresses
-function ManageUsersAddresses($UserName, $UserAddress, $IsActive) {
+// Manage User Trackers
+
+
+// Manage Users Addresses
+function ManageUsersAddresses($TrackerDomain, $IsActive) {
 	$MySB_DB = new medoo_MySB();
-	$UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$UserName"]);
 	$value = false;
-	
-	if (isset($UserID)) {	
-		// Check if address exist		
-		$IdAddress = $MySB_DB->get("users_addresses", "id_users_addresses", [
-																			"AND" => [
-																				"id_users" => "$UserID",
-																				"address" => "$UserAddress"
-																			]
-																		]);		
-		echo $IdAddress;
-		if (isset($IdAddress)) {
-			$value = $MySB_DB->update("users_addresses", ["is_active" => "$IsActive"], ["id_users_addresses" => "$IdAddress"]);
-		} else {
-			$value = $MySB_DB->insert("users_addresses", [
-													"id_users" => "$UserID",
-													"address" => "$UserAddress",
-													"is_active" => "$IsActive"
-												]);			
-		}	
+
+	// Check if address exist
+	$IdTracker = $MySB_DB->get("trackers_list", "id_trackers_list", [
+																		"AND" => [
+																			"origin" => "users",
+																			"tracker_domain" => "$TrackerDomain"
+																		]
+																	]);
+
+	if ( $IdTracker > 0 ) {
+		$value = $MySB_DB->update("trackers_list", ["is_active" => "$IsActive"], ["tracker_domain" => "$TrackerDomain"]);
+	} else {
+		$value = $MySB_DB->insert("trackers_list", [
+														"tracker" => "$TrackerDomain",
+														"tracker_domain" => "$TrackerDomain",
+														"origin" => "users",
+														"is_active" => "$IsActive"
+													]);													
 	}
 	
 	return $value;

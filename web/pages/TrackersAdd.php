@@ -23,20 +23,15 @@
 //#################### FIRST LINE #####################################
 
 // Users table
-$database = new medoo_MySB();
+$MySB_DB = new medoo_MySB();
 
 if(isset($_POST)==true && empty($_POST)==false) {
-	if (isset($_POST['add_tracker'])) {
+	if ( (isset($_POST['add_tracker'])) || (isset($_POST['submit'])) ) {
 		$success = true;
 		$count = count($_POST['input_id']);
 		
 		for($i=1; $i<=$count; $i++) {
-			$last_id_trackers_list = $database->insert("trackers_list", [
-																			"tracker" => $_POST['tracker_domain'][$i],
-																			"tracker_domain" => $_POST['tracker_domain'][$i],
-																			"origin" => "users",
-																			"is_active" => $_POST['is_active'][$i]
-																		]);	
+			$last_id_trackers_list = ManageUsersAddresses($_POST['tracker_domain'][$i], $_POST['is_active'][$i]);
 																		
 			if (!isset($last_id_trackers_list)) {
 				$success = false;
@@ -55,7 +50,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 		$count = count($_POST['delete']);
 		
 		foreach($_POST['delete'] as $key => $value) {
-			$result = $database->delete("trackers_list", [
+			$result = $MySB_DB->delete("trackers_list", [
 				"AND" => [
 					"id_trackers_list" => $key
 				]
@@ -74,7 +69,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 	}	
 }
 
-$TrackersList = $database->select("trackers_list", "*", ["origin" => "users", "ORDER" => "trackers_list.tracker_domain ASC"]);
+$TrackersList = $MySB_DB->select("trackers_list", "*", ["origin" => "users", "ORDER" => "trackers_list.tracker_domain ASC"]);
 ?>
 
 <style>
@@ -128,15 +123,18 @@ $TrackersList = $database->select("trackers_list", "*", ["origin" => "users", "O
 			</tr>						
 				
 <?php
+$i = 0;
 foreach($TrackersList as $Tracker) {
+	$i++;
+
 	switch ($Tracker["is_ssl"]) {
 		case '0':
-			$is_ssl = '	<select name="is_ssl[]" style="width:60px; background-color:#FEBABC;" disabled>
+			$is_ssl = '	<select name="is_ssl['.$i.']" style="width:60px; background-color:#FEBABC;" disabled>
 							<option value="0" selected="selected">No</option>
 						</select>';
 			break;		
 		default:
-			$is_ssl = '	<select name="is_ssl[]" style="width:60px; background-color:#B3FEA5;" disabled>
+			$is_ssl = '	<select name="is_ssl['.$i.']" style="width:60px; background-color:#B3FEA5;" disabled>
 							<option value="1" selected="selected">Yes</option>
 						</select>';
 			break;
@@ -144,13 +142,13 @@ foreach($TrackersList as $Tracker) {
 
 	switch ($Tracker["is_active"]) {
 		case '0':
-			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+			$is_active = '	<select name="is_active['.$i.']" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 								<option value="0" selected="selected" class="redText">No</option>
 								<option value="1" class="greenText">Yes</option>
 							</select>';
 			break;		
 		default:
-			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+			$is_active = '	<select name="is_active['.$i.']" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 								<option value="0" class="redText">No</option>
 								<option value="1" selected="selected" class="greenText">Yes</option>
 							</select>';
@@ -159,15 +157,15 @@ foreach($TrackersList as $Tracker) {
 ?>				
 			<tr>
 				<td>
-					<input style="width:150px;" type="hidden" name="tracker_domain[]" value="<?php echo $Tracker["tracker_domain"]; ?>" />
+					<input style="width:150px;" type="hidden" name="tracker_domain[<?php echo $i; ?>]" value="<?php echo $Tracker["tracker_domain"]; ?>" />
 					<?php echo $Tracker["tracker_domain"]; ?>
 				</td>
 				<td>
-					<input style="width:180px;" type="hidden" name="tracker[]" value="<?php echo $Tracker["tracker"]; ?>" />
+					<input style="width:180px;" type="hidden" name="tracker[<?php echo $i; ?>]" value="<?php echo $Tracker["tracker"]; ?>" />
 					<?php echo $Tracker["tracker"]; ?>
 				</td>
 				<td>
-					<input style="width:60px;" type="hidden" name="origin[]" value="<?php echo $Tracker["origin"]; ?>" />
+					<input style="width:60px;" type="hidden" name="origin[<?php echo $i; ?>]" value="<?php echo $Tracker["origin"]; ?>" />
 					<?php echo $Tracker["origin"]; ?>
 				</td>					
 				<td>
@@ -189,6 +187,7 @@ foreach($TrackersList as $Tracker) {
 					<input class="submit" name="delete[<?php echo $Tracker["id_trackers_list"]; ?>]" type="submit" value="Delete" />
 				</td>					
 			</tr>
+			<input class="input_id" id="input_id" name="input_id[<?php echo $i; ?>]" type="hidden" value="<?php echo $i; ?>" />
 <?php
 } // foreach($TrackersList as $Tracker) {
 ?>			

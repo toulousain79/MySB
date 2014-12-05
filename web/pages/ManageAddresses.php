@@ -22,14 +22,13 @@
 //
 //#################### FIRST LINE #####################################
 
-// Users table
 $MySB_DB = new medoo_MySB();
 
 // Vars
 $UserAddress = $_SERVER['REMOTE_ADDR'];
 $UserName = $_SERVER['PHP_AUTH_USER'];
 $UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$UserName"]);
-$CurrentIP = $MySB_DB->get("users_addresses", "id_users_addresses", [
+$IfExist = $MySB_DB->get("users_addresses", "id_users_addresses", [
 																	"AND" => [
 																		"id_users" => "$UserID",
 																		"address" => "$UserAddress"
@@ -38,14 +37,14 @@ $CurrentIP = $MySB_DB->get("users_addresses", "id_users_addresses", [
 
 
 if(isset($_POST)==true && empty($_POST)==false) {
-	if (isset($_POST['add_address'])) {
+	if ( (isset($_POST['add_address'])) || (isset($_POST['submit'])) ) {
 		$success = true;
 		$count = count($_POST['input_id']);
 		
 		for($i=1; $i<=$count; $i++) {
-			$last_id_trackers_list = ManageUsersAddresses($UserName, $_POST['address'][$i], $_POST['is_active'][$i]);
-																		
-			if ($last_id_trackers_list == false) {
+			$last_id_address = ManageUsersAddresses($UserName, $_POST['address'][$i], $_POST['is_active'][$i]);
+																
+			if ($last_id_address == false) {
 				$success = false;
 			}																		
 		}
@@ -83,11 +82,10 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 $AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserID"]);
 
-if (isset($CurrentIP)) {
-	
-	$add_current_ip = 'value="'.$UserAddress.'"';
-} else {
+if ( $IfExist > 0 ) {
 	$add_current_ip = '';
+} else {
+	$add_current_ip = 'value="'.$UserAddress.'"';
 }
 ?>
 
@@ -129,7 +127,6 @@ if (isset($CurrentIP)) {
 
 <form class="form_settings" method="post" action="">	
 	<div align="center">
-	
 		<table style="border-spacing:1;">
 			<tr>
 				<th style="text-align:center;">Address</th>
@@ -138,16 +135,19 @@ if (isset($CurrentIP)) {
 			</tr>						
 				
 <?php
+$i = 0;
 foreach($AddressesList as $Address) {
+	$i++;
+
 	switch ($Address["is_active"]) {
 		case '0':
-			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+			$is_active = '	<select name="is_active['.$i.']" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 								<option value="0" selected="selected" class="redText">No</option>
 								<option value="1" class="greenText">Yes</option>
 							</select>';
 			break;		
 		default:
-			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+			$is_active = '	<select name="is_active['.$i.']" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 								<option value="0" class="redText">No</option>
 								<option value="1" selected="selected" class="greenText">Yes</option>
 							</select>';
@@ -156,7 +156,7 @@ foreach($AddressesList as $Address) {
 ?>				
 			<tr>
 				<td>
-					<input style="width:150px;" type="hidden" name="address[]" value="<?php echo $Address["address"]; ?>" />
+					<input style="width:150px;" type="hidden" name="address[<?php echo $i; ?>]" value="<?php echo $Address["address"]; ?>" />
 					<?php echo $Address["address"]; ?>
 				</td>					
 				<td>
@@ -166,12 +166,12 @@ foreach($AddressesList as $Address) {
 					<input class="submit" name="delete[<?php echo $Address["id_users_addresses"]; ?>]" type="submit" value="Delete" />
 				</td>					
 			</tr>
+			<input class="input_id" id="input_id" name="input_id[<?php echo $i; ?>]" type="hidden" value="<?php echo $i; ?>" />
 <?php
 } // foreach($AddressesList as $Address) {
 ?>			
 
 		</table>
-		
 		<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
 	</div>
 </form>
