@@ -103,10 +103,7 @@ function UpdateWolfDB($username, $password) {
 }
 
 // Manage User Trackers
-
-
-// Manage Users Addresses
-function ManageUsersAddresses($TrackerDomain, $IsActive) {
+function ManageUsersTrackers($TrackerDomain, $IsActive) {
 	$MySB_DB = new medoo_MySB();
 	$value = false;
 
@@ -121,15 +118,82 @@ function ManageUsersAddresses($TrackerDomain, $IsActive) {
 	if ( $IdTracker > 0 ) {
 		$value = $MySB_DB->update("trackers_list", ["is_active" => "$IsActive"], ["tracker_domain" => "$TrackerDomain"]);
 	} else {
-		$value = $MySB_DB->insert("trackers_list", [
+		
+		$id_trackers_list = $MySB_DB->insert("trackers_list", [
 														"tracker" => "$TrackerDomain",
 														"tracker_domain" => "$TrackerDomain",
 														"origin" => "users",
 														"is_active" => "$IsActive"
-													]);													
+													]);
+
+		$DnsRecords = dns_get_record("cpasbien.pe", $type = DNS_A);
+		foreach($DnsRecords as $Record) {
+			$value = $MySB_DB->insert("trackers_list_ipv4", [
+															"id_trackers_list" => "$id_trackers_list",
+															"ipv4" => $Record['ip']
+														]);
+		}
 	}
 	
 	return $value;
+}
+
+// Manage Users Addresses
+function ManageUsersAddresses($UserName, $IPv4, $HostName, $IsActive, $CheckBy) {
+	$MySB_DB = new medoo_MySB();
+	$UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$UserName"]);
+	$value = false;
+
+	// Check if address exist
+	$IfExist = $MySB_DB->get("users_addresses", "check_by", [
+														"AND" => [
+															"id_users" => $UserID,
+															"ipv4" => $IPv4
+														]
+													]);
+
+	switch ($IfExist) {
+		case 'ipv4':
+			switch ($CheckBy) {
+				case 'hostname':
+					$value = $MySB_DB->update("users_addresses", ["hostname" => "$HostName", "check_by" => "$CheckBy", "is_active" => "$IsActive"], ["id_users" => "$UserID"]);
+					break;			
+				default:
+					$value = $MySB_DB->update("users_addresses", ["is_active" => "$IsActive"], ["id_users" => "$UserID"]);
+					break;
+			}
+			break;
+		case 'hostname':
+			switch ($CheckBy) {
+				case 'ipv4':
+					$value = $MySB_DB->update("users_addresses", ["hostname" => "$HostName", "check_by" => "$CheckBy", "is_active" => "$IsActive"], ["id_users" => "$UserID"]);
+					break;			
+				default:
+					$value = $MySB_DB->update("users_addresses", ["is_active" => "$IsActive"], ["id_users" => "$UserID"]);
+					break;
+			}
+			break;			
+		default:
+			$value = $MySB_DB->insert("users_addresses", [
+													"id_users" => "$UserID",
+													"ipv4" => "$IPv4",
+													"hostname" => "$HostName",
+													"check_by" => "$CheckBy",
+													"is_active" => "$IsActive"
+												]);
+			break;
+	}
+	
+	return $value;
+}
+
+// Validate an IPv4 address, excluding private range addresses
+function ValidateIPv4NoPriv($ip) {
+	if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+		return true;
+	} else {
+		return false;
+	}
 }
 
 //#################### LAST LINE ######################################

@@ -50,6 +50,9 @@ if [ "$USAGE" == "ON" ]; then
 	fi
 fi
 
+#### User ID
+UserId=$(sqlite3 $SQLiteDB "SELECT id_users FROM users WHERE users_ident = '$NEWUSER'")
+
 #### crontab
 log_daemon_msg "Delete cron for $NEWUSER"
 crontab -l > /tmp/crontab.tmp
@@ -76,6 +79,12 @@ StatusLSB
 
 #### NginX
 log_daemon_msg "Remove the access permission to the web server for $NEWUSER"
+sqlite3 $SQLiteDB "SELECT address,no_ip FROM users_addresses WHERE id_users = '$UserId'" | while read ROW; do
+	Address=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
+	Address=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
+	sed -i '/'$Address'/d' /etc/nginx/locations/MySB.conf
+done
+
 IP="`sqlite3 $SQLiteDB \"SELECT fixed_ip FROM users WHERE users_ident = '$NEWUSER'\"`"
 IFS=$','
 for ip in $USERIP; do 

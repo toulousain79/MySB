@@ -28,31 +28,59 @@ $MySB_DB = new medoo_MySB();
 $UserAddress = $_SERVER['REMOTE_ADDR'];
 $UserName = $_SERVER['PHP_AUTH_USER'];
 $UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$UserName"]);
-$IfExist = $MySB_DB->get("users_addresses", "id_users_addresses", [
-																	"AND" => [
-																		"id_users" => "$UserID",
-																		"address" => "$UserAddress"
-																	]
-																]);	
-
 
 if(isset($_POST)==true && empty($_POST)==false) {
-	if ( (isset($_POST['add_address'])) || (isset($_POST['submit'])) ) {
+	$success = true;
+
+	if ( isset($_POST['add_address']) ) {
+		$count = count($_POST['input_id']);
+		
+		for($i=1; $i<=$count; $i++) {
+			// test if IP or hostname (dynamic IP)
+			if (!filter_var($_POST['address'][$i], FILTER_VALIDATE_IP)) {
+				// IP is not valid (hostname)
+				$IPv4 = gethostbyname($_POST['address'][$i]);
+				
+				if (!filter_var($IPv4, FILTER_VALIDATE_IP)) {
+					$success = false;
+					?><script type="text/javascript">generate_message('error', 5000, 'The host name does not return a valid IP address.');</script><?php
+				} else {
+					$last_id_address = ManageUsersAddresses($UserName, $IPv4, $_POST['address'][$i], $_POST['is_active'][$i], 'hostname');
+				}
+			} else {
+				// IP is valid
+				if ( ValidateIPv4NoPriv($_POST['address'][$i]) ) {
+					// IP is valid
+					$HostName = gethostbyaddr($_POST['address'][$i]);
+					$last_id_address = ManageUsersAddresses($UserName, $_POST['address'][$i], $HostName, $_POST['is_active'][$i], 'ipv4');
+				} else {
+					// IP is not valid (private ?)
+					$success = false;
+					?><script type="text/javascript">generate_message('error', 5000, 'You must enter a public IPv4 address.');</script><?php
+				}
+			}			
+																
+			if ($last_id_address == false) {
+				$success = false;
+			}
+		}	
+	}
+
+	if ( isset($_POST['submit']) ) {
 		$success = true;
 		$count = count($_POST['input_id']);
 		
 		for($i=1; $i<=$count; $i++) {
-			$last_id_address = ManageUsersAddresses($UserName, $_POST['address'][$i], $_POST['is_active'][$i]);
-																
+			$last_id_address = $MySB_DB->update("users_addresses", ["is_active" => $_POST['is_active'][$i]], [
+																											"AND" => [
+																												"ipv4" => $_POST['ipv4'][$i],
+																												"hostname" => $_POST['hostname'][$i]
+																											]
+																										]);
+			
 			if ($last_id_address == false) {
 				$success = false;
-			}																		
-		}
-		
-		if ( $success == true ) {
-			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
-		} else {
-			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to add addresses in the MySB database.');</script><?php
+			}			
 		}		
 	}
 
@@ -70,23 +98,30 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			if ( $result = 0 ) {
 				$success = false;
 			}			
-		}
-		
-		if ( $success == true ) {
-			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
-		} else {
-			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to delete address.');</script><?php
 		}			
+	}
+
+	if ( $success == true ) {
+		?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
+	} else {
+		?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to add addresses in the MySB database.');</script><?php
 	}	
 }
 
-$AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserID"]);
+$IfExist = $MySB_DB->get("users_addresses", "id_users_addresses", [
+																	"AND" => [
+																		"id_users" => "$UserID",
+																		"ipv4" => "$UserAddress"
+																	]
+																]);	
 
 if ( $IfExist > 0 ) {
 	$add_current_ip = '';
 } else {
 	$add_current_ip = 'value="'.$UserAddress.'"';
 }
+
+$AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserID"]);
 ?>
 
 <style>
@@ -129,7 +164,9 @@ if ( $IfExist > 0 ) {
 	<div align="center">
 		<table style="border-spacing:1;">
 			<tr>
-				<th style="text-align:center;">Address</th>
+				<th style="text-align:center;">IPv4</th>
+				<th style="text-align:center;">Hostname</th>
+				<th style="text-align:center;">Check by</th>
 				<th style="text-align:center;">Active ?</th>
 				<th style="text-align:center;">Delete ?</th>
 			</tr>						
@@ -156,9 +193,16 @@ foreach($AddressesList as $Address) {
 ?>				
 			<tr>
 				<td>
-					<input style="width:150px;" type="hidden" name="address[<?php echo $i; ?>]" value="<?php echo $Address["address"]; ?>" />
-					<?php echo $Address["address"]; ?>
-				</td>					
+					<input style="width:150px;" type="hidden" name="ipv4[<?php echo $i; ?>]" value="<?php echo $Address["ipv4"]; ?>" />
+					<?php echo $Address["ipv4"]; ?>
+				</td>
+				<td>
+					<input style="width:150px;" type="hidden" name="hostname[<?php echo $i; ?>]" value="<?php echo $Address["hostname"]; ?>" />
+					<?php echo $Address["hostname"]; ?>
+				</td>
+				<td>
+					<?php echo $Address["check_by"]; ?>	
+				</td>				
 				<td>
 					<?php echo $is_active; ?>	
 				</td>

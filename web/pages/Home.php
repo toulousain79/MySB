@@ -34,7 +34,7 @@ $EmptyAddresses = $MySB_DB->get("users_addresses", "id_users_addresses", [
 																		]
 																	]);	
 
-echo '<h1><div align="center">Hi '.$UserName.', welcome to MySB Portal !</div></h1>';
+echo '<h1><div align="center">Hi '.$UserName.', welcome to MySB portal !</div></h1>';
 
 if ( $IsMainUser ) {
 	echo '

@@ -102,30 +102,6 @@ INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [com
 INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (15, 'DNScrypt-proxy', 'dnscrypt-proxy', 'service dnscrypt-proxy', null);
 INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (16, 'BIND', '/etc/bind/named.conf', 'service bind9', null);
 
--- Table: users
-CREATE TABLE users ( 
-    id_users      INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                  NOT NULL ON CONFLICT ABORT,
-    users_ident   VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT IGNORE,
-    users_email   VARCHAR( 260 )  NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT IGNORE,
-    users_passwd  VARCHAR( 32 ),
-    rpc           VARCHAR( 64 ),
-    sftp          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                  DEFAULT ( 1 ),
-    sudo          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                  DEFAULT ( 0 ),
-    admin         BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                  DEFAULT ( 0 ),
-    fixed_ip      VARCHAR( 128 ),
-    no_ip         VARCHAR( 128 ),
-    scgi_port     INTEGER( 5 ),
-    rtorrent_port INTEGER( 5 ),
-    home_dir      VARCHAR( 128 ) 
-);
-
-
 -- Table: vars
 CREATE TABLE vars ( 
     id_vars            INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -290,12 +266,45 @@ CREATE TABLE trackers_addresses (
 );
 
 
+-- Table: users
+CREATE TABLE users ( 
+    id_users      INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                  NOT NULL ON CONFLICT ABORT,
+    users_ident   VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT IGNORE,
+    users_email   VARCHAR( 260 )  NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT IGNORE,
+    users_passwd  VARCHAR( 32 ),
+    rpc           VARCHAR( 64 ),
+    sftp          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
+                                  DEFAULT ( 1 ),
+    sudo          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
+                                  DEFAULT ( 0 ),
+    admin         BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
+                                  DEFAULT ( 0 ),
+    scgi_port     INTEGER( 5 ),
+    rtorrent_port INTEGER( 5 ),
+    home_dir      VARCHAR( 128 ) 
+);
+
+
+-- Table: trackers_list_ipv4
+CREATE TABLE trackers_list_ipv4 ( 
+    id_trackers_list_ipv4 INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                          NOT NULL ON CONFLICT ABORT,
+    id_trackers_list      INTEGER         NOT NULL ON CONFLICT ABORT,
+    ipv4                  VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT 
+);
+
+
 -- Table: users_addresses
 CREATE TABLE users_addresses ( 
     id_users_addresses INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
                                        NOT NULL ON CONFLICT ABORT,
     id_users           INTEGER         NOT NULL ON CONFLICT ABORT,
-    address            VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT,
+    ipv4               VARCHAR( 15 )   NOT NULL ON CONFLICT ABORT,
+    hostname           VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT,
+    check_by           VARCHAR( 8 )    NOT NULL ON CONFLICT ABORT,
     is_active          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
                                        DEFAULT ( 0 ) 
 );

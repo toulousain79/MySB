@@ -157,7 +157,8 @@ foreach($TrackersList as $Tracker) {
 				<td>
 					<select style="width:140px;">
 <?php
-						foreach(array_map('trim', explode(" ",$Tracker["ipv4"])) as $IPv4) {					
+						$IPv4_List = $MySB_DB->get("trackers_list_ipv4", "ipv4", ["AND" => ["id_trackers_list" => $Tracker["id_trackers_list"]]]);
+						foreach($IPv4_List as $IPv4) {					
 							echo '<option>' .$IPv4. '</option>';
 						}
 ?>								
