@@ -29,11 +29,13 @@ if ($_SERVER['PHP_AUTH_USER'] == '##MySB_User##') {
 }
 
 function printUser($user) {
-	$database = new medoo_MySB();
+	$MySB_DB = new medoo_MySB();
 	// Users table
-	$users_datas = $database->get("users", "*", ["users_ident" => $_SERVER['PHP_AUTH_USER']]);	
+	$users_datas = $MySB_DB->get("users", "*", ["users_ident" => $_SERVER['PHP_AUTH_USER']]);	
 	// System table
-	$system_datas = $database->get("system", "*", ["id_system" => 1]);
+	$system_datas = $MySB_DB->get("system", "*", ["id_system" => 1]);
+	// User ID
+	$UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$user"]);	
 
 	echo '<table width="100%" border="0" align="left">';
 	
@@ -44,17 +46,21 @@ function printUser($user) {
 	// Username
 	echo '<tr align="left"><th width="15%" scope="row">Username</th>';
 	echo '<td>' . $user . '</td>';
-	echo '<td></td></tr>';		
+	echo '<td></td></tr>';
 	// IP Address
-	if ( trim($users_datas["fixed_ip"]) == 'blank' ) {
-		$comments .= '<a href="https://' . $user . ':##TempPassword##@' . $_SERVER['HTTP_HOST'] . '/?user/manage-ip.html">Before changing your temporary password, thank you to confirm your IP address HERE!</a>';
-		$opts = 'bgcolor="#FF6666"';
-	} else {
-		$comments = 'Public IP addresses used for web access restriction. You can manage this list <a href="https://' . $_SERVER['HTTP_HOST'] . '/?user/manage-ip.html">here</a>.';
+	$IPv4_List = $MySB_DB->select("users_addresses", "ipv4", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
+	$comments = 'Public IP addresses used for access restriction. You can manage this list <a href="https://' . $_SERVER['HTTP_HOST'] . '/?user/manage-addresses.html">here</a>.';
+	echo '<tr align="left"><th width="15%" scope="row">IP Address</th><td>';
+	if ( $IPv4_List != "" ) {
 		$opts = '';
-	}		
-	echo '<tr align="left"><th width="15%" scope="row">IP Address</th>';
-	echo '<td>' . $users_datas["fixed_ip"] . '</td>';
+		echo '<select style="cursor: pointer;">';
+		foreach($IPv4_List as $IPv4) {
+			echo '<option>' .$IPv4. '</option>';
+		}		
+		echo '</select>';
+	} else {
+		$opts = '';
+	}
 	echo '<td ' . $opts . '><span class="Comments">' . $comments . '</span></td></tr>';
 	// Password
 	if ( isset($users_datas["users_passwd"]) ) {
@@ -194,14 +200,14 @@ function printUser($user) {
 	echo '<tr align="left"><th width="15%" scope="row">ruTorrent</th>';	
 	echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">ruTorrent interface</span></a></td></tr>';
 	// Seedbox-Manager
-	$is_installed = $database->get("services", "is_installed", ["serv_name" => "Seedbox-Manager"]);
+	$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "Seedbox-Manager"]);
 	if ( $is_installed == '1' ) {		
 		$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/sm';
 		echo '<tr align="left"><th width="15%" scope="row">Seedbox-Manager</th>';
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Seedbox-Manager interface</span></a></td></tr>';
 	}
 	// OpenVPN
-	$is_installed = $database->get("services", "is_installed", ["serv_name" => "OpenVPN"]);
+	$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "OpenVPN"]);
 	if ( $is_installed == '1' ) {
 		// OpenVPN config
 		$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?user/openvpn-config-file.html';
@@ -213,7 +219,7 @@ function printUser($user) {
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Download here GUI for OpenVPN.</span></a></td></tr>';
 	}
 	// CakeBox Light
-	$CakeboxDatas = $database->get("services", "*", ["serv_name" => "CakeBox-Light"]);
+	$CakeboxDatas = $MySB_DB->get("services", "*", ["serv_name" => "CakeBox-Light"]);
 	if ( $CakeboxDatas["is_installed"] == '1' ) {
 		$Link = 'https://' . $system_datas["hostname"] . ':' . $CakeboxDatas["ports_tcp"] . '/';
 		echo '<tr align="left"><th width="15%" scope="row">CakeBox Light</th>';			
@@ -221,7 +227,7 @@ function printUser($user) {
 	}
 	if ( $users_datas["admin"] == '1' ) {
 		// Webmin
-		$WebminDatas = $database->get("services", "*", ["serv_name" => "Webmin"]);
+		$WebminDatas = $MySB_DB->get("services", "*", ["serv_name" => "Webmin"]);
 		if ( $WebminDatas["is_installed"] == '1' ) {
 			$Link = 'https://' . $system_datas["hostname"] . ':' . $WebminDatas["ports_tcp"] . '/';
 			echo '<tr align="left"><th width="15%" scope="row">Webmin</th>';			
@@ -242,7 +248,7 @@ function printUser($user) {
 		echo '<td colspan="2"><span class="Comments"><a href="' . $Link1 . '">Manage your trackers here.</a> You can also <a href="' . $Link2 . '">add new tracker here</a>.</span></td></tr>';		
 	}
 
-	$RentingDatas = $database->get("renting", "*", ["id_renting" => 1]);
+	$RentingDatas = $MySB_DB->get("renting", "*", ["id_renting" => 1]);
 	if ( isset($RentingDatas["global_cost"]) ) {
 		//////////////////////
 		// Price and Payment info

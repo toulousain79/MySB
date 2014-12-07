@@ -26,7 +26,7 @@ source /etc/MySB/inc/includes_before
 
 #### Create DB
 if [ ! -f $SQLiteDB ]; then
-	sqlite3 -echo $SQLiteDB < /etc/MySB/templates/MySB_2014-11-04.dump.sql;
+	sqlite3 -echo $SQLiteDB < /etc/MySB/templates/MySB_2014-11-30.dump.sql;
 fi
 
 #### Import users files to database
@@ -45,7 +45,15 @@ if [ -d /etc/MySB/users/ ]; then
 		UserRtorrentPort="$(cat $SeedboxUser.info | grep 'rTorrent port=' | awk '{ print $3 }')"
 		UserHomeDir="$(cat $SeedboxUser.info | grep 'Home=' | awk '{ print $2 }')"
 		
-		sqlite3 -echo $SQLiteDB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,admin,fixed_ip,scgi_port,rtorrent_port,home_dir) VALUES (\"$UserName\",\"$UserEmail\",\"$UserPassword\",\"$UserRPC\",\"$UserSSH\",\"$UserSudo\",\"0\",\"$UserIP\",\"$UserScgiPort\",\"$UserRtorrentPort\",\"$UserHomeDir\");"
+		sqlite3 -echo $SQLiteDB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,admin,scgi_port,rtorrent_port,home_dir) VALUES (\"$UserName\",\"$UserEmail\",\"$UserPassword\",\"$UserRPC\",\"$UserSSH\",\"$UserSudo\",\"0\",\"$UserScgiPort\",\"$UserRtorrentPort\",\"$UserHomeDir\");"
+		MainUserId="`sqlite3 $SQLiteDB \"SELECT id_users FROM users WHERE admin = '1'\"`"
+		
+		IFS=$','
+		for ip in $UserIP; do 
+			HostName="$(nslookup $ip | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
+			sqlite3 -echo $SQLiteDB "INSERT into users_addresses (id_users,ipv4,hostname,check_by,is_active) VALUES (\"$MainUserId\",\"$ip\",\"$HostName\",\"ipv4\",\"1\");"
+		done
+		unset IFS		
 	done
 	
 	rm -rf /etc/MySB/users/

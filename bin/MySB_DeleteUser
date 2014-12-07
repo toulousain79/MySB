@@ -79,18 +79,10 @@ StatusLSB
 
 #### NginX
 log_daemon_msg "Remove the access permission to the web server for $NEWUSER"
-sqlite3 $SQLiteDB "SELECT address,no_ip FROM users_addresses WHERE id_users = '$UserId'" | while read ROW; do
-	Address=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
-	Address=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
-	sed -i '/'$Address'/d' /etc/nginx/locations/MySB.conf
+sqlite3 $SQLiteDB "SELECT ipv4 FROM users_addresses WHERE id_users = '$UserId'" | while read ROW; do
+	IPv4=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
+	sed -i '/'$IPv4'/d' /etc/nginx/locations/MySB.conf
 done
-
-IP="`sqlite3 $SQLiteDB \"SELECT fixed_ip FROM users WHERE users_ident = '$NEWUSER'\"`"
-IFS=$','
-for ip in $USERIP; do 
-	sed -i '/'$ip'/d' /etc/nginx/locations/MySB.conf
-done
-unset IFS
 StatusLSB
 
 #### remove current password from htpassword
@@ -123,7 +115,8 @@ fi
 if [ -d /etc/MySB/web/seedbox-manager/conf/users/$NEWUSER ]; then
 	sudo rm -rf /etc/MySB/web/seedbox-manager/conf/users/$NEWUSER
 fi
-sqlite3 $SQLiteDB "DELETE FROM users WHERE users_ident = '$NEWUSER';"
+sqlite3 $SQLiteDB "DELETE FROM users_addresses WHERE id_users = '$UserId'"
+sqlite3 $SQLiteDB "DELETE FROM users WHERE users_ident = '$NEWUSER'"
 StatusLSB
 
 #### delete iptables rules

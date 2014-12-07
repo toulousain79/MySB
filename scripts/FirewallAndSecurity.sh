@@ -57,41 +57,27 @@ case $1 in
 		fi		
 	;;
 	new)
-		#### ManageIP.php
-		# if [ ! -z "$2" ] && [ ! -z "$3" ] && [ ! -z "$4" ]; then
-			# log_daemon_msg "Manage IP for $2"
-			# SeedboxUser="$2"
-			# CurrentList="$3"
-			# NewList="$4"			
-
-			# sqlite3 $SQLiteDB "UPDATE users SET fixed_ip = '$NewList' WHERE users_ident = '$SeedboxUser';"
-			# unset CurrentList NewList SeedboxUser
-			# StatusLSB
-		# fi		
+		#### Create users list ($UsersList)
+		ListingUsers
 	
 		#### Seedbox users IPs
 		log_daemon_msg "Creating IP white lists"
-		ListingUsers	
-		for SeedboxUser in $UsersList; do
-			UserIPs="`sqlite3 $SQLiteDB \"SELECT fixed_ip FROM users WHERE users_ident = '$SeedboxUser'\"`"
-			
-			IFS=$','
-			for ip in $UserIPs; do 
-				IfExist=`echo $Fail2banWhiteList | grep $ip`
-				if [ -z $IfExist ] && [ $ip != "blank" ]; then	
-					Fail2banWhiteList="${Fail2banWhiteList} ${ip}/32"
-				fi
-				IfExist=`echo $SeedboxUsersIPs | grep $ip`
-				if [ -z $IfExist ] && [ $ip != "blank" ]; then	
-					SeedboxUsersIPs="${SeedboxUsersIPs} ${ip}"
-				fi				
-			done
-			unset IFS ip
+		
+		sqlite3 $SQLiteDB "SELECT ipv4 FROM users_addresses WHERE is_active = '1'" | while read ROW; do
+			IPv4=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
+			IfExist=`echo $Fail2banWhiteList | grep $IPv4`
+			if [ -z $IfExist ]; then	
+				Fail2banWhiteList="${Fail2banWhiteList} ${IPv4}/32"
+			fi
+			IfExist=`echo $SeedboxUsersIPs | grep $IPv4`
+			if [ -z $IfExist ]; then	
+				SeedboxUsersIPs="${SeedboxUsersIPs} ${IPv4}"
+			fi			
 		done
 		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 			for ip in $VpnIPs; do 
 				IfExist=`echo $Fail2banWhiteList | grep $ip`
-				if [ -z $IfExist ] && [ $ip != "blank" ]; then	
+				if [ -z $IfExist ]; then	
 					Fail2banWhiteList="${Fail2banWhiteList} ${ip}"
 				fi			
 			done
@@ -251,7 +237,7 @@ case $1 in
 
 		#### NginX
 		if [ -f /etc/nginx/locations/MySB.conf ]; then
-			# Delete IP restriction for NginX			
+			# Add authorized users IP to NginX			
 			log_daemon_msg "Allow access to web server for all users"
 			for ip in $SeedboxUsersIPs; do 
 				awk '{ print } /allow 127.0.1.1;/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
@@ -261,10 +247,10 @@ case $1 in
 			unset ip					
 			StatusLSB
 			
-			# Delete IP restriction for NginX			
-			log_daemon_msg "Allow access to some page for '$MainUser'"
-
-			for ip in $(echo $MainUserIPs | sed 's/,/ /g;'); do 
+			# Add authorized main user IP to NginX			
+			log_daemon_msg "Allow access to some page for '$MainUser'"		
+			
+			for ip in $(echo $MainUserIPs); do 
 				awk '{ print } /## Restricted to mainuser ##/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
 				perl -pi -e "s/<ip>/$ip/g" /etc/MySB/files/MySB_location.conf
 				mv /etc/MySB/files/MySB_location.conf /etc/nginx/locations/MySB.conf
@@ -425,11 +411,13 @@ EOF
 EOF
 			) > /etc/pgl/allow.p2p
 
-			sqlite3 $SQLiteDB "SELECT tracker,ipv4 FROM trackers_list WHERE is_active = '1'" | while read ROW; do
+			sqlite3 $SQLiteDB "SELECT id_trackers_list,tracker FROM trackers_list WHERE is_active = '1'" | while read ROW; do
+				IdTracker=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
 				TrackerName=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
-				TrackerIPv4=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
-				
-				echo "$TrackerName:$TrackerIPv4-255.255.255.255" >> /etc/pgl/allow.p2p
+				sqlite3 $SQLiteDB "SELECT ipv4 FROM trackers_list_ipv4 WHERE is_active = '$IdTracker'" | while read ROW; do
+					TrackerIPv4=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
+					echo "$TrackerName:$TrackerIPv4-255.255.255.255" >> /etc/pgl/allow.p2p
+				done
 			done			
 		fi
 	;;

@@ -114,21 +114,6 @@ CREATE TABLE vars (
 
 INSERT INTO [vars] ([id_vars], [fail2ban_whitelist], [vpn_ip], [white_tcp_port_out], [white_udp_port_out]) VALUES (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24', '80 443', null);
 
--- Table: trackers_list
-CREATE TABLE trackers_list ( 
-    id_trackers_list INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                     NOT NULL ON CONFLICT ABORT,
-    tracker          VARCHAR( 128 )  NOT NULL ON CONFLICT IGNORE
-                                     UNIQUE ON CONFLICT IGNORE,
-    tracker_domain   VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT
-                                     UNIQUE ON CONFLICT IGNORE,
-    origin           VARCHAR( 9 )    NOT NULL ON CONFLICT ABORT,
-    ipv4             VARCHAR( 128 ),
-    is_ssl           BOOLEAN( 1 )    DEFAULT ( 0 ),
-    is_active        BOOLEAN( 1 )    DEFAULT ( 0 ) 
-);
-
-
 -- Table: rtorrent_blocklists
 CREATE TABLE rtorrent_blocklists ( 
     id_rtorrent_blocklists INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -288,15 +273,6 @@ CREATE TABLE users (
 );
 
 
--- Table: trackers_list_ipv4
-CREATE TABLE trackers_list_ipv4 ( 
-    id_trackers_list_ipv4 INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                          NOT NULL ON CONFLICT ABORT,
-    id_trackers_list      INTEGER         NOT NULL ON CONFLICT ABORT,
-    ipv4                  VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT 
-);
-
-
 -- Table: users_addresses
 CREATE TABLE users_addresses ( 
     id_users_addresses INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -307,5 +283,28 @@ CREATE TABLE users_addresses (
     check_by           VARCHAR( 8 )    NOT NULL ON CONFLICT ABORT,
     is_active          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
                                        DEFAULT ( 0 ) 
+);
+
+
+-- Table: trackers_list_ipv4
+CREATE TABLE trackers_list_ipv4 ( 
+    id_trackers_list_ipv4 INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                          NOT NULL ON CONFLICT ABORT,
+    id_trackers_list      INTEGER         NOT NULL ON CONFLICT ABORT,
+    ipv4                  VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT 
+);
+
+
+-- Table: trackers_list
+CREATE TABLE trackers_list ( 
+    id_trackers_list INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                     NOT NULL ON CONFLICT ABORT,
+    tracker          VARCHAR( 128 )  NOT NULL ON CONFLICT IGNORE
+                                     UNIQUE ON CONFLICT IGNORE,
+    tracker_domain   VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE,
+    origin           VARCHAR( 9 )    NOT NULL ON CONFLICT ABORT,
+    is_ssl           BOOLEAN( 1 )    DEFAULT ( 0 ),
+    is_active        BOOLEAN( 1 )    DEFAULT ( 0 ) 
 );
 

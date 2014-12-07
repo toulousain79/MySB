@@ -249,11 +249,12 @@ sqlite3 $SQLiteDB "UPDATE smtp SET smtp_provider = '$Smtp_Provider', smtp_userna
 # 'users' table (Main user)
 sqlite3 $SQLiteDB "INSERT into users (users_ident,users_email,users_passwd,sftp,sudo,admin) VALUES (\"$NEWUSER\",\"$MainUserEmail\",\"$PASSWORD\",\"1\",\"1\",\"1\");"
 
-# 'users_addresses' table (Main user)
+# 'users_addresses' table
 MainUserId=$(sqlite3 $SQLiteDB "SELECT id_users FROM users WHERE users_ident = '$NEWUSER'")
 IFS=$','
-for ip in $MainUserIPs; do 
-	sqlite3 $SQLiteDB "INSERT into users_addresses (id_users,address,is_active) VALUES (\"$MainUserId\",\"$ip\",\"1\");"
+for ip in $MainUserIPs; do
+	HostName="$(nslookup $ip | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
+	sqlite3 $SQLiteDB "INSERT into users_addresses (id_users,ipv4,hostname,is_active) VALUES (\"$MainUserId\",\"$ip\",\"$HostName\",\"1\");"
 done
 unset IFS
 	
