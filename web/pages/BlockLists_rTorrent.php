@@ -29,8 +29,8 @@ if(isset($_POST)==true && empty($_POST)==false) {
 	if (isset($_POST['submit'])) {
 		$success = true;
 		
-		for($i=0, $count = count($_POST['tracker_domain']);$i<$count;$i++) {
-			$result = $MySB_DB->update("trackers_list", ["is_active" => $_POST['is_active'][$i]], ["tracker_domain" => $_POST['tracker_domain'][$i]]);
+		for($i=0, $count = count($_POST['id_rtorrent_blocklists']);$i<$count;$i++) {
+			$result = $MySB_DB->update("rtorrent_blocklists", ["is_active" => $_POST['is_active'][$i]], ["id_rtorrent_blocklists" => $_POST['id_rtorrent_blocklists'][$i]]);
 			
 			if ( $result != 1 ) {
 				$success = false;
@@ -44,33 +44,9 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to update tracker in the MySB database.');</script><?php
 		}		
 	}
-	
-	if (isset($_POST['delete'])) {
-		$success = true;
-		$count = count($_POST['delete']);
-		
-		foreach($_POST['delete'] as $key => $value) {
-			$result = $MySB_DB->delete("trackers_list_ipv4", ["AND" => ["id_trackers_list" => $key]]);
-			if ( $result = 0 ) {
-				$success = false;
-			}			
-		
-			$result = $MySB_DB->delete("trackers_list", ["AND" => ["id_trackers_list" => $key]]);
-			if ( $result = 0 ) {
-				$success = false;
-			}			
-		}
-		
-		if ( $success == true ) {
-			IfApplyConfig(1);
-			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
-		} else {
-			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to delete tracker.');</script><?php
-		}			
-	}
 }
 
-$TrackersList = $MySB_DB->select("trackers_list", "*", ["ORDER" => "trackers_list.tracker_domain ASC"]);
+$BlockList = $MySB_DB->select("rtorrent_blocklists", "*");
 ?>
 
 <style>
@@ -95,40 +71,28 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["ORDER" => "trackers_lis
 		
 		<table style="border-spacing:1;">
 			<tr>
-				<th style="text-align:center;">Domain</th>
-				<th style="text-align:center;">Address</th>
-				<th style="text-align:center;">Origin</th>
-				<th style="text-align:center;">IPv4</th>
-				<th style="text-align:center;">SSL ?</th>
+				<th style="text-align:center;">Name</th>
+				<th style="text-align:center;">Blocklist</th>
+				<th style="text-align:center;">Default ?</th>
 				<th style="text-align:center;">Active ?</th>
-				<th style="text-align:center;">Delete ?</th>
 			</tr>						
 				
 <?php
-foreach($TrackersList as $Tracker) {
-	switch ($Tracker["origin"]) {
-		case 'users':
-			$origin = '<input class="submit" name="delete['. $Tracker["id_trackers_list"] .']" type="submit" value="Delete" />';
-			break;		
-		default:
-			$origin = '';
-			break;
-	}
-
-	switch ($Tracker["is_ssl"]) {
+foreach($BlockList as $List) {
+	switch ($List["default"]) {
 		case '0':
-			$is_ssl = '	<select name="is_ssl[]" style="width:60px; background-color:#FEBABC;" disabled>
+			$default = '<select name="default[]" style="width:60px; background-color:#FEBABC;" disabled>
 							<option value="0" selected="selected">No</option>
 						</select>';
 			break;		
 		default:
-			$is_ssl = '	<select name="is_ssl[]" style="width:60px; background-color:#B3FEA5;" disabled>
+			$default = '<select name="default[]" style="width:60px; background-color:#B3FEA5;" disabled>
 							<option value="1" selected="selected">Yes</option>
 						</select>';
 			break;
 	}
 	
-	switch ($Tracker["is_active"]) {
+	switch ($List["is_active"]) {
 		case '0':
 			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 								<option value="0" selected="selected" class="redText">No</option>
@@ -145,39 +109,23 @@ foreach($TrackersList as $Tracker) {
 ?>				
 			<tr>
 				<td>
-					<input style="width:150px;" type="hidden" name="tracker_domain[]" value="<?php echo $Tracker["tracker_domain"]; ?>" />
-					<?php echo $Tracker["tracker_domain"]; ?>
+					<input style="width:120px;" type="hidden" name="name[]" value="<?php echo $List["name"]; ?>" />
+					<?php echo $List["name"]; ?>
+				</td>			
+				<td>
+					<input style="width:180px;" type="hidden" name="blocklists[]" value="<?php echo $List["blocklists"]; ?>" />
+					<?php echo '<a target="_blank" href="' . $List["url_info"] . '">' . $List["blocklists"] . '</a>'; ?>
 				</td>
 				<td>
-					<input style="width:180px;" type="hidden" name="tracker[]" value="<?php echo $Tracker["tracker"]; ?>" />
-					<?php echo $Tracker["tracker"]; ?>
-				</td>
-				<td>
-					<input style="width:60px;" type="hidden" name="origin[]" value="<?php echo $Tracker["origin"]; ?>" />
-					<?php echo $Tracker["origin"]; ?>
-				</td>					
-				<td>
-					<select style="width:140px;">
-<?php
-						$IPv4_List = $MySB_DB->select("trackers_list_ipv4", "ipv4", ["AND" => ["id_trackers_list" => $Tracker["id_trackers_list"]]]);
-						foreach($IPv4_List as $IPv4) {					
-							echo '<option>' .$IPv4. '</option>';
-						}
-?>								
-					</select>
-				</td>
-				<td>
-					<?php echo $is_ssl; ?>			
+					<?php echo $default; ?>			
 				</td>
 				<td>
 					<?php echo $is_active; ?>				
-				</td>
-				<td>
-					<?php echo $origin; ?>
 				</td>					
 			</tr>
+			<input type="hidden" name="id_rtorrent_blocklists[]" value="<?php echo $List["id_rtorrent_blocklists"]; ?>" />
 <?php
-} // foreach($TrackersList as $Tracker) {
+} // foreach($BlockList as $List) {
 ?>			
 
 		</table>

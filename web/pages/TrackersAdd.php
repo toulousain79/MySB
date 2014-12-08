@@ -39,6 +39,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 		}
 		
 		if ( $success == true ) {
+			IfApplyConfig(1);
 			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
 		} else {
 			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to add trackers in the MySB database.');</script><?php
@@ -50,18 +51,19 @@ if(isset($_POST)==true && empty($_POST)==false) {
 		$count = count($_POST['delete']);
 		
 		foreach($_POST['delete'] as $key => $value) {
-			$result = $MySB_DB->delete("trackers_list", [
-				"AND" => [
-					"id_trackers_list" => $key
-				]
-			]);
+			$result = $MySB_DB->delete("trackers_list_ipv4", ["AND" => ["id_trackers_list" => $key]]);
+			if ( $result = 0 ) {
+				$success = false;
+			}
 			
+			$result = $MySB_DB->delete("trackers_list", ["AND" => ["id_trackers_list" => $key]]);
 			if ( $result = 0 ) {
 				$success = false;
 			}			
 		}
 		
 		if ( $success == true ) {
+			IfApplyConfig(1);
 			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
 		} else {
 			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to delete tracker.');</script><?php
@@ -115,7 +117,6 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["origin" => "users", "OR
 			<tr>
 				<th style="text-align:center;">Domain</th>
 				<th style="text-align:center;">Address</th>
-				<th style="text-align:center;">Origin</th>
 				<th style="text-align:center;">IPv4</th>
 				<th style="text-align:center;">SSL ?</th>
 				<th style="text-align:center;">Active ?</th>
@@ -163,15 +164,11 @@ foreach($TrackersList as $Tracker) {
 				<td>
 					<input style="width:180px;" type="hidden" name="tracker[<?php echo $i; ?>]" value="<?php echo $Tracker["tracker"]; ?>" />
 					<?php echo $Tracker["tracker"]; ?>
-				</td>
-				<td>
-					<input style="width:60px;" type="hidden" name="origin[<?php echo $i; ?>]" value="<?php echo $Tracker["origin"]; ?>" />
-					<?php echo $Tracker["origin"]; ?>
-				</td>					
+				</td>				
 				<td>
 					<select style="width:140px;">
 <?php
-						$IPv4_List = $MySB_DB->get("trackers_list_ipv4", "ipv4", ["AND" => ["id_trackers_list" => $Tracker["id_trackers_list"]]]);
+						$IPv4_List = $MySB_DB->select("trackers_list_ipv4", "ipv4", ["AND" => ["id_trackers_list" => $Tracker["id_trackers_list"]]]);
 						foreach($IPv4_List as $IPv4) {					
 							echo '<option>' .$IPv4. '</option>';
 						}

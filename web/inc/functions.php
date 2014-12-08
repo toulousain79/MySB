@@ -126,7 +126,7 @@ function ManageUsersTrackers($TrackerDomain, $IsActive) {
 														"is_active" => "$IsActive"
 													]);
 
-		$DnsRecords = dns_get_record("cpasbien.pe", $type = DNS_A);
+		$DnsRecords = dns_get_record("$TrackerDomain", $type = DNS_A);
 		foreach($DnsRecords as $Record) {
 			$value = $MySB_DB->insert("trackers_list_ipv4", [
 															"id_trackers_list" => "$id_trackers_list",
@@ -214,6 +214,23 @@ function ValidateIPv4NoPriv($ip) {
 	} else {
 		return false;
 	}
+}
+
+// Can I activate 'Apply' button ?
+function IfApplyConfig($switch = '-1') {
+	$MySB_DB = new medoo_MySB();
+	
+	switch ($switch) {
+		case "0":
+		case "1":
+			$Apply = $MySB_DB->update("vars", ["apply_config" => "$switch"], ["id_vars" => 1]);
+			break;		
+		default:
+			$Apply = $MySB_DB->get("vars", "apply_config", ["id_vars" => 1]);
+			break;
+	}	
+
+	return $Apply;
 }
 
 //#################### LAST LINE ######################################

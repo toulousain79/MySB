@@ -22,55 +22,58 @@
 //
 //#################### FIRST LINE #####################################
 
-$MySB_DB = new medoo_MySB();
+echo '<div id="jQ-menu">';
 
-// Vars
-$UserName = $_SERVER['PHP_AUTH_USER'];
-$IsMainUser = (MainUser()) ? true : false;
-$UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$UserName"]);
-$EmptyAddresses = $MySB_DB->get("users_addresses", "id_users_addresses", [
-																		"AND" => [
-																			"id_users" => "$UserID"
-																		]
-																	]);	
+$path = "./logs/";
 
-echo '<h1><div align="center">Hi '.$UserName.', welcome to MySB portal !</div></h1>';
-
-if ( $IsMainUser ) {
-	echo '
-		<p></p>
-		<p>As the main user you have additional features, such as:</p>
-		<ul style="margin-left: 100px">
-			<li>The trackers activation</li>
-			<li>The addition of new trackers</li>
-			<li>Blocklists activation for rTorrent and/or PeerGuardian <span class="Comments">(if installed)</span></li>
-			<li>Rental management</li>
-			<li>Viewing logs</li>
-		</ul>
-		<p>More of the following:</p>
-		<ul style="margin-left: 100px">
-			<li>Display your account information</li>
-			<li>Change your password</li>
-			<li>Manage your authorized connection addresses <span class="Comments">(IP or dynamic DNS)</span></li>
-			<li>Download the configuration files for OpenVPN <span class="Comments">(if installed)</span></li>
-		</ul>		
-	';
-} else {
-	echo '
-		<p></p>
-		<p>As a normal user, you have the following possibilities:</p>
-		<ul style="margin-left: 100px">
-			<li>Display your account information</li>
-			<li>Change your password</li>
-			<li>Manage your authorized connection addresses (IP or dynamic DNS)</li>
-			<li>Download the configuration files for OpenVPN (if installed)</li>
-		</ul>
-	';
-}
+	function createDir($path = '.')
+	{	
+		if ($handle = opendir($path)) 
+		{
+			echo "<ul>";
+		
+			while (false !== ($file = readdir($handle))) 
+			{
+				if (is_dir($path.$file) && $file != '.' && $file !='..')
+					printSubDir($file, $path, $queue);
+				else if ($file != '.' && $file !='..')
+					$queue[] = $file;
+			}
+			
+			printQueue($queue, $path);
+			echo "</ul>";
+		}
+	}
+	
+	function printQueue($queue, $path)
+	{
+		foreach ($queue as $file) 
+		{
+			printFile($file, $path);
+		} 
+	}
+	
+	function printFile($file, $path)
+	{
+		echo "<li><a target=\"_blank\" href=\"".$path.$file."\">$file</a></li>";
+	}
+	
+	function printSubDir($dir, $path)
+	{
+		echo "<li><span class=\"toggle\">$dir</span>";
+		createDir($path.$dir."/");
+		echo "</li>";
+	}
+	
+	createDir($path);
+	
+echo '</div>';
 ?>
-
-
-
+<!-- jQuery Color Plugin --> 
+<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.color.js"></script> 
+ 
+<!-- Import The jQuery Script --> 
+<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jMenu.js"></script> 
 <?php
 //#################### LAST LINE ######################################
 ?>

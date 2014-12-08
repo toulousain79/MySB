@@ -39,40 +39,6 @@ INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [i
 INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (9, 'rTorrent Block List', null, null, 0);
 INSERT INTO [services] ([id_services], [serv_name], [ports_tcp], [ports_udp], [is_installed]) VALUES (10, 'DNScrypt-proxy', null, '53 54 443 2053 5353', 1);
 
--- Table: system
-CREATE TABLE system ( 
-    id_system        INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                     NOT NULL ON CONFLICT ABORT,
-    mysb_version     VARCHAR( 6 )    NOT NULL ON CONFLICT ABORT
-                                     UNIQUE ON CONFLICT IGNORE,
-    mysb_user        VARCHAR( 32 )   UNIQUE ON CONFLICT IGNORE,
-    mysb_password    VARCHAR( 32 )   UNIQUE ON CONFLICT IGNORE,
-    hostname         VARCHAR( 128 )  UNIQUE ON CONFLICT IGNORE,
-    ipv4             VARCHAR( 15 )   UNIQUE ON CONFLICT IGNORE,
-    primary_inet     VARCHAR( 16 )   UNIQUE ON CONFLICT IGNORE,
-    timezone         VARCHAR( 64 )   UNIQUE ON CONFLICT IGNORE,
-    cert_password    VARCHAR( 13 )   UNIQUE ON CONFLICT IGNORE,
-    port_ftp         INTEGER( 5 )    NOT NULL ON CONFLICT ABORT
-                                     UNIQUE ON CONFLICT IGNORE
-                                     DEFAULT ( 8891 ),
-    port_ftp_data    INTEGER( 5 )    NOT NULL ON CONFLICT ABORT
-                                     UNIQUE ON CONFLICT IGNORE
-                                     DEFAULT ( 8800 ),
-    port_ftp_passive VARCHAR( 11 )   NOT NULL ON CONFLICT ABORT
-                                     UNIQUE ON CONFLICT IGNORE
-                                     DEFAULT ( '65000:65535' ),
-    port_ssh         INTEGER( 5 )    NOT NULL ON CONFLICT ABORT
-                                     UNIQUE ON CONFLICT IGNORE
-                                     DEFAULT ( 8892 ),
-    port_https       INTEGER         NOT NULL ON CONFLICT ABORT
-                                     UNIQUE ON CONFLICT IGNORE
-                                     DEFAULT ( 8889 ),
-    port_http        INTEGER         NOT NULL ON CONFLICT ABORT
-                                     UNIQUE ON CONFLICT IGNORE
-                                     DEFAULT ( 8888 ) 
-);
-
-
 -- Table: system_services
 CREATE TABLE system_services ( 
     id_system_services INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -101,18 +67,6 @@ INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [com
 INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (14, 'NFS', '/etc/exports', 'service nfs-kernel-server', null);
 INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (15, 'DNScrypt-proxy', 'dnscrypt-proxy', 'service dnscrypt-proxy', null);
 INSERT INTO [system_services] ([id_system_services], [short_name], [ident], [command], [args]) VALUES (16, 'BIND', '/etc/bind/named.conf', 'service bind9', null);
-
--- Table: vars
-CREATE TABLE vars ( 
-    id_vars            INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                      NOT NULL ON CONFLICT ABORT,
-    fail2ban_whitelist VARCHAR( 12 ),
-    vpn_ip             VARCHAR( 37 ),
-    white_tcp_port_out VARCHAR( 16 ),
-    white_udp_port_out VARCHAR( 16 ) 
-);
-
-INSERT INTO [vars] ([id_vars], [fail2ban_whitelist], [vpn_ip], [white_tcp_port_out], [white_udp_port_out]) VALUES (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24', '80 443', null);
 
 -- Table: rtorrent_blocklists
 CREATE TABLE rtorrent_blocklists ( 
@@ -165,55 +119,6 @@ INSERT INTO [rtorrent_blocklists] ([id_rtorrent_blocklists], [name], [blocklists
 INSERT INTO [rtorrent_blocklists] ([id_rtorrent_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (36, 'YOYO_ADSERVERS', 'http://list.iblocklist.com/?list=zhogegszwduurnvsyhdf&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=zhogegszwduurnvsyhdf', 0, 0);
 INSERT INTO [rtorrent_blocklists] ([id_rtorrent_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (37, 'PBLOCK_RAPIDSHARE', 'http://list.iblocklist.com/?list=zfucwtjkfwkalytktyiw&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=zfucwtjkfwkalytktyiw', 0, 0);
 INSERT INTO [rtorrent_blocklists] ([id_rtorrent_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (38, 'CIDR_BOGON', 'http://list.iblocklist.com/?list=lujdnbasfaaixitgmxpp&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=lujdnbasfaaixitgmxpp', 0, 0);
-
--- Table: peerguardian_blocklists
-CREATE TABLE peerguardian_blocklists ( 
-    id_peerguardian_blocklists INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                               NOT NULL ON CONFLICT ABORT,
-    blocklists                 VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT
-                                               UNIQUE ON CONFLICT IGNORE,
-    url_info                   VARCHAR( 256 ),
-    [default]                  BOOLEAN( 1 )    DEFAULT ( 0 ),
-    is_active                  BOOLEAN( 1 )    DEFAULT ( 0 ) 
-);
-
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (1, 'list.iblocklist.com/lists/atma/atma', 'https://www.iblocklist.com/list.php?list=tzmtqbbsgbtfxainogvm', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (2, 'list.iblocklist.com/lists/bluetack/ads-trackers-and-bad-pr0n', 'https://www.iblocklist.com/list.php?list=fruzekpkpzlmzozmuuhx', 1, 1);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (3, 'list.iblocklist.com/lists/bluetack/bad-peers', 'https://www.iblocklist.com/list.php?list=cwworuawihqvocglcoss', 1, 1);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (4, 'list.iblocklist.com/lists/bluetack/bogon', 'https://www.iblocklist.com/list.php?list=gihxqmhyunbxhbmgqrla', 1, 1);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (5, 'list.iblocklist.com/lists/bluetack/dshield', 'https://www.iblocklist.com/list.php?list=xpbqleszmajjesnzddhv', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (6, 'list.iblocklist.com/lists/bluetack/edu', 'https://www.iblocklist.com/list.php?list=imlmncgrkbnacgcwfjvh', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (7, 'list.iblocklist.com/lists/bluetack/for-non-lan-computers', 'https://www.iblocklist.com/list.php?list=jhaoawihmfxgnvmaqffp', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (8, 'list.iblocklist.com/lists/bluetack/forum-spam', 'https://www.iblocklist.com/list.php?list=ficutxiwawokxlcyoeye', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (9, 'list.iblocklist.com/lists/bluetack/hijacked', 'https://www.iblocklist.com/list.php?list=usrcshglbiilevmyfhse', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (10, 'list.iblocklist.com/lists/bluetack/iana-multicast', 'https://www.iblocklist.com/list.php?list=pwqnlynprfgtjbgqoizj', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (11, 'list.iblocklist.com/lists/bluetack/iana-private', 'https://www.iblocklist.com/list.php?list=cslpybexmxyuacbyuvib', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (12, 'list.iblocklist.com/lists/bluetack/iana-reserved', 'https://www.iblocklist.com/list.php?list=bcoepfyewziejvcqyhqo', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (13, 'list.iblocklist.com/lists/bluetack/level-1', 'https://www.iblocklist.com/list.php?list=ydxerpxkpcfqjaybcssw', 1, 1);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (14, 'list.iblocklist.com/lists/bluetack/level-2', 'https://www.iblocklist.com/list.php?list=gyisgnzbhppbvsphucsw', 1, 1);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (15, 'list.iblocklist.com/lists/bluetack/level-3', 'https://www.iblocklist.com/list.php?list=uwnukjqktoggdknzrhgh', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (16, 'list.iblocklist.com/lists/bluetack/microsoft', 'https://www.iblocklist.com/list.php?list=xshktygkujudfnjfioro', 1, 1);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (17, 'list.iblocklist.com/lists/bluetack/proxy', 'https://www.iblocklist.com/list.php?list=xoebmbyexwuiogmbyprb', 1, 1);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (18, 'list.iblocklist.com/lists/bluetack/range-test', 'https://www.iblocklist.com/list.php?list=plkehquoahljmyxjixpu', 1, 1);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (19, 'list.iblocklist.com/lists/bluetack/spider', 'https://www.iblocklist.com/list.php?list=mcvxsnihddgutbjfbghy', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (20, 'list.iblocklist.com/lists/bluetack/spyware', 'https://www.iblocklist.com/list.php?list=llvtlsjyoyiczbkjsxpf', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (21, 'list.iblocklist.com/lists/bluetack/web-exploit', 'https://www.iblocklist.com/list.php?list=ghlzqtqxnzctvvajwwag', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (22, 'list.iblocklist.com/lists/bluetack/webexploit-forumspam', 'https://www.iblocklist.com/list.php?list=ficutxiwawokxlcyoeye', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (23, 'list.iblocklist.com/lists/cidr-report/bogon', 'https://www.iblocklist.com/list.php?list=lujdnbasfaaixitgmxpp', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (24, 'list.iblocklist.com/lists/dchubad/faker', 'https://www.iblocklist.com/list.php?list=dcha_faker', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (25, 'list.iblocklist.com/lists/dchubad/hacker', 'https://www.iblocklist.com/list.php?list=dcha_hacker', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (26, 'list.iblocklist.com/lists/dchubad/pedophiles', 'https://www.iblocklist.com/list.php?list=dcha_pedophiles', 1, 1);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (27, 'list.iblocklist.com/lists/dchubad/spammer', 'https://www.iblocklist.com/list.php?list=dcha_spammer', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (28, 'list.iblocklist.com/lists/nexus23/ipfilterx', 'https://www.iblocklist.com/list.php?list=nxs23_ipfilterx', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (29, 'list.iblocklist.com/lists/peerblock/rapidshare', 'https://www.iblocklist.com/list.php?list=zfucwtjkfwkalytktyiw', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (30, 'list.iblocklist.com/lists/spamhaus/drop', 'https://www.iblocklist.com/list.php?list=zbdlwrqkabxbcppvrnos', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (31, 'list.iblocklist.com/lists/tbg/bogon', 'https://www.iblocklist.com/list.php?list=ewqglwibdgjttwttrinl', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (32, 'list.iblocklist.com/lists/tbg/business-isps', 'https://www.iblocklist.com/list.php?list=jcjfaxgyyshvdbceroxf', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (33, 'list.iblocklist.com/lists/tbg/educational-institutions', 'https://www.iblocklist.com/list.php?list=lljggjrpmefcwqknpalp', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (34, 'list.iblocklist.com/lists/tbg/general-corporate-ranges', 'https://www.iblocklist.com/list.php?list=ecqbsykllnadihkdirsh', 1, 1);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (35, 'list.iblocklist.com/lists/tbg/hijacked', 'https://www.iblocklist.com/list.php?list=tbnuqfclfkemqivekikv', 0, 0);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (36, 'list.iblocklist.com/lists/tbg/primary-threats', 'https://www.iblocklist.com/list.php?list=ijfqtofzixtwayqovmxn', 1, 1);
-INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [blocklists], [url_info], [default], [is_active]) VALUES (37, 'list.iblocklist.com/lists/tbg/search-engines', 'https://www.iblocklist.com/list.php?list=pfefqteoxlfzopecdtyw', 1, 1);
 
 -- Table: renting
 CREATE TABLE renting ( 
@@ -308,3 +213,102 @@ CREATE TABLE trackers_list (
     is_active        BOOLEAN( 1 )    DEFAULT ( 0 ) 
 );
 
+
+-- Table: peerguardian_blocklists
+CREATE TABLE peerguardian_blocklists ( 
+    id_peerguardian_blocklists INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                               NOT NULL ON CONFLICT ABORT,
+    name                       VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
+                                               UNIQUE ON CONFLICT IGNORE,
+    blocklists                 VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT
+                                               UNIQUE ON CONFLICT IGNORE,
+    url_info                   VARCHAR( 256 ),
+    [default]                  BOOLEAN( 1 )    DEFAULT ( 0 ),
+    is_active                  BOOLEAN( 1 )    DEFAULT ( 0 ) 
+);
+
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (1, 'Atma', 'list.iblocklist.com/lists/atma/atma', 'https://www.iblocklist.com/list.php?list=tzmtqbbsgbtfxainogvm', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (2, 'Bluetack - Ads and Trackers', 'list.iblocklist.com/lists/bluetack/ads-trackers-and-bad-pr0n', 'https://www.iblocklist.com/list.php?list=fruzekpkpzlmzozmuuhx', 1, 1);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (3, 'Bluetack - Bad Peers', 'list.iblocklist.com/lists/bluetack/bad-peers', 'https://www.iblocklist.com/list.php?list=cwworuawihqvocglcoss', 1, 1);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (4, 'Bluetack - Bogon', 'list.iblocklist.com/lists/bluetack/bogon', 'https://www.iblocklist.com/list.php?list=gihxqmhyunbxhbmgqrla', 1, 1);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (5, 'Bluetack - Dshield', 'list.iblocklist.com/lists/bluetack/dshield', 'https://www.iblocklist.com/list.php?list=xpbqleszmajjesnzddhv', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (6, 'Bluetack - Edu', 'list.iblocklist.com/lists/bluetack/edu', 'https://www.iblocklist.com/list.php?list=imlmncgrkbnacgcwfjvh', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (7, 'Bluetack - For Non Lan Computers', 'list.iblocklist.com/lists/bluetack/for-non-lan-computers', 'https://www.iblocklist.com/list.php?list=jhaoawihmfxgnvmaqffp', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (8, 'Bluetack - Forum Spam', 'list.iblocklist.com/lists/bluetack/forum-spam', 'https://www.iblocklist.com/list.php?list=ficutxiwawokxlcyoeye', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (9, 'Bluetack - Hijacked', 'list.iblocklist.com/lists/bluetack/hijacked', 'https://www.iblocklist.com/list.php?list=usrcshglbiilevmyfhse', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (10, 'Bluetack - IANA-Multicast', 'list.iblocklist.com/lists/bluetack/iana-multicast', 'https://www.iblocklist.com/list.php?list=pwqnlynprfgtjbgqoizj', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (11, 'Bluetack - IANA-Private', 'list.iblocklist.com/lists/bluetack/iana-private', 'https://www.iblocklist.com/list.php?list=cslpybexmxyuacbyuvib', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (12, 'Bluetack - IANA-Reserved', 'list.iblocklist.com/lists/bluetack/iana-reserved', 'https://www.iblocklist.com/list.php?list=bcoepfyewziejvcqyhqo', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (13, 'Bluetack - Level 1', 'list.iblocklist.com/lists/bluetack/level-1', 'https://www.iblocklist.com/list.php?list=ydxerpxkpcfqjaybcssw', 1, 1);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (14, 'Bluetack - Level 2', 'list.iblocklist.com/lists/bluetack/level-2', 'https://www.iblocklist.com/list.php?list=gyisgnzbhppbvsphucsw', 1, 1);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (15, 'Bluetack - Level 3', 'list.iblocklist.com/lists/bluetack/level-3', 'https://www.iblocklist.com/list.php?list=uwnukjqktoggdknzrhgh', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (16, 'Bluetack - Microsoft', 'list.iblocklist.com/lists/bluetack/microsoft', 'https://www.iblocklist.com/list.php?list=xshktygkujudfnjfioro', 1, 1);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (17, 'Bluetack - Proxy', 'list.iblocklist.com/lists/bluetack/proxy', 'https://www.iblocklist.com/list.php?list=xoebmbyexwuiogmbyprb', 1, 1);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (18, 'Bluetack - Range Test', 'list.iblocklist.com/lists/bluetack/range-test', 'https://www.iblocklist.com/list.php?list=plkehquoahljmyxjixpu', 1, 1);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (19, 'Bluetack - Spider', 'list.iblocklist.com/lists/bluetack/spider', 'https://www.iblocklist.com/list.php?list=mcvxsnihddgutbjfbghy', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (20, 'Bluetack - Spyware', 'list.iblocklist.com/lists/bluetack/spyware', 'https://www.iblocklist.com/list.php?list=llvtlsjyoyiczbkjsxpf', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (21, 'Bluetack - Web Exploit', 'list.iblocklist.com/lists/bluetack/web-exploit', 'https://www.iblocklist.com/list.php?list=ghlzqtqxnzctvvajwwag', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (22, 'Bluetack - Web Exploit Forum Spam', 'list.iblocklist.com/lists/bluetack/webexploit-forumspam', 'https://www.iblocklist.com/list.php?list=ficutxiwawokxlcyoeye', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (23, 'CIDR - Bogon', 'list.iblocklist.com/lists/cidr-report/bogon', 'https://www.iblocklist.com/list.php?list=lujdnbasfaaixitgmxpp', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (24, 'DCHubAd - Faker', 'list.iblocklist.com/lists/dchubad/faker', 'https://www.iblocklist.com/list.php?list=dcha_faker', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (25, 'DCHubAd - Hacker', 'list.iblocklist.com/lists/dchubad/hacker', 'https://www.iblocklist.com/list.php?list=dcha_hacker', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (26, 'DCHubAd - Pedophiles', 'list.iblocklist.com/lists/dchubad/pedophiles', 'https://www.iblocklist.com/list.php?list=dcha_pedophiles', 1, 1);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (27, 'DCHubAd - Spammer', 'list.iblocklist.com/lists/dchubad/spammer', 'https://www.iblocklist.com/list.php?list=dcha_spammer', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (28, 'Nexus23 - IPfilterX', 'list.iblocklist.com/lists/nexus23/ipfilterx', 'https://www.iblocklist.com/list.php?list=nxs23_ipfilterx', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (29, 'Peerblock - Rapidshare', 'list.iblocklist.com/lists/peerblock/rapidshare', 'https://www.iblocklist.com/list.php?list=zfucwtjkfwkalytktyiw', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (30, 'Spamhaus - DROP', 'list.iblocklist.com/lists/spamhaus/drop', 'https://www.iblocklist.com/list.php?list=zbdlwrqkabxbcppvrnos', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (31, 'TBG - Bogon', 'list.iblocklist.com/lists/tbg/bogon', 'https://www.iblocklist.com/list.php?list=ewqglwibdgjttwttrinl', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (32, 'TBG - Business ISPs', 'list.iblocklist.com/lists/tbg/business-isps', 'https://www.iblocklist.com/list.php?list=jcjfaxgyyshvdbceroxf', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (33, 'TBG - Educational Institutions', 'list.iblocklist.com/lists/tbg/educational-institutions', 'https://www.iblocklist.com/list.php?list=lljggjrpmefcwqknpalp', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (34, 'TBG - General Corporate Ranges', 'list.iblocklist.com/lists/tbg/general-corporate-ranges', 'https://www.iblocklist.com/list.php?list=ecqbsykllnadihkdirsh', 1, 1);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (35, 'TBG - Hijacked', 'list.iblocklist.com/lists/tbg/hijacked', 'https://www.iblocklist.com/list.php?list=tbnuqfclfkemqivekikv', 0, 0);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (36, 'TBG - Primary Threats', 'list.iblocklist.com/lists/tbg/primary-threats', 'https://www.iblocklist.com/list.php?list=ijfqtofzixtwayqovmxn', 1, 1);
+INSERT INTO [peerguardian_blocklists] ([id_peerguardian_blocklists], [name], [blocklists], [url_info], [default], [is_active]) VALUES (37, 'TBG - Search Engines', 'list.iblocklist.com/lists/tbg/search-engines', 'https://www.iblocklist.com/list.php?list=pfefqteoxlfzopecdtyw', 1, 1);
+
+-- Table: system
+CREATE TABLE system ( 
+    id_system        INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                     NOT NULL ON CONFLICT ABORT,
+    mysb_version     VARCHAR( 6 )    NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE,
+    mysb_user        VARCHAR( 32 )   UNIQUE ON CONFLICT IGNORE,
+    mysb_password    VARCHAR( 32 )   UNIQUE ON CONFLICT IGNORE,
+    hostname         VARCHAR( 128 )  UNIQUE ON CONFLICT IGNORE,
+    ipv4             VARCHAR( 15 )   UNIQUE ON CONFLICT IGNORE,
+    primary_inet     VARCHAR( 16 )   UNIQUE ON CONFLICT IGNORE,
+    timezone         VARCHAR( 64 )   UNIQUE ON CONFLICT IGNORE,
+    cert_password    VARCHAR( 13 )   UNIQUE ON CONFLICT IGNORE,
+    port_ftp         INTEGER( 5 )    NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE
+                                     DEFAULT ( 8891 ),
+    port_ftp_data    INTEGER( 5 )    NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE
+                                     DEFAULT ( 8800 ),
+    port_ftp_passive VARCHAR( 11 )   NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE
+                                     DEFAULT ( '65000:65535' ),
+    port_ssh         INTEGER( 5 )    NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE
+                                     DEFAULT ( 8892 ),
+    port_https       INTEGER         NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE
+                                     DEFAULT ( 8889 ),
+    port_http        INTEGER         NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE
+                                     DEFAULT ( 8888 ) 
+);
+
+
+-- Table: vars
+CREATE TABLE vars ( 
+    id_vars            INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                      NOT NULL ON CONFLICT ABORT,
+    fail2ban_whitelist VARCHAR( 12 ),
+    vpn_ip             VARCHAR( 37 ),
+    white_tcp_port_out VARCHAR( 16 ),
+    white_udp_port_out VARCHAR( 16 ),
+    apply_config       BOOLEAN( 1 )   NOT NULL ON CONFLICT ABORT
+                                      DEFAULT ( 0 ) 
+);
+
+INSERT INTO [vars] ([id_vars], [fail2ban_whitelist], [vpn_ip], [white_tcp_port_out], [white_udp_port_out], [apply_config]) VALUES (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24', '80 443', null, 0);

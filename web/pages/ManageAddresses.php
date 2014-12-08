@@ -102,6 +102,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 	}
 
 	if ( $success == true ) {
+		IfApplyConfig(1);
 		?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
 	} else {
 		?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to add addresses in the MySB database.');</script><?php

@@ -49,7 +49,7 @@ require_once  '/etc/MySB/web/inc/includes_before.php';
     <!-- noty -->
     <script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/noty/packaged/jquery.noty.packaged.min.js"></script>	
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.create_message.js"></script>
-	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/waiting.js"></script>	
+	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/waiting.js"></script>
 </head>
 
 <body>
@@ -63,19 +63,39 @@ require_once  '/etc/MySB/web/inc/includes_before.php';
 				</div>
 			</div>
 
+			<div style="float: right; margin-right: 20px; margin-top: -130px;">
+				<form id="ApplyConfig" method="post" action="/">
+<?php
+					switch (IfApplyConfig()) {
+						case '0':
+							$apply = 'disabled';
+							$style = 'style="height: 40px;"';
+							break;		
+						default:
+							$apply = '';
+							$style = 'style="height: 40px; cursor: pointer;"';
+							break;
+					}
+					echo '<div id="formsubmitbutton"><input ' . $style	 . ' name="ApplyConfig" type="submit" value="Apply configuration" ' . $apply . ' onclick="ButtonClicked()" /></div>';
+					echo '<div id="buttonreplacement" style="text-align:center; display:none; height: 33px;"><img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading..."></div>';
+?>
+				</form>
+				<div id="buttonreplacement" style="text-align:center; display:none; height: 33px;">
+					<img src="<?php echo THEMES_PATH; ?>MySB/images/ajax-loader.gif" alt="loading...">
+				</div>				
+			</div>		
+			
 			<nav>			
 				<div id="breadcrumb">
 					<?php echo $this->breadcrumb(); ?>
 				</div>			
 				<div id="menu_container">
-<?php $this->includeSnippet('allNav');
-  $page = $this->find('/'); ?>
-                <ul class="sf-menu" id="nav">
-<li<?php echo ($this->level() == 0) ? ' class="current"': null; ?>><?php echo $page->link($page->title); ?></li>
-<?php displayChildren($page, $this, false); ?>
-
-                </ul>
-
+					<?php $page = $this->find('/'); ?>
+					<ul class="sf-menu" id="nav">
+						<li<?php echo ($this->level() == 0) ? ' class="current"': null; ?>><?php echo $page->link($page->title); ?></li>
+						
+						<?php displayChildren($page, $this, false); ?>
+					</ul>
 				</div>
 			</nav>
 		</header>
@@ -85,8 +105,25 @@ require_once  '/etc/MySB/web/inc/includes_before.php';
 				<?php echo $this->content('sidebar', true); ?>			
 			</div>
 			<div class="content">
-				<?php echo $this->content(); ?> 
-				<?php if ($this->hasContent('extended')) echo $this->content('extended'); ?> 			
+<?php
+			if ( isset($_POST['ApplyConfig']) ) {
+				exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.sh new", $output, $result);
+				foreach ( $output as $item ) {
+					echo '<div class="Comments" align="center">'.$item.'</div>';
+				}
+				
+				if ( $result == 0 ) {
+					IfApplyConfig(0);
+					?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
+					header('Location: /');
+				} else {
+					?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to update the Wolf database.');</script><?php
+				}
+			} else {
+				echo $this->content();
+				if ($this->hasContent('extended')) echo $this->content('extended');
+			}
+?> 			
 			</div>		
 		</div>
 
