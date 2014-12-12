@@ -5,7 +5,23 @@ select.onchange = function () {
 }
 
 // Apply Config
-function ApplyConfig()
+function ApplyConfig(state)
 {
-	document.getElementById("ApplyConfigButton").style.backgroundColor = '#ffff99';
+	switch (state) {
+		case 'ToUpdate':
+			document.getElementById("ApplyConfigButton").className = "ApplyConfigButtonDO";
+			break;
+		case 'Updated':
+			document.getElementById("ApplyConfigButton").className = "ApplyConfigButtonNothing";
+			break;
+		case 'Do':
+			$.ajax({
+				  type: "POST",
+				  dataType: "json",
+				  url: "ApplyConfig.php", //Relative or absolute path to response.php file
+
+				});			
+			break;			
+	}
+	
 }

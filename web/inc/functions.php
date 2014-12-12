@@ -68,16 +68,21 @@ function displayChildren($page, $current, $startmenu = true) {
 
         foreach($page->children(null, array(), $hidden) as $menu) :
 			if ( $menu->title == "Apply configuration" ) {
-				$style = "id=\"ApplyConfigButton\" onclick=\"ApplyConfig()\"";
+				$style = "id=\"ApplyConfigButton\" class=\"ApplyConfigButtonNothing\" onclick=\"ApplyConfig('Do')\"";
+				echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a href="#" '.$style.'>'.$menu->title.'</a>';
 			} else {
-				$style = null;
+				echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title);
 			}		
-            echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title, $style); 
+             
             displayChildren($menu, $current, true);
             echo '</li>';
             endforeach;
         echo ($startmenu) ? '</ul>' : '';
     }
+	
+	if ( IfApplyConfig() > 0 ) {
+		echo '<script type="text/javascript">ApplyConfig("ToUpdate");</script>';
+	}
 }
 
 // Update Wolf database
@@ -240,11 +245,13 @@ function GenerateMessage($commands, $type, $message = '') {
 			$message = 'Success !';
 			if ( $commands != false ) {
 				$value = $MySB_DB->update("commands", ["reload" => 1], ["commands" => "$commands"]);
+				
 				switch ($commands) {
 					case "GetTrackersCert.sh":
 						$value = $MySB_DB->update("commands", ["reload" => 1], ["commands" => "FirewallAndSecurity.sh"]);
 						break;
 				}
+				echo '<script type="text/javascript">ApplyConfig("ToUpdate");</script>';
 			}
 			break;		
 		default:
@@ -252,7 +259,7 @@ function GenerateMessage($commands, $type, $message = '') {
 			break;
 	}	
 
-	?><script type="text/javascript">generate_message('<?php echo $type; ?>', <?php echo $timeout; ?>, '<?php echo $message; ?>');</script><?php
+	echo '<script type="text/javascript">generate_message("'. $type . '", ' . $timeout . ', "' . $message . '");</script>';
 }
 
 //#################### LAST LINE ######################################
