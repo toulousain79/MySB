@@ -29,8 +29,6 @@ if ( IfApplyConfig() > 0 ) {
 	foreach ($Commands as $Cmd) {
 		switch ($Cmd) {
 			case "FirewallAndSecurity.sh":
-				echo '<h1>FirewallAndSecurity.sh...</h1>';
-			
 				exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.sh new 'ApplyConfig'", $output, $result);
 
 				foreach ( $output as $item ) {
@@ -70,10 +68,6 @@ if ( IfApplyConfig() > 0 ) {
 					$message = 'Failed ! It was not possible to update the MySB database.';
 				}
 				break;			
-		}
-		
-		if ( $type == 'success' ) {
-			echo '<script type="text/javascript">ApplyConfig("Updated");</script>';
 		}
 		GenerateMessage(false, $type, $message);
 	}
