@@ -46,10 +46,10 @@ echo '
 			</tr>
 			<tr>
 				<td colspan="2">
-					<div id="formsubmitbutton">
-						<input class="submit" name="submit" type="submit" value="Submit" onclick="ButtonClicked()">
+					<div id="PageSubmitButton">
+						<input class="submit" name="submit" type="submit" value="Submit" onclick="ButtonClicked(\'page\')">
 					</div>
-					<div id="buttonreplacement" style="text-align:center; display:none; height: 33px;">
+					<div id="PageButtonReplace" style="text-align:center; display:none; height: 33px;">
 						<img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading...">
 					</div>
 				</td>
@@ -77,23 +77,29 @@ if ( isset($_POST['submit']) ) {
 					$result = UpdateWolfDB($_SERVER['PHP_AUTH_USER'], $new_pwd);
 				
 					if ( $result > 0 ) {
-						?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
-						$_SERVER['PHP_AUTH_PW'] = $new_pwd;
+						$type = 'success';
 					} else {
-						?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to update the Wolf database.');</script><?php
+						$type = 'error';
+						$message = 'Failed ! It was not possible to update the Wolf database.';
 					}
 				} else {
-					?><script type="text/javascript">generate_message('error', 5000, 'Error occured with "MySB_ChangeUserPassword" script !');</script><?php
+					$type = 'error';
+					$message = 'Error occured with "MySB_ChangeUserPassword" script !';
 				}
 			} else {
-				?><script type="text/javascript">generate_message('error', 5000, 'Error between the new typed password and verification.');</script><?php
+				$type = 'error';
+				$message = 'Error between the new typed password and verification.';
 			}
 		} else {
-			?><script type="text/javascript">generate_message('error', 5000, 'The current password is not valid.');</script><?php
+			$type = 'error';
+			$message = 'The current password is not valid.';
 		}
 	} else {
-		?><script type="text/javascript">generate_message('information', 5000, 'Please, complete all fields.');</script><?php
+		$type = 'information';
+		$message = 'Please, complete all fields.';	
 	}
+	
+	GenerateMessage(false, $type, $message);
 }
 
 //#################### LAST LINE ######################################

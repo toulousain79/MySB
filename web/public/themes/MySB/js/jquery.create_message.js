@@ -1,31 +1,8 @@
 // http://ned.im/noty/#/about
 
-function generate_confirmation(layout, question) {
+function generate_message(type, timeout, text) {
 	var n = noty({
-		text        : 'Confirmation',
-		type        : 'confirm',
-		dismissQueue: true,
-		layout      : layout,
-		theme       : 'relax',
-		buttons     : [
-			{addClass: 'btn btn-danger btn-primary', text: 'Yes', onClick: function ($noty) {
-				$noty.close();
-				noty({dismissQueue: true, force: true, layout: layout, theme: 'relax', text: 'You clicked "Edit" button', type: 'success'});
-			}
-			},
-			{addClass: 'btn btn-danger', text: 'No', onClick: function ($noty) {
-				$noty.close();
-				noty({dismissQueue: true, force: true, layout: layout, theme: 'relax', text: 'You clicked "Del" button', type: 'error'});
-			}
-			}
-		]
-	});
-	console.log('html: ' + n.options.id);
-}
-
-function generate_message(type, text) {
-	var n = noty({
-		layout      : 'bottomCenter',
+		layout      : 'center',
 		theme       : 'relax',
 		text        : text,
 		type        : type,
@@ -37,7 +14,7 @@ function generate_message(type, text) {
 			easing		: 'swing',
 			speed		: 500 // opening & closing animation speed
 		},
-		timeout		: 2000, // delay for closing event. Set false for sticky notifications
+		timeout		: timeout, // delay for closing event. Set false for sticky notifications
 		force		: false, // adds notification to the beginning of queue when set to true				
 		modal		: false,
 		maxVisible	: 2, // you can set max visible notification for dismissQueue true option,

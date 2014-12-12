@@ -16,22 +16,43 @@
    modify this software provided this 
    notice appears on all copies. 
 */
-function ButtonClicked()
+function ButtonClicked(origin)
 {
-   document.getElementById("formsubmitbutton").style.display = "none"; // to undisplay
-   document.getElementById("buttonreplacement").style.display = ""; // to display
+	switch (origin) {
+		case 'config':
+			ElementButton = "ConfigSubmitButton";
+			ElementReplace = "ConfigButtonReplace";
+			break;
+		case 'page':
+			ElementButton = "PageSubmitButton";
+			ElementReplace = "PageButtonReplace";
+			break;
+	}
+   document.getElementById(ElementButton).style.display = "none"; // to undisplay
+   document.getElementById(ElementReplace).style.display = ""; // to display
    return true;
 }
 var FirstLoading = true;
-function RestoreSubmitButton()
+function RestoreSubmitButton(origin)
 {
+	switch (origin) {
+		case 'config':
+			ElementButton = "ConfigSubmitButton";
+			ElementReplace = "ConfigButtonReplace";
+			break;
+		case 'page':
+			ElementButton = "PageSubmitButton";
+			ElementReplace = "PageButtonReplace";
+			break;
+	}
+
    if( FirstLoading )
    {
       FirstLoading = false;
       return;
    }
-   document.getElementById("formsubmitbutton").style.display = ""; // to display
-   document.getElementById("buttonreplacement").style.display = "none"; // to undisplay
+   document.getElementById(ElementButton).style.display = ""; // to display
+   document.getElementById(ElementReplace).style.display = "none"; // to undisplay
 }
 // To disable restoring submit button, disable or delete next line.
 document.onfocus = RestoreSubmitButton;

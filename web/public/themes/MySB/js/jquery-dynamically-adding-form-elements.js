@@ -5,7 +5,13 @@ jQuery( function ( $ ) {
 		var newElem = $( '#input' + num ).clone().attr( 'id', 'input' + newNum ).fadeIn('slow');		
 		
 		newElem.find('.input_id').attr('id', 'input_id'+ newNum).attr('name', 'input_id[' + newNum + ']').val(newNum);
+		
+		// Add trackers
         newElem.find('.input_tracker_domain').attr('id', 'tracker_domain' + newNum).attr('name', 'tracker_domain[' + newNum + ']').val('');
+		
+		// Add address
+		newElem.find('.input_address').attr('id', 'address' + newNum).attr('name', 'address[' + newNum + ']').val('');
+		
 		newElem.find('.select_is_active').attr('id', 'is_active' + newNum).attr('name', 'is_active[' + newNum + ']').val('0');
 		
 		

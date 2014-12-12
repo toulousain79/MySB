@@ -98,13 +98,17 @@ if (isset($_POST['submit'])) {
 										["id_renting" => 1]);
 		
 		if( $result = 1 ) {
-			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
+			$type = 'success';
 		} else {
-			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to update the MySB database.');</script><?php
+			$type = 'error';
+			$message = 'Failed ! It was not possible to update the MySB database.';
 		}
 	} else {
-		?><script type="text/javascript">generate_message('information', 5000, 'Please, complete all fields.');</script><?php
+		$type = 'information';
+		$message = 'Please, complete all fields.';
 	}
+	
+	GenerateMessage('PaymentReminder.sh', $type, $message);
 }
 
 Form();

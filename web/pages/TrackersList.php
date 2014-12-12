@@ -26,68 +26,56 @@
 $MySB_DB = new medoo_MySB();
 
 if(isset($_POST)==true && empty($_POST)==false) {
-	if (isset($_POST['submit'])) {
-		$success = true;
-		
-		for($i=0, $count = count($_POST['tracker_domain']);$i<$count;$i++) {
-			$result = $MySB_DB->update("trackers_list", ["is_active" => $_POST['is_active'][$i]], ["tracker_domain" => $_POST['tracker_domain'][$i]]);
-			
-			if ( $result != 1 ) {
-				$success = false;
+	$success = true;
+	
+	switch ($_POST['submit']) {
+		case "Save Changes":
+			for($i=0, $count = count($_POST['tracker_domain']);$i<$count;$i++) {
+				$result = $MySB_DB->update("trackers_list", ["is_active" => $_POST['is_active'][$i]], ["tracker_domain" => $_POST['tracker_domain'][$i]]);
+				
+				if ( $result != 1 ) {
+					$success = false;
+				}
 			}
-		}
 
-		if ( $success == true ) {
-			IfApplyConfig(1);
-			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
-		} else {
-			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to update tracker in the MySB database.');</script><?php
-		}		
+			if ( $success == true ) {
+				$type = 'success';
+			} else {
+				$type = 'error';
+				$message = 'Failed ! It was not possible to update tracker in the MySB database.';	
+			}
+			break;		
+		default: //Delete
+			if (isset($_POST['delete'])) {
+				$count = count($_POST['delete']);
+				
+				foreach($_POST['delete'] as $key => $value) {
+					$result = $MySB_DB->delete("trackers_list_ipv4", ["AND" => ["id_trackers_list" => $key]]);
+					if ( $result = 0 ) {
+						$success = false;
+					}			
+				
+					$result = $MySB_DB->delete("trackers_list", ["AND" => ["id_trackers_list" => $key]]);
+					if ( $result = 0 ) {
+						$success = false;
+					}			
+				}
+				
+				if ( $success == true ) {
+					$type = 'success';
+				} else {
+					$type = 'error';
+					$message = 'Failed ! It was not possible to delete tracker.';					
+				}
+			}
+			break;
 	}
 	
-	if (isset($_POST['delete'])) {
-		$success = true;
-		$count = count($_POST['delete']);
-		
-		foreach($_POST['delete'] as $key => $value) {
-			$result = $MySB_DB->delete("trackers_list_ipv4", ["AND" => ["id_trackers_list" => $key]]);
-			if ( $result = 0 ) {
-				$success = false;
-			}			
-		
-			$result = $MySB_DB->delete("trackers_list", ["AND" => ["id_trackers_list" => $key]]);
-			if ( $result = 0 ) {
-				$success = false;
-			}			
-		}
-		
-		if ( $success == true ) {
-			IfApplyConfig(1);
-			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
-		} else {
-			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to delete tracker.');</script><?php
-		}			
-	}
+	GenerateMessage('GetTrackersCert.sh', $type, $message);
 }
 
 $TrackersList = $MySB_DB->select("trackers_list", "*", ["ORDER" => "trackers_list.tracker_domain ASC"]);
 ?>
-
-<style>
-.redText {
-    background-color:#FEBABC;
-}
-.greenText {
-    background-color:#B3FEA5;
-}
-</style>
-
-<script type="text/javascript" >
-	var select = document.getElementById('mySelect');
-	select.onchange = function () {
-		select.className = this.options[this.selectedIndex].className;
-	}     
-</script>
 
 <form class="form_settings" method="post" action="">	
 	<div align="center">

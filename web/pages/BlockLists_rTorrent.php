@@ -25,45 +25,29 @@
 // Users table
 $MySB_DB = new medoo_MySB();
 
-if(isset($_POST)==true && empty($_POST)==false) {
-	if (isset($_POST['submit'])) {
-		$success = true;
+if (isset($_POST['submit'])) {
+	$success = true;
+	
+	for($i=0, $count = count($_POST['id_rtorrent_blocklists']);$i<$count;$i++) {
+		$result = $MySB_DB->update("rtorrent_blocklists", ["is_active" => $_POST['is_active'][$i]], ["id_rtorrent_blocklists" => $_POST['id_rtorrent_blocklists'][$i]]);
 		
-		for($i=0, $count = count($_POST['id_rtorrent_blocklists']);$i<$count;$i++) {
-			$result = $MySB_DB->update("rtorrent_blocklists", ["is_active" => $_POST['is_active'][$i]], ["id_rtorrent_blocklists" => $_POST['id_rtorrent_blocklists'][$i]]);
-			
-			if ( $result != 1 ) {
-				$success = false;
-			}
+		if ( $result != 1 ) {
+			$success = false;
 		}
-
-		if ( $success == true ) {
-			IfApplyConfig(1);
-			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
-		} else {
-			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to update tracker in the MySB database.');</script><?php
-		}		
 	}
+
+	if ( $success == true ) {
+		$type = 'success';
+	} else {
+		$type = 'error';
+		$message = 'Failed ! It was not possible to update tracker in the MySB database.';	
+	}
+	
+	GenerateMessage('FirewallAndSecurity.sh', $type, $message);
 }
 
 $BlockList = $MySB_DB->select("rtorrent_blocklists", "*");
 ?>
-
-<style>
-.redText {
-    background-color:#FEBABC;
-}
-.greenText {
-    background-color:#B3FEA5;
-}
-</style>
-
-<script type="text/javascript" >
-	var select = document.getElementById('mySelect');
-	select.onchange = function () {
-		select.className = this.options[this.selectedIndex].className;
-	}     
-</script>
 
 <form class="form_settings" method="post" action="">	
 	<div align="center">

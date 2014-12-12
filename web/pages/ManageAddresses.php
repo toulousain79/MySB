@@ -32,80 +32,109 @@ $UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$UserName"]);
 if(isset($_POST)==true && empty($_POST)==false) {
 	$success = true;
 
-	if ( isset($_POST['add_address']) ) {
-		$count = count($_POST['input_id']);
-		
-		for($i=1; $i<=$count; $i++) {
-			// test if IP or hostname (dynamic IP)
-			if (!filter_var($_POST['address'][$i], FILTER_VALIDATE_IP)) {
-				// IP is not valid (hostname)
-				$IPv4 = gethostbyname($_POST['address'][$i]);
+	switch ($_POST['submit']) {
+		case "Add my addresses now !":
+			//if ( isset($_POST['add_address']) ) {
+				$count = count($_POST['input_id']);
 				
-				if (!filter_var($IPv4, FILTER_VALIDATE_IP)) {
-					$success = false;
-					?><script type="text/javascript">generate_message('error', 5000, 'The host name does not return a valid IP address.');</script><?php
-				} else {
-					$last_id_address = ManageUsersAddresses($UserName, $IPv4, $_POST['address'][$i], $_POST['is_active'][$i], 'hostname');
+				for($i=1; $i<=$count; $i++) {
+					// test if IP or hostname (dynamic IP)
+					if (!filter_var($_POST['address'][$i], FILTER_VALIDATE_IP)) {
+						// IP is not valid (hostname)
+						$IPv4 = gethostbyname($_POST['address'][$i]);
+						
+						if (!filter_var($IPv4, FILTER_VALIDATE_IP)) {
+							$success = false;
+							$message = 'The host name does not return a valid IP address.';					
+						} else {
+							$last_id_address = ManageUsersAddresses($UserName, $IPv4, $_POST['address'][$i], $_POST['is_active'][$i], 'hostname');
+							if ($last_id_address == false) {
+								$success = false;
+								$message = 'Failed ! It was not possible to update hostname address in the MySB database.';
+							}
+						}
+					} else {
+						// IP is valid
+						if ( ValidateIPv4NoPriv($_POST['address'][$i]) ) {
+							// IP is valid
+							$HostName = gethostbyaddr($_POST['address'][$i]);
+							$last_id_address = ManageUsersAddresses($UserName, $_POST['address'][$i], $HostName, $_POST['is_active'][$i], 'ipv4');
+							if ($last_id_address == false) {
+								$success = false;
+								$message = 'Failed ! It was not possible to update IPv4 address in the MySB database.';
+							}					
+						} else {
+							// IP is not valid (private ?)
+							$success = false;
+							$message = 'You must enter a public IPv4 address.';	
+						}
+					}
 				}
-			} else {
-				// IP is valid
-				if ( ValidateIPv4NoPriv($_POST['address'][$i]) ) {
-					// IP is valid
-					$HostName = gethostbyaddr($_POST['address'][$i]);
-					$last_id_address = ManageUsersAddresses($UserName, $_POST['address'][$i], $HostName, $_POST['is_active'][$i], 'ipv4');
+				
+				if ( $success == true ) {
+					$type = 'success';
 				} else {
-					// IP is not valid (private ?)
-					$success = false;
-					?><script type="text/javascript">generate_message('error', 5000, 'You must enter a public IPv4 address.');</script><?php
+					$type = 'error';
 				}
-			}			
-																
-			if ($last_id_address == false) {
-				$success = false;
+				
+				GenerateMessage('FirewallAndSecurity.sh', $type, $message);		
+			//}
+			break;
+		case "Save Changes":
+			//if ( isset($_POST['submit']) ) {
+				$success = true;
+				$count = count($_POST['input_id']);
+				
+				for($i=1; $i<=$count; $i++) {
+					$last_id_address = $MySB_DB->update("users_addresses", ["is_active" => $_POST['is_active'][$i]], [
+																													"AND" => [
+																														"ipv4" => $_POST['ipv4'][$i],
+																														"hostname" => $_POST['hostname'][$i]
+																													]
+																												]);
+					
+					if ($last_id_address == false) {
+						$success = false;
+					}			
+				}
+
+				if ( $success == true ) {
+					$type = 'success';
+				} else {
+					$type = 'error';
+					$message = 'Failed ! It was not possible to update addresses informations.';
+				}
+				
+				GenerateMessage('FirewallAndSecurity.sh', $type, $message);		
+			//}
+			break;			
+		default: // Delete
+			if (isset($_POST['delete'])) {
+				$success = true;
+				$count = count($_POST['delete']);
+				
+				foreach($_POST['delete'] as $key => $value) {
+					$result = $MySB_DB->delete("users_addresses", [
+						"AND" => [
+							"id_users_addresses" => $key
+						]
+					]);
+					
+					if ( $result = 0 ) {
+						$success = false;
+					}			
+				}
+
+				if ( $success == true ) {
+					$type = 'success';
+				} else {
+					$type = 'error';
+					$message = 'Failed ! It was not possible to delete address.';
+				}
+				
+				GenerateMessage('FirewallAndSecurity.sh', $type, $message);		
 			}
-		}	
-	}
-
-	if ( isset($_POST['submit']) ) {
-		$success = true;
-		$count = count($_POST['input_id']);
-		
-		for($i=1; $i<=$count; $i++) {
-			$last_id_address = $MySB_DB->update("users_addresses", ["is_active" => $_POST['is_active'][$i]], [
-																											"AND" => [
-																												"ipv4" => $_POST['ipv4'][$i],
-																												"hostname" => $_POST['hostname'][$i]
-																											]
-																										]);
-			
-			if ($last_id_address == false) {
-				$success = false;
-			}			
-		}		
-	}
-
-	if (isset($_POST['delete'])) {
-		$success = true;
-		$count = count($_POST['delete']);
-		
-		foreach($_POST['delete'] as $key => $value) {
-			$result = $MySB_DB->delete("users_addresses", [
-				"AND" => [
-					"id_users_addresses" => $key
-				]
-			]);
-			
-			if ( $result = 0 ) {
-				$success = false;
-			}			
-		}			
-	}
-
-	if ( $success == true ) {
-		IfApplyConfig(1);
-		?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
-	} else {
-		?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to add addresses in the MySB database.');</script><?php
+			break;
 	}	
 }
 
@@ -125,41 +154,29 @@ if ( $IfExist > 0 ) {
 $AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserID"]);
 ?>
 
-<style>
-.redText {
-    background-color:#FEBABC;
-}
-.greenText {
-    background-color:#B3FEA5;
-}
-</style>
 
-<script type="text/javascript" >
-	var select = document.getElementById('mySelect');
-	select.onchange = function () {
-		select.className = this.options[this.selectedIndex].className;
-	}     
-</script>
-
-<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
-	<form id="myForm" class="form_settings" method="post" action="">
-		<div id="input1" class="clonedInput">
-			<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
-			Address (IP or Dynamic DNS): <input class="input_address" id="address" name="address[1]" type="text" required="required" <?php echo $add_current_ip; ?> />
-			Is active ?:	<select class="select_is_active" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required">
-								<option value="0" selected="selected">No</option>
-								<option value="1">Yes</option>
-							</select>
-		</div>
-	 
-		<div style="margin-top: 10px; margin-bottom: 20px;">
-			<input type="button" id="btnAdd" value="Add address" style="cursor: pointer;" />
-			<input type="button" id="btnDel" value="Remove last" style="cursor: pointer;" />
-		</div>
-		
-		<input class="submit" style="width:180px; margin-top: 10px; margin-bottom: 10px;" name="add_address" type="submit" value="Add my addresses now !">
-	</form>	
-</div>	
+	<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
+		<form id="myForm" class="form_settings" method="post" action="">
+			<fieldset>
+			<legend>Add your allowed addresses here</legend>
+				<div id="input1" class="clonedInput">
+					<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
+					Address (IP or Dynamic DNS): <input class="input_address" id="address" name="address[1]" type="text" required="required" <?php echo $add_current_ip; ?> />
+					Is active ?:	<select class="select_is_active" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required">
+										<option value="0" selected="selected">No</option>
+										<option value="1">Yes</option>
+									</select>
+				</div>
+			 
+				<div style="margin-top: 10px; margin-bottom: 20px;">
+					<input type="button" id="btnAdd" value="Add address" style="cursor: pointer;" />
+					<input type="button" id="btnDel" value="Remove last" style="cursor: pointer;" />
+				</div>
+				
+				<input class="submit" style="width:180px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="Add my addresses now !">
+			</fieldset>
+		</form>	
+	</div>
 
 <form class="form_settings" method="post" action="">	
 	<div align="center">

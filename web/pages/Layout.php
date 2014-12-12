@@ -39,6 +39,8 @@ require_once  '/etc/MySB/web/inc/includes_before.php';
 	<!-- Template CSS -->
 	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/screen.css" media="screen" type="text/css" />
 	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/print.css" media="print" type="text/css" />
+	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/mysb.css" type="text/css" />
+	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/jQ-menu.css" type="text/css" />
 	<!-- Messages animated CSS -->
 	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/buttons.css" type="text/css" />
 	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/animate.css" type="text/css" />
@@ -50,6 +52,7 @@ require_once  '/etc/MySB/web/inc/includes_before.php';
     <script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/noty/packaged/jquery.noty.packaged.min.js"></script>	
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.create_message.js"></script>
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/waiting.js"></script>
+	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/mysb.js"></script>
 </head>
 
 <body>
@@ -59,31 +62,9 @@ require_once  '/etc/MySB/web/inc/includes_before.php';
 				<div id="logo_text">
 					<!-- class="LogoFirstLine", allows you to change the colour of the text -->
 					<h1><a href="<?php echo URL_PUBLIC; ?>"><span class="LogoFirstLine">MySB</span></a></h1>
-					<h2> v1.2</h2>
+					<h2> <?php echo GetVersion(); ?></h2>
 				</div>
-			</div>
-
-			<div style="float: right; margin-right: 20px; margin-top: -130px;">
-				<form id="ApplyConfig" method="post" action="/">
-<?php
-					switch (IfApplyConfig()) {
-						case '0':
-							$apply = 'disabled';
-							$style = 'style="height: 40px;"';
-							break;		
-						default:
-							$apply = '';
-							$style = 'style="height: 40px; cursor: pointer;"';
-							break;
-					}
-					echo '<div id="formsubmitbutton"><input ' . $style	 . ' name="ApplyConfig" type="submit" value="Apply configuration" ' . $apply . ' onclick="ButtonClicked()" /></div>';
-					echo '<div id="buttonreplacement" style="text-align:center; display:none; height: 33px;"><img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading..."></div>';
-?>
-				</form>
-				<div id="buttonreplacement" style="text-align:center; display:none; height: 33px;">
-					<img src="<?php echo THEMES_PATH; ?>MySB/images/ajax-loader.gif" alt="loading...">
-				</div>				
-			</div>		
+			</div>	
 			
 			<nav>			
 				<div id="breadcrumb">
@@ -101,30 +82,15 @@ require_once  '/etc/MySB/web/inc/includes_before.php';
 		</header>
 		
 		<div id="site_content">
-			<div id="sidebar_container">
-				<?php echo $this->content('sidebar', true); ?>			
-			</div>
 			<div class="content">
 <?php
-			if ( isset($_POST['ApplyConfig']) ) {
-				exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.sh new", $output, $result);
-				foreach ( $output as $item ) {
-					echo '<div class="Comments" align="center">'.$item.'</div>';
-				}
-				
-				if ( $result == 0 ) {
-					IfApplyConfig(0);
-					?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
-					header('Location: /');
-				} else {
-					?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to update the Wolf database.');</script><?php
-				}
-			} else {
 				echo $this->content();
 				if ($this->hasContent('extended')) echo $this->content('extended');
-			}
 ?> 			
-			</div>		
+			</div>
+			<div id="sidebar_container">
+				<?php echo $this->content('sidebar', true); ?>			
+			</div>			
 		</div>
 
 		<div id="scroll">

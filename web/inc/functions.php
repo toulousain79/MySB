@@ -62,12 +62,17 @@ function MainUser() {
 // Create menu with submenu
 function displayChildren($page, $current, $startmenu = true) {
 	$hidden = (MainUser()) ? true : false;
-
+	
     if ($page && count($page->children(null, array(), $hidden)) > 0) {
         echo ($startmenu) ? '<ul>' : '';
 
         foreach($page->children(null, array(), $hidden) as $menu) :
-            echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title); 
+			if ( $menu->title == "Apply configuration" ) {
+				$style = "id=\"ApplyConfigButton\" onclick=\"ApplyConfig()\"";
+			} else {
+				$style = null;
+			}		
+            echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title, $style); 
             displayChildren($menu, $current, true);
             echo '</li>';
             endforeach;
@@ -217,20 +222,37 @@ function ValidateIPv4NoPriv($ip) {
 }
 
 // Can I activate 'Apply' button ?
-function IfApplyConfig($switch = '-1') {
+function IfApplyConfig() {
 	$MySB_DB = new medoo_MySB();
 	
-	switch ($switch) {
-		case "0":
-		case "1":
-			$Apply = $MySB_DB->update("vars", ["apply_config" => "$switch"], ["id_vars" => 1]);
+	$value = $MySB_DB->count("commands", "reload", ["reload" => 1]);	
+
+	return $value;
+}
+
+// Generate message (success, error, information, ...)
+function GenerateMessage($commands, $type, $message = '') {
+	$MySB_DB = new medoo_MySB();
+
+	switch ($type) {
+		case "success":
+			$timeout = 2000;
+			$message = 'Success !';
+			if ( $commands != false ) {
+				$value = $MySB_DB->update("commands", ["reload" => 1], ["commands" => "$commands"]);
+				switch ($commands) {
+					case "GetTrackersCert.sh":
+						$value = $MySB_DB->update("commands", ["reload" => 1], ["commands" => "FirewallAndSecurity.sh"]);
+						break;
+				}
+			}
 			break;		
 		default:
-			$Apply = $MySB_DB->get("vars", "apply_config", ["id_vars" => 1]);
+			$timeout = 5000;
 			break;
 	}	
 
-	return $Apply;
+	?><script type="text/javascript">generate_message('<?php echo $type; ?>', <?php echo $timeout; ?>, '<?php echo $message; ?>');</script><?php
 }
 
 //#################### LAST LINE ######################################

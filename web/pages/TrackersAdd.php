@@ -26,87 +26,80 @@
 $MySB_DB = new medoo_MySB();
 
 if(isset($_POST)==true && empty($_POST)==false) {
-	if ( (isset($_POST['add_tracker'])) || (isset($_POST['submit'])) ) {
-		$success = true;
-		$count = count($_POST['input_id']);
-		
-		for($i=1; $i<=$count; $i++) {
-			$last_id_trackers_list = ManageUsersTrackers($_POST['tracker_domain'][$i], $_POST['is_active'][$i]);
-																		
-			if (!isset($last_id_trackers_list)) {
-				$success = false;
-			}																		
-		}
-		
-		if ( $success == true ) {
-			IfApplyConfig(1);
-			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
-		} else {
-			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to add trackers in the MySB database.');</script><?php
-		}		
-	}
-
-	if (isset($_POST['delete'])) {
-		$success = true;
-		$count = count($_POST['delete']);
-		
-		foreach($_POST['delete'] as $key => $value) {
-			$result = $MySB_DB->delete("trackers_list_ipv4", ["AND" => ["id_trackers_list" => $key]]);
-			if ( $result = 0 ) {
-				$success = false;
+	$success = true;
+	
+	switch ($_POST['submit']) {
+		case "Save Changes":
+		case "Add my trackers now !":
+			$count = count($_POST['input_id']);
+			
+			for($i=1; $i<=$count; $i++) {
+				$last_id_trackers_list = ManageUsersTrackers($_POST['tracker_domain'][$i], $_POST['is_active'][$i]);
+																			
+				if (!isset($last_id_trackers_list)) {
+					$success = false;
+				}																		
 			}
 			
-			$result = $MySB_DB->delete("trackers_list", ["AND" => ["id_trackers_list" => $key]]);
-			if ( $result = 0 ) {
-				$success = false;
-			}			
-		}
-		
-		if ( $success == true ) {
-			IfApplyConfig(1);
-			?><script type="text/javascript">generate_message('success', 2000, 'Success !');</script><?php
-		} else {
-			?><script type="text/javascript">generate_message('error', 5000, 'Failed ! It was not possible to delete tracker.');</script><?php
-		}			
-	}	
+			if ( $success == true ) {
+				$type = 'success';
+			} else {
+				$type = 'error';
+				$message = 'Failed ! It was not possible to add trackers in the MySB database.';
+			}
+			break;		
+		default: // delete
+			if (isset($_POST['delete'])) {
+				$count = count($_POST['delete']);
+				
+				foreach($_POST['delete'] as $key => $value) {
+					$result = $MySB_DB->delete("trackers_list_ipv4", ["AND" => ["id_trackers_list" => $key]]);
+					if ( $result = 0 ) {
+						$success = false;
+					}
+					
+					$result = $MySB_DB->delete("trackers_list", ["AND" => ["id_trackers_list" => $key]]);
+					if ( $result = 0 ) {
+						$success = false;
+					}			
+				}
+				
+				if ( $success == true ) {
+					$type = 'success';
+				} else {
+					$type = 'error';
+					$message = 'Failed ! It was not possible to delete tracker.';
+				}			
+			}
+			break;
+	}
+	
+	GenerateMessage('GetTrackersCert.sh', $type, $message);
 }
 
 $TrackersList = $MySB_DB->select("trackers_list", "*", ["origin" => "users", "ORDER" => "trackers_list.tracker_domain ASC"]);
 ?>
 
-<style>
-.redText {
-    background-color:#FEBABC;
-}
-.greenText {
-    background-color:#B3FEA5;
-}
-</style>
-
-<script type="text/javascript" >
-	var select = document.getElementById('mySelect');
-	select.onchange = function () {
-		select.className = this.options[this.selectedIndex].className;
-	}     
-</script>
-
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 	<form id="myForm" class="form_settings" method="post" action="">
-		<div id="input1" class="clonedInput">
-			<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
-			Domain: <input class="input_tracker_domain" id="tracker_domain" name="tracker_domain[1]" type="text" required="required" />
-			Is active ?:	<select class="select_is_active" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required">
-								<option value="0" selected="selected">No</option>
-								<option value="1">Yes</option>
-							</select>
-		</div>
-	 
-		<div style="margin-top: 10px; margin-bottom: 20px;">
-			<input type="button" id="btnAdd" value="Add tracker domain" style="cursor: pointer;" />
-			<input type="button" id="btnDel" value="Remove last" style="cursor: pointer;" />
-		</div>
+		<fieldset>
+		<legend>Add your trackers here (only the domain)</legend>
+			<div id="input1" class="clonedInput">
+				<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
+				Domain: <input class="input_tracker_domain" id="tracker_domain" name="tracker_domain[1]" type="text" required="required" />
+				Is active ?:	<select class="select_is_active" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required">
+									<option value="0" selected="selected">No</option>
+									<option value="1">Yes</option>
+								</select>
+			</div>
+		 
+			<div style="margin-top: 10px; margin-bottom: 20px;">
+				<input type="button" id="btnAdd" value="Add tracker domain" style="cursor: pointer;" />
+				<input type="button" id="btnDel" value="Remove last" style="cursor: pointer;" />
+			</div>
 		
-		<input class="submit" style="width:150px; margin-top: 10px; margin-bottom: 10px;" name="add_tracker" type="submit" value="Add my trackers now !">
+			<input class="submit" style="width:150px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="Add my trackers now !">
+		</fieldset>
 	</form>	
 </div>	
 
