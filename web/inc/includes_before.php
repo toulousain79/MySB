@@ -24,9 +24,16 @@
 
 // Medoo framework
 include_once '/etc/MySB/web/inc/medoo.min.php';
+$MySB_DB = new medoo_MySB();
 
 // Some Functions
 include_once '/etc/MySB/web/inc/functions.php';
+
+// Load System table
+$system_datas = $MySB_DB->get("system", "*", ["id_system" => 1]);
+
+// Users table
+$users_datas = $MySB_DB->get("users", "*", ["users_ident" => $_SERVER['PHP_AUTH_USER']]);
 
 //#################### LAST LINE #####################################
 ?>

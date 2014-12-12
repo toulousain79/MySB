@@ -68,12 +68,13 @@ function displayChildren($page, $current, $startmenu = true) {
 
         foreach($page->children(null, array(), $hidden) as $menu) :
 			if ( $menu->title == "Apply configuration" ) {
-				$style = "id=\"ApplyConfigButton\" class=\"ApplyConfigButtonNothing\" onclick=\"ApplyConfig('Do')\"";
-				echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a href="#" '.$style.'>'.$menu->title.'</a>';
+				$replace = '<div id="ApplyConfigButtonReplace" style="padding-top: 10px; padding-left: 10px; text-align:center; display:none; height: 29px;"><img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading..."></div>';		
+				$style = "id=\"ApplyConfigButtonState\" class=\"ApplyConfigButtonNothing\" onclick=\"ButtonClicked('config')\"";
+				echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$replace.'<div id="ApplyConfigButton">'.$menu->link($menu->title, $style).'</div>';
 			} else {
 				echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title);
 			}		
-             
+            
             displayChildren($menu, $current, true);
             echo '</li>';
             endforeach;

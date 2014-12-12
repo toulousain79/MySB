@@ -4,23 +4,25 @@ select.onchange = function () {
 	select.className = this.options[this.selectedIndex].className;
 }
 
+// Do Apply Config
+function DoApplyConfig() {
+      $.ajax({
+           type: "POST",
+           url: '/?apply-configuration.html',
+           data:{},
+
+      });
+}
+
 // Apply Config
 function ApplyConfig(state)
 {
 	switch (state) {
 		case 'ToUpdate':
-			document.getElementById("ApplyConfigButton").className = "ApplyConfigButtonDO";
+			document.getElementById("ApplyConfigButtonState").className = "ApplyConfigButtonDO";
 			break;
 		case 'Updated':
-			document.getElementById("ApplyConfigButton").className = "ApplyConfigButtonNothing";
-			break;
-		case 'Do':
-			$.ajax({
-				  type: "POST",
-				  dataType: "json",
-				  url: "ApplyConfig.php", //Relative or absolute path to response.php file
-
-				});			
+			document.getElementById("ApplyConfigButtonState").className = "ApplyConfigButtonNothing";
 			break;			
 	}
 	

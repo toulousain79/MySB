@@ -52,6 +52,7 @@ if ( IfApplyConfig() > 0 ) {
 				
 				break;		
 			case "GetTrackersCert.sh":
+				echo '<h1>GetTrackersCert.sh...</h1>';
 				$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "$Cmd"]);
 				if ( $result > 0 ) {
 					$type = 'success';
@@ -62,6 +63,7 @@ if ( IfApplyConfig() > 0 ) {
 
 				break;
 			case "PaymentReminder.sh":
+				echo '<h1>PaymentReminder.sh...</h1>';
 				$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "$Cmd"]);
 				if ( $result > 0 ) {
 					$type = 'success';
@@ -76,9 +78,13 @@ if ( IfApplyConfig() > 0 ) {
 			echo '<script type="text/javascript">ApplyConfig("Updated");</script>';
 		}
 		GenerateMessage(false, $type, $message);
+		header('Refresh: 10; URL=/');
 	}
 } else {
 	echo '<h1>Nothing to apply...</h1>';
+	$type = 'information';
+	$message = 'Nothing to apply...';	
+	GenerateMessage(false, $type, $message);
 }
 
 

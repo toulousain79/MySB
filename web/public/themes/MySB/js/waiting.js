@@ -20,8 +20,8 @@ function ButtonClicked(origin)
 {
 	switch (origin) {
 		case 'config':
-			ElementButton = "ConfigSubmitButton";
-			ElementReplace = "ConfigButtonReplace";
+			ElementButton = "ApplyConfigButton";
+			ElementReplace = "ApplyConfigButtonReplace";
 			break;
 		case 'page':
 			ElementButton = "PageSubmitButton";
@@ -37,8 +37,8 @@ function RestoreSubmitButton(origin)
 {
 	switch (origin) {
 		case 'config':
-			ElementButton = "ConfigSubmitButton";
-			ElementReplace = "ConfigButtonReplace";
+			ElementButton = "ApplyConfigButton";
+			ElementReplace = "ApplyConfigButtonReplace";
 			break;
 		case 'page':
 			ElementButton = "PageSubmitButton";
