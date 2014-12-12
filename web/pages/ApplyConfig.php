@@ -23,13 +23,14 @@
 //#################### FIRST LINE #####################################
 
 if ( IfApplyConfig() > 0 ) {
-	$MySB_DB = new medoo_MySB();
+	global $MySB_DB;
+	
 	$Commands = $MySB_DB->select("commands", "commands", ["reload" => 1, "ORDER" => "priority DESC"]);
 
 	foreach ($Commands as $Cmd) {
 		switch ($Cmd) {
 			case "FirewallAndSecurity.sh":
-				echo '<h1>FirewallAndSecurity.sh...</h1>';
+				echo '<div align="center"><h1>FirewallAndSecurity.sh...</h1></div>';
 			
 				exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.sh new 'ApplyConfig'", $output, $result);
 
@@ -52,7 +53,7 @@ if ( IfApplyConfig() > 0 ) {
 				
 				break;		
 			case "GetTrackersCert.sh":
-				echo '<h1>GetTrackersCert.sh...</h1>';
+				echo '<div align="center"><h1>GetTrackersCert.sh...</h1></div>';
 				$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "$Cmd"]);
 				if ( $result > 0 ) {
 					$type = 'success';
@@ -60,10 +61,11 @@ if ( IfApplyConfig() > 0 ) {
 					$type = 'error';
 					$message = 'Failed ! It was not possible to update the MySB database.';
 				}
-
+				header('Refresh: 3; URL=/');
+				
 				break;
 			case "PaymentReminder.sh":
-				echo '<h1>PaymentReminder.sh...</h1>';
+				echo '<div align="center"><h1>PaymentReminder.sh...</h1></div>';
 				$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "$Cmd"]);
 				if ( $result > 0 ) {
 					$type = 'success';
@@ -71,6 +73,8 @@ if ( IfApplyConfig() > 0 ) {
 					$type = 'error';
 					$message = 'Failed ! It was not possible to update the MySB database.';
 				}
+				header('Refresh: 3; URL=/');
+				
 				break;			
 		}
 		
@@ -78,7 +82,6 @@ if ( IfApplyConfig() > 0 ) {
 			echo '<script type="text/javascript">ApplyConfig("Updated");</script>';
 		}
 		GenerateMessage(false, $type, $message);
-		header('Refresh: 10; URL=/');
 	}
 } else {
 	echo '<h1>Nothing to apply...</h1>';
@@ -86,7 +89,6 @@ if ( IfApplyConfig() > 0 ) {
 	$message = 'Nothing to apply...';	
 	GenerateMessage(false, $type, $message);
 }
-
 
 //#################### LAST LINE ######################################
 ?>

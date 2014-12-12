@@ -22,8 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-// Users table
-$MySB_DB = new medoo_MySB();
+global $MySB_DB;
 
 if(isset($_POST)==true && empty($_POST)==false) {
 	$success = true;

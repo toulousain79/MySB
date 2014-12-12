@@ -29,9 +29,7 @@ if ($_SERVER['PHP_AUTH_USER'] == '##MySB_User##') {
 }
 
 function printUser($user) {
-	global $users_datas;
-
-	$MySB_DB = new medoo_MySB();
+	global $MySB_DB, $system_datas, $users_datas;
 	
 	// User ID
 	$UserID = $users_datas["id_users"];

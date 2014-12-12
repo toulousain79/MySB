@@ -22,8 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-// Users table
-$MySB_DB = new medoo_MySB();
+global $MySB_DB;
 
 $IsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
 

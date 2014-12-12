@@ -22,7 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-$MySB_DB = new medoo_MySB();
+global $MySB_DB;
 
 // Vars
 $UserAddress = $_SERVER['REMOTE_ADDR'];

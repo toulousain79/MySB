@@ -24,7 +24,7 @@
 
 // CountingUsers
 function CountingUsers() {
-	$MySB_DB = new medoo_MySB();
+	global $MySB_DB;
 
 	$result = $MySB_DB->count("users", "");
 	
@@ -33,16 +33,14 @@ function CountingUsers() {
 
 // MySB version
 function GetVersion() {
-	$MySB_DB = new medoo_MySB();
+	global $system_datas;
 	
-	$Version = $MySB_DB->get("system", "mysb_version", ["id_system" => 1]);
-	
-	return $Version;
+	return $system_datas["mysb_version"];
 }
 
 // Main user ?
 function MainUser() {
-	$MySB_DB = new medoo_MySB();
+	global $MySB_DB;
 	
 	$MainUser = $MySB_DB->get("users", "users_ident", ["admin" => 1]);
 	$CurrentUser = $_SERVER['PHP_AUTH_USER'];
@@ -88,12 +86,13 @@ function displayChildren($page, $current, $startmenu = true) {
 
 // Update Wolf database
 function UpdateWolfDB($username, $password) {
+	global $MySB_DB;
+
 	if (!defined('IN_CMS')) { exit(); }
 	
 	if ( MainUser() == true ) {	
 		if ( (isset($password)) && (isset($username)) ) {
 			$PDO = Record::getConnection();
-			$MySB_DB = new medoo_MySB();
 			$sql_update = '';		
 		
 			$salt = AuthUser::generateSalt();
@@ -115,7 +114,8 @@ function UpdateWolfDB($username, $password) {
 
 // Manage User Trackers
 function ManageUsersTrackers($TrackerDomain, $IsActive) {
-	$MySB_DB = new medoo_MySB();
+	global $MySB_DB;
+	
 	$value = false;
 
 	// Check if address exist
@@ -151,7 +151,8 @@ function ManageUsersTrackers($TrackerDomain, $IsActive) {
 
 // Manage Users Addresses
 function ManageUsersAddresses($UserName, $IPv4, $HostName, $IsActive, $CheckBy) {
-	$MySB_DB = new medoo_MySB();
+	global $MySB_DB;
+	
 	$UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$UserName"]);
 	$value = false;
 
@@ -229,7 +230,7 @@ function ValidateIPv4NoPriv($ip) {
 
 // Can I activate 'Apply' button ?
 function IfApplyConfig() {
-	$MySB_DB = new medoo_MySB();
+	global $MySB_DB;
 	
 	$value = $MySB_DB->count("commands", "reload", ["reload" => 1]);	
 
@@ -238,7 +239,7 @@ function IfApplyConfig() {
 
 // Generate message (success, error, information, ...)
 function GenerateMessage($commands, $type, $message = '') {
-	$MySB_DB = new medoo_MySB();
+	global $MySB_DB;
 
 	switch ($type) {
 		case "success":

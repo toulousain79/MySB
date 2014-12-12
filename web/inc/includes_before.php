@@ -22,12 +22,24 @@
 //
 //#################### FIRST LINE #####################################
 
+// Directories
+define('WEB_ROOT', '/etc/MySB/web/');
+define('WEB_INC', WEB_ROOT . 'inc/');
+
+// Data bases
+define('Wolf_DB', WEB_ROOT. '../db/wolf.sq3');
+define('MySB_DB', WEB_ROOT. '../db/MySB_WithData.sq3');
+
+// Files
+define('FILE_MEDOO', WEB_INC. 'medoo.min.php');
+define('FILE_FUNCS', WEB_INC. 'functions.php');
+
 // Medoo framework
-include_once '/etc/MySB/web/inc/medoo.min.php';
-$MySB_DB = new medoo_MySB();
+include_once(FILE_MEDOO);
+$MySB_DB = new medoo();
 
 // Some Functions
-include_once '/etc/MySB/web/inc/functions.php';
+include_once(FILE_FUNCS);
 
 // Load System table
 $system_datas = $MySB_DB->get("system", "*", ["id_system" => 1]);

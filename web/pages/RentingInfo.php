@@ -23,9 +23,10 @@
 //#################### FIRST LINE #####################################
 
 function Form() {
-	$database = new medoo_MySB();
+	global $MySB_DB;
+
 	// Users table
-	$renting_datas = $database->get("renting", [
+	$renting_datas = $MySB_DB->get("renting", [
 												"model",
 												"tva",
 												"global_cost",
@@ -88,9 +89,9 @@ if (isset($_POST['submit'])) {
 		$PricePerUsers = $X + $Y;
 		$PricePerUsers = ceil($PricePerUsers);
 	
-		$database = new medoo_MySB();
+		global $MySB_DB;
 				
-		$result = $database->update("renting", ["model" => "$Model",
+		$result = $MySB_DB->update("renting", ["model" => "$Model",
 										"tva" => "$TVA",
 										"global_cost" => "$GlobalCost",
 										"nb_users" => "$TotalUsers",
