@@ -32,7 +32,7 @@ if ( IfApplyConfig() > 0 ) {
 			case "FirewallAndSecurity.bsh":
 				echo '<div align="center"><h1>FirewallAndSecurity.bsh...</h1></div>';
 			
-				exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh new 'ApplyConfig'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh new 'ApplyConfig.php'", $output, $result);
 
 				foreach ( $output as $item ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';
