@@ -147,29 +147,6 @@ CREATE TABLE renting (
 );
 
 
--- Table: users
-CREATE TABLE users ( 
-    id_users      INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                  NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT ABORT,
-    users_ident   VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT IGNORE,
-    users_email   VARCHAR( 260 )  NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT IGNORE,
-    users_passwd  VARCHAR( 32 ),
-    rpc           VARCHAR( 64 ),
-    sftp          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                  DEFAULT ( 1 ),
-    sudo          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                  DEFAULT ( 0 ),
-    admin         BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                  DEFAULT ( 0 ),
-    scgi_port     INTEGER( 5 ),
-    rtorrent_port INTEGER( 5 ),
-    home_dir      VARCHAR( 128 ) 
-);
-
-
 -- Table: rtorrent_blocklists
 CREATE TABLE rtorrent_blocklists ( 
     id_rtorrent_blocklists INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -309,3 +286,26 @@ INSERT INTO [services] ([id_services], [serv_name], [ident], [ports_tcp], [ports
 INSERT INTO [services] ([id_services], [serv_name], [ident], [ports_tcp], [ports_tcp_sec], [ports_tcp_ter], [ports_udp], [is_installed], [bin], [cmd_reload], [cmd_restart]) VALUES (19, 'NFS', '/etc/exports', '', '', '', '', 0, 'nfs-kernel-server', 'service nfs-kernel-server reload', 'service nfs-kernel-server restart');
 INSERT INTO [services] ([id_services], [serv_name], [ident], [ports_tcp], [ports_tcp_sec], [ports_tcp_ter], [ports_udp], [is_installed], [bin], [cmd_reload], [cmd_restart]) VALUES (20, 'BIND', '/etc/bind/named.conf', '', '', '', '', 0, 'bind9', 'service bind9 reload', 'service bind9 restart');
 INSERT INTO [services] ([id_services], [serv_name], [ident], [ports_tcp], [ports_tcp_sec], [ports_tcp_ter], [ports_udp], [is_installed], [bin], [cmd_reload], [cmd_restart]) VALUES (21, 'Stunnel', '/etc/stunnel', '', '', '', '', 0, 'stunnel4', 'service stunnel4 reload', 'service stunnel4 restart');
+
+-- Table: users
+CREATE TABLE users ( 
+    id_users      INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                  NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT ABORT,
+    users_ident   VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT IGNORE,
+    users_email   VARCHAR( 260 )  NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT IGNORE,
+    users_passwd  VARCHAR( 32 ),
+    rpc           VARCHAR( 64 ),
+    sftp          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
+                                  DEFAULT ( 1 ),
+    sudo          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
+                                  DEFAULT ( 0 ),
+    admin         BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
+                                  DEFAULT ( 0 ),
+    scgi_port     INTEGER( 5 ),
+    rtorrent_port INTEGER( 5 ),
+    home_dir      VARCHAR( 128 ) 
+);
+

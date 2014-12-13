@@ -112,6 +112,19 @@ function UpdateWolfDB($username, $password) {
 	return $result;
 }
 
+// Compare password and salt between MySB db and Wolf db
+function CheckWolfDB($username, $password) {
+	global $Wolf_DB;
+	
+	if ( MainUser() == true ) {	
+		$Wolf_Datas = $Wolf_DB->get("user", ["password", "salt"], ["username" => "$username"]);
+		
+		if ( ($Wolf_Datas["password"] == "") || ($Wolf_Datas["salt"] == "") ) {
+			UpdateWolfDB($username, $password);
+		}
+	}
+}
+
 // Manage User Trackers
 function ManageUsersTrackers($TrackerDomain, $IsActive) {
 	global $MySB_DB;

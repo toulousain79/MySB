@@ -28,7 +28,7 @@ define('WEB_INC', WEB_ROOT . 'inc/');
 
 // Data bases
 define('Wolf_DB', WEB_ROOT. '../db/Wolf.sq3');
-define('MySB_DB', WEB_ROOT. '../db/MySB_WithData.sq3');
+define('MySB_DB', WEB_ROOT. '../db/MySB.sq3');
 
 // Files
 define('FILE_MEDOO', WEB_INC. 'medoo.min.php');
@@ -36,7 +36,8 @@ define('FILE_FUNCS', WEB_INC. 'functions.php');
 
 // Medoo framework
 include_once(FILE_MEDOO);
-$MySB_DB = new medoo();
+$MySB_DB = new medoo(['database_file' => MySB_DB, 'database_name' => 'MySB']);
+$Wolf_DB = new medoo(['database_file' => Wolf_DB, 'database_name' => 'Wolf']);
 
 // Some Functions
 include_once(FILE_FUNCS);

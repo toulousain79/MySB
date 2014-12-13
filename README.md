@@ -286,6 +286,7 @@ Created by toulousain79
 * DNS Server:	http://en.m.wikipedia.org/wiki/Comparison_of_DNS_server_software
 * DNScrypt infos:	http://antix.freeforums.org/secure-dns-with-dnscrypt-t3588.html
 * DNScrypt + Bind9:	http://cavaencoreparlerdebits.fr/blog/2013/10/encrypt-your-dns-request-with-opendns-dnscrypt
+* PHPBench:		http://www.phpbench.com/
 
 ## TODO
 
