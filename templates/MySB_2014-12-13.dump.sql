@@ -267,6 +267,7 @@ CREATE TABLE system (
     cert_password VARCHAR( 13 )    UNIQUE ON CONFLICT IGNORE 
 );
 
+INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password]) VALUES (1, '', '', '', '', '', '', '', '');
 
 -- Table: services
 CREATE TABLE services ( 
