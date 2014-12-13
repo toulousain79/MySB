@@ -51,12 +51,12 @@ if [ -f $MySB_DB ]; then
 	TimeZone="`sqlite3 $MySB_DB \"SELECT timezone FROM system WHERE id_system = '1'\"`"
 	MySB_User="`sqlite3 $MySB_DB \"SELECT mysb_user FROM system WHERE id_system = '1'\"`"
 	MySB_Password="`sqlite3 $MySB_DB \"SELECT mysb_password FROM system WHERE id_system = '1'\"`"
-	Port_FTP="`sqlite3 $MySB_DB \"SELECT ports_tcp FROM services WHERE serv_name = 'VSFTPd'\"`"
-	Port_FTP_Data="`sqlite3 $MySB_DB \"SELECT ports_tcp_sec FROM services WHERE serv_name = 'VSFTPd'\"`"
-	Port_FTP_Passive="`sqlite3 $MySB_DB \"SELECT ports_tcp_ter FROM services WHERE serv_name = 'VSFTPd'\"`"
-	Port_SSH="`sqlite3 $MySB_DB \"SELECT ports_tcp FROM services WHERE serv_name = 'SSH'\"`"
-	Port_HTTPS="`sqlite3 $MySB_DB \"SELECT ports_tcp FROM services WHERE serv_name = 'NginX'\"`"
-	Port_HTTP="`sqlite3 $MySB_DB \"SELECT ports_tcp_sec FROM services WHERE serv_name = 'NginX'\"`"
+	Port_FTP="`sqlite3 $MySB_DB \"SELECT port_tcp1 FROM services WHERE serv_name = 'VSFTPd'\"`"
+	Port_FTP_Data="`sqlite3 $MySB_DB \"SELECT port_tcp2 FROM services WHERE serv_name = 'VSFTPd'\"`"
+	Port_FTP_Passive="`sqlite3 $MySB_DB \"SELECT port_tcp3 FROM services WHERE serv_name = 'VSFTPd'\"`"
+	Port_SSH="`sqlite3 $MySB_DB \"SELECT port_tcp1 FROM services WHERE serv_name = 'SSH'\"`"
+	Port_HTTPS="`sqlite3 $MySB_DB \"SELECT port_tcp1 FROM services WHERE serv_name = 'NginX'\"`"
+	Port_HTTP="`sqlite3 $MySB_DB \"SELECT port_tcp2 FROM services WHERE serv_name = 'NginX'\"`"
 
 	if [ -z "$HostNameFQDN" ]; then
 		HostNameFQDN="`hostname -f`"
@@ -104,19 +104,20 @@ if [ -f $MySB_DB ]; then
 		MySB_PeerBlock="none"
 	fi
 
-	Ports_Cakebox="`sqlite3 $MySB_DB \"SELECT ports_tcp FROM services WHERE serv_name = 'CakeBox-Light'\"`"
-	Ports_Webmin="`sqlite3 $MySB_DB \"SELECT ports_tcp FROM services WHERE serv_name = 'Webmin'\"`"
-	Ports_OpenVPN="`sqlite3 $MySB_DB \"SELECT ports_tcp FROM services WHERE serv_name = 'OpenVPN'\"`"
-	if [ ! -z "$Ports_OpenVPN" ]; then
-		OpenVPN_Proto="tcp"
-		Port_OpenVPN_WithGW=$(echo $Ports_OpenVPN | awk '{ print $1 }')
-		Port_OpenVPN_WithoutGW=$(echo $Ports_OpenVPN | awk '{ print $2 }')
-	else
-		Ports_OpenVPN="`sqlite3 $MySB_DB \"SELECT ports_udp FROM services WHERE serv_name = 'OpenVPN'\"`"
-		OpenVPN_Proto="udp"
-		Port_OpenVPN_WithGW=$(echo $Ports_OpenVPN | awk '{ print $1 }')
-		Port_OpenVPN_WithoutGW=$(echo $Ports_OpenVPN | awk '{ print $2 }')	
-	fi
+	Ports_Cakebox="`sqlite3 $MySB_DB \"SELECT ports_tcp1 FROM services WHERE serv_name = 'CakeBox-Light'\"`"
+	Ports_Webmin="`sqlite3 $MySB_DB \"SELECT ports_tcp1 FROM services WHERE serv_name = 'Webmin'\"`"
+	Port_OpenVPN_WithGW="`sqlite3 $MySB_DB \"SELECT ports_tcp1 FROM services WHERE serv_name = 'OpenVPN'\"`"
+	Port_OpenVPN_WithoutGW="`sqlite3 $MySB_DB \"SELECT ports_tcp2 FROM services WHERE serv_name = 'OpenVPN'\"`"
+	case "$Port_OpenVPN_WithGW" in
+		"")
+			OpenVPN_Proto="UDP"
+			Port_OpenVPN_WithGW="`sqlite3 $MySB_DB \"SELECT ports_udp1 FROM services WHERE serv_name = 'OpenVPN'\"`"
+			Port_OpenVPN_WithoutGW="`sqlite3 $MySB_DB \"SELECT ports_udp2 FROM services WHERE serv_name = 'OpenVPN'\"`"			
+		;;
+		*)
+			OpenVPN_Proto="TCP"
+		;;
+	esac
 	# ----- Services info
 
 	# ----- SMTP info
@@ -133,8 +134,8 @@ if [ -f $MySB_DB ]; then
 	# ----- White IP addresses
 
 	# ----- Networks ports (Services ports)
-	Ports_TCP_PlexMedia="`sqlite3 $MySB_DB \"SELECT ports_tcp FROM services WHERE serv_name = 'Plex Media Server'\" | sed 's/,/ /g;'`"
-	Ports_UDP_PlexMedia="`sqlite3 $MySB_DB \"SELECT ports_udp FROM services WHERE serv_name = 'Plex Media Server'\" | sed 's/,/ /g;'`"
+	Ports_TCP_PlexMedia="`sqlite3 $MySB_DB \"SELECT ports_tcp_list FROM services WHERE serv_name = 'Plex Media Server'\" | sed 's/,/ /g;'`"
+	Ports_UDP_PlexMedia="`sqlite3 $MySB_DB \"SELECT ports_udp_list FROM services WHERE serv_name = 'Plex Media Server'\" | sed 's/,/ /g;'`"
 	# ----- Networks ports (Services ports)
 	
 	# ----- Renting infos

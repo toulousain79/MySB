@@ -35,8 +35,8 @@ function printUser($user) {
 	$UserID = $users_datas["id_users"];
 	
 	// Ports
-	$Port_SSH = $MySB_DB->get("services", "ports_tcp", ["serv_name" => "SSH"]);
-	$Port_FTP = $MySB_DB->get("services", "ports_tcp", ["serv_name" => "VSFTPd"]);
+	$Port_SSH = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "SSH"]);
+	$Port_FTP = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "VSFTPd"]);
 
 	echo '<table width="100%" border="0" align="left">';
 	
@@ -218,7 +218,7 @@ function printUser($user) {
 	// CakeBox Light
 	$CakeboxDatas = $MySB_DB->get("services", "*", ["serv_name" => "CakeBox-Light"]);
 	if ( $CakeboxDatas["is_installed"] == '1' ) {
-		$Link = 'https://' . $system_datas["hostname"] . ':' . $CakeboxDatas["ports_tcp"] . '/';
+		$Link = 'https://' . $system_datas["hostname"] . ':' . $CakeboxDatas["port_tcp1"] . '/';
 		echo '<tr align="left"><th width="15%" scope="row">CakeBox Light</th>';			
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Play here your media.</span></a></td></tr>';
 	}
@@ -226,7 +226,7 @@ function printUser($user) {
 		// Webmin
 		$WebminDatas = $MySB_DB->get("services", "*", ["serv_name" => "Webmin"]);
 		if ( $WebminDatas["is_installed"] == '1' ) {
-			$Link = 'https://' . $system_datas["hostname"] . ':' . $WebminDatas["ports_tcp"] . '/';
+			$Link = 'https://' . $system_datas["hostname"] . ':' . $WebminDatas["port_tcp1"] . '/';
 			echo '<tr align="left"><th width="15%" scope="row">Webmin</th>';			
 			echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Admin interface for manage your server.</span></a></td></tr>';
 		}

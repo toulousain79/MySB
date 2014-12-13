@@ -49,7 +49,7 @@ $system_datas = $MySB_DB->get("system", "*", ["id_system" => 1]);
 $users_datas = $MySB_DB->get("users", "*", ["users_ident" => $_SERVER['PHP_AUTH_USER']]);
 
 // Services table
-$Port_HTTPs = $MySB_DB->get("services", "ports_tcp", ["serv_name" => "NginX"]);
+$Port_HTTPs = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "NginX"]);
 
 //#################### LAST LINE #####################################
 ?>

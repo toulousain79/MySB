@@ -80,13 +80,14 @@ done
 echo
 echo -e "${CYELLOW}Do you want to use an external SMTP server? (Good for safe sending emails.).$CEND"
 echo -e "${CYELLOW}Choose between ${CGREEN}LOCAL$CEND${CYELLOW} or listed providers $CEND${CGREEN}FREE$CEND|$CEND${CGREEN}OVH$CEND${CYELLOW}|$CEND${CGREEN}GMAIL$CEND|$CEND${CGREEN}YAHOO$CEND${CYELLOW}. Only SSL transactions will be used (SSL/465).$CEND"
+echo -e "${CYELLOW}I recommend you to use a provider.$CEND"
 while [ ! "$Smtp_Provider" = "LOCAL" ] \
-	|| [ ! "$Smtp_Provider" = "FREE" ] \
-	|| [ ! "$Smtp_Provider" = "OVH" ] \
-	|| [ ! "$Smtp_Provider" = "GMAIL" ] \
-	|| [ ! "$Smtp_Provider" = "YAHOO" ]; do
+	&& [ ! "$Smtp_Provider" = "FREE" ] \
+	&& [ ! "$Smtp_Provider" = "OVH" ] \
+	&& [ ! "$Smtp_Provider" = "GMAIL" ] \
+	&& [ ! "$Smtp_Provider" = "YAHOO" ]; do
 	
-	QuestionGetString NO "What is your provider? " Smtp_Provider LOCAL
+	QuestionGetString NO "What is your provider? " Smtp_Provider $Smtp_Provider
 done
 
 Smtp_Provider=`echo $Smtp_Provider | tr '[:lower:]' '[:upper:]'`
@@ -125,19 +126,19 @@ done
 QuestionGetString NO "What is the hostname (FQDN) of your box: " HostNameFQDN $HostNameFQDN
 
 # NginX HTTP port
-QuestionGetString NO "NginX HTTP port (usually 80): " Port_HTTP 8888
+QuestionGetString NO "NginX HTTP port (usually 80): " Port_HTTP $Port_HTTP
 
 # NginX HTTPs port
-QuestionGetString NO "NginX HTTPs port (usually 443): " Port_HTTPS 8889
+QuestionGetString NO "NginX HTTPs port (usually 443): " Port_HTTPS $Port_HTTPS
 
 # SSH port
-QuestionGetString NO "SSH port (usually 22): " Port_SSH 8892
+QuestionGetString NO "SSH port (usually 22): " Port_SSH $Port_SSH
 
 # FTP port
-QuestionGetString NO "FTP port (usually 21): " Port_FTP 8891
+QuestionGetString NO "FTP port (usually 21): " Port_FTP $Port_FTP
 
 # FTP Active data port
-QuestionGetString NO "FTP Active Data port (usually 20): " Port_FTP_Data 8800
+QuestionGetString NO "FTP Active Data port (usually 20): " Port_FTP_Data $Port_FTP_Data
 
 
 #### SERVICES
@@ -151,7 +152,7 @@ QuestionGetString NO "Install Seedbox-Manager (recommended)? " IsInstalled_Manag
 echo
 QuestionGetString NO "Install CakeBox Light? " IsInstalled_Cakebox YES
 if [ "$IsInstalled_Cakebox" == "YES" ]; then
-	QuestionGetString NO "CakeBox port: " Ports_Cakebox 8887
+	QuestionGetString NO "CakeBox port: " Ports_Cakebox $Ports_Cakebox
 fi
 
 # Plexmedia server
@@ -162,7 +163,7 @@ QuestionGetString NO "Install Plex Media? " IsInstalled_PlexMedia YES
 echo
 QuestionGetString NO "Install Webmin? " IsInstalled_Webmin YES
 if [ "$IsInstalled_Webmin" == "YES" ]; then
-	QuestionGetString NO "Webmin port  (usually 10000): " Ports_Webmin 8890
+	QuestionGetString NO "Webmin port  (usually 10000): " Ports_Webmin $Ports_Webmin
 fi
 
 # OpenVPN
@@ -173,7 +174,9 @@ if [ "`ls -la /dev/net/tun &>2 /dev/null && echo $?`" == "0" ]; then
 		QuestionGetString NO  "OpenVPN port with redirect gateway: " Port_OpenVPN_WithGW 8893
 		QuestionGetString NO  "OpenVPN port without redirect gateway: " Port_OpenVPN_WithoutGW 8894
 		echo -e "${CYELLOW}You can use OpenVPN with TCP or UDP.$CEND ${CYELLOW}(TCP is recommended)$CEND"
-		QuestionGetString NO "Which protocol, 'UDP' OR 'TCP' ? : " OpenVPN_Proto TCP
+		while [ ! "$OpenVPN_Proto" = "UDP" ] && [ ! "$OpenVPN_Proto" = "TCP" ]; do
+			QuestionGetString NO "Which protocol, 'UDP' OR 'TCP' ? : " OpenVPN_Proto $OpenVPN_Proto
+		done		
 	fi
 else
 	echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
@@ -257,22 +260,19 @@ done
 unset IFS
 	
 #### 'services' table
-# HTTP
-sqlite3 $MySB_DB "UPDATE services SET ports_tcp_sec = '$Port_HTTP' WHERE serv_name = 'NginX';"
-# HTTPs
-sqlite3 $MySB_DB "UPDATE services SET ports_tcp = '$Port_HTTPS' WHERE serv_name = 'NginX';"
+# HTTPs & HTTP
+sqlite3 $MySB_DB "UPDATE services SET port_tcp1 = '$Port_HTTPS', port_tcp2 = '$Port_HTTP', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'NginX';"
 # SSH
-sqlite3 $MySB_DB "UPDATE services SET ports_tcp = '$Port_SSH' WHERE serv_name = 'SSH';"
+sqlite3 $MySB_DB "UPDATE services SET port_tcp1 = '$Port_SSH', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'SSH';"
 # FTP
-sqlite3 $MySB_DB "UPDATE services SET ports_tcp = '$Port_FTP' WHERE serv_name = 'VSFTPd';"
-sqlite3 $MySB_DB "UPDATE services SET ports_tcp_sec = '$Port_FTP_Data', ports_tcp_ter = '65000:65535' WHERE serv_name = 'VSFTPd';"
+sqlite3 $MySB_DB "UPDATE services SET port_tcp1 = '$Port_FTP', port_tcp2 = '$Port_FTP_Data', port_tcp3 = '65000:65535', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'VSFTPd';"
 
 if [ "$IsInstalled_Manager" == "YES" ]; then
 	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'Seedbox-Manager';"
 fi
 
 if [ "$IsInstalled_Cakebox" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1', ports_tcp = '$Ports_Cakebox' WHERE serv_name = 'CakeBox-Light';"
+	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1', port_tcp1 = '$Ports_Cakebox', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'CakeBox-Light';"
 fi
 
 if [ "$IsInstalled_PlexMedia" == "YES" ]; then
@@ -280,17 +280,18 @@ if [ "$IsInstalled_PlexMedia" == "YES" ]; then
 fi
 
 if [ "$IsInstalled_Webmin" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1', ports_tcp = '$Ports_Webmin' WHERE serv_name = 'Webmin';"
+	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1', port_tcp1 = '$Ports_Webmin', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'Webmin';"
 fi
 
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'OpenVPN';"
+	OpenVPN_Proto=`echo $OpenVPN_Proto | tr '[:lower:]' '[:upper:]'`
 	case "$OpenVPN_Proto" in
 		"TCP")
-			sqlite3 $MySB_DB "UPDATE services SET is_installed = '1', ports_tcp = '$Port_OpenVPN_WithGW $Port_OpenVPN_WithoutGW', ports_udp = '' WHERE serv_name = 'OpenVPN';"		
+			sqlite3 $MySB_DB "UPDATE services SET is_installed = '1', port_tcp1 = '$Port_OpenVPN_WithGW', port_tcp2 = '$Port_OpenVPN_WithoutGW', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'OpenVPN';"		
 		;;
 		"UDP")
-			sqlite3 $MySB_DB "UPDATE services SET is_installed = '1', ports_tcp = '', ports_udp = '$Port_OpenVPN_WithGW $Port_OpenVPN_WithoutGW' WHERE serv_name = 'OpenVPN';"
+			sqlite3 $MySB_DB "UPDATE services SET is_installed = '1', port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '$Port_OpenVPN_WithGW', port_udp2 = '$Port_OpenVPN_WithoutGW', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'OpenVPN';"
 		;;				
 	esac	
 fi
