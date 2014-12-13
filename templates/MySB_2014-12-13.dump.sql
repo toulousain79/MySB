@@ -287,6 +287,17 @@ INSERT INTO [services] ([id_services], [serv_name], [ident], [port_tcp1], [port_
 INSERT INTO [services] ([id_services], [serv_name], [ident], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [is_installed], [bin], [cmd_reload], [cmd_restart]) VALUES (20, 'BIND', '/etc/bind/named.conf', '', '', '', '', '', ' ', ' ', ' ', 0, 'bind9', 'service bind9 reload', 'service bind9 restart');
 INSERT INTO [services] ([id_services], [serv_name], [ident], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [is_installed], [bin], [cmd_reload], [cmd_restart]) VALUES (21, 'Stunnel', '/etc/stunnel', '', '', '', '', '', ' ', ' ', ' ', 0, 'stunnel4', 'service stunnel4 reload', 'service stunnel4 restart');
 
+-- Table: trackers_list_ipv4
+CREATE TABLE trackers_list_ipv4 ( 
+    id_trackers_list_ipv4 INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                          NOT NULL ON CONFLICT ABORT
+                                          UNIQUE ON CONFLICT ABORT,
+    id_trackers_list      INTEGER         NOT NULL ON CONFLICT ABORT,
+    ipv4                  VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT
+                                          UNIQUE ON CONFLICT IGNORE 
+);
+
+
 -- Table: system
 CREATE TABLE system ( 
     id_system     INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
@@ -299,18 +310,9 @@ CREATE TABLE system (
     ipv4          VARCHAR( 15 )    UNIQUE ON CONFLICT IGNORE,
     primary_inet  VARCHAR( 16 )    UNIQUE ON CONFLICT IGNORE,
     timezone      VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
-    cert_password VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE 
+    cert_password VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
+    apt_update    BOOLEAN( 1 )     DEFAULT ( 1 ),
+    apt_date      DATETIME 
 );
 
-INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password]) VALUES (1, '', '', '', '', '', '', '', '');
-
--- Table: trackers_list_ipv4
-CREATE TABLE trackers_list_ipv4 ( 
-    id_trackers_list_ipv4 INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                          NOT NULL ON CONFLICT ABORT
-                                          UNIQUE ON CONFLICT ABORT,
-    id_trackers_list      INTEGER         NOT NULL ON CONFLICT ABORT,
-    ipv4                  VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT
-                                          UNIQUE ON CONFLICT IGNORE 
-);
-
+INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password], [apt_update], [apt_date]) VALUES (1, '', '', '', '', '', '', '', '', 0, null);

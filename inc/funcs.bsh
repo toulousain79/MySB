@@ -113,14 +113,21 @@ PackagesManage() {
 	OPTIONS="-y --assume-yes"
 	RETURN=0
 	
-	# AptDate="`sqlite3 $MySB_DB \"SELECT apt_date FROM system WHERE 1\"`"
-	# AptDate=$(date -d $AptDate +"%y%m%d")
+	AptUpdate="`sqlite3 $MySB_DB \"SELECT apt_update FROM system WHERE 1\"`"
+	AptDate="`sqlite3 $MySB_DB \"SELECT apt_date FROM system WHERE 1\"`"
+	AptDate=$(date -d $AptDate +"%y-%m-%d %H")
+	Now=$(date +%Y-%m-%d\ %H)
+	t1=$(date --date="$AptDate" +%H)
+	t2=$(date --date="$Now" +%H)
+	let "tDiff=$t2-$t1"
 	
-	$BEFORE $packetg $OPTIONS update
-	
-	# if [ $? -eq 0 ]; then
-		# sqlite3 $MySB_DB "INSERT into system (apt_date) VALUES (DATETIME('NOW'));"
-	# fi
+	#### Need of 'apt-get update' ?
+	if [ "$AptUpdate" == "1" ] || [ "$tDiff" >= 2 ]; then
+		$BEFORE $packetg $OPTIONS update
+		if [ $? -eq 0 ]; then
+			sqlite3 $MySB_DB "INSERT into system (apt_update,apt_date) VALUES (0,datetime('now','localtime'));"
+		fi
+	fi
 		
 	case "$1" in
 		"install")

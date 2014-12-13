@@ -53,29 +53,32 @@ if [ $? -eq 0 ] ; then
 fi
 
 if [ "$WEBMINDOWN" == "NO" ] ; then
-	#add webmin source
+	#### Add Webmin source
 	echo "# Webmin" > /etc/apt/sources.list.d/webmin.list
 	echo "" >> /etc/apt/sources.list.d/webmin.list
 	echo "# wget -t 5 http://www.webmin.com/jcameron-key.asc" >> /etc/apt/sources.list.d/webmin.list
 	echo "# apt-key add jcameron-key.asc" >> /etc/apt/sources.list.d/webmin.list
 	echo "" >> /etc/apt/sources.list.d/webmin.list
 	echo "deb http://download.webmin.com/download/repository sarge contrib" >> /etc/apt/sources.list.d/webmin.list
-fi
 
-if [ "$WEBMINDOWN" == "NO" ]; then
+	#### Force apt-get update
+	sqlite3 $MySB_DB "INSERT into system (apt_update, apt_date) VALUES (1,DATETIME('NOW'));"
+	
+	#### Install package
 	PackagesManage install "webmin"
 	
+	sqlite3 $MySB_DB "UPDATE services SET port_tcp1 = '$Ports_Webmin', is_installed = '1' WHERE serv_name = 'Webmin';"
+	
+	#### Create certificate
 	ScriptInvoke 'source' '/etc/MySB/install/Certificates.bsh' 'CreateServiceCertificate' 'webmin'
 	
 	cat /etc/MySB/ssl/webmin.cert > /etc/webmin/miniserv.pem
 	cat /etc/MySB/ssl/webmin.key >> /etc/webmin/miniserv.pem
 	
+	#### Config
 	perl -pi -e "s/10000/$Ports_Webmin/g" /etc/webmin/miniserv.conf
 	perl -pi -e "s/force_init=0/force_init=1/g" /etc/webmin/firewall/config
 
-	sqlite3 $MySB_DB "UPDATE services SET port_tcp1 = '$Ports_Webmin', is_installed = '1' WHERE serv_name = 'Seedbox-Manager';"
-	
-	# Package Update
 	sed -i '/sched_action/d' /etc/webmin/package-updates/config
 	echo "sched_action=1" >> /etc/webmin/package-updates/config
 	sed -i '/sched_email/d' /etc/webmin/package-updates/config
@@ -86,7 +89,7 @@ if [ "$WEBMINDOWN" == "NO" ]; then
 	crontab /tmp/crontab.tmp
 	rm /tmp/crontab.tmp	
 	
-	# Webmin modules
+	#### Webmin modules
 	if [ ! -f /etc/MySB/files/openvpn.wbm ]; then
 		wget --no-check-certificate -O /etc/MySB/files/openvpn.wbm $WBM_webmin_openvpn
 	fi	
