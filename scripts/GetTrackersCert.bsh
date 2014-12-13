@@ -88,56 +88,11 @@ if [ ! -z "$TrackerList" ]; then
 			AddTracker $Tracker "users"
 		else
 			log_daemon_msg "Force activation of tracker: $Tracker"
-			sqlite3 $MySB_DB "UPDATE trackers_users SET is_active = '1' WHERE tracker_users = '$TrackerDomain';"
+			sqlite3 $MySB_DB "UPDATE trackers_list SET is_active = '1' WHERE tracker_domain = '$TrackerDomain';"
 			StatusLSB				
 		fi
 	done
 fi
-
-#### Clean global trackers list
-sqlite3 $MySB_DB "SELECT tracker FROM trackers_list WHERE 1" | while read Tracker; do
-	TrackerDomain="`echo $Tracker | sed 's/tracker.//g;'`"
-
-	ExistInRutorrent="`sqlite3 $MySB_DB \"SELECT tracker_rutorrent FROM trackers_rutorrent WHERE tracker_rutorrent = '$TrackerDomain'\"`"
-	
-	if [ ! -z "$ExistInRutorrent" ]; then
-		IsActive="`sqlite3 $MySB_DB \"SELECT is_active FROM trackers_rutorrent WHERE tracker_rutorrent = '$TrackerDomain'\"`"
-		case "$IsActive" in
-			"0")
-				Message="Disable tracker: $Tracker"
-			;;
-			"1")
-				Message="Enable tracker: $Tracker"				
-			;;
-		esac		
-		
-		log_daemon_msg "$Message"
-		sqlite3 $MySB_DB "UPDATE trackers_list SET is_active = '$IsActive' WHERE tracker = '$Tracker';"
-		StatusLSB
-	else
-		ExistInUsers="`sqlite3 $MySB_DB \"SELECT tracker_users FROM trackers_users WHERE tracker_users = '$TrackerDomain'\"`"
-		
-		if [ ! -z "$ExistInUsers" ]; then
-			IsActive="`sqlite3 $MySB_DB \"SELECT is_active FROM trackers_users WHERE tracker_users = '$TrackerDomain'\"`"
-			case "$IsActive" in
-				"0")
-					Message="Disable tracker: $Tracker"
-				;;
-				"1")
-					Message="Enable tracker: $Tracker"				
-				;;
-			esac
-			
-			log_daemon_msg "$Message"			
-			sqlite3 $MySB_DB "UPDATE trackers_list SET is_active = '$IsActive' WHERE tracker = '$TrackerDomain';"
-			StatusLSB
-		else
-			log_daemon_msg "Delete old tracker: $Tracker"
-			sqlite3 $MySB_DB "DELETE FROM trackers_list WHERE tracker = '$Tracker';"
-			StatusLSB
-		fi
-	fi
-done
 
 #### Get certificates
 sqlite3 $MySB_DB "SELECT tracker FROM trackers_list WHERE is_active = '1'" | while read Tracker; do

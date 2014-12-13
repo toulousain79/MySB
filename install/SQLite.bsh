@@ -306,32 +306,26 @@ ScriptInvoke 'source' '/etc/MySB/scripts/GetTrackersCert.bsh'
 
 # Create users trackers listing (compare)
 if [ -f /etc/MySB/infos/trackers.list ] ; then
-	# while read line; do
-		# if [ ! -z "$line" ]; then
-			# PART1=`echo ${line} | cut -d "." -f 1`
-			# PART2=`echo ${line} | cut -d "." -f 2`
-			# PART3=`echo ${line} | cut -d "." -f 3`
+	while read line; do
+		if [ ! -z "$line" ]; then
+			PART1=`echo ${line} | cut -d "." -f 1`
+			PART2=`echo ${line} | cut -d "." -f 2`
+			PART3=`echo ${line} | cut -d "." -f 3`
 			
-			# if [ -z "$PART3" ]; then
-				# TrackerDomain="`echo $PART1`.`echo $PART2`"
-			# else
-				# TrackerDomain="`echo $PART2`.`echo $PART3`"
-			# fi
-			# unset PART1 PART2 PART3
+			if [ -z "$PART3" ]; then
+				TrackerDomain="`echo $PART1`.`echo $PART2`"
+			else
+				TrackerDomain="`echo $PART2`.`echo $PART3`"
+			fi
+			unset PART1 PART2 PART3
 			
-			# ExistInRutorrent="`sqlite3 $MySB_DB \"SELECT tracker_rutorrent FROM trackers_rutorrent WHERE tracker_rutorrent = '$TrackerDomain'\"`"
-			# if [ -z "$ExistInRutorrent" ]; then # Is User tracker ?
-				# ExistInUsers="`sqlite3 $MySB_DB \"SELECT tracker_users FROM trackers_users WHERE tracker_users = '$TrackerDomain'\"`"
-				
-				# if [ -z "$ExistInUsers" ]; then
-					# sqlite3 $MySB_DB "INSERT into trackers_users (tracker_users,is_active) VALUES (\"$TrackerDomain\",\"0\");"
-				# fi
-				
-				# unset ExistInUsers
-			# fi
-			# unset ExistInRutorrent
-		# fi
-	# done < /etc/MySB/infos/trackers.list
+			IfExist="`sqlite3 $MySB_DB \"SELECT tracker FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"
+			if [ -z "$IfExist" ]; then
+				AddTracker $TrackerDomain "users"
+			fi
+			unset IfExist
+		fi
+	done < /etc/MySB/infos/trackers.list
 	rm /etc/MySB/infos/trackers.list
 fi
 # ----- Trackers listing

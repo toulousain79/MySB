@@ -229,23 +229,6 @@ INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES 
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (2, 'GetTrackersCert.bsh', 0, 1);
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (3, 'PaymentReminder.bsh', 0, 0);
 
--- Table: system
-CREATE TABLE system ( 
-    id_system     INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
-                                   NOT NULL ON CONFLICT ABORT,
-    mysb_version  VARCHAR( 6 )     NOT NULL ON CONFLICT ABORT
-                                   UNIQUE ON CONFLICT IGNORE,
-    mysb_user     VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
-    mysb_password VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
-    hostname      VARCHAR( 128 )   UNIQUE ON CONFLICT IGNORE,
-    ipv4          VARCHAR( 15 )    UNIQUE ON CONFLICT IGNORE,
-    primary_inet  VARCHAR( 16 )    UNIQUE ON CONFLICT IGNORE,
-    timezone      VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
-    cert_password VARCHAR( 13 )    UNIQUE ON CONFLICT IGNORE 
-);
-
-INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password]) VALUES (1, '', '', '', '', '', '', '', '');
-
 -- Table: users
 CREATE TABLE users ( 
     id_users      INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -313,3 +296,20 @@ INSERT INTO [services] ([id_services], [serv_name], [ident], [port_tcp1], [port_
 INSERT INTO [services] ([id_services], [serv_name], [ident], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [is_installed], [bin], [cmd_reload], [cmd_restart]) VALUES (19, 'NFS', '/etc/exports', '', '', '', '', '', ' ', ' ', ' ', 0, 'nfs-kernel-server', 'service nfs-kernel-server reload', 'service nfs-kernel-server restart');
 INSERT INTO [services] ([id_services], [serv_name], [ident], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [is_installed], [bin], [cmd_reload], [cmd_restart]) VALUES (20, 'BIND', '/etc/bind/named.conf', '', '', '', '', '', ' ', ' ', ' ', 0, 'bind9', 'service bind9 reload', 'service bind9 restart');
 INSERT INTO [services] ([id_services], [serv_name], [ident], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [is_installed], [bin], [cmd_reload], [cmd_restart]) VALUES (21, 'Stunnel', '/etc/stunnel', '', '', '', '', '', ' ', ' ', ' ', 0, 'stunnel4', 'service stunnel4 reload', 'service stunnel4 restart');
+
+-- Table: system
+CREATE TABLE system ( 
+    id_system     INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
+                                   NOT NULL ON CONFLICT ABORT,
+    mysb_version  VARCHAR( 6 )     NOT NULL ON CONFLICT ABORT
+                                   UNIQUE ON CONFLICT IGNORE,
+    mysb_user     VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
+    mysb_password VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
+    hostname      VARCHAR( 128 )   UNIQUE ON CONFLICT IGNORE,
+    ipv4          VARCHAR( 15 )    UNIQUE ON CONFLICT IGNORE,
+    primary_inet  VARCHAR( 16 )    UNIQUE ON CONFLICT IGNORE,
+    timezone      VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
+    cert_password VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE 
+);
+
+INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password]) VALUES (1, '', '', '', '', '', '', '', '');

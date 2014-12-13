@@ -735,7 +735,6 @@ GetRutorrentTrackers() {
 
 #### Get Users Trackers
 GetUsersTrackers() {
-	#UsersTrackers="`sqlite3 $MySB_DB \"SELECT tracker_users FROM trackers_users WHERE 1\"`"
 	UsersTrackers="`sqlite3 $MySB_DB \"SELECT tracker FROM trackers_list WHERE origin = 'users'\"`"
 	for Tracker in $UsersTrackers; do
 		if [ ! -z "$Tracker" ]; then
@@ -771,8 +770,8 @@ AddTracker() {
 			if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
 				ListIPv4=""
 				for Ip in $DomainIPv4; do
-						ListIPv4="$ListIPv4 $Ip"
-					done
+					ListIPv4="$ListIPv4 $Ip"
+				done
 				ListIPv4="`echo $ListIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`"
 			
 				DomainIPv4="$(nslookup tracker.$TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
@@ -784,7 +783,19 @@ AddTracker() {
 					ListIPv4="`echo $ListIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`"
 					
 					log_daemon_msg "Update trackers IPv4 for 'tracker.$TrackerDomain' --> '$ListIPv4'"
-					sqlite3 $MySB_DB "UPDATE trackers_list SET tracker = 'tracker.$TrackerDomain', ipv4 = '$ListIPv4' WHERE tracker_domain = '$TrackerDomain';"
+					sqlite3 $MySB_DB "SELECT ipv4 FROM trackers_list_ipv4 WHERE tracker = 'tracker.$TrackerDomain'" | while read ROW; do
+						IPv4=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
+						SEARCH=`echo $ListIPv4 | grep $IPv4`
+						if [ -z $SEARCH ]; then
+							sqlite3 $MySB_DB "DELETE FROM trackers_list_ipv4 WHERE ipv4 = '$IPv4';"
+						fi
+					done			
+					TrackersListID="`sqlite3 $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker = 'tracker.$TrackerDomain'\"`"
+					for Ip in $DomainIPv4; do
+						ListIPv4="$ListIPv4 $Ip"
+						sqlite3 $MySB_DB "INSERT into trackers_list_ipv4 (id_trackers_list,ipv4) VALUES (\"$TrackersListID\",\"$Ip\");"
+					done					
+					sqlite3 $MySB_DB "UPDATE trackers_list SET tracker = 'tracker.$TrackerDomain' WHERE tracker_domain = '$TrackerDomain';"
 					StatusLSB
 					
 					# log_daemon_msg "Add tracker to global list: tracker.$TrackerDomain"
@@ -796,7 +807,19 @@ AddTracker() {
 					# StatusLSB				
 				else
 					log_daemon_msg "Update trackers IPv4 for '$TrackerDomain' --> '$ListIPv4'"
-					sqlite3 $MySB_DB "UPDATE trackers_list SET tracker = '$TrackerDomain', ipv4 = '$ListIPv4' WHERE tracker_domain = '$TrackerDomain';"
+					sqlite3 $MySB_DB "SELECT ipv4 FROM trackers_list_ipv4 WHERE tracker = '$TrackerDomain'" | while read ROW; do
+						IPv4=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
+						SEARCH=`echo $ListIPv4 | grep $IPv4`
+						if [ -z $SEARCH ]; then
+							sqlite3 $MySB_DB "DELETE FROM trackers_list_ipv4 WHERE ipv4 = '$IPv4';"
+						fi
+					done					
+					TrackersListID="`sqlite3 $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker = '$TrackerDomain'\"`"
+					for Ip in $DomainIPv4; do
+						ListIPv4="$ListIPv4 $Ip"
+						sqlite3 $MySB_DB "INSERT into trackers_list_ipv4 (id_trackers_list,ipv4) VALUES (\"$TrackersListID\",\"$Ip\");"
+					done					
+					sqlite3 $MySB_DB "UPDATE trackers_list SET tracker = '$TrackerDomain' WHERE tracker_domain = '$TrackerDomain';"
 					StatusLSB				
 				
 					# log_daemon_msg "Add tracker to global list: $TrackerDomain"
