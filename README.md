@@ -127,7 +127,7 @@ After installing you will have access to the following commands to be used direc
 	
 Next scripts are avaible too.
 	
-	* '/etc/MySB/scripts/rTorrentBlocklists.bsh', use this for generate blocklist for rTorrent with 'ipv4_filter.load' command.
+	* '/etc/MySB/scripts/BlocklistsRTorrent.bsh', use this for generate blocklist for rTorrent with 'ipv4_filter.load' command.
 	* '/etc/MySB/scripts/FirewallAndSecurity.bsh [clean|new]', use this for generate all security options (PeerGuardian, IPtables, Fail2Ban, Nginx IP restricted access, ...)
 	* '/etc/MySB/scripts/GetTrackersCert.bsh', use this for get all SSL certificates for all tracker avaibled with ruTorrent. You can add more trackers in '/etc/MySB/inc/trackers'.
 
@@ -182,7 +182,7 @@ OR
 	* All list are avaible in "/etc/MySB/inc/blocklist".
 	* Comment the line with '#' if you want to exclude a list OR comment out the line with deleting '#' if you want to activate it.
 	* Example: #BLUETACK_ADS="http://....." to exclude ADS Bluetack list.	
-	* And do "bash /etc/MySB/scripts/rTorrentBlocklists.bsh" for generate the new list for each users.
+	* And do "bash /etc/MySB/scripts/BlocklistsRTorrent.bsh" for generate the new list for each users.
 
 	NB: The script compile one file with all list, and make cleaning rules.
 	NB: Beware, if you have not enough memory, choising too many list will make you system very slow!
