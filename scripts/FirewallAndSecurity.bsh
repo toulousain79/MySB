@@ -32,6 +32,7 @@ source /etc/MySB/inc/includes_before.bsh
 Modules="tun,iptable_filter,iptable_nat,iptable_mangle,ip_gre,ip_tables,ip_nat_ftp,ip_nat_irc,ip_conntrack,ip_conntrack_ftp,ip_conntrack_irc,ipt_REJECT,ipt_tos,ipt_TOS,ipt_limit,ipt_multiport,ipt_TCPMSS,ipt_tcpmss,ipt_ttl,ipt_length,ipt_LOG,ipt_conntrack,ipt_helper,ipt_state,ipt_recent,ipt_owner,ipt_mark,ipt_REDIRECT,ipt_MASQUERADE,ipt_MARK,xt_connlimit,xt_limit,xt_multiport,xt_state,xt_owner,xt_NFQUEUE"
 SeedboxUsersIPs="`sqlite3 $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users != '$MainUserId'\" | sed -e 's/^//g;' | sed 's/\s+$//'`"
 MainUserIPs="`sqlite3 $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users = '$MainUserId'\" | sed -e 's/^//g;' | sed 's/\s+$//'`"
+ListingUsers #($UsersList)
 
 #### Begin
 case $1 in
@@ -71,11 +72,56 @@ case $1 in
 		StatusLSB	
 	;;
 	new)
-		#### Create users list ($UsersList)
-		ListingUsers
-	
+		#### NO spoofing
+		if [ -e /proc/sys/net/ipv4/conf/all/rp_filter ]; then
+			log_daemon_msg "No spoofing"
+			for filtre in /proc/sys/net/ipv4/conf/*/rp_filter; do
+				echo 1 > $filtre
+			done
+			StatusLSB
+		fi
+		
+		#### Modules
+		log_daemon_msg "Loading modules"
+		IFS=$','
+		for item in $Modules; do
+			IfExist=`lsmod | grep "$item"`
+			if [ $? -eq 0 ] ; then
+				modprobe $item
+			fi
+		done
+		unset IFS
+		StatusLSB
+
+		#### Emptying and removal of existing rules
+		log_daemon_msg "Emptying and removal of existing rules"
+		for TABLE in filter nat mangle; do
+			iptables -t $TABLE -F
+			iptables -t $TABLE -X
+		done
+		StatusLSB
+
+		#### Prohibit any incoming connection and allow any outgoing connection
+		log_daemon_msg "Prohibit any incoming connection and authorize any outgoing connection"
+		iptables -t filter -P INPUT DROP
+		iptables -t filter -P FORWARD DROP
+		iptables -t filter -P OUTPUT ACCEPT	
+		StatusLSB
+		
+		#### Do not break the established connections
+		log_daemon_msg "Do not break established connections"
+		iptables -A INPUT -m state --state RELATED,ESTABLISHED -i $PrimaryInet -j ACCEPT
+		iptables -A OUTPUT -m state --state RELATED,ESTABLISHED -o $PrimaryInet -j ACCEPT	
+		StatusLSB
+		
+		#### Allow loopback
+		log_daemon_msg "Allow loopback interface"
+		iptables -t filter -A INPUT -i lo -j ACCEPT
+		StatusLSB	
+
 		#### Seedbox users IPs
 		log_daemon_msg "Creating IP white lists"
+		# Normal users IPs
 		for IPv4 in $SeedboxUsersIPs; do
 			IfExist=`echo $Fail2banWhiteList | grep $IPv4`
 			if [ -z $IfExist ]; then	
@@ -83,6 +129,15 @@ case $1 in
 			fi			
 		done
 		unset IPv4
+		# Main user IPs
+		for IPv4 in $MainUserIPs; do 
+			IfExist=`echo $Fail2banWhiteList | grep $IPv4`
+			if [ -z $IfExist ]; then	
+				Fail2banWhiteList="${Fail2banWhiteList} ${IPv4}/32"
+			fi
+		done
+		unset IPv4
+		# VPN local IPs	
 		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 			for IPv4 in $VpnIPs; do 
 				IfExist=`echo $Fail2banWhiteList | grep $IPv4`
@@ -108,53 +163,6 @@ case $1 in
 		unset IPv4
 		StatusLSB		
 		
-		#### NO spoofing
-		if [ -e /proc/sys/net/ipv4/conf/all/rp_filter ]; then
-			log_daemon_msg "No spoofing"
-			for filtre in /proc/sys/net/ipv4/conf/*/rp_filter; do
-				echo 1 > $filtre
-			done
-			StatusLSB
-		fi
-		
-		#### Modules
-		log_daemon_msg "Loading modules"
-		IFS=$','
-		for item in $Modules; do
-			IfExist=`lsmod | grep "$item"`
-			if [ $? -eq 0 ] ; then
-				modprobe $item
-			fi
-		done
-		unset IFS
-		StatusLSB
-
-		#### Vidage et suppression des règles existantes :
-		log_daemon_msg "Emptying and removal of existing rules"
-		for TABLE in filter nat mangle; do
-			iptables -t $TABLE -F
-			iptables -t $TABLE -X
-		done
-		StatusLSB
-
-		#### Interdire toute connexion entrante et autoriser toute connexion sortante
-		log_daemon_msg "Prohibit any incoming connection and authorize any outgoing connection"
-		iptables -t filter -P INPUT DROP
-		iptables -t filter -P FORWARD DROP
-		iptables -t filter -P OUTPUT ACCEPT	
-		StatusLSB
-		
-		#### Ne pas casser les connexions etablies
-		log_daemon_msg "Do not break established connections"
-		iptables -A INPUT -m state --state RELATED,ESTABLISHED -i $PrimaryInet -j ACCEPT
-		iptables -A OUTPUT -m state --state RELATED,ESTABLISHED -o $PrimaryInet -j ACCEPT	
-		StatusLSB
-		
-		#### Autoriser loopback
-		log_daemon_msg "Allow loopback interface"
-		iptables -t filter -A INPUT -i lo -j ACCEPT
-		StatusLSB	
-
 		#### ICMP
 		log_daemon_msg "Allow incoming ping for seedbox users only"
 		for ip in $SeedboxUsersIPs; do 

@@ -191,17 +191,17 @@ ManageServices() {
 	ListingUsers
 
 	sqlite3 $MySB_DB "SELECT ident, bin FROM services WHERE is_installed = '1' AND ident != '' AND bin != ''" | while read ROW; do
-		SEARCH=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
-		FullBIN=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
-		BIN=`echo $FullBIN | cut -d "/" -f 4`
-		SEARCH=$(cat $0 | grep $SEARCH)
-		
-		if [ ! -z "$SEARCH" ] ; then
-			if hash ${FullBIN} 2> /dev/null; then				
-				ServicesToManage="$ServicesToManage $BIN"
+			IDENT=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
+			FullBIN=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
+			SEARCH=$(cat /etc/MySB/scripts/FirewallAndSecurity.bsh | grep $IDENT)
+			BIN=`echo $FullBIN | cut -d '/' -f 4`
+
+			if [ ! -z "$SEARCH" ] ; then
+				if hash ${FullBIN} 2> /dev/null; then
+					ServicesToManage="${ServicesToManage} ${BIN}"
+				fi
 			fi
-		fi
-		unset SEARCH BIN FullBIN
+			unset SEARCH FullBIN IDENT
 	done
 	
 	if [ "$ServicesToManage" != "" ] && [ "$Command" != "" ]; then
