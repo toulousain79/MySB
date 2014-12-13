@@ -92,8 +92,8 @@ https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-acc
 ## How to install
 Just copy and paste those commands on your terminal:
 ```
-wget --no-check-certificate -N https://raw.githubusercontent.com/toulousain79/MySB/v1.1/MySB_Install.sh
-bash MySB_Install.sh
+wget --no-check-certificate -N https://raw.githubusercontent.com/toulousain79/MySB/v1.1/MySB_Install.bsh
+bash MySB_Install.bsh
 ```
 
 If you lose connection during installation, restart the SSH session and run the following command:
@@ -127,9 +127,9 @@ After installing you will have access to the following commands to be used direc
 	
 Next scripts are avaible too.
 	
-	* '/etc/MySB/scripts/BlockList.sh', use this for generate blocklist for rTorrent with 'ipv4_filter.load' command.
-	* '/etc/MySB/scripts/FirewallAndSecurity.sh [clean|new]', use this for generate all security options (PeerGuardian, IPtables, Fail2Ban, Nginx IP restricted access, ...)
-	* '/etc/MySB/scripts/GetTrackersCert.sh', use this for get all SSL certificates for all tracker avaibled with ruTorrent. You can add more trackers in '/etc/MySB/inc/trackers'.
+	* '/etc/MySB/scripts/BlockList.bsh', use this for generate blocklist for rTorrent with 'ipv4_filter.load' command.
+	* '/etc/MySB/scripts/FirewallAndSecurity.bsh [clean|new]', use this for generate all security options (PeerGuardian, IPtables, Fail2Ban, Nginx IP restricted access, ...)
+	* '/etc/MySB/scripts/GetTrackersCert.bsh', use this for get all SSL certificates for all tracker avaibled with ruTorrent. You can add more trackers in '/etc/MySB/inc/trackers'.
 
 You can find others scripts in '/etc/MySB/scripts/'. This others scripts are added in cron job.
 
@@ -172,7 +172,7 @@ Depending on your system, it is possible to use:
 ###### NOTE: Do not try to add your rtorrents ports in the list of incoming ports allowed in PeerGuardian (pglcmd.conf) !!!
 ###### Using PeerGuardian will not have much sense ...
 ###### Rather prefer permission trackers via the "allow.p2p" PeerGuardian file. To do this, edit the "/etc/MySB/inc/trackers" file and add only the domain of your tracker.
-###### Then use the command "bash /etc/MySB/scripts/GetTrackersCert.sh." This will retrieve all SSL certificates (if available) and complete the list of PeerGuardian.
+###### Then use the command "bash /etc/MySB/scripts/GetTrackersCert.bsh." This will retrieve all SSL certificates (if available) and complete the list of PeerGuardian.
 
 OR
 
@@ -182,7 +182,7 @@ OR
 	* All list are avaible in "/etc/MySB/inc/blocklist".
 	* Comment the line with '#' if you want to exclude a list OR comment out the line with deleting '#' if you want to activate it.
 	* Example: #BLUETACK_ADS="http://....." to exclude ADS Bluetack list.	
-	* And do "bash /etc/MySB/scripts/BlockList.sh" for generate the new list for each users.
+	* And do "bash /etc/MySB/scripts/BlockList.bsh" for generate the new list for each users.
 
 	NB: The script compile one file with all list, and make cleaning rules.
 	NB: Beware, if you have not enough memory, choising too many list will make you system very slow!

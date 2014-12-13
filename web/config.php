@@ -28,7 +28,7 @@
 // For more info look at: www.php.net/pdo
 
 // Database settings:
-define('DB_DSN', 'sqlite:/etc/MySB/db/wolf.sq3');
+define('DB_DSN', 'sqlite:'.Wolf_DB);
 define('DB_USER', 'root');
 define('DB_PASS', '');
 define('TABLE_PREFIX', '');
@@ -43,7 +43,7 @@ define('CHECK_UPDATES', true);
 define('CHECK_TIMEOUT', 3);
 
 // The full URL of your Wolf CMS install
-define('URL_PUBLIC', 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/');
+define('URL_PUBLIC', 'https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/');
 
 // Use httpS for the backend?
 // Before enabling this, please make sure you have a working HTTP+SSL installation.

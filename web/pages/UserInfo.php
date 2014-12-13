@@ -33,6 +33,10 @@ function printUser($user) {
 	
 	// User ID
 	$UserID = $users_datas["id_users"];
+	
+	// Ports
+	$Port_SSH = $MySB_DB->get("services", "ports_tcp", ["serv_name" => "SSH"]);
+	$Port_FTP = $MySB_DB->get("services", "ports_tcp", ["serv_name" => "VSFTPd"]);
 
 	echo '<table width="100%" border="0" align="left">';
 	
@@ -46,7 +50,7 @@ function printUser($user) {
 	echo '<td></td></tr>';
 	// IP Address
 	$IPv4_List = $MySB_DB->select("users_addresses", "ipv4", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
-	$comments = 'Public IP addresses used for access restriction. You can manage this list <a href="https://' . $_SERVER['HTTP_HOST'] . '/?user/manage-addresses.html">here</a>.';
+	$comments = 'Public IP addresses used for access restriction. You can manage this list <a href="/?user/manage-addresses.html">here</a>.';
 	echo '<tr align="left"><th width="15%" scope="row">IP Address</th><td>';
 	if ( $IPv4_List != "" ) {
 		$opts = '';
@@ -63,7 +67,7 @@ function printUser($user) {
 	if ( isset($users_datas["users_passwd"]) ) {
 		echo '<tr align="left"><th width="15%" scope="row">Password</th>';
 		echo '<td>' . $users_datas["users_passwd"] . '</td>';
-		echo '<td  style="background-color: #FF6666; text-align: center;"><form method="post" action="https://srv1.lig2p.com:8889/?user/change-password.html">';
+		echo '<td  style="background-color: #FF6666; text-align: center;"><form method="post" action="?user/change-password.html">';
 		echo '<input name="TempPass" type="hidden" value="##TempPassword##" />';
 		echo '<input style="cursor: pointer;" name="submit" type="submit" value="I want to change my password now !" />';
 		echo '</form></td></tr>';		
@@ -140,11 +144,11 @@ function printUser($user) {
 	echo '<tr align="left"><th colspan="3" scope="row"><h4>Ports</h4></th></tr>';		
 	// SFTP Port
 	echo '<tr align="left"><th width="15%" scope="row">SFTP port</th>';
-	echo '<td>' . $system_datas["port_ssh"] . '</td>';
+	echo '<td>' . $Port_SSH . '</td>';
 	echo '<td></td></tr>';
 	// FTPs Port
 	echo '<tr align="left"><th width="15%" scope="row">FTPs port (TLS)</th>';
-	echo '<td>' . $system_datas["port_ftp"] . '</td>';
+	echo '<td>' . $Port_FTP . '</td>';
 	echo '<td><span class="Comments">It is necessary to configure your FTP client software by specifying this port number. You must select "FTPS" and "explicit TLS connection".</span></td></tr>';		
 	// SCGI Port
 	echo '<tr align="left"><th width="15%" scope="row">SCGI port</th>';
@@ -181,25 +185,22 @@ function printUser($user) {
 	//////////////////////
 	echo '<tr align="left"><th colspan="3" scope="row"><h4>Links</h4></th></tr>';		
 	// User Info
-	$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?user/user-infos.html';
 	echo '<tr align="left"><th width="15%" scope="row">User Info</th>';			
-	echo '<td colspan="2"><a href="' . $Link . '"><span class="Comments">Current information page, also accessible here.</span></a></td></tr>';
+	echo '<td colspan="2"><a href="?user/user-infos.html"><span class="Comments">Current information page, also accessible here.</span></a></td></tr>';
 	// Change password
-	$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?user/change-password.html';
 	echo '<tr align="left"><th width="15%" scope="row">Change password</th>';	
-	echo '<td colspan="2"><a href="' . $Link . '"><span class="Comments">You can change your password here.</span></a></td></tr>';
+	echo '<td colspan="2"><a href="?user/change-password.html"><span class="Comments">You can change your password here.</span></a></td></tr>';
 	// Manage Addresses
-	$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?user/manage-addresses.html';
 	echo '<tr align="left"><th width="15%" scope="row">Manage Addresses</th>';		
-	echo '<td colspan="2"><a href="' . $Link . '"><span class="Comments">Add here your IPs addresses and/or your dynamic DNS to add to whitelist.</span></a></td></tr>';		
+	echo '<td colspan="2"><a href="?user/manage-addresses.html"><span class="Comments">Add here your IPs addresses and/or your dynamic DNS to add to whitelist.</span></a></td></tr>';		
 	// ruTorrent
-	$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/ru';
+	$Link = 'https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/ru';
 	echo '<tr align="left"><th width="15%" scope="row">ruTorrent</th>';	
 	echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">ruTorrent interface</span></a></td></tr>';
 	// Seedbox-Manager
 	$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "Seedbox-Manager"]);
 	if ( $is_installed == '1' ) {		
-		$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/sm';
+		$Link = 'https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/sm';
 		echo '<tr align="left"><th width="15%" scope="row">Seedbox-Manager</th>';
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Seedbox-Manager interface</span></a></td></tr>';
 	}
@@ -207,9 +208,8 @@ function printUser($user) {
 	$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "OpenVPN"]);
 	if ( $is_installed == '1' ) {
 		// OpenVPN config
-		$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?user/openvpn-config-file.html';
 		echo '<tr align="left"><th width="15%" scope="row">OpenVPN config</th>';		
-		echo '<td colspan="2"><a href="' . $Link . '"><span class="Comments">Download here configuration files for OpenVPN.</span></a></td></tr>';
+		echo '<td colspan="2"><a href="?user/openvpn-config-file.html"><span class="Comments">Download here configuration files for OpenVPN.</span></a></td></tr>';
 		// OpenVPN GUI
 		$Link = 'https://openvpn.net/index.php/open-source/downloads.html';
 		echo '<tr align="left"><th width="15%" scope="row">OpenVPN GUI</th>';
@@ -231,18 +231,14 @@ function printUser($user) {
 			echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Admin interface for manage your server.</span></a></td></tr>';
 		}
 		// Logs
-		$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/logs/';
 		echo '<tr align="left"><th width="15%" scope="row">Logs</th>';	
-		echo '<td colspan="2"><a href="' . $Link . '"><span class="Comments">You can check logs of MySB install and security.</span></a></td></tr>';
+		echo '<td colspan="2"><a href="?main-user/logs.html"><span class="Comments">You can check logs of MySB install and security.</span></a></td></tr>';
 		// Renting infos
-		$Link = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?renting-infos.html';
 		echo '<tr align="left"><th width="15%" scope="row">Renting infos</th>';		
-		echo '<td colspan="2"><a href="' . $Link . '"><span class="Comments">Manage your renting informations.</span></a></td></tr>';
+		echo '<td colspan="2"><a href="?renting-infos.html"><span class="Comments">Manage your renting informations.</span></a></td></tr>';
 		// Trackers
-		$Link1 = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?trackers/trackers-list.html';
-		$Link2 = 'https://' . $system_datas["hostname"] . ':' . $system_datas["port_https"] . '/?trackers/add-new-trackers.html';
 		echo '<tr align="left"><th width="15%" scope="row">Trackers list</th>.';		
-		echo '<td colspan="2"><span class="Comments"><a href="' . $Link1 . '">Manage your trackers here.</a> You can also <a href="' . $Link2 . '">add new tracker here</a>.</span></td></tr>';		
+		echo '<td colspan="2"><span class="Comments"><a href="?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="?trackers/add-new-trackers.html">add new tracker here</a>.</span></td></tr>';		
 	}
 
 	$RentingDatas = $MySB_DB->get("renting", "*", ["id_renting" => 1]);

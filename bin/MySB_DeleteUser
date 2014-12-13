@@ -1,6 +1,6 @@
 #!/bin/bash 
 # ----------------------------------
-source /etc/MySB/inc/includes_before
+source /etc/MySB/inc/includes_before.bsh
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
@@ -38,7 +38,7 @@ if [ "$USAGE" == "ON" ]; then
 			echo -e "${CBLUE}Available users:$CEND $LIST"
 		else
 			echo -e "${CRED}Any user to delete ...$CEND $LIST"
-			source /etc/MySB/inc/includes_after
+			source /etc/MySB/inc/includes_after.bsh
 			EndingScript 0
 		fi	
 		
@@ -51,7 +51,7 @@ if [ "$USAGE" == "ON" ]; then
 fi
 
 #### User ID
-UserId=$(sqlite3 $SQLiteDB "SELECT id_users FROM users WHERE users_ident = '$NEWUSER'")
+UserId=$(sqlite3 $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$NEWUSER'")
 
 #### crontab
 log_daemon_msg "Delete cron for $NEWUSER"
@@ -79,7 +79,7 @@ StatusLSB
 
 #### NginX
 log_daemon_msg "Remove the access permission to the web server for $NEWUSER"
-sqlite3 $SQLiteDB "SELECT ipv4 FROM users_addresses WHERE id_users = '$UserId'" | while read ROW; do
+sqlite3 $MySB_DB "SELECT ipv4 FROM users_addresses WHERE id_users = '$UserId'" | while read ROW; do
 	IPv4=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
 	sed -i '/'$IPv4'/d' /etc/nginx/locations/MySB.conf
 done
@@ -115,12 +115,12 @@ fi
 if [ -d /etc/MySB/web/seedbox-manager/conf/users/$NEWUSER ]; then
 	sudo rm -rf /etc/MySB/web/seedbox-manager/conf/users/$NEWUSER
 fi
-sqlite3 $SQLiteDB "DELETE FROM users_addresses WHERE id_users = '$UserId'"
-sqlite3 $SQLiteDB "DELETE FROM users WHERE users_ident = '$NEWUSER'"
+sqlite3 $MySB_DB "DELETE FROM users_addresses WHERE id_users = '$UserId'"
+sqlite3 $MySB_DB "DELETE FROM users WHERE users_ident = '$NEWUSER'"
 StatusLSB
 
 #### delete iptables rules
-ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.sh' 'new'
+ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
 
 #### rtorrent max memory
 MEMORY=`free -m | grep Mem | awk '{ print $2 }'`
@@ -149,6 +149,6 @@ StatusLSB
 MonthlyPayment "$NEWUSER"
 
 # -----------------------------------------
-source /etc/MySB/inc/includes_after
+source /etc/MySB/inc/includes_after.bsh
 # -----------------------------------------
 ##################### LAST LINE ######################################

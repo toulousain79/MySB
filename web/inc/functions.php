@@ -249,7 +249,7 @@ function GenerateMessage($commands, $type, $message = '') {
 				$value = $MySB_DB->update("commands", ["reload" => 1], ["commands" => "$commands"]);
 				
 				switch ($commands) {
-					case "GetTrackersCert.sh":
+					case "GetTrackersCert.bsh":
 						$value = $MySB_DB->update("commands", ["reload" => 1], ["commands" => "FirewallAndSecurity.sh"]);
 						break;
 				}

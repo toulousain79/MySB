@@ -45,7 +45,7 @@ if ( $IsInstalled == '1' ) {
 			$message = 'Failed ! It was not possible to update tracker in the MySB database.';		
 		}		
 		
-		GenerateMessage('FirewallAndSecurity.sh' ,$type, $message);
+		GenerateMessage('FirewallAndSecurity.bsh' ,$type, $message);
 	}
 	
 	$BlockList = $MySB_DB->select("peerguardian_blocklists", "*");

@@ -29,10 +29,10 @@ if ( IfApplyConfig() > 0 ) {
 
 	foreach ($Commands as $Cmd) {
 		switch ($Cmd) {
-			case "FirewallAndSecurity.sh":
-				echo '<div align="center"><h1>FirewallAndSecurity.sh...</h1></div>';
+			case "FirewallAndSecurity.bsh":
+				echo '<div align="center"><h1>FirewallAndSecurity.bsh...</h1></div>';
 			
-				exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.sh new 'ApplyConfig'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh new 'ApplyConfig'", $output, $result);
 
 				foreach ( $output as $item ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';
@@ -48,12 +48,12 @@ if ( IfApplyConfig() > 0 ) {
 					}			
 				} else {
 					$type = 'error';
-					$message = 'Error occured with "FirewallAndSecurity.sh" script !';
+					$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
 				}
 				
 				break;		
-			case "GetTrackersCert.sh":
-				echo '<div align="center"><h1>GetTrackersCert.sh...</h1></div>';
+			case "GetTrackersCert.bsh":
+				echo '<div align="center"><h1>GetTrackersCert.bsh...</h1></div>';
 				$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "$Cmd"]);
 				if ( $result > 0 ) {
 					$type = 'success';
@@ -64,8 +64,8 @@ if ( IfApplyConfig() > 0 ) {
 				header('Refresh: 3; URL=/');
 				
 				break;
-			case "PaymentReminder.sh":
-				echo '<div align="center"><h1>PaymentReminder.sh...</h1></div>';
+			case "PaymentReminder.bsh":
+				echo '<div align="center"><h1>PaymentReminder.bsh...</h1></div>';
 				$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "$Cmd"]);
 				if ( $result > 0 ) {
 					$type = 'success';

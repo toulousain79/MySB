@@ -1,0 +1,106 @@
+#!/bin/bash 
+# ----------------------------------
+source /etc/MySB/inc/includes_before.bsh
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+if [ "$USAGE" == "ON" ]; then
+	if [ "`screen -ls | grep SeedboxManager`" == "" ]; then
+		if [ "$IsInstalled_Cakebox" == "NO" ]; then
+			echo
+			echo -e "${CYELLOW}CakeBox Light is not installed!$CEND"
+			GetString NO  "Install CakeBox Light? " IsInstalled_Cakebox $IsInstalled_Cakebox
+			
+			if [ "$IsInstalled_Cakebox" == "YES" ]; then
+				GetString NO  "CakeBox port: " Ports_Cakebox 8887
+			fi
+			
+			sqlite3 -echo $MySB_DB "UPDATE services SET ports_tcp = '$Ports_Cakebox', is_installed = '$(echo $IsInstalled_Cakebox | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'CakeBox-Light';"
+		fi
+	fi
+fi
+
+if [ "$IsInstalled_Cakebox" == "YES" ]; then
+	#### app
+	if [ -d /etc/MySB/web/Cakebox-light ]; then
+		cd /etc/MySB/web/Cakebox-light/
+		git stash
+		git pull
+	else
+		if [ -d /etc/MySB/temp/Cakebox-light ]; then
+			mv /etc/MySB/temp/Cakebox-light /etc/MySB/web/
+		else
+			git clone $GIT_cakebox /etc/MySB/web/Cakebox-light
+		fi
+	fi
+	cd /etc/MySB/web/Cakebox-light
+	composer install
+	bower update --allow-root --config.interactive=false	
+	
+	#### Plugin ruTorrent
+	if [ -d /etc/MySB/web/rutorrent/plugins/linkcakebox ]; then
+		cd /etc/MySB/web/rutorrent/plugins/linkcakebox 
+		git stash
+		git pull
+	else
+		git clone $GIT_rutorrent_plugins_CAKEBOX /etc/MySB/web/rutorrent/plugins/linkcakebox
+	fi
+	chown -R www-data:www-data /etc/MySB/web/rutorrent/plugins/linkcakebox
+	sed -i "s/'http:\/\/'.\$host;/'https:\/\/$HostNameFQDN:$Ports_Cakebox';/g;" /etc/MySB/web/rutorrent/plugins/linkcakebox/conf.php
+	sed -i "s/torrents/rtorrent/g;" /etc/MySB/web/rutorrent/plugins/linkcakebox/conf.php
+
+	#### NginX
+	cp /etc/MySB/templates/etc.nginx.site-enabled.cakebox.template /etc/nginx/sites-available/cakebox
+	perl -pi -e "s/<cakebox_port>/$Ports_Cakebox/g" /etc/nginx/sites-available/cakebox
+	perl -pi -e "s/<servername>/$HostNameFQDN/g" /etc/nginx/sites-available/cakebox
+	if [ ! -f /etc/nginx/sites-enabled/cakebox ]; then
+		ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox
+	fi
+
+	if [ -z $NEWUSER ] || [ -z $PASSWORD ]; then	
+		ListingUsers
+		for seedUser in $UsersList; do
+			(
+			cat <<'EOF'
+location /<username>/ {
+		alias /home/<username>/;
+		add_header Content-Disposition "attachment";
+		satisfy any;
+		allow all;
+}
+
+EOF
+			) > /etc/nginx/rpc/$seedUser.cakebox
+			perl -pi -e "s/<username>/$seedUser/g" /etc/nginx/rpc/$seedUser.cakebox
+			
+			cp /etc/MySB/web/Cakebox-light/config/default.php.dist /etc/MySB/web/Cakebox-light/config/$seedUser.php
+			sed -i "s/\/var\/www\//\/home\/$seedUser\//g;" /etc/MySB/web/Cakebox-light/config/$seedUser.php
+			sed -i "s/\/access\//\/$seedUser\//g;" /etc/MySB/web/Cakebox-light/config/$seedUser.php
+		done
+	fi
+fi
+
+# -----------------------------------------
+source /etc/MySB/inc/includes_after.bsh
+# -----------------------------------------
+##################### LAST LINE ######################################

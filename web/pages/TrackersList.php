@@ -70,7 +70,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			break;
 	}
 	
-	GenerateMessage('GetTrackersCert.sh', $type, $message);
+	GenerateMessage('GetTrackersCert.bsh', $type, $message);
 }
 
 $TrackersList = $MySB_DB->select("trackers_list", "*", ["ORDER" => "trackers_list.tracker_domain ASC"]);

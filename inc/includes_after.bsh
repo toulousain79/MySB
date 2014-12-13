@@ -1,0 +1,136 @@
+#!/bin/bash 
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### 1 - includes
+source /etc/MySB/inc/vars.bsh
+source /etc/MySB/inc/funcs.bsh
+
+#### 2 - cleaning
+case "$ScriptName" in
+	"MySB_Install.bsh")
+		if [ "$(pwd)/$(basename $0)" != "/etc/MySB/MySB_Install.bsh" ]; then
+			rm $0
+		fi
+	;;
+	"MySB_CreateUser")
+		if [ "`screen -ls | grep MySB`" != "" ]; then
+			#### 4 - Create MySB banner
+			if [ "$BANNER" == "ON" ]; then
+				BannerGenerator
+			fi				
+		fi
+	;;
+esac
+
+#### 4 - stop/start/restart services
+case "$ScriptName" in
+	"FirewallAndSecurity.bsh")
+	if [ "`ps ax | grep 'FirewallAndSecurity.bsh' | grep 'clean' | sed '/grep/d'`" != "" ]; then
+		echo &> /dev/null
+	else
+		ManageServices start
+	fi
+	;;
+	*)
+		ManageServices start	
+	;;
+esac
+
+#### 3 - Save Iptables
+sudo iptables-save > /etc/iptables.up.rules
+cp /etc/iptables.up.rules /etc/MySB/files/current-iptables-rules
+if [ -d /etc/webmin/firewall/ ]; then
+	cp /etc/iptables.up.rules /etc/webmin/firewall/iptables.save
+fi
+
+#### 4 - Update files database
+if hash /usr/bin/updatedb 2>/dev/null && [ "$ScriptName" != "Questions" ]; then
+	log_daemon_msg "Update the slocate database (updatedb)"
+	/usr/bin/updatedb
+	StatusLSB
+fi
+if hash /sbin/ldconfig 2>/dev/null && [ "$ScriptName" != "Questions" ]; then
+	log_daemon_msg "Configure dynamic linker run-time bindings (ldconfig)"
+	/sbin/ldconfig
+	StatusLSB
+fi
+
+#### 5 - Drop caches
+if [ -z $IFPVEKERNEL ] && [ "$ScriptName" != "Questions" ]; then
+	log_daemon_msg "Drop caches system"
+	#### Free cache server
+	## To free pagecache
+	#sync; echo 1 > /proc/sys/vm/drop_caches
+	## To release dentries and inodes
+	#sync; echo 2 > /proc/sys/vm/drop_caches
+	## To free pagecache, dentries and inodes
+	sync; echo 3 > /proc/sys/vm/drop_caches
+	## Default
+	#sync; echo 0 > /proc/sys/vm/drop_caches
+	StatusLSB
+fi
+
+#### 6 - create ccze files (HTML)
+if [ "`screen -ls | grep MySB`" != "" ] || [ "`ps ax | grep 'MySB_Install.bsh' | sed '/grep/d'`" != "" ]; then # MySB installation
+	DirLog="/etc/MySB/web/logs/install"
+elif [ "${ScriptName:0:5}" = "MySB_" ]; then
+	DirLog="/etc/MySB/web/logs/bin"
+elif [ "${ScriptName: -3}" = ".sh" ]; then
+	DirLog="/etc/MySB/web/logs/scripts"
+else
+	DirLog="/etc/MySB/web/logs"
+fi
+
+if [ "$LOGSTD" != "NO" ] ; then
+	if [ -f /etc/MySB/logs/$ScriptName.err ] && [ -d $DirLog/ ]; then
+		echo "--------------------" >> /etc/MySB/logs/$ScriptName.err
+		echo "END: "`date` "-" $ScriptName >> /etc/MySB/logs/$ScriptName.err
+		echo "--------------------" >> /etc/MySB/logs/$ScriptName.err
+		sudo ccze -h < /etc/MySB/logs/$ScriptName.err > $DirLog/$ScriptName-errors.html
+	fi
+	if [ -f /etc/MySB/logs/$ScriptName.log ] && [ -d /etc/MySB/web/logs/ ]; then
+		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
+		echo "END: "`date` "-" $ScriptName >> /etc/MySB/logs/$ScriptName.log
+		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
+		sudo ccze -h < /etc/MySB/logs/$ScriptName.log > $DirLog/$ScriptName-log.html
+	fi
+	if [ -d /etc/MySB/web/logs/ ]; then
+		if [ ! "`ls /etc/MySB/logs/ | grep .html`" = "" ]; then
+			mv /etc/MySB/logs/*.html $DirLog/
+		fi
+	fi
+fi
+
+#### Reboot after install
+if [ "$REBOOT" == "YES" ]; then
+	echo ""
+	echo -e -n "${CRED}The server will restart in $CEND"
+	for ((i = 20; i >= 0; i -= 1)); do
+		echo -n " $i"
+		sleep 1
+	done
+	reboot
+fi
+
+##################### LAST LINE ######################################

@@ -1,6 +1,6 @@
 #!/bin/bash 
 # -----------------------------------------
-source /etc/MySB/inc/includes_before
+source /etc/MySB/inc/includes_before.bsh
 # -----------------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
@@ -31,22 +31,33 @@ echo
 
 #### Sudoers
 sed -i '/MakeRenting.sh/d' /etc/sudoers.d/MySB_nginx
+sed -i '/FirewallAndSecurity.sh/d' /etc/sudoers.d/MySB_nginx
+echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh*" >> /etc/sudoers.d/MySB_nginx
 
 #### CreateDir
 echo -e -n "${CBLUE}Create missing directories$CEND..."
-screen -dmS CreateDir /bin/bash /etc/MySB/install/CreateDir;
+screen -dmS CreateDir /bin/bash /etc/MySB/install/CreateDir.bsh;
 WaitingScreen CreateDir
 StatusSTD
 
+#### Crontab
+log_daemon_msg "Creating Blocklist.sh cron"
+crontab -l > /tmp/crontab.tmp
+sed -i '/BlockList.bsh/d' /tmp/crontab.tmp
+echo "0 23 * * * /bin/bash /etc/MySB/scripts/BlockList.bsh NoBanner" >> /tmp/crontab.tmp
+crontab /tmp/crontab.tmp
+rm /tmp/crontab.tmp
+log_end_msg 0
+
 #### Packages
 echo -e -n "${CBLUE}Install missing packages$CEND..."
-screen -dmS Packages /bin/bash /etc/MySB/install/Packages;
+screen -dmS Packages /bin/bash /etc/MySB/install/Packages.bsh;
 WaitingScreen Packages
 StatusSTD
 
 #### PHP
 echo -e -n "${CBLUE}Some fixes for PHP$CEND..."
-screen -dmS PHP /bin/bash /etc/MySB/install/PHP;
+screen -dmS PHP /bin/bash /etc/MySB/install/PHP.bsh;
 WaitingScreen PHP
 StatusSTD
 
@@ -173,7 +184,7 @@ StatusSTD
 
 #### SQLite
 echo -e -n "${CBLUE}Create SQLite database$CEND..."
-screen -dmS SQLite /bin/bash /etc/MySB/install/SQLite;
+screen -dmS SQLite /bin/bash /etc/MySB/install/SQLite.bsh;
 WaitingScreen SQLite
 StatusSTD
 
@@ -195,8 +206,8 @@ ListingUsers
 for seedUser in $UsersList; do
 	log_daemon_msg "Creating '.rtorrent.rc' file for $seedUser"
 	HOMEDIR_ESCAPED=`echo /home/$seedUser | sed s,/,\\\\\\\\\\/,g`
-	SCGIPORT="`sqlite3 $SQLiteDB \"SELECT scgi_port FROM users WHERE users_ident = '$seedUser'\"`"
-	NETWORKPORT="`sqlite3 $SQLiteDB \"SELECT rtorrent_port FROM users WHERE users_ident = '$seedUser'\"`"	
+	SCGIPORT="`sqlite3 $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$seedUser'\"`"
+	NETWORKPORT="`sqlite3 $MySB_DB \"SELECT rtorrent_port FROM users WHERE users_ident = '$seedUser'\"`"	
 	
 	cp /home/$seedUser/.rtorrent.rc /home/$seedUser/.rtorrent.rc.bckp_v1.1_to_v1.2
 	cp /etc/MySB/templates/rtorrent.rc.template /home/$seedUser/.rtorrent.rc
@@ -225,7 +236,7 @@ for seedUser in $UsersList; do
 done
 
 #### Firewall And Security
-#ScriptInvoke 'screen' '/etc/MySB/scripts/FirewallAndSecurity.sh' 'new'
+#ScriptInvoke 'screen' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
 
 #### Refresh tools
 #ScriptInvoke 'bash' '/etc/MySB/bin/MySB_RefreshMe' 'all'
@@ -238,6 +249,6 @@ echo -e "${CGREEN}Upgrade finished succesfully !$CEND"
 echo
 
 # -----------------------------------------
-source /etc/MySB/inc/includes_after
+source /etc/MySB/inc/includes_after.bsh
 # -----------------------------------------
 ##################### LAST LINE ######################################

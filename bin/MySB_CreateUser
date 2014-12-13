@@ -1,6 +1,6 @@
 #!/bin/bash 
 # ----------------------------------
-source /etc/MySB/inc/includes_before
+source /etc/MySB/inc/includes_before.bsh
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
@@ -68,15 +68,15 @@ NEWRPC=$UPPERNEWUSER
 ListingUsers
 CountingUsers
 
-SCGIPORT="`sqlite3 $SQLiteDB \"SELECT value FROM ports ORDER BY rowid DESC LIMIT 1\"`"
-sqlite3 $SQLiteDB "DELETE FROM ports WHERE value = '$SCGIPORT';"
-NETWORKPORT="`sqlite3 $SQLiteDB \"SELECT value FROM ports ORDER BY rowid DESC LIMIT 1\"`"
-sqlite3 $SQLiteDB "DELETE FROM ports WHERE value = '$NETWORKPORT';"
+SCGIPORT="`sqlite3 $MySB_DB \"SELECT value FROM ports ORDER BY rowid DESC LIMIT 1\"`"
+sqlite3 $MySB_DB "DELETE FROM ports WHERE value = '$SCGIPORT';"
+NETWORKPORT="`sqlite3 $MySB_DB \"SELECT value FROM ports ORDER BY rowid DESC LIMIT 1\"`"
+sqlite3 $MySB_DB "DELETE FROM ports WHERE value = '$NETWORKPORT';"
 
 #### user infos
 if [ "$MainUser" == "$NEWUSER" ]; then	
 	log_daemon_msg "Info file creation for $NEWUSER"
-	sqlite3 $SQLiteDB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir) VALUES (\"$NEWUSER\",\"$UserEmail\",\"$UserPASSWD\",\"$NEWRPC\",\"$UserSFTP\",\"$UserSUDO\",\"$SCGIPORT\",\"$NETWORKPORT\",\"$HOMEDIR\");"
+	sqlite3 $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir) VALUES (\"$NEWUSER\",\"$UserEmail\",\"$UserPASSWD\",\"$NEWRPC\",\"$UserSFTP\",\"$UserSUDO\",\"$SCGIPORT\",\"$NETWORKPORT\",\"$HOMEDIR\");"
 	StatusLSB
 fi
 
@@ -374,7 +374,7 @@ fi
 #### OpenVPN
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	log_daemon_msg "Create OpenVPN account for user $NEWUSER"
-	screen -dmS OpenVPN_Client /bin/bash /etc/MySB/install/OpenVPN client "$NEWUSER";
+	screen -dmS OpenVPN_Client /bin/bash /etc/MySB/install/OpenVPNOpenVPN.bsh client "$NEWUSER";
 	WaitingSTD OpenVPN_Client	
 	StatusLSB
 fi
@@ -392,7 +392,7 @@ log_daemon_msg "Add init script to cron for $NEWUSER"
 crontab -l > /tmp/crontab.tmp
 sed -i '/'$NEWUSER'/d' /tmp/crontab.tmp
 echo "5 * * * * if ! ( /bin/ps U $NEWUSER | grep rtorrent > /dev/null ); then /etc/init.d/rtorrent-$NEWUSER restart &> /dev/null; fi" >> /tmp/crontab.tmp
-echo "0 12 1 * * /bin/bash /etc/MySB/scripts/PaymentReminder.sh $NEWUSER &> /dev/null" >> /tmp/crontab.tmp
+echo "0 12 1 * * /bin/bash /etc/MySB/scripts/PaymentReminder.bsh $NEWUSER &> /dev/null" >> /tmp/crontab.tmp
 crontab /tmp/crontab.tmp
 rm /tmp/crontab.tmp
 StatusLSB
@@ -412,7 +412,7 @@ for seedUser in $UsersList; do
 			StatusLSB
 		else
 			log_daemon_msg "Creating a new blocklist file for $seedUser"
-			ScriptInvoke 'screen' '/etc/MySB/scripts/BlockList.sh'
+			ScriptInvoke 'screen' '/etc/MySB/scripts/BlockList.bsh'
 			StatusLSB	
 		fi
 	#fi
@@ -420,7 +420,7 @@ done
 
 #### iptables
 log_daemon_msg "Create new rules for iptables"
-screen -dmS FirewallAndSecurity /bin/bash /etc/MySB/scripts/FirewallAndSecurity.sh new;
+screen -dmS FirewallAndSecurity /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh new;
 WaitingSTD FirewallAndSecurity
 StatusLSB
 
@@ -431,6 +431,6 @@ MonthlyPayment "$NEWUSER"
 ScriptInvoke 'source' '/etc/MySB/bin/MySB_ChangeUserPassword' $NEWUSER $PASSWORD
 
 # -----------------------------------------
-source /etc/MySB/inc/includes_after
+source /etc/MySB/inc/includes_after.bsh
 # -----------------------------------------
 ##################### LAST LINE ######################################

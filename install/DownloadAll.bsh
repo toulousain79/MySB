@@ -1,0 +1,164 @@
+#!/bin/bash 
+# ----------------------------------
+source /etc/MySB/inc/includes_before.bsh
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+# Delete source dir
+if [ -d /etc/MySB/sources ]; then
+	rm -rf /etc/MySB/sources/*
+fi
+
+# Delete source dir
+if [ -d /etc/MySB/files ]; then
+	rm /etc/MySB/files/*.wbm &> /dev/null
+	rm /etc/MySB/files/*.tar.gz &> /dev/null
+fi
+
+# Delete temp dir
+if [ -d /etc/MySB/temp ]; then
+	rm -rf /etc/MySB/temp/*
+fi
+
+# file to allow the install to continue or not
+if [ -f /etc/MySB/temp/continue ]; then
+	rm -f /etc/MySB/temp/continue
+fi
+
+REPOS=`cat /etc/MySB/inc/repos.bsh | sed -e '/^#/d' | sed -e '/^$/d'`
+
+#### check repos files
+for Repo in $REPOS; do
+	TYPE=`echo $Repo | tr '[:upper:]' '[:lower:]' | cut -d '=' -f 1 | cut -d '_' -f 1`
+	DIR=`echo $Repo | tr '[:upper:]' '[:lower:]' | cut -d '=' -f 1 | cut -d '_' -f 2`
+	SUB=`echo $Repo | tr '[:upper:]' '[:lower:]' | cut -d '=' -f 1 | cut -d '_' -f 3`
+	NAME=`echo $Repo | tr '[:upper:]' '[:lower:]' | cut -d '=' -f 1 | cut -d '_' -f 4`
+	URL=`echo $Repo | cut -d '"' -f 2`
+
+	#### change working directory
+	cd /etc/MySB/temp
+	
+	# Which dir ?
+	if [ ! -z $DIR ] && [ ! -z $SUB ] && [ ! -z $NAME ]; then
+		DEST=./$DIR/$SUB
+	elif [ ! -z $DIR ] && [ ! -z $SUB ] && [ -z $NAME ]; then
+		DEST=./$DIR/$SUB
+	elif [ ! -z $DIR ] && [ -z $SUB ] && [ -z $NAME ]; then
+		DEST=./$DIR
+	else
+		DEST="."
+	fi
+
+	# Which file ?
+	if [ ! -z $NAME ]; then
+		FILE=$NAME
+	elif [ ! -z $SUB ]; then
+		FILE=$SUB
+	else
+		FILE=$DIR
+	fi			
+	
+	case "$TYPE" in
+		"svn")
+			echo
+			echo "########## Subversion: $URL"
+			echo		
+			if [ ! -z $NAME ]; then
+				DEST=$DEST/$NAME
+			fi		
+			if [ ! -d $DEST ]; then
+				mkdir -p $DEST
+			else
+				if [ -d $DEST/.svn ]; then
+					rm -rf $DEST/.svn
+				fi				
+			fi			
+			
+			cd $DEST/
+			svn co $URL ./
+		;;
+		"curl")
+			echo
+			echo "########## Curl: $URL"
+			echo		
+			curl -s $URL | php
+		;;
+		"git")
+			echo
+			echo "########## Git: $URL"
+			echo		
+			if [ -z $SUB ]; then
+				DEST="."
+			fi
+			if [ ! -d $DEST ]; then
+				mkdir $DEST
+			fi			
+			
+			cd $DEST/
+			git clone $URL
+		;;	
+		"targz")
+			echo
+			echo "########## TAR.GZ: $URL"
+			echo		
+			if [ -z $SUB ]; then
+				DEST="."
+			fi	
+			if [ ! -d $DEST ]; then
+				mkdir $DEST
+			fi	
+			wget --no-check-certificate $URL -O /etc/MySB/files/$FILE.tar.gz
+			
+			tar -zxvf /etc/MySB/files/$FILE.tar.gz -C $DEST/
+		;;
+		"wbm")
+			echo
+			echo "########## WBM: $URL"
+			echo		
+			wget --no-check-certificate $URL -O /etc/MySB/files/$FILE.wbm
+		;;
+	esac
+	
+	if [ $? -gt 0 ]; then 
+		if [ "`echo '$Repo' | grep 'GIT_cakebox'`" != "" ]; then
+			IsInstalled_Cakebox=NO
+		fi
+		if [ "`echo '$Repo' | grep 'GIT_manager'`" != "" ]; then
+			IsInstalled_Manager=NO
+		fi
+		if [ "`echo '$Repo' | grep 'CURL_composer'`" != "" ] || [ "`echo '$Repo' | grep 'TARGZ_nodejs'`" != "" ]; then
+			IsInstalled_Cakebox=NO
+			IsInstalled_Manager=NO
+		fi
+		if [ "`echo '$Repo' | grep 'SVN_xmlrpc'`" != "" ] || [ "`echo '$Repo' | grep 'TARGZ_libtorrent'`" != "" ]\
+			|| [ "`echo '$Repo' | grep 'TARGZ_rtorrent'`" != "" ] || [ "`echo '$Repo' | grep 'SVN_rutorrent'`" != "" ]\
+			|| [ "`echo '$Repo' | grep 'SVN_rutorrent_plugins'`" != "" ]; then
+			echo "$URL" >> /etc/MySB/temp/continue
+		fi		
+	fi
+done
+
+# -----------------------------------------
+source /etc/MySB/inc/includes_after.bsh
+# -----------------------------------------
+##################### LAST LINE ######################################

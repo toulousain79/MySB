@@ -27,7 +27,7 @@ define('WEB_ROOT', '/etc/MySB/web/');
 define('WEB_INC', WEB_ROOT . 'inc/');
 
 // Data bases
-define('Wolf_DB', WEB_ROOT. '../db/wolf.sq3');
+define('Wolf_DB', WEB_ROOT. '../db/Wolf.sq3');
 define('MySB_DB', WEB_ROOT. '../db/MySB_WithData.sq3');
 
 // Files
@@ -46,6 +46,9 @@ $system_datas = $MySB_DB->get("system", "*", ["id_system" => 1]);
 
 // Users table
 $users_datas = $MySB_DB->get("users", "*", ["users_ident" => $_SERVER['PHP_AUTH_USER']]);
+
+// Services table
+$Port_HTTPs = $MySB_DB->get("services", "ports_tcp", ["serv_name" => "NginX"]);
 
 //#################### LAST LINE #####################################
 ?>

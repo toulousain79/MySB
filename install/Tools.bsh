@@ -1,0 +1,73 @@
+#!/bin/bash 
+# ----------------------------------
+source /etc/MySB/inc/includes_before.bsh
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+## composer
+if hash composer 2>/dev/null; then
+	composer self-update --quiet
+else
+	if [ -f /etc/MySB/temp/composer.phar ]; then
+		mv /etc/MySB/temp/composer.phar /usr/bin/composer
+		chmod +x /usr/bin/composer
+	else
+		cd /tmp
+		curl -s $CURL_composer | php
+		mv /tmp/composer.phar /usr/bin/composer
+		chmod +x /usr/bin/composer		
+	fi	
+fi
+
+## nodejs
+#if ! hash node 2>/dev/null; then
+	if [ -d /etc/MySB/temp/node* ]; then
+		if [ -d /etc/MySB/sources/node* ]; then
+			rm -rf /etc/MySB/sources/node*
+		fi	
+		mv /etc/MySB/temp/node-v* /etc/MySB/sources/nodejs
+	fi
+	if [ ! -d /etc/MySB/sources/node* ] && [ ! -f /etc/MySB/files/node-latest.tar.gz ]; then
+		wget --no-check-certificate $TARGZ_nodejs -O /etc/MySB/files/node-latest.tar.gz
+		tar -zxvf /etc/MySB/files/node-latest.tar.gz -C /etc/MySB/sources/
+		mv /etc/MySB/sources/node-v* /etc/MySB/sources/nodejs
+	fi
+	cd /etc/MySB/sources/node*
+	make clean
+	./configure
+	make -j$PROCESSOR
+	make install
+	/sbin/ldconfig
+#fi
+
+#### bower
+if hash bower 2>/dev/null; then
+	bower update --allow-root --config.interactive=false
+else
+	npm install -g bower
+fi
+
+# -----------------------------------------
+source /etc/MySB/inc/includes_after.bsh
+# -----------------------------------------
+##################### LAST LINE ######################################

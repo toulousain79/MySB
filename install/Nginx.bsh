@@ -1,0 +1,279 @@
+#!/bin/bash 
+# ----------------------------------
+source /etc/MySB/inc/includes_before.bsh
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### Install packages
+PackagesManage install "nginx-extras apache2-utils"
+
+#### Create certificates
+ScriptInvoke 'source' '/etc/MySB/install/Certificates.bsh' 'CreateServiceCertificate' 'nginx'
+
+#### Create directories
+if [ ! -d /etc/nginx/sites-available ]; then
+	mkdir /etc/nginx/sites-available
+fi
+if [ ! -d /etc/nginx/sites-enabled ]; then
+	mkdir /etc/nginx/sites-enabled
+fi
+if [ ! -d /etc/nginx/passwd ]; then
+	mkdir /etc/nginx/passwd
+fi
+if [ ! -d /etc/nginx/locations ]; then
+	mkdir /etc/nginx/locations
+fi
+if [ ! -d /etc/nginx/rpc ]; then
+	mkdir /etc/nginx/rpc
+fi
+
+#### Create files
+MySB_Password=`mkpasswd MySB` && MySB_Password=$MySB_Password`mkpasswd MySB`
+MySB_Password=`echo $MySB_Password | sed "s/\///g"`
+MySB_User=`mkpasswd MySB`
+MySB_User=`echo $MySB_User | sed "s/\///g"`
+sqlite3 -echo $MySB_DB "UPDATE system SET mysb_user = '$MySB_User', mysb_password = '$MySB_Password' WHERE id_system = '1';"
+
+if [ ! -f /etc/nginx/passwd/MySB ]; then
+	touch /etc/nginx/passwd/MySB
+	htpasswd -bs /etc/nginx/passwd/MySB $MySB_User $MySB_Password &> /dev/null
+fi
+
+chmod 640 /etc/nginx/passwd/MySB
+chown www-data:www-data /etc/nginx/passwd/MySB
+perl -pi -e "s/##MySB_User##/$MySB_User/g" /etc/MySB/web/pages/UserInfo.php
+
+#### Sudo
+if [ ! -f /etc/sudoers.d/MySB_nginx ]; then
+	touch /etc/sudoers.d/MySB_nginx
+fi
+if [ "`cat /etc/sudoers.d/MySB_nginx | grep 'MySB_ChangeUserPassword'`" == "" ];then
+	echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword*" > /etc/sudoers.d/MySB_nginx
+fi
+if [ "`cat /etc/sudoers.d/MySB_nginx | grep 'FirewallAndSecurity'`" == "" ];then
+	echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh*" >> /etc/sudoers.d/MySB_nginx
+fi
+
+#### nginx.conf
+if [ -f /etc/nginx/nginx.conf ]; then
+	mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.ORIGINAL
+fi
+
+cp /etc/MySB/templates/etc.nginx.nginx.conf.template /etc/nginx/nginx.conf
+perl -pi -e "s/worker_processes auto;/worker_processes $PROCESSOR;/g" /etc/nginx/nginx.conf
+
+#### PageSpeed Conf
+cp /etc/MySB/templates/etc.nginx.conf.d.pagespeed.template /etc/nginx/conf.d/pagespeed
+echo "# Nginx PageSpeed" >> /etc/fstab
+echo "tmpfs   /usr/share/nginx/pagespeed      tmpfs   rw,mode=1777,size=512M 0 0" >> /etc/fstab
+if [ ! -d /usr/share/nginx/pagespeed ]; then
+	mkdir /usr/share/nginx/pagespeed
+fi    
+if [ "`df -H | grep '/usr/share/nginx/pagespeed'`" == "" ]; then
+	mount /usr/share/nginx/pagespeed
+fi
+
+#### PHP conf.d
+(
+cat <<'EOF'
+location ~ \.php$ {
+	fastcgi_pass unix:/var/run/php5-fpm.sock;
+	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+	include /etc/nginx/fastcgi_params;
+	fastcgi_param APPLICATION_ENV production;
+	#fastcgi_param PHP_VALUE "";
+	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On";
+}
+
+EOF
+) > /etc/nginx/conf.d/php
+
+(
+cat <<'EOF'
+location ~ \.php$ {
+	fastcgi_pass unix:/var/run/php5-fpm.sock;
+	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+	include /etc/nginx/fastcgi_params;
+	fastcgi_param APPLICATION_ENV production;
+	#fastcgi_param PHP_VALUE "";
+	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On";
+	fastcgi_param HTTPS on;
+}
+
+EOF
+) > /etc/nginx/conf.d/php-ssl
+
+(
+cat <<'EOF'
+location ~ \.php$ {
+	fastcgi_pass unix:/var/run/php5-fpm.sock;
+	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+	include /etc/nginx/fastcgi_params;
+	fastcgi_param APPLICATION_ENV production;
+	#fastcgi_param PHP_VALUE "";
+	fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/etc/MySB/db\ndisplay_errors=Off";
+	fastcgi_param HTTPS on;
+}
+
+EOF
+) > /etc/nginx/conf.d/php-MySB-locations
+
+(
+cat <<'EOF'
+location ~ \.php$ {
+	fastcgi_pass unix:/var/run/php5-fpm.sock;
+	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+	include /etc/nginx/fastcgi_params;
+	fastcgi_param APPLICATION_ENV production;
+	#fastcgi_param PHP_VALUE "";
+	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On";
+	fastcgi_param HTTPS on;
+}
+
+EOF
+) > /etc/nginx/conf.d/php-rutorrent-locations
+
+(
+cat <<'EOF'
+location ~* \.(jpg|jpeg|gif|css|png|js|woff|ttf|svg|eot)$ {
+	expires 30d;
+	access_log off;
+}
+
+location ~* \.(eot|ttf|woff|svg)$ {
+	add_header Acccess-Control-Allow-Origin *;
+}
+
+EOF
+) > /etc/nginx/conf.d/cache
+
+(
+cat <<'EOF'
+	# deny access to .htaccess file, hidden files, svn files and git files
+	location ~ /\.ht 	{ access_log off; log_not_found off; deny all; }	
+	location ~ /\.svn 	{ access_log off; log_not_found off; deny all; }
+	location ~ /\.git	{ access_log off; log_not_found off; deny all; }
+	location ~ /\. 		{ access_log off; log_not_found off; deny all; }	
+	#location ^~ / 		{ access_log off; log_not_found off; deny all; }
+	location ~ ~$		{ access_log off; log_not_found off; deny all; }
+EOF
+) > /etc/nginx/conf.d/global_deny_access
+
+(
+cat <<'EOF'
+	# This block will catch static file requests, such as images, css, js
+	# The ?: prefix is a 'non-capturing' mark, meaning we do not require
+	# the pattern to be captured into $1 which should help improve performance
+	location ~* \.(?:ico|css|js|gif|jpe?g|png)$ {
+		# Some basic cache-control for static files to be sent to the browser
+		expires max;
+		add_header Pragma public;
+		add_header Cache-Control "public, must-revalidate, proxy-revalidate";
+		access_log off;
+		log_not_found off;
+	}
+EOF
+) > /etc/nginx/conf.d/static_files
+
+#### Default Server
+if [ -f /etc/nginx/sites-enabled/default ]; then
+	rm /etc/nginx/sites-enabled/default
+fi
+if [ -f /etc/nginx/sites-available/default ]; then
+	mv /etc/nginx/sites-available/default /etc/nginx/sites-available/default.ORIGINAL
+fi
+cp /etc/MySB/templates/etc.nginx.site-enabled.default.template /etc/nginx/sites-available/default
+perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<PORT_HTTP>/$Port_HTTP/g" /etc/nginx/sites-available/default
+# Enable Sites
+if [ ! -f /etc/nginx/sites-enabled/default ]; then
+	ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+fi
+
+#### MySB locations (logs, ruTorrent plugins, seedboxinfo)
+cp /etc/MySB/templates/etc.nginx.locations.mysb.conf.template /etc/nginx/locations/MySB.conf
+perl -pi -e "s/<server_ip>/$SrvIpAddress/g" /etc/nginx/locations/MySB.conf
+perl -pi -e "s/<mainuser>/$NEWUSER/g" /etc/nginx/locations/MySB.conf
+perl -pi -e "s/<mainuser_password>/$PASSWORD/g" /etc/MySB/web/phpLiteAdmin.php
+
+#### ruTorrent
+(
+cat <<'EOF'
+	location /rutorrent {
+		access_log /var/log/nginx/rutorrent-access.log combined;
+		error_log /var/log/nginx/rutorrent-error.log error;
+
+		location ~ /favicon.ico {
+			alias /etc/MySB/web/rutorrent/images/favicon.ico;
+		}	
+		
+		include /etc/nginx/conf.d/php-MySB-locations;
+		
+		location ~ /\.svn {
+			deny all;
+		}
+
+		location ~ /\.ht {
+			deny all;
+		}
+	}
+
+	location ^~ /rutorrent/conf/ {
+		deny all;
+	}
+
+	location ^~ /rutorrent/share/ {
+		deny all;
+	}
+
+EOF
+) > /etc/nginx/locations/rutorrent.conf
+
+#### logrotate
+if [ -f /etc/logrotate.d/nginx ]; then
+	rm -f /etc/logrotate.d/nginx
+fi
+
+(
+cat <<'EOF'
+/var/log/nginx/*.log {
+	daily
+	missingok
+	rotate 7
+	compress
+	delaycompress
+	notifempty
+	create 640 root
+	sharedscripts
+	postrotate
+		[ -f /var/run/nginx.pid ] && kill -USR1 `cat /var/run/nginx.pid`
+	endscript
+}
+
+EOF
+) > /etc/logrotate.d/nginx
+
+# -----------------------------------------
+source /etc/MySB/inc/includes_after.bsh
+# -----------------------------------------
+##################### LAST LINE ######################################
