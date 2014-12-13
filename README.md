@@ -92,7 +92,7 @@ https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-acc
 ## How to install
 Just copy and paste those commands on your terminal:
 ```
-wget --no-check-certificate -N https://raw.githubusercontent.com/toulousain79/MySB/v1.1/MySB_Install.bsh
+wget --no-check-certificate -N https://raw.githubusercontent.com/toulousain79/MySB/v1.2/MySB_Install.bsh
 bash MySB_Install.bsh
 ```
 
