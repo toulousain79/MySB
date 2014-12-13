@@ -29,6 +29,9 @@ echo -e "${CRED}If you lose connection during installation, restart the SSH sess
 echo -e "${CGREEN}	screen -r MySB_UpgradeMe$CEND"
 echo
 
+#### Vars
+ListingUsers
+
 #### Sudoers
 sed -i '/MakeRenting.sh/d' /etc/sudoers.d/MySB_nginx
 sed -i '/FirewallAndSecurity.sh/d' /etc/sudoers.d/MySB_nginx
@@ -45,6 +48,11 @@ log_daemon_msg "Creating Blocklist.sh cron"
 crontab -l > /tmp/crontab.tmp
 sed -i '/BlockList.sh/d' /tmp/crontab.tmp
 echo "0 23 * * * /bin/bash /etc/MySB/scripts/BlocklistsRTorrent.bsh NoBanner" >> /tmp/crontab.tmp
+for seedUser in $UsersList; do
+	sed -i '/'$seedUser'/d' /tmp/crontab.tmp
+	echo "5 * * * * if ! ( /bin/ps U $seedUser | grep rtorrent &> /dev/null ); then /etc/init.d/rtorrent-$seedUser restart &> /dev/null; fi" >> /tmp/crontab.tmp
+	echo "0 12 1 * * /bin/bash /etc/MySB/scripts/PaymentReminder.bsh $seedUser &> /dev/null" >> /tmp/crontab.tmp
+done
 crontab /tmp/crontab.tmp
 rm /tmp/crontab.tmp
 log_end_msg 0
@@ -202,7 +210,6 @@ chmod 644 /etc/MySB/ssl/*.cert
 StatusSTD
 
 #### rTorrent (.rtorrent.rc)
-ListingUsers
 for seedUser in $UsersList; do
 	log_daemon_msg "Creating '.rtorrent.rc' file for $seedUser"
 	HOMEDIR_ESCAPED=`echo /home/$seedUser | sed s,/,\\\\\\\\\\/,g`
