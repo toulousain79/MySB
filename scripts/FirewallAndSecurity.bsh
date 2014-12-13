@@ -30,6 +30,8 @@ source /etc/MySB/inc/includes_before.bsh
 
 #### VARs
 Modules="tun,iptable_filter,iptable_nat,iptable_mangle,ip_gre,ip_tables,ip_nat_ftp,ip_nat_irc,ip_conntrack,ip_conntrack_ftp,ip_conntrack_irc,ipt_REJECT,ipt_tos,ipt_TOS,ipt_limit,ipt_multiport,ipt_TCPMSS,ipt_tcpmss,ipt_ttl,ipt_length,ipt_LOG,ipt_conntrack,ipt_helper,ipt_state,ipt_recent,ipt_owner,ipt_mark,ipt_REDIRECT,ipt_MASQUERADE,ipt_MARK,xt_connlimit,xt_limit,xt_multiport,xt_state,xt_owner,xt_NFQUEUE"
+SeedboxUsersIPs="`sqlite3 $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users != '$MainUserId'\" | sed -e 's/^//g;' | sed 's/\s+$//'`"
+MainUserIPs="`sqlite3 $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users = '$MainUserId'\" | sed -e 's/^//g;' | sed 's/\s+$//'`"
 
 #### Begin
 case $1 in
@@ -54,7 +56,17 @@ case $1 in
 		
 		if [ -f /etc/pgl/pglcmd.conf ]; then
 			pglcmd stop
-		fi		
+		fi
+
+		#### Clean users IP Addresses
+		for IPv4 in $SeedboxUsersIPs; do 
+			sed -i '/'$IPv4'/d' /etc/nginx/locations/MySB.conf
+		done
+		unset IPv4
+		for IPv4 in $MainUserIPs; do 
+			sed -i '/'$IPv4'/d' /etc/nginx/locations/MySB.conf
+		done
+		unset IPv4	
 	;;
 	new)
 		#### Create users list ($UsersList)
@@ -62,35 +74,35 @@ case $1 in
 	
 		#### Seedbox users IPs
 		log_daemon_msg "Creating IP white lists"
-		sqlite3 $MySB_DB "SELECT ipv4 FROM users_addresses WHERE is_active = '1'" | while read ROW; do
-			IPv4=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
+		for IPv4 in $SeedboxUsersIPs; do
 			IfExist=`echo $Fail2banWhiteList | grep $IPv4`
 			if [ -z $IfExist ]; then	
 				Fail2banWhiteList="${Fail2banWhiteList} ${IPv4}/32"
-			fi
-			IfExist=`echo $SeedboxUsersIPs | grep $IPv4`
-			if [ -z $IfExist ]; then	
-				SeedboxUsersIPs="${SeedboxUsersIPs} ${IPv4}"
 			fi			
 		done
+		unset IPv4
 		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-			for ip in $VpnIPs; do 
-				IfExist=`echo $Fail2banWhiteList | grep $ip`
+			for IPv4 in $VpnIPs; do 
+				IfExist=`echo $Fail2banWhiteList | grep $IPv4`
 				if [ -z $IfExist ]; then	
-					Fail2banWhiteList="${Fail2banWhiteList} ${ip}"
+					Fail2banWhiteList="${Fail2banWhiteList} ${IPv4}"
 				fi			
 			done
-			unset ip
+			unset IPv4
 		fi
 		Fail2banWhiteList=`echo $Fail2banWhiteList | sed -e "s/^//g;"`
 		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed -e "s/^//g;"`
 		StatusLSB
 
 		#### Clean users IP Addresses
-		for ip in $SeedboxUsersIPs; do 
-			sed -i '/'$ip'/d' /etc/nginx/locations/MySB.conf
+		for IPv4 in $SeedboxUsersIPs; do 
+			sed -i '/'$IPv4'/d' /etc/nginx/locations/MySB.conf
 		done
-		unset ip
+		unset IPv4
+		for IPv4 in $MainUserIPs; do 
+			sed -i '/'$IPv4'/d' /etc/nginx/locations/MySB.conf
+		done
+		unset IPv4		
 		
 		#### NO spoofing
 		if [ -e /proc/sys/net/ipv4/conf/all/rp_filter ]; then
@@ -235,45 +247,47 @@ case $1 in
 
 		#### NginX
 		if [ -f /etc/nginx/locations/MySB.conf ]; then
-			# Add authorized users IP to NginX			
-			log_daemon_msg "Allow access to web server for all users"
-			for ip in $SeedboxUsersIPs; do 
-				awk '{ print } /allow 127.0.1.1;/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
-				perl -pi -e "s/<ip>/$ip/g" /etc/MySB/files/MySB_location.conf
-				mv /etc/MySB/files/MySB_location.conf /etc/nginx/locations/MySB.conf
-			done
-			unset ip					
-			StatusLSB
-			
-			# Add authorized main user IP to NginX			
-			log_daemon_msg "Allow access to some page for '$MainUser'"		
-			
-			for ip in $(echo $MainUserIPs); do 
+			# 1 - Add authorized main user IP to NginX			
+			log_daemon_msg "Allow access to some page for '$MainUser'"
+			for IPv4 in $(echo $MainUserIPs); do 
 				awk '{ print } /## Restricted to mainuser ##/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
-				perl -pi -e "s/<ip>/$ip/g" /etc/MySB/files/MySB_location.conf
+				perl -pi -e "s/<ip>/$IPv4/g" /etc/MySB/files/MySB_location.conf
 				mv /etc/MySB/files/MySB_location.conf /etc/nginx/locations/MySB.conf
 			done
-			unset ip					
+			unset IPv4					
 			StatusLSB			
+		
+			# 2 - Add authorized users IP to NginX			
+			log_daemon_msg "Allow access to web server for all users"
+			for IPv4 in $SeedboxUsersIPs; do
+				SEARCH=$(cat /etc/nginx/locations/MySB.conf | grep $IPv4)
+				if [ -z "$SEARCH" ] ; then
+					awk '{ print } /allow 127.0.1.1;/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
+					perl -pi -e "s/<ip>/$IPv4/g" /etc/MySB/files/MySB_location.conf
+					mv /etc/MySB/files/MySB_location.conf /etc/nginx/locations/MySB.conf
+				fi
+			done
+			unset IPv4					
+			StatusLSB		
 			
 			# Delete IP restriction for OpenVPN users
 			log_daemon_msg "Delete IP restriction for OpenVPN users"
-			for ip in $VpnIPs; do
-				ip=`echo $ip | sed s,/,\\\\\\\\\\/,g`
-				sed -i '/'$ip'/d' /etc/nginx/locations/MySB.conf		
+			for IPv4 in $VpnIPs; do
+				IPv4=`echo $IPv4 | sed s,/,\\\\\\\\\\/,g`
+				sed -i '/'$IPv4'/d' /etc/nginx/locations/MySB.conf		
 			done
-			unset ip
+			unset IPv4
 			StatusLSB			
 			
 			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 				log_daemon_msg "Allow access to web server for OpenVPN users"
-				for ip in $VpnIPs; do
-					ip=`echo $ip | sed s,/,\\\\\\\\\\/,g`
+				for IPv4 in $VpnIPs; do
+					IPv4=`echo $IPv4 | sed s,/,\\\\\\\\\\/,g`
 					awk '{ print } /allow 127.0.1.1;/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
-					perl -pi -e "s/<ip>/$ip/g" /etc/MySB/files/MySB_location.conf
+					perl -pi -e "s/<ip>/$IPv4/g" /etc/MySB/files/MySB_location.conf
 					mv /etc/MySB/files/MySB_location.conf /etc/nginx/locations/MySB.conf	
 				done
-				unset ip
+				unset IPv4
 				StatusLSB				
 			fi		
 		fi
