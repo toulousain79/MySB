@@ -25,12 +25,15 @@ source /etc/MySB/inc/includes_before.bsh
 ##################### FIRST LINE #####################################
 
 #### Install packages
-PackagesManage install "postfix stunnel4 gnutls-bin"
+PackagesManage install "postfix"
 
 #### Create certificates
 ScriptInvoke 'source' '/etc/MySB/install/Certificates.bsh' 'CreateServiceCertificate' 'postfix'
 
 if [ "$Smtp_Provider" != "LOCAL" ]; then
+	#### Install packages
+	PackagesManage install "stunnel4 gnutls-bin"
+
 	#### Create certificates
 	ScriptInvoke 'source' '/etc/MySB/install/Certificates.bsh' 'CreateServiceCertificate' 'stunnel'
 	
@@ -146,6 +149,8 @@ if [ "$Smtp_Provider" != "LOCAL" ]; then
 	postmap /etc/postfix/sasl/sasl_passwd
 fi
 
+sqlite3 $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'Postfix';"
+sqlite3 $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'Stunnel';"
 sqlite3 $MySB_DB "UPDATE smtp SET smtp_provider = '$Smtp_Provider', smtp_username = '$Smtp_Username', smtp_passwd = '$Smtp_Password', smtp_host = '$Smtp_Host', smtp_port = '$Smtp_Port' WHERE id_smtp = '1';"
 
 # -----------------------------------------

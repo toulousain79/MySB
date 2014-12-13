@@ -113,20 +113,21 @@ PackagesManage() {
 	OPTIONS="-y --assume-yes"
 	RETURN=0
 	
+	#### Check last update
 	AptUpdate="`sqlite3 $MySB_DB \"SELECT apt_update FROM system WHERE 1\"`"
 	AptDate="`sqlite3 $MySB_DB \"SELECT apt_date FROM system WHERE 1\"`"
-	AptDate=$(date -d $AptDate +"%y-%m-%d %H")
+	AptDate=$(date -d "$AptDate" +"%y-%m-%d %H")
 	Now=$(date +%Y-%m-%d\ %H)
 	t1=$(date --date="$AptDate" +%H)
 	t2=$(date --date="$Now" +%H)
 	let "tDiff=$t2-$t1"
 	
-	#### Need of 'apt-get update' ?
-	if [ "$AptUpdate" == "1" ] || [ "$tDiff" >= 2 ]; then
+	#### Need of 'apt-get update' ? (must be greater than 2 hours OR forced)
+	if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ]; then
 		$BEFORE $packetg $OPTIONS update
 		if [ $? -eq 0 ]; then
-			sqlite3 $MySB_DB "INSERT into system (apt_update,apt_date) VALUES (0,datetime('now','localtime'));"
-		fi
+			sqlite3 $MySB_DB "UPDATE system SET apt_update = 0, apt_date = datetime('now','localtime') WHERE id_system = 1;"
+		fi		
 	fi
 		
 	case "$1" in
@@ -146,15 +147,18 @@ PackagesManage() {
 	esac
 	
 	RETURN=$?
-	
-	if [ $RETURN -eq 0 ]; then
-		if [ "`$packetg --help | grep autoremove | awk '{ print $1 }'`" == "autoremove" ]; then
-			$BEFORE $packetg $OPTIONS autoremove
+
+	#### Need of cleaning ? (must be greater than 2 hours OR forced)
+	if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ]; then
+		if [ $RETURN -eq 0 ]; then
+			if [ "`$packetg --help | grep autoremove | awk '{ print $1 }'`" == "autoremove" ]; then
+				$BEFORE $packetg $OPTIONS autoremove
+			fi
+			if [ "`$packetg --help | grep autoclean | awk '{ print $1 }'`" == "autoclean" ]; then
+				$BEFORE $packetg $OPTIONS autoclean
+			fi	
 		fi
-		if [ "`$packetg --help | grep autoclean | awk '{ print $1 }'`" == "autoclean" ]; then
-			$BEFORE $packetg $OPTIONS autoclean
-		fi	
-	fi	
+	fi
 	
 	$BEFORE $packetg $OPTIONS install
 	
@@ -181,84 +185,32 @@ PeerGuardianFailed() {
 #### Auto Start services for each scripts
 ManageServices() {
 	ServicesToManage=""
-	Command=""
+	Command="$1"
 	
 	# Create users list
 	ListingUsers
 
-	sqlite3 $MySB_DB "SELECT ident, bin FROM services WHERE is_installed = '1' AND ident != ''" | while read ROW; do
+	sqlite3 $MySB_DB "SELECT ident, bin FROM services WHERE is_installed = '1' AND ident != '' AND bin != ''" | while read ROW; do
 		SEARCH=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
-		SERVICE=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
-		RESULT=`cat $0 | grep $SEARCH`
+		FullBIN=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
+		BIN=`echo $FullBIN | cut -d "/" -f 4`
+		cat $0 | grep $SEARCH 2> /dev/null
+		
 		if [ $? -eq 0 ] ; then
-			case "$SERVICE" in
-				"webmin")
-					if [ "$IsInstalled_Webmin" == "YES" ]; then
-						ServicesToManage="$ServicesToManage $SERVICE"
-					fi
-				;;
-				"fail2ban")
-					if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
-						ServicesToManage="$ServicesToManage $SERVICE"
-					fi
-				;;
-				"networking")
-					ServicesToManage="$ServicesToManage $SERVICE"
-				;;						
-				*)
-					if hash ${SERVICE} 2>/dev/null; then				
-						ServicesToManage="$ServicesToManage $SERVICE"
-					fi
-				;;			
-			esac
-		fi		
+			if hash ${FullBIN} 2> /dev/null; then				
+				ServicesToManage="$ServicesToManage $BIN"
+			fi
+		fi
 	done
 	
-	# while read line; do
-		# SERVICE=`echo $line | cut -d '=' -f 1`
-		# SEARCH=`echo $line | cut -d '"' -f 2`	
-		# if [ "`echo ${SERVICE} | cut -c1`" != '#' ] && [ ! -z $SERVICE ]; then
-			# SERVICE=`echo $SERVICE | sed "s/_/-/g;"`
-			# RESULT=`cat $0 | grep $SEARCH`
-			# if [ $? -eq 0 ] ; then
-				# case "$SERVICE" in
-					# "webmin")
-						# if [ "$IsInstalled_Webmin" == "YES" ]; then
-							# ServicesToManage="$ServicesToManage $SERVICE"
-						# fi
-					# ;;
-					# "fail2ban")
-						# if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
-							# ServicesToManage="$ServicesToManage $SERVICE"
-						# fi
-					# ;;
-					# "networking")
-						# ServicesToManage="$ServicesToManage $SERVICE"
-					# ;;						
-					# *)
-						# if hash ${SERVICE} 2>/dev/null; then				
-							# ServicesToManage="$ServicesToManage $SERVICE"
-						# fi
-					# ;;			
-				# esac
-			# fi			
-		# fi
-	# done < /etc/MySB/inc/services.bsh
-
-	case "$ScriptName" in
-		"ruTorrent"|"rTorrent"|"MySB_CleanAll.bsh"|"MySB_DeleteUser")	
-			Command="$1"
-		;;									
-	esac
-	
-	if [ "$ServicesToManage" != "" ] || [ "$Command" != "" ]; then
+	if [ "$ServicesToManage" != "" ] && [ "$Command" != "" ]; then
 		echo "---- "`date +"%T"` >> /etc/MySB/logs/$ScriptName.log
-		IFS=$' '
+
 		AllReadyStopped="false"
 		ServicesToManage=`echo $ServicesToManage | sed ':a;s/^[ \t]*//;s/[ \t]*$//'`
 		
 		case "$ScriptName" in
-			"ruTorrent"|"rTorrent"|"MySB_CleanAll.bsh")
+			"ruTorrent"|"rTorrent"|"MySB_CleanAll.bsh"|"MySB_DeleteUser")
 				if [ "$AllReadyStopped" == "false" ];then
 					service cron $Command
 
@@ -267,15 +219,6 @@ ManageServices() {
 							service rtorrent-$seedUser $Command
 						fi
 					done
-					AllReadyStopped=true
-				fi
-			;;	
-			"MySB_DeleteUser")
-				if [ "$AllReadyStopped" == "false" ]; then
-					service cron $Command
-					if [ "$Command" == "stop" ];then
-						service rtorrent-$NEWUSER stop
-					fi
 					AllReadyStopped=true
 				fi
 			;;														
@@ -344,7 +287,7 @@ ManageServices() {
 				esac
 			fi
 		done
-		unset IFS
+
 		echo "---- "`date +"%T"` >> /etc/MySB/logs/$ScriptName.log
 	fi
 }
