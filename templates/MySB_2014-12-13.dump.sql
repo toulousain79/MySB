@@ -13,16 +13,6 @@ CREATE TABLE users_addresses (
 );
 
 
--- Table: trackers_list_ipv4
-CREATE TABLE trackers_list_ipv4 ( 
-    id_trackers_list_ipv4 INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                          NOT NULL ON CONFLICT ABORT
-                                          UNIQUE ON CONFLICT ABORT,
-    id_trackers_list      INTEGER         NOT NULL ON CONFLICT ABORT,
-    ipv4                  VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT 
-);
-
-
 -- Table: trackers_list
 CREATE TABLE trackers_list ( 
     id_trackers_list INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -313,3 +303,14 @@ CREATE TABLE system (
 );
 
 INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password]) VALUES (1, '', '', '', '', '', '', '', '');
+
+-- Table: trackers_list_ipv4
+CREATE TABLE trackers_list_ipv4 ( 
+    id_trackers_list_ipv4 INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                          NOT NULL ON CONFLICT ABORT
+                                          UNIQUE ON CONFLICT ABORT,
+    id_trackers_list      INTEGER         NOT NULL ON CONFLICT ABORT,
+    ipv4                  VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT
+                                          UNIQUE ON CONFLICT IGNORE 
+);
+
