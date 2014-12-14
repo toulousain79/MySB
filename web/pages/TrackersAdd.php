@@ -33,7 +33,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			$count = count($_POST['input_id']);
 			
 			for($i=1; $i<=$count; $i++) {
-				$last_id_trackers_list = ManageUsersTrackers($_POST['tracker_domain'][$i], $_POST['is_active'][$i]);
+				$last_id_trackers_list = ManageUsersTrackers("$_POST['tracker_domain'][$i]", $_POST['is_active'][$i]);
 																			
 				if (!isset($last_id_trackers_list)) {
 					$success = false;

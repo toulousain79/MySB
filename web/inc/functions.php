@@ -151,8 +151,8 @@ function ManageUsersTrackers($TrackerDomain, $IsActive) {
 	
 	$value = false;
 	
-	$TrackerDomain = str_replace(' ','',$TrackerDomain);
-	$TrackerDomain = GetOnlyDomain($TrackerDomain);
+	$TrackerDomain = str_replace(' ','',"$TrackerDomain");
+	$TrackerDomain = GetOnlyDomain("$TrackerDomain");
 
 	switch ($IsActive) {
 		case "1":
