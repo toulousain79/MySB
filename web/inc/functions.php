@@ -93,7 +93,7 @@ function UpdateWolfDB($username, $password) {
 	if ( MainUser() == true ) {	
 		if ( (isset($password)) && (isset($username)) ) {
 			$PDO = Record::getConnection();
-			$sql_update = '';		
+			$sql_update = '';
 		
 			$salt = AuthUser::generateSalt();
 			$password = AuthUser::generateHashedPassword($password, $salt);
@@ -116,7 +116,7 @@ function UpdateWolfDB($username, $password) {
 function CheckWolfDB($username, $password) {
 	global $Wolf_DB;
 	
-	if ( MainUser() == true ) {	
+	if ( MainUser() == true ) {
 		$Wolf_Datas = $Wolf_DB->get("user", ["password", "salt"], ["username" => "$username"]);
 		
 		if ( ($Wolf_Datas["password"] == "") || ($Wolf_Datas["salt"] == "") ) {
