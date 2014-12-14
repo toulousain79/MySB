@@ -274,7 +274,7 @@ function GenerateMessage($commands, $type, $message = '') {
 				
 				switch ($commands) {
 					case "GetTrackersCert.bsh":
-						$value = $MySB_DB->update("commands", ["reload" => 1], ["commands" => "FirewallAndSecurity.sh"]);
+						$value = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "FirewallAndSecurity.sh"]);
 						break;
 				}
 				echo '<script type="text/javascript">ApplyConfig("ToUpdate");</script>';
