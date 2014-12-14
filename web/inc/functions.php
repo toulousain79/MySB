@@ -193,7 +193,7 @@ function ManageUsersTrackers($TrackerDomain, $IsActive) {
 															"origin" => "users",
 															"is_active" => "$IsActive",
 															"to_check" => "$to_check"
-														]);		
+														]);	
 			foreach($DnsRecords as $Record) {
 				$value = $MySB_DB->insert("trackers_list_ipv4", [
 																"id_trackers_list" => "$id_trackers_list",

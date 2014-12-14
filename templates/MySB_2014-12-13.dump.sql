@@ -102,17 +102,6 @@ CREATE TABLE users (
 );
 
 
--- Table: trackers_list_ipv4
-CREATE TABLE trackers_list_ipv4 ( 
-    id_trackers_list_ipv4 INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                          NOT NULL ON CONFLICT ABORT
-                                          UNIQUE ON CONFLICT ABORT,
-    id_trackers_list      INTEGER         NOT NULL ON CONFLICT ABORT,
-    ipv4                  VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT
-                                          UNIQUE ON CONFLICT IGNORE 
-);
-
-
 -- Table: system
 CREATE TABLE system ( 
     id_system     INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
@@ -323,5 +312,15 @@ CREATE TABLE trackers_list (
     is_active        BOOLEAN( 1 )    DEFAULT ( 0 ),
     to_check         BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
                                      DEFAULT ( 1 ) 
+);
+
+
+-- Table: trackers_list_ipv4
+CREATE TABLE trackers_list_ipv4 ( 
+    id_trackers_list_ipv4 INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                          NOT NULL ON CONFLICT ABORT
+                                          UNIQUE ON CONFLICT ABORT,
+    id_trackers_list      INTEGER         NOT NULL ON CONFLICT ABORT,
+    ipv4                  VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT 
 );
 
