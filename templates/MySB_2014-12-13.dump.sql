@@ -308,8 +308,10 @@ CREATE TABLE trackers_list (
     tracker_domain   VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT
                                      UNIQUE ON CONFLICT IGNORE,
     origin           VARCHAR( 9 )    NOT NULL ON CONFLICT ABORT,
-    is_ssl           BOOLEAN( 1 )    DEFAULT ( 0 ),
-    is_active        BOOLEAN( 1 )    DEFAULT ( 0 ),
+    is_ssl           BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
+                                     DEFAULT ( 0 ),
+    is_active        BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
+                                     DEFAULT ( 0 ),
     to_check         BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
                                      DEFAULT ( 1 ) 
 );
