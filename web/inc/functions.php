@@ -127,17 +127,27 @@ function CheckWolfDB($username, $password) {
 
 // Get only domain
 function GetOnlyDomain($url) {
-	$hostname = parse_url($url, PHP_URL_HOST);
-	$hostParts = explode('.', $hostname);
-	$numberParts = sizeof($hostParts);
-	$domain='';
+	if (filter_var($url, FILTER_VALIDATE_URL)) {
+		$hostname = parse_url($url, PHP_URL_HOST);
+		$hostParts = explode('.', $hostname);
+		$numberParts = sizeof($hostParts);
+		$domain='';
 
-	// Domaine sans tld (ex: http://server/page.php)
-	if(1 === $numberParts) {
-		$domain = current($hostParts);
-	}
-	// Domaine avec tld (ex: http://fr.php.net/parse-url)
-	elseif($numberParts>=2) {
+		switch ($numberParts) {
+			case 1:
+				$domain = current($hostParts);
+				break;
+			case 2:
+				$hostParts = array_reverse($hostParts);
+				$domain = $hostParts[1] .'.'. $hostParts[0];
+				break;			
+			default:
+				$hostParts = array_reverse($hostParts);
+				$domain = $hostParts[1] .'.'. $hostParts[0];
+				break;
+		}
+	} else {
+		$hostParts = explode('.', $url);
 		$hostParts = array_reverse($hostParts);
 		$domain = $hostParts[1] .'.'. $hostParts[0];
 	}
