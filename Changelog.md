@@ -4,6 +4,7 @@
 			- Add Wolf CMS for manage web pages (more convenient)
 			- NginX, add PageSpeed functionnality
 			- NginX, change url access (ruTorrent, Seedbox-Manager)
+			- DNScrypt-proxy v1.4.2
 
 	Version v1.1 (main branch)
 		2014/10/26

@@ -30,8 +30,6 @@ source /etc/MySB/inc/includes_before.bsh
 
 #### VARs
 Modules="tun,iptable_filter,iptable_nat,iptable_mangle,ip_gre,ip_tables,ip_nat_ftp,ip_nat_irc,ip_conntrack,ip_conntrack_ftp,ip_conntrack_irc,ipt_REJECT,ipt_tos,ipt_TOS,ipt_limit,ipt_multiport,ipt_TCPMSS,ipt_tcpmss,ipt_ttl,ipt_length,ipt_LOG,ipt_conntrack,ipt_helper,ipt_state,ipt_recent,ipt_owner,ipt_mark,ipt_REDIRECT,ipt_MASQUERADE,ipt_MARK,xt_connlimit,xt_limit,xt_multiport,xt_state,xt_owner,xt_NFQUEUE"
-SeedboxUsersIPs="`sqlite3 $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users != '$MainUserId'\" | sed -e 's/^//g;' | sed 's/\s+$//'`"
-MainUserIPs="`sqlite3 $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users = '$MainUserId'\" | sed -e 's/^//g;' | sed 's/\s+$//'`"
 ListingUsers #($UsersList)
 
 #### Begin
@@ -121,43 +119,14 @@ case $1 in
 
 		#### Seedbox users IPs
 		log_daemon_msg "Creating IP white lists"
-		# Normal users IPs
-		for IPv4 in $SeedboxUsersIPs; do
-			IfExist=`echo $Fail2banWhiteList | grep $IPv4`
-			if [ -z $IfExist ]; then	
-				Fail2banWhiteList="${Fail2banWhiteList} ${IPv4}/32"
-			fi			
-		done
-		unset IPv4
-		# Main user IPs
-		for IPv4 in $MainUserIPs; do 
-			IfExist=`echo $Fail2banWhiteList | grep $IPv4`
-			if [ -z $IfExist ]; then	
-				Fail2banWhiteList="${Fail2banWhiteList} ${IPv4}/32"
-			fi
-		done
-		unset IPv4
-		# VPN local IPs	
-		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-			for IPv4 in $VpnIPs; do 
-				IfExist=`echo $Fail2banWhiteList | grep $IPv4`
-				if [ -z $IfExist ]; then	
-					Fail2banWhiteList="${Fail2banWhiteList} ${IPv4}"
-				fi			
-			done
-			unset IPv4
-		fi
-		Fail2banWhiteList=`echo $Fail2banWhiteList | sed -e "s/^//g;"`
-		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed -e "s/^//g;"`
-		StatusLSB
+		# List all users IPs
+		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`	
+		MainUserIPs=`echo $MainUserIPs | sed s,/,\\\\\\\\\\/,g`
+		AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
 
 		#### Clean users IP Addresses
 		log_daemon_msg "Cleaning users IP Addresses"
-		for IPv4 in $SeedboxUsersIPs; do 
-			sed -i '/'$IPv4'/d' /etc/nginx/locations/MySB.conf
-		done
-		unset IPv4
-		for IPv4 in $MainUserIPs; do 
+		for IPv4 in $AllUsersIPs; do 
 			sed -i '/'$IPv4'/d' /etc/nginx/locations/MySB.conf
 		done
 		unset IPv4
@@ -165,7 +134,7 @@ case $1 in
 		
 		#### ICMP
 		log_daemon_msg "Allow incoming ping for seedbox users only"
-		for ip in $SeedboxUsersIPs; do 
+		for ip in $AllUsersIPs; do 
 			iptables -t filter -A INPUT -p icmp -s $ip/32 -j ACCEPT -m comment --comment "ICMP"
 		done
 		for ip in $VpnIPs; do
@@ -261,7 +230,7 @@ case $1 in
 		if [ -f /etc/nginx/locations/MySB.conf ]; then
 			# 1 - Add authorized main user IP to NginX			
 			log_daemon_msg "Allow access to some page for '$MainUser'"
-			for IPv4 in $(echo $MainUserIPs); do 
+			for IPv4 in $MainUserIPs); do 
 				awk '{ print } /## Restricted to mainuser ##/ { print "                allow <ip>;" }' /etc/nginx/locations/MySB.conf > /etc/MySB/files/MySB_location.conf
 				perl -pi -e "s/<ip>/$IPv4/g" /etc/MySB/files/MySB_location.conf
 				mv /etc/MySB/files/MySB_location.conf /etc/nginx/locations/MySB.conf
@@ -316,136 +285,10 @@ case $1 in
 		fi
 		
 		#### Fail2Ban
-		if [ -f /etc/fail2ban/jail.local ]; then
-			log_daemon_msg "Add whitelist to Fail2Ban"
-			Fail2banWhiteList=`echo $Fail2banWhiteList | sed s,/,\\\\\\\\\\/,g`			
-			SEARCH=$(cat /etc/fail2ban/jail.local | grep "ignoreip =" | cut -d "=" -f 2)
-			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
-			if [ ! -z "$SEARCH" ]; then	
-				perl -pi -e "s/$SEARCH/$Fail2banWhiteList/g" /etc/fail2ban/jail.local
-			fi
-			unset SEARCH
-			StatusLSB
-		fi
+		Fail2BanWhitheList 1
 		
 		#### PeerGuardian
-		if [ -f /etc/pgl/pglcmd.conf ]; then
-			# /etc/pgl/pglcmd.conf
-			log_daemon_msg "Add whitelist to PeerGuardian"
-			SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`	
-			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_IN=")
-			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
-			if [ ! -z "$SEARCH" ]; then	
-				perl -pi -e "s/$SEARCH/WHITE_IP_IN=\"$SeedboxUsersIPs\"/g" /etc/pgl/pglcmd.conf
-			fi
-			unset SEARCH
-
-			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_OUT=")
-			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
-			if [ ! -z "$SEARCH" ]; then
-				if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-					perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
-				else
-					perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"\"/g" /etc/pgl/pglcmd.conf
-				fi
-			fi
-			unset SEARCH
-			
-			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_FWD=")
-			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
-			if [ ! -z "$SEARCH" ]; then			
-				if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-					perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
-				else
-					perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"\"/g" /etc/pgl/pglcmd.conf
-				fi
-			fi
-			unset SEARCH
-			
-			NetworkPortsGenerator
-			
-			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
-			if [ ! -z "$SEARCH" ]; then	
-				perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${WHITE_TCP_IN}\"/g" /etc/pgl/pglcmd.conf
-			fi
-			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=")
-			if [ ! -z "$SEARCH" ]; then	
-				perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"${WHITE_UDP_IN}\"/g" /etc/pgl/pglcmd.conf
-			fi
-			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
-			if [ ! -z "$SEARCH" ]; then	
-				perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"${WHITE_TCP_OUT}\"/g" /etc/pgl/pglcmd.conf
-			fi
-			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
-			if [ ! -z "$SEARCH" ]; then	
-				perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${WHITE_UDP_OUT}\"/g" /etc/pgl/pglcmd.conf
-			fi
-			StatusLSB
-
-			# Create Blocklist file
-			(
-			cat <<'EOF'
-# blocklists.list - lists the blocklists that are handled automatically by pglcmd
-
-# Place one URL per line for every blocklist.
-# Any line which starts with a # (hash) is a comment and is ignored.
-
-# Have a look at /usr/share/doc/pglcmd/README.blocklists.gz for detailed
-# information about some available blocklists.
-
-# Instead or additionally to the blocklists that are specified in this file,
-# you can manually put lists in MASTER_BLOCKLIST_DIR (/var/lib/pgl).
-# All blocklists in that directory (except those which end in "~" or have a "."
-# prefix) are used by pgld. They may be in any supported format and have to be
-# either unpacked or gzipped. Note that these manually installed blocklists are
-# neither updated automatically, nore does IP_REMOVE work for them.
-
-# Do a "pglcmd reload" (or "restart" or "update") when you have edited
-# this file.
-
-EOF
-			) > /etc/pgl/blocklists.list
-			
-			sqlite3 $MySB_DB "SELECT blocklists,is_active FROM peerguardian_blocklists WHERE 1" | while read ROW; do
-				Blocklist=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
-				IsActive=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
-
-				case "$IsActive" in
-					0)
-						echo "#$Blocklist" >> /etc/pgl/blocklists.list
-					;;	
-					1)
-						echo "$Blocklist" >> /etc/pgl/blocklists.list
-					;;			
-				esac
-			done			
-			
-			# /etc/pgl/allow.p2p
-			(
-			cat <<'EOF'
-# allow.p2p - allow list for pglcmd
-#
-# This file contains IP ranges that shall not be checked.
-# They must be in the PeerGuardian .p2p text format like this:
-#   Some organization:1.0.0.0-1.255.255.255
-# This is also true if your blocklists are in another format.
-# Lines beginning with a hash (#) are comments and will be ignored.
-#
-# Do a "pglcmd restart" when you have edited this file.
-EOF
-			) > /etc/pgl/allow.p2p
-
-			AllTrackers="`sqlite3 $MySB_DB \"SELECT id_trackers_list, tracker FROM trackers_list WHERE is_active = '1'\"`"
-			for Tracker in $AllTrackers; do
-				IdTracker=`echo $Tracker | awk '{split($0,a,"|"); print a[1]}'`
-				TrackerName=`echo $Tracker | awk '{split($0,a,"|"); print a[2]}'`
-
-				ListIPv4="`sqlite3 $MySB_DB \"SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$IdTracker'\"`"
-				for IPv4 in $ListIPv4; do
-					echo "$TrackerName:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
-				done
-			done			
-		fi
+		PeerGuardianFilesGenerate 1
 	;;
 	
 	*)
