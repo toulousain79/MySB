@@ -54,14 +54,25 @@ if ( IfApplyConfig() > 0 ) {
 				break;		
 			case "GetTrackersCert.bsh":
 				echo '<div align="center"><h1>GetTrackersCert.bsh...</h1></div>';
-				$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "$Cmd"]);
-				if ( $result > 0 ) {
-					$type = 'success';
+				
+				exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh new 'ApplyConfig.php' 'GetTrackersCert.bsh'", $output, $result);
+
+				foreach ( $output as $item ) {
+					echo '<div class="Comments" align="center">'.$item.'</div>';
+				}				
+
+				if ( $result == 0 ) {
+					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "$Cmd"]);
+					if ( $result > 0 ) {
+						$type = 'success';
+					} else {
+						$type = 'error';
+						$message = 'Failed ! It was not possible to update the MySB database.';
+					}			
 				} else {
 					$type = 'error';
-					$message = 'Failed ! It was not possible to update the MySB database.';
+					$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
 				}
-				header('Refresh: 3; URL=/');
 				
 				break;
 			case "PaymentReminder.bsh":

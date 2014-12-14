@@ -30,7 +30,16 @@ if(isset($_POST)==true && empty($_POST)==false) {
 	switch ($_POST['submit']) {
 		case "Save Changes":
 			for($i=0, $count = count($_POST['tracker_domain']);$i<$count;$i++) {
-				$result = $MySB_DB->update("trackers_list", ["is_active" => $_POST['is_active'][$i]], ["tracker_domain" => $_POST['tracker_domain'][$i]]);
+				switch ($_POST['is_active'][$i]) {
+					case "1":
+						$to_check = 1;
+						break;
+					default:
+						$to_check = 0;
+						break;
+				}
+			
+				$result = $MySB_DB->update("trackers_list", ["is_active" => $_POST['is_active'][$i], "to_check" => $to_check], ["tracker_domain" => $_POST['tracker_domain'][$i]]);
 				
 				if ( $result != 1 ) {
 					$success = false;

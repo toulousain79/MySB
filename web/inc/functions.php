@@ -131,6 +131,15 @@ function ManageUsersTrackers($TrackerDomain, $IsActive) {
 	
 	$value = false;
 
+	switch ($IsActive) {
+		case "1":
+			$to_check = 1;
+			break;
+		default:
+			$to_check = 0;
+			break;
+	}	
+	
 	// Check if address exist
 	$IdTracker = $MySB_DB->get("trackers_list", "id_trackers_list", [
 																		"AND" => [
@@ -140,22 +149,24 @@ function ManageUsersTrackers($TrackerDomain, $IsActive) {
 																	]);
 
 	if ( $IdTracker > 0 ) {
-		$value = $MySB_DB->update("trackers_list", ["is_active" => "$IsActive"], ["tracker_domain" => "$TrackerDomain"]);
+		$value = $MySB_DB->update("trackers_list", ["is_active" => "$IsActive", "to_check" => "$to_check"], ["tracker_domain" => "$TrackerDomain"]);
 	} else {
-		
-		$id_trackers_list = $MySB_DB->insert("trackers_list", [
-														"tracker" => "$TrackerDomain",
-														"tracker_domain" => "$TrackerDomain",
-														"origin" => "users",
-														"is_active" => "$IsActive"
-													]);
-
 		$DnsRecords = dns_get_record("$TrackerDomain", $type = DNS_A);
-		foreach($DnsRecords as $Record) {
-			$value = $MySB_DB->insert("trackers_list_ipv4", [
-															"id_trackers_list" => "$id_trackers_list",
-															"ipv4" => $Record['ip']
-														]);
+		
+		if ( $DnsRecords != "" ) {
+			$id_trackers_list = $MySB_DB->insert("trackers_list", [
+															"tracker" => "$TrackerDomain",
+															"tracker_domain" => "$TrackerDomain",
+															"origin" => "users",
+															"is_active" => "$IsActive",
+															"to_check" => "$to_check"
+														]);		
+			foreach($DnsRecords as $Record) {
+				$value = $MySB_DB->insert("trackers_list_ipv4", [
+																"id_trackers_list" => "$id_trackers_list",
+																"ipv4" => $Record['ip']
+															]);
+			}
 		}
 	}
 	
