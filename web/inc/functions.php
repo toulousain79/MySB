@@ -184,7 +184,7 @@ function ManageUsersTrackers($TrackerDomain, $IsActive) {
 	if ( $IdTracker > 0 ) {
 		$value = $MySB_DB->update("trackers_list", ["is_active" => "$IsActive", "to_check" => "$to_check"], ["tracker_domain" => "$TrackerDomain"]);
 	} else {
-		$DnsRecords = dns_get_record("$TrackerDomain", $type = DNS_A);
+		$DnsRecords = dns_get_record($TrackerDomain, $type = DNS_A);
 		
 		if ( $DnsRecords != "" ) {
 			$id_trackers_list = $MySB_DB->insert("trackers_list", [
