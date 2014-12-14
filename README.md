@@ -38,6 +38,7 @@ MySB is a seedbox platform for multi-users.
 	* Samba share for each users (VPN access)
 	* NFS share for each users (VPN access)
 	* Get SSL certificates for each tracker avaible with ruTorrent
+	* DNScrypt-proxy (optionnal but recommended)
 
 ## Additional ruTorrent plugins
 
