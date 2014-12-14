@@ -24,30 +24,35 @@ source /etc/MySB/inc/includes_before.bsh
 #
 ##################### FIRST LINE #####################################
 
-if [ "$USAGE" == "ON" ]; then		
-	if [ -z $NEWUSER ] || [ -z $PASSWORD ]; then
-		ListingUsers
-		for seedUser in $UsersList; do
-			if [ "$seedUser" != "$MainUser" ]; then
-				LIST="$LIST|${CYELLOW}$seedUser$CEND"
-			fi
-		done
-		LIST="`echo \($LIST\) | sed -e 's/(|/(/g;'`"
+if [ "$USAGE" == "ON" ]; then
+	ListingUsers
+	LIST=""
+	for seedUser in $UsersList; do
+		if [ "$seedUser" != "$MainUser" ]; then
+			LIST="$LIST|${CYELLOW}$seedUser$CEND"
+		fi
+	done
+	LIST="`echo \($LIST\) | sed -e 's/^//g;' | sed -e 's/(|/(/g;'`"
+
+	if [ ! -z $LIST ]; then
+		echo -e "${CBLUE}Available users to delete:$CEND $LIST"
+		echo -e "${CYELLOW}Type$CEND ${CGREEN}none$CEND ${CYELLOW}to cancel.$CEND"
+	else
+		echo -e "${CRED}Any user to delete ...$CEND $LIST"
+		source /etc/MySB/inc/includes_after.bsh
+		EndingScript 0
+	fi	
 	
-		if [ ! -z $LIST ]; then
-			echo -e "${CBLUE}Available users:$CEND $LIST"
-		else
-			echo -e "${CRED}Any user to delete ...$CEND $LIST"
-			source /etc/MySB/inc/includes_after.bsh
-			EndingScript 0
-		fi	
-		
-		QuestionGetString NO  "Type username to DELETE: " NEWUSER
-		
+	QuestionGetString NO  "Type username to DELETE: " NEWUSER
+	
+	if [ "$NEWUSER" == "none" ]; then
+		source /etc/MySB/inc/includes_after.bsh
+		EndingScript 0
+	else
 		while [ "$NEWUSER" == "$MainUser" ]; do
 			QuestionGetString NO  "Type username to DELETE: " NEWUSER
 		done	
-	fi
+	fi	
 fi
 
 #### User ID
