@@ -733,57 +733,56 @@ AddTracker() {
 			sqlite3 $MySB_DB "INSERT into trackers_list (tracker_domain,origin) VALUES (\"$TrackerDomain\",\"$Origin\");"
 			StatusLSB
 			
-			DomainIPv4="$(nslookup $TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
+			DomainIPv4="$(nslookup tracker.$TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 			if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
-				ListIPv4=""
-				for Ip in $DomainIPv4; do
-					ListIPv4="$ListIPv4 $Ip"
+				DomainIPv4="`echo $DomainIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`"
+				
+				log_daemon_msg "Update trackers IPv4 for 'tracker.$TrackerDomain' --> '$DomainIPv4'"
+				TrackersListID="`sqlite3 $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker = 'tracker.$TrackerDomain'\"`"
+				# Cleaning
+				ListIPv4="`sqlite3 $MySB_DB \"SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$TrackersListID'\"`"
+				for IPv4 in $ListIPv4
+					SEARCH=$(echo "$DomainIPv4" | grep "$IPv4")
+					if [ -z $SEARCH ]; then
+						sqlite3 $MySB_DB "DELETE FROM trackers_list_ipv4 WHERE ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID';"
+					fi						
 				done
-				ListIPv4="`echo $ListIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`"
-			
-				DomainIPv4="$(nslookup tracker.$TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
+				unset ListIPv4 IPv4
+				# Add
+				for IPv4 in $DomainIPv4; do
+					sqlite3 $MySB_DB "INSERT into trackers_list_ipv4 (id_trackers_list,ipv4) VALUES (\"$TrackersListID\",\"$IPv4\");"
+				done
+				unset IPv4 DomainIPv4
+				sqlite3 $MySB_DB "UPDATE trackers_list SET tracker = 'tracker.$TrackerDomain' WHERE tracker_domain = '$TrackerDomain';"
+				StatusLSB
+			else
+				DomainIPv4="$(nslookup $TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
+				
 				if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
-					ListIPv4=""
-					for Ip in $DomainIPv4; do
-						ListIPv4="$ListIPv4 $Ip"
-					done
-					ListIPv4="`echo $ListIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`"
+					DomainIPv4="`echo $DomainIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`"
 					
-					log_daemon_msg "Update trackers IPv4 for 'tracker.$TrackerDomain' --> '$ListIPv4'"
-					TrackersListID="`sqlite3 $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker = 'tracker.$TrackerDomain'\"`"
+					log_daemon_msg "Update trackers IPv4 for '$TrackerDomain' --> '$DomainIPv4'"
+					TrackersListID="`sqlite3 $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker = '$TrackerDomain'\"`"
+					# Cleaning
 					ListIPv4="`sqlite3 $MySB_DB \"SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$TrackersListID'\"`"
 					for IPv4 in $ListIPv4
-						SEARCH=$(echo "$ListIPv4" | grep "$IPv4")
+						SEARCH=$(echo "$DomainIPv4" | grep "$IPv4")
 						if [ -z $SEARCH ]; then
 							sqlite3 $MySB_DB "DELETE FROM trackers_list_ipv4 WHERE ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID';"
 						fi						
 					done
-					for Ip in $DomainIPv4; do
-						ListIPv4="$ListIPv4 $Ip"
-						sqlite3 $MySB_DB "INSERT into trackers_list_ipv4 (id_trackers_list,ipv4) VALUES (\"$TrackersListID\",\"$Ip\");"
-					done					
-					sqlite3 $MySB_DB "UPDATE trackers_list SET tracker = 'tracker.$TrackerDomain' WHERE tracker_domain = '$TrackerDomain';"
-					StatusLSB		
-				else
-					log_daemon_msg "Update trackers IPv4 for '$TrackerDomain' --> '$ListIPv4'"
-					TrackersListID="`sqlite3 $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker = '$TrackerDomain'\"`"
-					ListIPv4="`sqlite3 $MySB_DB \"SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$TrackersListID'\"`"
-					for IPv4 in $ListIPv4
-						SEARCH=`echo "$ListIPv4" | grep "$IPv4"`
-						if [ -z $SEARCH ]; then
-							sqlite3 $MySB_DB "DELETE FROM trackers_list_ipv4 WHERE ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID';"
-						fi						
-					done				
-					for Ip in $DomainIPv4; do
-						ListIPv4="$ListIPv4 $Ip"
-						sqlite3 $MySB_DB "INSERT into trackers_list_ipv4 (id_trackers_list,ipv4) VALUES (\"$TrackersListID\",\"$Ip\");"
-					done					
+					unset ListIPv4 IPv4
+					# Add
+					for IPv4 in $DomainIPv4; do
+						sqlite3 $MySB_DB "INSERT into trackers_list_ipv4 (id_trackers_list,ipv4) VALUES (\"$TrackersListID\",\"$IPv4\");"
+					done
+					unset IPv4 DomainIPv4
 					sqlite3 $MySB_DB "UPDATE trackers_list SET tracker = '$TrackerDomain' WHERE tracker_domain = '$TrackerDomain';"
-					StatusLSB			
+					StatusLSB				
 				fi
 			fi
-
-			unset DomainIPv4 ListIPv4 TrackerDomain
+			
+			unset TrackerDomain
 		fi
 	fi
 }
