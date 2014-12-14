@@ -121,24 +121,29 @@ PackagesManage() {
 	
 	#### Need of 'apt-get update' ? (must be greater than 2 hours OR forced)
 	if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ]; then
+		echo "$BEFORE $packetg $OPTIONS update"
 		$BEFORE $packetg $OPTIONS update
 		if [ $? -eq 0 ]; then
-			sqlite3 $MySB_DB "UPDATE system SET apt_update = 0, apt_date = datetime('now','localtime') WHERE id_system = 1;"
+			sqlite3 -echo $MySB_DB "UPDATE system SET apt_update = 0, apt_date = datetime('now','localtime') WHERE id_system = 1;"
 		fi		
 	fi
 		
 	case "$1" in
 		"install")
+			echo "$BEFORE $packetg $OPTIONS install $2"
 			$BEFORE $packetg $OPTIONS install $2
 		;;		
 		'upgrade')
 			if [ "`$packetg --help | grep safe-upgrade | awk '{ print $1 }'`" == "safe-upgrade" ]; then
+				echo "$BEFORE $packetg $OPTIONS -V safe-upgrade"
 				$BEFORE $packetg $OPTIONS -V safe-upgrade
 			else
+				echo "$BEFORE $packetg $OPTIONS -V upgrade"
 				$BEFORE $packetg $OPTIONS -V upgrade
 			fi
 		;;
 		'purge')
+			echo "$BEFORE $packetg $OPTIONS purge $2"
 			$BEFORE $packetg $OPTIONS purge $2
 		;;			
 	esac
@@ -149,14 +154,16 @@ PackagesManage() {
 	if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ]; then
 		if [ $RETURN -eq 0 ]; then
 			if [ "`$packetg --help | grep autoremove | awk '{ print $1 }'`" == "autoremove" ]; then
+				echo "$BEFORE $packetg $OPTIONS autoremove"
 				$BEFORE $packetg $OPTIONS autoremove
-			fi
-			if [ "`$packetg --help | grep autoclean | awk '{ print $1 }'`" == "autoclean" ]; then
+			elif [ "`$packetg --help | grep autoclean | awk '{ print $1 }'`" == "autoclean" ]; then
+				echo "$BEFORE $packetg $OPTIONS autoremove"
 				$BEFORE $packetg $OPTIONS autoclean
 			fi	
 		fi
 	fi
 	
+	echo "$BEFORE $packetg $OPTIONS install"
 	$BEFORE $packetg $OPTIONS install
 	
 	return $RETURN
@@ -195,9 +202,16 @@ ManageServices() {
 		BIN=`echo $FullBIN | cut -d '/' -f 4`
 		
 		if [ ! -z "$SEARCH" ] ; then
-			if hash ${FullBIN} 2> /dev/null; then
-				ServicesToManage="${ServicesToManage} ${BIN}"
-			fi
+			case "$IDENT" in	
+				'/etc/network')
+					echo &> /dev/null
+				;;
+				*)
+					if hash ${FullBIN} 2> /dev/null; then
+						ServicesToManage="${ServicesToManage} ${BIN}"
+					fi
+				;;			
+			esac
 		fi
 		unset SEARCH FullBIN IDENT		
 	done
@@ -534,6 +548,10 @@ CreatePluginsDirUsers() {
 	LISTING=$(ls -1r /etc/MySB/web/rutorrent/plugins/)
 	UserName="$1"
 
+	if [ ! -d /etc/MySB/web/rutorrent/conf/users/$UserName/ ]; then
+		mkdir -p /etc/MySB/web/rutorrent/conf/users/$UserName/
+	fi	
+	
 	(
 	cat <<'EOF'
 [default]
@@ -732,52 +750,36 @@ AddTracker() {
 					ListIPv4="`echo $ListIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`"
 					
 					log_daemon_msg "Update trackers IPv4 for 'tracker.$TrackerDomain' --> '$ListIPv4'"
-					sqlite3 $MySB_DB "SELECT ipv4 FROM trackers_list_ipv4 WHERE tracker = 'tracker.$TrackerDomain'" | while read ROW; do
-						IPv4=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
+					TrackersListID="`sqlite3 $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker = 'tracker.$TrackerDomain'\"`"
+					ListIPv4="`sqlite3 $MySB_DB \"SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$TrackersListID'\"`"
+					for IPv4 in $ListIPv4
 						SEARCH=`echo $ListIPv4 | grep $IPv4`
 						if [ -z $SEARCH ]; then
-							sqlite3 $MySB_DB "DELETE FROM trackers_list_ipv4 WHERE ipv4 = '$IPv4';"
-						fi
-					done			
-					TrackersListID="`sqlite3 $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker = 'tracker.$TrackerDomain'\"`"
+							sqlite3 $MySB_DB "DELETE FROM trackers_list_ipv4 WHERE ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID';"
+						fi						
+					done
 					for Ip in $DomainIPv4; do
 						ListIPv4="$ListIPv4 $Ip"
 						sqlite3 $MySB_DB "INSERT into trackers_list_ipv4 (id_trackers_list,ipv4) VALUES (\"$TrackersListID\",\"$Ip\");"
 					done					
 					sqlite3 $MySB_DB "UPDATE trackers_list SET tracker = 'tracker.$TrackerDomain' WHERE tracker_domain = '$TrackerDomain';"
-					StatusLSB
-					
-					# log_daemon_msg "Add tracker to global list: tracker.$TrackerDomain"
-					# sqlite3 $MySB_DB "INSERT into trackers_list (tracker,tracker_domain,origin) VALUES (\"tracker.$TrackerDomain\",\"$TrackerDomain\",\"$Origin\");"
-					# StatusLSB					
-					
-					# log_daemon_msg "Update trackers IPv4: tracker.$TrackerDomain --> $ListIPv4"
-					# sqlite3 $MySB_DB "UPDATE trackers_list SET ipv4 = '$ListIPv4' WHERE tracker = 'tracker.$TrackerDomain';"
-					# StatusLSB				
+					StatusLSB		
 				else
 					log_daemon_msg "Update trackers IPv4 for '$TrackerDomain' --> '$ListIPv4'"
-					sqlite3 $MySB_DB "SELECT ipv4 FROM trackers_list_ipv4 WHERE tracker = '$TrackerDomain'" | while read ROW; do
-						IPv4=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
+					TrackersListID="`sqlite3 $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker = '$TrackerDomain'\"`"
+					ListIPv4="`sqlite3 $MySB_DB \"SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$TrackersListID'\"`"
+					for IPv4 in $ListIPv4
 						SEARCH=`echo $ListIPv4 | grep $IPv4`
 						if [ -z $SEARCH ]; then
-							sqlite3 $MySB_DB "DELETE FROM trackers_list_ipv4 WHERE ipv4 = '$IPv4';"
-						fi
-					done					
-					TrackersListID="`sqlite3 $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker = '$TrackerDomain'\"`"
+							sqlite3 $MySB_DB "DELETE FROM trackers_list_ipv4 WHERE ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID';"
+						fi						
+					done				
 					for Ip in $DomainIPv4; do
 						ListIPv4="$ListIPv4 $Ip"
 						sqlite3 $MySB_DB "INSERT into trackers_list_ipv4 (id_trackers_list,ipv4) VALUES (\"$TrackersListID\",\"$Ip\");"
 					done					
 					sqlite3 $MySB_DB "UPDATE trackers_list SET tracker = '$TrackerDomain' WHERE tracker_domain = '$TrackerDomain';"
-					StatusLSB				
-				
-					# log_daemon_msg "Add tracker to global list: $TrackerDomain"
-					# sqlite3 $MySB_DB "INSERT into trackers_list (tracker,tracker_domain,origin) VALUES (\"$TrackerDomain\",\"$TrackerDomain\",\"$Origin\");"
-					# StatusLSB
-					
-					# log_daemon_msg "Update trackers IPv4: $TrackerDomain --> $ListIPv4"
-					# sqlite3 $MySB_DB "UPDATE trackers_list SET ipv4 = '$ListIPv4' WHERE tracker = '$TrackerDomain';"
-					# StatusLSB				
+					StatusLSB			
 				fi
 			fi
 
