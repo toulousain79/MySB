@@ -304,8 +304,6 @@ ManageServices() {
 		done
 
 		echo "---- "`date +"%T"` >> /etc/MySB/logs/$ScriptName.log
-	else
-		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
 	fi
 }
 
@@ -736,7 +734,7 @@ AddTracker() {
 
 		if [ ! -z "$TrackerDomain" ]; then
 			log_daemon_msg "Add tracker domain to list: $TrackerDomain"
-			sqlite3 -echo $MySB_DB "INSERT into trackers_list (tracker_domain,origin) VALUES (\"$TrackerDomain\",\"$Origin\");"
+			sqlite3 -echo $MySB_DB "INSERT into trackers_list (tracker,tracker_domain,origin) VALUES (\"$TrackerDomain\",\"$TrackerDomain\",\"$Origin\");"
 			StatusLSB
 			
 			DomainIPv4="$(nslookup tracker.$TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
@@ -957,6 +955,7 @@ PeerGuardianFilesGenerate() {
 		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`	
 		MainUserIPs=`echo $MainUserIPs | sed s,/,\\\\\\\\\\/,g`
 		AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
+		AllUsersIPs=`echo $AllUsersIPs | sed -e "s/^//g;"`
 		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_IN=")
 		SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
 		if [ ! -z "$SEARCH" ]; then	
@@ -1031,7 +1030,7 @@ PeerGuardianFilesGenerate() {
 EOF
 		) > /etc/pgl/blocklists.list
 		
-		AllBlocklists="`sqlite3 $MySB_DB \"SELECT blocklists, is_active FROM peerguardian_blocklists WHERE 1\"`"
+		AllBlocklists="`sqlite3 $MySB_DB \"SELECT blocklists, is_active FROM blocklists_peerguardian WHERE 1\"`"
 		for Line in $AllBlocklists; do
 			Blocklist=`echo $Line | awk '{split($0,a,"|"); print a[1]}'`
 			IsActive=`echo $Line | awk '{split($0,a,"|"); print a[2]}'`

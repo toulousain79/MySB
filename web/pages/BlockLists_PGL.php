@@ -30,8 +30,8 @@ if ( $IsInstalled == '1' ) {
 	if (isset($_POST['submit'])) {
 		$success = true;
 		
-		for($i=0, $count = count($_POST['id_peerguardian_blocklists']);$i<$count;$i++) {
-			$result = $MySB_DB->update("peerguardian_blocklists", ["is_active" => $_POST['is_active'][$i]], ["id_peerguardian_blocklists" => $_POST['id_peerguardian_blocklists'][$i]]);
+		for($i=0, $count = count($_POST['id_blocklists_peerguardian']);$i<$count;$i++) {
+			$result = $MySB_DB->update("blocklists_peerguardian", ["is_active" => $_POST['is_active'][$i]], ["id_blocklists_peerguardian" => $_POST['id_blocklists_peerguardian'][$i]]);
 			
 			if ( $result != 1 ) {
 				$success = false;
@@ -48,7 +48,7 @@ if ( $IsInstalled == '1' ) {
 		GenerateMessage('FirewallAndSecurity.bsh' ,$type, $message);
 	}
 	
-	$BlockList = $MySB_DB->select("peerguardian_blocklists", "*");
+	$BlockList = $MySB_DB->select("blocklists_peerguardian", "*");
 ?>
 
 	<form class="form_settings" method="post" action="">	
@@ -95,7 +95,7 @@ if ( $IsInstalled == '1' ) {
 	?>				
 				<tr>
 					<td>
-						<input type="hidden" name="id_peerguardian_blocklists[]" value="<?php echo $List["id_peerguardian_blocklists"]; ?>" />
+						<input type="hidden" name="id_blocklists_peerguardian[]" value="<?php echo $List["id_blocklists_peerguardian"]; ?>" />
 						<input style="width:180px;" type="hidden" name="name[]" value="<?php echo $List["name"]; ?>" />
 						<?php echo $List["name"]; ?>
 					</td>			

@@ -27,8 +27,8 @@ global $MySB_DB;
 if (isset($_POST['submit'])) {
 	$success = true;
 	
-	for($i=0, $count = count($_POST['id_rtorrent_blocklists']);$i<$count;$i++) {
-		$result = $MySB_DB->update("rtorrent_blocklists", ["is_active" => $_POST['is_active'][$i]], ["id_rtorrent_blocklists" => $_POST['id_rtorrent_blocklists'][$i]]);
+	for($i=0, $count = count($_POST['id_blocklists_rtorrent']);$i<$count;$i++) {
+		$result = $MySB_DB->update("blocklists_rtorrent", ["is_active" => $_POST['is_active'][$i]], ["id_blocklists_rtorrent" => $_POST['id_blocklists_rtorrent'][$i]]);
 		
 		if ( $result != 1 ) {
 			$success = false;
@@ -45,7 +45,7 @@ if (isset($_POST['submit'])) {
 	GenerateMessage('FirewallAndSecurity.sh', $type, $message);
 }
 
-$BlockList = $MySB_DB->select("rtorrent_blocklists", "*");
+$BlockList = $MySB_DB->select("blocklists_rtorrent", "*");
 ?>
 
 <form class="form_settings" method="post" action="">	
@@ -106,7 +106,7 @@ foreach($BlockList as $List) {
 					<?php echo $is_active; ?>				
 				</td>					
 			</tr>
-			<input type="hidden" name="id_rtorrent_blocklists[]" value="<?php echo $List["id_rtorrent_blocklists"]; ?>" />
+			<input type="hidden" name="id_blocklists_rtorrent[]" value="<?php echo $List["id_blocklists_rtorrent"]; ?>" />
 <?php
 } // foreach($BlockList as $List) {
 ?>			
