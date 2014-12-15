@@ -58,12 +58,12 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$count = count($_POST['delete']);
 				
 				foreach($_POST['delete'] as $key => $value) {
-					$result = $MySB_DB->delete("trackers_list_ipv4", ["AND" => ["id_trackers_list" => $key]]);
+					$result = $MySB_DB->delete("trackers_list_ipv4", ["id_trackers_list" => $key]);
 					if ( $result = 0 ) {
 						$success = false;
 					}			
 				
-					$result = $MySB_DB->delete("trackers_list", ["AND" => ["id_trackers_list" => $key]]);
+					$result = $MySB_DB->delete("trackers_list", ["id_trackers_list" => $key]);
 					if ( $result = 0 ) {
 						$success = false;
 					}			

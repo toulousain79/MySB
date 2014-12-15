@@ -34,9 +34,10 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			
 			for($i=1; $i<=$count; $i++) {
 				$TrackerDomain = str_replace(' ','',$_POST['tracker_domain'][$i]);
+				$TrackerDomain = GetOnlyDomain($TrackerDomain);
 				$last_id_trackers_list = ManageUsersTrackers($TrackerDomain, $_POST['is_active'][$i]);
 																			
-				if (!isset($last_id_trackers_list)) {
+				if ( (!isset($last_id_trackers_list)) || ($last_id_trackers_list === false) ) {
 					$success = false;
 				}																		
 			}
@@ -53,12 +54,12 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$count = count($_POST['delete']);
 				
 				foreach($_POST['delete'] as $key => $value) {
-					$result = $MySB_DB->delete("trackers_list_ipv4", ["AND" => ["id_trackers_list" => $key]]);
+					$result = $MySB_DB->delete("trackers_list_ipv4", ["id_trackers_list" => $key]);
 					if ( $result = 0 ) {
 						$success = false;
 					}
 					
-					$result = $MySB_DB->delete("trackers_list", ["AND" => ["id_trackers_list" => $key]]);
+					$result = $MySB_DB->delete("trackers_list", ["id_trackers_list" => $key]);
 					if ( $result = 0 ) {
 						$success = false;
 					}			
@@ -83,7 +84,7 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["origin" => "users", "OR
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 	<form id="myForm" class="form_settings" method="post" action="">
 		<fieldset>
-		<legend>Add your trackers here (only the domain)</legend>
+		<legend>Add your trackers here (domain, hostname, url)</legend>
 			<div id="input1" class="clonedInput">
 				<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
 				Domain: <input class="input_tracker_domain" id="tracker_domain" name="tracker_domain[1]" type="text" required="required" />
