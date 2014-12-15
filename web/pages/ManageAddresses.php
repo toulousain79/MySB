@@ -114,11 +114,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$count = count($_POST['delete']);
 				
 				foreach($_POST['delete'] as $key => $value) {
-					$result = $MySB_DB->delete("users_addresses", [
-						"AND" => [
-							"id_users_addresses" => $key
-						]
-					]);
+					$result = $MySB_DB->delete("users_addresses", ["id_users_addresses" => $key]);
 					
 					if ( $result = 0 ) {
 						$success = false;
