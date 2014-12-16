@@ -100,6 +100,10 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["origin" => "users", "OR
 			</div>
 		
 			<input class="submit" style="width:150px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="Add my trackers now !">
+			<p class="Comments">If an error occurs when you add one of your trackers, it will be deleted.<br />
+				The most common error is the verification of IP addresses associated with the host name (A type of DNS record).</p>
+			<p class="Comments">The process of adding and trackers audit is started in the background and can take several seconds to several minutes.<br />
+				The addition of the tracker is confirmed when remains in the list with the IP addresses associated with it.</p>				
 		</fieldset>
 	</form>	
 </div>	
