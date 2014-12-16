@@ -138,66 +138,32 @@ if [ "$COMMAND" == "" ]; then
 		else
 			echo -e "${CGREEN}Done !$CEND"
 		
-			if [ ! -d /etc/MySB/sources ]; then
-				mkdir /etc/MySB/sources
-			fi
-			if [ ! -d /etc/MySB/logs ]; then
-				mkdir /etc/MySB/logs
-			fi		
-			if [ ! -d /etc/MySB/files ]; then
-				mkdir /etc/MySB/files
-			fi
-			if [ ! -d /etc/MySB/temp ]; then
-				mkdir /etc/MySB/temp
-			fi
-			if [ ! -d /etc/MySB/db ]; then
-				mkdir /etc/MySB/db
-			fi			
-			if [ ! -d /etc/MySB/web/logs/install ]; then
-				mkdir -p /etc/MySB/web/logs/install
-			fi
-			if [ ! -d /etc/MySB/web/logs/scripts ]; then
-				mkdir -p /etc/MySB/web/logs/scripts
-			fi
-			if [ ! -d /etc/MySB/web/logs/bin ]; then
-				mkdir -p /etc/MySB/web/logs/bin
-			fi
-			if [ ! -d /etc/MySB/web/logs/nginx ]; then
-				mkdir -p /etc/MySB/web/logs/nginx
-			fi
-			if [ ! -d /etc/MySB/web/logs/security ]; then
-				mkdir -p /etc/MySB/web/logs/security
-			fi			
-						
-			chmod +x /etc/MySB/MySB_Install.bsh
-			chmod +x /etc/MySB/MySB_CleanAll.bsh
-			chmod +x /etc/MySB/bin/*
-			chmod +x /etc/MySB/scripts/*
-			chmod +x /etc/MySB/install/*
-						
-			dos2unix /etc/MySB/*
-			dos2unix /etc/MySB/inc/*
-			dos2unix /etc/MySB/bin/*
-			dos2unix /etc/MySB/files/*
-			dos2unix /etc/MySB/scripts/*
-			dos2unix /etc/MySB/install/*
-			dos2unix /etc/MySB/templates/*
-			
-			if [ ! -f /etc/MySB/db/MySB.sq3 ]; then
-				sqlite3 /etc/MySB/db/MySB.sq3 < /etc/MySB/templates/MySB_2014-12-13.dump.sql;
-			fi
+			#### Create directories & change rights
+			echo -e -n "${CBLUE}Download files from GitHub$CEND..."
+			if [ -f /etc/MySB/inc/funcs.bsh ]; then source /etc/MySB/inc/funcs.bsh; fi
+			CreateDir
+			echo -e "${CGREEN}Done !$CEND"
 
 			sqlite3 /etc/MySB/db/MySB.sq3 "UPDATE system SET mysb_version = '$MySB_CurrentVersion' WHERE id_system = '1';"
 			
-			#### Some questions
-			/bin/bash /etc/MySB/install/Questions.bsh $$
-			echo
-			echo
-			echo -e "${CBLUE}Starting SCREEN session...$CEND"
-			screen -wipe >> /tmp/`basename $0`.log
-			screen -dmS MySB /bin/bash /etc/MySB/MySB.bsh;
-			sleep 5
-			screen -r MySB
+			if [ $? -gt 0 ]; then
+				echo -e -n "${CRED}Failed !$CEND"
+				echo ""
+				echo ""
+				echo -e "${CRED}Looks like somethig is wrong with creating database, aborting !$CEND"
+				if [ -f /etc/MySB/inc/includes_after.bsh ]; then source /etc/MySB/inc/includes_after.bsh; fi
+				exit 0
+			else			
+				#### Some questions
+				/bin/bash /etc/MySB/install/Questions.bsh $$
+				echo
+				echo
+				echo -e "${CBLUE}Starting SCREEN session...$CEND"
+				screen -wipe >> /tmp/`basename $0`.log
+				screen -dmS MySB /bin/bash /etc/MySB/MySB.bsh;
+				sleep 5
+				screen -r MySB
+			fi
 		fi
 	fi
 fi

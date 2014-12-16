@@ -173,8 +173,8 @@ PackagesManage() {
 PeerGuardianFailed() {
 	ListingUsers
 	for seedUser in $UsersList; do
-		if [ -f /etc/MySB/scripts/blocklist/blocklist_rtorrent.txt ]; then
-			cp /etc/MySB/scripts/blocklist/* /home/$seedUser/blocklist/
+		if [ -f /etc/MySB/files/blocklist/blocklist_rtorrent.txt ]; then
+			cp /etc/MySB/files/blocklist/* /home/$seedUser/blocklist/
 		else
 			ScriptInvoke 'screen' '/etc/MySB/scripts/BlocklistsRTorrent.bsh'
 		fi
@@ -385,20 +385,20 @@ CleanBlockList() {
 	
 	case $1 in
 		download)
-			wget --no-check-certificate $URL -O /etc/MySB/scripts/blocklist/$FILE.gz
-			gzip -dc /etc/MySB/scripts/blocklist/$FILE.gz | cut -d: -f2 > /etc/MySB/scripts/blocklist/$FILE.txt
+			wget --no-check-certificate $URL -O /etc/MySB/files/blocklist/$FILE.gz
+			gzip -dc /etc/MySB/files/blocklist/$FILE.gz | cut -d: -f2 > /etc/MySB/files/blocklist/$FILE.txt
 		;;
 		del_spaces)
-			sed -i '/\ /d' /etc/MySB/scripts/blocklist/$FILE.tmp
+			sed -i '/\ /d' /etc/MySB/files/blocklist/$FILE.tmp
 		;;
 		not_numeric)
-			sed -i '/^[0123456789]/!d' /etc/MySB/scripts/blocklist/$FILE.tmp
+			sed -i '/^[0123456789]/!d' /etc/MySB/files/blocklist/$FILE.tmp
 		;;
 		not_cidr)
-			sed -i '/\//!d' /etc/MySB/scripts/blocklist/$FILE.tmp
+			sed -i '/\//!d' /etc/MySB/files/blocklist/$FILE.tmp
 		;;
 		del_RC)
-			sed -i '/^M/d' /etc/MySB/scripts/blocklist/$FILE.tmp
+			sed -i '/^M/d' /etc/MySB/files/blocklist/$FILE.tmp
 		;;
 		is_ip)
 			while read line; do
@@ -407,13 +407,13 @@ CleanBlockList() {
 				RESULT_START=`printf $START | grep -E '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'`
 				RESULT_END=`printf $END | grep -E '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'`
 				if [ ! "$RESULT_START" = "$START" ] || [ ! "$RESULT_END" = "$END" ]; then
-					sed -i '/$line/!d' /etc/MySB/scripts/blocklist/$FILE.txt
+					sed -i '/$line/!d' /etc/MySB/files/blocklist/$FILE.txt
 				fi
-			done < /etc/MySB/scripts/blocklist/$FILE.txt		
+			done < /etc/MySB/files/blocklist/$FILE.txt		
 		;;	
 		sort_uniq)
-			sort -g /etc/MySB/scripts/blocklist/$FILE.tmp | uniq > /etc/MySB/scripts/blocklist/$FILE.txt
-			rm -f /etc/MySB/scripts/blocklist/blocklist_rtorrent.tmp
+			sort -g /etc/MySB/files/blocklist/$FILE.tmp | uniq > /etc/MySB/files/blocklist/$FILE.txt
+			rm -f /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
 		;;
 	esac
 }
@@ -1097,6 +1097,67 @@ EOF
 		done
 		if [ $1 -eq 1 ]; then StatusLSB; fi
 	fi		
+}
+
+#### Create directories & change rights
+CreateDir() {
+	# Root Directories
+	if [ ! -d /etc/MySB/db ]; then mkdir /etc/MySB/db; fi
+	if [ ! -d /etc/MySB/files ]; then mkdir /etc/MySB/files; fi
+	if [ ! -d /etc/MySB/logs ]; then mkdir /etc/MySB/logs; fi
+	if [ ! -d /etc/MySB/sources ]; then mkdir /etc/MySB/sources; fi
+	if [ ! -d /etc/MySB/ssl ]; then mkdir /etc/MySB/ssl; fi
+	if [ ! -d /etc/MySB/temp ]; then mkdir /etc/MySB/temp; fi
+	if [ ! -d /etc/MySB/web/logs/bin ]; then mkdir -p /etc/MySB/web/logs/bin; fi	
+	# Log directories
+	if [ ! -d /etc/MySB/web/logs ]; then mkdir /etc/MySB/web/logs; fi	
+	if [ ! -d /etc/MySB/web/logs/bin ]; then mkdir /etc/MySB/web/logs/bin; fi
+	if [ ! -d /etc/MySB/web/logs/install ]; then mkdir /etc/MySB/web/logs/install; fi
+	if [ ! -d /etc/MySB/web/logs/nginx ]; then mkdir /etc/MySB/web/logs/nginx; fi	
+	if [ ! -d /etc/MySB/web/logs/scripts ]; then mkdir /etc/MySB/web/logs/scripts; fi
+	if [ ! -d /etc/MySB/web/logs/security ]; then mkdir /etc/MySB/web/logs/security; fi
+
+	#### Convert with dos2unix
+	dos2unix /etc/MySB/*
+	dos2unix /etc/MySB/bin/*
+	dos2unix /etc/MySB/files/*
+	dos2unix /etc/MySB/inc/*
+	dos2unix /etc/MySB/install/*
+	dos2unix /etc/MySB/scripts/*
+	dos2unix /etc/MySB/templates/*
+	dos2unix /etc/MySB/upgrade/*
+
+	#### Create DB
+	if [ ! -f $MySB_DB ]; then sqlite3 -echo $MySB_DB < /etc/MySB/templates/MySB_2014-12-13.dump.sql; fi
+	if [ ! -f $Wolf_DB ]; then sqlite3 -echo $Wolf_DB < /etc/MySB/templates/Wolf_2014-12-12.dump.sql; fi
+	
+	#### Change rights
+	chmod -R 400 /etc/MySB/
+	chmod 500 /etc/MySB/MySB*
+	chmod 500 /etc/MySB/bin/*
+	chmod 770 /etc/MySB/db
+	chmod 660 /etc/MySB/db/*
+	chmod 600 /etc/MySB/files
+	chmod -R 400 /etc/MySB/inc
+	chmod 500 /etc/MySB/install/*
+	chmod 500 /etc/MySB/scripts/*
+	chmod 600 /etc/MySB/sources
+	chmod 600 /etc/MySB/ssl
+	chmod 700 /etc/MySB/temp
+	chmod 400 /etc/MySB/templates
+	chmod 600 /etc/MySB/upgrade
+	chmod 500 /etc/MySB/upgrade/*
+	chmod 600 /etc/MySB/web/openvpn
+	chmod 600 /etc/MySB/web/logs/bin
+	chmod 600 /etc/MySB/web/logs/install
+	chmod 600 /etc/MySB/web/logs/nginx
+	chmod 600 /etc/MySB/web/logs/scripts
+	chmod 600 /etc/MySB/web/logs/security
+	
+	#### Change owners
+	chown -R root:www-data /etc/MySB/db
+	chown root:www-data /etc/MySB/scripts/FirewallAndSecurity.bsh
+	chown root:www-data /etc/MySB/bin/MySB_ChangeUserPassword
 }
 
 ##################### LAST LINE ######################################
