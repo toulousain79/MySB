@@ -665,13 +665,10 @@ ValidateMail() {
 
 	#Results
 	if [ $checkreg == 1 ] && [ $checkdig == 1 ]; then
-		#echo "OK";
-		echo 0
-	else
-		#echo "not OK";
 		echo 1
+	else
+		echo 0
 	fi
-	#End
 }
 
 #### Monthly payment
@@ -1053,19 +1050,9 @@ PeerGuardianFilesGenerate() {
 EOF
 		) > /etc/pgl/blocklists.list
 		
-		AllBlocklists="`sqlite3 $MySB_DB \"SELECT blocklists, is_active FROM blocklists_peerguardian WHERE 1\"`"
-		for Line in $AllBlocklists; do
-			Blocklist=`echo $Line | awk '{split($0,a,"|"); print a[1]}'`
-			IsActive=`echo $Line | awk '{split($0,a,"|"); print a[2]}'`
-
-			case "$IsActive" in
-				0)
-					echo "#$Blocklist" >> /etc/pgl/blocklists.list
-				;;	
-				1)
-					echo "$Blocklist" >> /etc/pgl/blocklists.list
-				;;			
-			esac			
+		AllBlocklists="`sqlite3 $MySB_DB \"SELECT blocklists FROM blocklists_peerguardian WHERE is_active = '1'\"`"
+		for Blocklist in $AllBlocklists; do
+			echo "$Blocklist" >> /etc/pgl/blocklists.list			
 		done
 		if [ $1 -eq 1 ]; then StatusLSB; fi
 		
@@ -1151,13 +1138,14 @@ ManageDirectoriesAndFiles() {
 	# web
 	chmod -R 755 /etc/MySB/web
 	chmod 444 /etc/MySB/web/*
-	if [ -f /etc/MySB/web/config.php ]; then chmod 400 /etc/MySB/web/config.php; fi
+	if [ -f /etc/MySB/web/config.php ]; then chmod 4400 /etc/MySB/web/config.php; fi
 	chmod -R 555 /etc/MySB/web
 	chmod 444 /etc/MySB/web/inc/*
 	chmod 444 /etc/MySB/web/pages/*
 
 	#### Change owners
 	chown -R root:root /etc/MySB
+	chown root:www-data /etc/MySB/web/config.php
 	chown -R root:www-data /etc/MySB/db
 	chown root:www-data /etc/MySB/scripts/FirewallAndSecurity.bsh
 	chown root:www-data /etc/MySB/bin/MySB_ChangeUserPassword
