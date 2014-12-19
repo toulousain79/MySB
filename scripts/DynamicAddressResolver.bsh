@@ -25,6 +25,7 @@ source /etc/MySB/inc/includes_before.bsh
 ##################### FIRST LINE #####################################
 
 #### Update all IPs from hostname
+Reload=0
 AllHostname="`sqlite3 $MySB_DB \"SELECT id_users_addresses,ipv4,hostname FROM users_addresses WHERE is_active = '1' AND check_by = 'hostname'\"`"
 for Hostname in $AllHostname; do
 	IdUsersAddresses=`echo $Service | awk '{split($0,a,"|"); print a[1]}'`
@@ -35,10 +36,13 @@ for Hostname in $AllHostname; do
 	
 	if [ "`echo $ListIPv4 | grep $IPv4`" == "" ]; then
 		sqlite3 $MySB_DB "UPDATE users_addresses SET ipv4 = '$IPv4' WHERE hostname = '$Hostname' AND id_users_addresses = '$IdUsersAddresses';"
-		
-		ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
+		Reload=1
 	fi
 done
+
+if [ "$Reload" == "1" ]; then
+	ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
+fi
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after.bsh
