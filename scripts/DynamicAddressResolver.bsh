@@ -26,22 +26,30 @@ source /etc/MySB/inc/includes_before.bsh
 
 #### Update all IPs from hostname
 Reload=0
-AllHostname="`sqlite3 $MySB_DB \"SELECT id_users_addresses,ipv4,hostname FROM users_addresses WHERE is_active = '1' AND check_by = 'hostname'\"`"
+log_daemon_msg "Create list of all dynamic hostnames"
+AllHostname="`sqlite3 $MySB_DB \"SELECT id_users_addresses,hostname FROM users_addresses WHERE is_active = '1' AND check_by = 'hostname'\"`"
+StatusLSB
+
 for Hostname in $AllHostname; do
 	IdUsersAddresses=`echo $Service | awk '{split($0,a,"|"); print a[1]}'`
-	ListIPv4=`echo $Service | awk '{split($0,a,"|"); print a[2]}'`
-	Hostname=`echo $Service | awk '{split($0,a,"|"); print a[3]}'`
+	Hostname=`echo $Service | awk '{split($0,a,"|"); print a[2]}'`
+	ListIPv4="`sqlite3 $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND check_by = 'hostname' AND hostname = '$Hostname'\"`"
 	
 	IPv4="$(nslookup $Hostname | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 	
 	if [ "`echo $ListIPv4 | grep $IPv4`" == "" ]; then
+		log_daemon_msg "Updating a hostname: $Hostname"
 		sqlite3 $MySB_DB "UPDATE users_addresses SET ipv4 = '$IPv4' WHERE hostname = '$Hostname' AND id_users_addresses = '$IdUsersAddresses';"
+		StatusLSB
 		Reload=1
 	fi
 done
 
 if [ "$Reload" == "1" ]; then
 	ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
+else
+	log_daemon_msg "No hostname requires updating"
+	StatusLSB
 fi
 
 # -----------------------------------------
