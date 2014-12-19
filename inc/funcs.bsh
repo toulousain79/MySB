@@ -252,7 +252,14 @@ ManageServices() {
 					
 					"start")			
 						if [ "$Service" == "pglcmd" ]; then
-							pglcmd restart
+							if [ "`pidof pgls`" != "" ]; then
+								pglcmd reload
+								if [ $? -gt 0 ]; then
+									pglcmd restart
+								fi
+							else
+								pglcmd restart
+							fi
 							if [ $? -gt 0 ]; then # if pgl don't start maybe its due to a list update
 								echo `date +"%T"`" --> The updated list of PGL may have failed." >> /etc/MySB/logs/$ScriptName.log
 								echo `date +"%T"`" --> Attempting to clean lists error." >> /etc/MySB/logs/$ScriptName.log
@@ -282,7 +289,7 @@ ManageServices() {
 							fi
 						else
 							case "$Service" in
-								"nginx")
+								"nginx"|"fail2ban")
 									case "$ScriptName" in
 										"MySB_ChangeUserPassword"|"MySB_CreateUser"|"MySB_DeleteUser"|"FirewallAndSecurity.bsh")
 											if [ "`pidof nginx`" != "" ]; then
