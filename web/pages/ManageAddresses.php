@@ -77,7 +77,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					$type = 'error';
 				}
 				
-				GenerateMessage('FirewallAndSecurity.sh', $type, $message);		
+				GenerateMessage('FirewallAndSecurity.bsh', $type, $message);		
 			//}
 			break;
 		case "Save Changes":
@@ -105,7 +105,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					$message = 'Failed ! It was not possible to update addresses informations.';
 				}
 				
-				GenerateMessage('FirewallAndSecurity.sh', $type, $message);		
+				GenerateMessage('FirewallAndSecurity.bsh', $type, $message);		
 			//}
 			break;			
 		default: // Delete
@@ -128,7 +128,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					$message = 'Failed ! It was not possible to delete address.';
 				}
 				
-				GenerateMessage('FirewallAndSecurity.sh', $type, $message);		
+				GenerateMessage('FirewallAndSecurity.bsh', $type, $message);		
 			}
 			break;
 	}	
