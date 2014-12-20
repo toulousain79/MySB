@@ -29,13 +29,12 @@ if ($_SERVER['PHP_AUTH_USER'] == '##MySB_User##') {
 }
 
 function printUser($user) {
-	global $MySB_DB, $system_datas, $users_datas;
+	global $MySB_DB, $system_datas, $users_datas, $Port_HTTPs;
 	
 	// User ID
 	$UserID = $users_datas["id_users"];
 	
 	// Ports
-	$Port_HTTPs = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "NginX"]);
 	$Port_SSH = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "SSH"]);
 	$Port_FTP = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "VSFTPd"]);
 
@@ -48,7 +47,7 @@ function printUser($user) {
 	// Username
 	echo '<tr align="left"><th width="15%" scope="row">Username</th>';
 	echo '<td>' . $user . '</td>';
-	echo '<td></td></tr>';
+	echo '<td>&nbsp;</td></tr>';
 	// IP Address
 	$IPv4_List = $MySB_DB->select("users_addresses", "ipv4", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
 	$comments = 'Public IP addresses used for access restriction. You can manage this list <a href="/?user/manage-addresses.html">here</a>.';
@@ -65,18 +64,21 @@ function printUser($user) {
 	}
 	echo '<td ' . $opts . '><span class="Comments">' . $comments . '</span></td></tr>';
 	// Password
-	if ( isset($users_datas["users_passwd"]) ) {
-		echo '<tr align="left"><th width="15%" scope="row">Password</th>';
+	echo '<tr align="left"><th width="15%" scope="row">Password</th>';
+	if ( $users_datas["users_passwd"] != "" ) {
+		
 		echo '<td>' . $users_datas["users_passwd"] . '</td>';
-		echo '<td  style="background-color: #FF6666; text-align: center;"><form method="post" action="?user/change-password.html">';
-		echo '<input name="TempPass" type="hidden" value="##TempPassword##" />';
-		echo '<input style="cursor: pointer;" name="submit" type="submit" value="I want to change my password now !" />';
-		echo '</form></td></tr>';		
-	}	
+	} else {
+		echo '<td>&nbsp;</td>';
+	}
+	echo '<td  style="background-color: #FF6666; text-align: center;"><form method="post" action="?user/change-password.html">';
+	echo '<input name="TempPass" type="hidden" value="##TempPassword##" />';
+	echo '<input style="cursor: pointer;" name="submit" type="submit" value="I want to change my password now !" />';
+	echo '</form></td></tr>';
 	// E-mail
 	echo '<tr align="left"><th width="15%" scope="row">E-mail</th>';
 	echo '<td>' . $users_datas["users_email"] . '</td>';
-	echo '<td></td></tr>';
+	echo '<td>&nbsp;</td></tr>';
 	// RPC
 	echo '<tr align="left"><th width="15%" scope="row">RPC</th>';
 	echo '<td>' . $users_datas["rpc"] . '</td>';
@@ -92,7 +94,7 @@ function printUser($user) {
 	}	
 	echo '<tr align="left"><th width="15%" scope="row">SFTP</th>';
 	echo '<td>' . $sftp . '</td>';
-	echo '<td></td></tr>';
+	echo '<td>&nbsp;</td></tr>';
 	// Sudo
 	switch ($users_datas["sudo"]) {
 		case '0':
@@ -104,7 +106,7 @@ function printUser($user) {
 	}		
 	echo '<tr align="left"><th width="15%" scope="row">Sudo powers</th>';
 	echo '<td>' . $sudo . '</td>';
-	echo '<td></td></tr>';
+	echo '<td>&nbsp;</td></tr>';
 	
 	//////////////////////
 	// Directories
@@ -113,7 +115,7 @@ function printUser($user) {
 	// Home
 	echo '<tr align="left"><th width="15%" scope="row">Home</th>';
 	echo '<td>' . $users_datas["home_dir"] . '</td>';
-	echo '<td></td></tr>';
+	echo '<td>&nbsp;</td></tr>';
 	// Session dir
 	echo '<tr align="left"><th width="15%" scope="row">Session dir</th>';
 	echo '<td>' . $users_datas["home_dir"] . '/rtorrent/.session</td>';
@@ -129,7 +131,7 @@ function printUser($user) {
 	// Torrents dir
 	echo '<tr align="left"><th width="15%" scope="row">Torrents dir</th>';
 	echo '<td>' . $users_datas["home_dir"] . '/rtorrent/torrents</td>';
-	echo '<td></td></tr>';
+	echo '<td>&nbsp;</td></tr>';
 	// Watch dir
 	echo '<tr align="left"><th width="15%" scope="row">Watch dir</th>';
 	echo '<td>' . $users_datas["home_dir"] . '/rtorrent/watch</td>';
@@ -146,7 +148,7 @@ function printUser($user) {
 	// SFTP Port
 	echo '<tr align="left"><th width="15%" scope="row">SFTP port</th>';
 	echo '<td>' . $Port_SSH . '</td>';
-	echo '<td></td></tr>';
+	echo '<td>&nbsp;</td></tr>';
 	// FTPs Port
 	echo '<tr align="left"><th width="15%" scope="row">FTPs port (TLS)</th>';
 	echo '<td>' . $Port_FTP . '</td>';
@@ -158,7 +160,7 @@ function printUser($user) {
 	// rTorrent Port
 	echo '<tr align="left"><th width="15%" scope="row">rTorrent port</th>';
 	echo '<td>' . $users_datas["rtorrent_port"] . '</td>';
-	echo '<td></td></tr>';
+	echo '<td>&nbsp;</td></tr>';
 	
 	//////////////////////
 	// OpenVPN
