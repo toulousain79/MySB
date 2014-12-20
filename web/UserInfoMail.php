@@ -1,5 +1,7 @@
 <?php
 // ----------------------------------
+require_once  '/etc/MySB/web/inc/includes_before.php';
+// ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
@@ -50,7 +52,7 @@ function printUser($user) {
 	echo '<td> </td></tr>';
 	// IP Address
 	$IPv4_List = $MySB_DB->select("users_addresses", "ipv4", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
-	$comments = 'Public IP addresses used for access restriction. You can manage this list <a href="/?user/manage-addresses.html">here</a>.';
+	$comments = 'Public IP addresses used for access restriction. You can manage this list <a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '?user/manage-addresses.html">here</a>.';
 	echo '<tr align="left"><th width="15%" scope="row">IP Address</th><td>';
 	if ( $IPv4_List != "" ) {
 		$opts = '';
@@ -71,10 +73,10 @@ function printUser($user) {
 	} else {
 		echo '<td> </td>';
 	}
-	echo '<td  style="background-color: #FF6666; text-align: center;"><form method="post" action="?user/change-password.html">';
+	echo '<td  style="background-color: #FF6666; text-align: center;"><form method="post" action="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/change-password.html">';
 	echo '<input name="TempPass" type="hidden" value="##TempPassword##" />';
 	echo '<input style="cursor: pointer;" name="submit" type="submit" value="I want to change my password now !" />';
-	echo '</form></td></tr>';
+	echo '</form></td></tr>';	
 	// E-mail
 	echo '<tr align="left"><th width="15%" scope="row">E-mail</th>';
 	echo '<td>' . $users_datas["users_email"] . '</td>';
@@ -189,13 +191,13 @@ function printUser($user) {
 	echo '<tr align="left"><th colspan="3" scope="row"><h4>Links (Normal user)</h4></th></tr>';		
 	// User Info
 	echo '<tr align="left"><th width="15%" scope="row">User Info</th>';			
-	echo '<td colspan="2"><a href="?user/user-infos.html"><span class="Comments">Current information page.</span></a></td></tr>';
+	echo '<td colspan="2"><a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/user-infos.html"><span class="Comments">Current information page avaible on MySB portal.</span></a></td></tr>';
 	// Change password
 	echo '<tr align="left"><th width="15%" scope="row">Change password</th>';	
-	echo '<td colspan="2"><a href="?user/change-password.html"><span class="Comments">You can change your password here.</span></a></td></tr>';
+	echo '<td colspan="2"><a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/change-password.html"><span class="Comments">You can change your password here.</span></a></td></tr>';
 	// Manage Addresses
 	echo '<tr align="left"><th width="15%" scope="row">Manage Addresses</th>';		
-	echo '<td colspan="2"><a href="?user/manage-addresses.html"><span class="Comments">Add here your IPs addresses and/or your dynamic DNS to add to whitelist.</span></a></td></tr>';		
+	echo '<td colspan="2"><a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/manage-addresses.html"><span class="Comments">Add here your IPs addresses and/or your dynamic DNS to add to whitelist.</span></a></td></tr>';		
 	// ruTorrent
 	$Link = 'https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/ru';
 	echo '<tr align="left"><th width="15%" scope="row">ruTorrent</th>';	
@@ -212,7 +214,7 @@ function printUser($user) {
 	if ( $is_installed == '1' ) {
 		// OpenVPN config
 		echo '<tr align="left"><th width="15%" scope="row">OpenVPN config</th>';		
-		echo '<td colspan="2"><a href="?user/openvpn-config-file.html"><span class="Comments">Download here configuration files for OpenVPN.</span></a></td></tr>';
+		echo '<td colspan="2"><a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/openvpn-config-file.html"><span class="Comments">Download here configuration files for OpenVPN.</span></a></td></tr>';
 		// OpenVPN GUI
 		$Link = 'https://openvpn.net/index.php/open-source/downloads.html';
 		echo '<tr align="left"><th width="15%" scope="row">OpenVPN GUI</th>';
@@ -241,16 +243,16 @@ function printUser($user) {
 		}
 		// Logs
 		echo '<tr align="left"><th width="15%" scope="row">Logs</th>';	
-		echo '<td colspan="2"><a href="?main-user/logs.html"><span class="Comments">You can check logs of MySB install and security.</span></a></td></tr>';
+		echo '<td colspan="2"><a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?main-user/logs.html"><span class="Comments">You can check logs of MySB install and security.</span></a></td></tr>';
 		// Renting infos
 		echo '<tr align="left"><th width="15%" scope="row">Renting infos</th>';		
-		echo '<td colspan="2"><a href="?renting-infos.html"><span class="Comments">Manage your renting informations.</span></a></td></tr>';
+		echo '<td colspan="2"><a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?renting-infos.html"><span class="Comments">Manage your renting informations.</span></a></td></tr>';
 		// Trackers
 		echo '<tr align="left"><th width="15%" scope="row">Trackers list</th>';		
-		echo '<td colspan="2"><span class="Comments"><a href="?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="?trackers/add-new-trackers.html">add new tracker here</a>.</span></td></tr>';		
+		echo '<td colspan="2"><span class="Comments"><a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?trackers/add-new-trackers.html">add new tracker here</a>.</span></td></tr>';		
 		// Blocklists
 		echo '<tr align="left"><th width="15%" scope="row">Blocklists</th>';		
-		echo '<td colspan="2"><span class="Comments">You can manage <a href="?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a> AND <a href="?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a>.</span></td></tr>';			
+		echo '<td colspan="2"><span class="Comments">You can manage <a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a> AND <a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a>.</span></td></tr>';			
 	}
 
 	$RentingDatas = $MySB_DB->get("renting", "*", ["id_renting" => 1]);
@@ -285,7 +287,34 @@ function printUser($user) {
 }
 
 if ( (CountingUsers() >= 1) && (GetVersion() != "") ) {
+	echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+			<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-GB">
+			<head>
+				<title>MySB</title>
+				<meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
+				<style type="text/css" >
+					table {
+						font: 100% helvetica,arial,verdana,sans;
+						margin: 0px 0 5px 0;
+					}
+
+					table tr th, table tr td { 
+					  background: #3B3B3B;
+					  color: #FFF;
+					  padding: 7px 4px;
+					  text-align: left;
+					}
+					  
+					table tr td { 
+					  background: #E5E5DB;
+					  color: #47433F;
+					  border-top: 1px solid #FFF;
+					}
+				</style>
+			</head>
+			<body>';
 	printUser($UserName);
+	echo '</body></html>';
 } else {
 	echo '<p><h1 class="FontInRed">MySB is not installed !</h1></p>';
 }
