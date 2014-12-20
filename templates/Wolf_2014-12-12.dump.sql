@@ -107,19 +107,19 @@ INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (19, 'body', '', '<?php require_once ''/etc/MySB/web/pages/OpenVPN.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/OpenVPN.php''; ?>', 11);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (20, 'body', 'textile', '', '', 12);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (21, 'body', '', '<?php require_once ''/etc/MySB/web/pages/RentingInfo.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/RentingInfo.php''; ?>', 13);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (22, 'body', 'textile', '* "IP restriction(IP restriction)":?help/ip-restriction.html
-* "Trackers(Trackers)":?help/trackers.html
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (22, 'body', 'textile', '* "IP restriction(IP restriction)":?help/ip-restriction.html
+* "Trackers(Trackers)":?help/trackers.html
 * "Blocklists(Blocklists)":?help/blocklists.html', '	<ul>
 		<li><a href="?help/ip-restriction.html" title="IP restriction">IP restriction</a></li>
 		<li><a href="?help/trackers.html" title="Trackers">Trackers</a></li>
 		<li><a href="?help/blocklists.html" title="Blocklists">Blocklists</a></li>
 	</ul>', 14);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (23, 'body', 'textile', 'IP restriction is applied for access to the MySB portal.
-In case you do not have a fixed IP address, you can use a service such as ''No-IP'' or ''DynDNS''.
-You can add a host name instead of an IP address "here(here)":?user/manage-addresses.html.
-
-"http://www.noip.com/(No-IP.com)":http://www.noip.com/
-"http://www.dyndns.fr/(DynDNS.fr)":http://www.dyndns.fr/
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (23, 'body', 'textile', 'IP restriction is applied for access to the MySB portal.
+In case you do not have a fixed IP address, you can use a service such as ''No-IP'' or ''DynDNS''.
+You can add a host name instead of an IP address "here(here)":?user/manage-addresses.html.
+
+"http://www.noip.com/(No-IP.com)":http://www.noip.com/
+"http://www.dyndns.fr/(DynDNS.fr)":http://www.dyndns.fr/
 "https://account.dyn.com/entrance/(DynDNS.com)":https://account.dyn.com/entrance/', '	<p>IP restriction is applied for access to the MySB portal.<br />
 In case you do not have a fixed IP address, you can use a service such as &#8216;No-IP&#8217; or &#8216;DynDNS&#8217;.<br />
 You can add a host name instead of an IP address <a href="?user/manage-addresses.html" title="here">here</a>.</p>
@@ -127,10 +127,10 @@ You can add a host name instead of an IP address <a href="?user/manage-addresses
 	<p><a href="http://www.noip.com/" title="No-IP.com">http://www.noip.com/</a><br />
 <a href="http://www.dyndns.fr/" title="DynDNS.fr">http://www.dyndns.fr/</a><br />
 <a href="https://account.dyn.com/entrance/" title="DynDNS.com">https://account.dyn.com/entrance/</a></p>', 15);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (24, 'body', 'textile', 'You have an existing list of trackers generated from ruTorrent.
-Trackers in this list are not deletable. It is only possible to enable or disable it.
-
-You also have the option to add your own trackers "here(here)":?trackers/add-new-trackers.html.
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (24, 'body', 'textile', 'You have an existing list of trackers generated from ruTorrent.
+Trackers in this list are not deletable. It is only possible to enable or disable it.
+
+You also have the option to add your own trackers "here(here)":?trackers/add-new-trackers.html.
 Your trackers will also be displayed in the global list available "here(here)":?trackers/trackers-list.html.', '	<p>You have an existing list of trackers generated from ruTorrent.<br />
 Trackers in this list are not deletable. It is only possible to enable or disable it.</p>
 
@@ -139,11 +139,11 @@ Your trackers will also be displayed in the global list available <a href="?trac
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (25, 'body', '', '', '', 17);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (26, 'body', '', '<?php require_once ''/etc/MySB/web/pages/BlockLists_PGL.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/BlockLists_PGL.php''; ?>', 18);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (27, 'body', '', '<?php require_once ''/etc/MySB/web/pages/BlockLists_rTorrent.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/BlockLists_rTorrent.php''; ?>', 19);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (28, 'body', 'textile', 'It is possible to use a blocklist with rTorrent.
-Similarly, if you have decided to use PeerGuardian, a second blocklist will also be available.
-Although PeerGuardian is installed, it''s still a good idea to also select the lists for rTorrent.
-For if PeerGuardian has a problem and can not be launched, the blacklist of rTorrent will take over.
-"rTorrent blocklists(rTorrent blocklists)":?blocklists/rtorrent.html
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (28, 'body', 'textile', 'It is possible to use a blocklist with rTorrent.
+Similarly, if you have decided to use PeerGuardian, a second blocklist will also be available.
+Although PeerGuardian is installed, it''s still a good idea to also select the lists for rTorrent.
+For if PeerGuardian has a problem and can not be launched, the blacklist of rTorrent will take over.
+"rTorrent blocklists(rTorrent blocklists)":?blocklists/rtorrent.html
 "PeerGuardian blocklists(PeerGuardian blocklists)":?blocklists/peerguardian.html', '	<p>It is possible to use a blocklist with rTorrent.<br />
 Similarly, if you have decided to use PeerGuardian, a second blocklist will also be available.<br />
 Although PeerGuardian is installed, it&#8217;s still a good idea to also select the lists for rTorrent.<br />
@@ -227,9 +227,9 @@ CREATE TABLE plugin_settings (
     value     VARCHAR( 255 )  NOT NULL 
 );
 
-INSERT INTO [plugin_settings] ([plugin_id], [name], [value]) VALUES ('file_manager', 'umask', 0022);
-INSERT INTO [plugin_settings] ([plugin_id], [name], [value]) VALUES ('file_manager', 'dirmode', 0755);
-INSERT INTO [plugin_settings] ([plugin_id], [name], [value]) VALUES ('file_manager', 'filemode', 0644);
+INSERT INTO [plugin_settings] ([plugin_id], [name], [value]) VALUES ('file_manager', 'umask', 22);
+INSERT INTO [plugin_settings] ([plugin_id], [name], [value]) VALUES ('file_manager', 'dirmode', 755);
+INSERT INTO [plugin_settings] ([plugin_id], [name], [value]) VALUES ('file_manager', 'filemode', 644);
 INSERT INTO [plugin_settings] ([plugin_id], [name], [value]) VALUES ('file_manager', 'show_hidden', 0);
 INSERT INTO [plugin_settings] ([plugin_id], [name], [value]) VALUES ('file_manager', 'show_backups', 1);
 INSERT INTO [plugin_settings] ([plugin_id], [name], [value]) VALUES ('archive', 'use_dates', 1);
