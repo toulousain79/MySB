@@ -1,104 +1,144 @@
 <?php
-
 /*
- * Redirector - Wolf CMS URL redirection plugin
+ * Redirector Plugin for WolfCMS <http://www.wolfcms.org>
+ * Copyright (c) 2011 Shannon Brooks <shannon@brooksworks.com>
+ * Adapted from Redirector by Design Spike <http://designspike.ca>
+ * Major contributions and original idea by Cody at Design Spike
  *
- * Copyright (c) 2010 Design Spike
+ * Licensed under the MIT license
+ * http://www.opensource.org/licenses/mit-license.php
  *
- * Licensed under the MIT license:
- *   http://www.opensource.org/licenses/mit-license.php
- *
- * Project home:
- *   http://themes.designspike.ca/redirector/help/
- *
+ * Project home
+ * http://www.github.com/realslacker/Redirector-Plugin
  */
 
+//	fix so page shows up correctly in IE 
+header('X-UA-Compatible: IE=Edge');
+ 
 ?>
-<h1><?php echo __('Redirector'); ?></h1>
-<p id="jquery_notice"><img align="top" alt="layout-icon" src="<?php echo REDIRECTOR_BASE_URL ?>images/error_16.png" title="" class="node_image" />&nbsp;<strong>Note</strong>: It appears jQuery is not available. Please install and activate the <a href="http://github.com/tuupola/frog_jquery">jQuery plugin</a>.</p>
-<p id="redirect_form_anchor"><strong><?php echo __('Add Redirect'); ?></strong></p> 
-<div id="redirect_form">
-	<form action="<?php echo get_url('plugin/redirector/save'); ?>" method="post">
-		<table cellpadding="5" cellspacing="5" border="0" id="redirect_form_table"> 
-	      <tr> 
-		        <td>
-					<label for="redirect_url"><?php echo __('Requested URL'); ?></label><br />
-		        	<input class="textbox" id="redirect_url" maxlength="255" name="redirect[url]" type="text" value="" />
-				</td> 
-		        <td>
-					<label for="redirect_destination"><?php echo __('Redirects to'); ?></label><br />
-		        	<input class="textbox" id="redirect_destination" maxlength="255" name="redirect[destination]" type="text" value="" />
-				</td> 
-	      </tr> 
-	    </table>	
-		  <p> 
-				<input class="button" name="commit" type="submit" accesskey="s" value="Save" /> 
-		  </p> 
-	</form>
+<h1><?=__('Redirector')?></h1>
+
+<? if ( AuthUser::hasPermission('redirector_edit') ) : ?>
+
+<h2 id="new"><?=__('Add Redirect')?></h2>
+<form action="<?=get_url('plugin/redirector/save')?>" method="post">
+<div class="forminput">
+	<label for="url"><?=__('Requested URL')?></label><br />
+	<input type="text" id="url" name="redirect[url]" maxlength="255" value="" />
 </div>
-<div class="section">
-	<h4 class="section_heading"><?php echo __('Redirects'); ?></h4> 
-	<?php if(sizeof($current_redirects) > 0) { ?>
-	<ul id="redirects" class="index"> 
-		  <li id="redirects" class="node_heading"> 
-			<div><?php echo __('Requested URL'); ?> &rarr; <?php echo __('Redirects to'); ?></div> 
-			<div class="hits"><?php echo __('Hits'); ?></div>
-		</li>
-		<?php foreach ($current_redirects as $redirect): ?>
-		  <li id="redirects_<?php echo $redirect->id; ?>" class="node"> 
-		    <a href="#" class="url_link" title="<?php echo $redirect->url; ?>" ref="<?php echo $redirect->url; ?>"><?php echo strlen($redirect->url) > 50 ? substr($redirect->url, 0, 50)."..." : $redirect->url; ?></a> <span class="arrow">&rarr;</span> 
-		    <a class="destination"><?php echo strlen($redirect->destination) > 50 ? substr($redirect->destination, 0, 50)."..." : $redirect->destination; ?></a>
-			<div class="hits"><?php echo $redirect->hits; ?></div>
-		    <div class="remove"><a href="<?php echo get_url('plugin/redirector/remove/'.$redirect->id); ?>" onclick="return confirm('Are you sure you wish to delete this redirect?');"><img alt="Remove Redirect" src="<?php echo REDIRECTOR_BASE_URL ?>images/icon-remove.gif" /></a></div> 
-		</li>
-		<?php endforeach ?>
-	</ul>
-	<?php } else { ?>
-		<p><em><?php echo __('There are no redirects set up yet.'); ?></em></p>
-	<?php } ?>
-	
+<div class="forminput">
+	<label for="dest"><?=__('Redirects To')?></label><br />
+	<input type="text" id="dest" name="redirect[dest]" maxlength="255" value="" />
 </div>
-<div class="section">
-	<h4 class="section_heading"><?php echo __('404 Errors'); ?></h4> 
-	<?php if(sizeof($current_404s) > 0) { ?>
-	<ul id="redirects" class="index"> 
-		  <li id="redirects" class="node_heading"> 
-			<div><?php echo __('Requested URL'); ?></div>
-			<div class="hits"><?php echo __('Hits'); ?></div>
-		</li>
-		<?php foreach ($current_404s as $error): ?>
-		  <li id="redirects_<?php echo $error->id; ?>" class="node"> 
-		    <a href="#" class="url_link" title="<?php echo $error->url; ?>" ref="<?php echo $error->url; ?>"><?php echo strlen($error->url) > 80 ? substr($error->url, 0, 80)."..." : $error->url; ?></a>
-			<div class="hits"><?php echo $error->hits; ?></div>
-		    <div class="remove"><a href="<?php echo get_url('plugin/redirector/remove_404/'.$error->id); ?>" onclick="return confirm('Are you sure you wish to delete this redirect?');"><img alt="Remove Redirect" src="<?php echo REDIRECTOR_BASE_URL ?>images/icon-remove.gif" /></a></div> 
-		  </li> 
-		<?php endforeach ?>
-	</ul>
-	<?php } else { ?>
-		<p><em><?php echo __('There are no 404 errors collected yet.'); ?></em></p>
-	<?php } ?>	
+<div class="formsave">
+	<input type="submit" accesskey="s" value="Save" />
+</div>
+<br style="clear: both;"/>
+</form>
+
+<? endif; ?>
+
+<h2 id="redirects"><?=__('Active Redirects')?></h2> 
+<? if ( count($redirects) > 0 ) : ?>
+
+<div class="heading">
+	<span class="url"><?=__('Requested URL')?></span>
+	<span class="dest"><?=__('Redirects To')?></span>
+	<span class="hits"><?=__('Hits')?></span>
+	<div class="clearfix"></div>
 </div>
 
+<? foreach ($redirects as $redirect) : ?>
+
+<div class="entry redirect" id="redirect<?=$redirect->id?>" url="<?=$redirect->url?>" dest="<?=$redirect->dest?>" >
+	<span class="url"><?=htmlspecialchars($redirect->url)?></span>
+	<span class="dest"><?=htmlspecialchars($redirect->dest)?></span>
+	<span class="hits"><?=$redirect->hits?></span>
+	<? if ( AuthUser::hasPermission('redirector_delete') ) : ?>
+	<span class="actions">
+		<a class="remove" href="<?=get_url('plugin/redirector/remove/redirect/'.$redirect->id)?>"><img src="<?=PLUGINS_URI;?>/redirector/images/icon-remove.png" alt="Remove Redirect" title="Remove Redirect" /></a>
+	</span>
+	<? endif; ?>
+	<span class="actions">
+	<? if ( $redirect->perm == 1 ) : ?>
+		<a class="lock" href="<?=get_url('plugin/redirector/unlock/'.$redirect->id)?>"><img src="<?=PLUGINS_URI;?>/redirector/images/icon-locked.png" alt="Allow Expire" title="Allow Expire" /></a>
+	<? else : ?>
+		<a class="lock" href="<?=get_url('plugin/redirector/lock/'.$redirect->id)?>"><img src="<?=PLUGINS_URI;?>/redirector/images/icon-unlocked.png" alt="Prevent Expire" title="Prevent Expire" /></a>
+	<? endif; ?>
+	</span>
+	<div class="clearfix"></div>
+</div>
+
+<? endforeach; ?>
+
+<? else : ?>
+
+<p><em><?php echo __('There are no redirects set up yet.'); ?></em></p>
+
+<? endif; ?>
+	
+<h2 id="404s"><?=__('404 Errors')?></h2>
+<? if ( count($errors) > 0 ) : ?>
+
+<div class="heading">
+	<span class="url404"><?=__('Requested URL')?></span>
+	<span class="hits"><?=__('Hits')?></span>
+	<span class="actions">
+		<? if ( AuthUser::hasPermission('redirector_delete') ) : ?>
+		<a class="removeall" href="<?php echo get_url('plugin/redirector/clear404s'); ?>"><img src="<?=PLUGINS_URI;?>/redirector/images/icon-remove-white.png" alt="Remove All 404s" title="Remove All 404s" /></a>
+		<? endif; ?>
+	</span>
+	<div class="clearfix"></div>
+</div>
+
+<? foreach ($errors as $error) : ?>
+
+<div class="entry" id="error<?=$error->id?>" url="<?=$error->url?>" dest="" >
+	<span class="url404"><?=htmlspecialchars($error->url)?></span>
+	<span class="hits"><?=$error->hits?></span>
+	<span class="actions">
+		<? if ( AuthUser::hasPermission('redirector_delete') ) : ?>
+		<a class="remove" href="<?=get_url('plugin/redirector/remove/404/'.$error->id)?>"><img src="<?=PLUGINS_URI;?>/redirector/images/icon-remove.png" alt="Remove 404" title="Remove 404" /></a>
+		<? endif; ?>
+	</span>
+	<div class="clearfix"></div>
+</div>
+
+<? endforeach; ?>
+
+<? else : ?>
+
+<p><em><?php echo __('There are no 404 errors yet.'); ?></em></p>
+
+<? endif; ?>
+
+<? if ( AuthUser::hasPermission('redirector_edit') ) : ?>
+	
 <script type="text/javascript" charset="utf-8">
-	jQuery(document).ready(function($) {
-		$('#jquery_notice').hide();
-		$('#redirect_url').focus();
-		$('.url_link').click(function(){
-			$('#redirect_url').val($(this).attr('ref'));
-			$('#redirect_destination').val($(this).siblings('.destination').html());
-			$.scrollTo('#redirect_form_anchor', 400);
-			$('#redirect_destination').focus();
-			return false;
-		});
-		$('.destination').click(function(){
-			$('#redirect_url').val($(this).siblings('.url_link').attr('ref'));
-			$('#redirect_destination').val($(this).html());
-			$.scrollTo('#redirect_form_anchor', 400);
-			$('#redirect_destination').focus();
-			return false;
-		});
+$(function(){
+
+	$('div.entry').click(function(event){
+		var $target = $(event.target);
+		if( $target.is('a') ) {
+			alert('clicked link');
+			return;
+		}
+		$('html, body').animate({ scrollTop: $("#new").offset().top }, 500);
+		$('#url').val($(this).attr('url')).focus();
+		$('#dest').val($(this).attr('dest'));
 	});
+	
+	$('.remove').click(function(event){
+		event.stopPropagation();
+		return confirm('Are you sure you want to remove this redirect?');
+	});
+
+	$('.lock').click(function(event){
+		event.stopPropagation();
+	});
+
+
+});
 </script>
-<style type="text/css" media="screen">
-	@import url(<?php echo REDIRECTOR_BASE_URL ?>style.css);
-</style>
+
+<? endif; ?>
