@@ -8,6 +8,24 @@ CREATE TABLE secure_token (
     time     VARCHAR( 100 )  DEFAULT NULL 
 );
 
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (1, 'elohim13', 'afa5fd41a7c5d8695d1fec467ec5899381e9a59501fcd7275dd866f984eafc4d', 1419077533.1854);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (2, 'elohim13', 'e4fa8b467397a1f1a706a0e6f26350e108c994ca4a45c7c5a1c5b879f475fe4a', 1419077533.1903);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (3, 'elohim13', '971a7c13c2b17854fb682941cba97994837daae14c51cccbaf58b95e5e582954', 1419077533.1974);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (4, 'elohim13', 'ac2a83a7c3365c61d3011da04fbb3414e8d666f2e6b88193cdc1957892bc9f37', 1419077533.2035);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (5, 'elohim13', '62e29c3fd0e67978d6c2e6e9427eff113014268b21ea7dab25b22c0afdb83b64', 1419077533.211);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (6, 'elohim13', '42395f7550010305715877d5ba664e8fc3a14d128b4cb0edaca3c50afda4513f', 1419077533.2183);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (7, 'elohim13', 'e6161802040cf9b7c34a969419926855ca8f6443eb4c185cca7122fb9b41d654', 1419077538.2589);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (8, 'elohim13', '018bad368f325b3dc6acde39d79640f923b7d1ae38df8e5399136252620c1d33', 1419077536.164);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (9, 'elohim13', '44801750264cf3d75eac6d7f61acef0aedd47c36ce6576e2976e1c92df7254bb', 1419077536.1735);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (10, 'elohim13', '8c9059051aa2ef9c2e534b3fe21efbad5102a066417dfe47e9ad6116d51badf0', 1419077536.1783);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (11, 'elohim13', '20ebfea743d5f66049b1af0b3ba590587c7e77b82d1017af900f8b85729cf08e', 1419076757.8043);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (12, 'elohim13', 'e8e456d9e69dbf7be6f8dc7cbf7cce1a8f19218ce24bc477f69d937636213e7f', 1419076440.5655);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (13, 'elohim13', '94db66a4b10515f76eac3878e0fce9470fbf70bbe1a53029201f1ed9eb615f3e', 1419077008.2231);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (14, 'elohim13', '68acd3859e5acf25f3b84d1a4b428dd0460363a3e6df69300643a8b0928e7f85', 1419077538.2496);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (15, 'elohim13', '454619ffdd1ac26c75ccac14c11b7c99817801381c2d66e0fcd6077050fcbf8c', 1419077295.141);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (16, 'elohim13', 'e4784d6ad26bf3639bb85113d779f2b00d7b9af463dce4ac0b0f75a68b6420da', 1419077300.6078);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (17, 'elohim13', '62270ef5c79f90c40dc17881b66678788177614fee9cce2b691a3de2318e3a6b', 1419077533.1734);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (18, 'elohim13', 'bbed04212d2ae8d26a0f88f3aed0843845d2d279bd2474572d76d4dc72aa6ba3', 1419077516.0368);
 
 -- Table: cron
 CREATE TABLE cron ( 
@@ -76,13 +94,14 @@ INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [descriptio
 INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (12, 'Main User', 'main-user', 'Main user', '', '', 1, 0, 'Redirect_to_first_child', 101, '2014-12-01 22:30:46     ', '2014-12-01 22:30:46     ', '', '2014-12-08 13:43:24', 1, 1, 4, 1, 1);
 INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (13, 'Renting Infos', 'renting-infos', 'Renting Infos', '', '', 12, 0, '', 101, '2014-12-01 22:31:59', '2014-12-01 22:31:59', '', '2014-12-13 01:11:59', 1, 1, 10, 1, 1);
 INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (14, 'Help', 'help', 'Help', '', '', 1, 0, '', 100, '2014-12-07 08:12:24', '2014-12-07 08:12:24', '', '2014-12-13 01:12:15', 1, 1, 5, 0, 2);
-INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (15, 'IP restriction', 'ip-restriction', 'IP restriction', '', '', 14, 0, '', 100, '2014-12-07 15:46:09', '2014-12-07 15:46:09', '', '2014-12-07 15:46:47', 1, 1, 0, 0, 2);
-INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (16, 'Trackers', 'trackers', 'Trackers', '', '', 14, 0, '', 100, '2014-12-07 15:52:45', '2014-12-07 15:52:45', '', '2014-12-13 01:12:49', 1, 1, 0, 0, 2);
+INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (15, 'IP restriction', 'ip-restriction', 'IP restriction', '', '', 14, 0, '', 100, '2014-12-07 15:46:09', '2014-12-07 15:46:09', '', '2014-12-20 12:03:52', 1, 1, 0, 0, 2);
+INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (16, 'Trackers', 'trackers', 'Trackers', '', '', 14, 0, '', 100, '2014-12-07 15:52:45', '2014-12-07 15:52:45', '', '2014-12-20 12:01:41', 1, 1, 0, 0, 2);
 INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (17, 'Blocklists', 'blocklists', 'Blocklists', '', '', 1, 0, 'Redirect_to_first_child', 101, '2014-12-08 10:18:13', '2014-12-08 10:18:13', '', '2014-12-13 01:08:45', 1, 1, 3, 1, 1);
 INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (18, 'PeerGuardian BlockLists', 'peerguardian-blocklists', 'PeerGuardian Blocklists', '', '', 17, 0, '', 101, '2014-12-08 10:20:00', '2014-12-08 10:20:00', '', '2014-12-13 01:11:19', 1, 1, 7, 1, 1);
 INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (19, 'rTorrent Blocklists', 'rtorrent-blocklists', 'rTorrent Blocklists', '', '', 17, 0, '', 101, '2014-12-08 10:40:57', null, null, '2014-12-13 01:10:49', 1, 1, 6, 1, 1);
-INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (20, 'Blocklists', 'blocklists', 'Blocklists', '', '', 14, 0, '', 100, '2014-12-08 11:17:28', '2014-12-08 11:17:28', '', '2014-12-13 01:12:22', 1, 1, 0, 0, 2);
+INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (20, 'Blocklists', 'blocklists', 'Blocklists', '', '', 14, 0, '', 100, '2014-12-08 11:17:28', '2014-12-08 11:17:28', '', '2014-12-20 11:54:18', 1, 1, 0, 0, 2);
 INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (21, 'Apply configuration', 'apply-configuration', 'Apply configuration', '', '', 1, 0, '', 100, '2014-12-08 13:43:17', '2014-12-08 13:48:46', '', '2014-12-13 01:13:09', 1, 1, 6, 1, 2);
+INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (22, 'Services', 'services', 'Services', null, null, 1, 0, '', 100, '2014-12-20 12:08:37', '2014-12-20 12:08:37', null, '2014-12-20 12:08:37', 1, 1, 0, 0, 2);
 
 -- Table: page_part
 CREATE TABLE page_part ( 
@@ -114,43 +133,14 @@ INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [
 		<li><a href="?help/trackers.html" title="Trackers">Trackers</a></li>
 		<li><a href="?help/blocklists.html" title="Blocklists">Blocklists</a></li>
 	</ul>', 14);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (23, 'body', 'textile', 'IP restriction is applied for access to the MySB portal.
-In case you do not have a fixed IP address, you can use a service such as ''No-IP'' or ''DynDNS''.
-You can add a host name instead of an IP address "here(here)":?user/manage-addresses.html.
-
-"http://www.noip.com/(No-IP.com)":http://www.noip.com/
-"http://www.dyndns.fr/(DynDNS.fr)":http://www.dyndns.fr/
-"https://account.dyn.com/entrance/(DynDNS.com)":https://account.dyn.com/entrance/', '	<p>IP restriction is applied for access to the MySB portal.<br />
-In case you do not have a fixed IP address, you can use a service such as &#8216;No-IP&#8217; or &#8216;DynDNS&#8217;.<br />
-You can add a host name instead of an IP address <a href="?user/manage-addresses.html" title="here">here</a>.</p>
-
-	<p><a href="http://www.noip.com/" title="No-IP.com">http://www.noip.com/</a><br />
-<a href="http://www.dyndns.fr/" title="DynDNS.fr">http://www.dyndns.fr/</a><br />
-<a href="https://account.dyn.com/entrance/" title="DynDNS.com">https://account.dyn.com/entrance/</a></p>', 15);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (24, 'body', 'textile', 'You have an existing list of trackers generated from ruTorrent.
-Trackers in this list are not deletable. It is only possible to enable or disable it.
-
-You also have the option to add your own trackers "here(here)":?trackers/add-new-trackers.html.
-Your trackers will also be displayed in the global list available "here(here)":?trackers/trackers-list.html.', '	<p>You have an existing list of trackers generated from ruTorrent.<br />
-Trackers in this list are not deletable. It is only possible to enable or disable it.</p>
-
-	<p>You also have the option to add your own trackers <a href="?trackers/add-new-trackers.html" title="here">here</a>.<br />
-Your trackers will also be displayed in the global list available <a href="?trackers/trackers-list.html" title="here">here</a>.</p>', 16);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (23, 'body', 'textile', '<?php require_once ''/etc/MySB/web/pages/Help_IPrestriction.php''; ?>', '	<p><?php require_once ''/etc/MySB/web/pages/Help_IPrestriction.php''; ?></p>', 15);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (24, 'body', 'textile', '<?php require_once ''/etc/MySB/web/pages/Help_Trackers.php''; ?>', '	<p><?php require_once ''/etc/MySB/web/pages/Help_Trackers.php''; ?></p>', 16);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (25, 'body', '', '', '', 17);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (26, 'body', '', '<?php require_once ''/etc/MySB/web/pages/BlockLists_PGL.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/BlockLists_PGL.php''; ?>', 18);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (27, 'body', '', '<?php require_once ''/etc/MySB/web/pages/BlockLists_rTorrent.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/BlockLists_rTorrent.php''; ?>', 19);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (28, 'body', 'textile', 'It is possible to use a blocklist with rTorrent.
-Similarly, if you have decided to use PeerGuardian, a second blocklist will also be available.
-Although PeerGuardian is installed, it''s still a good idea to also select the lists for rTorrent.
-For if PeerGuardian has a problem and can not be launched, the blacklist of rTorrent will take over.
-"rTorrent blocklists(rTorrent blocklists)":?blocklists/rtorrent.html
-"PeerGuardian blocklists(PeerGuardian blocklists)":?blocklists/peerguardian.html', '	<p>It is possible to use a blocklist with rTorrent.<br />
-Similarly, if you have decided to use PeerGuardian, a second blocklist will also be available.<br />
-Although PeerGuardian is installed, it&#8217;s still a good idea to also select the lists for rTorrent.<br />
-For if PeerGuardian has a problem and can not be launched, the blacklist of rTorrent will take over.<br />
-<a href="?blocklists/rtorrent.html" title="rTorrent blocklists">rTorrent blocklists</a><br />
-<a href="?blocklists/peerguardian.html" title="PeerGuardian blocklists">PeerGuardian blocklists</a></p>', 20);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (28, 'body', 'textile', '<?php require_once ''/etc/MySB/web/pages/Help_Blocklists.php''; ?>', '	<p><?php require_once ''/etc/MySB/web/pages/Help_Blocklists.php''; ?></p>', 20);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (29, 'body', '', '<?php require_once ''/etc/MySB/web/pages/ApplyConfig.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/ApplyConfig.php''; ?>', 21);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (30, 'body', 'textile', null, null, 22);
 
 -- Table: page_tag
 CREATE TABLE page_tag ( 
@@ -218,7 +208,7 @@ INSERT INTO [setting] ([name], [value]) VALUES ('default_status_id', 100);
 INSERT INTO [setting] ([name], [value]) VALUES ('default_filter_id', 'textile');
 INSERT INTO [setting] ([name], [value]) VALUES ('default_tab', 'page');
 INSERT INTO [setting] ([name], [value]) VALUES ('allow_html_title', 'off');
-INSERT INTO [setting] ([name], [value]) VALUES ('plugins', 'a:2:{s:23:"redirect_to_first_child";i:1;s:7:"textile";i:1;}');
+INSERT INTO [setting] ([name], [value]) VALUES ('plugins', 'a:1:{s:23:"redirect_to_first_child";i:1;}');
 
 -- Table: plugin_settings
 CREATE TABLE plugin_settings ( 
@@ -280,7 +270,7 @@ CREATE TABLE user (
     CONSTRAINT uc_email UNIQUE ( email ) 
 );
 
-INSERT INTO [user] ([id], [name], [email], [username], [password], [salt], [language], [last_login], [last_failure], [failure_count], [created_on], [updated_on], [created_by_id], [updated_by_id]) VALUES (1, '', '', '', '', '', 'en', '', '', 0, '', '', 1, '');
+INSERT INTO [user] ([id], [name], [email], [username], [password], [salt], [language], [last_login], [last_failure], [failure_count], [created_on], [updated_on], [created_by_id], [updated_by_id]) VALUES (1, 'elohim13', 'toulousain79@gmail.com', 'elohim13', '402ea036fa00558f45b73dc1effc64c1f48f56c77edc0a5e68bf19843a7a85a62ba3f3a4af5a44246a2f0a518630f909622264b9405ddb70e77be06c4fe1dc41', '90a0a174eac0790074c64f995606b26e8cd05ab087613d4e7eb7232dd3f3704b', 'en', '2014-12-20 11:15:30', '2014-12-20 02:51:44', 0, '', '2014-12-20 11:15:30', 1, '');
 
 -- Table: user_role
 CREATE TABLE user_role ( 
