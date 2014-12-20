@@ -23,7 +23,7 @@
 //#################### FIRST LINE #####################################
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-GB">
+<html xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
 	<title><?php echo $this->title(); ?></title>
@@ -100,7 +100,7 @@
 			$FooterNavBar = '<a ' . $IsCurrentPage . ' href="' . URL_PUBLIC . '">Home</a>';
 			foreach($this->find('/')->children(null, array(), $hidden) as $menu):
 				if ( ($menu->title != "Apply configuration") && ($menu->title != "Services") ) {
-					$FooterNavBar .= ' | ' . $menu->link($menu->link($menu->title));
+					$FooterNavBar .= ' | ' . $menu->link($menu->title);
 				}
 			endforeach;
 			echo '<p>' . $FooterNavBar . '</p>';

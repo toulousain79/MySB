@@ -118,7 +118,7 @@ location ~ \.php$ {
 	include /etc/nginx/fastcgi_params;
 	fastcgi_param APPLICATION_ENV production;
 	#fastcgi_param PHP_VALUE "";
-	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On\nsession.save_path=$session_root";
+	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On";
 	fastcgi_param HTTPS on;
 }
 
@@ -128,30 +128,28 @@ EOF
 (
 cat <<'EOF'
 location ~ \.php$ {
+	include /etc/nginx/fastcgi_params;
 	fastcgi_pass unix:/var/run/php5-fpm.sock;
 	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-	include /etc/nginx/fastcgi_params;
 	fastcgi_param APPLICATION_ENV production;
-	fastcgi_param PHP_VALUE "";
-	fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/etc/MySB/db\ndisplay_errors=On\nsession.save_path=$session_root";
+	#fastcgi_param PHP_VALUE "";
+	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/etc/MySB/db\ndisplay_errors=On";
 	fastcgi_param HTTPS on;
 }
-
 EOF
 ) > /etc/nginx/conf.d/php-MySB-locations
 
 (
 cat <<'EOF'
 location ~ \.php$ {
-	fastcgi_pass unix:/var/run/php5-fpm.sock;
-	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
 	include /etc/nginx/fastcgi_params;
+	fastcgi_pass unix:/var/run/php5-fpm.sock;
+	fastcgi_param SCRIPT_FILENAME $request_filename;
 	fastcgi_param APPLICATION_ENV production;
-	fastcgi_param PHP_VALUE "";
-	fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On\nsession.save_path=$session_root";
+	#fastcgi_param PHP_VALUE "";
+	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp\ndisplay_errors=On";
 	fastcgi_param HTTPS on;
 }
-
 EOF
 ) > /etc/nginx/conf.d/php-rutorrent-locations
 
@@ -218,42 +216,7 @@ perl -pi -e "s/<server_ip>/$SrvIpAddress/g" /etc/nginx/locations/MySB.conf
 perl -pi -e "s/<mainuser>/$NEWUSER/g" /etc/nginx/locations/MySB.conf
 
 #### ruTorrent
-(
-cat <<'EOF'
-	location ^~ /ru {
-		alias /etc/MySB/web/rutorrent;
-		include /etc/nginx/conf.d/pagespeed;
-		include /etc/nginx/conf.d/cache;
-		include /etc/nginx/conf.d/static_files;
-		include /etc/nginx/conf.d/global_deny_access;
-		access_log /var/log/nginx/rutorrent-access.log combined;
-		error_log /var/log/nginx/rutorrent-error.log error;
-
-		location ~ /favicon.ico {
-			alias /etc/MySB/web/rutorrent/images/favicon.ico;
-		}	
-		
-		include /etc/nginx/conf.d/php-rutorrent-locations;
-		
-		location ~ /\.svn {
-			deny all;
-		}
-
-		location ~ /\.ht {
-			deny all;
-		}
-	}
-
-	location ^~ /rutorrent/conf/ {
-		deny all;
-	}
-
-	location ^~ /rutorrent/share/ {
-		deny all;
-	}
-
-EOF
-) > /etc/nginx/locations/rutorrent.conf
+cp /etc/MySB/templates/etc.nginx.locations.rutorrent.conf.template /etc/nginx/locations/rutorrent.conf
 
 #### logrotate
 if [ -f /etc/logrotate.d/nginx ]; then
