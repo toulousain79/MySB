@@ -22,12 +22,6 @@
 //
 //#################### FIRST LINE #####################################
 
-if ($_SERVER['PHP_AUTH_USER'] == '##MySB_User##') {
-	$UserName = $_GET['user'];
-} else {
-	$UserName = $_SERVER['PHP_AUTH_USER'];
-}
-
 function printUser($user) {
 	global $MySB_DB, $system_datas, $users_datas, $Port_HTTPs;
 	
@@ -285,7 +279,7 @@ function printUser($user) {
 }
 
 if ( (CountingUsers() >= 1) && (GetVersion() != "") ) {
-	printUser($UserName);
+	printUser($_SERVER['PHP_AUTH_USER']);
 } else {
 	echo '<p><h1 class="FontInRed">MySB is not installed !</h1></p>';
 }
