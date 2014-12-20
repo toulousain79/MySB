@@ -124,6 +124,7 @@ if ( IfApplyConfig() > 0 ) {
 	$type = 'information';
 	$message = 'Nothing to apply...';	
 	GenerateMessage(false, $type, $message);
+	header('Refresh: 5; URL=/');
 }
 
 //#################### LAST LINE ######################################
