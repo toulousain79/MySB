@@ -31,7 +31,10 @@ if ($_SERVER['PHP_AUTH_USER'] == '##MySB_User##') {
 }
 
 function printUser($user) {
-	global $MySB_DB, $system_datas, $users_datas, $Port_HTTPs;
+	global $MySB_DB, $system_datas, $Port_HTTPs;
+
+	// Users table
+	$users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$user"]);	
 	
 	// User ID
 	$UserID = $users_datas["id_users"];
