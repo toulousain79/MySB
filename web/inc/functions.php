@@ -59,11 +59,20 @@ function MainUser() {
 
 // Create menu with submenu
 function MenuDisplayChildren($page, $current, $startmenu = true) {
+	global $MySB_DB, $system_datas;
+
 	$hidden = (MainUser()) ? true : false;
+	$CakeboxDatas = $MySB_DB->get("services", "*", ["serv_name" => "CakeBox-Light"]);
+	
+	echo '<ul>';
+	echo '<li><a target="_blank"  href="ru">ruTorrent</a></li>';
+	echo '<li><a target="_blank"  href="sm">Seedbox-Manager</a></li>';
+	echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $CakeboxDatas["port_tcp1"] . '/">Cakebox-Light</a></li>';
+	echo '</ul>';
 	
     if ($page && count($page->children(null, array(), $hidden)) > 0) {
         echo ($startmenu) ? '<ul>' : '';
-
+		
         foreach($page->children(null, array(), $hidden) as $menu) :
 			if ( $menu->title == "Apply configuration" ) {
 				$replace = '<div id="ApplyConfigButtonReplace" style="padding-top: 10px; padding-left: 10px; text-align:center; display:none; height: 29px;"><img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading..."></div>';		

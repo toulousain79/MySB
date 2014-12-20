@@ -8,24 +8,25 @@ CREATE TABLE secure_token (
     time     VARCHAR( 100 )  DEFAULT NULL 
 );
 
-INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (1, 'elohim13', 'afa5fd41a7c5d8695d1fec467ec5899381e9a59501fcd7275dd866f984eafc4d', 1419077533.1854);
-INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (2, 'elohim13', 'e4fa8b467397a1f1a706a0e6f26350e108c994ca4a45c7c5a1c5b879f475fe4a', 1419077533.1903);
-INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (3, 'elohim13', '971a7c13c2b17854fb682941cba97994837daae14c51cccbaf58b95e5e582954', 1419077533.1974);
-INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (4, 'elohim13', 'ac2a83a7c3365c61d3011da04fbb3414e8d666f2e6b88193cdc1957892bc9f37', 1419077533.2035);
-INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (5, 'elohim13', '62e29c3fd0e67978d6c2e6e9427eff113014268b21ea7dab25b22c0afdb83b64', 1419077533.211);
-INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (6, 'elohim13', '42395f7550010305715877d5ba664e8fc3a14d128b4cb0edaca3c50afda4513f', 1419077533.2183);
-INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (7, 'elohim13', 'e6161802040cf9b7c34a969419926855ca8f6443eb4c185cca7122fb9b41d654', 1419077538.2589);
-INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (8, 'elohim13', '018bad368f325b3dc6acde39d79640f923b7d1ae38df8e5399136252620c1d33', 1419077536.164);
-INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (9, 'elohim13', '44801750264cf3d75eac6d7f61acef0aedd47c36ce6576e2976e1c92df7254bb', 1419077536.1735);
-INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (10, 'elohim13', '8c9059051aa2ef9c2e534b3fe21efbad5102a066417dfe47e9ad6116d51badf0', 1419077536.1783);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (1, 'elohim13', 'afa5fd41a7c5d8695d1fec467ec5899381e9a59501fcd7275dd866f984eafc4d', 1419080302.1652);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (2, 'elohim13', 'e4fa8b467397a1f1a706a0e6f26350e108c994ca4a45c7c5a1c5b879f475fe4a', 1419080302.1722);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (3, 'elohim13', '971a7c13c2b17854fb682941cba97994837daae14c51cccbaf58b95e5e582954', 1419080302.1801);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (4, 'elohim13', 'ac2a83a7c3365c61d3011da04fbb3414e8d666f2e6b88193cdc1957892bc9f37', 1419080302.1925);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (5, 'elohim13', '62e29c3fd0e67978d6c2e6e9427eff113014268b21ea7dab25b22c0afdb83b64', 1419080302.1996);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (6, 'elohim13', '42395f7550010305715877d5ba664e8fc3a14d128b4cb0edaca3c50afda4513f', 1419080302.231);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (7, 'elohim13', 'e6161802040cf9b7c34a969419926855ca8f6443eb4c185cca7122fb9b41d654', 1419080902.3191);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (8, 'elohim13', '018bad368f325b3dc6acde39d79640f923b7d1ae38df8e5399136252620c1d33', 1419080302.2085);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (9, 'elohim13', '44801750264cf3d75eac6d7f61acef0aedd47c36ce6576e2976e1c92df7254bb', 1419080302.2166);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (10, 'elohim13', '8c9059051aa2ef9c2e534b3fe21efbad5102a066417dfe47e9ad6116d51badf0', 1419080302.2233);
 INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (11, 'elohim13', '20ebfea743d5f66049b1af0b3ba590587c7e77b82d1017af900f8b85729cf08e', 1419076757.8043);
 INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (12, 'elohim13', 'e8e456d9e69dbf7be6f8dc7cbf7cce1a8f19218ce24bc477f69d937636213e7f', 1419076440.5655);
 INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (13, 'elohim13', '94db66a4b10515f76eac3878e0fce9470fbf70bbe1a53029201f1ed9eb615f3e', 1419077008.2231);
 INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (14, 'elohim13', '68acd3859e5acf25f3b84d1a4b428dd0460363a3e6df69300643a8b0928e7f85', 1419077538.2496);
 INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (15, 'elohim13', '454619ffdd1ac26c75ccac14c11b7c99817801381c2d66e0fcd6077050fcbf8c', 1419077295.141);
-INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (16, 'elohim13', 'e4784d6ad26bf3639bb85113d779f2b00d7b9af463dce4ac0b0f75a68b6420da', 1419077300.6078);
-INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (17, 'elohim13', '62270ef5c79f90c40dc17881b66678788177614fee9cce2b691a3de2318e3a6b', 1419077533.1734);
-INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (18, 'elohim13', 'bbed04212d2ae8d26a0f88f3aed0843845d2d279bd2474572d76d4dc72aa6ba3', 1419077516.0368);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (16, 'elohim13', 'e4784d6ad26bf3639bb85113d779f2b00d7b9af463dce4ac0b0f75a68b6420da', 1419077705.1755);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (17, 'elohim13', '62270ef5c79f90c40dc17881b66678788177614fee9cce2b691a3de2318e3a6b', 1419080302.1565);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (18, 'elohim13', 'bbed04212d2ae8d26a0f88f3aed0843845d2d279bd2474572d76d4dc72aa6ba3', 1419079923.4385);
+INSERT INTO [secure_token] ([id], [username], [url], [time]) VALUES (19, 'elohim13', '95c6ae3cc7e308166cdb032384e80958845de4d44138b3721f0900b86d5625d2', 1419080902.3101);
 
 -- Table: cron
 CREATE TABLE cron ( 
@@ -345,6 +346,27 @@ INSERT INTO [role_permission] ([role_id], [permission_id]) VALUES (3, 22);
 INSERT INTO [role_permission] ([role_id], [permission_id]) VALUES (3, 23);
 INSERT INTO [role_permission] ([role_id], [permission_id]) VALUES (3, 24);
 INSERT INTO [role_permission] ([role_id], [permission_id]) VALUES (3, 25);
+
+-- Table: redirector_redirects_old
+CREATE TABLE redirector_redirects_old ( 
+    id          INTEGER         PRIMARY KEY AUTOINCREMENT,
+    url         VARCHAR( 255 ),
+    destination VARCHAR( 255 ),
+    hits        INT( 11 )       DEFAULT 0
+                                NOT NULL,
+    created_on  DATETIME        DEFAULT NULL 
+);
+
+
+-- Table: redirector_404s_old
+CREATE TABLE redirector_404s_old ( 
+    id         INTEGER         PRIMARY KEY AUTOINCREMENT,
+    url        VARCHAR( 255 ),
+    hits       INT( 11 )       DEFAULT 1
+                               NOT NULL,
+    created_on DATETIME        DEFAULT NULL 
+);
+
 
 -- Index: username_url
 CREATE UNIQUE INDEX username_url ON secure_token ( 
