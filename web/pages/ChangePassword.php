@@ -46,7 +46,12 @@ echo '
 			</tr>
 			<tr>
 				<td colspan="2">
-					<input class="submit" name="submit" type="submit" value="Submit">
+					<div id="PageSubmitButton">
+						<input class="submit" name="submit" type="submit" value="Submit" onclick="ButtonClicked(\'page\')">
+					</div>
+					<div id="PageButtonReplace" style="text-align:center; display:none; height: 33px;">
+						<img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading...">
+					</div>
 				</td>
 			</tr>
 		</table></div>
@@ -62,15 +67,13 @@ if ( isset($_POST['submit']) ) {
 		if ( $current_pwd == $_SERVER['PHP_AUTH_PW'] ) {
 			if ( $new_pwd == $confirm_pwd ) {
 				
-				// exec("sudo /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword '".$_SERVER['PHP_AUTH_USER']."' '".$new_pwd."' 'ChangePassword.php'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword '".$_SERVER['PHP_AUTH_USER']."' '".$new_pwd."' 'ChangePassword.php'", $output, $result);
 
-				// foreach ( $output as $item ) {
-					// echo '<div class="Comments" align="center">'.$item.'</div>';
-				// }
-				$result = $MySB_DB->update("users", ["users_passwd" => "$new_pwd"], ["users_ident" => $_SERVER['PHP_AUTH_USER']]);
+				foreach ( $output as $item ) {
+					echo '<div class="Comments" align="center">'.$item.'</div>';
+				}
 				
-				//if ( $result == 0 ) {
-				if ( $result > 0 ) {
+				if ( $result == 0 ) {
 					$result = UpdateWolfDB($_SERVER['PHP_AUTH_USER'], $new_pwd);
 				
 					if ( $result > 0 ) {
@@ -96,8 +99,7 @@ if ( isset($_POST['submit']) ) {
 		$message = 'Please, complete all fields.';	
 	}
 	
-	//GenerateMessage(false, $type, $message);
-	GenerateMessage('MySB_ChangeUserPassword', $type, $message);
+	GenerateMessage(false, $type, $message);
 }
 
 //#################### LAST LINE ######################################

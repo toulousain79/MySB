@@ -32,8 +32,7 @@ if ( IfApplyConfig() > 0 ) {
 			case "FirewallAndSecurity.bsh":
 				echo '<div align="center"><h1>FirewallAndSecurity.bsh...</h1></div>';
 			
-				#exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh new 'ApplyConfig.php'", $output, $result);
-				exec("sudo /bin/bash /etc/MySB/scripts/PortalApplyConfig.bsh 'scripts/FirewallAndSecurity.bsh'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh new 'ApplyConfig.php'", $output, $result);
 
 				foreach ( $output as $item ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';
@@ -56,8 +55,7 @@ if ( IfApplyConfig() > 0 ) {
 			case "GetTrackersCert.bsh":
 				echo '<div align="center"><h1>GetTrackersCert.bsh...</h1></div>';
 				
-				#exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh 'new' 'ApplyConfig.php' 'GetTrackersCert.bsh'", $output, $result);
-				exec("sudo /bin/bash /etc/MySB/scripts/PortalApplyConfig.bsh 'scripts/GetTrackersCert.bsh'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh 'new' 'ApplyConfig.php' 'GetTrackersCert.bsh'", $output, $result);
 
 				foreach ( $output as $item ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';
@@ -87,29 +85,6 @@ if ( IfApplyConfig() > 0 ) {
 					$message = 'Failed ! It was not possible to update the MySB database.';
 				}
 				header('Refresh: 3; URL=/');
-				
-				break;
-			case "MySB_ChangeUserPassword":
-				echo '<div align="center"><h1>MySB_ChangeUserPassword...</h1></div>';
-
-				exec("sudo /bin/bash /etc/MySB/scripts/PortalApplyConfig.bsh 'bin/MySB_ChangeUserPassword' '".$_SERVER['PHP_AUTH_USER']."'", $output, $result);
-
-				foreach ( $output as $item ) {
-					echo '<div class="Comments" align="center">'.$item.'</div>';
-				}				
-
-				if ( $result == 0 ) {
-					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "$Cmd"]);
-					if ( $result > 0 ) {
-						$type = 'success';
-					} else {
-						$type = 'error';
-						$message = 'Failed ! It was not possible to update the MySB database.';
-					}			
-				} else {
-					$type = 'error';
-					$message = 'Error occured with "MySB_ChangeUserPassword" script !';
-				}
 				
 				break;				
 		}
