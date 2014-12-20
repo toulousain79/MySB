@@ -75,13 +75,13 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$replace.'<div id="ApplyConfigButton">'.$menu->link($menu->title, $style).'</div>';
 					break;
 				case "ruTorrent":
-					echo '<li><a target="_blank"  href="ru">ruTorrent</a></li>';
+					echo '<li><a target="_blank"  href="ru">ruTorrent</a>';
 					break;
 				case "Seedbox-Manager":
-					echo '<li><a target="_blank"  href="sm">Seedbox-Manager</a></li>';
+					echo '<li><a target="_blank"  href="sm">Seedbox-Manager</a>';
 					break;
 				case "Cakebox-Light":
-					echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $CakeboxDatas["port_tcp1"] . '/">Cakebox-Light</a></li>';
+					echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $CakeboxDatas["port_tcp1"] . '/">Cakebox-Light</a>';
 					break;						
 				default:
 					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title);

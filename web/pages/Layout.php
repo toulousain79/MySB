@@ -99,7 +99,7 @@
 			$hidden = (MainUser()) ? true : false;
 			$FooterNavBar = '<a ' . $IsCurrentPage . ' href="' . URL_PUBLIC . '">Home</a>';
 			foreach($this->find('/')->children(null, array(), $hidden) as $menu):
-				if ( $menu->title != "Apply configuration" ) {
+				if ( ($menu->title != "Apply configuration") && ($menu->title != "Services") ) {
 					$FooterNavBar .= ' | ' . $menu->link($menu->link($menu->title));
 				}
 			endforeach;
