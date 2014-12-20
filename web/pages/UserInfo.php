@@ -248,7 +248,7 @@ function printUser($user) {
 		echo '<td colspan="2"><span class="Comments"><a href="?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="?trackers/add-new-trackers.html">add new tracker here</a>.</span></td></tr>';		
 		// Blocklists
 		echo '<tr align="left"><th width="15%" scope="row">Blocklists</th>.';		
-		echo '<td colspan="2"><span class="Comments">You can manage <a href="?blocklists/rtorrent-blocklists.html">Manage rTorrent blocklists here</a> AND <a href="?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists here</a>.</span></td></tr>';			
+		echo '<td colspan="2"><span class="Comments">You can manage <a href="?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a> AND <a href="?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a>.</span></td></tr>';			
 	}
 
 	$RentingDatas = $MySB_DB->get("renting", "*", ["id_renting" => 1]);
