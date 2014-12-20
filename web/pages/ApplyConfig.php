@@ -51,7 +51,7 @@ if ( IfApplyConfig() > 0 ) {
 					$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
 				}
 				
-				break;		
+				break;
 			case "GetTrackersCert.bsh":
 				echo '<div align="center"><h1>GetTrackersCert.bsh...</h1></div>';
 				
@@ -68,7 +68,7 @@ if ( IfApplyConfig() > 0 ) {
 					} else {
 						$type = 'error';
 						$message = 'Failed ! It was not possible to update the MySB database.';
-					}			
+					}
 				} else {
 					$type = 'error';
 					$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
@@ -86,7 +86,7 @@ if ( IfApplyConfig() > 0 ) {
 				}
 				header('Refresh: 3; URL=/');
 				
-				break;				
+				break;
 		}
 		
 		if ( $type == 'success' ) {
@@ -97,7 +97,7 @@ if ( IfApplyConfig() > 0 ) {
 } else {
 	echo '<h1>Nothing to apply...</h1>';
 	$type = 'information';
-	$message = 'Nothing to apply...';	
+	$message = 'Nothing to apply...';
 	GenerateMessage(false, $type, $message);
 	header('Refresh: 5; URL=/');
 }

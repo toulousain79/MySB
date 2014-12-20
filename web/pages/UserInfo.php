@@ -35,6 +35,7 @@ function printUser($user) {
 	$UserID = $users_datas["id_users"];
 	
 	// Ports
+	$Port_HTTPs = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "NginX"]);
 	$Port_SSH = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "SSH"]);
 	$Port_FTP = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "VSFTPd"]);
 
@@ -181,12 +182,12 @@ function printUser($user) {
 	echo '<td><span class="Comments">mount -t nfs [10.0.0.1|10.0.1.1]:/home/'.$user.'/rtorrent [Destination_directory] -o nocto,noacl,noatime,nodiratime,nolock,rsize=8192,vers=3,ro,udp</span></td></tr>';				
 
 	//////////////////////
-	// Links
+	// Links (Normal user)
 	//////////////////////
-	echo '<tr align="left"><th colspan="3" scope="row"><h4>Links</h4></th></tr>';		
+	echo '<tr align="left"><th colspan="3" scope="row"><h4>Links (Normal user)</h4></th></tr>';		
 	// User Info
 	echo '<tr align="left"><th width="15%" scope="row">User Info</th>';			
-	echo '<td colspan="2"><a href="?user/user-infos.html"><span class="Comments">Current information page, also accessible here.</span></a></td></tr>';
+	echo '<td colspan="2"><a href="?user/user-infos.html"><span class="Comments">Current information page.</span></a></td></tr>';
 	// Change password
 	echo '<tr align="left"><th width="15%" scope="row">Change password</th>';	
 	echo '<td colspan="2"><a href="?user/change-password.html"><span class="Comments">You can change your password here.</span></a></td></tr>';
@@ -222,7 +223,13 @@ function printUser($user) {
 		echo '<tr align="left"><th width="15%" scope="row">CakeBox Light</th>';			
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Play here your media.</span></a></td></tr>';
 	}
+	
+	//////////////////////
+	// Links (Main user)
+	//////////////////////		
+	// User Info
 	if ( $users_datas["admin"] == '1' ) {
+		echo '<tr align="left"><th colspan="3" scope="row"><h4>Links (Main user)</h4></th></tr>';
 		// Webmin
 		$WebminDatas = $MySB_DB->get("services", "*", ["serv_name" => "Webmin"]);
 		if ( $WebminDatas["is_installed"] == '1' ) {
@@ -239,6 +246,9 @@ function printUser($user) {
 		// Trackers
 		echo '<tr align="left"><th width="15%" scope="row">Trackers list</th>.';		
 		echo '<td colspan="2"><span class="Comments"><a href="?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="?trackers/add-new-trackers.html">add new tracker here</a>.</span></td></tr>';		
+		// Blocklists
+		echo '<tr align="left"><th width="15%" scope="row">Blocklists</th>.';		
+		echo '<td colspan="2"><span class="Comments">You can manage <a href="?blocklists/rtorrent-blocklists.html">Manage rTorrent blocklists here</a> AND <a href="?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists here</a>.</span></td></tr>';			
 	}
 
 	$RentingDatas = $MySB_DB->get("renting", "*", ["id_renting" => 1]);

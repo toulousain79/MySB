@@ -339,7 +339,7 @@ function GenerateMessage($commands, $type, $message = '') {
 			}
 			break;		
 		default:
-			$timeout = 5000;
+			$timeout = 7000;
 			break;
 	}	
 
