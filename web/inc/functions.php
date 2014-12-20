@@ -64,23 +64,29 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 	$hidden = (MainUser()) ? true : false;
 	$CakeboxDatas = $MySB_DB->get("services", "*", ["serv_name" => "CakeBox-Light"]);
 	
-	echo '<ul>';
-	echo '<li><a target="_blank"  href="ru">ruTorrent</a></li>';
-	echo '<li><a target="_blank"  href="sm">Seedbox-Manager</a></li>';
-	echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $CakeboxDatas["port_tcp1"] . '/">Cakebox-Light</a></li>';
-	echo '</ul>';
-	
     if ($page && count($page->children(null, array(), $hidden)) > 0) {
         echo ($startmenu) ? '<ul>' : '';
 		
         foreach($page->children(null, array(), $hidden) as $menu) :
-			if ( $menu->title == "Apply configuration" ) {
-				$replace = '<div id="ApplyConfigButtonReplace" style="padding-top: 10px; padding-left: 10px; text-align:center; display:none; height: 29px;"><img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading..."></div>';		
-				$style = "id=\"ApplyConfigButtonState\" class=\"ApplyConfigButtonNothing\" onclick=\"ButtonClicked('config')\"";
-				echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$replace.'<div id="ApplyConfigButton">'.$menu->link($menu->title, $style).'</div>';
-			} else {
-				echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title);
-			}		
+			switch ($menu->title) {
+				case "Apply configuration":
+					$replace = '<div id="ApplyConfigButtonReplace" style="padding-top: 10px; padding-left: 10px; text-align:center; display:none; height: 29px;"><img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading..."></div>';		
+					$style = "id=\"ApplyConfigButtonState\" class=\"ApplyConfigButtonNothing\" onclick=\"ButtonClicked('config')\"";
+					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$replace.'<div id="ApplyConfigButton">'.$menu->link($menu->title, $style).'</div>';
+					break;
+				case "ruTorrent":
+					echo '<li><a target="_blank"  href="ru">ruTorrent</a></li>';
+					break;
+				case "Seedbox-Manager":
+					echo '<li><a target="_blank"  href="sm">Seedbox-Manager</a></li>';
+					break;
+				case "Cakebox-Light":
+					echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $CakeboxDatas["port_tcp1"] . '/">Cakebox-Light</a></li>';
+					break;						
+				default:
+					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title);
+					break;
+			}	
             
             MenuDisplayChildren($menu, $current, true);
             echo '</li>';
