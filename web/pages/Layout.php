@@ -69,7 +69,7 @@
 					<ul class="sf-menu" id="nav">
 						<li<?php echo ($this->level() == 0) ? ' class="current"': null; ?>><?php echo $page->link($page->title); ?></li>
 						
-						<?php displayChildren($page, $this, false); ?>
+						<?php MenuDisplayChildren($page, $this, false); ?>
 					</ul>
 					<div id="breadcrumb">
 						<?php echo $this->breadcrumb(); ?>

@@ -58,7 +58,7 @@ function MainUser() {
 }
 
 // Create menu with submenu
-function displayChildren($page, $current, $startmenu = true) {
+function MenuDisplayChildren($page, $current, $startmenu = true) {
 	$hidden = (MainUser()) ? true : false;
 	
     if ($page && count($page->children(null, array(), $hidden)) > 0) {
@@ -73,7 +73,7 @@ function displayChildren($page, $current, $startmenu = true) {
 				echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title);
 			}		
             
-            displayChildren($menu, $current, true);
+            MenuDisplayChildren($menu, $current, true);
             echo '</li>';
             endforeach;
         echo ($startmenu) ? '</ul>' : '';

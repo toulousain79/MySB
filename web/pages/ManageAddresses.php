@@ -77,7 +77,8 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					$type = 'error';
 				}
 				
-				GenerateMessage('FirewallAndSecurity.bsh', $type, $message);		
+				GenerateMessage('FirewallAndSecurity.bsh', $type, $message);
+				GenerateMessage(null, 'information', 'Remember that your dynamic IP will be checked every 10 minutes.');
 			//}
 			break;
 		case "Save Changes":
@@ -233,6 +234,11 @@ foreach($AddressesList as $Address) {
 		<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
 	</div>
 </form>
+
+<div align="center">
+	<p></p>
+	<p class="Comments"><b>NB</b>: Dynamic IP addresses are checked every <b>10</b> minutes.<br />If an IP has changed, the database will be updated and security will be adapted accordingly.</p>
+</div>
 
 <script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-dynamically-adding-form-elements.js"></script>	
 	
