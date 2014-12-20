@@ -288,6 +288,7 @@ Created by toulousain79
 * DNScrypt infos:	http://antix.freeforums.org/secure-dns-with-dnscrypt-t3588.html
 * DNScrypt + Bind9:	http://cavaencoreparlerdebits.fr/blog/2013/10/encrypt-your-dns-request-with-opendns-dnscrypt
 * PHPBench:		http://www.phpbench.com/
+* WolfCMS:		http://www.wolfcms.org/
 
 ## TODO
 
