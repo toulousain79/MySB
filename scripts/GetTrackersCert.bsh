@@ -121,6 +121,7 @@ fi
 	# TrackersList="`sqlite3 $MySB_DB \"SELECT tracker FROM trackers_list WHERE is_active = '1' AND to_check = '1'\"`"
 # fi
 TrackersList="`sqlite3 $MySB_DB \"SELECT tracker FROM trackers_list WHERE to_check = '1'\"`"
+DoRehash=0
 
 for Tracker in $TrackersList; do
 	log_daemon_msg "Get certificate for $Tracker"
@@ -135,6 +136,7 @@ for Tracker in $TrackersList; do
 			fi	
 			ln -s /etc/MySB/ssl/trackers/$Tracker.pem /etc/ssl/certs/$Tracker.pem
 			sqlite3 $MySB_DB "UPDATE trackers_list SET is_ssl = '1' WHERE tracker = '$Tracker';"
+			DoRehash=1
 		fi
 		
 		rm ./$Tracker.der
@@ -146,9 +148,11 @@ for Tracker in $TrackersList; do
 done
 
 #### Create again certificates listing in system
-log_daemon_msg "Certificates Rehash"
-c_rehash &> /dev/null
-StatusLSB
+if [ "$DoRehash" == 1 ]; then
+	log_daemon_msg "Certificates Rehash"
+	c_rehash &> /dev/null
+	StatusLSB
+fi
 
 #ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
 
