@@ -46,12 +46,7 @@ echo '
 			</tr>
 			<tr>
 				<td colspan="2">
-					<div id="PageSubmitButton">
-						<input class="submit" name="submit" type="submit" value="Submit" onclick="ButtonClicked(\'page\')">
-					</div>
-					<div id="PageButtonReplace" style="text-align:center; display:none; height: 33px;">
-						<img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading...">
-					</div>
+					<input class="submit" name="submit" type="submit" value="Submit">
 				</td>
 			</tr>
 		</table></div>
@@ -73,7 +68,6 @@ if ( isset($_POST['submit']) ) {
 					// echo '<div class="Comments" align="center">'.$item.'</div>';
 				// }
 				$result = $MySB_DB->update("users", ["users_passwd" => "$new_pwd"], ["users_ident" => $_SERVER['PHP_AUTH_USER']]);
-				GenerateMessage('MySB_ChangeUserPassword', $type, $message);
 				
 				//if ( $result == 0 ) {
 				if ( $result > 0 ) {
