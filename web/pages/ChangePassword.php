@@ -67,13 +67,15 @@ if ( isset($_POST['submit']) ) {
 		if ( $current_pwd == $_SERVER['PHP_AUTH_PW'] ) {
 			if ( $new_pwd == $confirm_pwd ) {
 				
-				exec("sudo /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword '".$_SERVER['PHP_AUTH_USER']."' '".$new_pwd."' 'ChangePassword.php'", $output, $result);
+				// exec("sudo /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword '".$_SERVER['PHP_AUTH_USER']."' '".$new_pwd."' 'ChangePassword.php'", $output, $result);
 
-				foreach ( $output as $item ) {
-					echo '<div class="Comments" align="center">'.$item.'</div>';
-				}
+				// foreach ( $output as $item ) {
+					// echo '<div class="Comments" align="center">'.$item.'</div>';
+				// }
+				$result = $MySB_DB->update("users", ["users_passwd" => "$new_pwd"], ["users_ident" => $_SERVER['PHP_AUTH_USER']]);
 				
-				if ( $result == 0 ) {
+				//if ( $result == 0 ) {
+				if ( $result > 0 ) {
 					$result = UpdateWolfDB($_SERVER['PHP_AUTH_USER'], $new_pwd);
 				
 					if ( $result > 0 ) {
@@ -99,7 +101,8 @@ if ( isset($_POST['submit']) ) {
 		$message = 'Please, complete all fields.';	
 	}
 	
-	GenerateMessage(false, $type, $message);
+	//GenerateMessage(false, $type, $message);
+	GenerateMessage('MySB_ChangeUserPassword', $type, $message);
 }
 
 //#################### LAST LINE ######################################

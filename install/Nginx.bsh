@@ -28,7 +28,9 @@ source /etc/MySB/inc/includes_before.bsh
 PackagesManage install "nginx-extras apache2-utils"
 
 #### Create certificates
-ScriptInvoke 'source' '/etc/MySB/install/Certificates.bsh' 'CreateServiceCertificate' 'nginx'
+if [ ! -f /etc/MySB/ssl/nginx.cert ]; then
+	ScriptInvoke 'source' '/etc/MySB/install/Certificates.bsh' 'CreateServiceCertificate' 'nginx'
+fi
 
 #### Create directories
 if [ ! -d /etc/nginx/sites-available ]; then
@@ -67,11 +69,14 @@ perl -pi -e "s/##MySB_User##/$MySB_User/g" /etc/MySB/web/pages/UserInfo.php
 if [ ! -f /etc/sudoers.d/MySB_nginx ]; then
 	touch /etc/sudoers.d/MySB_nginx
 fi
-if [ "`cat /etc/sudoers.d/MySB_nginx | grep 'MySB_ChangeUserPassword'`" == "" ];then
-	echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword*" > /etc/sudoers.d/MySB_nginx
-fi
-if [ "`cat /etc/sudoers.d/MySB_nginx | grep 'FirewallAndSecurity'`" == "" ];then
-	echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh*" >> /etc/sudoers.d/MySB_nginx
+# if [ "`cat /etc/sudoers.d/MySB_nginx | grep 'MySB_ChangeUserPassword'`" == "" ];then
+	# echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword*" > /etc/sudoers.d/MySB_nginx
+# fi
+# if [ "`cat /etc/sudoers.d/MySB_nginx | grep 'FirewallAndSecurity'`" == "" ];then
+	# echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh*" >> /etc/sudoers.d/MySB_nginx
+# fi
+if [ "`cat /etc/sudoers.d/MySB_nginx | grep 'PortalApplyConfig.bsh'`" == "" ];then
+	echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/scripts/PortalApplyConfig.bsh*" >> /etc/sudoers.d/MySB_nginx
 fi
 
 #### nginx.conf
@@ -218,7 +223,7 @@ perl -pi -e "s/<mainuser>/$NEWUSER/g" /etc/nginx/locations/MySB.conf
 #### ruTorrent
 (
 cat <<'EOF'
-	location /rutorrent {
+	location ^~ /ru {
 		access_log /var/log/nginx/rutorrent-access.log combined;
 		error_log /var/log/nginx/rutorrent-error.log error;
 

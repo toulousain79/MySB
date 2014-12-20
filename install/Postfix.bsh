@@ -25,17 +25,25 @@ source /etc/MySB/inc/includes_before.bsh
 ##################### FIRST LINE #####################################
 
 #### Install packages
-PackagesManage install "postfix"
+if ! hash postfix 2>/dev/null; then
+	PackagesManage install "postfix"
+fi
 
 #### Create certificates
-ScriptInvoke 'source' '/etc/MySB/install/Certificates.bsh' 'CreateServiceCertificate' 'postfix'
+if [ ! -f /etc/MySB/ssl/postfix.cert ]; then
+	ScriptInvoke 'source' '/etc/MySB/install/Certificates.bsh' 'CreateServiceCertificate' 'postfix'
+fi
 
 if [ "$Smtp_Provider" != "LOCAL" ]; then
 	#### Install packages
-	PackagesManage install "stunnel4 gnutls-bin"
+	if ! hash stunnel4 2>/dev/null; then
+		PackagesManage install "stunnel4 gnutls-bin"
+	fi
 
 	#### Create certificates
-	ScriptInvoke 'source' '/etc/MySB/install/Certificates.bsh' 'CreateServiceCertificate' 'stunnel'
+	if [ ! -f /etc/MySB/ssl/stunnel.cert ]; then
+		ScriptInvoke 'source' '/etc/MySB/install/Certificates.bsh' 'CreateServiceCertificate' 'stunnel'
+	fi
 	
 	#### stunnel
 	if [ -f /var/log/stunnel4/stunnel.log ]; then
@@ -46,7 +54,9 @@ if [ "$Smtp_Provider" != "LOCAL" ]; then
 		chmod 640 /var/lib/stunnel4/stunnel.log
 		chown stunnel4:stunnel4 /var/lib/stunnel4/stunnel.log
 	fi
-	ln -s /var/lib/stunnel4/stunnel.log /var/log/stunnel4/stunnel.log	
+	if [ ! -f /var/log/stunnel4/stunnel.log ]; then
+		ln -s /var/lib/stunnel4/stunnel.log /var/log/stunnel4/stunnel.log
+	fi
 fi
 
 #### main.cf
@@ -91,12 +101,12 @@ if [ "$Smtp_Provider" != "LOCAL" ]; then
 		"FREE")
 			Smtp_Host="smtp.free.fr"
 			Smtp_Port=465
-			Smtp_Security=SSL			
+			Smtp_Security=SSL
 		;;
 		"YAHOO")
 			Smtp_Host="smtp.mail.yahoo.fr"
 			Smtp_Port=465
-			Smtp_Security=SSL	
+			Smtp_Security=SSL
 		;;		
 		"OVH")
 			Smtp_Host="ssl0.ovh.net"

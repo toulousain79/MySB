@@ -24,37 +24,26 @@ source /etc/MySB/inc/includes_before.bsh
 #
 ##################### FIRST LINE #####################################
 
-#### Install packages
-PackagesManage install "vsftpd"
+case "$1" in
+	"bin/MySB_ChangeUserPassword")
+		Username=$1
+		Userpassword="`sqlite3 $MySB_DB \"SELECT users_passwd FROM users WHERE users_ident = '$Username'\"`"
+		ScriptInvoke 'bash' '/etc/MySB/bin/MySB_ChangeUserPassword' "$Username" "$Userpassword"
+	;;
+	"scripts/FirewallAndSecurity.bsh")
+		ScriptInvoke 'bash' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
+	;;
+	"scripts/GetTrackersCert.bsh")
+		ScriptInvoke 'bash' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
+		ScriptInvoke 'screen' '/etc/MySB/scripts/GetTrackersCert.bsh' 'to_check'
+	;;
+	"scripts/PaymentReminder.bsh")
 
-#### Create certificate
-if [ ! -f /etc/MySB/ssl/vsftpd.cert ]; then
-	ScriptInvoke 'source' '/etc/MySB/install/Certificates.bsh' 'CreateServiceCertificate' 'vsftpd'
-fi
-
-####
-cmdProxy='command'
-command type -f 'sudo' &>'/dev/null' && cmdProxy='sudo'
-dataPath='/srv/ftp'
-ftpUser="ftp"
-ftpGroup="ftp"
-
-if [ -z "$(${cmdProxy} grep "^${ftpGroup}" '/etc/group')" ]; then
-	${cmdProxy} addgroup --system "${ftpGroup}"
-fi
-if [ -z "$(${cmdProxy} grep "^${ftpUser}" '/etc/passwd')" ]; then
-	${cmdProxy} adduser --system --shell '/bin/false' --home "${dataPath}" --ingroup "${ftpGroup}" "${ftpUser}"
-fi
-
-#### config file
-cp /etc/MySB/templates/etc.vsftpd.conf.template /etc/vsftpd.conf
-sed -i "s/<Port_FTP>/$Port_FTP/g;" /etc/vsftpd.conf
-sed -i "s/<Port_FTP_Data>/$Port_FTP_Data/g;" /etc/vsftpd.conf
-sed -i "s/<SrvIpAddress>/$SrvIpAddress/g;" /etc/vsftpd.conf
-
-if [ ! -f /etc/vsftpd.chroot_list ]; then
-	touch /etc/vsftpd.chroot_list
-fi
+	;;	
+	"install/Postfix.bsh")
+		ScriptInvoke 'bash' '/etc/MySB/install/Postfix.bsh'
+	;;		
+esac
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after.bsh
