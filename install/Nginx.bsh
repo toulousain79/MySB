@@ -77,12 +77,25 @@ if [ "`cat /etc/sudoers.d/MySB_nginx | grep 'FirewallAndSecurity'`" == "" ];then
 fi
 
 #### nginx.conf
-if [ -f /etc/nginx/nginx.conf ]; then
-	mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.ORIGINAL
-fi
-
 cp /etc/MySB/templates/etc.nginx.nginx.conf.template /etc/nginx/nginx.conf
 perl -pi -e "s/worker_processes auto;/worker_processes $PROCESSOR;/g" /etc/nginx/nginx.conf
+
+#### Default Server
+if [ -f /etc/nginx/sites-enabled/default ]; then
+	rm /etc/nginx/sites-enabled/default
+fi
+cp /etc/MySB/templates/etc.nginx.site-enabled.default.template /etc/nginx/sites-available/default
+perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<PORT_HTTP>/$Port_HTTP/g" /etc/nginx/sites-available/default
+if [ ! -f /etc/nginx/sites-enabled/default ]; then
+	ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+fi
+
+#### MySB locations
+cp /etc/MySB/templates/etc.nginx.locations.mysb.conf.template /etc/nginx/locations/1_MySB.conf
+
+#### ruTorrent
+cp /etc/MySB/templates/etc.nginx.locations.rutorrent.conf.template /etc/nginx/locations/rutorrent.conf
 
 #### PageSpeed Conf
 cp /etc/MySB/templates/etc.nginx.conf.d.pagespeed.template /etc/nginx/conf.d/pagespeed
@@ -96,63 +109,6 @@ if [ "`df -H | grep '/usr/share/nginx/pagespeed'`" == "" ]; then
 fi
 
 #### PHP conf.d
-(
-cat <<'EOF'
-location ~ \.php$ {
-	fastcgi_pass unix:/var/run/php5-fpm.sock;
-	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-	include /etc/nginx/fastcgi_params;
-	fastcgi_param APPLICATION_ENV production;
-	#fastcgi_param PHP_VALUE "";
-	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On";
-}
-
-EOF
-) > /etc/nginx/conf.d/php
-
-(
-cat <<'EOF'
-location ~ \.php$ {
-	fastcgi_pass unix:/var/run/php5-fpm.sock;
-	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-	include /etc/nginx/fastcgi_params;
-	fastcgi_param APPLICATION_ENV production;
-	#fastcgi_param PHP_VALUE "";
-	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On";
-	fastcgi_param HTTPS on;
-}
-
-EOF
-) > /etc/nginx/conf.d/php-ssl
-
-(
-cat <<'EOF'
-location ~ \.php$ {
-	include /etc/nginx/fastcgi_params;
-	fastcgi_pass unix:/var/run/php5-fpm.sock;
-	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-	fastcgi_param APPLICATION_ENV production;
-	#fastcgi_param PHP_VALUE "";
-	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/etc/MySB/db\ndisplay_errors=On";
-	fastcgi_param HTTPS on;
-}
-EOF
-) > /etc/nginx/conf.d/php-MySB-locations
-
-(
-cat <<'EOF'
-location ~ \.php$ {
-	include /etc/nginx/fastcgi_params;
-	fastcgi_pass unix:/var/run/php5-fpm.sock;
-	fastcgi_param SCRIPT_FILENAME $request_filename;
-	fastcgi_param APPLICATION_ENV production;
-	#fastcgi_param PHP_VALUE "";
-	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp\ndisplay_errors=On";
-	fastcgi_param HTTPS on;
-}
-EOF
-) > /etc/nginx/conf.d/php-rutorrent-locations
-
 (
 cat <<'EOF'
 location ~* \.(jpg|jpeg|gif|css|png|js|woff|ttf|svg|eot)$ {
@@ -194,29 +150,6 @@ cat <<'EOF'
 	}
 EOF
 ) > /etc/nginx/conf.d/static_files
-
-#### Default Server
-if [ -f /etc/nginx/sites-enabled/default ]; then
-	rm /etc/nginx/sites-enabled/default
-fi
-if [ -f /etc/nginx/sites-available/default ]; then
-	mv /etc/nginx/sites-available/default /etc/nginx/sites-available/default.ORIGINAL
-fi
-cp /etc/MySB/templates/etc.nginx.site-enabled.default.template /etc/nginx/sites-available/default
-perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" /etc/nginx/sites-available/default
-perl -pi -e "s/<PORT_HTTP>/$Port_HTTP/g" /etc/nginx/sites-available/default
-# Enable Sites
-if [ ! -f /etc/nginx/sites-enabled/default ]; then
-	ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
-fi
-
-#### MySB locations (logs, ruTorrent plugins, seedboxinfo)
-cp /etc/MySB/templates/etc.nginx.locations.mysb.conf.template /etc/nginx/locations/MySB.conf
-perl -pi -e "s/<server_ip>/$SrvIpAddress/g" /etc/nginx/locations/MySB.conf
-perl -pi -e "s/<mainuser>/$NEWUSER/g" /etc/nginx/locations/MySB.conf
-
-#### ruTorrent
-cp /etc/MySB/templates/etc.nginx.locations.rutorrent.conf.template /etc/nginx/locations/rutorrent.conf
 
 #### logrotate
 if [ -f /etc/logrotate.d/nginx ]; then

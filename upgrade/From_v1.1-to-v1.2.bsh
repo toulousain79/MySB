@@ -29,9 +29,6 @@ echo -e "${CRED}If you lose connection during installation, restart the SSH sess
 echo -e "${CGREEN}	screen -r MySB_UpgradeMe$CEND"
 echo
 
-#### Vars
-ListingUsers
-
 #### Sudoers
 sed -i '/MakeRenting/d' /etc/sudoers.d/MySB_nginx
 sed -i '/FirewallAndSecurity/d' /etc/sudoers.d/MySB_nginx
@@ -47,6 +44,17 @@ if [ ! -d /etc/MySB/scripts/blocklist ]; then
 	mv /etc/MySB/scripts/blocklist /etc/MySB/files/blocklist
 fi
 
+#### SQLite
+echo -e -n "${CBLUE}Create SQLite database$CEND..."
+screen -dmS SQLite /bin/bash /etc/MySB/install/SQLite.bsh;
+WaitingScreen SQLite
+StatusSTD
+
+#### Vars
+if [ -f /etc/MySB/inc/vars.bsh ]; then source /etc/MySB/inc/vars.bsh; fi
+if [ -f /etc/MySB/inc/funcs.bsh ]; then source /etc/MySB/inc/funcs.bsh; fi
+ListingUsers
+
 #### Crontab
 log_daemon_msg "Creating Blocklist.sh cron"
 crontab -l > /tmp/crontab.tmp
@@ -61,6 +69,11 @@ crontab /tmp/crontab.tmp
 rm /tmp/crontab.tmp
 log_end_msg 0
 
+#### Upgrade System
+#log_daemon_msg "Upgrade system"
+ScriptInvoke 'screen' '/etc/MySB/bin/MySB_UpgradeSystem'
+#StatusLSB
+
 #### Packages
 echo -e -n "${CBLUE}Install missing packages$CEND..."
 screen -dmS Packages /bin/bash /etc/MySB/install/Packages.bsh;
@@ -73,89 +86,41 @@ screen -dmS PHP /bin/bash /etc/MySB/install/PHP.bsh;
 WaitingScreen PHP
 StatusSTD
 
+#### Postfix
+echo -e -n "${CBLUE}Some fixes for Postfix$CEND..."
+screen -dmS Postfix /bin/bash /etc/MySB/install/Postfix.bsh;
+WaitingScreen Postfix
+StatusSTD
+
 #### NginX
 echo -e -n "${CBLUE}Some fixes for NginX$CEND..."
-# /etc/nginx/locations/MySB.conf
-cp /etc/MySB/templates/etc.nginx.locations.mysb.conf.template /etc/nginx/locations/MySB.conf
-perl -pi -e "s/<server_ip>/$SrvIpAddress/g" /etc/nginx/locations/MySB.conf
-perl -pi -e "s/<mainuser>/$NEWUSER/g" /etc/nginx/locations/MySB.conf
-
-#### Wolf CMS
-cp /etc/MySB/templates/etc.myb.web.config.php.template /etc/MySB/web/config.php
-AdminDir=`mkpasswd $HostNameFQDN` && AdminDir=$AdminDir`mkpasswd $HostNameFQDN`
-AdminDir=`echo $AdminDir | sed "s/\///g"`
-perl -pi -e "s/<admin_dir>/$AdminDir/g" /etc/MySB/web/config.php
-chmod 400 /etc/MySB/web/config.php
-
 # /etc/nginx/nginx.conf
 cp /etc/MySB/templates/etc.nginx.nginx.conf.template /etc/nginx/nginx.conf
 perl -pi -e "s/worker_processes auto;/worker_processes $PROCESSOR;/g" /etc/nginx/nginx.conf
-
+# /etc/nginx/sites-enabled/default
+cp /etc/MySB/templates/etc.nginx.site-enabled.default.template /etc/nginx/sites-available/default
+perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<PORT_HTTP>/$Port_HTTP/g" /etc/nginx/sites-available/default
+if [ ! -f /etc/nginx/sites-enabled/default ]; then ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default; fi
+# /etc/nginx/locations/1_MySB.conf
+if [ -f /etc/nginx/locations/MySB.conf ]; then rm /etc/nginx/locations/MySB.conf; fi
+cp /etc/MySB/templates/etc.nginx.locations.mysb.conf.template /etc/nginx/locations/1_MySB.conf
+# /etc/nginx/locations/2_rutorrent.conf
+if [ -f /etc/nginx/locations/rutorrent.conf ]; then rm /etc/nginx/locations/rutorrent.conf; fi
+cp /etc/MySB/templates/etc.nginx.locations.rutorrent.conf.template /etc/nginx/locations/2_rutorrent.conf
 # pagespeed
 cp /etc/MySB/templates/etc.nginx.conf.d.pagespeed.template /etc/nginx/conf.d/pagespeed
 echo "# Nginx PageSpeed" >> /etc/fstab
 echo "tmpfs   /usr/share/nginx/pagespeed      tmpfs   rw,mode=1777,size=512M 0 0" >> /etc/fstab
-if [ ! -d /usr/share/nginx/pagespeed ]; then
-	mkdir /usr/share/nginx/pagespeed
-fi
-if [ "`df -H | grep '/usr/share/nginx/pagespeed'`" == "" ]; then
-	mount /usr/share/nginx/pagespeed
-fi
-
+if [ ! -d /usr/share/nginx/pagespeed ]; then mkdir /usr/share/nginx/pagespeed; fi
+if [ "`df -H | grep '/usr/share/nginx/pagespeed'`" == "" ]; then mount /usr/share/nginx/pagespeed; fi
 # conf.d
-(
-cat <<'EOF'
-location ~ \.php$ {
-	fastcgi_pass unix:/var/run/php5-fpm.sock;
-	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-	include /etc/nginx/fastcgi_params;
-	fastcgi_param APPLICATION_ENV production;
-	#fastcgi_param PHP_VALUE "";
-	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On";
-}
-
-EOF
-) > /etc/nginx/conf.d/php
-(
-cat <<'EOF'
-location ~ \.php$ {
-	fastcgi_pass unix:/var/run/php5-fpm.sock;
-	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-	include /etc/nginx/fastcgi_params;
-	fastcgi_param APPLICATION_ENV production;
-	#fastcgi_param PHP_VALUE "";
-	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/tmp\ndisplay_errors=On";
-	fastcgi_param HTTPS on;
-}
-
-EOF
-) > /etc/nginx/conf.d/php-ssl
-(
-cat <<'EOF'
-location ~ \.php$ {
-	include /etc/nginx/fastcgi_params;
-	fastcgi_pass unix:/var/run/php5-fpm.sock;
-	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-	fastcgi_param APPLICATION_ENV production;
-	#fastcgi_param PHP_VALUE "";
-	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp:/etc/MySB/db\ndisplay_errors=On";
-	fastcgi_param HTTPS on;
-}
-EOF
-) > /etc/nginx/conf.d/php-MySB-locations
-(
-cat <<'EOF'
-location ~ \.php$ {
-	include /etc/nginx/fastcgi_params;
-	fastcgi_pass unix:/var/run/php5-fpm.sock;
-	fastcgi_param SCRIPT_FILENAME $request_filename;
-	fastcgi_param APPLICATION_ENV production;
-	#fastcgi_param PHP_VALUE "";
-	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp\ndisplay_errors=On";
-	fastcgi_param HTTPS on;
-}
-EOF
-) > /etc/nginx/conf.d/php-rutorrent-locations
+if [ -f /etc/nginx/cond.d/php-ssl ]; then rm /etc/nginx/cond.d/php-ssl; fi
+if [ -f /etc/nginx/cond.d/php ]; then rm /etc/nginx/cond.d/php; fi
+if [ -f /etc/nginx/cond.d/php-MySB-locations ]; then rm /etc/nginx/cond.d/php-MySB-locations; fi
+if [ -f /etc/nginx/cond.d/php-seedbox-manager ]; then rm /etc/nginx/cond.d/php-seedbox-manager; fi
+if [ -f /etc/nginx/conf.d/php-cakebox-locations ]; then rm /etc/nginx/conf.d/php-cakebox-locations; fi
+if [ -f /etc/nginx/cond.d/php ]; then rm /etc/nginx/cond.d/php; fi
 (
 cat <<'EOF'
 	# deny access to .htaccess file, hidden files, svn files and git files
@@ -183,6 +148,34 @@ cat <<'EOF'
 EOF
 ) > /etc/nginx/conf.d/static_files
 
+#### logrotate
+if [ -f /etc/logrotate.d/nginx ]; then rm -f /etc/logrotate.d/nginx; fi
+(
+cat <<'EOF'
+/var/log/nginx/*.log {
+	daily
+	missingok
+	rotate 7
+	compress
+	delaycompress
+	notifempty
+	create 640 root
+	sharedscripts
+	postrotate
+		[ -f /var/run/nginx.pid ] && kill -USR1 `cat /var/run/nginx.pid`
+	endscript
+}
+
+EOF
+) > /etc/logrotate.d/nginx
+
+#### Wolf CMS
+cp /etc/MySB/templates/etc.myb.web.config.php.template /etc/MySB/web/config.php
+AdminDir=`mkpasswd $HostNameFQDN` && AdminDir=$AdminDir`mkpasswd $HostNameFQDN`
+AdminDir=`echo $AdminDir | sed "s/\///g"`
+perl -pi -e "s/<admin_dir>/$AdminDir/g" /etc/MySB/web/config.php
+chmod 400 /etc/MySB/web/config.php
+
 # move files
 if [ -f /usr/share/nginx/html/50x.html ]; then
 	rm /usr/share/nginx/html/50x.html
@@ -198,11 +191,22 @@ if [ -d /usr/share/nginx/html/Cakebox-light ]; then
 fi
 StatusSTD
 
-#### SQLite
-echo -e -n "${CBLUE}Create SQLite database$CEND..."
-screen -dmS SQLite /bin/bash /etc/MySB/install/SQLite.bsh;
-WaitingScreen SQLite
-StatusSTD
+#### Cakebox-Light
+if [ -f /etc/nginx/sites-enabled/cakebox ]; then rm /etc/nginx/sites-enabled/cakebox; fi
+if [ "$IsInstalled_Cakebox" == "YES" ]; then
+	cp /etc/MySB/templates/etc.nginx.site-enabled.cakebox.template /etc/nginx/sites-available/cakebox
+	perl -pi -e "s/<cakebox_port>/$Ports_Cakebox/g" /etc/nginx/sites-available/cakebox
+	perl -pi -e "s/<servername>/$HostNameFQDN/g" /etc/nginx/sites-available/cakebox
+	if [ ! -f /etc/nginx/sites-enabled/cakebox ]; then ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox; fi
+fi
+
+#### Seedbox-Manager
+if [ -f /etc/nginx/locations/seedbox-manager.conf ]; then rm /etc/nginx/locations/seedbox-manager.conf; fi
+
+#### Refresh tools
+log_daemon_msg "Refresh some tools"
+ScriptInvoke 'screen' '/etc/MySB/bin/MySB_RefreshMe' 'all'
+StatusLSB
 
 #### LogWatch
 if [ -f /etc/logwatch/conf/logwatch.conf ]; then
@@ -250,14 +254,15 @@ for seedUser in $UsersList; do
 	StatusLSB
 done
 
+#### Create directories & change rights
+log_daemon_msg "Change owners et rights for files and directories"
+ManageDirectoriesAndFiles
+StatusLSB
+
 #### Firewall And Security
-#ScriptInvoke 'screen' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
-
-#### Refresh tools
-#ScriptInvoke 'bash' '/etc/MySB/bin/MySB_RefreshMe' 'all'
-
-#### Upgrade System
-#ScriptInvoke 'bash' '/etc/MySB/bin/MySB_UpgradeSystem'
+log_daemon_msg "Update security rules"
+ScriptInvoke 'bash' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
+StatusLSB
 
 clear
 echo -e "${CGREEN}Upgrade finished succesfully !$CEND"

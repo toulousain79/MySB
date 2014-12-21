@@ -70,40 +70,27 @@ if [ "$IsInstalled_Cakebox" == "YES" ]; then
 	sed -i "s/torrents/rtorrent/g;" /etc/MySB/web/rutorrent/plugins/linkcakebox/conf.php
 
 	#### NginX
+	if [ -f /etc/nginx/sites-enabled/cakebox ]; then
+		rm /etc/nginx/sites-enabled/cakebox
+	fi	
 	cp /etc/MySB/templates/etc.nginx.site-enabled.cakebox.template /etc/nginx/sites-available/cakebox
 	perl -pi -e "s/<cakebox_port>/$Ports_Cakebox/g" /etc/nginx/sites-available/cakebox
 	perl -pi -e "s/<servername>/$HostNameFQDN/g" /etc/nginx/sites-available/cakebox
 	if [ ! -f /etc/nginx/sites-enabled/cakebox ]; then
 		ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox
 	fi
-
-	(
-	cat <<'EOF'
-location @site {
-	include /etc/nginx/fastcgi_params;
-	fastcgi_pass unix:/var/run/php5-fpm.sock;
-	fastcgi_param SCRIPT_FILENAME $document_root/index.php;
-	fastcgi_param APPLICATION_ENV production;
-	#fastcgi_param PHP_VALUE "";
-	#fastcgi_param PHP_ADMIN_VALUE "open_basedir=$document_root:/tmp\ndisplay_errors=On";
-	fastcgi_param HTTPS on;	
-	fastcgi_index index.php;
-}
-EOF
-	) > /etc/nginx/conf.d/php-cakebox-locations	
 	
 	if [ -z $NEWUSER ] || [ -z $PASSWORD ]; then	
 		ListingUsers
 		for seedUser in $UsersList; do
 			(
 			cat <<'EOF'
-location /<username>/ {
+	location /<username>/ {
 		alias /home/<username>/;
 		add_header Content-Disposition "attachment";
 		satisfy any;
 		allow all;
-}
-
+	}
 EOF
 			) > /etc/nginx/rpc/$seedUser.cakebox
 			perl -pi -e "s/<username>/$seedUser/g" /etc/nginx/rpc/$seedUser.cakebox

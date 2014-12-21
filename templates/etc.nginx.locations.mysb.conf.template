@@ -1,21 +1,39 @@
 	location ^~ / {
-		include /etc/nginx/conf.d/php-MySB-locations;
+		include /etc/nginx/conf.d/static_files;	
+		include /etc/nginx/conf.d/global_deny_access;
+		include /etc/nginx/conf.d/pagespeed;
+		include /etc/nginx/conf.d/cache;	
+	
+		location ~ \.php$ {
+			include /etc/nginx/fastcgi_params;
+			fastcgi_pass unix:/var/run/php5-fpm.sock;
+			fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+			fastcgi_param APPLICATION_ENV production;
+			fastcgi_param PHP_VALUE "";
+			fastcgi_param PHP_ADMIN_VALUE "display_errors=On";
+			fastcgi_param HTTPS on;
+			fastcgi_index index.php;
+		}	
+		
 		access_log /var/log/nginx/MySB-access.log combined;
 		error_log /var/log/nginx/MySB-error.log error;
+		index index.php;
+		
+		## Restricted IP ##
 		allow 127.0.0.1;
 		allow 127.0.1.1;
 		## Restricted IP for mainuser ##
-		deny all;		
-	}
-
-	location ^~ /inc/ {
+		deny all;
+	}	
+	
+	location /inc/ {
 		deny all;
 	}
 
-	location ^~ /openvpn/ {
+	location /openvpn/ {
 		deny all;
 	}
 	
-	location ^~ /pages/ {
+	location /pages/ {
 		deny all;
 	}
