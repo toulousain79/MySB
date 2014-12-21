@@ -63,6 +63,10 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 
 	$hidden = (MainUser()) ? true : false;
 	$CakeboxDatas = $MySB_DB->get("services", "*", ["serv_name" => "CakeBox-Light"]);
+	$CakeboxIsInstalled = $CakeboxDatas["is_installed"];
+	$ManagerIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "Seedbox-Manager"]);
+	$WebminDatas = $MySB_DB->get("services", "*", ["serv_name" => "Webmin"]);
+	$WebminIsInstalled = $WebminDatas["is_installed"];
 	
     if ($page && count($page->children(null, array(), $hidden)) > 0) {
         echo ($startmenu) ? '<ul>' : '';
@@ -78,11 +82,20 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					echo '<li><a target="_blank"  href="ru">ruTorrent</a>';
 					break;
 				case "Seedbox-Manager":
-					echo '<li><a target="_blank"  href="sm">Seedbox-Manager</a>';
+					if ( $ManagerIsInstalled == '1' ) {
+						echo '<li><a target="_blank"  href="sm">Seedbox-Manager</a>';
+					}
 					break;
 				case "Cakebox-Light":
-					echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $CakeboxDatas["port_tcp1"] . '/">Cakebox-Light</a>';
-					break;						
+					if ( $CakeboxIsInstalled == '1' ) {
+						echo '<li><a target="_blank"  href="http://' . $system_datas["hostname"] . ':' . $CakeboxDatas["port_tcp1"] . '/">Cakebox-Light</a>';
+					}
+					break;
+				case "Webmin":
+					if ( $WebminIsInstalled == '1' ) {
+						echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $WebminDatas["port_tcp1"] . '/">Webmin</a>';
+					}
+					break;					
 				default:
 					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title);
 					break;

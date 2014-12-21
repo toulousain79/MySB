@@ -49,6 +49,7 @@ CREATE TABLE renting (
     price_per_users NUMERIC( 2 ) 
 );
 
+INSERT INTO [renting] ([id_renting], [model], [tva], [global_cost], [nb_users], [price_per_users]) VALUES (1, null, null, null, null, null);
 
 -- Table: vars
 CREATE TABLE vars ( 

@@ -84,7 +84,7 @@ if ( IfApplyConfig() > 0 ) {
 					$type = 'error';
 					$message = 'Failed ! It was not possible to update the MySB database.';
 				}
-				header('Refresh: 3; URL=/');
+				header('Refresh: 3; URL=/?main-user/renting-infos.html');
 				
 				break;
 		}
