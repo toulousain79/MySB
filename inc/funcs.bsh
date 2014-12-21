@@ -323,74 +323,6 @@ ManageServices() {
 	fi
 }
 
-#### Change rights for users
-ChangingHomeUserRights() {
-	myuser=$1
-	homeuser=$2
-
-	# /home/user: O:rwx G:rx O:rx
-	if [ ! -d $homeuser ]; then
-		mkdir $homeuser
-	fi
-	sudo chmod 755 $homeuser
-	sudo chown -R $myuser:$myuser $homeuser
-	sudo chown root:root $homeuser
-
-	# .rtorrent.rc: O:rwx G:rx O:rx
-	if [ -f $homeuser/.rtorrent.rc ]; then	
-		sudo chmod 755 $homeuser/.rtorrent.rc	
-		sudo chown root:root $homeuser/.rtorrent.rc
-	fi
-
-	# blocklist: O:rwx G:rx O:rx
-	if [ ! -d $homeuser/blocklist ]; then
-		mkdir $homeuser/blocklist
-	fi	
-	sudo chown -R root:root $homeuser/blocklist
-	sudo chmod -R 755 $homeuser/blocklist
-	
-	# logs: O:rwx G:rwx O:rwx
-	if [ ! -d $homeuser/logs ]; then
-		mkdir $homeuser/logs
-	fi		
-	sudo chown root:root $homeuser/logs
-	sudo chmod -R 777 $homeuser/logs
-	
-	# rtorrent: O:rwx G:rwx O:rwx
-	if [ ! -d $homeuser/rtorrent ]; then
-		mkdir $homeuser/rtorrent
-	fi		
-	sudo chown -R root:root $homeuser/rtorrent
-	sudo chmod -R 777 $homeuser/rtorrent
-	
-	# share: O:rwx G:rwx O:rx
-	if [ ! -d $homeuser/rtorrent/share ]; then
-		mkdir $homeuser/rtorrent/share
-	fi			
-	sudo chown -R root:MySB_users $homeuser/rtorrent/share
-	sudo chmod -R 775 $homeuser/rtorrent/share
-	
-	# watch
-	if [ ! -d $homeuser/rtorrent/watch ]; then
-		mkdir $homeuser/rtorrent/watch
-	fi
-
-	# incomplete
-	if [ ! -d $homeuser/rtorrent/incomplete ]; then
-		mkdir $homeuser/rtorrent/incomplete
-	fi
-
-	# complete
-	if [ ! -d $homeuser/rtorrent/complete ]; then
-		mkdir $homeuser/rtorrent/complete
-	fi
-
-	# .session
-	if [ ! -d $homeuser/rtorrent/.session ]; then
-		mkdir $homeuser/rtorrent/.session
-	fi
-}
-
 #### Clean the rTorrent blocklist
 CleanBlockList() {
 	FILE="$2"
@@ -861,19 +793,13 @@ ScriptInvoke() {
 		
 			$METHOD /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked $Arguments
 		;;	
-		"screen")
+		"screen"|"background")
 			# copy it
 			cat $MYSCRIPT > /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked		
 
 			screen -dmS ${ScriptName}_${SCRIPT} /bin/bash /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked $Arguments;
-			WaitingSTD ${ScriptName}_${SCRIPT}
-		;;
-		"background")
-			# copy it
-			cat $MYSCRIPT > /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked		
-
-			screen -dmS ${ScriptName}_${SCRIPT} /bin/bash /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked $Arguments;
-		;;		
+			if [ "$METHOD" == "screen" ]; then WaitingSTD ${ScriptName}_${SCRIPT}; fi
+		;;	
 	esac
 }
 
@@ -1185,6 +1111,69 @@ ManageDirectoriesAndFiles() {
 		chmod 4755 /etc/MySB/web/seedbox-manager/reboot-rtorrent
 	fi	
 	# CakeBox-Light
+	
+	# Users
+	ListingUsers
+	for seedUser in $UsersList; do
+		ChangingHomeUserRights "$seedUser" "/home/$seedUser"
+	done
+}
+
+#### Change rights for users
+ChangingHomeUserRights() {
+	myuser=$1
+	homeuser=$2
+
+	# /home/user: O:rwx G:rx O:rx
+	if [ ! -d $homeuser ]; then mkdir $homeuser; fi
+	sudo chmod 755 $homeuser
+	sudo chown -R $myuser:$myuser $homeuser
+	sudo chown root:root $homeuser
+
+	# .bashrc, .bash_logout, .profile
+	if [ -f $homeuser/.bashrc ]; then chown $myuser:$myuser $homeuser/.bashrc; fi
+	if [ -f $homeuser/.bash_logout ]; then chown $myuser:$myuser $homeuser/.bash_logout; fi
+	if [ -f $homeuser/.profile ]; then chown $myuser:$myuser $homeuser/.profile; fi
+	
+	# .rtorrent.rc: O:rwx G:rx O:rx
+	if [ -f $homeuser/.rtorrent.rc ]; then	
+		sudo chmod 755 $homeuser/.rtorrent.rc	
+		sudo chown root:root $homeuser/.rtorrent.rc
+	fi
+
+	# blocklist: O:rwx G:rx O:rx
+	if [ ! -d $homeuser/blocklist ]; then mkdir $homeuser/blocklist; fi	
+	sudo chown -R root:root $homeuser/blocklist
+	sudo chmod -R 755 $homeuser/blocklist
+	
+	# logs: O:rwx G:rwx O:rwx
+	if [ ! -d $homeuser/logs ]; then mkdir $homeuser/logs; fi		
+	sudo chown root:root $homeuser/logs
+	sudo chmod -R 777 $homeuser/logs
+	
+	# rtorrent: O:rwx G:rwx O:rwx
+	if [ ! -d $homeuser/rtorrent ]; then mkdir $homeuser/rtorrent; fi		
+	sudo chown -R root:root $homeuser/rtorrent
+	sudo chmod -R 777 $homeuser/rtorrent
+	
+	# share: O:rwx G:rwx O:rx
+	if [ ! -d $homeuser/rtorrent/share ]; then mkdir $homeuser/rtorrent/share; fi			
+	sudo chown -R root:MySB_users $homeuser/rtorrent/share
+	sudo chmod -R 775 $homeuser/rtorrent/share
+	
+	# watch
+	if [ ! -d $homeuser/rtorrent/watch ]; then mkdir $homeuser/rtorrent/watch; fi
+	# incomplete
+	if [ ! -d $homeuser/rtorrent/incomplete ]; then mkdir $homeuser/rtorrent/incomplete; fi
+	# complete
+	if [ ! -d $homeuser/rtorrent/complete ]; then mkdir $homeuser/rtorrent/complete; fi
+	# .session
+	if [ ! -d $homeuser/rtorrent/.session ]; then mkdir $homeuser/rtorrent/.session; fi
+
+	# ruTorrent
+	if [ -f /etc/MySB/web/rutorrent/share/users/$myuser/settings/uisettings.json ]; then chmod 644 /etc/MySB/web/rutorrent/share/users/$myuser/settings/uisettings.json; fi
+	if [ -f /etc/MySB/web/rutorrent/share/users/$myuser/settings/autotools.dat ]; then chmod 666 /etc/MySB/web/rutorrent/share/users/$myuser/settings/autotools.dat; fi
+	if [ -d /etc/MySB/web/rutorrent/share/users/$myuser ]; then chmod -R 777 /etc/MySB/web/rutorrent/share/users/$myuser; fi
 }
 
 ##################### LAST LINE ######################################
