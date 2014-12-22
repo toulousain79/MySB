@@ -25,9 +25,9 @@
 function printUser($user) {
 	global $MySB_DB, $system_datas, $users_datas, $Port_HTTPs;
 	
-	// User ID
+	// Users infos	
 	$UserID = $users_datas["id_users"];
-	
+	$UserPasswd = $users_datas["users_passwd"];	
 	// Ports
 	$Port_SSH = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "SSH"]);
 	$Port_FTP = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "VSFTPd"]);
@@ -44,31 +44,30 @@ function printUser($user) {
 	echo '<td> </td></tr>';
 	// IP Address
 	$IPv4_List = $MySB_DB->select("users_addresses", "ipv4", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
-	$comments = 'Public IP addresses used for access restriction. You can manage this list <a href="/?user/manage-addresses.html">here</a>.';
-	echo '<tr align="left"><th width="15%" scope="row">IP Address</th><td>';
+	echo '<tr align="left"><th width="15%" scope="row">IP Address</th>';
 	if ( $IPv4_List != "" ) {
-		$opts = '';
-		echo '<select style="cursor: pointer;">';
+		echo '<td><select style="cursor: pointer;">';
 		foreach($IPv4_List as $IPv4) {
 			echo '<option>' .$IPv4. '</option>';
 		}		
-		echo '</select>';
+		echo '</select></td>';
 	} else {
-		$opts = '';
+		echo '<td>No address given ...</td>';
 	}
-	echo '<td ' . $opts . '><span class="Comments">' . $comments . '</span></td></tr>';
+	echo '<td><span class="Comments">Public IP addresses used for access restriction. You can manage this list <a href="/?user/manage-addresses.html">here</a>.</span></td></tr>';
 	// Password
 	echo '<tr align="left"><th width="15%" scope="row">Password</th>';
-	if ( $users_datas["users_passwd"] != "" ) {
-		
-		echo '<td>' . $users_datas["users_passwd"] . '</td>';
+	if ( $UserPasswd != "" ) {
+		echo '<td>' . $UserPasswd . '</td>';
+		echo '<td  style="background-color: #FF6666; text-align: center;"><form method="post" action="?user/change-password.html">';
+		echo '<input name="TempPass" type="hidden" value="' . $UserPasswd . '" />';
+		echo '<input style="cursor: pointer;" name="submit" type="submit" value="You must change your password now !" />';
+		echo '</form></td>';
 	} else {
-		echo '<td> </td>';
+		echo '<td>*****</td>';
+		echo '<td><span class="Comments">You can change your password <a href="?user/change-password.html">here</a>.</span></td>';
 	}
-	echo '<td  style="background-color: #FF6666; text-align: center;"><form method="post" action="?user/change-password.html">';
-	echo '<input name="TempPass" type="hidden" value="##TempPassword##" />';
-	echo '<input style="cursor: pointer;" name="submit" type="submit" value="I want to change my password now !" />';
-	echo '</form></td></tr>';
+	echo '</tr>';
 	// E-mail
 	echo '<tr align="left"><th width="15%" scope="row">E-mail</th>';
 	echo '<td>' . $users_datas["users_email"] . '</td>';
