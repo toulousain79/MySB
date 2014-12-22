@@ -54,7 +54,8 @@ function printUser($user) {
 	} else {
 		echo '<td>No address given ...</td>';
 	}
-	echo '<td><span class="Comments">Public IP addresses used for access restriction. You can manage this list <a href="/?user/manage-addresses.html">here</a>.</span></td></tr>';
+	echo '<td><span class="Comments">Public IP addresses used for access restriction. You can manage this list <a href="/?user/manage-addresses.html">here</a>.</span></td>';
+	echo '</tr>';
 	// Password
 	echo '<tr align="left"><th width="15%" scope="row">Password</th>';
 	if ( $UserPasswd != "" ) {

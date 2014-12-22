@@ -53,7 +53,7 @@ function printUser($user) {
 	echo '<td> </td></tr>';
 	// IP Address
 	$IPv4_List = $MySB_DB->select("users_addresses", "ipv4", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
-	echo '<tr align="left"><th width="15%" scope="row">IP Address</th><td>';
+	echo '<tr align="left"><th width="15%" scope="row">IP Address</th>';
 	if ( $IPv4_List != "" ) {
 		echo '<td><select style="cursor: pointer;">';
 		foreach($IPv4_List as $IPv4) {
@@ -63,16 +63,17 @@ function printUser($user) {
 	} else {
 		echo '<td>No address given ...</td>';
 	}	
-	if ( $UserPasswd != "" ) {
-		echo '<td style="background-color: #FF6666; text-align=center"><a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . 'NewUser.php?var1=' . $UserName . '&var2=' . $UserPasswd . '">You must change your password now !</a></td>';
+	if ( ($UserPasswd != "") && ($users_datas["admin"] != '1') ) {
+		echo '<td style="background-color: #FF6666; text-align=center"><a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . 'NewUser.php?var1=' . $user . '&var2=' . $UserPasswd . '">You must change your password now !</a></td>';
 	} else {
-		echo '<td><span class="Comments">Public IP addresses used for access restriction. You can manage this list <a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '?user/manage-addresses.html">here</a>.</span></td></tr>';
+		echo '<td><span class="Comments">Public IP addresses used for access restriction. You can manage this list <a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '?user/manage-addresses.html">here</a>.</span></td>';
 	}
+	echo '</tr>';
 	// Password
 	echo '<tr align="left"><th width="15%" scope="row">Password</th>';
-	if ( $UserPasswd != "" ) {
+	if ( ($UserPasswd != "") && ($users_datas["admin"] != '1') ) {
 		echo '<td>' . $UserPasswd . '</td>';
-		echo '<td style="background-color: #FF6666; text-align=center"><a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . 'NewUser.php?var1=' . $UserName . '&var2=' . $UserPasswd . '">You must change your password now !</a></td>';
+		echo '<td style="background-color: #FF6666; text-align=center"><a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . 'NewUser.php?var1=' . $user . '&var2=' . $UserPasswd . '">You must change your password now !</a></td>';
 	} else {
 		echo '<td>*****</td>';
 		echo '<td><span class="Comments">You can change your password <a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '?user/change-password.html">here</a>.</span></td>';
