@@ -58,7 +58,7 @@ function printUser($user) {
 	echo '</tr>';
 	// Password
 	echo '<tr align="left"><th width="15%" scope="row">Password</th>';
-	if ( $UserPasswd != "" ) {
+	if ( ($UserPasswd != "") && ($users_datas["admin"] != '1') ) {
 		echo '<td>' . $UserPasswd . '</td>';
 		echo '<td  style="background-color: #FF6666; text-align: center;"><form method="post" action="?user/change-password.html">';
 		echo '<input name="TempPass" type="hidden" value="' . $UserPasswd . '" />';
