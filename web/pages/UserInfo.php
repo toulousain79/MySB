@@ -215,7 +215,7 @@ function printUser($user) {
 	// CakeBox Light
 	$CakeboxDatas = $MySB_DB->get("services", "*", ["serv_name" => "CakeBox-Light"]);
 	if ( $CakeboxDatas["is_installed"] == '1' ) {
-		$Link = 'https://' . $system_datas["hostname"] . ':' . $CakeboxDatas["port_tcp1"] . '/';
+		$Link = 'http://' . $system_datas["hostname"] . ':' . $CakeboxDatas["port_tcp1"] . '/';
 		echo '<tr align="left"><th width="15%" scope="row">CakeBox Light</th>';			
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Play here your media.</span></a></td></tr>';
 	}
@@ -238,7 +238,7 @@ function printUser($user) {
 		echo '<td colspan="2"><a href="?main-user/logs.html"><span class="Comments">You can check logs of MySB install and security.</span></a></td></tr>';
 		// Renting infos
 		echo '<tr align="left"><th width="15%" scope="row">Renting infos</th>';		
-		echo '<td colspan="2"><a href="?renting-infos.html"><span class="Comments">Manage your renting informations.</span></a></td></tr>';
+		echo '<td colspan="2"><a href="?main-user/renting-infos.html"><span class="Comments">Manage your renting informations.</span></a></td></tr>';
 		// Trackers
 		echo '<tr align="left"><th width="15%" scope="row">Trackers list</th>';		
 		echo '<td colspan="2"><span class="Comments"><a href="?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="?trackers/add-new-trackers.html">add new tracker here</a>.</span></td></tr>';		

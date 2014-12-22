@@ -51,6 +51,8 @@ if(isset($_POST)==true && empty($_POST)==false) {
 							if ($last_id_address == false) {
 								$success = false;
 								$message = 'Failed ! It was not possible to update hostname address in the MySB database.';
+							} else {
+								GenerateMessage(null, 'information', 'Remember that your dynamic IP will be checked every 10 minutes.');
 							}
 						}
 					} else {
@@ -78,7 +80,6 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				}
 				
 				GenerateMessage('FirewallAndSecurity.bsh', $type, $message);
-				GenerateMessage(null, 'information', 'Remember that your dynamic IP will be checked every 10 minutes.');
 			//}
 			break;
 		case "Save Changes":
