@@ -83,18 +83,18 @@ $ResolversList = $MySB_DB->select("dnscrypt_resolvers", [
 				
 <?php
 foreach($ResolversList as $Resolver) {
-	if ( ! strpos($Name, 'ipv6') ) {
+	$Name=$Resolver["name"];
+	$FullName=$Resolver["full_name"];
+	$Location=$Resolver["location"];
+	$URL=$Resolver["url"];
+	$Version=$Resolver["version"];
+	$DnssecVal=$Resolver["dnssec"];
+	$NoLogs=$Resolver["no_logs"];
+	$Namecoin=$Resolver["namecoin"];
+	$ResolverAddress=$Resolver["resolver_address"];
+	$ProviderName=$Resolver["provider_name"];
 
-		$Name=$Resolver["name"];
-		$FullName=$Resolver["full_name"];
-		$Location=$Resolver["location"];
-		$URL=$Resolver["url"];
-		$Version=$Resolver["version"];
-		$DnssecVal=$Resolver["dnssec"];
-		$NoLogs=$Resolver["no_logs"];
-		$Namecoin=$Resolver["namecoin"];
-		$ResolverAddress=$Resolver["resolver_address"];
-		$ProviderName=$Resolver["provider_name"];
+	if ( ! strpos($Name, 'ipv6') ) {
 ?>				
 			<tr>
 				<td>
