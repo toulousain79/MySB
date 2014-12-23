@@ -56,7 +56,7 @@ function Form() {
 			<tr>
 				<td>Provider :</td>
 				<td>
-					<select style="cursor: pointer;">';
+					<select id="json-provider" style="width:100px; height: 28px; cursor: pointer;">';
 					
 					foreach($ProvidersList as $Providers => $Host) {
 						if ( $SmtpProvider == $Providers) {
@@ -72,19 +72,28 @@ function Form() {
 			</tr>
 			<tr>
 				<td>Username :</td>
-				<td><input class="text_normal" name="tva" type="text" value="' . $SmtpUsername . '" required="required" /></td>
+				<td><input class="text_normal" name="SmtpUsername" type="text" value="' . $SmtpUsername . '" required="required" /></td>
 			</tr>
 			<tr>
 				<td>Password :</td>
-				<td><input class="text_normal" name="global_cost" type="password" value="' . $SmtpPasswd . '" required="required" /></td>
+				<td><input class="text_normal" name="SmtpPasswd" type="password" value="' . $SmtpPasswd . '" required="required" /></td>
 			</tr>
 			<tr>
 				<td>Host :</td>
-				<td><input class="text_normal" name="global_cost" type="text" value="' . $SmtpHost . '" required="required" readonly /></td>
+				<td>
+					<select id="json-host" style="width:150px; height: 28px; cursor: pointer;" required="required" readonly>
+						<option>' . $SmtpHost . '</option>
+					</select>
+				
+				</td>
 			</tr>
 			<tr>
 				<td>Port :</td>
-				<td><input class="text_small" name="global_cost" type="text" value="' . $SmtpPort . '" required="required" readonly /></td>
+				<td>
+					<select id="json-port" style="width:50px; height: 28px; cursor: pointer;" required="required" readonly>
+						<option>' . $SmtpPort . '</option>
+					</select>
+				</td>
 			</tr>			
 			<tr>
 				<td colspan="3"><input class="submit" name="submit" type="submit" value="Submit" /></td>
@@ -92,7 +101,11 @@ function Form() {
 		</table></div>
 	</form>
 	';
+}
 
+echo '<script type="text/javascript">SMTP_ChangeValues("' . THEMES_PATH . 'MySB/js/SMTP_data.json");</script>';
 
+Form();
+	
 //#################### LAST LINE ######################################
 ?>

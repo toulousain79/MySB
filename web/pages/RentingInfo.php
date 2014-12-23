@@ -31,7 +31,7 @@ function Form() {
 												"tva",
 												"global_cost",
 												"nb_users",
-												"price_per_users",
+												"price_per_users"
 											], [
 												"id_renting" => 1
 											]);	
