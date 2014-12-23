@@ -25,7 +25,6 @@
 global $MySB_DB;
 
 $ResolversList = $MySB_DB->select("dnscrypt_resolvers", [
-															"is_active",
 															"name",
 															"full_name",
 															"location",
@@ -37,6 +36,25 @@ $ResolversList = $MySB_DB->select("dnscrypt_resolvers", [
 															"resolver_address",
 															"provider_name"
 														]);
+														
+if (isset($_POST['submit'])) {
+	$SelectedResolver = $_POST['ResolverName'];
+	
+	if ( isset($SelectedResolver) ) {
+		$result = $MySB_DB->update("system", ["dnscrypt_resolver" => "$SelectedResolver"], ["id_system" => 1]);		
+		if( $result = 1 ) {
+			$type = 'success';
+		} else {
+			$type = 'error';
+			$message = 'Failed ! It was not possible to update the MySB database.';
+		}
+	} else {
+		$type = 'information';
+		$message = 'Please, complete all fields.';
+	}
+	
+	GenerateMessage('FirewallAndSecurity.bsh', $type, $message);
+}														
 ?>
 
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
@@ -45,14 +63,15 @@ $ResolversList = $MySB_DB->select("dnscrypt_resolvers", [
 		<legend>What resolver do you use ? (IPv4 only)</legend>
 				Available resolvers: <select name="ResolverName" style="width:200px; cursor: pointer;" required="required">
 <?php
+						$SelectedResolver = $MySB_DB->get("system", "dnscrypt_resolver", ["id_system" => 1]);
 						foreach($ResolversList as $Resolver) {
-							if ( ! strpos($Resolver["name"], 'ipv6') ) {
-								switch ($Resolver["is_active"]) {
-									case '0':
-										$selected = '';
+							if ( ! strpos($Resolver["name"], 'ipv6') ) {					
+								switch ($Resolver["name"]) {
+									case "$SelectedResolver":
+										$selected = 'selected="selected"';
 										break;		
 									default:
-										$selected = 'selected="selected"';
+										$selected = '';
 										break;
 								}							
 								echo '<option value="' .$Resolver["name"]. '" ' . $selected . '>' .$Resolver["name"]. '</option>';
