@@ -51,13 +51,8 @@ else
 fi
 
 #### Users vars
-HOMEBASE=/home/$NewUser
-HOMEDIR=$HOMEBASE
-HOMEJAILED=$HOMEBASE
-JAILDIR=$HOMEBASE
-JAILDIR_ESCAPED=`echo $JAILDIR | sed s,/,\\\\\\\\\\/,g`
-HOMEDIR_ESCAPED=`echo $HOMEDIR | sed s,/,\\\\\\\\\\/,g`
-HOMEJAILED_ESCAPED=`echo $HOMEJAILED | sed s,/,\\\\\\\\\\/,g`
+HomeDir="`sqlite3 $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$NewUser'\"`"
+HOMEDIR_ESCAPED=`echo $HomeDir | sed s,/,\\\\\\\\\\/,g`
 UPPERNEWUSER=`echo $NewUser | tr '[:lower:]' '[:upper:]'`
 NEWRPC=$UPPERNEWUSER
 
@@ -73,26 +68,26 @@ sqlite3 $MySB_DB "DELETE FROM ports WHERE value = '$SCGIPORT';"
 #### user infos
 log_daemon_msg "Info file creation for $NewUser"
 if [ "$MainUser" != "$NewUser" ]; then	
-	sqlite3 $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir) VALUES (\"$NewUser\",\"$UserEmail\",\"$NewUserPassword\",\"$NEWRPC\",\"$UserSFTP\",\"$UserSUDO\",\"$SCGIPORT\",\"$NETWORKPORT\",\"$HOMEDIR\");"
+	sqlite3 $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir) VALUES (\"$NewUser\",\"$UserEmail\",\"$NewUserPassword\",\"$NEWRPC\",\"$UserSFTP\",\"$UserSUDO\",\"$SCGIPORT\",\"$NETWORKPORT\",\"$HomeDir\");"
 else
-	sqlite3 $MySB_DB "UPDATE users SET rpc = '$NEWRPC', scgi_port = '$SCGIPORT', rtorrent_port = '$NETWORKPORT', home_dir = '$HOMEDIR' WHERE users_ident = '$NewUser';"
+	sqlite3 $MySB_DB "UPDATE users SET rpc = '$NEWRPC', scgi_port = '$SCGIPORT', rtorrent_port = '$NETWORKPORT', home_dir = '$HomeDir' WHERE users_ident = '$NewUser';"
 fi
 StatusLSB
 
 #### create system user
 log_daemon_msg "Create the system account for $NewUser"
-useradd -c "MySB user $NewUser" -d $HOMEDIR -s /bin/bash $NewUser &> /dev/null
+useradd -c "MySB user $NewUser" -d $HomeDir -s /bin/bash $NewUser &> /dev/null
 StatusLSB
 
 #### create directories
 log_daemon_msg "Create directories for $NewUser"
-ChangingHomeUserRights "$NewUser" "$HOMEDIR"
+ChangingHomeUserRights "$NewUser" "$HomeDir"
 StatusLSB
 
 #### FTP
 log_daemon_msg "Allow use of FTP and share for $NewUser"
 echo "$NewUser" >> /etc/vsftpd.chroot_list
-mount --bind /home/MySB_share $HOMEDIR/rtorrent/share
+mount --bind /home/MySB_share $HomeDir/rtorrent/share
 StatusLSB
 
 #### add to groups
@@ -108,125 +103,46 @@ fi
 StatusLSB
 
 #### custumize profile
-if [ ! -f $HOMEDIR/.profile ]; then
+if [ ! -f $HomeDir/.profile ]; then
 	log_daemon_msg "Customize profile for $NewUser"
-	cp /etc/skel/.bashrc $HOMEDIR
-	cp /etc/skel/.bash_logout $HOMEDIR
-	cp /etc/skel/.profile $HOMEDIR
-	chown $NewUser:$NewUser $HOMEDIR/.bashrc
-	chown $NewUser:$NewUser $HOMEDIR/.bash_logout
-	chown $NewUser:$NewUser $HOMEDIR/.profile
-	perl -pi -e "s/#force_color_prompt=yes/force_color_prompt=yes/g" $HOMEDIR/.bashrc
+	cp /etc/skel/.bashrc $HomeDir
+	cp /etc/skel/.bash_logout $HomeDir
+	cp /etc/skel/.profile $HomeDir
+	chown $NewUser:$NewUser $HomeDir/.bashrc
+	chown $NewUser:$NewUser $HomeDir/.bash_logout
+	chown $NewUser:$NewUser $HomeDir/.profile
+	perl -pi -e "s/#force_color_prompt=yes/force_color_prompt=yes/g" $HomeDir/.bashrc
 	StatusLSB
 fi
 
 #### rTorrent (.rtorrent.rc)
 log_daemon_msg "Create the rTorrent configuration file for $NewUser"
-cp /etc/MySB/templates/rtorrent.rc.template  $HOMEDIR/.rtorrent.rc
-perl -pi -e "s/<server_ip>/$SrvIpAddress/g" $HOMEDIR/.rtorrent.rc
-perl -pi -e "s/<username>/$NewUser/g" $HOMEDIR/.rtorrent.rc
-perl -pi -e "s/<homedir>/$HOMEDIR_ESCAPED/g" $HOMEDIR/.rtorrent.rc
-perl -pi -e "s/<scgi_port>/$SCGIPORT/g" $HOMEDIR/.rtorrent.rc
-perl -pi -e "s/<port_range>/$NETWORKPORT-$NETWORKPORT/g" $HOMEDIR/.rtorrent.rc
+cp /etc/MySB/templates/rtorrent.rc.template $HomeDir/.rtorrent.rc
+perl -pi -e "s/<server_ip>/$SrvIpAddress/g" $HomeDir/.rtorrent.rc
+perl -pi -e "s/<username>/$NewUser/g" $HomeDir/.rtorrent.rc
+perl -pi -e "s/<homedir>/$HOMEDIR_ESCAPED/g" $HomeDir/.rtorrent.rc
+perl -pi -e "s/<scgi_port>/$SCGIPORT/g" $HomeDir/.rtorrent.rc
+perl -pi -e "s/<port_range>/$NETWORKPORT-$NETWORKPORT/g" $HomeDir/.rtorrent.rc
 if [ "$MySB_PeerBlock" == "rTorrent" ]; then
-	perl -pi -e "s/#{1}ipv4_filter.load/ipv4_filter.load/g" $HOMEDIR/.rtorrent.rc
-	perl -pi -e "s/#{1}print/print/g" $HOMEDIR/.rtorrent.rc
-	perl -pi -e "s/#{1}schedule=load_filter/schedule=load_filter/g" $HOMEDIR/.rtorrent.rc
+	perl -pi -e "s/#{1}ipv4_filter.load/ipv4_filter.load/g" $HomeDir/.rtorrent.rc
+	perl -pi -e "s/#{1}print/print/g" $HomeDir/.rtorrent.rc
+	perl -pi -e "s/#{1}schedule=load_filter/schedule=load_filter/g" $HomeDir/.rtorrent.rc
 fi
 
 case "$FILESYSTEMTYPE" in
 	"ext4"|"xfs"|"btrfs")
-		perl -pi -e "s/system.file_allocate.set = no/system.file_allocate.set = yes/g" $HOMEDIR/.rtorrent.rc
+		perl -pi -e "s/system.file_allocate.set = no/system.file_allocate.set = yes/g" $HomeDir/.rtorrent.rc
 	;;	
 	*)
-		perl -pi -e "s/^system.file_allocate.set = yes/system.file_allocate.set = no/g" $HOMEDIR/.rtorrent.rc
+		perl -pi -e "s/^system.file_allocate.set = yes/system.file_allocate.set = no/g" $HomeDir/.rtorrent.rc
 	;;			
 esac
-StatusLSB
-
-#### ruTorrent (user conf)
-log_daemon_msg "Create ruTorrent config.php for $NewUser"
-mkdir -p /etc/MySB/web/rutorrent/conf/users/$NewUser/
-
-(
-cat <<'EOF'
-<?php
-        // configuration parameters
-
-        // for snoopy client
-        @define('HTTP_USER_AGENT', 'Mozilla/5.0 (Windows NT 6.0; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0', true);
-        @define('HTTP_TIME_OUT', 30, true);     // in seconds
-        @define('HTTP_USE_GZIP', true, true);
-        $httpIP = null;                         // IP string. Or null for any.
-
-        @define('RPC_TIME_OUT', 5, true);       // in seconds
-
-        @define('LOG_RPC_CALLS', false, true);
-        @define('LOG_RPC_FAULTS', true, true);
-
-        // for php
-        @define('PHP_USE_GZIP', false, true);
-        @define('PHP_GZIP_LEVEL', 2, true);
-
-        $schedule_rand = 10;                    // rand for schedulers start, +0..X seconds
-
-        $do_diagnostic = true;
-        $log_file = '<homedir>/logs/rutorrent.log';          // path to log file (comment or leave blank to disable logging)
-
-        $saveUploadedTorrents = true;           // Save uploaded torrents to profile/torrents directory or not
-        $overwriteUploadedTorrents = false;     // Overwrite existing uploaded torrents in profile/torrents directory or make unique name
-
-        $topDirectory = '<homedir>';                   // Upper available directory. Absolute path with trail slash.
-        $forbidUserSettings = false;
-
-        $scgi_port = <scgi_port>;
-        $scgi_host = "127.0.0.1";
-
-        // For web->rtorrent link through unix domain socket
-        // (scgi_local in rtorrent conf file), change variables
-        // above to something like this:
-        //
-        // $scgi_port = 0;
-        // $scgi_host = "unix:///tmp/rpc.socket";
-        $pathToExternals = array(
-                "php"   => '/usr/bin/php',                  // Something like /usr/bin/php. If empty, will be found in PATH.
-                "curl"  => '/usr/bin/curl',                     // Something like /usr/bin/curl. If empty, will be found in PATH.
-                "gzip"  => '/bin/gzip',                 // Something like /usr/bin/gzip. If empty, will be found in PATH.
-                "id"  => '/usr/bin/id',                 // Something like /usr/bin/id. If empty, will be found in PATH.
-                "stat"  => '/usr/bin/stat',                     // Something like /usr/bin/stat. If empty, will be found in PATH.
-        );
-
-        $localhosts = array(                    // list of local interfaces
-                "127.0.0.1",
-                "localhost",
-        );
-
-        $profilePath = '../share/';              // Path to user profiles
-        $profileMask = 0777;                    // Mask for files and directory creation in user profiles.
-                                                // Both Webserver and rtorrent users must have read-write access to it.
-                                                // For example, if Webserver and rtorrent users are in the same group then the value may be 0770.
-
-        $tempDirectory = null;                  // Temp directory. Absolute path with trail slash. If null, then autodetect will be used.
-
-        $XMLRPCMountPoint = '/<USERNAME>';           // DO NOT DELETE THIS LINE!!! DO NOT COMMENT THIS LINE!!!
-
-		
-EOF
-) > /etc/MySB/web/rutorrent/conf/users/$NewUser/config.php
-perl -pi -e "s/<homedir>/$HOMEDIR_ESCAPED/g" /etc/MySB/web/rutorrent/conf/users/$NewUser/config.php
-perl -pi -e "s/<scgi_port>/$SCGIPORT/g" /etc/MySB/web/rutorrent/conf/users/$NewUser/config.php
-perl -pi -e "s/<USERNAME>/$UPPERNEWUSER/g" /etc/MySB/web/rutorrent/conf/users/$NewUser/config.php
-StatusLSB
-
-#### access.ini
-log_daemon_msg "Create ruTorrent access.ini for $NewUser"
-cp /etc/MySB/web/rutorrent/conf/access.ini /etc/MySB/web/rutorrent/conf/users/$NewUser/access.ini
 StatusLSB
 
 #### Plugins per users
 log_daemon_msg "Create ruTorrent plugins directories for $NewUser"
 # create subdirectory plugins for user and copy all conf.php
-CreatePluginsDirUsers "$NewUser" "$NewUserPassword"
+ruTorrentUsersConfigs "$NewUser"
 StatusLSB
 
 #### stream
@@ -235,31 +151,6 @@ if [ -f /etc/MySB/web/rutorrent/conf/users/$NewUser/plugins/stream/config.php ];
 	perl -pi -e "s/$auth = '';/$auth = '$NewUser:$NewUserPassword';/g" /etc/MySB/web/rutorrent/conf/users/$NewUser/plugins/stream/config.php
 fi
 StatusLSB
-	
-#### Create ruTorrent user conf
-mkdir -p /etc/MySB/web/rutorrent/share/users/$NewUser/settings/
-mkdir -p /etc/MySB/web/rutorrent/share/users/$NewUser/torrents/
-
-# UI Options
-(
-cat <<'EOF'
-{"webui.fls.view":0,"webui.show_cats":1,"webui.show_dets":1,"webui.needmessage":1,"webui.reqtimeout":30000,"webui.confirm_when_deleting":1,"webui.alternate_color":1,"webui.update_interval":3000,"webui.hsplit":0.88,"webui.vsplit":0.5,"webui.effects":1,"webui.fullrows":1,"webui.no_delaying_draw":1,"webui.search":-1,"webui.speedlistdl":"100,150,200,250,300,350,400,450,500,750,1000,1250","webui.speedlistul":"100,150,200,250,300,350,400,450,500,750,1000,1250","webui.ignore_timeouts":0,"webui.retry_on_error":120,"webui.closed_panels":{"ptrackers":0,"pstate":0,"plabel":0,"flabel":0,"prss":0},"webui.timeformat":0,"webui.dateformat":0,"webui.speedintitle":0,"webui.log_autoswitch":1,"webui.lang":"fr","webui.trt.colwidth":[200,100,60,100,100,100,60,60,60,60,60,60,60,80,100,90,100,100,60,60,75,75,75,100],"webui.trt.colenabled":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"webui.trt.colorder":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23],"webui.trt.sindex":-1,"webui.trt.rev":0,"webui.trt.sindex2":0,"webui.trt.rev2":0,"webui.fls.colwidth":[200,60,100,100,80],"webui.fls.colenabled":[1,1,1,1,1],"webui.fls.colorder":[0,1,2,3,4],"webui.fls.sindex":-1,"webui.fls.rev":0,"webui.fls.sindex2":0,"webui.fls.rev2":0,"webui.trk.colwidth":[200,60,60,60,60,60,80,85,80,60],"webui.trk.colenabled":[1,1,1,1,1,1,1,1,1,1],"webui.trk.colorder":[0,1,2,3,4,5,6,7,8,9],"webui.trk.sindex":-1,"webui.trk.rev":0,"webui.trk.sindex2":0,"webui.trk.rev2":0,"webui.prs.colwidth":[60,100,120,60,100,100,100,60,60],"webui.prs.colenabled":[1,1,1,1,1,1,1,1,1],"webui.prs.colorder":[0,1,2,3,4,5,6,7,8],"webui.prs.sindex":-1,"webui.prs.rev":0,"webui.prs.sindex2":0,"webui.prs.rev2":0,"webui.plg.colwidth":[150,60,80,80,80,500],"webui.plg.colenabled":[1,1,1,1,1,1],"webui.plg.colorder":[0,1,2,3,4,5],"webui.plg.sindex":-1,"webui.plg.rev":0,"webui.plg.sindex2":0,"webui.plg.rev2":0,"webui.hst.colwidth":[200,100,100,60,100,100,60,60,100,100,100,100],"webui.hst.colenabled":[1,1,1,1,1,1,1,1,1,1,1,1],"webui.hst.colorder":[0,1,2,3,4,5,6,7,8,9,10,11],"webui.hst.sindex":-1,"webui.hst.rev":0,"webui.hst.sindex2":0,"webui.hst.rev2":0,"webui.teg.colwidth":[200,100,60,100,100,100,60,60,60,60,60,60,60,80,100,90,100,100,60,60,75,75,75,100],"webui.teg.colenabled":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"webui.teg.colorder":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23],"webui.teg.sindex":-1,"webui.teg.rev":0,"webui.teg.sindex2":0,"webui.teg.rev2":0,"webui.rss.colwidth":[200,100,60,100,100,100,60,60,60,60,60,60,60,80,100,90,100,100,60,60,75,75,75,100],"webui.rss.colenabled":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"webui.rss.colorder":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23],"webui.rss.sindex":-1,"webui.rss.rev":0,"webui.rss.sindex2":0,"webui.rss.rev2":0,"webui.fsh.colwidth":[210,60,120,80,310],"webui.fsh.colenabled":[1,1,1,1,1],"webui.fsh.colorder":[0,1,2,3,4],"webui.fsh.sindex":-1,"webui.fsh.rev":0,"webui.fsh.sindex2":0,"webui.fsh.rev2":0,"webui.flm.colwidth":[210,60,120,80,80],"webui.flm.colenabled":[1,1,1,1,1],"webui.flm.colorder":[0,1,2,3,4],"webui.flm.sindex":-1,"webui.flm.rev":0,"webui.flm.sindex2":0,"webui.flm.rev2":0,"webui.fManager.timef":"%d-%M-%y %h:%m:%s","webui.fManager.permf":1,"webui.fManager.histpath":5,"webui.fManager.stripdirs":1,"webui.fManager.showhidden":1,"webui.fManager.cleanlog":0,"webui.fManager.arcnscheme":"new","webui.fManager.scrows":12,"webui.fManager.sccols":4,"webui.fManager.scwidth":300}
-EOF
-) > /etc/MySB/web/rutorrent/share/users/$NewUser/settings/uisettings.json
-chmod 644 /etc/MySB/web/rutorrent/share/users/$NewUser/settings/uisettings.json
-
-# Autotools
-(
-cat <<'EOF'
-O:10:"rAutoTools":9:{s:4:"hash";s:13:"autotools.dat";s:12:"enable_label";s:1:"0";s:14:"label_template";s:5:"{DIR}";s:11:"enable_move";s:1:"1";s:16:"path_to_finished";s:32:"/home/<USERNAME>/rtorrent/complete";s:11:"fileop_type";s:4:"Move";s:12:"enable_watch";s:1:"1";s:13:"path_to_watch";s:29:"/home/<USERNAME>/rtorrent/watch";s:11:"watch_start";s:1:"1";}
-EOF
-) > /etc/MySB/web/rutorrent/share/users/$NewUser/settings/autotools.dat
-perl -pi -e "s/<USERNAME>/$NewUser/g" /etc/MySB/web/rutorrent/share/users/$NewUser/settings/autotools.dat	
-chmod 666 /etc/MySB/web/rutorrent/share/users/$NewUser/settings/autotools.dat
-
-/sbin/ldconfig
-chmod -R 777 /etc/MySB/web/rutorrent/share/users/$NewUser
-chown -R www-data:www-data /etc/MySB/web/rutorrent
 
 #### NginX
 log_daemon_msg "Creating RPC file for $NewUser"
@@ -279,63 +170,6 @@ perl -pi -e "s/<username>/$NewUser/g" /etc/nginx/rpc/$NewUser.conf
 perl -pi -e "s/<USERNAME>/$UPPERNEWUSER/g" /etc/nginx/rpc/$NewUser.conf
 StatusLSB
 
-#### Seedbox-Manager
-if [ "$IsInstalled_Manager" == "YES" ]; then
-	log_daemon_msg "Create Seedbox-Manager configuration for $NewUser"
-	
-	mkdir -p /etc/MySB/web/seedbox-manager/conf/users/$NewUser
-
-	(
-	cat <<'EOF'
-; Manager de seedbox (adapté pour le tuto de mondedie.fr)
-;
-; Fichier de configuration :
-; yes ou no pour activer les modules
-; Si vous n'avez pas de nom de domaine, indiquez l'ip (ex: https://XX.XX.XX.XX/ru)
-
-[user]
-active_bloc_info = yes
-user_directory = "<homedir>"
-scgi_folder = "/<USERNAME>"
-theme = "default"
-owner = no
-
-[nav]
-data_link = "url = https://rutorrent.domaine.fr/ru/, name = ruTorrent
-url = https://rutorrent.domaine.fr/, name = MySB Portal"
-
-[ftp]
-active_ftp = yes
-port_ftp = "<FTPPORT>"
-port_sftp = "<SSHPORT>"
-
-[rtorrent]
-active_reboot = yes
-
-[support]
-active_support = yes
-adresse_mail = "contact@exemple.com"
-
-[logout]
-url_redirect = "http://www.google.fr"
-
-EOF
-	) > /etc/MySB/web/seedbox-manager/conf/users/$NewUser/config.ini
-	sed -i "s/<homedir>/$HOMEDIR_ESCAPED/g;" /etc/MySB/web/seedbox-manager/conf/users/$NewUser/config.ini
-	sed -i "s/<USERNAME>/$UPPERNEWUSER/g;" /etc/MySB/web/seedbox-manager/conf/users/$NewUser/config.ini
-	sed -i "s/rutorrent.domaine.fr/$HostNameFQDN:$Port_HTTPS/g;" /etc/MySB/web/seedbox-manager/conf/users/$NewUser/config.ini
-	sed -i "s/<FTPPORT>/$Port_FTP/g;" /etc/MySB/web/seedbox-manager/conf/users/$NewUser/config.ini
-	sed -i "s/<SSHPORT>/$Port_SSH/g;" /etc/MySB/web/seedbox-manager/conf/users/$NewUser/config.ini
-	sed -i "s/contact@exemple.com/$MainUserEmail/g;" /etc/MySB/web/seedbox-manager/conf/users/$NewUser/config.ini
-
-	if [ "$MainUser" == "$NewUser" ]; then	
-		sed -i "s/owner = no/owner = yes/g;" /etc/MySB/web/seedbox-manager/conf/users/$NewUser/config.ini
-	fi
-	
-	chown -R www-data:www-data /etc/MySB/web/seedbox-manager/conf/users/
-	StatusLSB
-fi
-
 #### CakeBox
 if [ "$IsInstalled_Cakebox" == "YES" ]; then
 	log_daemon_msg "Create Cakebox configuration for $NewUser"
@@ -352,10 +186,6 @@ location /<username>/ {
 EOF
 	) > /etc/nginx/rpc/$NewUser.cakebox
 	perl -pi -e "s/<username>/$NewUser/g" /etc/nginx/rpc/$NewUser.cakebox
-	
-	cp /etc/MySB/web/Cakebox-light/config/default.php.dist /etc/MySB/web/Cakebox-light/config/$NewUser.php
-	sed -i "s/\/var\/www\//\/home\/$NewUser\//g;" /etc/MySB/web/Cakebox-light/config/$NewUser.php
-	sed -i "s/\/access\//\/$NewUser\//g;" /etc/MySB/web/Cakebox-light/config/$NewUser.php
 	
 	StatusLSB
 fi
@@ -397,7 +227,7 @@ for seedUser in $UsersList; do
 	#if [ "$MySB_PeerBlock" == "rTorrent" ]; then	
 		if [ -f /etc/MySB/files/blocklist/blocklist_rtorrent.txt ]; then
 			log_daemon_msg "Copy the blocklist file for $seedUser"
-			cp /etc/MySB/files/blocklist/* $HOMEDIR/blocklist/
+			cp /etc/MySB/files/blocklist/* $HomeDir/blocklist/
 			StatusLSB
 		else
 			log_daemon_msg "Creating a new blocklist file for $seedUser"

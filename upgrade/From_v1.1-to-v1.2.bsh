@@ -35,7 +35,7 @@ sed -i '/FirewallAndSecurity/d' /etc/sudoers.d/MySB_nginx
 echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh*" >> /etc/sudoers.d/MySB_nginx
 
 #### CreateDir
-echo -e -n "${CBLUE}Create missing directories$CEND..."
+echo -e -n "${CBLUE}Create directories and change owners and rights$CEND..."
 ManageDirectoriesAndFiles
 StatusSTD
 
@@ -213,9 +213,9 @@ fi
 if [ -f /etc/nginx/locations/seedbox-manager.conf ]; then rm /etc/nginx/locations/seedbox-manager.conf; fi
 
 #### Refresh tools
-log_daemon_msg "Refresh some tools"
+echo -e -n "${CBLUE}Refresh some tools$CEND..."
 ScriptInvoke 'screen' '/etc/MySB/bin/MySB_RefreshMe' 'all'
-StatusLSB
+StatusSTD
 
 #### LogWatch
 if [ -f /etc/logwatch/conf/logwatch.conf ]; then
@@ -232,7 +232,7 @@ StatusSTD
 
 #### rTorrent (.rtorrent.rc)
 for seedUser in $UsersList; do
-	log_daemon_msg "Creating '.rtorrent.rc' file for $seedUser"
+	echo -e -n "${CBLUE}Creating '.rtorrent.rc' file for $seedUser$CEND..."
 	HOMEDIR_ESCAPED=`echo /home/$seedUser | sed s,/,\\\\\\\\\\/,g`
 	SCGIPORT="`sqlite3 $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$seedUser'\"`"
 	NETWORKPORT="`sqlite3 $MySB_DB \"SELECT rtorrent_port FROM users WHERE users_ident = '$seedUser'\"`"	
@@ -260,18 +260,19 @@ for seedUser in $UsersList; do
 		;;			
 	esac
 	
-	StatusLSB
+	StatusSTD
 done
 
 #### Create directories & change rights
-log_daemon_msg "Change owners et rights for files and directories"
+echo -e -n "${CBLUE}Force owners and rights for files and directories$CEND..."
 ManageDirectoriesAndFiles
-StatusLSB
+StatusSTD
 
 #### Firewall And Security
 log_daemon_msg "Update security rules"
-ScriptInvoke 'bash' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
-StatusLSB
+echo -e -n "${CBLUE}Update security rules$CEND..."
+ScriptInvoke 'screen' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
+StatusSTD
 
 clear
 echo -e "${CGREEN}Upgrade finished succesfully !$CEND"
