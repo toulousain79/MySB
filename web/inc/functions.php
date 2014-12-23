@@ -98,8 +98,8 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					}
 					break;
 				case "DNScrypt-proxy":
-					if ( $DnscryptIsInstalled == '0' ) {
-						break;
+					if ( $DnscryptIsInstalled == '1' ) {
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title);
 					}
 					break;					
 				default:

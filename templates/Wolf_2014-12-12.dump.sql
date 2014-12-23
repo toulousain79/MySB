@@ -89,7 +89,7 @@ INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [descriptio
 INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (25, 'Cakebox-Light', 'cakebox-light', 'Cakebox-Light', null, null, 22, 0, '', 100, '2014-12-20 15:27:27  ', '2014-12-20 15:27:27  ', null, '2014-12-20 15:29:11', 1, 1, 4, 0, 2);
 INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (26, 'Webmin', 'webmin', 'Webmin', '', '', 12, 0, '', 101, '2014-12-21 18:12:45        ', '2014-12-21 18:12:45        ', '', '2014-12-23 01:32:53', 1, 1, 10, 1, 2);
 INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (27, 'SMTP', 'smtp', 'SMTP', null, null, 12, 0, '', 101, '2014-12-22 22:05:31    ', null, null, '2014-12-23 01:32:53', 1, 1, 7, 1, 2);
-INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (28, 'DNScrypt', 'dnscrypt', 'DNScrypt', null, null, 12, 0, '', 101, '2014-12-22 22:06:25   ', null, null, '2014-12-23 01:32:53', 1, 1, 8, 1, 2);
+INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (28, 'DNScrypt-proxy', 'dnscrypt-proxy', 'DNScrypt-proxy', '', '', 12, 0, '', 101, '2014-12-22 22:06:25', null, null, '2014-12-23 09:35:01', 1, 1, 8, 1, 2);
 
 -- Table: page_part
 CREATE TABLE page_part ( 
@@ -134,7 +134,7 @@ INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (33, 'body', null, null, null, 25);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (34, 'body', '', '', '', 26);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (35, 'body', null, '<?php require_once ''/etc/MySB/web/pages/SMTP.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/SMTP.php''; ?>', 27);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (36, 'body', null, '<?php require_once ''/etc/MySB/web/pages/DNScrypt.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/DNScrypt.php''; ?>', 28);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (36, 'body', '', '<?php require_once ''/etc/MySB/web/pages/DNScrypt.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/DNScrypt.php''; ?>', 28);
 
 -- Table: page_tag
 CREATE TABLE page_tag ( 
