@@ -50,22 +50,22 @@ function Form() {
 				<td><span class="Comments">Example:	Serveur Dedibox XC</span></td>
 			</tr>
 			<tr>
-				<td>TVA (%)  :</td>
+				<td>TVA (%) :</td>
 				<td><input class="text_small" name="tva" type="text" value="' . $TVA . '" required="required" /></td>
 				<td><span class="Comments">Example:	20</span></td>
 			</tr>
 			<tr>
-				<td>Unit price (per month)   :</td>
+				<td>Unit price (per month) :</td>
 				<td><input class="text_small" name="global_cost" type="text" value="' . $GlobalCost . '" required="required" /></td>
 				<td><span class="Comments">Example:	19.99 (value without tax)</span></td>
 			</tr>
 			<tr>
-				<td>Total users   :</td>
+				<td>Total users :</td>
 				<td><input class="text_extra_small" readonly="readonly" type="text" value="' . $TotalUsers . '" /></td>
 				<td><span class="Comments">Readonly, only for information.</span></td>
 			</tr>
 			<tr>
-				<td>Price per user   :</td>
+				<td>Price per user :</td>
 				<td><input class="text_extra_small" readonly="readonly" type="text" value="' . $PricePerUser . '" /></td>
 				<td><span class="Comments">Readonly, only for information.</span></td>
 			</tr>					
