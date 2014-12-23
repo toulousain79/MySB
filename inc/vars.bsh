@@ -111,13 +111,35 @@ if [ -f $MySB_DB ]; then
 	IsInstalled_Blocklist="`sqlite3 $MySB_DB \"SELECT is_installed FROM services WHERE serv_name = 'rTorrent Block List'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
 	IsInstalled_DNScrypt="`sqlite3 $MySB_DB \"SELECT is_installed FROM services WHERE serv_name = 'DNScrypt-proxy'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
 
-	if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
-		MySB_PeerBlock="PeerGuardian"
-	elif [ "$IsInstalled_PeerGuardian" == "NO" ] && [ "$IsInstalled_Blocklist" == "YES" ]; then
-		MySB_PeerBlock="rTorrent"
-	else
-		MySB_PeerBlock="none"
-	fi
+	case "$ToInstall_PeerGuardian" in
+		"YES")
+			MySB_PeerBlock="PeerGuardian"
+		;;
+		"NO")
+			case "$IsInstalled_PeerGuardian" in
+				"YES")
+					MySB_PeerBlock="PeerGuardian"
+				;;
+				"NO")
+					case "$ToInstall_Blocklist" in
+						"YES")
+							MySB_PeerBlock="rTorrent"
+						;;
+						"NO")
+							case "$IsInstalled_Blocklist" in
+								"YES")
+									MySB_PeerBlock="rTorrent"
+								;;
+								"NO")
+									MySB_PeerBlock="none"
+								;;
+							esac							
+						;;
+					esac					
+				;;
+			esac			
+		;;
+	esac
 
 	Ports_Cakebox="`sqlite3 $MySB_DB \"SELECT port_tcp1 FROM services WHERE serv_name = 'CakeBox-Light'\"`"
 	Ports_Webmin="`sqlite3 $MySB_DB \"SELECT port_tcp1 FROM services WHERE serv_name = 'Webmin'\"`"

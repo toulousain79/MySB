@@ -109,7 +109,7 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	
 	#### init.d
 	cp /etc/MySB/templates/etc.init.dnscrypt-proxy.template /etc/init.d/dnscrypt-proxy
-	perl -pi -e "s/<MySB_DB>/$MySB_DB/g" /etc/init.d/dnscrypt-proxy
+	perl -pi -e "s/<MySB_DB>/`echo $MySB_DB | sed s,/,\\\\\\\\\\/,g`/g" /etc/init.d/dnscrypt-proxy
 	chmod +x /etc/init.d/dnscrypt-proxy
 	update-rc.d dnscrypt-proxy defaults
 
@@ -149,6 +149,13 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 			sqlite3 $MySB_DB "INSERT INTO dnscrypt_resolvers (name,full_name,description,location,coordinates,url,version,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record) VALUES (\"$Name\",\"$FullName\",\"$Description\",\"$Location\",\"$Coordinates\",\"$URL\",\"$Version\",\"$DnssecVal\",\"$NoLogs\",\"$Namecoin\",\"$ResolverAddress\",\"$ProviderName\",\"$ProviderPublicKey\",\"$ProviderPublicKeyTxtRecord\");"			
 		done
 	fi
+	
+	# Check service
+	crontab -l > /tmp/crontab.tmp
+	sed -i '/dnscrypt-proxy/d' /tmp/crontab.tmp
+	echo "5 * * * * if ! ( /bin/ps ax | grep 'dnscrypt-proxy' | sed '/grep/d' &> /dev/null ); then /etc/init.d/dnscrypt-proxy restart &> /dev/null; fi" >> /tmp/crontab.tmp
+	crontab /tmp/crontab.tmp
+	rm -f /tmp/crontab.tmp	
 fi
 	
 # -----------------------------------------
