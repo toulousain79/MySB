@@ -104,25 +104,6 @@ CREATE TABLE users (
 );
 
 
--- Table: system
-CREATE TABLE system ( 
-    id_system     INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
-                                   NOT NULL ON CONFLICT ABORT,
-    mysb_version  VARCHAR( 6 )     NOT NULL ON CONFLICT ABORT
-                                   UNIQUE ON CONFLICT IGNORE,
-    mysb_user     VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
-    mysb_password VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
-    hostname      VARCHAR( 128 )   UNIQUE ON CONFLICT IGNORE,
-    ipv4          VARCHAR( 15 )    UNIQUE ON CONFLICT IGNORE,
-    primary_inet  VARCHAR( 16 )    UNIQUE ON CONFLICT IGNORE,
-    timezone      VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
-    cert_password VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
-    apt_update    BOOLEAN( 1 )     DEFAULT ( 1 ),
-    apt_date      DATETIME 
-);
-
-INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password], [apt_update], [apt_date]) VALUES (1, '', '', '', '', '', '', '', '', 0, null);
-
 -- Table: services
 CREATE TABLE services ( 
     id_services    INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -301,13 +282,31 @@ CREATE TABLE trackers_list_ipv4 (
 );
 
 
+-- Table: system
+CREATE TABLE system ( 
+    id_system         INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
+                                       NOT NULL ON CONFLICT ABORT,
+    mysb_version      VARCHAR( 6 )     NOT NULL ON CONFLICT ABORT
+                                       UNIQUE ON CONFLICT IGNORE,
+    mysb_user         VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
+    mysb_password     VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
+    hostname          VARCHAR( 128 )   UNIQUE ON CONFLICT IGNORE,
+    ipv4              VARCHAR( 15 )    UNIQUE ON CONFLICT IGNORE,
+    primary_inet      VARCHAR( 16 )    UNIQUE ON CONFLICT IGNORE,
+    timezone          VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
+    cert_password     VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
+    apt_update        BOOLEAN( 1 )     DEFAULT ( 1 ),
+    apt_date          DATETIME,
+    dnscrypt_resolver VARCHAR( 32 ) 
+);
+
+INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password], [apt_update], [apt_date], [dnscrypt_resolver]) VALUES (1, '', '', '', '', '', '', '', '', 0, null, null);
+
 -- Table: dnscrypt_resolvers
 CREATE TABLE dnscrypt_resolvers ( 
     id_dnscrypt_resolvers          INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
                                                    NOT NULL ON CONFLICT ABORT
                                                    UNIQUE ON CONFLICT ABORT,
-    is_active                      BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                                   DEFAULT ( 0 ),
     name                           VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
                                                    UNIQUE ON CONFLICT ABORT,
     full_name                      VARCHAR( 64 )   NOT NULL ON CONFLICT ABORT
