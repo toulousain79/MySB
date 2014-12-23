@@ -1,12 +1,14 @@
-	Version v1.2
-		2014/10/26
+	Version v1.2 (main branch)
+		2014/12/24
 			- Used of SQLite instead of flat file (more convenient)
-			- Add Wolf CMS as portal (more convenient)
+			- Add Wolf CMS as portal (more convenient), manage blocklists, DNScrypt, trackers,...
 			- NginX, add PageSpeed functionnality
-			- NginX, change url access (ruTorrent, Seedbox-Manager)
+			- NginX, change url access to short url (ruTorrent, Seedbox-Manager, Cakebox)
 			- DNScrypt-proxy v1.4.2
+			- Possibility to allow access for dynamic IP addresses
+			- Some modifications
 
-	Version v1.1 (main branch)
+	Version v1.1
 		2014/10/26
 			- "install/PeerGuardian", minor change
 			- "scripts/FirewallAndSecurity.sh", minor change
