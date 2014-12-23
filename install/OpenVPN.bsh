@@ -62,7 +62,9 @@ CreateServer() {
 	fi
 
 	#### install package
-	PackagesManage install "openvpn"
+	if ! hash openvpn 2>/dev/null; then
+		PackagesManage install "openvpn"
+	fi
 	
 	#### Files and Directory
 	if [ ! -d /var/log/openvpn ]; then
@@ -113,8 +115,8 @@ CreateServer() {
 	cp keys/ca.crt /etc/openvpn/$CACRT
 	cp keys/ca.key /etc/openvpn/$CAKEY
 	cp keys/ta.key /etc/openvpn/$TAKEY
-	mv keys/$CRT /etc/openvpn/
-	mv keys/$KEY /etc/openvpn/
+	mv -v keys/$CRT /etc/openvpn/
+	mv -v keys/$KEY /etc/openvpn/
 	
 	#### Config file Server TUN - With Redirect Gateway
 	# start with a clean config file for a new user
@@ -136,7 +138,9 @@ CreateServer() {
 	cp /etc/openvpn/Server_TUN_WithGW.conf /etc/openvpn/Server_TUN_WithoutGW.conf
 	sed -i "s/$PortTunWithRedirectGW/$PortTunWithoutRedirectGW/g" /etc/openvpn/Server_TUN_WithoutGW.conf
 	sed -i "s/$NetTunWithRedirectGW/$NetTunWithoutRedirectGW/g" /etc/openvpn/Server_TUN_WithoutGW.conf
-	sed -i '/redirect-gateway/d' /etc/openvpn/Server_TUN_WithoutGW.conf	
+	sed -i '/redirect-gateway/d' /etc/openvpn/Server_TUN_WithoutGW.conf
+	
+	sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'Webmin';"
 }
 
 CreateClient() {
@@ -209,15 +213,15 @@ CreateClient() {
 	sed -i "s/$PortTunWithRedirectGW/$PortTunWithoutRedirectGW/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithoutGW.ovpn	
 	
 	#### Move created files
-	mv $CLIENTNAME.crt /etc/openvpn/clients/
-	mv $CLIENTNAME.csr /etc/openvpn/clients/
-	mv $CLIENTNAME.key /etc/openvpn/clients/
+	mv -v $CLIENTNAME.crt /etc/openvpn/clients/
+	mv -v $CLIENTNAME.csr /etc/openvpn/clients/
+	mv -v $CLIENTNAME.key /etc/openvpn/clients/
 	chmod 400 /etc/openvpn/clients/*
 }
 
 ZipClientFiles() {
 	if [ -f /etc/MySB/web/openvpn/openvpn_$USERNAME.zip ]; then
-		rm -f /etc/MySB/web/openvpn/openvpn_$USERNAME.zip
+		rm -vf /etc/MySB/web/openvpn/openvpn_$USERNAME.zip
 	fi
 	
 	perl -pi -e "s/^mtu-disc yes/;mtu-disc yes/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
@@ -238,19 +242,25 @@ ZipClientFiles() {
 
 case "$COMMAND" in
 	"server")
-		#### Creating server config
-		CreateServer
+		if [ "$ToInstall_OpenVPN" == "YES" ]; then
+			#### Creating server config
+			CreateServer
+		fi
 	;;
 	"client")
-		#### Creating user config
-		if [ ! -z $USERNAME ]; then
-			CreateClient
+		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+			#### Creating user config
+			if [ ! -z $USERNAME ]; then
+				CreateClient
+			fi
 		fi
 	;;
 	"zip")
-		#### ZIP user config files
-		if [ ! -z $USERNAME ] && [ ! -z $USERPASSWORD ]; then
-			ZipClientFiles
+		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+			#### ZIP user config files
+			if [ ! -z $USERNAME ] && [ ! -z $USERPASSWORD ]; then
+				ZipClientFiles
+			fi
 		fi
 	;;	
 	*)

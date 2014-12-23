@@ -149,31 +149,31 @@ echo
 echo -e "${CYELLOW}#### Services ####$CEND"
 
 # Seedbox-Manager
-QuestionGetString NO "Install Seedbox-Manager (recommended)? " IsInstalled_Manager YES
+QuestionGetString NO "Install Seedbox-Manager (recommended)? " ToInstall_Manager YES
 
 # Cakebox Light
 echo
-QuestionGetString NO "Install CakeBox Light? " IsInstalled_Cakebox YES
-if [ "$IsInstalled_Cakebox" == "YES" ]; then
+QuestionGetString NO "Install CakeBox Light? " ToInstall_Cakebox YES
+if [ "$ToInstall_Cakebox" == "YES" ]; then
 	QuestionGetString NO "CakeBox port: " Ports_Cakebox $Ports_Cakebox
 fi
 
 # Plexmedia server
 echo
-QuestionGetString NO "Install Plex Media? " IsInstalled_PlexMedia YES
+QuestionGetString NO "Install Plex Media? " ToInstall_PlexMedia YES
 
 # Webmin
 echo
-QuestionGetString NO "Install Webmin? " IsInstalled_Webmin YES
-if [ "$IsInstalled_Webmin" == "YES" ]; then
+QuestionGetString NO "Install Webmin? " ToInstall_Webmin YES
+if [ "$ToInstall_Webmin" == "YES" ]; then
 	QuestionGetString NO "Webmin port  (usually 10000): " Ports_Webmin $Ports_Webmin
 fi
 
 # OpenVPN
 echo
 if [ "`ls -la /dev/net/tun > /dev/null && echo $?`" == "0" ]; then
-	QuestionGetString NO "Install OpenVPN? " IsInstalled_OpenVPN YES
-	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+	QuestionGetString NO "Install OpenVPN? " ToInstall_OpenVPN YES
+	if [ "$ToInstall_OpenVPN" == "YES" ]; then
 		OpenVPN_Proto=""
 		QuestionGetString NO  "OpenVPN port with redirect gateway: " Port_OpenVPN_WithGW 8893
 		QuestionGetString NO  "OpenVPN port without redirect gateway: " Port_OpenVPN_WithoutGW 8894
@@ -186,7 +186,7 @@ else
 	echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
 	echo -e "${CYELLOW}You must follow this link BEFORE install 'MySB'.$CEND"
 	echo -e "${CGREEN}https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-access-server-on-a-vps-container.html$CEND"
-	IsInstalled_OpenVPN=NO
+	ToInstall_OpenVPN=NO
 	
 	QuestionGetString NO  "Do you want to continue MySB installation without OpenVPN, type 'yes' ?" CONTINUE NO
 	if [ "$CONTINUE" == "NO" ]; then
@@ -202,11 +202,11 @@ echo
 echo -e "${CYELLOW}#### Security ####$CEND"
 
 # Logwatch
-QuestionGetString NO "Install Logwatch ?" IsInstalled_LogWatch YES
+QuestionGetString NO "Install Logwatch ?" ToInstall_LogWatch YES
 
 # Fail2Ban
 echo
-QuestionGetString NO "Install Fail2ban? " IsInstalled_Fail2Ban YES
+QuestionGetString NO "Install Fail2ban? " ToInstall_Fail2Ban YES
 
 # Blocklist
 echo
@@ -230,8 +230,8 @@ fi
 
 # DNScrypt-proxy
 echo
-QuestionGetString NO "Install DNScrypt-proxy? " IsInstalled_DNScrypt YES
-if [ ! -z $IFPVEKERNEL ] && [ "$IsInstalled_DNScrypt" == "YES" ]; then
+QuestionGetString NO "Install DNScrypt-proxy? " ToInstall_DNScrypt YES
+if [ ! -z $IFPVEKERNEL ] && [ "$ToInstall_DNScrypt" == "YES" ]; then
 	echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
 	echo -e "${CYELLOW}At the end of the installation, you should replace your DNS (/etc/resolv.conf) with ${CGREEN}nameserver 127.0.0.1$CEND${CYELLOW} through the OpenVZ host (eg Proxmox).$CEND"
 	echo -e "${CYELLOW}Otherwise you will lose your configuration on the next reboot.$CEND"
@@ -272,59 +272,59 @@ sqlite3 $MySB_DB "UPDATE services SET port_tcp1 = '$Port_SSH', port_tcp2 = '', p
 # FTP
 sqlite3 $MySB_DB "UPDATE services SET port_tcp1 = '$Port_FTP', port_tcp2 = '$Port_FTP_Data', port_tcp3 = '65000:65535', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'VSFTPd';"
 
-if [ "$IsInstalled_Manager" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'Seedbox-Manager';"
+if [ "$ToInstall_Manager" == "YES" ]; then
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Seedbox-Manager';"
 fi
 
-if [ "$IsInstalled_Cakebox" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1', port_tcp1 = '$Ports_Cakebox', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'CakeBox-Light';"
+if [ "$ToInstall_Cakebox" == "YES" ]; then
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1', port_tcp1 = '$Ports_Cakebox', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'CakeBox-Light';"
 fi
 
-if [ "$IsInstalled_PlexMedia" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'Plex Media Server';"
+if [ "$ToInstall_PlexMedia" == "YES" ]; then
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Plex Media Server';"
 fi
 
-if [ "$IsInstalled_Webmin" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1', port_tcp1 = '$Ports_Webmin', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'Webmin';"
+if [ "$ToInstall_Webmin" == "YES" ]; then
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1', port_tcp1 = '$Ports_Webmin', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'Webmin';"
 fi
 
-if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'OpenVPN';"
+if [ "$ToInstall_OpenVPN" == "YES" ]; then
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'OpenVPN';"
 	OpenVPN_Proto=`echo $OpenVPN_Proto | tr '[:upper:]' '[:lower:]'`
 	case "$OpenVPN_Proto" in
 		"tcp")
-			sqlite3 $MySB_DB "UPDATE services SET is_installed = '1', port_tcp1 = '$Port_OpenVPN_WithGW', port_tcp2 = '$Port_OpenVPN_WithoutGW', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'OpenVPN';"		
+			sqlite3 $MySB_DB "UPDATE services SET to_install = '1', port_tcp1 = '$Port_OpenVPN_WithGW', port_tcp2 = '$Port_OpenVPN_WithoutGW', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'OpenVPN';"		
 		;;
 		"udp")
-			sqlite3 $MySB_DB "UPDATE services SET is_installed = '1', port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '$Port_OpenVPN_WithGW', port_udp2 = '$Port_OpenVPN_WithoutGW', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'OpenVPN';"
+			sqlite3 $MySB_DB "UPDATE services SET to_install = '1', port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '$Port_OpenVPN_WithGW', port_udp2 = '$Port_OpenVPN_WithoutGW', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'OpenVPN';"
 		;;				
 	esac	
 fi
 
-if [ "$IsInstalled_LogWatch" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'LogWatch';"
+if [ "$ToInstall_LogWatch" == "YES" ]; then
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'LogWatch';"
 fi
 
-if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'Fail2Ban';"
+if [ "$ToInstall_Fail2Ban" == "YES" ]; then
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Fail2Ban';"
 fi
 
-if [ "$IsInstalled_DNScrypt" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'DNScrypt-proxy';"
+if [ "$ToInstall_DNScrypt" == "YES" ]; then
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'DNScrypt-proxy';"
 fi
 
 case "$MySB_PeerBlock" in
 	"PeerGuardian")
-		sqlite3 $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'PeerGuardian';"
-		sqlite3 $MySB_DB "UPDATE services SET is_installed = '0' WHERE serv_name = 'rTorrent Block List';"
+		sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'PeerGuardian';"
+		sqlite3 $MySB_DB "UPDATE services SET to_install = '0' WHERE serv_name = 'rTorrent Block List';"
 	;;
 	"rTorrent")
-		sqlite3 $MySB_DB "UPDATE services SET is_installed = '0' WHERE serv_name = 'PeerGuardian';"
-		sqlite3 $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'rTorrent Block List';"
+		sqlite3 $MySB_DB "UPDATE services SET to_install = '0' WHERE serv_name = 'PeerGuardian';"
+		sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'rTorrent Block List';"
 	;;
 	*)
-		sqlite3 $MySB_DB "UPDATE services SET is_installed = '0' WHERE serv_name = 'PeerGuardian';"
-		sqlite3 $MySB_DB "UPDATE services SET is_installed = '0' WHERE serv_name = 'rTorrent Block List';"		
+		sqlite3 $MySB_DB "UPDATE services SET to_install = '0' WHERE serv_name = 'PeerGuardian';"
+		sqlite3 $MySB_DB "UPDATE services SET to_install = '0' WHERE serv_name = 'rTorrent Block List';"		
 	;;
 esac
 	

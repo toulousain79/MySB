@@ -24,12 +24,15 @@ source /etc/MySB/inc/includes_before.bsh
 #
 ##################### FIRST LINE #####################################
 
-#### Install packages
-PackagesManage install "fail2ban"
-	
-# conf fail2ban
-(
-cat <<'EOF'
+if [ "$ToInstall_Fail2Ban" == "YES" ]; then
+	#### Install packages
+	if ! hash /etc/init.d/fail2ban 2>/dev/null; then
+		PackagesManage install "fail2ban"
+	fi
+		
+	# conf fail2ban
+	(
+	cat <<'EOF'
 [DEFAULT]
 ignoreip = 127.0.0.1/32 10.0.0.0/24 10.0.1.0/24
 banaction = iptables-multiport
@@ -84,15 +87,15 @@ banaction = iptables-multiport
 maxretry = 3"
 
 EOF
-) > /etc/fail2ban/jail.local
+	) > /etc/fail2ban/jail.local
 
-sed -i 's/<Port_SSH>/'$Port_SSH'/g;' /etc/fail2ban/jail.local
-sed -i 's/<Port_HTTP>/'$Port_HTTP'/g;' /etc/fail2ban/jail.local
-sed -i 's/<Port_HTTPS>/'$Port_HTTPS'/g;' /etc/fail2ban/jail.local
-sed -i 's/<Port_FTP>/'$Port_FTP'/g;' /etc/fail2ban/jail.local
+	sed -i 's/<Port_SSH>/'$Port_SSH'/g;' /etc/fail2ban/jail.local
+	sed -i 's/<Port_HTTP>/'$Port_HTTP'/g;' /etc/fail2ban/jail.local
+	sed -i 's/<Port_HTTPS>/'$Port_HTTPS'/g;' /etc/fail2ban/jail.local
+	sed -i 's/<Port_FTP>/'$Port_FTP'/g;' /etc/fail2ban/jail.local
 
-(
-cat <<'EOF'
+	(
+	cat <<'EOF'
 ## FICHIER /etc/fail2ban/filter.d/nginx-auth.conf ##
 [Definition]
 
@@ -103,10 +106,10 @@ failregex = no user/password was provided for basic authentication.*client: <HOS
 ignoreregex =
 
 EOF
-) > /etc/fail2ban/filter.d/nginx-auth.conf
+	) > /etc/fail2ban/filter.d/nginx-auth.conf
 
-(
-cat <<'EOF'
+	(
+	cat <<'EOF'
 # Fail2Ban configuration file nginx-badbots.conf
 # Author: Patrik 'Sikevux' Greco <sikevux@sikevux.se>
 
@@ -160,10 +163,10 @@ failregex = ^<HOST> .*?"GET.*?\/setup\.php.*?" .*?
 ignoreregex =
 
 EOF
-) > /etc/fail2ban/filter.d/nginx-badbots.conf
+	) > /etc/fail2ban/filter.d/nginx-badbots.conf
 
-(
-cat <<'EOF'
+	(
+	cat <<'EOF'
 #
 # Login filter /etc/fail2ban/filter.d/nginx-login.conf:
 #
@@ -175,10 +178,13 @@ failregex = ^<HOST> -.*POST /sessions HTTP/1\.." 200
 ignoreregex =
 
 EOF
-) > /etc/fail2ban/filter.d/nginx-login.conf
+	) > /etc/fail2ban/filter.d/nginx-login.conf
 
-#### Add white list
-Fail2BanWhitheList 0
+	#### Add white list
+	Fail2BanWhitheList 0
+
+	sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'Fail2Ban';"
+fi
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after.bsh

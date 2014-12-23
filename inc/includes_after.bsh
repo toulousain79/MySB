@@ -30,7 +30,7 @@ source /etc/MySB/inc/funcs.bsh
 case "$ScriptName" in
 	"MySB_Install.bsh")
 		if [ "$(pwd)/$(basename $0)" != "/etc/MySB/MySB_Install.bsh" ]; then
-			rm $0
+			rm -vf $0
 		fi
 	;;
 	"MySB_CreateUser")
@@ -124,12 +124,22 @@ esac
 #### 6 - create ccze files (HTML)
 if [ "`screen -ls | grep MySB`" != "" ] || [ "`ps ax | grep 'MySB_Install.bsh' | sed '/grep/d'`" != "" ]; then # MySB installation
 	DirLog="/etc/MySB/web/logs/install"
-elif [ "${ScriptName:0:5}" = "MySB_" ]; then
-	DirLog="/etc/MySB/web/logs/bin"
-elif [ "${ScriptName: -3}" = ".sh" ]; then
-	DirLog="/etc/MySB/web/logs/scripts"
 else
-	DirLog="/etc/MySB/web/logs"
+	case "${ScriptName:0:5}" in
+		"MySB_")
+			DirLog="/etc/MySB/web/logs/bin"
+		;;
+		*)
+		case "$ScriptName" in
+			"BlocklistsRTorrent.bsh"|"DynamicAddressResolver.bsh"|"FirewallAndSecurity.bsh"|"GetTrackersCert.bsh"|"LogServer.bsh"|"PaymentReminder.bsh"|"PortalApplyConfig.bsh"|"UpdateGeoIP.bsh")
+				DirLog="/etc/MySB/web/logs/scripts"
+			;;
+			*)
+				DirLog="/etc/MySB/web/logs"
+			;;
+		esac			
+		;;
+	esac	
 fi
 
 if [ "$LOGSTD" != "NO" ] ; then
@@ -147,7 +157,7 @@ if [ "$LOGSTD" != "NO" ] ; then
 	fi
 	if [ -d /etc/MySB/web/logs/ ]; then
 		if [ ! "`ls /etc/MySB/logs/ | grep .html`" = "" ]; then
-			mv /etc/MySB/logs/*.html $DirLog/
+			mv -v /etc/MySB/logs/*.html $DirLog/
 		fi
 	fi
 fi

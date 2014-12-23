@@ -24,18 +24,25 @@ source /etc/MySB/inc/includes_before.bsh
 #
 ##################### FIRST LINE #####################################
 
-#### Add sources
-echo "# PlexMedia" >> /etc/apt/sources.list.d/ninthgate.list
-echo "deb http://shell.ninthgate.se/packages/debian $DEBIAN_VERSION main" >> /etc/apt/sources.list.d/ninthgate.list
+if [ "$ToInstall_PlexMedia" == "YES" ]; then
+	#### Add sources
+	echo "# PlexMedia" > /etc/apt/sources.list.d/ninthgate.list
+	echo "deb http://shell.ninthgate.se/packages/debian $DEBIAN_VERSION main" >> /etc/apt/sources.list.d/ninthgate.list
 
-cd /etc/MySB/files
-sudo curl http://shell.ninthgate.se/packages/shell-ninthgate-se-keyring.key | sudo apt-key add -
+	cd /etc/MySB/files
+	curl http://shell.ninthgate.se/packages/shell-ninthgate-se-keyring.key | apt-key add -
+	rm -vf shell-ninthgate-se-keyring.key
 
-#### Force apt-get update
-sqlite3 $MySB_DB "UPDATE system SET apt_update = 1, apt_date = datetime('now','localtime') WHERE id_system = 1;"
+	#### Force apt-get update
+	sqlite3 $MySB_DB "UPDATE system SET apt_update = 1, apt_date = datetime('now','localtime') WHERE id_system = 1;"
 
-#### Install package
-PackagesManage install "plexmediaserver"
+	#### Install package
+	if ! hash /etc/init.d/plexmediaserver 2>/dev/null; then
+		PackagesManage install "plexmediaserver"
+	fi
+	
+	sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'Plex Media Server';"
+fi
 	
 # -----------------------------------------
 source /etc/MySB/inc/includes_after.bsh

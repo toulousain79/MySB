@@ -29,18 +29,18 @@ if [ "$USAGE" == "ON" ]; then
 		if [ "$IsInstalled_Cakebox" == "NO" ]; then
 			echo
 			echo -e "${CYELLOW}CakeBox Light is not installed!$CEND"
-			QuestionGetString NO  "Install CakeBox Light? " IsInstalled_Cakebox $IsInstalled_Cakebox
+			QuestionGetString NO  "Install CakeBox Light? " ToInstall_Cakebox $ToInstall_Cakebox
 			
-			if [ "$IsInstalled_Cakebox" == "YES" ]; then
+			if [ "$ToInstall_Cakebox" == "YES" ]; then
 				QuestionGetString NO  "CakeBox port: " Ports_Cakebox $Ports_Cakebox
 			fi
 			
-			sqlite3 -echo $MySB_DB "UPDATE services SET port_tcp1 = '$Ports_Cakebox', is_installed = '$(echo $IsInstalled_Cakebox | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'CakeBox-Light';"
+			sqlite3 -echo $MySB_DB "UPDATE services SET port_tcp1 = '$Ports_Cakebox', to_install = '$(echo $ToInstall_Cakebox | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'CakeBox-Light';"
 		fi
 	fi
 fi
 
-if [ "$IsInstalled_Cakebox" == "YES" ]; then
+if [ "$ToInstall_Cakebox" == "YES" ]; then
 	#### app
 	if [ -d /etc/MySB/web/Cakebox-light ]; then
 		cd /etc/MySB/web/Cakebox-light/
@@ -48,7 +48,7 @@ if [ "$IsInstalled_Cakebox" == "YES" ]; then
 		git pull
 	else
 		if [ -d /etc/MySB/temp/Cakebox-light ]; then
-			mv /etc/MySB/temp/Cakebox-light /etc/MySB/web/
+			mv -v /etc/MySB/temp/Cakebox-light /etc/MySB/web/
 		else
 			git clone $GIT_cakebox /etc/MySB/web/Cakebox-light
 		fi
@@ -71,7 +71,7 @@ if [ "$IsInstalled_Cakebox" == "YES" ]; then
 
 	#### NginX
 	if [ -f /etc/nginx/sites-enabled/cakebox ]; then
-		rm /etc/nginx/sites-enabled/cakebox
+		rm -vf /etc/nginx/sites-enabled/cakebox
 	fi	
 	cp /etc/MySB/templates/etc.nginx.site-enabled.cakebox.template /etc/nginx/sites-available/cakebox
 	perl -pi -e "s/<cakebox_port>/$Ports_Cakebox/g" /etc/nginx/sites-available/cakebox
@@ -101,6 +101,8 @@ EOF
 		done
 	fi
 fi
+
+sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'CakeBox-Light';"
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after.bsh

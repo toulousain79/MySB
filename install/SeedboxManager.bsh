@@ -29,18 +29,18 @@ if [ "$USAGE" == "ON" ]; then
 		if [ "$IsInstalled_Manager" == "NO" ]; then
 			echo
 			echo -e "${CYELLOW}SeedBox-Manager is not installed!$CEND"
-			QuestionGetString NO  "Install Seedbox-Manager? " IsInstalled_Manager $IsInstalled_Manager
+			QuestionGetString NO  "Install Seedbox-Manager? " ToInstall_Manager $ToInstall_Manager
 			
-			if [ "$IsInstalled_Manager" == "YES" ]; then
+			if [ "$ToInstall_Manager" == "YES" ]; then
 				QuestionGetString NO  "Contact email for Seedbox-Manager: " MainUserEmail $MainUserEmail
 			fi
 			
-			sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '$(echo $IsInstalled_Manager | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'Seedbox-Manager';"
+			sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '$(echo $ToInstall_Manager | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'Seedbox-Manager';"
 		fi
 	fi
 fi
 
-if [ "$IsInstalled_Manager" == "YES" ]; then
+if [ "$ToInstall_Manager" == "YES" ]; then
 	cp /etc/MySB/templates/etc.nginx.locations.seedbox-manager.conf.template /etc/nginx/locations/3_seedbox-manager.conf
 
 	## app
@@ -50,14 +50,14 @@ if [ "$IsInstalled_Manager" == "YES" ]; then
 		git pull
 	else
 		if [ -d /etc/MySB/temp/seedbox-manager ]; then
-			mv /etc/MySB/temp/seedbox-manager /etc/MySB/web/
+			mv -v /etc/MySB/temp/seedbox-manager /etc/MySB/web/
 		else
 			git clone $GIT_manager /etc/MySB/web/seedbox-manager
 		fi
 	fi
 
 	if [ -d /etc/MySB/temp/seedbox-manager ]; then
-		rm -rf /etc/MySB/temp/seedbox-manager
+		rm -vrf /etc/MySB/temp/seedbox-manager
 	fi	
 	
 	cd /etc/MySB/web/seedbox-manager
@@ -113,6 +113,8 @@ EOF
 	fi
 	sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$HostNameFQDN:$Port_HTTPS\/sm\//g;" /etc/MySB/web/rutorrent/plugins/linkseedboxmanager/conf.php
 fi
+
+sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'Seedbox-Manager';"
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after.bsh

@@ -39,80 +39,84 @@ if [ "$USAGE" == "ON" ]; then
 	fi
 fi
 
-#if webmin isup, download key
-WEBMINDOWN=YES
-ping -c1 -w2 www.webmin.com
-if [ $? -eq 0 ] ; then
-	cd /etc/MySB/files
-	wget -t 5 http://www.webmin.com/jcameron-key.asc -O /etc/MySB/files/jcameron-key.asc
-	apt-key add /etc/MySB/files/jcameron-key.asc
+if [ "$ToInstall_Webmin" == "YES" ]; then
+	#if webmin isup, download key
+	WEBMINDOWN=YES
+	ping -c1 -w2 www.webmin.com
 	if [ $? -eq 0 ] ; then
-		WEBMINDOWN=NO
-		rm -f /etc/MySB/files/jcameron-key.asc
+		cd /etc/MySB/files
+		wget -t 5 http://www.webmin.com/jcameron-key.asc -O /etc/MySB/files/jcameron-key.asc
+		apt-key add /etc/MySB/files/jcameron-key.asc
+		if [ $? -eq 0 ] ; then
+			WEBMINDOWN=NO
+			rm -vf /etc/MySB/files/jcameron-key.asc
+		fi
 	fi
-fi
 
-if [ "$WEBMINDOWN" == "NO" ] ; then
-	#### Add Webmin source
-	echo "# Webmin" > /etc/apt/sources.list.d/webmin.list
-	echo "" >> /etc/apt/sources.list.d/webmin.list
-	echo "# wget -t 5 http://www.webmin.com/jcameron-key.asc" >> /etc/apt/sources.list.d/webmin.list
-	echo "# apt-key add jcameron-key.asc" >> /etc/apt/sources.list.d/webmin.list
-	echo "" >> /etc/apt/sources.list.d/webmin.list
-	echo "deb http://download.webmin.com/download/repository sarge contrib" >> /etc/apt/sources.list.d/webmin.list
+	if [ "$WEBMINDOWN" == "NO" ] ; then
+		#### Add Webmin source
+		echo "# Webmin" > /etc/apt/sources.list.d/webmin.list
+		echo "" >> /etc/apt/sources.list.d/webmin.list
+		echo "# wget -t 5 http://www.webmin.com/jcameron-key.asc" >> /etc/apt/sources.list.d/webmin.list
+		echo "# apt-key add jcameron-key.asc" >> /etc/apt/sources.list.d/webmin.list
+		echo "" >> /etc/apt/sources.list.d/webmin.list
+		echo "deb http://download.webmin.com/download/repository sarge contrib" >> /etc/apt/sources.list.d/webmin.list
 
-	#### Force apt-get update
-	sqlite3 $MySB_DB "UPDATE system SET apt_update = 1, apt_date = datetime('now','localtime') WHERE id_system = 1;"
-	
-	#### Install package
-	PackagesManage install "webmin"
-	
-	sqlite3 $MySB_DB "UPDATE services SET port_tcp1 = '$Ports_Webmin', is_installed = '1' WHERE serv_name = 'Webmin';"
-	
-	#### Create certificate
-	if [ ! -f /etc/MySB/ssl/webmin.cert ]; then
-		ScriptInvoke 'source' '/etc/MySB/install/Certificates.bsh' 'CreateServiceCertificate' 'webmin'
+		#### Force apt-get update
+		sqlite3 $MySB_DB "UPDATE system SET apt_update = 1, apt_date = datetime('now','localtime') WHERE id_system = 1;"
+		
+		#### Install package
+		if ! hash /etc/init.d/webmin 2>/dev/null; then
+			PackagesManage install "webmin"
+		fi
+		
+		#### Create certificate
+		if [ ! -f /etc/MySB/ssl/webmin.cert ]; then
+			ScriptInvoke 'source' '/etc/MySB/install/Certificates.bsh' 'CreateServiceCertificate' 'webmin'
+		fi
+		
+		cat /etc/MySB/ssl/webmin.cert > /etc/webmin/miniserv.pem
+		cat /etc/MySB/ssl/webmin.key >> /etc/webmin/miniserv.pem
+		
+		#### Config
+		perl -pi -e "s/10000/$Ports_Webmin/g" /etc/webmin/miniserv.conf
+		perl -pi -e "s/force_init=0/force_init=1/g" /etc/webmin/firewall/config
+
+		sed -i '/sched_action/d' /etc/webmin/package-updates/config
+		echo "sched_action=1" >> /etc/webmin/package-updates/config
+		sed -i '/sched_email/d' /etc/webmin/package-updates/config
+		echo "sched_email=$MainUserEmail" >> /etc/webmin/package-updates/config
+		crontab -l > /tmp/crontab.tmp
+		sed -i '/webmin\/package-updates/d' /tmp/crontab.tmp
+		echo "0 2 * * 3 /etc/webmin/package-updates/update.pl" >> /tmp/crontab.tmp
+		crontab /tmp/crontab.tmp
+		rm -vf /tmp/crontab.tmp	
+		
+		#### Webmin modules
+		if [ ! -f /etc/MySB/files/openvpn.wbm ]; then
+			wget --no-check-certificate -O /etc/MySB/files/openvpn.wbm $WBM_webmin_openvpn
+		fi	
+		if [ ! -f /etc/MySB/files/nginx.wbm ]; then
+			wget --no-check-certificate -O /etc/MySB/files/nginx.wbm $WBM_webmin_nginx
+		fi		
+		if [ ! -f /etc/MySB/files/dlna.wbm ]; then
+			wget --no-check-certificate -O /etc/MySB/files/dlna.wbm $WBM_webmin_dlna
+		fi		
+		if [ -f /etc/MySB/files/openvpn.wbm ]; then
+			perl /usr/share/webmin/install-module.pl /etc/MySB/files/openvpn.wbm
+			rm -vf /etc/MySB/files/dlna.wbm
+		fi	
+		if [ -f /etc/MySB/files/nginx.wbm ]; then
+			perl /usr/share/webmin/install-module.pl /etc/MySB/files/nginx.wbm
+			rm -vf /etc/MySB/files/dlna.wbm
+		fi	
+		if [ -f /etc/MySB/files/dlna.wbm ]; then
+			perl /usr/share/webmin/install-module.pl /etc/MySB/files/dlna.wbm
+			rm -vf /etc/MySB/files/dlna.wbm
+		fi
+
+		sqlite3 -echo $MySB_DB "UPDATE services SET port_tcp1 = '$Ports_Webmin', to_install = '0', is_installed = '1' WHERE serv_name = 'Webmin';"
 	fi
-	
-	cat /etc/MySB/ssl/webmin.cert > /etc/webmin/miniserv.pem
-	cat /etc/MySB/ssl/webmin.key >> /etc/webmin/miniserv.pem
-	
-	#### Config
-	perl -pi -e "s/10000/$Ports_Webmin/g" /etc/webmin/miniserv.conf
-	perl -pi -e "s/force_init=0/force_init=1/g" /etc/webmin/firewall/config
-
-	sed -i '/sched_action/d' /etc/webmin/package-updates/config
-	echo "sched_action=1" >> /etc/webmin/package-updates/config
-	sed -i '/sched_email/d' /etc/webmin/package-updates/config
-	echo "sched_email=$MainUserEmail" >> /etc/webmin/package-updates/config
-	crontab -l > /tmp/crontab.tmp
-	sed -i '/webmin\/package-updates/d' /tmp/crontab.tmp
-	echo "0 2 * * 3 /etc/webmin/package-updates/update.pl" >> /tmp/crontab.tmp
-	crontab /tmp/crontab.tmp
-	rm /tmp/crontab.tmp	
-	
-	#### Webmin modules
-	if [ ! -f /etc/MySB/files/openvpn.wbm ]; then
-		wget --no-check-certificate -O /etc/MySB/files/openvpn.wbm $WBM_webmin_openvpn
-	fi	
-	if [ ! -f /etc/MySB/files/nginx.wbm ]; then
-		wget --no-check-certificate -O /etc/MySB/files/nginx.wbm $WBM_webmin_nginx
-	fi		
-	if [ ! -f /etc/MySB/files/dlna.wbm ]; then
-		wget --no-check-certificate -O /etc/MySB/files/dlna.wbm $WBM_webmin_dlna
-	fi		
-	if [ -f /etc/MySB/files/openvpn.wbm ]; then
-		perl /usr/share/webmin/install-module.pl /etc/MySB/files/openvpn.wbm
-		rm -f /etc/MySB/files/dlna.wbm
-	fi	
-	if [ -f /etc/MySB/files/nginx.wbm ]; then
-		perl /usr/share/webmin/install-module.pl /etc/MySB/files/nginx.wbm
-		rm -f /etc/MySB/files/dlna.wbm
-	fi	
-	if [ -f /etc/MySB/files/dlna.wbm ]; then
-		perl /usr/share/webmin/install-module.pl /etc/MySB/files/dlna.wbm
-		rm -f /etc/MySB/files/dlna.wbm
-	fi		
 fi
 
 # -----------------------------------------
