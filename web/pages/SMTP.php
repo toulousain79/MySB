@@ -27,28 +27,22 @@ function Form() {
 
 	// Users table
 	$smtp_datas = $MySB_DB->get("smtp", [
-												"smtp_provider",
-												"smtp_username",
-												"smtp_passwd",
-												"smtp_host",
-												"smtp_port",
-											], [
-												"id_smtp" => 1
-											]);
+											"smtp_provider",
+											"smtp_username",
+											"smtp_passwd",
+											"smtp_host",
+											"smtp_port",
+										], [
+											"id_smtp" => 1
+										]);
 											
 	$SmtpProvider = $smtp_datas["smtp_provider"];
 	$SmtpUsername = $smtp_datas["smtp_username"];
 	$SmtpPasswd = $smtp_datas["smtp_passwd"];
 	$SmtpHost = $smtp_datas["smtp_host"];
 	$SmtpPort = $smtp_datas["smtp_port"];											
-	
-	$ProvidersList = array(
-							'LOCAL' => 'localhost',
-							'FREE' => 'smtp.free.fr',
-							'YAHOO' => 'smtp.mail.yahoo.fr',
-							'OVH' => 'ssl0.ovh.net',
-							'GMAIL' => 'smtp.gmail.com'
-							);
+
+	$ProvidersList = array('LOCAL', 'FREE', 'YAHOO', 'OVH', 'GMAIL');
 							
 	echo '
 	<form class="form_settings" method="post" action="">
@@ -58,7 +52,7 @@ function Form() {
 				<td>
 					<select id="json-provider" style="width:100px; height: 28px; cursor: pointer;">';
 					
-					foreach($ProvidersList as $Providers => $Host) {
+					foreach($ProvidersList as $Providers) {
 						if ( $SmtpProvider == $Providers) {
 							echo '<option selected="selected" value="' . $Providers . '">' . $Providers . '</option>';
 						} else {
@@ -81,7 +75,7 @@ function Form() {
 			<tr>
 				<td>Host :</td>
 				<td>
-					<select id="json-host" style="width:150px; height: 28px; cursor: pointer;" required="required" readonly>
+					<select id="json-host" style="width:150px; height: 28px;" required="required" readonly>
 						<option>' . $SmtpHost . '</option>
 					</select>
 				
@@ -90,7 +84,7 @@ function Form() {
 			<tr>
 				<td>Port :</td>
 				<td>
-					<select id="json-port" style="width:50px; height: 28px; cursor: pointer;" required="required" readonly>
+					<select id="json-port" style="width:50px; height: 28px;" required="required" readonly>
 						<option>' . $SmtpPort . '</option>
 					</select>
 				</td>
