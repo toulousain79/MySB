@@ -118,6 +118,34 @@ if [ "$IsInstalled_DNScrypt" == "YES" ]; then
 	
 	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'BIND';"
 	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'DNScrypt-proxy';"
+	
+	#### Update resolvers infos in db
+	if [ -f /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv ] && hash csvtool 2>/dev/null; then
+		# Clean the table 'dnscrypt_resolvers'
+		sqlite3 $MySB_DB "DELETE FROM dnscrypt_resolvers WHERE 1"
+		
+		# Get resolvers information from 'dnscrypt-resolvers.csv'
+		ResolversTable="`csvtool -t ',' -u '|' cat /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv | csvtool drop 1 - | sed 's/ /#/g;'`"
+		for Line in $ResolversTable; do
+			Name="`echo $Line | awk '{split($0,a,\"|\"); print a[1]}' | sed 's/#/ /g;'`"
+			FullName="`echo $Line | awk '{split($0,a,\"|\"); print a[2]}' | sed 's/#/ /g;'`"
+			Description="`echo $Line | awk '{split($0,a,\"|\"); print a[3]}' | sed 's/#/ /g;'`"
+			Location="`echo $Line | awk '{split($0,a,\"|\"); print a[4]}' | sed 's/#/ /g;'`"
+			Coordinates="`echo $Line | awk '{split($0,a,\"|\"); print a[5]}' | sed 's/#/ /g;'`"
+			URL="`echo $Line | awk '{split($0,a,\"|\"); print a[6]}' | sed 's/#/ /g;' | sed 's/http.\/\//http:\/\//g;'`"
+			Version="`echo $Line | awk '{split($0,a,\"|\"); print a[7]}' | sed 's/#/ /g;'`"
+			DnssecVal="`echo $Line | awk '{split($0,a,\"|\"); print a[8]}' | sed 's/#/ /g;'`"
+			NoLogs="`echo $Line | awk '{split($0,a,\"|\"); print a[9]}' | sed 's/#/ /g;'`"
+			Namecoin="`echo $Line | awk '{split($0,a,\"|\"); print a[10]}' | sed 's/#/ /g;'`"
+			ResolverAddress="`echo $Line | awk '{split($0,a,\"|\"); print a[11]}' | sed 's/#/ /g;'`"
+			ProviderName="`echo $Line | awk '{split($0,a,\"|\"); print a[12]}' | sed 's/#/ /g;'`"
+			ProviderPublicKey="`echo $Line | awk '{split($0,a,\"|\"); print a[13]}' | sed 's/#/ /g;'`"
+			ProviderPublicKeyTxtRecord="`echo $Line | awk '{split($0,a,\"|\"); print a[14]}' | sed 's/#/ /g;'`"	
+			
+			# Add new informations in DB
+			sqlite3 $MySB_DB "INSERT INTO dnscrypt_resolvers (name,full_name,description,location,coordinates,url,version,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record) VALUES (\"$Name\",\"$FullName\",\"$Description\",\"$Location\",\"$Coordinates\",\"$URL\",\"$Version\",\"$DnssecVal\",\"$NoLogs\",\"$Namecoin\",\"$ResolverAddress\",\"$ProviderName\",\"$ProviderPublicKey\",\"$ProviderPublicKeyTxtRecord\");"			
+		done
+	fi
 fi
 	
 # -----------------------------------------

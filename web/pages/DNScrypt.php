@@ -22,7 +22,118 @@
 //
 //#################### FIRST LINE #####################################
 
+global $MySB_DB;
 
+$ResolversList = $MySB_DB->select("dnscrypt_resolvers", [
+															"is_active",
+															"name",
+															"full_name",
+															"location",
+															"url",
+															"version",
+															"dnssec",
+															"no_logs",
+															"namecoin",
+															"resolver_address",
+															"provider_name"
+														]);
+?>
 
+<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
+	<form class="form_settings" method="post" action="">
+		<fieldset>
+		<legend>What resolver do you use ? (IPv4 only)</legend>
+				Available resolvers: <select name="ResolverName" style="width:200px; cursor: pointer;" required="required">
+<?php
+						foreach($ResolversList as $Resolver) {
+							if ( ! strpos($Resolver["name"], 'ipv6') ) {
+								switch ($Resolver["is_active"]) {
+									case '0':
+										$selected = '';
+										break;		
+									default:
+										$selected = 'selected="selected"';
+										break;
+								}							
+								echo '<option value="' .$Resolver["name"]. '" ' . $selected . '>' .$Resolver["name"]. '</option>';
+							}
+						}
+?>					
+									</select>
+		
+			<input class="submit" style="width:180px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="I want use this resolver !">			
+		</fieldset>
+	</form>	
+</div>
+
+<form class="form_settings" method="post" action="">	
+	<div align="center">	
+		<table style="border-spacing:1;">
+			<tr>
+				<th style="text-align:center;">Name</th>
+				<th style="text-align:center;">Full name</th>
+				<th style="text-align:center;">Location</th>
+				<th style="text-align:center;">Version</th>
+				<th style="text-align:center;">DNSSEC validation</th>
+				<th style="text-align:center;">No logs</th>
+				<th style="text-align:center;">Namecoin</th>
+				<th style="text-align:center;">Resolver address</th>
+				<th style="text-align:center;">Provider name</th>
+			</tr>						
+				
+<?php
+foreach($ResolversList as $Resolver) {
+	if ( ! strpos($Name, 'ipv6') ) {
+
+		$Name=$Resolver["name"];
+		$FullName=$Resolver["full_name"];
+		$Location=$Resolver["location"];
+		$URL=$Resolver["url"];
+		$Version=$Resolver["version"];
+		$DnssecVal=$Resolver["dnssec"];
+		$NoLogs=$Resolver["no_logs"];
+		$Namecoin=$Resolver["namecoin"];
+		$ResolverAddress=$Resolver["resolver_address"];
+		$ProviderName=$Resolver["provider_name"];
+?>				
+			<tr>
+				<td>
+					<?php echo $Name; ?>
+				</td>
+				<td>
+					<a target="_blank" href="<?php echo $URL; ?>"><?php echo $FullName; ?></a>
+				</td>				
+				<td>
+					<?php echo $Location; ?>
+				</td>
+				<td>
+					<?php echo $Version; ?>				
+				</td>
+				<td>
+					<?php echo $DnssecVal; ?>
+				</td>
+				<td>
+					<?php echo $NoLogs; ?>
+				</td>
+				<td>
+					<?php echo $Namecoin; ?>
+				</td>
+				<td>
+					<?php echo $ResolverAddress; ?>
+				</td>	
+				<td>
+					<?php echo $ProviderName; ?>
+				</td>					
+			</tr>
+<?php
+	}
+} // foreach($TrackersList as $Tracker) {
+?>			
+
+		</table>
+	</div>
+</form>
+
+<?php
 //#################### LAST LINE ######################################
 ?>

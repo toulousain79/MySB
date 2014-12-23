@@ -213,7 +213,7 @@ function printUser($user) {
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Download here GUI for OpenVPN.</span></a></td></tr>';
 	}
 	// CakeBox Light
-	$CakeboxDatas = $MySB_DB->get("services", "*", ["serv_name" => "CakeBox-Light"]);
+	$CakeboxDatas = $MySB_DB->get("services", ["is_installed", "port_tcp1"], ["serv_name" => "CakeBox-Light"]);
 	if ( $CakeboxDatas["is_installed"] == '1' ) {
 		$Link = 'http://' . $system_datas["hostname"] . ':' . $CakeboxDatas["port_tcp1"] . '/';
 		echo '<tr align="left"><th width="15%" scope="row">CakeBox Light</th>';			
@@ -227,7 +227,7 @@ function printUser($user) {
 	if ( $users_datas["admin"] == '1' ) {
 		echo '<tr align="left"><th colspan="3" scope="row"><h4>Links (Main user)</h4></th></tr>';
 		// Webmin
-		$WebminDatas = $MySB_DB->get("services", "*", ["serv_name" => "Webmin"]);
+		$WebminDatas = $MySB_DB->get("services", ["is_installed", "port_tcp1"], ["serv_name" => "Webmin"]);
 		if ( $WebminDatas["is_installed"] == '1' ) {
 			$Link = 'https://' . $system_datas["hostname"] . ':' . $WebminDatas["port_tcp1"] . '/';
 			echo '<tr align="left"><th width="15%" scope="row">Webmin</th>';			
@@ -245,6 +245,12 @@ function printUser($user) {
 		// Blocklists
 		echo '<tr align="left"><th width="15%" scope="row">Blocklists</th>';		
 		echo '<td colspan="2"><span class="Comments">You can manage <a href="?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a> AND <a href="?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a>.</span></td></tr>';			
+		// DNScrypt-proxy
+		$DNScryptDatas = $MySB_DB->get("services", ["is_installed"], ["serv_name" => "DNScrypt-proxy"]);
+		if ( $DNScryptDatas["is_installed"] == '1' ) {
+			echo '<tr align="left"><th width="15%" scope="row">DNScrypt-proxy</th>';	
+			echo '<td colspan="2"><a href="?main-user/dnscrypt-proxy.html"><span class="Comments">Select your resolver here.</span></a></td></tr>';			
+		}	
 	}
 
 	$RentingDatas = $MySB_DB->get("renting", "*", ["id_renting" => 1]);

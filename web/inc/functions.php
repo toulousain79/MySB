@@ -67,6 +67,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 	$ManagerIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "Seedbox-Manager"]);
 	$WebminDatas = $MySB_DB->get("services", "*", ["serv_name" => "Webmin"]);
 	$WebminIsInstalled = $WebminDatas["is_installed"];
+	$DnscryptIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "DNScrypt-proxy"]);
 	
     if ($page && count($page->children(null, array(), $hidden)) > 0) {
         echo ($startmenu) ? '<ul>' : '';
@@ -94,6 +95,11 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 				case "Webmin":
 					if ( $WebminIsInstalled == '1' ) {
 						echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $WebminDatas["port_tcp1"] . '/">Webmin</a>';
+					}
+					break;
+				case "DNScrypt-proxy":
+					if ( $DnscryptIsInstalled == '0' ) {
+						break;
 					}
 					break;					
 				default:

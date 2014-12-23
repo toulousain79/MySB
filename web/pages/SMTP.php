@@ -50,7 +50,7 @@ function Form() {
 			<tr>
 				<td>Provider :</td>
 				<td>
-					<select id="json-provider" style="width:100px; height: 28px; cursor: pointer;">';
+					<select name="SmtpProvider" id="json-provider" style="width:100px; height: 28px; cursor: pointer;">';
 					
 					foreach($ProvidersList as $Providers) {
 						if ( $SmtpProvider == $Providers) {
@@ -75,7 +75,7 @@ function Form() {
 			<tr>
 				<td>Host :</td>
 				<td>
-					<select id="json-host" style="width:150px; height: 28px;" required="required" readonly>
+					<select name="SmtpHost" id="json-host" style="width:150px; height: 28px;" required="required" readonly>
 						<option>' . $SmtpHost . '</option>
 					</select>
 				
@@ -84,7 +84,7 @@ function Form() {
 			<tr>
 				<td>Port :</td>
 				<td>
-					<select id="json-port" style="width:50px; height: 28px;" required="required" readonly>
+					<select name="SmtpPort" id="json-port" style="width:50px; height: 28px;" required="required" readonly>
 						<option>' . $SmtpPort . '</option>
 					</select>
 				</td>
@@ -98,6 +98,37 @@ function Form() {
 }
 
 echo '<script type="text/javascript">SMTP_ChangeValues("' . THEMES_PATH . 'MySB/js/SMTP_data.json");</script>';
+
+if (isset($_POST['submit'])) {
+	$SmtpProvider = $_POST['SmtpProvider'];
+	$SmtpUsername = $_POST['SmtpUsername'];
+	$SmtpPasswd = $_POST['SmtpPasswd'];
+	$SmtpHost = $_POST['SmtpHost'];
+	$SmtpPort = $_POST['SmtpPort'];
+	
+	if ( (isset($SmtpProvider)) && (isset($SmtpUsername)) && (isset($SmtpPasswd)) && (isset($SmtpHost)) && (isset($SmtpPort)) ) {
+		global $MySB_DB;
+				
+		$result = $MySB_DB->update("smtp", ["smtp_provider" => "$SmtpProvider",
+										"smtp_username" => "$SmtpUsername",
+										"smtp_passwd" => "$SmtpPasswd",
+										"smtp_host" => "$SmtpHost",
+										"smtp_port" => "$SmtpPort"],
+										["id_smtp" => 1]);
+
+		if( $result = 1 ) {
+			$type = 'success';
+		} else {
+			$type = 'error';
+			$message = 'Failed ! It was not possible to update the MySB database.';
+		}
+	} else {
+		$type = 'information';
+		$message = 'Please, complete all fields.';
+	}
+	
+	GenerateMessage('Postfix.bsh', $type, $message);
+}
 
 Form();
 	

@@ -79,6 +79,7 @@ CREATE TABLE commands (
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (1, 'FirewallAndSecurity.bsh', 0, 2);
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (2, 'GetTrackersCert.bsh', 0, 1);
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (3, 'PaymentReminder.bsh', 0, 0);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (4, 'Postfix.bsh', 0, 0);
 
 -- Table: users
 CREATE TABLE users ( 
@@ -165,34 +166,6 @@ INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [port_tcp1],
 INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [is_installed]) VALUES (20, 'BIND', '/etc/bind/named.conf', 'bind9', '', '', '', '', '', ' ', ' ', ' ', 0);
 INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [is_installed]) VALUES (21, 'Stunnel', '/etc/stunnel', 'stunnel4', '', '', '', '', '', ' ', ' ', ' ', 0);
 INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [is_installed]) VALUES (22, 'rTorrent', '/home/%user%', 'rtorrent', null, null, null, null, null, null, null, null, 1);
-
--- Table: dnscrypt_resolvers
-CREATE TABLE dnscrypt_resolvers ( 
-    id_dnscrypt_resolvers          INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                                   NOT NULL ON CONFLICT ABORT
-                                                   UNIQUE ON CONFLICT ABORT,
-    name                           VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
-                                                   UNIQUE ON CONFLICT ABORT,
-    full_name                      VARCHAR( 64 )   NOT NULL ON CONFLICT ABORT
-                                                   UNIQUE ON CONFLICT ABORT,
-    description                    VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT,
-    location                       VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
-    coordinates                    VARCHAR( 32 ),
-    url                            VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT,
-    version                        VARCHAR( 2 )    NOT NULL ON CONFLICT ABORT,
-    dnssec                         BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                                   DEFAULT ( 0 ),
-    no_logs                        BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                                   DEFAULT ( 0 ),
-    namecoin                       BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                                   DEFAULT ( 0 ),
-    resolver_address               VARCHAR( 64 )   NOT NULL ON CONFLICT ABORT
-                                                   UNIQUE ON CONFLICT ABORT,
-    provider_name                  VARCHAR( 64 )   NOT NULL ON CONFLICT ABORT,
-    provider_public_key            VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT,
-    provider_public_key_txt_record VARCHAR( 64 ) 
-);
-
 
 -- Table: blocklists_peerguardian
 CREATE TABLE blocklists_peerguardian ( 
@@ -325,5 +298,35 @@ CREATE TABLE trackers_list_ipv4 (
                                           UNIQUE ON CONFLICT ABORT,
     id_trackers_list      INTEGER         NOT NULL ON CONFLICT ABORT,
     ipv4                  VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT 
+);
+
+
+-- Table: dnscrypt_resolvers
+CREATE TABLE dnscrypt_resolvers ( 
+    id_dnscrypt_resolvers          INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                                   NOT NULL ON CONFLICT ABORT
+                                                   UNIQUE ON CONFLICT ABORT,
+    is_active                      BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
+                                                   DEFAULT ( 0 ),
+    name                           VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
+                                                   UNIQUE ON CONFLICT ABORT,
+    full_name                      VARCHAR( 64 )   NOT NULL ON CONFLICT ABORT
+                                                   UNIQUE ON CONFLICT ABORT,
+    description                    VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT,
+    location                       VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
+    coordinates                    VARCHAR( 32 ),
+    url                            VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT,
+    version                        VARCHAR( 2 )    NOT NULL ON CONFLICT ABORT,
+    dnssec                         BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
+                                                   DEFAULT ( 0 ),
+    no_logs                        BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
+                                                   DEFAULT ( 0 ),
+    namecoin                       BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
+                                                   DEFAULT ( 0 ),
+    resolver_address               VARCHAR( 64 )   NOT NULL ON CONFLICT ABORT
+                                                   UNIQUE ON CONFLICT ABORT,
+    provider_name                  VARCHAR( 64 )   NOT NULL ON CONFLICT ABORT,
+    provider_public_key            VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT,
+    provider_public_key_txt_record VARCHAR( 64 ) 
 );
 
