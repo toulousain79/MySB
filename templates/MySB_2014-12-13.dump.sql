@@ -76,10 +76,12 @@ CREATE TABLE commands (
                                DEFAULT ( 0 ) 
 );
 
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (1, 'FirewallAndSecurity.bsh', 0, 2);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (2, 'GetTrackersCert.bsh', 0, 1);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (3, 'PaymentReminder.bsh', 0, 0);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (4, 'Postfix.bsh', 0, 0);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (1, 'FirewallAndSecurity.bsh', 0, 1);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (2, 'GetTrackersCert.bsh', 0, 2);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (3, 'PaymentReminder.bsh', 0, 2);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (4, 'Postfix.bsh', 0, 2);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (5, 'BlocklistsRTorrent.bsh', 0, 2);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (6, 'MySB_ChangeUserPassword', 0, 2);
 
 -- Table: users
 CREATE TABLE users ( 

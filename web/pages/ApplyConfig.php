@@ -28,11 +28,39 @@ if ( IfApplyConfig() > 0 ) {
 	$Commands = $MySB_DB->select("commands", "commands", ["reload" => 1, "ORDER" => "priority DESC"]);
 
 	foreach ($Commands as $Cmd) {
+		$output = '';
+		
 		switch ($Cmd) {
+			case "BlocklistsRTorrent.bsh":
+				echo '<div align="center"><h1>BlocklistsRTorrent.bsh...</h1></div>';
+			
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'BlocklistsRTorrent.bsh'", $output, $result);
+
+				foreach ( $output as $item ) {
+					echo '<div class="Comments" align="center">'.$item.'</div>';
+				}
+				
+				if ( $result == 0 ) {
+					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "$Cmd"]);
+					if ( $result > 0 ) {
+						$type = 'information';
+						$message = 'The blocklist for rTorrent was created! Thank you to wait a little longer to apply ...';
+					} else {
+						$type = 'error';
+						$message = 'Failed ! It was not possible to update the MySB database.';
+					}			
+				} else {
+					$type = 'error';
+					$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
+				}
+				
+				break;
+				
 			case "FirewallAndSecurity.bsh":
 				echo '<div align="center"><h1>FirewallAndSecurity.bsh...</h1></div>';
 			
-				exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh new 'ApplyConfig.php'", $output, $result);
+				//exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh new 'ApplyConfig.php'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'FirewallAndSecurity.bsh'", $output, $result);
 
 				foreach ( $output as $item ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';
@@ -55,7 +83,8 @@ if ( IfApplyConfig() > 0 ) {
 			case "GetTrackersCert.bsh":
 				echo '<div align="center"><h1>GetTrackersCert.bsh...</h1></div>';
 				
-				exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh 'new' 'ApplyConfig.php' 'GetTrackersCert.bsh'", $output, $result);
+				//exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh 'new' 'ApplyConfig.php' 'GetTrackersCert.bsh'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'GetTrackersCert.bsh'", $output, $result);
 
 				foreach ( $output as $item ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';
@@ -75,10 +104,40 @@ if ( IfApplyConfig() > 0 ) {
 				}
 				
 				break;
+				
 			case "Postfix.bsh":
 				echo '<div align="center"><h1>Postfix.bsh...</h1></div>';
 				
-				exec("sudo /bin/bash /etc/MySB/install/Postfix.bsh 'ApplyConfig.php'", $output, $result);
+				//exec("sudo /bin/bash /etc/MySB/install/Postfix.bsh 'ApplyConfig.php'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'Postfix.bsh'", $output, $result);
+
+				foreach ( $output as $item ) {
+					echo '<div class="Comments" align="center">'.$item.'</div>';
+				}				
+
+				if ( $result == 0 ) {
+					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "$Cmd"]);
+					if ( $result > 0 ) {
+						$type = 'success';
+					} else {
+						$type = 'error';
+						$message = 'Failed ! It was not possible to update the MySB database.';
+					}
+				} else {
+					$type = 'error';
+					$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
+				}
+				header('Refresh: 10; URL=/?main-user/SMTP.html');
+				
+				break;
+			case "MySB_ChangeUserPassword":
+				echo '<div align="center"><h1>MySB_ChangeUserPassword...</h1></div>';
+				
+				global $new_pwd;
+				$CurrentUser = $_SERVER['PHP_AUTH_USER'];
+				
+				//exec("sudo /bin/bash /etc/MySB/install/Postfix.bsh 'ApplyConfig.php'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword' '$CurrentUser' '$new_pwd'", $output, $result);
 
 				foreach ( $output as $item ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';
@@ -116,6 +175,7 @@ if ( IfApplyConfig() > 0 ) {
 		if ( $type == 'success' ) {
 			echo '<script type="text/javascript">ApplyConfig("Updated");</script>';
 		}
+		
 		GenerateMessage(false, $type, $message);
 	}
 } else {

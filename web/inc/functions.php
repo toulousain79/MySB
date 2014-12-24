@@ -359,11 +359,11 @@ function GenerateMessage($commands, $type, $message = '') {
 			if ( $commands != false ) {
 				$value = $MySB_DB->update("commands", ["reload" => 1], ["commands" => "$commands"]);
 				
-				// switch ($commands) {
-					// case "GetTrackersCert.bsh":
-						// $value = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "FirewallAndSecurity.bsh"]);
-						// break;
-				// }
+				switch ($commands) {
+					case "BlocklistsRTorrent.bsh":
+						$value = $MySB_DB->update("commands", ["reload" => 1], ["commands" => "FirewallAndSecurity.bsh"]);
+						break;
+				}
 				echo '<script type="text/javascript">ApplyConfig("ToUpdate");</script>';
 			}
 			break;		
