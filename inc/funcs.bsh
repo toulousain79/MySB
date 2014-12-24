@@ -32,7 +32,7 @@ BannerGenerator() {
 		MYLIGN=`head -n $lign /etc/MySB/files/banner.tmp | tail -n 1`
 		echo "${CGREEN}#$CEND	${CBLUE}$MYLIGN$CEND" >> /etc/MySB/files/banner_$MySB_CurrentVersion
 	done
-	rm -vf /etc/MySB/files/banner.tmp
+	rm -f /etc/MySB/files/banner.tmp
 
 	echo "${CGREEN}#	by toulousain79$CEND ---> ${CYELLOW}https://github.com/toulousain79/$CEND" >> /etc/MySB/files/banner_$MySB_CurrentVersion
 	echo "${CGREEN}#$CEND" >> /etc/MySB/files/banner_$MySB_CurrentVersion
@@ -194,7 +194,7 @@ ManageServices() {
 	Command="$1"
 	
 	if [ ! -z "$2" ]; then
-		FileToRead="/etc/MySB/$2"
+		FileToRead="$2"
 	else
 		FileToRead="$0"
 	fi
@@ -215,9 +215,18 @@ ManageServices() {
 					echo &> /dev/null
 				;;
 				*)
-					if hash ${FullBIN} 2> /dev/null; then
-						ServicesToManage="${ServicesToManage} ${BIN}"
-					fi
+					case "${FullBIN}" in
+						"bind9")
+							if hash bind 2> /dev/null; then
+								ServicesToManage="${ServicesToManage} ${BIN}"
+							fi
+						;;
+						*)
+							if hash ${FullBIN} 2> /dev/null; then
+								ServicesToManage="${ServicesToManage} ${BIN}"
+							fi
+						;;
+					esac
 				;;			
 			esac
 		fi
@@ -310,13 +319,13 @@ ManageServices() {
 									esac
 								;;
 								"dnscrypt-proxy")
+									service $Service restart
 									if [ "`screen -ls | grep MySB`" != "" ] || [ "`ps ax | grep 'MySB_Install.bsh' | sed '/grep/d'`" != "" ]; then # MySB installation
 										#### Add SMTP host in cache
 										if [ "$SMTP_Provider" != "LOCAL" ]; then
 											ping -c5 $SMTP_Host &> /dev/null
 										fi		
-									fi
-									service $Service restart
+									fi									
 								;;
 								*)	
 									service $Service restart
