@@ -143,7 +143,7 @@ if ( IfApplyConfig() > 0 ) {
 				}				
 
 				if ( $result == 0 ) {
-					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "MySB_ChangeUserPassword"]);
+					$result = $MySB_DB->update("commands", ["reload" => 0, "args" => ""], ["commands" => "MySB_ChangeUserPassword"]);
 					if ( $result > 0 ) {
 						$type = 'success';
 					} else {
