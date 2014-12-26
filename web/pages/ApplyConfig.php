@@ -59,7 +59,6 @@ if ( IfApplyConfig() > 0 ) {
 			case "FirewallAndSecurity.bsh":
 				echo '<div align="center"><h1>FirewallAndSecurity.bsh...</h1></div>';
 			
-				//exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh new 'ApplyConfig.php'", $output, $result);
 				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'FirewallAndSecurity.bsh'", $output, $result);
 
 				foreach ( $output as $item ) {
@@ -83,7 +82,6 @@ if ( IfApplyConfig() > 0 ) {
 			case "GetTrackersCert.bsh":
 				echo '<div align="center"><h1>GetTrackersCert.bsh...</h1></div>';
 				
-				//exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh 'new' 'ApplyConfig.php' 'GetTrackersCert.bsh'", $output, $result);
 				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'GetTrackersCert.bsh'", $output, $result);
 
 				foreach ( $output as $item ) {

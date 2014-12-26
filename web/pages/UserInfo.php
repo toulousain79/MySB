@@ -40,7 +40,7 @@ function printUser($user) {
 	echo '<tr align="left"><th colspan="3" scope="row"><h4>User personal info</h4></th></tr>';		
 	// Username
 	echo '<tr align="left"><th width="15%" scope="row">Username</th>';
-	echo '<td>' . $user . '</td>';
+	echo '<td width="25%">' . $user . '</td>';
 	echo '<td> </td></tr>';
 	// IP Address
 	$IPv4_List = $MySB_DB->select("users_addresses", "ipv4", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
