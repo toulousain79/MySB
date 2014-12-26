@@ -60,7 +60,7 @@ if (isset($_POST['submit'])) {
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 	<form class="form_settings" method="post" action="">
 		<fieldset>
-		<legend>What resolver do you use ? (IPv4 only)</legend>
+		<legend>What resolver do you want to use ? (IPv4 only)</legend>
 				Available resolvers: <select name="ResolverName" style="width:200px; cursor: pointer;" required="required">
 <?php
 						$SelectedResolver = $MySB_DB->get("system", "dnscrypt_resolver", ["id_system" => 1]);
