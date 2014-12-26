@@ -17,6 +17,7 @@ function SMTP_ChangeValues(JSON_File, Username, Password) {
 						var host = [];
 						document.getElementById("SmtpUsername").value = Username;
 						document.getElementById("SmtpPasswd").value = Password;
+						document.getElementById("SmtpPasswdConfirm").value = Password;
 						port = '465';
 											
 						switch(key) {
@@ -25,6 +26,7 @@ function SMTP_ChangeValues(JSON_File, Username, Password) {
 								port = '25';
 								document.getElementById("SmtpUsername").value = "LOCAL";
 								document.getElementById("SmtpPasswd").value = "LOCAL";
+								document.getElementById("SmtpPasswdConfirm").value = "LOCAL";
 								break;
 							case 'FREE':
 								host = data.FREE;

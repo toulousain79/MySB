@@ -75,6 +75,10 @@ function Form() {
 				<td><input class="text_normal" id="SmtpPasswd" name="SmtpPasswd" type="password" value="' . $SmtpPasswd . '" required="required" /></td>
 			</tr>
 			<tr>
+				<td>Confirm :</td>
+				<td><input id="SmtpPasswdConfirm" name="SmtpPasswdConfirm" type="password" value="' . $SmtpPasswd . '" required="required" /></td>
+			</tr>			
+			<tr>
 				<td>Host :</td>
 				<td>
 					<select name="SmtpHost" id="json-host" style="width:150px; height: 28px;" required="required" readonly>
@@ -103,24 +107,30 @@ if (isset($_POST['submit'])) {
 	$SmtpProvider = $_POST['SmtpProvider'];
 	$SmtpUsername = $_POST['SmtpUsername'];
 	$SmtpPasswd = $_POST['SmtpPasswd'];
+	$SmtpPasswdConfirm = $_POST['SmtpPasswdConfirm'];
 	$SmtpHost = $_POST['SmtpHost'];
 	$SmtpPort = $_POST['SmtpPort'];
 	
-	if ( (isset($SmtpProvider)) && (isset($SmtpUsername)) && (isset($SmtpPasswd)) && (isset($SmtpHost)) && (isset($SmtpPort)) ) {
-		global $MySB_DB;
-				
-		$result = $MySB_DB->update("smtp", ["smtp_provider" => "$SmtpProvider",
-										"smtp_username" => "$SmtpUsername",
-										"smtp_passwd" => "$SmtpPasswd",
-										"smtp_host" => "$SmtpHost",
-										"smtp_port" => "$SmtpPort"],
-										["id_smtp" => 1]);
+	if ( (isset($SmtpProvider)) && (isset($SmtpUsername)) && (isset($SmtpPasswd)) && (isset($SmtpPasswdConfirm)) && (isset($SmtpHost)) && (isset($SmtpPort)) ) {
+		if ( $SmtpPasswd == $SmtpPasswdConfirm ) {
+			global $MySB_DB;
+					
+			$result = $MySB_DB->update("smtp", ["smtp_provider" => "$SmtpProvider",
+											"smtp_username" => "$SmtpUsername",
+											"smtp_passwd" => "$SmtpPasswd",
+											"smtp_host" => "$SmtpHost",
+											"smtp_port" => "$SmtpPort"],
+											["id_smtp" => 1]);
 
-		if( $result = 1 ) {
-			$type = 'success';
+			if( $result = 1 ) {
+				$type = 'success';
+			} else {
+				$type = 'error';
+				$message = 'Failed ! It was not possible to update the MySB database.';
+			}
 		} else {
 			$type = 'error';
-			$message = 'Failed ! It was not possible to update the MySB database.';
+			$message = 'Error between password and verification.';		
 		}
 	} else {
 		$type = 'information';
