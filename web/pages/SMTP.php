@@ -90,7 +90,7 @@ function Form() {
 			<tr>
 				<td>Port :</td>
 				<td>
-					<select name="SmtpPort" id="json-port" style="width:50px; height: 28px;" required="required" readonly>
+					<select name="SmtpPort" id="json-port" style="width:60px; height: 28px;" required="required" readonly>
 						<option>' . $SmtpPort . '</option>
 					</select>
 				</td>
