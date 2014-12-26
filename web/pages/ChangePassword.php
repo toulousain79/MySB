@@ -81,7 +81,7 @@ if ( isset($_POST['submit']) ) {
 				
 					if ( $result > 0 ) {
 						$type = 'success';
-						$args = ["username" => $_SERVER['PHP_AUTH_USER'], "passwd" => "$new_pwd"];
+						$args = "$new_pwd";
 					} else {
 						$type = 'error';
 						$message = 'Failed ! It was not possible to update the Wolf database.';
