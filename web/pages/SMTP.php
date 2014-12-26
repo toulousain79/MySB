@@ -43,7 +43,9 @@ function Form() {
 	$SmtpPort = $smtp_datas["smtp_port"];											
 
 	$ProvidersList = array('LOCAL', 'FREE', 'YAHOO', 'OVH', 'GMAIL');
-							
+	
+	echo '<script type="text/javascript">SMTP_ChangeValues("' . THEMES_PATH . 'MySB/js/SMTP_data.json", "'.$SmtpUsername.'", "'.$SmtpPasswd.'");</script>';	
+	
 	echo '
 	<form class="form_settings" method="post" action="">
 		<div align="center"><table border="0">	
@@ -66,11 +68,11 @@ function Form() {
 			</tr>
 			<tr>
 				<td>Username :</td>
-				<td><input class="text_normal" name="SmtpUsername" type="text" value="' . $SmtpUsername . '" required="required" /></td>
+				<td><input class="text_normal" id="SmtpUsername" name="SmtpUsername" type="text" value="' . $SmtpUsername . '" required="required" /></td>
 			</tr>
 			<tr>
 				<td>Password :</td>
-				<td><input class="text_normal" name="SmtpPasswd" type="password" value="' . $SmtpPasswd . '" required="required" /></td>
+				<td><input class="text_normal" id="SmtpPasswd" name="SmtpPasswd" type="password" value="' . $SmtpPasswd . '" required="required" /></td>
 			</tr>
 			<tr>
 				<td>Host :</td>
@@ -96,8 +98,6 @@ function Form() {
 	</form>
 	';
 }
-
-echo '<script type="text/javascript">SMTP_ChangeValues("' . THEMES_PATH . 'MySB/js/SMTP_data.json");</script>';
 
 if (isset($_POST['submit'])) {
 	$SmtpProvider = $_POST['SmtpProvider'];

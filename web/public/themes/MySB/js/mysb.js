@@ -5,8 +5,8 @@ select.onchange = function () {
 }
 
 // Select change SMTP values
-function SMTP_ChangeValues(JSON_File) {
-		$(function() {		
+function SMTP_ChangeValues(JSON_File, Username, Password) {
+		$(function() {
 				$("#json-provider").change(function() {
 	
 					var $dropdown = $(this);
@@ -15,28 +15,30 @@ function SMTP_ChangeValues(JSON_File) {
 					
 						var key = $dropdown.val();
 						var host = [];
+						document.getElementById("SmtpUsername").value = Username;
+						document.getElementById("SmtpPasswd").value = Password;
+						port = '465';
 											
 						switch(key) {
 							case 'LOCAL':
 								host = data.LOCAL;
 								port = '25';
+								document.getElementById("SmtpUsername").value = "LOCAL";
+								document.getElementById("SmtpPasswd").value = "LOCAL";
 								break;
 							case 'FREE':
 								host = data.FREE;
-								port = '465';
 								break;
 							case 'YAHOO':
 								host = data.YAHOO;
-								port = '465';
+								
 								break;
 							case 'OVH':
 								host = data.OVH;
-								port = '465';
 								break;
 							case 'GMAIL':
 								host = data.GMAIL;
-								port = '465';
-								break;							
+								break;
 						}
 						
 						var $jsontwo = $("#json-host");
@@ -45,7 +47,7 @@ function SMTP_ChangeValues(JSON_File) {
 
 						var $jsontwo = $("#json-port");
 						$jsontwo.empty();
-						$jsontwo.append("<option value=\"" + port + "\">" + port + "</option>");							
+						$jsontwo.append("<option value=\"" + port + "\">" + port + "</option>");
 					});
 				});
 
@@ -71,7 +73,6 @@ function ApplyConfig(state)
 			break;
 		case 'Updated':
 			document.getElementById("ApplyConfigButtonState").className = "ApplyConfigButtonNothing";
-			break;			
+			break;
 	}
-	
 }

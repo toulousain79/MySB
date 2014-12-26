@@ -107,8 +107,7 @@ if ( IfApplyConfig() > 0 ) {
 				
 			case "Postfix.bsh":
 				echo '<div align="center"><h1>Postfix.bsh...</h1></div>';
-				
-				//exec("sudo /bin/bash /etc/MySB/install/Postfix.bsh 'ApplyConfig.php'", $output, $result);
+
 				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'Postfix.bsh'", $output, $result);
 
 				foreach ( $output as $item ) {
@@ -127,7 +126,7 @@ if ( IfApplyConfig() > 0 ) {
 					$type = 'error';
 					$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
 				}
-				header('Refresh: 10; URL=/?main-user/SMTP.html');
+				header('Refresh: 10; URL=/?main-user/smtp.html');
 				
 				break;
 			case "MySB_ChangeUserPassword":
