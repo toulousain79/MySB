@@ -63,26 +63,6 @@ CREATE TABLE vars (
 
 INSERT INTO [vars] ([id_vars], [fail2ban_whitelist], [vpn_ip], [white_tcp_port_out], [white_udp_port_out]) VALUES (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24', '80 443', null);
 
--- Table: commands
-CREATE TABLE commands ( 
-    id_commands INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                               NOT NULL ON CONFLICT ABORT
-                               UNIQUE ON CONFLICT ABORT,
-    commands    VARCHAR( 32 )  NOT NULL ON CONFLICT ABORT
-                               UNIQUE ON CONFLICT ABORT,
-    reload      BOOLEAN( 1 )   NOT NULL ON CONFLICT ABORT
-                               DEFAULT ( 0 ),
-    priority    INTEGER( 2 )   NOT NULL ON CONFLICT ABORT
-                               DEFAULT ( 0 ) 
-);
-
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (1, 'FirewallAndSecurity.bsh', 0, 1);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (2, 'GetTrackersCert.bsh', 0, 2);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (3, 'PaymentReminder.bsh', 0, 2);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (4, 'Postfix.bsh', 0, 2);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (5, 'BlocklistsRTorrent.bsh', 0, 2);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority]) VALUES (6, 'MySB_ChangeUserPassword', 0, 2);
-
 -- Table: users
 CREATE TABLE users ( 
     id_users      INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -332,3 +312,24 @@ INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [port_tcp1],
 INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (20, 'BIND', '/etc/bind/named.conf', 'bind9', '', '', '', '', '', ' ', ' ', ' ', 0, 0);
 INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (21, 'Stunnel', '/etc/stunnel', 'stunnel4', '', '', '', '', '', ' ', ' ', ' ', 0, 0);
 INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (22, 'rTorrent', '/home/%user%', 'rtorrent', null, null, null, null, null, null, null, null, 0, 1);
+
+-- Table: commands
+CREATE TABLE commands ( 
+    id_commands INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                               NOT NULL ON CONFLICT ABORT
+                               UNIQUE ON CONFLICT ABORT,
+    commands    VARCHAR( 32 )  NOT NULL ON CONFLICT ABORT
+                               UNIQUE ON CONFLICT ABORT,
+    reload      BOOLEAN( 1 )   NOT NULL ON CONFLICT ABORT
+                               DEFAULT ( 0 ),
+    priority    INTEGER( 2 )   NOT NULL ON CONFLICT ABORT
+                               DEFAULT ( 0 ),
+    args        VARCHAR( 32 ) 
+);
+
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (1, 'FirewallAndSecurity.bsh', 0, 1, null);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (2, 'GetTrackersCert.bsh', 0, 2, null);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (3, 'PaymentReminder.bsh', 0, 2, null);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (4, 'Postfix.bsh', 0, 2, null);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (5, 'BlocklistsRTorrent.bsh', 0, 2, null);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (6, 'MySB_ChangeUserPassword', 0, 2, null);
