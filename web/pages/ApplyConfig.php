@@ -155,7 +155,6 @@ if ( IfApplyConfig() > 0 ) {
 					$type = 'error';
 					$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
 				}
-				header('Refresh: 10; URL=/?main-user/SMTP.html');
 				
 				break;				
 			case "PaymentReminder.bsh":
