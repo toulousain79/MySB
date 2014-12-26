@@ -64,6 +64,7 @@ if ( isset($_POST['submit']) ) {
 	$current_pwd = $_POST['current_pwd'];
 	$new_pwd = $_POST['new_pwd'];
 	$confirm_pwd = $_POST['confirm_pwd'];
+	$args = false;
 	
 	if ( ($current_pwd != '') && ($new_pwd != '') && ($confirm_pwd != '') ) {
 		if ( $current_pwd == $_SERVER['PHP_AUTH_PW'] ) {
@@ -80,6 +81,7 @@ if ( isset($_POST['submit']) ) {
 				
 					if ( $result > 0 ) {
 						$type = 'success';
+						$args = ["username" => $_SERVER['PHP_AUTH_USER'], "passwd" => "$new_pwd"];
 					} else {
 						$type = 'error';
 						$message = 'Failed ! It was not possible to update the Wolf database.';
@@ -102,7 +104,7 @@ if ( isset($_POST['submit']) ) {
 	}
 	
 	//GenerateMessage(false, $type, $message);
-	GenerateMessage('MySB_ChangeUserPassword', $type, $message);
+	GenerateMessage('MySB_ChangeUserPassword', $type, $message, $args);
 }
 
 //#################### LAST LINE ######################################

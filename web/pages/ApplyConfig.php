@@ -25,12 +25,12 @@
 if ( IfApplyConfig() > 0 ) {
 	global $MySB_DB;
 	
-	$Commands = $MySB_DB->select("commands", "commands", ["reload" => 1, "ORDER" => "priority DESC"]);
+	$Commands = $MySB_DB->select("commands", "*", ["reload" => 1, "ORDER" => "priority DESC"]);
 
 	foreach ($Commands as $Cmd) {
 		$output = '';
 		
-		switch ($Cmd) {
+		switch ($Cmd['commands']) {
 			case "BlocklistsRTorrent.bsh":
 				echo '<div align="center"><h1>BlocklistsRTorrent.bsh...</h1></div>';
 			
@@ -41,7 +41,7 @@ if ( IfApplyConfig() > 0 ) {
 				}
 				
 				if ( $result == 0 ) {
-					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "$Cmd"]);
+					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "BlocklistsRTorrent.bsh"]);
 					if ( $result > 0 ) {
 						$type = 'information';
 						$message = 'The blocklist for rTorrent was created! Thank you to wait a little longer to apply ...';
@@ -67,7 +67,7 @@ if ( IfApplyConfig() > 0 ) {
 				}
 				
 				if ( $result == 0 ) {
-					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "$Cmd"]);
+					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "FirewallAndSecurity.bsh"]);
 					if ( $result > 0 ) {
 						$type = 'success';
 					} else {
@@ -91,7 +91,7 @@ if ( IfApplyConfig() > 0 ) {
 				}				
 
 				if ( $result == 0 ) {
-					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "$Cmd"]);
+					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "GetTrackersCert.bsh"]);
 					if ( $result > 0 ) {
 						$type = 'success';
 					} else {
@@ -116,7 +116,7 @@ if ( IfApplyConfig() > 0 ) {
 				}				
 
 				if ( $result == 0 ) {
-					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "$Cmd"]);
+					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "Postfix.bsh"]);
 					if ( $result > 0 ) {
 						$type = 'success';
 					} else {
@@ -133,18 +133,17 @@ if ( IfApplyConfig() > 0 ) {
 			case "MySB_ChangeUserPassword":
 				echo '<div align="center"><h1>MySB_ChangeUserPassword...</h1></div>';
 				
-				global $new_pwd;
-				$CurrentUser = $_SERVER['PHP_AUTH_USER'];
+				$username = $Cmd['args']['username'];
+				$passwd = $Cmd['args']['passwd'];
 				
-				//exec("sudo /bin/bash /etc/MySB/install/Postfix.bsh 'ApplyConfig.php'", $output, $result);
-				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword' '$CurrentUser' '$new_pwd'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword' '$username' '$passwd'", $output, $result);
 
 				foreach ( $output as $item ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';
 				}				
 
 				if ( $result == 0 ) {
-					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "$Cmd"]);
+					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "MySB_ChangeUserPassword"]);
 					if ( $result > 0 ) {
 						$type = 'success';
 					} else {
@@ -159,7 +158,7 @@ if ( IfApplyConfig() > 0 ) {
 				break;				
 			case "PaymentReminder.bsh":
 				echo '<div align="center"><h1>PaymentReminder.bsh...</h1></div>';
-				$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "$Cmd"]);
+				$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "PaymentReminder.bsh"]);
 				if ( $result > 0 ) {
 					$type = 'success';
 				} else {

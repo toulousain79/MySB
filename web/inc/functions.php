@@ -349,7 +349,7 @@ function IfApplyConfig() {
 }
 
 // Generate message (success, error, information, ...)
-function GenerateMessage($commands, $type, $message = '') {
+function GenerateMessage($commands, $type, $message, $args = false) {
 	global $MySB_DB;
 
 	switch ($type) {
@@ -357,7 +357,11 @@ function GenerateMessage($commands, $type, $message = '') {
 			$timeout = 2000;
 			$message = 'Success !';
 			if ( $commands != false ) {
-				$value = $MySB_DB->update("commands", ["reload" => 1], ["commands" => "$commands"]);
+				if ( $args != false ) {
+					$value = $MySB_DB->update("commands", ["reload" => 1, "args" => "$args"], ["commands" => "$commands"]);
+				} else {
+					$value = $MySB_DB->update("commands", ["reload" => 1], ["commands" => "$commands"]);
+				}
 				
 				switch ($commands) {
 					case "BlocklistsRTorrent.bsh":
