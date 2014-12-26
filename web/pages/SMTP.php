@@ -76,7 +76,7 @@ function Form() {
 			</tr>
 			<tr>
 				<td>Confirm :</td>
-				<td><input id="SmtpPasswdConfirm" name="SmtpPasswdConfirm" type="password" value="' . $SmtpPasswd . '" required="required" /></td>
+				<td><input class="text_normal" id="SmtpPasswdConfirm" name="SmtpPasswdConfirm" type="password" value="' . $SmtpPasswd . '" required="required" /></td>
 			</tr>			
 			<tr>
 				<td>Host :</td>
