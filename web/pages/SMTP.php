@@ -32,6 +32,7 @@ function Form() {
 											"smtp_passwd",
 											"smtp_host",
 											"smtp_port",
+											"smtp_email"
 										], [
 											"id_smtp" => 1
 										]);
@@ -41,6 +42,7 @@ function Form() {
 	$SmtpPasswd = $smtp_datas["smtp_passwd"];
 	$SmtpHost = $smtp_datas["smtp_host"];
 	$SmtpPort = $smtp_datas["smtp_port"];
+	$SmtpEmail = $smtp_datas["smtp_email"];
 
 	$ProvidersList = array('LOCAL', 'FREE', 'YAHOO', 'OVH', 'GMAIL');
 
@@ -66,6 +68,10 @@ function Form() {
 					</select>
 				</td>
 			</tr>
+			<tr>
+				<td>E-mail address linked:</td>
+				<td><input class="text_normal" id="SmtpEmail" name="SmtpEmail" type="text" value="' . $SmtpEmail . '" required="required" /></td>
+			</tr>			
 			<tr>
 				<td>Username :</td>
 				<td><input class="text_normal" id="SmtpUsername" name="SmtpUsername" type="text" value="' . $SmtpUsername . '" required="required" /></td>
@@ -110,8 +116,9 @@ if (isset($_POST['submit'])) {
 	$SmtpPasswdConfirm = $_POST['SmtpPasswdConfirm'];
 	$SmtpHost = $_POST['SmtpHost'];
 	$SmtpPort = $_POST['SmtpPort'];
+	$SmtpEmail = $_POST['SmtpEmail'];
 
-	if ( (isset($SmtpProvider)) && (isset($SmtpUsername)) && (isset($SmtpPasswd)) && (isset($SmtpPasswdConfirm)) && (isset($SmtpHost)) && (isset($SmtpPort)) ) {
+	if ( (isset($SmtpProvider)) && (isset($SmtpUsername)) && (isset($SmtpPasswd)) && (isset($SmtpPasswdConfirm)) && (isset($SmtpHost)) && (isset($SmtpPort) && (isset($SmtpEmail)) ) {
 		if ( $SmtpPasswd == $SmtpPasswdConfirm ) {
 			global $MySB_DB;
 
@@ -119,7 +126,8 @@ if (isset($_POST['submit'])) {
 											"smtp_username" => "$SmtpUsername",
 											"smtp_passwd" => "$SmtpPasswd",
 											"smtp_host" => "$SmtpHost",
-											"smtp_port" => "$SmtpPort"],
+											"smtp_port" => "$SmtpPort",
+											"smtp_email" => "$SmtpEmail"],
 											["id_smtp" => 1]);
 
 			if( $result = 1 ) {

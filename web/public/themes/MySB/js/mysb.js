@@ -5,7 +5,7 @@ select.onchange = function () {
 }
 
 // Select change SMTP values
-function SMTP_ChangeValues(JSON_File, Username, Password) {
+function SMTP_ChangeValues(JSON_File, Email, Username, Password) {
 		$(function() {
 				$("#json-provider").change(function() {
 	
@@ -18,6 +18,7 @@ function SMTP_ChangeValues(JSON_File, Username, Password) {
 						document.getElementById("SmtpUsername").value = Username;
 						document.getElementById("SmtpPasswd").value = Password;
 						document.getElementById("SmtpPasswdConfirm").value = Password;
+						document.getElementById("SmtpEmail").value = Email;
 						port = '465';
 											
 						switch(key) {
