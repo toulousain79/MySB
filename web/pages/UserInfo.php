@@ -60,10 +60,9 @@ function printUser($user) {
 	echo '<tr align="left"><th width="15%" scope="row">Password</th>';
 	if ( ($UserPasswd != "") && ($users_datas["admin"] != '1') ) {
 		echo '<td>' . $UserPasswd . '</td>';
-		echo '<td  style="background-color: #FF6666; text-align: center;"><form method="post" action="?user/change-password.html">';
-		echo '<input name="TempPass" type="hidden" value="' . $UserPasswd . '" />';
-		echo '<input style="cursor: pointer;" name="submit" type="submit" value="You must change your password now !" />';
-		echo '</form></td>';
+		echo '<td  style="background-color: #FF6666; text-align: center;">';
+		echo '<span class="Comments"><a href="?user/change-password.html">You must change your password now !</a></span>';
+		echo '</td>';
 	} else {
 		echo '<td>*****</td>';
 		echo '<td><span class="Comments">You can change your password <a href="?user/change-password.html">here</a>.</span></td>';

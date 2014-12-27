@@ -57,8 +57,8 @@ switch ($IsMainUser) {
 			<ul style="margin-left: 100px">
 				<li>Display your account information</li>
 				<li>Change your password</li>
-				<li>Manage your authorized connection addresses (IP or dynamic DNS)</li>
-				<li>Download the configuration files for OpenVPN (if installed)</li>
+				<li>Manage your authorized connection addresses <span class="Comments">(IP or dynamic DNS)</span></li>
+				<li>Download the configuration files for OpenVPN <span class="Comments">(if installed)</span></li>
 			</ul>
 		';
 		break;

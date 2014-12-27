@@ -22,21 +22,20 @@
 //
 //#################### FIRST LINE #####################################
 
-if ( isset($_POST['TempPass']) ) {
-	$TempPass = $_POST['TempPass'];
-	$opts = "readonly=\"true\" value=" . $TempPass . "";
+global $users_datas;
+
+if ( isset($users_datas["users_passwd"]) ) {
+	$opts = 'readonly="true" value="' . $users_datas["users_passwd"] . '"';
 } else {
 	$opts = '';
 }
-
-//global $users_datas;
 
 echo '
 	<form class="form_settings" method="post" action="">
 		<div align="center"><table border="0">
 			<tr>
 				<td>Current password :</td>
-				<td><input name="current_pwd" type="password" ' . $opts . ' value="' . $users_datas["users_passwd"] . '"/></td>
+				<td><input name="current_pwd" type="password" ' . $opts . '/></td>
 			</tr>
 			<tr>
 				<td>New password :</td>
