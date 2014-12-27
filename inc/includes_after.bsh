@@ -29,8 +29,8 @@ source /etc/MySB/inc/funcs.bsh
 #### 2 - cleaning
 case "$ScriptName" in
 	"MySB_Install.bsh")
-		if [ "$(pwd)/$(basename $0)" != "/etc/MySB/MySB_Install.bsh" ]; then
-			rm -vf $0
+		if [ "$DirName/MySB_Install.bsh" != "/etc/MySB/MySB_Install.bsh" ]; then
+			rm -f $0
 		fi
 	;;
 	"MySB_CreateUser")
@@ -95,32 +95,30 @@ case "$ScriptName" in
 		echo &> /dev/null
 	;;
 	*)
-		if [ "`ps ax | grep 'ApplyConfig.bsh' | grep 'Postfix.bsh' | sed '/grep/d'`" != "" ]; then
-			if hash /usr/bin/updatedb 2>/dev/null ]; then
-				log_daemon_msg "Update the slocate database (updatedb)"
-				/usr/bin/updatedb
-				StatusLSB
-			fi
-			if hash /sbin/ldconfig 2>/dev/null; then
-				log_daemon_msg "Configure dynamic linker run-time bindings (ldconfig)"
-				/sbin/ldconfig
-				StatusLSB
-			fi
+		if hash /usr/bin/updatedb 2>/dev/null ]; then
+			log_daemon_msg "Update the slocate database (updatedb)"
+			/usr/bin/updatedb
+			StatusLSB
+		fi
+		if hash /sbin/ldconfig 2>/dev/null; then
+			log_daemon_msg "Configure dynamic linker run-time bindings (ldconfig)"
+			/sbin/ldconfig
+			StatusLSB
+		fi
 
-			#### 5 - Drop caches
-			if [ -z $IFPVEKERNEL ]; then
-				log_daemon_msg "Drop caches system"
-				#### Free cache server
-				## To free pagecache
-				#sync; echo 1 > /proc/sys/vm/drop_caches
-				## To release dentries and inodes
-				#sync; echo 2 > /proc/sys/vm/drop_caches
-				## To free pagecache, dentries and inodes
-				sync; echo 3 > /proc/sys/vm/drop_caches
-				## Default
-				#sync; echo 0 > /proc/sys/vm/drop_caches
-				StatusLSB
-			fi
+		#### 5 - Drop caches
+		if [ -z $IFPVEKERNEL ]; then
+			log_daemon_msg "Drop caches system"
+			#### Free cache server
+			## To free pagecache
+			#sync; echo 1 > /proc/sys/vm/drop_caches
+			## To release dentries and inodes
+			#sync; echo 2 > /proc/sys/vm/drop_caches
+			## To free pagecache, dentries and inodes
+			sync; echo 3 > /proc/sys/vm/drop_caches
+			## Default
+			#sync; echo 0 > /proc/sys/vm/drop_caches
+			StatusLSB
 		fi
 	;;	
 esac
@@ -141,23 +139,33 @@ if [ "$LOGSTD" != "NO" ] ; then
 			DirLog="/etc/MySB/logs/upgrade"
 		;;
 		*)
-			DirLog="/etc/MySB/web/logs"
+			if [ "$ScriptName" == "MySB_Install.bsh" ]; then
+				DirLog="/etc/MySB/web/logs/install"
+				if [ -f /tmp/`basename $0`.log ]; then 
+					cat /tmp/`basename $0`.log > /etc/MySB/logs/`basename $0`.log
+					rm -f /tmp/`basename $0`.log
+				fi
+				if [ -f /tmp/`basename $0`.err ] && [ -d /etc/MySB/logs/ ]; then
+					cat /tmp/`basename $0`.err >> /etc/MySB/logs/`basename $0`.err
+					rm -f /tmp/`basename $0`.err
+				fi				
+			else
+				DirLog="/etc/MySB/web/logs"
+			fi
 		;;
 	esac
-	if [ ! -d $DirLog ]; then
-		mkdir -p $DirLog
-	fi
+	if [ ! -d $DirLog ]; then mkdir -p $DirLog; fi
 	if [ -f /etc/MySB/logs/$ScriptName.err ]; then
 		echo "--------------------" >> /etc/MySB/logs/$ScriptName.err
 		echo "END: "`date` "-" $ScriptName $1 >> /etc/MySB/logs/$ScriptName.err
 		echo "--------------------" >> /etc/MySB/logs/$ScriptName.err
-		sudo ccze -h < /etc/MySB/logs/$ScriptName.err > $DirLog/$ScriptName-err.html
+		ccze -h < /etc/MySB/logs/$ScriptName.err > $DirLog/$ScriptName-err.html
 	fi
 	if [ -f /etc/MySB/logs/$ScriptName.log ]; then
 		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
 		echo "END: "`date` "-" $ScriptName $1 >> /etc/MySB/logs/$ScriptName.log
 		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
-		sudo ccze -h < /etc/MySB/logs/$ScriptName.log > $DirLog/$ScriptName-log.html
+		ccze -h < /etc/MySB/logs/$ScriptName.log > $DirLog/$ScriptName-log.html
 	fi
 fi
 
