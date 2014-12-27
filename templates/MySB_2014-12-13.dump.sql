@@ -23,21 +23,6 @@ CREATE TABLE ports (
 );
 
 
--- Table: smtp
-CREATE TABLE smtp ( 
-    id_smtp       INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
-                                   NOT NULL ON CONFLICT ABORT,
-    smtp_provider VARCHAR( 5 )     NOT NULL ON CONFLICT ABORT
-                                   UNIQUE ON CONFLICT IGNORE
-                                   DEFAULT ( 'LOCAL' ),
-    smtp_username VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
-    smtp_passwd   VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
-    smtp_host     VARCHAR( 128 )   UNIQUE ON CONFLICT IGNORE,
-    smtp_port     VARCHAR( 5 )     UNIQUE ON CONFLICT IGNORE 
-);
-
-INSERT INTO [smtp] ([id_smtp], [smtp_provider], [smtp_username], [smtp_passwd], [smtp_host], [smtp_port]) VALUES (1, 'LOCAL', null, null, null, null);
-
 -- Table: renting
 CREATE TABLE renting ( 
     id_renting      INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
@@ -333,3 +318,19 @@ INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args])
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (4, 'Postfix.bsh', 0, 2, null);
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (5, 'BlocklistsRTorrent.bsh', 0, 2, null);
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (6, 'MySB_ChangeUserPassword', 0, 2, null);
+
+-- Table: smtp
+CREATE TABLE smtp ( 
+    id_smtp       INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
+                                   NOT NULL ON CONFLICT ABORT,
+    smtp_provider VARCHAR( 5 )     NOT NULL ON CONFLICT ABORT
+                                   UNIQUE ON CONFLICT IGNORE
+                                   DEFAULT ( 'LOCAL' ),
+    smtp_username VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
+    smtp_passwd   VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
+    smtp_host     VARCHAR( 128 )   UNIQUE ON CONFLICT IGNORE,
+    smtp_port     VARCHAR( 5 )     UNIQUE ON CONFLICT IGNORE,
+    smtp_email    VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE 
+);
+
+INSERT INTO [smtp] ([id_smtp], [smtp_provider], [smtp_username], [smtp_passwd], [smtp_host], [smtp_port], [smtp_email]) VALUES (1, 'LOCAL', null, null, null, null, null);
