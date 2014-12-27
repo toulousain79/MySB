@@ -173,16 +173,18 @@ PackagesManage() {
 PeerGuardianFailed() {
 	ListingUsers
 	for seedUser in $UsersList; do
-		if [ -f /etc/MySB/files/blocklist/blocklist_rtorrent.txt ]; then
+		if [ -f /etc/MySB/files/blocklist/blocklist_rtorrent.txt ] && [ -d /home/$seedUser/blocklist/ ]; then
 			cp /etc/MySB/files/blocklist/* /home/$seedUser/blocklist/
 		else
 			ScriptInvoke 'screen' '/etc/MySB/scripts/BlocklistsRTorrent.bsh'
 		fi
 
-		perl -pi -e "s/^#ipv4_filter.load/ipv4_filter.load/g" /home/$seedUser/.rtorrent.rc
-		perl -pi -e "s/^#print/print/g" /home/$seedUser/.rtorrent.rc
+		if [ -f /home/$seedUser/.rtorrent.rc ]
+			perl -pi -e "s/^#ipv4_filter.load/ipv4_filter.load/g" /home/$seedUser/.rtorrent.rc
+			perl -pi -e "s/^#print/print/g" /home/$seedUser/.rtorrent.rc
 
-		service rtorrent-$seedUser restart
+			service rtorrent-$seedUser restart
+		fi
 	done
 }
 
@@ -291,12 +293,14 @@ ManageServices() {
 								fi
 							else
 								for seedUser in $UsersList; do
-									Check=`cat /home/$seedUser/.rtorrent.rc | grep '^ipv4_filter.load'`
-									if [ ! -z "$Check" ]; then
-										perl -pi -e "s/^ipv4_filter.load/#ipv4_filter.load/g" /home/$seedUser/.rtorrent.rc
-										perl -pi -e "s/^print/#print/g" /home/$seedUser/.rtorrent.rc
+									if [ -f /home/$seedUser/.rtorrent.rc ]; then
+										Check=`cat /home/$seedUser/.rtorrent.rc | grep '^ipv4_filter.load'`
+										if [ ! -z "$Check" ]; then
+											perl -pi -e "s/^ipv4_filter.load/#ipv4_filter.load/g" /home/$seedUser/.rtorrent.rc
+											perl -pi -e "s/^print/#print/g" /home/$seedUser/.rtorrent.rc
 
-										service rtorrent-$seedUser restart
+											service rtorrent-$seedUser restart
+										fi
 									fi
 								done
 							fi
