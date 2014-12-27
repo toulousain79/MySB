@@ -46,7 +46,7 @@ function Form() {
 
 	$ProvidersList = array('LOCAL', 'FREE', 'YAHOO', 'OVH', 'GMAIL');
 
-	echo '<script type="text/javascript">SMTP_ChangeValues("' . THEMES_PATH . 'MySB/js/SMTP_data.json", "'.$SmtpUsername.'", "'.$SmtpPasswd.'");</script>';
+	echo '<script type="text/javascript">SMTP_ChangeValues("' . THEMES_PATH . 'MySB/js/SMTP_data.json", "'.$SmtpEmail.'", "'.$SmtpUsername.'", "'.$SmtpPasswd.'");</script>';
 
 	echo '
 	<form class="form_settings" method="post" action="">
