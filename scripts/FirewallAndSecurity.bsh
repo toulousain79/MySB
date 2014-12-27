@@ -262,17 +262,12 @@ case $1 in
 		fi
 		
 		#### DNScrypt-proxy resolvers UDP ports
-		if hash csvtool 2>/dev/null && hash dnscrypt-proxy 2>/dev/null; then
+		if [ "$ToInstall_DNScrypt" == "YES" ] && hash dnscrypt-proxy 2>/dev/null; then
 			ResolverName="`sqlite3 $MySB_DB \"SELECT dnscrypt_resolver FROM system WHERE id_system = '1'\"`"
 			log_daemon_msg "Allow response for DNScrypt-proxy resolver: $ResolverName"
 			ResolverAddress="`sqlite3 $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$ResolverName'\"`"
 			ResolverPort="`echo $ResolverAddress | awk -F: '{print $NF}'`"
 			iptables -t filter -A INPUT -p tcp --dport $ResolverPort -i $PrimaryInet -j ACCEPT -m comment --comment "DNScrypt-proxy: $ResolverName"
-			#ResolversPorts="`csvtool -t ',' col 11 /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv | csvtool drop 1 - | awk -F: '{print $NF}' | sort -g | uniq`"
-			# for Port in $ResolversPorts; do
-				# iptables -t filter -A INPUT -p tcp --dport $Port -i $PrimaryInet -j ACCEPT -m comment --comment "DNScrypt-proxy"
-			# done
-			# unset Port
 			StatusLSB
 		fi
 		
@@ -285,12 +280,6 @@ case $1 in
 		if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
 			PeerGuardianFilesGenerate 1
 		fi
-		
-		#### Launch GetTrackersCert.bsh ?
-		#if [ "$2" == "ApplyConfig.php" ] && [ "$3" == "GetTrackersCert.bsh" ]; then
-			#### Get Tracker Certificates
-			#ScriptInvoke 'background' '/etc/MySB/scripts/GetTrackersCert.bsh' 'to_check'
-		#fi
 		
 		#### Add 'DynamicAddressResolver.bsh' to cron ?
 		if [ "`crontab -l | grep DynamicAddressResolver.bsh`" == "" ]; then

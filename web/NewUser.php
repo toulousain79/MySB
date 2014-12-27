@@ -2,14 +2,14 @@
 // ----------------------------------
 require_once  '/etc/MySB/web/inc/includes_before.php';
 // ----------------------------------
-//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
-//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
-//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
-//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
-//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
-//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
-//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
-//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
 //          _\///______________\///___\////__________\///////////_____\/////////////_____
 //			By toulousain79 ---> https://github.com/toulousain79/
 //
@@ -34,19 +34,22 @@ if ( isset($_GET['var1']) && isset($_GET['var2']) ) {
 	if ( !isset($users_datas) ) {
 		header('Refresh: 0; URL=http://www.google.fr');
 	} else {
-		$last_id_address = ManageUsersAddresses($UserName, $_POST['address'][$i], $HostName, $_POST['is_active'][$i], 'ipv4');
+		$HostName = gethostbyaddr($UserAddress);
+		$last_id_address = ManageUsersAddresses($UserName, $UserAddress, $HostName, 1, 'ipv4');
 		
-		if ( $success == true ) {
-			exec("sudo /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh 'new' 'ApplyConfig.php' 'GetTrackersCert.bsh'", $output, $result);	
+		if ($last_id_address != false) {
+			exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'FirewallAndSecurity.bsh'", $output, $result);
 
 			if ( $result == 0 ) {
-				header('Refresh: 10; URL=?user/change-password.html');
+				$_SERVER['PHP_AUTH_USER'] = $UserName;
+				$_SERVER['PHP_AUTH_PW'] = $UserPasswd;
+				header('Refresh: 0; URL=https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/change-password.html');
 			} else {
 				echo 'Failed ! It was not possible to give you an access to MySB portal !';
 			}
 		} else {
 			echo 'Failed ! It was not possible to add your IP address in MySB database!';
-		}		
+		}
 	}
 } else {
 	header('Refresh: 0; URL=http://www.google.fr');

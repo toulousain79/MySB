@@ -1,13 +1,13 @@
 <?php
 // ---------------------------
-//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
-//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
-//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
-//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
-//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
-//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
-//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
-//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
 //          _\///______________\///___\////__________\///////////_____\/////////////_____
 //			By toulousain79 ---> https://github.com/toulousain79/
 //
@@ -27,33 +27,33 @@ function CountingUsers() {
 	global $MySB_DB;
 
 	$result = $MySB_DB->count("users", "");
-	
+
 	return $result;
 }
 
 // MySB version
 function GetVersion() {
 	global $system_datas;
-	
+
 	return $system_datas["mysb_version"];
 }
 
 // Main user ?
 function MainUser() {
 	global $MySB_DB;
-	
+
 	$MainUser = $MySB_DB->get("users", "users_ident", ["admin" => 1]);
 	$CurrentUser = $_SERVER['PHP_AUTH_USER'];
 
 	switch ($MainUser) {
 		case "$CurrentUser":
 			$result = true;
-			break;		
+			break;
 		default:
 			$result = false;
 			break;
 	}
-	
+
 	return $result;
 }
 
@@ -68,14 +68,14 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 	$WebminDatas = $MySB_DB->get("services", "*", ["serv_name" => "Webmin"]);
 	$WebminIsInstalled = $WebminDatas["is_installed"];
 	$DnscryptIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "DNScrypt-proxy"]);
-	
+
     if ($page && count($page->children(null, array(), $hidden)) > 0) {
         echo ($startmenu) ? '<ul>' : '';
-		
+
         foreach($page->children(null, array(), $hidden) as $menu) :
 			switch ($menu->title) {
 				case "Apply configuration":
-					$replace = '<div id="ApplyConfigButtonReplace" style="padding-top: 10px; padding-left: 10px; text-align:center; display:none; height: 29px;"><img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading..."></div>';		
+					$replace = '<div id="ApplyConfigButtonReplace" style="padding-top: 10px; padding-left: 10px; text-align:center; display:none; height: 29px;"><img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading..."></div>';
 					$style = "id=\"ApplyConfigButtonState\" class=\"ApplyConfigButtonNothing\" onclick=\"ButtonClicked('config')\"";
 					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$replace.'<div id="ApplyConfigButton">'.$menu->link($menu->title, $style).'</div>';
 					break;
@@ -101,18 +101,18 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					if ( $DnscryptIsInstalled == '1' ) {
 						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title);
 					}
-					break;					
+					break;
 				default:
 					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title);
 					break;
 			}	
-            
+
             MenuDisplayChildren($menu, $current, true);
             echo '</li>';
             endforeach;
         echo ($startmenu) ? '</ul>' : '';
     }
-	
+
 	if ( IfApplyConfig() > 0 ) {
 		echo '<script type="text/javascript">ApplyConfig("ToUpdate");</script>';
 	}
@@ -123,18 +123,18 @@ function UpdateWolfDB($username, $password) {
 	global $MySB_DB;
 
 	if (!defined('IN_CMS')) { exit(); }
-	
+
 	if ( MainUser() == true ) {	
 		if ( (isset($password)) && (isset($username)) ) {
 			$PDO = Record::getConnection();
 			$sql_update = '';
-		
+
 			$salt = AuthUser::generateSalt();
 			$password = AuthUser::generateHashedPassword($password, $salt);
 			$MainUserEmail = $MySB_DB->get("users", "users_email", ["admin" => 1]);
-			
+
 			$sql_update = "UPDATE ".TABLE_PREFIX."user SET name = '".$username."', email = '".$MainUserEmail."', username = '".$username."', password = '".$password."', salt = '".$salt."' WHERE id = 1";
-			
+
 			$result = $PDO->exec($sql_update);
 		} else {
 			$result = false;
@@ -142,17 +142,17 @@ function UpdateWolfDB($username, $password) {
 	} else {
 		$result = true;
 	}
-	
+
 	return $result;
 }
 
 // Compare password and salt between MySB db and Wolf db
 function CheckWolfDB($username, $password) {
 	global $Wolf_DB;
-	
+
 	if ( MainUser() == true ) {
 		$Wolf_Datas = $Wolf_DB->get("user", ["password", "salt"], ["username" => "$username"]);
-		
+
 		if ( ($Wolf_Datas["password"] == "") || ($Wolf_Datas["salt"] == "") ) {
 			UpdateWolfDB($username, $password);
 		}
@@ -174,7 +174,7 @@ function GetOnlyDomain($url) {
 			case 2:
 				$hostParts = array_reverse($hostParts);
 				$domain = $hostParts[1] .'.'. $hostParts[0];
-				break;			
+				break;
 			default:
 				$hostParts = array_reverse($hostParts);
 				$domain = $hostParts[1] .'.'. $hostParts[0];
@@ -185,16 +185,16 @@ function GetOnlyDomain($url) {
 		$hostParts = array_reverse($hostParts);
 		$domain = $hostParts[1] .'.'. $hostParts[0];
 	}
-	
+
 	return $domain;
 }
 
 // Manage User Trackers
 function ManageUsersTrackers($TrackerDomain, $IsActive) {
 	global $MySB_DB;
-	
+
 	$value = false;
-	
+
 	$TrackerDomain = str_replace(' ','',"$TrackerDomain");
 	$TrackerAddress = "";
 
@@ -206,7 +206,7 @@ function ManageUsersTrackers($TrackerDomain, $IsActive) {
 			$to_check = 0;
 			break;
 	}	
-	
+
 	$DnsRecords = dns_get_record("tracker.".$TrackerDomain, $type = DNS_A);
 	$count = 0;
 	foreach($DnsRecords as $Record) {
@@ -214,7 +214,7 @@ function ManageUsersTrackers($TrackerDomain, $IsActive) {
 			$count++;
 		}
 	}	
-	
+
 	if ( $count >= 1 ) {
 		$TrackerAddress = "tracker.".$TrackerDomain;
 	} else {
@@ -225,9 +225,9 @@ function ManageUsersTrackers($TrackerDomain, $IsActive) {
 			if ( $Record['ip'] != "" ) {
 				$count++;
 			}
-		}		
+		}
 	}
-	
+
 	// Check if address exist
 	$IfTrackerExist = $MySB_DB->get("trackers_list", "id_trackers_list", [
 																		"AND" => [
@@ -245,7 +245,7 @@ function ManageUsersTrackers($TrackerDomain, $IsActive) {
 																	"origin" => "users",
 																	"is_active" => "$IsActive",
 																	"to_check" => "$to_check"
-																]);		
+																]);
 		}
 		if ( $id_trackers_list > 0 ) {
 			foreach($DnsRecords as $Record) {
@@ -285,14 +285,14 @@ function ManageUsersAddresses($UserName, $IPv4, $HostName, $IsActive, $CheckBy) 
 																																						"ipv4" => "$IPv4"
 																																					]
 																																				]);
-					break;			
+					break;
 				default:
 					$value = $MySB_DB->update("users_addresses", ["is_active" => "$IsActive"], [
 																								"AND" => [
 																									"id_users" => "$UserID",
 																									"ipv4" => "$IPv4"
 																								]
-																							]);					
+																							]);
 					break;
 			}
 			break;
@@ -305,7 +305,7 @@ function ManageUsersAddresses($UserName, $IPv4, $HostName, $IsActive, $CheckBy) 
 																																						"ipv4" => "$IPv4"
 																																					]
 																																				]);
-					break;			
+					break;
 				default:
 					$value = $MySB_DB->update("users_addresses", ["is_active" => "$IsActive"], [
 																								"AND" => [
@@ -315,7 +315,7 @@ function ManageUsersAddresses($UserName, $IPv4, $HostName, $IsActive, $CheckBy) 
 																							]);					
 					break;
 			}
-			break;			
+			break;
 		default:
 			$value = $MySB_DB->insert("users_addresses", [
 													"id_users" => "$UserID",
@@ -326,7 +326,7 @@ function ManageUsersAddresses($UserName, $IPv4, $HostName, $IsActive, $CheckBy) 
 												]);
 			break;
 	}
-	
+
 	return $value;
 }
 
@@ -343,7 +343,7 @@ function ValidateIPv4NoPriv($ip) {
 function IfApplyConfig() {
 	global $MySB_DB;
 	
-	$value = $MySB_DB->count("commands", "reload", ["reload" => 1]);	
+	$value = $MySB_DB->count("commands", "reload", ["reload" => 1]);
 
 	return $value;
 }
@@ -362,7 +362,7 @@ function GenerateMessage($commands, $type, $message, $args = false) {
 				} else {
 					$value = $MySB_DB->update("commands", ["reload" => 1], ["commands" => "$commands"]);
 				}
-				
+
 				switch ($commands) {
 					case "BlocklistsRTorrent.bsh":
 						$value = $MySB_DB->update("commands", ["reload" => 1], ["commands" => "FirewallAndSecurity.bsh"]);
@@ -370,11 +370,11 @@ function GenerateMessage($commands, $type, $message, $args = false) {
 				}
 				echo '<script type="text/javascript">ApplyConfig("ToUpdate");</script>';
 			}
-			break;		
+			break;
 		default:
 			$timeout = 7000;
 			break;
-	}	
+	}
 
 	echo '<script type="text/javascript">generate_message("'. $type . '", ' . $timeout . ', "' . $message . '");</script>';
 }

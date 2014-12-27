@@ -1,13 +1,13 @@
 <?php
 // ----------------------------------
-//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
-//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
-//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
-//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
-//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
-//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
-//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
-//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
 //          _\///______________\///___\////__________\///////////_____\/////////////_____
 //			By toulousain79 ---> https://github.com/toulousain79/
 //
@@ -34,93 +34,89 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 	switch ($_POST['submit']) {
 		case "Add my addresses now !":
-			//if ( isset($_POST['add_address']) ) {
-				$count = count($_POST['input_id']);
-				
-				for($i=1; $i<=$count; $i++) {
-					// test if IP or hostname (dynamic IP)
-					if (!filter_var($_POST['address'][$i], FILTER_VALIDATE_IP)) {
-						// IP is not valid (hostname)
-						$IPv4 = gethostbyname($_POST['address'][$i]);
-						
-						if (!filter_var($IPv4, FILTER_VALIDATE_IP)) {
-							$success = false;
-							$message = 'The host name does not return a valid IP address.';					
-						} else {
-							$last_id_address = ManageUsersAddresses($UserName, $IPv4, $_POST['address'][$i], $_POST['is_active'][$i], 'hostname');
-							if ($last_id_address == false) {
-								$success = false;
-								$message = 'Failed ! It was not possible to update hostname address in the MySB database.';
-							} else {
-								GenerateMessage(null, 'information', 'Remember that your dynamic IP will be checked every 10 minutes.');
-							}
-						}
+			$count = count($_POST['input_id']);
+
+			for($i=1; $i<=$count; $i++) {
+				// test if IP or hostname (dynamic IP)
+				if (!filter_var($_POST['address'][$i], FILTER_VALIDATE_IP)) {
+					// IP is not valid (hostname)
+					$IPv4 = gethostbyname($_POST['address'][$i]);
+
+					if (!filter_var($IPv4, FILTER_VALIDATE_IP)) {
+						$success = false;
+						$message = 'The host name does not return a valid IP address.';
 					} else {
-						// IP is valid
-						if ( ValidateIPv4NoPriv($_POST['address'][$i]) ) {
-							// IP is valid
-							$HostName = gethostbyaddr($_POST['address'][$i]);
-							$last_id_address = ManageUsersAddresses($UserName, $_POST['address'][$i], $HostName, $_POST['is_active'][$i], 'ipv4');
-							if ($last_id_address == false) {
-								$success = false;
-								$message = 'Failed ! It was not possible to update IPv4 address in the MySB database.';
-							}					
-						} else {
-							// IP is not valid (private ?)
+						$last_id_address = ManageUsersAddresses($UserName, $IPv4, $_POST['address'][$i], $_POST['is_active'][$i], 'hostname');
+						if ($last_id_address == false) {
 							$success = false;
-							$message = 'You must enter a public IPv4 address.';	
+							$message = 'Failed ! It was not possible to update hostname address in the MySB database.';
+						} else {
+							GenerateMessage(null, 'information', 'Remember that your dynamic IP will be checked every 10 minutes.');
 						}
 					}
-				}
-				
-				if ( $success == true ) {
-					$type = 'success';
 				} else {
-					$type = 'error';
+					// IP is valid
+					if ( ValidateIPv4NoPriv($_POST['address'][$i]) ) {
+						// IP is valid
+						$HostName = gethostbyaddr($_POST['address'][$i]);
+						$last_id_address = ManageUsersAddresses($UserName, $_POST['address'][$i], $HostName, $_POST['is_active'][$i], 'ipv4');
+						if ($last_id_address == false) {
+							$success = false;
+							$message = 'Failed ! It was not possible to update IPv4 address in the MySB database.';
+						}
+					} else {
+						// IP is not valid (private ?)
+						$success = false;
+						$message = 'You must enter a public IPv4 address.';	
+					}
 				}
-				
-				GenerateMessage('FirewallAndSecurity.bsh', $type, $message);
-			//}
+			}
+
+			if ( $success == true ) {
+				$type = 'success';
+			} else {
+				$type = 'error';
+			}
+
+			GenerateMessage('FirewallAndSecurity.bsh', $type, $message);
 			break;
 		case "Save Changes":
-			//if ( isset($_POST['submit']) ) {
-				$success = true;
-				$count = count($_POST['input_id']);
-				
-				for($i=1; $i<=$count; $i++) {
-					$last_id_address = $MySB_DB->update("users_addresses", ["is_active" => $_POST['is_active'][$i]], [
-																													"AND" => [
-																														"ipv4" => $_POST['ipv4'][$i],
-																														"hostname" => $_POST['hostname'][$i]
-																													]
-																												]);
-					
-					if ($last_id_address == false) {
-						$success = false;
-					}			
-				}
+			$success = true;
+			$count = count($_POST['input_id']);
 
-				if ( $success == true ) {
-					$type = 'success';
-				} else {
-					$type = 'error';
-					$message = 'Failed ! It was not possible to update addresses informations.';
-				}
-				
-				GenerateMessage('FirewallAndSecurity.bsh', $type, $message);		
-			//}
-			break;			
+			for($i=1; $i<=$count; $i++) {
+				$last_id_address = $MySB_DB->update("users_addresses", ["is_active" => $_POST['is_active'][$i]], [
+																												"AND" => [
+																													"ipv4" => $_POST['ipv4'][$i],
+																													"hostname" => $_POST['hostname'][$i]
+																												]
+																											]);
+
+				if ($last_id_address == false) {
+					$success = false;
+				}			
+			}
+
+			if ( $success == true ) {
+				$type = 'success';
+			} else {
+				$type = 'error';
+				$message = 'Failed ! It was not possible to update addresses informations.';
+			}
+
+			GenerateMessage('FirewallAndSecurity.bsh', $type, $message);
+			break;
 		default: // Delete
 			if (isset($_POST['delete'])) {
 				$success = true;
 				$count = count($_POST['delete']);
-				
+
 				foreach($_POST['delete'] as $key => $value) {
 					$result = $MySB_DB->delete("users_addresses", ["id_users_addresses" => $key]);
-					
+
 					if ( $result = 0 ) {
 						$success = false;
-					}			
+					}
 				}
 
 				if ( $success == true ) {
@@ -129,11 +125,11 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					$type = 'error';
 					$message = 'Failed ! It was not possible to delete address.';
 				}
-				
-				GenerateMessage('FirewallAndSecurity.bsh', $type, $message);		
+
+				GenerateMessage('FirewallAndSecurity.bsh', $type, $message);
 			}
 			break;
-	}	
+	}
 }
 
 $IfExist = $MySB_DB->get("users_addresses", "id_users_addresses", [
@@ -152,7 +148,6 @@ if ( $IfExist > 0 ) {
 $AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserID"]);
 ?>
 
-
 	<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 		<form id="myForm" class="form_settings" method="post" action="">
 			<fieldset>
@@ -165,7 +160,7 @@ $AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserI
 										<option value="1">Yes</option>
 									</select>
 				</div>
-			 
+
 				<div style="margin-top: 10px; margin-bottom: 20px;">
 					<input type="button" id="btnAdd" value="Add address" style="cursor: pointer;" />
 					<input type="button" id="btnDel" value="Remove last" style="cursor: pointer;" />
@@ -173,10 +168,10 @@ $AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserI
 				
 				<input class="submit" style="width:180px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="Add my addresses now !">
 			</fieldset>
-		</form>	
+		</form>
 	</div>
 
-<form class="form_settings" method="post" action="">	
+<form class="form_settings" method="post" action="">
 	<div align="center">
 		<table style="border-spacing:1;">
 			<tr>
@@ -185,8 +180,8 @@ $AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserI
 				<th style="text-align:center;">Check by</th>
 				<th style="text-align:center;">Active ?</th>
 				<th style="text-align:center;">Delete ?</th>
-			</tr>						
-				
+			</tr>
+
 <?php
 $i = 0;
 foreach($AddressesList as $Address) {
@@ -206,7 +201,7 @@ foreach($AddressesList as $Address) {
 							</select>';
 			break;
 	}
-?>				
+?>
 			<tr>
 				<td>
 					<input style="width:150px;" type="hidden" name="ipv4[<?php echo $i; ?>]" value="<?php echo $Address["ipv4"]; ?>" />
@@ -217,19 +212,19 @@ foreach($AddressesList as $Address) {
 					<?php echo $Address["hostname"]; ?>
 				</td>
 				<td>
-					<?php echo $Address["check_by"]; ?>	
-				</td>				
+					<?php echo $Address["check_by"]; ?>
+				</td>
 				<td>
-					<?php echo $is_active; ?>	
+					<?php echo $is_active; ?>
 				</td>
 				<td>
 					<input class="submit" name="delete[<?php echo $Address["id_users_addresses"]; ?>]" type="submit" value="Delete" />
-				</td>					
+				</td>
 			</tr>
 			<input class="input_id" id="input_id" name="input_id[<?php echo $i; ?>]" type="hidden" value="<?php echo $i; ?>" />
 <?php
 } // foreach($AddressesList as $Address) {
-?>			
+?>
 
 		</table>
 		<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
@@ -241,8 +236,8 @@ foreach($AddressesList as $Address) {
 	<p class="Comments"><b>NB</b>: Dynamic IP addresses are checked every <b>10</b> minutes.<br />If an IP has changed, the database will be updated and security will be adapted accordingly.</p>
 </div>
 
-<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-dynamically-adding-form-elements.js"></script>	
-	
+<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-dynamically-adding-form-elements.js"></script>
+
 <?php
 //#################### LAST LINE ######################################
 ?>
