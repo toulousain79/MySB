@@ -29,12 +29,14 @@ if ( isset($_POST['TempPass']) ) {
 	$opts = '';
 }
 
+//global $users_datas;
+
 echo '
 	<form class="form_settings" method="post" action="">
 		<div align="center"><table border="0">
 			<tr>
 				<td>Current password :</td>
-				<td><input name="current_pwd" type="password" ' . $opts . '/></td>
+				<td><input name="current_pwd" type="password" ' . $opts . ' value="' . $users_datas["users_passwd"] . '"/></td>
 			</tr>
 			<tr>
 				<td>New password :</td>
