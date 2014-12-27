@@ -37,11 +37,11 @@ MySB is a seedbox platform for multi-users.
 	* PlexMedia Server (optionnal) (requires additional setup)
 	* Samba share for each users (VPN access)
 	* NFS share for each users (VPN access)
-	* Auto retrieve SSL certificates for all trackers
-	* DNScrypt-proxy (optionnal but recommended)
+	* Auto retrieve SSL certificates for all trackers (if available)
+	* DNScrypt-proxy with Bind9 as dns caching (optionnal but recommended)
 	* MySB portal, ability to manage trackers, blocklists, and more
 
-## Additional ruTorrent plugins
+## Additional ruTorrent plugins (in addition to the official plugins)
 
 	* Chat
 	* Logoff
@@ -56,14 +56,9 @@ MySB is a seedbox platform for multi-users.
 	* Stream
 	* Favicons trackers
 
-## Some custom settings
-
-	* Using of DNSCrypt with Bind9 as dns caching
-
 ## Before installation
 
 You need to have a "blank" server installation.
-After that access your box using a SSH client, like PuTTY.
 
 #################
 #	Warnings	#
@@ -85,7 +80,7 @@ https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-acc
 
 ###### NOTE: If you don't know Linux ENOUGH:
 
-	--> DO NOT use capital letters, all your usernames should be written in lowercase.
+	--> DO NOT use capital letters, all your usernames should be written in lowercase without space.
 	--> DO NOT upgrade anything in your box, ask in the thread before even thinking about it.
 	--> DO NOT try to reconfigure packages using other tutorials.
 
@@ -102,13 +97,14 @@ If you lose connection during installation, restart the SSH session and run the 
 ```
 screen -r MySB
 ```
+
 Beware, during installation, the SSH port will be changed. If a port session 22 does not work, try with the new port that you have selected.
 
 ###### NOTE 1: You must be logged as root to run this installation or use sudo.
 ###### NOTE 2: At the end of the installation, the server will restart automatically and you will receive an e-mail summarizing.
-###### NOTE 3: The first thing to do once you have received the email, is to add your IPs and change the temporary password.
+###### NOTE 3: Each time a user is added, it will also receive a confirmation email with a temporary password.y password.
 
-## How to upgrade from v1.0
+## How to upgrade from v1.1
 Just copy and paste those commands on your terminal:
 ```
 MySB_UpdateGitHubRepo
@@ -135,28 +131,16 @@ Next scripts are avaible too.
 
 You can find others scripts in '/etc/MySB/scripts/'. This others scripts are added in cron job.
 
-###### NOTE: While executing them, if sudo is needed, they will ask for a password.
-
 ## Services
 
-To access services installed on your new server, point your browser to the following address:
+To access services installed on your new server, point your browser to the following address (MySB portal):
 ```
-https://<Server IP or Server Name>:<https NginX port>/?user/user-infos.html
+https://<Server IP or Server Name>:<https NginX port>/
 ```
 
 ## Seedbox-Manager
 
-The seedbox web-manager application is an interface to restart an rtorrent user session. 
-It is also not currently: 
-
-	* links to rutorrent and in Cakebox configurable navbar. 
-	* a reminder of ids ftp and sftp user. 
-	* a support module with deactivatable ticket. 
-	* server statistics (load average, uptime). 
-	* user information (disk space, visitor IP address). 
-	* a tool to generate configuration files filezilla and Transdroid. 
-	* a space administrator to easily manage the configuration of your users 
-	* A page parameter to disable the blocks you do not use. 
+The seedbox web-manager application is an interface to restart a rtorrent user session.
 
 Author: backtoback (c) & Magicalex (php) & hydrog3n (php).
 ```
@@ -169,32 +153,29 @@ Depending on your system, it is possible to use:
 
 #### PeerGuardian
 
-	* By default, some list are activated. Check "/etc/pgl/blocklists.list".
-	* Many tracker sites are allowed, but only private trackers. Check "/etc/pgl/allow.p2p".
+	* By default, some list are activated. Check this list in MySB portal.
+	* All trackers listed with ruTorrent are available but are inactive. You can add more or activate it via MySB portal.
+
 ###### NOTE: Do not try to add your rtorrents ports in the list of incoming ports allowed in PeerGuardian (pglcmd.conf) !!!
 ###### Using PeerGuardian will not have much sense ...
-###### Rather prefer permission trackers via the "allow.p2p" PeerGuardian file. To do this, edit the "/etc/MySB/inc/trackers" file and add only the domain of your tracker.
-###### Then use the command "bash /etc/MySB/scripts/GetTrackersCert.bsh." This will retrieve all SSL certificates (if available) and complete the list of PeerGuardian.
+###### Rather prefer permission trackers via the "allow.p2p" PeerGuardian file. To do this, use MySB portal.
+###### If PeerGuardian failed to start, rTorrent blocklists are used instead.
 
 OR
 
 #### rTorrent with ipv4_filter.load
 
-	* By default, some list are activated. Check "/etc/MySB/inc/blocklist".
-	* All list are avaible in "/etc/MySB/inc/blocklist".
-	* Comment the line with '#' if you want to exclude a list OR comment out the line with deleting '#' if you want to activate it.
-	* Example: #BLUETACK_ADS="http://....." to exclude ADS Bluetack list.	
-	* And do "bash /etc/MySB/scripts/BlocklistsRTorrent.bsh" for generate the new list for each users.
+	* By default, some list are activated. Check this list in MySB portal.
+	* Once the lists are selected, a common file containing all the lists will be generated and copied for each user.
 
-	NB: The script compile one file with all list, and make cleaning rules.
-	NB: Beware, if you have not enough memory, choising too many list will make you system very slow!
-
+###### NB: Beware, if you have not enough memory, choising too many list will make you system very slow!
+###### NB: Beware, if you have not enough memory, choising too many list will make you system very slow!
 
 ## OpenVPN
 
 To use your VPN you will need a VPN client compatible with [OpenVPN](http://openvpn.net/index.php?option=com_content&id=357), necessary files to configure your connection are in this link in your box:
 ```
-http://<Server IP or Server Name>:<https NginX port>/?user/openvpn-config-files.html` and use it in any OpenVPN client.
+http://<Server IP or Server Name>:<https NginX port>/?user/openvpn-config-file.html` and use it in any OpenVPN client.
 ```
 #### For OpenVZ, you must validate the prerequisites on this page first. Otherwise, OpenVPN will not be functional.
 ```
@@ -210,15 +191,11 @@ For Samba, you can mount the /home/<username> like that. The IP address can be d
 mount - <mount_dir> -t cifs -o noatime,nodiratime,UNC=//[10.0.0.1|10.0.1.1]/<username>,username=<username>,password=<your_password>
 ```
 
-###### NOTE: I personally use my router Asus RT-N16 (firmware TomatoUSB by Shibby) as OpenVPN client. From there, I mount the NFS share corresponding to my homedir on the MySB box.
-Then I add my mount point in the DLNA server on my RT-N16. 
-Miracle, I can stream my files with my Freebox Revolution!
-
 ## DNScrypt-proxy
 By default, DNScrypt-proxy will use OpenDNS resolver (opendns). 
 The full list of DNScrypt resolvers is available at: https://github.com/jedisct1/dnscrypt-proxy/blob/master/dnscrypt-resolvers.csv 
 
-It is possible to change the resolver name at any time using the following command:
+It is possible to change the resolver name via MySB portal OR using using the following command:
 ```
 dnscrypt-proxy service restart <resolver_name>
 ```
