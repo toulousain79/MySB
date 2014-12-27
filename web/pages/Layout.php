@@ -34,12 +34,12 @@
 	<meta name="robots" content="noarchive">
 	<meta name="googlebot" content="nosnippet">
 	<!-- Template CSS -->
-	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/screen.css" media="screen" type="text/css" />
-	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/mysb.css" type="text/css" />
-	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/jQ-menu.css" type="text/css" />
+	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/screen.css" />
+	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/mysb.css" />
+	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/jQ-menu.css" />
 	<!-- Messages animated CSS -->
-	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/buttons.css" type="text/css" />
-	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/animate.css" type="text/css" />
+	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/buttons.css" />
+	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/animate.css" />
 	<!-- jquery -->
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-1.11.1.min.js"></script>
 	<!-- modernizr enables HTML5 elements and feature detects -->
