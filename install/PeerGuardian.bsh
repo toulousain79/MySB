@@ -37,22 +37,23 @@ if [ "$ToInstall_PeerGuardian" == "YES" ]; then
 	fi
 
 	#### Sources list
-	echo "# Moblock for ${DEBIAN_VERSION}
-	deb http://moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main
-	deb-src http://moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" \
-	> '/etc/apt/sources.list.d/moblock.list'
+	if [ ! -f /etc/apt/sources.list.d/moblock.list ]; then
+		echo "# Moblock for ${DEBIAN_VERSION}" > /etc/apt/sources.list.d/moblock.list
+		echo "deb http://moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" >> /etc/apt/sources.list.d/moblock.list
+		echo "deb-src http://moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" >> /etc/apt/sources.list.d/moblock.list
+		
+		cd /etc/MySB/files
+		until sudo gpg --keyserver keyserver.ubuntu.com --recv-keys C0145138; do
+			sleep 1
+		done
 
-	cd /etc/MySB/files
-	until sudo gpg --keyserver keyserver.ubuntu.com --recv-keys C0145138; do
-		sleep 1
-	done
+		until sudo gpg --export --armor C0145138 | sudo apt-key add -; do
+			sleep 1
+		done
 
-	until sudo gpg --export --armor C0145138 | sudo apt-key add -; do
-		sleep 1
-	done
-
-	#### Force apt-get update
-	sqlite3 $MySB_DB "UPDATE system SET apt_update = 1, apt_date = datetime('now','localtime') WHERE id_system = 1;"
+		#### Force apt-get update
+		sqlite3 $MySB_DB "UPDATE system SET apt_update = 1, apt_date = datetime('now','localtime') WHERE id_system = 1;"
+	fi
 
 	#### Install Packages
 	if ! hash pglcmd 2>/dev/null; then
