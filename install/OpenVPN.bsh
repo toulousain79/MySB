@@ -242,6 +242,18 @@ ZipClientFiles() {
 	chmod 0660 /etc/MySB/web/openvpn/*.zip
 }
 
+DeleteUserFiles() {
+	mv -v /etc/openvpn/clients/$CLIENTNAME.crt /etc/openvpn/easy-rsa/keys/
+	mv -v /etc/openvpn/clients/$CLIENTNAME.csr /etc/openvpn/easy-rsa/keys/
+	mv -v /etc/openvpn/clients/$CLIENTNAME.key /etc/openvpn/easy-rsa/keys/
+	chmod 0660 /etc/openvpn/easy-rsa/keys/$CLIENTNAME.*
+	
+	cd /etc/openvpn/easy-rsa/
+	. ./vars
+	./revoke-full $CLIENTNAME
+	rm -fv /etc/openvpn/easy-rsa/keys/$CLIENTNAME.*
+}
+
 case "$COMMAND" in
 	"server")
 		if [ "$ToInstall_OpenVPN" == "YES" ]; then
@@ -264,7 +276,15 @@ case "$COMMAND" in
 				ZipClientFiles
 			fi
 		fi
-	;;	
+	;;
+	"delete")
+		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+			#### Delete user files
+			if [ ! -z $USERNAME ]; then
+				DeleteUserFiles
+			fi
+		fi
+	;;		
 	*)
 		echo -e "${CBLUE}Usage:$CEND	${CYELLOW}bash $0$CEND ${CGREEN}{server|client <username>|zip <username> <user_passwaord>}$CEND"
 		EndingScript 0	
