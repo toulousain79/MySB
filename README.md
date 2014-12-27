@@ -57,9 +57,9 @@ MySB is a seedbox platform for multi-users.
 	* Favicons trackers
 
 ## Some custom settings
-	
+
 	* Using of DNSCrypt with Bind9 as dns caching
-	
+
 ## Before installation
 
 You need to have a "blank" server installation.
@@ -88,9 +88,9 @@ https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-acc
 	--> DO NOT use capital letters, all your usernames should be written in lowercase.
 	--> DO NOT upgrade anything in your box, ask in the thread before even thinking about it.
 	--> DO NOT try to reconfigure packages using other tutorials.
-	
+
 #################
-	
+
 ## How to install
 Just copy and paste those commands on your terminal:
 ```
@@ -126,9 +126,9 @@ After installing you will have access to the following commands to be used direc
 	* MySB_RefreshMe (refresh some parts of MySB)
 	* MySB_UpgradeMe (to migrate to a new version of MySB)
 	* MySB_UpgradeSystem (simply upgrade your system APT upgrade)
-	
+
 Next scripts are avaible too.
-	
+
 	* '/etc/MySB/scripts/BlocklistsRTorrent.bsh', use this for generate blocklist for rTorrent with 'ipv4_filter.load' command.
 	* '/etc/MySB/scripts/FirewallAndSecurity.bsh [clean|new]', use this for generate all security options (PeerGuardian, IPtables, Fail2Ban, Nginx IP restricted access, ...)
 	* '/etc/MySB/scripts/GetTrackersCert.bsh', use this for get all SSL certificates for all tracker avaibled with ruTorrent. You can add more trackers in '/etc/MySB/inc/trackers'.

@@ -2,14 +2,14 @@
 # ----------------------------------
 source /etc/MySB/inc/includes_before.bsh
 # ----------------------------------
-#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
-#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
-#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
-#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
-#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
-#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
-#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
-#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
 #          _\///______________\///___\////__________\///////////_____\/////////////_____
 #			By toulousain79 ---> https://github.com/toulousain79/
 #
@@ -42,17 +42,17 @@ case $1 in
 			iptables -t $TABLE -X
 		done
 		StatusLSB
-		
+
 		log_daemon_msg "Authorize any incoming connection any outgoing connection"
 		iptables -t filter -P INPUT ACCEPT
 		iptables -t filter -P FORWARD ACCEPT
 		iptables -t filter -P OUTPUT ACCEPT	
 		StatusLSB
-		
+
 		if [ -f /etc/fail2ban/jail.local ]; then
 			service fail2ban stop
-		fi		
-		
+		fi
+
 		if [ -f /etc/pgl/pglcmd.conf ]; then
 			pglcmd stop
 		fi
@@ -60,7 +60,7 @@ case $1 in
 		#### Clean users IP Addresses
 		log_daemon_msg "Cleaning users IP Addresses"
 		echo "	satisfy all;" > /etc/nginx/conf.d/ip_restriction
-		StatusLSB	
+		StatusLSB
 	;;
 	new)
 		#### NO spoofing
@@ -71,7 +71,7 @@ case $1 in
 			done
 			StatusLSB
 		fi
-		
+
 		#### Modules
 		log_daemon_msg "Loading modules"
 		IFS=$','
@@ -98,17 +98,17 @@ case $1 in
 		iptables -t filter -P FORWARD DROP
 		iptables -t filter -P OUTPUT ACCEPT	
 		StatusLSB
-		
+
 		#### Do not break the established connections
 		log_daemon_msg "Do not break established connections"
 		iptables -A INPUT -m state --state RELATED,ESTABLISHED -i $PrimaryInet -j ACCEPT
 		iptables -A OUTPUT -m state --state RELATED,ESTABLISHED -o $PrimaryInet -j ACCEPT	
 		StatusLSB
-		
+
 		#### Allow loopback
 		log_daemon_msg "Allow loopback interface"
 		iptables -t filter -A INPUT -i lo -j ACCEPT
-		StatusLSB	
+		StatusLSB
 
 		#### Seedbox users IPs
 		log_daemon_msg "Creating IP white lists"
@@ -118,14 +118,6 @@ case $1 in
 		AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
 		StatusLSB
 
-		#### Clean users IP Addresses
-		# log_daemon_msg "Cleaning users IP Addresses"
-		# for IPv4 in $AllUsersIPs; do 
-			# sed -i '/'$IPv4'/d' /etc/nginx/conf.d/ip_restriction
-		# done
-		# unset IPv4
-		# StatusLSB		
-		
 		#### ICMP
 		log_daemon_msg "Allow incoming ping for seedbox users only"
 		for ip in $AllUsersIPs; do 
@@ -133,7 +125,7 @@ case $1 in
 		done
 		for ip in $VpnIPs; do
 			iptables -t filter -A INPUT -p icmp -s $ip -j ACCEPT -m comment --comment "ICMP"
-		done			
+		done
 		StatusLSB
 
 		#### CakeBox
@@ -142,7 +134,7 @@ case $1 in
 			iptables -t filter -A INPUT -p tcp --dport $Ports_Cakebox -i $PrimaryInet -j ACCEPT -m comment --comment "CakeBox"
 			StatusLSB
 		fi
-		
+
 		#### HTTP
 		log_daemon_msg "Allow access to HTTP"
 		iptables -t filter -A INPUT -p tcp --dport $Port_HTTP -i $PrimaryInet -j ACCEPT -m comment --comment "HTTP"
@@ -158,34 +150,34 @@ case $1 in
 			log_daemon_msg "Allow access to Webmin"
 			iptables -t filter -A INPUT -p tcp --dport $Ports_Webmin -i $PrimaryInet -j ACCEPT -m comment --comment "Webmin"
 			StatusLSB
-		fi		
+		fi
 
 		#### FTP
 		log_daemon_msg "Allow access to FTP"
 		iptables -t filter -A INPUT -p tcp --dport $Port_FTP -i $PrimaryInet -j ACCEPT -m comment --comment "FTP"
 		iptables -t filter -A INPUT -p tcp --dport $Port_FTP_Data -i $PrimaryInet -j ACCEPT -m comment --comment "FTP Data"
 		iptables -t filter -A INPUT -p tcp --dport $Port_FTP_Passive -i $PrimaryInet -j ACCEPT -m comment --comment "FTP Passive"
-		StatusLSB		
+		StatusLSB
 
 		#### SSH
 		log_daemon_msg "Allow access to SSH"
 		iptables -t filter -A INPUT -p tcp --dport $Port_SSH -i $PrimaryInet -j ACCEPT -m comment --comment "SSH"
 		StatusLSB
-		
+
 		#### OpenVPN
 		if [ "$IsInstalled_OpenVPN" == "YES" ]; then	
 			#### For network
 			echo 1 > /proc/sys/net/ipv4/ip_forward
-			perl -pi -e "s/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g" /etc/sysctl.conf			
-		
+			perl -pi -e "s/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g" /etc/sysctl.conf
+
 			log_daemon_msg "Allow use of OpenVPN TUN With Redirect Gateway"
 			iptables -t filter -A INPUT -i tun0 -j ACCEPT
 			iptables -t filter -A INPUT -p ${OpenVPN_Proto} --dport ${Port_OpenVPN_WithGW} -i $PrimaryInet -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t filter -A FORWARD -i tun0 -o $PrimaryInet -s 10.0.0.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t filter -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN"
-			iptables -t nat -A POSTROUTING -s 10.0.0.0/24 -j MASQUERADE -m comment --comment "OpenVPN"	
+			iptables -t nat -A POSTROUTING -s 10.0.0.0/24 -j MASQUERADE -m comment --comment "OpenVPN"
 			StatusLSB
-			
+
 			log_daemon_msg "Allow use of OpenVPN TUN Without Redirect Gateway"
 			iptables -t filter -A INPUT -i tun1 -j ACCEPT
 			iptables -t filter -A INPUT -p ${OpenVPN_Proto} --dport ${Port_OpenVPN_WithoutGW} -i $PrimaryInet -j ACCEPT -m comment --comment "OpenVPN"
@@ -210,7 +202,7 @@ case $1 in
 				StatusLSB
 			fi
 		fi
-	
+
 		#### rTorrent
 		for SeedboxUser in $UsersList; do
 			log_daemon_msg "Allow access to rTorrent for $SeedboxUser"
@@ -229,38 +221,38 @@ case $1 in
 			echo "	allow 127.0.0.1;" >> /etc/nginx/conf.d/ip_restriction
 			echo "	allow 127.0.1.1;" >> /etc/nginx/conf.d/ip_restriction
 			StatusLSB
-		
+
 			# 2 - Main user IP addresses
 			log_daemon_msg "Allow access to web server for '$MainUser'"	
 			echo "	# Restricted IP for mainuser" >> /etc/nginx/conf.d/ip_restriction
 			for IPv4 in $MainUserIPs; do
 				echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
 			done
-			unset IPv4					
-			StatusLSB			
-		
+			unset IPv4
+			StatusLSB
+
 			# 3 - Normal user IP addresses
 			log_daemon_msg "Allow access to web server for all users"
 			echo "	# Restricted IP for all users" >> /etc/nginx/conf.d/ip_restriction
 			for IPv4 in $SeedboxUsersIPs; do
 				echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
 			done
-			unset IPv4				
-			StatusLSB			
-			
+			unset IPv4
+			StatusLSB
+
 			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 				# 4 - OpenVPN user IP addresses
 				log_daemon_msg "Allow access to web server for OpenVPN users"
 				echo "	# Restricted IP for OpenVPN users" >> /etc/nginx/conf.d/ip_restriction
 				for IPv4 in $VpnIPs; do
-					echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction	
+					echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
 				done
 				unset IPv4
-				StatusLSB				
+				StatusLSB
 			fi
 			echo "	deny all;" >> /etc/nginx/conf.d/ip_restriction
 		fi
-		
+
 		#### DNScrypt-proxy resolvers UDP ports
 		if [ "$ToInstall_DNScrypt" == "YES" ] && hash dnscrypt-proxy 2>/dev/null; then
 			ResolverName="`sqlite3 $MySB_DB \"SELECT dnscrypt_resolver FROM system WHERE id_system = '1'\"`"
@@ -270,26 +262,26 @@ case $1 in
 			iptables -t filter -A INPUT -p tcp --dport $ResolverPort -i $PrimaryInet -j ACCEPT -m comment --comment "DNScrypt-proxy: $ResolverName"
 			StatusLSB
 		fi
-		
+
 		#### Fail2Ban
 		if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
 			Fail2BanWhitheList 1
 		fi
-		
+
 		#### PeerGuardian
 		if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
 			PeerGuardianFilesGenerate 1
 		fi
-		
+
 		#### Add 'DynamicAddressResolver.bsh' to cron ?
 		if [ "`crontab -l | grep DynamicAddressResolver.bsh`" == "" ]; then
 			crontab -l > /tmp/crontab.tmp
 			echo "10 * * * * /bin/bash /etc/MySB/scripts/DynamicAddressResolver.bsh AUTO >/dev/null" >> /tmp/crontab.tmp
 			crontab /tmp/crontab.tmp
 			rm -f /tmp/crontab.tmp
-		fi		
+		fi
 	;;
-	
+
 	*)
 		echo -e "${CBLUE}Usage:$CEND	${CYELLOW}bash $0$CEND ${CGREEN}{clean|new}$CEND"
 		EndingScript 0	

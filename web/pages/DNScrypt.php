@@ -1,13 +1,13 @@
 <?php
 // ----------------------------------
-//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
-//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
-//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
-//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
-//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
-//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
-//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
-//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
 //          _\///______________\///___\////__________\///////////_____\/////////////_____
 //			By toulousain79 ---> https://github.com/toulousain79/
 //
@@ -36,7 +36,7 @@ $ResolversList = $MySB_DB->select("dnscrypt_resolvers", [
 															"resolver_address",
 															"provider_name"
 														]);
-														
+
 if (isset($_POST['submit'])) {
 	$SelectedResolver = $_POST['ResolverName'];
 	
@@ -52,9 +52,9 @@ if (isset($_POST['submit'])) {
 		$type = 'information';
 		$message = 'Please, complete all fields.';
 	}
-	
+
 	GenerateMessage('FirewallAndSecurity.bsh', $type, $message);
-}														
+}
 ?>
 
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
@@ -65,19 +65,19 @@ if (isset($_POST['submit'])) {
 <?php
 						$SelectedResolver = $MySB_DB->get("system", "dnscrypt_resolver", ["id_system" => 1]);
 						foreach($ResolversList as $Resolver) {
-							if ( ! strpos($Resolver["name"], 'ipv6') ) {					
+							if ( ! strpos($Resolver["name"], 'ipv6') ) {
 								switch ($Resolver["name"]) {
 									case "$SelectedResolver":
 										$selected = 'selected="selected"';
-										break;		
+										break;
 									default:
 										$selected = '';
 										break;
-								}							
+								}
 								echo '<option value="' .$Resolver["name"]. '" ' . $selected . '>' .$Resolver["name"]. '</option>';
 							}
 						}
-?>					
+?>
 									</select>
 		
 			<input class="submit" style="width:180px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="I want use this resolver !">			
@@ -85,8 +85,8 @@ if (isset($_POST['submit'])) {
 	</form>	
 </div>
 
-<form class="form_settings" method="post" action="">	
-	<div align="center">	
+<form class="form_settings" method="post" action="">
+	<div align="center">
 		<table style="border-spacing:1;">
 			<tr>
 				<th style="text-align:center;">Name</th>
@@ -98,8 +98,7 @@ if (isset($_POST['submit'])) {
 				<th style="text-align:center;">Namecoin</th>
 				<th style="text-align:center;">Resolver address</th>
 				<th style="text-align:center;">Provider name</th>
-			</tr>						
-				
+			</tr>
 <?php
 foreach($ResolversList as $Resolver) {
 	$Name=$Resolver["name"];
@@ -114,19 +113,19 @@ foreach($ResolversList as $Resolver) {
 	$ProviderName=$Resolver["provider_name"];
 
 	if ( ! strpos($Name, 'ipv6') ) {
-?>				
+?>
 			<tr>
 				<td>
 					<?php echo $Name; ?>
 				</td>
 				<td>
 					<a target="_blank" href="<?php echo $URL; ?>"><?php echo $FullName; ?></a>
-				</td>				
+				</td>
 				<td>
 					<?php echo $Location; ?>
 				</td>
 				<td>
-					<?php echo $Version; ?>				
+					<?php echo $Version; ?>
 				</td>
 				<td>
 					<?php echo $DnssecVal; ?>
@@ -142,12 +141,12 @@ foreach($ResolversList as $Resolver) {
 				</td>	
 				<td>
 					<?php echo $ProviderName; ?>
-				</td>					
+				</td>
 			</tr>
 <?php
 	}
 } // foreach($TrackersList as $Tracker) {
-?>			
+?>
 
 		</table>
 	</div>

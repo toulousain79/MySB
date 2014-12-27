@@ -1,13 +1,13 @@
 <?php
 // ----------------------------------
-//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
-//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
-//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
-//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
-//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
-//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
-//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
-//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
 //          _\///______________\///___\////__________\///////////_____\/////////////_____
 //			By toulousain79 ---> https://github.com/toulousain79/
 //
@@ -29,17 +29,17 @@ if ( IfApplyConfig() > 0 ) {
 
 	foreach ($Commands as $Cmd) {
 		$output = '';
-		
+
 		switch ($Cmd['commands']) {
 			case "BlocklistsRTorrent.bsh":
 				echo '<div align="center"><h1>BlocklistsRTorrent.bsh...</h1></div>';
-			
+
 				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'BlocklistsRTorrent.bsh'", $output, $result);
 
 				foreach ( $output as $item ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';
 				}
-				
+
 				if ( $result == 0 ) {
 					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "BlocklistsRTorrent.bsh"]);
 					if ( $result > 0 ) {
@@ -48,23 +48,23 @@ if ( IfApplyConfig() > 0 ) {
 					} else {
 						$type = 'error';
 						$message = 'Failed ! It was not possible to update the MySB database.';
-					}			
+					}
 				} else {
 					$type = 'error';
 					$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
 				}
-				
+
 				break;
 				
 			case "FirewallAndSecurity.bsh":
 				echo '<div align="center"><h1>FirewallAndSecurity.bsh...</h1></div>';
-			
+
 				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'FirewallAndSecurity.bsh'", $output, $result);
 
 				foreach ( $output as $item ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';
 				}
-				
+
 				if ( $result == 0 ) {
 					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "FirewallAndSecurity.bsh"]);
 					if ( $result > 0 ) {
@@ -72,21 +72,21 @@ if ( IfApplyConfig() > 0 ) {
 					} else {
 						$type = 'error';
 						$message = 'Failed ! It was not possible to update the MySB database.';
-					}			
+					}
 				} else {
 					$type = 'error';
 					$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
 				}
-				
+
 				break;
 			case "GetTrackersCert.bsh":
 				echo '<div align="center"><h1>GetTrackersCert.bsh...</h1></div>';
-				
+
 				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'GetTrackersCert.bsh'", $output, $result);
 
 				foreach ( $output as $item ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';
-				}				
+				}
 
 				if ( $result == 0 ) {
 					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "GetTrackersCert.bsh"]);
@@ -100,9 +100,9 @@ if ( IfApplyConfig() > 0 ) {
 					$type = 'error';
 					$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
 				}
-				
+
 				break;
-				
+
 			case "Postfix.bsh":
 				echo '<div align="center"><h1>Postfix.bsh...</h1></div>';
 
@@ -110,7 +110,7 @@ if ( IfApplyConfig() > 0 ) {
 
 				foreach ( $output as $item ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';
-				}				
+				}
 
 				if ( $result == 0 ) {
 					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "Postfix.bsh"]);
@@ -125,19 +125,19 @@ if ( IfApplyConfig() > 0 ) {
 					$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
 				}
 				header('Refresh: 10; URL=/?main-user/smtp.html');
-				
+
 				break;
 			case "MySB_ChangeUserPassword":
 				echo '<div align="center"><h1>MySB_ChangeUserPassword...</h1></div>';
-				
+
 				$username = $_SERVER['PHP_AUTH_USER'];
 				$passwd = $Cmd['args'];
-				
+
 				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword' '$username' '$passwd'", $output, $result);
 
 				foreach ( $output as $item ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';
-				}				
+				}
 
 				if ( $result == 0 ) {
 					$result = $MySB_DB->update("commands", ["reload" => 0, "args" => ""], ["commands" => "MySB_ChangeUserPassword"]);
@@ -151,8 +151,8 @@ if ( IfApplyConfig() > 0 ) {
 					$type = 'error';
 					$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
 				}
-				
-				break;				
+
+				break;
 			case "PaymentReminder.bsh":
 				echo '<div align="center"><h1>PaymentReminder.bsh...</h1></div>';
 				$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "PaymentReminder.bsh"]);
@@ -164,13 +164,13 @@ if ( IfApplyConfig() > 0 ) {
 				}
 				header('Refresh: 3; URL=/?main-user/renting-infos.html');
 				
-				break;				
+				break;
 		}
-		
+
 		if ( $type == 'success' ) {
 			echo '<script type="text/javascript">ApplyConfig("Updated");</script>';
 		}
-		
+
 		GenerateMessage(false, $type, $message);
 	}
 } else {

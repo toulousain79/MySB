@@ -2,14 +2,14 @@
 # ----------------------------------
 source /etc/MySB/inc/includes_before.bsh
 # ----------------------------------
-#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
-#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
-#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
-#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
-#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
-#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
-#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
-#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
 #          _\///______________\///___\////__________\///////////_____\/////////////_____
 #			By toulousain79 ---> https://github.com/toulousain79/
 #
@@ -29,9 +29,9 @@ if [ "$USAGE" == "ON" ]; then
 		echo
 		echo -e "${CYELLOW}DNScrypt-proxy is not installed!$CEND"
 		QuestionGetString NO "Install DNScrypt-proxy? " IsInstalled_DNScrypt YES
-		
+
 		sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '$(echo $IsInstalled_DNScrypt | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'DNScrypt-proxy';"
-		
+
 		if [ "$IsInstalled_DNScrypt" != "YES" ]; then
 			EndingScript 0
 		fi
@@ -46,14 +46,14 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	if [ "`cat /etc/passwd | grep dnscrypt`" == "" ]; then
 		adduser --system --group --quiet --home /var/run/dnscrypt-proxy --shell /bin/false --disabled-password --disabled-login dnscrypt
 	fi
-	
+
 	#### Correcting minor bug display in Bind9 init script
 	sed -i "s/echo \"waiting for pid \$pid to die\"/break #echo \"waiting for pid \$pid to die\"/g" /etc/init.d/bind9
 	sed -i "s/echo \"giving up on pid \$pid with kill -0; trying -9\"/#echo \"giving up on pid \$pid with kill -0; trying -9\"/g" /etc/init.d/bind9
 	sed -i "s/echo \"giving up on pid \$pid\"/#echo \"giving up on pid \$pid\"/g" /etc/init.d/bind9
 
 	sqlite3 $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'BIND';"
-	
+
 	# LIBsodium
 	if [ -d /etc/MySB/sources/libsodium ]; then
 		cd /etc/MySB/sources/libsodium/
@@ -67,11 +67,11 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 			git clone $GIT_libsodium /etc/MySB/sources/libsodium
 		fi
 	fi
-	
+
 	if [ -d /etc/MySB/temp/libsodium ]; then
 		rm -vrf /etc/MySB/temp/libsodium
-	fi	
-	
+	fi
+
 	cd /etc/MySB/sources/libsodium/
 	./autogen.sh
 	./configure --enable-minimal
@@ -84,7 +84,7 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	if [ -d /etc/MySB/temp/dnscrypt* ]; then
 		if [ -d /etc/MySB/sources/dnscrypt/ ]; then
 			rm -vrf /etc/MySB/sources/dnscrypt/
-		fi	
+		fi
 		mv -v /etc/MySB/temp/dnscrypt* /etc/MySB/sources/dnscrypt
 	fi
 	if [ ! -d /etc/MySB/sources/dnscrypt/ ] && [ ! -f /etc/MySB/files/dnscrypt.tar.gz ]; then
@@ -106,7 +106,7 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	sed -i '/version/d' /etc/bind/named.conf.options
 	awk '{ print } /dnssec-validation auto;/ { print "        version \"MySB Secured DNS server\";" }' /etc/bind/named.conf.options > /tmp/named.conf.options
 	mv -v /tmp/named.conf.options /etc/bind/named.conf.options
-	
+
 	#### init.d
 	cp /etc/MySB/templates/etc.init.dnscrypt-proxy.template /etc/init.d/dnscrypt-proxy
 	perl -pi -e "s/<MySB_DB>/`echo $MySB_DB | sed s,/,\\\\\\\\\\/,g`/g" /etc/init.d/dnscrypt-proxy
@@ -118,14 +118,14 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 		sed -i '/nameserver/d' /etc/resolv.conf
 		echo "nameserver 127.0.0.1" >> /etc/resolv.conf
 	fi
-	
+
 	sqlite3 $MySB_DB "UPDATE services SET to_install = '0',is_installed = '1' WHERE serv_name = 'DNScrypt-proxy';"
-	
+
 	#### Update resolvers infos in db
 	if [ -f /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv ] && hash csvtool 2>/dev/null; then
 		# Clean the table 'dnscrypt_resolvers'
 		sqlite3 $MySB_DB "DELETE FROM dnscrypt_resolvers WHERE 1"
-		
+
 		# Get resolvers information from 'dnscrypt-resolvers.csv'
 		ResolversTable="`csvtool -t ',' -u '|' cat /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv | csvtool drop 1 - | sed 's/ /#/g;'`"
 		for Line in $ResolversTable; do
@@ -143,13 +143,13 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 			ProviderName="`echo $Line | awk '{split($0,a,\"|\"); print a[12]}' | sed 's/#/ /g;'`"
 			ProviderPublicKey="`echo $Line | awk '{split($0,a,\"|\"); print a[13]}' | sed 's/#/ /g;'`"
 			ProviderPublicKeyTxtRecord="`echo $Line | awk '{split($0,a,\"|\"); print a[14]}' | sed 's/#/ /g;'`"	
-			
-			# Add new informations in DB			
+
+			# Add new informations in DB
 			sqlite3 $MySB_DB "UPDATE system SET dnscrypt_resolver = 'opendns' WHERE id_system = '1';"
 			sqlite3 $MySB_DB "INSERT INTO dnscrypt_resolvers (name,full_name,description,location,coordinates,url,version,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record) VALUES (\"$Name\",\"$FullName\",\"$Description\",\"$Location\",\"$Coordinates\",\"$URL\",\"$Version\",\"$DnssecVal\",\"$NoLogs\",\"$Namecoin\",\"$ResolverAddress\",\"$ProviderName\",\"$ProviderPublicKey\",\"$ProviderPublicKeyTxtRecord\");"			
 		done
 	fi
-	
+
 	# Check service
 	crontab -l > /tmp/crontab.tmp
 	sed -i '/dnscrypt-proxy/d' /tmp/crontab.tmp
@@ -157,7 +157,7 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	crontab /tmp/crontab.tmp
 	rm -f /tmp/crontab.tmp	
 fi
-	
+
 # -----------------------------------------
 source /etc/MySB/inc/includes_after.bsh
 # -----------------------------------------

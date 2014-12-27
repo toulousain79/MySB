@@ -1,13 +1,13 @@
 <?php
 // ----------------------------------
-//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
-//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
-//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
-//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
-//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
-//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
-//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
-//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
 //          _\///______________\///___\////__________\///////////_____\/////////////_____
 //			By toulousain79 ---> https://github.com/toulousain79/
 //
@@ -24,7 +24,7 @@
 
 function printUser($user) {
 	global $MySB_DB, $system_datas, $users_datas, $Port_HTTPs;
-	
+
 	// Users infos	
 	$UserID = $users_datas["id_users"];
 	$UserPasswd = $users_datas["users_passwd"];	
@@ -33,11 +33,11 @@ function printUser($user) {
 	$Port_FTP = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "VSFTPd"]);
 
 	echo '<table width="100%" border="0" align="left">';
-	
+
 	//////////////////////
 	// User personal info
 	//////////////////////
-	echo '<tr align="left"><th colspan="3" scope="row"><h4>User personal info</h4></th></tr>';		
+	echo '<tr align="left"><th colspan="3" scope="row"><h4>User personal info</h4></th></tr>';
 	// Username
 	echo '<tr align="left"><th width="15%" scope="row">Username</th>';
 	echo '<td width="25%">' . $user . '</td>';
@@ -49,7 +49,7 @@ function printUser($user) {
 		echo '<td><select style="cursor: pointer;">';
 		foreach($IPv4_List as $IPv4) {
 			echo '<option>' .$IPv4. '</option>';
-		}		
+		}
 		echo '</select></td>';
 	} else {
 		echo '<td>No address given ...</td>';
@@ -81,11 +81,11 @@ function printUser($user) {
 	switch ($users_datas["sftp"]) {
 		case '0':
 			$sftp = 'NO';
-			break;		
+			break;
 		default:
 			$sftp = 'YES';
 			break;
-	}	
+	}
 	echo '<tr align="left"><th width="15%" scope="row">SFTP</th>';
 	echo '<td>' . $sftp . '</td>';
 	echo '<td> </td></tr>';
@@ -93,19 +93,19 @@ function printUser($user) {
 	switch ($users_datas["sudo"]) {
 		case '0':
 			$sudo = 'NO';
-			break;		
+			break;
 		default:
 			$sudo = 'YES';
 			break;
-	}		
+	}
 	echo '<tr align="left"><th width="15%" scope="row">Sudo powers</th>';
 	echo '<td>' . $sudo . '</td>';
 	echo '<td> </td></tr>';
-	
+
 	//////////////////////
 	// Directories
 	//////////////////////
-	echo '<tr align="left"><th colspan="3" scope="row"><h4>Directories</h4></th></tr>';	
+	echo '<tr align="left"><th colspan="3" scope="row"><h4>Directories</h4></th></tr>';
 	// Home
 	echo '<tr align="left"><th width="15%" scope="row">Home</th>';
 	echo '<td>' . $users_datas["home_dir"] . '</td>';
@@ -134,11 +134,11 @@ function printUser($user) {
 	echo '<tr align="left"><th width="15%" scope="row">Share dir</th>';
 	echo '<td>' . $users_datas["home_dir"] . '/rtorrent/share</td>';
 	echo '<td><span class="Comments">The "share" folder is accessible by all users on the server. You can easily share what you want with any user. You can use File Manager plugin available in ruTorrent.</span></td></tr>';
-	
+
 	//////////////////////
 	// Ports
 	//////////////////////
-	echo '<tr align="left"><th colspan="3" scope="row"><h4>Ports</h4></th></tr>';		
+	echo '<tr align="left"><th colspan="3" scope="row"><h4>Ports</h4></th></tr>';
 	// SFTP Port
 	echo '<tr align="left"><th width="15%" scope="row">SFTP port</th>';
 	echo '<td>' . $Port_SSH . '</td>';
@@ -155,15 +155,15 @@ function printUser($user) {
 	echo '<tr align="left"><th width="15%" scope="row">rTorrent port</th>';
 	echo '<td>' . $users_datas["rtorrent_port"] . '</td>';
 	echo '<td> </td></tr>';
-	
+
 	//////////////////////
 	// OpenVPN
 	//////////////////////
-	echo '<tr align="left"><th colspan="3" scope="row"><h4>OpenVPN</h4></th></tr>';	
+	echo '<tr align="left"><th colspan="3" scope="row"><h4>OpenVPN</h4></th></tr>';
 	// Server IP GW
 	echo '<tr align="left"><th width="15%" scope="row">Server IP GW</th>';
 	echo '<td>10.0.0.1</td>';
-	echo '<td><span class="Comments">Server IP with redirect traffic.</span></td></tr>';		
+	echo '<td><span class="Comments">Server IP with redirect traffic.</span></td></tr>';
 	// Server IP
 	echo '<tr align="left"><th width="15%" scope="row">Server IP</th>';
 	echo '<td>10.0.1.1</td>';
@@ -180,15 +180,15 @@ function printUser($user) {
 	//////////////////////
 	// Links (Normal user)
 	//////////////////////
-	echo '<tr align="left"><th colspan="3" scope="row"><h4>Links (Normal user)</h4></th></tr>';		
+	echo '<tr align="left"><th colspan="3" scope="row"><h4>Links (Normal user)</h4></th></tr>';
 	// User Info
-	echo '<tr align="left"><th width="15%" scope="row">User Info</th>';			
+	echo '<tr align="left"><th width="15%" scope="row">User Info</th>';
 	echo '<td colspan="2"><a href="?user/user-infos.html"><span class="Comments">Current information page.</span></a></td></tr>';
 	// Change password
-	echo '<tr align="left"><th width="15%" scope="row">Change password</th>';	
+	echo '<tr align="left"><th width="15%" scope="row">Change password</th>';
 	echo '<td colspan="2"><a href="?user/change-password.html"><span class="Comments">You can change your password here.</span></a></td></tr>';
 	// Manage Addresses
-	echo '<tr align="left"><th width="15%" scope="row">Manage Addresses</th>';		
+	echo '<tr align="left"><th width="15%" scope="row">Manage Addresses</th>';
 	echo '<td colspan="2"><a href="?user/manage-addresses.html"><span class="Comments">Add here your IPs addresses and/or your dynamic DNS to add to whitelist.</span></a></td></tr>';		
 	// ruTorrent
 	$Link = 'https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/ru';
@@ -196,7 +196,7 @@ function printUser($user) {
 	echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">ruTorrent interface</span></a></td></tr>';
 	// Seedbox-Manager
 	$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "Seedbox-Manager"]);
-	if ( $is_installed == '1' ) {		
+	if ( $is_installed == '1' ) {
 		$Link = 'https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/sm';
 		echo '<tr align="left"><th width="15%" scope="row">Seedbox-Manager</th>';
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Seedbox-Manager interface</span></a></td></tr>';
@@ -219,10 +219,10 @@ function printUser($user) {
 		echo '<tr align="left"><th width="15%" scope="row">CakeBox Light</th>';			
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Play here your media.</span></a></td></tr>';
 	}
-	
+
 	//////////////////////
 	// Links (Main user)
-	//////////////////////		
+	//////////////////////
 	// User Info
 	if ( $users_datas["admin"] == '1' ) {
 		echo '<tr align="left"><th colspan="3" scope="row"><h4>Links (Main user)</h4></th></tr>';
@@ -230,27 +230,27 @@ function printUser($user) {
 		$WebminDatas = $MySB_DB->get("services", ["is_installed", "port_tcp1"], ["serv_name" => "Webmin"]);
 		if ( $WebminDatas["is_installed"] == '1' ) {
 			$Link = 'https://' . $system_datas["hostname"] . ':' . $WebminDatas["port_tcp1"] . '/';
-			echo '<tr align="left"><th width="15%" scope="row">Webmin</th>';			
+			echo '<tr align="left"><th width="15%" scope="row">Webmin</th>';
 			echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Admin interface for manage your server.</span></a></td></tr>';
 		}
 		// Logs
-		echo '<tr align="left"><th width="15%" scope="row">Logs</th>';	
+		echo '<tr align="left"><th width="15%" scope="row">Logs</th>';
 		echo '<td colspan="2"><a href="?main-user/logs.html"><span class="Comments">You can check logs of MySB install and security.</span></a></td></tr>';
 		// Renting infos
-		echo '<tr align="left"><th width="15%" scope="row">Renting infos</th>';		
+		echo '<tr align="left"><th width="15%" scope="row">Renting infos</th>';
 		echo '<td colspan="2"><a href="?main-user/renting-infos.html"><span class="Comments">Manage your renting informations.</span></a></td></tr>';
 		// Trackers
-		echo '<tr align="left"><th width="15%" scope="row">Trackers list</th>';		
-		echo '<td colspan="2"><span class="Comments"><a href="?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="?trackers/add-new-trackers.html">add new tracker here</a>.</span></td></tr>';		
+		echo '<tr align="left"><th width="15%" scope="row">Trackers list</th>';
+		echo '<td colspan="2"><span class="Comments"><a href="?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="?trackers/add-new-trackers.html">add new tracker here</a>.</span></td></tr>';
 		// Blocklists
-		echo '<tr align="left"><th width="15%" scope="row">Blocklists</th>';		
+		echo '<tr align="left"><th width="15%" scope="row">Blocklists</th>';
 		echo '<td colspan="2"><span class="Comments">You can manage <a href="?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a> AND <a href="?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a>.</span></td></tr>';			
 		// DNScrypt-proxy
 		$DNScryptDatas = $MySB_DB->get("services", ["is_installed"], ["serv_name" => "DNScrypt-proxy"]);
 		if ( $DNScryptDatas["is_installed"] == '1' ) {
-			echo '<tr align="left"><th width="15%" scope="row">DNScrypt-proxy</th>';	
-			echo '<td colspan="2"><a href="?main-user/dnscrypt-proxy.html"><span class="Comments">Select your resolver here.</span></a></td></tr>';			
-		}	
+			echo '<tr align="left"><th width="15%" scope="row">DNScrypt-proxy</th>';
+			echo '<td colspan="2"><a href="?main-user/dnscrypt-proxy.html"><span class="Comments">Select your resolver here.</span></a></td></tr>';
+		}
 	}
 
 	$RentingDatas = $MySB_DB->get("renting", "*", ["id_renting" => 1]);
@@ -258,7 +258,7 @@ function printUser($user) {
 		//////////////////////
 		// Price and Payment info
 		//////////////////////
-		echo '<tr align="left"><th colspan="3" scope="row"><h4>Price and Payment info</h4></th></tr>';			
+		echo '<tr align="left"><th colspan="3" scope="row"><h4>Price and Payment info</h4></th></tr>';
 		// Server model
 		echo '<tr align="left"><th width="15%" scope="row">Server model</th>';
 		echo '<td>' . $RentingDatas["model"] . '</td>';
@@ -278,9 +278,9 @@ function printUser($user) {
 		// TOTAL per users
 		echo '<tr align="left"><th width="15%" scope="row">TOTAL per users</th>';
 		echo '<td><b><span class="FontInRed">' . $RentingDatas["price_per_users"] . '</span></b> &euro; TTC / month</td>';
-		echo '<td></td></tr>';			
+		echo '<td></td></tr>';
 	}
-	
+
 	echo '</table>';
 }
 

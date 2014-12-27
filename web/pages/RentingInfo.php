@@ -1,13 +1,13 @@
 <?php
 // ----------------------------------
-//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
-//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
-//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
-//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
-//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
-//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
-//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
-//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
 //          _\///______________\///___\////__________\///////////_____\/////////////_____
 //			By toulousain79 ---> https://github.com/toulousain79/
 //
@@ -34,16 +34,16 @@ function Form() {
 												"price_per_users"
 											], [
 												"id_renting" => 1
-											]);	
-	
+											]);
+
 	$TotalUsers = $renting_datas["nb_users"];
 	$PricePerUser = $renting_datas["price_per_users"];
 	$Model = $renting_datas["model"];
 	$TVA = $renting_datas["tva"];
 	$GlobalCost = $renting_datas["global_cost"];
-	
+
 	echo '<form class="form_settings" method="post" action="">
-		<div align="center"><table border="0">	
+		<div align="center"><table border="0">
 			<tr>
 				<td>Model :</td>
 				<td><input class="text_normal" name="model" type="text" value="' . $Model . '" required="required" /></td>
@@ -68,36 +68,36 @@ function Form() {
 				<td>Price per user :</td>
 				<td><input class="text_extra_small" readonly="readonly" type="text" value="' . $PricePerUser . '" /></td>
 				<td><span class="Comments">Readonly, only for information.</span></td>
-			</tr>					
+			</tr>
 			<tr>
 				<td colspan="3"><input class="submit" name="submit" type="submit" value="Submit" /></td>
-			</tr>						
+			</tr>
 		</table></div>
 	</form>';
 
 }
 
-if (isset($_POST['submit'])) {	
+if (isset($_POST['submit'])) {
 	$Model = $_POST['model'];
 	$TVA = $_POST['tva'];
 	$GlobalCost = $_POST['global_cost'];
 	$TotalUsers = CountingUsers();
-	
+
 	if ( (isset($GlobalCost)) && (isset($TVA)) && (isset($TotalUsers)) && (isset($Model)) ) {
 		$X = $GlobalCost / $TotalUsers;
 		$Y = ($X * $TVA) / 100;
 		$PricePerUsers = $X + $Y;
 		$PricePerUsers = ceil($PricePerUsers);
-	
+
 		global $MySB_DB;
-				
+
 		$result = $MySB_DB->update("renting", ["model" => "$Model",
 										"tva" => "$TVA",
 										"global_cost" => "$GlobalCost",
 										"nb_users" => "$TotalUsers",
 										"price_per_users" => "$PricePerUsers"],
 										["id_renting" => 1]);
-		
+
 		if( $result = 1 ) {
 			$type = 'success';
 		} else {
@@ -108,7 +108,7 @@ if (isset($_POST['submit'])) {
 		$type = 'information';
 		$message = 'Please, complete all fields.';
 	}
-	
+
 	GenerateMessage('PaymentReminder.bsh', $type, $message);
 }
 

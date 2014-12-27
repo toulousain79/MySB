@@ -1,13 +1,13 @@
 <?php
 // ----------------------------------
-//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
-//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
-//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
-//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
-//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
-//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
-//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
-//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
 //          _\///______________\///___\////__________\///////////_____\/////////////_____
 //			By toulousain79 ---> https://github.com/toulousain79/
 //
@@ -26,7 +26,7 @@ global $MySB_DB;
 
 if(isset($_POST)==true && empty($_POST)==false) {
 	$success = true;
-	
+
 	switch ($_POST['submit']) {
 		case "Save Changes":
 			for($i=0, $count = count($_POST['tracker_domain']);$i<$count;$i++) {
@@ -38,9 +38,9 @@ if(isset($_POST)==true && empty($_POST)==false) {
 						$to_check = 0;
 						break;
 				}
-			
+
 				$result = $MySB_DB->update("trackers_list", ["is_active" => $_POST['is_active'][$i], "to_check" => $to_check], ["tracker_domain" => $_POST['tracker_domain'][$i]]);
-				
+
 				if ( $result != 1 ) {
 					$success = false;
 				}
@@ -52,23 +52,23 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$type = 'error';
 				$message = 'Failed ! It was not possible to update tracker in the MySB database.';	
 			}
-			break;		
+			break;
 		default: //Delete
 			if (isset($_POST['delete'])) {
 				$count = count($_POST['delete']);
-				
+
 				foreach($_POST['delete'] as $key => $value) {
 					$result = $MySB_DB->delete("trackers_list_ipv4", ["id_trackers_list" => $key]);
 					if ( $result = 0 ) {
 						$success = false;
-					}			
-				
+					}
+
 					$result = $MySB_DB->delete("trackers_list", ["id_trackers_list" => $key]);
 					if ( $result = 0 ) {
 						$success = false;
-					}			
+					}
 				}
-				
+
 				if ( $success == true ) {
 					$type = 'success';
 				} else {
@@ -78,7 +78,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			}
 			break;
 	}
-	
+
 	GenerateMessage('GetTrackersCert.bsh', $type, $message);
 }
 
@@ -88,7 +88,7 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["ORDER" => "trackers_lis
 <form class="form_settings" method="post" action="">	
 	<div align="center">
 		<input class="submit" style="width:120px; margin-bottom: 10px;" name="submit" type="submit" value="Save Changes">
-		
+
 		<table style="border-spacing:1;">
 			<tr>
 				<th style="text-align:center;">Domain</th>
@@ -98,14 +98,13 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["ORDER" => "trackers_lis
 				<th style="text-align:center;">SSL ?</th>
 				<th style="text-align:center;">Active ?</th>
 				<th style="text-align:center;">Delete ?</th>
-			</tr>						
-				
+			</tr>
 <?php
 foreach($TrackersList as $Tracker) {
 	switch ($Tracker["origin"]) {
 		case 'users':
 			$origin = '<input class="submit" name="delete['. $Tracker["id_trackers_list"] .']" type="submit" value="Delete" />';
-			break;		
+			break;
 		default:
 			$origin = '';
 			break;
@@ -116,21 +115,21 @@ foreach($TrackersList as $Tracker) {
 			$is_ssl = '	<select name="is_ssl[]" style="width:60px; background-color:#FEBABC;" disabled>
 							<option value="0" selected="selected">No</option>
 						</select>';
-			break;		
+			break;
 		default:
 			$is_ssl = '	<select name="is_ssl[]" style="width:60px; background-color:#B3FEA5;" disabled>
 							<option value="1" selected="selected">Yes</option>
 						</select>';
 			break;
 	}
-	
+
 	switch ($Tracker["is_active"]) {
 		case '0':
 			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 								<option value="0" selected="selected" class="redText">No</option>
 								<option value="1" class="greenText">Yes</option>
 							</select>';
-			break;		
+			break;
 		default:
 			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 								<option value="0" class="redText">No</option>
@@ -138,7 +137,7 @@ foreach($TrackersList as $Tracker) {
 							</select>';
 			break;
 	}
-?>				
+?>
 			<tr>
 				<td>
 					<input style="width:150px;" type="hidden" name="tracker_domain[]" value="<?php echo $Tracker["tracker_domain"]; ?>" />
@@ -151,33 +150,32 @@ foreach($TrackersList as $Tracker) {
 				<td>
 					<input style="width:60px;" type="hidden" name="origin[]" value="<?php echo $Tracker["origin"]; ?>" />
 					<?php echo $Tracker["origin"]; ?>
-				</td>					
+				</td>
 				<td>
 					<select style="width:140px;">
 <?php
 						$IPv4_List = $MySB_DB->select("trackers_list_ipv4", "ipv4", ["AND" => ["id_trackers_list" => $Tracker["id_trackers_list"]]]);
-						foreach($IPv4_List as $IPv4) {					
+						foreach($IPv4_List as $IPv4) {
 							echo '<option>' .$IPv4. '</option>';
 						}
-?>								
+?>
 					</select>
 				</td>
 				<td>
-					<?php echo $is_ssl; ?>			
+					<?php echo $is_ssl; ?>
 				</td>
 				<td>
-					<?php echo $is_active; ?>				
+					<?php echo $is_active; ?>
 				</td>
 				<td>
 					<?php echo $origin; ?>
-				</td>					
+				</td>
 			</tr>
 <?php
 } // foreach($TrackersList as $Tracker) {
-?>			
+?>
 
 		</table>
-	
 		<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
 	</div>
 </form>

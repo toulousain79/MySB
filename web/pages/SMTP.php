@@ -1,13 +1,13 @@
 <?php
 // ----------------------------------
-//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
-//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
-//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
-//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
-//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
-//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
-//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
-//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
 //          _\///______________\///___\////__________\///////////_____\/////////////_____
 //			By toulousain79 ---> https://github.com/toulousain79/
 //
@@ -35,25 +35,25 @@ function Form() {
 										], [
 											"id_smtp" => 1
 										]);
-											
+
 	$SmtpProvider = $smtp_datas["smtp_provider"];
 	$SmtpUsername = $smtp_datas["smtp_username"];
 	$SmtpPasswd = $smtp_datas["smtp_passwd"];
 	$SmtpHost = $smtp_datas["smtp_host"];
-	$SmtpPort = $smtp_datas["smtp_port"];											
+	$SmtpPort = $smtp_datas["smtp_port"];
 
 	$ProvidersList = array('LOCAL', 'FREE', 'YAHOO', 'OVH', 'GMAIL');
-	
-	echo '<script type="text/javascript">SMTP_ChangeValues("' . THEMES_PATH . 'MySB/js/SMTP_data.json", "'.$SmtpUsername.'", "'.$SmtpPasswd.'");</script>';	
-	
+
+	echo '<script type="text/javascript">SMTP_ChangeValues("' . THEMES_PATH . 'MySB/js/SMTP_data.json", "'.$SmtpUsername.'", "'.$SmtpPasswd.'");</script>';
+
 	echo '
 	<form class="form_settings" method="post" action="">
-		<div align="center"><table border="0">	
+		<div align="center"><table border="0">
 			<tr>
 				<td>Provider :</td>
 				<td>
 					<select name="SmtpProvider" id="json-provider" style="width:100px; height: 28px; cursor: pointer;">';
-					
+
 					foreach($ProvidersList as $Providers) {
 						if ( $SmtpProvider == $Providers) {
 							echo '<option selected="selected" value="' . $Providers . '">' . $Providers . '</option>';
@@ -61,7 +61,7 @@ function Form() {
 							echo '<option value="' . $Providers . '">' . $Providers . '</option>';
 						}
 					}
-					
+
 	echo '
 					</select>
 				</td>
@@ -77,14 +77,14 @@ function Form() {
 			<tr>
 				<td>Confirm :</td>
 				<td><input class="text_normal" id="SmtpPasswdConfirm" name="SmtpPasswdConfirm" type="password" value="' . $SmtpPasswd . '" required="required" /></td>
-			</tr>			
+			</tr>
 			<tr>
 				<td>Host :</td>
 				<td>
 					<select name="SmtpHost" id="json-host" style="width:150px; height: 28px;" required="required" readonly>
 						<option>' . $SmtpHost . '</option>
 					</select>
-				
+
 				</td>
 			</tr>
 			<tr>
@@ -94,10 +94,10 @@ function Form() {
 						<option>' . $SmtpPort . '</option>
 					</select>
 				</td>
-			</tr>			
+			</tr>
 			<tr>
 				<td colspan="3"><input class="submit" name="submit" type="submit" value="Submit" /></td>
-			</tr>						
+			</tr>
 		</table></div>
 	</form>
 	';
@@ -110,11 +110,11 @@ if (isset($_POST['submit'])) {
 	$SmtpPasswdConfirm = $_POST['SmtpPasswdConfirm'];
 	$SmtpHost = $_POST['SmtpHost'];
 	$SmtpPort = $_POST['SmtpPort'];
-	
+
 	if ( (isset($SmtpProvider)) && (isset($SmtpUsername)) && (isset($SmtpPasswd)) && (isset($SmtpPasswdConfirm)) && (isset($SmtpHost)) && (isset($SmtpPort)) ) {
 		if ( $SmtpPasswd == $SmtpPasswdConfirm ) {
 			global $MySB_DB;
-					
+
 			$result = $MySB_DB->update("smtp", ["smtp_provider" => "$SmtpProvider",
 											"smtp_username" => "$SmtpUsername",
 											"smtp_passwd" => "$SmtpPasswd",
@@ -136,11 +136,11 @@ if (isset($_POST['submit'])) {
 		$type = 'information';
 		$message = 'Please, complete all fields.';
 	}
-	
+
 	GenerateMessage('Postfix.bsh', $type, $message);
 }
 
 Form();
-	
+
 //#################### LAST LINE ######################################
 ?>

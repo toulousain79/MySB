@@ -94,7 +94,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 				if ($last_id_address == false) {
 					$success = false;
-				}			
+				}
 			}
 
 			if ( $success == true ) {
@@ -165,7 +165,7 @@ $AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserI
 					<input type="button" id="btnAdd" value="Add address" style="cursor: pointer;" />
 					<input type="button" id="btnDel" value="Remove last" style="cursor: pointer;" />
 				</div>
-				
+
 				<input class="submit" style="width:180px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="Add my addresses now !">
 			</fieldset>
 		</form>
@@ -193,7 +193,7 @@ foreach($AddressesList as $Address) {
 								<option value="0" selected="selected" class="redText">No</option>
 								<option value="1" class="greenText">Yes</option>
 							</select>';
-			break;		
+			break;
 		default:
 			$is_active = '	<select name="is_active['.$i.']" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 								<option value="0" class="redText">No</option>

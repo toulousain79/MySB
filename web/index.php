@@ -1,6 +1,6 @@
 <?php
 // ----------------------------------
-require_once  '/etc/MySB/web/inc/includes_before.php';
+require_once '/etc/MySB/web/inc/includes_before.php';
 // ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
@@ -229,7 +229,7 @@ Dispatcher::addRoute($admin_routes);
 require APP_PATH.DS.'main.php';
 
 // -----------------------------------------
-require_once  '/etc/MySB/web/inc/includes_after.php';
+require_once '/etc/MySB/web/inc/includes_after.php';
 // -----------------------------------------
 //#################### LAST LINE ######################################
 ?>

@@ -1,13 +1,13 @@
 <?php
 // ----------------------------------
-//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
-//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
-//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
-//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
-//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
-//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
-//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
-//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
 //          _\///______________\///___\////__________\///////////_____\/////////////_____
 //			By toulousain79 ---> https://github.com/toulousain79/
 //
@@ -35,18 +35,17 @@
 	<meta name="googlebot" content="nosnippet">
 	<!-- Template CSS -->
 	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/screen.css" media="screen" type="text/css" />
-	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/print.css" media="print" type="text/css" />
 	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/mysb.css" type="text/css" />
 	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/jQ-menu.css" type="text/css" />
 	<!-- Messages animated CSS -->
 	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/buttons.css" type="text/css" />
 	<link rel="stylesheet" href="<?php echo THEMES_PATH; ?>MySB/css/animate.css" type="text/css" />
 	<!-- jquery -->
-	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-1.11.1.min.js"></script>	
+	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-1.11.1.min.js"></script>
 	<!-- modernizr enables HTML5 elements and feature detects -->
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/modernizr-1.5.min.js"></script>
     <!-- noty -->
-    <script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/noty/packaged/jquery.noty.packaged.min.js"></script>	
+    <script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/noty/packaged/jquery.noty.packaged.min.js"></script>
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.create_message.js"></script>
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/waiting.js"></script>
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/mysb.js"></script>
@@ -61,33 +60,33 @@
 					<h1><a href="<?php echo URL_PUBLIC; ?>"><span class="LogoFirstLine">MySB</span></a></h1>
 					<h2> <?php echo GetVersion(); ?></h2>
 				</div>
-			</div>	
-			
-			<nav>					
+			</div>
+
+			<nav>
 				<div id="menu_container">
 					<?php $page = $this->find('/'); ?>
 					<ul class="sf-menu" id="nav">
 						<li<?php echo ($this->level() == 0) ? ' class="current"': null; ?>><?php echo $page->link($page->title); ?></li>
-						
+
 						<?php MenuDisplayChildren($page, $this, false); ?>
 					</ul>
 					<div id="breadcrumb">
 						<?php echo $this->breadcrumb(); ?>
-					</div>					
-				</div>				
+					</div>
+				</div>
 			</nav>
 		</header>
-		
+
 		<div id="site_content">
 			<div class="content">
 <?php
 				echo $this->content();
 				if ($this->hasContent('extended')) echo $this->content('extended');
-?> 			
+?>
 			</div>
 			<div id="sidebar_container">
-				<?php echo $this->content('sidebar', true); ?>			
-			</div>			
+				<?php echo $this->content('sidebar', true); ?>
+			</div>
 		</div>
 
 		<div id="scroll">
@@ -107,7 +106,6 @@
 ?>
 			<p>Copyright &copy; CSS3_two | <a href="http://www.css3templates.co.uk">design from css3templates.co.uk</a> | <a href="http://www.wolfcms.org/" title="Wolf CMS">Wolf CMS</a> Inside.</p>				
 		</footer>
-		
 	</div>
 	
 	<!-- javascript at the bottom for fast page loading -->

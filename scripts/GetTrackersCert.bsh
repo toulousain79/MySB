@@ -2,14 +2,14 @@
 # ----------------------------------
 source /etc/MySB/inc/includes_before.bsh
 # ----------------------------------
-#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
-#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
-#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
-#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
-#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
-#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
-#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
-#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
 #          _\///______________\///___\////__________\///////////_____\/////////////_____
 #			By toulousain79 ---> https://github.com/toulousain79/
 #
@@ -92,14 +92,14 @@ if [ -z "$1" ]; then
 				TrackerDomain="`echo $PART2`.`echo $PART3`"
 			fi
 			unset PART1 PART2 PART3
-			
+
 			IfExist="`sqlite3 $MySB_DB \"SELECT tracker FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"
 			if [ -z "$IfExist" ]; then
 				AddTracker $Tracker "users"
 			else
 				log_daemon_msg "Force activation of tracker: $Tracker"
 				sqlite3 $MySB_DB "UPDATE trackers_list SET is_active = '1' WHERE tracker_domain = '$TrackerDomain';"
-				StatusLSB				
+				StatusLSB
 			fi
 		done
 	fi
@@ -108,18 +108,13 @@ fi
 #### Update users trackers data
 if [ -z "$1" ]; then
 	TrackersList="`sqlite3 $MySB_DB \"SELECT tracker FROM trackers_list WHERE origin = 'users' AND to_check = '1'\"`"
-	
+
 	for Tracker in $TrackersList; do
 		AddTracker $Tracker "users"
 	done
 fi
 
 #### Get certificates
-# if [ -z "$1" ]; then
-	# TrackersList="`sqlite3 $MySB_DB \"SELECT tracker FROM trackers_list WHERE to_check = '1'\"`"
-# else
-	# TrackersList="`sqlite3 $MySB_DB \"SELECT tracker FROM trackers_list WHERE is_active = '1' AND to_check = '1'\"`"
-# fi
 TrackersList="`sqlite3 $MySB_DB \"SELECT tracker FROM trackers_list WHERE to_check = '1'\"`"
 DoRehash=0
 
@@ -133,17 +128,17 @@ for Tracker in $TrackersList; do
 		if [ -e ./$Tracker.pem ]; then
 			if [ -f /etc/ssl/certs/$Tracker.pem ]; then
 				rm -f /etc/ssl/certs/$Tracker.pem
-			fi	
+			fi
 			ln -s /etc/MySB/ssl/trackers/$Tracker.pem /etc/ssl/certs/$Tracker.pem
 			sqlite3 $MySB_DB "UPDATE trackers_list SET is_ssl = '1' WHERE tracker = '$Tracker';"
 			DoRehash=1
 		fi
-		
+
 		rm -f ./$Tracker.der
 	fi
 	sqlite3 $MySB_DB "UPDATE trackers_list SET to_check = '0' WHERE tracker = '$Tracker';"
-	
-	rm -f ./$Tracker.crt	
+
+	rm -f ./$Tracker.crt
 	StatusLSB
 done
 
@@ -153,8 +148,6 @@ if [ "$DoRehash" == 1 ]; then
 	update-ca-certificates &> /dev/null
 	StatusLSB
 fi
-
-#ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after.bsh

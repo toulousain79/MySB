@@ -1,13 +1,13 @@
 <?php
 // ----------------------------------
-//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
-//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
-//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
-//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
-//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
-//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
-//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
-//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
 //          _\///______________\///___\////__________\///////////_____\/////////////_____
 //			By toulousain79 ---> https://github.com/toulousain79/
 //
@@ -31,7 +31,7 @@ if ( isset($_POST['TempPass']) ) {
 
 echo '
 	<form class="form_settings" method="post" action="">
-		<div align="center"><table border="0">	
+		<div align="center"><table border="0">
 			<tr>
 				<td>Current password :</td>
 				<td><input name="current_pwd" type="password" ' . $opts . '/></td>
@@ -58,38 +58,26 @@ echo '
 // </div>
 // <div id="PageButtonReplace" style="text-align:center; display:none; height: 33px;">
 	// <img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading...">
-// </div>	
+// </div>
 	
 if ( isset($_POST['submit']) ) {
 	$current_pwd = $_POST['current_pwd'];
 	$new_pwd = $_POST['new_pwd'];
 	$confirm_pwd = $_POST['confirm_pwd'];
 	$args = false;
-	
+
 	if ( ($current_pwd != '') && ($new_pwd != '') && ($confirm_pwd != '') ) {
 		if ( $current_pwd == $_SERVER['PHP_AUTH_PW'] ) {
 			if ( $new_pwd == $confirm_pwd ) {
-				
-				// exec("sudo /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword '".$_SERVER['PHP_AUTH_USER']."' '".$new_pwd."' 'ChangePassword.php'", $output, $result);
+				$result = UpdateWolfDB($_SERVER['PHP_AUTH_USER'], $new_pwd);
 
-				// foreach ( $output as $item ) {
-					// echo '<div class="Comments" align="center">'.$item.'</div>';
-				// }
-				
-				// if ( $result == 0 ) {
-					$result = UpdateWolfDB($_SERVER['PHP_AUTH_USER'], $new_pwd);
-				
-					if ( $result > 0 ) {
-						$type = 'success';
-						$args = "$new_pwd";
-					} else {
-						$type = 'error';
-						$message = 'Failed ! It was not possible to update the Wolf database.';
-					}
-				// } else {
-					// $type = 'error';
-					// $message = 'Error occured with "MySB_ChangeUserPassword" script !';
-				// }
+				if ( $result > 0 ) {
+					$type = 'success';
+					$args = "$new_pwd";
+				} else {
+					$type = 'error';
+					$message = 'Failed ! It was not possible to update the Wolf database.';
+				}
 			} else {
 				$type = 'error';
 				$message = 'Error between the new typed password and verification.';
@@ -102,8 +90,7 @@ if ( isset($_POST['submit']) ) {
 		$type = 'information';
 		$message = 'Please, complete all fields.';	
 	}
-	
-	//GenerateMessage(false, $type, $message);
+
 	GenerateMessage('MySB_ChangeUserPassword', $type, $message, $args);
 }
 

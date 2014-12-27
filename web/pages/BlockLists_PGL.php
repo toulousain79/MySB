@@ -1,13 +1,13 @@
 <?php
 // ----------------------------------
-//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
-//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
-//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_      
-//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__     
-//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_    
-//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_   
-//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_  
-//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__ 
+//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+//    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+//     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+//      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+//       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+//        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+//         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
 //          _\///______________\///___\////__________\///////////_____\/////////////_____
 //			By toulousain79 ---> https://github.com/toulousain79/
 //
@@ -29,10 +29,10 @@ $IsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGu
 if ( $IsInstalled == '1' ) {
 	if (isset($_POST['submit'])) {
 		$success = true;
-		
+
 		for($i=0, $count = count($_POST['id_blocklists_peerguardian']);$i<$count;$i++) {
 			$result = $MySB_DB->update("blocklists_peerguardian", ["is_active" => $_POST['is_active'][$i]], ["id_blocklists_peerguardian" => $_POST['id_blocklists_peerguardian'][$i]]);
-			
+
 			if ( $result != 1 ) {
 				$success = false;
 			}
@@ -42,27 +42,26 @@ if ( $IsInstalled == '1' ) {
 			$type = 'success';
 		} else {
 			$type = 'error';
-			$message = 'Failed ! It was not possible to update tracker in the MySB database.';		
-		}		
-		
+			$message = 'Failed ! It was not possible to update tracker in the MySB database.';
+		}
+
 		GenerateMessage('FirewallAndSecurity.bsh' ,$type, $message);
 	}
-	
+
 	$BlockList = $MySB_DB->select("blocklists_peerguardian", "*");
 ?>
 
 	<form class="form_settings" method="post" action="">	
 		<div align="center">
 			<input class="submit" style="width:120px; margin-bottom: 10px;" name="submit" type="submit" value="Save Changes">
-			
+
 			<table style="border-spacing:1;">
 				<tr>
 					<th style="text-align:center;">Name</th>
 					<th style="text-align:center;">Blocklist</th>
 					<th style="text-align:center;">Default ?</th>
 					<th style="text-align:center;">Active ?</th>
-				</tr>						
-					
+				</tr>
 	<?php
 	foreach($BlockList as $List) {
 		switch ($List["default"]) {
@@ -70,21 +69,21 @@ if ( $IsInstalled == '1' ) {
 				$default = '<select name="default[]" style="width:60px; background-color:#FEBABC;" disabled>
 								<option value="0" selected="selected">No</option>
 							</select>';
-				break;		
+				break;
 			default:
 				$default = '<select name="default[]" style="width:60px; background-color:#B3FEA5;" disabled>
 								<option value="1" selected="selected">Yes</option>
 							</select>';
 				break;
 		}
-		
+
 		switch ($List["is_active"]) {
 			case '0':
 				$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 									<option value="0" selected="selected" class="redText">No</option>
 									<option value="1" class="greenText">Yes</option>
 								</select>';
-				break;		
+				break;
 			default:
 				$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 									<option value="0" class="redText">No</option>
@@ -92,30 +91,28 @@ if ( $IsInstalled == '1' ) {
 								</select>';
 				break;
 		}
-	?>				
+	?>
 				<tr>
 					<td>
 						<input type="hidden" name="id_blocklists_peerguardian[]" value="<?php echo $List["id_blocklists_peerguardian"]; ?>" />
 						<input style="width:180px;" type="hidden" name="name[]" value="<?php echo $List["name"]; ?>" />
 						<?php echo $List["name"]; ?>
-					</td>			
+					</td>
 					<td>
 						<input style="width:180px;" type="hidden" name="blocklists[]" value="<?php echo $List["blocklists"]; ?>" />
 						<?php echo '<a target="_blank" href="' . $List["url_info"] . '">' . $List["blocklists"] . '</a>'; ?>
 					</td>
 					<td>
-						<?php echo $default; ?>			
+						<?php echo $default; ?>
 					</td>
 					<td>
-						<?php echo $is_active; ?>				
-					</td>					
+						<?php echo $is_active; ?>
+					</td>
 				</tr>
 	<?php
 	} // foreach($BlockList as $List) {
-	?>			
-
+	?>
 			</table>
-		
 			<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
 		</div>
 	</form>
