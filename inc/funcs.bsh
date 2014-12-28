@@ -771,10 +771,14 @@ NetworkPortsGenerator() {
 	WHITE_UDP_OUT="`sqlite3 $MySB_DB \"SELECT white_udp_port_out FROM vars WHERE 1\" | sed 's/,/ /g;'`"
 
 	# OpenDNS DNScrypt-proxy resolvers
-	if [ "$IsInstalled_DNScrypt" == "YES" ] && [ -f /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv ] && hash csvtool 2>/dev/null; then
-		ResolversPorts="`csvtool -t ',' col 11 /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv | csvtool drop 1 - | awk -F: '{print $NF}' | sort -g | uniq`"
-		ResolversPorts=`echo $ResolversPorts | sed -e 's/^//g;' | sed 's/\s+$//'`
-	fi 
+	if [ "$IsInstalled_DNScrypt" == "YES" ] && hash dnscrypt-proxy 2>/dev/null; then
+		ResolverName="`sqlite3 $MySB_DB \"SELECT dnscrypt_resolver FROM system WHERE id_system = '1'\"`"
+		log_daemon_msg "Allow response for DNScrypt-proxy resolver: $ResolverName"
+		ResolverAddress="`sqlite3 $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$ResolverName'\"`"
+		ResolverPort="`echo $ResolverAddress | awk -F: '{print $NF}'`"
+		iptables -t filter -A INPUT -p tcp --dport $ResolverPort -i $PrimaryInet -j ACCEPT -m comment --comment "DNScrypt-proxy: $ResolverName"
+		StatusLSB
+	fi	
 
 	# TCP In
 	WHITE_TCP_IN="${WHITE_TCP_IN} ${Port_HTTP} ${Port_HTTPS} ${Port_FTP} ${Port_SSH} ${Port_FTP_Data} ${Port_FTP_Passive}"
@@ -786,7 +790,7 @@ NetworkPortsGenerator() {
 	WHITE_TCP_OUT="${WHITE_TCP_OUT} ${SMTP_Port} ${Port_HTTP} ${Port_HTTPS} ${Port_FTP} ${Port_SSH} ${Port_FTP_Data} ${Port_FTP_Passive}"
 
 	# UDP Out
-	WHITE_UDP_OUT="${WHITE_UDP_OUT} ${ResolversPorts}"
+	WHITE_UDP_OUT="${WHITE_UDP_OUT} ${ResolverPort}"
 
 	# Services
 	if [ "$IsInstalled_Cakebox" == "YES" ]; then
