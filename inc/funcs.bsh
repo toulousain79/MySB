@@ -285,33 +285,35 @@ ManageServices() {
 					;;
 
 					"start")
-						if [ "$Service" == "pglcmd" ] && [ "`ps ax | grep 'FirewallAndSecurity.bsh' | grep 'clean' | sed '/grep/d'`" == "" ]; then
-							if [ "`pidof pgld`" != "" ]; then
-								pglcmd reload
-								if [ $? -gt 0 ]; then
+						if [ "$Service" == "pglcmd" ]; then
+							if [ "`ps ax | grep 'FirewallAndSecurity.bsh' | grep 'clean' | sed '/grep/d'`" == "" ]; then
+								if [ "`pidof pgld`" != "" ]; then
+									pglcmd reload
+									if [ $? -gt 0 ]; then
+										pglcmd restart
+									fi
+								else
 									pglcmd restart
 								fi
-							else
-								pglcmd restart
-							fi
-							if [ $? -gt 0 ]; then # if pgl don't start maybe its due to a list update
-								if [ $LOGSTD != "NO" ]; then echo `date +"%T"`" --> The updated list of PGL may have failed." >> /etc/MySB/logs/$ScriptName.log; fi
-								if [ $LOGSTD != "NO" ]; then echo `date +"%T"`" --> Attempting to clean lists error." >> /etc/MySB/logs/$ScriptName.log; fi
-								CheckLog=`cat /var/log/pgl/pglcmd.log | grep failed | grep list.iblocklist.com | awk '{ print $6 }'`		
-								for List in $CheckLog; do
-									echo `date +"%T"`" --> '$List' will be disabled." >> /etc/MySB/logs/$ScriptName.log
-									# Comment the list in '/etc/pgl/blocklists.list'
-									List=`echo $List | sed s,/,\\\\\\\\\\/,g`
-									sed -i "s/^$List/#$List/g" /etc/pgl/blocklists.list
-								done
-								pglcmd restart
+								if [ $? -gt 0 ]; then # if pgl don't start maybe its due to a list update
+									if [ $LOGSTD != "NO" ]; then echo `date +"%T"`" --> The updated list of PGL may have failed." >> /etc/MySB/logs/$ScriptName.log; fi
+									if [ $LOGSTD != "NO" ]; then echo `date +"%T"`" --> Attempting to clean lists error." >> /etc/MySB/logs/$ScriptName.log; fi
+									CheckLog=`cat /var/log/pgl/pglcmd.log | grep failed | grep list.iblocklist.com | awk '{ print $6 }'`		
+									for List in $CheckLog; do
+										echo `date +"%T"`" --> '$List' will be disabled." >> /etc/MySB/logs/$ScriptName.log
+										# Comment the list in '/etc/pgl/blocklists.list'
+										List=`echo $List | sed s,/,\\\\\\\\\\/,g`
+										sed -i "s/^$List/#$List/g" /etc/pgl/blocklists.list
+									done
+									pglcmd restart
 
-								if [ $? -gt 0 ]; then # We have a problem with PeerGuardian
-									# We will use rTorrent Blocklist
-									PeerGuardianFailed "rTorrent"
+									if [ $? -gt 0 ]; then # We have a problem with PeerGuardian
+										# We will use rTorrent Blocklist
+										PeerGuardianFailed "rTorrent"
+									fi
+								else
+									PeerGuardianFailed "PeerGuardian"
 								fi
-							else
-								PeerGuardianFailed "PeerGuardian"
 							fi
 						else
 							case "$Service" in
