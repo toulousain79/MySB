@@ -24,49 +24,25 @@ source /etc/MySB/inc/includes_before.bsh
 #
 ##################### FIRST LINE #####################################
 
-#### Install packages
-PackagesManage install "samba"
+if [ "$ToInstall_Samba" == "YES" ]; then
+	#### Install packages
+	PackagesManage install "samba"
+	
+	#### STOP services
+	ManageServices stop "samba"	
 
-#### smb.conf
-if [ ! -f /etc/samba/smb.conf.ORIGINAL ] && [ -f /etc/samba/smb.conf ]; then
-	cp /etc/samba/smb.conf /etc/samba/smb.conf.ORIGINAL
+	#### smb.conf
+	if [ ! -f /etc/samba/smb.conf.ORIGINAL ] && [ -f /etc/samba/smb.conf ]; then
+		cp /etc/samba/smb.conf /etc/samba/smb.conf.ORIGINAL
+	fi
+
+	cp /etc/MySB/templates/etc.samba.smb.conf.template /etc/samba/smb.conf
+
+	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'Samba';"
+	
+	#### START services
+	ManageServices start "samba"	
 fi
-
-(
-cat <<'EOF'
-[global]
-   workgroup = MySB
-   server string = MySB
-   wins support = yes
-   wins server = 127.0.0.1   
-   dns proxy = no
-   interfaces = lo tun0 tun1
-   bind interfaces only = no   
-   remote announce = 10.0.0.255/MySB 10.0.1.0.255/MySB
-   log file = /var/log/samba/log.%m
-   max log size = 1000
-   syslog = 0
-   panic action = /usr/share/samba/panic-action %d
-   encrypt passwords = true
-   passdb backend = tdbsam
-   obey pam restrictions = yes
-   unix password sync = yes
-   passwd program = /usr/bin/passwd %u
-   passwd chat = *Enter\snew\s*\spassword:* %n\n *Retype\snew\s*\spassword:* %n\n *password\supdated\ssuccessfully* .
-   pam password change = yes
-   map to guest = bad user
-   usershare allow guests = yes
-[homes]
-   comment = Home Directories
-   browseable = no
-   read only = yes
-   create mask = 0700
-   directory mask = 0700
-   valid users = %S
-EOF
-) > /etc/samba/smb.conf
-
-sqlite3 $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'Samba';"
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after.bsh

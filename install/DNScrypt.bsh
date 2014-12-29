@@ -41,6 +41,9 @@ fi
 if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	#### Install packages
 	PackagesManage install "ldnsutils libldns-dev bind9"
+	
+	#### STOP services
+	ManageServices stop "bind9"
 
 	#### Add dnscrypt user
 	if [ "`cat /etc/passwd | grep dnscrypt`" == "" ]; then
@@ -155,7 +158,15 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	sed -i '/dnscrypt-proxy/d' /tmp/crontab.tmp
 	echo "5 * * * * if ! ( /bin/ps ax | grep 'dnscrypt-proxy' | sed '/grep/d' &> /dev/null ); then /etc/init.d/dnscrypt-proxy restart &> /dev/null; fi" >> /tmp/crontab.tmp
 	crontab /tmp/crontab.tmp
-	rm -f /tmp/crontab.tmp	
+	rm -f /tmp/crontab.tmp
+	
+	#### START services
+	ManageServices start "cron dnscrypt-proxy"
+	
+	#### Add SMTP host in cache
+	if [ "$SMTP_Provider" != "LOCAL" ]; then
+		ping -c5 $SMTP_Host &> /dev/null
+	fi	
 fi
 
 # -----------------------------------------

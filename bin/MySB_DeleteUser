@@ -27,9 +27,9 @@ source /etc/MySB/inc/includes_before.bsh
 if [ "$USAGE" == "ON" ]; then
 	ListingUsers
 	LIST=""
-	for seedUser in $UsersList; do
-		if [ "$seedUser" != "$MainUser" ]; then
-			LIST="$LIST|${CYELLOW}$seedUser$CEND"
+	for User in $UsersList; do
+		if [ "$User" != "$MainUser" ]; then
+			LIST="$LIST|${CYELLOW}$User$CEND"
 		fi
 	done
 
@@ -42,112 +42,105 @@ if [ "$USAGE" == "ON" ]; then
 		EndingScript 0 0
 	fi	
 
-	QuestionGetString NO  "Type username to DELETE: " NEWUSER
+	QuestionGetString NO  "Type username to DELETE: " SeedboxUser
 
-	if [ "$NEWUSER" == "none" ]; then
+	if [ "$SeedboxUser" == "none" ]; then
 		EndingScript 0 0
 	else
-		while [ "$NEWUSER" == "$MainUser" ]; do
-			QuestionGetString NO  "Type username to DELETE: " NEWUSER
+		while [ "$SeedboxUser" == "$MainUser" ]; do
+			QuestionGetString NO  "Type username to DELETE: " SeedboxUser
 		done
 	fi
 fi
 
-#### Stop services
-ManageServices stop
+#### STOP services
+ManageServices stop "cron rtorrent-$SeedboxUser"
 
 #### User ID
-UserId=$(sqlite3 $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$NEWUSER'")
+UserId=$(sqlite3 $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$SeedboxUser'")
 
 #### crontab
-log_daemon_msg "Delete cron for $NEWUSER"
+log_daemon_msg "Delete cron for $SeedboxUser"
 crontab -l > /tmp/crontab.tmp
-sed -i '/'$NEWUSER'/d' /tmp/crontab.tmp
+sed -i '/'$SeedboxUser'/d' /tmp/crontab.tmp
 crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
 StatusLSB
 
 #### FTP
-log_daemon_msg "Delete FTP access & share for $NEWUSER"
-sed -i '/'$NEWUSER'/d' /etc/vsftpd.chroot_list
-umount /home/$NEWUSER/rtorrent/share
+log_daemon_msg "Delete FTP access & share for $SeedboxUser"
+sed -i '/'$SeedboxUser'/d' /etc/vsftpd.chroot_list
+umount /home/$SeedboxUser/rtorrent/share
 StatusLSB
 
 #### NFS
-log_daemon_msg "Delete NFS access for $NEWUSER"
-sed -i '/'$NEWUSER'/d' /etc/exports
+log_daemon_msg "Delete NFS access for $SeedboxUser"
+sed -i '/'$SeedboxUser'/d' /etc/exports
 StatusLSB
 
 #### Samba
-log_daemon_msg "Delete Samba access for $NEWUSER"
-smbpasswd -x $NEWUSER &> /dev/null
+log_daemon_msg "Delete Samba access for $SeedboxUser"
+smbpasswd -x $SeedboxUser &> /dev/null
 StatusLSB
 
-#### NginX
-log_daemon_msg "Remove the access permission to the web server for $NEWUSER"
-sqlite3 $MySB_DB "SELECT ipv4 FROM users_addresses WHERE id_users = '$UserId'" | while read ROW; do
-	IPv4=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
-	sed -i '/'$IPv4'/d' /etc/nginx/locations/1_MySB.conf
-done
-StatusLSB
-
-#### remove current password from htpassword
-log_daemon_msg "Delete Web server account for $NEWUSER"
-sudo htpasswd -D /etc/nginx/passwd/MySB $NEWUSER
-sudo rm -f /etc/nginx/passwd/MySB_$NEWUSER
+#### NginX - remove current password from htpassword
+log_daemon_msg "Delete Web server account for $SeedboxUser"
+htpasswd -D /etc/nginx/passwd/MySB $SeedboxUser
+rm -f /etc/nginx/passwd/MySB_$SeedboxUser
 StatusLSB
 
 #### remove files
-log_daemon_msg "Remove files and init script for $NEWUSER"
-update-rc.d -f rtorrent-$NEWUSER.conf remove &> /dev/null
-if [ -f /etc/init.d/rtorrent-$NEWUSER.conf ]; then
-	sudo rm -f /etc/init.d/rtorrent-$NEWUSER.conf
+log_daemon_msg "Remove files and init script for $SeedboxUser"
+update-rc.d -f rtorrent-$SeedboxUser.conf remove &> /dev/null
+if [ -f /etc/init.d/rtorrent-$SeedboxUser.conf ]; then
+	rm -f /etc/init.d/rtorrent-$SeedboxUser.conf
 fi
-if [ -f /etc/nginx/rpc/$NEWUSER.conf ]; then
-	sudo rm -f /etc/nginx/rpc/$NEWUSER.conf
+if [ -f /etc/nginx/rpc/$SeedboxUser.conf ]; then
+	rm -f /etc/nginx/rpc/$SeedboxUser.conf
 fi
-if [ -f /etc/nginx/rpc/$NEWUSER.cakebox ]; then
-	sudo rm -f /etc/nginx/rpc/$NEWUSER.cakebox
+if [ -f /etc/nginx/rpc/$SeedboxUser.cakebox ]; then
+	rm -f /etc/nginx/rpc/$SeedboxUser.cakebox
 fi
-if [ -f /etc/MySB/web/openvpn/openvpn_$NEWUSER.zip ]; then
-	/etc/MySB/web/openvpn/openvpn_$NEWUSER.zip
+if [ -f /etc/MySB/web/openvpn/openvpn_$SeedboxUser.zip ]; then
+	/etc/MySB/web/openvpn/openvpn_$SeedboxUser.zip
 fi
-if [ -d /etc/MySB/web/rutorrent/conf/users/$NEWUSER ]; then
-	sudo rm -rf /etc/MySB/web/rutorrent/conf/users/$NEWUSER
+if [ -d /etc/MySB/web/rutorrent/conf/users/$SeedboxUser ]; then
+	rm -rf /etc/MySB/web/rutorrent/conf/users/$SeedboxUser
 fi
-if [ -d /etc/MySB/web/rutorrent/share/users/$NEWUSER ]; then
-	sudo rm -rf /etc/MySB/web/rutorrent/share/users/$NEWUSER
+if [ -d /etc/MySB/web/rutorrent/share/users/$SeedboxUser ]; then
+	rm -rf /etc/MySB/web/rutorrent/share/users/$SeedboxUser
 fi
-if [ -d /etc/MySB/web/seedbox-manager/conf/users/$NEWUSER ]; then
-	sudo rm -rf /etc/MySB/web/seedbox-manager/conf/users/$NEWUSER
+if [ -d /etc/MySB/web/seedbox-manager/conf/users/$SeedboxUser ]; then
+	rm -rf /etc/MySB/web/seedbox-manager/conf/users/$SeedboxUser
 fi
-sqlite3 $MySB_DB "DELETE FROM users_addresses WHERE id_users = '$UserId'"
-sqlite3 $MySB_DB "DELETE FROM users WHERE users_ident = '$NEWUSER'"
 StatusLSB
 
-#### Create new security rules
-ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
+#### Remove user from database
+log_daemon_msg "Remove files and init script for $SeedboxUser"
+sqlite3 $MySB_DB "DELETE FROM users_addresses WHERE id_users = '$UserId'"
+sqlite3 $MySB_DB "DELETE FROM users WHERE users_ident = '$SeedboxUser'"
+StatusLSB
 
 #### rtorrent max memory
 MEMORY=`free -m | grep Mem | awk '{ print $2 }'`
 CountingUsers
 ListingUsers
-for seedUser in $UsersList; do
-	log_daemon_msg "Changing parameter 'pieces.memory.max.set' for $seedUser"
-	LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$seedUser/.rtorrent.rc)
-	sudo sed -i ''$LIGN'd' /home/$seedUser/.rtorrent.rc
-	sed -i ''$LIGN'i\#pieces.memory.max.set = '$(((($MEMORY/$TotalUsers)*1024)*1024))'\n' /home/$seedUser/.rtorrent.rc
+for User in $UsersList; do
+	log_daemon_msg "Changing parameter 'pieces.memory.max.set' for $User"
+	LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$User/.rtorrent.rc)
+	sed -i ''$LIGN'd' /home/$User/.rtorrent.rc
+	sed -i ''$LIGN'i\#pieces.memory.max.set = '$(((($MEMORY/$TotalUsers)*1024)*1024))'\n' /home/$User/.rtorrent.rc
 	StatusLSB
 done
 
 #### system user
-log_daemon_msg "Delete $seedUser system account"
-sudo userdel --remove --force $NEWUSER &> /dev/null
-if [ -d /home/$NEWUSER ]; then
-	sudo rm -vrf /home/$NEWUSER
+log_daemon_msg "Delete $SeedboxUser system account"
+userdel --remove --force $SeedboxUser &> /dev/null
+if [ -d /home/$SeedboxUser ]; then
+	rm -vrf /home/$SeedboxUser
 fi
-if [ -d /var/run/screen/S-$NEWUSER ]; then
-	sudo rm -vrf /var/run/screen/S-$NEWUSER
+if [ -d /var/run/screen/S-$SeedboxUser ]; then
+	rm -vrf /var/run/screen/S-$SeedboxUser
 fi
 StatusLSB
 
@@ -160,10 +153,13 @@ if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 fi
 
 #### renting
-MonthlyPayment "$NEWUSER"
+MonthlyPayment "$SeedboxUser"
 
-#### Stop services
-ManageServices start
+#### START services
+ManageServices start "cron nfs-kernel-server vsftpd samba nginx"
+
+#### Create new security rules
+ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after.bsh

@@ -51,6 +51,9 @@ else
 	UserSUDO=$4
 fi
 
+#### STOP services
+ManageServices stop ""
+
 #### Users vars
 HomeDir="/home/$NewUser"
 HOMEDIR_ESCAPED=`echo $HomeDir | sed s,/,\\\\\\\\\\/,g`
@@ -224,18 +227,23 @@ for seedUser in $UsersList; do
 	sed -i ''$LIGN'd' /home/$seedUser/.rtorrent.rc
 	sed -i ''$LIGN'i\pieces.memory.max.set = '$(((($MEMORY/$TotalUsers)*1024)*1024))'\n' /home/$seedUser/.rtorrent.rc
 	StatusLSB
-	
-	#if [ "$MySB_PeerBlock" == "rTorrent" ]; then	
-		if [ -f /etc/MySB/files/blocklist/blocklist_rtorrent.txt ]; then
-			log_daemon_msg "Copy the blocklist file for $seedUser"
-			cp /etc/MySB/files/blocklist/* $HomeDir/blocklist/
-			StatusLSB
-		else
-			log_daemon_msg "Creating a new blocklist file for $seedUser"
-			ScriptInvoke 'screen' '/etc/MySB/scripts/BlocklistsRTorrent.bsh'
-			StatusLSB	
-		fi
-	#fi
+
+	if [ -f /etc/MySB/files/blocklist/blocklist_rtorrent.txt ]; then
+		log_daemon_msg "Copy the blocklist file for $seedUser"
+		cp /etc/MySB/files/blocklist/* $HomeDir/blocklist/
+		StatusLSB
+	else
+		log_daemon_msg "Creating a new blocklist file for $seedUser"
+		ScriptInvoke 'screen' '/etc/MySB/scripts/BlocklistsRTorrent.bsh'
+		StatusLSB	
+	fi
+
+	service rtorrent-$seedUser status &> /dev/null
+	if [ $? -gt 0 ]; then
+		service rtorrent-$seedUser restart
+	else
+		service rtorrent-$seedUser reload
+	fi
 done
 
 #### renting
@@ -245,10 +253,13 @@ MonthlyPayment "$NewUser"
 ScriptInvoke 'source' '/etc/MySB/bin/MySB_ChangeUserPassword' $NewUser $NewUserPassword
 
 #### iptables
-log_daemon_msg "Create new rules for iptables"
+log_daemon_msg "Create new security rules"
 screen -dmS FirewallAndSecurity /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh new;
 WaitingSTD FirewallAndSecurity
 StatusLSB
+
+#### START services
+ManageServices start "vsftpd nginx cron"
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after.bsh

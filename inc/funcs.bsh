@@ -205,172 +205,99 @@ PeerGuardianFailed() {
 	done
 }
 
-#### Auto Start services for each scripts
+#### Check if service is started
+GetPid() {
+	PID=""
+
+	case "$1" in
+		"fail2ban")
+			if [ -f /var/run/fail2ban/fail2ban.pid ]; then
+				PID="`cat /var/webmin/miniserv.pid`"
+			fi
+		;;
+		"webmin")
+			if [ -f /var/webmin/miniserv.pid ]; then
+				PID="`cat /var/webmin/miniserv.pid`"
+			fi
+		;;
+		"ssh")
+			PID="`pidof sshd`"
+		;;
+		*)
+			PID="`pidof $1`"
+		;;
+	esac
+}
+
+#### Start/Stop services
 ManageServices() {
-	ServicesToManage=""
 	Command="$1"
+	ServicesToManage="$2"
 
-	if [ ! -z "$2" ]; then
-		FileToRead="$2"
-	else
-		FileToRead="$0"
-	fi
-
-	# Create users list
-	ListingUsers
-
-	AllServices="`sqlite3 $MySB_DB \"SELECT ident, bin FROM services WHERE is_installed = '1' AND ident != '' AND bin != '' ORDER BY priority ASC\"`"
-	for Service in $AllServices; do
-		IDENT=`echo $Service | awk '{split($0,a,"|"); print a[1]}'`
-		FullBIN=`echo $Service | awk '{split($0,a,"|"); print a[2]}'`
-		SEARCH=$(cat $FileToRead | grep $IDENT)
-		BIN=`echo $FullBIN | cut -d '/' -f 4`
-
-		if [ ! -z "$SEARCH" ] ; then
-			case "$IDENT" in
-				'/etc/network')
-					echo &> /dev/null
-				;;
-				*)
-					case "${FullBIN}" in
-						"bind9")
-							if hash bind 2> /dev/null; then
-								ServicesToManage="${ServicesToManage} ${BIN}"
-							fi
-						;;
-						*)
-							if hash ${FullBIN} 2> /dev/null; then
-								ServicesToManage="${ServicesToManage} ${BIN}"
-							fi
-						;;
-					esac
-				;;
-			esac
-		fi
-		unset SEARCH FullBIN IDENT
-	done
-
-	if [ "$ServicesToManage" != "" ] && [ "$Command" != "" ]; then
+	if [ ! -z "$ServicesToManage" ]; then
 		if [ $LOGSTD != "NO" ]; then echo "---- "`date +"%T"` >> /etc/MySB/logs/$ScriptName.log; fi
-
-		AllReadyStopped="false"
-		ServicesToManage=`echo $ServicesToManage | sed ':a;s/^[ \t]*//;s/[ \t]*$//'`
-
-		case "$ScriptName" in
-			"ruTorrent"|"rTorrent"|"MySB_CleanAll.bsh"|"MySB_DeleteUser")
-				if [ "$AllReadyStopped" == "false" ];then
-					service cron $Command
-
-					for seedUser in $UsersList; do
-						if [ -e /etc/init.d/rtorrent-$seedUser ]; then
-							service rtorrent-$seedUser $Command
-						fi
-					done
-					AllReadyStopped=true
-				fi
-			;;
-		esac
-
+		
 		for Service in $ServicesToManage; do
-			if [ ! -z "$Service" ]; then
-				case "$1" in
-					"stop")
-						case "$Service" in
-							"pglcmd")
-								if [ "`ps ax | grep 'FirewallAndSecurity.bsh' | grep 'clean' | sed '/grep/d'`" != "" ]; then
-									pglcmd stop
-								fi
-							;;
-							"dnscrypt-proxy")
-								echo &> /dev/null
-							;;							
-							*)
-								if [ "`screen -ls | grep 'MySB'`" != "" ] || [ "`ps ax | grep 'FirewallAndSecurity.bsh' | grep 'clean' | sed '/grep/d'`" != "" ]; then
-									service $Service stop
-								fi
-							;;
-						esac
-					;;
+			ServiceStatus="`GetPid $Service`"
 
-					"start")
-						if [ "$Service" == "pglcmd" ]; then
-							if [ "`ps ax | grep 'FirewallAndSecurity.bsh' | grep 'clean' | sed '/grep/d'`" == "" ]; then
-								if [ "`pidof pgld`" != "" ] && [ "`screen -ls | grep MySB`" == "" ]; then
-									pglcmd reload
-									if [ $? -gt 0 ]; then
-										pglcmd restart
-									fi
-								else
-									pglcmd restart
-								fi
-								if [ $? -gt 0 ]; then # if pgl don't start maybe its due to a list update
-									if [ $LOGSTD != "NO" ]; then echo `date +"%T"`" --> The updated list of PGL may have failed." >> /etc/MySB/logs/$ScriptName.log; fi
-									if [ $LOGSTD != "NO" ]; then echo `date +"%T"`" --> Attempting to clean lists error." >> /etc/MySB/logs/$ScriptName.log; fi
-									CheckLog=`cat /var/log/pgl/pglcmd.log | grep failed | grep list.iblocklist.com | awk '{ print $6 }'`		
-									for List in $CheckLog; do
-										echo `date +"%T"`" --> '$List' will be disabled." >> /etc/MySB/logs/$ScriptName.log
-										# Comment the list in '/etc/pgl/blocklists.list'
-										List=`echo $List | sed s,/,\\\\\\\\\\/,g`
-										sed -i "s/^$List/#$List/g" /etc/pgl/blocklists.list
-									done
-									pglcmd restart
-
-									if [ $? -gt 0 ]; then # We have a problem with PeerGuardian
-										# We will use rTorrent Blocklist
-										PeerGuardianFailed "rTorrent"
-									fi
-								else
-									PeerGuardianFailed "PeerGuardian"
-								fi
+			case "$Command" in
+				"stop")
+					if [ "$ServiceStatus" != "" ]; then
+						service $Service stop
+					fi
+				;;
+				"start")
+					if [ "$Service" == "pglcmd" ]; then
+						if [ "$ServiceStatus" != "" ]; then
+							pglcmd reload
+							if [ $? -gt 0 ]; then
+								pglcmd restart
 							fi
 						else
-							case "$Service" in
-								# "nginx"|"fail2ban"|"cron")
-									# case "$ScriptName" in
-										# "MySB_ChangeUserPassword"|"MySB_CreateUser"|"MySB_DeleteUser"|"FirewallAndSecurity.bsh")
-											# if [ "`pidof $Service`" != "" ]; then
-												# service $Service reload
-											# else
-												# service $Service restart
-											# fi
-										# ;;
-										# *)
-											# service $Service restart
-										# ;;
-									# esac
-								# ;;
-								"fail2ban")
-									if [ "`ps ax | grep 'FirewallAndSecurity.bsh' | grep 'clean' | sed '/grep/d'`" == "" ]; then
-										if [ "`ps ax | grep 'fail2ban' | sed '/grep/d'`" != "" ]; then
-											service $Service reload
-										else
-											service $Service restart
-										fi
-									fi
-								;;								
-								"dnscrypt-proxy")
-									service $Service restart
-									if [ "`screen -ls | grep MySB`" != "" ] || [ "`ps ax | grep 'MySB_Install.bsh' | sed '/grep/d'`" != "" ]; then # MySB installation
-										#### Add SMTP host in cache
-										if [ "$SMTP_Provider" != "LOCAL" ]; then
-											ping -c5 $SMTP_Host &> /dev/null
-										fi
-									fi
-								;;
-								*)	
-									if [ "`pidof $Service`" != "" ]; then
-										service $Service reload
-									else
-										service $Service restart
-									fi
-								;;
-							esac
+							pglcmd restart
 						fi
-					;;
-				esac
-			fi
-		done
+						if [ $? -gt 0 ]; then # if pgl don't start maybe its due to a list update
+							if [ $LOGSTD != "NO" ]; then echo `date +"%T"`" --> The updated list of PGL may have failed." >> /etc/MySB/logs/$ScriptName.log; fi
+							if [ $LOGSTD != "NO" ]; then echo `date +"%T"`" --> Attempting to clean lists error." >> /etc/MySB/logs/$ScriptName.log; fi
+							CheckLog=`cat /var/log/pgl/pglcmd.log | grep failed | grep list.iblocklist.com | awk '{ print $6 }'`		
+							for List in $CheckLog; do
+								echo `date +"%T"`" --> '$List' will be disabled." >> /etc/MySB/logs/$ScriptName.log
+								# Comment the list in '/etc/pgl/blocklists.list'
+								List=`echo $List | sed s,/,\\\\\\\\\\/,g`
+								sed -i "s/^$List/#$List/g" /etc/pgl/blocklists.list
+							done
+							pglcmd restart
 
+							if [ $? -gt 0 ]; then # We have a problem with PeerGuardian
+								# We will use rTorrent Blocklist
+								PeerGuardianFailed "rTorrent"
+							fi
+						else
+							PeerGuardianFailed "PeerGuardian"
+						fi
+					else
+						case "$Service" in
+							"dnscrypt-proxy"|"webmin")
+								Command="restart"
+							;;
+							*)
+								Command="reload"
+							;;
+						esac
+
+						if [ "$ServiceStatus" == "" ]; then
+							service $Service start
+						else
+							service $Service $Command
+							if [ $? -gt 0 ] && [ "$Command" == "reload" ]; then
+								service $Service restart
+							fi
+						fi
+					fi
+				;;
+			esac
+		done
+		
 		if [ $LOGSTD != "NO" ]; then echo "---- "`date +"%T"` >> /etc/MySB/logs/$ScriptName.log; fi
 	fi
 }

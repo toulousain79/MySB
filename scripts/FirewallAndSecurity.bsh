@@ -35,6 +35,9 @@ ListingUsers #($UsersList)
 #### Begin
 case $1 in
 	clean)
+		#### STOP services
+		ManageServices stop "pglcmd fail2ban"
+	
 		# Vidage et suppression des règles existantes :
 		log_daemon_msg "Emptying and removal of existing rules"
 		for TABLE in filter nat mangle; do
@@ -53,8 +56,14 @@ case $1 in
 		log_daemon_msg "Cleaning users IP Addresses"
 		echo "	satisfy all;" > /etc/nginx/conf.d/ip_restriction
 		StatusLSB
+		
+		#### START services
+		ManageServices start "nginx"		
 	;;
 	new)
+		#### STOP services
+		ManageServices stop ""
+	
 		#### NO spoofing
 		if [ -e /proc/sys/net/ipv4/conf/all/rp_filter ]; then
 			log_daemon_msg "No spoofing"
@@ -261,6 +270,9 @@ case $1 in
 		if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
 			PeerGuardianFilesGenerate 1
 		fi
+		
+		#### START services
+		ManageServices start "nginx fail2ban pglcmd"		
 	;;
 
 	*)
