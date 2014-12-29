@@ -272,7 +272,7 @@ ManageServices() {
 		esac
 
 		for Service in $ServicesToManage; do
-			if [ ! -z $Service ]; then
+			if [ ! -z "$Service" ]; then
 				case "$1" in
 					"stop")
 						case "$Service" in
@@ -285,7 +285,7 @@ ManageServices() {
 								echo &> /dev/null
 							;;							
 							*)
-								if [ "`screen -ls | grep MySB`" != "" ]; then
+								if [ "`screen -ls | grep 'MySB'`" != "" ]; then
 									service $Service stop
 								else
 									if [ "`ps ax | grep 'FirewallAndSecurity.bsh' | grep 'clean' | sed '/grep/d'`" != "" ]; then
@@ -299,7 +299,7 @@ ManageServices() {
 					"start")
 						if [ "$Service" == "pglcmd" ]; then
 							if [ "`ps ax | grep 'FirewallAndSecurity.bsh' | grep 'clean' | sed '/grep/d'`" == "" ]; then
-								if [ "`pidof pgld`" != "" ]; then
+								if [ "`pidof pgld`" != "" ] && [ "`screen -ls | grep MySB`" == "" ]; then
 									pglcmd reload
 									if [ $? -gt 0 ]; then
 										pglcmd restart
@@ -840,10 +840,7 @@ NetworkPortsGenerator() {
 		fi
 	fi
 	# OpenDNS DNScrypt-proxy resolvers
-	if [ "$IsInstalled_DNScrypt" == "YES" ] && hash dnscrypt-proxy 2>/dev/null; then
-		ResolverName="`sqlite3 $MySB_DB \"SELECT dnscrypt_resolver FROM system WHERE id_system = '1'\"`"
-		ResolverAddress="`sqlite3 $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$ResolverName'\"`"
-		ResolverPort="`echo $ResolverAddress | awk -F: '{print $NF}'`"
+	if [ ! -z "$ResolverPort" ]; then
 		# UDP Out
 		WHITE_UDP_OUT="${WHITE_UDP_OUT} ${ResolverPort}"
 	fi		
@@ -862,6 +859,10 @@ Fail2BanWhitheList() {
 		MainUserIPs=`echo $MainUserIPs | sed s,/,\\\\\\\\\\/,g`
 		AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
 
+		# OpenDNS DNScrypt-proxy resolvers
+		if [ ! -z "$ResolverAddress" ]; then
+			Fail2banWhiteList="${ResolverAddress}/32"
+		fi
 		if [ $1 -eq 1 ]; then log_daemon_msg "Add whitelist to Fail2Ban"; fi
 		# All users IPs
 		for IPv4 in $AllUsersIPs; do
@@ -903,7 +904,13 @@ PeerGuardianFilesGenerate() {
 		if [ $1 -eq 1 ]; then log_daemon_msg "Add whitelist to PeerGuardian"; fi
 		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`
 		MainUserIPs=`echo $MainUserIPs | sed s,/,\\\\\\\\\\/,g`
-		AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
+
+		# OpenDNS DNScrypt-proxy resolvers
+		if [ ! -z "$ResolverAddress" ]; then
+			AllUsersIPs="${ResolverAddress}"
+		fi
+
+		AllUsersIPs="${AllUsersIPs} ${SeedboxUsersIPs} ${MainUserIPs}"
 		AllUsersIPs=`echo $AllUsersIPs | sed -e "s/^//g;"`
 		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_IN=")
 		SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`

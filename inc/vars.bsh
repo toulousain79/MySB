@@ -34,8 +34,10 @@ CBLUE="${CSI}1;34m"
 #### System
 MySB_DB="/etc/MySB/db/MySB.sq3"
 Wolf_DB="/etc/MySB/db/Wolf.sq3"
-ScriptName=$(basename $0)
-DirName=$(dirname $0)
+if [ ! -z "$0" ]; then
+	ScriptName=$(basename $0)
+	DirName=$(dirname $0)
+fi
 PROCESSOR=`cat /proc/cpuinfo | grep processor | wc -l`
 MEMORY=`free -m | grep Mem | awk '{ print $2 }'`
 DEBIAN_VERSION=`lsb_release -cs`
@@ -76,6 +78,14 @@ if [ -f $MySB_DB ]; then
 	if [ -z "$PrimaryInet" ]; then
 		PrimaryInet="`ip route get 8.8.8.8 | grep 8.8.8.8 | awk '{ print $5 }'`"
 	fi
+	
+	# OpenDNS DNScrypt-proxy resolvers
+	if [ "$IsInstalled_DNScrypt" == "YES" ] && hash dnscrypt-proxy 2>/dev/null; then
+		ResolverName="`sqlite3 $MySB_DB \"SELECT dnscrypt_resolver FROM system WHERE id_system = '1'\"`"
+		ResolverAddress="`sqlite3 $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$ResolverName'\"`"
+		ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
+		ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
+	fi		
 	# ----- System info
 
 	# ----- Main user info
