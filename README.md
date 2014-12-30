@@ -229,6 +229,11 @@ To clean Bind cache, just restart BIND service.
 service bind9 restart
 ```
 
+## SMTP authentification
+If you want to use GMAIL provider, maybe should you read this for authorize connexion to your account by your server.
+```
+https://www.google.com/accounts/DisplayUnlockCaptcha
+```
 
 ###### IMPORTANT: With OpenVZ container, to complete the installation of DNScrypt-proxy, you must replace your existing DNS config (/etc/resolv.conf), by the loopback address.
 ###### IMPORTANT: It's necessary to make the change via the host (eg Proxmox), otherwise you will lose your configuration on next reboot. You must replace yours nameserver by 'nameserver 127.0.0.1' (/etc/resolv.conf).
@@ -251,7 +256,7 @@ Take a look at 'Changelog.md', it's all there.
 
 ## Support
 
-There is no real support for this script.
+There is no official support for MySB.
 
 
 ## License
@@ -292,12 +297,12 @@ Created by toulousain79
 * Use of "Let's Encrypt" (https://letsencrypt.org/) (Summer 2015)
 * Maybe add miniDLNA functionality (with OpenVPN)
 * Make some thing for users with dynamic ip for update whitelist in PeerGuardian and Fail2ban.
-* Gmail SMTP https://www.google.com/accounts/DisplayUnlockCaptcha
 * Maybe add OwnCloud possiblity
 * NFS over sTunnel ? (https://w3.physics.illinois.edu/physwiki/doku.php?id=pcs:unix:nfs_over_stunnel)
-* SABnzbd option ?
-* Subsonic option ?
+* SABnzbd option
+* Subsonic option
 * Namebench ?
-* Maybe use of 'psad' and 'systemd'
+* Maybe use of 'psad'
+* Maybe use of  'systemd'
 * check plugin 'Mediastream', doesn't work ?
 * check Cakebox, doesn't work ?
