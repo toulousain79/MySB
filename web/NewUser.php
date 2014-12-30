@@ -41,9 +41,7 @@ if ( isset($_GET['var1']) && isset($_GET['var2']) ) {
 			exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'FirewallAndSecurity.bsh'", $output, $result);
 
 			if ( $result == 0 ) {
-				$_SERVER['PHP_AUTH_USER'] = $UserName;
-				$_SERVER['PHP_AUTH_PW'] = $UserPasswd;
-				header('Refresh: 0; URL=https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/change-password.html');
+				header('Location: https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/change-password.html');
 			} else {
 				echo 'Failed ! It was not possible to give you an access to MySB portal !';
 			}
