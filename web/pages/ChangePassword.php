@@ -22,10 +22,8 @@
 //
 //#################### FIRST LINE #####################################
 
-global $users_datas;
-
-if ( isset($users_datas["users_passwd"]) ) {
-	$opts = 'readonly="true" value="' . $users_datas["users_passwd"] . '"';
+if ( isset($_SERVER['PHP_AUTH_PW']) ) {
+	$opts = 'readonly="true" value="' . $_SERVER['PHP_AUTH_PW'] . '"';
 } else {
 	$opts = '';
 }
