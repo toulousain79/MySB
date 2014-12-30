@@ -118,7 +118,7 @@ if (isset($_POST['submit'])) {
 	$SmtpPort = $_POST['SmtpPort'];
 	$SmtpEmail = $_POST['SmtpEmail'];
 
-	if ( (isset($SmtpProvider)) && (isset($SmtpUsername)) && (isset($SmtpPasswd)) && (isset($SmtpPasswdConfirm)) && (isset($SmtpHost)) && (isset($SmtpPort) && (isset($SmtpEmail)) ) {
+	if ( (isset($SmtpProvider)) && (isset($SmtpUsername)) && (isset($SmtpPasswd)) && (isset($SmtpPasswdConfirm)) && (isset($SmtpHost)) && (isset($SmtpPort)) && (isset($SmtpEmail)) ) {
 		if ( $SmtpPasswd == $SmtpPasswdConfirm ) {
 			global $MySB_DB;
 

@@ -124,7 +124,7 @@ if ( IfApplyConfig() > 0 ) {
 					$type = 'error';
 					$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
 				}
-				header('Refresh: 10; URL=/?main-user/smtp.html');
+				header('Refresh: 20; URL=/?main-user/smtp.html');
 
 				break;
 			case "MySB_ChangeUserPassword":
