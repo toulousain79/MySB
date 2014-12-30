@@ -42,7 +42,7 @@ function printUser($user) {
 	$Port_FTP = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "VSFTPd"]);
 
 	echo '<table width="100%" border="0" align="left">';
-	echo '<tr align="center"><th colspan="3" scope="row"><h2>User personal info</h2></th></tr>';
+	echo '<tr><td colspan="3" scope="row"><a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '">Go to MySB Portal</a></td></tr>';
 	//////////////////////
 	// User personal info
 	//////////////////////
@@ -320,7 +320,7 @@ if ( (CountingUsers() >= 1) && (GetVersion() != "") ) {
 					.Comments {
 						font-size: 90%;
 						font-style: italic;
-					}
+					}				
 					h4 {
 						color: #09D4FF;
 					}

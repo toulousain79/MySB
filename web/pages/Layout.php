@@ -60,6 +60,9 @@
 					<h1><a href="<?php echo URL_PUBLIC; ?>"><span class="LogoFirstLine">MySB</span></a></h1>
 					<h2> <?php echo GetVersion(); ?></h2>
 				</div>
+				<div id="logout">
+					
+				</div>			
 			</div>
 
 			<nav>
@@ -72,7 +75,7 @@
 					</ul>
 					<div id="breadcrumb">
 						<?php echo $this->breadcrumb(); ?>
-					</div>
+					</div>				
 				</div>
 			</nav>
 		</header>
