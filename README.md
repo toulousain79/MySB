@@ -83,6 +83,7 @@ https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-acc
 	--> DO NOT use capital letters, all your usernames should be written in lowercase without space.
 	--> DO NOT upgrade anything in your box, ask in the thread before even thinking about it.
 	--> DO NOT try to reconfigure packages using other tutorials.
+	--> TO UPGRADE your system, please use 'MySB_UpgradeSystem' command.
 
 #################
 
@@ -102,7 +103,7 @@ Beware, during installation, the SSH port will be changed. If a port session 22 
 
 ###### NOTE 1: You must be logged as root to run this installation or use sudo.
 ###### NOTE 2: At the end of the installation, the server will restart automatically and you will receive an e-mail summarizing.
-###### NOTE 3: Each time a user is added, it will also receive a confirmation email with a temporary password.y password.
+###### NOTE 3: Each time a user is added, it will also receive a confirmation email with a temporary password.
 
 ## How to upgrade from v1.1
 Just copy and paste these command on your terminal:
@@ -124,18 +125,33 @@ After installing you will have access to the following commands to be used direc
 
 Next scripts are avaible too.
 
-	* '/etc/MySB/scripts/BlocklistsRTorrent.bsh', use this for generate blocklist for rTorrent with 'ipv4_filter.load' command.
-	* '/etc/MySB/scripts/FirewallAndSecurity.bsh [clean|new]', use this for generate all security options (PeerGuardian, IPtables, Fail2Ban, Nginx IP restricted access, ...)
-	* '/etc/MySB/scripts/GetTrackersCert.bsh', use this for get all SSL certificates for all tracker avaibled with ruTorrent. You can add more trackers in '/etc/MySB/inc/trackers'.
+	* '/etc/MySB/scripts/ApplyConfig.bsh', not needed by command line. It is only use for MySB portal to apply modifications.
+	* '/etc/MySB/scripts/BlocklistsRTorrent.bsh', use this for generate blocklist for rTorrent with 'ipv4_filter.load' command. (CRON every day at 23:00)	
+	* '/etc/MySB/scripts/DynamicAddressResolver.bsh', used for auto update users dynamics addresses IP. (CRON every 10 minutes)
+	* '/etc/MySB/scripts/FirewallAndSecurity.bsh [clean|new]', use this for generate all security options (Nginx IP restricted access, IPtables, Fail2BanPeerGuardian, ...)
+	* '/etc/MySB/scripts/GetTrackersCert.bsh', use this for get all SSL certificates for all tracker. You can add more trackers in MySB portal. This script is start every time you add/edit trackers list.	
+	* '/etc/MySB/scripts/LogServer.bsh', used for generate HTML log files (Nginx, PeerGuardian, Fail2Ban,...) avalaible in MySB Portal. (CRON every 10 minutes)	
+	* '/etc/MySB/scripts/PaymentReminder.bsh', if used in MySB Portal, sending a reminder email the beginning of each month for each users. (CRON every 1st of month)
+	* '/etc/MySB/scripts/UpdateGeoIP.bsh', not needed by command line. It's auto update GeoIP files. (CRON with automatic timer)
 
-You can find others scripts in '/etc/MySB/scripts/'. This others scripts are added in cron job.
-
-## Services
+## MySB Portal
 
 To access services installed on your new server, point your browser to the following address (MySB portal):
 ```
 https://<Server IP or Server Name>:<https NginX port>/
 ```
+
+###### Main user and normal users
+	* Users can change their password.
+	* Users can change their IP addresses authorized connection (dynamic DNS included).
+
+###### Normal users only
+	* Direct access to the various services installed (ruTorrent, Cabox-Light, Seedbox-Manager).
+	
+###### Main user only
+	* Direct access to the various services installed, like normal users plus others services (Webmin, Logs, Renting Infos, SMTP).
+	* Manage trackers list.
+	* Manage blocklists (rTorrent and PeerGuardian).
 
 ## Seedbox-Manager
 
@@ -144,6 +160,15 @@ The seedbox web-manager application is an interface to restart a rtorrent user s
 Author: backtoback (c) & Magicalex (php) & hydrog3n (php).
 ```
 https://github.com/Magicalex/seedbox-manager/
+```
+
+## Cakebox-Light
+
+Cakebox is a small web app written with AngularJS and Silex, in order to list directories and watch video files for a specified directory.
+
+Author: MardamBeyK & Tuxity.
+```
+https://github.com/Cakebox/Cakebox-light
 ```
 
 ## BlockList
@@ -155,20 +180,20 @@ Depending on your system, it is possible to use:
 	* By default, some list are activated. Check this list in MySB portal.
 	* All trackers listed with ruTorrent are available but are inactive. You can add more or activate it via MySB portal.
 
-###### NOTE: Do not try to add your rtorrents ports in the list of incoming ports allowed in PeerGuardian (pglcmd.conf) !!!
-###### Using PeerGuardian will not have much sense ...
-###### Rather prefer permission trackers via the "allow.p2p" PeerGuardian file. To do this, use MySB portal.
-###### If PeerGuardian failed to start, rTorrent blocklists are used instead.
+###### NOTE 1: 	Do not try to add your rtorrents ports in the list of incoming ports allowed in PeerGuardian (pglcmd.conf) !!!
+###### 			Using PeerGuardian will not have much sense ...
+###### 			Rather prefer permission trackers via the "allow.p2p" PeerGuardian file. To do this, use MySB portal.
+###### 			If PeerGuardian failed to start, rTorrent blocklists are used instead.
+###### NOTE 2:	Do not activate all trackers, but only these needed.
 
 OR
 
-#### rTorrent with ipv4_filter.load
+#### rTorrent (with ipv4_filter.load)
 
 	* By default, some list are activated. Check this list in MySB portal.
 	* Once the lists are selected, a common file containing all the lists will be generated and copied for each user.
 
-###### NB: Beware, if you have not enough memory, choising too many list will make you system very slow!
-###### NB: Beware, if you have not enough memory, choising too many list will make you system very slow!
+###### NOTE:	Beware, if you do not have enough memory, too much list activée will make your system slower, especially if you have multiple users!
 
 ## OpenVPN
 
@@ -199,16 +224,11 @@ It is possible to change the resolver name via MySB portal OR using using the fo
 dnscrypt-proxy service restart <resolver_name>
 ```
 
-To clean Bind cache, just restart service.
-
-###### 1 - Clean Bind9 cache
+To clean Bind cache, just restart BIND service.
 ```
 service bind9 restart
 ```
-###### 2 - Change DNScrypt resolver name
-```
-service dnscrypt-proxy restart dnscrypt.eu-nl
-```
+
 
 ###### IMPORTANT: With OpenVZ container, to complete the installation of DNScrypt-proxy, you must replace your existing DNS config (/etc/resolv.conf), by the loopback address.
 ###### IMPORTANT: It's necessary to make the change via the host (eg Proxmox), otherwise you will lose your configuration on next reboot. You must replace yours nameserver by 'nameserver 127.0.0.1' (/etc/resolv.conf).
