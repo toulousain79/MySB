@@ -169,12 +169,12 @@ function printUser($user) {
 	echo '<td><span class="Comments">Server IP without redirect traffic.</span></td></tr>';
 	// Samba share
 	echo '<tr align="left"><th width="15%" scope="row">Samba share</th>';
-	echo '<td>' . $users_datas["home_dir"] . '</td>';
+	echo '<td>' . $users_datas["home_dir"] . '/rtorrent</td>';
 	echo '<td><span class="Comments">mount - [Destination_directory] -t cifs -o noatime,nodiratime,UNC=//[10.0.0.1|10.0.1.1]/'.$user.',username='.$user.',password=[your_password]</span></td></tr>';		
 	// NFS share
 	echo '<tr align="left"><th width="15%" scope="row">NFS share</th>';
 	echo '<td>' . $users_datas["home_dir"] . '/rtorrent</td>';
-	echo '<td><span class="Comments">mount -t nfs [10.0.0.1|10.0.1.1]:/home/'.$user.'/rtorrent [Destination_directory] -o nocto,noacl,noatime,nodiratime,nolock,rsize=8192,vers=3,ro,udp</span></td></tr>';				
+	echo '<td><span class="Comments">mount -t nfs [10.0.0.1|10.0.1.1]:/home/'.$user.'/rtorrent [Destination_directory] [-o vers=3,ro]</span></td></tr>';				
 
 	//////////////////////
 	// Links (Normal user)
