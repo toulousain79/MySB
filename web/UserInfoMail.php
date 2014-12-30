@@ -321,6 +321,9 @@ if ( (CountingUsers() >= 1) && (GetVersion() != "") ) {
 						font-size: 90%;
 						font-style: italic;
 					}
+					h4 {
+						color: #09D4FF;
+					}
 				</style>
 			</head>
 			<body>';
