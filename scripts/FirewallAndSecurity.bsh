@@ -61,8 +61,8 @@ case $1 in
 		ManageServices start "nginx"		
 	;;
 	new)
-		#### STOP services
-		ManageServices stop ""
+		#### VARs
+		ServicesToManage=""
 	
 		#### NO spoofing
 		if [ -e /proc/sys/net/ipv4/conf/all/rp_filter ]; then
@@ -214,7 +214,7 @@ case $1 in
 		done
 
 		#### NginX
-		if [ -f /etc/nginx/conf.d/ip_restriction ]; then
+		if [ -f /etc/nginx/conf.d/ip_restriction ] && hash nginx 2> /dev/null; then
 			# 1 - Server IP addresses
 			log_daemon_msg "Allow access to web server for '$HostNameFQDN'"		
 			echo "	# Server IP" > /etc/nginx/conf.d/ip_restriction
@@ -252,20 +252,24 @@ case $1 in
 				StatusLSB
 			fi
 			echo "	deny all;" >> /etc/nginx/conf.d/ip_restriction
+			
+			ServicesToManage="${ServicesToManage} nginx"
 		fi
 
 		#### Fail2Ban
 		if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
 			Fail2BanWhitheList 1
+			ServicesToManage="${ServicesToManage} fail2ban"
 		fi
 
 		#### PeerGuardian
 		if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
 			PeerGuardianFilesGenerate 1
+			ServicesToManage="${ServicesToManage} pglcmd"
 		fi
 		
 		#### START services
-		ManageServices start "nginx fail2ban pglcmd"		
+		ManageServices start "$ServicesToManage"		
 	;;
 
 	*)
