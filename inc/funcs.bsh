@@ -111,21 +111,26 @@ PackagesManage() {
 	RETURN=0
 
 	#### Check last update
-	AptUpdate="`sqlite3 $MySB_DB \"SELECT apt_update FROM system WHERE 1\"`"
-	AptDate="`sqlite3 $MySB_DB \"SELECT apt_date FROM system WHERE 1\"`"
-	AptDate=$(date -d "$AptDate" +"%Y-%m-%d %H")
-	Now=$(date +%Y-%m-%d\ %H)
-	t1=$(date --date="$AptDate" +'%-H')
-	t2=$(date --date="$Now" +'%-H')
-	let "tDiff=$t2-$t1"
+	if hash sqlite3 2> /dev/null; then
+		AptUpdate="`sqlite3 $MySB_DB \"SELECT apt_update FROM system WHERE 1\"`"
+		AptDate="`sqlite3 $MySB_DB \"SELECT apt_date FROM system WHERE 1\"`"
+		AptDate=$(date -d "$AptDate" +"%Y-%m-%d %H")
+		Now=$(date +%Y-%m-%d\ %H)
+		t1=$(date --date="$AptDate" +'%-H')
+		t2=$(date --date="$Now" +'%-H')
+		let "tDiff=$t2-$t1"
 
-	#### Need of 'apt-get update' ? (must be greater than 2 hours OR forced)
-	if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ]; then
-		echo "$BEFORE $packetg $OPTIONS update"
-		$BEFORE $packetg $OPTIONS update
-		if [ $? -eq 0 ]; then
-			sqlite3 -echo $MySB_DB "UPDATE system SET apt_update = 0, apt_date = datetime('now','localtime') WHERE id_system = 1;"
+		#### Need of 'apt-get update' ? (must be greater than 2 hours OR forced)
+		if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ]; then
+			echo "$BEFORE $packetg $OPTIONS update"
+			$BEFORE $packetg $OPTIONS update
+			if [ $? -eq 0 ]; then
+				sqlite3 -echo $MySB_DB "UPDATE system SET apt_update = 0, apt_date = datetime('now','localtime') WHERE id_system = 1;"
+			fi
 		fi
+	else
+		echo "$BEFORE $packetg $OPTIONS update"
+		$BEFORE $packetg $OPTIONS update		
 	fi
 
 	case "$1" in
@@ -150,19 +155,21 @@ PackagesManage() {
 	
 	RETURN=$?
 
-	#### Need of cleaning ? (must be greater than 2 hours OR forced)
-	if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ]; then
-		if [ $RETURN -eq 0 ]; then
-			if [ "`$packetg --help | grep autoremove | awk '{ print $1 }'`" == "autoremove" ]; then
-				echo "$BEFORE $packetg $OPTIONS autoremove"
-				$BEFORE $packetg $OPTIONS autoremove
-			elif [ "`$packetg --help | grep autoclean | awk '{ print $1 }'`" == "autoclean" ]; then
-				echo "$BEFORE $packetg $OPTIONS autoremove"
-				$BEFORE $packetg $OPTIONS autoclean
-			fi
+	if hash sqlite3 2> /dev/null; then
+		#### Need of cleaning ? (must be greater than 2 hours OR forced)
+		if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ]; then
+			if [ $RETURN -eq 0 ]; then
+				if [ "`$packetg --help | grep autoremove | awk '{ print $1 }'`" == "autoremove" ]; then
+					echo "$BEFORE $packetg $OPTIONS autoremove"
+					$BEFORE $packetg $OPTIONS autoremove
+				elif [ "`$packetg --help | grep autoclean | awk '{ print $1 }'`" == "autoclean" ]; then
+					echo "$BEFORE $packetg $OPTIONS autoremove"
+					$BEFORE $packetg $OPTIONS autoclean
+				fi
 
-			echo "$BEFORE $packetg $OPTIONS install"
-			$BEFORE $packetg $OPTIONS install
+				echo "$BEFORE $packetg $OPTIONS install"
+				$BEFORE $packetg $OPTIONS install
+			fi
 		fi
 	fi
 
