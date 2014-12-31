@@ -24,6 +24,8 @@ source /etc/MySB/inc/includes_before.bsh
 #
 ##################### FIRST LINE #####################################
 
+ManageDirectoriesAndFiles
+
 #### Import users files to database
 if [ -d /etc/MySB/users/ ]; then
 	UsersList="`ls /etc/MySB/users/ | grep '.info' | sed 's/.\{5\}$//'`"
@@ -41,12 +43,12 @@ if [ -d /etc/MySB/users/ ]; then
 		UserHomeDir="$(cat $SeedboxUser.info | grep 'Home=' | awk '{ print $2 }')"
 
 		sqlite3 -echo $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,admin,scgi_port,rtorrent_port,home_dir) VALUES (\"$UserName\",\"$UserEmail\",\"$UserPassword\",\"$UserRPC\",\"$UserSSH\",\"$UserSudo\",\"0\",\"$UserScgiPort\",\"$UserRtorrentPort\",\"$UserHomeDir\");"
-		MainUserId="`sqlite3 $MySB_DB \"SELECT id_users FROM users WHERE admin = '1'\"`"
+		UserId="`sqlite3 $MySB_DB \"SELECT id_users FROM users WHERE users_ident = '$UserName'\"`"
 
 		IFS=$','
 		for ip in $UserIP; do 
 			HostName="$(nslookup $ip | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
-			sqlite3 -echo $MySB_DB "INSERT into users_addresses (id_users,ipv4,hostname,check_by,is_active) VALUES (\"$MainUserId\",\"$ip\",\"$HostName\",\"ipv4\",\"1\");"
+			sqlite3 -echo $MySB_DB "INSERT into users_addresses (id_users,ipv4,hostname,check_by,is_active) VALUES (\"$UserId\",\"$ip\",\"$HostName\",\"ipv4\",\"1\");"
 		done
 		unset IFS
 	done
@@ -253,8 +255,9 @@ if [ -d /etc/MySB/infos/ ]; then
 		SMTP_Password="$(cat /etc/postfix/sasl/sasl_passwd | awk '{ print $2 }' | cut -d ":" -f 2)"
 		SMTP_Host="$(cat /etc/MySB/infos/smtp_host.info)"
 		SMTP_Port="$(cat /etc/MySB/infos/smtp_port.info)"
+		MainUserEmail="`sqlite3 $MySB_DB \"SELECT users_email FROM users WHERE admin = '1'\"`"
 
-		sqlite3 -echo $MySB_DB "UPDATE smtp SET smtp_provider = '$SMTP_Provider', smtp_username = '$SMTP_Username', smtp_passwd = '$SMTP_Password', smtp_host = '$SMTP_Host', smtp_port = '$SMTP_Port' WHERE id_smtp = '1';"
+		sqlite3 -echo $MySB_DB "UPDATE smtp SET smtp_provider = '$SMTP_Provider', smtp_username = '$SMTP_Username', smtp_passwd = '$SMTP_Password', smtp_host = '$SMTP_Host', smtp_port = '$SMTP_Port', smtp_email = '$MainUserEmail' WHERE id_smtp = '1';"
 
 		if [ $? -eq 0 ]; then
 			rm -vf /etc/MySB/infos/smtp.info
