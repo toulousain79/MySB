@@ -29,40 +29,157 @@ echo -e "${CRED}If you lose connection during installation, restart the SSH sess
 echo -e "${CGREEN}	screen -r MySB_UpgradeMe$CEND"
 echo
 
-#### STOP services
-ManageServices stop "cron nginx"
-
-#### Sudoers
-echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/scripts/ApplyConfig.bsh*" > /etc/sudoers.d/MySB_nginx
-
-#### CreateDir
-echo -e -n "${CBLUE}Create directories and change owners and rights$CEND..."
+#### 1 - Create missing directories and DBs
+echo -e -n "${CBLUE}Create missing directories, databases and change owners and rights$CEND..."
 ManageDirectoriesAndFiles
 StatusSTD
 
-#### Move some files & directories
-if [ ! -d /etc/MySB/scripts/blocklist ]; then
-	mv -v /etc/MySB/scripts/blocklist /etc/MySB/files/blocklist
-fi
+#### 2 - Move some files & directories
+echo -e -n "${CBLUE}Move some files & directories$CEND..."
+rm -f /etc/MySB/logs/*
+if [ -d /etc/MySB/scripts/blocklist ]; then mv /etc/MySB/scripts/blocklist /etc/MySB/files/blocklist; fi
+if [ -f /usr/share/nginx/html/50x.html ]; then rm -f /usr/share/nginx/html/50x.html; fi
+if [ -d /usr/share/nginx/html/seedbox-manager ]; then mv /usr/share/nginx/html/seedbox-manager /etc/MySB/web/; fi
+if [ -d /usr/share/nginx/html/rutorrent ]; then mv /usr/share/nginx/html/rutorrent /etc/MySB/web/; fi
+if [ -d /usr/share/nginx/html/Cakebox-light ]; then mv /usr/share/nginx/html/Cakebox-light /etc/MySB/web/; fi
+if [ -d /etc/MySB/sources/dnscrypt/ ]; then rm -rf /etc/MySB/sources/dnscrypt/; fi
+StatusSTD
 
-#### SQLite
-echo -e -n "${CBLUE}Create SQLite database$CEND..."
+#### 3 - SQLite (move flat files to database)
+echo -e -n "${CBLUE}Move flat files to database$CEND..."
 screen -dmS SQLite /bin/bash /etc/MySB/install/SQLite.bsh;
 WaitingScreen SQLite
 StatusSTD
 
-#### Vars
+#### 4 - Vars
+echo -e -n "${CBLUE}Read database informations$CEND..."
 if [ -f /etc/MySB/inc/vars.bsh ]; then source /etc/MySB/inc/vars.bsh; fi
 if [ -f /etc/MySB/inc/funcs.bsh ]; then source /etc/MySB/inc/funcs.bsh; fi
 ListingUsers
+StatusSTD
+
+#### 5 - Tweaks
+echo -e -n "${CBLUE}Sytem optimizations$CEND..."
+screen -dmS Tweaks /bin/bash /etc/MySB/install/Tweaks.bsh;
+WaitingScreen Tweaks
+StatusSTD
+
+#### 6 - STOP services
+# ManageServices stop "cron"
+# for seedUser in $UsersList; do
+	# serviice rtorrent-$seedUser stop
+# done
+
+#### 7 - Sources List
+echo -e -n "${CBLUE}Prepare Sources$CEND..."
+screen -dmS SourcesList /bin/bash /etc/MySB/install/SourcesList.bsh;
+WaitingScreen SourcesList
+StatusSTD
+
+#### 8 - Packages
+echo -e -n "${CBLUE}Install missing packages$CEND..."
+screen -dmS Packages /bin/bash /etc/MySB/install/Packages.bsh;
+WaitingScreen Packages
+StatusSTD
+
+#### 9 - PHP
+echo -e -n "${CBLUE}Some fixes for PHP$CEND..."
+screen -dmS PHP /bin/bash /etc/MySB/install/PHP.bsh;
+WaitingScreen PHP
+StatusSTD
+
+#### 10 - Postfix
+echo -e -n "${CBLUE}Some fixes for Postfix$CEND..."
+screen -dmS Postfix /bin/bash /etc/MySB/install/Postfix.bsh;
+WaitingScreen Postfix
+StatusSTD
+
+#### 11 - NginX
+echo -e -n "${CBLUE}Some fixes for NginX$CEND..."
+screen -dmS Nginx /bin/bash /etc/MySB/install/Nginx.bsh;
+WaitingScreen Nginx
+StatusSTD
+
+#### 12 - ruTorrent
+echo -e -n "${CBLUE}Some fixes for ruTorrent & Plugins$CEND..."
+screen -dmS ruTorrent /bin/bash /etc/MySB/install/ruTorrent.bsh;
+WaitingScreen ruTorrent
+StatusSTD
+
+#### 13 - Refresh tools
+echo -e -n "${CBLUE}Refresh some tools (ruTorrent, Manager, Cakebox)$CEND..."
+ScriptInvoke 'screen' '/etc/MySB/bin/MySB_RefreshMe' 'all'
+StatusSTD
+
+#### 14 - Samba
+if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+	echo -e -n "${CBLUE}Some fixes for Samba$CEND..."
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Samba';"
+	screen -dmS Samba /bin/bash /etc/MySB/install/Samba.bsh;	
+	WaitingScreen Samba
+	StatusSTD
+fi
+
+#### 15 - Fail2Ban
+if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
+	echo -e -n "${CBLUE}Some fixes for Fail2Ban$CEND..."
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Fail2Ban';"
+	screen -dmS Fail2Ban /bin/bash /etc/MySB/install/Fail2Ban.bsh;
+	WaitingScreen Fail2Ban
+	StatusSTD
+fi
+
+#### 16 - LogWatch
+if [ "$IsInstalled_LogWatch" == "YES" ]; then
+	echo -e -n "${CBLUE}Some fixes for Logwatch$CEND..."
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'LogWatch';"
+	screen -dmS Logwatch /bin/bash /etc/MySB/install/Logwatch.bsh;
+	WaitingScreen Logwatch
+	StatusSTD
+fi
+
+#### 17 - DNScrypt-proxy
+if [ "$IsInstalled_DNScrypt" == "YES" ]; then
+	echo -e -n "${CBLUE}Some fixes for DNScrypt-proxy$CEND..."
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'DNScrypt-proxy';"
+	screen -dmS DNScrypt /bin/bash /etc/MySB/install/DNScrypt.bsh;
+	WaitingScreen DNScrypt
+	StatusSTD
+fi
+
+#### 18 - rTorrent Blocklists
+echo -e -n "${CBLUE}Compile blocklists for rTorrent$CEND..."
+screen -dmS Blocklist /bin/bash /etc/MySB/install/Blocklists.bsh;
+WaitingScreen Blocklist
+StatusSTD
+
+#### 19 - PeerGuardian
+if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
+	echo -e -n "${CBLUE}Some fixes for PeerGuardian$CEND..."
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'PeerGuardian';"
+	screen -dmS PeerGuardian /bin/bash /etc/MySB/install/PeerGuardian.bsh;
+	WaitingScreen PeerGuardian
+	StatusSTD
+fi
+
+#### Certificates
+echo -e -n "${CBLUE}Some fixes for Certificates$CEND..."
+chmod 644 /etc/MySB/ssl/*.cert &> /dev/null
+StatusSTD
+
+#### OpenVPN
+if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+	echo -e -n "${CBLUE}Some fixes for OpenVPN$CEND..."
+	sed -i '/DNS 8.8.8.8/d' /etc/openvpn/Server_TUN_WithGW.conf
+	sed -i "s/DNS 8.8.4.4/DNS 10.0.0.1/g" /etc/openvpn/Server_TUN_WithGW.conf
+	sed -i '/DNS 8.8.8.8/d' /etc/openvpn/Server_TUN_WithoutGW.conf
+	sed -i '/DNS 8.8.4.4/d' /etc/openvpn/Server_TUN_WithoutGW.conf
+	StatusSTD
+fi
 
 #### Crontab
-log_daemon_msg "Creating Blocklist.sh cron"
+echo -e -n "${CBLUE}Some fixes for Crontab$CEND..."
 crontab -l > /tmp/crontab.tmp
-sed -i '/BlockList.sh/d' /tmp/crontab.tmp
-sed -i '/ldconfig/d' /tmp/crontab.tmp
-sed -i '/drop_caches/d' /tmp/crontab.tmp
-echo "0 23 * * * /bin/bash /etc/MySB/scripts/BlocklistsRTorrent.bsh NoBanner" >> /tmp/crontab.tmp
 for seedUser in $UsersList; do
 	sed -i '/'$seedUser'/d' /tmp/crontab.tmp
 	echo "5 * * * * if ! ( /bin/ps U $seedUser | grep rtorrent &> /dev/null ); then /etc/init.d/rtorrent-$seedUser restart &> /dev/null; fi" >> /tmp/crontab.tmp
@@ -70,173 +187,6 @@ for seedUser in $UsersList; do
 done
 crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
-log_end_msg 0
-
-#### Upgrade System
-#log_daemon_msg "Upgrade system"
-ScriptInvoke 'screen' '/etc/MySB/bin/MySB_UpgradeSystem'
-#StatusLSB
-
-#### Packages
-echo -e -n "${CBLUE}Install missing packages$CEND..."
-screen -dmS Packages /bin/bash /etc/MySB/install/Packages.bsh;
-WaitingScreen Packages
-StatusSTD
-
-#### PHP
-echo -e -n "${CBLUE}Some fixes for PHP$CEND..."
-screen -dmS PHP /bin/bash /etc/MySB/install/PHP.bsh;
-WaitingScreen PHP
-StatusSTD
-
-#### Samba
-echo -e -n "${CBLUE}Some fixes for Samba$CEND..."
-screen -dmS Samba /bin/bash /etc/MySB/install/Samba.bsh;
-WaitingScreen Samba
-StatusSTD
-
-#### Postfix
-echo -e -n "${CBLUE}Some fixes for Postfix$CEND..."
-screen -dmS Postfix /bin/bash /etc/MySB/install/Postfix.bsh;
-WaitingScreen Postfix
-StatusSTD
-
-#### NginX
-echo -e -n "${CBLUE}Some fixes for NginX$CEND..."
-# /etc/nginx/nginx.conf
-cp /etc/MySB/templates/etc.nginx.nginx.conf.template /etc/nginx/nginx.conf
-perl -pi -e "s/worker_processes auto;/worker_processes $PROCESSOR;/g" /etc/nginx/nginx.conf
-# /etc/nginx/sites-enabled/default
-cp /etc/MySB/templates/etc.nginx.site-enabled.default.template /etc/nginx/sites-available/default
-perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" /etc/nginx/sites-available/default
-perl -pi -e "s/<PORT_HTTP>/$Port_HTTP/g" /etc/nginx/sites-available/default
-if [ ! -f /etc/nginx/sites-enabled/default ]; then ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default; fi
-# /etc/nginx/locations/1_MySB.conf
-if [ -f /etc/nginx/locations/MySB.conf ]; then rm -vf /etc/nginx/locations/MySB.conf; fi
-cp /etc/MySB/templates/etc.nginx.locations.mysb.conf.template /etc/nginx/locations/1_MySB.conf
-# /etc/nginx/locations/2_rutorrent.conf
-if [ -f /etc/nginx/locations/rutorrent.conf ]; then rm -vf /etc/nginx/locations/rutorrent.conf; fi
-cp /etc/MySB/templates/etc.nginx.locations.rutorrent.conf.template /etc/nginx/locations/2_rutorrent.conf
-# pagespeed
-cp /etc/MySB/templates/etc.nginx.conf.d.pagespeed.template /etc/nginx/conf.d/pagespeed
-echo "# Nginx PageSpeed" >> /etc/fstab
-echo "tmpfs   /usr/share/nginx/pagespeed      tmpfs   rw,mode=1777,size=512M 0 0" >> /etc/fstab
-if [ ! -d /usr/share/nginx/pagespeed ]; then mkdir /usr/share/nginx/pagespeed; fi
-if [ "`df -H | grep '/usr/share/nginx/pagespeed'`" == "" ]; then mount /usr/share/nginx/pagespeed; fi
-# conf.d
-if [ -f /etc/nginx/cond.d/php-ssl ]; then rm -vf /etc/nginx/cond.d/php-ssl; fi
-if [ -f /etc/nginx/cond.d/php ]; then rm -vf /etc/nginx/cond.d/php; fi
-if [ -f /etc/nginx/cond.d/php-MySB-locations ]; then rm -vf /etc/nginx/cond.d/php-MySB-locations; fi
-if [ -f /etc/nginx/cond.d/php-seedbox-manager ]; then rm -vf /etc/nginx/cond.d/php-seedbox-manager; fi
-if [ -f /etc/nginx/conf.d/php-cakebox-locations ]; then rm -vf /etc/nginx/conf.d/php-cakebox-locations; fi
-if [ -f /etc/nginx/cond.d/php ]; then rm -vf /etc/nginx/cond.d/php; fi
-(
-cat <<'EOF'
-	# deny access to .htaccess file, hidden files, svn files and git files
-	location ~ /\.ht 	{ access_log off; log_not_found off; deny all; }	
-	location ~ /\.svn 	{ access_log off; log_not_found off; deny all; }
-	location ~ /\.git	{ access_log off; log_not_found off; deny all; }
-	location ~ /\. 		{ access_log off; log_not_found off; deny all; }	
-	#location ^~ / 		{ access_log off; log_not_found off; deny all; }
-	location ~ ~$		{ access_log off; log_not_found off; deny all; }
-EOF
-) > /etc/nginx/conf.d/global_deny_access
-(
-cat <<'EOF'
-	# This block will catch static file requests, such as images, css, js
-	# The ?: prefix is a 'non-capturing' mark, meaning we do not require
-	# the pattern to be captured into $1 which should help improve performance
-	location ~* \.(?:ico|css|js|gif|jpe?g|png)$ {
-		# Some basic cache-control for static files to be sent to the browser
-		expires max;
-		add_header Pragma public;
-		add_header Cache-Control "public, must-revalidate, proxy-revalidate";
-		access_log off;
-		log_not_found off;
-	}
-EOF
-) > /etc/nginx/conf.d/static_files
-(
-cat <<'EOF'
-	## Restricted IP ##
-	allow 127.0.0.1;
-	allow 127.0.1.1;
-	## Restricted IP for mainuser ##
-	deny all;
-EOF
-) > /etc/nginx/conf.d/ip_restriction
-
-#### logrotate
-if [ -f /etc/logrotate.d/nginx ]; then rm -vf /etc/logrotate.d/nginx; fi
-(
-cat <<'EOF'
-/var/log/nginx/*.log {
-	daily
-	missingok
-	rotate 7
-	compress
-	delaycompress
-	notifempty
-	create 640 root
-	sharedscripts
-	postrotate
-		[ -f /var/run/nginx.pid ] && kill -USR1 `cat /var/run/nginx.pid`
-	endscript
-}
-
-EOF
-) > /etc/logrotate.d/nginx
-
-#### Wolf CMS
-cp /etc/MySB/templates/etc.myb.web.config.php.template /etc/MySB/web/config.php
-AdminDir=`mkpasswd $HostNameFQDN` && AdminDir=$AdminDir`mkpasswd $HostNameFQDN`
-AdminDir=`echo $AdminDir | sed "s/\///g"`
-perl -pi -e "s/<admin_dir>/$AdminDir/g" /etc/MySB/web/config.php
-chmod 400 /etc/MySB/web/config.php
-
-# move files
-if [ -f /usr/share/nginx/html/50x.html ]; then
-	rm -vf /usr/share/nginx/html/50x.html
-fi
-if [ -d /usr/share/nginx/html/seedbox-manager ]; then
-	mv -v /usr/share/nginx/html/seedbox-manager /etc/MySB/web/
-fi
-if [ -d /usr/share/nginx/html/rutorrent ]; then
-	mv -v /usr/share/nginx/html/rutorrent /etc/MySB/web/
-fi
-if [ -d /usr/share/nginx/html/Cakebox-light ]; then
-	mv -v /usr/share/nginx/html/Cakebox-light /etc/MySB/web/
-fi
-StatusSTD
-
-#### Cakebox-Light
-if [ -f /etc/nginx/sites-enabled/cakebox ]; then rm -vf /etc/nginx/sites-enabled/cakebox; fi
-if [ "$IsInstalled_Cakebox" == "YES" ]; then
-	cp /etc/MySB/templates/etc.nginx.site-enabled.cakebox.template /etc/nginx/sites-available/cakebox
-	perl -pi -e "s/<cakebox_port>/$Ports_Cakebox/g" /etc/nginx/sites-available/cakebox
-	perl -pi -e "s/<servername>/$HostNameFQDN/g" /etc/nginx/sites-available/cakebox
-	if [ ! -f /etc/nginx/sites-enabled/cakebox ]; then ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox; fi
-fi
-
-#### Seedbox-Manager
-if [ -f /etc/nginx/locations/seedbox-manager.conf ]; then rm -vf /etc/nginx/locations/seedbox-manager.conf; fi
-
-#### Refresh tools
-echo -e -n "${CBLUE}Refresh some tools$CEND..."
-ScriptInvoke 'screen' '/etc/MySB/bin/MySB_RefreshMe' 'all'
-StatusSTD
-
-#### LogWatch
-if [ -f /etc/logwatch/conf/logwatch.conf ]; then
-	echo -e -n "${CBLUE}Some fixes for LogWatch$CEND..."
-	perl -pi -e "s/^Range = All/Range = yesterday/g" /etc/logwatch/conf/logwatch.conf
-	perl -pi -e "s/^Detail = High/Detail = Low/g" /etc/logwatch/conf/logwatch.conf
-	StatusSTD
-fi
-
-#### Certificates
-echo -e -n "${CBLUE}Some fixes for Certificates$CEND..."
-chmod 644 /etc/MySB/ssl/*.cert
 StatusSTD
 
 #### rTorrent (.rtorrent.rc)
@@ -245,7 +195,7 @@ for seedUser in $UsersList; do
 	service rtorrent-$seedUser stop
 	StatusSTD
 
-	echo -e -n "${CBLUE}Creating '.rtorrent.rc' file for $seedUser$CEND..."
+	echo -e -n "${CBLUE}Creating new '.rtorrent.rc' file for $seedUser$CEND..."
 	HOMEDIR_ESCAPED=`echo /home/$seedUser | sed s,/,\\\\\\\\\\/,g`
 	SCGIPORT="`sqlite3 $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$seedUser'\"`"
 	NETWORKPORT="`sqlite3 $MySB_DB \"SELECT rtorrent_port FROM users WHERE users_ident = '$seedUser'\"`"	
@@ -284,6 +234,14 @@ echo -e -n "${CBLUE}Force owners and rights for files and directories$CEND..."
 ManageDirectoriesAndFiles
 StatusSTD
 
+#### LogWatch
+# if [ -f /etc/logwatch/conf/logwatch.conf ]; then
+	# echo -e -n "${CBLUE}Some fixes for LogWatch$CEND..."
+	# perl -pi -e "s/^Range = All/Range = yesterday/g" /etc/logwatch/conf/logwatch.conf
+	# perl -pi -e "s/^Detail = High/Detail = Low/g" /etc/logwatch/conf/logwatch.conf
+	# StatusSTD
+# fi
+
 #### START services
 ManageServices start "cron nginx"
 
@@ -294,7 +252,9 @@ StatusSTD
 
 #### Send mail for each user with new version
 for seedUser in $UsersList; do
+	echo -e -n "${CBLUE}Send mail for $seedUser$CEND..."
 	MonthlyPayment "$seedUser"
+	StatusSTD
 done
 
 clear
