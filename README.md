@@ -106,9 +106,8 @@ Beware, during installation, the SSH port will be changed. If a port session 22 
 ###### NOTE 3: Each time a user is added, it will also receive a confirmation email with a temporary password.
 
 ## How to upgrade from v1.1
-Just copy and paste those commands on your terminal:
+Just copy and paste these command on your terminal:
 ```
-MySB_UpdateGitHubRepo
 MySB_UpgradeMe
 ```
 
