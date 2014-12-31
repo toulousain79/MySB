@@ -109,9 +109,11 @@ PackagesManage() {
 	BEFORE="sudo DEBIAN_FRONTEND=noninteractive"
 	OPTIONS="-y --assume-yes"
 	RETURN=0
+	AptUpdate=0
+	tDiff=0	
 
 	#### Check last update
-	if hash sqlite3 2> /dev/null; then
+	if [ -s $MySB_DB ] && hash sqlite3 2> /dev/null; then
 		AptUpdate="`sqlite3 $MySB_DB \"SELECT apt_update FROM system WHERE 1\"`"
 		AptDate="`sqlite3 $MySB_DB \"SELECT apt_date FROM system WHERE 1\"`"
 		AptDate=$(date -d "$AptDate" +"%Y-%m-%d %H")
@@ -130,7 +132,7 @@ PackagesManage() {
 		fi
 	else
 		echo "$BEFORE $packetg $OPTIONS update"
-		$BEFORE $packetg $OPTIONS update		
+		$BEFORE $packetg $OPTIONS update
 	fi
 
 	case "$1" in
@@ -155,7 +157,7 @@ PackagesManage() {
 	
 	RETURN=$?
 
-	if hash sqlite3 2> /dev/null; then
+	if [ -s $MySB_DB ] && hash sqlite3 2> /dev/null; then
 		#### Need of cleaning ? (must be greater than 2 hours OR forced)
 		if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ]; then
 			if [ $RETURN -eq 0 ]; then
@@ -987,8 +989,8 @@ ManageDirectoriesAndFiles() {
 
 	#### Create DB
 	if hash sqlite3 2> /dev/null; then
-		if [ ! -f $MySB_DB ]; then sqlite3 -echo $MySB_DB < /etc/MySB/templates/MySB_2014-12-30.dump.sql; fi
-		if [ ! -f $Wolf_DB ]; then
+		if [ ! -f $MySB_DB ] || [ ! -s $MySB_DB ]; then sqlite3 -echo $MySB_DB < /etc/MySB/templates/MySB_2014-12-30.dump.sql; fi
+		if [ ! -f $Wolf_DB ] || [ ! -s $Wolf_DB ]; then
 			sqlite3 -echo $Wolf_DB < /etc/MySB/templates/Wolf_2014-12-30.dump.sql
 			sqlite3 $Wolf_DB "DELETE FROM secure_token WHERE 1"
 			sqlite3 $Wolf_DB "UPDATE user SET name = '', email = '', username = '', password = '', salt = '', last_login = '', last_failure = '', last_failure = '', created_on = '', updated_on = '' WHERE id = '1';"
