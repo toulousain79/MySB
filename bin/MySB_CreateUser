@@ -215,7 +215,7 @@ log_daemon_msg "Add init script to cron for $NewUser"
 crontab -l > /tmp/crontab.tmp
 sed -i '/'$NewUser'/d' /tmp/crontab.tmp
 echo "5 * * * * if ! ( /bin/ps U $NewUser | grep rtorrent &> /dev/null ); then /etc/init.d/rtorrent-$NewUser restart &> /dev/null; fi" >> /tmp/crontab.tmp
-echo "0 12 1 * * /bin/bash /etc/MySB/scripts/PaymentReminder.bsh $NewUser &> /dev/null" >> /tmp/crontab.tmp
+echo "0 12 1 * * /bin/bash /etc/MySB/scripts/PaymentReminder.bsh $NewUser CRON &> /dev/null" >> /tmp/crontab.tmp
 crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
 StatusLSB
@@ -248,14 +248,14 @@ done
 
 #### Create new security rules
 log_daemon_msg "Create new security rules"
-ScriptInvoke 'screen' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
+ScriptInvoke 'screen' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new' 'INSTALL'
 StatusLSB
 
 #### renting
 MonthlyPayment "$NewUser"
 
 #### Assign password
-ScriptInvoke 'source' '/etc/MySB/bin/MySB_ChangeUserPassword' $NewUser $NewUserPassword
+ScriptInvoke "source" "/etc/MySB/bin/MySB_ChangeUserPassword" "$NewUser" "$NewUserPassword" "INSTALL"
 
 #### START services
 ManageServices start "vsftpd nginx cron"
