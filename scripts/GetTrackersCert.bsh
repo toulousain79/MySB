@@ -30,7 +30,24 @@ if [ ! -d /etc/MySB/ssl/trackers/ ]; then
 fi
 
 #### Clean certificates with bad links
-if [ -z "$1" ]; then
+case "$1" in
+	"APPLYCONFIG")
+		DoCleanCertificates=0
+		DoGetRutorrentTrackers=0
+		DoGetUsersTrackers=0
+		DoActivateTrackers=0
+		DoUpdateUsersTracker=0
+	;;
+	*) # "INSTALL"|"REFRESH"
+		DoCleanCertificates=1
+		DoGetRutorrentTrackers=1
+		DoGetUsersTrackers=1
+		DoActivateTrackers=1
+		DoUpdateUsersTrackers=1
+	;;
+esac
+
+if [ -z "$DoCleanCertificates" == "1" ]; then
 	log_daemon_msg "Clean certificates with bad links"
 	LIST_CERTS=$(ls -la /etc/ssl/certs/ | awk '{ print $9 }')
 	for Cert in ${LIST_CERTS}; do
@@ -39,7 +56,7 @@ if [ -z "$1" ]; then
 			TARGET=$(ls -la /etc/ssl/certs/$Cert | awk '{ print $11 }')
 
 			if [ ! -f $TARGET ]; then
-				rm -vf /etc/ssl/certs/$Cert
+				rm -f /etc/ssl/certs/$Cert
 			fi
 			
 			unset Cert TARGET
@@ -51,17 +68,17 @@ fi
 
 #### Create trackers listing
 # 1 - Add ruTorrent trackers in db
-if [ -z "$1" ]; then
+if [ -z "$DoGetRutorrentTrackers" == "1" ]; then
 	GetRutorrentTrackers
 fi
 
 # 2 - Add users trackers in db
-if [ -z "$1" ]; then
+if [ -z "$DoGetUsersTrackers" == "1" ]; then
 	GetUsersTrackers
 fi
 
 # 3 - Activate trackers with users' actived torrents
-if [ -z "$1" ]; then
+if [ -z "$DoActivateTrackers" == "1" ]; then
 	ListingUsers
 	for SeedboxUser in $UsersList; do
 		if [ -d /home/$SeedboxUser/rtorrent/.session/ ]; then
@@ -106,7 +123,7 @@ if [ -z "$1" ]; then
 fi
 
 #### Update users trackers data
-if [ -z "$1" ]; then
+if [ -z "$DoUpdateUsersTrackers" == "1" ]; then
 	TrackersList="`sqlite3 $MySB_DB \"SELECT tracker FROM trackers_list WHERE origin = 'users' AND to_check = '1'\"`"
 
 	for Tracker in $TrackersList; do
