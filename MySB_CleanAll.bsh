@@ -42,8 +42,11 @@ PCKTOREMOVE=`grep -rni --exclude="MySB_CleanAll.bsh" 'PackagesManage install' /e
 PCKTOKEEP=`grep -rni --exclude="MySB_CleanAll.bsh" 'TOOLS=' /etc/MySB/MySB_Install.bsh | cut -d '"' -f 2`
 ListingUsers
 
+#### Clean security rules
+ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'clean'
+
 #### STOP services
-ManageServices start "cron"
+ManageServices start "cron dnscrypt-proxy"
 
 for seedUser in $UsersList; do
 	sed -i '/'$seedUser'/d' /tmp/crontab.tmp
@@ -51,7 +54,6 @@ for seedUser in $UsersList; do
 done
 
 #### Delete CRON
-log_daemon_msg "Clean crontab"
 crontab -l > /tmp/crontab.tmp
 for seedUser in $UsersList; do
 	sed -i '/'$seedUser'/d' /tmp/crontab.tmp
@@ -69,15 +71,29 @@ sed -i '/drop_caches/d' /tmp/crontab.tmp
 sed -i '/webmin\/package-updates/d' /tmp/crontab.tmp
 crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
-StatusLSB
+
+#### Force nameserver
+sed -i '/nameserver/d' /etc/resolv.conf
+(
+cat <<'EOF'
+nameserver 208.67.220.220
+nameserver 8.8.8.8
+nameserver 4.2.2.1
+nameserver 208.67.222.222
+nameserver 8.8.4.4
+nameserver 4.2.2.2
+nameserver 4.2.2.3
+nameserver 4.2.2.4
+nameserver 4.2.2.5
+nameserver 4.2.2.6
+EOF
+) >> /etc/resolv.conf
 
 #### Remove system account for all users
 for seedUser in $UsersList; do
-	log_daemon_msg "Delete $SeedboxUser system account"
-	userdel --remove --force $SeedboxUser &> /dev/null
-	if [ -d /home/$SeedboxUser ]; then rm -vrf /home/$SeedboxUser; fi
-	if [ -d /var/run/screen/S-$SeedboxUser ]; then rm -vrf /var/run/screen/S-$SeedboxUser; fi
-	StatusLSB
+	userdel --remove --force $seedUser &> /dev/null
+	if [ -d /home/$seedUser ]; then rm -vrf /home/$seedUser; fi
+	if [ -d /var/run/screen/S-$seedUser ]; then rm -vrf /var/run/screen/S-$seedUser; fi
 done
 
 #### Prepare list of packages
@@ -102,10 +118,21 @@ PackagesManage purge "$TOREMOVE"
 
 #### Delete files and directories
 rm -vf /etc/init.d/rtorrent-*
-
-if [ -d /etc/MySB ]; then
-	rm -vrf /etc/MySB
-fi
+rm -vf /etc/apt/sources.list.d/* &> /dev/null
+rm -vf /var/log//* &> /dev/null
+if [ -f /etc/init.d/FirewallAndSecurity ]; then rm -vf /etc/init.d/FirewallAndSecurity; fi
+if [ -f /etc/init.d/dnscrypt-proxy ]; then rm -vf /etc/init.d/dnscrypt-proxy; fi
+if [ -f /var/log/dnscrypt-proxy.log ]; then rm -vf /var/log/dnscrypt-proxy.log; fi
+if [ -f /var/log/vsftpd.log ]; then rm -vf /var/log/vsftpd.log; fi
+if [ -d /run/dnscrypt-proxy ]; then rm -vrf /run/dnscrypt-proxy; fi
+if [ -d /etc/stunnel ]; then rm -vrf /etc/stunnel; fi
+if [ -d /usr/share/webmin ]; then rm -vrf /usr/share/webmin; fi
+if [ -d /var/lib/pgl ]; then rm -vrf /var/lib/pgl; fi
+if [ -d /var/log/pgl ]; then rm -vrf /var/log/pgl; fi
+if [ -d /var/log/nginx ]; then rm -vrf /var/log/nginx; fi
+if [ -d /var/log/openvpn ]; then rm -vrf /var/log/openvpn; fi
+if [ -d /var/log/samba ]; then rm -vrf /var/log/samba; fi
+if [ -d /etc/MySB ]; then rm -vrf /etc/MySB; fi
 
 # -----------------------------------------
 if [ -f /etc/MySB/inc/includes_after.bsh ]; then source /etc/MySB/inc/includes_after.bsh; fi
