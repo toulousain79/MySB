@@ -49,8 +49,8 @@ for Repo in $AllRepos; do
 	echo "File : "$RepoFile
 	echo "Old File : "$RepoOldFile
 	echo "URL : "$RepoURL
-	echo	
-	
+	echo
+
 	case "$RepoType" in
 		"TARGZ")
 			# Clean on version changed
@@ -73,7 +73,12 @@ for Repo in $AllRepos; do
 				wget --no-check-certificate $RepoURL -O /etc/MySB/files/$RepoFile
 			fi
 			if [ ! -d $RepoDir ]; then
-				tar -zxvf /etc/MySB/files/$RepoFile -C $RepoDir
+				tar -zxvf /etc/MySB/files/$RepoFile -C /etc/MySB/temp/
+
+				SubDir="`tar -ztf /etc/MySB/files/$RepoFile | sed -e 's@/.*@@' | uniq`"
+				if [ -d /etc/MySB/temp/$SubDir ]; then
+					mv /etc/MySB/temp/$SubDir $RepoDir
+				fi
 			fi
 		;;
 		"WBM")
@@ -88,8 +93,8 @@ for Repo in $AllRepos; do
 						rm -vf $RepoDir/$RepoFile
 					fi
 				;;
-			esac			
-			
+			esac
+
 			if [ ! -f $RepoDir/$RepoFile ]; then
 				wget --no-check-certificate $RepoURL -O $RepoDir/$RepoFile
 			fi
@@ -104,7 +109,7 @@ for Repo in $AllRepos; do
 							svn switch $RepoURL $RepoDir
 						else
 							svn co $RepoURL $RepoDir
-						fi					
+						fi
 					fi
 				;;
 				*)
@@ -112,7 +117,7 @@ for Repo in $AllRepos; do
 						svn switch $RepoURL $RepoDir
 					else
 						svn co $RepoURL $RepoDir
-					fi				
+					fi
 				;;
 			esac
 		;;
@@ -124,44 +129,46 @@ for Repo in $AllRepos; do
 						git stash
 						git pull
 					else
-						git clone --verbose $RepoURL $RepoDir
+						git clone $RepoURL $RepoDir
 					fi
 				;;
 				*)
-					git clone --verbose $RepoURL $RepoDir
+					if [ ! -d $RepoDir ]; then
+						git clone $RepoURL $RepoDir
+					fi
 				;;
-			esac			
-			
+			esac
 		;;
 		"CURL")
 			cd /etc/MySB/temp
 			curl -s $RepoURL | php
 		;;
 	esac
-	
-	if [ $? -gt 0 ]; then 
-		if [ "$RepoName" == "Cakebox-Light" ]; then
-			IsInstalled_Cakebox=NO
-			ToInstall_Cakebox=NO
-			sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '0' WHERE serv_name = 'CakeBox-Light';"
-		fi
-		if [ "$RepoName" == "Seedbox-Manager" ]; then
-			IsInstalled_Manager=NO
-			ToInstall_Manager=NO
-			sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '0' WHERE serv_name = 'Seedbox-Manager';"
-		fi
-		if [ "$RepoName" == "Composer" ] || [ "$RepoName" == "Node" ]; then
-			IsInstalled_Cakebox=NO
-			ToInstall_Cakebox=NO
-			IsInstalled_Manager=NO
-			ToInstall_Manager=NO
-			sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '0' WHERE serv_name = 'CakeBox-Light';"
-			sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '0' WHERE serv_name = 'Seedbox-Manager';"
-		fi
-		if [ "$RepoName" == "XMLRPC" ] || [ "$RepoName" == "LibTorrent" ] || [ "$RepoName" == "rTorrent" ]\
-			|| [ "$RepoName" == "ruTorrent" ] || [ "$RepoName" == "ruTorrents Official Plugins" ]; then
-			echo "$RepoURL" >> /etc/MySB/temp/continue
-		fi
+
+	if [ $? -gt 0 ]; then
+		case "$RepoName" in
+			"Cakebox-Light")
+				IsInstalled_Cakebox=NO
+				ToInstall_Cakebox=NO
+				sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '0' WHERE serv_name = 'CakeBox-Light';"
+			;;
+			"Seedbox-Manager")
+				IsInstalled_Manager=NO
+				ToInstall_Manager=NO
+				sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '0' WHERE serv_name = 'Seedbox-Manager';"
+			;;
+			"Composer"|"Node")
+				IsInstalled_Cakebox=NO
+				ToInstall_Cakebox=NO
+				IsInstalled_Manager=NO
+				ToInstall_Manager=NO
+				sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '0' WHERE serv_name = 'CakeBox-Light';"
+				sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '0' WHERE serv_name = 'Seedbox-Manager';"
+			;;
+			"XMLRPC"|"LibTorrent"|"rTorrent"|"ruTorrent"|"ruTorrents Official Plugins")
+				echo "$RepoURL" >> /etc/MySB/temp/continue
+			;;
+		esac
 	fi	
 done
 unset IFS
