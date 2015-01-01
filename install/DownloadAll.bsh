@@ -31,20 +31,28 @@ fi
 
 #### Get all repos
 AllRepos="`sqlite3 $MySB_DB \"SELECT * FROM repositories WHERE active = '1'\"`"
-for Repo in $AllRepos; do
-	RepoType=`echo $Repo | awk '{split($0,a,"|"); print a[1]}'`
-	RepoDir=`echo $Repo | awk '{split($0,a,"|"); print a[2]}'`
-	RepoName=`echo $Repo | awk '{split($0,a,"|"); print a[3]}'`
-	RepoVersion=`echo $Repo | awk '{split($0,a,"|"); print a[4]}'`
-	RepoFile=`echo $Repo | awk '{split($0,a,"|"); print a[5]}'`
-	RepoOldFile=`echo $Repo | awk '{split($0,a,"|"); print a[6]}'`
-	RepoURL=`echo $Repo | awk '{split($0,a,"|"); print a[7]}'`
 
+IFS=$'\n'
+for Repo in $AllRepos; do
+	RepoType=`echo $Repo | awk '{split($0,a,"|"); print a[2]}'`
+	RepoDir=`echo $Repo | awk '{split($0,a,"|"); print a[3]}'`
+	RepoName=`echo $Repo | awk '{split($0,a,"|"); print a[4]}'`
+	RepoVersion=`echo $Repo | awk '{split($0,a,"|"); print a[5]}'`
+	RepoFile=`echo $Repo | awk '{split($0,a,"|"); print a[6]}'`
+	RepoOldFile=`echo $Repo | awk '{split($0,a,"|"); print a[7]}'`
+	RepoURL=`echo $Repo | awk '{split($0,a,"|"); print a[8]}'`
+
+	echo
+	echo "########## $RepoType: $RepoName"
+	echo "Directory : "$RepoDir
+	echo "Version : "$RepoVersion
+	echo "File : "$RepoFile
+	echo "Old File : "$RepoOldFile
+	echo "URL : "$RepoURL
+	echo	
+	
 	case "$RepoType" in
 		"TARGZ")
-			echo
-			echo "########## TAR.GZ: $URL"
-			echo
 			# Clean on version changed
 			if [ -f /etc/MySB/files/$RepoOldFile ]; then
 				rm -vf /etc/MySB/files/$RepoOldFile
@@ -66,13 +74,11 @@ for Repo in $AllRepos; do
 				wget --no-check-certificate $RepoURL -O /etc/MySB/files/$RepoFile
 			fi
 			if [ ! -d $RepoDir ]; then
+				mkdir $RepoDir
 				tar -zxvf /etc/MySB/files/$RepoFile -C $RepoDir
 			fi
 		;;
 		"WBM")
-			echo
-			echo "########## WBM: $URL"
-			echo
 			# Clean on version changed
 			if [ -f /etc/MySB/files/$RepoOldFile ]; then
 				rm -vf /etc/MySB/files/$RepoOldFile
@@ -91,17 +97,7 @@ for Repo in $AllRepos; do
 			fi
 		;;
 		"SVN")
-			echo
-			echo "########## Subversion: $URL"
-			echo
 			case "$1" in
-				"INSTALL")
-					if [ -d $RepoDir/.svn ]; then
-						svn switch $RepoURL $RepoDir
-					else
-						svn co $RepoURL $RepoDir
-					fi
-				;;
 				"UPGRADE")
 					if [ -d $RepoDir ]; then
 						svn up $RepoDir
@@ -112,17 +108,18 @@ for Repo in $AllRepos; do
 							svn co $RepoURL $RepoDir
 						fi					
 					fi
-				;;				
+				;;
+				*)
+					if [ -d $RepoDir/.svn ]; then
+						svn switch $RepoURL $RepoDir
+					else
+						svn co $RepoURL $RepoDir
+					fi				
+				;;
 			esac
 		;;
 		"GIT")
-			echo
-			echo "########## Git: $URL"
-			echo
 			case "$1" in
-				"INSTALL")
-					git clone $RepoURL $RepoDir
-				;;
 				"UPGRADE")
 					if [ -d $RepoDir/ ]; then
 						cd $RepoDir/
@@ -131,16 +128,16 @@ for Repo in $AllRepos; do
 					else
 						git clone $RepoURL $RepoDir
 					fi
-				;;				
+				;;
+				*)
+					git clone $RepoURL $RepoDir
+				;;
 			esac			
 			
 		;;
 		"CURL")
-			echo
-			echo "########## Curl: $URL"
-			echo
 			cd /etc/MySB/temp
-			curl -s $URL | php
+			curl -s $RepoURL | php
 		;;
 	esac
 	
@@ -165,10 +162,11 @@ for Repo in $AllRepos; do
 		fi
 		if [ "$RepoName" == "XMLRPC" ] || [ "$RepoName" == "LibTorrent" ] || [ "$RepoName" == "rTorrent" ]\
 			|| [ "$RepoName" == "ruTorrent" ] || [ "$RepoName" == "ruTorrents Official Plugins" ]; then
-			echo "$URL" >> /etc/MySB/temp/continue
+			echo "$RepoURL" >> /etc/MySB/temp/continue
 		fi
 	fi	
 done
+unset IFS
 
 if [ "$ToInstall_Cakebox" == "NO" ]; then
 	PluginDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin Link Cakebox'\"`"

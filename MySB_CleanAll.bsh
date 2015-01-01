@@ -35,50 +35,77 @@ if [ "$CONTINUE" == "NO" ]; then
 	EndingScript 0
 fi
 
+#### VARs
 TOREMOVE=""
 TOKEEP=""
-
 PCKTOREMOVE=`grep -rni --exclude="MySB_CleanAll.bsh" 'PackagesManage install' /etc/MySB | cut -d '"' -f 2`
 PCKTOKEEP=`grep -rni --exclude="MySB_CleanAll.bsh" 'TOOLS=' /etc/MySB/MySB_Install.bsh | cut -d '"' -f 2`
+ListingUsers
 
-#### To keep
+#### STOP services
+ManageServices start "cron"
+
+for seedUser in $UsersList; do
+	sed -i '/'$seedUser'/d' /tmp/crontab.tmp
+	service rtorrent-$seedUser stop
+done
+
+#### Delete CRON
+log_daemon_msg "Clean crontab"
+crontab -l > /tmp/crontab.tmp
+for seedUser in $UsersList; do
+	sed -i '/'$seedUser'/d' /tmp/crontab.tmp
+done
+sed -i '/MySB/d' /tmp/crontab.tmp
+sed -i '/BlocklistsRTorrent.bsh/d' /tmp/crontab.tmp
+sed -i '/dnscrypt-proxy/d' /tmp/crontab.tmp
+sed -i '/nfs-kernel-server/d' /tmp/crontab.tmp
+sed -i '/UpdateGeoIP.bsh/d' /tmp/crontab.tmp
+sed -i '/ntpdate/d' /tmp/crontab.tmp
+sed -i '/LogServer.bsh/d' /tmp/crontab.tmp
+sed -i '/DynamicAddressResolver.bsh/d' /tmp/crontab.tmp
+sed -i '/ldconfig/d' /tmp/crontab.tmp
+sed -i '/drop_caches/d' /tmp/crontab.tmp
+sed -i '/webmin\/package-updates/d' /tmp/crontab.tmp
+crontab /tmp/crontab.tmp
+rm -f /tmp/crontab.tmp
+StatusLSB
+
+#### Remove system account for all users
+for seedUser in $UsersList; do
+	log_daemon_msg "Delete $SeedboxUser system account"
+	userdel --remove --force $SeedboxUser &> /dev/null
+	if [ -d /home/$SeedboxUser ]; then rm -vrf /home/$SeedboxUser; fi
+	if [ -d /var/run/screen/S-$SeedboxUser ]; then rm -vrf /var/run/screen/S-$SeedboxUser; fi
+	StatusLSB
+done
+
+#### Prepare list of packages
+# To keep
 for Package in $PCKTOKEEP; do 
 	TOKEEP="$TOKEEP $Package"
 done
 
-#### To remove
+# To remove
 for Package in $PCKTOREMOVE; do 
 	if [ "`dpkg -l | grep $Package`" != "" ];then
 		TOREMOVE="$TOREMOVE $Package"
 	fi
 done
 
-crontab -l > /tmp/crontab.tmp
-
-ListingUsers
-for seedUser in $UsersList; do
-	sed -i '/'$seedUser'/d' /tmp/crontab.tmp
+# Exclude packages to keep from packages to remove
+for ToKeep in $TOKEEP; do
+	PCKTOREMOVE="`echo $PCKTOREMOVE | sed 's/$ToKeep//g;'`"
 done
-
-rm -vf /etc/init.d/rtorrent-*
-
-sed -i '/MySB/d' /tmp/crontab.tmp
-crontab /tmp/crontab.tmp
-rm -f /tmp/crontab.tmp
 
 PackagesManage purge "$TOREMOVE"
 
-if [ -d /etc/MySB/sources ]; then
-	rm -vf /etc/MySB/sources/*
-fi
-if [ -d /etc/MySB/files ]; then
-	rm -vf /etc/MySB/files/*
-fi
-if [ -d /etc/MySB/web/logs ]; then
-	rm -vf /etc/MySB/web/logs/*
-fi
+#### Delete files and directories
+rm -vf /etc/init.d/rtorrent-*
 
-PackagesManage install "$TOKEEP"
+if [ -d /etc/MySB ]; then
+	rm -vf /etc/MySB
+fi
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after.bsh
