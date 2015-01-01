@@ -35,55 +35,63 @@ done
 echo
 echo "########## ruTorrent + Official Plugins"
 echo
-if [ -d /etc/MySB/web/rutorrent ]; then
-	svn up $SVN_rutorrent /etc/MySB/web/rutorrent
-	svn switch $SVN_rutorrent_plugins /etc/MySB/web/rutorrent/plugins
+RutorrentDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent'\"`"
+RutorrentUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent'\"`"
+RutorrentPluginsDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrents Official Plugins'\"`"
+RutorrentPluginsUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrents Official Plugins'\"`"
+
+if [ -d $RutorrentDir ]; then
+	svn up $RutorrentDir
+	svn up $RutorrentPluginsDir
 else
-	if [ -d /etc/MySB/temp/rutorrent ]; then
-		mv -v /etc/MySB/temp/rutorrent /etc/MySB/web/
-		svn switch $SVN_rutorrent /etc/MySB/web/rutorrent
-		svn switch $SVN_rutorrent_plugins /etc/MySB/web/rutorrent/plugins
-	else
-		svn co $SVN_rutorrent /etc/MySB/web/rutorrent
-		svn switch $SVN_rutorrent_plugins /etc/MySB/web/rutorrent/plugins
-	fi
+	svn co $RutorrentUrl $RutorrentDir
+	svn switch $RutorrentPluginsUrl $RutorrentPluginsDir
 fi
 
-if [ ! -d /etc/MySB/temp/rutorrent ]; then
-	# Plugin Chat
-	echo
-	echo "########## Plugin Chat"
-	echo
-	if [ -d /etc/MySB/web/rutorrent/plugins/chat ]; then
-		svn up /etc/MySB/web/rutorrent/plugins/chat
-	else
-		svn co $SVN_rutorrent_plugins_CHAT /etc/MySB/web/rutorrent/plugins/chat
-	fi
+#### Plugin Chat
+echo
+echo "########## Plugin Chat"
+echo
+PluginChatDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin Chat'\"`"
+PluginChatUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin Chat'\"`"
+if [ -d $PluginChatDir ]; then
+	svn up $PluginChatDir
+else
+	svn co $PluginChatUrl $PluginChatDir
+fi
 
-	# Plugin Logoff
-	echo
-	echo "########## Plugin Logoff"
-	echo
-	if [ -d /etc/MySB/web/rutorrent/plugins/logoff ]; then
-		svn up /etc/MySB/web/rutorrent/plugins/logoff
-	else
-		svn co $SVN_rutorrent_plugins_LOGOFF /etc/MySB/web/rutorrent/plugins/logoff
-	fi
+#### Plugin Logoff
+PluginLogoffDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin Chat'\"`"
+PluginLogoffUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin Chat'\"`"
+echo
+echo "########## Plugin Logoff"
+echo
+if [ -d $PluginLogoffDir ]; then
+	svn up $PluginLogoffDir
+else
+	svn co $PluginLogoffUrl $PluginLogoffDir
+fi
 
-	# Plugin tAdd-Labels
-	echo
-	echo "########## Plugin tAdd-Labels"
-	echo
-	if [ "$1" == "REFRESH" ]; then 
-		if [ -d /etc/MySB/web/rutorrent/plugins/lbll-suite/ ]; then
-			rm -vrf /etc/MySB/web/rutorrent/plugins/lbll-suite/
-		fi
-		if [ -f /etc/MySB/files/lbll-suite.tar.gz ]; then
-			rm -vf /etc/MySB/files/lbll-suite.tar.gz
-		fi
-		wget --no-check-certificate $TARGZ_rutorrent_plugins_TADDLABELS -O /etc/MySB/files/lbll-suite.tar.gz
-		tar -zxvf /etc/MySB/files/lbll-suite.tar.gz -C /etc/MySB/web/rutorrent/plugins/
+#### Plugin tAdd-Labels
+echo
+echo "########## Plugin tAdd-Labels"
+echo
+PluginLbllDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin tAdd-Labels'\"`"
+PluginLbllUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin tAdd-Labels'\"`"
+PluginLbllFile="`sqlite3 $MySB_DB \"SELECT file FROM repositories WHERE name = 'ruTorrent Plugin tAdd-Labels'\"`"
+if [ "$1" == "REFRESH" ]; then 
+	if [ -d $PluginLbllDir ]; then
+		rm -vrf $PluginLbllDir
 	fi
+	if [ -f /etc/MySB/files/$PluginLbllFile ]; then
+		rm -vf /etc/MySB/files/$PluginLbllFile
+	fi
+	wget --no-check-certificate $PluginLbllUrl -O /etc/MySB/files/$PluginLbllFile
+	tar -zxvf /etc/MySB/files/$PluginLbllFile -C $PluginLbllDir
+fi
+
+
+
 
 	# Plugin Filemanager
 	echo
@@ -339,9 +347,6 @@ $pathToExternals["pgrep"] = '/usr/bin/pgrep';		// Something like /usr/bin/pgrep.
 
 EOF
 	) > /etc/MySB/web/rutorrent/plugins/create/conf.php
-else
-	rm -vrf /etc/MySB/temp/rutorrent
-fi
 
 # PlowShare4
 echo

@@ -58,24 +58,19 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	sqlite3 $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'BIND';"
 
 	# LIBsodium
-	if [ -d /etc/MySB/sources/libsodium ]; then
-		cd /etc/MySB/sources/libsodium/
+	LibsodiumDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'Libsodium'\"`"
+	LibsodiumUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'Libsodium'\"`"
+
+	if [ -d $LibsodiumDir ]; then
+		cd $LibsodiumDir/
 		git stash
 		git pull
 		make clean
 	else
-		if [ -d /etc/MySB/temp/libsodium ]; then
-			mv -v /etc/MySB/temp/libsodium /etc/MySB/sources/
-		else
-			git clone $GIT_libsodium /etc/MySB/sources/libsodium
-		fi
+		git clone $LibsodiumUrl $LibsodiumDir
 	fi
 
-	if [ -d /etc/MySB/temp/libsodium ]; then
-		rm -vrf /etc/MySB/temp/libsodium
-	fi
-
-	cd /etc/MySB/sources/libsodium/
+	cd $LibsodiumDir/
 	./autogen.sh
 	./configure --enable-minimal
 	make -j$PROCESSOR
@@ -84,17 +79,16 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	/sbin/ldconfig
 
 	# DNScrypt
-	if [ -d /etc/MySB/temp/dnscrypt* ]; then
-		if [ -d /etc/MySB/sources/dnscrypt/ ]; then
-			rm -vrf /etc/MySB/sources/dnscrypt/
-		fi
-		mv -v /etc/MySB/temp/dnscrypt* /etc/MySB/sources/dnscrypt
+	DnscryptDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'DNScrypt-proxy'\"`"
+	DnscryptUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'DNScrypt-proxy'\"`"
+	DnscryptFile="`sqlite3 $MySB_DB \"SELECT file FROM repositories WHERE name = 'DNScrypt-proxy'\"`"
+	
+	if [ ! -d $DnscryptDir/ ];then
+		wget --no-check-certificate $DnscryptUrl -O /etc/MySB/files/$DnscryptFile
+		tar -zxvf /etc/MySB/files/$DnscryptFile -C $DnscryptDir
 	fi
-	if [ ! -d /etc/MySB/sources/dnscrypt/ ] && [ ! -f /etc/MySB/files/dnscrypt.tar.gz ]; then
-		wget --no-check-certificate $TARGZ_dnscrypt -O /etc/MySB/files/dnscrypt.tar.gz
-		tar -zxvf /etc/MySB/files/dnscrypt.tar.gz -C /etc/MySB/sources/
-	fi
-	cd /etc/MySB/sources/dnscrypt/
+	
+	cd $DnscryptDir/
 	make clean
 	./autogen.sh
 	./configure --enable-plugins

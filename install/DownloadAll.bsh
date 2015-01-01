@@ -24,139 +24,161 @@ source /etc/MySB/inc/includes_before.bsh
 #
 ##################### FIRST LINE #####################################
 
-# Delete source dir
-if [ -d /etc/MySB/sources ]; then
-	rm -vrf /etc/MySB/sources/*
-fi
-
-# Delete source dir
-if [ -d /etc/MySB/files ]; then
-	rm -vf /etc/MySB/files/*.wbm &> /dev/null
-	rm -vf /etc/MySB/files/*.tar.gz &> /dev/null
-fi
-
-# Delete temp dir
-if [ -d /etc/MySB/temp ]; then
-	rm -vrf /etc/MySB/temp/*
-fi
-
-# file to allow the install to continue or not
+#### file to allow the install to continue or not
 if [ -f /etc/MySB/temp/continue ]; then
 	rm -vf /etc/MySB/temp/continue
 fi
 
-REPOS=`cat /etc/MySB/inc/repos.bsh | sed -e '/^#/d' | sed -e '/^$/d'`
+#### Get all repos
+AllRepos="`sqlite3 $MySB_DB \"SELECT * FROM repositories WHERE active = '1'\"`"
+for Repo in $AllRepos; do
+	RepoType=`echo $Repo | awk '{split($0,a,"|"); print a[1]}'`
+	RepoDir=`echo $Repo | awk '{split($0,a,"|"); print a[2]}'`
+	RepoName=`echo $Repo | awk '{split($0,a,"|"); print a[3]}'`
+	RepoVersion=`echo $Repo | awk '{split($0,a,"|"); print a[4]}'`
+	RepoFile=`echo $Repo | awk '{split($0,a,"|"); print a[5]}'`
+	RepoOldFile=`echo $Repo | awk '{split($0,a,"|"); print a[6]}'`
+	RepoURL=`echo $Repo | awk '{split($0,a,"|"); print a[7]}'`
 
-#### check repos files
-for Repo in $REPOS; do
-	TYPE=`echo $Repo | tr '[:upper:]' '[:lower:]' | cut -d '=' -f 1 | cut -d '_' -f 1`
-	DIR=`echo $Repo | tr '[:upper:]' '[:lower:]' | cut -d '=' -f 1 | cut -d '_' -f 2`
-	SUB=`echo $Repo | tr '[:upper:]' '[:lower:]' | cut -d '=' -f 1 | cut -d '_' -f 3`
-	NAME=`echo $Repo | tr '[:upper:]' '[:lower:]' | cut -d '=' -f 1 | cut -d '_' -f 4`
-	URL=`echo $Repo | cut -d '"' -f 2`
-
-	#### change working directory
-	cd /etc/MySB/temp
-
-	# Which dir ?
-	if [ ! -z $DIR ] && [ ! -z $SUB ] && [ ! -z $NAME ]; then
-		DEST=./$DIR/$SUB
-	elif [ ! -z $DIR ] && [ ! -z $SUB ] && [ -z $NAME ]; then
-		DEST=./$DIR/$SUB
-	elif [ ! -z $DIR ] && [ -z $SUB ] && [ -z $NAME ]; then
-		DEST=./$DIR
-	else
-		DEST="."
-	fi
-
-	# Which file ?
-	if [ ! -z $NAME ]; then
-		FILE=$NAME
-	elif [ ! -z $SUB ]; then
-		FILE=$SUB
-	else
-		FILE=$DIR
-	fi
-
-	case "$TYPE" in
-		"svn")
-			echo
-			echo "########## Subversion: $URL"
-			echo
-			if [ ! -z $NAME ]; then
-				DEST=$DEST/$NAME
-			fi
-			if [ ! -d $DEST ]; then
-				mkdir -p $DEST
-			else
-				if [ -d $DEST/.svn ]; then
-					svn switch $URL $DEST
-				fi
-			fi
-
-			cd $DEST/
-			svn co $URL ./
-		;;
-		"curl")
-			echo
-			echo "########## Curl: $URL"
-			echo
-			curl -s $URL | php
-		;;
-		"git")
-			echo
-			echo "########## Git: $URL"
-			echo
-			if [ -z $SUB ]; then
-				DEST="."
-			fi
-			if [ ! -d $DEST ]; then
-				mkdir $DEST
-			fi
-
-			cd $DEST/
-			git clone $URL
-		;;
-		"targz")
+	case "$RepoType" in
+		"TARGZ")
 			echo
 			echo "########## TAR.GZ: $URL"
 			echo
-			if [ -z $SUB ]; then
-				DEST="."
+			# Clean on version changed
+			if [ -f /etc/MySB/files/$RepoOldFile ]; then
+				rm -vf /etc/MySB/files/$RepoOldFile
+				rm -vrf $RepoDir
 			fi
-			if [ ! -d $DEST ]; then
-				mkdir $DEST
-			fi
-			wget --no-check-certificate $URL -O /etc/MySB/files/$FILE.tar.gz
 
-			tar -zxvf /etc/MySB/files/$FILE.tar.gz -C $DEST/
+			case "$1" in
+				"UPGRADE")
+					if [ -f /etc/MySB/files/$RepoFile ]; then
+						rm -vf /etc/MySB/files/$RepoFile
+					fi
+					if [ -d $RepoDir ]; then
+						rm -vrf $RepoDir
+					fi
+				;;
+			esac
+
+			if [ ! -f /etc/MySB/files/$RepoFile ]; then
+				wget --no-check-certificate $RepoURL -O /etc/MySB/files/$RepoFile
+			fi
+			if [ ! -d $RepoDir ]; then
+				tar -zxvf /etc/MySB/files/$RepoFile -C $RepoDir
+			fi
 		;;
-		"wbm")
+		"WBM")
 			echo
 			echo "########## WBM: $URL"
 			echo
-			wget --no-check-certificate $URL -O /etc/MySB/files/$FILE.wbm
+			# Clean on version changed
+			if [ -f /etc/MySB/files/$RepoOldFile ]; then
+				rm -vf /etc/MySB/files/$RepoOldFile
+			fi
+
+			case "$1" in
+				"UPGRADE")
+					if [ -f $RepoDir/$RepoFile ]; then
+						rm -vf $RepoDir/$RepoFile
+					fi
+				;;
+			esac			
+			
+			if [ ! -f $RepoDir/$RepoFile ]; then
+				wget --no-check-certificate $RepoURL -O $RepoDir/$RepoFile
+			fi
+		;;
+		"SVN")
+			echo
+			echo "########## Subversion: $URL"
+			echo
+			case "$1" in
+				"INSTALL")
+					if [ -d $RepoDir/.svn ]; then
+						svn switch $RepoURL $RepoDir
+					else
+						svn co $RepoURL $RepoDir
+					fi
+				;;
+				"UPGRADE")
+					if [ -d $RepoDir ]; then
+						svn up $RepoDir
+					else
+						if [ -d $RepoDir/.svn ]; then
+							svn switch $RepoURL $RepoDir
+						else
+							svn co $RepoURL $RepoDir
+						fi					
+					fi
+				;;				
+			esac
+		;;
+		"GIT")
+			echo
+			echo "########## Git: $URL"
+			echo
+			case "$1" in
+				"INSTALL")
+					git clone $RepoURL $RepoDir
+				;;
+				"UPGRADE")
+					if [ -d $RepoDir/ ]; then
+						cd $RepoDir/
+						git stash
+						git pull
+					else
+						git clone $RepoURL $RepoDir
+					fi
+				;;				
+			esac			
+			
+		;;
+		"CURL")
+			echo
+			echo "########## Curl: $URL"
+			echo
+			cd /etc/MySB/temp
+			curl -s $URL | php
 		;;
 	esac
-
+	
 	if [ $? -gt 0 ]; then 
-		if [ "`echo '$Repo' | grep 'GIT_cakebox'`" != "" ]; then
+		if [ "$RepoName" == "Cakebox-Light" ]; then
 			IsInstalled_Cakebox=NO
+			ToInstall_Cakebox=NO
+			sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '0' WHERE serv_name = 'CakeBox-Light';"
 		fi
-		if [ "`echo '$Repo' | grep 'GIT_manager'`" != "" ]; then
+		if [ "$RepoName" == "Seedbox-Manager" ]; then
 			IsInstalled_Manager=NO
+			ToInstall_Manager=NO
+			sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '0' WHERE serv_name = 'Seedbox-Manager';"
 		fi
-		if [ "`echo '$Repo' | grep 'CURL_composer'`" != "" ] || [ "`echo '$Repo' | grep 'TARGZ_nodejs'`" != "" ]; then
+		if [ "$RepoName" == "Composer" ] || [ "$RepoName" == "Node" ]; then
 			IsInstalled_Cakebox=NO
+			ToInstall_Cakebox=NO
 			IsInstalled_Manager=NO
+			ToInstall_Manager=NO
+			sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '0' WHERE serv_name = 'CakeBox-Light';"
+			sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '0' WHERE serv_name = 'Seedbox-Manager';"
 		fi
 		if [ "`echo '$Repo' | grep 'SVN_xmlrpc'`" != "" ] || [ "`echo '$Repo' | grep 'TARGZ_libtorrent'`" != "" ]\
 			|| [ "`echo '$Repo' | grep 'TARGZ_rtorrent'`" != "" ] || [ "`echo '$Repo' | grep 'SVN_rutorrent'`" != "" ]\
 			|| [ "`echo '$Repo' | grep 'SVN_rutorrent_plugins'`" != "" ]; then
 			echo "$URL" >> /etc/MySB/temp/continue
 		fi
-	fi
+	fi	
 done
+
+if [ "$ToInstall_Cakebox" == "NO" ]; then
+	PluginDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin Link Cakebox'\"`"
+	if [ -d $PluginDir ]; then rm -vrf $PluginDir; fi
+fi
+if [ "$ToInstall_Manager" == "NO" ]; then
+	PluginDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin Link Manager'\"`"
+	if [ -d $PluginDir ]; then rm -vrf $PluginDir; fi
+fi
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after.bsh
