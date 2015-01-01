@@ -39,7 +39,6 @@ RutorrentDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruT
 RutorrentUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent'\"`"
 RutorrentPluginsDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrents Official Plugins'\"`"
 RutorrentPluginsUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrents Official Plugins'\"`"
-
 if [ -d $RutorrentDir ]; then
 	svn up $RutorrentDir
 	svn up $RutorrentPluginsDir
@@ -90,20 +89,19 @@ if [ "$1" == "REFRESH" ]; then
 	tar -zxvf /etc/MySB/files/$PluginLbllFile -C $PluginLbllDir
 fi
 
-
-
-
-	# Plugin Filemanager
-	echo
-	echo "########## Plugin Filemanager"
-	echo
-	if [ -d /etc/MySB/web/rutorrent/plugins/filemanager ]; then
-		svn up /etc/MySB/web/rutorrent/plugins/filemanager
-	else
-		svn co $SVN_rutorrent_plugins_FILEMANAGER /etc/MySB/web/rutorrent/plugins/filemanager
-	fi
-	(
-	cat <<'EOF'
+#### Plugin Filemanager
+echo
+echo "########## Plugin Filemanager"
+echo
+PluginFilemanagerDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin FileManager'\"`"
+PluginFilemanagerUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin FileManager'\"`"
+if [ -d $PluginFilemanagerDir ]; then
+	svn up $PluginFilemanagerDir
+else
+	svn co $PluginFilemanagerUrl $PluginFilemanagerDir
+fi
+(
+cat <<'EOF'
 <?php
 $fm["tempdir"] = "/tmp";                // path were to store temporary data ; must be writable
 $fm["mkdperm"] = 775;           // default permission to set to new created directories
@@ -124,23 +122,69 @@ $fm["archive"]["compress"][1] = array("-0", "-1", "-9");
 $fm["archive"]["compress"][2] = $fm["archive"]["compress"][3] = $fm["archive"]["compress"][4] = array(0);
 
 EOF
-	) > /etc/MySB/web/rutorrent/plugins/filemanager/conf.php
+) > $PluginFilemanagerDir/conf.php
 
-	# Plugin Fileshare
-	echo
-	echo "########## Plugin Fileshare"
-	echo
-	if [ -d /etc/MySB/web/rutorrent/plugins/fileshare ]; then
-		svn up /etc/MySB/web/rutorrent/plugins/fileshare
-	else
-		svn co $SVN_rutorrent_plugins_FILESHARE /etc/MySB/web/rutorrent/plugins/fileshare
+#### Plugin NFO
+echo
+echo "########## Plugin NFO"
+echo
+PluginNfoDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin NFO'\"`"
+PluginNfoUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin NFO'\"`"
+PluginNfoFile="`sqlite3 $MySB_DB \"SELECT file FROM repositories WHERE name = 'ruTorrent Plugin NFO'\"`"
+if [ "$1" == "REFRESH" ]; then 
+	if [ -d $PluginNfoDir ]; then
+		rm -vrf $PluginNfoDir
 	fi
-	if [ ! -f /etc/MySB/web/fileshare.php ] && [ -f /etc/MySB/web/rutorrent/plugins/fileshare/share.php ]; then
-		ln -s /etc/MySB/web/rutorrent/plugins/fileshare/share.php /etc/MySB/web/fileshare.php
+	if [ -f /etc/MySB/files/nfo.tar.gz ]; then
+		rm -vf /etc/MySB/files/$PluginNfoFile
 	fi
+	wget --no-check-certificate $PluginNfoUrl -O /etc/MySB/files/$PluginNfoFile
+	tar -zxvf /etc/MySB/files/$PluginNfoFile -C $PluginNfoDir
+fi
 
-	(
-	cat <<'EOF'
+#### Plugin Ratiocolor
+echo
+echo "########## Plugin Ratiocolor"
+echo
+PluginRatiocolorDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin RatioColor'\"`"
+PluginRatiocolorUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin RatioColor'\"`"
+if [ -d $PluginRatiocolorDir ]; then
+	cd $PluginRatiocolorDir
+	git stash
+	git pull
+else
+	git clone $PluginRatiocolorUrl $PluginRatiocolorDir
+fi
+perl -pi -e "s/changeWhat = \"cell-background\";/changeWhat = \"font\";/g" $$PluginRatiocolorDir/init.js
+
+#### Plugin FileUpload
+echo
+echo "########## Plugin FileUpload"
+echo
+PluginFileuploadDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin FileUpload'\"`"
+PluginFileuploadUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin FileUpload'\"`"
+if [ -d $PluginFileuploadDir ]; then
+	svn up $PluginFileuploadDir
+else
+	svn co $PluginFileuploadUrl $PluginFileuploadDir
+fi
+
+#### Plugin Fileshare
+echo
+echo "########## Plugin Fileshare"
+echo
+PluginFileshareDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin FileShare'\"`"
+PluginFileshareUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin FileShare'\"`"
+if [ -d $PluginFileshareDir ]; then
+	svn up $PluginFileshareDir
+else
+	svn co $PluginFileshareUrl $PluginFileshareDir
+fi
+if [ -f $PluginFileshareDir/share.php ] && [ ! -f /etc/MySB/web/fileshare.php ]; then
+	ln -s $PluginFileshareDir/share.php /etc/MySB/web/fileshare.php
+fi
+(
+cat <<'EOF'
 <?php
 // limits
 // 0 = unlimited
@@ -152,118 +196,82 @@ $limits['links'] = 0;   //maximum sharing links per user
 $downloadpath = 'https://<servername>:<port>/fileshare.php';
 
 EOF
-	) > /etc/MySB/web/rutorrent/plugins/fileshare/conf.php
-	perl -pi -e "s/<servername>/$HostNameFQDN/g" /etc/MySB/web/rutorrent/plugins/fileshare/conf.php
-	perl -pi -e "s/<port>/$Port_HTTPS/g" /etc/MySB/web/rutorrent/plugins/fileshare/conf.php
+) > $PluginFileshareDir/conf.php
+perl -pi -e "s/<servername>/$HostNameFQDN/g" $PluginFileshareDir/conf.php
+perl -pi -e "s/<port>/$Port_HTTPS/g" $PluginFileshareDir/conf.php
 
-	# Plugin NFO
-	echo
-	echo "########## Plugin NFO"
-	echo
-	if [ "$1" == "REFRESH" ]; then 
-		if [ -d /etc/MySB/web/rutorrent/plugins/nfo ]; then
-			rm -vrf /etc/MySB/web/rutorrent/plugins/nfo
-		fi
-		if [ -f /etc/MySB/files/nfo.tar.gz ]; then
-			rm -vf /etc/MySB/files/nfo.tar.gz
-		fi
-		wget --no-check-certificate $TARGZ_rutorrent_plugins_NFO -O /etc/MySB/files/nfo.tar.gz
-		tar -zxvf /etc/MySB/files/nfo.tar.gz -C /etc/MySB/web/rutorrent/plugins/
+#### Plugin Stream
+echo
+echo "########## Plugin Stream"
+echo
+PluginStreamDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin Stream'\"`"
+PluginStreamUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin Stream'\"`"
+PluginStreamFile="`sqlite3 $MySB_DB \"SELECT file FROM repositories WHERE name = 'ruTorrent Plugin Stream'\"`"
+if [ "$1" == "REFRESH" ]; then 
+	if [ -d $PluginStreamDir/ ]; then
+		rm -vrf $PluginStreamDir/
 	fi
+	if [ -f /etc/MySB/files/$PluginStreamFile ]; then
+		rm -vf /etc/MySB/files/$PluginStreamFile
+	fi
+	wget --no-check-certificate $PluginStreamUrl -O /etc/MySB/files/$PluginStreamFile
+	tar -zxvf /etc/MySB/files/$PluginStreamFile -C $PluginStreamDir
+fi
+perl -pi -e "s/define\('USE_NGINX', false\);/define\('USE_NGINX', true\);/g" $PluginStreamDir/config.php
+perl -pi -e "s/define\('SCHEME', http\);/define\('SCHEME', https\);/g" $PluginStreamDir/config.php
+if [ -f $PluginStreamDir/stream.php ] && [ ! -f /etc/MySB/web/stream.php ]; then
+	ln -s $PluginStreamDir/stream.php /etc/MySB/web/stream.php
+fi
 
-	# Plugin Ratiocolor
-	echo
-	echo "########## Plugin Ratiocolor"
-	echo
-	if [ -d /etc/MySB/web/rutorrent/plugins/rutorrent-ratiocolor ] && [ ! -d /etc/MySB/web/rutorrent/plugins/ratiocolor ]; then
-		mv -v /etc/MySB/web/rutorrent/plugins/rutorrent-ratiocolor /etc/MySB/web/rutorrent/plugins/ratiocolor
-	fi
-	if [ -d /etc/MySB/web/rutorrent/plugins/ratiocolor ]; then
-		cd /etc/MySB/web/rutorrent/plugins/ratiocolor/
-		git stash
-		git pull
-	else
-		git clone $GIT_rutorrent_plugins_RATIOCOLOR /etc/MySB/web/rutorrent/plugins/ratiocolor
-	fi
-	perl -pi -e "s/changeWhat = \"cell-background\";/changeWhat = \"font\";/g" /etc/MySB/web/rutorrent/plugins/ratiocolor/init.js
+#### Plugin Mediastream
+echo
+echo "########## Plugin Mediastream"
+echo
+PluginMediastreamDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin MediaStream'\"`"
+PluginMediastreamUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin MediaStream'\"`"
+if [ -d $PluginMediastreamDir ]; then
+	svn up $PluginMediastreamDir
+else
+	svn co $PluginMediastreamUrl $PluginMediastreamDir
+fi
+echo "<?php \$streampath = \"https://$HostNameFQDN:$Port_HTTPS/MySB/view.php\"; ?>" > $PluginMediastreamDir/conf.php
+if [ -f $PluginMediastreamDir/view.php ] && [ ! -f /etc/MySB/web/view.php ]; then
+	ln -s $PluginMediastreamDir/view.php /etc/MySB/web/view.php
+fi
 
-	# Plugin Theme
-	echo
-	echo "########## Plugin Theme"
-	echo
-	if [ "`cat /etc/MySB/web/rutorrent/css/style.css | grep 'for Oblivion'`" == "" ];then
-		echo "" | tee -a /etc/MySB/web/rutorrent/css/style.css
-		echo "/* for Oblivion */" | tee -a /etc/MySB/web/rutorrent/css/style.css
-		echo ".meter-value-start-color { background-color: #E05400 }" | tee -a /etc/MySB/web/rutorrent/css/style.css
-		echo ".meter-value-end-color { background-color: #8FBC00 }" | tee -a /etc/MySB/web/rutorrent/css/style.css
-		echo "::-webkit-scrollbar {width:12px;height:12px;padding:0px;margin:0px;}" | tee -a /etc/MySB/web/rutorrent/css/style.css
-	fi
-	perl -pi -e "s/\$defaultTheme \= \"\"\;/\$defaultTheme \= \"Oblivion\"\;/g" /etc/MySB/web/rutorrent/plugins/theme/conf.php
+#### Theme
+echo
+echo "########## Plugin Theme"
+echo
+if [ "`cat /etc/MySB/web/rutorrent/css/style.css | grep 'for Oblivion'`" == "" ];then
+	echo "" | tee -a /etc/MySB/web/rutorrent/css/style.css
+	echo "/* for Oblivion */" | tee -a /etc/MySB/web/rutorrent/css/style.css
+	echo ".meter-value-start-color { background-color: #E05400 }" | tee -a /etc/MySB/web/rutorrent/css/style.css
+	echo ".meter-value-end-color { background-color: #8FBC00 }" | tee -a /etc/MySB/web/rutorrent/css/style.css
+	echo "::-webkit-scrollbar {width:12px;height:12px;padding:0px;margin:0px;}" | tee -a /etc/MySB/web/rutorrent/css/style.css
+fi
+perl -pi -e "s/\$defaultTheme \= \"\"\;/\$defaultTheme \= \"Oblivion\"\;/g" /etc/MySB/web/rutorrent/plugins/theme/conf.php
 
-	# Plugin FileUpload
-	echo
-	echo "########## Plugin FileUpload"
-	echo
-	if [ -d /etc/MySB/web/rutorrent/plugins/fileupload ]; then
-		svn up /etc/MySB/web/rutorrent/plugins/fileupload
-	else
-		svn co $SVN_rutorrent_plugins_FILEUPLOAD /etc/MySB/web/rutorrent/plugins/fileupload
-	fi
+#### ruTorrent favicons trackers
+echo
+echo "########## ruTorrent favicons trackers"
+echo
+if [ ! -f /etc/MySB/web/rutorrent/plugins/tracklabels/trackers/gks.gs.png ]; then
+	wget http://www.ratbox.nl/md/favicons-trackers/gks.gs.png
+fi
+if [ ! -f /etc/MySB/web/rutorrent/plugins/tracklabels/trackers/mteam.fr.png ]; then
+	wget http://www.ratbox.nl/md/favicons-trackers/mteam.fr.png
+fi
+if [ ! -f /etc/MySB/web/rutorrent/plugins/tracklabels/trackers/montorrent.com.png ]; then
+	wget http://www.ratbox.nl/md/favicons-trackers/montorrent.com.png
+fi
+if [ ! -f /etc/MySB/web/rutorrent/plugins/tracklabels/trackers/lakameraobscura.com.png ]; then
+	wget http://www.ratbox.nl/md/favicons-trackers/lakameraobscura.com.png
+fi
 
-	# Plugin Stream
-	echo
-	echo "########## Plugin Stream"
-	echo
-	if [ "$1" == "REFRESH" ]; then 
-		if [ -d /etc/MySB/web/rutorrent/plugins/stream/ ]; then
-			rm -vrf /etc/MySB/web/rutorrent/plugins/stream/
-		fi
-		if [ -f /etc/MySB/files/stream.tar.gz ]; then
-			rm -vf /etc/MySB/files/stream.tar.gz
-		fi
-		wget --no-check-certificate $TARGZ_rutorrent_plugins_STREAM -O /etc/MySB/files/stream.tar.gz
-		tar -zxvf /etc/MySB/files/stream.tar.gz -C /etc/MySB/web/rutorrent/plugins/
-	fi
-	perl -pi -e "s/define\('USE_NGINX', false\);/define\('USE_NGINX', true\);/g" /etc/MySB/web/rutorrent/plugins/stream/config.php
-	perl -pi -e "s/define\('SCHEME', http\);/define\('SCHEME', https\);/g" /etc/MySB/web/rutorrent/plugins/stream/config.php
-	if [ ! -f /etc/MySB/web/stream.php ] && [ -f /etc/MySB/web/rutorrent/plugins/stream/stream.php ]; then
-		ln -s /etc/MySB/web/rutorrent/plugins/stream/stream.php /etc/MySB/web/stream.php
-	fi
-
-	# Plugin Mediastream
-	echo
-	echo "########## Plugin Mediastream"
-	echo
-	if [ -d /etc/MySB/web/rutorrent/plugins/mediastream ]; then
-		svn up /etc/MySB/web/rutorrent/plugins/mediastream
-	else
-		svn co $SVN_rutorrent_plugins_MEDIASTREAM /etc/MySB/web/rutorrent/plugins/mediastream
-	fi
-	echo "<?php \$streampath = \"https://$HostNameFQDN:$Port_HTTPS/MySB/view.php\"; ?>" > /etc/MySB/web/rutorrent/plugins/mediastream/conf.php
-	if [ ! -f /etc/MySB/web/view.php ] && [ -f /etc/MySB/web/rutorrent/plugins/mediastream/view.php ]; then
-		ln -s /etc/MySB/web/rutorrent/plugins/mediastream/view.php /etc/MySB/web/view.php
-	fi
-
-	# ruTorrent favicons trackers
-	echo
-	echo "########## ruTorrent favicons trackers"
-	echo
-	if [ ! -f /etc/MySB/web/rutorrent/plugins/tracklabels/trackers/gks.gs.png ]; then
-		wget http://www.ratbox.nl/md/favicons-trackers/gks.gs.png
-	fi
-	if [ ! -f /etc/MySB/web/rutorrent/plugins/tracklabels/trackers/mteam.fr.png ]; then
-		wget http://www.ratbox.nl/md/favicons-trackers/mteam.fr.png
-	fi
-	if [ ! -f /etc/MySB/web/rutorrent/plugins/tracklabels/trackers/montorrent.com.png ]; then
-		wget http://www.ratbox.nl/md/favicons-trackers/montorrent.com.png
-	fi
-	if [ ! -f /etc/MySB/web/rutorrent/plugins/tracklabels/trackers/lakameraobscura.com.png ]; then
-		wget http://www.ratbox.nl/md/favicons-trackers/lakameraobscura.com.png
-	fi
-
-	# /etc/MySB/web/rutorrent/conf/config.php
-	(
-	cat <<'EOF'
+#### /etc/MySB/web/rutorrent/conf/config.php
+(
+cat <<'EOF'
 <?php
         // configuration parameters
 
@@ -326,11 +334,11 @@ EOF
 
 		
 EOF
-	) > /etc/MySB/web/rutorrent/conf/config.php
+) > /etc/MySB/web/rutorrent/conf/config.php
 
-	#### create/conf.php
-	(
-	cat <<'EOF'
+#### /etc/MySB/web/rutorrent/plugins/create/conf.php
+(
+cat <<'EOF'
 <?php
 // configuration parameters
 
@@ -346,30 +354,24 @@ $pathToCreatetorrent = '/usr/bin/buildtorrent';		// Something like /bin/createto
 $pathToExternals["pgrep"] = '/usr/bin/pgrep';		// Something like /usr/bin/pgrep. If empty, will be found in PATH.
 
 EOF
-	) > /etc/MySB/web/rutorrent/plugins/create/conf.php
+) > /etc/MySB/web/rutorrent/plugins/create/conf.php
 
-# PlowShare4
+#### PlowShare4
 echo
 echo "########## PlowShare4"
 echo
-if [ -d /etc/MySB/sources/plowshare ]; then
-	cd /etc/MySB/sources/plowshare/
+PluginPlowshareDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'Plowshare4'\"`"
+PluginPlowshareUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'Plowshare4'\"`"
+if [ -d $PluginPlowshareDir ]; then
+	cd $PluginPlowshareDir/
 	git stash
 	git pull
 	make clean
 else
-	if [ -d /etc/MySB/temp/plowshare* ]; then
-		mv -v /etc/MySB/temp/plowshare* /etc/MySB/sources/
-	else
-		git clone $GIT_plowshare /etc/MySB/sources/plowshare
-	fi
-	cd /etc/MySB/sources/plowshare
+	git clone $PluginPlowshareUrl $PluginPlowshareDir
+	cd $PluginPlowshareDir
 fi
 make install
-
-if [ -d /etc/MySB/temp/plowshare* ]; then
-	rm -vrf /etc/MySB/temp/plowshare*
-fi
 
 #### Create directories & change rights
 echo

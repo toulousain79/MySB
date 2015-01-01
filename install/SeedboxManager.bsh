@@ -41,29 +41,23 @@ if [ "$USAGE" == "ON" ]; then
 fi
 
 if [ "$ToInstall_Manager" == "YES" ]; then
+	ManagerDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'Seedbox-Manager'\"`"
+	ManagerUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'Seedbox-Manager'\"`"
+	ManagerFile="`sqlite3 $MySB_DB \"SELECT file FROM repositories WHERE name = 'Seedbox-Manager'\"`"
+
 	cp /etc/MySB/templates/etc.nginx.locations.seedbox-manager.conf.template /etc/nginx/locations/3_seedbox-manager.conf
 
 	## app
-	if [ -d /etc/MySB/web/seedbox-manager ]; then
-		cd /etc/MySB/web/seedbox-manager/
+	if [ -d $ManagerDir ]; then
+		cd $ManagerDir/
 		git stash
 		git pull
 	else
-		if [ -d /etc/MySB/temp/seedbox-manager ]; then
-			mv -v /etc/MySB/temp/seedbox-manager /etc/MySB/web/
-		else
-			git clone $GIT_manager /etc/MySB/web/seedbox-manager
-		fi
+		git clone $ManagerUrl $ManagerDir
 	fi
 
-	if [ -d /etc/MySB/temp/seedbox-manager ]; then
-		rm -vrf /etc/MySB/temp/seedbox-manager
-	fi
-
-	cd /etc/MySB/web/seedbox-manager
-
-(
-cat <<'EOF'
+	(
+	cat <<'EOF'
 #include "suppression.h"
 
 void supprLock (char nickname[])
@@ -76,7 +70,7 @@ void supprLock (char nickname[])
     system (chaine);
 }
 EOF
-) > /etc/MySB/web/seedbox-manager/source-reboot-rtorrent/suppression.c
+	) > $ManagerDir/source-reboot-rtorrent/suppression.c
 
 	(
 	cat <<'EOF'
@@ -92,26 +86,28 @@ void reboot (char nickname[])
     system (chaine);
 }
 EOF
-	) > /etc/MySB/web/seedbox-manager/source-reboot-rtorrent/reboot.c
+	) > $ManagerDir/source-reboot-rtorrent/reboot.c
 	
-	sed -i "s/http:\/\/{{ host }}/https:\/\/{{ host }}/g;" /etc/MySB/web/seedbox-manager/public/themes/default/template/bloc-ftp.html
+	sed -i "s/http:\/\/{{ host }}/https:\/\/{{ host }}/g;" $ManagerDir/public/themes/default/template/bloc-ftp.html
 
 	composer install
 	bower install --allow-root --config.interactive=false
-	chown -R www-data:www-data /etc/MySB/web/seedbox-manager/
+	chown -R www-data:www-data $ManagerDir/
 	cd ./source-reboot-rtorrent/
 	chmod +x install.sh
 	./install.sh
 
 	# seedbox-manager ruTorrent Plugin
-	if [ -d /etc/MySB/web/rutorrent/plugins/linkseedboxmanager ]; then
-		cd /etc/MySB/web/rutorrent/plugins/linkseedboxmanager 
+	PluginManagerDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin Link Manager'\"`"
+	PluginManagerUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin Link Manager'\"`"
+	if [ -d $PluginManagerDir ]; then
+		cd $PluginManagerDir
 		git stash
 		git pull
 	else
-		git clone $GIT_rutorrent_plugins_MANAGER /etc/MySB/web/rutorrent/plugins/linkseedboxmanager
+		git clone $PluginManagerUrl $PluginManagerDir
 	fi
-	sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$HostNameFQDN:$Port_HTTPS\/sm\//g;" /etc/MySB/web/rutorrent/plugins/linkseedboxmanager/conf.php
+	sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$HostNameFQDN:$Port_HTTPS\/sm\//g;" $PluginManagerDir/conf.php
 	
 	#### Create directories & change rights
 	ManageDirectoriesAndFiles

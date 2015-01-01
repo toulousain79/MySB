@@ -24,41 +24,46 @@ source /etc/MySB/inc/includes_before.bsh
 #
 ##################### FIRST LINE #####################################
 
-## composer
+#### Composer
+ComposerDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'Composer'\"`"
+ComposerUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'Composer'\"`"
+ComposerFile="`sqlite3 $MySB_DB \"SELECT file FROM repositories WHERE name = 'Composer'\"`"
 if hash composer 2>/dev/null; then
 	composer self-update --quiet
 else
-	if [ -f /etc/MySB/temp/composer.phar ]; then
-		mv -v /etc/MySB/temp/composer.phar /usr/bin/composer
+	if [ -f /etc/MySB/temp/$ComposerFile ]; then
+		mv -v /etc/MySB/temp/$ComposerFile $ComposerDir
 		chmod +x /usr/bin/composer
 	else
 		cd /tmp
-		curl -s $CURL_composer | php
-		mv -v /tmp/composer.phar /usr/bin/composer
+		curl -s $ComposerUrl | php
+		mv -v /tmp/$ComposerFile $ComposerDir
 		chmod +x /usr/bin/composer
 	fi
 fi
 
-## nodejs
-if [ -d /etc/MySB/temp/node* ]; then
-	if [ -d /etc/MySB/sources/node* ]; then
-		rm -vrf /etc/MySB/sources/node*
-	fi	
-	mv -v /etc/MySB/temp/node-v* /etc/MySB/sources/nodejs
+#### NodeJS
+NodeDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'Node'\"`"
+NodeUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'Node'\"`"
+NodeFile="`sqlite3 $MySB_DB \"SELECT file FROM repositories WHERE name = 'Node'\"`"
+if [ "$1" == "REFRESH" ]; then 
+	if [ -d $NodeDir ]; then
+		rm -vrf $NodeDir
+	fi
+	if [ -f /etc/MySB/files/$NodeFile ]; then
+		rm -vf /etc/MySB/files/$NodeFile
+	fi
+	wget --no-check-certificate $NodeUrl -O /etc/MySB/files/$NodeFile
+	tar -zxvf /etc/MySB/files/$NodeFile -C $NodeDir
 fi
-if [ ! -d /etc/MySB/sources/node* ] && [ ! -f /etc/MySB/files/node-latest.tar.gz ]; then
-	wget --no-check-certificate $TARGZ_nodejs -O /etc/MySB/files/node-latest.tar.gz
-	tar -zxvf /etc/MySB/files/node-latest.tar.gz -C /etc/MySB/sources/
-	mv -v /etc/MySB/sources/node-v* /etc/MySB/sources/nodejs
-fi
-cd /etc/MySB/sources/node*
+cd $NodeDir
 make clean
 ./configure
 make -j$PROCESSOR
 make install
 /sbin/ldconfig
 
-#### bower
+#### Bower
 if hash bower 2>/dev/null; then
 	bower update --allow-root --config.interactive=false
 else

@@ -42,32 +42,32 @@ fi
 
 if [ "$ToInstall_Cakebox" == "YES" ]; then
 	#### app
-	if [ -d /etc/MySB/web/Cakebox-light ]; then
-		cd /etc/MySB/web/Cakebox-light/
+	CakeboxDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'Cakebox-Light'\"`"
+	CakeboxUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'Cakebox-Light'\"`"
+	if [ -d $CakeboxDir ]; then
+		cd $CakeboxDir/
 		git stash
 		git pull
 	else
-		if [ -d /etc/MySB/temp/Cakebox-light ]; then
-			mv -v /etc/MySB/temp/Cakebox-light /etc/MySB/web/
-		else
-			git clone $GIT_cakebox /etc/MySB/web/Cakebox-light
-		fi
+		git clone $CakeboxUrl $CakeboxDir
 	fi
-	cd /etc/MySB/web/Cakebox-light
+	cd $CakeboxDir
 	composer install
 	bower update --allow-root --config.interactive=false	
 	
 	#### Plugin ruTorrent
-	if [ -d /etc/MySB/web/rutorrent/plugins/linkcakebox ]; then
-		cd /etc/MySB/web/rutorrent/plugins/linkcakebox 
+	PluginCakeboxDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin Link Cakebox'\"`"
+	PluginCakeboxUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin Link Cakebox'\"`"	
+	if [ -d $PluginCakeboxDir ]; then
+		cd $PluginCakeboxDir
 		git stash
 		git pull
 	else
-		git clone $GIT_rutorrent_plugins_CAKEBOX /etc/MySB/web/rutorrent/plugins/linkcakebox
+		git clone $PluginCakeboxUrl $PluginCakeboxDir
 	fi
-	chown -R www-data:www-data /etc/MySB/web/rutorrent/plugins/linkcakebox
-	sed -i "s/'http:\/\/'.\$host;/'https:\/\/$HostNameFQDN:$Ports_Cakebox';/g;" /etc/MySB/web/rutorrent/plugins/linkcakebox/conf.php
-	sed -i "s/torrents/rtorrent/g;" /etc/MySB/web/rutorrent/plugins/linkcakebox/conf.php
+	chown -R www-data:www-data $PluginCakeboxDir
+	sed -i "s/'http:\/\/'.\$host;/'https:\/\/$HostNameFQDN:$Ports_Cakebox';/g;" $PluginCakeboxDir/conf.php
+	sed -i "s/torrents/rtorrent/g;" $PluginCakeboxDir/conf.php
 
 	#### NginX
 	if [ -f /etc/nginx/sites-enabled/cakebox ]; then
@@ -95,9 +95,9 @@ EOF
 			) > /etc/nginx/rpc/$seedUser.cakebox
 			perl -pi -e "s/<username>/$seedUser/g" /etc/nginx/rpc/$seedUser.cakebox
 			
-			cp /etc/MySB/web/Cakebox-light/config/default.php.dist /etc/MySB/web/Cakebox-light/config/$seedUser.php
-			sed -i "s/\/var\/www\//\/home\/$seedUser\//g;" /etc/MySB/web/Cakebox-light/config/$seedUser.php
-			sed -i "s/\/access\//\/$seedUser\//g;" /etc/MySB/web/Cakebox-light/config/$seedUser.php
+			cp $PluginCakeboxDir/config/default.php.dist $PluginCakeboxDir/config/$seedUser.php
+			sed -i "s/\/var\/www\//\/home\/$seedUser\//g;" $PluginCakeboxDir/config/$seedUser.php
+			sed -i "s/\/access\//\/$seedUser\//g;" $PluginCakeboxDir/config/$seedUser.php
 		done
 	fi
 	
