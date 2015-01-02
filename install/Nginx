@@ -45,6 +45,9 @@ rm -f /etc/nginx/locations/* &> /dev/null
 rm -f /etc/nginx/conf.d/* &> /dev/null
 
 #### Create files
+if [ ! -z "$MySB_User" ];
+	sed -i '/'$MySB_User'/d' /etc/nginx/passwd/MySB
+fi
 MySB_Password=`mkpasswd MySB` && MySB_Password=$MySB_Password`mkpasswd MySB`
 MySB_Password=`echo $MySB_Password | sed "s/\///g"`
 MySB_User=`mkpasswd MySB`
@@ -54,8 +57,8 @@ sqlite3 $MySB_DB "UPDATE system SET mysb_user = '$MySB_User', mysb_password = '$
 #### /etc/nginx/passwd/MySB
 if [ ! -f /etc/nginx/passwd/MySB ]; then
 	touch /etc/nginx/passwd/MySB
-	htpasswd -bs /etc/nginx/passwd/MySB $MySB_User $MySB_Password &> /dev/null
 fi
+htpasswd -bs /etc/nginx/passwd/MySB $MySB_User $MySB_Password &> /dev/null
 chmod 640 /etc/nginx/passwd/MySB
 chown www-data:www-data /etc/nginx/passwd/MySB
 perl -pi -e "s/##MySB_User##/$MySB_User/g" /etc/MySB/web/pages/UserInfo.php
