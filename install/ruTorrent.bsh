@@ -35,9 +35,7 @@ done
 echo
 echo "########## ruTorrent + Official Plugins"
 echo
-RutorrentDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent'\"`"
 RutorrentUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent'\"`"
-RutorrentPluginsDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrents Official Plugins'\"`"
 RutorrentPluginsUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrents Official Plugins'\"`"
 if [ -d $RutorrentDir ]; then
 	svn up $RutorrentDir
@@ -100,29 +98,6 @@ if [ -d $PluginFilemanagerDir ]; then
 else
 	svn co $PluginFilemanagerUrl $PluginFilemanagerDir
 fi
-(
-cat <<'EOF'
-<?php
-$fm["tempdir"] = "/tmp";                // path were to store temporary data ; must be writable
-$fm["mkdperm"] = 775;           // default permission to set to new created directories
-
-// set with fullpath to binary or leave empty
-$pathToExternals["rar"] = "/usr/bin/rar";
-$pathToExternals["zip"] = "/usr/bin/zip";
-$pathToExternals["unzip"] = "/usr/bin/unzip";
-$pathToExternals["tar"] = "/bin/tar";
-$pathToExternals["gzip"] = "/bin/gzip";
-$pathToExternals["bzip2"] = "/bin/bzip2";
-
-// archive mangling, see archiver man page before editing
-$fm["archive"]["types"] = array("rar", "zip", "tar", "gzip", "bzip2");
-
-$fm["archive"]["compress"][0] = range(0, 5);
-$fm["archive"]["compress"][1] = array("-0", "-1", "-9");
-$fm["archive"]["compress"][2] = $fm["archive"]["compress"][3] = $fm["archive"]["compress"][4] = array(0);
-
-EOF
-) > $PluginFilemanagerDir/conf.php
 
 #### Plugin NFO
 echo
@@ -183,22 +158,11 @@ fi
 if [ -f $PluginFileshareDir/share.php ] && [ ! -f /etc/MySB/web/fileshare.php ]; then
 	ln -s $PluginFileshareDir/share.php /etc/MySB/web/fileshare.php
 fi
-(
-cat <<'EOF'
-<?php
-// limits
-// 0 = unlimited
-$limits['duration'] = 0;        // maximum duration hours
-$limits['links'] = 0;   //maximum sharing links per user
 
-// path on domain where a symlink to share.php can be found
-// example: http://mydomain.com/share.php
-$downloadpath = 'https://<servername>:<port>/fileshare.php';
-
-EOF
-) > $PluginFileshareDir/conf.php
-perl -pi -e "s/<servername>/$HostNameFQDN/g" $PluginFileshareDir/conf.php
-perl -pi -e "s/<port>/$Port_HTTPS/g" $PluginFileshareDir/conf.php
+perl -pi -e "s/$limits\['duration'\] = 1;/$limits\['duration'\] = 0;/g" $PluginFileshareDir/conf.php
+perl -pi -e "s/$limits\['links'\] = 1;/$limits\['links'\] = 0;/g" $PluginFileshareDir/conf.php
+perl -pi -e "s/http:\/\/robits.org\/rutorrent\/share.php/http:\/\/$HostNameFQDN:$Port_HTTPS/g" $PluginFileshareDir/conf.php
+perl -pi -e "s/http:\/\/robits.org\/rutorrent\/share.php/https:\/\/$HostNameFQDN:$Port_HTTPS/g" $PluginFileshareDir/conf.php
 
 #### Plugin Stream
 echo
@@ -243,118 +207,39 @@ fi
 echo
 echo "########## Plugin Theme"
 echo
-if [ "`cat /etc/MySB/web/rutorrent/css/style.css | grep 'for Oblivion'`" == "" ];then
-	echo "" | tee -a /etc/MySB/web/rutorrent/css/style.css
-	echo "/* for Oblivion */" | tee -a /etc/MySB/web/rutorrent/css/style.css
-	echo ".meter-value-start-color { background-color: #E05400 }" | tee -a /etc/MySB/web/rutorrent/css/style.css
-	echo ".meter-value-end-color { background-color: #8FBC00 }" | tee -a /etc/MySB/web/rutorrent/css/style.css
-	echo "::-webkit-scrollbar {width:12px;height:12px;padding:0px;margin:0px;}" | tee -a /etc/MySB/web/rutorrent/css/style.css
+if [ "`cat $RutorrentDir/css/style.css | grep 'for Oblivion'`" == "" ];then
+	echo "" | tee -a $RutorrentDir/css/style.css
+	echo "/* for Oblivion */" | tee -a $RutorrentDir/css/style.css
+	echo ".meter-value-start-color { background-color: #E05400 }" | tee -a $RutorrentDir/css/style.css
+	echo ".meter-value-end-color { background-color: #8FBC00 }" | tee -a $RutorrentDir/css/style.css
+	echo "::-webkit-scrollbar {width:12px;height:12px;padding:0px;margin:0px;}" | tee -a $RutorrentDir/css/style.css
 fi
-perl -pi -e "s/\$defaultTheme \= \"\"\;/\$defaultTheme \= \"Oblivion\"\;/g" /etc/MySB/web/rutorrent/plugins/theme/conf.php
+perl -pi -e "s/\$defaultTheme \= \"\"\;/\$defaultTheme \= \"Oblivion\"\;/g" $RutorrentPluginsDir/theme/conf.php
 
 #### ruTorrent favicons trackers
 echo
 echo "########## ruTorrent favicons trackers"
 echo
-if [ ! -f /etc/MySB/web/rutorrent/plugins/tracklabels/trackers/gks.gs.png ]; then
+if [ ! -f $RutorrentPluginsDir/tracklabels/trackers/gks.gs.png ]; then
 	wget http://www.ratbox.nl/md/favicons-trackers/gks.gs.png
 fi
-if [ ! -f /etc/MySB/web/rutorrent/plugins/tracklabels/trackers/mteam.fr.png ]; then
+if [ ! -f $RutorrentPluginsDir/tracklabels/trackers/mteam.fr.png ]; then
 	wget http://www.ratbox.nl/md/favicons-trackers/mteam.fr.png
 fi
-if [ ! -f /etc/MySB/web/rutorrent/plugins/tracklabels/trackers/montorrent.com.png ]; then
+if [ ! -f $RutorrentPluginsDir/tracklabels/trackers/montorrent.com.png ]; then
 	wget http://www.ratbox.nl/md/favicons-trackers/montorrent.com.png
 fi
-if [ ! -f /etc/MySB/web/rutorrent/plugins/tracklabels/trackers/lakameraobscura.com.png ]; then
+if [ ! -f $RutorrentPluginsDir/tracklabels/trackers/lakameraobscura.com.png ]; then
 	wget http://www.ratbox.nl/md/favicons-trackers/lakameraobscura.com.png
 fi
 
 #### /etc/MySB/web/rutorrent/conf/config.php
-(
-cat <<'EOF'
-<?php
-        // configuration parameters
-
-        // for snoopy client
-        @define('HTTP_USER_AGENT', 'Mozilla/5.0 (Windows NT 6.0; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0', true);
-        @define('HTTP_TIME_OUT', 30, true);     // in seconds
-        @define('HTTP_USE_GZIP', true, true);
-        $httpIP = null;                         // IP string. Or null for any.
-
-        @define('RPC_TIME_OUT', 5, true);       // in seconds
-
-        @define('LOG_RPC_CALLS', false, true);
-        @define('LOG_RPC_FAULTS', true, true);
-
-        // for php
-        @define('PHP_USE_GZIP', false, true);
-        @define('PHP_GZIP_LEVEL', 2, true);
-
-        $schedule_rand = 10;                    // rand for schedulers start, +0..X seconds
-
-        $do_diagnostic = true;
-        $log_file = '/tmp/errors.log';          // path to log file (comment or leave blank to disable logging)
-
-        $saveUploadedTorrents = true;           // Save uploaded torrents to profile/torrents directory or not
-        $overwriteUploadedTorrents = false;     // Overwrite existing uploaded torrents in profile/torrents directory or make unique name
-
-        $topDirectory = '/home';                    // Upper available directory. Absolute path with trail slash.
-        $forbidUserSettings = false;
-
-        $scgi_port = 5000;
-        $scgi_host = "127.0.0.1";
-
-        // For web->rtorrent link through unix domain socket
-        // (scgi_local in rtorrent conf file), change variables
-        // above to something like this:
-        //
-        // $scgi_port = 0;
-        // $scgi_host = "unix:///tmp/rpc.socket";
-        $pathToExternals = array(
-                "php"   => '/usr/bin/php',                  // Something like /usr/bin/php. If empty, will be found in PATH.
-                "curl"  => '/usr/bin/curl',                     // Something like /usr/bin/curl. If empty, will be found in PATH.
-                "gzip"  => '/bin/gzip',                 // Something like /usr/bin/gzip. If empty, will be found in PATH.
-                "id"  => '/usr/bin/id',                 // Something like /usr/bin/id. If empty, will be found in PATH.
-                "stat"  => '/usr/bin/stat',                     // Something like /usr/bin/stat. If empty, will be found in PATH.
-        );
-
-        $localhosts = array(                    // list of local interfaces
-                "127.0.0.1",
-                "localhost",
-        );
-
-        $profilePath = '../share';              // Path to user profiles
-        $profileMask = 0777;                    // Mask for files and directory creation in user profiles.
-                                                // Both Webserver and rtorrent users must have read-write access to it.
-                                                // For example, if Webserver and rtorrent users are in the same group then the value may be 0770.
-
-        $tempDirectory = null;                  // Temp directory. Absolute path with trail slash. If null, then autodetect will be used.
-
-        $XMLRPCMountPoint = "/RPC2";            // DO NOT DELETE THIS LINE!!! DO NOT COMMENT THIS LINE!!!
-
-		
-EOF
-) > /etc/MySB/web/rutorrent/conf/config.php
+perl -pi -e "s/$topDirectory = '\/';/$topDirectory = '\/home';/g" $RutorrentDir/conf/config.php
+perl -pi -e "s/'',/'\/usr\/bin\/php',/g" $RutorrentDir/conf/config.php
+perl -pi -e "s/'',/'\/usr\/bin\/php',/g" $RutorrentDir/conf/config.php
 
 #### /etc/MySB/web/rutorrent/plugins/create/conf.php
-(
-cat <<'EOF'
-<?php
-// configuration parameters
-
-@define('MAX_CONSOLE_SIZE',25,true);
-	$useExternal = 'buildtorrent';			// Valid choices:
-					// false - use internal realization (may be too slow for large files)
-					// "transmissioncli" - use program transmissioncli (see http://www.transmissionbt.com/)
-					// "transmissioncreate" - use program transmissioncreate (see http://www.transmissionbt.com/)
-					// "createtorrent" - use program createtorrent (see http://www.createtorrent.com)
-					// "mktorrent" - use program createtorrent (see http://mktorrent.sourceforge.net)
-					// "buildtorrent" - use program buildtorrent (see http://claudiusmaximus.goto10.org/cm/torrent.html)
-$pathToCreatetorrent = '/usr/bin/buildtorrent';		// Something like /bin/createtorrent, or /bin/transmissioncli. If empty, program will be found in PATH.
-$pathToExternals["pgrep"] = '/usr/bin/pgrep';		// Something like /usr/bin/pgrep. If empty, will be found in PATH.
-
-EOF
-) > /etc/MySB/web/rutorrent/plugins/create/conf.php
+perl -pi -e "s/$useExternal = false;/$useExternal = 'buildtorrent';/g" $RutorrentPluginsDir/create/conf.php
 
 #### PlowShare4
 echo

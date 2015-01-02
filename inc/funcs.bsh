@@ -185,8 +185,8 @@ PeerGuardianFailed() {
 	for seedUser in $UsersList; do
 		case "$1" in
 			"rTorrent")
-				if [ -f /etc/MySB/files/blocklist/blocklist_rtorrent.txt ] && [ -d /home/$seedUser/blocklist/ ]; then
-					cp /etc/MySB/files/blocklist/* /home/$seedUser/blocklist/
+				if [ -f /etc/MySB/files/blocklists/blocklist_rtorrent.txt ] && [ -d /home/$seedUser/blocklist/ ]; then
+					cp /etc/MySB/files/blocklists/* /home/$seedUser/blocklist/
 				else
 					ScriptInvoke 'screen' '/etc/MySB/scripts/BlocklistsRTorrent.bsh'
 				fi
@@ -332,20 +332,20 @@ CleanBlockList() {
 
 	case $1 in
 		download)
-			wget --no-check-certificate $URL -O /etc/MySB/files/blocklist/$FILE.gz
-			gzip -dc /etc/MySB/files/blocklist/$FILE.gz | cut -d: -f2 > /etc/MySB/files/blocklist/$FILE.txt
+			wget --no-check-certificate $URL -O /etc/MySB/files/blocklists/$FILE.gz
+			gzip -dc /etc/MySB/files/blocklists/$FILE.gz | cut -d: -f2 > /etc/MySB/files/blocklists/$FILE.txt
 		;;
 		del_spaces)
-			sed -i '/\ /d' /etc/MySB/files/blocklist/$FILE.tmp
+			sed -i '/\ /d' /etc/MySB/files/blocklists/$FILE.tmp
 		;;
 		not_numeric)
-			sed -i '/^[0123456789]/!d' /etc/MySB/files/blocklist/$FILE.tmp
+			sed -i '/^[0123456789]/!d' /etc/MySB/files/blocklists/$FILE.tmp
 		;;
 		not_cidr)
-			sed -i '/\//!d' /etc/MySB/files/blocklist/$FILE.tmp
+			sed -i '/\//!d' /etc/MySB/files/blocklists/$FILE.tmp
 		;;
 		del_RC)
-			sed -i '/^M/d' /etc/MySB/files/blocklist/$FILE.tmp
+			sed -i '/^M/d' /etc/MySB/files/blocklists/$FILE.tmp
 		;;
 		is_ip)
 			while read line; do
@@ -354,14 +354,14 @@ CleanBlockList() {
 				RESULT_START=`printf $START | grep -E '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'`
 				RESULT_END=`printf $END | grep -E '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'`
 				if [ ! "$RESULT_START" = "$START" ] || [ ! "$RESULT_END" = "$END" ]; then
-					sed -i '/$line/!d' /etc/MySB/files/blocklist/$FILE.txt
+					sed -i '/$line/!d' /etc/MySB/files/blocklists/$FILE.txt
 				fi
-			done < /etc/MySB/files/blocklist/$FILE.txt		
+			done < /etc/MySB/files/blocklists/$FILE.txt		
 		;;
 		sort_uniq)
-			sort -g /etc/MySB/files/blocklist/$FILE.tmp | uniq > /etc/MySB/files/blocklist/$FILE.txt
-			if [ -f /etc/MySB/files/blocklist/blocklist_rtorrent.tmp ]; then
-				rm -f /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
+			sort -g /etc/MySB/files/blocklists/$FILE.tmp | uniq > /etc/MySB/files/blocklists/$FILE.txt
+			if [ -f /etc/MySB/files/blocklists/blocklist_rtorrent.tmp ]; then
+				rm -f /etc/MySB/files/blocklists/blocklist_rtorrent.tmp
 			fi
 		;;
 	esac
@@ -573,9 +573,9 @@ MonthlyPayment() {
 
 #### Get ruTorrent Trackers
 GetRutorrentTrackers() {
-	Engines=$(ls -1r /etc/MySB/web/rutorrent/plugins/extsearch/engines/)
+	Engines=$(ls -1r $RutorrentDir/plugins/extsearch/engines/)
 	for engine in $Engines; do
-		Tracker=`cat /etc/MySB/web/rutorrent/plugins/extsearch/engines/$engine | grep "\$url" | grep "\=" | grep "http" | head -1 | sed 's/public//g;' | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
+		Tracker=`cat $RutorrentDir/plugins/extsearch/engines/$engine | grep "\$url" | grep "\=" | grep "http" | head -1 | sed 's/public//g;' | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
 		if [ ! -z "$Tracker" ]; then
 			AddTracker $Tracker "rutorrent"
 		fi
@@ -721,7 +721,7 @@ ScriptInvoke() {
 		
 			$METHOD /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked $Arguments
 			
-			rm -f /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked
+			#rm -f /etc/MySB/temp/${ScriptName}_${SCRIPT}.invoked
 		;;	
 		"screen"|"background")
 			screen -dmS ${ScriptName}_${SCRIPT} /bin/bash $MYSCRIPT $Arguments;
@@ -1037,16 +1037,16 @@ ManageDirectoriesAndFiles() {
 	fi
 	
 	# ruTorrent
-	if [ -d /etc/MySB/web/rutorrent ]; then chmod -R 0755 /etc/MySB/web/rutorrent; fi
-	if [ -d /etc/MySB/web/rutorrent ]; then chown -R www-data:www-data /etc/MySB/web/rutorrent; fi	
-	if [ -d /etc/MySB/web/rutorrent/plugins/fileupload/scripts/upload ]; then chmod 0775 /etc/MySB/web/rutorrent/plugins/fileupload/scripts/upload; fi
+	if [ -d $RutorrentDir ]; then chmod -R 0755 $RutorrentDir; fi
+	if [ -d $RutorrentDir ]; then chown -R www-data:www-data $RutorrentDir; fi	
+	if [ -d $RutorrentPluginsDir/fileupload/scripts/upload ]; then chmod 0775 $RutorrentPluginsDir/fileupload/scripts/upload; fi
 
 	# Seedbox-Manager
 	if [ "$IsInstalled_Manager" == "YES" ]; then
-		if [ -d /etc/MySB/web/seedbox-manager ]; then chown -R www-data:www-data /etc/MySB/web/seedbox-manager; fi
-		if [ -f /etc/MySB/web/seedbox-manager/reboot-rtorrent ]; then
-			chown root:root /etc/MySB/web/seedbox-manager/reboot-rtorrent
-			chmod 4755 /etc/MySB/web/seedbox-manager/reboot-rtorrent
+		if [ -d $ManagerDir ]; then chown -R www-data:www-data $ManagerDir; fi
+		if [ -f $ManagerDir/reboot-rtorrent ]; then
+			chown root:root $ManagerDir/reboot-rtorrent
+			chmod 4755 $ManagerDir/reboot-rtorrent
 		fi
 	fi
 }
@@ -1108,12 +1108,12 @@ CakeboxUsersConfigs() {
 	if [ "$IsInstalled_Cakebox" == "YES" ]; then
 		UserName="$1"
 		
-		if [ ! -f /etc/MySB/web/Cakebox-light/config/$UserName.php ] && [ -f /etc/MySB/web/Cakebox-light/config/default.php.dist ]; then
-			cp /etc/MySB/web/Cakebox-light/config/default.php.dist /etc/MySB/web/Cakebox-light/config/$UserName.php
+		if [ ! -f $CakeboxDir/config/$UserName.php ] && [ -f $CakeboxDir/config/default.php.dist ]; then
+			cp $CakeboxDir/config/default.php.dist $CakeboxDir/config/$UserName.php
 		fi
-		if [ -f /etc/MySB/web/Cakebox-light/config/$UserName.php ]; then
-			sed -i "s/\/var\/www\//\/home\/$UserName\//g;" /etc/MySB/web/Cakebox-light/config/$UserName.php
-			sed -i "s/\/access\//\/$UserName\//g;" /etc/MySB/web/Cakebox-light/config/$UserName.php
+		if [ -f $CakeboxDir/config/$UserName.php ]; then
+			sed -i "s/\/var\/www\//\/home\/$UserName\//g;" $CakeboxDir/config/$UserName.php
+			sed -i "s/\/access\//\/$UserName\//g;" $CakeboxDir/config/$UserName.php
 		fi
 	fi
 }
@@ -1123,28 +1123,28 @@ ManagerUsersConfigs() {
 	if [ "$IsInstalled_Manager" == "YES" ]; then
 		UserName="$1"
 
-		if [ ! -d /etc/MySB/web/seedbox-manager/conf/users/$UserName ]; then mkdir -p /etc/MySB/web/seedbox-manager/conf/users/$UserName; fi
-		if [ ! -f /etc/MySB/web/seedbox-manager/conf/users/$UserName/config.ini ]; then
-			cp /etc/MySB/templates/etc.mysb.web.seedbox-manager.conf.users.config.template /etc/MySB/web/seedbox-manager/conf/users/$UserName/config.ini
-			sed -i "s/<homedir>/$HOMEDIR_ESCAPED/g;" /etc/MySB/web/seedbox-manager/conf/users/$UserName/config.ini
-			sed -i "s/<USERNAME>/$UPPERNEWUSER/g;" /etc/MySB/web/seedbox-manager/conf/users/$UserName/config.ini
-			sed -i "s/rutorrent.domaine.fr/$HostNameFQDN:$Port_HTTPS/g;" /etc/MySB/web/seedbox-manager/conf/users/$UserName/config.ini
-			sed -i "s/<FTPPORT>/$Port_FTP/g;" /etc/MySB/web/seedbox-manager/conf/users/$UserName/config.ini
-			sed -i "s/<SSHPORT>/$Port_SSH/g;" /etc/MySB/web/seedbox-manager/conf/users/$UserName/config.ini
-			sed -i "s/contact@exemple.com/$MainUserEmail/g;" /etc/MySB/web/seedbox-manager/conf/users/$UserName/config.ini
+		if [ ! -d $ManagerDir/conf/users/$UserName ]; then mkdir -p $ManagerDir/conf/users/$UserName; fi
+		if [ ! -f $ManagerDir/conf/users/$UserName/config.ini ]; then
+			cp /etc/MySB/templates/etc.mysb.web.seedbox-manager.conf.users.config.template $ManagerDir/conf/users/$UserName/config.ini
+			sed -i "s/<homedir>/$HOMEDIR_ESCAPED/g;" $ManagerDir/conf/users/$UserName/config.ini
+			sed -i "s/<USERNAME>/$UPPERNEWUSER/g;" $ManagerDir/conf/users/$UserName/config.ini
+			sed -i "s/rutorrent.domaine.fr/$HostNameFQDN:$Port_HTTPS/g;" $ManagerDir/conf/users/$UserName/config.ini
+			sed -i "s/<FTPPORT>/$Port_FTP/g;" $ManagerDir/conf/users/$UserName/config.ini
+			sed -i "s/<SSHPORT>/$Port_SSH/g;" $ManagerDir/conf/users/$UserName/config.ini
+			sed -i "s/contact@exemple.com/$MainUserEmail/g;" $ManagerDir/conf/users/$UserName/config.ini
 
 			if [ "$MainUser" == "$UserName" ]; then	
-				sed -i "s/owner = no/owner = yes/g;" /etc/MySB/web/seedbox-manager/conf/users/$UserName/config.ini
+				sed -i "s/owner = no/owner = yes/g;" $ManagerDir/conf/users/$UserName/config.ini
 			fi
 		fi
 
-		chown -R www-data:www-data /etc/MySB/web/seedbox-manager/conf/users/
+		chown -R www-data:www-data $ManagerDir/conf/users/
 	fi
 }
 
 #### ruTorrent Users Config and Plugins
 ruTorrentUsersConfigs() {
-	LISTING=$(ls -1r /etc/MySB/web/rutorrent/plugins/)
+	LISTING=$(ls -1r $RutorrentPluginsDir/)
 	UserName="$1"
 	
 	HomeDir="`sqlite3 $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$UserName'\"`"
@@ -1152,34 +1152,34 @@ ruTorrentUsersConfigs() {
 	PortSCGI="`sqlite3 $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$UserName'\"`"
 	UserNameUpper=`echo $UserName | tr '[:lower:]' '[:upper:]'`
 
-	if [ ! -d /etc/MySB/web/rutorrent/conf/users/$UserName/ ]; then mkdir -p /etc/MySB/web/rutorrent/conf/users/$UserName/; fi
-	if [ ! -f /etc/MySB/web/rutorrent/conf/users/$UserName/config.php ]; then
-		cp /etc/MySB/templates/etc.mysb.web.rutorrent.conf.users.config.template /etc/MySB/web/rutorrent/conf/users/$UserName/config.php
-		perl -pi -e "s/<homedir>/$HomeDirEscaped/g" /etc/MySB/web/rutorrent/conf/users/$UserName/config.php
-		perl -pi -e "s/<scgi_port>/$PortSCGI/g" /etc/MySB/web/rutorrent/conf/users/$UserName/config.php
-		perl -pi -e "s/<USERNAME>/$UserNameUpper/g" /etc/MySB/web/rutorrent/conf/users/$UserName/config.php
+	if [ ! -d $RutorrentDir/conf/users/$UserName/ ]; then mkdir -p $RutorrentDir/conf/users/$UserName/; fi
+	if [ ! -f $RutorrentDir/conf/users/$UserName/config.php ]; then
+		cp /etc/MySB/templates/etc.mysb.web.rutorrent.conf.users.config.template $RutorrentDir/conf/users/$UserName/config.php
+		perl -pi -e "s/<homedir>/$HomeDirEscaped/g" $RutorrentDir/conf/users/$UserName/config.php
+		perl -pi -e "s/<scgi_port>/$PortSCGI/g" $RutorrentDir/conf/users/$UserName/config.php
+		perl -pi -e "s/<USERNAME>/$UserNameUpper/g" $RutorrentDir/conf/users/$UserName/config.php
 	fi
-	if [ ! -f /etc/MySB/web/rutorrent/conf/users/$UserName/access.ini ]; then cp /etc/MySB/web/rutorrent/conf/access.ini /etc/MySB/web/rutorrent/conf/users/$UserName/access.ini; fi
-	if [ ! -d /etc/MySB/web/rutorrent/share/users/$UserName/settings/ ]; then mkdir -p /etc/MySB/web/rutorrent/share/users/$UserName/settings/; fi
-	if [ ! -d /etc/MySB/web/rutorrent/share/users/$UserName/torrents/ ]; then mkdir -p /etc/MySB/web/rutorrent/share/users/$UserName/torrents/; fi
-	if [ ! -f /etc/MySB/web/rutorrent/share/users/$UserName/settings/uisettings.json ]; then
+	if [ ! -f $RutorrentDir/conf/users/$UserName/access.ini ]; then cp $RutorrentDir/conf/access.ini $RutorrentDir/conf/users/$UserName/access.ini; fi
+	if [ ! -d $RutorrentDir/share/users/$UserName/settings/ ]; then mkdir -p $RutorrentDir/share/users/$UserName/settings/; fi
+	if [ ! -d $RutorrentDir/share/users/$UserName/torrents/ ]; then mkdir -p $RutorrentDir/share/users/$UserName/torrents/; fi
+	if [ ! -f $RutorrentDir/share/users/$UserName/settings/uisettings.json ]; then
 		(
 		cat <<'EOF'
 {"webui.fls.view":0,"webui.show_cats":1,"webui.show_dets":1,"webui.needmessage":1,"webui.reqtimeout":30000,"webui.confirm_when_deleting":1,"webui.alternate_color":1,"webui.update_interval":3000,"webui.hsplit":0.88,"webui.vsplit":0.5,"webui.effects":1,"webui.fullrows":1,"webui.no_delaying_draw":1,"webui.search":-1,"webui.speedlistdl":"100,150,200,250,300,350,400,450,500,750,1000,1250","webui.speedlistul":"100,150,200,250,300,350,400,450,500,750,1000,1250","webui.ignore_timeouts":0,"webui.retry_on_error":120,"webui.closed_panels":{"ptrackers":0,"pstate":0,"plabel":0,"flabel":0,"prss":0},"webui.timeformat":0,"webui.dateformat":0,"webui.speedintitle":0,"webui.log_autoswitch":1,"webui.lang":"fr","webui.trt.colwidth":[200,100,60,100,100,100,60,60,60,60,60,60,60,80,100,90,100,100,60,60,75,75,75,100],"webui.trt.colenabled":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"webui.trt.colorder":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23],"webui.trt.sindex":-1,"webui.trt.rev":0,"webui.trt.sindex2":0,"webui.trt.rev2":0,"webui.fls.colwidth":[200,60,100,100,80],"webui.fls.colenabled":[1,1,1,1,1],"webui.fls.colorder":[0,1,2,3,4],"webui.fls.sindex":-1,"webui.fls.rev":0,"webui.fls.sindex2":0,"webui.fls.rev2":0,"webui.trk.colwidth":[200,60,60,60,60,60,80,85,80,60],"webui.trk.colenabled":[1,1,1,1,1,1,1,1,1,1],"webui.trk.colorder":[0,1,2,3,4,5,6,7,8,9],"webui.trk.sindex":-1,"webui.trk.rev":0,"webui.trk.sindex2":0,"webui.trk.rev2":0,"webui.prs.colwidth":[60,100,120,60,100,100,100,60,60],"webui.prs.colenabled":[1,1,1,1,1,1,1,1,1],"webui.prs.colorder":[0,1,2,3,4,5,6,7,8],"webui.prs.sindex":-1,"webui.prs.rev":0,"webui.prs.sindex2":0,"webui.prs.rev2":0,"webui.plg.colwidth":[150,60,80,80,80,500],"webui.plg.colenabled":[1,1,1,1,1,1],"webui.plg.colorder":[0,1,2,3,4,5],"webui.plg.sindex":-1,"webui.plg.rev":0,"webui.plg.sindex2":0,"webui.plg.rev2":0,"webui.hst.colwidth":[200,100,100,60,100,100,60,60,100,100,100,100],"webui.hst.colenabled":[1,1,1,1,1,1,1,1,1,1,1,1],"webui.hst.colorder":[0,1,2,3,4,5,6,7,8,9,10,11],"webui.hst.sindex":-1,"webui.hst.rev":0,"webui.hst.sindex2":0,"webui.hst.rev2":0,"webui.teg.colwidth":[200,100,60,100,100,100,60,60,60,60,60,60,60,80,100,90,100,100,60,60,75,75,75,100],"webui.teg.colenabled":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"webui.teg.colorder":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23],"webui.teg.sindex":-1,"webui.teg.rev":0,"webui.teg.sindex2":0,"webui.teg.rev2":0,"webui.rss.colwidth":[200,100,60,100,100,100,60,60,60,60,60,60,60,80,100,90,100,100,60,60,75,75,75,100],"webui.rss.colenabled":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"webui.rss.colorder":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23],"webui.rss.sindex":-1,"webui.rss.rev":0,"webui.rss.sindex2":0,"webui.rss.rev2":0,"webui.fsh.colwidth":[210,60,120,80,310],"webui.fsh.colenabled":[1,1,1,1,1],"webui.fsh.colorder":[0,1,2,3,4],"webui.fsh.sindex":-1,"webui.fsh.rev":0,"webui.fsh.sindex2":0,"webui.fsh.rev2":0,"webui.flm.colwidth":[210,60,120,80,80],"webui.flm.colenabled":[1,1,1,1,1],"webui.flm.colorder":[0,1,2,3,4],"webui.flm.sindex":-1,"webui.flm.rev":0,"webui.flm.sindex2":0,"webui.flm.rev2":0,"webui.fManager.timef":"%d-%M-%y %h:%m:%s","webui.fManager.permf":1,"webui.fManager.histpath":5,"webui.fManager.stripdirs":1,"webui.fManager.showhidden":1,"webui.fManager.cleanlog":0,"webui.fManager.arcnscheme":"new","webui.fManager.scrows":12,"webui.fManager.sccols":4,"webui.fManager.scwidth":300}
 EOF
-		) > /etc/MySB/web/rutorrent/share/users/$UserName/settings/uisettings.json
+		) > $RutorrentDir/share/users/$UserName/settings/uisettings.json
 	fi
-	if [ ! -f /etc/MySB/web/rutorrent/share/users/$UserName/settings/autotools.dat ]; then
+	if [ ! -f $RutorrentDir/share/users/$UserName/settings/autotools.dat ]; then
 		(
 		cat <<'EOF'
 O:10:"rAutoTools":9:{s:4:"hash";s:13:"autotools.dat";s:12:"enable_label";s:1:"0";s:14:"label_template";s:5:"{DIR}";s:11:"enable_move";s:1:"1";s:16:"path_to_finished";s:32:"/home/<USERNAME>/rtorrent/complete";s:11:"fileop_type";s:4:"Move";s:12:"enable_watch";s:1:"1";s:13:"path_to_watch";s:29:"/home/<USERNAME>/rtorrent/watch";s:11:"watch_start";s:1:"1";}
 EOF
-		) > /etc/MySB/web/rutorrent/share/users/$UserName/settings/autotools.dat
-		perl -pi -e "s/<USERNAME>/$UserName/g" /etc/MySB/web/rutorrent/share/users/$UserName/settings/autotools.dat
+		) > $RutorrentDir/share/users/$UserName/settings/autotools.dat
+		perl -pi -e "s/<USERNAME>/$UserName/g" $RutorrentDir/share/users/$UserName/settings/autotools.dat
 	fi
-	if [ -d /etc/MySB/web/rutorrent/share/users/$UserName ]; then chmod -R 777 /etc/MySB/web/rutorrent/share/users/$UserName; fi
-	if [ -f /etc/MySB/web/rutorrent/share/users/$UserName/settings/uisettings.json ]; then chmod 644 /etc/MySB/web/rutorrent/share/users/$UserName/settings/uisettings.json; fi
-	if [ -f /etc/MySB/web/rutorrent/share/users/$UserName/settings/autotools.dat ]; then chmod 666 /etc/MySB/web/rutorrent/share/users/$UserName/settings/autotools.dat; fi	
+	if [ -d $RutorrentDir/share/users/$UserName ]; then chmod -R 777 $RutorrentDir/share/users/$UserName; fi
+	if [ -f $RutorrentDir/share/users/$UserName/settings/uisettings.json ]; then chmod 644 $RutorrentDir/share/users/$UserName/settings/uisettings.json; fi
+	if [ -f $RutorrentDir/share/users/$UserName/settings/autotools.dat ]; then chmod 666 $RutorrentDir/share/users/$UserName/settings/autotools.dat; fi	
 
 	(
 	cat <<'EOF'
@@ -1195,52 +1195,52 @@ canChangeCategory = yes
 canBeShutdowned = yes
 
 EOF
-	) > /etc/MySB/web/rutorrent/conf/users/$UserName/plugins.ini
+	) > $RutorrentDir/conf/users/$UserName/plugins.ini
 
 	for Plugin in ${LISTING}; do
-		if [ -d /etc/MySB/web/rutorrent/plugins/${Plugin} ]; then
-			if [ -f /etc/MySB/web/rutorrent/plugins/${Plugin}/conf.php ] || [ -f /etc/MySB/web/rutorrent/plugins/${Plugin}/config.php ]; then
-				if [ ! -d /etc/MySB/web/rutorrent/conf/users/$UserName/plugins/${Plugin} ]; then
-					mkdir -p /etc/MySB/web/rutorrent/conf/users/$UserName/plugins/${Plugin}
+		if [ -d $RutorrentPluginsDir/${Plugin} ]; then
+			if [ -f $RutorrentPluginsDir/${Plugin}/conf.php ] || [ -f $RutorrentPluginsDir/${Plugin}/config.php ]; then
+				if [ ! -d $RutorrentDir/conf/users/$UserName/plugins/${Plugin} ]; then
+					mkdir -p $RutorrentDir/conf/users/$UserName/plugins/${Plugin}
 				fi
-				if [ -f /etc/MySB/web/rutorrent/plugins/${Plugin}/conf.php ]; then
-					cp /etc/MySB/web/rutorrent/plugins/${Plugin}/conf.php /etc/MySB/web/rutorrent/conf/users/$UserName/plugins/${Plugin}
+				if [ -f $RutorrentPluginsDir/${Plugin}/conf.php ]; then
+					cp $RutorrentPluginsDir/${Plugin}/conf.php $RutorrentDir/conf/users/$UserName/plugins/${Plugin}
 				fi
-				if [ -f /etc/MySB/web/rutorrent/plugins/${Plugin}/config.php ]; then
-					cp /etc/MySB/web/rutorrent/plugins/${Plugin}/config.php /etc/MySB/web/rutorrent/conf/users/$UserName/plugins/${Plugin}
+				if [ -f $RutorrentPluginsDir/${Plugin}/config.php ]; then
+					cp $RutorrentPluginsDir/${Plugin}/config.php $RutorrentDir/conf/users/$UserName/plugins/${Plugin}
 				fi
 			fi
 		fi
 
 		case ${Plugin} in
 			'autotools')
-				echo "[autotools]" >> /etc/MySB/web/rutorrent/conf/users/$UserName/plugins.ini
-				echo "enabled = yes" >> /etc/MySB/web/rutorrent/conf/users/$UserName/plugins.ini
+				echo "[autotools]" >> $RutorrentDir/conf/users/$UserName/plugins.ini
+				echo "enabled = yes" >> $RutorrentDir/conf/users/$UserName/plugins.ini
 			;;
 			'logoff')
-				echo "[logoff]" >> /etc/MySB/web/rutorrent/conf/users/$UserName/plugins.ini
-				echo "enabled = yes" >> /etc/MySB/web/rutorrent/conf/users/$UserName/plugins.ini
-				sed -i "s/scars,user1,user2/$UserName/g;" /etc/MySB/web/rutorrent/conf/users/$UserName/plugins/logoff/conf.php
+				echo "[logoff]" >> $RutorrentDir/conf/users/$UserName/plugins.ini
+				echo "enabled = yes" >> $RutorrentDir/conf/users/$UserName/plugins.ini
+				sed -i "s/scars,user1,user2/$UserName/g;" $RutorrentDir/conf/users/$UserName/plugins/logoff/conf.php
 			;;
 			'ratiocolor')
-				echo "[ratiocolor]" >> /etc/MySB/web/rutorrent/conf/users/$UserName/plugins.ini
-				echo "enabled = yes" >> /etc/MySB/web/rutorrent/conf/users/$UserName/plugins.ini
+				echo "[ratiocolor]" >> $RutorrentDir/conf/users/$UserName/plugins.ini
+				echo "enabled = yes" >> $RutorrentDir/conf/users/$UserName/plugins.ini
 			;;
 			'chat')
-				echo "[chat]" >> /etc/MySB/web/rutorrent/conf/users/$UserName/plugins.ini
-				echo "enabled = yes" >> /etc/MySB/web/rutorrent/conf/users/$UserName/plugins.ini
+				echo "[chat]" >> $RutorrentDir/conf/users/$UserName/plugins.ini
+				echo "enabled = yes" >> $RutorrentDir/conf/users/$UserName/plugins.ini
 			;;
 			'filemanager')
-				echo "[filemanager]" >> /etc/MySB/web/rutorrent/conf/users/$UserName/plugins.ini
-				echo "enabled = yes" >> /etc/MySB/web/rutorrent/conf/users/$UserName/plugins.ini
+				echo "[filemanager]" >> $RutorrentDir/conf/users/$UserName/plugins.ini
+				echo "enabled = yes" >> $RutorrentDir/conf/users/$UserName/plugins.ini
 			;;
 			'fileshare')
-				echo "[fileshare]" >> /etc/MySB/web/rutorrent/conf/users/$UserName/plugins.ini
-				echo "enabled = yes" >> /etc/MySB/web/rutorrent/conf/users/$UserName/plugins.ini
+				echo "[fileshare]" >> $RutorrentDir/conf/users/$UserName/plugins.ini
+				echo "enabled = yes" >> $RutorrentDir/conf/users/$UserName/plugins.ini
 			;;
 			*)
-				echo "[${Plugin}]" >> /etc/MySB/web/rutorrent/conf/users/$UserName/plugins.ini
-				echo "enabled = user-defined" >> /etc/MySB/web/rutorrent/conf/users/$UserName/plugins.ini			
+				echo "[${Plugin}]" >> $RutorrentDir/conf/users/$UserName/plugins.ini
+				echo "enabled = user-defined" >> $RutorrentDir/conf/users/$UserName/plugins.ini			
 			;;
 		esac
 	done

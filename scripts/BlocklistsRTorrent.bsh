@@ -25,13 +25,11 @@ source /etc/MySB/inc/includes_before.bsh
 ##################### FIRST LINE #####################################
 
 log_daemon_msg "Delete current global blocklist"
-if [ ! -d /etc/MySB/files/blocklist ]; then
-	mkdir /etc/MySB/files/blocklist
+if [ ! -d /etc/MySB/files/blocklists ]; then
+	mkdir /etc/MySB/files/blocklists
+else
+	rm -f /etc/MySB/files/blocklists/* &> /dev/null
 fi
-if [ -f /etc/MySB/files/blocklist/blocklist_rtorrent.tmp ]; then
-	rm -f /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
-fi
-rm -f /etc/MySB/files/blocklist/*
 StatusLSB
 
 sqlite3 $MySB_DB "SELECT name, blocklists FROM blocklists_rtorrent WHERE is_active = '1'" | while read ROW; do
@@ -43,14 +41,14 @@ sqlite3 $MySB_DB "SELECT name, blocklists FROM blocklists_rtorrent WHERE is_acti
 		CleanBlockList download "$FILE" "$URL" &> /dev/null
 
 		# complete global list
-		cat /etc/MySB/files/blocklist/$FILE.txt >> /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
+		cat /etc/MySB/files/blocklists/$FILE.txt >> /etc/MySB/files/blocklists/blocklist_rtorrent.tmp
 
 		# delete unused files
-		if [ -f /etc/MySB/files/blocklist/$FILE.tmp ]; then
-			rm -f /etc/MySB/files/blocklist/$FILE.tmp
+		if [ -f /etc/MySB/files/blocklists/$FILE.tmp ]; then
+			rm -f /etc/MySB/files/blocklists/$FILE.tmp
 		fi		
-		if [ -f /etc/MySB/files/blocklist/$FILE.gz ]; then
-			rm -f /etc/MySB/files/blocklist/$FILE.gz
+		if [ -f /etc/MySB/files/blocklists/$FILE.gz ]; then
+			rm -f /etc/MySB/files/blocklists/$FILE.gz
 		fi
 		StatusLSB
 	fi	
@@ -58,20 +56,20 @@ done
 
 # Default IP of TMG
 log_daemon_msg "Add know TMG's IP to global blocklist"
-echo "82.138.70.128/26" >> /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
-echo "82.138.74.0/25" >> /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
-echo "82.138.81.0/24" >> /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
-echo "85.159.232.0/24" >> /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
-echo "85.159.236.0/24" >> /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
-echo "91.189.104.0/20" >> /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
-echo "193.107.240.0/24" >> /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
-echo "193.107.241.0/24" >> /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
-echo "193.107.242.0/24" >> /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
-echo "193.107.243.0/24" >> /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
-echo "193.107.244.0/24" >> /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
-echo "193.107.245.0/24" >> /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
-echo "193.105.197.0/24" >> /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
-echo "195.191.244.0/24" >> /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
+echo "82.138.70.128/26" >> /etc/MySB/files/blocklists/blocklist_rtorrent.tmp
+echo "82.138.74.0/25" >> /etc/MySB/files/blocklists/blocklist_rtorrent.tmp
+echo "82.138.81.0/24" >> /etc/MySB/files/blocklists/blocklist_rtorrent.tmp
+echo "85.159.232.0/24" >> /etc/MySB/files/blocklists/blocklist_rtorrent.tmp
+echo "85.159.236.0/24" >> /etc/MySB/files/blocklists/blocklist_rtorrent.tmp
+echo "91.189.104.0/20" >> /etc/MySB/files/blocklists/blocklist_rtorrent.tmp
+echo "193.107.240.0/24" >> /etc/MySB/files/blocklists/blocklist_rtorrent.tmp
+echo "193.107.241.0/24" >> /etc/MySB/files/blocklists/blocklist_rtorrent.tmp
+echo "193.107.242.0/24" >> /etc/MySB/files/blocklists/blocklist_rtorrent.tmp
+echo "193.107.243.0/24" >> /etc/MySB/files/blocklists/blocklist_rtorrent.tmp
+echo "193.107.244.0/24" >> /etc/MySB/files/blocklists/blocklist_rtorrent.tmp
+echo "193.107.245.0/24" >> /etc/MySB/files/blocklists/blocklist_rtorrent.tmp
+echo "193.105.197.0/24" >> /etc/MySB/files/blocklists/blocklist_rtorrent.tmp
+echo "195.191.244.0/24" >> /etc/MySB/files/blocklists/blocklist_rtorrent.tmp
 StatusLSB
 
 # delete blank line
@@ -99,8 +97,8 @@ log_daemon_msg "Delete double lines & sort global list"
 CleanBlockList sort_uniq blocklist_rtorrent
 StatusLSB
 
-if [ -f /etc/MySB/files/blocklist/blocklist_rtorrent.tmp ]; then
-	rm -vf /etc/MySB/files/blocklist/blocklist_rtorrent.tmp
+if [ -f /etc/MySB/files/blocklists/blocklist_rtorrent.tmp ]; then
+	rm -vf /etc/MySB/files/blocklists/blocklist_rtorrent.tmp
 fi
 
 ListingUsers
@@ -112,7 +110,7 @@ for seedUser in $UsersList; do
 		else
 			mkdir /home/$seedUser/blocklist
 		fi	
-		cp /etc/MySB/files/blocklist/* /home/$seedUser/blocklist/
+		cp /etc/MySB/files/blocklists/* /home/$seedUser/blocklist/
 		ChangingHomeUserRights "$seedUser" "/home/$seedUser"
 		StatusLSB
 	fi
