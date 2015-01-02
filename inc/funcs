@@ -69,7 +69,6 @@ SendMail() {
 	User="$2"
 	Info="$3"
 	SeedUserMail="`sqlite3 $MySB_DB \"SELECT users_email FROM users WHERE users_ident = '$User'\"`"
-	#TempPassword="`sqlite3 $MySB_DB \"SELECT users_passwd FROM users WHERE users_ident = '$User'\"`"
 	MailFrom=$MainUserEmail
 	log_daemon_msg "Generate HTML info for $User"
 	perl -pi -e "s/##MySB_User##/$MySB_User/g" /etc/MySB/web/UserInfoMail.php
@@ -82,11 +81,8 @@ SendMail() {
 
 	StatusLSB
 
-	log_daemon_msg "Sending email to $User ($Info)"
+	if [ ! -z "$Info" ]; then log_daemon_msg "Sending email to $User ($Info)"; fi
 	if [ -s /etc/MySB/temp/$User.html ]; then
-		# if [ ! -z $TempPassword ]; then
-			# perl -pi -e "s/##TempPassword##/$TempPassword/g" /etc/MySB/temp/$User.html
-		# fi
 		attach="$User.html"
 		type="html"
 	else
@@ -95,7 +91,7 @@ SendMail() {
 	fi
 	cat /etc/MySB/temp/$attach | mail -a "From: MySB <$MailFrom>" -a "MIME-Version: 1.0" -a "Content-Type: text/$type" -s "$Subject" $SeedUserMail
 	sleep 2
-	StatusLSB
+	if [ ! -z "$Info" ]; then StatusLSB; fi
 }
 
 #### apt-get OR aptitude
@@ -564,7 +560,7 @@ MonthlyPayment() {
 		for seedUser in $UsersList; do
 			SeedUserMail="`sqlite3 $MySB_DB \"SELECT users_email FROM users WHERE users_ident = '$seedUser'\"`"
 			
-			if [ ! "$1" = "${seedUser}" ]; then	
+			if [ ! "$1" = "$seedUser" ]; then	
 				SendMail "MySB - Changing monthly" "${seedUser}" "Changing Monthly"
 			fi
 		done

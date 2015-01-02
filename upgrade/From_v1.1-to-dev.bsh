@@ -43,7 +43,8 @@ StatusSTD
 
 #### 2 - Move some files & directories
 echo -e -n "${CBLUE}Move some files & directories$CEND..."
-if [ -f /etc/MySB/logs/BlockList.sh.log ]; then mv /etc/MySB/logs/BlockList.sh.log /etc/MySB/logs/BlockLists.bsh.log; fi
+if [ -f /etc/MySB/logs/Blocklist.log ]; then mv /etc/MySB/logs/Blocklist.log /etc/MySB/logs/Blocklists.log; fi
+if [ -f /etc/MySB/logs/BlockList.sh.log ]; then mv /etc/MySB/logs/BlockList.sh.log /etc/MySB/logs/BlocklistsRTorrent.bsh.log; fi
 if [ -f /etc/MySB/logs/Bridge-Start.sh.log ]; then rm -f /etc/MySB/logs/Bridge-Start.sh.log; fi
 if [ -f /etc/MySB/logs/Bridge-Stop.sh.log ]; then rm -f /etc/MySB/logs/Bridge-Stop.sh.log; fi
 if [ -f /etc/MySB/logs/CreateDir.log ]; then rm -f /etc/MySB/logs/CreateDir.log; fi
@@ -112,7 +113,7 @@ StatusSTD
 #### 8 - STOP services
 ManageServices stop "cron"
 for seedUser in $UsersList; do
-	service rtorrent-$seedUser stop
+	service rtorrent-$seedUser stop &> /dev/null
 done
 
 #### 9 - PHP
@@ -155,8 +156,8 @@ fi
 echo -e -n "${CBLUE}Download all files now in one time (GIT, SVN, TAR.GZ, WBM)$CEND..."
 # ruTorrent
 rm -f $RutorrentDir/conf/config.php &> /dev/null
-mv $RutorrentDir/conf/users /etc/MySB/temp/conf_users && rm -rf /etc/MySB/temp/conf_users/.svn &> /dev/null
-mv $RutorrentDir/share/users /etc/MySB/temp/share_users && rm -rf /etc/MySB/temp/share_users/.svn &> /dev/null
+mv $RutorrentDir/conf/users /etc/MySB/temp/conf_users &> /dev/null && rm -rf /etc/MySB/temp/conf_users/.svn &> /dev/null
+mv $RutorrentDir/share/users /etc/MySB/temp/share_users &> /dev/null && rm -rf /etc/MySB/temp/share_users/.svn &> /dev/null
 rm -rf $RutorrentDir &> /dev/null
 # Seedbox-Manager
 if [ -d $ManagerDir ]; then rm -rf $ManagerDir; fi
@@ -165,8 +166,8 @@ if [ -d $CakeboxDir ]; then rm -rf $CakeboxDir; fi
 screen -dmS DownloadAll /bin/bash /etc/MySB/install/DownloadAll 'UPGRADE';
 WaitingScreen DownloadAll
 # ruTorrent
-rsync -av /etc/MySB/temp/conf_users/ $RutorrentDir/conf/users/ && rm -rf /etc/MySB/temp/conf_users &> /dev/null
-rsync -av /etc/MySB/temp/share_users/ $RutorrentDir/share/users/ && rm -rf /etc/MySB/temp/share_users &> /dev/null
+rsync -av /etc/MySB/temp/conf_users/ $RutorrentDir/conf/users/ &> /dev/null && rm -rf /etc/MySB/temp/conf_users &> /dev/null
+rsync -av /etc/MySB/temp/share_users/ $RutorrentDir/share/users/ &> /dev/null && rm -rf /etc/MySB/temp/share_users &> /dev/null
 StatusSTD
 
 #### 15 - Refresh tools
@@ -294,7 +295,7 @@ StatusSTD
 #### 28 - Send mail for each user with new version
 for seedUser in $UsersList; do
 	echo -e -n "${CBLUE}Send mail for $seedUser$CEND..."
-	MonthlyPayment "$seedUser"
+	SendMail "MySB - Upgraded to $MySB_CurrentVersion !" "$seedUser"
 	StatusSTD
 done
 
