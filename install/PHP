@@ -1,6 +1,6 @@
 #!/bin/bash 
 # ----------------------------------
-source /etc/MySB/inc/includes_before.bsh
+source /etc/MySB/inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -24,25 +24,45 @@ source /etc/MySB/inc/includes_before.bsh
 #
 ##################### FIRST LINE #####################################
 
-if [ "$ToInstall_PlexMedia" == "YES" ]; then
-	#### Add sources
-	echo "# PlexMedia" > /etc/apt/sources.list.d/ninthgate.list
-	echo "deb http://shell.ninthgate.se/packages/debian $DEBIAN_VERSION main" >> /etc/apt/sources.list.d/ninthgate.list
+#### Install packages
+PackagesManage install "php5-cli php5-fpm php5-curl php5-geoip php5-xmlrpc php5-gd php5-sqlite"
 
-	cd /etc/MySB/files
-	curl http://shell.ninthgate.se/packages/shell-ninthgate-se-keyring.key | apt-key add -
-	rm -vf shell-ninthgate-se-keyring.key
+#### STOP services
+ManageServices stop "php5-fpm"
 
-	#### Force apt-get update
-	sqlite3 -echo $MySB_DB "UPDATE system SET apt_update = 1, apt_date = datetime('now','localtime') WHERE id_system = 1;"
+perl -pi -e "s/;listen = 127.0.0.1:9000/listen = \/var\/run\/php5-fpm.sock/g" /etc/php5/fpm/pool.d/www.conf
+perl -pi -e "s/^;listen.owner = www-data/listen.owner = www-data/g" /etc/php5/fpm/pool.d/www.conf
+perl -pi -e "s/^;listen.group = www-data/listen.group = www-data/g" /etc/php5/fpm/pool.d/www.conf
+perl -pi -e "s/^;listen.mode = 0660/listen.mode = 0660/g" /etc/php5/fpm/pool.d/www.conf
+perl -pi -e "s/expose_php = On/expose_php = Off/g" /etc/php5/fpm/php.ini
+perl -pi -e "s/file_uploads = Off/file_uploads = On/g" /etc/php5/fpm/php.ini
+perl -pi -e "s/post_max_size = 8M/post_max_size = 10M/g" /etc/php5/fpm/php.ini
+perl -pi -e "s/upload_max_filesize = 2M/upload_max_filesize = 10M/g" /etc/php5/fpm/php.ini
+perl -pi -e "s/^;date.timezone =/date.timezone = Europe\/Paris/g" /etc/php5/fpm/php.ini
+perl -pi -e "s/expose_php = On/expose_php = Off/g" /etc/php5/cli/php.ini
+perl -pi -e "s/^;date.timezone =/date.timezone = Europe\/Paris/g" /etc/php5/cli/php.ini
 
-	#### Install package
-	PackagesManage install "plexmediaserver"
-	
-	sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'Plex Media Server';"
-fi
+#bash /etc/MySB/scripts/UpdateGeoIP.bsh
+ScriptInvoke 'source' '/etc/MySB/scripts/UpdateGeoIP.bsh'
+
+# write out current crontab
+crontab -l > /tmp/crontab.tmp
+sed -i '/UpdateGeoIP.bsh/d' /tmp/crontab.tmp
+# echo new cron into cron file
+# script mise à jour mensuel geoip et complément plugin city
+# variable minutes aléatoire crontab geoip
+MAXIMUM=58
+MINIMUM=1
+UPGEOIP=$((MINIMUM+RANDOM*(1+MAXIMUM-MINIMUM)/32767))
+echo "$UPGEOIP 2 9 * * /bin/bash /etc/MySB/scripts/UpdateGeoIP.bsh &> /dev/null 2>&1" >> /tmp/crontab.tmp
+# install new cron file
+crontab /tmp/crontab.tmp
+rm -f /tmp/crontab.tmp
+
+#### START services
+ManageServices start "cron php5-fpm"
 
 # -----------------------------------------
-source /etc/MySB/inc/includes_after.bsh
+source /etc/MySB/inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

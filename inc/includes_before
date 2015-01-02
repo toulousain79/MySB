@@ -1,7 +1,5 @@
 #!/bin/bash 
 # ----------------------------------
-source /etc/MySB/inc/includes_before.bsh
-# ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 #    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -24,34 +22,64 @@ source /etc/MySB/inc/includes_before.bsh
 #
 ##################### FIRST LINE #####################################
 
-if [ "$ToInstall_Fail2Ban" == "YES" ]; then
-	#### Install packages
-	PackagesManage install "fail2ban"
-	
-	#### STOP services
-	ManageServices stop "fail2ban"	
-
-	# conf fail2ban
-	cp /etc/MySB/templates/etc.fail2ban.jail.local.template /etc/fail2ban/jail.local
-	sed -i 's/<Port_SSH>/'$Port_SSH'/g;' /etc/fail2ban/jail.local
-	sed -i 's/<Port_HTTP>/'$Port_HTTP'/g;' /etc/fail2ban/jail.local
-	sed -i 's/<Port_HTTPS>/'$Port_HTTPS'/g;' /etc/fail2ban/jail.local
-	sed -i 's/<Port_FTP>/'$Port_FTP'/g;' /etc/fail2ban/jail.local
-
-	cp /etc/MySB/templates/etc.fail2ban.filter.d.nginx-auth.conf.template /etc/fail2ban/filter.d/nginx-auth.conf
-	cp /etc/MySB/templates/etc.fail2ban.filter.d.nginx-badbots.conf.template /etc/fail2ban/filter.d/nginx-badbots.conf
-	cp /etc/MySB/templates/etc.fail2ban.filter.d.nginx-login.template /etc/fail2ban/filter.d/nginx-login.conf
-
-	#### Add white list
-	Fail2BanWhitheList 0
-
-	sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'Fail2Ban';"
-	
-	#### START services
-	ManageServices start "fail2ban"
+#### 1 - includes
+source /etc/MySB/inc/vars
+source /etc/MySB/inc/funcs
+if [ -f /lib/lsb/init-functions ]; then
+	source /lib/lsb/init-functions
 fi
 
-# -----------------------------------------
-source /etc/MySB/inc/includes_after.bsh
-# -----------------------------------------
+#### 2 - SWITCHES
+# Default
+BANNER=ON		# Banner for all script (ON/OFF)
+LOGSTD=NO		# Standard Outpout and Error redicted to 'scriptname.log' (STDERR/STDOUT/NO)
+USAGE=ON		# All usage display to user (ON/OFF)
+
+#### Check by arguments
+Args=("$@")
+for ((i=0; i < $#; i++)) {
+	case "${Args[$i]}" in
+		"UPGRADE"|"REFRESH"|"CRON"|"INSTALL")
+			BANNER=OFF
+			LOGSTD=STDOUT
+			USAGE=OFF
+		;;
+		"APPLYCONFIG")
+			BANNER=OFF
+			LOGSTD=NO
+			USAGE=OFF
+		;;
+	esac
+}
+
+#### Check by script name
+case "$ScriptName" in
+	"ApplyConfig.bsh") # Launched by ApplyConfig.bsh (web)
+		BANNER=OFF
+	;;
+	"From_v1.1-to-dev.bsh") # Upgrade ?
+		MySB_CurrentVersion="dev"
+	;;
+esac
+
+#### 3 - Create MySB banner
+if [ "$BANNER" == "ON" ]; then
+	BannerGenerator
+fi
+
+#### 4 -STD Out/Err (after banner)
+if [ "$LOGSTD" != "NO" ] ; then
+	if [ "$LOGSTD" == "STDERR" ]; then
+		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
+		echo "START Err: "`date` "-" $ScriptName $1 >> /etc/MySB/logs/$ScriptName.log
+		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
+		exec 2>> /etc/MySB/logs/$ScriptName.log
+	else
+		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
+		echo "START Out/Err: "`date` "-" $ScriptName $1 >> /etc/MySB/logs/$ScriptName.log
+		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
+		exec >> /etc/MySB/logs/$ScriptName.log	2>&1
+	fi
+fi
+
 ##################### LAST LINE ######################################

@@ -1,6 +1,6 @@
 #!/bin/bash 
 # ----------------------------------
-source /etc/MySB/inc/includes_before.bsh
+source /etc/MySB/inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -24,45 +24,25 @@ source /etc/MySB/inc/includes_before.bsh
 #
 ##################### FIRST LINE #####################################
 
-#### Install packages
-PackagesManage install "vsftpd"
+if [ "$ToInstall_PlexMedia" == "YES" ]; then
+	#### Add sources
+	echo "# PlexMedia" > /etc/apt/sources.list.d/ninthgate.list
+	echo "deb http://shell.ninthgate.se/packages/debian $DEBIAN_VERSION main" >> /etc/apt/sources.list.d/ninthgate.list
 
-#### STOP services
-ManageServices stop "vsftpd"
+	cd /etc/MySB/files
+	curl http://shell.ninthgate.se/packages/shell-ninthgate-se-keyring.key | apt-key add -
+	rm -vf shell-ninthgate-se-keyring.key
 
-#### Create certificate
-if [ ! -f /etc/MySB/ssl/vsftpd.cert ]; then
-	ScriptInvoke 'source' '/etc/MySB/install/Certificates.bsh' 'CreateServiceCertificate' 'vsftpd'
+	#### Force apt-get update
+	sqlite3 -echo $MySB_DB "UPDATE system SET apt_update = 1, apt_date = datetime('now','localtime') WHERE id_system = 1;"
+
+	#### Install package
+	PackagesManage install "plexmediaserver"
+	
+	sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'Plex Media Server';"
 fi
-
-####
-cmdProxy='command'
-command type -f 'sudo' &>'/dev/null' && cmdProxy='sudo'
-dataPath='/srv/ftp'
-ftpUser="ftp"
-ftpGroup="ftp"
-
-if [ -z "$(${cmdProxy} grep "^${ftpGroup}" '/etc/group')" ]; then
-	${cmdProxy} addgroup --system "${ftpGroup}"
-fi
-if [ -z "$(${cmdProxy} grep "^${ftpUser}" '/etc/passwd')" ]; then
-	${cmdProxy} adduser --system --shell '/bin/false' --home "${dataPath}" --ingroup "${ftpGroup}" "${ftpUser}"
-fi
-
-#### config file
-cp /etc/MySB/templates/etc.vsftpd.conf.template /etc/vsftpd.conf
-sed -i "s/<Port_FTP>/$Port_FTP/g;" /etc/vsftpd.conf
-sed -i "s/<Port_FTP_Data>/$Port_FTP_Data/g;" /etc/vsftpd.conf
-sed -i "s/<SrvIpAddress>/$SrvIpAddress/g;" /etc/vsftpd.conf
-
-if [ ! -f /etc/vsftpd.chroot_list ]; then
-	touch /etc/vsftpd.chroot_list
-fi
-
-#### START services
-ManageServices start "vsftpd"
 
 # -----------------------------------------
-source /etc/MySB/inc/includes_after.bsh
+source /etc/MySB/inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

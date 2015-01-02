@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/bash 
 # ----------------------------------
-source /etc/MySB/inc/includes_before.bsh
+source /etc/MySB/inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -24,24 +24,45 @@ source /etc/MySB/inc/includes_before.bsh
 #
 ##################### FIRST LINE #####################################
 
-if [ "$ToInstall_LogWatch" == "YES" ]; then
-	#### Install packages
-	PackagesManage install "logwatch"
+#### Install packages
+PackagesManage install "vsftpd"
 
-	# Config
-	if [ ! -d /var/cache/logwatch ]; then
-		mkdir -p /var/cache/logwatch
-	fi
-	if [ -f /usr/share/logwatch/default.conf/logwatch.conf ] && [ ! -f /etc/logwatch/conf/logwatch.conf ]; then
-		cp /usr/share/logwatch/default.conf/logwatch.conf /etc/logwatch/conf/
-	fi
-	perl -pi -e "s/Output = stdout/Output = mail/g" /etc/logwatch/conf/logwatch.conf
-	perl -pi -e "s/Format = text/Format = html/g" /etc/logwatch/conf/logwatch.conf
+#### STOP services
+ManageServices stop "vsftpd"
 
-	sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'LogWatch';"
+#### Create certificate
+if [ ! -f /etc/MySB/ssl/vsftpd.cert ]; then
+	ScriptInvoke 'source' '/etc/MySB/install/Certificates' 'CreateServiceCertificate' 'vsftpd'
 fi
 
+####
+cmdProxy='command'
+command type -f 'sudo' &>'/dev/null' && cmdProxy='sudo'
+dataPath='/srv/ftp'
+ftpUser="ftp"
+ftpGroup="ftp"
+
+if [ -z "$(${cmdProxy} grep "^${ftpGroup}" '/etc/group')" ]; then
+	${cmdProxy} addgroup --system "${ftpGroup}"
+fi
+if [ -z "$(${cmdProxy} grep "^${ftpUser}" '/etc/passwd')" ]; then
+	${cmdProxy} adduser --system --shell '/bin/false' --home "${dataPath}" --ingroup "${ftpGroup}" "${ftpUser}"
+fi
+
+#### config file
+cp /etc/MySB/templates/etc.vsftpd.conf.template /etc/vsftpd.conf
+sed -i "s/<Port_FTP>/$Port_FTP/g;" /etc/vsftpd.conf
+sed -i "s/<Port_FTP_Data>/$Port_FTP_Data/g;" /etc/vsftpd.conf
+sed -i "s/<SrvIpAddress>/$SrvIpAddress/g;" /etc/vsftpd.conf
+
+if [ ! -f /etc/vsftpd.chroot_list ]; then
+	touch /etc/vsftpd.chroot_list
+fi
+
+#### START services
+ManageServices start "vsftpd"
+
 # -----------------------------------------
-source /etc/MySB/inc/includes_after.bsh
+source /etc/MySB/inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

@@ -1,6 +1,6 @@
 #!/bin/bash 
 # ----------------------------------
-source /etc/MySB/inc/includes_before.bsh
+source /etc/MySB/inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -80,11 +80,14 @@ if [ "$1" == "REFRESH" ]; then
 	if [ -d $PluginLbllDir ]; then
 		rm -vrf $PluginLbllDir
 	fi
-	if [ -f /etc/MySB/files/$PluginLbllFile ]; then
-		rm -vf /etc/MySB/files/$PluginLbllFile
+	if [ ! -f /etc/MySB/files/$PluginLbllFile ]; then
+		wget --no-check-certificate $PluginLbllUrl -O /etc/MySB/files/$PluginLbllFile
 	fi
-	wget --no-check-certificate $PluginLbllUrl -O /etc/MySB/files/$PluginLbllFile
-	tar -zxvf /etc/MySB/files/$PluginLbllFile -C $PluginLbllDir
+	tar -zxvf /etc/MySB/files/$PluginLbllFile -C /etc/MySB/temp/	
+	SubDirLbll="`tar -ztf /etc/MySB/files/$PluginLbllFile | sed -e 's@/.*@@' | uniq`"
+	if [ -d /etc/MySB/temp/$SubDirLbll ]; then
+		mv /etc/MySB/temp/$SubDirLbll $PluginLbllDir
+	fi
 fi
 
 #### Plugin Filemanager
@@ -110,11 +113,14 @@ if [ "$1" == "REFRESH" ]; then
 	if [ -d $PluginNfoDir ]; then
 		rm -vrf $PluginNfoDir
 	fi
-	if [ -f /etc/MySB/files/nfo.tar.gz ]; then
-		rm -vf /etc/MySB/files/$PluginNfoFile
+	if [ ! -f /etc/MySB/files/$PluginNfoFile ]; then
+		wget --no-check-certificate $PluginNfoUrl -O /etc/MySB/files/$PluginNfoFile
 	fi
-	wget --no-check-certificate $PluginNfoUrl -O /etc/MySB/files/$PluginNfoFile
-	tar -zxvf /etc/MySB/files/$PluginNfoFile -C $PluginNfoDir
+	tar -zxvf /etc/MySB/files/$PluginNfoFile -C /etc/MySB/temp/	
+	SubDirNfo="`tar -ztf /etc/MySB/files/$PluginNfoFile | sed -e 's@/.*@@' | uniq`"
+	if [ -d /etc/MySB/temp/$SubDirNfo ]; then
+		mv /etc/MySB/temp/$SubDirNfo $PluginNfoDir
+	fi
 fi
 
 #### Plugin Ratiocolor
@@ -172,14 +178,17 @@ PluginStreamDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = '
 PluginStreamUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin Stream'\"`"
 PluginStreamFile="`sqlite3 $MySB_DB \"SELECT file FROM repositories WHERE name = 'ruTorrent Plugin Stream'\"`"
 if [ "$1" == "REFRESH" ]; then 
-	if [ -d $PluginStreamDir/ ]; then
-		rm -vrf $PluginStreamDir/
+	if [ -d $PluginStreamDir ]; then
+		rm -vrf $PluginStreamDir
 	fi
-	if [ -f /etc/MySB/files/$PluginStreamFile ]; then
-		rm -vf /etc/MySB/files/$PluginStreamFile
+	if [ ! -f /etc/MySB/files/$PluginStreamFile ]; then
+		wget --no-check-certificate $PluginStreamUrl -O /etc/MySB/files/$PluginStreamFile
 	fi
-	wget --no-check-certificate $PluginStreamUrl -O /etc/MySB/files/$PluginStreamFile
-	tar -zxvf /etc/MySB/files/$PluginStreamFile -C $PluginStreamDir
+	tar -zxvf /etc/MySB/files/$PluginStreamFile -C /etc/MySB/temp/	
+	SubDirStream="`tar -ztf /etc/MySB/files/$PluginStreamFile | sed -e 's@/.*@@' | uniq`"
+	if [ -d /etc/MySB/temp/$SubDirStream ]; then
+		mv /etc/MySB/temp/$SubDirStream $PluginStreamDir
+	fi
 fi
 perl -pi -e "s/define\('USE_NGINX', false\);/define\('USE_NGINX', true\);/g" $PluginStreamDir/config.php
 perl -pi -e "s/define\('SCHEME', http\);/define\('SCHEME', https\);/g" $PluginStreamDir/config.php
@@ -263,11 +272,7 @@ ManageDirectoriesAndFiles
 StatusLSB
 
 #### Get Tracker Certificates
-if [ "$1" == "REFRESH" ]; then
-	ScriptInvoke 'screen' '/etc/MySB/scripts/GetTrackersCert.bsh' 'REFRESH'
-else
-	ScriptInvoke 'screen' '/etc/MySB/scripts/GetTrackersCert.bsh' 'INSTALL'
-fi
+ScriptInvoke 'screen' '/etc/MySB/scripts/GetTrackersCert.bsh' 'REFRESH'
 
 #### START services
 ManageServices start "cron"
@@ -277,6 +282,6 @@ for seedUser in $UsersList; do
 done
 
 # -----------------------------------------
-source /etc/MySB/inc/includes_after.bsh
+source /etc/MySB/inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

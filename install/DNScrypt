@@ -1,6 +1,6 @@
 #!/bin/bash 
 # ----------------------------------
-source /etc/MySB/inc/includes_before.bsh
+source /etc/MySB/inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -82,11 +82,17 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	DnscryptDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'DNScrypt-proxy'\"`"
 	DnscryptUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'DNScrypt-proxy'\"`"
 	DnscryptFile="`sqlite3 $MySB_DB \"SELECT file FROM repositories WHERE name = 'DNScrypt-proxy'\"`"
-	
-	if [ ! -d $DnscryptDir/ ];then
+
+	if [ ! -f /etc/MySB/files/$DnscryptFile ]; then
 		wget --no-check-certificate $DnscryptUrl -O /etc/MySB/files/$DnscryptFile
-		tar -zxvf /etc/MySB/files/$DnscryptFile -C $DnscryptDir
 	fi
+	if [ ! -d $DnscryptDir ] && [ -f /etc/MySB/files/$DnscryptFile ]; then
+		tar -zxvf /etc/MySB/files/$DnscryptFile -C /etc/MySB/temp/	
+		SubDir="`tar -ztf /etc/MySB/files/$DnscryptFile | sed -e 's@/.*@@' | uniq`"
+		if [ -d /etc/MySB/temp/$SubDir ]; then
+			mv /etc/MySB/temp/$SubDir $DnscryptDir
+		fi
+	fi		
 	
 	cd $DnscryptDir/
 	make clean
@@ -155,7 +161,7 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	rm -f /tmp/crontab.tmp
 	
 	#### START services
-	ManageServices start "cron dnscrypt-proxy"
+	ManageServices start "cron bind9 dnscrypt-proxy"
 
 	#### Create new security rules
 	ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
@@ -171,6 +177,6 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 fi
 
 # -----------------------------------------
-source /etc/MySB/inc/includes_after.bsh
+source /etc/MySB/inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

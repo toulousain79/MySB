@@ -1,6 +1,6 @@
-#!/bin/bash 
+#!/bin/bash
 # ----------------------------------
-source /etc/MySB/inc/includes_before.bsh
+source /etc/MySB/inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -24,26 +24,24 @@ source /etc/MySB/inc/includes_before.bsh
 #
 ##################### FIRST LINE #####################################
 
-if [ "$ToInstall_Samba" == "YES" ]; then
+if [ "$ToInstall_LogWatch" == "YES" ]; then
 	#### Install packages
-	if ! hash smbd 2> /dev/null; then
-		PackagesManage install "samba"
+	PackagesManage install "logwatch"
+
+	# Config
+	if [ ! -d /var/cache/logwatch ]; then
+		mkdir -p /var/cache/logwatch
 	fi
-
-	#### smb.conf
-	if [ ! -f /etc/samba/smb.conf.ORIGINAL ] && [ -f /etc/samba/smb.conf ]; then
-		cp /etc/samba/smb.conf /etc/samba/smb.conf.ORIGINAL
+	if [ -f /usr/share/logwatch/default.conf/logwatch.conf ] && [ ! -f /etc/logwatch/conf/logwatch.conf ]; then
+		cp /usr/share/logwatch/default.conf/logwatch.conf /etc/logwatch/conf/
 	fi
+	perl -pi -e "s/Output = stdout/Output = mail/g" /etc/logwatch/conf/logwatch.conf
+	perl -pi -e "s/Format = text/Format = html/g" /etc/logwatch/conf/logwatch.conf
 
-	cp /etc/MySB/templates/etc.samba.smb.conf.template /etc/samba/smb.conf
-
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'Samba';"
-	
-	#### START services
-	ManageServices start "samba"	
+	sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'LogWatch';"
 fi
 
 # -----------------------------------------
-source /etc/MySB/inc/includes_after.bsh
+source /etc/MySB/inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

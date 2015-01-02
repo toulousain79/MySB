@@ -145,7 +145,7 @@ if (isset($_POST['submit'])) {
 		$message = 'Please, complete all fields.';
 	}
 
-	GenerateMessage('Postfix.bsh', $type, $message);
+	GenerateMessage('Postfix', $type, $message);
 }
 
 Form();

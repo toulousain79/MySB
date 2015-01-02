@@ -270,7 +270,7 @@ CREATE TABLE commands (
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (1, 'FirewallAndSecurity.bsh', 0, 1, null);
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (2, 'GetTrackersCert.bsh', 0, 2, null);
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (3, 'PaymentReminder.bsh', 0, 2, null);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (4, 'Postfix.bsh', 0, 2, null);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (4, 'Postfix', 0, 2, null);
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (5, 'BlocklistsRTorrent.bsh', 0, 2, null);
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (6, 'MySB_ChangeUserPassword', 0, 2, null);
 

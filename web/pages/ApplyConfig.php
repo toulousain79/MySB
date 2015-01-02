@@ -103,17 +103,17 @@ if ( IfApplyConfig() > 0 ) {
 
 				break;
 
-			case "Postfix.bsh":
-				echo '<div align="center"><h1>Postfix.bsh...</h1></div>';
+			case "Postfix":
+				echo '<div align="center"><h1>Postfix...</h1></div>';
 
-				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'Postfix.bsh'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'Postfix'", $output, $result);
 
 				foreach ( $output as $item ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';
 				}
 
 				if ( $result == 0 ) {
-					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "Postfix.bsh"]);
+					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "Postfix"]);
 					if ( $result > 0 ) {
 						$type = 'success';
 					} else {

@@ -1,6 +1,6 @@
 #!/bin/bash 
 # ----------------------------------
-source /etc/MySB/inc/includes_before.bsh
+source /etc/MySB/inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -24,53 +24,39 @@ source /etc/MySB/inc/includes_before.bsh
 #
 ##################### FIRST LINE #####################################
 
-#### Composer
-ComposerDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'Composer'\"`"
-ComposerUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'Composer'\"`"
-ComposerFile="`sqlite3 $MySB_DB \"SELECT file FROM repositories WHERE name = 'Composer'\"`"
-if hash composer 2>/dev/null; then
-	composer self-update --quiet
-else
-	if [ -f /etc/MySB/temp/$ComposerFile ]; then
-		mv -v /etc/MySB/temp/$ComposerFile $ComposerDir
-		chmod +x /usr/bin/composer
-	else
-		cd /tmp
-		curl -s $ComposerUrl | php
-		mv -v /tmp/$ComposerFile $ComposerDir
-		chmod +x /usr/bin/composer
+if [ "$ToInstall_NFS" == "YES" ]; then
+	#### install
+	if [ ! -f /etc/init.d/nfs-kernel-server ]; then
+		PackagesManage purge "nfs-common"
+		PackagesManage purge "rpcbind"
+		PackagesManage install "rpcbind"
+		PackagesManage install "nfs-common"
+		PackagesManage install "nfs-kernel-server"
 	fi
-fi
 
-#### NodeJS
-NodeDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'Node'\"`"
-NodeUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'Node'\"`"
-NodeFile="`sqlite3 $MySB_DB \"SELECT file FROM repositories WHERE name = 'Node'\"`"
-if [ "$1" == "REFRESH" ]; then 
-	if [ -d $NodeDir ]; then
-		rm -vrf $NodeDir
-	fi
-	if [ -f /etc/MySB/files/$NodeFile ]; then
-		rm -vf /etc/MySB/files/$NodeFile
-	fi
-	wget --no-check-certificate $NodeUrl -O /etc/MySB/files/$NodeFile
-	tar -zxvf /etc/MySB/files/$NodeFile -C $NodeDir
-fi
-cd $NodeDir
-make clean
-./configure
-make -j$PROCESSOR
-make install
-/sbin/ldconfig
+	#### STOP services
+	ManageServices stop "nfs-kernel-server"
 
-#### Bower
-if hash bower 2>/dev/null; then
-	bower update --allow-root --config.interactive=false
-else
-	npm install -g bower
+	#### rpcbind bug
+	if [ "`cat /etc/init.d/nfs-kernel-server | grep 'service rpcbind restart'`" == "" ];then
+		awk '{ print } /export_files=/ { print "        service rpcbind restart" }' /etc/init.d/nfs-kernel-server > /tmp/nfs-kernel-server
+		mv -v /tmp/nfs-kernel-server /etc/init.d/nfs-kernel-server
+		chmod +x /etc/init.d/nfs-kernel-server
+	fi
+
+	crontab -l > /tmp/crontab.tmp
+	sed -i '/nfs-kernel-server/d' /tmp/crontab.tmp
+	echo "@reboot service nfs-kernel-server start &> /dev/null" >> /tmp/crontab.tmp
+	crontab /tmp/crontab.tmp
+	rm -f /tmp/crontab.tmp
+
+	sqlite3 $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'NFS';"
+	
+	#### START services
+	ManageServices start "cron nfs-kernel-server"
 fi
 
 # -----------------------------------------
-source /etc/MySB/inc/includes_after.bsh
+source /etc/MySB/inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

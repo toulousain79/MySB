@@ -1,5 +1,7 @@
 #!/bin/bash 
 # ----------------------------------
+source /etc/MySB/inc/includes_before
+# ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 #    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,64 +24,24 @@
 #
 ##################### FIRST LINE #####################################
 
-#### 1 - includes
-source /etc/MySB/inc/vars.bsh
-source /etc/MySB/inc/funcs.bsh
-if [ -f /lib/lsb/init-functions ]; then
-	source /lib/lsb/init-functions
+#### Install packages
+MySB_Install_Packages=`grep -rni 'TOOLS=' /etc/MySB/MySB_Install.bsh | cut -d '"' -f 2`
+PackagesManage install "$MySB_Install_Packages subversion htop build-essential automake libtool manpages-fr pkg-config curl unzip zip iperf csvtool whois vim nano ntpdate update-notifier-common debian-goodies rkhunter bridge-utils libxml2-dev libsigc++-2.0-dev libncurses5-dev libxmlrpc-c3-dev libcppunit-dev gnupg-curl python debianutils coreutils mailutils bc"
+
+PackagesManage install "rar"
+if [ $? -gt 0 ]; then
+	PackagesManage install "rar-free"
 fi
 
-#### 2 - SWITCHES
-# Default
-BANNER=ON		# Banner for all script (ON/OFF)
-LOGSTD=NO		# Standard Outpout and Error redicted to 'scriptname.log' (STDERR/STDOUT/NO)
-USAGE=ON		# All usage display to user (ON/OFF)
-
-#### Check by arguments
-Args=("$@")
-for ((i=0; i < $#; i++)) {
-	case "${Args[$i]}" in
-		"UPGRADE"|"REFRESH"|"CRON"|"INSTALL")
-			BANNER=OFF
-			LOGSTD=STDOUT
-			USAGE=OFF
-		;;
-		"APPLYCONFIG")
-			BANNER=OFF
-			LOGSTD=NO
-			USAGE=OFF
-		;;
-	esac
-}
-
-#### Check by script name
-case "$ScriptName" in
-	"ApplyConfig.bsh") # Launched by ApplyConfig.bsh (web)
-		BANNER=OFF
-	;;
-	"From_v1.1-to-dev.bsh") # Upgrade ?
-		MySB_CurrentVersion="dev"
-	;;
-esac
-
-#### 3 - Create MySB banner
-if [ "$BANNER" == "ON" ]; then
-	BannerGenerator
+PackagesManage install "unrar"
+if [ $? -gt 0 ]; then
+	PackagesManage install "unrar-free"
 fi
 
-#### 4 -STD Out/Err (after banner)
-if [ "$LOGSTD" != "NO" ] ; then
-	if [ "$LOGSTD" == "STDERR" ]; then
-		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
-		echo "START Err: "`date` "-" $ScriptName $1 >> /etc/MySB/logs/$ScriptName.log
-		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
-		exec 2>> /etc/MySB/logs/$ScriptName.log
-	else
-		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
-		echo "START Out/Err: "`date` "-" $ScriptName $1 >> /etc/MySB/logs/$ScriptName.log
-		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
-		exec >> /etc/MySB/logs/$ScriptName.log	2>&1
-	fi
-fi
+#### Purge packages
+PackagesManage purge "heirloom-mailx"
 
+# -----------------------------------------
+source /etc/MySB/inc/includes_after
+# -----------------------------------------
 ##################### LAST LINE ######################################
