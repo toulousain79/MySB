@@ -81,39 +81,39 @@ rm -rf /etc/MySB/files/* &> /dev/null
 rm -rf /etc/MySB/sources/* &> /dev/null
 StatusSTD
 
-#### 7 - Sources List
+#### 3 - Sources List
 source /etc/MySB/install/SourcesList
 
-#### 8 - Packages
+#### 4 - Packages
 echo -e -n "${CBLUE}Install missing packages$CEND..."
 screen -dmS PHP /bin/bash /etc/MySB/install/Packages 'UPGRADE';
 WaitingScreen PHP
 StatusSTD
 
-#### 3 - SQLite (move flat files to database)
+#### 5 - SQLite (move flat files to database)
 echo -e -n "${CBLUE}Create and populate databases$CEND..."
 screen -dmS PHP /bin/bash /etc/MySB/install/SQLite 'UPGRADE';
 WaitingScreen PHP
 StatusSTD
 
-#### 4 - Vars
+#### 6 - Vars
 echo -e -n "${CBLUE}Read database informations$CEND..."
 if [ -f /etc/MySB/inc/vars ]; then source /etc/MySB/inc/vars; fi
 if [ -f /etc/MySB/inc/funcs ]; then source /etc/MySB/inc/funcs; fi
 ListingUsers
 StatusSTD
 
-#### 5 - Tweaks
+#### 7 - Tweaks
 echo -e -n "${CBLUE}Sytem optimizations$CEND..."
 screen -dmS PHP /bin/bash /etc/MySB/install/Tweaks 'UPGRADE';
 WaitingScreen PHP
 StatusSTD
 
-#### 6 - STOP services
-# ManageServices stop "cron"
-# for seedUser in $UsersList; do
-	# serviice rtorrent-$seedUser stop
-# done
+#### 8 - STOP services
+ManageServices stop "cron"
+for seedUser in $UsersList; do
+	service rtorrent-$seedUser stop
+done
 
 #### 9 - PHP
 echo -e -n "${CBLUE}Some fixes for PHP$CEND..."
@@ -133,7 +133,25 @@ screen -dmS Nginx /bin/bash /etc/MySB/install/Nginx 'UPGRADE';
 WaitingScreen Nginx
 StatusSTD
 
-#### 12 - DownloadAll (update)
+#### 12 - DNScrypt-proxy
+if [ "$IsInstalled_DNScrypt" == "YES" ]; then
+	echo -e -n "${CBLUE}Some fixes for DNScrypt-proxy$CEND..."
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'DNScrypt-proxy';"
+	screen -dmS DNScrypt /bin/bash /etc/MySB/install/DNScrypt 'UPGRADE';
+	WaitingScreen DNScrypt
+	StatusSTD
+fi
+
+#### 13 - PeerGuardian
+if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
+	echo -e -n "${CBLUE}Some fixes for PeerGuardian$CEND..."
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'PeerGuardian';"
+	screen -dmS PeerGuardian /bin/bash /etc/MySB/install/PeerGuardian 'UPGRADE';
+	WaitingScreen PeerGuardian
+	StatusSTD
+fi
+
+#### 14 - DownloadAll (update)
 echo -e -n "${CBLUE}Download all files now in one time (GIT, SVN, TAR.GZ, WBM)$CEND..."
 # ruTorrent
 rm -f $RutorrentDir/conf/config.php &> /dev/null
@@ -151,31 +169,13 @@ rsync -av /etc/MySB/temp/conf_users/ $RutorrentDir/conf/users/ && rm -rf /etc/My
 rsync -av /etc/MySB/temp/share_users/ $RutorrentDir/share/users/ && rm -rf /etc/MySB/temp/share_users &> /dev/null
 StatusSTD
 
-#### 17 - DNScrypt-proxy
-if [ "$IsInstalled_DNScrypt" == "YES" ]; then
-	echo -e -n "${CBLUE}Some fixes for DNScrypt-proxy$CEND..."
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'DNScrypt-proxy';"
-	screen -dmS DNScrypt /bin/bash /etc/MySB/install/DNScrypt 'UPGRADE';
-	WaitingScreen DNScrypt
-	StatusSTD
-fi
-
-#### 19 - PeerGuardian
-if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
-	echo -e -n "${CBLUE}Some fixes for PeerGuardian$CEND..."
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'PeerGuardian';"
-	screen -dmS PeerGuardian /bin/bash /etc/MySB/install/PeerGuardian 'UPGRADE';
-	WaitingScreen PeerGuardian
-	StatusSTD
-fi
-
-#### 13 - Refresh tools
+#### 15 - Refresh tools
 echo -e -n "${CBLUE}Refresh some tools (ruTorrent, Manager, Cakebox)$CEND..."
 screen -dmS MySB_RefreshMe /bin/bash /etc/MySB/bin/MySB_RefreshMe 'all';	
 WaitingScreen MySB_RefreshMe
 StatusSTD
 
-#### 14 - Samba
+#### 16 - Samba
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	echo -e -n "${CBLUE}Some fixes for Samba$CEND..."
 	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Samba';"
@@ -184,7 +184,7 @@ if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	StatusSTD
 fi
 
-#### 15 - Fail2Ban
+#### 17 - Fail2Ban
 if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
 	echo -e -n "${CBLUE}Some fixes for Fail2Ban$CEND..."
 	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Fail2Ban';"
@@ -193,7 +193,7 @@ if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
 	StatusSTD
 fi
 
-#### 16 - LogWatch
+#### 18 - LogWatch
 if [ "$IsInstalled_LogWatch" == "YES" ]; then
 	echo -e -n "${CBLUE}Some fixes for Logwatch$CEND..."
 	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'LogWatch';"
@@ -202,18 +202,18 @@ if [ "$IsInstalled_LogWatch" == "YES" ]; then
 	StatusSTD
 fi
 
-#### 18 - rTorrent Blocklists
+#### 19 - rTorrent Blocklists
 echo -e -n "${CBLUE}Compile blocklists for rTorrent$CEND..."
 screen -dmS Blocklist /bin/bash /etc/MySB/install/Blocklists 'UPGRADE';
 WaitingScreen Blocklist
 StatusSTD
 
-#### Certificates
+#### 20 - Certificates
 echo -e -n "${CBLUE}Some fixes for Certificates$CEND..."
 chmod 644 /etc/MySB/ssl/*.cert &> /dev/null
 StatusSTD
 
-#### OpenVPN
+#### 21 - OpenVPN
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	echo -e -n "${CBLUE}Some fixes for OpenVPN$CEND..."
 	sed -i '/DNS 8.8.8.8/d' /etc/openvpn/Server_TUN_WithGW.conf
@@ -223,7 +223,7 @@ if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	StatusSTD
 fi
 
-#### Crontab
+#### 22 - Crontab
 echo -e -n "${CBLUE}Some fixes for Crontab$CEND..."
 crontab -l > /tmp/crontab.tmp
 for seedUser in $UsersList; do
@@ -235,7 +235,7 @@ crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
 StatusSTD
 
-#### rTorrent (.rtorrent.rc)
+#### 23 - rTorrent (.rtorrent.rc)
 for seedUser in $UsersList; do
 	echo -e -n "${CBLUE}Stopping rTorrent process for $seedUser$CEND..."
 	service rtorrent-$seedUser stop
@@ -275,31 +275,23 @@ for seedUser in $UsersList; do
 	StatusSTD	
 done
 
-#### Create directories & change rights
+#### 24 - Create directories & change rights
 echo -e -n "${CBLUE}Force owners and rights for files and directories$CEND..."
 ManageDirectoriesAndFiles
 StatusSTD
 
-#### LogWatch
-# if [ -f /etc/logwatch/conf/logwatch.conf ]; then
-	# echo -e -n "${CBLUE}Some fixes for LogWatch$CEND..."
-	# perl -pi -e "s/^Range = All/Range = yesterday/g" /etc/logwatch/conf/logwatch.conf
-	# perl -pi -e "s/^Detail = High/Detail = Low/g" /etc/logwatch/conf/logwatch.conf
-	# StatusSTD
-# fi
-
-#### Cleaning
+#### 25 - Cleaning
 rm -rf /etc/MySB/temp/* &> /dev/null
 
-#### START services
-ManageServices start "cron nginx"
+#### 26 - START services
+ManageServices start "cron"
 
-#### Firewall And Security
+#### 27 - Firewall And Security
 echo -e -n "${CBLUE}Update security rules$CEND..."
 ScriptInvoke 'screen' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new' 'UPGRADE'
 StatusSTD
 
-#### Send mail for each user with new version
+#### 28 - Send mail for each user with new version
 for seedUser in $UsersList; do
 	echo -e -n "${CBLUE}Send mail for $seedUser$CEND..."
 	MonthlyPayment "$seedUser"
