@@ -152,10 +152,8 @@ if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
 	StatusSTD
 fi
 
-#### 14 - DownloadAll (update)
-echo -e -n "${CBLUE}Download all files now in one time (GIT, SVN, TAR.GZ, WBM)$CEND..."
+#### 14 - Backup users data
 # ruTorrent
-rm -f $RutorrentDir/conf/config.php &> /dev/null
 mv $RutorrentDir/conf/users /etc/MySB/temp/conf_users &> /dev/null && rm -rf /etc/MySB/temp/conf_users/.svn &> /dev/null
 mv $RutorrentDir/share/users /etc/MySB/temp/share_users &> /dev/null && rm -rf /etc/MySB/temp/share_users/.svn &> /dev/null
 rm -rf $RutorrentDir &> /dev/null
@@ -163,20 +161,27 @@ rm -rf $RutorrentDir &> /dev/null
 if [ -d $ManagerDir ]; then rm -rf $ManagerDir; fi
 # Cackebox
 if [ -d $CakeboxDir ]; then rm -rf $CakeboxDir; fi
+
+#### 15 - DownloadAll (update)
+echo -e -n "${CBLUE}Download all files now in one time (GIT, SVN, TAR.GZ, WBM)$CEND..."
 screen -dmS DownloadAll /bin/bash /etc/MySB/install/DownloadAll 'UPGRADE';
 WaitingScreen DownloadAll
-# ruTorrent
-rsync -av /etc/MySB/temp/conf_users/ $RutorrentDir/conf/users/ &> /dev/null && rm -rf /etc/MySB/temp/conf_users &> /dev/null
-rsync -av /etc/MySB/temp/share_users/ $RutorrentDir/share/users/ &> /dev/null && rm -rf /etc/MySB/temp/share_users &> /dev/null
 StatusSTD
 
-#### 15 - Refresh tools
+#### 16 - Refresh tools
 echo -e -n "${CBLUE}Refresh some tools (ruTorrent, Manager, Cakebox)$CEND..."
 screen -dmS MySB_RefreshMe /bin/bash /etc/MySB/bin/MySB_RefreshMe 'all';	
 WaitingScreen MySB_RefreshMe
 StatusSTD
 
-#### 16 - Samba
+#### 17 - Restore users data
+for seedUser in $UsersList; do
+	mv /etc/MySB/temp/conf_users/$seedUser/plugins/stream/config.php $RutorrentDir/conf/users/$seedUser/plugins/stream/
+done
+rm -rf /etc/MySB/temp/conf_users &> /dev/null
+rsync -av /etc/MySB/temp/share_users/ $RutorrentDir/share/users/ &> /dev/null && rm -rf /etc/MySB/temp/share_users &> /dev/null
+
+#### 18 - Samba
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	echo -e -n "${CBLUE}Some fixes for Samba$CEND..."
 	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Samba';"
@@ -185,7 +190,7 @@ if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	StatusSTD
 fi
 
-#### 17 - Fail2Ban
+#### 19 - Fail2Ban
 if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
 	echo -e -n "${CBLUE}Some fixes for Fail2Ban$CEND..."
 	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Fail2Ban';"
@@ -194,7 +199,7 @@ if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
 	StatusSTD
 fi
 
-#### 18 - LogWatch
+#### 20 - LogWatch
 if [ "$IsInstalled_LogWatch" == "YES" ]; then
 	echo -e -n "${CBLUE}Some fixes for Logwatch$CEND..."
 	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'LogWatch';"
@@ -203,18 +208,18 @@ if [ "$IsInstalled_LogWatch" == "YES" ]; then
 	StatusSTD
 fi
 
-#### 19 - rTorrent Blocklists
+#### 21 - rTorrent Blocklists
 echo -e -n "${CBLUE}Compile blocklists for rTorrent$CEND..."
 screen -dmS Blocklist /bin/bash /etc/MySB/install/Blocklists 'UPGRADE';
 WaitingScreen Blocklist
 StatusSTD
 
-#### 20 - Certificates
+#### 22 - Certificates
 echo -e -n "${CBLUE}Some fixes for Certificates$CEND..."
 chmod 644 /etc/MySB/ssl/*.cert &> /dev/null
 StatusSTD
 
-#### 21 - OpenVPN
+#### 23 - OpenVPN
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	echo -e -n "${CBLUE}Some fixes for OpenVPN$CEND..."
 	sed -i '/DNS 8.8.8.8/d' /etc/openvpn/Server_TUN_WithGW.conf
@@ -224,7 +229,7 @@ if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	StatusSTD
 fi
 
-#### 22 - Crontab
+#### 24 - Crontab
 echo -e -n "${CBLUE}Some fixes for Crontab$CEND..."
 crontab -l > /tmp/crontab.tmp
 for seedUser in $UsersList; do
@@ -236,7 +241,7 @@ crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
 StatusSTD
 
-#### 23 - rTorrent (.rtorrent.rc)
+#### 25 - rTorrent (.rtorrent.rc)
 for seedUser in $UsersList; do
 	echo -e -n "${CBLUE}Stopping rTorrent process for $seedUser$CEND..."
 	service rtorrent-$seedUser stop
@@ -276,23 +281,23 @@ for seedUser in $UsersList; do
 	StatusSTD	
 done
 
-#### 24 - Create directories & change rights
+#### 26 - Create directories & change rights
 echo -e -n "${CBLUE}Force owners and rights for files and directories$CEND..."
 ManageDirectoriesAndFiles
 StatusSTD
 
-#### 25 - Cleaning
+#### 27 - Cleaning
 rm -rf /etc/MySB/temp/* &> /dev/null
 
-#### 26 - START services
+#### 28 - START services
 ManageServices start "cron"
 
-#### 27 - Firewall And Security
+#### 29 - Firewall And Security
 echo -e -n "${CBLUE}Update security rules$CEND..."
 ScriptInvoke 'screen' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new' 'UPGRADE'
 StatusSTD
 
-#### 28 - Send mail for each user with new version
+#### 30 - Send mail for each user with new version
 for seedUser in $UsersList; do
 	echo -e -n "${CBLUE}Send mail for $seedUser$CEND..."
 	SendMail "MySB - Upgraded to $MySB_CurrentVersion !" "$seedUser"
