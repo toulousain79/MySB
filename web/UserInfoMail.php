@@ -61,7 +61,8 @@ function printUser($user) {
 	} else {
 		$User_IPv4 = 'No address given ...';
 	}
-	if ( ($UserPasswd != "") && ($users_datas["admin"] != '1') ) {
+	
+	if ( $UserPasswd != "" ) {
 		$CommentAddress = '<a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/NewUser.php?var1=' . $user . '&var2=' . $UserPasswd . '">You must change your password now !</a>';
 		$CommentAddressStyle = 'style="background-color: #FF6666; text-align=center"';
 		$CommentPassword = $CommentAddress;

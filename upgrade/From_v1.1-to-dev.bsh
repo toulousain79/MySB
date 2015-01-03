@@ -42,6 +42,7 @@ StatusSTD
 
 #### 2 - Move some files & directories
 echo -e -n "${CBLUE}Move some files & directories$CEND..."
+if [ -f /etc/MySB/logs/From_v1.0-to-v1.1.bsh.log ]; then rm -f /etc/MySB/logs/From_v1.0-to-v1.1.bsh.log; fi
 if [ -f /etc/MySB/logs/Blocklist.log ]; then mv /etc/MySB/logs/Blocklist.log /etc/MySB/logs/Blocklists.log; fi
 if [ -f /etc/MySB/logs/BlockList.sh.log ]; then mv /etc/MySB/logs/BlockList.sh.log /etc/MySB/logs/BlocklistsRTorrent.bsh.log; fi
 if [ -f /etc/MySB/logs/Bridge-Start.sh.log ]; then rm -f /etc/MySB/logs/Bridge-Start.sh.log; fi
@@ -119,7 +120,7 @@ WaitingScreen PHP
 StatusSTD
 
 #### 8 - STOP services
-ManageServices stop "cron stunnel4 postfix" &> /dev/null
+ManageServices stop "cron" &> /dev/null
 for seedUser in $UsersList; do
 	service rtorrent-$seedUser stop &> /dev/null
 done
@@ -306,24 +307,19 @@ if [ -f /etc/MySB/inc/funcs ]; then source /etc/MySB/inc/funcs; fi
 ListingUsers
 StatusSTD
 
-#### 28 - Create directories & change rights
-echo -e -n "${CBLUE}Force owners and rights for files and directories$CEND..."
-ManageDirectoriesAndFiles
-StatusSTD
-
-#### 29 - Firewall And Security
+#### 28 - Firewall And Security
 echo -e -n "${CBLUE}Update security rules$CEND..."
 ScriptInvoke 'screen' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new' 'UPGRADE'
 StatusSTD
 
-#### 30 - START services
-ManageServices start "cron nginx stunnel4 postfix" &> /dev/null
+#### 29 - START services
+ManageServices start "cron nginx" &> /dev/null
 
-#### 31 - Send mail for each user with new version
+#### 30 - Send mail for each user with new version
 for seedUser in $UsersList; do
 	UserPassword="`sqlite3 $MySB_DB \"SELECT users_passwd FROM users WHERE users_ident = '$seedUser'\"`"
 	#### Assign password
-	ScriptInvoke "source" "/etc/MySB/bin/MySB_ChangeUserPassword" "$seedUser" "$UserPassword" "UPGRADE"
+	ScriptInvoke "screen" "/etc/MySB/bin/MySB_ChangeUserPassword" "$seedUser" "$UserPassword" "UPGRADE"
 done
 
 clear
