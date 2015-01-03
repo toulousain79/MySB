@@ -1016,18 +1016,13 @@ ManageDirectoriesAndFiles() {
 	ListingUsers
 	if [ ! -z "$UsersList" ] && [ -f $MySB_DB ] && [ -s $MySB_DB ] && hash sqlite3 2> /dev/null; then	
 		for SeedboxUser in $UsersList; do
-			if [ ! -z "`getent passwd $SeedboxUser`" ]; then
-				HomeDir="`sqlite3 $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$SeedboxUser'\"`"
-				HomeDirEscaped=`echo $HomeDir | sed s,/,\\\\\\\\\\/,g`
-				PortSCGI="`sqlite3 $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$SeedboxUser'\"`"
-				UserNameUpper=`echo $SeedboxUser | tr '[:lower:]' '[:upper:]'`
-			
+			if [ ! -z "`getent passwd $SeedboxUser`" ]; then		
 				# Home
-				ChangingHomeUserRights
+				ChangingHomeUserRights "$SeedboxUser"
 				
 				# ruTorrent
 				if [ ! -z "$RutorrentDir" ]; then
-					ruTorrentUsersConfigs
+					ruTorrentUsersConfigs "$SeedboxUser"
 				fi
 				
 				# Seedbox-Manager
@@ -1058,6 +1053,9 @@ ManageDirectoriesAndFiles() {
 
 #### Change rights for users
 ChangingHomeUserRights() {
+	SeedboxUser="$1"
+	HomeDir="`sqlite3 $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$SeedboxUser'\"`"
+
 	# /home/user: O:rwx G:rx O:rx
 	if [ ! -d $HomeDir ]; then mkdir $HomeDir; fi
 	chmod 755 $HomeDir
@@ -1108,6 +1106,10 @@ ChangingHomeUserRights() {
 #### Cakebox-Light Users Config
 CakeboxUsersConfigs() {
 	if [ "$IsInstalled_Cakebox" == "YES" ]; then
+		SeedboxUser="$1"
+		HomeDir="`sqlite3 $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$SeedboxUser'\"`"
+		HomeDirEscaped=`echo $HomeDir | sed s,/,\\\\\\\\\\/,g`
+	
 		if [ -f $CakeboxDir/config/default.php.dist ]; then
 			cp $CakeboxDir/config/default.php.dist $CakeboxDir/config/$SeedboxUser.php
 			sed -i "s/\/var\/www\//$HomeDirEscaped\//g;" $CakeboxDir/config/$SeedboxUser.php
@@ -1120,6 +1122,12 @@ CakeboxUsersConfigs() {
 #### Seedbox-Manager Users Config
 ManagerUsersConfigs() {
 	if [ "$IsInstalled_Manager" == "YES" ]; then
+		SeedboxUser="$1"
+		HomeDir="`sqlite3 $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$SeedboxUser'\"`"
+		HomeDirEscaped=`echo $HomeDir | sed s,/,\\\\\\\\\\/,g`
+		PortSCGI="`sqlite3 $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$SeedboxUser'\"`"
+		UserNameUpper=`echo $SeedboxUser | tr '[:lower:]' '[:upper:]'`	
+	
 		if [ ! -d $ManagerDir/conf/users/$SeedboxUser ]; then mkdir -p $ManagerDir/conf/users/$SeedboxUser; fi
 		if [ -f $ManagerDir/conf/config.ini ]; then
 			cp $ManagerDir/conf/config.ini $ManagerDir/conf/users/$SeedboxUser/config.ini
@@ -1143,6 +1151,11 @@ ManagerUsersConfigs() {
 #### ruTorrent Users Config and Plugins
 ruTorrentUsersConfigs() {
 	LISTING=$(ls -1r $RutorrentPluginsDir/)
+	SeedboxUser="$1"
+	HomeDir="`sqlite3 $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$SeedboxUser'\"`"
+	HomeDirEscaped=`echo $HomeDir | sed s,/,\\\\\\\\\\/,g`
+	PortSCGI="`sqlite3 $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$SeedboxUser'\"`"
+	UserNameUpper=`echo $SeedboxUser | tr '[:lower:]' '[:upper:]'`	
 
 	# share
 	if [ ! -d $RutorrentDir/share/users/$SeedboxUser/settings/ ]; then mkdir -p $RutorrentDir/share/users/$SeedboxUser/settings/; fi
@@ -1201,15 +1214,15 @@ canBeShutdowned = yes
 EOF
 	) > $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
 
-	for Plugin in ${LISTING}; do	
-		if [ -d $RutorrentPluginsDir/${Plugin} ]; then
-			if [ -f $RutorrentPluginsDir/${Plugin}/conf.php ] || [ -f $RutorrentPluginsDir/${Plugin}/config.php ]; then
-				if [ ! -d $RutorrentDir/conf/users/$SeedboxUser/plugins/${Plugin} ]; then
-					mkdir -p $RutorrentDir/conf/users/$SeedboxUser/plugins/${Plugin}
+	for Plugin in $LISTING; do	
+		if [ -d $RutorrentPluginsDir/$Plugin ]; then
+			if [ -f $RutorrentPluginsDir/$Plugin/conf.php ] || [ -f $RutorrentPluginsDir/$Plugin/config.php ]; then
+				if [ ! -d $RutorrentDir/conf/users/$SeedboxUser/plugins/$Plugin ]; then
+					mkdir -p $RutorrentDir/conf/users/$SeedboxUser/plugins/$Plugin
 				fi
 
 				# Before copy of plugin conf, alter for general use
-				case ${Plugin} in
+				case $Plugin in
 					'create')
 						perl -pi -e "s/$useExternal = false;/$useExternal = 'buildtorrent';/g" $RutorrentPluginsDir/create/conf.php
 						sed -i "/pathToCreatetorrent/s/'';/'\/usr\/bin\/buildtorrent';/g" $RutorrentPluginsDir/create/conf.php
@@ -1227,62 +1240,62 @@ EOF
 					;;
 				esac
 
-				if [ -f $RutorrentPluginsDir/${Plugin}/conf.php ]; then
-					cp $RutorrentPluginsDir/${Plugin}/conf.php $RutorrentDir/conf/users/$SeedboxUser/plugins/${Plugin}
+				if [ -f $RutorrentPluginsDir/$Plugin/conf.php ]; then
+					cp $RutorrentPluginsDir/$Plugin/conf.php $RutorrentDir/conf/users/$SeedboxUser/plugins/$Plugin
 				fi
-				if [ -f $RutorrentPluginsDir/${Plugin}/config.php ]; then
-					cp $RutorrentPluginsDir/${Plugin}/config.php $RutorrentDir/conf/users/$SeedboxUser/plugins/${Plugin}
+				if [ -f $RutorrentPluginsDir/$Plugin/config.php ]; then
+					cp $RutorrentPluginsDir/$Plugin/config.php $RutorrentDir/conf/users/$SeedboxUser/plugins/$Plugin
 				fi
 			fi
 		fi
 
 		# After copy of plugin conf, alter for user
-		case ${Plugin} in
+		case $Plugin in
 			'autotools')
-				echo "[${Plugin}]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
+				echo "[$Plugin]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
 				echo "enabled = yes" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
 			;;
 			'logoff')
-				echo "[${Plugin}]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
+				echo "[$Plugin]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
 				echo "enabled = yes" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
-				perl -pi -e "s/scars,user1,user2/$SeedboxUser/g" $RutorrentDir/conf/users/$SeedboxUser/plugins/${Plugin}/conf.php
+				perl -pi -e "s/scars,user1,user2/$SeedboxUser/g" $RutorrentDir/conf/users/$SeedboxUser/plugins/$Plugin/conf.php
 			;;
 			'ratiocolor')
-				echo "[${Plugin}]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
+				echo "[$Plugin]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
 				echo "enabled = yes" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
 			;;
 			'chat')
-				echo "[${Plugin}]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
+				echo "[$Plugin]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
 				echo "enabled = yes" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
 			;;		
 			'filemanager')
-				echo "[${Plugin}]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
+				echo "[$Plugin]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
 				echo "enabled = yes" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
 			;;
 			'fileshare')
-				echo "[${Plugin}]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
+				echo "[$Plugin]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
 				echo "enabled = yes" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
 			;;
 			'linkseedboxmanager')
 				if [ "$IsInstalled_Manager" == "NO" ]; then
-					if [ -d $RutorrentDir/conf/users/$SeedboxUser/plugins/${Plugin} ]; then rm -rf $RutorrentDir/conf/users/$SeedboxUser/plugins/${Plugin}; fi
-					if [ -d $RutorrentPluginsDir/${Plugin} ]; then rm -rf $RutorrentPluginsDir/${Plugin}; fi
+					if [ -d $RutorrentDir/conf/users/$SeedboxUser/plugins/$Plugin ]; then rm -rf $RutorrentDir/conf/users/$SeedboxUser/plugins/$Plugin; fi
+					if [ -d $RutorrentPluginsDir/$Plugin ]; then rm -rf $RutorrentPluginsDir/$Plugin; fi
 				else
-					echo "[${Plugin}]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
+					echo "[$Plugin]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
 					echo "enabled = yes" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini					
 				fi
 			;;
 			'linkcakebox')
 				if [ "$IsInstalled_Cakebox" == "NO" ]; then
-					if [ -d $RutorrentDir/conf/users/$SeedboxUser/plugins/${Plugin} ]; then rm -rf $RutorrentDir/conf/users/$SeedboxUser/plugins/${Plugin}; fi
-					if [ -d $RutorrentPluginsDir/${Plugin} ]; then rm -rf $RutorrentPluginsDir/${Plugin}; fi
+					if [ -d $RutorrentDir/conf/users/$SeedboxUser/plugins/$Plugin ]; then rm -rf $RutorrentDir/conf/users/$SeedboxUser/plugins/$Plugin; fi
+					if [ -d $RutorrentPluginsDir/$Plugin ]; then rm -rf $RutorrentPluginsDir/$Plugin; fi
 				else
-					echo "[${Plugin}]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
+					echo "[$Plugin]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
 					echo "enabled = yes" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini					
 				fi
 			;;			
 			*)
-				echo "[${Plugin}]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
+				echo "[$Plugin]" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
 				echo "enabled = user-defined" >> $RutorrentDir/conf/users/$SeedboxUser/plugins.ini
 			;;
 		esac
