@@ -189,13 +189,19 @@ done
 rm -rf /etc/MySB/temp/conf_users &> /dev/null
 rsync -av /etc/MySB/temp/share_users/ $RutorrentDir/share/users/ &> /dev/null && rm -rf /etc/MySB/temp/share_users &> /dev/null
 
-#### 18 - Samba
+#### 18 - Samba & NFS
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	echo -e -n "${CBLUE}Some fixes for Samba$CEND..."
 	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Samba';"
 	screen -dmS Samba /bin/bash /etc/MySB/install/Samba 'UPGRADE';	
 	WaitingScreen Samba
 	StatusSTD
+	
+	echo -e -n "${CBLUE}Some fixes for NFS$CEND..."
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'NFS';"
+	screen -dmS NFS /bin/bash /etc/MySB/install/NFS 'UPGRADE';
+	WaitingScreen NFS
+	StatusSTD	
 fi
 
 #### 19 - Fail2Ban
@@ -298,7 +304,7 @@ StatusSTD
 rm -rf /etc/MySB/temp/* &> /dev/null
 
 #### 28 - START services
-ManageServices start "cron"
+ManageServices start "cron nginx"
 
 #### 29 - Firewall And Security
 echo -e -n "${CBLUE}Update security rules$CEND..."
@@ -308,7 +314,7 @@ StatusSTD
 #### 30 - Send mail for each user with new version
 for seedUser in $UsersList; do
 	echo -e -n "${CBLUE}Send mail for $seedUser$CEND..."
-	SendMail "MySB - Upgraded to $MySB_CurrentVersion !" "$seedUser"
+	SendMail "MySB - Upgraded to $MySB_CurrentVersion" "$seedUser"
 	StatusSTD
 done
 

@@ -1123,7 +1123,7 @@ CakeboxUsersConfigs() {
 ManagerUsersConfigs() {
 	if [ "$IsInstalled_Manager" == "YES" ]; then
 		if [ ! -d $ManagerDir/conf/users/$seedUser ]; then mkdir -p $ManagerDir/conf/users/$seedUser; fi
-		if [ ! -f $ManagerDir/conf/users/$seedUser/config.ini ]; then
+		if [ -f $ManagerDir/conf/config.ini ]; then
 			cp $ManagerDir/conf/config.ini $ManagerDir/conf/users/$seedUser/config.ini
 			sed -i "s/user_directory = \"\/\"/user_directory = \"$HOMEDIR_ESCAPED\"/g;" $ManagerDir/conf/users/$seedUser/config.ini
 			sed -i "s/scgi_folder = \"\/RPC1\"/scgi_folder = \"\/$UPPERNEWUSER\"/g;" $ManagerDir/conf/users/$seedUser/config.ini
@@ -1221,9 +1221,11 @@ EOF
 						sed -i "/'zip'/s/'';/'\/usr\/bin\/zip';/g" $RutorrentPluginsDir/filemanager/conf.php
 						sed -i "/'unzip'/s/'';/'\/usr\/bin\/unzip';/g" $RutorrentPluginsDir/filemanager/conf.php
 						sed -i "/'tar'/s/'';/'\/bin\/tar';/g" $RutorrentPluginsDir/filemanager/conf.php
-						NumLign=$(sed -n "/'\/bin\/tar'/=" $RutorrentPluginsDir/filemanager/conf.php)
-						(( NumLign++ ))
-						sed -i "${NumLign}i\$pathToExternals['bzip2'] = '\/bin\/bzip2';" $RutorrentPluginsDir/filemanager/conf.php
+						if [ "`cat $RutorrentPluginsDir/filemanager/conf.php | grep "$pathToExternals\['bzip2'\]"`" == "" ];then
+							NumLign=$(sed -n "/'\/bin\/tar'/=" $RutorrentPluginsDir/filemanager/conf.php)
+							(( NumLign++ ))
+							sed -i "${NumLign}i\$pathToExternals['bzip2'] = '\/bin\/bzip2';" $RutorrentPluginsDir/filemanager/conf.php
+						fi
 					;;
 				esac
 
@@ -1245,7 +1247,7 @@ EOF
 			'logoff')
 				echo "[${Plugin}]" >> $RutorrentDir/conf/users/$seedUser/plugins.ini
 				echo "enabled = yes" >> $RutorrentDir/conf/users/$seedUser/plugins.ini
-				sed -i "s/scars,user1,user2/$seedUser/g;" $RutorrentDir/conf/users/$seedUser/plugins/${Plugin}/conf.php
+				perl -pi -e "s/scars,user1,user2/$seedUser/g" $RutorrentDir/conf/users/$seedUser/plugins/${Plugin}/conf.php
 			;;
 			'ratiocolor')
 				echo "[${Plugin}]" >> $RutorrentDir/conf/users/$seedUser/plugins.ini
