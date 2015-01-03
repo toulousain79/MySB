@@ -33,8 +33,9 @@ perl -pi -e "s/^X11Forwarding yes/X11Forwarding no/g" /etc/ssh/sshd_config
 perl -pi -e "s/Subsystem sftp \/usr\/lib\/openssh\/sftp-server/Subsystem sftp internal-sftp -l ERROR/g" /etc/ssh/sshd_config
 
 if [ "`cat /etc/ssh/sshd_config | grep 'DebianBanner'`" == "" ];then
-	awk '{ print } /UsePAM yes/ { print "DebianBanner no" }' /etc/ssh/sshd_config > /etc/MySB/files/sshd_config
-	mv -v /etc/MySB/files/sshd_config /etc/ssh/sshd_config
+	NumLign="`sed -n '/UsePAM yes/=' /etc/ssh/sshd_config`"
+	(( NumLign++ ))
+	sed -i "${NumLign}i\DebianBanner no" /etc/ssh/sshd_config
 fi
 
 if [ "`cat /etc/ssh/sshd_config | grep 'AllowGroups sshdusers MySB_users'`" == "" ];then
@@ -53,12 +54,14 @@ else
 		perl -pi -e "s/ChrootDirectory \/home\/%u/ChrootDirectory %u/g" /etc/ssh/sshd_config
 	fi
 	if [ "`cat /etc/ssh/sshd_config | grep 'AllowTcpForwarding no'`" == "" ];then
-		awk '{ print } /ForceCommand internal-sftp/ { print "        AllowTcpForwarding no" }' /etc/ssh/sshd_config > /etc/MySB/files/sshd_config
-		mv -v /etc/MySB/files/sshd_config /etc/ssh/sshd_config
+		NumLign="`sed -n '/ForceCommand internal-sftp/=' /etc/ssh/sshd_config`"
+		(( NumLign++ ))
+		sed -i "${NumLign}i\        AllowTcpForwarding no" /etc/ssh/sshd_config
 	fi
 	if [ "`cat /etc/ssh/sshd_config | grep 'X11Forwarding no'`" == "" ];then
-		awk '{ print } /ForceCommand internal-sftp/ { print "        X11Forwarding no" }' /etc/ssh/sshd_config > /etc/MySB/files/sshd_config
-		mv -v /etc/MySB/files/sshd_config /etc/ssh/sshd_config
+		NumLign="`sed -n '/ForceCommand internal-sftp/=' /etc/ssh/sshd_config`"
+		(( NumLign++ ))
+		sed -i "${NumLign}i\        X11Forwarding no" /etc/ssh/sshd_config
 	fi	
 fi
 
