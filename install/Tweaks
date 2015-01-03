@@ -96,6 +96,9 @@ if [ ! -z $TimeZone ]; then
 	dpkg-reconfigure -f noninteractive tzdata
 fi
 
+#### NTP update
+/usr/sbin/ntpdate 0.fr.pool.ntp.org
+
 #### Harden kernel using /etc/sysctl.conf
 # Protection SYN flood
 perl -pi -e "s/^#net.ipv4.tcp_syncookies=1/net.ipv4.tcp_syncookies=1/g" /etc/sysctl.conf
@@ -151,18 +154,29 @@ fi
 
 #### CRON for Synchro NTP, LogServer, DynamicAddressResolver, MySB_UpdateGitHubRepo
 crontab -l > /tmp/crontab.tmp
+
+# Synchro NTP
 sed -i '/ntpdate/d' /tmp/crontab.tmp
-sed -i '/webmin\/package-updates/d' /tmp/crontab.tmp
-sed -i '/LogServer.bsh/d' /tmp/crontab.tmp
-sed -i '/DynamicAddressResolver.bsh/d' /tmp/crontab.tmp
-sed -i '/MySB_UpdateGitHubRepo.bsh/d' /tmp/crontab.tmp
-sed -i '/ldconfig/d' /tmp/crontab.tmp
-sed -i '/drop_caches/d' /tmp/crontab.tmp
-sed -i '/DynamicAddressResolver.bsh/d' /tmp/crontab.tmp
-echo "0 0,6,12,18 * * * /usr/sbin/ntpdate 0.fr.pool.ntp.org &> /dev/null" >> /tmp/crontab.tmp
+echo "0 0,6,12,18 * * * /usr/sbin/ntpdate 0.fr.pool.ntp.org &> /dev/null 2>&1" >> /tmp/crontab.tmp
+# Log HTML
+sed -i '/LogServer/d' /tmp/crontab.tmp
 echo "0 */2 * * * /bin/bash /etc/MySB/scripts/LogServer.bsh CRON &> /dev/null 2>&1" >> /tmp/crontab.tmp
-echo "10 * * * * /bin/bash /etc/MySB/scripts/DynamicAddressResolver.bsh CRON >/dev/null" >> /tmp/crontab.tmp
+# Dynamic Address Resolver
+sed -i '/DynamicAddressResolver/d' /tmp/crontab.tmp
+echo "10 * * * * /bin/bash /etc/MySB/scripts/DynamicAddressResolver.bsh CRON &> /dev/null 2>&1" >> /tmp/crontab.tmp
+# Update Actual Git Repo of MySB
+sed -i '/MySB_UpdateGitHubRepo/d' /tmp/crontab.tmp
 echo "0 12 */2 * * /bin/bash /etc/MySB/bin/MySB_UpdateGitHubRepo &> /dev/null 2>&1" >> /tmp/crontab.tmp
+# GeoIP
+sed -i '/UpdateGeoIP.bsh/d' /tmp/crontab.tmp
+MAXIMUM=58 # DO NOT REMOVE
+MINIMUM=1 # DO NOT REMOVE
+UPGEOIP=$((MINIMUM+RANDOM*(1+MAXIMUM-MINIMUM)/32767))
+echo "$UPGEOIP 2 9 * * /bin/bash /etc/MySB/scripts/UpdateGeoIP.bsh &> /dev/null 2>&1" >> /tmp/crontab.tmp
+# rTorrent Blocklists
+sed -i '/BlocklistsRTorrent/d' /tmp/crontab.tmp
+echo "0 23 * * * /bin/bash /etc/MySB/scripts/BlocklistsRTorrent.bsh CRON &> /dev/null 2>&1" >> /tmp/crontab.tmp
+
 crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
 
