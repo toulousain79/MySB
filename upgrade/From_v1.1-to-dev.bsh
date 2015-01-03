@@ -30,6 +30,8 @@ echo -e "${CGREEN}	screen -r MySB_UpgradeMe$CEND"
 echo
 echo -e "${CYELLOW}During the update of some packages, questions may be asked to you. Leave the default choice, and press the Enter key.$CEND"
 echo
+echo -e "${CYELLOW}All users password will be changed by temporary password.$CEND"
+echo
 QuestionGetString NO  "Type 'yes' to continue or 'no' to abort ?" CONTINUE YES
 if [ "$CONTINUE" == "NO" ]; then
 	EndingScript 0
@@ -291,7 +293,7 @@ for seedUser in $UsersList; do
 		;;
 	esac
 	StatusSTD
-	
+
 	echo -e -n "${CBLUE}Starting rTorrent process for $seedUser$CEND..."
 	service rtorrent-$seedUser start &> /dev/null
 	StatusSTD	
@@ -317,8 +319,11 @@ ManageServices start "cron nginx stunnel4 postfix" &> /dev/null
 
 #### 30 - Send mail for each user with new version
 for seedUser in $UsersList; do
+	UserId=$(sqlite3 $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$seedUser'")
 	UserPassword="`sqlite3 $MySB_DB \"SELECT users_passwd FROM users WHERE users_ident = '$seedUser'\"`"
-	#### Assign password
+	sqlite3 $MySB_DB "DELETE FROM users_addresses WHERE id_users = '$UserId'"
+
+	#### Erase all users passwords
 	ScriptInvoke "screen" "/etc/MySB/bin/MySB_ChangeUserPassword" "$seedUser" "$UserPassword" "UPGRADE"
 done
 
