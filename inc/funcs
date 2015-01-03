@@ -1171,6 +1171,14 @@ EOF
 	# conf
 	if [ ! -d $RutorrentDir/conf/users/$seedUser/ ]; then mkdir -p $RutorrentDir/conf/users/$seedUser/; fi
 	if [ -f $RutorrentDir/conf/config.php ]; then
+		# Alter 'config.php' for general use
+		perl -pi -e "s/$topDirectory = '\/';/$topDirectory = '\/home';/g" $RutorrentDir/conf/config.php
+		sed -i "/\"php\"/s/'',/'\/usr\/bin\/php',/g" $RutorrentDir/conf/config.php
+		sed -i "/\"curl\"/s/'',/'\/usr\/bin\/curl',/g" $RutorrentDir/conf/config.php
+		sed -i "/\"gzip\"/s/'',/'\/bin\/gzip',/g" $RutorrentDir/conf/config.php
+		sed -i "/\"id\"/s/'',/'\/usr\/bin\/id',/g" $RutorrentDir/conf/config.php
+		sed -i "/\"stat\"/s/'',/'\/usr\/bin\/stat',/g" $RutorrentDir/conf/config.php
+		# Now we can copy it for all users
 		cp $RutorrentDir/conf/config.php $RutorrentDir/conf/users/$seedUser/config.php
 		perl -pi -e "s/$topDirectory = '\/home';/$topDirectory = '$HomeDirEscaped';/g" $RutorrentDir/conf/users/$seedUser/config.php
 		perl -pi -e "s/$log_file = '\/tmp\/errors.log';/$log_file = '$HomeDirEscaped\/logs\/rutorrent.log';/g" $RutorrentDir/conf/users/$seedUser/config.php
@@ -1195,12 +1203,27 @@ canBeShutdowned = yes
 EOF
 	) > $RutorrentDir/conf/users/$seedUser/plugins.ini
 
-	for Plugin in ${LISTING}; do
+	for Plugin in ${LISTING}; do	
 		if [ -d $RutorrentPluginsDir/${Plugin} ]; then
 			if [ -f $RutorrentPluginsDir/${Plugin}/conf.php ] || [ -f $RutorrentPluginsDir/${Plugin}/config.php ]; then
 				if [ ! -d $RutorrentDir/conf/users/$seedUser/plugins/${Plugin} ]; then
 					mkdir -p $RutorrentDir/conf/users/$seedUser/plugins/${Plugin}
 				fi
+
+				# Before copy of plugin conf, alter for general use
+				case ${Plugin} in
+					'create')
+						perl -pi -e "s/$useExternal = false;/$useExternal = 'buildtorrent';/g" $RutorrentPluginsDir/create/conf.php
+						sed -i "/pathToCreatetorrent/s/'';/'\/usr\/bin\/buildtorrent';/g" $RutorrentPluginsDir/create/conf.php
+					;;
+					'filemanager')
+						sed -i "/'rar'/s/'';/'\/usr\/bin\/rar';/g" $RutorrentPluginsDir/filemanager/conf.php
+						sed -i "/'zip'/s/'';/'\/usr\/bin\/zip';/g" $RutorrentPluginsDir/filemanager/conf.php
+						sed -i "/'unzip'/s/'';/'\/usr\/bin\/unzip';/g" $RutorrentPluginsDir/filemanager/conf.php
+						sed -i "/'tar'/s/'';/'\/bin\/tar';/g" $RutorrentPluginsDir/filemanager/conf.php
+					;;
+				esac
+
 				if [ -f $RutorrentPluginsDir/${Plugin}/conf.php ]; then
 					cp $RutorrentPluginsDir/${Plugin}/conf.php $RutorrentDir/conf/users/$seedUser/plugins/${Plugin}
 				fi
@@ -1210,6 +1233,7 @@ EOF
 			fi
 		fi
 
+		# After copy of plugin conf, alter for user
 		case ${Plugin} in
 			'autotools')
 				echo "[autotools]" >> $RutorrentDir/conf/users/$seedUser/plugins.ini
@@ -1227,18 +1251,10 @@ EOF
 			'chat')
 				echo "[chat]" >> $RutorrentDir/conf/users/$seedUser/plugins.ini
 				echo "enabled = yes" >> $RutorrentDir/conf/users/$seedUser/plugins.ini
-			;;
-			'create')
-				perl -pi -e "s/$useExternal = false;/$useExternal = 'buildtorrent';/g" $RutorrentDir/conf/users/$seedUser/plugins/create/conf.php
-				sed -i "/pathToCreatetorrent/s/'';/'\/usr\/bin\/buildtorrent';/g" $RutorrentDir/conf/users/$seedUser/plugins/create/conf.php
-			;;			
+			;;		
 			'filemanager')
 				echo "[filemanager]" >> $RutorrentDir/conf/users/$seedUser/plugins.ini
 				echo "enabled = yes" >> $RutorrentDir/conf/users/$seedUser/plugins.ini
-				sed -i "/'rar'/s/'';/'\/usr\/bin\/rar';/g" $RutorrentDir/conf/users/$seedUser/plugins/filemanager/conf.php
-				sed -i "/'zip'/s/'';/'\/usr\/bin\/zip';/g" $RutorrentDir/conf/users/$seedUser/plugins$RutorrentPluginsDir/filemanager/conf.php
-				sed -i "/'unzip'/s/'';/'\/usr\/bin\/unzip';/g" $RutorrentDir/conf/users/$seedUser/plugins$RutorrentPluginsDir/filemanager/conf.php
-				sed -i "/'tar'/s/'';/'\/bin\/tar';/g" $RutorrentDir/conf/users/$seedUser/plugins$RutorrentPluginsDir/filemanager/conf.php				
 			;;
 			'fileshare')
 				echo "[fileshare]" >> $RutorrentDir/conf/users/$seedUser/plugins.ini
@@ -1246,7 +1262,7 @@ EOF
 			;;
 			*)
 				echo "[${Plugin}]" >> $RutorrentDir/conf/users/$seedUser/plugins.ini
-				echo "enabled = user-defined" >> $RutorrentDir/conf/users/$seedUser/plugins.ini			
+				echo "enabled = user-defined" >> $RutorrentDir/conf/users/$seedUser/plugins.ini
 			;;
 		esac
 	done
