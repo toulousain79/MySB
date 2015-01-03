@@ -28,6 +28,8 @@ MySB is a seedbox platform for multi-users.
 
 ## Services available
 
+	* PeerGuardian (optionnal but recommended)
+	* DNScrypt-proxy with Bind9 as dns caching (optionnal but recommended)	
 	* Fail2ban (optionnal but recommended)
 	* Seedbox-Manager (optionnal but recommended)
 	* OpenVPN (optionnal); Multi TUN configuration, with or without redirection of traffic. Add AES-NI support (Not valid for OpenVZ Container).
@@ -38,7 +40,6 @@ MySB is a seedbox platform for multi-users.
 	* Samba share for each users (VPN access)
 	* NFS share for each users (VPN access)
 	* Auto retrieve SSL certificates for all trackers (if available)
-	* DNScrypt-proxy with Bind9 as dns caching (optionnal but recommended)
 	* MySB portal, ability to manage trackers, blocklists, and more
 
 ## Additional ruTorrent plugins (in addition to the official plugins)
@@ -119,7 +120,7 @@ After installing you will have access to the following commands to be used direc
 	* MySB_CreateUser
 	* MySB_DeleteUser
 	* MySB_UpdateGitHubRepo (update actual repository)
-	* MySB_RefreshMe (refresh some parts of MySB)
+	* MySB_RefreshMe (refresh rTorrent, ruTorrent, Seedbox-Manager, Cakebox-Light)
 	* MySB_UpgradeMe (to migrate to a new version of MySB)
 	* MySB_UpgradeSystem (simply upgrade your system APT upgrade)
 
@@ -143,7 +144,7 @@ https://<Server IP or Server Name>:<https NginX port>/
 
 ###### Main user and normal users
 	* Users can change their password.
-	* Users can change their IP addresses authorized connection (dynamic DNS included).
+	* Users can change their IP addresses for authorized connection (dynamic DNS included).
 
 ###### Normal users only
 	* Direct access to the various services installed (ruTorrent, Cabox-Light, Seedbox-Manager).
@@ -206,11 +207,11 @@ http://<Server IP or Server Name>:<https NginX port>/?user/openvpn-config-file.h
 https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-access-server-on-a-vps-container.html
 ```
 ##### NFS and Samba share with OpenVPN
-For NFS, you can mount the /home/<username>/rtorrent like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
+For NFS, you can mount the '/home/<username>/rtorrent' like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
 ```
-mount -t nfs [10.0.0.1|10.0.1.1]:/home/<username>/rtorrent <mount_dir> -o  -o nocto,noacl,noatime,nodiratime,nolock,rsize=8192,vers=3,ro,udp
+mount -t nfs [10.0.0.1|10.0.1.1]:/home/<username>/rtorrent <mount_dir> -o  -o vers=3
 ```
-For Samba, you can mount the /home/<username> like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
+For Samba, you can mount the '/home/<username>' like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
 ```
 mount - <mount_dir> -t cifs -o noatime,nodiratime,UNC=//[10.0.0.1|10.0.1.1]/<username>,username=<username>,password=<your_password>
 ```
@@ -238,6 +239,12 @@ https://www.google.com/accounts/DisplayUnlockCaptcha
 ###### IMPORTANT: With OpenVZ container, to complete the installation of DNScrypt-proxy, you must replace your existing DNS config (/etc/resolv.conf), by the loopback address.
 ###### IMPORTANT: It's necessary to make the change via the host (eg Proxmox), otherwise you will lose your configuration on next reboot. You must replace yours nameserver by 'nameserver 127.0.0.1' (/etc/resolv.conf).
 
+## Plex Media Server
+To complete the Plex Media Server configuration, an excellent tutorial is available here:
+```
+http://mondedie.fr/viewtopic.php?id=5732
+```
+
 ## Supported and tested servers
 
 #### Debian 7 - x86_64 (Wheezy)
@@ -252,12 +259,6 @@ https://www.google.com/accounts/DisplayUnlockCaptcha
 ## Changelog
 
 Take a look at 'Changelog.md', it's all there.
-
-
-## Support
-
-There is no official support for MySB.
-
 
 ## License
 
