@@ -291,8 +291,15 @@ if [ -s $MySB_DB ] && hash sqlite3 2> /dev/null; then
 			RentingModel="$(cat /etc/MySB/infos/renting.info | grep 'Server model=' | awk -F= '{ print $2 }' | sed 's/^\ \ *//')"
 			RentingGlobalCost="$(cat /etc/MySB/infos/renting.info | grep 'Global cost=' | awk -F= '{ print $2 }' | awk '{ print $1 }'  | sed 's/^\ \ *//' | sed 's/\ $*//')"
 			RentingTVA="$(cat /etc/MySB/infos/renting.info | grep 'TVA=' | awk -F= '{ print $2 }' | awk '{ print $1 }'  | sed 's/^\ \ *//' | sed 's/\ $*//')"
-			
-			sqlite3 -echo $MySB_DB "UPDATE renting SET model = '$RentingModel', tva = '$RentingTVA', global_cost = '$RentingGlobalCost' WHERE id_renting = '1';"
+			TotalUsers="`sqlite3 $MySB_DB \"SELECT count(*) FROM users\"`"
+
+			export LANG=""
+			X=`echo "$RentingGlobalCost/$TotalUsers" | bc -l`
+			Y=`echo "($X*$RentingTVA)/100" | bc -l`
+			PriceByUser=`echo "$X+$Y" | bc -l`
+			PriceByUser=`printf '%.0f\n' $PriceByUser`
+
+			sqlite3 -echo $MySB_DB "UPDATE renting SET model = '$RentingModel', tva = '$RentingTVA', global_cost = '$RentingGlobalCost', nb_users = '$TotalUsers', price_per_users = '$PriceByUser' WHERE id_renting = '1';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/renting.info
 			fi
