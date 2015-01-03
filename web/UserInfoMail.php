@@ -275,6 +275,13 @@ function printUser($user) {
 			<th width="15%" scope="row">Manage Addresses</th>
 			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/manage-addresses.html"><span class="Comments">Add here your IPs addresses and/or your dynamic DNS to add to whitelist.</span></a></td>
 		</tr>
+		
+		<!-- // Erase password and addresses -->
+		<tr align="left">
+			<th width="15%" scope="row" style="color: #FF6666;">Erase all</th>
+			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/NewUser.php?var1=' . $user . '&var2=erase"><span class="Comments">Erase your password and all your addresses.</span></a></td>
+		</tr>		
+		
 		<!-- // ruTorrent -->
 		<tr align="left">
 			<th width="15%" scope="row">ruTorrent</th>

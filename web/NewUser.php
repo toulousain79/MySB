@@ -26,8 +26,16 @@ require_once '/etc/MySB/web/inc/includes_before.php';
 
 if ( isset($_GET['var1']) && isset($_GET['var2']) ) {
 	$UserName = $_GET['var1'];
-	$UserPasswd = $_GET['var2'];
 	$UserAddress = $_SERVER['REMOTE_ADDR'];
+	
+	if ( $_GET['var2'] == 'erase' ) {
+		$UserPasswd = 'erase';
+		$MySB_DB->update("users", ["users_passwd" => "$UserPasswd"], ["users_ident" => "$UserName"]);
+		$UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$UserName"]);
+		$MySB_DB->delete("users_addresses", ["id_users_addresses" => "$UserID"]);
+	} else {
+		$UserPasswd = $_GET['var2'];
+	}
 	
 	// Users table
 	$users_datas = $MySB_DB->get("users", "*", ["AND" => ["users_ident" => "$UserName", "users_passwd" => "$UserPasswd"]]);
