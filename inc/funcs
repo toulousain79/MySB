@@ -298,40 +298,60 @@ ManageServices() {
 						fi
 					else
 						case "$Service" in
-							"dnscrypt-proxy"|"webmin"|"postfix")
-								Args="restart"
+							"dnscrypt-proxy"|"webmin")
+								Continue=1
+								Command="restart"
 							;;
 							"stunnel4")
-								StdOut="&> /dev/null"
-								Args="restart $StdOut"
-								Message="Restarting Stunnel daemon"
+								Continue=0
+								log_daemon_msg "Restarting Stunnel daemon"
+								service $Service restart &> /dev/null
+								StatusLSB								
 							;;
+							"cron")
+								Continue=0
+								if [ "$ServiceStatus" == "" ]; then
+									log_daemon_msg "Restating periodic command scheduler"
+									service $Service restart &> /dev/null
+								else
+									log_daemon_msg "Reloading periodic command scheduler"
+									service $Service reload &> /dev/null
+									if [ $? -gt 0 ]; then
+										service $Service restart &> /dev/null
+									fi
+								fi
+								StatusLSB							
+							;;							
 							"vsftpd")
-								StdOut="&> /dev/null"
-								Args="reload &> /dev/null"
-								Message="Reloading FTP server configuration"
+								Continue=0
+								if [ "$ServiceStatus" == "" ]; then
+									log_daemon_msg "Restating VSFTPd server configuration"
+									service $Service restart &> /dev/null
+								else
+									log_daemon_msg "Reloading VSFTPd server configuration"
+									service $Service reload &> /dev/null
+									if [ $? -gt 0 ]; then
+										service $Service restart &> /dev/null
+									fi
+								fi
+								StatusLSB
 							;;
 							*)
-								StdOut=""
-								Args="reload"
-								Message=""
+								Continue=1
+								Command="reload"
 							;;
 						esac
 
-						if [ "$ServiceStatus" == "" ]; then
-							Args="restart $StdOut"
-						fi
+						if [ "$Continue" == "1" ]; then
+							if [ "$ServiceStatus" == "" ]; then
+								Command="restart"
+							fi
 
-						if [ ! -z "$Message" ]; then log_daemon_msg "$Message"; fi
-						service $Service $Args
-						if [ ! -z "$Message" ]; then StatusLSB; fi
+							service $Service $Command
 
-						if [ $? -gt 0 ] && [ "$Args" == "reload" ]; then
-							Args="restart $StdOut"
-
-							if [ ! -z "$Message" ]; then log_daemon_msg "$Message"; fi
-							service $Service $Args
-							if [ ! -z "$Message" ]; then StatusLSB; fi
+							if [ $? -gt 0 ] && [ "$Command" == "reload" ]; then
+								service $Service restart
+							fi
 						fi
 					fi
 				;;
