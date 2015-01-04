@@ -50,6 +50,14 @@ if ( $IsInstalled == '1' ) {
 
 	$BlockList = $MySB_DB->select("blocklists_peerguardian", "*");
 ?>
+	<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
+		<fieldset>
+			<legend>Beware</legend>
+			<p class="Comments">Beware, the application of these lists can take a long time and can make failed the page refresh.<br />
+				Especially if these lists were never downloaded.</p>
+			<p class="Comments">In this case, wait a while and then reapply your list by clicking on the button "Save changes", and then "Apply configuration".</p>				
+		</fieldset>
+	</div>
 
 	<form class="form_settings" method="post" action="">	
 		<div align="center">

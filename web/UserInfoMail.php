@@ -65,7 +65,7 @@ function printUser($user) {
 	if ( $UserPasswd != "" ) {
 		$CommentAddress = '<span class="Comments">Please, change your password. Your current IP address will be add for get a valid access.</span>';
 		$CommentAddressStyle = 'style="color: #FF6666;"';
-		$CommentPassword = '<a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/NewUser.php?var1=' . $user . '&var2=' . $UserPasswd . '">You must change your password now !</a>';;
+		$CommentPassword = '<a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/NewUser.php?var1=' . $user . '&var2=' . $UserPasswd . '">Please, change your your password now.</a>';;
 		$CommentPasswordStyle = 'style="background-color: #FF6666; text-align=center"';
 	} else {
 		$CommentAddress = '<span class="Comments">Public IP addresses used for access restriction. You can manage this list <a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/manage-addresses.html">here</a>.</span>';
