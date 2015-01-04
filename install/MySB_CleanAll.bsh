@@ -45,12 +45,16 @@ ListingUsers
 ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'clean'
 
 #### STOP services
-TOSTOP=""
+ToStop=""
 for Service in $ServicesToStop; do
-	TOSTOP="$TOSTOP $Service"
+	if [ "$Service" != '$ServicesToManage' ] && [ "$Service" != 'ssh' ]; then
+		if [ "`echo $ToStop | grep "$Service"`" == "" ]; then
+			ToStop="$ToStop $Service"
+		fi
+	fi
 done
 
-ManageServices start "$TOSTOP"
+ManageServices start "$ToStop"
 for seedUser in $UsersList; do
 	service rtorrent-$seedUser stop
 done
@@ -99,26 +103,26 @@ for seedUser in $UsersList; do
 done
 
 #### Prepare list of packages
-TOKEEP=""
+ToKeep=""
 # To keep
 for Package in $PackagesToKeep; do 
-	TOKEEP="$TOKEEP $Package"
+	ToKeep="$ToKeep $Package"
 done
 
 # To remove
-TOREMOVE=""
+ToRemove=""
 for Package in $PackagesToRemove; do 
 	if [ "`dpkg -l | grep $Package`" != "" ]; then
-		TOREMOVE="$TOREMOVE $Package"
+		ToRemove="$ToRemove $Package"
 	fi
 done
 
 # Exclude packages to keep from packages to remove
-for ToKeep in $TOKEEP; do
+for ToKeep in $ToKeep; do
 	PackagesToRemove="`echo $PackagesToRemove | sed 's/$ToKeep//g;'`"
 done
 
-PackagesManage purge "$TOREMOVE"
+PackagesManage purge "$ToRemove"
 
 #### Delete files and directories
 rm -vf /etc/init.d/rtorrent-*
