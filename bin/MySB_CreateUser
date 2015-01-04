@@ -25,16 +25,14 @@ if [ "$USAGE" == "ON" ]; then
 	if [ ! -z "$LIST" ]; then
 		echo -e "${CBLUE}Available users: $CEND${CYELLOW}$LIST$CEND"
 	fi
-	QuestionGetString NO  "Username for your seedbox: " NewUser
-	while [ ! "`echo \"$LIST\" | grep $NewUser`" = "" ]; do
-		QuestionGetString NO  "Username for your seedbox: " NewUser
+	QuestionGetString NO  "Username for your seedbox: " UserToCreate
+	while [ ! "`echo \"$LIST\" | grep $UserToCreate`" = "" ]; do
+		QuestionGetString NO  "Username for your seedbox: " UserToCreate
 	done
 
-	#NewUserPassword=`mkpasswd $NewUser`
-	#NewUserPassword=`echo $NewUserPassword | sed "s/\///g"`
 	NewUserPassword="`GenPassword 8`"
 	if [ -s "NewUserPassword" ]; then
-		QuestionGetString YES "Password for user $NewUser: " NewUserPassword
+		QuestionGetString YES "Password for user $UserToCreate: " NewUserPassword
 	fi
 	QuestionGetString NO  "User can login via SFTP? " UserSFTP YES
 	QuestionGetString NO  "Add user to sudoers? " UserSUDO NO
@@ -46,7 +44,7 @@ if [ "$USAGE" == "ON" ]; then
 	UserSUDO="$(echo $UserSUDO | sed 's/YES/1/g;' | sed 's/NO/0/g;')"
 else
 	# It is the main user creation
-	NewUser=$1
+	UserToCreate=$1
 	NewUserPassword=$2
 	UserSFTP=$3
 	UserSUDO=$4
@@ -56,9 +54,9 @@ fi
 ManageServices stop ""
 
 #### Users vars
-HomeDir="/home/$NewUser"
-HOMEDIR_ESCAPED=`echo $HomeDir | sed s,/,\\\\\\\\\\/,g`
-UPPERNEWUSER=`echo $NewUser | tr '[:lower:]' '[:upper:]'`
+NewUserHomedir="/home/$UserToCreate"
+HOMEDIR_ESCAPED=`echo $NewUserHomedir | sed s,/,\\\\\\\\\\/,g`
+UPPERNEWUSER=`echo $UserToCreate | tr '[:lower:]' '[:upper:]'`
 NEWRPC=$UPPERNEWUSER
 
 #### Users infos
@@ -71,96 +69,96 @@ SCGIPORT="`sqlite3 $MySB_DB \"SELECT value FROM ports ORDER BY rowid DESC LIMIT 
 sqlite3 $MySB_DB "DELETE FROM ports WHERE value = '$SCGIPORT';"
 
 #### user infos
-if [ "$MainUser" != "$NewUser" ]; then
+if [ "$MainUser" != "$UserToCreate" ]; then
 	log_daemon_msg "Insert user informations in database"
-	sqlite3 $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir) VALUES (\"$NewUser\",\"$UserEmail\",\"$NewUserPassword\",\"$NEWRPC\",\"$UserSFTP\",\"$UserSUDO\",\"$SCGIPORT\",\"$NETWORKPORT\",\"$HomeDir\");"
+	sqlite3 $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir) VALUES (\"$UserToCreate\",\"$UserEmail\",\"$NewUserPassword\",\"$NEWRPC\",\"$UserSFTP\",\"$UserSUDO\",\"$SCGIPORT\",\"$NETWORKPORT\",\"$NewUserHomedir\");"
 else
 	log_daemon_msg "Update user informations in database"
-	sqlite3 $MySB_DB "UPDATE users SET users_passwd = '', rpc = '$NEWRPC', scgi_port = '$SCGIPORT', rtorrent_port = '$NETWORKPORT', home_dir = '$HomeDir' WHERE users_ident = '$NewUser';"
+	sqlite3 $MySB_DB "UPDATE users SET users_passwd = '', rpc = '$NEWRPC', scgi_port = '$SCGIPORT', rtorrent_port = '$NETWORKPORT', home_dir = '$NewUserHomedir' WHERE users_ident = '$UserToCreate';"
 fi
 StatusLSB
 
 #### create system user
-log_daemon_msg "Create the system account for $NewUser"
-useradd -c "MySB user $NewUser" -d $HomeDir -s /bin/bash $NewUser &> /dev/null
+log_daemon_msg "Create the system account for $UserToCreate"
+useradd -c "MySB user $UserToCreate" -d $NewUserHomedir -s /bin/bash $UserToCreate &> /dev/null
 StatusLSB
 
 #### create directories
-log_daemon_msg "Create directories for $NewUser"
-ChangingHomeUserRights "$NewUser"
+log_daemon_msg "Create directories for $UserToCreate"
+ChangingHomeUserRights "$UserToCreate"
 StatusLSB
 
 #### FTP
-log_daemon_msg "Allow use of FTP and share for $NewUser"
-echo "$NewUser" >> /etc/vsftpd.chroot_list
-mount --bind /home/MySB_share $HomeDir/rtorrent/share
+log_daemon_msg "Allow use of FTP and share for $UserToCreate"
+echo "$UserToCreate" >> /etc/vsftpd.chroot_list
+mount --bind /home/MySB_share $NewUserHomedir/rtorrent/share
 StatusLSB
 
 #### add to groups
-log_daemon_msg "Assign user groups to $NewUser"
-addgroup $NewUser MySB_users &> /dev/null
+log_daemon_msg "Assign user groups to $UserToCreate"
+addgroup $UserToCreate MySB_users &> /dev/null
 
 if [ "$UserSUDO" == "YES" ]; then
-	addgroup $NewUser sudo &> /dev/null
+	addgroup $UserToCreate sudo &> /dev/null
 fi
 if [ "$UserSFTP" == "YES" ]; then
-	addgroup $NewUser sshdusers &> /dev/null
+	addgroup $UserToCreate sshdusers &> /dev/null
 fi
 StatusLSB
 
 #### custumize profile
-if [ ! -f $HomeDir/.profile ]; then
-	log_daemon_msg "Customize profile for $NewUser"
-	cp /etc/skel/.bashrc $HomeDir
-	cp /etc/skel/.bash_logout $HomeDir
-	cp /etc/skel/.profile $HomeDir
-	chown $NewUser:$NewUser $HomeDir/.bashrc
-	chown $NewUser:$NewUser $HomeDir/.bash_logout
-	chown $NewUser:$NewUser $HomeDir/.profile
-	perl -pi -e "s/#force_color_prompt=yes/force_color_prompt=yes/g" $HomeDir/.bashrc
+if [ ! -f $NewUserHomedir/.profile ]; then
+	log_daemon_msg "Customize profile for $UserToCreate"
+	cp /etc/skel/.bashrc $NewUserHomedir
+	cp /etc/skel/.bash_logout $NewUserHomedir
+	cp /etc/skel/.profile $NewUserHomedir
+	chown $UserToCreate:$UserToCreate $NewUserHomedir/.bashrc
+	chown $UserToCreate:$UserToCreate $NewUserHomedir/.bash_logout
+	chown $UserToCreate:$UserToCreate $NewUserHomedir/.profile
+	perl -pi -e "s/#force_color_prompt=yes/force_color_prompt=yes/g" $NewUserHomedir/.bashrc
 	StatusLSB
 fi
 
 #### rTorrent (.rtorrent.rc)
-log_daemon_msg "Create the rTorrent configuration file for $NewUser"
-cp /etc/MySB/templates/rtorrent.rc.template $HomeDir/.rtorrent.rc
-perl -pi -e "s/<server_ip>/$SrvIpAddress/g" $HomeDir/.rtorrent.rc
-perl -pi -e "s/<username>/$NewUser/g" $HomeDir/.rtorrent.rc
-perl -pi -e "s/<homedir>/$HOMEDIR_ESCAPED/g" $HomeDir/.rtorrent.rc
-perl -pi -e "s/<scgi_port>/$SCGIPORT/g" $HomeDir/.rtorrent.rc
-perl -pi -e "s/<port_range>/$NETWORKPORT-$NETWORKPORT/g" $HomeDir/.rtorrent.rc
+log_daemon_msg "Create the rTorrent configuration file for $UserToCreate"
+cp /etc/MySB/templates/rtorrent.rc.template $NewUserHomedir/.rtorrent.rc
+perl -pi -e "s/<server_ip>/$SrvIpAddress/g" $NewUserHomedir/.rtorrent.rc
+perl -pi -e "s/<username>/$UserToCreate/g" $NewUserHomedir/.rtorrent.rc
+perl -pi -e "s/<homedir>/$HOMEDIR_ESCAPED/g" $NewUserHomedir/.rtorrent.rc
+perl -pi -e "s/<scgi_port>/$SCGIPORT/g" $NewUserHomedir/.rtorrent.rc
+perl -pi -e "s/<port_range>/$NETWORKPORT-$NETWORKPORT/g" $NewUserHomedir/.rtorrent.rc
 if [ "$MySB_PeerBlock" == "rTorrent" ]; then
-	perl -pi -e "s/#{1}ipv4_filter.load/ipv4_filter.load/g" $HomeDir/.rtorrent.rc
-	perl -pi -e "s/#{1}print/print/g" $HomeDir/.rtorrent.rc
-	perl -pi -e "s/#{1}schedule=load_filter/schedule=load_filter/g" $HomeDir/.rtorrent.rc
+	perl -pi -e "s/#{1}ipv4_filter.load/ipv4_filter.load/g" $NewUserHomedir/.rtorrent.rc
+	perl -pi -e "s/#{1}print/print/g" $NewUserHomedir/.rtorrent.rc
+	perl -pi -e "s/#{1}schedule=load_filter/schedule=load_filter/g" $NewUserHomedir/.rtorrent.rc
 fi
 
 case "$FILESYSTEMTYPE" in
 	"ext4"|"xfs"|"btrfs")
-		perl -pi -e "s/system.file_allocate.set = no/system.file_allocate.set = yes/g" $HomeDir/.rtorrent.rc
+		perl -pi -e "s/system.file_allocate.set = no/system.file_allocate.set = yes/g" $NewUserHomedir/.rtorrent.rc
 	;;	
 	*)
-		perl -pi -e "s/^system.file_allocate.set = yes/system.file_allocate.set = no/g" $HomeDir/.rtorrent.rc
+		perl -pi -e "s/^system.file_allocate.set = yes/system.file_allocate.set = no/g" $NewUserHomedir/.rtorrent.rc
 	;;			
 esac
 StatusLSB
 
 #### Plugins per users
-log_daemon_msg "Create ruTorrent plugins directories for $NewUser"
+log_daemon_msg "Create ruTorrent plugins directories for $UserToCreate"
 # create subdirectory plugins for user and copy all conf.php
-ruTorrentUsersConfigs "$NewUser"
+ruTorrentUsersConfigs "$UserToCreate"
 StatusLSB
 
 #### stream
-log_daemon_msg "Create ruTorrent plugin Stream (config.php) for $NewUser"
-if [ -f $RutorrentDir/conf/users/$NewUser/plugins/stream/config.php ]; then
-	perl -pi -e "s/$auth = '';/$auth = '$NewUser:$NewUserPassword';/g" $RutorrentDir/conf/users/$NewUser/plugins/stream/config.php
-	perl -pi -e "s/define\('SCHEME', 'http'\);/define\('SCHEME', 'https'\);/g" $RutorrentDir/conf/users/$NewUser/plugins/stream/config.php
+log_daemon_msg "Create ruTorrent plugin Stream (config.php) for $UserToCreate"
+if [ -f $RutorrentDir/conf/users/$UserToCreate/plugins/stream/config.php ]; then
+	perl -pi -e "s/$auth = '';/$auth = '$UserToCreate:$NewUserPassword';/g" $RutorrentDir/conf/users/$UserToCreate/plugins/stream/config.php
+	perl -pi -e "s/define\('SCHEME', 'http'\);/define\('SCHEME', 'https'\);/g" $RutorrentDir/conf/users/$UserToCreate/plugins/stream/config.php
 fi
 StatusLSB
 
 #### NginX
-log_daemon_msg "Creating RPC file for $NewUser"
+log_daemon_msg "Creating RPC file for $UserToCreate"
 (
 cat <<'EOF'
 location /<USERNAME> {
@@ -171,15 +169,15 @@ location /<USERNAME> {
 }
 
 EOF
-) > /etc/nginx/rpc/$NewUser.conf
-perl -pi -e "s/5995/$SCGIPORT/g" /etc/nginx/rpc/$NewUser.conf
-perl -pi -e "s/<username>/$NewUser/g" /etc/nginx/rpc/$NewUser.conf
-perl -pi -e "s/<USERNAME>/$UPPERNEWUSER/g" /etc/nginx/rpc/$NewUser.conf
+) > /etc/nginx/rpc/$UserToCreate.conf
+perl -pi -e "s/5995/$SCGIPORT/g" /etc/nginx/rpc/$UserToCreate.conf
+perl -pi -e "s/<username>/$UserToCreate/g" /etc/nginx/rpc/$UserToCreate.conf
+perl -pi -e "s/<USERNAME>/$UPPERNEWUSER/g" /etc/nginx/rpc/$UserToCreate.conf
 StatusLSB
 
 #### CakeBox
 if [ "$IsInstalled_Cakebox" == "YES" ]; then
-	log_daemon_msg "Create Cakebox configuration for $NewUser"
+	log_daemon_msg "Create Cakebox configuration for $UserToCreate"
 
 	(
 	cat <<'EOF'
@@ -191,34 +189,34 @@ location /<username>/ {
 }
 
 EOF
-	) > /etc/nginx/rpc/$NewUser.cakebox
-	perl -pi -e "s/<username>/$NewUser/g" /etc/nginx/rpc/$NewUser.cakebox
+	) > /etc/nginx/rpc/$UserToCreate.cakebox
+	perl -pi -e "s/<username>/$UserToCreate/g" /etc/nginx/rpc/$UserToCreate.cakebox
 	
 	StatusLSB
 fi
 
 #### OpenVPN
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-	log_daemon_msg "Create OpenVPN account for user $NewUser"
-	screen -dmS OpenVPN_Client /bin/bash /etc/MySB/install/OpenVPN client "$NewUser";
+	log_daemon_msg "Create OpenVPN account for user $UserToCreate"
+	screen -dmS OpenVPN_Client /bin/bash /etc/MySB/install/OpenVPN client "$UserToCreate";
 	WaitingSTD OpenVPN_Client	
 	StatusLSB
 fi
 
 #### script init
-log_daemon_msg "Create init script for $NewUser"
-cp /etc/MySB/templates/etc.init.rtorrent.template /etc/init.d/rtorrent-$NewUser
-perl -pi -e "s/<username>/$NewUser/g" /etc/init.d/rtorrent-$NewUser
-chmod +x /etc/init.d/rtorrent-$NewUser
-update-rc.d rtorrent-$NewUser defaults 99 &> /dev/null
+log_daemon_msg "Create rTorrent init script for $UserToCreate"
+cp /etc/MySB/templates/etc.init.rtorrent.template /etc/init.d/rtorrent-$UserToCreate
+perl -pi -e "s/<username>/$UserToCreate/g" /etc/init.d/rtorrent-$UserToCreate
+chmod +x /etc/init.d/rtorrent-$UserToCreate
+update-rc.d rtorrent-$UserToCreate defaults 99 &> /dev/null
 StatusLSB
 
 #### cron
-log_daemon_msg "Add init script to cron for $NewUser"
+log_daemon_msg "Add init script to cron for $UserToCreate"
 crontab -l > /tmp/crontab.tmp
-sed -i '/'$NewUser'/d' /tmp/crontab.tmp
-echo "5 * * * * if ! ( /bin/ps U $NewUser | grep rtorrent &> /dev/null ); then /etc/init.d/rtorrent-$NewUser restart &> /dev/null; fi" >> /tmp/crontab.tmp
-echo "0 12 1 * * /bin/bash /etc/MySB/scripts/PaymentReminder.bsh $NewUser CRON &> /dev/null" >> /tmp/crontab.tmp
+sed -i '/'$UserToCreate'/d' /tmp/crontab.tmp
+echo "5 * * * * if ! ( /bin/ps U $UserToCreate | grep rtorrent &> /dev/null ); then /etc/init.d/rtorrent-$UserToCreate restart &> /dev/null; fi" >> /tmp/crontab.tmp
+echo "0 12 1 * * /bin/bash /etc/MySB/scripts/PaymentReminder.bsh $UserToCreate CRON &> /dev/null" >> /tmp/crontab.tmp
 crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
 StatusLSB
@@ -233,7 +231,7 @@ for seedUser in $UsersList; do
 
 	if [ -f /etc/MySB/files/blocklists/blocklist_rtorrent.txt ]; then
 		log_daemon_msg "Copy the blocklist file for $seedUser"
-		cp /etc/MySB/files/blocklists/* $HomeDir/blocklist/
+		cp /etc/MySB/files/blocklists/* $NewUserHomedir/blocklist/
 		StatusLSB
 	else
 		log_daemon_msg "Creating a new blocklist file for $seedUser"
@@ -250,10 +248,10 @@ for seedUser in $UsersList; do
 done
 
 #### Assign password
-ScriptInvoke "source" "/etc/MySB/bin/MySB_ChangeUserPassword" "$NewUser" "$NewUserPassword" "INSTALL"
+ScriptInvoke "source" "/etc/MySB/bin/MySB_ChangeUserPassword" "$UserToCreate" "$NewUserPassword" "INSTALL"
 
 #### renting
-MonthlyPayment "$NewUser"
+MonthlyPayment "$UserToCreate"
 
 #### START services
 ManageServices start "vsftpd nginx cron"

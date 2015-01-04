@@ -42,83 +42,81 @@ if [ "$USAGE" == "ON" ]; then
 		EndingScript 0 0
 	fi	
 
-	QuestionGetString NO  "Type username to DELETE: " SeedboxUser
+	QuestionGetString NO  "Type username to DELETE: " UserToDelete
 
-	if [ "$SeedboxUser" == "none" ]; then
+	if [ "$UserToDelete" == "none" ]; then
 		EndingScript 0 0
 	else
-		while [ "$SeedboxUser" == "$MainUser" ]; do
-			QuestionGetString NO  "Type username to DELETE: " SeedboxUser
+		while [ "$UserToDelete" == "$MainUser" ]; do
+			QuestionGetString NO  "Type username to DELETE: " UserToDelete
 		done
 	fi
 fi
 
 #### STOP services
-ManageServices stop "cron rtorrent-$SeedboxUser"
-
-#### User ID
-UserId=$(sqlite3 $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$SeedboxUser'")
+ManageServices stop "cron rtorrent-$UserToDelete"
 
 #### crontab
-log_daemon_msg "Delete cron for $SeedboxUser"
+log_daemon_msg "Delete cron for $UserToDelete"
 crontab -l > /tmp/crontab.tmp
-sed -i '/'$SeedboxUser'/d' /tmp/crontab.tmp
+sed -i '/'$UserToDelete'/d' /tmp/crontab.tmp
 crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
 StatusLSB
 
 #### FTP
-log_daemon_msg "Delete FTP access & share for $SeedboxUser"
-sed -i '/'$SeedboxUser'/d' /etc/vsftpd.chroot_list
-umount /home/$SeedboxUser/rtorrent/share
+log_daemon_msg "Delete FTP access & share for $UserToDelete"
+sed -i '/'$UserToDelete'/d' /etc/vsftpd.chroot_list
+umount /home/$UserToDelete/rtorrent/share
 StatusLSB
 
 #### NFS
-log_daemon_msg "Delete NFS access for $SeedboxUser"
-sed -i '/'$SeedboxUser'/d' /etc/exports
+log_daemon_msg "Delete NFS access for $UserToDelete"
+sed -i '/'$UserToDelete'/d' /etc/exports
 StatusLSB
 
 #### Samba
-log_daemon_msg "Delete Samba access for $SeedboxUser"
-smbpasswd -x $SeedboxUser &> /dev/null
+log_daemon_msg "Delete Samba access for $UserToDelete"
+smbpasswd -x $UserToDelete &> /dev/null
 StatusLSB
 
 #### NginX - remove current password from htpassword
-log_daemon_msg "Delete Web server account for $SeedboxUser"
-htpasswd -D /etc/nginx/passwd/MySB $SeedboxUser &> /dev/null
-rm -f /etc/nginx/passwd/MySB_$SeedboxUser
+log_daemon_msg "Delete Web server account for $UserToDelete"
+htpasswd -D /etc/nginx/passwd/MySB $UserToDelete &> /dev/null
+rm -f /etc/nginx/passwd/MySB_$UserToDelete
 StatusLSB
 
 #### remove files
-log_daemon_msg "Remove files and init script for $SeedboxUser"
-update-rc.d -f rtorrent-$SeedboxUser.conf remove &> /dev/null
-if [ -f /etc/init.d/rtorrent-$SeedboxUser.conf ]; then
-	rm -f /etc/init.d/rtorrent-$SeedboxUser.conf
+log_daemon_msg "Remove files and init script for $UserToDelete"
+update-rc.d -f rtorrent-$UserToDelete.conf remove &> /dev/null
+if [ -f /etc/init.d/rtorrent-$UserToDelete.conf ]; then
+	rm -f /etc/init.d/rtorrent-$UserToDelete.conf
 fi
-if [ -f /etc/nginx/rpc/$SeedboxUser.conf ]; then
-	rm -f /etc/nginx/rpc/$SeedboxUser.conf
+if [ -f /etc/nginx/rpc/$UserToDelete.conf ]; then
+	rm -f /etc/nginx/rpc/$UserToDelete.conf
 fi
-if [ -f /etc/nginx/rpc/$SeedboxUser.cakebox ]; then
-	rm -f /etc/nginx/rpc/$SeedboxUser.cakebox
+if [ -f /etc/nginx/rpc/$UserToDelete.cakebox ]; then
+	rm -f /etc/nginx/rpc/$UserToDelete.cakebox
 fi
-if [ -f /etc/MySB/web/openvpn/openvpn_$SeedboxUser.zip ]; then
-	rm -f /etc/MySB/web/openvpn/openvpn_$SeedboxUser.zip
+if [ -f /etc/MySB/web/openvpn/openvpn_$UserToDelete.zip ]; then
+	rm -f /etc/MySB/web/openvpn/openvpn_$UserToDelete.zip
 fi
-if [ -d $RutorrentDir/conf/users/$SeedboxUser ]; then
-	rm -rf $RutorrentDir/conf/users/$SeedboxUser
+if [ -d $RutorrentDir/conf/users/$UserToDelete ]; then
+	rm -rf $RutorrentDir/conf/users/$UserToDelete
 fi
-if [ -d $RutorrentDir/share/users/$SeedboxUser ]; then
-	rm -rf $RutorrentDir/share/users/$SeedboxUser
+if [ -d $RutorrentDir/share/users/$UserToDelete ]; then
+	rm -rf $RutorrentDir/share/users/$UserToDelete
 fi
-if [ -d $ManagerDir/conf/users/$SeedboxUser ]; then
-	rm -rf $ManagerDir/conf/users/$SeedboxUser
+if [ -d $ManagerDir/conf/users/$UserToDelete ]; then
+	rm -rf $ManagerDir/conf/users/$UserToDelete
 fi
 StatusLSB
 
 #### Remove user from database
-log_daemon_msg "Remove files and init script for $SeedboxUser"
+log_daemon_msg "Remove files and init script for $UserToDelete"
+UserId=$(sqlite3 $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$UserToDelete'")
 sqlite3 $MySB_DB "DELETE FROM users_addresses WHERE id_users = '$UserId'"
-sqlite3 $MySB_DB "DELETE FROM users WHERE users_ident = '$SeedboxUser'"
+sqlite3 $MySB_DB "DELETE FROM users WHERE users_ident = '$UserToDelete'"
 StatusLSB
 
 #### rtorrent max memory
@@ -134,13 +132,13 @@ for User in $UsersList; do
 done
 
 #### system user
-log_daemon_msg "Delete system account for $SeedboxUser"
-userdel --remove --force $SeedboxUser &> /dev/null
-if [ -d /home/$SeedboxUser ]; then
-	rm -rf /home/$SeedboxUser
+log_daemon_msg "Delete system account for $UserToDelete"
+userdel --remove --force $UserToDelete &> /dev/null
+if [ -d /home/$UserToDelete ]; then
+	rm -rf /home/$UserToDelete
 fi
-if [ -d /var/run/screen/S-$SeedboxUser ]; then
-	rm -rf /var/run/screen/S-$SeedboxUser
+if [ -d /var/run/screen/S-$UserToDelete ]; then
+	rm -rf /var/run/screen/S-$UserToDelete
 fi
 StatusLSB
 
@@ -153,7 +151,7 @@ if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 fi
 
 #### renting
-MonthlyPayment "$SeedboxUser"
+MonthlyPayment "$UserToDelete"
 
 #### Create new security rules
 log_daemon_msg "Create new security rules"
