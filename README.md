@@ -112,11 +112,13 @@ Just copy and paste these command on your terminal:
 MySB_UpgradeMe
 ```
 
-## Complete uninstall MySB
+## Complete uninstall of MySB
 Just copy and paste these command on your terminal:
 ```
 bash /etc/MySB/install/MySB_CleanAll.bsh
 ```
+
+###### BEWARE: The '/etc/MySB' will be completely removed and all packages installed during the installation will be uninstalled..
 
 ## Commands
 
