@@ -51,7 +51,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 							$success = false;
 							$message = 'Failed ! It was not possible to update hostname address in the MySB database.';
 						} else {
-							GenerateMessage(null, 'information', 'Remember that your dynamic IP will be checked every 10 minutes.');
+							GenerateMessage(null, 'information', 'Remember that your dynamic IP will be checked every 5 minutes.');
 						}
 					}
 				} else {
@@ -233,7 +233,7 @@ foreach($AddressesList as $Address) {
 
 <div align="center">
 	<p></p>
-	<p class="Comments"><b>NB</b>: Dynamic IP addresses are checked every <b>10</b> minutes.<br />If an IP has changed, the database will be updated and security will be adapted accordingly.</p>
+	<p class="Comments"><b>NB</b>: Dynamic IP addresses are checked every <b>5</b> minutes.<br />If an IP has changed, the database will be updated and security will be adapted accordingly.</p>
 </div>
 
 <script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-dynamically-adding-form-elements.js"></script>

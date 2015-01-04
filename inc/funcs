@@ -240,18 +240,16 @@ GetPid() {
 
 #### Start/Stop services
 ManageServices() {
-	Command="$1"
+	GlobalCommand="$1"
 	ServicesToManage="$2"
 	ServicesToManage=`echo $ServicesToManage | sed -e 's/^//g;' | sed 's/\s+$//'`
-
 	if [ ! -z "$ServicesToManage" ]; then
 		if [ $LOGSTD != "NO" ]; then echo "---- "`date +"%T"` >> /etc/MySB/logs/$ScriptName.log; fi
-		
+
 		for Service in $ServicesToManage; do
 			ServiceStatus="`GetPid $Service`"
-
-			case "$Command" in
-				"stop")				
+			case "$GlobalCommand" in
+				"stop")
 					if [ "$ServiceStatus" != "" ]; then
 						case "$1" in
 							"pglcmd")
@@ -298,14 +296,30 @@ ManageServices() {
 						fi
 					else
 						Continue=1
+						FinalCommand="reload"
+
 						case "$Service" in
 							"dnscrypt-proxy"|"webmin")
-								Command="restart"
+								FinalCommand="restart"
 							;;
 							"stunnel4")
 								Continue=0
 								log_daemon_msg "Restarting Stunnel daemon"
 								service $Service restart &> /dev/null
+								StatusLSB
+							;;
+							"postfix")
+								Continue=0
+								if [ "$ServiceStatus" == "" ]; then
+									log_daemon_msg "Restarting Postfix Mail Transport Agent"
+									service $Service restart &> /dev/null
+								else
+									log_daemon_msg "Reloading Postfix Mail Transport Agent"
+									service $Service reload &> /dev/null
+									if [ $? -gt 0 ]; then
+										service $Service restart &> /dev/null
+									fi
+								fi
 								StatusLSB
 							;;
 							"cron")
@@ -336,19 +350,16 @@ ManageServices() {
 								fi
 								StatusLSB
 							;;
-							*)
-								Command="reload"
-							;;
 						esac
 
 						if [ "$Continue" == "1" ]; then
 							if [ "$ServiceStatus" == "" ]; then
-								Command="restart"
+								FinalCommand="restart"
 							fi
 
-							service $Service $Command
+							service $Service $FinalCommand
 
-							if [ $? -gt 0 ] && [ "$Command" == "reload" ]; then
+							if [ $? -gt 0 ] && [ "$FinalCommand" == "reload" ]; then
 								service $Service restart
 							fi
 						fi
