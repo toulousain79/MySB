@@ -300,39 +300,41 @@ ManageServices() {
 						case "$Service" in
 							"dnscrypt-proxy"|"webmin"|"postfix")
 								Args="restart"
-								Opts=""
-								Message=""
 							;;
 							"stunnel4")
-								Args="restart"
-								Opts="&> /dev/null"
-								Message="Restarting Stunnel daemon..."
+								StdOut="&> /dev/null"
+								Args="restart $StdOut"
+								Message="Restarting Stunnel daemon"
 							;;
 							"vsftpd")
-								Args="reload"
-								Opts="&> /dev/null"
-								Message="Restarting VSFTPd daemon..."
+								StdOut="&> /dev/null"
+								Args="reload $StdOut"
+								Message="Reloading FTP server configuration"
+							;;							
+							"cron")
+								StdOut="&> /dev/null"
+								Args="reload $StdOut"
+								Message="Restarting periodic command scheduler"
 							;;								
 							*)
 								Args="reload"
-								Opts=""
-								Message=""
 							;;
 						esac
 
 						if [ "$ServiceStatus" == "" ]; then
+							Args="restart $StdOut"
+						fi
+						
+						if [ ! -z "$Message" ]; then log_daemon_msg "$Message"; fi
+						service $Service $Args
+						if [ ! -z "$Message" ]; then StatusLSB; fi
+						
+						if [ $? -gt 0 ] && [ "$Args" == "reload" ]; then
+							Args="restart $StdOut"
+							
 							if [ ! -z "$Message" ]; then log_daemon_msg "$Message"; fi
-							service $Service restart $Opts
+							service $Service $Args
 							if [ ! -z "$Message" ]; then StatusLSB; fi
-						else
-							if [ ! -z "$Message" ]; then log_daemon_msg "$Message"; fi
-							service $Service $Args $Opts
-							if [ ! -z "$Message" ]; then StatusLSB; fi
-							if [ $? -gt 0 ] && [ "$Args" == "reload" ]; then
-								if [ ! -z "$Message" ]; then log_daemon_msg "$Message"; fi
-								service $Service restart $Opts
-								if [ ! -z "$Message" ]; then StatusLSB; fi
-							fi
 						fi
 					fi
 				;;
