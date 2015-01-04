@@ -36,20 +36,22 @@ if [ "$CONTINUE" == "NO" ]; then
 fi
 
 #### VARs
-TOREMOVE=""
-TOKEEP=""
-PCKTOREMOVE=`grep -rni --exclude="MySB_CleanAll.bsh" 'PackagesManage install' /etc/MySB | cut -d '"' -f 2`
-PCKTOKEEP=`grep -rni --exclude="MySB_CleanAll.bsh" 'TOOLS=' /etc/MySB/install/MySB_Install.bsh | cut -d '"' -f 2`
+PackagesToRemove="`grep -rni --exclude="MySB_CleanAll.bsh" 'PackagesManage install' /etc/MySB | cut -d '"' -f 2`"
+PackagesToKeep="`grep -rni --exclude="MySB_CleanAll.bsh" 'TOOLS=' /etc/MySB/install/MySB_Install.bsh | cut -d '"' -f 2`"
+ServicesToStop="`grep -rni --exclude="MySB_CleanAll.bsh" 'ManageServices start' /etc/MySB | cut -d '"' -f 2`"
 ListingUsers
 
 #### Clean security rules
 ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'clean'
 
 #### STOP services
-ManageServices start "cron dnscrypt-proxy"
+TOSTOP=""
+for Service in $ServicesToStop; do
+	TOSTOP="$TOSTOP $Service"
+done
 
+ManageServices start "cron dnscrypt-proxy"
 for seedUser in $UsersList; do
-	sed -i '/'$seedUser'/d' /tmp/crontab.tmp
 	service rtorrent-$seedUser stop
 done
 
@@ -97,13 +99,15 @@ for seedUser in $UsersList; do
 done
 
 #### Prepare list of packages
+TOKEEP=""
 # To keep
-for Package in $PCKTOKEEP; do 
+for Package in $PackagesToKeep; do 
 	TOKEEP="$TOKEEP $Package"
 done
 
 # To remove
-for Package in $PCKTOREMOVE; do 
+TOREMOVE=""
+for Package in $PackagesToRemove; do 
 	if [ "`dpkg -l | grep $Package`" != "" ]; then
 		TOREMOVE="$TOREMOVE $Package"
 	fi
@@ -111,7 +115,7 @@ done
 
 # Exclude packages to keep from packages to remove
 for ToKeep in $TOKEEP; do
-	PCKTOREMOVE="`echo $PCKTOREMOVE | sed 's/$ToKeep//g;'`"
+	PackagesToRemove="`echo $PackagesToRemove | sed 's/$ToKeep//g;'`"
 done
 
 PackagesManage purge "$TOREMOVE"
