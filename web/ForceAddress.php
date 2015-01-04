@@ -34,7 +34,7 @@ if ($last_id_address != false) {
 	exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'FirewallAndSecurity.bsh'", $output, $result);
 
 	if ( $result == 0 ) {
-		header('Location: https://'$system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/manage-addresses.html"');
+		header('Location: https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/manage-addresses.html');
 	} else {
 		echo 'Failed ! It was not possible to give you an access to MySB portal !';
 	}
