@@ -26,9 +26,9 @@ source /etc/MySB/inc/includes_before
 
 #### Update all IPs from hostname
 Reload=0
-log_daemon_msg "Create list of all dynamic hostnames"
+if [ "$LOGSTD" != "NO" ]; then log_daemon_msg "Create list of all dynamic hostnames"; fi
 AllHostname="`sqlite3 $MySB_DB \"SELECT id_users_addresses,hostname FROM users_addresses WHERE is_active = '1' AND check_by = 'hostname'\"`"
-StatusLSB
+if [ "$LOGSTD" != "NO" ]; then StatusLSB; fi
 
 for Line in $AllHostname; do
 	IdUsersAddresses=`echo $Line | awk '{split($0,a,"|"); print a[1]}'`
@@ -38,9 +38,10 @@ for Line in $AllHostname; do
 	IPv4="$(nslookup $Hostname | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 
 	if [ "`echo $ListIPv4 | grep $IPv4`" == "" ]; then
-		log_daemon_msg "Updating hostname: $Hostname"
+		if [ "$LOGSTD" != "NO" ]; then log_daemon_msg "Updating hostname: $Hostname"; fi
 		sqlite3 $MySB_DB "UPDATE users_addresses SET ipv4 = '$IPv4' WHERE hostname = '$Hostname' AND id_users_addresses = '$IdUsersAddresses';"
-		StatusLSB
+		if [ "$LOGSTD" != "NO" ]; then StatusLSB; fi
+		if [ "$LOGSTD" == "NO" ]; then echo `date`" --> UPDATE $Hostname WITH $IPv4" >> /etc/MySB/logs/$ScriptName.log; fi
 		Reload=1
 	fi
 done
@@ -48,9 +49,10 @@ done
 if [ "$Reload" == "1" ]; then
 	ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
 else
-	log_daemon_msg "No hostname requires updating"
-	StatusLSB
+	if [ "$LOGSTD" != "NO" ]; then log_daemon_msg "No hostname requires updating" && StatusLSB; fi
 fi
+
+echo "START Out/Err: "`date` "-" $ScriptName $1 >> /etc/MySB/logs/$ScriptName.log
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
