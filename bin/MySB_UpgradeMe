@@ -48,6 +48,11 @@ fi
 
 #### Backup
 DateTime="`/bin/date +%Y%m%d-%H%M%S`"
+echo -e "${CBLUE}Create backup files '/etc/MySB/upgrade/backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz'$CEND"
+for ((i = 5; i >= 0; i -= 1)); do
+	echo -n " $i"
+	sleep 1
+done
 if [ ! -d /etc/MySB/upgrade/backup ]; then
 	mkdir -p /etc/MySB/upgrade/backup
 fi
@@ -56,6 +61,11 @@ tar -zcvf /tmp/MySB_backup_$DateTime/Backup-$DateTime-$MySB_CurrentVersion.tar.g
 mv -v /tmp/MySB_backup_* /etc/MySB/upgrade/backup
 
 #### MySB Script GitHub
+echo -e "${CBLUE}Merge MySB to $MySB_NewVersion$CEND"
+for ((i = 5; i >= 0; i -= 1)); do
+	echo -n " $i"
+	sleep 1
+done
 cd /etc/MySB/
 git fetch --all
 git stash
@@ -69,7 +79,16 @@ rm -vf /etc/MySB/files/banner_*
 #### Completing the upgrade
 if [ -f /etc/MySB/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh ]; then
 	echo
-	echo
+	echo -e "${CBLUE}Upgrade system$CEND"
+	echo -e "${CYELLOW}During the update of some packages, questions may be asked to you. Leave the default choice, and press the Enter key.$CEND"
+	for ((i = 10; i >= 0; i -= 1)); do
+		echo -n " $i"
+		sleep 1
+	done	
+	#### Upgrade System
+	ScriptInvoke 'bash' '/etc/MySB/bin/MySB_UpgradeSystem'
+	
+	clear
 	echo -e "${CBLUE}Starting SCREEN session...$CEND"
 	screen -wipe &> /dev/null
 	screen -dmS MySB_UpgradeMe /bin/bash /etc/MySB/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh;
@@ -79,6 +98,11 @@ if [ -f /etc/MySB/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh ]; t
 		sleep 1
 	done
 	screen -r MySB_UpgradeMe
+else
+	echo ""
+	echo ""
+	echo -e "${CRED}Upgrade script does not exist (/etc/MySB/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh), aborting...$CEND"	
+	EndingScript 0
 fi
 
 #### Finished
