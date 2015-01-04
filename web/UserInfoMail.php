@@ -68,9 +68,9 @@ function printUser($user) {
 		$CommentPassword = '<a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/NewUser.php?var1=' . $user . '&var2=' . $UserPasswd . '">You must change your password now !</a>';;
 		$CommentPasswordStyle = 'style="background-color: #FF6666; text-align=center"';
 	} else {
-		$CommentAddress = '<span class="Comments">Public IP addresses used for access restriction. You can manage this list <a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '?user/manage-addresses.html">here</a>.</span>';
+		$CommentAddress = '<span class="Comments">Public IP addresses used for access restriction. You can manage this list <a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/manage-addresses.html">here</a>.</span>';
 		$CommentAddressStyle = '';
-		$CommentPassword = '<span class="Comments">You can change your password <a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '?user/change-password.html">here</a>.</span>';
+		$CommentPassword = '<span class="Comments">You can change your password <a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/change-password.html">here</a>.</span>';
 		$CommentPasswordStyle = '';
 		$UserPasswd = '*****';
 	}
@@ -276,10 +276,10 @@ function printUser($user) {
 			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/manage-addresses.html"><span class="Comments">Add here your IPs addresses and/or your dynamic DNS to add to whitelist.</span></a></td>
 		</tr>
 		
-		<!-- // Erase password and addresses -->
+		<!-- // Force IP addresse -->
 		<tr align="left">
 			<th width="15%" scope="row" style="color: #FF6666;">Force IP addresse</th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/NewUser.php?var1=<?php echo $user;?>&var2=erase"><span class="Comments">Force the addition of your current IP address in case of problems.</span></a></td>
+			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ForceAddress.php"><span class="Comments">Force the addition of your current IP address in case of problems.</span></a></td>
 		</tr>		
 		
 		<!-- // ruTorrent -->
