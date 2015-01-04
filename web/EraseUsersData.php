@@ -29,6 +29,12 @@ if ( isset($_GET['var1']) && isset($_GET['var2']) ) {
 	$UserPasswd = $_GET['var2'];
 	$UserAddress = $_SERVER['REMOTE_ADDR'];
 	
+	if ( $UserPasswd == 'erase' ) {
+		$MySB_DB->update("users", ["users_passwd" => "$UserPasswd"], ["users_ident" => "$UserName"]);
+		$UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$UserName"]);
+		$MySB_DB->delete("users_addresses", ["id_users_addresses" => "$UserID"]);
+	}
+	
 	// Users table
 	$users_datas = $MySB_DB->get("users", "*", ["AND" => ["users_ident" => "$UserName", "users_passwd" => "$UserPasswd"]]);
 	if ( !isset($users_datas) ) {

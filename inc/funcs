@@ -298,20 +298,40 @@ ManageServices() {
 						fi
 					else
 						case "$Service" in
-							"dnscrypt-proxy"|"webmin"|"stunnel4"|"postfix")
+							"dnscrypt-proxy"|"webmin"|"postfix")
 								Args="restart"
+								Opts=""
+								Message=""
 							;;
+							"stunnel4")
+								Args="restart"
+								Opts="&> /dev/null"
+								Message="Restarting Stunnel daemon..."
+							;;
+							"vsftpd")
+								Args="reload"
+								Opts="&> /dev/null"
+								Message="Restarting VSFTPd daemon..."
+							;;								
 							*)
 								Args="reload"
+								Opts=""
+								Message=""
 							;;
 						esac
 
 						if [ "$ServiceStatus" == "" ]; then
-							service $Service restart
+							if [ ! -z "$Message" ]; then log_daemon_msg "$Message"; fi
+							service $Service restart $Opts
+							if [ ! -z "$Message" ]; then StatusLSB; fi
 						else
-							service $Service $Args
+							if [ ! -z "$Message" ]; then log_daemon_msg "$Message"; fi
+							service $Service $Args $Opts
+							if [ ! -z "$Message" ]; then StatusLSB; fi
 							if [ $? -gt 0 ] && [ "$Args" == "reload" ]; then
+								if [ ! -z "$Message" ]; then log_daemon_msg "$Message"; fi
 								service $Service restart
+								if [ ! -z "$Message" ]; then StatusLSB; fi
 							fi
 						fi
 					fi
