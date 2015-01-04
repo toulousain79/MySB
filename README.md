@@ -91,7 +91,7 @@ https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-acc
 ## How to install
 Just copy and paste those commands on your terminal:
 ```
-wget --no-check-certificate -N https://raw.githubusercontent.com/toulousain79/MySB/dev/MySB_Install.bsh
+wget --no-check-certificate -N https://raw.githubusercontent.com/toulousain79/MySB/dev/install/MySB_Install.bsh
 bash MySB_Install.bsh
 ```
 
@@ -110,6 +110,12 @@ Beware, during installation, the SSH port will be changed. If a port session 22 
 Just copy and paste these command on your terminal:
 ```
 MySB_UpgradeMe
+```
+
+## Complete uninstall MySB
+Just copy and paste these command on your terminal:
+```
+bash /etc/MySB/install/MySB_CleanAll.bsh
 ```
 
 ## Commands
