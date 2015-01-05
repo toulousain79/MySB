@@ -887,9 +887,101 @@ Fail2BanWhitheList() {
 	fi
 }
 
-#### PeerGuardian Create Files
-PeerGuardianFilesGenerate() {
-	if [ -f /etc/pgl/pglcmd.conf ]; then
+#### PeerGuardian Create blocklists.list
+PeerGuardianBlocklistsList() {
+	if [ -f /etc/pgl/pglcmd.conf ] && hash pglcmd 2> /dev/null; then
+		# /etc/pgl/blocklists.list
+		if [ $1 -eq 1 ]; then log_daemon_msg "Add blocklists to PeerGuardian"; fi
+		(
+		cat <<'EOF'
+# blocklists.list - lists the blocklists that are handled automatically by pglcmd
+
+# Place one URL per line for every blocklist.
+# Any line which starts with a # (hash) is a comment and is ignored.
+
+# Have a look at /usr/share/doc/pglcmd/README.blocklists.gz for detailed
+# information about some available blocklists.
+
+# Instead or additionally to the blocklists that are specified in this file,
+# you can manually put lists in MASTER_BLOCKLIST_DIR (/var/lib/pgl).
+# All blocklists in that directory (except those which end in "~" or have a "."
+# prefix) are used by pgld. They may be in any supported format and have to be
+# either unpacked or gzipped. Note that these manually installed blocklists are
+# neither updated automatically, nore does IP_REMOVE work for them.
+
+# Do a "pglcmd reload" (or "restart" or "update") when you have edited
+# this file.
+
+EOF
+		) > /etc/pgl/blocklists.list
+
+		#AllBlocklists="`sqlite3 $MySB_DB \"SELECT blocklists FROM blocklists_peerguardian WHERE is_active = '1'\"`"
+		AllBlocklists="`sqlite3 $MySB_DB \"SELECT blocklists,is_active FROM blocklists_peerguardian WHERE 1\"`"	
+		for Blocklist in $AllBlocklists; do
+			List=`echo $Blocklist | awk '{split($0,a,"|"); print a[1]}'`
+			IsActive=`echo $Blocklist | awk '{split($0,a,"|"); print a[2]}'`			
+
+			case "$2" in
+				'UpdateLists')
+					echo "$List" >> /etc/pgl/blocklists.list
+					pglcmd update
+				;;
+				'CreateFile')
+					case "$IsActive" in
+						'1')
+							echo "$List" >> /etc/pgl/blocklists.list
+						;;
+						'0')
+							echo "#$List" >> /etc/pgl/blocklists.list
+						;;
+					esac
+				;;
+			esac
+		done
+		if [ $1 -eq 1 ]; then StatusLSB; fi
+	fi
+}
+
+#### PeerGuardian Create allow.p2p
+PeerGuardianAllowP2P() {
+	if [ -f /etc/pgl/pglcmd.conf ] && hash pglcmd 2> /dev/null; then
+		# /etc/pgl/allow.p2p
+		if [ $1 -eq 1 ]; then log_daemon_msg "Add allow P2P to PeerGuardian"; fi
+		(
+		cat <<'EOF'
+# allow.p2p - allow list for pglcmd
+#
+# This file contains IP ranges that shall not be checked.
+# They must be in the PeerGuardian .p2p text format like this:
+#   Some organization:1.0.0.0-1.255.255.255
+# This is also true if your blocklists are in another format.
+# Lines beginning with a hash (#) are comments and will be ignored.
+#
+# Do a "pglcmd restart" when you have edited this file.
+EOF
+		) > /etc/pgl/allow.p2p
+
+		if [ "$IsInstalled_DNScrypt" == "YES" ]; then
+			echo "DNScrypt Resolver '$ResolverName':$ResolverAddress-255.255.255.255" >> /etc/pgl/allow.p2p
+		fi		
+		
+		AllTrackers="`sqlite3 $MySB_DB \"SELECT id_trackers_list, tracker FROM trackers_list WHERE is_active = '1'\"`"
+		for Tracker in $AllTrackers; do
+			IdTracker=`echo $Tracker | awk '{split($0,a,"|"); print a[1]}'`
+			TrackerName=`echo $Tracker | awk '{split($0,a,"|"); print a[2]}'`
+
+			ListIPv4="`sqlite3 $MySB_DB \"SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$IdTracker'\"`"
+			for IPv4 in $ListIPv4; do
+				echo "$TrackerName:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
+			done
+		done
+		if [ $1 -eq 1 ]; then StatusLSB; fi
+	fi
+}
+
+#### PeerGuardian Create pglcmd.conf
+PeerGuardianPglcmdConf() {
+	if [ -f /etc/pgl/pglcmd.conf ] && hash pglcmd 2> /dev/null; then
 		# /etc/pgl/pglcmd.conf
 		if [ $1 -eq 1 ]; then log_daemon_msg "Add whitelist to PeerGuardian"; fi
 		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`
@@ -944,69 +1036,6 @@ PeerGuardianFilesGenerate() {
 		if [ ! -z "$SEARCH" ]; then	
 			perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${WHITE_UDP_OUT}\"/g" /etc/pgl/pglcmd.conf
 		fi
-		if [ $1 -eq 1 ]; then StatusLSB; fi
-
-		# /etc/pgl/blocklists.list
-		if [ $1 -eq 1 ]; then log_daemon_msg "Add blocklists to PeerGuardian"; fi
-		(
-		cat <<'EOF'
-# blocklists.list - lists the blocklists that are handled automatically by pglcmd
-
-# Place one URL per line for every blocklist.
-# Any line which starts with a # (hash) is a comment and is ignored.
-
-# Have a look at /usr/share/doc/pglcmd/README.blocklists.gz for detailed
-# information about some available blocklists.
-
-# Instead or additionally to the blocklists that are specified in this file,
-# you can manually put lists in MASTER_BLOCKLIST_DIR (/var/lib/pgl).
-# All blocklists in that directory (except those which end in "~" or have a "."
-# prefix) are used by pgld. They may be in any supported format and have to be
-# either unpacked or gzipped. Note that these manually installed blocklists are
-# neither updated automatically, nore does IP_REMOVE work for them.
-
-# Do a "pglcmd reload" (or "restart" or "update") when you have edited
-# this file.
-
-EOF
-		) > /etc/pgl/blocklists.list
-
-		AllBlocklists="`sqlite3 $MySB_DB \"SELECT blocklists FROM blocklists_peerguardian WHERE is_active = '1'\"`"
-		for Blocklist in $AllBlocklists; do
-			echo "$Blocklist" >> /etc/pgl/blocklists.list
-		done
-		if [ $1 -eq 1 ]; then StatusLSB; fi
-
-		# /etc/pgl/allow.p2p
-		if [ $1 -eq 1 ]; then log_daemon_msg "Add allow P2P to PeerGuardian"; fi
-		(
-		cat <<'EOF'
-# allow.p2p - allow list for pglcmd
-#
-# This file contains IP ranges that shall not be checked.
-# They must be in the PeerGuardian .p2p text format like this:
-#   Some organization:1.0.0.0-1.255.255.255
-# This is also true if your blocklists are in another format.
-# Lines beginning with a hash (#) are comments and will be ignored.
-#
-# Do a "pglcmd restart" when you have edited this file.
-EOF
-		) > /etc/pgl/allow.p2p
-
-		if [ "$IsInstalled_DNScrypt" == "YES" ]; then
-			echo "DNScrypt Resolver '$ResolverName':$ResolverAddress-255.255.255.255" >> /etc/pgl/allow.p2p
-		fi		
-		
-		AllTrackers="`sqlite3 $MySB_DB \"SELECT id_trackers_list, tracker FROM trackers_list WHERE is_active = '1'\"`"
-		for Tracker in $AllTrackers; do
-			IdTracker=`echo $Tracker | awk '{split($0,a,"|"); print a[1]}'`
-			TrackerName=`echo $Tracker | awk '{split($0,a,"|"); print a[2]}'`
-
-			ListIPv4="`sqlite3 $MySB_DB \"SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$IdTracker'\"`"
-			for IPv4 in $ListIPv4; do
-				echo "$TrackerName:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
-			done
-		done
 		if [ $1 -eq 1 ]; then StatusLSB; fi
 	fi
 }
