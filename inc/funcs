@@ -945,8 +945,20 @@ EOF
 		if [ "$2" == "UpdateLists" ]; then
 			# Only inactive list will be updated
 			# The activated lists will be updated when PGL will start.
-			# With this solution, all list will be created and could be activated later by the portal.		
-			pglcmd update
+			# With this solution, all list will be created and could be activated later by the portal.
+			until pglcmd update; do # if update fail maybe its due to a bad list
+				if [ $LOGSTD != "NO" ]; then echo `date +"%T"`" --> The updated list of PGL may have failed." >> /etc/MySB/logs/$ScriptName.log; fi
+				if [ $LOGSTD != "NO" ]; then echo `date +"%T"`" --> Attempting to clean lists error." >> /etc/MySB/logs/$ScriptName.log; fi
+				CheckLog=`cat /var/log/pgl/pglcmd.log | grep failed | grep list.iblocklist.com | awk '{ print $6 }'`		
+				for List in $CheckLog; do
+					echo `date +"%T"`" --> '$List' will be disabled." >> /etc/MySB/logs/$ScriptName.log
+					# Comment the list in '/etc/pgl/blocklists.list'
+					List=`echo $List | sed s,/,\\\\\\\\\\/,g`
+					sed -i "s/^$List/#$List/g" /etc/pgl/blocklists.list
+					# Force inactived list
+					sqlite3 $MySB_DB "UPDATE blocklists_peerguardian SET is_active = '0' WHERE blocklists = '$List';"
+				done
+			done
 		fi
 		
 		if [ $1 -eq 1 ]; then StatusLSB; fi
