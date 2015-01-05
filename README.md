@@ -305,11 +305,10 @@ Created by toulousain79
 
 * Use of "Let's Encrypt" (https://letsencrypt.org/) (Summer 2015)
 * Maybe add miniDLNA functionality (with OpenVPN)
-* Make some thing for users with dynamic ip for update whitelist in PeerGuardian and Fail2ban.
 * Maybe add OwnCloud possiblity
 * NFS over sTunnel ? (https://w3.physics.illinois.edu/physwiki/doku.php?id=pcs:unix:nfs_over_stunnel)
-* SABnzbd option
-* Subsonic option
+* SABnzbd ?
+* Subsonic ?
 * Namebench ?
 * Maybe use of 'psad'
 * Maybe use of  'systemd'

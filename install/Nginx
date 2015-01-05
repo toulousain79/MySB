@@ -51,10 +51,6 @@ fi
 
 MySB_Password="`GenPassword 16`"
 MySB_User="`GenPassword 8`"
-#MySB_Password=`mkpasswd MySB` && MySB_Password=$MySB_Password`mkpasswd MySB`
-#MySB_Password=`echo $MySB_Password | sed "s/\///g"`
-# MySB_User=`mkpasswd MySB`
-# MySB_User=`echo $MySB_User | sed "s/\///g"`
 sqlite3 $MySB_DB "UPDATE system SET mysb_user = '$MySB_User', mysb_password = '$MySB_Password' WHERE id_system = '1';"
 
 #### /etc/nginx/passwd/MySB
@@ -65,9 +61,6 @@ htpasswd -bs /etc/nginx/passwd/MySB $MySB_User $MySB_Password &> /dev/null
 chmod 640 /etc/nginx/passwd/MySB
 chown www-data:www-data /etc/nginx/passwd/MySB
 perl -pi -e "s/##MySB_User##/$MySB_User/g" /etc/MySB/web/pages/UserInfo.php
-
-#### Sudo
-echo "www-data ALL = (root) NOPASSWD: /bin/bash /etc/MySB/scripts/ApplyConfig.bsh*" > /etc/sudoers.d/MySB_nginx
 
 #### nginx.conf
 cp /etc/MySB/templates/etc.nginx.nginx.conf.template /etc/nginx/nginx.conf
@@ -181,6 +174,19 @@ cp /etc/MySB/templates/etc.myb.web.config.php.template /etc/MySB/web/config.php
 AdminDir="`GenPassword 16`"
 perl -pi -e "s/<admin_dir>/$AdminDir/g" /etc/MySB/web/config.php
 chmod 400 /etc/MySB/web/config.php
+
+#### LoadAvg
+# LoadAvgUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'LoadAvg'\"`"
+# LoadAvgDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'LoadAvg'\"`"
+# if [ -d $LoadAvgDir ]; then
+	# cd $LoadAvgDir
+	# git stash
+	# git pull
+# else
+	# git clone $LoadAvgUrl $LoadAvgDir
+# fi
+# cd $LoadAvgDir
+# ./configure
 
 #### Remove errors logs
 rm -f /var/log/nginx/error.log &> /dev/null
