@@ -54,8 +54,9 @@ if ( $IsInstalled == '1' ) {
 		<fieldset>
 			<legend>Beware</legend>
 			<p class="Comments">Beware, the application of these lists can take a long time and can make failed the page refresh.<br />
-				Especially if these lists were never downloaded.</p>
-			<p class="Comments">In this case, wait a while and then reapply your list by clicking on the button "Save changes", and then "Apply configuration".</p>				
+				Especially if these lists were never downloaded.<br />
+			In this case, wait a while and then reapply your list by clicking on the button "Save changes", and then "Apply configuration".<br />
+			To avoid errors, enable <b>a list at a time</b>.</p>				
 		</fieldset>
 	</div>
 

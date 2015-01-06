@@ -93,11 +93,11 @@ if (isset($_POST['submit'])) {
 				<th style="text-align:center;">Full name</th>
 				<th style="text-align:center;">Location</th>
 				<th style="text-align:center;">Version</th>
-				<th style="text-align:center;">DNSSEC validation</th>
+				<th style="text-align:center;">DNSSEC<br />validation</th>
 				<th style="text-align:center;">No logs</th>
 				<th style="text-align:center;">Namecoin</th>
-				<th style="text-align:center;">Resolver address</th>
-				<th style="text-align:center;">Provider name</th>
+				<!-- <th style="text-align:center;">Resolver address</th> -->
+				<!-- <th style="text-align:center;">Provider name</th> -->
 			</tr>
 <?php
 foreach($ResolversList as $Resolver) {
@@ -124,24 +124,24 @@ foreach($ResolversList as $Resolver) {
 				<td>
 					<?php echo $Location; ?>
 				</td>
-				<td>
+				<td style="text-align: center;">
 					<?php echo $Version; ?>
 				</td>
-				<td>
+				<td style="text-align: center;">
 					<?php echo $DnssecVal; ?>
 				</td>
-				<td>
+				<td style="text-align: center;">
 					<?php echo $NoLogs; ?>
 				</td>
-				<td>
+				<td style="text-align: center;">
 					<?php echo $Namecoin; ?>
 				</td>
-				<td>
-					<?php echo $ResolverAddress; ?>
-				</td>	
-				<td>
-					<?php echo $ProviderName; ?>
-				</td>
+				<!-- <td>
+					<?php //echo $ResolverAddress; ?>
+				</td> -->
+				<!-- <td>
+					<?php //echo $ProviderName; ?>
+				</td> -->
 			</tr>
 <?php
 	}
