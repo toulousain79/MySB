@@ -67,7 +67,8 @@ CountingUsers() {
 SendMail() {
 	FnSubject="$1"
 	FnUser="$2"
-	FnInfo="$3"
+	FnCase="$3"
+	FnInfo="$4"
 	FnAttach=""
 	FnUserMail="`sqlite3 $MySB_DB \"SELECT users_email FROM users WHERE users_ident = '$FnUser'\"`"
 	FnMailFrom=$MainUserEmail
@@ -78,7 +79,7 @@ SendMail() {
 		service nginx restart &> /dev/null
 	fi
 
-	curl --silent --retry 2 --user $MySB_User:$MySB_Password https://$HostNameFQDN:$Port_HTTPS/UserInfoMail.php?user=$FnUser --cacert /etc/MySB/ssl/nginx.cert > /etc/MySB/temp/$FnUser.html
+	curl --silent --retry 2 --user $MySB_User:$MySB_Password https://$HostNameFQDN:$Port_HTTPS/UserInfoMail.php?case=$FnCase&user=$FnUser --cacert /etc/MySB/ssl/nginx.cert > /etc/MySB/temp/$FnUser.html
 
 	StatusLSB
 
@@ -627,7 +628,7 @@ MonthlyPayment() {
 			SeedUserMail="`sqlite3 $MySB_DB \"SELECT users_email FROM users WHERE users_ident = '$SeedboxUser'\"`"
 			
 			if [ ! "$1" = "$SeedboxUser" ]; then	
-				SendMail "MySB - Changing monthly" "${SeedboxUser}" "Changing Monthly"
+				SendMail "MySB - Changing monthly" "${SeedboxUser}" "new_user" "Changing Monthly"
 			fi
 		done
 	fi
@@ -931,11 +932,22 @@ EOF
 
 			case "$2" in
 				'UpdateLists') # We create a blocklists with all inactive lists for update them
-					case "$IsActive" in
-						'0')
-							echo "$List" >> /etc/pgl/blocklists.list
-						;;
-					esac
+					echo "$List" >> /etc/pgl/blocklists.list
+					
+					pglcmd update
+					
+					if [ $? -gt 0 ]; then # if update fail maybe its due to a bad list 
+						if [ $1 -eq 0 ]; then echo `date +"%T"`" --> The updated list of PGL may have failed." >> /etc/MySB/logs/$ScriptName.log; fi
+
+						CheckLog=`cat /var/log/pgl/pglcmd.log | grep failed | grep list.iblocklist.com | awk '{ print $6 }'`		
+						for List in $CheckLog; do
+							echo `date +"%T"`" --> '$List' will be disabled." >> /etc/MySB/logs/$ScriptName.log
+							# Force inactived list
+							sqlite3 -echo $MySB_DB "UPDATE blocklists_peerguardian SET is_active = '0', last_update = '' WHERE blocklists = '$List';"
+						done
+					else # Update OK
+						sqlite3 -echo $MySB_DB "UPDATE blocklists_peerguardian SET last_update = datetime('now','localtime') WHERE blocklists = '$List';"
+					done
 				;;
 				'CreateFile') # Now, we create the final blocklists with all active lists
 					case "$IsActive" in
@@ -949,25 +961,6 @@ EOF
 				;;
 			esac
 		done
-
-		if [ "$2" == "UpdateLists" ]; then
-			# Only inactive list will be updated
-			# The activated lists will be updated when PGL will start.
-			# With this solution, all list will be created and could be activated later by the portal.
-			until pglcmd update; do # if update fail maybe its due to a bad list
-				if [ $1 -eq 0 ]; then echo `date +"%T"`" --> The updated list of PGL may have failed." >> /etc/MySB/logs/$ScriptName.log; fi
-				if [ $1 -eq 0 ]; then echo `date +"%T"`" --> Attempting to clean lists error." >> /etc/MySB/logs/$ScriptName.log; fi
-				CheckLog=`cat /var/log/pgl/pglcmd.log | grep failed | grep list.iblocklist.com | awk '{ print $6 }'`		
-				for List in $CheckLog; do
-					echo `date +"%T"`" --> '$List' will be disabled." >> /etc/MySB/logs/$ScriptName.log
-					# Comment the list in '/etc/pgl/blocklists.list'
-					List=`echo $List | sed s,/,\\\\\\\\\\/,g`
-					sed -i "s/^$List/#$List/g" /etc/pgl/blocklists.list
-					# Force inactived list
-					sqlite3 $MySB_DB "UPDATE blocklists_peerguardian SET is_active = '0' WHERE blocklists = '$List';"
-				done
-			done
-		fi
 		
 		if [ $1 -eq 1 ]; then StatusLSB; fi
 	fi

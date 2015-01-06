@@ -26,11 +26,12 @@ require_once  '/etc/MySB/web/inc/includes_before.php';
 
 if ($_SERVER['PHP_AUTH_USER'] == '##MySB_User##') {
 	$UserName = $_GET['user'];
+	$Case = $_GET['case'];
 } else {
 	$UserName = $_SERVER['PHP_AUTH_USER'];
 }
 
-function printUser($user) {
+function printUser($user, $Case) {
 	global $MySB_DB, $system_datas, $Port_HTTPs;
 
 	// Users table
@@ -90,9 +91,48 @@ function printUser($user) {
 			$sudo = 'YES';
 			break;
 	}
+
+	// Format email for users
+	switch ($Case) { // account_created, account_confirmed, upgrade, renting, new_user
+		case 'account_created':
+			$DisplayGoTo 		= false;
+			$DisplayUserInfo 	= false;
+			$DisplayLinks 		= false;
+			$DisplayRenting		= false;
+			break;
+		case 'new_user':
+			$DisplayGoTo 		= true;
+			$DisplayUserInfo 	= false;
+			$DisplayLinks 		= false;
+			$DisplayRenting		= true;
+			break;			
+		case 'account_confirmed':
+			$DisplayGoTo 		= true;
+			$DisplayUserInfo 	= true;
+			$DisplayLinks 		= true;
+			$DisplayRenting		= true;
+			break;
+		case 'upgrade':
+			$DisplayGoTo 		= false;
+			$DisplayUserInfo 	= false;
+			$DisplayLinks 		= false;
+			$DisplayRenting		= false;
+			break;
+		case 'renting':
+			$DisplayGoTo 		= true;
+			$DisplayUserInfo 	= false;
+			$DisplayLinks 		= false;
+			$DisplayRenting		= true;
+			break;
+	}
 ?>
 	<table width="100%" border="0" align="left">
+
+
+<?php if ( $DisplayGoTo == true ) { ?>
 		<tr><td colspan="3" scope="row"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>">Go to MySB Portal</a></td></tr>
+<?php } ?>
+
 
 		<!-- //////////////////////
 		// User personal info
@@ -124,6 +164,9 @@ function printUser($user) {
 			<td><?php echo $users_datas["users_email"];?></td>
 			<td> </td>
 		</tr>
+
+
+<?php if ( $DisplayUserInfo == true ) { ?>
 		<!-- // RPC -->
 		<tr align="left">
 			<th width="15%" scope="row">RPC</th>
@@ -252,7 +295,9 @@ function printUser($user) {
 			<th width="15%" scope="row">NFS share</th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent</td>
 			<td><span class="Comments">mount -t nfs [10.0.0.1|10.0.1.1]:/home/'.$user.'/rtorrent [Destination_directory] [-o vers=3,ro]</span></td>
-		</tr>		
+		</tr>
+<?php } ?>
+
 
 		<!-- //////////////////////
 		// Links (Normal user)
@@ -260,6 +305,9 @@ function printUser($user) {
 		<tr align="left">
 			<th colspan="3" scope="row"><h4>Links (Normal user)</h4></th>
 		</tr>
+		
+		
+<?php if ( $DisplayLinks == true ) { ?>
 		<!-- // User Info -->
 		<tr align="left">
 			<th width="15%" scope="row">User Info</th>
@@ -269,37 +317,27 @@ function printUser($user) {
 		<tr align="left">
 			<th width="15%" scope="row">Change password</th>
 			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/change-password.html"><span class="Comments">You can change your password here.</span></a></td>
-		</tr>	
+		</tr>
 		<!-- // Manage Addresses -->
 		<tr align="left">
 			<th width="15%" scope="row">Manage Addresses</th>
 			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/manage-addresses.html"><span class="Comments">Add here your IPs addresses and/or your dynamic DNS to add to whitelist.</span></a></td>
 		</tr>
-		
-		<!-- // Force IP addresse -->
-		<tr align="left">
-			<th width="15%" scope="row" style="color: #FF6666;">Force IP addresse</th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ForceAddress.php"><span class="Comments">Force the addition of your current IP address in case of problems. (You need a valid password)</span></a></td>
-		</tr>		
-		
+
 		<!-- // ruTorrent -->
 		<tr align="left">
 			<th width="15%" scope="row">ruTorrent</th>
 			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ru"><span class="Comments">ruTorrent interface</span></a></td>
 		</tr>
 		<!-- // Seedbox-Manager -->
-<?php
-if ( $ManagerInstalled == '1' ) {
-?>		
+	<?php if ( $ManagerInstalled == '1' ) { ?>
 		<tr align="left">
 			<th width="15%" scope="row">Seedbox-Manager</th>
 			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/sm"><span class="Comments">Seedbox-Manager interface</span></a></td>
-		</tr>		
-<?php
-}
+		</tr>
+	<?php } ?>
 
-if ( $OpenVpnInstalled == '1' ) {
-?>		
+	<?php if ( $OpenVpnInstalled == '1' ) { ?>
 		<!-- // OpenVPN -->
 		<tr align="left">
 			<th width="15%" scope="row">OpenVPN config</th>
@@ -310,22 +348,26 @@ if ( $OpenVpnInstalled == '1' ) {
 			<th width="15%" scope="row">OpenVPN GUI</th>
 			<td colspan="2"><a target="_blank" href="https://openvpn.net/index.php/open-source/downloads.html"><span class="Comments">Download here GUI for OpenVPN.</span></a></td>
 		</tr>
-<?php
-}
+	<?php } ?>
 
-if ( $CakeboxDatas["is_installed"] == '1' ) {
-?>
+	<?php if ( $CakeboxDatas["is_installed"] == '1' ) { ?>
 		<!-- // CakeBox Light -->
 		<tr align="left">
 			<th width="15%" scope="row">CakeBox Light</th>
 			<td colspan="2"><a target="_blank" href="http://<?php echo $system_datas["hostname"];?>:<?php echo $CakeboxDatas["port_tcp1"];?>"><span class="Comments">Play here your media.</span></a></td>
 		</tr>
-<?php
-}
+	<?php } ?>
 
-	if ( $users_datas["admin"] == '1' ) {
-		
-?>
+<?php } // $DisplayLinks ?>
+
+
+		<!-- // Force IP addresse -->
+		<tr align="left">
+			<th width="15%" scope="row" style="color: #FF6666;">Force IP addresse</th>
+			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ForceAddress.php"><span class="Comments">Force the addition of your current IP address in case of problems. (You need a valid password)</span></a></td>
+		</tr>
+	
+	<?php if ( $users_datas["admin"] == '1' ) { ?>
 
 		<!-- //////////////////////
 		// Links (Main user)
@@ -333,18 +375,13 @@ if ( $CakeboxDatas["is_installed"] == '1' ) {
 		<tr align="left">
 			<th colspan="3" scope="row"><h4>Links (Main user)</h4></th>
 		</tr>
-		<!-- // Webmin -->
-		
-<?php
-		if ( $WebminDatas["is_installed"] == '1' ) {
-?>
+		<!-- // Webmin -->		
+		<?php if ( $WebminDatas["is_installed"] == '1' ) { ?>
 			<tr align="left">
 				<th width="15%" scope="row">Webmin</th>
 				<td colspan="2"><a target="_blank" href="https://<?php echo $system_datas["hostname"];?>:<?php echo $WebminDatas["port_tcp1"];?>"><span class="Comments">Admin interface for manage your server.</span></a></td>
 			</tr>
-<?php
-		}
-?>
+		<?php } ?>
 		<!-- // Logs -->
 		<tr align="left">
 			<th width="15%" scope="row">Logs</th>
@@ -365,20 +402,17 @@ if ( $CakeboxDatas["is_installed"] == '1' ) {
 			<th width="15%" scope="row">Blocklists</th>
 			<td colspan="2"><span class="Comments">You can manage <a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a> AND <a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a>.</span></td>
 		</tr>
-<?php
-		if ( $DNScryptDatas["is_installed"] == '1' ) {
-?>		
+		<?php if ( $DNScryptDatas["is_installed"] == '1' ) { ?>
 			<!-- // DNScrypt-proxy -->
 			<tr align="left">
 				<th width="15%" scope="row">DNScrypt-proxy</th>
 				<td colspan="2"><span class="Comments">You can manage <a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?main-user/dnscrypt-proxy.html">Select your resolver here.</a></span></td>
 			</tr>
-<?php
-		}
-	}
+		<?php } ?>
 	
-	if ( isset($RentingDatas["global_cost"]) ) {
-?>
+	<?php } ?>
+
+	<?php if ( isset($RentingDatas["global_cost"]) ) { ?>
 		<!-- //////////////////////
 		// Price and Payment info
 		////////////////////// -->
@@ -415,10 +449,10 @@ if ( $CakeboxDatas["is_installed"] == '1' ) {
 			<td><b><span class="FontInRed"><?php echo $RentingDatas["price_per_users"];?></span></b> &euro; TTC / month</td>
 			<td> </td>
 		</tr>		
-<?php
-	}
-?>
+	<?php } ?>
+	
 	</table>
+	
 <?php	
 }
 
@@ -454,7 +488,7 @@ if ( (CountingUsers() >= 1) && (GetVersion() != "") ) {
 				</style>
 			</head>
 			<body>';
-	printUser($UserName);
+	printUser($UserName, $Case);
 	echo '</body></html>';
 } else {
 	echo '<p><h1 class="FontInRed">MySB is not installed !</h1></p>';
