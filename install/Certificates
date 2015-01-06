@@ -67,26 +67,26 @@ CreateCACertificate() {
 	fi
 
 	# 2 - Change working directory
-	cd /etc/MySB/ssl/CA/
+	#cd /etc/MySB/ssl/CA/
 
 	# 3 - OpenSSL config
-	cp /etc/MySB/templates/root.ca.cacert.conf.template ./MySB_caconfig.cnf
-	perl -pi -e "s/<servername>/$HostNameFQDN/g" ./MySB_caconfig.cnf
-	perl -pi -e "s/<email>/$MainUserEmail/g" ./MySB_caconfig.cnf
-	perl -pi -e "s/<ipaddress>/$SrvIpAddress/g" ./MySB_caconfig.cnf
+	cp /etc/MySB/templates/root.ca.cacert.conf.template /etc/MySB/ssl/CA/MySB_caconfig.cnf
+	perl -pi -e "s/<servername>/$HostNameFQDN/g" /etc/MySB/ssl/CA/MySB_caconfig.cnf
+	perl -pi -e "s/<email>/$MainUserEmail/g" /etc/MySB/ssl/CA/MySB_caconfig.cnf
+	perl -pi -e "s/<ipaddress>/$SrvIpAddress/g" /etc/MySB/ssl/CA/MySB_caconfig.cnf
 
 	#### 4 - Certificate Authority
-	echo '01' > ./serial
-	touch ./index.txt
+	echo '01' > /etc/MySB/ssl/CA/serial
+	touch /etc/MySB/ssl/CA/index.txt
 
-	openssl req -new -x509 -extensions v3_ca -keyout ./private/cakey.pem -passout pass:$CERTPASS -out ./certs/cacert.pem -days 3650 -config ./MySB_caconfig.cnf
-	openssl req -new -nodes -out ./req.pem -passout pass:$CERTPASS -config ./MySB_caconfig.cnf
-	openssl ca -batch -out ./cert.pem -config ./MySB_caconfig.cnf -passin pass:$CERTPASS -infiles ./req.pem
-	mv -v ./cert.pem ./tmp.pem
-	openssl x509 -in ./tmp.pem -out ./cert.pem
-	cat ./key.pem ./cert.pem > ./key-cert.pem
-	chmod 644 ./cert.pem
-	chmod 644 ./key.pem
+	openssl req -new -x509 -extensions v3_ca -passout pass:$CERTPASS -days 3650 -config /etc/MySB/ssl/CA/MySB_caconfig.cnf
+	openssl req -new -nodes -out /etc/MySB/ssl/CA/req.pem -passout pass:$CERTPASS -config /etc/MySB/ssl/CA/MySB_caconfig.cnf
+	openssl ca -batch -out /etc/MySB/ssl/CA/cert.pem -config /etc/MySB/ssl/CA/MySB_caconfig.cnf -passin pass:$CERTPASS -infiles /etc/MySB/ssl/CA/req.pem
+	mv -v /etc/MySB/ssl/CA/cert.pem /etc/MySB/ssl/CA/tmp.pem
+	openssl x509 -in /etc/MySB/ssl/CA/tmp.pem -out /etc/MySB/ssl/CA/cert.pem
+	cat /etc/MySB/ssl/CA/key.pem /etc/MySB/ssl/CA/cert.pem > /etc/MySB/ssl/CA/key-cert.pem
+	chmod 644 /etc/MySB/ssl/CA/cert.pem
+	chmod 644 /etc/MySB/ssl/CA/key.pem
 }
 
 # Services Certificate
@@ -97,13 +97,12 @@ CreateServiceCertificate() {
 	SUBJ="/C=FR/ST=FR/L=FR/O=MySB/CN=$HostNameFQDN/emailAddress=$MainUserEmail/OU=$SERVICENAME"
 	
 	if [ ! -f /etc/MySB/ssl/$SERVICENAME.key ]; then
-		openssl genrsa 2048 | sudo tee ./$SERVICENAME.key
-		openssl req -new -x509 -nodes -key ./$SERVICENAME.key -config ./MySB_caconfig.cnf -batch -subj $SUBJ | sudo tee ./$SERVICENAME.cert
-		openssl ca -batch -passin pass:$CERTPASS -subj $SUBJ -out ./$SERVICENAME.pem -config ./MySB_caconfig.cnf -passin pass:$CERTPASS -ss_cert ./$SERVICENAME.cert
-		chmod 600 ./$SERVICENAME.*
-		mv -v ./$SERVICENAME.* ../
-		chmod 644 ../$SERVICENAME.cert
-
+		openssl genrsa 2048 | sudo tee /etc/MySB/ssl/CA/$SERVICENAME.key
+		openssl req -new -x509 -nodes -key /etc/MySB/ssl/CA/$SERVICENAME.key -config /etc/MySB/ssl/CA/MySB_caconfig.cnf -batch -subj $SUBJ | sudo tee /etc/MySB/ssl/CA/$SERVICENAME.cert
+		openssl ca -batch -passin pass:$CERTPASS -subj $SUBJ -out /etc/MySB/ssl/CA/$SERVICENAME.pem -config /etc/MySB/ssl/CA/MySB_caconfig.cnf -passin pass:$CERTPASS -ss_cert /etc/MySB/ssl/CA/$SERVICENAME.cert
+		chmod 600 /etc/MySB/ssl/CA/$SERVICENAME.*
+		mv -v /etc/MySB/ssl/CA/$SERVICENAME.* /etc/MySB/ssl/
+		chmod 644 /etc/MySB/ssl/$SERVICENAME.cert
 	fi
 }
 
