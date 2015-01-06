@@ -41,26 +41,32 @@ fi
 
 if [ "$ToInstall_Webmin" == "YES" ]; then
 	#if webmin isup, download key
-	WEBMINDOWN=YES
-	ping -c1 -w2 www.webmin.com
-	if [ $? -eq 0 ] ; then
-		cd /etc/MySB/files
-		wget -t 5 http://www.webmin.com/jcameron-key.asc -O /etc/MySB/files/jcameron-key.asc
-		apt-key add /etc/MySB/files/jcameron-key.asc
+	if [ -z "$1" ] || [ "$1" != "UPGRADE" ]; then
+		WEBMINDOWN=YES
+		ping -c1 -w2 www.webmin.com
 		if [ $? -eq 0 ] ; then
-			WEBMINDOWN=NO
-			rm -vf /etc/MySB/files/jcameron-key.asc
+			cd /etc/MySB/files
+			wget -t 5 http://www.webmin.com/jcameron-key.asc -O /etc/MySB/files/jcameron-key.asc
+			apt-key add /etc/MySB/files/jcameron-key.asc
+			if [ $? -eq 0 ] ; then
+				WEBMINDOWN=NO
+				rm -vf /etc/MySB/files/jcameron-key.asc
+			fi
 		fi
+	else
+		WEBMINDOWN=NO
 	fi
 
 	if [ "$WEBMINDOWN" == "NO" ] ; then
-		#### Add Webmin source
-		echo "# Webmin" > /etc/apt/sources.list.d/webmin.list
-		echo "" >> /etc/apt/sources.list.d/webmin.list
-		echo "# wget -t 5 http://www.webmin.com/jcameron-key.asc" >> /etc/apt/sources.list.d/webmin.list
-		echo "# apt-key add jcameron-key.asc" >> /etc/apt/sources.list.d/webmin.list
-		echo "" >> /etc/apt/sources.list.d/webmin.list
-		echo "deb http://download.webmin.com/download/repository sarge contrib" >> /etc/apt/sources.list.d/webmin.list
+		if [ -z "$1" ] || [ "$1" != "UPGRADE" ]; then
+			#### Add Webmin source
+			echo "# Webmin" > /etc/apt/sources.list.d/webmin.list
+			echo "" >> /etc/apt/sources.list.d/webmin.list
+			echo "# wget -t 5 http://www.webmin.com/jcameron-key.asc" >> /etc/apt/sources.list.d/webmin.list
+			echo "# apt-key add jcameron-key.asc" >> /etc/apt/sources.list.d/webmin.list
+			echo "" >> /etc/apt/sources.list.d/webmin.list
+			echo "deb http://download.webmin.com/download/repository sarge contrib" >> /etc/apt/sources.list.d/webmin.list
+		fi
 
 		#### Force apt-get update
 		sqlite3 $MySB_DB "UPDATE system SET apt_update = 1, apt_date = datetime('now','localtime') WHERE id_system = 1;"

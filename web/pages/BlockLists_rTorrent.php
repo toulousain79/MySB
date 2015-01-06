@@ -56,6 +56,7 @@ $BlockList = $MySB_DB->select("blocklists_rtorrent", "*");
 			<tr>
 				<th style="text-align:center;">Name</th>
 				<th style="text-align:center;">Blocklist</th>
+				<th style="text-align:center;">Last Update</th>
 				<th style="text-align:center;">Default ?</th>
 				<th style="text-align:center;">Active ?</th>
 			</tr>
@@ -98,6 +99,9 @@ foreach($BlockList as $List) {
 					<input style="width:180px;" type="hidden" name="blocklists[]" value="<?php echo $List["blocklists"]; ?>" />
 					<?php echo '<a target="_blank" href="' . $List["url_info"] . '">' . $List["blocklists"] . '</a>'; ?>
 				</td>
+				<td>
+					<?php echo $List["last_update"]; ?>
+				</td>				
 				<td>
 					<?php echo $default; ?>
 				</td>

@@ -138,27 +138,30 @@ DoRehash=0
 for Tracker in $TrackersList; do
 	log_daemon_msg "Get certificate for $Tracker"
 	cd /etc/MySB/ssl/trackers/
-	# TODO
-	# Some trackers are down or block our request.
-	# Find a solution with a timeout or a ping... We can stay blocked during installation a long time.
-	openssl s_client -connect $Tracker:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$Tracker.crt
-	if [ -s ./$Tracker.crt ]; then
-		openssl x509 -in ./$Tracker.crt -out ./$Tracker.der -outform DER 
-		openssl x509 -in ./$Tracker.der -inform DER -out ./$Tracker.pem -outform PEM
-		if [ -e ./$Tracker.pem ]; then
-			if [ -f /etc/ssl/certs/$Tracker.pem ]; then
-				rm -f /etc/ssl/certs/$Tracker.pem
+	PingResult="`ping -c1 -w2 $Tracker | grep 'packets transmitted'`"
+	
+	if [ "`echo $PingResult | grep '0 received'`" == "" ] ; then	
+		openssl s_client -connect $Tracker:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$Tracker.crt
+		if [ -s ./$Tracker.crt ]; then
+			openssl x509 -in ./$Tracker.crt -out ./$Tracker.der -outform DER 
+			openssl x509 -in ./$Tracker.der -inform DER -out ./$Tracker.pem -outform PEM
+			if [ -e ./$Tracker.pem ]; then
+				if [ -f /etc/ssl/certs/$Tracker.pem ]; then
+					rm -f /etc/ssl/certs/$Tracker.pem
+				fi
+				ln -s /etc/MySB/ssl/trackers/$Tracker.pem /etc/ssl/certs/$Tracker.pem
+				sqlite3 $MySB_DB "UPDATE trackers_list SET is_ssl = '1' WHERE tracker = '$Tracker';"
+				DoRehash=1
 			fi
-			ln -s /etc/MySB/ssl/trackers/$Tracker.pem /etc/ssl/certs/$Tracker.pem
-			sqlite3 $MySB_DB "UPDATE trackers_list SET is_ssl = '1' WHERE tracker = '$Tracker';"
-			DoRehash=1
+
+			rm -f ./$Tracker.der
 		fi
-
-		rm -f ./$Tracker.der
+		
+		sqlite3 $MySB_DB "UPDATE trackers_list SET to_check = '0', ping = '$PingResult' WHERE tracker = '$Tracker';"
+		rm -f ./$Tracker.crt
+	else
+		sqlite3 $MySB_DB "UPDATE trackers_list SET is_active = '0', to_check = '0', ping = '$PingResult' WHERE tracker = '$Tracker';"
 	fi
-	sqlite3 $MySB_DB "UPDATE trackers_list SET to_check = '0' WHERE tracker = '$Tracker';"
-
-	rm -f ./$Tracker.crt
 	StatusLSB
 done
 

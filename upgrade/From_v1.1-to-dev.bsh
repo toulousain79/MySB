@@ -38,7 +38,7 @@ fi
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=31
+TotalSTEP=33
 
 #### 1 - Create missing directories and DBs
 (( CurrentSTEP++ ))
@@ -49,6 +49,7 @@ StatusSTD
 #### 2 - Move some files & directories
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Moving and deleting some files & directories$CEND..."
+# Manage LOGs
 if [ -f /etc/MySB/logs/From_v1.0-to-v1.1.bsh.log ]; then rm -f /etc/MySB/logs/From_v1.0-to-v1.1.bsh.log; fi
 if [ -f /etc/MySB/logs/Blocklist.log ]; then mv /etc/MySB/logs/Blocklist.log /etc/MySB/logs/Blocklists.log; fi
 if [ -f /etc/MySB/logs/BlockList.sh.log ]; then mv /etc/MySB/logs/BlockList.sh.log /etc/MySB/logs/BlocklistsRTorrent.bsh.log; fi
@@ -78,20 +79,28 @@ if [ -f /etc/MySB/web/logs/scripts/BlockList.sh-log.html ]; then mv /etc/MySB/we
 if [ -f /etc/MySB/web/logs/scripts/FirewallAndSecurity.sh-log.html ]; then mv /etc/MySB/web/logs/scripts/FirewallAndSecurity.sh-log.html /etc/MySB/web/logs/scripts/FirewallAndSecurity.bsh-log.html; fi
 if [ -f /etc/MySB/web/logs/scripts/GetTrackersCert.sh-log.html ]; then mv /etc/MySB/web/logs/scripts/GetTrackersCert.sh-log.html /etc/MySB/web/logs/scripts/GetTrackersCert.bsh-log.html; fi
 if [ -f /etc/MySB/web/logs/scripts/LogServer.sh-log.html ]; then mv /etc/MySB/web/logs/scripts/LogServer.sh-log.html /etc/MySB/web/logs/scripts/LogServer.bsh-log.html; fi
+# Ghost files
 if [ -f /root/2 ]; then rm -f /root/2 &> /dev/null; fi
 if [ -f /root/033* ]; then rm -f /root/033* &> /dev/null; fi
 if [ -f /root/MySB_Install.sh ]; then rm -f /root/MySB_Install.sh &> /dev/null; fi
+# Unused files
 if [ -f /usr/share/nginx/html/50x.html ]; then rm -f /usr/share/nginx/html/50x.html &> /dev/null; fi
 if [ -h /etc/MySB/web/fileshare.php ]; then rm -f /etc/MySB/web/fileshare.php; fi
 if [ -h /etc/MySB/web/stream.php ]; then rm -f /etc/MySB/web/stream.php; fi
 if [ -h /etc/MySB/web/view.php ]; then rm -f /etc/MySB/web/view.php; fi
+# Movinf directories
 if [ -d /etc/MySB/scripts/blocklist ]; then mv /etc/MySB/scripts/blocklist /etc/MySB/files/blocklists; fi
 if [ -d /usr/share/nginx/html/seedbox-manager ]; then mv /usr/share/nginx/html/seedbox-manager /etc/MySB/web/; fi
 if [ -d /usr/share/nginx/html/rutorrent ]; then mv /usr/share/nginx/html/rutorrent /etc/MySB/web/; fi
 if [ -d /usr/share/nginx/html/Cakebox-light ]; then mv /usr/share/nginx/html/Cakebox-light /etc/MySB/web/; fi
+# Cleaning
 rm -rf /etc/MySB/temp/* &> /dev/null
 rm -rf /etc/MySB/files/* &> /dev/null
 rm -rf /etc/MySB/sources/* &> /dev/null
+# Cleaning old certificates
+rm -f /etc/MySB/ssl/*.cert &> /dev/null
+rm -f /etc/MySB/ssl/*.pem &> /dev/null
+rm -f /etc/MySB/ssl/*.key &> /dev/null
 # Delete old crontab
 crontab -l > /tmp/crontab.tmp
 sed -i '/webmin\/package-updates/d' /tmp/crontab.tmp
@@ -147,21 +156,19 @@ for seedUser in $UsersList; do
 done
 StatusSTD
 
-#### 9 - PHP
+#### 9 - Certificates
 (( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring PHP5$CEND..."
-screen -dmS PHP /bin/bash /etc/MySB/install/PHP 'UPGRADE';
-WaitingScreen PHP
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Generating CA certificate (SHA1 to SHA256)$CEND..."
+screen -dmS Certificates /bin/bash /etc/MySB/install/Certificates 'CreateCACertificate' 'UPGRADE';
+WaitingScreen Certificates
+chmod 644 /etc/MySB/ssl/*.cert &> /dev/null
+if [ -f /etc/webmin/miniserv.pem ]; then
+	cat /etc/MySB/ssl/webmin.cert > /etc/webmin/miniserv.pem
+	cat /etc/MySB/ssl/webmin.key >> /etc/webmin/miniserv.pem
+fi
 StatusSTD
 
-#### 10 - NginX
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring NginX$CEND..."
-screen -dmS Nginx /bin/bash /etc/MySB/install/Nginx 'UPGRADE';
-WaitingScreen Nginx
-StatusSTD
-
-#### 11 - DNScrypt-proxy
+#### 10 - DNScrypt-proxy
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring DNScrypt-proxy$CEND..."
 if [ "$IsInstalled_DNScrypt" == "YES" ]; then
@@ -173,9 +180,9 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 12 - PeerGuardian
+#### 11 - PeerGuardian
 (( CurrentSTEP++ ))
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring PeerGuardian$CEND..."
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring PeerGuardian$CEND..."
 if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
 	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'PeerGuardian';"
 	screen -dmS PeerGuardian /bin/bash /etc/MySB/install/PeerGuardian 'UPGRADE';
@@ -185,14 +192,47 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 13 - Postfix
+#### 12 - PHP
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring PHP5$CEND..."
+screen -dmS PHP /bin/bash /etc/MySB/install/PHP 'UPGRADE';
+WaitingScreen PHP
+StatusSTD
+
+#### 13 - NginX
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring NginX$CEND..."
+screen -dmS Nginx /bin/bash /etc/MySB/install/Nginx 'UPGRADE';
+WaitingScreen Nginx
+StatusSTD
+
+#### 14 - Postfix
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Postfix$CEND..."
 screen -dmS Postfix /bin/bash /etc/MySB/install/Postfix 'UPGRADE';
 WaitingScreen Postfix
 StatusSTD
 
-#### 14 - Backup users data
+#### 15 - VSFTPd
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring VSFTPd$CEND..."
+screen -dmS VSFTP /bin/bash /etc/MySB/install/VSFTP 'UPGRADE';
+WaitingScreen VSFTP
+StatusSTD
+
+#### 16 - Webmin
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Webmin$CEND..."
+if [ "$IsInstalled_Webmin" == "YES" ]; then
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Webmin';"
+	screen -dmS Webmin /bin/bash /etc/MySB/install/Webmin 'UPGRADE';
+	WaitingScreen Webmin
+	StatusSTD
+else
+	echo -e "${CGREEN}Nothing to do !$CEND..."	
+fi
+
+#### 17 - Backup users data
 # ruTorrent
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Backups of users data$CEND..."
@@ -205,21 +245,21 @@ if [ -d $ManagerDir ]; then rm -rf $ManagerDir &> /dev/null; fi
 if [ -d $CakeboxDir ]; then rm -rf $CakeboxDir &> /dev/null; fi
 StatusSTD
 
-#### 15 - DownloadAll (update)
+#### 18 - DownloadAll (update)
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Downloading all files at once (GIT, SVN, TAR.GZ, WBM)$CEND..."
 screen -dmS DownloadAll /bin/bash /etc/MySB/install/DownloadAll 'UPGRADE';
 WaitingScreen DownloadAll
 StatusSTD
 
-#### 16 - Refresh tools
+#### 19 - Refresh tools
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Refresh some tools (ruTorrent, Manager, Cakebox)$CEND..."
 screen -dmS MySB_RefreshMe /bin/bash /etc/MySB/bin/MySB_RefreshMe 'all';
 WaitingScreen MySB_RefreshMe
 StatusSTD
 
-#### 17 - Restore users data
+#### 20 - Restore users data
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Restoring user data$CEND..."
 for seedUser in $UsersList; do
@@ -230,7 +270,7 @@ rm -rf /etc/MySB/temp/conf_users &> /dev/null
 rsync -av /etc/MySB/temp/share_users/ $RutorrentDir/share/users/ &> /dev/null && rm -rf /etc/MySB/temp/share_users &> /dev/null
 StatusSTD
 
-#### 18 - Samba & NFS
+#### 21 - Samba
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Samba$CEND..."
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
@@ -242,6 +282,7 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
+#### 22 - Samba
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring NFS$CEND..."
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then	
@@ -253,7 +294,7 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 19 - Fail2Ban
+#### 23 - Fail2Ban
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Fail2Ban$CEND..."
 if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
@@ -265,7 +306,7 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 20 - LogWatch
+#### 24 - LogWatch
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Logwatch$CEND..."
 if [ "$IsInstalled_LogWatch" == "YES" ]; then
@@ -277,20 +318,14 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 21 - rTorrent Blocklists
+#### 25 - rTorrent Blocklists
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Compiling the rTorrent blocklist$CEND..."
 screen -dmS Blocklist /bin/bash /etc/MySB/install/Blocklists 'UPGRADE';
 WaitingScreen Blocklist
 StatusSTD
 
-#### 22 - Certificates
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for Certificates$CEND..."
-chmod 644 /etc/MySB/ssl/*.cert &> /dev/null
-StatusSTD
-
-#### 23 - OpenVPN
+#### 26 - OpenVPN
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for OpenVPN$CEND..."
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
@@ -303,7 +338,7 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 24 - Crontab
+#### 27 - Crontab
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for Crontab$CEND..."
 crontab -l > /tmp/crontab.tmp
@@ -316,7 +351,7 @@ crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
 StatusSTD
 
-#### 25 - rTorrent (.rtorrent.rc)
+#### 28 - rTorrent (.rtorrent.rc)
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Creating new '.rtorrent.rc' file for all users$CEND..."
 for seedUser in $UsersList; do
@@ -353,13 +388,13 @@ for seedUser in $UsersList; do
 done
 StatusSTD
 
-#### 26 - Cleaning
+#### 29 - Cleaning
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Cleaning$CEND..."
 rm -rf /etc/MySB/temp/* &> /dev/null
 StatusSTD
 
-#### 27 - Vars (again)
+#### 30 - Vars (again)
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Read database informations$CEND..."
 if [ -f /etc/MySB/inc/vars ]; then source /etc/MySB/inc/vars; fi
@@ -367,20 +402,20 @@ if [ -f /etc/MySB/inc/funcs ]; then source /etc/MySB/inc/funcs; fi
 ListingUsers
 StatusSTD
 
-#### 28 - Firewall And Security
+#### 31 - Firewall And Security
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Creating basic security rules$CEND..."
 ScriptInvoke 'screen' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new' 'UPGRADE'
 StatusSTD
 
-#### 29 - STOP & START services
+#### 32 - STOP & START services
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Restarting all services$CEND..."
 ManageServices stop "stunnel4 postfix" &> /dev/null
 ManageServices start "cron nginx openvpn stunnel4 postfix" &> /dev/null
 StatusSTD
 
-#### 30 - Send mail for each user with new version
+#### 33 - Send mail for each user with new version
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Clearing the password for all users$CEND..."
 for seedUser in $UsersList; do

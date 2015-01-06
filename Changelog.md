@@ -7,7 +7,7 @@
 			- DNScrypt-proxy v1.4.2
 			- Possibility to allow access for dynamic IP addresses
 			- Some modifications
-			- Renew all certificates using SH256 instead SHA1
+			- Renew all certificates using SHA256 instead of SHA1
 
 	Version v1.1
 		2014/10/26
