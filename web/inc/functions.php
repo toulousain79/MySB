@@ -76,7 +76,7 @@ function MainUser() {
 
 // Create menu with submenu
 function MenuDisplayChildren($page, $current, $startmenu = true) {
-	global $MySB_DB, $system_datas;
+	global $MySB_DB, $Port_HTTPs, $system_datas;
 
 	$hidden = (MainUser()) ? true : false;
 	$CakeboxDatas = $MySB_DB->get("services", "*", ["serv_name" => "CakeBox-Light"]);
@@ -109,6 +109,9 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						echo '<li><a target="_blank"  href="http://' . $system_datas["hostname"] . ':' . $CakeboxDatas["port_tcp1"] . '/">Cakebox-Light</a>';
 					}
 					break;
+				case "LoadAvg":
+					echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/loadavg/public/">LoadAvg</a>';
+					break;					
 				case "Webmin":
 					if ( $WebminIsInstalled == '1' ) {
 						echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $WebminDatas["port_tcp1"] . '/">Webmin</a>';
