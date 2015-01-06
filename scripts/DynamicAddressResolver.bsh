@@ -26,13 +26,15 @@ source /etc/MySB/inc/includes_before
 
 #### Update all IPs from hostname
 Reload=0
+AllIdUsers=""
 if [ "$LOGSTD" != "NO" ]; then log_daemon_msg "Create list of all dynamic hostnames"; fi
-AllHostname="`sqlite3 $MySB_DB \"SELECT id_users_addresses,hostname FROM users_addresses WHERE is_active = '1' AND check_by = 'hostname'\"`"
+AllHostname="`sqlite3 $MySB_DB \"SELECT id_users_addresses,id_users,hostname FROM users_addresses WHERE is_active = '1' AND check_by = 'hostname'\"`"
 if [ "$LOGSTD" != "NO" ]; then StatusLSB; fi
 
 for Line in $AllHostname; do
 	IdUsersAddresses=`echo $Line | awk '{split($0,a,"|"); print a[1]}'`
-	Hostname=`echo $Line | awk '{split($0,a,"|"); print a[2]}'`
+	IdUsers=`echo $Line | awk '{split($0,a,"|"); print a[2]}'`
+	Hostname=`echo $Line | awk '{split($0,a,"|"); print a[3]}'`
 	ListIPv4="`sqlite3 $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND check_by = 'hostname' AND hostname = '$Hostname'\"`"
 
 	IPv4="$(nslookup $Hostname | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
@@ -43,6 +45,7 @@ for Line in $AllHostname; do
 		if [ "$LOGSTD" != "NO" ]; then StatusLSB; fi
 		if [ "$LOGSTD" == "NO" ]; then echo `date`" --> UPDATE $Hostname WITH $IPv4" >> /etc/MySB/logs/$ScriptName.log; fi
 		Reload=1
+		AllIdUsers="${AllIdUsers} $IdUsers"
 	fi
 done
 
@@ -54,6 +57,13 @@ if [ "$Reload" == "1" ]; then
 		echo `date`" --> UPDATE security rules" >> /etc/MySB/logs/$ScriptName.log; fi
 		ccze -h < /etc/MySB/logs/$ScriptName.log > /etc/MySB/web/logs/scripts/$ScriptName-log.html		
 	fi
+	
+	for IdUser in $AllIdUsers; do
+		UserEmail="`sqlite3 $MySB_DB \"SELECT users_email FROM users WHERE id_users = '$IdUser'\"`"
+		UserName="`sqlite3 $MySB_DB \"SELECT users_ident FROM users WHERE id_users = '$IdUser'\"`"
+		
+		SendMail "MySB - Dynamic IP addresses were updated" "$UserName" "ip_updated" "Dynamic IP updated"
+	done
 else
 	if [ "$LOGSTD" != "NO" ]; then log_daemon_msg "No hostname requires updating" && StatusLSB; fi
 fi
