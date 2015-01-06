@@ -62,7 +62,10 @@ case $1 in
 		#### START services
 		ManageServices start "nginx"		
 	;;
-	new)	
+	new)
+		#### VARs
+		ServicesToManage=""
+	
 		#### NO spoofing
 		if [ -e /proc/sys/net/ipv4/conf/all/rp_filter ]; then
 			log_daemon_msg "No spoofing"
@@ -256,12 +259,14 @@ case $1 in
 		fi
 
 		#### BIND
-		AllTrackersDomain="`sqlite3 $MySB_DB \"SELECT tracker_domain FROM trackers_list WHERE is_active = '0'\"`"
-		echo "# Blacklisted domain (ex: inactive trackers)" > /etc/bind/named.conf.blacklists
-		for TrackerDomain in $AllTrackersDomain; do
-			echo "zone \"$TrackerDomain\"        IN  { type master; file \"zones/intercept.zone\"; };" >> /etc/bind/named.conf.blacklists
-		done
-		ServicesToManage="bind9"
+		if [ -f /etc/bind/named.conf ]; then
+			AllTrackersDomain="`sqlite3 $MySB_DB \"SELECT tracker_domain FROM trackers_list WHERE is_active = '0'\"`"
+			echo "# Blacklisted domain (ex: inactive trackers)" > /etc/bind/named.conf.blacklists
+			for TrackerDomain in $AllTrackersDomain; do
+				echo "zone \"$TrackerDomain\"        IN  { type master; file \"zones/intercept.zone\"; };" >> /etc/bind/named.conf.blacklists
+			done
+			ServicesToManage="${ServicesToManage} bind9"
+		fi
 		
 		#### Fail2Ban
 		if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
