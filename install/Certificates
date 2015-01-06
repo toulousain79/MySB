@@ -91,18 +91,20 @@ CreateCACertificate() {
 
 # Services Certificate
 CreateServiceCertificate() {
-	cd /etc/MySB/ssl/CA/
+	#cd /etc/MySB/ssl/CA/
 
 	CERTPASS="`sqlite3 $MySB_DB \"SELECT cert_password FROM system WHERE id_system = '1'\"`"
 	SUBJ="/C=FR/ST=FR/L=FR/O=MySB/CN=$HostNameFQDN/emailAddress=$MainUserEmail/OU=$SERVICENAME"
 	
 	if [ ! -f /etc/MySB/ssl/$SERVICENAME.key ]; then
 		openssl genrsa 2048 | sudo tee ./$SERVICENAME.key
-		openssl req -new -x509 -nodes -sha1 -days 3650 -key ./$SERVICENAME.key -config ./MySB_caconfig.cnf -batch -subj $SUBJ | sudo tee ./$SERVICENAME.cert
-		openssl ca -batch -keyfile ./private/cakey.pem -passin pass:$CERTPASS -subj $SUBJ -out ./$SERVICENAME.pem -config ./MySB_caconfig.cnf -passin pass:$CERTPASS -ss_cert ./$SERVICENAME.cert
+		openssl req -new -x509 -nodes -key ./$SERVICENAME.key -config ./MySB_caconfig.cnf -batch -subj $SUBJ | sudo tee ./$SERVICENAME.cert
+		openssl ca -batch -passin pass:$CERTPASS -subj $SUBJ -out ./$SERVICENAME.pem -config ./MySB_caconfig.cnf -passin pass:$CERTPASS -ss_cert ./$SERVICENAME.cert
 		chmod 600 ./$SERVICENAME.*
 		mv -v ./$SERVICENAME.* ../
 		chmod 644 ../$SERVICENAME.cert
+	else # renew certificate
+		
 	fi
 }
 
