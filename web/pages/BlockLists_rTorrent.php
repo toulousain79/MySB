@@ -97,7 +97,7 @@ foreach($BlockList as $List) {
 				</td>
 				<td>
 					<input style="width:180px;" type="hidden" name="blocklists[]" value="<?php echo $List["blocklists"]; ?>" />
-					<?php echo '<a target="_blank" href="' . $List["url_info"] . '">' . $List["blocklists"] . '</a>'; ?>
+					<?php echo '<a target="_blank" href="' . $List["url_info"] . '">' . StringTruncate($List["blocklists"], 120) . '</a>'; ?>
 				</td>
 				<td>
 					<?php echo $List["last_update"]; ?>

@@ -22,6 +22,17 @@
 //
 //#################### FIRST LINE #####################################
 
+// StringTruncate
+function StringTruncate($string, $length) {
+	if (strlen($string) > $length) { 
+		$string = substr($string, 0, $length); 
+		$last_space = strrpos($string, ""); 
+		$string = substr($string, 0, $last_space)."..."; 
+	} 
+
+	return $string;
+}
+
 // CountingUsers
 function CountingUsers() {
 	global $MySB_DB;
