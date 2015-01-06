@@ -85,17 +85,19 @@ SendMail() {
 
 	if [ ! -z "$FnInfo" ]; then log_daemon_msg "Sending email to $FnUser ($FnInfo)"; fi
 	if [ -s /etc/MySB/temp/$FnUser.html ]; then
-		FnAttach="$FnUser.html"
+		FnAttach="/etc/MySB/temp/$FnUser.html"
 		type="html"
 	else
 		FnAttach="/etc/MySB/logs/MySB_CreateUser.log"
 		type="plain"
 	fi
-	cat /etc/MySB/temp/$FnAttach | mail -a "From: MySB <$FnMailFrom>" -a "MIME-Version: 1.0" -a "Content-Type: text/$type" -s "$FnSubject" $FnUserMail
+	cat $FnAttach | mail -a "From: MySB <$FnMailFrom>" -a "MIME-Version: 1.0" -a "Content-Type: text/$type" -s "$FnSubject" $FnUserMail
 	sleep 2
 	#### Flush mail queue
 	if hash postfix 2> /dev/null; then postfix flush; fi	
 	if [ ! -z "$FnInfo" ]; then StatusLSB; fi
+	
+	unset FnAttach FnInfo FnSubject FnUser
 }
 
 #### apt-get OR aptitude
@@ -622,11 +624,11 @@ MonthlyPayment() {
 		StatusLSB
 
 		ListingUsers
-		for FnUser in $UsersList; do
-			SeedUserMail="`sqlite3 $MySB_DB \"SELECT users_email FROM users WHERE users_ident = '$FnUser'\"`"
+		for SeedboxUser in $UsersList; do
+			SeedUserMail="`sqlite3 $MySB_DB \"SELECT users_email FROM users WHERE users_ident = '$SeedboxUser'\"`"
 			
-			if [ ! "$1" = "$FnUser" ]; then	
-				SendMail "MySB - Changing monthly" "${FnUser}" "Changing Monthly"
+			if [ ! "$1" = "$SeedboxUser" ]; then	
+				SendMail "MySB - Changing monthly" "${SeedboxUser}" "Changing Monthly"
 			fi
 		done
 	fi
