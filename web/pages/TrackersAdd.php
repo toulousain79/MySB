@@ -115,6 +115,7 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["origin" => "users", "OR
 				<th style="text-align:center;">Domain</th>
 				<th style="text-align:center;">Address</th>
 				<th style="text-align:center;">IPv4</th>
+				<th style="text-align:center;">Ping Result</th>
 				<th style="text-align:center;">SSL ?</th>
 				<th style="text-align:center;">Active ?</th>
 				<th style="text-align:center;">Delete ?</th>
@@ -171,6 +172,9 @@ foreach($TrackersList as $Tracker) {
 ?>
 					</select>
 				</td>
+				<td>
+					<?php echo $Tracker["ping"]; ?>
+				</td>				
 				<td>
 					<?php echo $is_ssl; ?>
 				</td>

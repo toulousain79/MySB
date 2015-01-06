@@ -1,0 +1,95 @@
+#!/bin/bash 
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### 1 - includes
+source /etc/MySB/inc/vars
+source /etc/MySB/inc/funcs
+if [ -f /lib/lsb/init-functions ]; then
+	source /lib/lsb/init-functions
+fi
+
+#### 2 - SWITCHES
+# Default
+BANNER=ON		# Banner for all script (ON/OFF)
+LOGSTD=NO		# Standard Outpout and Error redicted to 'scriptname.log' (STDERR/STDOUT/NO)
+USAGE=ON		# All usage display to user (ON/OFF)
+END=ON			# Lauch some commands (ON/OFF) (ldconfig, updatedb, drop cache) (see includes_after)
+
+#### Check by arguments
+Args=("$@")
+for ((i=0; i < $#; i++)) {
+	case "${Args[$i]}" in
+		"UPGRADE"|"REFRESH"|"CRON"|"INSTALL")
+			BANNER=OFF
+			LOGSTD=STDOUT
+			USAGE=OFF
+			case "$ScriptName" in
+				"DynamicAddressResolver.bsh")
+					LOGSTD=NO
+				;;
+			esac
+			if [ "${Args[$i]}" == "CRON" ]; then
+				END=OFF
+			fi
+		;;
+		"APPLYCONFIG")
+			BANNER=OFF
+			LOGSTD=NO
+			USAGE=OFF
+			END=OFF
+		;;
+	esac
+}
+
+#### Check by script name
+case "$ScriptName" in
+	"ApplyConfig.bsh") # Launched by ApplyConfig.bsh (web)
+		BANNER=OFF
+	;;	
+	"From_v1.1-to-dev.bsh") # Upgrade ?
+		MySB_CurrentVersion="dev"
+	;;
+esac
+
+#### 3 - Create MySB banner
+if [ "$BANNER" == "ON" ]; then
+	BannerGenerator
+fi
+
+#### 4 -STD Out/Err (after banner)
+if [ "$LOGSTD" != "NO" ] ; then
+	if [ "$LOGSTD" == "STDERR" ]; then
+		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
+		echo "START Err: "`date` "-" $ScriptName $1 >> /etc/MySB/logs/$ScriptName.log
+		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
+		exec 2>> /etc/MySB/logs/$ScriptName.log
+	else
+		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
+		echo "START Out/Err: "`date` "-" $ScriptName $1 >> /etc/MySB/logs/$ScriptName.log
+		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
+		exec >> /etc/MySB/logs/$ScriptName.log	2>&1
+	fi
+fi
+
+##################### LAST LINE ######################################

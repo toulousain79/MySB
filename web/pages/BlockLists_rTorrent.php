@@ -93,11 +93,11 @@ foreach($BlockList as $List) {
 			<tr>
 				<td>
 					<input style="width:120px;" type="hidden" name="name[]" value="<?php echo $List["name"]; ?>" />
-					<?php echo $List["name"]; ?>
+					<?php echo '<a target="_blank" href="' . $List["url_info"] . '">' . $List["name"] . '</a>'; ?>
 				</td>
 				<td>
 					<input style="width:180px;" type="hidden" name="blocklists[]" value="<?php echo $List["blocklists"]; ?>" />
-					<?php echo '<a target="_blank" href="' . $List["url_info"] . '">' . StringTruncate($List["blocklists"], 120) . '</a>'; ?>
+					<?php echo StringTruncate($List["blocklists"], 40, 60, ' ', '...'); ?>
 				</td>
 				<td>
 					<?php echo $List["last_update"]; ?>

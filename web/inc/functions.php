@@ -23,14 +23,20 @@
 //#################### FIRST LINE #####################################
 
 // StringTruncate
-function StringTruncate($string, $length) {
-	if (strlen($string) > $length) { 
-		$string = substr($string, 0, $length); 
-		$last_space = strrpos($string, ""); 
-		$string = substr($string, 0, $last_space)."..."; 
-	} 
-
-	return $string;
+function StringTruncate($string, $minlen, $maxlen, $separator = ' ', $suffix = '') {
+	$result = $string;
+	if (strlen($result) > $maxlen) {
+		if (($pos = strrpos(substr($result, 0, $maxlen + strlen( $separator )), $separator)) !== false) {
+			if ($pos < $minlen) {
+				$result = substr($result, 0, $maxlen) . $suffix;
+			} else {
+				$result = substr($result, 0, $pos) . $suffix;
+			}
+		} else {
+			$result = substr($result, 0, $maxlen) . $suffix;
+		}
+	}
+	echo $result;
 }
 
 // CountingUsers
@@ -86,7 +92,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
         foreach($page->children(null, array(), $hidden) as $menu) :
 			switch ($menu->title) {
 				case "Apply configuration":
-					$replace = '<div id="ApplyConfigButtonReplace" style="padding-top: 10px; padding-left: 10px; text-align:center; display:none; height: 29px;"><img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading..."></div>';
+					$replace = '<div id="ApplyConfigButtonReplace" style="padding-top: 8px; padding-left: 10px; text-align:center; display:none; height: 24px;"><img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading..."></div>';
 					$style = "id=\"ApplyConfigButtonState\" class=\"ApplyConfigButtonNothing\" onclick=\"ButtonClicked('config')\"";
 					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$replace.'<div id="ApplyConfigButton">'.$menu->link($menu->title, $style).'</div>';
 					break;
