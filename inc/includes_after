@@ -50,42 +50,36 @@ if [ -d /etc/webmin/firewall/ ]; then
 	cp /etc/iptables.up.rules /etc/webmin/firewall/iptables.save
 fi
 
-#### 5 - Update files database
-case "$ScriptName" in
-	"ApplyConfig.bsh"|"BlocklistsRTorrent.bsh"|"GetTrackersCert.bsh"|"FirewallAndSecurity.bsh"|"DynamicAddressResolver.bsh"|"MySB_ChangeUserPassword"|"MySB_RefreshMe"|"Questions")
-		echo &> /dev/null
-	;;
-	*)
-		log_daemon_msg "Update the man database (mandb)"
-		/usr/bin/mandb -q
-		StatusLSB
-		
-		if hash /usr/bin/updatedb 2>/dev/null ]; then
-			log_daemon_msg "Update the slocate database (updatedb)"
-			/usr/bin/updatedb
-			StatusLSB
-		fi
-		if hash /sbin/ldconfig 2>/dev/null; then
-			log_daemon_msg "Configure dynamic linker run-time bindings (ldconfig)"
-			/sbin/ldconfig
-			StatusLSB
-		fi
+#### 5 - End Script
+if [ "$END" == "ON" ], then
+	log_daemon_msg "Update the man database (mandb)"
+	/usr/bin/mandb -q
+	StatusLSB
 
-		if [ -z $IFPVEKERNEL ]; then
-			log_daemon_msg "Drop caches system"
-			#### Free cache server
-			## To free pagecache
-			#sync; echo 1 > /proc/sys/vm/drop_caches
-			## To release dentries and inodes
-			#sync; echo 2 > /proc/sys/vm/drop_caches
-			## To free pagecache, dentries and inodes
-			sync; echo 3 > /proc/sys/vm/drop_caches
-			## Default
-			#sync; echo 0 > /proc/sys/vm/drop_caches
-			StatusLSB
-		fi
-	;;	
-esac
+	if hash /usr/bin/updatedb 2>/dev/null ]; then
+		log_daemon_msg "Update the slocate database (updatedb)"
+		/usr/bin/updatedb
+		StatusLSB
+	fi
+	if hash /sbin/ldconfig 2>/dev/null; then
+		log_daemon_msg "Configure dynamic linker run-time bindings (ldconfig)"
+		/sbin/ldconfig
+		StatusLSB
+	fi
+	if [ -z $IFPVEKERNEL ]; then
+		log_daemon_msg "Drop caches system"
+		#### Free cache server
+		## To free pagecache
+		#sync; echo 1 > /proc/sys/vm/drop_caches
+		## To release dentries and inodes
+		#sync; echo 2 > /proc/sys/vm/drop_caches
+		## To free pagecache, dentries and inodes
+		sync; echo 3 > /proc/sys/vm/drop_caches
+		## Default
+		#sync; echo 0 > /proc/sys/vm/drop_caches
+		StatusLSB
+	fi
+fi
 
 #### 6 - create ccze files (HTML)
 if [ "$LOGSTD" != "NO" ] ; then
