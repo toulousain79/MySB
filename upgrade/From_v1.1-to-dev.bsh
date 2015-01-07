@@ -157,21 +157,16 @@ StatusSTD
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Stopping of services$CEND..."
 ManageServices stop "cron" &> /dev/null
+StatusSTD
 for seedUser in $UsersList; do
 	service rtorrent-$seedUser stop &> /dev/null
 done
-StatusSTD
 
 #### 10 - Certificates
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Generating CA certificate (SHA1 to SHA256)$CEND..."
 screen -dmS Certificates /bin/bash /etc/MySB/install/Certificates 'CreateCACertificate' 'NoServiceNameToGive' 'UPGRADE';
 WaitingScreen Certificates
-chmod 644 /etc/MySB/ssl/*.cert &> /dev/null
-if [ -f /etc/webmin/miniserv.pem ]; then
-	cat /etc/MySB/ssl/webmin.cert > /etc/webmin/miniserv.pem
-	cat /etc/MySB/ssl/webmin.key >> /etc/webmin/miniserv.pem
-fi
 StatusSTD
 
 #### 11 - Bind
@@ -255,6 +250,10 @@ if [ "$IsInstalled_Webmin" == "YES" ] || [ "$ToInstall_Webmin" == "YES" ]; then
 	screen -dmS Webmin /bin/bash /etc/MySB/install/Webmin 'UPGRADE';
 	WaitingScreen Webmin
 	StatusSTD
+	if [ -f /etc/webmin/miniserv.pem ]; then
+		cat /etc/MySB/ssl/webmin.cert > /etc/webmin/miniserv.pem
+		cat /etc/MySB/ssl/webmin.key >> /etc/webmin/miniserv.pem
+	fi
 else
 	echo -e "${CGREEN}Nothing to do !$CEND..."	
 fi
