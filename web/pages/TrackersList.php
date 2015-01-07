@@ -24,6 +24,8 @@
 
 global $MySB_DB;
 
+$IsMainUser = (MainUser()) ? true : false;
+
 if(isset($_POST)==true && empty($_POST)==false) {
 	$success = true;
 
@@ -87,7 +89,10 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["ORDER" => "trackers_lis
 
 <form class="form_settings" method="post" action="">	
 	<div align="center">
+
+	<?php if ( $IsMainUser ) { ?>
 		<input class="submit" style="width:120px; margin-bottom: 10px;" name="submit" type="submit" value="Save Changes">
+	<?php } ?>
 
 		<table style="border-spacing:1;">
 			<tr>
@@ -126,16 +131,28 @@ foreach($TrackersList as $Tracker) {
 
 	switch ($Tracker["is_active"]) {
 		case '0':
-			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-								<option value="0" selected="selected" class="redText">No</option>
-								<option value="1" class="greenText">Yes</option>
-							</select>';
+			if ( $IsMainUser ) {
+				$is_active = '	<select name="is_active[]" style="width:60px;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+									<option value="0" selected="selected" class="redText">No</option>
+									<option value="1" class="greenText">Yes</option>
+								</select>';
+			} else {
+				$is_active = '	<select name="is_active[]" style="width:60px;" class="redText" disabled>
+									<option value="0" selected="selected">No</option>
+								</select>';				
+			}
 			break;
 		default:
-			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-								<option value="0" class="redText">No</option>
-								<option value="1" selected="selected" class="greenText">Yes</option>
-							</select>';
+			if ( $IsMainUser ) {
+				$is_active = '	<select name="is_active[]" style="width:60px;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+									<option value="0" class="redText">No</option>
+									<option value="1" selected="selected" class="greenText">Yes</option>
+								</select>';
+			} else {
+				$is_active = '	<select name="is_active[]" style="width:60px;" class="greenText">
+									<option value="1" selected="selected" class="greenText">Yes</option>
+								</select>';				
+			}
 			break;
 	}
 ?>
@@ -180,7 +197,9 @@ foreach($TrackersList as $Tracker) {
 ?>
 
 		</table>
-		<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
+		<?php if ( $IsMainUser ) { ?>
+			<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
+		<?php } ?>
 	</div>
 </form>
 

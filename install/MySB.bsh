@@ -121,6 +121,10 @@ case $MySB_PeerBlock in
 	;;
 esac
 
+#
+########## PREPARE - BoF ##########
+#
+
 #### 1 - Create basic security rules
 (( CurrentSTEP++ ))
 if [ "$1" == "manual" ]; then
@@ -177,6 +181,117 @@ else
 	StatusSTD
 fi
 
+#
+########## PREPARE - EoF ##########
+#
+
+#
+########## SECURITY - BoF ##########
+#
+
+#### 19 - Fail2Ban
+if [ "$ToInstall_Fail2Ban" == "YES" ]; then
+	(( CurrentSTEP++ ))
+	if [ "$1" == "manual" ]; then
+		clear
+		echo -e "${CGREEN}$CurrentSTEP/$TotalSTEP	- /bin/bash /etc/MySB/install/Fail2Ban$CEND"
+		read -p "Press [Enter] key to continue..."
+		/bin/bash /etc/MySB/install/Fail2Ban
+	else
+		echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Fail2Ban$CEND..."
+		screen -dmS Fail2Ban /bin/bash /etc/MySB/install/Fail2Ban 'INSTALL';
+		WaitingScreen Fail2Ban
+		StatusSTD
+	fi
+fi
+
+#### 23 - Bind
+(( CurrentSTEP++ ))
+if [ "$1" == "manual" ]; then
+	clear
+	echo -e "${CGREEN}$CurrentSTEP/$TotalSTEP	- /bin/bash /etc/MySB/install/Bind$CEND"
+	read -p "Press [Enter] key to continue..."
+	/bin/bash /etc/MySB/install/Bind
+else
+	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring BIND$CEND..."
+	screen -dmS Bind /bin/bash /etc/MySB/install/Bind 'INSTALL';
+	WaitingScreen Bind
+	StatusSTD
+fi
+
+### 24 - DNScrypt-proxy
+if [ "$ToInstall_DNScrypt" == "YES" ]; then
+	(( CurrentSTEP++ ))
+	if [ "$1" == "manual" ]; then
+		clear
+		echo -e "${CGREEN}$CurrentSTEP/$TotalSTEP	- /bin/bash /etc/MySB/install/DNScrypt$CEND"
+		read -p "Press [Enter] key to continue..."
+		/bin/bash /etc/MySB/install/DNScrypt
+	else
+		echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring DNScrypt-proxy$CEND..."
+		screen -dmS DNScrypt /bin/bash /etc/MySB/install/DNScrypt 'INSTALL';
+		WaitingScreen DNScrypt
+		StatusSTD
+	fi
+fi
+
+#### 25 - BlockList / PeerGuardian
+case $MySB_PeerBlock in
+	PeerGuardian)
+		(( CurrentSTEP++ ))
+		if [ "$1" == "manual" ]; then
+			clear
+			echo -e "${CGREEN}$CurrentSTEP/$TotalSTEP	- /bin/bash /etc/MySB/install/PeerGuardian$CEND"
+			read -p "Press [Enter] key to continue..."
+			/bin/bash /etc/MySB/install/PeerGuardian
+		else
+			echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring PeerGuardian, and updating blocklists (this may take a while, please be patient)$CEND..."
+			screen -dmS PeerGuardian /bin/bash /etc/MySB/install/PeerGuardian 'INSTALL';
+			WaitingScreen PeerGuardian
+			StatusSTD
+		fi
+		
+		(( CurrentSTEP++ ))
+		if [ "$1" == "manual" ]; then
+			clear
+			echo -e "${CGREEN}$CurrentSTEP/$TotalSTEP	- /bin/bash /etc/MySB/install/Blocklists$CEND"
+			read -p "Press [Enter] key to continue..."
+			/bin/bash /etc/MySB/install/Blocklists
+		else
+			echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Compiling the rTorrent blocklist$CEND..."
+			screen -dmS Blocklist /bin/bash /etc/MySB/install/Blocklists 'INSTALL';
+			WaitingScreen Blocklist
+			StatusSTD
+		fi		
+	;;
+	rTorrent)
+		(( CurrentSTEP++ ))
+		if [ "$1" == "manual" ]; then
+			clear
+			echo -e "${CGREEN}$CurrentSTEP/$TotalSTEP	- /bin/bash /etc/MySB/install/Blocklists$CEND"
+			read -p "Press [Enter] key to continue..."
+			/bin/bash /etc/MySB/install/Blocklists
+		else
+			echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Compiling the rTorrent blocklist$CEND..."
+			screen -dmS Blocklist /bin/bash /etc/MySB/install/Blocklists 'INSTALL';
+			WaitingScreen Blocklist
+			StatusSTD
+		fi
+	;;	
+	*)
+		echo -e -n "${CBLUE}Don't use any blocklist$CEND..."
+		StatusSTD
+	;;
+esac
+
+#
+########## SECURITY - EoF ##########
+#
+
+#
+########## INSTALLATION - BoF ##########
+#
+
 #### 5 - DownloadAll
 (( CurrentSTEP++ ))
 if [ "$1" == "manual" ]; then
@@ -199,7 +314,7 @@ if [ -f /etc/MySB/temp/continue ]; then
 	EndingScript 1
 fi
 
-#### 8 - Certificates
+#### 6 - Certificates
 (( CurrentSTEP++ ))
 if [ "$1" == "manual" ]; then
 	clear
@@ -240,7 +355,7 @@ else
 	StatusSTD
 fi
 
-#### 10 - Postfix
+#### 9 - Postfix
 (( CurrentSTEP++ ))
 if [ "$1" == "manual" ]; then
 	clear
@@ -254,7 +369,7 @@ else
 	StatusSTD
 fi
 
-#### 11 - Nginx
+#### 10 - Nginx
 (( CurrentSTEP++ ))
 if [ "$1" == "manual" ]; then
 	clear
@@ -416,22 +531,6 @@ if [ "$ToInstall_OpenVPN" == "YES" ]; then
 	fi
 fi
 
-#### 19 - Fail2Ban
-if [ "$ToInstall_Fail2Ban" == "YES" ]; then
-	(( CurrentSTEP++ ))
-	if [ "$1" == "manual" ]; then
-		clear
-		echo -e "${CGREEN}$CurrentSTEP/$TotalSTEP	- /bin/bash /etc/MySB/install/Fail2Ban$CEND"
-		read -p "Press [Enter] key to continue..."
-		/bin/bash /etc/MySB/install/Fail2Ban
-	else
-		echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Fail2Ban$CEND..."
-		screen -dmS Fail2Ban /bin/bash /etc/MySB/install/Fail2Ban 'INSTALL';
-		WaitingScreen Fail2Ban
-		StatusSTD
-	fi
-fi
-
 #### 20 - Webmin
 if [ "$ToInstall_Webmin" == "YES" ]; then
 	(( CurrentSTEP++ ))
@@ -480,86 +579,7 @@ if [ "$ToInstall_PlexMedia" == "YES" ]; then
 	fi
 fi
 
-#### 6 - Bind
-(( CurrentSTEP++ ))
-if [ "$1" == "manual" ]; then
-	clear
-	echo -e "${CGREEN}$CurrentSTEP/$TotalSTEP	- /bin/bash /etc/MySB/install/Bind$CEND"
-	read -p "Press [Enter] key to continue..."
-	/bin/bash /etc/MySB/install/Bind
-else
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring BIND$CEND..."
-	screen -dmS Bind /bin/bash /etc/MySB/install/Bind 'INSTALL';
-	WaitingScreen Bind
-	StatusSTD
-fi
-
-### 23 - DNScrypt-proxy
-if [ "$ToInstall_DNScrypt" == "YES" ]; then
-	(( CurrentSTEP++ ))
-	if [ "$1" == "manual" ]; then
-		clear
-		echo -e "${CGREEN}$CurrentSTEP/$TotalSTEP	- /bin/bash /etc/MySB/install/DNScrypt$CEND"
-		read -p "Press [Enter] key to continue..."
-		/bin/bash /etc/MySB/install/DNScrypt
-	else
-		echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring DNScrypt-proxy$CEND..."
-		screen -dmS DNScrypt /bin/bash /etc/MySB/install/DNScrypt 'INSTALL';
-		WaitingScreen DNScrypt
-		StatusSTD
-	fi
-fi
-
-#### 24 - BlockList / PeerGuardian
-case $MySB_PeerBlock in
-	PeerGuardian)
-		(( CurrentSTEP++ ))
-		if [ "$1" == "manual" ]; then
-			clear
-			echo -e "${CGREEN}$CurrentSTEP/$TotalSTEP	- /bin/bash /etc/MySB/install/PeerGuardian$CEND"
-			read -p "Press [Enter] key to continue..."
-			/bin/bash /etc/MySB/install/PeerGuardian
-		else
-			echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring PeerGuardian, and updating blocklists (this may take a while, please be patient)$CEND..."
-			screen -dmS PeerGuardian /bin/bash /etc/MySB/install/PeerGuardian 'INSTALL';
-			WaitingScreen PeerGuardian
-			StatusSTD
-		fi
-		
-		(( CurrentSTEP++ ))
-		if [ "$1" == "manual" ]; then
-			clear
-			echo -e "${CGREEN}$CurrentSTEP/$TotalSTEP	- /bin/bash /etc/MySB/install/Blocklists$CEND"
-			read -p "Press [Enter] key to continue..."
-			/bin/bash /etc/MySB/install/Blocklists
-		else
-			echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Compiling the rTorrent blocklist$CEND..."
-			screen -dmS Blocklist /bin/bash /etc/MySB/install/Blocklists 'INSTALL';
-			WaitingScreen Blocklist
-			StatusSTD
-		fi		
-	;;
-	rTorrent)
-		(( CurrentSTEP++ ))
-		if [ "$1" == "manual" ]; then
-			clear
-			echo -e "${CGREEN}$CurrentSTEP/$TotalSTEP	- /bin/bash /etc/MySB/install/Blocklists$CEND"
-			read -p "Press [Enter] key to continue..."
-			/bin/bash /etc/MySB/install/Blocklists
-		else
-			echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Compiling the rTorrent blocklist$CEND..."
-			screen -dmS Blocklist /bin/bash /etc/MySB/install/Blocklists 'INSTALL';
-			WaitingScreen Blocklist
-			StatusSTD
-		fi
-	;;	
-	*)
-		echo -e -n "${CBLUE}Don't use any blocklist$CEND..."
-		StatusSTD
-	;;
-esac
-
-#### 25 - MySB_CreateUser
+#### 26 - MySB_CreateUser
 (( CurrentSTEP++ ))
 if [ "$1" == "manual" ]; then
 	clear
@@ -573,11 +593,15 @@ else
 	StatusSTD
 fi
 
-#### 26 - Modify rights and owner for directories and files
+#### 27 - Modify rights and owner for directories and files
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}Modifying of rights and owners for directories and files$CEND..."
 ManageDirectoriesAndFiles
 StatusSTD
+
+#
+########## INSTALLATION - EoF ##########
+#
 
 echo
 echo -e "${CGREEN}Looks like everything is set.$CEND"
@@ -608,7 +632,7 @@ echo
 echo -e "${CBLUE}As main user, you can manage bloclists, trackers and more via MySB portal, available here:$CEND"
 echo -e "	-->	${CYELLOW}https://$HostNameFQDN:$Port_HTTPS/$CEND"
 
-#### 25 - Reboot after install
+#### 28 - Reboot after install
 if [ "$1" == "manual" ]; then
 	QuestionGetString NO  "Do you want to reboot now, type 'yes' or 'no' ?" REBOOT NO
 else
