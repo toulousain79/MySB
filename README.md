@@ -35,12 +35,12 @@ MySB is a seedbox platform for multi-users.
 	* OpenVPN (optionnal); Multi TUN configuration, with or without redirection of traffic. Add AES-NI support (Not valid for OpenVZ Container).
 	* Webmin (optionnal)
 	* BlockList usage (optionnal) (PeerGuardian or rTorrent, if PeerGuardian failed to start, rTorrent will use its own blocklist)
-	* CakeBoxLight (optionnal)
+	* CakeBox-Light (optionnal)
 	* PlexMedia Server (optionnal) (requires additional setup)
 	* Samba share for each users (VPN access)
 	* NFS share for each users (VPN access)
 	* Auto retrieve SSL certificates for all trackers (if available)
-	* MySB portal, ability to manage trackers, blocklists, and more
+	* MySB portal, ability to manage trackers, blocklists, users and more
 	* Block all possibilities to use any trackers that was not activated in MySB portal.
 
 ## Additional ruTorrent plugins (in addition to the official plugins)
