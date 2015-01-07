@@ -22,6 +22,30 @@
 //
 //#################### FIRST LINE #####################################
 
+// Password Generator
+function PasswordGenerator ($length = 8) {
+	$password = "";
+	$possibilities = "012346789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+ 
+	$lengthMax = strlen($possibilities);
+ 
+	if ($length > $lengthMax) {
+		$length = $lengthMax;
+	}
+ 
+	$i = 0;
+	while ($i < $length) {
+		$caractere = substr($possibilities, mt_rand(0, $lengthMax-1), 1);
+ 
+		if (!strstr($password, $caractere)) {
+			$password .= $caractere;
+			$i++;
+		}
+	}
+ 
+	return $password;
+}
+
 // Validate e-mail
 function ValidateEmail($email) {
 	return filter_var($email, FILTER_VALIDATE_EMAIL);

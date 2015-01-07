@@ -153,18 +153,32 @@ if ( IfApplyConfig() > 0 ) {
 				}
 
 				break;
-			case "PaymentReminder.bsh":
-				echo '<div align="center"><h1>PaymentReminder.bsh...</h1></div>';
-				$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "PaymentReminder.bsh"]);
-				if ( $result > 0 ) {
-					$type = 'success';
+			case "MySB_CreateUser":
+				echo '<div align="center"><h1>MySB_CreateUser...</h1></div>';
+
+				$username = $Cmd['args'];
+				$password = PasswordGenerator();
+
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_CreateUser' '$username' '$password' '1' '0'", $output, $result);
+
+				foreach ( $output as $item ) {
+					echo '<div class="Comments" align="center">'.$item.'</div>';
+				}
+
+				if ( $result == 0 ) {
+					$result = $MySB_DB->update("commands", ["reload" => 0, "args" => ""], ["commands" => "MySB_CreateUser"]);
+					if ( $result > 0 ) {
+						$type = 'success';
+					} else {
+						$type = 'error';
+						$message = 'Failed ! It was not possible to update the MySB database.';
+					}
 				} else {
 					$type = 'error';
-					$message = 'Failed ! It was not possible to update the MySB database.';
+					$message = 'Error occured with "MySB_CreateUser" script !';
 				}
-				header('Refresh: 3; URL=/?main-user/renting-infos.html');
-				
-				break;
+
+				break;				
 		}
 
 		if ( $type == 'success' ) {

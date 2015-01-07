@@ -31,7 +31,7 @@ function Form() {
 			<div align="center"><table border="0">
 				<tr>
 					<td>Current e-mail :</td>
-					<td><input name="current_email" type="text" readonly="true" value="' . $UserEmail . '"/></td>
+					<td><input style="cursor: default;" name="current_email" type="text" readonly="true" value="' . $UserEmail . '"/></td>
 				</tr>
 				<tr>
 					<td>New e-mail :</td>

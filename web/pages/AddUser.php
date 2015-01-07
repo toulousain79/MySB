@@ -22,76 +22,60 @@
 //
 //#################### FIRST LINE #####################################
 
-if ( isset($_SERVER['PHP_AUTH_PW']) ) {
-	$opts = 'readonly="true" style="cursor: default;" value="' . $_SERVER['PHP_AUTH_PW'] . '"';
-} else {
-	$opts = '';
+function Form() {
+	global $MySB_DB;
+
+	echo '<form class="form_settings" method="post" action="">
+			<div align="center"><table border="0">
+				<tr>
+					<td>Username :</td>
+					<td><input name="username" type="text" /></td>
+				</tr>
+				<tr>
+					<td>User e-mail :</td>
+					<td><input name="email" type="text" /></td>
+				</tr>
+				<tr>
+					<td>Confirm :</td>
+					<td><input name="confirm_email" type="text" /></td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<input class="submit" name="submit" type="submit" value="Submit"">
+					</td>
+				</tr>
+			</table></div>
+		</form>';
 }
 
-echo '
-	<form class="form_settings" method="post" action="">
-		<div align="center"><table border="0">
-			<tr>
-				<td>Current password :</td>
-				<td><input name="current_pwd" type="password" ' . $opts . '/></td>
-			</tr>
-			<tr>
-				<td>New password :</td>
-				<td><input name="new_pwd" type="password" /></td>
-			</tr>
-			<tr>
-				<td>Confirm :</td>
-				<td><input name="confirm_pwd" type="password" /></td>
-			</tr>
-			<tr>
-				<td colspan="2">
-					<input class="submit" name="submit" type="submit" value="Submit"">
-				</td>
-			</tr>
-		</table></div>
-	</form>
-	';
-
-// <div id="PageSubmitButton">
-	// <input class="submit" name="submit" type="submit" value="Submit" onclick="ButtonClicked(\'page\')">
-// </div>
-// <div id="PageButtonReplace" style="text-align:center; display:none; height: 33px;">
-	// <img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading...">
-// </div>
-	
 if ( isset($_POST['submit']) ) {
-	$current_pwd = $_POST['current_pwd'];
-	$new_pwd = $_POST['new_pwd'];
-	$confirm_pwd = $_POST['confirm_pwd'];
-	$args = false;
+	$username = $_POST['username'];
+	$email = $_POST['email'];
+	$confirm_email = $_POST['confirm_email'];
 
-	if ( ($current_pwd != '') && ($new_pwd != '') && ($confirm_pwd != '') ) {
-		if ( $current_pwd == $_SERVER['PHP_AUTH_PW'] ) {
-			if ( $new_pwd == $confirm_pwd ) {
-				$result = UpdateWolfDB($_SERVER['PHP_AUTH_USER'], $new_pwd);
-
-				if ( $result > 0 ) {
+	if ( ($username != '') && ($email != '') && ($confirm_email != '') ) {
+			if ( ValidateEmail($email) != false ) {
+				if ( $email == $confirm_email ) {
 					$type = 'success';
-					$args = "$new_pwd";
+					$args = "$username";
 				} else {
 					$type = 'error';
-					$message = 'Failed ! It was not possible to update the Wolf database.';
+					$message = 'Error between the typed email and verification.';
 				}
 			} else {
 				$type = 'error';
-				$message = 'Error between the new typed password and verification.';
+				$message = 'The given e-mail address is not valid!';
 			}
-		} else {
-			$type = 'error';
-			$message = 'The current password is not valid.';
-		}
 	} else {
 		$type = 'information';
-		$message = 'Please, complete all fields.';	
+		$message = 'Please, complete all fields.';
 	}
 
-	GenerateMessage('MySB_ChangeUserPassword', $type, $message, $args);
+	GenerateMessage('MySB_CreateUser', $type, $message, $args);
 }
 
+Form();
+
+<?php
 //#################### LAST LINE ######################################
 ?>

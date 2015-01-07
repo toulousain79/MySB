@@ -109,7 +109,7 @@ if (isset($_POST['submit'])) {
 		$message = 'Please, complete all fields.';
 	}
 
-	GenerateMessage('PaymentReminder.bsh', $type, $message);
+	GenerateMessage(false, $type, $message);
 }
 
 Form();
