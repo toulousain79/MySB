@@ -142,6 +142,35 @@ for Repo in $AllRepos; do
 				;;
 			esac
 		;;
+		"ZIP")
+			# Clean on version changed
+			if [ -f /etc/MySB/files/$RepoOldFile ]; then
+				rm -vf /etc/MySB/files/$RepoOldFile
+			fi
+
+			case "$1" in
+				"UPGRADE")
+					if [ -f /etc/MySB/files/$RepoFile ]; then
+						rm -vf /etc/MySB/files/$RepoFile
+					fi
+					if [ -d $RepoDir ]; then
+						rm -vrf $RepoDir
+					fi
+				;;
+			esac
+
+			if [ ! -f /etc/MySB/files/$RepoFile ]; then
+				wget --no-check-certificate $RepoURL -O /etc/MySB/files/$RepoFile
+			fi
+			if [ ! -d $RepoDir ]; then
+				unzip /etc/MySB/files/$RepoFile -d /etc/MySB/temp/
+
+				SubDir="`unzip -l /etc/MySB/files/$RepoFile | awk '{ print $4 }' | sed -e 's@/.*@@' | uniq | sed '1,3d;$d'`"
+				if [ -d /etc/MySB/temp/$SubDir ]; then
+					mv /etc/MySB/temp/$SubDir $RepoDir
+				fi
+			fi
+		;;	
 	esac
 
 	if [ $? -gt 0 ]; then

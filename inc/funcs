@@ -1108,16 +1108,6 @@ ManageDirectoriesAndFiles() {
 	dos2unix /etc/MySB/templates/* &> /dev/null
 	dos2unix /etc/MySB/upgrade/* &> /dev/null
 
-	#### Create DB
-	if hash sqlite3 2> /dev/null; then
-		if [ ! -f $MySB_DB ] || [ ! -s $MySB_DB ]; then sqlite3 -echo $MySB_DB < /etc/MySB/templates/MySB_2014-12-30.dump.sql; fi
-		if [ ! -f $Wolf_DB ] || [ ! -s $Wolf_DB ]; then
-			sqlite3 -echo $Wolf_DB < /etc/MySB/templates/Wolf_2014-12-30.dump.sql
-			sqlite3 $Wolf_DB "DELETE FROM secure_token WHERE 1"
-			sqlite3 $Wolf_DB "UPDATE user SET name = '', email = '', username = '', password = '', salt = '', last_login = '', last_failure = '', last_failure = '', created_on = '', updated_on = '' WHERE id = '1';"
-		fi
-	fi
-
 	#### Change rights
 	# /etc/MySB/
 	chmod -R 0700 /etc/MySB
@@ -1129,6 +1119,11 @@ ManageDirectoriesAndFiles() {
 	chown -R root:www-data /etc/MySB/db
 	# /etc/MySB/install
 	chmod -R 0755 /etc/MySB/install
+	# LoadAvg
+	if [ ! -z "$LoadAvgDir" ]; then
+		if [ -f $LoadAvgDir/configure ]; then chmod 0640 $LoadAvgDir/configure; fi
+		if [ ! -d $LoadAvgDir/logs ]; then mkdir $LoadAvgDir/logs; fi
+	fi
 	# /etc/MySB/web
 	chown -R root:www-data /etc/MySB/web
 	chown root:root /etc/MySB/web
@@ -1138,28 +1133,30 @@ ManageDirectoriesAndFiles() {
 	# /etc/MySB/web/openvpn
 	if [ -d /etc/MySB/web/openvpn ]; then chmod 0770 /etc/MySB/web/openvpn; fi
 	# LoadAvg
-	if [ -f $LoadAvgDir/configure ]; then chmod 0777 $LoadAvgDir/configure; fi
-	
+	if [ ! -z "$LoadAvgDir" ]; then chmod 0777 $LoadAvgDir/logs; fi
+
 	# Users
-	ListingUsers
-	if [ ! -z "$UsersList" ] && [ -f $MySB_DB ] && [ -s $MySB_DB ] && hash sqlite3 2> /dev/null; then	
-		for FnUser in $UsersList; do
-			if [ ! -z "`getent passwd $FnUser`" ]; then		
-				# Home
-				ChangingHomeUserRights "$FnUser"
-				
-				# ruTorrent
-				if [ ! -z "$RutorrentDir" ]; then
-					ruTorrentUsersConfigs "$FnUser"
+	if [ ! -z "$MySB_DB" ]; then
+		ListingUsers
+		if [ ! -z "$UsersList" ] && [ -f $MySB_DB ] && [ -s $MySB_DB ] && hash sqlite3 2> /dev/null; then
+			for FnUser in $UsersList; do
+				if [ ! -z "`getent passwd $FnUser`" ]; then
+					# Home
+					ChangingHomeUserRights "$FnUser"
+
+					# ruTorrent
+					if [ ! -z "$RutorrentDir" ]; then
+						ruTorrentUsersConfigs "$FnUser"
+					fi
+
+					# Seedbox-Manager
+					ManagerUsersConfigs "$FnUser"
+
+					# Cakebox-Light
+					CakeboxUsersConfigs "$FnUser"
 				fi
-				
-				# Seedbox-Manager
-				ManagerUsersConfigs "$FnUser"
-				
-				# Cakebox-Light
-				CakeboxUsersConfigs "$FnUser"
-			fi
-		done
+			done
+		fi
 	fi
 	
 	# ruTorrent

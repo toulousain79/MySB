@@ -130,16 +130,30 @@ if [ "$COMMAND" == "" ]; then
 		else
 			echo -e "${CGREEN}Done !$CEND"
 
-			#### Create directories & change rights
-			echo -e -n "${CBLUE}Create directories$CEND..."
+			#### Load variables and functions
+			echo -e -n "${CBLUE}Load variables and functions$CEND..."
 			source /etc/MySB/inc/vars
 			source /etc/MySB/inc/funcs
 			if [ -f /lib/lsb/init-functions ]; then
 				source /lib/lsb/init-functions
 			fi
-			ManageDirectoriesAndFiles >> /tmp/`basename $0`.log
 			echo -e "${CGREEN}Done !$CEND"
-
+			
+			#### Create directories & change rights
+			ManageDirectoriesAndFiles >> /tmp/`basename $0`.log
+			
+			#### Create database
+			echo -e -n "${CBLUE}Create databases$CEND..."
+			/bin/bash /etc/MySB/install/SQLite >> /tmp/`basename $0`.log
+			if [ $? -gt 0 ]; then
+				echo -e -n "${CRED}Failed !$CEND"
+				echo ""
+				echo ""
+				echo -e "${CRED}Looks like somethig is wrong with creating database, aborting !$CEND"
+				if [ -f /etc/MySB/inc/includes_after ]; then source /etc/MySB/inc/includes_after; fi
+				exit 0
+			fi			
+			
 			echo -e -n "${CBLUE}Update version in database$CEND..."
 			sqlite3 $MySB_DB "UPDATE system SET mysb_version = '$MySB_CurrentVersion' WHERE id_system = '1';"
 
@@ -147,7 +161,7 @@ if [ "$COMMAND" == "" ]; then
 				echo -e -n "${CRED}Failed !$CEND"
 				echo ""
 				echo ""
-				echo -e "${CRED}Looks like somethig is wrong with creating database, aborting !$CEND"
+				echo -e "${CRED}Looks like somethig is wrong with updating database, aborting !$CEND"
 				if [ -f /etc/MySB/inc/includes_after ]; then source /etc/MySB/inc/includes_after; fi
 				exit 0
 			else
