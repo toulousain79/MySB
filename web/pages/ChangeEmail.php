@@ -22,42 +22,33 @@
 //
 //#################### FIRST LINE #####################################
 
-if ( isset($_SERVER['PHP_AUTH_PW']) ) {
-	$opts = 'readonly="true" value="' . $_SERVER['PHP_AUTH_PW'] . '"';
-} else {
-	$opts = '';
+function Form() {
+	global $MySB_DB;
+
+	$UserEmail = $MySB_DB->get("users", "users_email", ["users_ident" => $_SERVER['PHP_AUTH_USER']]);	
+	
+	echo '<form class="form_settings" method="post" action="">
+			<div align="center"><table border="0">
+				<tr>
+					<td>Current e-mail :</td>
+					<td><input name="current_email" type="text" readonly="true" value="' . $UserEmail . '"/></td>
+				</tr>
+				<tr>
+					<td>New e-mail :</td>
+					<td><input name="new_email" type="text" /></td>
+				</tr>
+				<tr>
+					<td>Confirm :</td>
+					<td><input name="confirm_email" type="text" /></td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<input class="submit" name="submit" type="submit" value="Submit"">
+					</td>
+				</tr>
+			</table></div>
+		</form>';
 }
-
-echo '
-	<form class="form_settings" method="post" action="">
-		<div align="center"><table border="0">
-			<tr>
-				<td>Current e-mail :</td>
-				<td><input name="current_email" type="text" ' . $opts . '/></td>
-			</tr>
-			<tr>
-				<td>New e-mail :</td>
-				<td><input name="new_email" type="text" /></td>
-			</tr>
-			<tr>
-				<td>Confirm :</td>
-				<td><input name="confirm_email" type="password" /></td>
-			</tr>
-			<tr>
-				<td colspan="2">
-					<input class="submit" name="submit" type="submit" value="Submit"">
-				</td>
-			</tr>
-		</table></div>
-	</form>
-	';
-
-// <div id="PageSubmitButton">
-	// <input class="submit" name="submit" type="submit" value="Submit" onclick="ButtonClicked(\'page\')">
-// </div>
-// <div id="PageButtonReplace" style="text-align:center; display:none; height: 33px;">
-	// <img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading...">
-// </div>
 	
 if ( isset($_POST['submit']) ) {
 	$current_email = $_POST['current_email'];
@@ -65,24 +56,25 @@ if ( isset($_POST['submit']) ) {
 	$confirm_email = $_POST['confirm_email'];
 
 	if ( ($current_email != '') && ($new_email != '') && ($confirm_email != '') ) {
-		if ( $current_email == $_SERVER['PHP_AUTH_PW'] ) {
-			if ( $new_email == $confirm_email ) {
-				$result = $MySB_DB->update("users", ["users_email" => "$new_email"], ["users_ident" => $_SERVER['PHP_AUTH_USER']]);
+			if ( ValidateEmail($new_email) != false ) {
+				if ( $new_email == $confirm_email ) {
+					global $MySB_DB;
+					$result = $MySB_DB->update("users", ["users_email" => "$new_email"], ["users_ident" => $_SERVER['PHP_AUTH_USER']]);
 
-				if ( $result > 0 ) {
-					$type = 'success';
+					if ( $result > 0 ) {
+						$type = 'success';
+					} else {
+						$type = 'error';
+						$message = 'Failed ! It was not possible to update the MySB database.';
+					}
 				} else {
 					$type = 'error';
-					$message = 'Failed ! It was not possible to update the Wolf database.';
+					$message = 'Error between the new typed email and verification.';
 				}
 			} else {
 				$type = 'error';
-				$message = 'Error between the new typed password and verification.';
+				$message = 'The given e-mail address is not valid!';
 			}
-		} else {
-			$type = 'error';
-			$message = 'The current password is not valid.';
-		}
 	} else {
 		$type = 'information';
 		$message = 'Please, complete all fields.';	
@@ -90,6 +82,8 @@ if ( isset($_POST['submit']) ) {
 
 	GenerateMessage(false, $type, $message);
 }
+
+Form();
 
 //#################### LAST LINE ######################################
 ?>
