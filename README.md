@@ -312,6 +312,5 @@ Created by toulousain79
 * Subsonic ?
 * Namebench ?
 * Maybe use of 'psad'
-* Maybe use of  'systemd'
 * check plugin 'Mediastream', doesn't work ?
 * check Cakebox, doesn't work ?
