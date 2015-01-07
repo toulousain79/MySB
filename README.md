@@ -239,14 +239,15 @@ To clean Bind cache, just restart BIND service.
 service bind9 restart
 ```
 
+###### IMPORTANT: With OpenVZ container, to complete the installation of DNScrypt-proxy, you must replace your existing DNS config (/etc/resolv.conf), by the loopback address.
+###### IMPORTANT: It's necessary to make the change via the host (eg Proxmox), otherwise you will lose your configuration on next reboot. You must replace yours nameserver by 'nameserver 127.0.0.1' (/etc/resolv.conf).
+
+
 ## SMTP authentification
 If you want to use GMAIL provider, maybe should you read this for authorize connexion to your account by your server.
 ```
 https://www.google.com/accounts/DisplayUnlockCaptcha
 ```
-
-###### IMPORTANT: With OpenVZ container, to complete the installation of DNScrypt-proxy, you must replace your existing DNS config (/etc/resolv.conf), by the loopback address.
-###### IMPORTANT: It's necessary to make the change via the host (eg Proxmox), otherwise you will lose your configuration on next reboot. You must replace yours nameserver by 'nameserver 127.0.0.1' (/etc/resolv.conf).
 
 ## Plex Media Server
 To complete the Plex Media Server configuration, an excellent tutorial is available here:
