@@ -92,6 +92,7 @@ INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [descriptio
 INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (28, 'DNScrypt-proxy', 'dnscrypt-proxy', 'DNScrypt-proxy', '', '', 12, 0, '', 101, '2014-12-22 22:06:25', null, null, '2014-12-23 09:35:01', 1, 1, 8, 1, 2);
 INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (29, 'LoadAvg', 'loadavg', 'LoadAvg', '', '', 22, 0, '', 100, '2015-01-06 18:01:48  ', '2015-01-06 18:01:48  ', '', '2015-01-06 18:04:13', 1, 1, 5, 0, 2);
 INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (30, 'Change Email', 'change-email', 'Change Email', '', '', 2, 0, '', 100, '2015-01-07 01:46:06', '2015-01-07 01:46:06', '', '2015-01-07 01:48:16', 1, 1, 6, 0, 2);
+INSERT INTO [page] ([id], [title], [slug], [breadcrumb], [keywords], [description], [parent_id], [layout_id], [behavior_id], [status_id], [created_on], [published_on], [valid_until], [updated_on], [created_by_id], [updated_by_id], [position], [is_protected], [needs_login]) VALUES (31, 'Add User', 'add-user', 'Add User', '', '', 12, 0, '', 101, '2015-01-07 09:56:55', null, null, '2015-01-07 11:04:43', 1, 1, 0, 1, 1);
 
 -- Table: page_part
 CREATE TABLE page_part ( 
@@ -139,6 +140,7 @@ INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (36, 'body', '', '<?php require_once ''/etc/MySB/web/pages/DNScrypt.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/DNScrypt.php''; ?>', 28);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (37, 'body', '', '', '', 29);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (38, 'body', '', '<?php require_once ''/etc/MySB/web/pages/ChangeEmail.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/ChangeEmail.php''; ?>', 30);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (39, 'body', '', '<?php require_once ''/etc/MySB/web/pages/UserAdd.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/UserAdd.php''; ?>', 31);
 
 -- Table: page_tag
 CREATE TABLE page_tag ( 

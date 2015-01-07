@@ -57,8 +57,6 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			break;
 		default: //Delete
 			if (isset($_POST['delete'])) {
-				$count = count($_POST['delete']);
-
 				foreach($_POST['delete'] as $key => $value) {
 					$result = $MySB_DB->delete("trackers_list_ipv4", ["id_trackers_list" => $key]);
 					if ( $result = 0 ) {

@@ -156,10 +156,12 @@ if ( IfApplyConfig() > 0 ) {
 			case "MySB_CreateUser":
 				echo '<div align="center"><h1>MySB_CreateUser...</h1></div>';
 
-				$username = $Cmd['args'];
+				$args = explode("|", $Cmd['args']);
+				$username = $args[0];
+				$useremail = $args[1];
 				$password = PasswordGenerator();
 
-				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_CreateUser' '$username' '$password' '1' '0'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_CreateUser' '$username' '$password' '1' '0' '$useremail'", $output, $result);
 
 				foreach ( $output as $item ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';
@@ -178,7 +180,32 @@ if ( IfApplyConfig() > 0 ) {
 					$message = 'Error occured with "MySB_CreateUser" script !';
 				}
 
-				break;				
+				break;
+			case "MySB_DeleteUser":
+				echo '<div align="center"><h1>MySB_DeleteUser...</h1></div>';
+
+				$username = $Cmd['args'];
+
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_DeleteUser' '$username'", $output, $result);
+
+				foreach ( $output as $item ) {
+					echo '<div class="Comments" align="center">'.$item.'</div>';
+				}
+
+				if ( $result == 0 ) {
+					$result = $MySB_DB->update("commands", ["reload" => 0, "args" => ""], ["commands" => "MySB_DeleteUser"]);
+					if ( $result > 0 ) {
+						$type = 'success';
+					} else {
+						$type = 'error';
+						$message = 'Failed ! It was not possible to update the MySB database.';
+					}
+				} else {
+					$type = 'error';
+					$message = 'Error occured with "MySB_DeleteUser" script !';
+				}
+
+				break;
 		}
 
 		if ( $type == 'success' ) {

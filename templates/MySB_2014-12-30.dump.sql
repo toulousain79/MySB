@@ -129,28 +129,6 @@ CREATE TABLE dnscrypt_resolvers (
 );
 
 
--- Table: commands
-CREATE TABLE commands ( 
-    id_commands INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                               NOT NULL ON CONFLICT ABORT
-                               UNIQUE ON CONFLICT ABORT,
-    commands    VARCHAR( 32 )  NOT NULL ON CONFLICT ABORT
-                               UNIQUE ON CONFLICT ABORT,
-    reload      BOOLEAN( 1 )   NOT NULL ON CONFLICT ABORT
-                               DEFAULT ( 0 ),
-    priority    INTEGER( 2 )   NOT NULL ON CONFLICT ABORT
-                               DEFAULT ( 0 ),
-    args        VARCHAR( 32 ) 
-);
-
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (1, 'FirewallAndSecurity.bsh', 0, 1, null);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (2, 'GetTrackersCert.bsh', 0, 2, null);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (3, 'PaymentReminder.bsh', 0, 2, null);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (4, 'Postfix', 0, 2, null);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (5, 'BlocklistsRTorrent.bsh', 0, 2, null);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (6, 'MySB_ChangeUserPassword', 0, 2, null);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (7, 'MySB_CreateUser', 0, 2, null);
-
 -- Table: smtp
 CREATE TABLE smtp ( 
     id_smtp       INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
@@ -383,3 +361,26 @@ INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists
 INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (36, 'YOYO_ADSERVERS', 'http://list.iblocklist.com/?list=zhogegszwduurnvsyhdf&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=zhogegszwduurnvsyhdf', 0, 0, null);
 INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (37, 'PBLOCK_RAPIDSHARE', 'http://list.iblocklist.com/?list=zfucwtjkfwkalytktyiw&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=zfucwtjkfwkalytktyiw', 0, 0, null);
 INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (38, 'CIDR_BOGON', 'http://list.iblocklist.com/?list=lujdnbasfaaixitgmxpp&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=lujdnbasfaaixitgmxpp', 0, 0, null);
+
+-- Table: commands
+CREATE TABLE commands ( 
+    id_commands INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                               NOT NULL ON CONFLICT ABORT
+                               UNIQUE ON CONFLICT ABORT,
+    commands    VARCHAR( 32 )  NOT NULL ON CONFLICT ABORT
+                               UNIQUE ON CONFLICT ABORT,
+    reload      BOOLEAN( 1 )   NOT NULL ON CONFLICT ABORT
+                               DEFAULT ( 0 ),
+    priority    INTEGER( 2 )   NOT NULL ON CONFLICT ABORT
+                               DEFAULT ( 0 ),
+    args        VARCHAR( 64 ) 
+);
+
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (1, 'FirewallAndSecurity.bsh', 0, 1, null);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (2, 'GetTrackersCert.bsh', 0, 2, null);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (3, 'PaymentReminder.bsh', 0, 2, null);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (4, 'Postfix', 0, 2, null);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (5, 'BlocklistsRTorrent.bsh', 0, 2, null);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (6, 'MySB_ChangeUserPassword', 0, 2, null);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (7, 'MySB_CreateUser', 0, 2, null);
+INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (8, 'MySB_DeleteUser', 0, 2, null);
