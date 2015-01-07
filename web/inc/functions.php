@@ -22,7 +22,12 @@
 //
 //#################### FIRST LINE #####################################
 
-// StringTruncate
+// Validate e-mail
+function ValidateEmail($email) {
+	return filter_var($email, FILTER_VALIDATE_EMAIL);
+}
+
+// Truncate string with suffix like '...'
 function StringTruncate($string, $minlen, $maxlen, $separator = ' ', $suffix = '') {
 	$result = $string;
 	if (strlen($result) > $maxlen) {
