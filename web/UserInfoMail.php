@@ -95,10 +95,17 @@ function printUser($user, $Case) {
 	// Format email for users
 	switch ($Case) { // account_created, account_confirmed, upgrade, renting, new_user, ip_updated
 		case 'account_created':
-			$DisplayGoTo 		= false;
-			$DisplayUserInfo 	= false;
-			$DisplayLinks 		= false;
-			$DisplayRenting		= false;
+			if ( $users_datas["admin"] == '1' ) {
+				$DisplayGoTo 		= true;
+				$DisplayUserInfo 	= true;
+				$DisplayLinks 		= true;
+				$DisplayRenting		= true;
+			} else {
+				$DisplayGoTo 		= true;
+				$DisplayUserInfo 	= true;
+				$DisplayLinks 		= true;
+				$DisplayRenting		= true;
+			}
 			break;
 		case 'new_user':
 			$DisplayGoTo 		= true;
@@ -129,7 +136,7 @@ function printUser($user, $Case) {
 			$DisplayUserInfo 	= false;
 			$DisplayLinks 		= false;
 			$DisplayRenting		= true;
-			break;			
+			break;
 	}
 ?>
 	<table width="100%" border="0" align="left">
