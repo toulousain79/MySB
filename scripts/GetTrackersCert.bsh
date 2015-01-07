@@ -138,10 +138,11 @@ DoRehash=0
 for Tracker in $TrackersList; do
 	log_daemon_msg "Get certificate for $Tracker"
 	cd /etc/MySB/ssl/trackers/
-	PingCmd="`ping -c1 -w2 $Tracker | grep 'packets transmitted'`"
-	PingResult="`echo $PingCmd | cut -d ',' -f 3 | sed -e 's/^ //g;'`"
+	PingCmd="`ping -c2 -w2 $Tracker | grep 'packets transmitted'`"
+	PacketsTransmitted="`echo $PingCmd | cut -d ',' -f 1 | awk '{ print $1 }'`"
+	PacketsReceived="`echo $PingCmd | cut -d ',' -f 2 | awk '{ print $1 }'`"
 	
-	if [ "`echo $PingCmd | grep '0 received'`" == "" ] ; then	
+	if [ "$PacketsReceived" == "$PacketsTransmitted" ] ; then	
 		openssl s_client -connect $Tracker:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$Tracker.crt
 		if [ -s ./$Tracker.crt ]; then
 			openssl x509 -in ./$Tracker.crt -out ./$Tracker.der -outform DER 
@@ -158,10 +159,10 @@ for Tracker in $TrackersList; do
 			rm -f ./$Tracker.der
 		fi
 		
-		sqlite3 $MySB_DB "UPDATE trackers_list SET to_check = '0', ping = '$PingResult' WHERE tracker = '$Tracker';"
+		sqlite3 $MySB_DB "UPDATE trackers_list SET to_check = '0', ping = 'GOOD' WHERE tracker = '$Tracker';"
 		rm -f ./$Tracker.crt
 	else
-		sqlite3 $MySB_DB "UPDATE trackers_list SET is_active = '0', to_check = '0', ping = '$PingResult' WHERE tracker = '$Tracker';"
+		sqlite3 $MySB_DB "UPDATE trackers_list SET is_active = '0', to_check = '0', ping = 'BAD' WHERE tracker = '$Tracker';"
 	fi
 	StatusLSB
 done
