@@ -30,6 +30,16 @@ echo -e "${CGREEN}	screen -r MySB_UpgradeMe$CEND"
 echo
 echo -e "${CYELLOW}All users password will be changed by temporary password.$CEND"
 echo
+
+GetString NO "Install DNScrypt-proxy ? " INSTALLDNSCRYPT YES
+if [ ! -z $IFPVEKERNEL ] && [ "$INSTALLDNSCRYPT" == "YES" ]; then
+	echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
+	echo -e "${CYELLOW}At the end of the installation, you should replace your DNS (/etc/resolv.conf) with ${CGREEN}nameserver 127.0.0.1$CEND${CYELLOW} through the OpenVZ host (eg Proxmox).$CEND"
+	echo -e "${CYELLOW}Otherwise you will lose your configuration on the next reboot.$CEND"
+	sleep 10
+fi
+
+
 QuestionGetString NO  "Type 'yes' to continue or 'no' to abort ?" CONTINUE YES
 if [ "$CONTINUE" == "NO" ]; then
 	EndingScript 0
@@ -38,7 +48,7 @@ fi
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=36
+TotalSTEP=37
 
 #### 1 - Create missing directories and change rights
 (( CurrentSTEP++ ))
@@ -132,7 +142,12 @@ screen -dmS SQLite /bin/bash /etc/MySB/install/SQLite 'UPGRADE';
 WaitingScreen SQLite
 StatusSTD
 
-#### 6 - Vars
+#### 6 - Questions
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Creating and populating databases, and check of all the trackers (this may take a while, please be patient)$CEND..."
+/bin/bash /etc/MySB/install/Questions $$ 'UPGRADE';
+
+#### 7 - Vars
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Reading database informations$CEND..."
 if [ -f /etc/MySB/inc/vars ]; then source /etc/MySB/inc/vars; fi
@@ -140,14 +155,14 @@ if [ -f /etc/MySB/inc/funcs ]; then source /etc/MySB/inc/funcs; fi
 ListingUsers
 StatusSTD
 
-#### 7 - Tweaks
+#### 8 - Tweaks
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- System optimizations$CEND..."
 screen -dmS Tweaks /bin/bash /etc/MySB/install/Tweaks 'UPGRADE';
 WaitingScreen Tweaks
 StatusSTD
 
-#### 8 - STOP services
+#### 9 - STOP services
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Stopping of services$CEND..."
 ManageServices stop "cron" &> /dev/null
@@ -156,7 +171,7 @@ for seedUser in $UsersList; do
 done
 StatusSTD
 
-#### 9 - Certificates
+#### 10 - Certificates
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Generating CA certificate (SHA1 to SHA256)$CEND..."
 screen -dmS Certificates /bin/bash /etc/MySB/install/Certificates 'CreateCACertificate' 'UPGRADE';
@@ -168,21 +183,17 @@ if [ -f /etc/webmin/miniserv.pem ]; then
 fi
 StatusSTD
 
-#### 10 - Bind
+#### 11 - Bind
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Bind$CEND..."
-if [ "$IsInstalled_DNScrypt" == "YES" ]; then
-	screen -dmS Bind /bin/bash /etc/MySB/install/Bind 'UPGRADE';
-	WaitingScreen Bind
-	StatusSTD
-else
-	echo -e "${CGREEN}Nothing to do !$CEND..."
-fi
+screen -dmS Bind /bin/bash /etc/MySB/install/Bind 'UPGRADE';
+WaitingScreen Bind
+StatusSTD
 
-#### 11 - DNScrypt-proxy
+#### 12 - DNScrypt-proxy
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring DNScrypt-proxy$CEND..."
-if [ "$IsInstalled_DNScrypt" == "YES" ]; then
+if [ "$IsInstalled_DNScrypt" == "YES" ] || [ "$ToInstall_DNScrypt" == "YES" ]; then
 	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'DNScrypt-proxy';"
 	screen -dmS DNScrypt /bin/bash /etc/MySB/install/DNScrypt 'UPGRADE';
 	WaitingScreen DNScrypt
@@ -191,10 +202,10 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 12 - PeerGuardian
+#### 13 - PeerGuardian
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring PeerGuardian$CEND..."
-if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
+if [ "$IsInstalled_PeerGuardian" == "YES" ] || [ "$MySB_PeerBlock" == "PeerGuardian" ]; then
 	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'PeerGuardian';"
 	screen -dmS PeerGuardian /bin/bash /etc/MySB/install/PeerGuardian 'UPGRADE';
 	WaitingScreen PeerGuardian
@@ -203,52 +214,52 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 13 - DownloadAll (update)
+#### 14 - DownloadAll (update)
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Downloading all files at once (GIT, SVN, TAR.GZ, WBM)$CEND..."
 screen -dmS DownloadAll /bin/bash /etc/MySB/install/DownloadAll 'UPGRADE';
 WaitingScreen DownloadAll
 StatusSTD
 
-#### 14 - PHP
+#### 15 - PHP
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring PHP5$CEND..."
 screen -dmS PHP /bin/bash /etc/MySB/install/PHP 'UPGRADE';
 WaitingScreen PHP
 StatusSTD
 
-#### 15 - NginX
+#### 16 - NginX
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring NginX$CEND..."
 screen -dmS Nginx /bin/bash /etc/MySB/install/Nginx 'UPGRADE';
 WaitingScreen Nginx
 StatusSTD
 
-#### 16 - LoadAvg
+#### 17 - LoadAvg
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring LoadAvg$CEND..."
 screen -dmS LoadAvg /bin/bash /etc/MySB/install/LoadAvg 'UPGRADE';
 WaitingScreen LoadAvg
 StatusSTD
 
-#### 17 - Postfix
+#### 18 - Postfix
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Postfix$CEND..."
 screen -dmS Postfix /bin/bash /etc/MySB/install/Postfix 'UPGRADE';
 WaitingScreen Postfix
 StatusSTD
 
-#### 18 - VSFTPd
+#### 19 - VSFTPd
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring VSFTPd$CEND..."
 screen -dmS VSFTP /bin/bash /etc/MySB/install/VSFTP 'UPGRADE';
 WaitingScreen VSFTP
 StatusSTD
 
-#### 19 - Webmin
+#### 20 - Webmin
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Webmin$CEND..."
-if [ "$IsInstalled_Webmin" == "YES" ]; then
+if [ "$IsInstalled_Webmin" == "YES" ] || [ "$ToInstall_Webmin" == "YES" ]; then
 	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Webmin';"
 	screen -dmS Webmin /bin/bash /etc/MySB/install/Webmin 'UPGRADE';
 	WaitingScreen Webmin
@@ -257,7 +268,7 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."	
 fi
 
-#### 20 - Backup users data
+#### 21 - Backup users data
 # ruTorrent
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Backups of users data$CEND..."
@@ -268,13 +279,6 @@ rm -rf $RutorrentDir &> /dev/null
 if [ -d $ManagerDir ]; then rm -rf $ManagerDir &> /dev/null; fi
 # Cackebox
 if [ -d $CakeboxDir ]; then rm -rf $CakeboxDir &> /dev/null; fi
-StatusSTD
-
-#### 21 - DownloadAll (update)
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Downloading all files at once (GIT, SVN, TAR.GZ, WBM)$CEND..."
-screen -dmS DownloadAll /bin/bash /etc/MySB/install/DownloadAll 'UPGRADE';
-WaitingScreen DownloadAll
 StatusSTD
 
 #### 22 - Refresh tools
@@ -295,62 +299,19 @@ rm -rf /etc/MySB/temp/conf_users &> /dev/null
 rsync -av /etc/MySB/temp/share_users/ $RutorrentDir/share/users/ &> /dev/null && rm -rf /etc/MySB/temp/share_users &> /dev/null
 StatusSTD
 
-#### 24 - Samba
+#### 24 - OepnVPN
 (( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Samba$CEND..."
-if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Samba';"
-	screen -dmS Samba /bin/bash /etc/MySB/install/Samba 'UPGRADE';
-	WaitingScreen Samba
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring OpenVPN$CEND..."
+if [ "$ToInstall_OpenVPN" == "YES" ]; then
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'OpenVPN';"
+	screen -dmS OpenVPN /bin/bash /etc/MySB/install/OpenVPN 'UPGRADE';
+	WaitingScreen OpenVPN
 	StatusSTD
 else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 25 - Samba
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring NFS$CEND..."
-if [ "$IsInstalled_OpenVPN" == "YES" ]; then	
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'NFS';"
-	screen -dmS NFS /bin/bash /etc/MySB/install/NFS 'UPGRADE';
-	WaitingScreen NFS
-	StatusSTD
-else
-	echo -e "${CGREEN}Nothing to do !$CEND..."
-fi
-
-#### 26 - Fail2Ban
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Fail2Ban$CEND..."
-if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Fail2Ban';"
-	screen -dmS Fail2Ban /bin/bash /etc/MySB/install/Fail2Ban 'UPGRADE';
-	WaitingScreen Fail2Ban
-	StatusSTD
-else
-	echo -e "${CGREEN}Nothing to do !$CEND..."
-fi
-
-#### 27 - LogWatch
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Logwatch$CEND..."
-if [ "$IsInstalled_LogWatch" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'LogWatch';"
-	screen -dmS Logwatch /bin/bash /etc/MySB/install/Logwatch 'UPGRADE';
-	WaitingScreen Logwatch
-	StatusSTD
-else
-	echo -e "${CGREEN}Nothing to do !$CEND..."
-fi
-
-#### 28 - rTorrent Blocklists
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Compiling the rTorrent blocklist$CEND..."
-screen -dmS Blocklist /bin/bash /etc/MySB/install/Blocklists 'UPGRADE';
-WaitingScreen Blocklist
-StatusSTD
-
-#### 29 - OpenVPN
+#### 25 - OpenVPN
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for OpenVPN$CEND..."
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
@@ -363,7 +324,62 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 30 - Crontab
+#### 26 - Samba
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Samba$CEND..."
+if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Samba';"
+	screen -dmS Samba /bin/bash /etc/MySB/install/Samba 'UPGRADE';
+	WaitingScreen Samba
+	StatusSTD
+else
+	echo -e "${CGREEN}Nothing to do !$CEND..."
+fi
+
+#### 27 - NFS
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring NFS$CEND..."
+if [ "$IsInstalled_OpenVPN" == "YES" ]; then	
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'NFS';"
+	screen -dmS NFS /bin/bash /etc/MySB/install/NFS 'UPGRADE';
+	WaitingScreen NFS
+	StatusSTD
+else
+	echo -e "${CGREEN}Nothing to do !$CEND..."
+fi
+
+#### 28 - Fail2Ban
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Fail2Ban$CEND..."
+if [ "$IsInstalled_Fail2Ban" == "YES" ] || [ "$ToInstall_Fail2Ban" == "YES" ]; then
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Fail2Ban';"
+	screen -dmS Fail2Ban /bin/bash /etc/MySB/install/Fail2Ban 'UPGRADE';
+	WaitingScreen Fail2Ban
+	StatusSTD
+else
+	echo -e "${CGREEN}Nothing to do !$CEND..."
+fi
+
+#### 29 - LogWatch
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Logwatch$CEND..."
+if [ "$IsInstalled_LogWatch" == "YES" ] || [ "$ToInstall_LogWatch" == "YES" ]; then
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'LogWatch';"
+	screen -dmS Logwatch /bin/bash /etc/MySB/install/Logwatch 'UPGRADE';
+	WaitingScreen Logwatch
+	StatusSTD
+else
+	echo -e "${CGREEN}Nothing to do !$CEND..."
+fi
+
+#### 30 - rTorrent Blocklists
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Compiling the rTorrent blocklist$CEND..."
+screen -dmS Blocklist /bin/bash /etc/MySB/install/Blocklists 'UPGRADE';
+WaitingScreen Blocklist
+StatusSTD
+
+#### 31 - Crontab
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for Crontab$CEND..."
 crontab -l > /tmp/crontab.tmp
@@ -376,7 +392,7 @@ crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
 StatusSTD
 
-#### 31 - rTorrent (.rtorrent.rc)
+#### 32 - rTorrent (.rtorrent.rc)
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Creating new '.rtorrent.rc' file for all users$CEND..."
 for seedUser in $UsersList; do
@@ -413,13 +429,13 @@ for seedUser in $UsersList; do
 done
 StatusSTD
 
-#### 32 - Cleaning
+#### 33 - Cleaning
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Cleaning$CEND..."
 rm -rf /etc/MySB/temp/* &> /dev/null
 StatusSTD
 
-#### 33 - Vars (again)
+#### 34 - Vars (again)
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Read database informations$CEND..."
 if [ -f /etc/MySB/inc/vars ]; then source /etc/MySB/inc/vars; fi
@@ -427,20 +443,20 @@ if [ -f /etc/MySB/inc/funcs ]; then source /etc/MySB/inc/funcs; fi
 ListingUsers
 StatusSTD
 
-#### 34 - Firewall And Security
+#### 35 - Firewall And Security
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Creating basic security rules$CEND..."
 ScriptInvoke 'screen' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new' 'UPGRADE'
 StatusSTD
 
-#### 35 - STOP & START services
+#### 36 - STOP & START services
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Restarting all services$CEND..."
 ManageServices stop "stunnel4 postfix" &> /dev/null
 ManageServices start "cron nginx openvpn stunnel4 postfix" &> /dev/null
 StatusSTD
 
-#### 36 - Send mail for each user with new version
+#### 37 - Send mail for each user with new version
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Clearing the password for all users$CEND..."
 for seedUser in $UsersList; do

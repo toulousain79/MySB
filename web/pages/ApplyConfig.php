@@ -127,6 +127,7 @@ if ( IfApplyConfig() > 0 ) {
 				header('Refresh: 20; URL=/?main-user/smtp.html');
 
 				break;
+				
 			case "MySB_ChangeUserPassword":
 				echo '<div align="center"><h1>MySB_ChangeUserPassword...</h1></div>';
 
@@ -153,6 +154,7 @@ if ( IfApplyConfig() > 0 ) {
 				}
 
 				break;
+				
 			case "MySB_CreateUser":
 				echo '<div align="center"><h1>MySB_CreateUser...</h1></div>';
 
@@ -181,6 +183,7 @@ if ( IfApplyConfig() > 0 ) {
 				}
 
 				break;
+				
 			case "MySB_DeleteUser":
 				echo '<div align="center"><h1>MySB_DeleteUser...</h1></div>';
 

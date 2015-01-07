@@ -118,7 +118,7 @@ $UsersList = $MySB_DB->select("users", "*", ["AND" => ["admin" => "0"]]);
 				<th style="text-align:center;">E-mail</th>
 				<th style="text-align:center;">SFTP ?</th>
 				<th style="text-align:center;">Sudo ?</th>
-				<th style="text-align:center;">Delete ?</th>
+				<!-- <th style="text-align:center;">Delete ?</th> -->
 			</tr>
 
 <?php
@@ -141,9 +141,9 @@ foreach($UsersList as $User) {
 					<input type="hidden" name="sudo[]" value="<?php echo $User["sudo"]; ?>" />						
 					<?php echo $User["sudo"]; ?>
 				</td>
-				<td>
+				<!-- <td>
 					<input class="submit" name="delete[<?php echo $User["users_ident"]; ?>]" type="submit" value="Delete" />
-				</td>
+				</td> -->
 			</tr>
 <?php
 } // foreach($UsersList as $User) {
