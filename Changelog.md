@@ -1,13 +1,14 @@
-	Version v1.2 (main branch)
+	Version v2.0 (main branch)
 		2014/12/24
 			- Used of SQLite instead of flat file (more convenient)
-			- Add Wolf CMS as portal (more convenient), manage blocklists, DNScrypt, trackers,...
+			- Add Wolf CMS as portal (more convenient), manage blocklists, DNScrypt, trackers, users...
 			- NginX, add PageSpeed functionnality
 			- NginX, change url access to short url (ruTorrent, Seedbox-Manager, Cakebox)
-			- DNScrypt-proxy v1.4.2
+			- DNScrypt-proxy v1.4.3
+			- Strengthening IP access policy, Web access is fully subject to the restriction by IP 
 			- Possibility to allow access for dynamic IP addresses
+			- Renew all certificates using SHA256 2048bits instead of SHA1 1024bits
 			- Some modifications
-			- Renew all certificates using SHA256 instead of SHA1
 
 	Version v1.1
 		2014/10/26

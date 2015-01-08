@@ -8,12 +8,10 @@
 My SeedBox
 ====
 
-This script is a fork of Notos' Script (base v2.1.9) avaible at https://github.com/Notos/seedbox-from-scratch/, combined with tuto of Mondedie.fr avaible at "http://mondedie.fr/viewtopic.php?id=5302".
-
 MySB is a seedbox platform for multi-users.
 
-##### Current version = dev
-###### Last stable version = v1.1
+##### Current version = v2.0
+###### Last stable version = v2.0
 
 ## Installed software
 
@@ -23,7 +21,7 @@ MySB is a seedbox platform for multi-users.
 	* NginX (SSL, specific port and some customizations)
 	* PHP5-FPM (php5-apcu, FastCGI, SSL)
 	* SFTP with Chroot
-	* vsftpd (TLS)
+	* VSFTPd (FTP over TLS)
 	* Postfix with SMTP authentication (Gmail, Free, Ovh and Yahoo)
 
 ## Services available
@@ -41,7 +39,7 @@ MySB is a seedbox platform for multi-users.
 	* NFS share for each users (VPN access)
 	* Auto retrieve SSL certificates for all trackers (if available)
 	* MySB portal, ability to manage trackers, blocklists, users and more
-	* Block all possibilities to use any trackers that was not activated in MySB portal.
+	* Block all possibilities to use any trackers that was not activated in MySB portal
 
 ## Additional ruTorrent plugins (in addition to the official plugins)
 
@@ -306,12 +304,12 @@ Created by toulousain79
 ## TODO
 
 * Use of "Let's Encrypt" (https://letsencrypt.org/) (Summer 2015)
-* Maybe add miniDLNA functionality (with OpenVPN)
-* Maybe add OwnCloud possiblity
 * NFS over sTunnel ? (https://w3.physics.illinois.edu/physwiki/doku.php?id=pcs:unix:nfs_over_stunnel)
-* SABnzbd ?
-* Subsonic ?
+* Add miniDLNA (with OpenVPN) ?
+* Add SABnzbd ?
+* Add Subsonic ?
+* Add OwnCloud ?
 * Namebench ?
-* Maybe use of 'psad'
+* PSAD, SNORT ?
 * check plugin 'Mediastream', doesn't work ?
 * check Cakebox, doesn't work ?
