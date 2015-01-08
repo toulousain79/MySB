@@ -81,6 +81,8 @@ if ( isset($_POST['submit']) ) {
 						}
 
 						if ( $result == 0 ) {
+							session_unset();
+							session_destroy();
 							$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "MySB_ChangeUserPassword"]);
 							if ( $result > 0 ) {
 								$type = 'success';
@@ -90,12 +92,10 @@ if ( isset($_POST['submit']) ) {
 							}
 						} else {
 							$type = 'error';
-							$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
+							$message = 'Error occured with "MySB_ChangeUserPassword" script !';
 						}
 						
 						GenerateMessage(false, $type, $message);
-						session_unset ();
-						session_destroy ();
 						header('Refresh: 5; URL=/');
 					} else {
 						$type = 'success';
