@@ -28,23 +28,26 @@ if ( isset($_GET['var1']) && isset($_GET['var2']) ) {
 	$UserName = $_GET['var1'];
 	$UserPasswd = $_GET['var2'];
 	$UserAddress = $_SERVER['REMOTE_ADDR'];
-	
+
 	// Users table
-	$users_datas = $MySB_DB->get("users", "*", ["AND" => ["users_ident" => "$UserName", "users_passwd" => "$UserPasswd"]]);
-	if ( !isset($users_datas) ) {
-		header('Refresh: 0; URL=http://www.google.fr');
-	} else {
+	//$users_datas = $MySB_DB->get("users", "*", ["AND" => ["users_ident" => "$UserName", "users_passwd" => "$UserPasswd"]]);
+	$ActualUserPass = $MySB_DB->get("users", "users_passwd", ["users_ident" => "$UserName"]);
+	if ( ($ActualUserPass != "") && ($UserPasswd != "") && ($UserPasswd == $ActualUserPass) ) {
 		$HostName = gethostbyaddr($UserAddress);
 		$last_id_address = ManageUsersAddresses($UserName, $UserAddress, $HostName, 1, 'ipv4');
-		
+
 		if ($last_id_address != false) {
 			session_start();
 			$_SESSION['user'] = $UserName;
-			$_SESSION['pwd'] = $UserPasswd;				
+			$_SESSION['pwd'] = $UserPasswd;
 			require_once '/etc/MySB/web/index.php';
+			// session_unset();
+			// session_destroy();
 		} else {
 			echo 'Failed ! It was not possible to add your IP address in MySB database!';
 		}
+	} else {
+		header('Refresh: 0; URL=http://www.google.fr');
 	}
 } else {
 	header('Refresh: 0; URL=http://www.google.fr');
