@@ -48,29 +48,6 @@ CREATE TABLE vars (
 
 INSERT INTO [vars] ([id_vars], [fail2ban_whitelist], [vpn_ip], [white_tcp_port_out], [white_udp_port_out]) VALUES (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24', '80 443', null);
 
--- Table: users
-CREATE TABLE users ( 
-    id_users      INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                  NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT ABORT,
-    users_ident   VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT IGNORE,
-    users_email   VARCHAR( 260 )  NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT IGNORE,
-    users_passwd  VARCHAR( 32 ),
-    rpc           VARCHAR( 64 ),
-    sftp          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                  DEFAULT ( 1 ),
-    sudo          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                  DEFAULT ( 0 ),
-    admin         BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                  DEFAULT ( 0 ),
-    scgi_port     INTEGER( 5 ),
-    rtorrent_port INTEGER( 5 ),
-    home_dir      VARCHAR( 128 ) 
-);
-
-
 -- Table: trackers_list_ipv4
 CREATE TABLE trackers_list_ipv4 ( 
     id_trackers_list_ipv4 INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -384,3 +361,23 @@ INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args])
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (6, 'MySB_ChangeUserPassword', 0, 2, null);
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (7, 'MySB_CreateUser', 0, 2, null);
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (8, 'MySB_DeleteUser', 0, 2, null);
+
+-- Table: users
+CREATE TABLE users ( 
+    id_users      INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                  NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT ABORT,
+    users_ident   VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT IGNORE,
+    users_email   VARCHAR( 260 )  NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT IGNORE,
+    users_passwd  VARCHAR( 32 ),
+    rpc           VARCHAR( 64 ),
+    sftp          BOOLEAN( 1 )    DEFAULT ( 1 ),
+    sudo          BOOLEAN( 1 )    DEFAULT ( 0 ),
+    admin         BOOLEAN( 1 )    DEFAULT ( 0 ),
+    scgi_port     INTEGER( 5 ),
+    rtorrent_port INTEGER( 5 ),
+    home_dir      VARCHAR( 128 ) 
+);
+
