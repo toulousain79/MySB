@@ -81,7 +81,7 @@
 		<div id="site_content">
 			<div class="content">
 <?php
-	if (isset($_SESSION['user']) && isset($_SESSION['pwd'])) {
+	if ( isset($_GET['var1']) && isset($_GET['var2']) && isset($_SESSION['user']) && isset($_SESSION['pwd']) ) {
 		$_SERVER['PHP_AUTH_USER'] = $_SESSION['user'];
 		$_SERVER['PHP_AUTH_PW'] = $_SESSION['pwd'];
 		require_once '/etc/MySB/web/pages/ChangePassword.php';
@@ -109,10 +109,10 @@
 					$FooterNavBar .= ' | ' . $menu->link($menu->title);
 				}
 			endforeach;
-			echo '<p>' . $FooterNavBar . '</p>';
+			echo $FooterNavBar . '<br /><br />';
 ?>
-
-			<p><a href="https://github.com/toulousain79/MySB/" title="MySB on GitHub">MySB on GitHub</a><br />Copyright &copy; CSS3_two | <a href="http://www.css3templates.co.uk">design from css3templates.co.uk</a> | <a href="http://www.wolfcms.org/" title="Wolf CMS">Wolf CMS</a> Inside.</p>
+			<a href="https://github.com/toulousain79/MySB/" title="MySB on GitHub">MySB on GitHub</a><br />
+			<a href="http://www.css3templates.co.uk">Copyright &copy; CSS3_two</a> | <a href="http://www.wolfcms.org/" title="Wolf CMS">Wolf CMS Inside.</a></p>
 		</footer>
 	</div>
 	
