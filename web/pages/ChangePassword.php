@@ -44,20 +44,27 @@ echo '
 				<td><input name="confirm_pwd" type="password" /></td>
 			</tr>
 			<tr>
-				<td colspan="2">
-					<input class="submit" name="submit" type="submit" value="Submit"">
-				</td>
+				<td colspan="2">';
+				
+if (isset($_SESSION['user']) && isset($_SESSION['pwd'])) { ?>
+
+					<div id="PageSubmitButton">
+						<input class="submit" name="submit" type="submit" value="Submit" onclick="ButtonClicked(\'page\')">
+					</div>
+					<div id="PageButtonReplace" style="text-align:center; display:none; height: 33px;">
+						<img src="<?php echo THEMES_PATH; ?>MySB/images/ajax-loader.gif" alt="loading...">
+					</div>
+
+<?php
+} else { 
+					echo '<input class="submit" name="submit" type="submit" value="Submit">';
+}	
+
+echo '			</td>
 			</tr>
 		</table></div>
 	</form>
 	';
-
-// <div id="PageSubmitButton">
-	// <input class="submit" name="submit" type="submit" value="Submit" onclick="ButtonClicked(\'page\')">
-// </div>
-// <div id="PageButtonReplace" style="text-align:center; display:none; height: 33px;">
-	// <img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading...">
-// </div>
 	
 if ( isset($_POST['submit']) ) {
 	$current_pwd = $_POST['current_pwd'];
