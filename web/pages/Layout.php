@@ -111,7 +111,8 @@
 			endforeach;
 			echo '<p>' . $FooterNavBar . '</p>';
 ?>
-			<p>Copyright &copy; CSS3_two | <a href="http://www.css3templates.co.uk">design from css3templates.co.uk</a> | <a href="http://www.wolfcms.org/" title="Wolf CMS">Wolf CMS</a> Inside.</p>				
+			<p><a href="https://github.com/toulousain79/MySB/" title="MySB on GitHub">MySB on GitHub</a></p>
+			<p>Copyright &copy; CSS3_two | <a href="http://www.css3templates.co.uk">design from css3templates.co.uk</a> | <a href="http://www.wolfcms.org/" title="Wolf CMS">Wolf CMS</a> Inside.</p>
 		</footer>
 	</div>
 	

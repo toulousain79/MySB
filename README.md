@@ -247,11 +247,6 @@ If you want to use GMAIL provider, maybe should you read this for authorize conn
 https://www.google.com/accounts/DisplayUnlockCaptcha
 ```
 
-## Plex Media Server
-To complete the Plex Media Server configuration, an excellent tutorial is available here:
-```
-http://mondedie.fr/viewtopic.php?id=5732
-```
 
 ## Supported and tested servers
 
