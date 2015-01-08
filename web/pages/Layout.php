@@ -27,8 +27,6 @@
 
 <head>
 	<title><?php echo $this->title(); ?></title>
-	<meta name="description" content="<?php echo ($this->description() != '') ? $this->description() : 'Default description goes here'; ?>" />
-	<meta name="keywords" content="<?php echo ($this->keywords() != '') ? $this->keywords() : 'default, keywords, here'; ?>" />
 	<meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
 	<meta name="robots" content="noindex, nofollow">
 	<meta name="robots" content="noarchive">
@@ -83,8 +81,14 @@
 		<div id="site_content">
 			<div class="content">
 <?php
-				echo $this->content();
-				if ($this->hasContent('extended')) echo $this->content('extended');
+	if (isset($_SESSION['user']) && isset($_SESSION['pwd'])) {
+		$_SERVER['PHP_AUTH_USER'] = $_SESSION['user'];
+		$_SERVER['PHP_AUTH_PW'] = $_SESSION['pwd'];
+		require_once '/etc/MySB/web/pages/ChangePassword.php';
+	} else {
+		echo $this->content();
+		if ($this->hasContent('extended')) echo $this->content('extended');
+	}
 ?>
 			</div>
 			<div id="sidebar_container">

@@ -38,14 +38,10 @@ if ( isset($_GET['var1']) && isset($_GET['var2']) ) {
 		$last_id_address = ManageUsersAddresses($UserName, $UserAddress, $HostName, 1, 'ipv4');
 		
 		if ($last_id_address != false) {
-			exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'FirewallAndSecurity.bsh'", $output, $result);
-
-			if ( $result == 0 ) {
-				DoPostRequest('https://'. $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/change-password.html', $UserName.'|'.$UserPasswd) 
-				//header('Location: https://'.$UserName.':'.$UserPasswd.'@' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/change-password.html');
-			} else {
-				echo 'Failed ! It was not possible to give you an access to MySB portal !';
-			}
+			session_start();
+			$_SESSION['user'] = $UserName;
+			$_SESSION['pwd'] = $UserPasswd;				
+			require_once '/etc/MySB/web/index.php';
 		} else {
 			echo 'Failed ! It was not possible to add your IP address in MySB database!';
 		}

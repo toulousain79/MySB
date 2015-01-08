@@ -129,7 +129,7 @@ After installing you will have access to the following commands to be used direc
 	* MySB_CreateUser
 	* MySB_DeleteUser
 	* MySB_UpdateGitHubRepo (update actual repository)
-	* MySB_RefreshMe (refresh rTorrent, ruTorrent, Seedbox-Manager, Cakebox-Light)
+	* MySB_RefreshMe (refresh ruTorrent, Seedbox-Manager, Cakebox-Light, LoadAvg)
 	* MySB_UpgradeMe (to migrate to a new version of MySB)
 	* MySB_UpgradeSystem (simply upgrade your system APT upgrade)
 
