@@ -63,6 +63,17 @@ CountingUsers() {
 	TotalUsers="`sqlite3 $MySB_DB \"SELECT count(*) FROM users\"`"
 }
 
+#### Check if a package is installed
+CheckPackage() {
+	Result="`dpkg --status $1 | grep 'Status' | cut -d ':' -f 2 | sed -e 's/^ //g;'`"
+	
+	if [ "$Result" == "install ok installed" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
 #### Send Mail
 SendMail() {
 	FnSubject="$1"
@@ -101,6 +112,9 @@ SendMail() {
 
 #### apt-get OR aptitude
 PackagesManage() {
+	Query=$1
+	PackageList=$2
+
 	if [ "`dpkg --status aptitude | grep Status:`" == "Status: install ok installed" ]; then
 		packetg="aptitude -q"
 	else
@@ -136,10 +150,20 @@ PackagesManage() {
 		$BEFORE $packetg $OPTIONS -o Acquire::Check-Valid-Until=false update
 	fi
 
-	case "$1" in
+	case "$Query" in
 		"install")
-			echo "$BEFORE $packetg $OPTIONS install $2"
-			$BEFORE $packetg $OPTIONS install $2
+			FinalList=""
+			for Package in $PackageList; do
+				if ! CheckPackage $Package; then
+					FinalList="${FinalList} $Package"
+				fi
+			done
+			FinalList="`echo $FinalList | sed -e 's/^ //g;'`"
+			
+			if [ ! -z "$FinalList" ]; then
+				echo "$BEFORE $packetg $OPTIONS install $FinalList"
+				$BEFORE $packetg $OPTIONS install $FinalList
+			fi
 		;;
 		'upgrade')
 			if [ "`$packetg --help | grep safe-upgrade | awk '{ print $1 }'`" == "safe-upgrade" ]; then
@@ -151,8 +175,18 @@ PackagesManage() {
 			fi
 		;;
 		'purge')
-			echo "$BEFORE $packetg $OPTIONS purge $2"
-			$BEFORE $packetg $OPTIONS purge $2
+			FinalList=""
+			for Package in $PackageList; do
+				if CheckPackage $Package; then
+					FinalList="${FinalList} $Package"
+				fi
+			done
+			FinalList="`echo $FinalList | sed -e 's/^ //g;'`"
+			
+			if [ ! -z "$FinalList" ]; then		
+				echo "$BEFORE $packetg $OPTIONS purge $FinalList"
+				$BEFORE $packetg $OPTIONS purge $FinalList
+			fi
 		;;
 	esac
 	
@@ -251,7 +285,7 @@ GetPid() {
 ManageServices() {
 	GlobalCommand="$1"
 	ServicesToManage="$2"
-	ServicesToManage=`echo $ServicesToManage | sed -e 's/^//g;' | sed 's/\s+$//'`
+	ServicesToManage=`echo $ServicesToManage | sed -e 's/^ //g;' | sed 's/\s+$//'`
 	if [ ! -z "$ServicesToManage" ]; then
 		if [ $LOGSTD != "NO" ]; then echo "---- "`date +"%T"` >> /etc/MySB/logs/$ScriptName.log; fi
 
@@ -708,7 +742,7 @@ AddTracker() {
 			fi
 
 			if [ ! -z "$TrackerIPv4" ] && [ "$TrackerIPv4" != "0.0.0.0" ] && [ "$TrackerIPv4" != "127.0.0.1" ]; then
-				TrackerIPv4="`echo $TrackerIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`"
+				TrackerIPv4="`echo $TrackerIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 				TrackersListID="`sqlite3 $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"	
 
 				if [ ! -z "$TrackersListID" ] && [ $TrackersListID -gt 0 ]; then
@@ -733,7 +767,7 @@ AddTracker() {
 				fi
 			else
 				if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
-					DomainIPv4="`echo $DomainIPv4 | sed -e 's/^//g;' | sed 's/\s+$//'`"
+					DomainIPv4="`echo $DomainIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 					TrackersListID="`sqlite3 $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"
 					
 					if [ ! -z "$TrackersListID" ] && [ $TrackersListID -gt 0 ]; then
@@ -863,10 +897,10 @@ NetworkPortsGenerator() {
 		fi
 	fi	
 
-	WHITE_TCP_IN=`echo $WHITE_TCP_IN | sed -e 's/^//g;' | sed 's/\s+$//'`
-	WHITE_UDP_IN=`echo $WHITE_UDP_IN | sed -e 's/^//g;' | sed 's/\s+$//'`
-	WHITE_TCP_OUT=`echo $WHITE_TCP_OUT | sed -e 's/^//g;' | sed 's/\s+$//'`
-	WHITE_UDP_OUT=`echo $WHITE_UDP_OUT | sed -e 's/^//g;' | sed 's/\s+$//'`	
+	WHITE_TCP_IN=`echo $WHITE_TCP_IN | sed -e 's/^ //g;' | sed 's/\s+$//'`
+	WHITE_UDP_IN=`echo $WHITE_UDP_IN | sed -e 's/^ //g;' | sed 's/\s+$//'`
+	WHITE_TCP_OUT=`echo $WHITE_TCP_OUT | sed -e 's/^ //g;' | sed 's/\s+$//'`
+	WHITE_UDP_OUT=`echo $WHITE_UDP_OUT | sed -e 's/^ //g;' | sed 's/\s+$//'`	
 }
 
 #### Fail2Ban White List
@@ -886,7 +920,7 @@ Fail2BanWhitheList() {
 			fi
 		done
 		unset IPv4
-		AllUsersIPs=`echo $AllUsersIPs | sed -e "s/^//g;"`
+		AllUsersIPs=`echo $AllUsersIPs | sed -e "s/^ //g;"`
 
 		# VPN local IPs	
 		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
@@ -898,7 +932,7 @@ Fail2BanWhitheList() {
 			done
 			unset IPv4
 		fi
-		Fail2banWhiteList=`echo $Fail2banWhiteList | sed -e "s/^//g;"`
+		Fail2banWhiteList=`echo $Fail2banWhiteList | sed -e "s/^ //g;"`
 
 		Fail2banWhiteList=`echo $Fail2banWhiteList | sed s,/,\\\\\\\\\\/,g`
 		SEARCH=$(cat /etc/fail2ban/jail.local | grep "ignoreip =" | cut -d "=" -f 2)
@@ -1027,7 +1061,7 @@ PeerGuardianPglcmdConf() {
 		MainUserIPs=`echo $MainUserIPs | sed s,/,\\\\\\\\\\/,g`
 
 		AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
-		AllUsersIPs=`echo $AllUsersIPs | sed -e "s/^//g;"`
+		AllUsersIPs=`echo $AllUsersIPs | sed -e "s/^ //g;"`
 		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_IN=")
 		SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
 		if [ ! -z "$SEARCH" ]; then	
