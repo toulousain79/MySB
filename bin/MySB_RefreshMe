@@ -24,20 +24,27 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 #
-# Usage:	MySB_RefreshMe (rtorrent|rutorrent|manager|cakebox|all)
+# Usage:	MySB_RefreshMe (rtorrent|rutorrent|manager|cakebox|loadavg|all)
 #
 ##################### FIRST LINE #####################################
 
 if [ "$USAGE" == "ON" ]; then
 	if [ "`screen -ls | grep MySB_RefreshMe`" == "" ]; then
 		if [ ! $1 ]; then
-			echo -e "${CBLUE}Usage:$CEND	${CYELLOW}$ScriptName$CEND ${CGREEN}(rtorrent|rutorrent|manager|cakebox|all)$CEND"
+			echo -e "${CBLUE}Usage:$CEND	${CYELLOW}$ScriptName$CEND ${CGREEN}(rutorrent|manager|cakebox|all)$CEND"
 			EndingScript 0
 		fi
 	fi
 fi
 
 #### some functions
+refresh_tools() {
+	echo -e -n "${CBLUE}Install and configure Composer, Bower and NodeJS$CEND..."
+	screen -dmS Tools /bin/bash /etc/MySB/install/Tools "REFRESH";
+	WaitingScreen Tools
+	StatusSTD
+}
+
 refresh_manager() {
 	if [ "$IsInstalled_Manager" == "YES" ] || [ "$ToInstall_Manager" == "YES" ]; then
 		sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Seedbox-Manager';"
@@ -70,27 +77,29 @@ refresh_cakebox() {
 	fi
 }
 
+refresh_rutorrent() {
+	echo -e -n "${CBLUE}Refresh rTorrent$CEND..."
+	screen -dmS rTorrent /bin/bash /etc/MySB/install/rTorrent "REFRESH";
+	WaitingScreen rTorrent
+	StatusSTD
+}
+
+refresh_loadavg() {
+	echo -e -n "${CBLUE}Refresh LoadAvg$CEND..."
+	screen -dmS LoadAvg /bin/bash /etc/MySB/install/LoadAvg "REFRESH";
+	WaitingScreen LoadAvg
+	StatusSTD
+}
+
 #### do job
 case "$1" in
-	"rtorrent")
-		echo -e -n "${CBLUE}Refresh rTorrent$CEND..."
-		screen -dmS rTorrent /bin/bash /etc/MySB/install/rTorrent "REFRESH";
-		WaitingScreen rTorrent
-		StatusSTD
-	;;
 	"rutorrent")
-		echo -e -n "${CBLUE}Refresh ruTorrent$CEND..."
-		screen -dmS ruTorrent /bin/bash /etc/MySB/install/ruTorrent "REFRESH";
-		WaitingScreen ruTorrent
-		StatusSTD
+		refresh_rutorrent
 	;;
 	"manager"|"cakebox")
 		#### Tools for CakeBox and Seedbox-Manager
 		if [ "$IsInstalled_Cakebox" == "YES" ] || [ "$IsInstalled_Manager" == "YES" ] || [ "$ToInstall_Cakebox" == "YES" ] || [ "$ToInstall_Manager" == "YES" ]; then
-			echo -e -n "${CBLUE}Install and configure Composer, Bower and NodeJS$CEND..."
-			screen -dmS Tools /bin/bash /etc/MySB/install/Tools "REFRESH";
-			WaitingScreen Tools
-			StatusSTD
+			refresh_tools
 		fi
 
 		if [ "$1" == "cakebox" ]; then
@@ -100,23 +109,17 @@ case "$1" in
 		if [ "$1" == "manager" ]; then
 			refresh_manager
 		fi
+	;;
+	"loadavg")
+		refresh_loadavg
 	;;	
 	"all")
-		echo -e -n "${CBLUE}Refresh rTorrent$CEND..."
-		screen -dmS rTorrent /bin/bash /etc/MySB/install/rTorrent "REFRESH";
-		WaitingScreen rTorrent
-		StatusSTD
-
-		echo -e -n "${CBLUE}Refresh ruTorrent$CEND..."
-		screen -dmS ruTorrent /bin/bash /etc/MySB/install/ruTorrent "REFRESH";
-		WaitingScreen ruTorrent
-		StatusSTD
+		refresh_rutorrent
+		
+		refresh_loadavg
 		
 		if [ "$IsInstalled_Cakebox" == "YES" ] || [ "$IsInstalled_Manager" == "YES" ] || [ "$ToInstall_Cakebox" == "YES" ] || [ "$ToInstall_Manager" == "YES" ]; then
-			echo -e -n "${CBLUE}Install and configure Composer, Bower and NodeJS$CEND..."
-			screen -dmS Tools /bin/bash /etc/MySB/install/Tools "REFRESH";
-			WaitingScreen Tools
-			StatusSTD
+			refresh_tools
 		fi
 
 		refresh_manager
@@ -125,11 +128,7 @@ case "$1" in
 	;;
 esac
 
-case "$1" in
-	*)
-		ManageDirectoriesAndFiles
-	;;
-esac
+ManageDirectoriesAndFiles
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after

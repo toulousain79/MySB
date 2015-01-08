@@ -39,7 +39,7 @@ fi
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=37
+TotalSTEP=35
 
 #### 1 - Create missing directories and change rights
 (( CurrentSTEP++ ))
@@ -47,7 +47,22 @@ echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Creating missing directories, data
 ManageDirectoriesAndFiles
 StatusSTD
 
-#### 2 - Move some files & directories
+#### 2 - SQLite (move flat files to database)
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Creating and populating databases, and check of all the trackers (this may take a while, please be patient)$CEND..."
+screen -dmS SQLite /bin/bash /etc/MySB/install/SQLite 'UPGRADE';
+WaitingScreen SQLite
+StatusSTD
+
+#### 3 - Vars
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Reading database informations$CEND..."
+if [ -f /etc/MySB/inc/vars ]; then source /etc/MySB/inc/vars; fi
+if [ -f /etc/MySB/inc/funcs ]; then source /etc/MySB/inc/funcs; fi
+ListingUsers
+StatusSTD
+
+#### 4 - Move some files & directories
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Moving and deleting some files & directories$CEND..."
 # Manage LOGs
@@ -86,6 +101,7 @@ if [ -f /root/033* ]; then rm -f /root/033* &> /dev/null; fi
 if [ -f /root/MySB_Install.sh ]; then rm -f /root/MySB_Install.sh &> /dev/null; fi
 # Unused files
 if [ -f /usr/share/nginx/html/50x.html ]; then rm -f /usr/share/nginx/html/50x.html &> /dev/null; fi
+# Links
 if [ -h /etc/MySB/web/fileshare.php ]; then rm -f /etc/MySB/web/fileshare.php; fi
 if [ -h /etc/MySB/web/stream.php ]; then rm -f /etc/MySB/web/stream.php; fi
 if [ -h /etc/MySB/web/view.php ]; then rm -f /etc/MySB/web/view.php; fi
@@ -110,35 +126,35 @@ sed -i '/drop_caches/d' /tmp/crontab.tmp
 sed -i '/BlockList/d' /tmp/crontab.tmp
 crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
+# Seedbox-Manager
+if [ -d $ManagerDir ]; then rm -rf $ManagerDir &> /dev/null; fi
+# Cackebox
+if [ -d $CakeboxDir ]; then rm -rf $CakeboxDir &> /dev/null; fi
+mv $RutorrentDir/conf/users /etc/MySB/temp/conf_users &> /dev/null && rm -rf /etc/MySB/temp/conf_users/.svn &> /dev/null
+mv $RutorrentDir/share/users /etc/MySB/temp/share_users &> /dev/null && rm -rf /etc/MySB/temp/share_users/.svn &> /dev/null
+rm -rf $RutorrentDir &> /dev/null
 StatusSTD
 
-#### 5 - SQLite (move flat files to database)
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Creating and populating databases, and check of all the trackers (this may take a while, please be patient)$CEND..."
-screen -dmS SQLite /bin/bash /etc/MySB/install/SQLite 'UPGRADE';
-WaitingScreen SQLite
-StatusSTD
-
-#### 4 - Sources List
+#### 5 - Sources List
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Preparing sources for debian$CEND..."
 screen -dmS SourcesList /bin/bash /etc/MySB/install/SourcesList 'UPGRADE';
 WaitingScreen SourcesList
 StatusSTD
 
-#### 3 - Packages
+#### 6 - Packages
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing all needed packages$CEND..."
 screen -dmS Packages /bin/bash /etc/MySB/install/Packages 'UPGRADE';
 WaitingScreen Packages
 StatusSTD
 
-#### 6 - Questions
+#### 7 - Questions
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Creating and populating databases, and check of all the trackers (this may take a while, please be patient)$CEND..."
-/bin/bash /etc/MySB/install/Questions $$ 'UPGRADE';
+source /etc/MySB/install/Questions $$ 'UPGRADE';
 
-#### 7 - Vars
+#### 8 - Vars
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Reading database informations$CEND..."
 if [ -f /etc/MySB/inc/vars ]; then source /etc/MySB/inc/vars; fi
@@ -146,14 +162,14 @@ if [ -f /etc/MySB/inc/funcs ]; then source /etc/MySB/inc/funcs; fi
 ListingUsers
 StatusSTD
 
-#### 8 - Tweaks
+#### 9 - Tweaks
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- System optimizations$CEND..."
 screen -dmS Tweaks /bin/bash /etc/MySB/install/Tweaks 'UPGRADE';
 WaitingScreen Tweaks
 StatusSTD
 
-#### 9 - STOP services
+#### 10 - STOP services
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Stopping of services$CEND..."
 ManageServices stop "cron" &> /dev/null
@@ -162,21 +178,35 @@ for seedUser in $UsersList; do
 	service rtorrent-$seedUser stop &> /dev/null
 done
 
-#### 10 - Certificates
+#### 11 - Certificates
 (( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Generating CA certificate (SHA1 to SHA256)$CEND..."
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Generating CA certificate (from SHA1 1024 bits to SHA256 in 2048bits)$CEND..."
 screen -dmS Certificates /bin/bash /etc/MySB/install/Certificates 'CreateCACertificate' 'NoServiceNameToGive' 'UPGRADE';
 WaitingScreen Certificates
 StatusSTD
 
-#### 11 - Bind
+#### 12 - DownloadAll (update)
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Downloading all files at once (GIT, SVN, TAR.GZ, WBM)$CEND..."
+screen -dmS DownloadAll /bin/bash /etc/MySB/install/DownloadAll 'UPGRADE';
+WaitingScreen DownloadAll
+StatusSTD
+
+#### 13 - NginX
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring NginX$CEND..."
+screen -dmS Nginx /bin/bash /etc/MySB/install/Nginx 'UPGRADE';
+WaitingScreen Nginx
+StatusSTD
+
+#### 14 - Bind
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Bind$CEND..."
 screen -dmS Bind /bin/bash /etc/MySB/install/Bind 'UPGRADE';
 WaitingScreen Bind
 StatusSTD
 
-#### 12 - DNScrypt-proxy
+#### 15 - DNScrypt-proxy
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring DNScrypt-proxy$CEND..."
 if [ "$IsInstalled_DNScrypt" == "YES" ] || [ "$ToInstall_DNScrypt" == "YES" ]; then
@@ -188,7 +218,7 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 13 - PeerGuardian
+#### 16 - PeerGuardian
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring PeerGuardian$CEND..."
 if [ "$IsInstalled_PeerGuardian" == "YES" ] || [ "$MySB_PeerBlock" == "PeerGuardian" ]; then
@@ -200,32 +230,11 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 14 - DownloadAll (update)
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Downloading all files at once (GIT, SVN, TAR.GZ, WBM)$CEND..."
-screen -dmS DownloadAll /bin/bash /etc/MySB/install/DownloadAll 'UPGRADE';
-WaitingScreen DownloadAll
-StatusSTD
-
-#### 15 - PHP
+#### 17 - PHP
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring PHP5$CEND..."
 screen -dmS PHP /bin/bash /etc/MySB/install/PHP 'UPGRADE';
 WaitingScreen PHP
-StatusSTD
-
-#### 16 - NginX
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring NginX$CEND..."
-screen -dmS Nginx /bin/bash /etc/MySB/install/Nginx 'UPGRADE';
-WaitingScreen Nginx
-StatusSTD
-
-#### 17 - LoadAvg
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring LoadAvg$CEND..."
-screen -dmS LoadAvg /bin/bash /etc/MySB/install/LoadAvg 'UPGRADE';
-WaitingScreen LoadAvg
 StatusSTD
 
 #### 18 - Postfix
@@ -258,27 +267,14 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."	
 fi
 
-#### 21 - Backup users data
-# ruTorrent
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Backups of users data$CEND..."
-mv $RutorrentDir/conf/users /etc/MySB/temp/conf_users &> /dev/null && rm -rf /etc/MySB/temp/conf_users/.svn &> /dev/null
-mv $RutorrentDir/share/users /etc/MySB/temp/share_users &> /dev/null && rm -rf /etc/MySB/temp/share_users/.svn &> /dev/null
-rm -rf $RutorrentDir &> /dev/null
-# Seedbox-Manager
-if [ -d $ManagerDir ]; then rm -rf $ManagerDir &> /dev/null; fi
-# Cackebox
-if [ -d $CakeboxDir ]; then rm -rf $CakeboxDir &> /dev/null; fi
-StatusSTD
-
-#### 22 - Refresh tools
+#### 21 - Refresh tools
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Refresh some tools (ruTorrent, Manager, Cakebox)$CEND..."
 screen -dmS MySB_RefreshMe /bin/bash /etc/MySB/bin/MySB_RefreshMe 'all';
 WaitingScreen MySB_RefreshMe
 StatusSTD
 
-#### 23 - Restore users data
+#### 22 - Restore users data
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Restoring user data$CEND..."
 for seedUser in $UsersList; do
@@ -289,7 +285,7 @@ rm -rf /etc/MySB/temp/conf_users &> /dev/null
 rsync -av /etc/MySB/temp/share_users/ $RutorrentDir/share/users/ &> /dev/null && rm -rf /etc/MySB/temp/share_users &> /dev/null
 StatusSTD
 
-#### 24 - OepnVPN
+#### 23 - OepnVPN
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring OpenVPN$CEND..."
 if [ "$ToInstall_OpenVPN" == "YES" ]; then
@@ -301,7 +297,7 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 25 - OpenVPN
+#### 24 - OpenVPN
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for OpenVPN$CEND..."
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
@@ -314,7 +310,7 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 26 - Samba
+#### 25 - Samba
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Samba$CEND..."
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
@@ -326,7 +322,7 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 27 - NFS
+#### 26 - NFS
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring NFS$CEND..."
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then	
@@ -338,7 +334,7 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 28 - Fail2Ban
+#### 27 - Fail2Ban
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Fail2Ban$CEND..."
 if [ "$IsInstalled_Fail2Ban" == "YES" ] || [ "$ToInstall_Fail2Ban" == "YES" ]; then
@@ -350,7 +346,7 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 29 - LogWatch
+#### 28 - LogWatch
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Logwatch$CEND..."
 if [ "$IsInstalled_LogWatch" == "YES" ] || [ "$ToInstall_LogWatch" == "YES" ]; then
@@ -362,14 +358,14 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND..."
 fi
 
-#### 30 - rTorrent Blocklists
+#### 29 - rTorrent Blocklists
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Compiling the rTorrent blocklist$CEND..."
 screen -dmS Blocklist /bin/bash /etc/MySB/install/Blocklists 'UPGRADE';
 WaitingScreen Blocklist
 StatusSTD
 
-#### 31 - Crontab
+#### 30 - Crontab
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for Crontab$CEND..."
 crontab -l > /tmp/crontab.tmp
@@ -382,7 +378,7 @@ crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
 StatusSTD
 
-#### 32 - rTorrent (.rtorrent.rc)
+#### 31 - rTorrent (.rtorrent.rc)
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Creating new '.rtorrent.rc' file for all users$CEND..."
 for seedUser in $UsersList; do
@@ -419,34 +415,26 @@ for seedUser in $UsersList; do
 done
 StatusSTD
 
-#### 33 - Cleaning
+#### 32 - Cleaning
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Cleaning$CEND..."
 rm -rf /etc/MySB/temp/* &> /dev/null
 StatusSTD
 
-#### 34 - Vars (again)
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Read database informations$CEND..."
-if [ -f /etc/MySB/inc/vars ]; then source /etc/MySB/inc/vars; fi
-if [ -f /etc/MySB/inc/funcs ]; then source /etc/MySB/inc/funcs; fi
-ListingUsers
-StatusSTD
-
-#### 35 - Firewall And Security
+#### 33 - Firewall And Security
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Creating basic security rules$CEND..."
 ScriptInvoke 'screen' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new' 'UPGRADE'
 StatusSTD
 
-#### 36 - STOP & START services
+#### 34 - STOP & START services
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Restarting all services$CEND..."
 ManageServices stop "stunnel4 postfix" &> /dev/null
 ManageServices start "cron nginx openvpn stunnel4 postfix" &> /dev/null
 StatusSTD
 
-#### 37 - Send mail for each user with new version
+#### 35 - Send mail for each user with new version
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Clearing the password for all users$CEND..."
 for seedUser in $UsersList; do
