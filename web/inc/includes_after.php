@@ -22,7 +22,9 @@
 //
 //#################### FIRST LINE #####################################
 
-CheckWolfDB($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
+if ( (isset($_SERVER['PHP_AUTH_USER'])) && (isset($_SERVER['PHP_AUTH_PW'])) ) {
+	CheckWolfDB($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
+}
 
 //#################### LAST LINE #####################################
 ?>
