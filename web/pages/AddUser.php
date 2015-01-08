@@ -57,7 +57,7 @@ if ( isset($_POST['submit']) ) {
 			if ( ValidateEmail($email) != false ) {
 				if ( $email == $confirm_email ) {
 					$type = 'success';
-					$args = "$username";
+					$args = "$username|$email";
 				} else {
 					$type = 'error';
 					$message = 'Error between the typed email and verification.';
