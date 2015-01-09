@@ -28,7 +28,10 @@ source /etc/MySB/inc/includes_before
 ManageServices stop "cron"
 ListingUsers
 for seedUser in $UsersList; do
-	service rtorrent-$seedUser stop
+	service rtorrent-$seedUser status &> /dev/null
+	if [ $? -eq 0 ]; then
+		service rtorrent-$seedUser stop
+	fi
 done
 
 #### ruTorrent + Official Plugins
@@ -73,10 +76,10 @@ fi
 echo
 echo "########## Plugin tAdd-Labels"
 echo
-PluginLbllDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin tAdd-Labels'\"`"
-PluginLbllUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin tAdd-Labels'\"`"
-PluginLbllFile="`sqlite3 $MySB_DB \"SELECT file FROM repositories WHERE name = 'ruTorrent Plugin tAdd-Labels'\"`"
-if [ "$1" == "REFRESH" ]; then 
+if [ "$1" == "REFRESH" ]; then
+	PluginLbllDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin tAdd-Labels'\"`"
+	PluginLbllUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin tAdd-Labels'\"`"
+	PluginLbllFile="`sqlite3 $MySB_DB \"SELECT file FROM repositories WHERE name = 'ruTorrent Plugin tAdd-Labels'\"`"	
 	if [ -d $PluginLbllDir ]; then
 		rm -vrf $PluginLbllDir
 	fi
@@ -106,10 +109,10 @@ fi
 echo
 echo "########## Plugin NFO"
 echo
-PluginNfoDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin NFO'\"`"
-PluginNfoUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin NFO'\"`"
-PluginNfoFile="`sqlite3 $MySB_DB \"SELECT file FROM repositories WHERE name = 'ruTorrent Plugin NFO'\"`"
-if [ "$1" == "REFRESH" ]; then 
+if [ "$1" == "REFRESH" ]; then
+	PluginNfoDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin NFO'\"`"
+	PluginNfoUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin NFO'\"`"
+	PluginNfoFile="`sqlite3 $MySB_DB \"SELECT file FROM repositories WHERE name = 'ruTorrent Plugin NFO'\"`"
 	if [ -d $PluginNfoDir ]; then
 		rm -vrf $PluginNfoDir
 	fi
@@ -272,7 +275,12 @@ StatusLSB
 #### START services
 ManageServices start "cron"
 for seedUser in $UsersList; do
-	service rtorrent-$seedUser start
+	service rtorrent-$seedUser status &> /dev/null
+	if [ $? -gt 0 ]; then
+		service rtorrent-$seedUser restart
+	else
+		service rtorrent-$seedUser reload
+	fi
 done
 
 # -----------------------------------------

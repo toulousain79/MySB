@@ -130,6 +130,29 @@ case $1 in
 			iptables -t filter -A INPUT -p icmp -s $ip -j ACCEPT -m comment --comment "ICMP"
 		done
 		StatusLSB
+		
+		if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" == "none" ]; then
+			log_daemon_msg "Allow monitoring for $ServerProvider"
+			case "$ServerProvider" in
+				"OVH")
+					OvhIp1="`echo $SrvIpAddress | sed "s/$(echo $SrvIpAddress | cut -d '.' -f 4)/250/g;"`"
+					OvhIp2="`echo $SrvIpAddress | sed "s/$(echo $SrvIpAddress | cut -d '.' -f 4)/249/g;"`"
+					OvhIp3="`echo $SrvIpAddress | sed "s/$(echo $SrvIpAddress | cut -d '.' -f 4)/251/g;"`"
+					iptables -A INPUT -i $PrimaryInet -p icmp --source proxy-rbx2.ovh.net -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+					iptables -A INPUT -i $PrimaryInet -p icmp --source proxy.rbx.ovh.net -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+					iptables -A INPUT -i $PrimaryInet -p icmp --source proxy.sbg.ovh.net -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+					iptables -A INPUT -i $PrimaryInet -p icmp --source proxy.bhs.ovh.net -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+					iptables -A INPUT -i $PrimaryInet -p icmp --source ping.ovh.net -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+					iptables -A INPUT -i $PrimaryInet -p icmp --source $OvhIp1 -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+					iptables -A INPUT -i $PrimaryInet -p icmp --source $OvhIp2 -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+					iptables -A INPUT -i $PrimaryInet -p icmp --source $OvhIp3 -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+				;;
+				"ONLINE")
+					iptables -A INPUT -i $PrimaryInet -p icmp --source 62.210.16.0/24 -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+				;;
+			esac
+			StatusLSB
+		fi				
 
 		#### CakeBox
 		if [ "$IsInstalled_Cakebox" == "YES" ]; then

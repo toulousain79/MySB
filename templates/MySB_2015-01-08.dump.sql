@@ -1,385 +1,4055 @@
+<HTML>
+	<HEAD>
+		<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<TITLE>EXport base de données: MySB.sq3</TITLE>
+		<STYLE type="text/css">
 
--- Table: users_addresses
-CREATE TABLE users_addresses ( 
-    id_users_addresses INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                       NOT NULL ON CONFLICT ABORT
-                                       UNIQUE ON CONFLICT ABORT,
-    id_users           INTEGER         NOT NULL ON CONFLICT ABORT,
-    ipv4               VARCHAR( 15 )   NOT NULL ON CONFLICT ABORT,
-    hostname           VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT,
-    check_by           VARCHAR( 8 )    NOT NULL ON CONFLICT ABORT,
-    is_active          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                       DEFAULT ( 0 ) 
-);
+	TABLE
+	{
+		border-style: solid;
+		border-width: 1;
+		border-color: black;
+		border-collapse: collapse;
+	}
+	TABLE TR
+	{
+		background-color: white;
+	}
+	TABLE TR.header
+	{
+		background-color: #DDDDDD;
+	}
+	TABLE TR.title
+	{
+		background-color: #EEEEEE;
+	}
+	TABLE TR TD
+	{
+		padding: 0px 3px 0px 3px;
+		border-style: solid;
+		border-width: 1;
+		border-color: #666666;
+	}
+	TABLE TR TD.null
+	{
+		color: #999999;
+		text-align: center;
+		padding: 0px 3px 0px 3px;
+		border-style: solid;
+		border-width: 1;
+		border-color: #666666;
+	}
+	TABLE TR TD.separator
+	{
+		padding: 0px 3px 0px 3px;
+		border-style: solid;
+		border-width: 1;
+		border-color: #666666;
+		background-color: #DDDDDD;
+	}
+	TABLE TR TD.rownum
+	{
+		padding: 0px 3px 0px 3px;
+		border-style: solid;
+		border-width: 1;
+		border-color: #666666;
+		background-color: #DDDDDD;
+		text-align: right;
+	}
+		</STYLE>
+	</HEAD>
+	<BODY>
+		<TABLE>
+			<TR class="title">
+				<TD colspan="6" align="center">
+					Table: <B>users_addresses</B>
+				</TD>
+			</TR>
+		</TABLE>
+		<BR><BR>
+		<TABLE>
+			<TR class="title">
+				<TD colspan="2" align="center">
+					Table: <B>ports</B>
+				</TD>
+			</TR>
+		</TABLE>
+		<BR><BR>
+		<TABLE>
+			<TR class="title">
+				<TD colspan="6" align="center">
+					Table: <B>renting</B>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="right" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="right" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="right" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="right" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+		</TABLE>
+		<BR><BR>
+		<TABLE>
+			<TR class="title">
+				<TD colspan="5" align="center">
+					Table: <B>vars</B>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					127.0.0.1/32
+				</TD>
+				<TD align="left">
+					10.0.0.0/24,10.0.1.0/24
+				</TD>
+				<TD align="left">
+					80 443
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+		</TABLE>
+		<BR><BR>
+		<TABLE>
+			<TR class="title">
+				<TD colspan="3" align="center">
+					Table: <B>trackers_list_ipv4</B>
+				</TD>
+			</TR>
+		</TABLE>
+		<BR><BR>
+		<TABLE>
+			<TR class="title">
+				<TD colspan="15" align="center">
+					Table: <B>dnscrypt_resolvers</B>
+				</TD>
+			</TR>
+		</TABLE>
+		<BR><BR>
+		<TABLE>
+			<TR class="title">
+				<TD colspan="7" align="center">
+					Table: <B>smtp</B>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					LOCAL
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+		</TABLE>
+		<BR><BR>
+		<TABLE>
+			<TR class="title">
+				<TD colspan="15" align="center">
+					Table: <B>services</B>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					Seedbox-Manager
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					2
+				</TD>
+				<TD align="left">
+					CakeBox-Light
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					8887
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					3
+				</TD>
+				<TD align="left">
+					Plex Media Server
+				</TD>
+				<TD align="left">
+					/etc/default/plexmediaserver
+				</TD>
+				<TD align="left">
+					/etc/init.d/plexmediaserver
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					32400 32469
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					1900 5353 2410 32412 32413 32414
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					4
+				</TD>
+				<TD align="left">
+					Webmin
+				</TD>
+				<TD align="left">
+					/etc/webmin
+				</TD>
+				<TD align="left">
+					/etc/init.d/webmin
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					8890
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					5
+				</TD>
+				<TD align="left">
+					OpenVPN
+				</TD>
+				<TD align="left">
+					/etc/openvpn
+				</TD>
+				<TD align="left">
+					openvpn
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					8893
+				</TD>
+				<TD align="left">
+					8894
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					6
+				</TD>
+				<TD align="left">
+					LogWatch
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					7
+				</TD>
+				<TD align="left">
+					Fail2Ban
+				</TD>
+				<TD align="left">
+					/etc/fail2ban
+				</TD>
+				<TD align="left">
+					/etc/init.d/fail2ban
+				</TD>
+				<TD align="right">
+					3
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					8
+				</TD>
+				<TD align="left">
+					PeerGuardian
+				</TD>
+				<TD align="left">
+					/etc/pgl
+				</TD>
+				<TD align="left">
+					pglcmd
+				</TD>
+				<TD align="right">
+					4
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					9
+				</TD>
+				<TD align="left">
+					rTorrent Block List
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					10
+				</TD>
+				<TD align="left">
+					DNScrypt-proxy
+				</TD>
+				<TD align="left">
+					dnscrypt-proxy
+				</TD>
+				<TD align="left">
+					dnscrypt-proxy
+				</TD>
+				<TD align="right">
+					2
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					53 54 443 2053 5353
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					11
+				</TD>
+				<TD align="left">
+					CRON
+				</TD>
+				<TD align="left">
+					crontab
+				</TD>
+				<TD align="left">
+					cron
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					12
+				</TD>
+				<TD align="left">
+					NginX
+				</TD>
+				<TD align="left">
+					/etc/nginx
+				</TD>
+				<TD align="left">
+					nginx
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					8889
+				</TD>
+				<TD align="left">
+					8888
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					13
+				</TD>
+				<TD align="left">
+					SSH
+				</TD>
+				<TD align="left">
+					/etc/ssh
+				</TD>
+				<TD align="left">
+					ssh
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					8892
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					14
+				</TD>
+				<TD align="left">
+					VSFTPd
+				</TD>
+				<TD align="left">
+					/etc/vsftpd
+				</TD>
+				<TD align="left">
+					vsftpd
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					8891
+				</TD>
+				<TD align="left">
+					8800
+				</TD>
+				<TD align="left">
+					65000:65535
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					15
+				</TD>
+				<TD align="left">
+					PHP5-FPM
+				</TD>
+				<TD align="left">
+					/etc/php5
+				</TD>
+				<TD align="left">
+					php5-fpm
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					16
+				</TD>
+				<TD align="left">
+					Postfix
+				</TD>
+				<TD align="left">
+					/etc/postfix
+				</TD>
+				<TD align="left">
+					postfix
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					17
+				</TD>
+				<TD align="left">
+					Networking
+				</TD>
+				<TD align="left">
+					/etc/network
+				</TD>
+				<TD align="left">
+					/etc/init.d/networking
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					18
+				</TD>
+				<TD align="left">
+					Samba
+				</TD>
+				<TD align="left">
+					/etc/samba
+				</TD>
+				<TD align="left">
+					samba
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					19
+				</TD>
+				<TD align="left">
+					NFS
+				</TD>
+				<TD align="left">
+					/etc/exports
+				</TD>
+				<TD align="left">
+					nfs-kernel-server
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					20
+				</TD>
+				<TD align="left">
+					BIND
+				</TD>
+				<TD align="left">
+					/etc/bind/named.conf
+				</TD>
+				<TD align="left">
+					bind9
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					21
+				</TD>
+				<TD align="left">
+					Stunnel
+				</TD>
+				<TD align="left">
+					/etc/stunnel
+				</TD>
+				<TD align="left">
+					stunnel4
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					22
+				</TD>
+				<TD align="left">
+					rTorrent
+				</TD>
+				<TD align="left">
+					/home/%user%
+				</TD>
+				<TD align="left">
+					rtorrent
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+		</TABLE>
+		<BR><BR>
+		<TABLE>
+			<TR class="title">
+				<TD colspan="9" align="center">
+					Table: <B>repositories</B>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					SVN
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/rutorrent
+				</TD>
+				<TD align="left">
+					ruTorrent
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://rutorrent.googlecode.com/svn/trunk/rutorrent
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					2
+				</TD>
+				<TD align="left">
+					SVN
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/rutorrent/plugins
+				</TD>
+				<TD align="left">
+					ruTorrents Official Plugins
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://rutorrent.googlecode.com/svn/trunk/plugins
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					3
+				</TD>
+				<TD align="left">
+					SVN
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/rutorrent/plugins/chat
+				</TD>
+				<TD align="left">
+					ruTorrent Plugin Chat
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://rutorrent-chat.googlecode.com/svn/trunk/
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					4
+				</TD>
+				<TD align="left">
+					SVN
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/rutorrent/plugins/logoff
+				</TD>
+				<TD align="left">
+					ruTorrent Plugin Logoff
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://rutorrent-logoff.googlecode.com/svn/trunk/
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					5
+				</TD>
+				<TD align="left">
+					TARGZ
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/rutorrent/plugins/lbll-suite
+				</TD>
+				<TD align="left">
+					ruTorrent Plugin tAdd-Labels
+				</TD>
+				<TD align="left">
+					0.8.1
+				</TD>
+				<TD align="left">
+					lbll-suite_0.8.1.tar.gz
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					https://rutorrent-tadd-labels.googlecode.com/files/lbll-suite_0.8.1.tar.gz
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					6
+				</TD>
+				<TD align="left">
+					SVN
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/rutorrent/plugins/filemanager
+				</TD>
+				<TD align="left">
+					ruTorrent Plugin FileManager
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://svn.rutorrent.org/svn/filemanager/trunk/filemanager
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					7
+				</TD>
+				<TD align="left">
+					TARGZ
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/rutorrent/plugins/nfo
+				</TD>
+				<TD align="left">
+					ruTorrent Plugin NFO
+				</TD>
+				<TD align="left">
+					1337
+				</TD>
+				<TD align="left">
+					nfo_v1337.tar.gz
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://srious.biz/nfo.tar.gz
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					8
+				</TD>
+				<TD align="left">
+					GIT
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/rutorrent/plugins/ratiocolor
+				</TD>
+				<TD align="left">
+					ruTorrent Plugin RatioColor
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					https://github.com/Gyran/rutorrent-ratiocolor
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					9
+				</TD>
+				<TD align="left">
+					SVN
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/rutorrent/plugins/fileupload
+				</TD>
+				<TD align="left">
+					ruTorrent Plugin FileUpload
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://svn.rutorrent.org/svn/filemanager/trunk/fileupload
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					10
+				</TD>
+				<TD align="left">
+					SVN
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/rutorrent/plugins/fileshare
+				</TD>
+				<TD align="left">
+					ruTorrent Plugin FileShare
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://svn.rutorrent.org/svn/filemanager/trunk/fileshare
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					11
+				</TD>
+				<TD align="left">
+					TARGZ
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/rutorrent/plugins/stream
+				</TD>
+				<TD align="left">
+					ruTorrent Plugin Stream
+				</TD>
+				<TD align="left">
+					1.0
+				</TD>
+				<TD align="left">
+					stream_v1.0.tar.gz
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					https://rutorrent-stream-plugin.googlecode.com/files/stream.tar.gz
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					12
+				</TD>
+				<TD align="left">
+					SVN
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/rutorrent/plugins/mediastream
+				</TD>
+				<TD align="left">
+					ruTorrent Plugin MediaStream
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://svn.rutorrent.org/svn/filemanager/trunk/mediastream
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					13
+				</TD>
+				<TD align="left">
+					GIT
+				</TD>
+				<TD align="left">
+					/etc/MySB/sources/plowshare
+				</TD>
+				<TD align="left">
+					Plowshare4
+				</TD>
+				<TD align="left">
+					4
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					https://code.google.com/p/plowshare/
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					14
+				</TD>
+				<TD align="left">
+					CURL
+				</TD>
+				<TD align="left">
+					/usr/bin/composer
+				</TD>
+				<TD align="left">
+					Composer
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					composer.phar
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://getcomposer.org/installer
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					15
+				</TD>
+				<TD align="left">
+					TARGZ
+				</TD>
+				<TD align="left">
+					/etc/MySB/sources/node_v0.10.35
+				</TD>
+				<TD align="left">
+					Node
+				</TD>
+				<TD align="left">
+					0.10.35
+				</TD>
+				<TD align="left">
+					node_v0.10.35.tar.gz
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://nodejs.org/dist/v0.10.35/node-v0.10.35.tar.gz
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					16
+				</TD>
+				<TD align="left">
+					GIT
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/seedbox-manager
+				</TD>
+				<TD align="left">
+					Seedbox-Manager
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					https://github.com/Magicalex/seedbox-manager.git
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					17
+				</TD>
+				<TD align="left">
+					GIT
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/rutorrent/plugins/linkseedboxmanager
+				</TD>
+				<TD align="left">
+					ruTorrent Plugin Link Manager
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					https://github.com/Hydrog3n/linkseedboxmanager.git
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					18
+				</TD>
+				<TD align="left">
+					GIT
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/Cakebox-light
+				</TD>
+				<TD align="left">
+					Cakebox-Light
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					https://github.com/Cakebox/Cakebox-light.git
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					19
+				</TD>
+				<TD align="left">
+					GIT
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/rutorrent/plugins/linkcakebox
+				</TD>
+				<TD align="left">
+					ruTorrent Plugin Link Cakebox
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					https://github.com/Cakebox/linkcakebox.git
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					20
+				</TD>
+				<TD align="left">
+					GIT
+				</TD>
+				<TD align="left">
+					/etc/MySB/sources/libsodium
+				</TD>
+				<TD align="left">
+					Libsodium
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					https://github.com/jedisct1/libsodium
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					21
+				</TD>
+				<TD align="left">
+					TARGZ
+				</TD>
+				<TD align="left">
+					/etc/MySB/sources/dnscrypt-proxy_v1.4.3
+				</TD>
+				<TD align="left">
+					DNScrypt-proxy
+				</TD>
+				<TD align="left">
+					1.4.3
+				</TD>
+				<TD align="left">
+					dnscrypt-proxy_v1.4.3.tar.gz
+				</TD>
+				<TD align="left">
+					dnscrypt-proxy_v1.4.2.tar.gz
+				</TD>
+				<TD align="left">
+					http://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-proxy-1.4.3.tar.gz
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					22
+				</TD>
+				<TD align="left">
+					WBM
+				</TD>
+				<TD align="left">
+					/etc/MySB/files
+				</TD>
+				<TD align="left">
+					OpenVPNadmin WebMin
+				</TD>
+				<TD align="left">
+					2.6
+				</TD>
+				<TD align="left">
+					openvpn-2.6.wbm
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://www.openit.it/downloads/OpenVPNadmin/openvpn-2.6.wbm.gz
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					23
+				</TD>
+				<TD align="left">
+					WBM
+				</TD>
+				<TD align="left">
+					/etc/MySB/files
+				</TD>
+				<TD align="left">
+					Nginx Webmin Module
+				</TD>
+				<TD align="left">
+					0.0.8
+				</TD>
+				<TD align="left">
+					nginx-0.08.wbm
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://www.justindhoffman.com/sites/justindhoffman.com/files/nginx-0.08.wbm__0.gz
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					24
+				</TD>
+				<TD align="left">
+					WBM
+				</TD>
+				<TD align="left">
+					/etc/MySB/files
+				</TD>
+				<TD align="left">
+					MiniDLNA Webmin Module
+				</TD>
+				<TD align="left">
+					alpha1.12 svn26
+				</TD>
+				<TD align="left">
+					minidlnawebmin_alpha1_12.wbm
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://downloads.sourceforge.net/project/minidlnawebmin/Webmin%20alpha1.12%20svn26/minidlnawebmin_alpha1_12.wbm?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fminidlnawebmin%2Ffiles%2FWebmin%2520alpha1.12%2520svn26%2F&amp;ts=1420088634&amp;use_mirror=freefr
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					25
+				</TD>
+				<TD align="left">
+					TARGZ
+				</TD>
+				<TD align="left">
+					/etc/MySB/sources/libtorrent_v0.13.4
+				</TD>
+				<TD align="left">
+					LibTorrent
+				</TD>
+				<TD align="left">
+					0.13.4
+				</TD>
+				<TD align="left">
+					libtorrent_v0.13.4.tar.gz
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://libtorrent.rakshasa.no/downloads/libtorrent-0.13.4.tar.gz
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					26
+				</TD>
+				<TD align="left">
+					TARGZ
+				</TD>
+				<TD align="left">
+					/etc/MySB/sources/rorrent_v0.9.4
+				</TD>
+				<TD align="left">
+					rTorrent
+				</TD>
+				<TD align="left">
+					0.9.4
+				</TD>
+				<TD align="left">
+					rtorrent_v0.9.4.tar.gz
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://libtorrent.rakshasa.no/downloads/rtorrent-0.9.4.tar.gz
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					27
+				</TD>
+				<TD align="left">
+					SVN
+				</TD>
+				<TD align="left">
+					/etc/MySB/sources/
+				</TD>
+				<TD align="left">
+					XMLRPC
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://svn.code.sf.net/p/xmlrpc-c/code/stable xmlrpc-c
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					28
+				</TD>
+				<TD align="left">
+					GIT
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/loadavg
+				</TD>
+				<TD align="left">
+					LoadAvg
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					https://github.com/loadavg/loadavg.git
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					29
+				</TD>
+				<TD align="left">
+					SVN
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/rutorrent/plugins/pausewebui
+				</TD>
+				<TD align="left">
+					ruTorrent Plugin Pause WebUI
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					http://rutorrent-pausewebui.googlecode.com/svn/trunk/
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					30
+				</TD>
+				<TD align="left">
+					GIT
+				</TD>
+				<TD align="left">
+					/etc/MySB/web/rutorrent/plugins/mobile
+				</TD>
+				<TD align="left">
+					ruTorrent Plugin Mobile
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left">
+					https://github.com/xombiemp/rutorrentMobile.git
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+			</TR>
+		</TABLE>
+		<BR><BR>
+		<TABLE>
+			<TR class="title">
+				<TD colspan="8" align="center">
+					Table: <B>trackers_list</B>
+				</TD>
+			</TR>
+		</TABLE>
+		<BR><BR>
+		<TABLE>
+			<TR class="title">
+				<TD colspan="7" align="center">
+					Table: <B>blocklists_peerguardian</B>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					Atma
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/atma/atma
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=tzmtqbbsgbtfxainogvm
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					2
+				</TD>
+				<TD align="left">
+					Bluetack - Ads and Trackers
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/ads-trackers-and-bad-pr0n
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=fruzekpkpzlmzozmuuhx
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					3
+				</TD>
+				<TD align="left">
+					Bluetack - Bad Peers
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/bad-peers
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=cwworuawihqvocglcoss
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					4
+				</TD>
+				<TD align="left">
+					Bluetack - Bogon
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/bogon
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=gihxqmhyunbxhbmgqrla
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					5
+				</TD>
+				<TD align="left">
+					Bluetack - Dshield
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/dshield
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=xpbqleszmajjesnzddhv
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					6
+				</TD>
+				<TD align="left">
+					Bluetack - Edu
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/edu
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=imlmncgrkbnacgcwfjvh
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					7
+				</TD>
+				<TD align="left">
+					Bluetack - For Non Lan Computers
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/for-non-lan-computers
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=jhaoawihmfxgnvmaqffp
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					8
+				</TD>
+				<TD align="left">
+					Bluetack - Forum Spam
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/forum-spam
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=ficutxiwawokxlcyoeye
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					9
+				</TD>
+				<TD align="left">
+					Bluetack - Hijacked
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/hijacked
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=usrcshglbiilevmyfhse
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					10
+				</TD>
+				<TD align="left">
+					Bluetack - IANA-Multicast
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/iana-multicast
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=pwqnlynprfgtjbgqoizj
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					11
+				</TD>
+				<TD align="left">
+					Bluetack - IANA-Private
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/iana-private
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=cslpybexmxyuacbyuvib
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					12
+				</TD>
+				<TD align="left">
+					Bluetack - IANA-Reserved
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/iana-reserved
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=bcoepfyewziejvcqyhqo
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					13
+				</TD>
+				<TD align="left">
+					Bluetack - Level 1
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/level-1
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=ydxerpxkpcfqjaybcssw
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					14
+				</TD>
+				<TD align="left">
+					Bluetack - Level 2
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/level-2
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=gyisgnzbhppbvsphucsw
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					15
+				</TD>
+				<TD align="left">
+					Bluetack - Level 3
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/level-3
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=uwnukjqktoggdknzrhgh
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					16
+				</TD>
+				<TD align="left">
+					Bluetack - Microsoft
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/microsoft
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=xshktygkujudfnjfioro
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					17
+				</TD>
+				<TD align="left">
+					Bluetack - Proxy
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/proxy
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=xoebmbyexwuiogmbyprb
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					18
+				</TD>
+				<TD align="left">
+					Bluetack - Range Test
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/range-test
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=plkehquoahljmyxjixpu
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					19
+				</TD>
+				<TD align="left">
+					Bluetack - Spider
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/spider
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=mcvxsnihddgutbjfbghy
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					20
+				</TD>
+				<TD align="left">
+					Bluetack - Spyware
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/spyware
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=llvtlsjyoyiczbkjsxpf
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					21
+				</TD>
+				<TD align="left">
+					Bluetack - Web Exploit
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/web-exploit
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=ghlzqtqxnzctvvajwwag
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					22
+				</TD>
+				<TD align="left">
+					Bluetack - Web Exploit Forum Spam
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/bluetack/webexploit-forumspam
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=ficutxiwawokxlcyoeye
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					23
+				</TD>
+				<TD align="left">
+					CIDR - Bogon
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/cidr-report/bogon
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=lujdnbasfaaixitgmxpp
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					24
+				</TD>
+				<TD align="left">
+					DCHubAd - Faker
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/dchubad/faker
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=dcha_faker
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					25
+				</TD>
+				<TD align="left">
+					DCHubAd - Hacker
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/dchubad/hacker
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=dcha_hacker
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					26
+				</TD>
+				<TD align="left">
+					DCHubAd - Pedophiles
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/dchubad/pedophiles
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=dcha_pedophiles
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					27
+				</TD>
+				<TD align="left">
+					DCHubAd - Spammer
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/dchubad/spammer
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=dcha_spammer
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					28
+				</TD>
+				<TD align="left">
+					Nexus23 - IPfilterX
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/nexus23/ipfilterx
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=nxs23_ipfilterx
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					29
+				</TD>
+				<TD align="left">
+					Peerblock - Rapidshare
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/peerblock/rapidshare
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=zfucwtjkfwkalytktyiw
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					30
+				</TD>
+				<TD align="left">
+					Spamhaus - DROP
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/spamhaus/drop
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=zbdlwrqkabxbcppvrnos
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					31
+				</TD>
+				<TD align="left">
+					TBG - Bogon
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/tbg/bogon
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=ewqglwibdgjttwttrinl
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					32
+				</TD>
+				<TD align="left">
+					TBG - Business ISPs
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/tbg/business-isps
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=jcjfaxgyyshvdbceroxf
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					33
+				</TD>
+				<TD align="left">
+					TBG - Educational Institutions
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/tbg/educational-institutions
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=lljggjrpmefcwqknpalp
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					34
+				</TD>
+				<TD align="left">
+					TBG - General Corporate Ranges
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/tbg/general-corporate-ranges
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=ecqbsykllnadihkdirsh
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					35
+				</TD>
+				<TD align="left">
+					TBG - Hijacked
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/tbg/hijacked
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=tbnuqfclfkemqivekikv
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					36
+				</TD>
+				<TD align="left">
+					TBG - Primary Threats
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/tbg/primary-threats
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=ijfqtofzixtwayqovmxn
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					37
+				</TD>
+				<TD align="left">
+					TBG - Search Engines
+				</TD>
+				<TD align="left">
+					list.iblocklist.com/lists/tbg/search-engines
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=pfefqteoxlfzopecdtyw
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+		</TABLE>
+		<BR><BR>
+		<TABLE>
+			<TR class="title">
+				<TD colspan="7" align="center">
+					Table: <B>blocklists_rtorrent</B>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					BLUETACK_LEVEL1
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=ydxerpxkpcfqjaybcssw&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=ydxerpxkpcfqjaybcssw
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					2
+				</TD>
+				<TD align="left">
+					BLUETACK_SPYWARE
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=llvtlsjyoyiczbkjsxpf&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=llvtlsjyoyiczbkjsxpf
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					3
+				</TD>
+				<TD align="left">
+					BLUETACK_ADS
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=dgxtneitpuvgqqcpfulq&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=dgxtneitpuvgqqcpfulq
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					4
+				</TD>
+				<TD align="left">
+					BLUETACK_EDU
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=imlmncgrkbnacgcwfjvh&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=imlmncgrkbnacgcwfjvh
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					5
+				</TD>
+				<TD align="left">
+					BLUETACK_BADPEER
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=cwworuawihqvocglcoss&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=cwworuawihqvocglcoss
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					6
+				</TD>
+				<TD align="left">
+					BLUETACK_BOGON
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=gihxqmhyunbxhbmgqrla&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=gihxqmhyunbxhbmgqrla
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					7
+				</TD>
+				<TD align="left">
+					BLUETACK_DSHIELD
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=xpbqleszmajjesnzddhv&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=xpbqleszmajjesnzddhv
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					8
+				</TD>
+				<TD align="left">
+					BLUETACK_HIJACKED
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=usrcshglbiilevmyfhse&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=usrcshglbiilevmyfhse
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					9
+				</TD>
+				<TD align="left">
+					BLUETACK_IANAMULTICAST
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=pwqnlynprfgtjbgqoizj&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=pwqnlynprfgtjbgqoizj
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					10
+				</TD>
+				<TD align="left">
+					BLUETACK_IANAPRIVATE
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=cslpybexmxyuacbyuvib&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=cslpybexmxyuacbyuvib
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					11
+				</TD>
+				<TD align="left">
+					BLUETACK_IANARESERVED
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=bcoepfyewziejvcqyhqo&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=bcoepfyewziejvcqyhqo
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					12
+				</TD>
+				<TD align="left">
+					BLUETACK_LEVEL2
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=gyisgnzbhppbvsphucsw&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=gyisgnzbhppbvsphucsw
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					13
+				</TD>
+				<TD align="left">
+					BLUETACK_LEVEL3
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=uwnukjqktoggdknzrhgh&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=uwnukjqktoggdknzrhgh
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					14
+				</TD>
+				<TD align="left">
+					BLUETACK_MICROSOFT
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=xshktygkujudfnjfioro&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=xshktygkujudfnjfioro
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					15
+				</TD>
+				<TD align="left">
+					BLUETACK_PROXY
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=xoebmbyexwuiogmbyprb&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=xoebmbyexwuiogmbyprb
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					16
+				</TD>
+				<TD align="left">
+					BLUETACK_SPIDER
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=mcvxsnihddgutbjfbghy&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=mcvxsnihddgutbjfbghy
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					17
+				</TD>
+				<TD align="left">
+					BLUETACK_RANGETEST
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=plkehquoahljmyxjixpu&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=plkehquoahljmyxjixpu
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					18
+				</TD>
+				<TD align="left">
+					BLUETACK_FORUMSPAM
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=ficutxiwawokxlcyoeye&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=ficutxiwawokxlcyoeye
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					19
+				</TD>
+				<TD align="left">
+					BLUETACK_WEBEXPLOIT
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=ghlzqtqxnzctvvajwwag&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=ghlzqtqxnzctvvajwwag
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					20
+				</TD>
+				<TD align="left">
+					BLUETACK_FORNONLANCOMP
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=jhaoawihmfxgnvmaqffp&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=jhaoawihmfxgnvmaqffp
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					21
+				</TD>
+				<TD align="left">
+					BLUETACK_EXCLUSIONS
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=mtxmiireqmjzazcsoiem&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=mtxmiireqmjzazcsoiem
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					22
+				</TD>
+				<TD align="left">
+					TBG_BOGON
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=ewqglwibdgjttwttrinl&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=ewqglwibdgjttwttrinl
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					23
+				</TD>
+				<TD align="left">
+					TBG_BUSINESSISPS
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=jcjfaxgyyshvdbceroxf&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=jcjfaxgyyshvdbceroxf
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					24
+				</TD>
+				<TD align="left">
+					TBG_GENERALCORPORATE
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=ecqbsykllnadihkdirsh&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=ecqbsykllnadihkdirsh
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					25
+				</TD>
+				<TD align="left">
+					TBG_HIJACKED
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=tbnuqfclfkemqivekikv&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=ijfqtofzixtwayqovmxn
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					26
+				</TD>
+				<TD align="left">
+					TBG_PRIMTHREATS
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=ijfqtofzixtwayqovmxn&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=ijfqtofzixtwayqovmxn
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					27
+				</TD>
+				<TD align="left">
+					TBG_EDUINSTITUTUION
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=lljggjrpmefcwqknpalp&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=lljggjrpmefcwqknpalp
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					28
+				</TD>
+				<TD align="left">
+					TBG_SEARCHENGINE
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=pfefqteoxlfzopecdtyw&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=pfefqteoxlfzopecdtyw
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					29
+				</TD>
+				<TD align="left">
+					SPAMHAUS_DROP
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=zbdlwrqkabxbcppvrnos&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=zbdlwrqkabxbcppvrnos
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					30
+				</TD>
+				<TD align="left">
+					ABUSE_ZEUS
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=ynkdjqsjyfmilsgbogqf&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=ynkdjqsjyfmilsgbogqf
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					31
+				</TD>
+				<TD align="left">
+					ABUSE_SPYEYE
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=zvjxsfuvdhoxktpeiokq&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=zvjxsfuvdhoxktpeiokq
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					32
+				</TD>
+				<TD align="left">
+					ABUSE_PALEVO
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=erqajhwrxiuvjxqrrwfj&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=erqajhwrxiuvjxqrrwfj
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					33
+				</TD>
+				<TD align="left">
+					IBLOCK_PEDOPHILE
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=dufcxgnbjsdwmwctgfuj&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=dufcxgnbjsdwmwctgfuj
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					34
+				</TD>
+				<TD align="left">
+					CIARMY_MALICIOUS
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=npkuuhuxcsllnhoamkvm&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=npkuuhuxcsllnhoamkvm
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					35
+				</TD>
+				<TD align="left">
+					MALCODE_MALCODE
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=pbqcylkejciyhmwttify&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=pbqcylkejciyhmwttify
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					36
+				</TD>
+				<TD align="left">
+					YOYO_ADSERVERS
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=zhogegszwduurnvsyhdf&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=zhogegszwduurnvsyhdf
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					37
+				</TD>
+				<TD align="left">
+					PBLOCK_RAPIDSHARE
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=zfucwtjkfwkalytktyiw&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=zfucwtjkfwkalytktyiw
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					38
+				</TD>
+				<TD align="left">
+					CIDR_BOGON
+				</TD>
+				<TD align="left">
+					http://list.iblocklist.com/?list=lujdnbasfaaixitgmxpp&amp;fileformat=cidr&amp;archiveformat=gz
+				</TD>
+				<TD align="left">
+					https://www.iblocklist.com/list.php?list=lujdnbasfaaixitgmxpp
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+		</TABLE>
+		<BR><BR>
+		<TABLE>
+			<TR class="title">
+				<TD colspan="11" align="center">
+					Table: <B>users</B>
+				</TD>
+			</TR>
+		</TABLE>
+		<BR><BR>
+		<TABLE>
+			<TR class="title">
+				<TD colspan="5" align="center">
+					Table: <B>commands</B>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					FirewallAndSecurity.bsh
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					2
+				</TD>
+				<TD align="left">
+					GetTrackersCert.bsh
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="right">
+					2
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					3
+				</TD>
+				<TD align="left">
+					PaymentReminder.bsh
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="right">
+					2
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					4
+				</TD>
+				<TD align="left">
+					Postfix
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="right">
+					2
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					5
+				</TD>
+				<TD align="left">
+					BlocklistsRTorrent.bsh
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="right">
+					2
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					6
+				</TD>
+				<TD align="left">
+					MySB_ChangeUserPassword
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="right">
+					2
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					7
+				</TD>
+				<TD align="left">
+					MySB_CreateUser
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="right">
+					2
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					8
+				</TD>
+				<TD align="left">
+					MySB_DeleteUser
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="right">
+					2
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+		</TABLE>
+		<BR><BR>
+		<TABLE>
+			<TR class="title">
+				<TD colspan="13" align="center">
+					Table: <B>system</B>
+				</TD>
+			</TR>
+			<TR>
+				<TD align="right">
+					1
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					&nbsp;
+				</TD>
+				<TD align="left">
+					0
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+				<TD align="left" class="null">
+					<i>NULL</i>
+				</TD>
+			</TR>
+		</TABLE>
+		<BR><BR>
 
 
--- Table: ports
-CREATE TABLE ports ( 
-    id_ports INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                     NOT NULL ON CONFLICT ABORT
-                     UNIQUE ON CONFLICT ABORT,
-    value    INTEGER NOT NULL ON CONFLICT ABORT
-                     UNIQUE ON CONFLICT IGNORE 
-);
 
 
--- Table: renting
-CREATE TABLE renting ( 
-    id_renting      INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
-                                     NOT NULL ON CONFLICT ABORT,
-    model           VARCHAR( 64 ),
-    tva             NUMERIC,
-    global_cost     NUMERIC,
-    nb_users        NUMERIC( 2 ),
-    price_per_users NUMERIC( 2 ) 
-);
-
-INSERT INTO [renting] ([id_renting], [model], [tva], [global_cost], [nb_users], [price_per_users]) VALUES (1, null, null, null, null, null);
-
--- Table: vars
-CREATE TABLE vars ( 
-    id_vars            INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
-                                        NOT NULL ON CONFLICT ABORT,
-    fail2ban_whitelist VARCHAR( 12 ),
-    vpn_ip             VARCHAR( 37 ),
-    white_tcp_port_out VARCHAR( 16 ),
-    white_udp_port_out VARCHAR( 16 ) 
-);
-
-INSERT INTO [vars] ([id_vars], [fail2ban_whitelist], [vpn_ip], [white_tcp_port_out], [white_udp_port_out]) VALUES (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24', '80 443', null);
-
--- Table: trackers_list_ipv4
-CREATE TABLE trackers_list_ipv4 ( 
-    id_trackers_list_ipv4 INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                          NOT NULL ON CONFLICT ABORT
-                                          UNIQUE ON CONFLICT ABORT,
-    id_trackers_list      INTEGER         NOT NULL ON CONFLICT ABORT,
-    ipv4                  VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT 
-);
-
-
--- Table: system
-CREATE TABLE system ( 
-    id_system         INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
-                                       NOT NULL ON CONFLICT ABORT,
-    mysb_version      VARCHAR( 6 )     NOT NULL ON CONFLICT ABORT
-                                       UNIQUE ON CONFLICT IGNORE,
-    mysb_user         VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
-    mysb_password     VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
-    hostname          VARCHAR( 128 )   UNIQUE ON CONFLICT IGNORE,
-    ipv4              VARCHAR( 15 )    UNIQUE ON CONFLICT IGNORE,
-    primary_inet      VARCHAR( 16 )    UNIQUE ON CONFLICT IGNORE,
-    timezone          VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
-    cert_password     VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
-    apt_update        BOOLEAN( 1 )     DEFAULT ( 1 ),
-    apt_date          DATETIME,
-    dnscrypt_resolver VARCHAR( 32 ) 
-);
-
-INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password], [apt_update], [apt_date], [dnscrypt_resolver]) VALUES (1, '', '', '', '', '', '', '', '', 0, null, null);
-
--- Table: dnscrypt_resolvers
-CREATE TABLE dnscrypt_resolvers ( 
-    id_dnscrypt_resolvers          INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                                   NOT NULL ON CONFLICT ABORT
-                                                   UNIQUE ON CONFLICT ABORT,
-    name                           VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
-                                                   UNIQUE ON CONFLICT ABORT,
-    full_name                      VARCHAR( 64 )   NOT NULL ON CONFLICT ABORT
-                                                   UNIQUE ON CONFLICT ABORT,
-    description                    VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT,
-    location                       VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
-    coordinates                    VARCHAR( 32 ),
-    url                            VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT,
-    version                        VARCHAR( 2 )    NOT NULL ON CONFLICT ABORT,
-    dnssec                         BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                                   DEFAULT ( 0 ),
-    no_logs                        BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                                   DEFAULT ( 0 ),
-    namecoin                       BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                                   DEFAULT ( 0 ),
-    resolver_address               VARCHAR( 64 )   NOT NULL ON CONFLICT ABORT
-                                                   UNIQUE ON CONFLICT ABORT,
-    provider_name                  VARCHAR( 64 )   NOT NULL ON CONFLICT ABORT,
-    provider_public_key            VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT,
-    provider_public_key_txt_record VARCHAR( 64 ) 
-);
-
-
--- Table: smtp
-CREATE TABLE smtp ( 
-    id_smtp       INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
-                                   NOT NULL ON CONFLICT ABORT,
-    smtp_provider VARCHAR( 5 )     NOT NULL ON CONFLICT ABORT
-                                   UNIQUE ON CONFLICT IGNORE
-                                   DEFAULT ( 'LOCAL' ),
-    smtp_username VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
-    smtp_passwd   VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
-    smtp_host     VARCHAR( 128 )   UNIQUE ON CONFLICT IGNORE,
-    smtp_port     VARCHAR( 5 )     UNIQUE ON CONFLICT IGNORE,
-    smtp_email    VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE 
-);
-
-INSERT INTO [smtp] ([id_smtp], [smtp_provider], [smtp_username], [smtp_passwd], [smtp_host], [smtp_port], [smtp_email]) VALUES (1, 'LOCAL', null, null, null, null, null);
-
--- Table: services
-CREATE TABLE services ( 
-    id_services    INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                  NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT ABORT,
-    serv_name      VARCHAR( 32 )  NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT IGNORE,
-    ident          VARCHAR( 64 ),
-    bin            VARCHAR( 32 ),
-    priority       INTEGER( 1 )   DEFAULT ( 1 ),
-    port_tcp1      VARCHAR( 11 ),
-    port_tcp2      VARCHAR( 11 ),
-    port_tcp3      VARCHAR( 11 ),
-    ports_tcp_list VARCHAR( 32 ),
-    port_udp1      VARCHAR( 11 ),
-    port_udp2      VARCHAR( 11 ),
-    port_udp3      VARCHAR( 11 ),
-    ports_udp_list VARCHAR( 32 ),
-    to_install     BOOLEAN( 1 )   DEFAULT ( 0 ),
-    is_installed   BOOLEAN        NOT NULL ON CONFLICT ABORT
-                                  DEFAULT ( 0 ) 
-);
-
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (1, 'Seedbox-Manager', '', '', 1, '', '', '', '', '', '', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (2, 'CakeBox-Light', '', '', 1, 8887, '', '', '', '', '', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (3, 'Plex Media Server', '/etc/default/plexmediaserver', '/etc/init.d/plexmediaserver', 1, '', '', '', '32400 32469', '', '', ' ', '1900 5353 2410 32412 32413 32414', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (4, 'Webmin', '/etc/webmin', '/etc/init.d/webmin', 1, 8890, '', '', '', '', '', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (5, 'OpenVPN', '/etc/openvpn', 'openvpn', 1, 8893, 8894, '', '', '', '', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (6, 'LogWatch', '', '', 1, '', '', '', '', '', '', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (7, 'Fail2Ban', '/etc/fail2ban', '/etc/init.d/fail2ban', 3, '', '', '', '', '', '', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (8, 'PeerGuardian', '/etc/pgl', 'pglcmd', 4, '', '', '', '', '', '', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (9, 'rTorrent Block List', '', '', 1, '', '', '', '', '', ' ', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (10, 'DNScrypt-proxy', 'dnscrypt-proxy', 'dnscrypt-proxy', 2, '', '', '', '', '53 54 443 2053 5353', ' ', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (11, 'CRON', 'crontab', 'cron', 1, '', '', '', '', '', ' ', ' ', ' ', 0, 1);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (12, 'NginX', '/etc/nginx', 'nginx', 1, 8889, 8888, '', '', '', ' ', ' ', ' ', 0, 1);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (13, 'SSH', '/etc/ssh', 'ssh', 1, 8892, '', '', '', '', ' ', ' ', ' ', 0, 1);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (14, 'VSFTPd', '/etc/vsftpd', 'vsftpd', 1, 8891, 8800, '65000:65535', '', '', ' ', ' ', ' ', 0, 1);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (15, 'PHP5-FPM', '/etc/php5', 'php5-fpm', 1, '', '', '', '', '', ' ', ' ', ' ', 0, 1);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (16, 'Postfix', '/etc/postfix', 'postfix', 1, '', '', '', '', '', ' ', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (17, 'Networking', '/etc/network', '/etc/init.d/networking', 1, '', '', '', '', '', ' ', ' ', ' ', 0, 1);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (18, 'Samba', '/etc/samba', 'samba', 1, '', '', '', '', '', ' ', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (19, 'NFS', '/etc/exports', 'nfs-kernel-server', 1, '', '', '', '', '', ' ', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (20, 'BIND', '/etc/bind/named.conf', 'bind9', 1, '', '', '', '', '', ' ', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (21, 'Stunnel', '/etc/stunnel', 'stunnel4', 1, '', '', '', '', '', ' ', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (22, 'rTorrent', '/home/%user%', 'rtorrent', 1, null, null, null, null, null, null, null, null, 0, 1);
-
--- Table: repositories
-CREATE TABLE repositories ( 
-    id_repositories INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                    NOT NULL ON CONFLICT ABORT
-                                    UNIQUE ON CONFLICT ABORT,
-    type            VARCHAR( 5 )    NOT NULL ON CONFLICT ABORT,
-    dir             VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
-    name            VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
-    version         VARCHAR( 8 ),
-    file            VARCHAR( 32 ),
-    old_file        VARCHAR( 32 ),
-    url             VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT,
-    active          BOOLEAN( 1 ) 
-);
-
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (1, 'SVN', '/etc/MySB/web/rutorrent', 'ruTorrent', null, null, null, 'http://rutorrent.googlecode.com/svn/trunk/rutorrent', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (2, 'SVN', '/etc/MySB/web/rutorrent/plugins', 'ruTorrents Official Plugins', null, null, null, 'http://rutorrent.googlecode.com/svn/trunk/plugins', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (3, 'SVN', '/etc/MySB/web/rutorrent/plugins/chat', 'ruTorrent Plugin Chat', null, null, null, 'http://rutorrent-chat.googlecode.com/svn/trunk/', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (4, 'SVN', '/etc/MySB/web/rutorrent/plugins/logoff', 'ruTorrent Plugin Logoff', null, null, null, 'http://rutorrent-logoff.googlecode.com/svn/trunk/', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (5, 'TARGZ', '/etc/MySB/web/rutorrent/plugins/lbll-suite', 'ruTorrent Plugin tAdd-Labels', '0.8.1', 'lbll-suite_0.8.1.tar.gz', null, 'https://rutorrent-tadd-labels.googlecode.com/files/lbll-suite_0.8.1.tar.gz', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (6, 'SVN', '/etc/MySB/web/rutorrent/plugins/filemanager', 'ruTorrent Plugin FileManager', null, null, null, 'http://svn.rutorrent.org/svn/filemanager/trunk/filemanager', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (7, 'TARGZ', '/etc/MySB/web/rutorrent/plugins/nfo', 'ruTorrent Plugin NFO', 1337, 'nfo_v1337.tar.gz', null, 'http://srious.biz/nfo.tar.gz', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (8, 'GIT', '/etc/MySB/web/rutorrent/plugins/ratiocolor', 'ruTorrent Plugin RatioColor', null, null, null, 'https://github.com/Gyran/rutorrent-ratiocolor', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (9, 'SVN', '/etc/MySB/web/rutorrent/plugins/fileupload', 'ruTorrent Plugin FileUpload', null, null, null, 'http://svn.rutorrent.org/svn/filemanager/trunk/fileupload', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (10, 'SVN', '/etc/MySB/web/rutorrent/plugins/fileshare', 'ruTorrent Plugin FileShare', null, null, null, 'http://svn.rutorrent.org/svn/filemanager/trunk/fileshare', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (11, 'TARGZ', '/etc/MySB/web/rutorrent/plugins/stream', 'ruTorrent Plugin Stream', 1.0, 'stream_v1.0.tar.gz', null, 'https://rutorrent-stream-plugin.googlecode.com/files/stream.tar.gz', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (12, 'SVN', '/etc/MySB/web/rutorrent/plugins/mediastream', 'ruTorrent Plugin MediaStream', null, null, null, 'http://svn.rutorrent.org/svn/filemanager/trunk/mediastream', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (13, 'GIT', '/etc/MySB/sources/plowshare', 'Plowshare4', 4, null, null, 'https://code.google.com/p/plowshare/', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (14, 'CURL', '/usr/bin/composer', 'Composer', null, 'composer.phar', null, 'http://getcomposer.org/installer', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (15, 'TARGZ', '/etc/MySB/sources/node_v0.10.35', 'Node', '0.10.35', 'node_v0.10.35.tar.gz', null, 'http://nodejs.org/dist/v0.10.35/node-v0.10.35.tar.gz', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (16, 'GIT', '/etc/MySB/web/seedbox-manager', 'Seedbox-Manager', null, null, null, 'https://github.com/Magicalex/seedbox-manager.git', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (17, 'GIT', '/etc/MySB/web/rutorrent/plugins/linkseedboxmanager', 'ruTorrent Plugin Link Manager', null, null, null, 'https://github.com/Hydrog3n/linkseedboxmanager.git', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (18, 'GIT', '/etc/MySB/web/Cakebox-light', 'Cakebox-Light', null, null, null, 'https://github.com/Cakebox/Cakebox-light.git', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (19, 'GIT', '/etc/MySB/web/rutorrent/plugins/linkcakebox', 'ruTorrent Plugin Link Cakebox', null, null, null, 'https://github.com/Cakebox/linkcakebox.git', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (20, 'GIT', '/etc/MySB/sources/libsodium', 'Libsodium', null, null, null, 'https://github.com/jedisct1/libsodium', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (21, 'TARGZ', '/etc/MySB/sources/dnscrypt-proxy_v1.4.3', 'DNScrypt-proxy', '1.4.3', 'dnscrypt-proxy_v1.4.3.tar.gz', 'dnscrypt-proxy_v1.4.2.tar.gz', 'http://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-proxy-1.4.3.tar.gz', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (22, 'WBM', '/etc/MySB/files', 'OpenVPNadmin WebMin', 2.6, 'openvpn-2.6.wbm', null, 'http://www.openit.it/downloads/OpenVPNadmin/openvpn-2.6.wbm.gz', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (23, 'WBM', '/etc/MySB/files', 'Nginx Webmin Module', '0.0.8', 'nginx-0.08.wbm', null, 'http://www.justindhoffman.com/sites/justindhoffman.com/files/nginx-0.08.wbm__0.gz', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (24, 'WBM', '/etc/MySB/files', 'MiniDLNA Webmin Module', 'alpha1.12 svn26', 'minidlnawebmin_alpha1_12.wbm', null, 'http://downloads.sourceforge.net/project/minidlnawebmin/Webmin%20alpha1.12%20svn26/minidlnawebmin_alpha1_12.wbm?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fminidlnawebmin%2Ffiles%2FWebmin%2520alpha1.12%2520svn26%2F&ts=1420088634&use_mirror=freefr', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (25, 'TARGZ', '/etc/MySB/sources/libtorrent_v0.13.4', 'LibTorrent', '0.13.4', 'libtorrent_v0.13.4.tar.gz', null, 'http://libtorrent.rakshasa.no/downloads/libtorrent-0.13.4.tar.gz', 0);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (26, 'TARGZ', '/etc/MySB/sources/rorrent_v0.9.4', 'rTorrent', '0.9.4', 'rtorrent_v0.9.4.tar.gz', null, 'http://libtorrent.rakshasa.no/downloads/rtorrent-0.9.4.tar.gz', 0);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (27, 'SVN', '/etc/MySB/sources/', 'XMLRPC', null, null, null, 'http://svn.code.sf.net/p/xmlrpc-c/code/stable xmlrpc-c', 0);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (28, 'GIT', '/etc/MySB/web/loadavg', 'LoadAvg', null, null, null, 'https://github.com/loadavg/loadavg.git', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (29, 'SVN', '/etc/MySB/web/rutorrent/plugins/pausewebui', 'ruTorrent Plugin Pause WebUI', null, null, null, 'http://rutorrent-pausewebui.googlecode.com/svn/trunk/', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (30, 'GIT', '/etc/MySB/web/rutorrent/plugins/mobile', 'ruTorrent Plugin Mobile', null, null, null, 'https://github.com/xombiemp/rutorrentMobile.git', 1);
-
--- Table: trackers_list
-CREATE TABLE trackers_list ( 
-    id_trackers_list INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                     NOT NULL ON CONFLICT ABORT
-                                     UNIQUE ON CONFLICT ABORT,
-    tracker          VARCHAR( 128 )  NOT NULL ON CONFLICT IGNORE
-                                     UNIQUE ON CONFLICT IGNORE,
-    tracker_domain   VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT
-                                     UNIQUE ON CONFLICT IGNORE,
-    origin           VARCHAR( 9 )    NOT NULL ON CONFLICT ABORT,
-    is_ssl           BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                     DEFAULT ( 0 ),
-    is_active        BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                     DEFAULT ( 0 ),
-    to_check         BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                     DEFAULT ( 1 ),
-    ping             VARCHAR( 64 ) 
-);
-
-
--- Table: blocklists_peerguardian
-CREATE TABLE blocklists_peerguardian ( 
-    id_blocklists_peerguardian INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                               NOT NULL ON CONFLICT ABORT
-                                               UNIQUE ON CONFLICT ABORT,
-    name                       VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
-                                               UNIQUE ON CONFLICT IGNORE,
-    blocklists                 VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT
-                                               UNIQUE ON CONFLICT IGNORE,
-    url_info                   VARCHAR( 256 ),
-    [default]                  BOOLEAN( 1 )    DEFAULT ( 0 ),
-    is_active                  BOOLEAN( 1 )    DEFAULT ( 0 ),
-    last_update                DATETIME 
-);
-
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (1, 'Atma', 'list.iblocklist.com/lists/atma/atma', 'https://www.iblocklist.com/list.php?list=tzmtqbbsgbtfxainogvm', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (2, 'Bluetack - Ads and Trackers', 'list.iblocklist.com/lists/bluetack/ads-trackers-and-bad-pr0n', 'https://www.iblocklist.com/list.php?list=fruzekpkpzlmzozmuuhx', 1, 1, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (3, 'Bluetack - Bad Peers', 'list.iblocklist.com/lists/bluetack/bad-peers', 'https://www.iblocklist.com/list.php?list=cwworuawihqvocglcoss', 1, 1, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (4, 'Bluetack - Bogon', 'list.iblocklist.com/lists/bluetack/bogon', 'https://www.iblocklist.com/list.php?list=gihxqmhyunbxhbmgqrla', 1, 1, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (5, 'Bluetack - Dshield', 'list.iblocklist.com/lists/bluetack/dshield', 'https://www.iblocklist.com/list.php?list=xpbqleszmajjesnzddhv', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (6, 'Bluetack - Edu', 'list.iblocklist.com/lists/bluetack/edu', 'https://www.iblocklist.com/list.php?list=imlmncgrkbnacgcwfjvh', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (7, 'Bluetack - For Non Lan Computers', 'list.iblocklist.com/lists/bluetack/for-non-lan-computers', 'https://www.iblocklist.com/list.php?list=jhaoawihmfxgnvmaqffp', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (8, 'Bluetack - Forum Spam', 'list.iblocklist.com/lists/bluetack/forum-spam', 'https://www.iblocklist.com/list.php?list=ficutxiwawokxlcyoeye', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (9, 'Bluetack - Hijacked', 'list.iblocklist.com/lists/bluetack/hijacked', 'https://www.iblocklist.com/list.php?list=usrcshglbiilevmyfhse', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (10, 'Bluetack - IANA-Multicast', 'list.iblocklist.com/lists/bluetack/iana-multicast', 'https://www.iblocklist.com/list.php?list=pwqnlynprfgtjbgqoizj', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (11, 'Bluetack - IANA-Private', 'list.iblocklist.com/lists/bluetack/iana-private', 'https://www.iblocklist.com/list.php?list=cslpybexmxyuacbyuvib', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (12, 'Bluetack - IANA-Reserved', 'list.iblocklist.com/lists/bluetack/iana-reserved', 'https://www.iblocklist.com/list.php?list=bcoepfyewziejvcqyhqo', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (13, 'Bluetack - Level 1', 'list.iblocklist.com/lists/bluetack/level-1', 'https://www.iblocklist.com/list.php?list=ydxerpxkpcfqjaybcssw', 1, 1, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (14, 'Bluetack - Level 2', 'list.iblocklist.com/lists/bluetack/level-2', 'https://www.iblocklist.com/list.php?list=gyisgnzbhppbvsphucsw', 1, 1, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (15, 'Bluetack - Level 3', 'list.iblocklist.com/lists/bluetack/level-3', 'https://www.iblocklist.com/list.php?list=uwnukjqktoggdknzrhgh', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (16, 'Bluetack - Microsoft', 'list.iblocklist.com/lists/bluetack/microsoft', 'https://www.iblocklist.com/list.php?list=xshktygkujudfnjfioro', 1, 1, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (17, 'Bluetack - Proxy', 'list.iblocklist.com/lists/bluetack/proxy', 'https://www.iblocklist.com/list.php?list=xoebmbyexwuiogmbyprb', 1, 1, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (18, 'Bluetack - Range Test', 'list.iblocklist.com/lists/bluetack/range-test', 'https://www.iblocklist.com/list.php?list=plkehquoahljmyxjixpu', 1, 1, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (19, 'Bluetack - Spider', 'list.iblocklist.com/lists/bluetack/spider', 'https://www.iblocklist.com/list.php?list=mcvxsnihddgutbjfbghy', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (20, 'Bluetack - Spyware', 'list.iblocklist.com/lists/bluetack/spyware', 'https://www.iblocklist.com/list.php?list=llvtlsjyoyiczbkjsxpf', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (21, 'Bluetack - Web Exploit', 'list.iblocklist.com/lists/bluetack/web-exploit', 'https://www.iblocklist.com/list.php?list=ghlzqtqxnzctvvajwwag', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (22, 'Bluetack - Web Exploit Forum Spam', 'list.iblocklist.com/lists/bluetack/webexploit-forumspam', 'https://www.iblocklist.com/list.php?list=ficutxiwawokxlcyoeye', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (23, 'CIDR - Bogon', 'list.iblocklist.com/lists/cidr-report/bogon', 'https://www.iblocklist.com/list.php?list=lujdnbasfaaixitgmxpp', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (24, 'DCHubAd - Faker', 'list.iblocklist.com/lists/dchubad/faker', 'https://www.iblocklist.com/list.php?list=dcha_faker', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (25, 'DCHubAd - Hacker', 'list.iblocklist.com/lists/dchubad/hacker', 'https://www.iblocklist.com/list.php?list=dcha_hacker', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (26, 'DCHubAd - Pedophiles', 'list.iblocklist.com/lists/dchubad/pedophiles', 'https://www.iblocklist.com/list.php?list=dcha_pedophiles', 1, 1, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (27, 'DCHubAd - Spammer', 'list.iblocklist.com/lists/dchubad/spammer', 'https://www.iblocklist.com/list.php?list=dcha_spammer', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (28, 'Nexus23 - IPfilterX', 'list.iblocklist.com/lists/nexus23/ipfilterx', 'https://www.iblocklist.com/list.php?list=nxs23_ipfilterx', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (29, 'Peerblock - Rapidshare', 'list.iblocklist.com/lists/peerblock/rapidshare', 'https://www.iblocklist.com/list.php?list=zfucwtjkfwkalytktyiw', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (30, 'Spamhaus - DROP', 'list.iblocklist.com/lists/spamhaus/drop', 'https://www.iblocklist.com/list.php?list=zbdlwrqkabxbcppvrnos', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (31, 'TBG - Bogon', 'list.iblocklist.com/lists/tbg/bogon', 'https://www.iblocklist.com/list.php?list=ewqglwibdgjttwttrinl', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (32, 'TBG - Business ISPs', 'list.iblocklist.com/lists/tbg/business-isps', 'https://www.iblocklist.com/list.php?list=jcjfaxgyyshvdbceroxf', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (33, 'TBG - Educational Institutions', 'list.iblocklist.com/lists/tbg/educational-institutions', 'https://www.iblocklist.com/list.php?list=lljggjrpmefcwqknpalp', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (34, 'TBG - General Corporate Ranges', 'list.iblocklist.com/lists/tbg/general-corporate-ranges', 'https://www.iblocklist.com/list.php?list=ecqbsykllnadihkdirsh', 1, 1, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (35, 'TBG - Hijacked', 'list.iblocklist.com/lists/tbg/hijacked', 'https://www.iblocklist.com/list.php?list=tbnuqfclfkemqivekikv', 0, 0, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (36, 'TBG - Primary Threats', 'list.iblocklist.com/lists/tbg/primary-threats', 'https://www.iblocklist.com/list.php?list=ijfqtofzixtwayqovmxn', 1, 1, null);
-INSERT INTO [blocklists_peerguardian] ([id_blocklists_peerguardian], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (37, 'TBG - Search Engines', 'list.iblocklist.com/lists/tbg/search-engines', 'https://www.iblocklist.com/list.php?list=pfefqteoxlfzopecdtyw', 1, 1, null);
-
--- Table: blocklists_rtorrent
-CREATE TABLE blocklists_rtorrent ( 
-    id_blocklists_rtorrent INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                           NOT NULL ON CONFLICT ABORT
-                                           UNIQUE ON CONFLICT ABORT,
-    name                   VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
-                                           UNIQUE ON CONFLICT IGNORE,
-    blocklists             VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT
-                                           UNIQUE ON CONFLICT IGNORE,
-    url_info               VARCHAR( 256 ),
-    [default]              BOOLEAN( 1 )    DEFAULT ( 0 ),
-    is_active              BOOLEAN( 1 )    DEFAULT ( 0 ),
-    last_update            DATETIME 
-);
-
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (1, 'BLUETACK_LEVEL1', 'http://list.iblocklist.com/?list=ydxerpxkpcfqjaybcssw&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=ydxerpxkpcfqjaybcssw', 1, 1, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (2, 'BLUETACK_SPYWARE', 'http://list.iblocklist.com/?list=llvtlsjyoyiczbkjsxpf&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=llvtlsjyoyiczbkjsxpf', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (3, 'BLUETACK_ADS', 'http://list.iblocklist.com/?list=dgxtneitpuvgqqcpfulq&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=dgxtneitpuvgqqcpfulq', 1, 1, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (4, 'BLUETACK_EDU', 'http://list.iblocklist.com/?list=imlmncgrkbnacgcwfjvh&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=imlmncgrkbnacgcwfjvh', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (5, 'BLUETACK_BADPEER', 'http://list.iblocklist.com/?list=cwworuawihqvocglcoss&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=cwworuawihqvocglcoss', 1, 1, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (6, 'BLUETACK_BOGON', 'http://list.iblocklist.com/?list=gihxqmhyunbxhbmgqrla&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=gihxqmhyunbxhbmgqrla', 1, 1, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (7, 'BLUETACK_DSHIELD', 'http://list.iblocklist.com/?list=xpbqleszmajjesnzddhv&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=xpbqleszmajjesnzddhv', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (8, 'BLUETACK_HIJACKED', 'http://list.iblocklist.com/?list=usrcshglbiilevmyfhse&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=usrcshglbiilevmyfhse', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (9, 'BLUETACK_IANAMULTICAST', 'http://list.iblocklist.com/?list=pwqnlynprfgtjbgqoizj&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=pwqnlynprfgtjbgqoizj', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (10, 'BLUETACK_IANAPRIVATE', 'http://list.iblocklist.com/?list=cslpybexmxyuacbyuvib&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=cslpybexmxyuacbyuvib', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (11, 'BLUETACK_IANARESERVED', 'http://list.iblocklist.com/?list=bcoepfyewziejvcqyhqo&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=bcoepfyewziejvcqyhqo', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (12, 'BLUETACK_LEVEL2', 'http://list.iblocklist.com/?list=gyisgnzbhppbvsphucsw&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=gyisgnzbhppbvsphucsw', 1, 1, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (13, 'BLUETACK_LEVEL3', 'http://list.iblocklist.com/?list=uwnukjqktoggdknzrhgh&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=uwnukjqktoggdknzrhgh', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (14, 'BLUETACK_MICROSOFT', 'http://list.iblocklist.com/?list=xshktygkujudfnjfioro&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=xshktygkujudfnjfioro', 1, 1, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (15, 'BLUETACK_PROXY', 'http://list.iblocklist.com/?list=xoebmbyexwuiogmbyprb&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=xoebmbyexwuiogmbyprb', 1, 1, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (16, 'BLUETACK_SPIDER', 'http://list.iblocklist.com/?list=mcvxsnihddgutbjfbghy&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=mcvxsnihddgutbjfbghy', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (17, 'BLUETACK_RANGETEST', 'http://list.iblocklist.com/?list=plkehquoahljmyxjixpu&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=plkehquoahljmyxjixpu', 1, 1, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (18, 'BLUETACK_FORUMSPAM', 'http://list.iblocklist.com/?list=ficutxiwawokxlcyoeye&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=ficutxiwawokxlcyoeye', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (19, 'BLUETACK_WEBEXPLOIT', 'http://list.iblocklist.com/?list=ghlzqtqxnzctvvajwwag&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=ghlzqtqxnzctvvajwwag', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (20, 'BLUETACK_FORNONLANCOMP', 'http://list.iblocklist.com/?list=jhaoawihmfxgnvmaqffp&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=jhaoawihmfxgnvmaqffp', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (21, 'BLUETACK_EXCLUSIONS', 'http://list.iblocklist.com/?list=mtxmiireqmjzazcsoiem&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=mtxmiireqmjzazcsoiem', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (22, 'TBG_BOGON', 'http://list.iblocklist.com/?list=ewqglwibdgjttwttrinl&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=ewqglwibdgjttwttrinl', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (23, 'TBG_BUSINESSISPS', 'http://list.iblocklist.com/?list=jcjfaxgyyshvdbceroxf&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=jcjfaxgyyshvdbceroxf', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (24, 'TBG_GENERALCORPORATE', 'http://list.iblocklist.com/?list=ecqbsykllnadihkdirsh&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=ecqbsykllnadihkdirsh', 1, 1, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (25, 'TBG_HIJACKED', 'http://list.iblocklist.com/?list=tbnuqfclfkemqivekikv&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=ijfqtofzixtwayqovmxn', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (26, 'TBG_PRIMTHREATS', 'http://list.iblocklist.com/?list=ijfqtofzixtwayqovmxn&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=ijfqtofzixtwayqovmxn', 1, 1, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (27, 'TBG_EDUINSTITUTUION', 'http://list.iblocklist.com/?list=lljggjrpmefcwqknpalp&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=lljggjrpmefcwqknpalp', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (28, 'TBG_SEARCHENGINE', 'http://list.iblocklist.com/?list=pfefqteoxlfzopecdtyw&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=pfefqteoxlfzopecdtyw', 1, 1, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (29, 'SPAMHAUS_DROP', 'http://list.iblocklist.com/?list=zbdlwrqkabxbcppvrnos&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=zbdlwrqkabxbcppvrnos', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (30, 'ABUSE_ZEUS', 'http://list.iblocklist.com/?list=ynkdjqsjyfmilsgbogqf&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=ynkdjqsjyfmilsgbogqf', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (31, 'ABUSE_SPYEYE', 'http://list.iblocklist.com/?list=zvjxsfuvdhoxktpeiokq&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=zvjxsfuvdhoxktpeiokq', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (32, 'ABUSE_PALEVO', 'http://list.iblocklist.com/?list=erqajhwrxiuvjxqrrwfj&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=erqajhwrxiuvjxqrrwfj', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (33, 'IBLOCK_PEDOPHILE', 'http://list.iblocklist.com/?list=dufcxgnbjsdwmwctgfuj&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=dufcxgnbjsdwmwctgfuj', 1, 1, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (34, 'CIARMY_MALICIOUS', 'http://list.iblocklist.com/?list=npkuuhuxcsllnhoamkvm&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=npkuuhuxcsllnhoamkvm', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (35, 'MALCODE_MALCODE', 'http://list.iblocklist.com/?list=pbqcylkejciyhmwttify&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=pbqcylkejciyhmwttify', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (36, 'YOYO_ADSERVERS', 'http://list.iblocklist.com/?list=zhogegszwduurnvsyhdf&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=zhogegszwduurnvsyhdf', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (37, 'PBLOCK_RAPIDSHARE', 'http://list.iblocklist.com/?list=zfucwtjkfwkalytktyiw&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=zfucwtjkfwkalytktyiw', 0, 0, null);
-INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (38, 'CIDR_BOGON', 'http://list.iblocklist.com/?list=lujdnbasfaaixitgmxpp&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=lujdnbasfaaixitgmxpp', 0, 0, null);
-
--- Table: users
-CREATE TABLE users ( 
-    id_users      INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                  NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT ABORT,
-    users_ident   VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT IGNORE,
-    users_email   VARCHAR( 260 )  NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT IGNORE,
-    users_passwd  VARCHAR( 32 ),
-    rpc           VARCHAR( 64 ),
-    sftp          BOOLEAN( 1 )    DEFAULT ( 1 ),
-    sudo          BOOLEAN( 1 )    DEFAULT ( 0 ),
-    admin         BOOLEAN( 1 )    DEFAULT ( 0 ),
-    scgi_port     INTEGER( 5 ),
-    rtorrent_port INTEGER( 5 ),
-    home_dir      VARCHAR( 128 ) 
-);
-
-
--- Table: commands
-CREATE TABLE commands ( 
-    id_commands INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                NOT NULL ON CONFLICT ABORT
-                                UNIQUE ON CONFLICT ABORT,
-    commands    VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
-                                UNIQUE ON CONFLICT ABORT,
-    reload      BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                DEFAULT ( 0 ),
-    priority    INTEGER( 2 )    NOT NULL ON CONFLICT ABORT
-                                DEFAULT ( 0 ),
-    args        VARCHAR( 128 ) 
-);
-
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (1, 'FirewallAndSecurity.bsh', 0, 1, null);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (2, 'GetTrackersCert.bsh', 0, 2, null);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (3, 'PaymentReminder.bsh', 0, 2, null);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (4, 'Postfix', 0, 2, null);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (5, 'BlocklistsRTorrent.bsh', 0, 2, null);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (6, 'MySB_ChangeUserPassword', 0, 2, null);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (7, 'MySB_CreateUser', 0, 2, null);
-INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (8, 'MySB_DeleteUser', 0, 2, null);
+	<I>Généré de 2015-01-09 11:03:40 avec <A href="http://sqlitestudio.pl">SQLiteStudio v2.1.5</A>
+</I>
+	</BODY>
+</HTML>
