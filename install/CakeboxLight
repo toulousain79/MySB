@@ -65,7 +65,7 @@ if [ "$ToInstall_Cakebox" == "YES" ]; then
 		git clone $PluginCakeboxUrl $PluginCakeboxDir
 	fi
 	chown -R www-data:www-data $PluginCakeboxDir
-	sed -i "s/'http:\/\/'.\$host;/'https:\/\/$HostNameFQDN:$Port_HTTPS\/sm\/';/g;" $PluginCakeboxDir/conf.php
+	sed -i "s/'http:\/\/'.\$host;/'https:\/\/$HostNameFQDN:$Port_HTTPS\/cb\/';/g;" $PluginCakeboxDir/conf.php
 	sed -i "s/torrents/rtorrent/g;" $PluginCakeboxDir/conf.php
 
 	#### NginX (vhost)
@@ -79,9 +79,10 @@ if [ "$ToInstall_Cakebox" == "YES" ]; then
 		# ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox
 	# fi
 	#### NginX (alias with proxy)
+	CakeboxDirEscaped=`echo $CakeboxDir | sed s,/,\\\\\\\\\\/,g`
 	if [ -h /etc/nginx/sites-enabled/cakebox ]; then rm -vf /etc/nginx/sites-enabled/cakebox; fi
 	cp /etc/MySB/templates/etc.nginx.site-enabled.cakebox.template /etc/nginx/sites-available/cakebox
-	perl -pi -e "s/<cakebox_rootdir>/$CakeboxDir/g" /etc/nginx/sites-available/cakebox
+	perl -pi -e "s/<cakebox_rootdir>/$CakeboxDirEscaped\/public/g" /etc/nginx/sites-available/cakebox
 	cp /etc/MySB/templates/etc.nginx.locations.cakebox.conf.template /etc/nginx/locations/4_cakebox.conf
 	if [ ! -h /etc/nginx/sites-enabled/cakebox ]; then ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox; fi
 	
@@ -110,6 +111,9 @@ EOF
 	ManageDirectoriesAndFiles	
 	
 	sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'CakeBox-Light';"
+	
+	#### START services
+	ManageServices start "nginx"	
 fi
 
 # -----------------------------------------

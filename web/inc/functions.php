@@ -136,7 +136,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					break;
 				case "Cakebox-Light":
 					if ( $CakeboxIsInstalled == '1' ) {
-						echo '<li><a target="_blank"  href="http://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/cb/">Cakebox-Light</a>';
+						echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/cb/">Cakebox-Light</a>';
 					}
 					break;
 				case "LoadAvg":
