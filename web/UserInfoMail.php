@@ -367,7 +367,7 @@ function printUser($user, $Case) {
 		<!-- // CakeBox Light -->
 		<tr align="left">
 			<th width="15%" scope="row">CakeBox Light</th>
-			<td colspan="2"><a target="_blank" href="http://<?php echo $system_datas["hostname"];?>:<?php echo $CakeboxDatas["port_tcp1"];?>"><span class="Comments">Play here your media.</span></a></td>
+			<td colspan="2"><a target="_blank" href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/cb/"><span class="Comments">Play here your media.</span></a></td>
 		</tr>
 	<?php } ?>
 
