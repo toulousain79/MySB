@@ -68,16 +68,22 @@ if [ "$ToInstall_Cakebox" == "YES" ]; then
 	sed -i "s/'http:\/\/'.\$host;/'https:\/\/$HostNameFQDN:$Ports_Cakebox';/g;" $PluginCakeboxDir/conf.php
 	sed -i "s/torrents/rtorrent/g;" $PluginCakeboxDir/conf.php
 
-	#### NginX
-	if [ -f /etc/nginx/sites-enabled/cakebox ]; then
-		rm -vf /etc/nginx/sites-enabled/cakebox
-	fi	
+	#### NginX (vhost)
+	# if [ -f /etc/nginx/sites-enabled/cakebox ]; then
+		# rm -vf /etc/nginx/sites-enabled/cakebox
+	# fi	
+	# cp /etc/MySB/templates/etc.nginx.site-enabled.cakebox.template /etc/nginx/sites-available/cakebox
+	# perl -pi -e "s/<cakebox_port>/$Ports_Cakebox/g" /etc/nginx/sites-available/cakebox
+	# perl -pi -e "s/<servername>/$HostNameFQDN/g" /etc/nginx/sites-available/cakebox
+	# if [ ! -f /etc/nginx/sites-enabled/cakebox ]; then
+		# ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox
+	# fi
+	#### NginX (alias with proxy)
+	if [ -h /etc/nginx/sites-enabled/cakebox ]; then rm -vf /etc/nginx/sites-enabled/cakebox; fi
 	cp /etc/MySB/templates/etc.nginx.site-enabled.cakebox.template /etc/nginx/sites-available/cakebox
-	perl -pi -e "s/<cakebox_port>/$Ports_Cakebox/g" /etc/nginx/sites-available/cakebox
-	perl -pi -e "s/<servername>/$HostNameFQDN/g" /etc/nginx/sites-available/cakebox
-	if [ ! -f /etc/nginx/sites-enabled/cakebox ]; then
-		ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox
-	fi
+	perl -pi -e "s/<cakebox_rootdir>/$CakeboxDir/g" /etc/nginx/sites-available/cakebox
+	cp /etc/MySB/templates/etc.nginx.locations.cakebox.conf.template /etc/nginx/locations/4_rutorrent.conf
+	if [ -h /etc/nginx/sites-enabled/cakebox ]; then ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox; fi
 	
 	if [ -z $NEWUSER ] || [ -z $PASSWORD ]; then	
 		ListingUsers

@@ -1,30 +1,19 @@
 server {
-	listen <cakebox_port>;
-	server_name <servername>;
-	#ssl on;
+	listen 81;
+	server_name _;
+
+	allow 127.0.0.1;
+	deny all;
+
+	root <cakebox_rootdir>;
+	index index.php;
 
 	access_log /var/log/nginx/cakebox-access.log;
 	error_log /var/log/nginx/cakebox-error.log;
 
-	root /etc/MySB/web/Cakebox-light/public;
-
-	include /etc/nginx/conf.d/ip_restriction;
+	charset utf-8;
 	include /etc/nginx/conf.d/static_files;
-	include /etc/nginx/conf.d/global_deny_access;
-	include /etc/nginx/conf.d/pagespeed;
 
-	location @site {
-		include /etc/nginx/fastcgi_params;
-		fastcgi_pass unix:/var/run/php5-fpm.sock;
-		fastcgi_param SCRIPT_FILENAME $document_root/index.php;
-		fastcgi_param APPLICATION_ENV production;
-		#fastcgi_param HTTPS on;
-		fastcgi_index index.php;
-	}
-	
-	auth_basic "MySB";
-	auth_basic_user_file "/etc/nginx/passwd/MySB";
-	
 	location = / {
 		try_files @site @site;
 	}
@@ -33,11 +22,15 @@ server {
 		try_files $uri $uri/ @site;
 	}
 
-	#return 404 for all php files as we do have a front controller
 	location ~ \.php$ {
 		return 404;
 	}
 
-	# directory to store Cakebox users RPC
-	include /etc/nginx/rpc/*.cakebox;
+	location @site {
+		fastcgi_pass unix:/var/run/php5-fpm.sock;
+		include fastcgi_params;
+		fastcgi_param  SCRIPT_FILENAME $document_root/index.php;
+		fastcgi_param APPLICATION_ENV production;
+		fastcgi_param HTTPS on;
+	}
 }
