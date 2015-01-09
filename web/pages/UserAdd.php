@@ -125,6 +125,23 @@ $UsersList = $MySB_DB->select("users", "*", ["AND" => ["admin" => "0"]]);
 
 <?php
 foreach($UsersList as $User) {
+	switch ($User["sftp"]) {
+		case '0':
+			$SFTP = 'NO';
+			break;
+		default:
+			$SFTP = 'YES';
+			break;
+	}
+	switch ($User["sudo"]) {
+		case '0':
+			$SUDO = 'NO';
+			break;
+		default:
+			$SUDO = 'YES';
+			break;
+	}		
+	
 ?>
 			<tr>
 				<td>
@@ -135,13 +152,11 @@ foreach($UsersList as $User) {
 					<input style="width:200px;" type="hidden" name="users_email[]" value="<?php echo $User["users_email"]; ?>" />					
 					<?php echo $User["users_email"]; ?>
 				</td>
-				<td>
-					<input type="hidden" name="sftp[]" value="<?php echo $User["sftp"]; ?>" />		
-					<?php echo $User["sftp"]; ?>
+				<td>		
+					<?php echo $SFTP; ?>
 				</td>
-				<td>
-					<input type="hidden" name="sudo[]" value="<?php echo $User["sudo"]; ?>" />						
-					<?php echo $User["sudo"]; ?>
+				<td>					
+					<?php echo $SUDO; ?>
 				</td>
 				<!-- <td>
 					<input class="submit" name="delete[<?php echo $User["users_ident"]; ?>]" type="submit" value="Delete" />

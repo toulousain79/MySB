@@ -112,7 +112,7 @@
 			echo $FooterNavBar . '<br /><br />';
 ?>
 			<a href="https://github.com/toulousain79/MySB/" title="MySB on GitHub">MySB on GitHub</a><br />
-			<a href="http://www.css3templates.co.uk">Copyright &copy; CSS3_two</a> | <a href="http://www.wolfcms.org/" title="Wolf CMS">Wolf CMS Inside.</a></p>
+			<a href="http://www.css3templates.co.uk">Copyright &copy; CSS3_two</a> | <a href="http://www.wolfcms.org/" title="Wolf CMS">Wolf CMS</a></p>
 		</footer>
 	</div>
 	
