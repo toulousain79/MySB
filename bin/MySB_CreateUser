@@ -155,7 +155,7 @@ case "$FILESYSTEMTYPE" in
 	;;	
 	*)
 		perl -pi -e "s/^system.file_allocate.set = yes/system.file_allocate.set = no/g" $NewUserHomedir/.rtorrent.rc
-	;;			
+	;;
 esac
 StatusLSB
 
@@ -260,17 +260,20 @@ for seedUser in $UsersList; do
 done
 
 #### Assign password
-ScriptInvoke "source" "/etc/MySB/bin/MySB_ChangeUserPassword" "$UserToCreate" "$NewUserPassword" "INSTALL"
+ScriptInvoke "source" "/etc/MySB/bin/MySB_ChangeUserPassword" "$UserToCreate" "$NewUserPassword"
+
+#### START services
+# For 'MySB_CreateUser' and 'MySB_ChangeUserPassword'
+# 'NginX is restarted by 'FirewallAndSecurity.bsh'
+ManageServices start "vsftpd nfs-kernel-server cron"
+
+#### Create new security rules
+log_daemon_msg "Create new security rules"
+ScriptInvoke 'screen' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new' 'INSTALL'
+StatusLSB
 
 #### renting
 MonthlyPayment "$UserToCreate"
-
-#### START services
-ManageServices start "vsftpd nginx nfs-kernel-server cron"
-if [ "$TYPE" == "INSTALL" ]; then
-	#### START services
-	ManageServices start "stunnel4 postfix"
-fi
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
