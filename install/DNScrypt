@@ -116,8 +116,6 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 		echo "nameserver 127.0.0.1" >> /etc/resolv.conf
 	fi
 
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '0',is_installed = '1' WHERE serv_name = 'DNScrypt-proxy';"
-
 	#### Update resolvers infos in db
 	if [ -f /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv ] && hash csvtool 2>/dev/null; then
 		# Clean the table 'dnscrypt_resolvers'
@@ -139,12 +137,14 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 			ResolverAddress="`echo $Line | awk '{split($0,a,\"|\"); print a[11]}' | sed 's/#/ /g;'`"
 			ProviderName="`echo $Line | awk '{split($0,a,\"|\"); print a[12]}' | sed 's/#/ /g;'`"
 			ProviderPublicKey="`echo $Line | awk '{split($0,a,\"|\"); print a[13]}' | sed 's/#/ /g;'`"
-			ProviderPublicKeyTxtRecord="`echo $Line | awk '{split($0,a,\"|\"); print a[14]}' | sed 's/#/ /g;'`"	
+			ProviderPublicKeyTxtRecord="`echo $Line | awk '{split($0,a,\"|\"); print a[14]}' | sed 's/#/ /g;'`"
 
 			# Add new informations in DB
-			sqlite3 $MySB_DB "UPDATE system SET dnscrypt_resolver = 'dnscrypt.eu-dk' WHERE id_system = '1';"
-			sqlite3 $MySB_DB "INSERT INTO dnscrypt_resolvers (name,full_name,description,location,coordinates,url,version,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record) VALUES (\"$Name\",\"$FullName\",\"$Description\",\"$Location\",\"$Coordinates\",\"$URL\",\"$Version\",\"$DnssecVal\",\"$NoLogs\",\"$Namecoin\",\"$ResolverAddress\",\"$ProviderName\",\"$ProviderPublicKey\",\"$ProviderPublicKeyTxtRecord\");"			
+			sqlite3 $MySB_DB "INSERT INTO dnscrypt_resolvers (name,full_name,description,location,coordinates,url,version,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record,is_activated,is_wished) VALUES (\"$Name\",\"$FullName\",\"$Description\",\"$Location\",\"$Coordinates\",\"$URL\",\"$Version\",\"$DnssecVal\",\"$NoLogs\",\"$Namecoin\",\"$ResolverAddress\",\"$ProviderName\",\"$ProviderPublicKey\",\"$ProviderPublicKeyTxtRecord\",\"0\",\"0\");"
 		done
+
+		# Force the resovler 'dnscrypt.eu-dk'
+		sqlite3 $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '1', is_wished = '1' WHERE name = 'dnscrypt.eu-dk';"
 	fi
 
 	# Check service
@@ -154,17 +154,14 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	crontab /tmp/crontab.tmp
 	rm -f /tmp/crontab.tmp
 	
+	# Mark as installed
+	sqlite3 $MySB_DB "UPDATE services SET to_install = '0',is_installed = '1' WHERE serv_name = 'DNScrypt-proxy';"	
+	
+	#### Create new security rules
+	ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'	
+	
 	#### START services
 	ManageServices start "cron bind9 dnscrypt-proxy"
-
-	#### Create new security rules
-	ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
-	
-	#### Add some hosts in cache
-	# ping -c5 ftp.nl.debian.org
-	# ping -c5 ftp.debian.org
-	# ping -c5 ftp2.debian.org
-	# ping -c5 security.debian.org
 fi
 
 # -----------------------------------------

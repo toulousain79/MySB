@@ -410,7 +410,7 @@ function GenerateMessage($commands, $type, $message, $args = false) {
 	switch ($type) {
 		case "success":
 			$timeout = 2000;
-			$message = 'Success !';
+			$message = 'Success ! Please, click Apply you configuration.';
 			if ( $commands != false ) {
 				if ( $args != false ) {
 					$value = $MySB_DB->update("commands", ["reload" => 1, "args" => "$args"], ["commands" => "$commands"]);

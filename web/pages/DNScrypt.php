@@ -34,14 +34,16 @@ $ResolversList = $MySB_DB->select("dnscrypt_resolvers", [
 															"no_logs",
 															"namecoin",
 															"resolver_address",
-															"provider_name"
+															"provider_name",
+															"is_activated",
+															"is_wished"
 														]);
 
 if (isset($_POST['submit'])) {
 	$SelectedResolver = $_POST['ResolverName'];
 	
 	if ( isset($SelectedResolver) ) {
-		$result = $MySB_DB->update("system", ["dnscrypt_resolver" => "$SelectedResolver"], ["id_system" => 1]);		
+		$result = $MySB_DB->update("dnscrypt_resolvers", ["is_wished" => "1"], ["name" => "$SelectedResolver"]);		
 		if( $result = 1 ) {
 			$type = 'success';
 		} else {
@@ -63,7 +65,7 @@ if (isset($_POST['submit'])) {
 		<legend>What resolver do you want to use ? (IPv4 only)</legend>
 				Available resolvers: <select name="ResolverName" style="width:200px; cursor: pointer;" required="required">
 <?php
-						$SelectedResolver = $MySB_DB->get("system", "dnscrypt_resolver", ["id_system" => 1]);
+						$SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["is_activated" => 1]);
 						foreach($ResolversList as $Resolver) {
 							if ( ! strpos($Resolver["name"], 'ipv6') ) {
 								switch ($Resolver["name"]) {

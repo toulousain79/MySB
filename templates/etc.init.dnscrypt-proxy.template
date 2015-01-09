@@ -46,16 +46,21 @@ DAEMON="/usr/local/sbin/dnscrypt-proxy"
 if [ ! -z "$2" ]; then
 	IfExist="`sqlite3 $MySB_DB \"SELECT id_dnscrypt_resolvers FROM dnscrypt_resolvers WHERE name = '$2'\"`"
 	if [ ! -z "$IfExist" ]; then
-		sqlite3 $MySB_DB "UPDATE system SET dnscrypt_resolver = '$2' WHERE id_system = '1';"
-		screen -dmS FirewallAndSecurity /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh new;
+		RESOLVER="$2"
+		screen -dmS FirewallAndSecurity /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh new 'CRON';
 	fi
+else
+	# Get the resolver choosen in DB
+	RESOLVER="`sqlite3 $MySB_DB \"SELECT name FROM dnscrypt_resolvers WHERE is_wished = '1'\"`"
 fi
 
-# Get the resolver choosen in DB
-RESOLVER="`sqlite3 $MySB_DB \"SELECT dnscrypt_resolver FROM system WHERE id_system = '1'\"`"
 if [ -z "$RESOLVER" ]; then
 	RESOLVER="opendns"
 fi
+
+# Update DB
+sqlite3 $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '0', is_wished = '0' WHERE 1;"
+sqlite3 $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '1', is_wished = '1' WHERE name = '$RESOLVER';"
 
 DEAMON_OPT="--local-address=127.0.0.1:52 --user=$DAEMON_USER --resolver-name=$RESOLVER --loglevel=99 --resolvers-list=/usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv --logfile=$LOG_FILE"
 
