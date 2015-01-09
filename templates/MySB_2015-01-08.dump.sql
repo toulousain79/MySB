@@ -293,26 +293,6 @@ INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists
 INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (37, 'PBLOCK_RAPIDSHARE', 'http://list.iblocklist.com/?list=zfucwtjkfwkalytktyiw&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=zfucwtjkfwkalytktyiw', 0, 0, null);
 INSERT INTO [blocklists_rtorrent] ([id_blocklists_rtorrent], [name], [blocklists], [url_info], [default], [is_active], [last_update]) VALUES (38, 'CIDR_BOGON', 'http://list.iblocklist.com/?list=lujdnbasfaaixitgmxpp&fileformat=cidr&archiveformat=gz', 'https://www.iblocklist.com/list.php?list=lujdnbasfaaixitgmxpp', 0, 0, null);
 
--- Table: users
-CREATE TABLE users ( 
-    id_users      INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                  NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT ABORT,
-    users_ident   VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT IGNORE,
-    users_email   VARCHAR( 260 )  NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT IGNORE,
-    users_passwd  VARCHAR( 32 ),
-    rpc           VARCHAR( 64 ),
-    sftp          BOOLEAN( 1 )    DEFAULT ( 1 ),
-    sudo          BOOLEAN( 1 )    DEFAULT ( 0 ),
-    admin         BOOLEAN( 1 )    DEFAULT ( 0 ),
-    scgi_port     INTEGER( 5 ),
-    rtorrent_port INTEGER( 5 ),
-    home_dir      VARCHAR( 128 ) 
-);
-
-
 -- Table: commands
 CREATE TABLE commands ( 
     id_commands INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -385,3 +365,22 @@ CREATE TABLE system (
 );
 
 INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password], [apt_update], [apt_date], [server_provider]) VALUES (1, '', '', '', '', '', '', '', '', 0, null, null);
+
+-- Table: users
+CREATE TABLE users ( 
+    id_users      INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                  NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT ABORT,
+    users_ident   VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT IGNORE,
+    users_email   VARCHAR( 260 )  NOT NULL ON CONFLICT ABORT,
+    users_passwd  VARCHAR( 32 ),
+    rpc           VARCHAR( 64 ),
+    sftp          BOOLEAN( 1 )    DEFAULT ( 1 ),
+    sudo          BOOLEAN( 1 )    DEFAULT ( 0 ),
+    admin         BOOLEAN( 1 )    DEFAULT ( 0 ),
+    scgi_port     INTEGER( 5 ),
+    rtorrent_port INTEGER( 5 ),
+    home_dir      VARCHAR( 128 ) 
+);
+

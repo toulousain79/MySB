@@ -74,26 +74,23 @@ fi
 NewUserHomedir="/home/$UserToCreate"
 HOMEDIR_ESCAPED=`echo $NewUserHomedir | sed s,/,\\\\\\\\\\/,g`
 UPPERNEWUSER=`echo $UserToCreate | tr '[:lower:]' '[:upper:]'`
-NEWRPC=$UPPERNEWUSER
-
-#### Users infos
-ListingUsers
-CountingUsers
-
+NEWRPC="/"$UPPERNEWUSER
 NETWORKPORT="`sqlite3 $MySB_DB \"SELECT value FROM ports ORDER BY rowid DESC LIMIT 1\"`"
-sqlite3 $MySB_DB "DELETE FROM ports WHERE value = '$NETWORKPORT';"
 SCGIPORT="`sqlite3 $MySB_DB \"SELECT value FROM ports ORDER BY rowid DESC LIMIT 1\"`"
-sqlite3 $MySB_DB "DELETE FROM ports WHERE value = '$SCGIPORT';"
 
 #### user infos
 if [ "$UserToCreate" != "$MainUser" ]; then
 	log_daemon_msg "Insert user informations in database"
-	sqlite3 $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir) VALUES (\"$UserToCreate\",\"$UserEmail\",\"$NewUserPassword\",\"$NEWRPC\",\"$UserSFTP\",\"$UserSUDO\",\"$SCGIPORT\",\"$NETWORKPORT\",\"$NewUserHomedir\");"
+	sqlite3 -echo $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir) VALUES (\"$UserToCreate\",\"$UserEmail\",\"$NewUserPassword\",\"$NEWRPC\",\"$UserSFTP\",\"$UserSUDO\",\"$SCGIPORT\",\"$NETWORKPORT\",\"$NewUserHomedir\");"
 else
 	log_daemon_msg "Update user informations in database"
 	sqlite3 $MySB_DB "UPDATE users SET users_passwd = '', rpc = '$NEWRPC', scgi_port = '$SCGIPORT', rtorrent_port = '$NETWORKPORT', home_dir = '$NewUserHomedir' WHERE users_ident = '$UserToCreate';"
 fi
 StatusLSB
+
+#### Remove used ports from DB
+sqlite3 $MySB_DB "DELETE FROM ports WHERE value = '$NETWORKPORT';"
+sqlite3 $MySB_DB "DELETE FROM ports WHERE value = '$SCGIPORT';"
 
 #### create system user
 log_daemon_msg "Create the system account for $UserToCreate"
@@ -118,7 +115,7 @@ echo "$UserToCreate" >> /etc/vsftpd.chroot_list
 StatusLSB
 
 #### Share
-log_daemon_msg "Allow use of share for $UserToCreate"
+log_daemon_msg "Allow use of share directory for $UserToCreate"
 mount --bind /home/MySB_share $NewUserHomedir/rtorrent/share
 StatusLSB
 
@@ -246,6 +243,8 @@ rm -f /tmp/crontab.tmp
 StatusLSB
 
 #### rtorrent max memory & rTorrent Blocklist
+ListingUsers
+CountingUsers
 for seedUser in $UsersList; do
 	log_daemon_msg "Change parameter 'pieces.memory.max.set' for $seedUser"
 	LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$seedUser/.rtorrent.rc)
