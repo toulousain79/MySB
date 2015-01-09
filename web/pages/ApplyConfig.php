@@ -159,11 +159,13 @@ if ( IfApplyConfig() > 0 ) {
 				echo '<div align="center"><h1>MySB_CreateUser...</h1></div>';
 
 				$args = explode("|", $Cmd['args']);
-				$username = $args[0];
-				$useremail = $args[1];
-				$password = PasswordGenerator();
+				$UserToCreate = $args[0];
+				$UserSFTP = $args[1];
+				$UserSUDO = $args[2];
+				$UserEmail = $args[3];
+				# ($1 = user, $2 = sftp, $3 = sudo, $4 = email)
 
-				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_CreateUser' '$username' '$password' '1' '0' '$useremail'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_CreateUser' '$UserToCreate' '$UserSFTP' '$UserSUDO' '$UserEmail'", $output, $result);
 
 				foreach ( $output as $item ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';

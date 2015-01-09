@@ -58,6 +58,8 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			$username = $_POST['username'];
 			$email = $_POST['email'];
 			$confirm_email = $_POST['confirm_email'];
+			$sftp = 1
+			$sudo = 0
 			$args = false;
 
 			if ( ($username != '') && ($email != '') && ($confirm_email != '') ) {
@@ -66,7 +68,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					if ( ValidateEmail($email) != false ) {
 						if ( $email == $confirm_email ) {
 							$type = 'success';
-							$args = "$username|$email";
+							$args = "$username|$sftp|$sudo|$email";
 						} else {
 							$type = 'error';
 							$message = 'Error between the typed email and verification.';

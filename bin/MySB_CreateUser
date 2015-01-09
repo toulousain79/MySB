@@ -47,19 +47,27 @@ if [ "$USAGE" == "ON" ]; then
 
 	UserSFTP="$(echo $UserSFTP | sed 's/YES/1/g;' | sed 's/NO/0/g;')"
 	UserSUDO="$(echo $UserSUDO | sed 's/YES/1/g;' | sed 's/NO/0/g;')"
+	Type="MANUAL"
 else
-	# It is the main user creation
+	# user sftp sudo email type
 	UserToCreate="$1"
-	NewUserPassword="$2"
-	UserSFTP=$3
-	UserSUDO=$4
-	if [ ! -z "$6" ]; then	# APPLYCONFIG
-		UserEmail="$5"
-		Type="$6"
-	else					# INSTALL
-		UserEmail="$MainUserEmail"
-		Type="$5"
-	fi
+
+	case "$2" in
+		"INSTALL")	# INSTALL ($1 = user, $2 = type), user created by installation (main user)
+			UserSFTP=1
+			UserSUDO=0
+			UserEmail="$MainUserEmail"
+			NewUserPassword="$MainUserPassword"
+			Type="$2"
+		;;	
+		*)			# APPLYCONFIG (user sftp sudo email type), user created by Web
+			UserSFTP=$2
+			UserSUDO=$3
+			UserEmail="$4"
+			Type="$5"
+			NewUserPassword="`GenPassword 8`"
+		;;
+	esac
 fi
 
 #### Users vars
@@ -78,7 +86,7 @@ SCGIPORT="`sqlite3 $MySB_DB \"SELECT value FROM ports ORDER BY rowid DESC LIMIT 
 sqlite3 $MySB_DB "DELETE FROM ports WHERE value = '$SCGIPORT';"
 
 #### user infos
-if [ "$MainUser" != "$UserToCreate" ]; then
+if [ "$UserToCreate" != "$MainUser" ]; then
 	log_daemon_msg "Insert user informations in database"
 	sqlite3 $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir) VALUES (\"$UserToCreate\",\"$UserEmail\",\"$NewUserPassword\",\"$NEWRPC\",\"$UserSFTP\",\"$UserSUDO\",\"$SCGIPORT\",\"$NETWORKPORT\",\"$NewUserHomedir\");"
 else
