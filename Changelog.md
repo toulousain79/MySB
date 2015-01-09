@@ -8,6 +8,7 @@
 			- Strengthening IP access policy, Web access is fully subject to the restriction by IP 
 			- Possibility to allow access for dynamic IP addresses
 			- Renew all certificates using SHA256 2048bits instead of SHA1 1024bits
+			- Add ruTorrent Plugins (Mobile and Pause WebUI)
 			- Some modifications
 
 	Version v1.1

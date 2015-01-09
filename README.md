@@ -43,6 +43,8 @@ MySB is a seedbox platform for multi-users.
 
 ## Additional ruTorrent plugins (in addition to the official plugins)
 
+	* Mobile
+	* Pause WebUI
 	* Chat
 	* Logoff
 	* tAdd-Labels

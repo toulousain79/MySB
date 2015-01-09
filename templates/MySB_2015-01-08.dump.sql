@@ -211,6 +211,8 @@ INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version],
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (26, 'TARGZ', '/etc/MySB/sources/rorrent_v0.9.4', 'rTorrent', '0.9.4', 'rtorrent_v0.9.4.tar.gz', null, 'http://libtorrent.rakshasa.no/downloads/rtorrent-0.9.4.tar.gz', 0);
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (27, 'SVN', '/etc/MySB/sources/', 'XMLRPC', null, null, null, 'http://svn.code.sf.net/p/xmlrpc-c/code/stable xmlrpc-c', 0);
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (28, 'GIT', '/etc/MySB/web/loadavg', 'LoadAvg', null, null, null, 'https://github.com/loadavg/loadavg.git', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (29, 'SVN', '/etc/MySB/web/rutorrent/plugins/pausewebui', 'ruTorrent Plugin Pause WebUI', null, null, null, 'http://rutorrent-pausewebui.googlecode.com/svn/trunk/', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (30, 'GIT', '/etc/MySB/web/rutorrent/plugins/mobile', 'ruTorrent Plugin Mobile', null, null, null, 'https://github.com/xombiemp/rutorrentMobile.git', 1);
 
 -- Table: trackers_list
 CREATE TABLE trackers_list ( 
