@@ -58,8 +58,8 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			$username = $_POST['username'];
 			$email = $_POST['email'];
 			$confirm_email = $_POST['confirm_email'];
-			$sftp = 1
-			$sudo = 0
+			$sftp = 1;
+			$sudo = 0;
 			$args = false;
 
 			if ( ($username != '') && ($email != '') && ($confirm_email != '') ) {
