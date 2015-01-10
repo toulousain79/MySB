@@ -188,7 +188,7 @@ function UpdateWolfDB($username, $password) {
 			$password = AuthUser::generateHashedPassword($password, $salt);
 			$MainUserEmail = $MySB_DB->get("users", "users_email", ["admin" => 1]);
 
-			$sql_update = "UPDATE ".TABLE_PREFIX."user SET name = '".$username."', email = '".$MainUserEmail."', username = '".$username."', password = '".$password."', salt = '".$salt."' WHERE id = 1";
+			$sql_update = "UPDATE ".TABLE_PREFIX."user SET name = '".$username."', email = '".$MainUserEmail."', username = '".$username."', password = '".$password."', salt = '".$salt."' WHERE id = 2";
 
 			$result = $PDO->exec($sql_update);
 		} else {
