@@ -272,8 +272,8 @@ CREATE TABLE user (
     CONSTRAINT uc_email UNIQUE ( email ) 
 );
 
-INSERT INTO [user] ([id], [name], [email], [username], [password], [salt], [language], [last_login], [last_failure], [failure_count], [created_on], [updated_on], [created_by_id], [updated_by_id]) VALUES (1, 'noadmin', 'noadmin', 'noadmin', '5915c3eda78e311357e33c2f3d50b1f901c99bb706f1df4ad146af383f5a070459a17fc08a2b059a4686773b39507d2a03adaec38092263fd21d80a55db744a2', '0957ba0256bceff352a83e67793f1b16a6796c34e3348fdc27742420c3f9f9cb', 'en', '2015-01-10 06:42:00', '', 0, '', '2015-01-10 06:46:52', 1, 1);
-INSERT INTO [user] ([id], [name], [email], [username], [password], [salt], [language], [last_login], [last_failure], [failure_count], [created_on], [updated_on], [created_by_id], [updated_by_id]) VALUES (2, 'user', '', 'user', '', '', 'en', '', '', 0, '', '', 1, 1);
+INSERT INTO [user] ([id], [name], [email], [username], [password], [salt], [language], [last_login], [last_failure], [failure_count], [created_on], [updated_on], [created_by_id], [updated_by_id]) VALUES (1, 'noadmin', 'admin@localhost.com', 'noadmin', '5915c3eda78e311357e33c2f3d50b1f901c99bb706f1df4ad146af383f5a070459a17fc08a2b059a4686773b39507d2a03adaec38092263fd21d80a55db744a2', '0957ba0256bceff352a83e67793f1b16a6796c34e3348fdc27742420c3f9f9cb', 'en', '2015-01-10 06:42:00', '', 0, '', '2015-01-10 06:46:52', 1, 1);
+INSERT INTO [user] ([id], [name], [email], [username], [password], [salt], [language], [last_login], [last_failure], [failure_count], [created_on], [updated_on], [created_by_id], [updated_by_id]) VALUES (2, 'user', 'user', 'user', '', '', 'en', '', '', 0, '', '', 1, 1);
 
 -- Table: user_role
 CREATE TABLE user_role ( 

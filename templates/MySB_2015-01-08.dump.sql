@@ -159,9 +159,9 @@ INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version],
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (22, 'WBM', '/etc/MySB/files', 'OpenVPNadmin WebMin', 2.6, 'openvpn-2.6.wbm', null, 'http://www.openit.it/downloads/OpenVPNadmin/openvpn-2.6.wbm.gz', 1);
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (23, 'WBM', '/etc/MySB/files', 'Nginx Webmin Module', '0.0.8', 'nginx-0.08.wbm', null, 'http://www.justindhoffman.com/sites/justindhoffman.com/files/nginx-0.08.wbm__0.gz', 1);
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (24, 'WBM', '/etc/MySB/files', 'MiniDLNA Webmin Module', 'alpha1.12 svn26', 'minidlnawebmin_alpha1_12.wbm', null, 'http://downloads.sourceforge.net/project/minidlnawebmin/Webmin%20alpha1.12%20svn26/minidlnawebmin_alpha1_12.wbm?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fminidlnawebmin%2Ffiles%2FWebmin%2520alpha1.12%2520svn26%2F&ts=1420088634&use_mirror=freefr', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (25, 'TARGZ', '/etc/MySB/sources/libtorrent_v0.13.4', 'LibTorrent', '0.13.4', 'libtorrent_v0.13.4.tar.gz', null, 'http://libtorrent.rakshasa.no/downloads/libtorrent-0.13.4.tar.gz', 0);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (26, 'TARGZ', '/etc/MySB/sources/rorrent_v0.9.4', 'rTorrent', '0.9.4', 'rtorrent_v0.9.4.tar.gz', null, 'http://libtorrent.rakshasa.no/downloads/rtorrent-0.9.4.tar.gz', 0);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (27, 'SVN', '/etc/MySB/sources/', 'XMLRPC', null, null, null, 'http://svn.code.sf.net/p/xmlrpc-c/code/stable xmlrpc-c', 0);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (25, 'TARGZ', '/etc/MySB/sources/libtorrent_v0.13.4', 'LibTorrent', '0.13.4', 'libtorrent_v0.13.4.tar.gz', null, 'http://libtorrent.rakshasa.no/downloads/libtorrent-0.13.4.tar.gz', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (26, 'TARGZ', '/etc/MySB/sources/rorrent_v0.9.4', 'rTorrent', '0.9.4', 'rtorrent_v0.9.4.tar.gz', null, 'http://libtorrent.rakshasa.no/downloads/rtorrent-0.9.4.tar.gz', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (27, 'SVN', '/etc/MySB/sources/', 'XMLRPC', null, null, null, 'http://svn.code.sf.net/p/xmlrpc-c/code/stable xmlrpc-c', 1);
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (28, 'GIT', '/etc/MySB/web/loadavg', 'LoadAvg', null, null, null, 'https://github.com/loadavg/loadavg.git', 1);
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (29, 'SVN', '/etc/MySB/web/rutorrent/plugins/pausewebui', 'ruTorrent Plugin Pause WebUI', null, null, null, 'http://rutorrent-pausewebui.googlecode.com/svn/trunk/', 1);
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (30, 'GIT', '/etc/MySB/web/rutorrent/plugins/mobile', 'ruTorrent Plugin Mobile', null, null, null, 'https://github.com/xombiemp/rutorrentMobile.git', 1);
@@ -316,36 +316,6 @@ INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args])
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (7, 'MySB_CreateUser', 0, 2, null);
 INSERT INTO [commands] ([id_commands], [commands], [reload], [priority], [args]) VALUES (8, 'MySB_DeleteUser', 0, 2, null);
 
--- Table: dnscrypt_resolvers
-CREATE TABLE dnscrypt_resolvers ( 
-    id_dnscrypt_resolvers          INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                                   NOT NULL ON CONFLICT ABORT
-                                                   UNIQUE ON CONFLICT ABORT,
-    name                           VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
-                                                   UNIQUE ON CONFLICT ABORT,
-    full_name                      VARCHAR( 64 )   NOT NULL ON CONFLICT ABORT
-                                                   UNIQUE ON CONFLICT ABORT,
-    description                    VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT,
-    location                       VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
-    coordinates                    VARCHAR( 32 ),
-    url                            VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT,
-    version                        VARCHAR( 2 )    NOT NULL ON CONFLICT ABORT,
-    dnssec                         BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                                   DEFAULT ( 0 ),
-    no_logs                        BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                                   DEFAULT ( 0 ),
-    namecoin                       BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                                   DEFAULT ( 0 ),
-    resolver_address               VARCHAR( 64 )   NOT NULL ON CONFLICT ABORT
-                                                   UNIQUE ON CONFLICT ABORT,
-    provider_name                  VARCHAR( 64 )   NOT NULL ON CONFLICT ABORT,
-    provider_public_key            VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT,
-    provider_public_key_txt_record VARCHAR( 64 ),
-    is_actived                     BOOLEAN( 1 )    DEFAULT ( 0 ),
-    is_wished                      BOOLEAN( 1 )    DEFAULT ( 0 ) 
-);
-
-
 -- Table: system
 CREATE TABLE system ( 
     id_system       INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
@@ -382,5 +352,35 @@ CREATE TABLE users (
     scgi_port     INTEGER( 5 ),
     rtorrent_port INTEGER( 5 ),
     home_dir      VARCHAR( 128 ) 
+);
+
+
+-- Table: dnscrypt_resolvers
+CREATE TABLE dnscrypt_resolvers ( 
+    id_dnscrypt_resolvers          INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                                   NOT NULL ON CONFLICT ABORT
+                                                   UNIQUE ON CONFLICT ABORT,
+    name                           VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
+                                                   UNIQUE ON CONFLICT ABORT,
+    full_name                      VARCHAR( 64 )   NOT NULL ON CONFLICT ABORT
+                                                   UNIQUE ON CONFLICT ABORT,
+    description                    VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT,
+    location                       VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
+    coordinates                    VARCHAR( 32 ),
+    url                            VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT,
+    version                        VARCHAR( 2 )    NOT NULL ON CONFLICT ABORT,
+    dnssec                         BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
+                                                   DEFAULT ( 0 ),
+    no_logs                        BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
+                                                   DEFAULT ( 0 ),
+    namecoin                       BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
+                                                   DEFAULT ( 0 ),
+    resolver_address               VARCHAR( 64 )   NOT NULL ON CONFLICT ABORT
+                                                   UNIQUE ON CONFLICT ABORT,
+    provider_name                  VARCHAR( 64 )   NOT NULL ON CONFLICT ABORT,
+    provider_public_key            VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT,
+    provider_public_key_txt_record VARCHAR( 64 ),
+    is_activated                   BOOLEAN( 1 )    DEFAULT ( 0 ),
+    is_wished                      BOOLEAN( 1 )    DEFAULT ( 0 ) 
 );
 
