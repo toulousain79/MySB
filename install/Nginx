@@ -66,15 +66,14 @@ perl -pi -e "s/worker_processes auto;/worker_processes $PROCESSOR;/g" /etc/nginx
 #### Default Server
 if [ -h /etc/nginx/sites-enabled/default ]; then rm -vf /etc/nginx/sites-enabled/default; fi
 cp /etc/MySB/templates/etc.nginx.site-enabled.default.template /etc/nginx/sites-available/default
+RutorrentPluginsDirEscaped=`echo $RutorrentPluginsDir | sed s,/,\\\\\\\\\\/,g`
+RutorrentDirEscaped=`echo $RutorrentDir | sed s,/,\\\\\\\\\\/,g`
 perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" /etc/nginx/sites-available/default
 perl -pi -e "s/<PORT_HTTP>/$Port_HTTP/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<server_name>/$HostNameFQDN/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<plugins_dir>/$RutorrentPluginsDirEscaped/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<rutorrent_dir>/$RutorrentDirEscaped/g" /etc/nginx/sites-available/default
 if [ ! -h /etc/nginx/sites-enabled/default ]; then ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default; fi
-
-#### MySB locations
-cp /etc/MySB/templates/etc.nginx.locations.mysb.conf.template /etc/nginx/locations/1_MySB.conf
-
-#### ruTorrent
-cp /etc/MySB/templates/etc.nginx.locations.rutorrent.conf.template /etc/nginx/locations/2_rutorrent.conf
 
 #### PageSpeed Conf
 cp /etc/MySB/templates/etc.nginx.conf.d.pagespeed.template /etc/nginx/conf.d/pagespeed
@@ -88,6 +87,13 @@ if [ "`df -H | grep '/usr/share/nginx/pagespeed'`" == "" ]; then
 fi
 
 #### PHP conf.d
+(
+cat <<'EOF'
+	auth_basic "MySB";
+	auth_basic_user_file "/etc/nginx/passwd/MySB";
+EOF
+) > /etc/nginx/conf.d/auth_basic
+
 (
 cat <<'EOF'
 	# This block will catch static file requests, such as images, css, js
@@ -111,27 +117,24 @@ EOF
 (
 cat <<'EOF'
 	# deny access to .htaccess file, hidden files, svn files and git files
-	location ~ /\.ht 	{ access_log off; log_not_found off; deny all; }	
+	location ~ /\.ht 	{ access_log off; log_not_found off; deny all; }
 	location ~ /\.svn 	{ access_log off; log_not_found off; deny all; }
 	location ~ /\.git	{ access_log off; log_not_found off; deny all; }
-	location ~ /\. 		{ access_log off; log_not_found off; deny all; }	
-	#location ^~ / 		{ access_log off; log_not_found off; deny all; }
+	location ~ /\. 		{ access_log off; log_not_found off; deny all; }
 	location ~ ~$		{ access_log off; log_not_found off; deny all; }
 EOF
 ) > /etc/nginx/conf.d/global_deny_access
 
 (
 cat <<'EOF'
-		location ~ \.php$ {
-			include /etc/nginx/fastcgi_params;
-			fastcgi_pass unix:/var/run/php5-fpm.sock;
-			fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-			fastcgi_param APPLICATION_ENV production;
-			fastcgi_param PHP_VALUE "";
-			fastcgi_param PHP_ADMIN_VALUE "display_errors=On";
-			fastcgi_param HTTPS on;
-			fastcgi_read_timeout 300;
-		}
+	include /etc/nginx/fastcgi_params;
+	fastcgi_pass unix:/var/run/php5-fpm.sock;
+	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+	fastcgi_param APPLICATION_ENV production;
+	fastcgi_param PHP_VALUE "";
+	fastcgi_param PHP_ADMIN_VALUE "display_errors=On";
+	fastcgi_param HTTPS on;
+	fastcgi_read_timeout 300;
 EOF
 ) > /etc/nginx/conf.d/php-ssl
 

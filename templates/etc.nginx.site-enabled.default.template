@@ -1,8 +1,8 @@
 server {
 	listen <PORT_HTTPS> default_server ssl;
-	server_name "";
+	server_name "<server_name>";
 	ssl on;
-	index index.html index.php;
+	index index.php;
 	charset utf-8;
 
 	access_log /var/log/nginx/default-access.log combined;
@@ -10,19 +10,139 @@ server {
 
 	root /etc/MySB/web;
 
+	include /etc/nginx/conf.d/static_files;	
 	include /etc/nginx/conf.d/global_deny_access;
 	include /etc/nginx/conf.d/pagespeed;
+	include /etc/nginx/conf.d/ip_restriction;
 
-	auth_basic "MySB";
-	auth_basic_user_file "/etc/nginx/passwd/MySB";
-
-	location /favicon.ico {
-		alias /etc/MySB/web/favicon.ico;
+	#### Deny access for some subdirectories
+	location ^~ /inc/ {
+		deny all;
+	}
+	location ^~ /openvpn/ {
+		deny all;
+	}
+	location ^~ /pages/ {
+		deny all;
+	}
+	location ^~ /ru/conf/ {
+		deny all;
+	}
+	location ^~ /ru/share/ {
+		deny all;
 	}
 
-	# directory to store all others web sites for your seedbox (ex: ruTorrent, RapidLeech, Seedbox-Manager, ...)
-	include /etc/nginx/locations/*.conf;
+	#### MySB Portal
+	location / {
+		access_log /var/log/nginx/MySB-access.log combined;
+		error_log /var/log/nginx/MySB-error.log error;
 
-	# directory to store ruTorrent users RPC
+		include /etc/nginx/conf.d/auth_basic;
+
+		include /etc/nginx/fastcgi_params;
+		fastcgi_pass unix:/var/run/php5-fpm.sock;
+		fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+		fastcgi_param APPLICATION_ENV production;
+		fastcgi_param PHP_VALUE "";
+		fastcgi_param PHP_ADMIN_VALUE "display_errors=On";
+		fastcgi_param HTTPS on;
+		fastcgi_read_timeout 300;
+		fastcgi_index index.php;
+
+		# For new users, permit to confirmed their account (IP + password)
+		location = /NewUser.php {
+			alias /etc/MySB/web/pages/NewUser.php;
+			access_log /var/log/nginx/NewUser-access.log combined;
+			error_log /var/log/nginx/NewUser-error.log error;
+			satisfy any;
+			auth_basic off;
+			include /etc/nginx/conf.d/php-ssl;
+		}
+
+		# For created users, permit to force to add their actual IP address
+		location = /ForceAddress.php {
+			alias /etc/MySB/web/pages/ForceAddress.php;
+			access_log /var/log/nginx/ForceAddress-access.log combined;
+			error_log /var/log/nginx/ForceAddress-error.log error;
+			satisfy any;
+			include /etc/nginx/conf.d/php-ssl;
+		}
+
+		# Permit to generate mail to send to all users (server only)
+		location = /UserInfoMail.php {
+			alias /etc/MySB/web/pages/UserInfoMail.php;
+			access_log /var/log/nginx/UserInfoMail-access.log combined;
+			error_log /var/log/nginx/UserInfoMail-error.log error;
+			allow 127.0.0.1;
+			deny all;
+			include /etc/nginx/conf.d/php-ssl;
+		}
+
+		# ruTorrent Plugin Fileshare
+		location = /fileshare.php {
+			alias <plugins_dir>/fileshare/share.php;
+			access_log /var/log/nginx/fileshare-access.log combined;
+			error_log /var/log/nginx/fileshare-error.log error;
+			auth_basic off;
+			satisfy any;
+			include /etc/nginx/conf.d/php-ssl;
+		}
+
+		# ruTorrent Plugin Mediastream
+		location = /view.php {
+			alias <plugins_dir>/mediastream/view.php;
+			access_log /var/log/nginx/view-access.log combined;
+			error_log /var/log/nginx/view-error.log error;
+			include /etc/nginx/conf.d/php-ssl;
+		}
+
+		# ruTorrent Plugin Stream
+		location = /stream.php {
+			alias <plugins_dir>/stream/stream.php;
+			access_log /var/log/nginx/stream-access.log combined;
+			error_log /var/log/nginx/stream-error.log error;
+			include /etc/nginx/conf.d/php-ssl;
+		}
+	}
+
+	#### LoadAvg
+	location ^~ /loadavg/ {
+		access_log /var/log/nginx/loadavg-access.log combined;
+		error_log /var/log/nginx/loadavg-error.log error;
+		include /etc/nginx/conf.d/php-ssl;
+	}
+
+	#### ruTorrent
+	location ^~ /ru {
+		alias <rutorrent_dir>;
+
+		access_log /var/log/nginx/rutorrent-access.log combined;
+		error_log /var/log/nginx/rutorrent-error.log error;
+		index index.html;
+		
+		location ~ /ru/favicon.ico {
+			alias <rutorrent_dir>/images/favicon.ico;
+		}
+
+		include /etc/nginx/conf.d/auth_basic;
+
+		location ~ \.php$ {
+			include /etc/nginx/fastcgi_params;
+			fastcgi_pass unix:/var/run/php5-fpm.sock;
+			fastcgi_param SCRIPT_FILENAME $request_filename;
+			fastcgi_param APPLICATION_ENV production;
+			fastcgi_param PHP_VALUE "";
+			fastcgi_param PHP_ADMIN_VALUE "display_errors=On";
+			fastcgi_param HTTPS on;
+		}
+	}
+
+	#### Others locations (Seedbox-Manager, Cakebox-Light)
+	include /etc/nginx/locations/*.conf;
+	
+	#### ruTorrent - users RPC
 	include /etc/nginx/rpc/*.conf;
+
+	#### Cakebox-Light - users RPC
+	include /etc/nginx/rpc/*.cakebox;
 }
