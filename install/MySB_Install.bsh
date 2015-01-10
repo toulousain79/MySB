@@ -48,9 +48,41 @@ if [[ $EUID -ne 0 ]]; then
 	exit 1
 fi
 
-#### Must be Debian 7 (Wheezy) x86_64
-if [ `cut -c -1 /etc/debian_version` -ne "7" ] || [ `getconf LONG_BIT` = "32" ]; then
-	echo -e "${CRED}MySB script is designed only for Debian 7 (Wheezy) x86_64, aborting !$CEND"
+#### Must be Debian >= 7 (Wheezy) x86_64
+if type -P lsb_release > /dev/null; then
+	OS_Id="`lsb_release -is`"
+	OS_Ver="`lsb_release -rs | cut -d '.' -f 1`"
+else
+	OS_Id="`cat /etc/issue | sed '2,2d;$d' | awk '{ print $1 }'`"
+	OS_Ver="cat /etc/issue | sed '2,2d;$d' | awk '{ print $3 }'"
+fi
+
+OS_Arch="`getconf LONG_BIT`"
+
+if [ "$OS_Id" != "Debian" ] || [ $OS_Ver -lt 7 ] || [ "$OS_Arch" != "64" ]; then
+	case "$OS_Id" in
+		"Debian")
+			echo -e "${CYELLOW}Distributor ID	: $CEND${CGREEN}$OS_Id$CEND"
+		;;
+		*)
+			echo -e "${CYELLOW}Distributor ID	: $CEND${CRED}$OS_Id$CEND"
+		;;
+	esac
+	if [ $OS_Ver -ge 7 ]; then
+		echo -e "${CYELLOW}Release			: $CEND${CGREEN}$OS_Ver$CEND"
+	else
+		echo -e "${CYELLOW}Release			: $CEND${CRED}$OS_Ver$CEND"	
+	fi
+	case "$OS_Arch" in
+		"64")
+			echo -e "${CYELLOW}Architecture	: $CEND${CGREEN}$OS_Arch$CEND"
+		;;
+		*)
+			echo -e "${CYELLOW}Architecture	: $CEND${CRED}$OS_Arch$CEND"
+		;;
+	esac
+	echo
+	echo -e "${CRED}MySB script is designed only for Debian 7 (Wheezy) or superior on x86_64, aborting !$CEND"
 	exit 1
 fi
 
@@ -100,7 +132,7 @@ if [ "$COMMAND" == "" ]; then
 			packetg="apt-get"
 		fi
 
-		TOOLS="sudo git-core dos2unix lsb-release screen ccze gnupg figlet mlocate sqlite3 dnsutils netselect-apt"
+		TOOLS="sudo git-core dos2unix lsb-core screen ccze gnupg figlet mlocate sqlite3 dnsutils netselect-apt"
 
 		$packetg -y --assume-yes install $TOOLS >> /tmp/`basename $0`.log
 
