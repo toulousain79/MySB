@@ -37,7 +37,7 @@ case $1 in
 	clean)
 		#### STOP services
 		ManageServices stop "pglcmd fail2ban"
-	
+
 		# Vidage et suppression des règles existantes :
 		log_daemon_msg "Emptying and removal of existing rules"
 		for TABLE in filter nat mangle; do
@@ -49,18 +49,18 @@ case $1 in
 		log_daemon_msg "Authorize any incoming connection any outgoing connection"
 		iptables -t filter -P INPUT ACCEPT
 		iptables -t filter -P FORWARD ACCEPT
-		iptables -t filter -P OUTPUT ACCEPT	
+		iptables -t filter -P OUTPUT ACCEPT
 		StatusLSB
 
 		#### Clean users IP Addresses
-		if [ -f /etc/nginx/conf.d/ip_restriction ] && hash nginx 2> /dev/null; then
+		if [ -f /etc/nginx/conf.d/ip_restriction ] && CheckCommand nginx; then
 			log_daemon_msg "Cleaning users IP Addresses"
 			echo "	satisfy all;" > /etc/nginx/conf.d/ip_restriction
 			StatusLSB
 		fi
-		
+
 		#### START services
-		ManageServices start "nginx"		
+		ManageServices start "nginx"
 	;;
 	new)
 		#### VARs
@@ -105,7 +105,7 @@ case $1 in
 		#### Do not break the established connections
 		log_daemon_msg "Do not break established connections"
 		iptables -A INPUT -m state --state RELATED,ESTABLISHED -i $PrimaryInet -j ACCEPT
-		iptables -A OUTPUT -m state --state RELATED,ESTABLISHED -o $PrimaryInet -j ACCEPT	
+		iptables -A OUTPUT -m state --state RELATED,ESTABLISHED -o $PrimaryInet -j ACCEPT
 		StatusLSB
 
 		#### Allow loopback
@@ -117,7 +117,7 @@ case $1 in
 		log_daemon_msg "Creating IP white lists"
 		# List all users IPs
 		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`	
-		SeedboxUsersIPs=$(echo "$SeedboxUsersIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq		
+		SeedboxUsersIPs=$(echo "$SeedboxUsersIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
 		MainUserIPs=`echo $MainUserIPs | sed s,/,\\\\\\\\\\/,g`
 		MainUserIPs=$(echo "$MainUserIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
 		AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
@@ -154,19 +154,7 @@ case $1 in
 				;;
 			esac
 			StatusLSB
-		fi				
-
-		#### CakeBox
-		# if [ "$IsInstalled_Cakebox" == "YES" ]; then
-			# log_daemon_msg "Allow access to CakeBox"
-			# iptables -t filter -A INPUT -p tcp --dport $Ports_Cakebox -i $PrimaryInet -j ACCEPT -m comment --comment "CakeBox"
-			# StatusLSB
-		# fi
-
-		#### HTTP
-		#log_daemon_msg "Allow access to HTTP"
-		#iptables -t filter -A INPUT -p tcp --dport $Port_HTTP -i $PrimaryInet -j ACCEPT -m comment --comment "HTTP"
-		#StatusLSB
+		fi
 
 		#### HTTPS
 		log_daemon_msg "Allow access to HTTPs"
@@ -213,7 +201,7 @@ case $1 in
 		fi
 
 		#### PlexMedia Server
-		if [ "$IsInstalled_PlexMedia" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
+		if [ "$IsInstalled_PlexMedia" == "YES" ]; then
 			log_daemon_msg "Allow access to Plex Media Server on TCP"
 			for PlexTcpPort in $Ports_TCP_PlexMedia; do 
 				iptables -t filter -A INPUT -p tcp --dport $PlexTcpPort -i $PrimaryInet -j ACCEPT -m comment --comment "Plex Media Server TCP"
@@ -241,7 +229,7 @@ case $1 in
 		done
 
 		#### NginX
-		if [ -f /etc/nginx/conf.d/ip_restriction ] && hash nginx 2> /dev/null; then
+		if [ -f /etc/nginx/conf.d/ip_restriction ] && CheckCommand nginx; then
 			# 1 - Server IP addresses
 			log_daemon_msg "Allow access to web server for '$HostNameFQDN'"		
 			echo "	# Server IP" > /etc/nginx/conf.d/ip_restriction
@@ -284,7 +272,7 @@ case $1 in
 		fi
 
 		#### BIND
-		if [ -f /etc/bind/named.conf ]; then
+		if [ -f /etc/bind/named.conf ] && CheckCommand named; then
 			AllTrackersDomain="`sqlite3 $MySB_DB \"SELECT tracker_domain FROM trackers_list WHERE is_active = '0' AND to_check = '0'\"`"
 			echo "# Blacklisted domain (ex: inactive trackers)" > /etc/bind/named.conf.blacklists
 			for TrackerDomain in $AllTrackersDomain; do
@@ -300,8 +288,7 @@ case $1 in
 		fi
 
 		#### PeerGuardian
-		if hash pglcmd 2> /dev/null; then
-		#if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
+		if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
 			# Create '/etc/pgl/pglcmd.conf'
 			PeerGuardianPglcmdConf 0
 			# Create '/etc/pgl/allow.p2p'
@@ -323,10 +310,12 @@ case $1 in
 		#### Save Iptables Rules for Webmin
 		iptables-save > /etc/iptables.up.rules
 		cp /etc/iptables.up.rules /etc/MySB/files/current-iptables-rules
-		if [ -d /etc/webmin/firewall/ ]; then cp /etc/iptables.up.rules /etc/webmin/firewall/iptables.save; fi
-		
+		if [ "$IsInstalled_PeerGuardian" == "YES" ] && [ -d /etc/webmin/firewall/ ]; then
+			cp /etc/iptables.up.rules /etc/webmin/firewall/iptables.save
+		fi
+
 		#### Flush mail queue
-		if hash postfix 2> /dev/null; then postfix flush; fi
+		if CheckCommand postfix; then postfix flush; fi
 	;;
 
 	*)

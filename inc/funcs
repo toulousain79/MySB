@@ -82,7 +82,7 @@ SendMail() {
 	cat $FnAttach | mail -a "From: MySB <$MainUserEmail>" -a "MIME-Version: 1.0" -a "Content-Type: text/$type" -s "$FnSubject" $FnUserMail
 	sleep 2
 	#### Flush mail queue
-	if hash postfix 2> /dev/null; then postfix flush; fi	
+	if CheckCommand postfix; then postfix flush; fi
 	if [ ! -z "$FnInfo" ]; then StatusLSB; fi
 	
 	unset FnAttach FnInfo FnSubject FnUser
@@ -107,7 +107,7 @@ PackagesManage() {
 	tDiff=0	
 
 	#### Check last update
-	if [ -s $MySB_DB ] && hash sqlite3 2> /dev/null; then
+	if [ -s $MySB_DB ] && CheckCommand sqlite3; then
 		AptUpdate="`sqlite3 $MySB_DB \"SELECT apt_update FROM system WHERE 1\"`"
 		AptDate="`sqlite3 $MySB_DB \"SELECT apt_date FROM system WHERE 1\"`"
 		AptDate=$(date -d "$AptDate" +"%Y-%m-%d %H")
@@ -177,7 +177,7 @@ PackagesManage() {
 	
 	RETURN=$?
 
-	if [ -s $MySB_DB ] && hash sqlite3 2> /dev/null; then
+	if [ -s $MySB_DB ] && CheckCommand sqlite3; then
 		#### Need of cleaning ? (must be greater than 2 hours OR forced)
 		if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ]; then
 			if [ $RETURN -eq 0 ]; then
@@ -272,7 +272,7 @@ ManageServices() {
 				;;
 				"start")
 					if [ "$Service" == "pglcmd" ]; then
-						if hash pglcmd 2> /dev/null; then
+						if CheckCommand pglcmd; then
 							if [ "$ServiceStatus" != "" ]; then
 								pglcmd reload
 								if [ $? -gt 0 ]; then
@@ -793,7 +793,7 @@ Fail2BanWhitheList() {
 
 #### PeerGuardian Create blocklists.list
 PeerGuardianBlocklistsList() {
-	if [ -f /etc/pgl/pglcmd.conf ] && hash pglcmd 2> /dev/null; then
+	if [ -f /etc/pgl/pglcmd.conf ] && CheckCommand pglcmd; then
 		# /etc/pgl/blocklists.list
 		if [ $1 -eq 1 ]; then log_daemon_msg "Add blocklists to PeerGuardian"; fi
 		(
@@ -863,7 +863,7 @@ EOF
 
 #### PeerGuardian Create allow.p2p
 PeerGuardianAllowP2P() {
-	if [ -f /etc/pgl/pglcmd.conf ] && hash pglcmd 2> /dev/null; then
+	if [ -f /etc/pgl/pglcmd.conf ] && CheckCommand pglcmd; then
 		# /etc/pgl/allow.p2p
 		if [ $1 -eq 1 ]; then log_daemon_msg "Add allow P2P to PeerGuardian"; fi
 		(
@@ -900,7 +900,7 @@ EOF
 
 #### PeerGuardian Create pglcmd.conf
 PeerGuardianPglcmdConf() {
-	if [ -f /etc/pgl/pglcmd.conf ] && hash pglcmd 2> /dev/null; then
+	if [ -f /etc/pgl/pglcmd.conf ] && CheckCommand pglcmd; then
 		# /etc/pgl/pglcmd.conf
 		if [ $1 -eq 1 ]; then log_daemon_msg "Add whitelist to PeerGuardian"; fi
 		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`
@@ -1020,7 +1020,7 @@ ManageDirectoriesAndFiles() {
 	# Users
 	if [ ! -z "$MySB_DB" ]; then
 		ListingUsers
-		if [ ! -z "$UsersList" ] && [ -f $MySB_DB ] && [ -s $MySB_DB ] && hash sqlite3 2> /dev/null; then
+		if [ ! -z "$UsersList" ] && [ -f $MySB_DB ] && [ -s $MySB_DB ] && CheckCommand sqlite3; then
 			for FnUser in $UsersList; do
 				if [ ! -z "`getent passwd $FnUser`" ]; then
 					# Home
