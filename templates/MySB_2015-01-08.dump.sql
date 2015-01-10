@@ -13,16 +13,6 @@ CREATE TABLE users_addresses (
 );
 
 
--- Table: ports
-CREATE TABLE ports ( 
-    id_ports INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                     NOT NULL ON CONFLICT ABORT
-                     UNIQUE ON CONFLICT ABORT,
-    value    INTEGER NOT NULL ON CONFLICT ABORT
-                     UNIQUE ON CONFLICT IGNORE 
-);
-
-
 -- Table: renting
 CREATE TABLE renting ( 
     id_renting      INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
