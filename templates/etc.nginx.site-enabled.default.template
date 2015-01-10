@@ -10,7 +10,7 @@ server {
 
 	root /etc/MySB/web;
 
-	include /etc/nginx/conf.d/static_files;	
+	include /etc/nginx/conf.d/static_files;
 	include /etc/nginx/conf.d/global_deny_access;
 	include /etc/nginx/conf.d/pagespeed;
 	include /etc/nginx/conf.d/ip_restriction;
@@ -38,15 +38,7 @@ server {
 		error_log /var/log/nginx/MySB-error.log error;
 
 		include /etc/nginx/conf.d/auth_basic;
-
-		include /etc/nginx/fastcgi_params;
-		fastcgi_pass unix:/var/run/php5-fpm.sock;
-		fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-		fastcgi_param APPLICATION_ENV production;
-		fastcgi_param PHP_VALUE "";
-		fastcgi_param PHP_ADMIN_VALUE "display_errors=On";
-		fastcgi_param HTTPS on;
-		fastcgi_read_timeout 300;
+		include /etc/nginx/conf.d/php-ssl;
 		fastcgi_index index.php;
 
 		# For new users, permit to confirmed their account (IP + password)
@@ -109,7 +101,9 @@ server {
 	location ^~ /loadavg/ {
 		access_log /var/log/nginx/loadavg-access.log combined;
 		error_log /var/log/nginx/loadavg-error.log error;
-		include /etc/nginx/conf.d/php-ssl;
+		location ~ \.php$ {
+			include /etc/nginx/conf.d/php-ssl;
+		}
 	}
 
 	#### ruTorrent
@@ -119,27 +113,23 @@ server {
 		access_log /var/log/nginx/rutorrent-access.log combined;
 		error_log /var/log/nginx/rutorrent-error.log error;
 		index index.html;
-		
+
 		location ~ /ru/favicon.ico {
 			alias <rutorrent_dir>/images/favicon.ico;
 		}
 
 		include /etc/nginx/conf.d/auth_basic;
+		include /etc/nginx/conf.d/static_files;
 
 		location ~ \.php$ {
-			include /etc/nginx/fastcgi_params;
-			fastcgi_pass unix:/var/run/php5-fpm.sock;
+			include /etc/nginx/conf.d/php-ssl;
 			fastcgi_param SCRIPT_FILENAME $request_filename;
-			fastcgi_param APPLICATION_ENV production;
-			fastcgi_param PHP_VALUE "";
-			fastcgi_param PHP_ADMIN_VALUE "display_errors=On";
-			fastcgi_param HTTPS on;
 		}
 	}
 
 	#### Others locations (Seedbox-Manager, Cakebox-Light)
 	include /etc/nginx/locations/*.conf;
-	
+
 	#### ruTorrent - users RPC
 	include /etc/nginx/rpc/*.conf;
 
