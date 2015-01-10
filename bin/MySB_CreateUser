@@ -75,22 +75,26 @@ NewUserHomedir="/home/$UserToCreate"
 HOMEDIR_ESCAPED=`echo $NewUserHomedir | sed s,/,\\\\\\\\\\/,g`
 UPPERNEWUSER=`echo $UserToCreate | tr '[:lower:]' '[:upper:]'`
 NEWRPC="/"$UPPERNEWUSER
-NETWORKPORT="`sqlite3 $MySB_DB \"SELECT value FROM ports ORDER BY rowid DESC LIMIT 1\"`"
-SCGIPORT="`sqlite3 $MySB_DB \"SELECT value FROM ports ORDER BY rowid DESC LIMIT 1\"`"
+
+LastPort="`sqlite3 $MySB_DB \"SELECT max(rtorrent_port) FROM users WHERE 1\"`"
+if [ -z "$LastPort" ] || [ "$LastPort" == "" ]; then
+	LastPort=51100
+fi
+(( LastPort++ ))
+ScgiPort=$LastPort
+(( LastPort++ ))
+rTorrentPort=$LastPort
+
 
 #### user infos
 if [ "$UserToCreate" != "$MainUser" ]; then
 	log_daemon_msg "Insert user informations in database"
-	sqlite3 -echo $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir) VALUES (\"$UserToCreate\",\"$UserEmail\",\"$NewUserPassword\",\"$NEWRPC\",\"$UserSFTP\",\"$UserSUDO\",\"$SCGIPORT\",\"$NETWORKPORT\",\"$NewUserHomedir\");"
+	sqlite3 -echo $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir) VALUES (\"$UserToCreate\",\"$UserEmail\",\"$NewUserPassword\",\"$NEWRPC\",\"$UserSFTP\",\"$UserSUDO\",\"$ScgiPort\",\"$rTorrentPort\",\"$NewUserHomedir\");"
 else
 	log_daemon_msg "Update user informations in database"
-	sqlite3 $MySB_DB "UPDATE users SET users_passwd = '', rpc = '$NEWRPC', scgi_port = '$SCGIPORT', rtorrent_port = '$NETWORKPORT', home_dir = '$NewUserHomedir' WHERE users_ident = '$UserToCreate';"
+	sqlite3 $MySB_DB "UPDATE users SET users_passwd = '', rpc = '$NEWRPC', scgi_port = '$ScgiPort', rtorrent_port = '$rTorrentPort', home_dir = '$NewUserHomedir' WHERE users_ident = '$UserToCreate';"
 fi
 StatusLSB
-
-#### Remove used ports from DB
-sqlite3 $MySB_DB "DELETE FROM ports WHERE value = '$NETWORKPORT';"
-sqlite3 $MySB_DB "DELETE FROM ports WHERE value = '$SCGIPORT';"
 
 #### create system user
 log_daemon_msg "Create the system account for $UserToCreate"
@@ -150,8 +154,8 @@ cp /etc/MySB/templates/rtorrent.rc.template $NewUserHomedir/.rtorrent.rc
 perl -pi -e "s/<server_ip>/$SrvIpAddress/g" $NewUserHomedir/.rtorrent.rc
 perl -pi -e "s/<username>/$UserToCreate/g" $NewUserHomedir/.rtorrent.rc
 perl -pi -e "s/<homedir>/$HOMEDIR_ESCAPED/g" $NewUserHomedir/.rtorrent.rc
-perl -pi -e "s/<scgi_port>/$SCGIPORT/g" $NewUserHomedir/.rtorrent.rc
-perl -pi -e "s/<port_range>/$NETWORKPORT-$NETWORKPORT/g" $NewUserHomedir/.rtorrent.rc
+perl -pi -e "s/<scgi_port>/$ScgiPort/g" $NewUserHomedir/.rtorrent.rc
+perl -pi -e "s/<port_range>/$rTorrentPort-$rTorrentPort/g" $NewUserHomedir/.rtorrent.rc
 if [ "$MySB_PeerBlock" == "rTorrent" ]; then
 	perl -pi -e "s/#{1}ipv4_filter.load/ipv4_filter.load/g" $NewUserHomedir/.rtorrent.rc
 	perl -pi -e "s/#{1}print/print/g" $NewUserHomedir/.rtorrent.rc
@@ -181,7 +185,7 @@ location /<USERNAME> {
 
 EOF
 ) > /etc/nginx/rpc/$UserToCreate.conf
-perl -pi -e "s/5995/$SCGIPORT/g" /etc/nginx/rpc/$UserToCreate.conf
+perl -pi -e "s/5995/$ScgiPort/g" /etc/nginx/rpc/$UserToCreate.conf
 perl -pi -e "s/<username>/$UserToCreate/g" /etc/nginx/rpc/$UserToCreate.conf
 perl -pi -e "s/<USERNAME>/$UPPERNEWUSER/g" /etc/nginx/rpc/$UserToCreate.conf
 StatusLSB
