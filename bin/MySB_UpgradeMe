@@ -78,26 +78,35 @@ git checkout -b $MySB_NewVersion origin/$MySB_NewVersion
 git pull
 
 #### Update version info
-sqlite3 -echo $MySB_DB "UPDATE system SET mysb_version = '$MySB_NewVersion' WHERE id_system = '1';"
+echo -e -n "${CBLUE}Updating the clock$CEND..."
+sqlite3 $MySB_DB "UPDATE system SET mysb_version = '$MySB_NewVersion' WHERE id_system = '1';"
 rm -vf /etc/MySB/files/banner_*
+echo -e "${CGREEN}Done !$CEND"
 
 #### Completing the upgrade
 if [ -f /etc/MySB/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh ]; then
-	echo
-	echo -e "${CBLUE}Upgrade system$CEND"
-	echo -e "${CYELLOW}During the update of some packages, questions may be asked to you. Leave the default choice, and press the Enter key.$CEND"
-	echo -e -n "${CRED}Please wait $CEND"
-	for ((i = 10; i >= 0; i -= 1)); do
-		echo -n " $i"
-		sleep 1
-	done
-	echo
+	# echo
+	# echo -e "${CBLUE}Upgrade system$CEND"
+	# echo -e "${CYELLOW}During the update of some packages, questions may be asked to you. Leave the default choice, and press the Enter key.$CEND"
+	# echo -e -n "${CRED}Please wait $CEND"
+	# for ((i = 10; i >= 0; i -= 1)); do
+		# echo -n " $i"
+		# sleep 1
+	# done
+	# echo
 	
 	#### Upgrade System
-	ScriptInvoke 'bash' '/etc/MySB/bin/MySB_UpgradeSystem'
+	echo -e -n "${CBLUE}Updating the clock$CEND..."
 	/usr/sbin/ntpdate 0.fr.pool.ntp.org &> /dev/null 2>&1
+	echo -e "${CGREEN}Done !$CEND"
 	
-	clear
+	#ScriptInvoke 'bash' '/etc/MySB/bin/MySB_UpgradeSystem'
+	echo -e -n "${CBLUE}Upgrading of system$CEND..."
+	screen -dmS MySB_UpgradeSystem /bin/bash /etc/MySB/install/MySB_UpgradeSystem 'UPGRADE';
+	WaitingScreen MySB_UpgradeSystem
+	StatusSTD	
+	
+	echo
 	echo -e "${CBLUE}Starting SCREEN session...$CEND"
 	screen -wipe &> /dev/null
 	screen -dmS MySB_UpgradeMe /bin/bash /etc/MySB/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh;
