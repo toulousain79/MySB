@@ -374,9 +374,9 @@ function printUser($user, $Case) {
 <?php } // $DisplayLinks ?>
 
 
-		<!-- // Force IP addresse -->
+		<!-- // Force IP address -->
 		<tr align="left">
-			<th width="15%" scope="row" style="color: #FF6666;">Force IP addresse</th>
+			<th width="15%" scope="row" style="color: #FF6666;">Force IP address</th>
 			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ForceAddress.php"><span class="Comments">Force the addition of your current IP address in case of problems. (You need a valid password)</span></a></td>
 		</tr>
 	

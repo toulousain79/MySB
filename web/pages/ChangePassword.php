@@ -22,7 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-if ( isset($_SERVER['PHP_AUTH_PW']) ) {
+if ( isset($_SERVER['PHP_AUTH_PW']) && isset($_SESSION['user']) && isset($_SESSION['pwd']) ) {
 	$opts = 'readonly="true" style="cursor: default;" value="' . $_SERVER['PHP_AUTH_PW'] . '"';
 } else {
 	$opts = '';
@@ -44,23 +44,9 @@ echo '
 				<td><input name="confirm_pwd" type="password" /></td>
 			</tr>
 			<tr>
-				<td colspan="2">';
-				
-if (isset($_SESSION['user']) && isset($_SESSION['pwd'])) { ?>
-
-					<div id="PageSubmitButton">
-						<input class="submit" name="submit" type="submit" value="Submit" onclick="ButtonClicked(\'page\')">
-					</div>
-					<div id="PageButtonReplace" style="text-align:center; display:none; height: 33px;">
-						<img src="<?php echo THEMES_PATH; ?>MySB/images/ajax-loader.gif" alt="loading...">
-					</div>
-
-<?php
-} else { 
-					echo '<input class="submit" name="submit" type="submit" value="Submit">';
-}	
-
-echo '			</td>
+				<td colspan="2">
+					<input class="submit" name="submit" type="submit" value="Submit">
+				</td>
 			</tr>
 		</table></div>
 	</form>

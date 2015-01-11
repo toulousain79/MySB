@@ -16,19 +16,10 @@ server {
 	include /etc/nginx/conf.d/ip_restriction;
 
 	#### Deny access for some subdirectories
-	location ^~ /inc/ {
+	location ~ /(inc|openvpn|pages|\/ru\/conf\/|\/ru\/share\/)/ {
 		deny all;
 	}
-	location ^~ /openvpn/ {
-		deny all;
-	}
-	location ^~ /pages/ {
-		deny all;
-	}
-	location ^~ /ru/conf/ {
-		deny all;
-	}
-	location ^~ /ru/share/ {
+	location ~ /ru/(?:conf|share)/ {
 		deny all;
 	}
 
@@ -38,6 +29,10 @@ server {
 		error_log /var/log/nginx/MySB-error.log error;
 
 		include /etc/nginx/conf.d/auth_basic;
+		include /etc/nginx/conf.d/static_files;
+		include /etc/nginx/conf.d/global_deny_access;
+		include /etc/nginx/conf.d/pagespeed;
+		include /etc/nginx/conf.d/ip_restriction;
 		include /etc/nginx/conf.d/php-ssl;
 		fastcgi_index index.php;
 
@@ -101,6 +96,13 @@ server {
 	location ^~ /loadavg/ {
 		access_log /var/log/nginx/loadavg-access.log combined;
 		error_log /var/log/nginx/loadavg-error.log error;
+		
+		include /etc/nginx/conf.d/auth_basic;
+		include /etc/nginx/conf.d/static_files;
+		include /etc/nginx/conf.d/global_deny_access;
+		include /etc/nginx/conf.d/pagespeed;
+		include /etc/nginx/conf.d/ip_restriction;
+
 		location ~ \.php$ {
 			include /etc/nginx/conf.d/php-ssl;
 		}
@@ -114,12 +116,23 @@ server {
 		error_log /var/log/nginx/rutorrent-error.log error;
 		index index.html;
 
+		location ~ /ru/(?:plugins|php)/ {
+			access_log off;
+			location ~ \.php$ {
+				include /etc/nginx/conf.d/php-ssl;
+				fastcgi_param SCRIPT_FILENAME $request_filename;
+			}
+		}
+
 		location ~ /ru/favicon.ico {
 			alias <rutorrent_dir>/images/favicon.ico;
 		}
 
 		include /etc/nginx/conf.d/auth_basic;
 		include /etc/nginx/conf.d/static_files;
+		include /etc/nginx/conf.d/global_deny_access;
+		include /etc/nginx/conf.d/pagespeed;
+		include /etc/nginx/conf.d/ip_restriction;
 
 		location ~ \.php$ {
 			include /etc/nginx/conf.d/php-ssl;
