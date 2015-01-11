@@ -32,6 +32,7 @@ fi
 #### VARs
 RemovePluginCakebox=NO
 RemovePluginManager=NO
+Error=0
 
 #### Get all repos
 AllRepos="`sqlite3 $MySB_DB \"SELECT * FROM repositories WHERE active = '1'\"`"
@@ -75,9 +76,11 @@ for Repo in $AllRepos; do
 
 			if [ ! -f /etc/MySB/files/$RepoFile ]; then
 				wget --no-check-certificate $RepoURL -O /etc/MySB/files/$RepoFile
+				Error=$?
 			fi
-			if [ ! -d $RepoDir ]; then
+			if [ ! -d $RepoDir ] && [ $Error -gt 0 ]; then
 				tar -zxvf /etc/MySB/files/$RepoFile -C /etc/MySB/temp/
+				Error=$?
 
 				SubDir="`tar -ztf /etc/MySB/files/$RepoFile | sed -e 's@/.*@@' | uniq`"
 				if [ -d /etc/MySB/temp/$SubDir ]; then
@@ -101,6 +104,7 @@ for Repo in $AllRepos; do
 
 			if [ ! -f $RepoDir/$RepoFile ]; then
 				wget --no-check-certificate $RepoURL -O $RepoDir/$RepoFile
+				Error=$?
 			fi
 		;;
 		"SVN")
@@ -110,16 +114,20 @@ for Repo in $AllRepos; do
 						svn up $RepoDir
 						if [ $? -gt 0 ]; then
 							svn switch $RepoURL $RepoDir
+							Error=$?
 						fi
 					else
 						svn co $RepoURL $RepoDir
+						Error=$?
 					fi
 				;;
 				*)
 					if [ -d $RepoDir/.svn ]; then
 						svn switch $RepoURL $RepoDir
+						Error=$?
 					else
 						svn co $RepoURL $RepoDir
+						Error=$?
 					fi
 				;;
 			esac
@@ -130,14 +138,21 @@ for Repo in $AllRepos; do
 					if [ -d $RepoDir/ ]; then
 						cd $RepoDir/
 						git stash
-						git pull
+						Error=$?
+						
+						if [ $Error -gt 0 ]; then
+							git pull
+							Error=$?
+						fi
 					else
 						git clone $RepoURL $RepoDir
+						Error=$?
 					fi
 				;;
 				*)
 					if [ ! -d $RepoDir ]; then
 						git clone $RepoURL $RepoDir
+						Error=$?
 					fi
 				;;
 			esac
@@ -161,9 +176,11 @@ for Repo in $AllRepos; do
 
 			if [ ! -f /etc/MySB/files/$RepoFile ]; then
 				wget --no-check-certificate $RepoURL -O /etc/MySB/files/$RepoFile
+				Error=$?
 			fi
-			if [ ! -d $RepoDir ]; then
+			if [ ! -d $RepoDir ] && [ $Error -gt 0 ]; then
 				unzip /etc/MySB/files/$RepoFile -d /etc/MySB/temp/
+				Error=$?
 
 				SubDir="`unzip -l /etc/MySB/files/$RepoFile | awk '{ print $4 }' | sed -e 's@/.*@@' | uniq | sed '1,3d;$d'`"
 				if [ -d /etc/MySB/temp/$SubDir ]; then
@@ -173,7 +190,7 @@ for Repo in $AllRepos; do
 		;;	
 	esac
 
-	if [ $? -gt 0 ]; then
+	if [ $Error -gt 0 ]; then
 		case "$RepoName" in
 			"Cakebox-Light")
 				RemovePluginCakebox=YES
