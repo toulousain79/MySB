@@ -64,36 +64,8 @@ if ( isset($_POST['submit']) ) {
 				$result = UpdateWolfDB($_SERVER['PHP_AUTH_USER'], $new_pwd);
 
 				if ( $result > 0 ) {
-					if (isset($_SESSION['user']) && isset($_SESSION['pwd'])) {
-						$username = $_SERVER['PHP_AUTH_USER'];
-
-						exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword' '$username' '$new_pwd'", $output, $result);
-						
-						foreach ( $output as $item ) {
-							echo '<div class="Comments" align="center">'.$item.'</div>';
-						}
-
-						if ( $result == 0 ) {
-							session_unset();
-							session_destroy();
-							$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "MySB_ChangeUserPassword"]);
-							if ( $result > 0 ) {
-								$type = 'success';
-							} else {
-								$type = 'error';
-								$message = 'Failed ! It was not possible to update the MySB database.';
-							}
-						} else {
-							$type = 'error';
-							$message = 'Error occured with "MySB_ChangeUserPassword" script !';
-						}
-						
-						GenerateMessage(false, $type, $message);
-						header('Refresh: 5; URL=/');
-					} else {
-						$type = 'success';
-						$args = "$new_pwd";
-					}
+					$type = 'success';
+					$args = "$username|$new_pwd";
 				} else {
 					$type = 'error';
 					$message = 'Failed ! It was not possible to update the Wolf database.';

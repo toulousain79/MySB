@@ -131,8 +131,9 @@ if ( IfApplyConfig() > 0 ) {
 			case "MySB_ChangeUserPassword":
 				echo '<div align="center"><h1>MySB_ChangeUserPassword...</h1></div>';
 
-				$username = $_SERVER['PHP_AUTH_USER'];
-				$passwd = $Cmd['args'];
+				$args = explode("|", $Cmd['args']);
+				$username = $args[0];
+				$passwd = $args[1];				
 
 				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword' '$username' '$passwd'", $output, $result);
 

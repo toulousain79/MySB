@@ -41,8 +41,6 @@ if ( isset($_GET['var1']) && isset($_GET['var2']) ) {
 			$_SESSION['user'] = $UserName;
 			$_SESSION['pwd'] = $UserPasswd;
 			require_once '/etc/MySB/web/index.php';
-			// session_unset();
-			// session_destroy();
 		} else {
 			echo 'Failed ! It was not possible to add your IP address in MySB database!';
 		}

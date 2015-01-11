@@ -432,8 +432,16 @@ function GenerateMessage($commands, $type, $message, $args = false) {
 			$timeout = 7000;
 			break;
 	}
-
-	echo '<script type="text/javascript">generate_message("'. $type . '", ' . $timeout . ', "' . $message . '");</script>';
+	
+	if ( isset($_SESSION['user']) && isset($_SESSION['pwd']) && isset($_GET['var1']) && isset($_GET['var2']) ) {
+		$message = 'Success ! You are now able to connect to MySB portal...".';
+		$timeout = 10000;
+		echo '<script type="text/javascript">generate_message("'. $type . '", ' . $timeout . ', "' . $message . '");</script>';
+		session_unset();
+		session_destroy();
+	} else {
+		echo '<script type="text/javascript">generate_message("'. $type . '", ' . $timeout . ', "' . $message . '");</script>';
+	}
 }
 
 //#################### LAST LINE ######################################
