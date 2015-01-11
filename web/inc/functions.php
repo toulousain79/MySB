@@ -86,10 +86,9 @@ function GetVersion() {
 
 // Main user ?
 function MainUser() {
-	global $MySB_DB;
+	global $MySB_DB, $CurrentUser;
 
 	$MainUser = $MySB_DB->get("users", "users_ident", ["admin" => 1]);
-	$CurrentUser = $_SERVER['PHP_AUTH_USER'];
 
 	switch ($MainUser) {
 		case "$CurrentUser":
@@ -396,16 +395,16 @@ function ValidateIPv4NoPriv($ip) {
 
 // Can I activate 'Apply' button ?
 function IfApplyConfig() {
-	global $MySB_DB;
+	global $MySB_DB, $CurrentUser;
 	
-	$value = $MySB_DB->count("commands", "reload", ["reload" => 1]);
+	$value = $MySB_DB->count("commands", "reload", ["AND" => ["user" => "$CurrentUser","reload" => 1]]);
 
 	return $value;
 }
 
 // Generate message (success, error, information, ...)
 function GenerateMessage($commands, $type, $message, $args = false) {
-	global $MySB_DB;
+	global $MySB_DB, $CurrentUser;
 
 	switch ($type) {
 		case "success":
@@ -414,15 +413,11 @@ function GenerateMessage($commands, $type, $message, $args = false) {
 			if ( $commands != false ) {
 				$timeout = 4000;
 				$message = 'Success ! Please, click on "Apply you configuration".';
-				if ( $args != false ) {
-					$value = $MySB_DB->update("commands", ["reload" => 1, "args" => "$args"], ["commands" => "$commands"]);
-				} else {
-					$value = $MySB_DB->update("commands", ["reload" => 1], ["commands" => "$commands"]);
-				}
-
+				$value = $MySB_DB->insert("commands", ["reload" => 1, "commands" => "$commands", "args" => "$args", "user" => "$CurrentUser"]);
+				
 				switch ($commands) {
 					case "BlocklistsRTorrent.bsh":
-						$value = $MySB_DB->update("commands", ["reload" => 1], ["commands" => "FirewallAndSecurity.bsh"]);
+						$value = $MySB_DB->insert("commands", ["reload" => 1, "commands" => "FirewallAndSecurity.bsh", "args" => "$args", "user" => "$CurrentUser"]);
 						break;
 				}
 				echo '<script type="text/javascript">ApplyConfig("ToUpdate");</script>';

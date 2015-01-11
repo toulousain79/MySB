@@ -252,7 +252,7 @@ https://www.google.com/accounts/DisplayUnlockCaptcha
 
 ## Supported and tested servers
 
-#### Debian 7 - x86_64 (Wheezy)
+#### Debian 7 (Wheezy) - 32 and 64 bits
 
 	--> Tested on Online.net with "DEDIBOX® SC GEN2" and "DEDIBOX® XC"
 	--> Tested on OpenVZ Container with ProxMox, work fine ! (read comment in top of this page)

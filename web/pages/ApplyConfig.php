@@ -23,9 +23,9 @@
 //#################### FIRST LINE #####################################
 
 if ( IfApplyConfig() > 0 ) {
-	global $MySB_DB;
+	global $MySB_DB, $CurrentUser;
 	
-	$Commands = $MySB_DB->select("commands", "*", ["reload" => 1, "ORDER" => "priority DESC"]);
+	$Commands = $MySB_DB->select("commands", "*", ["user" => "$CurrentUser", "ORDER" => "priority DESC"]);
 
 	foreach ($Commands as $Cmd) {
 		$output = '';
@@ -41,7 +41,7 @@ if ( IfApplyConfig() > 0 ) {
 				}
 
 				if ( $result == 0 ) {
-					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "BlocklistsRTorrent.bsh"]);
+					$result = $MySB_DB->delete("commands", ["AND" => ["user" => "$CurrentUser", "commands" => "BlocklistsRTorrent.bsh"]]);
 					if ( $result > 0 ) {
 						$type = 'information';
 						$message = 'The blocklist for rTorrent was created! Thank you to wait a little longer to apply ...';
@@ -66,7 +66,8 @@ if ( IfApplyConfig() > 0 ) {
 				}
 
 				if ( $result == 0 ) {
-					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "FirewallAndSecurity.bsh"]);
+					$result = $MySB_DB->delete("commands", ["AND" => ["user" => "$CurrentUser", "commands" => "FirewallAndSecurity.bsh"]]);
+					
 					if ( $result > 0 ) {
 						$type = 'success';
 					} else {
@@ -89,7 +90,8 @@ if ( IfApplyConfig() > 0 ) {
 				}
 
 				if ( $result == 0 ) {
-					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "GetTrackersCert.bsh"]);
+					$result = $MySB_DB->delete("commands", ["AND" => ["user" => "$CurrentUser", "commands" => "GetTrackersCert.bsh"]]);
+					
 					if ( $result > 0 ) {
 						$type = 'success';
 					} else {
@@ -113,7 +115,8 @@ if ( IfApplyConfig() > 0 ) {
 				}
 
 				if ( $result == 0 ) {
-					$result = $MySB_DB->update("commands", ["reload" => 0], ["commands" => "Postfix"]);
+					$result = $MySB_DB->delete("commands", ["AND" => ["user" => "$CurrentUser", "commands" => "Postfix"]]);
+					
 					if ( $result > 0 ) {
 						$type = 'success';
 					} else {
@@ -142,7 +145,8 @@ if ( IfApplyConfig() > 0 ) {
 				}
 
 				if ( $result == 0 ) {
-					$result = $MySB_DB->update("commands", ["reload" => 0, "args" => ""], ["commands" => "MySB_ChangeUserPassword"]);
+					$result = $MySB_DB->delete("commands", ["AND" => ["user" => "$CurrentUser", "commands" => "MySB_ChangeUserPassword"]]);
+					
 					if ( $result > 0 ) {
 						$type = 'success';
 					} else {
@@ -173,7 +177,8 @@ if ( IfApplyConfig() > 0 ) {
 				}
 
 				if ( $result == 0 ) {
-					$result = $MySB_DB->update("commands", ["reload" => 0, "args" => ""], ["commands" => "MySB_CreateUser"]);
+					$result = $MySB_DB->delete("commands", ["AND" => ["user" => "$CurrentUser", "commands" => "MySB_CreateUser"]]);
+					
 					if ( $result > 0 ) {
 						$type = 'success';
 					} else {
@@ -199,7 +204,8 @@ if ( IfApplyConfig() > 0 ) {
 				}
 
 				if ( $result == 0 ) {
-					$result = $MySB_DB->update("commands", ["reload" => 0, "args" => ""], ["commands" => "MySB_DeleteUser"]);
+					$result = $MySB_DB->delete("commands", ["AND" => ["user" => "$CurrentUser", "commands" => "MySB_DeleteUser"]]);
+					
 					if ( $result > 0 ) {
 						$type = 'success';
 					} else {
