@@ -98,13 +98,25 @@ else
 	COMMAND="`screen -ls | grep MySB 2>/dev/null`"
 fi
 
-#### Banner
-echo -e "${CGREEN}############################################################$CEND"
-echo -e "${CGREEN}#$CEND"
-echo -e "${CGREEN}#$CEND 			${CYELLOW}MySB$CEND ${CRED}$MySB_CurrentVersion$CEND"
-echo -e "${CGREEN}#$CEND"
-echo -e "${CGREEN}############################################################$CEND"
-echo
+BannerInstall() {
+	clear
+	#### Banner
+	echo -e "${CGREEN}############################################################$CEND"
+	echo -e "${CGREEN}#$CEND"
+	echo -e "${CGREEN}#$CEND 			${CYELLOW}MySB$CEND ${CRED}$MySB_CurrentVersion$CEND"
+	echo -e "${CGREEN}#$CEND"
+	echo -e "${CGREEN}############################################################$CEND"
+	echo
+
+	#### Advertising
+	echo
+	echo -e "${CRED}############################################################$CEND"
+	echo -e "${CRED}#$CEND ${CYELLOW}At the end of the installation, you will receive an email.$CEND"
+	echo -e "${CRED}#$CEND ${CYELLOW}It list informations about your account.$CEND"
+	echo -e "${CRED}# IMPORTANT:$CEND ${CYELLOW}Remember to also check the SPAM folder...$CEND"
+	echo -e "${CRED}############################################################$CEND"
+	echo
+}
 
 if [ "$COMMAND" == "" ]; then
 	if [ -s /etc/MySB/version ]; then # Upgrade ?
@@ -114,54 +126,66 @@ if [ "$COMMAND" == "" ]; then
 		source /etc/MySB/inc/includes_after
 		exit 1
 	else # Install ?
-		#### Advertising
-		echo
-		echo -e "${CRED}############################################################$CEND"
-		echo -e "${CRED}#$CEND ${CYELLOW}At the end of the installation, you will receive an email.$CEND"
-		echo -e "${CRED}#$CEND ${CYELLOW}It list informations about your account.$CEND"
-		echo -e "${CRED}# IMPORTANT:$CEND ${CYELLOW}Remember to also check the SPAM folder...$CEND"
-		echo -e "${CRED}############################################################$CEND"
-		echo
-
-		echo -e -n "${CBLUE}Install some tools (please be patient)$CEND..."
-
 		if [ "`dpkg --status aptitude | grep Status:`" == "Status: install ok installed" ]; then
-			packetg="aptitude -q"
+			AptCommand="aptitude -q"
 		else
-			packetg="apt-get"
-		fi
+			AptCommand="apt-get"
+		fi	
 
-		TOOLS="git-core dos2unix lsb-core screen ccze gnupg figlet mlocate sqlite3 dnsutils netselect-apt"
-
-		$packetg -y --assume-yes install $TOOLS >> /tmp/`basename $0`.log
-
+		# First we do an update
+		BannerInstall
+		echo -e -n "${CBLUE}Updating Debian source lists$CEND... "
+		for ((i = 5; i >= 0; i -= 1)); do
+			echo -n " $i"
+			sleep 1
+		done		
+		$AptCommand -y --assume-yes -o Acquire::Check-Valid-Until=false update
 		if [ $? -gt 0 ]; then
-			echo -e -n "${CRED}Failed !$CEND"
-			echo ""
-			echo ""
-			echo -e "${CRED}Looks like something for installing some tools, aborting !$CEND"
+			echo -e "${CRED}Looks like something was wrong during the update, aborting !$CEND"
 			exit 1
-		else
-			echo -e "${CGREEN}Done !$CEND"
+		fi		
+		
+		# Next we do an upgrade
+		BannerInstall		
+		echo -e -n "${CBLUE}Upgrading the system$CEND... "
+		for ((i = 5; i >= 0; i -= 1)); do
+			echo -n " $i"
+			sleep 1
+		done
+		$AptCommand -y --assume-yes -V -o Dpkg::Options::="--force-confold" upgrade
+		if [ $? -gt 0 ]; then
+			echo -e "${CRED}Looks like something was wrong during the upgrade, aborting !$CEND"
+			exit 1
+		fi		
+		
+		# Now we can install required packages
+		BannerInstall
+		echo -e -n "${CBLUE}Installing some needed packages$CEND... "
+		for ((i = 5; i >= 0; i -= 1)); do
+			echo -n " $i"
+			sleep 1
+		done		
+		TOOLS="git-core dos2unix lsb-core screen ccze gnupg figlet mlocate sqlite3 dnsutils netselect-apt"
+		$AptCommand -y --assume-yes install $TOOLS
+		if [ $? -gt 0 ]; then
+			echo -e "${CRED}Looks like something was wrong during the install of needed packages, aborting !$CEND"
+			exit 1
 		fi
 		
 		#### download files from Git
-		echo -e -n "${CBLUE}Download files from GitHub$CEND..."
-
-		git clone -b $MySB_CurrentVersion https://github.com/toulousain79/MySB.git /etc/MySB >> /tmp/`basename $0`.log
-
+		BannerInstall
+		echo -e -n "${CBLUE}Downloading files from GitHub$CEND... "
+		for ((i = 5; i >= 0; i -= 1)); do
+			echo -n " $i"
+			sleep 1
+		done
+		git clone -b $MySB_CurrentVersion https://github.com/toulousain79/MySB.git /etc/MySB
 		if [ $? -gt 0 ]; then
-			echo -e -n "${CRED}Failed !$CEND"
-			echo ""
-			echo ""
-			echo -e "${CRED}Looks like somethig is wrong with git clone, aborting !$CEND"
-			if [ -f /etc/MySB/inc/includes_after ]; then source /etc/MySB/inc/includes_after; fi
-			exit 0
+			echo -e "${CRED}Looks like something was wrong with git clone, aborting !$CEND"
+			exit 1
 		else
-			echo -e "${CGREEN}Done !$CEND"
-
 			#### Load variables and functions
-			echo -e -n "${CBLUE}Load variables and functions$CEND..."
+			echo -e -n "${CBLUE}Loading variables and functions$CEND..."
 			source /etc/MySB/inc/vars
 			source /etc/MySB/inc/funcs
 			if [ -f /lib/lsb/init-functions ]; then
@@ -170,32 +194,32 @@ if [ "$COMMAND" == "" ]; then
 			echo -e "${CGREEN}Done !$CEND"
 
 			#### Create directories
-			echo -e -n "${CBLUE}Create directories$CEND..."
+			echo -e -n "${CBLUE}Creating directories$CEND..."
 			ManageDirectoriesAndFiles &> /dev/null
 			echo -e "${CGREEN}Done !$CEND"			
 			
 			#### Create database
-			echo -e -n "${CBLUE}Create databases$CEND..."
+			echo -e -n "${CBLUE}Creating databases$CEND..."
 			/bin/bash /etc/MySB/install/SQLite 'INSTALL' >> /tmp/`basename $0`.log
 			if [ $? -gt 0 ]; then
 				echo -e -n "${CRED}Failed !$CEND"
 				echo ""
 				echo ""
-				echo -e "${CRED}Looks like somethig is wrong with creating database, aborting !$CEND"
+				echo -e "${CRED}Looks like something is wrong when creating the databases, aborting !$CEND"
 				if [ -f /etc/MySB/inc/includes_after ]; then source /etc/MySB/inc/includes_after; fi
 				exit 0
 			else
 				echo -e "${CGREEN}Done !$CEND"
 			fi
 
-			echo -e -n "${CBLUE}Update version in database$CEND..."
-			sqlite3 $MySB_DB "UPDATE system SET mysb_version = '$MySB_CurrentVersion' WHERE id_system = '1';"
+			echo -e -n "${CBLUE}Updating MySB version in database$CEND..."
+			sqlite3 -echo $MySB_DB "UPDATE system SET mysb_version = '$MySB_CurrentVersion' WHERE id_system = '1';" >> /tmp/`basename $0`.log
 
 			if [ $? -gt 0 ]; then
 				echo -e -n "${CRED}Failed !$CEND"
 				echo ""
 				echo ""
-				echo -e "${CRED}Looks like somethig is wrong with updating database, aborting !$CEND"
+				echo -e "${CRED}Looks like something is wrong when updating the database, aborting !$CEND"
 				if [ -f /etc/MySB/inc/includes_after ]; then source /etc/MySB/inc/includes_after; fi
 				exit 0
 			else
@@ -209,7 +233,7 @@ if [ "$COMMAND" == "" ]; then
 				echo
 
 				if [ -f /etc/MySB/DEV ]; then
-					QuestionGetString NO  "How do you want to start the instalaltion ? Type 'manual' or 'auto' ?" DevInstallMode "manual"
+					QuestionGetString NO  "How do you want to start the installation ? Type 'manual' or 'auto' ?" DevInstallMode "manual"
 				fi
 
 				if [ "$DevInstallMode" == "manual" ]; then
@@ -234,7 +258,7 @@ if [ "$COMMAND" == "" ]; then
 else
 	echo ""
 	echo ""
-	echo -e "${CRED}MySB is already started with SCREEN...$CEND"
+	echo -e "${CRED}MySB is already started with SCREEN, aborting !$CEND"
 	if [ -f /etc/MySB/inc/includes_after ]; then source /etc/MySB/inc/includes_after; fi
 	exit 0
 fi
