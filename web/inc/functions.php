@@ -411,15 +411,21 @@ function GenerateMessage($commands, $type, $message, $args = false) {
 			$timeout = 2000;
 			$message = 'Success !';
 			if ( $commands != false ) {
+				$priority=2
 				$timeout = 4000;
 				$message = 'Success ! Please, click on "Apply you configuration".';
-				$value = $MySB_DB->insert("commands", ["reload" => 1, "commands" => "$commands", "args" => "$args", "user" => "$CurrentUser"]);
 				
 				switch ($commands) {
 					case "BlocklistsRTorrent.bsh":
-						$value = $MySB_DB->insert("commands", ["reload" => 1, "commands" => "FirewallAndSecurity.bsh", "args" => "$args", "user" => "$CurrentUser"]);
+						$value = $MySB_DB->insert("commands", ["commands" => "FirewallAndSecurity.bsh", "reload" => 1, "priority" => 1, "args" => "$args", "user" => "$CurrentUser"]);
 						break;
+					case "FirewallAndSecurity.bsh":
+						$priority=1
+						break;						
 				}
+				
+				$value = $MySB_DB->insert("commands", ["commands" => "$commands", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
+				
 				echo '<script type="text/javascript">ApplyConfig("ToUpdate");</script>';
 			}
 			break;
@@ -429,12 +435,11 @@ function GenerateMessage($commands, $type, $message, $args = false) {
 	}
 	
 	if ( isset($_SESSION['user']) && isset($_SESSION['pwd']) && isset($_GET['var1']) && isset($_GET['var2']) ) {
-		$message = 'Success ! You are now able to connect to MySB portal...".';
+		$message = 'Success ! You are now able to connect to MySB portal...';
 		$timeout = 10000;
-		echo '<script type="text/javascript">generate_message("'. $type . '", ' . $timeout . ', "' . $message . '");</script>';
-	} else {
-		echo '<script type="text/javascript">generate_message("'. $type . '", ' . $timeout . ', "' . $message . '");</script>';
 	}
+	
+	echo '<script type="text/javascript">generate_message("'. $type . '", ' . $timeout . ', "' . $message . '");</script>';
 }
 
 //#################### LAST LINE ######################################
