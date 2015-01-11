@@ -258,7 +258,7 @@ https://www.google.com/accounts/DisplayUnlockCaptcha
 	--> Tested on OpenVZ Container with ProxMox, work fine ! (read comment in top of this page)
 	--> Tested on OVH with "Kimsufi"
   
-#### Ubuntu or older Debian may worked, but not tested...
+#### Ubuntu is not supported.
 
 
 ## Changelog
