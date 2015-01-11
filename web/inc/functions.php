@@ -437,8 +437,6 @@ function GenerateMessage($commands, $type, $message, $args = false) {
 		$message = 'Success ! You are now able to connect to MySB portal...".';
 		$timeout = 10000;
 		echo '<script type="text/javascript">generate_message("'. $type . '", ' . $timeout . ', "' . $message . '");</script>';
-		session_unset();
-		session_destroy();
 	} else {
 		echo '<script type="text/javascript">generate_message("'. $type . '", ' . $timeout . ', "' . $message . '");</script>';
 	}
