@@ -94,18 +94,18 @@ PackagesManage() {
 	PackageList=$2
 
 	if [ "`dpkg --status aptitude | grep Status:`" == "Status: install ok installed" ]; then
-		packetg="aptitude -q"
+		AptCommand="aptitude -q"
 	else
-		packetg="apt-get"
+		AptCommand="apt-get"
 	fi
 
-	export DEBIAN_FRONTEND=noninteractive
-	BEFORE="sudo DEBIAN_FRONTEND=noninteractive"
-	OPTIONS="-y --assume-yes"
+	GlobalArgs="-y --assume-yes"
 	RETURN=0
 	AptUpdate=0
 	tDiff=0	
 
+	export DEBIAN_FRONTEND=noninteractive
+	
 	#### Check last update
 	if [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 		AptUpdate="`sqlite3 $MySB_DB \"SELECT apt_update FROM system WHERE 1\"`"
@@ -118,17 +118,15 @@ PackagesManage() {
 
 		#### Need of 'apt-get update' ? (must be greater than 2 hours OR forced)
 		if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ]; then
-			echo "$BEFORE $packetg $OPTIONS -o Acquire::Check-Valid-Until=false update"
-			#$BEFORE $packetg $OPTIONS -o Acquire::Check-Valid-Until=false update
-			$packetg $OPTIONS -o Acquire::Check-Valid-Until=false update
+			echo "$AptCommand $GlobalArgs update"
+			$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update
 			if [ $? -eq 0 ]; then
 				sqlite3 -echo $MySB_DB "UPDATE system SET apt_update = 0, apt_date = datetime('now','localtime') WHERE id_system = 1;"
 			fi
 		fi
 	else
-		echo "$BEFORE $packetg $OPTIONS -o Acquire::Check-Valid-Until=false update"
-		#$BEFORE $packetg $OPTIONS -o Acquire::Check-Valid-Until=false update
-		$packetg $OPTIONS -o Acquire::Check-Valid-Until=false update
+		echo "$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update"
+		$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update
 	fi
 
 	case "$Query" in
@@ -142,20 +140,17 @@ PackagesManage() {
 			FinalList="`echo $FinalList | sed -e 's/^ //g;'`"
 			
 			if [ ! -z "$FinalList" ]; then
-				echo "$BEFORE $packetg $OPTIONS install $FinalList"
-				#$BEFORE $packetg $OPTIONS install $FinalList
-				$packetg $OPTIONS install $FinalList
+				echo "$AptCommand $GlobalArgs install $FinalList"
+				$AptCommand $GlobalArgs -V install $FinalList
 			fi
 		;;
 		'upgrade')
-			if [ "`$packetg --help | grep safe-upgrade | awk '{ print $1 }'`" == "safe-upgrade" ]; then
-				echo "$BEFORE $packetg $OPTIONS -V safe-upgrade"
-				#$BEFORE $packetg $OPTIONS -V safe-upgrade
-				$packetg $OPTIONS -V safe-upgrade
+			if [ "`$AptCommand --help | grep safe-upgrade | awk '{ print $1 }'`" == "safe-upgrade" ]; then
+				echo "$AptCommand $GlobalArgs -V safe-upgrade"
+				$AptCommand $GlobalArgs -V -o Dpkg::Options::="--force-confold" safe-upgrade
 			else
-				echo "$BEFORE $packetg $OPTIONS -V upgrade"
-				#$BEFORE $packetg $OPTIONS -V upgrade
-				$packetg $OPTIONS -V upgrade
+				echo "$AptCommand $GlobalArgs -V upgrade"
+				$AptCommand $GlobalArgs -V -o Dpkg::Options::="--force-confold" upgrade
 			fi
 		;;
 		'purge')
@@ -168,9 +163,8 @@ PackagesManage() {
 			FinalList="`echo $FinalList | sed -e 's/^ //g;'`"
 			
 			if [ ! -z "$FinalList" ]; then		
-				echo "$BEFORE $packetg $OPTIONS purge $FinalList"
-				#$BEFORE $packetg $OPTIONS purge $FinalList
-				$packetg $OPTIONS purge $FinalList
+				echo "$AptCommand $GlobalArgs purge $FinalList"
+				$AptCommand $GlobalArgs purge $FinalList
 			fi
 		;;
 	esac
@@ -181,19 +175,16 @@ PackagesManage() {
 		#### Need of cleaning ? (must be greater than 2 hours OR forced)
 		if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ]; then
 			if [ $RETURN -eq 0 ]; then
-				if [ "`$packetg --help | grep autoremove | awk '{ print $1 }'`" == "autoremove" ]; then
-					echo "$BEFORE $packetg $OPTIONS autoremove"
-					#$BEFORE $packetg $OPTIONS autoremove
-					$packetg $OPTIONS autoremove
-				elif [ "`$packetg --help | grep autoclean | awk '{ print $1 }'`" == "autoclean" ]; then
-					echo "$BEFORE $packetg $OPTIONS autoremove"
-					#$BEFORE $packetg $OPTIONS autoclean
-					$packetg $OPTIONS autoclean
+				if [ "`$AptCommand --help | grep autoremove | awk '{ print $1 }'`" == "autoremove" ]; then
+					echo "$AptCommand $GlobalArgs autoremove"
+					$AptCommand $GlobalArgs autoremove
+				elif [ "`$AptCommand --help | grep autoclean | awk '{ print $1 }'`" == "autoclean" ]; then
+					echo "$AptCommand $GlobalArgs autoremove"
+					$AptCommand $GlobalArgs autoclean
 				fi
 
-				echo "$BEFORE $packetg $OPTIONS install"
-				#$BEFORE $packetg $OPTIONS install
-				$packetg $OPTIONS install
+				echo "$AptCommand $GlobalArgs install"
+				$AptCommand $GlobalArgs install
 			fi
 		fi
 	fi
@@ -363,6 +354,8 @@ ManageServices() {
 
 						if [ "$Continue" == "1" ]; then
 							if [ "$ServiceStatus" == "" ]; then
+								FinalCommand="start"
+							else
 								FinalCommand="restart"
 							fi
 						
