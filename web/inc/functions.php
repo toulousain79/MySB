@@ -22,6 +22,14 @@
 //
 //#################### FIRST LINE #####################################
 
+// Create a log file pour 'ApplyConfig.php'
+function CreateLogFile($LogFile, $Data) {
+	$fp = fopen ($LogFile, "a+");
+	fseek ($fp, 0);
+	fputs ($fp, $Data);
+	fclose ($fp);
+}
+
 // Password Generator
 function PasswordGenerator ($length = 8) {
 	$password = "";
@@ -410,10 +418,11 @@ function GenerateMessage($commands, $type, $message, $args = false) {
 		case "success":
 			$timeout = 2000;
 			$message = 'Success !';
-			if ( $commands != false ) {
-				$priority=2;
+			
+			if ( ($commands != false) && ($commands != "") ) {
+				$priority = 2;
 				$timeout = 4000;
-				$message = 'Success ! Please, click on "Apply you configuration".';
+				$message = 'Success !<br /><br />Please, click on \"Apply configuration\"';
 				
 				switch ($commands) {
 					case "BlocklistsRTorrent.bsh":
@@ -434,7 +443,7 @@ function GenerateMessage($commands, $type, $message, $args = false) {
 			break;
 	}
 	
-	if ( isset($_SESSION['user']) && isset($_SESSION['pwd']) && isset($_GET['var1']) && isset($_GET['var2']) ) {
+	if ( isset($_SESSION['user']) && isset($_GET['var1']) && isset($_GET['var2']) ) {
 		$message = 'Success ! You are now able to connect to MySB portal...';
 		$timeout = 10000;
 	}

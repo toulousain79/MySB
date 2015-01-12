@@ -22,6 +22,12 @@
 //
 //#################### FIRST LINE #####################################
 
+//CreateLogFile("../../temp/Postfix.log", $output);
+// $contenu=file_get_contents('/tmp/Postfix.start'); 
+// echo "<div style=\"text-align:left;\" align=\"center\"><pre>$contenu</pre></div>";
+// $contenu=file_get_contents('/tmp/Postfix.end'); 
+// echo "<div style=\"text-align:left;\" align=\"center\"><pre>$contenu</pre></div>";
+
 if ( IfApplyConfig() > 0 ) {
 	global $MySB_DB, $CurrentUser;
 	
@@ -102,32 +108,6 @@ if ( IfApplyConfig() > 0 ) {
 					$type = 'error';
 					$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
 				}
-
-				break;
-
-			case "Postfix":
-				echo '<div align="center"><h1>Postfix...</h1></div>';
-
-				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'Postfix'", $output, $result);
-
-				foreach ( $output as $item ) {
-					echo '<div class="Comments" align="center">'.$item.'</div>';
-				}
-
-				if ( $result == 0 ) {
-					$result = $MySB_DB->delete("commands", ["AND" => ["user" => "$CurrentUser", "commands" => "Postfix"]]);
-					
-					if ( $result > 0 ) {
-						$type = 'success';
-					} else {
-						$type = 'error';
-						$message = 'Failed ! It was not possible to update the MySB database.';
-					}
-				} else {
-					$type = 'error';
-					$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
-				}
-				header('Refresh: 20; URL=/?main-user/smtp.html');
 
 				break;
 				

@@ -131,6 +131,7 @@ if (isset($_POST['submit'])) {
 											["id_smtp" => 1]);
 
 			if( $result = 1 ) {
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'Postfix'", $output, $result);
 				$type = 'success';
 			} else {
 				$type = 'error';
@@ -145,7 +146,7 @@ if (isset($_POST['submit'])) {
 		$message = 'Please, complete all fields.';
 	}
 
-	GenerateMessage('Postfix', $type, $message);
+	GenerateMessage(false, $type, $message);
 }
 
 Form();
