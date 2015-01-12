@@ -357,8 +357,7 @@ CREATE TABLE commands (
     id_commands INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
                                 NOT NULL ON CONFLICT ABORT
                                 UNIQUE ON CONFLICT ABORT,
-    commands    VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
-                                UNIQUE ON CONFLICT ABORT,
+    commands    VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
     reload      BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
                                 DEFAULT ( 0 ),
     priority    INTEGER( 2 )    NOT NULL ON CONFLICT ABORT

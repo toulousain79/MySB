@@ -30,7 +30,6 @@ if ( !isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW']) || !is
 	$HostName = gethostbyaddr($_SERVER['REMOTE_ADDR']);
 	$last_id_address = ManageUsersAddresses($_SERVER['PHP_AUTH_USER'], $_SERVER['REMOTE_ADDR'], $HostName, 1, 'ipv4');
 	if ($last_id_address != false) {
-	
 		require_once '/etc/MySB/web/index.php';
 	} else {
 		echo 'Failed ! It was not possible to add your IP address in MySB database!';

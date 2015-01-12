@@ -22,12 +22,11 @@
 //
 //#################### FIRST LINE #####################################
 
-global $MySB_DB;
+global $MySB_DB, $CurrentUser;
 
 // Vars
 $UserAddress = $_SERVER['REMOTE_ADDR'];
-$UserName = $_SERVER['PHP_AUTH_USER'];
-$UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$UserName"]);
+$UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$CurrentUser"]);
 
 if(isset($_POST)==true && empty($_POST)==false) {
 	$success = true;
@@ -46,7 +45,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 						$success = false;
 						$message = 'The host name does not return a valid IP address.';
 					} else {
-						$last_id_address = ManageUsersAddresses($UserName, $IPv4, $_POST['address'][$i], $_POST['is_active'][$i], 'hostname');
+						$last_id_address = ManageUsersAddresses($CurrentUser, $IPv4, $_POST['address'][$i], $_POST['is_active'][$i], 'hostname');
 						if ($last_id_address == false) {
 							$success = false;
 							$message = 'Failed ! It was not possible to update hostname address in the MySB database.';
@@ -59,7 +58,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					if ( ValidateIPv4NoPriv($_POST['address'][$i]) ) {
 						// IP is valid
 						$HostName = gethostbyaddr($_POST['address'][$i]);
-						$last_id_address = ManageUsersAddresses($UserName, $_POST['address'][$i], $HostName, $_POST['is_active'][$i], 'ipv4');
+						$last_id_address = ManageUsersAddresses($CurrentUser, $_POST['address'][$i], $HostName, $_POST['is_active'][$i], 'ipv4');
 						if ($last_id_address == false) {
 							$success = false;
 							$message = 'Failed ! It was not possible to update IPv4 address in the MySB database.';
@@ -74,11 +73,12 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 			if ( $success == true ) {
 				$type = 'success';
+				$message = 'Success !<br /><br />Please, Check your addresses<br />and click on \"Save Changes\"';
 			} else {
 				$type = 'error';
 			}
 
-			GenerateMessage('FirewallAndSecurity.bsh', $type, $message, '');
+			GenerateMessage('message_only', $type, $message, '');
 			break;
 		case "Save Changes":
 			$success = true;
@@ -121,12 +121,13 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 				if ( $success == true ) {
 					$type = 'success';
+					$message = 'Success !<br /><br />Please, Check your addresses<br />and click on \"Save Changes\"';
 				} else {
 					$type = 'error';
 					$message = 'Failed ! It was not possible to delete address.';
 				}
 
-				GenerateMessage('FirewallAndSecurity.bsh', $type, $message, '');
+				GenerateMessage('message_only', $type, $message, '');
 			}
 			break;
 	}

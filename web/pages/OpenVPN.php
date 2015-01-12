@@ -46,7 +46,7 @@ if (file_exists($full_path)) {
 	exit();
 } else {
 	$message = "No OpenVPN config file for user ".$_SERVER['PHP_AUTH_USER']."...";
-	GenerateMessage('FirewallAndSecurity.bsh', 'information', $message);
+	GenerateMessage('message_only', 'information', $message);
 	echo "No OpenVPN config file for user ".$_SERVER['PHP_AUTH_USER']."...";
 	header('Refresh: 5; URL=/');
 }

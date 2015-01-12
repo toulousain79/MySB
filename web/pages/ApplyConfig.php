@@ -35,23 +35,41 @@ if ( IfApplyConfig() > 0 ) {
 
 	foreach ($CommandsToReload as $Cmd) {
 		$output = '';
-		$CommandToErase = '';
 
 		switch ($Cmd['commands']) {
+			case "Postfix":
+				echo '<div align="center"><h1>Postfix...</h1></div>';
+
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'Postfix' '$CurrentUser'", $output, $result);
+
+				if ( $result == 0 ) {
+					$result = $MySB_DB->update("commands", ["reload" => 0],  ["AND" => ["user" => "$CurrentUser", "commands" => $Cmd['commands']]]);
+					
+					if ( $result > 0 ) {
+						$type = 'success';
+						$message = 'Success !<br /><br />This will take effect in a moment.';
+					} else {
+						$type = 'error';
+						$message = 'Failed ! It was not possible to update the MySB database.';
+					}
+				} else {
+					$type = 'error';
+					$message = 'Error occured with "FirewallAndSecurity.bsh" script !';
+				}
+
+				break;
+				
 			case "BlocklistsRTorrent.bsh":
 				echo '<div align="center"><h1>BlocklistsRTorrent.bsh...</h1></div>';
 
-				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'BlocklistsRTorrent.bsh'", $output, $result);
-
-				foreach ( $output as $item ) {
-					echo '<div class="Comments" align="center">'.$item.'</div>';
-				}
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'BlocklistsRTorrent.bsh' '$CurrentUser'", $output, $result);
 
 				if ( $result == 0 ) {
-					$result = $MySB_DB->delete("commands", ["AND" => ["user" => "$CurrentUser", "commands" => "BlocklistsRTorrent.bsh"]]);
+					$result = $MySB_DB->update("commands", ["reload" => 0],  ["AND" => ["user" => "$CurrentUser", "commands" => $Cmd['commands']]]);
+					
 					if ( $result > 0 ) {
-						$type = 'information';
-						$message = 'The blocklist for rTorrent was created! Thank you to wait a little longer to apply ...';
+						$type = 'success';
+						$message = 'Success !<br /><br />The blocklist for rTorrent was created!<br />This will take effect in a moment.';
 					} else {
 						$type = 'error';
 						$message = 'Failed ! It was not possible to update the MySB database.';
@@ -66,17 +84,14 @@ if ( IfApplyConfig() > 0 ) {
 			case "FirewallAndSecurity.bsh":
 				echo '<div align="center"><h1>FirewallAndSecurity.bsh...</h1></div>';
 
-				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'FirewallAndSecurity.bsh'", $output, $result);
-
-				foreach ( $output as $item ) {
-					echo '<div class="Comments" align="center">'.$item.'</div>';
-				}
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'FirewallAndSecurity.bsh' '$CurrentUser'", $output, $result);
 
 				if ( $result == 0 ) {
-					$result = $MySB_DB->delete("commands", ["AND" => ["user" => "$CurrentUser", "commands" => "FirewallAndSecurity.bsh"]]);
+					$result = $MySB_DB->update("commands", ["reload" => 0],  ["AND" => ["user" => "$CurrentUser", "commands" => $Cmd['commands']]]);
 					
 					if ( $result > 0 ) {
 						$type = 'success';
+						$message = 'Success !<br /><br />This will take effect in a moment.';
 					} else {
 						$type = 'error';
 						$message = 'Failed ! It was not possible to update the MySB database.';
@@ -90,17 +105,14 @@ if ( IfApplyConfig() > 0 ) {
 			case "GetTrackersCert.bsh":
 				echo '<div align="center"><h1>GetTrackersCert.bsh...</h1></div>';
 
-				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'GetTrackersCert.bsh'", $output, $result);
-
-				foreach ( $output as $item ) {
-					echo '<div class="Comments" align="center">'.$item.'</div>';
-				}
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'GetTrackersCert.bsh' '$CurrentUser'", $output, $result);
 
 				if ( $result == 0 ) {
-					$result = $MySB_DB->delete("commands", ["AND" => ["user" => "$CurrentUser", "commands" => "GetTrackersCert.bsh"]]);
+					$result = $MySB_DB->update("commands", ["reload" => 0],  ["AND" => ["user" => "$CurrentUser", "commands" => $Cmd['commands']]]);
 					
 					if ( $result > 0 ) {
 						$type = 'success';
+						$message = 'Success !<br /><br />This will take effect in a moment.';
 					} else {
 						$type = 'error';
 						$message = 'Failed ! It was not possible to update the MySB database.';
@@ -119,19 +131,14 @@ if ( IfApplyConfig() > 0 ) {
 				$username = $args[0];
 				$passwd = $args[1];		
 
-				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword' '$username' '$passwd'", $output, $result);
-				
-				foreach ( $output as $item ) {
-					echo '<div class="Comments" align="center">'.$item.'</div>';
-				}
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword' '$username' '$passwd' '$CurrentUser'", $output, $result);
 				
 				if ( $result == 0 ) {
-					$result = $MySB_DB->update("commands", ["reload" => 0], ["AND" => ["user" => "$CurrentUser", "commands" => "MySB_ChangeUserPassword"]]);
+					$result = $MySB_DB->update("commands", ["reload" => 0],  ["AND" => ["user" => "$CurrentUser", "commands" => $Cmd['commands']]]);
 					
 					if ( $result > 0 ) {
 						$type = 'success';
-						$command = 'erase';
-						$CommandToErase = 'MySB_ChangeUserPassword';
+						$message = 'Success !<br /><br />This will take effect in a moment.';
 					} else {
 						$type = 'error';
 						$message = 'Failed ! It was not possible to update the MySB database.';
@@ -153,17 +160,14 @@ if ( IfApplyConfig() > 0 ) {
 				$UserEmail = $args[3];
 				# ($1 = user, $2 = sftp, $3 = sudo, $4 = email)
 
-				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_CreateUser' '$UserToCreate' '$UserSFTP' '$UserSUDO' '$UserEmail'", $output, $result);
-
-				foreach ( $output as $item ) {
-					echo '<div class="Comments" align="center">'.$item.'</div>';
-				}
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_CreateUser' '$UserToCreate' '$UserSFTP' '$UserSUDO' '$UserEmail' '$CurrentUser'", $output, $result);
 
 				if ( $result == 0 ) {
-					$result = $MySB_DB->delete("commands", ["AND" => ["user" => "$CurrentUser", "commands" => "MySB_CreateUser"]]);
+					$result = $MySB_DB->update("commands", ["reload" => 0],  ["AND" => ["user" => "$CurrentUser", "commands" => $Cmd['commands']]]);
 					
 					if ( $result > 0 ) {
 						$type = 'success';
+						$message = 'Success !<br /><br />This will take effect in a moment.';
 					} else {
 						$type = 'error';
 						$message = 'Failed ! It was not possible to update the MySB database.';
@@ -180,17 +184,14 @@ if ( IfApplyConfig() > 0 ) {
 
 				$username = $Cmd['args'];
 
-				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_DeleteUser' '$username'", $output, $result);
-
-				foreach ( $output as $item ) {
-					echo '<div class="Comments" align="center">'.$item.'</div>';
-				}
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_DeleteUser' '$username' '$CurrentUser'", $output, $result);
 
 				if ( $result == 0 ) {
-					$result = $MySB_DB->delete("commands", ["AND" => ["user" => "$CurrentUser", "commands" => "MySB_DeleteUser"]]);
+					$result = $MySB_DB->update("commands", ["reload" => 0],  ["AND" => ["user" => "$CurrentUser", "commands" => $Cmd['commands']]]);
 					
 					if ( $result > 0 ) {
 						$type = 'success';
+						$message = 'Success !<br /><br />This will take effect in a moment.';
 					} else {
 						$type = 'error';
 						$message = 'Failed ! It was not possible to update the MySB database.';
@@ -207,14 +208,14 @@ if ( IfApplyConfig() > 0 ) {
 			echo '<script type="text/javascript">ApplyConfig("Updated");</script>';
 		}
 
-		GenerateMessage($command, $type, $message, $CommandToErase);
+		GenerateMessage('message_only', $type, $message, '');
+		header('Refresh: 4; URL='.$_SERVER['HTTP_REFERER'].'');
 	}
 } else {
-	//echo '<h1>Nothing to apply...</h1>';
-	//$type = 'information';
-	//$message = 'Nothing to apply...';
-	//GenerateMessage('message_only', $type, $message, '');
-	//header('Refresh: 5; URL=/');
+	$type = 'information';
+	$message = 'Nothing to apply...';
+	GenerateMessage('message_only', $type, $message, '');
+	header('Refresh: 3; URL=/');
 }
 
 //#################### LAST LINE ######################################
