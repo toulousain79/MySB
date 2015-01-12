@@ -81,13 +81,11 @@
 		<div id="site_content">
 			<div class="content">
 <?php
-	if ( isset($_GET['user']) && isset($_GET['passwd']) && isset($_SESSION['user']) && isset($_SESSION['pwd']) ) {
-		$_SERVER['PHP_AUTH_USER'] = $_SESSION['user'];
-		$_SERVER['PHP_AUTH_PW'] = $_SESSION['pwd'];
-		require_once '/etc/MySB/web/pages/ChangePassword.php';
+	if ( isset($_SESSION['user']) && isset($_SESSION['pwd']) && isset($_SESSION['page']) ) {
+		require_once '/etc/MySB/web/pages/' . $_SESSION['page'] . '.php';		
 	} else {
 		echo $this->content();
-		if ($this->hasContent('extended')) echo $this->content('extended');
+		if ($this->hasContent('extended')) echo $this->content('extended');		
 	}
 ?>
 			</div>

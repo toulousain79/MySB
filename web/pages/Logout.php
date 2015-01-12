@@ -24,7 +24,7 @@ require_once '/etc/MySB/web/inc/includes_before.php';
 //
 //#################### FIRST LINE #####################################
 
-if ( (isset($_SERVER['PHP_AUTH_USER'])) && (isset($_SERVER['PHP_AUTH_PW'])) ) {
+if ( isset($_SESSION['user']) || isset($_SESSION['pwd']) || isset($_SESSION['page']) ) {
 	session_start();
 	unset($_SERVER['PHP_AUTH_USER']);  
 	unset($_SERVER['PHP_AUTH_PW']);

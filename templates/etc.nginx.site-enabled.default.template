@@ -14,51 +14,44 @@ server {
 	include /etc/nginx/conf.d/global_deny_access;
 	include /etc/nginx/conf.d/pagespeed;
 	include /etc/nginx/conf.d/ip_restriction;
-
-	#### Deny access for some subdirectories
-	location ~ /(inc|openvpn|pages)/ {
-		deny all;
+	include /etc/nginx/conf.d/auth_basic;
+	location ~ \.php$ {
+		include /etc/nginx/conf.d/php-ssl;
 	}
-	location ~ /ru/(?:conf|share)/ {
-		deny all;
-	}
-
-	#### Allow access for 'NewUser.php'
-	location /public/themes/MySB/ {
-		auth_basic off;
-	}	
 
 	#### MySB Portal
-	location / {
+	location ^~ / {
 		access_log /var/log/nginx/MySB-access.log combined;
 		error_log /var/log/nginx/MySB-error.log error;
-
-		include /etc/nginx/conf.d/auth_basic;
-		include /etc/nginx/conf.d/static_files;
-		include /etc/nginx/conf.d/global_deny_access;
-		include /etc/nginx/conf.d/pagespeed;
-		include /etc/nginx/conf.d/ip_restriction;
+		
 		include /etc/nginx/conf.d/php-ssl;
 		fastcgi_index index.php;
 
-		# Logout
-		location = /Logout.php {
-			alias /etc/MySB/web/pages/Logout.php;
-			include /etc/nginx/conf.d/php-ssl;
+		#### Deny access for some subdirectories
+		location /(?:inc|openvpn|pages)/ {
+			deny all;
+		}		
+		
+		#### Allow access for 'NewUser.php'
+		location /public/themes/MySB/ {
+			satisfy any;
+			allow all;
+			auth_basic off;
 		}		
 		
 		# For new users, permit to confirmed their account (IP + password)
-		location = /NewUser.php {
+		location /NewUser.php {
 			alias /etc/MySB/web/pages/NewUser.php;
 			access_log /var/log/nginx/NewUser-access.log combined;
 			error_log /var/log/nginx/NewUser-error.log error;
 			satisfy any;
+			allow all;
 			auth_basic off;
-			include /etc/nginx/conf.d/php-ssl;
+			include /etc/nginx/conf.d/php-ssl;		
 		}
 
 		# For created users, permit to force to add their actual IP address
-		location = /ForceAddress.php {
+		location /ForceAddress.php {
 			alias /etc/MySB/web/pages/ForceAddress.php;
 			access_log /var/log/nginx/ForceAddress-access.log combined;
 			error_log /var/log/nginx/ForceAddress-error.log error;
@@ -67,7 +60,7 @@ server {
 		}
 
 		# Permit to generate mail to send to all users (server only)
-		location = /UserInfoMail.php {
+		location /UserInfoMail.php {
 			alias /etc/MySB/web/pages/UserInfoMail.php;
 			access_log /var/log/nginx/UserInfoMail-access.log combined;
 			error_log /var/log/nginx/UserInfoMail-error.log error;
@@ -76,18 +69,25 @@ server {
 			include /etc/nginx/conf.d/php-ssl;
 		}
 
+		# Logout
+		location /Logout.php {
+			alias /etc/MySB/web/pages/Logout.php;
+			include /etc/nginx/conf.d/php-ssl;
+		}
+		
 		# ruTorrent Plugin Fileshare
-		location = /fileshare.php {
+		location /fileshare.php {
 			alias <plugins_dir>/fileshare/share.php;
 			access_log /var/log/nginx/fileshare-access.log combined;
 			error_log /var/log/nginx/fileshare-error.log error;
-			auth_basic off;
 			satisfy any;
+			allow all;
+			auth_basic off;
 			include /etc/nginx/conf.d/php-ssl;
 		}
 
 		# ruTorrent Plugin Mediastream
-		location = /view.php {
+		location /view.php {
 			alias <plugins_dir>/mediastream/view.php;
 			access_log /var/log/nginx/view-access.log combined;
 			error_log /var/log/nginx/view-error.log error;
@@ -95,64 +95,56 @@ server {
 		}
 
 		# ruTorrent Plugin Stream
-		location = /stream.php {
+		location /stream.php {
 			alias <plugins_dir>/stream/stream.php;
 			access_log /var/log/nginx/stream-access.log combined;
 			error_log /var/log/nginx/stream-error.log error;
 			include /etc/nginx/conf.d/php-ssl;
 		}
-	}
-
-	#### LoadAvg
-	location ^~ /loadavg/ {
-		access_log /var/log/nginx/loadavg-access.log combined;
-		error_log /var/log/nginx/loadavg-error.log error;
 		
-		include /etc/nginx/conf.d/auth_basic;
-		include /etc/nginx/conf.d/static_files;
-		include /etc/nginx/conf.d/global_deny_access;
-		include /etc/nginx/conf.d/pagespeed;
-		include /etc/nginx/conf.d/ip_restriction;
-
-		location ~ \.php$ {
-			include /etc/nginx/conf.d/php-ssl;
+		#### LoadAvg
+		location ^~ /loadavg {
+			access_log /var/log/nginx/loadavg-access.log combined;
+			error_log /var/log/nginx/loadavg-error.log error;
+			location ~ \.php$ {
+				include /etc/nginx/conf.d/php-ssl;
+			}
 		}
-	}
 
-	#### ruTorrent
-	location ^~ /ru {
-		alias <rutorrent_dir>;
+		#### ruTorrent
+		location ^~ /ru {
+			alias <rutorrent_dir>;
 
-		access_log /var/log/nginx/rutorrent-access.log combined;
-		error_log /var/log/nginx/rutorrent-error.log error;
-		index index.html;
+			access_log /var/log/nginx/rutorrent-access.log combined;
+			error_log /var/log/nginx/rutorrent-error.log error;
+			index index.html;
 
-		location ~ /ru/(?:plugins|php)/ {
-			access_log off;
+			location ~ /ru/favicon.ico {
+				alias <rutorrent_dir>/images/favicon.ico;
+			}
+
 			location ~ \.php$ {
 				include /etc/nginx/conf.d/php-ssl;
 				fastcgi_param SCRIPT_FILENAME $request_filename;
 			}
+			
+			location ~ /ru/(?:plugins|php)/ {
+				access_log off;
+				location ~ \.php$ {
+					include /etc/nginx/conf.d/php-ssl;
+					fastcgi_param SCRIPT_FILENAME $request_filename;
+				}
+			}
+
+			#### Deny access for some subdirectories
+			location ~ /ru/(?:conf|share)/ {
+				deny all;
+			}
 		}
 
-		location ~ /ru/favicon.ico {
-			alias <rutorrent_dir>/images/favicon.ico;
-		}
-
-		include /etc/nginx/conf.d/auth_basic;
-		include /etc/nginx/conf.d/static_files;
-		include /etc/nginx/conf.d/global_deny_access;
-		include /etc/nginx/conf.d/pagespeed;
-		include /etc/nginx/conf.d/ip_restriction;
-
-		location ~ \.php$ {
-			include /etc/nginx/conf.d/php-ssl;
-			fastcgi_param SCRIPT_FILENAME $request_filename;
-		}
+		#### Others locations (Seedbox-Manager, Cakebox-Light)
+		include /etc/nginx/locations/*.conf;		
 	}
-
-	#### Others locations (Seedbox-Manager, Cakebox-Light)
-	include /etc/nginx/locations/*.conf;
 
 	#### ruTorrent - users RPC
 	include /etc/nginx/rpc/*.conf;
