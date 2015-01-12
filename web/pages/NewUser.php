@@ -24,9 +24,9 @@ require_once '/etc/MySB/web/inc/includes_before.php';
 //
 //#################### FIRST LINE #####################################
 
-if ( isset($_GET['var1']) && isset($_GET['var2']) ) {
-	$UserName = $_GET['var1'];
-	$UserPasswd = $_GET['var2'];
+if ( isset($_GET['user']) && isset($_GET['passwd']) ) {
+	$UserName = $_GET['user'];
+	$UserPasswd = $_GET['passwd'];
 	$UserAddress = $_SERVER['REMOTE_ADDR'];
 
 	// Users table

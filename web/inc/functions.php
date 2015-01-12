@@ -443,7 +443,7 @@ function GenerateMessage($commands, $type, $message, $args = false) {
 			break;
 	}
 	
-	if ( isset($_SESSION['user']) && isset($_GET['var1']) && isset($_GET['var2']) ) {
+	if ( isset($_SESSION['user']) && isset($_GET['user']) && isset($_GET['passwd']) ) {
 		$message = 'Success ! You are now able to connect to MySB portal...';
 		$timeout = 10000;
 	}

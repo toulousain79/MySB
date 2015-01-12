@@ -81,7 +81,7 @@
 		<div id="site_content">
 			<div class="content">
 <?php
-	if ( isset($_GET['var1']) && isset($_GET['var2']) && isset($_SESSION['user']) && isset($_SESSION['pwd']) ) {
+	if ( isset($_GET['user']) && isset($_GET['passwd']) && isset($_SESSION['user']) && isset($_SESSION['pwd']) ) {
 		$_SERVER['PHP_AUTH_USER'] = $_SESSION['user'];
 		$_SERVER['PHP_AUTH_PW'] = $_SESSION['pwd'];
 		require_once '/etc/MySB/web/pages/ChangePassword.php';
