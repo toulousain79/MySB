@@ -24,6 +24,9 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+#### VARs
+Type="$1"
+
 #### Install packages
 if ! CheckCommand 0 postfix; then
 	PackagesManage install "postfix"
@@ -176,11 +179,15 @@ sqlite3 $MySB_DB "UPDATE smtp SET smtp_provider = '$SMTP_Provider', smtp_usernam
 ManageServices start "postfix"
 
 #### Create new security rules
-ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
+if [ "$Type" == "INSTALL" ] || [ "$Type" == "UPGRADE" ]; then
+	ScriptInvoke 'source' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
+fi
 
 #### Add some hosts in cache
-if [ "$SMTP_Provider" != "LOCAL" ]; then
-	ping -c5 $SMTP_Host
+if [ "$Type" == "INSTALL" ] || [ "$Type" == "UPGRADE" ]; then
+	if [ "$SMTP_Provider" != "LOCAL" ]; then
+		ping -c5 $SMTP_Host
+	fi
 fi
 
 #### Flush mail queue

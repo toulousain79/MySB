@@ -36,7 +36,7 @@ CREATE TABLE vars (
     white_udp_port_out VARCHAR( 16 ) 
 );
 
-INSERT INTO [vars] ([id_vars], [fail2ban_whitelist], [vpn_ip], [white_tcp_port_out], [white_udp_port_out]) VALUES (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24', '80 443', null);
+INSERT INTO [vars] ([id_vars], [fail2ban_whitelist], [vpn_ip], [white_tcp_port_out], [white_udp_port_out]) VALUES (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24', '25 80 443', null);
 
 -- Table: trackers_list_ipv4
 CREATE TABLE trackers_list_ipv4 ( 

@@ -411,7 +411,7 @@ function GenerateMessage($commands, $type, $message, $args = false) {
 			$timeout = 2000;
 			$message = 'Success !';
 			if ( $commands != false ) {
-				$priority=2
+				$priority=2;
 				$timeout = 4000;
 				$message = 'Success ! Please, click on "Apply you configuration".';
 				
@@ -420,7 +420,7 @@ function GenerateMessage($commands, $type, $message, $args = false) {
 						$value = $MySB_DB->insert("commands", ["commands" => "FirewallAndSecurity.bsh", "reload" => 1, "priority" => 1, "args" => "$args", "user" => "$CurrentUser"]);
 						break;
 					case "FirewallAndSecurity.bsh":
-						$priority=1
+						$priority=1;
 						break;						
 				}
 				
