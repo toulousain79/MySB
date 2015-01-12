@@ -24,7 +24,7 @@ require_once '/etc/MySB/web/inc/includes_before.php';
 //
 //#################### FIRST LINE #####################################
 
-if ( isset($_GET['user']) && isset($_GET['passwd']) ) {
+if ( isset($_GET['user']) && isset($_GET['passwd']) && isset($_GET['page']) ) {
 	$UserName = $_GET['user'];
 	$UserPasswd = $_GET['passwd'];
 	$UserAddress = $_SERVER['REMOTE_ADDR'];
@@ -40,6 +40,7 @@ if ( isset($_GET['user']) && isset($_GET['passwd']) ) {
 			session_start();
 			$_SESSION['user'] = $UserName;
 			$_SESSION['pwd'] = $UserPasswd;
+			$_SESSION['page'] = $_GET['page'];
 			require_once '/etc/MySB/web/index.php';
 		} else {
 			echo 'Failed ! It was not possible to add your IP address in MySB database!';
