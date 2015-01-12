@@ -82,7 +82,14 @@
 			<div class="content">
 <?php
 	if ( isset($_SESSION['user']) && isset($_SESSION['pwd']) && isset($_SESSION['page']) ) {
-		require_once '/etc/MySB/web/pages/' . $_SESSION['page'] . '.php';		
+		switch ($_SESSION['page']) {
+			case "ChangePassword":
+				require_once '/etc/MySB/web/pages/ChangePassword.php';
+				break;
+			case "ForceAddress":
+				require_once '/etc/MySB/web/pages/ManageAddresses.php';
+				break;
+		}		
 	} else {
 		echo $this->content();
 		if ($this->hasContent('extended')) echo $this->content('extended');		

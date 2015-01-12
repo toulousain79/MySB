@@ -31,10 +31,11 @@
 if ( IfApplyConfig() > 0 ) {
 	global $MySB_DB, $CurrentUser;
 	
-	$Commands = $MySB_DB->select("commands", "*", ["user" => "$CurrentUser", "ORDER" => "priority DESC"]);
+	$CommandsToReload = $MySB_DB->select("commands", "*", ["user" => "$CurrentUser", "ORDER" => "priority DESC"]);
 
-	foreach ($Commands as $Cmd) {
+	foreach ($CommandsToReload as $Cmd) {
 		$output = '';
+		$CommandToErase = '';
 
 		switch ($Cmd['commands']) {
 			case "BlocklistsRTorrent.bsh":
@@ -116,19 +117,21 @@ if ( IfApplyConfig() > 0 ) {
 
 				$args = explode("|", $Cmd['args']);
 				$username = $args[0];
-				$passwd = $args[1];				
+				$passwd = $args[1];		
 
 				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword' '$username' '$passwd'", $output, $result);
-
+				
 				foreach ( $output as $item ) {
 					echo '<div class="Comments" align="center">'.$item.'</div>';
 				}
-
+				
 				if ( $result == 0 ) {
-					$result = $MySB_DB->delete("commands", ["AND" => ["user" => "$CurrentUser", "commands" => "MySB_ChangeUserPassword"]]);
+					$result = $MySB_DB->update("commands", ["reload" => 0], ["AND" => ["user" => "$CurrentUser", "commands" => "MySB_ChangeUserPassword"]]);
 					
 					if ( $result > 0 ) {
 						$type = 'success';
+						$command = 'erase';
+						$CommandToErase = 'MySB_ChangeUserPassword';
 					} else {
 						$type = 'error';
 						$message = 'Failed ! It was not possible to update the MySB database.';
@@ -204,14 +207,14 @@ if ( IfApplyConfig() > 0 ) {
 			echo '<script type="text/javascript">ApplyConfig("Updated");</script>';
 		}
 
-		GenerateMessage(false, $type, $message);
+		GenerateMessage($command, $type, $message, $CommandToErase);
 	}
 } else {
-	echo '<h1>Nothing to apply...</h1>';
-	$type = 'information';
-	$message = 'Nothing to apply...';
-	GenerateMessage(false, $type, $message);
-	header('Refresh: 5; URL=/');
+	//echo '<h1>Nothing to apply...</h1>';
+	//$type = 'information';
+	//$message = 'Nothing to apply...';
+	//GenerateMessage('message_only', $type, $message, '');
+	//header('Refresh: 5; URL=/');
 }
 
 //#################### LAST LINE ######################################

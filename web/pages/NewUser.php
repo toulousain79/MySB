@@ -41,6 +41,8 @@ if ( isset($_GET['user']) && isset($_GET['passwd']) && isset($_GET['page']) ) {
 			$_SESSION['user'] = $UserName;
 			$_SESSION['pwd'] = $UserPasswd;
 			$_SESSION['page'] = $_GET['page'];
+			$_SERVER['PHP_AUTH_USER'] = $UserName;
+			$_SERVER['PHP_AUTH_PW'] = $UserPasswd;
 			require_once '/etc/MySB/web/index.php';
 		} else {
 			echo 'Failed ! It was not possible to add your IP address in MySB database!';

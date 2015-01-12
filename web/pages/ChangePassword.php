@@ -53,10 +53,13 @@ echo '
 	';
 	
 if ( isset($_POST['submit']) ) {
+	global $CurrentUser;
+	
 	$current_pwd = $_POST['current_pwd'];
 	$new_pwd = $_POST['new_pwd'];
 	$confirm_pwd = $_POST['confirm_pwd'];
-	$args = false;
+	$args = '';
+	$command = 'MySB_ChangeUserPassword';
 
 	if ( ($current_pwd != '') && ($new_pwd != '') && ($confirm_pwd != '') ) {
 		if ( $current_pwd == $_SERVER['PHP_AUTH_PW'] ) {
@@ -64,8 +67,22 @@ if ( isset($_POST['submit']) ) {
 				$result = UpdateWolfDB($_SERVER['PHP_AUTH_USER'], $new_pwd);
 
 				if ( $result > 0 ) {
-					$type = 'success';
-					$args = "$username|$new_pwd";
+					if ( isset($_SESSION['user']) && isset($_SESSION['pwd']) && isset($_SESSION['page']) ) { // by NewUser.php
+						$UserName = $_SESSION['user'];
+						exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword' '$UserName' '$new_pwd'", $output, $result);
+
+						if ( $result == 0 ) {
+							$type = 'success';
+							$command = 'message_only';
+						} else {
+							$type = 'error';
+							$message = 'Failed ! It was not possible to update the MySB database.';
+						}						
+					
+					} else { // directly by MySB portal
+						$type = 'success';
+						$args = "$CurrentUser|$new_pwd";
+					}
 				} else {
 					$type = 'error';
 					$message = 'Failed ! It was not possible to update the Wolf database.';
@@ -83,7 +100,7 @@ if ( isset($_POST['submit']) ) {
 		$message = 'Please, complete all fields.';	
 	}
 	
-	GenerateMessage('MySB_ChangeUserPassword', $type, $message, $args);
+	GenerateMessage($command, $type, $message, $args, $timeout);
 }
 
 //#################### LAST LINE ######################################

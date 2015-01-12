@@ -405,49 +405,64 @@ function ValidateIPv4NoPriv($ip) {
 function IfApplyConfig() {
 	global $MySB_DB, $CurrentUser;
 	
-	$value = $MySB_DB->count("commands", "reload", ["AND" => ["user" => "$CurrentUser","reload" => 1]]);
+	$value = $MySB_DB->count("commands", "commands", ["AND" => ["user" => "$CurrentUser", "reload" => 1]]);
 
 	return $value;
 }
 
 // Generate message (success, error, information, ...)
-function GenerateMessage($commands, $type, $message, $args = false) {
+function GenerateMessage($commands, $type, $message, $args) {
 	global $MySB_DB, $CurrentUser;
 
 	switch ($type) {
 		case "success":
 			$timeout = 2000;
 			$message = 'Success !';
+
+			switch ($commands) {
+				case "erase": // Used to purge database when a command was applied
+					$result = $MySB_DB->delete("commands", ["AND" => ["user" => "$CurrentUser", "commands" => "$args"]]);
+					if ( $result > 0 ) {
+						$type = 'success';
+					} else {
+						$type = 'error';
+						$message = 'Failed !<br /><br />It was not possible to delete '.$args.' from the MySB database.';
+					}
+					break;
+					
+				case "message_only": // Used to only display a message
+					if ( isset($_SESSION['user']) && isset($_SESSION['pwd']) && isset($_SESSION['page']) ) { // by NewUser.php
+						$timeout = 10000;
+						$message = 'Success !<br /><br />Wait a few seconds and you will be able to log in with your new password.';
+					}					
+					break;
+					
+				default: // Used for create a new command to apply
+					$priority = 2;
+					$timeout = 4000;
+					$message = 'Success !<br /><br />Please, click on \"Apply configuration\"';
+					
+					switch ($commands) {
+						case "BlocklistsRTorrent.bsh":
+							$value = $MySB_DB->insert("commands", ["commands" => "FirewallAndSecurity.bsh", "reload" => 1, "priority" => 1, "args" => "$args", "user" => "$CurrentUser"]);
+							break;
+						case "FirewallAndSecurity.bsh":
+							$priority=1;
+							break;						
+					}
+					
+					$value = $MySB_DB->insert("commands", ["commands" => "$commands", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
+					
+					echo '<script type="text/javascript">ApplyConfig("ToUpdate");</script>';
 			
-			if ( ($commands != false) && ($commands != "") ) {
-				$priority = 2;
-				$timeout = 4000;
-				$message = 'Success !<br /><br />Please, click on \"Apply configuration\"';
-				
-				switch ($commands) {
-					case "BlocklistsRTorrent.bsh":
-						$value = $MySB_DB->insert("commands", ["commands" => "FirewallAndSecurity.bsh", "reload" => 1, "priority" => 1, "args" => "$args", "user" => "$CurrentUser"]);
-						break;
-					case "FirewallAndSecurity.bsh":
-						$priority=1;
-						break;						
-				}
-				
-				$value = $MySB_DB->insert("commands", ["commands" => "$commands", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
-				
-				echo '<script type="text/javascript">ApplyConfig("ToUpdate");</script>';
+					break;
 			}
 			break;
 		default:
 			$timeout = 7000;
 			break;
 	}
-	
-	if ( isset($_SESSION['user']) && isset($_GET['user']) && isset($_GET['passwd']) ) {
-		$message = 'Success ! You are now able to connect to MySB portal...';
-		$timeout = 10000;
-	}
-	
+
 	echo '<script type="text/javascript">generate_message("'. $type . '", ' . $timeout . ', "' . $message . '");</script>';
 }
 

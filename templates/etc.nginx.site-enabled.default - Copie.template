@@ -23,25 +23,22 @@ server {
 	location ^~ / {
 		access_log /var/log/nginx/MySB-access.log combined;
 		error_log /var/log/nginx/MySB-error.log error;
-
+		
 		include /etc/nginx/conf.d/php-ssl;
 		fastcgi_index index.php;
 
 		#### Deny access for some subdirectories
-		location ~ ^/(inc|openvpn|pages)/ {
+		location /(?:inc|openvpn|pages)/ {
 			deny all;
-		}
-		location ~ ^/ru/(conf|share)/ {
-			deny all;
-		}
-
+		}		
+		
 		#### Allow access for 'NewUser.php'
-		location ~ ^/public/themes/MySB/(css|js|fonts|images)/.*.(ico|css|js|gif|jpe?g|png|eot|ttf|woff|svg)$ {
+		location /public/themes/MySB/ {
 			satisfy any;
 			allow all;
 			auth_basic off;
-		}
-
+		}		
+		
 		# For new users, permit to confirmed their account (IP + password)
 		location /NewUser.php {
 			alias /etc/MySB/web/pages/NewUser.php;
@@ -50,7 +47,7 @@ server {
 			satisfy any;
 			allow all;
 			auth_basic off;
-			include /etc/nginx/conf.d/php-ssl;
+			include /etc/nginx/conf.d/php-ssl;		
 		}
 
 		# For created users, permit to force to add their actual IP address
@@ -58,7 +55,7 @@ server {
 			alias /etc/MySB/web/pages/ForceAddress.php;
 			access_log /var/log/nginx/ForceAddress-access.log combined;
 			error_log /var/log/nginx/ForceAddress-error.log error;
-			allow all;
+			satisfy any;
 			include /etc/nginx/conf.d/php-ssl;
 		}
 
@@ -77,7 +74,7 @@ server {
 			alias /etc/MySB/web/pages/Logout.php;
 			include /etc/nginx/conf.d/php-ssl;
 		}
-
+		
 		# ruTorrent Plugin Fileshare
 		location /fileshare.php {
 			alias <plugins_dir>/fileshare/share.php;
@@ -104,7 +101,7 @@ server {
 			error_log /var/log/nginx/stream-error.log error;
 			include /etc/nginx/conf.d/php-ssl;
 		}
-
+		
 		#### LoadAvg
 		location ^~ /loadavg {
 			access_log /var/log/nginx/loadavg-access.log combined;
@@ -130,7 +127,7 @@ server {
 				include /etc/nginx/conf.d/php-ssl;
 				fastcgi_param SCRIPT_FILENAME $request_filename;
 			}
-
+			
 			location ~ /ru/(?:plugins|php)/ {
 				access_log off;
 				location ~ \.php$ {
@@ -138,10 +135,15 @@ server {
 					fastcgi_param SCRIPT_FILENAME $request_filename;
 				}
 			}
+
+			#### Deny access for some subdirectories
+			location ~ /ru/(?:conf|share)/ {
+				deny all;
+			}
 		}
 
 		#### Others locations (Seedbox-Manager, Cakebox-Light)
-		include /etc/nginx/locations/*.conf;
+		include /etc/nginx/locations/*.conf;		
 	}
 
 	#### ruTorrent - users RPC

@@ -24,23 +24,32 @@ require_once '/etc/MySB/web/inc/includes_before.php';
 //
 //#################### FIRST LINE #####################################
 
-if ( (!isset($_SERVER['PHP_AUTH_USER'])) && (!isset($_SERVER['PHP_AUTH_PW'])) ) {
+if ( !isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW']) || !isset($_GET['page']) ) {
 	header('Refresh: 0; URL=http://www.google.fr');
-}
-
-$HostName = gethostbyaddr($_SERVER['REMOTE_ADDR']);
-$last_id_address = ManageUsersAddresses($_SERVER['PHP_AUTH_USER'], $_SERVER['REMOTE_ADDR'], $HostName, 1, 'ipv4');
-if ($last_id_address != false) {
-	exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'FirewallAndSecurity.bsh'", $output, $result);
-
-	if ( $result == 0 ) {
-		header('Location: https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/manage-addresses.html');
-	} else {
-		echo 'Failed ! It was not possible to give you an access to MySB portal !';
-	}
 } else {
-	echo 'Failed ! It was not possible to add your IP address in MySB database!';
+	$HostName = gethostbyaddr($_SERVER['REMOTE_ADDR']);
+	$last_id_address = ManageUsersAddresses($_SERVER['PHP_AUTH_USER'], $_SERVER['REMOTE_ADDR'], $HostName, 1, 'ipv4');
+	if ($last_id_address != false) {
+	
+		require_once '/etc/MySB/web/index.php';
+	} else {
+		echo 'Failed ! It was not possible to add your IP address in MySB database!';
+	}
 }
+
+// $HostName = gethostbyaddr($_SERVER['REMOTE_ADDR']);
+// $last_id_address = ManageUsersAddresses($_SERVER['PHP_AUTH_USER'], $_SERVER['REMOTE_ADDR'], $HostName, 1, 'ipv4');
+// if ($last_id_address != false) {
+	// exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'FirewallAndSecurity.bsh'", $output, $result);
+
+	// if ( $result == 0 ) {
+		// header('Location: https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/manage-addresses.html');
+	// } else {
+		// echo 'Failed ! It was not possible to give you an access to MySB portal !';
+	// }
+// } else {
+	// echo 'Failed ! It was not possible to add your IP address in MySB database!';
+// }
 
 // ----------------------------------
 require_once '/etc/MySB/web/inc/includes_after.php';

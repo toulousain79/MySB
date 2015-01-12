@@ -80,7 +80,7 @@ if ( isset($_POST['submit']) ) {
 		$message = 'Please, complete all fields.';	
 	}
 
-	GenerateMessage(false, $type, $message);
+	GenerateMessage('message_only', $type, $message, '');
 }
 
 Form();

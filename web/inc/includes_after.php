@@ -26,11 +26,5 @@ if ( (isset($_SERVER['PHP_AUTH_USER'])) && (isset($_SERVER['PHP_AUTH_PW'])) ) {
 	CheckWolfDB($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
 }
 
-if ( isset($_SESSION['user']) || isset($_SESSION['pwd']) || isset($_SESSION['page']) ) {
-	session_start();
-	session_unset();
-	session_destroy();
-}
-
 //#################### LAST LINE #####################################
 ?>

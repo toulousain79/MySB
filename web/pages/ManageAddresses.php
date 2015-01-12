@@ -51,7 +51,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 							$success = false;
 							$message = 'Failed ! It was not possible to update hostname address in the MySB database.';
 						} else {
-							GenerateMessage(null, 'information', 'Remember that your dynamic IP will be checked every 5 minutes.');
+							GenerateMessage('message_only', 'information', 'Remember that your dynamic IP will be checked every 5 minutes.');
 						}
 					}
 				} else {
@@ -78,7 +78,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$type = 'error';
 			}
 
-			GenerateMessage('FirewallAndSecurity.bsh', $type, $message);
+			GenerateMessage('FirewallAndSecurity.bsh', $type, $message, '');
 			break;
 		case "Save Changes":
 			$success = true;
@@ -104,7 +104,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$message = 'Failed ! It was not possible to update addresses informations.';
 			}
 
-			GenerateMessage('FirewallAndSecurity.bsh', $type, $message);
+			GenerateMessage('FirewallAndSecurity.bsh', $type, $message, '');
 			break;
 		default: // Delete
 			if (isset($_POST['delete'])) {
@@ -126,7 +126,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					$message = 'Failed ! It was not possible to delete address.';
 				}
 
-				GenerateMessage('FirewallAndSecurity.bsh', $type, $message);
+				GenerateMessage('FirewallAndSecurity.bsh', $type, $message, '');
 			}
 			break;
 	}
@@ -227,7 +227,25 @@ foreach($AddressesList as $Address) {
 ?>
 
 		</table>
-		<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
+<?php
+if ( isset($_SESSION['user']) && isset($_SESSION['pwd']) && isset($_SESSION['page']) ) {
+	exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'FirewallAndSecurity.bsh'", $output, $result);
+	foreach ( $output as $item ) {
+		echo "<div style=\"text-align:left;\" align=\"center\"><pre>$item</pre></div>";
+	}
+	if ( $result == 0 ) {
+		$type = 'success';
+		GenerateMessage('message_only', $type, $message, '');
+	} else {
+		echo 'Failed ! It was not possible to give you an access to MySB portal !';
+	}	
+} else {
+?>
+	<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
+<?php
+}
+?>
+		
 	</div>
 </form>
 
