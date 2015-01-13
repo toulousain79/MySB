@@ -131,7 +131,8 @@ if ( IfApplyConfig() > 0 ) {
 				$username = $args[0];
 				$passwd = $args[1];		
 
-				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword' '$username' '$passwd' '$CurrentUser'", $output, $result);
+				#exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword' '$username' '$passwd' '$CurrentUser'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword' '$CurrentUser'", $output, $result);
 				
 				if ( $result == 0 ) {
 					$result = $MySB_DB->update("commands", ["reload" => 0],  ["AND" => ["user" => "$CurrentUser", "commands" => $Cmd['commands']]]);
@@ -160,7 +161,8 @@ if ( IfApplyConfig() > 0 ) {
 				$UserEmail = $args[3];
 				# ($1 = user, $2 = sftp, $3 = sudo, $4 = email)
 
-				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_CreateUser' '$UserToCreate' '$UserSFTP' '$UserSUDO' '$UserEmail' '$CurrentUser'", $output, $result);
+				#exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_CreateUser' '$UserToCreate' '$UserSFTP' '$UserSUDO' '$UserEmail' '$CurrentUser'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_CreateUser' '$CurrentUser'", $output, $result);
 
 				if ( $result == 0 ) {
 					$result = $MySB_DB->update("commands", ["reload" => 0],  ["AND" => ["user" => "$CurrentUser", "commands" => $Cmd['commands']]]);
@@ -184,7 +186,8 @@ if ( IfApplyConfig() > 0 ) {
 
 				$username = $Cmd['args'];
 
-				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_DeleteUser' '$username' '$CurrentUser'", $output, $result);
+				#exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_DeleteUser' '$username' '$CurrentUser'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_DeleteUser' '$CurrentUser'", $output, $result);
 
 				if ( $result == 0 ) {
 					$result = $MySB_DB->update("commands", ["reload" => 0],  ["AND" => ["user" => "$CurrentUser", "commands" => $Cmd['commands']]]);
