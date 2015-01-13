@@ -24,6 +24,9 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+#### VARs
+Type="$1"
+
 #### Update actual repo
 ScriptInvoke 'source' '/etc/MySB/bin/MySB_UpdateGitHubRepo'
 
@@ -36,14 +39,23 @@ if [ "$MySB_CurrentVersion" == "$MySB_NewVersion" ]; then
 	echo
 	EndingScript 0
 else
-	echo
-	echo -e "${CYELLOW}MySB$CEND ${CGREEN}$MySB_NewVersion$CEND ${CYELLOW}is avaible !$CEND"
-	echo -e "${CYELLOW}Do you want to continue and upgrade MySB to $CEND${CGREEN}$MySB_NewVersion$CEND ${CYELLOW}?$CEND"
-	echo
-	QuestionGetString NO  "Type 'yes' to continue or 'no' to abort ?" CONTINUE NO
-	if [ "$CONTINUE" == "NO" ]; then
-		EndingScript 0
-	fi
+	case "$Type" in
+		"CRON")
+			SendMail "MySB - Dynamic IP addresses were updated" "$MainUser" "new_version" "New version available"
+			
+			EndingScript 0
+		;;	
+		*)
+			echo
+			echo -e "${CYELLOW}MySB$CEND ${CGREEN}$MySB_NewVersion$CEND ${CYELLOW}is avaible !$CEND"
+			echo -e "${CYELLOW}Do you want to continue and upgrade MySB to $CEND${CGREEN}$MySB_NewVersion$CEND ${CYELLOW}?$CEND"
+			echo
+			QuestionGetString NO  "Type 'yes' to continue or 'no' to abort ?" CONTINUE NO
+			if [ "$CONTINUE" == "NO" ]; then
+				EndingScript 0
+			fi
+		;;
+	esac
 fi
 
 #### Backup

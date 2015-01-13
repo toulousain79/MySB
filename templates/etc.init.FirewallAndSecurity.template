@@ -24,24 +24,43 @@
 
 ### BEGIN INIT INFO
 # Provides:          FirewallAndSecurity
-# Required-Start:    $network $remote_fs $syslog
-# Required-Stop:     $network $remote_fs $syslog
+# Required-Start:    $network $remote_fs $syslog $named
+# Required-Stop:     $network $remote_fs $syslog $named
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: FirewallAndSecurity
-# Description:       Generate IPtables, PeerGuardian and Fail2Ban rules
+# Description:       Generate all security rules for IPtables, PeerGuardian and Fail2Ban rules
 ### END INIT INFO
 
+. /lib/lsb/init-functions
+
 case "$1" in
-'new')
-        /bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh new
-        ;;
-'clean')
-		/bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh clean
-        ;;
-*)
+	'new')
+		Args="new"
+	;;
+	'clean')
+		Args="clean"
+	;;
+	'start')
+		Args="new CRON"
+	;;
+	'stop')
+		Args="clean CRON"
+	;;
+esac
+
+case "$1" in
+	'new'|'clean'|'start')
+		if [ "$1" == "start" ]; then log_daemon_msg "Applying MySB security rules"; fi
+		/bin/bash /etc/MySB/scripts/FirewallAndSecurity.bsh $Args
+		if [ "$1" == "start" ]; then log_end_msg 0; fi
+	;;
+	'stop')
+		return 0
+	;;	
+	*)
         echo "Usage: $0 { new | clean }"
-        ;;
+	;;
 esac
 
 exit 0

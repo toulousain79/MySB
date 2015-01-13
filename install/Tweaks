@@ -154,7 +154,10 @@ sed -i '/DynamicAddressResolver/d' /tmp/crontab.tmp
 echo "*/5 * * * * /bin/bash /etc/MySB/scripts/DynamicAddressResolver.bsh CRON &> /dev/null 2>&1" >> /tmp/crontab.tmp
 # Update Actual Git Repo of MySB
 sed -i '/MySB_UpdateGitHubRepo/d' /tmp/crontab.tmp
-echo "0 12 */2 * * /bin/bash /etc/MySB/bin/MySB_UpdateGitHubRepo &> /dev/null 2>&1" >> /tmp/crontab.tmp
+echo "0 12 */2 * * /bin/bash /etc/MySB/bin/MySB_UpdateGitHubRepo CRON &> /dev/null 2>&1" >> /tmp/crontab.tmp
+# Check update for MySB
+sed -i '/MySB_UpgradeMe/d' /tmp/crontab.tmp
+echo "0 4 */3 * * /bin/bash /etc/MySB/bin/MySB_UpgradeMe CRON &> /dev/null 2>&1" >> /tmp/crontab.tmp
 # GeoIP
 sed -i '/UpdateGeoIP.bsh/d' /tmp/crontab.tmp
 MAXIMUM=58 # DO NOT REMOVE
@@ -183,7 +186,7 @@ if [ ! -f /root/.ssh/id_rsa ]; then
 	ssh-keygen -q -t rsa -b 2048 -N "" -f /root/.ssh/id_rsa &> /dev/null
 fi
 
-# AES-NI Crypto Acceleration
+#### AES-NI Crypto Acceleration
 if [ -z $IFPVEKERNEL ]; then
 	if [ "`cat /proc/cpuinfo | grep aes`" != "" ]; then	
 		## load
@@ -201,12 +204,16 @@ if [ -z $IFPVEKERNEL ]; then
 	fi
 fi
 
+#### Check new version by cron
+
+
 #### START services
 ManageServices start "cron"
 
 # FirewallAndSecurity Boot Up
 cp /etc/MySB/templates/etc.init.FirewallAndSecurity.template /etc/init.d/FirewallAndSecurity
 chmod +x /etc/init.d/FirewallAndSecurity
+insserv FirewallAndSecurity
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after

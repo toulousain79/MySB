@@ -272,9 +272,12 @@ ManageServices() {
 								pglcmd reload
 								if [ $? -gt 0 ]; then
 									pglcmd restart
+									if [ $? -gt 0 ]; then
+										pglcmd force-restart
+									fi
 								fi
 							else
-								pglcmd restart
+								pglcmd force-restart
 							fi
 							if [ $? -gt 0 ]; then # if pgl don't start maybe its due to a list update
 								case "$LOGSTD" in
@@ -304,10 +307,17 @@ ManageServices() {
 									sed -i "s/^$List/#$List/g" /etc/pgl/blocklists.list
 								done
 								pglcmd restart
-
-								if [ $? -gt 0 ]; then # We have a problem with PeerGuardian
-									# We will use rTorrent Blocklist
-									PeerGuardianFailed "rTorrent"
+								
+								if [ $? -gt 0 ]; then # We have a problem with PeerGuardian, test a force-restart
+									pglcmd force-restart
+									if [ $? -gt 0 ]; then # We have a problem with PeerGuardian
+										# We will use rTorrent Blocklist
+										PeerGuardianFailed "rTorrent"
+									else
+										PeerGuardianFailed "PeerGuardian"
+									fi
+								else
+									PeerGuardianFailed "PeerGuardian"
 								fi
 							else
 								PeerGuardianFailed "PeerGuardian"
@@ -377,7 +387,7 @@ ManageServices() {
 							if [ "$ServiceStatus" == "" ]; then
 								FinalCommand="start"
 							else
-								FinalCommand="restart"
+								FinalCommand="reload"
 							fi
 						
 							service $Service $FinalCommand
@@ -899,7 +909,7 @@ EOF
 		) > /etc/pgl/allow.p2p
 
 		if [ "$IsInstalled_DNScrypt" == "YES" ]; then
-			echo "DNScrypt Resolver '$ResolverName':$ResolverAddress-255.255.255.255" >> /etc/pgl/allow.p2p
+			echo "DNScrypt Resolver ($ResolverName):$ResolverAddress-255.255.255.255" >> /etc/pgl/allow.p2p
 		fi	
 		
 		AllTrackers="`sqlite3 $MySB_DB \"SELECT id_trackers_list, tracker FROM trackers_list WHERE is_active = '1'\"`"

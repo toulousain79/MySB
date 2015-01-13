@@ -31,9 +31,9 @@ if ($_SERVER['PHP_AUTH_USER'] == '##MySB_User##') {
 	$UserName = $_SERVER['PHP_AUTH_USER'];
 }
 
-function printUser($user, $Case) {
+function PrintContent($user, $Case) {
 	global $MySB_DB, $system_datas, $Port_HTTPs;
-
+	
 	// Users table
 	$users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$user"]);
 	$UserID = $users_datas["id_users"];
@@ -96,46 +96,68 @@ function printUser($user, $Case) {
 	switch ($Case) { // account_created, account_confirmed, upgrade, renting, new_user, ip_updated
 		case 'account_created':
 			if ( $users_datas["admin"] == '1' ) {
-				$DisplayGoTo 		= true;
-				$DisplayUserInfo 	= true;
-				$DisplayLinks 		= true;
-				$DisplayRenting		= true;
+				$DisplayGoTo 			= true;
+				$DisplayCommand			= true;
+				$DisplayUserInfo		= true;
+				$DisplayUserInfoDetail 	= true;
+				$DisplayLinks 			= true;
+				$DisplayRenting			= true;
 			} else {
-				$DisplayGoTo 		= true;
-				$DisplayUserInfo 	= true;
-				$DisplayLinks 		= true;
-				$DisplayRenting		= true;
+				$DisplayGoTo 			= true;
+				$DisplayCommand			= false;
+				$DisplayUserInfo		= true;
+				$DisplayUserInfoDetail 	= true;
+				$DisplayLinks 			= true;
+				$DisplayRenting			= true;
 			}
 			break;
 		case 'new_user':
-			$DisplayGoTo 		= true;
-			$DisplayUserInfo 	= false;
-			$DisplayLinks 		= false;
-			$DisplayRenting		= true;
+			$DisplayGoTo 			= true;
+			$DisplayCommand			= false;
+			$DisplayUserInfo		= true;
+			$DisplayUserInfoDetail 	= false;
+			$DisplayLinks 			= false;
+			$DisplayRenting			= true;
 			break;			
 		case 'account_confirmed':
-			$DisplayGoTo 		= true;
-			$DisplayUserInfo 	= true;
-			$DisplayLinks 		= true;
-			$DisplayRenting		= true;
+			$DisplayGoTo 			= true;
+			$DisplayCommand			= false;
+			$DisplayUserInfo		= true;
+			$DisplayUserInfoDetail 	= true;
+			$DisplayLinks 			= true;
+			$DisplayRenting			= true;
 			break;
 		case 'upgrade':
-			$DisplayGoTo 		= false;
-			$DisplayUserInfo 	= false;
-			$DisplayLinks 		= false;
-			$DisplayRenting		= false;
+			$DisplayGoTo 			= false;
+			$DisplayCommand			= false;
+			$DisplayUserInfo		= true;
+			$DisplayUserInfoDetail 	= false;
+			$DisplayLinks 			= false;
+			$DisplayRenting			= false;
 			break;
 		case 'renting':
-			$DisplayGoTo 		= true;
-			$DisplayUserInfo 	= false;
-			$DisplayLinks 		= false;
-			$DisplayRenting		= true;
+			$DisplayGoTo 			= true;
+			$DisplayCommand			= false;
+			$DisplayUserInfo		= true;
+			$DisplayUserInfoDetail 	= false;
+			$DisplayLinks 			= false;
+			$DisplayRenting			= true;
 			break;
 		case 'ip_updated':
-			$DisplayGoTo 		= true;
-			$DisplayUserInfo 	= false;
-			$DisplayLinks 		= false;
-			$DisplayRenting		= true;
+			$DisplayGoTo 			= true;
+			$DisplayCommand			= false;
+			$DisplayUserInfo		= true;
+			$DisplayUserInfoDetail 	= false;
+			$DisplayLinks 			= false;
+			$DisplayRenting			= true;
+			break;
+		case 'new_version':
+			$DisplayGoTo 			= false;
+			$DisplayCommand			= true;
+			$DisplayUserInfo		= false;
+			$DisplayUserInfoDetail 	= false;
+			$DisplayLinks 			= false;
+			$DisplayRenting			= false;
 			break;
 	}
 ?>
@@ -146,7 +168,70 @@ function printUser($user, $Case) {
 		<tr><td colspan="3" scope="row"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>">Go to MySB Portal</a></td></tr>
 <?php } ?>
 
+<?php if ( $DisplayCommand == true ) { ?>
+		<!-- //////////////////////
+		// SSH commands available
+		////////////////////// -->
+		<tr align="left">
+			<th colspan="3" scope="row"><h4>SSH commands available</h4></th>
+		</tr>
+		<!-- // Users Management -->
+		<tr align="left">
+			<th width="15%" scope="row">Users Management</th>
+			<td width="25%"><pre>MySB_CreateUser</pre></td>
+			<td> </td>
+		</tr>
+		<tr align="left">
+			<th width="15%" scope="row"> </th>
+			<td width="25%"><pre>MySB_ChangeUserPassword</pre></td>
+			<td><span class="Comments">Arguments: <pre>MySB_ChangeUserPassword <username> <new_password></pre></span></td>
+		</tr>
+		<tr align="left">
+			<th width="15%" scope="row"> </th>
+			<td width="25%"><pre>MySB_DeleteUser</pre></td>
+			<td> </td>
+		</tr>
+		<!-- // SeedBox Management -->
+		<tr align="left">
+			<th width="15%" scope="row">SeedBox Management</th>
+			<td width="25%"><pre>MySB_RefreshMe</pre></td>
+			<td><span class="Comments">Arguments: <pre>MySB_RefreshMe (rutorrent|manager|cakebox|loadavg|all)</pre></span></td>
+		</tr>
+		<tr align="left">
+			<th width="15%" scope="row"> </th>
+			<td width="25%"><pre>MySB_UpgradeSystem</pre></td>
+			<td><span class="Comments">Performs an update + upgrade + update-ca-certificates</span></td>
+		</tr>
+		<tr align="left">
+			<th width="15%" scope="row"> </th>
+			<td width="25%"><pre>service FirewallAndSecurity</pre></td>
+			<td><span class="Comments">Arguments: <pre>service FirewallAndSecurity (new|clean)</pre></span></td>
+		</tr>
+		<!-- // MySB Management -->
+		<tr align="left">
+			<th width="15%" scope="row">MySB Management</th>
+			<td width="25%"><pre>MySB_UpdateGitHubRepo</pre></td>
+			<td><span class="Comments">Updates the repository of the current version of MySB. (CRON every 2 days)</span></td>
+		</tr>
+		<tr align="left">
+			<th width="15%" scope="row"> </th>
+			<td width="25%"><pre>MySB_UpgradeMe</pre></td>
+			<td><span class="Comments">Enables migration to a new version of MySB.</pre></span></td>
+		</tr>
+		<!-- // Main scripts -->
+		<tr align="left">
+			<th width="15%" scope="row">Main scripts</th>
+			<td width="25%"><pre>/etc/MySB/scripts/BlocklistsRTorrent.bsh</pre></td>
+			<td><span class="Comments">Use this for generate rTorrent blocklist. (CRON every day)</span></td>
+		</tr>
+		<tr align="left">
+			<th width="15%" scope="row"> </th>
+			<td width="25%"><pre>/etc/MySB/scripts/GetTrackersCert.bsh</pre></td>
+			<td><span class="Comments">Get all SSL certificates for all trackers. This script is start every time you add/edit trackers list in MySB portal.</span></td>
+		</tr>
+<?php } ?>
 
+<?php if ( $DisplayUserInfoDetail == true ) { ?>
 		<!-- //////////////////////
 		// User personal info
 		////////////////////// -->
@@ -177,9 +262,9 @@ function printUser($user, $Case) {
 			<td><?php echo $users_datas["users_email"];?></td>
 			<td> </td>
 		</tr>
+<?php } ?>
 
-
-<?php if ( $DisplayUserInfo == true ) { ?>
+<?php if ( $DisplayUserInfoDetail == true ) { ?>
 		<!-- // RPC -->
 		<tr align="left">
 			<th width="15%" scope="row">RPC</th>
@@ -501,7 +586,7 @@ if ( (CountingUsers() >= 1) && (GetVersion() != "") ) {
 				</style>
 			</head>
 			<body>';
-	printUser($UserName, $Case);
+	PrintContent($UserName, $Case);
 	echo '</body></html>';
 } else {
 	echo '<p><h1 class="FontInRed">MySB is not installed !</h1></p>';
