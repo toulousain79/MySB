@@ -231,11 +231,10 @@ foreach($AddressesList as $Address) {
 <?php
 if ( isset($_SESSION['user']) && isset($_SESSION['pwd']) && isset($_SESSION['page']) ) {
 	exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'FirewallAndSecurity.bsh'", $output, $result);
-	foreach ( $output as $item ) {
-		echo "<div style=\"text-align:left;\" align=\"center\"><pre>$item</pre></div>";
-	}
+
 	if ( $result == 0 ) {
 		$type = 'success';
+		$message = 'Success !<br /><br />Wait a few seconds and you will be able to log in with your new password.';
 		GenerateMessage('message_only', $type, $message, '');
 	} else {
 		echo 'Failed ! It was not possible to give you an access to MySB portal !';

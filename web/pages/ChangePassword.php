@@ -60,6 +60,7 @@ if ( isset($_POST['submit']) ) {
 	$confirm_pwd = $_POST['confirm_pwd'];
 	$args = '';
 	$command = 'MySB_ChangeUserPassword';
+	$timeout = '';
 
 	if ( ($current_pwd != '') && ($new_pwd != '') && ($confirm_pwd != '') ) {
 		if ( $current_pwd == $_SERVER['PHP_AUTH_PW'] ) {

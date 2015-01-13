@@ -424,18 +424,13 @@ function GenerateMessage($commands, $type, $message, $args) {
 			switch ($commands) {				
 				case "message_only": // Used to only display a message
 					$timeout = 10000;
-				
-					if ( isset($_SESSION['page']) && $_SESSION['page'] == 'ChangePassword' ) { // by NewUser.php
-						$timeout = 10000;
-						$message = 'Success !<br /><br />Wait a few seconds and you will be able to log in with your new password.';
-					}				
-					break;
 					
 				default: // Used for create a new command to apply
 					$timeout = 4000;
 					$message = 'Success !<br /><br />Please, click on \"Apply configuration\"';
 					
-					$priority = $database->max("commands", "priority");
+					$priority = $MySB_DB->max("commands", "priority");
+					$priority++;
 					
 					$value = $MySB_DB->insert("commands", ["commands" => "$commands", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
 					

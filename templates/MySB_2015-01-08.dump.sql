@@ -358,11 +358,9 @@ CREATE TABLE commands (
                                 NOT NULL ON CONFLICT ABORT
                                 UNIQUE ON CONFLICT ABORT,
     commands    VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
-    reload      BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                DEFAULT ( 0 ),
-    priority    INTEGER( 2 )    NOT NULL ON CONFLICT ABORT
-                                DEFAULT ( 0 ),
+    reload      BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT,
+    priority    INTEGER( 2 )    NOT NULL ON CONFLICT ABORT,
     args        VARCHAR( 128 ),
-    user        VARCHAR( 13 ) 
+    user        VARCHAR( 16 )   NOT NULL ON CONFLICT ABORT 
 );
 
