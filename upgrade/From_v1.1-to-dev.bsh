@@ -376,6 +376,13 @@ StatusSTD
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Creating new '.rtorrent.rc' file for all users$CEND..."
 for seedUser in $UsersList; do
 	service rtorrent-$seedUser stop &> /dev/null
+	
+	#### script init
+	update-rc.d -f rtorrent-$seedUser.conf remove &> /dev/null
+	cp /etc/MySB/templates/etc.init.rtorrent.template /etc/init.d/rtorrent-$seedUser
+	perl -pi -e "s/<username>/$seedUser/g" /etc/init.d/rtorrent-$seedUser
+	chmod +x /etc/init.d/rtorrent-$seedUser
+	update-rc.d rtorrent-$seedUser defaults 99 &> /dev/null
 
 	HOMEDIR_ESCAPED=`echo /home/$seedUser | sed s,/,\\\\\\\\\\/,g`
 	SCGIPORT="`sqlite3 $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$seedUser'\"`"

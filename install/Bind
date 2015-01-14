@@ -25,7 +25,9 @@ source /etc/MySB/inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### Install packages
-PackagesManage install "bind9"
+if ! CheckCommand 0 named; then
+	PackagesManage install "bind9"
+fi
 
 #### Correcting minor bug display in Bind9 init script
 sed -i "s/echo \"waiting for pid \$pid to die\"/break #echo \"waiting for pid \$pid to die\"/g" /etc/init.d/bind9
@@ -36,12 +38,13 @@ sed -i "s/echo \"giving up on pid \$pid\"/#echo \"giving up on pid \$pid\"/g" /e
 ManageServices stop "bind9"
 
 #### /etc/bind/named.conf
-echo "include /etc/bind/named.conf.blacklists"
-echo "include \"/etc/bind/named.conf.blacklists\";" >> /etc/bind/named.conf
+# echo "include /etc/bind/named.conf.blacklists"
+# echo "include \"/etc/bind/named.conf.blacklists\";" >> /etc/bind/named.conf
 
 #### /etc/bind/named.conf.local
-echo "include \"/etc/bind/log.conf\";"
+perl -pi -e "s/\/\/include \"\/etc\/bind\/zones.rfc1918\";/include \"\/etc\/bind\/zones.rfc1918\";/g" /etc/bind/named.conf.local
 echo "include \"/etc/bind/log.conf\";" >> /etc/bind/named.conf.local
+echo "include \"/etc/bind/MySB.zones.blakclists\";" >> /etc/bind/named.conf.local
 
 #### /etc/bind/log.conf
 cp /etc/MySB/templates/etc.bind.log.conf.template /etc/bind/log.conf
@@ -58,16 +61,16 @@ chmod 0644 /etc/bind/named.conf.options
 chown root:bind /etc/bind/named.conf.options
 
 #### /etc/bind/intercept.zone
-echo "cp /etc/MySB/templates/etc.bind.intercept.zone.template /etc/bind/intercept.zone"
-cp /etc/MySB/templates/etc.bind.intercept.zone.template /etc/bind/intercept.zone
-perl -pi -e "s/<server_name>/$HostNameFQDN/g" /etc/bind/intercept.zone
-chmod 0644 /etc/bind/intercept.zone
-chown root:bind /etc/bind/intercept.zone
+# echo "cp /etc/MySB/templates/etc.bind.intercept.zone.template /etc/bind/intercept.zone"
+# cp /etc/MySB/templates/etc.bind.intercept.zone.template /etc/bind/intercept.zone
+# perl -pi -e "s/<server_name>/$HostNameFQDN/g" /etc/bind/intercept.zone
+# chmod 0644 /etc/bind/intercept.zone
+# chown root:bind /etc/bind/intercept.zone
 
-#### /etc/bind/named.conf.blacklists
-echo "# Blacklisted domain (ex: inactive trackers)" > /etc/bind/named.conf.blacklists
-chmod 0644 /etc/bind/named.conf.blacklists
-chown root:bind /etc/bind/named.conf.blacklists
+#### /etc/bind/MySB.ones.blakclists
+echo "#### MySB - Blacklisted domains (ex: inactive trackers)" > /etc/bind/MySB.ones.blakclists
+chmod 0644 /etc/bind/MySB.ones.blakclists
+chown root:bind /etc/bind/MySB.ones.blakclists
 
 #### logrotate
 (
