@@ -8,7 +8,7 @@
 My SeedBox
 ====
 
-MySB is a seedbox platform for multi-users.
+MySB is a seedbox for multi-users for dedicated server.
 
 ##### Current version = v2.0
 ###### Last stable version = v2.0
