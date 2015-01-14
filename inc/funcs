@@ -327,11 +327,14 @@ ManageServices() {
 						fi
 					else
 						Continue=1
-						FinalCommand="reload"
 
 						case "$Service" in
 							"dnscrypt-proxy"|"webmin")
-								FinalCommand="restart"
+								if [ "$ServiceStatus" == "" ]; then
+									FinalCommand="start"
+								else
+									FinalCommand="restart"
+								fi
 							;;
 							"stunnel4")
 								Continue=0
@@ -381,15 +384,16 @@ ManageServices() {
 								fi
 								StatusLSB
 							;;
+							*)
+								if [ "$ServiceStatus" == "" ]; then
+									FinalCommand="start"
+								else
+									FinalCommand="reload"
+								fi
+							;;
 						esac
 
-						if [ "$Continue" == "1" ]; then
-							if [ "$ServiceStatus" == "" ]; then
-								FinalCommand="start"
-							else
-								FinalCommand="reload"
-							fi
-						
+						if [ "$Continue" == "1" ]; then						
 							service $Service $FinalCommand
 
 							if [ $? -gt 0 ] && [ "$FinalCommand" == "reload" ]; then
