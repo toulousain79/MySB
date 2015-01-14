@@ -24,8 +24,8 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-if [ -z "`ps ax | grep 'DynamicAddressResolver.bsh CRON' | grep -v 'grep'`" ]; then
 
+ResolveAddresses() {
 	#### Update all IPs from hostname
 	Reload=0
 	AllIdUsers=""
@@ -61,7 +61,7 @@ if [ -z "`ps ax | grep 'DynamicAddressResolver.bsh CRON' | grep -v 'grep'`" ]; t
 		if [ "$LOGSTD" == "NO" ]; then log_daemon_msg "Updating MySB security rules"; fi
 		ScriptInvoke 'screen' '/etc/MySB/scripts/FirewallAndSecurity.bsh' 'new'
 		echo `date`" --> UPDATE security rules" >> /etc/MySB/logs/$ScriptName.log
-		ccze -h -o nolookups -o transparent -o cssfile="/etc/MySB/web/public/themes/MySB/css/ccze.css" < /etc/MySB/logs/$ScriptName.log | sed -e '/DOCTYPE/d' -e '/html>/d' -e '/head>/d' -e '/<meta/d' -e '/<link/d' -e '/<title/d' -e '/body/d' > /etc/MySB/web/logs/scripts/$ScriptName-log.html
+		ccze -h -o nolookups -o transparent -o cssfile="/etc/MySB/web/public/themes/MySB/css/ccze.css" < /etc/MySB/logs/$ScriptName.log > /etc/MySB/web/logs/scripts/$ScriptName-log.html
 		if [ "$LOGSTD" == "NO" ]; then StatusLSB 0; fi
 
 		for IdUser in $AllIdUsers; do
@@ -75,8 +75,17 @@ if [ -z "`ps ax | grep 'DynamicAddressResolver.bsh CRON' | grep -v 'grep'`" ]; t
 	else
 		if [ "$LOGSTD" == "NO" ]; then log_daemon_msg "No hostname requires updating" && StatusLSB 0; fi
 	fi
+}
 
+IfRunning="`ps ax | grep 'DynamicAddressResolver.bsh' | grep -v 'grep' | awk '{ print $1 }'`"
+
+if [ ! -z "$IfRunning" ]; then
+	while [ ! -z "`ps ax | grep 'DynamicAddressResolver.bsh $IfRunning CRON' | grep -v 'grep'`" ]; do
+		sleep 1	
+	done
 fi
+
+ResolveAddresses
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after

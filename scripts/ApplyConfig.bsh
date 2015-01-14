@@ -24,15 +24,15 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-#if [ ! -z "$1" ]; then
-	# "BlocklistsRTorrent.bsh": 	DOUBLON / ADMIN
-	# "FirewallAndSecurity.bsh": 	DOUBLON / USER
-	# "GetTrackersCert.bsh": 		DOUBLON / ADMIN
-	# "MySB_CreateUser": 			ADMIN / ARGS
-	# "MySB_DeleteUser": 			ADMIN / ARGS
-	# "MySB_ChangeUserPassword": 	DOUBLON / USER / ARGS
-	# "Postfix": 					DOUBLON / ADMIN
+# "BlocklistsRTorrent.bsh": 	DOUBLON / ADMIN
+# "FirewallAndSecurity.bsh": 	DOUBLON / USER
+# "GetTrackersCert.bsh": 		DOUBLON / ADMIN
+# "MySB_CreateUser": 			ADMIN / ARGS
+# "MySB_DeleteUser": 			ADMIN / ARGS
+# "MySB_ChangeUserPassword": 	DOUBLON / USER / ARGS
+# "Postfix": 					DOUBLON / ADMIN
 
+DoApplyConfig() {
 	# 1 - Purger la base des entrées en double (command + user), uniquement l'entrée avec la priorité la plus haute sera conservée
 	# Applicable pour seulement quelques commandes
 	AllUser="`sqlite3 $MySB_DB \"SELECT user FROM commands WHERE 1\" | tr " " "\n"|sort|uniq|tr "\n" " "`"
@@ -45,7 +45,7 @@ source /etc/MySB/inc/includes_before
 					LastCommandUser="`sqlite3 $MySB_DB \"SELECT max(priority) FROM commands WHERE user = '$User' AND commands = '$CommandUser'\"`"
 					while [ $FirstCommandUser -lt $LastCommandUser ]; do
 						# On supprime les premières commandes
-						sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE user = '$User' AND commands = '$CommandUser' AND priority = '$FirstCommandUser'"					
+						sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE user = '$User' AND commands = '$CommandUser' AND priority = '$FirstCommandUser'"
 						(( FirstCommandUser++ ))
 					done
 				;;
@@ -139,8 +139,17 @@ source /etc/MySB/inc/includes_before
 			;;
 		esac
 	done
+}
 
-#fi
+IfRunning="`ps ax | grep 'ApplyConfig.bsh' | grep -v 'grep' | awk '{ print $1 }'`"
+
+if [ ! -z "$IfRunning" ]; then
+	while [ ! -z "`ps ax | grep 'ApplyConfig.bsh $IfRunning' | grep -v 'grep'`" ]; do
+		sleep 1	
+	done
+fi
+
+DoApplyConfig
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
