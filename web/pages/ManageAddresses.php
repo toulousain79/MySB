@@ -106,8 +106,25 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$message = 'Failed ! It was not possible to update addresses informations.';
 			}
 
-			GenerateMessage('FirewallAndSecurity.bsh', $type, $message, '');
-			GenerateMessage('message_only', 'information', 'Remember that your dynamic IP will be checked every 5 minutes.');
+			if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ManageAddresses') ) { // by NewUser.php
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'FirewallAndSecurity.bsh'", $output, $result);
+
+				if ( $result == 0 ) {
+					$type = 'success';
+					$message = 'Success !<br /><br />You will be redirect in 10 seconds.';
+					GenerateMessage('message_only', $type, $message, '');
+					session_start();
+					unset($_SESSION['page']);
+					session_unset();
+					session_destroy();
+					header('Refresh: 10; URL=/');
+				} else {
+					echo 'Failed ! It was not possible to give you an access to MySB portal !';
+				}
+			} else {
+				GenerateMessage('FirewallAndSecurity.bsh', $type, $message, '');
+				GenerateMessage('message_only', 'information', 'Remember that your dynamic IP will be checked every 5 minutes.');
+			}
 			break;
 		default: // Delete
 			if (isset($_POST['delete'])) {
@@ -165,8 +182,8 @@ $AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserI
 				</div>
 
 				<div style="margin-top: 10px; margin-bottom: 20px;">
-					<input type="button" id="btnAdd" value="Add address" style="cursor: pointer;" />
-					<input type="button" id="btnDel" value="Remove last" style="cursor: pointer;" />
+					<input type="button" id="btnAdd" value="Add new line" style="cursor: pointer;" />
+					<input type="button" id="btnDel" value="Remove last line" style="cursor: pointer;" />
 				</div>
 
 			<p class="Comments">If you have a <b>dynamic IP address</b>, you must enter a hostname (No-IP, DynDNS, ...).<br />
@@ -233,24 +250,9 @@ foreach($AddressesList as $Address) {
 ?>
 
 		</table>
-<?php
-if ( isset($_SESSION['user']) && isset($_SESSION['pwd']) && isset($_SESSION['page']) ) {
-	exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'FirewallAndSecurity.bsh'", $output, $result);
 
-	if ( $result == 0 ) {
-		$type = 'success';
-		$message = 'Success !<br /><br />Wait a few seconds and you will be able to log in with your new password.';
-		GenerateMessage('message_only', $type, $message, '');
-	} else {
-		echo 'Failed ! It was not possible to give you an access to MySB portal !';
-	}	
-} else {
-?>
-	<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
-<?php
-}
-?>
-		
+		<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
+
 	</div>
 </form>
 

@@ -24,29 +24,14 @@ require_once '/etc/MySB/web/inc/includes_before.php';
 //
 //#################### FIRST LINE #####################################
 
-if ( isset($_GET['user']) && isset($_GET['passwd']) && isset($_GET['page']) ) {
+if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') ) {
 	$UserName = $_GET['user'];
 	$UserPasswd = $_GET['passwd'];
-	$UserAddress = $_SERVER['REMOTE_ADDR'];
 
 	// Users table
-	//$users_datas = $MySB_DB->get("users", "*", ["AND" => ["users_ident" => "$UserName", "users_passwd" => "$UserPasswd"]]);
 	$ActualUserPass = $MySB_DB->get("users", "users_passwd", ["users_ident" => "$UserName"]);
 	if ( ($ActualUserPass != "") && ($UserPasswd != "") && ($UserPasswd == $ActualUserPass) ) {
-		$HostName = gethostbyaddr($UserAddress);
-		$last_id_address = ManageUsersAddresses($UserName, $UserAddress, $HostName, 1, 'ipv4');
-
-		if ($last_id_address != false) {
-			session_start();
-			$_SESSION['user'] = $UserName;
-			$_SESSION['pwd'] = $UserPasswd;
-			$_SESSION['page'] = $_GET['page'];
-			$_SERVER['PHP_AUTH_USER'] = $UserName;
-			$_SERVER['PHP_AUTH_PW'] = $UserPasswd;
-			require_once '/etc/MySB/web/index.php';
-		} else {
-			echo 'Failed ! It was not possible to add your IP address in MySB database!';
-		}
+		require_once '/etc/MySB/web/index.php';
 	} else {
 		header('Refresh: 0; URL=http://www.google.fr');
 	}

@@ -68,18 +68,29 @@ if ( isset($_POST['submit']) ) {
 				$result = UpdateWolfDB($_SERVER['PHP_AUTH_USER'], $new_pwd);
 
 				if ( $result > 0 ) {
-					if ( isset($_SESSION['user']) && isset($_SESSION['pwd']) && isset($_SESSION['page']) ) { // by NewUser.php
-						$UserName = $_SESSION['user'];
-						exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword' '$UserName' '$new_pwd'", $output, $result);
+					if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') ) { // by NewUser.php
 
-						if ( $result == 0 ) {
-							$type = 'success';
-							$command = 'message_only';
+						$priority = $MySB_DB->max("commands", "priority");
+						$priority++;
+						$args = "$CurrentUser|$new_pwd";
+
+						$value = $MySB_DB->insert("commands", ["commands" => "$commands", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
+					
+						if ( $result > 0 ) {
+							exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword'", $output, $result);
+
+							if ( $result == 0 ) {
+								$type = 'success';
+								$command = 'message_only';
+								$message = 'Success !<br /><br />Wait a few seconds and you will be able to log in with your new password.<br /><br />You will be redirect in 15 seconds.';
+							} else {
+								$type = 'error';
+								$message = 'Failed ! It was not possible to apply the new password...';
+							}
 						} else {
 							$type = 'error';
 							$message = 'Failed ! It was not possible to update the MySB database.';
-						}						
-					
+						}
 					} else { // directly by MySB portal
 						$type = 'success';
 						$args = "$CurrentUser|$new_pwd";
@@ -100,8 +111,16 @@ if ( isset($_POST['submit']) ) {
 		$type = 'information';
 		$message = 'Please, complete all fields.';	
 	}
-	
+
 	GenerateMessage($command, $type, $message, $args, $timeout);
+
+	if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') ) { // by NewUser.php
+		session_start();
+		unset($_SESSION['page']);
+		session_unset();
+		session_destroy();
+		header('Refresh: 15; URL=/');
+	}
 }
 
 //#################### LAST LINE ######################################

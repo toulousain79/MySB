@@ -59,21 +59,29 @@
 					<h2> <?php echo GetVersion(); ?></h2>
 				</div>
 				<div id="logout">
-					
+					<a href="/Logout.php">Logout</a>
 				</div>			
 			</div>
 
 			<nav>
 				<div id="menu_container">
-					<?php $page = $this->find('/'); ?>
+<?php
+				$page = $this->find('/');
+
+				if ( !isset($_SESSION['page']) ) {
+?>
+					
 					<ul class="sf-menu" id="nav">
 						<li<?php echo ($this->level() == 0) ? ' class="current"': null; ?>><?php echo $page->link($page->title); ?></li>
 
 						<?php MenuDisplayChildren($page, $this, false); ?>
 					</ul>
+<?php
+				}
+?>					
 					<div id="breadcrumb">
 						<?php echo $this->breadcrumb(); ?>
-					</div>				
+					</div>
 				</div>
 			</nav>
 		</header>
@@ -81,19 +89,25 @@
 		<div id="site_content">
 			<div class="content">
 <?php
-	if ( isset($_SESSION['user']) && isset($_SESSION['pwd']) && isset($_SESSION['page']) ) {
-		switch ($_SESSION['page']) {
-			case "ChangePassword":
-				require_once '/etc/MySB/web/pages/ChangePassword.php';
-				break;
-			case "ForceAddress":
-				require_once '/etc/MySB/web/pages/ManageAddresses.php';
-				break;
-		}		
-	} else {
-		echo $this->content();
-		if ($this->hasContent('extended')) echo $this->content('extended');		
-	}
+			if ( isset($_SESSION['page']) ) {
+				switch ($_SESSION['page']) {
+					case "ChangePassword":
+						require_once '/etc/MySB/web/pages/ChangePassword.php';
+						break;
+
+					case "ManageAddresses":
+						require_once '/etc/MySB/web/pages/ManageAddresses.php';
+						break;
+
+					default:
+						echo $this->content();
+						if ($this->hasContent('extended')) echo $this->content('extended');
+						break;
+				}
+			} else {
+				echo $this->content();
+				if ($this->hasContent('extended')) echo $this->content('extended');
+			}
 ?>
 			</div>
 			<div id="sidebar_container">

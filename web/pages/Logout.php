@@ -24,15 +24,35 @@ require_once '/etc/MySB/web/inc/includes_before.php';
 //
 //#################### FIRST LINE #####################################
 
-if ( isset($_SESSION['user']) || isset($_SESSION['pwd']) || isset($_SESSION['page']) ) {
+if ( isset($_SESSION['page']) ) {
 	session_start();
-	unset($_SERVER['PHP_AUTH_USER']);  
-	unset($_SERVER['PHP_AUTH_PW']);
 	session_unset();
-	session_destroy();	
-	header('Location: https://logout@' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/');
-} else {
-	header('Location: https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/');
+	session_destroy();
+}
+
+// Logout HTTP Internet Explorer
+if ( preg_match( '~MSIE|Internet Explorer~i', $_SERVER['HTTP_USER_AGENT'] ) || ( strpos( $_SERVER['HTTP_USER_AGENT'], 'Trident/7.0; rv:11.0') !== false ) ) {
+
+?>
+
+<script type="text/javascript">
+	try {
+		document.execCommand("ClearAuthenticationCache");
+		window.location.href('/');
+	} catch (exception) {}
+</script>
+ 
+<?php } else {  // Logout HTTP Firefox/Safari/Chrome ?>
+ 
+<script type="text/javascript">
+    var request = new XMLHttpRequest();
+    request.open("get", "https://logout@<?php echo $system_datas["hostname"] . ':' . $Port_HTTPs . '/'; ?>", false);
+    request.send();
+    window.location.replace('index.php');
+</script>
+ 
+<?php
+
 }
 
 // -----------------------------------------

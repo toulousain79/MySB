@@ -22,6 +22,24 @@
 //
 //#################### FIRST LINE #####################################
 
+// Session
+session_start();
+if ( isset($_GET['page']) ) {
+	switch ($_GET['page']) {
+		case "ChangePassword":
+			if ( isset($_GET['user']) && isset($_GET['passwd']) ) {
+				$_SESSION['page'] = $_GET['page'];
+			}
+			break;
+
+		case "ManageAddresses":
+			if ( isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW']) ) { 
+				$_SESSION['page'] = $_GET['page'];
+			}
+			break;
+	}
+}
+
 // Directories
 define('WEB_ROOT', '/etc/MySB/web/');
 define('WEB_INC', WEB_ROOT . 'inc/');

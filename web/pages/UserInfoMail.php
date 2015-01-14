@@ -462,7 +462,7 @@ function PrintContent($user, $Case) {
 		<!-- // Force IP address -->
 		<tr align="left">
 			<th width="15%" scope="row" style="color: #FF6666;">Force IP address</th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ForceAddress.php?page=ForceAddress"><span class="Comments">Force the addition of your current IP address in case of problems. (You need a valid password)</span></a></td>
+			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ForceAddress.php?page=ManageAddresses"><span class="Comments">Force the addition of your current IP address in case of problems. (You need a valid password)</span></a></td>
 		</tr>
 	
 	<?php if ( $users_datas["admin"] == '1' ) { ?>
