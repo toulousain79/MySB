@@ -257,7 +257,7 @@ function ManageUsersTrackers($TrackerDomain, $IsActive) {
 
 	$value = false;
 
-	$TrackerDomain = str_replace(' ','',"$TrackerDomain");
+	$TrackerDomain = preg_replace('/\s\s+/', '', "$TrackerDomain"); 
 	$TrackerAddress = "";
 
 	switch ($IsActive) {
@@ -417,21 +417,26 @@ function GenerateMessage($commands, $type, $message, $args) {
 	switch ($type) {
 		case "success":
 			$timeout = 2000;
+
 			if ( !isset($message) ) {
 				$message = 'Success !';
 			}
 
-			switch ($commands) {				
+			switch ($commands) {
 				case "message_only": // Used to only display a message
 					$timeout = 10000;
 					
+					break;
+
 				default: // Used for create a new command to apply
 					$timeout = 4000;
-					$message = 'Success !<br /><br />Please, click on \"Apply configuration\"';
-					
+					if ( !isset($message) || ($message == 'Success !') )  {
+						$message = 'Success !<br /><br />Please, click on \"Apply configuration\"';
+					}
+
 					$priority = $MySB_DB->max("commands", "priority");
 					$priority++;
-					
+
 					$value = $MySB_DB->insert("commands", ["commands" => "$commands", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
 
 					switch ($commands) {
@@ -439,12 +444,12 @@ function GenerateMessage($commands, $type, $message, $args) {
 						case "GetTrackersCert.bsh":
 						case "Postfix":
 							$priority++;
-							$value = $MySB_DB->insert("commands", ["commands" => "$commands", "reload" => 1, "priority" => "$priority", "user" => "$CurrentUser"]);
+							$value = $MySB_DB->insert("commands", ["commands" => "FirewallAndSecurity.bsh", "reload" => 1, "priority" => "$priority", "user" => "$CurrentUser"]);
 							break;
 					}
-					
+
 					echo '<script type="text/javascript">ApplyConfig("ToUpdate");</script>';
-			
+
 					break;
 			}
 			break;

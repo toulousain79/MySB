@@ -43,14 +43,29 @@ if [ "$IsInstalled_DNScrypt" == "YES" ]; then IsInstalled_DNScrypt="`CheckComman
 #### 3 - SWITCHES
 # Default
 BANNER=ON		# Banner for all script (ON/OFF)
-LOGSTD=NO		# Standard Outpout and Error redicted to 'scriptname.log' (STDERR/STDOUT/NO)
-USAGE=ON		# All usage display to user (ON/OFF)
-END=ON			# Lauch some commands (ON/OFF) (ldconfig, updatedb, drop cache) (see includes_after)
+LOGSTD=NO		# Standard Outpout and Error redicted to 'scriptname.log' (STDOUT/NO)
+USAGE=ON		# All usage display to user, like questions (ON/OFF)
+END=ON			# Launch some commands at the end (ldconfig, updatedb, drop cache) (see includes_after) (ON/OFF)
+TIMESTAMP=YES	# Adds a time stamp at the beginning and end of the script in the logs (ON/OFF)
+
+# Check by script name BEFORE check arguments (to force default switches)
+case "$ScriptName" in
+	"DynamicAddressResolver.bsh")
+		BANNER=OFF
+		LOGSTD=NO
+		USAGE=OFF
+		END=OFF
+		TIMESTAMP=OFF
+	;;	
+	"ApplyConfig.bsh") # Launched by ApplyConfig.bsh (web)
+		BANNER=OFF
+		END=OFF
+	;;
+esac
 
 # Check by arguments
-Args=("$@")
-for ((i=0; i < $#; i++)) {
-	case "${Args[$i]}" in
+for Arg in "$@"; do
+	case "$Arg" in
 		"REFRESH"|"INSTALL")
 			BANNER=OFF
 			LOGSTD=STDOUT
@@ -76,9 +91,9 @@ for ((i=0; i < $#; i++)) {
 			END=OFF
 		;;
 	esac
-}
+done
 
-# Check by script name
+# Check by script name AFTER check arguments (to force any switches)
 case "$ScriptName" in
 	"MySB.bsh") # Upgrade ?
 		BANNER=ON
@@ -93,20 +108,10 @@ case "$ScriptName" in
 		USAGE=ON
 		END=OFF
 	;;
-	"DynamicAddressResolver.bsh")
-		BANNER=OFF
-		LOGSTD=NO
-		USAGE=OFF
-		END=OFF
-	;;	
-	"ApplyConfig.bsh") # Launched by ApplyConfig.bsh (web)
-		BANNER=OFF
-		END=OFF
-	;;	
 	"From_v1.1-to-dev.bsh") # Upgrade ?
 		MySB_CurrentVersion="dev"
 		sleep 10
-	;;
+	;;	
 esac
 
 #### 4 - Create MySB banner
@@ -115,19 +120,11 @@ if [ "$BANNER" == "ON" ]; then
 fi
 
 #### 5 -STD Out/Err (after banner)
-case "$LOGSTD" in
-	"STDERR")
-		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
-		echo "START Err: "`date` "-" $ScriptName $1 >> /etc/MySB/logs/$ScriptName.log
-		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
-		exec 2>> /etc/MySB/logs/$ScriptName.log
-	;;
-	"STDOUT")
-		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
-		echo "START Out/Err: "`date` "-" $ScriptName $1 >> /etc/MySB/logs/$ScriptName.log
-		echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
-		exec >> /etc/MySB/logs/$ScriptName.log	2>&1
-	;;
-esac
+if [ "$TIMESTAMP" == "ON" ]; then
+	echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
+	echo "START Out/Err: "`date` "-" $ScriptName $1 >> /etc/MySB/logs/$ScriptName.log
+	echo "--------------------" >> /etc/MySB/logs/$ScriptName.log
+	exec >> /etc/MySB/logs/$ScriptName.log	2>&1
+fi
 
 ##################### LAST LINE ######################################

@@ -69,7 +69,7 @@ function Form() {
 				</td>
 			</tr>
 			<tr>
-				<td>E-mail address linked:</td>
+				<td>E-mail related to the SMTP account:</td>
 				<td><input class="text_normal" id="SmtpEmail" name="SmtpEmail" type="text" value="' . $SmtpEmail . '" required="required" /></td>
 			</tr>			
 			<tr>
@@ -111,34 +111,40 @@ function Form() {
 
 if (isset($_POST['submit'])) {
 	$SmtpProvider = $_POST['SmtpProvider'];
-	$SmtpUsername = $_POST['SmtpUsername'];
+	$SmtpUsername = preg_replace('/\s\s+/', '', $_POST['SmtpUsername']); 
+	$SmtpEmail = preg_replace('/\s\s+/', '', $_POST['SmtpEmail']); 	
 	$SmtpPasswd = $_POST['SmtpPasswd'];
 	$SmtpPasswdConfirm = $_POST['SmtpPasswdConfirm'];
 	$SmtpHost = $_POST['SmtpHost'];
 	$SmtpPort = $_POST['SmtpPort'];
-	$SmtpEmail = $_POST['SmtpEmail'];
+	
 
 	if ( (isset($SmtpProvider)) && (isset($SmtpUsername)) && (isset($SmtpPasswd)) && (isset($SmtpPasswdConfirm)) && (isset($SmtpHost)) && (isset($SmtpPort)) && (isset($SmtpEmail)) ) {
-		if ( $SmtpPasswd == $SmtpPasswdConfirm ) {
-			global $MySB_DB;
+		if ( ValidateEmail($SmtpEmail) != false ) {	
+			if ( $SmtpPasswd == $SmtpPasswdConfirm ) {
+				global $MySB_DB;
 
-			$result = $MySB_DB->update("smtp", ["smtp_provider" => "$SmtpProvider",
-											"smtp_username" => "$SmtpUsername",
-											"smtp_passwd" => "$SmtpPasswd",
-											"smtp_host" => "$SmtpHost",
-											"smtp_port" => "$SmtpPort",
-											"smtp_email" => "$SmtpEmail"],
-											["id_smtp" => 1]);
+				$result = $MySB_DB->update("smtp", ["smtp_provider" => "$SmtpProvider",
+												"smtp_username" => "$SmtpUsername",
+												"smtp_passwd" => "$SmtpPasswd",
+												"smtp_host" => "$SmtpHost",
+												"smtp_port" => "$SmtpPort",
+												"smtp_email" => "$SmtpEmail"],
+												["id_smtp" => 1]);
 
-			if( $result = 1 ) {
-				$type = 'success';
+				if( $result = 1 ) {
+					$type = 'success';
+				} else {
+					$type = 'error';
+					$message = 'Failed ! It was not possible to update the MySB database.';
+				}
 			} else {
 				$type = 'error';
-				$message = 'Failed ! It was not possible to update the MySB database.';
+				$message = 'Error between password and verification.';		
 			}
 		} else {
 			$type = 'error';
-			$message = 'Error between password and verification.';		
+			$message = 'The e-mail related to the SMTP account is not valid!';
 		}
 	} else {
 		$type = 'information';

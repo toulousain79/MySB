@@ -37,28 +37,28 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 			for($i=1; $i<=$count; $i++) {
 				// test if IP or hostname (dynamic IP)
-				if (!filter_var($_POST['address'][$i], FILTER_VALIDATE_IP)) {
+				$CleanAddress = preg_replace('/\s\s+/', '', $_POST['address'][$i]); 
+				if (!filter_var($CleanAddress, FILTER_VALIDATE_IP)) {
 					// IP is not valid (hostname)
-					$IPv4 = gethostbyname($_POST['address'][$i]);
+					$IPv4 = gethostbyname($CleanAddress);
 
 					if (!filter_var($IPv4, FILTER_VALIDATE_IP)) {
 						$success = false;
 						$message = 'The host name does not return a valid IP address.';
 					} else {
-						$last_id_address = ManageUsersAddresses($CurrentUser, $IPv4, $_POST['address'][$i], $_POST['is_active'][$i], 'hostname');
+						$last_id_address = ManageUsersAddresses($CurrentUser, $IPv4, $CleanAddress, $_POST['is_active'][$i], 'hostname');
 						if ($last_id_address == false) {
 							$success = false;
 							$message = 'Failed ! It was not possible to update hostname address in the MySB database.';
-						} else {
-							GenerateMessage('message_only', 'information', 'Remember that your dynamic IP will be checked every 5 minutes.');
 						}
 					}
 				} else {
 					// IP is valid
-					if ( ValidateIPv4NoPriv($_POST['address'][$i]) ) {
+					$CleanAddress = preg_replace('/\s\s+/', '', $_POST['address'][$i]); 
+					if ( ValidateIPv4NoPriv($CleanAddress) ) {
 						// IP is valid
-						$HostName = gethostbyaddr($_POST['address'][$i]);
-						$last_id_address = ManageUsersAddresses($CurrentUser, $_POST['address'][$i], $HostName, $_POST['is_active'][$i], 'ipv4');
+						$HostName = gethostbyaddr($CleanAddress);
+						$last_id_address = ManageUsersAddresses($CurrentUser, $CleanAddress, $HostName, $_POST['is_active'][$i], 'ipv4');
 						if ($last_id_address == false) {
 							$success = false;
 							$message = 'Failed ! It was not possible to update IPv4 address in the MySB database.';
@@ -78,17 +78,19 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$type = 'error';
 			}
 
-			GenerateMessage('message_only', $type, $message, '');
+			GenerateMessage('FirewallAndSecurity.bsh', $type, $message, '');
 			break;
 		case "Save Changes":
 			$success = true;
 			$count = count($_POST['input_id']);
 
 			for($i=1; $i<=$count; $i++) {
+				$CleanIPv4 = preg_replace('/\s\s+/', '', $_POST['ipv4'][$i]); 
+				$CleanHostname = preg_replace('/\s\s+/', '', $_POST['hostname'][$i]); 
 				$last_id_address = $MySB_DB->update("users_addresses", ["is_active" => $_POST['is_active'][$i]], [
 																												"AND" => [
-																													"ipv4" => $_POST['ipv4'][$i],
-																													"hostname" => $_POST['hostname'][$i]
+																													"ipv4" => "$CleanIPv4",
+																													"hostname" => "$CleanHostname"
 																												]
 																											]);
 
@@ -105,6 +107,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			}
 
 			GenerateMessage('FirewallAndSecurity.bsh', $type, $message, '');
+			GenerateMessage('message_only', 'information', 'Remember that your dynamic IP will be checked every 5 minutes.');
 			break;
 		default: // Delete
 			if (isset($_POST['delete'])) {
@@ -121,13 +124,12 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 				if ( $success == true ) {
 					$type = 'success';
-					$message = 'Success !<br /><br />Please, Check your addresses<br />and click on \"Save Changes\"';
 				} else {
 					$type = 'error';
 					$message = 'Failed ! It was not possible to delete address.';
 				}
 
-				GenerateMessage('message_only', $type, $message, '');
+				GenerateMessage('FirewallAndSecurity.bsh', $type, $message, '');
 			}
 			break;
 	}
@@ -167,6 +169,9 @@ $AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserI
 					<input type="button" id="btnDel" value="Remove last" style="cursor: pointer;" />
 				</div>
 
+			<p class="Comments">If you have a <b>dynamic IP address</b>, you must enter a hostname (No-IP, DynDNS, ...).<br />
+				If you have a <b>fixed IP address</b>, you can enter it directly, or enter a hostname. In this case, it is advisable to directly enter your IP.</p>				
+				
 				<input class="submit" style="width:180px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="Add my addresses now !">
 			</fieldset>
 		</form>
