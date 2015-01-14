@@ -26,14 +26,11 @@ echo '<div id="jQ-menu">';
 
 $path = "./logs/";
 
-	function createDir($path = '.')
-	{	
-		if ($handle = opendir($path)) 
-		{
+	function createDir($path = '.') {
+		if ($handle = opendir($path)) {
 			echo "<ul>";
-		
-			while (false !== ($file = readdir($handle))) 
-			{
+
+			while (false !== ($file = readdir($handle))) {
 				if (is_dir($path.$file) && $file != '.' && $file !='..')
 					printSubDir($file, $path, $queue);
 				else if ($file != '.' && $file !='..')
@@ -45,21 +42,19 @@ $path = "./logs/";
 		}
 	}
 
-	function printQueue($queue, $path)
-	{
-		foreach ($queue as $file) 
-		{
+	function printQueue($queue, $path) {
+		foreach ($queue as $file) {
 			printFile($file, $path);
 		} 
 	}
 
-	function printFile($file, $path)
-	{
-		echo "<li><a target=\"_blank\" href=\"".$path.$file."\">$file</a></li>";
+	function printFile($file, $path) {
+		$SudDirectory = preg_replace('/.\/logs\//', '', "$path");
+		$SudDirectory = preg_replace('/\//', '', "$SudDirectory"); 
+		echo "<li><a href=\"/?main-user/logs.html?dir=".$SudDirectory."&file=".$file."\">$file</a></li>";
 	}
 
-	function printSubDir($dir, $path)
-	{
+	function printSubDir($dir, $path) {
 		echo "<li><span class=\"toggle\">$dir</span>";
 		createDir($path.$dir."/");
 		echo "</li>";
@@ -68,12 +63,13 @@ $path = "./logs/";
 	createDir($path);
 
 echo '</div>';
-?>
-<!-- jQuery Color Plugin --> 
-<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.color.js"></script> 
- 
-<!-- Import The jQuery Script --> 
-<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jMenu.js"></script> 
-<?php
+
+if ( isset($_GET['dir']) && isset($_GET['file']) ) {
+	echo '<div style="background-color:#404040;">';
+	include_once('./logs/'.$_GET['dir'].'/'.$_GET['file']);
+	echo $contenu;
+	echo '</div>';
+}
+
 //#################### LAST LINE ######################################
 ?>

@@ -34,6 +34,9 @@
 	<!-- Template CSS -->
 	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/screen.css" />
 	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/mysb.css" />
+<?php if ( strstr($_SERVER['REQUEST_URI'], '/?main-user/logs.html') ) { ?>
+	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/ccze.css" />
+<?php } ?>
 	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/jQ-menu.css" />
 	<!-- Messages animated CSS -->
 	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/buttons.css" />
@@ -131,10 +134,10 @@
 			echo $FooterNavBar . '<br /><br />';
 ?>
 			<a href="https://github.com/toulousain79/MySB/" title="MySB on GitHub">MySB on GitHub</a><br />
-			<a href="http://www.css3templates.co.uk">Copyright &copy; CSS3_two</a> | <a href="http://www.wolfcms.org/" title="Wolf CMS">Wolf CMS</a></p>
+			<a href="http://www.css3templates.co.uk">Copyright &copy; CSS3_two</a> | <a href="http://www.wolfcms.org/" title="Wolf CMS">Wolf CMS</a>
 		</footer>
 	</div>
-	
+
 	<!-- javascript at the bottom for fast page loading -->
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.easing-sooper.js"></script>
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.sooperfish.js"></script>
@@ -144,6 +147,12 @@
 		$('.top').click(function() {$('html, body').animate({scrollTop:0}, 'fast'); return false;});
 		});
 	</script>
+<?php if ( strstr($_SERVER['REQUEST_URI'], '/?main-user/logs.html') ) { ?>
+	<!-- jQuery Color Plugin --> 
+	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.color.js"></script>
+	<!-- Import The jQuery Script --> 
+	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jMenu.js"></script>
+<?php } ?>	
 </body>
 
 </html>
