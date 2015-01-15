@@ -30,9 +30,9 @@ if ! CheckCommand 0 named; then
 fi
 
 #### Correcting minor bug display in Bind9 init script
-sed -i "s/echo \"waiting for pid \$pid to die\"/break #echo \"waiting for pid \$pid to die\"/g" /etc/init.d/bind9
-sed -i "s/echo \"giving up on pid \$pid with kill -0; trying -9\"/#echo \"giving up on pid \$pid with kill -0; trying -9\"/g" /etc/init.d/bind9
-sed -i "s/echo \"giving up on pid \$pid\"/#echo \"giving up on pid \$pid\"/g" /etc/init.d/bind9
+sed -i "s/^echo \"waiting for pid \$pid to die\"/break #echo \"waiting for pid \$pid to die\"/g" /etc/init.d/bind9
+sed -i "s/^echo \"giving up on pid \$pid with kill -0; trying -9\"/#echo \"giving up on pid \$pid with kill -0; trying -9\"/g" /etc/init.d/bind9
+sed -i "s/^echo \"giving up on pid \$pid\"/#echo \"giving up on pid \$pid\"/g" /etc/init.d/bind9
 
 #### START services
 ManageServices stop "bind9"
@@ -42,14 +42,16 @@ ManageServices stop "bind9"
 # echo "include \"/etc/bind/named.conf.blacklists\";" >> /etc/bind/named.conf
 
 #### /etc/bind/named.conf.local
-perl -pi -e "s/\/\/include \"\/etc\/bind\/zones.rfc1918\";/include \"\/etc\/bind\/zones.rfc1918\";/g" /etc/bind/named.conf.local
+sed -i '/zones.rfc1918/d' /etc/bind/named.conf.local
 sed -i '/\/etc\/bind\/log.conf/d' /etc/bind/named.conf.local
-echo "include \"/etc/bind/log.conf\";" >> /etc/bind/named.conf.local
 sed -i '/\/etc\/bind\/MySB.zones.blakclists/d' /etc/bind/named.conf.local
-echo "include \"/etc/bind/MySB.zones.blakclists\";" >> /etc/bind/named.conf.local
+echo "include \"/etc/bind/zones.rfc1918\";" | tee -a /etc/bind/named.conf.local
+echo "include \"/etc/bind/log.conf\";" | tee -a /etc/bind/named.conf.local
+echo "include \"/etc/bind/MySB.zones.blakclists\";" | tee -a /etc/bind/named.conf.local
 
 #### /etc/bind/log.conf
-cp /etc/MySB/templates/etc.bind.log.conf.template /etc/bind/log.conf
+if [ -f /etc/bind/log.conf ]; then rm -vf /etc/bind/log.conf; fi
+cat /etc/MySB/templates/etc.bind.log.conf.template | tee -a /etc/bind/log.conf
 chmod 0644 /etc/bind/log.conf
 chown root:bind /etc/bind/log.conf
 if [ ! -d /var/log/bind ]; then
@@ -71,11 +73,12 @@ chown root:bind /etc/bind/named.conf.options
 # chown root:bind /etc/bind/intercept.zone
 
 #### /etc/bind/MySB.ones.blakclists
-echo "#### MySB - Blacklisted domains (ex: inactive trackers)" > /etc/bind/MySB.ones.blakclists
-chmod 0644 /etc/bind/MySB.ones.blakclists
-chown root:bind /etc/bind/MySB.ones.blakclists
+echo "#### MySB - Blacklisted domains (ex: inactive trackers)" | tee -a /etc/bind/MySB.zones.blakclists
+chmod 0644 /etc/bind/MySB.zones.blakclists
+chown root:bind /etc/bind/MySB.zones.blakclists
 
 #### logrotate
+if [ -f /etc/logrotate.d/bind ]; then rm -vf /etc/logrotate.d/bind; fi
 (
 cat <<'EOF'
 /var/log/bind/*.log {
@@ -91,12 +94,17 @@ cat <<'EOF'
 }
 
 EOF
-) > /etc/logrotate.d/bind
+) | tee -a /etc/logrotate.d/bind
 
 sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'BIND';"
 
 #### START services
 ManageServices start "bind9"
+
+#### Check if service is OK and running
+if [ "`GetPid bind9`" ]; then
+	service bind9 status | tee -a /etc/MySB/temp/continue
+fi
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after
