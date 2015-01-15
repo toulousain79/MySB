@@ -153,7 +153,10 @@ function PrintContent($user, $Case) {
 			break;
 		case 'new_version':
 			$DisplayGoTo 			= false;
-			$DisplayCommand			= true;
+			$DisplayCommand			= false;
+			if ( $users_datas["admin"] == '1' ) {
+				$DisplayCommand			= true;
+			}
 			$DisplayUserInfo		= false;
 			$DisplayUserInfoDetail 	= false;
 			$DisplayLinks 			= false;
@@ -168,69 +171,6 @@ function PrintContent($user, $Case) {
 		<tr><td colspan="3" scope="row"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>">Go to MySB Portal</a></td></tr>
 <?php } ?>
 
-<?php if ( $DisplayCommand == true ) { ?>
-		<!-- //////////////////////
-		// SSH commands available
-		////////////////////// -->
-		<tr align="left">
-			<th colspan="3" scope="row"><h4>SSH commands available</h4></th>
-		</tr>
-		<!-- // Users Management -->
-		<tr align="left">
-			<th width="15%" scope="row">Users Management</th>
-			<td width="25%"><pre>MySB_CreateUser</pre></td>
-			<td> </td>
-		</tr>
-		<tr align="left">
-			<th width="15%" scope="row"> </th>
-			<td width="25%"><pre>MySB_ChangeUserPassword</pre></td>
-			<td><span class="Comments">Arguments: <pre>MySB_ChangeUserPassword <username> <new_password></pre></span></td>
-		</tr>
-		<tr align="left">
-			<th width="15%" scope="row"> </th>
-			<td width="25%"><pre>MySB_DeleteUser</pre></td>
-			<td> </td>
-		</tr>
-		<!-- // SeedBox Management -->
-		<tr align="left">
-			<th width="15%" scope="row">SeedBox Management</th>
-			<td width="25%"><pre>MySB_RefreshMe</pre></td>
-			<td><span class="Comments">Arguments: <pre>MySB_RefreshMe (rutorrent|manager|cakebox|loadavg|all)</pre></span></td>
-		</tr>
-		<tr align="left">
-			<th width="15%" scope="row"> </th>
-			<td width="25%"><pre>MySB_UpgradeSystem</pre></td>
-			<td><span class="Comments">Performs an update + upgrade + update-ca-certificates</span></td>
-		</tr>
-		<tr align="left">
-			<th width="15%" scope="row"> </th>
-			<td width="25%"><pre>service FirewallAndSecurity</pre></td>
-			<td><span class="Comments">Arguments: <pre>service FirewallAndSecurity (new|clean)</pre></span></td>
-		</tr>
-		<!-- // MySB Management -->
-		<tr align="left">
-			<th width="15%" scope="row">MySB Management</th>
-			<td width="25%"><pre>MySB_UpdateGitHubRepo</pre></td>
-			<td><span class="Comments">Updates the repository of the current version of MySB. (CRON every 2 days)</span></td>
-		</tr>
-		<tr align="left">
-			<th width="15%" scope="row"> </th>
-			<td width="25%"><pre>MySB_UpgradeMe</pre></td>
-			<td><span class="Comments">Enables migration to a new version of MySB.</pre></span></td>
-		</tr>
-		<!-- // Main scripts -->
-		<tr align="left">
-			<th width="15%" scope="row">Main scripts</th>
-			<td width="25%"><pre>/etc/MySB/scripts/BlocklistsRTorrent.bsh</pre></td>
-			<td><span class="Comments">Use this for generate rTorrent blocklist. (CRON every day)</span></td>
-		</tr>
-		<tr align="left">
-			<th width="15%" scope="row"> </th>
-			<td width="25%"><pre>/etc/MySB/scripts/GetTrackersCert.bsh</pre></td>
-			<td><span class="Comments">Get all SSL certificates for all trackers. This script is start every time you add/edit trackers list in MySB portal.</span></td>
-		</tr>
-<?php } ?>
-
 <?php if ( $DisplayUserInfoDetail == true ) { ?>
 		<!-- //////////////////////
 		// User personal info
@@ -240,25 +180,25 @@ function PrintContent($user, $Case) {
 		</tr>
 		<!-- // Username -->
 		<tr align="left">
-			<th width="15%" scope="row">Username</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Username</th>
 			<td width="25%"><?php echo $user;?></td>
 			<td> </td>
 		</tr>
 		<!-- // IP Address -->
 		<tr align="left">
-			<th width="15%" scope="row">IP Address</th>
+			<th width="15%" scope="row" id="BorderTopTitle">IP Address</th>
 			<td><?php echo $User_IPv4;?></td>
 			<td <?php echo $CommentAddressStyle;?>><?php echo $CommentAddress;?></td>
 		</tr>
 		<!-- // Password -->
 		<tr align="left">
-			<th width="15%" scope="row">Password</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Password</th>
 			<td><?php echo $UserPasswd;?></td>
 			<td <?php echo $CommentPasswordStyle;?>><?php echo $CommentPassword;?></td>
 		</tr>
 		<!-- // E-mail -->
 		<tr align="left">
-			<th width="15%" scope="row">E-mail</th>
+			<th width="15%" scope="row" id="BorderTopTitle">E-mail</th>
 			<td><?php echo $users_datas["users_email"];?></td>
 			<td> </td>
 		</tr>
@@ -267,19 +207,19 @@ function PrintContent($user, $Case) {
 <?php if ( $DisplayUserInfoDetail == true ) { ?>
 		<!-- // RPC -->
 		<tr align="left">
-			<th width="15%" scope="row">RPC</th>
+			<th width="15%" scope="row" id="BorderTopTitle">RPC</th>
 			<td><?php echo $users_datas["rpc"];?></td>
 			<td><span class="Comments">RPC value can be used to remotely connect to rTorrent via a smartphone. (see Seedbox-Manager)</span></td>		
 		</tr>
 		<!-- // SFTP -->
 		<tr align="left">
-			<th width="15%" scope="row">SFTP</th>
+			<th width="15%" scope="row" id="BorderTopTitle">SFTP</th>
 			<td><?php echo $sftp;?></td>
 			<td> </td>
 		</tr>	
 		<!-- // Sudo -->
 		<tr align="left">
-			<th width="15%" scope="row">Sudo powers</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Sudo powers</th>
 			<td><?php echo $sudo;?></td>
 			<td> </td>
 		</tr>
@@ -292,45 +232,45 @@ function PrintContent($user, $Case) {
 		</tr>
 		<!-- // Home -->
 		<tr align="left">
-			<th width="15%" scope="row">Home</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Home</th>
 			<td><?php echo $users_datas["home_dir"];?></td>
 			<td> </td>
 		</tr>		
 		<!-- // Session dir -->
 		<tr align="left">
-			<th width="15%" scope="row">Session dir</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Session dir</th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent/.session</td>
 			<td><span class="Comments">The session directory allows rTorrent to save the progess of your torrents.</span></td>
 		</tr>		
 		<!-- // Complete dir -->
 		<tr align="left">
-			<th width="15%" scope="row">Complete dir</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Complete dir</th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent/complete</td>
 			<td><span class="Comments">Completed files will be move to this directory via Autotools in ruTorrent.</span></td>
 		</tr>
 		<!-- // Incomplete dir -->
 		<tr align="left">
-			<th width="15%" scope="row">Incomplete dir</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Incomplete dir</th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent/incomplete</td>
 			<td><span class="Comments">Partial downloads are stored here.</span></td>
 		</tr>
 		<!-- // Torrents dir -->
 		<tr align="left">
-			<th width="15%" scope="row">Torrents dir</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Torrents dir</th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent/torrents</td>
-			<td> </td>
+			<td><span class="Comments">All your torrents files are stored here.</span></td>
 		</tr>			
 		<!-- // Watch dir -->
 		<tr align="left">
-			<th width="15%" scope="row">Watch dir</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Watch dir</th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent/watch</td>
-			<td><span class="Comments">Saving a torrent file to this directory will automatically start the download via Autotools in ruTorrent.</span></td>
+			<td><span class="Comments">Saving a torrent file into this directory will automatically start the download via Autotools in ruTorrent.</span></td>
 		</tr>
 		<!-- // Share dir -->
 		<tr align="left">
-			<th width="15%" scope="row">Share dir</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Share dir</th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent/share</td>
-			<td><span class="Comments">The "share" folder is accessible by all users on the server. You can easily share what you want with any user. You can use File Manager plugin available in ruTorrent.</span></td>
+			<td><span class="Comments">The "share" folder is accessible by all users on the server. You can easily share what you want with any user.</span></td>
 		</tr>
 
 		<!-- //////////////////////
@@ -341,25 +281,25 @@ function PrintContent($user, $Case) {
 		</tr>
 		<!-- // SFTP Port -->
 		<tr align="left">
-			<th width="15%" scope="row">SFTP port</th>
+			<th width="15%" scope="row" id="BorderTopTitle">SFTP port</th>
 			<td><?php echo $Port_SSH;?></td>
 			<td> </td>
 		</tr>
 		<!-- // FTPs Port -->
 		<tr align="left">
-			<th width="15%" scope="row">FTPs port (TLS)</th>
+			<th width="15%" scope="row" id="BorderTopTitle">FTPs port (TLS)</th>
 			<td><?php echo $Port_FTP;?></td>
 			<td><span class="Comments">It is necessary to configure your FTP client software by specifying this port number. You must select "FTPS" and "explicit TLS connection".</span></td>
 		</tr>
 		<!-- // SCGI Port -->
 		<tr align="left">
-			<th width="15%" scope="row">SCGI port</th>
+			<th width="15%" scope="row" id="BorderTopTitle">SCGI port</th>
 			<td><?php echo $users_datas["scgi_port"];?></td>
 			<td><span class="Comments">This value is used in conjunction with RPC.</span></td>
 		</tr>
 		<!-- // rTorrent Port -->
 		<tr align="left">
-			<th width="15%" scope="row">rTorrent port</th>
+			<th width="15%" scope="row" id="BorderTopTitle">rTorrent port</th>
 			<td><?php echo $users_datas["rtorrent_port"];?></td>
 			<td> </td>
 		</tr>
@@ -372,25 +312,25 @@ function PrintContent($user, $Case) {
 		</tr>
 		<!-- // Server IP GW -->
 		<tr align="left">
-			<th width="15%" scope="row">Server IP GW</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Server IP GW</th>
 			<td>10.0.0.1</td>
 			<td><span class="Comments">Server IP with redirect traffic.</span></td>
 		</tr>
 		<!-- // Server IP -->
 		<tr align="left">
-			<th width="15%" scope="row">Server IP</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Server IP</th>
 			<td>10.0.1.1</td>
 			<td><span class="Comments">Server IP without redirect traffic.</span></td>
 		</tr>
 		<!-- // Samba share -->
 		<tr align="left">
-			<th width="15%" scope="row">Samba share</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Samba share</th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent</td>
 			<td><span class="Comments">mount - [Destination_directory] -t cifs -o noatime,nodiratime,UNC=//[10.0.0.1|10.0.1.1]/<?php echo $user;?>,username=<?php echo $user;?>,password=[your_password]</span></td>
 		</tr>
 		<!-- // NFS share -->
 		<tr align="left">
-			<th width="15%" scope="row">NFS share</th>
+			<th width="15%" scope="row" id="BorderTopTitle">NFS share</th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent</td>
 			<td><span class="Comments">mount -t nfs [10.0.0.1|10.0.1.1]:/home/'.$user.'/rtorrent [Destination_directory] [-o vers=3,ro]</span></td>
 		</tr>
@@ -408,29 +348,29 @@ function PrintContent($user, $Case) {
 <?php if ( $DisplayLinks == true ) { ?>
 		<!-- // User Info -->
 		<tr align="left">
-			<th width="15%" scope="row">User Info</th>
+			<th width="15%" scope="row" id="BorderTopTitle">User Info</th>
 			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/user-infos.html"><span class="Comments">Current information page avaible on MySB portal.</span></a></td>
 		</tr>
 		<!-- // Change password -->
 		<tr align="left">
-			<th width="15%" scope="row">Change password</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Change password</th>
 			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/change-password.html"><span class="Comments">You can change your password here.</span></a></td>
 		</tr>
 		<!-- // Manage Addresses -->
 		<tr align="left">
-			<th width="15%" scope="row">Manage Addresses</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Manage Addresses</th>
 			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/manage-addresses.html"><span class="Comments">Add here your IPs addresses and/or your dynamic DNS to add to whitelist.</span></a></td>
 		</tr>
 
 		<!-- // ruTorrent -->
 		<tr align="left">
-			<th width="15%" scope="row">ruTorrent</th>
+			<th width="15%" scope="row" id="BorderTopTitle">ruTorrent</th>
 			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ru"><span class="Comments">ruTorrent interface</span></a></td>
 		</tr>
 		<!-- // Seedbox-Manager -->
 	<?php if ( $ManagerInstalled == '1' ) { ?>
 		<tr align="left">
-			<th width="15%" scope="row">Seedbox-Manager</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Seedbox-Manager</th>
 			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/sm"><span class="Comments">Seedbox-Manager interface</span></a></td>
 		</tr>
 	<?php } ?>
@@ -438,12 +378,12 @@ function PrintContent($user, $Case) {
 	<?php if ( $OpenVpnInstalled == '1' ) { ?>
 		<!-- // OpenVPN -->
 		<tr align="left">
-			<th width="15%" scope="row">OpenVPN config</th>
+			<th width="15%" scope="row" id="BorderTopTitle">OpenVPN config</th>
 			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/openvpn-config-file.html"><span class="Comments">Download here configuration files for OpenVPN.</span></a></td>
 		</tr>
 		<!-- // OpenVPN GUI -->
 		<tr align="left">
-			<th width="15%" scope="row">OpenVPN GUI</th>
+			<th width="15%" scope="row" id="BorderTopTitle">OpenVPN GUI</th>
 			<td colspan="2"><a target="_blank" href="https://openvpn.net/index.php/open-source/downloads.html"><span class="Comments">Download here GUI for OpenVPN.</span></a></td>
 		</tr>
 	<?php } ?>
@@ -451,7 +391,7 @@ function PrintContent($user, $Case) {
 	<?php if ( $CakeboxDatas["is_installed"] == '1' ) { ?>
 		<!-- // CakeBox Light -->
 		<tr align="left">
-			<th width="15%" scope="row">CakeBox Light</th>
+			<th width="15%" scope="row" id="BorderTopTitle">CakeBox Light</th>
 			<td colspan="2"><a target="_blank" href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/cb/"><span class="Comments">Play here your media.</span></a></td>
 		</tr>
 	<?php } ?>
@@ -461,7 +401,7 @@ function PrintContent($user, $Case) {
 
 		<!-- // Force IP address -->
 		<tr align="left">
-			<th width="15%" scope="row" style="color: #FF6666;">Force IP address</th>
+			<th width="15%" scope="row" style="color: #FF6666;" id="BorderTopTitle">Force IP address</th>
 			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ForceAddress.php?page=ManageAddresses"><span class="Comments">Force the addition of your current IP address in case of problems. (You need a valid password)</span></a></td>
 		</tr>
 	
@@ -476,40 +416,103 @@ function PrintContent($user, $Case) {
 		<!-- // Webmin -->		
 		<?php if ( $WebminDatas["is_installed"] == '1' ) { ?>
 			<tr align="left">
-				<th width="15%" scope="row">Webmin</th>
+				<th width="15%" scope="row" id="BorderTopTitle">Webmin</th>
 				<td colspan="2"><a target="_blank" href="https://<?php echo $system_datas["hostname"];?>:<?php echo $WebminDatas["port_tcp1"];?>"><span class="Comments">Admin interface for manage your server.</span></a></td>
 			</tr>
 		<?php } ?>
 		<!-- // Logs -->
 		<tr align="left">
-			<th width="15%" scope="row">Logs</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Logs</th>
 			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?main-user/logs.html"><span class="Comments">You can check logs of MySB install and security.</span></a></td>
 		</tr>
 		<!-- // Renting infos -->
 		<tr align="left">
-			<th width="15%" scope="row">Renting infos</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Renting infos</th>
 			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?main-user/renting-infos.html"><span class="Comments">Manage your renting informations.</span></a></td>
 		</tr>
 		<!-- // Trackers -->
 		<tr align="left">
-			<th width="15%" scope="row">Trackers list</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Trackers list</th>
 			<td colspan="2"><span class="Comments"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?trackers/add-new-trackers.html">add new tracker here</a>.</span></td>
 		</tr>		
 		<!-- // Blocklists -->
 		<tr align="left">
-			<th width="15%" scope="row">Blocklists</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Blocklists</th>
 			<td colspan="2"><span class="Comments">You can manage <a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a> AND <a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a>.</span></td>
 		</tr>
 		<?php if ( $DNScryptDatas["is_installed"] == '1' ) { ?>
 			<!-- // DNScrypt-proxy -->
 			<tr align="left">
-				<th width="15%" scope="row">DNScrypt-proxy</th>
+				<th width="15%" scope="row" id="BorderTopTitle">DNScrypt-proxy</th>
 				<td colspan="2"><span class="Comments">You can manage <a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?main-user/dnscrypt-proxy.html">Select your resolver here.</a></span></td>
 			</tr>
 		<?php } ?>
 	
 	<?php } ?>
 
+	<?php if ( $DisplayCommand == true ) { ?>
+		<!-- //////////////////////
+		// SSH commands available
+		////////////////////// -->
+		<tr align="left">
+			<th colspan="3" scope="row"><h4>SSH commands available</h4></th>
+		</tr>
+		<!-- // Users Management -->
+		<tr align="left">
+			<th width="15%" scope="row" id="BorderTopTitle">Users Management</th>
+			<td width="25%"><pre>MySB_CreateUser</pre></td>
+			<td> </td>
+		</tr>
+		<tr align="left">
+			<th width="15%" scope="row"> </th>
+			<td width="25%"><pre>MySB_ChangeUserPassword</pre></td>
+			<td><span class="Comments"><pre>MySB_ChangeUserPassword <username> <new_password></pre></span></td>
+		</tr>
+		<tr align="left">
+			<th width="15%" scope="row"> </th>
+			<td width="25%"><pre>MySB_DeleteUser</pre></td>
+			<td> </td>
+		</tr>
+		<!-- // SeedBox Management -->
+		<tr align="left">
+			<th width="15%" scope="row" id="BorderTopTitle">SeedBox Management</th>
+			<td width="25%"><pre>MySB_RefreshMe</pre></td>
+			<td><span class="Comments"><pre>MySB_RefreshMe (rutorrent|manager|cakebox|loadavg|all)</pre></span></td>
+		</tr>
+		<tr align="left">
+			<th width="15%" scope="row"> </th>
+			<td width="25%"><pre>MySB_UpgradeSystem</pre></td>
+			<td><span class="Comments">Performs an update + upgrade + update-ca-certificates</span></td>
+		</tr>
+		<tr align="left">
+			<th width="15%" scope="row"> </th>
+			<td width="25%"><pre>FirewallAndSecurity</pre></td>
+			<td><span class="Comments"><pre>service FirewallAndSecurity (new|clean)</pre></span></td>
+		</tr>
+		<!-- // MySB Management -->
+		<tr align="left">
+			<th width="15%" scope="row" id="BorderTopTitle">MySB Management</th>
+			<td width="25%"><pre>MySB_UpdateGitHubRepo</pre></td>
+			<td><span class="Comments">Updates the repository of the current version of MySB. (CRON every 2 days)</span></td>
+		</tr>
+		<tr align="left">
+			<th width="15%" scope="row"> </th>
+			<td width="25%"><pre>MySB_UpgradeMe</pre></td>
+			<td><span class="Comments">Enables migration to a new version of MySB.</pre></span></td>
+		</tr>
+		<!-- // Main scripts -->
+		<tr align="left">
+			<th width="15%" scope="row" id="BorderTopTitle">Main scripts</th>
+			<td width="25%"><pre>/etc/MySB/scripts/BlocklistsRTorrent.bsh</pre></td>
+			<td><span class="Comments">Use this for generate rTorrent blocklist. (CRON every day)</span></td>
+		</tr>
+		<tr align="left">
+			<th width="15%" scope="row"> </th>
+			<td width="25%"><pre>/etc/MySB/scripts/GetTrackersCert.bsh</pre></td>
+			<td><span class="Comments">Get all SSL certificates for all trackers. This script is start every time you add/edit trackers list in MySB portal.</span></td>
+		</tr>
+<?php } ?>
+	
 	<?php if ( isset($RentingDatas["global_cost"]) ) { ?>
 		<!-- //////////////////////
 		// Price and Payment info
@@ -519,31 +522,31 @@ function PrintContent($user, $Case) {
 		</tr>
 		<!-- // Server model -->
 		<tr align="left">
-			<th width="15%" scope="row">Server model</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Server model</th>
 			<td><?php echo $RentingDatas["model"];?></td>
 			<td> </td>
 		</tr>
 		<!-- // Global cost -->
 		<tr align="left">
-			<th width="15%" scope="row">Global cost</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Global cost</th>
 			<td><?php echo $RentingDatas["global_cost"];?></td>
 			<td> </td>
 		</tr>
 		<!-- // TVA -->
 		<tr align="left">
-			<th width="15%" scope="row">TVA</th>
+			<th width="15%" scope="row" id="BorderTopTitle">TVA</th>
 			<td><?php echo $RentingDatas["tva"];?></td>
 			<td> </td>
 		</tr>
 		<!-- // Total users -->
 		<tr align="left">
-			<th width="15%" scope="row">Total users</th>
+			<th width="15%" scope="row" id="BorderTopTitle">Total users</th>
 			<td><?php echo $RentingDatas["nb_users"];?></td>
 			<td> </td>
 		</tr>		
 		<!-- // TOTAL per users -->
 		<tr align="left">
-			<th width="15%" scope="row">TOTAL per users</th>
+			<th width="15%" scope="row" id="BorderTopTitle">TOTAL per users</th>
 			<td><b><span class="FontInRed"><?php echo $RentingDatas["price_per_users"];?></span></b> &euro; TTC / month</td>
 			<td> </td>
 		</tr>		
@@ -560,7 +563,7 @@ if ( (CountingUsers() >= 1) && (GetVersion() != "") ) {
 			<head>
 				<title>MySB</title>
 				<meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
-				<style type="text/css" >
+				<style type="text/css">
 					table {
 						font: 100% helvetica,arial,verdana,sans;
 						margin: 0px 0 5px 0;
@@ -583,6 +586,9 @@ if ( (CountingUsers() >= 1) && (GetVersion() != "") ) {
 					h4 {
 						color: #09D4FF;
 					}
+					#BorderTopTitle {
+						border-top:solid 2px #E5E5DB;
+					}					
 				</style>
 			</head>
 			<body>';

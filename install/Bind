@@ -30,9 +30,15 @@ if ! CheckCommand 0 named; then
 fi
 
 #### Correcting minor bug display in Bind9 init script
-sed -i "s/^echo \"waiting for pid \$pid to die\"/break #echo \"waiting for pid \$pid to die\"/g" /etc/init.d/bind9
-sed -i "s/^echo \"giving up on pid \$pid with kill -0; trying -9\"/#echo \"giving up on pid \$pid with kill -0; trying -9\"/g" /etc/init.d/bind9
-sed -i "s/^echo \"giving up on pid \$pid\"/#echo \"giving up on pid \$pid\"/g" /etc/init.d/bind9
+if [ -z "`cat /etc/init.d/bind9 | grep 'echo "waiting for pid \$pid to die" > /dev/null'`" ]; then
+	sed -i "s/echo \"waiting for pid \$pid to die\"/echo \"waiting for pid \$pid to die\" > \/dev\/null/g" /etc/init.d/bind9
+fi
+if [ -z "`cat /etc/init.d/bind9 | grep 'echo "giving up on pid \$pid with kill -0; trying -9" > /dev/null'`" ]; then
+	sed -i "s/echo \"giving up on pid \$pid with kill -0; trying -9\"/echo \"giving up on pid \$pid with kill -0; trying -9\" > \/dev\/null/g" /etc/init.d/bind9
+fi
+if [ -z "`cat /etc/init.d/bind9 | grep 'echo "giving up on pid \$pid" > /dev/null'`" ]; then
+	sed -i "s/echo \"giving up on pid \$pid\"/echo \"giving up on pid \$pid\" > \/dev\/null/g" /etc/init.d/bind9
+fi
 
 #### START services
 ManageServices stop "bind9"
@@ -42,10 +48,12 @@ ManageServices stop "bind9"
 # echo "include \"/etc/bind/named.conf.blacklists\";" >> /etc/bind/named.conf
 
 #### /etc/bind/named.conf.local
-sed -i '/zones.rfc1918/d' /etc/bind/named.conf.local
+sed -i '/\/etc\/bind\/zones.rfc1918/d' /etc/bind/named.conf.local
+sed -i '/\/etc\/bind\/rndc.key/d' /etc/bind/named.conf.local
 sed -i '/\/etc\/bind\/log.conf/d' /etc/bind/named.conf.local
 sed -i '/\/etc\/bind\/MySB.zones.blakclists/d' /etc/bind/named.conf.local
 echo "include \"/etc/bind/zones.rfc1918\";" | tee -a /etc/bind/named.conf.local
+echo "include \"/etc/bind/rndc.key\";" | tee -a /etc/bind/named.conf.local
 echo "include \"/etc/bind/log.conf\";" | tee -a /etc/bind/named.conf.local
 echo "include \"/etc/bind/MySB.zones.blakclists\";" | tee -a /etc/bind/named.conf.local
 
@@ -72,7 +80,7 @@ chown root:bind /etc/bind/named.conf.options
 # chmod 0644 /etc/bind/intercept.zone
 # chown root:bind /etc/bind/intercept.zone
 
-#### /etc/bind/MySB.ones.blakclists
+#### /etc/bind/MySB.zones.blakclists
 echo "#### MySB - Blacklisted domains (ex: inactive trackers)" | tee -a /etc/bind/MySB.zones.blakclists
 chmod 0644 /etc/bind/MySB.zones.blakclists
 chown root:bind /etc/bind/MySB.zones.blakclists

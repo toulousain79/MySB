@@ -40,6 +40,9 @@ USER="<username>"
 ## User home dir
 HOMEDIR="/home/$USER"
 
+## ruTorrent dir
+RUTORRENT_DIR="<rutorrent_dir>"
+
 ## Absolute path to the rtorrent binary.
 RTORRENT="/usr/bin/rtorrent"
 
@@ -114,6 +117,24 @@ mount_share() {
 		"umount")
 			if [ ! -z "$MOUNT" ]; then
 				umount $HOMEDIR/rtorrent/share 2>> $LOG_FILE
+			fi
+		;;
+	esac
+}
+
+## mout share dir for seedbox users
+mount_torrents_storage() {
+	MOUNT=`df -H | grep "$HOMEDIR/rtorrent/torrents"`
+
+	case "$1" in
+		"mount")
+			if [ -z "$MOUNT" ]; then
+				mount --bind $RUTORRENT_DIR/share/users/$USER/torrents $HOMEDIR/rtorrent/torrents 2>> $LOG_FILE
+			fi
+		;;	
+		"umount")
+			if [ ! -z "$MOUNT" ]; then
+				umount $HOMEDIR/rtorrent/torrents 2>> $LOG_FILE
 			fi
 		;;
 	esac
@@ -218,6 +239,7 @@ case "$1" in
 	start)
 		log_daemon_msg "Starting $DESC" "$NAME"
 		mount_share mount
+		mount_torrents_storage mount
 		do_start
 		case "$?" in
 			0)
@@ -242,6 +264,7 @@ case "$1" in
 	stop)
 		log_daemon_msg "Stopping $DESC" "$NAME"
 		mount_share umount
+		mount_torrents_storage umount
 		do_stop
 		case "$?" in
 			0)
