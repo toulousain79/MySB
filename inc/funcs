@@ -241,10 +241,9 @@ ManageServices() {
 		esac
 
 		for Service in $ServicesToManage; do
-			ServiceStatus="`GetPid $Service`"
 			case "$GlobalCommand" in
 				"stop")
-					if [ "$ServiceStatus" != "" ]; then
+					if GetPid $Service; then
 						Continue=1
 						
 						case "$Service" in
@@ -268,7 +267,7 @@ ManageServices() {
 				"start")
 					if [ "$Service" == "pglcmd" ]; then
 						if CheckCommand 0 pglcmd; then
-							if [ "$ServiceStatus" != "" ]; then
+							if GetPid $Service; then
 								pglcmd reload
 								if [ $? -gt 0 ]; then
 									pglcmd restart
@@ -330,10 +329,10 @@ ManageServices() {
 
 						case "$Service" in
 							"dnscrypt-proxy"|"webmin")
-								if [ "$ServiceStatus" == "" ]; then
-									FinalCommand="start"
-								else
+								if GetPid $Service; then
 									FinalCommand="restart"
+								else
+									FinalCommand="start"
 								fi
 							;;
 							"stunnel4")
@@ -344,7 +343,7 @@ ManageServices() {
 							;;
 							"postfix")
 								Continue=0
-								if [ "$ServiceStatus" == "" ]; then
+								if ! GetPid $Service; then
 									log_daemon_msg "Restarting Postfix Mail Transport Agent"
 									service $Service restart &> /dev/null
 								else
@@ -358,7 +357,7 @@ ManageServices() {
 							;;
 							"cron")
 								Continue=0
-								if [ "$ServiceStatus" == "" ]; then
+								if ! GetPid $Service; then
 									log_daemon_msg "Restating periodic command scheduler"
 									service $Service restart &> /dev/null
 								else
@@ -372,7 +371,7 @@ ManageServices() {
 							;;
 							"vsftpd")
 								Continue=0
-								if [ "$ServiceStatus" == "" ]; then
+								if ! GetPid $Service; then
 									log_daemon_msg "Restating VSFTPd server configuration"
 									service $Service restart &> /dev/null
 								else
@@ -385,7 +384,7 @@ ManageServices() {
 								StatusLSB
 							;;
 							*)
-								if [ "$ServiceStatus" == "" ]; then
+								if ! GetPid $Service; then
 									FinalCommand="start"
 								else
 									FinalCommand="reload"
