@@ -41,7 +41,7 @@ if [ "$ToInstall_PeerGuardian" == "YES" ]; then
 		echo "# Moblock for ${DEBIAN_VERSION}" > /etc/apt/sources.list.d/moblock.list
 		echo "deb http://moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" >> /etc/apt/sources.list.d/moblock.list
 		echo "deb-src http://moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" >> /etc/apt/sources.list.d/moblock.list
-		
+
 		cd /etc/MySB/files
 		until gpg --keyserver keyserver.ubuntu.com --recv-keys C0145138; do
 			sleep 1
@@ -54,21 +54,24 @@ if [ "$ToInstall_PeerGuardian" == "YES" ]; then
 		#### Force apt-get update
 		sqlite3 $MySB_DB "UPDATE system SET apt_update = 1, apt_date = datetime('now','localtime') WHERE id_system = 1;"
 	fi
-	
+
+	#### Create empty security rules
+	ScriptInvoke 'source' '/etc/MySB/bin/MySB_SecurityRules' 'clean'
+
 	#### Install Packages
 	if ! CheckCommand 0 pglcmd; then
 		PackagesManage install "pgld pglcmd"
 	fi
 
-	#### Create empty security rules
-	ScriptInvoke 'source' '/etc/MySB/bin/MySB_SecurityRules' 'clean'	
-	
+	#### STOP services
+	ManageServices stop "pglcmd"
+
 	#### Create config files
 	cp /etc/MySB/templates/etc.pgl.pglcmd.conf.template /etc/pgl/pglcmd.conf
-	
+
 	# Create '/etc/pgl/pglcmd.conf'
 	PeerGuardianPglcmdConf 0
-	
+
 	# Create '/etc/pgl/allow.p2p'
 	PeerGuardianAllowP2P 0
 
