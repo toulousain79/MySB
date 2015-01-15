@@ -274,6 +274,9 @@ function printUser($user) {
 		echo '<td>MySB_UpgradeSystem</td>';
 		echo '<td><span class="Comments">Performs an update + upgrade + update-ca-certificates</span></td></tr>';
 		echo '<tr align="left"><th width="15%" scope="row"> </th>';
+		echo '<td><pre>MySB_GitHubRepoUpdate</pre></td>';
+		echo '<td><span class="Comments">Updates the repository of the current version of MySB. (CRON every 2 days)</span></td></tr>';		
+		echo '<tr align="left"><th width="15%" scope="row"> </th>';
 		echo '<td><pre>MySB_SecurityRules</pre></td>';
 		echo '<td><span class="Comments"><pre>MySB_SecurityRules (new|clean)</pre></span></td></tr>';
 		// Main scripts

@@ -492,7 +492,7 @@ function PrintContent($user, $Case) {
 		<!-- // MySB Management -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle">MySB Management</th>
-			<td width="25%">MySB_UpdateGitHubRepo</td>
+			<td width="25%">MySB_GitHubRepoUpdate</td>
 			<td><span class="Comments">Updates the repository of the current version of MySB. (CRON every 2 days)</span></td>
 		</tr>
 		<tr align="left">
