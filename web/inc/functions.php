@@ -444,7 +444,7 @@ function GenerateMessage($commands, $type, $message, $args) {
 						case "GetTrackersCert.bsh":
 						case "Postfix":
 							$priority++;
-							$value = $MySB_DB->insert("commands", ["commands" => "FirewallAndSecurity.bsh", "reload" => 1, "priority" => "$priority", "user" => "$CurrentUser"]);
+							$value = $MySB_DB->insert("commands", ["commands" => "MySB_SecurityRules", "reload" => 1, "priority" => "$priority", "user" => "$CurrentUser"]);
 							break;
 					}
 

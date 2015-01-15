@@ -16,7 +16,7 @@
 	Version v1.1
 		2014/10/26
 			- "install/PeerGuardian", minor change
-			- "scripts/FirewallAndSecurity.sh", minor change
+			- "bin/MySB_SecurityRules" (old FirewallAndSecurity.sh), minor change
 			- Correcting PlexMedia ports management
 			- Correcting SSL vulnerability (poodle) for Nginx and Postfix
 			- Changing the management of Logs (web)

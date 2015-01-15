@@ -55,7 +55,7 @@ if (isset($_POST['submit'])) {
 		$message = 'Please, complete all fields.';
 	}
 
-	GenerateMessage('FirewallAndSecurity.bsh', $type, $message, '');
+	GenerateMessage('MySB_SecurityRules', $type, $message, '');
 }
 ?>
 

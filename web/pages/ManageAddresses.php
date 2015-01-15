@@ -78,7 +78,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$type = 'error';
 			}
 
-			GenerateMessage('FirewallAndSecurity.bsh', $type, $message, '');
+			GenerateMessage('MySB_SecurityRules', $type, $message, '');
 			break;
 		case "Save Changes":
 			$success = true;
@@ -107,7 +107,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			}
 
 			if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ManageAddresses') ) { // by NewUser.php
-				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'FirewallAndSecurity.bsh'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_SecurityRules'", $output, $result);
 
 				if ( $result == 0 ) {
 					$type = 'success';
@@ -122,7 +122,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					echo 'Failed ! It was not possible to give you an access to MySB portal !';
 				}
 			} else {
-				GenerateMessage('FirewallAndSecurity.bsh', $type, $message, '');
+				GenerateMessage('MySB_SecurityRules', $type, $message, '');
 				GenerateMessage('message_only', 'information', 'Remember that your dynamic IP will be checked every 5 minutes.');
 			}
 			break;
@@ -146,7 +146,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					$message = 'Failed ! It was not possible to delete address.';
 				}
 
-				GenerateMessage('FirewallAndSecurity.bsh', $type, $message, '');
+				GenerateMessage('MySB_SecurityRules', $type, $message, '');
 			}
 			break;
 	}

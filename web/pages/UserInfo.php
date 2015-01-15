@@ -222,7 +222,6 @@ function printUser($user) {
 	//////////////////////
 	// Links (Main user)
 	//////////////////////
-	// User Info
 	if ( $users_datas["admin"] == '1' ) {
 		echo '<tr align="left"><th colspan="3" scope="row"><h4>Links (Main user)</h4></th></tr>';
 		// Webmin
@@ -250,6 +249,40 @@ function printUser($user) {
 			echo '<tr align="left"><th width="15%" scope="row">DNScrypt-proxy</th>';
 			echo '<td colspan="2"><a href="?main-user/dnscrypt-proxy.html"><span class="Comments">Select your resolver here.</span></a></td></tr>';
 		}
+	}
+
+	//////////////////////
+	// SSH commands available
+	//////////////////////
+	if ( $users_datas["admin"] == '1' ) {
+		echo '<tr align="left"><th colspan="3" scope="row"><h4>SSH commands available</h4></th></tr>';
+		// Users Management
+		echo '<tr align="left"><th width="15%" scope="row">Users Management</th>';
+		echo '<td>MySB_CreateUser</td>';
+		echo '<td> </td></tr>';
+		echo '<tr align="left"><th width="15%" scope="row"> </th>';
+		echo '<td>MySB_ChangeUserPassword</td>';
+		echo '<td><span class="Comments"><pre>MySB_ChangeUserPassword <username> <new_password></pre></span></td></tr>';
+		echo '<tr align="left"><th width="15%" scope="row"> </th>';
+		echo '<td>MySB_DeleteUser</td>';
+		echo '<td> </td></tr>';
+		// SeedBox Management
+		echo '<tr align="left"><th width="15%" scope="row">SeedBox Management</th>';
+		echo '<td>MySB_RefreshMe</td>';
+		echo '<td><span class="Comments"><pre>MySB_RefreshMe (rutorrent|manager|cakebox|loadavg|all)</pre></span></td></tr>';
+		echo '<tr align="left"><th width="15%" scope="row"> </th>';
+		echo '<td>MySB_UpgradeSystem</td>';
+		echo '<td><span class="Comments">Performs an update + upgrade + update-ca-certificates</span></td></tr>';
+		echo '<tr align="left"><th width="15%" scope="row"> </th>';
+		echo '<td><pre>MySB_SecurityRules</pre></td>';
+		echo '<td><span class="Comments"><pre>MySB_SecurityRules (new|clean)</pre></span></td></tr>';
+		// Main scripts
+		echo '<tr align="left"><th width="15%" scope="row">Main scripts</th>';
+		echo '<td>/etc/MySB/scripts/BlocklistsRTorrent.bsh</td>';
+		echo '<td><span class="Comments">Use this for generate rTorrent blocklist. (CRON every day)</span></td></tr>';
+		echo '<tr align="left"><th width="15%" scope="row"> </th>';
+		echo '<td>/etc/MySB/scripts/GetTrackersCert.bsh</td>';
+		echo '<td><span class="Comments">Get all SSL certificates for all trackers. This script is start every time you add/edit trackers list in MySB portal.</span></td></tr>';
 	}
 
 	$RentingDatas = $MySB_DB->get("renting", "*", ["id_renting" => 1]);

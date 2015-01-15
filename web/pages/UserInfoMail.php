@@ -460,55 +460,55 @@ function PrintContent($user, $Case) {
 		<!-- // Users Management -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle">Users Management</th>
-			<td width="25%"><pre>MySB_CreateUser</pre></td>
+			<td width="25%">MySB_CreateUser</td>
 			<td> </td>
 		</tr>
 		<tr align="left">
 			<th width="15%" scope="row"> </th>
-			<td width="25%"><pre>MySB_ChangeUserPassword</pre></td>
+			<td width="25%">MySB_ChangeUserPassword</td>
 			<td><span class="Comments"><pre>MySB_ChangeUserPassword <username> <new_password></pre></span></td>
 		</tr>
 		<tr align="left">
 			<th width="15%" scope="row"> </th>
-			<td width="25%"><pre>MySB_DeleteUser</pre></td>
+			<td width="25%">MySB_DeleteUser</td>
 			<td> </td>
 		</tr>
 		<!-- // SeedBox Management -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle">SeedBox Management</th>
-			<td width="25%"><pre>MySB_RefreshMe</pre></td>
+			<td width="25%">MySB_RefreshMe</td>
 			<td><span class="Comments"><pre>MySB_RefreshMe (rutorrent|manager|cakebox|loadavg|all)</pre></span></td>
 		</tr>
 		<tr align="left">
 			<th width="15%" scope="row"> </th>
-			<td width="25%"><pre>MySB_UpgradeSystem</pre></td>
+			<td width="25%">MySB_UpgradeSystem</td>
 			<td><span class="Comments">Performs an update + upgrade + update-ca-certificates</span></td>
 		</tr>
 		<tr align="left">
 			<th width="15%" scope="row"> </th>
-			<td width="25%"><pre>FirewallAndSecurity</pre></td>
-			<td><span class="Comments"><pre>service FirewallAndSecurity (new|clean)</pre></span></td>
+			<td width="25%">MySB_SecurityRules</td>
+			<td><span class="Comments"><pre>MySB_SecurityRules (new|clean)</pre></span></td>
 		</tr>
 		<!-- // MySB Management -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle">MySB Management</th>
-			<td width="25%"><pre>MySB_UpdateGitHubRepo</pre></td>
+			<td width="25%">MySB_UpdateGitHubRepo</td>
 			<td><span class="Comments">Updates the repository of the current version of MySB. (CRON every 2 days)</span></td>
 		</tr>
 		<tr align="left">
 			<th width="15%" scope="row"> </th>
-			<td width="25%"><pre>MySB_UpgradeMe</pre></td>
+			<td width="25%">MySB_UpgradeMe</td>
 			<td><span class="Comments">Enables migration to a new version of MySB.</pre></span></td>
 		</tr>
 		<!-- // Main scripts -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle">Main scripts</th>
-			<td width="25%"><pre>/etc/MySB/scripts/BlocklistsRTorrent.bsh</pre></td>
+			<td width="25%">/etc/MySB/scripts/BlocklistsRTorrent.bsh</td>
 			<td><span class="Comments">Use this for generate rTorrent blocklist. (CRON every day)</span></td>
 		</tr>
 		<tr align="left">
 			<th width="15%" scope="row"> </th>
-			<td width="25%"><pre>/etc/MySB/scripts/GetTrackersCert.bsh</pre></td>
+			<td width="25%">/etc/MySB/scripts/GetTrackersCert.bsh</td>
 			<td><span class="Comments">Get all SSL certificates for all trackers. This script is start every time you add/edit trackers list in MySB portal.</span></td>
 		</tr>
 <?php } ?>
@@ -567,6 +567,7 @@ if ( (CountingUsers() >= 1) && (GetVersion() != "") ) {
 					table {
 						font: 100% helvetica,arial,verdana,sans;
 						margin: 0px 0 5px 0;
+						background:#3b3b3b;
 					}
 					table tr th, table tr td {
 					  background: #3B3B3B;
