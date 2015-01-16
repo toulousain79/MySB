@@ -187,7 +187,7 @@ $AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserI
 				</div>
 
 			<p class="Comments">If you have a <b>dynamic IP address</b>, you must enter a hostname (No-IP, DynDNS, ...).<br />
-				If you have a <b>fixed IP address</b>, you can enter it directly, or enter a hostname. In this case, it is advisable to directly enter your IP.</p>				
+				If you have a <b>fixed IP address</b>, you can enter it directly, or enter a hostname. In this case, it is advisable to directly enter your IP.</p>
 				
 				<input class="submit" style="width:180px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="Add my addresses now !">
 			</fieldset>

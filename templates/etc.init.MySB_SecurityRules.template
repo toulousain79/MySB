@@ -43,30 +43,29 @@
 . /lib/lsb/init-functions
 
 case "$1" in
-	"new")
-		Args="$2"
-		Command="new"
-		LOGSTD=NO
-	;;
-	"clean")
-		Args="$2"
-		Command="clean"
-		LOGSTD=NO
-	;;	
-	"start"|"restart"|"force-reload")
-		Args="CRON"
-		Command="start"
-		LOGSTD=STDOUT
+	"start")
+		log_daemon_msg "Applying all MySB security rules"
+		/bin/bash /etc/MySB/bin/MySB_SecurityRules new INIT
+		log_end_msg 0
 	;;
 	"stop")
-		Args="CRON"
-		Command="start"
-		LOGSTD=STDOUT
+		# 1 - First we stop all rtorrent processes
+		ListingUsers
+		for User in $UsersList; do
+			service rtorrent-$User stop
+		done
+
+		#### 2 - We stop services
+		if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
+			pglcmd stop
+		fi
+		if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
+			service fail2ban stop
+		fi
+	;;
+	*)
+        echo "Usage: $0 { start | stop }"
 	;;
 esac
-
-if [ "$LOGSTD" == "STDOUT" ]; then log_daemon_msg "Applying all MySB security rules"; fi
-/bin/bash /etc/MySB/bin/MySB_SecurityRules $Command $Args
-if [ "$LOGSTD" == "STDOUT" ]; then log_end_msg 0; fi
 
 exit 0

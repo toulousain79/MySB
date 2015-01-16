@@ -82,6 +82,10 @@ if (isset($_POST['submit'])) {
 ?>
 									</select>
 		
+			<p class="Comments">If Be careful, some resolvers do not seem to work for resolving certain domains. This is the case of <b>opendns</b> for example.<br />
+								If problems try another one.<br />
+								The default resolver is <b>dnscrypt.eu-dk</b>.</p>		
+		
 			<input class="submit" style="width:180px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="I want use this resolver !">			
 		</fieldset>
 	</form>	
