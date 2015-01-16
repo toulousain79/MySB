@@ -39,7 +39,18 @@ if [ "$ToInstall_LogWatch" == "YES" ]; then
 	perl -pi -e "s/^Format = text/Format = html/g" /etc/logwatch/conf/logwatch.conf
 	perl -pi -e "s/^Range = All/Range = Yesterday/g" /etc/logwatch/conf/logwatch.conf
 
+	# Add Nginx support
+	cat /etc/MySB/templates/usr.share.logwatch.default.conf.logfiles.nginx.conf.template | tee -a /usr/share/logwatch/default.conf/logfiles/nginx.conf
+	cat /usr/share/logwatch/default.conf/services/http.conf | tee -a /usr/share/logwatch/default.conf/services/nginx.conf
+	mv /usr/share/logwatch/default.conf/services/http.conf /usr/share/logwatch/default.conf/services/http.conf.bak
+	perl -pi -e "s/^Title = \"httpd\"/Title = \"nginx\"/g" /usr/share/logwatch/default.conf/services/nginx.conf
+	perl -pi -e "s/^LogFile = http/LogFile = nginx/g" /usr/share/logwatch/default.conf/services/nginx.conf
+	cat /usr/share/logwatch/scripts/services/http | tee -a /usr/share/logwatch/scripts/services/nginx
+
 	sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'LogWatch';"
+
+	#### START services
+	ManageServices start "logwatch"	
 fi
 
 # -----------------------------------------
