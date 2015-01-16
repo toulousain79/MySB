@@ -132,7 +132,7 @@ if (isset($_POST['submit'])) {
 												"smtp_email" => "$SmtpEmail"],
 												["id_smtp" => 1]);
 
-				if( $result = 1 ) {
+				if( $result == 1 ) {
 					$type = 'success';
 				} else {
 					$type = 'error';

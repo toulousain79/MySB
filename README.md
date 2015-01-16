@@ -239,8 +239,6 @@ To clean Bind cache, just restart BIND service.
 service bind9 restart
 ```
 
-#### To check the result, use your new OpenVPN connection with the redirect gateway and go to 'https://dnsleaktest.com'. You can see that the IP display is not your server but resolver used with DNScrypt-proxy.
-
 ###### IMPORTANT: With OpenVZ container, to complete the installation of DNScrypt-proxy, you must replace your existing DNS config (/etc/resolv.conf), by the loopback address.
 ###### IMPORTANT: It's necessary to make the change via the host (eg Proxmox), otherwise you will lose your configuration on next reboot. You must replace yours nameserver by 'nameserver 127.0.0.1' (/etc/resolv.conf).
 
@@ -299,6 +297,7 @@ Created by toulousain79
 * DNScrypt + Bind9:	http://cavaencoreparlerdebits.fr/blog/2013/10/encrypt-your-dns-request-with-opendns-dnscrypt
 * PHPBench:		http://www.phpbench.com/
 * WolfCMS:		http://www.wolfcms.org/
+* Medoo:		http://medoo.in/
 
 ## TODO
 
@@ -310,5 +309,3 @@ Created by toulousain79
 * Add OwnCloud ?
 * Namebench ?
 * PSAD, SNORT ?
-* check plugin 'Mediastream', doesn't work ?
-* check Cakebox, doesn't work ?

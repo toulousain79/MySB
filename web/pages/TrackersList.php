@@ -170,7 +170,8 @@ foreach($TrackersList as $Tracker) {
 				<td>
 					<select style="width:150px;">
 <?php
-						$IPv4_List = $MySB_DB->select("trackers_list_ipv4", "ipv4", ["AND" => ["id_trackers_list" => $Tracker["id_trackers_list"]]]);
+						//$IPv4_List = $MySB_DB->select("trackers_list_ipv4", "ipv4", ["AND" => ["id_trackers_list" => $Tracker["id_trackers_list"]]]);
+						$IPv4_List = $MySB_DB->select("trackers_list_ipv4", "ipv4", ["id_trackers_list" => $Tracker["id_trackers_list"]]);
 						foreach($IPv4_List as $IPv4) {
 							echo '<option>' .$IPv4. '</option>';
 						}

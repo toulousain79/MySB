@@ -98,7 +98,7 @@ if (isset($_POST['submit'])) {
 										"price_per_users" => "$PricePerUsers"],
 										["id_renting" => 1]);
 
-		if( $result = 1 ) {
+		if( $result == 1 ) {
 			$type = 'success';
 		} else {
 			$type = 'error';
