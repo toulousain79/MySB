@@ -26,11 +26,11 @@ global $MySB_DB;
 
 if (isset($_POST['submit'])) {
 	$SelectedResolver = $_POST['ResolverName'];
-	
+
 	if ( isset($SelectedResolver) ) {
 		$MySB_DB->update("dnscrypt_resolvers", ["is_wished" => 0], ["AND" => ["is_wished" => 1, "is_activated" => 0]]);
 		$result = $MySB_DB->update("dnscrypt_resolvers", ["is_wished" => "1"], ["name" => "$SelectedResolver"]);
-		
+
 		if( $result == 1 ) {
 			$type = 'success';
 		} else {
@@ -59,17 +59,17 @@ $ResolversList = $MySB_DB->select("dnscrypt_resolvers", [
 															"is_activated",
 															"is_wished"
 														]);
-						//$SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["is_wished" => 1]);
-						$SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["is_wished" => 1, "is_activated" => 1]]);													
+
+$SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["is_wished" => 1, "is_activated" => 1]]);
 ?>
 
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 	<form class="form_settings" method="post" action="">
 		<fieldset>
 		<legend>What resolver do you want to use ? (IPv4 only)</legend>
-	
+
 				Available resolvers: <select name="ResolverName" style="width:200px; cursor: pointer;" required="required">
-<?php			
+<?php
 						foreach($ResolversList as $Resolver) {
 							if ( ! strpos($Resolver["name"], 'ipv6') ) {
 								switch ($Resolver["name"]) {
@@ -88,11 +88,11 @@ $ResolversList = $MySB_DB->select("dnscrypt_resolvers", [
 		
 			<p class="Comments">If Be careful, some resolvers do not seem to work for resolving certain domains. This is the case of <b>opendns</b> for example.<br />
 								If problems try another one.<br />
-								The default resolver is <b>dnscrypt.eu-dk</b>.</p>		
-		
+								The default resolver is <b>dnscrypt.eu-dk</b>.</p>
+
 			<input class="submit" style="width:180px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="I want use this resolver !">			
 		</fieldset>
-	</form>	
+	</form>
 </div>
 
 <form class="form_settings" method="post" action="">
