@@ -24,21 +24,6 @@
 
 global $MySB_DB;
 
-$ResolversList = $MySB_DB->select("dnscrypt_resolvers", [
-															"name",
-															"full_name",
-															"location",
-															"url",
-															"version",
-															"dnssec",
-															"no_logs",
-															"namecoin",
-															"resolver_address",
-															"provider_name",
-															"is_activated",
-															"is_wished"
-														]);
-
 if (isset($_POST['submit'])) {
 	$SelectedResolver = $_POST['ResolverName'];
 	
@@ -57,6 +42,21 @@ if (isset($_POST['submit'])) {
 
 	GenerateMessage('MySB_SecurityRules', $type, $message, '');
 }
+
+$ResolversList = $MySB_DB->select("dnscrypt_resolvers", [
+															"name",
+															"full_name",
+															"location",
+															"url",
+															"version",
+															"dnssec",
+															"no_logs",
+															"namecoin",
+															"resolver_address",
+															"provider_name",
+															"is_activated",
+															"is_wished"
+														]);
 ?>
 
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
