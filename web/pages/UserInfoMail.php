@@ -176,7 +176,7 @@ function PrintContent($user, $Case) {
 		// User personal info
 		////////////////////// -->
 		<tr align="left">
-			<th colspan="3" scope="row"><h4>User personal info</h4></th>
+			<th colspan="3" scope="row" id="BorderTopTitle"><h4>User personal info</h4></th>
 		</tr>
 		<!-- // Username -->
 		<tr align="left">
@@ -228,7 +228,7 @@ function PrintContent($user, $Case) {
 		// Directories
 		////////////////////// -->
 		<tr align="left">
-			<th colspan="3" scope="row"><h4>Directories</h4></th>
+			<th colspan="3" scope="row" id="BorderTopTitle"><h4>Directories</h4></th>
 		</tr>
 		<!-- // Home -->
 		<tr align="left">
@@ -277,7 +277,7 @@ function PrintContent($user, $Case) {
 		// Ports
 		////////////////////// -->
 		<tr align="left">
-			<th colspan="3" scope="row"><h4>Ports</h4></th>
+			<th colspan="3" scope="row" id="BorderTopTitle"><h4>Ports</h4></th>
 		</tr>
 		<!-- // SFTP Port -->
 		<tr align="left">
@@ -308,7 +308,7 @@ function PrintContent($user, $Case) {
 		// OpenVPN
 		////////////////////// -->
 		<tr align="left">
-			<th colspan="3" scope="row"><h4>OpenVPN</h4></th>
+			<th colspan="3" scope="row" id="BorderTopTitle"><h4>OpenVPN</h4></th>
 		</tr>
 		<!-- // Server IP GW -->
 		<tr align="left">
@@ -341,7 +341,7 @@ function PrintContent($user, $Case) {
 		// Links (Normal user)
 		////////////////////// -->
 		<tr align="left">
-			<th colspan="3" scope="row"><h4>Links (Normal user)</h4></th>
+			<th colspan="3" scope="row" id="BorderTopTitle"><h4>Links (Normal user)</h4></th>
 		</tr>
 		
 		
@@ -411,7 +411,7 @@ function PrintContent($user, $Case) {
 		// Links (Main user)
 		////////////////////// -->
 		<tr align="left">
-			<th colspan="3" scope="row"><h4>Links (Main user)</h4></th>
+			<th colspan="3" scope="row" id="BorderTopTitle"><h4>Links (Main user)</h4></th>
 		</tr>
 		<!-- // Webmin -->		
 		<?php if ( $WebminDatas["is_installed"] == '1' ) { ?>
@@ -455,7 +455,7 @@ function PrintContent($user, $Case) {
 		// SSH commands available
 		////////////////////// -->
 		<tr align="left">
-			<th colspan="3" scope="row"><h4>SSH commands available</h4></th>
+			<th colspan="3" scope="row" id="BorderTopTitle"><h4>SSH commands available</h4></th>
 		</tr>
 		<!-- // Users Management -->
 		<tr align="left">
@@ -518,7 +518,7 @@ function PrintContent($user, $Case) {
 		// Price and Payment info
 		////////////////////// -->
 		<tr align="left">
-			<th colspan="3" scope="row"><h4>Price and Payment info</h4></th>
+			<th colspan="3" scope="row" id="BorderTopTitle"><h4>Price and Payment info</h4></th>
 		</tr>
 		<!-- // Server model -->
 		<tr align="left">

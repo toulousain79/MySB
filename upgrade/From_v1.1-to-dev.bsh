@@ -24,6 +24,30 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+#### Local functions
+SwitchDNS() {
+	case "$1" in
+		"dnscrypt")
+			sed -i '/nameserver/d' /etc/resolv.conf
+			echo "nameserver 127.0.0.1" > /etc/resolv.conf
+			echo "nameserver 127.0.0.2" > /etc/resolv.conf
+		;;
+		"standard")
+			sed -i '/nameserver/d' /etc/resolv.conf
+			echo "nameserver 208.67.220.220" >> /etc/resolv.conf
+			echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.1" >> /etc/resolv.conf
+			echo "nameserver 208.67.222.222" >> /etc/resolv.conf
+			echo "nameserver 8.8.4.4" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.2" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.3" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.4" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.5" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.6" >> /etc/resolv.conf
+		;;
+	esac
+}
+
 echo
 echo -e "${CRED}If you lose connection during installation, restart the SSH session and run the following command:$CEND"
 echo -e "${CGREEN}	screen -r MySB_UpgradeMe$CEND"
@@ -41,7 +65,7 @@ fi
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=33
+TotalSTEP=35
 
 #### 1 - Move some files & directories
 (( CurrentSTEP++ ))
@@ -132,21 +156,37 @@ echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Creating missing directories, chan
 ManageDirectoriesAndFiles
 StatusSTD
 
-#### 3 - Sources List
+#### 3 - Stopping CRON and rTorrent sessions
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Stopping CRON and rTorrent sessions$CEND..."
+service cron stop &> /dev/null
+RtorrentSeesions="`ls -1r /etc/init.d/rtorrent-* | cut -d '/' -f 4`"
+for Session in $RtorrentSeesions; do
+	service $Session stop &> /dev/null
+done
+StatusSTD
+
+#### 4 - Switching to standard DNS
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Switching to standard DNS$CEND..."
+SwitchDNS "standard" &> /dev/null
+StatusSTD
+
+#### 4 - Sources List
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Preparing sources for debian$CEND..."
 screen -dmS SourcesList /bin/bash /etc/MySB/install/SourcesList 'UPGRADE';
 WaitingScreen SourcesList
 StatusSTD
 
-#### 4 - Packages
+#### 5 - Packages
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing all needed packages$CEND..."
 screen -dmS Packages /bin/bash /etc/MySB/install/Packages 'UPGRADE';
 WaitingScreen Packages
 StatusSTD
 
-#### 5 - SQLite (move flat files to database)
+#### 6 - SQLite (move flat files to database)
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Creating and populating databases, and check of all the trackers (this may take a while, please be patient)$CEND..."
 screen -dmS SQLite /bin/bash /etc/MySB/install/SQLite 'UPGRADE';
@@ -157,7 +197,7 @@ StatusSTD
 ScriptInvoke "source" "/etc/MySB/install/Questions" "$$" "UPGRADE"
 #### Questions
 
-#### 6 - Vars
+#### 7 - Vars
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Reading database informations$CEND..."
 if [ -f /etc/MySB/inc/vars ]; then source /etc/MySB/inc/vars; fi
@@ -171,15 +211,6 @@ echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- System optimizations$CEND..."
 screen -dmS Tweaks /bin/bash /etc/MySB/install/Tweaks 'UPGRADE';
 WaitingScreen Tweaks
 StatusSTD
-
-#### 9 - STOP services
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Stopping of services$CEND..."
-ManageServices stop "cron" &> /dev/null
-StatusSTD
-for seedUser in $UsersList; do
-	service rtorrent-$seedUser stop &> /dev/null
-done
 
 #### 10 - Certificates
 (( CurrentSTEP++ ))

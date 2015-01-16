@@ -232,8 +232,19 @@ PeerGuardianFailed() {
 ManageServices() {
 	GlobalCommand="$1"
 	ServicesToManage="$2"
-	ServicesToManage=`echo $ServicesToManage | sed -e 's/^ //g;' | sed 's/\s+$//'`
+	ServicesToManage="`echo $ServicesToManage | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+
+	# Cleaning actual list of services
 	if [ ! -z "$ServicesToManage" ]; then
+		# Check if command exist
+		for Service in $ServicesToManage; do
+			if ! CheckCommand 0 $Service; then
+				ServicesToManage="`echo $ServicesToManage | sed -e 's/$Service//g;'`"
+			fi
+		done
+	fi
+
+	if [ ! -z "$ServicesToManage" ]; then	
 		case "$LOGSTD" in
 			"STDOUT")
 				echo "---- "`date +"%T"` >> /etc/MySB/logs/$ScriptName.log
@@ -245,7 +256,7 @@ ManageServices() {
 				"stop")
 					if GetPid $Service; then
 						Continue=1
-						
+
 						case "$Service" in
 							"pglcmd")
 								Continue=0
@@ -256,7 +267,7 @@ ManageServices() {
 								log_daemon_msg "Stopping PHP5 FastCGI Process Manager"
 								service $Service stop &> /dev/null
 								StatusLSB
-							;;							
+							;;
 							"stunnel4")
 								Continue=0
 								log_daemon_msg "Stopping Stunnel daemon"
@@ -264,7 +275,7 @@ ManageServices() {
 								StatusLSB
 							;;
 						esac
-						
+
 						if [ "$Continue" == "1" ]; then
 							service $Service stop
 						fi
@@ -272,7 +283,7 @@ ManageServices() {
 				;;
 				"start")
 					if [ "$Service" == "pglcmd" ]; then
-						if CheckCommand 0 pglcmd; then
+						#if CheckCommand 0 pglcmd; then
 							if GetPid $Service; then
 								pglcmd restart
 								if [ $? -gt 0 ]; then
@@ -287,10 +298,10 @@ ManageServices() {
 										echo `date +"%T"`" --> The updated list of PGL may have failed." >> /etc/MySB/logs/$ScriptName.log
 										echo `date +"%T"`" --> Attempting to clean lists error." >> /etc/MySB/logs/$ScriptName.log
 									;;
-									"TEMP")
-										echo `date +"%T"`" --> The updated list of PGL may have failed." >> /etc/MySB/temp/$ScriptName.log
-										echo `date +"%T"`" --> Attempting to clean lists error." >> /etc/MySB/temp/$ScriptName.log
-									;;
+									# "TEMP")
+										# echo `date +"%T"`" --> The updated list of PGL may have failed." >> /etc/MySB/temp/$ScriptName.log
+										# echo `date +"%T"`" --> Attempting to clean lists error." >> /etc/MySB/temp/$ScriptName.log
+									# ;;
 								esac
 
 								CheckLog="`cat /var/log/pgl/pglcmd.log | grep failed | grep list.iblocklist.com | awk '{ print $6 }'`"
@@ -299,9 +310,9 @@ ManageServices() {
 										"STDOUT")
 											echo `date +"%T"`" --> '$List' will be disabled." >> /etc/MySB/logs/$ScriptName.log
 										;;
-										"TEMP")
-											echo `date +"%T"`" --> '$List' will be disabled." >> /etc/MySB/temp/$ScriptName.log
-										;;
+										# "TEMP")
+											# echo `date +"%T"`" --> '$List' will be disabled." >> /etc/MySB/temp/$ScriptName.log
+										# ;;
 									esac
 
 									# Comment the list in '/etc/pgl/blocklists.list'
@@ -309,10 +320,10 @@ ManageServices() {
 									sed -i "s/^$List/#$List/g" /etc/pgl/blocklists.list
 								done
 								pglcmd restart
-								
-								if [ $? -gt 0 ]; then # We have a problem with PeerGuardian, test a force-restart
+
+								if [ $? -gt 0 ]; then # We have again a problem with PeerGuardian, test a force-restart
 									pglcmd force-restart
-									if [ $? -gt 0 ]; then # We have a problem with PeerGuardian
+									if [ $? -gt 0 ]; then # Again ??
 										# We will use rTorrent Blocklist
 										PeerGuardianFailed "rTorrent"
 									else
@@ -324,9 +335,9 @@ ManageServices() {
 							else
 								PeerGuardianFailed "PeerGuardian"
 							fi
-						else
-							echo "The command 'pglcmd' is not yet available..."
-						fi
+						# else
+							# echo "The command 'pglcmd' is not yet available..."
+						# fi
 					else
 						Continue=1
 
