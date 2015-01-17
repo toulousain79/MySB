@@ -24,223 +24,277 @@
 
 ### BEGIN INIT INFO
 # Provides:          dnscrypt
-# Required-Start:    $local_fs $network
-# Required-Stop:     $local_fs
+# Required-Start:    $network $remote_fs $syslog
+# Required-Stop:     $network $remote_fs $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: Start DNScrypt-proxy
 # Description:       Encrypt DNS queries.
 ### END INIT INFO
 
+#### LSB
 . /lib/lsb/init-functions
 
-## VARs
-PATH=/usr/sbin:/usr/bin:/sbin:/bin
-
-MySB_DB="/etc/MySB/db/MySB.sq3"
+#### VARs
+MySB_DB="<MySB_DB>"
 NAME="dnscrypt-proxy"
 DESC="OpenDNS DNScrypt-proxy"
-DIR="/var/run/dnscrypt-proxy"
+DIR_PID="/var/run/dnscrypt-proxy"
+DIR_LOG="/var/log/dnscrypt-proxy"
+LOG_FILE="$DIR_LOG/dnscrypt-proxy.log"
 DAEMON_USER="dnscrypt"
 DAEMON="/usr/local/sbin/dnscrypt-proxy"
-DIR_LOG="/var/log/dnscrypt-proxy"
-LOG_FILE="dnscrypt-proxy.log"
-PID="$DIR/dnscrypt-proxy.pid"
+CSV_FILE="/usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv"
+IFPVEKERNEL="`uname -r | grep pve`"
 
-# Update DB if argument given is a good resolver
-AllResolvers="`sqlite3 $MySB_DB \"SELECT name FROM dnscrypt_resolvers WHERE dnssec = 'yes' AND no_logs = 'yes'\"`"
+#### Command line arguments - Begin
+# Cherck arguments, we can start with as much DNScrypt resolver as desired (no IPv6).
+# The default resolvers are those accepting DNSsec and NoLogs.
+# --dnnsec
+# --nologs
+# --all (with or without DNSsec and NoLogs)
+# --resolver="rsolver1,resolver2,..."
+CountResolvers=0
+GivenResolvers=""
+ResolversSearched=""
+DNSsec="yes"
+NoLogs="yes"
+All=""
+for Arg in "$@"; do
+	case "$Arg" in
+		--all)
+			All="WHERE 1"
+		;;
+		--dnssec)
+			DNSsec="`echo $Arg | cut -d '=' -f 2 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+			DNSsec="$DNSsec"
+		;;
+		--nologs)
+			NoLogs="`echo $Arg | cut -d '=' -f 2 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+			NoLogs="$NoLogs"
+		;;
+		--resolver*)
+			echo $Arg
+			GivenResolvers="`echo $Arg | cut -d '=' -f 2 | sed -e 's/,/ /g;' | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+			for Resolver in $GivenResolvers; do
+				IfExist="`sqlite3 $MySB_DB \"SELECT id_dnscrypt_resolvers FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+				if [ ! -z "$IfExist" ]; then
+					ResolversSearched="$ResolversSearched AND name = '$Resolver'"
+				fi
+			done
+		;;		
+	esac
+done
+
+if [ -z "$All" ]; then
+	Search="WHERE dnssec = '$DNSsec' AND no_logs = '$NoLogs' $ResolversSearched"
+else
+	Search="$All"
+fi
+
+# Get resolvers list
+AllResolvers="`sqlite3 $MySB_DB \"SELECT name FROM dnscrypt_resolvers $Search\"`"
 
 # Cleaning the list (IPv6)
 for Resolver in $AllResolvers; do
-	if [ -z "`echo $Resolver | grep 'ipv6'`" ] && [ -z "`echo $Resolver | grep '5353'`" ] && [ "$Resolver" != "soltysiak" ]; then
-		Resolvers="${Resolvers} ${Resolver}"
+	if [ -z "`echo $Resolver | grep 'ipv6'`" ]; then
+		(( CountResolvers++ ))
+		ResolversList="${ResolversList} ${Resolver}"
 	fi
 done
-Resolvers="`echo $Resolvers | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-if [ -z "$Resolvers" ]; then
-	Resolvers="dnscrypt.eu-dk"
+ResolversList="`echo $ResolversList | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+
+# If resolvers list is empty
+if [ -z "$ResolversList" ]; then
+	CountResolvers=1
+	ResolversList="dnscrypt.eu-dk"
 fi
+#### Command line arguments - End
 
-if [ ! -d $DIR ]; then mkdir $DIR; fi
-if [ ! -d $DIR_LOG ]; then mkdir $DIR_LOG; fi
+#### Check directories
+if [ ! -d $DIR_PID ]; then mkdir $DIR_PID && chown $DAEMON_USER:$DAEMON_USER $DIR_PID; fi
+if [ ! -d $DIR_LOG ]; then mkdir $DIR_LOG && chown $DAEMON_USER:$DAEMON_USER $DIR_LOG; fi
 
-## Delete user PID file
+#### Functions - Begin
+# Create daemon option
+DeamonOption() {
+	Name="$1"
+	LocalAddress="$2"
+	ProviderAddress="`sqlite3 $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Name'\"`"
+	ProviderName="`sqlite3 $MySB_DB \"SELECT provider_name FROM dnscrypt_resolvers WHERE name = '$Name'\"`"
+	ProviderKey="`sqlite3 $MySB_DB \"SELECT provider_public_key FROM dnscrypt_resolvers WHERE name = '$Name'\"`"
+
+	DEAMON_OPT="--user=$DAEMON_USER --edns-payload-size=4096 --resolver-address=$ProviderAddress --provider-name=$ProviderName --provider-key=$ProviderKey --logfile=$DIR_LOG/$Resolver.log --local-address=$LocalAddress"
+}
+
+# Function that check BIND status
+bind_check() {
+	if [ "`pidof named`" == "" ]; then
+		service bind9 restart
+	fi
+}
+
+# Function that check /etc/resolv.conf
+resolv_check() {
+	if [ -z $IFPVEKERNEL ] && [ -z "`cat /etc/resolv.conf | grep 127.0.0.1`" ]; then
+		sed -i '/nameserver/d' /etc/resolv.conf
+		echo "nameserver 127.0.0.1" >> /etc/resolv.conf
+	fi
+}
+
+# Delete all pid files
 delete_pid_file() {
-	LogFile="$1"
-	PID="$2"
-	Resolver="$3"
+	FnPid=$1
+	FnResolver="$2"
 
-    if [ -e $PID ]; then
-        rm -f $PID
-		echo "Delete $NAME $Resolver PID file: "`date` >> $LogFile
+    if [ -e $FnPid ]; then
+        rm -f $FnPid
+		echo "--> PID: $FnPid file deleted : "`date` >> $LOG_FILE
     fi
 }
 
-## Function stop case
-restart_stop_case() {
-	LogFile="$1"
-	PID="$2"
-	Resolver="$3"
-
-	do_start
-	case "$?" in
-		0)
-			echo "RESTART: "`date` >> $LogFile
-			log_end_msg 0
-		;;
-		1) # Old process is still running
-			echo "Could not be restarted, old process is still running: "`date` >> $LogFile
-			log_end_msg 1
-		;;
-		*) # Failed to start
-			echo "Could not be restarted: "`date` >> $LogFile
-			delete_pid_file "$LogFile" "$PID" "$Resolver"
-			log_end_msg 1
-		;;
-	esac
-}
-
-#
-# Function that starts the daemon/service
+# Function START
 do_start() {
-	DaemonOpts="$1"
-	LogFile="$2"
-	PID="$3"
+	resolv_check
+	bind_check
 
-	# Delete ghost screen pid file
-	if [ -e $PID ]; then
-		pidofproc -p $PID &> /dev/null || rm -f $PID
-	fi
-echo $DAEMON $DaemonOpts >> /tmp/dns
-	# Return
-	#   0 if daemon has been started
-	#   1 if daemon was already running
-	#   2 if daemon could not be started
-	start-stop-daemon --start --quiet --background --make-pidfile --test --pidfile $PID --exec $DAEMON -- $DaemonOpts 2>> $LogFile || return 1
+	i=0
+	Return=0
+	for Resolver in $ResolversList; do
+		(( i++ ))
+		
+		# /etc/bind/named.conf.options
+		BindForwarders="$BindForwarders 127.0.0.$i port 52;"
+		
+		# Delete ghost screen pid file
+		if [ -e $DIR_PID/$Resolver.pid ]; then
+			pidofproc -p $DIR_PID/$Resolver.pid &> /dev/null || rm -f $DIR_PID/$Resolver.pid
+		fi
 
-	start-stop-daemon --start --quiet --background --make-pidfile --pidfile $PID --exec $DAEMON -- $DaemonOpts 2>> $LogFile || return 2
+		# Get options
+		DeamonOption "$Resolver" "127.0.0.$i:52"
+
+		# Return
+		#   0 if daemon has been started
+		#   1 if daemon was already running
+		#   2 if daemon could not be started
+		start-stop-daemon --start --quiet --background --make-pidfile --test \
+			--pidfile $DIR_PID/$Resolver.pid\
+			--exec $DAEMON\
+			-- $DEAMON_OPT\
+			 >> $LOG_FILE
+		
+		if [ $? -gt 0 ]; then
+			echo "--> $Resolver already running: "`date` >> $LOG_FILE
+			Return=1
+		fi
+
+		start-stop-daemon --start --quiet --background --make-pidfile \
+			--pidfile $DIR_PID/$Resolver.pid\
+			--exec $DAEMON\
+			-- $DEAMON_OPT\
+			 >> $LOG_FILE
+			 
+		if [ $? -gt 0 ]; then
+			delete_pid_file $DIR_PID/$Resolver.pid $Resolver			
+			echo "--> NOT STARTED: $Resolver : "`date` >> $LOG_FILE
+			Return=2
+		else
+			echo "--> STARTED: $Resolver : "`date` >> $LOG_FILE
+		fi
+	done
+	
+	# /etc/bind/named.conf.options
+	BindForwarders="`echo $BindForwarders | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+	sed -i '/forwarders/d' /etc/bind/named.conf.options
+	NumLign=$(sed -n "/\/\/ DNScrypt-proxy - BoF/=" /etc/bind/named.conf.options)
+	(( NumLign++ ))
+	sed -i "${NumLign}i\        forwarders { $BindForwarders };" /etc/bind/named.conf.options
+	
+	return $Return
 }
 
-#
-# Function that stops the daemon/service
-#
+# Function STOP the daemon/service
 do_stop() {
-	LogFile="$1"
-	PID="$2"
+	PidList="`ls -1r $DIR_PID/`"
 
 	# Return
 	#   0 if daemon has been stopped
 	#   1 if daemon was already stopped
 	#   2 if daemon could not be stopped
 	#   other if a failure occurred
-	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PID --exec "$DAEMON" 2>> $LogFile
-	RETVAL="$?"
-
-	sleep 1
-	return "$RETVAL"
+	for Pid in $PidList; do
+		Resolver="`echo $Pid | cut -d '.' -f 1`"
+		start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $DIR_PID/$Pid --exec "$DAEMON" 2>> $LOG_FILE
+		
+		case "$?" in
+			0|1)
+				echo "--> STOPPED: $Resolver : "`date` >> $LOG_FILE
+				delete_pid_file $DIR_PID/$Pid $Resolver
+			;;
+			2)
+				echo "--> NOT STOPPED: $Resolver : "`date` >> $LOG_FILE
+			;;
+		esac
+	done
+	
+	# Ghost processes ?
+	pkill -f $DAEMON >> $LOG_FILE
 }
+#### Functions - End
 
-## Function that check BIND status
-if [ "`pidof named`" == "" ]; then
-	service bind9 restart &> /dev/null
-fi
 
+
+#### CASE - Begin
 case "$1" in
-	start)		
-		i=0
-		for Resolver in $Resolvers; do
-			(( i++ ))
-			if [ $i -eq 1 ]; then
-				sed -i '/nameserver/d' /etc/resolv.conf
-			fi
-			echo "nameserver 127.0.0.$i" >> /etc/resolv.conf
-
-			log_daemon_msg "Starting $DESC" "$Resolver"
-
-			do_start "--local-address=127.0.0.$i --user=$DAEMON_USER --resolver-name=$Resolver --loglevel=99 --resolvers-list=/usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv --logfile=$DIR_LOG/$Resolver.log" "$DIR_LOG/$Resolver.log" "$DIR/$Resolver.pid"
-			
-			case "$?" in
-				0)
-					echo "START $Resolver on 127.0.0.$i: "`date` >> $DIR_LOG/$Resolver.log
-					log_end_msg 0
-				;;
-				1)
-					echo "Already running ($Resolver on 127.0.0.$i): "`date` >> $DIR_LOG/$Resolver.log
-					log_end_msg 0
-				;;
-				2)
-					echo "Could not be started ($Resolver on 127.0.0.$i): "`date` >> $DIR_LOG/$Resolver.log
-					delete_pid_file $DIR_LOG/$Resolver.log $DIR/$Resolver.pid $Resolver
-					log_end_msg 1
-				;;
-			esac
-		done
+	start)
+		log_daemon_msg "Starting $DESC" "$NAME"
+		do_start
+		case "$?" in
+			0|1)	
+				log_end_msg 0
+			;;
+			2)
+				log_end_msg 1
+			;;
+		esac		
 	;;
 
-	
 	stop)
-		i=0
-		for Resolver in $Resolvers; do
-			(( i++ ))
-			sed -i '/nameserver/d' /etc/resolv.conf
-			if [ $i -eq 1 ]; then
-				echo "nameserver 127.0.0.1" >> /etc/resolv.conf
-			fi
-			
-			log_daemon_msg "Stopping $DESC" "$Resolver"
-			do_stop $DIR_LOG/$Resolver.log $DIR/$Resolver.pid
-	
-			case "$?" in
-				0)
-					echo "STOP: "`date` >> $DIR_LOG/$Resolver.log
-					delete_pid_file $DIR_LOG/$Resolver.log $DIR/$Resolver.pid $Resolver
-					log_end_msg 0
-				;;
-				1)
-					echo "Already stopped: "`date` >> $DIR_LOG/$Resolver.log
-					delete_pid_file $DIR_LOG/$Resolver.log $DIR/$Resolver.pid $Resolver
-					log_end_msg 0
-				;;
-				2)
-					echo "Could not be stopped: "`date` >> $DIR_LOG/$Resolver.log
-					log_end_msg 1
-				;;
-			esac
-		done
+		log_daemon_msg "Stopping $DESC" "$NAME"
+		do_stop
+		log_end_msg 0
 	;;
 
 	restart)
-		for Resolver in $Resolvers; do
-			log_daemon_msg "Restarting $DESC" "$Resolver"
-			
-			do_stop "$DIR_LOG/$Resolver.log" "$DIR/$Resolver.pid"
-			case "$?" in
-				0)
-					restart_stop_case "$DIR_LOG/$Resolver.log" "$DIR/$Resolver.pid" "$Resolver"
-				;;
-				1)
-					restart_stop_case "$DIR_LOG/$Resolver.log" "$DIR/$Resolver.pid" "$Resolver"
-				;;
-				*) # Failed to stop
-					echo "Could not be restarted: "`date` >> $DIR_LOG/$Resolver.log
-					log_end_msg 1
-				;;
-			esac			
-		done
+		log_daemon_msg "Restarting $DESC" "$NAME"
+		do_stop
+		do_start
+		case "$?" in
+			0|1)	
+				log_end_msg 0
+			;;
+			2)
+				log_end_msg 1
+			;;
+		esac		
 	;;
 
 	status)
-		for Resolver in $Resolvers; do
-			status_of_proc -p "$DIR/$Resolver.pid" "$DAEMON" "$Resolver" && StatusLSB
+		for Resolver in $ResolversList; do
+			status_of_proc -p "$DIR_PID/$Resolver.pid" "$DAEMON" "$Resolver" && StatusLSB
 		done
 		exit 0
 	;;
 
 	*)
-		echo "Usage: service dnscrypt-proxy {start|stop|restart|status} <ResolverName>"
+		echo "Usage: service dnscrypt-proxy {stop|status} [{start|restart} [--all] [[--nologs] [--dnnsec] [--resolver=resolver1,resolver2,...]]]"
 		exit 3
 	;;
 esac
+#### CASE - End
+
+
 
 exit 0
 
