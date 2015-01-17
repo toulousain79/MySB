@@ -303,25 +303,6 @@ CREATE TABLE system (
 
 INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password], [apt_update], [apt_date], [server_provider]) VALUES (1, '', '', '', '', '', '', '', '', 0, null, null);
 
--- Table: users
-CREATE TABLE users ( 
-    id_users      INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                  NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT ABORT,
-    users_ident   VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT IGNORE,
-    users_email   VARCHAR( 260 )  NOT NULL ON CONFLICT ABORT,
-    users_passwd  VARCHAR( 32 ),
-    rpc           VARCHAR( 64 ),
-    sftp          BOOLEAN( 1 )    DEFAULT ( 1 ),
-    sudo          BOOLEAN( 1 )    DEFAULT ( 0 ),
-    admin         BOOLEAN( 1 )    DEFAULT ( 0 ),
-    scgi_port     INTEGER( 5 ),
-    rtorrent_port INTEGER( 5 ),
-    home_dir      VARCHAR( 128 ) 
-);
-
-
 -- Table: commands
 CREATE TABLE commands ( 
     id_commands INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -362,5 +343,25 @@ CREATE TABLE dnscrypt_resolvers (
     provider_public_key_txt_record VARCHAR( 64 ),
     is_activated                   BOOLEAN( 1 )    DEFAULT ( 0 ),
     is_wished                      BOOLEAN( 1 )    DEFAULT ( 0 ) 
+);
+
+
+-- Table: users
+CREATE TABLE users ( 
+    id_users      INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                  NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT ABORT,
+    users_ident   VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT IGNORE,
+    users_email   VARCHAR( 260 )  NOT NULL ON CONFLICT ABORT,
+    users_passwd  VARCHAR( 32 ),
+    rpc           VARCHAR( 64 ),
+    sftp          BOOLEAN( 1 )    DEFAULT ( 1 ),
+    sudo          BOOLEAN( 1 )    DEFAULT ( 0 ),
+    admin         BOOLEAN( 1 )    DEFAULT ( 0 ),
+    scgi_port     INTEGER( 5 ),
+    rtorrent_port INTEGER( 5 ),
+    home_dir      VARCHAR( 128 ),
+    is_active     BOOLEAN( 1 )    DEFAULT ( 1 ) 
 );
 
