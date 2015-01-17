@@ -63,21 +63,20 @@ for Repo in $AllRepos; do
 				rm -vf /etc/MySB/files/$RepoOldFile
 			fi
 
-			case "$1" in
-				"UPGRADE")
-					# if [ -f /etc/MySB/files/$RepoFile ]; then
-						# rm -vf /etc/MySB/files/$RepoFile
-					# fi
-					if [ -d $RepoDir ]; then
-						rm -vrf $RepoDir
-					fi
-				;;
-			esac
-
 			if [ ! -f /etc/MySB/files/$RepoFile ]; then
 				wget --no-check-certificate $RepoURL -O /etc/MySB/files/$RepoFile
 				Error=$?
 			fi
+			if [ -f /etc/MySB/files/$RepoFile ]; then
+				# We can delete repo dir ONLY IF tar.gz file exist...
+				case "$1" in
+					"UPGRADE"|"REFRESH")
+						if [ -d $RepoDir ]; then
+							rm -vrf $RepoDir
+						fi
+					;;
+				esac
+			fi			
 			if [ ! -d $RepoDir ] && [ $Error -eq 0 ]; then
 				tar -zxvf /etc/MySB/files/$RepoFile -C /etc/MySB/temp/
 				Error=$?
@@ -85,6 +84,7 @@ for Repo in $AllRepos; do
 				SubDir="`tar -ztf /etc/MySB/files/$RepoFile | cut -d '/' -f 1 | uniq`"
 				if [ -d /etc/MySB/temp/$SubDir ]; then
 					mv /etc/MySB/temp/$SubDir $RepoDir
+					Error=$?
 				fi
 			fi
 		;;
@@ -93,14 +93,6 @@ for Repo in $AllRepos; do
 			if [ -f /etc/MySB/files/$RepoOldFile ]; then
 				rm -vf /etc/MySB/files/$RepoOldFile
 			fi
-
-			# case "$1" in
-				# "UPGRADE")
-					# if [ -f $RepoDir/$RepoFile ]; then
-						# rm -vf $RepoDir/$RepoFile
-					# fi
-				# ;;
-			# esac
 
 			if [ ! -f $RepoDir/$RepoFile ]; then
 				wget --no-check-certificate $RepoURL -O $RepoDir/$RepoFile
@@ -164,10 +156,7 @@ for Repo in $AllRepos; do
 			fi
 
 			case "$1" in
-				"UPGRADE")
-					# if [ -f /etc/MySB/files/$RepoFile ]; then
-						# rm -vf /etc/MySB/files/$RepoFile
-					# fi
+				"UPGRADE"|"REFRESH")
 					if [ -d $RepoDir ]; then
 						rm -vrf $RepoDir
 					fi
@@ -178,6 +167,16 @@ for Repo in $AllRepos; do
 				wget --no-check-certificate $RepoURL -O /etc/MySB/files/$RepoFile
 				Error=$?
 			fi
+			if [ -f /etc/MySB/files/$RepoFile ]; then
+				# We can delete repo dir ONLY IF zip file exist...
+				case "$1" in
+					"UPGRADE"|"REFRESH")
+						if [ -d $RepoDir ]; then
+							rm -vrf $RepoDir
+						fi
+					;;
+				esac
+			fi				
 			if [ ! -d $RepoDir ] && [ $Error -eq 0 ]; then
 				unzip /etc/MySB/files/$RepoFile -d /etc/MySB/temp/
 				Error=$?
@@ -185,6 +184,7 @@ for Repo in $AllRepos; do
 				SubDir="`unzip -l /etc/MySB/files/$RepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
 				if [ -d /etc/MySB/temp/$SubDir ]; then
 					mv /etc/MySB/temp/$SubDir $RepoDir
+					Error=$?
 				fi
 			fi
 		;;	
