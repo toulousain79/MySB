@@ -48,7 +48,7 @@ if ( $IsInstalled == '1' ) {
 		GenerateMessage('MySB_SecurityRules' ,$type, $message, '');
 	}
 
-	$BlockList = $MySB_DB->select("blocklists", "*", , ["peerguardian_list[!]" => ""]);
+	$BlockList = $MySB_DB->select("blocklists", "*", ["peerguardian_list[!]" => ""]);
 ?>
 	<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 		<fieldset>

@@ -45,7 +45,7 @@ if (isset($_POST['submit'])) {
 	GenerateMessage('BlocklistsRTorrent.bsh', $type, $message, '');
 }
 
-$BlockList = $MySB_DB->select("blocklists", "*", , ["rtorrent_list[!]" => ""]);
+$BlockList = $MySB_DB->select("blocklists", "*", ["rtorrent_list[!]" => ""]);
 ?>
 
 <form class="form_settings" method="post" action="">	
