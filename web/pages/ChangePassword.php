@@ -22,7 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-if ( isset($_SERVER['PHP_AUTH_PW']) && isset($_SESSION['user']) && isset($_SESSION['pwd']) ) {
+if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ManageAddresses') ) {
 	$opts = 'readonly="true" style="cursor: default;" value="' . $_SERVER['PHP_AUTH_PW'] . '"';
 } else {
 	$opts = '';

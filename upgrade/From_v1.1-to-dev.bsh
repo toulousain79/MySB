@@ -53,6 +53,7 @@ echo -e "${CRED}If you lose connection during installation, restart the SSH sess
 echo -e "${CGREEN}	screen -r MySB_UpgradeMe$CEND"
 echo
 echo -e "${CYELLOW}All users password will be changed by temporary password.$CEND"
+echo -e "${CYELLOW}All users IP addresses will be remove (except mainuser).$CEND"
 echo -e "${CYELLOW}They will receive an email with information to change it.$CEND"
 echo -e "${CYELLOW}Their IP address will be automatically added into the database.$CEND"
 echo
@@ -422,7 +423,6 @@ for seedUser in $UsersList; do
 	perl -pi -e "s/<username>/$seedUser/g" /etc/init.d/rtorrent-$seedUser
 	perl -pi -e "s/<rutorrent_dir>/$RutorrentDirEscaped/g" /etc/init.d/rtorrent-$UserToCreate
 	chmod +x /etc/init.d/rtorrent-$seedUser
-	update-rc.d rtorrent-$seedUser defaults 99 &> /dev/null
 
 	HOMEDIR_ESCAPED=`echo /home/$seedUser | sed s,/,\\\\\\\\\\/,g`
 	SCGIPORT="`sqlite3 $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$seedUser'\"`"
@@ -481,10 +481,14 @@ StatusSTD
 #### 34 - Send mail for each user with new version
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Clearing the password for all users$CEND..."
+MainUserId="`sqlite3 $MySB_DB \"SELECT id_users FROM users WHERE admin = '1'\"`"
 for seedUser in $UsersList; do
 	UserId=$(sqlite3 $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$seedUser'")
 	UserPassword="`sqlite3 $MySB_DB \"SELECT users_passwd FROM users WHERE users_ident = '$seedUser'\"`"
-	#sqlite3 $MySB_DB "DELETE FROM users_addresses WHERE id_users = '$UserId'"
+	
+	if [ "$UserId" != "$MainUserId" ]; then
+		sqlite3 $MySB_DB "DELETE FROM users_addresses WHERE id_users = '$UserId' AND id_user != '$MainUserId'"
+	fi
 
 	#### Erase all users passwords
 	ScriptInvoke "screen" "/etc/MySB/bin/MySB_ChangeUserPassword" "$seedUser" "$UserPassword" "UPGRADE"
