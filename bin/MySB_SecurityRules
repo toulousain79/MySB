@@ -117,6 +117,12 @@ case $1 in
 		log_daemon_msg "Do not break established connections"
 		iptables -A INPUT -m state --state RELATED,ESTABLISHED -i $PrimaryInet -j ACCEPT
 		iptables -A OUTPUT -m state --state RELATED,ESTABLISHED -o $PrimaryInet -j ACCEPT
+		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+			iptables -A INPUT -m state --state RELATED,ESTABLISHED -i tun0 -j ACCEPT
+			iptables -A OUTPUT -m state --state RELATED,ESTABLISHED -o tun0 -j ACCEPT
+			iptables -A INPUT -m state --state RELATED,ESTABLISHED -i tun1 -j ACCEPT
+			iptables -A OUTPUT -m state --state RELATED,ESTABLISHED -o tun1 -j ACCEPT			
+		fi
 		StatusLSB
 
 		#### Allow loopback
@@ -137,11 +143,14 @@ case $1 in
 		#### ICMP
 		log_daemon_msg "Allow incoming ping for seedbox users"
 		for ip in $AllUsersIPs; do 
-			iptables -t filter -A INPUT -p icmp -s $ip/32 -j ACCEPT -m comment --comment "ICMP"
+			iptables -t filter -A INPUT -p icmp -s $ip/32 -i $PrimaryInet -j ACCEPT -m comment --comment "ICMP"
 		done
-		for ip in $VpnIPs; do
-			iptables -t filter -A INPUT -p icmp -s $ip -j ACCEPT -m comment --comment "ICMP"
-		done
+		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+			for ip in $VpnIPs; do 
+				iptables -t filter -A INPUT -p icmp -s $ip -i tun0 -j ACCEPT -m comment --comment "ICMP over OpenVPN"
+				iptables -t filter -A INPUT -p icmp -s $ip -i tun1 -j ACCEPT -m comment --comment "ICMP over OpenVPN"
+			done
+		fi
 		StatusLSB
 		
 		if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "none" ]; then
@@ -151,17 +160,17 @@ case $1 in
 					OvhIp1="`echo $SrvIpAddress | sed "s/$(echo $SrvIpAddress | cut -d '.' -f 4)/250/g;"`"
 					OvhIp2="`echo $SrvIpAddress | sed "s/$(echo $SrvIpAddress | cut -d '.' -f 4)/249/g;"`"
 					OvhIp3="`echo $SrvIpAddress | sed "s/$(echo $SrvIpAddress | cut -d '.' -f 4)/251/g;"`"
-					iptables -A INPUT -i $PrimaryInet -p icmp --source proxy-rbx2.ovh.net -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
-					iptables -A INPUT -i $PrimaryInet -p icmp --source proxy.rbx.ovh.net -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
-					iptables -A INPUT -i $PrimaryInet -p icmp --source proxy.sbg.ovh.net -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
-					iptables -A INPUT -i $PrimaryInet -p icmp --source proxy.bhs.ovh.net -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
-					iptables -A INPUT -i $PrimaryInet -p icmp --source ping.ovh.net -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
-					iptables -A INPUT -i $PrimaryInet -p icmp --source $OvhIp1 -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
-					iptables -A INPUT -i $PrimaryInet -p icmp --source $OvhIp2 -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
-					iptables -A INPUT -i $PrimaryInet -p icmp --source $OvhIp3 -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+					iptables -A INPUT -i $PrimaryInet -p icmp -s proxy-rbx2.ovh.net -i $PrimaryInet -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+					iptables -A INPUT -i $PrimaryInet -p icmp -s proxy.rbx.ovh.net $PrimaryInet -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+					iptables -A INPUT -i $PrimaryInet -p icmp -s proxy.sbg.ovh.net $PrimaryInet -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+					iptables -A INPUT -i $PrimaryInet -p icmp -s proxy.bhs.ovh.net $PrimaryInet -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+					iptables -A INPUT -i $PrimaryInet -p icmp -s ping.ovh.net $PrimaryInet -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+					iptables -A INPUT -i $PrimaryInet -p icmp -s $OvhIp1 $PrimaryInet -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+					iptables -A INPUT -i $PrimaryInet -p icmp -s $OvhIp2 $PrimaryInet -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+					iptables -A INPUT -i $PrimaryInet -p icmp -s $OvhIp3 $PrimaryInet -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
 				;;
 				"ONLINE")
-					iptables -A INPUT -i $PrimaryInet -p icmp --source 62.210.16.0/24 -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
+					iptables -A INPUT -i $PrimaryInet -p icmp -s 62.210.16.0/24 $PrimaryInet -j ACCEPT -m comment --comment "Monitoring $ServerProvider"
 				;;
 			esac
 			StatusLSB
@@ -170,25 +179,52 @@ case $1 in
 		#### HTTPS
 		log_daemon_msg "Allow access to HTTPs"
 		iptables -t filter -A INPUT -p tcp --dport $Port_HTTPS -i $PrimaryInet -j ACCEPT -m comment --comment "HTTPs"
+		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+			iptables -t filter -A INPUT -p tcp --dport $Port_HTTPS -i tun0 -j ACCEPT -m comment --comment "HTTPs over OpenVPN"
+			iptables -t filter -A INPUT -p tcp --dport $Port_HTTPS -i tun1 -j ACCEPT -m comment --comment "HTTPs over OpenVPN"
+		fi
 		StatusLSB
 
 		#### Webmin
 		if [ "$IsInstalled_Webmin" == "YES" ]; then
-			log_daemon_msg "Allow access to Webmin"
-			iptables -t filter -A INPUT -p tcp --dport $Ports_Webmin -i $PrimaryInet -j ACCEPT -m comment --comment "Webmin"
+			log_daemon_msg "Allow access to Webmin for mainuser"
+			for ip in $MainUserIPs; do 
+				iptables -t filter -A INPUT -p tcp --source $ip --dport $Ports_Webmin -i $PrimaryInet -j ACCEPT -m comment --comment "Webmin"
+			done
+			#iptables -t filter -A INPUT -p tcp --dport $Ports_Webmin -i $PrimaryInet -j ACCEPT -m comment --comment "Webmin"
 			StatusLSB
 		fi
 
 		#### FTP
-		log_daemon_msg "Allow access to FTP"
-		iptables -t filter -A INPUT -p tcp --dport $Port_FTP -i $PrimaryInet -j ACCEPT -m comment --comment "FTP"
-		iptables -t filter -A INPUT -p tcp --dport $Port_FTP_Data -i $PrimaryInet -j ACCEPT -m comment --comment "FTP Data"
-		iptables -t filter -A INPUT -p tcp --dport $Port_FTP_Passive -i $PrimaryInet -j ACCEPT -m comment --comment "FTP Passive"
+		log_daemon_msg "Allow access to FTPs for all seedbox users"
+		for ip in $AllUsersIPs; do 
+			iptables -t filter -A INPUT -p tcp --source $ip --dport $Port_FTP -i $PrimaryInet -j ACCEPT -m comment --comment "FTP"
+			iptables -t filter -A INPUT -p tcp --source $ip --dport $Port_FTP_Data -i $PrimaryInet -j ACCEPT -m comment --comment "FTP Data"
+			iptables -t filter -A INPUT -p tcp --source $ip --dport $Port_FTP_Passive -i $PrimaryInet -j ACCEPT -m comment --comment "FTP Passive"
+		done
+		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+			for ip in $VpnIPs; do
+				iptables -t filter -A INPUT -p tcp --source $ip --dport $Port_FTP -i $PrimaryInet -j ACCEPT -m comment --comment "FTP over OpenVPN"
+				iptables -t filter -A INPUT -p tcp --source $ip --dport $Port_FTP_Data -i $PrimaryInet -j ACCEPT -m comment --comment "FTP Data over OpenVPN"
+				iptables -t filter -A INPUT -p tcp --source $ip --dport $Port_FTP_Passive -i $PrimaryInet -j ACCEPT -m comment --comment "FTP Passive over OpenVPN"
+			done
+		fi
+		# iptables -t filter -A INPUT -p tcp --dport $Port_FTP -i $PrimaryInet -j ACCEPT -m comment --comment "FTP"
+		# iptables -t filter -A INPUT -p tcp --dport $Port_FTP_Data -i $PrimaryInet -j ACCEPT -m comment --comment "FTP Data"
+		# iptables -t filter -A INPUT -p tcp --dport $Port_FTP_Passive -i $PrimaryInet -j ACCEPT -m comment --comment "FTP Passive"
 		StatusLSB
 
 		#### SSH
-		log_daemon_msg "Allow access to SSH"
-		iptables -t filter -A INPUT -p tcp --dport $Port_SSH -i $PrimaryInet -j ACCEPT -m comment --comment "SSH"
+		log_daemon_msg "Allow access to SSH and SFTP"
+		for ip in $AllUsersIPs; do 
+			iptables -t filter -A INPUT -p tcp --source $ip --dport $Port_SSH -i $PrimaryInet -j ACCEPT -m comment --comment "SSH and SFTP"
+		done
+		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+			for ip in $VpnIPs; do
+				iptables -t filter -A INPUT -p tcp --source $ip --dport $Port_SSH -i $PrimaryInet -j ACCEPT -m comment --comment "SSH and SFTP over OpenVPN"
+			done
+		fi
+		#iptables -t filter -A INPUT -p tcp --dport $Port_SSH -i $PrimaryInet -j ACCEPT -m comment --comment "SSH"
 		StatusLSB
 
 		#### OpenVPN
@@ -223,7 +259,7 @@ case $1 in
 			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 				log_daemon_msg "Allow use of Plex Media Server on UDP (OpenVPN)"
 				for PlexUdpPort in $Ports_UDP_PlexMedia; do 
-					iptables -t filter -A INPUT -p udp --dport $PlexUdpPort -j ACCEPT -m comment --comment "Plex Media Server UDP"
+					iptables -t filter -A INPUT -p udp --dport $PlexUdpPort -j ACCEPT -m comment --comment "Plex Media Server UDP over OpenVPN"
 				done
 				unset PlexUdpPort
 				StatusLSB
@@ -239,6 +275,22 @@ case $1 in
 			StatusLSB
 		done
 
+		#### DNScrypt-proxy
+		if [ "$IsInstalled_DNScrypt" == "YES" ]; then
+			for Resolver in $ResolverName; do
+				log_daemon_msg "Allow access response for DNScrypt from $Resolver"
+				ResolverAddress="`sqlite3 $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+				ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
+				ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
+
+				iptables -t filter -A INPUT -p tcp --source $ResolverAddress --dport $ResolverPort -i $PrimaryInet -j ACCEPT -m comment --comment "DNScrypt-proxy: $Resolver"
+				StatusLSB
+			done
+			if ! GetPid dnscrypt-proxy; then
+				ServicesToManage="${ServicesToManage} dnscrypt-proxy"
+			fi
+		fi		
+		
 		#### NginX
 		if [ -f /etc/nginx/conf.d/ip_restriction ] && CheckCommand 0 nginx; then
 			# 1 - Server IP addresses
@@ -278,14 +330,14 @@ case $1 in
 			echo "	deny all;" >> /etc/nginx/conf.d/ip_restriction
 
 			ServicesToManage="${ServicesToManage} nginx"
-		fi
-
-		#### DNScrypt-proxy (restart needed ?)
-		if [ "$IsInstalled_DNScrypt" == "YES" ]; then
-			if [ "$ResolverName" != "$WishedResolver" ] || ! GetPid dnscrypt-proxy; then
-				ServicesToManage="${ServicesToManage} dnscrypt-proxy"
-			fi
 		fi		
+		
+		#### VSFTPd
+		if [ -z "`cat /etc/hosts.deny | grep 'vsftpd: ALL'`" ]; then
+			echo "vsftpd: ALL" >> /etc/hosts.deny
+		fi
+		sed -i '/vsftpd:/d' /etc/hosts.allow
+		echo "vsftpd:$AllUsersIPs" >> /etc/hosts.allow
 		
 		#### BIND
 		if CheckCommand 0 named; then

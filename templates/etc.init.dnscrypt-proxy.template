@@ -60,46 +60,52 @@ ResolversSearched=""
 DNSsec="yes"
 NoLogs="yes"
 All=""
-for Arg in "$@"; do
-	case "$Arg" in
-		--all)
-			All="WHERE 1"
-		;;
-		--dnssec)
-			DNSsec="`echo $Arg | cut -d '=' -f 2 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-			DNSsec="$DNSsec"
-		;;
-		--nologs)
-			NoLogs="`echo $Arg | cut -d '=' -f 2 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-			NoLogs="$NoLogs"
-		;;
-		--resolver*)
-			echo $Arg
-			GivenResolvers="`echo $Arg | cut -d '=' -f 2 | sed -e 's/,/ /g;' | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-			for Resolver in $GivenResolvers; do
-				IfExist="`sqlite3 $MySB_DB \"SELECT id_dnscrypt_resolvers FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
-				if [ ! -z "$IfExist" ]; then
-					ResolversSearched="$ResolversSearched AND name = '$Resolver'"
-				fi
-			done
-		;;		
-	esac
-done
 
-if [ -z "$All" ]; then
-	Search="WHERE dnssec = '$DNSsec' AND no_logs = '$NoLogs' $ResolversSearched"
+if [ $# -gt 1 ]; then
+	for Arg in "$@"; do
+		case "$Arg" in
+			--all)
+				All="WHERE 1"
+			;;
+			--dnssec)
+				DNSsec="`echo $Arg | cut -d '=' -f 2 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+				DNSsec="$DNSsec"
+			;;
+			--nologs)
+				NoLogs="`echo $Arg | cut -d '=' -f 2 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+				NoLogs="$NoLogs"
+			;;
+			--resolver*)
+				echo $Arg
+				GivenResolvers="`echo $Arg | cut -d '=' -f 2 | sed -e 's/,/ /g;' | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+				for Resolver in $GivenResolvers; do
+					IfExist="`sqlite3 $MySB_DB \"SELECT id_dnscrypt_resolvers FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+					if [ ! -z "$IfExist" ]; then
+						ResolversSearched="$ResolversSearched AND name = '$Resolver'"
+					fi
+				done
+			;;
+		esac
+	done
+	
+	if [ -z "$All" ]; then
+		Search="WHERE dnssec = '$DNSsec' AND no_logs = '$NoLogs' $ResolversSearched"
+	else
+		Search="$All"
+	fi
+
+	# Get resolvers list (by command line)
+	AllResolvers="`sqlite3 $MySB_DB \"SELECT name FROM dnscrypt_resolvers $Search\"`"	
 else
-	Search="$All"
+	# Get resolvers list (by database)
+	AllResolvers="`sqlite3 $MySB_DB \"SELECT name FROM dnscrypt_resolvers WHERE is_wished = '1'\"`"	
 fi
 
-# Get resolvers list
-AllResolvers="`sqlite3 $MySB_DB \"SELECT name FROM dnscrypt_resolvers $Search\"`"
-
-# Cleaning the list (IPv6)
+# Cleaning the list (no IPv6)
 for Resolver in $AllResolvers; do
 	if [ -z "`echo $Resolver | grep 'ipv6'`" ]; then
 		(( CountResolvers++ ))
-		ResolversList="${ResolversList} ${Resolver}"
+		ResolversList="${ResolversList} ${Resolver}"	
 	fi
 done
 ResolversList="`echo $ResolversList | sed -e 's/^ //g;' | sed 's/\s+$//'`"
@@ -107,7 +113,7 @@ ResolversList="`echo $ResolversList | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 # If resolvers list is empty
 if [ -z "$ResolversList" ]; then
 	CountResolvers=1
-	ResolversList="dnscrypt.eu-dk"
+	ResolversList="dnscrypt.eu-dk dnscrypt.eu-nl"
 fi
 #### Command line arguments - End
 
@@ -158,10 +164,16 @@ do_start() {
 	resolv_check
 	bind_check
 
+	# Update DB
+	sqlite3 $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '0', is_wished = '0' WHERE 1;"
+	
 	i=0
 	Return=0
 	for Resolver in $ResolversList; do
 		(( i++ ))
+		
+		# Update DB
+		sqlite3 $MySB_DB "UPDATE dnscrypt_resolvers SET is_wished = '1' WHERE name = '$Resolver';"		
 		
 		# /etc/bind/named.conf.options
 		BindForwarders="$BindForwarders 127.0.0.$i port 52;"
@@ -200,6 +212,8 @@ do_start() {
 			echo "--> NOT STARTED: $Resolver : "`date` >> $LOG_FILE
 			Return=2
 		else
+			# Update DB
+			sqlite3 $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '1' WHERE name = '$Resolver';"
 			echo "--> STARTED: $Resolver : "`date` >> $LOG_FILE
 		fi
 	done
@@ -231,6 +245,8 @@ do_stop() {
 			0|1)
 				echo "--> STOPPED: $Resolver : "`date` >> $LOG_FILE
 				delete_pid_file $DIR_PID/$Pid $Resolver
+				# Update DB
+				sqlite3 $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '0' WHERE name = '$Resolver';"
 			;;
 			2)
 				echo "--> NOT STOPPED: $Resolver : "`date` >> $LOG_FILE
@@ -289,6 +305,12 @@ case "$1" in
 
 	*)
 		echo "Usage: service dnscrypt-proxy {stop|status} [{start|restart} [--all] [[--nologs] [--dnnsec] [--resolver=resolver1,resolver2,...]]]"
+		echo
+		echo "Default, \"--nologs=yes\" and \"--dnnsec=yes\""
+		echo
+		echo "Example 1: \"service dnscrypt-proxy start --all\", DNScrypt-proxy will start using all available providers."
+		echo "Example 2: \"service dnscrypt-proxy start --nologs=no --dnssec=yes\", DNScrypt-proxy will start using all available providers that accept DNSsec and doesn't accept No Logs."
+		echo "Example 3: \"service dnscrypt-proxy start --resolver=resolver1,resolver2 --dnssec=yes\", DNScrypt-proxy will start using selected providers only that accept DNSsec."
 		exit 3
 	;;
 esac

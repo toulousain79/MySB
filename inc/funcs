@@ -771,6 +771,16 @@ NetworkPortsGenerator() {
 
 	# UDP Out
 	WHITE_UDP_OUT="${WHITE_UDP_OUT}"
+	if [ "$IsInstalled_DNScrypt" == "YES" ]; then
+		for Resolver in $ResolverName; do
+			ResolverAddress="`sqlite3 $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+			ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
+			
+			WHITE_UDP_OUT="${WHITE_UDP_OUT} ${ResolverPort}"
+		fi
+	else
+		WHITE_UDP_OUT="${WHITE_UDP_OUT} 53"
+	fi	
 
 	# Services
 	if [ "$IsInstalled_Cakebox" == "YES" ]; then
@@ -936,7 +946,11 @@ EOF
 		) > /etc/pgl/allow.p2p
 
 		if [ "$IsInstalled_DNScrypt" == "YES" ]; then
-			echo "DNScrypt Resolver ($ResolverName):$ResolverAddress-255.255.255.255" >> /etc/pgl/allow.p2p
+			for Resolver in $ResolverName; do
+				ResolverAddress="`sqlite3 $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+				ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"			
+				echo "DNScrypt Resolver ($Resolver):$ResolverAddress-255.255.255.255" >> /etc/pgl/allow.p2p
+			fi
 		fi	
 		
 		AllTrackers="`sqlite3 $MySB_DB \"SELECT id_trackers_list, tracker FROM trackers_list WHERE is_active = '1'\"`"
@@ -1007,7 +1021,7 @@ PeerGuardianPglcmdConf() {
 			perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"${WHITE_TCP_OUT}\"/g" /etc/pgl/pglcmd.conf
 		fi
 		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
-		if [ ! -z "$SEARCH" ]; then	
+		if [ ! -z "$SEARCH" ]; then
 			perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${WHITE_UDP_OUT}\"/g" /etc/pgl/pglcmd.conf
 		fi
 		if [ $1 -eq 1 ]; then StatusLSB; fi

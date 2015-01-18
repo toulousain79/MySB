@@ -36,7 +36,7 @@ CREATE TABLE vars (
     white_udp_port_out VARCHAR( 16 ) 
 );
 
-INSERT INTO [vars] ([id_vars], [fail2ban_whitelist], [vpn_ip], [white_tcp_port_out], [white_udp_port_out]) VALUES (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24', '25 80 443', null);
+INSERT INTO [vars] ([id_vars], [fail2ban_whitelist], [vpn_ip], [white_tcp_port_out], [white_udp_port_out]) VALUES (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24', '80 443', null);
 
 -- Table: trackers_list_ipv4
 CREATE TABLE trackers_list_ipv4 ( 
@@ -96,7 +96,7 @@ INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], 
 INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (7, 'Fail2Ban', '/etc/fail2ban', '/etc/init.d/fail2ban', 3, '', '', '', '', '', '', ' ', ' ', 0, 0);
 INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (8, 'PeerGuardian', '/etc/pgl', 'pglcmd', 4, '', '', '', '', '', '', ' ', ' ', 0, 0);
 INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (9, 'rTorrent Block List', '', '', 1, '', '', '', '', '', ' ', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (10, 'DNScrypt-proxy', 'dnscrypt-proxy', 'dnscrypt-proxy', 2, '', '', '', '', '53 54 443 2053 5353', ' ', ' ', ' ', 0, 0);
+INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (10, 'DNScrypt-proxy', 'dnscrypt-proxy', 'dnscrypt-proxy', 2, '', '', '', '', '', ' ', ' ', ' ', 0, 0);
 INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (11, 'CRON', 'crontab', 'cron', 1, '', '', '', '', '', ' ', ' ', ' ', 0, 1);
 INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (12, 'NginX', '/etc/nginx', 'nginx', 1, 8889, 8888, '', '', '', ' ', ' ', ' ', 0, 1);
 INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (13, 'SSH', '/etc/ssh', 'ssh', 1, 8892, '', '', '', '', ' ', ' ', ' ', 0, 1);
@@ -109,52 +109,6 @@ INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], 
 INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (20, 'BIND', '/etc/bind/named.conf', 'bind9', 1, '', '', '', '', '', ' ', ' ', ' ', 0, 0);
 INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (21, 'Stunnel', '/etc/stunnel', 'stunnel4', 1, '', '', '', '', '', ' ', ' ', ' ', 0, 0);
 INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (22, 'rTorrent', '/home/%user%', 'rtorrent', 1, null, null, null, null, null, null, null, null, 0, 1);
-
--- Table: repositories
-CREATE TABLE repositories ( 
-    id_repositories INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                    NOT NULL ON CONFLICT ABORT
-                                    UNIQUE ON CONFLICT ABORT,
-    type            VARCHAR( 5 )    NOT NULL ON CONFLICT ABORT,
-    dir             VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
-    name            VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
-    version         VARCHAR( 8 ),
-    file            VARCHAR( 32 ),
-    old_file        VARCHAR( 32 ),
-    url             VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT,
-    active          BOOLEAN( 1 ) 
-);
-
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (1, 'SVN', '/etc/MySB/web/rutorrent', 'ruTorrent', null, null, null, 'http://rutorrent.googlecode.com/svn/trunk/rutorrent', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (2, 'SVN', '/etc/MySB/web/rutorrent/plugins', 'ruTorrents Official Plugins', null, null, null, 'http://rutorrent.googlecode.com/svn/trunk/plugins', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (3, 'SVN', '/etc/MySB/web/rutorrent/plugins/chat', 'ruTorrent Plugin Chat', null, null, null, 'http://rutorrent-chat.googlecode.com/svn/trunk/', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (4, 'SVN', '/etc/MySB/web/rutorrent/plugins/logoff', 'ruTorrent Plugin Logoff', null, null, null, 'http://rutorrent-logoff.googlecode.com/svn/trunk/', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (5, 'TARGZ', '/etc/MySB/web/rutorrent/plugins/lbll-suite', 'ruTorrent Plugin tAdd-Labels', '0.8.1', 'lbll-suite_0.8.1.tar.gz', null, 'https://rutorrent-tadd-labels.googlecode.com/files/lbll-suite_0.8.1.tar.gz', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (6, 'SVN', '/etc/MySB/web/rutorrent/plugins/filemanager', 'ruTorrent Plugin FileManager', null, null, null, 'http://svn.rutorrent.org/svn/filemanager/trunk/filemanager', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (7, 'TARGZ', '/etc/MySB/web/rutorrent/plugins/nfo', 'ruTorrent Plugin NFO', 1337, 'nfo_v1337.tar.gz', null, 'http://srious.biz/nfo.tar.gz', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (8, 'GIT', '/etc/MySB/web/rutorrent/plugins/ratiocolor', 'ruTorrent Plugin RatioColor', null, null, null, 'https://github.com/Gyran/rutorrent-ratiocolor', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (9, 'SVN', '/etc/MySB/web/rutorrent/plugins/fileupload', 'ruTorrent Plugin FileUpload', null, null, null, 'http://svn.rutorrent.org/svn/filemanager/trunk/fileupload', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (10, 'SVN', '/etc/MySB/web/rutorrent/plugins/fileshare', 'ruTorrent Plugin FileShare', null, null, null, 'http://svn.rutorrent.org/svn/filemanager/trunk/fileshare', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (11, 'TARGZ', '/etc/MySB/web/rutorrent/plugins/stream', 'ruTorrent Plugin Stream', 1.0, 'stream_v1.0.tar.gz', null, 'https://rutorrent-stream-plugin.googlecode.com/files/stream.tar.gz', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (12, 'SVN', '/etc/MySB/web/rutorrent/plugins/mediastream', 'ruTorrent Plugin MediaStream', null, null, null, 'http://svn.rutorrent.org/svn/filemanager/trunk/mediastream', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (13, 'GIT', '/etc/MySB/sources/plowshare', 'Plowshare4', 4, null, null, 'https://code.google.com/p/plowshare/', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (14, 'CURL', '/usr/bin/composer', 'Composer', null, 'composer.phar', null, 'http://getcomposer.org/installer', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (15, 'TARGZ', '/etc/MySB/sources/nodejs', 'NodeJS', '0.10.35', 'node_v0.10.35.tar.gz', null, 'http://nodejs.org/dist/v0.10.35/node-v0.10.35.tar.gz', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (16, 'GIT', '/etc/MySB/web/seedbox-manager', 'Seedbox-Manager', null, null, null, 'https://github.com/Magicalex/seedbox-manager.git', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (17, 'GIT', '/etc/MySB/web/rutorrent/plugins/linkseedboxmanager', 'ruTorrent Plugin Link Manager', null, null, null, 'https://github.com/Hydrog3n/linkseedboxmanager.git', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (18, 'GIT', '/etc/MySB/web/Cakebox-light', 'Cakebox-Light', null, null, null, 'https://github.com/Cakebox/Cakebox-light.git', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (19, 'GIT', '/etc/MySB/web/rutorrent/plugins/linkcakebox', 'ruTorrent Plugin Link Cakebox', null, null, null, 'https://github.com/Cakebox/linkcakebox.git', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (20, 'GIT', '/etc/MySB/sources/libsodium', 'Libsodium', null, null, null, 'https://github.com/jedisct1/libsodium', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (21, 'TARGZ', '/etc/MySB/sources/dnscrypt-proxy', 'DNScrypt-proxy', '1.4.3', 'dnscrypt-proxy_v1.4.3.tar.gz', 'dnscrypt-proxy_v1.4.2.tar.gz', 'http://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-proxy-1.4.3.tar.gz', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (22, 'WBM', '/etc/MySB/files', 'OpenVPNadmin WebMin', 2.6, 'openvpn-2.6.wbm', null, 'http://www.openit.it/downloads/OpenVPNadmin/openvpn-2.6.wbm.gz', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (23, 'WBM', '/etc/MySB/files', 'Nginx Webmin Module', '0.0.8', 'nginx-0.08.wbm', null, 'http://www.justindhoffman.com/sites/justindhoffman.com/files/nginx-0.08.wbm__0.gz', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (24, 'WBM', '/etc/MySB/files', 'MiniDLNA Webmin Module', 'alpha1.12 svn26', 'minidlnawebmin_alpha1_12.wbm', null, 'http://downloads.sourceforge.net/project/minidlnawebmin/Webmin%20alpha1.12%20svn26/minidlnawebmin_alpha1_12.wbm?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fminidlnawebmin%2Ffiles%2FWebmin%2520alpha1.12%2520svn26%2F&ts=1420088634&use_mirror=freefr', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (25, 'TARGZ', '/etc/MySB/sources/libtorrent', 'LibTorrent', '0.13.4', 'libtorrent_v0.13.4.tar.gz', null, 'http://libtorrent.rakshasa.no/downloads/libtorrent-0.13.4.tar.gz', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (26, 'TARGZ', '/etc/MySB/sources/rtorrent', 'rTorrent', '0.9.4', 'rtorrent_v0.9.4.tar.gz', null, 'http://libtorrent.rakshasa.no/downloads/rtorrent-0.9.4.tar.gz', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (27, 'SVN', '/etc/MySB/sources/xmlrpc-c', 'XMLRPC', null, null, null, 'http://svn.code.sf.net/p/xmlrpc-c/code/stable', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (28, 'GIT', '/etc/MySB/web/loadavg', 'LoadAvg', null, null, null, 'https://github.com/loadavg/loadavg.git', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (29, 'SVN', '/etc/MySB/web/rutorrent/plugins/pausewebui', 'ruTorrent Plugin Pause WebUI', null, null, null, 'http://rutorrent-pausewebui.googlecode.com/svn/trunk/', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (30, 'GIT', '/etc/MySB/web/rutorrent/plugins/mobile', 'ruTorrent Plugin Mobile', null, null, null, 'https://github.com/xombiemp/rutorrentMobile.git', 1);
 
 -- Table: trackers_list
 CREATE TABLE trackers_list ( 
@@ -365,3 +319,49 @@ CREATE TABLE users (
     is_active     BOOLEAN( 1 )    DEFAULT ( 1 ) 
 );
 
+
+-- Table: repositories
+CREATE TABLE repositories ( 
+    id_repositories INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                    NOT NULL ON CONFLICT ABORT
+                                    UNIQUE ON CONFLICT ABORT,
+    type            VARCHAR( 5 )    NOT NULL ON CONFLICT ABORT,
+    dir             VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
+    name            VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
+    version         VARCHAR( 8 ),
+    file            VARCHAR( 32 ),
+    old_file        VARCHAR( 32 ),
+    url             VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT,
+    active          BOOLEAN( 1 ) 
+);
+
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (1, 'SVN', '/etc/MySB/web/rutorrent', 'ruTorrent', null, null, null, 'http://rutorrent.googlecode.com/svn/trunk/rutorrent', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (2, 'SVN', '/etc/MySB/web/rutorrent/plugins', 'ruTorrents Official Plugins', null, null, null, 'http://rutorrent.googlecode.com/svn/trunk/plugins', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (3, 'SVN', '/etc/MySB/web/rutorrent/plugins/chat', 'ruTorrent Plugin Chat', null, null, null, 'http://rutorrent-chat.googlecode.com/svn/trunk/', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (4, 'SVN', '/etc/MySB/web/rutorrent/plugins/logoff', 'ruTorrent Plugin Logoff', null, null, null, 'http://rutorrent-logoff.googlecode.com/svn/trunk/', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (5, 'TARGZ', '/etc/MySB/web/rutorrent/plugins/lbll-suite', 'ruTorrent Plugin tAdd-Labels', '0.8.1', 'lbll-suite_0.8.1.tar.gz', null, 'https://rutorrent-tadd-labels.googlecode.com/files/lbll-suite_0.8.1.tar.gz', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (6, 'SVN', '/etc/MySB/web/rutorrent/plugins/filemanager', 'ruTorrent Plugin FileManager', null, null, null, 'http://svn.rutorrent.org/svn/filemanager/trunk/filemanager', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (7, 'TARGZ', '/etc/MySB/web/rutorrent/plugins/nfo', 'ruTorrent Plugin NFO', 1337, 'nfo_v1337.tar.gz', null, 'http://srious.biz/nfo.tar.gz', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (8, 'GIT', '/etc/MySB/web/rutorrent/plugins/ratiocolor', 'ruTorrent Plugin RatioColor', null, null, null, 'https://github.com/Gyran/rutorrent-ratiocolor', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (9, 'SVN', '/etc/MySB/web/rutorrent/plugins/fileupload', 'ruTorrent Plugin FileUpload', null, null, null, 'http://svn.rutorrent.org/svn/filemanager/trunk/fileupload', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (10, 'SVN', '/etc/MySB/web/rutorrent/plugins/fileshare', 'ruTorrent Plugin FileShare', null, null, null, 'http://svn.rutorrent.org/svn/filemanager/trunk/fileshare', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (11, 'TARGZ', '/etc/MySB/web/rutorrent/plugins/stream', 'ruTorrent Plugin Stream', 1.0, 'stream_v1.0.tar.gz', null, 'https://rutorrent-stream-plugin.googlecode.com/files/stream.tar.gz', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (12, 'SVN', '/etc/MySB/web/rutorrent/plugins/mediastream', 'ruTorrent Plugin MediaStream', null, null, null, 'http://svn.rutorrent.org/svn/filemanager/trunk/mediastream', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (13, 'GIT', '/etc/MySB/sources/plowshare', 'Plowshare4', 4, null, null, 'https://code.google.com/p/plowshare/', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (14, 'CURL', '/usr/bin/composer', 'Composer', null, 'composer.phar', null, 'http://getcomposer.org/installer', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (15, 'TARGZ', '/etc/MySB/sources/nodejs', 'NodeJS', '0.10.35', 'node_v0.10.35.tar.gz', null, 'http://nodejs.org/dist/v0.10.35/node-v0.10.35.tar.gz', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (16, 'GIT', '/etc/MySB/web/seedbox-manager', 'Seedbox-Manager', null, null, null, 'https://github.com/Magicalex/seedbox-manager.git', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (17, 'GIT', '/etc/MySB/web/rutorrent/plugins/linkseedboxmanager', 'ruTorrent Plugin Link Manager', null, null, null, 'https://github.com/Hydrog3n/linkseedboxmanager.git', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (18, 'GIT', '/etc/MySB/web/Cakebox-light', 'Cakebox-Light', null, null, null, 'https://github.com/Cakebox/Cakebox-light.git', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (19, 'GIT', '/etc/MySB/web/rutorrent/plugins/linkcakebox', 'ruTorrent Plugin Link Cakebox', null, null, null, 'https://github.com/Cakebox/linkcakebox.git', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (20, 'GIT', '/etc/MySB/sources/libsodium', 'Libsodium', null, null, null, 'https://github.com/jedisct1/libsodium', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (21, 'TARGZ', '/etc/MySB/sources/dnscrypt-proxy', 'DNScrypt-proxy', '1.4.3', 'dnscrypt-proxy_v1.4.3.tar.gz', 'dnscrypt-proxy_v1.4.2.tar.gz', 'http://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-proxy-1.4.3.tar.gz', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (22, 'WBM', '/etc/MySB/files', 'OpenVPNadmin WebMin', 2.6, 'openvpn-2.6.wbm', null, 'http://www.openit.it/downloads/OpenVPNadmin/openvpn-2.6.wbm.gz', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (23, 'WBM', '/etc/MySB/files', 'Nginx Webmin Module', '0.0.8', 'nginx-0.08.wbm', null, 'http://www.justindhoffman.com/sites/justindhoffman.com/files/nginx-0.08.wbm__0.gz', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (24, 'WBM', '/etc/MySB/files', 'MiniDLNA Webmin Module', 'alpha1.12 svn26', 'minidlnawebmin_alpha1_12.wbm', null, 'http://downloads.sourceforge.net/project/minidlnawebmin/Webmin%20alpha1.12%20svn26/minidlnawebmin_alpha1_12.wbm?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fminidlnawebmin%2Ffiles%2FWebmin%2520alpha1.12%2520svn26%2F&ts=1420088634&use_mirror=freefr', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (25, 'TARGZ', '/etc/MySB/sources/libtorrent', 'LibTorrent', '0.13.4', 'libtorrent_v0.13.4.tar.gz', null, 'http://libtorrent.rakshasa.no/downloads/libtorrent-0.13.4.tar.gz', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (26, 'TARGZ', '/etc/MySB/sources/rtorrent', 'rTorrent', '0.9.4', 'rtorrent_v0.9.4.tar.gz', null, 'http://libtorrent.rakshasa.no/downloads/rtorrent-0.9.4.tar.gz', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (27, 'SVN', '/etc/MySB/sources/xmlrpc-c', 'XMLRPC', null, null, null, 'http://svn.code.sf.net/p/xmlrpc-c/code/stable', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (28, 'GIT', '/etc/MySB/web/loadavg', 'LoadAvg', null, null, null, 'https://github.com/loadavg/loadavg.git', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (29, 'SVN', '/etc/MySB/web/rutorrent/plugins/pausewebui', 'ruTorrent Plugin Pause WebUI', null, null, null, 'http://rutorrent-pausewebui.googlecode.com/svn/trunk/', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (30, 'GIT', '/etc/MySB/web/rutorrent/plugins/mobile', 'ruTorrent Plugin Mobile', null, null, null, 'https://github.com/xombiemp/rutorrentMobile.git', 1);

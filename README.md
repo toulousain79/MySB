@@ -226,12 +226,12 @@ mount - <mount_dir> -t cifs -o noatime,nodiratime,UNC=//[10.0.0.1|10.0.1.1]/<use
 ```
 
 ## DNScrypt-proxy
-By default, DNScrypt-proxy will use OpenDNS resolver (dnscrypt.eu-dk). 
+By default, all provider that accept 'dnssec' and 'no_logs' are activated.
 The full list of DNScrypt resolvers is available at: https://github.com/jedisct1/dnscrypt-proxy/blob/master/dnscrypt-resolvers.csv 
 
-It is possible to change the resolver name via MySB portal OR using using the following command:
+It is possible to change the provider list by command line:
 ```
-dnscrypt-proxy service restart <resolver_name>
+service dnscrypt-proxy {stop|status} [{start|restart} [--all] [[--nologs=yes|no] [--dnnsec=yes|no] [--resolver=resolver1,resolver2,...]]]
 ```
 
 To clean Bind cache, just restart BIND service.
