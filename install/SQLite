@@ -38,6 +38,8 @@ if CheckCommand 0 sqlite3; then
 fi
 
 if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
+	#### Add ruTorrent Trackers
+	GetRutorrentTrackers
 
 	#### Import users files to database
 	if [ -d /etc/MySB/users/ ]; then
@@ -69,6 +71,46 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 			done
 			unset IFS
 		done
+		
+		#### Add users trackers
+		if [ -d /home/$SeedboxUser/rtorrent/.session/ ]; then
+			TorrentListing="`ls -1r /home/$SeedboxUser/rtorrent/.session/`"
+
+			if [ ! -z "$TorrentListing" ]; then
+				cd /home/$SeedboxUser/rtorrent/.session/
+				for Torrent in $TorrentListing; do
+					if [ "`echo $Torrent | grep '.libtorrent_resume'`" != "" ]; then
+						Tracker="`cat $Torrent | tr -cd '[:print:]' | sed 's/=//' | sed 's/:\/\//=/' | cut -d '=' -f 2 | cut -d '/' -f 1 | cut -d ':' -f 1`"
+						if [ "`echo $TrackerList | grep $Tracker`" == "" ]; then
+							TrackerList="$TrackerList $Tracker"
+						fi
+					fi
+				done
+			fi
+		fi
+		if [ ! -z "$TrackerList" ]; then
+			for Tracker in $TrackerList; do
+				PART1=`echo ${Tracker} | cut -d "." -f 1`
+				PART2=`echo ${Tracker} | cut -d "." -f 2`
+				PART3=`echo ${Tracker} | cut -d "." -f 3`
+				if [ -z "$PART3" ]; then
+					TrackerDomain="`echo $PART1`.`echo $PART2`"
+				else
+					TrackerDomain="`echo $PART2`.`echo $PART3`"
+				fi
+				unset PART1 PART2 PART3
+
+				IfExist="`sqlite3 $MySB_DB \"SELECT tracker FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"
+				if [ -z "$IfExist" ]; then
+					AddTracker $Tracker "users"
+				else
+					log_daemon_msg "Force activation of tracker: $Tracker"
+					sqlite3 $MySB_DB "UPDATE trackers_list SET is_active = '1' WHERE tracker_domain = '$TrackerDomain';"
+					StatusLSB
+				fi
+			done
+		fi
+		unset TrackerList
 		
 		rm -rf /etc/MySB/users/
 	fi
@@ -311,9 +353,6 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 			fi
 		fi
 		# ----- Renting infos
-
-		#### Get Tracker Certificates
-		ScriptInvoke 'screen' '/etc/MySB/scripts/GetTrackersCert.bsh' 'REFRESH'
 
 		# Create users trackers listing (compare)
 		if [ -f /etc/MySB/infos/trackers.list ]; then

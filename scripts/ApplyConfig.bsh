@@ -34,9 +34,11 @@ source /etc/MySB/inc/includes_before
 
 DoApplyConfig() {
 	# 1 - Purger la base des entrées en double (command + user), uniquement l'entrée avec la priorité la plus haute sera conservée
-	# Applicable pour seulement quelques commandes
-	AllUser="`sqlite3 $MySB_DB \"SELECT user FROM commands WHERE 1\" | tr " " "\n"|sort|uniq|tr "\n" " "`"
-	for User in $AllUser; do
+	# Applicable pour seulement quelques commandes	
+	#AllUser="`sqlite3 $MySB_DB \"SELECT user FROM commands WHERE 1\" | tr " " "\n"|sort|uniq|tr "\n" " "`"
+	User=$1
+	
+	#for User in $AllUser; do
 		AllCommandsUser="`sqlite3 $MySB_DB \"SELECT commands FROM commands WHERE user = '$User'\"`"
 		for CommandUser in $AllCommandsUser; do
 			case "$CommandUser" in
@@ -51,37 +53,46 @@ DoApplyConfig() {
 				;;
 			esac
 		done
-	done
+	#done
 
 	# 2 - En fonction de l'ensemble des commandes, on réorganise certaines.
 	# Par exemple, la commande 'MySB_SecurityRules' devra être exécutée une seule fois et en dernier
 	# On en garde qu'une seule tout utilisateur confondu et assigne une priorité maxi.
-	LastOneMin="`sqlite3 $MySB_DB \"SELECT min(priority) FROM commands WHERE commands = 'MySB_SecurityRules'\"`"
-	LastOneMax="`sqlite3 $MySB_DB \"SELECT max(priority) FROM commands WHERE commands = 'MySB_SecurityRules'\"`"
+	# LastOneMin="`sqlite3 $MySB_DB \"SELECT min(priority) FROM commands WHERE commands = 'MySB_SecurityRules'\"`"
+	# LastOneMax="`sqlite3 $MySB_DB \"SELECT max(priority) FROM commands WHERE commands = 'MySB_SecurityRules'\"`"
+	LastOneMin="`sqlite3 $MySB_DB \"SELECT min(priority) FROM commands WHERE commands = 'MySB_SecurityRules' AND user = '$User'\"`"
+	LastOneMax="`sqlite3 $MySB_DB \"SELECT max(priority) FROM commands WHERE commands = 'MySB_SecurityRules' AND user = '$User'\"`"	
 	while [ $LastOneMin -lt $LastOneMax ]; do
 		# On supprime les premières commandes
-		sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = 'MySB_SecurityRules' AND priority = '$LastOneMin'"
+		#sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = 'MySB_SecurityRules' AND priority = '$LastOneMin'"
+		sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = 'MySB_SecurityRules' AND priority = '$LastOneMin' AND user = '$User'"
 		((  LastOneMin++ ))
 	done
 
 	# Maintenant on prend la priorité globale maxi toute commandes confondues, puis on incrémente de 1 'MySB_SecurityRules'.
-	LastPriority="`sqlite3 $MySB_DB \"SELECT max(priority) FROM commands WHERE 1\"`"
+	#LastPriority="`sqlite3 $MySB_DB \"SELECT max(priority) FROM commands WHERE 1\"`"
+	LastPriority="`sqlite3 $MySB_DB \"SELECT max(priority) FROM commands WHERE user = '$User'\"`"
 	(( LastPriority++ ))
-	sqlite3 -echo $MySB_DB "UPDATE commands SET priority = '$LastPriority' WHERE users_ident = 'MySB_SecurityRules';"
+	#sqlite3 -echo $MySB_DB "UPDATE commands SET priority = '$LastPriority' WHERE commands = 'MySB_SecurityRules';"
+	sqlite3 -echo $MySB_DB "UPDATE commands SET priority = '$LastPriority' WHERE commands = 'MySB_SecurityRules' AND user = '$User';"
 
 	# 3 - On peut maintenant exécuté les commandes une à une dans l'ordre ascendant des priorités.
-	AllCommands="`sqlite3 $MySB_DB \"SELECT commands, user FROM commands WHERE 1 ORDER BY priority ASC\"`"
+	#AllCommands="`sqlite3 $MySB_DB \"SELECT commands, user FROM commands WHERE 1 ORDER BY priority ASC\"`"
+	AllCommands="`sqlite3 $MySB_DB \"SELECT commands FROM commands WHERE user = '$User' ORDER BY priority ASC\"`"
 
-	for MyCommand in $AllCommands; do
-		Command=`echo $MyCommand | awk '{split($0,a,"|"); print a[1]}'`
-		User=`echo $MyCommand | awk '{split($0,a,"|"); print a[2]}'`
+	#for MyCommand in $AllCommands; do
+	for Command in $AllCommands; do
+		#Command=`echo $MyCommand | awk '{split($0,a,"|"); print a[1]}'`
+		#User=`echo $MyCommand | awk '{split($0,a,"|"); print a[2]}'`
 
+		# Creating arguments listing
 		case "$Command" in
 			"MySB_CreateUser"|"MySB_DeleteUser"|"MySB_ChangeUserPassword") # 3 args
 				CommandArg="`sqlite3 $MySB_DB \"SELECT args FROM commands WHERE commands = '$Command' AND user = '$User'\"`"
 			;;
 		esac
 
+		# Execute commands
 		case "$Command" in
 			"MySB_CreateUser") # ($1 = user, $2 = sftp, $3 = sudo, $4 = email)
 				IFS='|' read -a array <<< "$CommandArg"
@@ -147,15 +158,13 @@ DoApplyConfig() {
 	done
 }
 
-IfRunning="`ps ax | grep 'ApplyConfig.bsh' | grep -v 'grep' | awk '{ print $1 }'`"
+while [ ! -z "`ps ax | grep 'ApplyConfig.bsh' | grep -v 'grep'`" ]; do
+	sleep 1	
+done
 
-if [ ! -z "$IfRunning" ]; then
-	while [ ! -z "`ps ax | grep 'ApplyConfig.bsh $IfRunning' | grep -v 'grep'`" ]; do
-		sleep 1	
-	done
+if [ ! -z "$1" ]; then
+	DoApplyConfig $1
 fi
-
-DoApplyConfig
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after

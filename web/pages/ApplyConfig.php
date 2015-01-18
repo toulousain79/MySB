@@ -25,7 +25,7 @@
 if ( IfApplyConfig() > 0 ) {
 	global $MySB_DB, $CurrentUser;
 
-	exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh $$", $output, $result);
+	exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh $CurrentUser", $output, $result);
 
 	if ( $result == 0 ) {
 		$type = 'success';

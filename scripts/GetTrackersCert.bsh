@@ -35,14 +35,12 @@ case "$1" in
 		DoCleanCertificates=0
 		DoGetRutorrentTrackers=0
 		DoGetUsersTrackers=0
-		DoActivateTrackers=0
 		DoUpdateUsersTracker=0
 	;;
 	*) # "REFRESH" or "INSTALL"
 		DoCleanCertificates=1
 		DoGetRutorrentTrackers=1
 		DoGetUsersTrackers=1
-		DoActivateTrackers=1
 		DoUpdateUsersTrackers=1
 	;;
 esac
@@ -72,54 +70,9 @@ if [ "$DoGetRutorrentTrackers" == "1" ]; then
 	GetRutorrentTrackers
 fi
 
-# 2 - Add users trackers in db
+# 2 - Add mainuser trackers in db
 if [ "$DoGetUsersTrackers" == "1" ]; then
 	GetUsersTrackers
-fi
-
-# 3 - Activate trackers with users' actived torrents
-if [ "$DoActivateTrackers" == "1" ]; then
-	ListingUsers
-	for SeedboxUser in $UsersList; do
-		if [ -d /home/$SeedboxUser/rtorrent/.session/ ]; then
-			TorrentListing="`ls -1r /home/$SeedboxUser/rtorrent/.session/`"
-
-			if [ ! -z "$TorrentListing" ]; then
-				cd /home/$SeedboxUser/rtorrent/.session/
-				for Torrent in $TorrentListing; do
-					if [ "`echo $Torrent | grep '.libtorrent_resume'`" != "" ]; then
-						Tracker="`cat $Torrent | tr -cd '[:print:]' | sed 's/=//' | sed 's/:\/\//=/' | cut -d '=' -f 2 | cut -d '/' -f 1 | cut -d ':' -f 1`"
-						if [ "`echo $TrackerList | grep $Tracker`" == "" ]; then
-							TrackerList="$TrackerList $Tracker"
-						fi
-					fi
-				done
-			fi
-		fi
-	done
-
-	if [ ! -z "$TrackerList" ]; then
-		for Tracker in $TrackerList; do
-			PART1=`echo ${Tracker} | cut -d "." -f 1`
-			PART2=`echo ${Tracker} | cut -d "." -f 2`
-			PART3=`echo ${Tracker} | cut -d "." -f 3`
-			if [ -z "$PART3" ]; then
-				TrackerDomain="`echo $PART1`.`echo $PART2`"
-			else
-				TrackerDomain="`echo $PART2`.`echo $PART3`"
-			fi
-			unset PART1 PART2 PART3
-
-			IfExist="`sqlite3 $MySB_DB \"SELECT tracker FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"
-			if [ -z "$IfExist" ]; then
-				AddTracker $Tracker "users"
-			else
-				log_daemon_msg "Force activation of tracker: $Tracker"
-				sqlite3 $MySB_DB "UPDATE trackers_list SET is_active = '1' WHERE tracker_domain = '$TrackerDomain';"
-				StatusLSB
-			fi
-		done
-	fi
 fi
 
 #### Update users trackers data

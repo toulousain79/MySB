@@ -192,8 +192,6 @@ StatusSTD
 if [ -d /etc/MySB/web/rutorrent ]; then rm -rf /etc/MySB/web/rutorrent &> /dev/null; fi
 
 #### 
-echo
-echo
 ScriptInvoke "source" "/etc/MySB/install/Questions" "$$" "UPGRADE"
 #### Questions
 
@@ -419,7 +417,7 @@ for seedUser in $UsersList; do
 	service rtorrent-$seedUser stop &> /dev/null
 	
 	#### script init
-	update-rc.d -f rtorrent-$seedUser.conf remove &> /dev/null
+	update-rc.d rtorrent-$seedUser remove -f &> /dev/null
 	cp /etc/MySB/templates/etc.init.rtorrent.template /etc/init.d/rtorrent-$seedUser
 	RutorrentDirEscaped=`echo $RutorrentDir | sed s,/,\\\\\\\\\\/,g`
 	perl -pi -e "s/<username>/$seedUser/g" /etc/init.d/rtorrent-$seedUser
@@ -487,12 +485,13 @@ for seedUser in $UsersList; do
 	UserId=$(sqlite3 $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$seedUser'")
 	UserPassword="`sqlite3 $MySB_DB \"SELECT users_passwd FROM users WHERE users_ident = '$seedUser'\"`"
 	
+	#### Erase all users passwords and addresses (except mainuser)
 	if [ "$UserId" != "$MainUserId" ]; then
 		sqlite3 $MySB_DB "DELETE FROM users_addresses WHERE id_users = '$UserId' AND id_user != '$MainUserId'"
+		ScriptInvoke "screen" "/etc/MySB/bin/MySB_ChangeUserPassword" "$seedUser" "$UserPassword" "UPGRADE"
+	else
+		SendMail "MySB - Upgraded to $MySB_CurrentVersion" "$seedUser" "upgrade" "MySB upgraded"
 	fi
-
-	#### Erase all users passwords
-	ScriptInvoke "screen" "/etc/MySB/bin/MySB_ChangeUserPassword" "$seedUser" "$UserPassword" "UPGRADE"
 done
 StatusSTD
 
