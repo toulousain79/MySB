@@ -1,13 +1,13 @@
 	Version v2.0 (main branch)
 		2014/12/24
 			- Used of SQLite instead of flat file (more convenient)
-			- Add Wolf CMS as portal (more convenient), manage blocklists, DNScrypt, trackers, users...
+			- Add Wolf CMS as portal (more convenient), manage blocklists, trackers, users...
 			- NginX, add PageSpeed functionnality
 			- NginX, change url access to short url (ruTorrent, Seedbox-Manager, Cakebox)
 			- DNScrypt-proxy v1.4.3, add use of multi provider instead of one. By default, all provider that accept DNSsec and No Logs are activated.
 			- BIND, block all inactivated trackers, add DNSsec
 			- OpenVPN, change clients pushed DNS
-			- Strengthening IP access policy, Web access is fully subject to the restriction by IP 
+			- Strengthening IP access policy, all access to the server is fully subject to the restriction by IP 
 			- Possibility to allow access for dynamic IP addresses
 			- Renew all certificates using SHA256 2048bits instead of SHA1 1024bits
 			- Add ruTorrent Plugins (Mobile and Pause WebUI)
