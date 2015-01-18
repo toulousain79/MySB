@@ -27,8 +27,8 @@ global $MySB_DB;
 if (isset($_POST['submit'])) {
 	$success = true;
 
-	for($i=0, $count = count($_POST['id_blocklists_rtorrent']);$i<$count;$i++) {
-		$result = $MySB_DB->update("blocklists_rtorrent", ["is_active" => $_POST['is_active'][$i]], ["id_blocklists_rtorrent" => $_POST['id_blocklists_rtorrent'][$i]]);
+	for($i=0, $count = count($_POST['id_blocklists']);$i<$count;$i++) {
+		$result = $MySB_DB->update("blocklists", ["rtorrent_active" => $_POST['rtorrent_active'][$i]], ["id_blocklists" => $_POST['id_blocklists'][$i]]);
 
 		if ( $result != 1 ) {
 			$success = false;
@@ -45,7 +45,7 @@ if (isset($_POST['submit'])) {
 	GenerateMessage('BlocklistsRTorrent.bsh', $type, $message, '');
 }
 
-$BlockList = $MySB_DB->select("blocklists_rtorrent", "*");
+$BlockList = $MySB_DB->select("blocklists", "*", , ["rtorrent_list[!]" => ""]);
 ?>
 
 <form class="form_settings" method="post" action="">	
@@ -75,15 +75,15 @@ foreach($BlockList as $List) {
 			break;
 	}
 
-	switch ($List["is_active"]) {
+	switch ($List["rtorrent_active"]) {
 		case '0':
-			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+			$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 								<option value="0" selected="selected" class="redText">No</option>
 								<option value="1" class="greenText">Yes</option>
 							</select>';
 			break;
 		default:
-			$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+			$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 								<option value="0" class="redText">No</option>
 								<option value="1" selected="selected" class="greenText">Yes</option>
 							</select>';
@@ -92,24 +92,24 @@ foreach($BlockList as $List) {
 ?>
 			<tr>
 				<td>
-					<input style="width:120px;" type="hidden" name="name[]" value="<?php echo $List["name"]; ?>" />
-					<?php echo '<a target="_blank" href="' . $List["url_info"] . '">' . $List["name"] . '</a>'; ?>
+					<input style="width:120px;" type="hidden" name="list_name[]" value="<?php echo $List["list_name"]; ?>" />
+					<?php echo '<a target="_blank" href="' . $List["url_infos"] . '">' . $List["author"].' - '.$List["list_name"] . '</a>'; ?>
 				</td>
 				<td>
-					<input style="width:180px;" type="hidden" name="blocklists[]" value="<?php echo $List["blocklists"]; ?>" />
-					<?php echo StringTruncate($List["blocklists"], 40, 60, ' ', '...'); ?>
+					<input style="width:180px;" type="hidden" name="rtorrent_list[]" value="<?php echo $List["rtorrent_list"]; ?>" />
+					<?php echo StringTruncate($List["rtorrent_list"], 40, 60, ' ', '...'); ?>
 				</td>
 				<td>
-					<?php echo $List["last_update"]; ?>
+					<?php echo $List["rtorrent_lastupdate"]; ?>
 				</td>				
 				<td>
 					<?php echo $default; ?>
 				</td>
 				<td>
-					<?php echo $is_active; ?>
+					<?php echo $rtorrent_active; ?>
 				</td>
 			</tr>
-			<input type="hidden" name="id_blocklists_rtorrent[]" value="<?php echo $List["id_blocklists_rtorrent"]; ?>" />
+			<input type="hidden" name="id_blocklists[]" value="<?php echo $List["id_blocklists"]; ?>" />
 <?php
 } // foreach($BlockList as $List) {
 ?>

@@ -448,9 +448,9 @@ CleanBlockList() {
 			wget --no-check-certificate $URL -O /etc/MySB/files/blocklists/$FILE.gz
 			if [ $? -eq 0 ] ; then
 				gzip -dc /etc/MySB/files/blocklists/$FILE.gz | cut -d: -f2 > /etc/MySB/files/blocklists/$FILE.txt
-				sqlite3 -echo $MySB_DB "UPDATE blocklists_rtorrent SET last_update = datetime('now','localtime') WHERE name = '$FILE';"
+				sqlite3 -echo $MySB_DB "UPDATE blocklists SET rtorrent_lastupdate = datetime('now','localtime') WHERE rtorrent_list = '$URL';"
 			else
-				sqlite3 -echo $MySB_DB "UPDATE blocklists_rtorrent SET last_update = 'failed' WHERE name = '$FILE';"
+				sqlite3 -echo $MySB_DB "UPDATE blocklists SET rtorrent_lastupdate = 'failed' WHERE rtorrent_list = '$URL';"
 			fi
 		;;
 		del_spaces)
@@ -884,8 +884,7 @@ PeerGuardianBlocklistsList() {
 EOF
 		) > /etc/pgl/blocklists.list
 
-		#AllBlocklists="`sqlite3 $MySB_DB \"SELECT blocklists FROM blocklists_peerguardian WHERE is_active = '1'\"`"
-		AllBlocklists="`sqlite3 $MySB_DB \"SELECT blocklists,is_active FROM blocklists_peerguardian WHERE 1\"`"	
+		AllBlocklists="`sqlite3 $MySB_DB \"SELECT peerguardian_list,peerguardian_active FROM blocklists WHERE peerguardian_list != ''\"`"
 		for Blocklist in $AllBlocklists; do
 			List=`echo $Blocklist | awk '{split($0,a,"|"); print a[1]}'`
 			IsActive=`echo $Blocklist | awk '{split($0,a,"|"); print a[2]}'`			
@@ -903,10 +902,10 @@ EOF
 						for List in $CheckLog; do
 							echo `date +"%T"`" --> '$List' will be disabled." >> /etc/MySB/logs/$ScriptName.log
 							# Force inactived list
-							sqlite3 -echo $MySB_DB "UPDATE blocklists_peerguardian SET is_active = '0', last_update = 'failed' WHERE blocklists = '$List';"
+							sqlite3 -echo $MySB_DB "UPDATE blocklists SET peerguardian_active = '0', peerguardian_lastupdate = 'failed' WHERE peerguardian_list = '$List';"
 						done
 					else # Update OK
-						sqlite3 -echo $MySB_DB "UPDATE blocklists_peerguardian SET last_update = datetime('now','localtime') WHERE blocklists = '$List';"
+						sqlite3 -echo $MySB_DB "UPDATE blocklists SET peerguardian_lastupdate = datetime('now','localtime') WHERE peerguardian_list = '$List';"
 					fi
 				;;
 				'CreateFile') # Now, we create the final blocklists with all active lists

@@ -32,12 +32,19 @@ else
 fi
 StatusLSB
 
-sqlite3 $MySB_DB "SELECT name, blocklists FROM blocklists_rtorrent WHERE is_active = '1'" | while read ROW; do
+sqlite3 $MySB_DB "SELECT author, list_name, rtorrent_list FROM blocklists WHERE rtorrent_active = '1' AND rtorrent_list != ''" | while read ROW; do
+	Author="`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`"
+	Author="`echo $Author | sed 's/ /_/g;'`"
+	ListName="`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`"
+	ListName="`echo $ListName | sed 's/ /_/g;'`"
+	URL="`echo $ROW | awk '{split($0,a,"|"); print a[3]}'`"
+	FILE="$Author#$ListName"
+
 	FILE=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
 	URL=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
 
 	if [ ! -z "$FILE" ] && [ ! -z "$URL" ]; then
-		log_daemon_msg "Download selected list" "$FILE"
+		log_daemon_msg "Download selected list" "$Author - $ListName"
 		CleanBlockList download "$FILE" "$URL" &> /dev/null
 
 		# complete global list

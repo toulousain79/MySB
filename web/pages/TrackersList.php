@@ -22,7 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-global $MySB_DB;
+global $MySB_DB, $CurrentUser;
 
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 

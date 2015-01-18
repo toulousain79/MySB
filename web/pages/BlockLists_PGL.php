@@ -30,8 +30,8 @@ if ( $IsInstalled == '1' ) {
 	if (isset($_POST['submit'])) {
 		$success = true;
 
-		for($i=0, $count = count($_POST['id_blocklists_peerguardian']);$i<$count;$i++) {
-			$result = $MySB_DB->update("blocklists_peerguardian", ["is_active" => $_POST['is_active'][$i]], ["id_blocklists_peerguardian" => $_POST['id_blocklists_peerguardian'][$i]]);
+		for($i=0, $count = count($_POST['id_blocklists']);$i<$count;$i++) {
+			$result = $MySB_DB->update("blocklists", ["peerguardian_active" => $_POST['peerguardian_active'][$i]], ["id_blocklists" => $_POST['id_blocklists'][$i]]);
 
 			if ( $result != 1 ) {
 				$success = false;
@@ -48,7 +48,7 @@ if ( $IsInstalled == '1' ) {
 		GenerateMessage('MySB_SecurityRules' ,$type, $message, '');
 	}
 
-	$BlockList = $MySB_DB->select("blocklists_peerguardian", "*");
+	$BlockList = $MySB_DB->select("blocklists", "*", , ["peerguardian_list[!]" => ""]);
 ?>
 	<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 		<fieldset>
@@ -87,15 +87,15 @@ if ( $IsInstalled == '1' ) {
 				break;
 		}
 
-		switch ($List["is_active"]) {
+		switch ($List["peerguardian_active"]) {
 			case '0':
-				$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+				$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 									<option value="0" selected="selected" class="redText">No</option>
 									<option value="1" class="greenText">Yes</option>
 								</select>';
 				break;
 			default:
-				$is_active = '	<select name="is_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+				$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 									<option value="0" class="redText">No</option>
 									<option value="1" selected="selected" class="greenText">Yes</option>
 								</select>';
@@ -104,22 +104,22 @@ if ( $IsInstalled == '1' ) {
 	?>
 				<tr>
 					<td>
-						<input type="hidden" name="id_blocklists_peerguardian[]" value="<?php echo $List["id_blocklists_peerguardian"]; ?>" />
-						<input style="width:180px;" type="hidden" name="name[]" value="<?php echo $List["name"]; ?>" />
-						<?php echo $List["name"]; ?>
+						<input type="hidden" name="id_blocklists[]" value="<?php echo $List["id_blocklists"]; ?>" />
+						<input style="width:180px;" type="hidden" name="name[]" value="<?php echo $List["list_name"]; ?>" />
+						<?php echo $List["author"].' - '.$List["list_name"]; ?>
 					</td>
 					<td>
-						<input style="width:180px;" type="hidden" name="blocklists[]" value="<?php echo $List["blocklists"]; ?>" />
-						<?php echo '<a target="_blank" href="' . $List["url_info"] . '">' . $List["blocklists"] . '</a>'; ?>
+						<input style="width:180px;" type="hidden" name="peerguardian_list[]" value="<?php echo $List["peerguardian_list"]; ?>" />
+						<?php echo '<a target="_blank" href="' . $List["url_infos"] . '">' . $List["peerguardian_list"] . '</a>'; ?>
 					</td>
 					<td>
-						<?php echo $List["last_update"]; ?>
+						<?php echo $List["peerguardian_lastupdate"]; ?>
 					</td>					
 					<td>
 						<?php echo $default; ?>
 					</td>
 					<td>
-						<?php echo $is_active; ?>
+						<?php echo $peerguardian_active; ?>
 					</td>
 				</tr>
 	<?php
