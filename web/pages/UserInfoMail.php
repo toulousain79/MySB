@@ -131,7 +131,7 @@ function PrintContent($user, $Case) {
 			$DisplayGoTo 			= false;
 			$DisplayCommand			= false;
 			$DisplayUserInfo		= true;
-			$DisplayUserInfoDetail 	= false;
+			$DisplayUserInfoDetail 	= true;
 			$DisplayLinks 			= false;
 			$DisplayRenting			= false;
 			break;
@@ -171,7 +171,7 @@ function PrintContent($user, $Case) {
 		<tr><td colspan="3" scope="row"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>">Go to MySB Portal</a></td></tr>
 <?php } ?>
 
-<?php if ( $DisplayUserInfoDetail == true ) { ?>
+<?php if ( $DisplayUserInfo == true ) { ?>
 		<!-- //////////////////////
 		// User personal info
 		////////////////////// -->
