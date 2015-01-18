@@ -39,7 +39,7 @@ MySB is a seedbox for multi-users for dedicated server.
 	* NFS share for each users (VPN access)
 	* Auto retrieve SSL certificates for all trackers (if available)
 	* MySB portal, ability to manage trackers, blocklists, users and more
-	* Block all possibilities to use any trackers that was not activated in MySB portal
+	* Block all possibilities to use any listed trackers that was not activated in MySB portal
 
 ## Additional ruTorrent plugins (in addition to the official plugins)
 
