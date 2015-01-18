@@ -93,13 +93,13 @@ function GetVersion() {
 }
 
 // Main user ?
-function MainUser() {
-	global $MySB_DB, $CurrentUser;
+function MainUser($user) {
+	global $MySB_DB;
 
 	$MainUser = $MySB_DB->get("users", "users_ident", ["admin" => 1]);
 
 	switch ($MainUser) {
-		case "$CurrentUser":
+		case "$user":
 			$result = true;
 			break;
 		default:
@@ -112,9 +112,9 @@ function MainUser() {
 
 // Create menu with submenu
 function MenuDisplayChildren($page, $current, $startmenu = true) {
-	global $MySB_DB, $Port_HTTPs, $system_datas;
+	global $MySB_DB, $Port_HTTPs, $system_datas, $CurrentUser;
 
-	$hidden = (MainUser()) ? true : false;
+	$hidden = (MainUser($CurrentUser)) ? true : false;
 	$CakeboxDatas = $MySB_DB->get("services", "*", ["serv_name" => "CakeBox-Light"]);
 	$CakeboxIsInstalled = $CakeboxDatas["is_installed"];
 	$ManagerIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "Seedbox-Manager"]);
@@ -186,7 +186,7 @@ function UpdateWolfDB($username, $password) {
 
 	if (!defined('IN_CMS')) { exit(); }
 
-	if ( MainUser() == true ) {	
+	if ( MainUser($username) == true ) {	
 		if ( (isset($password)) && (isset($username)) ) {
 			$PDO = Record::getConnection();
 			$sql_update = '';
@@ -212,7 +212,7 @@ function UpdateWolfDB($username, $password) {
 function CheckWolfDB($username, $password) {
 	global $Wolf_DB;
 
-	if ( MainUser() == true ) {
+	if ( MainUser($username) == true ) {
 		$Wolf_Datas = $Wolf_DB->get("user", ["password", "salt"], ["username" => "$username"]);
 
 		if ( ($Wolf_Datas["password"] == "") || ($Wolf_Datas["salt"] == "") ) {
@@ -452,6 +452,7 @@ function GenerateMessage($commands, $type, $message, $args) {
 
 					break;
 			}
+			
 			break;
 		default:
 			$timeout = 7000;

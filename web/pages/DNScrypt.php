@@ -63,6 +63,7 @@ $ResolversList = $MySB_DB->select("dnscrypt_resolvers", [
 $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["is_wished" => 1, "is_activated" => 1]]);
 ?>
 
+<!--
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 	<form class="form_settings" method="post" action="">
 		<fieldset>
@@ -70,30 +71,31 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["is_w
 
 				Available resolvers: <select name="ResolverName" style="width:200px; cursor: pointer;" required="required">
 <?php
-						foreach($ResolversList as $Resolver) {
-							if ( ! strpos($Resolver["name"], 'ipv6') ) {
-								switch ($Resolver["name"]) {
-									case "$SelectedResolver":
-										$selected = 'selected="selected"';
-										break;
-									default:
-										$selected = '';
-										break;
-								}
-								echo '<option value="' .$Resolver["name"]. '" ' . $selected . '>' .$Resolver["name"]. '</option>';
-							}
-						}
+						// foreach($ResolversList as $Resolver) {
+							// if ( ! strpos($Resolver["name"], 'ipv6') ) {
+								// switch ($Resolver["name"]) {
+									// case "$SelectedResolver":
+										// $selected = 'selected="selected"';
+										// break;
+									// default:
+										// $selected = '';
+										// break;
+								// }
+								// echo '<option value="' .$Resolver["name"]. '" ' . $selected . '>' .$Resolver["name"]. '</option>';
+							// }
+						// }
 ?>
-									</select>
+									</select> 
 		
 			<p class="Comments">If Be careful, some resolvers do not seem to work for resolving certain domains. This is the case of <b>opendns</b> for example.<br />
 								If problems try another one.<br />
 								The default resolver is <b>dnscrypt.eu-dk</b>.</p>
 
-			<input class="submit" style="width:180px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="I want use this resolver !">			
+			<input class="submit" style="width:180px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="I want use this resolver !">
 		</fieldset>
 	</form>
 </div>
+-->
 
 <form class="form_settings" method="post" action="">
 	<div align="center">
@@ -121,30 +123,38 @@ foreach($ResolversList as $Resolver) {
 	$Namecoin=$Resolver["namecoin"];
 	$ResolverAddress=$Resolver["resolver_address"];
 	$ProviderName=$Resolver["provider_name"];
+	$IsWished=$Resolver["is_wished"];
+	$IsActivated=$Resolver["is_activated"];
+	
+	if ( ($IsActivated == '1') && ($IsWished == '1') ) {
+		$style = "style=\"background-color:#00FF66\"";
+	} else {
+		$style = "";
+	}
 
 	if ( ! strpos($Name, 'ipv6') ) {
 ?>
 			<tr>
-				<td>
+				<td <?php echo $style ?>>
 					<?php echo $Name; ?>
 				</td>
-				<td>
+				<td <?php echo $style ?>>
 					<a target="_blank" href="<?php echo $URL; ?>"><?php echo $FullName; ?></a>
 				</td>
-				<td>
+				<td <?php echo $style ?>>
 					<?php echo $Location; ?>
 				</td>
-				<td style="text-align: center;">
-					<?php echo $Version; ?>
+				<td <?php echo $style ?>>
+					<div style="text-align: center;"><?php echo $Version; ?></div>
 				</td>
-				<td style="text-align: center;">
-					<?php echo $DnssecVal; ?>
+				<td <?php echo $style ?>>
+					<div style="text-align: center;"><?php echo $DnssecVal; ?></div>
 				</td>
-				<td style="text-align: center;">
-					<?php echo $NoLogs; ?>
+				<td <?php echo $style ?>>
+					<div style="text-align: center;"><?php echo $NoLogs; ?></div>
 				</td>
-				<td style="text-align: center;">
-					<?php echo $Namecoin; ?>
+				<td <?php echo $style ?>>
+					<div style="text-align: center;"><?php echo $Namecoin; ?></div>
 				</td>
 				<!-- <td>
 					<?php //echo $ResolverAddress; ?>

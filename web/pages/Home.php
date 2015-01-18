@@ -23,10 +23,10 @@
 //#################### FIRST LINE #####################################
 
 // Vars
-$UserName = $_SERVER['PHP_AUTH_USER'];
-$IsMainUser = (MainUser()) ? true : false;
+global $CurrentUser;
+$IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
-echo '<h1><div align="center">Hi '.$UserName.', welcome to MySB portal !</div></h1>';
+echo '<h1><div align="center">Hi '.$CurrentUser.', welcome to MySB portal !</div></h1>';
 
 switch ($IsMainUser) {
 	case true:

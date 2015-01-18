@@ -24,7 +24,7 @@
 
 global $MySB_DB;
 
-$IsMainUser = (MainUser()) ? true : false;
+$IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
 if(isset($_POST)==true && empty($_POST)==false) {
 	$success = true;

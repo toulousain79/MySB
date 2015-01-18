@@ -65,8 +65,12 @@ $system_datas = $MySB_DB->get("system", "*", ["id_system" => 1]);
 
 // Users table
 if ( isset($_SERVER['PHP_AUTH_USER']) ) {
-	$users_datas = $MySB_DB->get("users", "*", ["users_ident" => $_SERVER['PHP_AUTH_USER']]);
 	$CurrentUser = $_SERVER['PHP_AUTH_USER'];
+} elseif ( isset($_SESSION['page']) && isset($_GET['user']) ) {
+	$CurrentUser = $_SERVER[$_GET['user']];
+}
+if ( isset($CurrentUser) ) {
+	$users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
 }
 
 // Services table

@@ -22,7 +22,9 @@
 //
 //#################### FIRST LINE #####################################
 
-switch (MainUser()) {
+global $CurrentUser;
+
+switch (MainUser($CurrentUser)) {
 	case true:
 		echo '
 		<p>

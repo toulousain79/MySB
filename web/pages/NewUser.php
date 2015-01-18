@@ -25,11 +25,11 @@ require_once '/etc/MySB/web/inc/includes_before.php';
 //#################### FIRST LINE #####################################
 
 if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') ) {
-	$UserName = $_GET['user'];
+	$CurrentUser = $_GET['user'];
 	$UserPasswd = $_GET['passwd'];
 
 	// Users table
-	$ActualUserPass = $MySB_DB->get("users", "users_passwd", ["users_ident" => "$UserName"]);
+	$ActualUserPass = $MySB_DB->get("users", "users_passwd", ["users_ident" => "$CurrentUser"]);
 	if ( ($ActualUserPass != "") && ($UserPasswd != "") && ($UserPasswd == $ActualUserPass) ) {
 		require_once '/etc/MySB/web/index.php';
 	} else {

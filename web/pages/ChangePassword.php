@@ -22,9 +22,16 @@
 //
 //#################### FIRST LINE #####################################
 
-if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ManageAddresses') ) {
-	$opts = 'readonly="true" style="cursor: default;" value="' . $_SERVER['PHP_AUTH_PW'] . '"';
+if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') && isset($_GET['passwd']) ) {
+	$opts = 'readonly="true" style="cursor: default;" value="' . $_GET['passwd'] . '"';
+	$AuthPassword = $_GET['passwd'];
 } else {
+	if ( isset($_SERVER['PHP_AUTH_PW']) ) {
+		$AuthPassword = $_SERVER['PHP_AUTH_PW'];
+	} else {
+		$AuthPassword = "";
+	}	
+
 	$opts = '';
 }
 
@@ -51,9 +58,9 @@ echo '
 		</table></div>
 	</form>
 	';
-	
+
 if ( isset($_POST['submit']) ) {
-	global $CurrentUser;
+	global $MySB_DB, $CurrentUser;
 	
 	$current_pwd = $_POST['current_pwd'];
 	$new_pwd = $_POST['new_pwd'];
@@ -63,9 +70,9 @@ if ( isset($_POST['submit']) ) {
 	$timeout = '';
 
 	if ( ($current_pwd != '') && ($new_pwd != '') && ($confirm_pwd != '') ) {
-		if ( $current_pwd == $_SERVER['PHP_AUTH_PW'] ) {
+		if ( $current_pwd == $AuthPassword ) {
 			if ( $new_pwd == $confirm_pwd ) {
-				$result = UpdateWolfDB($_SERVER['PHP_AUTH_USER'], $new_pwd);
+				$result = UpdateWolfDB($AuthPassword, $new_pwd);
 
 				if ( $result > 0 ) {
 					if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') ) { // by NewUser.php
@@ -74,7 +81,7 @@ if ( isset($_POST['submit']) ) {
 						$priority++;
 						$args = "$CurrentUser|$new_pwd";
 
-						$value = $MySB_DB->insert("commands", ["commands" => "$commands", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
+						$value = $MySB_DB->insert("commands", ["commands" => "$command", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
 					
 						if ( $result > 0 ) {
 							exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword'", $output, $result);
