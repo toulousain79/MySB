@@ -196,6 +196,7 @@ PackagesManage() {
 PeerGuardianFailed() {
 	ListingUsers
 	
+	log_daemon_msg "Switching use of blocklists with $1"
 	for FnUser in $UsersList; do
 		case "$1" in
 			"rTorrent")
@@ -209,7 +210,13 @@ PeerGuardianFailed() {
 					perl -pi -e "s/^#ipv4_filter.load/ipv4_filter.load/g" /home/$FnUser/.rtorrent.rc
 					perl -pi -e "s/^#print/print/g" /home/$FnUser/.rtorrent.rc
 
-					service rtorrent-$FnUser restart
+					service rtorrent-$FnUser status &> /dev/null
+					if [ $? -eq 0 ]; then
+						service rtorrent-$FnUser restart
+					fi
+					StatusLSB
+				else
+					StatusLSB 0
 				fi
 			;;
 			"PeerGuardian")
@@ -218,13 +225,20 @@ PeerGuardianFailed() {
 					if [ ! -z "$Check" ]; then
 						perl -pi -e "s/^ipv4_filter.load/#ipv4_filter.load/g" /home/$FnUser/.rtorrent.rc
 						perl -pi -e "s/^print/#print/g" /home/$FnUser/.rtorrent.rc
-
-						service rtorrent-$FnUser restart
+						
+						service rtorrent-$FnUser status &> /dev/null
+						if [ $? -eq 0 ]; then
+							service rtorrent-$FnUser restart
+						fi
+						StatusLSB
+					else
+						StatusLSB 0
 					fi
+				else
+					StatusLSB 0
 				fi
 			;;
-		esac	
-
+		esac
 	done
 }
 
@@ -270,6 +284,12 @@ ManageServices() {
 								service $Service stop &> /dev/null
 								StatusLSB
 							;;
+							"nginx")
+								Continue=0
+								log_daemon_msg "Stopping NginX server" "nginx"
+								pglcmd stop &> /dev/null
+								StatusLSB
+							;;							
 							"stunnel4")
 								Continue=0
 								log_daemon_msg "Stopping Stunnel daemon" "stunnel4"
@@ -281,7 +301,19 @@ ManageServices() {
 								log_daemon_msg "Stopping VSFTPd daemon" "vsftpd"
 								service $Service stop &> /dev/null
 								StatusLSB
-							;;							
+							;;
+							"fail2ban")
+								Continue=0
+								log_daemon_msg "Stopping Fail2ban daemon" "fail2ban"
+								service $Service stop &> /dev/null
+								StatusLSB
+							;;
+							"nfs-kernel-server")
+								Continue=0
+								log_daemon_msg "Stopping NFS kernel daemon" "mountd nfsd"
+								service $Service stop &> /dev/null
+								StatusLSB
+							;;
 						esac
 
 						if [ "$Continue" == "1" ]; then
@@ -301,7 +333,7 @@ ManageServices() {
 									pglcmd force-restart &> /dev/null
 								fi
 							else
-								log_daemon_msg "Restarting PeerGuardian Linux" "pglcmd"
+								log_daemon_msg "Starting PeerGuardian Linux" "pglcmd"
 								pglcmd start &> /dev/null
 							fi
 							
@@ -333,17 +365,24 @@ ManageServices() {
 									List=`echo $List | sed s,/,\\\\\\\\\\/,g`
 									sed -i "s/^$List/#$List/g" /etc/pgl/blocklists.list
 								done
+								log_daemon_msg "Force Restarting PeerGuardian Linux" "pglcmd"
 								pglcmd restart
 
 								if [ $? -gt 0 ]; then # We have again a problem with PeerGuardian, test a force-restart
+									StatusLSB 1
+								
+									log_daemon_msg "Force Restarting PeerGuardian Linux" "pglcmd"
 									pglcmd force-restart
 									if [ $? -gt 0 ]; then # Again ??
+										StatusLSB 1
 										# We will use rTorrent Blocklist
 										PeerGuardianFailed "rTorrent"
 									else
+										StatusLSB 0
 										PeerGuardianFailed "PeerGuardian"
 									fi
 								else
+									StatusLSB 0
 									PeerGuardianFailed "PeerGuardian"
 								fi
 							else
@@ -366,29 +405,43 @@ ManageServices() {
 							;;
 							"logwatch")
 								Continue=0
-								log_daemon_msg "Restarting Logwatch"
+								log_daemon_msg "Restarting Logwatch" "logwatch"
 								$Service restart &> /dev/null
 								StatusLSB
 							;;
 							"stunnel4")
 								Continue=0
-								log_daemon_msg "Restarting Stunnel daemon"
+								log_daemon_msg "Restarting Stunnel daemon" "stunnel4"
 								service $Service restart &> /dev/null
 								StatusLSB
 							;;
 							"php5-fpm")
 								Continue=0
-								log_daemon_msg "Restarting PHP5 FastCGI Process Manager"
+								log_daemon_msg "Restarting PHP5 FastCGI Process Manager" "php5-fpm")
 								service $Service restart &> /dev/null
 								StatusLSB							
 							;;
+							"nginx")
+								Continue=0
+								if ! GetPid $Service; then
+									log_daemon_msg "Restarting NginX server" "nginx"
+									service $Service restart &> /dev/null
+								else
+									log_daemon_msg "Reloading NginX server" "nginx"
+									service $Service reload &> /dev/null
+									if [ $? -gt 0 ]; then
+										service $Service restart &> /dev/null
+									fi
+								fi
+								StatusLSB
+							;;							
 							"postfix")
 								Continue=0
 								if ! GetPid $Service; then
-									log_daemon_msg "Restarting Postfix Mail Transport Agent"
+									log_daemon_msg "Restarting Postfix Mail Transport Agent" "postfix"
 									service $Service restart &> /dev/null
 								else
-									log_daemon_msg "Reloading Postfix Mail Transport Agent"
+									log_daemon_msg "Reloading Postfix Mail Transport Agent" "postfix"
 									service $Service reload &> /dev/null
 									if [ $? -gt 0 ]; then
 										service $Service restart &> /dev/null
@@ -399,10 +452,10 @@ ManageServices() {
 							"cron")
 								Continue=0
 								if ! GetPid $Service; then
-									log_daemon_msg "Restating periodic command scheduler"
+									log_daemon_msg "Restating periodic command scheduler" "cron"
 									service $Service restart &> /dev/null
 								else
-									log_daemon_msg "Reloading periodic command scheduler"
+									log_daemon_msg "Reloading periodic command scheduler" "cron"
 									service $Service reload &> /dev/null
 									if [ $? -gt 0 ]; then
 										service $Service restart &> /dev/null
@@ -413,16 +466,22 @@ ManageServices() {
 							"vsftpd")
 								Continue=0
 								if ! GetPid $Service; then
-									log_daemon_msg "Restating VSFTPd server configuration"
+									log_daemon_msg "Restating VSFTPd server configuration" "vsftpd"
 									service $Service restart &> /dev/null
 								else
-									log_daemon_msg "Reloading VSFTPd server configuration"
+									log_daemon_msg "Reloading VSFTPd server configuration" "vsftpd"
 									service $Service reload &> /dev/null
 									if [ $? -gt 0 ]; then
 										service $Service restart &> /dev/null
 									fi
 								fi
 								StatusLSB
+							;;
+							"nfs-kernel-server")
+								Continue=0
+								log_daemon_msg "Restarting NFS kernel daemon" "mountd nfsd"
+								service $Service restart &> /dev/null
+								StatusLSB								
 							;;
 							*)
 								if ! GetPid $Service; then
@@ -848,7 +907,7 @@ Fail2BanWhitheList() {
 		MainUserIPs=`echo $MainUserIPs | sed s,/,\\\\\\\\\\/,g`
 		AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
 
-		if [ $1 -eq 1 ]; then log_daemon_msg "Add whitelist to Fail2Ban"; fi
+		if [ $1 -eq 1 ]; then log_daemon_msg "Fail2Ban - Adding IP addresses to ignore"; fi
 		# All users IPs
 		for IPv4 in $AllUsersIPs; do
 			IfExist=`echo $Fail2banWhiteList | grep $IPv4`
@@ -886,7 +945,7 @@ Fail2BanWhitheList() {
 PeerGuardianBlocklistsList() {
 	if [ -f /etc/pgl/pglcmd.conf ] && [ -f /etc/pgl/blocklists.list ]; then
 		# /etc/pgl/blocklists.list
-		if [ $1 -eq 1 ]; then log_daemon_msg "Add blocklists to PeerGuardian"; fi
+		if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Adding the blocklists to use"; fi
 		(
 		cat <<'EOF'
 # blocklists.list - lists the blocklists that are handled automatically by pglcmd
@@ -955,7 +1014,7 @@ EOF
 PeerGuardianAllowP2P() {
 	if [ -f /etc/pgl/pglcmd.conf ] && [ -f /etc/pgl/allow.p2p ]; then
 		# /etc/pgl/allow.p2p
-		if [ $1 -eq 1 ]; then log_daemon_msg "Add allow P2P to PeerGuardian"; fi
+		if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Adding trackers to allow"; fi
 		(
 		cat <<'EOF'
 # allow.p2p - allow list for pglcmd
@@ -996,7 +1055,7 @@ EOF
 PeerGuardianPglcmdConf() {
 	if [ -f /etc/pgl/pglcmd.conf ]; then
 		# /etc/pgl/pglcmd.conf
-		if [ $1 -eq 1 ]; then log_daemon_msg "Add whitelist to PeerGuardian"; fi
+		if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Adding of authorized IP addresses"; fi
 		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`
 		MainUserIPs=`echo $MainUserIPs | sed s,/,\\\\\\\\\\/,g`
 
@@ -1058,7 +1117,7 @@ ManageDirectoriesAndFiles() {
 	# Root Directories
 	if [ ! -d /etc/MySB/db ]; then mkdir /etc/MySB/db; fi
 	if [ ! -d /etc/MySB/files ]; then mkdir /etc/MySB/files; fi
-	if [ ! -d /etc/MySB/logs ]; then mkdir /etc/MySB/logs; fi
+	if [ ! -d /etc/MySB/logs/archives ]; then mkdir -p /etc/MySB/logs/archives; fi
 	if [ ! -d /etc/MySB/sources ]; then mkdir /etc/MySB/sources; fi
 	if [ ! -d /etc/MySB/ssl ]; then mkdir /etc/MySB/ssl; fi
 	if [ ! -d /etc/MySB/temp ]; then mkdir /etc/MySB/temp; fi

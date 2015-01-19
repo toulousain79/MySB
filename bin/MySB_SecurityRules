@@ -39,14 +39,14 @@ case $1 in
 		ManageServices stop "pglcmd fail2ban"
 
 		# Vidage et suppression des règles existantes :
-		log_daemon_msg "Emptying and removal of existing rules"
+		log_daemon_msg "IPtables - Removal of existing rules"
 		for TABLE in filter nat mangle; do
 			iptables -t $TABLE -F
 			iptables -t $TABLE -X
 		done
 		StatusLSB
 
-		log_daemon_msg "Authorize any incoming connection any outgoing connection"
+		log_daemon_msg "IPtables - Authorize any incoming/outgoing connection"
 		iptables -t filter -P INPUT ACCEPT
 		iptables -t filter -P FORWARD ACCEPT
 		iptables -t filter -P OUTPUT ACCEPT
@@ -54,7 +54,7 @@ case $1 in
 
 		#### Clean users IP Addresses
 		if [ -f /etc/nginx/conf.d/ip_restriction ] && CheckCommand 0 nginx; then
-			log_daemon_msg "Cleaning users IP Addresses"
+			log_daemon_msg "NginX - Allows all IP addresses"
 			echo "	satisfy all;" > /etc/nginx/conf.d/ip_restriction
 			StatusLSB
 		fi
@@ -106,13 +106,13 @@ case $1 in
 		#### NginX
 		if [ -f /etc/nginx/conf.d/ip_restriction ] && CheckCommand 0 nginx; then
 			# 1 - Server IP addresses
-			log_daemon_msg "Allow access to web server for localhost"
+			log_daemon_msg "NginX - Allow the loopback interface"
 			echo "	# Localhost" > /etc/nginx/conf.d/ip_restriction
 			echo "	allow 127.0.0.1;" >> /etc/nginx/conf.d/ip_restriction
 			StatusLSB
 
 			# 2 - Main user IP addresses
-			log_daemon_msg "Allow access to web server for mainuser"	
+			log_daemon_msg "NginX - Allow the IP addresses of the main user"	
 			echo "	# Restricted IP for mainuser" >> /etc/nginx/conf.d/ip_restriction
 			for IPv4 in $MainUserIPs; do
 				echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
@@ -121,7 +121,7 @@ case $1 in
 			StatusLSB
 
 			# 3 - Normal user IP addresses
-			log_daemon_msg "Allow access to web server for all users"
+			log_daemon_msg "NginX - Allow the IP addresses of all users"
 			echo "	# Restricted IP for all users" >> /etc/nginx/conf.d/ip_restriction
 			for IPv4 in $SeedboxUsersIPs; do
 				echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
@@ -131,7 +131,7 @@ case $1 in
 
 			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 				# 4 - OpenVPN user IP addresses
-				log_daemon_msg "Allow access to web server for OpenVPN users"
+				log_daemon_msg "NginX - Allow the IP addresses of OpenVPN users"
 				echo "	# Restricted IP for OpenVPN users" >> /etc/nginx/conf.d/ip_restriction
 				for IPv4 in $VpnIPs; do
 					echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
@@ -146,7 +146,7 @@ case $1 in
 
 		#### NO spoofing
 		if [ -e /proc/sys/net/ipv4/conf/all/rp_filter ]; then
-			log_daemon_msg "No spoofing"
+			log_daemon_msg "IPtables - No spoofing"
 			for filtre in /proc/sys/net/ipv4/conf/*/rp_filter; do
 				echo 1 > $filtre
 			done
@@ -154,7 +154,7 @@ case $1 in
 		fi
 
 		#### Modules
-		log_daemon_msg "Loading modules"
+		log_daemon_msg "IPtables - Loading modules"
 		IFS=$','
 		for item in $Modules; do
 			IfExist=`lsmod | grep "$item"`
@@ -165,17 +165,19 @@ case $1 in
 		unset IFS
 		StatusLSB
 
-		#### TCP Wrapper		
+		#### TCP Wrapper
+		log_daemon_msg "TCP Wrapper - Allow all users for FTPs and sFTP"		
 		if [ -z "`cat /etc/hosts.deny | grep 'vsftpd: ALL'`" ]; then echo "vsftpd: ALL" >> /etc/hosts.deny; fi
 		if [ -z "`cat /etc/hosts.deny | grep 'sshd: ALL'`" ]; then echo "sshd: ALL" >> /etc/hosts.deny; fi
 		sed -i '/vsftpd:/d' /etc/hosts.allow
 		sed -i '/sshd:/d' /etc/hosts.allow
 		echo "vsftpd: ${SeedboxUsersIPs} ${MainUserIPs} ${VpnIPs}" >> /etc/hosts.allow
 		echo "sshd: ${SeedboxUsersIPs} ${MainUserIPs} ${VpnIPs}" >> /etc/hosts.allow
+		StatusLSB
 		
 		#### BIND
 		if CheckCommand 0 named; then
-			log_daemon_msg "Block all outgoing request for inactive trackers"
+			log_daemon_msg "Bind - Block all outgoing request for inactive trackers"
 			AllTrackersDomain="`sqlite3 $MySB_DB \"SELECT tracker_domain FROM trackers_list WHERE is_active = '0' AND to_check = '0'\"`"
 			echo "#### MySB - Blacklisted domains (ex: inactive trackers)" > /etc/bind/MySB.zones.blakclists
 			for TrackerDomain in $AllTrackersDomain; do
@@ -191,7 +193,7 @@ case $1 in
 		######################################################################		
 		
 		#### Emptying and removal of existing rules
-		log_daemon_msg "Emptying and removal of existing rules"
+		log_daemon_msg "IPtables - Removal of existing rules"
 		for TABLE in filter nat mangle; do
 			iptables -t $TABLE -F
 			iptables -t $TABLE -X
@@ -199,14 +201,14 @@ case $1 in
 		StatusLSB
 		
 		#### Prohibit any incoming connection and allow any outgoing connection
-		log_daemon_msg "Prohibit any incoming connection and authorize any outgoing connection"
+		log_daemon_msg "IPtables - Prohibit any incoming connection and authorize any outgoing connection"
 		iptables -t filter -P INPUT DROP
 		iptables -t filter -P FORWARD DROP
 		iptables -t filter -P OUTPUT ACCEPT	
 		StatusLSB
 
 		#### Do not break the established connections
-		log_daemon_msg "Do not break established connections"
+		log_daemon_msg "IPtables - Do not break established connections"
 		iptables -A INPUT -m state --state RELATED,ESTABLISHED -i $PrimaryInet -j ACCEPT
 		iptables -A OUTPUT -m state --state RELATED,ESTABLISHED -o $PrimaryInet -j ACCEPT
 		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
@@ -218,12 +220,12 @@ case $1 in
 		StatusLSB
 
 		#### Allow loopback
-		log_daemon_msg "Allow loopback interface"
+		log_daemon_msg "IPtables - Allow loopback interface"
 		iptables -t filter -A INPUT -i lo -j ACCEPT
 		StatusLSB
 
 		#### ICMP
-		log_daemon_msg "Allow incoming ping for seedbox users"
+		log_daemon_msg "IPtables - Allow incoming ping for all users"
 		for ip in $AllUsersIPs; do 
 			iptables -t filter -A INPUT -p icmp -s $ip/32 -i $PrimaryInet -j ACCEPT -m comment --comment "ICMP"
 		done
@@ -236,7 +238,7 @@ case $1 in
 		StatusLSB
 		
 		if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "none" ]; then
-			log_daemon_msg "Allow incoming ping for $ServerProvider"
+			log_daemon_msg "IPtables - Allow incoming ping for $ServerProvider"
 			case "$ServerProvider" in
 				"OVH")
 					OvhIp1="`echo $SrvIpAddress | sed "s/$(echo $SrvIpAddress | cut -d '.' -f 4)/250/g;"`"
@@ -259,7 +261,7 @@ case $1 in
 		fi
 
 		#### HTTPS
-		log_daemon_msg "Allow access to HTTPs"
+		log_daemon_msg "IPtables - Allow access to HTTPs"
 		iptables -t filter -A INPUT -p tcp --dport $Port_HTTPS -i $PrimaryInet -j ACCEPT -m comment --comment "HTTPs"
 		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 			iptables -t filter -A INPUT -p tcp --dport $Port_HTTPS -i tun0 -j ACCEPT -m comment --comment "HTTPs over OpenVPN"
@@ -269,7 +271,7 @@ case $1 in
 
 		#### Webmin
 		if [ "$IsInstalled_Webmin" == "YES" ]; then
-			log_daemon_msg "Allow access to Webmin for mainuser"
+			log_daemon_msg "IPtables - Allow access to Webmin for main user"
 			for ip in $MainUserIPs; do 
 				iptables -t filter -A INPUT -p tcp --source $ip --dport $Ports_Webmin -i $PrimaryInet -j ACCEPT -m comment --comment "Webmin"
 			done
@@ -278,7 +280,7 @@ case $1 in
 		fi
 
 		#### FTP
-		log_daemon_msg "Allow access to FTPs for all seedbox users"
+		log_daemon_msg "IPtables - Allow access to FTPs for all seedbox users"
 		for ip in $AllUsersIPs; do 
 			iptables -t filter -A INPUT -p tcp --source $ip --dport $Port_FTP -i $PrimaryInet -j ACCEPT -m comment --comment "FTP"
 			iptables -t filter -A INPUT -p tcp --source $ip --dport $Port_FTP_Data -i $PrimaryInet -j ACCEPT -m comment --comment "FTP Data"
@@ -297,7 +299,7 @@ case $1 in
 		StatusLSB
 
 		#### SSH
-		log_daemon_msg "Allow access to SSH and SFTP"
+		log_daemon_msg "IPtables - Allow access to SSH and SFTP"
 		for ip in $AllUsersIPs; do 
 			iptables -t filter -A INPUT -p tcp --source $ip --dport $Port_SSH -i $PrimaryInet -j ACCEPT -m comment --comment "SSH and SFTP"
 		done
@@ -315,7 +317,7 @@ case $1 in
 			echo 1 > /proc/sys/net/ipv4/ip_forward
 			perl -pi -e "s/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g" /etc/sysctl.conf
 
-			log_daemon_msg "Allow access to OpenVPN TUN With Redirect Gateway"
+			log_daemon_msg "IPtables - Allow access to OpenVPN TUN With Redirect Gateway"
 			iptables -t filter -A INPUT -i tun0 -j ACCEPT
 			iptables -t filter -A INPUT -p ${OpenVPN_Proto} --dport ${Port_OpenVPN_WithGW} -i $PrimaryInet -j ACCEPT -m comment --comment "OpenVPN"
 			iptables -t filter -A FORWARD -i tun0 -o $PrimaryInet -s 10.0.0.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN"
@@ -323,7 +325,7 @@ case $1 in
 			iptables -t nat -A POSTROUTING -s 10.0.0.0/24 -j MASQUERADE -m comment --comment "OpenVPN"
 			StatusLSB
 
-			log_daemon_msg "Allow access to OpenVPN TUN Without Redirect Gateway"
+			log_daemon_msg "IPtables - Allow access to OpenVPN TUN Without Redirect Gateway"
 			iptables -t filter -A INPUT -i tun1 -j ACCEPT
 			iptables -t filter -A INPUT -p ${OpenVPN_Proto} --dport ${Port_OpenVPN_WithoutGW} -i $PrimaryInet -j ACCEPT -m comment --comment "OpenVPN"
 			StatusLSB
@@ -331,7 +333,7 @@ case $1 in
 
 		#### PlexMedia Server
 		if [ "$IsInstalled_PlexMedia" == "YES" ]; then
-			log_daemon_msg "Allow access to Plex Media Server on TCP"
+			log_daemon_msg "IPtables - Allow access to Plex Media Server on TCP"
 			for PlexTcpPort in $Ports_TCP_PlexMedia; do 
 				iptables -t filter -A INPUT -p tcp --dport $PlexTcpPort -i $PrimaryInet -j ACCEPT -m comment --comment "Plex Media Server TCP"
 			done
@@ -339,7 +341,7 @@ case $1 in
 			StatusLSB
 
 			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-				log_daemon_msg "Allow access to Plex Media Server on UDP (OpenVPN)"
+				log_daemon_msg "IPtables - Allow access to Plex Media Server on UDP (OpenVPN)"
 				for PlexUdpPort in $Ports_UDP_PlexMedia; do 
 					iptables -t filter -A INPUT -p udp --dport $PlexUdpPort -j ACCEPT -m comment --comment "Plex Media Server UDP over OpenVPN"
 				done
@@ -350,7 +352,7 @@ case $1 in
 
 		#### rTorrent
 		for SeedboxUser in $UsersList; do
-			log_daemon_msg "Allow access to rTorrent for $SeedboxUser"
+			log_daemon_msg "IPtables - Allow access to rTorrent for $SeedboxUser"
 			PORT_START="`sqlite3 $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$SeedboxUser'\"`"
 			PORT_END="`sqlite3 $MySB_DB \"SELECT rtorrent_port FROM users WHERE users_ident = '$SeedboxUser'\"`"
 			iptables -t filter -A INPUT -p tcp --dport $PORT_START:$PORT_END -i $PrimaryInet -j ACCEPT -m comment --comment "rTorrent $SeedboxUser"
@@ -360,7 +362,7 @@ case $1 in
 		#### DNScrypt-proxy
 		if [ "$IsInstalled_DNScrypt" == "YES" ]; then
 			for Resolver in $ResolverName; do
-				log_daemon_msg "Allow response for DNScrypt from $Resolver"
+				log_daemon_msg "IPtables - Allow response for DNScrypt from $Resolver"
 				ResolverAddress="`sqlite3 $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
 				ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
 				ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
