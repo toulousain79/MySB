@@ -71,11 +71,84 @@ case $1 in
 	;;
 
 	"new")
-		#### STOP services
-		ManageServices stop "pglcmd fail2ban"
-
 		#### VARs
-		ServicesToManage=""	
+		ServicesToRestart=""
+		HostnameList=""
+
+		#### Seedbox users IPs
+		log_daemon_msg "Creating IP/hostname white lists"
+		# List all users hostname
+		UsersHostname="`sqlite3 $MySB_DB \"SELECT hostname FROM users_addresses WHERE is_active = '1'\"`"
+		UsersHostname=$(echo "$UsersHostname"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
+		for Hostname in $UsersHostname; do
+			HostnameList="${HostnameList} ${Hostname}"
+		done
+		# List all users IPs
+		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`	
+		SeedboxUsersIPs=$(echo "$SeedboxUsersIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
+		MainUserIPs=`echo $MainUserIPs | sed s,/,\\\\\\\\\\/,g`
+		MainUserIPs=$(echo "$MainUserIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
+		AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
+		StatusLSB		
+
+		#### Fail2Ban
+		if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
+			Fail2BanWhitheList 1
+			ServicesToRestart="${ServicesToRestart} fail2ban"
+		fi
+
+		#### PeerGuardian
+		if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
+			# Create '/etc/pgl/pglcmd.conf'
+			PeerGuardianPglcmdConf 0
+			# Create '/etc/pgl/allow.p2p'
+			PeerGuardianAllowP2P 0
+			# Create '/etc/pgl/blocklists.list'
+			PeerGuardianBlocklistsList 0 "CreateFile"
+
+			ServicesToRestart="${ServicesToRestart} pglcmd"
+		fi		
+		
+		#### NginX
+		if [ -f /etc/nginx/conf.d/ip_restriction ] && CheckCommand 0 nginx; then
+			# 1 - Server IP addresses
+			log_daemon_msg "Allow access to web server for localhost"
+			echo "	# Localhost" > /etc/nginx/conf.d/ip_restriction
+			echo "	allow 127.0.0.1;" >> /etc/nginx/conf.d/ip_restriction
+			StatusLSB
+
+			# 2 - Main user IP addresses
+			log_daemon_msg "Allow access to web server for mainuser"	
+			echo "	# Restricted IP for mainuser" >> /etc/nginx/conf.d/ip_restriction
+			for IPv4 in $MainUserIPs; do
+				echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
+			done
+			unset IPv4
+			StatusLSB
+
+			# 3 - Normal user IP addresses
+			log_daemon_msg "Allow access to web server for all users"
+			echo "	# Restricted IP for all users" >> /etc/nginx/conf.d/ip_restriction
+			for IPv4 in $SeedboxUsersIPs; do
+				echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
+			done
+			unset IPv4
+			StatusLSB
+
+			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+				# 4 - OpenVPN user IP addresses
+				log_daemon_msg "Allow access to web server for OpenVPN users"
+				echo "	# Restricted IP for OpenVPN users" >> /etc/nginx/conf.d/ip_restriction
+				for IPv4 in $VpnIPs; do
+					echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
+				done
+				unset IPv4
+				StatusLSB
+			fi
+			echo "	deny all;" >> /etc/nginx/conf.d/ip_restriction
+
+			ServicesToRestart="${ServicesToRestart} nginx"
+		fi
 
 		#### NO spoofing
 		if [ -e /proc/sys/net/ipv4/conf/all/rp_filter ]; then
@@ -98,6 +171,30 @@ case $1 in
 		unset IFS
 		StatusLSB
 
+		#### TCP Wrapper		
+		if [ -z "`cat /etc/hosts.deny | grep 'ALL: ALL'`" ]; then
+			echo "ALL: ALL" >> /etc/hosts.deny
+		fi
+		sed -i '/ALL:/d' /etc/hosts.allow
+		echo "vsftpd:$HostnameList" >> /etc/hosts.allow
+		
+		#### BIND
+		if CheckCommand 0 named; then
+			log_daemon_msg "Block all outgoing request for inactive trackers"
+			AllTrackersDomain="`sqlite3 $MySB_DB \"SELECT tracker_domain FROM trackers_list WHERE is_active = '0' AND to_check = '0'\"`"
+			echo "#### MySB - Blacklisted domains (ex: inactive trackers)" > /etc/bind/MySB.zones.blakclists
+			for TrackerDomain in $AllTrackersDomain; do
+				echo "zone \"$TrackerDomain\" { type master; file \"/etc/bind/db.empty\"; };" >> /etc/bind/MySB.zones.blakclists
+			done
+			ServicesToRestart="${ServicesToRestart} bind9"
+			StatusLSB
+		fi		
+		
+		#### STOP services
+		ManageServices stop "pglcmd fail2ban"
+		
+		######################################################################		
+		
 		#### Emptying and removal of existing rules
 		log_daemon_msg "Emptying and removal of existing rules"
 		for TABLE in filter nat mangle; do
@@ -105,7 +202,7 @@ case $1 in
 			iptables -t $TABLE -X
 		done
 		StatusLSB
-
+		
 		#### Prohibit any incoming connection and allow any outgoing connection
 		log_daemon_msg "Prohibit any incoming connection and authorize any outgoing connection"
 		iptables -t filter -P INPUT DROP
@@ -128,16 +225,6 @@ case $1 in
 		#### Allow loopback
 		log_daemon_msg "Allow loopback interface"
 		iptables -t filter -A INPUT -i lo -j ACCEPT
-		StatusLSB
-
-		#### Seedbox users IPs
-		log_daemon_msg "Creating IP white lists"
-		# List all users IPs
-		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`	
-		SeedboxUsersIPs=$(echo "$SeedboxUsersIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
-		MainUserIPs=`echo $MainUserIPs | sed s,/,\\\\\\\\\\/,g`
-		MainUserIPs=$(echo "$MainUserIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
-		AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
 		StatusLSB
 
 		#### ICMP
@@ -288,90 +375,12 @@ case $1 in
 				StatusLSB
 			done
 			if ! GetPid dnscrypt-proxy; then
-				ServicesToManage="${ServicesToManage} dnscrypt-proxy"
+				ServicesToRestart="${ServicesToRestart} dnscrypt-proxy"
 			fi
-		fi		
-		
-		#### NginX
-		if [ -f /etc/nginx/conf.d/ip_restriction ] && CheckCommand 0 nginx; then
-			# 1 - Server IP addresses
-			log_daemon_msg "Allow access to web server for localhost"
-			echo "	# Localhost" > /etc/nginx/conf.d/ip_restriction
-			echo "	allow 127.0.0.1;" >> /etc/nginx/conf.d/ip_restriction
-			StatusLSB
-
-			# 2 - Main user IP addresses
-			log_daemon_msg "Allow access to web server for mainuser"	
-			echo "	# Restricted IP for mainuser" >> /etc/nginx/conf.d/ip_restriction
-			for IPv4 in $MainUserIPs; do
-				echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
-			done
-			unset IPv4
-			StatusLSB
-
-			# 3 - Normal user IP addresses
-			log_daemon_msg "Allow access to web server for all users"
-			echo "	# Restricted IP for all users" >> /etc/nginx/conf.d/ip_restriction
-			for IPv4 in $SeedboxUsersIPs; do
-				echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
-			done
-			unset IPv4
-			StatusLSB
-
-			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-				# 4 - OpenVPN user IP addresses
-				log_daemon_msg "Allow access to web server for OpenVPN users"
-				echo "	# Restricted IP for OpenVPN users" >> /etc/nginx/conf.d/ip_restriction
-				for IPv4 in $VpnIPs; do
-					echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
-				done
-				unset IPv4
-				StatusLSB
-			fi
-			echo "	deny all;" >> /etc/nginx/conf.d/ip_restriction
-
-			ServicesToManage="${ServicesToManage} nginx"
-		fi		
-		
-		#### VSFTPd
-		if [ -z "`cat /etc/hosts.deny | grep 'vsftpd: ALL'`" ]; then
-			echo "vsftpd: ALL" >> /etc/hosts.deny
-		fi
-		sed -i '/vsftpd:/d' /etc/hosts.allow
-		echo "vsftpd:$AllUsersIPs" >> /etc/hosts.allow
-		
-		#### BIND
-		if CheckCommand 0 named; then
-			log_daemon_msg "Block all outgoing request for inactive trackers"
-			AllTrackersDomain="`sqlite3 $MySB_DB \"SELECT tracker_domain FROM trackers_list WHERE is_active = '0' AND to_check = '0'\"`"
-			echo "#### MySB - Blacklisted domains (ex: inactive trackers)" > /etc/bind/MySB.zones.blakclists
-			for TrackerDomain in $AllTrackersDomain; do
-				echo "zone \"$TrackerDomain\" { type master; file \"/etc/bind/db.empty\"; };" >> /etc/bind/MySB.zones.blakclists
-			done
-			ServicesToManage="${ServicesToManage} bind9"
-			StatusLSB
-		fi
-
-		#### Fail2Ban
-		if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
-			Fail2BanWhitheList 1
-			ServicesToManage="${ServicesToManage} fail2ban"
-		fi
-
-		#### PeerGuardian
-		if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
-			# Create '/etc/pgl/pglcmd.conf'
-			PeerGuardianPglcmdConf 0
-			# Create '/etc/pgl/allow.p2p'
-			PeerGuardianAllowP2P 0
-			# Create '/etc/pgl/blocklists.list'
-			PeerGuardianBlocklistsList 0 "CreateFile"
-
-			ServicesToManage="${ServicesToManage} pglcmd"
 		fi
 
 		#### START services
-		ManageServices start "$ServicesToManage"
+		ManageServices start "$ServicesToRestart"
 
 		#### Save Iptables Rules for Webmin
 		iptables-save > /etc/iptables.up.rules
