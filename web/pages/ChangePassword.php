@@ -72,7 +72,7 @@ if ( isset($_POST['submit']) ) {
 	if ( ($current_pwd != '') && ($new_pwd != '') && ($confirm_pwd != '') ) {
 		if ( $current_pwd == $AuthPassword ) {
 			if ( $new_pwd == $confirm_pwd ) {
-				$result = UpdateWolfDB($AuthPassword, $new_pwd);
+				$result = UpdateWolfDB($CurrentUser, $new_pwd);
 
 				if ( $result > 0 ) {
 					if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') ) { // by NewUser.php
