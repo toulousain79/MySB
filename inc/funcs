@@ -260,22 +260,28 @@ ManageServices() {
 						case "$Service" in
 							"pglcmd")
 								Continue=0
-								log_daemon_msg "Stopping PeerGuardian Linux"
+								log_daemon_msg "Stopping PeerGuardian Linux" "pglcmd"
 								pglcmd stop &> /dev/null
 								StatusLSB
 							;;
 							"php5-fpm")
 								Continue=0
-								log_daemon_msg "Stopping PHP5 FastCGI Process Manager"
+								log_daemon_msg "Stopping PHP5 FastCGI Process Manager" "php5-fpm"
 								service $Service stop &> /dev/null
 								StatusLSB
 							;;
 							"stunnel4")
 								Continue=0
-								log_daemon_msg "Stopping Stunnel daemon"
+								log_daemon_msg "Stopping Stunnel daemon" "stunnel4"
 								service $Service stop &> /dev/null
 								StatusLSB
 							;;
+							"vsftpd")
+								Continue=0
+								log_daemon_msg "Stopping VSFTPd daemon" "vsftpd"
+								service $Service stop &> /dev/null
+								StatusLSB
+							;;							
 						esac
 
 						if [ "$Continue" == "1" ]; then
@@ -287,14 +293,20 @@ ManageServices() {
 					if [ "$Service" == "pglcmd" ]; then
 						#if CheckCommand 0 pglcmd; then
 							if GetPid $Service; then
-								pglcmd restart
+								log_daemon_msg "Restarting PeerGuardian Linux" "pglcmd"
+								pglcmd restart &> /dev/null
 								if [ $? -gt 0 ]; then
-									pglcmd force-restart
+									StatusLSB 1
+									log_daemon_msg "Force Restarting PeerGuardian Linux" "pglcmd"
+									pglcmd force-restart &> /dev/null
 								fi
 							else
-								pglcmd start
+								log_daemon_msg "Restarting PeerGuardian Linux" "pglcmd"
+								pglcmd start &> /dev/null
 							fi
+							
 							if [ $? -gt 0 ]; then # if pgl don't start maybe its due to a list update
+								StatusLSB 1
 								case "$LOGSTD" in
 									"STDOUT")
 										echo `date +"%T"`" --> The updated list of PGL may have failed." >> /etc/MySB/logs/$ScriptName.log
@@ -335,6 +347,7 @@ ManageServices() {
 									PeerGuardianFailed "PeerGuardian"
 								fi
 							else
+								StatusLSB 0
 								PeerGuardianFailed "PeerGuardian"
 							fi
 						# else

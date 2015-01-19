@@ -77,12 +77,6 @@ case $1 in
 
 		#### Seedbox users IPs
 		log_daemon_msg "Creating IP/hostname white lists"
-		# List all users hostname
-		UsersHostname="`sqlite3 $MySB_DB \"SELECT hostname FROM users_addresses WHERE is_active = '1'\"`"
-		UsersHostname=$(echo "$UsersHostname"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
-		for Hostname in $UsersHostname; do
-			HostnameList="${HostnameList} ${Hostname}"
-		done
 		# List all users IPs
 		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`	
 		SeedboxUsersIPs=$(echo "$SeedboxUsersIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
@@ -176,8 +170,8 @@ case $1 in
 		if [ -z "`cat /etc/hosts.deny | grep 'sshd: ALL'`" ]; then echo "sshd: ALL" >> /etc/hosts.deny; fi
 		sed -i '/vsftpd:/d' /etc/hosts.allow
 		sed -i '/sshd:/d' /etc/hosts.allow
-		echo "vsftpd: $HostnameList" >> /etc/hosts.allow
-		echo "sshd: $HostnameList" >> /etc/hosts.allow
+		echo "vsftpd: ${SeedboxUsersIPs} ${MainUserIPs} ${VpnIPs}" >> /etc/hosts.allow
+		echo "sshd: ${SeedboxUsersIPs} ${MainUserIPs} ${VpnIPs}" >> /etc/hosts.allow
 		
 		#### BIND
 		if CheckCommand 0 named; then
