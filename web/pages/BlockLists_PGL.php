@@ -31,7 +31,7 @@ if ( $IsInstalled == '1' ) {
 		$success = true;
 
 		for($i=0, $count = count($_POST['id_blocklists']);$i<$count;$i++) {
-			$result = $MySB_DB->update("blocklists", ["peerguardian_active" => $_POST['peerguardian_active'][$i]], ["id_blocklists" => $_POST['id_blocklists'][$i]]);
+			$result = $MySB_DB->update("blocklists", ["peerguardian_active" => $_POST['peerguardian_active'][$i], "rtorrent_active" => $_POST['peerguardian_active'][$i]], ["id_blocklists" => $_POST['id_blocklists'][$i]]);
 
 			if ( $result != 1 ) {
 				$success = false;
@@ -40,6 +40,7 @@ if ( $IsInstalled == '1' ) {
 
 		if ( $success == true ) {
 			$type = 'success';
+			$message = 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.';
 		} else {
 			$type = 'error';
 			$message = 'Failed ! It was not possible to update tracker in the MySB database.';

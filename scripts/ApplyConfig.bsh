@@ -33,6 +33,7 @@ source /etc/MySB/inc/includes_before
 # "Postfix": 					DOUBLON / ADMIN
 
 UserApplying="$1"
+Switch="$2"
 
 DoApplyConfig() {
 	# 1 - Purger la base des entrées en double (command + user), uniquement l'entrée avec la priorité la plus haute sera conservée
@@ -40,6 +41,7 @@ DoApplyConfig() {
 	#AllUser="`sqlite3 $MySB_DB \"SELECT user FROM commands WHERE 1\" | tr " " "\n"|sort|uniq|tr "\n" " "`"
 	User=$1
 	
+	log_daemon_msg "Creating order of execution for $UserApplying"
 	#for User in $AllUser; do
 		AllCommandsUser="`sqlite3 $MySB_DB \"SELECT commands FROM commands WHERE user = '$User'\"`"
 		for CommandUser in $AllCommandsUser; do
@@ -49,7 +51,7 @@ DoApplyConfig() {
 					LastCommandUser="`sqlite3 $MySB_DB \"SELECT max(priority) FROM commands WHERE user = '$User' AND commands = '$CommandUser'\"`"
 					while [ $FirstCommandUser -lt $LastCommandUser ]; do
 						# On supprime les premières commandes
-						sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE user = '$User' AND commands = '$CommandUser' AND priority = '$FirstCommandUser'"
+						echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE user = '$User' AND commands = '$CommandUser' AND priority = '$FirstCommandUser'"
 						(( FirstCommandUser++ ))
 					done
 				;;
@@ -67,7 +69,7 @@ DoApplyConfig() {
 	while [ $LastOneMin -lt $LastOneMax ]; do
 		# On supprime les premières commandes
 		#sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = 'MySB_SecurityRules' AND priority = '$LastOneMin'"
-		sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = 'MySB_SecurityRules' AND priority = '$LastOneMin' AND user = '$User'"
+		echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = 'MySB_SecurityRules' AND priority = '$LastOneMin' AND user = '$User'"
 		((  LastOneMin++ ))
 	done
 
@@ -76,12 +78,13 @@ DoApplyConfig() {
 	LastPriority="`sqlite3 $MySB_DB \"SELECT max(priority) FROM commands WHERE user = '$User'\"`"
 	(( LastPriority++ ))
 	#sqlite3 -echo $MySB_DB "UPDATE commands SET priority = '$LastPriority' WHERE commands = 'MySB_SecurityRules';"
-	sqlite3 -echo $MySB_DB "UPDATE commands SET priority = '$LastPriority' WHERE commands = 'MySB_SecurityRules' AND user = '$User';"
+	echo -n "	--> " && sqlite3 -echo $MySB_DB "UPDATE commands SET priority = '$LastPriority' WHERE commands = 'MySB_SecurityRules' AND user = '$User';"
 
 	# 3 - On peut maintenant exécuté les commandes une à une dans l'ordre ascendant des priorités.
 	#AllCommands="`sqlite3 $MySB_DB \"SELECT commands, user FROM commands WHERE 1 ORDER BY priority ASC\"`"
 	AllCommands="`sqlite3 $MySB_DB \"SELECT commands FROM commands WHERE user = '$User' ORDER BY priority ASC\"`"
-
+	
+	
 	#for MyCommand in $AllCommands; do
 	for Command in $AllCommands; do
 		#Command=`echo $MyCommand | awk '{split($0,a,"|"); print a[1]}'`
@@ -90,11 +93,14 @@ DoApplyConfig() {
 		# Creating arguments listing
 		case "$Command" in
 			"MySB_CreateUser"|"MySB_DeleteUser"|"MySB_ChangeUserPassword") # 3 args
+				log_daemon_msg "Getting arguments for $Command"
 				CommandArg="`sqlite3 $MySB_DB \"SELECT args FROM commands WHERE commands = '$Command' AND user = '$User'\"`"
+				StatusLSB 0
 			;;
 		esac
 
 		# Execute commands
+		log_daemon_msg "Executing $Command for $UserApplying"
 		case "$Command" in
 			"MySB_CreateUser") # ($1 = user, $2 = sftp, $3 = sudo, $4 = email)
 				IFS='|' read -a array <<< "$CommandArg"
@@ -106,7 +112,8 @@ DoApplyConfig() {
 				WaitingSTD MySB_CreateUser
 				screen -dmS MySB_CreateUser /bin/bash /etc/MySB/bin/MySB_CreateUser "$UserToCreate" "$UserSftp" "$UserSudo" "$UserMail" "APPLYCONFIG";
 				WaitingSTD MySB_CreateUser
-				sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
+				StatusLSB 0
+				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
 			;;
 
 			"MySB_DeleteUser") # 1 args
@@ -115,7 +122,8 @@ DoApplyConfig() {
 				WaitingSTD MySB_DeleteUser
 				screen -dmS MySB_DeleteUser /bin/bash /etc/MySB/bin/MySB_DeleteUser "$UserToDelete" "APPLYCONFIG";
 				WaitingSTD MySB_DeleteUser
-				sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
+				StatusLSB 0
+				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
 			;;
 
 			"MySB_ChangeUserPassword") # 2 args
@@ -126,47 +134,63 @@ DoApplyConfig() {
 				WaitingSTD MySB_ChangeUserPassword
 				screen -dmS MySB_ChangeUserPassword /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword "$UserName" "$UserPass" "APPLYCONFIG";
 				WaitingSTD MySB_ChangeUserPassword
-				sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
+				StatusLSB 0
+				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
 			;;
 
 			"BlocklistsRTorrent.bsh")
 				WaitingSTD BlocklistsRTorrent
 				screen -dmS BlocklistsRTorrent /bin/bash /etc/MySB/scripts/BlocklistsRTorrent.bsh "APPLYCONFIG";
 				WaitingSTD BlocklistsRTorrent
-				sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
+				StatusLSB 0
+				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
 			;;
 
 			"MySB_SecurityRules")
 				WaitingSTD MySB_SecurityRules
 				screen -dmS MySB_SecurityRules /bin/bash /etc/MySB/bin/MySB_SecurityRules "new" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
-				sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
+				StatusLSB 0
+				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
 			;;
 
 			"GetTrackersCert.bsh")
 				WaitingSTD GetTrackersCert
 				screen -dmS GetTrackersCert /bin/bash /etc/MySB/scripts/GetTrackersCert.bsh "APPLYCONFIG";
 				WaitingSTD GetTrackersCert
-				sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
+				StatusLSB 0
+				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
 			;;
 
 			"Postfix")
 				WaitingSTD Postfix
 				screen -dmS Postfix /bin/bash /etc/MySB/install/Postfix "APPLYCONFIG";
 				WaitingSTD Postfix
-				sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
+				StatusLSB 0
+				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
 			;;
 		esac
 	done
 }
 
-while [ ! -z "`ps ax | grep 'ApplyConfig.bsh' | grep -v "$UserApplying" | grep -v 'grep'`" ]; do
-	sleep 0.5
-done
+case "$Switch" in
+	"APPLYCONFIG") # Execute by portal
+		log_daemon_msg "Creating SCREEN session for $UserApplying"
+		screen -dmS ApplyConfig_$UserApplying /bin/bash /etc/MySB/scripts/ApplyConfig.bsh "$UserApplying" "SCREEN";
+		StatusLSB 0
+	;;
+	"SCREEN")
+		log_daemon_msg "Waiting authorization"
+		while [ ! -z "`ps ax | grep 'ApplyConfig.bsh' | grep 'SCREEN' | grep -v 'grep'`" ]; do
+			sleep 0.5
+		done
+		StatusLSB 0
 
-if [ ! -z "$UserApplying" ]; then
-	DoApplyConfig $UserApplying
-fi
+		if [ ! -z "$UserApplying" ]; then
+			DoApplyConfig $UserApplying
+		fi
+	;;
+esac
 
 # -----------------------------------------
 source /etc/MySB/inc/includes_after

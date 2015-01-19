@@ -84,7 +84,7 @@ if ( isset($_POST['submit']) ) {
 						$value = $MySB_DB->insert("commands", ["commands" => "$command", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
 					
 						if ( $result > 0 ) {
-							exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword'", $output, $result);
+							exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_ChangeUserPassword' 'APPLYCONFIG'", $output, $result);
 
 							if ( $result == 0 ) {
 								$type = 'success';

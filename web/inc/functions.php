@@ -122,6 +122,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 	$WebminIsInstalled = $WebminDatas["is_installed"];
 	$DnscryptIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "DNScrypt-proxy"]);
 	$PlexMediaIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "Plex Media Server"]);
+	$PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
 
     if ($page && count($page->children(null, array(), $hidden)) > 0) {
         echo ($startmenu) ? '<ul>' : '';
@@ -141,6 +142,11 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						echo '<li><a target="_blank"  href="sm">Seedbox-Manager</a>';
 					}
 					break;
+				case "PeerGuardian BlockLists":
+					if ( $PeerguardianIsInstalled == '1' ) {
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title);
+					}
+					break;					
 				case "Cakebox-Light":
 					if ( $CakeboxIsInstalled == '1' ) {
 						echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/cb/">Cakebox-Light</a>';

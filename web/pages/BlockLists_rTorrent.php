@@ -28,7 +28,7 @@ if (isset($_POST['submit'])) {
 	$success = true;
 
 	for($i=0, $count = count($_POST['id_blocklists']);$i<$count;$i++) {
-		$result = $MySB_DB->update("blocklists", ["rtorrent_active" => $_POST['rtorrent_active'][$i]], ["id_blocklists" => $_POST['id_blocklists'][$i]]);
+		$result = $MySB_DB->update("blocklists", ["rtorrent_active" => $_POST['rtorrent_active'][$i], "peerguardian_active" => $_POST['rtorrent_active'][$i]], ["id_blocklists" => $_POST['id_blocklists'][$i]]);
 
 		if ( $result != 1 ) {
 			$success = false;
@@ -37,6 +37,7 @@ if (isset($_POST['submit'])) {
 
 	if ( $success == true ) {
 		$type = 'success';
+		$message = 'Success!<br /><br />The blocklists have been apply for rTorrent AND PeerGuardian.';
 	} else {
 		$type = 'error';
 		$message = 'Failed ! It was not possible to update tracker in the MySB database.';	
