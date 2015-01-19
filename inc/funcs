@@ -651,8 +651,14 @@ AddTracker() {
 			TrackerDomain="`echo $PART2`.`echo $PART3`"
 		fi
 		unset PART1 PART2 PART3
-
+		
 		if [ ! -z "$TrackerDomain" ]; then
+			# Allow domain in BIND
+			InBlacklist"`cat /etc/bind/MySB.zones.blakclists | grep $TrackerDomain`"
+			if [ ! -z "$InBlacklist" ]; then
+				sed -i '/'$TrackerDomain'/d' /etc/bind/MySB.zones.blakclists
+			fi
+		
 			DomainIPv4="$(nslookup $TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 			if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
 				log_daemon_msg "Add tracker domain : $TrackerDomain"
@@ -720,6 +726,10 @@ AddTracker() {
 				fi
 			fi
 
+			if [ ! -z "$InBlacklist" ]; then
+				echo "zone \"$TrackerDomain\" { type master; file \"/etc/bind/db.empty\"; };" >> /etc/bind/MySB.zones.blakclists
+			fi
+			
 			unset TrackerDomain
 		fi
 	fi
