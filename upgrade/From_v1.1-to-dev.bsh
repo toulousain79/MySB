@@ -57,6 +57,9 @@ echo -e "${CYELLOW}All users IP addresses will be remove (except mainuser).$CEND
 echo -e "${CYELLOW}They will receive an email with information to change it.$CEND"
 echo -e "${CYELLOW}Their IP address will be automatically added into the database.$CEND"
 echo
+echo -e "${CYELLOW}The upgrade may take 20 to 45 minutes around.$CEND"
+echo -e "${CYELLOW}This will depend on your server configuration and choice of services to install.$CEND"
+echo
 
 # QuestionGetString NO  "Type 'yes' to continue or 'no' to abort ?" CONTINUE YES
 # if [ "$CONTINUE" == "NO" ]; then
@@ -438,7 +441,7 @@ for seedUser in $UsersList; do
 	SCGIPORT="`sqlite3 $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$seedUser'\"`"
 	NETWORKPORT="`sqlite3 $MySB_DB \"SELECT rtorrent_port FROM users WHERE users_ident = '$seedUser'\"`"
 
-	cp /home/$seedUser/.rtorrent.rc /home/$seedUser/.rtorrent.rc.bckp_v1.1_to_v1.2
+	cp /home/$seedUser/.rtorrent.rc /home/$seedUser/.rtorrent.rc.bckp_v1.1_to_$MySB_CurrentVersion
 	cp /etc/MySB/templates/rtorrent.rc.template /home/$seedUser/.rtorrent.rc
 	perl -pi -e "s/<server_ip>/$SrvIpAddress/g" /home/$seedUser/.rtorrent.rc
 	perl -pi -e "s/<username>/$seedUser/g" /home/$seedUser/.rtorrent.rc
@@ -460,8 +463,6 @@ for seedUser in $UsersList; do
 			perl -pi -e "s/^system.file_allocate.set = yes/system.file_allocate.set = no/g" /home/$seedUser/.rtorrent.rc
 		;;
 	esac
-
-	service rtorrent-$seedUser start &> /dev/null
 done
 StatusSTD
 
@@ -508,7 +509,7 @@ for seedUser in $UsersList; do
 			HostName="$(nslookup $MainUserIP | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
 			sqlite3 $MySB_DB "INSERT into users_addresses (id_users,ipv4,hostname,check_by,is_active) VALUES (\"$UserId\",\"$MainUserIP\",\"$HostName\",\"ipv4\",\"1\");"
 		fi
-		SendMail "MySB - Upgraded to $MySB_CurrentVersion" "$seedUser" "upgrade" "MySB upgraded"
+		SendMail "MySB - Upgraded to $MySB_CurrentVersion" "$seedUser" "upgrade"
 	fi
 done
 StatusSTD
