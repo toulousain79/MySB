@@ -41,7 +41,7 @@ DoApplyConfig() {
 	#AllUser="`sqlite3 $MySB_DB \"SELECT user FROM commands WHERE 1\" | tr " " "\n"|sort|uniq|tr "\n" " "`"
 	User=$1
 	
-	log_daemon_msg "Creating order of execution for $UserApplying"
+	echo `date +%H:%m:%S` "- Creating order of execution for $UserApplying"
 	#for User in $AllUser; do
 		AllCommandsUser="`sqlite3 $MySB_DB \"SELECT commands FROM commands WHERE user = '$User'\"`"
 		for CommandUser in $AllCommandsUser; do
@@ -93,14 +93,13 @@ DoApplyConfig() {
 		# Creating arguments listing
 		case "$Command" in
 			"MySB_CreateUser"|"MySB_DeleteUser"|"MySB_ChangeUserPassword") # 3 args
-				log_daemon_msg "Getting arguments for $Command"
+				echo `date +%H:%m:%S` "- Getting arguments for $Command"
 				CommandArg="`sqlite3 $MySB_DB \"SELECT args FROM commands WHERE commands = '$Command' AND user = '$User'\"`"
-				StatusLSB 0
 			;;
 		esac
 
 		# Execute commands
-		log_daemon_msg "Executing $Command for $UserApplying"
+		echo `date +%H:%m:%S` "Executing $Command for $UserApplying"
 		case "$Command" in
 			"MySB_CreateUser") # ($1 = user, $2 = sftp, $3 = sudo, $4 = email)
 				IFS='|' read -a array <<< "$CommandArg"
@@ -112,7 +111,6 @@ DoApplyConfig() {
 				WaitingSTD MySB_CreateUser
 				screen -dmS MySB_CreateUser /bin/bash /etc/MySB/bin/MySB_CreateUser "$UserToCreate" "$UserSftp" "$UserSudo" "$UserMail" "APPLYCONFIG";
 				WaitingSTD MySB_CreateUser
-				StatusLSB 0
 				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
 			;;
 
@@ -122,7 +120,6 @@ DoApplyConfig() {
 				WaitingSTD MySB_DeleteUser
 				screen -dmS MySB_DeleteUser /bin/bash /etc/MySB/bin/MySB_DeleteUser "$UserToDelete" "APPLYCONFIG";
 				WaitingSTD MySB_DeleteUser
-				StatusLSB 0
 				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
 			;;
 
@@ -134,7 +131,6 @@ DoApplyConfig() {
 				WaitingSTD MySB_ChangeUserPassword
 				screen -dmS MySB_ChangeUserPassword /bin/bash /etc/MySB/bin/MySB_ChangeUserPassword "$UserName" "$UserPass" "APPLYCONFIG";
 				WaitingSTD MySB_ChangeUserPassword
-				StatusLSB 0
 				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
 			;;
 
@@ -142,7 +138,6 @@ DoApplyConfig() {
 				WaitingSTD BlocklistsRTorrent
 				screen -dmS BlocklistsRTorrent /bin/bash /etc/MySB/scripts/BlocklistsRTorrent.bsh "APPLYCONFIG";
 				WaitingSTD BlocklistsRTorrent
-				StatusLSB 0
 				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
 			;;
 
@@ -150,7 +145,6 @@ DoApplyConfig() {
 				WaitingSTD MySB_SecurityRules
 				screen -dmS MySB_SecurityRules /bin/bash /etc/MySB/bin/MySB_SecurityRules "new" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
-				StatusLSB 0
 				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
 			;;
 
@@ -158,7 +152,6 @@ DoApplyConfig() {
 				WaitingSTD GetTrackersCert
 				screen -dmS GetTrackersCert /bin/bash /etc/MySB/scripts/GetTrackersCert.bsh "APPLYCONFIG";
 				WaitingSTD GetTrackersCert
-				StatusLSB 0
 				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
 			;;
 
@@ -166,7 +159,6 @@ DoApplyConfig() {
 				WaitingSTD Postfix
 				screen -dmS Postfix /bin/bash /etc/MySB/install/Postfix "APPLYCONFIG";
 				WaitingSTD Postfix
-				StatusLSB 0
 				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
 			;;
 		esac
@@ -174,20 +166,18 @@ DoApplyConfig() {
 }
 
 case "$Switch" in
-	"APPLYCONFIG") # Execute by portal
-		log_daemon_msg "Creating SCREEN session for $UserApplying"
+	"DO_APPLY") # Execute by portal
 		screen -dmS ApplyConfig_$UserApplying /bin/bash /etc/MySB/scripts/ApplyConfig.bsh "$UserApplying" "SCREEN";
-		StatusLSB 0
-		echo -n "	--> " && sqlite3 -echo $MySB_DB "UPDATE commands SET reload = '0' WHERE user = '$User';"
+		sqlite3 $MySB_DB "UPDATE commands SET reload = '0' WHERE user = '$UserApplying';"
 	;;
 	"SCREEN")
-		log_daemon_msg "Waiting authorization"
-		while [ ! -z "`ps ax | grep 'ApplyConfig.bsh' | grep 'SCREEN' | grep -v 'grep'`" ]; do
-			sleep 0.5
+		echo `date +%H:%m:%S` "- Waiting authorization"
+		while [ ! -z "`ps ax | grep 'ApplyConfig.bsh' | grep 'SCREEN'  | grep -v "$UserApplying" | grep -v 'grep'`" ]; do
+			sleep 1
 		done
-		StatusLSB 0
 
 		if [ ! -z "$UserApplying" ]; then
+			echo `date +%H:%m:%S` "- Executing commands"
 			DoApplyConfig $UserApplying
 		fi
 	;;
