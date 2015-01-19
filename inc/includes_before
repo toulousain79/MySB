@@ -26,6 +26,7 @@
 source /etc/MySB/inc/vars
 source /etc/MySB/inc/funcs
 source /lib/lsb/init-functions
+source /etc/MySB/inc/switches
 
 #### 2 - Check services again
 if [ "$IsInstalled_PlexMedia" == "YES" ]; then IsInstalled_PlexMedia="`CheckCommand 1 plexmediaserver`"; fi
@@ -38,86 +39,12 @@ if [ "$IsInstalled_Fail2Ban" == "YES" ]; then IsInstalled_Fail2Ban="`CheckComman
 if [ "$IsInstalled_PeerGuardian" == "YES" ]; then IsInstalled_PeerGuardian="`CheckCommand 1 pgld`"; fi
 if [ "$IsInstalled_DNScrypt" == "YES" ]; then IsInstalled_DNScrypt="`CheckCommand 1 dnscrypt-proxy`"; fi
 
-#### 3 - SWITCHES
-# Default
-BANNER=ON		# Banner for all script (ON/OFF)
-LOGSTD=NO		# Standard Outpout and Error redicted to 'scriptname.log' (STDOUT/NO)
-USAGE=ON		# All usage display to user, like questions (ON/OFF)
-END=ON			# Launch some commands at the end (ldconfig, updatedb, drop cache) (see includes_after) (ON/OFF)
-TIMESTAMP=ON	# Adds a time stamp at the beginning and end of the script in the logs (ON/OFF)
-
-# Check by script name BEFORE check arguments (to force default switches)
-case "$ScriptName" in	
-	"ApplyConfig.bsh") # Launched by ApplyConfig.bsh (web)
-		BANNER=OFF
-		END=OFF
-		TIMESTAMP=OFF
-	;;
-	"MySB_SecurityRules"|"MySB_RefreshMe")
-		TIMESTAMP=OFF
-		END=OFF
-	;;
-esac
-
-# Check by arguments
-for Arg in "$@"; do
-	case "$Arg" in
-		"REFRESH"|"INSTALL")
-			BANNER=OFF
-			LOGSTD=STDOUT
-			USAGE=OFF
-			END=ON
-			TIMESTAMP=ON
-		;;
-		"UPGRADE"|"CRON"|"APPLYCONFIG"|"INIT")
-			BANNER=OFF
-			LOGSTD=STDOUT
-			USAGE=OFF
-			END=OFF
-			TIMESTAMP=ON
-		;;
-	esac
-done
-
-# Check by script name AFTER check arguments (to force any switches)
-case "$ScriptName" in
-	"MySB.bsh") # Upgrade ?
-		BANNER=ON
-		LOGSTD=NO
-		USAGE=ON
-		END=OFF
-		TIMESTAMP=OFF
-		sleep 10
-	;;
-	"Questions")
-		BANNER=ON
-		LOGSTD=NO
-		USAGE=ON
-		END=OFF
-		TIMESTAMP=OFF
-	;;
-	"MySB_GitHubRepoUpdate"|"DynamicAddressResolver.bsh") # Maybe used with CRON args
-		TIMESTAMP=OFF
-		END=OFF
-	;;
-	"MySB_Install.bsh")
-		TIMESTAMP=ON
-		END=OFF
-	;;
-	"From_v1.1-to-dev.bsh") # Upgrade ?
-		MySB_CurrentVersion="dev"
-		TIMESTAMP=OFF
-		END=OFF
-		sleep 10
-	;;
-esac
-
-#### 4 - Create MySB banner
+#### 3 - Create MySB banner
 if [ "$BANNER" == "ON" ]; then
 	BannerGenerator
 fi
 
-#### 5 -STD Out/Err (after banner)
+#### 4 -STD Out/Err (after banner)
 if [ "$TIMESTAMP" == "ON" ]; then
 	echo "------------------------------------------------------------" >> /etc/MySB/logs/$ScriptName.log
 	#echo "START Out/Err: "`date` "-" $ScriptName $@ >> /etc/MySB/logs/$ScriptName.log

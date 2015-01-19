@@ -1,7 +1,5 @@
 #!/bin/bash 
 # ----------------------------------
-source /etc/MySB/inc/includes_before
-# ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 #    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -24,39 +22,99 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-if [ -f /etc/MySB/files/GeoIP.dat.gz ]; then
-	rm -vf /etc/MySB/files/GeoIP.dat.gz
-fi
-if [ -f /etc/MySB/files/GeoIPv6.dat.gz ]; then
-	rm -vf /etc/MySB/files/GeoIPv6.dat.gz
-fi
-if [ -f /etc/MySB/files/GeoLiteCity.dat.gz ]; then
-	rm -vf /etc/MySB/files/GeoLiteCity.dat.gz
-fi
+#### SWITCHES
+# BANNER		Banner for all script (ON/OFF)
+# LOGSTD		Standard Outpout redirected to 'scriptname.log' (STDOUT/NO)
+# USAGE			All usage display to user, like questions (ON/OFF)
+# END			Launch some commands at the end (ldconfig, updatedb, drop cache, mandb) (see includes_after) (ON/OFF)
+# TIMESTAMP		Adds a time stamp at the beginning and end of the script in the logs (ON/OFF)
 
-cd /etc/MySB/files/
-wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz
-wget http://geolite.maxmind.com/download/geoip/database/GeoIPv6.dat.gz
-wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+# Check by arguments
+for Arg in "$@"; do
+	case "$Arg" in
+		"REFRESH"|"INSTALL"|"UPGRADE")
+			BANNER=OFF
+			LOGSTD=STDOUT
+			USAGE=OFF
+			END=ON
+			TIMESTAMP=ON
+		;;
+		"CRON"|"APPLYCONFIG"|"INIT")
+			BANNER=OFF
+			LOGSTD=STDOUT
+			USAGE=OFF
+			END=OFF
+			TIMESTAMP=ON
+		;;
+		*) # Command line ?
+			BANNER=ON
+			LOGSTD=NO
+			USAGE=ON
+			END=OFF
+			TIMESTAMP=OFF
+		;;
+	esac
+done
 
-if [ -f /etc/MySB/files/GeoIP.dat.gz ]; then
-	gunzip GeoIP.dat.gz
-	cp -vf GeoIP.dat /usr/share/GeoIP/GeoIP.dat
-	rm -vf GeoIP.dat
-fi
-if [ -f /etc/MySB/files/GeoIPv6.dat.gz ]; then
-	gunzip GeoIPv6.dat.gz
-	cp -vf GeoIPv6.dat /usr/share/GeoIP/GeoIPv6.dat
-	rm -vf  GeoIPv6.dat
-fi
-if [ -f /etc/MySB/files/GeoLiteCity.dat.gz ]; then
-	gunzip GeoLiteCity.dat.gz
-	cp -vf GeoLiteCity.dat /usr/share/GeoIP/GeoIPCity.dat
-	cp -vf GeoLiteCity.dat /usr/share/GeoIP/GeoLiteCity.dat
-	rm -vf GeoLiteCity.dat
-fi
+# Check by script name (to force switches)
+case "$ScriptName" in
+	"MySB_GitHubRepoUpdate"|"DynamicAddressResolver.bsh") # Maybe used with CRON args
+		TIMESTAMP=OFF
+		END=OFF
+	;;
+	"PaymentReminder.bsh")
+		BANNER=OFF
+		LOGSTD=NO
+		USAGE=OFF
+		END=OFF
+		TIMESTAMP=OFF
+	;;
+	"ApplyConfig.bsh") # Launched by ApplyConfig.bsh (web)
+		BANNER=OFF
+		LOGSTD=NO
+		USAGE=OFF
+		END=OFF
+		TIMESTAMP=OFF
+	;;
+	"MySB_RefreshMe"|"MySB_UpgradeMe") # This script call others scripts, it's not need to do STDOUT
+		BANNER=OFF
+		LOGSTD=NO
+		USAGE=OFF
+		END=OFF
+		TIMESTAMP=OFF
+	;;
+	"MySB.bsh") # Install ?
+		BANNER=ON
+		LOGSTD=NO
+		USAGE=ON
+		END=OFF
+		TIMESTAMP=OFF
+		sleep 10
+	;;	
+	"From_v*.bsh") # Upgrade ?
+		BANNER=ON
+		LOGSTD=NO
+		USAGE=ON
+		END=OFF
+		TIMESTAMP=OFF	
+	
+		MySB_CurrentVersion="dev"
+		sleep 10
+	;;
+	"Questions")
+		BANNER=ON
+		LOGSTD=NO
+		USAGE=ON
+		END=OFF
+		TIMESTAMP=OFF
+	;;
+	"MySB_Install.bsh")
+		BANNER=ON
+		LOGSTD=NO
+		USAGE=ON
+		TIMESTAMP=ON
+		END=OFF
+	;;	
+esac
 
-# -----------------------------------------
-source /etc/MySB/inc/includes_after
-# -----------------------------------------
 ##################### LAST LINE ######################################
