@@ -66,16 +66,6 @@ You need to have a "blank" server installation.
 #	Warnings	#
 #################
 
-#### OpenVZ Containers
---> PeerGuardian, it's not possible to install it in your OpenVZ Container.
-```
-Module 'xt_mark' is mandatory for PeerGuardian. Currently, I have not found solution. The subject is pending.
-```
---> OpenVPN, you must follow this link BEFORE install 'MySB'.
-```
-https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-access-server-on-a-vps-container.html
-```
-
 ###### NOTE: You must have a swap partition for systems with less than 2GB of RAM!
 
 	--> Your swap partition should be at least equal to your RAM.
@@ -128,6 +118,7 @@ After installing you will have access to the following commands to be used direc
 	* MySB_ChangeUserPassword
 	* MySB_CreateUser
 	* MySB_DeleteUser
+	* MySB_SecurityRules (use this for generate all security options Nginx IP restricted access, IPtables, Fail2BanPeerGuardian, ...)
 	* MySB_GitHubRepoUpdate (update actual repository)
 	* MySB_RefreshMe (refresh ruTorrent, Seedbox-Manager, Cakebox-Light, LoadAvg)
 	* MySB_UpgradeMe (to migrate to a new version of MySB)
@@ -138,9 +129,8 @@ Next scripts are avaible too.
 	* '/etc/MySB/scripts/ApplyConfig.bsh', not needed by command line. It is only use for MySB portal to apply modifications.
 	* '/etc/MySB/scripts/BlocklistsRTorrent.bsh', use this for generate blocklist for rTorrent with 'ipv4_filter.load' command. (CRON every day at 23:00)	
 	* '/etc/MySB/scripts/DynamicAddressResolver.bsh', used for auto update users dynamics addresses IP. (CRON every 5 minutes)
-	* '/etc/MySB/bin/MySB_SecurityRules [clean|new]', use this for generate all security options (Nginx IP restricted access, IPtables, Fail2BanPeerGuardian, ...)
 	* '/etc/MySB/scripts/GetTrackersCert.bsh', use this for get all SSL certificates for all tracker. You can add more trackers in MySB portal. This script is start every time you add/edit trackers list.	
-	* '/etc/MySB/scripts/LogServer.bsh', used for generate HTML log files (Nginx, PeerGuardian, Fail2Ban,...) avalaible in MySB Portal. (CRON every 1 hour)	
+	* '/etc/MySB/scripts/LogServer.bsh', used for generate HTML log files (Nginx, PeerGuardian, Fail2Ban,...) avalaible in MySB Portal. (CRON every 30 minutes)	
 	* '/etc/MySB/scripts/PaymentReminder.bsh', if used in MySB Portal, sending a reminder email the beginning of each month for each users. (CRON every 1st of month)
 	* '/etc/MySB/scripts/UpdateGeoIP.bsh', not needed by command line. It's auto update GeoIP files. (CRON with automatic timer)
 
@@ -188,12 +178,13 @@ Depending on your system, it is possible to use:
 #### PeerGuardian
 
 	* By default, some list are activated. Check this list in MySB portal.
-	* All trackers listed with ruTorrent are available but are inactive. You can add more or activate it via MySB portal.
+	* All listed trackers in ruTorrent are available but disabled. You can add more or activate it via MySB portal.
 
 ###### NOTE 1: 	Do not try to add your rtorrents ports in the list of incoming ports allowed in PeerGuardian (pglcmd.conf) !!!
 ###### 			Using PeerGuardian will not have much sense ...
 ###### 			Rather prefer permission trackers via the "allow.p2p" PeerGuardian file. To do this, use MySB portal.
 ###### 			If PeerGuardian failed to start, rTorrent blocklists are used instead.
+######			All modifications applied by hand will be erased by MySB SecurityRules script.
 ###### NOTE 2:	Do not activate all trackers, but only these needed.
 
 OR
@@ -203,17 +194,13 @@ OR
 	* By default, some list are activated. Check this list in MySB portal.
 	* Once the lists are selected, a common file containing all the lists will be generated and copied for each user.
 
-###### NOTE:	Beware, if you do not have enough memory, too much list activée will make your system slower, especially if you have multiple users!
+###### NOTE:	Beware, if you do not have enough memory, too much list enabled will make your system slower, especially if you have multiple users!
 
 ## OpenVPN
 
 To use your VPN you will need a VPN client compatible with [OpenVPN](http://openvpn.net/index.php?option=com_content&id=357), necessary files to configure your connection are in this link in your box:
 ```
 http://<Server IP or Server Name>:<https NginX port>/?user/openvpn-config-file.html` and use it in any OpenVPN client.
-```
-#### For OpenVZ, you must validate the prerequisites on this page first. Otherwise, OpenVPN will not be functional.
-```
-https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-access-server-on-a-vps-container.html
 ```
 ##### NFS and Samba share with OpenVPN
 For NFS, you can mount the '/home/<username>/rtorrent' like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
@@ -239,28 +226,18 @@ To clean Bind cache, just restart BIND service.
 service bind9 restart
 ```
 
-###### IMPORTANT: With OpenVZ container, to complete the installation of DNScrypt-proxy, you must replace your existing DNS config (/etc/resolv.conf), by the loopback address.
-###### IMPORTANT: It's necessary to make the change via the host (eg Proxmox), otherwise you will lose your configuration on next reboot. You must replace yours nameserver by 'nameserver 127.0.0.1' (/etc/resolv.conf).
-
-
 ## SMTP authentification
 If you want to use GMAIL provider, maybe should you read this for authorize connexion to your account by your server.
 ```
 https://www.google.com/accounts/DisplayUnlockCaptcha
 ```
 
-
 ## Supported and tested servers
 
 #### Designed for dedicated server with Debian 7 (Wheezy) - 64 bits
 
-	--> Tested on Online.net with "DEDIBOX® SC GEN2" and "DEDIBOX® XC"
-	--> Tested on OpenVZ Container with ProxMox, work fine ! (read comment in top of this page)
-	--> Tested on OVH with "Kimsufi"
+	--> Ubuntu is not supported.
   
-#### Ubuntu is not supported.
-
-
 ## Changelog
 
 Take a look at 'Changelog.md', it's all there.
