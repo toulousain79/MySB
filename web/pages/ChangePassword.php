@@ -61,7 +61,7 @@ echo '
 
 if ( isset($_POST['submit']) ) {
 	global $MySB_DB, $CurrentUser;
-	
+
 	$current_pwd = $_POST['current_pwd'];
 	$new_pwd = $_POST['new_pwd'];
 	$confirm_pwd = $_POST['confirm_pwd'];
@@ -76,7 +76,10 @@ if ( isset($_POST['submit']) ) {
 
 				if ( $result > 0 ) {
 					if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') ) { // by NewUser.php
-
+						$UserAddress = $_SERVER['REMOTE_ADDR'];
+						$HostName = gethostbyaddr($UserAddress);
+						ManageUsersAddresses($CurrentUser, $UserAddress, $HostName, '1', 'ipv4');
+						
 						$priority = $MySB_DB->max("commands", "priority");
 						$priority++;
 						$args = "$CurrentUser|$new_pwd";
