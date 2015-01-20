@@ -38,8 +38,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			for($i=1; $i<=$count; $i++) {
 				// test if IP or hostname (dynamic IP)
 				$CleanAddress = preg_replace('/\s\s+/', '', $_POST['address'][$i]); 
-				//if (!filter_var($CleanAddress, FILTER_VALIDATE_IP)) {
-				if ( !ValidateIPv4($CleanAddress) ) {	
+				if ( !ValidateIPv4($CleanAddress) ) {
 					// IP is not valid (hostname)
 					$IPv4 = gethostbyname($CleanAddress);
 
