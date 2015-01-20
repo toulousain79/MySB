@@ -399,8 +399,9 @@ function ManageUsersAddresses($UserName, $IPv4, $HostName, $IsActive, $CheckBy) 
 }
 
 // Validate an IPv4 address, excluding private range addresses
-function ValidateIPv4NoPriv($ip) {
-	if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+function ValidateIPv4($ip) {
+	//if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+	if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_NO_RES_RANGE)) {
 		return true;
 	} else {
 		return false;

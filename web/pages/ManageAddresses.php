@@ -38,7 +38,8 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			for($i=1; $i<=$count; $i++) {
 				// test if IP or hostname (dynamic IP)
 				$CleanAddress = preg_replace('/\s\s+/', '', $_POST['address'][$i]); 
-				if (!filter_var($CleanAddress, FILTER_VALIDATE_IP)) {
+				//if (!filter_var($CleanAddress, FILTER_VALIDATE_IP)) {
+				if ( !ValidateIPv4($CleanAddress) ) {	
 					// IP is not valid (hostname)
 					$IPv4 = gethostbyname($CleanAddress);
 
@@ -55,7 +56,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				} else {
 					// IP is valid
 					$CleanAddress = preg_replace('/\s\s+/', '', $_POST['address'][$i]); 
-					if ( ValidateIPv4NoPriv($CleanAddress) ) {
+					if ( ValidateIPv4($CleanAddress) ) {
 						// IP is valid
 						$HostName = gethostbyaddr($CleanAddress);
 						$last_id_address = ManageUsersAddresses($CurrentUser, $CleanAddress, $HostName, $_POST['is_active'][$i], 'ipv4');

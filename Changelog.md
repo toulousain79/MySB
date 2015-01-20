@@ -3,15 +3,14 @@
 			- Used of SQLite instead of flat file (more convenient)
 			- Add Wolf CMS as portal (more convenient), manage blocklists, trackers, users...
 			- NginX, add PageSpeed functionnality
-			- NginX, change url access to short url (ruTorrent, Seedbox-Manager, Cakebox)
 			- DNScrypt-proxy v1.4.3, add use of multi provider instead of one. By default, all provider that accept DNSsec and No Logs are activated.
 			- BIND, block all inactivated trackers, add DNSsec
 			- OpenVPN, change clients pushed DNS
-			- Strengthening IP access policy, all access to the server is fully subject to the restriction by IP 
-			- Possibility to allow access for dynamic IP addresses
+			- Strengthening IP access policy, all access to the server are fully subject to the restriction by IP 
+			- Possibility for all users to allowing access by dynamic IP addresses
 			- Renew all certificates using SHA256 2048bits instead of SHA1 1024bits
 			- Add ruTorrent Plugins (Mobile and Pause WebUI)
-			- Allow monitoring (ping) from OVH et ONLINE
+			- Allow monitoring (ping) from some providers
 			- Change Cakebox access by 'alias' instead of 'vhost'
 			- Add LoadAvg, free server analytics and monitoring
 			- Some modifications
@@ -19,7 +18,7 @@
 	Version v1.1
 		2014/10/26
 			- "install/PeerGuardian", minor change
-			- "bin/MySB_SecurityRules" (old FirewallAndSecurity.sh), minor change
+			- "scripts/FirewallAndSecurity.sh", minor change
 			- Correcting PlexMedia ports management
 			- Correcting SSL vulnerability (poodle) for Nginx and Postfix
 			- Changing the management of Logs (web)
