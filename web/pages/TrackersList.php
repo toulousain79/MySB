@@ -107,7 +107,9 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["ORDER" => "trackers_lis
 foreach($TrackersList as $Tracker) {
 	switch ($Tracker["origin"]) {
 		case 'users':
-			$origin = '<input class="submit" name="delete['. $Tracker["id_trackers_list"] .']" type="submit" value="Delete" />';
+			if ( $IsMainUser ) {
+				$origin = '<input class="submit" name="delete['. $Tracker["id_trackers_list"] .']" type="submit" value="Delete" />';
+			}
 			break;
 		default:
 			$origin = '';
@@ -147,7 +149,7 @@ foreach($TrackersList as $Tracker) {
 									<option value="1" selected="selected" class="greenText">Yes</option>
 								</select>';
 			} else {
-				$is_active = '	<select name="is_active[]" style="width:60px;" class="greenText">
+				$is_active = '	<select name="is_active[]" style="width:60px;" class="greenText" disabled>
 									<option value="1" selected="selected" class="greenText">Yes</option>
 								</select>';				
 			}
