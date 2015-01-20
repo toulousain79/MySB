@@ -93,23 +93,23 @@ screen -r MySB
 
 Beware, during installation, the SSH port will be changed. If a port session 22 does not work, try with the new port that you have selected.
 
-###### NOTE 1: You must be logged as root to run this installation or use sudo.
+###### NOTE 1: You must be logged as root to run this installation.
 ###### NOTE 2: At the end of the installation, the server will restart automatically and you will receive an e-mail summarizing.
 ###### NOTE 3: Each time a user is added, it will also receive a confirmation email with a temporary password.
 
 ## How to upgrade from v1.1
-Just copy and paste these command on your terminal:
+Use this command on your terminal:
 ```
 MySB_UpgradeMe
 ```
 
 ## Complete uninstall of MySB
-Just copy and paste these command on your terminal:
+Use this command on your terminal:
 ```
 bash /etc/MySB/install/MySB_CleanAll.bsh
 ```
 
-###### BEWARE: The '/etc/MySB' will be completely removed and all packages installed during the installation will be uninstalled..
+###### BEWARE: The '/etc/MySB' will be completely removed and all packages installed during the installation will be uninstalled !
 
 ## Commands
 
@@ -124,7 +124,7 @@ After installing you will have access to the following commands to be used direc
 	* MySB_UpgradeMe (to migrate to a new version of MySB)
 	* MySB_UpgradeSystem (simply upgrade your system APT upgrade)
 
-Next scripts are avaible too.
+Additional scripts:
 
 	* '/etc/MySB/scripts/ApplyConfig.bsh', not needed by command line. It is only use for MySB portal to apply modifications.
 	* '/etc/MySB/scripts/BlocklistsRTorrent.bsh', use this for generate blocklist for rTorrent with 'ipv4_filter.load' command. (CRON every day at 23:00)	
@@ -155,7 +155,7 @@ https://<Server IP or Server Name>:<https NginX port>/
 
 ## Seedbox-Manager
 
-The seedbox web-manager application is an interface to restart a rtorrent user session.
+The seedbox manager is an interface to restart a rtorrent user session.
 
 Author: backtoback (c) & Magicalex (php) & hydrog3n (php).
 ```
