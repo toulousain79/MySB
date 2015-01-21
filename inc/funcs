@@ -196,8 +196,8 @@ PackagesManage() {
 PeerGuardianFailed() {
 	ListingUsers
 	
-	log_daemon_msg "Switching use of blocklists with $1"
 	for FnUser in $UsersList; do
+		log_daemon_msg "Switching use of blocklists with $1" "$FnUser"
 		case "$1" in
 			"rTorrent")
 				if [ -f /etc/MySB/files/blocklists/blocklist_rtorrent.txt ] && [ -d /home/$FnUser/blocklist/ ]; then
@@ -212,30 +212,34 @@ PeerGuardianFailed() {
 
 					service rtorrent-$FnUser status &> /dev/null
 					if [ $? -eq 0 ]; then
+						StatusLSB 0
 						service rtorrent-$FnUser restart
+					else
+						StatusLSB 0
 					fi
-					StatusLSB
 				else
-					StatusLSB 0
+					StatusLSB 1
 				fi
 			;;
 			"PeerGuardian")
 				if [ -f /home/$FnUser/.rtorrent.rc ]; then
-					Check=`cat /home/$FnUser/.rtorrent.rc | grep '^ipv4_filter.load'`
+					Check="`cat /home/$FnUser/.rtorrent.rc | grep '^ipv4_filter.load'`"
 					if [ ! -z "$Check" ]; then
 						perl -pi -e "s/^ipv4_filter.load/#ipv4_filter.load/g" /home/$FnUser/.rtorrent.rc
 						perl -pi -e "s/^print/#print/g" /home/$FnUser/.rtorrent.rc
 						
 						service rtorrent-$FnUser status &> /dev/null
 						if [ $? -eq 0 ]; then
+							StatusLSB 0
 							service rtorrent-$FnUser restart
+						else
+							StatusLSB 0
 						fi
-						StatusLSB
 					else
 						StatusLSB 0
 					fi
 				else
-					StatusLSB 0
+					StatusLSB 1
 				fi
 			;;
 		esac

@@ -299,14 +299,9 @@ PopulatingIcmpChain() {
 	fi
 
 	# Allow ICMP for all users
-	for FnUser in $UsersList; do
-		UserId="`sqlite3 $MySB_DB \"SELECT id_users FROM users WHERE users_ident = '$FnUser'\"`"
-		UserIPs="`sqlite3 $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users = '$UserId'\" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-
-		for ip in $UserIPs; do
-			iptables -A icmp_packets -p ICMP -s $ip/32 --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "Allow ICMP for user $FnUser"
-			iptables -A icmp_packets -p ICMP -s $ip/32 --icmp-type 8 -j ACCEPT -m comment --comment "Allow ICMP for user $FnUser"
-		done
+	for ip in $AllUsersIPs; do
+		iptables -A icmp_packets -p ICMP -s $ip/32 --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "Allow ICMP for users"
+		iptables -A icmp_packets -p ICMP -s $ip/32 --icmp-type 8 -j ACCEPT -m comment --comment "Allow ICMP for users"
 	done
 	
 	# Allow ICMP over VPN tunneling
@@ -351,13 +346,8 @@ PopulatingUdpInboundChain() {
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 123 -j ACCEPT -m comment --comment "NTP over OpenVPN"
 	fi
-	for FnUser in $UsersList; do
-		UserId="`sqlite3 $MySB_DB \"SELECT id_users FROM users WHERE users_ident = '$FnUser'\"`"
-		UserIPs="`sqlite3 $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users = '$UserId'\" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-
-		for ip in $UserIPs; do
-			iptables -A udp_inbound -p UDP -s $ip/32 --destination-port 123 -j ACCEPT -m comment --comment "NTP for user $FnUser"
-		done
+	for ip in $AllUsersIPs; do
+		iptables -A udp_inbound -p UDP -s $ip/32 --destination-port 123 -j ACCEPT -m comment --comment "NTP for users"
 	done
 
 	# DNS Server
@@ -392,14 +382,9 @@ PopulatingUdpInboundChain() {
 
 	#### OpenVPN
 	if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$OpenVPN_Proto" == "udp" ]; then
-		for FnUser in $UsersList; do
-			UserId="`sqlite3 $MySB_DB \"SELECT id_users FROM users WHERE users_ident = '$FnUser'\"`"
-			UserIPs="`sqlite3 $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users = '$UserId'\" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-
-			for ip in $UserIPs; do	
-				iptables -A udp_inbound -p UDP -s $ip/32 --destination-port $Port_OpenVPN_WithGW -j ACCEPT -m comment --comment "OpenVPN with GW for $FnUser"
-				iptables -A udp_inbound -p UDP -s $ip/32 --destination-port $Port_OpenVPN_WithoutGW -j ACCEPT -m comment --comment "OpenVPN without GW for $FnUser"
-			done
+		for ip in $AllUsersIPs; do
+			iptables -A udp_inbound -p UDP -s $ip/32 --destination-port $Port_OpenVPN_WithGW -j ACCEPT -m comment --comment "OpenVPN with GW for users"
+			iptables -A udp_inbound -p UDP -s $ip/32 --destination-port $Port_OpenVPN_WithoutGW -j ACCEPT -m comment --comment "OpenVPN without GW for users"
 		done
 	fi	
 
@@ -458,29 +443,24 @@ PopulatingTcpInboundChain() {
 	# HTTPS (Secure Web Server)
 	iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $Port_HTTPS -j ACCEPT -m comment --comment "HTTPs"
 	
-	for FnUser in $UsersList; do
-		UserId="`sqlite3 $MySB_DB \"SELECT id_users FROM users WHERE users_ident = '$FnUser'\"`"
-		UserIPs="`sqlite3 $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users = '$UserId'\" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+	for ip in $AllUsersIPs; do
+		# SSHd
+		iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Port_SSH -j ACCEPT -m comment --comment "SSH and SFTP for users"
+		
+		# FTP Server (Control)
+		iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Port_FTP -j ACCEPT -m comment --comment "FTP for users"
 
-		for ip in $UserIPs; do
-			# SSHd
-			iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Port_SSH -j ACCEPT -m comment --comment "SSH and SFTP for user $FnUser"
-			
-			# FTP Server (Control)
-			iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Port_FTP -j ACCEPT -m comment --comment "FTP for user $FnUser"
-
-			# FTP Client (Data Port for non-PASV transfers)
-			iptables -A tcp_inbound -p TCP -s $ip/32 --source-port $Port_FTP_Data -j ACCEPT -m comment --comment "FTP Data for user $FnUser"
-			
-			# Passive FTP
-			iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Port_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive for user $FnUser"
-			
-			#### OpenVPN
-			if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$OpenVPN_Proto" == "tcp" ]; then
-				iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Port_OpenVPN_WithGW -j ACCEPT -m comment --comment "OpenVPN with GW for user $FnUser"
-				iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Port_OpenVPN_WithoutGW -j ACCEPT -m comment --comment "OpenVPN without GW for user $FnUser"
-			fi
-		done
+		# FTP Client (Data Port for non-PASV transfers)
+		iptables -A tcp_inbound -p TCP -s $ip/32 --source-port $Port_FTP_Data -j ACCEPT -m comment --comment "FTP Data for users"
+		
+		# Passive FTP
+		iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Port_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive for users"
+		
+		#### OpenVPN
+		if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$OpenVPN_Proto" == "tcp" ]; then
+			iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Port_OpenVPN_WithGW -j ACCEPT -m comment --comment "OpenVPN with GW for users"
+			iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Port_OpenVPN_WithoutGW -j ACCEPT -m comment --comment "OpenVPN without GW for users"
+		fi
 	done
 	
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
@@ -500,7 +480,7 @@ PopulatingTcpInboundChain() {
 	#### Webmin
 	if [ "$IsInstalled_Webmin" == "YES" ]; then
 		for ip in $MainUserIPs; do
-			iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Ports_Webmin -j ACCEPT -m comment --comment "Webmin for user $MainUser"
+			iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Ports_Webmin -j ACCEPT -m comment --comment "Webmin for main user"
 		done
 		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 			iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port $Ports_Webmin -j ACCEPT -m comment --comment "Webmin over OpenVPN"
@@ -518,7 +498,7 @@ PopulatingTcpInboundChain() {
 	for SeedboxUser in $UsersList; do
 		PORT_START="`sqlite3 $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$SeedboxUser'\"`"
 		PORT_END="`sqlite3 $MySB_DB \"SELECT rtorrent_port FROM users WHERE users_ident = '$SeedboxUser'\"`"
-		iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $PORT_START:$PORT_END -j ACCEPT -m comment --comment "rTorrent for user $SeedboxUser"
+		iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $PORT_START:$PORT_END -j ACCEPT -m comment --comment "rTorrent for users"
 	done
 	
 	# Network File System (NFS) Server
