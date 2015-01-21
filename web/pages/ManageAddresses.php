@@ -107,7 +107,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			}
 
 			if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ManageAddresses') ) { // by NewUser.php
-				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh 'MySB_SecurityRules'", $output, $result);
+				exec("sudo /bin/bash /etc/MySB/scripts/ApplyConfig.bsh '$CurrentUser' 'DO_APPLY'", $output, $result);
 
 				if ( $result == 0 ) {
 					$type = 'success';
