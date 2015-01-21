@@ -150,19 +150,6 @@ CREATE TABLE system (
 
 INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password], [apt_update], [apt_date], [server_provider]) VALUES (1, '', '', '', '', '', '', '', '', 0, null, null);
 
--- Table: commands
-CREATE TABLE commands ( 
-    id_commands INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                NOT NULL ON CONFLICT ABORT
-                                UNIQUE ON CONFLICT ABORT,
-    commands    VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
-    reload      BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT,
-    priority    INTEGER( 2 )    NOT NULL ON CONFLICT ABORT,
-    args        VARCHAR( 128 ),
-    user        VARCHAR( 16 )   NOT NULL ON CONFLICT ABORT 
-);
-
-
 -- Table: dnscrypt_resolvers
 CREATE TABLE dnscrypt_resolvers ( 
     id_dnscrypt_resolvers          INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -315,3 +302,16 @@ INSERT INTO [blocklists] ([id_blocklists], [author], [list_name], [url_infos], [
 INSERT INTO [blocklists] ([id_blocklists], [author], [list_name], [url_infos], [peerguardian_list], [rtorrent_list], [peerguardian_active], [rtorrent_active], [default], [comments], [peerguardian_lastupdate], [rtorrent_lastupdate]) VALUES (35, 'TBG', 'Hijacked', 'https://www.iblocklist.com/list.php?list=tbnuqfclfkemqivekikv', 'list.iblocklist.com/lists/tbg/hijacked', 'http://list.iblocklist.com/?list=tbnuqfclfkemqivekikv&fileformat=p2p&archiveformat=gz', 0, 0, 0, null, null, null);
 INSERT INTO [blocklists] ([id_blocklists], [author], [list_name], [url_infos], [peerguardian_list], [rtorrent_list], [peerguardian_active], [rtorrent_active], [default], [comments], [peerguardian_lastupdate], [rtorrent_lastupdate]) VALUES (36, 'TBG', 'Primary Threats', 'https://www.iblocklist.com/list.php?list=ijfqtofzixtwayqovmxn', 'list.iblocklist.com/lists/tbg/primary-threats', 'http://list.iblocklist.com/?list=ijfqtofzixtwayqovmxn&fileformat=cidr&archiveformat=gz', 1, 1, 1, null, null, null);
 INSERT INTO [blocklists] ([id_blocklists], [author], [list_name], [url_infos], [peerguardian_list], [rtorrent_list], [peerguardian_active], [rtorrent_active], [default], [comments], [peerguardian_lastupdate], [rtorrent_lastupdate]) VALUES (37, 'TBG', 'Search Engines', 'https://www.iblocklist.com/list.php?list=pfefqteoxlfzopecdtyw', 'list.iblocklist.com/lists/tbg/search-engines', 'http://list.iblocklist.com/?list=pfefqteoxlfzopecdtyw&fileformat=cidr&archiveformat=gz', 0, 0, 0, null, null, null);
+
+-- Table: commands
+CREATE TABLE commands ( 
+    id_commands INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                NOT NULL ON CONFLICT ABORT
+                                UNIQUE ON CONFLICT ABORT,
+    commands    VARCHAR( 64 )   NOT NULL ON CONFLICT ABORT,
+    reload      BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT,
+    priority    INTEGER( 2 )    NOT NULL ON CONFLICT ABORT,
+    args        VARCHAR( 128 ),
+    user        VARCHAR( 16 )   NOT NULL ON CONFLICT ABORT 
+);
+

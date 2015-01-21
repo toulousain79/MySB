@@ -24,17 +24,11 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 #
-# Usage:	MySB_SecurityRules {clean|new}
+# Usage:	MySB_SecurityRules {clean|create|refresh}
 #
 ##################### FIRST LINE #####################################
 
-# 1 - Clean all
-# 2 - Create new
-# 3 - Refresh
-#	* NginX
-#	* PeerGuardian
-#	* Fail2Ban
-#	* Iptables
+source /etc/MySB/inc/funcs_iptables
 
 #### VARs
 ListingUsers #($UsersList)
@@ -46,78 +40,80 @@ MainUserIPs=$(echo "$MainUserIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as u
 AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
 
 ServicesToRestart=""
-
-ApplyNginx=false
-ApplyBind=false
-ApplyFail2Ban=false
-ApplyPGL=false
-ApplyDnscrypt=false
 #### VARs
 
-
 #### Check arguments options
-if [ $# -gt 1 ]; then
-	for Arg in "$@"; do
-		case "$Arg" in
-			--full)
-				ApplyNginx=true
-				if CheckCommand 0 named; then
-					ApplyBind=true
-				fi
-				if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
-					ApplyPGL=true
-				fi
-				if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
-					ApplyFail2Ban=true
-				fi
-				if [ "$IsInstalled_DNScrypt" == "true" ]; then
-					ApplyDnscrypt=true
-				fi
-			;;
-			--iptables)
-				
-			;;
-			--pgl)
-				if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
-					ApplyPGL=true
-				fi
-			;;
-			--nginx)
-				ApplyNginx=true
-			;;
-			--dnscrypt)
-				if [ "$IsInstalled_DNScrypt" == "true" ]; then
-					ApplyDnscrypt=true
-				fi
-			;;			
-			--bind)
-				if CheckCommand 0 named; then
-					ApplyBind=true
-				fi
-			;;
-			--fail2ban)
-				if [ "$IsInstalled_Fail2Ban" == "YES" ]; then
-					ApplyFail2Ban=true
-				fi
-			;;
-		esac
-	done
-fi
+ApplyConfigNginx=NO
+ApplyConfigPeerGuardian=NO
+ApplyConfigFail2Ban=NO
+ApplyConfigBind=NO
+ApplyConfigDnscrypt=NO
+ApplyIptablesUsers=NO
+ApplyIptablesDnscrypt=NO
 
-if [ "$ApplyNginx" == "true" ]; then
+case "$1" in
+	create)
+		ApplyConfigNginx=YES
+		ApplyConfigPeerGuardian=YES
+		ApplyConfigFail2Ban=YES
+		ApplyConfigBind=YES
+		ApplyConfigDnscrypt=YES
+	;;
+	clean)
+		ApplyConfigNginx=YES
+		ApplyConfigBind=YES
+	;;
+	refresh)
+		for Arg in "$@"; do
+			case "$Arg" in
+				--users)
+					ApplyIptablesUsers=YES
+					ApplyConfigNginx=YES
+					ApplyConfigFail2Ban=$IsInstalled_Fail2Ban
+					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
+				;;
+				--dnscrypt)
+					ApplyIptablesDnscrypt=YES
+					ApplyConfigBind="`CheckCommand 1 named`"
+					ApplyConfigDnscrypt=$IsInstalled_DNScrypt
+					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
+				;;
+				--trackers)
+					ApplyConfigBind="`CheckCommand 1 named`"
+					ApplyConfigDnscrypt=$IsInstalled_DNScrypt
+				;;
+				--blocklists)
+					ApplyConfigBind="`CheckCommand 1 named`"
+					ApplyConfigDnscrypt=$IsInstalled_DNScrypt
+					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
+				;;
+				*)
+					ApplyIptablesUsers=YES
+					ApplyConfigNginx=YES
+					ApplyConfigBind="`CheckCommand 1 named`"
+					ApplyConfigDnscrypt=$IsInstalled_DNScrypt
+					ApplyConfigFail2Ban=$IsInstalled_Fail2Ban
+					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
+				;;
+			esac
+		done
+	;;
+esac
+
+if [ "$ApplyConfigNginx" == "YES" ]; then
 	ServicesToRestart="${ServicesToRestart} nginx"
 fi
-if [ "$ApplyBind" == "true" ]; then
+if [ "$ApplyConfigBind" == "YES" ]; then
 	AllTrackersDomain="`sqlite3 $MySB_DB \"SELECT tracker_domain FROM trackers_list WHERE is_active = '0' AND to_check = '0'\"`"
 	ServicesToRestart="${ServicesToRestart} bind9"
 fi
-if [ "$IsInstalled_DNScrypt" == "YES" ] && ! GetPid dnscrypt-proxy; then
-	ServicesToRestart="${ServicesToRestart} dnscrypt-proxy"	
+if [ "$ApplyConfigDnscrypt" == "YES" ] || ! GetPid dnscrypt-proxy; then
+	ServicesToRestart="${ServicesToRestart} dnscrypt-proxy"
 fi
-if [ "$ApplyFail2Ban" == "true" ]; then
+if [ "$ApplyConfigFail2Ban" == "YES" ]; then
 	ServicesToRestart="${ServicesToRestart} fail2ban"
 fi
-if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
+if [ "$ApplyConfigPeerGuardian" == "YES" ]; then
 	ServicesToRestart="${ServicesToRestart} pglcmd"
 fi
 #### Check arguments options
@@ -125,27 +121,27 @@ fi
 #### Functions
 CreateServicesRules() {
 	for FnUser in $UsersList; do
-		log_daemon_msg "NginX - Allow the IP addresses of $FnUser"
+		log_daemon_msg "NginX - Allowing IP addresses of $FnUser"
 		UserId="`sqlite3 $MySB_DB \"SELECT id_users FROM users WHERE users_ident = '$FnUser'\"`"
 		UserIPs="`sqlite3 $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users = '$UserId'\" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-		
+
 		#### NginX
-		if [ "$ApplyNginx" == "true" ]; then
-			echo "	# Restricted IP for $FnUser" >> /etc/nginx/conf.d/ip_restriction
+		if [ "$ApplyConfigNginx" == "YES" ]; then
+			echo "	# Restricted IP for $FnUser" > /etc/nginx/conf.d/ip_restriction
 			for IPv4 in $UserIPs; do
 				echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
 			done
 			unset IPv4
-			StatusLSB
 		fi
 		#### NginX
+		StatusLSB
 	done
 
 	#### NginX
-	if [ "$ApplyNginx" == "true" ]; then		
+	if [ "$ApplyConfigNginx" == "YES" ]; then		
 		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 			# OpenVPN local IP addresses
-			log_daemon_msg "NginX - Allow the IP addresses of OpenVPN users"
+			log_daemon_msg "NginX - Allowing IP addresses of OpenVPN users"
 			echo "	# Restricted IP for OpenVPN users" >> /etc/nginx/conf.d/ip_restriction
 			for IPv4 in $VpnIPs; do
 				echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
@@ -153,13 +149,13 @@ CreateServicesRules() {
 			unset IPv4
 			StatusLSB
 		fi
-		
+
 		# Loopback
-		log_daemon_msg "NginX - Allow the loopback interface"
-		echo "	# Localhost" > /etc/nginx/conf.d/ip_restriction
+		log_daemon_msg "NginX - Allowing the loopback interface"
+		echo "	# Localhost" >> /etc/nginx/conf.d/ip_restriction
 		echo "	allow 127.0.0.1;" >> /etc/nginx/conf.d/ip_restriction
 		StatusLSB
-		
+
 		# Deny all others
 		echo "	# Deny all others" >> /etc/nginx/conf.d/ip_restriction
 		echo "	deny all;" >> /etc/nginx/conf.d/ip_restriction
@@ -167,7 +163,7 @@ CreateServicesRules() {
 	#### NginX
 
 	#### BIND
-	if [ "$ApplyBind" == "true" ]; then
+	if [ "$ApplyConfigBind" == "YES" ]; then
 		log_daemon_msg "Bind - Block all outgoing request for inactive trackers"
 		AllTrackersDomain="`sqlite3 $MySB_DB \"SELECT tracker_domain FROM trackers_list WHERE is_active = '0' AND to_check = '0'\"`"
 		echo "#### MySB - Blacklisted domains (ex: inactive trackers)" > /etc/bind/MySB.zones.blakclists
@@ -180,13 +176,13 @@ CreateServicesRules() {
 	#### BIND
 
 	#### Fail2Ban
-	if [ "$ApplyFail2Ban" == "YES" ]; then
+	if [ "$ApplyConfigFail2Ban" == "YES" ]; then
 		Fail2BanWhitheList 1
 	fi
 	#### Fail2Ban
 
 	#### PeerGuardian
-	if [ "$ApplyPGL" == "YES" ]; then
+	if [ "$ApplyConfigPeerGuardian" == "YES" ]; then
 		# Create '/etc/pgl/pglcmd.conf'
 		PeerGuardianPglcmdConf 0
 		# Create '/etc/pgl/allow.p2p'
@@ -205,31 +201,39 @@ case $1 in
 		#### STOP services
 		ManageServices stop "pglcmd fail2ban"
 		#### STOP services
-		
+
 		#### IPtables - Removal of existing rules
 		log_daemon_msg "IPtables - Removal of existing rules"
 		FlushingTables
 		StatusLSB
 		#### IPtables - Removal of existing rules
-		
+
 		#### NginX - Satisfy all
 		log_daemon_msg "NginX - Satisfy all"
 		echo "	# Allow any one" >> /etc/nginx/conf.d/ip_restriction
 		echo "	satisfy all;" > /etc/nginx/conf.d/ip_restriction
 		StatusLSB
 		#### NginX - Satisfy all
-		
+
 		#### Bind - Unblock inactive tracker domains
 		log_daemon_msg "Bind - Unblock inactive tracker domains"
 		perl -pi -e "s/^include \"\/etc\/bind\/MySB.zones.blakclists\";/#include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
 		StatusLSB
 		#### Bind - Unblock inactive tracker domains
-		
+
 		#### START services
 		ManageServices start "nginx bind9"
-		#### START services		
+		#### START services
+
+		#### IPtables - SAVE Iptables Rules
+		iptables-save > /etc/iptables.up.rules
+		cp /etc/iptables.up.rules /etc/MySB/files/current-iptables-rules
+		if [ "$IsInstalled_Webmin" == "YES" ] && [ -d /etc/webmin/firewall/ ]; then
+			cp /etc/iptables.up.rules /etc/webmin/firewall/iptables.save
+		fi
+		#### IPtables - SAVE Iptables Rules
 	;;
-	
+
 	"create")
 		#### STOP services
 		ManageServices stop "pglcmd fail2ban"
@@ -246,7 +250,7 @@ case $1 in
 		KernelParameterConfiguration
 		StatusLSB
 		#### Kernel - Parameter Configuration
-		
+
 		#### IPtables - Removal of existing rules
 		log_daemon_msg "IPtables - Removal of existing rules"
 		FlushingTables
@@ -260,13 +264,13 @@ case $1 in
 		iptables -P OUTPUT DROP
 		StatusLSB
 		#### IPtables - Prohibit any incoming/outgoing connections
-		
+
 		#### IPtables - Creating user chains
 		log_daemon_msg "IPtables - Creating user chains"
 		CreatingUserChain
 		StatusLSB
 		#### IPtables - Creating user chains
-		
+
 		#### IPtables - Populating user chains
 		log_daemon_msg "IPtables - Populating BAD chains"
 		PopulatingBadChain
@@ -282,13 +286,13 @@ case $1 in
 		PopulatingIcmpChain
 		StatusLSB
 		#### IPtables - Populating ICMP chain
-		
+
 		#### IPtables - Populating UDP inboud user chain
 		log_daemon_msg "IPtables - Populating UDP inboud chain"
 		PopulatingUdpInboundChain
 		StatusLSB
 		#### IPtables - Populating UDP inboud chain
-		
+
 		#### IPtables - Populating UDP outbound chain
 		log_daemon_msg "IPtables - Populating UDP outbound chain"
 		PopulatingUdpOutboundChain
@@ -305,7 +309,7 @@ case $1 in
 		log_daemon_msg "IPtables - Populating TCP outbound chain"
 		PopulatingTcpOutboundChain
 		StatusLSB
-		#### IPtables - Populating TCP outbound chain	
+		#### IPtables - Populating TCP outbound chain
 
 		#### IPtables - Process INPUT chain
 		log_daemon_msg "IPtables - Process INPUT chain"
@@ -318,27 +322,27 @@ case $1 in
 		ProcessForwardChain
 		StatusLSB
 		#### IPtables - Process FORWARD chain
-		
+
 		#### IPtables - Process OUTPUT chain
 		log_daemon_msg "IPtables - Process OUTPUT chain"
 		ProcessOutputChain
 		StatusLSB
 		#### IPtables - Process OUTPUT chain
-		
+
 		#### IPtables - Process POSTROUTING chain
 		log_daemon_msg "IPtables - Process POSTROUTING chain"
 		ProcessPostroutingChain
 		StatusLSB
-		#### IPtables - Process POSTROUTING chain		
-		
+		#### IPtables - Process POSTROUTING chain
+
 		#### Services - Create all security rules for services
 		CreateServicesRules
 		#### Services - Create all security rules for services
-		
+
 		#### START services
 		ManageServices start "$ServicesToRestart"
-		#### START services			
-		
+		#### START services
+
 		#### Save Iptables Rules for Webmin
 		iptables-save > /etc/iptables.up.rules
 		cp /etc/iptables.up.rules /etc/MySB/files/current-iptables-rules
@@ -347,7 +351,7 @@ case $1 in
 		fi
 		#### Save Iptables Rules for Webmin
 	;;
-	
+
 	"refresh")
 		#### IPtables - SAVE Iptables Rules
 		log_daemon_msg "IPtables - SAVE Iptables Rules"
@@ -356,44 +360,94 @@ case $1 in
 		#### IPtables - SAVE Iptables Rules
 
 		#### IPtables - ALTER Iptables Rules
-		## MySB_CreateUser
-		for FnUser in $UsersList; do
-			UserId="`sqlite3 $MySB_DB \"SELECT id_users FROM users WHERE users_ident = '$FnUser'\"`"
-			UserIPs="`sqlite3 $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users = '$UserId'\" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+		if [ "$ApplyIptablesUsers" == "YES" ]; then
+			for FnUser in $UsersList; do
+				UserId="`sqlite3 $MySB_DB \"SELECT id_users FROM users WHERE users_ident = '$FnUser'\"`"
+				UserIPs="`sqlite3 $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users = '$UserId'\" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 
-			# icmp_packets chain			
-			NumLign=$(grep -n 'Allow ICMP for user' /etc/MySB/temp/current-iptables-rules)
-			sed -i '/Allow ICMP for user '$FnUser'/d' /etc/MySB/temp/current-iptables-rules
-			for ip in $UserIPs; do
-				sed -i ""$NumLign"i\iptables -A icmp_packets -p ICMP -s $ip/32 --icmp-type 8 -j ACCEPT -m comment --comment \"Allow ICMP for $FnUser\"\n" /etc/MySB/temp/current-iptables-rules
-				sed -i ""$NumLign"i\iptables -A icmp_packets -p ICMP -s $ip/32 --icmp-type 8 -j LOG --log-prefix \"fp=icmp_packets:2 a=ACCEPT \" -m comment --comment \"Allow ICMP for $FnUser\"\n" /etc/MySB/temp/current-iptables-rules
+				# icmp_packets chain
+				NumLign=$(cat /etc/MySB/temp/current-iptables-rules | grep 'Allow ICMP for user' -n -m 1 | cut -d ':' -f 1)
+				sed -i '/Allow ICMP for user/d' /etc/MySB/temp/current-iptables-rules
+				for ip in $UserIPs; do
+					# ICMP
+					sed -i ""$NumLign"i\-A icmp_packets -s $ip/32 -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for user $FnUser\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+					sed -i ""$NumLign"i\-A icmp_packets -s $ip/32 -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for user $FnUser\" -j LOG --log-prefix \"fp=icmp_packets:2 a=ACCEPT\"\n" /etc/MySB/temp/current-iptables-rules
+				done
+				# icmp_packets chain
+
+				# udp_inbound chain
+				NumLign=$(cat /etc/MySB/temp/current-iptables-rules | grep 'NTP for user' -n -m 1 | cut -d ':' -f 1)
+				sed -i '/NTP for user/d' /etc/MySB/temp/current-iptables-rules
+				for ip in $UserIPs; do
+					# NTP
+					sed -i ""$NumLign"i\-A udp_inbound -s $ip/32 -p udp -m udp --dport 123 -m comment --comment \"NTP for user $FnUser\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+				done
+				# udp_inbound chain
+
+				# tcp_inbound chain
+				NumLign=$(cat /etc/MySB/temp/current-iptables-rules | grep 'SSH and SFTP for user' -n -m 1 | cut -d ':' -f 1)
+				sed -i '/SSH and SFTP for user/d' /etc/MySB/temp/current-iptables-rules
+				sed -i '/FTP for user/d' /etc/MySB/temp/current-iptables-rules
+				sed -i '/FTP Data for user/d' /etc/MySB/temp/current-iptables-rules
+				sed -i '/FTP Passive for user/d' /etc/MySB/temp/current-iptables-rules
+				if [ "$IsInstalled_Webmin" == "YES" ] && [ "$FnUser" == "$MainUser" ]; then
+					sed -i '/Webmin for user/d' /etc/MySB/temp/current-iptables-rules
+				fi
+				sed -i '/rTorrent for user/d' /etc/MySB/temp/current-iptables-rules
+				for ip in $UserIPs; do
+					# SSH and SFTP
+					sed -i ""$NumLign"i\-A tcp_inbound -s $ip/32 -p tcp -m tcp --dport $Port_SSH -m comment --comment \"SSH and SFTP for user $FnUser\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+					# FTP
+					sed -i ""$NumLign"i\-A tcp_inbound -s $ip/32 -p tcp -m tcp --dport $Port_FTP -m comment --comment \"FTP for user $FnUser\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+					# FTP Data
+					sed -i ""$NumLign"i\-A tcp_inbound -s $ip/32 -p tcp -m tcp --sport $Port_FTP_Data -m comment --comment \"FTP Data for user $FnUser\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+					# FTP Passive
+					sed -i ""$NumLign"i\-A tcp_inbound -s $ip/32 -p tcp -m tcp --dport $Port_FTP_Passive -m comment --comment \"FTP Passive for user $FnUser\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+					# OpenVPN TCP
+					if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$OpenVPN_Proto" == "tcp" ]; then
+						sed -i ""$NumLign"i\-A tcp_inbound -s $ip/32 -p tcp -m tcp --dport $Port_OpenVPN_WithGW -m comment --comment \"OpenVPN with GW for user $FnUser\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+						sed -i ""$NumLign"i\-A tcp_inbound -s $ip/32 -p tcp -m tcp --dport $Port_OpenVPN_WithoutGW -m comment --comment \"OpenVPN without GW for user $FnUser\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+					fi
+					# Webmin
+					if [ "$IsInstalled_Webmin" == "YES" ] && [ "$FnUser" == "$MainUser" ]; then
+						sed -i ""$NumLign"i\-A tcp_inbound -s $ip/32 -p tcp -m tcp --dport $Ports_Webmin -m comment --comment \"Webmin for user $FnUser\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+					fi
+					# rTorrent
+					PORT_START="`sqlite3 $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$FnUser'\"`"
+					PORT_END="`sqlite3 $MySB_DB \"SELECT rtorrent_port FROM users WHERE users_ident = '$FnUser'\"`"
+					sed -i ""$NumLign"i\-A tcp_inbound -p tcp -m tcp --dport $PORT_START:$PORT_END -m comment --comment \"rTorrent for user $FnUser\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+				done
+				# tcp_inbound chain
 			done
-			# icmp_packets chain
-			
-			# udp_inbound chain
-			NumLign=$(grep -n 'NTP for user' /etc/MySB/temp/current-iptables-rules)
-			sed -i '/NTP for user '$FnUser'/d' /etc/MySB/temp/current-iptables-rules
-			for ip in $UserIPs; do
-				sed -i ""$NumLign"i\iptables -A udp_inbound -p UDP -s $ip/32 --destination-port 123 -j ACCEPT -m comment --comment \"NTP for user $FnUser\"\n" /etc/MySB/temp/current-iptables-rules
-			done			
-			# udp_inbound chain
-		done
-		## MySB_CreateUser - icmp_packets chain
+		fi
+		if [ "$ApplyIptablesDnscrypt" == "YES" ]; then
+			NumLign=$(cat /etc/MySB/temp/current-iptables-rules | grep 'DNScrypt-proxy' -n -m 1 | cut -d ':' -f 1)
+			sed -i '/DNScrypt-proxy/d' /etc/MySB/temp/current-iptables-rules
+
+			for Resolver in $ResolverName; do
+				ResolverAddress="`sqlite3 $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+				ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
+				ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
+				if [ -z "$ResolverPort" ]; then ResolverPort="443"; fi
+
+				sed -i ""$NumLign"i\-A udp_inbound -s $ResolverAddress/32 -p udp -m udp --dport $ResolverPort -m comment --comment \"DNScrypt-proxy: $Resolver\" -j ACCEPT" /etc/MySB/temp/current-iptables-rules
+			done
+		fi
 		#### IPtables - ALTER Iptables Rules
 	
 		#### Services - Create all security rules for services
 		CreateServicesRules
 		#### Services - Create all security rules for services
-		
+
 		#### IPtables - RESTORE Iptables Rules
 		log_daemon_msg "IPtables - RESTORE Iptables Rules"
 		iptables-restore < /etc/MySB/temp/current-iptables-rules
 		StatusLSB
-		#### IPtables - RESTORE Iptables Rules		
-		
+		#### IPtables - RESTORE Iptables Rules
+
 		#### START services
 		ManageServices start "$ServicesToRestart"
-		#### START services		
+		#### START services
 
 		#### Save Iptables Rules for Webmin
 		iptables-save > /etc/iptables.up.rules
@@ -406,22 +460,8 @@ case $1 in
 	;;
 
 	*)
-		echo -e "${CBLUE}Usage:$CEND	${CYELLOW}bash $ScriptName$CEND ${CGREEN}{clean|create|refresh} [ --full | --pgl | --nginx | --dnscrypt | --bind | --fail2ban ]$CEND"
+		echo -e "${CBLUE}Usage:$CEND	${CYELLOW}bash $ScriptName$CEND ${CGREEN}{clean|create|refresh}$CEND"
 		echo
-		echo -e "${CYELLOW}	--full$CEND"
-		echo -e "${CBLUE}		Refresh security rules for all available services. Like --pgl --nginx -- dnscrypt --bind -- fail2ban$CEND"
-		echo -e "${CYELLOW}	--pgl$CEND"
-		echo -e "${CBLUE}		Refresh security rules for PeerGuadian.$CEND"
-		echo -e "${CYELLOW}	--nginx$CEND"
-		echo -e "${CBLUE}		Refresh security rules for Nginx.$CEND"
-		echo -e "${CYELLOW}	--dnscrypt$CEND"
-		echo -e "${CBLUE}		Refresh security rules for DNScrypt-proxy.$CEND"
-		echo -e "${CYELLOW}	--bind$CEND"
-		echo -e "${CBLUE}		Refresh security rules for BIND.$CEND"
-		echo -e "${CYELLOW}	--fail2ban$CEND"
-		echo -e "${CBLUE}		Refresh security rules for Fail2Ban.$CEND"
-		
-		
 		END=OFF
 		EndingScript 0
 	;;

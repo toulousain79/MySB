@@ -46,7 +46,7 @@ DoApplyConfig() {
 		AllCommandsUser="`sqlite3 $MySB_DB \"SELECT commands FROM commands WHERE user = '$User'\"`"
 		for CommandUser in $AllCommandsUser; do
 			case "$CommandUser" in
-				"BlocklistsRTorrent.bsh"|"MySB_SecurityRules"|"GetTrackersCert.bsh"|"MySB_ChangeUserPassword"|"Postfix") # On peut supprimer les doublons
+				BlocklistsRTorrent.bsh|MySB_SecurityRules*|GetTrackersCert.bsh|MySB_ChangeUserPassword|Postfix) # On peut supprimer les doublons
 					FirstCommandUser="`sqlite3 $MySB_DB \"SELECT min(priority) FROM commands WHERE user = '$User' AND commands = '$CommandUser'\"`"
 					LastCommandUser="`sqlite3 $MySB_DB \"SELECT max(priority) FROM commands WHERE user = '$User' AND commands = '$CommandUser'\"`"
 					while [ $FirstCommandUser -lt $LastCommandUser ]; do
@@ -140,10 +140,17 @@ DoApplyConfig() {
 				WaitingSTD BlocklistsRTorrent
 				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
 			;;
+			
+			"MySB_SecurityRules_Refresh_Blocklists")
+				WaitingSTD MySB_SecurityRules
+				screen -dmS MySB_SecurityRules /bin/bash /etc/MySB/bin/MySB_SecurityRules "refresh --blocklists" "APPLYCONFIG";
+				WaitingSTD MySB_SecurityRules
+				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
+			;;			
 
 			"MySB_SecurityRules")
 				WaitingSTD MySB_SecurityRules
-				screen -dmS MySB_SecurityRules /bin/bash /etc/MySB/bin/MySB_SecurityRules "new" "APPLYCONFIG";
+				screen -dmS MySB_SecurityRules /bin/bash /etc/MySB/bin/MySB_SecurityRules "refresh" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
 				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
 			;;
@@ -152,6 +159,10 @@ DoApplyConfig() {
 				WaitingSTD GetTrackersCert
 				screen -dmS GetTrackersCert /bin/bash /etc/MySB/scripts/GetTrackersCert.bsh "APPLYCONFIG";
 				WaitingSTD GetTrackersCert
+				
+				WaitingSTD MySB_SecurityRules
+				screen -dmS MySB_SecurityRules /bin/bash /etc/MySB/bin/MySB_SecurityRules "refresh --trackers" "APPLYCONFIG";
+				WaitingSTD MySB_SecurityRules				
 				echo -n "	--> " && sqlite3 -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
 			;;
 

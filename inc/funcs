@@ -278,39 +278,9 @@ ManageServices() {
 								pglcmd stop &> /dev/null
 								StatusLSB
 							;;
-							"php5-fpm")
+							"php5-fpm"|"nginx"|"stunnel4"|"vsftpd"|"fail2ban"|"nfs-kernel-server")
 								Continue=0
-								log_daemon_msg "Stopping PHP5 FastCGI Process Manager" "php5-fpm"
-								service $Service stop &> /dev/null
-								StatusLSB
-							;;
-							"nginx")
-								Continue=0
-								log_daemon_msg "Stopping NginX server" "nginx"
-								pglcmd stop &> /dev/null
-								StatusLSB
-							;;							
-							"stunnel4")
-								Continue=0
-								log_daemon_msg "Stopping Stunnel daemon" "stunnel4"
-								service $Service stop &> /dev/null
-								StatusLSB
-							;;
-							"vsftpd")
-								Continue=0
-								log_daemon_msg "Stopping VSFTPd daemon" "vsftpd"
-								service $Service stop &> /dev/null
-								StatusLSB
-							;;
-							"fail2ban")
-								Continue=0
-								log_daemon_msg "Stopping Fail2ban daemon" "fail2ban"
-								service $Service stop &> /dev/null
-								StatusLSB
-							;;
-							"nfs-kernel-server")
-								Continue=0
-								log_daemon_msg "Stopping NFS kernel daemon" "mountd nfsd"
+								log_daemon_msg "Stopping $Service" "$Service"
 								service $Service stop &> /dev/null
 								StatusLSB
 							;;
@@ -328,13 +298,17 @@ ManageServices() {
 					if [ "$Service" == "pglcmd" ]; then
 						#if CheckCommand 0 pglcmd; then
 							if GetPid $Service; then
-								log_daemon_msg "Restarting PeerGuardian Linux" "pglcmd"
-								pglcmd restart &> /dev/null
+								log_daemon_msg "Reloading PeerGuardian Linux" "pglcmd"
+								pglcmd reload &> /dev/null
 								if [ $? -gt 0 ]; then
 									StatusLSB 1
-									log_daemon_msg "Force Restarting PeerGuardian Linux" "pglcmd"
-									pglcmd force-restart &> /dev/null
-								fi
+									log_daemon_msg "Restarting PeerGuardian Linux" "pglcmd"
+									pglcmd restart &> /dev/null
+									if [ $? -gt 0 ]; then
+										StatusLSB 1
+										log_daemon_msg "Force Restarting PeerGuardian Linux" "pglcmd"
+										pglcmd force-restart &> /dev/null
+									fi
 							else
 								log_daemon_msg "Starting PeerGuardian Linux" "pglcmd"
 								pglcmd start &> /dev/null
@@ -412,79 +386,22 @@ ManageServices() {
 								$Service restart &> /dev/null
 								StatusLSB
 							;;
-							"stunnel4")
-								Continue=0
-								log_daemon_msg "Restarting Stunnel daemon" "stunnel4"
-								service $Service restart &> /dev/null
-								StatusLSB
-							;;
-							"php5-fpm")
-								Continue=0
-								log_daemon_msg "Restarting PHP5 FastCGI Process Manager" "php5-fpm"
-								service $Service restart &> /dev/null
-								StatusLSB							
-							;;
-							"nginx")
+							"nginx"|"php5-fpm"|"stunnel4"|"postfix"|"cron"|"vsftpd"|"nfs-kernel-server")
 								Continue=0
 								if ! GetPid $Service; then
-									log_daemon_msg "Restarting NginX server" "nginx"
+									log_daemon_msg "Restarting $Service" "$Service"
 									service $Service restart &> /dev/null
 								else
-									log_daemon_msg "Reloading NginX server" "nginx"
+									log_daemon_msg "Reloading $Service" "$Service"
 									service $Service reload &> /dev/null
 									if [ $? -gt 0 ]; then
+										StatusLSB 1
+										log_daemon_msg "Restarting $Service" "$Service"
 										service $Service restart &> /dev/null
+										StatusLSB
 									fi
 								fi
 								StatusLSB
-							;;							
-							"postfix")
-								Continue=0
-								if ! GetPid $Service; then
-									log_daemon_msg "Restarting Postfix Mail Transport Agent" "postfix"
-									service $Service restart &> /dev/null
-								else
-									log_daemon_msg "Reloading Postfix Mail Transport Agent" "postfix"
-									service $Service reload &> /dev/null
-									if [ $? -gt 0 ]; then
-										service $Service restart &> /dev/null
-									fi
-								fi
-								StatusLSB
-							;;
-							"cron")
-								Continue=0
-								if ! GetPid $Service; then
-									log_daemon_msg "Restating periodic command scheduler" "cron"
-									service $Service restart &> /dev/null
-								else
-									log_daemon_msg "Reloading periodic command scheduler" "cron"
-									service $Service reload &> /dev/null
-									if [ $? -gt 0 ]; then
-										service $Service restart &> /dev/null
-									fi
-								fi
-								StatusLSB
-							;;
-							"vsftpd")
-								Continue=0
-								if ! GetPid $Service; then
-									log_daemon_msg "Restating VSFTPd server configuration" "vsftpd"
-									service $Service restart &> /dev/null
-								else
-									log_daemon_msg "Reloading VSFTPd server configuration" "vsftpd"
-									service $Service reload &> /dev/null
-									if [ $? -gt 0 ]; then
-										service $Service restart &> /dev/null
-									fi
-								fi
-								StatusLSB
-							;;
-							"nfs-kernel-server")
-								Continue=0
-								log_daemon_msg "Restarting NFS kernel daemon" "mountd nfsd"
-								service $Service restart &> /dev/null
-								StatusLSB								
 							;;
 							*)
 								if ! GetPid $Service; then
@@ -910,7 +827,7 @@ Fail2BanWhitheList() {
 		MainUserIPs=`echo $MainUserIPs | sed s,/,\\\\\\\\\\/,g`
 		AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
 
-		if [ $1 -eq 1 ]; then log_daemon_msg "Fail2Ban - Adding IP addresses to ignore"; fi
+		if [ $1 -eq 1 ]; then log_daemon_msg "Fail2Ban - Adding IP addresses to ignore list"; fi
 		# All users IPs
 		for IPv4 in $AllUsersIPs; do
 			IfExist=`echo $Fail2banWhiteList | grep $IPv4`
@@ -1032,14 +949,14 @@ PeerGuardianAllowP2P() {
 EOF
 		) > /etc/pgl/allow.p2p
 
-		if [ "$IsInstalled_DNScrypt" == "YES" ]; then
-			for Resolver in $ResolverName; do
-				ResolverAddress="`sqlite3 $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
-				ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"			
-				echo "DNScrypt Resolver ($Resolver):$ResolverAddress-255.255.255.255" >> /etc/pgl/allow.p2p
-			done
-		fi	
-		
+		# if [ "$IsInstalled_DNScrypt" == "YES" ]; then
+			# for Resolver in $ResolverName; do
+				# ResolverAddress="`sqlite3 $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+				# ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"			
+				# echo "DNScrypt Resolver ($Resolver):$ResolverAddress-255.255.255.255" >> /etc/pgl/allow.p2p
+			# done
+		# fi
+
 		AllTrackers="`sqlite3 $MySB_DB \"SELECT id_trackers_list, tracker FROM trackers_list WHERE is_active = '1'\"`"
 		for Tracker in $AllTrackers; do
 			IdTracker=`echo $Tracker | awk '{split($0,a,"|"); print a[1]}'`

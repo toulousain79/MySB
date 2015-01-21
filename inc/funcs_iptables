@@ -122,18 +122,18 @@ KernelParameterConfiguration() {
 		# Required to enable IPv4 forwarding.
 		# Redhat users can try setting FORWARD_IPV4 in /etc/sysconfig/network to true
 		# Alternatively, it can be set in /etc/sysctl.conf
-		/sbin/sysctl -w net.ipv4.ip_forward="1"
+		/sbin/sysctl -w net.ipv4.ip_forward="1" &> /dev/null
 	fi
 
 	# This enables dynamic address hacking.
 	# This may help if you have a dynamic IP address \(e.g. slip, ppp, dhcp\).
-	#/sbin/sysctl -w net.ipv4.ip_dynaddr="1"
+	#/sbin/sysctl -w net.ipv4.ip_dynaddr="1" &> /dev/null
 
 	# This enables SYN flood protection.
 	# The SYN cookies activation allows your system to accept an unlimited
 	# number of TCP connections while still trying to give reasonable
 	# service during a denial of service attack.
-	/sbin/sysctl -w net.ipv4.tcp_syncookies="1"
+	/sbin/sysctl -w net.ipv4.tcp_syncookies="1" &> /dev/null
 
 	# This enables source validation by reversed path according to RFC1812.
 	# In other words, did the response packet originate from the same interface
@@ -141,36 +141,36 @@ KernelParameterConfiguration() {
 	# systems and routers on stub networks.  Since those are the configurations
 	# this firewall is designed to support, I turn it on by default.
 	# Turn it off if you use multiple NICs connected to the same network.
-	/sbin/sysctl -w net.ipv4.conf.all.rp_filter="1"
+	/sbin/sysctl -w net.ipv4.conf.all.rp_filter="1" &> /dev/null
 
 	# This option allows a subnet to be firewalled with a single IP address.
 	# It's used to build a DMZ.  Since that's not a focus of this firewall
 	# script, it's not enabled by default, but is included for reference.
 	# See: http://www.sjdjweis.com/linux/proxyarp/ 
-	#/sbin/sysctl -w net.ipv4.conf.all.proxy_arp="1"
+	#/sbin/sysctl -w net.ipv4.conf.all.proxy_arp="1" &> /dev/null
+	
 	# The following kernel settings were suggested by Alex Weeks. Thanks!
-
 	# This kernel parameter instructs the kernel to ignore all ICMP
 	# echo requests sent to the broadcast address.  This prevents
 	# a number of smurfs and similar DoS nasty attacks.
-	/sbin/sysctl -w net.ipv4.icmp_echo_ignore_broadcasts="1"
+	/sbin/sysctl -w net.ipv4.icmp_echo_ignore_broadcasts="1" &> /dev/null
 
 	# This option can be used to accept or refuse source routed
 	# packets.  It is usually on by default, but is generally
 	# considered a security risk.  This option turns it off.
-	/sbin/sysctl -w net.ipv4.conf.all.accept_source_route="0"
+	/sbin/sysctl -w net.ipv4.conf.all.accept_source_route="0" &> /dev/null
 
 	# This option can disable ICMP redirects.  ICMP redirects
 	# are generally considered a security risk and shouldn't be
 	# needed by most systems using this generator.
-	#/sbin/sysctl -w net.ipv4.conf.all.accept_redirects="0"
+	#/sbin/sysctl -w net.ipv4.conf.all.accept_redirects="0" &> /dev/null
 
 	# However, we'll ensure the secure_redirects option is on instead.
 	# This option accepts only from gateways in the default gateways list.
-	/sbin/sysctl -w net.ipv4.conf.all.secure_redirects="1"
+	/sbin/sysctl -w net.ipv4.conf.all.secure_redirects="1" &> /dev/null
 
 	# This option logs packets from impossible addresses.
-	/sbin/sysctl -w net.ipv4.conf.all.log_martians="1"
+	/sbin/sysctl -w net.ipv4.conf.all.log_martians="1" &> /dev/null
 }
 
 #### Create user chains to reduce the number of rules each packet must traverse.
@@ -377,17 +377,17 @@ PopulatingUdpInboundChain() {
 
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 		# NFS Server - portmapper
-		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 111 -j ACCEPT
+		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 111 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
 		# NFS Server - statd
-		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9400 -j ACCEPT
+		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9400 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
 		# NFS Server - NFS daemon
-		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 2049 -j ACCEPT
+		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 2049 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
 		# NFS Server - lockd
-		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9401 -j ACCEPT
+		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9401 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
 		# NFS Server - mountd
-		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9402 -j ACCEPT
+		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9402 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
 		# NFS Server - quotad
-		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9403 -j ACCEPT
+		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9403 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
 	fi
 
 	#### OpenVPN
@@ -414,8 +414,8 @@ PopulatingUdpInboundChain() {
 	if [ "$IsInstalled_DNScrypt" == "YES" ]; then
 		for Resolver in $ResolverName; do
 			ResolverAddress="`sqlite3 $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
-			ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
 			ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
+			ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
 			if [ -z "$ResolverPort" ]; then ResolverPort="443"; fi
 
 			iptables -A udp_inbound -p UDP -s $ResolverAddress/32 --destination-port $ResolverPort -j ACCEPT -m comment --comment "DNScrypt-proxy: $Resolver"
@@ -464,21 +464,21 @@ PopulatingTcpInboundChain() {
 
 		for ip in $UserIPs; do
 			# SSHd
-			iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $Port_SSH -j ACCEPT -m comment --comment "SSH and SFTP for $FnUser"
+			iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Port_SSH -j ACCEPT -m comment --comment "SSH and SFTP for user $FnUser"
 			
 			# FTP Server (Control)
-			iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $Port_FTP -j ACCEPT -m comment --comment "FTP for $FnUser"
+			iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Port_FTP -j ACCEPT -m comment --comment "FTP for user $FnUser"
 
 			# FTP Client (Data Port for non-PASV transfers)
-			iptables -A tcp_inbound -p TCP -s 0/0 --source-port $Port_FTP_Data -j ACCEPT -m comment --comment "FTP Data for $FnUser"
+			iptables -A tcp_inbound -p TCP -s $ip/32 --source-port $Port_FTP_Data -j ACCEPT -m comment --comment "FTP Data for user $FnUser"
 			
 			# Passive FTP
-			iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $Port_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive for $FnUser"
+			iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Port_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive for user $FnUser"
 			
 			#### OpenVPN
 			if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$OpenVPN_Proto" == "tcp" ]; then
-				iptables -A tcp_inbound -p UDP -s $ip/32 --destination-port $Port_OpenVPN_WithGW -j ACCEPT -m comment --comment "OpenVPN with GW for $FnUser"
-				iptables -A tcp_inbound -p UDP -s $ip/32 --destination-port $Port_OpenVPN_WithoutGW -j ACCEPT -m comment --comment "OpenVPN without GW for $FnUser"
+				iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Port_OpenVPN_WithGW -j ACCEPT -m comment --comment "OpenVPN with GW for user $FnUser"
+				iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Port_OpenVPN_WithoutGW -j ACCEPT -m comment --comment "OpenVPN without GW for user $FnUser"
 			fi
 		done
 	done
@@ -500,7 +500,7 @@ PopulatingTcpInboundChain() {
 	#### Webmin
 	if [ "$IsInstalled_Webmin" == "YES" ]; then
 		for ip in $MainUserIPs; do
-			iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Ports_Webmin -j ACCEPT -m comment --comment "Webmin for $MainUser"
+			iptables -A tcp_inbound -p TCP -s $ip/32 --destination-port $Ports_Webmin -j ACCEPT -m comment --comment "Webmin for user $MainUser"
 		done
 		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 			iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port $Ports_Webmin -j ACCEPT -m comment --comment "Webmin over OpenVPN"
@@ -518,7 +518,7 @@ PopulatingTcpInboundChain() {
 	for SeedboxUser in $UsersList; do
 		PORT_START="`sqlite3 $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$SeedboxUser'\"`"
 		PORT_END="`sqlite3 $MySB_DB \"SELECT rtorrent_port FROM users WHERE users_ident = '$SeedboxUser'\"`"
-		iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $PORT_START:$PORT_END -j ACCEPT -m comment --comment "rTorrent $SeedboxUser"
+		iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $PORT_START:$PORT_END -j ACCEPT -m comment --comment "rTorrent for user $SeedboxUser"
 	done
 	
 	# Network File System (NFS) Server
@@ -528,17 +528,17 @@ PopulatingTcpInboundChain() {
 
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 		# NFS Server - portmapper
-		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 111 -j ACCEPT
+		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 111 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
 		# NFS Server - statd
-		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9400 -j ACCEPT
+		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9400 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
 		# NFS Server - NFS daemon
-		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 2049 -j ACCEPT
+		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 2049 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
 		# NFS Server - lockd
-		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9401 -j ACCEPT
+		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9401 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
 		# NFS Server - mountd
-		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9402 -j ACCEPT
+		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9402 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
 		# NFS Server - quotad
-		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9403 -j ACCEPT
+		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9403 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
 	fi
 	
 	# Not matched, so return so it will be logged
@@ -577,7 +577,7 @@ ProcessInputChain() {
 		iptables -A INPUT -p ALL -d 224.0.0.1 -j ACCEPT
 	else
 		# Drop them without logging.
-		#iptables -A INPUT -p ALL -d 224.0.0.1 -j DROP
+		iptables -A INPUT -p ALL -d 224.0.0.1 -j DROP
 	fi
 
 
@@ -659,10 +659,10 @@ ProcessOutputChain() {
 
 #### Process POSTROUTING chain
 ProcessPostroutingChain() {
-	$IPT -t nat -A POSTROUTING -o $INET_IFACE -j SNAT --to-source $INET_ADDRESS
+	iptables -t nat -A POSTROUTING -o $PrimaryInet -j SNAT --to-source $SrvIpAddress
 	
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-		iptables -t nat -A POSTROUTING -i tun0 -s 10.0.0.0/24 -j MASQUERADE -m comment --comment "OpenVPN"
+		iptables -t nat -A POSTROUTING -s 10.0.0.0/24 -j MASQUERADE -m comment --comment "OpenVPN with redirect GW"
 	fi
 }
 
