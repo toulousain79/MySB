@@ -42,7 +42,7 @@
 	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/buttons.css" />
 	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/animate.css" />
 	<!-- jquery -->
-	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-1.11.1.min.js"></script>
+	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-1.11.2.min.js"></script>
 	<!-- modernizr enables HTML5 elements and feature detects -->
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/modernizr-1.5.min.js"></script>
     <!-- noty -->

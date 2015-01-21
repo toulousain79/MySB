@@ -42,7 +42,7 @@ if (isset($_POST['submit'])) {
 		$message = 'Please, complete all fields.';
 	}
 
-	GenerateMessage('MySB_SecurityRules', $type, $message, '');
+	GenerateMessage('DNScrypt', $type, $message, '');
 }
 
 $ResolversList = $MySB_DB->select("dnscrypt_resolvers", [

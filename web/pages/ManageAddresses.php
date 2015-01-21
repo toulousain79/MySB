@@ -78,7 +78,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$type = 'error';
 			}
 
-			GenerateMessage('MySB_SecurityRules', $type, $message, '');
+			GenerateMessage('ManageAddresses', $type, $message, '');
 			break;
 		case "Save Changes":
 			$success = true;
@@ -122,7 +122,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					echo 'Failed ! It was not possible to give you an access to MySB portal !';
 				}
 			} else {
-				GenerateMessage('MySB_SecurityRules', $type, $message, '');
+				GenerateMessage('ManageAddresses', $type, $message, '');
 				GenerateMessage('message_only', 'information', 'Remember that your dynamic IP will be checked every 5 minutes.');
 			}
 			break;
@@ -146,7 +146,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					$message = 'Failed ! It was not possible to delete address.';
 				}
 
-				GenerateMessage('MySB_SecurityRules', $type, $message, '');
+				GenerateMessage('ManageAddresses', $type, $message, '');
 			}
 			break;
 	}

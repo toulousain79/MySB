@@ -46,7 +46,7 @@ if ( $IsInstalled == '1' ) {
 			$message = 'Failed ! It was not possible to update tracker in the MySB database.';
 		}
 
-		GenerateMessage('MySB_SecurityRules_Refresh_Blocklists' ,$type, $message, '');
+		GenerateMessage('Blocklists_PeerGuardian' ,$type, $message, '');
 	}
 
 	$BlockList = $MySB_DB->select("blocklists", "*", ["peerguardian_list[!]" => ""]);

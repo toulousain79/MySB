@@ -1,6 +1,6 @@
 /*!
  @package noty - jQuery Notification Plugin
- @version version: 2.3.1
+ @version version: 2.3.4
  @contributors https://github.com/needim/noty/graphs/contributors
 
  @documentation Examples and Documentation - http://needim.github.com/noty/
@@ -74,9 +74,9 @@
                 $.each(this.options.buttons, function(i, button) {
                     var $button = $('<button/>').addClass((button.addClass) ? button.addClass : 'gray').html(button.text).attr('id', button.id ? button.id : 'button-' + i)
                         .appendTo(self.$bar.find('.noty_buttons'))
-                        .on('click', function() {
+                        .on('click', function(event) {
                             if($.isFunction(button.onClick)) {
-                                button.onClick.call($button, self);
+                                button.onClick.call($button, self, event);
                             }
                         });
                 });
@@ -182,8 +182,6 @@
                 );
                 return;
             }
-
-            this.$bar.dequeue();
 
             if(!this.shown && !this.showing) { // If we are still waiting in the queue just delete from queue
                 var queue = [];
