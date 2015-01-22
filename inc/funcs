@@ -303,36 +303,35 @@ ManageServices() {
 				;;
 				"start")
 					if [ "$Service" == "pglcmd" ]; then
-						#if CheckCommand 0 pglcmd; then
+						if CheckCommand 0 pglcmd; then
 							if GetPid $Service; then
-								log_daemon_msg "Reloading PeerGuardian Linux" "pglcmd"
+								log_daemon_msg "Reloading PeerGuardian Linux"
 								pglcmd reload &> /dev/null
 								if [ $? -gt 0 ]; then
 									StatusLSB 1
-									log_daemon_msg "Restarting PeerGuardian Linux" "pglcmd"
+									
+									log_daemon_msg "Restarting PeerGuardian Linux"
 									pglcmd restart &> /dev/null
 									if [ $? -gt 0 ]; then
 										StatusLSB 1
-										log_daemon_msg "Force Restarting PeerGuardian Linux" "pglcmd"
+										
+										log_daemon_msg "Force Restarting PeerGuardian Linux"
 										pglcmd force-restart &> /dev/null
 									fi
 								fi
 							else
-								log_daemon_msg "Starting PeerGuardian Linux" "pglcmd"
+								log_daemon_msg "Starting PeerGuardian Linux"
 								pglcmd start &> /dev/null
 							fi
 							
 							if [ $? -gt 0 ]; then # if pgl don't start maybe its due to a list update
 								StatusLSB 1
+								
 								case "$LOGSTD" in
 									"STDOUT")
 										echo `date +"%T"`" --> The updated list of PGL may have failed." >> /etc/MySB/logs/$ScriptName.log
 										echo `date +"%T"`" --> Attempting to clean lists error." >> /etc/MySB/logs/$ScriptName.log
 									;;
-									# "TEMP")
-										# echo `date +"%T"`" --> The updated list of PGL may have failed." >> /etc/MySB/temp/$ScriptName.log
-										# echo `date +"%T"`" --> Attempting to clean lists error." >> /etc/MySB/temp/$ScriptName.log
-									# ;;
 								esac
 
 								CheckLog="`cat /var/log/pgl/pglcmd.log | grep failed | grep list.iblocklist.com | awk '{ print $6 }'`"
@@ -341,23 +340,20 @@ ManageServices() {
 										"STDOUT")
 											echo `date +"%T"`" --> '$List' will be disabled." >> /etc/MySB/logs/$ScriptName.log
 										;;
-										# "TEMP")
-											# echo `date +"%T"`" --> '$List' will be disabled." >> /etc/MySB/temp/$ScriptName.log
-										# ;;
 									esac
 
 									# Comment the list in '/etc/pgl/blocklists.list'
 									List=`echo $List | sed s,/,\\\\\\\\\\/,g`
 									sed -i "s/^$List/#$List/g" /etc/pgl/blocklists.list
 								done
-								log_daemon_msg "Force Restarting PeerGuardian Linux" "pglcmd"
-								pglcmd restart
+								log_daemon_msg "Force Restarting PeerGuardian Linux"
+								pglcmd restart &> /dev/null
 
 								if [ $? -gt 0 ]; then # We have again a problem with PeerGuardian, test a force-restart
 									StatusLSB 1
 								
-									log_daemon_msg "Force Restarting PeerGuardian Linux" "pglcmd"
-									pglcmd force-restart
+									log_daemon_msg "Force Restarting PeerGuardian Linux"
+									pglcmd force-restart &> /dev/null
 									if [ $? -gt 0 ]; then # Again ??
 										StatusLSB 1
 										# We will use rTorrent Blocklist
@@ -374,9 +370,9 @@ ManageServices() {
 								StatusLSB 0
 								PeerGuardianFailed "PeerGuardian"
 							fi
-						# else
-							# echo "The command 'pglcmd' is not yet available..."
-						# fi
+						else
+							echo "The command 'pglcmd' is not yet available..."
+						fi
 					else
 						Continue=1
 
@@ -388,17 +384,23 @@ ManageServices() {
 									FinalCommand="start"
 								fi
 							;;
-							"logwatch")
+							"fail2ban")
 								Continue=0
-								log_daemon_msg "Restarting Logwatch" "logwatch"
-								$Service restart &> /dev/null
-								StatusLSB
+								if ! GetPid $Service; then
+									log_daemon_msg "Starting $Service"
+									service $Service start &> /dev/null
+								else
+									StatusLSB 1
+									log_daemon_msg "Restarting $Service"
+									service $Service restart &> /dev/null
+								fi
+								StatusLSB								
 							;;
 							"nginx"|"php5-fpm"|"stunnel4"|"postfix"|"cron"|"vsftpd"|"nfs-kernel-server")
 								Continue=0
 								if ! GetPid $Service; then
-									log_daemon_msg "Restarting $Service"
-									service $Service restart &> /dev/null
+									log_daemon_msg "Starting $Service"
+									service $Service start &> /dev/null
 								else
 									log_daemon_msg "Reloading $Service"
 									service $Service reload &> /dev/null
@@ -406,7 +408,6 @@ ManageServices() {
 										StatusLSB 1
 										log_daemon_msg "Restarting $Service"
 										service $Service restart &> /dev/null
-										StatusLSB
 									fi
 								fi
 								StatusLSB
