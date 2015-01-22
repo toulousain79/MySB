@@ -237,6 +237,7 @@ https://www.google.com/accounts/DisplayUnlockCaptcha
 #### Designed for dedicated server with Debian 7 (Wheezy) - 64 bits
 
 	--> Ubuntu is not supported.
+	--> PVE kernel are not supported.
   
 ## Changelog
 
