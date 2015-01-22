@@ -30,7 +30,7 @@ if [ "$USAGE" == "ON" ]; then
 		echo -e "${CYELLOW}DNScrypt-proxy is not installed!$CEND"
 		QuestionGetString NO "Install DNScrypt-proxy? " IsInstalled_DNScrypt YES
 
-		sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '$(echo $IsInstalled_DNScrypt | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'DNScrypt-proxy';"
+		sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '$(echo $IsInstalled_DNScrypt | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'DNScrypt-proxy';"
 
 		if [ "$IsInstalled_DNScrypt" != "YES" ]; then
 			EndingScript 0
@@ -48,8 +48,8 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	fi
 
 	# LIBsodium
-	LibsodiumDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'Libsodium'\"`"
-	LibsodiumUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'Libsodium'\"`"
+	LibsodiumDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'Libsodium'\"`"
+	LibsodiumUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'Libsodium'\"`"
 
 	if [ -d $LibsodiumDir ]; then
 		cd $LibsodiumDir/
@@ -69,9 +69,9 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	/sbin/ldconfig
 
 	# DNScrypt
-	DnscryptDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'DNScrypt-proxy'\"`"
-	DnscryptUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'DNScrypt-proxy'\"`"
-	DnscryptFile="`sqlite3 $MySB_DB \"SELECT file FROM repositories WHERE name = 'DNScrypt-proxy'\"`"
+	DnscryptDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'DNScrypt-proxy'\"`"
+	DnscryptUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'DNScrypt-proxy'\"`"
+	DnscryptFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'DNScrypt-proxy'\"`"
 
 	if [ ! -f /etc/MySB/files/$DnscryptFile ]; then
 		wget --no-check-certificate $DnscryptUrl -O /etc/MySB/files/$DnscryptFile
@@ -124,7 +124,7 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	#### Update resolvers infos in db
 	if [ -f /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv ] && CheckCommand 0 csvtool; then
 		# Clean the table 'dnscrypt_resolvers'
-		sqlite3 $MySB_DB "DELETE FROM dnscrypt_resolvers WHERE 1"
+		sqlite3 -cmd '.timeout 150000' $MySB_DB "DELETE FROM dnscrypt_resolvers WHERE 1"
 
 		# Get resolvers information from 'dnscrypt-resolvers.csv'
 		ResolversTable="`csvtool -t ',' -u '|' cat /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv | csvtool drop 1 - | sed 's/ /#/g;'`"
@@ -146,12 +146,12 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 
 			# Add new informations in DB (don't want IPv6)
 			if [ -z "`echo $Name | grep 'ipv6'`" ]; then
-				sqlite3 $MySB_DB "INSERT INTO dnscrypt_resolvers (name,full_name,description,location,coordinates,url,version,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record,is_activated,is_wished) VALUES (\"$Name\",\"$FullName\",\"$Description\",\"$Location\",\"$Coordinates\",\"$URL\",\"$Version\",\"$DnssecVal\",\"$NoLogs\",\"$Namecoin\",\"$ResolverAddress\",\"$ProviderName\",\"$ProviderPublicKey\",\"$ProviderPublicKeyTxtRecord\",\"0\",\"0\");"
+				sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT INTO dnscrypt_resolvers (name,full_name,description,location,coordinates,url,version,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record,is_activated,is_wished) VALUES (\"$Name\",\"$FullName\",\"$Description\",\"$Location\",\"$Coordinates\",\"$URL\",\"$Version\",\"$DnssecVal\",\"$NoLogs\",\"$Namecoin\",\"$ResolverAddress\",\"$ProviderName\",\"$ProviderPublicKey\",\"$ProviderPublicKeyTxtRecord\",\"0\",\"0\");"
 			fi
 		done
 
 		# Force use of all provider taht accept 'dnssec' and 'no logs'
-		sqlite3 $MySB_DB "UPDATE dnscrypt_resolvers SET is_wished = '1' WHERE dnssec = 'yes' AND no_logs='yes';"
+		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_wished = '1' WHERE dnssec = 'yes' AND no_logs='yes';"
 	fi
 
 	# Check service
@@ -162,10 +162,10 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	rm -f /tmp/crontab.tmp
 	
 	# Mark as installed
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '0',is_installed = '1' WHERE serv_name = 'DNScrypt-proxy';"	
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '0',is_installed = '1' WHERE serv_name = 'DNScrypt-proxy';"	
 	
 	#### Create new security rules
-	ScriptInvoke 'source' '/etc/MySB/bin/MySB_SecurityRules' 'create'
+	ScriptInvoke 'screen' '/etc/MySB/bin/MySB_SecurityRules' 'create'
 	
 	#### START services
 	#ManageServices start "cron bind9 dnscrypt-proxy"

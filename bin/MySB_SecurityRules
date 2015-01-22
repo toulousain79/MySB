@@ -105,7 +105,7 @@ if [ "$ApplyConfigNginx" == "YES" ]; then
 	ServicesToRestart="${ServicesToRestart} nginx"
 fi
 if [ "$ApplyConfigBind" == "YES" ]; then
-	AllTrackersDomain="`sqlite3 $MySB_DB \"SELECT tracker_domain FROM trackers_list WHERE is_active = '0' AND to_check = '0'\"`"
+	AllTrackersDomain="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT tracker_domain FROM trackers_list WHERE is_active = '0' AND to_check = '0'\"`"
 	ServicesToRestart="${ServicesToRestart} bind9"
 fi
 if [ "$ApplyConfigDnscrypt" == "YES" ]; then
@@ -161,7 +161,7 @@ CreateServicesRules() {
 	#### BIND
 	if [ "$ApplyConfigBind" == "YES" ]; then
 		log_daemon_msg "Bind - Block all outgoing request for inactive trackers"
-		AllTrackersDomain="`sqlite3 $MySB_DB \"SELECT tracker_domain FROM trackers_list WHERE is_active = '0' AND to_check = '0'\"`"
+		AllTrackersDomain="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT tracker_domain FROM trackers_list WHERE is_active = '0' AND to_check = '0'\"`"
 		echo "#### MySB - Blacklisted domains (ex: inactive trackers)" > /etc/bind/MySB.zones.blakclists
 		for TrackerDomain in $AllTrackersDomain; do
 			echo "zone \"$TrackerDomain\" { type master; file \"/etc/bind/db.empty\"; };" >> /etc/bind/MySB.zones.blakclists
@@ -205,16 +205,24 @@ case "$Switch" in
 		#### IPtables - Removal of existing rules
 
 		#### NginX - Satisfy all
-		log_daemon_msg "NginX - Satisfy all"
-		echo "	# Allow any one" >> /etc/nginx/conf.d/ip_restriction
-		echo "	satisfy all;" > /etc/nginx/conf.d/ip_restriction
-		StatusLSB
+		if [ "$ApplyConfigNginx" == "YES" ]; then
+			log_daemon_msg "NginX - Satisfy all"
+			echo "	# Allow any one" >> /etc/nginx/conf.d/ip_restriction
+			echo "	satisfy all;" > /etc/nginx/conf.d/ip_restriction
+			StatusLSB
+		else
+			log_daemon_msg "NginX - Not yet installed."
+		fi
 		#### NginX - Satisfy all
 
 		#### Bind - Unblock inactive tracker domains
-		log_daemon_msg "Bind - Unblock inactive tracker domains"
-		perl -pi -e "s/^include \"\/etc\/bind\/MySB.zones.blakclists\";/#include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
-		StatusLSB
+		if [ "$ApplyConfigBind" == "YES" ]; then
+			log_daemon_msg "Bind - Unblock inactive tracker domains"
+			perl -pi -e "s/^include \"\/etc\/bind\/MySB.zones.blakclists\";/#include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
+			StatusLSB
+		else
+			log_daemon_msg "Bind - Not yet installed."		
+		fi
 		#### Bind - Unblock inactive tracker domains
 
 		#### START services
@@ -405,8 +413,8 @@ case "$Switch" in
 						sed -i ""$NumLign"i\-A tcp_inbound -s $ip/32 -p tcp -m tcp --dport $Ports_Webmin -m comment --comment \"Webmin for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
 					fi
 					# rTorrent
-					PORT_START="`sqlite3 $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$FnUser'\"`"
-					PORT_END="`sqlite3 $MySB_DB \"SELECT rtorrent_port FROM users WHERE users_ident = '$FnUser'\"`"
+					PORT_START="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$FnUser'\"`"
+					PORT_END="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT rtorrent_port FROM users WHERE users_ident = '$FnUser'\"`"
 					sed -i ""$NumLign"i\-A tcp_inbound -p tcp -m tcp --dport $PORT_START:$PORT_END -m comment --comment \"rTorrent for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
 				done
 				# tcp_inbound chain
@@ -416,7 +424,7 @@ case "$Switch" in
 			sed -i '/DNScrypt-proxy/d' /etc/MySB/temp/current-iptables-rules
 
 			for Resolver in $ResolverName; do
-				ResolverAddress="`sqlite3 $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+				ResolverAddress="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
 				ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
 				ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
 				if [ -z "$ResolverPort" ]; then ResolverPort="443"; fi

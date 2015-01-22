@@ -321,3 +321,20 @@ INSERT INTO [blocklists] ([id_blocklists], [author], [list_name], [url_infos], [
 INSERT INTO [blocklists] ([id_blocklists], [author], [list_name], [url_infos], [peerguardian_list], [rtorrent_list], [peerguardian_active], [rtorrent_active], [default], [comments], [peerguardian_lastupdate], [rtorrent_lastupdate]) VALUES (35, 'TBG', 'Hijacked', 'https://www.iblocklist.com/list.php?list=tbnuqfclfkemqivekikv', 'list.iblocklist.com/lists/tbg/hijacked', 'http://list.iblocklist.com/?list=tbnuqfclfkemqivekikv&fileformat=p2p&archiveformat=gz', 0, 0, 0, null, null, null);
 INSERT INTO [blocklists] ([id_blocklists], [author], [list_name], [url_infos], [peerguardian_list], [rtorrent_list], [peerguardian_active], [rtorrent_active], [default], [comments], [peerguardian_lastupdate], [rtorrent_lastupdate]) VALUES (36, 'TBG', 'Primary Threats', 'https://www.iblocklist.com/list.php?list=ijfqtofzixtwayqovmxn', 'list.iblocklist.com/lists/tbg/primary-threats', 'http://list.iblocklist.com/?list=ijfqtofzixtwayqovmxn&fileformat=cidr&archiveformat=gz', 1, 1, 1, null, null, null);
 INSERT INTO [blocklists] ([id_blocklists], [author], [list_name], [url_infos], [peerguardian_list], [rtorrent_list], [peerguardian_active], [rtorrent_active], [default], [comments], [peerguardian_lastupdate], [rtorrent_lastupdate]) VALUES (37, 'TBG', 'Search Engines', 'https://www.iblocklist.com/list.php?list=pfefqteoxlfzopecdtyw', 'list.iblocklist.com/lists/tbg/search-engines', 'http://list.iblocklist.com/?list=pfefqteoxlfzopecdtyw&fileformat=cidr&archiveformat=gz', 0, 0, 0, null, null, null);
+
+-- Table: providers_monitoring
+CREATE TABLE providers_monitoring ( 
+    id_providers_monitoring INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                           NOT NULL ON CONFLICT ABORT
+                                           UNIQUE ON CONFLICT ABORT,
+    provider                VARCHAR( 16 ),
+    ipv4                    VARCHAR( 25 ),
+    hostname                VARCHAR( 32 ) 
+);
+
+INSERT INTO [providers_monitoring] ([id_providers_monitoring], [provider], [ipv4], [hostname]) VALUES (1, 'ONLINE', '62.210.16.0/24', null);
+INSERT INTO [providers_monitoring] ([id_providers_monitoring], [provider], [ipv4], [hostname]) VALUES (2, 'OVH', null, 'proxy-rbx2.ovh.net');
+INSERT INTO [providers_monitoring] ([id_providers_monitoring], [provider], [ipv4], [hostname]) VALUES (3, 'OVH', null, 'proxy-rbx.ovh.net');
+INSERT INTO [providers_monitoring] ([id_providers_monitoring], [provider], [ipv4], [hostname]) VALUES (4, 'OVH', null, 'proxy.sbg.ovh.net');
+INSERT INTO [providers_monitoring] ([id_providers_monitoring], [provider], [ipv4], [hostname]) VALUES (5, 'OVH', null, 'proxy.bhs.ovh.net');
+INSERT INTO [providers_monitoring] ([id_providers_monitoring], [provider], [ipv4], [hostname]) VALUES (6, 'OVH', null, 'ping.ovh.net');

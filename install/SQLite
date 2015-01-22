@@ -29,11 +29,11 @@ PackagesManage install "sqlite3"
 
 #### Create databases
 if CheckCommand 0 sqlite3; then
-	if [ ! -f $MySB_DB ] || [ ! -s $MySB_DB ]; then sqlite3 -echo $MySB_DB < /etc/MySB/templates/MySB_2015-01-08.dump.sql; fi
+	if [ ! -f $MySB_DB ] || [ ! -s $MySB_DB ]; then sqlite3 -cmd '.timeout 150000' -echo $MySB_DB < /etc/MySB/templates/MySB_2015-01-08.dump.sql; fi
 	if [ ! -f $Wolf_DB ] || [ ! -s $Wolf_DB ]; then
-		sqlite3 -echo $Wolf_DB < /etc/MySB/templates/Wolf_2015-01-08.dump.sql
-		sqlite3 $Wolf_DB "DELETE FROM secure_token WHERE 1"
-		sqlite3 $Wolf_DB "UPDATE user SET name = '', email = '', username = '', password = '', salt = '', last_login = '', last_failure = '', last_failure = '', created_on = '', updated_on = '' WHERE id = '2';"
+		sqlite3 -cmd '.timeout 150000' -echo $Wolf_DB < /etc/MySB/templates/Wolf_2015-01-08.dump.sql
+		sqlite3 -cmd '.timeout 150000' $Wolf_DB "DELETE FROM secure_token WHERE 1"
+		sqlite3 -cmd '.timeout 150000' $Wolf_DB "UPDATE user SET name = '', email = '', username = '', password = '', salt = '', last_login = '', last_failure = '', last_failure = '', created_on = '', updated_on = '' WHERE id = '2';"
 	fi
 fi
 
@@ -59,13 +59,13 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 			UserRtorrentPort="$(cat $SeedboxUser.info | grep 'rTorrent port=' | awk '{ print $3 }')"
 			UserHomeDir="$(cat $SeedboxUser.info | grep 'Home=' | awk '{ print $2 }')"
 			
-			sqlite3 -echo $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,admin,scgi_port,rtorrent_port,home_dir) VALUES (\"$UserName\",\"$UserEmail\",\"$UserPassword\",\"$UserRPC\",\"$UserSSH\",\"$UserSudo\",\"0\",\"$UserScgiPort\",\"$UserRtorrentPort\",\"$UserHomeDir\");"
-			UserId="`sqlite3 $MySB_DB \"SELECT id_users FROM users WHERE users_ident = '$UserName'\"`"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,admin,scgi_port,rtorrent_port,home_dir) VALUES (\"$UserName\",\"$UserEmail\",\"$UserPassword\",\"$UserRPC\",\"$UserSSH\",\"$UserSudo\",\"0\",\"$UserScgiPort\",\"$UserRtorrentPort\",\"$UserHomeDir\");"
+			UserId="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_users FROM users WHERE users_ident = '$UserName'\"`"
 
 			IFS=$','
 			for ip in $UserIP; do 
 				HostName="$(nslookup $ip | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
-				sqlite3 -echo $MySB_DB "INSERT into users_addresses (id_users,ipv4,hostname,check_by,is_active) VALUES (\"$UserId\",\"$ip\",\"$HostName\",\"ipv4\",\"1\");"
+				sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "INSERT into users_addresses (id_users,ipv4,hostname,check_by,is_active) VALUES (\"$UserId\",\"$ip\",\"$HostName\",\"ipv4\",\"1\");"
 			done
 			unset IFS
 		done
@@ -98,7 +98,7 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 				fi
 				unset PART1 PART2 PART3
 
-				IfExist="`sqlite3 $MySB_DB \"SELECT tracker FROM trackers_list WHERE tracker_domain = '$UserTrackerDomain'\"`"
+				IfExist="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT tracker FROM trackers_list WHERE tracker_domain = '$UserTrackerDomain'\"`"
 				if [ -z "$IfExist" ]; then
 					# Add the tracker
 					AddTracker $Tracker "users"
@@ -106,7 +106,7 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 				
 				# Force activation of the tracker
 				log_daemon_msg "Force activation of tracker: $Tracker"
-				sqlite3 $MySB_DB "UPDATE trackers_list SET is_active = '1' WHERE tracker_domain = '$UserTrackerDomain';"
+				sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE trackers_list SET is_active = '1' WHERE tracker_domain = '$UserTrackerDomain';"
 				StatusLSB
 			done
 		fi
@@ -118,7 +118,7 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 	if [ -d /etc/MySB/infos/ ]; then
 		# ----- Main user info
 		if [ -f /etc/MySB/infos/email.info ] && [ -f /etc/MySB/infos/mainuser.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE users SET admin = '1' WHERE users_email = '$(cat /etc/MySB/infos/email.info)' and users_ident = '$(cat /etc/MySB/infos/mainuser.info)';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE users SET admin = '1' WHERE users_email = '$(cat /etc/MySB/infos/email.info)' and users_ident = '$(cat /etc/MySB/infos/mainuser.info)';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/email.info
 				rm -f /etc/MySB/infos/mainuser.info
@@ -129,74 +129,74 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 		#### Import files infos to database
 		# ----- System info
 		if [ -f /etc/MySB/infos/version.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE system SET mysb_version = '$(cat /etc/MySB/infos/version.info)' WHERE id_system = '1';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE system SET mysb_version = '$(cat /etc/MySB/infos/version.info)' WHERE id_system = '1';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/version.info
 			fi
 		fi
 		if [ -f /etc/MySB/infos/hostfqdn.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE system SET hostname = '$(cat /etc/MySB/infos/hostfqdn.info)' WHERE id_system = '1';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE system SET hostname = '$(cat /etc/MySB/infos/hostfqdn.info)' WHERE id_system = '1';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/hostfqdn.info
 			fi
 		fi
 		if [ -f /etc/MySB/infos/ipaddress.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE system SET ipv4 = '$(cat /etc/MySB/infos/ipaddress.info)' WHERE id_system = '1';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE system SET ipv4 = '$(cat /etc/MySB/infos/ipaddress.info)' WHERE id_system = '1';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/ipaddress.info
 			fi
 		fi
 		if [ -f /etc/MySB/infos/primaryinet.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE system SET primary_inet = '$(cat /etc/MySB/infos/primaryinet.info)' WHERE id_system = '1';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE system SET primary_inet = '$(cat /etc/MySB/infos/primaryinet.info)' WHERE id_system = '1';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/primaryinet.info
 			fi
 		fi
 		if [ -f /etc/MySB/infos/timezone.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE system SET timezone = '$(cat /etc/MySB/infos/timezone.info)' WHERE id_system = '1';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE system SET timezone = '$(cat /etc/MySB/infos/timezone.info)' WHERE id_system = '1';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/timezone.info
 			fi
 		fi
 		if [ -f /etc/MySB/infos/MySB_password.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE system SET mysb_user = '$(cat /etc/MySB/infos/MySB_password.info | grep user | awk '{ print $2 }')' WHERE id_system = '1';"
-			sqlite3 -echo $MySB_DB "UPDATE system SET mysb_password = '$(cat /etc/MySB/infos/MySB_password.info | grep pass | awk '{ print $2 }')' WHERE id_system = '1';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE system SET mysb_user = '$(cat /etc/MySB/infos/MySB_password.info | grep user | awk '{ print $2 }')' WHERE id_system = '1';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE system SET mysb_password = '$(cat /etc/MySB/infos/MySB_password.info | grep pass | awk '{ print $2 }')' WHERE id_system = '1';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/MySB_password.info
 			fi
 		fi
 		if [ -f /etc/MySB/infos/certpass.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE system SET cert_password = '$(cat /etc/MySB/infos/certpass.info)' WHERE id_system = '1';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE system SET cert_password = '$(cat /etc/MySB/infos/certpass.info)' WHERE id_system = '1';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/certpass.info
 			fi
 		fi
 		if [ -f /etc/MySB/infos/port_ftp.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE services SET port_tcp1 = '$(cat /etc/MySB/infos/port_ftp.info)' WHERE serv_name = 'VSFTPd';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET port_tcp1 = '$(cat /etc/MySB/infos/port_ftp.info)' WHERE serv_name = 'VSFTPd';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/port_ftp.info
 			fi
 		fi
 		if [ -f /etc/MySB/infos/port_ftpdata.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE services SET port_tcp2 = '$(cat /etc/MySB/infos/port_ftpdata.info)' WHERE serv_name = 'VSFTPd';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET port_tcp2 = '$(cat /etc/MySB/infos/port_ftpdata.info)' WHERE serv_name = 'VSFTPd';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/port_ftpdata.info
 			fi
 		fi
 		if [ -f /etc/MySB/infos/port_ssh.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE services SET port_tcp1 = '$(cat /etc/MySB/infos/port_ssh.info)' WHERE serv_name = 'SSH';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET port_tcp1 = '$(cat /etc/MySB/infos/port_ssh.info)' WHERE serv_name = 'SSH';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/port_ssh.info
 			fi
 		fi
 		if [ -f /etc/MySB/infos/port_https.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE services SET port_tcp1 = '$(cat /etc/MySB/infos/port_https.info)' WHERE serv_name = 'NginX';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET port_tcp1 = '$(cat /etc/MySB/infos/port_https.info)' WHERE serv_name = 'NginX';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/port_https.info
 			fi
 		fi
 		if [ -f /etc/MySB/infos/port_http.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE services SET port_tcp2 = '$(cat /etc/MySB/infos/port_http.info)' WHERE serv_name = 'NginX';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET port_tcp2 = '$(cat /etc/MySB/infos/port_http.info)' WHERE serv_name = 'NginX';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/port_http.info
 			fi
@@ -205,14 +205,14 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 
 		# ----- Services info
 		if [ -f /etc/MySB/infos/install_cakebox.info ] && [ -f /etc/MySB/infos/port_cakebox.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE services SET port_tcp1 = '$(cat /etc/MySB/infos/port_cakebox.info)', is_installed = '$(cat /etc/MySB/infos/install_cakebox.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'CakeBox-Light';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET port_tcp1 = '$(cat /etc/MySB/infos/port_cakebox.info)', is_installed = '$(cat /etc/MySB/infos/install_cakebox.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'CakeBox-Light';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/install_cakebox.info
 				rm -f /etc/MySB/infos/port_cakebox.info
 			fi
 		fi
 		if [ -f /etc/MySB/infos/install_webmin.info ] && [ -f /etc/MySB/infos/port_webmin.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE services SET port_tcp1 = '$(cat /etc/MySB/infos/port_webmin.info)', is_installed = '$(cat /etc/MySB/infos/install_webmin.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'Webmin';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET port_tcp1 = '$(cat /etc/MySB/infos/port_webmin.info)', is_installed = '$(cat /etc/MySB/infos/install_webmin.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'Webmin';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/install_webmin.info
 				rm -f /etc/MySB/infos/port_webmin.info
@@ -225,14 +225,14 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 
 			case "$(cat /etc/MySB/infos/proto_openvpn.info)" in
 				"tcp")
-					sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '$(cat /etc/MySB/infos/install_openvpn.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')', port_tcp1 = '${Port_OpenVPN_WithGW}', port_tcp2 = '${Port_OpenVPN_WithoutGW}', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'OpenVPN';"
+					sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '$(cat /etc/MySB/infos/install_openvpn.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')', port_tcp1 = '${Port_OpenVPN_WithGW}', port_tcp2 = '${Port_OpenVPN_WithoutGW}', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'OpenVPN';"
 				;;
 				"udp")
-					sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '$(cat /etc/MySB/infos/install_openvpn.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')', port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '${Port_OpenVPN_WithGW}', port_udp2 = '${Port_OpenVPN_WithoutGW}', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'OpenVPN';"
+					sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '$(cat /etc/MySB/infos/install_openvpn.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')', port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '${Port_OpenVPN_WithGW}', port_udp2 = '${Port_OpenVPN_WithoutGW}', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'OpenVPN';"
 				;;
 			esac
-			sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'Samba';"
-			sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'NFS';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'Samba';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'NFS';"
 
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/install_openvpn.info
@@ -241,27 +241,27 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 			fi
 		fi
 		if [ -f /etc/MySB/infos/install_dnscrypt.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '$(cat /etc/MySB/infos/install_dnscrypt.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'DNScrypt-proxy';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '$(cat /etc/MySB/infos/install_dnscrypt.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'DNScrypt-proxy';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/install_dnscrypt.info
 			fi
 		else
-			sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'DNScrypt-proxy';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'DNScrypt-proxy';"
 		fi
 		if [ -f /etc/MySB/infos/install_fail2ban.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '$(cat /etc/MySB/infos/install_fail2ban.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'Fail2Ban';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '$(cat /etc/MySB/infos/install_fail2ban.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'Fail2Ban';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/install_fail2ban.info
 			fi
 		fi
 		if [ -f /etc/MySB/infos/install_manager.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '$(cat /etc/MySB/infos/install_manager.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'Seedbox-Manager';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '$(cat /etc/MySB/infos/install_manager.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'Seedbox-Manager';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/install_manager.info
 			fi
 		fi
 		if [ -f /etc/MySB/infos/install_plexmedia.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '$(cat /etc/MySB/infos/install_plexmedia.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'Plex Media Server';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '$(cat /etc/MySB/infos/install_plexmedia.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'Plex Media Server';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/install_plexmedia.info
 			fi
@@ -270,16 +270,16 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 			MySB_PeerBlock=$(cat /etc/MySB/infos/blocklist.info)
 			case $MySB_PeerBlock in
 				PeerGuardian)
-					sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'PeerGuardian';"
-					sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '0' WHERE serv_name = 'rTorrent Block List';"
+					sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'PeerGuardian';"
+					sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '0' WHERE serv_name = 'rTorrent Block List';"
 				;;
 				rTorrent)
-					sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'rTorrent Block List';"
-					sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '0' WHERE serv_name = 'PeerGuardian';"
+					sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '1' WHERE serv_name = 'rTorrent Block List';"
+					sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '0' WHERE serv_name = 'PeerGuardian';"
 				;;
 				*)
-					sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '0' WHERE serv_name = 'rTorrent Block List';"
-					sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '0' WHERE serv_name = 'PeerGuardian';"
+					sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '0' WHERE serv_name = 'rTorrent Block List';"
+					sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '0' WHERE serv_name = 'PeerGuardian';"
 				;;
 			esac
 
@@ -288,7 +288,7 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 			fi
 		fi
 		if [ -f /etc/MySB/infos/install_logwatch.info ]; then
-			sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '$(cat /etc/MySB/infos/install_logwatch.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'LogWatch';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '$(cat /etc/MySB/infos/install_logwatch.info | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'LogWatch';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/install_logwatch.info
 			fi
@@ -298,7 +298,7 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 			else
 				IsInstalled_LogWatch=0
 			fi
-			sqlite3 -echo $MySB_DB "UPDATE services SET is_installed = '$IsInstalled_LogWatch' WHERE serv_name = 'LogWatch';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '$IsInstalled_LogWatch' WHERE serv_name = 'LogWatch';"
 		fi
 		# ----- Services info
 
@@ -313,9 +313,9 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 			SMTP_Password="$(cat /etc/postfix/sasl/sasl_passwd | awk '{ print $2 }' | cut -d ":" -f 2)"
 			SMTP_Host="$(cat /etc/MySB/infos/smtp_host.info)"
 			SMTP_Port="$(cat /etc/MySB/infos/smtp_port.info)"
-			MainUserEmail="`sqlite3 $MySB_DB \"SELECT users_email FROM users WHERE admin = '1'\"`"
+			MainUserEmail="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT users_email FROM users WHERE admin = '1'\"`"
 
-			sqlite3 -echo $MySB_DB "UPDATE smtp SET smtp_provider = '$SMTP_Provider', smtp_username = '$SMTP_Username', smtp_passwd = '$SMTP_Password', smtp_host = '$SMTP_Host', smtp_port = '$SMTP_Port', smtp_email = '$MainUserEmail' WHERE id_smtp = '1';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE smtp SET smtp_provider = '$SMTP_Provider', smtp_username = '$SMTP_Username', smtp_passwd = '$SMTP_Password', smtp_host = '$SMTP_Host', smtp_port = '$SMTP_Port', smtp_email = '$MainUserEmail' WHERE id_smtp = '1';"
 
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/smtp.info
@@ -338,7 +338,7 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 			RentingModel="$(cat /etc/MySB/infos/renting.info | grep 'Server model=' | awk -F= '{ print $2 }' | sed 's/^\ \ *//')"
 			RentingGlobalCost="$(cat /etc/MySB/infos/renting.info | grep 'Global cost=' | awk -F= '{ print $2 }' | awk '{ print $1 }'  | sed 's/^\ \ *//' | sed 's/\ $*//')"
 			RentingTVA="$(cat /etc/MySB/infos/renting.info | grep 'TVA=' | awk -F= '{ print $2 }' | awk '{ print $1 }'  | sed 's/^\ \ *//' | sed 's/\ $*//')"
-			TotalUsers="`sqlite3 $MySB_DB \"SELECT count(*) FROM users\"`"
+			TotalUsers="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT count(*) FROM users\"`"
 
 			export LANG=""
 			X=`echo "$RentingGlobalCost/$TotalUsers" | bc -l`
@@ -346,7 +346,7 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 			PriceByUser=`echo "$X+$Y" | bc -l`
 			PriceByUser=`printf '%.0f\n' $PriceByUser`
 
-			sqlite3 -echo $MySB_DB "UPDATE renting SET model = '$RentingModel', tva = '$RentingTVA', global_cost = '$RentingGlobalCost', nb_users = '$TotalUsers', price_per_users = '$PriceByUser' WHERE id_renting = '1';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE renting SET model = '$RentingModel', tva = '$RentingTVA', global_cost = '$RentingGlobalCost', nb_users = '$TotalUsers', price_per_users = '$PriceByUser' WHERE id_renting = '1';"
 			if [ $? -eq 0 ]; then
 				rm -f /etc/MySB/infos/renting.info
 			fi
@@ -368,7 +368,7 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 					fi
 					unset PART1 PART2 PART3
 					
-					IfExist="`sqlite3 $MySB_DB \"SELECT tracker FROM trackers_list WHERE tracker_domain = '$UserTrackerDomain'\"`"
+					IfExist="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT tracker FROM trackers_list WHERE tracker_domain = '$UserTrackerDomain'\"`"
 					if [ -z "$IfExist" ]; then
 						AddTracker $UserTrackerDomain "users"
 					fi

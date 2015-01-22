@@ -35,14 +35,14 @@ if [ "$USAGE" == "ON" ]; then
 				QuestionGetString NO  "Contact email for Seedbox-Manager: " MainUserEmail $MainUserEmail
 			fi
 
-			sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '$(echo $ToInstall_Manager | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'Seedbox-Manager';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET to_install = '$(echo $ToInstall_Manager | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name = 'Seedbox-Manager';"
 		fi
 	fi
 fi
 
 if [ "$ToInstall_Manager" == "YES" ]; then
-	ManagerUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'Seedbox-Manager'\"`"
-	ManagerFile="`sqlite3 $MySB_DB \"SELECT file FROM repositories WHERE name = 'Seedbox-Manager'\"`"
+	ManagerUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'Seedbox-Manager'\"`"
+	ManagerFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'Seedbox-Manager'\"`"
 
 	cp /etc/MySB/templates/etc.nginx.locations.seedbox-manager.conf.template /etc/nginx/locations/Seedbox-Manager.conf
 	ManagerDirEscaped=`echo $ManagerDir | sed s,/,\\\\\\\\\\/,g`
@@ -99,8 +99,8 @@ EOF
 	./install.sh
 
 	# seedbox-manager ruTorrent Plugin
-	PluginManagerDir="`sqlite3 $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin Link Manager'\"`"
-	PluginManagerUrl="`sqlite3 $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin Link Manager'\"`"
+	PluginManagerDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin Link Manager'\"`"
+	PluginManagerUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin Link Manager'\"`"
 	if [ -d $PluginManagerDir ]; then
 		cd $PluginManagerDir
 		git stash
@@ -113,7 +113,7 @@ EOF
 	#### Create directories & change rights
 	ManageDirectoriesAndFiles
 	
-	sqlite3 -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'Seedbox-Manager';"
+	sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'Seedbox-Manager';"
 	
 	#### START services
 	ManageServices start "nginx"	

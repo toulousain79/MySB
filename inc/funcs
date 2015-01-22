@@ -59,7 +59,7 @@ SendMail() {
 	FnCase="$3"
 	FnInfo="$4"
 	FnAttach=""
-	FnUserMail="`sqlite3 $MySB_DB \"SELECT users_email FROM users WHERE users_ident = '$FnUser'\"`"
+	FnUserMail="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT users_email FROM users WHERE users_ident = '$FnUser'\"`"
 	if [ ! -z "$FnInfo" ]; then log_daemon_msg "Generate HTML info for $FnUser"; fi
 	perl -pi -e "s/##MySB_User##/$MySB_User/g" /etc/MySB/web/pages/UserInfoMail.php
 
@@ -108,8 +108,8 @@ PackagesManage() {
 	
 	#### Check last update
 	if [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
-		AptUpdate="`sqlite3 $MySB_DB \"SELECT apt_update FROM system WHERE 1\"`"
-		AptDate="`sqlite3 $MySB_DB \"SELECT apt_date FROM system WHERE 1\"`"
+		AptUpdate="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT apt_update FROM system WHERE 1\"`"
+		AptDate="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT apt_date FROM system WHERE 1\"`"
 		AptDate=$(date -d "$AptDate" +"%Y-%m-%d %H")
 		Now=$(date +%Y-%m-%d\ %H)
 		t1=$(date --date="$AptDate" +'%-H')
@@ -121,7 +121,7 @@ PackagesManage() {
 			echo "$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update"
 			$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update
 			if [ $? -eq 0 ]; then
-				sqlite3 -echo $MySB_DB "UPDATE system SET apt_update = 0, apt_date = datetime('now','localtime') WHERE id_system = 1;"
+				sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE system SET apt_update = 0, apt_date = datetime('now','localtime') WHERE id_system = 1;"
 			fi
 		fi
 	else
@@ -450,9 +450,9 @@ CleanBlockList() {
 			wget --no-check-certificate $URL -O /etc/MySB/files/blocklists/$FILE.gz
 			if [ $? -eq 0 ] ; then
 				gzip -dc /etc/MySB/files/blocklists/$FILE.gz | cut -d: -f2 > /etc/MySB/files/blocklists/$FILE.txt
-				sqlite3 -echo $MySB_DB "UPDATE blocklists SET rtorrent_lastupdate = datetime('now','localtime') WHERE rtorrent_list = '$URL';"
+				sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE blocklists SET rtorrent_lastupdate = datetime('now','localtime') WHERE rtorrent_list = '$URL';"
 			else
-				sqlite3 -echo $MySB_DB "UPDATE blocklists SET rtorrent_lastupdate = 'failed' WHERE rtorrent_list = '$URL';"
+				sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE blocklists SET rtorrent_lastupdate = 'failed' WHERE rtorrent_list = '$URL';"
 			fi
 		;;
 		del_spaces)
@@ -584,12 +584,12 @@ MonthlyPayment() {
 		UserToIgnore="$1"
 
 		# add new renting info
-		sqlite3 $MySB_DB "UPDATE renting SET model = '$RentingModel', tva = '$RentingTVA', global_cost = '$RentingGlobalCost', nb_users = '$TotalUsers', price_per_users = '$PriceByUser' WHERE id_renting = '1';"
+		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE renting SET model = '$RentingModel', tva = '$RentingTVA', global_cost = '$RentingGlobalCost', nb_users = '$TotalUsers', price_per_users = '$PriceByUser' WHERE id_renting = '1';"
 		StatusLSB
 
 		ListingUsers
 		for SeedboxUser in $UsersList; do
-			SeedUserMail="`sqlite3 $MySB_DB \"SELECT users_email FROM users WHERE users_ident = '$SeedboxUser'\"`"
+			SeedUserMail="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT users_email FROM users WHERE users_ident = '$SeedboxUser'\"`"
 			
 			if [ "$UserToIgnore" != "$SeedboxUser" ]; then	
 				SendMail "MySB - Changing monthly" "${SeedboxUser}" "new_user" "Changing Monthly"
@@ -615,7 +615,7 @@ GetRutorrentTrackers() {
 
 #### Get Users Trackers
 GetUsersTrackers() {
-	FnUsersTrackers="`sqlite3 $MySB_DB \"SELECT tracker FROM trackers_list WHERE origin = 'users'\"`"
+	FnUsersTrackers="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT tracker FROM trackers_list WHERE origin = 'users'\"`"
 	for FnTracker in $FnUsersTrackers; do
 		if [ ! -z "$FnTracker" ]; then
 			AddTracker $FnTracker "users"
@@ -644,75 +644,75 @@ AddTracker() {
 		if [ ! -z "$TrackerDomain" ]; then		
 			DomainIPv4="$(nslookup $TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 			if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
-				IfExist="`sqlite3 $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"
+				IfExist="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"
 				if [ -z $IfExist ]; then
 					log_daemon_msg "Add tracker domain : $TrackerDomain"
-					sqlite3 $MySB_DB "INSERT into trackers_list (tracker,tracker_domain,origin) VALUES (\"$TrackerDomain\",\"$TrackerDomain\",\"$Origin\");"
+					sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into trackers_list (tracker,tracker_domain,origin) VALUES (\"$TrackerDomain\",\"$TrackerDomain\",\"$Origin\");"
 					StatusLSB
 				fi
 
 				TrackerIPv4="$(nslookup tracker.$TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 			else
-				IfExist="`sqlite3 $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"
+				IfExist="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"
 				if [ ! -z $IfExist ]; then
 					log_daemon_msg "Delete tracker domain : $TrackerDomain"
-					sqlite3 $MySB_DB "DELETE FROM trackers_list WHERE tracker_domain = '$TrackerDomain';"
+					sqlite3 -cmd '.timeout 150000' $MySB_DB "DELETE FROM trackers_list WHERE tracker_domain = '$TrackerDomain';"
 					StatusLSB
 				fi
 			fi
 
 			if [ ! -z "$TrackerIPv4" ] && [ "$TrackerIPv4" != "0.0.0.0" ] && [ "$TrackerIPv4" != "127.0.0.1" ]; then
 				TrackerIPv4="`echo $TrackerIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-				TrackersListID="`sqlite3 $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"	
+				TrackersListID="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"	
 
 				if [ ! -z "$TrackersListID" ] && [ $TrackersListID -gt 0 ]; then
 					log_daemon_msg "Update trackers IPv4 for 'tracker.$TrackerDomain' --> '$TrackerIPv4'"
 					# Cleaning
-					ListIPv4="`sqlite3 $MySB_DB \"SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$TrackersListID'\"`"
+					ListIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$TrackersListID'\"`"
 					for IPv4 in $ListIPv4; do
 						SEARCH=$(echo "$TrackerIPv4" | grep "$IPv4")
 						if [ -z "$SEARCH" ]; then
-							sqlite3 $MySB_DB "DELETE FROM trackers_list_ipv4 WHERE ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID';"
+							sqlite3 -cmd '.timeout 150000' $MySB_DB "DELETE FROM trackers_list_ipv4 WHERE ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID';"
 						fi
 					done
 					unset ListIPv4 IPv4
 
 					# Add
 					for IPv4 in $TrackerIPv4; do
-						IfExist="`sqlite3 $MySB_DB \"SELECT id_trackers_list_ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'\"`"
+						IfExist="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list_ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'\"`"
 						if [ -z $IfExist ]; then
-							sqlite3 $MySB_DB "INSERT into trackers_list_ipv4 (id_trackers_list,ipv4) VALUES (\"$TrackersListID\",\"$IPv4\");"
+							sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into trackers_list_ipv4 (id_trackers_list,ipv4) VALUES (\"$TrackersListID\",\"$IPv4\");"
 						fi
 					done
 					unset IPv4 TrackerIPv4
-					sqlite3 $MySB_DB "UPDATE trackers_list SET tracker = 'tracker.$TrackerDomain' WHERE tracker_domain = '$TrackerDomain';"
+					sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE trackers_list SET tracker = 'tracker.$TrackerDomain' WHERE tracker_domain = '$TrackerDomain';"
 					StatusLSB
 				fi
 			else
 				if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
 					DomainIPv4="`echo $DomainIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-					TrackersListID="`sqlite3 $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"
+					TrackersListID="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"
 					
 					if [ ! -z "$TrackersListID" ] && [ $TrackersListID -gt 0 ]; then
 						log_daemon_msg "Update trackers IPv4 for '$TrackerDomain' --> '$DomainIPv4'"
 						# Cleaning
-						ListIPv4="`sqlite3 $MySB_DB \"SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$TrackersListID'\"`"
+						ListIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$TrackersListID'\"`"
 						for IPv4 in $ListIPv4; do
 							SEARCH=$(echo "$DomainIPv4" | grep "$IPv4")
 							if [ -z "$SEARCH" ]; then
-								sqlite3 $MySB_DB "DELETE FROM trackers_list_ipv4 WHERE ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID';"
+								sqlite3 -cmd '.timeout 150000' $MySB_DB "DELETE FROM trackers_list_ipv4 WHERE ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID';"
 							fi
 						done
 						unset ListIPv4 IPv4
 						# Add
 						for IPv4 in $DomainIPv4; do
-							IfExist="`sqlite3 $MySB_DB \"SELECT id_trackers_list_ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'\"`"
+							IfExist="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list_ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'\"`"
 							if [ -z $IfExist ]; then
-								sqlite3 $MySB_DB "INSERT into trackers_list_ipv4 (id_trackers_list,ipv4) VALUES (\"$TrackersListID\",\"$IPv4\");"
+								sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into trackers_list_ipv4 (id_trackers_list,ipv4) VALUES (\"$TrackersListID\",\"$IPv4\");"
 							fi
 						done
 						unset IPv4 DomainIPv4
-						sqlite3 $MySB_DB "UPDATE trackers_list SET tracker = '$TrackerDomain' WHERE tracker_domain = '$TrackerDomain';"
+						sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE trackers_list SET tracker = '$TrackerDomain' WHERE tracker_domain = '$TrackerDomain';"
 						StatusLSB
 					fi
 				fi
@@ -770,8 +770,8 @@ ScriptInvoke() {
 NetworkPortsGenerator() {
 	WHITE_TCP_IN=""
 	WHITE_UDP_IN=""
-	WHITE_TCP_OUT="`sqlite3 $MySB_DB \"SELECT white_tcp_port_out FROM vars WHERE 1\" | sed 's/,/ /g;'`"
-	WHITE_UDP_OUT="`sqlite3 $MySB_DB \"SELECT white_udp_port_out FROM vars WHERE 1\" | sed 's/,/ /g;'`"
+	WHITE_TCP_OUT="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT white_tcp_port_out FROM vars WHERE 1\" | sed 's/,/ /g;'`"
+	WHITE_UDP_OUT="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT white_udp_port_out FROM vars WHERE 1\" | sed 's/,/ /g;'`"
 
 	# TCP In
 	WHITE_TCP_IN="${WHITE_TCP_IN} ${Port_HTTP} ${Port_HTTPS} ${Port_FTP} ${Port_SSH} ${Port_FTP_Data} ${Port_FTP_Passive}"
@@ -786,7 +786,7 @@ NetworkPortsGenerator() {
 	WHITE_UDP_OUT="${WHITE_UDP_OUT}"
 	if [ "$IsInstalled_DNScrypt" == "YES" ]; then
 		for Resolver in $ResolverName; do
-			ResolverAddress="`sqlite3 $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+			ResolverAddress="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
 			ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
 			
 			WHITE_UDP_OUT="${WHITE_UDP_OUT} ${ResolverPort}"
@@ -897,7 +897,7 @@ PeerGuardianBlocklistsList() {
 EOF
 		) > /etc/pgl/blocklists.list
 
-		AllBlocklists="`sqlite3 $MySB_DB \"SELECT peerguardian_list,peerguardian_active FROM blocklists WHERE peerguardian_list != ''\"`"
+		AllBlocklists="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT peerguardian_list,peerguardian_active FROM blocklists WHERE peerguardian_list != ''\"`"
 		for Blocklist in $AllBlocklists; do
 			List=`echo $Blocklist | awk '{split($0,a,"|"); print a[1]}'`
 			IsActive=`echo $Blocklist | awk '{split($0,a,"|"); print a[2]}'`			
@@ -915,10 +915,10 @@ EOF
 						for List in $CheckLog; do
 							echo `date +"%T"`" --> '$List' will be disabled." >> /etc/MySB/logs/$ScriptName.log
 							# Force inactived list
-							sqlite3 -echo $MySB_DB "UPDATE blocklists SET peerguardian_active = '0', peerguardian_lastupdate = 'failed' WHERE peerguardian_list = '$List';"
+							sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE blocklists SET peerguardian_active = '0', peerguardian_lastupdate = 'failed' WHERE peerguardian_list = '$List';"
 						done
 					else # Update OK
-						sqlite3 -echo $MySB_DB "UPDATE blocklists SET peerguardian_lastupdate = datetime('now','localtime') WHERE peerguardian_list = '$List';"
+						sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE blocklists SET peerguardian_lastupdate = datetime('now','localtime') WHERE peerguardian_list = '$List';"
 					fi
 				;;
 				'CreateFile') # Now, we create the final blocklists with all active lists
@@ -959,18 +959,18 @@ EOF
 
 		# if [ "$IsInstalled_DNScrypt" == "YES" ]; then
 			# for Resolver in $ResolverName; do
-				# ResolverAddress="`sqlite3 $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+				# ResolverAddress="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
 				# ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"			
 				# echo "DNScrypt Resolver ($Resolver):$ResolverAddress-255.255.255.255" >> /etc/pgl/allow.p2p
 			# done
 		# fi
 
-		AllTrackers="`sqlite3 $MySB_DB \"SELECT id_trackers_list, tracker FROM trackers_list WHERE is_active = '1'\"`"
+		AllTrackers="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list, tracker FROM trackers_list WHERE is_active = '1'\"`"
 		for Tracker in $AllTrackers; do
 			IdTracker=`echo $Tracker | awk '{split($0,a,"|"); print a[1]}'`
 			TrackerName=`echo $Tracker | awk '{split($0,a,"|"); print a[2]}'`
 
-			ListIPv4="`sqlite3 $MySB_DB \"SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$IdTracker'\"`"
+			ListIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$IdTracker'\"`"
 			for IPv4 in $ListIPv4; do
 				echo "$TrackerName:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
 			done
@@ -1147,7 +1147,7 @@ ManageDirectoriesAndFiles() {
 #### Change rights for users
 ManageUserHomeDir() {
 	FnUser="$1"
-	FnHomeDir="`sqlite3 $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$FnUser'\"`"
+	FnHomeDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$FnUser'\"`"
 
 	# /home/user: O:rwx G:rx O:rx
 	if [ ! -d $FnHomeDir ]; then mkdir $FnHomeDir; fi
@@ -1204,7 +1204,7 @@ ManageUserHomeDir() {
 CakeboxUsersConfigs() {
 	if [ "$IsInstalled_Cakebox" == "YES" ]; then
 		FnUser="$1"
-		FnHomeDir="`sqlite3 $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$FnUser'\"`"
+		FnHomeDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$FnUser'\"`"
 		HomeDirEscaped=`echo $FnHomeDir | sed s,/,\\\\\\\\\\/,g`
 	
 		if [ -f $CakeboxDir/config/default.php.dist ]; then
@@ -1222,9 +1222,9 @@ CakeboxUsersConfigs() {
 ManagerUsersConfigs() {
 	if [ "$IsInstalled_Manager" == "YES" ]; then
 		FnUser="$1"
-		FnHomeDir="`sqlite3 $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$FnUser'\"`"
+		FnHomeDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$FnUser'\"`"
 		HomeDirEscaped=`echo $FnHomeDir | sed s,/,\\\\\\\\\\/,g`
-		PortSCGI="`sqlite3 $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$FnUser'\"`"
+		PortSCGI="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$FnUser'\"`"
 		UserNameUpper=`echo $FnUser | tr '[:lower:]' '[:upper:]'`	
 	
 		if [ ! -d $ManagerDir/conf/users/$FnUser ]; then mkdir -p $ManagerDir/conf/users/$FnUser; fi
@@ -1251,9 +1251,9 @@ ManagerUsersConfigs() {
 ruTorrentUsersConfigs() {
 	LISTING=$(ls -1r $RutorrentPluginsDir/)
 	FnUser="$1"
-	FnHomeDir="`sqlite3 $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$FnUser'\"`"
+	FnHomeDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$FnUser'\"`"
 	HomeDirEscaped=`echo $FnHomeDir | sed s,/,\\\\\\\\\\/,g`
-	PortSCGI="`sqlite3 $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$FnUser'\"`"
+	PortSCGI="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$FnUser'\"`"
 	UserNameUpper=`echo $FnUser | tr '[:lower:]' '[:upper:]'`	
 
 	# share

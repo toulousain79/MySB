@@ -79,7 +79,7 @@ if [ $# -gt 1 ]; then
 				echo $Arg
 				GivenResolvers="`echo $Arg | cut -d '=' -f 2 | sed -e 's/,/ /g;' | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 				for Resolver in $GivenResolvers; do
-					IfExist="`sqlite3 $MySB_DB \"SELECT id_dnscrypt_resolvers FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+					IfExist="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_dnscrypt_resolvers FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
 					if [ ! -z "$IfExist" ]; then
 						ResolversSearched="$ResolversSearched AND name = '$Resolver'"
 					fi
@@ -95,10 +95,10 @@ if [ $# -gt 1 ]; then
 	fi
 
 	# Get resolvers list (by command line)
-	AllResolvers="`sqlite3 $MySB_DB \"SELECT name FROM dnscrypt_resolvers $Search\"`"	
+	AllResolvers="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT name FROM dnscrypt_resolvers $Search\"`"	
 else
 	# Get resolvers list (by database)
-	AllResolvers="`sqlite3 $MySB_DB \"SELECT name FROM dnscrypt_resolvers WHERE is_wished = '1'\"`"	
+	AllResolvers="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT name FROM dnscrypt_resolvers WHERE is_wished = '1'\"`"	
 fi
 
 # Cleaning the list (no IPv6)
@@ -126,9 +126,9 @@ if [ ! -d $DIR_LOG ]; then mkdir $DIR_LOG && chown $DAEMON_USER:$DAEMON_USER $DI
 DeamonOption() {
 	Name="$1"
 	LocalAddress="$2"
-	ProviderAddress="`sqlite3 $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Name'\"`"
-	ProviderName="`sqlite3 $MySB_DB \"SELECT provider_name FROM dnscrypt_resolvers WHERE name = '$Name'\"`"
-	ProviderKey="`sqlite3 $MySB_DB \"SELECT provider_public_key FROM dnscrypt_resolvers WHERE name = '$Name'\"`"
+	ProviderAddress="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Name'\"`"
+	ProviderName="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT provider_name FROM dnscrypt_resolvers WHERE name = '$Name'\"`"
+	ProviderKey="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT provider_public_key FROM dnscrypt_resolvers WHERE name = '$Name'\"`"
 
 	DEAMON_OPT="--user=$DAEMON_USER --edns-payload-size=4096 --resolver-address=$ProviderAddress --provider-name=$ProviderName --provider-key=$ProviderKey --logfile=$DIR_LOG/$Resolver.log --local-address=$LocalAddress"
 }
@@ -165,7 +165,7 @@ do_start() {
 	bind_check
 
 	# Update DB
-	sqlite3 $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '0', is_wished = '0' WHERE 1;"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '0', is_wished = '0' WHERE 1;"
 	
 	i=0
 	Return=0
@@ -173,7 +173,7 @@ do_start() {
 		(( i++ ))
 		
 		# Update DB
-		sqlite3 $MySB_DB "UPDATE dnscrypt_resolvers SET is_wished = '1' WHERE name = '$Resolver';"		
+		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_wished = '1' WHERE name = '$Resolver';"		
 		
 		# /etc/bind/named.conf.options
 		BindForwarders="$BindForwarders 127.0.0.$i port 52;"
@@ -213,7 +213,7 @@ do_start() {
 			Return=2
 		else
 			# Update DB
-			sqlite3 $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '1' WHERE name = '$Resolver';"
+			sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '1' WHERE name = '$Resolver';"
 			echo "--> STARTED: $Resolver : "`date` >> $LOG_FILE
 		fi
 	done
@@ -253,7 +253,7 @@ do_stop() {
 				echo "--> STOPPED: $Resolver : "`date` >> $LOG_FILE
 				delete_pid_file $DIR_PID/$Pid $Resolver
 				# Update DB
-				sqlite3 $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '0' WHERE name = '$Resolver';"
+				sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '0' WHERE name = '$Resolver';"
 			;;
 			2)
 				echo "--> NOT STOPPED: $Resolver : "`date` >> $LOG_FILE

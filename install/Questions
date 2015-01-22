@@ -303,89 +303,113 @@ fi
 #### Add answer to SQLite db
 if [ "$TYPE" == "INSTALL" ]; then
 	# 'system' table
-	sqlite3 $MySB_DB "UPDATE system SET hostname = '$HostNameFQDN', ipv4 = '$SrvIpAddress', primary_inet = '$PrimaryInet', timezone = '$TimeZone', server_provider = '$ServerProvider' WHERE id_system = '1';"
-
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE system SET hostname = '$HostNameFQDN', ipv4 = '$SrvIpAddress', primary_inet = '$PrimaryInet', timezone = '$TimeZone', server_provider = '$ServerProvider' WHERE id_system = '1';"
+	
 	# 'smtp' table
-	sqlite3 $MySB_DB "UPDATE smtp SET smtp_provider = '$SMTP_Provider', smtp_username = '$SMTP_Username', smtp_passwd = '$SMTP_Password', smtp_email ='$MainUserEmail' WHERE id_smtp = '1';"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE smtp SET smtp_provider = '$SMTP_Provider', smtp_username = '$SMTP_Username', smtp_passwd = '$SMTP_Password', smtp_email ='$MainUserEmail' WHERE id_smtp = '1';"
 
 	# 'users' table (Main user)
-	sqlite3 $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,sftp,sudo,admin) VALUES (\"$NEWUSER\",\"$MainUserEmail\",\"$PASSWORD\",\"1\",\"1\",\"1\");"
-	sqlite3 $Wolf_DB "UPDATE user SET name = '$NEWUSER', email = '$MainUserEmail', username = '$NEWUSER' WHERE id = '2';"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,sftp,sudo,admin) VALUES (\"$NEWUSER\",\"$MainUserEmail\",\"$PASSWORD\",\"1\",\"1\",\"1\");"
+	sqlite3 -cmd '.timeout 150000' $Wolf_DB "UPDATE user SET name = '$NEWUSER', email = '$MainUserEmail', username = '$NEWUSER' WHERE id = '2';"
 
 	# 'users_addresses' table
-	MainUserId=$(sqlite3 $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$NEWUSER'")
+	MainUserId=$(sqlite3 -cmd '.timeout 150000' $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$NEWUSER'")
 	IFS=$','
 	for ip in $MainUserIPs; do
 		HostName="$(nslookup $ip | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
-		sqlite3 $MySB_DB "INSERT into users_addresses (id_users,ipv4,hostname,check_by,is_active) VALUES (\"$MainUserId\",\"$ip\",\"$HostName\",\"ipv4\",\"1\");"
+		sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into users_addresses (id_users,ipv4,hostname,check_by,is_active) VALUES (\"$MainUserId\",\"$ip\",\"$HostName\",\"ipv4\",\"1\");"
 	done
 	unset IFS
-
+	
+	# resolve provider hostname
+	if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "none" ]; then
+		case "$ServerProvider" in
+			"OVH")
+				OvhHostnames="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT hostname FROM providers_monitoring WHERE provider = 'OVH'\"`"
+				for Hostname in $OvhHostnames; do
+					IPv4="$(nslookup $Hostname | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
+					
+					if [ ! -z "$IPv4" ]; then
+						sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE providers_monitoring SET ipv4 = '$IPv4/32' WHERE provider = 'OVH' AND hostname = '$Hostname';"
+					fi
+				done
+			
+				OvhIp1="`echo $SrvIpAddress | sed "s/$(echo $SrvIpAddress | cut -d '.' -f 4)/250/g;"`"
+				OvhIp2="`echo $SrvIpAddress | sed "s/$(echo $SrvIpAddress | cut -d '.' -f 4)/249/g;"`"
+				OvhIp3="`echo $SrvIpAddress | sed "s/$(echo $SrvIpAddress | cut -d '.' -f 4)/251/g;"`"
+				sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into providers_monitoring (provider,ipv4) VALUES (\"OVH\",\"$OvhIp1/32\");"
+				sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into providers_monitoring (provider,ipv4) VALUES (\"OVH\",\"$OvhIp2/32\");"
+				sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into providers_monitoring (provider,ipv4) VALUES (\"OVH\",\"$OvhIp3/32\");"
+			;;
+		esac
+	fi
+	
+	
 	#### 'services' table
 	# HTTPs & HTTP
-	sqlite3 $MySB_DB "UPDATE services SET port_tcp1 = '$Port_HTTPS', port_tcp2 = '$Port_HTTP', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'NginX';"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET port_tcp1 = '$Port_HTTPS', port_tcp2 = '$Port_HTTP', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'NginX';"
 	# SSH
-	sqlite3 $MySB_DB "UPDATE services SET port_tcp1 = '$Port_SSH', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'SSH';"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET port_tcp1 = '$Port_SSH', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'SSH';"
 	# FTP
-	sqlite3 $MySB_DB "UPDATE services SET port_tcp1 = '$Port_FTP', port_tcp2 = '$Port_FTP_Data', port_tcp3 = '65000:65535', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'VSFTPd';"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET port_tcp1 = '$Port_FTP', port_tcp2 = '$Port_FTP_Data', port_tcp3 = '65000:65535', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'VSFTPd';"
 fi
 
 if [ "$ToInstall_Manager" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Seedbox-Manager';"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Seedbox-Manager';"
 fi
 
 if [ "$ToInstall_Cakebox" == "YES" ]; then
-	#sqlite3 $MySB_DB "UPDATE services SET to_install = '1', port_tcp1 = '$Ports_Cakebox', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'CakeBox-Light';"
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '1', port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'CakeBox-Light';"
+	#sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1', port_tcp1 = '$Ports_Cakebox', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'CakeBox-Light';"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1', port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'CakeBox-Light';"
 fi
 
 if [ "$ToInstall_PlexMedia" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Plex Media Server';"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Plex Media Server';"
 fi
 
 if [ "$ToInstall_Webmin" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '1', port_tcp1 = '$Ports_Webmin', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'Webmin';"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1', port_tcp1 = '$Ports_Webmin', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'Webmin';"
 fi
 
 if [ "$ToInstall_OpenVPN" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'OpenVPN';"
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Samba';"
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'NFS';"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'OpenVPN';"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Samba';"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'NFS';"
 	OpenVPN_Proto=`echo $OpenVPN_Proto | tr '[:upper:]' '[:lower:]'`
 	case "$OpenVPN_Proto" in
 		"tcp")
-			sqlite3 $MySB_DB "UPDATE services SET to_install = '1', port_tcp1 = '$Port_OpenVPN_WithGW', port_tcp2 = '$Port_OpenVPN_WithoutGW', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'OpenVPN';"		
+			sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1', port_tcp1 = '$Port_OpenVPN_WithGW', port_tcp2 = '$Port_OpenVPN_WithoutGW', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'OpenVPN';"		
 		;;
 		"udp")
-			sqlite3 $MySB_DB "UPDATE services SET to_install = '1', port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '$Port_OpenVPN_WithGW', port_udp2 = '$Port_OpenVPN_WithoutGW', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'OpenVPN';"
+			sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1', port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '$Port_OpenVPN_WithGW', port_udp2 = '$Port_OpenVPN_WithoutGW', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'OpenVPN';"
 		;;
 	esac
 fi
 
 if [ "$ToInstall_LogWatch" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'LogWatch';"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'LogWatch';"
 fi
 
 if [ "$ToInstall_Fail2Ban" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Fail2Ban';"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Fail2Ban';"
 fi
 
 if [ "$ToInstall_DNScrypt" == "YES" ]; then
-	sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'DNScrypt-proxy';"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'DNScrypt-proxy';"
 fi
 
 case "$MySB_PeerBlock" in
 	"PeerGuardian")
-		sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'PeerGuardian';"
-		sqlite3 $MySB_DB "UPDATE services SET to_install = '0' WHERE serv_name = 'rTorrent Block List';"
+		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'PeerGuardian';"
+		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '0' WHERE serv_name = 'rTorrent Block List';"
 	;;
 	"rTorrent")
-		sqlite3 $MySB_DB "UPDATE services SET to_install = '0' WHERE serv_name = 'PeerGuardian';"
-		sqlite3 $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'rTorrent Block List';"
+		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '0' WHERE serv_name = 'PeerGuardian';"
+		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'rTorrent Block List';"
 	;;
 	*)
-		sqlite3 $MySB_DB "UPDATE services SET to_install = '0' WHERE serv_name = 'PeerGuardian';"
-		sqlite3 $MySB_DB "UPDATE services SET to_install = '0' WHERE serv_name = 'rTorrent Block List';"
+		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '0' WHERE serv_name = 'PeerGuardian';"
+		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '0' WHERE serv_name = 'rTorrent Block List';"
 	;;
 esac
 
