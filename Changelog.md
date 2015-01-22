@@ -13,6 +13,7 @@
 			- Allow monitoring (ping) from some providers
 			- Change Cakebox access by 'alias' instead of 'vhost'
 			- Add LoadAvg, free server analytics and monitoring
+			- Correcting issues with OVH server (OVH kernel)
 			- Some modifications
 
 	Version v1.1

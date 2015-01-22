@@ -56,33 +56,48 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 #### Functions
-ReplaceOvhKernel() {
+OvhDisableIpv6() {
+	/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6="1" &> /dev/null
+	/sbin/sysctl -w net.ipv6.conf.default.disable_ipv6="1" &> /dev/null
+	/sbin/sysctl -w net.ipv6.conf.lo.disable_ipv6="1" &> /dev/null
+	sysctl -p &> /dev/null
+	
+	cp /etc/network/interfaces /etc/network/interfaces.bckp
+	sed '/inet6/,/indet6/d' /etc/network/interfaces
+}
+
+OvhReplaceKernel() {
 	echo
 	if [ ! -z "$CheckLastKernel" ]; then
 		echo -e "${CYELLOW}Latest Debian kernel	: $CEND${CGREEN}$CheckLastKernel$CEND"
 		echo
-		$AptCommand -y --assume-yes -o Acquire::Check-Valid-Until=false update
-		$AptCommand -y --assume-yes -V -o Dpkg::Options::="--force-confold" upgrade
-		$AptCommand -y --assume-yes install $CheckLastKernel
-		mv /etc/grub.d/06_OVHkernel /etc/grub.d/11_OVHkernel
-		echo
-		echo -e "${CBLUE}You need to reboot your server before install MySB.'$CEND"
-		echo -e "${CBLUE}After the reboot, you can start $0 again.'$CEND"
-		echo
-		echo -e -n "${CYELLOW}Do you want install a standard kernel ans use MySB ?$CEND"
+		if [ ! -z "$CheckLastKernel" ]; then
+			$AptCommand -y --assume-yes -o Acquire::Check-Valid-Until=false update
+			$AptCommand -y --assume-yes -V -o Dpkg::Options::="--force-confold" upgrade
+			$AptCommand -y --assume-yes install $CheckLastKernel
+			mv /etc/grub.d/06_OVHkernel /etc/grub.d/11_OVHkernel
+			echo
+			echo -e "${CBLUE}You need to reboot your server before install MySB.'$CEND"
+			echo -e "${CBLUE}After the reboot, you can start again '$0'.'$CEND"
+			echo
+			echo -e -n "${CYELLOW}Do you want to reboot now ?$CEND "
 
-		read answer
-		case ${answer:0:1} in
-			y|Y|yes|YES)
-				echo -e "${CYELLOW}OK, let's go !$CEND"
-				CountDown 3
-				ReplaceOvhKernel
-				
-			;;
-			n|N|no|NO)
-				Continue=1
-			;;
-		esac		
+			read answer
+			case ${answer:0:1} in
+				y|Y|yes|YES)
+					echo -e "${CYELLOW}OK, let's go !$CEND"
+					CountDown 5
+					reboot
+				;;
+				n|N|no|NO)
+					Continue=1
+				;;
+			esac
+		else
+			echo
+			echo -e "${CRED}I can't find the last kernel for your server, please install it yourself.$CEND"
+			Continue=1
+		fi
 	else
 		echo -e "${CYELLOW}Latest Debian kernel	: $CEND${CRED}??$CEND"
 		Continue=1
@@ -166,14 +181,14 @@ if [ ! -z "$OVH_Kernel" ]; then
 	echo -e "${CRED}This kernel does not support networking modules.$CEND"
 	echo -e "${CRED}If you want install MySB, you must install a Debian standard kernel.$CEND"
 	echo
-	echo -e -n "${CYELLOW}Do you want install a standard kernel ans use MySB ?$CEND"
+	echo -e -n "${CYELLOW}Do you want install a standard kernel ans use MySB ?$CEND "
 
 	read answer
 	case ${answer:0:1} in
 		y|Y|yes|YES)
 			echo -e "${CYELLOW}OK, let's go !$CEND"
 			CountDown 3
-			ReplaceOvhKernel
+			OvhReplaceKernel
 			
 		;;
 		n|N|no|NO)

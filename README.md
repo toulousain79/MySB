@@ -76,8 +76,6 @@ You need to have a "blank" server installation.
 	--> DO NOT upgrade anything in your box, ask in the thread before even thinking about it.
 	--> DO NOT try to reconfigure packages using other tutorials.
 	--> TO UPGRADE your system, please use 'MySB_UpgradeSystem' command.
-	
-###### NOTE: For OVH servers, please change the proposed kernel by a Debian standard.
 
 #################
 
@@ -278,7 +276,8 @@ Created by toulousain79
 * PHPBench:		http://www.phpbench.com/
 * WolfCMS:		http://www.wolfcms.org/
 * Medoo:		http://medoo.in/
-* OVH:		http://www.isalo.org/wiki.debian-fr/Installation_d'un_noyau_Debian_chez_ovh.
+* OVH kernel:		http://www.isalo.org/wiki.debian-fr/Installation_d'un_noyau_Debian_chez_ovh.
+* OVH IPv6:		http://forum.ovh.com/showthread.php?96479-TUTO-D%E9sactiver-l-IPv6-sur-les-VPS-classic-VKS
 
 ## TODO
 
