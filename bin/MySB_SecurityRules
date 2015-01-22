@@ -54,27 +54,27 @@ ApplyIptablesDnscrypt=NO
 
 case "$Switch" in
 	create)
-		ApplyConfigNginx=YES
-		ApplyConfigPeerGuardian=YES
-		ApplyConfigFail2Ban=YES
-		ApplyConfigBind=YES
-		ApplyConfigDnscrypt=YES
+		ApplyConfigNginx="`CheckCommand 1 nginx`"
+		ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
+		ApplyConfigFail2Ban=$IsInstalled_Fail2Ban
+		ApplyConfigBind="`CheckCommand 1 named`"
+		ApplyConfigDnscrypt=$IsInstalled_DNScrypt
 	;;
 	clean)
-		ApplyConfigNginx=YES
-		ApplyConfigBind=YES
+		ApplyConfigNginx="`CheckCommand 1 nginx`"
+		ApplyConfigBind="`CheckCommand 1 named`"
 	;;
 	refresh)
 		for Arg in "$@"; do
 			case "$Arg" in
 				--users)
 					ApplyIptablesUsers=YES
-					ApplyConfigNginx=YES
+					ApplyConfigNginx="`CheckCommand 1 nginx`"
 					ApplyConfigFail2Ban=$IsInstalled_Fail2Ban
 					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
 				;;
 				--dnscrypt)
-					ApplyIptablesDnscrypt=YES
+					ApplyIptablesDnscrypt=$IsInstalled_DNScrypt
 					ApplyConfigBind="`CheckCommand 1 named`"
 					ApplyConfigDnscrypt=$IsInstalled_DNScrypt
 					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
@@ -90,7 +90,7 @@ case "$Switch" in
 				;;
 				*)
 					ApplyIptablesUsers=YES
-					ApplyConfigNginx=YES
+					ApplyConfigNginx="`CheckCommand 1 nginx`"
 					ApplyConfigBind="`CheckCommand 1 named`"
 					ApplyConfigDnscrypt=$IsInstalled_DNScrypt
 					ApplyConfigFail2Ban=$IsInstalled_Fail2Ban
@@ -121,11 +121,10 @@ fi
 
 #### Functions
 CreateServicesRules() {
-	echo "	# Users allowed IP" > /etc/nginx/conf.d/ip_restriction
-	
 	#### NginX
 	if [ "$ApplyConfigNginx" == "YES" ]; then
 		log_daemon_msg "NginX - Allowing IP addresses of all users"
+		echo "	# Users allowed IP" > /etc/nginx/conf.d/ip_restriction
 		for IPv4 in $AllUsersIPs; do
 			echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
 		done

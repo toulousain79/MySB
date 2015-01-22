@@ -200,10 +200,12 @@ PeerGuardianFailed() {
 		log_daemon_msg "Switching use of blocklists with $1" "$FnUser"
 		case "$1" in
 			"rTorrent")
+				if [ ! -f /etc/MySB/files/blocklists/blocklist_rtorrent.txt ]; then
+					ScriptInvoke 'screen' '/etc/MySB/scripts/BlocklistsRTorrent.bsh' 'REFRESH'
+				fi
+			
 				if [ -f /etc/MySB/files/blocklists/blocklist_rtorrent.txt ] && [ -d /home/$FnUser/blocklist/ ]; then
 					cp /etc/MySB/files/blocklists/* /home/$FnUser/blocklist/
-				else
-					ScriptInvoke 'screen' '/etc/MySB/scripts/BlocklistsRTorrent.bsh' 'REFRESH'
 				fi
 
 				if [ -f /home/$FnUser/.rtorrent.rc ]; then
@@ -260,6 +262,7 @@ ManageServices() {
 				ServicesToManage="`echo $ServicesToManage | sed -e 's/$Service//g;'`"
 			fi
 		done
+		ServicesToManage="`echo $ServicesToManage | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 	fi
 
 	if [ ! -z "$ServicesToManage" ]; then	
@@ -284,7 +287,7 @@ ManageServices() {
 							;;
 							"php5-fpm"|"nginx"|"stunnel4"|"vsftpd"|"fail2ban"|"nfs-kernel-server")
 								Continue=0
-								log_daemon_msg "Stopping $Service" "$Service"
+								log_daemon_msg "Stopping $Service"
 								service $Service stop &> /dev/null
 								StatusLSB
 							;;
@@ -394,14 +397,14 @@ ManageServices() {
 							"nginx"|"php5-fpm"|"stunnel4"|"postfix"|"cron"|"vsftpd"|"nfs-kernel-server")
 								Continue=0
 								if ! GetPid $Service; then
-									log_daemon_msg "Restarting $Service" "$Service"
+									log_daemon_msg "Restarting $Service"
 									service $Service restart &> /dev/null
 								else
-									log_daemon_msg "Reloading $Service" "$Service"
+									log_daemon_msg "Reloading $Service"
 									service $Service reload &> /dev/null
 									if [ $? -gt 0 ]; then
 										StatusLSB 1
-										log_daemon_msg "Restarting $Service" "$Service"
+										log_daemon_msg "Restarting $Service"
 										service $Service restart &> /dev/null
 										StatusLSB
 									fi
