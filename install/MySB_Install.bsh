@@ -56,15 +56,15 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 #### Functions
-OvhDisableIpv6() {
-	/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6="1" &> /dev/null
-	/sbin/sysctl -w net.ipv6.conf.default.disable_ipv6="1" &> /dev/null
-	/sbin/sysctl -w net.ipv6.conf.lo.disable_ipv6="1" &> /dev/null
-	sysctl -p &> /dev/null
+# OvhDisableIpv6() {
+	# /sbin/sysctl -w net.ipv6.conf.all.disable_ipv6="1" &> /dev/null
+	# /sbin/sysctl -w net.ipv6.conf.default.disable_ipv6="1" &> /dev/null
+	# /sbin/sysctl -w net.ipv6.conf.lo.disable_ipv6="1" &> /dev/null
+	# sysctl -p &> /dev/null
 	
-	cp /etc/network/interfaces /etc/network/interfaces.bckp
-	sed '/inet6/,/indet6/d' /etc/network/interfaces
-}
+	# cp /etc/network/interfaces /etc/network/interfaces.bckp
+	# sed '/inet6/,/indet6/d' /etc/network/interfaces
+# }
 
 OvhReplaceKernel() {
 	echo
@@ -104,6 +104,15 @@ OvhReplaceKernel() {
 	fi
 }
 
+#### Check if internet
+ping -c2 -w2 github.com >> /tmp/`basename $0`.log
+if [ $? -gt 0 ]; then
+	Continue=1
+	echo -e "${CYELLOW}Internet	: $CEND${CRED}KO$CEND"
+else
+	echo -e "${CYELLOW}Internet	: $CEND${CGREEN}OK$CEND"
+fi
+
 #### Must be Debian >= 7 (Wheezy) x86_64
 Continue=0
 if type -P lsb_release > /dev/null; then
@@ -115,7 +124,7 @@ else
 fi
 OS_Arch="`getconf LONG_BIT`"
 PVE_Kernel="`uname -r | grep 'pve'`"
-OVH_Kernel="`uname -r | grep 'OVH'`"
+OVH_Kernel="`uname -r | grep 'xxxx'`"
 
 #### Check if Debian
 if [ "$OS_Id" != "Debian" ]; then
@@ -177,12 +186,21 @@ else
 fi
 if [ ! -z "$OVH_Kernel" ]; then
 	echo
-	echo -e "${CRED}Your server use a personnal kernel installed by OVH.$CEND"
-	echo -e "${CRED}This kernel does not support networking modules.$CEND"
+	echo -e "${CRED}Your server use a custom kernel (maybe installed by OVH).$CEND"
+	echo -e "${CRED}This kernel does not support networking modules required by Iptables, PeerGuardian and OpenVPN.$CEND"
 	echo -e "${CRED}If you want install MySB, you must install a Debian standard kernel.$CEND"
 	echo
-	echo -e -n "${CYELLOW}Do you want install a standard kernel ans use MySB ?$CEND "
-
+	echo -e "${CYELLOW}You have 2 options:$CEND "
+	echo -e "${CYELLOW}	- Either we try to install a standard Debian kernel (not guaranteed outcome).$CEND "
+	echo -e "${CYELLOW}	- Either you do a fresh install of your server using the OVH Manager interface as follows:$CEND "
+	echo -e "${CYELLOW}		1) When choosing the OS, check \"Custom install\"$CEND "
+	echo -e "${CYELLOW}		2) Then on the options page (hostname, SSH key), check \"Use of kernel distribution\"$CEND "
+	echo -e "${CYELLOW}		3) Continue and confirm the installation of your system$CEND "
+	echo -e "${CYELLOW}		4) From there you can proceed with installing MySB$CEND "
+	echo
+	echo -e "${CBLEU}Type$CEND ${CGREEN}YES$CEND {CBLEU}for try to install a standard Debian kernel.$CEND"
+	echo -e "${CBLEU}Type$CEND ${CGREEN}NO$CEND {CBLEU}for stop the script now and proceed to an new install yourself.$CEND"
+	echo -e "${CBLEU}What do you want to do ?$CEND "
 	read answer
 	case ${answer:0:1} in
 		y|Y|yes|YES)
@@ -197,14 +215,7 @@ if [ ! -z "$OVH_Kernel" ]; then
 	esac	
 fi
 
-#### Check if internet
-ping -c2 -w2 github.com >> /tmp/`basename $0`.log
-if [ $? -gt 0 ]; then
-	Continue=1
-	echo -e "${CYELLOW}Internet	: $CEND${CRED}KO$CEND"
-else
-	echo -e "${CYELLOW}Internet	: $CEND${CGREEN}OK$CEND"
-fi
+
 
 if [ $Continue -gt 0 ]; then
 	echo
