@@ -41,12 +41,11 @@ CRED="${CSI}1;31m"
 CGREEN="${CSI}1;32m"
 CYELLOW="${CSI}1;33m"
 CBLUE="${CSI}1;34m"
+
 if [ "`dpkg --status aptitude | grep Status:`" == "Status: install ok installed" ]; then
 	AptCommand="aptitude -q"
-	CheckLastKernel="`$Aptsearch linux-image | grep -v 'rt-' | grep -v 'dummy' | grep -v 'dbg' | awk '{ print $2 }' | grep '[.]'`"
 else
 	AptCommand="apt-get"
-	CheckLastKernel="apt-cache search linux-image  | grep -v 'rt-' | grep 'image' | grep -v 'dummy' | grep -v 'dbg' | awk '{ print $1 }' | grep '[.]'"
 fi
 
 #### Must be root
@@ -67,6 +66,12 @@ fi
 # }
 
 OvhReplaceKernel() {
+	if [ "`dpkg --status aptitude | grep Status:`" == "Status: install ok installed" ]; then
+		KernelFind="aptitude -q search linux-image | grep -v 'rt-' | grep -v 'dummy' | grep -v 'dbg' | awk '{ print $2 }' | grep '[.]'"
+	else
+		KernelFind="apt-cache search search linux-image | grep -v 'rt-' | grep -v 'dummy' | grep -v 'dbg' | grep 'image' |  awk '{ print $1 }' | grep '[.]'"
+	fi
+
 	echo
 	if [ ! -z "$CheckLastKernel" ]; then
 		echo -e "${CYELLOW}Latest Debian kernel	: $CEND${CGREEN}$CheckLastKernel$CEND"
@@ -154,7 +159,7 @@ else
 			OS_Ver="`cat /etc/debian_version | cut -d '.' -f 1`"
 			if [ $OS_Ver -lt 7 ]; then
 				Continue=1
-				echo -e "${CYELLOW}Release		: $CEND${CRED}$OS_Ver$CEND"		
+				echo -e "${CYELLOW}Release		: $CEND${CRED}$OS_Ver$CEND"
 			else
 				echo -e "${CYELLOW}Release		: $CEND${CGREEN}$OS_Ver$CEND"
 			fi
@@ -200,6 +205,7 @@ if [ ! -z "$OVH_Kernel" ]; then
 	echo
 	echo -e "${CBLUE}Type$CEND ${CGREEN}YES$CEND {CBLUE}for try to install a standard Debian kernel.$CEND"
 	echo -e "${CBLUE}Type$CEND ${CGREEN}NO$CEND {CBLUE}for stop the script now and proceed to an new install yourself.$CEND"
+	echo
 	echo -e -n "${CBLUE}What do you want to do ?$CEND "
 	read answer
 	case ${answer:0:1} in
@@ -212,9 +218,8 @@ if [ ! -z "$OVH_Kernel" ]; then
 		n|N|no|NO)
 			Continue=1
 		;;
-	esac	
+	esac
 fi
-
 
 
 if [ $Continue -gt 0 ]; then
@@ -278,7 +283,7 @@ if [ "$COMMAND" == "" ]; then
 		echo -e "${CYELLOW}	5) I will install MySB completly (silently)$CEND"
 		echo
 		echo -e "${CYELLOW}The installation may take 20 to 45 minutes around.$CEND"
-		echo -e "${CYELLOW}This will depend on your server configuration and choice of services to install.$CEND"		
+		echo -e "${CYELLOW}This will depend on your server configuration and choice of services to install.$CEND"
 		echo
 		echo -e -n "${CYELLOW}Are you ready to install MySB ? (yes/no)$CEND "
 
