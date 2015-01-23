@@ -966,6 +966,24 @@ EOF
 			# done
 		# fi
 
+		# Allow provider monitoring by ICMP
+		if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "none" ]; then
+			case "$ServerProvider" in
+				"OVH")
+					OvhIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM providers_monitoring WHERE provider = 'OVH'\"`"
+					for IPv4 in $OvhIPv4; do
+						echo "OVH Monitoring:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p			
+					done
+				;;
+				"ONLINE")
+					OnlineIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM providers_monitoring WHERE provider = 'ONLINE'\"`"
+					for IPv4 in $OnlineIPv4; do
+						echo "ONLINE Monitoring:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
+					done
+				;;
+			esac
+		fi		
+		
 		AllTrackers="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list, tracker FROM trackers_list WHERE is_active = '1'\"`"
 		for Tracker in $AllTrackers; do
 			IdTracker=`echo $Tracker | awk '{split($0,a,"|"); print a[1]}'`
