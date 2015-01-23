@@ -335,10 +335,20 @@ PopulatingUdpInboundChain() {
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 123 -j ACCEPT -m comment --comment "NTP over OpenVPN"
 	fi
-	for ip in $AllUsersIPs; do
-		iptables -A udp_inbound -p UDP -s $ip/32 --destination-port 123 -j ACCEPT -m comment --comment "NTP for users"
+	for IPv4 in $AllUsersIPs; do
+		iptables -A udp_inbound -p UDP -s $IPv4/32 --destination-port 123 -j ACCEPT -m comment --comment "NTP for users"
 	done
 
+	if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "none" ]; then
+		case "$ServerProvider" in
+			"OVH")
+				for IPv4 in $OvhIPv4; do
+					iptables -A udp_inbound -p UDP -s $IPv4 --destination-port 6100:6200 -j ACCEPT -m comment --comment "$ServerProvider monitoring"			
+				done
+			;;
+		esac
+	fi	
+	
 	# DNS Server
 	# Configure the server to use port 53 as the source port for requests.
 	# Note, if you run a caching-only name server that only accepts queries from the private network or localhost, you can comment out this line.

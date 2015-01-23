@@ -956,33 +956,7 @@ PeerGuardianAllowP2P() {
 #
 # Do a "pglcmd restart" when you have edited this file.
 EOF
-		) > /etc/pgl/allow.p2p
-
-		# if [ "$IsInstalled_DNScrypt" == "YES" ]; then
-			# for Resolver in $ResolverName; do
-				# ResolverAddress="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
-				# ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"			
-				# echo "DNScrypt Resolver ($Resolver):$ResolverAddress-255.255.255.255" >> /etc/pgl/allow.p2p
-			# done
-		# fi
-
-		# Allow provider monitoring by ICMP
-		if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "none" ]; then
-			case "$ServerProvider" in
-				"OVH")
-					OvhIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM providers_monitoring WHERE provider = 'OVH'\"`"
-					for IPv4 in $OvhIPv4; do
-						echo "OVH Monitoring:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p			
-					done
-				;;
-				"ONLINE")
-					OnlineIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM providers_monitoring WHERE provider = 'ONLINE'\"`"
-					for IPv4 in $OnlineIPv4; do
-						echo "ONLINE Monitoring:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
-					done
-				;;
-			esac
-		fi		
+		) > /etc/pgl/allow.p2p		
 		
 		AllTrackers="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list, tracker FROM trackers_list WHERE is_active = '1'\"`"
 		for Tracker in $AllTrackers; do
@@ -997,6 +971,55 @@ EOF
 		if [ $1 -eq 1 ]; then StatusLSB; fi
 	fi
 }
+
+#### PeerGuardian Create all needed iptables complementary rules
+PeerGuardianIptablesInsert() {
+	# DNScrypt
+	if [ "$IsInstalled_DNScrypt" == "YES" ]; then
+		if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Adding of iptables complementary rules for DNScrypt"; fi
+			echo "#!/bin/sh" > /etc/pgl/dnscrypt.insert.sh
+			echo >> /etc/pgl/dnscrypt.insert.sh
+			echo "# DNScrypt-proxy complementary rules" >> /etc/pgl/dnscrypt.insert.sh
+			for Resolver in $ResolverName; do
+				ResolverAddress="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+				ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
+				ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
+				if [ -z "$ResolverPort" ]; then ResolverPort="443"; fi
+				
+				echo "iptables -I pgl_in -p udp -s $ResolverAddress/32 --dport $ResolverPort -j RETURN -m comment --comment \"DNScrypt-proxy: $Resolver\"" >> /etc/pgl/dnscrypt.insert.sh
+			done
+		if [ $1 -eq 1 ]; then StatusLSB; fi
+	else
+		if [ -f /etc/pgl/dnscrypt.insert.sh ]; then rm -f /etc/pgl/dnscrypt.insert.sh; fi
+	fi
+	
+	# Monitoring OVH
+	if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "none" ]; then
+		if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Adding of iptables complementary rules for $ServerProvider monitoring"; fi
+			echo "#!/bin/sh" > /etc/pgl/monitoring.insert.sh
+			echo >> /etc/pgl/monitoring.insert.sh
+			echo "# $ServerProvider monitoring complementary rules" >> /etc/pgl/monitoring.insert.sh
+			case "$ServerProvider" in
+				"OVH")
+					OvhIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM providers_monitoring WHERE provider = 'OVH'\"`"
+					for IPv4 in $OvhIPv4; do
+						echo "iptables -A pgl_in -p udp -s $IPv4 --destination-port 6100:6200 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
+						echo "iptables -I pgl_in -p icmp -s $IPv4 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
+					done
+				;;
+				"ONLINE")
+					OnlineIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM providers_monitoring WHERE provider = 'ONLINE'\"`"
+					for IPv4 in $OnlineIPv4; do
+						echo "iptables -I pgl_in -p icmp -s $IPv4 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
+					done
+				;;
+			esac			
+		if [ $1 -eq 1 ]; then StatusLSB; fi
+	else
+		if [ -f /etc/pgl/monitoring.insert.sh ]; then rm -f /etc/pgl/monitoring.insert.sh; fi
+	fi
+}
+
 
 #### PeerGuardian Create pglcmd.conf
 PeerGuardianPglcmdConf() {
