@@ -72,20 +72,20 @@ color brightblue "(^|[[:space:]])(#|;)"
 EOF
 ) | tee -a /usr/share/nano/conf.nanorc
 
-if [ "`cat /etc/nanorc | grep '## Config Files (.ini)'`" == "" ]; then
+if [ -z "`cat /etc/nanorc | grep '## Config Files (.ini)'`" ]; then
 	echo "" | tee -a /etc/nanorc
 	echo "## Config Files (.ini)" | tee -a /etc/nanorc
 	echo "include \"/usr/share/nano/ini.nanorc\"" | tee -a /etc/nanorc
 fi
 
-if [ "`cat /etc/nanorc | grep '## Config Files (.conf)'`" == "" ]; then
+if [ -z "`cat /etc/nanorc | grep '## Config Files (.conf)'`" ]; then
 	echo "" | tee -a /etc/nanorc
 	echo "## Config Files (.conf)" | tee -a /etc/nanorc
 	echo "include \"/usr/share/nano/conf.nanorc\"" | tee -a /etc/nanorc
 fi
 
 #### Change timezone
-if [ ! -z $TimeZone ]; then
+if [ ! -z "$TimeZone" ]; then
 	if [ -f /etc/timezone ]; then rm -vf /etc/timezone; fi
 	echo "$TimeZone" | tee -a /etc/timezone
 	sed -i "s/UTC/LOCAL/g;" /etc/adjtime
@@ -113,18 +113,28 @@ fi
 locale > /etc/MySB/files/locale
 
 #### /etc/hostname
-if [ -f /etc/hostname ]; then rm -vf /etc/hostname; fi
-echo "$HostNameFQDN" | tee -a /etc/hostname
-sh /etc/init.d/hostname.sh
+#if [ -f /etc/hostname ]; then rm -vf /etc/hostname; fi
+# echo "$HostNameFQDN" | tee -a /etc/hostname
+# sh /etc/init.d/hostname.sh
+if [ -z "`cat /etc/hostname | grep "$HostNameFQDN"`" ]; then
+	echo "$HostNameFQDN" | tee -a /etc/hostname
+	sh /etc/init.d/hostname.sh
+fi
 
 # /etc/hosts
-sed -i '/127.0.0.1/d' /etc/hosts
-sed -i '/127.0.1.1/d' /etc/hosts
-sed -i '/'$SrvIpAddress'/d' /etc/hosts
-sed -i '/^$/d' /etc/hosts
-echo "127.0.0.1       localhost.localdomain localhost" | tee -a /etc/hosts
-echo "127.0.1.1       $HostNameFQDN $(hostname -s)" | tee -a /etc/hosts
-echo "$SrvIpAddress       $HostNameFQDN $(hostname -s)" | tee -a /etc/hosts
+# sed -i '/127.0.0.1/d' /etc/hosts
+# sed -i '/127.0.1.1/d' /etc/hosts
+# sed -i '/'$SrvIpAddress'/d' /etc/hosts
+# sed -i '/^$/d' /etc/hosts
+#echo "127.0.0.1       localhost.localdomain localhost" | tee -a /etc/hosts
+#echo "127.0.1.1       $HostNameFQDN $(hostname -s)" | tee -a /etc/hosts
+#echo "$SrvIpAddress       $HostNameFQDN $(hostname -s)" | tee -a /etc/hosts
+if [ -z "`cat /etc/hosts | grep '127.0.0.1' | grep 'localhost.localdomain' | grep 'localhost'`" ]; then
+	echo "127.0.0.1       localhost.localdomain localhost" | tee -a /etc/hosts
+fi
+if [ -z "`cat /etc/hosts | grep "$SrvIpAddress" | grep "$HostNameFQDN" | grep "$(hostname -s)"`" ]; then
+	echo "$SrvIpAddress       $HostNameFQDN $(hostname -s)" | tee -a /etc/hosts
+fi
 
 #### Resolv.conf
 mv /etc/resolv.conf /etc/resolv.conf.back
@@ -187,7 +197,7 @@ if [ ! -f /root/.ssh/id_rsa ]; then
 fi
 
 #### AES-NI Crypto Acceleration
-if [ -z $IFPVEKERNEL ]; then
+if [ -z "$IFPVEKERNEL" ]; then
 	if [ "`cat /proc/cpuinfo | grep aes`" != "" ]; then	
 		## load
 		modprobe aesni_intel

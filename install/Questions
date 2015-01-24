@@ -150,6 +150,7 @@ if [ "$DisplayServerInfo" == "YES" ]; then
 	echo -e "${CRED}I don't recommend this...$CEND"
 	echo -e "${CYELLOW}It would be wiser to disable the monitoring function in your provider's interface.$CEND"
 	QuestionGetString NO "What is your server provider ?: " ServerProvider none
+	ServerProvider="`echo $ServerProvider | tr '[:lower:]' '[:upper:]'`"
 	
 	#Time Zone
 	echo
@@ -321,31 +322,7 @@ if [ "$TYPE" == "INSTALL" ]; then
 		HostName="$(nslookup $ip | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
 		sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into users_addresses (id_users,ipv4,hostname,check_by,is_active) VALUES (\"$MainUserId\",\"$ip\",\"$HostName\",\"ipv4\",\"1\");"
 	done
-	unset IFS
-	
-	# resolve provider hostname
-	if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "none" ]; then
-		case "$ServerProvider" in
-			"OVH")
-				OvhHostnames="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT hostname FROM providers_monitoring WHERE provider = 'OVH' and hostname != ''\"`"
-				for Hostname in $OvhHostnames; do
-					IPv4="$(nslookup $Hostname | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
-					
-					if [ ! -z "$IPv4" ]; then
-						sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE providers_monitoring SET ipv4 = '$IPv4/32' WHERE provider = 'OVH' AND hostname = '$Hostname';"
-					fi
-				done
-			
-				OvhIp1="`echo $SrvIpAddress | sed "s/$(echo $SrvIpAddress | cut -d '.' -f 4)/250/g;"`"
-				OvhIp2="`echo $SrvIpAddress | sed "s/$(echo $SrvIpAddress | cut -d '.' -f 4)/249/g;"`"
-				OvhIp3="`echo $SrvIpAddress | sed "s/$(echo $SrvIpAddress | cut -d '.' -f 4)/251/g;"`"
-				sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into providers_monitoring (provider,ipv4) VALUES (\"OVH\",\"$OvhIp1/32\");"
-				sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into providers_monitoring (provider,ipv4) VALUES (\"OVH\",\"$OvhIp2/32\");"
-				sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into providers_monitoring (provider,ipv4) VALUES (\"OVH\",\"$OvhIp3/32\");"
-			;;
-		esac
-	fi
-	
+	unset IFS	
 	
 	#### 'services' table
 	# HTTPs & HTTP

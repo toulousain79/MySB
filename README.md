@@ -276,8 +276,6 @@ Created by toulousain79
 * PHPBench:		http://www.phpbench.com/
 * WolfCMS:		http://www.wolfcms.org/
 * Medoo:		http://medoo.in/
-* OVH kernel:		http://www.isalo.org/wiki.debian-fr/Installation_d'un_noyau_Debian_chez_ovh.
-* OVH IPv6:		http://forum.ovh.com/showthread.php?96479-TUTO-D%E9sactiver-l-IPv6-sur-les-VPS-classic-VKS
 
 ## TODO
 
