@@ -1,4 +1,34 @@
 server {
+	listen <PORT_HTTP> default_server;
+	server_name "ns303094.ip-94-23-204.eu";
+
+	include /etc/nginx/conf.d/static_files;
+	include /etc/nginx/conf.d/global_deny_access;
+	include /etc/nginx/conf.d/pagespeed;
+	include /etc/nginx/conf.d/ip_restriction;
+	include /etc/nginx/conf.d/auth_basic;
+	
+	#### Permit to generate mail to send to all users (server only)
+	location /UserInfoMail.php {
+		alias /etc/MySB/web/pages/UserInfoMail.php;
+		access_log /var/log/nginx/UserInfoMail-access.log combined;
+		error_log /var/log/nginx/UserInfoMail-error.log error;
+		allow 127.0.0.1;
+		deny all;
+		include /etc/nginx/fastcgi_params;
+		fastcgi_pass unix:/var/run/php5-fpm.sock;
+		fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+		fastcgi_param APPLICATION_ENV production;
+		fastcgi_param PHP_VALUE "";
+		fastcgi_param PHP_ADMIN_VALUE "display_errors=On";
+	}
+	
+	location ^~ / {
+		deny all;
+	}	
+}
+
+server {
 	listen <PORT_HTTPS> default_server ssl;
 	server_name "<server_name>";
 	ssl on;
@@ -81,14 +111,14 @@ server {
 		}
 
 		#### Permit to generate mail to send to all users (server only)
-		location /UserInfoMail.php {
-			alias /etc/MySB/web/pages/UserInfoMail.php;
-			access_log /var/log/nginx/UserInfoMail-access.log combined;
-			error_log /var/log/nginx/UserInfoMail-error.log error;
-			allow 127.0.0.1;
-			deny all;
-			include /etc/nginx/conf.d/php-ssl;
-		}
+		# location /UserInfoMail.php {
+			# alias /etc/MySB/web/pages/UserInfoMail.php;
+			# access_log /var/log/nginx/UserInfoMail-access.log combined;
+			# error_log /var/log/nginx/UserInfoMail-error.log error;
+			# allow 127.0.0.1;
+			# deny all;
+			# include /etc/nginx/conf.d/php-ssl;
+		# }
 
 		#### Logout
 		location /Logout.php {
