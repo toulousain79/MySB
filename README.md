@@ -278,6 +278,8 @@ Created by toulousain79
 ## TODO
 
 * Use of "Let's Encrypt" (https://letsencrypt.org/) (Summer 2015)
+* Use of DNScrypt-wrapper instead of DNScrypt-proxy
+* TIGER: http://www.nongnu.org/tiger/index.html#intro
 * NFS over sTunnel ? (https://w3.physics.illinois.edu/physwiki/doku.php?id=pcs:unix:nfs_over_stunnel)
 * Add miniDLNA (with OpenVPN) ?
 * Add SABnzbd ?
