@@ -8,7 +8,7 @@
 MySB
 ====
 
-MySB is a multi-users seedbox for dedicated server under Debian 7 (Wheezy).  
+MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).  
 
 ##### Current version = v2.0
 ###### Last stable version = v2.0
@@ -137,13 +137,10 @@ After installing you will have access to the following commands to be used direc
 
 Additional scripts:
 
-	* '/etc/MySB/scripts/ApplyConfig.bsh', not needed by command line. It is only use for MySB portal to apply modifications.
 	* '/etc/MySB/scripts/BlocklistsRTorrent.bsh', use this for generate blocklist for rTorrent with 'ipv4_filter.load' command. (CRON every day at 23:00)	
 	* '/etc/MySB/scripts/DynamicAddressResolver.bsh', used for auto update users dynamics addresses IP. (CRON every 5 minutes)
 	* '/etc/MySB/scripts/GetTrackersCert.bsh', use this for get all SSL certificates for all tracker. You can add more trackers in MySB portal. This script is start every time you add/edit trackers list.	
 	* '/etc/MySB/scripts/LogServer.bsh', used for generate HTML log files (Nginx, PeerGuardian, Fail2Ban,...) avalaible in MySB Portal. (CRON every 30 minutes)	
-	* '/etc/MySB/scripts/PaymentReminder.bsh', if used in MySB Portal, sending a reminder email the beginning of each month for each users. (CRON every 1st of month)
-	* '/etc/MySB/scripts/UpdateGeoIP.bsh', not needed by command line. It's auto update GeoIP files. (CRON with automatic timer)
 
 ## MySB Portal
 
