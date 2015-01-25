@@ -5,10 +5,10 @@
 ====
 #### This script is not intended to solicit illegal actions! I can not be held responsible for the use that you could doing it! Thank you to reconsider the installation and use of MySB. I developed this script only for pleasure and passion for my job.
 ====
-My SeedBox
+MySB
 ====
 
-MySB is a seedbox for multi-users for dedicated server under Debian 7 (Wheezy).  
+MySB is a multi-users seedbox for dedicated server under Debian 7 (Wheezy).  
 
 ##### Current version = v2.0
 ###### Last stable version = v2.0
@@ -85,6 +85,8 @@ You need to have a "blank" server installation.
 
 	--> Use the default distribution kernel. When you start the installation process, choose "Custom install", and "Use of kernel distribution".
 	--> You can monitor your server, simply specify it during installation. But I still advice to disable this service in the OVH interface.
+	--> If you leave the monitoring enable in the OVH interface AND you do not activated it during installation of MySB, your server may be rebooted in rescue mode by the OVH staff...
+	--> If you want use the monitoring, you must first disable it BEFORE start the installation. You can reactivate it AFTER the END of installation.
 
 #################
 
