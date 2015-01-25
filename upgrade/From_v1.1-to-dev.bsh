@@ -515,16 +515,16 @@ for seedUser in $UsersList; do
 		fi
 		ScriptInvoke "screen" "/etc/MySB/bin/MySB_ChangeUserPassword" "$seedUser" "$UserPassword" "UPGRADE"
 	else
-		MainUserIP="`echo $SSH_CLIENT | awk '{ print $1 }'`"
+		CurentUserIP="`echo $SSH_CLIENT | awk '{ print $1 }'`"
 		if [ -z "$MainUserIP" ]; then
-			MainUserIP="`who --ips | awk '{print $6}' | grep ^[0123456789]`"
-			if [ "$MainUserIP" == "" ]; then
-				MainUserIP="`who --ips | awk '{print $5}' | grep ^[0123456789]`"
+			CurentUserIP="`who --ips | awk '{print $6}' | grep ^[0123456789]`"
+			if [ "$CurentUserIP" == "" ]; then
+				CurentUserIP="`who --ips | awk '{print $5}' | grep ^[0123456789]`"
 			fi
 		fi
-		if [ ! -z "$MainUserIP" ]; then
-			HostName="$(nslookup $MainUserIP | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
-			sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into users_addresses (id_users,ipv4,hostname,check_by,is_active) VALUES (\"$UserId\",\"$MainUserIP\",\"$HostName\",\"ipv4\",\"1\");"
+		if [ "$MainUserIP" != "$CurentUserIP" ]; then
+			HostName="$(nslookup $CurentUserIP | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
+			sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into users_addresses (id_users,ipv4,hostname,check_by,is_active) VALUES (\"$UserId\",\"$CurentUserIP\",\"$HostName\",\"ipv4\",\"1\");"
 		fi
 		SendMail "MySB - Upgraded to $MySB_CurrentVersion" "$seedUser" "upgrade"
 	fi

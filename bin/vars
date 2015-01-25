@@ -1,0 +1,227 @@
+#!/bin/bash 
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### Colors
+CSI="\033["
+CEND="${CSI}0m"
+CBLACK="${CSI}0;30m"
+CRED="${CSI}1;31m"
+CGREEN="${CSI}1;32m"
+CYELLOW="${CSI}1;33m"
+CBLUE="${CSI}1;34m"
+
+#### System
+MySB_DB="/etc/MySB/db/MySB.sq3"
+Wolf_DB="/etc/MySB/db/Wolf.sq3"
+if [ "$0" != "-bash" ]; then
+	ScriptName=$(basename $0)
+	DirName=$(dirname $0)
+fi
+PROCESSOR=`cat /proc/cpuinfo | grep processor | wc -l`
+MEMORY=`free -m | grep Mem | awk '{ print $2 }'`
+DEBIAN_VERSION=`lsb_release -cs`
+IFPVEKERNEL=`uname -r | grep pve`
+FILESYSTEMTYPE=`df -T "/home/" | awk '{print $2}' | tail -n1`
+
+if [ -s $MySB_DB ]; then
+	#### All Variables
+	# ----- System info
+	MySB_CurrentVersion="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT mysb_version FROM system WHERE id_system = '1'\"`"
+	HostNameFQDN="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT hostname FROM system WHERE id_system = '1'\"`"
+	SrvIpAddress="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM system WHERE id_system = '1'\"`"
+	PrimaryInet="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT primary_inet FROM system WHERE id_system = '1'\"`"
+	TimeZone="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT timezone FROM system WHERE id_system = '1'\"`"
+	MySB_User="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT mysb_user FROM system WHERE id_system = '1'\"`"
+	MySB_Password="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT mysb_password FROM system WHERE id_system = '1'\"`"
+	ServerProvider="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT server_provider FROM system WHERE id_system = '1'\"`"
+	IpRestriction="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ip_restriction FROM system WHERE id_system = '1'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	
+	Port_FTP="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT port_tcp1 FROM services WHERE serv_name = 'VSFTPd'\"`"
+	Port_FTP_Data="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT port_tcp2 FROM services WHERE serv_name = 'VSFTPd'\"`"
+	Port_FTP_Passive="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT port_tcp3 FROM services WHERE serv_name = 'VSFTPd'\"`"
+	Port_SSH="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT port_tcp1 FROM services WHERE serv_name = 'SSH'\"`"
+	Port_HTTPS="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT port_tcp1 FROM services WHERE serv_name = 'NginX'\"`"
+	Port_HTTP="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT port_tcp2 FROM services WHERE serv_name = 'NginX'\"`"
+
+	if [ -z "$HostNameFQDN" ]; then
+		HostNameFQDN="`hostname -f`"
+	fi
+
+	if [ -z "$SrvIpAddress" ]; then
+		SrvIpAddress=$(wget -qO- ipv4.icanhazip.com)
+		if [ -z "$SrvIpAddress" ]; then
+			SrvIpAddress="`ifconfig | sed -n 's/.*inet addr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
+			if [ -z "$SrvIpAddress" ]; then
+				SrvIpAddress="`ifconfig | sed -n 's/.*inet adr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
+			fi
+		fi
+	fi
+
+	if [ -z "$PrimaryInet" ]; then
+		PrimaryInet="`ip route get 8.8.8.8 | grep 8.8.8.8 | awk '{ print $5 }'`"
+	fi		
+	# ----- System info
+
+	# ----- Main user info
+	MainUserEmail="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT users_email FROM users WHERE admin = '1'\"`"
+	MainUser="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT users_ident FROM users WHERE admin = '1'\"`"
+	MainUserPassword="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT users_passwd FROM users WHERE admin = '1'\"`"
+	MainUserId="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_users FROM users WHERE admin = '1'\"`"
+	unset MainUserIPs Temp
+	Temp="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users = '$MainUserId'\" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+	if [ "$IpRestriction" == "YES" ]; then
+		for ip in $Temp; do
+			MainUserIPs="$MainUserIPs $ip/32"
+		done
+	else
+		MainUserIPs="0/0"	
+	fi
+	MainUserIPs=$(echo "$MainUserIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
+	# ----- Main user info
+
+	# ----- Normal users info
+	unset SeedboxUsersIPs Temp
+	Temp="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users != '$MainUserId'\" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+	if [ "$IpRestriction" == "YES" ]; then
+		for ip in $Temp; do
+			SeedboxUsersIPs="${SeedboxUsersIPs} $ip/32"
+		done
+	else
+		SeedboxUsersIPs="0/0"
+	fi
+	SeedboxUsersIPs=$(echo "$SeedboxUsersIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
+	# ----- Normal users info
+	
+	# ----- Services info
+	ToInstall_Manager="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT to_install FROM services WHERE serv_name = 'Seedbox-Manager'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	ToInstall_Cakebox="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT to_install FROM services WHERE serv_name = 'CakeBox-Light'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	ToInstall_PlexMedia="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT to_install FROM services WHERE serv_name = 'Plex Media Server'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	ToInstall_Webmin="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT to_install FROM services WHERE serv_name = 'Webmin'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	ToInstall_OpenVPN="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT to_install FROM services WHERE serv_name = 'OpenVPN'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	ToInstall_Samba="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT to_install FROM services WHERE serv_name = 'Samba'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	ToInstall_NFS="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT to_install FROM services WHERE serv_name = 'NFS'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	ToInstall_LogWatch="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT to_install FROM services WHERE serv_name = 'LogWatch'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	ToInstall_Fail2Ban="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT to_install FROM services WHERE serv_name = 'Fail2Ban'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	ToInstall_PeerGuardian="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT to_install FROM services WHERE serv_name = 'PeerGuardian'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	ToInstall_Blocklist="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT to_install FROM services WHERE serv_name = 'rTorrent Block List'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	ToInstall_DNScrypt="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT to_install FROM services WHERE serv_name = 'DNScrypt-proxy'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+
+	IsInstalled_Manager="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT is_installed FROM services WHERE serv_name = 'Seedbox-Manager'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	IsInstalled_Cakebox="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT is_installed FROM services WHERE serv_name = 'CakeBox-Light'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	IsInstalled_PlexMedia="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT is_installed FROM services WHERE serv_name = 'Plex Media Server'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	IsInstalled_Webmin="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT is_installed FROM services WHERE serv_name = 'Webmin'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	IsInstalled_OpenVPN="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT is_installed FROM services WHERE serv_name = 'OpenVPN'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	IsInstalled_Samba="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT is_installed FROM services WHERE serv_name = 'Samba'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	IsInstalled_NFS="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT is_installed FROM services WHERE serv_name = 'NFS'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	IsInstalled_LogWatch="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT is_installed FROM services WHERE serv_name = 'LogWatch'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	IsInstalled_Fail2Ban="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT is_installed FROM services WHERE serv_name = 'Fail2Ban'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	IsInstalled_PeerGuardian="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT is_installed FROM services WHERE serv_name = 'PeerGuardian'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	IsInstalled_Blocklist="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT is_installed FROM services WHERE serv_name = 'rTorrent Block List'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	IsInstalled_DNScrypt="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT is_installed FROM services WHERE serv_name = 'DNScrypt-proxy'\" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	
+	case "$ToInstall_PeerGuardian" in
+		"YES")
+			MySB_PeerBlock="PeerGuardian"
+		;;
+		"NO")
+			case "$IsInstalled_PeerGuardian" in
+				"YES")
+					MySB_PeerBlock="PeerGuardian"
+				;;
+				"NO")
+					case "$ToInstall_Blocklist" in
+						"YES")
+							MySB_PeerBlock="rTorrent"
+						;;
+						"NO")
+							case "$IsInstalled_Blocklist" in
+								"YES")
+									MySB_PeerBlock="rTorrent"
+								;;
+								"NO")
+									MySB_PeerBlock="none"
+								;;
+							esac
+						;;
+					esac
+				;;
+			esac
+		;;
+	esac
+
+	# OpenDNS DNScrypt-proxy resolvers
+	if [ "$IsInstalled_DNScrypt" == "YES" ]; then
+		ResolverName="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT name FROM dnscrypt_resolvers WHERE is_wished = '1'\"`"
+	fi	
+	
+	Ports_Cakebox="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT port_tcp1 FROM services WHERE serv_name = 'CakeBox-Light'\"`"
+	Ports_Webmin="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT port_tcp1 FROM services WHERE serv_name = 'Webmin'\"`"
+	Port_OpenVPN_WithGW="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT port_tcp1 FROM services WHERE serv_name = 'OpenVPN'\"`"
+	Port_OpenVPN_WithoutGW="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT port_tcp2 FROM services WHERE serv_name = 'OpenVPN'\"`"
+	case "$Port_OpenVPN_WithGW" in
+		"")
+			OpenVPN_Proto="udp"
+			Port_OpenVPN_WithGW="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT port_udp1 FROM services WHERE serv_name = 'OpenVPN'\"`"
+			Port_OpenVPN_WithoutGW="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT port_udp2 FROM services WHERE serv_name = 'OpenVPN'\"`"
+		;;
+		*)
+			OpenVPN_Proto="tcp"
+		;;
+	esac
+	# ----- Services info
+
+	# ----- SMTP info
+	SMTP_Provider="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT smtp_provider FROM smtp WHERE id_smtp = '1'\"`"
+	SMTP_Username="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT smtp_username FROM smtp WHERE id_smtp = '1'\"`"
+	SMTP_Password="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT smtp_passwd FROM smtp WHERE id_smtp = '1'\"`"
+	SMTP_Host="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT smtp_host FROM smtp WHERE id_smtp = '1'\"`"
+	SMTP_Port="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT smtp_port FROM smtp WHERE id_smtp = '1'\"`"
+	# ----- SMTP info
+
+	# ----- White IP addresses
+	Fail2banWhiteList="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT fail2ban_whitelist FROM vars WHERE 1\"`"
+	VpnIPs="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT vpn_ip FROM vars WHERE 1\" | sed 's/,/ /g;'`"
+	# ----- White IP addresses
+
+	# ----- Networks ports (Services ports)
+	Ports_TCP_PlexMedia="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ports_tcp_list FROM services WHERE serv_name = 'Plex Media Server'\" | sed 's/,/ /g;'`"
+	Ports_UDP_PlexMedia="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ports_udp_list FROM services WHERE serv_name = 'Plex Media Server'\" | sed 's/,/ /g;'`"
+	# ----- Networks ports (Services ports)
+
+	# ----- Renting infos
+	RentingModel="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT model FROM renting WHERE id_renting = '1'\"`"
+	RentingGlobalCost="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT global_cost FROM renting WHERE id_renting = '1'\"`"
+	RentingTVA="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT tva FROM renting WHERE id_renting = '1'\"`"
+	# ----- Renting infos
+	
+	# ----- Repositories infos
+	RutorrentDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent'\"`"
+	RutorrentPluginsDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrents Official Plugins'\"`"
+	ManagerDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'Seedbox-Manager'\"`"
+	CakeboxDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'Cakebox-Light'\"`"
+	LoadAvgDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'LoadAvg'\"`"
+	# ----- Repositories infos
+fi
+
+##################### LAST LINE ######################################
