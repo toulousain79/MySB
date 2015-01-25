@@ -88,25 +88,29 @@ if [ -s $MySB_DB ]; then
 	MainUser="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT users_ident FROM users WHERE admin = '1'\"`"
 	MainUserPassword="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT users_passwd FROM users WHERE admin = '1'\"`"
 	MainUserId="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_users FROM users WHERE admin = '1'\"`"
-	#MainUserIPs="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users = '$MainUserId'\" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+	unset MainUserIPs Temp
+	Temp="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users = '$MainUserId'\" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 	if [ "$IpRestriction" == "YES" ]; then
-		for ip in "`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users = '$MainUserId'\" | sed -e 's/^ //g;' | sed 's/\s+$//'`"; do
-			MainUserIPs="${MainUserIPs} $ip/32"
+		for ip in $Temp; do
+			MainUserIPs="$MainUserIPs $ip/32"
 		done
 	else
 		MainUserIPs="0/0"	
 	fi
+	MainUserIPs=$(echo "$MainUserIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
 	# ----- Main user info
 
 	# ----- Normal users info
-	#SeedboxUsersIPs="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users != '$MainUserId'\" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+	unset SeedboxUsersIPs Temp
+	Temp="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users != '$MainUserId'\" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 	if [ "$IpRestriction" == "YES" ]; then
-		for ip in "`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND id_users != '$MainUserId'\" | sed -e 's/^ //g;' | sed 's/\s+$//'`"; do
+		for ip in $Temp; do
 			SeedboxUsersIPs="${SeedboxUsersIPs} $ip/32"
-		done	
+		done
 	else
 		SeedboxUsersIPs="0/0"
 	fi
+	SeedboxUsersIPs=$(echo "$SeedboxUsersIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
 	# ----- Normal users info
 	
 	# ----- Services info

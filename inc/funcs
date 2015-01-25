@@ -836,16 +836,14 @@ NetworkPortsGenerator() {
 Fail2BanWhitheList() {
 	if [ -f /etc/fail2ban/jail.local ]; then
 		Fail2banWhiteList=""
-		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`	
-		MainUserIPs=`echo $MainUserIPs | sed s,/,\\\\\\\\\\/,g`
 		AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
 		AllUsersIPs=`echo $AllUsersIPs | sed -e "s/^ //g;"`
-		
+
 		if [ $1 -eq 1 ]; then log_daemon_msg "Fail2Ban - Adding IP addresses to ignore list"; fi
 		if [ "$IpRestriction" == "YES" ]; then
 			# All users IPs
 			for IPv4 in $AllUsersIPs; do
-				IfExist=`echo $Fail2banWhiteList | grep $IPv4`
+				IfExist=`echo $Fail2banWhiteList | grep "$IPv4"`
 				if [ -z "$IfExist" ]; then
 					Fail2banWhiteList="${Fail2banWhiteList} ${IPv4}"
 				fi
@@ -967,14 +965,14 @@ EOF
 		) > /etc/pgl/allow.p2p		
 
 		# DNScrypt
-		for Resolver in $ResolverName; do
-			ResolverAddress="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
-			ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
-			ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
-			if [ -z "$ResolverPort" ]; then ResolverPort="443"; fi
+		# for Resolver in $ResolverName; do
+			# ResolverAddress="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+			# ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
+			# ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
+			# if [ -z "$ResolverPort" ]; then ResolverPort="443"; fi
 			
-			echo "$Resolver:$ResolverAddress-255.255.255.255" >> /etc/pgl/allow.p2p
-		done
+			# echo "$Resolver:$ResolverAddress-255.255.255.255" >> /etc/pgl/allow.p2p
+		# done
 		
 		AllTrackers="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list, tracker FROM trackers_list WHERE is_active = '1'\"`"
 		for Tracker in $AllTrackers; do
@@ -1044,12 +1042,9 @@ PeerGuardianPglcmdConf() {
 	if [ -f /etc/pgl/pglcmd.conf ]; then
 		# /etc/pgl/pglcmd.conf
 		if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Adding of authorized IP addresses"; fi
-		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`
-		MainUserIPs=`echo $MainUserIPs | sed s,/,\\\\\\\\\\/,g`
 
 		if [ "$IpRestriction" == "YES" ]; then
-			AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
-			AllUsersIPs=`echo $AllUsersIPs | sed -e "s/^ //g;"`
+			AllUsersIPs="`echo $AllUsersIPs | sed -e 's/^ //g;' | sed -e 's/\/32//g;'`"
 			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_IN=")
 			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
 			if [ ! -z "$SEARCH" ]; then	
