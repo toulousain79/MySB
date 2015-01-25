@@ -39,6 +39,7 @@ SeedboxUsersIPs=$(echo "$SeedboxUsersIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # s
 MainUserIPs=`echo $MainUserIPs | sed s,/,\\\\\\\\\\/,g`
 MainUserIPs=$(echo "$MainUserIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
 AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
+AllUsersIPs=$(echo "$AllUsersIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
 
 ServicesToRestart=""
 #### VARs
@@ -122,7 +123,7 @@ fi
 #### Functions
 CreateServicesRules() {
 	#### NginX
-	if [ "$ApplyConfigNginx" == "YES" ]; then
+	if [ "$ApplyConfigNginx" == "YES" ] && [ "$IpRestriction" == "YES" ]; then
 		log_daemon_msg "NginX - Allowing IP addresses of all users"
 		echo "	# Users allowed IP" > /etc/nginx/conf.d/ip_restriction
 		for IPv4 in $AllUsersIPs; do
@@ -134,27 +135,34 @@ CreateServicesRules() {
 	#### NginX
 
 	#### NginX
-	if [ "$ApplyConfigNginx" == "YES" ]; then		
-		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-			# OpenVPN local IP addresses
-			log_daemon_msg "NginX - Allowing IP addresses of OpenVPN users"
-			echo "	# Restricted IP for OpenVPN users" >> /etc/nginx/conf.d/ip_restriction
-			for IPv4 in $VpnIPs; do
-				echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
-			done
-			unset IPv4
+	if [ "$ApplyConfigNginx" == "YES" ]; then
+		if [ "$IpRestriction" == "YES" ]; then
+			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+				# OpenVPN local IP addresses
+				log_daemon_msg "NginX - Allowing IP addresses of OpenVPN users"
+				echo "	# Restricted IP for OpenVPN users" >> /etc/nginx/conf.d/ip_restriction
+				for IPv4 in $VpnIPs; do
+					echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
+				done
+				unset IPv4
+				StatusLSB
+			fi
+
+			# Loopback
+			log_daemon_msg "NginX - Allowing the loopback interface"
+			echo "	# Localhost" >> /etc/nginx/conf.d/ip_restriction
+			echo "	allow 127.0.0.1;" >> /etc/nginx/conf.d/ip_restriction
 			StatusLSB
+
+			# Deny all others
+			echo "	# Deny all others" >> /etc/nginx/conf.d/ip_restriction
+			echo "	deny all;" >> /etc/nginx/conf.d/ip_restriction
+		else
+			log_daemon_msg "NginX - Satisfy all"
+			echo "	# Allow any one" >> /etc/nginx/conf.d/ip_restriction
+			echo "	satisfy all;" > /etc/nginx/conf.d/ip_restriction
+			StatusLSB		
 		fi
-
-		# Loopback
-		log_daemon_msg "NginX - Allowing the loopback interface"
-		echo "	# Localhost" >> /etc/nginx/conf.d/ip_restriction
-		echo "	allow 127.0.0.1;" >> /etc/nginx/conf.d/ip_restriction
-		StatusLSB
-
-		# Deny all others
-		echo "	# Deny all others" >> /etc/nginx/conf.d/ip_restriction
-		echo "	deny all;" >> /etc/nginx/conf.d/ip_restriction
 	fi
 	#### NginX
 
@@ -372,8 +380,8 @@ case "$Switch" in
 				sed -i '/Allow ICMP for users/d' /etc/MySB/temp/current-iptables-rules
 				for ip in $AllUsersIPs; do
 					# ICMP
-					sed -i ""$NumLign"i\-A icmp_packets -s $ip/32 -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
-					sed -i ""$NumLign"i\-A icmp_packets -s $ip/32 -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for users\" -j LOG --log-prefix \"fp=icmp_packets:2 a=ACCEPT\"\n" /etc/MySB/temp/current-iptables-rules
+					sed -i ""$NumLign"i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+					sed -i ""$NumLign"i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for users\" -j LOG --log-prefix \"fp=icmp_packets:2 a=ACCEPT\"\n" /etc/MySB/temp/current-iptables-rules
 				done
 				# icmp_packets chain
 
@@ -382,7 +390,7 @@ case "$Switch" in
 				sed -i '/NTP for users/d' /etc/MySB/temp/current-iptables-rules
 				for ip in $AllUsersIPs; do
 					# NTP
-					sed -i ""$NumLign"i\-A udp_inbound -s $ip/32 -p udp -m udp --dport 123 -m comment --comment \"NTP for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+					sed -i ""$NumLign"i\-A udp_inbound -s $ip -p udp -m udp --dport 123 -m comment --comment \"NTP for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
 				done
 				# udp_inbound chain
 
@@ -398,26 +406,26 @@ case "$Switch" in
 				sed -i '/rTorrent for users/d' /etc/MySB/temp/current-iptables-rules
 				for ip in $AllUsersIPs; do
 					# SSH and SFTP
-					sed -i ""$NumLign"i\-A tcp_inbound -s $ip/32 -p tcp -m tcp --dport $Port_SSH -m comment --comment \"SSH and SFTP for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+					sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_SSH -m comment --comment \"SSH and SFTP for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
 					# FTP
-					sed -i ""$NumLign"i\-A tcp_inbound -s $ip/32 -p tcp -m tcp --dport $Port_FTP -m comment --comment \"FTP for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+					sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_FTP -m comment --comment \"FTP for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
 					# FTP Data
-					sed -i ""$NumLign"i\-A tcp_inbound -s $ip/32 -p tcp -m tcp --sport $Port_FTP_Data -m comment --comment \"FTP Data for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+					sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --sport $Port_FTP_Data -m comment --comment \"FTP Data for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
 					# FTP Passive
-					sed -i ""$NumLign"i\-A tcp_inbound -s $ip/32 -p tcp -m tcp --dport $Port_FTP_Passive -m comment --comment \"FTP Passive for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+					sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_FTP_Passive -m comment --comment \"FTP Passive for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
 					# OpenVPN TCP
 					if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$OpenVPN_Proto" == "tcp" ]; then
-						sed -i ""$NumLign"i\-A tcp_inbound -s $ip/32 -p tcp -m tcp --dport $Port_OpenVPN_WithGW -m comment --comment \"OpenVPN with GW for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
-						sed -i ""$NumLign"i\-A tcp_inbound -s $ip/32 -p tcp -m tcp --dport $Port_OpenVPN_WithoutGW -m comment --comment \"OpenVPN without GW for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+						sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_OpenVPN_WithGW -m comment --comment \"OpenVPN with GW for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+						sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_OpenVPN_WithoutGW -m comment --comment \"OpenVPN without GW for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
 					fi
 					# Webmin
 					if [ "$IsInstalled_Webmin" == "YES" ] && [ "$FnUser" == "$MainUser" ]; then
-						sed -i ""$NumLign"i\-A tcp_inbound -s $ip/32 -p tcp -m tcp --dport $Ports_Webmin -m comment --comment \"Webmin for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+						sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Ports_Webmin -m comment --comment \"Webmin for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
 					fi
 					# rTorrent
 					PORT_START="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$FnUser'\"`"
 					PORT_END="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT rtorrent_port FROM users WHERE users_ident = '$FnUser'\"`"
-					sed -i ""$NumLign"i\-A tcp_inbound -p tcp -m tcp --dport $PORT_START:$PORT_END -m comment --comment \"rTorrent for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+					sed -i ""$NumLign"i\-A tcp_inbound -s 0/0 -p tcp -m tcp --dport $PORT_START:$PORT_END -m comment --comment \"rTorrent for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
 				done
 				# tcp_inbound chain
 		fi

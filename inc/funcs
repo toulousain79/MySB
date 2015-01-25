@@ -836,17 +836,19 @@ Fail2BanWhitheList() {
 		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`	
 		MainUserIPs=`echo $MainUserIPs | sed s,/,\\\\\\\\\\/,g`
 		AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
-
-		if [ $1 -eq 1 ]; then log_daemon_msg "Fail2Ban - Adding IP addresses to ignore list"; fi
-		# All users IPs
-		for IPv4 in $AllUsersIPs; do
-			IfExist=`echo $Fail2banWhiteList | grep $IPv4`
-			if [ -z "$IfExist" ]; then
-				Fail2banWhiteList="${Fail2banWhiteList} ${IPv4}/32"
-			fi
-		done
-		unset IPv4
 		AllUsersIPs=`echo $AllUsersIPs | sed -e "s/^ //g;"`
+
+		if [ "$IpRestriction" == "YES" ]; then
+			if [ $1 -eq 1 ]; then log_daemon_msg "Fail2Ban - Adding IP addresses to ignore list"; fi
+			# All users IPs
+			for IPv4 in $AllUsersIPs; do
+				IfExist=`echo $Fail2banWhiteList | grep $IPv4`
+				if [ -z "$IfExist" ]; then
+					Fail2banWhiteList="${Fail2banWhiteList} ${IPv4}"
+				fi
+			done
+			unset IPv4
+		fi
 
 		# VPN local IPs	
 		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
@@ -858,8 +860,8 @@ Fail2BanWhitheList() {
 			done
 			unset IPv4
 		fi
+		
 		Fail2banWhiteList=`echo $Fail2banWhiteList | sed -e "s/^ //g;"`
-
 		Fail2banWhiteList=`echo $Fail2banWhiteList | sed s,/,\\\\\\\\\\/,g`
 		SEARCH=$(cat /etc/fail2ban/jail.local | grep "ignoreip =" | cut -d "=" -f 2)
 		SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
@@ -1030,14 +1032,16 @@ PeerGuardianPglcmdConf() {
 		SeedboxUsersIPs=`echo $SeedboxUsersIPs | sed s,/,\\\\\\\\\\/,g`
 		MainUserIPs=`echo $MainUserIPs | sed s,/,\\\\\\\\\\/,g`
 
-		AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
-		AllUsersIPs=`echo $AllUsersIPs | sed -e "s/^ //g;"`
-		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_IN=")
-		SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
-		if [ ! -z "$SEARCH" ]; then	
-			perl -pi -e "s/$SEARCH/WHITE_IP_IN=\"$AllUsersIPs\"/g" /etc/pgl/pglcmd.conf
+		if [ "$IpRestriction" == "YES" ]; then
+			AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
+			AllUsersIPs=`echo $AllUsersIPs | sed -e "s/^ //g;"`
+			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_IN=")
+			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
+			if [ ! -z "$SEARCH" ]; then	
+				perl -pi -e "s/$SEARCH/WHITE_IP_IN=\"$AllUsersIPs\"/g" /etc/pgl/pglcmd.conf
+			fi
+			unset SEARCH
 		fi
-		unset SEARCH
 
 		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_OUT=")
 		SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`

@@ -80,9 +80,19 @@ if [ "$DisplayUserInfo" == "YES" ]; then
 
 	# User IP addresses
 	echo
+	echo -e "${CYELLOW}If you do not want to activate the restriction by IP for access to your server, just type this: $CEND${CGREEN}NO$CEND"
+	echo -e "${CRED}I think this is NOT a very good idea !$CEND ${CYELLOW}But it's not my problem...$CEND"
+	echo -e "${CYELLOW}However, you will still need to add at least one IP to the next question.$CEND"
+	echo -e "${CYELLOW}Just remember that Fail2Ban and PeerGuardian may have to block you...$CEND"
+	QuestionGetString NO "Do you want to use the IP restriction ?" IpRestriction YES
+	
+	echo
 	echo -e "${CYELLOW}Add now, at least one of your public IP addresses that will be allowed to connect to your server for all services (whitelist).$CEND"
-	echo -e "${CYELLOW}You will be able to manage this list later on the portal, and also adding dynamic IP (with hostnames).$CEND"
-	while [ ! "$CHECK_MYIP" = "$MainUserIPs" ] || [ -z "$MainUserIPs" ]; do
+	echo -e "${CYELLOW}You will be able to manage this list later on the portal, and also adding dynamic IP with hostnames (DynDN, No-IP,...).$CEND"
+	echo -e "${CYELLOW}You also have the possibility to add as many addresses (IP or hostname) that you want through the portal.$CEND"
+
+	
+	while [ "$CHECK_MYIP" != "$MainUserIPs" ] || [ -z "$MainUserIPs" ]; do
 		MainUserIPs="`echo $SSH_CLIENT | awk '{ print $1 }'`"
 		if [ -z "$MainUserIPs" ]; then
 			MainUserIPs="`who --ips | awk '{print $6}' | grep ^[0123456789]`"
@@ -307,7 +317,12 @@ fi
 #### Add answer to SQLite db
 if [ "$TYPE" == "INSTALL" ]; then
 	# 'system' table
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE system SET hostname = '$HostNameFQDN', ipv4 = '$SrvIpAddress', primary_inet = '$PrimaryInet', timezone = '$TimeZone', server_provider = '$ServerProvider' WHERE id_system = '1';"
+	if [ "$IpRestriction" == "YES" ]; then
+		IpRestriction="1"
+	else
+		IpRestriction="0"
+	fi	
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE system SET hostname = '$HostNameFQDN', ipv4 = '$SrvIpAddress', primary_inet = '$PrimaryInet', timezone = '$TimeZone', server_provider = '$ServerProvider', ip_restriction = '$IpRestriction' WHERE id_system = '1';"
 	
 	# 'smtp' table
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE smtp SET smtp_provider = '$SMTP_Provider', smtp_username = '$SMTP_Username', smtp_passwd = '$SMTP_Password', smtp_email ='$MainUserEmail' WHERE id_smtp = '1';"
@@ -317,7 +332,7 @@ if [ "$TYPE" == "INSTALL" ]; then
 	sqlite3 -cmd '.timeout 150000' $Wolf_DB "UPDATE user SET name = '$NEWUSER', email = '$MainUserEmail', username = '$NEWUSER' WHERE id = '2';"
 
 	# 'users_addresses' table
-	MainUserId=$(sqlite3 -cmd '.timeout 150000' $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$NEWUSER'")
+	MainUserId=$(sqlite3 -cmd '.timeout 150000' $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$NEWUSER'")	
 	IFS=$','
 	for ip in $MainUserIPs; do
 		HostName="$(nslookup $ip | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
