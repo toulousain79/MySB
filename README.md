@@ -8,7 +8,7 @@
 My SeedBox
 ====
 
-MySB is a seedbox for multi-users for dedicated server.
+MySB is a seedbox for multi-users for dedicated server under Debian 7 (Wheezy).  
 
 ##### Current version = v2.0
 ###### Last stable version = v2.0
@@ -27,19 +27,24 @@ MySB is a seedbox for multi-users for dedicated server.
 ## Services available
 
 	* PeerGuardian (optionnal but recommended)
-	* DNScrypt-proxy with Bind9 as dns caching (optionnal but recommended)	
+	* DNScrypt-proxy with Bind9 as DNS caching (optionnal but recommended)	
 	* Fail2ban (optionnal but recommended)
 	* Seedbox-Manager (optionnal but recommended)
 	* OpenVPN (optionnal); Multi TUN configuration, with or without redirection of traffic. Add AES-NI support (Not valid for OpenVZ Container).
 	* Webmin (optionnal)
-	* BlockList usage (optionnal) (PeerGuardian or rTorrent, if PeerGuardian failed to start, rTorrent will use its own blocklist)
+	* BlockList usage (optionnal) (PeerGuardian or rTorrent, if PeerGuardian failed to start, rTorrent will use its own blocklists)
 	* CakeBox-Light (optionnal)
 	* PlexMedia Server (optionnal) (requires additional setup)
 	* Samba share for each users (VPN access)
 	* NFS share for each users (VPN access)
 	* Auto retrieve SSL certificates for all trackers (if available)
-	* MySB portal, ability to manage trackers, blocklists, users and more
+	* MySB portal, ability to manage trackers, blocklists, logs, users and more
 	* Block all possibilities to use any listed trackers that was not activated in MySB portal
+	* LoadAvg, Monitoring & Analytics
+	* Monitoring service available for some providers
+	* Access restricted by IP for all server access (can be disabled)
+	* Dynamic IP Management (DynDNS, No-IP, ...)
+	* 
 
 ## Additional ruTorrent plugins (in addition to the official plugins)
 
@@ -237,14 +242,12 @@ If you want to use GMAIL provider, maybe should you read this for authorize conn
 ```
 https://www.google.com/accounts/DisplayUnlockCaptcha
 ```
-
-## Supported and tested servers
-
-#### Designed for dedicated server with Debian 7 (Wheezy) - 64 bits
+ 
+## Designed for dedicated server with Debian 7 (Wheezy)
 
 	--> Ubuntu is not supported.
 	--> PVE kernel are not supported.
-  
+ 
 ## Changelog
 
 Take a look at 'Changelog.md', it's all there.
@@ -257,31 +260,20 @@ Created by toulousain79
 
 ## Sources, inspiration and tools
 
-* Notos' script:		https://github.com/Notos/seedbox-from-scratch/
-* Mondedie.fr script:		https://bitbucket.org/exrat/install-rutorrent	
 * rTorrent Community:	http://community.rutorrent.org/	
 * rTorrent config info:		http://libtorrent.rakshasa.no/rtorrent/rtorrent.1.html
-* rTorrent tweaks:		https://calomel.org/rtorrent_mods.html
 * rTorrent SSL:	https://forums.gentoo.org/viewtopic-t-710876-start-0.html
 * OpenSSL configuration file:	http://www.eclectica.ca/howto/ssl-cert-howto.php
 * OpenSSL AES-NI support:	http://openssl.6102.n7.nabble.com/having-a-lot-of-troubles-trying-to-get-AES-NI-working-td44285.html
 * Text ASCII Art Generator:	http://patorjk.com/software/taag/
 * Why nginx-extras + infos:	https://wiki.debian.org/fr/Nginx
-* NginX config:	http://wiki.nginx.org/CoreModule#worker_rlimit_nofile
-* NginX config:	http://trac.evolix.net/infogerance/wiki/HowtoNginx
-* NginX config:	https://library.linode.com/web-servers/nginx/configuration/basic
-* NginX with SSL:	http://nginx.org/en/docs/http/configuring_https_servers.html
-* Nginx with PageSpeed: https://rtcamp.com/tutorials/nginx/using-pagespeed/
-* OpenSSL CAconfig:	http://www.ulduzsoft.com/2012/01/creating-a-certificate-authority-and-signing-the-ssl-certificates-using-openssl/
-* VSFTDs TLS:	http://www.howtoforge.com/setting-up-vsftpd-tls-on-debian-squeeze
-* VSFTPd Debian: https://howto.biapy.com/fr/debian-gnu-linux/serveurs/autres/installer-le-serveur-ftp-vsftpd-sur-debian
-* VSFTPd ManPage: https://security.appspot.com/vsftpd/vsftpd_conf.html
-* DNS Server:	http://en.m.wikipedia.org/wiki/Comparison_of_DNS_server_software
-* DNScrypt infos:	http://antix.freeforums.org/secure-dns-with-dnscrypt-t3588.html
-* DNScrypt + Bind9:	http://cavaencoreparlerdebits.fr/blog/2013/10/encrypt-your-dns-request-with-opendns-dnscrypt
+* Nginx / PageSpeed: https://developers.google.com/speed/pagespeed/
+* DNS Server:	http://en.m.wikipedia.org/wiki/Comparison_of_DNS_server_software#Feature_matrix
+* DNScrypt:	http://dnscrypt.org/
 * PHPBench:		http://www.phpbench.com/
 * WolfCMS:		http://www.wolfcms.org/
 * Medoo:		http://medoo.in/
+* LoadAvg:	http://www.loadavg.com/
 
 ## TODO
 
