@@ -30,7 +30,7 @@ MySB is a seedbox for multi-users for dedicated server under Debian 7 (Wheezy).
 	* DNScrypt-proxy with Bind9 as DNS caching (optionnal but recommended)	
 	* Fail2ban (optionnal but recommended)
 	* Seedbox-Manager (optionnal but recommended)
-	* OpenVPN (optionnal); Multi TUN configuration, with or without redirection of traffic. Add AES-NI support (Not valid for OpenVZ Container).
+	* OpenVPN (optionnal); Multi TUN configuration, with or without redirection of traffic. Add AES-NI support.
 	* Webmin (optionnal)
 	* BlockList usage (optionnal) (PeerGuardian or rTorrent, if PeerGuardian failed to start, rTorrent will use its own blocklists)
 	* CakeBox-Light (optionnal)
@@ -44,7 +44,6 @@ MySB is a seedbox for multi-users for dedicated server under Debian 7 (Wheezy).
 	* Monitoring service available for some providers
 	* Access restricted by IP for all server access (can be disabled)
 	* Dynamic IP Management (DynDNS, No-IP, ...)
-	* 
 
 ## Additional ruTorrent plugins (in addition to the official plugins)
 
@@ -86,7 +85,6 @@ You need to have a "blank" server installation.
 
 	--> Use the default distribution kernel. When you start the installation process, choose "Custom install", and "Use of kernel distribution".
 	--> You can monitor your server, simply specify it during installation. But I still advice to disable this service in the OVH interface.
-	--> If you leave the monitoring enable in the OVH interface AND you do not activated it during installation of MySB, your server may be rebooted in rescue mode ...
 
 #################
 
