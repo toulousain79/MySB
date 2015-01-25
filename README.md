@@ -76,6 +76,12 @@ You need to have a "blank" server installation.
 	--> DO NOT upgrade anything in your box, ask in the thread before even thinking about it.
 	--> DO NOT try to reconfigure packages using other tutorials.
 	--> TO UPGRADE your system, please use 'MySB_UpgradeSystem' command.
+	
+###### NOTE: For OVH servers:
+
+	--> Use the default distribution kernel. When you start the installation process, choose "Custom install", and "Use of kernel distribution".
+	--> You can monitor your server, simply specify it during installation. But I still advice to disable this service in the OVH interface.
+	--> If you leave the monitoring enable in the OVH interface AND you do not activated it during installation of MySB, your server may be rebooted in rescue mode ...
 
 #################
 
