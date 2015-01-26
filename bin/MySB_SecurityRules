@@ -116,6 +116,7 @@ fi
 #### Check arguments options
 
 #### Functions
+# Create all rules for services (config files)
 CreateServicesRules() {
 	#### NginX
 	if [ "$ApplyConfigNginx" == "YES" ] && [ "$IpRestriction" == "YES" ]; then
@@ -193,6 +194,25 @@ CreateServicesRules() {
 	fi
 	#### PeerGuardian
 }
+
+# Restart all rTorrent session if needed
+RestartRtorrentSessions() {
+	case "$1" in
+		stop)
+			for FnUser in $UsersList; do
+				service rtorrent-$FnUser stop
+			done
+		;;
+		start)
+			for FnUser in $UsersList; do
+				service rtorrent-$FnUser status &> /dev/null
+				if [ $? -ne 0 ]; then
+					service rtorrent-$FnUser restart
+				fi
+			done
+		;;
+	esac
+}
 #### Functions
 
 
@@ -200,6 +220,7 @@ CreateServicesRules() {
 case "$Switch" in
 	clean)
 		#### STOP services
+		RestartRtorrentSessions "stop"
 		ManageServices stop "pglcmd fail2ban"
 		#### STOP services
 
@@ -370,59 +391,70 @@ case "$Switch" in
 
 		#### IPtables - ALTER Iptables Rules
 		if [ "$ApplyIptablesUsers" == "YES" ]; then
-				# icmp_packets chain
-				NumLign=$(cat /etc/MySB/temp/current-iptables-rules | grep 'Allow ICMP for users' -n -m 1 | cut -d ':' -f 1)
-				sed -i '/Allow ICMP for users/d' /etc/MySB/temp/current-iptables-rules
-				for ip in $AllUsersIPs; do
-					# ICMP
-					sed -i ""$NumLign"i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
-					sed -i ""$NumLign"i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for users\" -j LOG --log-prefix \"fp=icmp_packets:2 a=ACCEPT\"\n" /etc/MySB/temp/current-iptables-rules
-				done
-				# icmp_packets chain
+			log_daemon_msg "IPtables - Refresh rules for all users"
+		
+			# icmp_packets chain
+			NumLign=$(cat /etc/MySB/temp/current-iptables-rules | grep 'Allow ICMP for users' -n -m 1 | cut -d ':' -f 1)
+			sed -i '/Allow ICMP for users/d' /etc/MySB/temp/current-iptables-rules
+			for ip in $AllUsersIPs; do
+				# ICMP
+				sed -i ""$NumLign"i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+				sed -i ""$NumLign"i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for users\" -j LOG --log-prefix \"fp=icmp_packets:2 a=ACCEPT\"\n" /etc/MySB/temp/current-iptables-rules
+			done
+			# icmp_packets chain
 
-				# udp_inbound chain
-				NumLign=$(cat /etc/MySB/temp/current-iptables-rules | grep 'NTP for users' -n -m 1 | cut -d ':' -f 1)
-				sed -i '/NTP for users/d' /etc/MySB/temp/current-iptables-rules
-				for ip in $AllUsersIPs; do
-					# NTP
-					sed -i ""$NumLign"i\-A udp_inbound -s $ip -p udp -m udp --dport 123 -m comment --comment \"NTP for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
-				done
-				# udp_inbound chain
+			# udp_inbound chain
+			NumLign=$(cat /etc/MySB/temp/current-iptables-rules | grep 'NTP for users' -n -m 1 | cut -d ':' -f 1)
+			sed -i '/NTP for users/d' /etc/MySB/temp/current-iptables-rules
+			for ip in $AllUsersIPs; do
+				# NTP
+				sed -i ""$NumLign"i\-A udp_inbound -s $ip -p udp -m udp --dport 123 -m comment --comment \"NTP for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+			done
+			# udp_inbound chain
 
-				# tcp_inbound chain
-				NumLign=$(cat /etc/MySB/temp/current-iptables-rules | grep 'SSH and SFTP for users' -n -m 1 | cut -d ':' -f 1)
-				sed -i '/SSH and SFTP for users/d' /etc/MySB/temp/current-iptables-rules
-				sed -i '/FTP for users/d' /etc/MySB/temp/current-iptables-rules
-				sed -i '/FTP Data for users/d' /etc/MySB/temp/current-iptables-rules
-				sed -i '/FTP Passive for users/d' /etc/MySB/temp/current-iptables-rules
-				if [ "$IsInstalled_Webmin" == "YES" ] && [ "$FnUser" == "$MainUser" ]; then
-					sed -i '/Webmin for users/d' /etc/MySB/temp/current-iptables-rules
+			# tcp_inbound chain
+			NumLign=$(cat /etc/MySB/temp/current-iptables-rules | grep 'SSH and SFTP for users' -n -m 1 | cut -d ':' -f 1)
+			sed -i '/SSH and SFTP for users/d' /etc/MySB/temp/current-iptables-rules
+			sed -i '/FTP for users/d' /etc/MySB/temp/current-iptables-rules
+			sed -i '/FTP Data for users/d' /etc/MySB/temp/current-iptables-rules
+			sed -i '/FTP Passive for users/d' /etc/MySB/temp/current-iptables-rules
+			sed -i '/rTorrent for users/d' /etc/MySB/temp/current-iptables-rules
+			sed -i '/Webmin for main user/d' /etc/MySB/temp/current-iptables-rules
+			sed -i '/Webmin over OpenVPN/d' /etc/MySB/temp/current-iptables-rules
+			for ip in $AllUsersIPs; do
+				# SSH and SFTP
+				sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_SSH -m comment --comment \"SSH and SFTP for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+				# FTP
+				sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_FTP -m comment --comment \"FTP for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+				# FTP Data
+				sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --sport $Port_FTP_Data -m comment --comment \"FTP Data for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+				# FTP Passive
+				sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_FTP_Passive -m comment --comment \"FTP Passive for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+				# OpenVPN TCP
+				if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$OpenVPN_Proto" == "tcp" ]; then
+					sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_OpenVPN_WithGW -m comment --comment \"OpenVPN with GW for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+					sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_OpenVPN_WithoutGW -m comment --comment \"OpenVPN without GW for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
 				fi
-				sed -i '/rTorrent for users/d' /etc/MySB/temp/current-iptables-rules
-				for ip in $AllUsersIPs; do
-					# SSH and SFTP
-					sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_SSH -m comment --comment \"SSH and SFTP for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
-					# FTP
-					sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_FTP -m comment --comment \"FTP for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
-					# FTP Data
-					sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --sport $Port_FTP_Data -m comment --comment \"FTP Data for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
-					# FTP Passive
-					sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_FTP_Passive -m comment --comment \"FTP Passive for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
-					# OpenVPN TCP
-					if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$OpenVPN_Proto" == "tcp" ]; then
-						sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_OpenVPN_WithGW -m comment --comment \"OpenVPN with GW for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
-						sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_OpenVPN_WithoutGW -m comment --comment \"OpenVPN without GW for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
-					fi
-					# Webmin
-					if [ "$IsInstalled_Webmin" == "YES" ] && [ "$FnUser" == "$MainUser" ]; then
-						sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Ports_Webmin -m comment --comment \"Webmin for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
-					fi
-					# rTorrent
-					PORT_START="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$FnUser'\"`"
-					PORT_END="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT rtorrent_port FROM users WHERE users_ident = '$FnUser'\"`"
-					sed -i ""$NumLign"i\-A tcp_inbound -s 0/0 -p tcp -m tcp --dport $PORT_START:$PORT_END -m comment --comment \"rTorrent for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
-				done
-				# tcp_inbound chain
+			done
+			
+			for FnUser in $UsersList; do
+				# Webmin
+				if [ "$IsInstalled_Webmin" == "YES" ] && [ "$FnUser" == "$MainUser" ]; then
+					for ip in $MainUserIPs; do
+						sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Ports_Webmin -m comment --comment \"Webmin for main user\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+					done
+					if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+						sed -i ""$NumLign"i\-A tcp_inbound -s 0/0 -i tun+ -p tcp -m tcp --dport $Ports_Webmin -m comment --comment \"Webmin over OpenVPN\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules
+					fi					
+				fi
+				# rTorrent
+				PORT_START="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$FnUser'\"`"
+				PORT_END="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT rtorrent_port FROM users WHERE users_ident = '$FnUser'\"`"
+				sed -i ""$NumLign"i\-A tcp_inbound -s 0/0 -p tcp -m tcp --dport $PORT_START:$PORT_END -m comment --comment \"rTorrent for users\" -j ACCEPT\n" /etc/MySB/temp/current-iptables-rules			
+			done
+			# tcp_inbound chain
+			
+			StatusLSB
 		fi
 		if [ "$ApplyIptablesDnscrypt" == "YES" ]; then
 			NumLign=$(cat /etc/MySB/temp/current-iptables-rules | grep 'DNScrypt-proxy' -n -m 1 | cut -d ':' -f 1)
@@ -461,6 +493,8 @@ case "$Switch" in
 		fi
 
 		if CheckCommand 0 postfix && GetPid $Service; then postfix flush; fi
+		
+		RestartRtorrentSessions "start"
 	;;
 
 	*)
