@@ -24,11 +24,72 @@ source /etc/MySB/inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-#### install
+#### Install rTorrent v0.9.2
 if ! CheckCommand 0 rtorrent; then
 	PackagesManage install "rtorrent buildtorrent mediainfo ffmpeg"
 fi
- 
+
+#### Install rTorrent v0.9.4
+# XMLRPC-C
+XmlrpcDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'XMLRPC'\"`"
+XmlrpcUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'XMLRPC'\"`"
+XmlrpcFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'XMLRPC'\"`"
+if [ ! -f /etc/MySB/files/$XmlrpcFile ]; then
+	wget --no-check-certificate $XmlrpcUrl -O /etc/MySB/files/$XmlrpcFile
+fi
+if [ ! -d $XmlrpcDir ] && [ -f /etc/MySB/files/$XmlrpcFile ]; then
+	tar -zxvf /etc/MySB/files/$XmlrpcFile -C /etc/MySB/temp/	
+	SubDir="`tar -ztf /etc/MySB/files/$XmlrpcFile | sed -e 's@/.*@@' | uniq`"
+	if [ -d /etc/MySB/temp/$SubDir ]; then
+		mv /etc/MySB/temp/$SubDir $XmlrpcDir
+	fi
+fi
+cd $XmlrpcDir/
+make clean
+./configure --disable-wininet-client --disable-libwww-client
+make -j$PROCESSOR
+make install
+
+# LIBtorrent 0.13.4
+LibtorrentDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'LibTorrent'\"`"
+LibtorrentUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'LibTorrent'\"`"
+LibtorrentFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'LibTorrent'\"`"
+if [ ! -f /etc/MySB/files/$LibtorrentFile ]; then
+	wget --no-check-certificate $LibtorrentUrl -O /etc/MySB/files/$LibtorrentFile
+fi
+if [ ! -d $LibtorrentDir ] && [ -f /etc/MySB/files/$LibtorrentFile ]; then
+	tar -zxvf /etc/MySB/files/$LibtorrentFile -C /etc/MySB/temp/	
+	SubDir="`tar -ztf /etc/MySB/files/$LibtorrentFile | sed -e 's@/.*@@' | uniq`"
+	if [ -d /etc/MySB/temp/$SubDir ]; then
+		mv /etc/MySB/temp/$SubDir $LibtorrentDir
+	fi
+fi
+cd $LibtorrentDir/
+make clean
+./configure --with-posix-fallocate
+make
+make install
+
+# rTorrent 0.9.4
+RtorrentDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'rTorrent'\"`"
+RtorrentUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'rTorrent'\"`"
+RtorrentFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'rTorrent'\"`"
+if [ ! -f /etc/MySB/files/$RtorrentFile ]; then
+	wget --no-check-certificate $RtorrentUrl -O /etc/MySB/files/$RtorrentFile
+fi
+if [ ! -d $RtorrentDir ] && [ -f /etc/MySB/files/$RtorrentFile ]; then
+	tar -zxvf /etc/MySB/files/$RtorrentFile -C /etc/MySB/temp/	
+	SubDir="`tar -ztf /etc/MySB/files/$RtorrentFile | sed -e 's@/.*@@' | uniq`"
+	if [ -d /etc/MySB/temp/$SubDir ]; then
+		mv /etc/MySB/temp/$SubDir $RtorrentDir
+	fi
+fi
+make clean
+./configure --with-xmlrpc-c=/usr/local/bin/xmlrpc-c-config
+make
+make install
+
+
 #### Create certificates
 if [ ! -f /etc/MySB/ssl/rtorrent.cert ]; then
 	ScriptInvoke 'source' '/etc/MySB/install/Certificates' 'CreateServiceCertificate' 'rtorrent'
