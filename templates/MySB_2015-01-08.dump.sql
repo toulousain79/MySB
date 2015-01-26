@@ -208,8 +208,8 @@ CREATE TABLE repositories (
     active          BOOLEAN( 1 ) 
 );
 
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (1, 'TARGZ', '/etc/MySB/web/rutorrent', 'ruTorrent', 3.6, 'rutorrent_v3.6.tar.gz', null, 'https://bintray.com/artifact/download/novik65/generic/rutorrent-3.6.tar.gz', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (2, 'TARGZ', '/etc/MySB/web/rutorrent/plugins', 'ruTorrents Official Plugins', 3.6, 'plugins_3.6.tar.gz', null, 'https://bintray.com/artifact/download/novik65/generic/plugins-3.6.tar.gz', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (1, 'SVN', '/etc/MySB/web/rutorrent', 'ruTorrent', '', '', null, 'http://rutorrent.googlecode.com/svn/trunk/rutorrent/', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (2, 'SVN', '/etc/MySB/web/rutorrent/plugins', 'ruTorrents Official Plugins', '', '', null, 'http://rutorrent.googlecode.com/svn/trunk/plugins/', 1);
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (3, 'SVN', '/etc/MySB/web/rutorrent/plugins/chat', 'ruTorrent Plugin Chat', null, null, null, 'http://rutorrent-chat.googlecode.com/svn/trunk/', 1);
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (4, 'SVN', '/etc/MySB/web/rutorrent/plugins/logoff', 'ruTorrent Plugin Logoff', null, null, null, 'http://rutorrent-logoff.googlecode.com/svn/trunk/', 1);
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (5, 'TARGZ', '/etc/MySB/web/rutorrent/plugins/lbll-suite', 'ruTorrent Plugin tAdd-Labels', '0.8.1', 'lbll-suite_0.8.1.tar.gz', null, 'https://rutorrent-tadd-labels.googlecode.com/files/lbll-suite_0.8.1.tar.gz', 1);
