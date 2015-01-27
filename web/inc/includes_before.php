@@ -41,14 +41,14 @@ if ( isset($_GET['page']) ) {
 }
 
 // Directories
-define('WEB_ROOT', dirname(__FILE__));
+define('WEB_ROOT', dirname(__FILE__).'/../');
 define('WEB_INC', WEB_ROOT . 'inc/');
 define('WEB_PAGES', WEB_ROOT . 'pages/');
 
 // Data bases
 define('Wolf_DB', WEB_ROOT. '../db/Wolf.sq3');
 define('MySB_DB', WEB_ROOT. '../db/MySB.sq3');
-
+echo Wolf_DB;
 // Files
 define('FILE_MEDOO', WEB_INC. 'medoo.min.php');
 define('FILE_FUNCS', WEB_INC. 'functions.php');
