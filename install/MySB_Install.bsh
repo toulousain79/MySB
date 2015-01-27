@@ -324,7 +324,12 @@ if [ "$COMMAND" == "" ]; then
 				IfEmpty=0
 			fi
 		done
-		echo $MySB_InstallDir > /tmp/MySB_InstallDir
+		if [ ! -z "$MySB_InstallDir" ]; then
+			echo "MySB_InstallDir=\"$MySB_InstallDir\"" > /etc/default/MySB.conf
+		else
+			echo -e "${CRED}I can't write the config file \"/etc/default/MySB.conf\", aborting !$CEND"
+			exit 1
+		fi
 
 		# First we do an update
 		BannerInstall
@@ -332,6 +337,7 @@ if [ "$COMMAND" == "" ]; then
 		CountDown 3
 		$AptCommand -y --assume-yes -o Acquire::Check-Valid-Until=false update
 		if [ $? -gt 0 ]; then
+			if [ -f /etc/default/MySB.conf ]; then rm -f /etc/default/MySB.conf; fi
 			echo -e "${CRED}Looks like something was wrong during the update, aborting !$CEND"
 			exit 1
 		fi
@@ -342,6 +348,7 @@ if [ "$COMMAND" == "" ]; then
 		CountDown 3
 		$AptCommand -y --assume-yes -V -o Dpkg::Options::="--force-confold" upgrade
 		if [ $? -gt 0 ]; then
+			if [ -f /etc/default/MySB.conf ]; then rm -f /etc/default/MySB.conf; fi
 			echo -e "${CRED}Looks like something was wrong during the upgrade, aborting !$CEND"
 			exit 1
 		fi
@@ -353,15 +360,17 @@ if [ "$COMMAND" == "" ]; then
 		TOOLS="git-core dos2unix lsb-release screen ccze gnupg figlet mlocate sqlite3 dnsutils netselect-apt"
 		$AptCommand -y --assume-yes install $TOOLS
 		if [ $? -gt 0 ]; then
+			if [ -f /etc/default/MySB.conf ]; then rm -f /etc/default/MySB.conf; fi
 			echo -e "${CRED}Looks like something was wrong during the install of needed packages, aborting !$CEND"
 			exit 1
 		fi
 
 		#### download files from Git
 		BannerInstall
-		echo -e -n "${CBLUE}Downloading files from GitHub to $MySB_InstallDir$CEND... "
+		echo -e -n "${CBLUE}Downloading files from GitHub into $MySB_InstallDir$CEND... "
 		git clone --progress -b $MySB_CurrentVersion https://github.com/toulousain79/MySB.git $MySB_InstallDir >> /tmp/`basename $0`.log
 		if [ $? -gt 0 ]; then
+			if [ -f /etc/default/MySB.conf ]; then rm -f /etc/default/MySB.conf; fi
 			echo -e "${CRED}Looks like something was wrong with git clone, aborting !$CEND"
 			exit 1
 		else
@@ -387,6 +396,7 @@ if [ "$COMMAND" == "" ]; then
 				echo ""
 				echo ""
 				echo -e "${CRED}Looks like something is wrong when creating the databases, aborting !$CEND"
+				if [ -f /etc/default/MySB.conf ]; then rm -f /etc/default/MySB.conf; fi
 				if [ -f $MySB_InstallDir/inc/includes_after ]; then source $MySB_InstallDir/inc/includes_after; fi
 				exit 0
 			else
@@ -398,6 +408,7 @@ if [ "$COMMAND" == "" ]; then
 					echo ""
 					echo ""
 					echo -e "${CRED}Looks like something is wrong when creating the database, aborting !$CEND"
+					if [ -f /etc/default/MySB.conf ]; then rm -f /etc/default/MySB.conf; fi
 					if [ -f $MySB_InstallDir/inc/includes_after ]; then source $MySB_InstallDir/inc/includes_after; fi
 					exit 0
 				else
@@ -436,6 +447,7 @@ else
 	echo ""
 	echo ""
 	echo -e "${CRED}MySB is already started with SCREEN, aborting !$CEND"
+	if [ -f /etc/default/MySB.conf ]; then rm -f /etc/default/MySB.conf; fi
 	if [ -f $MySB_InstallDir/inc/includes_after ]; then source $MySB_InstallDir/inc/includes_after; fi
 	exit 0
 fi
