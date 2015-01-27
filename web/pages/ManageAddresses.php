@@ -107,8 +107,8 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			}
 
 			if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ManageAddresses') ) { // by NewUser.php
-				$InstallDir = $system_datas["install_dir"];
-				exec("sudo /bin/bash $InstallDir/scripts/ApplyConfig.bsh '$CurrentUser' 'DO_APPLY'", $output, $result);
+				$MySB_InstallDir = $system_datas["install_dir"];
+				exec("sudo /bin/bash $MySB_InstallDir/scripts/ApplyConfig.bsh '$CurrentUser' 'DO_APPLY'", $output, $result);
 
 				if ( $result == 0 ) {
 					$type = 'success';

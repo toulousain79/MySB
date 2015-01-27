@@ -23,31 +23,31 @@
 ##################### FIRST LINE #####################################
 
 #### Include tools functions
-source $InstallDir/inc/funcs_tools
+source $MySB_InstallDir/inc/funcs_tools
 
 #### Banner
 BannerGenerator() {
-	figlet MySB $MySB_CurrentVersion > $InstallDir/files/banner.tmp
-	echo "echo -e \"${CGREEN}############################################################$CEND" > $InstallDir/files/banner_$MySB_CurrentVersion
+	figlet MySB $MySB_CurrentVersion > $MySB_InstallDir/files/banner.tmp
+	echo "echo -e \"${CGREEN}############################################################$CEND" > $MySB_InstallDir/files/banner_$MySB_CurrentVersion
 
-	NBLIGN=`wc -l $InstallDir/files/banner.tmp | awk '{ print $1 }'`
+	NBLIGN=`wc -l $MySB_InstallDir/files/banner.tmp | awk '{ print $1 }'`
 	for (( lign=1; lign<=$NBLIGN; lign++ )); do
-		MYLIGN=`head -n $lign $InstallDir/files/banner.tmp | tail -n 1`
-		echo "${CGREEN}#$CEND	${CBLUE}$MYLIGN$CEND" >> $InstallDir/files/banner_$MySB_CurrentVersion
+		MYLIGN=`head -n $lign $MySB_InstallDir/files/banner.tmp | tail -n 1`
+		echo "${CGREEN}#$CEND	${CBLUE}$MYLIGN$CEND" >> $MySB_InstallDir/files/banner_$MySB_CurrentVersion
 	done
-	rm -f $InstallDir/files/banner.tmp
+	rm -f $MySB_InstallDir/files/banner.tmp
 
-	echo "${CGREEN}#$CEND		${CYELLOW}https://github.com/toulousain79/$CEND" >> $InstallDir/files/banner_$MySB_CurrentVersion
-	echo "${CGREEN}#$CEND" >> $InstallDir/files/banner_$MySB_CurrentVersion
+	echo "${CGREEN}#$CEND		${CYELLOW}https://github.com/toulousain79/$CEND" >> $MySB_InstallDir/files/banner_$MySB_CurrentVersion
+	echo "${CGREEN}#$CEND" >> $MySB_InstallDir/files/banner_$MySB_CurrentVersion
 	if [ "`screen -ls | grep MySB`" == "" ]; then
-		echo "${CGREEN}#$CEND	Current file: ${CRED}$0$CEND" >> $InstallDir/files/banner_$MySB_CurrentVersion
+		echo "${CGREEN}#$CEND	Current file: ${CRED}$0$CEND" >> $MySB_InstallDir/files/banner_$MySB_CurrentVersion
 	fi
-	echo "${CGREEN}############################################################$CEND\"" >> $InstallDir/files/banner_$MySB_CurrentVersion		
-	if [ -f $InstallDir/files/banner_$MySB_CurrentVersion ]; then
-		sed -i "s/,/ /g;" $InstallDir/files/banner_dev &> /dev/null
-		sed -i "s/\`/ /g;" $InstallDir/files/banner_dev &> /dev/null
+	echo "${CGREEN}############################################################$CEND\"" >> $MySB_InstallDir/files/banner_$MySB_CurrentVersion		
+	if [ -f $MySB_InstallDir/files/banner_$MySB_CurrentVersion ]; then
+		sed -i "s/,/ /g;" $MySB_InstallDir/files/banner_dev &> /dev/null
+		sed -i "s/\`/ /g;" $MySB_InstallDir/files/banner_dev &> /dev/null
 		clear
-		source $InstallDir/files/banner_$MySB_CurrentVersion
+		source $MySB_InstallDir/files/banner_$MySB_CurrentVersion
 	fi
 	echo
 }
@@ -61,23 +61,23 @@ SendMail() {
 	FnAttach=""
 	FnUserMail="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT users_email FROM users WHERE users_ident = '$FnUser'\"`"
 	if [ ! -z "$FnInfo" ]; then log_daemon_msg "Generate HTML info for $FnUser"; fi
-	perl -pi -e "s/##MySB_User##/$MySB_User/g" $InstallDir/web/pages/UserInfoMail.php
+	perl -pi -e "s/##MySB_User##/$MySB_User/g" $MySB_InstallDir/web/pages/UserInfoMail.php
 
 	if [ "`service nginx status | grep 'nginx is not running'`" != "" ]; then
 		service nginx restart &> /dev/null
 	fi
 
-	#curl --silent --retry 2 --user $MySB_User:$MySB_Password "https://$HostNameFQDN:$Port_HTTPS/UserInfoMail.php?case=$FnCase&user=$FnUser" --cacert $InstallDir/ssl/nginx.cert > $InstallDir/temp/$FnUser.html
-	curl --silent --retry 2 --user $MySB_User:$MySB_Password "http://127.0.0.1:$Port_HTTP/UserInfoMail.php?case=$FnCase&user=$FnUser" --cacert $InstallDir/ssl/nginx.cert > $InstallDir/temp/$FnUser.html
+	#curl --silent --retry 2 --user $MySB_User:$MySB_Password "https://$HostNameFQDN:$Port_HTTPS/UserInfoMail.php?case=$FnCase&user=$FnUser" --cacert $MySB_InstallDir/ssl/nginx.cert > $MySB_InstallDir/temp/$FnUser.html
+	curl --silent --retry 2 --user $MySB_User:$MySB_Password "http://127.0.0.1:$Port_HTTP/UserInfoMail.php?case=$FnCase&user=$FnUser" --cacert $MySB_InstallDir/ssl/nginx.cert > $MySB_InstallDir/temp/$FnUser.html
 
 	StatusLSB
 
 	if [ ! -z "$FnInfo" ]; then log_daemon_msg "Sending email to $FnUser ($FnInfo)"; fi
-	if [ -s $InstallDir/temp/$FnUser.html ]; then
-		FnAttach="$InstallDir/temp/$FnUser.html"
+	if [ -s $MySB_InstallDir/temp/$FnUser.html ]; then
+		FnAttach="$MySB_InstallDir/temp/$FnUser.html"
 		type="html"
 	else
-		FnAttach="$InstallDir/logs/MySB_CreateUser.log"
+		FnAttach="$MySB_InstallDir/logs/MySB_CreateUser.log"
 		type="plain"
 	fi
 	cat $FnAttach | mail -a "From: MySB <$MainUserEmail>" -a "MIME-Version: 1.0" -a "Content-Type: text/$type" -s "$FnSubject" $FnUserMail
@@ -201,12 +201,12 @@ PeerGuardianFailed() {
 		log_daemon_msg "Switching use of blocklists with $1" "$FnUser"
 		case "$1" in
 			"rTorrent")
-				if [ ! -f $InstallDir/files/blocklists/blocklist_rtorrent.txt ]; then
-					ScriptInvoke 'screen' '$InstallDir/scripts/BlocklistsRTorrent.bsh' 'REFRESH'
+				if [ ! -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.txt ]; then
+					ScriptInvoke 'screen' '$MySB_InstallDir/scripts/BlocklistsRTorrent.bsh' 'REFRESH'
 				fi
 			
-				if [ -f $InstallDir/files/blocklists/blocklist_rtorrent.txt ] && [ -d /home/$FnUser/blocklist/ ]; then
-					cp $InstallDir/files/blocklists/* /home/$FnUser/blocklist/
+				if [ -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.txt ] && [ -d /home/$FnUser/blocklist/ ]; then
+					cp $MySB_InstallDir/files/blocklists/* /home/$FnUser/blocklist/
 				fi
 
 				if [ -f /home/$FnUser/.rtorrent.rc ]; then
@@ -269,7 +269,7 @@ ManageServices() {
 	if [ ! -z "$ServicesToManage" ]; then	
 		case "$LOGSTD" in
 			"STDOUT")
-				echo "---- "`date +"%T"` >> $InstallDir/logs/$ScriptName.log
+				echo "---- "`date +"%T"` >> $MySB_InstallDir/logs/$ScriptName.log
 			;;
 		esac
 
@@ -330,8 +330,8 @@ ManageServices() {
 								
 								case "$LOGSTD" in
 									"STDOUT")
-										echo `date +"%T"`" --> The updated list of PGL may have failed." >> $InstallDir/logs/$ScriptName.log
-										echo `date +"%T"`" --> Attempting to clean lists error." >> $InstallDir/logs/$ScriptName.log
+										echo `date +"%T"`" --> The updated list of PGL may have failed." >> $MySB_InstallDir/logs/$ScriptName.log
+										echo `date +"%T"`" --> Attempting to clean lists error." >> $MySB_InstallDir/logs/$ScriptName.log
 									;;
 								esac
 
@@ -339,7 +339,7 @@ ManageServices() {
 								for List in $CheckLog; do
 									case "$LOGSTD" in
 										"STDOUT")
-											echo `date +"%T"`" --> '$List' will be disabled." >> $InstallDir/logs/$ScriptName.log
+											echo `date +"%T"`" --> '$List' will be disabled." >> $MySB_InstallDir/logs/$ScriptName.log
 										;;
 									esac
 
@@ -435,7 +435,7 @@ ManageServices() {
 
 		case "$LOGSTD" in
 			"STDOUT")
-				echo "---- "`date +"%T"` >> $InstallDir/logs/$ScriptName.log
+				echo "---- "`date +"%T"` >> $MySB_InstallDir/logs/$ScriptName.log
 			;;
 		esac
 	fi
@@ -448,25 +448,25 @@ CleanBlockList() {
 
 	case $1 in
 		download)
-			wget --no-check-certificate $URL -O $InstallDir/files/blocklists/$FILE.gz
+			wget --no-check-certificate $URL -O $MySB_InstallDir/files/blocklists/$FILE.gz
 			if [ $? -eq 0 ] ; then
-				gzip -dc $InstallDir/files/blocklists/$FILE.gz | cut -d: -f2 > $InstallDir/files/blocklists/$FILE.txt
+				gzip -dc $MySB_InstallDir/files/blocklists/$FILE.gz | cut -d: -f2 > $MySB_InstallDir/files/blocklists/$FILE.txt
 				sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE blocklists SET rtorrent_lastupdate = datetime('now','localtime') WHERE rtorrent_list = '$URL';"
 			else
 				sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE blocklists SET rtorrent_lastupdate = 'failed' WHERE rtorrent_list = '$URL';"
 			fi
 		;;
 		del_spaces)
-			sed -i '/\ /d' $InstallDir/files/blocklists/$FILE.tmp
+			sed -i '/\ /d' $MySB_InstallDir/files/blocklists/$FILE.tmp
 		;;
 		not_numeric)
-			sed -i '/^[0123456789]/!d' $InstallDir/files/blocklists/$FILE.tmp
+			sed -i '/^[0123456789]/!d' $MySB_InstallDir/files/blocklists/$FILE.tmp
 		;;
 		not_cidr)
-			sed -i '/\//!d' $InstallDir/files/blocklists/$FILE.tmp
+			sed -i '/\//!d' $MySB_InstallDir/files/blocklists/$FILE.tmp
 		;;
 		del_RC)
-			sed -i '/^M/d' $InstallDir/files/blocklists/$FILE.tmp
+			sed -i '/^M/d' $MySB_InstallDir/files/blocklists/$FILE.tmp
 		;;
 		is_ip)
 			while read line; do
@@ -475,14 +475,14 @@ CleanBlockList() {
 				RESULT_START=`printf $START | grep -E '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'`
 				RESULT_END=`printf $END | grep -E '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'`
 				if [ ! "$RESULT_START" = "$START" ] || [ ! "$RESULT_END" = "$END" ]; then
-					sed -i '/$line/!d' $InstallDir/files/blocklists/$FILE.txt
+					sed -i '/$line/!d' $MySB_InstallDir/files/blocklists/$FILE.txt
 				fi
-			done < $InstallDir/files/blocklists/$FILE.txt		
+			done < $MySB_InstallDir/files/blocklists/$FILE.txt		
 		;;
 		sort_uniq)
-			sort -g $InstallDir/files/blocklists/$FILE.tmp | uniq > $InstallDir/files/blocklists/$FILE.txt
-			if [ -f $InstallDir/files/blocklists/blocklist_rtorrent.tmp ]; then
-				rm -f $InstallDir/files/blocklists/blocklist_rtorrent.tmp
+			sort -g $MySB_InstallDir/files/blocklists/$FILE.tmp | uniq > $MySB_InstallDir/files/blocklists/$FILE.txt
+			if [ -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp ]; then
+				rm -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
 			fi
 		;;
 	esac
@@ -745,20 +745,20 @@ ScriptInvoke() {
 		"source"|"bash")
 			#### Prepare our script
 			# vars & funcs
-			echo "source $InstallDir/inc/vars" > $InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
-			echo "source $InstallDir/inc/funcs" >> $InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
-			echo "source /lib/lsb/init-functions" >> $InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
+			echo "source $MySB_InstallDir/inc/vars" > $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
+			echo "source $MySB_InstallDir/inc/funcs" >> $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
+			echo "source /lib/lsb/init-functions" >> $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
 			# copy it
-			cat $MYSCRIPT >> $InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
+			cat $MYSCRIPT >> $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
 			# delete lign start with comments
-			sed -i '/^#/d' $InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
+			sed -i '/^#/d' $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
 			#delete includes before and after (on top and bottom of every script)
-			sed -i '/includes_before/d' $InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
-			sed -i '/includes_after/d' $InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
+			sed -i '/includes_before/d' $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
+			sed -i '/includes_after/d' $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
 		
-			$METHOD $InstallDir/temp/${ScriptName}_${SCRIPT}.invoked $Arguments
+			$METHOD $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked $Arguments
 			
-			#if [ -f $InstallDir/temp/${ScriptName}_${SCRIPT}.invoked ]; then rm -f $InstallDir/temp/${ScriptName}_${SCRIPT}.invoked; fi
+			#if [ -f $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked ]; then rm -f $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked; fi
 		;;	
 		"screen"|"background")
 			screen -dmS ${ScriptName}_${SCRIPT} /bin/bash $MYSCRIPT $Arguments;
@@ -915,11 +915,11 @@ EOF
 					pglcmd update
 					
 					if [ $? -gt 0 ]; then # if update fail maybe its due to a bad list 
-						if [ $1 -eq 0 ]; then echo `date +"%T"`" --> The updated list of PGL may have failed." >> $InstallDir/logs/$ScriptName.log; fi
+						if [ $1 -eq 0 ]; then echo `date +"%T"`" --> The updated list of PGL may have failed." >> $MySB_InstallDir/logs/$ScriptName.log; fi
 
 						CheckLog=`cat /var/log/pgl/pglcmd.log | grep failed | grep list.iblocklist.com | awk '{ print $6 }'`		
 						for List in $CheckLog; do
-							echo `date +"%T"`" --> '$List' will be disabled." >> $InstallDir/logs/$ScriptName.log
+							echo `date +"%T"`" --> '$List' will be disabled." >> $MySB_InstallDir/logs/$ScriptName.log
 							# Force inactived list
 							sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE blocklists SET peerguardian_active = '0', peerguardian_lastupdate = 'failed' WHERE peerguardian_list = '$List';"
 						done
@@ -1100,62 +1100,62 @@ PeerGuardianPglcmdConf() {
 #### Manage directories, files and rights
 ManageDirectoriesAndFiles() {
 	# Root Directories
-	if [ ! -d $InstallDir/db ]; then mkdir $InstallDir/db; fi
-	if [ ! -d $InstallDir/files ]; then mkdir $InstallDir/files; fi
-	if [ ! -d $InstallDir/logs/archives ]; then mkdir -p $InstallDir/logs/archives; fi
-	if [ ! -d $InstallDir/sources ]; then mkdir $InstallDir/sources; fi
-	if [ ! -d $InstallDir/ssl ]; then mkdir $InstallDir/ssl; fi
-	if [ ! -d $InstallDir/temp ]; then mkdir $InstallDir/temp; fi
-	if [ ! -d $InstallDir/web/openvpn ]; then mkdir -p $InstallDir/web/openvpn; fi	
+	if [ ! -d $MySB_InstallDir/db ]; then mkdir $MySB_InstallDir/db; fi
+	if [ ! -d $MySB_InstallDir/files ]; then mkdir $MySB_InstallDir/files; fi
+	if [ ! -d $MySB_InstallDir/logs/archives ]; then mkdir -p $MySB_InstallDir/logs/archives; fi
+	if [ ! -d $MySB_InstallDir/sources ]; then mkdir $MySB_InstallDir/sources; fi
+	if [ ! -d $MySB_InstallDir/ssl ]; then mkdir $MySB_InstallDir/ssl; fi
+	if [ ! -d $MySB_InstallDir/temp ]; then mkdir $MySB_InstallDir/temp; fi
+	if [ ! -d $MySB_InstallDir/web/openvpn ]; then mkdir -p $MySB_InstallDir/web/openvpn; fi	
 	# Log directories
-	if [ ! -d $InstallDir/web/logs ]; then mkdir $InstallDir/web/logs; fi	
-	if [ ! -d $InstallDir/web/logs/bin ]; then mkdir $InstallDir/web/logs/bin; fi
-	if [ ! -d $InstallDir/web/logs/install ]; then mkdir $InstallDir/web/logs/install; fi
-	if [ ! -d $InstallDir/web/logs/nginx ]; then mkdir $InstallDir/web/logs/nginx; fi	
-	if [ ! -d $InstallDir/web/logs/scripts ]; then mkdir $InstallDir/web/logs/scripts; fi
-	if [ ! -d $InstallDir/web/logs/security ]; then mkdir $InstallDir/web/logs/security; fi
-	if [ ! -d $InstallDir/web/logs/upgrade ]; then mkdir $InstallDir/web/logs/upgrade; fi
-	if [ ! -d $InstallDir/web/logs/system ]; then mkdir $InstallDir/web/logs/system; fi
+	if [ ! -d $MySB_InstallDir/web/logs ]; then mkdir $MySB_InstallDir/web/logs; fi	
+	if [ ! -d $MySB_InstallDir/web/logs/bin ]; then mkdir $MySB_InstallDir/web/logs/bin; fi
+	if [ ! -d $MySB_InstallDir/web/logs/install ]; then mkdir $MySB_InstallDir/web/logs/install; fi
+	if [ ! -d $MySB_InstallDir/web/logs/nginx ]; then mkdir $MySB_InstallDir/web/logs/nginx; fi	
+	if [ ! -d $MySB_InstallDir/web/logs/scripts ]; then mkdir $MySB_InstallDir/web/logs/scripts; fi
+	if [ ! -d $MySB_InstallDir/web/logs/security ]; then mkdir $MySB_InstallDir/web/logs/security; fi
+	if [ ! -d $MySB_InstallDir/web/logs/upgrade ]; then mkdir $MySB_InstallDir/web/logs/upgrade; fi
+	if [ ! -d $MySB_InstallDir/web/logs/system ]; then mkdir $MySB_InstallDir/web/logs/system; fi
 
 	#### Convert with dos2unix
-	dos2unix $InstallDir/* &> /dev/null
-	dos2unix $InstallDir/bin/* &> /dev/null
-	dos2unix $InstallDir/files/* &> /dev/null
-	dos2unix $InstallDir/inc/* &> /dev/null
-	dos2unix $InstallDir/install/* &> /dev/null
-	dos2unix $InstallDir/scripts/* &> /dev/null
-	dos2unix $InstallDir/templates/* &> /dev/null
-	dos2unix $InstallDir/upgrade/* &> /dev/null
+	dos2unix $MySB_InstallDir/* &> /dev/null
+	dos2unix $MySB_InstallDir/bin/* &> /dev/null
+	dos2unix $MySB_InstallDir/files/* &> /dev/null
+	dos2unix $MySB_InstallDir/inc/* &> /dev/null
+	dos2unix $MySB_InstallDir/install/* &> /dev/null
+	dos2unix $MySB_InstallDir/scripts/* &> /dev/null
+	dos2unix $MySB_InstallDir/templates/* &> /dev/null
+	dos2unix $MySB_InstallDir/upgrade/* &> /dev/null
 
 	#### Change rights
-	# $InstallDir/
-	chmod -R 0700 $InstallDir
-	chmod 0755 $InstallDir
-	chown -R root:root $InstallDir
-	# $InstallDir/db
-	chmod 0770 $InstallDir/db
-	chmod 0660 $InstallDir/db/* &> /dev/null
-	chown -R root:www-data $InstallDir/db
-	# $InstallDir/ssl
-	chmod 0644 $InstallDir/ssl/*.cert &> /dev/null
-	# $InstallDir/install
-	chmod -R 0755 $InstallDir/install
-	# $InstallDir/temp
-	chown root:www-data $InstallDir/temp
-	chmod 0760 $InstallDir/temp
+	# $MySB_InstallDir/
+	chmod -R 0700 $MySB_InstallDir
+	chmod 0755 $MySB_InstallDir
+	chown -R root:root $MySB_InstallDir
+	# $MySB_InstallDir/db
+	chmod 0770 $MySB_InstallDir/db
+	chmod 0660 $MySB_InstallDir/db/* &> /dev/null
+	chown -R root:www-data $MySB_InstallDir/db
+	# $MySB_InstallDir/ssl
+	chmod 0644 $MySB_InstallDir/ssl/*.cert &> /dev/null
+	# $MySB_InstallDir/install
+	chmod -R 0755 $MySB_InstallDir/install
+	# $MySB_InstallDir/temp
+	chown root:www-data $MySB_InstallDir/temp
+	chmod 0760 $MySB_InstallDir/temp
 	# LoadAvg
 	if [ ! -z "$LoadAvgDir" ]; then
 		if [ -f $LoadAvgDir/configure ]; then chmod 0640 $LoadAvgDir/configure; fi
 		if [ ! -d $LoadAvgDir/logs ] && [ -d $LoadAvgDir ]; then mkdir $LoadAvgDir/logs; fi
 	fi
-	# $InstallDir/web
-	chown -R root:www-data $InstallDir/web
-	chown root:root $InstallDir/web
-	chmod -R 0640 $InstallDir/web
-	find $InstallDir/web -type d -iname "*" -print0 | xargs -I {} -0 chmod 0750 {}
-	chmod 0755 $InstallDir/web
-	# $InstallDir/web/openvpn
-	if [ -d $InstallDir/web/openvpn ]; then chmod 0770 $InstallDir/web/openvpn; fi
+	# $MySB_InstallDir/web
+	chown -R root:www-data $MySB_InstallDir/web
+	chown root:root $MySB_InstallDir/web
+	chmod -R 0640 $MySB_InstallDir/web
+	find $MySB_InstallDir/web -type d -iname "*" -print0 | xargs -I {} -0 chmod 0750 {}
+	chmod 0755 $MySB_InstallDir/web
+	# $MySB_InstallDir/web/openvpn
+	if [ -d $MySB_InstallDir/web/openvpn ]; then chmod 0770 $MySB_InstallDir/web/openvpn; fi
 	# LoadAvg
 	if [ ! -z "$LoadAvgDir" ] && [ -d $LoadAvgDir/logs ]; then chmod 0777 $LoadAvgDir/logs; fi
 

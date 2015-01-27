@@ -25,8 +25,8 @@ source ../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### Create dir
-if [ ! -d $InstallDir/ssl/trackers/ ]; then
-	mkdir $InstallDir/ssl/trackers/
+if [ ! -d $MySB_InstallDir/ssl/trackers/ ]; then
+	mkdir $MySB_InstallDir/ssl/trackers/
 fi
 
 #### Clean certificates with bad links
@@ -94,13 +94,13 @@ DoRehash=0
 
 for Tracker in $TrackersList; do
 	log_daemon_msg "Get certificate for $Tracker"
-	cd $InstallDir/ssl/trackers/
+	cd $MySB_InstallDir/ssl/trackers/
 	PingCmd="`ping -c2 -w2 $Tracker | grep 'packets transmitted'`"
 	PacketsTransmitted="`echo $PingCmd | cut -d ',' -f 1 | awk '{ print $1 }'`"
 	PacketsReceived="`echo $PingCmd | cut -d ',' -f 2 | awk '{ print $1 }'`"
 	
 	if [ "$PacketsReceived" == "$PacketsTransmitted" ] ; then
-		#if [ ! -h /etc/ssl/certs/$Tracker.pem ] || [ ! -f $InstallDir/ssl/trackers/$Tracker.pem ]; then
+		#if [ ! -h /etc/ssl/certs/$Tracker.pem ] || [ ! -f $MySB_InstallDir/ssl/trackers/$Tracker.pem ]; then
 			openssl s_client -connect $Tracker:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$Tracker.crt
 			if [ -s ./$Tracker.crt ]; then
 				openssl x509 -in ./$Tracker.crt -out ./$Tracker.der -outform DER 
@@ -109,7 +109,7 @@ for Tracker in $TrackersList; do
 					if [ -f /etc/ssl/certs/$Tracker.pem ]; then
 						rm -f /etc/ssl/certs/$Tracker.pem
 					fi
-					ln -s $InstallDir/ssl/trackers/$Tracker.pem /etc/ssl/certs/$Tracker.pem
+					ln -s $MySB_InstallDir/ssl/trackers/$Tracker.pem /etc/ssl/certs/$Tracker.pem
 					sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE trackers_list SET is_ssl = '1' WHERE tracker = '$Tracker';"
 					DoRehash=1
 				fi

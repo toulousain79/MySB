@@ -31,8 +31,8 @@ PackagesManage install "nginx-extras apache2-utils"
 ManageServices stop "nginx"
 
 #### Create certificates
-if [ ! -f $InstallDir/ssl/nginx.cert ]; then
-	ScriptInvoke 'source' '$InstallDir/install/Certificates' 'CreateServiceCertificate' 'nginx'
+if [ ! -f $MySB_InstallDir/ssl/nginx.cert ]; then
+	ScriptInvoke 'source' '$MySB_InstallDir/install/Certificates' 'CreateServiceCertificate' 'nginx'
 fi
 
 #### Create directories & remove some files
@@ -58,19 +58,19 @@ fi
 htpasswd -bs /etc/nginx/passwd/MySB $MySB_User $MySB_Password &> /dev/null
 chmod 640 /etc/nginx/passwd/MySB
 chown www-data:www-data /etc/nginx/passwd/MySB
-perl -pi -e "s/##MySB_User##/$MySB_User/g" $InstallDir/web/pages/UserInfo.php
+perl -pi -e "s/##MySB_User##/$MySB_User/g" $MySB_InstallDir/web/pages/UserInfo.php
 
 #### nginx.conf
-cp $InstallDir/templates/etc.nginx.nginx.conf.template /etc/nginx/nginx.conf
-perl -pi -e "s/<InstallDir>/$InstallDirEscaped/g" /etc/nginx/nginx.conf
+cp $MySB_InstallDir/templates/etc.nginx.nginx.conf.template /etc/nginx/nginx.conf
+perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/nginx.conf
 perl -pi -e "s/worker_processes auto;/worker_processes $PROCESSOR;/g" /etc/nginx/nginx.conf
 
 #### Default Server
 if [ -h /etc/nginx/sites-enabled/default ]; then rm -vf /etc/nginx/sites-enabled/default; fi
-cp $InstallDir/templates/etc.nginx.site-enabled.default.template /etc/nginx/sites-available/default
+cp $MySB_InstallDir/templates/etc.nginx.site-enabled.default.template /etc/nginx/sites-available/default
 RutorrentPluginsDirEscaped=`echo $RutorrentPluginsDir | sed s,/,\\\\\\\\\\/,g`
 RutorrentDirEscaped=`echo $RutorrentDir | sed s,/,\\\\\\\\\\/,g`
-perl -pi -e "s/<InstallDir>/$InstallDirEscaped/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/sites-available/default
 perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" /etc/nginx/sites-available/default
 perl -pi -e "s/<PORT_HTTP>/$Port_HTTP/g" /etc/nginx/sites-available/default
 perl -pi -e "s/<server_name>/$HostNameFQDN/g" /etc/nginx/sites-available/default
@@ -79,7 +79,7 @@ perl -pi -e "s/<rutorrent_dir>/$RutorrentDirEscaped/g" /etc/nginx/sites-availabl
 if [ ! -h /etc/nginx/sites-enabled/default ]; then ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default; fi
 
 #### PageSpeed Conf
-cp $InstallDir/templates/etc.nginx.conf.d.pagespeed.template /etc/nginx/conf.d/pagespeed
+cp $MySB_InstallDir/templates/etc.nginx.conf.d.pagespeed.template /etc/nginx/conf.d/pagespeed
 sed -i '/PageSpeed/d' /etc/fstab
 sed -i '/pagespeed/d' /etc/fstab
 echo "# Nginx PageSpeed" >> /etc/fstab
@@ -164,16 +164,16 @@ EOF
 ) > /etc/logrotate.d/nginx
 
 #### Wolf CMS
-cp $InstallDir/templates/etc.myb.web.config.php.template $InstallDir/web/config.php
+cp $MySB_InstallDir/templates/etc.myb.web.config.php.template $MySB_InstallDir/web/config.php
 AdminDir="`GenPassword 32`"
 TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
-perl -pi -e "s/<admin_dir>/$AdminDir/g" $InstallDir/web/config.php
-perl -pi -e "s/<TimeZone>/$TimeZoneEscaped/g" $InstallDir/web/config.php
-chmod 400 $InstallDir/web/config.php
+perl -pi -e "s/<admin_dir>/$AdminDir/g" $MySB_InstallDir/web/config.php
+perl -pi -e "s/<TimeZone>/$TimeZoneEscaped/g" $MySB_InstallDir/web/config.php
+chmod 400 $MySB_InstallDir/web/config.php
 
 #### Sudo
 if [ -f /etc/sudoers.d/MySB_nginx ]; then rm -vf /etc/sudoers.d/MySB_nginx; fi
-echo "www-data ALL = (root) NOPASSWD: /bin/bash $InstallDir/scripts/ApplyConfig.bsh*" | tee -a /etc/sudoers.d/MySB_nginx
+echo "www-data ALL = (root) NOPASSWD: /bin/bash $MySB_InstallDir/scripts/ApplyConfig.bsh*" | tee -a /etc/sudoers.d/MySB_nginx
 
 #### Remove errors logs
 rm -f /var/log/nginx/error.log &> /dev/null

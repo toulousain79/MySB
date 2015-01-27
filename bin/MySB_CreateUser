@@ -155,8 +155,8 @@ fi
 
 #### rTorrent (.rtorrent.rc)
 log_daemon_msg "Create the rTorrent configuration file for $UserToCreate"
-cp $InstallDir/templates/rtorrent.rc.template $NewUserHomedir/.rtorrent.rc
-perl -pi -e "s/<InstallDir>/$InstallDirEscaped/g" $NewUserHomedir/.rtorrent.rc
+cp $MySB_InstallDir/templates/rtorrent.rc.template $NewUserHomedir/.rtorrent.rc
+perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" $NewUserHomedir/.rtorrent.rc
 perl -pi -e "s/<server_ip>/$SrvIpAddress/g" $NewUserHomedir/.rtorrent.rc
 perl -pi -e "s/<username>/$UserToCreate/g" $NewUserHomedir/.rtorrent.rc
 perl -pi -e "s/<homedir>/$HOMEDIR_ESCAPED/g" $NewUserHomedir/.rtorrent.rc
@@ -229,16 +229,16 @@ fi
 #### OpenVPN
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	log_daemon_msg "Create OpenVPN account for user $UserToCreate"
-	screen -dmS OpenVPN_Client /bin/bash $InstallDir/install/OpenVPN client "$UserToCreate" "INSTALL";
+	screen -dmS OpenVPN_Client /bin/bash $MySB_InstallDir/install/OpenVPN client "$UserToCreate" "INSTALL";
 	WaitingSTD OpenVPN_Client	
 	StatusLSB
 fi
 
 #### script init
 log_daemon_msg "Create rTorrent init script for $UserToCreate"
-cp $InstallDir/templates/etc.init.rtorrent.template /etc/init.d/rtorrent-$UserToCreate
+cp $MySB_InstallDir/templates/etc.init.rtorrent.template /etc/init.d/rtorrent-$UserToCreate
 RutorrentDirEscaped=`echo $RutorrentDir | sed s,/,\\\\\\\\\\/,g`
-perl -pi -e "s/<InstallDir>/$InstallDirEscaped/g" /etc/init.d/rtorrent-$UserToCreate
+perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/init.d/rtorrent-$UserToCreate
 perl -pi -e "s/<username>/$UserToCreate/g" /etc/init.d/rtorrent-$UserToCreate
 perl -pi -e "s/<rutorrent_dir>/$RutorrentDirEscaped/g" /etc/init.d/rtorrent-$UserToCreate
 chmod +x /etc/init.d/rtorrent-$UserToCreate
@@ -249,7 +249,7 @@ log_daemon_msg "Add init script to cron for $UserToCreate"
 crontab -l > /tmp/crontab.tmp
 sed -i '/'$UserToCreate'/d' /tmp/crontab.tmp
 echo "*/5 * * * * if ! ( /bin/ps U $UserToCreate | grep rtorrent &> /dev/null ); then /etc/init.d/rtorrent-$UserToCreate restart &> /dev/null 2>&1; fi" >> /tmp/crontab.tmp
-echo "0 12 1 * * /bin/bash $InstallDir/scripts/PaymentReminder.bsh $UserToCreate CRON &> /dev/null 2>&1" >> /tmp/crontab.tmp
+echo "0 12 1 * * /bin/bash $MySB_InstallDir/scripts/PaymentReminder.bsh $UserToCreate CRON &> /dev/null 2>&1" >> /tmp/crontab.tmp
 crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
 StatusLSB
@@ -264,13 +264,13 @@ for seedUser in $UsersList; do
 	sed -i ''$LIGN'i\pieces.memory.max.set = '$(((($MEMORY/$TotalUsers)*1024)*1024))'\n' /home/$seedUser/.rtorrent.rc
 	StatusLSB
 
-	if [ -f $InstallDir/files/blocklists/blocklist_rtorrent.txt ]; then
+	if [ -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.txt ]; then
 		log_daemon_msg "Copy the blocklist file for $seedUser"
-		cp $InstallDir/files/blocklists/* $NewUserHomedir/blocklist/
+		cp $MySB_InstallDir/files/blocklists/* $NewUserHomedir/blocklist/
 		StatusLSB
 	else
 		log_daemon_msg "Creating a new blocklist file for $seedUser"
-		ScriptInvoke 'screen' '$InstallDir/scripts/BlocklistsRTorrent.bsh' 'REFRESH'
+		ScriptInvoke 'screen' '$MySB_InstallDir/scripts/BlocklistsRTorrent.bsh' 'REFRESH'
 		StatusLSB	
 	fi
 
@@ -281,7 +281,7 @@ for seedUser in $UsersList; do
 done
 
 #### Assign password
-ScriptInvoke "source" "$InstallDir/bin/MySB_ChangeUserPassword" "$UserToCreate" "$NewUserPassword" "INSTALL"
+ScriptInvoke "source" "$MySB_InstallDir/bin/MySB_ChangeUserPassword" "$UserToCreate" "$NewUserPassword" "INSTALL"
 
 #### START services
 # For 'MySB_CreateUser' and 'MySB_ChangeUserPassword'
@@ -290,7 +290,7 @@ ManageServices start "vsftpd nfs-kernel-server cron"
 
 #### Create new security rules
 log_daemon_msg "Create new security rules"
-ScriptInvoke 'screen' '$InstallDir/bin/MySB_SecurityRules' 'refresh' '--users' 'INSTALL'
+ScriptInvoke 'screen' '$MySB_InstallDir/bin/MySB_SecurityRules' 'refresh' '--users' 'INSTALL'
 StatusLSB
 
 #### renting

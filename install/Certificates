@@ -34,7 +34,7 @@ TYPE=$3 # INSTALL / UPGRADE
 
 #### Create CA
 CreateCACertificate() {
-	if [ -z "$TYPE" ] && [ -f $InstallDir/ssl/CA/serial ]; then
+	if [ -z "$TYPE" ] && [ -f $MySB_InstallDir/ssl/CA/serial ]; then
 		echo -e "${CYELLOW}CA certificate already exist. Do you want to create it again ?$CEND"
 		echo -e "${CYELLOW}I you create new CA, you must create again certificates for services.$CEND"
 		echo -e "${CYELLOW}Do you understand ?$CEND"
@@ -51,29 +51,29 @@ CreateCACertificate() {
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE system SET cert_password = '$CERTPASS' WHERE id_system = '1';"
 	
 	# create needed files and directories
-	if [ -d $InstallDir/ssl/CA ]; then
-		rm -vrf $InstallDir/ssl/CA
+	if [ -d $MySB_InstallDir/ssl/CA ]; then
+		rm -vrf $MySB_InstallDir/ssl/CA
 	fi
-	if [ ! -d $InstallDir/ssl/CA/private/ ]; then
-		mkdir -p $InstallDir/ssl/CA/private/
+	if [ ! -d $MySB_InstallDir/ssl/CA/private/ ]; then
+		mkdir -p $MySB_InstallDir/ssl/CA/private/
 	fi
-	if [ ! -d $InstallDir/ssl/CA/newcerts/ ]; then
-		mkdir -p $InstallDir/ssl/CA/newcerts/
+	if [ ! -d $MySB_InstallDir/ssl/CA/newcerts/ ]; then
+		mkdir -p $MySB_InstallDir/ssl/CA/newcerts/
 	fi
-	if [ ! -d $InstallDir/ssl/CA/certs/ ]; then
-		mkdir -p $InstallDir/ssl/CA/certs/
+	if [ ! -d $MySB_InstallDir/ssl/CA/certs/ ]; then
+		mkdir -p $MySB_InstallDir/ssl/CA/certs/
 	fi
-	if [ ! -d $InstallDir/ssl/crl/ ]; then
-		mkdir -p $InstallDir/ssl/CA/crl/
+	if [ ! -d $MySB_InstallDir/ssl/crl/ ]; then
+		mkdir -p $MySB_InstallDir/ssl/CA/crl/
 	fi
 
 	# 2 - Change working directory
-	cd $InstallDir/ssl/CA/
+	cd $MySB_InstallDir/ssl/CA/
 
 	# 3 - OpenSSL config
-	cp $InstallDir/templates/root.ca.cacert.conf.template ./MySB_caconfig.cnf
+	cp $MySB_InstallDir/templates/root.ca.cacert.conf.template ./MySB_caconfig.cnf
 	MainUserEmailEscaped="`echo $MainUserEmail | sed s/\@/\\\\\\\\\\@/g`"
-	perl -pi -e "s/<InstallDir>/$InstallDirEscaped/g" ./MySB_caconfig.cnf
+	perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" ./MySB_caconfig.cnf
 	perl -pi -e "s/<servername>/$HostNameFQDN/g" ./MySB_caconfig.cnf
 	perl -pi -e "s/<email>/$MainUserEmailEscaped/g" ./MySB_caconfig.cnf
 	perl -pi -e "s/<ipaddress>/$SrvIpAddress/g" ./MySB_caconfig.cnf
@@ -94,12 +94,12 @@ CreateCACertificate() {
 
 # Services Certificate
 CreateServiceCertificate() {
-	cd $InstallDir/ssl/CA/
+	cd $MySB_InstallDir/ssl/CA/
 
 	CERTPASS="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT cert_password FROM system WHERE id_system = '1'\"`"
 	SUBJ="/C=FR/ST=FR/L=FR/O=MySB/CN=$HostNameFQDN/emailAddress=$MainUserEmail/OU=$SERVICENAME"
 	
-	if [ ! -f $InstallDir/ssl/$SERVICENAME.key ]; then
+	if [ ! -f $MySB_InstallDir/ssl/$SERVICENAME.key ]; then
 		openssl genrsa 2048 | tee ./$SERVICENAME.key
 		openssl req -new -x509 -nodes -key ./$SERVICENAME.key -config ./MySB_caconfig.cnf -batch -subj $SUBJ | tee ./$SERVICENAME.cert
 		openssl ca -batch -keyfile ./private/cakey.pem -passin pass:$CERTPASS -subj $SUBJ -out ./$SERVICENAME.pem -config ./MySB_caconfig.cnf -passin pass:$CERTPASS -ss_cert ./$SERVICENAME.cert

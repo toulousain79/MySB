@@ -117,10 +117,10 @@ MySB_UpgradeMe
 ## Complete uninstall of MySB
 Use this command on your terminal:
 ```
-bash $InstallDir/install/MySB_CleanAll.bsh
+bash $MySB_InstallDir/install/MySB_CleanAll.bsh
 ```
 
-###### BEWARE: The '$InstallDir' will be completely removed and all packages installed during the installation will be uninstalled !
+###### BEWARE: The '$MySB_InstallDir' will be completely removed and all packages installed during the installation will be uninstalled !
 
 ## Commands
 
@@ -137,10 +137,10 @@ After installing you will have access to the following commands to be used direc
 
 Additional scripts:
 
-	* '$InstallDir/scripts/BlocklistsRTorrent.bsh', use this for generate blocklist for rTorrent with 'ipv4_filter.load' command. (CRON every day at 23:00)	
-	* '$InstallDir/scripts/DynamicAddressResolver.bsh', used for auto update users dynamics addresses IP. (CRON every 5 minutes)
-	* '$InstallDir/scripts/GetTrackersCert.bsh', use this for get all SSL certificates for all tracker. You can add more trackers in MySB portal. This script is start every time you add/edit trackers list.	
-	* '$InstallDir/scripts/LogServer.bsh', used for generate HTML log files (Nginx, PeerGuardian, Fail2Ban,...) avalaible in MySB Portal. (CRON every 30 minutes)	
+	* '$MySB_InstallDir/scripts/BlocklistsRTorrent.bsh', use this for generate blocklist for rTorrent with 'ipv4_filter.load' command. (CRON every day at 23:00)	
+	* '$MySB_InstallDir/scripts/DynamicAddressResolver.bsh', used for auto update users dynamics addresses IP. (CRON every 5 minutes)
+	* '$MySB_InstallDir/scripts/GetTrackersCert.bsh', use this for get all SSL certificates for all tracker. You can add more trackers in MySB portal. This script is start every time you add/edit trackers list.	
+	* '$MySB_InstallDir/scripts/LogServer.bsh', used for generate HTML log files (Nginx, PeerGuardian, Fail2Ban,...) avalaible in MySB Portal. (CRON every 30 minutes)	
 
 ## MySB Portal
 
