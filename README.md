@@ -45,7 +45,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 	* Access restricted by IP for all server access (can be disabled)
 	* Dynamic IP Management for IP restriction (DynDNS, No-IP, ...)
 
-## Additional ruTorrent plugins (in addition to the official plugins)
+## Additional ruTorrent plugins
 
 	* Mobile
 	* Pause WebUI
@@ -57,7 +57,6 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 	* Fileshare
 	* NFO
 	* RatioColor
-	* Theme: Oblivion
 	* FileUpload
 	* Stream
 	* Favicons trackers
@@ -70,7 +69,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 
 ## Bugs
 
-	--> Please, tell me
+	--> Please, tell me.
 
 ## Before installation
 
@@ -118,9 +117,17 @@ screen -r MySB
 
 Beware, during installation, the SSH port will be changed. If a port session 22 does not work, try with the new port that you have selected.
 
-###### NOTE 1: You must be logged as root to run this installation.
-###### NOTE 2: At the end of the installation, the server will restart automatically and you will receive an e-mail summarizing.
-###### NOTE 3: Each time a user is added, it will also receive a confirmation email with a temporary password.
+###### NOTE 1
+	You must be logged as root to run this installation.
+###### NOTE 2
+	At the end of the installation, the server will restart automatically and you will receive an e-mail summarizing.
+###### NOTE 3
+	Each time a user is added, it will also receive a confirmation email with a temporary password.
+###### NOTE 4
+	The installation may take 20 to 45 minutes depending on the services to install and server configuration.
+###### NOTE 5
+	The installation runs completely silently (screen). However, all of the installation logs will be available in the portal for the main user.
+
 
 ## How to upgrade from v1.1
 Use this command on your terminal:
