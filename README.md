@@ -15,8 +15,8 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 
 ## Installed software
 
-	* rTorrent (rakshasa) v0.9.2 with SSL
-	* libTorrrent (rakshasa) v13.2
+	* rTorrent (rakshasa) v0.9.2 & v0.9.4 with SSL
+	* libTorrrent (rakshasa) v0.13.2 & v0.13.4
 	* ruTorrent (SVN) + official plugins (SVN)
 	* NginX (SSL, specific port and some customizations)
 	* PHP5-FPM (php5-apcu, FastCGI, SSL)
@@ -40,10 +40,10 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 	* Auto retrieve SSL certificates for all trackers (if available)
 	* MySB portal, ability to manage trackers, blocklists, logs, users and more
 	* Block all possibilities to use any listed trackers that was not activated in MySB portal
-	* LoadAvg, Monitoring & Analytics
+	* LoadAvg, free server analytics and monitoring
 	* Monitoring service available for some providers
 	* Access restricted by IP for all server access (can be disabled)
-	* Dynamic IP Management (DynDNS, No-IP, ...)
+	* Dynamic IP Management for IP restriction (DynDNS, No-IP, ...)
 
 ## Additional ruTorrent plugins (in addition to the official plugins)
 
@@ -62,9 +62,19 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 	* Stream
 	* Favicons trackers
 
+## Coming soon
+	
+	* Possibility to restart rTorrent via the portal without having Seedbox-Manager for each user
+	* Possibility to switch rTorrent version (v0.9.2 to v0.9.4), and vice versa
+	* Possiblity to add more blocklists
+
+## Bugs
+
+	--> Please, tell me
+
 ## Before installation
 
-You need to have a "blank" server installation.
+	--> You need to have a "blank" server installation.
 
 #################
 #	Warnings	#
@@ -78,15 +88,19 @@ You need to have a "blank" server installation.
 
 	--> DO NOT use capital letters, all your usernames should be written in lowercase without space.
 	--> DO NOT upgrade anything in your box, ask in the thread before even thinking about it.
-	--> DO NOT try to reconfigure packages using other tutorials.
+	--> DO NOT try to reconfigure packages using other tutorials or yourself.
 	--> TO UPGRADE your system, please use 'MySB_UpgradeSystem' command.
 	
 ###### NOTE: For OVH servers:
 
 	--> Use the default distribution kernel. When you start the installation process, choose "Custom install", and "Use of kernel distribution".
-	--> You can monitor your server, simply specify it during installation. But I still advice to disable this service in the OVH interface.
+	
+	--> You can monitor your server, simply specify it during MySB installation.
+		BUT I still advice to disable this service in the OVH interface.
+		If you allow monitoring with MySB, the IPs of your provider will be added to the whitelist globally (PeerGuardian, Fail2Ban, IPTables), and those addresses will not be filtered.
+	
 	--> If you leave the monitoring enable in the OVH interface AND you do not activated it during installation of MySB, your server may be rebooted in rescue mode by the OVH staff...
-	--> If you want use the monitoring, you must first disable it BEFORE start the installation. You can reactivate it AFTER the END of installation.
+	--> If you want use the monitoring, you must first disable it BEFORE start the MySB installation. You can reactivate it AFTER the END of installation.
 
 #################
 

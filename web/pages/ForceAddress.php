@@ -1,6 +1,6 @@
 <?php
 // ----------------------------------
-require_once dirname(__FILE__) . '/inc/includes_before.php';
+require_once dirname(__FILE__) . '/../inc/includes_before.php';
 // ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -25,13 +25,13 @@ require_once dirname(__FILE__) . '/inc/includes_before.php';
 //#################### FIRST LINE #####################################
 
 if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ManageAddresses') ) {
-	require_once dirname(__FILE__) . '/index.php';
+	require_once WEB_ROOT . 'index.php';
 } else {
 	header('Refresh: 0; URL=http://www.google.fr');
 }
 
 // ----------------------------------
-require_once dirname(__FILE__) . '/inc/includes_after.php';
+require_once dirname(__FILE__) . '/../inc/includes_after.php';
 // ----------------------------------
 //#################### LAST LINE ######################################
 ?>
