@@ -32,7 +32,7 @@ CREATE TABLE layout (
     position      MEDIUMINT( 6 )  DEFAULT NULL 
 );
 
-INSERT INTO [layout] ([id], [name], [content_type], [content], [created_on], [updated_on], [created_by_id], [updated_by_id], [position]) VALUES (5, 'MySB', 'text/html', '<?php require_once ''/var/www/clients/client3/web57/web/mysb/pages/Layout.php''; ?>', '2014-11-27 07:51:41', '2014-12-22 21:59:43', 1, 1, null);
+INSERT INTO [layout] ([id], [name], [content_type], [content], [created_on], [updated_on], [created_by_id], [updated_by_id], [position]) VALUES (5, 'MySB', 'text/html', '<?php require_once WEB_PAGES . ''/Layout.php''; ?>', '2014-11-27 07:51:41', '2014-12-22 21:59:43', 1, 1, null);
 
 -- Table: page
 CREATE TABLE page ( 
