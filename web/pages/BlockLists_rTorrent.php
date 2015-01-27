@@ -22,7 +22,8 @@
 //
 //#################### FIRST LINE #####################################
 
-global $MySB_DB;
+global $MySB_DB, $CurrentUser;
+$IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
 if (isset($_POST['submit'])) {
 	$success = true;
@@ -78,16 +79,28 @@ foreach($BlockList as $List) {
 
 	switch ($List["rtorrent_active"]) {
 		case '0':
-			$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-								<option value="0" selected="selected" class="redText">No</option>
-								<option value="1" class="greenText">Yes</option>
-							</select>';
+			if ( $IsMainUser ) {
+				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+									<option value="0" selected="selected" class="redText">No</option>
+									<option value="1" class="greenText">Yes</option>
+								</select>';
+			} else {
+				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" disabled>
+									<option value="0" selected="selected" class="redText">No</option>
+								</select>';				
+			}
 			break;
 		default:
-			$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-								<option value="0" class="redText">No</option>
-								<option value="1" selected="selected" class="greenText">Yes</option>
-							</select>';
+			if ( $IsMainUser ) {
+				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+									<option value="0" class="redText">No</option>
+									<option value="1" selected="selected" class="greenText">Yes</option>
+								</select>';
+			} else {
+				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" disabled>
+									<option value="1" selected="selected" class="greenText">Yes</option>
+								</select>';				
+			}
 			break;
 	}
 ?>

@@ -22,9 +22,10 @@
 //
 //#################### FIRST LINE #####################################
 
-global $MySB_DB;
+global $MySB_DB, $CurrentUser;
 
 $IsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
+$IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
 if ( $IsInstalled == '1' ) {
 	if (isset($_POST['submit'])) {
@@ -51,6 +52,8 @@ if ( $IsInstalled == '1' ) {
 
 	$BlockList = $MySB_DB->select("blocklists", "*", ["peerguardian_list[!]" => ""]);
 ?>
+
+<?php if ( $IsMainUser ) { ?>
 	<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 		<fieldset>
 			<legend>Beware</legend>
@@ -60,6 +63,7 @@ if ( $IsInstalled == '1' ) {
 			To avoid errors, enable <b>a list at a time</b>.</p>				
 		</fieldset>
 	</div>
+<?php } ?>
 
 	<form class="form_settings" method="post" action="">	
 		<div align="center">
@@ -90,16 +94,28 @@ if ( $IsInstalled == '1' ) {
 
 		switch ($List["peerguardian_active"]) {
 			case '0':
-				$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-									<option value="0" selected="selected" class="redText">No</option>
-									<option value="1" class="greenText">Yes</option>
-								</select>';
+				if ( $IsMainUser ) {
+					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+										<option value="0" selected="selected" class="redText">No</option>
+										<option value="1" class="greenText">Yes</option>
+									</select>';
+				} else {
+					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" disabled>
+										<option value="0" selected="selected" class="redText">No</option>
+									</select>';					
+				}
 				break;
 			default:
-				$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-									<option value="0" class="redText">No</option>
-									<option value="1" selected="selected" class="greenText">Yes</option>
-								</select>';
+				if ( $IsMainUser ) {
+					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+										<option value="0" class="redText">No</option>
+										<option value="1" selected="selected" class="greenText">Yes</option>
+									</select>';
+				} else {
+					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" disabled>
+										<option value="1" selected="selected" class="greenText">Yes</option>
+									</select>';					
+				}
 				break;
 		}
 	?>

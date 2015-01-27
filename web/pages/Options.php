@@ -23,65 +23,13 @@
 //#################### FIRST LINE #####################################
 
 function Form() {
-	global $MySB_DB, $CurrentUser;
-
-	$UserEmail = $MySB_DB->get("users", "users_email", ["users_ident" => "$CurrentUser"]);	
-	
 	echo '<form class="form_settings" method="post" action="">
 			<div align="center"><table border="0">
 				<tr>
-					<td>Current e-mail :</td>
-					<td><input style="cursor: default;" name="current_email" type="text" readonly="true" value="' . $UserEmail . '"/></td>
-				</tr>
-				<tr>
-					<td>New e-mail :</td>
-					<td><input name="new_email" type="text" /></td>
-				</tr>
-				<tr>
-					<td>Confirm :</td>
-					<td><input name="confirm_email" type="text" /></td>
-				</tr>
-				<tr>
-					<td colspan="2">
-						<input class="submit" name="submit" type="submit" value="Submit"">
-					</td>
+					<td>Under construction...</td>
 				</tr>
 			</table></div>
 		</form>';
-}
-
-if ( isset($_POST['submit']) ) {
-	global $MySB_DB, $CurrentUser;
-
-	$current_email = preg_replace('/\s\s+/', '', $_POST['current_email']); 
-	$new_email = preg_replace('/\s\s+/', '', $_POST['new_email']); 
-	$confirm_email = preg_replace('/\s\s+/', '', $_POST['confirm_email']); 
-
-	if ( ($current_email != '') && ($new_email != '') && ($confirm_email != '') ) {
-		if ( ValidateEmail($new_email) != false ) {
-			if ( $new_email == $confirm_email ) {
-				$result = $MySB_DB->update("users", ["users_email" => "$new_email"], ["users_ident" => "$CurrentUser"]);
-
-				if ( $result > 0 ) {
-					$type = 'success';
-				} else {
-					$type = 'error';
-					$message = 'Failed ! It was not possible to update the MySB database.';
-				}
-			} else {
-				$type = 'error';
-				$message = 'Error between the new typed email and verification.';
-			}
-		} else {
-			$type = 'error';
-			$message = 'The given e-mail address is not valid!';
-		}
-	} else {
-		$type = 'information';
-		$message = 'Please, complete all fields.';
-	}
-
-	GenerateMessage('message_only', $type, $message, '');
 }
 
 Form();
