@@ -1,6 +1,6 @@
 <?php
 // ----------------------------------
-require_once '/etc/MySB/web/inc/includes_before.php';
+require_once dirname(__FILE__) . '/inc/includes_before.php';
 // ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -56,7 +56,7 @@ if ( preg_match( '~MSIE|Internet Explorer~i', $_SERVER['HTTP_USER_AGENT'] ) || (
 }
 
 // -----------------------------------------
-require_once '/etc/MySB/web/inc/includes_after.php';
+require_once dirname(__FILE__) . '/inc/includes_after.php';
 // -----------------------------------------
 //#################### LAST LINE ######################################
 ?>

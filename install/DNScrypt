@@ -1,6 +1,6 @@
 #!/bin/bash 
 # ----------------------------------
-source /etc/MySB/inc/includes_before
+source ../inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -73,14 +73,14 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	DnscryptUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'DNScrypt-proxy'\"`"
 	DnscryptFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'DNScrypt-proxy'\"`"
 
-	if [ ! -f /etc/MySB/files/$DnscryptFile ]; then
-		wget --no-check-certificate $DnscryptUrl -O /etc/MySB/files/$DnscryptFile
+	if [ ! -f $InstallDir/files/$DnscryptFile ]; then
+		wget --no-check-certificate $DnscryptUrl -O $InstallDir/files/$DnscryptFile
 	fi
-	if [ ! -d $DnscryptDir ] && [ -f /etc/MySB/files/$DnscryptFile ]; then
-		tar -zxvf /etc/MySB/files/$DnscryptFile -C /etc/MySB/temp/	
-		SubDir="`tar -ztf /etc/MySB/files/$DnscryptFile | sed -e 's@/.*@@' | uniq`"
-		if [ -d /etc/MySB/temp/$SubDir ]; then
-			mv /etc/MySB/temp/$SubDir $DnscryptDir
+	if [ ! -d $DnscryptDir ] && [ -f $InstallDir/files/$DnscryptFile ]; then
+		tar -zxvf $InstallDir/files/$DnscryptFile -C $InstallDir/temp/	
+		SubDir="`tar -ztf $InstallDir/files/$DnscryptFile | sed -e 's@/.*@@' | uniq`"
+		if [ -d $InstallDir/temp/$SubDir ]; then
+			mv $InstallDir/temp/$SubDir $DnscryptDir
 		fi
 	fi		
 	
@@ -110,8 +110,9 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	sed -i "${NumLign}i\        // DNScrypt-proxy - EoF" /etc/bind/named.conf.options
 	
 	#### DNScrypt-proxy - /etc/init.d/dnscrypt-proxy
-	cp /etc/MySB/templates/etc.init.dnscrypt-proxy.template /etc/init.d/dnscrypt-proxy
+	cp $InstallDir/templates/etc.init.dnscrypt-proxy.template /etc/init.d/dnscrypt-proxy
 	perl -pi -e "s/<MySB_DB>/`echo $MySB_DB | sed s,/,\\\\\\\\\\/,g`/g" /etc/init.d/dnscrypt-proxy
+	perl -pi -e "s/<InstallDir>/$InstallDirEscaped/g" /etc/init.d/dnscrypt-proxy
 	chmod +x /etc/init.d/dnscrypt-proxy
 	#update-rc.d dnscrypt-proxy defaults
 
@@ -165,7 +166,7 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '0',is_installed = '1' WHERE serv_name = 'DNScrypt-proxy';"	
 	
 	#### Create new security rules
-	ScriptInvoke 'screen' '/etc/MySB/bin/MySB_SecurityRules' 'create'
+	ScriptInvoke 'screen' '$InstallDir/bin/MySB_SecurityRules' 'create'
 	
 	#### START services
 	#ManageServices start "cron bind9 dnscrypt-proxy"
@@ -176,11 +177,11 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	
 	#### Check if service is OK and running
 	if ! GetPid dnscrypt-proxy; then
-		service dnscrypt-proxy status | tee -a /etc/MySB/temp/continue
+		service dnscrypt-proxy status | tee -a $InstallDir/temp/continue
 	fi	
 fi
 
 # -----------------------------------------
-source /etc/MySB/inc/includes_after
+source ../inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

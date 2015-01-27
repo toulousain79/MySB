@@ -25,6 +25,8 @@
 function printUser($user) {
 	global $MySB_DB, $system_datas, $users_datas, $Port_HTTPs;
 
+	// System infos
+	$InstallDir = $system_datas["install_dir"];
 	// Users infos	
 	$UserID = $users_datas["id_users"];
 	$UserPasswd = $users_datas["users_passwd"];	
@@ -281,10 +283,10 @@ function printUser($user) {
 		echo '<td><span class="Comments"><pre>MySB_SecurityRules (new|clean)</pre></span></td></tr>';
 		// Main scripts
 		echo '<tr align="left"><th width="15%" scope="row">Main scripts</th>';
-		echo '<td>/etc/MySB/scripts/BlocklistsRTorrent.bsh</td>';
+		echo '<td>'.$InstallDir.'/scripts/BlocklistsRTorrent.bsh</td>';
 		echo '<td><span class="Comments">Use this for generate rTorrent blocklist. (CRON every day)</span></td></tr>';
 		echo '<tr align="left"><th width="15%" scope="row"> </th>';
-		echo '<td>/etc/MySB/scripts/GetTrackersCert.bsh</td>';
+		echo '<td>'.$InstallDir.'/scripts/GetTrackersCert.bsh</td>';
 		echo '<td><span class="Comments">Get all SSL certificates for all trackers. This script is start every time you add/edit trackers list in MySB portal.</span></td></tr>';
 	}
 

@@ -1,6 +1,6 @@
 <?php
 // ----------------------------------
-require_once '/etc/MySB/web/inc/includes_before.php';
+require_once dirname(__FILE__) . '/inc/includes_before.php';
 // ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -31,7 +31,7 @@ if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') ) {
 	// Users table
 	$ActualUserPass = $MySB_DB->get("users", "users_passwd", ["users_ident" => "$CurrentUser"]);
 	if ( ($ActualUserPass != "") && ($UserPasswd != "") && ($UserPasswd == $ActualUserPass) ) {
-		require_once '/etc/MySB/web/index.php';
+		require_once dirname(__FILE__) . '/index.php';
 	} else {
 		header('Refresh: 0; URL=http://www.google.fr');
 	}
@@ -40,7 +40,7 @@ if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') ) {
 }
 
 // ----------------------------------
-require_once '/etc/MySB/web/inc/includes_after.php';
+require_once dirname(__FILE__) . '/inc/includes_after.php';
 // ----------------------------------
 //#################### LAST LINE ######################################
 ?>

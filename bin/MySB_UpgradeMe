@@ -1,6 +1,6 @@
 #!/bin/bash 
 # ----------------------------------
-source /etc/MySB/inc/includes_before
+source ../inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -28,10 +28,10 @@ source /etc/MySB/inc/includes_before
 Type="$1"
 
 #### Update actual repo
-ScriptInvoke 'source' '/etc/MySB/bin/MySB_GitHubRepoUpdate' 'REFRESH'
+ScriptInvoke 'source' '$InstallDir/bin/MySB_GitHubRepoUpdate' 'REFRESH'
 
 #### Check if new version
-MySB_NewVersion="`cat /etc/MySB/version`"
+MySB_NewVersion="`cat $InstallDir/version`"
 
 if [ "$MySB_CurrentVersion" == "$MySB_NewVersion" ]; then
 	echo
@@ -60,16 +60,16 @@ fi
 
 #### Backup
 DateTime="`/bin/date +%Y%m%d-%H%M%S`"
-echo -e "${CBLUE}Create backup files '/etc/MySB/upgrade/backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz'$CEND"
+echo -e "${CBLUE}Create backup files '$InstallDir/upgrade/backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz'$CEND"
 echo -e -n "${CRED}Please wait $CEND"
 CountDown 5
 
-if [ ! -d /etc/MySB/upgrade/backup ]; then
-	mkdir -p /etc/MySB/upgrade/backup
+if [ ! -d $InstallDir/upgrade/backup ]; then
+	mkdir -p $InstallDir/upgrade/backup
 fi
-mv -v /etc/MySB/upgrade/backup /tmp/MySB_backup_$DateTime
-tar -zcvf /tmp/MySB_backup_$DateTime/Backup-$DateTime-$MySB_CurrentVersion.tar.gz /etc/MySB
-mv -v /tmp/MySB_backup_* /etc/MySB/upgrade/backup
+mv -v $InstallDir/upgrade/backup /tmp/MySB_backup_$DateTime
+tar -zcvf /tmp/MySB_backup_$DateTime/Backup-$DateTime-$MySB_CurrentVersion.tar.gz $InstallDir
+mv -v /tmp/MySB_backup_* $InstallDir/upgrade/backup
 
 #### MySB Script GitHub
 echo
@@ -77,7 +77,7 @@ echo -e "${CBLUE}Merge MySB to $MySB_NewVersion$CEND"
 echo -e -n "${CRED}Please wait $CEND"
 CountDown 5
 
-cd /etc/MySB/
+cd $InstallDir/
 git fetch --all
 git stash
 git checkout -b $MySB_NewVersion origin/$MySB_NewVersion
@@ -86,11 +86,11 @@ git pull
 #### Update version info
 echo -e -n "${CBLUE}Updating the clock$CEND..."
 sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE system SET mysb_version = '$MySB_NewVersion' WHERE id_system = '1';"
-rm -vf /etc/MySB/files/banner_*
+rm -vf $InstallDir/files/banner_*
 echo -e "${CGREEN}Done !$CEND"
 
 #### Completing the upgrade
-if [ -f /etc/MySB/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh ]; then
+if [ -f $InstallDir/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh ]; then
 	# echo
 	# echo -e "${CBLUE}Upgrade system$CEND"
 	# echo -e "${CYELLOW}During the update of some packages, questions may be asked to you. Leave the default choice, and press the Enter key.$CEND"
@@ -103,14 +103,14 @@ if [ -f /etc/MySB/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh ]; t
 	echo -e "${CGREEN}Done !$CEND"
 	
 	echo -e -n "${CBLUE}Upgrading of system$CEND..."
-	screen -dmS MySB_UpgradeSystem /bin/bash /etc/MySB/bin/MySB_UpgradeSystem 'UPGRADE';
+	screen -dmS MySB_UpgradeSystem /bin/bash $InstallDir/bin/MySB_UpgradeSystem 'UPGRADE';
 	WaitingScreen MySB_UpgradeSystem
 	StatusSTD	
 	
 	echo
 	echo -e "${CBLUE}Starting SCREEN session...$CEND"
 	screen -wipe &> /dev/null
-	screen -dmS MySB_Upgrade /bin/bash /etc/MySB/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh;
+	screen -dmS MySB_Upgrade /bin/bash $InstallDir/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh;
 	echo -e -n "${CRED}Please wait $CEND"
 	CountDown 5
 	
@@ -118,7 +118,7 @@ if [ -f /etc/MySB/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh ]; t
 else
 	echo ""
 	echo ""
-	echo -e "${CRED}Upgrade script does not exist (/etc/MySB/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh), aborting...$CEND"	
+	echo -e "${CRED}Upgrade script does not exist ($InstallDir/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh), aborting...$CEND"	
 	EndingScript 0
 fi
 
@@ -128,6 +128,6 @@ echo -e "${CGREEN}Upgrade finished succesfully !$CEND"
 echo
 
 # -----------------------------------------
-source /etc/MySB/inc/includes_after
+source ../inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

@@ -1,6 +1,6 @@
 #!/bin/bash 
 # ----------------------------------
-source /etc/MySB/inc/includes_before
+source ../inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -36,8 +36,8 @@ fi
 #ManageServices stop "postfix"
 
 #### Create certificates
-if [ ! -f /etc/MySB/ssl/postfix.cert ]; then
-	ScriptInvoke 'source' '/etc/MySB/install/Certificates' 'CreateServiceCertificate' 'postfix'
+if [ ! -f $InstallDir/ssl/postfix.cert ]; then
+	ScriptInvoke 'source' '$InstallDir/install/Certificates' 'CreateServiceCertificate' 'postfix'
 fi
 
 if [ "$SMTP_Provider" != "LOCAL" ]; then
@@ -50,8 +50,8 @@ if [ "$SMTP_Provider" != "LOCAL" ]; then
 	#ManageServices stop "stunnel4"	
 	
 	#### Create certificates
-	if [ ! -f /etc/MySB/ssl/stunnel.cert ]; then
-		ScriptInvoke 'source' '/etc/MySB/install/Certificates' 'CreateServiceCertificate' 'stunnel'
+	if [ ! -f $InstallDir/ssl/stunnel.cert ]; then
+		ScriptInvoke 'source' '$InstallDir/install/Certificates' 'CreateServiceCertificate' 'stunnel'
 	fi
 
 	#### stunnel
@@ -69,7 +69,7 @@ if [ "$SMTP_Provider" != "LOCAL" ]; then
 fi
 
 #### main.cf
-cp /etc/MySB/templates/etc.postfix.main.conf.template /etc/postfix/main.cf
+cp $InstallDir/templates/etc.postfix.main.conf.template /etc/postfix/main.cf
 perl -pi -e "s/<hostname>/$HostNameFQDN/g" /etc/postfix/main.cf
 perl -pi -e "s/<domain>/$(hostname -d)/g" /etc/postfix/main.cf
 echo "$HostNameFQDN" > /etc/mailname
@@ -132,7 +132,8 @@ if [ "$SMTP_Provider" != "LOCAL" ]; then
 	case "$Smtp_Security" in
 		"SSL")
 			# stunnel.conf
-			cp /etc/MySB/templates/etc.stunnel.stunnel.conf.template /etc/stunnel/stunnel.conf
+			cp $InstallDir/templates/etc.stunnel.stunnel.conf.template /etc/stunnel/stunnel.conf
+			perl -pi -e "s/<InstallDir>/$InstallDirEscaped/g" /etc/stunnel/stunnel.conf
 			perl -pi -e "s/<smtp_host>:<smtp_port>/$SMTP_Host:$SMTP_Port/g" /etc/stunnel/stunnel.conf
 			perl -pi -e "s/ENABLED=0/ENABLED=1/g" /etc/default/stunnel4
 			echo "127.0.0.1:23000              $SMTP_Username:$SMTP_Password" > /etc/postfix/sasl/sasl_passwd
@@ -158,10 +159,10 @@ if [ "$SMTP_Provider" != "LOCAL" ]; then
 			postconf -e "smtp_tls_scert_verifydepth = 5"
 			postconf -e "smtp_tls_enforce_peername = no"
 			postconf -e "smtp_tls_session_cache_database = btree:\${data_directory}/smtp_scache"
-			postconf -e "smtp_tls_cert_file = /etc/MySB/ssl/postfix.cert"
-			postconf -e "smtp_tls_key_file = /etc/MySB/ssl/postfix.key"	
+			postconf -e "smtp_tls_cert_file = $InstallDir/ssl/postfix.cert"
+			postconf -e "smtp_tls_key_file = $InstallDir/ssl/postfix.key"	
 			postconf -e "smtp_tls_policy_maps = hash:/etc/postfix/tls_policy"
-			postconf -e "smtp_tls_CAfile = /etc/MySB/ssl/CA/certs/cacert.pem"
+			postconf -e "smtp_tls_CAfile = $InstallDir/ssl/CA/certs/cacert.pem"
 		;;
 	esac
 
@@ -182,7 +183,7 @@ ManageServices start "$ServicesToRestart"
 
 #### Create new security rules
 # if [ "$Type" == "INSTALL" ] || [ "$Type" == "UPGRADE" ]; then
-	# ScriptInvoke 'source' '/etc/MySB/bin/MySB_SecurityRules' 'new'
+	# ScriptInvoke 'source' '$InstallDir/bin/MySB_SecurityRules' 'new'
 # fi
 
 #### Add some hosts in cache
@@ -196,6 +197,6 @@ fi
 if CheckCommand 0 postfix; then postfix flush; fi
 
 # -----------------------------------------
-source /etc/MySB/inc/includes_after
+source ../inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

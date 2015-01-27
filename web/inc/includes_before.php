@@ -41,8 +41,9 @@ if ( isset($_GET['page']) ) {
 }
 
 // Directories
-define('WEB_ROOT', '/etc/MySB/web/');
+define('WEB_ROOT', dirname(__FILE__));
 define('WEB_INC', WEB_ROOT . 'inc/');
+define('WEB_PAGES', WEB_ROOT . 'pages/');
 
 // Data bases
 define('Wolf_DB', WEB_ROOT. '../db/Wolf.sq3');

@@ -95,11 +95,11 @@
 			if ( isset($_SESSION['page']) ) {
 				switch ($_SESSION['page']) {
 					case "ChangePassword":
-						require_once '/etc/MySB/web/pages/ChangePassword.php';
+						require_once WEB_PAGES .'/ChangePassword.php';
 						break;
 
 					case "ManageAddresses":
-						require_once '/etc/MySB/web/pages/ManageAddresses.php';
+						require_once WEB_PAGES . '/ManageAddresses.php';
 						break;
 
 					default:

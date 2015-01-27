@@ -32,7 +32,7 @@ CREATE TABLE layout (
     position      MEDIUMINT( 6 )  DEFAULT NULL 
 );
 
-INSERT INTO [layout] ([id], [name], [content_type], [content], [created_on], [updated_on], [created_by_id], [updated_by_id], [position]) VALUES (5, 'MySB', 'text/html', '<?php require_once ''/etc/MySB/web/pages/Layout.php''; ?>', '2014-11-27 07:51:41', '2014-12-22 21:59:43', 1, 1, null);
+INSERT INTO [layout] ([id], [name], [content_type], [content], [created_on], [updated_on], [created_by_id], [updated_by_id], [position]) VALUES (5, 'MySB', 'text/html', '<?php require_once WEB_PAGES . ''/Layout.php''; ?>', '2014-11-27 07:51:41', '2014-12-22 21:59:43', 1, 1, null);
 
 -- Table: page
 CREATE TABLE page ( 
@@ -106,18 +106,18 @@ CREATE TABLE page_part (
     page_id      INT( 11 )       DEFAULT NULL 
 );
 
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (1, 'body', '', '<?php require_once ''/etc/MySB/web/pages/Home.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/Home.php''; ?>', 1);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (1, 'body', '', '<?php require_once WEB_PAGES . ''/Home.php''; ?>', '<?php require_once WEB_PAGES . ''/Home.php''; ?>', 1);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (10, 'body', '', '', '', 2);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (11, 'body', '', '<?php require_once ''/etc/MySB/web/pages/Logs.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/Logs.php''; ?>', 3);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (12, 'body', '', '<?php require_once ''/etc/MySB/web/pages/ChangePassword.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/ChangePassword.php''; ?>', 4);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (13, 'body', '', '<?php require_once ''/etc/MySB/web/pages/ManageAddresses.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/ManageAddresses.php''; ?>', 5);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (14, 'body', '', '<?php require_once ''/etc/MySB/web/pages/TrackersList.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/TrackersList.php''; ?>', 6);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (16, 'body', '', '<?php require_once ''/etc/MySB/web/pages/TrackersAdd.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/TrackersAdd.php''; ?>', 8);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (17, 'body', '', '<?php require_once ''/etc/MySB/web/pages/TrackersList.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/TrackersList.php''; ?>', 9);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (18, 'body', '', '<?php require_once ''/etc/MySB/web/pages/UserInfo.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/UserInfo.php''; ?>', 10);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (19, 'body', '', '<?php require_once ''/etc/MySB/web/pages/OpenVPN.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/OpenVPN.php''; ?>', 11);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (20, 'body', '', '<?php require_once ''/etc/MySB/web/pages/RentingInfo.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/RentingInfo.php''; ?>', 12);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (21, 'body', '', '<?php require_once ''/etc/MySB/web/pages/RentingInfo.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/RentingInfo.php''; ?>', 13);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (11, 'body', '', '<?php require_once WEB_PAGES . ''/Logs.php''; ?>', '<?php require_once WEB_PAGES . ''/Logs.php''; ?>', 3);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (12, 'body', '', '<?php require_once WEB_PAGES . ''/ChangePassword.php''; ?>', '<?php require_once WEB_PAGES . ''/ChangePassword.php''; ?>', 4);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (13, 'body', '', '<?php require_once WEB_PAGES . ''/ManageAddresses.php''; ?>', '<?php require_once WEB_PAGES . ''/ManageAddresses.php''; ?>', 5);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (14, 'body', '', '<?php require_once WEB_PAGES . ''/TrackersList.php''; ?>', '<?php require_once WEB_PAGES . ''/TrackersList.php''; ?>', 6);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (16, 'body', '', '<?php require_once WEB_PAGES . ''/TrackersAdd.php''; ?>', '<?php require_once WEB_PAGES . ''/TrackersAdd.php''; ?>', 8);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (17, 'body', '', '<?php require_once WEB_PAGES . ''/TrackersList.php''; ?>', '<?php require_once WEB_PAGES . ''/TrackersList.php''; ?>', 9);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (18, 'body', '', '<?php require_once WEB_PAGES . ''/UserInfo.php''; ?>', '<?php require_once WEB_PAGES . ''/UserInfo.php''; ?>', 10);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (19, 'body', '', '<?php require_once WEB_PAGES . ''/OpenVPN.php''; ?>', '<?php require_once WEB_PAGES . ''/OpenVPN.php''; ?>', 11);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (20, 'body', '', '<?php require_once WEB_PAGES . ''/RentingInfo.php''; ?>', '<?php require_once WEB_PAGES . ''/RentingInfo.php''; ?>', 12);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (21, 'body', '', '<?php require_once WEB_PAGES . ''/RentingInfo.php''; ?>', '<?php require_once WEB_PAGES . ''/RentingInfo.php''; ?>', 13);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (22, 'body', 'textile', '* "IP restriction(IP restriction)":?help/ip-restriction.html
 * "Trackers(Trackers)":?help/trackers.html
 * "Blocklists(Blocklists)":?help/blocklists.html', '	<ul>
@@ -125,24 +125,24 @@ INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [
 		<li><a href="?help/trackers.html" title="Trackers">Trackers</a></li>
 		<li><a href="?help/blocklists.html" title="Blocklists">Blocklists</a></li>
 	</ul>', 14);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (23, 'body', 'textile', '<?php require_once ''/etc/MySB/web/pages/Help_IPrestriction.php''; ?>', '	<p><?php require_once ''/etc/MySB/web/pages/Help_IPrestriction.php''; ?></p>', 15);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (24, 'body', '', '<?php require_once ''/etc/MySB/web/pages/Help_Trackers.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/Help_Trackers.php''; ?>', 16);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (25, 'body', '', '<?php require_once ''/etc/MySB/web/pages/BlockLists_rTorrent.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/BlockLists_rTorrent.php''; ?>', 17);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (26, 'body', '', '<?php require_once ''/etc/MySB/web/pages/BlockLists_PGL.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/BlockLists_PGL.php''; ?>', 18);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (27, 'body', '', '<?php require_once ''/etc/MySB/web/pages/BlockLists_rTorrent.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/BlockLists_rTorrent.php''; ?>', 19);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (28, 'body', '', '<?php require_once ''/etc/MySB/web/pages/Help_Blocklists.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/Help_Blocklists.php''; ?>', 20);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (29, 'body', '', '<?php require_once ''/etc/MySB/web/pages/ApplyConfig.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/ApplyConfig.php''; ?>', 21);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (23, 'body', 'textile', '<?php require_once WEB_PAGES . ''/Help_IPrestriction.php''; ?>', '	<p><?php require_once WEB_PAGES . ''/Help_IPrestriction.php''; ?></p>', 15);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (24, 'body', '', '<?php require_once WEB_PAGES . ''/Help_Trackers.php''; ?>', '<?php require_once WEB_PAGES . ''/Help_Trackers.php''; ?>', 16);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (25, 'body', '', '<?php require_once WEB_PAGES . ''/BlockLists_rTorrent.php''; ?>', '<?php require_once WEB_PAGES . ''/BlockLists_rTorrent.php''; ?>', 17);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (26, 'body', '', '<?php require_once WEB_PAGES . ''/BlockLists_PGL.php''; ?>', '<?php require_once WEB_PAGES . ''/BlockLists_PGL.php''; ?>', 18);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (27, 'body', '', '<?php require_once WEB_PAGES . ''/BlockLists_rTorrent.php''; ?>', '<?php require_once WEB_PAGES . ''/BlockLists_rTorrent.php''; ?>', 19);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (28, 'body', '', '<?php require_once WEB_PAGES . ''/Help_Blocklists.php''; ?>', '<?php require_once WEB_PAGES . ''/Help_Blocklists.php''; ?>', 20);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (29, 'body', '', '<?php require_once WEB_PAGES . ''/ApplyConfig.php''; ?>', '<?php require_once WEB_PAGES . ''/ApplyConfig.php''; ?>', 21);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (30, 'body', 'textile', null, null, 22);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (31, 'body', null, null, null, 23);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (32, 'body', null, null, null, 24);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (33, 'body', null, null, null, 25);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (34, 'body', '', '', '', 26);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (35, 'body', null, '<?php require_once ''/etc/MySB/web/pages/SMTP.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/SMTP.php''; ?>', 27);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (36, 'body', '', '<?php require_once ''/etc/MySB/web/pages/DNScrypt.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/DNScrypt.php''; ?>', 28);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (35, 'body', null, '<?php require_once WEB_PAGES . ''/SMTP.php''; ?>', '<?php require_once WEB_PAGES . ''/SMTP.php''; ?>', 27);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (36, 'body', '', '<?php require_once WEB_PAGES . ''/DNScrypt.php''; ?>', '<?php require_once WEB_PAGES . ''/DNScrypt.php''; ?>', 28);
 INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (37, 'body', '', '', '', 29);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (38, 'body', '', '<?php require_once ''/etc/MySB/web/pages/ChangeEmail.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/ChangeEmail.php''; ?>', 30);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (39, 'body', '', '<?php require_once ''/etc/MySB/web/pages/UserAdd.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/UserAdd.php''; ?>', 31);
-INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (40, 'body', '', '<?php require_once ''/etc/MySB/web/pages/Help_PlexMedia.php''; ?>', '<?php require_once ''/etc/MySB/web/pages/Help_PlexMedia.php''; ?>', 32);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (38, 'body', '', '<?php require_once WEB_PAGES . ''/ChangeEmail.php''; ?>', '<?php require_once WEB_PAGES . ''/ChangeEmail.php''; ?>', 30);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (39, 'body', '', '<?php require_once WEB_PAGES . ''/UserAdd.php''; ?>', '<?php require_once WEB_PAGES . ''/UserAdd.php''; ?>', 31);
+INSERT INTO [page_part] ([id], [name], [filter_id], [content], [content_html], [page_id]) VALUES (40, 'body', '', '<?php require_once WEB_PAGES . ''/Help_PlexMedia.php''; ?>', '<?php require_once WEB_PAGES . ''/Help_PlexMedia.php''; ?>', 32);
 
 -- Table: page_tag
 CREATE TABLE page_tag ( 

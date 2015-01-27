@@ -1,8 +1,9 @@
 #!/bin/bash
 # -----------------------------------------
-if [ -f /etc/MySB/inc/includes_before ]; then source /etc/MySB/inc/includes_before; fi
-# -----------------------------------------
 MySB_CurrentVersion=dev
+MySB_InstallDir="$InstallDir"
+# -----------------------------------------
+if [ -f $MySB_InstallDir/inc/includes_before ]; then source $MySB_InstallDir/inc/includes_before; fi
 # -----------------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -268,11 +269,11 @@ CountDown() {
 }
 
 if [ "$COMMAND" == "" ]; then
-	if [ -s /etc/MySB/version ]; then # Upgrade ?
+	if [ -s $MySB_InstallDir/version ]; then # Upgrade ?
 		echo -e -n "${CRED}MySB is already installed, aborting!$CEND"
 		echo -e -n "${CBLUE}To upgrade MySB, thank you use the following command.'$CEND"
 		echo -e -n "${CGREEN}	MySB_UpgradeMe'$CEND"
-		source /etc/MySB/inc/includes_after
+		source $MySB_InstallDir/inc/includes_after
 		exit 1
 	else # Install ?
 		BannerInstall
@@ -300,6 +301,29 @@ if [ "$COMMAND" == "" ]; then
 				exit 0
 			;;
 		esac
+
+		#
+		BannerInstall
+		echo
+		Count=0
+		while [ -z "$MySB_InstallDir" ] || [ -d $MySB_InstallDir ] || [ $IfEmpty -ne 0 ] || [ $Count -eq 0 ]; do
+			if [ -z "$MySB_InstallDir" ]; then
+				echo -e -n "${CBLUE}Where do you want to install MySB ? (Hit enter for default choice) [$InstallDir]$CEND "
+				read MySB_InstallDir $MySB_InstallDir
+			else
+				echo -e -n "${CYELLOW}The selected folder is not empty, choose another one:$CEND "
+				read MySB_InstallDir
+			fi
+			if [ -z "$MySB_InstallDir" ]; then
+				MySB_InstallDir="$InstallDir"
+			fi
+			MySB_InstallDir=${MySB_InstallDir%/}
+			if [ -d $MySB_InstallDir ]; then
+				IfEmpty="`ls -a $MySB_InstallDir | sed -e "/\.$/d" | wc -l`"
+			else
+				IfEmpty=0
+			fi
+		done
 
 		# First we do an update
 		BannerInstall
@@ -335,17 +359,17 @@ if [ "$COMMAND" == "" ]; then
 		#### download files from Git
 		BannerInstall
 		echo -e -n "${CBLUE}Downloading files from GitHub$CEND... "
-		git clone --progress -b $MySB_CurrentVersion https://github.com/toulousain79/MySB.git /etc/MySB >> /tmp/`basename $0`.log
+		git clone --progress -b $MySB_CurrentVersion https://github.com/toulousain79/MySB.git $MySB_InstallDir >> /tmp/`basename $0`.log
 		if [ $? -gt 0 ]; then
 			echo -e "${CRED}Looks like something was wrong with git clone, aborting !$CEND"
 			exit 1
 		else
 			#### Load variables and functions
-			echo -e "${CGREEN}Done !$CEND"
-			
+			echo -e "${CGREEN}Done !$CEND"	
+
 			echo -e -n "${CBLUE}Loading variables and functions$CEND..."
-			source /etc/MySB/inc/vars
-			source /etc/MySB/inc/funcs
+			source $MySB_InstallDir/inc/vars
+			source $MySB_InstallDir/inc/funcs
 			source /lib/lsb/init-functions
 			echo -e "${CGREEN}Done !$CEND"
 
@@ -356,13 +380,13 @@ if [ "$COMMAND" == "" ]; then
 
 			#### Create database
 			echo -e -n "${CBLUE}Creating databases$CEND..."
-			/bin/bash /etc/MySB/install/SQLite 'INSTALL' >> /tmp/`basename $0`.log
+			/bin/bash $MySB_InstallDir/install/SQLite 'INSTALL' >> /tmp/`basename $0`.log
 			if [ $? -gt 0 ]; then
 				echo -e -n "${CRED}Failed !$CEND"
 				echo ""
 				echo ""
 				echo -e "${CRED}Looks like something is wrong when creating the databases, aborting !$CEND"
-				if [ -f /etc/MySB/inc/includes_after ]; then source /etc/MySB/inc/includes_after; fi
+				if [ -f $MySB_InstallDir/inc/includes_after ]; then source $MySB_InstallDir/inc/includes_after; fi
 				exit 0
 			else
 				echo -e "${CGREEN}Done !$CEND"
@@ -376,7 +400,7 @@ if [ "$COMMAND" == "" ]; then
 				echo ""
 				echo ""
 				echo -e "${CRED}Looks like something is wrong when updating the database, aborting !$CEND"
-				if [ -f /etc/MySB/inc/includes_after ]; then source /etc/MySB/inc/includes_after; fi
+				if [ -f $MySB_InstallDir/inc/includes_after ]; then source $MySB_InstallDir/inc/includes_after; fi
 				exit 0
 			else
 				echo -e "${CGREEN}Done !$CEND"
@@ -384,21 +408,21 @@ if [ "$COMMAND" == "" ]; then
 				sleep 2
 
 				#### Some questions
-				/bin/bash /etc/MySB/install/Questions $$ 'INSTALL'
+				/bin/bash $MySB_InstallDir/install/Questions $$ 'INSTALL'
 				echo
 				echo
 
-				if [ -f /etc/MySB/DEV ]; then
+				if [ -f $MySB_InstallDir/DEV ]; then
 					QuestionGetString NO  "How do you want to start the installation ? Type 'manual' or 'auto' ?" DevInstallMode "manual"
 				fi
 
 				if [ "$DevInstallMode" == "manual" ]; then
-					/bin/bash /etc/MySB/install/MySB.bsh "manual"
+					/bin/bash $MySB_InstallDir/install/MySB.bsh "manual"
 				else
 					echo -e "${CBLUE}Starting SCREEN session...$CEND"
 
 					screen -wipe >> /tmp/`basename $0`.log
-					screen -dmS MySB_bsh /bin/bash /etc/MySB/install/MySB.bsh;
+					screen -dmS MySB_bsh /bin/bash $MySB_InstallDir/install/MySB.bsh;
 
 					echo -e -n "${CRED}Please wait $CEND"
 					CountDown 5
@@ -412,11 +436,11 @@ else
 	echo ""
 	echo ""
 	echo -e "${CRED}MySB is already started with SCREEN, aborting !$CEND"
-	if [ -f /etc/MySB/inc/includes_after ]; then source /etc/MySB/inc/includes_after; fi
+	if [ -f $MySB_InstallDir/inc/includes_after ]; then source $MySB_InstallDir/inc/includes_after; fi
 	exit 0
 fi
 
 # -----------------------------------------
-if [ -f /etc/MySB/inc/includes_after ]; then source /etc/MySB/inc/includes_after; fi
+if [ -f $MySB_InstallDir/inc/includes_after ]; then source $MySB_InstallDir/inc/includes_after; fi
 # -----------------------------------------
 ##################### LAST LINE ######################################

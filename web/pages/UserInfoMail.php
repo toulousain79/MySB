@@ -1,6 +1,6 @@
 <?php
 // ----------------------------------
-require_once  '/etc/MySB/web/inc/includes_before.php';
+require_once  dirname(__FILE__) . '/inc/includes_before.php';
 // ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -510,12 +510,12 @@ function PrintContent($user, $Case) {
 		<!-- // Main scripts -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle">Main scripts</th>
-			<td width="25%">/etc/MySB/scripts/BlocklistsRTorrent.bsh</td>
+			<td width="25%"><?php echo $system_datas["install_dir"];?>/scripts/BlocklistsRTorrent.bsh</td>
 			<td><span class="Comments">Use this for generate rTorrent blocklist. (CRON every day)</span></td>
 		</tr>
 		<tr align="left">
 			<th width="15%" scope="row"> </th>
-			<td width="25%">/etc/MySB/scripts/GetTrackersCert.bsh</td>
+			<td width="25%"><?php echo $system_datas["install_dir"];?>/scripts/GetTrackersCert.bsh</td>
 			<td><span class="Comments">Get all SSL certificates for all trackers. This script is start every time you add/edit trackers list in MySB portal.</span></td>
 		</tr>
 <?php } ?>
@@ -607,7 +607,7 @@ if ( (CountingUsers() >= 1) && (GetVersion() != "") ) {
 }
 
 // ----------------------------------
-require_once  '/etc/MySB/web/inc/includes_after.php';
+require_once  dirname(__FILE__) . '/inc/includes_after.php';
 // ----------------------------------
 //#################### LAST LINE ######################################
 ?>
