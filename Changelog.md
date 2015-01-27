@@ -7,14 +7,14 @@
 			- rTorrent v0.9.4 & libTorrent v0.13.4 (older versions are still present, it will soon be possible to switch from one version to another via the portal)
 			- BIND, block all inactivated trackers, add DNSsec
 			- OpenVPN, change clients pushed DNS
-			- Strengthening IP access policy, all access to the server are fully subject to the restriction by IP 
+			- Strengthening IP access policy, all access to the server are fully subject to the restriction by IP (can be disabled)
 			- Possibility for all users to allowing access by dynamic IP addresses
 			- Renew all certificates using SHA256 2048bits instead of SHA1 1024bits
-			- Add ruTorrent Plugins (Mobile and Pause WebUI)
-			- Allow monitoring (ping) from some providers
+			- Add ruTorrent Plugins (Mobile and Pause WebUI), some corrections
+			- Allow monitoring (ping) from some providers (OVH and ONLINE)
 			- Change Cakebox access by 'alias' instead of 'vhost'
 			- Add LoadAvg, free server analytics and monitoring
-			- Correcting issues with OVH server (OVH kernel)
+			- Correcting issues with OVH server (OVH kernel, look the warnings section in the README)
 			- Some modifications
 
 	Version v1.1
