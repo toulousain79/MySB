@@ -337,8 +337,7 @@ CREATE TABLE system (
     apt_date        DATETIME,
     server_provider VARCHAR( 16 ),
     ip_restriction  BOOLEAN( 1 )     DEFAULT ( 1 ),
-    install_dir     VARCHAR( 64 )    NOT NULL ON CONFLICT ABORT
-                                     DEFAULT ( '/etc/MySB' ) 
+    install_dir     VARCHAR( 64 ) 
 );
 
 INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password], [apt_update], [apt_date], [server_provider], [ip_restriction], [install_dir]) VALUES (1, '', '', '', '', '', '', '', '', 0, '', '', 1, '/etc/MySB');
