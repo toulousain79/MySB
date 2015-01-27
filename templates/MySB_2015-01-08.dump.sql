@@ -340,4 +340,4 @@ CREATE TABLE system (
     install_dir     VARCHAR( 64 ) 
 );
 
-INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password], [apt_update], [apt_date], [server_provider], [ip_restriction], [install_dir]) VALUES (1, '', '', '', '', '', '', '', '', 0, '', '', 1, '/etc/MySB');
+INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password], [apt_update], [apt_date], [server_provider], [ip_restriction], [install_dir]) VALUES (1, '', '', '', '', '', '', '', '', 0, '', '', 1, '');
