@@ -24,7 +24,7 @@ require_once dirname(__FILE__) . '/../inc/includes_before.php';
 //
 //#################### FIRST LINE #####################################
 
-if ($_SERVER['PHP_AUTH_USER'] == 'uWcd27MG') {
+if ($_SERVER['PHP_AUTH_USER'] == '##MySB_User##') {
 	$UserName = $_GET['user'];
 	$Case = $_GET['case'];
 } else {
