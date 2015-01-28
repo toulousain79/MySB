@@ -60,15 +60,16 @@ if ( $IsInstalled == '1' ) {
 			<p class="Comments">Beware, the application of these lists can take a long time and can make failed the page refresh.<br />
 				Especially if these lists were never downloaded.<br />
 			In this case, wait a while and then reapply your list by clicking on the button "Save changes", and then "Apply configuration".<br />
-			To avoid errors, enable <b>a list at a time</b>.</p>				
+			To avoid errors, enable <b>a list at a time</b>.</p>
 		</fieldset>
 	</div>
 <?php } ?>
 
-	<form class="form_settings" method="post" action="">	
+	<form class="form_settings" method="post" action="">
 		<div align="center">
+<?php if ( $IsMainUser ) { ?>
 			<input class="submit" style="width:120px; margin-bottom: 10px;" name="submit" type="submit" value="Save Changes">
-
+<?php } ?>
 			<table style="border-spacing:1;">
 				<tr>
 					<th style="text-align:center;">Name</th>
@@ -102,7 +103,7 @@ if ( $IsInstalled == '1' ) {
 				} else {
 					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" disabled>
 										<option value="0" selected="selected" class="redText">No</option>
-									</select>';					
+									</select>';
 				}
 				break;
 			default:
@@ -114,7 +115,7 @@ if ( $IsInstalled == '1' ) {
 				} else {
 					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" disabled>
 										<option value="1" selected="selected" class="greenText">Yes</option>
-									</select>';					
+									</select>';
 				}
 				break;
 		}
@@ -131,7 +132,7 @@ if ( $IsInstalled == '1' ) {
 					</td>
 					<td>
 						<?php echo $List["peerguardian_lastupdate"]; ?>
-					</td>					
+					</td>
 					<td>
 						<?php echo $default; ?>
 					</td>
@@ -143,7 +144,9 @@ if ( $IsInstalled == '1' ) {
 	} // foreach($BlockList as $List) {
 	?>
 			</table>
+<?php if ( $IsMainUser ) { ?>
 			<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
+<?php } ?>
 		</div>
 	</form>
 <?php

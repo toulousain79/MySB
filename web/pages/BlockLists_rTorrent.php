@@ -41,7 +41,7 @@ if (isset($_POST['submit'])) {
 		$message = 'Success!<br /><br />The blocklists have been apply for rTorrent AND PeerGuardian.';
 	} else {
 		$type = 'error';
-		$message = 'Failed ! It was not possible to update tracker in the MySB database.';	
+		$message = 'Failed ! It was not possible to update tracker in the MySB database.';
 	}
 
 	GenerateMessage('BlocklistsRTorrent.bsh', $type, $message, '');
@@ -50,10 +50,11 @@ if (isset($_POST['submit'])) {
 $BlockList = $MySB_DB->select("blocklists", "*", ["rtorrent_list[!]" => ""]);
 ?>
 
-<form class="form_settings" method="post" action="">	
+<form class="form_settings" method="post" action="">
 	<div align="center">
+<?php if ( $IsMainUser ) { ?>
 		<input class="submit" style="width:120px; margin-bottom: 10px;" name="submit" type="submit" value="Save Changes">
-
+<?php } ?>
 		<table style="border-spacing:1;">
 			<tr>
 				<th style="text-align:center;">Name</th>
@@ -87,7 +88,7 @@ foreach($BlockList as $List) {
 			} else {
 				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" disabled>
 									<option value="0" selected="selected" class="redText">No</option>
-								</select>';				
+								</select>';
 			}
 			break;
 		default:
@@ -99,7 +100,7 @@ foreach($BlockList as $List) {
 			} else {
 				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" disabled>
 									<option value="1" selected="selected" class="greenText">Yes</option>
-								</select>';				
+								</select>';
 			}
 			break;
 	}
@@ -129,7 +130,9 @@ foreach($BlockList as $List) {
 ?>
 
 		</table>
+<?php if ( $IsMainUser ) { ?>
 		<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
+<?php } ?>
 	</div>
 </form>
 
