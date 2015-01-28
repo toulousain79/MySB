@@ -138,44 +138,47 @@ MySB_UpgradeMe
 ## Complete uninstall of MySB
 Use this command on your terminal:
 ```
-bash $MySB_InstallDir/install/MySB_CleanAll.bsh
+bash <MySB_directory>/install/MySB_CleanAll.bsh
 ```
 
-###### BEWARE: The '$MySB_InstallDir' will be completely removed and all packages installed during the installation will be uninstalled !
+###### BEWARE: The MySB installation directory will be completely removed, and ALL installed packages will be purged.
 
 ## Commands
 
-After installing you will have access to the following commands to be used directly in terminal.
+After installation, you can access the following commands to be used directly in the terminal (can used in the portal too).
 
 	* MySB_ChangeUserPassword
 	* MySB_CreateUser
 	* MySB_DeleteUser
 	* MySB_SecurityRules (use this for generate all security options Nginx IP restricted access, IPtables, Fail2BanPeerGuardian, ...)
-	* MySB_GitHubRepoUpdate (update actual repository)
+	* MySB_GitHubRepoUpdate (update actual repository) (added to cron)
 	* MySB_RefreshMe (refresh ruTorrent, Seedbox-Manager, Cakebox-Light, LoadAvg)
-	* MySB_UpgradeMe (to migrate to a new version of MySB)
-	* MySB_UpgradeSystem (simply upgrade your system APT upgrade)
+	* MySB_UpgradeMe (to migrate to a new version of MySB) (added to cron to check if a new version is available, you will receive a mail)
+	* MySB_UpgradeSystem (simply upgrade your system with APT command)
 
 Additional scripts:
 
-	* '$MySB_InstallDir/scripts/BlocklistsRTorrent.bsh', use this for generate blocklist for rTorrent with 'ipv4_filter.load' command. (CRON every day at 23:00)	
-	* '$MySB_InstallDir/scripts/DynamicAddressResolver.bsh', used for auto update users dynamics addresses IP. (CRON every 5 minutes)
-	* '$MySB_InstallDir/scripts/GetTrackersCert.bsh', use this for get all SSL certificates for all tracker. You can add more trackers in MySB portal. This script is start every time you add/edit trackers list.	
-	* '$MySB_InstallDir/scripts/LogServer.bsh', used for generate HTML log files (Nginx, PeerGuardian, Fail2Ban,...) avalaible in MySB Portal. (CRON every 30 minutes)	
+	* '<MySB_directory>/scripts/BlocklistsRTorrent.bsh', use this for generate blocklist for rTorrent with 'ipv4_filter.load' command. (CRON every day at 23:00)	
+	* '<MySB_directory>/scripts/DynamicAddressResolver.bsh', used for auto update users dynamics addresses IP. (CRON every 5 minutes)
+	* '<MySB_directory>/scripts/GetTrackersCert.bsh', use this for get all SSL certificates for all tracker. You can add more trackers in MySB portal. This script is start every time you add/edit trackers list.	
+	* '<MySB_directory>/scripts/LogServer.bsh', used for generate HTML log files (Nginx, PeerGuardian, Fail2Ban,...) avalaible in MySB Portal. (CRON every 30 minutes)	
 
 ## MySB Portal
 
 To access services installed on your new server, point your browser to the following address (MySB portal):
 ```
-https://<Server IP or Server Name>:<https NginX port>/
+https://<Server_Name>:<HTTPS_Port>/
 ```
 
-###### Main user and normal users
-	* Users can change their password.
-	* Users can change their IP addresses for authorized connection (dynamic DNS included).
+###### Main and normal users
+	* Can change their password.
+	* Can change their IP addresses for authorized connection (dynamic DNS included).
+	* Can download OpenVPN config files.
+	* Direct access to the various services installed (ruTorrent, Cabox-Light, Seedbox-Manager, LoadAvg).
 
 ###### Normal users only
-	* Direct access to the various services installed (ruTorrent, Cabox-Light, Seedbox-Manager).
+	* Display activated blocklists (read only)
+	* Display activated trackers (read only)
 	
 ###### Main user only
 	* Direct access to the various services installed, like normal users plus others services (Webmin, Logs, Renting Infos, SMTP).
@@ -200,7 +203,14 @@ Author: MardamBeyK & Tuxity.
 https://github.com/Cakebox/Cakebox-light
 ```
 
-## BlockList
+## LoadAvg
+
+LoadAvg is a powerful way to manage load, memory, and resource usage on linux servers, cloud computers and virtual machines.
+```
+http://www.loadavg.com/
+```
+
+## BlockLists
 BlockList usage (optionnal), PeerGuardian or directly via rTorrent.
 Depending on your system, it is possible to use: 
 
@@ -209,12 +219,14 @@ Depending on your system, it is possible to use:
 	* By default, some list are activated. Check this list in MySB portal.
 	* All listed trackers in ruTorrent are available but disabled. You can add more or activate it via MySB portal.
 
-###### NOTE 1: 	Do not try to add your rtorrents ports in the list of incoming ports allowed in PeerGuardian (pglcmd.conf) !!!
-###### 			Using PeerGuardian will not have much sense ...
-###### 			Rather prefer permission trackers via the "allow.p2p" PeerGuardian file. To do this, use MySB portal.
-###### 			If PeerGuardian failed to start, rTorrent blocklists are used instead.
-######			All modifications applied by hand will be erased by MySB SecurityRules script.
-###### NOTE 2:	Do not activate all trackers, but only these needed.
+###### NOTE 1
+	Do not try to add your rtorrents ports in the list of incoming ports allowed in PeerGuardian (pglcmd.conf) !!! Using PeerGuardian will not have much sense...
+###### NOTE 2
+	If PeerGuardian failed to start, rTorrent blocklists are used instead.
+###### NOTE 3
+	All modifications applied by hand will be erased by MySB SecurityRules script.
+###### NOTE 4
+	Do not activate all trackers, but only these needed.
 
 OR
 
@@ -227,22 +239,23 @@ OR
 
 ## OpenVPN
 
-To use your VPN you will need a VPN client compatible with [OpenVPN](http://openvpn.net/index.php?option=com_content&id=357), necessary files to configure your connection are in this link in your box:
+To use your VPN you will need a VPN client compatible with [OpenVPN](http://openvpn.net/index.php?option=com_content&id=357).
+Necessary files to configure your connection are available here:
 ```
-http://<Server IP or Server Name>:<https NginX port>/?user/openvpn-config-file.html` and use it in any OpenVPN client.
+http://<Server_Name>:<HTTPs_Port>/?user/openvpn-config-file.html
 ```
 ##### NFS and Samba share with OpenVPN
-For NFS, you can mount the '/home/<username>/rtorrent' like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
+For NFS, you can mount the '/home/<User>/rtorrent' like below. The IP address can be different depending on the OpenVPN configuration that you have selected.
 ```
-mount -t nfs [10.0.0.1|10.0.1.1]:/home/<username>/rtorrent <mount_dir> -o  -o vers=3
+mount -t nfs [10.0.0.1|10.0.1.1]:/home/<User>/rtorrent <mount_dir> -o  -o vers=3
 ```
-For Samba, you can mount the '/home/<username>' like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
+For Samba, you can mount the '/home/<User>' like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
 ```
-mount - <mount_dir> -t cifs -o noatime,nodiratime,UNC=//[10.0.0.1|10.0.1.1]/<username>,username=<username>,password=<your_password>
+mount - <mount_dir> -t cifs -o noatime,nodiratime,UNC=//[10.0.0.1|10.0.1.1]/<User>,username=<User>,password=<Password>
 ```
 
 ## DNScrypt-proxy
-By default, all provider that accept 'dnssec' and 'no_logs' are activated.
+By default, all provider that accept 'DNSsec' and 'No Logs' are activated.
 The full list of DNScrypt resolvers is available at: https://github.com/jedisct1/dnscrypt-proxy/blob/master/dnscrypt-resolvers.csv 
 
 It is possible to change the provider list by command line:
@@ -251,12 +264,13 @@ service dnscrypt-proxy {stop|status} [{start|restart} [--all] [[--nologs=yes|no]
 ```
 
 To clean Bind cache, just restart BIND service.
+BIND will restart every DNScrypt-proxy restarts.
 ```
 service bind9 restart
 ```
 
 ## SMTP authentification
-If you want to use GMAIL provider, maybe should you read this for authorize connexion to your account by your server.
+If you want to use GMAIL provider, maybe should you read this for authorize connexion to your account by your server JUST BEFORE installation.
 ```
 https://www.google.com/accounts/DisplayUnlockCaptcha
 ```
