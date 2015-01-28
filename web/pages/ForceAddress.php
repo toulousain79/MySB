@@ -1,6 +1,8 @@
 <?php
 // ----------------------------------
-require_once dirname(__FILE__) . '/../inc/includes_before.php';
+$IncludeBeforeFile = dirname(__FILE__) . '/../inc/includes_before.php';
+$IncludeAfterFile = dirname(__FILE__) . '/../inc/includes_after.php';
+require_once $IncludeBeforeFile;
 // ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -31,7 +33,7 @@ if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ManageAddresses') ) {
 }
 
 // ----------------------------------
-require_once dirname(__FILE__) . '/../inc/includes_after.php';
+require_once $IncludeAfterFile;
 // ----------------------------------
 //#################### LAST LINE ######################################
 ?>

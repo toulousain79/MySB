@@ -22,6 +22,9 @@
 //
 //#################### FIRST LINE #####################################
 
+if isset($IncludeBeforeFile) { unset($IncludeBeforeFile); }
+if isset($IncludeAfterFile) { unset($IncludeAfterFile); }
+
 if ( (isset($_SERVER['PHP_AUTH_USER'])) && (isset($_SERVER['PHP_AUTH_PW'])) ) {
 	CheckWolfDB($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
 }
