@@ -82,19 +82,19 @@ DoApplyConfig() {
 
 	# 3 - On peut maintenant exécuté les commandes une à une dans l'ordre ascendant des priorités.
 	#AllCommands="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT commands, user FROM commands WHERE 1 ORDER BY priority ASC\"`"
-	AllCommands="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT commands FROM commands WHERE user = '$User' ORDER BY priority ASC\"`"
+	AllCommands="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT commands,priority FROM commands WHERE user = '$User' ORDER BY priority ASC\"`"
 	
 	
 	#for MyCommand in $AllCommands; do
 	for Command in $AllCommands; do
-		#Command=`echo $MyCommand | awk '{split($0,a,"|"); print a[1]}'`
-		#User=`echo $MyCommand | awk '{split($0,a,"|"); print a[2]}'`
+		Command="`echo $Command | awk '{split($0,a,"|"); print a[1]}'`"
+		Priority="`echo $Command | awk '{split($0,a,"|"); print a[2]}'`"
 
 		# Creating arguments listing
 		case "$Command" in
 			MySB_CreateUser|MySB_DeleteUser|MySB_ChangeUserPassword) # 3 args
 				echo `date +%H:%m:%S` "- Getting arguments for $Command"
-				CommandArg="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT args FROM commands WHERE commands = '$Command' AND user = '$User'\"`"
+				CommandArg="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT args FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'\"`"
 			;;
 		esac
 
@@ -111,7 +111,7 @@ DoApplyConfig() {
 				WaitingSTD MySB_CreateUser
 				screen -dmS MySB_CreateUser /bin/bash $MySB_InstallDir/bin/MySB_CreateUser "$UserToCreate" "$UserSftp" "$UserSudo" "$UserMail" "APPLYCONFIG";
 				WaitingSTD MySB_CreateUser
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND args = '$CommandArg'"
+				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			"MySB_DeleteUser") # 1 args
@@ -120,7 +120,7 @@ DoApplyConfig() {
 				WaitingSTD MySB_DeleteUser
 				screen -dmS MySB_DeleteUser /bin/bash $MySB_InstallDir/bin/MySB_DeleteUser "$UserToDelete" "APPLYCONFIG";
 				WaitingSTD MySB_DeleteUser
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND args = '$CommandArg'"
+				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			"MySB_ChangeUserPassword") # 2 args
@@ -131,7 +131,7 @@ DoApplyConfig() {
 				WaitingSTD MySB_ChangeUserPassword
 				screen -dmS MySB_ChangeUserPassword /bin/bash $MySB_InstallDir/bin/MySB_ChangeUserPassword "$UserName" "$UserPass" "APPLYCONFIG";
 				WaitingSTD MySB_ChangeUserPassword
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND args = '$CommandArg'"
+				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			# "Blocklists")
@@ -148,35 +148,35 @@ DoApplyConfig() {
 				WaitingSTD BlocklistsRTorrent
 				screen -dmS BlocklistsRTorrent /bin/bash $MySB_InstallDir/scripts/BlocklistsRTorrent.bsh "APPLYCONFIG";
 				WaitingSTD BlocklistsRTorrent
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
+				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			"Blocklists_PeerGuardian")
 				WaitingSTD MySB_SecurityRules
 				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "--blocklists" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
+				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			"DNScrypt")
 				WaitingSTD MySB_SecurityRules
 				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "--dnscrypt" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
+				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 			
 			"ManageAddresses")
 				WaitingSTD MySB_SecurityRules
 				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "--users" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
+				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;			
 
 			"MySB_SecurityRules")
 				WaitingSTD MySB_SecurityRules
 				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
+				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			"GetTrackersCert.bsh")
@@ -187,14 +187,14 @@ DoApplyConfig() {
 				WaitingSTD MySB_SecurityRules
 				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "--trackers" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
+				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			"Postfix")
 				WaitingSTD Postfix
 				screen -dmS Postfix /bin/bash $MySB_InstallDir/install/Postfix "APPLYCONFIG";
 				WaitingSTD Postfix
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
+				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 		esac
 	done

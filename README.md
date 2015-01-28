@@ -22,7 +22,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 	* PHP5-FPM (php5-apcu, FastCGI, SSL)
 	* SFTP with Chroot
 	* VSFTPd (FTP over TLS)
-	* Postfix with SMTP authentication (Gmail, Free, Ovh and Yahoo)
+	* Postfix with (or without) SMTP authentication (Gmail, Free, Ovh and Yahoo)
 
 ## Services available
 
@@ -65,7 +65,8 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 	
 	* Possibility to restart rTorrent via the portal without having Seedbox-Manager for each user
 	* Possibility to switch rTorrent version (v0.9.2 to v0.9.4), and vice versa
-	* Possiblity to add more blocklists
+	* Possibility to add more blocklists
+	* Possibility to delete/inactivate a user
 
 ## Bugs
 
@@ -92,7 +93,8 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 	
 ###### NOTE: For OVH servers:
 
-	--> Use the default distribution kernel. When you start the installation process, choose "Custom install", and "Use of kernel distribution".
+	--> Use the default distribution kernel.
+		When you start the installation process, choose "Custom install", and "Use of kernel distribution".
 	
 	--> You can monitor your server, simply specify it during MySB installation.
 		BUT I still advice to disable this service in the OVH interface.
