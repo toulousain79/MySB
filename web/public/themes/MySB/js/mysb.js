@@ -8,11 +8,11 @@ select.onchange = function () {
 function SMTP_ChangeValues(JSON_File, Email, Username, Password) {
 		$(function() {
 				$("#json-provider").change(function() {
-	
+
 					var $dropdown = $(this);
-				
+
 					$.getJSON(JSON_File, function(data) {
-					
+
 						var key = $dropdown.val();
 						var host = [];
 						document.getElementById("SmtpUsername").value = Username;
@@ -20,7 +20,7 @@ function SMTP_ChangeValues(JSON_File, Email, Username, Password) {
 						document.getElementById("SmtpPasswdConfirm").value = Password;
 						document.getElementById("SmtpEmail").value = Email;
 						port = '465';
-											
+
 						switch(key) {
 							case 'LOCAL':
 								host = data.LOCAL;
@@ -34,7 +34,6 @@ function SMTP_ChangeValues(JSON_File, Email, Username, Password) {
 								break;
 							case 'YAHOO':
 								host = data.YAHOO;
-								
 								break;
 							case 'OVH':
 								host = data.OVH;
@@ -43,7 +42,7 @@ function SMTP_ChangeValues(JSON_File, Email, Username, Password) {
 								host = data.GMAIL;
 								break;
 						}
-						
+
 						var $jsontwo = $("#json-host");
 						$jsontwo.empty();
 						$jsontwo.append("<option value=\"" + host + "\">" + host + "</option>");

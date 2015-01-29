@@ -25,7 +25,6 @@
 function Form() {
 	global $MySB_DB;
 
-	// Users table
 	$smtp_datas = $MySB_DB->get("smtp", [
 											"smtp_provider",
 											"smtp_username",
@@ -54,7 +53,7 @@ function Form() {
 			<tr>
 				<td>Provider :</td>
 				<td>
-					<select name="SmtpProvider" id="json-provider" style="width:100px; height: 28px; cursor: pointer;">';
+					<select name="SmtpProvider" id="json-provider" style="width:100px; height: 28px;">';
 
 					foreach($ProvidersList as $Providers) {
 						if ( $SmtpProvider == $Providers) {

@@ -38,6 +38,8 @@ switch ($IsMainUser) {
 				<li>The addition of new trackers</li>
 				<li>Blocklists activation for rTorrent and/or PeerGuardian <span class="Comments">(if installed)</span></li>
 				<li>Rental management</li>
+				<li>SMTP management</li>
+				<li>Users management</li>
 				<li>Viewing logs</li>
 			</ul>
 			<p>More of the following:</p>

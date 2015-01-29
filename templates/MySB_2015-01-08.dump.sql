@@ -64,52 +64,6 @@ CREATE TABLE smtp (
 
 INSERT INTO [smtp] ([id_smtp], [smtp_provider], [smtp_username], [smtp_passwd], [smtp_host], [smtp_port], [smtp_email]) VALUES (1, '', '', '', '', '', '');
 
--- Table: services
-CREATE TABLE services ( 
-    id_services    INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                  NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT ABORT,
-    serv_name      VARCHAR( 32 )  NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT IGNORE,
-    ident          VARCHAR( 64 ),
-    bin            VARCHAR( 32 ),
-    priority       INTEGER( 1 )   DEFAULT ( 1 ),
-    port_tcp1      VARCHAR( 11 ),
-    port_tcp2      VARCHAR( 11 ),
-    port_tcp3      VARCHAR( 11 ),
-    ports_tcp_list VARCHAR( 32 ),
-    port_udp1      VARCHAR( 11 ),
-    port_udp2      VARCHAR( 11 ),
-    port_udp3      VARCHAR( 11 ),
-    ports_udp_list VARCHAR( 32 ),
-    to_install     BOOLEAN( 1 )   DEFAULT ( 0 ),
-    is_installed   BOOLEAN        NOT NULL ON CONFLICT ABORT
-                                  DEFAULT ( 0 ) 
-);
-
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (1, 'Seedbox-Manager', '', '', 1, '', '', '', '', '', '', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (2, 'CakeBox-Light', '', '', 1, '', '', '', '', '', '', '', '', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (3, 'Plex Media Server', '/etc/default/plexmediaserver', '/etc/init.d/plexmediaserver', 1, '', '', '', '32400 32469', '', '', ' ', '1900 5353 2410 32412 32413 32414', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (4, 'Webmin', '/etc/webmin', '/etc/init.d/webmin', 1, 8890, '', '', '', '', '', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (5, 'OpenVPN', '/etc/openvpn', 'openvpn', 1, 8893, 8894, '', '', '', '', '', '', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (6, 'LogWatch', '', '', 1, '', '', '', '', '', '', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (7, 'Fail2Ban', '/etc/fail2ban', '/etc/init.d/fail2ban', 3, '', '', '', '', '', '', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (8, 'PeerGuardian', '/etc/pgl', 'pglcmd', 4, '', '', '', '', '', '', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (9, 'rTorrent Block List', '', '', 1, '', '', '', '', '', ' ', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (10, 'DNScrypt-proxy', 'dnscrypt-proxy', 'dnscrypt-proxy', 2, '', '', '', '', '', ' ', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (11, 'CRON', 'crontab', 'cron', 1, '', '', '', '', '', ' ', ' ', ' ', 1, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (12, 'NginX', '/etc/nginx', 'nginx', 1, 8889, 8888, '', '', '', '', '', '', 1, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (13, 'SSH', '/etc/ssh', 'ssh', 1, 8892, '', '', '', '', '', '', '', 1, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (14, 'VSFTPd', '/etc/vsftpd', 'vsftpd', 1, 8891, 8800, '65000:65535', '', '', '', '', '', 1, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (15, 'PHP5-FPM', '/etc/php5', 'php5-fpm', 1, '', '', '', '', '', ' ', ' ', ' ', 1, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (16, 'Postfix', '/etc/postfix', 'postfix', 1, '', '', '', '', '', ' ', ' ', ' ', 1, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (17, 'Networking', '/etc/network', '/etc/init.d/networking', 1, '', '', '', '', '', ' ', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (18, 'Samba', '/etc/samba', 'samba', 1, '', '', '', '', '', ' ', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (19, 'NFS', '/etc/exports', 'nfs-kernel-server', 1, '', '', '', '', '', ' ', ' ', ' ', 1, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (20, 'BIND', '/etc/bind/named.conf', 'bind9', 1, '', '', '', '', '', ' ', ' ', ' ', 1, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (21, 'Stunnel', '/etc/stunnel', 'stunnel4', 1, '', '', '', '', '', ' ', ' ', ' ', 0, 0);
-INSERT INTO [services] ([id_services], [serv_name], [ident], [bin], [priority], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (22, 'rTorrent', '/home/%user%', 'rtorrent', 1, null, null, null, null, null, null, null, null, 1, 0);
-
 -- Table: trackers_list
 CREATE TABLE trackers_list ( 
     id_trackers_list INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -322,6 +276,51 @@ CREATE TABLE system (
 
 INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password], [apt_update], [apt_date], [server_provider], [ip_restriction], [install_dir]) VALUES (1, '', '', '', '', '', '', '', '', 0, '', '', 1, '');
 
+-- Table: services
+CREATE TABLE services ( 
+    id_services    INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                  NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT ABORT,
+    serv_name      VARCHAR( 32 )  NOT NULL ON CONFLICT ABORT
+                                  UNIQUE ON CONFLICT IGNORE,
+    bin            VARCHAR( 32 ),
+    port_tcp1      VARCHAR( 11 ),
+    port_tcp2      VARCHAR( 11 ),
+    port_tcp3      VARCHAR( 11 ),
+    ports_tcp_list VARCHAR( 32 ),
+    port_udp1      VARCHAR( 11 ),
+    port_udp2      VARCHAR( 11 ),
+    port_udp3      VARCHAR( 11 ),
+    ports_udp_list VARCHAR( 32 ),
+    to_install     BOOLEAN( 1 )   DEFAULT ( 0 ),
+    is_installed   BOOLEAN        NOT NULL ON CONFLICT ABORT
+                                  DEFAULT ( 0 ) 
+);
+
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (1, 'Seedbox-Manager', '', '', '', '', '', '', '', ' ', ' ', 0, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (2, 'CakeBox-Light', '', '', '', '', '', '', '', '', '', 0, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (3, 'Plex Media Server', '', '', '', '', '32400 32469', '', '', ' ', '1900 5353 2410 32412 32413 32414', 0, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (4, 'Webmin', '', 8890, '', '', '', '', '', ' ', ' ', 0, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (5, 'OpenVPN', '', 8893, 8894, '', '', '', '', '', '', 0, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (6, 'LogWatch', '', '', '', '', '', '', '', ' ', ' ', 0, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (7, 'Fail2Ban', '', '', '', '', '', '', '', ' ', ' ', 0, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (8, 'PeerGuardian', '', '', '', '', '', '', '', ' ', ' ', 0, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (9, 'rTorrent Block List', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (10, 'DNScrypt-proxy', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (11, 'CRON', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (12, 'NginX', '', 8889, 8888, '', '', '', '', '', '', 1, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (13, 'SSH', '', 8892, '', '', '', '', '', '', '', 1, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (14, 'VSFTPd', '', 8891, 8800, '65000:65535', '', '', '', '', '', 1, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (15, 'PHP5-FPM', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (16, 'Postfix', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (17, 'Networking', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (18, 'Samba', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (19, 'NFS', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (20, 'BIND', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (21, 'Stunnel', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (22, 'rTorrent v0.9.2', '/usr/bin/rtorrent', null, null, null, null, null, null, null, null, 1, 0);
+INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (23, 'rTorrent v0.9.4', '/usr/local/bin/rtorrent', null, null, null, null, null, null, null, null, 1, 0);
+
 -- Table: users
 CREATE TABLE users ( 
     id_users         INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -339,6 +338,7 @@ CREATE TABLE users (
     rtorrent_port    INTEGER( 5 ),
     home_dir         VARCHAR( 128 ),
     is_active        BOOLEAN( 1 )    DEFAULT ( 1 ),
-    rtorrent_version VARCHAR( 6 )    DEFAULT ( '0.9.4' ) 
+    rtorrent_version VARCHAR( 6 )    DEFAULT ( '0.9.4' ),
+    rtorrent_restart BOOLEAN( 1 )    DEFAULT ( '0' ) 
 );
 
