@@ -68,7 +68,6 @@ if ( isset($_POST['submit']) ) {
 	$confirm_pwd = $_POST['confirm_pwd'];
 	$args = '';
 	$command = 'MySB_ChangeUserPassword';
-	$timeout = '';
 
 	if ( ($current_pwd != '') && ($new_pwd != '') && ($confirm_pwd != '') ) {
 		if ( $current_pwd == $AuthPassword ) {
@@ -123,7 +122,7 @@ if ( isset($_POST['submit']) ) {
 		$message = 'Please, complete all fields.';	
 	}
 
-	GenerateMessage($command, $type, $message, $args, $timeout);
+	GenerateMessage($command, $type, $message, $args);
 
 	if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') ) { // by NewUser.php
 		session_start();

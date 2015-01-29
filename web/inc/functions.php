@@ -446,15 +446,6 @@ function GenerateMessage($commands, $type, $message, $args) {
 
 					$value = $MySB_DB->insert("commands", ["commands" => "$commands", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
 
-					// switch ($commands) {
-						// case "BlocklistsRTorrent.bsh":
-						// case "GetTrackersCert.bsh":
-						// case "Postfix":
-							// $priority++;
-							// $value = $MySB_DB->insert("commands", ["commands" => "MySB_SecurityRules", "reload" => 1, "priority" => "$priority", "user" => "$CurrentUser"]);
-							// break;
-					// }
-
 					echo '<script type="text/javascript">ApplyConfig("ToUpdate");</script>';
 
 					break;

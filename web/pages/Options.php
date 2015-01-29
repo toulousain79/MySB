@@ -22,14 +22,69 @@
 //
 //#################### FIRST LINE #####################################
 
+global $MySB_DB, $users_datas, $CurrentUser;
+
 function Form() {
+	$ToRestart = $users_datas['rtorrent_restart'];
+	$CurrentVersion = $users_datas['rtorrent_version'];
+	$rTorrentRestart = array('No', 'Yes');
+	$rTorrentVersionsList = array('v0.9.2', 'v0.9.4');
+
 	echo '<form class="form_settings" method="post" action="">
 			<div align="center"><table border="0">
 				<tr>
-					<td>Under construction...</td>
+					<td>rTorrent version:</td>
+					<td>
+						<select name="rTorrentVersion" style="width:80px; height: 28px;">';
+
+					foreach($rTorrentVersionsList as $rTorrentVersion) {
+						if ( $CurrentVersion == $rTorrentVersion) {
+							echo '<option selected="selected" value="' . $rTorrentVersion . '">' . $rTorrentVersion . '</option>';
+						} else {
+							echo '<option value="' . $rTorrentVersion . '">' . $rTorrentVersion . '</option>';
+						}
+					}
+	echo '
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td>Restart rTorrent ?</td>
+					<td>
+						<select name="rTorrentRestart" style="width:80px; height: 28px;">';
+
+					foreach($rTorrentRestart as $YesNo) {
+						if ( $ToRestart == $YesNo) {
+							echo '<option selected="selected" value="' . $YesNo . '">' . $YesNo . '</option>';
+						} else {
+							echo '<option value="' . $YesNo . '">' . $YesNo . '</option>';
+						}
+					}
+	echo '
+						</select>					
+					</td>
+				</tr>
+
+				<tr>
+					<td colspan="3"><input class="submit" name="submit" type="submit" value="Submit" /></td>
 				</tr>
 			</table></div>
 		</form>';
+}
+
+if (isset($_POST['submit'])) {
+	$rTorrentVersion = $_POST['rTorrentVersion'];
+
+	$result = $MySB_DB->update("users", ["rtorrent_version" => "$rTorrentVersion"], ["users_ident" => "$CurrentUser"]);
+
+	if( $result == 1 ) {
+		$type = 'success';
+	} else {
+		$type = 'error';
+		$message = 'Failed ! It was not possible to update the MySB database.';
+	}
+	
+	GenerateMessage('message_only', $type, $message);
 }
 
 Form();
