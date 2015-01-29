@@ -29,7 +29,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 	* PeerGuardian (optionnal but recommended)
 	* DNScrypt-proxy with Bind9 as DNS caching (optionnal but recommended)	
 	* Fail2ban (optionnal but recommended)
-	* Seedbox-Manager (optionnal but recommended)
+	* Seedbox-Manager (optionnal, you are able to restart rTorrent session via MySB portal)
 	* OpenVPN (optionnal); Multi TUN configuration, with or without redirection of traffic. Add AES-NI support.
 	* Webmin (optionnal)
 	* BlockList usage (optionnal) (PeerGuardian or rTorrent, if PeerGuardian failed to start, rTorrent will use its own blocklists)
@@ -38,7 +38,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 	* Samba share for each users (VPN access)
 	* NFS share for each users (VPN access)
 	* Auto retrieve SSL certificates for all trackers (if available)
-	* MySB portal, ability to manage trackers, blocklists, logs, users and more
+	* MySB portal, ability to manage trackers, blocklists, logs, users, restart rTorrent, switch of rTorrent version, and more
 	* Block all possibilities to use any listed trackers that was not activated in MySB portal
 	* LoadAvg, free server analytics and monitoring
 	* Monitoring service available for some providers
@@ -62,9 +62,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 	* Favicons trackers
 
 ## Coming soon
-	
-	* Possibility to restart rTorrent via the portal without having Seedbox-Manager for each user
-	* Possibility to switch rTorrent version (v0.9.2 to v0.9.4), and vice versa
+
 	* Possibility to add more blocklists
 	* Possibility to delete/inactivate a user
 

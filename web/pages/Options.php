@@ -24,9 +24,11 @@
 
 global $MySB_DB, $users_datas, $CurrentUser;
 
+$CurrentVersion = $users_datas['rtorrent_version'];
+$rTorrentRestart = $users_datas['rtorrent_restart'];
+$Command = 'message_only';
+
 function Form() {
-	$ToRestart = $users_datas['rtorrent_restart'];
-	$CurrentVersion = $users_datas['rtorrent_version'];
 	$rTorrentRestart = array('No', 'Yes');
 	$rTorrentVersionsList = array('v0.9.2', 'v0.9.4');
 
@@ -53,15 +55,18 @@ function Form() {
 					<td>
 						<select name="rTorrentRestart" style="width:80px; height: 28px;">';
 
-					foreach($rTorrentRestart as $YesNo) {
-						if ( $ToRestart == $YesNo) {
-							echo '<option selected="selected" value="' . $YesNo . '">' . $YesNo . '</option>';
-						} else {
-							echo '<option value="' . $YesNo . '">' . $YesNo . '</option>';
+						switch ($rTorrentRestart) {
+							case '1':
+								echo '<option selected="selected" value="1">Yes</option>';
+								echo '<option value="0">No</option>';
+								break;
+							default:
+								echo '<option value="1">Yes</option>';
+								echo '<option selected="selected" value="0">No</option>';
+								break;
 						}
-					}
 	echo '
-						</select>					
+						</select>
 					</td>
 				</tr>
 
@@ -74,8 +79,14 @@ function Form() {
 
 if (isset($_POST['submit'])) {
 	$rTorrentVersion = $_POST['rTorrentVersion'];
+	$rTorrentRestart = $_POST['rTorrentRestart'];
+	
+	if ( ($rTorrentVersion != $CurrentVersion) || ($rTorrentRestart == "1") ) {
+		$rTorrentRestart = 1;
+		$Command = 'Options';
+	}
 
-	$result = $MySB_DB->update("users", ["rtorrent_version" => "$rTorrentVersion"], ["users_ident" => "$CurrentUser"]);
+	$result = $MySB_DB->update("users", ["rtorrent_version" => "$rTorrentVersion", "rtorrent_restart" => "$rTorrentRestart"], ["users_ident" => "$CurrentUser"]);
 
 	if( $result == 1 ) {
 		$type = 'success';
@@ -83,8 +94,8 @@ if (isset($_POST['submit'])) {
 		$type = 'error';
 		$message = 'Failed ! It was not possible to update the MySB database.';
 	}
-	
-	GenerateMessage('message_only', $type, $message);
+
+	GenerateMessage($Command, $type, $message);
 }
 
 Form();
