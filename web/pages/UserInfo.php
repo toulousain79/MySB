@@ -25,8 +25,6 @@
 function printUser($user) {
 	global $MySB_DB, $system_datas, $users_datas, $Port_HTTPs;
 
-	// System infos
-	$MySB_InstallDir = $system_datas["install_dir"];
 	// Users infos	
 	$UserID = $users_datas["id_users"];
 	$UserPasswd = $users_datas["users_passwd"];	

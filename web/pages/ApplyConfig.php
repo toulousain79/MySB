@@ -23,10 +23,9 @@
 //#################### FIRST LINE #####################################
 
 if ( IfApplyConfig() > 0 ) {
-	global $MySB_DB, $CurrentUser, $system_datas;
-	$MySB_InstallDir = $system_datas["install_dir"];
+	global $MySB_DB, $CurrentUser;
 
-	exec("sudo /bin/bash $MySB_InstallDir/scripts/ApplyConfig.bsh $CurrentUser DO_APPLY", $output, $result);
+	exec("sudo /bin/bash ".MYSB_ROOT."/scripts/ApplyConfig.bsh $CurrentUser DO_APPLY", $output, $result);
 
 	if ( $result == 0 ) {
 		$type = 'success';

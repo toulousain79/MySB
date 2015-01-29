@@ -510,12 +510,12 @@ function PrintContent($user, $Case) {
 		<!-- // Main scripts -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle">Main scripts</th>
-			<td width="25%"><?php echo $system_datas["install_dir"];?>/scripts/BlocklistsRTorrent.bsh</td>
+			<td width="25%"><?php echo MYSB_ROOT;?>/scripts/BlocklistsRTorrent.bsh</td>
 			<td><span class="Comments">Use this for generate rTorrent blocklist. (CRON every day)</span></td>
 		</tr>
 		<tr align="left">
 			<th width="15%" scope="row"> </th>
-			<td width="25%"><?php echo $system_datas["install_dir"];?>/scripts/GetTrackersCert.bsh</td>
+			<td width="25%"><?php echo MYSB_ROOT;?>/scripts/GetTrackersCert.bsh</td>
 			<td><span class="Comments">Get all SSL certificates for all trackers. This script is start every time you add/edit trackers list in MySB portal.</span></td>
 		</tr>
 <?php } ?>

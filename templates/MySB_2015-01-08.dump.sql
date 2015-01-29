@@ -254,28 +254,6 @@ INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version],
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (30, 'GIT', '/web/rutorrent/plugins/mobile', 'ruTorrent Plugin Mobile', null, null, null, 'https://github.com/xombiemp/rutorrentMobile.git', 1);
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (31, 'GIT', '/web/rutorrent/plugins/autodl-irssi', 'ruTorrent Plugin Autodl-irssi', null, null, null, 'https://github.com/autodl-community/autodl-rutorrent.git', 0);
 
--- Table: system
-CREATE TABLE system ( 
-    id_system       INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
-                                     NOT NULL ON CONFLICT ABORT,
-    mysb_version    VARCHAR( 6 )     NOT NULL ON CONFLICT ABORT
-                                     UNIQUE ON CONFLICT IGNORE,
-    mysb_user       VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
-    mysb_password   VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
-    hostname        VARCHAR( 128 )   UNIQUE ON CONFLICT IGNORE,
-    ipv4            VARCHAR( 15 )    UNIQUE ON CONFLICT IGNORE,
-    primary_inet    VARCHAR( 16 )    UNIQUE ON CONFLICT IGNORE,
-    timezone        VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
-    cert_password   VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
-    apt_update      BOOLEAN( 1 )     DEFAULT ( 1 ),
-    apt_date        DATETIME,
-    server_provider VARCHAR( 16 ),
-    ip_restriction  BOOLEAN( 1 )     DEFAULT ( 1 ),
-    install_dir     VARCHAR( 64 ) 
-);
-
-INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password], [apt_update], [apt_date], [server_provider], [ip_restriction], [install_dir]) VALUES (1, '', '', '', '', '', '', '', '', 0, '', '', 1, '');
-
 -- Table: services
 CREATE TABLE services ( 
     id_services    INTEGER        PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -342,3 +320,24 @@ CREATE TABLE users (
     rtorrent_restart BOOLEAN( 1 )    DEFAULT ( '0' ) 
 );
 
+
+-- Table: system
+CREATE TABLE system ( 
+    id_system       INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
+                                     NOT NULL ON CONFLICT ABORT,
+    mysb_version    VARCHAR( 6 )     NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE,
+    mysb_user       VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
+    mysb_password   VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
+    hostname        VARCHAR( 128 )   UNIQUE ON CONFLICT IGNORE,
+    ipv4            VARCHAR( 15 )    UNIQUE ON CONFLICT IGNORE,
+    primary_inet    VARCHAR( 16 )    UNIQUE ON CONFLICT IGNORE,
+    timezone        VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
+    cert_password   VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
+    apt_update      BOOLEAN( 1 )     DEFAULT ( 1 ),
+    apt_date        DATETIME,
+    server_provider VARCHAR( 16 ),
+    ip_restriction  BOOLEAN( 1 )     DEFAULT ( 1 ) 
+);
+
+INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password], [apt_update], [apt_date], [server_provider], [ip_restriction]) VALUES (1, '', '', '', '', '', '', '', '', 0, '', '', 1);

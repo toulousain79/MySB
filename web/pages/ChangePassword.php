@@ -22,6 +22,8 @@
 //
 //#################### FIRST LINE #####################################
 
+global $MySB_DB, $CurrentUser;
+
 if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') && isset($_GET['passwd']) ) {
 	$opts = 'readonly="true" style="cursor: default;" value="' . $_GET['passwd'] . '"';
 	$AuthPassword = $_GET['passwd'];
@@ -60,9 +62,6 @@ echo '
 	';
 
 if ( isset($_POST['submit']) ) {
-	global $MySB_DB, $CurrentUser, $system_datas;
-
-	$MySB_InstallDir = $system_datas["install_dir"];
 	$current_pwd = $_POST['current_pwd'];
 	$new_pwd = $_POST['new_pwd'];
 	$confirm_pwd = $_POST['confirm_pwd'];
@@ -87,7 +86,7 @@ if ( isset($_POST['submit']) ) {
 						$value = $MySB_DB->insert("commands", ["commands" => "$command", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
 					
 						if ( $result > 0 ) {
-							exec("sudo /bin/bash $MySB_InstallDir/scripts/ApplyConfig.bsh '$CurrentUser' 'DO_APPLY'", $output, $result);
+							exec("sudo /bin/bash ".MYSB_ROOT."/scripts/ApplyConfig.bsh '$CurrentUser' 'DO_APPLY'", $output, $result);
 
 							if ( $result == 0 ) {
 								$type = 'success';
