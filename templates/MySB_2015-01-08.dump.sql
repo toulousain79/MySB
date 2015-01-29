@@ -173,26 +173,6 @@ CREATE TABLE dnscrypt_resolvers (
 );
 
 
--- Table: users
-CREATE TABLE users ( 
-    id_users      INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                  NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT ABORT,
-    users_ident   VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
-                                  UNIQUE ON CONFLICT IGNORE,
-    users_email   VARCHAR( 260 )  NOT NULL ON CONFLICT ABORT,
-    users_passwd  VARCHAR( 32 ),
-    rpc           VARCHAR( 64 ),
-    sftp          BOOLEAN( 1 )    DEFAULT ( 1 ),
-    sudo          BOOLEAN( 1 )    DEFAULT ( 0 ),
-    admin         BOOLEAN( 1 )    DEFAULT ( 0 ),
-    scgi_port     INTEGER( 5 ),
-    rtorrent_port INTEGER( 5 ),
-    home_dir      VARCHAR( 128 ),
-    is_active     BOOLEAN( 1 )    DEFAULT ( 1 ) 
-);
-
-
 -- Table: blocklists
 CREATE TABLE blocklists ( 
     id_blocklists           INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -341,3 +321,24 @@ CREATE TABLE system (
 );
 
 INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password], [apt_update], [apt_date], [server_provider], [ip_restriction], [install_dir]) VALUES (1, '', '', '', '', '', '', '', '', 0, '', '', 1, '');
+
+-- Table: users
+CREATE TABLE users ( 
+    id_users         INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                     NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT ABORT,
+    users_ident      VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE,
+    users_email      VARCHAR( 260 )  NOT NULL ON CONFLICT ABORT,
+    users_passwd     VARCHAR( 32 ),
+    rpc              VARCHAR( 64 ),
+    sftp             BOOLEAN( 1 )    DEFAULT ( 1 ),
+    sudo             BOOLEAN( 1 )    DEFAULT ( 0 ),
+    admin            BOOLEAN( 1 )    DEFAULT ( 0 ),
+    scgi_port        INTEGER( 5 ),
+    rtorrent_port    INTEGER( 5 ),
+    home_dir         VARCHAR( 128 ),
+    is_active        BOOLEAN( 1 )    DEFAULT ( 1 ),
+    rtorrent_version VARCHAR( 6 )    DEFAULT ( '0.9.4' ) 
+);
+
