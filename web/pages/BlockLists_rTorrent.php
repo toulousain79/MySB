@@ -81,24 +81,24 @@ foreach($BlockList as $List) {
 	switch ($List["rtorrent_active"]) {
 		case '0':
 			if ( $IsMainUser ) {
-				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 									<option value="0" selected="selected" class="redText">No</option>
 									<option value="1" class="greenText">Yes</option>
 								</select>';
 			} else {
-				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" disabled>
+				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px;" class="redText" id="mySelect" disabled>
 									<option value="0" selected="selected" class="redText">No</option>
 								</select>';
 			}
 			break;
 		default:
 			if ( $IsMainUser ) {
-				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 									<option value="0" class="redText">No</option>
 									<option value="1" selected="selected" class="greenText">Yes</option>
 								</select>';
 			} else {
-				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" disabled>
+				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px;" class="greenText" id="mySelect" disabled>
 									<option value="1" selected="selected" class="greenText">Yes</option>
 								</select>';
 			}

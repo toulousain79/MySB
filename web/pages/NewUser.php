@@ -31,7 +31,7 @@ if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') ) {
 	// Users table
 	$ActualUserPass = $MySB_DB->get("users", "users_passwd", ["users_ident" => "$CurrentUser"]);
 	if ( ($ActualUserPass != "") && ($UserPasswd != "") && ($UserPasswd == $ActualUserPass) ) {
-		require_once WEB_ROOT . 'index.php';
+		require_once WEB_ROOT . '/index.php';
 	} else {
 		header('Refresh: 0; URL=http://www.google.fr');
 	}

@@ -53,18 +53,6 @@ if ( $IsInstalled == '1' ) {
 	$BlockList = $MySB_DB->select("blocklists", "*", ["peerguardian_list[!]" => ""]);
 ?>
 
-<?php if ( $IsMainUser ) { ?>
-	<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
-		<fieldset>
-			<legend>Beware</legend>
-			<p class="Comments">Beware, the application of these lists can take a long time and can make failed the page refresh.<br />
-				Especially if these lists were never downloaded.<br />
-			In this case, wait a while and then reapply your list by clicking on the button "Save changes", and then "Apply configuration".<br />
-			To avoid errors, enable <b>a list at a time</b>.</p>
-		</fieldset>
-	</div>
-<?php } ?>
-
 	<form class="form_settings" method="post" action="">
 		<div align="center">
 <?php if ( $IsMainUser ) { ?>
@@ -96,24 +84,24 @@ if ( $IsInstalled == '1' ) {
 		switch ($List["peerguardian_active"]) {
 			case '0':
 				if ( $IsMainUser ) {
-					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 										<option value="0" selected="selected" class="redText">No</option>
 										<option value="1" class="greenText">Yes</option>
 									</select>';
 				} else {
-					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px; cursor: pointer;" class="redText" id="mySelect" disabled>
+					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px;" class="redText" id="mySelect" disabled>
 										<option value="0" selected="selected" class="redText">No</option>
 									</select>';
 				}
 				break;
 			default:
 				if ( $IsMainUser ) {
-					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 										<option value="0" class="redText">No</option>
 										<option value="1" selected="selected" class="greenText">Yes</option>
 									</select>';
 				} else {
-					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" disabled>
+					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px;" class="greenText" id="mySelect" disabled>
 										<option value="1" selected="selected" class="greenText">Yes</option>
 									</select>';
 				}
@@ -124,11 +112,11 @@ if ( $IsInstalled == '1' ) {
 					<td>
 						<input type="hidden" name="id_blocklists[]" value="<?php echo $List["id_blocklists"]; ?>" />
 						<input style="width:180px;" type="hidden" name="name[]" value="<?php echo $List["list_name"]; ?>" />
-						<?php echo $List["author"].' - '.$List["list_name"]; ?>
+						<?php echo '<a target="_blank" href="' . $List["url_infos"] . '">' . $List["author"].' - '.$List["list_name"] . '</a>'; ?>
 					</td>
 					<td>
 						<input style="width:180px;" type="hidden" name="peerguardian_list[]" value="<?php echo $List["peerguardian_list"]; ?>" />
-						<?php echo '<a target="_blank" href="' . $List["url_infos"] . '">' . $List["peerguardian_list"] . '</a>'; ?>
+						<?php echo $List["peerguardian_list"]; ?>
 					</td>
 					<td>
 						<?php echo $List["peerguardian_lastupdate"]; ?>

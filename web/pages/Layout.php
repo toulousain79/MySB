@@ -62,7 +62,9 @@
 					<h2> <?php echo GetVersion(); ?></h2>
 				</div>
 				<div id="logout">
+<?php if ( !isset($_SESSION['page']) ) { ?>
 					<a href="/Logout.php">Logout</a>
+<?php } ?>
 				</div>			
 			</div>
 

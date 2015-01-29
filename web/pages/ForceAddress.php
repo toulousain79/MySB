@@ -25,7 +25,7 @@ require_once '/etc/MySB/config.php';
 //#################### FIRST LINE #####################################
 
 if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ManageAddresses') ) {
-	require_once WEB_ROOT . 'index.php';
+	require_once WEB_ROOT . '/index.php';
 } else {
 	header('Refresh: 0; URL=http://www.google.fr');
 }

@@ -188,9 +188,17 @@ echo "0 23 * * * /bin/bash $MySB_InstallDir/scripts/BlocklistsRTorrent.bsh CRON 
 crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
 
-#### Add iptables-restore to interfaces
+#### /etc/network/interfaces
+# Remove IPv6
+/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6="1" &> /dev/null
+/sbin/sysctl -w net.ipv6.conf.default.disable_ipv6="1" &> /dev/null
+/sbin/sysctl -w net.ipv6.conf.lo.disable_ipv6="1" &> /dev/null
+sysctl -p &> /dev/null
+
+cp /etc/network/interfaces /etc/network/interfaces.bckp
+sed '/inet6/,/indet6/d' /etc/network/interfaces
+# Add iptables-restore
 if [ "`cat /etc/network/interfaces | grep 'post-up iptables-restore < /etc/iptables.up.rules'`" == "" ]; then
-	#NumLign=$(sed -n "/^iface $PrimaryInet inet/=" /etc/network/interfaces)
 	NumLign=$(cat /etc/network/interfaces | grep -v inet6 | sed -n "/^iface eth0 inet/=")
 	(( NumLign++ ))
 	sed -i "${NumLign}i\        post-up iptables-restore < /etc/iptables.up.rules" /etc/network/interfaces
