@@ -1,6 +1,6 @@
 <?php
 // ----------------------------------
-if ( !isset($IncludeBeforeFile) ) { require_once './inc/includes_before.php'; }
+require_once '/etc/MySB/config.php';
 // ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
@@ -52,7 +52,7 @@ $config_file = CMS_ROOT.DS.'config.php';
 require_once($config_file);
 
 // if you have installed wolf and see this line, you can comment it or delete it :)
-if ( ! defined('DEBUG')) { header('Location: wolf/install/'); exit(); }
+//if ( ! defined('DEBUG')) { header('Location: wolf/install/'); exit(); }
 
 $url = URL_PUBLIC;
 
@@ -229,7 +229,7 @@ Dispatcher::addRoute($admin_routes);
 require APP_PATH.DS.'main.php';
 
 // -----------------------------------------
-if ( !isset($IncludeAfterFile) ) { require_once './inc/includes_after.php'; }
+require_once WEB_INC . '/includes_after.php';
 // -----------------------------------------
 //#################### LAST LINE ######################################
 ?>

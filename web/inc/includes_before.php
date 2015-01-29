@@ -22,6 +22,8 @@
 //
 //#################### FIRST LINE #####################################
 
+require_once('/etc/MySB/config.php');
+
 // Session
 session_start();
 if ( isset($_GET['page']) ) {
@@ -41,25 +43,25 @@ if ( isset($_GET['page']) ) {
 }
 
 // Directories
-define('WEB_ROOT', dirname(__FILE__).'/../');
-define('WEB_INC', WEB_ROOT . 'inc');
-define('WEB_PAGES', WEB_ROOT . 'pages');
+// define('WEB_ROOT', dirname(__FILE__).'/../');
+// define('WEB_INC', WEB_ROOT . 'inc');
+// define('WEB_PAGES', WEB_ROOT . 'pages');
 
 // Data bases
-define('Wolf_DB', WEB_ROOT. '../db/Wolf.sq3');
-define('MySB_DB', WEB_ROOT. '../db/MySB.sq3');
+// define('Wolf_DB', WEB_ROOT. '../db/Wolf.sq3');
+// define('MySB_DB', WEB_ROOT. '../db/MySB.sq3');
 
 // Files
-define('FILE_MEDOO', WEB_INC. '/medoo.min.php');
-define('FILE_FUNCS', WEB_INC. '/functions.php');
+// define('FILE_MEDOO', WEB_INC. '/medoo.min.php');
+// define('FILE_FUNCS', WEB_INC. '/functions.php');
 
 // Medoo framework
-include_once(FILE_MEDOO);
+require_once(FILE_MEDOO);
 $MySB_DB = new medoo(['database_file' => MySB_DB, 'database_name' => 'MySB']);
 $Wolf_DB = new medoo(['database_file' => Wolf_DB, 'database_name' => 'Wolf']);
 
 // Some Functions
-include_once(FILE_FUNCS);
+require_once(FILE_FUNCS);
 
 // Load System table
 $system_datas = $MySB_DB->get("system", "*", ["id_system" => 1]);

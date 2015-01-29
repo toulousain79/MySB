@@ -1,8 +1,6 @@
 <?php
 // ----------------------------------
-$IncludeBeforeFile = dirname(__FILE__) . '/../inc/includes_before.php';
-$IncludeAfterFile = dirname(__FILE__) . '/../inc/includes_after.php';
-require_once $IncludeBeforeFile;
+require_once '/etc/MySB/config.php';
 // ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -33,7 +31,7 @@ if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ManageAddresses') ) {
 }
 
 // ----------------------------------
-require_once $IncludeAfterFile;
+require_once WEB_INC . '/includes_after.php';
 // ----------------------------------
 //#################### LAST LINE ######################################
 ?>
