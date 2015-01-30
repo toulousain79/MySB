@@ -22,72 +22,32 @@
 //
 //#################### FIRST LINE #####################################
 
-global $MySB_DB, $users_datas, $CurrentUser;
+global $MySB_DB, $users_datas, $CurrentUser, $system_datas;
 
-$CurrentVersion = $users_datas['rtorrent_version'];
-$rTorrentRestart = $users_datas['rtorrent_restart'];
+$PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
+$IsMainUser = (MainUser($CurrentUser)) ? true : false;
+
 $Command = 'message_only';
-
-function Form() {
-	$rTorrentRestart = array('No', 'Yes');
-	$rTorrentVersionsList = array('v0.9.2', 'v0.9.4');
-
-	echo '<form class="form_settings" method="post" action="">
-			<div align="center"><table border="0">
-				<tr>
-					<td>rTorrent version:</td>
-					<td>
-						<select name="rTorrentVersion" style="width:80px; height: 28px;">';
-
-					foreach($rTorrentVersionsList as $rTorrentVersion) {
-						if ( $CurrentVersion == $rTorrentVersion) {
-							echo '<option selected="selected" value="' . $rTorrentVersion . '">' . $rTorrentVersion . '</option>';
-						} else {
-							echo '<option value="' . $rTorrentVersion . '">' . $rTorrentVersion . '</option>';
-						}
-					}
-	echo '
-						</select>
-					</td>
-				</tr>
-				<tr>
-					<td>Restart rTorrent ?</td>
-					<td>
-						<select name="rTorrentRestart" style="width:80px; height: 28px;">';
-
-						switch ($rTorrentRestart) {
-							case '1':
-								echo '<option selected="selected" value="1">Yes</option>';
-								echo '<option value="0">No</option>';
-								break;
-							default:
-								echo '<option value="1">Yes</option>';
-								echo '<option selected="selected" value="0">No</option>';
-								break;
-						}
-	echo '
-						</select>
-					</td>
-				</tr>
-
-				<tr>
-					<td colspan="3"><input class="submit" name="submit" type="submit" value="Submit" /></td>
-				</tr>
-			</table></div>
-		</form>';
-}
+$rTorrentVersionsList = array('v0.9.2', 'v0.9.4');
+$Error = 0;
 
 if (isset($_POST['submit'])) {
 	$rTorrentVersion = $_POST['rTorrentVersion'];
 	$rTorrentRestart = $_POST['rTorrentRestart'];
+	$PGL_EmailStats = $_POST['PGL_EmailStats'];
+	$PGL_EmailWD = $_POST['PGL_EmailWD'];
+	$IP_restriction = $_POST['IP_restriction'];
+	// Get values from database
+	$rtorrent_version = $users_datas['rtorrent_version'];
 	
-	if ( ($rTorrentVersion != $CurrentVersion) || ($rTorrentRestart == "1") ) {
+	// Users table
+	if ( ($rTorrentVersion != $rtorrent_version) || ($rTorrentRestart == "1") ) {
 		$rTorrentRestart = 1;
 		$Command = 'Options';
 	}
 
 	$result = $MySB_DB->update("users", ["rtorrent_version" => "$rTorrentVersion", "rtorrent_restart" => "$rTorrentRestart"], ["users_ident" => "$CurrentUser"]);
-
+	
 	if( $result == 1 ) {
 		$type = 'success';
 	} else {
@@ -96,9 +56,127 @@ if (isset($_POST['submit'])) {
 	}
 
 	GenerateMessage($Command, $type, $message);
+	
+	// System table
+	
+	
 }
 
-Form();
+// Get values from database
+$rtorrent_version = $users_datas['rtorrent_version'];
+$rtorrent_restart = $users_datas['rtorrent_restart'];
+$pgl_email_stats = $system_datas['pgl_email_stats'];
+$pgl_watchdog_email = $system_datas['pgl_watchdog_email'];
+$ip_restriction = $system_datas['ip_restriction'];
+?>
 
+<form class="form_settings" method="post" action="">
+<div align="center" style="margin-top: 10px; margin-bottom: 20px;">	
+	<fieldset>
+	<legend>rTorrent</legend>
+	<table>
+		<tr>
+			<td>rTorrent version:</td>
+			<td>
+				<select name="rTorrentVersion" style="width:80px; height: 28px;">';
+				<?php foreach($rTorrentVersionsList as $rTorrentVersion) {
+					if ( $rtorrent_version == $rTorrentVersion) {
+						echo '<option selected="selected" value="' . $rTorrentVersion . '">' . $rTorrentVersion . '</option>';
+					} else {
+						echo '<option value="' . $rTorrentVersion . '">' . $rTorrentVersion . '</option>';
+					}
+				} ?>
+				</select>
+			</td>
+			<td>Restart rTorrent ?</td>
+			<td>
+				<select name="rTorrentRestart" style="width:80px; height: 28px;">';
+				<?php switch ($rtorrent_restart) {
+					case '1':
+						echo '<option selected="selected" value="1">Yes</option>';
+						echo '<option value="0">No</option>';
+						break;
+					default:
+						echo '<option value="1">Yes</option>';
+						echo '<option selected="selected" value="0">No</option>';
+						break;
+				} ?>
+				</select>
+			</td>			
+		</tr>
+	</table>
+	</fieldset>
+
+	<?php if ( ($IsMainUser) && ($PeerguardianIsInstalled == '1') ) { ?>
+	<fieldset>
+	<legend>PeerGuardian</legend>
+	<table>
+		<tr>
+			<td>Email stats</td>
+			<td>
+				<select name="PGL_EmailStats" style="width:80px; height: 28px;">';
+				<?php switch ($pgl_email_stats) {
+					case '1':
+						echo '<option selected="selected" value="1">Yes</option>';
+						echo '<option value="0">No</option>';
+						break;
+					default:
+						echo '<option value="1">Yes</option>';
+						echo '<option selected="selected" value="0">No</option>';
+						break;
+				} ?>
+				</select>
+			</td>
+			<td>Watchdog email</td>
+			<td>
+				<select name="PGL_EmailWD" style="width:80px; height: 28px;">';
+				<?php switch ($pgl_watchdog_email) {
+					case '1':
+						echo '<option selected="selected" value="1">Yes</option>';
+						echo '<option value="0">No</option>';
+						break;
+					default:
+						echo '<option value="1">Yes</option>';
+						echo '<option selected="selected" value="0">No</option>';
+						break;
+				} ?>
+				</select>
+			</td>
+		</tr>
+	</table>
+	</fieldset>
+	<?php } ?>
+	
+	<?php if ( $IsMainUser ) { ?>
+	<fieldset>
+	<legend>IPtables</legend>
+	<table>
+		<tr>
+			<td>IP restriction</td>
+			<td>
+				<select name="IP_restriction" style="width:80px; height: 28px;">';
+				<?php switch ($ip_restriction) {
+					case '1':
+						echo '<option selected="selected" value="1">Yes</option>';
+						echo '<option value="0">No</option>';
+						break;
+					default:
+						echo '<option value="1">Yes</option>';
+						echo '<option selected="selected" value="0">No</option>';
+						break;
+				} ?>
+				</select>
+			</td>
+		</tr>
+	</table>
+	</fieldset>
+	<?php } ?>	
+	
+	<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Submit" />
+	
+	</div>
+</form>
+		
+<?php
 //#################### LAST LINE ######################################
 ?>

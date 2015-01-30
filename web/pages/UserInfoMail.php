@@ -333,13 +333,13 @@ function PrintContent($user, $Case) {
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle">Samba share</th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent</td>
-			<td><span class="Comments">mount - [Destination_directory] -t cifs -o noatime,nodiratime,UNC=//[10.0.0.1|10.0.1.1]/<?php echo $user;?>,username=<?php echo $user;?>,password=[your_password]</span></td>
+			<td><span class="Comments">mount - [Destination_directory] -t cifs -o noatime,nodiratime,UNC=//[10.0.x.1]/<?php echo $user;?>,username=<?php echo $user;?>,password=[your_password]</span></td>
 		</tr>
 		<!-- // NFS share -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle">NFS share</th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent</td>
-			<td><span class="Comments">mount -t nfs [10.0.0.1|10.0.1.1]:/home/'.$user.'/rtorrent [Destination_directory] [-o vers=3,ro]</span></td>
+			<td><span class="Comments">mount -t nfs [10.0.x.1]:/home/'.$user.'/rtorrent [Destination_directory] [-o vers=3,nolock]</span></td>
 		</tr>
 <?php } ?>
 

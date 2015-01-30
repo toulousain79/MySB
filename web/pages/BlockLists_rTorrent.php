@@ -58,7 +58,8 @@ $BlockList = $MySB_DB->select("blocklists", "*", ["rtorrent_list[!]" => ""]);
 		<table style="border-spacing:1;">
 			<tr>
 				<th style="text-align:center;">Name</th>
-				<th style="text-align:center;">Blocklist</th>
+				<!--<th style="text-align:center;">Blocklist</th>-->
+				<th style="text-align:center;">Comments</th>
 				<th style="text-align:center;">Last Update</th>
 				<th style="text-align:center;">Default ?</th>
 				<th style="text-align:center;">Active ?</th>
@@ -110,9 +111,12 @@ foreach($BlockList as $List) {
 					<input style="width:120px;" type="hidden" name="list_name[]" value="<?php echo $List["list_name"]; ?>" />
 					<?php echo '<a target="_blank" href="' . $List["url_infos"] . '">' . $List["author"].' - '.$List["list_name"] . '</a>'; ?>
 				</td>
-				<td>
+				<!--<td>
 					<input style="width:180px;" type="hidden" name="rtorrent_list[]" value="<?php echo $List["rtorrent_list"]; ?>" />
 					<?php echo StringTruncate($List["rtorrent_list"], 40, 60, ' ', '...'); ?>
+				</td>-->
+				<td>
+					<?php echo $List["comments"]; ?>
 				</td>
 				<td>
 					<?php echo $List["rtorrent_lastupdate"]; ?>

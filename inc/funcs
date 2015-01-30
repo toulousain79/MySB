@@ -775,41 +775,30 @@ NetworkPortsGenerator() {
 	WHITE_UDP_OUT="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT white_udp_port_out FROM vars WHERE 1\" | sed 's/,/ /g;'`"
 
 	# TCP In
-	WHITE_TCP_IN="${WHITE_TCP_IN} ${Port_HTTP} ${Port_HTTPS} ${Port_FTP} ${Port_SSH} ${Port_FTP_Data} ${Port_FTP_Passive}"
+	WHITE_TCP_IN="${Port_HTTPS}"
+	if [ "$IpRestriction" == "NO" ]; then
+		WHITE_TCP_IN="${WHITE_TCP_IN} ${Port_HTTPS} ${Port_FTP} ${Port_SSH} ${Port_FTP_Data} ${Port_FTP_Passive}"
+	fi
 
 	# UDP In
-	WHITE_UDP_IN="${WHITE_UDP_IN}"
+	if [ "$IpRestriction" == "NO" ]; then
+		WHITE_UDP_IN="${WHITE_UDP_IN}"
+	fi
 
 	# TCP Out
-	WHITE_TCP_OUT="${WHITE_TCP_OUT} ${SMTP_Port} ${Port_HTTP} ${Port_HTTPS} ${Port_FTP} ${Port_SSH} ${Port_FTP_Data} ${Port_FTP_Passive}"
+	WHITE_TCP_OUT="${WHITE_TCP_OUT} ${SMTP_Port} ${Port_HTTPS} ${Port_FTP} ${Port_SSH} ${Port_FTP_Data} ${Port_FTP_Passive}"
 
 	# UDP Out
-	WHITE_UDP_OUT="${WHITE_UDP_OUT}"
-	# if [ "$IsInstalled_DNScrypt" == "YES" ]; then
-		# for Resolver in $ResolverName; do
-			# ResolverAddress="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
-			# ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
-			# if [ -z "$ResolverPort" ]; then ResolverPort="443"; fi
-			
-			# if [ -z "`echo $WHITE_UDP_OUT | grep $ResolverPort`" ]; then
-				# WHITE_UDP_OUT="${WHITE_UDP_OUT} ${ResolverPort}"
-			# fi
-		# done
-	# else
-		# WHITE_UDP_OUT="${WHITE_UDP_OUT} 53"
-	# fi	
+	WHITE_UDP_OUT="${WHITE_UDP_OUT}"	
 
 	# Services
-	if [ "$IsInstalled_Cakebox" == "YES" ]; then
-		WHITE_TCP_IN="${WHITE_TCP_IN} ${Ports_Cakebox}"
-	fi
-	if [ "$IsInstalled_Webmin" == "YES" ]; then
+	if [ "$IsInstalled_Webmin" == "YES" ] && [ "$IpRestriction" == "NO" ]; then
 		WHITE_TCP_IN="${WHITE_TCP_IN} ${Ports_Webmin}"
 	fi
 	if [ "$IsInstalled_PlexMedia" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
 		WHITE_TCP_IN="${WHITE_TCP_IN} ${Ports_TCP_PlexMedia}"
 	fi
-	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+	if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$IpRestriction" == "NO" ]; then
 		case "$OpenVPN_Proto" in
 			"udp")
 				WHITE_UDP_IN="${WHITE_UDP_IN} ${Port_OpenVPN_WithGW} ${Port_OpenVPN_WithoutGW}"
@@ -963,16 +952,33 @@ PeerGuardianAllowP2P() {
 EOF
 		) > /etc/pgl/allow.p2p		
 
-		# DNScrypt
-		for Resolver in $ResolverName; do
-			ResolverAddress="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
-			ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
-			ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
-			if [ -z "$ResolverPort" ]; then ResolverPort="443"; fi
-			
-			echo "DNScrypt-proxy ($Resolver):$ResolverAddress-255.255.255.255" >> /etc/pgl/allow.p2p
-		done
+		# Allow all users
+		ListingUsers
+		if [ ! -z "$UsersList" ] && [ "$IpRestriction" == "YES" ]; then
+			echo "## Allow all MySB users" >> /etc/pgl/allow.p2p
+			for FnUser in $UsersList; do
+				UserID="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_users FROM users WHERE users_ident = '$FnUser'\"`"
+				UserIP="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE id_users = '$UserID'\"`"
+				for IPv4 in $UserIP; do
+					echo "$FnUser:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
+				done
+			done
+		fi	
 		
+		# DNScrypt
+		if [ "$IsInstalled_DNScrypt" == "YES" ]; then
+			echo "## DNScrypt" >> /etc/pgl/allow.p2p
+			for Resolver in $ResolverName; do
+				ResolverAddress="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+				ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
+				ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
+				if [ -z "$ResolverPort" ]; then ResolverPort="443"; fi
+
+				echo "DNScrypt-proxy ($Resolver):$ResolverAddress-255.255.255.255" >> /etc/pgl/allow.p2p
+			done
+		fi
+		
+		echo "## Trackers enabled" >> /etc/pgl/allow.p2p
 		AllTrackers="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list, tracker FROM trackers_list WHERE is_active = '1'\"`"
 		for Tracker in $AllTrackers; do
 			IdTracker=`echo $Tracker | awk '{split($0,a,"|"); print a[1]}'`
@@ -1043,15 +1049,15 @@ PeerGuardianPglcmdConf() {
 		# /etc/pgl/pglcmd.conf
 		if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Adding of authorized IP addresses"; fi
 
-		if [ "$IpRestriction" == "YES" ]; then
-			AllUsersIPs="`echo $AllUsersIPs | sed -e 's/^ //g;' | sed -e 's/\/32//g;'`"
-			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_IN=")
-			SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
-			if [ ! -z "$SEARCH" ]; then	
-				perl -pi -e "s/$SEARCH/WHITE_IP_IN=\"$AllUsersIPs\"/g" /etc/pgl/pglcmd.conf
-			fi
-			unset SEARCH
-		fi
+		# if [ "$IpRestriction" == "YES" ]; then
+			# AllUsersIPs="`echo $AllUsersIPs | sed -e 's/^ //g;' | sed -e 's/\/32//g;'`"
+			# SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_IN=")
+			# SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
+			# if [ ! -z "$SEARCH" ]; then	
+				# perl -pi -e "s/$SEARCH/WHITE_IP_IN=\"$AllUsersIPs\"/g" /etc/pgl/pglcmd.conf
+			# fi
+			# unset SEARCH
+		# fi
 
 		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_OUT=")
 		SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
@@ -1280,7 +1286,7 @@ CakeboxUsersConfigs() {
 		if [ -f $CakeboxDir/config/default.php.dist ]; then
 			cp $CakeboxDir/config/default.php.dist $CakeboxDir/config/$FnUser.php
 			sed -i "s/\/var\/www\//$HomeDirEscaped\/rtorrent\//g;" $CakeboxDir/config/$FnUser.php
-			sed -i "s/\/access\//\/$FnUser\//g;" $CakeboxDir/config/$FnUser.php
+			sed -i "s/\/access\//\/$FnUser\/rtorrent\//g;" $CakeboxDir/config/$FnUser.php
 			sed -i "s/\"fr\"/\"en\"/g;" $CakeboxDir/config/$FnUser.php			
 		fi
 		

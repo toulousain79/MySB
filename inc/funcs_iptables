@@ -295,8 +295,8 @@ PopulatingIcmpChain() {
 	
 	# Allow ICMP over VPN tunneling
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-		iptables -A icmp_packets -p ICMP -i tun+ --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "Allow ICMP over OpenVPN"
-		iptables -A icmp_packets -p ICMP -i tun+ --icmp-type 8 -j ACCEPT -m comment --comment "Allow ICMP over OpenVPN"
+		iptables -A icmp_packets -p ICMP -s 0/0 -i tun+ --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "Allow ICMP over OpenVPN"
+		iptables -A icmp_packets -p ICMP -s 0/0 -i tun+ --icmp-type 8 -j ACCEPT -m comment --comment "Allow ICMP over OpenVPN"
 	fi	
 	
 	# By default, however, drop pings without logging. Blaster and other worms have infected systems blasting pings.
@@ -327,8 +327,9 @@ PopulatingUdpInboundChain() {
 	# These rules drop those packets quickly and without logging them.
 	# This prevents them from traversing the whole chain and keeps the log from getting cluttered with chatter from Windows systems.
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 137 -j ACCEPT
-		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 138 -j ACCEPT
+		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 137 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 138 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+		iptables -A udp_inbound -p UDP -s 10.254.254.254 -i dummy0 -j ACCEPT -m comment --comment "Samba dummy"
 	fi
 
 	# Network Time Protocol (NTP) Server
@@ -388,11 +389,11 @@ PopulatingUdpInboundChain() {
 	fi	
 
 	#### PlexMedia Server
-	if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$IsInstalled_PlexMedia" == "YES" ]; then
-		for PlexUdpPort in $Ports_UDP_PlexMedia; do 
-			iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port $PlexUdpPort -j ACCEPT -m comment --comment "Plex Media Server UDP over OpenVPN"
-		done
-	fi
+	# if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$IsInstalled_PlexMedia" == "YES" ]; then
+		# for PlexUdpPort in $Ports_UDP_PlexMedia; do 
+			# iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port $PlexUdpPort -j ACCEPT -m comment --comment "Plex Media Server UDP over OpenVPN"
+		# done
+	# fi
 	
 	#### DNScrypt-proxy
 	if [ "$IsInstalled_DNScrypt" == "YES" ]; then
@@ -487,11 +488,11 @@ PopulatingTcpInboundChain() {
 	fi
 	
 	#### PlexMedia Server
-	if [ "$IsInstalled_PlexMedia" == "YES" ]; then
-		for PlexTcpPort in $Ports_TCP_PlexMedia; do
-			iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $PlexTcpPort -j ACCEPT -m comment --comment "Plex Media Server TCP"
-		done
-	fi
+	# if [ "$IsInstalled_PlexMedia" == "YES" ]; then
+		# for PlexTcpPort in $Ports_TCP_PlexMedia; do
+			# iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $PlexTcpPort -j ACCEPT -m comment --comment "Plex Media Server TCP"
+		# done
+	# fi
 	
 	#### rTorrent
 	for SeedboxUser in $UsersList; do
@@ -551,19 +552,20 @@ ProcessInputChain() {
 	# The firewall will drop all multicasts to the entire subnet (224.0.0.1) by default.
 	# To only affect IGMP multicasts, change '-p ALL' to '-p 2'.
 	# Of course, if they aren't accepted elsewhere, it will only ensure that multicasts on other protocols are logged.
-	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+	#if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 		# The rule to accept the packets.
-		iptables -A INPUT -p ALL -d 224.0.0.1 -j ACCEPT
-	else
+	#	iptables -A INPUT -p ALL -d 224.0.0.1 -j ACCEPT
+	#else
 		# Drop them without logging.
 		iptables -A INPUT -p ALL -d 224.0.0.1 -j DROP
-	fi
-
+	#fi
 
 	# Rules for the private network (accessing gateway system itself)
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 		iptables -A INPUT -p ALL -i tun+ -s 10.0.0.0/24 -j ACCEPT
 		iptables -A INPUT -p ALL -i tun+ -d 10.0.0.255 -j ACCEPT
+		# Samba dummy0
+		iptables -A INPUT -p ALL -i dummy+ -j ACCEPT	
 	fi
 	
 	## Inbound Internet Packet Rules
@@ -578,10 +580,10 @@ ProcessInputChain() {
 	# Drop without logging broadcasts that get this far.
 	# Cuts down on log clutter.
 	# Comment this line if testing new rules that impact broadcast protocols.
-	iptables -A INPUT -m pkttype --pkt-type broadcast -j DROP
+	#iptables -A INPUT -m pkttype --pkt-type broadcast -j DROP
 
 	# Log packets that still don't match
-	iptables -A INPUT -j LOG --log-prefix "fp=INPUT:99 a=DROP "	
+	iptables -A INPUT -j LOG --log-prefix "fp=INPUT:99 a=DROP "
 }
 
 # Process FORWARD Chain
@@ -626,7 +628,10 @@ ProcessOutputChain() {
 		iptables -A OUTPUT -p ALL -s 10.0.0.1 -j ACCEPT
 		iptables -A OUTPUT -p ALL -o tun0 -j ACCEPT
 		iptables -A OUTPUT -p ALL -s 10.0.1.1 -j ACCEPT
-		iptables -A OUTPUT -p ALL -o tun1 -j ACCEPT	
+		iptables -A OUTPUT -p ALL -o tun1 -j ACCEPT
+		# Samba dummy0
+		iptables -A OUTPUT -p ALL -s 10.254.254.254 -j ACCEPT
+		iptables -A OUTPUT -p ALL -o dummy+ -j ACCEPT			
 	fi
 
 	# To internet

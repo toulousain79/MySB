@@ -201,6 +201,7 @@ Cakebox is a small web app written with AngularJS and Silex, in order to list di
 Author: MardamBeyK & Tuxity.
 ```
 https://github.com/Cakebox/Cakebox-light
+https://github.com/Cakebox/Cakebox-light/wiki/Choisir-son-lecteur-vid%C3%A9o
 ```
 
 ## LoadAvg

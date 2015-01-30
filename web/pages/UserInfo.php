@@ -170,11 +170,11 @@ function printUser($user) {
 	// Samba share
 	echo '<tr align="left"><th width="17%" scope="row">Samba share</th>';
 	echo '<td>' . $users_datas["home_dir"] . '/rtorrent</td>';
-	echo '<td><span class="Comments">mount - [Destination_directory] -t cifs -o noatime,nodiratime,UNC=//[10.0.0.1|10.0.1.1]/'.$user.',username='.$user.',password=[your_password]</span></td></tr>';		
+	echo '<td><span class="Comments">mount - [Destination_directory] -t cifs -o noatime,nodiratime,UNC=//[10.0.x.1]/'.$user.',username='.$user.',password=[your_password]</span></td></tr>';		
 	// NFS share
 	echo '<tr align="left"><th width="17%" scope="row">NFS share</th>';
 	echo '<td>' . $users_datas["home_dir"] . '/rtorrent</td>';
-	echo '<td><span class="Comments">mount -t nfs [10.0.0.1|10.0.1.1]:/home/'.$user.'/rtorrent [Destination_directory] [-o vers=3,ro]</span></td></tr>';				
+	echo '<td><span class="Comments">mount -t nfs [10.0.x.1]:/home/'.$user.'/rtorrent [Destination_directory] [-o vers=3,nolock]</span></td></tr>';				
 
 	//////////////////////
 	// Links (Normal user)

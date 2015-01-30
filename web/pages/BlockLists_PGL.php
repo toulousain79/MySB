@@ -61,7 +61,8 @@ if ( $IsInstalled == '1' ) {
 			<table style="border-spacing:1;">
 				<tr>
 					<th style="text-align:center;">Name</th>
-					<th style="text-align:center;">Blocklist</th>
+					<!--<th style="text-align:center;">Blocklist</th>-->
+					<th style="text-align:center;">Comments</th>
 					<th style="text-align:center;">Last Update</th>
 					<th style="text-align:center;">Default ?</th>
 					<th style="text-align:center;">Active ?</th>
@@ -114,9 +115,12 @@ if ( $IsInstalled == '1' ) {
 						<input style="width:180px;" type="hidden" name="name[]" value="<?php echo $List["list_name"]; ?>" />
 						<?php echo '<a target="_blank" href="' . $List["url_infos"] . '">' . $List["author"].' - '.$List["list_name"] . '</a>'; ?>
 					</td>
-					<td>
+					<!--<td>
 						<input style="width:180px;" type="hidden" name="peerguardian_list[]" value="<?php echo $List["peerguardian_list"]; ?>" />
 						<?php echo $List["peerguardian_list"]; ?>
+					</td>-->
+					<td>
+						<?php echo $List["comments"]; ?>
 					</td>
 					<td>
 						<?php echo $List["peerguardian_lastupdate"]; ?>

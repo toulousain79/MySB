@@ -299,27 +299,6 @@ INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tc
 INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (22, 'rTorrent v0.9.2', '/usr/bin/rtorrent', null, null, null, null, null, null, null, null, 1, 0);
 INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (23, 'rTorrent v0.9.4', '/usr/local/bin/rtorrent', null, null, null, null, null, null, null, null, 1, 0);
 
--- Table: system
-CREATE TABLE system ( 
-    id_system       INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
-                                     NOT NULL ON CONFLICT ABORT,
-    mysb_version    VARCHAR( 6 )     NOT NULL ON CONFLICT ABORT
-                                     UNIQUE ON CONFLICT IGNORE,
-    mysb_user       VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
-    mysb_password   VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
-    hostname        VARCHAR( 128 )   UNIQUE ON CONFLICT IGNORE,
-    ipv4            VARCHAR( 15 )    UNIQUE ON CONFLICT IGNORE,
-    primary_inet    VARCHAR( 16 )    UNIQUE ON CONFLICT IGNORE,
-    timezone        VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
-    cert_password   VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
-    apt_update      BOOLEAN( 1 )     DEFAULT ( 1 ),
-    apt_date        DATETIME,
-    server_provider VARCHAR( 16 ),
-    ip_restriction  BOOLEAN( 1 )     DEFAULT ( 1 ) 
-);
-
-INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password], [apt_update], [apt_date], [server_provider], [ip_restriction]) VALUES (1, '', '', '', '', '', '', '', '', 0, '', '', 1);
-
 -- Table: users
 CREATE TABLE users ( 
     id_users         INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
@@ -341,3 +320,26 @@ CREATE TABLE users (
     rtorrent_restart BOOLEAN( 1 )    DEFAULT ( '0' ) 
 );
 
+
+-- Table: system
+CREATE TABLE system ( 
+    id_system          INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
+                                        NOT NULL ON CONFLICT ABORT,
+    mysb_version       VARCHAR( 6 )     NOT NULL ON CONFLICT ABORT
+                                        UNIQUE ON CONFLICT IGNORE,
+    mysb_user          VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
+    mysb_password      VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
+    hostname           VARCHAR( 128 )   UNIQUE ON CONFLICT IGNORE,
+    ipv4               VARCHAR( 15 )    UNIQUE ON CONFLICT IGNORE,
+    primary_inet       VARCHAR( 16 )    UNIQUE ON CONFLICT IGNORE,
+    timezone           VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
+    cert_password      VARCHAR( 32 )    UNIQUE ON CONFLICT IGNORE,
+    apt_update         BOOLEAN( 1 )     DEFAULT ( 1 ),
+    apt_date           DATETIME,
+    server_provider    VARCHAR( 16 ),
+    ip_restriction     BOOLEAN( 1 )     DEFAULT ( 1 ),
+    pgl_email_stats    BOOLEAN( 1 )     DEFAULT ( 0 ),
+    pgl_watchdog_email BOOLEAN( 1 )     DEFAULT ( 0 ) 
+);
+
+INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password], [apt_update], [apt_date], [server_provider], [ip_restriction], [pgl_email_stats], [pgl_watchdog_email]) VALUES (1, '', '', '', '', '', '', '', '', 0, '', '', 1, 0, 0);
