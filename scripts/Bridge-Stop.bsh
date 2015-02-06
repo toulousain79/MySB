@@ -1,6 +1,6 @@
 #!/bin/bash 
 # ----------------------------------
-source $(dirname $0)/../inc/includes_before
+source /etc/MySB/inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___        
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_       
@@ -24,27 +24,24 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-#### Crontab
-log_daemon_msg "Creating cron job for 'BlocklistsRTorrent.bsh'"
-crontab -l > /tmp/crontab.tmp
-sed -i '/BlocklistsRTorrent/d' /tmp/crontab.tmp
-echo "0 23 * * * /bin/bash $MySB_InstallDir/scripts/BlocklistsRTorrent.bsh CRON > /dev/null" >> /tmp/crontab.tmp
-crontab /tmp/crontab.tmp
-rm -f /tmp/crontab.tmp
-log_end_msg 0
+####################################
+# Tear Down Ethernet bridge on Linux
+####################################
 
-#### START services
-Switch="$1"
-if [ "$Switch" != "UPGRADE" ]; then
-	ManageServices start "cron"
-fi
+# Define Bridge Interface
+br="br0"
 
-#### Create Blocklist
-log_daemon_msg "Creating rTorrent blocklists"
-ScriptInvoke 'screen' "$MySB_InstallDir/scripts/BlocklistsRTorrent.bsh" 'REFRESH'
-StatusLSB 0
-	
+# Define list of TAP interfaces to be bridged together
+tap="tap0"
+
+ifconfig $br down
+brctl delbr $br
+
+for t in $tap; do
+    openvpn --rmtun --dev $t
+done
+
 # -----------------------------------------
-source $(dirname $0)/../inc/includes_after
+source /etc/MySB/inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################
