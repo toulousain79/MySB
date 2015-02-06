@@ -562,8 +562,11 @@ ProcessInputChain() {
 
 	# Rules for the private network (accessing gateway system itself)
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-		iptables -A INPUT -p ALL -i tun+ -s 10.0.0.0/24 -j ACCEPT
-		iptables -A INPUT -p ALL -i tun+ -d 10.0.0.255 -j ACCEPT
+		for ip in $VpnIPs; do
+			Broadcast="`echo $ip | sed -e 's/\/24//g;' | sed 's/0/255/4'`"
+			iptables -A INPUT -p ALL -i tun+ -s $ip -j ACCEPT
+			iptables -A INPUT -p ALL -i tun+ -d $Broadcast -j ACCEPT		
+		done
 		# Samba dummy0
 		iptables -A INPUT -p ALL -i dummy+ -j ACCEPT	
 	fi
