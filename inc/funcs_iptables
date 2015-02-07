@@ -625,15 +625,23 @@ ProcessForwardChain() {
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 		# Accept TCP packets we want to forward from internal sources
 		iptables -A FORWARD -p tcp -i tun0 -j tcp_outbound
+		iptables -A FORWARD -p tcp -i tap0 -j tcp_outbound
+		iptables -A FORWARD -p tcp -i br0 -j tcp_outbound
 
 		# Accept UDP packets we want to forward from internal sources
 		iptables -A FORWARD -p udp -i tun0 -j udp_outbound
+		iptables -A FORWARD -p udp -i tap0 -j udp_outbound
+		iptables -A FORWARD -p udp -i br0 -j udp_outbound
 
 		# If not blocked, accept any other packets from the internal interface
 		iptables -A FORWARD -p ALL -i tun0 -j ACCEPT
+		iptables -A FORWARD -p ALL -i tap0 -j ACCEPT
+		iptables -A FORWARD -p ALL -i br0 -j ACCEPT
 		
 		iptables -A FORWARD -i tun0 -o $PrimaryInet -s 10.0.0.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN with redirect GW"
 		iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN with redirect GW"
+		
+		
 	fi
 
 	# Deal with responses from the internet
@@ -660,7 +668,8 @@ ProcessOutputChain() {
 		iptables -A OUTPUT -p ALL -s 10.0.1.1 -j ACCEPT
 		iptables -A OUTPUT -p ALL -o tun1 -j ACCEPT
 		iptables -A OUTPUT -p ALL -s 10.0.2.1 -j ACCEPT
-		iptables -A OUTPUT -p ALL -o tap0 -j ACCEPT		
+		iptables -A OUTPUT -p ALL -o tap0 -j ACCEPT
+		iptables -A OUTPUT -p ALL -o br0 -j ACCEPT	
 		# Samba dummy0
 		# iptables -A OUTPUT -p ALL -s 10.254.254.254 -j ACCEPT
 		# iptables -A OUTPUT -p ALL -o dummy+ -j ACCEPT			
