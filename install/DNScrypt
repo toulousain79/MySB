@@ -41,7 +41,7 @@ fi
 if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	#### Install packages
 	PackagesManage install "ldnsutils libldns-dev"
-	
+
 	#### Add dnscrypt user
 	if [ "`cat /etc/passwd | grep dnscrypt`" == "" ]; then
 		adduser --system --group --quiet --home /var/run/dnscrypt-proxy --shell /bin/false --disabled-password --disabled-login dnscrypt
@@ -77,13 +77,13 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 		wget --no-check-certificate $DnscryptUrl -O $MySB_InstallDir/files/$DnscryptFile
 	fi
 	if [ ! -d $DnscryptDir ] && [ -f $MySB_InstallDir/files/$DnscryptFile ]; then
-		tar -zxvf $MySB_InstallDir/files/$DnscryptFile -C $MySB_InstallDir/temp/	
+		tar -zxvf $MySB_InstallDir/files/$DnscryptFile -C $MySB_InstallDir/temp/
 		SubDir="`tar -ztf $MySB_InstallDir/files/$DnscryptFile | sed -e 's@/.*@@' | uniq`"
 		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
 			mv $MySB_InstallDir/temp/$SubDir $DnscryptDir
 		fi
-	fi		
-	
+	fi
+
 	cd $DnscryptDir/
 	make clean
 	./autogen.sh
@@ -93,8 +93,8 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	make install
 
 	#### STOP services
-	ManageServices stop "bind9"	
-	
+	ManageServices stop "bind9"
+
 	#### Bind - /etc/bind/named.conf.options
 	sed -i '/forwarders/d' /etc/bind/named.conf.options
 	sed -i '/version/d' /etc/bind/named.conf.options
@@ -161,24 +161,32 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	echo "*/5 * * * * if ! ( /bin/ps ax | grep 'dnscrypt-proxy' | sed '/grep/d' > /dev/null ); then /etc/init.d/dnscrypt-proxy restart > /dev/null; fi" >> /tmp/crontab.tmp
 	crontab /tmp/crontab.tmp
 	rm -f /tmp/crontab.tmp
-	
+
 	# Mark as installed
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '0',is_installed = '1' WHERE serv_name = 'DNScrypt-proxy';"	
-	
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '0',is_installed = '1' WHERE serv_name = 'DNScrypt-proxy';"
+
+	#### Logs
+	if [ ! -d /var/log/dnscrypt-proxy/archives ]; then mkdir -p /var/log/dnscrypt-proxy/archives; fi
+	if [ -f /var/log/dnscrypt-proxy.log ]; then mv /var/log/dnscrypt-proxy.log /var/log/dnscrypt-proxy; fi
+
+	#### Logrotate
+	cp -v $MySB_InstallDir/templates/etc.logrotate.d.dnscrypt.template /etc/logrotate.d/dnscrypt-proxy
+	logrotate -f /etc/logrotate.d/dnscrypt-proxy
+
 	#### Create new security rules
 	ScriptInvoke 'screen' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create'
-	
+
 	#### START services
 	#ManageServices start "cron bind9 dnscrypt-proxy"
 	Switch="$1"
 	if [ "$Switch" != "UPGRADE" ]; then
 		ManageServices start "cron"
 	fi
-	
+
 	#### Check if service is OK and running
 	if ! GetPid dnscrypt-proxy; then
 		service dnscrypt-proxy status | tee -a $MySB_InstallDir/temp/continue
-	fi	
+	fi
 fi
 
 # -----------------------------------------
