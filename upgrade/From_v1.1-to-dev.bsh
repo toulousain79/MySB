@@ -84,7 +84,7 @@ BannerUpgrade
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=38
+TotalSTEP=37
 
 #### 1 - Move some files & directories
 (( CurrentSTEP++ ))
@@ -338,27 +338,51 @@ StatusSTD
 
 #### 22 - OepnVPN
 (( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring OpenVPN$CEND..."
 if [ "$ToInstall_OpenVPN" == "YES" ]; then
+	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring OpenVPN$CEND..."
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'OpenVPN';"
 	screen -dmS OpenVPN /bin/bash $MySB_InstallDir/install/OpenVPN 'UPGRADE';
 	WaitingScreen OpenVPN
 	StatusSTD
 else
-	echo -e "${CGREEN}Nothing to do !$CEND"
-fi
+	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for OpenVPN$CEND..."
+	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+		sed -i '/DNS 8.8.8.8/d' /etc/openvpn/Server_TUN_WithGW.conf
+		sed -i "s/DNS 8.8.4.4/DNS 10.0.0.1/g" /etc/openvpn/Server_TUN_WithGW.conf
+		sed -i '/DNS 8.8.8.8/d' /etc/openvpn/Server_TUN_WithoutGW.conf
+		sed -i '/DNS 8.8.4.4/d' /etc/openvpn/Server_TUN_WithoutGW.conf
+		
+		# dummy interface
+		echo "alias netdev-dummy0 dummy" | tee -a /etc/modprobe.d/aliases.conf
+		modprobe dummy numdummies=0	
+		ScriptInvoke 'source' "$MySB_InstallDir/scripts/OpenVPN-Bridge.bsh" 'start'
 
-#### 23 - OpenVPN
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for OpenVPN$CEND..."
-if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-	sed -i '/DNS 8.8.8.8/d' /etc/openvpn/Server_TUN_WithGW.conf
-	sed -i "s/DNS 8.8.4.4/DNS 10.0.0.1/g" /etc/openvpn/Server_TUN_WithGW.conf
-	sed -i '/DNS 8.8.8.8/d' /etc/openvpn/Server_TUN_WithoutGW.conf
-	sed -i '/DNS 8.8.4.4/d' /etc/openvpn/Server_TUN_WithoutGW.conf
-	StatusSTD
-else
-	echo -e "${CGREEN}Nothing to do !$CEND"
+		#### Config file Server TAP - Without Redirect Gateway
+		cp $MySB_InstallDir/templates/openvpn.server.conf.template /etc/openvpn/Server_TAP_WithoutGW.conf
+		# adapt this file
+		sed -i '/server 10.0.0.0 255.255.255.0/d' /etc/openvpn/Server_TAP_WithoutGW.conf
+		sed -i '/redirect-gateway/d' /etc/openvpn/Server_TAP_WithoutGW.conf
+		sed -i "s/^;server-bridge/server-bridge/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+		sed -i "s/^;up/up/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+		sed -i "s/^;down/down/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+		sed -i "s/<MySB_InstallDir>/$MySB_InstallDir/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+		sed -i "s/<PORT>/$Port_OpenVPN_TAP_WithoutGW/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+		sed -i "s/<PROTO>/$OpenVPN_Proto/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+		sed -i "s/<TAKEY>/ta_$HostNameFQDN.key/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+		sed -i "s/<CA>/ca_$HostNameFQDN.crt/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+		sed -i "s/<CERT>/$HostNameFQDN.crt/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+		sed -i "s/<KEY>/$HostNameFQDN.key/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+		sed -i "s/<DH>/dh1024_$HostNameFQDN.pem/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+		sed -i "s/dev tun/dev tap0/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+		sed -i "s/10.0.0/10.0.2/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+		# and clean it (delete comments, delete unused option, delete blank line)
+		sed -i '/#/d' /etc/openvpn/Server_TAP_WithoutGW.conf
+		sed -i '/^;/d' /etc/openvpn/Server_TAP_WithoutGW.conf
+		sed -i '/^$/d' /etc/openvpn/Server_TAP_WithoutGW.conf		
+		StatusSTD
+	else
+		echo -e "${CGREEN}Nothing to do !$CEND"
+	fi
 fi
 
 #### 24 - Samba
