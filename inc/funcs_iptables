@@ -171,8 +171,6 @@ KernelParameterConfiguration() {
 
 	# This option logs packets from impossible addresses.
 	/sbin/sysctl -w net.ipv4.conf.all.log_martians="1" &> /dev/null
-	
-	/sbin/sysctl -w net.ipv4.tcp_max_syn_backlog="1024" &> /dev/null
 }
 
 #### Create user chains to reduce the number of rules each packet must traverse.
@@ -221,6 +219,7 @@ PopulatingBadChain() {
 	# This maintains the approach throughout this firewall of a largely trusted internal network.	
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 		iptables -A bad_tcp_packets -p tcp -i tun+ -j RETURN
+		iptables -A bad_tcp_packets -p tcp -i tap+ -j RETURN
 	fi	
 	
 	# However, I originally did apply this filter to the forward chain for packets originating from the internal network.
@@ -299,6 +298,8 @@ PopulatingIcmpChain() {
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 		iptables -A icmp_packets -p ICMP -s 0/0 -i tun+ --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "Allow ICMP over OpenVPN"
 		iptables -A icmp_packets -p ICMP -s 0/0 -i tun+ --icmp-type 8 -j ACCEPT -m comment --comment "Allow ICMP over OpenVPN"
+		iptables -A icmp_packets -p ICMP -s 0/0 -i tap+ --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "Allow ICMP over OpenVPN"
+		iptables -A icmp_packets -p ICMP -s 0/0 -i tap+ --icmp-type 8 -j ACCEPT -m comment --comment "Allow ICMP over OpenVPN"		
 	fi	
 	
 	# By default, however, drop pings without logging. Blaster and other worms have infected systems blasting pings.
@@ -331,7 +332,9 @@ PopulatingUdpInboundChain() {
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 137 -j ACCEPT -m comment --comment "Samba over OpenVPN"
 		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 138 -j ACCEPT -m comment --comment "Samba over OpenVPN"
-		iptables -A udp_inbound -p UDP -s 10.254.254.254 -i dummy0 -j ACCEPT -m comment --comment "Samba dummy"
+		iptables -A udp_inbound -p UDP -s 0/0 -i tap+ --destination-port 137 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+		iptables -A udp_inbound -p UDP -s 0/0 -i tap+ --destination-port 138 -j ACCEPT -m comment --comment "Samba over OpenVPN"		
+		#iptables -A udp_inbound -p UDP -s 0/0 -i dummy0 -j ACCEPT -m comment --comment "Samba dummy"
 	fi
 
 	# Network Time Protocol (NTP) Server
@@ -370,16 +373,22 @@ PopulatingUdpInboundChain() {
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 		# NFS Server - portmapper
 		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 111 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+		iptables -A udp_inbound -p UDP -s 0/0 -i tap+ --destination-port 111 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
 		# NFS Server - statd
 		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9400 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+		iptables -A udp_inbound -p UDP -s 0/0 -i tap+ --destination-port 9400 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
 		# NFS Server - NFS daemon
 		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 2049 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+		iptables -A udp_inbound -p UDP -s 0/0 -i tap+ --destination-port 2049 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
 		# NFS Server - lockd
 		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9401 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+		iptables -A udp_inbound -p UDP -s 0/0 -i tap+ --destination-port 9401 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
 		# NFS Server - mountd
 		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9402 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+		iptables -A udp_inbound -p UDP -s 0/0 -i tap+ --destination-port 9402 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
 		# NFS Server - quotad
 		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9403 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+		iptables -A udp_inbound -p UDP -s 0/0 -i tap+ --destination-port 9403 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
 	fi
 
 	#### OpenVPN
@@ -387,6 +396,7 @@ PopulatingUdpInboundChain() {
 		for ip in $AllUsersIPs; do
 			iptables -A udp_inbound -p UDP -s $ip --destination-port $Port_OpenVPN_WithGW -j ACCEPT -m comment --comment "OpenVPN with GW for users"
 			iptables -A udp_inbound -p UDP -s $ip --destination-port $Port_OpenVPN_WithoutGW -j ACCEPT -m comment --comment "OpenVPN without GW for users"
+			iptables -A udp_inbound -p UDP -s $ip --destination-port $Port_OpenVPN_TAP_WithoutGW -j ACCEPT -m comment --comment "OpenVPN bridged without GW for users"
 		done
 	fi	
 
@@ -462,21 +472,26 @@ PopulatingTcpInboundChain() {
 		if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$OpenVPN_Proto" == "tcp" ]; then
 			iptables -A tcp_inbound -p TCP -s $ip --destination-port $Port_OpenVPN_WithGW -j ACCEPT -m comment --comment "OpenVPN with GW for users"
 			iptables -A tcp_inbound -p TCP -s $ip --destination-port $Port_OpenVPN_WithoutGW -j ACCEPT -m comment --comment "OpenVPN without GW for users"
+			iptables -A udp_inbound -p TCP -s $ip --destination-port $Port_OpenVPN_TAP_WithoutGW -j ACCEPT -m comment --comment "OpenVPN bridged without GW for users"			
 		fi
 	done
 	
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 		# SSHd
 		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port $Port_SSH -j ACCEPT -m comment --comment "SSH and SFTP over OpenVPN"
+		iptables -A tcp_inbound -p TCP -s 0/0 -i tap+ --destination-port $Port_SSH -j ACCEPT -m comment --comment "SSH and SFTP over OpenVPN"
 		
 		# FTP Server (Control)
 		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port $Port_FTP -j ACCEPT -m comment --comment "FTP over OpenVPN"
+		iptables -A tcp_inbound -p TCP -s 0/0 -i tap+ --destination-port $Port_FTP -j ACCEPT -m comment --comment "FTP over OpenVPN"
 
 		# FTP Client (Data Port for non-PASV transfers)
 		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --source-port $Port_FTP_Data -j ACCEPT -m comment --comment "FTP Data over OpenVPN"
+		iptables -A tcp_inbound -p TCP -s 0/0 -i tap+ --source-port $Port_FTP_Data -j ACCEPT -m comment --comment "FTP Data over OpenVPN"
 		
 		# Passive FTP
-		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port $Port_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive over OpenVPN"	
+		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port $Port_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive over OpenVPN"
+		iptables -A tcp_inbound -p TCP -s 0/0 -i tap+ --destination-port $Port_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive over OpenVPN"
 	fi
 	
 	#### Webmin
@@ -486,6 +501,7 @@ PopulatingTcpInboundChain() {
 		done
 		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 			iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port $Ports_Webmin -j ACCEPT -m comment --comment "Webmin over OpenVPN"
+			iptables -A tcp_inbound -p TCP -s 0/0 -i tap+ --destination-port $Ports_Webmin -j ACCEPT -m comment --comment "Webmin over OpenVPN"
 		fi
 	fi
 	
@@ -511,16 +527,22 @@ PopulatingTcpInboundChain() {
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 		# NFS Server - portmapper
 		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 111 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+		iptables -A tcp_inbound -p TCP -s 0/0 -i tap+ --destination-port 111 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
 		# NFS Server - statd
 		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9400 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+		iptables -A tcp_inbound -p TCP -s 0/0 -i tap+ --destination-port 9400 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
 		# NFS Server - NFS daemon
 		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 2049 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+		iptables -A tcp_inbound -p TCP -s 0/0 -i tap+ --destination-port 2049 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
 		# NFS Server - lockd
 		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9401 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+		iptables -A tcp_inbound -p TCP -s 0/0 -i tap+ --destination-port 9401 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
 		# NFS Server - mountd
 		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9402 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+		iptables -A tcp_inbound -p TCP -s 0/0 -i tap+ --destination-port 9402 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
 		# NFS Server - quotad
 		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9403 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+		iptables -A tcp_inbound -p TCP -s 0/0 -i tap+ --destination-port 9403 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
 	fi
 	
 	# Not matched, so return so it will be logged
@@ -567,10 +589,12 @@ ProcessInputChain() {
 		for ip in $VpnIPs; do
 			Broadcast="`echo $ip | sed -e 's/\/24//g;' | sed 's/0/255/4'`"
 			iptables -A INPUT -p ALL -i tun+ -s $ip -j ACCEPT
-			iptables -A INPUT -p ALL -i tun+ -d $Broadcast -j ACCEPT		
+			iptables -A INPUT -p ALL -i tun+ -d $Broadcast -j ACCEPT
+			iptables -A INPUT -p ALL -i tap+ -s $ip -j ACCEPT
+			iptables -A INPUT -p ALL -i tap+ -d $Broadcast -j ACCEPT
 		done
 		# Samba dummy0
-		iptables -A INPUT -p ALL -i dummy+ -j ACCEPT	
+		#iptables -A INPUT -p ALL -i dummy+ -j ACCEPT
 	fi
 	
 	## Inbound Internet Packet Rules
@@ -634,9 +658,11 @@ ProcessOutputChain() {
 		iptables -A OUTPUT -p ALL -o tun0 -j ACCEPT
 		iptables -A OUTPUT -p ALL -s 10.0.1.1 -j ACCEPT
 		iptables -A OUTPUT -p ALL -o tun1 -j ACCEPT
+		iptables -A OUTPUT -p ALL -s 10.0.2.1 -j ACCEPT
+		iptables -A OUTPUT -p ALL -o tap0 -j ACCEPT		
 		# Samba dummy0
-		iptables -A OUTPUT -p ALL -s 10.254.254.254 -j ACCEPT
-		iptables -A OUTPUT -p ALL -o dummy+ -j ACCEPT			
+		# iptables -A OUTPUT -p ALL -s 10.254.254.254 -j ACCEPT
+		# iptables -A OUTPUT -p ALL -o dummy+ -j ACCEPT			
 	fi
 
 	# To internet

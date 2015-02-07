@@ -46,7 +46,7 @@ PortTunWithoutRedirectGW=$Port_OpenVPN_WithoutGW
 PortTapWithoutRedirectGW=$Port_OpenVPN_TAP_WithoutGW
 NetTunWithRedirectGW="10.0.0"
 NetTunWithoutRedirectGW="10.0.1"
-NetTapWithoutRedirectGW="192.168.0"
+NetTapWithoutRedirectGW="10.0.2"
 
 CreateServer() {
 	if [ -f /etc/openvpn/$CACRT ]; then
@@ -66,7 +66,7 @@ CreateServer() {
 	PackagesManage install "openvpn"
 
 	#### STOP services
-	#ManageServices stop "openvpn"
+	ManageServices stop "openvpn"
 
 	#### Files and Directory
 	if [ ! -d /var/log/openvpn ]; then mkdir -p /var/log/openvpn; fi
@@ -132,24 +132,20 @@ CreateServer() {
 	sed -i '/redirect-gateway/d' /etc/openvpn/Server_TUN_WithoutGW.conf
 
 	#### TAP
-	sed -i "s/eth0/$PrimaryInet/g" $MySB_InstallDir/scripts/Bridge-Start.bsh
-	sed -i '/Bridge-Start.bsh/d' /etc/init.d/openvpn
-	sed -i '/Bridge-Stop.bsh/d' /etc/init.d/openvpn
-	NumLign="`sed -n '/start_vpn () {/=' /etc/init.d/openvpn`"
-	(( NumLign++ ))
-	sed -i "${NumLign}i\    bash $MySB_InstallDir/scripts/Bridge-Start.bsh > /dev/null" /etc/init.d/openvpn
-	NumLign="`sed -n '/stop_vpn () {/=' /etc/init.d/openvpn`"
-	(( NumLign++ ))
-	sed -i "${NumLign}i\    bash $MySB_InstallDir/scripts/Bridge-Stop.bsh > /dev/null" /etc/init.d/openvpn
-	ManageServices stop "openvpn"
-	ScriptInvoke 'source' "$MySB_InstallDir/scripts/Bridge-Start.bsh"
+	# dummy interface
+	echo "alias netdev-dummy0 dummy" | tee -a /etc/modprobe.d/aliases.conf
+	modprobe dummy numdummies=0	
+	ScriptInvoke 'source' "$MySB_InstallDir/scripts/OpenVPN-Bridge.bsh" 'start'
 
 	#### Config file Server TAP - Without Redirect Gateway
 	cp $MySB_InstallDir/templates/openvpn.server.conf.template /etc/openvpn/Server_TAP_WithoutGW.conf
 	# adapt this file
 	sed -i '/server 10.0.0.0 255.255.255.0/d' /etc/openvpn/Server_TAP_WithoutGW.conf
 	sed -i '/redirect-gateway/d' /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i "s/;server-bridge/server-bridge/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+	sed -i "s/^;server-bridge/server-bridge/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+	sed -i "s/^;up/up/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+	sed -i "s/^;down/down/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+	sed -i "s/<MySB_InstallDir>/$MySB_InstallDir/g" /etc/openvpn/Server_TAP_WithoutGW.conf
 	sed -i "s/<PORT>/$PortTapWithoutRedirectGW/g" /etc/openvpn/Server_TAP_WithoutGW.conf
 	sed -i "s/<PROTO>/$OpenVPN_Proto/g" /etc/openvpn/Server_TAP_WithoutGW.conf
 	sed -i "s/<TAKEY>/$TAKEY/g" /etc/openvpn/Server_TAP_WithoutGW.conf
