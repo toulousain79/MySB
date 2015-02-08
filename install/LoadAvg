@@ -39,15 +39,22 @@ if [ ! -d $LoadAvgDir/logs ]; then
 	chown root:www-data $LoadAvgDir/logs
 fi
 
-#### Config
+#### settings.ini.php
 cp $MySB_InstallDir/templates/etc.myb.web.loadavg.app.config.template $LoadAvgDir/app/config/settings.ini.php
 perl -pi -e "s/<server_name>/$HostNameFQDN/g" $LoadAvgDir/app/config/settings.ini.php
 TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
 perl -pi -e "s/<time_zone>/$TimeZoneEscaped/g" $LoadAvgDir/app/config/settings.ini.php
-perl -pi -e "s/<user_name>/noadmin/g" $LoadAvgDir/app/config/settings.ini.php
 FakePassword="`GenPassword 32`"
 perl -pi -e "s/<password>/$FakePassword/g" $LoadAvgDir/app/config/settings.ini.php
 perl -pi -e "s/eth0/$PrimaryInet/g" $LoadAvgDir/app/config/settings.ini.php
+if [ "$IsInstalled_OpenVPN" != "YES" ]; then
+	sed -i '/br0/d' $LoadAvgDir/app/config/settings.ini.php
+	sed -i '/tap0/d' $LoadAvgDir/app/config/settings.ini.php
+	sed -i '/tun0/d' $LoadAvgDir/app/config/settings.ini.php
+	sed -i '/tun1/d' $LoadAvgDir/app/config/settings.ini.php
+fi
+
+#### ssh.ini.php
 perl -pi -e "s/\/var\/log\/secure/\/var\/log\/auth.log/g" $LoadAvgDir/lib/modules/Ssh/ssh.ini.php
 
 #### Install
