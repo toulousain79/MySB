@@ -314,13 +314,6 @@ if [ "$COMMAND" == "" ]; then
 				IfEmpty=0
 			fi
 		done
-		if [ ! -z "$MySB_InstallDir" ]; then
-			if [ ! -d /etc/MySB/ ]; then mkdir /etc/MySB/; fi
-			echo "MySB_InstallDir=\"$MySB_InstallDir\"" > /etc/MySB/config
-		else
-			echo -e "${CRED}I can't write the config file \"/etc/MySB/config\", aborting !$CEND"
-			exit 1
-		fi
 
 		# First we do an update
 		BannerInstall
@@ -339,7 +332,6 @@ if [ "$COMMAND" == "" ]; then
 		CountDown 3
 		$AptCommand -y --assume-yes -V -o Dpkg::Options::="--force-confold" upgrade
 		if [ $? -gt 0 ]; then
-			if [ -f /etc/MySB/config ]; then rm -f /etc/MySB/config; fi
 			echo -e "${CRED}Looks like something was wrong during the upgrade, aborting !$CEND"
 			exit 1
 		fi
@@ -351,7 +343,6 @@ if [ "$COMMAND" == "" ]; then
 		TOOLS="git-core dos2unix lsb-release screen ccze gnupg figlet mlocate sqlite3 dnsutils netselect-apt"
 		$AptCommand -y --assume-yes install $TOOLS
 		if [ $? -gt 0 ]; then
-			if [ -f /etc/MySB/config ]; then rm -f /etc/MySB/config; fi
 			echo -e "${CRED}Looks like something was wrong during the install of needed packages, aborting !$CEND"
 			exit 1
 		fi
@@ -361,12 +352,19 @@ if [ "$COMMAND" == "" ]; then
 		echo -e -n "${CBLUE}Downloading files from GitHub into $MySB_InstallDir$CEND... "
 		git clone --progress -b $MySB_CurrentVersion https://github.com/toulousain79/MySB.git $MySB_InstallDir >> /tmp/`basename $0`.log
 		if [ $? -gt 0 ]; then
-			if [ -f /etc/MySB/config ]; then rm -f /etc/MySB/config; fi
 			echo -e "${CRED}Looks like something was wrong with git clone, aborting !$CEND"
 			exit 1
 		else
 			#### Load variables and functions
-			echo -e "${CGREEN}Done !$CEND"	
+			echo -e "${CGREEN}Done !$CEND"
+
+			if [ ! -z "$MySB_InstallDir" ]; then
+				if [ ! -d /etc/MySB/ ]; then mkdir /etc/MySB/; fi
+				echo "MySB_InstallDir=\"$MySB_InstallDir\"" > /etc/MySB/config
+			else
+				echo -e "${CRED}I can't write the config file \"/etc/MySB/config\", aborting !$CEND"
+				exit 1
+			fi
 
 			echo -e -n "${CBLUE}Loading variables and functions$CEND..."
 			source $MySB_InstallDir/inc/vars
