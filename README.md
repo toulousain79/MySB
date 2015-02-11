@@ -89,7 +89,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 	--> DO NOT try to reconfigure packages using other tutorials or yourself.
 	--> TO UPGRADE your system, please use 'MySB_UpgradeSystem' command.
 	
-###### NOTE: For OVH servers:
+###### NOTE: For OVH servers (OVH, KimSufi, SoYouStart):
 
 	--> Use the default distribution kernel.
 		When you start the installation process, choose "Custom install", and "Use of kernel distribution".
@@ -97,6 +97,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 	--> You can monitor your server, simply specify it during MySB installation.
 		BUT I still advice to disable this service in the OVH interface.
 		If you allow monitoring with MySB, the IPs of your provider will be added to the whitelist globally (PeerGuardian, Fail2Ban, IPTables), and those addresses will not be filtered.
+		The system works on SoYouStart servers. But has not been verified on OVH servers ! 
 	
 	--> If you leave the monitoring enable in the OVH interface AND you do not activated it during installation of MySB, your server may be rebooted in rescue mode by the OVH staff...
 	--> If you want use the monitoring, you must first disable it BEFORE start the MySB installation. You can reactivate it AFTER the END of installation.

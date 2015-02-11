@@ -11,10 +11,10 @@
 			- Possibility for all users to allowing access by dynamic IP addresses
 			- Renew all certificates using SHA256 2048bits instead of SHA1 1024bits
 			- Add ruTorrent Plugins (Mobile and Pause WebUI), some corrections
-			- Allow monitoring (ping) from some providers (OVH and ONLINE)
+			- Allow monitoring (ping) from some providers (OVH and ONLINE, check the warnings section in the README)
 			- Change Cakebox access by 'alias' instead of 'vhost'
 			- Add LoadAvg, free server analytics and monitoring
-			- Correcting issues with OVH server (OVH kernel, look the warnings section in the README)
+			- Correcting some issues with OVH servers (OVH kernel, check the warnings section in the README)
 			- Some modifications
 
 	Version v1.1
