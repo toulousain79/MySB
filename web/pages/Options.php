@@ -56,10 +56,6 @@ if (isset($_POST['submit'])) {
 	}
 
 	GenerateMessage($Command, $type, $message);
-	
-	// System table
-	
-	
 }
 
 // Get values from database
@@ -108,7 +104,7 @@ $ip_restriction = $system_datas['ip_restriction'];
 	</fieldset>
 
 	<?php if ( ($IsMainUser) && ($PeerguardianIsInstalled == '1') ) { ?>
-	<fieldset>
+	<!--<fieldset>
 	<legend>PeerGuardian</legend>
 	<table>
 		<tr>
@@ -144,11 +140,11 @@ $ip_restriction = $system_datas['ip_restriction'];
 			</td>
 		</tr>
 	</table>
-	</fieldset>
+	</fieldset>-->
 	<?php } ?>
 	
 	<?php if ( $IsMainUser ) { ?>
-	<fieldset>
+	<!--<fieldset>
 	<legend>IPtables</legend>
 	<table>
 		<tr>
@@ -169,7 +165,7 @@ $ip_restriction = $system_datas['ip_restriction'];
 			</td>
 		</tr>
 	</table>
-	</fieldset>
+	</fieldset>-->
 	<?php } ?>	
 	
 	<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Submit" />
