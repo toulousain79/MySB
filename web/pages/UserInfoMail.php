@@ -345,7 +345,7 @@ function PrintContent($user, $Case) {
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle">NFS share</th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent</td>
-			<td><span class="Comments">mount -t nfs [10.0.x.1]:/home/'.$user.'/rtorrent [Destination_directory] [-o vers=3,nolock]</span></td>
+			<td><span class="Comments">mount -t nfs [10.0.x.1]:/home/<?php echo $user;?>/rtorrent [Destination_directory] [-o vers=3,nolock]</span></td>
 		</tr>
 <?php } ?>
 
