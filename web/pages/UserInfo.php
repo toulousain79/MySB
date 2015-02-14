@@ -162,11 +162,15 @@ function printUser($user) {
 	// Server IP GW
 	echo '<tr align="left"><th width="17%" scope="row">Server IP GW</th>';
 	echo '<td>10.0.0.1</td>';
-	echo '<td><span class="Comments">Server IP with redirect traffic.</span></td></tr>';
+	echo '<td><span class="Comments">Server IP with redirect traffic (TUN interface).</span></td></tr>';
 	// Server IP
 	echo '<tr align="left"><th width="17%" scope="row">Server IP</th>';
 	echo '<td>10.0.1.1</td>';
-	echo '<td><span class="Comments">Server IP without redirect traffic.</span></td></tr>';
+	echo '<td><span class="Comments">Server IP without redirect traffic (TUN interface).</span></td></tr>';
+	// Server IP bridged
+	echo '<tr align="left"><th width="17%" scope="row">Server IP bridged</th>';
+	echo '<td>10.0.2.1</td>';
+	echo '<td><span class="Comments">Server IP without redirect traffic (TAP interface).</span></td></tr>';
 	// Samba share
 	echo '<tr align="left"><th width="17%" scope="row">Samba share</th>';
 	echo '<td>' . $users_datas["home_dir"] . '/rtorrent</td>';

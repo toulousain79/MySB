@@ -321,14 +321,20 @@ function PrintContent($user, $Case) {
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle">Server IP GW</th>
 			<td>10.0.0.1</td>
-			<td><span class="Comments">Server IP with redirect traffic.</span></td>
+			<td><span class="Comments">Server IP with redirect traffic (TUN interface).</span></td>
 		</tr>
 		<!-- // Server IP -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle">Server IP</th>
 			<td>10.0.1.1</td>
-			<td><span class="Comments">Server IP without redirect traffic.</span></td>
+			<td><span class="Comments">Server IP without redirect traffic (TUN interface).</span></td>
 		</tr>
+		<!-- // Server IP bridged -->
+		<tr align="left">
+			<th width="15%" scope="row" id="BorderTopTitle">Server IP bridged</th>
+			<td>10.0.2.1</td>
+			<td><span class="Comments">Server IP without redirect traffic (TAP interface).</span></td>
+		</tr>		
 		<!-- // Samba share -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle">Samba share</th>
