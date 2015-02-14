@@ -1,5 +1,5 @@
 	Version v2.0 (main branch)
-		2014/12/24
+		2015/02/14
 			- Used of SQLite instead of flat file (more convenient)
 			- Add Wolf CMS as portal (more convenient), manage blocklists, trackers, users...
 			- NginX, add PageSpeed functionnality
