@@ -1,8 +1,4 @@
 ====
-#### WORK IN PROGRESS, DON'T USE THIS VERSION !!!
-====
-
-====
 #### This script is not intended to solicit illegal actions! I can not be held responsible for the use that you could doing it! Thank you to reconsider the installation and use of MySB. I developed this script only for pleasure and passion for my job.
 ====
 MySB
@@ -108,7 +104,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 ## How to install
 Just copy and paste those commands on your terminal:
 ```
-wget --no-check-certificate -N https://raw.githubusercontent.com/toulousain79/MySB/dev/install/MySB_Install.bsh
+wget --no-check-certificate -N https://raw.githubusercontent.com/toulousain79/MySB/v2.0/install/MySB_Install.bsh
 bash MySB_Install.bsh
 ```
 
