@@ -6,7 +6,7 @@
 			- DNScrypt-proxy v1.4.3, add use of multi provider instead of one. By default, all provider that accept DNSsec and No Logs are activated.
 			- rTorrent v0.9.4 & libTorrent v0.13.4 (older versions are still present, it will soon be possible to switch from one version to another via the portal)
 			- BIND, block all inactivated trackers, add DNSsec
-			- OpenVPN, change clients pushed DNS
+			- OpenVPN, change clients pushed DNS and add TAP mode for DLNA with Plex Media
 			- Strengthening IP access policy, all access to the server are fully subject to the restriction by IP (can be disabled)
 			- Possibility for all users to allowing access by dynamic IP addresses
 			- Renew all certificates using SHA256 2048bits instead of SHA1 1024bits
