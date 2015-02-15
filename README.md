@@ -26,11 +26,11 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 	* DNScrypt-proxy with Bind9 as DNS caching (optionnal but recommended)	
 	* Fail2ban (optionnal but recommended)
 	* Seedbox-Manager (optionnal, you are able to restart rTorrent session via MySB portal)
-	* OpenVPN (optionnal); Multi TUN configuration, with or without redirection of traffic. Add AES-NI support.
+	* OpenVPN (optionnal); Multi TUN/TAP configuration, with or without redirection of traffic. Add AES-NI support.
 	* Webmin (optionnal)
 	* BlockList usage (optionnal) (PeerGuardian or rTorrent, if PeerGuardian failed to start, rTorrent will use its own blocklists)
 	* CakeBox-Light (optionnal)
-	* PlexMedia Server (optionnal) (requires additional setup)
+	* PlexMedia Server (optionnal, VPN bridged access, requires additional setup) (WiP)
 	* Samba share for each users (VPN access)
 	* NFS share for each users (VPN access)
 	* Auto retrieve SSL certificates for all trackers (if available)
@@ -208,6 +208,18 @@ LoadAvg is a powerful way to manage load, memory, and resource usage on linux se
 ```
 http://www.loadavg.com/
 ```
+
+## Plex Media
+
+Additional steps to add your server to your Plex account.
+```
+https://www.kassianoff.fr/blog/fr/installation-de-plex-media-server-sur-debian-7
+http://mondedie.fr/viewtopic.php?id=5732
+```
+###### NOTE
+	Work in progress, this service is currently not 100% functional.
+	The OpenVPN TAP mode has been added to allow the diffusion of DLNA, but it is still in testing.
+	Feedback would be appreciated...
 
 ## BlockLists
 BlockList usage (optionnal), PeerGuardian or directly via rTorrent.
