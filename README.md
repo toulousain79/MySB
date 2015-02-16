@@ -10,8 +10,9 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 ###### Last stable version = v2.0
 
 ====
-#### You must have a default Debian kernel !
-#### If you can not install a Debian kernel in this case MySB is not for you ...
+## Prerequisite (All prerequisites listed below are MANDATORY!)
+	* You must have a default Debian kernel ! If you can not install a Debian kernel in this case MySB is not for you ...
+	* Virtual Private Server (VPS) are not compatible ! (refer to the previous point)
 ====
 
 ## Installed software
