@@ -5,6 +5,7 @@
 
 MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and could be renamed MySSB, My Secured SeedBox.
 
+====
 ##### Current version : v2.0
 ###### Last stable version : v2.0
 
@@ -98,8 +99,8 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 		The system works on SoYouStart servers. But has not been verified on others OVH servers like KimSufi ! 
 	
 	--> If you leave the monitoring enable in the OVH interface AND you do not activated it during installation of MySB, your server may be rebooted in rescue mode by the OVH staff...
-	--> If you want use the monitoring, you must first disable it BEFORE start the MySB installation. You can reactivate it AFTER the END of installation.
-
+	--> If you want use the monitoring, you must first disable it BEFORE start the MySB installation. You can reactivate it AFTER the END of installation.	
+	
 #################
 
 ## How to install
