@@ -4,10 +4,15 @@
 MySB
 ====
 
-MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).  
+MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 
 ##### Current version = v2.0
 ###### Last stable version = v2.0
+
+====
+#### You must have a default Debian kernel !
+#### If you can not install a Debian kernel in this case MySB is not for you ...
+====
 
 ## Installed software
 
@@ -23,7 +28,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 ## Services available
 
 	* PeerGuardian (optionnal but recommended)
-	* DNScrypt-proxy with Bind9 as DNS caching (optionnal but recommended)	
+	* DNScrypt-proxy with Bind9 as DNS caching (optionnal but recommended)
 	* Fail2ban (optionnal but recommended)
 	* Seedbox-Manager (optionnal, you are able to restart rTorrent session via MySB portal)
 	* OpenVPN (optionnal); Multi TUN/TAP configuration, with or without redirection of traffic. Add AES-NI support.
@@ -94,7 +99,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 	--> You can monitor your server, simply specify it during MySB installation.
 		BUT I still advice to disable this service in the OVH interface.
 		If you allow monitoring with MySB, the IPs of your provider will be added to the whitelist globally (PeerGuardian, Fail2Ban, IPTables), and those addresses will not be filtered.
-		The system works on SoYouStart servers. But has not been verified on OVH servers ! 
+		The system works on SoYouStart servers. But has not been verified on others OVH servers like KimSufi ! 
 	
 	--> If you leave the monitoring enable in the OVH interface AND you do not activated it during installation of MySB, your server may be rebooted in rescue mode by the OVH staff...
 	--> If you want use the monitoring, you must first disable it BEFORE start the MySB installation. You can reactivate it AFTER the END of installation.
