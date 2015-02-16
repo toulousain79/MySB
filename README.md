@@ -89,7 +89,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 ###### NOTE: For OVH servers (OVH, KimSufi, SoYouStart):
 
 	--> Use the default distribution kernel.
-		When you start the installation process, choose "Custom install", and "Use of kernel distribution".
+		In your OVH manager interface, when you start the installation process, choose "Custom install", and "Use of kernel distribution".
 	
 	--> You can monitor your server, simply specify it during MySB installation.
 		BUT I still advice to disable this service in the OVH interface.
