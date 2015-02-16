@@ -1,22 +1,21 @@
-====
 #### This script is not intended to solicit illegal actions! I can not be held responsible for the use that you could doing it! Thank you to reconsider the installation and use of MySB. I developed this script only for pleasure and passion for my job.
 ====
 MySB
-====
 
 MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
+MySB could be renamed MySSB, My Secured SeedBox.
 
-##### Current version = v2.0
-###### Last stable version = v2.0
+##### Current version : v2.0
+###### Last stable version : v2.0
 
 ====
 ## All prerequisites listed below are MANDATORY!
 	* You must have a standard Debian kernel ! If you can not install a Debian kernel, then MySB is not for you ...
 	* Virtual Private Server (VPS) are not compatible ! (refer to the previous point)
+	* You must have a clean dedicated server.
+
 ====
-
 ## Installed software
-
 	* rTorrent (rakshasa) v0.9.2 & v0.9.4 with SSL
 	* libTorrrent (rakshasa) v0.13.2 & v0.13.4
 	* ruTorrent (SVN) + official plugins (SVN)
@@ -26,8 +25,8 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 	* VSFTPd (FTP over TLS)
 	* Postfix with (or without) SMTP authentication (Gmail, Free, Ovh and Yahoo)
 
+====
 ## Services available
-
 	* PeerGuardian (optionnal but recommended)
 	* DNScrypt-proxy with Bind9 as DNS caching (optionnal but recommended)
 	* Fail2ban (optionnal but recommended)
@@ -47,8 +46,8 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 	* Access restricted by IP for all server access (can be disabled)
 	* Dynamic IP Management for IP restriction (DynDNS, No-IP, ...)
 
+====
 ## Additional ruTorrent plugins
-
 	* Mobile
 	* Pause WebUI
 	* Chat
@@ -63,19 +62,15 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
 	* Stream
 	* Favicons trackers
 
+====
 ## Coming soon
-
 	* Possibility to add more blocklists
 	* Possibility to delete/inactivate a user
 
+====
 ## Bugs
-
 	--> Please, tell me.
 	--> Maybe some missing IPtables rules for some services. Can be corrected quickly if you do a feedback...
-
-## Before installation
-
-	--> You need to have a "blank" server installation.
 
 #################
 #	Warnings	#
