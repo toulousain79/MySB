@@ -1,9 +1,9 @@
 #### This script is not intended to solicit illegal actions! I can not be held responsible for the use that you could doing it! Thank you to reconsider the installation and use of MySB. I developed this script only for pleasure and passion for my job.
-====
-MySB
 
-MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy).
-MySB could be renamed MySSB, My Secured SeedBox.
+====
+# MySB
+
+MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and could be renamed MySSB, My Secured SeedBox.
 
 ##### Current version : v2.0
 ###### Last stable version : v2.0
