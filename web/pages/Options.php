@@ -46,7 +46,7 @@ if (isset($_POST['submit'])) {
 		$Command = 'Options';
 	}
 
-	$MySB_DB->update("system", ["ip_restriction" => "$IP_restriction"], ["id_system" => 1]);
+	//$MySB_DB->update("system", ["ip_restriction" => "$IP_restriction"], ["id_system" => 1]);
 	$result = $MySB_DB->update("users", ["rtorrent_version" => "$rTorrentVersion", "rtorrent_restart" => "$rTorrentRestart"], ["users_ident" => "$CurrentUser"]);
 	
 	if( $result == 1 ) {
@@ -145,7 +145,7 @@ $ip_restriction = $system_datas['ip_restriction'];
 	<?php } ?>
 	
 	<?php if ( $IsMainUser ) { ?>
-	<fieldset>
+	<!--<fieldset>
 	<legend>IPtables</legend>
 	<table>
 		<tr>
@@ -166,7 +166,7 @@ $ip_restriction = $system_datas['ip_restriction'];
 			</td>
 		</tr>
 	</table>
-	</fieldset>
+	</fieldset>-->
 	<?php } ?>	
 	
 	<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Submit" />
