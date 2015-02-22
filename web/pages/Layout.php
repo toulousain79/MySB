@@ -58,14 +58,22 @@
 			<div id="logo">
 				<div id="logo_text">
 					<!-- class="LogoFirstLine", allows you to change the colour of the text -->
-					<h1><a href="<?php echo URL_PUBLIC; ?>"><span class="LogoFirstLine">MySB</span></a></h1>
+					<h1>
+<?php if ( !isset($_SESSION['page']) ) { ?>
+						<a href="<?php echo URL_PUBLIC; ?>">
+<?php } ?>
+							<span class="LogoFirstLine">MySB</span>
+<?php if ( !isset($_SESSION['page']) ) { ?>
+						</a>
+<?php } ?>
+					</h1>
 					<h2> <?php echo GetVersion(); ?></h2>
 				</div>
 				<div id="logout">
 <?php if ( !isset($_SESSION['page']) ) { ?>
 					<a href="/Logout.php">Logout</a>
 <?php } ?>
-				</div>			
+				</div>
 			</div>
 
 			<nav>
@@ -75,7 +83,7 @@
 
 				if ( !isset($_SESSION['page']) ) {
 ?>
-					
+
 					<ul class="sf-menu" id="nav">
 						<li<?php echo ($this->level() == 0) ? ' class="current"': null; ?>><?php echo $page->link($page->title); ?></li>
 
@@ -83,7 +91,7 @@
 					</ul>
 <?php
 				}
-?>					
+?>
 					<div id="breadcrumb">
 						<?php echo $this->breadcrumb(); ?>
 					</div>
@@ -125,6 +133,7 @@
 		</div>
 		<footer>
 <?php
+		if ( !isset($_SESSION['page']) ) {
 			$IsCurrentPage = url_match('/') ? ' class="current"': '';
 			$hidden = (MainUser()) ? true : false;
 			$FooterNavBar = '<a ' . $IsCurrentPage . ' href="' . URL_PUBLIC . '">Home</a>';
@@ -134,6 +143,7 @@
 				}
 			endforeach;
 			echo $FooterNavBar . '<br /><br />';
+		}
 ?>
 			<a target="_blank" href="https://github.com/toulousain79/MySB/" title="MySB on GitHub">MySB on GitHub</a> | <a target="_blank" href="https://github.com/toulousain79/MySB/blob/<?php echo GetVersion(); ?>/Changelog.md" title="MySB on GitHub">Changelog <?php echo GetVersion(); ?></a><br />
 			<a target="_blank" href="http://www.css3templates.co.uk">Copyright &copy; CSS3_two</a> | <a target="_blank" href="http://www.wolfcms.org/" title="Wolf CMS">Wolf CMS</a>
@@ -154,7 +164,7 @@
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.color.js"></script>
 	<!-- Import The jQuery Script --> 
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jMenu.js"></script>
-<?php } ?>	
+<?php } ?>
 </body>
 
 </html>

@@ -91,7 +91,7 @@ if ( isset($_POST['submit']) ) {
 							if ( $result == 0 ) {
 								$type = 'success';
 								$command = 'message_only';
-								$message = 'Success !<br /><br />Wait a few seconds and you will be able to log in with your new password.<br /><br />You will be redirect in 20 seconds.';
+								$message = 'Success !<br /><br />Wait a few seconds and you will be able to log in with your new password.<br /><br />You will be redirect in 30 seconds.<br /><br />Please, wait for automatic redirection !';
 							} else {
 								$type = 'error';
 								$message = 'Failed ! It was not possible to apply the new password...';
@@ -128,7 +128,7 @@ if ( isset($_POST['submit']) ) {
 		unset($_SESSION['page']);
 		session_unset();
 		session_destroy();
-		header('Refresh: 20; URL=/');
+		header('Refresh: 30; URL=/');
 	}
 }
 
