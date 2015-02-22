@@ -37,51 +37,41 @@ Switch="$2"
 
 DoApplyConfig() {
 	# 1 - Purger la base des entrées en double (command + user), uniquement l'entrée avec la priorité la plus haute sera conservée
-	# Applicable pour seulement quelques commandes	
-	#AllUser="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT user FROM commands WHERE 1\" | tr " " "\n"|sort|uniq|tr "\n" " "`"
 	User=$1
-	
+
 	echo `date +%H:%m:%S` "- Creating order of execution for $UserApplying"
-	#for User in $AllUser; do
-		AllCommandsUser="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT commands FROM commands WHERE user = '$User'\"`"
-		for CommandUser in $AllCommandsUser; do
-			case "$CommandUser" in
-				BlocklistsRTorrent.bsh|MySB_SecurityRules*|GetTrackersCert.bsh|MySB_ChangeUserPassword|Postfix) # On peut supprimer les doublons
-					FirstCommandUser="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT min(priority) FROM commands WHERE user = '$User' AND commands = '$CommandUser'\"`"
-					LastCommandUser="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT max(priority) FROM commands WHERE user = '$User' AND commands = '$CommandUser'\"`"
-					while [ $FirstCommandUser -lt $LastCommandUser ]; do
-						# On supprime les premières commandes
-						echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE user = '$User' AND commands = '$CommandUser' AND priority = '$FirstCommandUser'"
-						(( FirstCommandUser++ ))
-					done
-				;;
-			esac
-		done
-	#done
+	AllCommandsUser="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT commands FROM commands WHERE user = '$User'\"`"
+	for CommandUser in $AllCommandsUser; do
+		case "$CommandUser" in
+			BlocklistsRTorrent.bsh|MySB_SecurityRules*|GetTrackersCert.bsh|MySB_ChangeUserPassword|Postfix) # On peut supprimer les doublons
+				FirstCommandUser="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT min(priority) FROM commands WHERE user = '$User' AND commands = '$CommandUser'\"`"
+				LastCommandUser="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT max(priority) FROM commands WHERE user = '$User' AND commands = '$CommandUser'\"`"
+				while [ $FirstCommandUser -lt $LastCommandUser ]; do
+					# On supprime les premières commandes
+					echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE user = '$User' AND commands = '$CommandUser' AND priority = '$FirstCommandUser'"
+					(( FirstCommandUser++ ))
+				done
+			;;
+		esac
+	done
 
 	# 2 - En fonction de l'ensemble des commandes, on réorganise certaines.
 	# Par exemple, la commande 'MySB_SecurityRules' devra être exécutée une seule fois et en dernier
 	# On en garde qu'une seule tout utilisateur confondu et assigne une priorité maxi.
-	# LastOneMin="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT min(priority) FROM commands WHERE commands = 'MySB_SecurityRules'\"`"
-	# LastOneMax="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT max(priority) FROM commands WHERE commands = 'MySB_SecurityRules'\"`"
 	LastOneMin="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT min(priority) FROM commands WHERE commands = 'MySB_SecurityRules' AND user = '$User'\"`"
 	LastOneMax="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT max(priority) FROM commands WHERE commands = 'MySB_SecurityRules' AND user = '$User'\"`"	
 	while (( $LastOneMin -lt $LastOneMax )); do
 		# On supprime les premières commandes
-		#sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = 'MySB_SecurityRules' AND priority = '$LastOneMin'"
 		echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = 'MySB_SecurityRules' AND priority = '$LastOneMin' AND user = '$User'"
 		((  LastOneMin++ ))
 	done
 
 	# Maintenant on prend la priorité globale maxi toute commandes confondues, puis on incrémente de 1 'MySB_SecurityRules'.
-	#LastPriority="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT max(priority) FROM commands WHERE 1\"`"
 	LastPriority="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT max(priority) FROM commands WHERE user = '$User'\"`"
 	(( LastPriority++ ))
-	#sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE commands SET priority = '$LastPriority' WHERE commands = 'MySB_SecurityRules';"
 	echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE commands SET priority = '$LastPriority' WHERE commands = 'MySB_SecurityRules' AND user = '$User';"
 
 	# 3 - On peut maintenant exécuté les commandes une à une dans l'ordre ascendant des priorités.
-	#AllCommands="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT commands, user FROM commands WHERE 1 ORDER BY priority ASC\"`"
 	AllCommands="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT commands, priority FROM commands WHERE user = '$User' ORDER BY priority ASC\"`"
 	
 	#for MyCommand in $AllCommands; do
@@ -130,18 +120,11 @@ DoApplyConfig() {
 				WaitingSTD MySB_ChangeUserPassword
 				screen -dmS MySB_ChangeUserPassword /bin/bash $MySB_InstallDir/bin/MySB_ChangeUserPassword "$UserName" "$UserPass" "APPLYCONFIG";
 				WaitingSTD MySB_ChangeUserPassword
+				WaitingSTD MySB_SecurityRules
+				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "--users" "APPLYCONFIG";
+				WaitingSTD MySB_SecurityRules				
 				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
-
-			# "Blocklists")
-				# WaitingSTD BlocklistsRTorrent
-				# screen -dmS BlocklistsRTorrent /bin/bash $MySB_InstallDir/scripts/BlocklistsRTorrent.bsh "APPLYCONFIG";
-				# WaitingSTD BlocklistsRTorrent
-				# WaitingSTD MySB_SecurityRules
-				# screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "--blocklists" "APPLYCONFIG";
-				# WaitingSTD MySB_SecurityRules
-				# echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User'"
-			# ;;
 
 			"BlocklistsRTorrent.bsh")
 				WaitingSTD BlocklistsRTorrent
@@ -163,17 +146,17 @@ DoApplyConfig() {
 				WaitingSTD MySB_SecurityRules
 				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
-			
+
 			"ManageAddresses")
 				WaitingSTD MySB_SecurityRules
 				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "--users" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
 				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
-			;;			
+			;;
 
 			"MySB_SecurityRules")
 				WaitingSTD MySB_SecurityRules
-				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "APPLYCONFIG";
+				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "create" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
 				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
