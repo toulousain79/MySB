@@ -14,6 +14,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 	* You must have a standard Debian kernel ! If you can not install a Debian kernel, then MySB is not for you ...
 	* Virtual Private Server (VPS) are not compatible ! (refer to the previous point)
 	* You must have a clean dedicated server.
+	* Encourage me by following my project ;-)
 
 ====
 ## Installed software
@@ -129,6 +130,7 @@ Use this command on your terminal:
 ```
 MySB_UpgradeMe
 ```
+###### NOTE: If you can, reinstall MySB v2.0 directly.
 
 ## Complete uninstall of MySB
 Use this command on your terminal:
