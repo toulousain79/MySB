@@ -1,0 +1,116 @@
+#!/bin/bash
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_before
+# -----------------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### Local functions
+SwitchDNS() {
+	case "$1" in
+		"dnscrypt")
+			sed -i '/nameserver/d' /etc/resolv.conf
+			echo "nameserver 127.0.0.1" > /etc/resolv.conf
+			echo "nameserver 127.0.0.2" > /etc/resolv.conf
+		;;
+		"standard")
+			sed -i '/nameserver/d' /etc/resolv.conf
+			echo "nameserver 208.67.220.220" >> /etc/resolv.conf
+			echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.1" >> /etc/resolv.conf
+			echo "nameserver 208.67.222.222" >> /etc/resolv.conf
+			echo "nameserver 8.8.4.4" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.2" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.3" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.4" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.5" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.6" >> /etc/resolv.conf
+		;;
+	esac
+}
+
+BannerUpgrade() {
+	echo
+	echo -e "${CRED}If you lose connection during installation, restart the SSH session and run the following command:$CEND"
+	echo -e "${CGREEN}	screen -r MySB_Upgrade$CEND"
+	echo
+	echo -e "${CYELLOW}All users password will be changed by temporary password (except main user).$CEND"
+	echo -e "${CYELLOW}All users IP addresses will be removed (except main user).$CEND"
+	echo -e "${CYELLOW}They will receive an email with information to change it.$CEND"
+	echo -e "${CYELLOW}Their IP address will be automatically added into the database.$CEND"
+	echo
+	echo -e "${CYELLOW}The upgrade may take 20 to 45 minutes around.$CEND"
+	echo -e "${CYELLOW}This will depend on your server configuration and installed services.$CEND"
+	echo
+}
+
+#### Count steps
+echo
+CurrentSTEP=0
+TotalSTEP=3
+
+BannerUpgrade
+CountDown 20
+
+if [ "$BANNER" == "ON" ]; then
+	BannerGenerator
+fi
+BannerUpgrade
+
+#### Stopping CRON and rTorrent sessions
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Stopping CRON and rTorrent sessions$CEND..."
+service cron stop &> /dev/null
+RtorrentSeesions="`ls -1r /etc/init.d/rtorrent-* | cut -d '/' -f 4`"
+for Session in $RtorrentSeesions; do
+	service $Session stop &> /dev/null
+done
+StatusSTD
+
+#### Switching to standard DNS
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Switching to standard DNS$CEND..."
+SwitchDNS "standard" &> /dev/null
+StatusSTD
+
+#### Bind
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Bind$CEND..."
+screen -dmS Bind /bin/bash $MySB_InstallDir/install/Bind 'UPGRADE';
+WaitingScreen Bind
+StatusSTD
+
+#### Monitoring
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Getting information about OVH monitoring servers$CEND..."
+if [ "$ServerProvider" == "OVH" ] || [ "$ServerProvider" == "ONLINE" ]; then
+	screen -dmS Monitoring /bin/bash $MySB_InstallDir/install/Monitoring 'UPGRADE';
+	WaitingScreen Monitoring
+	StatusSTD
+else
+	echo -e "${CGREEN}Nothing to do !$CEND"
+fi
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################
