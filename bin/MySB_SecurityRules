@@ -472,21 +472,21 @@ case "$Switch" in
 				# fi
 			done
 
+			rTorrentNumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'rTorrent for users' -n -m 1 | cut -d ':' -f 1)
 			sed -i '/rTorrent for users/d' $MySB_InstallDir/temp/current-iptables-rules
-			sed -i '/Webmin for main user/d' $MySB_InstallDir/temp/current-iptables-rules
 			for FnUser in $UsersList; do
 				# Webmin
 				if [ "$IsInstalled_Webmin" == "YES" ] && [ "$FnUser" == "$MainUser" ]; then
 					NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'Webmin for main user' -n -m 1 | cut -d ':' -f 1)
+					sed -i '/Webmin for main user/d' $MySB_InstallDir/temp/current-iptables-rules
 					for ip in $MainUserIPs; do
 						sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Ports_Webmin -m comment --comment \"Webmin for main user\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
 					done
 				fi
 				# rTorrent
-				NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'rTorrent for users' -n -m 1 | cut -d ':' -f 1)
 				PORT_START="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$FnUser'\"`"
 				PORT_END="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT rtorrent_port FROM users WHERE users_ident = '$FnUser'\"`"
-				sed -i ""$NumLign"i\-A tcp_inbound -s 0/0 -p tcp -m tcp --dport $PORT_START:$PORT_END -m comment --comment \"rTorrent for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
+				sed -i ""$rTorrentNumLign"i\-A tcp_inbound -s 0/0 -p tcp -m tcp --dport $PORT_START:$PORT_END -m comment --comment \"rTorrent for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
 			done
 			# tcp_inbound chain
 
