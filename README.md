@@ -129,10 +129,10 @@ Beware, during installation, the SSH port will be changed. If a port session 22 
 	1) You must be logged as root to run this installation.
 	2) At the end of the installation, the server will restart automatically and you will receive an e-mail summarizing.
 	3) Each time a user is added, it will also receive a confirmation email with a temporary password.
-	4) The installation may take 20 to 45 minutes depending on the services to install and server configuration.
+	4) The installation may take 30 to 60 minutes depending on the services to install and server configuration.
 	5) The installation runs completely silently (screen). However, all of the installation logs will be available in the portal for the main user.
 
-## How to upgrade from v1.1
+## How to upgrade from v2.0
 Use this command on your terminal:
 ```
 MySB_UpgradeMe
