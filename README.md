@@ -9,8 +9,8 @@
 MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and could be renamed MySSB, My Secured SeedBox.
 
 ====
-##### Current version : v2.0
-###### Last stable version : v2.0
+##### Current version : v2.1
+###### Last stable version : v2.1
 
 ====
 ## All prerequisites listed below are MANDATORY!
@@ -114,7 +114,7 @@ http://www.torrent-invites.com/showthread.php?t=39022
 ## How to install
 Just copy and paste those commands on your terminal:
 ```
-wget --no-check-certificate -N https://raw.githubusercontent.com/toulousain79/MySB/v2.0/install/MySB_Install.bsh
+wget --no-check-certificate -N https://raw.githubusercontent.com/toulousain79/MySB/v2.1/install/MySB_Install.bsh
 bash MySB_Install.bsh
 ```
 
@@ -137,7 +137,6 @@ Use this command on your terminal:
 ```
 MySB_UpgradeMe
 ```
-###### NOTE: If you can, reinstall MySB v2.0 directly.
 
 ## Complete uninstall of MySB
 Use this command on your terminal:
