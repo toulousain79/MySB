@@ -1,3 +1,6 @@
+#### WORK IN PROGRESS !
+#### DO NOT USE THIS VERSION !
+
 #### This script is not intended to solicit illegal actions! I can not be held responsible for the use that you could doing it! Thank you to reconsider the installation and use of MySB. I developed this script only for pleasure and passion for my job.
 
 ====

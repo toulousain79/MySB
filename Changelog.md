@@ -1,3 +1,5 @@
+	Version v2.1 (work in progress)
+
 	Version v2.0 (main branch)
 		2015/02/14
 			- Used of SQLite instead of flat file (more convenient)
