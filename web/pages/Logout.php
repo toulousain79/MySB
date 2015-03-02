@@ -38,7 +38,7 @@ if ( preg_match( '~MSIE|Internet Explorer~i', $_SERVER['HTTP_USER_AGENT'] ) || (
 <script type="text/javascript">
 	try {
 		document.execCommand("ClearAuthenticationCache");
-		window.location.href('/');
+		window.location.href('http://www.google.fr');
 	} catch (exception) {}
 </script>
  
@@ -48,7 +48,7 @@ if ( preg_match( '~MSIE|Internet Explorer~i', $_SERVER['HTTP_USER_AGENT'] ) || (
     var request = new XMLHttpRequest();
     request.open("get", "https://logout@<?php echo $system_datas["hostname"] . ':' . $Port_HTTPs . '/'; ?>", false);
     request.send();
-    window.location.replace('index.php');
+    window.location.replace('http://www.google.fr');
 </script>
  
 <?php
