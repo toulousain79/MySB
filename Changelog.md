@@ -1,6 +1,6 @@
 	Version v2.1 (work in progress)
 		2015/03/14
-			- Correcting MySB logrotate bug (0644)
+			- Correcting MySB logrotate bug (0644, add log file)
 
 	Version v2.0 (main branch)
 		2015/02/14
