@@ -324,15 +324,15 @@ Created by toulousain79
 * Medoo:		http://medoo.in/
 * LoadAvg:	http://www.loadavg.com/
 
-## TODO
+## TODO & Ideas
 
 * Use of "Let's Encrypt" (https://letsencrypt.org/) (Summer 2015)
-* Use of DNScrypt-wrapper instead of DNScrypt-proxy
 * TIGER: http://www.nongnu.org/tiger/index.html#intro
-* NFS over sTunnel ? (https://w3.physics.illinois.edu/physwiki/doku.php?id=pcs:unix:nfs_over_stunnel)
+* NFS over SSH ? https://www.howtoforge.com/nfs_ssh_tunneling
 * Add miniDLNA (with OpenVPN) ?
 * Add SABnzbd ?
 * Add Subsonic ?
 * Add OwnCloud ?
 * Namebench ?
 * PSAD, SNORT ?
+* Ability to disable the restriction trackers ?
