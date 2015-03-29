@@ -2,6 +2,8 @@
 		2015/03/14
 			- Correcting MySB logrotate bugs
 			- Correcting Postfix configuration
+			TODO
+			- Create certificates again (wrong time period, check speed with SHA256 in 1024)
 
 	Version v2.0 (main branch)
 		2015/02/14
