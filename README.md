@@ -9,8 +9,8 @@
 MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and could be renamed MySSB, My Secured SeedBox.
 
 ====
-##### Current version : v2.1
-###### Last stable version : v2.1
+##### Current version : v2.0
+###### Last stable version : v2.0
 
 ====
 ## All prerequisites listed below are MANDATORY!
@@ -241,7 +241,7 @@ Depending on your system, it is possible to use:
 ###### NOTE 2
 	If PeerGuardian failed to start, rTorrent blocklists are used instead.
 ###### NOTE 3
-	All modifications applied by hand will be erased by MySB SecurityRules script.
+	All modifications applied by hand will be erased by MySB_SecurityRules script.
 ###### NOTE 4
 	Do not activate all trackers, but only these needed.
 
@@ -262,13 +262,13 @@ Necessary files to configure your connection are available here:
 http://<Server_Name>:<HTTPs_Port>/?user/openvpn-config-file.html
 ```
 ##### NFS and Samba share with OpenVPN
-For NFS, you can mount the '/home/<User>/rtorrent' like below. The IP address can be different depending on the OpenVPN configuration that you have selected.
+For NFS, you can mount the '/home/username/rtorrent' like below. The IP address can be different depending on the OpenVPN configuration that you have selected.
 ```
-mount -t nfs [10.0.0.1|10.0.1.1]:/home/<User>/rtorrent <mount_dir> -o  -o vers=3
+mount -t nfs 10.0.x.1:/home/<User>/rtorrent <mount_dir> -o vers=3,nolock
 ```
 For Samba, you can mount the '/home/<User>' like that. The IP address can be different depending on the OpenVPN configuration that you have selected.
 ```
-mount - <mount_dir> -t cifs -o noatime,nodiratime,UNC=//[10.0.0.1|10.0.1.1]/<User>,username=<User>,password=<Password>
+mount - <mount_dir> -t cifs -o noatime,nodiratime,UNC=//10.0.x.1/<User>,username=<User>,password=<Password>
 ```
 
 ## DNScrypt-proxy
