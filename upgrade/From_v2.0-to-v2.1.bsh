@@ -66,7 +66,7 @@ BannerUpgrade() {
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=14
+TotalSTEP=13
 
 BannerUpgrade
 CountDown 20
@@ -100,6 +100,13 @@ echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Switching to standard DNS$CEND..."
 SwitchDNS "standard" &> /dev/null
 StatusSTD
 
+#### SQLite
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Updating MySB database$CEND..."
+screen -dmS SQLite /bin/bash $MySB_InstallDir/install/SQLite 'UPGRADE';
+WaitingScreen SQLite
+StatusSTD
+
 #### Certificates
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Generating new certificates$CEND..."
@@ -116,7 +123,7 @@ StatusSTD
 
 #### Monitoring
 (( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Getting information about OVH monitoring servers$CEND..."
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Getting information about monitoring servers$CEND..."
 if [ "$ServerProvider" == "OVH" ] || [ "$ServerProvider" == "ONLINE" ]; then
 	screen -dmS Monitoring /bin/bash $MySB_InstallDir/install/Monitoring 'UPGRADE';
 	WaitingScreen Monitoring
@@ -132,20 +139,6 @@ echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- System optimizations$CEND..."
 screen -dmS Tweaks /bin/bash $MySB_InstallDir/install/Tweaks 'UPGRADE';
 WaitingScreen Tweaks
 StatusSTD
-
-#### NFS
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for NFS$CEND..."
-if [ "$IsInstalled_NFS" == "YES" ]; then
-	for seedUser in $UsersList; do
-		sed -i '/'$seedUser'/d' /etc/exports
-		uid=`grep $seedUser /etc/passwd | awk -F: '{ print $3 }'`
-		guid=`grep MySB_users /etc/group | awk -F: '{ print $3 }'`
-		echo "/home/$seedUser/rtorrent 10.0.0.0/255.255.255.0(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,fsid=0,crossmnt) 10.0.1.0/255.255.255.0(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,fsid=0,crossmnt) 10.0.2.0/255.255.255.0(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,fsid=0,crossmnt)" >> /etc/exports		
-	done
-else
-	echo -e "${CGREEN}Nothing to do !$CEND"	
-fi
 
 #### NginX
 (( CurrentSTEP++ ))
@@ -185,6 +178,21 @@ if [ "$ToInstall_Webmin" == "YES" ]; then
 	StatusSTD
 else
 	echo -e "${CGREEN}Nothing to do !$CEND"		
+fi
+
+#### NFS
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for NFS$CEND..."
+if [ "$IsInstalled_NFS" == "YES" ]; then
+	for seedUser in $UsersList; do
+		sed -i '/'$seedUser'/d' /etc/exports
+		uid=`grep $seedUser /etc/passwd | awk -F: '{ print $3 }'`
+		guid=`grep MySB_users /etc/group | awk -F: '{ print $3 }'`
+		echo "/home/$seedUser/rtorrent 10.0.0.0/255.255.255.0(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,fsid=0,crossmnt) 10.0.1.0/255.255.255.0(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,fsid=0,crossmnt) 10.0.2.0/255.255.255.0(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,fsid=0,crossmnt)" >> /etc/exports		
+	done
+	StatusSTD
+else
+	echo -e "${CGREEN}Nothing to do !$CEND"	
 fi
 
 ######################################################################
