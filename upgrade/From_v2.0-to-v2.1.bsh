@@ -66,7 +66,7 @@ BannerUpgrade() {
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=9
+TotalSTEP=14
 
 BannerUpgrade
 CountDown 20
@@ -87,6 +87,12 @@ done
 StatusSTD
 
 ######################################################################
+
+#### Move some files & directories
+# Cleaning old certificates
+rm -f $MySB_InstallDir/ssl/*.cert &> /dev/null
+rm -f $MySB_InstallDir/ssl/*.pem &> /dev/null
+rm -f $MySB_InstallDir/ssl/*.key &> /dev/null
 
 #### Switching to standard DNS
 (( CurrentSTEP++ ))
@@ -141,12 +147,45 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND"	
 fi
 
+#### NginX
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring NginX$CEND..."
+screen -dmS Nginx /bin/bash $MySB_InstallDir/install/Nginx 'UPGRADE';
+WaitingScreen Nginx
+StatusSTD
+
 #### Postfix
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Postfix$CEND..."
 screen -dmS Postfix /bin/bash $MySB_InstallDir/install/Postfix 'UPGRADE';
 WaitingScreen Postfix
 StatusSTD
+
+#### Refresh tools
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Refreshing rTorrent, ruTorrent, Manager, Cakebox, LoadAvg (this may take a while, please be patient)$CEND..."
+screen -dmS MySB_RefreshMe /bin/bash $MySB_InstallDir/bin/MySB_RefreshMe 'all' 'UPGRADE';
+WaitingScreen MySB_RefreshMe
+StatusSTD
+
+#### VSFTPd
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring VSFTPd$CEND..."
+screen -dmS VSFTP /bin/bash $MySB_InstallDir/install/VSFTP 'UPGRADE';
+WaitingScreen VSFTP
+StatusSTD
+
+#### Webmin
+(( CurrentSTEP++ ))
+if [ "$ToInstall_Webmin" == "YES" ]; then
+	(( CurrentSTEP++ ))
+	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Webmin$CEND..."
+	screen -dmS Webmin /bin/bash $MySB_InstallDir/install/Webmin 'UPGRADE';
+	WaitingScreen Webmin
+	StatusSTD
+else
+	echo -e "${CGREEN}Nothing to do !$CEND"		
+fi
 
 ######################################################################
 
