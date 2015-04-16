@@ -2,6 +2,7 @@
 		2015/03/14
 			- Correcting MySB logrotate bugs
 			- Correcting Postfix configuration
+			- MySB_SecurityRules, correcting 'ip_forward' for OpenVPN
 			TODO
 			- Create certificates again (wrong time period, check speed with SHA256 in 1024)
 
