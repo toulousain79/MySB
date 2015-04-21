@@ -1,10 +1,11 @@
 	Version v2.1 (work in progress)
 		2015/03/14
-			- Correcting MySB logrotate bugs
-			- Correcting Postfix configuration
-			- MySB_SecurityRules, correcting 'ip_forward' for OpenVPN
+			- Correcting MySB logrotate bugs (v2.0 and v2.1)
+			- Correcting Postfix configuration (v2.0 and v2.1)
+			- MySB_SecurityRules, correcting 'ip_forward' for OpenVPN (v2.0 and v2.1)
+			- Seedbox-Manager, correction of installation errors, generation of configuration files (FTP & Trandroid) and minor changes. (v2.0 and v2.1)
 			TODO
-			- Create certificates again (wrong time period, check speed with SHA256 in 1024)
+			- Create certificates again (wrong time period, check speed with SHA256 in 1024) (only v2.1)
 
 	Version v2.0 (main branch)
 		2015/02/14

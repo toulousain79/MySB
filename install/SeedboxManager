@@ -58,8 +58,9 @@ if [ "$ToInstall_Manager" == "YES" ]; then
 		git clone $ManagerUrl $ManagerDir
 	fi
 
-	(
-	cat <<'EOF'
+	if [ -f $ManagerDir/source-reboot-rtorrent/suppression.c ]; then
+		(
+		cat <<'EOF'
 #include "suppression.h"
 
 void supprLock (char nickname[])
@@ -72,10 +73,12 @@ void supprLock (char nickname[])
     system (chaine);
 }
 EOF
-	) > $ManagerDir/source-reboot-rtorrent/suppression.c
+		) > $ManagerDir/source-reboot-rtorrent/suppression.c
+	fi
 
-	(
-	cat <<'EOF'
+	if [ -f $ManagerDir/source-reboot-rtorrent/reboot.c ]; then
+		(
+		cat <<'EOF'
 #include "reboot.h"
 
 void reboot (char nickname[])
@@ -88,10 +91,80 @@ void reboot (char nickname[])
     system (chaine);
 }
 EOF
-	) > $ManagerDir/source-reboot-rtorrent/reboot.c
-	
-	sed -i "s/http:\/\/{{ host }}/https:\/\/{{ host }}/g;" $ManagerDir/public/themes/default/template/bloc-ftp.html
+		) > $ManagerDir/source-reboot-rtorrent/reboot.c
+	fi
 
+	if [ -f $ManagerDir/source-reboot-rtorrent/kill_rtorrent.c ]; then
+		(
+		cat <<'EOF'
+#include "kill_rtorrent.h"
+
+void rtorrent_kill (char nickname[])
+{
+    //Déclarations
+    char chaine [100] = {0};
+
+    snprintf(chaine, 100, "service rtorrent-%s stop\n", nickname);
+    printf("%s", chaine);
+    system (chaine);
+}
+EOF
+		) > $ManagerDir/source-reboot-rtorrent/kill_rtorrent.c
+
+		sed -i '/screen_kill/d' $ManagerDir/source-reboot-rtorrent/main.c
+		sed -i '/supprLock/d' $ManagerDir/source-reboot-rtorrent/main.c
+	fi
+
+	if [ -f $ManagerDir/source-reboot-rtorrent/start_rtorrent.c ]; then
+		(
+		cat <<'EOF'
+#include "start_rtorrent.h"
+
+void start_rtorrent (char nickname[])
+{
+    //Déclarations
+    char chaine [100] = {0};
+
+    snprintf(chaine, 100, "service rtorrent-%s start\n", nickname);
+    printf("%s", chaine);
+    system (chaine);
+}
+EOF
+	) > $ManagerDir/source-reboot-rtorrent/start_rtorrent.c
+	fi
+
+	#### Blocs FTP
+	sed -i "s/Les accès ftp - sftp - transdroid/Les accès FTPs - sFTP - Transdroid/g;" $ManagerDir/public/themes/default/template/bloc-ftp.html
+	sed -i "s/Serveur FTP et sFTP/Serveur FTPs et sFTP/g;" $ManagerDir/public/themes/default/template/bloc-ftp.html
+	sed -i "/host/s/Adresse (s)FTP :/Adresse :/g" $ManagerDir/public/themes/default/template/bloc-ftp.html
+	sed -i "s/(s)ftp:\/\/{{ host }}/$HostNameFQDN/g;" $ManagerDir/public/themes/default/template/bloc-ftp.html
+	sed -i "/userName/s/User (s)FTP :/User :/g" $ManagerDir/public/themes/default/template/bloc-ftp.html
+	sed -i "/user.portFtp/s/Port FTP :/Port FTPs :/g" $ManagerDir/public/themes/default/template/bloc-ftp.html
+	sed -i "/user.portSftp/s/Port FTP :/Port sFTP :/g" $ManagerDir/public/themes/default/template/bloc-ftp.html
+	sed -i "s/Adresse http :/Adresse :/g;" $ManagerDir/public/themes/default/template/bloc-ftp.html
+	sed -i "s/http:\/\/{{ host }}/$HostNameFQDN/g;" $ManagerDir/public/themes/default/template/bloc-ftp.html
+	
+	# Add new line for the HTTPs port
+	NumLign=$(cat $ManagerDir/public/themes/default/template/bloc-ftp.html | grep 'User transdroid' -n -m 1 | cut -d ':' -f 1)
+	sed -i ""$NumLign"i\<li>Port HTTP<strong>s<\/strong> : <em>$Port_HTTPS<\/em><\/li>\n" $ManagerDir/public/themes/default/template/bloc-ftp.html
+
+	#### Global configs
+	sed -i "s/\$_SERVER\['HTTP_HOST'\]/\$_SERVER\['SERVER_NAME'\]/g;" $ManagerDir/app/downloads.php
+	sed -i "s/'seedbox-'.\$userName;/'MySB - '.\$userName;/g;" $ManagerDir/app/downloads.php
+
+	#### Transdroid
+	sed -i "s/443/$Port_HTTPS/g;"  $ManagerDir/app/downloads.php
+	sed -i "/base_ftp_url/s/'ftp:\/\/'.\$userName.'@'.\$_SERVER\['SERVER_NAME'\].'\/torrents\/'/''/g" $ManagerDir/app/downloads.php
+	
+	#### Config FileZilla
+	sed -i "s/<Protocol>0<\/Protocol>/<Protocol>4<\/Protocol>/g;" $ManagerDir/app/downloads.php
+	sed -i "s/<Name>'.\$title_seedbox.'-ftp<\/Name>/<Name>MySB - FTPs - '.\$userName.'<\/Name>/g;" $ManagerDir/app/downloads.php
+	sed -i "s/<SyncBrowsing>0<\/SyncBrowsing>'.\$title_seedbox.'-ftp/<SyncBrowsing>0<\/SyncBrowsing>MySB - FTPs - '.\$userName.'/g;" $ManagerDir/app/downloads.php
+	sed -i "s/<Name>'.\$title_seedbox.'-sftp<\/Name>/<Name>MySB - sFTP - '.\$userName.'<\/Name>/g;" $ManagerDir/app/downloads.php
+	sed -i "s/<SyncBrowsing>0<\/SyncBrowsing>'.\$title_seedbox.'-sftp/<SyncBrowsing>0<\/SyncBrowsing>MySB - sFTP - '.\$userName.'/g;" $ManagerDir/app/downloads.php
+
+	#### Install
+	cd $ManagerDir/
 	composer install
 	bower install --allow-root --config.interactive=false
 	chown -R www-data:www-data $ManagerDir/
@@ -110,14 +183,14 @@ EOF
 		git clone $PluginManagerUrl $PluginManagerDir
 	fi
 	sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$HostNameFQDN:$Port_HTTPS\/sm\//g;" $PluginManagerDir/conf.php
-	
+
 	#### Create directories & change rights
 	ManageDirectoriesAndFiles
-	
+
 	sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'Seedbox-Manager';"
-	
+
 	#### START services
-	ManageServices start "nginx"	
+	ManageServices start "nginx"
 fi
 
 # -----------------------------------------
