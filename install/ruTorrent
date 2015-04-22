@@ -250,15 +250,38 @@ echo "########## PlowShare4"
 echo
 PluginPlowshareDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'Plowshare4'\"`"
 PluginPlowshareUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'Plowshare4'\"`"
-if [ -d $PluginPlowshareDir ]; then
-	cd $PluginPlowshareDir/
-	git stash
-	git pull
-	make clean
-else
-	git clone $PluginPlowshareUrl $PluginPlowshareDir
-	cd $PluginPlowshareDir
-fi
+PluginPlowshareFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'Plowshare4'\"`"
+PluginPlowshareType="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT type FROM repositories WHERE name = 'Plowshare4'\"`"
+case "$PluginPlowshareType" in
+	"GIT")
+		if [ -d $PluginPlowshareDir ]; then
+			cd $PluginPlowshareDir/
+			git stash
+			git pull
+		else
+			git clone $PluginPlowshareUrl $PluginPlowshareDir
+			cd $PluginPlowshareDir
+		fi
+	;;
+	*)
+		if [ "$1" == "REFRESH" ]; then
+			if [ -d $PluginPlowshareDir ]; then
+				rm -vrf $PluginPlowshareDir
+			fi
+		fi
+		if [ ! -f $MySB_InstallDir/files/$PluginPlowshareFile ]; then
+			wget --no-check-certificate $PluginPlowshareUrl -O $MySB_InstallDir/files/$PluginPlowshareFile
+		fi
+		tar -zxvf $MySB_InstallDir/files/$PluginPlowshareFile -C $MySB_InstallDir/temp/
+		SubDirPlowshare="`tar -ztf $MySB_InstallDir/files/$PluginPlowshareFile | cut -d '/' -f 1 | uniq`"
+		if [ -d $MySB_InstallDir/temp/$SubDirPlowshare ]; then
+			mv $MySB_InstallDir/temp/$SubDirPlowshare $PluginPlowshareDir
+		fi
+	;;
+esac
+
+cd $PluginPlowshareDir
+make clean
 make install
 
 #### Create directories & change rights
