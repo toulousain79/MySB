@@ -4,6 +4,7 @@
 			- Correcting Postfix configuration (v2.0 and v2.1)
 			- MySB_SecurityRules, correcting 'ip_forward' for OpenVPN (v2.0 and v2.1)
 			- Seedbox-Manager, correction of installation errors, generation of configuration files (FTP & Trandroid) and minor changes. (v2.0 and v2.1)
+			- PlowShare 4, change install method (FTP & Trandroid) and minor changes. (v2.0 and v2.1)
 			TODO
 			- Create certificates again (wrong time period, check speed with SHA256 in 1024) (only v2.1)
 
