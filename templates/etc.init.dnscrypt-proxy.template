@@ -219,11 +219,20 @@ do_start() {
 	BindForwarders="`echo $BindForwarders | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 	sed -i '/forwarders/d' /etc/bind/named.conf.options
 	sed -i '/forward only;/d' /etc/bind/named.conf.options
-	NumLign=$(sed -n "/\/\/ DNScrypt-proxy - BoF/=" /etc/bind/named.conf.options)
+	sed -i '/version/d' /etc/bind/named.conf.options
+	sed -i '/DNScrypt-proxy/d' /etc/bind/named.conf.options
+	#NumLign=$(sed -n "/\/\/ DNScrypt-proxy - BoF/=" /etc/bind/named.conf.options)
+	NumLign=$(sed -n "/directory \"\/var\/cache\/bind\";/=" /etc/bind/named.conf.options)
+	(( NumLign++ ))
+	sed -i "${NumLign}i\        // DNScrypt-proxy - BoF" /etc/bind/named.conf.options
 	(( NumLign++ ))
 	sed -i "${NumLign}i\        forwarders { $BindForwarders };" /etc/bind/named.conf.options
 	(( NumLign++ ))
 	sed -i "${NumLign}i\        forward only;" /etc/bind/named.conf.options
+	(( NumLign++ ))
+	sed -i "${NumLign}i\        version \"MySB Secured DNS server\";" /etc/bind/named.conf.options	
+	(( NumLign++ ))
+	sed -i "${NumLign}i\        // DNScrypt-proxy - EoF" /etc/bind/named.conf.options	
 
 	if [ -z "`ps ax | grep 'MySB_SecurityRules' | grep -e 'create' -e 'refresh' | grep -v 'grep'`" ]; then
 		screen -dmS MySB_SecurityRules /bin/bash <InstallDir>/bin/MySB_SecurityRules 'refresh' '--dnscrypt' 'SCREEN';
