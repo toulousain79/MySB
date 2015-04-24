@@ -44,16 +44,11 @@ fi
 ManageServices stop "bind9"
 
 #### /etc/bind/named.conf.local
-sed -i '/\/etc\/bind\/zones.rfc1918/d' /etc/bind/named.conf.local
-sed -i '/\/etc\/bind\/rndc.key/d' /etc/bind/named.conf.local
-sed -i '/\/etc\/bind\/bind.keys/d' /etc/bind/named.conf.local
-sed -i '/\/etc\/bind\/log.conf/d' /etc/bind/named.conf.local
-sed -i '/\/etc\/bind\/MySB.zones.blakclists/d' /etc/bind/named.conf.local
-echo "include \"/etc/bind/zones.rfc1918\";" | tee -a /etc/bind/named.conf.local
-echo "include \"/etc/bind/rndc.key\";" | tee -a /etc/bind/named.conf.local
-echo "include \"/etc/bind/bind.keys\";" | tee -a /etc/bind/named.conf.local
-echo "include \"/etc/bind/log.conf\";" | tee -a /etc/bind/named.conf.local
-echo "include \"/etc/bind/MySB.zones.blakclists\";" | tee -a /etc/bind/named.conf.local
+if [ -f /etc/bind/named.conf.local ]; then rm -vf /etc/bind/named.conf.local; fi
+touch /etc/bind/named.conf.local
+cat $MySB_InstallDir/templates/etc.bind.named.conf.local.template | tee -a /etc/bind/named.conf.local
+chmod 0644 /etc/bind/named.conf.local
+chown root:bind /etc/bind/named.conf.local
 
 #### /etc/bind/log.conf
 if [ -f /etc/bind/log.conf ]; then rm -vf /etc/bind/log.conf; fi
@@ -71,47 +66,12 @@ fi
 if [ -f /etc/bind/named.conf.options ]; then rm -vf /etc/bind/named.conf.options; fi
 touch /etc/bind/named.conf.options
 cat $MySB_InstallDir/templates/etc.bind.named.conf.options.template | tee -a /etc/bind/named.conf.options
-sed -i '/listen-on-v6/d' /etc/bind/named.conf.options
-sed -i '/allow-transfer/d' /etc/bind/named.conf.options
-sed -i '/recursion/d' /etc/bind/named.conf.options
-sed -i '/forwarders/d' /etc/bind/named.conf.options
-sed -i '/forward/d' /etc/bind/named.conf.options
-sed -i '/forward only;/d' /etc/bind/named.conf.options
-sed -i '/DNScrypt-proxy/d' /etc/bind/named.conf.options
-sed -i '/version/d' /etc/bind/named.conf.options
-sed -i '/auth-nxdomain/d' /etc/bind/named.conf.options
-sed -i '/listen-on/d' /etc/bind/named.conf.options
-sed -i '/allow-query/d' /etc/bind/named.conf.options
-sed -i '/dnssec-enable/d' /etc/bind/named.conf.options
-sed -i '/dnssec-validation/d' /etc/bind/named.conf.options
-sed -i '/dnssec-lookaside/d' /etc/bind/named.conf.options
-sed -i '/transfer-source/d' /etc/bind/named.conf.options
-sed -i '/notify-source/d' /etc/bind/named.conf.options
-
-NumLign=$(sed -n "/directory \"\/var\/cache\/bind\";/=" /etc/bind/named.conf.options)
-(( NumLign++ ))
-sed -i "${NumLign}i\        version \"MySB DNS server\";" /etc/bind/named.conf.options
-(( NumLign++ ))
-sed -i "${NumLign}i\        auth-nxdomain no;    # conform to RFC1035" /etc/bind/named.conf.options
-(( NumLign++ ))
-sed -i "${NumLign}i\        listen-on    { 127.0.0.1; 10.0.0.1; 10.0.1.1; 10.0.2.1; };" /etc/bind/named.conf.options
-(( NumLign++ ))
-sed -i "${NumLign}i\        allow-query { any; };" /etc/bind/named.conf.options
-(( NumLign++ ))
-sed -i "${NumLign}i\        dnssec-enable yes;" /etc/bind/named.conf.options
-(( NumLign++ ))
-sed -i "${NumLign}i\        dnssec-validation yes;" /etc/bind/named.conf.options
-(( NumLign++ ))
-sed -i "${NumLign}i\        dnssec-lookaside auto;" /etc/bind/named.conf.options
-(( NumLign++ ))
-sed -i "${NumLign}i\        transfer-source $SrvIpAddress;" /etc/bind/named.conf.options
-(( NumLign++ ))
-sed -i "${NumLign}i\        notify-source $SrvIpAddress;" /etc/bind/named.conf.options
-
+sed -i "s/<SrvIpAddress>/$SrvIpAddress/g;" /etc/bind/named.conf.options
 chmod 0644 /etc/bind/named.conf.options
 chown root:bind /etc/bind/named.conf.options
 
 #### /etc/bind/MySB.zones.blakclists
+if [ -f /etc/bind/MySB.zones.blakclists ]; then rm -vf /etc/bind/MySB.zones.blakclists; fi
 touch /etc/bind/MySB.zones.blakclists
 echo "#### MySB - Blacklisted domains (ex: inactive trackers)" | tee -a /etc/bind/MySB.zones.blakclists
 chmod 0644 /etc/bind/MySB.zones.blakclists
