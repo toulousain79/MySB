@@ -39,13 +39,13 @@ echo
 echo "########## ruTorrent + Official Plugins"
 echo
 RutorrentUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent'\"`"
-RutorrentPluginsUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrents Official Plugins'\"`"
 if [ -d $RutorrentDir ]; then
-	svn up $RutorrentDir
-	svn switch $RutorrentPluginsUrl $RutorrentPluginsDir
+	cd $RutorrentDir/
+	git stash
+	git pull
 else
-	svn co $RutorrentUrl $RutorrentDir
-	svn switch $RutorrentPluginsUrl $RutorrentPluginsDir
+	git clone $RutorrentUrl $RutorrentDir
+	cd $RutorrentDir
 fi
 
 #### Plugin Chat
@@ -53,31 +53,49 @@ echo
 echo "########## Plugin Chat"
 echo
 PluginChatDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin Chat'\"`"
-PluginChatUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin Chat'\"`"
-if [ -d $PluginChatDir ]; then
-	svn up $PluginChatDir
-else
-	svn co $PluginChatUrl $PluginChatDir
+if [ "$1" == "REFRESH" ] || [ ! -d $PluginChatDir ]; then
+	PluginChatUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin Chat'\"`"
+	PluginChatFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'ruTorrent Plugin Chat'\"`"	
+	if [ -d $PluginChatDir ]; then
+		rm -vrf $PluginChatDir
+	fi
+	if [ ! -f $MySB_InstallDir/files/$PluginChatFile ]; then
+		wget --no-check-certificate $PluginChatUrl -O $MySB_InstallDir/files/$PluginChatFile
+	fi
+	tar -zxvf $MySB_InstallDir/files/$PluginChatFile -C $MySB_InstallDir/temp/	
+	SubDirChat="`tar -ztf $MySB_InstallDir/files/$PluginChatFile | cut -d '/' -f 1 | uniq`"
+	if [ -d $MySB_InstallDir/temp/$SubDirChat ]; then
+		mv $MySB_InstallDir/temp/$SubDirChat $PluginChatDir
+	fi
 fi
 
 #### Plugin Logoff
-PluginLogoffDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin Chat'\"`"
-PluginLogoffUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin Chat'\"`"
 echo
 echo "########## Plugin Logoff"
 echo
-if [ -d $PluginLogoffDir ]; then
-	svn up $PluginLogoffDir
-else
-	svn co $PluginLogoffUrl $PluginLogoffDir
+PluginLogoffDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin Logoff'\"`"
+if [ "$1" == "REFRESH" ] || [ ! -d $PluginLogoffDir ]; then
+	PluginLogoffUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin Logoff'\"`"
+	PluginLogoffFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'ruTorrent Plugin Logoff'\"`"	
+	if [ -d $PluginLogoffDir ]; then
+		rm -vrf $PluginLogoffDir
+	fi
+	if [ ! -f $MySB_InstallDir/files/$PluginLogoffFile ]; then
+		wget --no-check-certificate $PluginLogoffUrl -O $MySB_InstallDir/files/$PluginLogoffFile
+	fi
+	tar -zxvf $MySB_InstallDir/files/$PluginLogoffFile -C $MySB_InstallDir/temp/	
+	SubDirChat="`tar -ztf $MySB_InstallDir/files/$PluginLogoffFile | cut -d '/' -f 1 | uniq`"
+	if [ -d $MySB_InstallDir/temp/$SubDirChat ]; then
+		mv $MySB_InstallDir/temp/$SubDirChat $PluginLogoffDir
+	fi
 fi
 
 #### Plugin tAdd-Labels
 echo
 echo "########## Plugin tAdd-Labels"
 echo
-if [ "$1" == "REFRESH" ]; then
-	PluginLbllDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin tAdd-Labels'\"`"
+PluginLbllDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin tAdd-Labels'\"`"
+if [ "$1" == "REFRESH" ] || [ ! -d $PluginLbllDir ]; then
 	PluginLbllUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin tAdd-Labels'\"`"
 	PluginLbllFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'ruTorrent Plugin tAdd-Labels'\"`"	
 	if [ -d $PluginLbllDir ]; then
@@ -93,24 +111,12 @@ if [ "$1" == "REFRESH" ]; then
 	fi
 fi
 
-#### Plugin Filemanager
-echo
-echo "########## Plugin Filemanager"
-echo
-PluginFilemanagerDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin FileManager'\"`"
-PluginFilemanagerUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin FileManager'\"`"
-if [ -d $PluginFilemanagerDir ]; then
-	svn up $PluginFilemanagerDir
-else
-	svn co $PluginFilemanagerUrl $PluginFilemanagerDir
-fi
-
 #### Plugin NFO
 echo
 echo "########## Plugin NFO"
 echo
-if [ "$1" == "REFRESH" ]; then
-	PluginNfoDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin NFO'\"`"
+PluginNfoDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin NFO'\"`"
+if [ "$1" == "REFRESH" ] || [ ! -d $PluginNfoDir ]; then
 	PluginNfoUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin NFO'\"`"
 	PluginNfoFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'ruTorrent Plugin NFO'\"`"
 	if [ -d $PluginNfoDir ]; then
@@ -131,25 +137,37 @@ echo
 echo "########## Plugin Ratiocolor"
 echo
 PluginRatiocolorDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin RatioColor'\"`"
-PluginRatiocolorUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin RatioColor'\"`"
 if [ -d $PluginRatiocolorDir ]; then
 	cd $PluginRatiocolorDir
 	git stash
 	git pull
 else
+	PluginRatiocolorUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin RatioColor'\"`"
 	git clone $PluginRatiocolorUrl $PluginRatiocolorDir
 fi
 perl -pi -e "s/changeWhat = \"cell-background\";/changeWhat = \"font\";/g" $PluginRatiocolorDir/init.js
+
+#### Plugin Filemanager
+echo
+echo "########## Plugin Filemanager"
+echo
+PluginFilemanagerDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin FileManager'\"`"
+if [ -d $PluginFilemanagerDir ]; then
+	svn up $PluginFilemanagerDir
+else
+	PluginFilemanagerUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin FileManager'\"`"
+	svn co $PluginFilemanagerUrl $PluginFilemanagerDir
+fi
 
 #### Plugin FileUpload
 echo
 echo "########## Plugin FileUpload"
 echo
 PluginFileuploadDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin FileUpload'\"`"
-PluginFileuploadUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin FileUpload'\"`"
 if [ -d $PluginFileuploadDir ]; then
 	svn up $PluginFileuploadDir
 else
+	PluginFileuploadUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin FileUpload'\"`"
 	svn co $PluginFileuploadUrl $PluginFileuploadDir
 fi
 
@@ -158,28 +176,37 @@ echo
 echo "########## Plugin Fileshare"
 echo
 PluginFileshareDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin FileShare'\"`"
-PluginFileshareUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin FileShare'\"`"
 if [ -d $PluginFileshareDir ]; then
 	svn up $PluginFileshareDir
 else
+	PluginFileshareUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin FileShare'\"`"
 	svn co $PluginFileshareUrl $PluginFileshareDir
 fi
-# if [ -f $PluginFileshareDir/share.php ] && [ ! -h $MySB_InstallDir/web/fileshare.php ]; then
-	# ln -s $PluginFileshareDir/share.php $MySB_InstallDir/web/fileshare.php
-# fi
-
 perl -pi -e "s/$limits\['duration'\] = 1;/$limits\['duration'\] = 0;/g" $PluginFileshareDir/conf.php
 perl -pi -e "s/$limits\['links'\] = 1;/$limits\['links'\] = 0;/g" $PluginFileshareDir/conf.php
 perl -pi -e "s/http:\/\/robits.org\/rutorrent\/share.php/https:\/\/$HostNameFQDN:$Port_HTTPS\/fileshare.php/g" $PluginFileshareDir/conf.php
+
+#### Plugin Mediastream
+echo
+echo "########## Plugin Mediastream"
+echo
+PluginMediastreamDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin MediaStream'\"`"
+if [ -d $PluginMediastreamDir ]; then
+	svn up $PluginMediastreamDir
+else
+	PluginMediastreamUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin MediaStream'\"`"
+	svn co $PluginMediastreamUrl $PluginMediastreamDir
+fi
+echo "<?php \$streampath = \"https://$HostNameFQDN:$Port_HTTPS/view.php\"; ?>" > $PluginMediastreamDir/conf.php
 
 #### Plugin Stream
 echo
 echo "########## Plugin Stream"
 echo
 PluginStreamDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin Stream'\"`"
-PluginStreamUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin Stream'\"`"
-PluginStreamFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'ruTorrent Plugin Stream'\"`"
-if [ "$1" == "REFRESH" ]; then 
+if [ "$1" == "REFRESH" ] || [ ! -d $PluginStreamDir ]; then
+	PluginStreamUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin Stream'\"`"
+	PluginStreamFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'ruTorrent Plugin Stream'\"`"
 	if [ -d $PluginStreamDir ]; then
 		rm -vrf $PluginStreamDir
 	fi
@@ -194,25 +221,46 @@ if [ "$1" == "REFRESH" ]; then
 fi
 perl -pi -e "s/define\('USE_NGINX', false\);/define\('USE_NGINX', true\);/g" $PluginStreamDir/config.php
 perl -pi -e "s/define\('SCHEME', http\);/define\('SCHEME', https\);/g" $PluginStreamDir/config.php
-#if [ -f $PluginStreamDir/stream.php ] && [ ! -h $MySB_InstallDir/web/stream.php ]; then
-#	ln -s $PluginStreamDir/stream.php $MySB_InstallDir/web/stream.php
-#fi
 
-#### Plugin Mediastream
+#### Pause WebUI
 echo
-echo "########## Plugin Mediastream"
+echo "########## Plugin Pause WebUI"
 echo
-PluginMediastreamDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin MediaStream'\"`"
-PluginMediastreamUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin MediaStream'\"`"
-if [ -d $PluginMediastreamDir ]; then
-	svn up $PluginMediastreamDir
+PluginWebUiDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin Pause WebUI'\"`"
+if [ -d $PluginWebUiDir ]; then
+	svn up $PluginWebUiDir
 else
-	svn co $PluginMediastreamUrl $PluginMediastreamDir
+	PluginWebUiUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin Pause WebUI'\"`"
+	svn co $PluginWebUiUrl $PluginWebUiDir
 fi
-echo "<?php \$streampath = \"https://$HostNameFQDN:$Port_HTTPS/view.php\"; ?>" > $PluginMediastreamDir/conf.php
-# if [ -f $PluginMediastreamDir/view.php ] && [ ! -h $MySB_InstallDir/web/view.php ]; then
-	# ln -s $PluginMediastreamDir/view.php $MySB_InstallDir/web/view.php
-# fi
+
+#### Mobile
+echo
+echo "########## Plugin Mobile"
+echo
+PluginMobileDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin Mobile'\"`"
+if [ -d $PluginMobileDir ]; then
+	cd $PluginMobileDir
+	git stash
+	git pull
+else
+	PluginMobileUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin Mobile'\"`"
+	git clone $PluginMobileUrl $PluginMobileDir
+fi
+
+#### Autodl-irssi
+echo
+echo "########## Plugin Autodl-irssi"
+echo
+PluginAutodlDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ruTorrent Plugin Autodl-irssi'\"`"
+if [ -d $PluginAutodlDir ]; then
+	cd $PluginAutodlDir
+	git stash
+	git pull
+else
+	PluginAutodlUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ruTorrent Plugin Autodl-irssi'\"`"
+	git clone $PluginAutodlUrl $PluginAutodlDir
+fi
 
 #### Theme
 echo
@@ -231,18 +279,12 @@ perl -pi -e "s/\$defaultTheme \= \"\"\;/\$defaultTheme \= \"Oblivion\"\;/g" $Rut
 echo
 echo "########## ruTorrent favicons trackers"
 echo
-if [ ! -f $RutorrentPluginsDir/tracklabels/trackers/gks.gs.png ]; then
-	wget http://www.ratbox.nl/md/favicons-trackers/gks.gs.png -O $RutorrentPluginsDir/tracklabels/trackers/gks.gs.png
-fi
-if [ ! -f $RutorrentPluginsDir/tracklabels/trackers/mteam.fr.png ]; then
-	wget http://www.ratbox.nl/md/favicons-trackers/mteam.fr.png -O $RutorrentPluginsDir/tracklabels/trackers/mteam.fr.png
-fi
-if [ ! -f $RutorrentPluginsDir/tracklabels/trackers/montorrent.com.png ]; then
-	wget http://www.ratbox.nl/md/favicons-trackers/montorrent.com.png -O $RutorrentPluginsDir/tracklabels/trackers/montorrent.com.png
-fi
-if [ ! -f $RutorrentPluginsDir/tracklabels/trackers/lakameraobscura.com.png ]; then
-	wget http://www.ratbox.nl/md/favicons-trackers/lakameraobscura.com.png -O $RutorrentPluginsDir/tracklabels/trackers/lakameraobscura.com.png
-fi
+TrackersFavicons=$(ls -1r $MySB_InstallDir/files/trackers_favicons/)
+for TrackersFavicons in $LISTING; do
+	if [ ! -f $RutorrentPluginsDir/tracklabels/trackers/$TrackersFavicons ]; then
+		cp -v $MySB_InstallDir/files/trackers_favicons/$TrackersFavicons $RutorrentPluginsDir/tracklabels/trackers/
+	fi
+done
 
 #### PlowShare4
 echo
