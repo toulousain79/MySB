@@ -114,27 +114,11 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * [Installation](https://github.com/toulousain79/MySB/wiki/Installation)
 * [Upgrade](https://github.com/toulousain79/MySB/wiki/Upgrade)
 * [Uninstall](https://github.com/toulousain79/MySB/wiki/Uninstall)
+### Commands and scripts
+* [Commands](https://github.com/toulousain79/MySB/wiki/Commands)
 
 
-## Commands
 
-After installation, you can access the following commands to be used directly in the terminal (can used in the portal too).
-
-	* MySB_ChangeUserPassword
-	* MySB_CreateUser
-	* MySB_DeleteUser
-	* MySB_SecurityRules (use this for generate all security options Nginx IP restricted access, IPtables, Fail2BanPeerGuardian, ...)
-	* MySB_GitHubRepoUpdate (update actual repository) (added to cron)
-	* MySB_RefreshMe (refresh ruTorrent, Seedbox-Manager, Cakebox-Light, LoadAvg)
-	* MySB_UpgradeMe (to migrate to a new version of MySB) (added to cron to check if a new version is available, you will receive a mail)
-	* MySB_UpgradeSystem (simply upgrade your system with APT command)
-
-Additional scripts:
-
-	* '<MySB_directory>/scripts/BlocklistsRTorrent.bsh', use this for generate blocklist for rTorrent with 'ipv4_filter.load' command. (CRON every day at 23:00)	
-	* '<MySB_directory>/scripts/DynamicAddressResolver.bsh', used for auto update users dynamics addresses IP. (CRON every 5 minutes)
-	* '<MySB_directory>/scripts/GetTrackersCert.bsh', use this for get all SSL certificates for all tracker. You can add more trackers in MySB portal. This script is start every time you add/edit trackers list.	
-	* '<MySB_directory>/scripts/LogServer.bsh', used for generate HTML log files (Nginx, PeerGuardian, Fail2Ban,...) avalaible in MySB Portal. (CRON every 30 minutes)	
 
 ## MySB Portal
 
