@@ -116,31 +116,14 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * [Uninstall](https://github.com/toulousain79/MySB/wiki/Uninstall)
 ### Commands and scripts
 * [Commands](https://github.com/toulousain79/MySB/wiki/Commands)
+### Portal
+* [Presentation](https://github.com/toulousain79/MySB/wiki/%5BPortal%5D-Presentation)
+* [Users rights](https://github.com/toulousain79/MySB/wiki/%5BPortal%5D-Users-rights)
 
 
 
 
-## MySB Portal
 
-To access services installed on your new server, point your browser to the following address (MySB portal):
-```
-https://<Server_Name>:<HTTPS_Port>/
-```
-
-###### Main and normal users
-	* Can change their password.
-	* Can change their IP addresses for authorized connection (dynamic DNS included).
-	* Can download OpenVPN config files.
-	* Direct access to the various services installed (ruTorrent, Cabox-Light, Seedbox-Manager, LoadAvg).
-
-###### Normal users only
-	* Display activated blocklists (read only)
-	* Display activated trackers (read only)
-	
-###### Main user only
-	* Direct access to the various services installed, like normal users plus others services (Webmin, Logs, Renting Infos, SMTP).
-	* Manage trackers list.
-	* Manage blocklists (rTorrent and PeerGuardian).
 
 ## Seedbox-Manager
 
