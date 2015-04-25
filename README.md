@@ -109,40 +109,12 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 
 #################
 
-## How to install
-Just copy and paste those commands on your terminal:
-```
-wget --no-check-certificate -N https://raw.githubusercontent.com/toulousain79/MySB/v2.1/install/MySB_Install.bsh
-bash MySB_Install.bsh
-```
+## [WiKi](https://github.com/toulousain79/MySB/wiki)
+### Installation / Upgrade / Uninstall
+* [Installation](https://github.com/toulousain79/MySB/wiki/Installation)
+* [Upgrade](https://github.com/toulousain79/MySB/wiki/Upgrade)
+* [Uninstall](https://github.com/toulousain79/MySB/wiki/Uninstall)
 
-If you lose connection during installation, restart the SSH session and run the following command:
-```
-screen -r MySB
-```
-
-Beware, during installation, the SSH port will be changed. If a port session 22 does not work, try with the new port that you have selected.
-
-###### NOTE
-	1) You must be logged as root to run this installation.
-	2) At the end of the installation, the server will restart automatically and you will receive an e-mail summarizing.
-	3) Each time a user is added, it will also receive a confirmation email with a temporary password.
-	4) The installation may take 30 to 60 minutes depending on the services to install and server configuration.
-	5) The installation runs completely silently (screen). However, all of the installation logs will be available in the portal for the main user.
-
-## How to upgrade from v2.0
-Use this command on your terminal:
-```
-MySB_UpgradeMe
-```
-
-## Complete uninstall of MySB
-Use this command on your terminal:
-```
-bash <MySB_directory>/install/MySB_CleanAll.bsh
-```
-
-###### BEWARE: The MySB installation directory will be completely removed, and ALL installed packages will be purged.
 
 ## Commands
 
