@@ -1,5 +1,21 @@
+
+-- Table: repositories
+CREATE TABLE repositories ( 
+    id_repositories INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                    NOT NULL ON CONFLICT ABORT
+                                    UNIQUE ON CONFLICT ABORT,
+    type            VARCHAR( 5 )    NOT NULL ON CONFLICT ABORT,
+    dir             VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
+    name            VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
+    version         VARCHAR( 8 ),
+    file            VARCHAR( 32 ),
+    old_file        VARCHAR( 32 ),
+    url             VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT,
+    active          BOOLEAN( 1 ) 
+);
+
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (1, 'GIT', '/web/rutorrent', 'ruTorrent', 3.7, '', null, 'https://github.com/Novik/ruTorrent', 1);
-INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (2, 'TARGZ', '/web/rutorrent/plugins/chat', 'ruTorrent Plugin Chat', 2.0, 'chat-2.0.tar.gz ', null, 'https://rutorrent-chat.googlecode.com/files/chat-2.0.tar.gz', 1);
+INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (2, 'TARGZ', '/web/rutorrent/plugins/chat', 'ruTorrent Plugin Chat', 2.0, 'chat-2.0.tar.gz', null, 'https://rutorrent-chat.googlecode.com/files/chat-2.0.tar.gz', 1);
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (3, 'TARGZ', '/web/rutorrent/plugins/logoff', 'ruTorrent Plugin Logoff', 1.3, 'logoff-1.3.tar.gz', null, 'https://rutorrent-logoff.googlecode.com/files/logoff-1.3.tar.gz', 1);
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (4, 'TARGZ', '/web/rutorrent/plugins/lbll-suite', 'ruTorrent Plugin tAdd-Labels', 1.1, 'tadd-labels_1.1.tar.gz', 'lbll-suite_0.8.1.tar.gz', 'http://rutorrent-tadd-labels.googlecode.com/files/tadd-labels_1.1.tar.gz', 1);
 INSERT INTO [repositories] ([id_repositories], [type], [dir], [name], [version], [file], [old_file], [url], [active]) VALUES (5, 'TARGZ', '/web/rutorrent/plugins/nfo', 'ruTorrent Plugin NFO', 1337, 'nfo_v1337.tar.gz', null, 'http://srious.biz/nfo.tar.gz', 1);
