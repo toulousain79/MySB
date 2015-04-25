@@ -29,7 +29,7 @@ Similarly, if you have decided to use PeerGuardian, a second blocklist will also
 </p>
 <p>
 Although PeerGuardian is installed, it's still a good idea to also select the lists for rTorrent.<br />
-For if PeerGuardian has a problem and can not be launched, the blacklist of rTorrent will take over.
+For if PeerGuardian has a problem and can not be launched, the blocklist of rTorrent will take over.
 	<ul>
 		<li><a href="?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a></li>
 		<li><a href="?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a></li>
