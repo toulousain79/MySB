@@ -119,10 +119,12 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * [Commands](https://github.com/toulousain79/MySB/wiki/Commands)
 
 ### Portal
-* [Presentation](https://github.com/toulousain79/MySB/wiki/%5BPortal%5D-Presentation)
+* [Screenshots](https://github.com/toulousain79/MySB/wiki/%5BPortal%5D-Screenshots)
 * [Users rights](https://github.com/toulousain79/MySB/wiki/%5BPortal%5D-Users-rights)
 
-
+### More
+* [ToDo & Ideas](https://github.com/toulousain79/MySB/wiki/ToDo-&-Ideas)
+* [Sources, inspiration and tools](https://github.com/toulousain79/MySB/wiki/Sources-and-Tools)
 
 
 
@@ -244,33 +246,3 @@ Take a look at 'Changelog.md', it's all there.
 Created by toulousain79
 
 --> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
-
-## Sources, inspiration and tools
-
-* rTorrent Community:	http://community.rutorrent.org/	
-* rTorrent config info:		http://libtorrent.rakshasa.no/rtorrent/rtorrent.1.html
-* rTorrent SSL:	https://forums.gentoo.org/viewtopic-t-710876-start-0.html
-* OpenSSL configuration file:	http://www.eclectica.ca/howto/ssl-cert-howto.php
-* OpenSSL AES-NI support:	http://openssl.6102.n7.nabble.com/having-a-lot-of-troubles-trying-to-get-AES-NI-working-td44285.html
-* Text ASCII Art Generator:	http://patorjk.com/software/taag/
-* Why nginx-extras + infos:	https://wiki.debian.org/fr/Nginx
-* Nginx / PageSpeed: https://developers.google.com/speed/pagespeed/
-* DNS Server:	http://en.m.wikipedia.org/wiki/Comparison_of_DNS_server_software#Feature_matrix
-* DNScrypt:	http://dnscrypt.org/
-* PHPBench:		http://www.phpbench.com/
-* WolfCMS:		http://www.wolfcms.org/
-* Medoo:		http://medoo.in/
-* LoadAvg:	http://www.loadavg.com/
-
-## TODO & Ideas
-
-* Use of "Let's Encrypt" (https://letsencrypt.org/) (Summer 2015)
-* TIGER: http://www.nongnu.org/tiger/index.html#intro
-* NFS over SSH ? https://www.howtoforge.com/nfs_ssh_tunneling
-* Add miniDLNA (with OpenVPN) ?
-* Add SABnzbd ?
-* Add Subsonic ?
-* Add OwnCloud ?
-* Namebench ?
-* PSAD, SNORT ?
-* Ability to disable the restriction trackers ?
