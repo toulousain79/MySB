@@ -105,10 +105,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 
 	--> If you leave the monitoring enable in the OVH interface AND you do not activated it during installation of MySB, your server may be rebooted in rescue mode by the OVH staff...
 	--> If you want use the monitoring, you must first disable it BEFORE start the MySB installation. You can reactivate it AFTER the END of installation.
-	--> You can also disable the Real Time Monitoring (RTM), read this page.
-```
-http://www.torrent-invites.com/showthread.php?t=39022
-```	
+	--> You can also disable the Real Time Monitoring (RTM), read this page. [Real Time Monitoring (RTM)](http://www.torrent-invites.com/showthread.php?t=39022)
 
 #################
 
@@ -195,7 +192,7 @@ The seedbox manager is an interface to restart a rtorrent user session.
 
 Author: backtoback (c) & Magicalex (php) & hydrog3n (php).
 ```
-https://github.com/Magicalex/seedbox-manager/
+[https://github.com/Magicalex/seedbox-manager/](https://github.com/Magicalex/seedbox-manager/)
 ```
 
 ## Cakebox-Light
@@ -204,23 +201,23 @@ Cakebox is a small web app written with AngularJS and Silex, in order to list di
 
 Author: MardamBeyK & Tuxity.
 ```
-https://github.com/Cakebox/Cakebox-light
-https://github.com/Cakebox/Cakebox-light/wiki/Choisir-son-lecteur-vid%C3%A9o
+[https://github.com/Cakebox/Cakebox-light](https://github.com/Cakebox/Cakebox-light)
+[https://github.com/Cakebox/Cakebox-light/wiki/Choisir-son-lecteur-vid%C3%A9o](https://github.com/Cakebox/Cakebox-light/wiki/Choisir-son-lecteur-vid%C3%A9o)
 ```
 
 ## LoadAvg
 
 LoadAvg is a powerful way to manage load, memory, and resource usage on linux servers, cloud computers and virtual machines.
 ```
-http://www.loadavg.com/
+[http://www.loadavg.com/](http://www.loadavg.com/)
 ```
 
 ## Plex Media
 
 Additional steps to add your server to your Plex account.
 ```
-https://www.kassianoff.fr/blog/fr/installation-de-plex-media-server-sur-debian-7
-http://mondedie.fr/viewtopic.php?id=5732
+[https://www.kassianoff.fr/blog/fr/installation-de-plex-media-server-sur-debian-7](https://www.kassianoff.fr/blog/fr/installation-de-plex-media-server-sur-debian-7)
+[https://www.kassianoff.fr/blog/fr/installation-de-plex-media-server-sur-debian-7](https://www.kassianoff.fr/blog/fr/installation-de-plex-media-server-sur-debian-7)
 ```
 ###### NOTE
 	Work in progress, this service is currently not 100% functional.
@@ -289,7 +286,7 @@ service bind9 restart
 ## SMTP authentification
 If you want to use GMAIL provider, maybe should you read this for authorize connexion to your account by your server JUST BEFORE installation.
 ```
-https://www.google.com/accounts/DisplayUnlockCaptcha
+[https://www.google.com/accounts/DisplayUnlockCaptcha](https://www.google.com/accounts/DisplayUnlockCaptcha)
 ```
  
 ## Designed for dedicated server with Debian 7 (Wheezy)
