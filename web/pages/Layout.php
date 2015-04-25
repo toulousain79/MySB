@@ -145,7 +145,7 @@
 			echo $FooterNavBar . '<br /><br />';
 		}
 ?>
-			<a target="_blank" href="https://github.com/toulousain79/MySB/" title="MySB on GitHub">MySB on GitHub</a> | <a target="_blank" href="https://github.com/toulousain79/MySB/wiki" title="MySB WiKi">MySB WiKi</a> | <a target="_blank" href="https://github.com/toulousain79/MySB/blob/<?php echo GetVersion(); ?>/Changelog.md" title="MySB on GitHub">Changelog <?php echo GetVersion(); ?></a><br />
+			<a target="_blank" href="https://github.com/toulousain79/MySB/" title="MySB on GitHub">MySB on GitHub</a> | <a target="_blank" href="https://github.com/toulousain79/MySB/wiki" title="MySB WiKi">MySB WiKi</a> | <a target="_blank" href="https://github.com/toulousain79/MySB/blob/<?php echo GetVersion(); ?>/Changelog.md" title="Changelog <?php echo GetVersion(); ?>">Changelog <?php echo GetVersion(); ?></a><br />
 			<a target="_blank" href="http://www.css3templates.co.uk">Copyright &copy; CSS3_two</a> | <a target="_blank" href="http://www.wolfcms.org/" title="Wolf CMS">Wolf CMS</a>
 		</footer>
 	</div>
