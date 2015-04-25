@@ -44,16 +44,12 @@ fi
 ManageServices stop "bind9"
 
 #### /etc/bind/named.conf.local
-if [ -f /etc/bind/named.conf.local ]; then rm -vf /etc/bind/named.conf.local; fi
-touch /etc/bind/named.conf.local
-cat $MySB_InstallDir/templates/etc.bind.named.conf.local.template | tee -a /etc/bind/named.conf.local
+cp -vf $MySB_InstallDir/templates/etc.bind.named.conf.local.template /etc/bind/named.conf.local
 chmod 0644 /etc/bind/named.conf.local
 chown root:bind /etc/bind/named.conf.local
 
 #### /etc/bind/log.conf
-if [ -f /etc/bind/log.conf ]; then rm -vf /etc/bind/log.conf; fi
-touch /etc/bind/log.conf
-cat $MySB_InstallDir/templates/etc.bind.log.conf.template | tee -a /etc/bind/log.conf
+cp -vf $MySB_InstallDir/templates/etc.bind.log.conf.template /etc/bind/log.conf
 chmod 0644 /etc/bind/log.conf
 chown root:bind /etc/bind/log.conf
 if [ ! -d /var/log/bind ]; then
@@ -63,38 +59,18 @@ if [ ! -d /var/log/bind ]; then
 fi
 
 #### /etc/bind/named.conf.options
-if [ -f /etc/bind/named.conf.options ]; then rm -vf /etc/bind/named.conf.options; fi
-touch /etc/bind/named.conf.options
-cat $MySB_InstallDir/templates/etc.bind.named.conf.options.template | tee -a /etc/bind/named.conf.options
+cp -vf $MySB_InstallDir/templates/etc.bind.named.conf.options.template /etc/bind/named.conf.options
 sed -i "s/<SrvIpAddress>/$SrvIpAddress/g;" /etc/bind/named.conf.options
 chmod 0644 /etc/bind/named.conf.options
 chown root:bind /etc/bind/named.conf.options
 
 #### /etc/bind/MySB.zones.blakclists
-if [ -f /etc/bind/MySB.zones.blakclists ]; then rm -vf /etc/bind/MySB.zones.blakclists; fi
-touch /etc/bind/MySB.zones.blakclists
-echo "#### MySB - Blacklisted domains (ex: inactive trackers)" | tee -a /etc/bind/MySB.zones.blakclists
+echo "#### MySB - Blacklisted domains (ex: inactive trackers)" > /etc/bind/MySB.zones.blakclists
 chmod 0644 /etc/bind/MySB.zones.blakclists
 chown root:bind /etc/bind/MySB.zones.blakclists
 
 #### logrotate
-if [ -f /etc/logrotate.d/bind ]; then rm -vf /etc/logrotate.d/bind; fi
-(
-cat <<'EOF'
-/var/log/bind/*.log {
-	weekly
-	missingok
-	rotate 10
-	compress
-	delaycompress
-	create 775 root bind
-	postrotate
-	/etc/init.d/bind9 reload > /dev/null
-	endscript
-}
-
-EOF
-) | tee -a /etc/logrotate.d/bind
+cp -vf $MySB_InstallDir/templates/etc.logrotate.d.bind.template /etc/logrotate.d/bind
 
 #### Disable init
 update-rc.d bind9 remove -f
