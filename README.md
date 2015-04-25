@@ -114,8 +114,10 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * [Installation](https://github.com/toulousain79/MySB/wiki/Installation)
 * [Upgrade](https://github.com/toulousain79/MySB/wiki/Upgrade)
 * [Uninstall](https://github.com/toulousain79/MySB/wiki/Uninstall)
+
 ### Commands and scripts
 * [Commands](https://github.com/toulousain79/MySB/wiki/Commands)
+
 ### Portal
 * [Presentation](https://github.com/toulousain79/MySB/wiki/%5BPortal%5D-Presentation)
 * [Users rights](https://github.com/toulousain79/MySB/wiki/%5BPortal%5D-Users-rights)
