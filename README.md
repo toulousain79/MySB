@@ -120,20 +120,6 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 
 
 
-
-
-## Plex Media
-
-Additional steps to add your server to your Plex account.
-```
-(https://www.kassianoff.fr/blog/fr/installation-de-plex-media-server-sur-debian-7)
-(http://mondedie.fr/viewtopic.php?id=5732)
-```
-###### NOTE
-	Work in progress, this service is currently not 100% functional.
-	The OpenVPN TAP mode has been added to allow the diffusion of DLNA, but it is still in testing.
-	Feedback would be appreciated...
-
 ## BlockLists
 BlockList usage (optionnal), PeerGuardian or directly via rTorrent.
 Depending on your system, it is possible to use: 
