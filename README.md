@@ -98,6 +98,20 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 
 * If you leave the monitoring enable in the OVH interface **AND** you do not activated it during installation of MySB, your server may be **rebooted in rescue mode** by the OVH staff... If you want use the monitoring, you **must** first disable it **BEFORE** start the MySB installation. You can reactivate it **AFTER** the END of installation. You can also disable the Real Time Monitoring (RTM), read this page. [Real Time Monitoring (RTM)](http://www.torrent-invites.com/showthread.php?t=39022)
 
+## Designed for dedicated server with Debian 7 (Wheezy)
+
+* **Ubuntu** is **not supported**.
+* **PVE kernel** are not **supported**.
+ 
+## Changelog
+
+Take a look at 'Changelog.md', it's all there.
+
+## License
+
+Created by toulousain79
+
+--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 
 ====
 ## [WiKi](https://github.com/toulousain79/MySB/wiki)
@@ -112,6 +126,11 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 ### Portal
 * [Screenshots](https://github.com/toulousain79/MySB/wiki/%5BPortal%5D-Screenshots)
 * [Users rights](https://github.com/toulousain79/MySB/wiki/%5BPortal%5D-Users-rights)
+
+### Help
+* [Cakebox Light](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-Cakebox-Light)
+* [Plex Media Server](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-Plex-Media-Server)
+* [FAQ](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-FAQ)
 
 ### More
 * [ToDo & Ideas](https://github.com/toulousain79/MySB/wiki/%5BMore%5D-ToDo-&-Ideas)
@@ -184,18 +203,3 @@ If you want to use GMAIL provider, maybe should you read this for authorize conn
 ```
 [https://www.google.com/accounts/DisplayUnlockCaptcha](https://www.google.com/accounts/DisplayUnlockCaptcha)
 ```
- 
-## Designed for dedicated server with Debian 7 (Wheezy)
-
-	--> Ubuntu is not supported.
-	--> PVE kernel are not supported.
- 
-## Changelog
-
-Take a look at 'Changelog.md', it's all there.
-
-## License
-
-Created by toulousain79
-
---> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
