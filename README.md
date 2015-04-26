@@ -75,35 +75,29 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * Possibility to delete/inactivate a user
 
 ## Bugs
+
 * Please, tell me.
 * Maybe some missing IPtables rules for some services. Can be corrected quickly if you do a feedback...
 
-#################
-#	Warnings	#
-#################
+====
+# Warnings
 
-###### NOTE: You must have a swap partition for systems with less than 2GB of RAM!
+**NOTE :**
+* You must have a swap partition for systems with less than 2GB of RAM!
+* Your swap partition should be at least equal to your RAM.
 
-	--> Your swap partition should be at least equal to your RAM.
-
-###### NOTE: If you don't know Linux ENOUGH:
-
-	--> DO NOT use capital letters, all your usernames should be written in lowercase without space.
-	--> DO NOT upgrade anything in your box, ask in the thread before even thinking about it.
-	--> DO NOT try to reconfigure packages using other tutorials or yourself.
-	--> TO UPGRADE your system, please use 'MySB_UpgradeSystem' command.
+**NOTE :** If you don't know Linux ENOUGH:
+* **DO NOT** all your usernames and password should be written **without** space.
+* **DO NOT** upgrade anything in your box, ask in the thread **before** even thinking about it.
+* **DO NOT** try to reconfigure packages using other tutorials or yourself.
+* **TO UPGRADE** your system, please use **MySB_UpgradeSystem** command. _(This command is comparable to an APT update + APT upgrade)_
 	
-###### NOTE: For OVH servers (OVH, KimSufi, SoYouStart):
+**NOTE :** For OVH servers (OVH, KimSufi, SoYouStart):
+* Use the **default distribution kernel**. In your OVH manager interface, when you start the installation process, choose **Custom install**, and **Use of kernel distribution**.
 
-	--> Use the default distribution kernel.
-		In your OVH manager interface, when you start the installation process, choose "Custom install", and "Use of kernel distribution".
+* You can monitor your server, simply specify it during MySB installation. **BUT** I still advice to **disable** this service in the OVH interface. If you allow monitoring with MySB, the IPs of your provider will be **added** to the whitelist globally (PeerGuardian, Fail2Ban, IPTables), and those addresses will **not be filtered**. The system works on SoYouStart servers. But has **not been verified** on others OVH servers like KimSufi !
 
-	--> You can monitor your server, simply specify it during MySB installation.
-		BUT I still advice to disable this service in the OVH interface.
-		If you allow monitoring with MySB, the IPs of your provider will be added to the whitelist globally (PeerGuardian, Fail2Ban, IPTables), and those addresses will not be filtered.
-		The system works on SoYouStart servers. But has not been verified on others OVH servers like KimSufi !
-
-	--> If you leave the monitoring enable in the OVH interface AND you do not activated it during installation of MySB, your server may be rebooted in rescue mode by the OVH staff...
+* If you leave the monitoring enable in the OVH interface AND you do not activated it during installation of MySB, your server may be rebooted in rescue mode by the OVH staff...
 	--> If you want use the monitoring, you must first disable it BEFORE start the MySB installation. You can reactivate it AFTER the END of installation.
 	--> You can also disable the Real Time Monitoring (RTM), read this page. [Real Time Monitoring (RTM)](http://www.torrent-invites.com/showthread.php?t=39022)
 
