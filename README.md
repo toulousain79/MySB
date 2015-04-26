@@ -114,37 +114,13 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * [Users rights](https://github.com/toulousain79/MySB/wiki/%5BPortal%5D-Users-rights)
 
 ### More
-* [ToDo & Ideas](https://github.com/toulousain79/MySB/wiki/ToDo-&-Ideas)
-* [Sources, inspiration and tools](https://github.com/toulousain79/MySB/wiki/Sources-and-Tools)
+* [ToDo & Ideas](https://github.com/toulousain79/MySB/wiki/%5BMore%5D-ToDo-&-Ideas)
+* [Sources, inspiration and tools](https://github.com/toulousain79/MySB/wiki/%5BMore%5D-Sources-and-Tools)
 
 
 
 
-## Seedbox-Manager
 
-The seedbox manager is an interface to restart a rtorrent user session.
-
-Author: backtoback (c) & Magicalex (php) & hydrog3n (php).
-```
-(https://github.com/Magicalex/seedbox-manager/)
-```
-
-## Cakebox-Light
-
-Cakebox is a small web app written with AngularJS and Silex, in order to list directories and watch video files for a specified directory.
-
-Author: MardamBeyK & Tuxity.
-```
-(https://github.com/Cakebox/Cakebox-light)
-(https://github.com/Cakebox/Cakebox-light/wiki/Choisir-son-lecteur-vid%C3%A9o)
-```
-
-## LoadAvg
-
-LoadAvg is a powerful way to manage load, memory, and resource usage on linux servers, cloud computers and virtual machines.
-```
-(http://www.loadavg.com/)
-```
 
 ## Plex Media
 
