@@ -31,24 +31,24 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * PHP5-FPM _(php5-apcu, FastCGI, SSL)_
 * SFTP _with Chroot_
 * VSFTPd _(FTP over TLS)_
-* Postfix with (or without) SMTP authentication _(Gmail, Free, Ovh and Yahoo)_
+* Postfix with _(or without)_ SMTP authentication _(Gmail, Free, Ovh and Yahoo)_
 
 ====
 ## Services available
 
-* PeerGuardian (optionnal but recommended)
-* DNScrypt-proxy with Bind9 as DNS caching (optionnal but recommended)
-* Fail2ban (optionnal but recommended)
-* Seedbox-Manager (optionnal, you are able to restart rTorrent session via MySB portal)
-* OpenVPN (optionnal); Multi TUN/TAP configuration, with or without redirection of traffic. Add AES-NI support.
-* Webmin (optionnal)
-* BlockList usage (optionnal) (PeerGuardian or rTorrent, if PeerGuardian failed to start, rTorrent will use its own blocklists)
-* CakeBox-Light (optionnal)
-* PlexMedia Server (optionnal, VPN bridged access, requires additional setup) (WiP)
-* Samba share for each users (VPN access)
-* NFS share for each users (VPN access)
-* Auto retrieve SSL certificates for all trackers (if available)
-* MySB portal, ability to manage trackers, blocklists, logs, users, restart rTorrent, switch of rTorrent version, and more
+* PeerGuardian _(optionnal but **recommended**)_
+* DNScrypt-proxy with Bind9 as DNS caching _(optionnal but **recommended**)_
+* Fail2ban _(optionnal but **recommended**)_
+* Seedbox-Manager _(optionnal)_
+* OpenVPN _(optionnal); Multi TUN/TAP configuration, with or without redirection of traffic. Add AES-NI support._
+* Webmin _(optionnal)_
+* BlockList usage _(optionnal) (PeerGuardian or rTorrent, if PeerGuardian failed to start, rTorrent will use its own blocklists)_
+* CakeBox-Light _(optionnal)_
+* PlexMedia Server _(optionnal, VPN bridged access, requires additional setup)_
+* Samba share for each users _(VPN access)_
+* NFS share for each users _(VPN access)_
+* Auto retrieve SSL certificates for all trackers _(if available)_
+* MySB portal _ability to manage trackers, blocklists, logs, users, restart rTorrent, switch of rTorrent version, and more_
 * Block all possibilities to use any listed trackers that was not activated in MySB portal
 * LoadAvg, free server analytics and monitoring
 * Monitoring service available for some providers
