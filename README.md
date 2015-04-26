@@ -37,23 +37,23 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 ## Services available
 
 * **PeerGuardian** _(optionnal but **recommended**)_
-* DNScrypt-proxy with Bind9 as DNS caching _(optionnal but **recommended**)_
-* Fail2ban _(optionnal but **recommended**)_
-* Seedbox-Manager _(optionnal)_
-* OpenVPN _(optionnal); Multi TUN/TAP configuration, with or without redirection of traffic. Add AES-NI support._
-* Webmin _(optionnal)_
-* BlockList usage _(optionnal) (PeerGuardian or rTorrent, if PeerGuardian failed to start, rTorrent will use its own blocklists)_
-* CakeBox-Light _(optionnal)_
-* PlexMedia Server _(optionnal, VPN bridged access, requires additional setup)_
-* Samba share for each users _(VPN access)_
-* NFS share for each users _(VPN access)_
-* Auto retrieve SSL certificates for all trackers _(if available)_
-* MySB portal _ability to manage trackers, blocklists, logs, users, restart rTorrent, switch of rTorrent version, and more_
-* Block all possibilities to use any listed trackers that was not activated in MySB portal
-* LoadAvg, free server analytics and monitoring
-* Monitoring service available for some providers
-* Access restricted by IP for all server access (can be disabled)
-* Dynamic IP Management for IP restriction (DynDNS, No-IP, ...)
+* **DNScrypt-proxy** with Bind9 as DNS caching _(optionnal but **recommended**)_
+* **Fail2ban** _(optionnal but **recommended**)_
+* **Seedbox-Manager** _(optionnal) (user interface is in french)_
+* **OpenVPN** _(optionnal); Multi TUN/TAP configuration, with or without redirection of traffic. Add AES-NI support._
+* **Webmin** _(optionnal)_
+* **BlockList usage** _(optionnal) (PeerGuardian or rTorrent, if PeerGuardian failed to start, rTorrent will use its own blocklists)_
+* **CakeBox-Light** _(optionnal)_
+* **PlexMedia Server** _(optionnal, VPN bridged access, requires additional setup)_
+* **Samba share** for each users _(VPN access)_
+* **NFS share** for each users _(VPN access)_
+* **Auto retrieve SSL certificates for all trackers** _(if available)_
+* **MySB portal**, _ability to manage trackers, blocklists, logs, users, restart rTorrent, switch of rTorrent version, and more_
+* **Block all possibilities to use any listed trackers that was not activated in MySB portal**
+* **LoadAvg**, _free server analytics and monitoring_
+* **Monitoring service available for some providers**
+* **Access restricted by IP** for all server access _(can be disabled)_
+* **Dynamic IP Management for IP restriction** _(DynDNS, No-IP, ...)_
 
 ====
 ## Additional ruTorrent plugins
