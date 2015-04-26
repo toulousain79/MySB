@@ -126,7 +126,7 @@ The seedbox manager is an interface to restart a rtorrent user session.
 
 Author: backtoback (c) & Magicalex (php) & hydrog3n (php).
 ```
-[https://github.com/Magicalex/seedbox-manager/](https://github.com/Magicalex/seedbox-manager/)
+<https://github.com/Magicalex/seedbox-manager/>
 ```
 
 ## Cakebox-Light
@@ -135,23 +135,23 @@ Cakebox is a small web app written with AngularJS and Silex, in order to list di
 
 Author: MardamBeyK & Tuxity.
 ```
-[https://github.com/Cakebox/Cakebox-light](https://github.com/Cakebox/Cakebox-light)
-[https://github.com/Cakebox/Cakebox-light/wiki/Choisir-son-lecteur-vid%C3%A9o](https://github.com/Cakebox/Cakebox-light/wiki/Choisir-son-lecteur-vid%C3%A9o)
+<https://github.com/Cakebox/Cakebox-light>
+<https://github.com/Cakebox/Cakebox-light/wiki/Choisir-son-lecteur-vid%C3%A9o>
 ```
 
 ## LoadAvg
 
 LoadAvg is a powerful way to manage load, memory, and resource usage on linux servers, cloud computers and virtual machines.
 ```
-[http://www.loadavg.com/](http://www.loadavg.com/)
+<http://www.loadavg.com/>
 ```
 
 ## Plex Media
 
 Additional steps to add your server to your Plex account.
 ```
-[https://www.kassianoff.fr/blog/fr/installation-de-plex-media-server-sur-debian-7](https://www.kassianoff.fr/blog/fr/installation-de-plex-media-server-sur-debian-7)
-[https://www.kassianoff.fr/blog/fr/installation-de-plex-media-server-sur-debian-7](https://www.kassianoff.fr/blog/fr/installation-de-plex-media-server-sur-debian-7)
+<https://www.kassianoff.fr/blog/fr/installation-de-plex-media-server-sur-debian-7>
+<https://www.kassianoff.fr/blog/fr/installation-de-plex-media-server-sur-debian-7>
 ```
 ###### NOTE
 	Work in progress, this service is currently not 100% functional.
