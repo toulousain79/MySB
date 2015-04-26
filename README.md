@@ -15,11 +15,11 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 ====
 ## All prerequisites listed below are MANDATORY!
 
-* You **must** have a standard Debian kernel ! If you can not install a Debian kernel, then MySB is not for you ...
-* Virtual Private Server (VPS) are not compatible ! (refer to the previous point)
-* You must have a clean dedicated server.
-* Your primary inet must be configured staticly, not DHCP (eg: Online servers)
-* Encourage me by following my project ;-)
+* You **must** have a **standard Debian kernel** ! If you can not install a **Debian kernel**, then MySB is **not for you**...
+* Virtual Private Server (VPS) are **not compatible** ! (refer to the previous point)
+* You must have a **clean dedicated server**.
+* Your primary inet must be configured **staticly**, not DHCP (eg: Online servers)
+* Encourage me by **following my project** ;-)
 
 ====
 ## Installed software
@@ -35,45 +35,48 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 
 ====
 ## Services available
-	* PeerGuardian (optionnal but recommended)
-	* DNScrypt-proxy with Bind9 as DNS caching (optionnal but recommended)
-	* Fail2ban (optionnal but recommended)
-	* Seedbox-Manager (optionnal, you are able to restart rTorrent session via MySB portal)
-	* OpenVPN (optionnal); Multi TUN/TAP configuration, with or without redirection of traffic. Add AES-NI support.
-	* Webmin (optionnal)
-	* BlockList usage (optionnal) (PeerGuardian or rTorrent, if PeerGuardian failed to start, rTorrent will use its own blocklists)
-	* CakeBox-Light (optionnal)
-	* PlexMedia Server (optionnal, VPN bridged access, requires additional setup) (WiP)
-	* Samba share for each users (VPN access)
-	* NFS share for each users (VPN access)
-	* Auto retrieve SSL certificates for all trackers (if available)
-	* MySB portal, ability to manage trackers, blocklists, logs, users, restart rTorrent, switch of rTorrent version, and more
-	* Block all possibilities to use any listed trackers that was not activated in MySB portal
-	* LoadAvg, free server analytics and monitoring
-	* Monitoring service available for some providers
-	* Access restricted by IP for all server access (can be disabled)
-	* Dynamic IP Management for IP restriction (DynDNS, No-IP, ...)
+
+* PeerGuardian (optionnal but recommended)
+* DNScrypt-proxy with Bind9 as DNS caching (optionnal but recommended)
+* Fail2ban (optionnal but recommended)
+* Seedbox-Manager (optionnal, you are able to restart rTorrent session via MySB portal)
+* OpenVPN (optionnal); Multi TUN/TAP configuration, with or without redirection of traffic. Add AES-NI support.
+* Webmin (optionnal)
+* BlockList usage (optionnal) (PeerGuardian or rTorrent, if PeerGuardian failed to start, rTorrent will use its own blocklists)
+* CakeBox-Light (optionnal)
+* PlexMedia Server (optionnal, VPN bridged access, requires additional setup) (WiP)
+* Samba share for each users (VPN access)
+* NFS share for each users (VPN access)
+* Auto retrieve SSL certificates for all trackers (if available)
+* MySB portal, ability to manage trackers, blocklists, logs, users, restart rTorrent, switch of rTorrent version, and more
+* Block all possibilities to use any listed trackers that was not activated in MySB portal
+* LoadAvg, free server analytics and monitoring
+* Monitoring service available for some providers
+* Access restricted by IP for all server access (can be disabled)
+* Dynamic IP Management for IP restriction (DynDNS, No-IP, ...)
 
 ====
 ## Additional ruTorrent plugins
-	* Mobile
-	* Pause WebUI
-	* Chat
-	* Logoff
-	* tAdd-Labels
-	* Filemanager
-	* Mediastream
-	* Fileshare
-	* NFO
-	* RatioColor
-	* FileUpload
-	* Stream
-	* Favicons trackers
+
+* Mobile
+* Pause WebUI
+* Chat
+* Logoff
+* tAdd-Labels
+* Filemanager
+* Mediastream
+* Fileshare
+* NFO
+* RatioColor
+* FileUpload
+* Stream
+* Favicons trackers
 
 ====
 ## Coming soon
-	* Possibility to add more blocklists
-	* Possibility to delete/inactivate a user
+
+* Possibility to add more blocklists
+* Possibility to delete/inactivate a user
 
 ====
 ## Bugs
