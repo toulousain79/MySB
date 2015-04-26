@@ -109,8 +109,27 @@ for Repo in $AllRepos; do
 							Error=$?
 						fi
 					else
-						svn co $RepoURL $MySB_InstallDir$RepoDir
-						Error=$?
+						# GitHub project download directly from 'github.com', so it is a ZIP file.
+						if [ ! -f $MySB_InstallDir/files/$RepoFile ]; then
+							unzip $MySB_InstallDir/files/$RepoFile -d $MySB_InstallDir/temp/
+							Error=$?
+
+							SubDir="`unzip -l $MySB_InstallDir/files/$RepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+							if [ -d $MySB_InstallDir/temp/$SubDir ]; then
+								mv -v $MySB_InstallDir/temp/$SubDir $MySB_InstallDir$RepoDir
+								Error=$?
+							fi
+							if [ -d $MySB_InstallDir$RepoDir/.svn ]; then
+								svn up $MySB_InstallDir$RepoDir
+								if [ $? -gt 0 ]; then
+									svn switch $RepoURL $MySB_InstallDir$RepoDir
+									Error=$?
+								fi
+							fi							
+						else
+							svn co $RepoURL $MySB_InstallDir$RepoDir
+							Error=$?
+						fi
 					fi
 				;;
 				*)
@@ -147,6 +166,16 @@ for Repo in $AllRepos; do
 								mv -v $MySB_InstallDir/temp/$SubDir $MySB_InstallDir$RepoDir
 								Error=$?
 							fi
+							if [ -d $MySB_InstallDir$RepoDir ]; then
+								cd $MySB_InstallDir$RepoDir/
+								git stash
+								Error=$?
+
+								if [ $Error -eq 0 ]; then
+									git pull
+									Error=$?
+								fi
+							fi							
 						else
 							git clone $RepoURL $MySB_InstallDir$RepoDir
 							Error=$?
@@ -155,8 +184,39 @@ for Repo in $AllRepos; do
 				;;
 				*)
 					if [ ! -d $MySB_InstallDir$RepoDir ]; then
-						git clone $RepoURL $MySB_InstallDir$RepoDir
+						# GitHub project download directly from 'github.com', so it is a ZIP file.
+						if [ ! -f $MySB_InstallDir/files/$RepoFile ]; then
+							unzip $MySB_InstallDir/files/$RepoFile -d $MySB_InstallDir/temp/
+							Error=$?
+
+							SubDir="`unzip -l $MySB_InstallDir/files/$RepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+							if [ -d $MySB_InstallDir/temp/$SubDir ]; then
+								mv -v $MySB_InstallDir/temp/$SubDir $MySB_InstallDir$RepoDir
+								Error=$?
+							fi
+							if [ -d $MySB_InstallDir$RepoDir ]; then
+								cd $MySB_InstallDir$RepoDir/
+								git stash
+								Error=$?
+
+								if [ $Error -eq 0 ]; then
+									git pull
+									Error=$?
+								fi
+							fi
+						else
+							git clone $RepoURL $MySB_InstallDir$RepoDir
+							Error=$?
+						fi
+					else
+						cd $MySB_InstallDir$RepoDir/
+						git stash
 						Error=$?
+
+						if [ $Error -eq 0 ]; then
+							git pull
+							Error=$?
+						fi					
 					fi
 				;;
 			esac
