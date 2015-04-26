@@ -36,7 +36,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 ====
 ## Services available
 
-* PeerGuardian _(optionnal but **recommended**)_
+* **PeerGuardian** _(optionnal but **recommended**)_
 * DNScrypt-proxy with Bind9 as DNS caching _(optionnal but **recommended**)_
 * Fail2ban _(optionnal but **recommended**)_
 * Seedbox-Manager _(optionnal)_
