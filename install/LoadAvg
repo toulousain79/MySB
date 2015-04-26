@@ -39,29 +39,40 @@ if [ ! -d $LoadAvgDir/logs ]; then
 	chown root:www-data $LoadAvgDir/logs
 fi
 
-#### settings.ini.php
-cp $MySB_InstallDir/templates/etc.mysb.web.loadavg.app.config.template $LoadAvgDir/app/config/settings.ini.php
-perl -pi -e "s/<server_name>/$HostNameFQDN/g" $LoadAvgDir/app/config/settings.ini.php
-TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
-perl -pi -e "s/<time_zone>/$TimeZoneEscaped/g" $LoadAvgDir/app/config/settings.ini.php
-perl -pi -e "s/<user_name>/fake_user/g" $LoadAvgDir/app/config/settings.ini.php
-FakePassword="`GenPassword 32`"
-perl -pi -e "s/<password>/$FakePassword/g" $LoadAvgDir/app/config/settings.ini.php
-perl -pi -e "s/eth0/$PrimaryInet/g" $LoadAvgDir/app/config/settings.ini.php
-if [ "$IsInstalled_OpenVPN" == "NO" ] && [ "$ToInstall_OpenVPN" == "NO" ]; then
-	sed -i '/br0/d' $LoadAvgDir/app/config/settings.ini.php
-	sed -i '/tap0/d' $LoadAvgDir/app/config/settings.ini.php
-	sed -i '/tun0/d' $LoadAvgDir/app/config/settings.ini.php
-	sed -i '/tun1/d' $LoadAvgDir/app/config/settings.ini.php
-fi
-
-#### ssh.ini.php
-perl -pi -e "s/\/var\/log\/secure/\/var\/log\/auth.log/g" $LoadAvgDir/lib/modules/Ssh/ssh.ini.php
-
 #### Install
 cd $LoadAvgDir/
 chmod 0777 $LoadAvgDir/configure
 ./configure
+
+#### settings.ini.php
+cp $LoadAvgDir/app/config/default_settings.ini.php $LoadAvgDir/app/config/settings.ini.php
+FakePassword="`GenPassword 32`"
+TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
+sed -i "/title/s/\"\"/\"$HostNameFQDN\"/g" $LoadAvgDir/app/config/settings.ini.php
+sed -i "/allow_anyone/s/false/true/g" $LoadAvgDir/app/config/settings.ini.php
+perl -pi -e "s/America\/New_York/$TimeZoneEscaped/g" $LoadAvgDir/app/config/settings.ini.php
+sed -i "/username/s/\"\"/\"fake_user\"/g" $LoadAvgDir/app/config/settings.ini.php
+sed -i "/password/s/\"\"/\"$FakePassword\"/g" $LoadAvgDir/app/config/settings.ini.php
+sed -i "/https/s/false/true/g" $LoadAvgDir/app/config/settings.ini.php
+sed -i "/checkforupdates/s/false/true/g" $LoadAvgDir/app/config/settings.ini.php
+sed -i "/ban_ip/s/true/false/g" $LoadAvgDir/app/config/settings.ini.php
+sed -i "/autoreload/s/false/true/g" $LoadAvgDir/app/config/settings.ini.php
+perl -pi -e "s/eno16777736/$PrimaryInet/g" $LoadAvgDir/app/config/settings.ini.php
+sed -i "/lo/s/false/true/g" $LoadAvgDir/app/config/settings.ini.php
+if [ "$IsInstalled_OpenVPN" == "YES" ] || [ "$ToInstall_OpenVPN" == "YES" ]; then
+	NumLign=$(sed -n "/network_interface/=" $LoadAvgDir/app/config/settings.ini.php)
+	(( NumLign++ ))
+	sed -i "${NumLign}i\br0 = \"true\"" $LoadAvgDir/app/config/settings.ini.php
+	sed -i "${NumLign}i\tap0 = \"true\"" $LoadAvgDir/app/config/settings.ini.php
+	sed -i "${NumLign}i\tun0 = \"true\"" $LoadAvgDir/app/config/settings.ini.php
+	sed -i "${NumLign}i\tun1 = \"true\"" $LoadAvgDir/app/config/settings.ini.php
+fi
+sed -i "/Processor/s/false/true/g" $LoadAvgDir/app/config/settings.ini.php
+sed -i "/Ssh/s/false/true/g" $LoadAvgDir/app/config/settings.ini.php
+sed -i "/Swap/s/false/true/g" $LoadAvgDir/app/config/settings.ini.php
+
+#### ssh.ini.php
+perl -pi -e "s/\/var\/log\/secure/\/var\/log\/auth.log/g" $LoadAvgDir/lib/modules/Ssh/ssh.ini.php
 
 #### Clean
 if [ -d $LoadAvgDir/install/ ]; then
