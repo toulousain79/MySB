@@ -14,22 +14,24 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 
 ====
 ## All prerequisites listed below are MANDATORY!
-	* You must have a standard Debian kernel ! If you can not install a Debian kernel, then MySB is not for you ...
-	* Virtual Private Server (VPS) are not compatible ! (refer to the previous point)
-	* You must have a clean dedicated server.
-	* Your primary inet must be configured staticly, not DHCP (eg: Online servers)
-	* Encourage me by following my project ;-)
+
+* You must have a standard Debian kernel ! If you can not install a Debian kernel, then MySB is not for you ...
+* Virtual Private Server (VPS) are not compatible ! (refer to the previous point)
+* You must have a clean dedicated server.
+* Your primary inet must be configured staticly, not DHCP (eg: Online servers)
+* Encourage me by following my project ;-)
 
 ====
 ## Installed software
-	* rTorrent (rakshasa) v0.9.2 & v0.9.4 with SSL
-	* libTorrrent (rakshasa) v0.13.2 & v0.13.4
-	* ruTorrent (SVN) + official plugins (SVN)
-	* NginX (SSL, specific port and some customizations)
-	* PHP5-FPM (php5-apcu, FastCGI, SSL)
-	* SFTP with Chroot
-	* VSFTPd (FTP over TLS)
-	* Postfix with (or without) SMTP authentication (Gmail, Free, Ovh and Yahoo)
+
+* rTorrent (rakshasa) v0.9.2 & v0.9.4 with SSL
+* libTorrrent (rakshasa) v0.13.2 & v0.13.4
+* ruTorrent (SVN) + official plugins (SVN)
+* NginX (SSL, specific port and some customizations)
+* PHP5-FPM (php5-apcu, FastCGI, SSL)
+* SFTP with Chroot
+* VSFTPd (FTP over TLS)
+* Postfix with (or without) SMTP authentication (Gmail, Free, Ovh and Yahoo)
 
 ====
 ## Services available
