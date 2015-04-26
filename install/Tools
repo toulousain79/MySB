@@ -28,14 +28,18 @@ source $(dirname $0)/../inc/includes_before
 ComposerDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'Composer'\"`"
 ComposerUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'Composer'\"`"
 ComposerFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'Composer'\"`"
-if CheckCommand 0 composer; then
-	composer self-update --quiet
-else
-	cd /tmp
-	curl -s $ComposerUrl | php
-	mv -v /tmp/$ComposerFile $ComposerDir
-	chmod +x /usr/bin/composer
+
+if ! CheckCommand 0 composer; then
+	if [ -f $MySB_InstallDir/files/$ComposerFile ]; then
+		cp -v /tmp/$ComposerFile $ComposerDir
+	else
+		cd /tmp
+		curl -s $ComposerUrl | php
+		mv -v /tmp/$ComposerFile $ComposerDir
+		chmod +x /usr/bin/composer
+	fi
 fi
+composer self-update --quiet
 
 #### NodeJS
 NodeDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'NodeJS'\"`"
