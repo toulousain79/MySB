@@ -43,7 +43,7 @@ BannerUpgrade() {
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=22
+TotalSTEP=23
 
 BannerUpgrade
 CountDown 20
@@ -220,17 +220,12 @@ fi
 
 #### PeerGuardian
 (( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring PeerGuardian, and updating all lists (this may take a while, please be patient)$CEND..."
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for PeerGuardian$CEND..."
 if [ "$IsInstalled_PeerGuardian" == "YES" ] || [ "$MySB_PeerBlock" == "PeerGuardian" ]; then
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'PeerGuardian';"
-	screen -dmS PeerGuardian /bin/bash $MySB_InstallDir/install/PeerGuardian 'UPGRADE';
-	WaitingScreen PeerGuardian
-	StatusSTD
+	cp $MySB_InstallDir/templates/etc.pgl.pglcmd.conf.template /etc/pgl/pglcmd.conf
 else
 	echo -e "${CGREEN}Nothing to do !$CEND"
 fi
-
-######################################################################
 
 #### Crontab
 (( CurrentSTEP++ ))
@@ -238,11 +233,20 @@ echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for Crontab$CEND..."
 crontab -l > /tmp/crontab.tmp
 for seedUser in $UsersList; do
 	sed -i '/'$seedUser'/d' /tmp/crontab.tmp
-	echo "*/5 * * * * if ! ( /bin/ps U $seedUser | grep rtorrent > /dev/null ); then /etc/init.d/rtorrent-$seedUser restart &> /dev/null; fi" >> /tmp/crontab.tmp
+	echo "*/5 * * * * if ! ( /bin/ps U $seedUser | grep rtorrent > /dev/null ); then service rtorrent-$seedUser restart &> /dev/null; fi" >> /tmp/crontab.tmp
 	echo "0 12 1 * * /bin/bash $MySB_InstallDir/scripts/PaymentReminder.bsh $seedUser CRON &> /dev/null" >> /tmp/crontab.tmp
 done
 crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
+StatusSTD
+
+######################################################################
+
+#### Cleaning
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Cleaning$CEND..."
+rm -rf $MySB_InstallDir/temp/* &> /dev/null
+if [ -f /root/1 ]; then rm -f /root/1 &> /dev/null; fi
 StatusSTD
 
 #### STOP & START services
