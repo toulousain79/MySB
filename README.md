@@ -12,7 +12,6 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 ##### Current version : v2.0
 ###### Last stable version : v2.0
 
-====
 ## All prerequisites listed below are MANDATORY!
 
 * You **must** have a **standard Debian kernel** ! If you can not install a **Debian kernel**, then MySB is **not for you**...
@@ -21,7 +20,6 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * Your primary inet must be configured **staticly**, not DHCP (eg: Online servers)
 * Encourage me by **following my project** ;-)
 
-====
 ## Installed software
 
 * rTorrent _(Rakshasa) v0.9.2 & v0.9.4 with SSL_
@@ -33,7 +31,6 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * VSFTPd _(FTP over TLS)_
 * Postfix with _(or without)_ SMTP authentication _(Gmail, Free, Ovh and Yahoo)_
 
-====
 ## Services available
 
 * **PeerGuardian** _(optionnal but **recommended**)_
@@ -56,7 +53,6 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
  + Access restricted by IP for all server access _(can be disabled)_
  + Dynamic IP Management for IP restriction _(DynDNS, No-IP, ...)_
 
-====
 ## Additional ruTorrent plugins
 
 * Mobile
@@ -73,13 +69,11 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * Stream
 * Favicons trackers
 
-====
 ## Coming soon
 
 * Possibility to add more blocklists
 * Possibility to delete/inactivate a user
 
-====
 ## Bugs
 	--> Please, tell me.
 	--> Maybe some missing IPtables rules for some services. Can be corrected quickly if you do a feedback...
