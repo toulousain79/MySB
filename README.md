@@ -16,7 +16,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * Your primary inet must be configured **staticly**, not DHCP (eg: Online servers)
 * Encourage me by **following my project** ;-)
 
-## Services available
+## Features & Services
 * **rTorrent** _(Rakshasa) v0.9.2 & v0.9.4 with SSL_
 * **libTorrrent** _(Rakshasa) v0.13.2 & v0.13.4_
 * **ruTorrent + official plugins** _(GIT)_
