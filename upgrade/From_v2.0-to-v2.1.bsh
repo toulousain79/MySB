@@ -25,29 +25,6 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### Local functions
-SwitchDNS() {
-	case "$1" in
-		"dnscrypt")
-			sed -i '/nameserver/d' /etc/resolv.conf
-			echo "nameserver 127.0.0.1" > /etc/resolv.conf
-			echo "nameserver 127.0.0.2" > /etc/resolv.conf
-		;;
-		"standard")
-			sed -i '/nameserver/d' /etc/resolv.conf
-			echo "nameserver 208.67.220.220" >> /etc/resolv.conf
-			echo "nameserver 8.8.8.8" >> /etc/resolv.conf
-			echo "nameserver 4.2.2.1" >> /etc/resolv.conf
-			echo "nameserver 208.67.222.222" >> /etc/resolv.conf
-			echo "nameserver 8.8.4.4" >> /etc/resolv.conf
-			echo "nameserver 4.2.2.2" >> /etc/resolv.conf
-			echo "nameserver 4.2.2.3" >> /etc/resolv.conf
-			echo "nameserver 4.2.2.4" >> /etc/resolv.conf
-			echo "nameserver 4.2.2.5" >> /etc/resolv.conf
-			echo "nameserver 4.2.2.6" >> /etc/resolv.conf
-		;;
-	esac
-}
-
 BannerUpgrade() {
 	echo
 	echo -e "${CRED}If you lose connection during installation, restart the SSH session and run the following command:$CEND"
@@ -66,7 +43,7 @@ BannerUpgrade() {
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=14
+TotalSTEP=22
 
 BannerUpgrade
 CountDown 20
@@ -89,6 +66,10 @@ StatusSTD
 ######################################################################
 
 #### Move some files & directories
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Moving and deleting some files & directories$CEND..."
+# Ghost files
+if [ -f /root/1 ]; then rm -f /root/1 &> /dev/null; fi
 # Cleaning old certificates
 rm -f $MySB_InstallDir/ssl/*.cert &> /dev/null
 rm -f $MySB_InstallDir/ssl/*.pem &> /dev/null
@@ -103,18 +84,25 @@ if [ -d $RutorrentDir ]; then
 fi
 # Seedbox-Manager
 rm -rf $ManagerDir/ &> /dev/null
-
-#### Switching to standard DNS
-# (( CurrentSTEP++ ))
-# echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Switching to standard DNS$CEND..."
-# SwitchDNS "standard" &> /dev/null
-# StatusSTD
+StatusSTD
 
 #### SQLite
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Updating MySB database$CEND..."
 screen -dmS SQLite /bin/bash $MySB_InstallDir/install/SQLite 'UPGRADE';
 WaitingScreen SQLite
+StatusSTD
+
+#### Questions
+ScriptInvoke "source" "$MySB_InstallDir/install/Questions" "$$" "UPGRADE"
+#### Questions
+
+#### Vars
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Reading database informations$CEND..."
+if [ -f $MySB_InstallDir/inc/vars ]; then source $MySB_InstallDir/inc/vars; fi
+if [ -f $MySB_InstallDir/inc/funcs ]; then source $MySB_InstallDir/inc/funcs; fi
+ListingUsers
 StatusSTD
 
 #### DownloadAll
@@ -125,10 +113,13 @@ WaitingScreen DownloadAll
 StatusSTD
 
 #### Restore users data
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Restoring user data$CEND..."
 rsync -av $MySB_InstallDir/temp/conf_users/ $RutorrentDir/conf/users/ &> /dev/null
 rsync -av $MySB_InstallDir/temp/share_users/ $RutorrentDir/share/users/ &> /dev/null
 rm -rf $MySB_InstallDir/temp/conf_users &> /dev/null
 rm -rf $MySB_InstallDir/temp/share_users &> /dev/null
+StatusSTD
 
 #### Certificates
 (( CurrentSTEP++ ))
@@ -205,8 +196,6 @@ StatusSTD
 #### Webmin
 (( CurrentSTEP++ ))
 if [ "$ToInstall_Webmin" == "YES" ]; then
-	(( CurrentSTEP++ ))
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Webmin$CEND..."
 	screen -dmS Webmin /bin/bash $MySB_InstallDir/install/Webmin 'UPGRADE';
 	WaitingScreen Webmin
 	StatusSTD
@@ -229,7 +218,32 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND"	
 fi
 
+#### PeerGuardian
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring PeerGuardian, and updating all lists (this may take a while, please be patient)$CEND..."
+if [ "$IsInstalled_PeerGuardian" == "YES" ] || [ "$MySB_PeerBlock" == "PeerGuardian" ]; then
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'PeerGuardian';"
+	screen -dmS PeerGuardian /bin/bash $MySB_InstallDir/install/PeerGuardian 'UPGRADE';
+	WaitingScreen PeerGuardian
+	StatusSTD
+else
+	echo -e "${CGREEN}Nothing to do !$CEND"
+fi
+
 ######################################################################
+
+#### Crontab
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for Crontab$CEND..."
+crontab -l > /tmp/crontab.tmp
+for seedUser in $UsersList; do
+	sed -i '/'$seedUser'/d' /tmp/crontab.tmp
+	echo "*/5 * * * * if ! ( /bin/ps U $seedUser | grep rtorrent > /dev/null ); then /etc/init.d/rtorrent-$seedUser restart &> /dev/null; fi" >> /tmp/crontab.tmp
+	echo "0 12 1 * * /bin/bash $MySB_InstallDir/scripts/PaymentReminder.bsh $seedUser CRON &> /dev/null" >> /tmp/crontab.tmp
+done
+crontab /tmp/crontab.tmp
+rm -f /tmp/crontab.tmp
+StatusSTD
 
 #### STOP & START services
 (( CurrentSTEP++ ))

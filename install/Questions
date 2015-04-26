@@ -67,15 +67,15 @@ if [ "$DisplayUserInfo" == "YES" ]; then
 		echo -e "${CYELLOW}#### Main User Info ####$CEND"
 	fi
 
-	# Username
-	while [ "`echo $NEWUSER | grep '@'`" != "" ] || [ -z "$NEWUSER" ]; do
-		QuestionGetString NO "Username for the first user for your seedbox (main user): " NEWUSER
+	# Main User name
+	while [ "`echo $MainUser | grep '@'`" != "" ] || [ -z "$MainUser" ]; do
+		QuestionGetString NO "Username for the first user for your seedbox (main user): " MainUser
 	done
 
-	# User password
+	# Main User password
 	echo
-	if [ -z "$PASSWORD" ] && [ "$TYPE" != "UPGRADE" ]; then
-		QuestionGetString YES "Password for this user (NO spaces): " PASSWORD
+	if [ -z "$MainUserPassword" ] && [ "$TYPE" != "UPGRADE" ]; then
+		QuestionGetString YES "Password for this user (NO spaces): " MainUserPassword
 	fi
 
 	# User IP addresses
@@ -332,11 +332,11 @@ if [ "$TYPE" == "INSTALL" ]; then
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE smtp SET smtp_provider = '$SMTP_Provider', smtp_username = '$SMTP_Username', smtp_passwd = '$SMTP_Password', smtp_email ='$MainUserEmail' WHERE id_smtp = '1';"
 
 	# 'users' table (Main user)
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,sftp,sudo,admin) VALUES (\"$NEWUSER\",\"$MainUserEmail\",\"$PASSWORD\",\"1\",\"1\",\"1\");"
-	sqlite3 -cmd '.timeout 150000' $Wolf_DB "UPDATE user SET name = '$NEWUSER', email = '$MainUserEmail', username = '$NEWUSER' WHERE id = '2';"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,sftp,sudo,admin) VALUES (\"$MainUser\",\"$MainUserEmail\",\"$MainUserPassword\",\"1\",\"1\",\"1\");"
+	sqlite3 -cmd '.timeout 150000' $Wolf_DB "UPDATE user SET name = '$MainUser', email = '$MainUserEmail', username = '$MainUser' WHERE id = '2';"
 
 	# 'users_addresses' table
-	MainUserId=$(sqlite3 -cmd '.timeout 150000' $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$NEWUSER'")	
+	MainUserId=$(sqlite3 -cmd '.timeout 150000' $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$MainUser'")	
 	IFS=$','
 	for ip in $MainUserIPs; do
 		HostName="$(nslookup $ip | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
