@@ -24,14 +24,14 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 ====
 ## Installed software
 
-* rTorrent (rakshasa) v0.9.2 & v0.9.4 with SSL
-* libTorrrent (rakshasa) v0.13.2 & v0.13.4
-* ruTorrent (SVN) + official plugins (SVN)
-* NginX (SSL, specific port and some customizations)
-* PHP5-FPM (php5-apcu, FastCGI, SSL)
-* SFTP with Chroot
-* VSFTPd (FTP over TLS)
-* Postfix with (or without) SMTP authentication (Gmail, Free, Ovh and Yahoo)
+* rTorrent _(Rakshasa) v0.9.2 & v0.9.4 with SSL_
+* libTorrrent _(Rakshasa) v0.13.2 & v0.13.4_
+* ruTorrent + official plugins _(GIT)_
+* NginX _(SSL, specific port and some customizations)_
+* PHP5-FPM _(php5-apcu, FastCGI, SSL)_
+* SFTP _with Chroot_
+* VSFTPd _(FTP over TLS)_
+* Postfix with (or without) SMTP authentication _(Gmail, Free, Ovh and Yahoo)_
 
 ====
 ## Services available
