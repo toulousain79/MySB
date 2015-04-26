@@ -112,8 +112,8 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 	--> If you want use the monitoring, you must first disable it BEFORE start the MySB installation. You can reactivate it AFTER the END of installation.
 	--> You can also disable the Real Time Monitoring (RTM), read this page. [Real Time Monitoring (RTM)](http://www.torrent-invites.com/showthread.php?t=39022)
 
-#################
 
+====
 ## [WiKi](https://github.com/toulousain79/MySB/wiki)
 ### Installation / Upgrade / Uninstall
 * [Installation](https://github.com/toulousain79/MySB/wiki/Installation)
