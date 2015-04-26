@@ -75,8 +75,8 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * Possibility to delete/inactivate a user
 
 ## Bugs
-	--> Please, tell me.
-	--> Maybe some missing IPtables rules for some services. Can be corrected quickly if you do a feedback...
+* Please, tell me.
+* Maybe some missing IPtables rules for some services. Can be corrected quickly if you do a feedback...
 
 #################
 #	Warnings	#
