@@ -46,8 +46,8 @@ case "$TYPE" in
 		echo
 		echo -e "${CYELLOW}Please, confirm the main user password.$CEND"
 		echo -e "${CYELLOW}You can use your old password OR use a new one.$CEND"
-		QuestionGetString YES "Password for the main user (NO spaces): " MainUserPassword
-		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE users SET users_passwd = '$MainUserPassword' WHERE admin = '1';"		
+		QuestionGetString YES "Password for the main user (NO spaces): " MainUserPasswd
+		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE users SET users_passwd = '$MainUserPasswd' WHERE admin = '1';"		
 	;;
 esac
 
@@ -75,14 +75,14 @@ if [ "$DisplayUserInfo" == "YES" ]; then
 	fi
 
 	# Main User name
-	while [ "`echo $MainUser | grep '@'`" != "" ] || [ -z "$MainUser" ]; do
-		QuestionGetString NO "Username for the first user for your seedbox (main user): " MainUser
+	while [ "`echo $MainUserLogin | grep '@'`" != "" ] || [ -z "$MainUserLogin" ]; do
+		QuestionGetString NO "Username for the first user for your seedbox (main user): " MainUserLogin
 	done
 
 	# Main User password
 	echo
-	if [ -z "$MainUserPassword" ] || [ "$TYPE" == "UPGRADE" ]; then
-		QuestionGetString YES "Password for this user (NO spaces): " MainUserPassword
+	if [ -z "$MainUserPasswd" ] || [ "$TYPE" == "UPGRADE" ]; then
+		QuestionGetString YES "Password for this user (NO spaces): " MainUserPasswd
 	fi
 
 	# User IP addresses
@@ -339,11 +339,11 @@ if [ "$TYPE" == "INSTALL" ]; then
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE smtp SET smtp_provider = '$SMTP_Provider', smtp_username = '$SMTP_Username', smtp_passwd = '$SMTP_Password', smtp_email ='$MainUserEmail' WHERE id_smtp = '1';"
 
 	# 'users' table (Main user)
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,sftp,sudo,admin) VALUES (\"$MainUser\",\"$MainUserEmail\",\"$MainUserPassword\",\"1\",\"1\",\"1\");"
-	sqlite3 -cmd '.timeout 150000' $Wolf_DB "UPDATE user SET name = '$MainUser', email = '$MainUserEmail', username = '$MainUser' WHERE id = '2';"
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,sftp,sudo,admin) VALUES (\"$MainUserLogin\",\"$MainUserEmail\",\"$MainUserPasswd\",\"1\",\"1\",\"1\");"
+	sqlite3 -cmd '.timeout 150000' $Wolf_DB "UPDATE user SET name = '$MainUserLogin', email = '$MainUserEmail', username = '$MainUserLogin' WHERE id = '2';"
 
 	# 'users_addresses' table
-	MainUserId=$(sqlite3 -cmd '.timeout 150000' $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$MainUser'")	
+	MainUserId=$(sqlite3 -cmd '.timeout 150000' $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$MainUserLogin'")	
 	IFS=$','
 	for ip in $MainUserIPs; do
 		HostName="$(nslookup $ip | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
