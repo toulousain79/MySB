@@ -40,10 +40,32 @@ BannerUpgrade() {
 	echo
 }
 
+SwitchDNS() {
+	case "$1" in
+		"dnscrypt")
+			sed -i '/nameserver/d' /etc/resolv.conf
+			echo "nameserver 127.0.0.1" > /etc/resolv.conf
+		;;
+		"standard")
+			sed -i '/nameserver/d' /etc/resolv.conf
+			echo "nameserver 208.67.220.220" >> /etc/resolv.conf
+			echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.1" >> /etc/resolv.conf
+			echo "nameserver 208.67.222.222" >> /etc/resolv.conf
+			echo "nameserver 8.8.4.4" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.2" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.3" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.4" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.5" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.6" >> /etc/resolv.conf
+		;;
+	esac
+}
+
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=24
+TotalSTEP=25
 
 BannerUpgrade
 CountDown 20
@@ -65,6 +87,22 @@ echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Reading database informations$CEND
 if [ -f $MySB_InstallDir/inc/vars ]; then source $MySB_InstallDir/inc/vars; fi
 if [ -f $MySB_InstallDir/inc/funcs ]; then source $MySB_InstallDir/inc/funcs; fi
 ListingUsers
+StatusSTD
+
+#### PeerGuardian
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for PeerGuardian$CEND..."
+if [ "$IsInstalled_PeerGuardian" == "YES" ] || [ "$MySB_PeerBlock" == "PeerGuardian" ]; then
+	cp $MySB_InstallDir/templates/etc.pgl.pglcmd.conf.template /etc/pgl/pglcmd.conf
+	StatusSTD
+else
+	echo -e "${CGREEN}Nothing to do !$CEND"
+fi
+
+#### Security rules
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Creating new security rules$CEND..."
+ScriptInvoke 'screen' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create' 'UPGRADE'
 StatusSTD
 
 #### Stopping CRON and rTorrent sessions
@@ -218,15 +256,6 @@ if [ "$IsInstalled_NFS" == "YES" ]; then
 	StatusSTD
 else
 	echo -e "${CGREEN}Nothing to do !$CEND"	
-fi
-
-#### PeerGuardian
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for PeerGuardian$CEND..."
-if [ "$IsInstalled_PeerGuardian" == "YES" ] || [ "$MySB_PeerBlock" == "PeerGuardian" ]; then
-	cp $MySB_InstallDir/templates/etc.pgl.pglcmd.conf.template /etc/pgl/pglcmd.conf
-else
-	echo -e "${CGREEN}Nothing to do !$CEND"
 fi
 
 #### Crontab
