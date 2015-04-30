@@ -45,6 +45,8 @@ SwitchDNS() {
 		"dnscrypt")
 			sed -i '/nameserver/d' /etc/resolv.conf
 			echo "nameserver 127.0.0.1" > /etc/resolv.conf
+			service service bind9 restart &> /dev/null
+			service dnscrypt-proxy restart &> /dev/null
 		;;
 		"standard")
 			sed -i '/nameserver/d' /etc/resolv.conf
@@ -58,6 +60,12 @@ SwitchDNS() {
 			echo "nameserver 4.2.2.4" >> /etc/resolv.conf
 			echo "nameserver 4.2.2.5" >> /etc/resolv.conf
 			echo "nameserver 4.2.2.6" >> /etc/resolv.conf
+			sed -i '/forwarders/d' /etc/bind/named.conf.options
+			sed -i '/forward only;/d' /etc/bind/named.conf.options
+			sed -i '/version/d' /etc/bind/named.conf.options
+			sed -i '/DNScrypt-proxy/d' /etc/bind/named.conf.options
+			service dnscrypt-proxy stop &> /dev/null
+			service service bind9 restart &> /dev/null
 		;;
 	esac
 }
@@ -65,7 +73,7 @@ SwitchDNS() {
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=25
+TotalSTEP=27
 
 BannerUpgrade
 #CountDown 20
@@ -87,6 +95,22 @@ echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Reading database informations$CEND
 if [ -f $MySB_InstallDir/inc/vars ]; then source $MySB_InstallDir/inc/vars; fi
 if [ -f $MySB_InstallDir/inc/funcs ]; then source $MySB_InstallDir/inc/funcs; fi
 ListingUsers
+StatusSTD
+
+#### Bind
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Bind$CEND..."
+screen -dmS Bind /bin/bash $MySB_InstallDir/install/Bind 'UPGRADE';
+WaitingScreen Bind
+StatusSTD
+
+#### DNScrypt-proxy 1/2
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for DNScrypt-proxy$CEND..."
+cp $MySB_InstallDir/templates/etc.init.dnscrypt-proxy.template /etc/init.d/dnscrypt-proxy
+perl -pi -e "s/<MySB_DB>/`echo $MySB_DB | sed s,/,\\\\\\\\\\/,g`/g" /etc/init.d/dnscrypt-proxy
+perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/init.d/dnscrypt-proxy
+chmod +x /etc/init.d/dnscrypt-proxy
 StatusSTD
 
 #### PeerGuardian
@@ -113,6 +137,14 @@ RtorrentSeesions="`ls -1r /etc/init.d/rtorrent-* | cut -d '/' -f 4`"
 for Session in $RtorrentSeesions; do
 	service $Session stop &> /dev/null
 done
+StatusSTD
+
+#### Forcing NTP update
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Forcing NTP updateCEND..."
+SwitchDNS "standard"
+/usr/sbin/ntpdate 0.fr.pool.ntp.org > /dev/null 2>&1
+SwitchDNS "dnscrypt"
 StatusSTD
 
 ######################################################################
@@ -166,13 +198,6 @@ StatusSTD
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Generating new certificates$CEND..."
 screen -dmS Certificates /bin/bash $MySB_InstallDir/install/Certificates 'CreateCACertificate' 'NoServiceNameToGive' 'UPGRADE';
 WaitingScreen Certificates
-StatusSTD
-
-#### Bind
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring Bind$CEND..."
-screen -dmS Bind /bin/bash $MySB_InstallDir/install/Bind 'UPGRADE';
-WaitingScreen Bind
 StatusSTD
 
 #### DNScrypt-proxy
