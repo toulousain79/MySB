@@ -24,6 +24,9 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+#### VARs
+TYPE=$1
+
 #### Install packages
 PackagesManage install "nginx-extras apache2-utils"
 
@@ -76,7 +79,18 @@ perl -pi -e "s/<PORT_HTTP>/$Port_HTTP/g" /etc/nginx/sites-available/default
 perl -pi -e "s/<server_name>/$HostNameFQDN/g" /etc/nginx/sites-available/default
 perl -pi -e "s/<plugins_dir>/$RutorrentPluginsDirEscaped/g" /etc/nginx/sites-available/default
 perl -pi -e "s/<rutorrent_dir>/$RutorrentDirEscaped/g" /etc/nginx/sites-available/default
-if [ ! -h /etc/nginx/sites-enabled/default ]; then ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default; fi
+if [ ! -h /etc/nginx/sites-enabled/default ] && [ "$TYPE" != "UPGRADE" ]; then
+	ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default;
+fi
+
+#### Work in progress page
+if [ -h /etc/nginx/sites-enabled/WiP ] && [ "$TYPE" != "UPGRADE" ]; then
+	rm -vf /etc/nginx/sites-enabled/WiP;
+fi
+cp $MySB_InstallDir/templates/etc.nginx.site-enabled.WiP.template /etc/nginx/sites-available/WiP
+if [ ! -h /etc/nginx/sites-enabled/WiP ] && [ "$TYPE" == "UPGRADE" ]; then
+	ln -s /etc/nginx/sites-available/WiP /etc/nginx/sites-enabled/WiP;
+fi
 
 #### PageSpeed Conf
 cp -v $MySB_InstallDir/templates/etc.nginx.conf.d.pagespeed.template /etc/nginx/conf.d/pagespeed
