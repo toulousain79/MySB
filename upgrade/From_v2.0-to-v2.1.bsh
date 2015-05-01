@@ -73,7 +73,7 @@ SwitchDNS() {
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=27
+TotalSTEP=26
 
 BannerUpgrade
 #CountDown 20
@@ -104,14 +104,17 @@ screen -dmS Bind /bin/bash $MySB_InstallDir/install/Bind 'UPGRADE';
 WaitingScreen Bind
 StatusSTD
 
-#### DNScrypt-proxy 1/2
+#### DNScrypt-proxy
 (( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for DNScrypt-proxy$CEND..."
-cp $MySB_InstallDir/templates/etc.init.dnscrypt-proxy.template /etc/init.d/dnscrypt-proxy
-perl -pi -e "s/<MySB_DB>/`echo $MySB_DB | sed s,/,\\\\\\\\\\/,g`/g" /etc/init.d/dnscrypt-proxy
-perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/init.d/dnscrypt-proxy
-chmod +x /etc/init.d/dnscrypt-proxy
-StatusSTD
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring DNScrypt-proxy$CEND..."
+if [ "$IsInstalled_DNScrypt" == "YES" ] || [ "$ToInstall_DNScrypt" == "YES" ]; then
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'DNScrypt-proxy';"
+	screen -dmS DNScrypt /bin/bash $MySB_InstallDir/install/DNScrypt 'UPGRADE';
+	WaitingScreen DNScrypt
+	StatusSTD
+else
+	echo -e "${CGREEN}Nothing to do !$CEND"
+fi
 
 #### PeerGuardian
 (( CurrentSTEP++ ))
@@ -143,9 +146,9 @@ StatusSTD
 #### Forcing NTP update
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Forcing NTP update$CEND..."
-SwitchDNS "standard"
+if [ "$IsInstalled_DNScrypt" == "NO" ]; then SwitchDNS "standard"; fi
 /usr/sbin/ntpdate -u 0.fr.pool.ntp.org > /dev/null 2>&1
-SwitchDNS "dnscrypt"
+if [ "$IsInstalled_DNScrypt" == "NO" ]; then SwitchDNS "dnscrypt"; fi
 StatusSTD
 
 ######################################################################
@@ -168,7 +171,7 @@ if [ -d $RutorrentDir ]; then
 	rm -rf $RutorrentDir/ &> /dev/null
 fi
 # Seedbox-Manager
-rm -rf $ManagerDir/ &> /dev/null
+if [ -d $ManagerDir/ ]; then rm -rf $ManagerDir/ &> /dev/null; fi
 StatusSTD
 
 #### SQLite
@@ -200,18 +203,6 @@ echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Generating new certificates$CEND..
 screen -dmS Certificates /bin/bash $MySB_InstallDir/install/Certificates 'CreateCACertificate' 'NoServiceNameToGive' 'UPGRADE';
 WaitingScreen Certificates
 StatusSTD
-
-#### DNScrypt-proxy
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Installing and configuring DNScrypt-proxy$CEND..."
-if [ "$IsInstalled_DNScrypt" == "YES" ] || [ "$ToInstall_DNScrypt" == "YES" ]; then
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'DNScrypt-proxy';"
-	screen -dmS DNScrypt /bin/bash $MySB_InstallDir/install/DNScrypt 'UPGRADE';
-	WaitingScreen DNScrypt
-	StatusSTD
-else
-	echo -e "${CGREEN}Nothing to do !$CEND"
-fi
 
 #### Monitoring
 (( CurrentSTEP++ ))
