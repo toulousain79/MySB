@@ -69,11 +69,29 @@ SwitchDNS() {
 		;;
 	esac
 }
+UpgradeInProgress() {
+	case "$1" in
+		"on")
+			if [ -h /etc/nginx/sites-enabled/WiP ]; then rm -f /etc/nginx/sites-enabled/WiP; fi
+			if [ -h /etc/nginx/sites-enabled/default ]; then rm -f /etc/nginx/sites-enabled/default; fi
+			if [ -h /etc/nginx/sites-enabled/cakebox ]; then rm -f /etc/nginx/sites-enabled/cakebox; fi
+			cp $MySB_InstallDir/templates/etc.nginx.site-enabled.WiP.template /etc/nginx/sites-available/WiP
+			if [ ! -h /etc/nginx/sites-enabled/WiP ]; then ln -s /etc/nginx/sites-available/WiP /etc/nginx/sites-enabled/WiP; fi
+			service nginx restart &> /dev/null
+		;;
+		"off")
+			if [ -h /etc/nginx/sites-enabled/WiP ]; then rm -f /etc/nginx/sites-enabled/WiP; fi
+			if [ ! -h /etc/nginx/sites-enabled/default ]; then ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default; fi
+			if [ ! -h /etc/nginx/sites-enabled/cakebox ]; then ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox; fi
+			service nginx restart &> /dev/null
+		;;
+	esac
+}
 
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=27
+TotalSTEP=28
 
 BannerUpgrade
 #CountDown 20
@@ -99,13 +117,8 @@ StatusSTD
 
 #### Upgrade in progress page
 (( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Creating upgrade in progress page$CEND..."
-if [ -h /etc/nginx/sites-enabled/WiP ]; then rm -vf /etc/nginx/sites-enabled/WiP; fi
-if [ -h /etc/nginx/sites-enabled/default ]; then rm -vf /etc/nginx/sites-enabled/default; fi
-if [ -h /etc/nginx/sites-enabled/cakebox ]; then rm -vf /etc/nginx/sites-enabled/cakebox; fi
-cp $MySB_InstallDir/templates/etc.nginx.site-enabled.WiP.template /etc/nginx/sites-available/WiP
-if [ ! -h /etc/nginx/sites-enabled/WiP ]; then ln -s /etc/nginx/sites-available/WiP /etc/nginx/sites-enabled/WiP; fi
-service nginx restart &> /dev/null
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Activating upgrade in progress page$CEND..."
+UpgradeInProgress "on"
 StatusSTD
 
 #### Bind
@@ -363,6 +376,12 @@ StatusSTD
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Creating final security rules$CEND..."
 ScriptInvoke 'screen' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create' 'UPGRADE'
+StatusSTD
+
+#### Upgrade in progress page
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Activating upgrade in progress page$CEND..."
+UpgradeInProgress "off"
 StatusSTD
 
 clear
