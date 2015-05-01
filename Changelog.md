@@ -8,6 +8,7 @@
 			- ruTorrent v3.7, change location from old SVN to GitHub (v2.1)
 			- ruTorrent Plugins, minor change (location) (v2.1)
 			- PlowShare 4, change install method. (v2.0 and v2.1)
+			- NTPdate, correcting ntpdate process (v2.0 and v2.1)
 			TODO
 			- Create certificates again (wrong time period, check speed with SHA256 in 1024) (only v2.1)
 
