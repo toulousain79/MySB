@@ -9,8 +9,7 @@
 			- ruTorrent Plugins, minor change (location) (v2.1)
 			- PlowShare 4, change install method. (v2.0 and v2.1)
 			- NTPdate, correcting ntpdate process (v2.0 and v2.1)
-			TODO
-			- Create certificates again (wrong time period, check speed with SHA256 in 1024) (only v2.1)
+			- Create certificates again (wrong time period and go back to 1024bits unstead 2048bits) (only v2.1)
 
 	Version v2.0 (main branch)
 		2015/02/14
