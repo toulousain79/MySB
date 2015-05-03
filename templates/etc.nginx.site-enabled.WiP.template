@@ -1,6 +1,6 @@
 server {
-	listen 8889 default_server ssl;
-	server_name "srv1.lig2p.com";
+	listen <PORT_HTTPS> default_server ssl;
+	server_name "<server_name>";
 	ssl on;
 	index index.php;
 	charset utf-8;
@@ -8,7 +8,14 @@ server {
 	access_log /var/log/nginx/default-access.log combined;
 	error_log /var/log/nginx/default-error.log error;
 
-	root /etc/MySB/web;
+	root <InstallDir>/web;
+
+	include /etc/nginx/conf.d/static_files;
+	include /etc/nginx/conf.d/global_deny_access;
+	include /etc/nginx/conf.d/pagespeed;
+	location ~ \.php$ {
+		include /etc/nginx/conf.d/php-ssl;
+	}
 
 	#### Upgrade in progress
 	error_page 503 @maintenance;
@@ -28,7 +35,7 @@ server {
 		fastcgi_index index.php;
 
 		location ~ ^/favicon.ico {
-			alias /etc/MySB/web/favicon.ico;
+			alias <InstallDir>/web/favicon.ico;
 			satisfy any;
 		}
 
@@ -54,15 +61,67 @@ server {
 			auth_basic off;
 		}
 
-		#### Permit to generate mail to send to all users (server only)
-		# location /UserInfoMail.php {
-			# alias /etc/MySB/web/pages/UserInfoMail.php;
-			# access_log /var/log/nginx/UserInfoMail-access.log combined;
-			# error_log /var/log/nginx/UserInfoMail-error.log error;
-			# allow 127.0.0.1;
-			# deny all;
-			# include /etc/nginx/conf.d/php-ssl;
-		# }
+		#### For new users, permit to confirmed their account (IP + password)
+		location /NewUser.php {
+			alias <InstallDir>/web/pages/NewUser.php;
+			access_log /var/log/nginx/NewUser-access.log combined;
+			error_log /var/log/nginx/NewUser-error.log error;
+			deny all;
+		}
+
+		#### For created users, permit to force to add their actual IP address
+		location /ForceAddress.php {
+			alias <InstallDir>/web/pages/ForceAddress.php;
+			access_log /var/log/nginx/ForceAddress-access.log combined;
+			error_log /var/log/nginx/ForceAddress-error.log error;
+			deny all;
+		}
+
+		#### Logout
+		location /Logout.php {
+			alias <InstallDir>/web/pages/Logout.php;
+			deny all;
+		}
+
+		#### ruTorrent Plugin Fileshare
+		location /fileshare.php {
+			alias <plugins_dir>/fileshare/share.php;
+			access_log /var/log/nginx/fileshare-access.log combined;
+			error_log /var/log/nginx/fileshare-error.log error;
+			deny all;
+		}
+
+		#### ruTorrent Plugin Mediastream
+		location /view.php {
+			alias <plugins_dir>/mediastream/view.php;
+			access_log /var/log/nginx/view-access.log combined;
+			error_log /var/log/nginx/view-error.log error;
+			deny all;
+		}
+
+		#### ruTorrent Plugin Stream
+		location /stream.php {
+			alias <plugins_dir>/stream/stream.php;
+			access_log /var/log/nginx/stream-access.log combined;
+			error_log /var/log/nginx/stream-error.log error;
+			deny all;
+		}
+
+		#### LoadAvg
+		location ^~ /loadavg {
+			access_log /var/log/nginx/loadavg-access.log combined;
+			error_log /var/log/nginx/loadavg-error.log error;
+			deny all;
+		}
+
+		#### ruTorrent
+		location ^~ /ru {
+			alias <rutorrent_dir>;
+			access_log /var/log/nginx/rutorrent-access.log combined;
+			error_log /var/log/nginx/rutorrent-error.log error;
+			deny all;
+		}
+	}
 
 		#### Upgrade in progress
 		if (-f $document_root/WiP.html) {
