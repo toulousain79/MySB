@@ -1,4 +1,4 @@
-	Version v2.1 (work in progress)
+	Version v2.1
 		2015/03/14
 			- Correcting MySB logrotate bugs (v2.0 and v2.1)
 			- Correcting Postfix configuration (v2.0 and v2.1)

@@ -34,7 +34,12 @@ if [ $? -gt 0 ]; then
 	SwitchDNS "standard"
 fi
 /usr/sbin/ntpdate -u 0.fr.pool.ntp.org > /dev/null 2>&1
-echo -e "${CGREEN}Done !$CEND"
+if [ $? -eq 0 ]; then
+	echo -e "${CGREEN}Done !$CEND"
+else
+	echo -e "${CRED}Failed !$CEND"
+	EndingScript 0
+fi
 
 #### Update actual repo
 echo -e -n "${CBLUE}Updating actual GitHub repository$CEND..."
@@ -74,26 +79,52 @@ fi
 DateTime="`/bin/date +%Y%m%d-%H%M%S`"
 echo -e "${CBLUE}Create backup files '$MySB_InstallDir/upgrade/backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz'$CEND"
 echo -e -n "${CRED}Please wait $CEND"
-CountDown 5
+CountDown 4
 
 if [ ! -d $MySB_InstallDir/upgrade/backup ]; then
 	mkdir -p $MySB_InstallDir/upgrade/backup
 fi
 mv -v $MySB_InstallDir/upgrade/backup /tmp/MySB_backup_$DateTime
 tar -zcvf /tmp/MySB_backup_$DateTime/Backup-$DateTime-$MySB_CurrentVersion.tar.gz $MySB_InstallDir
-mv -v /tmp/MySB_backup_* $MySB_InstallDir/upgrade/backup
+if [ $? -gt 0 ]; then
+	EndingScript 0
+else
+	mv -v /tmp/MySB_backup_* $MySB_InstallDir/upgrade/backup
+	if  [ ! -f $MySB_InstallDir/upgrade/backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz ]; then
+		EndingScript 0
+	fi
+fi
 
 #### MySB Script GitHub
 echo
 echo -e "${CBLUE}Merge MySB to $MySB_NewVersion$CEND"
 echo -e -n "${CRED}Please wait $CEND"
-CountDown 5
+CountDown 4
 
 cd $MySB_InstallDir/
 git fetch --all
+if [ $? -gt 0 ]; then
+	EndingScript 0
+fi
 git stash
+if [ $? -gt 0 ]; then
+	EndingScript 0
+fi
 git checkout -b $MySB_NewVersion origin/$MySB_NewVersion
+if [ $? -gt 0 ]; then
+	EndingScript 0
+fi
 git pull
+if [ $? -gt 0 ]; then
+	EndingScript 0
+fi
+
+MySB_NewVersion="`cat $MySB_InstallDir/version`"
+MySB_RepoVersion="`cd $MySB_InstallDir/ && git branch | grep '*' | awk '{ print $2 }'`"
+
+
+
+
 
 #### Update version info
 echo -e -n "${CBLUE}Updating MySB version$CEND..."
