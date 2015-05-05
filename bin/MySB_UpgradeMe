@@ -26,6 +26,8 @@ source $(dirname $0)/../inc/includes_before
 
 #### VARs
 Type="$1"
+Continue=1
+Error=""
 
 #### Updating clock
 echo -e -n "${CBLUE}Updating the clock$CEND..."
@@ -38,27 +40,31 @@ if [ $? -eq 0 ]; then
 	echo -e "${CGREEN}Done !$CEND"
 else
 	echo -e "${CRED}Failed !$CEND"
-	EndingScript 0
+	Continue=0
+	Error="The clock synchronization failed !"
 fi
 
 #### Update actual repo
-echo -e -n "${CBLUE}Updating actual GitHub repository$CEND..."
-screen -dmS MySB_GitHubRepoUpdate /bin/bash $MySB_InstallDir/bin/MySB_GitHubRepoUpdate 'REFRESH';
-WaitingScreen MySB_GitHubRepoUpdate
-StatusSTD
+if [ "$Continue" == "1" ]; then
+	echo -e -n "${CBLUE}Updating actual GitHub repository$CEND..."
+	screen -dmS MySB_GitHubRepoUpdate /bin/bash $MySB_InstallDir/bin/MySB_GitHubRepoUpdate 'REFRESH';
+	WaitingScreen MySB_GitHubRepoUpdate
+	StatusSTD
+fi
 
 #### Check if new version
 MySB_NewVersion="`cat $MySB_InstallDir/version`"
 
 if [ "$MySB_CurrentVersion" == "$MySB_NewVersion" ]; then
 	echo
-	echo -e "${CGREEN}MySB is up to date !$CEND"
+	echo -e "${CGREEN}MySB repository $MySB_CurrentVersion is up to date !$CEND"
+	echo -e "${CGREEN}There is no new version to install.$CEND"
 	echo
 	EndingScript 0
 else
 	case "$Type" in
 		"CRON")
-			SendMail "MySB - Dynamic IP addresses were updated" "$MainUser" "new_version" "New version available"
+			SendMail "MySB - New version available ($MySB_NewVersion)" "$MainUser" "new_version" "New version available"
 			
 			EndingScript 0
 		;;	
@@ -76,69 +82,94 @@ else
 fi
 
 #### Backup
-DateTime="`/bin/date +%Y%m%d-%H%M%S`"
-echo -e "${CBLUE}Create backup files '$MySB_InstallDir/upgrade/backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz'$CEND"
-echo -e -n "${CRED}Please wait $CEND"
-CountDown 4
+if [ "$Continue" == "1" ]; then
+	DateTime="`/bin/date +%Y%m%d-%H%M%S`"
+	echo -e "${CBLUE}Create backup files '$MySB_InstallDir/upgrade/backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz'$CEND"
+	echo -e -n "${CRED}Please wait $CEND"
+	CountDown 3
 
-if [ ! -d $MySB_InstallDir/upgrade/backup ]; then
-	mkdir -p $MySB_InstallDir/upgrade/backup
-fi
-mv -v $MySB_InstallDir/upgrade/backup /tmp/MySB_backup_$DateTime
-tar -zcvf /tmp/MySB_backup_$DateTime/Backup-$DateTime-$MySB_CurrentVersion.tar.gz $MySB_InstallDir
-if [ $? -gt 0 ]; then
-	EndingScript 0
-else
-	mv -v /tmp/MySB_backup_* $MySB_InstallDir/upgrade/backup
-	if  [ ! -f $MySB_InstallDir/upgrade/backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz ]; then
-		EndingScript 0
+	if [ ! -d $MySB_InstallDir/upgrade/backup ]; then
+		mkdir -p $MySB_InstallDir/upgrade/backup
+	fi
+	mv -v $MySB_InstallDir/upgrade/backup /tmp/MySB_backup_$DateTime
+	tar -zcvf /tmp/MySB_backup_$DateTime/Backup-$DateTime-$MySB_CurrentVersion.tar.gz $MySB_InstallDir
+	if [ $? -gt 0 ]; then
+		Continue=0
+		Error="The creation of the 'Backup-$DateTime-$MySB_CurrentVersion.tar.gz file' failed !"
+	else
+		mv -v /tmp/MySB_backup_* $MySB_InstallDir/upgrade/backup
+		if  [ ! -f $MySB_InstallDir/upgrade/backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz ]; then
+			Continue=0
+			Error="Backup failed! The archive does not exist."
+		fi
 	fi
 fi
 
 #### MySB Script GitHub
-echo
-echo -e "${CBLUE}Merge MySB to $MySB_NewVersion$CEND"
-echo -e -n "${CRED}Please wait $CEND"
-CountDown 4
+if [ "$Continue" == "1" ]; then
+	echo
+	echo -e "${CBLUE}Merge MySB from $MySB_CurrentVersion to $MySB_NewVersion$CEND"
+	echo -e -n "${CRED}Please wait $CEND"
+	CountDown 3
+	echo
 
-cd $MySB_InstallDir/
-git fetch --all
-if [ $? -gt 0 ]; then
-	EndingScript 0
+	cd $MySB_InstallDir/
+	git fetch --all
+	if [ $? -gt 0 ]; then
+		Continue=0
+		Error="The command 'git fetch --all' failed!"
+	fi
+	
+	if [ "$Continue" == "1" ]; then
+		git stash
+		if [ $? -gt 0 ]; then
+			Continue=0
+			Error="The command 'git stash' failed!"
+		fi
+	fi
+	
+	if [ "$Continue" == "1" ]; then
+		git checkout -b $MySB_NewVersion origin/$MySB_NewVersion
+		if [ $? -gt 0 ]; then
+			Continue=0
+			Error="The command 'git checkout -b $MySB_NewVersion origin/$MySB_NewVersion' failed!"
+		fi
+	fi
+	
+	if [ "$Continue" == "1" ]; then
+		git pull
+		if [ $? -gt 0 ]; then
+			Continue=0
+			Error="The command 'git pull' failed!"
+		fi
+	fi
+	
+	if [ "$Continue" == "1" ]; then
+		#### Update version info
+		echo -e -n "${CBLUE}Updating MySB version$CEND..."
+		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE system SET mysb_version = '$MySB_NewVersion' WHERE id_system = '1';"
+		rm -f $MySB_InstallDir/files/banner_*
+		echo -e "${CGREEN}Done !$CEND"
+	fi
 fi
-git stash
-if [ $? -gt 0 ]; then
-	EndingScript 0
-fi
-git checkout -b $MySB_NewVersion origin/$MySB_NewVersion
-if [ $? -gt 0 ]; then
-	EndingScript 0
-fi
-git pull
-if [ $? -gt 0 ]; then
-	EndingScript 0
-fi
+
+
+
+
+
+
+
 
 MySB_NewVersion="`cat $MySB_InstallDir/version`"
 MySB_RepoVersion="`cd $MySB_InstallDir/ && git branch | grep '*' | awk '{ print $2 }'`"
 
-
-
-
-
-#### Update version info
-echo -e -n "${CBLUE}Updating MySB version$CEND..."
-sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE system SET mysb_version = '$MySB_NewVersion' WHERE id_system = '1';"
-rm -f $MySB_InstallDir/files/banner_*
-echo -e "${CGREEN}Done !$CEND"
-
 #### Completing the upgrade
-if [ -f $MySB_InstallDir/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh ]; then
+if [ -f $MySB_InstallDir/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh ] && [ "$Continue" == "1" ]; then
 	#### Upgrade System
 	echo -e -n "${CBLUE}Upgrading the system$CEND..."
 	screen -dmS MySB_UpgradeSystem /bin/bash $MySB_InstallDir/bin/MySB_UpgradeSystem 'UPGRADE';
 	WaitingScreen MySB_UpgradeSystem
-	StatusSTD	
+	StatusSTD
 	
 	echo
 	echo -e "${CBLUE}Starting SCREEN session...$CEND"

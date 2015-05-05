@@ -1,3 +1,7 @@
+	Version v2.2
+		2015/05/05
+			- Changing the upgrade script
+
 	Version v2.1
 		2015/03/14
 			- Correcting MySB logrotate bugs (v2.0 and v2.1)
