@@ -298,28 +298,6 @@ INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tc
 INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (22, 'rTorrent v0.9.2', '/usr/bin/rtorrent', null, null, null, null, null, null, null, null, 1, 0);
 INSERT INTO [services] ([id_services], [serv_name], [bin], [port_tcp1], [port_tcp2], [port_tcp3], [ports_tcp_list], [port_udp1], [port_udp2], [port_udp3], [ports_udp_list], [to_install], [is_installed]) VALUES (23, 'rTorrent v0.9.4', '/usr/local/bin/rtorrent', null, null, null, null, null, null, null, null, 1, 0);
 
--- Table: users
-CREATE TABLE users ( 
-    id_users         INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                     NOT NULL ON CONFLICT ABORT
-                                     UNIQUE ON CONFLICT ABORT,
-    users_ident      VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
-                                     UNIQUE ON CONFLICT IGNORE,
-    users_email      VARCHAR( 260 )  NOT NULL ON CONFLICT ABORT,
-    users_passwd     VARCHAR( 32 ),
-    rpc              VARCHAR( 64 ),
-    sftp             BOOLEAN( 1 )    DEFAULT ( 1 ),
-    sudo             BOOLEAN( 1 )    DEFAULT ( 0 ),
-    admin            BOOLEAN( 1 )    DEFAULT ( 0 ),
-    scgi_port        INTEGER( 5 ),
-    rtorrent_port    INTEGER( 5 ),
-    home_dir         VARCHAR( 128 ),
-    is_active        BOOLEAN( 1 )    DEFAULT ( 1 ),
-    rtorrent_version VARCHAR( 10 )   DEFAULT ( 'v0.9.2' ),
-    rtorrent_restart BOOLEAN( 1 )    DEFAULT ( '0' ) 
-);
-
-
 -- Table: system
 CREATE TABLE system ( 
     id_system          INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
@@ -342,3 +320,26 @@ CREATE TABLE system (
 );
 
 INSERT INTO [system] ([id_system], [mysb_version], [mysb_user], [mysb_password], [hostname], [ipv4], [primary_inet], [timezone], [cert_password], [apt_update], [apt_date], [server_provider], [ip_restriction], [pgl_email_stats], [pgl_watchdog_email]) VALUES (1, '', '', '', '', '', '', '', '', 0, '', '', 1, 0, 0);
+
+-- Table: users
+CREATE TABLE users ( 
+    id_users         INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                     NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT ABORT,
+    users_ident      VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT
+                                     UNIQUE ON CONFLICT IGNORE,
+    users_email      VARCHAR( 260 )  NOT NULL ON CONFLICT ABORT,
+    users_passwd     VARCHAR( 32 ),
+    rpc              VARCHAR( 64 ),
+    sftp             BOOLEAN( 1 )    DEFAULT ( 1 ),
+    sudo             BOOLEAN( 1 )    DEFAULT ( 0 ),
+    admin            BOOLEAN( 1 )    DEFAULT ( 0 ),
+    scgi_port        INTEGER( 5 ),
+    rtorrent_port    INTEGER( 5 ),
+    home_dir         VARCHAR( 128 ),
+    is_active        BOOLEAN( 1 )    DEFAULT ( 1 ),
+    rtorrent_version VARCHAR( 10 )   DEFAULT ( 'v0.9.2' ),
+    rtorrent_restart BOOLEAN( 1 )    DEFAULT ( '0' ),
+    lanaguage        VARCHAR( 10 )   DEFAULT ( 'english' ) 
+);
+

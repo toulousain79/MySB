@@ -28,24 +28,14 @@ $PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
 $Command = 'message_only';
-$rTorrentVersionsList = array('v0.9.2', 'v0.9.4');
-$LanguagesList = array('english', 'french');
 $Error = 0;
 
 if (isset($_POST['submit'])) {
-	$rTorrentVersion = $_POST['rTorrentVersion'];
-	$rTorrentRestart = $_POST['rTorrentRestart'];
-	$Language = $_POST['language'];
-	// Get values from database
-	$rtorrent_version = $users_datas['rtorrent_version'];
+	$PGL_EmailStats = $_POST['PGL_EmailStats'];
+	$PGL_EmailWD = $_POST['PGL_EmailWD'];
+	$IP_restriction = $_POST['IP_restriction'];
 
-	// Users table
-	if ( ($rTorrentVersion != $rtorrent_version) || ($rTorrentRestart == "1") ) {
-		$rTorrentRestart = 1;
-		$Command = 'Options';
-	}
-
-	$result = $MySB_DB->update("users", ["rtorrent_version" => "$rTorrentVersion", "rtorrent_restart" => "$rTorrentRestart", "language" => "$Language"], ["users_ident" => "$CurrentUser"]);
+	$MySB_DB->update("system", ["ip_restriction" => "$IP_restriction"], ["id_system" => 1]);
 
 	if( $result == 1 ) {
 		$type = 'success';
@@ -58,33 +48,37 @@ if (isset($_POST['submit'])) {
 }
 
 // Get values from database
-$rtorrent_version = $users_datas['rtorrent_version'];
-$rtorrent_restart = $users_datas['rtorrent_restart'];
-$language = $users_datas['language'];
+$pgl_email_stats = $system_datas['pgl_email_stats'];
+$pgl_watchdog_email = $system_datas['pgl_watchdog_email'];
+$ip_restriction = $system_datas['ip_restriction'];
 ?>
 
 <form class="form_settings" method="post" action="">
-<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
+<div align="center" style="margin-top: 10px; margin-bottom: 20px;">	
+	<?php if ( ($IsMainUser) && ($PeerguardianIsInstalled == '1') ) { ?>
 	<fieldset>
-	<legend>rTorrent</legend>
+	<legend>PeerGuardian</legend>
 	<table>
 		<tr>
-			<td>rTorrent version:</td>
+			<td>Email stats</td>
 			<td>
-				<select name="rTorrentVersion" style="width:80px; height: 28px;">';
-				<?php foreach($rTorrentVersionsList as $rTorrentVersion) {
-					if ( $rtorrent_version == $rTorrentVersion) {
-						echo '<option selected="selected" value="' . $rTorrentVersion . '">' . $rTorrentVersion . '</option>';
-					} else {
-						echo '<option value="' . $rTorrentVersion . '">' . $rTorrentVersion . '</option>';
-					}
+				<select name="PGL_EmailStats" style="width:80px; height: 28px;">';
+				<?php switch ($pgl_email_stats) {
+					case '1':
+						echo '<option selected="selected" value="1">Yes</option>';
+						echo '<option value="0">No</option>';
+						break;
+					default:
+						echo '<option value="1">Yes</option>';
+						echo '<option selected="selected" value="0">No</option>';
+						break;
 				} ?>
 				</select>
 			</td>
-			<td>Restart rTorrent ?</td>
+			<td>Watchdog email</td>
 			<td>
-				<select name="rTorrentRestart" style="width:80px; height: 28px;">';
-				<?php switch ($rtorrent_restart) {
+				<select name="PGL_EmailWD" style="width:80px; height: 28px;">';
+				<?php switch ($pgl_watchdog_email) {
 					case '1':
 						echo '<option selected="selected" value="1">Yes</option>';
 						echo '<option value="0">No</option>';
@@ -99,35 +93,38 @@ $language = $users_datas['language'];
 		</tr>
 	</table>
 	</fieldset>
+	<?php } ?>
 
+	<?php if ( $IsMainUser ) { ?>
 	<fieldset>
-	<legend>MySB Portal</legend>
+	<legend>IPtables</legend>
 	<table>
 		<tr>
-			<td>Language</td>
+			<td>IP restriction</td>
 			<td>
-				<select name="Language" style="width:80px; height: 28px;">';
-				<?php switch ($language) {
-					case 'french':
-						echo '<option selected="selected" value="french">French</option>';
-						echo '<option value="english">English</option>';
+				<select name="IP_restriction" style="width:80px; height: 28px;">';
+				<?php switch ($ip_restriction) {
+					case '1':
+						echo '<option selected="selected" value="1">Yes</option>';
+						echo '<option value="0">No</option>';
 						break;
 					default:
-						echo '<option value="french">French</option>';
-						echo '<option selected="selected" value="english">English</option>';
+						echo '<option value="1">Yes</option>';
+						echo '<option selected="selected" value="0">No</option>';
 						break;
 				} ?>
 				</select>
 			</td>
 		</tr>
 	</table>
-	</fieldset>	
-	
+	</fieldset>
+	<?php } ?>
+
 	<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Submit" />
-	
+
 	</div>
 </form>
-		
+
 <?php
 //#################### LAST LINE ######################################
 ?>
