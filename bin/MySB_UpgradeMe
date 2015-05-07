@@ -65,9 +65,9 @@ else
 	case "$Type" in
 		"CRON")
 			SendMail "MySB - New version available ($MySB_NewVersion)" "$MainUser" "new_version" "New version available"
-			
+
 			EndingScript 0
-		;;	
+		;;
 		*)
 			echo
 			echo -e "${CYELLOW}MySB$CEND ${CGREEN}$MySB_NewVersion$CEND ${CYELLOW}is avaible !$CEND"
@@ -119,7 +119,7 @@ if [ "$Continue" == "1" ]; then
 		Continue=0
 		Error="The command 'git fetch --all' failed!"
 	fi
-	
+
 	if [ "$Continue" == "1" ]; then
 		git stash
 		if [ $? -gt 0 ]; then
@@ -127,7 +127,7 @@ if [ "$Continue" == "1" ]; then
 			Error="The command 'git stash' failed!"
 		fi
 	fi
-	
+
 	if [ "$Continue" == "1" ]; then
 		git checkout -b $MySB_NewVersion origin/$MySB_NewVersion
 		if [ $? -gt 0 ]; then
@@ -135,7 +135,7 @@ if [ "$Continue" == "1" ]; then
 			Error="The command 'git checkout -b $MySB_NewVersion origin/$MySB_NewVersion' failed!"
 		fi
 	fi
-	
+
 	if [ "$Continue" == "1" ]; then
 		git pull
 		if [ $? -gt 0 ]; then
@@ -143,7 +143,7 @@ if [ "$Continue" == "1" ]; then
 			Error="The command 'git pull' failed!"
 		fi
 	fi
-	
+
 	if [ "$Continue" == "1" ]; then
 		#### Update version info
 		echo -e -n "${CBLUE}Updating MySB version$CEND..."
@@ -153,43 +153,42 @@ if [ "$Continue" == "1" ]; then
 	fi
 fi
 
-
-
-
-
-
-
-
+#### Completing the upgrade
 MySB_NewVersion="`cat $MySB_InstallDir/version`"
 MySB_RepoVersion="`cd $MySB_InstallDir/ && git branch | grep '*' | awk '{ print $2 }'`"
 
-#### Completing the upgrade
-if [ -f $MySB_InstallDir/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh ] && [ "$Continue" == "1" ]; then
+if [ -f $MySB_InstallDir/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh ] && [ "$Continue" == "1" ] && [ "$MySB_NewVersion" == "$MySB_RepoVersion" ]; then
 	#### Upgrade System
 	echo -e -n "${CBLUE}Upgrading the system$CEND..."
 	screen -dmS MySB_UpgradeSystem /bin/bash $MySB_InstallDir/bin/MySB_UpgradeSystem 'UPGRADE';
 	WaitingScreen MySB_UpgradeSystem
 	StatusSTD
-	
+
 	echo
 	echo -e "${CBLUE}Starting SCREEN session...$CEND"
 	screen -wipe &> /dev/null
 	screen -dmS MySB_Upgrade /bin/bash $MySB_InstallDir/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh;
 	echo -e -n "${CRED}Please wait $CEND"
 	CountDown 5
-	
+
 	screen -r MySB_Upgrade
 else
 	echo ""
 	echo ""
-	echo -e "${CRED}Upgrade script does not exist ($MySB_InstallDir/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh), aborting...$CEND"	
+	echo -e "${CRED}Upgrade script does not exist ($MySB_InstallDir/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh), aborting...$CEND"
 	EndingScript 0
 fi
 
 #### Finished
 clear
-echo -e "${CGREEN}Upgrade finished succesfully !$CEND"
-echo
+if [ "$Continue" == "1" ]; then
+	echo -e "${CGREEN}Upgrade finished succesfully !$CEND"
+	echo
+else
+	echo -e "${CRED}An error occured!$CEND"
+	echo -e "${CRED}$Error$CEND"
+	echo
+fi
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after
