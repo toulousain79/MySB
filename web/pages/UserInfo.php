@@ -218,7 +218,7 @@ function printUser($user) {
 	// CakeBox Light
 	$CakeboxDatas = $MySB_DB->get("services", ["is_installed", "port_tcp1"], ["serv_name" => "CakeBox-Light"]);
 	if ( $CakeboxDatas["is_installed"] == '1' ) {
-		$Link = 'http://' . $system_datas["hostname"] . ':' . $CakeboxDatas["port_tcp1"] . '/';
+		$Link = 'https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/cb';
 		echo '<tr align="left"><th width="17%" scope="row">CakeBox Light</th>';			
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Play here your media.</span></a></td></tr>';
 	}
