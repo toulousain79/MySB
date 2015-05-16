@@ -23,8 +23,21 @@
 //#################### FIRST LINE #####################################
 
 $lang = array();
- 
-//$lang['PAGE_TITLE'] = 'My website page title';
+
+// Global
+$lang['Global_Yes'] = 'Yes';
+$lang['Global_No'] = 'No';
+$lang['Global_SaveChanges'] = 'Save Changes';
+
+// BlockLists_PGL.php
+$lang['BlockLists_PGL_Success'] = 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.';
+$lang['BlockLists_PGL_Failed'] = 'Failed ! It was not possible to update tracker in the MySB database.';
+$lang['BlockLists_PGL_Table_Name'] = 'Name';
+$lang['BlockLists_PGL_Table_Blocklist'] = 'Blocklist';
+$lang['BlockLists_PGL_Table_Comments'] = 'Comments';
+$lang['BlockLists_PGL_LastUpdate'] = 'Last Update';
+$lang['BlockLists_PGL_Default'] = 'Default ?';
+$lang['BlockLists_PGL_Active'] = 'Active ?';
 
 //#################### LAST LINE ######################################
 ?>

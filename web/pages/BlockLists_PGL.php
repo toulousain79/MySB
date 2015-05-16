@@ -41,10 +41,10 @@ if ( $IsInstalled == '1' ) {
 
 		if ( $success == true ) {
 			$type = 'success';
-			$message = 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.';
+			$message = $lang['BlockLists_PGL_Success'];
 		} else {
 			$type = 'error';
-			$message = 'Failed ! It was not possible to update tracker in the MySB database.';
+			$message = $lang['BlockLists_PGL_Failed'];
 		}
 
 		GenerateMessage('Blocklists_PeerGuardian' ,$type, $message, '');
@@ -60,24 +60,24 @@ if ( $IsInstalled == '1' ) {
 <?php } ?>
 			<table style="border-spacing:1;">
 				<tr>
-					<th style="text-align:center;">Name</th>
-					<!--<th style="text-align:center;">Blocklist</th>-->
-					<th style="text-align:center;">Comments</th>
-					<th style="text-align:center;">Last Update</th>
-					<th style="text-align:center;">Default ?</th>
-					<th style="text-align:center;">Active ?</th>
+					<th style="text-align:center;"><?php echo $lang['BlockLists_PGL_Table_Name']; ?></th>
+					<!--<th style="text-align:center;"><?php echo $lang['BlockLists_PGL_Table_Blocklist']; ?></th>-->
+					<th style="text-align:center;"><?php echo $lang['BlockLists_PGL_Table_Comments']; ?></th>
+					<th style="text-align:center;"><?php echo $lang['BlockLists_PGL_LastUpdate']; ?></th>
+					<th style="text-align:center;"><?php echo $lang['BlockLists_PGL_Default']; ?></th>
+					<th style="text-align:center;"><?php echo $lang['BlockLists_PGL_Active']; ?></th>
 				</tr>
 	<?php
 	foreach($BlockList as $List) {
 		switch ($List["default"]) {
 			case '0':
 				$default = '<select name="default[]" style="width:60px; background-color:#FEBABC;" disabled>
-								<option value="0" selected="selected">No</option>
+								<option value="0" selected="selected">' .$lang['Global_No']. '</option>
 							</select>';
 				break;
 			default:
 				$default = '<select name="default[]" style="width:60px; background-color:#B3FEA5;" disabled>
-								<option value="1" selected="selected">Yes</option>
+								<option value="1" selected="selected">' .$lang['Global_Yes']. '</option>
 							</select>';
 				break;
 		}
@@ -86,24 +86,24 @@ if ( $IsInstalled == '1' ) {
 			case '0':
 				if ( $IsMainUser ) {
 					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-										<option value="0" selected="selected" class="redText">No</option>
-										<option value="1" class="greenText">Yes</option>
+										<option value="0" selected="selected" class="redText">' .$lang['Global_No']. '</option>
+										<option value="1" class="greenText">' .$lang['Global_Yes']. '</option>
 									</select>';
 				} else {
 					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px;" class="redText" id="mySelect" disabled>
-										<option value="0" selected="selected" class="redText">No</option>
+										<option value="0" selected="selected" class="redText">' .$lang['Global_No']. '</option>
 									</select>';
 				}
 				break;
 			default:
 				if ( $IsMainUser ) {
 					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-										<option value="0" class="redText">No</option>
-										<option value="1" selected="selected" class="greenText">Yes</option>
+										<option value="0" class="redText">' .$lang['Global_No']. '</option>
+										<option value="1" selected="selected" class="greenText">' .$lang['Global_Yes']. '</option>
 									</select>';
 				} else {
 					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px;" class="greenText" id="mySelect" disabled>
-										<option value="1" selected="selected" class="greenText">Yes</option>
+										<option value="1" selected="selected" class="greenText">' .$lang['Global_Yes']. '</option>
 									</select>';
 				}
 				break;
@@ -137,7 +137,7 @@ if ( $IsInstalled == '1' ) {
 	?>
 			</table>
 <?php if ( $IsMainUser ) { ?>
-			<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
+			<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="<?php echo $List["Global_SaveChanges"]; ?>">
 <?php } ?>
 		</div>
 	</form>
