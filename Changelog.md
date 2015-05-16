@@ -1,6 +1,8 @@
 	Version v2.2
 		2015/05/05
 			- Changing the upgrade script
+			- Mysb portal, Cakebox link in User Infos page (v2.0 and v2.1)
+			- Seedbox-Manager, now keep your config in administration page (v2.0 and v2.1)
 
 	Version v2.1
 		2015/03/14
