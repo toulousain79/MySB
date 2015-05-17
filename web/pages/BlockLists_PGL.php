@@ -22,7 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-global $MySB_DB, $CurrentUser;
+global $MySB_DB, $CurrentUser, $lang;
 
 $IsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
@@ -56,16 +56,16 @@ if ( $IsInstalled == '1' ) {
 	<form class="form_settings" method="post" action="">
 		<div align="center">
 <?php if ( $IsMainUser ) { ?>
-			<input class="submit" style="width:120px; margin-bottom: 10px;" name="submit" type="submit" value="Save Changes">
+			<input class="submit" style="width:120px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo $lang["Global_SaveChanges"]; ?>">
 <?php } ?>
 			<table style="border-spacing:1;">
 				<tr>
 					<th style="text-align:center;"><?php echo $lang['BlockLists_PGL_Table_Name']; ?></th>
 					<!--<th style="text-align:center;"><?php echo $lang['BlockLists_PGL_Table_Blocklist']; ?></th>-->
-					<th style="text-align:center;"><?php echo $lang['BlockLists_PGL_Table_Comments']; ?></th>
-					<th style="text-align:center;"><?php echo $lang['BlockLists_PGL_LastUpdate']; ?></th>
-					<th style="text-align:center;"><?php echo $lang['BlockLists_PGL_Default']; ?></th>
-					<th style="text-align:center;"><?php echo $lang['BlockLists_PGL_Active']; ?></th>
+					<th style="text-align:center;"><?php echo $lang['Global_Comment']; ?></th>
+					<th style="text-align:center;"><?php echo $lang['Global_LastUpdate']; ?></th>
+					<th style="text-align:center;"><?php echo $lang['Global_IsDefault']; ?></th>
+					<th style="text-align:center;"><?php echo $lang['Global_IsActive']; ?></th>
 				</tr>
 	<?php
 	foreach($BlockList as $List) {
@@ -137,7 +137,7 @@ if ( $IsInstalled == '1' ) {
 	?>
 			</table>
 <?php if ( $IsMainUser ) { ?>
-			<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="<?php echo $List["Global_SaveChanges"]; ?>">
+			<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="<?php echo $lang["Global_SaveChanges"]; ?>">
 <?php } ?>
 		</div>
 	</form>

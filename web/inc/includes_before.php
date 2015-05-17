@@ -43,34 +43,6 @@ if ( isset($_GET['page']) ) {
 	}
 }
 
-header('Cache-control: private'); // IE 6 FIX
-if ( isSet($_GET['lang']) ) {
-	$lang = $_GET['lang'];
-
-	// register the session and set the cookie
-	$_SESSION['lang'] = $lang;
-
-	setcookie('lang', $lang, time() + (3600 * 24 * 30));
-} else if ( isSet($_SESSION['lang']) ) {
-	$lang = $_SESSION['lang'];
-} else if ( isSet($_COOKIE['lang']) ) {
-	$lang = $_COOKIE['lang'];
-} else {
-	$lang = 'en';
-}
-
-switch ($lang) {
-	case 'fr':
-	$lang_file = 'lang.en.php';
-	break;
-
-	default:
-	$lang_file = 'lang.en.php';
-}
-
-// Language
-require_once(WEB_INC . '/lang/' . $lang_file);
-
 // Medoo framework
 require_once(FILE_MEDOO);
 $MySB_DB = new medoo(['database_file' => MySB_DB, 'database_name' => 'MySB']);
@@ -94,6 +66,34 @@ if ( isset($CurrentUser) ) {
 
 // Services table
 $Port_HTTPs = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "NginX"]);
+
+// Language
+header('Cache-control: private'); // IE 6 FIX
+if ( isSet($users_datas["language"]) ) {
+	$lang = $users_datas["language"];
+
+	// register the session and set the cookie
+	$_SESSION['lang'] = $lang;
+
+	setcookie('lang', $lang, time() + (3600 * 24 * 30));
+} else if ( isSet($_SESSION['lang']) ) {
+	$lang = $_SESSION['lang'];
+} else if ( isSet($_COOKIE['lang']) ) {
+	$lang = $_COOKIE['lang'];
+} else {
+	$lang = 'en';
+}
+
+switch ($lang) {
+	case 'fr':
+	$lang_file = 'lang.fr.php';
+	break;
+
+	default:
+	$lang_file = 'lang.en.php';
+}
+
+require_once(WEB_INC . '/languages/' . $lang_file);
 
 //#################### LAST LINE #####################################
 ?>

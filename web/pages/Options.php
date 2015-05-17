@@ -109,12 +109,12 @@ $language = $users_datas['language'];
 				<select name="Language" style="width:80px; height: 28px;">';
 				<?php switch ($language) {
 					case 'french':
-						echo '<option selected="selected" value="french">French</option>';
-						echo '<option value="english">English</option>';
+						echo '<option selected="selected" value="fr">French</option>';
+						echo '<option value="en">English</option>';
 						break;
 					default:
-						echo '<option value="french">French</option>';
-						echo '<option selected="selected" value="english">English</option>';
+						echo '<option value="fr">French</option>';
+						echo '<option selected="selected" value="en">English</option>';
 						break;
 				} ?>
 				</select>

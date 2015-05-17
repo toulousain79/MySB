@@ -28,16 +28,16 @@ $lang = array();
 $lang['Global_Yes'] = 'Oui';
 $lang['Global_No'] = 'Non';
 $lang['Global_SaveChanges'] = 'Appliquer';
+$lang['Global_IsDefault'] = 'D&eacute;faut ?';
+$lang['Global_IsActive'] = 'Activ&eacute; ?';
+$lang['Global_Comment'] = 'Commentaire';
+$lang['Global_LastUpdate'] = 'Derni&egrave;re mise &agrave; jour';
 
 // BlockLists_PGL.php
 $lang['BlockLists_PGL_Success'] = 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.';
 $lang['BlockLists_PGL_Failed'] = 'Failed ! It was not possible to update tracker in the MySB database.';
 $lang['BlockLists_PGL_Table_Name'] = 'Name';
 $lang['BlockLists_PGL_Table_Blocklist'] = 'Blocklist';
-$lang['BlockLists_PGL_Table_Comments'] = 'Commentaire';
-$lang['BlockLists_PGL_LastUpdate'] = 'Last Update';
-$lang['BlockLists_PGL_Default'] = 'Default ?';
-$lang['BlockLists_PGL_Active'] = 'Active ?';
 
 //#################### LAST LINE ######################################
 ?>

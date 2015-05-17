@@ -22,7 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-global $MySB_DB, $CurrentUser;
+global $MySB_DB, $CurrentUser, $lang;
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
 if (isset($_POST['submit'])) {

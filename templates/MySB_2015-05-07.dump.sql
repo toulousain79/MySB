@@ -340,6 +340,6 @@ CREATE TABLE users (
     is_active        BOOLEAN( 1 )    DEFAULT ( 1 ),
     rtorrent_version VARCHAR( 10 )   DEFAULT ( 'v0.9.2' ),
     rtorrent_restart BOOLEAN( 1 )    DEFAULT ( '0' ),
-    lanaguage        VARCHAR( 10 )   DEFAULT ( 'english' ) 
+    language         VARCHAR( 2 )    DEFAULT ( 'en' ) 
 );
 
