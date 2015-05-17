@@ -1,9 +1,10 @@
 	Version v2.2
 		2015/05/05
 			- Changing the upgrade script
-			- Mysb portal, Cakebox link in User Infos page (v2.0 and v2.1)
-			- Seedbox-Manager, now keep your config in administration page (v2.0 and v2.1)
-			- Nginx, some fixes (v2.1)
+			- Mysb portal, Cakebox link in User Infos page (v2.1 and v2.2)
+			- Seedbox-Manager, now keep your config in administration page (v2.1 and v2.2)
+			- Nginx, some fixes (v2.2)
+			- MySB, add language select French and English (v2.2)
 
 	Version v2.1
 		2015/03/14
