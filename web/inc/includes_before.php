@@ -86,11 +86,11 @@ if ( isSet($users_datas["language"]) ) {
 
 switch ($lang) {
 	case 'fr':
-	$lang_file = 'lang.fr.php';
-	break;
+		$lang_file = 'lang.fr.php';
+		break;
 
 	default:
-	$lang_file = 'lang.en.php';
+		$lang_file = 'lang.en.php';
 }
 
 require_once(WEB_INC . '/languages/' . $lang_file);

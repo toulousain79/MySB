@@ -22,6 +22,37 @@
 //
 //#################### FIRST LINE #####################################
 
+// Change Cakebox-light language
+function ChangeCakeboxLanaguage() {
+	global $MySB_DB, $CurrentUser, $lang;
+
+	$CakeboxDatas = $MySB_DB->get("services", ["is_installed"], ["serv_name" => "CakeBox-Light"]);
+
+	if ( $CakeboxDatas["is_installed"] == '1' ) {
+		$CakeboxDir = $MySB_DB->get("repositories", "dir", ["name" => "Cakebox-Light"]);
+		$ConfigFile = $CakeboxDir . "/config/" . $CurrentUser . ".php";
+
+		$File = fopen($ConfigFile,'r') or die("Config file missing");
+		$Content = file_get_contents($ConfigFile);
+
+		switch ($lang) {
+			case 'fr':
+				$NewContent=str_replace('"en"', '"fr"', $Content);
+				break;
+
+			default:
+				$NewContent=str_replace('"fr"', '"en"', $Content);
+		}
+
+		fclose($File);
+
+		//ouverture en écriture
+		$File = fopen($ConfigFile,'w+') or die("Config file missing");
+		fwrite($File, $NewContent);
+		fclose($File);
+	}
+}
+
 // Create a log file pour 'ApplyConfig.php'
 function CreateLogFile($LogFile, $Data) {
 	$fp = fopen ($LogFile, "a+");

@@ -49,6 +49,8 @@ if (isset($_POST['submit'])) {
 
 	if( $result == 1 ) {
 		$type = 'success';
+
+		ChangeCakeboxLanaguage();
 	} else {
 		$type = 'error';
 		$message = 'Failed ! It was not possible to update the MySB database.';
@@ -121,13 +123,13 @@ $language = $users_datas['language'];
 			</td>
 		</tr>
 	</table>
-	</fieldset>	
-	
+	</fieldset>
+
 	<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Submit" />
-	
+
 	</div>
 </form>
-		
+
 <?php
 //#################### LAST LINE ######################################
 ?>

@@ -216,7 +216,7 @@ function printUser($user) {
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">Download here GUI for OpenVPN.</span></a></td></tr>';
 	}
 	// CakeBox Light
-	$CakeboxDatas = $MySB_DB->get("services", ["is_installed", "port_tcp1"], ["serv_name" => "CakeBox-Light"]);
+	$CakeboxDatas = $MySB_DB->get("services", ["is_installed"], ["serv_name" => "CakeBox-Light"]);
 	if ( $CakeboxDatas["is_installed"] == '1' ) {
 		$Link = 'https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/cb';
 		echo '<tr align="left"><th width="17%" scope="row">CakeBox Light</th>';			
