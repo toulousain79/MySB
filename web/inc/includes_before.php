@@ -69,7 +69,7 @@ switch ($lang) {
 }
 
 // Language
-require_once(WEB_INC . '/' . $lang_file);
+require_once(WEB_INC . '/lang/' . $lang_file);
 
 // Medoo framework
 require_once(FILE_MEDOO);
