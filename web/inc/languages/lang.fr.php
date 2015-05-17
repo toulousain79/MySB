@@ -25,19 +25,25 @@
 $lang = array();
  
 // Global
-$lang['Global_Yes'] = 'Oui';
-$lang['Global_No'] = 'Non';
-$lang['Global_SaveChanges'] = 'Appliquer';
-$lang['Global_IsDefault'] = 'D&eacute;faut ?';
-$lang['Global_IsActive'] = 'Activ&eacute; ?';
-$lang['Global_Comment'] = 'Commentaire';
-$lang['Global_LastUpdate'] = 'Derni&egrave;re mise &agrave; jour';
+$lang['Global_Yes'] = 'Yes';
+$lang['Global_No'] = 'No';
+$lang['Global_SaveChanges'] = 'Save Changes';
+$lang['Global_IsDefault'] = 'Default ?';
+$lang['Global_IsActive'] = 'Active ?';
+$lang['Global_Comment'] = 'Comments';
+$lang['Global_LastUpdate'] = 'Last Update';
 
 // BlockLists_PGL.php
 $lang['BlockLists_PGL_Success'] = 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.';
 $lang['BlockLists_PGL_Failed'] = 'Failed ! It was not possible to update tracker in the MySB database.';
 $lang['BlockLists_PGL_Table_Name'] = 'Name';
 $lang['BlockLists_PGL_Table_Blocklist'] = 'Blocklist';
+
+// BlockLists_rTorrent.php
+$lang['BlockLists_rTorrent_Success'] = 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.';
+$lang['BlockLists_rTorrent_Failed'] = 'Failed ! It was not possible to update tracker in the MySB database.';
+$lang['BlockLists_rTorrent_Table_Name'] = 'Name';
+$lang['BlockLists_rTorrent_Table_Blocklist'] = 'Blocklist';
 
 //#################### LAST LINE ######################################
 ?>

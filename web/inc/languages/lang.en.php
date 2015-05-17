@@ -39,7 +39,11 @@ $lang['BlockLists_PGL_Failed'] = 'Failed ! It was not possible to update tracker
 $lang['BlockLists_PGL_Table_Name'] = 'Name';
 $lang['BlockLists_PGL_Table_Blocklist'] = 'Blocklist';
 
-// BlockLists_PGL.php
+// BlockLists_rTorrent.php
+$lang['BlockLists_rTorrent_Success'] = 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.';
+$lang['BlockLists_rTorrent_Failed'] = 'Failed ! It was not possible to update tracker in the MySB database.';
+$lang['BlockLists_rTorrent_Table_Name'] = 'Name';
+$lang['BlockLists_rTorrent_Table_Blocklist'] = 'Blocklist';
 
 //#################### LAST LINE ######################################
 ?>

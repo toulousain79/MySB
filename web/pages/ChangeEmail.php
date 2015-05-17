@@ -43,7 +43,7 @@ function Form() {
 				</tr>
 				<tr>
 					<td colspan="2">
-						<input class="submit" name="submit" type="submit" value="Submit"">
+						<input class="submit" name="submit" type="submit" value="' .$lang['Global_SaveChanges']. '"">
 					</td>
 				</tr>
 			</table></div>

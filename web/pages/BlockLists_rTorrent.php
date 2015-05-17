@@ -38,10 +38,10 @@ if (isset($_POST['submit'])) {
 
 	if ( $success == true ) {
 		$type = 'success';
-		$message = 'Success!<br /><br />The blocklists have been apply for rTorrent AND PeerGuardian.';
+		$message = $lang['BlockLists_rTorrent_Success'];
 	} else {
 		$type = 'error';
-		$message = 'Failed ! It was not possible to update tracker in the MySB database.';
+		$message = $lang['BlockLists_rTorrent_Failed'];
 	}
 
 	GenerateMessage('BlocklistsRTorrent.bsh', $type, $message, '');
@@ -53,28 +53,28 @@ $BlockList = $MySB_DB->select("blocklists", "*", ["rtorrent_list[!]" => ""]);
 <form class="form_settings" method="post" action="">
 	<div align="center">
 <?php if ( $IsMainUser ) { ?>
-		<input class="submit" style="width:120px; margin-bottom: 10px;" name="submit" type="submit" value="Save Changes">
+		<input class="submit" style="width:120px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo $lang["Global_SaveChanges"]; ?>">
 <?php } ?>
 		<table style="border-spacing:1;">
 			<tr>
-				<th style="text-align:center;">Name</th>
-				<!--<th style="text-align:center;">Blocklist</th>-->
-				<th style="text-align:center;">Comments</th>
-				<th style="text-align:center;">Last Update</th>
-				<th style="text-align:center;">Default ?</th>
-				<th style="text-align:center;">Active ?</th>
+				<th style="text-align:center;"><?php echo $lang['BlockLists_rTorrent_Table_Name']; ?></th>
+				<!--<th style="text-align:center;"><?php echo $lang['BlockLists_rTorrent_Table_Blocklist']; ?></th>-->
+				<th style="text-align:center;"><?php echo $lang['Global_Comment']; ?></th>
+				<th style="text-align:center;"><?php echo $lang['Global_LastUpdate']; ?></th>
+				<th style="text-align:center;"><?php echo $lang['Global_IsDefault']; ?></th>
+				<th style="text-align:center;"><?php echo $lang['Global_IsActive']; ?></th>
 			</tr>
 <?php
 foreach($BlockList as $List) {
 	switch ($List["default"]) {
 		case '0':
 			$default = '<select name="default[]" style="width:60px; background-color:#FEBABC;" disabled>
-							<option value="0" selected="selected">No</option>
+							<option value="0" selected="selected">' .$lang['Global_No']. '</option>
 						</select>';
 			break;
 		default:
 			$default = '<select name="default[]" style="width:60px; background-color:#B3FEA5;" disabled>
-							<option value="1" selected="selected">Yes</option>
+							<option value="1" selected="selected">' .$lang['Global_Yes']. '</option>
 						</select>';
 			break;
 	}
@@ -83,24 +83,24 @@ foreach($BlockList as $List) {
 		case '0':
 			if ( $IsMainUser ) {
 				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-									<option value="0" selected="selected" class="redText">No</option>
-									<option value="1" class="greenText">Yes</option>
+									<option value="0" selected="selected" class="redText">' .$lang['Global_No']. '</option>
+									<option value="1" class="greenText">' .$lang['Global_Yes']. '</option>
 								</select>';
 			} else {
 				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px;" class="redText" id="mySelect" disabled>
-									<option value="0" selected="selected" class="redText">No</option>
+									<option value="0" selected="selected" class="redText">' .$lang['Global_No']. '</option>
 								</select>';
 			}
 			break;
 		default:
 			if ( $IsMainUser ) {
 				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-									<option value="0" class="redText">No</option>
-									<option value="1" selected="selected" class="greenText">Yes</option>
+									<option value="0" class="redText">' .$lang['Global_No']. '</option>
+									<option value="1" selected="selected" class="greenText">' .$lang['Global_Yes']. '</option>
 								</select>';
 			} else {
 				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px;" class="greenText" id="mySelect" disabled>
-									<option value="1" selected="selected" class="greenText">Yes</option>
+									<option value="1" selected="selected" class="greenText">' .$lang['Global_Yes']. '</option>
 								</select>';
 			}
 			break;
@@ -135,7 +135,7 @@ foreach($BlockList as $List) {
 
 		</table>
 <?php if ( $IsMainUser ) { ?>
-		<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
+		<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="<?php echo $lang["Global_SaveChanges"]; ?>">
 <?php } ?>
 	</div>
 </form>
