@@ -23,7 +23,7 @@
 //#################### FIRST LINE #####################################
 
 function Form() {
-	global $MySB_DB, $CurrentUser;
+	global $MySB_DB, $CurrentUser, $lang;
 
 	$UserEmail = $MySB_DB->get("users", "users_email", ["users_ident" => "$CurrentUser"]);	
 	
@@ -51,7 +51,7 @@ function Form() {
 }
 
 if ( isset($_POST['submit']) ) {
-	global $MySB_DB, $CurrentUser;
+	global $MySB_DB, $CurrentUser, $lang;
 
 	$current_email = preg_replace('/\s\s+/', '', $_POST['current_email']); 
 	$new_email = preg_replace('/\s\s+/', '', $_POST['new_email']); 
