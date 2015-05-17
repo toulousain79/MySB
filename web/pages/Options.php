@@ -49,8 +49,6 @@ if (isset($_POST['submit'])) {
 
 	if( $result == 1 ) {
 		$type = 'success';
-
-		ChangeCakeboxLanaguage();
 	} else {
 		$type = 'error';
 		$message = 'Failed ! It was not possible to update the MySB database.';
@@ -64,6 +62,8 @@ $users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
 $rtorrent_version = $users_datas['rtorrent_version'];
 $rtorrent_restart = $users_datas['rtorrent_restart'];
 $language = $users_datas['language'];
+
+ChangeCakeboxLanguage();
 ?>
 
 <form class="form_settings" method="post" action="">

@@ -23,7 +23,7 @@
 //#################### FIRST LINE #####################################
 
 // Change Cakebox-light language
-function ChangeCakeboxLanaguage() {
+function ChangeCakeboxLanguage() {
 	global $MySB_DB, $CurrentUser, $Language;
 
 	$CakeboxDatas = $MySB_DB->get("services", "is_installed", ["serv_name" => "CakeBox-Light"]);
@@ -35,13 +35,13 @@ function ChangeCakeboxLanaguage() {
 		$File = fopen($ConfigFile, 'r') or die("Config file missing R");
 		$Content = file_get_contents($ConfigFile);
 
-		switch ($lang) {
+		switch ($Language) {
 			case 'fr':
-				$NewContent = str_replace('\"en\"', '\"fr\"', $Content);
+				$NewContent = str_replace('"en"', '"fr"', $Content);
 				break;
 
 			default:
-				$NewContent = str_replace('\"fr\"', '\"en\"', $Content);
+				$NewContent = str_replace('"fr"', '"en"', $Content);
 		}
 		fclose($File);
 
