@@ -70,21 +70,21 @@ $Port_HTTPs = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "NginX"]);
 // Language
 header('Cache-control: private'); // IE 6 FIX
 if ( isSet($users_datas["language"]) ) {
-	$lang = $users_datas["language"];
+	$Language = $users_datas["language"];
 
 	// register the session and set the cookie
-	$_SESSION['lang'] = $lang;
+	$_SESSION['Language'] = $Language;
 
-	setcookie('lang', $lang, time() + (3600 * 24 * 30));
-} else if ( isSet($_SESSION['lang']) ) {
-	$lang = $_SESSION['lang'];
-} else if ( isSet($_COOKIE['lang']) ) {
-	$lang = $_COOKIE['lang'];
+	setcookie('Language', $Language, time() + (3600 * 24 * 30));
+} else if ( isSet($_SESSION['Language']) ) {
+	$Language = $_SESSION['Language'];
+} else if ( isSet($_COOKIE['Language']) ) {
+	$Language = $_COOKIE['Language'];
 } else {
-	$lang = 'en';
+	$Language = 'en';
 }
 
-switch ($lang) {
+switch ($Language) {
 	case 'fr':
 		$lang_file = 'lang.fr.php';
 		break;

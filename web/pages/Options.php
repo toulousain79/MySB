@@ -60,6 +60,7 @@ if (isset($_POST['submit'])) {
 }
 
 // Get values from database
+$users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
 $rtorrent_version = $users_datas['rtorrent_version'];
 $rtorrent_restart = $users_datas['rtorrent_restart'];
 $language = $users_datas['language'];
@@ -108,9 +109,9 @@ $language = $users_datas['language'];
 		<tr>
 			<td>Language</td>
 			<td>
-				<select name="Language" style="width:80px; height: 28px;">';
+				<select name="language" style="width:80px; height: 28px;">';
 				<?php switch ($language) {
-					case 'french':
+					case 'fr':
 						echo '<option selected="selected" value="fr">French</option>';
 						echo '<option value="en">English</option>';
 						break;

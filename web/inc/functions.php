@@ -24,7 +24,7 @@
 
 // Change Cakebox-light language
 function ChangeCakeboxLanaguage() {
-	global $MySB_DB, $CurrentUser, $lang;
+	global $MySB_DB, $CurrentUser, $Language;
 
 	$CakeboxDatas = $MySB_DB->get("services", "is_installed", ["serv_name" => "CakeBox-Light"]);
 
@@ -37,13 +37,12 @@ function ChangeCakeboxLanaguage() {
 
 		switch ($lang) {
 			case 'fr':
-				$NewContent=str_replace('\"en\"', '\"fr\"', $Content);
+				$NewContent = str_replace('\"en\"', '\"fr\"', $Content);
 				break;
 
 			default:
-				$NewContent=str_replace('\"fr\"', '\"en\"', $Content);
+				$NewContent = str_replace('\"fr\"', '\"en\"', $Content);
 		}
-
 		fclose($File);
 
 		//ouverture en écriture
