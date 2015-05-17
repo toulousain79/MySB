@@ -23,19 +23,19 @@
 //#################### FIRST LINE #####################################
 
 // Change Cakebox-light language
-function ChangeCakeboxLanguage() {
-	global $MySB_DB, $CurrentUser, $Language;
+function ChangeCakeboxLanguage($user, $language) {
+	global $MySB_DB;
 
 	$CakeboxDatas = $MySB_DB->get("services", "is_installed", ["serv_name" => "CakeBox-Light"]);
 
 	if ( $CakeboxDatas["is_installed"] == '1' ) {
 		$CakeboxDir = $MySB_DB->get("repositories", "dir", ["name" => "Cakebox-Light"]);
-		$ConfigFile = MYSB_ROOT.$CakeboxDir . "/config/" . $CurrentUser . ".php";
+		$ConfigFile = MYSB_ROOT.$CakeboxDir . "/config/" . $user . ".php";
 
 		$File = fopen($ConfigFile, 'r') or die("Config file missing R");
 		$Content = file_get_contents($ConfigFile);
 
-		switch ($Language) {
+		switch ($language) {
 			case 'fr':
 				$NewContent = str_replace('"en"', '"fr"', $Content);
 				break;

@@ -72,18 +72,12 @@ header('Cache-control: private'); // IE 6 FIX
 if ( isSet($users_datas["language"]) ) {
 	$Language = $users_datas["language"];
 
-	// register the session and set the cookie
+	// register the session
 	$_SESSION['Language'] = $Language;
-
-	setcookie('Language', $Language, time() + (3600 * 24 * 30));
-} else if ( isSet($_SESSION['Language']) ) {
-	$Language = $_SESSION['Language'];
-} else if ( isSet($_COOKIE['Language']) ) {
-	$Language = $_COOKIE['Language'];
 } else {
 	$Language = 'en';
+	$_SESSION['Language'] = $Language;
 }
-
 switch ($Language) {
 	case 'fr':
 		$lang_file = 'lang.fr.php';
@@ -92,7 +86,6 @@ switch ($Language) {
 	default:
 		$lang_file = 'lang.en.php';
 }
-
 require_once(WEB_INC . '/languages/' . $lang_file);
 
 //#################### LAST LINE #####################################

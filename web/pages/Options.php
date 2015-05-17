@@ -63,7 +63,7 @@ $rtorrent_version = $users_datas['rtorrent_version'];
 $rtorrent_restart = $users_datas['rtorrent_restart'];
 $language = $users_datas['language'];
 
-ChangeCakeboxLanguage();
+ChangeCakeboxLanguage($CurrentUser, $language);
 ?>
 
 <form class="form_settings" method="post" action="">
