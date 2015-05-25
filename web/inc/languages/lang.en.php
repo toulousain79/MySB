@@ -35,7 +35,7 @@ $lang['Global_LastUpdate'] = 'Last Update';
 
 // BlockLists_PGL.php
 $lang['BlockLists_PGL_Success'] = 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.';
-$lang['BlockLists_PGL_Failed'] = 'Failed ! It was not possible to update tracker in the MySB database.';
+$lang['BlockLists_PGL_Failed'] = 'Failed ! It was not possible to update the MySB database.';
 $lang['BlockLists_PGL_Table_Name'] = 'Name';
 $lang['BlockLists_PGL_Table_Blocklist'] = 'Blocklist';
 

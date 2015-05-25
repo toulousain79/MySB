@@ -25,25 +25,25 @@
 $lang = array();
  
 // Global
-$lang['Global_Yes'] = 'Yes';
-$lang['Global_No'] = 'No';
-$lang['Global_SaveChanges'] = 'Save Changes';
-$lang['Global_IsDefault'] = 'Default ?';
+$lang['Global_Yes'] = 'Oui';
+$lang['Global_No'] = 'Non';
+$lang['Global_SaveChanges'] = 'Sauvegarder les modifications';
+$lang['Global_IsDefault'] = 'D&eacute;faut ?';
 $lang['Global_IsActive'] = 'Active ?';
-$lang['Global_Comment'] = 'Comments';
-$lang['Global_LastUpdate'] = 'Last Update';
+$lang['Global_Comment'] = 'Commentaires';
+$lang['Global_LastUpdate'] = 'Derni&egrave;re mise &agrave; jour';
 
 // BlockLists_PGL.php
-$lang['BlockLists_PGL_Success'] = 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.';
-$lang['BlockLists_PGL_Failed'] = 'Failed ! It was not possible to update tracker in the MySB database.';
-$lang['BlockLists_PGL_Table_Name'] = 'Name';
-$lang['BlockLists_PGL_Table_Blocklist'] = 'Blocklist';
+$lang['BlockLists_PGL_Success'] = 'Succ&egrave;s!<br /><br />Les listes noires ont &eacute;t&eacute; appliqu&eacute;es pour PeerGuardian ET rTorrent.';
+$lang['BlockLists_PGL_Failed'] = 'Echec!<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.';
+$lang['BlockLists_PGL_Table_Name'] = 'Nom';
+$lang['BlockLists_PGL_Table_Blocklist'] = 'Liste noire';
 
 // BlockLists_rTorrent.php
-$lang['BlockLists_rTorrent_Success'] = 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.';
-$lang['BlockLists_rTorrent_Failed'] = 'Failed ! It was not possible to update tracker in the MySB database.';
-$lang['BlockLists_rTorrent_Table_Name'] = 'Name';
-$lang['BlockLists_rTorrent_Table_Blocklist'] = 'Blocklist';
+$lang['BlockLists_rTorrent_Success'] = 'Succ&egrave;s!<br /><br />Les listes noires ont &eacute;t&eacute; appliqu&eacute;es pour rTorrent ET PeerGuardian.';
+$lang['BlockLists_rTorrent_Failed'] = 'Echec!<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.';
+$lang['BlockLists_rTorrent_Table_Name'] = 'Nom';
+$lang['BlockLists_rTorrent_Table_Blocklist'] = 'Liste noire';
 
 //#################### LAST LINE ######################################
 ?>

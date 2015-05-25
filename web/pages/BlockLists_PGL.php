@@ -56,7 +56,7 @@ if ( $IsInstalled == '1' ) {
 	<form class="form_settings" method="post" action="">
 		<div align="center">
 <?php if ( $IsMainUser ) { ?>
-			<input class="submit" style="width:120px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo $lang["Global_SaveChanges"]; ?>">
+			<input class="submit" style="width:<?php echo strlen($lang["Global_SaveChanges"])*10; ?>px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo $lang["Global_SaveChanges"]; ?>">
 <?php } ?>
 			<table style="border-spacing:1;">
 				<tr>
@@ -137,7 +137,7 @@ if ( $IsInstalled == '1' ) {
 	?>
 			</table>
 <?php if ( $IsMainUser ) { ?>
-			<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="<?php echo $lang["Global_SaveChanges"]; ?>">
+			<input class="submit" style="width:<?php echo strlen($lang["Global_SaveChanges"])*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo $lang["Global_SaveChanges"]; ?>">
 <?php } ?>
 		</div>
 	</form>
