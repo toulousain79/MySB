@@ -45,5 +45,14 @@ $lang['BlockLists_rTorrent_Failed'] = 'Failed ! It was not possible to update tr
 $lang['BlockLists_rTorrent_Table_Name'] = 'Name';
 $lang['BlockLists_rTorrent_Table_Blocklist'] = 'Blocklist';
 
+// User > Change e-mail
+$lang['User_ChangeEmail_CurrentAddress'] = 'Current e-mail :';
+$lang['User_ChangeEmail_NewAddress'] = 'New e-mail :';
+$lang['User_ChangeEmail_ConfirmAddress'] = 'New e-mail :';
+$lang['User_ChangeEmail_FailedUpdate'] = 'Failed !<br /><br />It was not possible to update the MySB database.';
+$lang['User_ChangeEmail_ErrorConfirm'] = 'Error between the new typed email and verification.';
+$lang['User_ChangeEmail_ErrorNotValid'] = 'The given e-mail address is not valid!';
+$lang['User_ChangeEmail_CompleteAll'] = 'Please, complete all fields.';
+
 //#################### LAST LINE ######################################
 ?>

@@ -35,15 +35,24 @@ $lang['Global_LastUpdate'] = 'Derni&egrave;re mise &agrave; jour';
 
 // BlockLists_PGL.php
 $lang['BlockLists_PGL_Success'] = 'Succ&egrave;s!<br /><br />Les listes noires ont &eacute;t&eacute; appliqu&eacute;es pour PeerGuardian ET rTorrent.';
-$lang['BlockLists_PGL_Failed'] = 'Echec!<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.';
+$lang['BlockLists_PGL_Failed'] = 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.';
 $lang['BlockLists_PGL_Table_Name'] = 'Nom';
 $lang['BlockLists_PGL_Table_Blocklist'] = 'Liste noire';
 
 // BlockLists_rTorrent.php
 $lang['BlockLists_rTorrent_Success'] = 'Succ&egrave;s!<br /><br />Les listes noires ont &eacute;t&eacute; appliqu&eacute;es pour rTorrent ET PeerGuardian.';
-$lang['BlockLists_rTorrent_Failed'] = 'Echec!<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.';
+$lang['BlockLists_rTorrent_Failed'] = 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.';
 $lang['BlockLists_rTorrent_Table_Name'] = 'Nom';
 $lang['BlockLists_rTorrent_Table_Blocklist'] = 'Liste noire';
+
+// User > Change e-mail
+$lang['User_ChangeEmail_CurrentAddress'] = 'Adresse actuelle :';
+$lang['User_ChangeEmail_NewAddress'] = 'Nouvelle adresse :';
+$lang['User_ChangeEmail_ConfirmAddress'] = 'Confirmation :';
+$lang['User_ChangeEmail_FailedUpdate'] = 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.';
+$lang['User_ChangeEmail_ErrorConfirm'] = 'Erreur entre la nouvelle adresse et la confirmation..';
+$lang['User_ChangeEmail_ErrorNotValid'] = 'L\'adresse e-mail indiqu&eacute;e n\'est pas valide!';
+$lang['User_ChangeEmail_CompleteAll'] = 'Merci de renseigner tous les champs.';
 
 //#################### LAST LINE ######################################
 ?>

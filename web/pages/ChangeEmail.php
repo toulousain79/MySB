@@ -30,20 +30,20 @@ function Form() {
 	echo '<form class="form_settings" method="post" action="">
 			<div align="center"><table border="0">
 				<tr>
-					<td>Current e-mail :</td>
+					<td>' . $lang["User_ChangeEmail_CurrentAddress"] . '</td>
 					<td><input style="cursor: default;" name="current_email" type="text" readonly="true" value="' . $UserEmail . '"/></td>
 				</tr>
 				<tr>
-					<td>New e-mail :</td>
+					<td>' . $lang["User_ChangeEmail_NewAddress"] . '</td>
 					<td><input name="new_email" type="text" /></td>
 				</tr>
 				<tr>
-					<td>Confirm :</td>
+					<td>' . $lang["User_ChangeEmail_ConfirmAddress"] . '</td>
 					<td><input name="confirm_email" type="text" /></td>
 				</tr>
 				<tr>
 					<td colspan="2">
-						<input class="submit" name="submit" type="submit" value="' .$lang['Global_SaveChanges']. '"">
+						<input class="submit" style="width:' . strlen($lang["Global_SaveChanges"])*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' .$lang['Global_SaveChanges']. '"">
 					</td>
 				</tr>
 			</table></div>
@@ -66,19 +66,19 @@ if ( isset($_POST['submit']) ) {
 					$type = 'success';
 				} else {
 					$type = 'error';
-					$message = 'Failed ! It was not possible to update the MySB database.';
+					$message = $lang['User_ChangeEmail_FailedUpdate'];
 				}
 			} else {
 				$type = 'error';
-				$message = 'Error between the new typed email and verification.';
+				$message = $lang['User_ChangeEmail_ErrorConfirm'];
 			}
 		} else {
 			$type = 'error';
-			$message = 'The given e-mail address is not valid!';
+			$message = $lang['User_ChangeEmail_ErrorNotValid'];
 		}
 	} else {
 		$type = 'information';
-		$message = 'Please, complete all fields.';
+		$message = $lang['User_ChangeEmail_CompleteAll'];
 	}
 
 	GenerateMessage('message_only', $type, $message, '');

@@ -22,7 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-global $MySB_DB, $CurrentUser;
+global $MySB_DB, $CurrentUser, $lang;
 
 if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') && isset($_GET['passwd']) ) {
 	$opts = 'readonly="true" style="cursor: default;" value="' . $_GET['passwd'] . '"';
@@ -54,7 +54,7 @@ echo '
 			</tr>
 			<tr>
 				<td colspan="2">
-					<input class="submit" name="submit" type="submit" value="Submit">
+					<input class="submit" style="width:' . strlen($lang["Global_SaveChanges"])*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="Submit">
 				</td>
 			</tr>
 		</table></div>
