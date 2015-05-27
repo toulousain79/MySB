@@ -32,6 +32,7 @@ $lang['Global_IsDefault'] = 'Default ?';
 $lang['Global_IsActive'] = 'Active ?';
 $lang['Global_Comment'] = 'Comments';
 $lang['Global_LastUpdate'] = 'Last Update';
+$lang['Global_FailedUpdateMysbDB'] = 'Failed !<br /><br />It was not possible to update the MySB database.';
 
 // BlockLists_PGL.php
 $lang['BlockLists_PGL_Success'] = 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.';
@@ -45,7 +46,7 @@ $lang['BlockLists_rTorrent_Failed'] = 'Failed ! It was not possible to update tr
 $lang['BlockLists_rTorrent_Table_Name'] = 'Name';
 $lang['BlockLists_rTorrent_Table_Blocklist'] = 'Blocklist';
 
-// User > Change e-mail
+// User > ChangeEmail.php
 $lang['User_ChangeEmail_CurrentAddress'] = 'Current e-mail :';
 $lang['User_ChangeEmail_NewAddress'] = 'New e-mail :';
 $lang['User_ChangeEmail_ConfirmAddress'] = 'New e-mail :';
@@ -53,6 +54,29 @@ $lang['User_ChangeEmail_FailedUpdate'] = 'Failed !<br /><br />It was not possibl
 $lang['User_ChangeEmail_ErrorConfirm'] = 'Error between the new typed email and verification.';
 $lang['User_ChangeEmail_ErrorNotValid'] = 'The given e-mail address is not valid!';
 $lang['User_ChangeEmail_CompleteAll'] = 'Please, complete all fields.';
+
+// User > ChangePassword.php
+$lang['User_ChangePassword_CurrentPassword'] = 'Current password :';
+$lang['User_ChangePassword_NewPassword'] = 'New password :';
+$lang['User_ChangePassword_ConfirmPassword'] = 'Confirm :';
+$lang['User_ChangePassword_Success'] = 'Success !<br /><br />Wait a few seconds and you will be able to log in with your new password.<br /><br />You will be redirect in 30 seconds.<br /><br />Please, wait for automatic redirection !';
+$lang['User_ChangePassword_Failded'] = 'Failed !<br /><br />It was not possible to apply the new password.';
+$lang['User_ChangePassword_FailedUpdateMysbDB'] = 'Failed !<br /><br />It was not possible to update the MySB database.';
+$lang['User_ChangePassword_FailedUpdateWolfDB'] = 'Failed !<br /><br />It was not possible to update the Wolf database.';
+$lang['User_ChangePassword_ErrorConfirm'] = 'Error between the new typed password and verification.';
+$lang['User_ChangePassword_ErrorNotValid'] = 'The current password is not valid.';
+$lang['User_ChangePassword_CompleteAll'] = 'Please, complete all fields.';
+
+// Main user > DNScrypt.php
+$lang['MainUser_DNScrypt_FailedUpdateMysbDB'] = 'Failed !<br /><br />It was not possible to update the MySB database.';
+$lang['MainUser_DNScrypt_CompleteAll'] = 'Please, complete all fields.';
+$lang['MainUser_DNScrypt_Table_Name'] = 'Name';
+$lang['MainUser_DNScrypt_Table_FullName'] = 'Full name';
+$lang['MainUser_DNScrypt_Table_Location'] = 'Location';
+$lang['MainUser_DNScrypt_Table_Version'] = 'Version';
+$lang['MainUser_DNScrypt_Table_DNSsec'] = 'DNSSEC<br />validation';
+$lang['MainUser_DNScrypt_Table_NoLog'] = 'No logs';
+$lang['MainUser_DNScrypt_Table_NameCoin'] = 'Namecoin';
 
 //#################### LAST LINE ######################################
 ?>

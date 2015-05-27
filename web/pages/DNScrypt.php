@@ -22,7 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-global $MySB_DB;
+global $MySB_DB, $lang;
 
 if (isset($_POST['submit'])) {
 	$SelectedResolver = $_POST['ResolverName'];
@@ -35,11 +35,11 @@ if (isset($_POST['submit'])) {
 			$type = 'success';
 		} else {
 			$type = 'error';
-			$message = 'Failed ! It was not possible to update the MySB database.';
+			$message = $lang['MainUser_DNScrypt_FailedUpdateMysbDB'];
 		}
 	} else {
 		$type = 'information';
-		$message = 'Please, complete all fields.';
+		$message = $lang['MainUser_DNScrypt_CompleteAll'];
 	}
 
 	GenerateMessage('DNScrypt', $type, $message, '');
@@ -101,15 +101,13 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["is_w
 	<div align="center">
 		<table style="border-spacing:1;">
 			<tr>
-				<th style="text-align:center;">Name</th>
-				<th style="text-align:center;">Full name</th>
-				<th style="text-align:center;">Location</th>
-				<th style="text-align:center;">Version</th>
-				<th style="text-align:center;">DNSSEC<br />validation</th>
-				<th style="text-align:center;">No logs</th>
-				<th style="text-align:center;">Namecoin</th>
-				<!-- <th style="text-align:center;">Resolver address</th> -->
-				<!-- <th style="text-align:center;">Provider name</th> -->
+				<th style="text-align:center;"><?php echo $lang['MainUser_DNScrypt_Table_Name']; ?></th>
+				<th style="text-align:center;"><?php echo $lang['MainUser_DNScrypt_Table_FullName']; ?></th>
+				<th style="text-align:center;"><?php echo $lang['MainUser_DNScrypt_Table_Location']; ?></th>
+				<th style="text-align:center;"><?php echo $lang['MainUser_DNScrypt_Table_Version']; ?></th>
+				<th style="text-align:center;"><?php echo $lang['MainUser_DNScrypt_Table_DNSsec']; ?></th>
+				<th style="text-align:center;"><?php echo $lang['MainUser_DNScrypt_Table_NoLog']; ?></th>
+				<th style="text-align:center;"><?php echo $lang['MainUser_DNScrypt_Table_NameCoin']; ?></th>
 			</tr>
 <?php
 foreach($ResolversList as $Resolver) {
@@ -156,12 +154,6 @@ foreach($ResolversList as $Resolver) {
 				<td <?php echo $style ?>>
 					<div style="text-align: center;"><?php echo $Namecoin; ?></div>
 				</td>
-				<!-- <td>
-					<?php //echo $ResolverAddress; ?>
-				</td> -->
-				<!-- <td>
-					<?php //echo $ProviderName; ?>
-				</td> -->
 			</tr>
 <?php
 	}

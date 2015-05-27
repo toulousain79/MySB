@@ -41,20 +41,20 @@ echo '
 	<form class="form_settings" method="post" action="">
 		<div align="center"><table border="0">
 			<tr>
-				<td>Current password :</td>
+				<td>' . $lang["User_ChangePassword_CurrentPassword"] . '</td>
 				<td><input name="current_pwd" type="password" ' . $opts . '/></td>
 			</tr>
 			<tr>
-				<td>New password :</td>
+				<td>' . $lang["User_ChangePassword_NewPassword"] . '</td>
 				<td><input name="new_pwd" type="password" /></td>
 			</tr>
 			<tr>
-				<td>Confirm :</td>
+				<td>' . $lang["User_ChangePassword_ConfirmPassword"] . '</td>
 				<td><input name="confirm_pwd" type="password" /></td>
 			</tr>
 			<tr>
 				<td colspan="2">
-					<input class="submit" style="width:' . strlen($lang["Global_SaveChanges"])*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="Submit">
+					<input class="submit" style="width:' . strlen($lang["Global_SaveChanges"])*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' .$lang['Global_SaveChanges']. '">
 				</td>
 			</tr>
 		</table></div>
@@ -91,14 +91,14 @@ if ( isset($_POST['submit']) ) {
 							if ( $result == 0 ) {
 								$type = 'success';
 								$command = 'message_only';
-								$message = 'Success !<br /><br />Wait a few seconds and you will be able to log in with your new password.<br /><br />You will be redirect in 30 seconds.<br /><br />Please, wait for automatic redirection !';
+								$message = $lang['User_ChangePassword_Success'];
 							} else {
 								$type = 'error';
-								$message = 'Failed ! It was not possible to apply the new password...';
+								$message = $lang['User_ChangePassword_Failded'];
 							}
 						} else {
 							$type = 'error';
-							$message = 'Failed ! It was not possible to update the MySB database.';
+							$message = $lang['User_ChangePassword_FailedUpdateMysbDB'];
 						}
 					} else { // directly by MySB portal
 						$type = 'success';
@@ -106,19 +106,19 @@ if ( isset($_POST['submit']) ) {
 					}
 				} else {
 					$type = 'error';
-					$message = 'Failed ! It was not possible to update the Wolf database.';
+					$message = $lang['User_ChangePassword_FailedUpdateWolfDB'];
 				}
 			} else {
 				$type = 'error';
-				$message = 'Error between the new typed password and verification.';
+				$message = $lang['User_ChangePassword_ErrorConfirm'];
 			}
 		} else {
 			$type = 'error';
-			$message = 'The current password is not valid.';
+			$message = $lang['User_ChangePassword_ErrorNotValid'];
 		}
 	} else {
 		$type = 'information';
-		$message = 'Please, complete all fields.';	
+		$message = $lang['User_ChangePassword_CompleteAll'];	
 	}
 
 	GenerateMessage($command, $type, $message, $args);

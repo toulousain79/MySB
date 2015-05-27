@@ -45,14 +45,37 @@ $lang['BlockLists_rTorrent_Failed'] = 'Echec !<br /><br />Il n\'a pas &eacute;t&
 $lang['BlockLists_rTorrent_Table_Name'] = 'Nom';
 $lang['BlockLists_rTorrent_Table_Blocklist'] = 'Liste noire';
 
-// User > Change e-mail
+// User > ChangeEmail.php
 $lang['User_ChangeEmail_CurrentAddress'] = 'Adresse actuelle :';
 $lang['User_ChangeEmail_NewAddress'] = 'Nouvelle adresse :';
 $lang['User_ChangeEmail_ConfirmAddress'] = 'Confirmation :';
 $lang['User_ChangeEmail_FailedUpdate'] = 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.';
-$lang['User_ChangeEmail_ErrorConfirm'] = 'Erreur entre la nouvelle adresse et la confirmation..';
+$lang['User_ChangeEmail_ErrorConfirm'] = 'Erreur entre la nouvelle adresse et la confirmation.';
 $lang['User_ChangeEmail_ErrorNotValid'] = 'L\'adresse e-mail indiqu&eacute;e n\'est pas valide!';
 $lang['User_ChangeEmail_CompleteAll'] = 'Merci de renseigner tous les champs.';
+
+// User > ChangePassword.php
+$lang['User_ChangePassword_CurrentPassword'] = 'Mot de passe actuel :';
+$lang['User_ChangePassword_NewPassword'] = 'Nouveau mot de passe :';
+$lang['User_ChangePassword_ConfirmPassword'] = 'Confirmation :';
+$lang['User_ChangePassword_Success'] = 'Succ&egrave;s !<br /><br />Attendez quelques secondes et vous serez en mesure de vous connecter avec votre nouveau mot de passe.<br /><br />Vous serez redirigez dans 30 secondes.<br /><br />S\'il vous pla&icirc;t, attendez la redirection automatique !';
+$lang['User_ChangePassword_Failded'] = 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible d\'appliquer le nouveau mot de passe.';
+$lang['User_ChangePassword_FailedUpdateMysbDB'] = 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.';
+$lang['User_ChangePassword_FailedUpdateWolfDB'] = 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es Wolf.';
+$lang['User_ChangePassword_ErrorConfirm'] = 'Erreur entre le nouveau mot de passe et la confirmation.';
+$lang['User_ChangePassword_ErrorNotValid'] = 'Le mot de passe actuel n\'est pas valide!';
+$lang['User_ChangePassword_CompleteAll'] = 'Merci de renseigner tous les champs.';
+
+// Main user > DNScrypt.php
+$lang['MainUser_DNScrypt_FailedUpdateMysbDB'] = 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.';
+$lang['MainUser_DNScrypt_CompleteAll'] = 'Merci de renseigner tous les champs.';
+$lang['MainUser_DNScrypt_Table_Name'] = 'Nom';
+$lang['MainUser_DNScrypt_Table_FullName'] = 'Nom complet';
+$lang['MainUser_DNScrypt_Table_Location'] = 'Localisation';
+$lang['MainUser_DNScrypt_Table_Version'] = 'Version';
+$lang['MainUser_DNScrypt_Table_DNSsec'] = 'Validation<br />DNSSEC';
+$lang['MainUser_DNScrypt_Table_NoLog'] = 'Pas de logs';
+$lang['MainUser_DNScrypt_Table_NameCoin'] = 'Namecoin';
 
 //#################### LAST LINE ######################################
 ?>
