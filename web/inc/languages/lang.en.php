@@ -78,5 +78,59 @@ $lang['MainUser_DNScrypt_Table_DNSsec'] = 'DNSSEC<br />validation';
 $lang['MainUser_DNScrypt_Table_NoLog'] = 'No logs';
 $lang['MainUser_DNScrypt_Table_NameCoin'] = 'Namecoin';
 
+// Help > Help_Blocklists.php
+$lang['Help_Blocklists'] = '
+	<p>
+		It is possible to use a blocklist with rTorrent.<br />
+		Similarly, if you have decided to use PeerGuardian, a second blocklist will also be available.
+		</p>
+		<p>
+		Although PeerGuardian is installed, it\'s still a good idea to also select the lists for rTorrent.<br />
+		For if PeerGuardian has a problem and can not be launched, the blocklist of rTorrent will take over.
+		<ul>
+			<li><a href="?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a></li>
+			<li><a href="?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a></li>
+		</ul>
+	</p>';
+
+// Help > Help_IPrestriction.php
+$lang['Help_IPrestriction'] = '
+	<p>
+		IP restriction is applied for access to the MySB portal.<br />
+		In case you do not have a fixed IP address, you can use a service such as \'No-IP\' or \'DynDNS\'.<br />
+		You can add a host name instead of an IP address <a href="?user/manage-addresses.html">here</a>.
+
+		<ul>
+			<li><a target="_blank" href="http://www.noip.com/">No-IP.com</a></li>
+			<li><a target="_blank" href="http://www.dyndns.fr/">DynDNS.fr</a></li>
+			<li><a target="_blank" href="https://account.dyn.com/entrance/">DynDNS.com</a></li>
+			<li>...</li>
+		</ul>
+	</p>';
+
+// Help > Help_PlexMedia.php
+$lang['Help_PlexMedia'] = '';
+
+// Help > Help_Trackers.php
+$lang['Help_Trackers_MainUser'] = '
+	<p>
+		You have an existing list of trackers generated from ruTorrent.<br />
+		Trackers in this list are not deletable. It is only possible to enable or disable it.
+	</p>
+	<p>
+		You also have the option to add your own trackers <a href="?trackers/add-new-trackers.html">here</a>.<br />
+		Your trackers will also be displayed in the global list available <a href="?trackers/trackers-list.html">here</a>.
+	</p>';
+$lang['Help_Trackers_NormalUser'] = '
+	<p>
+		Maybe do you need to add a new tracker?<br />
+		As a normal user, you must submit a request to the primary user.<br />
+		Only the primary user can add / remove a new tracker.
+	</p>
+	<p>
+		You can submit your request by e-mail or using the ruTorrent chat.
+	</p>
+';
+
 //#################### LAST LINE ######################################
 ?>

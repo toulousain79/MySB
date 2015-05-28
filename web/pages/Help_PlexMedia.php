@@ -21,10 +21,10 @@
 //	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 //
 //#################### FIRST LINE #####################################
-?>
 
+global $lang;
 
+echo $lang['Help_PlexMedia'];
 
-<?php
 //#################### LAST LINE ######################################
 ?>

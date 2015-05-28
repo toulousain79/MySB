@@ -21,21 +21,10 @@
 //	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 //
 //#################### FIRST LINE #####################################
-?>
 
-<p>
-It is possible to use a blocklist with rTorrent.<br />
-Similarly, if you have decided to use PeerGuardian, a second blocklist will also be available.
-</p>
-<p>
-Although PeerGuardian is installed, it's still a good idea to also select the lists for rTorrent.<br />
-For if PeerGuardian has a problem and can not be launched, the blocklist of rTorrent will take over.
-	<ul>
-		<li><a href="?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a></li>
-		<li><a href="?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a></li>
-	</ul>
-</p>
+global $lang;
 
-<?php
+echo $lang['Help_Blocklists'];
+
 //#################### LAST LINE ######################################
 ?>

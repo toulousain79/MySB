@@ -77,5 +77,57 @@ $lang['MainUser_DNScrypt_Table_DNSsec'] = 'Validation<br />DNSSEC';
 $lang['MainUser_DNScrypt_Table_NoLog'] = 'Pas de logs';
 $lang['MainUser_DNScrypt_Table_NameCoin'] = 'Namecoin';
 
+// Help > Help_Blocklists.php
+$lang['Help_Blocklists'] = '<p>
+Il est possible d\'utiliser une liste de blocage avec rTorrent.<br />
+Similarly, if you have decided to use PeerGuardian, a second blocklist will also be available.
+</p>
+<p>
+De m&ecirc;me, si vous avez d&eacute;cid&eacute; d\'utiliser PeerGuardian, une deuxi&egrave;me liste de blocage sera &eacute;galement disponible.<br />
+Car si PeerGuardian a un probl&egrave;me et ne peut pas &ecirc;tre lanc&eacute;, la liste de blocage de rTorrent prendra le relais.
+	<ul>
+		<li><a href="?blocklists/rtorrent-blocklists.html">Liste de blocage rTorrent</a></li>
+		<li><a href="?blocklists/peerguardian-blocklists.html">Liste de blocage PeerGuardian</a></li>
+	</ul>
+</p>';
+
+// Help > Help_IPrestriction.php
+$lang['Help_IPrestriction'] = '<p>
+La restriction par adresse IP est appliqu&eacute;e pour limiter l\'acc&egrave;s au portail MySB.<br />
+Dans le cas o&ugrave; vous ne disposez pas d\'une adresse IP publique fixe, vous pouvez utiliser un service tel que &quot;No-IP&quot; ou &quot;DynDNS&quot;.<br />
+Vous pourrez ainso ajouter un nom d\'h&ocirc;te au lieu d\'une adresse IP sur <a href="?user/manage-addresses.html">cette page</a>.
+
+	<ul>
+		<li><a target="_blank" href="http://www.noip.com/">No-IP.com</a></li>
+		<li><a target="_blank" href="http://www.dyndns.fr/">DynDNS.fr</a></li>
+		<li><a target="_blank" href="https://account.dyn.com/entrance/">DynDNS.com</a></li>
+		<li>...</li>
+	</ul>
+</p>';
+
+// Help > Help_PlexMedia.php
+$lang['Help_PlexMedia'] = '';
+
+// Help > Help_Trackers.php
+$lang['Help_Trackers_MainUser'] = '
+	<p>
+		Une liste de trackers a &eacute;t&eacute; g&eacute;n&eacute;r&eacute;e en utilisant ruTorrent.<br />
+		Les trackers pr&eacute;sents dans cette liste ne sont pas modifiables. Il est seulement possible de les activer ou de les d&eacute;sactiver.
+	</p>
+	<p>
+		Vous avez &eacute;galement la possibilit&eacute; d\'ajouter vos propres trackers sur <a href="?trackers/add-new-trackers.html">cette page</a>.<br />
+		Vos trackers seront &eacute;galement affich&eacute;s dans la liste globale disponible sur <a href="?trackers/trackers-list.html">cette page</a>.
+	</p>';
+$lang['Help_Trackers_NormalUser'] = '
+	<p>
+		Peut-&ecirc;tre avez-vous besoin d\'ajouter un nouveau tracker?<br />
+		En tant qu\'utilisateur normal, vous devez soumettre une demande &agrave; l\'utilisateur principal.<br />
+		Seul l\'utilisateur principal peut ajouter / supprimer un nouveau tracker.
+	</p>
+	<p>
+		Vous pouvez soumettre votre demande par e-mail ou en utilisant le chat ruTorrent.
+	</p>
+';
+
 //#################### LAST LINE ######################################
 ?>

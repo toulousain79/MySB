@@ -22,30 +22,17 @@
 //
 //#################### FIRST LINE #####################################
 
-global $CurrentUser;
+global $CurrentUser, $lang;
 
 switch (MainUser($CurrentUser)) {
 	case true:
-		echo '
-		<p>
-		You have an existing list of trackers generated from ruTorrent.<br />
-		Trackers in this list are not deletable. It is only possible to enable or disable it.
-		</p>
-		<p>
-		You also have the option to add your own trackers <a href="?trackers/add-new-trackers.html">here</a>.<br />
-		Your trackers will also be displayed in the global list available <a href="?trackers/trackers-list.html">here</a>.
-		</p>
-		';
+		echo $lang['Help_Trackers_MainUser'];
 
 		break;
 
 	case false:
-		echo '
-			<p>Maybe do you need to add a new tracker?<br />
-			As a normal user, you must submit a request to the primary user.<br />
-			Only the primary user can add / remove a new tracker.</p>
-			<p>You can submit your request by e-mail or using the ruTorrent chat.</p>
-		';
+		echo $lang['Help_Trackers_NormalUser'];
+		
 		break;
 }
 //#################### LAST LINE ######################################
