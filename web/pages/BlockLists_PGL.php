@@ -24,6 +24,8 @@
 
 global $MySB_DB, $CurrentUser, $lang;
 
+//require(DIR_WS_LANGUAGES . $language . '/' . FILENAME_LOGOFF);
+
 $IsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
