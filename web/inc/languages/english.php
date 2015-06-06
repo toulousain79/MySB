@@ -22,23 +22,15 @@
 //
 //#################### FIRST LINE #####################################
 
-$lang = array();
-
 // Global
-$lang['Global_Yes'] = 'Yes';
-$lang['Global_No'] = 'No';
-$lang['Global_SaveChanges'] = 'Save Changes';
-$lang['Global_IsDefault'] = 'Default ?';
-$lang['Global_IsActive'] = 'Active ?';
-$lang['Global_Comment'] = 'Comments';
-$lang['Global_LastUpdate'] = 'Last Update';
-$lang['Global_FailedUpdateMysbDB'] = 'Failed !<br /><br />It was not possible to update the MySB database.';
-
-// BlockLists_PGL.php
-$lang['BlockLists_PGL_Success'] = 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.';
-$lang['BlockLists_PGL_Failed'] = 'Failed ! It was not possible to update the MySB database.';
-$lang['BlockLists_PGL_Table_Name'] = 'Name';
-$lang['BlockLists_PGL_Table_Blocklist'] = 'Blocklist';
+define('Global_Yes', 'Yes');
+define('Global_No', 'No');
+define('Global_SaveChanges', 'Save Changes');
+define('Global_IsDefault', 'Default ?');
+define('Global_IsActive', 'Active ?');
+define('Global_Comment', 'Comments');
+define('Global_LastUpdate', 'Last Update');
+define('Global_FailedUpdateMysbDB', 'Failed !<br /><br />It was not possible to update the MySB database.');
 
 // BlockLists_rTorrent.php
 $lang['BlockLists_rTorrent_Success'] = 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.';

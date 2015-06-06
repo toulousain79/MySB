@@ -22,71 +22,10 @@
 //
 //#################### FIRST LINE #####################################
 
-// Config file
-require_once('/etc/MySB/config.php');
+define('BlockLists_PGL_Success', 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.');
+define('BlockLists_PGL_Failed', 'Failed ! It was not possible to update the MySB database.');
+define('BlockLists_PGL_Table_Name', 'Name');
+define('BlockLists_PGL_Table_Blocklist', 'Blocklist');
 
-// Session
-session_start();
-if ( isset($_GET['page']) ) {
-	switch ($_GET['page']) {
-		case "ChangePassword":
-			if ( isset($_GET['user']) && isset($_GET['passwd']) ) {
-				$_SESSION['page'] = $_GET['page'];
-			}
-			break;
-
-		case "ManageAddresses":
-			if ( isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW']) ) { 
-				$_SESSION['page'] = $_GET['page'];
-			}
-			break;
-	}
-}
-
-// Medoo framework
-require_once(FILE_MEDOO);
-$MySB_DB = new medoo(['database_file' => MySB_DB, 'database_name' => 'MySB']);
-$Wolf_DB = new medoo(['database_file' => Wolf_DB, 'database_name' => 'Wolf']);
-
-// Some Functions
-require_once(FILE_FUNCS);
-
-// Load System table
-$system_datas = $MySB_DB->get("system", "*", ["id_system" => 1]);
-
-// Users table
-if ( isset($_SERVER['PHP_AUTH_USER']) ) {
-	$CurrentUser = $_SERVER['PHP_AUTH_USER'];
-} elseif ( isset($_SESSION['page']) && isset($_GET['user']) ) {
-	$CurrentUser = $_GET['user'];
-}
-if ( isset($CurrentUser) ) {
-	$users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
-}
-
-// Services table
-$Port_HTTPs = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "NginX"]);
-
-// Language
-header('Cache-control: private'); // IE 6 FIX
-if ( isSet($users_datas["language"]) ) {
-	$Language = $users_datas["language"];
-
-	// register the session
-	$_SESSION['Language'] = $Language;
-} else {
-	$Language = 'en';
-	$_SESSION['Language'] = $Language;
-}
-switch ($Language) {
-	case 'fr':
-		$lang_file = 'french';
-		break;
-
-	default:
-		$lang_file = 'english';
-}
-require_once(WEB_INC . '/languages/' . $lang_file . '.php');
-
-//#################### LAST LINE #####################################
+//#################### LAST LINE ######################################
 ?>

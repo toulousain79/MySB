@@ -22,22 +22,14 @@
 //
 //#################### FIRST LINE #####################################
 
-$lang = array();
- 
-// Global
-$lang['Global_Yes'] = 'Oui';
-$lang['Global_No'] = 'Non';
-$lang['Global_SaveChanges'] = 'Sauvegarder les modifications';
-$lang['Global_IsDefault'] = 'D&eacute;faut ?';
-$lang['Global_IsActive'] = 'Active ?';
-$lang['Global_Comment'] = 'Commentaires';
-$lang['Global_LastUpdate'] = 'Derni&egrave;re mise &agrave; jour';
-
-// BlockLists_PGL.php
-$lang['BlockLists_PGL_Success'] = 'Succ&egrave;s!<br /><br />Les listes noires ont &eacute;t&eacute; appliqu&eacute;es pour PeerGuardian ET rTorrent.';
-$lang['BlockLists_PGL_Failed'] = 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.';
-$lang['BlockLists_PGL_Table_Name'] = 'Nom';
-$lang['BlockLists_PGL_Table_Blocklist'] = 'Liste noire';
+define('Global_Yes', 'Oui');
+define('Global_No', 'Non');
+define('Global_SaveChanges', 'Sauvegarder les modifications');
+define('Global_IsDefault', 'D&eacute;faut ?');
+define('Global_IsActive', 'Active ?');
+define('Global_Comment', 'Commentaires');
+define('Global_LastUpdate', 'Derni&egrave;re mise &agrave; jour');
+define('Global_FailedUpdateMysbDB', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre à jour la base de donn&eacute;es MySB.');
 
 // BlockLists_rTorrent.php
 $lang['BlockLists_rTorrent_Success'] = 'Succ&egrave;s!<br /><br />Les listes noires ont &eacute;t&eacute; appliqu&eacute;es pour rTorrent ET PeerGuardian.';

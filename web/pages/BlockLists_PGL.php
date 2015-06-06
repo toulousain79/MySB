@@ -22,7 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/BlockLists_PGL.php');
+require_once(WEB_INC . '/languages/' .$lang_file. '/BlockLists_PGL.php');
 global $MySB_DB, $CurrentUser;
 
 //require(DIR_WS_LANGUAGES . $language . '/' . FILENAME_LOGOFF);
