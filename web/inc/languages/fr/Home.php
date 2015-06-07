@@ -1,5 +1,5 @@
 <?php
-// ----------------------------------
+// ---------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,9 +22,37 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Help_Blocklists.php');
-
-echo Help_Blocklists;
+define('Home_Welcome', 'Bonjour %s, bienvenue sur le portail MySB !');
+define('Home_MainUser', '
+	<p></p>
+	<p>En tant qu\'utilisateur principal, vous disposez de fonctionnalit&eacute;s suppl&eacute;mentaires, telles que:</p>
+	<ul style="margin-left: 100px">
+		<li>Activation des trackers</li>
+		<li>Ajout de nouveaux trackers</li>
+		<li>Activation des listes noires pour rTorrent et/ou PeerGuardian <span class="Comments">(si install&eacute;)</span></li>
+		<li>Gestion locative</li>
+		<li>Gestion SMTP</li>
+		<li>Gestion des utilisateurs</li>
+		<li>Visualisation des logs</li>
+	</ul>
+	<p>Ainsi que les fonctions de bases :</p>
+	<ul style="margin-left: 100px">
+		<li>Afficher les informations de votre compte</li>
+		<li>Changez votre mot de passe</li>
+		<li>G&eacute;rer vos adresses de connexion autoris&eacute;s <span class="Comments">(IP ou DNS dynamique)</span></li>
+		<li>T&eacute;l&eacute;charger vos fichiers de configuration pour OpenVPN <span class="Comments">(si install&eacute;)</span></li>
+	</ul>
+');
+define('Home_NormalUser', '
+	<p></p>
+	<p>En tant qu\'utilisateur normal, vous diposez des fonctionnalit&eacute;s suivantes :</p>
+	<ul style="margin-left: 100px">
+		<li>Afficher les informations de votre compte</li>
+		<li>Changez votre mot de passe</li>
+		<li>G&eacute;rer vos adresses de connexion autoris&eacute;s <span class="Comments">(IP ou DNS dynamique)</span></li>
+		<li>T&eacute;l&eacute;charger vos fichiers de configuration pour OpenVPN <span class="Comments">(si install&eacute;)</span></li>
+	</ul>
+');
 
 //#################### LAST LINE ######################################
 ?>

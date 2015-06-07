@@ -78,15 +78,7 @@ if ( isSet($users_datas["language"]) ) {
 	$Language = 'en';
 	$_SESSION['Language'] = $Language;
 }
-switch ($Language) {
-	case 'fr':
-		$lang_file = 'french';
-		break;
-
-	default:
-		$lang_file = 'english';
-}
-require_once(WEB_INC . '/languages/' . $lang_file . '.php');
+require_once(WEB_INC . '/languages/global.' . $Language . '.php');
 
 //#################### LAST LINE #####################################
 ?>

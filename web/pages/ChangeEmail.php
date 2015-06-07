@@ -22,28 +22,30 @@
 //
 //#################### FIRST LINE #####################################
 
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/ChangeEmail.php');
+
 function Form() {
-	global $MySB_DB, $CurrentUser, $lang;
+	global $MySB_DB, $CurrentUser;
 
 	$UserEmail = $MySB_DB->get("users", "users_email", ["users_ident" => "$CurrentUser"]);	
 	
 	echo '<form class="form_settings" method="post" action="">
 			<div align="center"><table border="0">
 				<tr>
-					<td>' . $lang["User_ChangeEmail_CurrentAddress"] . '</td>
+					<td>' . User_ChangeEmail_CurrentAddress . '</td>
 					<td><input style="cursor: default;" name="current_email" type="text" readonly="true" value="' . $UserEmail . '"/></td>
 				</tr>
 				<tr>
-					<td>' . $lang["User_ChangeEmail_NewAddress"] . '</td>
+					<td>' . User_ChangeEmail_NewAddress . '</td>
 					<td><input name="new_email" type="text" /></td>
 				</tr>
 				<tr>
-					<td>' . $lang["User_ChangeEmail_ConfirmAddress"] . '</td>
+					<td>' . User_ChangeEmail_ConfirmAddress . '</td>
 					<td><input name="confirm_email" type="text" /></td>
 				</tr>
 				<tr>
 					<td colspan="2">
-						<input class="submit" style="width:' . strlen($lang["Global_SaveChanges"])*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' .$lang['Global_SaveChanges']. '"">
+						<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' .Global_SaveChanges. '"">
 					</td>
 				</tr>
 			</table></div>
@@ -51,7 +53,7 @@ function Form() {
 }
 
 if ( isset($_POST['submit']) ) {
-	global $MySB_DB, $CurrentUser, $lang;
+	global $MySB_DB, $CurrentUser;
 
 	$current_email = preg_replace('/\s\s+/', '', $_POST['current_email']); 
 	$new_email = preg_replace('/\s\s+/', '', $_POST['new_email']); 
@@ -66,19 +68,19 @@ if ( isset($_POST['submit']) ) {
 					$type = 'success';
 				} else {
 					$type = 'error';
-					$message = $lang['User_ChangeEmail_FailedUpdate'];
+					$message = User_ChangeEmail_FailedUpdate;
 				}
 			} else {
 				$type = 'error';
-				$message = $lang['User_ChangeEmail_ErrorConfirm'];
+				$message = User_ChangeEmail_ErrorConfirm;
 			}
 		} else {
 			$type = 'error';
-			$message = $lang['User_ChangeEmail_ErrorNotValid'];
+			$message = User_ChangeEmail_ErrorNotValid;
 		}
 	} else {
 		$type = 'information';
-		$message = $lang['User_ChangeEmail_CompleteAll'];
+		$message = User_ChangeEmail_CompleteAll;
 	}
 
 	GenerateMessage('message_only', $type, $message, '');

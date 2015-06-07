@@ -1,5 +1,5 @@
 <?php
-// ----------------------------------
+// ---------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,9 +22,10 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Help_Blocklists.php');
-
-echo Help_Blocklists;
+define('BlockLists_rTorrent_Success', 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.');
+define('BlockLists_rTorrent_Failed', 'Failed ! It was not possible to update tracker in the MySB database.');
+define('BlockLists_rTorrent_Table_Name', 'Name');
+define('BlockLists_rTorrent_Table_Blocklist', 'Blocklist');
 
 //#################### LAST LINE ######################################
 ?>

@@ -22,7 +22,8 @@
 //
 //#################### FIRST LINE #####################################
 
-global $MySB_DB, $CurrentUser, $lang;
+global $MySB_DB, $CurrentUser;
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/ChangePassword.php');
 
 if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') && isset($_GET['passwd']) ) {
 	$opts = 'readonly="true" style="cursor: default;" value="' . $_GET['passwd'] . '"';
@@ -41,20 +42,20 @@ echo '
 	<form class="form_settings" method="post" action="">
 		<div align="center"><table border="0">
 			<tr>
-				<td>' . $lang["User_ChangePassword_CurrentPassword"] . '</td>
+				<td>' . User_ChangePassword_CurrentPassword . '</td>
 				<td><input name="current_pwd" type="password" ' . $opts . '/></td>
 			</tr>
 			<tr>
-				<td>' . $lang["User_ChangePassword_NewPassword"] . '</td>
+				<td>' . User_ChangePassword_NewPassword . '</td>
 				<td><input name="new_pwd" type="password" /></td>
 			</tr>
 			<tr>
-				<td>' . $lang["User_ChangePassword_ConfirmPassword"] . '</td>
+				<td>' . User_ChangePassword_ConfirmPassword . '</td>
 				<td><input name="confirm_pwd" type="password" /></td>
 			</tr>
 			<tr>
 				<td colspan="2">
-					<input class="submit" style="width:' . strlen($lang["Global_SaveChanges"])*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' .$lang['Global_SaveChanges']. '">
+					<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' .Global_SaveChanges. '">
 				</td>
 			</tr>
 		</table></div>
@@ -91,14 +92,14 @@ if ( isset($_POST['submit']) ) {
 							if ( $result == 0 ) {
 								$type = 'success';
 								$command = 'message_only';
-								$message = $lang['User_ChangePassword_Success'];
+								$message = User_ChangePassword_Success;
 							} else {
 								$type = 'error';
-								$message = $lang['User_ChangePassword_Failded'];
+								$message = User_ChangePassword_Failded;
 							}
 						} else {
 							$type = 'error';
-							$message = $lang['User_ChangePassword_FailedUpdateMysbDB'];
+							$message = User_ChangePassword_FailedUpdateMysbDB;
 						}
 					} else { // directly by MySB portal
 						$type = 'success';
@@ -106,19 +107,19 @@ if ( isset($_POST['submit']) ) {
 					}
 				} else {
 					$type = 'error';
-					$message = $lang['User_ChangePassword_FailedUpdateWolfDB'];
+					$message = User_ChangePassword_FailedUpdateWolfDB;
 				}
 			} else {
 				$type = 'error';
-				$message = $lang['User_ChangePassword_ErrorConfirm'];
+				$message = User_ChangePassword_ErrorConfirm;
 			}
 		} else {
 			$type = 'error';
-			$message = $lang['User_ChangePassword_ErrorNotValid'];
+			$message = User_ChangePassword_ErrorNotValid;
 		}
 	} else {
 		$type = 'information';
-		$message = $lang['User_ChangePassword_CompleteAll'];	
+		$message = User_ChangePassword_CompleteAll;	
 	}
 
 	GenerateMessage($command, $type, $message, $args);

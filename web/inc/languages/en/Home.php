@@ -1,5 +1,5 @@
 <?php
-// ----------------------------------
+// ---------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,9 +22,37 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Help_Blocklists.php');
-
-echo Help_Blocklists;
+define('Home_Welcome', 'Hi %s, welcome to MySB portal !');
+define('Home_MainUser', '
+	<p></p>
+	<p>As the main user you have additional features, such as:</p>
+	<ul style="margin-left: 100px">
+		<li>The trackers activation</li>
+		<li>The addition of new trackers</li>
+		<li>Blocklists activation for rTorrent and/or PeerGuardian <span class="Comments">(if installed)</span></li>
+		<li>Rental management</li>
+		<li>SMTP management</li>
+		<li>Users management</li>
+		<li>Viewing logs</li>
+	</ul>
+	<p>More of the following:</p>
+	<ul style="margin-left: 100px">
+		<li>Display your account information</li>
+		<li>Change your password</li>
+		<li>Manage your authorized connection addresses <span class="Comments">(IP or dynamic DNS)</span></li>
+		<li>Download the configuration files for OpenVPN <span class="Comments">(if installed)</span></li>
+	</ul>
+');
+define('Home_NormalUser', '
+	<p></p>
+	<p>As a normal user, you have the following possibilities:</p>
+	<ul style="margin-left: 100px">
+		<li>Display your account information</li>
+		<li>Change your password</li>
+		<li>Manage your authorized connection addresses <span class="Comments">(IP or dynamic DNS)</span></li>
+		<li>Download the configuration files for OpenVPN <span class="Comments">(if installed)</span></li>
+	</ul>
+');
 
 //#################### LAST LINE ######################################
 ?>

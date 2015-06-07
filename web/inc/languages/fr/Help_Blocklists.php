@@ -1,5 +1,5 @@
 <?php
-// ----------------------------------
+// ---------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,9 +22,20 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Help_Blocklists.php');
-
-echo Help_Blocklists;
+define('Help_Blocklists', '
+	<p>
+	Il est possible d\'utiliser une liste de blocage avec rTorrent.<br />
+	Similarly, if you have decided to use PeerGuardian, a second blocklist will also be available.
+	</p>
+	<p>
+	De m&ecirc;me, si vous avez d&eacute;cid&eacute; d\'utiliser PeerGuardian, une deuxi&egrave;me liste de blocage sera &eacute;galement disponible.<br />
+	Car si PeerGuardian a un probl&egrave;me et ne peut pas &ecirc;tre lanc&eacute;, la liste de blocage de rTorrent prendra le relais.
+		<ul>
+			<li><a href="?blocklists/rtorrent-blocklists.html">Liste de blocage rTorrent</a></li>
+			<li><a href="?blocklists/peerguardian-blocklists.html">Liste de blocage PeerGuardian</a></li>
+		</ul>
+	</p>
+');
 
 //#################### LAST LINE ######################################
 ?>

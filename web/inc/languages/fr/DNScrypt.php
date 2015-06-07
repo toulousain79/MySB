@@ -1,5 +1,5 @@
 <?php
-// ----------------------------------
+// ---------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,9 +22,15 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Help_Blocklists.php');
-
-echo Help_Blocklists;
+define('MainUser_DNScrypt_FailedUpdateMysbDB', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.');
+define('MainUser_DNScrypt_CompleteAll', 'Merci de renseigner tous les champs.');
+define('MainUser_DNScrypt_Table_Name', 'Nom');
+define('MainUser_DNScrypt_Table_FullName', 'Nom complet');
+define('MainUser_DNScrypt_Table_Location', 'Localisation');
+define('MainUser_DNScrypt_Table_Version', 'Version');
+define('MainUser_DNScrypt_Table_DNSsec', 'Validation<br />DNSSEC');
+define('MainUser_DNScrypt_Table_NoLog', 'Pas de logs');
+define('MainUser_DNScrypt_Table_NameCoin', 'Namecoin');
 
 //#################### LAST LINE ######################################
 ?>

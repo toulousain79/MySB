@@ -1,5 +1,5 @@
 <?php
-// ----------------------------------
+// ---------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,9 +22,16 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Help_Blocklists.php');
-
-echo Help_Blocklists;
+define('User_ChangePassword_CurrentPassword', 'Current password :');
+define('User_ChangePassword_NewPassword', 'New password :');
+define('User_ChangePassword_ConfirmPassword', 'Confirm :');
+define('User_ChangePassword_Success', 'Success !<br /><br />Wait a few seconds and you will be able to log in with your new password.<br /><br />You will be redirect in 30 seconds.<br /><br />Please, wait for automatic redirection !');
+define('User_ChangePassword_Failded', 'Failed !<br /><br />It was not possible to apply the new password.');
+define('User_ChangePassword_FailedUpdateMysbDB', 'Failed !<br /><br />It was not possible to update the MySB database.');
+define('User_ChangePassword_FailedUpdateWolfDB', 'Failed !<br /><br />It was not possible to update the Wolf database.');
+define('User_ChangePassword_ErrorConfirm', 'Error between the new typed password and verification.');
+define('User_ChangePassword_ErrorNotValid', 'The current password is not valid.');
+define('User_ChangePassword_CompleteAll', 'Please, complete all fields.');
 
 //#################### LAST LINE ######################################
 ?>

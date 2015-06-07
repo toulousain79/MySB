@@ -22,7 +22,8 @@
 //
 //#################### FIRST LINE #####################################
 
-global $MySB_DB, $lang;
+global $MySB_DB;
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/DNScrypt.php');
 
 if (isset($_POST['submit'])) {
 	$SelectedResolver = $_POST['ResolverName'];
@@ -35,11 +36,11 @@ if (isset($_POST['submit'])) {
 			$type = 'success';
 		} else {
 			$type = 'error';
-			$message = $lang['MainUser_DNScrypt_FailedUpdateMysbDB'];
+			$message = MainUser_DNScrypt_FailedUpdateMysbDB;
 		}
 	} else {
 		$type = 'information';
-		$message = $lang['MainUser_DNScrypt_CompleteAll'];
+		$message = MainUser_DNScrypt_CompleteAll;
 	}
 
 	GenerateMessage('DNScrypt', $type, $message, '');
@@ -101,13 +102,13 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["is_w
 	<div align="center">
 		<table style="border-spacing:1;">
 			<tr>
-				<th style="text-align:center;"><?php echo $lang['MainUser_DNScrypt_Table_Name']; ?></th>
-				<th style="text-align:center;"><?php echo $lang['MainUser_DNScrypt_Table_FullName']; ?></th>
-				<th style="text-align:center;"><?php echo $lang['MainUser_DNScrypt_Table_Location']; ?></th>
-				<th style="text-align:center;"><?php echo $lang['MainUser_DNScrypt_Table_Version']; ?></th>
-				<th style="text-align:center;"><?php echo $lang['MainUser_DNScrypt_Table_DNSsec']; ?></th>
-				<th style="text-align:center;"><?php echo $lang['MainUser_DNScrypt_Table_NoLog']; ?></th>
-				<th style="text-align:center;"><?php echo $lang['MainUser_DNScrypt_Table_NameCoin']; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_Name; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_FullName; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_Location; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_Version; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_DNSsec; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_NoLog; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_NameCoin; ?></th>
 			</tr>
 <?php
 foreach($ResolversList as $Resolver) {

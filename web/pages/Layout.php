@@ -71,7 +71,7 @@
 				</div>
 				<div id="logout">
 <?php if ( !isset($_SESSION['page']) ) { ?>
-					<a href="/Logout.php">Logout</a>
+					<a href="/Logout.php"><?php echo Layout_Logout; ?></a>
 <?php } ?>
 				</div>
 			</div>
@@ -145,8 +145,8 @@
 			echo $FooterNavBar . '<br /><br />';
 		}
 ?>
-			<a target="_blank" href="https://github.com/toulousain79/MySB/" title="MySB on GitHub">MySB on GitHub</a> | <a target="_blank" href="https://github.com/toulousain79/MySB/wiki" title="MySB WiKi">MySB WiKi</a> | <a target="_blank" href="https://github.com/toulousain79/MySB/blob/<?php echo GetVersion(); ?>/Changelog.md" title="Changelog <?php echo GetVersion(); ?>">Changelog <?php echo GetVersion(); ?></a><br />
-			<a target="_blank" href="http://www.css3templates.co.uk">Copyright &copy; CSS3_two</a> | <a target="_blank" href="http://www.wolfcms.org/" title="Wolf CMS">Wolf CMS</a>
+			<a target="_blank" href="https://github.com/toulousain79/MySB/" title="MySB on GitHub"><?php echo Layout_OnGithub; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/wiki" title="MySB WiKi"><?php echo Layout_Wiki; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/blob/<?php echo GetVersion(); ?>/Changelog.md" title="Changelog <?php echo GetVersion(); ?>">Changelog <?php echo GetVersion(); ?></a><br />
+			<a target="_blank" href="http://www.css3templates.co.uk">Copyright &copy; CSS3_two</a> | <a target="_blank" href="http://www.wolfcms.org/" title="Wolf CMS"><?php echo Layout_Wolf; ?></a>
 		</footer>
 	</div>
 

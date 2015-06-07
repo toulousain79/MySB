@@ -22,18 +22,20 @@
 //
 //#################### FIRST LINE #####################################
 
-global $CurrentUser, $lang;
+global $CurrentUser;
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Help_Trackers.php');
 
 switch (MainUser($CurrentUser)) {
 	case true:
-		echo $lang['Help_Trackers_MainUser'];
+		echo Help_Trackers_MainUser;
 
 		break;
 
 	case false:
-		echo $lang['Help_Trackers_NormalUser'];
-		
+		echo Help_Trackers_NormalUser;
+
 		break;
 }
+
 //#################### LAST LINE ######################################
 ?>

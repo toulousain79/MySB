@@ -1,5 +1,5 @@
 <?php
-// ----------------------------------
+// ---------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,9 +22,16 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Help_Blocklists.php');
-
-echo Help_Blocklists;
+define('User_ChangePassword_CurrentPassword', 'Mot de passe actuel :');
+define('User_ChangePassword_NewPassword', 'Nouveau mot de passe :');
+define('User_ChangePassword_ConfirmPassword', 'Confirmation :');
+define('User_ChangePassword_Success', 'Succ&egrave;s !<br /><br />Attendez quelques secondes et vous serez en mesure de vous connecter avec votre nouveau mot de passe.<br /><br />Vous serez redirigez dans 30 secondes.<br /><br />S\'il vous pla&icirc;t, attendez la redirection automatique !');
+define('User_ChangePassword_Failded', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible d\'appliquer le nouveau mot de passe.');
+define('User_ChangePassword_FailedUpdateMysbDB', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.');
+define('User_ChangePassword_FailedUpdateWolfDB', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es Wolf.');
+define('User_ChangePassword_ErrorConfirm', 'Erreur entre le nouveau mot de passe et la confirmation.');
+define('User_ChangePassword_ErrorNotValid', 'Le mot de passe actuel n\'est pas valide!');
+define('User_ChangePassword_CompleteAll', 'Merci de renseigner tous les champs.');
 
 //#################### LAST LINE ######################################
 ?>

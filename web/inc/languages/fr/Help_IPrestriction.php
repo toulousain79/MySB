@@ -1,5 +1,5 @@
 <?php
-// ----------------------------------
+// ---------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,9 +22,20 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Help_Blocklists.php');
+define('Help_IPrestriction', '
+	<p>
+		La restriction par adresse IP est appliqu&eacute;e pour limiter l\'acc&egrave;s au portail MySB.<br />
+		Dans le cas o&ugrave; vous ne disposez pas d\'une adresse IP publique fixe, vous pouvez utiliser un service tel que &quot;No-IP&quot; ou &quot;DynDNS&quot;.<br />
+		Vous pourrez ainso ajouter un nom d\'h&ocirc;te au lieu d\'une adresse IP sur <a href="?user/manage-addresses.html">cette page</a>.
 
-echo Help_Blocklists;
+		<ul>
+			<li><a target="_blank" href="http://www.noip.com/">No-IP.com</a></li>
+			<li><a target="_blank" href="http://www.dyndns.fr/">DynDNS.fr</a></li>
+			<li><a target="_blank" href="https://account.dyn.com/entrance/">DynDNS.com</a></li>
+			<li>...</li>
+		</ul>
+	</p>
+');
 
 //#################### LAST LINE ######################################
 ?>

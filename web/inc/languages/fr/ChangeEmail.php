@@ -1,5 +1,5 @@
 <?php
-// ----------------------------------
+// ---------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,9 +22,13 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Help_Blocklists.php');
-
-echo Help_Blocklists;
+define('User_ChangeEmail_CurrentAddress', 'Adresse actuelle :');
+define('User_ChangeEmail_NewAddress', 'Nouvelle adresse :');
+define('User_ChangeEmail_ConfirmAddress', 'Confirmation :');
+define('User_ChangeEmail_FailedUpdate', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.');
+define('User_ChangeEmail_ErrorConfirm', 'Erreur entre la nouvelle adresse et la confirmation.');
+define('User_ChangeEmail_ErrorNotValid', 'L\'adresse e-mail indiqu&eacute;e n\'est pas valide!');
+define('User_ChangeEmail_CompleteAll', 'Merci de renseigner tous les champs.');
 
 //#################### LAST LINE ######################################
 ?>

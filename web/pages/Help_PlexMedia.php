@@ -22,9 +22,9 @@
 //
 //#################### FIRST LINE #####################################
 
-global $lang;
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Help_PlexMedia.php');
 
-echo $lang['Help_PlexMedia'];
+echo Help_PlexMedia;
 
 //#################### LAST LINE ######################################
 ?>

@@ -1,5 +1,5 @@
 <?php
-// ----------------------------------
+// ---------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,9 +22,26 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Help_Blocklists.php');
-
-echo Help_Blocklists;
+define('Help_Trackers_MainUser', '
+	<p>
+		You have an existing list of trackers generated from ruTorrent.<br />
+		Trackers in this list are not deletable. It is only possible to enable or disable it.
+	</p>
+	<p>
+		You also have the option to add your own trackers <a href="?trackers/add-new-trackers.html">here</a>.<br />
+		Your trackers will also be displayed in the global list available <a href="?trackers/trackers-list.html">here</a>.
+	</p>
+');
+define('Help_Trackers_NormalUser', '
+	<p>
+		Maybe do you need to add a new tracker?<br />
+		As a normal user, you must submit a request to the primary user.<br />
+		Only the primary user can add / remove a new tracker.
+	</p>
+	<p>
+		You can submit your request by e-mail or using the ruTorrent chat.
+	</p>
+');
 
 //#################### LAST LINE ######################################
 ?>

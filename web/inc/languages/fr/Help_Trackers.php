@@ -1,5 +1,5 @@
 <?php
-// ----------------------------------
+// ---------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,9 +22,26 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Help_Blocklists.php');
-
-echo Help_Blocklists;
+define('Help_Trackers_MainUser', '
+	<p>
+		Une liste de trackers a &eacute;t&eacute; g&eacute;n&eacute;r&eacute;e en utilisant ruTorrent.<br />
+		Les trackers pr&eacute;sents dans cette liste ne sont pas modifiables. Il est seulement possible de les activer ou de les d&eacute;sactiver.
+	</p>
+	<p>
+		Vous avez &eacute;galement la possibilit&eacute; d\'ajouter vos propres trackers sur <a href="?trackers/add-new-trackers.html">cette page</a>.<br />
+		Vos trackers seront &eacute;galement affich&eacute;s dans la liste globale disponible sur <a href="?trackers/trackers-list.html">cette page</a>.
+	</p>
+');
+define('Help_Trackers_NormalUser', '
+	<p>
+		Peut-&ecirc;tre avez-vous besoin d\'ajouter un nouveau tracker?<br />
+		En tant qu\'utilisateur normal, vous devez soumettre une demande &agrave; l\'utilisateur principal.<br />
+		Seul l\'utilisateur principal peut ajouter / supprimer un nouveau tracker.
+	</p>
+	<p>
+		Vous pouvez soumettre votre demande par e-mail ou en utilisant le chat ruTorrent.
+	</p>
+');
 
 //#################### LAST LINE ######################################
 ?>

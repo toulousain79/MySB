@@ -1,5 +1,5 @@
 <?php
-// ----------------------------------
+// ---------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,9 +22,20 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Help_Blocklists.php');
+define('Global_Yes', 'Yes');
+define('Global_No', 'No');
+define('Global_SaveChanges', 'Save Changes');
+define('Global_IsDefault', 'Default ?');
+define('Global_IsActive', 'Active ?');
+define('Global_Comment', 'Comments');
+define('Global_LastUpdate', 'Last Update');
+define('Global_FailedUpdateMysbDB', 'Failed !<br /><br />It was not possible to update the MySB database.');
 
-echo Help_Blocklists;
+define('Layout_Logout', 'Logout');
+define('Layout_OnGithub', 'MySB on GitHub');
+define('Layout_Wiki', 'MySB WiKi');
+define('Layout_Wiki', 'MySB WiKi');
+define('Layout_Wolf', 'Wolf CMS');
 
 //#################### LAST LINE ######################################
 ?>

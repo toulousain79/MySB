@@ -22,9 +22,9 @@
 //
 //#################### FIRST LINE #####################################
 
-global $lang;
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Help_IPrestriction.php');
 
-echo $lang['Help_IPrestriction'];
+echo Help_IPrestriction;
 
 //#################### LAST LINE ######################################
 ?>

@@ -1,5 +1,5 @@
 <?php
-// ----------------------------------
+// ---------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,9 +22,20 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Help_Blocklists.php');
+define('Help_IPrestriction', '
+	<p>
+		IP restriction is applied for access to the MySB portal.<br />
+		In case you do not have a fixed IP address, you can use a service such as \'No-IP\' or \'DynDNS\'.<br />
+		You can add a host name instead of an IP address <a href="?user/manage-addresses.html">here</a>.
 
-echo Help_Blocklists;
+		<ul>
+			<li><a target="_blank" href="http://www.noip.com/">No-IP.com</a></li>
+			<li><a target="_blank" href="http://www.dyndns.fr/">DynDNS.fr</a></li>
+			<li><a target="_blank" href="https://account.dyn.com/entrance/">DynDNS.com</a></li>
+			<li>...</li>
+		</ul>
+	</p>
+');
 
 //#################### LAST LINE ######################################
 ?>

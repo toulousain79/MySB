@@ -22,7 +22,8 @@
 //
 //#################### FIRST LINE #####################################
 
-global $MySB_DB, $CurrentUser, $lang;
+global $MySB_DB, $CurrentUser;
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/BlockLists_rTorrent.php');
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
 if (isset($_POST['submit'])) {
@@ -38,10 +39,10 @@ if (isset($_POST['submit'])) {
 
 	if ( $success == true ) {
 		$type = 'success';
-		$message = $lang['BlockLists_rTorrent_Success'];
+		$message = BlockLists_rTorrent_Success;
 	} else {
 		$type = 'error';
-		$message = $lang['BlockLists_rTorrent_Failed'];
+		$message = BlockLists_rTorrent_Failed;
 	}
 
 	GenerateMessage('BlocklistsRTorrent.bsh', $type, $message, '');
@@ -53,16 +54,16 @@ $BlockList = $MySB_DB->select("blocklists", "*", ["rtorrent_list[!]" => ""]);
 <form class="form_settings" method="post" action="">
 	<div align="center">
 <?php if ( $IsMainUser ) { ?>
-		<input class="submit" style="width:<?php echo strlen($lang["Global_SaveChanges"])*10; ?>px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo $lang["Global_SaveChanges"]; ?>">
+		<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">
 <?php } ?>
 		<table style="border-spacing:1;">
 			<tr>
-				<th style="text-align:center;"><?php echo $lang['BlockLists_rTorrent_Table_Name']; ?></th>
-				<!--<th style="text-align:center;"><?php echo $lang['BlockLists_rTorrent_Table_Blocklist']; ?></th>-->
-				<th style="text-align:center;"><?php echo $lang['Global_Comment']; ?></th>
-				<th style="text-align:center;"><?php echo $lang['Global_LastUpdate']; ?></th>
-				<th style="text-align:center;"><?php echo $lang['Global_IsDefault']; ?></th>
-				<th style="text-align:center;"><?php echo $lang['Global_IsActive']; ?></th>
+				<th style="text-align:center;"><?php echo BlockLists_rTorrent_Table_Name; ?></th>
+				<!--<th style="text-align:center;"><?php echo BlockLists_rTorrent_Table_Blocklist; ?></th>-->
+				<th style="text-align:center;"><?php echo Global_Comment; ?></th>
+				<th style="text-align:center;"><?php echo Global_LastUpdate; ?></th>
+				<th style="text-align:center;"><?php echo Global_IsDefault; ?></th>
+				<th style="text-align:center;"><?php echo Global_IsActive; ?></th>
 			</tr>
 <?php
 foreach($BlockList as $List) {
@@ -135,7 +136,7 @@ foreach($BlockList as $List) {
 
 		</table>
 <?php if ( $IsMainUser ) { ?>
-		<input class="submit" style="width:<?php echo strlen($lang["Global_SaveChanges"])*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo $lang["Global_SaveChanges"]; ?>">
+		<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">
 <?php } ?>
 	</div>
 </form>
