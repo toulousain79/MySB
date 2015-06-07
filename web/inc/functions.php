@@ -162,7 +162,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 				case "Apply configuration":
 					$replace = '<div id="ApplyConfigButtonReplace" style="padding-top: 8px; padding-left: 10px; text-align:center; display:none; height: 24px;"><img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading..."></div>';
 					$style = "id=\"ApplyConfigButtonState\" class=\"ApplyConfigButtonNothing\" onclick=\"ButtonClicked('config')\"";
-					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$replace.'<div id="ApplyConfigButton">'.$menu->link($menu->title, $style).'</div>';
+					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$replace.'<div id="ApplyConfigButton">'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr, $style).'</div>';
 					break;
 				case "ruTorrent":
 					echo '<li><a target="_blank"  href="ru">ruTorrent</a>';
@@ -174,9 +174,9 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					break;
 				case "PeerGuardian BlockLists":
 					if ( $PeerguardianIsInstalled == '1' ) {
-						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title);
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					}
-					break;					
+					break;
 				case "Cakebox-Light":
 					if ( $CakeboxIsInstalled == '1' ) {
 						echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/cb/">Cakebox-Light</a>';
@@ -185,11 +185,11 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 				case "LoadAvg":
 					echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/loadavg/public/">LoadAvg</a>';
 					break;
-				case "Plex Media":
+				case "Plex Media Server":
 					if ( ($PlexMediaIsInstalled != '1') && $PlexMediaIsInstalled != '0' ) {
-						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title);
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					}
-					break;				
+					break;
 				case "Webmin":
 					if ( $WebminIsInstalled == '1' ) {
 						echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $WebminDatas["port_tcp1"] . '/">Webmin</a>';
@@ -197,13 +197,16 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					break;
 				case "DNScrypt-proxy":
 					if ( $DnscryptIsInstalled == '1' ) {
-						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title);
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					}
 					break;
-				default:
-					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($menu->title);
+				case "User":
+					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($CurrentUser);
 					break;
-			}	
+				default:
+					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+					break;
+			}
 
             MenuDisplayChildren($menu, $current, true);
             echo '</li>';
@@ -303,7 +306,7 @@ function ManageUsersTrackers($TrackerDomain, $IsActive) {
 		default:
 			$to_check = 0;
 			break;
-	}	
+	}
 
 	$DnsRecords = dns_get_record("tracker.".$TrackerDomain, $type = DNS_A);
 	$count = 0;
@@ -311,7 +314,7 @@ function ManageUsersTrackers($TrackerDomain, $IsActive) {
 		if ( $Record['ip'] != "" ) {
 			$count++;
 		}
-	}	
+	}
 
 	if ( $count >= 1 ) {
 		$TrackerAddress = "tracker.".$TrackerDomain;

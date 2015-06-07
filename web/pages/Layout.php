@@ -85,7 +85,7 @@
 ?>
 
 					<ul class="sf-menu" id="nav">
-						<li<?php echo ($this->level() == 0) ? ' class="current"': null; ?>><?php echo $page->link($page->title); ?></li>
+						<li<?php echo ($this->level() == 0) ? ' class="current"': null; ?>><?php echo ($_SESSION['Language'] == 'en') ? $page->link($page->title) : $page->link($page->title_fr); ?></li>
 
 						<?php MenuDisplayChildren($page, $this, false); ?>
 					</ul>
@@ -139,7 +139,8 @@
 			$FooterNavBar = '<a ' . $IsCurrentPage . ' href="' . URL_PUBLIC . '">Home</a>';
 			foreach($this->find('/')->children(null, array(), $hidden) as $menu):
 				if ( ($menu->title != "Apply configuration") && ($menu->title != "Services") ) {
-					$FooterNavBar .= ' | ' . $menu->link($menu->title);
+					$BottomMenu = ($_SESSION['Language'] == 'en') ? $menu->link($menu->title) : $menu->link($menu->title_fr);
+					$FooterNavBar .= ' | ' . $BottomMenu;
 				}
 			endforeach;
 			echo $FooterNavBar . '<br /><br />';
