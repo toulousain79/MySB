@@ -26,7 +26,7 @@ global $CurrentUser;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Home.php');
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
-echo '<h1><div align="center">Hi '.sprintf(Home_Welcome, $CurrentUser).', welcome to MySB portal !</div></h1>';
+echo '<h1><div align="center">'.sprintf(Home_Welcome, $CurrentUser).'</div></h1>';
 
 
 switch ($IsMainUser) {

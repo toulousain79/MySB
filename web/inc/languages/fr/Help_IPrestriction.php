@@ -26,7 +26,7 @@ define('Help_IPrestriction', '
 	<p>
 		La restriction par adresse IP est appliqu&eacute;e pour limiter l\'acc&egrave;s au portail MySB.<br />
 		Dans le cas o&ugrave; vous ne disposez pas d\'une adresse IP publique fixe, vous pouvez utiliser un service tel que &quot;No-IP&quot; ou &quot;DynDNS&quot;.<br />
-		Vous pourrez ainso ajouter un nom d\'h&ocirc;te au lieu d\'une adresse IP sur <a href="?user/manage-addresses.html">cette page</a>.
+		Vous pourrez ainsi ajouter un nom d\'h&ocirc;te au lieu d\'une adresse IP sur <a href="?user/manage-addresses.html">cette page</a>.
 
 		<ul>
 			<li><a target="_blank" href="http://www.noip.com/">No-IP.com</a></li>
