@@ -93,7 +93,7 @@
 				}
 ?>
 					<div id="breadcrumb">
-						<?php echo $this->breadcrumb(); ?>
+						<?php echo ($_SESSION['Language'] == 'en') ? $this->breadcrumb() : $this->breadcrumb_fr(); ?>
 					</div>
 				</div>
 			</nav>
