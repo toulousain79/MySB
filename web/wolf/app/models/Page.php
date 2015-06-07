@@ -42,6 +42,9 @@ class Page extends Node {
     public $title = '';
     public $slug = '';
     public $breadcrumb;
+	// MySB - BoF
+	public $breadcrumb_fr;
+	// MySB - BoF
     public $keywords = '';
     public $description = '';
     public $content;
@@ -210,6 +213,11 @@ class Page extends Node {
         return $this->breadcrumb;
     }
 
+	// MySB - BoF
+    public function breadcrumb_fr() {
+        return $this->breadcrumb_fr;
+    }
+	// MySB - BoF
 
     public function updater() {
         return $this->updater;
