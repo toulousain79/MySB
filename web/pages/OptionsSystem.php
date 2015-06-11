@@ -23,6 +23,7 @@
 //#################### FIRST LINE #####################################
 
 global $MySB_DB, $users_datas, $CurrentUser, $system_datas;
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 $PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
@@ -57,35 +58,35 @@ $ip_restriction = $system_datas['ip_restriction'];
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">	
 	<?php if ( ($IsMainUser) && ($PeerguardianIsInstalled == '1') ) { ?>
 	<fieldset>
-	<legend>PeerGuardian</legend>
+	<legend><?php echo MainUser_OptionsSystem_Title_PGL; ?></legend>
 	<table>
 		<tr>
-			<td>Email stats</td>
+			<td><?php echo MainUser_OptionsSystem_PGL_Stats; ?></td>
 			<td>
 				<select name="PGL_EmailStats" style="width:80px; height: 28px;">';
 				<?php switch ($pgl_email_stats) {
 					case '1':
-						echo '<option selected="selected" value="1">Yes</option>';
-						echo '<option value="0">No</option>';
+						echo '<option selected="selected" value="1">' .Global_Yes. '</option>';
+						echo '<option value="0">' .Global_No. '</option>';
 						break;
 					default:
-						echo '<option value="1">Yes</option>';
-						echo '<option selected="selected" value="0">No</option>';
+						echo '<option value="1">' .Global_Yes. '</option>';
+						echo '<option selected="selected" value="0">' .Global_No. '</option>';
 						break;
 				} ?>
 				</select>
 			</td>
-			<td>Watchdog email</td>
+			<td><?php echo MainUser_OptionsSystem_PGL_Whathdog; ?></td>
 			<td>
 				<select name="PGL_EmailWD" style="width:80px; height: 28px;">';
 				<?php switch ($pgl_watchdog_email) {
 					case '1':
-						echo '<option selected="selected" value="1">Yes</option>';
-						echo '<option value="0">No</option>';
+						echo '<option selected="selected" value="1">' .Global_Yes. '</option>';
+						echo '<option value="0">' .Global_No. '</option>';
 						break;
 					default:
-						echo '<option value="1">Yes</option>';
-						echo '<option selected="selected" value="0">No</option>';
+						echo '<option value="1">' .Global_Yes. '</option>';
+						echo '<option selected="selected" value="0">' .Global_No. '</option>';
 						break;
 				} ?>
 				</select>
@@ -97,20 +98,20 @@ $ip_restriction = $system_datas['ip_restriction'];
 
 	<?php if ( $IsMainUser ) { ?>
 	<fieldset>
-	<legend>IPtables</legend>
+	<legend><?php echo MainUser_OptionsSystem_Title_Iptables; ?></legend>
 	<table>
 		<tr>
-			<td>IP restriction</td>
+			<td><?php echo MainUser_OptionsSystem_Iptables_Restrict; ?></td>
 			<td>
 				<select name="IP_restriction" style="width:80px; height: 28px;">';
 				<?php switch ($ip_restriction) {
 					case '1':
-						echo '<option selected="selected" value="1">Yes</option>';
-						echo '<option value="0">No</option>';
+						echo '<option selected="selected" value="1">' .Global_Yes. '</option>';
+						echo '<option value="0">' .Global_No. '</option>';
 						break;
 					default:
-						echo '<option value="1">Yes</option>';
-						echo '<option selected="selected" value="0">No</option>';
+						echo '<option value="1">' .Global_Yes. '</option>';
+						echo '<option selected="selected" value="0">' .Global_No. '</option>';
 						break;
 				} ?>
 				</select>
@@ -120,7 +121,7 @@ $ip_restriction = $system_datas['ip_restriction'];
 	</fieldset>
 	<?php } ?>
 
-	<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Submit" />
+	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
 
 	</div>
 </form>
