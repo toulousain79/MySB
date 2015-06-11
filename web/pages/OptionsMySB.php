@@ -23,6 +23,7 @@
 //#################### FIRST LINE #####################################
 
 global $MySB_DB, $users_datas, $CurrentUser, $system_datas;
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 $PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
@@ -51,7 +52,7 @@ if (isset($_POST['submit'])) {
 		$type = 'success';
 	} else {
 		$type = 'error';
-		$message = 'Failed ! It was not possible to update the MySB database.';
+		$message = Global_FailedUpdateMysbDB;
 	}
 
 	GenerateMessage($Command, $type, $message);
@@ -69,10 +70,10 @@ ChangeCakeboxLanguage($CurrentUser, $language);
 <form class="form_settings" method="post" action="">
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 	<fieldset>
-	<legend>rTorrent</legend>
+	<legend><?php echo User_OptionsMySB_Title_rTorrent; ?></legend>
 	<table>
 		<tr>
-			<td>rTorrent version:</td>
+			<td><?php echo User_OptionsMySB_rTorrentVersion; ?></td>
 			<td>
 				<select name="rTorrentVersion" style="width:80px; height: 28px;">';
 				<?php foreach($rTorrentVersionsList as $rTorrentVersion) {
@@ -89,12 +90,12 @@ ChangeCakeboxLanguage($CurrentUser, $language);
 				<select name="rTorrentRestart" style="width:80px; height: 28px;">';
 				<?php switch ($rtorrent_restart) {
 					case '1':
-						echo '<option selected="selected" value="1">Yes</option>';
-						echo '<option value="0">No</option>';
+						echo '<option selected="selected" value="1">' .Global_Yes. '</option>';
+						echo '<option value="0">' .Global_No. '</option>';
 						break;
 					default:
-						echo '<option value="1">Yes</option>';
-						echo '<option selected="selected" value="0">No</option>';
+						echo '<option value="1">' .Global_Yes. '</option>';
+						echo '<option selected="selected" value="0">' .Global_No. '</option>';
 						break;
 				} ?>
 				</select>
@@ -104,20 +105,20 @@ ChangeCakeboxLanguage($CurrentUser, $language);
 	</fieldset>
 
 	<fieldset>
-	<legend>MySB Portal</legend>
+	<legend><?php echo User_OptionsMySB_Title_Portal; ?></legend>
 	<table>
 		<tr>
-			<td>Language</td>
+			<td><?php echo User_OptionsMySB_Language; ?></td>
 			<td>
-				<select name="language" style="width:80px; height: 28px;">';
+				<select name="language" style="width:90px; height: 28px;">';
 				<?php switch ($language) {
 					case 'fr':
-						echo '<option selected="selected" value="fr">French</option>';
-						echo '<option value="en">English</option>';
+						echo '<option selected="selected" value="fr">' .User_OptionsMySB_Lang_French. '</option>';
+						echo '<option value="en">' .User_OptionsMySB_Lang_English. '</option>';
 						break;
 					default:
-						echo '<option value="fr">French</option>';
-						echo '<option selected="selected" value="en">English</option>';
+						echo '<option value="fr">' .User_OptionsMySB_Lang_French. '</option>';
+						echo '<option selected="selected" value="en">' .User_OptionsMySB_Lang_English. '</option>';
 						break;
 				} ?>
 				</select>
@@ -126,7 +127,7 @@ ChangeCakeboxLanguage($CurrentUser, $language);
 	</table>
 	</fieldset>
 
-	<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Submit" />
+	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
 
 	</div>
 </form>

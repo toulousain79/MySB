@@ -23,7 +23,7 @@
 //#################### FIRST LINE #####################################
 
 global $MySB_DB;
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/DNScrypt.php');
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 if (isset($_POST['submit'])) {
 	$SelectedResolver = $_POST['ResolverName'];

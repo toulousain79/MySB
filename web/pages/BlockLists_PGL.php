@@ -23,7 +23,7 @@
 //#################### FIRST LINE #####################################
 
 global $MySB_DB, $CurrentUser;
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/BlockLists_PGL.php');
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 $IsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;

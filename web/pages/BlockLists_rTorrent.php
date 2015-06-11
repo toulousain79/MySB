@@ -23,7 +23,7 @@
 //#################### FIRST LINE #####################################
 
 global $MySB_DB, $CurrentUser;
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/BlockLists_rTorrent.php');
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
 if (isset($_POST['submit'])) {

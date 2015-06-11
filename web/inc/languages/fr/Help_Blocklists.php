@@ -25,7 +25,7 @@
 define('Help_Blocklists', '
 	<p>
 	Il est possible d\'utiliser une liste de blocage avec rTorrent.<br />
-	Similarly, if you have decided to use PeerGuardian, a second blocklist will also be available.
+	De m&ecirc;me, si vous avez d&eacute;cid&eacute; d\'utiliser PeerGuardian, une deuxi&egrave;me liste noire sera &eacute;galement disponible.
 	</p>
 	<p>
 	De m&ecirc;me, si vous avez d&eacute;cid&eacute; d\'utiliser PeerGuardian, une deuxi&egrave;me liste de blocage sera &eacute;galement disponible.<br />

@@ -22,7 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/ChangeEmail.php');
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 function Form() {
 	global $MySB_DB, $CurrentUser;

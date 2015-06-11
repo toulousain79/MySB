@@ -22,9 +22,12 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
-
-echo Help_Blocklists;
+define('User_OptionsMySB_Title_rTorrent', 'rTorrent');
+define('User_OptionsMySB_rTorrentVersion', 'Version de rTorrent:');
+define('User_OptionsMySB_Title_Portal', 'Portail MySB');
+define('User_OptionsMySB_Language', 'Language');
+define('User_OptionsMySB_Lang_French', 'Fran&ccedil;ais');
+define('User_OptionsMySB_Lang_English', 'Anglais');
 
 //#################### LAST LINE ######################################
 ?>

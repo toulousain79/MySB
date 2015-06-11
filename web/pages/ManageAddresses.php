@@ -23,6 +23,7 @@
 //#################### FIRST LINE #####################################
 
 global $MySB_DB, $CurrentUser;
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 // Vars
 $UserAddress = $_SERVER['REMOTE_ADDR'];
@@ -171,25 +172,24 @@ $AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserI
 	<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 		<form id="myForm" class="form_settings" method="post" action="">
 			<fieldset>
-			<legend>Add your allowed addresses here</legend>
+			<legend><?php echo User_ManageAddresses_TitleAdd; ?></legend>
 				<div id="input1" class="clonedInput">
 					<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
-					Address (IP or Dynamic DNS): <input class="input_address" id="address" name="address[1]" type="text" required="required" <?php echo $add_current_ip; ?> />
-					Is active ?:	<select class="select_is_active" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required">
-										<option value="0" selected="selected">No</option>
-										<option value="1">Yes</option>
+					<?php echo User_ManageAddresses_TextAddress; ?>&nbsp;<input class="input_address" id="address" name="address[1]" type="text" required="required" <?php echo $add_current_ip; ?> />
+					&nbsp;&nbsp;<?php echo Global_IsActive; ?>&nbsp;&nbsp;<select class="select_is_active" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required">
+										<option value="0" selected="selected"><?php echo Global_No; ?></option>
+										<option value="1"><?php echo Global_Yes; ?></option>
 									</select>
 				</div>
 
 				<div style="margin-top: 10px; margin-bottom: 20px;">
-					<input type="button" id="btnAdd" value="Add new line" style="cursor: pointer;" />
-					<input type="button" id="btnDel" value="Remove last line" style="cursor: pointer;" />
+					<input type="button" id="btnAdd" value="<?php echo User_ManageAddresses_Btn_AddNewLine; ?>" style="cursor: pointer;" />
+					<input type="button" id="btnDel" value="<?php echo User_ManageAddresses_Btn_RemoveLastLine; ?>" style="cursor: pointer;" />
 				</div>
 
-			<p class="Comments">If you have a <b>dynamic IP address</b>, you must enter a hostname (No-IP, DynDNS, ...).<br />
-				If you have a <b>fixed IP address</b>, you can enter it directly, or enter a hostname. In this case, it is advisable to directly enter your IP.</p>
+			<p class="Comments"><?php echo User_ManageAddresses_InfoAddAddresses; ?></p>
 				
-				<input class="submit" style="width:180px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="Add my addresses now !">
+				<input class="submit" style="width:<?php echo strlen(User_ManageAddresses_Btn_AddAddress)*10; ?>px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo User_ManageAddresses_Btn_AddAddress; ?>">
 			</fieldset>
 		</form>
 	</div>
@@ -198,11 +198,11 @@ $AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserI
 	<div align="center">
 		<table style="border-spacing:1;">
 			<tr>
-				<th style="text-align:center;">IPv4</th>
-				<th style="text-align:center;">Hostname</th>
-				<th style="text-align:center;">Check by</th>
-				<th style="text-align:center;">Active ?</th>
-				<th style="text-align:center;">Delete ?</th>
+				<th style="text-align:center;"><?php echo User_ManageAddresses_Table_IPv4; ?></th>
+				<th style="text-align:center;"><?php echo User_ManageAddresses_Table_Hostname; ?></th>
+				<th style="text-align:center;"><?php echo User_ManageAddresses_Table_CheckBy; ?></th>
+				<th style="text-align:center;"><?php echo Global_IsActive; ?></th>
+				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
 			</tr>
 
 <?php
@@ -213,14 +213,14 @@ foreach($AddressesList as $Address) {
 	switch ($Address["is_active"]) {
 		case '0':
 			$is_active = '	<select name="is_active['.$i.']" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-								<option value="0" selected="selected" class="redText">No</option>
-								<option value="1" class="greenText">Yes</option>
+								<option value="0" selected="selected" class="redText">' .Global_No. '</option>
+								<option value="1" class="greenText">' .Global_Yes. '</option>
 							</select>';
 			break;
 		default:
 			$is_active = '	<select name="is_active['.$i.']" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-								<option value="0" class="redText">No</option>
-								<option value="1" selected="selected" class="greenText">Yes</option>
+								<option value="0" class="redText">' .Global_No. '</option>
+								<option value="1" selected="selected" class="greenText">' .Global_Yes. '</option>
 							</select>';
 			break;
 	}
@@ -241,7 +241,7 @@ foreach($AddressesList as $Address) {
 					<?php echo $is_active; ?>
 				</td>
 				<td>
-					<input class="submit" name="delete[<?php echo $Address["id_users_addresses"]; ?>]" type="submit" value="Delete" />
+					<input class="submit" name="delete[<?php echo $Address["id_users_addresses"]; ?>]" type="submit" value="<?php echo Global_Delete; ?>" />
 				</td>
 			</tr>
 			<input class="input_id" id="input_id" name="input_id[<?php echo $i; ?>]" type="hidden" value="<?php echo $i; ?>" />
@@ -251,14 +251,14 @@ foreach($AddressesList as $Address) {
 
 		</table>
 
-		<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
+		<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">
 
 	</div>
 </form>
 
 <div align="center">
 	<p></p>
-	<p class="Comments"><b>NB</b>: Dynamic IP addresses are checked every <b>5</b> minutes.<br />If an IP has changed, the database will be updated and security will be adapted accordingly.</p>
+	<p class="Comments"><?php echo User_ManageAddresses_InfoBottom; ?></p>
 </div>
 
 <script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-dynamically-adding-form-elements.js"></script>

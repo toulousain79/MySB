@@ -23,7 +23,7 @@
 //#################### FIRST LINE #####################################
 
 global $MySB_DB, $CurrentUser;
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/ChangePassword.php');
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') && isset($_GET['passwd']) ) {
 	$opts = 'readonly="true" style="cursor: default;" value="' . $_GET['passwd'] . '"';

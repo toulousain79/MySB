@@ -1,5 +1,5 @@
 <?php
-// ----------------------------------
+// ---------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,9 +22,16 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
-
-echo Help_Blocklists;
+define('User_ManageAddresses_TitleAdd', 'Add your allowed addresses here');
+define('User_ManageAddresses_TextAddress', 'Address <i>(IP or Dynamic DNS)</i>:');
+define('User_ManageAddresses_Btn_AddNewLine', 'Add new line');
+define('User_ManageAddresses_Btn_RemoveLastLine', 'Remove last line');
+define('User_ManageAddresses_InfoAddAddresses', 'If you have a <b>dynamic IP address</b>, you must enter a hostname (No-IP, DynDNS, ...).<br />If you have a <b>fixed IP address</b>, you can enter it directly, or enter a hostname. In this case, it is advisable to directly enter your IP.');
+define('User_ManageAddresses_Btn_AddAddress', 'Add my addresses now !');
+define('User_ManageAddresses_Table_IPv4', 'IPv4');
+define('User_ManageAddresses_Table_Hostname', 'Hostname');
+define('User_ManageAddresses_Table_CheckBy', 'Check by');
+define('User_ManageAddresses_InfoBottom', '<b>NB</b>: Dynamic IP addresses are checked every <b>5</b> minutes.<br />If an IP has changed, the database will be updated and security will be adapted accordingly.');
 
 //#################### LAST LINE ######################################
 ?>

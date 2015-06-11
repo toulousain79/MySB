@@ -23,7 +23,7 @@
 //#################### FIRST LINE #####################################
 
 global $CurrentUser;
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Help_Trackers.php');
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 switch (MainUser($CurrentUser)) {
 	case true:

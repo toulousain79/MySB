@@ -22,10 +22,13 @@
 //
 //#################### FIRST LINE #####################################
 
+define('Global_Home', 'Accueil');
 define('Global_Yes', 'Oui');
 define('Global_No', 'Non');
+define('Global_Delete', 'Supprimer');
 define('Global_SaveChanges', 'Sauvegarder les modifications');
 define('Global_IsDefault', 'D&eacute;faut ?');
+define('Global_Table_Delete', 'Supprimer ?');
 define('Global_IsActive', 'Active ?');
 define('Global_Comment', 'Commentaires');
 define('Global_LastUpdate', 'Derni&egrave;re mise &agrave; jour');

@@ -23,7 +23,7 @@
 //#################### FIRST LINE #####################################
 
 global $CurrentUser;
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/Home.php');
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
 echo '<h1><div align="center">'.sprintf(Home_Welcome, $CurrentUser).'</div></h1>';

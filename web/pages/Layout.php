@@ -136,7 +136,7 @@
 		if ( !isset($_SESSION['page']) ) {
 			$IsCurrentPage = url_match('/') ? ' class="current"': '';
 			$hidden = (MainUser()) ? true : false;
-			$FooterNavBar = '<a ' . $IsCurrentPage . ' href="' . URL_PUBLIC . '">Home</a>';
+			$FooterNavBar = '<a ' . $IsCurrentPage . ' href="' . URL_PUBLIC . '">' . Global_Home . '</a>';
 			foreach($this->find('/')->children(null, array(), $hidden) as $menu):
 				if ( ($menu->title != "Apply configuration") && ($menu->title != "Services") ) {
 					$BottomMenu = ($_SESSION['Language'] == 'en') ? $menu->link($menu->title) : $menu->link($menu->title_fr);

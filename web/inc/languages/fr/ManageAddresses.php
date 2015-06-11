@@ -1,5 +1,5 @@
 <?php
-// ----------------------------------
+// ---------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,9 +22,16 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
-
-echo Help_Blocklists;
+define('User_ManageAddresses_TitleAdd', 'Ajouter vos adresses autoris&eacute;es ici');
+define('User_ManageAddresses_TextAddress', 'Adresse <i>(IP ou DNS dynamique)</i>:');
+define('User_ManageAddresses_Btn_AddNewLine', 'Ajouter une nouvelle ligne');
+define('User_ManageAddresses_Btn_RemoveLastLine', 'Supprimer la derni&egrave;re ligne');
+define('User_ManageAddresses_InfoAddAddresses', 'Si vous avez une <b>adresse IP dynamique</b>, vous devez entrer un nom d\'h&ocirc;te (No-IP, DynDNS, ...).<br />Si vous avez une <b>adresse IP fixe</b>, vous pouvez le saisir directement, ou entrer un nom d\'h&ocirc;te. Dans ce cas, il est conseill&eacute; de saisir directement votre IP.');
+define('User_ManageAddresses_Btn_AddAddress', 'Ajouter mes adresses maintenant!');
+define('User_ManageAddresses_Table_IPv4', 'IPv4');
+define('User_ManageAddresses_Table_Hostname', 'Nom d\'h&ocirc;te');
+define('User_ManageAddresses_Table_CheckBy', 'V&eacute;rifi&eacute; par');
+define('User_ManageAddresses_InfoBottom', '<b>NB</b>: Les adresses IP dynamiques sont v&eacute;rifi&eacute;es toutes les <b>5</b> minutes.<br />Si une adresse IP a chang&eacute;, la base de donn&eacute;es sera mise &agrave; jour et les r&egrave;gles de s&eacute;curit&eacute; seront adapt&eacute;es en cons&eacute;quence.');
 
 //#################### LAST LINE ######################################
 ?>
