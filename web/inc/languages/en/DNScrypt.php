@@ -23,7 +23,6 @@
 //#################### FIRST LINE #####################################
 
 define('MainUser_DNScrypt_FailedUpdateMysbDB', 'Failed !<br /><br />It was not possible to update the MySB database.');
-define('MainUser_DNScrypt_CompleteAll', 'Please, complete all fields.');
 define('MainUser_DNScrypt_Table_Name', 'Name');
 define('MainUser_DNScrypt_Table_FullName', 'Full name');
 define('MainUser_DNScrypt_Table_Location', 'Location');

@@ -33,6 +33,7 @@ define('Global_IsActive', 'Active ?');
 define('Global_Comment', 'Commentaires');
 define('Global_LastUpdate', 'Derni&egrave;re mise &agrave; jour');
 define('Global_FailedUpdateMysbDB', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre à jour la base de donn&eacute;es MySB.');
+define('Global_CompleteAllFields', 'Merci de renseigner tous les champs.');
 
 define('Layout_Logout', 'D&eacute;connexion');
 define('Layout_OnGithub', 'MySB sur GitHub');

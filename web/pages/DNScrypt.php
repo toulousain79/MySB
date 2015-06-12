@@ -40,7 +40,7 @@ if (isset($_POST['submit'])) {
 		}
 	} else {
 		$type = 'information';
-		$message = MainUser_DNScrypt_CompleteAll;
+		$message = Global_CompleteAllFields;
 	}
 
 	GenerateMessage('DNScrypt', $type, $message, '');

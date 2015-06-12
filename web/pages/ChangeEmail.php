@@ -80,7 +80,7 @@ if ( isset($_POST['submit']) ) {
 		}
 	} else {
 		$type = 'information';
-		$message = User_ChangeEmail_CompleteAll;
+		$message = Global_CompleteAllFields;
 	}
 
 	GenerateMessage('message_only', $type, $message, '');

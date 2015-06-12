@@ -119,7 +119,7 @@ if ( isset($_POST['submit']) ) {
 		}
 	} else {
 		$type = 'information';
-		$message = User_ChangePassword_CompleteAll;	
+		$message = Global_CompleteAllFields;	
 	}
 
 	GenerateMessage($command, $type, $message, $args);

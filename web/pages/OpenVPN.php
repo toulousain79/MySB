@@ -22,6 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 $full_path = './openvpn/openvpn_'.$_SERVER['PHP_AUTH_USER'].'.zip';
 $file_name = basename($full_path);
 
@@ -45,9 +46,9 @@ if (file_exists($full_path)) {
 	readfile($full_path);
 	exit();
 } else {
-	$message = "No OpenVPN config file for user ".$_SERVER['PHP_AUTH_USER']."...";
+	$message = sprintf(User_OpenVPN_NoFile, $_SERVER['PHP_AUTH_USER']);
 	GenerateMessage('message_only', 'information', $message);
-	echo "No OpenVPN config file for user ".$_SERVER['PHP_AUTH_USER']."...";
+	echo $message;
 	header('Refresh: 5; URL=/');
 }
 

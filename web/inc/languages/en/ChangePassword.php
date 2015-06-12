@@ -31,7 +31,6 @@ define('User_ChangePassword_FailedUpdateMysbDB', 'Failed !<br /><br />It was not
 define('User_ChangePassword_FailedUpdateWolfDB', 'Failed !<br /><br />It was not possible to update the Wolf database.');
 define('User_ChangePassword_ErrorConfirm', 'Error between the new typed password and verification.');
 define('User_ChangePassword_ErrorNotValid', 'The current password is not valid.');
-define('User_ChangePassword_CompleteAll', 'Please, complete all fields.');
 
 //#################### LAST LINE ######################################
 ?>

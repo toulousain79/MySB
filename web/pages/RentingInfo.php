@@ -22,6 +22,8 @@
 //
 //#################### FIRST LINE #####################################
 
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
+
 function Form() {
 	global $MySB_DB;
 
@@ -47,30 +49,30 @@ function Form() {
 			<tr>
 				<td>Model :</td>
 				<td><input class="text_normal" name="model" type="text" value="' . $Model . '" required="required" /></td>
-				<td><span class="Comments">Example:	Serveur Dedibox XC</span></td>
+				<td><span class="Comments">' . MainUser_Renting_ExExample . '</span></td>
 			</tr>
 			<tr>
 				<td>TVA (%) :</td>
 				<td><input class="text_small" name="tva" type="text" value="' . $TVA . '" required="required" /></td>
-				<td><span class="Comments">Example:	20</span></td>
+				<td><span class="Comments">' . MainUser_Renting_ExTVA . '</span></td>
 			</tr>
 			<tr>
 				<td>Unit price (per month) :</td>
 				<td><input class="text_small" name="global_cost" type="text" value="' . $GlobalCost . '" required="required" /></td>
-				<td><span class="Comments">Example:	19.99 (value without tax)</span></td>
+				<td><span class="Comments">' . MainUser_Renting_ExPrice . '</span></td>
 			</tr>
 			<tr>
 				<td>Total users :</td>
 				<td><input class="text_extra_small" readonly="readonly" type="text" value="' . $TotalUsers . '" /></td>
-				<td><span class="Comments">Readonly, only for information.</span></td>
+				<td><span class="Comments">' . MainUser_Renting_ReadOnly . '</span></td>
 			</tr>
 			<tr>
 				<td>Price per user :</td>
 				<td><input class="text_extra_small" readonly="readonly" type="text" value="' . $PricePerUser . '" /></td>
-				<td><span class="Comments">Readonly, only for information.</span></td>
+				<td><span class="Comments">' . MainUser_Renting_ReadOnly . '</span></td>
 			</tr>
 			<tr>
-				<td colspan="3"><input class="submit" name="submit" type="submit" value="Submit" /></td>
+				<td colspan="3"><input class="submit" name="submit" type="submit" value="' . Global_SaveChanges . '" /></td>
 			</tr>
 		</table></div>
 	</form>';
@@ -102,11 +104,11 @@ if (isset($_POST['submit'])) {
 			$type = 'success';
 		} else {
 			$type = 'error';
-			$message = 'Failed ! It was not possible to update the MySB database.';
+			$message = Global_FailedUpdateMysbDB;
 		}
 	} else {
 		$type = 'information';
-		$message = 'Please, complete all fields.';
+		$message = Global_CompleteAllFields;
 	}
 
 	GenerateMessage('message_only', $type, $message);
