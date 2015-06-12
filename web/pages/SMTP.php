@@ -53,7 +53,7 @@ function Form() {
 	<form class="form_settings" method="post" action="">
 		<div align="center"><table border="0">
 			<tr>
-				<td>Provider :</td>
+				<td>' . MainUser_SMTP_Provider . '</td>
 				<td>
 					<select name="SmtpProvider" id="json-provider" style="width:100px; height: 28px;">';
 
@@ -70,23 +70,23 @@ function Form() {
 				</td>
 			</tr>
 			<tr>
-				<td>E-mail related to the SMTP account:</td>
+				<td>' . MainUser_SMTP_Address . '</td>
 				<td><input class="text_normal" id="SmtpEmail" name="SmtpEmail" type="text" value="' . $SmtpEmail . '" required="required" /></td>
 			</tr>			
 			<tr>
-				<td>Username :</td>
+				<td>' . MainUser_SMTP_Username . '</td>
 				<td><input class="text_normal" id="SmtpUsername" name="SmtpUsername" type="text" value="' . $SmtpUsername . '" required="required" /></td>
 			</tr>
 			<tr>
-				<td>Password :</td>
+				<td>' . MainUser_SMTP_Password . '</td>
 				<td><input class="text_normal" id="SmtpPasswd" name="SmtpPasswd" type="password" value="' . $SmtpPasswd . '" required="required" /></td>
 			</tr>
 			<tr>
-				<td>Confirm :</td>
+				<td>' . MainUser_SMTP_Confirm . '</td>
 				<td><input class="text_normal" id="SmtpPasswdConfirm" name="SmtpPasswdConfirm" type="password" value="' . $SmtpPasswd . '" required="required" /></td>
 			</tr>
 			<tr>
-				<td>Host :</td>
+				<td>' . MainUser_SMTP_Host . '</td>
 				<td>
 					<select name="SmtpHost" id="json-host" style="width:150px; height: 28px;" required="required" readonly>
 						<option>' . $SmtpHost . '</option>
@@ -95,7 +95,7 @@ function Form() {
 				</td>
 			</tr>
 			<tr>
-				<td>Port :</td>
+				<td>' . MainUser_SMTP_Port . '</td>
 				<td>
 					<select name="SmtpPort" id="json-port" style="width:60px; height: 28px;" required="required" readonly>
 						<option>' . $SmtpPort . '</option>
@@ -103,7 +103,7 @@ function Form() {
 				</td>
 			</tr>
 			<tr>
-				<td colspan="3"><input class="submit" name="submit" type="submit" value="Submit" /></td>
+				<td colspan="3"><input class="submit" name="submit" type="submit" value="' . Global_SaveChanges . '" /></td>
 			</tr>
 		</table></div>
 	</form>

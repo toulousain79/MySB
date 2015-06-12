@@ -22,7 +22,13 @@
 //
 //#################### FIRST LINE #####################################
 
-
+define('MainUser_SMTP_Provider', 'Fournisseur :');
+define('MainUser_SMTP_Address', 'E-mail li&eacute; au compte SMTP :');
+define('MainUser_SMTP_Username', 'Nom d\'utilisateur :');
+define('MainUser_SMTP_Password', 'Mot de passe :');
+define('MainUser_SMTP_Confirm', 'Confirmation :');
+define('MainUser_SMTP_Host', 'Serveur :');
+define('MainUser_SMTP_Port', 'Port :');
 
 //#################### LAST LINE ######################################
 ?>
