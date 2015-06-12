@@ -103,7 +103,7 @@ function Form() {
 				</td>
 			</tr>
 			<tr>
-				<td colspan="3"><input class="submit" name="submit" type="submit" value="' . Global_SaveChanges . '" /></td>
+				<td colspan="3"><input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' . Global_SaveChanges . '" /></td>
 			</tr>
 		</table></div>
 	</form>

@@ -22,7 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-define('MainUser_Renting_ExExample', 'Exemple:	Serveur Dedibox XC');
+define('MainUser_Renting_ExModel', 'Exemple:	Serveur Dedibox XC');
 define('MainUser_Renting_ExTVA', 'Exemple:	20');
 define('MainUser_Renting_ExPrice', 'Exemple:	19.99 (value without tax)');
 define('MainUser_Renting_ReadOnly', 'Lecture seule, pour information.');
