@@ -22,14 +22,16 @@
 //
 //#################### FIRST LINE #####################################
 
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
+
 global $MySB_DB;
 
 if(isset($_POST)==true && empty($_POST)==false) {
 	$success = true;
 
 	switch ($_POST['submit']) {
-		case "Save Changes":
-		case "Add my trackers now !":
+		case Global_SaveChanges:
+		case TrackersAdd_AddMyTrackers:
 			$count = count($_POST['input_id']);
 
 			for($i=1; $i<=$count; $i++) {
@@ -47,7 +49,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$type = 'success';
 			} else {
 				$type = 'error';
-				$message = 'Failed ! It was not possible to add trackers in the MySB database.';
+				$message = Global_FailedUpdateMysbDB;
 			}
 			break;
 		default: // delete
@@ -70,12 +72,12 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					$type = 'success';
 				} else {
 					$type = 'error';
-					$message = 'Failed ! It was not possible to delete tracker.';
+					$message = TrackersAdd_UpdateFailed;
 				}
 			}
 			break;
 	}
-	
+
 	GenerateMessage('GetTrackersCert.bsh', $type, $message);
 }
 
@@ -85,26 +87,25 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["origin" => "users", "OR
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 	<form id="myForm" class="form_settings" method="post" action="">
 		<fieldset>
-		<legend>Add your trackers here (domain, hostname, url)</legend>
+		<legend><?php echo TrackersAdd_TitleAddTrackers; ?></legend>
 			<div id="input1" class="clonedInput">
 				<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
-				Domain: <input class="input_tracker_domain" id="tracker_domain" name="tracker_domain[1]" type="text" required="required" />
-				Is active ?:	<select class="select_is_active" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required">
-									<option value="0" selected="selected">No</option>
-									<option value="1">Yes</option>
+				<?php echo TrackersAdd_TextAddress; ?>&nbsp;<input class="input_tracker_domain" id="tracker_domain" name="tracker_domain[1]" type="text" required="required" />
+				&nbsp;&nbsp;<?php echo Global_IsActive; ?>&nbsp;&nbsp;<select class="select_is_active" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required">
+									<option value="0" selected="selected"><?php echo Global_No; ?></option>
+									<option value="1"><?php echo Global_Yes; ?></option>
 								</select>
 			</div>
 
 			<div style="margin-top: 10px; margin-bottom: 20px;">
-				<input type="button" id="btnAdd" value="Add tracker domain" style="cursor: pointer;" />
-				<input type="button" id="btnDel" value="Remove last" style="cursor: pointer;" />
+				<input type="button" id="btnAdd" value="<?php echo TrackersAdd_Btn_AddNewDomain; ?>" style="cursor: pointer;" />
+				<input type="button" id="btnDel" value="<?php echo TrackersAdd_Btn_RemoveLastTracker; ?>" style="cursor: pointer;" />
 			</div>
 
-			<input class="submit" style="width:150px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="Add my trackers now !">
-			<p class="Comments">If an error occurs when you add one of your trackers, it will be deleted.<br />
-				The most common error is the verification of IP addresses associated with the host name (A type of DNS record).</p>
-			<p class="Comments">The process of adding and trackers audit is started in the background and can take several seconds to several minutes.<br />
-				The addition of the tracker is confirmed when remains in the list with the IP addresses associated with it.</p>				
+			<input class="submit" style="width:<?php echo strlen(TrackersAdd_AddMyTrackers)*10; ?>px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo TrackersAdd_AddMyTrackers; ?>">
+			<p class="Comments"><?php echo TrackersAdd_InfoAddTracker_1; ?></p>
+			<br />
+			<p class="Comments"><?php echo TrackersAdd_InfoAddTracker_2; ?></p>
 		</fieldset>
 	</form>
 </div>
@@ -113,13 +114,13 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["origin" => "users", "OR
 	<div align="center">
 		<table style="border-spacing:1;">
 			<tr>
-				<th style="text-align:center;">Domain</th>
-				<th style="text-align:center;">Address</th>
-				<th style="text-align:center;">IPv4</th>
-				<th style="text-align:center;">Ping Result</th>
-				<th style="text-align:center;">SSL ?</th>
-				<th style="text-align:center;">Active ?</th>
-				<th style="text-align:center;">Delete ?</th>
+				<th style="text-align:center;"><?php echo TrackersAdd_Table_Domain; ?></th>
+				<th style="text-align:center;"><?php echo TrackersAdd_Table_Address; ?></th>
+				<th style="text-align:center;"><?php echo TrackersAdd_Table_IPv4; ?></th>
+				<th style="text-align:center;"><?php echo TrackersAdd_Table_PingResult; ?></th>
+				<th style="text-align:center;"><?php echo TrackersAdd_Table_IsSSL; ?></th>
+				<th style="text-align:center;"><?php echo Global_IsActive; ?></th>
+				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
 			</tr>
 <?php
 $i = 0;
@@ -129,12 +130,12 @@ foreach($TrackersList as $Tracker) {
 	switch ($Tracker["is_ssl"]) {
 		case '0':
 			$is_ssl = '	<select name="is_ssl['.$i.']" style="width:60px; background-color:#FEBABC;" disabled>
-							<option value="0" selected="selected">No</option>
+							<option value="0" selected="selected">' .Global_No. '</option>
 						</select>';
 			break;
 		default:
 			$is_ssl = '	<select name="is_ssl['.$i.']" style="width:60px; background-color:#B3FEA5;" disabled>
-							<option value="1" selected="selected">Yes</option>
+							<option value="1" selected="selected">' .Global_Yes. '</option>
 						</select>';
 			break;
 	}
@@ -142,14 +143,14 @@ foreach($TrackersList as $Tracker) {
 	switch ($Tracker["is_active"]) {
 		case '0':
 			$is_active = '	<select name="is_active['.$i.']" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-								<option value="0" selected="selected" class="redText">No</option>
-								<option value="1" class="greenText">Yes</option>
+								<option value="0" selected="selected" class="redText">' .Global_No. '</option>
+								<option value="1" class="greenText">' .Global_Yes. '</option>
 							</select>';
 			break;
 		default:
 			$is_active = '	<select name="is_active['.$i.']" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-								<option value="0" class="redText">No</option>
-								<option value="1" selected="selected" class="greenText">Yes</option>
+								<option value="0" class="redText">' .Global_No. '</option>
+								<option value="1" selected="selected" class="greenText">' .Global_Yes. '</option>
 							</select>';
 			break;
 	}
@@ -166,9 +167,8 @@ foreach($TrackersList as $Tracker) {
 				<td>
 					<select style="width:140px;">
 <?php
-						//$IPv4_List = $MySB_DB->select("trackers_list_ipv4", "ipv4", ["AND" => ["id_trackers_list" => $Tracker["id_trackers_list"]]]);
 						$IPv4_List = $MySB_DB->select("trackers_list_ipv4", "ipv4", ["id_trackers_list" => $Tracker["id_trackers_list"]]);
-						foreach($IPv4_List as $IPv4) {					
+						foreach($IPv4_List as $IPv4) {
 							echo '<option>' .$IPv4. '</option>';
 						}
 ?>
@@ -176,7 +176,7 @@ foreach($TrackersList as $Tracker) {
 				</td>
 				<td>
 					<?php echo $Tracker["ping"]; ?>
-				</td>				
+				</td>
 				<td>
 					<?php echo $is_ssl; ?>
 				</td>
@@ -184,7 +184,7 @@ foreach($TrackersList as $Tracker) {
 					<?php echo $is_active; ?>
 				</td>
 				<td>
-					<input class="submit" name="delete[<?php echo $Tracker["id_trackers_list"]; ?>]" type="submit" value="Delete" />
+					<input class="submit" name="delete[<?php echo $Tracker["id_trackers_list"]; ?>]" type="submit" value="<?php echo Global_Delete; ?>" />
 				</td>
 			</tr>
 			<input class="input_id" id="input_id" name="input_id[<?php echo $i; ?>]" type="hidden" value="<?php echo $i; ?>" />
@@ -192,7 +192,7 @@ foreach($TrackersList as $Tracker) {
 } // foreach($TrackersList as $Tracker) {
 ?>
 		</table>
-		<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
+		<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">
 	</div>
 </form>
 

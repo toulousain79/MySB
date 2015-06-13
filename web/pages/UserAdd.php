@@ -22,6 +22,8 @@
 //
 //#################### FIRST LINE #####################################
 
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
+
 global $MySB_DB;
 
 function Form() {
@@ -30,20 +32,20 @@ function Form() {
 	echo '<form class="form_settings" method="post" action="">
 			<div align="center"><table border="0">
 				<tr>
-					<td>Username :</td>
+					<td>' . MainUser_UserAdd_Username . '</td>
 					<td><input name="username" type="text" /></td>
 				</tr>
 				<tr>
-					<td>User e-mail :</td>
+					<td>' . MainUser_UserAdd_UserEmail . '</td>
 					<td><input name="email" type="text" /></td>
 				</tr>
 				<tr>
-					<td>Confirm e-mail :</td>
+					<td>' . MainUser_UserAdd_ConfirmEmail . '</td>
 					<td><input name="confirm_email" type="text" /></td>
 				</tr>
 				<tr>
 					<td colspan="2">
-						<input class="submit" name="submit" type="submit" value="Add this user">
+						<input class="submit" name="submit" type="submit" value="' . MainUser_UserAdd_AddUser . '">
 					</td>
 				</tr>
 			</table></div>

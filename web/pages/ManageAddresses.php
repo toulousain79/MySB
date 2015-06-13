@@ -33,7 +33,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 	$success = true;
 
 	switch ($_POST['submit']) {
-		case "Add my addresses now !":
+		case User_ManageAddresses_Btn_AddAddress:
 			$count = count($_POST['input_id']);
 
 			for($i=1; $i<=$count; $i++) {
@@ -45,12 +45,12 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 					if (!filter_var($IPv4, FILTER_VALIDATE_IP)) {
 						$success = false;
-						$message = 'The host name does not return a valid IP address.';
+						$message = User_ManageAddresses_NotValidIp;
 					} else {
 						$last_id_address = ManageUsersAddresses($CurrentUser, $IPv4, $CleanAddress, $_POST['is_active'][$i], 'hostname');
 						if ($last_id_address == false) {
 							$success = false;
-							$message = 'Failed ! It was not possible to update hostname address in the MySB database.';
+							$message = User_ManageAddresses_HostnameUpdateFailed;
 						}
 					}
 				} else {
@@ -62,26 +62,26 @@ if(isset($_POST)==true && empty($_POST)==false) {
 						$last_id_address = ManageUsersAddresses($CurrentUser, $CleanAddress, $HostName, $_POST['is_active'][$i], 'ipv4');
 						if ($last_id_address == false) {
 							$success = false;
-							$message = 'Failed ! It was not possible to update IPv4 address in the MySB database.';
+							$message = User_ManageAddresses_Ipv4UpdateFailed;
 						}
 					} else {
 						// IP is not valid (private ?)
 						$success = false;
-						$message = 'You must enter a public IPv4 address.';	
+						$message = User_ManageAddresses_PublicIpv4Address;	
 					}
 				}
 			}
 
 			if ( $success == true ) {
 				$type = 'success';
-				$message = 'Success !<br /><br />Please, Check your addresses<br />and click on \"Save Changes\"';
+				$message = sprintf(Home_Welcome, Global_SaveChanges);
 			} else {
 				$type = 'error';
 			}
 
 			GenerateMessage('ManageAddresses', $type, $message, '');
 			break;
-		case "Save Changes":
+		case Global_SaveChanges:
 			$success = true;
 			$count = count($_POST['input_id']);
 
@@ -104,7 +104,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$type = 'success';
 			} else {
 				$type = 'error';
-				$message = 'Failed ! It was not possible to update addresses informations.';
+				$message = User_ManageAddresses_AddresseUpdateFailed;
 			}
 
 			if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ManageAddresses') ) { // by NewUser.php
@@ -112,7 +112,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 				if ( $result == 0 ) {
 					$type = 'success';
-					$message = 'Success !<br /><br />You will be redirect in 10 seconds.';
+					$message = User_ManageAddresses_MessageRedirect;
 					GenerateMessage('message_only', $type, $message, '');
 					session_start();
 					unset($_SESSION['page']);
@@ -120,11 +120,11 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					session_destroy();
 					header('Refresh: 10; URL=/');
 				} else {
-					echo 'Failed ! It was not possible to give you an access to MySB portal !';
+					echo User_ManageAddresses_NotAccessPortal;
 				}
 			} else {
 				GenerateMessage('ManageAddresses', $type, $message, '');
-				GenerateMessage('message_only', 'information', 'Remember that your dynamic IP will be checked every 5 minutes.');
+				GenerateMessage('message_only', 'information', User_ManageAddresses_RememberCheck);
 			}
 			break;
 		default: // Delete
@@ -144,7 +144,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					$type = 'success';
 				} else {
 					$type = 'error';
-					$message = 'Failed ! It was not possible to delete address.';
+					$message = User_ManageAddresses_FailedDeleteAddress;
 				}
 
 				GenerateMessage('ManageAddresses', $type, $message, '');

@@ -22,6 +22,8 @@
 //
 //#################### FIRST LINE #####################################
 
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
+
 global $MySB_DB, $CurrentUser;
 
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
@@ -30,7 +32,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 	$success = true;
 
 	switch ($_POST['submit']) {
-		case "Save Changes":
+		case Global_SaveChanges:
 			for($i=0, $count = count($_POST['tracker_domain']);$i<$count;$i++) {
 				switch ($_POST['is_active'][$i]) {
 					case "1":
@@ -52,7 +54,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$type = 'success';
 			} else {
 				$type = 'error';
-				$message = 'Failed ! It was not possible to update tracker in the MySB database.';	
+				$message = Global_FailedUpdateMysbDB;	
 			}
 			break;
 		default: //Delete
@@ -73,7 +75,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					$type = 'success';
 				} else {
 					$type = 'error';
-					$message = 'Failed ! It was not possible to delete tracker.';					
+					$message = TrackersList_UpdateFailed;
 				}
 			}
 			break;
@@ -89,19 +91,19 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["ORDER" => "trackers_lis
 	<div align="center">
 
 	<?php if ( $IsMainUser ) { ?>
-		<input class="submit" style="width:120px; margin-bottom: 10px;" name="submit" type="submit" value="Save Changes">
+		<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">
 	<?php } ?>
 
 		<table style="border-spacing:1;">
 			<tr>
-				<th style="text-align:center;">Domain</th>
-				<th style="text-align:center;">Address</th>
-				<th style="text-align:center;">Origin</th>
-				<th style="text-align:center;">IPv4</th>
-				<th style="text-align:center;">Ping Result</th>
-				<th style="text-align:center;">SSL ?</th>
-				<th style="text-align:center;">Active ?</th>
-				<th style="text-align:center;">Delete ?</th>
+				<th style="text-align:center;"><?php echo TrackersList_Table_Domain; ?></th>
+				<th style="text-align:center;"><?php echo TrackersList_Table_Address; ?></th>
+				<th style="text-align:center;"><?php echo TrackersList_Table_Origin; ?></th>
+				<th style="text-align:center;"><?php echo TrackersList_Table_IPv4; ?></th>
+				<th style="text-align:center;"><?php echo TrackersList_Table_PingResult; ?></th>
+				<th style="text-align:center;"><?php echo TrackersList_Table_IsSSL; ?></th>
+				<th style="text-align:center;"><?php echo Global_IsActive; ?></th>
+				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
 			</tr>
 <?php
 foreach($TrackersList as $Tracker) {
@@ -119,12 +121,12 @@ foreach($TrackersList as $Tracker) {
 	switch ($Tracker["is_ssl"]) {
 		case '0':
 			$is_ssl = '	<select name="is_ssl[]" style="width:60px; background-color:#FEBABC;" disabled>
-							<option value="0" selected="selected">No</option>
+							<option value="0" selected="selected">' .Global_No. '</option>
 						</select>';
 			break;
 		default:
 			$is_ssl = '	<select name="is_ssl[]" style="width:60px; background-color:#B3FEA5;" disabled>
-							<option value="1" selected="selected">Yes</option>
+							<option value="1" selected="selected">' .Global_Yes. '</option>
 						</select>';
 			break;
 	}
@@ -133,25 +135,25 @@ foreach($TrackersList as $Tracker) {
 		case '0':
 			if ( $IsMainUser ) {
 				$is_active = '	<select name="is_active[]" style="width:60px;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-									<option value="0" selected="selected" class="redText">No</option>
-									<option value="1" class="greenText">Yes</option>
+									<option value="0" selected="selected" class="redText">' .Global_No. '</option>
+									<option value="1" class="greenText">' .Global_Yes. '</option>
 								</select>';
 			} else {
 				$is_active = '	<select name="is_active[]" style="width:60px;" class="redText" disabled>
-									<option value="0" selected="selected">No</option>
-								</select>';				
+									<option value="0" selected="selected">' .Global_No. '</option>
+								</select>';
 			}
 			break;
 		default:
 			if ( $IsMainUser ) {
 				$is_active = '	<select name="is_active[]" style="width:60px;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-									<option value="0" class="redText">No</option>
-									<option value="1" selected="selected" class="greenText">Yes</option>
+									<option value="0" class="redText">' .Global_No. '</option>
+									<option value="1" selected="selected" class="greenText">' .Global_Yes. '</option>
 								</select>';
 			} else {
 				$is_active = '	<select name="is_active[]" style="width:60px;" class="greenText" disabled>
-									<option value="1" selected="selected" class="greenText">Yes</option>
-								</select>';				
+									<option value="1" selected="selected" class="greenText">' .Global_Yes. '</option>
+								</select>';
 			}
 			break;
 	}
@@ -172,7 +174,6 @@ foreach($TrackersList as $Tracker) {
 				<td>
 					<select style="width:150px;">
 <?php
-						//$IPv4_List = $MySB_DB->select("trackers_list_ipv4", "ipv4", ["AND" => ["id_trackers_list" => $Tracker["id_trackers_list"]]]);
 						$IPv4_List = $MySB_DB->select("trackers_list_ipv4", "ipv4", ["id_trackers_list" => $Tracker["id_trackers_list"]]);
 						foreach($IPv4_List as $IPv4) {
 							echo '<option>' .$IPv4. '</option>';
@@ -182,7 +183,7 @@ foreach($TrackersList as $Tracker) {
 				</td>
 				<td>
 					<?php echo $Tracker["ping"]; ?>
-				</td>				
+				</td>
 				<td>
 					<?php echo $is_ssl; ?>
 				</td>
@@ -199,7 +200,7 @@ foreach($TrackersList as $Tracker) {
 
 		</table>
 		<?php if ( $IsMainUser ) { ?>
-			<input class="submit" style="width:120px; margin-top: 10px;" name="submit" type="submit" value="Save Changes">
+			<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">
 		<?php } ?>
 	</div>
 </form>

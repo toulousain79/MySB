@@ -32,6 +32,16 @@ define('User_ManageAddresses_Table_IPv4', 'IPv4');
 define('User_ManageAddresses_Table_Hostname', 'Hostname');
 define('User_ManageAddresses_Table_CheckBy', 'Check by');
 define('User_ManageAddresses_InfoBottom', '<b>NB</b>: Dynamic IP addresses are checked every <b>5</b> minutes.<br />If an IP has changed, the database will be updated and security will be adapted accordingly.');
+define('User_ManageAddresses_NotValidIp', 'The host name does not return a valid IP address.');
+define('User_ManageAddresses_HostnameUpdateFailed', 'Failed !<br /><br />It was not possible to update hostname address in the MySB database.');
+define('User_ManageAddresses_Ipv4UpdateFailed', 'Failed !<br /><br />It was not possible to update IPv4 address in the MySB database.');
+define('User_ManageAddresses_PublicIpv4Address', 'You must enter a public IPv4 address.');
+define('User_ManageAddresses_VerifAddresseConfirm', 'Success !<br /><br />Please, Check your addresses,<br />and click on \"%s\"');
+define('User_ManageAddresses_AddresseUpdateFailed', 'Failed !<br /><br />It was not possible to update addresses informations.');
+define('User_ManageAddresses_MessageRedirect', 'Success !<br /><br />You will be redirect in 10 seconds.');
+define('User_ManageAddresses_NotAccessPortal', 'Failed !<br /><br />It was not possible to give you an access to MySB portal !');
+define('User_ManageAddresses_RememberCheck', 'Remember that your dynamic IP will be checked every 5 minutes.');
+define('User_ManageAddresses_FailedDeleteAddress', 'Failed !<br /><br />It was not possible to delete address.');
 
 //#################### LAST LINE ######################################
 ?>
