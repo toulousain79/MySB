@@ -22,13 +22,13 @@
 //
 //#################### FIRST LINE #####################################
 
-define('TrackersAdd_UpdateFailed', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de supprimer le tracker.');
-define('TrackersAdd_Table_Domain', 'Domaine');
-define('TrackersAdd_Table_Address', 'Adresse');
+define('TrackersList_UpdateFailed', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de supprimer le tracker.');
+define('TrackersList_Table_Domain', 'Domaine');
+define('TrackersList_Table_Address', 'Adresse');
 define('TrackersList_Table_Origin', 'Origine');
-define('TrackersAdd_Table_IPv4', 'IPv4');
-define('TrackersAdd_Table_PingResult', 'R&eacute;sultat du ping');
-define('TrackersAdd_Table_IsSSL', 'SSL ?');
+define('TrackersList_Table_IPv4', 'IPv4');
+define('TrackersList_Table_PingResult', 'R&eacute;sultat du ping');
+define('TrackersList_Table_IsSSL', 'SSL ?');
 
 //#################### LAST LINE ######################################
 ?>

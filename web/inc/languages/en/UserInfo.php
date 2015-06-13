@@ -22,20 +22,35 @@
 //
 //#################### FIRST LINE #####################################
 
-define('MainUser_UserAdd_Username', 'Username :');
-define('MainUser_UserAdd_UserEmail', 'User e-mail :');
-define('MainUser_UserAdd_ConfirmEmail', 'Confirm e-mail :');
-define('MainUser_UserAdd_AddUser', 'Add this user');
-define('MainUser_UserAdd_VerifError', 'Error between the typed email and verification.');
-define('MainUser_UserAdd_BadAddress', 'The given e-mail address is not valid !');
-define('MainUser_UserAdd_AlreadyUsed', 'Username already used !');
-define('MainUser_UserAdd_UserDontExist', 'Failed !<br /><br />User does not exist...');
-define('MainUser_UserAdd_Table_Username', 'Username');
-define('MainUser_UserAdd_Table_Email', 'E-mail');
-define('MainUser_UserAdd_Table_IsSftp', 'SFTP ?');
-define('MainUser_UserAdd_Table_IsSudo', 'Sudo ?');
-define('MainUser_UserAdd_YES', 'YES');
-define('MainUser_UserAdd_NO', 'NO');
+define('User_UserInfo_YES', 'YES');
+define('User_UserInfo_NO', 'NO');
+
+// Username
+define('User_UserInfo_Title_PersonnalInfo', 'User personal info');
+define('User_UserInfo_Table_Username', 'Username');
+
+// IP Address
+define('User_UserInfo_Table_IpAddress', 'IP Address');
+define('User_UserInfo_Table_NoIpAddress', 'No address given ...');
+define('User_UserInfo_Comment_IpAddress', 'Public IP addresses used for access restriction. You can manage this list <a href="/?user/manage-addresses.html">here</a>.');
+
+// Password
+define('User_UserInfo_Table_Password', 'Password');
+define('User_UserInfo_Comment_Password_1', '<a href="?user/change-password.html">You must change your password now !</a>');
+define('User_UserInfo_Comment_Password_2', 'You can change your password <a href="?user/change-password.html">here</a>.');
+
+// E-mail
+define('User_UserInfo_Table_Email', 'E-mail');
+
+// RPC
+define('User_UserInfo_Table_RPC', 'RPC');
+define('User_UserInfo_Comment_RPC', 'RPC value can be used to remotely connect to rTorrent via a smartphone. (see Seedbox-Manager)');
+
+// SFTP
+define('User_UserInfo_Table_SFTP', 'SFTP');
+
+// Sudo
+define('User_UserInfo_Table_Sudo', 'Sudo powers');
 
 //#################### LAST LINE ######################################
 ?>

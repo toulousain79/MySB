@@ -5,7 +5,8 @@
 			- Seedbox-Manager, now keep your config in administration page (v2.1 and v2.2)
 			- Nginx, some fixes (v2.2)
 			- MySB, add language select French and English (v2.2)
-			- NFS, disabling IPv6 support
+			- NFS, disabling IPv6 support (v2.2)
+			- Samba, change some settings (v2.2)
 
 	Version v2.1
 		2015/03/14

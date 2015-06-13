@@ -22,6 +22,8 @@
 //
 //#################### FIRST LINE #####################################
 
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
+
 function printUser($user) {
 	global $MySB_DB, $system_datas, $users_datas, $Port_HTTPs;
 
@@ -37,14 +39,14 @@ function printUser($user) {
 	//////////////////////
 	// User personal info
 	//////////////////////
-	echo '<tr align="left"><th colspan="3" scope="row"><h4>User personal info</h4></th></tr>';
+	echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_UserInfo_Title_PersonnalInfo . '</h4></th></tr>';
 	// Username
-	echo '<tr align="left"><th width="17%" scope="row">Username</th>';
+	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Username . '</th>';
 	echo '<td width="25%">' . $user . '</td>';
 	echo '<td> </td></tr>';
 	// IP Address
 	$IPv4_List = $MySB_DB->select("users_addresses", "ipv4", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
-	echo '<tr align="left"><th width="17%" scope="row">IP Address</th>';
+	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_IpAddress . '</th>';
 	if ( $IPv4_List != "" ) {
 		echo '<td><select style="cursor: pointer;">';
 		foreach($IPv4_List as $IPv4) {
@@ -52,52 +54,52 @@ function printUser($user) {
 		}
 		echo '</select></td>';
 	} else {
-		echo '<td>No address given ...</td>';
+		echo '<td>' . User_UserInfo_Table_NoIpAddress . '</td>';
 	}
-	echo '<td><span class="Comments">Public IP addresses used for access restriction. You can manage this list <a href="/?user/manage-addresses.html">here</a>.</span></td>';
+	echo '<td><span class="Comments">' . User_UserInfo_Comment_IpAddress . '</a>.</span></td>';
 	echo '</tr>';
 	// Password
-	echo '<tr align="left"><th width="17%" scope="row">Password</th>';
+	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Password . '</th>';
 	if ( ($UserPasswd != "") && ($users_datas["admin"] != '1') ) {
 		echo '<td>' . $UserPasswd . '</td>';
 		echo '<td  style="background-color: #FF6666; text-align: center;">';
-		echo '<span class="Comments"><a href="?user/change-password.html">You must change your password now !</a></span>';
+		echo '<span class="Comments">' . User_UserInfo_Comment_Password_1 . '</span>';
 		echo '</td>';
 	} else {
 		echo '<td>*****</td>';
-		echo '<td><span class="Comments">You can change your password <a href="?user/change-password.html">here</a>.</span></td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_Password_2 . '</span></td>';
 	}
 	echo '</tr>';
 	// E-mail
-	echo '<tr align="left"><th width="17%" scope="row">E-mail</th>';
+	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Email . '</th>';
 	echo '<td>' . $users_datas["users_email"] . '</td>';
 	echo '<td> </td></tr>';
 	// RPC
-	echo '<tr align="left"><th width="17%" scope="row">RPC</th>';
+	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_RPC . '</th>';
 	echo '<td>' . $users_datas["rpc"] . '</td>';
-	echo '<td><span class="Comments">RPC value can be used to remotely connect to rTorrent via a smartphone. (see Seedbox-Manager)</span></td></tr>';	
+	echo '<td><span class="Comments">' . User_UserInfo_Comment_RPC . '</span></td></tr>';	
 	// SFTP
 	switch ($users_datas["sftp"]) {
 		case '0':
-			$sftp = 'NO';
+			$sftp = User_UserInfo_NO;
 			break;
 		default:
-			$sftp = 'YES';
+			$sftp = User_UserInfo_YES;
 			break;
 	}
-	echo '<tr align="left"><th width="17%" scope="row">SFTP</th>';
+	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SFTP . '</th>';
 	echo '<td>' . $sftp . '</td>';
 	echo '<td> </td></tr>';
 	// Sudo
 	switch ($users_datas["sudo"]) {
 		case '0':
-			$sudo = 'NO';
+			$sudo = User_UserInfo_NO;
 			break;
 		default:
-			$sudo = 'YES';
+			$sudo = User_UserInfo_YES;
 			break;
 	}
-	echo '<tr align="left"><th width="17%" scope="row">Sudo powers</th>';
+	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Sudo . '</th>';
 	echo '<td>' . $sudo . '</td>';
 	echo '<td> </td></tr>';
 

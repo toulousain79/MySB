@@ -22,20 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-define('MainUser_UserAdd_Username', 'Username :');
-define('MainUser_UserAdd_UserEmail', 'User e-mail :');
-define('MainUser_UserAdd_ConfirmEmail', 'Confirm e-mail :');
-define('MainUser_UserAdd_AddUser', 'Add this user');
-define('MainUser_UserAdd_VerifError', 'Error between the typed email and verification.');
-define('MainUser_UserAdd_BadAddress', 'The given e-mail address is not valid !');
-define('MainUser_UserAdd_AlreadyUsed', 'Username already used !');
-define('MainUser_UserAdd_UserDontExist', 'Failed !<br /><br />User does not exist...');
-define('MainUser_UserAdd_Table_Username', 'Username');
-define('MainUser_UserAdd_Table_Email', 'E-mail');
-define('MainUser_UserAdd_Table_IsSftp', 'SFTP ?');
-define('MainUser_UserAdd_Table_IsSudo', 'Sudo ?');
-define('MainUser_UserAdd_YES', 'YES');
-define('MainUser_UserAdd_NO', 'NO');
+
 
 //#################### LAST LINE ######################################
 ?>

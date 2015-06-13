@@ -56,7 +56,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 	$success = true;
 
 	switch ($_POST['submit']) {
-		case "Add this user":
+		case MainUser_UserAdd_AddUser:
 			$username = $_POST['username'];
 			$email = $_POST['email'];
 			$confirm_email = $_POST['confirm_email'];
@@ -73,19 +73,19 @@ if(isset($_POST)==true && empty($_POST)==false) {
 							$args = "$username|$sftp|$sudo|$email";
 						} else {
 							$type = 'error';
-							$message = 'Error between the typed email and verification.';
+							$message = MainUser_UserAdd_VerifError;
 						}
 					} else {
 						$type = 'error';
-						$message = 'The given e-mail address is not valid!';
+						$message = MainUser_UserAdd_BadAddress;
 					}
 				} else {
 					$type = 'error';
-					$message = 'Username already used!';
+					$message = MainUser_UserAdd_AlreadyUsed;
 				}
 			} else {
 				$type = 'information';
-				$message = 'Please, complete all fields.';
+				$message = Global_CompleteAllFields;
 			}
 
 			GenerateMessage('MySB_CreateUser', $type, $message, $args);
@@ -101,7 +101,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 						$args = "$key";
 					} else {
 						$type = 'error';
-						$message = 'Failed ! User does not exist...';
+						$message = MainUser_UserAdd_UserDontExist;
 					}
 				}
 
@@ -118,29 +118,29 @@ $UsersList = $MySB_DB->select("users", "*", ["AND" => ["admin" => "0"]]);
 	<form class="form_settings" method="post" action="">	
 		<div align="center" style="margin-top: 50px; margin-bottom: 20px;"><table style="border-spacing:1;">
 			<tr>
-				<th style="text-align:center;">Username</th>
-				<th style="text-align:center;">E-mail</th>
-				<th style="text-align:center;">SFTP ?</th>
-				<th style="text-align:center;">Sudo ?</th>
-				<!--<th style="text-align:center;">Delete ?</th>-->
+				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Username; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Email; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_IsSftp; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_IsSudo; ?></th>
+				<!--<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>-->
 			</tr>
 
 <?php
 foreach($UsersList as $User) {
 	switch ($User["sftp"]) {
 		case '0':
-			$SFTP = 'NO';
+			$SFTP = MainUser_UserAdd_NO;
 			break;
 		default:
-			$SFTP = 'YES';
+			$SFTP = MainUser_UserAdd_YES;
 			break;
 	}
 	switch ($User["sudo"]) {
 		case '0':
-			$SUDO = 'NO';
+			$SUDO = MainUser_UserAdd_NO;
 			break;
 		default:
-			$SUDO = 'YES';
+			$SUDO = MainUser_UserAdd_YES;
 			break;
 	}		
 	
@@ -161,7 +161,7 @@ foreach($UsersList as $User) {
 					<?php echo $SUDO; ?>
 				</td>
 				<!--<td>
-					<input class="submit" name="delete[<?php echo $User["users_ident"]; ?>]" type="submit" value="Delete" />
+					<input class="submit" name="delete[<?php echo $User["users_ident"]; ?>]" type="submit" value="<?php echo Global_Delete; ?>" />
 				</td>-->
 			</tr>
 <?php

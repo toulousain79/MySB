@@ -74,7 +74,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 			if ( $success == true ) {
 				$type = 'success';
-				$message = sprintf(Home_Welcome, Global_SaveChanges);
+				$message = sprintf(User_ManageAddresses_VerifAddresseConfirm, Global_SaveChanges);
 			} else {
 				$type = 'error';
 			}

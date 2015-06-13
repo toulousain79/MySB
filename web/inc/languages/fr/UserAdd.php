@@ -22,7 +22,20 @@
 //
 //#################### FIRST LINE #####################################
 
-
+define('MainUser_UserAdd_Username', 'Nom d\'utilisateur :');
+define('MainUser_UserAdd_UserEmail', 'E-mail de l\'utilisateur :');
+define('MainUser_UserAdd_ConfirmEmail', 'Confirmation :');
+define('MainUser_UserAdd_AddUser', 'Ajouter cet utilisateur');
+define('MainUser_UserAdd_VerifError', 'Erreur entre l\'email saisie et la v&eacute;rification.');
+define('MainUser_UserAdd_BadAddress', 'L\'adresse e-mail indiqu&eacute;e n\'est pas valide !');
+define('MainUser_UserAdd_AlreadyUsed', 'Nom d\'utilisateur d&eacute;j&agrave; utilis&eacute; !');
+define('MainUser_UserAdd_UserDontExist', 'Echec !<br /><br />L\'utilisateur n\'existe pas ...');
+define('MainUser_UserAdd_Table_Username', 'Nom d\'utilisateur');
+define('MainUser_UserAdd_Table_Email', 'E-mail');
+define('MainUser_UserAdd_Table_IsSftp', 'SFTP ?');
+define('MainUser_UserAdd_Table_IsSudo', 'Sudo ?');
+define('MainUser_UserAdd_YES', 'OUI');
+define('MainUser_UserAdd_NO', 'NON');
 
 //#################### LAST LINE ######################################
 ?>
