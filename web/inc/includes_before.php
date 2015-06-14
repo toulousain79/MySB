@@ -48,6 +48,19 @@ require_once(FILE_MEDOO);
 $MySB_DB = new medoo(['database_file' => MySB_DB, 'database_name' => 'MySB']);
 $Wolf_DB = new medoo(['database_file' => Wolf_DB, 'database_name' => 'Wolf']);
 
+// Language
+header('Cache-control: private'); // IE 6 FIX
+if ( isSet($users_datas["language"]) ) {
+	$Language = $users_datas["language"];
+
+	// register the session
+	$_SESSION['Language'] = $Language;
+} else {
+	$Language = 'en';
+	$_SESSION['Language'] = $Language;
+}
+require_once(WEB_INC . '/languages/global.' . $Language . '.php');
+
 // Some Functions
 require_once(FILE_FUNCS);
 
@@ -66,19 +79,6 @@ if ( isset($CurrentUser) ) {
 
 // Services table
 $Port_HTTPs = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "NginX"]);
-
-// Language
-header('Cache-control: private'); // IE 6 FIX
-if ( isSet($users_datas["language"]) ) {
-	$Language = $users_datas["language"];
-
-	// register the session
-	$_SESSION['Language'] = $Language;
-} else {
-	$Language = 'en';
-	$_SESSION['Language'] = $Language;
-}
-require_once(WEB_INC . '/languages/global.' . $Language . '.php');
 
 //#################### LAST LINE #####################################
 ?>

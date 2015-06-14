@@ -459,7 +459,7 @@ function GenerateMessage($commands, $type, $message, $args) {
 			$timeout = 2000;
 
 			if ( !isset($message) ) {
-				$message = 'Success !';
+				$message = Global_Success;
 			}
 
 			switch ($commands) {
@@ -471,7 +471,7 @@ function GenerateMessage($commands, $type, $message, $args) {
 				default: // Used for create a new command to apply
 					$timeout = 4000;
 					if ( !isset($message) || ($message == 'Success !') )  {
-						$message = 'Success !<br /><br />Please, click on \"Apply configuration\"';
+						$message = Global_SuccessAndApply;
 					}
 
 					$priority = $MySB_DB->max("commands", "priority");

@@ -22,6 +22,8 @@
 //
 //#################### FIRST LINE #####################################
 
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
+
 if ( IfApplyConfig() > 0 ) {
 	global $MySB_DB, $CurrentUser;
 
@@ -29,10 +31,10 @@ if ( IfApplyConfig() > 0 ) {
 
 	if ( $result == 0 ) {
 		$type = 'success';
-		$message = 'Success !<br /><br />This will take effect in a moment.';
+		$message = ApplyConfig_SuccessWillTakeMoment;
 	} else {
 		$type = 'error';
-		$message = 'Error occurred when applying your configuration...';
+		$message = ApplyConfig_ErrorApply;
 	}
 
 	if ( $type == 'success' ) {

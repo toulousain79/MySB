@@ -1,5 +1,5 @@
 <?php
-// ---------------------------
+// ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,25 +22,9 @@
 //
 //#################### FIRST LINE #####################################
 
-define('Global_Home', 'Accueil');
-define('Global_Yes', 'Oui');
-define('Global_No', 'Non');
-define('Global_Delete', 'Supprimer');
-define('Global_SaveChanges', 'Sauvegarder les modifications');
-define('Global_IsDefault', 'D&eacute;faut ?');
-define('Global_Table_Delete', 'Supprimer ?');
-define('Global_IsActive', 'Active ?');
-define('Global_Comment', 'Commentaires');
-define('Global_LastUpdate', 'Derni&egrave;re mise &agrave; jour');
-define('Global_FailedUpdateMysbDB', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre à jour la base de donn&eacute;es MySB.');
-define('Global_CompleteAllFields', 'Merci de renseigner tous les champs.');
-define('Global_Success', 'Succ&egrave;s !');
-define('Global_SuccessAndApply', 'Succ&egrave;s !<br /><br />Merci de cliquer maintenant sur "Appliquer les modifications".');
-
-define('Layout_Logout', 'D&eacute;connexion');
-define('Layout_OnGithub', 'MySB sur GitHub');
-define('Layout_Wiki', 'WiKi MySB');
-define('Layout_Wolf', 'CMS Wolf');
+define('ApplyConfig_SuccessWillTakeMoment', 'Succ&egrave;s !<br /><br />Cela prendra effet dans un instant.');
+define('ApplyConfig_ErrorApply', 'Une erreur est survenue lors de l\'application des modifications...');
+define('ApplyConfig_NothingToApply', 'Il n\'y a rien &agrave; appliquer...');
 
 //#################### LAST LINE ######################################
 ?>
