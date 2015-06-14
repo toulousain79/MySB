@@ -56,7 +56,7 @@ function printUser($user) {
 	} else {
 		echo '<td>' . User_UserInfo_Table_NoIpAddress . '</td>';
 	}
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_IpAddress . '</a>.</span></td>';
+	echo '<td><span class="Comments">' . User_UserInfo_Comment_IpAddress . '</span></td>';
 	echo '</tr>';
 	// Password
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Password . '</th>';
