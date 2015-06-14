@@ -24,6 +24,8 @@ require_once '/etc/MySB/config.php';
 //
 //#################### FIRST LINE #####################################
 
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
+
 if ($_SERVER['PHP_AUTH_USER'] == '##MySB_User##') {
 	$UserName = $_GET['user'];
 	$Case = $_GET['case'];
@@ -60,35 +62,35 @@ function PrintContent($user, $Case) {
 			}
 		}
 	} else {
-		$User_IPv4 = 'No address given ...';
+		$User_IPv4 = User_UserInfoMail_NoIpAddress;
 	}
 	
 	if ( $UserPasswd != "" ) {
-		$CommentAddress = '<span class="Comments">Please, change your password. Your current IP address will be add for get a valid access.</span>';
+		$CommentAddress = '<span class="Comments">' . User_UserInfoMail_Comment_Address_1 . '</span>';
 		$CommentAddressStyle = 'style="color: #FF6666;"';
-		$CommentPassword = '<a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/NewUser.php?user=' . $user . '&passwd=' . $UserPasswd . '&page=ChangePassword">Please, change your your password now.</a>';;
+		$CommentPassword = sprintf(User_UserInfoMail_Comment_Password_1, $system_datas["hostname"], $Port_HTTPs, $user, $UserPasswd);
 		$CommentPasswordStyle = 'style="background-color: #FF6666; text-align=center"';
 	} else {
-		$CommentAddress = '<span class="Comments">Public IP addresses used for access restriction. You can manage this list <a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/manage-addresses.html">here</a>.</span>';
+		$CommentAddress = '<span class="Comments">' . sprintf(User_UserInfoMail_Comment_Address_2, $system_datas["hostname"], $Port_HTTPs) . '</span>';
 		$CommentAddressStyle = '';
-		$CommentPassword = '<span class="Comments">You can change your password <a href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/?user/change-password.html">here</a>.</span>';
+		$CommentPassword = '<span class="Comments">' . sprintf(User_UserInfoMail_Comment_Password_2, $system_datas["hostname"], $Port_HTTPs) . '</span>';
 		$CommentPasswordStyle = '';
 		$UserPasswd = '*****';
 	}
 	switch ($users_datas["sftp"]) {
 		case '0':
-			$sftp = 'NO';
+			$sftp = User_UserInfo_NO;
 			break;
 		default:
-			$sftp = 'YES';
+			$sftp = User_UserInfo_YES;
 			break;
 	}
 	switch ($users_datas["sudo"]) {
 		case '0':
-			$sudo = 'NO';
+			$sudo = User_UserInfo_NO;
 			break;
 		default:
-			$sudo = 'YES';
+			$sudo = User_UserInfo_YES;
 			break;
 	}
 
@@ -175,7 +177,7 @@ function PrintContent($user, $Case) {
 
 
 <?php if ( $DisplayGoTo == true ) { ?>
-		<tr><td colspan="3" scope="row"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>">Go to MySB Portal</a></td></tr>
+		<tr><td colspan="3" scope="row"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>"><?php echo User_UserInfoMail_GoTo; ?></a></td></tr>
 <?php } ?>
 
 <?php if ( $DisplayUserInfo == true ) { ?>
@@ -183,29 +185,29 @@ function PrintContent($user, $Case) {
 		// User personal info
 		////////////////////// -->
 		<tr align="left">
-			<th colspan="3" scope="row" id="BorderTopTitle"><h4>User personal info</h4></th>
+			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfoMail_Title_UserPersoInfo; ?></h4></th>
 		</tr>
 		<!-- // Username -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Username</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_Username; ?></th>
 			<td width="25%"><?php echo $user;?></td>
 			<td> </td>
 		</tr>
 		<!-- // IP Address -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">IP Address</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_IPAddress; ?></th>
 			<td><?php echo $User_IPv4;?></td>
 			<td <?php echo $CommentAddressStyle;?>><?php echo $CommentAddress;?></td>
 		</tr>
 		<!-- // Password -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Password</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_Password; ?></th>
 			<td><?php echo $UserPasswd;?></td>
 			<td <?php echo $CommentPasswordStyle;?>><?php echo $CommentPassword;?></td>
 		</tr>
 		<!-- // E-mail -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">E-mail</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_Email; ?></th>
 			<td><?php echo $users_datas["users_email"];?></td>
 			<td> </td>
 		</tr>
@@ -214,19 +216,19 @@ function PrintContent($user, $Case) {
 <?php if ( $DisplayUserInfoDetail == true ) { ?>
 		<!-- // RPC -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">RPC</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_RPC; ?></th>
 			<td><?php echo $users_datas["rpc"];?></td>
-			<td><span class="Comments">RPC value can be used to remotely connect to rTorrent via a smartphone. (see Seedbox-Manager)</span></td>		
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_RPC; ?></span></td>		
 		</tr>
 		<!-- // SFTP -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">SFTP</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_SFTP; ?></th>
 			<td><?php echo $sftp;?></td>
 			<td> </td>
 		</tr>	
 		<!-- // Sudo -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Sudo powers</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_SUDO; ?></th>
 			<td><?php echo $sudo;?></td>
 			<td> </td>
 		</tr>
@@ -235,117 +237,117 @@ function PrintContent($user, $Case) {
 		// Directories
 		////////////////////// -->
 		<tr align="left">
-			<th colspan="3" scope="row" id="BorderTopTitle"><h4>Directories</h4></th>
+			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfoMail_Title_Directories; ?></h4></th>
 		</tr>
 		<!-- // Home -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Home</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_Home; ?></th>
 			<td><?php echo $users_datas["home_dir"];?></td>
 			<td> </td>
 		</tr>		
 		<!-- // Session dir -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Session dir</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_Session; ?></th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent/.session</td>
-			<td><span class="Comments">The session directory allows rTorrent to save the progess of your torrents.</span></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_Session; ?></span></td>
 		</tr>		
 		<!-- // Complete dir -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Complete dir</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_CompleteDir; ?></th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent/complete</td>
-			<td><span class="Comments">Completed files will be move to this directory via Autotools in ruTorrent.</span></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_CompleteDir; ?></span></td>
 		</tr>
 		<!-- // Incomplete dir -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Incomplete dir</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_IncompleteDir; ?></th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent/incomplete</td>
-			<td><span class="Comments">Partial downloads are stored here.</span></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_IncompleteDir; ?></span></td>
 		</tr>
 		<!-- // Torrents dir -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Torrents dir</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_TorrentDir; ?></th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent/torrents</td>
-			<td><span class="Comments">All your torrents files are stored here.</span></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_TorrentDir; ?></span></td>
 		</tr>			
 		<!-- // Watch dir -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Watch dir</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_WatchDir; ?></th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent/watch</td>
-			<td><span class="Comments">Saving a torrent file into this directory will automatically start the download via Autotools in ruTorrent.</span></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_WatchDir; ?></span></td>
 		</tr>
 		<!-- // Share dir -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Share dir</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_ShareDir; ?></th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent/share</td>
-			<td><span class="Comments">The "share" folder is accessible by all users on the server. You can easily share what you want with any user.</span></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_ShareDir; ?></span></td>
 		</tr>
 
 		<!-- //////////////////////
 		// Ports
 		////////////////////// -->
 		<tr align="left">
-			<th colspan="3" scope="row" id="BorderTopTitle"><h4>Ports</h4></th>
+			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfoMail_Title_Ports; ?></h4></th>
 		</tr>
 		<!-- // SFTP Port -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">SFTP port</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_SftpPort; ?></th>
 			<td><?php echo $Port_SSH;?></td>
-			<td> </td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_SftpPort; ?></span></td>
 		</tr>
 		<!-- // FTPs Port -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">FTPs port (TLS)</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_FtpsPort; ?></th>
 			<td><?php echo $Port_FTP;?></td>
-			<td><span class="Comments">It is necessary to configure your FTP client software by specifying this port number. You must select "FTPS" and "explicit TLS connection".</span></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_FtpsPort; ?></span></td>
 		</tr>
 		<!-- // SCGI Port -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">SCGI port</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_ScgiPort; ?></th>
 			<td><?php echo $users_datas["scgi_port"];?></td>
-			<td><span class="Comments">This value is used in conjunction with RPC.</span></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_ScgiPort; ?></span></td>
 		</tr>
 		<!-- // rTorrent Port -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">rTorrent port</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_RtorrentPort; ?></th>
 			<td><?php echo $users_datas["rtorrent_port"];?></td>
-			<td> </td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_RtorrentPort; ?></span></td>
 		</tr>
 
 		<!-- //////////////////////
 		// OpenVPN
 		////////////////////// -->
 		<tr align="left">
-			<th colspan="3" scope="row" id="BorderTopTitle"><h4>OpenVPN</h4></th>
+			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfoMail_Title_OpenVPN; ?></h4></th>
 		</tr>
 		<!-- // Server IP GW -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Server IP GW</th>
-			<td>10.0.0.1</td>
-			<td><span class="Comments">Server IP with redirect traffic (TUN interface).</span></td>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_SrvIpGw; ?></th>
+			<td><?php echo User_UserInfoMail_SrvIpGw; ?></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_SrvIpGw; ?></span></td>
 		</tr>
 		<!-- // Server IP -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Server IP</th>
-			<td>10.0.1.1</td>
-			<td><span class="Comments">Server IP without redirect traffic (TUN interface).</span></td>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_SrvIp; ?></th>
+			<td><?php echo User_UserInfoMail_SrvIp; ?></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_SrvIp; ?></span></td>
 		</tr>
 		<!-- // Server IP bridged -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Server IP bridged</th>
-			<td>10.0.2.1</td>
-			<td><span class="Comments">Server IP without redirect traffic (TAP interface).</span></td>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_SrvIpBridge; ?></th>
+			<td><?php echo User_UserInfoMail_SrvIpBridge; ?></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_SrvIpBridge; ?></span></td>
 		</tr>		
 		<!-- // Samba share -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Samba share</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_SambaShare; ?></th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent</td>
-			<td><span class="Comments">mount - [Destination_directory] -t cifs -o noatime,nodiratime,UNC=//[10.0.x.1]/<?php echo $user;?>,username=<?php echo $user;?>,password=[your_password]</span></td>
+			<td><span class="Comments"><?php echo sprintf(User_UserInfoMail_Comment_SambaShare, $user, $user); ?></span></td>
 		</tr>
 		<!-- // NFS share -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">NFS share</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_NfsShare; ?></th>
 			<td><?php echo $users_datas["home_dir"];?>/rtorrent</td>
-			<td><span class="Comments">mount -t nfs [10.0.x.1]:/home/<?php echo $user;?>/rtorrent [Destination_directory] [-o vers=3,nolock]</span></td>
+			<td><span class="Comments"><?php echo sprintf(User_UserInfoMail_Comment_NfsShare, $user, $user); ?></span></td>
 		</tr>
 <?php } ?>
 
@@ -354,58 +356,58 @@ function PrintContent($user, $Case) {
 		// Links (Normal user)
 		////////////////////// -->
 		<tr align="left">
-			<th colspan="3" scope="row" id="BorderTopTitle"><h4>Links (Normal user)</h4></th>
+			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfoMail_Title_LinkNormal; ?></h4></th>
 		</tr>
 		
 		
 <?php if ( $DisplayLinks == true ) { ?>
 		<!-- // User Info -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">User Info</th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/user-infos.html"><span class="Comments">Current information page avaible on MySB portal.</span></a></td>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_UserInfo; ?></th>
+			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/user-infos.html"><span class="Comments"><?php echo User_UserInfoMail_Comment_UserInfo; ?></span></a></td>
 		</tr>
 		<!-- // Change password -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Change password</th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/change-password.html"><span class="Comments">You can change your password here.</span></a></td>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_ChangePass; ?></th>
+			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/change-password.html"><span class="Comments"><?php echo User_UserInfoMail_Comment_ChangePass; ?></span></a></td>
 		</tr>
 		<!-- // Manage Addresses -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Manage Addresses</th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/manage-addresses.html"><span class="Comments">Add here your IPs addresses and/or your dynamic DNS to add to whitelist.</span></a></td>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_ManageAddresses; ?></th>
+			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/manage-addresses.html"><span class="Comments"><?php echo User_UserInfoMail_Comment_ManageAddresses; ?></span></a></td>
 		</tr>
 
 		<!-- // ruTorrent -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">ruTorrent</th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ru"><span class="Comments">ruTorrent interface</span></a></td>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_ruTorrent; ?></th>
+			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ru"><span class="Comments"><?php echo User_UserInfoMail_Comment_ruTorrent; ?></span></a></td>
 		</tr>
 		<!-- // Seedbox-Manager -->
 	<?php if ( $ManagerInstalled == '1' ) { ?>
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Seedbox-Manager</th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/sm"><span class="Comments">Seedbox-Manager interface</span></a></td>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_Manager; ?></th>
+			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/sm"><span class="Comments"><?php echo User_UserInfoMail_Comment_Manager; ?></span></a></td>
 		</tr>
 	<?php } ?>
 
 	<?php if ( $OpenVpnInstalled == '1' ) { ?>
 		<!-- // OpenVPN -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">OpenVPN config</th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/openvpn-config-file.html"><span class="Comments">Download here configuration files for OpenVPN.</span></a></td>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_OpenVpnConfig; ?></th>
+			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/openvpn-config-file.html"><span class="Comments"><?php echo User_UserInfoMail_Comment_OpenVpnConfig; ?></span></a></td>
 		</tr>
 		<!-- // OpenVPN GUI -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">OpenVPN GUI</th>
-			<td colspan="2"><a target="_blank" href="https://openvpn.net/index.php/open-source/downloads.html"><span class="Comments">Download here GUI for OpenVPN.</span></a></td>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_OpenVpnGui; ?></th>
+			<td colspan="2"><a target="_blank" href="https://openvpn.net/index.php/open-source/downloads.html"><span class="Comments"><?php echo User_UserInfoMail_Comment_OpenVpnGui; ?></span></a></td>
 		</tr>
 	<?php } ?>
 
 	<?php if ( $CakeboxDatas["is_installed"] == '1' ) { ?>
 		<!-- // CakeBox Light -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">CakeBox Light</th>
-			<td colspan="2"><a target="_blank" href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/cb/"><span class="Comments">Play here your media.</span></a></td>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_Cakebox; ?></th>
+			<td colspan="2"><a target="_blank" href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/cb/"><span class="Comments"><?php echo User_UserInfoMail_Comment_Cakebox; ?></span></a></td>
 		</tr>
 	<?php } ?>
 
@@ -414,8 +416,8 @@ function PrintContent($user, $Case) {
 
 		<!-- // Force IP address -->
 		<tr align="left">
-			<th width="15%" scope="row" style="color: #FF6666;" id="BorderTopTitle">Force IP address</th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ForceAddress.php?page=ManageAddresses"><span class="Comments">Force the addition of your current IP address in case of problems. (You need a valid password)</span></a></td>
+			<th width="15%" scope="row" style="color: #FF6666;" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_ForceIP; ?></th>
+			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ForceAddress.php?page=ManageAddresses"><span class="Comments"><?php echo User_UserInfoMail_Comment_ForceIP; ?></span></a></td>
 		</tr>
 	
 	<?php if ( $users_datas["admin"] == '1' ) { ?>
@@ -424,40 +426,40 @@ function PrintContent($user, $Case) {
 		// Links (Main user)
 		////////////////////// -->
 		<tr align="left">
-			<th colspan="3" scope="row" id="BorderTopTitle"><h4>Links (Main user)</h4></th>
+			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfoMail_Title_LinkMain; ?></h4></th>
 		</tr>
 		<!-- // Webmin -->		
 		<?php if ( $WebminDatas["is_installed"] == '1' ) { ?>
 			<tr align="left">
-				<th width="15%" scope="row" id="BorderTopTitle">Webmin</th>
-				<td colspan="2"><a target="_blank" href="https://<?php echo $system_datas["hostname"];?>:<?php echo $WebminDatas["port_tcp1"];?>"><span class="Comments">Admin interface for manage your server.</span></a></td>
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_Webmin; ?></th>
+				<td colspan="2"><a target="_blank" href="https://<?php echo $system_datas["hostname"];?>:<?php echo $WebminDatas["port_tcp1"];?>"><span class="Comments"><?php echo User_UserInfoMail_Comment_Webmin; ?></span></a></td>
 			</tr>
 		<?php } ?>
 		<!-- // Logs -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Logs</th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?main-user/logs.html"><span class="Comments">You can check logs of MySB install and security.</span></a></td>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_Logs; ?></th>
+			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?main-user/logs.html"><span class="Comments"><?php echo User_UserInfoMail_Comment_Logs; ?></span></a></td>
 		</tr>
 		<!-- // Renting infos -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Renting infos</th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?main-user/renting-infos.html"><span class="Comments">Manage your renting informations.</span></a></td>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_Renting; ?></th>
+			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?main-user/renting-infos.html"><span class="Comments"><?php echo User_UserInfoMail_Comment_Renting; ?></span></a></td>
 		</tr>
 		<!-- // Trackers -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Trackers list</th>
-			<td colspan="2"><span class="Comments"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?trackers/add-new-trackers.html">add new tracker here</a>.</span></td>
-		</tr>		
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_Trackers; ?></th>
+			<td colspan="2"><span class="Comments"><?php echo sprintf(User_UserInfoMail_Comment_Trackers, $system_datas["hostname"], $Port_HTTPs, $system_datas["hostname"], $Port_HTTPs); ?></span></td>
+		</tr>
 		<!-- // Blocklists -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Blocklists</th>
-			<td colspan="2"><span class="Comments">You can manage <a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a> AND <a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a>.</span></td>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_Blocklists; ?></th>
+			<td colspan="2"><span class="Comments"><?php echo User_UserInfoMail_Comment_Blocklists; ?></span></td>
 		</tr>
 		<?php if ( $DNScryptDatas["is_installed"] == '1' ) { ?>
 			<!-- // DNScrypt-proxy -->
 			<tr align="left">
-				<th width="15%" scope="row" id="BorderTopTitle">DNScrypt-proxy</th>
-				<td colspan="2"><span class="Comments">You can manage <a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?main-user/dnscrypt-proxy.html">Select your resolver here.</a></span></td>
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_DNScrypt; ?></th>
+				<td colspan="2"><span class="Comments"><?php echo User_UserInfoMail_Comment_DNScrypt; ?></span></td>
 			</tr>
 		<?php } ?>
 	
@@ -468,61 +470,61 @@ function PrintContent($user, $Case) {
 		// SSH commands available
 		////////////////////// -->
 		<tr align="left">
-			<th colspan="3" scope="row" id="BorderTopTitle"><h4>SSH commands available</h4></th>
+			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfoMail_Title_SSHcommand; ?></h4></th>
 		</tr>
 		<!-- // Users Management -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Users Management</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_UserManage; ?></th>
 			<td width="25%">MySB_CreateUser</td>
-			<td> </td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_MySB_CreateUser; ?></span></td>
 		</tr>
 		<tr align="left">
 			<th width="15%" scope="row"> </th>
 			<td width="25%">MySB_ChangeUserPassword</td>
-			<td><span class="Comments"><pre>MySB_ChangeUserPassword <username> <new_password></pre></span></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_MySB_ChangeUserPassword; ?></span></td>
 		</tr>
 		<tr align="left">
 			<th width="15%" scope="row"> </th>
 			<td width="25%">MySB_DeleteUser</td>
-			<td> </td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_MySB_DeleteUser; ?></span></td>
 		</tr>
 		<!-- // SeedBox Management -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">SeedBox Management</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_SeedboxManage; ?></th>
 			<td width="25%">MySB_RefreshMe</td>
-			<td><span class="Comments"><pre>MySB_RefreshMe (rutorrent|manager|cakebox|loadavg|all)</pre></span></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_MySB_RefreshMe; ?></span></td>
 		</tr>
 		<tr align="left">
 			<th width="15%" scope="row"> </th>
 			<td width="25%">MySB_UpgradeSystem</td>
-			<td><span class="Comments">Performs an update + upgrade + update-ca-certificates</span></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_MySB_UpgradeSystem; ?></span></td>
 		</tr>
 		<tr align="left">
 			<th width="15%" scope="row"> </th>
 			<td width="25%">MySB_SecurityRules</td>
-			<td><span class="Comments"><pre>MySB_SecurityRules (new|clean)</pre></span></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_MySB_SecurityRules; ?></span></td>
 		</tr>
 		<!-- // MySB Management -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle">MySB Management</th>
 			<td width="25%">MySB_GitHubRepoUpdate</td>
-			<td><span class="Comments">Updates the repository of the current version of MySB. (CRON every 2 days)</span></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_MySB_GitHubRepoUpdate; ?></span></td>
 		</tr>
 		<tr align="left">
 			<th width="15%" scope="row"> </th>
 			<td width="25%">MySB_UpgradeMe</td>
-			<td><span class="Comments">Enables migration to a new version of MySB.</pre></span></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_MySB_UpgradeMe; ?></span></td>
 		</tr>
 		<!-- // Main scripts -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Main scripts</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_MainScript; ?></th>
 			<td width="25%"><?php echo MYSB_ROOT;?>/scripts/BlocklistsRTorrent.bsh</td>
-			<td><span class="Comments">Use this for generate rTorrent blocklist. (CRON every day)</span></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_BlocklistsRTorrent; ?></span></td>
 		</tr>
 		<tr align="left">
 			<th width="15%" scope="row"> </th>
 			<td width="25%"><?php echo MYSB_ROOT;?>/scripts/GetTrackersCert.bsh</td>
-			<td><span class="Comments">Get all SSL certificates for all trackers. This script is start every time you add/edit trackers list in MySB portal.</span></td>
+			<td><span class="Comments"><?php echo User_UserInfoMail_Comment_GetTrackersCert; ?></span></td>
 		</tr>
 <?php } ?>
 	
@@ -531,36 +533,36 @@ function PrintContent($user, $Case) {
 		// Price and Payment info
 		////////////////////// -->
 		<tr align="left">
-			<th colspan="3" scope="row" id="BorderTopTitle"><h4>Price and Payment info</h4></th>
+			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfoMail_Title_Renting; ?></h4></th>
 		</tr>
 		<!-- // Server model -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Server model</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_SrvModel; ?></th>
 			<td><?php echo $RentingDatas["model"];?></td>
 			<td> </td>
 		</tr>
 		<!-- // Global cost -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Global cost</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_GlobalCost; ?></th>
 			<td><?php echo $RentingDatas["global_cost"];?></td>
 			<td> </td>
 		</tr>
 		<!-- // TVA -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">TVA</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_TVA; ?></th>
 			<td><?php echo $RentingDatas["tva"];?></td>
 			<td> </td>
 		</tr>
 		<!-- // Total users -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">Total users</th>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_TotalUsers; ?></th>
 			<td><?php echo $RentingDatas["nb_users"];?></td>
 			<td> </td>
 		</tr>		
 		<!-- // TOTAL per users -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">TOTAL per users</th>
-			<td><b><span class="FontInRed"><?php echo $RentingDatas["price_per_users"];?></span></b> &euro; TTC / month</td>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfoMail_Table_TotalPerUser; ?></th>
+			<td><b><span class="FontInRed"><?php echo $RentingDatas["price_per_users"];?></span></b><?php echo User_UserInfoMail_Table_TotalPerUser_Plus; ?></td>
 			<td> </td>
 		</tr>		
 	<?php } ?>
@@ -609,7 +611,7 @@ if ( (CountingUsers() >= 1) && (GetVersion() != "") ) {
 	PrintContent($UserName, $Case);
 	echo '</body></html>';
 } else {
-	echo '<p><h1 class="FontInRed">MySB is not installed !</h1></p>';
+	echo '<p><h1 class="FontInRed">' . User_UserInfoMail_NotInstalled . '</h1></p>';
 }
 
 // ----------------------------------

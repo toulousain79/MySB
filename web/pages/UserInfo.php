@@ -128,9 +128,9 @@ function printUser($user) {
 	echo '<td>' . $users_datas["home_dir"] . '/rtorrent/torrents</td>';
 	echo '<td> </td></tr>';
 	// Watch dir
-	echo '<tr align="left"><th width="17%" scope="row">Watch dir</th>';
+	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_WatchDir . '</th>';
 	echo '<td>' . $users_datas["home_dir"] . '/rtorrent/watch</td>';
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_TorrentDir . '</span></td></tr>';
+	echo '<td><span class="Comments">' . User_UserInfo_Comment_WatchDir . '</span></td></tr>';
 	// Share dir
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_ShareDir . '</th>';
 	echo '<td>' . $users_datas["home_dir"] . '/rtorrent/share</td>';
@@ -245,7 +245,7 @@ function printUser($user) {
 		echo '<td colspan="2"><a href="?main-user/renting-infos.html"><span class="Comments">' . User_UserInfo_Comment_Renting . '</span></a></td></tr>';
 		// Trackers
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Trackers . '</th>';
-		echo '<td colspan="2"><span class="Comments">' . User_UserInfo_Comment_Trackers . '</span></td></tr>';
+		echo '<td colspan="2"><span class="Comments">' . sprintf(User_UserInfo_Comment_Trackers, $system_datas["hostname"], $Port_HTTPs, $system_datas["hostname"], $Port_HTTPs) . '</span></td></tr>';
 		// Blocklists
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Blocklists . '</th>';
 		echo '<td colspan="2"><span class="Comments">' . User_UserInfo_Comment_Blocklists . '</span></td></tr>';
@@ -277,6 +277,9 @@ function printUser($user) {
 		echo '<td>MySB_RefreshMe</td>';
 		echo '<td><span class="Comments">' . User_UserInfo_Comment_MySB_RefreshMe . '</span></td></tr>';
 		echo '<tr align="left"><th width="17%" scope="row"> </th>';
+		echo '<td>MySB_UpgradeMe</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_MySB_UpgradeMe . '</span></td></tr>';
+		echo '<tr align="left"><th width="17%" scope="row"> </th>';		
 		echo '<td>MySB_UpgradeSystem</td>';
 		echo '<td><span class="Comments">' . User_UserInfo_Comment_MySB_UpgradeSystem . '</span></td></tr>';
 		echo '<tr align="left"><th width="17%" scope="row"> </th>';

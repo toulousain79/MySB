@@ -60,6 +60,7 @@ define('User_UserInfo_Comment_Sudo', '');
 define('User_UserInfo_Title_Directories', 'Directories');
 // Home
 define('User_UserInfo_Table_Home', 'Home');
+// Session dir
 define('User_UserInfo_Table_Session', 'Session dir');
 define('User_UserInfo_Comment_Session', 'The session directory allows rTorrent to save the progress of your torrents.');
 // Complete dir
@@ -71,6 +72,9 @@ define('User_UserInfo_Comment_IncompleteDir', 'Partial downloads are stored here
 // Torrents dir
 define('User_UserInfo_Table_TorrentDir', 'Torrents dir');
 define('User_UserInfo_Comment_TorrentDir', 'Saving a torrent file to this directory will automatically start the download.');
+// Watch dir
+define('User_UserInfo_Table_WatchDir', 'Watch dir');
+define('User_UserInfo_Comment_WatchDir', 'Saving a torrent file into this directory will automatically start the download ruTorrent.');
 // Share dir
 define('User_UserInfo_Table_ShareDir', 'Share dir');
 define('User_UserInfo_Comment_ShareDir', 'The "share" folder is accessible by all users on the server. You can easily share what you want with any user. You can use File Manager plugin available in ruTorrent, use sFTP/FTPs or Samba.');
@@ -159,13 +163,13 @@ define('User_UserInfo_Table_Renting', 'Renting infos');
 define('User_UserInfo_Comment_Renting', 'Manage your renting informations.');
 // Trackers
 define('User_UserInfo_Table_Trackers', 'Trackers list');
-define('User_UserInfo_Comment_Trackers', 'Manage your trackers here.</a> You can also <a href="?trackers/add-new-trackers.html">add new tracker here</a>.');
+define('User_UserInfo_Comment_Trackers', '<a href="https://%s:%s/?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="https://%s:%s/?trackers/add-new-trackers.html">add new tracker here</a>.');
 // Blocklists
 define('User_UserInfo_Table_Blocklists', 'Blocklists');
 define('User_UserInfo_Comment_Blocklists', 'You can manage <a href="?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a> AND <a href="?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a>.');
 // DNScrypt-proxy
 define('User_UserInfo_Table_DNScrypt', 'DNScrypt-proxy');
-define('User_UserInfo_Comment_DNScrypt', 'Select your resolver here.');
+define('User_UserInfo_Comment_DNScrypt', 'Informations on resolvers used.');
 
 //////////////////////
 // SSH commands available
@@ -179,6 +183,7 @@ define('User_UserInfo_Comment_MySB_DeleteUser', '');
 // SeedBox Management
 define('User_UserInfo_Table_SeedboxManage', 'SeedBox Management');
 define('User_UserInfo_Comment_MySB_RefreshMe', '<pre>MySB_RefreshMe (rutorrent|manager|cakebox|loadavg|all)</pre>');
+define('User_UserInfo_Comment_MySB_UpgradeMe', 'Enables migration to a new version of MySB.');
 define('User_UserInfo_Comment_MySB_UpgradeSystem', 'Performs an update + upgrade + update-ca-certificates');
 define('User_UserInfo_Comment_MySB_GitHubRepoUpdate', 'Updates the repository of the current version of MySB. (CRON every 2 days)');
 define('User_UserInfo_Comment_MySB_SecurityRules', '<pre>MySB_SecurityRules (new|clean)</pre>');
