@@ -39,10 +39,10 @@ if (isset($_POST['submit'])) {
 
 	if ( $success == true ) {
 		$type = 'success';
-		$message = BlockLists_rTorrent_Success;
+		$message = MainUser_BlockLists_rTorrent_Success;
 	} else {
 		$type = 'error';
-		$message = BlockLists_rTorrent_Failed;
+		$message = MainUser_BlockLists_rTorrent_Failed;
 	}
 
 	GenerateMessage('BlocklistsRTorrent.bsh', $type, $message, '');
@@ -58,8 +58,8 @@ $BlockList = $MySB_DB->select("blocklists", "*", ["rtorrent_list[!]" => ""]);
 <?php } ?>
 		<table style="border-spacing:1;">
 			<tr>
-				<th style="text-align:center;"><?php echo BlockLists_rTorrent_Table_Name; ?></th>
-				<!--<th style="text-align:center;"><?php echo BlockLists_rTorrent_Table_Blocklist; ?></th>-->
+				<th style="text-align:center;"><?php echo MainUser_BlockLists_rTorrent_Table_Name; ?></th>
+				<!--<th style="text-align:center;"><?php echo MainUser_BlockLists_rTorrent_Table_Blocklist; ?></th>-->
 				<th style="text-align:center;"><?php echo Global_Comment; ?></th>
 				<th style="text-align:center;"><?php echo Global_LastUpdate; ?></th>
 				<th style="text-align:center;"><?php echo Global_IsDefault; ?></th>

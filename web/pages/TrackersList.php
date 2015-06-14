@@ -75,7 +75,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					$type = 'success';
 				} else {
 					$type = 'error';
-					$message = TrackersList_UpdateFailed;
+					$message = User_TrackersAdd_Btn_RemoveLastTracker;
 				}
 			}
 			break;
@@ -96,12 +96,12 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["ORDER" => "trackers_lis
 
 		<table style="border-spacing:1;">
 			<tr>
-				<th style="text-align:center;"><?php echo TrackersList_Table_Domain; ?></th>
-				<th style="text-align:center;"><?php echo TrackersList_Table_Address; ?></th>
-				<th style="text-align:center;"><?php echo TrackersList_Table_Origin; ?></th>
-				<th style="text-align:center;"><?php echo TrackersList_Table_IPv4; ?></th>
-				<th style="text-align:center;"><?php echo TrackersList_Table_PingResult; ?></th>
-				<th style="text-align:center;"><?php echo TrackersList_Table_IsSSL; ?></th>
+				<th style="text-align:center;"><?php echo User_TrackersList_Table_Domain; ?></th>
+				<th style="text-align:center;"><?php echo User_TrackersList_Table_Address; ?></th>
+				<th style="text-align:center;"><?php echo User_TrackersList_Table_Origin; ?></th>
+				<th style="text-align:center;"><?php echo User_TrackersList_Table_IPv4; ?></th>
+				<th style="text-align:center;"><?php echo User_TrackersList_Table_PingResult; ?></th>
+				<th style="text-align:center;"><?php echo User_TrackersList_Table_IsSSL; ?></th>
 				<th style="text-align:center;"><?php echo Global_IsActive; ?></th>
 				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
 			</tr>

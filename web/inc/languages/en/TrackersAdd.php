@@ -22,19 +22,19 @@
 //
 //#################### FIRST LINE #####################################
 
-define('TrackersAdd_UpdateFailed', 'Failed !<br /><br />It was not possible to delete tracker.');
-define('TrackersAdd_AddMyTrackers', 'Add my trackers now !');
-define('TrackersAdd_TitleAddTrackers', 'Add your trackers here');
-define('TrackersAdd_TextAddress', 'Tracker <i>(domain, hostname or URL)</i>:');
-define('TrackersAdd_Btn_AddNewDomain', 'Add my trackers');
-define('TrackersAdd_Btn_RemoveLastTracker', 'Remove last tracker');
-define('TrackersAdd_InfoAddTracker_1', 'If an error occurs when you add one of your trackers, it will <b>not be added</b>.<br />The most common error is the verification of IP addresses associated with the host name (A type of DNS record).');
-define('TrackersAdd_InfoAddTracker_2', 'The process of adding and trackers audit is started in the background and can take <b>several seconds</b> to <b>several minutes</b>.<br />The addition of a tracker is <b>confirmed</b> when it <b>remains</b> in the list <b>with</b> the IP addresses associated with it.');
-define('TrackersAdd_Table_Domain', 'Domain');
-define('TrackersAdd_Table_Address', 'Address');
-define('TrackersAdd_Table_IPv4', 'IPv4');
-define('TrackersAdd_Table_PingResult', 'Ping Result');
-define('TrackersAdd_Table_IsSSL', 'SSL ?');
+define('MainUser_TrackersAdd_UpdateFailed', 'Failed !<br /><br />It was not possible to delete tracker.');
+define('MainUser_TrackersAdd_AddMyTrackers', 'Add my trackers now !');
+define('MainUser_TrackersAdd_Title_AddTrackers', 'Add your trackers here');
+define('MainUser_TrackersAdd_TextAddress', 'Tracker <i>(domain, hostname or URL)</i>:');
+define('MainUser_TrackersAdd_Btn_AddNewDomain', 'Add my trackers');
+define('MainUser_TrackersAdd_Btn_RemoveLastTracker', 'Remove last tracker');
+define('MainUser_TrackersAdd_InfoAddTracker_1', 'If an error occurs when you add one of your trackers, it will <b>not be added</b>.<br />The most common error is the verification of IP addresses associated with the host name (A type of DNS record).');
+define('MainUser_TrackersAdd_InfoAddTracker_2', 'The process of adding and trackers audit is started in the background and can take <b>several seconds</b> to <b>several minutes</b>.<br />The addition of a tracker is <b>confirmed</b> when it <b>remains</b> in the list <b>with</b> the IP addresses associated with it.');
+define('MainUser_TrackersAdd_Table_Domain', 'Domain');
+define('MainUser_TrackersAdd_Table_Address', 'Address');
+define('MainUser_TrackersAdd_Table_IPv4', 'IPv4');
+define('MainUser_TrackersAdd_Table_PingResult', 'Ping Result');
+define('MainUser_TrackersAdd_Table_IsSSL', 'SSL ?');
 
 //#################### LAST LINE ######################################
 ?>

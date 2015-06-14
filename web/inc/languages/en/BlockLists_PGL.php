@@ -22,10 +22,10 @@
 //
 //#################### FIRST LINE #####################################
 
-define('BlockLists_PGL_Success', 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.');
-define('BlockLists_PGL_Failed', 'Failed ! It was not possible to update the MySB database.');
-define('BlockLists_PGL_Table_Name', 'Name');
-define('BlockLists_PGL_Table_Blocklist', 'Blocklist');
+define('MainUser_BlockLists_PGL_Success', 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.');
+define('MainUser_BlockLists_PGL_Failed', 'Failed ! It was not possible to update the MySB database.');
+define('MainUser_BlockLists_PGL_Table_Name', 'Name');
+define('MainUser_BlockLists_PGL_Table_Blocklist', 'Blocklist');
 
 //#################### LAST LINE ######################################
 ?>

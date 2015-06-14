@@ -45,7 +45,7 @@ if ( $IsInstalled == '1' ) {
 			$message = BlockLists_PGL_Success;
 		} else {
 			$type = 'error';
-			$message = BlockLists_PGL_Failed;
+			$message = MainUser_BlockLists_PGL_Failed;
 		}
 
 		GenerateMessage('Blocklists_PeerGuardian' ,$type, $message, '');
@@ -61,8 +61,8 @@ if ( $IsInstalled == '1' ) {
 <?php } ?>
 			<table style="border-spacing:1;">
 				<tr>
-					<th style="text-align:center;"><?php echo BlockLists_PGL_Table_Name; ?></th>
-					<!--<th style="text-align:center;"><?php echo BlockLists_PGL_Table_Blocklist; ?></th>-->
+					<th style="text-align:center;"><?php echo MainUser_BlockLists_PGL_Table_Name; ?></th>
+					<!--<th style="text-align:center;"><?php echo MainUser_BlockLists_PGL_Table_Blocklist; ?></th>-->
 					<th style="text-align:center;"><?php echo Global_Comment; ?></th>
 					<th style="text-align:center;"><?php echo Global_LastUpdate; ?></th>
 					<th style="text-align:center;"><?php echo Global_IsDefault; ?></th>

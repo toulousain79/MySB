@@ -31,7 +31,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 	switch ($_POST['submit']) {
 		case Global_SaveChanges:
-		case TrackersAdd_AddMyTrackers:
+		case MainUser_TrackersAdd_AddMyTrackers:
 			$count = count($_POST['input_id']);
 
 			for($i=1; $i<=$count; $i++) {
@@ -72,7 +72,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					$type = 'success';
 				} else {
 					$type = 'error';
-					$message = TrackersAdd_UpdateFailed;
+					$message = MainUser_TrackersAdd_UpdateFailed;
 				}
 			}
 			break;
@@ -87,10 +87,10 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["origin" => "users", "OR
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 	<form id="myForm" class="form_settings" method="post" action="">
 		<fieldset>
-		<legend><?php echo TrackersAdd_TitleAddTrackers; ?></legend>
+		<legend><?php echo MainUser_TrackersAdd_Title_AddTrackers; ?></legend>
 			<div id="input1" class="clonedInput">
 				<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
-				<?php echo TrackersAdd_TextAddress; ?>&nbsp;<input class="input_tracker_domain" id="tracker_domain" name="tracker_domain[1]" type="text" required="required" />
+				<?php echo MainUser_TrackersAdd_TextAddress; ?>&nbsp;<input class="input_tracker_domain" id="tracker_domain" name="tracker_domain[1]" type="text" required="required" />
 				&nbsp;&nbsp;<?php echo Global_IsActive; ?>&nbsp;&nbsp;<select class="select_is_active" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required">
 									<option value="0" selected="selected"><?php echo Global_No; ?></option>
 									<option value="1"><?php echo Global_Yes; ?></option>
@@ -98,14 +98,14 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["origin" => "users", "OR
 			</div>
 
 			<div style="margin-top: 10px; margin-bottom: 20px;">
-				<input type="button" id="btnAdd" value="<?php echo TrackersAdd_Btn_AddNewDomain; ?>" style="cursor: pointer;" />
-				<input type="button" id="btnDel" value="<?php echo TrackersAdd_Btn_RemoveLastTracker; ?>" style="cursor: pointer;" />
+				<input type="button" id="btnAdd" value="<?php echo MainUser_TrackersAdd_Btn_AddNewDomain; ?>" style="cursor: pointer;" />
+				<input type="button" id="btnDel" value="<?php echo MainUser_TrackersAdd_Btn_RemoveLastTracker; ?>" style="cursor: pointer;" />
 			</div>
 
-			<input class="submit" style="width:<?php echo strlen(TrackersAdd_AddMyTrackers)*10; ?>px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo TrackersAdd_AddMyTrackers; ?>">
-			<p class="Comments"><?php echo TrackersAdd_InfoAddTracker_1; ?></p>
+			<input class="submit" style="width:<?php echo strlen(MainUser_TrackersAdd_AddMyTrackers)*10; ?>px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo MainUser_TrackersAdd_AddMyTrackers; ?>">
+			<p class="Comments"><?php echo MainUser_TrackersAdd_InfoAddTracker_1; ?></p>
 			<br />
-			<p class="Comments"><?php echo TrackersAdd_InfoAddTracker_2; ?></p>
+			<p class="Comments"><?php echo MainUser_TrackersAdd_InfoAddTracker_2; ?></p>
 		</fieldset>
 	</form>
 </div>
@@ -114,11 +114,11 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["origin" => "users", "OR
 	<div align="center">
 		<table style="border-spacing:1;">
 			<tr>
-				<th style="text-align:center;"><?php echo TrackersAdd_Table_Domain; ?></th>
-				<th style="text-align:center;"><?php echo TrackersAdd_Table_Address; ?></th>
-				<th style="text-align:center;"><?php echo TrackersAdd_Table_IPv4; ?></th>
-				<th style="text-align:center;"><?php echo TrackersAdd_Table_PingResult; ?></th>
-				<th style="text-align:center;"><?php echo TrackersAdd_Table_IsSSL; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_TrackersAdd_Table_Domain; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_TrackersAdd_Table_Address; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_TrackersAdd_Table_IPv4; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_TrackersAdd_Table_PingResult; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_TrackersAdd_Table_IsSSL; ?></th>
 				<th style="text-align:center;"><?php echo Global_IsActive; ?></th>
 				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
 			</tr>

@@ -7,6 +7,8 @@
 			- MySB, add language select French and English (v2.2)
 			- NFS, disabling IPv6 support (v2.2)
 			- Samba, change some settings (v2.2)
+			- DNScrypt-proxy v1.5 (v2.2)
+			- NodeJS v0.12.4 (v2.2)
 
 	Version v2.1
 		2015/03/14

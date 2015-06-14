@@ -22,19 +22,19 @@
 //
 //#################### FIRST LINE #####################################
 
-define('TrackersAdd_UpdateFailed', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de supprimer le tracker.');
-define('TrackersAdd_AddMyTrackers', 'Ajouter mes trackers maintenant !');
-define('TrackersAdd_TitleAddTrackers', 'Ajouter vos trackers ici');
-define('TrackersAdd_TextAddress', 'Tracker <i>(domaine, nom d\'h&ocirc;te ou URL)</i>:');
-define('TrackersAdd_Btn_AddNewDomain', 'Ajouter mes trackers');
-define('TrackersAdd_Btn_RemoveLastTracker', 'Supprimer le dernier tracker');
-define('TrackersAdd_InfoAddTracker_1', 'Si une erreur se produit lorsque vous ajoutez un de vos trackers, il sera <b>pas ajout&eacute;</b>.<br />L\'erreur la plus commune est la v&eacute;rification des adresses IP associ&eacute;es avec le nom d\'h&ocirc;te (enregistrement DNS de type A).');
-define('TrackersAdd_InfoAddTracker_2', 'Le processus d\'ajout et de v&eacute;rification des trackers est lanc&eacute; en arri&egrave;re-plan et peut prendre de <b>quelques secondes</b> &agrave; <b>quelques minutes</b>.<br />L\'ajout d\'un tracker est <b>confirm&eacute;</b> lorsque que celui-ci <b>reste</b> dans la liste <b>avec</b> les adresses IP associ&eacute;es.');
-define('TrackersAdd_Table_Domain', 'Domaine');
-define('TrackersAdd_Table_Address', 'Adresse');
-define('TrackersAdd_Table_IPv4', 'IPv4');
-define('TrackersAdd_Table_PingResult', 'R&eacute;sultat du ping');
-define('TrackersAdd_Table_IsSSL', 'SSL ?');
+define('MainUser_TrackersAdd_UpdateFailed', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de supprimer le tracker.');
+define('MainUser_TrackersAdd_AddMyTrackers', 'Ajouter mes trackers maintenant !');
+define('MainUser_TrackersAdd_Title_AddTrackers', 'Ajouter vos trackers ici');
+define('MainUser_TrackersAdd_TextAddress', 'Tracker <i>(domaine, nom d\'h&ocirc;te ou URL)</i>:');
+define('MainUser_TrackersAdd_Btn_AddNewDomain', 'Ajouter mes trackers');
+define('MainUser_TrackersAdd_Btn_RemoveLastTracker', 'Supprimer le dernier tracker');
+define('MainUser_TrackersAdd_InfoAddTracker_1', 'Si une erreur se produit lorsque vous ajoutez un de vos trackers, il sera <b>pas ajout&eacute;</b>.<br />L\'erreur la plus commune est la v&eacute;rification des adresses IP associ&eacute;es avec le nom d\'h&ocirc;te (enregistrement DNS de type A).');
+define('MainUser_TrackersAdd_InfoAddTracker_2', 'Le processus d\'ajout et de v&eacute;rification des trackers est lanc&eacute; en arri&egrave;re-plan et peut prendre de <b>quelques secondes</b> &agrave; <b>quelques minutes</b>.<br />L\'ajout d\'un tracker est <b>confirm&eacute;</b> lorsque que celui-ci <b>reste</b> dans la liste <b>avec</b> les adresses IP associ&eacute;es.');
+define('MainUser_TrackersAdd_Table_Domain', 'Domaine');
+define('MainUser_TrackersAdd_Table_Address', 'Adresse');
+define('MainUser_TrackersAdd_Table_IPv4', 'IPv4');
+define('MainUser_TrackersAdd_Table_PingResult', 'R&eacute;sultat du ping');
+define('MainUser_TrackersAdd_Table_IsSSL', 'SSL ?');
 
 //#################### LAST LINE ######################################
 ?>

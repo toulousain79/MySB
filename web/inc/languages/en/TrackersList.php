@@ -22,13 +22,13 @@
 //
 //#################### FIRST LINE #####################################
 
-define('TrackersList_UpdateFailed', 'Failed !<br /><br />It was not possible to delete tracker.');
-define('TrackersList_Table_Domain', 'Domain');
-define('TrackersList_Table_Address', 'Address');
-define('TrackersList_Table_Origin', 'Origin');
-define('TrackersList_Table_IPv4', 'IPv4');
-define('TrackersList_Table_PingResult', 'Ping Result');
-define('TrackersList_Table_IsSSL', 'SSL ?');
+define('User_TrackersAdd_Btn_RemoveLastTracker', 'Failed !<br /><br />It was not possible to delete tracker.');
+define('User_TrackersList_Table_Domain', 'Domain');
+define('User_TrackersList_Table_Address', 'Address');
+define('User_TrackersList_Table_Origin', 'Origin');
+define('User_TrackersList_Table_IPv4', 'IPv4');
+define('User_TrackersList_Table_PingResult', 'Ping Result');
+define('User_TrackersList_Table_IsSSL', 'SSL ?');
 
 //#################### LAST LINE ######################################
 ?>

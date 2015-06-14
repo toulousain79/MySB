@@ -23,9 +23,9 @@
 //#################### FIRST LINE #####################################
 
 define('BlockLists_PGL_Success', 'Succ&egrave;s!<br /><br />Les listes noires ont &eacute;t&eacute; appliqu&eacute;es pour PeerGuardian ET rTorrent.');
-define('BlockLists_PGL_Failed', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.');
-define('BlockLists_PGL_Table_Name', 'Nom');
-define('BlockLists_PGL_Table_Blocklist', 'Liste noire');
+define('MainUser_BlockLists_PGL_Failed', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.');
+define('MainUser_BlockLists_PGL_Table_Name', 'Nom');
+define('MainUser_BlockLists_PGL_Table_Blocklist', 'Liste noire');
 
 //#################### LAST LINE ######################################
 ?>
