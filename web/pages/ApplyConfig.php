@@ -45,7 +45,7 @@ if ( IfApplyConfig() > 0 ) {
 	header('Refresh: 4; URL='.$_SERVER['HTTP_REFERER'].'');
 } else {
 	$type = 'information';
-	$message = 'Nothing to apply...';
+	$message = ApplyConfig_NothingToApply;
 	GenerateMessage('message_only', $type, $message, '');
 	header('Refresh: 3; URL=/');
 }

@@ -43,7 +43,7 @@ if (isset($_POST['submit'])) {
 	// Users table
 	if ( ($rTorrentVersion != $rtorrent_version) || ($rTorrentRestart == "1") ) {
 		$rTorrentRestart = 1;
-		$Command = 'Options';
+		$Command = 'Options_MySB';
 	}
 
 	$result = $MySB_DB->update("users", ["rtorrent_version" => "$rTorrentVersion", "rtorrent_restart" => "$rTorrentRestart", "language" => "$Language"], ["users_ident" => "$CurrentUser"]);
@@ -64,7 +64,10 @@ $rtorrent_version = $users_datas['rtorrent_version'];
 $rtorrent_restart = $users_datas['rtorrent_restart'];
 $language = $users_datas['language'];
 
+// Change language of Cakebox-Light
 ChangeCakeboxLanguage($CurrentUser, $language);
+// Change language of ruTorrent
+ChangeRuTorrentLanguage($CurrentUser, $language);
 ?>
 
 <form class="form_settings" method="post" action="">
