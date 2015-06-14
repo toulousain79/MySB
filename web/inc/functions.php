@@ -22,33 +22,6 @@
 //
 //#################### FIRST LINE #####################################
 
-// Change ruTorrent language
-function ChangeRuTorrentLanguage($user, $language) {
-	global $MySB_DB;
-
-
-	$RuTorrentDir = WEB_ROOT . '/rutorrent';
-	$ConfigFile = $RuTorrentDir . '/share/users/' . $user . '/settings/uisettings.json';
-
-	$File = fopen($ConfigFile, 'r') or die("Config file missing R");
-	$Content = file_get_contents($ConfigFile);
-
-	switch ($language) {
-		case 'fr':
-			$NewContent = str_replace('"en"', '"fr"', $Content);
-			break;
-
-		default:
-			$NewContent = str_replace('"fr"', '"en"', $Content);
-	}
-	fclose($File);
-
-	//ouverture en écriture
-	$File = fopen($ConfigFile, 'w+') or die("Config file missing W");
-	fwrite($File, $NewContent);
-	fclose($File);
-}
-
 // Change Cakebox-light language
 function ChangeCakeboxLanguage($user, $language) {
 	global $MySB_DB;

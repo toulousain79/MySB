@@ -66,8 +66,6 @@ $language = $users_datas['language'];
 
 // Change language of Cakebox-Light
 ChangeCakeboxLanguage($CurrentUser, $language);
-// Change language of ruTorrent
-ChangeRuTorrentLanguage($CurrentUser, $language);
 ?>
 
 <form class="form_settings" method="post" action="">
