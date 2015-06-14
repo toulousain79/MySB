@@ -122,7 +122,7 @@ function printUser($user) {
 	// Incomplete dir
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_IncompleteDir . '</th>';
 	echo '<td>' . $users_datas["home_dir"] . '/rtorrent/incomplete</td>';
-	echo '<td><span class="Comments">' . Partial downloads are stored here . '</span></td></tr>';
+	echo '<td><span class="Comments">' . User_UserInfo_Comment_IncompleteDir . '</span></td></tr>';
 	// Torrents dir
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_TorrentDir . '</th>';
 	echo '<td>' . $users_datas["home_dir"] . '/rtorrent/torrents</td>';

@@ -70,12 +70,12 @@ foreach($BlockList as $List) {
 	switch ($List["default"]) {
 		case '0':
 			$default = '<select name="default[]" style="width:60px; background-color:#FEBABC;" disabled>
-							<option value="0" selected="selected">' .$lang['Global_No']. '</option>
+							<option value="0" selected="selected">' .Global_No. '</option>
 						</select>';
 			break;
 		default:
 			$default = '<select name="default[]" style="width:60px; background-color:#B3FEA5;" disabled>
-							<option value="1" selected="selected">' .$lang['Global_Yes']. '</option>
+							<option value="1" selected="selected">' .Global_Yes. '</option>
 						</select>';
 			break;
 	}
@@ -84,24 +84,24 @@ foreach($BlockList as $List) {
 		case '0':
 			if ( $IsMainUser ) {
 				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-									<option value="0" selected="selected" class="redText">' .$lang['Global_No']. '</option>
-									<option value="1" class="greenText">' .$lang['Global_Yes']. '</option>
+									<option value="0" selected="selected" class="redText">' .Global_No. '</option>
+									<option value="1" class="greenText">' .Global_Yes. '</option>
 								</select>';
 			} else {
 				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px;" class="redText" id="mySelect" disabled>
-									<option value="0" selected="selected" class="redText">' .$lang['Global_No']. '</option>
+									<option value="0" selected="selected" class="redText">' .Global_No. '</option>
 								</select>';
 			}
 			break;
 		default:
 			if ( $IsMainUser ) {
 				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-									<option value="0" class="redText">' .$lang['Global_No']. '</option>
-									<option value="1" selected="selected" class="greenText">' .$lang['Global_Yes']. '</option>
+									<option value="0" class="redText">' .Global_No. '</option>
+									<option value="1" selected="selected" class="greenText">' .Global_Yes. '</option>
 								</select>';
 			} else {
 				$rtorrent_active = '	<select name="rtorrent_active[]" style="width:60px;" class="greenText" id="mySelect" disabled>
-									<option value="1" selected="selected" class="greenText">' .$lang['Global_Yes']. '</option>
+									<option value="1" selected="selected" class="greenText">' .Global_Yes. '</option>
 								</select>';
 			}
 			break;

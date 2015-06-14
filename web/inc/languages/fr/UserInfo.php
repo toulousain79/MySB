@@ -84,7 +84,7 @@ define('User_UserInfo_Table_SftpPort', 'Port sFTP');
 define('User_UserInfo_Comment_SftpPort', '');
 // FTPs Port
 define('User_UserInfo_Table_FtpsPort', 'Port FTPs (TLS)');
-define('User_UserInfo_Comment_FtpsPort', 'Il est n&eacute;cessaire de configurer votre logiciel client FTP en sp&eacute;cifiant ce num&eacute;ro de port. Vous devez s&eacute;lectionner &quot;FTPs&quot; et &quot;lien explicite TLS&quot;. Plus simple, t&eacute;l&eacute;charger directement le fichier XML pr&eacute;-param&eacute;tr&eacute; via Seedbox-Manager.');
+define('User_UserInfo_Comment_FtpsPort', 'Il est n&eacute;cessaire de configurer votre logiciel client FTP en sp&eacute;cifiant ce num&eacute;ro de port. Vous devez s&eacute;lectionner &quot;FTPs&quot; et "Connexion FTP explicite TLS". Plus simple, t&eacute;l&eacute;chargez directement le fichier XML pr&eacute;-param&eacute;tr&eacute; via Seedbox-Manager.');
 // SCGI Port
 define('User_UserInfo_Table_ScgiPort', 'Port SCGI');
 define('User_UserInfo_Comment_ScgiPort', '>Cette valeur est utilisée conjointement avec RPC.');
