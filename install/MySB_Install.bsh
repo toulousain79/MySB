@@ -55,7 +55,7 @@ ${CYELLOW}Do you want to reboot now ?$CEND"
 The installation may take 30 to 60 minutes around.
 This will depend on your server configuration and choice of services to install.
 
-Are you ready to install MySB ? (yes/no)$CEND"	
+Are you ready to install MySB ? (yes/no)$CEND "	
 
 	CustomKernel="${CRED}Your server use a custom kernel (maybe installed by OVH).
 This kernel does not support networking modules required by Iptables, PeerGuardian and OpenVPN.
@@ -103,7 +103,9 @@ ${CRED}############################################################$CEND"
 	QStartInstall="How do you want to start the installation ? Type 'manual' or 'auto' ?"
 	StartingScreen="${CBLUE}Starting SCREEN session...$CEND"
 	PleaseWait="${CRED}Please wait $CEND"
-	AlreadyInstall="${CRED}MySB is already started with SCREEN, aborting !$CEND"
+	AlreadyExecuted="${CRED}MySB is already started with SCREEN, aborting !$CEND"
+	AlreadyInstalled="${CRED}MySB is already installed, aborting!$CEND"
+	ToUpgradeUse="${CBLUE}To upgrade MySB, thank you to use the following command.'$CEND"
 }
 
 LoadFrench() {
@@ -128,7 +130,7 @@ ${CYELLOW}Voulez-vous redémarrer maintenant ?$CEND"
 L'installation peut prendre de 30 à 60 minutes environ.
 Cela dépendra de la configuration de votre serveur et du choix des services à installer.
 
-Êtes-vous prêt à installer MySB? (oui/non)$CEND"
+Êtes-vous prêt à installer MySB? (oui/non)$CEND "
 
 	CustomKernel="${CRED}Votre serveur utilise un noyau personnalisé (peut-être installé par OVH).
 Ce noyau ne supporte pas les modules requis par IPtables, OpenVPN et PeerGuardian.
@@ -176,7 +178,9 @@ ${CRED}############################################################$CEND"
 	QStartInstall="Comment voulez-vous lancer l'installation? Tapez 'manuel' ou 'auto'."
 	StartingScreen="${CBLUE}Démarrage de la session SCREEN...$CEND"
 	PleaseWait="${CRED}Merci de patienter $CEND"
-	AlreadyInstall="${CRED}L'installation de MySB est déjà exécutée avec SCREEN, abandon !$CEND"
+	AlreadyExecuted="${CRED}L'installation de MySB est déjà exécutée avec SCREEN, abandon !$CEND"
+	AlreadyInstalled="${CRED}MySB est déjà installé, abandon!$CEND"
+	ToUpgradeUse="${CBLUE}Pour mettre à jour MySB, merci d'utiliser la commande suivante.'$CEND"	
 }
 
 #### VARs
@@ -236,8 +240,8 @@ OvhReplaceKernel() {
 			echo
 			echo -e -n "$RebootBeforeInstall"
 
-			read answer
-			case ${answer:0:1} in
+			read Answer
+			case ${Answer:0:1} in
 				y|Y|yes|YES|o|O|oui|OUI)
 					echo -e "$LetsGo"
 					CountDown 3
@@ -342,8 +346,8 @@ fi
 if [ ! -z "$OVH_Kernel" ]; then
 	echo
 	echo -e -n "$CustomKernel"
-	read answer
-	case ${answer:0:1} in
+	read Answer
+	case ${Answer:0:1} in
 		y|Y|yes|YES|o|O|oui|OUI)
 			echo -e "$LetsGo"
 			CountDown 3
@@ -393,28 +397,31 @@ CountDown() {
 
 if [ "$COMMAND" == "" ]; then
 	if [ -s $MySB_InstallDir/version ]; then # Upgrade ?
-		echo -e -n "${CRED}MySB is already installed, aborting!$CEND"
-		echo -e -n "${CBLUE}To upgrade MySB, thank you use the following command.'$CEND"
-		echo -e -n "${CGREEN}	MySB_UpgradeMe'$CEND"
+		echo -e "$AlreadyInstalled"
+		echo -e "$ToUpgradeUse"
+		echo -e "${CGREEN}	MySB_UpgradeMe'$CEND"
 		source $(dirname $0)/../inc/includes_after
 		exit 1
 	else # Install ?
-		BannerInstall
-		echo -e -n "$MessageIsReady"
+		Answer=""
+		
+		while [ -z "$Answer" ]; do
+			BannerInstall
+			echo -e -n "$MessageIsReady"
 
-		read answer
-		case ${answer:0:1} in
-			y|Y|yes|YES)
-				echo -e "$LetsGo"
-				CountDown 3
-			;;
-			n|N|no|NO)
-				echo -e "$SeeYouLater"
-				exit 0
-			;;
-		esac
+			read Answer
+			case ${Answer:0:1} in
+				y|Y|yes|YES)
+					echo -e "$LetsGo"
+					CountDown 3
+				;;
+				n|N|no|NO)
+					echo -e "$SeeYouLater"
+					exit 0
+				;;
+			esac
+		done
 
-		#
 		BannerInstall
 		echo
 		echo -e -n "$WhereToInstall"
@@ -467,7 +474,7 @@ if [ "$COMMAND" == "" ]; then
 		TOOLS="git-core dos2unix lsb-release screen ccze gnupg figlet mlocate sqlite3 dnsutils netselect-apt"
 		$AptCommand -y --assume-yes install $TOOLS
 		if [ $? -gt 0 ]; then
-			echo -e "${CRED}Looks like something was wrong during the install of needed packages, aborting !$CEND"
+			echo -e "$SomethingWrong"
 			exit 1
 		fi
 
@@ -560,7 +567,7 @@ if [ "$COMMAND" == "" ]; then
 else
 	echo ""
 	echo ""
-	echo -e "$AlreadyInstall"
+	echo -e "$AlreadyExecuted"
 	if [ -f /etc/MySB/config ]; then rm -f /etc/MySB/config; fi
 	if [ -f $MySB_InstallDir/inc/includes_after ]; then source $MySB_InstallDir/inc/includes_after; fi
 	exit 0
