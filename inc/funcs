@@ -1050,51 +1050,69 @@ PeerGuardianIptablesInsert() {
 
 #### PeerGuardian Create pglcmd.conf
 PeerGuardianPglcmdConf() {
+	if [ -z "$2" ]; then
+		OnlyLogging="NO"
+	else
+		OnlyLogging="$2"
+	fi
+
 	if [ -f /etc/pgl/pglcmd.conf ]; then
-		# /etc/pgl/pglcmd.conf
-		if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Adding of authorized IP addresses"; fi
-
-		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_OUT=")
-		SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
-		if [ ! -z "$SEARCH" ]; then
-			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-				perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
-			else
-				perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"\"/g" /etc/pgl/pglcmd.conf
-			fi
-		fi
-		unset SEARCH
-
-		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_FWD=")
-		SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
-		if [ ! -z "$SEARCH" ]; then
-			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-				perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
-			else
-				perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"\"/g" /etc/pgl/pglcmd.conf
-			fi
-		fi
-		unset SEARCH
-
-		NetworkPortsGenerator
-
-		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
-		if [ ! -z "$SEARCH" ]; then	
-			perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${WHITE_TCP_IN}\"/g" /etc/pgl/pglcmd.conf
-		fi
-		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=")
-		if [ ! -z "$SEARCH" ]; then	
-			perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"${WHITE_UDP_IN}\"/g" /etc/pgl/pglcmd.conf
-		fi
-		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
-		if [ ! -z "$SEARCH" ]; then	
-			perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"${WHITE_TCP_OUT}\"/g" /etc/pgl/pglcmd.conf
-		fi
-		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
-		if [ ! -z "$SEARCH" ]; then
-			perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${WHITE_UDP_OUT}\"/g" /etc/pgl/pglcmd.conf
-		fi
+		if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Logging and verbosity settings"; fi
+			STATS_MAILTO="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT pgl_email_stats FROM system WHERE 1\" | sed 's/0//g;' | sed 's/1/root/g;'`"			
+			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "STATS_MAILTO=")
+			perl -pi -e "s/$SEARCH/STATS_MAILTO=\"$STATS_MAILTO\"/g" /etc/pgl/pglcmd.conf
+			unset SEARCH
+			
+			WD_MAILTO="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT pgl_watchdog_email FROM system WHERE 1\" | sed 's/0//g;' | sed 's/1/root/g;'`"
+			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WD_MAILTO=")
+			perl -pi -e "s/$SEARCH/WD_MAILTO=\"$WD_MAILTO\"/g" /etc/pgl/pglcmd.conf
+			unset SEARCH			
 		if [ $1 -eq 1 ]; then StatusLSB; fi
+	
+		if [ "$OnlyLogging" == "NO" ]; then
+			if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Adding of authorized IP addresses"; fi
+			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_OUT=")
+			SEARCH="`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`"
+			if [ ! -z "$SEARCH" ]; then
+				if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+					perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
+				else
+					perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"\"/g" /etc/pgl/pglcmd.conf
+				fi
+			fi
+			unset SEARCH
+
+			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_FWD=")
+			SEARCH="`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`"
+			if [ ! -z "$SEARCH" ]; then
+				if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+					perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
+				else
+					perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"\"/g" /etc/pgl/pglcmd.conf
+				fi
+			fi
+			unset SEARCH
+
+			NetworkPortsGenerator
+
+			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
+			if [ ! -z "$SEARCH" ]; then	
+				perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${WHITE_TCP_IN}\"/g" /etc/pgl/pglcmd.conf
+			fi
+			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=")
+			if [ ! -z "$SEARCH" ]; then	
+				perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"${WHITE_UDP_IN}\"/g" /etc/pgl/pglcmd.conf
+			fi
+			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
+			if [ ! -z "$SEARCH" ]; then	
+				perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"${WHITE_TCP_OUT}\"/g" /etc/pgl/pglcmd.conf
+			fi
+			SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
+			if [ ! -z "$SEARCH" ]; then
+				perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${WHITE_UDP_OUT}\"/g" /etc/pgl/pglcmd.conf
+			fi
+			if [ $1 -eq 1 ]; then StatusLSB; fi
+		fi
 	fi
 }
 

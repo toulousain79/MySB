@@ -1,7 +1,8 @@
 	Version v2.2
 		2015/05/05
 			- Changing the upgrade script
-			- Mysb portal, Cakebox link in User Infos page (v2.1 and v2.2)
+			- MySB portal, correcting Cakebox link in User Infos page (v2.1 and v2.2)
+			- MySB portal, add some new actions (v2.2)
 			- Seedbox-Manager, now keep your config in administration page (v2.1 and v2.2)
 			- Nginx, some fixes (v2.2)
 			- MySB, add language select French and English (v2.2)
@@ -9,6 +10,8 @@
 			- Samba, change some settings (v2.2)
 			- DNScrypt-proxy v1.5 (v2.2)
 			- NodeJS v0.12.4 (v2.2)
+			- DynamicAddressResolver.bsh, corrocting bugs (v2.1 and v2.2)
+			- Translation, possibility to change language (fr/en) into the portal (v2.2)
 
 	Version v2.1
 		2015/03/14

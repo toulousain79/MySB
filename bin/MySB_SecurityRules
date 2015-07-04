@@ -49,6 +49,7 @@ ApplyConfigBind=NO
 ApplyConfigDnscrypt=NO
 ApplyIptablesUsers=NO
 ApplyIptablesDnscrypt=NO
+OnlyLoggingSettings=NO
 
 # Check by arguments
 for Arg in "$@"; do
@@ -97,6 +98,10 @@ case "$Switch" in
 					ApplyConfigDnscrypt=$IsInstalled_DNScrypt
 					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
 				;;
+				--pglcmd)
+					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
+					OnlyLoggingSettings=YES
+				;;				
 				--all)
 					ApplyIptablesUsers=YES
 					ApplyConfigNginx="`CheckCommand 1 nginx`"
@@ -197,13 +202,16 @@ CreateServicesRules() {
 	#### PeerGuardian
 	if [ "$ApplyConfigPeerGuardian" == "YES" ]; then
 		# Create '/etc/pgl/pglcmd.conf'
-		PeerGuardianPglcmdConf 0
-		# Create '/etc/pgl/allow.p2p'
-		PeerGuardianAllowP2P 0
-		# Create '/etc/pgl/blocklists.list'
-		PeerGuardianBlocklistsList 0 "CreateFile"
-		# Create '/etc/pgl/*.insert.sh'
-		PeerGuardianIptablesInsert 0
+		PeerGuardianPglcmdConf 0 $OnlyLoggingSettings
+
+		if [ "$OnlyLoggingSettings" == "NO" ]; then
+			# Create '/etc/pgl/allow.p2p'
+			PeerGuardianAllowP2P 0
+			# Create '/etc/pgl/blocklists.list'
+			PeerGuardianBlocklistsList 0 "CreateFile"
+			# Create '/etc/pgl/*.insert.sh'
+			PeerGuardianIptablesInsert 0
+		fi
 	fi
 	#### PeerGuardian
 }
@@ -274,10 +282,12 @@ case "$Switch" in
 		#### START services
 
 		#### IPtables - SAVE Iptables Rules
-		iptables-save > /etc/iptables.up.rules
-		cp /etc/iptables.up.rules $MySB_InstallDir/files/current-iptables-rules
-		if [ "$IsInstalled_Webmin" == "YES" ] && [ -d /etc/webmin/firewall/ ]; then
-			cp /etc/iptables.up.rules /etc/webmin/firewall/iptables.save
+		iptables-save > $MySB_InstallDir/files/current-iptables-rules
+		if [ "$IsInstalled_Webmin" == "YES" ] && [ -d /etc/webmin/firewall/ ] && [ -f $MySB_InstallDir/files/current-iptables-rules ]; then
+			cp $MySB_InstallDir/files/current-iptables-rules /etc/webmin/firewall/iptables.save
+		fi
+		if [ -f /etc/iptables.up.rules ]; then
+			rm -f /etc/iptables.up.rules
 		fi
 		#### IPtables - SAVE Iptables Rules
 	;;
@@ -290,7 +300,7 @@ case "$Switch" in
 
 		#### Kernel - Loading modules
 		log_daemon_msg "Kernel - Loading modules"
-		if [ "$LoadKernelModules" == "YES" ]; then		
+		if [ "$LoadKernelModules" == "YES" ]; then
 			LoadingKernelModules
 		fi
 		StatusLSB
@@ -407,11 +417,19 @@ case "$Switch" in
 	;;
 
 	refresh)
+		#### MySB_SecurityRules - Create new rules if needed
+		if ( [ "$IsInstalled_PeerGuardian" == "YES" ] && ! GetPid pglcmd ) || 
+			( [ "$IsInstalled_Fail2Ban" == "YES" ] && ! GetPid fail2ban ) || 
+			[ ! -f /etc/iptables.up.rules ]; then
+			ScriptInvoke 'screen' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create'
+		fi
+		#### MySB_SecurityRules - Create new rules if needed
+
 		#### IPtables - SAVE Iptables Rules
 		log_daemon_msg "IPtables - SAVE Iptables Rules"
 		if [ -f $MySB_InstallDir/temp/current-iptables-rules ]; then
 			rm -f $MySB_InstallDir/temp/current-iptables-rules
-		fi		
+		fi
 		iptables-save > $MySB_InstallDir/temp/current-iptables-rules
 		StatusLSB
 		#### IPtables - SAVE Iptables Rules

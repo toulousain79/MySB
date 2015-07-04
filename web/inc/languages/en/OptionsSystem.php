@@ -27,6 +27,8 @@ define('MainUser_OptionsSystem_PGL_Stats', 'Stats');
 define('MainUser_OptionsSystem_PGL_Whathdog', 'Watchdog');
 define('MainUser_OptionsSystem_Title_Iptables', 'IPtables');
 define('MainUser_OptionsSystem_Iptables_Restrict', 'IP restriction');
+define('MainUser_OptionsSystem_FailedUpdateIpRestriction', 'Failed !<br /><br />It was not possible to update the IP restriction value.');
+define('MainUser_OptionsSystem_FailedUpdatePpglEmailStats', 'Failed !<br /><br />It was not possible to update the PeerGuardian Email Stats value.');
 
 //#################### LAST LINE ######################################
 ?>

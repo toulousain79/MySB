@@ -28,30 +28,36 @@ require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__
 $PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
-$Command = 'message_only';
-$Error = 0;
+// Get values from database
+$pgl_email_stats = $system_datas['pgl_email_stats'];
+$pgl_watchdog_email = $system_datas['pgl_watchdog_email'];
+$ip_restriction_db = $system_datas['ip_restriction'];
 
 if (isset($_POST['submit'])) {
 	$PGL_EmailStats = $_POST['PGL_EmailStats'];
 	$PGL_EmailWD = $_POST['PGL_EmailWD'];
-	$IP_restriction = $_POST['IP_restriction'];
+	$IP_restriction_post = $_POST['IP_restriction_post'];
 
-	$MySB_DB->update("system", ["ip_restriction" => "$IP_restriction"], ["id_system" => 1]);
+	if (($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD)) {
+		$MySB_DB->update("system", ["ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats", "pgl_watchdog_email" => "$PGL_EmailWD"], ["id_system" => 1]);
 
-	if( $result == 1 ) {
-		$type = 'success';
-	} else {
-		$type = 'error';
-		$message = 'Failed ! It was not possible to update the MySB database.';
+		if( $result == 1 ) {
+			$type = 'success';
+			$Command = 'Options_System';
+		} else {
+			$Command = 'message_only';
+			$type = 'error';
+			$message = Global_FailedUpdateMysbDB;
+		}
 	}
-
+	
+	// Get new values from database
+	$pgl_email_stats = $MySB_DB->get("system", "pgl_email_stats", ["id_system" => 1]);
+	$pgl_watchdog_email = $MySB_DB->get("system", "pgl_watchdog_email", ["id_system" => 1]);
+	$ip_restriction_db = $MySB_DB->get("system", "ip_restriction", ["id_system" => 1]);
+	
 	GenerateMessage($Command, $type, $message);
 }
-
-// Get values from database
-$pgl_email_stats = $system_datas['pgl_email_stats'];
-$pgl_watchdog_email = $system_datas['pgl_watchdog_email'];
-$ip_restriction = $system_datas['ip_restriction'];
 ?>
 
 <form class="form_settings" method="post" action="">
@@ -103,8 +109,8 @@ $ip_restriction = $system_datas['ip_restriction'];
 		<tr>
 			<td><?php echo MainUser_OptionsSystem_Iptables_Restrict; ?></td>
 			<td>
-				<select name="IP_restriction" style="width:80px; height: 28px;">';
-				<?php switch ($ip_restriction) {
+				<select name="IP_restriction_post" style="width:80px; height: 28px;">';
+				<?php switch ($ip_restriction_db) {
 					case '1':
 						echo '<option selected="selected" value="1">' .Global_Yes. '</option>';
 						echo '<option value="0">' .Global_No. '</option>';
