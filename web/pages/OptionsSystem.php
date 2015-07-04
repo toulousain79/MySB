@@ -54,6 +54,7 @@ if (isset($_POST['submit'])) {
 	$PGL_EmailWD = $_POST['PGL_EmailWD'];
 	$IP_restriction_post = $_POST['IP_restriction_post'];
 	$OpenVPN_Proto = $_POST['OpenVPN_Proto_post'];
+	$args = 'refresh';
 
 	// 1 - First, we apply new paramaters WITHOUT needed of create again MySB Security rules
 	if ($openvpn_proto_db != $OpenVPN_Proto) {
@@ -68,7 +69,7 @@ if (isset($_POST['submit'])) {
 
 		if( $result == 1 ) {
 			$type = 'success';
-			$Command = 'Options_System_Refresh';
+			$Command = 'Options_System';
 		} else {
 			$Command = 'message_only';
 			$type = 'error';
@@ -85,8 +86,9 @@ if (isset($_POST['submit'])) {
 			if ($ip_restriction_db != $IP_restriction_post) {
 				$Command = 'Options_System_Create';
 			} else {
-				$Command = 'Options_System_Refresh';
+				$args = 'create';
 			}
+			$Command = 'Options_System';
 		} else {
 			$Command = 'message_only';
 			$type = 'error';
@@ -100,7 +102,7 @@ if (isset($_POST['submit'])) {
 	$ip_restriction_db = $IP_restriction_post;
 	$openvpn_proto_db = $OpenVPN_Proto;
 
-	GenerateMessage($Command, $type, $message);
+	GenerateMessage($Command, $type, $message, $args);
 }
 ?>
 
