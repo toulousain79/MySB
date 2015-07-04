@@ -26,17 +26,66 @@ global $MySB_DB, $users_datas, $CurrentUser, $system_datas;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 $PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
+$OpenVPNIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "OpenVPN"]);
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
 // Get values from database
 $pgl_email_stats = $system_datas['pgl_email_stats'];
 $pgl_watchdog_email = $system_datas['pgl_watchdog_email'];
 $ip_restriction_db = $system_datas['ip_restriction'];
+$openvpn_proto_db =  $MySB_DB->get("services", "port_udp1", ["serv_name" => "OpenVPN"]);
+switch ($openvpn_proto_db) {
+	case '':
+		$openvpn_proto_db = 'TCP';
+		$openvpn_port1 =  $MySB_DB->get("services", "port_tcp1", ["serv_name" => "OpenVPN"]);
+		$openvpn_port2 =  $MySB_DB->get("services", "port_tcp2", ["serv_name" => "OpenVPN"]);
+		$openvpn_port3 =  $MySB_DB->get("services", "port_tcp3", ["serv_name" => "OpenVPN"]);
+		break;
+	default:
+		$openvpn_proto_db = 'UDP';
+		$openvpn_port1 =  $MySB_DB->get("services", "port_udp1", ["serv_name" => "OpenVPN"]);
+		$openvpn_port2 =  $MySB_DB->get("services", "port_udp2", ["serv_name" => "OpenVPN"]);
+		$openvpn_port3 =  $MySB_DB->get("services", "port_udp3", ["serv_name" => "OpenVPN"]);
+		break;
+}
 
 if (isset($_POST['submit'])) {
 	$PGL_EmailStats = $_POST['PGL_EmailStats'];
 	$PGL_EmailWD = $_POST['PGL_EmailWD'];
 	$IP_restriction_post = $_POST['IP_restriction_post'];
+	$OpenVPN_Proto = $_POST['OpenVPN_Proto_post'];
+
+	if ($openvpn_proto_db != $OpenVPN_Proto) {
+		switch ($OpenVPN_Proto) {
+			case 'TCP':
+				$MySB_DB->update("services", 	[	"port_tcp1" => "$openvpn_port1",
+													"port_tcp2" => "$openvpn_port2",
+													"port_tcp3" => "$openvpn_port3",
+													"port_udp1" => "",
+													"port_udp2" => "",
+													"port_udp3" => ""
+												], ["serv_name" => "OpenVPN"]);
+				break;
+			default:
+				$MySB_DB->update("services", 	[	"port_tcp1" => "",
+													"port_tcp2" => "",
+													"port_tcp3" => "",
+													"port_udp1" => "$openvpn_port1",
+													"port_udp2" => "$openvpn_port2",
+													"port_udp3" => "$openvpn_port3"
+												], ["serv_name" => "OpenVPN"]);
+				break;
+		}
+		
+		if( $result == 1 ) {
+			$type = 'success';
+			$Command = 'Options_System';
+		} else {
+			$Command = 'message_only';
+			$type = 'error';
+			$message = Global_FailedUpdateMysbDB;
+		}		
+	}
 
 	if (($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD)) {
 		$MySB_DB->update("system", ["ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats", "pgl_watchdog_email" => "$PGL_EmailWD"], ["id_system" => 1]);
@@ -50,19 +99,19 @@ if (isset($_POST['submit'])) {
 			$message = Global_FailedUpdateMysbDB;
 		}
 	}
-	
+
 	// Get new values from database
 	$pgl_email_stats = $MySB_DB->get("system", "pgl_email_stats", ["id_system" => 1]);
 	$pgl_watchdog_email = $MySB_DB->get("system", "pgl_watchdog_email", ["id_system" => 1]);
 	$ip_restriction_db = $MySB_DB->get("system", "ip_restriction", ["id_system" => 1]);
-	
+
 	GenerateMessage($Command, $type, $message);
 }
 ?>
 
 <form class="form_settings" method="post" action="">
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">	
-	<?php if ( ($IsMainUser) && ($PeerguardianIsInstalled == '1') ) { ?>
+	<?php if ($PeerguardianIsInstalled == '1') { ?>
 	<fieldset>
 	<legend><?php echo MainUser_OptionsSystem_Title_PGL; ?></legend>
 	<table>
@@ -102,15 +151,15 @@ if (isset($_POST['submit'])) {
 	</fieldset>
 	<?php } ?>
 
-	<?php if ( $IsMainUser ) { ?>
+	<?php if ($OpenVPNIsInstalled == '1') { ?>
 	<fieldset>
-	<legend><?php echo MainUser_OptionsSystem_Title_Iptables; ?></legend>
+	<legend><?php echo MainUser_OptionsSystem_Title_OpenVPN; ?></legend>
 	<table>
 		<tr>
-			<td><?php echo MainUser_OptionsSystem_Iptables_Restrict; ?></td>
+			<td><?php echo MainUser_OptionsSystem_OpenVPN_Proto; ?></td>
 			<td>
-				<select name="IP_restriction_post" style="width:80px; height: 28px;">';
-				<?php switch ($ip_restriction_db) {
+				<select name="OpenVPN_Proto_post" style="width:80px; height: 28px;">';
+				<?php switch ($openvpn_proto_db) {
 					case '1':
 						echo '<option selected="selected" value="1">' .Global_Yes. '</option>';
 						echo '<option value="0">' .Global_No. '</option>';
