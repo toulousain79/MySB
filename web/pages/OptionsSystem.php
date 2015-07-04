@@ -183,13 +183,13 @@ if (isset($_POST['submit'])) {
 			<td>
 				<select name="OpenVPN_Proto_post" style="width:80px; height: 28px;">';
 				<?php switch ($openvpn_proto_db) {
-					case '1':
-						echo '<option selected="selected" value="1">' .Global_Yes. '</option>';
-						echo '<option value="0">' .Global_No. '</option>';
+					case 'UDP':
+						echo '<option selected="selected" value="1">UDP</option>';
+						echo '<option value="0">TCP</option>';
 						break;
 					default:
-						echo '<option value="1">' .Global_Yes. '</option>';
-						echo '<option selected="selected" value="0">' .Global_No. '</option>';
+						echo '<option value="1">UDP</option>';
+						echo '<option selected="selected" value="0">TCP</option>';
 						break;
 				} ?>
 				</select>
