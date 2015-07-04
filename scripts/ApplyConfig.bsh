@@ -73,7 +73,7 @@ DoApplyConfig() {
 
 	# 3 - On peut maintenant exécuté les commandes une à une dans l'ordre ascendant des priorités.
 	AllCommands="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT commands, priority FROM commands WHERE user = '$User' ORDER BY priority ASC\"`"
-	
+
 	#for MyCommand in $AllCommands; do
 	for CommandLine in $AllCommands; do
 		Command="`echo $CommandLine | awk '{split($0,a,"|"); print a[1]}'`"
@@ -156,14 +156,7 @@ DoApplyConfig() {
 
 			"MySB_SecurityRules")
 				WaitingSTD MySB_SecurityRules
-				case "$CommandArg" in
-					refresh)
-						screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "--pglcmd" "APPLYCONFIG";
-					;;
-					*)
-						screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "create" "APPLYCONFIG";
-					;;
-				esac
+				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "create" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
 				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
@@ -190,6 +183,13 @@ DoApplyConfig() {
 				WaitingSTD rTorrent-$User
 				screen -dmS rTorrent-$User service rtorrent-$User restart &> /dev/null;
 				WaitingSTD rTorrent-$User
+				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
+			;;
+
+			"Options_System")
+				WaitingSTD MySB_SecurityRules
+				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "--pglcmd" "APPLYCONFIG";
+				WaitingSTD MySB_SecurityRules
 				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 		esac
