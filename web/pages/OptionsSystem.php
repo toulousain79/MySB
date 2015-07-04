@@ -87,7 +87,7 @@ if (isset($_POST['submit'])) {
 		}		
 	}
 
-	if (($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD)) {
+	if (($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD)) {		
 		$MySB_DB->update("system", ["ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats", "pgl_watchdog_email" => "$PGL_EmailWD"], ["id_system" => 1]);
 
 		if( $result == 1 ) {
@@ -150,6 +150,29 @@ if (isset($_POST['submit'])) {
 	</table>
 	</fieldset>
 	<?php } ?>
+
+	<fieldset>
+	<legend><?php echo MainUser_OptionsSystem_Title_Iptables; ?></legend>
+	<table>
+		<tr>
+			<td><?php echo MainUser_OptionsSystem_Iptables_Restrict; ?></td>
+			<td>
+				<select name="IP_restriction_post" style="width:80px; height: 28px;">';
+				<?php switch ($ip_restriction_db) {
+					case '1':
+						echo '<option selected="selected" value="1">' .Global_Yes. '</option>';
+						echo '<option value="0">' .Global_No. '</option>';
+						break;
+					default:
+						echo '<option value="1">' .Global_Yes. '</option>';
+						echo '<option selected="selected" value="0">' .Global_No. '</option>';
+						break;
+				} ?>
+				</select>
+			</td>
+		</tr>
+	</table>
+	</fieldset>
 
 	<?php if ($OpenVPNIsInstalled == '1') { ?>
 	<fieldset>

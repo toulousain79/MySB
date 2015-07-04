@@ -48,6 +48,16 @@ require_once(FILE_MEDOO);
 $MySB_DB = new medoo(['database_file' => MySB_DB, 'database_name' => 'MySB']);
 $Wolf_DB = new medoo(['database_file' => Wolf_DB, 'database_name' => 'Wolf']);
 
+// Users table
+if ( isset($_SERVER['PHP_AUTH_USER']) ) {
+	$CurrentUser = $_SERVER['PHP_AUTH_USER'];
+} elseif ( isset($_SESSION['page']) && isset($_GET['user']) ) {
+	$CurrentUser = $_GET['user'];
+}
+if ( isset($CurrentUser) ) {
+	$users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
+}
+
 // Language
 header('Cache-control: private'); // IE 6 FIX
 if ( isSet($users_datas["language"]) ) {
@@ -66,16 +76,6 @@ require_once(FILE_FUNCS);
 
 // Load System table
 $system_datas = $MySB_DB->get("system", "*", ["id_system" => 1]);
-
-// Users table
-if ( isset($_SERVER['PHP_AUTH_USER']) ) {
-	$CurrentUser = $_SERVER['PHP_AUTH_USER'];
-} elseif ( isset($_SESSION['page']) && isset($_GET['user']) ) {
-	$CurrentUser = $_GET['user'];
-}
-if ( isset($CurrentUser) ) {
-	$users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
-}
 
 // Services table
 $Port_HTTPs = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "NginX"]);
