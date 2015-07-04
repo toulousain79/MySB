@@ -31,7 +31,6 @@ $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 $Command = 'message_only';
 $rTorrentVersionsList = array('v0.9.2', 'v0.9.4');
 $LanguagesList = array('english', 'french');
-$Error = 0;
 
 if (isset($_POST['submit'])) {
 	$rTorrentVersion = $_POST['rTorrentVersion'];

@@ -55,44 +55,38 @@ if (isset($_POST['submit'])) {
 	$IP_restriction_post = $_POST['IP_restriction_post'];
 	$OpenVPN_Proto = $_POST['OpenVPN_Proto_post'];
 
+	// 1 - First, we apply new paramaters WITHOUT needed of create again MySB Security rules
 	if ($openvpn_proto_db != $OpenVPN_Proto) {
 		switch ($OpenVPN_Proto) {
 			case 'TCP':
-				$result = $MySB_DB->update("services", 	[	"port_tcp1" => "$openvpn_port1",
-													"port_tcp2" => "$openvpn_port2",
-													"port_tcp3" => "$openvpn_port3",
-													"port_udp1" => "",
-													"port_udp2" => "",
-													"port_udp3" => ""
-												], ["serv_name" => "OpenVPN"]);
+				$result = $MySB_DB->update("services", 	["port_tcp1" => $openvpn_port1, "port_tcp2" => $openvpn_port2, "port_tcp3" => $openvpn_port3, "port_udp1" => "", "port_udp2" => "", "port_udp3" => ""], ["serv_name" => "OpenVPN"]);
 				break;
 			default:
-				$result = $MySB_DB->update("services", 	[	"port_tcp1" => "",
-													"port_tcp2" => "",
-													"port_tcp3" => "",
-													"port_udp1" => "$openvpn_port1",
-													"port_udp2" => "$openvpn_port2",
-													"port_udp3" => "$openvpn_port3"
-												], ["serv_name" => "OpenVPN"]);
+				$result = $MySB_DB->update("services", 	["port_tcp1" => "", "port_tcp2" => "", "port_tcp3" => "", "port_udp1" => $openvpn_port1, "port_udp2" => $openvpn_port2, "port_udp3" => $openvpn_port3], ["serv_name" => "OpenVPN"]);
 				break;
 		}
-		
+
 		if( $result == 1 ) {
 			$type = 'success';
-			$Command = 'Options_System';
+			$Command = 'Options_System_Refresh';
 		} else {
 			$Command = 'message_only';
 			$type = 'error';
 			$message = Global_FailedUpdateMysbDB;
-		}		
+		}
 	}
 
-	if (($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD)) {		
+	// 2 - First, we apply new paramaters WITH (maybe) needed of create again MySB Security rules
+	if (($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD)) {
 		$result = $MySB_DB->update("system", ["ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats", "pgl_watchdog_email" => "$PGL_EmailWD"], ["id_system" => 1]);
 
 		if( $result == 1 ) {
 			$type = 'success';
-			$Command = 'Options_System';
+			if ($ip_restriction_db != $IP_restriction_post) {
+				$Command = 'Options_System_Create';
+			} else {
+				$Command = 'Options_System_Refresh';
+			}
 		} else {
 			$Command = 'message_only';
 			$type = 'error';
@@ -101,9 +95,10 @@ if (isset($_POST['submit'])) {
 	}
 
 	// Get new values from database
-	$pgl_email_stats = $MySB_DB->get("system", "pgl_email_stats", ["id_system" => 1]);
-	$pgl_watchdog_email = $MySB_DB->get("system", "pgl_watchdog_email", ["id_system" => 1]);
-	$ip_restriction_db = $MySB_DB->get("system", "ip_restriction", ["id_system" => 1]);
+	$pgl_email_stats = $PGL_EmailStats;
+	$pgl_watchdog_email = $PGL_EmailWD;
+	$ip_restriction_db = $IP_restriction_post;
+	$openvpn_proto_db = $OpenVPN_Proto;
 
 	GenerateMessage($Command, $type, $message);
 }
@@ -184,12 +179,12 @@ if (isset($_POST['submit'])) {
 				<select name="OpenVPN_Proto_post" style="width:80px; height: 28px;">';
 				<?php switch ($openvpn_proto_db) {
 					case 'UDP':
-						echo '<option selected="selected" value="1">UDP</option>';
-						echo '<option value="0">TCP</option>';
+						echo '<option selected="selected" value="UDP">UDP</option>';
+						echo '<option value="TCP">TCP</option>';
 						break;
 					default:
-						echo '<option value="1">UDP</option>';
-						echo '<option selected="selected" value="0">TCP</option>';
+						echo '<option value="UDP">UDP</option>';
+						echo '<option selected="selected" value="TCP">TCP</option>';
 						break;
 				} ?>
 				</select>
