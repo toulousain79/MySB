@@ -84,8 +84,6 @@ if (isset($_POST['submit'])) {
 		if( $result == 1 ) {
 			$type = 'success';
 			if ($ip_restriction_db != $IP_restriction_post) {
-				$Command = 'Options_System_Create';
-			} else {
 				$args = 'create';
 			}
 			$Command = 'Options_System';
