@@ -58,7 +58,7 @@ if (isset($_POST['submit'])) {
 	if ($openvpn_proto_db != $OpenVPN_Proto) {
 		switch ($OpenVPN_Proto) {
 			case 'TCP':
-				$MySB_DB->update("services", 	[	"port_tcp1" => "$openvpn_port1",
+				$result = $MySB_DB->update("services", 	[	"port_tcp1" => "$openvpn_port1",
 													"port_tcp2" => "$openvpn_port2",
 													"port_tcp3" => "$openvpn_port3",
 													"port_udp1" => "",
@@ -67,7 +67,7 @@ if (isset($_POST['submit'])) {
 												], ["serv_name" => "OpenVPN"]);
 				break;
 			default:
-				$MySB_DB->update("services", 	[	"port_tcp1" => "",
+				$result = $MySB_DB->update("services", 	[	"port_tcp1" => "",
 													"port_tcp2" => "",
 													"port_tcp3" => "",
 													"port_udp1" => "$openvpn_port1",
@@ -88,7 +88,7 @@ if (isset($_POST['submit'])) {
 	}
 
 	if (($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD)) {		
-		$MySB_DB->update("system", ["ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats", "pgl_watchdog_email" => "$PGL_EmailWD"], ["id_system" => 1]);
+		$result = $MySB_DB->update("system", ["ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats", "pgl_watchdog_email" => "$PGL_EmailWD"], ["id_system" => 1]);
 
 		if( $result == 1 ) {
 			$type = 'success';
