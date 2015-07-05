@@ -45,7 +45,7 @@ function Form() {
 						<td><input name="confirm_email" type="text" /></td>
 					</tr>
 				</table>
-				<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' .Global_SaveChanges. '"">
+				<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' .Global_SaveChanges. '"">
 			</div>
 		</form>';
 }

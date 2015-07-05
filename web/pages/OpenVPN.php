@@ -42,36 +42,36 @@ switch ($openvpn_proto_db) {
 		break;
 }
 
-echo '<form method="post" enctype="multipart/form-data" action="$zip_file"><div align="center">';
+echo '<form id="myForm" class="form_settings" method="post" enctype="multipart/form-data" action="$zip_file"><div align="center">';
 echo '<table width="100%" border="0" align="left">';
-echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_OpenVPN_Title_Global . '</h4></th></tr>';
+echo '<tr align="left"><th colspan="2" scope="row"><h4>' . User_OpenVPN_Title_Global . '</h4></th></tr>';
 // Protocol
 echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_Proto . '</th>';
 echo '<td>' . $openvpn_proto_db . '</td>';
 echo '<td></td></tr>';
 // Config TUN 1 (With Gateway)
-echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_OpenVPN_Title_CongigTUN_1 . '</h4></th></tr>';
+echo '<tr align="left"><th colspan="2" scope="row"><h4>' . User_OpenVPN_Title_CongigTUN_1 . '</h4></th></tr>';
 echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_Port . '</th>';
 echo '<td>' . $openvpn_port1 . '</td><tr>';
 echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_ServerIP . '</th>';
 echo '<td>' . OpenVPN_SrvIpGw . '</td><tr>';
 echo '<tr><td colspan="3"><span class="Comments">' . User_OpenVPN_Comment_CongigTUN_1 . '</span></td></tr>';
 // Config TUN 2 (Without Gateway)
-echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_OpenVPN_Title_CongigTUN_2 . '</h4></th></tr>';
+echo '<tr align="left"><th colspan="2" scope="row"><h4>' . User_OpenVPN_Title_CongigTUN_2 . '</h4></th></tr>';
 echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_Port . '</th>';
 echo '<td>' . $openvpn_port2 . '</td><tr>';
 echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_ServerIP . '</th>';
 echo '<td>' . OpenVPN_SrvIp . '</td><tr>';
 echo '<tr><td colspan="3"><span class="Comments">' . User_OpenVPN_Comment_CongigTUN_2 . '</span></td></tr>';
 // Config TAP 1 (Bridged Without Gateway)
-echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_OpenVPN_Title_CongigTAP_1 . '</h4></th></tr>';
+echo '<tr align="left"><th colspan="2" scope="row"><h4>' . User_OpenVPN_Title_CongigTAP_1 . '</h4></th></tr>';
 echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_Port . '</th>';
 echo '<td>' . $openvpn_port3 . '</td><tr>';
 echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_ServerIP . '</th>';
 echo '<td>' . OpenVPN_SrvIpBridge . '</td><tr>';
 echo '<tr><td colspan="3"><span class="Comments">' . User_OpenVPN_Comment_CongigTAP_1 . '</span></td></tr>';
 echo '</table>';
-echo '<input class="submit" style="width:' . strlen(User_OpenVPN_Download)*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' .User_OpenVPN_Download. '">';
+echo '<input class="submit" style="width:' . strlen(User_OpenVPN_Download)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' .User_OpenVPN_Download. '">';
 echo '</div></form>';
 
 if ( isset($_POST['submit']) ) {

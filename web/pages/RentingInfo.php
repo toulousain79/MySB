@@ -45,36 +45,36 @@ function Form() {
 	$GlobalCost = $renting_datas["global_cost"];
 
 	echo '<form class="form_settings" method="post" action="">
-		<div align="center"><table border="0">
-			<tr>
-				<td>' . MainUser_Renting_Model . '</td>
-				<td><input class="text_normal" name="model" type="text" value="' . $Model . '" required="required" /></td>
-				<td><span class="Comments">' . MainUser_Renting_ExModel . '</span></td>
-			</tr>
-			<tr>
-				<td>' . MainUser_Renting_TVA . '</td>
-				<td><input class="text_small" name="tva" type="text" value="' . $TVA . '" required="required" /></td>
-				<td><span class="Comments">' . MainUser_Renting_ExTVA . '</span></td>
-			</tr>
-			<tr>
-				<td>' . MainUser_Renting_Price . '</td>
-				<td><input class="text_small" name="global_cost" type="text" value="' . $GlobalCost . '" required="required" /></td>
-				<td><span class="Comments">' . MainUser_Renting_ExPrice . '</span></td>
-			</tr>
-			<tr>
-				<td>' . MainUser_Renting_TotalUser . '</td>
-				<td><input class="text_extra_small" readonly="readonly" type="text" value="' . $TotalUsers . '" /></td>
-				<td><span class="Comments">' . MainUser_Renting_ReadOnly . '</span></td>
-			</tr>
-			<tr>
-				<td>' . MainUser_Renting_PricePerUser . '</td>
-				<td><input class="text_extra_small" readonly="readonly" type="text" value="' . $PricePerUser . '" /></td>
-				<td><span class="Comments">' . MainUser_Renting_ReadOnly . '</span></td>
-			</tr>
-			<tr>
-				<td colspan="3"><input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' . Global_SaveChanges . '" /></td>
-			</tr>
-		</table></div>
+		<div align="center">
+			<table border="0">
+				<tr>
+					<td>' . MainUser_Renting_Model . '</td>
+					<td><input class="text_normal" name="model" type="text" value="' . $Model . '" required="required" /></td>
+					<td><span class="Comments">' . MainUser_Renting_ExModel . '</span></td>
+				</tr>
+				<tr>
+					<td>' . MainUser_Renting_TVA . '</td>
+					<td><input class="text_small" name="tva" type="text" value="' . $TVA . '" required="required" /></td>
+					<td><span class="Comments">' . MainUser_Renting_ExTVA . '</span></td>
+				</tr>
+				<tr>
+					<td>' . MainUser_Renting_Price . '</td>
+					<td><input class="text_small" name="global_cost" type="text" value="' . $GlobalCost . '" required="required" /></td>
+					<td><span class="Comments">' . MainUser_Renting_ExPrice . '</span></td>
+				</tr>
+				<tr>
+					<td>' . MainUser_Renting_TotalUser . '</td>
+					<td><input class="text_extra_small" readonly="readonly" type="text" value="' . $TotalUsers . '" /></td>
+					<td><span class="Comments">' . MainUser_Renting_ReadOnly . '</span></td>
+				</tr>
+				<tr>
+					<td>' . MainUser_Renting_PricePerUser . '</td>
+					<td><input class="text_extra_small" readonly="readonly" type="text" value="' . $PricePerUser . '" /></td>
+					<td><span class="Comments">' . MainUser_Renting_ReadOnly . '</span></td>
+				</tr>
+			</table>
+			<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' . Global_SaveChanges . '" />
+		</div>
 	</form>';
 
 }

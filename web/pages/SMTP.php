@@ -51,61 +51,61 @@ function Form() {
 
 	echo '
 	<form class="form_settings" method="post" action="">
-		<div align="center"><table border="0">
-			<tr>
-				<td>' . MainUser_SMTP_Provider . '</td>
-				<td>
-					<select name="SmtpProvider" id="json-provider" style="width:100px; height: 28px;">';
+		<div align="center">
+			<table border="0">
+				<tr>
+					<td>' . MainUser_SMTP_Provider . '</td>
+					<td>
+						<select name="SmtpProvider" id="json-provider" style="width:100px; height: 28px;">';
 
-					foreach($ProvidersList as $Providers) {
-						if ( $SmtpProvider == $Providers) {
-							echo '<option selected="selected" value="' . $Providers . '">' . $Providers . '</option>';
-						} else {
-							echo '<option value="' . $Providers . '">' . $Providers . '</option>';
+						foreach($ProvidersList as $Providers) {
+							if ( $SmtpProvider == $Providers) {
+								echo '<option selected="selected" value="' . $Providers . '">' . $Providers . '</option>';
+							} else {
+								echo '<option value="' . $Providers . '">' . $Providers . '</option>';
+							}
 						}
-					}
 
-	echo '
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<td>' . MainUser_SMTP_Address . '</td>
-				<td><input class="text_normal" id="SmtpEmail" name="SmtpEmail" type="text" value="' . $SmtpEmail . '" required="required" /></td>
-			</tr>			
-			<tr>
-				<td>' . MainUser_SMTP_Username . '</td>
-				<td><input class="text_normal" id="SmtpUsername" name="SmtpUsername" type="text" value="' . $SmtpUsername . '" required="required" /></td>
-			</tr>
-			<tr>
-				<td>' . MainUser_SMTP_Password . '</td>
-				<td><input class="text_normal" id="SmtpPasswd" name="SmtpPasswd" type="password" value="' . $SmtpPasswd . '" required="required" /></td>
-			</tr>
-			<tr>
-				<td>' . MainUser_SMTP_Confirm . '</td>
-				<td><input class="text_normal" id="SmtpPasswdConfirm" name="SmtpPasswdConfirm" type="password" value="' . $SmtpPasswd . '" required="required" /></td>
-			</tr>
-			<tr>
-				<td>' . MainUser_SMTP_Host . '</td>
-				<td>
-					<select name="SmtpHost" id="json-host" style="width:150px; height: 28px;" required="required" readonly>
-						<option>' . $SmtpHost . '</option>
-					</select>
+		echo '
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td>' . MainUser_SMTP_Address . '</td>
+					<td><input class="text_normal" id="SmtpEmail" name="SmtpEmail" type="text" value="' . $SmtpEmail . '" required="required" /></td>
+				</tr>			
+				<tr>
+					<td>' . MainUser_SMTP_Username . '</td>
+					<td><input class="text_normal" id="SmtpUsername" name="SmtpUsername" type="text" value="' . $SmtpUsername . '" required="required" /></td>
+				</tr>
+				<tr>
+					<td>' . MainUser_SMTP_Password . '</td>
+					<td><input class="text_normal" id="SmtpPasswd" name="SmtpPasswd" type="password" value="' . $SmtpPasswd . '" required="required" /></td>
+				</tr>
+				<tr>
+					<td>' . MainUser_SMTP_Confirm . '</td>
+					<td><input class="text_normal" id="SmtpPasswdConfirm" name="SmtpPasswdConfirm" type="password" value="' . $SmtpPasswd . '" required="required" /></td>
+				</tr>
+				<tr>
+					<td>' . MainUser_SMTP_Host . '</td>
+					<td>
+						<select name="SmtpHost" id="json-host" style="width:150px; height: 28px;" required="required" readonly>
+							<option>' . $SmtpHost . '</option>
+						</select>
 
-				</td>
-			</tr>
-			<tr>
-				<td>' . MainUser_SMTP_Port . '</td>
-				<td>
-					<select name="SmtpPort" id="json-port" style="width:60px; height: 28px;" required="required" readonly>
-						<option>' . $SmtpPort . '</option>
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<td colspan="3"><input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' . Global_SaveChanges . '" /></td>
-			</tr>
-		</table></div>
+					</td>
+				</tr>
+				<tr>
+					<td>' . MainUser_SMTP_Port . '</td>
+					<td>
+						<select name="SmtpPort" id="json-port" style="width:60px; height: 28px;" required="required" readonly>
+							<option>' . $SmtpPort . '</option>
+						</select>
+					</td>
+				</tr>
+			</table>
+			<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' . Global_SaveChanges . '" />
+		</div>
 	</form>
 	';
 }
