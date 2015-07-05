@@ -113,26 +113,28 @@ PackagesManage() {
 	export DEBIAN_FRONTEND=noninteractive
 	
 	#### Check last update
-	if [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
-		AptUpdate="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT apt_update FROM system WHERE 1\"`"
-		AptDate="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT apt_date FROM system WHERE 1\"`"
-		AptDate=$(date -d "$AptDate" +"%Y-%m-%d %H")
-		Now=$(date +%Y-%m-%d\ %H)
-		t1=$(date --date="$AptDate" +'%-H')
-		t2=$(date --date="$Now" +'%-H')
-		let "tDiff=$t2-$t1"
+	if [ "$Query" != "test" ]; then
+		if [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
+			AptUpdate="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT apt_update FROM system WHERE 1\"`"
+			AptDate="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT apt_date FROM system WHERE 1\"`"
+			AptDate=$(date -d "$AptDate" +"%Y-%m-%d %H")
+			Now=$(date +%Y-%m-%d\ %H)
+			t1=$(date --date="$AptDate" +'%-H')
+			t2=$(date --date="$Now" +'%-H')
+			let "tDiff=$t2-$t1"
 
-		#### Need of 'apt-get update' ? (must be greater than 2 hours OR forced)
-		if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ]; then
+			#### Need of 'apt-get update' ? (must be greater than 2 hours OR forced)
+			if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ]; then
+				echo "$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update"
+				$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update
+				if [ $? -eq 0 ]; then
+					sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE system SET apt_update = 0, apt_date = datetime('now','localtime') WHERE id_system = 1;"
+				fi
+			fi
+		else
 			echo "$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update"
 			$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update
-			if [ $? -eq 0 ]; then
-				sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE system SET apt_update = 0, apt_date = datetime('now','localtime') WHERE id_system = 1;"
-			fi
 		fi
-	else
-		echo "$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update"
-		$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update
 	fi
 
 	case "$Query" in
@@ -167,30 +169,56 @@ PackagesManage() {
 				fi
 			done
 			FinalList="`echo $FinalList | sed -e 's/^ //g;'`"
-			
-			if [ ! -z "$FinalList" ]; then		
+
+			if [ ! -z "$FinalList" ]; then
 				echo "$AptCommand $GlobalArgs purge $FinalList"
 				$AptCommand $GlobalArgs purge $FinalList
+			fi
+		;;
+		'test')
+			$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update > $MySB_InstallDir/temp/netselect-apt
+			case "$AptCommand" in
+				"aptitude -q")
+					Erreur="Erreur"
+					Ignore="Ignoré"
+				;;
+				"apt-get")
+					Erreur="Err"
+					Ignore="Ign"
+				;;
+			esac
+
+			if [ -f $MySB_InstallDir/temp/netselect-apt ]; then
+				MirrorsError="`cat $MySB_InstallDir/temp/netselect-apt | grep "^$Erreur" | awk '{ print $2 }'`"
+				for Mirror in $MirrorsError; do
+					sed -i '/'$Mirror'/d' $MySB_InstallDir/files/fastest_mirrors
+				done
+				MirrorsError="`cat $MySB_InstallDir/temp/netselect-apt | grep "^$Ignore" | awk '{ print $2 }'`"
+				for Mirror in $MirrorsError; do
+					sed -i '/'$Mirror'/d' $MySB_InstallDir/files/fastest_mirrors
+				done
 			fi
 		;;
 	esac
 	
 	RETURN=$?
 
-	if [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
-		#### Need of cleaning ? (must be greater than 2 hours OR forced)
-		if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ]; then
-			if [ $RETURN -eq 0 ]; then
-				if [ "`$AptCommand --help | grep autoremove | awk '{ print $1 }'`" == "autoremove" ]; then
-					echo "$AptCommand $GlobalArgs autoremove"
-					$AptCommand $GlobalArgs autoremove
-				elif [ "`$AptCommand --help | grep autoclean | awk '{ print $1 }'`" == "autoclean" ]; then
-					echo "$AptCommand $GlobalArgs autoremove"
-					$AptCommand $GlobalArgs autoclean
-				fi
+	if [ "$Query" != "test" ]; then
+		if [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
+			#### Need of cleaning ? (must be greater than 2 hours OR forced)
+			if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ]; then
+				if [ $RETURN -eq 0 ]; then
+					if [ "`$AptCommand --help | grep autoremove | awk '{ print $1 }'`" == "autoremove" ]; then
+						echo "$AptCommand $GlobalArgs autoremove"
+						$AptCommand $GlobalArgs autoremove
+					elif [ "`$AptCommand --help | grep autoclean | awk '{ print $1 }'`" == "autoclean" ]; then
+						echo "$AptCommand $GlobalArgs autoremove"
+						$AptCommand $GlobalArgs autoclean
+					fi
 
-				echo "$AptCommand $GlobalArgs install"
-				$AptCommand $GlobalArgs install
+					echo "$AptCommand $GlobalArgs install"
+					$AptCommand $GlobalArgs install
+				fi
 			fi
 		fi
 	fi
