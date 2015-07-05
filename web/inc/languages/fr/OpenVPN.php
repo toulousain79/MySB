@@ -38,10 +38,7 @@ define('User_OpenVPN_Success', 'Succ&egrave;s de la cr&eacute;ation du fichier Z
 define('User_OpenVPN_Failded', 'Echec de la cr&eacute;ation du fichier ZIP !<br />Impossible de t&eacute;l&eacute;charger vos configuration pour OpenVPN.');
 define('User_OpenVPN_FailedUpdateMysbDB', 'Echec !<br /><br />Impossible de planifier la g&eacute;n&eacute;ration de fichier ZIP...');
 define('User_OpenVPN_NoPassword', 'Echec !<br /><br />Votre session n\'est pas enregistr&eacute;e.<br />Merci de bien vouloir actualiser cette page.');
-
-
 define('User_OpenVPN_NoFile', 'Aucun fichier de configuration pour l\'utilisateur %s....');
-
 
 //#################### LAST LINE ######################################
 ?>

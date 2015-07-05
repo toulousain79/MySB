@@ -42,6 +42,7 @@ switch ($openvpn_proto_db) {
 		break;
 }
 
+echo '<table width="100%" border="0" align="left">';
 echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_OpenVPN_Title_Global . '</h4></th></tr>';
 // Protocol
 echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_Proto . '</th>';
@@ -68,9 +69,10 @@ echo '<td>' . $openvpn_port3 . '</td><tr>';
 echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_ServerIP . '</th>';
 echo '<td>' . OpenVPN_SrvIpBridge . '</td><tr>';
 echo '<tr><td colspan="3"><span class="Comments">' . User_OpenVPN_Comment_CongigTAP_1 . '</span></td></tr>';
+echo '</table>';
 
 echo '
-	<form class="form_settings" method="post" enctype="multipart/form-data" action="$zip_file">
+	<form method="post" enctype="multipart/form-data" action="$zip_file">
 		<div align="center"><table border="0">	
 			<tr>
 				<td colspan="2">

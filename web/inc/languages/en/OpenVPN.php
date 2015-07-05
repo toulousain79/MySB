@@ -38,12 +38,7 @@ define('User_OpenVPN_Success', 'Successful creation of ZIP file!');
 define('User_OpenVPN_Failded', 'Failed to create the ZIP file!<br />Unable to download your OpenVPN configuration.');
 define('User_OpenVPN_FailedUpdateMysbDB', 'Failed !<br /><br />Unable to schedule the ZIP file generation...');
 define('User_OpenVPN_NoPassword', 'Failed!<br /><br />Your session is not recorded.<br />Thank you kindly refresh this page.');
-
-
-
-
 define('User_OpenVPN_NoFile', 'No OpenVPN config file for user %s....');
-
 
 //#################### LAST LINE ######################################
 ?>
