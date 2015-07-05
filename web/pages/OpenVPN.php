@@ -42,97 +42,119 @@ switch ($openvpn_proto_db) {
 		break;
 }
 
-echo '<form id="myForm" class="form_settings" method="post" enctype="multipart/form-data" action="$zip_file"><div align="center">';
+echo '<form id="myForm" class="form_settings" method="post" enctype="multipart/form-data" action=""><div align="center">';
+if (file_exists($zip_file)) {
+	echo '<input class="submit" style="width:' . strlen(User_OpenVPN_Download)*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' . User_OpenVPN_Download . '">';
+} else {
+	echo '<input class="submit" style="width:' . strlen(User_OpenVPN_Generate)*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' . User_OpenVPN_Generate . '">';
+}
 echo '<table>';
 echo '<tr align="left"><th colspan="2" scope="row"><h4>' . User_OpenVPN_Title_Global . '</h4></th></tr>';
 // Protocol
-echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_Proto . '</th>';
+echo '<tr align="left"><th scope="row">' . User_OpenVPN_Table_Proto . '</th>';
 echo '<td>' . $openvpn_proto_db . '</td></tr>';
+echo '<td colspan="2"> </td><tr>';
 // Config TUN 1 (With Gateway)
 echo '<tr align="left"><th colspan="2" scope="row"><h4>' . User_OpenVPN_Title_CongigTUN_1 . '</h4></th></tr>';
-echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_Port . '</th>';
+echo '<tr align="left"><th scope="row">' . User_OpenVPN_Table_Port . '</th>';
 echo '<td>' . $openvpn_port1 . '</td><tr>';
-echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_ServerIP . '</th>';
+echo '<tr align="left"><th scope="row">' . User_OpenVPN_Table_ServerIP . '</th>';
 echo '<td>' . OpenVPN_SrvIpGw . '</td><tr>';
 echo '<tr><td colspan="2"><span class="Comments">' . User_OpenVPN_Comment_CongigTUN_1 . '</span></td></tr>';
 // Config TUN 2 (Without Gateway)
 echo '<tr align="left"><th colspan="2" scope="row"><h4>' . User_OpenVPN_Title_CongigTUN_2 . '</h4></th></tr>';
-echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_Port . '</th>';
+echo '<tr align="left"><th scope="row">' . User_OpenVPN_Table_Port . '</th>';
 echo '<td>' . $openvpn_port2 . '</td><tr>';
-echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_ServerIP . '</th>';
+echo '<tr align="left"><th scope="row">' . User_OpenVPN_Table_ServerIP . '</th>';
 echo '<td>' . OpenVPN_SrvIp . '</td><tr>';
 echo '<tr><td colspan="2"><span class="Comments">' . User_OpenVPN_Comment_CongigTUN_2 . '</span></td></tr>';
 // Config TAP 1 (Bridged Without Gateway)
 echo '<tr align="left"><th colspan="2" scope="row"><h4>' . User_OpenVPN_Title_CongigTAP_1 . '</h4></th></tr>';
-echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_Port . '</th>';
+echo '<tr align="left"><th scope="row">' . User_OpenVPN_Table_Port . '</th>';
 echo '<td>' . $openvpn_port3 . '</td><tr>';
-echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_ServerIP . '</th>';
+echo '<tr align="left"><th scope="row">' . User_OpenVPN_Table_ServerIP . '</th>';
 echo '<td>' . OpenVPN_SrvIpBridge . '</td><tr>';
 echo '<tr><td colspan="2"><span class="Comments">' . User_OpenVPN_Comment_CongigTAP_1 . '</span></td></tr>';
 echo '</table>';
-echo '<input class="submit" style="width:' . strlen(User_OpenVPN_Download)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' .User_OpenVPN_Download. '">';
+if (file_exists($zip_file)) {
+	echo '<input class="submit" style="width:' . strlen(User_OpenVPN_Download)*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' . User_OpenVPN_Download . '">';
+} else {
+	echo '<input class="submit" style="width:' . strlen(User_OpenVPN_Generate)*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' . User_OpenVPN_Generate . '">';
+}
 echo '</div></form>';
 
 if ( isset($_POST['submit']) ) {
-	switch ($_POST['submit']) {
-		case User_OpenVPN_Download:
-			GenerateMessage('message_only', 'information', User_OpenVPN_Wait);
+	if ($_POST['submit'] == User_OpenVPN_Generate) {
+		
+		$current_pwd = $_SERVER['PHP_AUTH_PW'];
+		
+		GenerateMessage('message_only', 'information', User_OpenVPN_Wait);
+		
+		if ( ($CurrentUser != '') && ($current_pwd != '') ) {
+			$args = "$CurrentUser|$current_pwd";
+			$command = 'OpenVPN';
+			$priority = $MySB_DB->max("commands", "priority");
+			$priority++;
+			$value = $MySB_DB->insert("commands", ["commands" => "$command", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
 
-			if ( ($_SERVER['PHP_AUTH_USER'] != '') && ($_SERVER['PHP_AUTH_PW'] != '') ) {
-				$args = $_SERVER['PHP_AUTH_USER'].'|'.$_SERVER['PHP_AUTH_PW'];
-				$command = 'OpenVPN';
-				$priority = $MySB_DB->max("commands", "priority");
-				$priority++;
-				$value = $MySB_DB->insert("commands", ["commands" => "$command", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
+			if ( $value > 0 ) {
+				exec("sudo /bin/bash ".MYSB_ROOT."/scripts/ApplyConfig.bsh '$CurrentUser' 'DO_APPLY'", $output, $result);
 
-				if ( $value > 0 ) {
-					exec("sudo /bin/bash ".MYSB_ROOT."/scripts/ApplyConfig.bsh '$CurrentUser' 'DO_APPLY'", $output, $result);
-
-					if ( $result == 0 ) {
-						$type = 'success';
-						$command = 'message_only';
-						$message = User_OpenVPN_Success;
-					} else {
-						$type = 'error';
-						$message = User_OpenVPN_Failded;
-					}
+				if ( $result == 0 ) {
+					$type = 'success';
+					$command = 'message_only';
+					$message = User_OpenVPN_Success;
 				} else {
 					$type = 'error';
-					$message = User_OpenVPN_FailedUpdateMysbDB;
+					$message = User_OpenVPN_Failded;
 				}
 			} else {
 				$type = 'error';
-				$message = User_OpenVPN_NoPassword;
+				$message = User_OpenVPN_FailedUpdateMysbDB;
 			}
+		} else {
+			$type = 'error';
+			$message = User_OpenVPN_NoPassword;
+		}
+		
+		GenerateMessage($command, $type, $message, $args);
+		
+		if ( $type == 'success' ) {
+			session_start();
+			unset($_SESSION['page']);
+			session_unset();
+			session_destroy();
+			header('Refresh: 10; URL=/?user/openvpn-config-file.html');
+		}
+	
+	} else {
 
-			if (file_exists($zip_file)) {
-				$file_name = basename($zip_file);
-				ini_set('zlib.output_compression', 0);
-				$date = gmdate(DATE_RFC1123);
+		if (file_exists($zip_file)) {
+			$file_name = basename($zip_file);
+			ini_set('zlib.output_compression', 0);
+			$date = gmdate(DATE_RFC1123);
 
-				if (preg_match('/MSIE 5.5/', $_ENV['HTTP_USER_AGENT']) || preg_match('/MSIE 6.0/', $_ENV['HTTP_USER_AGENT'])) {
-					header('Content-Disposition: filename = "'.$file_name.'"');
-				} else {
-					header('Content-Disposition: attachment; filename = "'.$file_name.'"');
-				}
-
-				header("Content-Type: application/zip");
-				header("Pragma: no-cache");
-				header("Cache-Control: must-revalidate, post-check=0, pre-check=0, public");
-				header("Expires: 0");
-				header("Content-Transfer-Encoding: binary");
-				header("Connection: close\r\n\r\n" );
-				ob_end_clean();
-				readfile($zip_file);
-				exit();
+			if (preg_match('/MSIE 5.5/', $_ENV['HTTP_USER_AGENT']) || preg_match('/MSIE 6.0/', $_ENV['HTTP_USER_AGENT'])) {
+				header('Content-Disposition: filename = "'.$file_name.'"');
 			} else {
-				$message = sprintf(User_OpenVPN_NoFile, $_SERVER['PHP_AUTH_USER']);
-				GenerateMessage('message_only', 'information', $message);
-				echo $message;
-				header('Refresh: 5; URL=/');
+				header('Content-Disposition: attachment; filename = "'.$file_name.'"');
 			}
 
-			break;
+			header("Content-Type: application/zip");
+			header("Pragma: no-cache");
+			header("Cache-Control: must-revalidate, post-check=0, pre-check=0, public");
+			header("Expires: 0");
+			header("Content-Transfer-Encoding: binary");
+			header("Connection: close\r\n\r\n" );
+			ob_end_clean();
+			readfile($zip_file);
+			exit();
+		} else {
+			$message = sprintf(User_OpenVPN_NoFile, $_SERVER['PHP_AUTH_USER']);
+			GenerateMessage('message_only', 'information', $message);
+			echo $message;
+			header('Refresh: 5; URL=/');
+		}
 	}
 }
 
