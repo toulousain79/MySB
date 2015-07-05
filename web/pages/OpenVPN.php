@@ -43,7 +43,7 @@ switch ($openvpn_proto_db) {
 }
 
 echo '<form id="myForm" class="form_settings" method="post" enctype="multipart/form-data" action="$zip_file"><div align="center">';
-echo '<table width="100%" border="0" align="left">';
+echo '<table>';
 echo '<tr align="left"><th colspan="2" scope="row"><h4>' . User_OpenVPN_Title_Global . '</h4></th></tr>';
 // Protocol
 echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_Proto . '</th>';
