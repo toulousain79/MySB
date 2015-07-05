@@ -30,25 +30,23 @@ function Form() {
 	global $MySB_DB;
 
 	echo '<form class="form_settings" method="post" action="">
-			<div align="center"><table border="0">
-				<tr>
-					<td>' . MainUser_UserAdd_Username . '</td>
-					<td><input name="username" type="text" /></td>
-				</tr>
-				<tr>
-					<td>' . MainUser_UserAdd_UserEmail . '</td>
-					<td><input name="email" type="text" /></td>
-				</tr>
-				<tr>
-					<td>' . MainUser_UserAdd_ConfirmEmail . '</td>
-					<td><input name="confirm_email" type="text" /></td>
-				</tr>
-				<tr>
-					<td colspan="2">
-						<input class="submit" name="submit" type="submit" value="' . MainUser_UserAdd_AddUser . '">
-					</td>
-				</tr>
-			</table></div>
+			<div align="center">
+				<table border="0">
+					<tr>
+						<td>' . MainUser_UserAdd_Username . '</td>
+						<td><input name="username" type="text" /></td>
+					</tr>
+					<tr>
+						<td>' . MainUser_UserAdd_UserEmail . '</td>
+						<td><input name="email" type="text" /></td>
+					</tr>
+					<tr>
+						<td>' . MainUser_UserAdd_ConfirmEmail . '</td>
+						<td><input name="confirm_email" type="text" /></td>
+					</tr>
+				</table>
+				<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' .MainUser_UserAdd_AddUser. '"">
+			</div>
 		</form>';
 }
 
