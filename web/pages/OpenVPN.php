@@ -26,6 +26,7 @@ global $MySB_DB, $CurrentUser;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 $zip_file = WEB_ROOT . "/openvpn/openvpn_$CurrentUser.zip";
+$RefreshPage = 5;
 
 $openvpn_proto_db =  $MySB_DB->get("services", "port_udp1", ["serv_name" => "OpenVPN"]);
 switch ($openvpn_proto_db) {
@@ -49,6 +50,7 @@ if (file_exists($zip_file)) {
 } else {
 	echo '<input class="submit" style="width:' . strlen(User_OpenVPN_Generate)*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' . User_OpenVPN_Generate . '">';
 }
+
 echo '<table>';
 echo '<tr align="left"><th colspan="2" scope="row"><h4>' . User_OpenVPN_Title_Global . '</h4></th></tr>';
 // Protocol
@@ -121,11 +123,7 @@ if ( isset($_POST['submit']) ) {
 			GenerateMessage($command, $type, $message, $args);
 			
 			if ( $type == 'success' ) {
-				session_start();
-				unset($_SESSION['page']);
-				session_unset();
-				session_destroy();
-				header('Refresh: 10; URL=/?user/openvpn-config-file.html');
+				header("Refresh: $RefreshPage; URL=/?user/openvpn-config-file.html");
 			}
 			break;
 
@@ -146,14 +144,12 @@ if ( isset($_POST['submit']) ) {
 					header('Content-Disposition: attachment; filename = "'.$file_name.'"');
 				}
 				header("Content-Transfer-Encoding: binary");
-				header("Content-Length: ".filesize(zip_file));
+				header("Content-Length: ".filesize($zip_file));
 				ob_end_flush();
 				@readfile($zip_file);
 			} else {
 				$message = sprintf(User_OpenVPN_NoFile, $_SERVER['PHP_AUTH_USER']);
 				GenerateMessage('message_only', 'information', $message);
-				echo $message;
-				header('Refresh: 5; URL=/');
 			}
 			break;
 	}

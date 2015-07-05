@@ -35,7 +35,7 @@ define('User_OpenVPN_Comment_CongigTAP_1', 'Avec cette configuration, vous dispo
 define('User_OpenVPN_Generate', 'G&eacute;n&eacute;rer mes fichiers !');
 define('User_OpenVPN_Download', 'T&eacute;l&eacute;charger mes fichiers de configuration !');
 define('User_OpenVPN_Wait', 'G&eacute;n&eacute;ration du fichier ZIP en cours.<br />Merci de patienter quelques secondes.');
-define('User_OpenVPN_Success', 'Succ&egrave;s de la cr&eacute;ation du fichier ZIP !<br /><br />Merci de patienter 10 secondes.');
+define('User_OpenVPN_Success', 'Succ&egrave;s de la cr&eacute;ation du fichier ZIP !<br /><br />Merci de patienter %s secondes.');
 define('User_OpenVPN_Failded', 'Echec de la cr&eacute;ation du fichier ZIP !<br />Impossible de t&eacute;l&eacute;charger vos configuration pour OpenVPN.');
 define('User_OpenVPN_FailedUpdateMysbDB', 'Echec !<br /><br />Impossible de planifier la g&eacute;n&eacute;ration de fichier ZIP...');
 define('User_OpenVPN_NoPassword', 'Echec !<br /><br />Votre session n\'est pas enregistr&eacute;e.<br />Merci de bien vouloir actualiser cette page.');

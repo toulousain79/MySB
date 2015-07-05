@@ -28,7 +28,7 @@ define('MainUser_DNScrypt_Table_FullName', 'Nom complet');
 define('MainUser_DNScrypt_Table_Location', 'Localisation');
 define('MainUser_DNScrypt_Table_Version', 'Version');
 define('MainUser_DNScrypt_Table_DNSsec', 'Validation<br />DNSSEC');
-define('MainUser_DNScrypt_Table_NoLog', 'Pas de logs');
+define('MainUser_DNScrypt_Table_NoLog', 'Pas de<br />logs');
 define('MainUser_DNScrypt_Table_NameCoin', 'Namecoin');
 
 //#################### LAST LINE ######################################

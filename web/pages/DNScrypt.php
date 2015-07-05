@@ -62,54 +62,30 @@ $ResolversList = $MySB_DB->select("dnscrypt_resolvers", [
 														]);
 
 $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["is_wished" => 1, "is_activated" => 1]]);
+
+function YesNo($value) {
+	switch ($value) {
+		case 'yes':
+			echo Global_Yes;
+			break;
+		default:
+			echo Global_No;
+			break;
+	}
+}
 ?>
 
-<!--
-<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
-	<form class="form_settings" method="post" action="">
-		<fieldset>
-		<legend>What resolver do you want to use ? (IPv4 only)</legend>
-
-				Available resolvers: <select name="ResolverName" style="width:200px; cursor: pointer;" required="required">
-<?php
-						// foreach($ResolversList as $Resolver) {
-							// if ( ! strpos($Resolver["name"], 'ipv6') ) {
-								// switch ($Resolver["name"]) {
-									// case "$SelectedResolver":
-										// $selected = 'selected="selected"';
-										// break;
-									// default:
-										// $selected = '';
-										// break;
-								// }
-								// echo '<option value="' .$Resolver["name"]. '" ' . $selected . '>' .$Resolver["name"]. '</option>';
-							// }
-						// }
-?>
-									</select> 
-		
-			<p class="Comments">If Be careful, some resolvers do not seem to work for resolving certain domains. This is the case of <b>opendns</b> for example.<br />
-								If problems try another one.<br />
-								The default resolver is <b>dnscrypt.eu-dk</b>.</p>
-
-			<input class="submit" style="width:180px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="I want use this resolver !">
-		</fieldset>
-	</form>
-</div>
--->
-
-<form class="form_settings" method="post" action="">
-	<div align="center">
-		<table style="border-spacing:1;">
-			<tr>
-				<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_Name; ?></th>
-				<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_FullName; ?></th>
-				<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_Location; ?></th>
-				<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_Version; ?></th>
-				<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_DNSsec; ?></th>
-				<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_NoLog; ?></th>
-				<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_NameCoin; ?></th>
-			</tr>
+<div align="center">
+	<table style="border-spacing:1;">
+		<tr>
+			<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_Name; ?></th>
+			<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_FullName; ?></th>
+			<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_Location; ?></th>
+			<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_Version; ?></th>
+			<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_DNSsec; ?></th>
+			<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_NoLog; ?></th>
+			<th style="text-align:center;"><?php echo MainUser_DNScrypt_Table_NameCoin; ?></th>
+		</tr>
 <?php
 foreach($ResolversList as $Resolver) {
 	$Name=$Resolver["name"];
@@ -124,7 +100,7 @@ foreach($ResolversList as $Resolver) {
 	$ProviderName=$Resolver["provider_name"];
 	$IsWished=$Resolver["is_wished"];
 	$IsActivated=$Resolver["is_activated"];
-	
+
 	if ( ($IsActivated == '1') && ($IsWished == '1') ) {
 		$style = "style=\"background-color:#00FF66\"";
 	} else {
@@ -133,37 +109,35 @@ foreach($ResolversList as $Resolver) {
 
 	if ( ! strpos($Name, 'ipv6') ) {
 ?>
-			<tr>
-				<td <?php echo $style ?>>
-					<?php echo $Name; ?>
-				</td>
-				<td <?php echo $style ?>>
-					<a target="_blank" href="<?php echo $URL; ?>"><?php echo $FullName; ?></a>
-				</td>
-				<td <?php echo $style ?>>
-					<?php echo $Location; ?>
-				</td>
-				<td <?php echo $style ?>>
-					<div style="text-align: center;"><?php echo $Version; ?></div>
-				</td>
-				<td <?php echo $style ?>>
-					<div style="text-align: center;"><?php echo $DnssecVal; ?></div>
-				</td>
-				<td <?php echo $style ?>>
-					<div style="text-align: center;"><?php echo $NoLogs; ?></div>
-				</td>
-				<td <?php echo $style ?>>
-					<div style="text-align: center;"><?php echo $Namecoin; ?></div>
-				</td>
-			</tr>
+		<tr>
+			<td <?php echo $style ?>>
+				<?php echo $Name; ?>
+			</td>
+			<td <?php echo $style ?>>
+				<a target="_blank" href="<?php echo $URL; ?>"><?php echo $FullName; ?></a>
+			</td>
+			<td <?php echo $style ?>>
+				<?php echo $Location; ?>
+			</td>
+			<td <?php echo $style ?>>
+				<div style="text-align: center;"><?php echo $Version; ?></div>
+			</td>
+			<td <?php echo $style ?>>
+				<div style="text-align: center;"><?php echo YesNo($DnssecVal); ?></div>
+			</td>
+			<td <?php echo $style ?>>
+				<div style="text-align: center;"><?php echo YesNo($NoLogs); ?></div>
+			</td>
+			<td <?php echo $style ?>>
+				<div style="text-align: center;"><?php echo YesNo($Namecoin); ?></div>
+			</td>
+		</tr>
 <?php
 	}
 } // foreach($TrackersList as $Tracker) {
 ?>
-
-		</table>
-	</div>
-</form>
+	</table>
+</div>
 
 <?php
 //#################### LAST LINE ######################################

@@ -52,14 +52,6 @@ function ChangeCakeboxLanguage($user, $language) {
 	}
 }
 
-// Create a log file pour 'ApplyConfig.php'
-function CreateLogFile($LogFile, $Data) {
-	$fp = fopen ($LogFile, "a+");
-	fseek ($fp, 0);
-	fputs ($fp, $Data);
-	fclose ($fp);
-}
-
 // Password Generator
 function PasswordGenerator ($length = 8) {
 	$password = "";

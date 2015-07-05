@@ -35,7 +35,7 @@ define('User_OpenVPN_Comment_CongigTAP_1', 'With this configuration you only hav
 define('User_OpenVPN_Generate', 'Generate my configuration files !');
 define('User_OpenVPN_Download', 'Download my configuration files !');
 define('User_OpenVPN_Wait', 'Generating the ZIP file in progress.<br />Please, wait a few seconds.');
-define('User_OpenVPN_Success', 'Successful creation of ZIP file!<br /><br />Please, wait a 10 seconds.');
+define('User_OpenVPN_Success', 'Successful creation of ZIP file!<br /><br />Please, wait a %s seconds.');
 define('User_OpenVPN_Failded', 'Failed to create the ZIP file!<br />Unable to download your OpenVPN configuration.');
 define('User_OpenVPN_FailedUpdateMysbDB', 'Failed !<br /><br />Unable to schedule the ZIP file generation...');
 define('User_OpenVPN_NoPassword', 'Failed!<br /><br />Your session is not recorded.<br />Thank you kindly refresh this page.');
