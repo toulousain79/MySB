@@ -53,11 +53,7 @@ echo '
 				<td>' . User_ChangePassword_ConfirmPassword . '</td>
 				<td><input name="confirm_pwd" type="password" /></td>
 			</tr>
-			<tr>
-				<td colspan="2">
-					<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' .Global_SaveChanges. '">
-				</td>
-			</tr>
+			<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' .Global_SaveChanges. '">
 		</table></div>
 	</form>
 	';

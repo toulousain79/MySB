@@ -42,7 +42,8 @@ switch ($openvpn_proto_db) {
 		break;
 }
 
-echo '<table width="100%" border="0" align="left">';
+echo '<form method="post" enctype="multipart/form-data" action="$zip_file">';
+echo '<div align="center"><table width="100%" border="0" align="left">';
 echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_OpenVPN_Title_Global . '</h4></th></tr>';
 // Protocol
 echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_Proto . '</th>';
@@ -69,19 +70,9 @@ echo '<td>' . $openvpn_port3 . '</td><tr>';
 echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_ServerIP . '</th>';
 echo '<td>' . OpenVPN_SrvIpBridge . '</td><tr>';
 echo '<tr><td colspan="3"><span class="Comments">' . User_OpenVPN_Comment_CongigTAP_1 . '</span></td></tr>';
-echo '</table>';
-
-echo '
-	<form method="post" enctype="multipart/form-data" action="$zip_file">
-		<div align="center"><table border="0">	
-			<tr>
-				<td colspan="2">
-					<input class="submit" style="width:' . strlen(User_OpenVPN_Download)*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' .User_OpenVPN_Download. '">
-				</td>
-			</tr>
-		</table></div>
-	</form>
-	';
+echo '<input class="submit" style="width:' . strlen(User_OpenVPN_Download)*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' .User_OpenVPN_Download. '">';
+echo '</table></div>';
+echo '</form>';
 
 if ( isset($_POST['submit']) ) {
 	switch ($_POST['submit']) {
