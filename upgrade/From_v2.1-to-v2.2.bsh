@@ -27,7 +27,7 @@ source $(dirname $0)/../inc/includes_before
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=16
+TotalSTEP=17
 
 BannerUpgrade
 
@@ -88,6 +88,14 @@ echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Moving and deleting some files & d
 # NginX
 if [ -f /etc/nginx/nginx.conf.dpkg-dist ]; then rm -f /etc/nginx/nginx.conf.dpkg-dist &> /dev/null; fi
 if [ -f /etc/nginx/sites-available/default.dpkg-dist ]; then rm -f /etc/nginx/sites-available/default.dpkg-dist &> /dev/null; fi
+# Seedbox-Manager
+if [ "$IsInstalled_Manager" == "YES" ]; then
+	if [ -f $ManagerDir/conf ]; then
+		mv $ManagerDir/conf $MySB_InstallDir/temp/sm_conf &> /dev/null
+		rm -rf $ManagerDir/* &> /dev/null
+		mv $MySB_InstallDir/temp/sm_conf $ManagerDir/conf &> /dev/null
+	fi
+fi
 StatusSTD
 
 #### SQLite
@@ -113,7 +121,7 @@ StatusSTD
 
 #### NFS
 (( CurrentSTEP++ ))
-if [ "$ToInstall_OpenVPN" == "YES" ]; then
+if [ "$ToInstall_OpenVPN" == "YES" ] || [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for NFS$CEND..."
 	screen -dmS NFS /bin/bash $MySB_InstallDir/install/NFS 'UPGRADE';
 	WaitingScreen NFS
@@ -124,7 +132,7 @@ fi
 
 #### Samba
 (( CurrentSTEP++ ))
-if [ "$ToInstall_OpenVPN" == "YES" ]; then	
+if [ "$ToInstall_OpenVPN" == "YES" ] || [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Some fixes for Samba$CEND..."
 	screen -dmS Samba /bin/bash $MySB_InstallDir/install/Samba 'UPGRADE';
 	WaitingScreen Samba
@@ -133,9 +141,16 @@ else
 	echo -e "${CGREEN}Nothing to do !$CEND"
 fi
 
+#### Refresh tools
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Refreshing rTorrent, ruTorrent, Manager, Cakebox, LoadAvg (this may take a while, please be patient)$CEND..."
+screen -dmS MySB_RefreshMe /bin/bash $MySB_InstallDir/bin/MySB_RefreshMe 'all' 'UPGRADE';
+WaitingScreen MySB_RefreshMe
+StatusSTD
+
 ### DNScrypt-proxy
 (( CurrentSTEP++ ))
-if [ "$ToInstall_DNScrypt" == "YES" ]; then
+if [ "$ToInstall_DNScrypt" == "YES" ] || [ "$IsInstalled_DNScrypt" == "YES" ]; then
 	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- Upgrading DNScrypt-proxy$CEND..."
 	screen -dmS DNScrypt /bin/bash $MySB_InstallDir/install/DNScrypt 'UPGRADE';
 	WaitingScreen DNScrypt
