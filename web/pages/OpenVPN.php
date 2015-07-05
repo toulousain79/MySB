@@ -47,8 +47,7 @@ echo '<table width="100%" border="0" align="left">';
 echo '<tr align="left"><th colspan="2" scope="row"><h4>' . User_OpenVPN_Title_Global . '</h4></th></tr>';
 // Protocol
 echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_Proto . '</th>';
-echo '<td>' . $openvpn_proto_db . '</td>';
-echo '<td></td></tr>';
+echo '<td>' . $openvpn_proto_db . '</td></tr>';
 // Config TUN 1 (With Gateway)
 echo '<tr align="left"><th colspan="2" scope="row"><h4>' . User_OpenVPN_Title_CongigTUN_1 . '</h4></th></tr>';
 echo '<tr align="left"><th width="17%" scope="row">' . User_OpenVPN_Table_Port . '</th>';
