@@ -30,21 +30,23 @@ function Form() {
 	$UserEmail = $MySB_DB->get("users", "users_email", ["users_ident" => "$CurrentUser"]);	
 	
 	echo '<form class="form_settings" method="post" action="">
-			<div align="center"><table border="0">
-				<tr>
-					<td>' . User_ChangeEmail_CurrentAddress . '</td>
-					<td><input style="cursor: default;" name="current_email" type="text" readonly="true" value="' . $UserEmail . '"/></td>
-				</tr>
-				<tr>
-					<td>' . User_ChangeEmail_NewAddress . '</td>
-					<td><input name="new_email" type="text" /></td>
-				</tr>
-				<tr>
-					<td>' . User_ChangeEmail_ConfirmAddress . '</td>
-					<td><input name="confirm_email" type="text" /></td>
-				</tr>
+			<div align="center">
+				<table border="0">
+					<tr>
+						<td>' . User_ChangeEmail_CurrentAddress . '</td>
+						<td><input style="cursor: default;" name="current_email" type="text" readonly="true" value="' . $UserEmail . '"/></td>
+					</tr>
+					<tr>
+						<td>' . User_ChangeEmail_NewAddress . '</td>
+						<td><input name="new_email" type="text" /></td>
+					</tr>
+					<tr>
+						<td>' . User_ChangeEmail_ConfirmAddress . '</td>
+						<td><input name="confirm_email" type="text" /></td>
+					</tr>
+				</table>
 				<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' .Global_SaveChanges. '"">
-			</table></div>
+			</div>
 		</form>';
 }
 

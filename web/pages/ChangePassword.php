@@ -40,21 +40,23 @@ if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') && isse
 
 echo '
 	<form class="form_settings" method="post" action="">
-		<div align="center"><table border="0">
-			<tr>
-				<td>' . User_ChangePassword_CurrentPassword . '</td>
-				<td><input name="current_pwd" type="password" ' . $opts . '/></td>
-			</tr>
-			<tr>
-				<td>' . User_ChangePassword_NewPassword . '</td>
-				<td><input name="new_pwd" type="password" /></td>
-			</tr>
-			<tr>
-				<td>' . User_ChangePassword_ConfirmPassword . '</td>
-				<td><input name="confirm_pwd" type="password" /></td>
-			</tr>
+		<div align="center">
+			<table border="0">
+				<tr>
+					<td>' . User_ChangePassword_CurrentPassword . '</td>
+					<td><input name="current_pwd" type="password" ' . $opts . '/></td>
+				</tr>
+				<tr>
+					<td>' . User_ChangePassword_NewPassword . '</td>
+					<td><input name="new_pwd" type="password" /></td>
+				</tr>
+				<tr>
+					<td>' . User_ChangePassword_ConfirmPassword . '</td>
+					<td><input name="confirm_pwd" type="password" /></td>
+				</tr>
+			</table>
 			<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-bottom: 10px;" name="submit" type="submit" value="' .Global_SaveChanges. '">
-		</table></div>
+		</div>
 	</form>
 	';
 
