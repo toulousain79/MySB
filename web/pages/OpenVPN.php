@@ -25,7 +25,8 @@
 global $MySB_DB, $CurrentUser;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
-$zip_file = './openvpn/openvpn_'.$_SERVER['PHP_AUTH_USER'].'.zip';
+$zip_file = WEB_ROOT . "/openvpn/openvpn_$CurrentUser.zip";
+
 $openvpn_proto_db =  $MySB_DB->get("services", "port_udp1", ["serv_name" => "OpenVPN"]);
 switch ($openvpn_proto_db) {
 	case '':
@@ -84,77 +85,77 @@ if (file_exists($zip_file)) {
 echo '</div></form>';
 
 if ( isset($_POST['submit']) ) {
-	if ($_POST['submit'] == User_OpenVPN_Generate) {
-		
-		$current_pwd = $_SERVER['PHP_AUTH_PW'];
-		
-		GenerateMessage('message_only', 'information', User_OpenVPN_Wait);
-		
-		if ( ($CurrentUser != '') && ($current_pwd != '') ) {
-			$args = "$CurrentUser|$current_pwd";
-			$command = 'OpenVPN';
-			$priority = $MySB_DB->max("commands", "priority");
-			$priority++;
-			$value = $MySB_DB->insert("commands", ["commands" => "$command", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
+	switch ($_POST['submit']) {
+		case html_entity_decode(User_OpenVPN_Generate):
+			$current_pwd = $_SERVER['PHP_AUTH_PW'];
 
-			if ( $value > 0 ) {
-				exec("sudo /bin/bash ".MYSB_ROOT."/scripts/ApplyConfig.bsh '$CurrentUser' 'DO_APPLY'", $output, $result);
+			GenerateMessage('message_only', 'information', User_OpenVPN_Wait);
 
-				if ( $result == 0 ) {
-					$type = 'success';
-					$command = 'message_only';
-					$message = User_OpenVPN_Success;
+			if ( ($CurrentUser != '') && ($current_pwd != '') ) {
+				$args = "$CurrentUser|$current_pwd";
+				$command = 'OpenVPN';
+				$priority = $MySB_DB->max("commands", "priority");
+				$priority++;
+				$value = $MySB_DB->insert("commands", ["commands" => "$command", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
+
+				if ( $value > 0 ) {
+					exec("sudo /bin/bash ".MYSB_ROOT."/scripts/ApplyConfig.bsh '$CurrentUser' 'DO_APPLY'", $output, $result);
+
+					if ( $result == 0 ) {
+						$type = 'success';
+						$command = 'message_only';
+						$message = User_OpenVPN_Success;
+					} else {
+						$type = 'error';
+						$message = User_OpenVPN_Failded;
+					}
 				} else {
 					$type = 'error';
-					$message = User_OpenVPN_Failded;
+					$message = User_OpenVPN_FailedUpdateMysbDB;
 				}
 			} else {
 				$type = 'error';
-				$message = User_OpenVPN_FailedUpdateMysbDB;
+				$message = User_OpenVPN_NoPassword;
 			}
-		} else {
-			$type = 'error';
-			$message = User_OpenVPN_NoPassword;
-		}
-		
-		GenerateMessage($command, $type, $message, $args);
-		
-		if ( $type == 'success' ) {
-			session_start();
-			unset($_SESSION['page']);
-			session_unset();
-			session_destroy();
-			header('Refresh: 10; URL=/?user/openvpn-config-file.html');
-		}
-	
-	} else {
+			
+			GenerateMessage($command, $type, $message, $args);
+			
+			if ( $type == 'success' ) {
+				session_start();
+				unset($_SESSION['page']);
+				session_unset();
+				session_destroy();
+				header('Refresh: 10; URL=/?user/openvpn-config-file.html');
+			}
+			break;
 
-		if (file_exists($zip_file)) {
-			$file_name = basename($zip_file);
-			ini_set('zlib.output_compression', 0);
-			$date = gmdate(DATE_RFC1123);
+		default:
+			if (file_exists($zip_file)) {
+				$file_name = basename($zip_file);
+				ini_set('zlib.output_compression', 0);
+				$date = gmdate(DATE_RFC1123);
 
-			if (preg_match('/MSIE 5.5/', $_ENV['HTTP_USER_AGENT']) || preg_match('/MSIE 6.0/', $_ENV['HTTP_USER_AGENT'])) {
-				header('Content-Disposition: filename = "'.$file_name.'"');
+				header("Pragma: no-cache");
+				header("Expires: 0");
+				header("Cache-Control: must-revalidate, post-check=0, pre-check=0, public");
+				header("Content-Description: File Transfer");
+				header("Content-type: application/octet-stream");
+				if (preg_match('/MSIE 5.5/', $_ENV['HTTP_USER_AGENT']) || preg_match('/MSIE 6.0/', $_ENV['HTTP_USER_AGENT'])) {
+					header('Content-Disposition: filename = "'.$file_name.'"');
+				} else {
+					header('Content-Disposition: attachment; filename = "'.$file_name.'"');
+				}
+				header("Content-Transfer-Encoding: binary");
+				header("Content-Length: ".filesize(zip_file));
+				ob_end_flush();
+				@readfile($zip_file);
 			} else {
-				header('Content-Disposition: attachment; filename = "'.$file_name.'"');
+				$message = sprintf(User_OpenVPN_NoFile, $_SERVER['PHP_AUTH_USER']);
+				GenerateMessage('message_only', 'information', $message);
+				echo $message;
+				header('Refresh: 5; URL=/');
 			}
-
-			header("Content-Type: application/zip");
-			header("Pragma: no-cache");
-			header("Cache-Control: must-revalidate, post-check=0, pre-check=0, public");
-			header("Expires: 0");
-			header("Content-Transfer-Encoding: binary");
-			header("Connection: close\r\n\r\n" );
-			ob_end_clean();
-			readfile($zip_file);
-			exit();
-		} else {
-			$message = sprintf(User_OpenVPN_NoFile, $_SERVER['PHP_AUTH_USER']);
-			GenerateMessage('message_only', 'information', $message);
-			echo $message;
-			header('Refresh: 5; URL=/');
-		}
+			break;
 	}
 }
 
