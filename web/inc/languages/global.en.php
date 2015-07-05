@@ -26,6 +26,7 @@ define('Global_Home', 'Home');
 define('Global_Yes', 'Yes');
 define('Global_No', 'No');
 define('Global_Delete', 'Delete');
+define('Global_NoChange', 'No change');
 define('Global_SaveChanges', 'Save Changes');
 define('Global_IsDefault', 'Default ?');
 define('Global_Table_Delete', 'Delete ?');
@@ -36,6 +37,10 @@ define('Global_FailedUpdateMysbDB', 'Failed !<br /><br />It was not possible to 
 define('Global_CompleteAllFields', 'Please, complete all fields.');
 define('Global_Success', 'Success !');
 define('Global_SuccessAndApply', 'Success !<br /><br />Please, click on "Apply configuration"');
+
+define('OpenVPN_SrvIpGw', '10.0.0.1');
+define('OpenVPN_SrvIp', '10.0.1.1');
+define('OpenVPN_SrvIpBridge', '10.0.2.1');
 
 define('Layout_Logout', 'Logout');
 define('Layout_OnGithub', 'MySB on GitHub');

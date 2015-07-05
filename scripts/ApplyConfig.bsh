@@ -43,7 +43,7 @@ DoApplyConfig() {
 	AllCommandsUser="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT commands FROM commands WHERE user = '$User'\"`"
 	for CommandUser in $AllCommandsUser; do
 		case "$CommandUser" in
-			BlocklistsRTorrent.bsh|MySB_SecurityRules*|GetTrackersCert.bsh|MySB_ChangeUserPassword|Postfix|Options_MySB|Options_System) # On peut supprimer les doublons
+			BlocklistsRTorrent.bsh|MySB_SecurityRules*|GetTrackersCert.bsh|MySB_ChangeUserPassword|Postfix|Options_MySB|Options_System|OpenVPN) # On peut supprimer les doublons
 				FirstCommandUser="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT min(priority) FROM commands WHERE user = '$User' AND commands = '$CommandUser'\"`"
 				LastCommandUser="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT max(priority) FROM commands WHERE user = '$User' AND commands = '$CommandUser'\"`"
 				while [ $FirstCommandUser -lt $LastCommandUser ]; do
@@ -81,7 +81,7 @@ DoApplyConfig() {
 
 		# Creating arguments listing
 		case "$Command" in
-			MySB_CreateUser|MySB_DeleteUser|MySB_ChangeUserPassword) # 3 args
+			MySB_CreateUser|MySB_DeleteUser|MySB_ChangeUserPassword|OpenVPN) # 3 args
 				echo `date +%H:%m:%S` "- Getting arguments for $Command"
 				CommandArg="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT args FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'\"`"
 			;;
@@ -112,7 +112,7 @@ DoApplyConfig() {
 				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
-			"MySB_ChangeUserPassword") # 2 args
+			"MySB_ChangeUserPassword") # ($1 = username, $2 = userpass)
 				IFS='|' read -a array <<< "$CommandArg"
 				UserName="${array[0]}"
 				UserPass="${array[1]}"
@@ -190,6 +190,17 @@ DoApplyConfig() {
 				WaitingSTD MySB_SecurityRules
 				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "--pglcmd" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
+				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
+			;;
+			
+			"OpenVPN") # ($1 = username, $2 = userpass)
+				IFS='|' read -a array <<< "$CommandArg"
+				UserName="${array[0]}"
+				UserPass="${array[1]}"
+			
+				WaitingSTD OpenVPN
+				screen -dmS OpenVPN_Zip /bin/bash $MySB_InstallDir/install/OpenVPN zip "$UserName" "$UserPass" "APPLYCONFIG";
+				WaitingSTD OpenVPN
 				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 		esac

@@ -276,6 +276,39 @@ ZipClientFiles() {
 	chmod 0660 $MySB_InstallDir/web/openvpn/*.zip
 }
 
+RefreshProto() {
+	ServiceRestart=0
+	if [ -f /etc/openvpn/Server_TUN_WithGW.conf ]; then
+		SEARCH=$(cat /etc/openvpn/Server_TUN_WithGW.conf | grep "proto" | awk '{ print $2 }')
+		if [ "$SEARCH" != "$OpenVPN_Proto" ]; then
+			ServiceRestart=1
+		fi
+		perl -pi -e "s/^proto $SEARCH/proto $OpenVPN_Proto/g" /etc/openvpn/Server_TUN_WithGW.conf
+		unset SEARCH
+	fi
+	if [ -f /etc/openvpn/Server_TUN_WithoutGW.conf ]; then
+		SEARCH=$(cat /etc/openvpn/Server_TUN_WithoutGW.conf | grep "proto" | awk '{ print $2 }')
+		if [ "$SEARCH" != "$OpenVPN_Proto" ]; then
+			ServiceRestart=1
+		fi
+		perl -pi -e "s/^proto $SEARCH/proto $OpenVPN_Proto/g" /etc/openvpn/Server_TUN_WithoutGW.conf
+		unset SEARCH
+	fi
+	if [ -f /etc/openvpn/Server_TAP_WithoutGW.conf ]; then
+		SEARCH=$(cat /etc/openvpn/Server_TAP_WithoutGW.conf | grep "proto" | awk '{ print $2 }')
+		if [ "$SEARCH" != "$OpenVPN_Proto" ]; then
+			ServiceRestart=1
+		fi
+		perl -pi -e "s/^proto $SEARCH/proto $OpenVPN_Proto/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+		unset SEARCH
+	fi
+
+	#### START services
+	if [ "$ServiceRestart" -eq 1 ]; then
+		ManageServices start "openvpn"
+	fi
+}
+
 DeleteUserFiles() {
 	mv -v /etc/openvpn/clients/$CLIENTNAME.crt /etc/openvpn/easy-rsa/keys/
 	mv -v /etc/openvpn/clients/$CLIENTNAME.csr /etc/openvpn/easy-rsa/keys/
@@ -321,9 +354,15 @@ case "$COMMAND" in
 				DeleteUserFiles
 			fi
 		fi
+	;;
+	"refresh")
+		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+			#### Refresh Protocol
+			RefreshProto
+		fi
 	;;		
 	*)
-		echo -e "${CBLUE}Usage:$CEND	${CYELLOW}bash $0$CEND ${CGREEN}{server|client <username>|zip <username> <user_passwaord>}$CEND"
+		echo -e "${CBLUE}Usage:$CEND	${CYELLOW}bash $0$CEND ${CGREEN}{server|client <username>|zip <username> <user_password>|refresh}$CEND"
 		EndingScript 0	
 	;;
 esac

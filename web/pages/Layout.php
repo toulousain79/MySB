@@ -83,7 +83,6 @@
 
 				if ( !isset($_SESSION['page']) ) {
 ?>
-
 					<ul class="sf-menu" id="nav">
 						<li<?php echo ($this->level() == 0) ? ' class="current"': null; ?>><?php echo ($_SESSION['Language'] == 'en') ? $page->link($page->title) : $page->link($page->title_fr); ?></li>
 

@@ -113,27 +113,27 @@ function printUser($user) {
 	echo '<td> </td></tr>';
 	// Session dir
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Session . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . '/rtorrent/.session</td>';
+	echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_Session . '</td>';
 	echo '<td><span class="Comments">' . User_UserInfo_Comment_Session . '</span></td></tr>';
 	// Complete dir
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_CompleteDir . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . '/rtorrent/complete</td>';
+	echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_CompleteDir . '</td>';
 	echo '<td><span class="Comments">' . User_UserInfo_Comment_CompleteDir . '</span></td></tr>';
 	// Incomplete dir
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_IncompleteDir . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . '/rtorrent/incomplete</td>';
+	echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_IncompleteDir . '</td>';
 	echo '<td><span class="Comments">' . User_UserInfo_Comment_IncompleteDir . '</span></td></tr>';
 	// Torrents dir
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_TorrentDir . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . '/rtorrent/torrents</td>';
-	echo '<td> </td></tr>';
+	echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_TorrentDir . '</td>';
+	echo '<td><span class="Comments">' . User_UserInfo_Comment_TorrentDir . '</span></td></tr>';
 	// Watch dir
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_WatchDir . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . '/rtorrent/watch</td>';
+	echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_WatchDir . '</td>';
 	echo '<td><span class="Comments">' . User_UserInfo_Comment_WatchDir . '</span></td></tr>';
 	// Share dir
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_ShareDir . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . '/rtorrent/share</td>';
+	echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_ShareDir . '</td>';
 	echo '<td><span class="Comments">' . User_UserInfo_Comment_ShareDir . '</span></td></tr>';
 
 	//////////////////////
@@ -163,23 +163,23 @@ function printUser($user) {
 	echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_UserInfo_Title_OpenVPN . '</h4></th></tr>';
 	// Server IP GW
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SrvIpGw . '</th>';
-	echo '<td>' . User_UserInfo_SrvIpGw . '</td>';
+	echo '<td>' . OpenVPN_SrvIpGw . '</td>';
 	echo '<td><span class="Comments">' . User_UserInfo_Comment_SrvIpGw . '</span></td></tr>';
 	// Server IP
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SrvIp . '</th>';
-	echo '<td>' . User_UserInfo_SrvIp . '</td>';
+	echo '<td>' . OpenVPN_SrvIp . '</td>';
 	echo '<td><span class="Comments">' . User_UserInfo_Comment_SrvIp . '</span></td></tr>';
 	// Server IP bridged
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SrvIpBridge . '</th>';
-	echo '<td>' . User_UserInfo_SrvIpBridge . '</td>';
+	echo '<td>' . OpenVPN_SrvIpBridge . '</td>';
 	echo '<td><span class="Comments">' . User_UserInfo_Comment_SrvIpBridge . '</span></td></tr>';
 	// Samba share
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SambaShare . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . '/rtorrent</td>';
+	echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_SambaShare . '</td>';
 	echo '<td><span class="Comments">' . sprintf(User_UserInfo_Comment_SambaShare, $user, $user) . '</span></td></tr>';
 	// NFS share
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_NfsShare . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . '/rtorrent</td>';
+	echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_NfsShare . '</td>';
 	echo '<td><span class="Comments">' . sprintf(User_UserInfo_Comment_NfsShare, $user, $user) . '</span></td></tr>';
 
 	//////////////////////
@@ -213,7 +213,7 @@ function printUser($user) {
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_OpenVpnConfig . '</th>';
 		echo '<td colspan="2"><a href="?user/openvpn-config-file.html"><span class="Comments">' . User_UserInfo_Comment_OpenVpnConfig . '</span></a></td></tr>';
 		// OpenVPN GUI
-		$Link = 'https://openvpn.net/index.php/open-source/downloads.html';
+		$Link = User_UserInfo_Value_OpenVpnGui;
 		echo '<tr align="left"><th width="17%" scope="row"' . User_UserInfo_Title_OpenVpnGui . '</th>';
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">' . User_UserInfo_Comment_OpenVpnGui . '</span></a></td></tr>';
 	}

@@ -32,27 +32,27 @@ define('User_UserInfo_NotInstalled', 'MySB is not installed !');
 define('User_UserInfo_Title_PersonnalInfo', 'User personal info');
 // Username
 define('User_UserInfo_Table_Username', 'Username');
-define('User_UserInfo_Comment_Username', 'Username');
+define('User_UserInfo_Comment_Username', ' ');
 // IP Address
 define('User_UserInfo_Table_IpAddress', 'IP Addresses');
 define('User_UserInfo_Table_NoIpAddress', 'No address given ...');
-define('User_UserInfo_Comment_IpAddress', 'Public IP addresses used for access restriction. You can manage this list <a href="/?user/manage-addresses.html">here</a>.');
+define('User_UserInfo_Comment_IpAddress', 'Public IP addresses used for access restriction (if activated). You can manage this list <a href="/?user/manage-addresses.html">here</a>.');
 // Password
 define('User_UserInfo_Table_Password', 'Password');
 define('User_UserInfo_Comment_Password_1', '<a href="?user/change-password.html">You must change your password now !</a>');
 define('User_UserInfo_Comment_Password_2', 'You can change your password <a href="?user/change-password.html">here</a>.');
 // E-mail
 define('User_UserInfo_Table_Email', 'E-mail');
-define('User_UserInfo_Comment_Email', '');
+define('User_UserInfo_Comment_Email', ' ');
 // RPC
 define('User_UserInfo_Table_RPC', 'RPC');
 define('User_UserInfo_Comment_RPC', 'RPC value can be used to remotely connect to rTorrent via a smartphone. (see Seedbox-Manager)');
 // SFTP
 define('User_UserInfo_Table_SFTP', 'SFTP');
-define('User_UserInfo_Comment_SFTP', '');
+define('User_UserInfo_Comment_SFTP', ' ');
 // Sudo
 define('User_UserInfo_Table_Sudo', 'Sudo powers');
-define('User_UserInfo_Comment_Sudo', '');
+define('User_UserInfo_Comment_Sudo', ' ');
 
 //////////////////////
 // Directories
@@ -62,21 +62,27 @@ define('User_UserInfo_Title_Directories', 'Directories');
 define('User_UserInfo_Table_Home', 'Home');
 // Session dir
 define('User_UserInfo_Table_Session', 'Session dir');
+define('User_UserInfo_Value_Session', '/rtorrent/.session');
 define('User_UserInfo_Comment_Session', 'The session directory allows rTorrent to save the progress of your torrents.');
 // Complete dir
 define('User_UserInfo_Table_CompleteDir', 'Complete dir');
+define('User_UserInfo_Value_CompleteDir', '/rtorrent/complete');
 define('User_UserInfo_Comment_CompleteDir', 'The completed files will be transferred to this directory. You can change it via Autotools of ruTorrent.');
 // Incomplete dir
 define('User_UserInfo_Table_IncompleteDir', 'Incomplete dir');
+define('User_UserInfo_Value_IncompleteDir', '/rtorrent/incomplete');
 define('User_UserInfo_Comment_IncompleteDir', 'Partial downloads are stored here.');
 // Torrents dir
 define('User_UserInfo_Table_TorrentDir', 'Torrents dir');
+define('User_UserInfo_Value_TorrentDir', '/rtorrent/torrents');
 define('User_UserInfo_Comment_TorrentDir', 'Saving a torrent file to this directory will automatically start the download.');
 // Watch dir
 define('User_UserInfo_Table_WatchDir', 'Watch dir');
+define('User_UserInfo_Value_WatchDir', '/rtorrent/watch');
 define('User_UserInfo_Comment_WatchDir', 'Saving a torrent file into this directory will automatically start the download ruTorrent.');
 // Share dir
 define('User_UserInfo_Table_ShareDir', 'Share dir');
+define('User_UserInfo_Value_ShareDir', '/rtorrent/share');
 define('User_UserInfo_Comment_ShareDir', 'The "share" folder is accessible by all users on the server. You can easily share what you want with any user. You can use File Manager plugin available in ruTorrent, use sFTP/FTPs or Samba.');
 
 //////////////////////
@@ -85,7 +91,7 @@ define('User_UserInfo_Comment_ShareDir', 'The "share" folder is accessible by al
 define('User_UserInfo_Title_Ports', 'Ports');
 // SFTP Port
 define('User_UserInfo_Table_SftpPort', 'SFTP port');
-define('User_UserInfo_Comment_SftpPort', '');
+define('User_UserInfo_Comment_SftpPort', ' ');
 // FTPs Port
 define('User_UserInfo_Table_FtpsPort', 'FTPs port (TLS)');
 define('User_UserInfo_Comment_FtpsPort', 'It is necessary to configure your FTP client software by specifying this port number. You must select "FTPS" and "explicit TLS connection".');
@@ -102,21 +108,20 @@ define('User_UserInfo_Comment_RtorrentPort', 'Is the network port for your rTorr
 define('User_UserInfo_Title_OpenVPN', 'OpenVPN');
 // Server IP GW
 define('User_UserInfo_Table_SrvIpGw', 'Server IP GW');
-define('User_UserInfo_SrvIpGw', '10.0.0.1');
 define('User_UserInfo_Comment_SrvIpGw', 'Server IP with redirect traffic (TUN interface).');
 // Server IP
 define('User_UserInfo_Table_SrvIp', 'Server IP');
-define('User_UserInfo_SrvIp', '10.0.1.1');
 define('User_UserInfo_Comment_SrvIp', 'Server IP without redirect traffic (TUN interface).');
 // Server IP bridged
 define('User_UserInfo_Table_SrvIpBridge', 'Server IP bridged');
-define('User_UserInfo_SrvIpBridge', '10.0.2.1');
 define('User_UserInfo_Comment_SrvIpBridge', 'Server IP without redirect traffic (TAP interface).');
 // Samba share
 define('User_UserInfo_Table_SambaShare', 'Samba share');
+define('User_UserInfo_Value_SambaShare', '/rtorrent');
 define('User_UserInfo_Comment_SambaShare', 'mount - [Destination_directory] -t cifs -o noatime,nodiratime,UNC=//[10.0.x.1]/%s,username=%s,password=[your_password]');
 // NFS share
 define('User_UserInfo_Table_NfsShare', 'NFS share');
+define('User_UserInfo_Value_NfsShare', '/rtorrent');
 define('User_UserInfo_Comment_NfsShare', 'mount -t nfs [10.0.x.1]:/home/%s/rtorrent [Destination_directory] [-o vers=3,nolock]');
 
 //////////////////////
@@ -142,10 +147,11 @@ define('User_UserInfo_Comment_Manager', 'Seedbox-Manager interface');
 define('User_UserInfo_Title_OpenVpnConfig', 'OpenVPN config');
 define('User_UserInfo_Comment_OpenVpnConfig', 'Download here configuration files for OpenVPN.');
 // OpenVPN GUI
-define('User_UserInfo_Title_OpenVpnGui', '>OpenVPN GUI');
+define('User_UserInfo_Title_OpenVpnGui', 'OpenVPN GUI');
+define('User_UserInfo_Value_OpenVpnGui', 'https://openvpn.net/index.php/open-source/downloads.html');
 define('User_UserInfo_Comment_OpenVpnGui', 'Download here GUI for OpenVPN.');
 // CakeBox Light
-define('User_UserInfo_Title_Cakebox', '>CakeBox Light');
+define('User_UserInfo_Title_Cakebox', 'CakeBox Light');
 define('User_UserInfo_Comment_Cakebox', 'Play here your media.');
 
 //////////////////////
@@ -163,7 +169,7 @@ define('User_UserInfo_Table_Renting', 'Renting infos');
 define('User_UserInfo_Comment_Renting', 'Manage your renting informations.');
 // Trackers
 define('User_UserInfo_Table_Trackers', 'Trackers list');
-define('User_UserInfo_Comment_Trackers', '<a href="https://%s:%s/?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="https://%s:%s/?trackers/add-new-trackers.html">add new tracker here</a>.');
+define('User_UserInfo_Comment_Trackers', '<a href="?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="?trackers/add-new-trackers.html">add new tracker here</a>.');
 // Blocklists
 define('User_UserInfo_Table_Blocklists', 'Blocklists');
 define('User_UserInfo_Comment_Blocklists', 'You can manage <a href="?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a> AND <a href="?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a>.');
@@ -177,9 +183,9 @@ define('User_UserInfo_Comment_DNScrypt', 'Informations on resolvers used.');
 define('User_UserInfo_Title_SSHcommand', 'SSH commands available');
 // Users Management
 define('User_UserInfo_Table_UserManage', 'Users Management');
-define('User_UserInfo_Comment_MySB_CreateUser', '');
+define('User_UserInfo_Comment_MySB_CreateUser', ' ');
 define('User_UserInfo_Comment_MySB_ChangeUserPassword', '<pre>MySB_ChangeUserPassword <username> <new_password></pre>');
-define('User_UserInfo_Comment_MySB_DeleteUser', '');
+define('User_UserInfo_Comment_MySB_DeleteUser', ' ');
 // SeedBox Management
 define('User_UserInfo_Table_SeedboxManage', 'SeedBox Management');
 define('User_UserInfo_Comment_MySB_RefreshMe', '<pre>MySB_RefreshMe (rutorrent|manager|cakebox|loadavg|all)</pre>');

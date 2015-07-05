@@ -43,16 +43,16 @@ define('User_UserInfo_Comment_Password_1', '<a href="?user/change-password.html"
 define('User_UserInfo_Comment_Password_2', 'Vous pouvez changer votre mot de passe <a href="?user/change-password.html">ici</a>.');
 // E-mail
 define('User_UserInfo_Table_Email', 'E-mail');
-define('User_UserInfo_Comment_Email', '');
+define('User_UserInfo_Comment_Email', ' ');
 // RPC
 define('User_UserInfo_Table_RPC', 'RPC');
 define('User_UserInfo_Comment_RPC', 'La valeur RPC peut &ecirc;tre utilis&eacute;e pour se connecter &agrave; distance &agrave; rTorrent via un smartphone. (voir Seedbox-Manager)');
 // SFTP
 define('User_UserInfo_Table_SFTP', 'SFTP');
-define('User_UserInfo_Comment_SFTP', '');
+define('User_UserInfo_Comment_SFTP', ' ');
 // Sudo
 define('User_UserInfo_Table_Sudo', 'Droits SUDO');
-define('User_UserInfo_Comment_Sudo', '');
+define('User_UserInfo_Comment_Sudo', ' ');
 
 //////////////////////
 // Directories
@@ -84,7 +84,7 @@ define('User_UserInfo_Comment_ShareDir', 'Le dossier &laquo;partage&raquo; est a
 define('User_UserInfo_Title_Ports', 'Ports');
 // SFTP Port
 define('User_UserInfo_Table_SftpPort', 'Port sFTP');
-define('User_UserInfo_Comment_SftpPort', '');
+define('User_UserInfo_Comment_SftpPort', ' ');
 // FTPs Port
 define('User_UserInfo_Table_FtpsPort', 'Port FTPs (TLS)');
 define('User_UserInfo_Comment_FtpsPort', 'Il est n&eacute;cessaire de configurer votre logiciel client FTP en sp&eacute;cifiant ce num&eacute;ro de port. Vous devez s&eacute;lectionner &quot;FTPs&quot; et "Connexion FTP explicite TLS". Plus simple, t&eacute;l&eacute;chargez directement le fichier XML pr&eacute;-param&eacute;tr&eacute; via Seedbox-Manager.');
@@ -101,15 +101,12 @@ define('User_UserInfo_Comment_RtorrentPort', 'Correspond au port r&eacute;seau d
 define('User_UserInfo_Title_OpenVPN', 'OpenVPN');
 // Server IP GW
 define('User_UserInfo_Table_SrvIpGw', 'IP du serveur GW');
-define('User_UserInfo_SrvIpGw', '10.0.0.1');
 define('User_UserInfo_Comment_SrvIpGw', 'IP du serveur utilisant la redirection du trafic (interface TUN).');
 // Server IP
 define('User_UserInfo_Table_SrvIp', 'IP du serveur');
-define('User_UserInfo_SrvIp', '10.0.1.1');
 define('User_UserInfo_Comment_SrvIp', 'IP du serveur N\'utilisant PAS la redirection du trafic (interface TUN).');
 // Server IP bridged
 define('User_UserInfo_Table_SrvIpBridge', 'IP du serveur BR');
-define('User_UserInfo_SrvIpBridge', '10.0.2.1');
 define('User_UserInfo_Comment_SrvIpBridge', 'IP du serveur N\'utilisant PAS la redirection du trafic (interface TAP).');
 // Samba share
 define('User_UserInfo_Table_SambaShare', 'Partage Samba');
@@ -141,10 +138,10 @@ define('User_UserInfo_Comment_Manager', 'Interface Seedbox-Manager');
 define('User_UserInfo_Title_OpenVpnConfig', 'Configuration OpenVPN');
 define('User_UserInfo_Comment_OpenVpnConfig', 'T&eacute;l&eacute;chargez ici vos fichiers de configuration personnalis&eacute;s pour OpenVPN.');
 // OpenVPN GUI
-define('User_UserInfo_Title_OpenVpnGui', '>Client OpenVPN');
+define('User_UserInfo_Title_OpenVpnGui', 'Client OpenVPN');
 define('User_UserInfo_Comment_OpenVpnGui', 'T&eacute;l&eacute;chargez ici un client pour OpenVPN.');
 // CakeBox Light
-define('User_UserInfo_Title_Cakebox', '>CakeBox Light');
+define('User_UserInfo_Title_Cakebox', 'CakeBox Light');
 define('User_UserInfo_Comment_Cakebox', 'Jouer ici vos m&eacute;dias.');
 
 //////////////////////
@@ -162,7 +159,7 @@ define('User_UserInfo_Table_Renting', 'Location');
 define('User_UserInfo_Comment_Renting', 'G&eacute;rez vos informations de location.');
 // Trackers
 define('User_UserInfo_Table_Trackers', 'Liste des Trackers');
-define('User_UserInfo_Comment_Trackers', '<a href="https://%s:%s/?trackers/trackers-list.html">G&eacute;rer vos trackers ici.</a> Vous pouvez &eacute;galement <a href="https://%s:%s/?trackers/add-new-trackers.html">ajouter de nouveaux tracker ici</a>.');
+define('User_UserInfo_Comment_Trackers', '<a href="?trackers/trackers-list.html">G&eacute;rer vos trackers ici.</a> Vous pouvez &eacute;galement <a href="?trackers/add-new-trackers.html">ajouter de nouveaux tracker ici</a>.');
 // Blocklists
 define('User_UserInfo_Table_Blocklists', 'Listes noires');
 define('User_UserInfo_Comment_Blocklists', 'G&eacute;rer les <a href="?blocklists/rtorrent-blocklists.html">listes noire pour rTorrent</a> ET les <a href="?blocklists/peerguardian-blocklists.html">listes noires pour PeerGuardian</a>.');
@@ -176,9 +173,9 @@ define('User_UserInfo_Comment_DNScrypt', 'Informations sur les serveurs utilis&e
 define('User_UserInfo_Title_SSHcommand', 'Commandes SSH disponibles');
 // Users Management
 define('User_UserInfo_Table_UserManage', 'Gestion des utilsiateurs');
-define('User_UserInfo_Comment_MySB_CreateUser', '');
+define('User_UserInfo_Comment_MySB_CreateUser', ' ');
 define('User_UserInfo_Comment_MySB_ChangeUserPassword', '<pre>MySB_ChangeUserPassword <username> <new_password></pre>');
-define('User_UserInfo_Comment_MySB_DeleteUser', '');
+define('User_UserInfo_Comment_MySB_DeleteUser', ' ');
 // SeedBox Management
 define('User_UserInfo_Table_SeedboxManage', 'Gestion de la seedbox');
 define('User_UserInfo_Comment_MySB_RefreshMe', '<pre>MySB_RefreshMe (rutorrent|manager|cakebox|loadavg|all)</pre>');

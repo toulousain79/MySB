@@ -86,7 +86,7 @@ if ( isset($_POST['submit']) ) {
 
 						$value = $MySB_DB->insert("commands", ["commands" => "$command", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
 					
-						if ( $result > 0 ) {
+						if ( $value > 0 ) {
 							exec("sudo /bin/bash ".MYSB_ROOT."/scripts/ApplyConfig.bsh '$CurrentUser' 'DO_APPLY'", $output, $result);
 
 							if ( $result == 0 ) {
