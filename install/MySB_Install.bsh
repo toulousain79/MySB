@@ -86,7 +86,7 @@ ${CRED}############################################################$CEND"
 	LatestKernel="${CYELLOW}Latest Debian kernel	: $CEND"
 	LetsGo="${CYELLOW}OK, let's go !$CEND"
 	SeeYouLater="${CYELLOW}OK, see you later...$CEND"
-	WhereToInstall="${CBLUE}Where do you want to install MySB ? (Hit enter for default choice) [/etc/MySB]$CEND"
+	WhereToInstall="${CBLUE}Where do you want to install MySB ? (Hit enter for default choice) [$MySB_InstallDir]$CEND"
 	UpdatingSource="${CBLUE}Updating Debian source lists$CEND... "
 	SomethingWrong="${CRED}Looks like something was wrong during the update, aborting !$CEND"
 	UpgradingSystem="${CBLUE}Upgrading the system"
@@ -160,7 +160,7 @@ ${CRED}############################################################$CEND"
 	LatestKernel="${CYELLOW}Dernier noyau debian	: $CEND"
 	LetsGo="${CYELLOW}OK, c'est parti !$CEND"
 	SeeYouLater="${CYELLOW}OK, à plus tard ...$CEND"
-	WhereToInstall="${CBLUE}Où voulez-vous installer MySB ? (Appuyez sur Entrée pour le choix par défaut) [/etc/MySB]$CEND"
+	WhereToInstall="${CBLUE}Où voulez-vous installer MySB ? (Appuyez sur Entrée pour le choix par défaut) [$MySB_InstallDir]$CEND"
 	UpdatingSource="${CBLUE}Mise à jour des listes sources de Debian$CEND... "
 	SomethingWrong="${CRED}On dirait que quelque chose clochait au cours de la mise à jour, abandon!$CEND"
 	UpgradingSystem="${CBLUE}Mise à niveau du système$CEND"
@@ -343,20 +343,25 @@ else
 	echo -e "${CYELLOW}OVH kernel	: $CEND${CGREEN}No$CEND"
 fi
 if [ ! -z "$OVH_Kernel" ]; then
-	echo
-	echo -e -n "$CustomKernel"
-	read Answer
-	case ${Answer:0:1} in
-		y|Y|yes|YES|o|O|oui|OUI)
-			echo -e "$LetsGo"
-			CountDown 3
-			OvhReplaceKernel
-			
-		;;
-		n|N|no|NO|non|NON)
-			Continue=1
-		;;
-	esac
+	Answer=""
+	while [ -z "$Answer" ]; do
+		clear
+		echo -e -n "$CustomKernel"
+		read Answer
+		case ${Answer:0:1} in
+			y|Y|yes|YES|o|O|oui|OUI)
+				echo -e "$LetsGo"
+				CountDown 3
+				OvhReplaceKernel
+			;;
+			n|N|no|NO|non|NON)
+				Continue=1
+			;;
+			*)
+				unset Answer
+			;;
+		esac
+	done
 fi
 
 if [ $Continue -gt 0 ]; then
@@ -403,7 +408,6 @@ if [ "$COMMAND" == "" ]; then
 		exit 1
 	else # Install ?
 		Answer=""
-
 		while [ -z "$Answer" ]; do
 			BannerInstall
 			echo -e -n "$MessageIsReady"
@@ -417,6 +421,9 @@ if [ "$COMMAND" == "" ]; then
 				n|N|no|NO|non|NON)
 					echo -e "$SeeYouLater"
 					exit 0
+				;;
+				*)
+					unset Answer
 				;;
 			esac
 		done
