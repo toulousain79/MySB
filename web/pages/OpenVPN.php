@@ -106,7 +106,7 @@ if ( isset($_POST['submit']) ) {
 					if ( $result == 0 ) {
 						$type = 'success';
 						$command = 'message_only';
-						$message = User_OpenVPN_Success;
+						$message = sprintf(User_OpenVPN_Success, $RefreshPage);
 					} else {
 						$type = 'error';
 						$message = User_OpenVPN_Failded;
