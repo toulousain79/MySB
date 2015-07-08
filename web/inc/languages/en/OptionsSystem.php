@@ -29,6 +29,8 @@ define('MainUser_OptionsSystem_Title_Iptables', 'IPtables');
 define('MainUser_OptionsSystem_Iptables_Restrict', 'IP restriction');
 define('MainUser_OptionsSystem_Title_OpenVPN', 'OpenVPN');
 define('MainUser_OptionsSystem_OpenVPN_Proto', 'Protocol');
+define('MainUser_OptionsSystem_Title_Renting', 'Renting Infos');
+define('MainUser_OptionsSystem_Renting_Calcul', 'Calcul type');
 
 //#################### LAST LINE ######################################
 ?>

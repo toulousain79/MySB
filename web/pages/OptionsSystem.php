@@ -27,6 +27,7 @@ require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__
 
 $PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
 $OpenVPNIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "OpenVPN"]);
+$RentingDatas = $MySB_DB->get("renting", ["model", "tva", "global_cost", "nb_users", "price_per_users" ], ["id_renting" => 1]);
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
 // Get values from database
@@ -178,6 +179,7 @@ if (isset($_POST['submit'])) {
 	</fieldset>
 
 	<?php if ($OpenVPNIsInstalled == '1') { ?>
+	<br />
 	<fieldset>
 	<legend><?php echo MainUser_OptionsSystem_Title_OpenVPN; ?></legend>
 	<table>
@@ -188,6 +190,35 @@ if (isset($_POST['submit'])) {
 				<?php switch ($openvpn_proto_db) {
 					case 'UDP':
 						echo '<option selected="selected" value="UDP">UDP</option>';
+						echo '<option value="TCP">TCP</option>';
+						break;
+					default:
+						echo '<option value="UDP">UDP</option>';
+						echo '<option selected="selected" value="TCP">TCP</option>';
+						break;
+				} ?>
+				</select>
+			</td>
+		</tr>
+	</table>
+	</fieldset>
+	<?php } ?>
+
+	<?php if (isset($RentingDatas['price_per_users'])) { ?>
+	<fieldset>
+	<legend><?php echo MainUser_OptionsSystem_Title_Renting; ?></legend>
+	<table>
+		<tr>
+			<td><?php echo MainUser_OptionsSystem_Renting_Calcul; ?></td>
+			<td>
+				<select name="OpenVPN_Proto_post" style="width:80px; height: 28px;">';
+				<?php switch ($openvpn_proto_db) {
+					case '0':
+						echo '<option selected="selected" value="0">UDP</option>';
+						echo '<option value="TCP">TCP</option>';
+						break;					
+					case '1':
+						echo '<option selected="selected" value="1">UDP</option>';
 						echo '<option value="TCP">TCP</option>';
 						break;
 					default:

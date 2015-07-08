@@ -90,6 +90,7 @@ if (isset($_POST['submit'])) {
 		$Y = ($X * $TVA) / 100;
 		$PricePerUsers = $X + $Y;
 		$PricePerUsers = ceil($PricePerUsers);
+		//$PricePerUsers = round($PricePerUsers, 2);
 
 		global $MySB_DB;
 

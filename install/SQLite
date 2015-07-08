@@ -37,9 +37,14 @@ if CheckCommand 0 sqlite3; then
 fi
 
 if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
+	#### Update repositories
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "DELETE FROM repositories WHERE 1"
+	sqlite3 -cmd '.timeout 150000' -echo $MySB_DB < $MySB_InstallDir/upgrade/repositories_v2.2.sql
+	#### Update renting
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "ALTER TABLE renting ADD COLUMN calcul INTEGER(1) DEFAULT(1)"
 	#### Add column 'language' to 'system' table
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "ALTER TABLE users ADD COLUMN language VARCHAR(10) DEFAULT(english)"
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE users SET language = 'english' WHERE id_system = '1';"	
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE users SET language = 'english' WHERE id_system = '1';"
 fi
 
 # -----------------------------------------
