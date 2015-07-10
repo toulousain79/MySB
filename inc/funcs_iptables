@@ -173,7 +173,7 @@ KernelParameterConfiguration() {
 
 	# This option logs packets from impossible addresses.
 	/sbin/sysctl -w net.ipv4.conf.all.log_martians="1" &> /dev/null
-	
+
 	# Restarting the procps service
 	service procps restart &> /dev/null
 }
@@ -201,12 +201,12 @@ PopulatingBadChain() {
 	## bad_packets chain
 	# Drop packets received on the external interface claiming a source of the local network
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-		for ip in $VpnIPs; do	
+		for ip in $VpnIPs; do
 			iptables -A bad_packets -p ALL -i $PrimaryInet -s $ip -j LOG --log-prefix "fp=bad_packets:2 a=DROP "
 			iptables -A bad_packets -p ALL -i $PrimaryInet -s $ip -j DROP
 		done
 	fi
-	
+
 	# Drop INVALID packets immediately
 	iptables -A bad_packets -p ALL -m state --state INVALID -j LOG --log-prefix "fp=bad_packets:1 a=DROP "
 	iptables -A bad_packets -p ALL -m state --state INVALID -j DROP
@@ -214,19 +214,19 @@ PopulatingBadChain() {
 	iptables -A bad_packets -p tcp -j bad_tcp_packets
 	# All good, so return
 	iptables -A bad_packets -p ALL -j RETURN
-	
+
 	## bad_tcp_packets chain
 	# All tcp packets will traverse this chain.
 	# Every new connection attempt should begin with a syn packet.  If it doesn't, it is likely a port scan.
 	# This drops packets in state NEW that are not flagged as syn packets.
 	#
 	# Return to the calling chain if the bad packets originate from the local interface.
-	# This maintains the approach throughout this firewall of a largely trusted internal network.	
+	# This maintains the approach throughout this firewall of a largely trusted internal network.
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 		iptables -A bad_tcp_packets -p tcp -i tun+ -j RETURN
 		iptables -A bad_tcp_packets -p tcp -i br0 -j RETURN
-	fi	
-	
+	fi
+
 	# However, I originally did apply this filter to the forward chain for packets originating from the internal network.
 	# While I have not conclusively determined its effect, it appears to have the interesting side effect of blocking some of the ad systems.
 	# Apparently some ad systems have the browser initiate a NEW connection that is not flagged as a syn packet to retrieve the ad image.
@@ -271,50 +271,81 @@ PopulatingIcmpChain() {
 	# ICMP packets should fit in a Layer 2 frame, thus they should
 	# never be fragmented.  Fragmented ICMP packets are a typical sign
 	# of a denial of service attack.
-	iptables -A icmp_packets --fragment -p ICMP -j LOG --log-prefix "fp=icmp_packets:1 a=DROP "
-	iptables -A icmp_packets --fragment -p ICMP -j DROP
+	case "$1" in
+		"create")
+			iptables -A icmp_packets --fragment -p ICMP -j LOG --log-prefix "fp=icmp_packets:1 a=DROP "
+			iptables -A icmp_packets --fragment -p ICMP -j DROP
+		;;
+	esac
 
 	# Allow provider monitoring by ICMP
-	if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "NONE" ]; then
-		case "$ServerProvider" in
-			"OVH")
-				OvhIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM providers_monitoring WHERE provider = 'OVH' AND ipv4 != ''\"`"
-				for IPv4 in $OvhIPv4; do
-					iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "$ServerProvider monitoring"
-					iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j ACCEPT -m comment --comment "$ServerProvider monitoring"				
-				done
-			;;
-			"ONLINE")
-				OnlineIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM providers_monitoring WHERE provider = 'ONLINE' AND ipv4 != ''\"`"
-				for IPv4 in $OnlineIPv4; do
-					iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "$ServerProvider monitoring"
-					iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j ACCEPT -m comment --comment "$ServerProvider monitoring"
-				done
-			;;
-		esac
-	fi
+	case "$1" in
+		"create")
+			if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "NONE" ]; then
+				case "$ServerProvider" in
+					"OVH")
+						OvhIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM providers_monitoring WHERE provider = 'OVH' AND ipv4 != ''\"`"
+						for IPv4 in $OvhIPv4; do
+							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "$ServerProvider monitoring"
+							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j ACCEPT -m comment --comment "$ServerProvider monitoring"				
+						done
+					;;
+					"ONLINE")
+						OnlineIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM providers_monitoring WHERE provider = 'ONLINE' AND ipv4 != ''\"`"
+						for IPv4 in $OnlineIPv4; do
+							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "$ServerProvider monitoring"
+							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j ACCEPT -m comment --comment "$ServerProvider monitoring"
+						done
+					;;
+				esac
+			fi
+		;;
+	esac
 
 	# Allow ICMP for all users
-	for ip in $AllUsersIPs; do
-		iptables -A icmp_packets -p ICMP -s $ip --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "Allow ICMP for users"
-		iptables -A icmp_packets -p ICMP -s $ip --icmp-type 8 -j ACCEPT -m comment --comment "Allow ICMP for users"
-	done
+	case "$1" in
+		"create")
+			for ip in $AllUsersIPs; do
+				iptables -A icmp_packets -p ICMP -s $ip --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "Allow ICMP for users"
+				iptables -A icmp_packets -p ICMP -s $ip --icmp-type 8 -j ACCEPT -m comment --comment "Allow ICMP for users"
+			done
+		;;
+		"refresh")
+			NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'Allow ICMP for users' -n -m 1 | cut -d ':' -f 1)
+			sed -i '/Allow ICMP for users/d' $MySB_InstallDir/temp/current-iptables-rules
+			for ip in $AllUsersIPs; do
+				# ICMP
+				sed -i ""$NumLign"i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for users\" -j LOG --log-prefix \"fp=icmp_packets:2 a=ACCEPT\"\n" $MySB_InstallDir/temp/current-iptables-rules
+				(( NumLign++ ))
+				sed -i ""$NumLign"i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
+				(( NumLign++ ))
+			done
+		;;
+	esac
 
 	# Allow ICMP over VPN tunneling
-	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-		iptables -A icmp_packets -p ICMP -s 0/0 -i tun+ --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "Allow ICMP over OpenVPN"
-		iptables -A icmp_packets -p ICMP -s 0/0 -i tun+ --icmp-type 8 -j ACCEPT -m comment --comment "Allow ICMP over OpenVPN"
-		iptables -A icmp_packets -p ICMP -s 0/0 -i br0 --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "Allow ICMP over OpenVPN"
-		iptables -A icmp_packets -p ICMP -s 0/0 -i br0 --icmp-type 8 -j ACCEPT -m comment --comment "Allow ICMP over OpenVPN"
-	fi
+	case "$1" in
+		"create")
+			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+				iptables -A icmp_packets -p ICMP -s 0/0 -i tun+ --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "Allow ICMP over OpenVPN"
+				iptables -A icmp_packets -p ICMP -s 0/0 -i tun+ --icmp-type 8 -j ACCEPT -m comment --comment "Allow ICMP over OpenVPN"
+				iptables -A icmp_packets -p ICMP -s 0/0 -i br0 --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "Allow ICMP over OpenVPN"
+				iptables -A icmp_packets -p ICMP -s 0/0 -i br0 --icmp-type 8 -j ACCEPT -m comment --comment "Allow ICMP over OpenVPN"
+			fi
+		;;
+	esac
 
 	# By default, however, drop pings without logging. Blaster and other worms have infected systems blasting pings.
-	# Comment the line below if you want pings logged, but it will likely fill your logs.
-	iptables -A icmp_packets -p ICMP -s 0/0 --icmp-type 8 -j DROP
-	# Time Exceeded
-	iptables -A icmp_packets -p ICMP -s 0/0 --icmp-type 11 -j ACCEPT
-	# Not matched, so return so it will be logged
-	iptables -A icmp_packets -p ICMP -j RETURN	
+	case "$1" in
+		"create")
+			# Comment the line below if you want pings logged, but it will likely fill your logs.
+			iptables -A icmp_packets -p ICMP -s 0/0 --icmp-type 8 -j DROP
+			# Time Exceeded
+			iptables -A icmp_packets -p ICMP -s 0/0 --icmp-type 11 -j ACCEPT
+			# Not matched, so return so it will be logged
+			iptables -A icmp_packets -p ICMP -j RETURN
+		;;
+	esac
 }
 
 #### Populate UDP inbound chain
@@ -335,33 +366,53 @@ PopulatingUdpInboundChain() {
 	# I added these rules because some network connections, such as those via cable modems, tend to be filled with noise from unprotected Windows machines.
 	# These rules drop those packets quickly and without logging them.
 	# This prevents them from traversing the whole chain and keeps the log from getting cluttered with chatter from Windows systems.
-	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 137 -j ACCEPT -m comment --comment "Samba over OpenVPN"
-		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 138 -j ACCEPT -m comment --comment "Samba over OpenVPN"
-		iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 137 -j ACCEPT -m comment --comment "Samba over OpenVPN"
-		iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 138 -j ACCEPT -m comment --comment "Samba over OpenVPN"
-	fi
-	iptables -A udp_inbound -p UDP -s 0/0 -i $PrimaryInet --destination-port 137 -j DROP
+	case "$1" in
+		"create")
+			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 137 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 138 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 137 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 138 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+			fi
+			iptables -A udp_inbound -p UDP -s 0/0 -i $PrimaryInet --destination-port 137 -j DROP
+		;;
+	esac
 
 	# Network Time Protocol (NTP) Server
-	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 123 -j ACCEPT -m comment --comment "NTP over OpenVPN"
-		iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 123 -j ACCEPT -m comment --comment "NTP over OpenVPN"
-	fi
-	for IPv4 in $AllUsersIPs; do
-		iptables -A udp_inbound -p UDP -s $IPv4 --destination-port 123 -j ACCEPT -m comment --comment "NTP for users"
-	done
+	case "$1" in
+		"create")
+			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 123 -j ACCEPT -m comment --comment "NTP over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 123 -j ACCEPT -m comment --comment "NTP over OpenVPN"
+			fi
+			for IPv4 in $AllUsersIPs; do
+				iptables -A udp_inbound -p UDP -s $IPv4 --destination-port 123 -j ACCEPT -m comment --comment "NTP for users"
+			done
+		;;
+		"refresh")
+			NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'NTP for users' -n -m 1 | cut -d ':' -f 1)
+			sed -i '/NTP for users/d' $MySB_InstallDir/temp/current-iptables-rules
+			for ip in $AllUsersIPs; do
+				sed -i ""$NumLign"i\-A udp_inbound -s $ip -p udp -m udp --dport 123 -m comment --comment \"NTP for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
+			done
+		;;
+	esac
 
-	if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "NONE" ]; then
-		case "$ServerProvider" in
-			"OVH")
-				for IPv4 in $OvhIPv4; do
-					iptables -A udp_inbound -p UDP -s $IPv4 --destination-port 6100:6200 -j ACCEPT -m comment --comment "$ServerProvider monitoring"			
-				done
-			;;
-		esac
-	fi	
-	
+	# Provider monitoring
+	case "$1" in
+		"create")
+			if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "NONE" ]; then
+				case "$ServerProvider" in
+					"OVH")
+						for IPv4 in $OvhIPv4; do
+							iptables -A udp_inbound -p UDP -s $IPv4 --destination-port 6100:6200 -j ACCEPT -m comment --comment "$ServerProvider monitoring"
+						done
+					;;
+				esac
+			fi
+		;;
+	esac
+
 	# DNS Server
 	# Configure the server to use port 53 as the source port for requests.
 	# Note, if you run a caching-only name server that only accepts queries from the private network or localhost, you can comment out this line.
@@ -376,57 +427,75 @@ PopulatingUdpInboundChain() {
 	# Please note that additional services must be configured in order to support an NFS Server through the firewall.
 	# Read the help in the generator or this site:
 	# http://www.lowth.com/LinWiz/nfs_help.html
-	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-		# NFS Server - portmapper
-		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 111 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-		iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 111 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-		# NFS Server - statd
-		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9400 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-		iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 9400 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-		# NFS Server - NFS daemon
-		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 2049 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-		iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 2049 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-		# NFS Server - lockd
-		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9401 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-		iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 9401 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-		# NFS Server - mountd
-		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9402 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-		iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 9402 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-		# NFS Server - quotad
-		iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9403 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-		iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 9403 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-	fi
+	case "$1" in
+		"create")
+			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+				# NFS Server - portmapper
+				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 111 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 111 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+				# NFS Server - statd
+				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9400 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 9400 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+				# NFS Server - NFS daemon
+				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 2049 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 2049 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+				# NFS Server - lockd
+				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9401 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 9401 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+				# NFS Server - mountd
+				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9402 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 9402 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+				# NFS Server - quotad
+				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9403 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 9403 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+			fi
+		;;
+	esac
 
 	#### OpenVPN
-	if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$OpenVPN_Proto" == "udp" ]; then
-		#for ip in $AllUsersIPs; do
-			iptables -A udp_inbound -p UDP -s 0/0 -i $PrimaryInet --destination-port $Port_OpenVPN_WithGW -j ACCEPT -m comment --comment "OpenVPN with GW for users"
-			iptables -A udp_inbound -p UDP -s 0/0 -i $PrimaryInet --destination-port $Port_OpenVPN_WithoutGW -j ACCEPT -m comment --comment "OpenVPN without GW for users"
-			iptables -A udp_inbound -p UDP -s 0/0 -i $PrimaryInet --destination-port $Port_OpenVPN_TAP_WithoutGW -j ACCEPT -m comment --comment "OpenVPN bridged without GW for users"
-		#done
-	fi	
+	case "$1" in
+		"create")
+			if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$OpenVPN_Proto" == "udp" ]; then
+				iptables -A udp_inbound -p UDP -s 0/0 -i $PrimaryInet --destination-port $Port_OpenVPN_WithGW -j ACCEPT -m comment --comment "OpenVPN with GW for users"
+				iptables -A udp_inbound -p UDP -s 0/0 -i $PrimaryInet --destination-port $Port_OpenVPN_WithoutGW -j ACCEPT -m comment --comment "OpenVPN without GW for users"
+				iptables -A udp_inbound -p UDP -s 0/0 -i $PrimaryInet --destination-port $Port_OpenVPN_TAP_WithoutGW -j ACCEPT -m comment --comment "OpenVPN bridged without GW for users"
+			fi
+		;;
+	esac
 
 	#### PlexMedia Server
-	if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$IsInstalled_PlexMedia" == "YES" ]; then
-		for PlexUdpPort in $Ports_UDP_PlexMedia; do 
-			iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port $PlexUdpPort -j ACCEPT -m comment --comment "Plex Media Server UDP over OpenVPN"
-		done
-	fi
-	
-	#### DNScrypt-proxy
-	if [ "$IsInstalled_DNScrypt" == "YES" ]; then
-		for Resolver in $ResolverName; do
-			ResolverAddress="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
-			ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
-			ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
-			if [ -z "$ResolverPort" ]; then ResolverPort="443"; fi
+	case "$1" in
+		"create")
+			if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$IsInstalled_PlexMedia" == "YES" ]; then
+				for PlexUdpPort in $Ports_UDP_PlexMedia; do 
+					iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port $PlexUdpPort -j ACCEPT -m comment --comment "Plex Media Server UDP over OpenVPN"
+				done
+			fi
+		;;
+	esac
 
-			iptables -A udp_inbound -p UDP -s $ResolverAddress/32 --destination-port $ResolverPort -j ACCEPT -m comment --comment "DNScrypt-proxy: $Resolver"
-		done
-	fi	
-	
+	#### DNScrypt-proxy
+	case "$1" in
+		"create")
+			if [ "$IsInstalled_DNScrypt" == "YES" ]; then
+				for Resolver in $ResolverName; do
+					ResolverAddress="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+					ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
+					ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
+					if [ -z "$ResolverPort" ]; then ResolverPort="443"; fi
+
+					iptables -A udp_inbound -p UDP -s $ResolverAddress/32 --destination-port $ResolverPort -j ACCEPT -m comment --comment "DNScrypt-proxy: $Resolver"
+				done
+			fi
+		;;
+	esac
+
 	# Not matched, so return for logging
-	iptables -A udp_inbound -p UDP -j RETURN
+	case "$1" in
+		"create")
+			iptables -A udp_inbound -p UDP -j RETURN
+		;;
+	esac
 }
 
 #### Populate UDP outbound chain
@@ -453,107 +522,169 @@ PopulatingTcpInboundChain() {
 	# If you allow queries from the 'net, you also need to be aware that although
 	# DNS queries use UDP by default, a truncated UDP query can legally be submitted via TCP instead.
 	# You probably will never need it, but should be aware of the fact.
-	# iptables -A tcp_inbound -p TCP -s 0/0 --destination-port 53 -j ACCEPT
+	# case "$1" in
+		# "create")
+			# iptables -A tcp_inbound -p TCP -s 0/0 --destination-port 53 -j ACCEPT
+		# ;;
+	# esac
 
-	# HTTP
-	#iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $Port_HTTP -j ACCEPT -m comment --comment "HTTP"
+	case "$1" in
+		"create")
+			# HTTP
+			#iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $Port_HTTP -j ACCEPT -m comment --comment "HTTP"
 
-	# HTTPS (Secure Web Server)
-	iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $Port_HTTPS -j ACCEPT -m comment --comment "HTTPs"
-	
-	for ip in $AllUsersIPs; do
-		# SSHd
-		iptables -A tcp_inbound -p TCP -s $ip --destination-port $Port_SSH -j ACCEPT -m comment --comment "SSH and SFTP for users"
-		
-		# FTP Server (Control)
-		iptables -A tcp_inbound -p TCP -s $ip --destination-port $Port_FTP -j ACCEPT -m comment --comment "FTP for users"
+			# HTTPS (Secure Web Server)
+			iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $Port_HTTPS -j ACCEPT -m comment --comment "HTTPs"
+			
+			for ip in $AllUsersIPs; do
+				# SSHd
+				iptables -A tcp_inbound -p TCP -s $ip --destination-port $Port_SSH -j ACCEPT -m comment --comment "SSH and SFTP for users"
 
-		# FTP Client (Data Port for non-PASV transfers)
-		iptables -A tcp_inbound -p TCP -s $ip --source-port $Port_FTP_Data -j ACCEPT -m comment --comment "FTP Data for users"
-		
-		# Passive FTP
-		iptables -A tcp_inbound -p TCP -s $ip --destination-port $Port_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive for users"
-	done
+				# FTP Server (Control)
+				iptables -A tcp_inbound -p TCP -s $ip --destination-port $Port_FTP -j ACCEPT -m comment --comment "FTP for users"
+
+				# FTP Client (Data Port for non-PASV transfers)
+				iptables -A tcp_inbound -p TCP -s $ip --source-port $Port_FTP_Data -j ACCEPT -m comment --comment "FTP Data for users"
+
+				# Passive FTP
+				iptables -A tcp_inbound -p TCP -s $ip --destination-port $Port_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive for users"
+			done
+		;;
+		"refresh")
+			sed -i '/SSH and SFTP for users/d' $MySB_InstallDir/temp/current-iptables-rules
+			sed -i '/FTP for users/d' $MySB_InstallDir/temp/current-iptables-rules
+			sed -i '/FTP Data for users/d' $MySB_InstallDir/temp/current-iptables-rules
+			sed -i '/FTP Passive for users/d' $MySB_InstallDir/temp/current-iptables-rules
+			NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'comment --comment HTTPs -j ACCEPT' -n -m 1 | cut -d ':' -f 1)
+			for ip in $AllUsersIPs; do
+				# SSHd
+				(( NumLign++ ))
+				sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_SSH -m comment --comment \"SSH and SFTP for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
+				# FTP Server (Control)
+				(( NumLign++ ))
+				sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_FTP -m comment --comment \"FTP for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules		
+				# FTP Client (Data Port for non-PASV transfers)
+				(( NumLign++ ))
+				sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --sport $Port_FTP_Data -m comment --comment \"FTP Data for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
+				# Passive FTP
+				(( NumLign++ ))
+				sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_FTP_Passive -m comment --comment \"FTP Passive for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
+			done
+		;;
+	esac
 
 	#### OpenVPN
-	if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$OpenVPN_Proto" == "tcp" ]; then
-		iptables -A tcp_inbound -p TCP -s 0/0 -i $PrimaryInet --destination-port $Port_OpenVPN_WithGW -j ACCEPT -m comment --comment "OpenVPN with GW for users"
-		iptables -A tcp_inbound -p TCP -s 0/0 -i $PrimaryInet --destination-port $Port_OpenVPN_WithoutGW -j ACCEPT -m comment --comment "OpenVPN without GW for users"
-		iptables -A tcp_inbound -p TCP -s 0/0 -i $PrimaryInet --destination-port $Port_OpenVPN_TAP_WithoutGW -j ACCEPT -m comment --comment "OpenVPN bridged without GW for users"
-	fi
+	case "$1" in
+		"create")
+			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+				if [ "$OpenVPN_Proto" == "tcp" ]; then
+					iptables -A tcp_inbound -p TCP -s 0/0 -i $PrimaryInet --destination-port $Port_OpenVPN_WithGW -j ACCEPT -m comment --comment "OpenVPN with GW for users"
+					iptables -A tcp_inbound -p TCP -s 0/0 -i $PrimaryInet --destination-port $Port_OpenVPN_WithoutGW -j ACCEPT -m comment --comment "OpenVPN without GW for users"
+					iptables -A tcp_inbound -p TCP -s 0/0 -i $PrimaryInet --destination-port $Port_OpenVPN_TAP_WithoutGW -j ACCEPT -m comment --comment "OpenVPN bridged without GW for users"
+				fi
 
-	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-		# SSHd
-		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port $Port_SSH -j ACCEPT -m comment --comment "SSH and SFTP over OpenVPN"
-		iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port $Port_SSH -j ACCEPT -m comment --comment "SSH and SFTP over OpenVPN"
-		
-		# FTP Server (Control)
-		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port $Port_FTP -j ACCEPT -m comment --comment "FTP over OpenVPN"
-		iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port $Port_FTP -j ACCEPT -m comment --comment "FTP over OpenVPN"
+				# SSHd
+				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port $Port_SSH -j ACCEPT -m comment --comment "SSH and SFTP over OpenVPN"
+				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port $Port_SSH -j ACCEPT -m comment --comment "SSH and SFTP over OpenVPN"
 
-		# FTP Client (Data Port for non-PASV transfers)
-		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --source-port $Port_FTP_Data -j ACCEPT -m comment --comment "FTP Data over OpenVPN"
-		iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --source-port $Port_FTP_Data -j ACCEPT -m comment --comment "FTP Data over OpenVPN"
-		
-		# Passive FTP
-		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port $Port_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive over OpenVPN"
-		iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port $Port_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive over OpenVPN"
-	fi
-	
+				# FTP Server (Control)
+				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port $Port_FTP -j ACCEPT -m comment --comment "FTP over OpenVPN"
+				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port $Port_FTP -j ACCEPT -m comment --comment "FTP over OpenVPN"
+
+				# FTP Client (Data Port for non-PASV transfers)
+				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --source-port $Port_FTP_Data -j ACCEPT -m comment --comment "FTP Data over OpenVPN"
+				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --source-port $Port_FTP_Data -j ACCEPT -m comment --comment "FTP Data over OpenVPN"
+
+				# Passive FTP
+				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port $Port_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive over OpenVPN"
+				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port $Port_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive over OpenVPN"
+			fi
+		;;
+	esac
+
 	#### Webmin
-	if [ "$IsInstalled_Webmin" == "YES" ]; then
-		for ip in $MainUserIPs; do
-			iptables -A tcp_inbound -p TCP -s $ip --destination-port $Ports_Webmin -j ACCEPT -m comment --comment "Webmin for main user"
-		done
-		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-			iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port $Ports_Webmin -j ACCEPT -m comment --comment "Webmin over OpenVPN"
-			iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port $Ports_Webmin -j ACCEPT -m comment --comment "Webmin over OpenVPN"
-		fi
-	fi
-	
+	case "$1" in
+		"create")
+			if [ "$IsInstalled_Webmin" == "YES" ]; then
+				for ip in $MainUserIPs; do
+					iptables -A tcp_inbound -p TCP -s $ip --destination-port $Ports_Webmin -j ACCEPT -m comment --comment "Webmin for main user"
+				done
+				if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+					iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port $Ports_Webmin -j ACCEPT -m comment --comment "Webmin over OpenVPN"
+					iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port $Ports_Webmin -j ACCEPT -m comment --comment "Webmin over OpenVPN"
+				fi
+			fi
+		;;
+		"refresh")
+			if [ "$IsInstalled_Webmin" == "YES" ]; then
+				NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'Webmin for main user' -n -m 1 | cut -d ':' -f 1)
+				sed -i '/Webmin for main user/d' $MySB_InstallDir/temp/current-iptables-rules
+				for ip in $MainUserIPs; do
+					sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Ports_Webmin -m comment --comment \"Webmin for main user\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
+					(( NumLign++ ))
+				done
+			fi
+		;;
+	esac
+
 	#### PlexMedia Server
-	if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$IsInstalled_PlexMedia" == "YES" ]; then
-		iptables -A tcp_inbound -p TCP -s 0/0 -i $PrimaryInet --destination-port 32400 -j ACCEPT -m comment --comment "Plex Media Server TCP"
-		for PlexTcpPort in $Ports_TCP_PlexMedia; do
-			iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port $PlexTcpPort -j ACCEPT -m comment --comment "Plex Media Server TCP"
-		done
-	fi
-	
+	case "$1" in
+		"create")
+			if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$IsInstalled_PlexMedia" == "YES" ]; then
+				iptables -A tcp_inbound -p TCP -s 0/0 -i $PrimaryInet --destination-port 32400 -j ACCEPT -m comment --comment "Plex Media Server TCP"
+				for PlexTcpPort in $Ports_TCP_PlexMedia; do
+					iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port $PlexTcpPort -j ACCEPT -m comment --comment "Plex Media Server TCP"
+				done
+			fi
+		;;
+	esac
+
 	#### rTorrent
-	for SeedboxUser in $UsersList; do
-		PORT_START="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$SeedboxUser'\"`"
-		PORT_END="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT rtorrent_port FROM users WHERE users_ident = '$SeedboxUser'\"`"
-		iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $PORT_START:$PORT_END -j ACCEPT -m comment --comment "rTorrent for users"
-	done
-	
+	case "$1" in
+		"create")
+			for SeedboxUser in $UsersList; do
+				PORT_START="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$SeedboxUser'\"`"
+				PORT_END="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT rtorrent_port FROM users WHERE users_ident = '$SeedboxUser'\"`"
+				iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $PORT_START:$PORT_END -j ACCEPT -m comment --comment "rTorrent for users"
+			done
+		;;
+	esac
+
 	# Network File System (NFS) Server
 	# Please note that additional services must be configured in order to support an NFS Server through the firewall.
 	# Read the help in the generator or this site:
 	# http://www.lowth.com/LinWiz/nfs_help.html
+	case "$1" in
+		"create")
+			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+				# NFS Server - portmapper
+				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 111 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 111 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+				# NFS Server - statd
+				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9400 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 9400 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+				# NFS Server - NFS daemon
+				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 2049 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 2049 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+				# NFS Server - lockd
+				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9401 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 9401 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+				# NFS Server - mountd
+				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9402 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 9402 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+				# NFS Server - quotad
+				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9403 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 9403 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+			fi
+		;;
+	esac
 
-	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-		# NFS Server - portmapper
-		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 111 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-		iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 111 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-		# NFS Server - statd
-		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9400 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-		iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 9400 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-		# NFS Server - NFS daemon
-		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 2049 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-		iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 2049 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-		# NFS Server - lockd
-		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9401 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-		iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 9401 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-		# NFS Server - mountd
-		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9402 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-		iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 9402 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-		# NFS Server - quotad
-		iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9403 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-		iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 9403 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-	fi
-	
 	# Not matched, so return so it will be logged
-	iptables -A tcp_inbound -p TCP -j RETURN	
+	case "$1" in
+		"create")
+			iptables -A tcp_inbound -p TCP -j RETURN
+		;;
+	esac
 }
 
 #### Populate TCP outbound chain
@@ -574,7 +705,7 @@ ProcessInputChain() {
 
 	# Drop bad packets
 	iptables -A INPUT -p ALL -j bad_packets
-	
+
 	# DOCSIS compliant cable modems
 	# Some DOCSIS compliant cable modems send IGMP multicasts to find connected PCs.
 	# The multicast packets have the destination address 224.0.0.1.  You can accept them.
@@ -600,7 +731,7 @@ ProcessInputChain() {
 		iptables -A INPUT -p ALL -i br0 -s 10.0.2.0/24 -j ACCEPT
 		iptables -A INPUT -p ALL -i br0 -d 10.0.2.255 -j ACCEPT
 	fi
-	
+
 	## Inbound Internet Packet Rules
 	# Accept Established Connections
 	iptables -A INPUT -p ALL -i $PrimaryInet -m state --state ESTABLISHED,RELATED -j ACCEPT
@@ -638,7 +769,7 @@ ProcessForwardChain() {
 		# If not blocked, accept any other packets from the internal interface
 		iptables -A FORWARD -p ALL -i tun0 -j ACCEPT
 		iptables -A FORWARD -p ALL -i br0 -j ACCEPT
-		
+
 		iptables -A FORWARD -i tun0 -o $PrimaryInet -s 10.0.0.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN with redirect GW"
 		iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN with redirect GW"
 	fi
@@ -667,7 +798,7 @@ ProcessOutputChain() {
 		iptables -A OUTPUT -p ALL -s 10.0.1.1 -j ACCEPT
 		iptables -A OUTPUT -p ALL -o tun1 -j ACCEPT
 		iptables -A OUTPUT -p ALL -s 10.0.2.1 -j ACCEPT
-		iptables -A OUTPUT -p ALL -o br0 -j ACCEPT	
+		iptables -A OUTPUT -p ALL -o br0 -j ACCEPT
 	fi
 
 	# To internet

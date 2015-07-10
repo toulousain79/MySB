@@ -97,10 +97,6 @@ case "$Switch" in
 					ApplyConfigDnscrypt=$IsInstalled_DNScrypt
 					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
 				;;
-				--pglcmd)
-					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
-					ApplyIptablesUsers=YES
-				;;				
 				--all)
 					ApplyIptablesUsers=YES
 					ApplyConfigNginx="`CheckCommand 1 nginx`"
@@ -174,7 +170,7 @@ CreateServicesRules() {
 			log_daemon_msg "NginX - Satisfy all"
 			echo "	# Allow any one" >> /etc/nginx/conf.d/ip_restriction
 			echo "	satisfy all;" > /etc/nginx/conf.d/ip_restriction
-			StatusLSB		
+			StatusLSB
 		fi
 	fi
 	#### NginX
@@ -221,7 +217,7 @@ RestartRtorrentSessions() {
 			done
 		;;
 		start)
-			service cron status &> /dev/null
+			service cron status > /dev/null
 			if [ $? -eq 0 ]; then
 				for FnUser in $UsersList; do
 					service rtorrent-$FnUser status &> /dev/null
@@ -278,12 +274,10 @@ case "$Switch" in
 		#### START services
 
 		#### IPtables - SAVE Iptables Rules
-		iptables-save > $MySB_InstallDir/files/current-iptables-rules
-		if [ "$IsInstalled_Webmin" == "YES" ] && [ -d /etc/webmin/firewall/ ] && [ -f $MySB_InstallDir/files/current-iptables-rules ]; then
-			cp $MySB_InstallDir/files/current-iptables-rules /etc/webmin/firewall/iptables.save
-		fi
-		if [ -f /etc/iptables.up.rules ]; then
-			rm -f /etc/iptables.up.rules
+		iptables-save > /etc/iptables.up.rules
+		cp /etc/iptables.up.rules $MySB_InstallDir/files/current-iptables-rules
+		if [ "$IsInstalled_Webmin" == "YES" ] && [ -d /etc/webmin/firewall/ ]; then
+			cp /etc/iptables.up.rules /etc/webmin/firewall/iptables.save
 		fi
 		#### IPtables - SAVE Iptables Rules
 	;;
@@ -296,7 +290,7 @@ case "$Switch" in
 
 		#### Kernel - Loading modules
 		log_daemon_msg "Kernel - Loading modules"
-		if [ "$LoadKernelModules" == "YES" ]; then
+		if [ "$LoadKernelModules" == "YES" ]; then		
 			LoadingKernelModules
 		fi
 		StatusLSB
@@ -342,13 +336,13 @@ case "$Switch" in
 			Message="IPtables - Populating ICMP user chains (allow seedbox users and $ServerProvider)"
 		fi
 		log_daemon_msg "$Message"
-		PopulatingIcmpChain
+		PopulatingIcmpChain 'create'
 		StatusLSB
 		#### IPtables - Populating ICMP chain
 
 		#### IPtables - Populating UDP inboud user chain
 		log_daemon_msg "IPtables - Populating UDP inboud chain"
-		PopulatingUdpInboundChain
+		PopulatingUdpInboundChain 'create'
 		StatusLSB
 		#### IPtables - Populating UDP inboud chain
 
@@ -360,7 +354,7 @@ case "$Switch" in
 
 		#### IPtables - Populating TCP inboud user chain
 		log_daemon_msg "IPtables - Populating TCP inboud chain"
-		PopulatingTcpInboundChain
+		PopulatingTcpInboundChain 'create'
 		StatusLSB
 		#### IPtables - Populating TCP inboud chain
 
@@ -399,7 +393,7 @@ case "$Switch" in
 		#### Services - Create all security rules for services
 
 		#### START services
-		ManageServices start "$ServicesToRestart cron"
+		ManageServices start "$ServicesToRestart"
 		RestartRtorrentSessions "start"
 		#### START services
 
@@ -413,14 +407,6 @@ case "$Switch" in
 	;;
 
 	refresh)
-		#### MySB_SecurityRules - Create new rules if needed
-		if ( [ "$IsInstalled_PeerGuardian" == "YES" ] && ! GetPid pglcmd ) || 
-			( [ "$IsInstalled_Fail2Ban" == "YES" ] && ! GetPid fail2ban ) || 
-			[ ! -f /etc/iptables.up.rules ]; then
-			ScriptInvoke 'screen' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create'
-		fi
-		#### MySB_SecurityRules - Create new rules if needed
-
 		#### IPtables - SAVE Iptables Rules
 		log_daemon_msg "IPtables - SAVE Iptables Rules"
 		if [ -f $MySB_InstallDir/temp/current-iptables-rules ]; then
@@ -435,76 +421,15 @@ case "$Switch" in
 			log_daemon_msg "IPtables - Refresh rules for all users"
 
 			# icmp_packets chain
-			NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'Allow ICMP for users' -n -m 1 | cut -d ':' -f 1)
-			sed -i '/Allow ICMP for users/d' $MySB_InstallDir/temp/current-iptables-rules
-			for ip in $AllUsersIPs; do
-				# ICMP
-				sed -i ""$NumLign"i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
-				sed -i ""$NumLign"i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for users\" -j LOG --log-prefix \"fp=icmp_packets:2 a=ACCEPT\"\n" $MySB_InstallDir/temp/current-iptables-rules
-			done
+			PopulatingIcmpChain 'refresh'
 			# icmp_packets chain
 
 			# udp_inbound chain
-			NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'NTP for users' -n -m 1 | cut -d ':' -f 1)
-			sed -i '/NTP for users/d' $MySB_InstallDir/temp/current-iptables-rules
-			for ip in $AllUsersIPs; do
-				# NTP
-				sed -i ""$NumLign"i\-A udp_inbound -s $ip -p udp -m udp --dport 123 -m comment --comment \"NTP for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
-			done
+			PopulatingUdpInboundChain 'refresh'
 			# udp_inbound chain
 
 			# tcp_inbound chain
-			NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'SSH and SFTP for users' -n -m 1 | cut -d ':' -f 1)
-			sed -i '/SSH and SFTP for users/d' $MySB_InstallDir/temp/current-iptables-rules
-			sed -i '/FTP for users/d' $MySB_InstallDir/temp/current-iptables-rules
-			sed -i '/FTP Data for users/d' $MySB_InstallDir/temp/current-iptables-rules
-			sed -i '/FTP Passive for users/d' $MySB_InstallDir/temp/current-iptables-rules
-			sed -i '/OpenVPN with GW for users/d' $MySB_InstallDir/temp/current-iptables-rules
-			sed -i '/OpenVPN without GW for users/d' $MySB_InstallDir/temp/current-iptables-rules
-			sed -i '/OpenVPN bridged without GW for users/d' $MySB_InstallDir/temp/current-iptables-rules
-			for ip in $AllUsersIPs; do
-				# SSH and SFTP
-				sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_SSH -m comment --comment \"SSH and SFTP for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
-				# FTP
-				sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_FTP -m comment --comment \"FTP for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
-				# FTP Data
-				sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --sport $Port_FTP_Data -m comment --comment \"FTP Data for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
-				# FTP Passive
-				sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Port_FTP_Passive -m comment --comment \"FTP Passive for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
-			done
-			# OpenVPN TCP
-			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-				case "$OpenVPN_Proto" in
-					"tcp")
-						sed -i ""$NumLign"i\-A tcp_inbound -p tcp -m tcp --dport $Port_OpenVPN_WithGW -m comment --comment \"OpenVPN with GW for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
-						sed -i ""$NumLign"i\-A tcp_inbound -p tcp -m tcp --dport $Port_OpenVPN_WithoutGW -m comment --comment \"OpenVPN without GW for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
-						sed -i ""$NumLign"i\-A tcp_inbound -p tcp -m tcp --dport $Port_OpenVPN_TAP_WithoutGW -m comment --comment \"OpenVPN bridged without GW for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
-					;;
-					"udp")
-						sed -i ""$NumLign"i\-A udp_inbound -p udp -m udp --dport $Port_OpenVPN_WithGW -m comment --comment \"OpenVPN with GW for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
-						sed -i ""$NumLign"i\-A udp_inbound -p udp -m udp --dport $Port_OpenVPN_WithoutGW -m comment --comment \"OpenVPN without GW for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
-						sed -i ""$NumLign"i\-A udp_inbound -p udp -m udp --dport $Port_OpenVPN_TAP_WithoutGW -m comment --comment \"OpenVPN bridged without GW for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
-					;;
-				esac
-			fi
-
-			rTorrentNumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'rTorrent for users' -n -m 1 | cut -d ':' -f 1)
-			sed -i '/rTorrent for users/d' $MySB_InstallDir/temp/current-iptables-rules
-			for FnUser in $UsersList; do
-				# Webmin
-				if [ "$IsInstalled_Webmin" == "YES" ] && [ "$FnUser" == "$MainUser" ]; then
-					NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'Webmin for main user' -n -m 1 | cut -d ':' -f 1)
-					sed -i '/Webmin for main user/d' $MySB_InstallDir/temp/current-iptables-rules
-					for ip in $MainUserIPs; do
-						sed -i ""$NumLign"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $Ports_Webmin -m comment --comment \"Webmin for main user\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
-					done
-				fi
-
-				# rTorrent
-				PORT_START="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$FnUser'\"`"
-				PORT_END="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT rtorrent_port FROM users WHERE users_ident = '$FnUser'\"`"
-				sed -i ""$rTorrentNumLign"i\-A tcp_inbound -s 0/0 -p tcp -m tcp --dport $PORT_START:$PORT_END -m comment --comment \"rTorrent for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
-			done
+			PopulatingTcpInboundChain 'refresh'
 			# tcp_inbound chain
 
 			StatusLSB
@@ -522,6 +447,7 @@ case "$Switch" in
 				sed -i ""$NumLign"i\-A udp_inbound -s $ResolverAddress/32 -p udp -m udp --dport $ResolverPort -m comment --comment \"DNScrypt-proxy: $Resolver\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
 			done
 		fi
+		
 		#### IPtables - ALTER Iptables Rules
 	
 		#### Services - Create all security rules for services
@@ -538,26 +464,16 @@ case "$Switch" in
 		ManageServices start "$ServicesToRestart"
 		#### START services
 
-		#### Webmin - Save Iptables Rules
+		#### Save Iptables Rules for Webmin
 		iptables-save > /etc/iptables.up.rules
 		cp /etc/iptables.up.rules $MySB_InstallDir/files/current-iptables-rules
-		if [ "$IsInstalled_PeerGuardian" == "YES" ] && [ -d /etc/webmin/firewall/ ]; then
+		if [ "$IsInstalled_Webmin" == "YES" ] && [ -d /etc/webmin/firewall/ ]; then
 			cp /etc/iptables.up.rules /etc/webmin/firewall/iptables.save
 		fi
-		#### Webmin - Save Iptables Rules
 
 		if CheckCommand 0 postfix && GetPid $Service; then postfix flush; fi
-
+		
 		RestartRtorrentSessions "start"
-
-		#### OpenVPN - Refresh protocol
-		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-			log_daemon_msg "OpenVPN - Refresh protocol"
-			screen -dmS OpenVPN_Client /bin/bash $MySB_InstallDir/install/OpenVPN refresh "$Switch";
-			WaitingSTD OpenVPN_Client
-			StatusLSB
-		fi
-		#### OpenVPN - Refresh protocol
 	;;
 
 	*)
