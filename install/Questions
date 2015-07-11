@@ -44,9 +44,8 @@ case "$TYPE" in
 
 		# Main User password (confirm it OR change it when you upgrade)
 		echo
-		echo -e "${CYELLOW}Please, confirm the main user password.$CEND"
-		echo -e "${CYELLOW}You can use your old password OR use a new one.$CEND"
-		QuestionGetString YES "Password for the main user (NO spaces): " MainUserPassword
+		echo -e "$Upgrade_MainUserPasswordConfirm"
+		QuestionGetString YES "$Questions_MainUserPassword" MainUserPassword
 		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE users SET users_passwd = '$MainUserPassword' WHERE admin = '1';"		
 	;;
 esac
@@ -54,49 +53,38 @@ esac
 #### Advertising
 if [ "$DisplayInfo" == "YES" ]; then
 	echo
-	echo -e "${CRED}############################################################$CEND"
-	echo -e "${CRED}#$CEND ${CYELLOW}At the end of the installation, you will receive an email.$CEND"
-	echo -e "${CRED}#$CEND ${CYELLOW}It lists information about your account.$CEND"
-	echo -e "${CRED}# IMPORTANT:$CEND ${CYELLOW}Remember to also check the SPAM folder...$CEND"
-	echo -e "${CRED}############################################################$CEND"
+	echo -e "$Header_Install_0"
 	echo
 
 	echo
-	echo -e "${CGREEN}############################################################$CEND"
-	echo -e "${CGREEN}#$CEND	${CYELLOW}Now, I need some informations.$CEND"
-	echo -e "${CGREEN}############################################################$CEND"
+	echo -e "$Questions_NeedSomeInfos"
 	echo
 fi
 
 #### MAIN USER INFO
 if [ "$DisplayUserInfo" == "YES" ]; then
 	if [ "$DisplayInfo" == "YES" ]; then
-		echo -e "${CYELLOW}#### Main User Info ####$CEND"
+		echo -e "$Questions_Category_MainUserInfos"
 	fi
 
 	# Main User name
 	while [ "`echo $MainUser | grep '@'`" != "" ] || [ -z "$MainUser" ]; do
-		QuestionGetString NO "Username for the first user for your seedbox (main user): " MainUser
+		QuestionGetString NO "$Questions_MainUserUsername" MainUser
 	done
 
 	# Main User password
 	echo
 	if [ -z "$MainUserPassword" ] || [ "$TYPE" == "UPGRADE" ]; then
-		QuestionGetString YES "Password for this user (NO spaces): " MainUserPassword
+		QuestionGetString YES "$Questions_MainUserPassword" MainUserPassword
 	fi
 
 	# User IP addresses
 	echo
-	echo -e "${CYELLOW}If you do not want to activate the restriction by IP for access to your server, just type: $CEND${CGREEN}NO$CEND"
-	echo -e "${CRED}But I think this is NOT a very good idea !$CEND ${CYELLOW}But it's not my problem...$CEND"
-	echo -e "${CYELLOW}However, you will still need to add at least one IP to the next question.$CEND"
-	echo -e "${CYELLOW}Just remember that Fail2Ban and PeerGuardian may have to block you...$CEND"
-	QuestionGetString NO "Do you want to use the IP restriction ?" IpRestriction YES
+	echo -e "$Questions_Message_IpRestriction"
+	QuestionGetString NO "$Questions_UseIprestriction" IpRestriction $Global_YES
 	
 	echo
-	echo -e "${CYELLOW}Add now, at least one of your public IP addresses that will be allowed to connect to your server for all services (whitelist).$CEND"
-	echo -e "${CYELLOW}You will be able to manage this list later on the portal, and also adding dynamic IP with hostnames (DynDN, No-IP,...).$CEND"
-	echo -e "${CYELLOW}You also have the possibility to add as many addresses (IP or hostname) that you want through the portal.$CEND"
+	echo -e "$Questions_Message_AddAddresses"
 
 	
 	while [ "$CHECK_MYIP" != "$MainUserIPs" ] || [ -z "$MainUserIPs" ]; do
@@ -108,7 +96,7 @@ if [ "$DisplayUserInfo" == "YES" ]; then
 			fi
 		fi
 
-		QuestionGetString NO "What are your personal IP public addresses ? (ex: x.x.x.x,y.y.y.y)" MainUserIPs $MainUserIPs
+		QuestionGetString NO "$Questions_AddAddresses" MainUserIPs $MainUserIPs
 		IFS=$','
 		for ip in $MainUserIPs; do 
 			TEMP=`ValidateIP "$ip"`
@@ -120,10 +108,7 @@ if [ "$DisplayUserInfo" == "YES" ]; then
 
 	# SMTP ?
 	echo
-	echo -e "${CYELLOW}Do you want to use an external SMTP server ? (Good for safe sending emails.).$CEND"
-	echo -e "${CYELLOW}Choose between ${CGREEN}LOCAL$CEND${CYELLOW} or listed providers $CEND${CGREEN}FREE$CEND|$CEND${CGREEN}OVH$CEND${CYELLOW}|$CEND${CGREEN}GMAIL$CEND|$CEND${CGREEN}YAHOO$CEND${CYELLOW}. Only SSL transactions will be used (SSL/465).$CEND"
-	echo -e "${CYELLOW}I recommend you to use a provider. This reduces the risk that the mails sent by the server is considered like spam.$CEND"
-	echo -e "${CYELLOW}You can change your choice later with the MySB portal.$CEND"
+	echo -e "$Questions_Message_SMTP_0"
 	SMTP_Provider=""
 	while [ ! "$SMTP_Provider" = "LOCAL" ] \
 		&& [ ! "$SMTP_Provider" = "FREE" ] \
@@ -131,25 +116,22 @@ if [ "$DisplayUserInfo" == "YES" ]; then
 		&& [ ! "$SMTP_Provider" = "GMAIL" ] \
 		&& [ ! "$SMTP_Provider" = "YAHOO" ]; do
 
-		QuestionGetString NO "What is your SMTP provider ? " SMTP_Provider $SMTP_Provider
+		QuestionGetString NO "$Questions_SMTP" SMTP_Provider $SMTP_Provider
 	done
 
 	SMTP_Provider=`echo $SMTP_Provider | tr '[:lower:]' '[:upper:]'`
 	if [ "$SMTP_Provider" != "LOCAL" ]; then
-		QuestionGetString NO "What is the username for the SMTP server ${CGREEN}$SMTP_Provider$CEND ?" SMTP_Username
-		QuestionGetString YES "What is the password for the SMTP server ${CGREEN}$SMTP_Provider$CEND ?" SMTP_Password
+		QuestionGetString NO "$Questions_SMTP_Username" SMTP_Username
+		QuestionGetString YES "$Questions_SMTP_Password" SMTP_Password
 	fi
 
 	# User e-mail
 	if [ "$SMTP_Provider" != "LOCAL" ]; then
 		echo
-		echo -e "${CYELLOW}Be careful when entering your e-mail address!$CEND"
-		echo -e "${CYELLOW}If the input address is wrong, you will not receive the confirmation email ...$CEND"
-		echo -e "${CYELLOW}If you selected a different provider that LOCAL to the previous question,$CEND"
-		echo -e "${CYELLOW}you must enter here email address corresponding to the SMTP account you specified.$CEND"
+		echo -e "$Questions_Message_SMTP_1"
 	fi
 	while [ ! "`ValidateMail $MainUserEmail`" = "1" ] || [ -z "$MainUserEmail" ]; do
-		QuestionGetString NO "What's your e-mail address ?" MainUserEmail
+		QuestionGetString NO "$Questions_EmailAddress" MainUserEmail
 	done
 fi
 
@@ -157,87 +139,83 @@ fi
 if [ "$DisplayServerInfo" == "YES" ]; then
 	if [ "$DisplayInfo" == "YES" ]; then
 		echo
-		echo -e "${CYELLOW}#### Server Info ####$CEND"
+		echo -e "$Questions_Category_ServerInfos"
 	fi
-	
+
 	#Time Zone
 	echo
-	QuestionGetString NO "What is your time zone ? (ex: Europe/Paris): " TimeZone "Europe/Paris"
+	QuestionGetString NO "$Questions_TimeZone" TimeZone "$TimeZone"
 
 	# Primary Inet
-	QuestionGetString NO "What is your primary network interface ? (ex: eth0, nic0, ...): " PrimaryInet $PrimaryInet
+	QuestionGetString NO "$Questions_PrimaryNetwork" PrimaryInet $PrimaryInet
 
 	# Box' IP
 	while [ ! "$CHECK_SrvIpAddress" = "$SrvIpAddress" ] || [ -z "$SrvIpAddress" ]; do
-		QuestionGetString NO  "What is the IP address of your box: " SrvIpAddress $SrvIpAddress
+		QuestionGetString NO "$Questions_BoxIpAddress" SrvIpAddress $SrvIpAddress
 		CHECK_SrvIpAddress=`ValidateIP "$SrvIpAddress"`
 	done
 
 	# Box' hostname
-	QuestionGetString NO "What is the hostname (FQDN) of your box: " HostNameFQDN $HostNameFQDN
+	QuestionGetString NO "$Questions_Hostname" HostNameFQDN $HostNameFQDN
 
 	# NginX HTTP port
-	#QuestionGetString NO "NginX HTTP port (usually 80): " Port_HTTP $Port_HTTP
+	#QuestionGetString NO "$Questions_PortHTTP" Port_HTTP $Port_HTTP
 
 	# NginX HTTPs port
-	QuestionGetString NO "NginX HTTPs port (usually 443): " Port_HTTPS $Port_HTTPS
+	QuestionGetString NO "$Questions_PortHTTPs" Port_HTTPS $Port_HTTPS
 
 	# SSH port
-	QuestionGetString NO "SSH port (usually 22): " Port_SSH $Port_SSH
+	QuestionGetString NO "$Questions_PortSSH" Port_SSH $Port_SSH
 
 	# FTP port
-	QuestionGetString NO "FTPs port (usually 990): " Port_FTP $Port_FTP
+	QuestionGetString NO "$Questions_PortFTPs" Port_FTP $Port_FTP
 
 	# FTP Active data port
-	#QuestionGetString NO "FTP Active Data port (usually 20): " Port_FTP_Data $Port_FTP_Data
+	#QuestionGetString NO "$Questions_PortFTPData" Port_FTP_Data $Port_FTP_Data
 fi
 
 #### SERVICES
 if [ "$DisplayServices" == "YES" ]; then
 	if [ "$DisplayInfo" == "YES" ]; then
 		echo
-		echo -e "${CYELLOW}#### Services ####$CEND"
+		echo -e "$Questions_Category_Services"
 	fi
 
 	#Provider
-	echo -e "${CYELLOW}Maybe you want to monitoring your server with a service proposed by your provider ?$CEND"
-	echo -e "${CYELLOW}Choose between ${CGREEN}none$CEND${CYELLOW} or listed providers $CEND${CGREEN}OVH$CEND|$CEND${CGREEN}ONLINE$CEND${CYELLOW}.$CEND"
-	echo -e "${CYELLOW}This will allow the PING from this provider.$CEND"
-	echo -e "${CRED}I don't recommend this... So, I you don't use monitoring, please disable it in the provider interface...$CEND"
-	echo -e "${CRED}If you don't enable it here AND it is enable with your provider, you server can be rebooted in Rescue Mode by the OVH staff...$CEND"
-	echo -e "${CYELLOW}It would be wiser to disable the monitoring function in your provider's interface.$CEND"
-	echo -e "${CRED}In case you want to use the monitoring, first disable the service NOW in your provider's interface.$CEND"
-	echo -e "${CRED}You can reactivate it AFTER the end of the installation of MySB.$CEND"
-	QuestionGetString NO "What is your server provider ?: " ServerProvider none
-	ServerProvider="`echo $ServerProvider | tr '[:lower:]' '[:upper:]'`"	
-	
+	echo -e "$Questions_Message_ServerProvider"
+	ServerProvider=""
+	while [ ! "$SMTP_Provider" = "$Global_NO" ] \
+		&& [ ! "$SMTP_Provider" = "OVH" ] \
+		&& [ ! "$SMTP_Provider" = "ONLINE" ]; do
+
+		QuestionGetString NO "$Questions_ServerProvider" ServerProvider $Global_NO
+		ServerProvider="`echo $ServerProvider | tr '[:lower:]' '[:upper:]'`"
+	done
+
 	# Seedbox-Manager
 	if [ "$IsInstalled_Manager" != "YES" ]; then
 		echo
-		QuestionGetString NO "Install Seedbox-Manager ? " ToInstall_Manager YES
+		QuestionGetString NO "$Questions_InstallSeedboxManager" ToInstall_Manager $Global_YES
 	fi
 
 	# Cakebox Light
 	if [ "$IsInstalled_Cakebox" != "YES" ]; then
 		echo
-		QuestionGetString NO "Install CakeBox Light ? " ToInstall_Cakebox YES
-		# if [ "$ToInstall_Cakebox" == "YES" ]; then
-			# QuestionGetString NO "CakeBox port: " Ports_Cakebox $Ports_Cakebox
-		# fi
+		QuestionGetString NO "$Questions_InstallCakeBox" ToInstall_Cakebox $Global_YES
 	fi
 
 	# Plexmedia server
 	if [ "$IsInstalled_PlexMedia" != "YES" ]; then
 		echo
-		QuestionGetString NO "Install Plex Media ? " ToInstall_PlexMedia NO
+		QuestionGetString NO "$Questions_InstallPlexMedia" ToInstall_PlexMedia $Global_NO
 	fi
 
 	# Webmin
 	if [ "$IsInstalled_Webmin" != "YES" ]; then
 		echo
-		QuestionGetString NO "Install Webmin ? " ToInstall_Webmin NO
-		if [ "$ToInstall_Webmin" == "YES" ]; then
-			QuestionGetString NO "Webmin port (usually 10000): " Ports_Webmin $Ports_Webmin
+		QuestionGetString NO "$Questions_InstallWebmin" ToInstall_Webmin $Global_NO
+		if [ "$ToInstall_Webmin" == "$Global_YES" ]; then
+			QuestionGetString NO "$Questions_PortWebmin" Ports_Webmin $Ports_Webmin
 		fi
 	fi
 
@@ -245,25 +223,23 @@ if [ "$DisplayServices" == "YES" ]; then
 	if [ "$IsInstalled_OpenVPN" != "YES" ]; then
 		echo
 		if [ "`ls -la /dev/net/tun > /dev/null && echo $?`" == "0" ]; then
-			QuestionGetString NO "Install OpenVPN ? " ToInstall_OpenVPN YES
-			if [ "$ToInstall_OpenVPN" == "YES" ]; then
+			QuestionGetString NO "$Questions_InstallOpenVPN" ToInstall_OpenVPN $Global_YES
+			if [ "$ToInstall_OpenVPN" == "$Global_YES" ]; then
 				OpenVPN_Proto=""
-				QuestionGetString NO  "OpenVPN port with redirect gateway (TUN): " Port_OpenVPN_WithGW 8893
-				QuestionGetString NO  "OpenVPN port without redirect gateway (TUN): " Port_OpenVPN_WithoutGW 8894
-				QuestionGetString NO  "OpenVPN port without redirect gateway (TAP): " Port_OpenVPN_TAP_WithoutGW 8895
+				QuestionGetString NO "$Questions_PortOpenvpnTUNwithGW" Port_OpenVPN_WithGW 8893
+				QuestionGetString NO "$Questions_PortOpenvpnTUNwithoutGW" Port_OpenVPN_WithoutGW 8894
+				QuestionGetString NO "$Questions_PortOpenvpnTAPwithoutGW" Port_OpenVPN_TAP_WithoutGW 8895
 				while [ ! "$OpenVPN_Proto" = "UDP" ] && [ ! "$OpenVPN_Proto" = "TCP" ]; do
-					QuestionGetString NO "Which protocol (UDP if you have a good connection quality, TCP otherwise), 'UDP' OR 'TCP' ? : " OpenVPN_Proto UDP
+					QuestionGetString NO "$Questions_ProtoOpenVPN" OpenVPN_Proto UDP
 				done
 			fi
 		else
-			echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
-			echo -e "${CYELLOW}You must follow this link BEFORE install 'MySB'.$CEND"
-			echo -e "${CGREEN}https://openvpn.net/index.php/access-server/docs/admin-guides/186-how-to-run-access-server-on-a-vps-container.html$CEND"
-			ToInstall_OpenVPN=NO
+			echo -e "$Questions_IsOpenVZ"
+			ToInstall_OpenVPN=$Global_NO
 
-			QuestionGetString NO  "Do you want to continue MySB installation without OpenVPN, type 'yes' ?" CONTINUE NO
-			if [ "$CONTINUE" == "NO" ]; then
-				echo -e "${CYELLOW}OK, see you later...$CEND"
+			QuestionGetString NO "$Questions_ContinueInstall" CONTINUE $Global_NO
+			if [ "$CONTINUE" == "$Global_NO" ]; then
+				echo -e "$Global_SeeYouLater"
 				echo
 				echo
 				EndingScript 0 $MySB_Install_PID
@@ -276,38 +252,34 @@ fi
 if [ "$DisplaySecurity" == "YES" ]; then
 	if [ "$DisplayInfo" == "YES" ]; then
 		echo
-		echo -e "${CYELLOW}#### Security ####$CEND"
+		echo -e "$Questions_Category_Security"
 	fi
 
 	# Logwatch
 	if [ "$IsInstalled_LogWatch" != "YES" ]; then
-		QuestionGetString NO "Install Logwatch ?" ToInstall_LogWatch YES
+		QuestionGetString NO "$Questions_InstallLogwatch" ToInstall_LogWatch $Global_YES
 	fi
 
 	# Fail2Ban
 	if [ "$IsInstalled_Fail2Ban" != "YES" ]; then
 		echo
-		QuestionGetString NO "Install Fail2ban ? " ToInstall_Fail2Ban YES
+		QuestionGetString NO "$Questions_InstallFail2Ban" ToInstall_Fail2Ban $Global_YES
 	fi
 
 	# Blocklist
 	if [ "$MySB_PeerBlock" == "none" ] || [ "$MySB_PeerBlock" == "" ]; then
 		echo
-		echo -e "${CYELLOW}How should we manage blocklists ?$CEND"
-		echo -e "${CYELLOW}With$CEND ${CGREEN}PeerGuardian$CEND${CYELLOW}, you completely protect your seedbox. You also use less RAM. $CEND"
-		echo -e "${CYELLOW}While with$CEND ${CGREEN}rTorrent$CEND${CYELLOW}, you will only protect your use of rTorrent. And memory consumption will be dependent on the number of seedbox users.$CEND"
-		echo -e "${CYELLOW}Choose '$CEND${CGREEN}none$CEND${CYELLOW}' if you don't want to use a blocklist. It's not recommended.$CEND"
+		echo -e "$Questions_Message_Blocklists"
 
 		if [ -z $IFPVEKERNEL ]; then
 			if [ "$MEMORY" -lt "2048" ]; then
-				echo -e "${CYELLOW}Your system have ${CRED}$MEMORY$CEND ${CYELLOW}MB of RAM. I recommend using PeerGuardian.$CEND"
+				echo -e "$Questions_Message_Blocklists_0"
 			else
-				echo -e "${CYELLOW}Your system have ${CRED}$MEMORY$CEND ${CYELLOW}MB of RAM. You can choose between PeerGuardian and rTorrent.$CEND"
+				echo -e "$Questions_Message_Blocklists_1"
 			fi
 			QuestionGetString NO "'PeerGuardian' OR 'rTorrent' OR 'none' ?" MySB_PeerBlock "PeerGuardian"
 		else
-			echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
-			echo -e "${CYELLOW}It's not possible to install$CEND ${CGREEN}PeerGuardian$CEND${CYELLOW}.$CEND"
+			echo -e "$Questions_Message_NotPeerGuardian"
 			QuestionGetString NO "'rTorrent' OR 'none' ?" MySB_PeerBlock "rTorrent"
 		fi
 	fi
@@ -315,11 +287,11 @@ if [ "$DisplaySecurity" == "YES" ]; then
 	# DNScrypt-proxy
 	if [ "$IsInstalled_DNScrypt" != "YES" ]; then
 		echo
-		QuestionGetString NO "Install DNScrypt-proxy (recommended) ? " ToInstall_DNScrypt YES
-		if [ ! -z $IFPVEKERNEL ] && [ "$ToInstall_DNScrypt" == "YES" ]; then
+		QuestionGetString NO "$Questions_InstallDNScrypt" ToInstall_DNScrypt $Global_YES
+		if [ ! -z $IFPVEKERNEL ] && [ "$ToInstall_DNScrypt" == "$Global_YES" ]; then
 			echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
 			echo -e "${CYELLOW}At the end of the installation, you should replace your DNS (/etc/resolv.conf) with ${CGREEN}nameserver 127.0.0.1$CEND${CYELLOW} through the OpenVZ host (eg Proxmox).$CEND"
-			echo -e "${CYELLOW}Otherwise you will lose your configuration on the next reboot.$CEND"
+			echo -e "$Questions_Message_DNScrypt"
 			sleep 10
 		fi
 	fi
@@ -328,7 +300,7 @@ fi
 #### Add answer to SQLite db
 if [ "$TYPE" == "INSTALL" ]; then
 	# 'system' table
-	if [ "$IpRestriction" == "YES" ]; then
+	if [ "$IpRestriction" == "$Global_YES" ]; then
 		IpRestriction="1"
 	else
 		IpRestriction="0"
@@ -361,23 +333,23 @@ if [ "$TYPE" == "INSTALL" ]; then
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET port_tcp1 = '$Port_FTP', port_tcp2 = '$Port_FTP_Data', port_tcp3 = '65000:65535', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'VSFTPd';"
 fi
 
-if [ "$ToInstall_Manager" == "YES" ]; then
+if [ "$ToInstall_Manager" == "$Global_YES" ]; then
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Seedbox-Manager';"
 fi
 
-if [ "$ToInstall_Cakebox" == "YES" ]; then
+if [ "$ToInstall_Cakebox" == "$Global_YES" ]; then
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1', port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'CakeBox-Light';"
 fi
 
-if [ "$ToInstall_PlexMedia" == "YES" ]; then
+if [ "$ToInstall_PlexMedia" == "$Global_YES" ]; then
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Plex Media Server';"
 fi
 
-if [ "$ToInstall_Webmin" == "YES" ]; then
+if [ "$ToInstall_Webmin" == "$Global_YES" ]; then
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1', port_tcp1 = '$Ports_Webmin', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'Webmin';"
 fi
 
-if [ "$ToInstall_OpenVPN" == "YES" ]; then
+if [ "$ToInstall_OpenVPN" == "$Global_YES" ]; then
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'OpenVPN';"
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Samba';"
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'NFS';"
@@ -392,15 +364,15 @@ if [ "$ToInstall_OpenVPN" == "YES" ]; then
 	esac
 fi
 
-if [ "$ToInstall_LogWatch" == "YES" ]; then
+if [ "$ToInstall_LogWatch" == "$Global_YES" ]; then
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'LogWatch';"
 fi
 
-if [ "$ToInstall_Fail2Ban" == "YES" ]; then
+if [ "$ToInstall_Fail2Ban" == "$Global_YES" ]; then
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Fail2Ban';"
 fi
 
-if [ "$ToInstall_DNScrypt" == "YES" ]; then
+if [ "$ToInstall_DNScrypt" == "$Global_YES" ]; then
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'DNScrypt-proxy';"
 fi
 
