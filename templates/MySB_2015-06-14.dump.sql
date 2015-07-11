@@ -1,5 +1,5 @@
 --
--- Fichier généré par SQLiteStudio v3.0.6sur sam. juil. 11 21:04:41 2015
+-- Fichier généré par SQLiteStudio v3.0.6sur sam. juil. 11 21:53:00 2015
 --
 -- Encodage texte utilisé: windows-1252
 --
@@ -252,8 +252,8 @@ CREATE TABLE smtp (
 INSERT INTO smtp (id_smtp, smtp_provider, smtp_username, smtp_passwd, smtp_host, smtp_port, smtp_email) VALUES (1, '', '', '', '', '', '');
 
 -- Table: renting
-CREATE TABLE renting (id_renting INTEGER (1, 1) PRIMARY KEY ON CONFLICT IGNORE NOT NULL ON CONFLICT ABORT, model VARCHAR (64), tva NUMERIC, global_cost NUMERIC, nb_users NUMERIC (2), price_per_users_nodecimal NUMERIC (2));
-INSERT INTO renting (id_renting, model, tva, global_cost, nb_users, price_per_users_nodecimal) VALUES (1, NULL, NULL, NULL, NULL, NULL);
+CREATE TABLE renting (id_renting INTEGER (1, 1) PRIMARY KEY ON CONFLICT IGNORE NOT NULL ON CONFLICT ABORT, model VARCHAR (64), tva NUMERIC, global_cost NUMERIC, nb_users NUMERIC (2), price_per_users NUMERIC (2));
+INSERT INTO renting (id_renting, model, tva, global_cost, nb_users, price_per_users) VALUES (1, NULL, NULL, NULL, NULL, NULL);
 
 COMMIT TRANSACTION;
 PRAGMA foreign_keys = on;
