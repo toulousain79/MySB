@@ -27,11 +27,6 @@ if ( isset($IncludeAfterFile) ) { unset($IncludeAfterFile); }
 
 if ( (isset($_SERVER['PHP_AUTH_USER'])) && (isset($_SERVER['PHP_AUTH_PW'])) ) {
 	CheckWolfDB($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
-	
-	$zip_file = WEB_ROOT . '/openvpn/openvpn_' . $_SERVER['PHP_AUTH_USER'] . '.zip';
-	if ( file_exists($zip_file) ) {
-		unlink($zip_file);
-	}
 }
 
 //#################### LAST LINE #####################################

@@ -39,5 +39,11 @@ switch ($IsMainUser) {
 		break;
 }
 
+	
+$zip_file = WEB_ROOT . '/openvpn/openvpn_' . $CurrentUser . '.zip';
+if ( file_exists($zip_file) ) {
+	unlink($zip_file);
+}
+
 //#################### LAST LINE ######################################
 ?>
