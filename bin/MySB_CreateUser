@@ -180,7 +180,7 @@ esac
 StatusLSB
 
 #### NginX
-log_daemon_msg "Creating RPC file for [$UserToCreate]"
+log_daemon_msg "$CreateUser_RpcFile [$UserToCreate]"
 (
 cat <<'EOF'
 location /<USERNAME> {
@@ -219,7 +219,7 @@ fi
 
 #### NFS
 if [ "$IsInstalled_NFS" == "YES" ]; then
-	log_daemon_msg "Create NFS share for [$UserToCreate]"
+	log_daemon_msg "$CreateUser_NfsFile [$UserToCreate]"
 	sed -i '/'$UserToCreate'/d' /etc/exports
 	uid=`grep $UserToCreate /etc/passwd | awk -F: '{ print $3 }'`
 	guid=`grep MySB_users /etc/group | awk -F: '{ print $3 }'`
@@ -229,14 +229,14 @@ fi
 
 #### OpenVPN
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-	log_daemon_msg "Create OpenVPN account for user [$UserToCreate]"
+	log_daemon_msg "$CreateUser_OpenVPN [$UserToCreate]"
 	screen -dmS OpenVPN_Client /bin/bash $MySB_InstallDir/install/OpenVPN client "$UserToCreate" "INSTALL";
 	WaitingSTD OpenVPN_Client
 	StatusLSB
 fi
 
 #### script init
-log_daemon_msg "Create rTorrent init script for [$UserToCreate]"
+log_daemon_msg "$CreateUser_rTorrentInit [$UserToCreate]"
 cp $MySB_InstallDir/templates/etc.init.rtorrent.template /etc/init.d/rtorrent-$UserToCreate
 RutorrentDirEscaped=`echo $RutorrentDir | sed s,/,\\\\\\\\\\/,g`
 perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/init.d/rtorrent-$UserToCreate
@@ -246,7 +246,7 @@ chmod +x /etc/init.d/rtorrent-$UserToCreate
 StatusLSB
 
 #### cron
-log_daemon_msg "Add init script to cron for [$UserToCreate]"
+log_daemon_msg "$CreateUser_InitCron [$UserToCreate]"
 crontab -l > /tmp/crontab.tmp
 sed -i '/'$UserToCreate'/d' /tmp/crontab.tmp
 echo "*/5 * * * * if ! ( /bin/ps U $UserToCreate | grep 'rtorrent' > /dev/null ); then service rtorrent-$UserToCreate restart &> /dev/null; fi" >> /tmp/crontab.tmp
@@ -259,18 +259,18 @@ StatusLSB
 ListingUsers
 CountingUsers
 for seedUser in $UsersList; do
-	log_daemon_msg "Change parameter 'pieces.memory.max.set' for $seedUser"
+	log_daemon_msg "$CreateUser_PiecesMemory $seedUser"
 	LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$seedUser/.rtorrent.rc)
 	sed -i ''$LIGN'd' /home/$seedUser/.rtorrent.rc
 	sed -i ''$LIGN'i\pieces.memory.max.set = '$(((($MEMORY/$TotalUsers)*1024)*1024))'\n' /home/$seedUser/.rtorrent.rc
 	StatusLSB
 
 	if [ -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.txt ]; then
-		log_daemon_msg "Copy the blocklist file for $seedUser"
+		log_daemon_msg "$CreateUser_Blocklists $seedUser"
 		cp $MySB_InstallDir/files/blocklists/* $NewUserHomedir/blocklist/
 		StatusLSB
 	else
-		log_daemon_msg "Creating a new blocklist file for $seedUser"
+		log_daemon_msg "$CreateUser_NewBlocklists $seedUser"
 		ScriptInvoke 'screen' "$MySB_InstallDir/scripts/BlocklistsRTorrent.bsh" 'REFRESH'
 		StatusLSB
 	fi
@@ -290,7 +290,7 @@ ScriptInvoke "source" "$MySB_InstallDir/bin/MySB_ChangeUserPassword" "$UserToCre
 ManageServices start "vsftpd nfs-kernel-server cron"
 
 #### Create new security rules
-log_daemon_msg "Create new security rules"
+log_daemon_msg "$CreateUser_SecurituRules"
 ScriptInvoke 'screen' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--users' "$Type"
 StatusLSB
 
