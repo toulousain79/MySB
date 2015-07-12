@@ -68,8 +68,7 @@ function PrintContent($user, $Case) {
 	} else {
 		$Language = 'en';
 	}
-	require_once(WEB_INC . '/languages/global.' . $Language . '.php');
-	require_once(WEB_INC . '/languages/' . $Language . '/' . basename(__FILE__));
+	include_once(WEB_INC . '/languages/' . $Language . '/' . basename(__FILE__));
 
 	if ( $UserPasswd != "" ) {
 		$CommentAddress = '<span class="Comments">' . User_UserInfoMail_Comment_Address_1 . '</span>';
