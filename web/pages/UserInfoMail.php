@@ -65,8 +65,10 @@ function PrintContent($user, $Case) {
 
 	if ( isSet($users_datas["language"]) ) {
 		$Language = $users_datas["language"];
+		$_SESSION['Language'] = $Language;
 	} else {
 		$Language = 'en';
+		$_SESSION['Language'] = $Language;
 	}
 	include_once(WEB_INC . '/languages/' . $Language . '/' . basename(__FILE__));
 

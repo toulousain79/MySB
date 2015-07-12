@@ -97,7 +97,7 @@ define('User_UserInfo_Table_FtpsPort', 'FTPs port (TLS)');
 define('User_UserInfo_Comment_FtpsPort', 'It is necessary to configure your FTP client software by specifying this port number. You must select "FTPS" and "explicit TLS connection".');
 // SCGI Port
 define('User_UserInfo_Table_ScgiPort', 'SCGI port');
-define('User_UserInfo_Comment_ScgiPort', '>This value is used in conjunction with RPC.');
+define('User_UserInfo_Comment_ScgiPort', 'This value is used in conjunction with RPC.');
 // rTorrent Port
 define('User_UserInfo_Table_RtorrentPort', 'rTorrent port');
 define('User_UserInfo_Comment_RtorrentPort', 'Is the network port for your rTorrent session.');

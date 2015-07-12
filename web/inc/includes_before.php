@@ -62,8 +62,6 @@ if ( isset($CurrentUser) ) {
 header('Cache-control: private'); // IE 6 FIX
 if ( isSet($users_datas["language"]) ) {
 	$Language = $users_datas["language"];
-
-	// register the session
 	$_SESSION['Language'] = $Language;
 } else {
 	$Language = 'en';
