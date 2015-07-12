@@ -23,30 +23,31 @@ if [ "$USAGE" == "ON" ]; then
 	LIST="`echo \($LIST\) | sed -e 's/(|/(/g;'`"
 
 	if [ ! -z "$LIST" ]; then
-		echo -e "${CBLUE}Available users: $CEND${CYELLOW}$LIST$CEND"
+		echo -e "${CBLUE}$CreateUser_Usage$CEND${CYELLOW}$LIST$CEND"
 	fi
 
-	QuestionGetString NO  "Username for your seedbox: " UserToCreate
-	while [ ! "`echo \"$LIST\" | grep $UserToCreate`" = "" ]; do
-		QuestionGetString NO  "Username for your seedbox: " UserToCreate
+	while [ ! "`echo \"$LIST\" | grep $UserToCreate`" = "" ] && [ -z "$UserToCreate" ]; do
+		QuestionGetString NO "$CreateUser_Username" UserToCreate
 	done
 
 	NewUserPassword="`GenPassword 8`"
 	if [ -z "NewUserPassword" ]; then
-		QuestionGetString YES "Password for user $UserToCreate: " NewUserPassword
+		QuestionGetString YES "$CreateUser_Password [$UserToCreate]: " NewUserPassword
 	fi
 
-	QuestionGetString NO  "User can login via SFTP? " UserSFTP YES
+	QuestionGetString NO "$CreateUser_SFTP" UserSFTP $Global_YES
+	UserSFTP="`echo $UserSFTP | tr '[:lower:]' '[:upper:]'`"
 
-	#QuestionGetString NO  "Add user to sudoers? " UserSUDO NO
-	UserSUDO="NO"
+	#QuestionGetString NO "Add user to sudoers? " UserSUDO $Global_NO
+	#UserSUDO="`echo $UserSUDO | tr '[:lower:]' '[:upper:]'`"
+	UserSUDO="$Global_NO"
 
 	while [ ! "`ValidateMail $UserEmail`" = "1" ]; do
-		QuestionGetString NO  "Email for this user? " UserEmail
+		QuestionGetString NO "$CreateUser_Email" UserEmail
 	done
 
-	UserSFTP="$(echo $UserSFTP | sed 's/YES/1/g;' | sed 's/NO/0/g;')"
-	UserSUDO="$(echo $UserSUDO | sed 's/YES/1/g;' | sed 's/NO/0/g;')"
+	UserSFTP="$(echo $UserSFTP | sed "s/$Global_YES/1/g;" | sed "s/$Global_NO/0/g;")"
+	UserSUDO="$(echo $UserSUDO | sed "s/$Global_YES/1/g;" | sed "s/$Global_NO/0/g;")"
 	Type="MANUAL"
 else
 	# user sftp sudo email type
@@ -88,10 +89,10 @@ rTorrentPort=$LastPort
 
 #### user infos
 if [ "$UserToCreate" != "$MainUser" ]; then
-	log_daemon_msg "Insert user informations in database"
+	log_daemon_msg "$CreateUser_Email"
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir) VALUES (\"$UserToCreate\",\"$UserEmail\",\"$NewUserPassword\",\"$NEWRPC\",\"$UserSFTP\",\"$UserSUDO\",\"$ScgiPort\",\"$rTorrentPort\",\"$NewUserHomedir\");"
 else
-	log_daemon_msg "Update user informations in database"
+	log_daemon_msg "$CreateUser_UpdateInfoDB"
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE users SET users_passwd = '', rpc = '$NEWRPC', scgi_port = '$ScgiPort', rtorrent_port = '$rTorrentPort', home_dir = '$NewUserHomedir' WHERE users_ident = '$UserToCreate';"
 fi
 StatusLSB
