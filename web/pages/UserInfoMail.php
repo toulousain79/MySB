@@ -24,8 +24,6 @@ require_once '/etc/MySB/config.php';
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
-
 if ($_SERVER['PHP_AUTH_USER'] == '##MySB_User##') {
 	$UserName = $_GET['user'];
 	$Case = $_GET['case'];
@@ -64,7 +62,15 @@ function PrintContent($user, $Case) {
 	} else {
 		$User_IPv4 = User_UserInfo_Table_NoIpAddress;
 	}
-	
+
+	if ( isSet($users_datas["language"]) ) {
+		$Language = $users_datas["language"];
+	} else {
+		$Language = 'en';
+	}
+	require_once(WEB_INC . '/languages/global.' . $Language . '.php');
+	require_once(WEB_INC . '/languages/' . $Language . '/' . basename(__FILE__));
+
 	if ( $UserPasswd != "" ) {
 		$CommentAddress = '<span class="Comments">' . User_UserInfoMail_Comment_Address_1 . '</span>';
 		$CommentAddressStyle = 'style="color: #FF6666;"';
