@@ -1363,6 +1363,7 @@ ManagerUsersConfigs() {
 #### ruTorrent Global config
 ruTorrentGlobalConfigs() {
 	LISTING=$(ls -1r $RutorrentPluginsDir/)
+	ListingUsers	
 
 	if [ -f $RutorrentDir/conf/config.php ]; then
 		# Alter 'config.php' for general use
@@ -1375,7 +1376,7 @@ ruTorrentGlobalConfigs() {
 	fi
 
 	for Plugin in $LISTING; do
-		case $Plugin in
+		case "$Plugin" in
 			'cpuload')
 				if [ -f $RutorrentPluginsDir/cpuload/conf.php ]; then
 					perl -pi -e "s/$processorsCount = null;/$processorsCount = $PROCESSOR;/g" $RutorrentPluginsDir/cpuload/conf.php
@@ -1421,6 +1422,22 @@ ruTorrentGlobalConfigs() {
 					echo "Plugin $Plugin missing"
 				fi
 			;;
+			'fileupload')
+				if [ -f $RutorrentPluginsDir/fileupload/conf.php ]; then
+					if [ ! -z "$UsersList" ]; then
+						for FnUser in $UsersList; do
+							if [ ! -d $RutorrentDir/conf/users/$FnUser/$Plugin ]; then
+								mkdir -p $RutorrentDir/conf/users/$FnUser/$Plugin
+								if [ -f $RutorrentPluginsDir/fileupload/conf.php ] && [ ! -f $RutorrentDir/conf/users/$FnUser/fileupload/conf.php ]; then
+									cp $RutorrentPluginsDir/fileupload/conf.php $RutorrentDir/conf/users/$FnUser/fileupload/conf.php
+								fi
+							fi
+						done
+					fi
+				else
+					echo "Plugin $Plugin missing"
+				fi
+			;;			
 			'geoip')
 				if [ -f $RutorrentPluginsDir/geoip/conf.php ]; then
 					perl -pi -e "s/$dnsResolver = '8.8.8.8';/$dnsResolver = null;/g" $RutorrentPluginsDir/geoip/conf.php
@@ -1474,12 +1491,22 @@ ruTorrentGlobalConfigs() {
 			;;
 			'stream')
 				if [ -f $RutorrentPluginsDir/stream/config.php ]; then
-					NumLign=$(sed -n "/\$auth =/=" $RutorrentPluginsDir/stream/config.php)
-					sed -i "${NumLign}i\$username = \$_SERVER['PHP_AUTH_USER'];" $RutorrentPluginsDir/stream/config.php
-					sed -i "${NumLign}i\$password = \$_SERVER['PHP_AUTH_PW'];" $RutorrentPluginsDir/stream/config.php
-					sed -i '/$auth =/d' $RutorrentPluginsDir/stream/config.php
-					NumLign=$(( NumLign+2 ))
-					sed -i "${NumLign}i\$auth = \"\$username:\$password\";" $RutorrentPluginsDir/stream/config.php
+					NumLign=$(sed -n "/\$username =/=" $RutorrentPluginsDir/stream/config.php)
+					if [ -z "$(sed -n "/\$username =/=" $RutorrentPluginsDir/stream/config.php)" ]; then
+						NumLign=$(sed -n "/\$auth =/=" $RutorrentPluginsDir/stream/config.php)
+						sed -i "${NumLign}i\$username = \$_SERVER['PHP_AUTH_USER'];" $RutorrentPluginsDir/stream/config.php
+					fi
+					NumLign=$(sed -n "/\$password =/=" $RutorrentPluginsDir/stream/config.php)
+					if [ -z "$NumLign" ]; then
+						NumLign=$(sed -n "/\$auth =/=" $RutorrentPluginsDir/stream/config.php)
+						sed -i "${NumLign}i\$password = \$_SERVER['PHP_AUTH_PW'];" $RutorrentPluginsDir/stream/config.php
+					fi
+					if [ -z "` cat $RutorrentPluginsDir/stream/config.php | grep '$auth = "$username:$password";'`" ]; then
+						NumLign=$(sed -n "/\$auth =/=" $RutorrentPluginsDir/stream/config.php)
+						sed -i '/$auth =/d' $RutorrentPluginsDir/stream/config.php
+						NumLign=$(( NumLign+2 ))
+						sed -i "${NumLign}i\$auth = \"\$username:\$password\";" $RutorrentPluginsDir/stream/config.php
+					fi
 					perl -pi -e "s/define\('USE_NGINX', false\);/define\('USE_NGINX', true\);/g" $RutorrentPluginsDir/stream/config.php
 					perl -pi -e "s/define\('SCHEME', 'http'\);/define\('SCHEME', 'https'\);/g" $RutorrentPluginsDir/stream/config.php
 				else
@@ -1500,7 +1527,7 @@ ruTorrentGlobalConfigs() {
 				else
 					echo "Plugin $Plugin missing"
 				fi
-			;;
+			;;			
 		esac
 	done
 }
