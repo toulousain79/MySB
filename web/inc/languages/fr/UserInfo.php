@@ -60,22 +60,29 @@ define('User_UserInfo_Comment_Sudo', ' ');
 define('User_UserInfo_Title_Directories', 'R&eacute;pertoires');
 // Home
 define('User_UserInfo_Table_Home', 'Home');
+// Session dir
 define('User_UserInfo_Table_Session', 'R&eacute;pertoires Sessions');
+define('User_UserInfo_Value_Session', '/rtorrent/.session');
 define('User_UserInfo_Comment_Session', 'Le r&eacute;pertoire des sessions permet &agrave; rTorrent de sauvegarder l\'avancement de vos torrents.');
 // Complete dir
 define('User_UserInfo_Table_CompleteDir', 'R&eacute;pertoires Complete');
+define('User_UserInfo_Value_CompleteDir', '/rtorrent/complete');
 define('User_UserInfo_Comment_CompleteDir', 'Les fichiers complets seront transf&eacute;r&eacute;s dans ce r&eacute;pertoire. Il est possible de le modifier via les Autotools de ruTorrent.');
 // Incomplete dir
 define('User_UserInfo_Table_IncompleteDir', 'R&eacute;pertoires Incomplete');
+define('User_UserInfo_Value_IncompleteDir', '/rtorrent/incomplete');
 define('User_UserInfo_Comment_IncompleteDir', 'Les t&eacute;l&eacute;chargements partiels sont stock&eacute;s ici.');
 // Torrents dir
 define('User_UserInfo_Table_TorrentDir', 'R&eacute;pertoires Torrents');
+define('User_UserInfo_Value_TorrentDir', '/rtorrent/torrents');
 define('User_UserInfo_Comment_TorrentDir', 'L\'enregistrement d\'un fichier torrent dans ce r&eacute;pertoire commencera automatiquement le t&eacute;l&eacute;chargement.');
 // Watch dir
 define('User_UserInfo_Table_WatchDir', 'R&eacute;pertoires Watch');
+define('User_UserInfo_Value_WatchDir', '/rtorrent/watch');
 define('User_UserInfo_Comment_WatchDir', 'Enregistrer un fichier torrent dans ce r&eacute;pertoire commencera automatiquement le t&eacute;l&eacute;chargement dans ruTorrent.');
 // Share dir
 define('User_UserInfo_Table_ShareDir', 'R&eacute;pertoires Share');
+define('User_UserInfo_Value_ShareDir', '/rtorrent/share');
 define('User_UserInfo_Comment_ShareDir', 'Le dossier &laquo;partage&raquo; est accessible par tous les utilisateurs du serveur. Vous pouvez facilement partager ce que vous voulez avec tout utilisateur. Vous pouvez utiliser le plugin de FileManager disponible dans ruTorrent, utiliser sFTP / FTPs ou Samba.');
 
 //////////////////////
@@ -113,6 +120,7 @@ define('User_UserInfo_Table_SambaShare', 'Partage Samba');
 define('User_UserInfo_Comment_SambaShare', 'mount - [Destination_directory] -t cifs -o noatime,nodiratime,UNC=//[10.0.x.1]/%s,username=%s,password=[your_password]');
 // NFS share
 define('User_UserInfo_Table_NfsShare', 'Partage NFS');
+define('User_UserInfo_Value_NfsShare', '/rtorrent');
 define('User_UserInfo_Comment_NfsShare', 'mount -t nfs [10.0.x.1]:/home/%s/rtorrent [Destination_directory] [-o vers=3,nolock]');
 
 //////////////////////

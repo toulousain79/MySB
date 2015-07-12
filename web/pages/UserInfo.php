@@ -175,7 +175,7 @@ function printUser($user) {
 	echo '<td><span class="Comments">' . User_UserInfo_Comment_SrvIpBridge . '</span></td></tr>';
 	// Samba share
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SambaShare . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_SambaShare . '</td>';
+	echo '<td>' . $users_datas["home_dir"] . '</td>';
 	echo '<td><span class="Comments">' . sprintf(User_UserInfo_Comment_SambaShare, $user, $user) . '</span></td></tr>';
 	// NFS share
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_NfsShare . '</th>';

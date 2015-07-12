@@ -117,7 +117,6 @@ define('User_UserInfo_Table_SrvIpBridge', 'Server IP bridged');
 define('User_UserInfo_Comment_SrvIpBridge', 'Server IP without redirect traffic (TAP interface).');
 // Samba share
 define('User_UserInfo_Table_SambaShare', 'Samba share');
-define('User_UserInfo_Value_SambaShare', '/rtorrent');
 define('User_UserInfo_Comment_SambaShare', 'mount - [Destination_directory] -t cifs -o noatime,nodiratime,UNC=//[10.0.x.1]/%s,username=%s,password=[your_password]');
 // NFS share
 define('User_UserInfo_Table_NfsShare', 'NFS share');

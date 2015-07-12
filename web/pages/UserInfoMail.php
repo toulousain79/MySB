@@ -347,7 +347,7 @@ function PrintContent($user, $Case) {
 		<!-- // Samba share -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SambaShare; ?></th>
-			<td><?php echo $users_datas["home_dir"] . User_UserInfo_Value_SambaShare;?></td>
+			<td><?php echo $users_datas["home_dir"];?></td>
 			<td><span class="Comments"><?php echo sprintf(User_UserInfo_Comment_SambaShare, $user, $user); ?></span></td>
 		</tr>
 		<!-- // NFS share -->
