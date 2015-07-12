@@ -79,7 +79,7 @@ if (isset($_POST['submit'])) {
 		}
 	}
 
-	// 2 - First, we apply new paramaters WITH (maybe) needed of create again MySB Security rules
+	// 2 - Second, we apply new paramaters WITH (maybe) needed of create again MySB Security rules
 	if (($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD)) {
 		$result = $MySB_DB->update("system", ["ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats", "pgl_watchdog_email" => "$PGL_EmailWD"], ["id_system" => 1]);
 
