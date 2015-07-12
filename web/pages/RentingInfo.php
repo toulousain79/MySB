@@ -73,7 +73,7 @@ function Form() {
 		echo				'</select>
 					</td>
 					<td><span class="Comments">' . MainUser_Renting_ExPriceToDiplay . '</span></td>
-				</tr>		
+				</tr>
 				<tr>
 					<td>' . MainUser_Renting_TotalUser . '</td>
 					<td><div align="center">'.$TotalUsers.'</div></td>
@@ -81,7 +81,7 @@ function Form() {
 				</tr>
 				<tr>
 					<td>' . MainUser_Renting_PricePerUser . '</td>
-					<td><div align="center"><b>'.ceil($PricePerUser).'</b>&euro;</div></td>
+					<td><div align="center"><b>'.$PricePerUser.'</b>' . MainUser_Renting_TotalPerUser_Plus . '</div></td>
 					<td><span class="Comments">TTC / mois</span></td>
 				</tr>
 			</table>
@@ -114,7 +114,7 @@ if (isset($_POST['submit'])) {
 
 		global $MySB_DB;
 
-		$result = $MySB_DB->update("renting", ["model" => "$Model", "tva" => "$TVA", "global_cost" => "$GlobalCost", "nb_users" => "$TotalUsers", "price_per_users" => "$PricePerUsers"], ["id_renting" => 1]);
+		$result = $MySB_DB->update("renting", ["model" => "$Model", "tva" => "$TVA", "global_cost" => "$GlobalCost", "nb_users" => "$TotalUsers", "price_per_users" => "$PricePerUsers", "method" => "$Method"], ["id_renting" => 1]);
 
 		if( $result == 1 ) {
 			$type = 'success';

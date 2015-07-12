@@ -35,6 +35,7 @@ define('MainUser_Renting_Calcul', 'Prix &agrave; afficher :');
 define('MainUser_Renting_ExPriceToDiplay', 'M&eacute;thode d\'affichage du prix pour les utilisateurs');
 define('MainUser_Renting_Method_0', 'Entier sup&eacute;rieur');
 define('MainUser_Renting_Method_1', '2 décimales arrondies');
+define('MainUser_Renting_TotalPerUser_Plus', ' &euro; TTC / mois');
 
 //#################### LAST LINE ######################################
 ?>
