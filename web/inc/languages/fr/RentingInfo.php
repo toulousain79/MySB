@@ -24,13 +24,17 @@
 
 define('MainUser_Renting_ExModel', 'Exemple:	Serveur Dedibox XC');
 define('MainUser_Renting_ExTVA', 'Exemple:	20');
-define('MainUser_Renting_ExPrice', 'Exemple:	19.99 (value without tax)');
+define('MainUser_Renting_ExPrice', 'Exemple:	19.99 (valeur hors taxe)');
 define('MainUser_Renting_ReadOnly', 'Lecture seule, pour information.');
 define('MainUser_Renting_Model', 'Mod&egrave;le :');
 define('MainUser_Renting_TVA', 'TVA (%) :');
 define('MainUser_Renting_Price', 'Prix unitaire (par mois) :');
 define('MainUser_Renting_TotalUser', 'Nombre d\'utilisateurs :');
 define('MainUser_Renting_PricePerUser', 'Prix par utilisateur :');
+define('MainUser_Renting_Calcul', 'Prix &agrave; afficher :');
+define('MainUser_Renting_ExPriceToDiplay', 'M&eacute;thode d\'affichage du prix pour les utilisateurs');
+define('MainUser_Renting_Method_0', 'Entier sup&eacute;rieur');
+define('MainUser_Renting_Method_1', '2 décimales arrondies');
 
 //#################### LAST LINE ######################################
 ?>

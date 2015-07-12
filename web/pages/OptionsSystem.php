@@ -27,7 +27,6 @@ require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__
 
 $PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
 $OpenVPNIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "OpenVPN"]);
-$RentingDatas = $MySB_DB->get("renting", ["model", "tva", "global_cost", "nb_users", "price_per_users" ], ["id_renting" => 1]);
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
 // Get values from database
@@ -90,7 +89,7 @@ if (isset($_POST['submit'])) {
 			}
 			if (($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD)) {
 				$NoChange = false;
-			}			
+			}
 			$NoChange = false;
 		} else {
 			$Command = 'message_only';
@@ -99,8 +98,6 @@ if (isset($_POST['submit'])) {
 		}
 	}
 
-
-	
 	// Get new values from database
 	$pgl_email_stats = $PGL_EmailStats;
 	$pgl_watchdog_email = $PGL_EmailWD;
@@ -197,31 +194,6 @@ if (isset($_POST['submit'])) {
 					default:
 						echo '<option value="UDP">UDP</option>';
 						echo '<option selected="selected" value="TCP">TCP</option>';
-						break;
-				} ?>
-				</select>
-			</td>
-		</tr>
-	</table>
-	</fieldset>
-	<?php } ?>
-
-	<?php if (isset($RentingDatas['price_per_users'])) { ?>
-	<fieldset>
-	<legend><?php echo MainUser_OptionsSystem_Title_Renting; ?></legend>
-	<table>
-		<tr>
-			<td><?php echo MainUser_OptionsSystem_Renting_Calcul; ?></td>
-			<td>
-				<select name="OpenVPN_Proto_post" style="width:80px; height: 28px;">';
-				<?php switch ($openvpn_proto_db) {					
-					case '2':
-						echo '<option selected="selected" value="2">2 décimales, arrondies</option>';
-						echo '<option value="0">Arrondir à l\'entier supérieur, sans décimales</option>';
-						break;
-					default:
-						echo '<option value="2">2 décimales, arrondies</option>';
-						echo '<option selected="selected" value="0">Arrondir à l\'entier supérieur, sans décimales</option>';
 						break;
 				} ?>
 				</select>

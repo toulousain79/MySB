@@ -31,6 +31,10 @@ define('MainUser_Renting_TVA', 'TVA (%) :');
 define('MainUser_Renting_Price', 'Unit price (per month) :');
 define('MainUser_Renting_TotalUser', 'Total users :');
 define('MainUser_Renting_PricePerUser', 'Price per user :');
+define('MainUser_Renting_Calcul', 'Price to display :');
+define('MainUser_Renting_ExPriceToDiplay', 'The price display method for users');
+define('MainUser_Renting_Method_0', 'Upper integer');
+define('MainUser_Renting_Method_1', '2 decimals rounded');
 
 //#################### LAST LINE ######################################
 ?>

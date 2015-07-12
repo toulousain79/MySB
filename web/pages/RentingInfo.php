@@ -28,21 +28,13 @@ function Form() {
 	global $MySB_DB;
 
 	// Users table
-	$renting_datas = $MySB_DB->get("renting", [
-												"model",
-												"tva",
-												"global_cost",
-												"nb_users",
-												"price_per_users"
-											], [
-												"id_renting" => 1
-											]);
-
+	$renting_datas = $MySB_DB->get("renting", ["model", "tva", "global_cost", "nb_users", "price_per_users", "method"], ["id_renting" => 1]);
 	$TotalUsers = $renting_datas["nb_users"];
 	$PricePerUser = $renting_datas["price_per_users"];
 	$Model = $renting_datas["model"];
 	$TVA = $renting_datas["tva"];
 	$GlobalCost = $renting_datas["global_cost"];
+	$Method = $renting_datas["method"];	
 
 	echo '<form class="form_settings" method="post" action="">
 		<div align="center">
@@ -63,14 +55,34 @@ function Form() {
 					<td><span class="Comments">' . MainUser_Renting_ExPrice . '</span></td>
 				</tr>
 				<tr>
+					<td>' . MainUser_Renting_Calcul . '</td>
+					<td>
+						<select name="method" style="width:200px; height: 28px;">';
+
+						switch ($Method) {
+							case '1':
+								echo '<option selected="selected" value="1">' . MainUser_Renting_Method_1 .'</option>';
+								echo '<option value="0">' . MainUser_Renting_Method_0 . '</option>';
+								break;
+							default:
+								echo '<option value="1">' . MainUser_Renting_Method_1 .'</option>';
+								echo '<option selected="selected" value="0">' . MainUser_Renting_Method_0 . '</option>';
+								break;
+						}
+
+		echo				'</select>
+					</td>
+					<td><span class="Comments">' . MainUser_Renting_ExPriceToDiplay . '</span></td>
+				</tr>		
+				<tr>
 					<td>' . MainUser_Renting_TotalUser . '</td>
-					<td><input class="text_extra_small" readonly="readonly" type="text" value="' . $TotalUsers . '" /></td>
-					<td><span class="Comments">' . MainUser_Renting_ReadOnly . '</span></td>
+					<td><div align="center">'.$TotalUsers.'</div></td>
+					<td></td>
 				</tr>
 				<tr>
 					<td>' . MainUser_Renting_PricePerUser . '</td>
-					<td><input class="text_extra_small" readonly="readonly" type="text" value="' . $PricePerUser . '" /></td>
-					<td><span class="Comments">' . MainUser_Renting_ReadOnly . '</span></td>
+					<td><div align="center"><b>'.ceil($PricePerUser).'</b>&euro;</div></td>
+					<td><span class="Comments">TTC / mois</span></td>
 				</tr>
 			</table>
 			<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' . Global_SaveChanges . '" />
@@ -83,23 +95,26 @@ if (isset($_POST['submit'])) {
 	$Model = $_POST['model'];
 	$TVA = $_POST['tva'];
 	$GlobalCost = $_POST['global_cost'];
+	$Method = $_POST['method'];
 	$TotalUsers = CountingUsers();
 
-	if ( (isset($GlobalCost)) && (isset($TVA)) && (isset($TotalUsers)) && (isset($Model)) ) {
+	if ( (isset($GlobalCost)) && (isset($TVA)) && (isset($TotalUsers)) && (isset($Model)) && (isset($Method)) ) {
 		$X = $GlobalCost / $TotalUsers;
 		$Y = ($X * $TVA) / 100;
 		$PricePerUsers = $X + $Y;
-		$PricePerUsers = ceil($PricePerUsers);
-		//$PricePerUsers = round($PricePerUsers, 2);
+
+		switch ($Method) {
+			case '1':
+				$PricePerUsers = round($PricePerUsers, 2);
+				break;
+			default:
+				$PricePerUsers = ceil($PricePerUsers);
+				break;
+		}
 
 		global $MySB_DB;
 
-		$result = $MySB_DB->update("renting", ["model" => "$Model",
-										"tva" => "$TVA",
-										"global_cost" => "$GlobalCost",
-										"nb_users" => "$TotalUsers",
-										"price_per_users" => "$PricePerUsers"],
-										["id_renting" => 1]);
+		$result = $MySB_DB->update("renting", ["model" => "$Model", "tva" => "$TVA", "global_cost" => "$GlobalCost", "nb_users" => "$TotalUsers", "price_per_users" => "$PricePerUsers"], ["id_renting" => 1]);
 
 		if( $result == 1 ) {
 			$type = 'success';
