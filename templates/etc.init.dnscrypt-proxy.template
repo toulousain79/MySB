@@ -152,17 +152,20 @@ check_crontab() {
 	case "$1" in
 		add)
 			if [ -z "`crontab -l | grep dnscrypt-proxy`" ]; then
-				crontab -l > /tmp/crontab.tmp
-				sed -i '/dnscrypt-proxy/d' /tmp/crontab.tmp
+				crontab -l > /tmp/crontab.tmp > /dev/null 2>&1
+				sed -i '/dnscrypt-proxy/d' /tmp/crontab.tmp > /dev/null 2>&1
 				echo "*/5 * * * * if ( ! /bin/ps ax | grep 'dnscrypt-proxy' | sed '/grep/d' > /dev/null ); then service dnscrypt-proxy restart &> /dev/null; fi" >> /tmp/crontab.tmp
-				crontab /tmp/crontab.tmp
-				rm -f /tmp/crontab.tmp
+				crontab /tmp/crontab.tmp > /dev/null 2>&1
+				rm -f /tmp/crontab.tmp > /dev/null 2>&1
 				service cron reload > /dev/null 2>&1
 			fi
 		;;
 		remove)
 			if [ ! -z "`crontab -l | grep dnscrypt-proxy`" ]; then
-				sed -i '/dnscrypt-proxy/d' /tmp/crontab.tmp
+				crontab -l > /tmp/crontab.tmp > /dev/null 2>&1
+				sed -i '/dnscrypt-proxy/d' /tmp/crontab.tmp > /dev/null 2>&1
+				crontab /tmp/crontab.tmp > /dev/null 2>&1
+				rm -f /tmp/crontab.tmp > /dev/null 2>&1
 				service cron reload > /dev/null 2>&1
 			fi
 		;;
@@ -184,7 +187,6 @@ delete_pid_file() {
 do_start() {
 	resolv_check
 	bind_check
-	check_crontab 'add'
 
 	# Update DB
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '0', is_wished = '0' WHERE 1;"
@@ -268,8 +270,6 @@ do_start() {
 
 # Function STOP the daemon/service
 do_stop() {
-	check_crontab 'remove'
-
 	PidList="`ls -1r $DIR_PID/`"
 
 	# Return
@@ -307,7 +307,6 @@ do_stop() {
 #### Functions - End
 
 
-
 #### CASE - Begin
 case "$1" in
 	start)
@@ -316,6 +315,7 @@ case "$1" in
 		case "$?" in
 			0|1)	
 				log_end_msg 0
+				check_crontab 'add'
 			;;
 			2)
 				log_end_msg 1
@@ -324,6 +324,7 @@ case "$1" in
 	;;
 
 	stop)
+		check_crontab 'remove'
 		log_daemon_msg "Stopping $DESC" "$NAME"
 		do_stop
 		log_end_msg 0
