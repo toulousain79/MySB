@@ -148,7 +148,7 @@ CreateServicesRules() {
 		if [ "$IpRestriction" == "YES" ]; then
 			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 				# OpenVPN local IP addresses
-				log_daemon_msg "NginX - Allowing IP addresses of OpenVPN users"
+				log_daemon_msg "$SecurityRules_NginX_OpenVPN"
 				echo "	# Restricted IP for OpenVPN users" >> /etc/nginx/conf.d/ip_restriction
 				for IPv4 in $VpnIPs; do
 					echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
@@ -158,7 +158,7 @@ CreateServicesRules() {
 			fi
 
 			# Loopback
-			log_daemon_msg "NginX - Allowing the loopback interface"
+			log_daemon_msg "$SecurityRules_NginX_Loopback"
 			echo "	# Localhost" >> /etc/nginx/conf.d/ip_restriction
 			echo "	allow 127.0.0.1;" >> /etc/nginx/conf.d/ip_restriction
 			StatusLSB
@@ -167,7 +167,7 @@ CreateServicesRules() {
 			echo "	# Deny all others" >> /etc/nginx/conf.d/ip_restriction
 			echo "	deny all;" >> /etc/nginx/conf.d/ip_restriction
 		else
-			log_daemon_msg "NginX - Satisfy all"
+			log_daemon_msg "$SecurityRules_NginX_SatisfyAll"
 			echo "	# Allow any one" >> /etc/nginx/conf.d/ip_restriction
 			echo "	satisfy all;" > /etc/nginx/conf.d/ip_restriction
 			StatusLSB
@@ -177,7 +177,7 @@ CreateServicesRules() {
 
 	#### BIND
 	if [ "$ApplyConfigBind" == "YES" ]; then
-		log_daemon_msg "Bind - Block all outgoing request for inactive trackers"
+		log_daemon_msg "$SecurityRules_Bind_BlockOut"
 		AllTrackersDomain="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT tracker_domain FROM trackers_list WHERE is_active = '0' AND to_check = '0'\"`"
 		echo "#### MySB - Blacklisted domains (ex: inactive trackers)" > /etc/bind/MySB.zones.blakclists
 		for TrackerDomain in $AllTrackersDomain; do
@@ -241,30 +241,30 @@ case "$Switch" in
 		#### STOP services
 
 		#### IPtables - Removal of existing rules
-		log_daemon_msg "IPtables - Removal of existing rules"
+		log_daemon_msg "$SecurityRules_IPtables_RemoveAll"
 		FlushingTables
 		StatusLSB
 		#### IPtables - Removal of existing rules
 
 		#### NginX - Satisfy all
 		if [ "$ApplyConfigNginx" == "YES" ]; then
-			log_daemon_msg "NginX - Satisfy all"
+			log_daemon_msg "$SecurityRules_NginX_SatisfyAll"
 			echo "	# Allow any one" >> /etc/nginx/conf.d/ip_restriction
 			echo "	satisfy all;" > /etc/nginx/conf.d/ip_restriction
 			StatusLSB
 		else
-			log_daemon_msg "NginX - Not yet installed."
+			log_daemon_msg "$SecurityRules_NginX_NotInstalled"
 			StatusLSB
 		fi
 		#### NginX - Satisfy all
 
 		#### Bind - Unblock inactive tracker domains
 		if [ "$ApplyConfigBind" == "YES" ]; then
-			log_daemon_msg "Bind - Unblock inactive tracker domains"
+			log_daemon_msg "$SecurityRules_Bind_UnblockTracker"
 			perl -pi -e "s/^include \"\/etc\/bind\/MySB.zones.blakclists\";/#include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
 			StatusLSB
 		else
-			log_daemon_msg "Bind - Not yet installed."
+			log_daemon_msg "$SecurityRules_Bind_NotInstalled"
 			StatusLSB
 		fi
 		#### Bind - Unblock inactive tracker domains
@@ -289,7 +289,7 @@ case "$Switch" in
 		#### STOP services
 
 		#### Kernel - Loading modules
-		log_daemon_msg "Kernel - Loading modules"
+		log_daemon_msg "$SecurityRules_Kernel_Loading"
 		if [ "$LoadKernelModules" == "YES" ]; then		
 			LoadingKernelModules
 		fi
@@ -297,7 +297,7 @@ case "$Switch" in
 		#### Kernel - Loading modules
 
 		#### Kernel - Parameter Configuration
-		log_daemon_msg "Kernel - Parameter Configuration"
+		log_daemon_msg "$SecurityRules_Kernel_Parameter"
 		if [ "$LoadKernelParameter" == "YES" ]; then
 			KernelParameterConfiguration
 		fi
@@ -305,13 +305,13 @@ case "$Switch" in
 		#### Kernel - Parameter Configuration
 
 		#### IPtables - Removal of existing rules
-		log_daemon_msg "IPtables - Removal of existing rules"
+		log_daemon_msg "$SecurityRules_IPtables_RemoveAll"
 		FlushingTables
 		StatusLSB
 		#### IPtables - Removal of existing rules
 
 		#### IPtables - Prohibit any incoming/outgoing connections
-		log_daemon_msg "IPtables - Prohibit any incoming/outgoing connections"
+		log_daemon_msg "$SecurityRules_IPtables_ProhibitConn"
 		iptables -P INPUT DROP
 		iptables -P FORWARD DROP
 		iptables -P OUTPUT DROP
@@ -319,21 +319,21 @@ case "$Switch" in
 		#### IPtables - Prohibit any incoming/outgoing connections
 
 		#### IPtables - Creating user chains
-		log_daemon_msg "IPtables - Creating user chains"
+		log_daemon_msg "$SecurityRules_IPtables_UserChains"
 		CreatingUserChain
 		StatusLSB
 		#### IPtables - Creating user chains
 
 		#### IPtables - Populating user chains
-		log_daemon_msg "IPtables - Populating BAD chains"
+		log_daemon_msg "$SecurityRules_IPtables_BadChains"
 		PopulatingBadChain
 		StatusLSB
 		#### IPtables - Populating user chains
 
 		#### IPtables - Populating ICMP chain
-		Message="IPtables - Populating ICMP chain (allow seedbox users only)"
+		Message="$SecurityRules_IPtables_ICMP_0"
 		if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "NONE" ]; then
-			Message="IPtables - Populating ICMP user chains (allow seedbox users and $ServerProvider)"
+			Message="$SecurityRules_IPtables_ICMP_1"
 		fi
 		log_daemon_msg "$Message"
 		PopulatingIcmpChain 'create'
@@ -341,49 +341,49 @@ case "$Switch" in
 		#### IPtables - Populating ICMP chain
 
 		#### IPtables - Populating UDP inboud user chain
-		log_daemon_msg "IPtables - Populating UDP inboud chain"
+		log_daemon_msg "$SecurityRules_IPtables_UdpIn"
 		PopulatingUdpInboundChain 'create'
 		StatusLSB
 		#### IPtables - Populating UDP inboud chain
 
 		#### IPtables - Populating UDP outbound chain
-		log_daemon_msg "IPtables - Populating UDP outbound chain"
+		log_daemon_msg "$SecurityRules_IPtables_UdpOut"
 		PopulatingUdpOutboundChain
 		StatusLSB
 		#### IPtables - Populating UDP outbound chain
 
 		#### IPtables - Populating TCP inboud user chain
-		log_daemon_msg "IPtables - Populating TCP inboud chain"
+		log_daemon_msg "$SecurityRules_IPtables_TcpIn"
 		PopulatingTcpInboundChain 'create'
 		StatusLSB
 		#### IPtables - Populating TCP inboud chain
 
 		#### IPtables - Populating TCP outbound user chain
-		log_daemon_msg "IPtables - Populating TCP outbound chain"
+		log_daemon_msg "$SecurityRules_IPtables_TcpOut"
 		PopulatingTcpOutboundChain
 		StatusLSB
 		#### IPtables - Populating TCP outbound chain
 
 		#### IPtables - Process INPUT chain
-		log_daemon_msg "IPtables - Process INPUT chain"
+		log_daemon_msg "$SecurityRules_IPtables_Input"
 		ProcessInputChain
 		StatusLSB
 		#### IPtables - Process INPUT chain
 
 		#### IPtables - Process FORWARD chain
-		log_daemon_msg "IPtables - Process FORWARD chain"
+		log_daemon_msg "$SecurityRules_IPtables_Forward"
 		ProcessForwardChain
 		StatusLSB
 		#### IPtables - Process FORWARD chain
 
 		#### IPtables - Process OUTPUT chain
-		log_daemon_msg "IPtables - Process OUTPUT chain"
+		log_daemon_msg "$SecurityRules_IPtables_Output"
 		ProcessOutputChain
 		StatusLSB
 		#### IPtables - Process OUTPUT chain
 
 		#### IPtables - Process POSTROUTING chain
-		log_daemon_msg "IPtables - Process POSTROUTING chain"
+		log_daemon_msg "$SecurityRules_IPtables_Postrouting"
 		ProcessPostroutingChain
 		StatusLSB
 		#### IPtables - Process POSTROUTING chain
@@ -408,7 +408,7 @@ case "$Switch" in
 
 	refresh)
 		#### IPtables - SAVE Iptables Rules
-		log_daemon_msg "IPtables - SAVE Iptables Rules"
+		log_daemon_msg "$SecurityRules_IPtables_Save"
 		if [ -f $MySB_InstallDir/temp/current-iptables-rules ]; then
 			rm -f $MySB_InstallDir/temp/current-iptables-rules
 		fi
@@ -418,7 +418,7 @@ case "$Switch" in
 
 		#### IPtables - ALTER Iptables Rules
 		if [ "$ApplyIptablesUsers" == "YES" ]; then
-			log_daemon_msg "IPtables - Refresh rules for all users"
+			log_daemon_msg "$SecurityRules_IPtables_Refresh"
 
 			# icmp_packets chain
 			PopulatingIcmpChain 'refresh'
@@ -455,7 +455,7 @@ case "$Switch" in
 		#### Services - Create all security rules for services
 
 		#### IPtables - RESTORE Iptables Rules
-		log_daemon_msg "IPtables - RESTORE Iptables Rules"
+		log_daemon_msg "$SecurityRules_IPtables_Restore"
 		iptables-restore < $MySB_InstallDir/temp/current-iptables-rules
 		StatusLSB
 		#### IPtables - RESTORE Iptables Rules
@@ -477,7 +477,7 @@ case "$Switch" in
 	;;
 
 	*)
-		echo -e "${CBLUE}Usage:$CEND	${CYELLOW}bash $ScriptName$CEND ${CGREEN}{clean|create|refresh}$CEND"
+		echo -e "$SecurityRules_Usage"
 		echo
 		END=OFF
 		EndingScript 0
