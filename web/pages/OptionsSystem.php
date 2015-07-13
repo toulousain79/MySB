@@ -27,9 +27,11 @@ require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__
 
 $PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
 $OpenVPNIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "OpenVPN"]);
+$DNScryptIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "DNScrypt-proxy"]);
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
 // Get values from database
+$DNScrypt_db = $system_datas['dnscrypt'];
 $pgl_email_stats = $system_datas['pgl_email_stats'];
 $pgl_watchdog_email = $system_datas['pgl_watchdog_email'];
 $ip_restriction_db = $system_datas['ip_restriction'];
@@ -53,13 +55,14 @@ if (isset($_POST['submit'])) {
 	$PGL_EmailStats = $_POST['PGL_EmailStats'];
 	$PGL_EmailWD = $_POST['PGL_EmailWD'];
 	$IP_restriction_post = $_POST['IP_restriction_post'];
-	$OpenVPN_Proto = $_POST['OpenVPN_Proto_post'];
+	$OpenVPN_Proto_post = $_POST['OpenVPN_Proto_post'];
+	$DNScrypt_post = $_POST['DNScrypt_post'];
 	$Command = 'Options_System';
 	$type = 'success';
 	$NoChange = true;
 
 	// 1 - First, we apply new paramaters WITHOUT needed of create again MySB Security rules
-	if ($openvpn_proto_db != $OpenVPN_Proto) {
+	if ($openvpn_proto_db != $OpenVPN_Proto_post) {
 		switch ($OpenVPN_Proto) {
 			case 'TCP':
 				$result = $MySB_DB->update("services", 	["port_tcp1" => $openvpn_port1, "port_tcp2" => $openvpn_port2, "port_tcp3" => $openvpn_port3, "port_udp1" => "", "port_udp2" => "", "port_udp3" => ""], ["serv_name" => "OpenVPN"]);
@@ -77,17 +80,17 @@ if (isset($_POST['submit'])) {
 			$NoChange = false;
 		}
 	}
-
+	
 	// 2 - Second, we apply new paramaters WITH (maybe) needed of create again MySB Security rules
-	if (($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD)) {
-		$result = $MySB_DB->update("system", ["ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats", "pgl_watchdog_email" => "$PGL_EmailWD"], ["id_system" => 1]);
+	if (($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) || ($DNScrypt_db != $DNScrypt_post)) {
+		$result = $MySB_DB->update("system", ["ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats", "pgl_watchdog_email" => "$PGL_EmailWD", "dnscrypt" => "$DNScrypt_post"], ["id_system" => 1]);
 
 		if( $result == 1 ) {
 			if ($ip_restriction_db != $IP_restriction_post) {
 				$Command = 'MySB_SecurityRules';
 				$NoChange = false;
 			}
-			if (($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD)) {
+			if (($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) || ($DNScrypt_db != $DNScrypt_post)) {
 				$NoChange = false;
 			}
 			$NoChange = false;
@@ -102,7 +105,7 @@ if (isset($_POST['submit'])) {
 	$pgl_email_stats = $PGL_EmailStats;
 	$pgl_watchdog_email = $PGL_EmailWD;
 	$ip_restriction_db = $IP_restriction_post;
-	$openvpn_proto_db = $OpenVPN_Proto;
+	$openvpn_proto_db = $OpenVPN_Proto_post;
 
 	if ($NoChange) {
 		GenerateMessage('message_only', 'information', Global_NoChange);
@@ -202,6 +205,32 @@ if (isset($_POST['submit'])) {
 	</table>
 	</fieldset>
 	<?php } ?>
+	
+	<?php if ($DNScryptIsInstalled == '1') { ?>
+	<br />
+	<fieldset>
+	<legend><?php echo MainUser_OptionsSystem_Title_DNScrypt; ?></legend>
+	<table>
+		<tr>
+			<td><?php echo MainUser_OptionsSystem_DNScrypt_Activate; ?></td>
+			<td>
+				<select name="DNScrypt_post" style="width:80px; height: 28px;">';
+				<?php switch ($DNScrypt) {
+					case '1':
+						echo '<option selected="selected" value="1">' . Global_Yes . '</option>';
+						echo '<option value="0">' . Global_No . '</option>';
+						break;
+					default:
+						echo '<option value="1">' . Global_Yes . '</option>';
+						echo '<option selected="selected" value="0">' . Global_No . '</option>';
+						break;
+				} ?>
+				</select>
+			</td>
+		</tr>
+	</table>
+	</fieldset>
+	<?php } ?>	
 
 	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
 

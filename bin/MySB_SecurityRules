@@ -35,8 +35,8 @@ Switch="$1"
 ListingUsers #($UsersList)
 AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
 AllUsersIPs=$(echo "$AllUsersIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
-
 ServicesToRestart=""
+ServicesToStop=""
 #### VARs
 
 #### Check arguments options
@@ -66,7 +66,9 @@ case "$Switch" in
 		ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
 		ApplyConfigFail2Ban=$IsInstalled_Fail2Ban
 		ApplyConfigBind="`CheckCommand 1 named`"
-		ApplyConfigDnscrypt=$IsInstalled_DNScrypt
+		if [ "$DNScrypt_Switch" == "1" ]; then
+			ApplyConfigDnscrypt=$IsInstalled_DNScrypt
+		fi
 	;;
 	clean)
 		ApplyConfigNginx="`CheckCommand 1 nginx`"
@@ -84,24 +86,32 @@ case "$Switch" in
 				--dnscrypt)
 					ApplyIptablesDnscrypt=$IsInstalled_DNScrypt
 					ApplyConfigBind="`CheckCommand 1 named`"
-					ApplyConfigDnscrypt=$IsInstalled_DNScrypt
+					if [ "$DNScrypt_Switch" == "1" ]; then
+						ApplyConfigDnscrypt=$IsInstalled_DNScrypt
+					fi
 					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
 				;;
 				--trackers)
 					ApplyConfigBind="`CheckCommand 1 named`"
-					ApplyConfigDnscrypt=$IsInstalled_DNScrypt
+					if [ "$DNScrypt_Switch" == "1" ]; then
+						ApplyConfigDnscrypt=$IsInstalled_DNScrypt
+					fi
 					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
 				;;
 				--blocklists)
 					ApplyConfigBind="`CheckCommand 1 named`"
-					ApplyConfigDnscrypt=$IsInstalled_DNScrypt
+					if [ "$DNScrypt_Switch" == "1" ]; then
+						ApplyConfigDnscrypt=$IsInstalled_DNScrypt
+					fi
 					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
 				;;
 				--all)
 					ApplyIptablesUsers=YES
 					ApplyConfigNginx="`CheckCommand 1 nginx`"
 					ApplyConfigBind="`CheckCommand 1 named`"
-					ApplyConfigDnscrypt=$IsInstalled_DNScrypt
+					if [ "$DNScrypt_Switch" == "1" ]; then
+						ApplyConfigDnscrypt=$IsInstalled_DNScrypt
+					fi
 					ApplyConfigFail2Ban=$IsInstalled_Fail2Ban
 					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
 				;;
@@ -125,6 +135,9 @@ if [ "$ApplyConfigPeerGuardian" == "YES" ]; then
 fi
 if [ "$ApplyConfigNginx" == "YES" ]; then
 	ServicesToRestart="${ServicesToRestart} nginx"
+fi
+if [ "$DNScrypt_Switch" == "1" ]; then
+	ServicesToStop="dnscrypt-proxy"
 fi
 #### Check arguments options
 
@@ -231,7 +244,6 @@ RestartRtorrentSessions() {
 }
 #### Functions
 
-
 #### Begin
 case "$Switch" in
 	clean)
@@ -272,6 +284,10 @@ case "$Switch" in
 		#### START services
 		ManageServices start "nginx bind9"
 		#### START services
+
+		#### STOP services
+		ManageServices stop "$ServicesToStop"
+		#### STOP services
 
 		#### IPtables - SAVE Iptables Rules
 		iptables-save > /etc/iptables.up.rules
@@ -397,6 +413,10 @@ case "$Switch" in
 		RestartRtorrentSessions "start"
 		#### START services
 
+		#### STOP services
+		ManageServices stop "$ServicesToStop"
+		#### STOP services
+
 		#### Save Iptables Rules for Webmin
 		iptables-save > /etc/iptables.up.rules
 		cp /etc/iptables.up.rules $MySB_InstallDir/files/current-iptables-rules
@@ -447,9 +467,9 @@ case "$Switch" in
 				sed -i ""$NumLign"i\-A udp_inbound -s $ResolverAddress/32 -p udp -m udp --dport $ResolverPort -m comment --comment \"DNScrypt-proxy: $Resolver\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
 			done
 		fi
-		
+
 		#### IPtables - ALTER Iptables Rules
-	
+
 		#### Services - Create all security rules for services
 		CreateServicesRules
 		#### Services - Create all security rules for services
@@ -464,6 +484,10 @@ case "$Switch" in
 		ManageServices start "$ServicesToRestart"
 		#### START services
 
+		#### STOP services
+		ManageServices stop "$ServicesToStop"
+		#### STOP services
+
 		#### Save Iptables Rules for Webmin
 		iptables-save > /etc/iptables.up.rules
 		cp /etc/iptables.up.rules $MySB_InstallDir/files/current-iptables-rules
@@ -472,7 +496,7 @@ case "$Switch" in
 		fi
 
 		if CheckCommand 0 postfix && GetPid $Service; then postfix flush; fi
-		
+
 		RestartRtorrentSessions "start"
 	;;
 

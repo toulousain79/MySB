@@ -29,6 +29,8 @@ define('MainUser_OptionsSystem_Title_Iptables', 'IPtables');
 define('MainUser_OptionsSystem_Iptables_Restrict', 'IP restriction');
 define('MainUser_OptionsSystem_Title_OpenVPN', 'OpenVPN');
 define('MainUser_OptionsSystem_OpenVPN_Proto', 'Protocol');
+define('MainUser_OptionsSystem_Title_DNScrypt', 'DNScrypt-proxy');
+define('MainUser_OptionsSystem_DNScrypt_Activate', 'Activation');
 
 //#################### LAST LINE ######################################
 ?>

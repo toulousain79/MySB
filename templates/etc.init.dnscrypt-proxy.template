@@ -147,6 +147,28 @@ resolv_check() {
 	fi
 }
 
+# Add monitor with cron
+check_crontab() {
+	case "$1" in
+		add)
+			if [ -z "`crontab -l | grep dnscrypt-proxy`" ]; then
+				crontab -l > /tmp/crontab.tmp
+				sed -i '/dnscrypt-proxy/d' /tmp/crontab.tmp
+				echo "*/5 * * * * if ( ! /bin/ps ax | grep 'dnscrypt-proxy' | sed '/grep/d' > /dev/null ); then service dnscrypt-proxy restart &> /dev/null; fi" >> /tmp/crontab.tmp
+				crontab /tmp/crontab.tmp
+				rm -f /tmp/crontab.tmp
+				service cron reload > /dev/null 2>&1
+			fi
+		;;
+		remove)
+			if [ ! -z "`crontab -l | grep dnscrypt-proxy`" ]; then
+				sed -i '/dnscrypt-proxy/d' /tmp/crontab.tmp
+				service cron reload > /dev/null 2>&1
+			fi
+		;;
+	esac
+}
+
 # Delete all pid files
 delete_pid_file() {
 	FnPid=$1
@@ -162,6 +184,7 @@ delete_pid_file() {
 do_start() {
 	resolv_check
 	bind_check
+	check_crontab 'add'
 
 	# Update DB
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '0', is_wished = '0' WHERE 1;"
@@ -236,6 +259,7 @@ do_start() {
 	sed -i "${NumLign}i\        // DNScrypt-proxy - EoF" /etc/bind/named.conf.options	
 
 	if [ -z "`ps ax | grep 'MySB_SecurityRules' | grep -e 'create' -e 'refresh' | grep -v 'grep'`" ]; then
+		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE system SET dnscrypt = '1' WHERE id_system = '1';"
 		screen -dmS MySB_SecurityRules /bin/bash <InstallDir>/bin/MySB_SecurityRules 'refresh' '--dnscrypt' 'SCREEN';
 	fi
 	
@@ -244,6 +268,8 @@ do_start() {
 
 # Function STOP the daemon/service
 do_stop() {
+	check_crontab 'remove'
+
 	PidList="`ls -1r $DIR_PID/`"
 
 	# Return
