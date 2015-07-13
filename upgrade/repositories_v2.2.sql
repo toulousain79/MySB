@@ -1,5 +1,5 @@
 --
--- Fichier généré par SQLiteStudio v3.0.6sur sam. juil. 11 21:04:55 2015
+-- Fichier généré par SQLiteStudio v3.0.6sur lun. juil. 13 19:43:24 2015
 --
 -- Encodage texte utilisé: windows-1252
 --
@@ -7,6 +7,7 @@ PRAGMA foreign_keys = off;
 BEGIN TRANSACTION;
 
 -- Table: repositories
+DROP TABLE IF EXISTS repositories;
 CREATE TABLE [repositories] ([id_repositories] INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, [type] VARCHAR (5) NOT NULL ON CONFLICT ABORT, [dir] VARCHAR (32) NOT NULL ON CONFLICT ABORT, [name] VARCHAR (32) NOT NULL ON CONFLICT ABORT, [version] VARCHAR (8), [file] VARCHAR (32), [old_file] VARCHAR (32), [url] VARCHAR (256) NOT NULL ON CONFLICT ABORT, [active] BOOLEAN (1));
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (1, 'GIT', '/web/rutorrent', 'ruTorrent', '3.7', 'ruTorrent_v3.7.zip', '', 'https://github.com/Novik/ruTorrent', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (2, 'TARGZ', '/web/rutorrent/plugins/chat', 'ruTorrent Plugin Chat', '2.0', 'chat-2.0.tar.gz', '', 'https://rutorrent-chat.googlecode.com/files/chat-2.0.tar.gz', 1);
