@@ -167,16 +167,21 @@ echo "	satisfy all;" > /etc/nginx/conf.d/ip_restriction
 (
 cat <<'EOF'
 /var/log/nginx/*.log {
-	daily
+	weekly
 	missingok
 	rotate 7
 	compress
 	delaycompress
 	notifempty
-	create 640 root
+	create 0640 www-data adm
 	sharedscripts
+	prerotate
+		if [ -d /etc/logrotate.d/httpd-prerotate ]; then \
+			run-parts /etc/logrotate.d/httpd-prerotate; \
+		fi \
+	endscript
 	postrotate
-		[ -f /var/run/nginx.pid ] && kill -USR1 `cat /var/run/nginx.pid`
+		invoke-rc.d nginx rotate >/dev/null 2>&1
 	endscript
 }
 
