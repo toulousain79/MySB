@@ -27,7 +27,7 @@ source $(dirname $0)/../inc/includes_before
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=16
+TotalSTEP=20
 
 BannerUpgrade
 
@@ -104,6 +104,20 @@ screen -dmS SQLite /bin/bash $MySB_InstallDir/install/SQLite 'UPGRADE';
 WaitingScreen SQLite
 StatusSTD
 
+#### Packages
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_AllNeededPackages$CEND..."
+screen -dmS Packages /bin/bash $MySB_InstallDir/install/Packages 'UPGRADE';
+WaitingScreen Packages
+StatusSTD
+
+#### DownloadAll
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_DownloadAll$CEND..."
+screen -dmS DownloadAll /bin/bash $MySB_InstallDir/install/DownloadAll 'UPGRADE';
+WaitingScreen DownloadAll
+StatusSTD
+
 #### SourcesList
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_UpdateDebianSources$CEND..."
@@ -120,8 +134,9 @@ StatusSTD
 
 #### NFS
 (( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_NFS$CEND..."
 if [ "$ToInstall_OpenVPN" == "YES" ] || [ "$IsInstalled_OpenVPN" == "YES" ]; then
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_NFS$CEND..."
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'NFS';"
 	screen -dmS NFS /bin/bash $MySB_InstallDir/install/NFS 'UPGRADE';
 	WaitingScreen NFS
 	StatusSTD
@@ -131,8 +146,9 @@ fi
 
 #### Samba
 (( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Samba$CEND..."
 if [ "$ToInstall_OpenVPN" == "YES" ] || [ "$IsInstalled_OpenVPN" == "YES" ]; then
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Samba$CEND..."
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Samba';"
 	screen -dmS Samba /bin/bash $MySB_InstallDir/install/Samba 'UPGRADE';
 	WaitingScreen Samba
 	StatusSTD
@@ -149,13 +165,32 @@ StatusSTD
 
 ### DNScrypt-proxy
 (( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_DNScrypt$CEND..."
 if [ "$ToInstall_DNScrypt" == "YES" ] || [ "$IsInstalled_DNScrypt" == "YES" ]; then
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_DNScrypt$CEND..."
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'DNScrypt-proxy';"
 	screen -dmS DNScrypt /bin/bash $MySB_InstallDir/install/DNScrypt 'UPGRADE';
 	WaitingScreen DNScrypt
 	StatusSTD
 else
 	echo -e "$Upgrade_NothingToDo"
+fi
+
+#### VSFTPd
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_VSFTPd$CEND..."
+screen -dmS VSFTP /bin/bash $MySB_InstallDir/install/VSFTP 'UPGRADE';
+WaitingScreen VSFTP
+StatusSTD
+
+#### Webmin
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Webmin$CEND..."
+if [ "$ToInstall_Webmin" == "YES" ]; then
+	screen -dmS Webmin /bin/bash $MySB_InstallDir/install/Webmin 'UPGRADE';
+	WaitingScreen Webmin
+	StatusSTD
+else
+	echo -e "$Upgrade_NothingToDo"		
 fi
 
 ######################################################################
