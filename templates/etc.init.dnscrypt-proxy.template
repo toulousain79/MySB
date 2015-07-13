@@ -88,7 +88,7 @@ if [ $# -gt 1 ]; then
 			;;
 		esac
 	done
-	
+
 	if [ -z "$All" ]; then
 		Search="WHERE dnssec = '$DNSsec' AND no_logs = '$NoLogs' $ResolversSearched"
 	else
@@ -96,7 +96,7 @@ if [ $# -gt 1 ]; then
 	fi
 
 	# Get resolvers list (by command line)
-	AllResolvers="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT name FROM dnscrypt_resolvers $Search\"`"	
+	AllResolvers="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT name FROM dnscrypt_resolvers $Search\"`"
 else
 	# Get resolvers list (by database)
 	AllResolvers="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT name FROM dnscrypt_resolvers WHERE is_wished = '1'\"`"	
@@ -105,7 +105,7 @@ fi
 # Cleaning the list (no IPv6)
 for Resolver in $AllResolvers; do
 	if [ -z "`echo $Resolver | grep 'ipv6'`" ]; then
-		ResolversList="${ResolversList} ${Resolver}"	
+		ResolversList="${ResolversList} ${Resolver}"
 	fi
 done
 ResolversList="`echo $ResolversList | sed -e 's/^ //g;' | sed 's/\s+$//'`"
@@ -136,15 +136,7 @@ DeamonOption() {
 bind_check() {
 	service bind9 stop &> /dev/null
 	service bind9 start &> /dev/null
-	/usr/sbin/ntpdate -u 0.fr.pool.ntp.org > /dev/null 2>&1
-}
-
-# Function that check /etc/resolv.conf
-resolv_check() {
-	if [ -z "`cat /etc/resolv.conf | grep '127.0.0.1'`" ]; then
-		sed -i '/nameserver/d' /etc/resolv.conf
-		echo "nameserver 127.0.0.1" >> /etc/resolv.conf
-	fi
+	#/usr/sbin/ntpdate -u 0.fr.pool.ntp.org > /dev/null 2>&1
 }
 
 # Add monitor with cron
@@ -185,23 +177,16 @@ delete_pid_file() {
 
 # Function START
 do_start() {
-	resolv_check
 	bind_check
 
 	# Update DB
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '0', is_wished = '0' WHERE 1;"
-	
+
 	i=0
 	Return=0
 	for Resolver in $ResolversList; do
 		(( i++ ))
-		
-		# Update DB
-		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_wished = '1' WHERE name = '$Resolver';"		
-		
-		# /etc/bind/named.conf.options
-		BindForwarders="$BindForwarders 127.0.0.$i port 52;"
-		
+
 		# Delete ghost screen pid file
 		if [ -e $DIR_PID/$Resolver.pid ]; then
 			pidofproc -p $DIR_PID/$Resolver.pid &> /dev/null || rm -f $DIR_PID/$Resolver.pid
@@ -219,7 +204,7 @@ do_start() {
 			--exec $DAEMON\
 			-- $DEAMON_OPT\
 			 >> $LOG_FILE
-		
+
 		if [ $? -gt 0 ]; then
 			echo "--> $Resolver already running: "`date` >> $LOG_FILE
 			Return=1
@@ -230,35 +215,18 @@ do_start() {
 			--exec $DAEMON\
 			-- $DEAMON_OPT\
 			 >> $LOG_FILE
-			 
+
 		if [ $? -gt 0 ]; then
-			delete_pid_file $DIR_PID/$Resolver.pid $Resolver			
+			sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_wished = '1', is_activated = '0', forwarder = '' WHERE name = '$Resolver';"
+			delete_pid_file $DIR_PID/$Resolver.pid $Resolver
 			echo "--> NOT STARTED: $Resolver : "`date` >> $LOG_FILE
 			Return=2
 		else
 			# Update DB
-			sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '1' WHERE name = '$Resolver';"
+			sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_wished = '1', is_activated = '1', forwarder = '127.0.0.$i' WHERE name = '$Resolver';"
 			echo "--> STARTED: $Resolver : "`date` >> $LOG_FILE
 		fi
 	done
-	
-	# /etc/bind/named.conf.options
-	BindForwarders="`echo $BindForwarders | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-	cp $MySB_InstallDir/templates/etc.bind.named.conf.options.template /etc/bind/named.conf.options
-	sed -i "s/<SrvIpAddress>/$SrvIpAddress/g;" /etc/bind/named.conf.options
-	chmod 0644 /etc/bind/named.conf.options
-	chown root:bind /etc/bind/named.conf.options
-	NumLign=$(sed -n "/#### MARKER - DoNotDelete ####/=" /etc/bind/named.conf.options)
-	(( NumLign++ ))
-	sed -i "${NumLign}i\        // DNScrypt-proxy - BoF" /etc/bind/named.conf.options
-	(( NumLign++ ))
-	sed -i "${NumLign}i\        forwarders { $BindForwarders };" /etc/bind/named.conf.options
-	(( NumLign++ ))
-	sed -i "${NumLign}i\        forward only;" /etc/bind/named.conf.options
-	(( NumLign++ ))
-	sed -i "${NumLign}i\        version \"MySB Secured DNS server\";" /etc/bind/named.conf.options	
-	(( NumLign++ ))
-	sed -i "${NumLign}i\        // DNScrypt-proxy - EoF" /etc/bind/named.conf.options	
 
 	if [ -z "`ps ax | grep 'MySB_SecurityRules' | grep -e 'create' -e 'refresh' | grep -v 'grep'`" ]; then
 		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE system SET dnscrypt = '1' WHERE id_system = '1';"
@@ -280,7 +248,7 @@ do_stop() {
 	for Pid in $PidList; do
 		Resolver="`echo $Pid | cut -d '.' -f 1`"
 		start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $DIR_PID/$Pid --exec "$DAEMON" 2>> $LOG_FILE
-		
+
 		case "$?" in
 			0|1)
 				echo "--> STOPPED: $Resolver : "`date` >> $LOG_FILE
@@ -293,7 +261,7 @@ do_stop() {
 			;;
 		esac
 	done
-	
+
 	# Ghost processes ?
 	pkill -f $DAEMON >> $LOG_FILE
 
@@ -313,18 +281,22 @@ case "$1" in
 		log_daemon_msg "Starting $DESC" "$NAME"
 		do_start
 		case "$?" in
-			0|1)	
+			0|1)
 				log_end_msg 0
 				check_crontab 'add'
+				SwitchDNS "dnscrypt"
 			;;
 			2)
 				log_end_msg 1
+				check_crontab 'remove'
+				SwitchDNS "standard"
 			;;
-		esac		
+		esac
 	;;
 
 	stop)
 		check_crontab 'remove'
+		SwitchDNS "standard"
 		log_daemon_msg "Stopping $DESC" "$NAME"
 		do_stop
 		log_end_msg 0
@@ -335,13 +307,13 @@ case "$1" in
 		do_stop
 		do_start
 		case "$?" in
-			0|1)	
+			0|1)
 				log_end_msg 0
 			;;
 			2)
 				log_end_msg 1
 			;;
-		esac		
+		esac
 	;;
 
 	status)
