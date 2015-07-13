@@ -55,6 +55,9 @@ if (isset($_POST['submit'])) {
 	}
 
 	GenerateMessage($Command, $type, $message);
+	
+	// Change language of Cakebox-Light
+	ChangeCakeboxLanguage($CurrentUser, $language);	
 }
 
 // Get values from database
@@ -62,9 +65,6 @@ $users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
 $rtorrent_version = $users_datas['rtorrent_version'];
 $rtorrent_restart = $users_datas['rtorrent_restart'];
 $language = $users_datas['language'];
-
-// Change language of Cakebox-Light
-ChangeCakeboxLanguage($CurrentUser, $language);
 ?>
 
 <form class="form_settings" method="post" action="">
