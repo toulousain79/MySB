@@ -207,7 +207,6 @@ if (isset($_POST['submit'])) {
 	<?php } ?>
 	
 	<?php if ($DNScryptIsInstalled == '1') { ?>
-	<br />
 	<fieldset>
 	<legend><?php echo MainUser_OptionsSystem_Title_DNScrypt; ?></legend>
 	<table>
@@ -215,7 +214,7 @@ if (isset($_POST['submit'])) {
 			<td><?php echo MainUser_OptionsSystem_DNScrypt_Activate; ?></td>
 			<td>
 				<select name="DNScrypt_post" style="width:80px; height: 28px;">';
-				<?php switch ($DNScrypt) {
+				<?php switch ($DNScrypt_db) {
 					case '1':
 						echo '<option selected="selected" value="1">' . Global_Yes . '</option>';
 						echo '<option value="0">' . Global_No . '</option>';
