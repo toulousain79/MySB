@@ -57,7 +57,7 @@ if (isset($_POST['submit'])) {
 	GenerateMessage($Command, $type, $message);
 	
 	// Change language of Cakebox-Light
-	ChangeCakeboxLanguage($CurrentUser, $language);	
+	ChangeCakeboxLanguage($CurrentUser, $Language);	
 }
 
 // Get values from database
