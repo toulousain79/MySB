@@ -27,7 +27,7 @@ source $(dirname $0)/../inc/includes_before
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=20
+TotalSTEP=18
 
 BannerUpgrade
 
@@ -66,17 +66,17 @@ for Session in $RtorrentSeesions; do
 done
 StatusSTD
 
+#### Switching DNS
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_SwitchingDNS$CEND..."
+SwitchDNS "standard"
+StatusSTD
+
 #### Forcing NTP update
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_UpdatingClock$CEND..."
 ping -c4 0.fr.pool.ntp.org > /dev/null 2>&1
-if [ $? -gt 0 ]; then
-	SwitchDNS "standard"
-fi
 /usr/sbin/ntpdate -u 0.fr.pool.ntp.org > /dev/null 2>&1
-if [ $? -eq 0 ]; then
-	SwitchDNS "dnscrypt"
-fi
 StatusSTD
 
 ######################################################################
@@ -104,13 +104,6 @@ screen -dmS SQLite /bin/bash $MySB_InstallDir/install/SQLite 'UPGRADE';
 WaitingScreen SQLite
 StatusSTD
 
-#### Packages
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_AllNeededPackages$CEND..."
-screen -dmS Packages /bin/bash $MySB_InstallDir/install/Packages 'UPGRADE';
-WaitingScreen Packages
-StatusSTD
-
 #### DownloadAll
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_DownloadAll$CEND..."
@@ -124,25 +117,6 @@ echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_UpdateDebianSources$CEND.
 screen -dmS SourcesList /bin/bash $MySB_InstallDir/install/SourcesList 'UPGRADE';
 WaitingScreen SourcesList
 StatusSTD
-
-#### NginX
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_NginX$CEND..."
-screen -dmS Nginx /bin/bash $MySB_InstallDir/install/Nginx 'UPGRADE';
-WaitingScreen Nginx
-StatusSTD
-
-#### NFS
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_NFS$CEND..."
-if [ "$ToInstall_OpenVPN" == "YES" ] || [ "$IsInstalled_OpenVPN" == "YES" ]; then
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'NFS';"
-	screen -dmS NFS /bin/bash $MySB_InstallDir/install/NFS 'UPGRADE';
-	WaitingScreen NFS
-	StatusSTD
-else
-	echo -e "$Upgrade_NothingToDo"
-fi
 
 #### Samba
 (( CurrentSTEP++ ))
