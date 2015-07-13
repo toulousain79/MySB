@@ -269,6 +269,22 @@ SwitchDNS() {
 				sed -i "s/<SrvIpAddress>/$SrvIpAddress/g;" /etc/bind/named.conf.options
 				chmod 0644 /etc/bind/named.conf.options
 				chown root:bind /etc/bind/named.conf.options
+				Forwarders="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT forwarder FROM dnscrypt_resolvers WHERE forwarder != '' AND is_activated = '1'\"`"
+				for Forwarder in $Forwarders; do
+					BindForwarders="$BindForwarders $Forwarder port 52;"
+				done
+				BindForwarders="`echo $BindForwarders | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+				NumLign=$(sed -n "/#### MARKER - DoNotDelete ####/=" /etc/bind/named.conf.options)
+				(( NumLign++ ))
+				sed -i "${NumLign}i\        // DNScrypt-proxy - BoF" /etc/bind/named.conf.options
+				(( NumLign++ ))
+				sed -i "${NumLign}i\        forwarders { $BindForwarders };" /etc/bind/named.conf.options
+				(( NumLign++ ))
+				sed -i "${NumLign}i\        forward only;" /etc/bind/named.conf.options
+				(( NumLign++ ))
+				sed -i "${NumLign}i\        version \"MySB Secured DNS server\";" /etc/bind/named.conf.options
+				(( NumLign++ ))
+				sed -i "${NumLign}i\        // DNScrypt-proxy - EoF" /etc/bind/named.conf.options
 				# DNScrypt-proxy
 				cp $MySB_InstallDir/templates/etc.init.dnscrypt-proxy.template /etc/init.d/dnscrypt-proxy
 				perl -pi -e "s/<MySB_DB>/`echo $MySB_DB | sed s,/,\\\\\\\\\\/,g`/g" /etc/init.d/dnscrypt-proxy

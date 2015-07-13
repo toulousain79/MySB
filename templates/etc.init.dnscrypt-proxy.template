@@ -151,7 +151,7 @@ resolv_check() {
 check_crontab() {
 	case "$1" in
 		add)
-			if [ -z "`crontab -l | grep dnscrypt-proxy`" ]; then
+			if [ -z "`crontab -l | grep 'dnscrypt-proxy'`" ]; then
 				crontab -l > /tmp/crontab.tmp > /dev/null 2>&1
 				sed -i '/dnscrypt-proxy/d' /tmp/crontab.tmp > /dev/null 2>&1
 				echo "*/5 * * * * if ( ! /bin/ps ax | grep 'dnscrypt-proxy' | sed '/grep/d' > /dev/null ); then service dnscrypt-proxy restart &> /dev/null; fi" >> /tmp/crontab.tmp
@@ -161,7 +161,7 @@ check_crontab() {
 			fi
 		;;
 		remove)
-			if [ ! -z "`crontab -l | grep dnscrypt-proxy`" ]; then
+			if [ ! -z "`crontab -l | grep 'dnscrypt-proxy'`" ]; then
 				crontab -l > /tmp/crontab.tmp > /dev/null 2>&1
 				sed -i '/dnscrypt-proxy/d' /tmp/crontab.tmp > /dev/null 2>&1
 				crontab /tmp/crontab.tmp > /dev/null 2>&1
@@ -244,10 +244,10 @@ do_start() {
 	
 	# /etc/bind/named.conf.options
 	BindForwarders="`echo $BindForwarders | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-	sed -i '/forwarders/d' /etc/bind/named.conf.options
-	sed -i '/forward only;/d' /etc/bind/named.conf.options
-	sed -i '/version/d' /etc/bind/named.conf.options
-	sed -i '/DNScrypt-proxy/d' /etc/bind/named.conf.options
+	cp $MySB_InstallDir/templates/etc.bind.named.conf.options.template /etc/bind/named.conf.options
+	sed -i "s/<SrvIpAddress>/$SrvIpAddress/g;" /etc/bind/named.conf.options
+	chmod 0644 /etc/bind/named.conf.options
+	chown root:bind /etc/bind/named.conf.options
 	NumLign=$(sed -n "/#### MARKER - DoNotDelete ####/=" /etc/bind/named.conf.options)
 	(( NumLign++ ))
 	sed -i "${NumLign}i\        // DNScrypt-proxy - BoF" /etc/bind/named.conf.options
