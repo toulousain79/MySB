@@ -30,23 +30,23 @@ Continue=1
 Error=""
 
 #### Updating clock
-echo -e -n "${CBLUE}Updating the clock$CEND..."
+echo -e -n "${CBLUE}$UpgradeMe_Clock$CEND..."
 ping -c4 0.fr.pool.ntp.org > /dev/null 2>&1
 if [ $? -gt 0 ]; then
 	SwitchDNS "standard"
 fi
 /usr/sbin/ntpdate -u 0.fr.pool.ntp.org > /dev/null 2>&1
 if [ $? -eq 0 ]; then
-	echo -e "${CGREEN}Done !$CEND"
+	echo -e "$Global_Done"
 else
-	echo -e "${CRED}Failed !$CEND"
+	echo -e "$Global_Failed"
 	Continue=0
-	Error="The clock synchronization failed !"
+	Error="$UpgradeMe_Error_Clock"
 fi
 
 #### Update actual repo
 if [ "$Continue" == "1" ]; then
-	echo -e -n "${CBLUE}Updating actual GitHub repository$CEND..."
+	echo -e -n "${CBLUE}$UpgradeMe_UpdateGithub$CEND..."
 	screen -dmS MySB_GitHubRepoUpdate /bin/bash $MySB_InstallDir/bin/MySB_GitHubRepoUpdate 'REFRESH';
 	WaitingScreen MySB_GitHubRepoUpdate
 	StatusSTD
@@ -56,25 +56,26 @@ fi
 MySB_NewVersion="`cat $MySB_InstallDir/version`"
 
 if [ "$MySB_CurrentVersion" == "$MySB_NewVersion" ]; then
+	UpgradeMe_UpToDate="`echo $UpgradeMe_UpToDate | sed "s/#version#/$MySB_CurrentVersion/g;"`"
 	echo
-	echo -e "${CGREEN}MySB repository $MySB_CurrentVersion is up to date !$CEND"
-	echo -e "${CGREEN}There is no new version to install.$CEND"
+	echo -e "$UpgradeMe_UpToDate"
 	echo
 	EndingScript 0
 else
 	case "$Type" in
 		"CRON")
-			SendMail "MySB - New version available ($MySB_NewVersion)" "$MainUser" "new_version" "New version available"
+			SendMail "MySB - $UpgradeMe_NewVersion ($MySB_NewVersion)" "$MainUser" "new_version" "$UpgradeMe_NewVersion"
 
 			EndingScript 0
 		;;
 		*)
+			UpgradeMe_Msg_VersionAvailable="`echo $UpgradeMe_Msg_VersionAvailable | sed "s/#version#/$MySB_CurrentVersion/g;"`"
 			echo
-			echo -e "${CYELLOW}MySB$CEND ${CGREEN}$MySB_NewVersion$CEND ${CYELLOW}is avaible !$CEND"
-			echo -e "${CYELLOW}Do you want to continue and upgrade MySB to $CEND${CGREEN}$MySB_NewVersion$CEND ${CYELLOW}?$CEND"
+			echo -e "$UpgradeMe_Msg_VersionAvailable"
 			echo
-			QuestionGetString NO  "Type 'yes' to continue or 'no' to abort ?" CONTINUE NO
-			if [ "$CONTINUE" == "NO" ]; then
+			QuestionGetString NO "$Global_WantToContinue" CONTINUE $Global_NO
+			CONTINUE="`echo $CONTINUE | tr '[:lower:]' '[:upper:]'`"
+			if [ "$CONTINUE" == "$Global_NO" ]; then
 				EndingScript 0
 			fi
 		;;
@@ -84,8 +85,8 @@ fi
 #### Backup
 if [ "$Continue" == "1" ]; then
 	DateTime="`/bin/date +%Y%m%d-%H%M%S`"
-	echo -e "${CBLUE}Create backup files '$MySB_InstallDir/upgrade/backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz'$CEND"
-	echo -e -n "${CRED}Please wait $CEND"
+	echo -e "${CBLUE}$UpgradeMe_CreateBackup '$MySB_InstallDir/upgrade/backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz'$CEND"
+	echo -e -n "${CRED}$Global_PleaseWait $CEND"
 	CountDown 3
 
 	if [ ! -d $MySB_InstallDir/upgrade/backup ]; then
@@ -95,12 +96,13 @@ if [ "$Continue" == "1" ]; then
 	tar -zcvf /tmp/MySB_backup_$DateTime/Backup-$DateTime-$MySB_CurrentVersion.tar.gz $MySB_InstallDir
 	if [ $? -gt 0 ]; then
 		Continue=0
-		Error="The creation of the 'Backup-$DateTime-$MySB_CurrentVersion.tar.gz file' failed !"
+		UpgradeMe_Error_CreateBackup="`echo $UpgradeMe_Error_CreateBackup | sed "s/#file#/Backup-$DateTime-$MySB_CurrentVersion.tar.gz/g;"`"
+		Error="$UpgradeMe_Error_CreateBackup"
 	else
 		mv -v /tmp/MySB_backup_* $MySB_InstallDir/upgrade/backup
 		if  [ ! -f $MySB_InstallDir/upgrade/backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz ]; then
 			Continue=0
-			Error="Backup failed! The archive does not exist."
+			Error="$UpgradeMe_Error_BackupFailed"
 		fi
 	fi
 fi
@@ -108,8 +110,9 @@ fi
 #### MySB Script GitHub
 if [ "$Continue" == "1" ]; then
 	echo
-	echo -e "${CBLUE}Merge MySB from $MySB_CurrentVersion to $MySB_NewVersion$CEND"
-	echo -e -n "${CRED}Please wait $CEND"
+	UpgradeMe_Merge="`echo $UpgradeMe_Merge | sed "s/#current_version#/$MySB_CurrentVersion/g;" | sed "s/#new_version#/$MySB_NewVersion/g;"`"
+	echo -e "${CBLUE}$UpgradeMe_Merge$CEND"
+	echo -e -n "${CRED}$Global_PleaseWait $CEND"
 	CountDown 3
 	echo
 
@@ -117,14 +120,14 @@ if [ "$Continue" == "1" ]; then
 	git fetch --all
 	if [ $? -gt 0 ]; then
 		Continue=0
-		Error="The command 'git fetch --all' failed!"
+		Error="$UpgradeMe_Error_GitFetch"
 	fi
 
 	if [ "$Continue" == "1" ]; then
 		git stash
 		if [ $? -gt 0 ]; then
 			Continue=0
-			Error="The command 'git stash' failed!"
+			Error="$UpgradeMe_Error_GitStash"
 		fi
 	fi
 
@@ -132,7 +135,8 @@ if [ "$Continue" == "1" ]; then
 		git checkout -b $MySB_NewVersion origin/$MySB_NewVersion
 		if [ $? -gt 0 ]; then
 			Continue=0
-			Error="The command 'git checkout -b $MySB_NewVersion origin/$MySB_NewVersion' failed!"
+			UpgradeMe_Error_GitCheckout="`echo $UpgradeMe_Error_GitCheckout | sed "s/#new_version#/$MySB_NewVersion/g;"`"
+			Error="$UpgradeMe_Error_GitCheckout"
 		fi
 	fi
 
@@ -140,16 +144,16 @@ if [ "$Continue" == "1" ]; then
 		git pull
 		if [ $? -gt 0 ]; then
 			Continue=0
-			Error="The command 'git pull' failed!"
+			Error="$UpgradeMe_Error_GitPull"
 		fi
 	fi
 
 	if [ "$Continue" == "1" ]; then
 		#### Update version info
-		echo -e -n "${CBLUE}Updating MySB version$CEND..."
+		echo -e -n "${CBLUE}$UpgradeMe_UpdatingVersion$CEND..."
 		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE system SET mysb_version = '$MySB_NewVersion' WHERE id_system = '1';"
 		rm -f $MySB_InstallDir/files/banner_*
-		echo -e "${CGREEN}Done !$CEND"
+		echo -e "$Global_Done"
 	fi
 fi
 
@@ -159,33 +163,33 @@ MySB_RepoVersion="`cd $MySB_InstallDir/ && git branch | grep '*' | awk '{ print 
 
 if [ -f $MySB_InstallDir/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh ] && [ "$Continue" == "1" ] && [ "$MySB_NewVersion" == "$MySB_RepoVersion" ]; then
 	#### Upgrade System
-	echo -e -n "${CBLUE}Upgrading the system$CEND..."
+	echo -e -n "${CBLUE}$UpgradeMe_UpgradeSystem$CEND..."
 	screen -dmS MySB_UpgradeSystem /bin/bash $MySB_InstallDir/bin/MySB_UpgradeSystem 'UPGRADE';
 	WaitingScreen MySB_UpgradeSystem
 	StatusSTD
 
 	echo
-	echo -e "${CBLUE}Starting SCREEN session...$CEND"
+	echo -e "${CBLUE}$UpgradeMe_StartScreen$CEND"
 	screen -wipe &> /dev/null
 	screen -dmS MySB_Upgrade /bin/bash $MySB_InstallDir/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh;
-	echo -e -n "${CRED}Please wait $CEND"
+	echo -e -n "${CRED}$Global_PleaseWait $CEND"
 	CountDown 5
 
 	screen -r MySB_Upgrade
 else
 	echo ""
 	echo ""
-	echo -e "${CRED}Upgrade script does not exist ($MySB_InstallDir/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh), aborting...$CEND"
+	echo -e "${CRED}$UpgradeMe_Error_UpgradeSciptMissing ($MySB_InstallDir/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh)$CEND"
 	EndingScript 0
 fi
 
 #### Finished
 clear
 if [ "$Continue" == "1" ]; then
-	echo -e "${CGREEN}Upgrade finished succesfully !$CEND"
+	echo -e "${CGREEN}$UpgradeMe_UpgradeFinished$CEND"
 	echo
 else
-	echo -e "${CRED}An error occured!$CEND"
+	echo -e "${CRED}$UpgradeMe_ErrorOccured$CEND"
 	echo -e "${CRED}$Error$CEND"
 	echo
 fi
