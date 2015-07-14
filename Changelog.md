@@ -6,6 +6,7 @@
 				* Translation, language select French and English
 				* PeerGuardian, mail report management
 				* IP restriction, switch possibility
+				* DNScrypt-proxy, ON/OFF possibility
 			- Seedbox-Manager, now keep your config in administration page (v2.1 and v2.2)
 			- Nginx, some fixes (v2.2)
 			- NFS, disabling IPv6 support (v2.2)
