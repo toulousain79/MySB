@@ -241,17 +241,17 @@ echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Cleaning$CEND..."
 rm -rf $MySB_InstallDir/temp/* &> /dev/null
 StatusSTD
 
-#### STOP & START services
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_RestartServices$CEND..."
-ManageServices stop "stunnel4 postfix" &> /dev/null
-ManageServices start "cron stunnel4 postfix samba bind9 dnscrypt-proxy" &> /dev/null
-StatusSTD
-
 #### Create missing directories and change rights
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Global_OwnerAndRights$CEND..."
 ManageDirectoriesAndFiles
+StatusSTD
+
+#### STOP & START services
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_RestartServices$CEND..."
+ManageServices stop "stunnel4 postfix" &> /dev/null
+ManageServices start "cron stunnel4 postfix samba nginx bind9 dnscrypt-proxy" &> /dev/null
 StatusSTD
 
 #### Security rules
@@ -259,12 +259,6 @@ StatusSTD
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Global_FinalSecurityRules$CEND..."
 screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'create' 'UPGRADE';
 WaitingScreen MySB_SecurityRules
-StatusSTD
-
-#### Upgrade in progress page
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_DisablingProgressPage$CEND..."
-UpgradeInProgress "off"
 StatusSTD
 
 #### Send mail for each user with new version
@@ -276,6 +270,12 @@ for seedUser in $UsersList; do
 	Case="upgrade"
 	SendMail "$Subject" "$seedUser" "$Case"
 done
+StatusSTD
+
+#### Upgrade in progress page
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_DisablingProgressPage$CEND..."
+UpgradeInProgress "off"
 StatusSTD
 
 clear
