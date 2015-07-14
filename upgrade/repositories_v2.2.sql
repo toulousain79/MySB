@@ -1,5 +1,5 @@
 --
--- Fichier généré par SQLiteStudio v3.0.6sur lun. juil. 13 19:43:24 2015
+-- Fichier généré par SQLiteStudio v3.0.6sur mar. juil. 14 16:46:07 2015
 --
 -- Encodage texte utilisé: windows-1252
 --
@@ -23,7 +23,7 @@ INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_f
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (12, 'ZIP', '/web/rutorrent/plugins/pausewebui', 'ruTorrent Plugin Pause WebUI', '13', 'pausewebui_v1.2.zip', '', 'https://rutorrent-pausewebui.googlecode.com/files/pausewebui.1.2.zip', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (13, 'GIT', '/web/rutorrent/plugins/mobile', 'ruTorrent Plugin Mobile', '1.0', 'mobile_v1.0.zip', '', 'https://github.com/xombiemp/rutorrentMobile.git', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (14, 'GIT', '/web/rutorrent/plugins/autodl-irssi', 'ruTorrent Plugin Autodl-irssi', '1.52', 'autodl_v1.52.zip', '', 'https://github.com/autodl-community/autodl-rutorrent.git', 0);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (15, 'TARGZ', '/sources/plowshare', 'Plowshare4', '4', 'Plowshare4.tar.gz', '', 'https://github.com/toulousain79/MySB/blob/v2.2/files/Plowshare4.tar.gz?raw=true', 1);
+INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (15, 'TARGZ', '/sources/plowshare', 'Plowshare', '2.1.1', 'Plowshare_2.1.1.zip', 'Plowshare4.tar.gz', 'https://github.com/mcrapet/plowshare.git', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (16, 'CURL', '/usr/bin/composer', 'Composer', '', 'composer.phar', '', 'http://getcomposer.org/installer', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (17, 'TARGZ', '/sources/nodejs', 'NodeJS', '0.12.6', 'node-v0.12.6.tar.gz', 'node-v0.12.2.tar.gz', 'https://nodejs.org/dist/v0.12.6/node-v0.12.6.tar.gz', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (18, 'GIT', '/web/seedbox-manager', 'Seedbox-Manager', '2.4.4', 'seedbox-manager_v2.4.4.zip', 'seedbox-manager_v0.1.zip', 'https://github.com/Magicalex/seedbox-manager.git', 1);

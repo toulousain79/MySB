@@ -1,5 +1,5 @@
 	Version v2.2
-		2015/05/05
+		2015/07/14
 			- MySB portal, correcting Cakebox link in User Infos page (v2.1 and v2.2)
 			- MySB portal, add some new actions (v2.2)
 				* OpenVPN, possibility to change protocol
