@@ -38,20 +38,21 @@ fi
 
 if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 	#### Update repositories
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "DELETE FROM repositories WHERE 1;"
+	sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM repositories WHERE 1;"
 	sqlite3 -cmd '.timeout 150000' -echo $MySB_DB < $MySB_InstallDir/upgrade/repositories_v2.2.sql
-	#### Update dnscrypt_resolvers
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "ALTER TABLE dnscrypt_resolvers ADD COLUMN forwarder VARCHAR(16);"
-	#### Update renting
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "ALTER TABLE renting ADD COLUMN method BOOLEAN(1) DEFAULT(0);"
-	#### Update system
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "ALTER TABLE system ADD COLUMN dnscrypt BOOLEAN(1) DEFAULT(1);"	
+	#### Add column 'forwarder' to 'dnscrypt_resolvers' table
+	sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "ALTER TABLE dnscrypt_resolvers ADD COLUMN forwarder VARCHAR(16);"
+	#### Add column 'method' to 'renting' table
+	sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "ALTER TABLE renting ADD COLUMN method BOOLEAN(1) DEFAULT(0);"
+	#### Add column 'dnscrypt' to 'system' table
+	sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "ALTER TABLE system ADD COLUMN dnscrypt BOOLEAN(1) DEFAULT(1);"
 	#### Add column 'language' to 'users' table
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "ALTER TABLE users ADD COLUMN language VARCHAR(2) DEFAULT(en);"
+	sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "ALTER TABLE users ADD COLUMN language VARCHAR(2) DEFAULT(en);"
+	#### Update 'language' for all users
 	ListingUsers
 	if [ ! -z "$UsersList" ]; then
 		for FnUser in $UsersList; do
-			sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE users SET language = '$EnvLang' WHERE users_ident = '$FnUser';"
+			sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE users SET language = '$EnvLang' WHERE users_ident = '$FnUser';"
 		done
 	fi
 fi
