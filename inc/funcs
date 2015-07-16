@@ -690,20 +690,20 @@ GetUsersTrackers() {
 AddTracker() {
 	Tracker=$1
 	Origin=$2
-	
+
 	if [ ! -z "$Tracker" ]; then
 		PART1=`echo ${Tracker} | cut -d "." -f 1`
 		PART2=`echo ${Tracker} | cut -d "." -f 2`
 		PART3=`echo ${Tracker} | cut -d "." -f 3`
-		
+
 		if [ -z "$PART3" ]; then
 			TrackerDomain="`echo $PART1`.`echo $PART2`"
 		else
 			TrackerDomain="`echo $PART2`.`echo $PART3`"
 		fi
 		unset PART1 PART2 PART3
-		
-		if [ ! -z "$TrackerDomain" ]; then		
+
+		if [ ! -z "$TrackerDomain" ]; then
 			DomainIPv4="$(nslookup $TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 			if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
 				IfExist="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"
@@ -754,7 +754,7 @@ AddTracker() {
 				if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
 					DomainIPv4="`echo $DomainIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 					TrackersListID="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"
-					
+
 					if [ ! -z "$TrackersListID" ] && [ $TrackersListID -gt 0 ]; then
 						log_daemon_msg "Update trackers IPv4 for '$TrackerDomain' --> '$DomainIPv4'"
 						# Cleaning
@@ -778,8 +778,8 @@ AddTracker() {
 						StatusLSB
 					fi
 				fi
-			fi			
-			
+			fi
+
 			unset TrackerDomain
 		fi
 	fi
@@ -793,15 +793,15 @@ ScriptInvoke() {
 	#### Script to invoke
 	MYSCRIPT=$2
 	SCRIPT="`echo $MYSCRIPT | cut -d '/' -f 5`"
-	
+
 	#### Arguments
 	Arguments=""
 	args=("$@")
 	for ((i=2; i < $#; i++)) {
 		Arguments="$Arguments ${args[$i]}"
-	}	
+	}
 
-	#### Start invovation	
+	#### Start invovation
 	case "$METHOD" in
 		"source"|"bash")
 			#### Prepare our script
@@ -817,16 +817,16 @@ ScriptInvoke() {
 			sed -i '/includes_before/d' $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
 			sed -i '/includes_after/d' $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
 			# Language
-			LoadLanguage ${SCRIPT}
-		
+			LoadLanguage "$EnvLang" "$SCRIPT"
+
 			$METHOD $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked $Arguments
-			
+
 			#if [ -f $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked ]; then rm -f $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked; fi
-		;;	
+		;;
 		"screen"|"background")
 			screen -dmS ${ScriptName}_${SCRIPT} /bin/bash $MYSCRIPT $Arguments;
 			if [ "$METHOD" == "screen" ]; then WaitingSTD ${ScriptName}_${SCRIPT}; fi
-		;;	
+		;;
 	esac
 }
 
