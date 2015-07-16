@@ -75,7 +75,7 @@ define('User_UserInfo_Comment_IncompleteDir', 'Partial downloads are stored here
 // Torrents dir
 define('User_UserInfo_Table_TorrentDir', 'Torrents dir');
 define('User_UserInfo_Value_TorrentDir', '/rtorrent/torrents');
-define('User_UserInfo_Comment_TorrentDir', 'Saving a torrent file to this directory will automatically start the download.');
+define('User_UserInfo_Comment_TorrentDir', 'A copy of all torrents added directly via ruTorrent are copied to this folder.');
 // Watch dir
 define('User_UserInfo_Table_WatchDir', 'Watch dir');
 define('User_UserInfo_Value_WatchDir', '/rtorrent/watch');
@@ -83,7 +83,7 @@ define('User_UserInfo_Comment_WatchDir', 'Saving a torrent file into this direct
 // Share dir
 define('User_UserInfo_Table_ShareDir', 'Share dir');
 define('User_UserInfo_Value_ShareDir', '/rtorrent/share');
-define('User_UserInfo_Comment_ShareDir', 'The "share" folder is accessible by all users on the server. You can easily share what you want with any user. You can use File Manager plugin available in ruTorrent, use sFTP/FTPs or Samba.');
+define('User_UserInfo_Comment_ShareDir', 'The "share" folder is accessible by all users on the server (FTPs, sFTP, Samba, NFS). You can easily share what you want with any user. You can use File Manager plugin available in ruTorrent, use sFTP/FTPs or Samba.');
 
 //////////////////////
 // Ports

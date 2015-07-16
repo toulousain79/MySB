@@ -75,7 +75,7 @@ define('User_UserInfo_Comment_IncompleteDir', 'Les t&eacute;l&eacute;chargements
 // Torrents dir
 define('User_UserInfo_Table_TorrentDir', 'R&eacute;pertoires Torrents');
 define('User_UserInfo_Value_TorrentDir', '/rtorrent/torrents');
-define('User_UserInfo_Comment_TorrentDir', 'L\'enregistrement d\'un fichier torrent dans ce r&eacute;pertoire commencera automatiquement le t&eacute;l&eacute;chargement.');
+define('User_UserInfo_Comment_TorrentDir', 'Une copie de tous les torrents ajout&eacute;s directement via ruTorrent sont copi&eacute;s dans ce dossier.');
 // Watch dir
 define('User_UserInfo_Table_WatchDir', 'R&eacute;pertoires Watch');
 define('User_UserInfo_Value_WatchDir', '/rtorrent/watch');
@@ -83,7 +83,7 @@ define('User_UserInfo_Comment_WatchDir', 'Enregistrer un fichier torrent dans ce
 // Share dir
 define('User_UserInfo_Table_ShareDir', 'R&eacute;pertoires Share');
 define('User_UserInfo_Value_ShareDir', '/rtorrent/share');
-define('User_UserInfo_Comment_ShareDir', 'Le dossier &laquo;partage&raquo; est accessible par tous les utilisateurs du serveur. Vous pouvez facilement partager ce que vous voulez avec tout utilisateur. Vous pouvez utiliser le plugin de FileManager disponible dans ruTorrent, utiliser sFTP / FTPs ou Samba.');
+define('User_UserInfo_Comment_ShareDir', 'Le dossier &laquo;share&raquo; (partage) est accessible par tous les utilisateurs du serveur. Vous pouvez facilement partager ce que vous voulez avec tout utilisateur. Vous pouvez utiliser le plugin de FileManager disponible dans ruTorrent, ou sFTP / FTPs ou Samba.');
 
 //////////////////////
 // Ports
@@ -193,7 +193,7 @@ define('User_UserInfo_Comment_MySB_GitHubRepoUpdate', 'Mise &agrave; jour de la 
 define('User_UserInfo_Comment_MySB_SecurityRules', '<pre>MySB_SecurityRules (new|clean)</pre>');
 // Main scripts
 define('User_UserInfo_Table_MainScript', 'Scripts importants');
-define('User_UserInfo_Comment_BlocklistsRTorrent', 'Utilisez-le pour g&eacute;n&eacute;rer rTorrent blocklist. (CRON chaque jour)');
+define('User_UserInfo_Comment_BlocklistsRTorrent', 'Utilisez-le pour g&eacute;n&eacute;rer la liste de blocage pour rTorrent. (CRON chaque jour)');
 define('User_UserInfo_Comment_GetTrackersCert', 'Obtenez tous les certificats SSL pour tous les trackers. Ce script est ex&eacute;cut&eacute; &agrave; chaque fois que vous ajoutez/modifiez la liste des trackers dans le portail MySB.');
 
 //////////////////////
