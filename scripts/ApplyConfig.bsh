@@ -46,11 +46,13 @@ DoApplyConfig() {
 			BlocklistsRTorrent.bsh|MySB_SecurityRules*|GetTrackersCert.bsh|MySB_ChangeUserPassword|Postfix|Options_MySB|Options_System|OpenVPN) # On peut supprimer les doublons
 				FirstCommandUser="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT min(priority) FROM commands WHERE user = '$User' AND commands = '$CommandUser'\"`"
 				LastCommandUser="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT max(priority) FROM commands WHERE user = '$User' AND commands = '$CommandUser'\"`"
-				while [ "$FirstCommandUser" -lt "$LastCommandUser" ]; do
-					# On supprime les premières commandes
-					echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE user = '$User' AND commands = '$CommandUser' AND priority = '$FirstCommandUser'"
-					(( FirstCommandUser++ ))
-				done
+				if [ "$FirstCommandUser" -ne "$LastCommandUser" ] && [ ! -z "$FirstCommandUser" ] && [ ! -z "$LastCommandUser" ]; then
+					while [ "$FirstCommandUser" -lt "$LastCommandUser" ]; do
+						# On supprime les premières commandes
+						echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE user = '$User' AND commands = '$CommandUser' AND priority = '$FirstCommandUser'"
+						(( FirstCommandUser++ ))
+					done
+				fi
 			;;
 		esac
 	done
@@ -60,11 +62,13 @@ DoApplyConfig() {
 	# On en garde qu'une seule tout utilisateur confondu et assigne une priorité maxi.
 	LastOneMin="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT min(priority) FROM commands WHERE commands = 'MySB_SecurityRules' AND user = '$User'\"`"
 	LastOneMax="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT max(priority) FROM commands WHERE commands = 'MySB_SecurityRules' AND user = '$User'\"`"	
-	while [ "$LastOneMin" -lt "$LastOneMax" ]; do
-		# On supprime les premières commandes
-		echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = 'MySB_SecurityRules' AND priority = '$LastOneMin' AND user = '$User'"
-		((  LastOneMin++ ))
-	done
+	if [ "$LastOneMin" -ne "$LastOneMax" ] && [ ! -z "$LastOneMin" ] && [ ! -z "$LastOneMax" ]; then
+		while [ "$LastOneMin" -lt "$LastOneMax" ]; do
+			# On supprime les premières commandes
+			echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = 'MySB_SecurityRules' AND priority = '$LastOneMin' AND user = '$User'"
+			((  LastOneMin++ ))
+		done
+	fi
 
 	# Maintenant on prend la priorité globale maxi toute commandes confondues, puis on incrémente de 1 'MySB_SecurityRules'.
 	LastPriority="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT max(priority) FROM commands WHERE user = '$User'\"`"
