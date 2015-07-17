@@ -1,5 +1,5 @@
 --
--- Fichier généré par SQLiteStudio v3.0.6sur mar. juil. 14 16:53:31 2015
+-- Fichier généré par SQLiteStudio v3.0.6sur ven. juil. 17 21:18:05 2015
 --
 -- Encodage texte utilisé: windows-1252
 --
@@ -37,7 +37,7 @@ INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_f
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (26, 'WBM', '/files', 'MiniDLNA Webmin Module', 'alpha1.12 svn26', 'minidlnawebmin_alpha1_12.wbm', '', 'http://downloads.sourceforge.net/project/minidlnawebmin/Webmin%20alpha1.12%20svn26/minidlnawebmin_alpha1_12.wbm?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fminidlnawebmin%2Ffiles%2FWebmin%2520alpha1.12%2520svn26%2F&ts=1420088634&use_mirror=freefr', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (27, 'TARGZ', '/sources/libtorrent', 'LibTorrent', '0.13.4', 'libtorrent_v0.13.4.tar.gz', '', 'http://libtorrent.rakshasa.no/downloads/libtorrent-0.13.4.tar.gz', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (28, 'TARGZ', '/sources/rtorrent', 'rTorrent', '0.9.4', 'rtorrent_v0.9.4.tar.gz', '', 'http://libtorrent.rakshasa.no/downloads/rtorrent-0.9.4.tar.gz', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (29, 'SVN', '/sources/xmlrpc-c', 'XMLRPC', '1.42.0', 'xmlrpc-c_v1.42.0.zip', 'xmlrpc-c_v1.41.02.zip', 'http://svn.code.sf.net/p/xmlrpc-c/code/advanced', 1);
+INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (29, 'ZIP', '/sources/xmlrpc-c', 'XMLRPC', '1.42.0', 'xmlrpc-c_v1.42.0.zip', 'xmlrpc-c_v1.41.02.zip', 'https://github.com/toulousain79/MySB/raw/v2.2/files/xmlrpc-c_v1.42.0.zip', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (30, 'GIT', '/web/loadavg', 'LoadAvg', '2.2', 'loadavg_v2.2.zip', '', 'https://github.com/loadavg/loadavg.git', 1);
 
 COMMIT TRANSACTION;
