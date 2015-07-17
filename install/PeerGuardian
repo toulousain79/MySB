@@ -63,7 +63,7 @@ if [ "$ToInstall_PeerGuardian" == "YES" ]; then
 
 	# Restart PeerGuardian with the params
 	pglcmd restart
-	
+
 	# Create '/etc/pgl/blocklists.list'
 	PeerGuardianBlocklistsList 0 "UpdateLists"
 
@@ -72,20 +72,23 @@ if [ "$ToInstall_PeerGuardian" == "YES" ]; then
 
 	#### Disable init, service will be started by MySB_SecurityRules
 	update-rc.d pgl remove -f
-	
+
 	#### Clean current log file
 	logrotate -f /etc/logrotate.d/pglcmd
 	logrotate -f /etc/logrotate.d/pgld
-	
+
 	#### START services
 	ManageServices start "pglcmd"
-	
+
+	#### Check if service is OK and running
 	if CheckCommand 0 pgld; then
 		sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'PeerGuardian';"
-	fi	
-	
-	#### Create empty security rules
-	ScriptInvoke 'screen' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create' 'SCREEN'
+
+		#### Create empty security rules
+		ScriptInvoke 'screen' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create' 'SCREEN'
+	else
+		sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '0' WHERE serv_name = 'PeerGuardian';"
+	fi
 fi
 
 # -----------------------------------------
