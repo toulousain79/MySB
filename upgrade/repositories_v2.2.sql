@@ -1,5 +1,5 @@
 --
--- Fichier généré par SQLiteStudio v3.0.6sur ven. juil. 17 21:18:05 2015
+-- Fichier généré par SQLiteStudio v3.0.6sur lun. juil. 20 00:49:50 2015
 --
 -- Encodage texte utilisé: windows-1252
 --
@@ -39,6 +39,7 @@ INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_f
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (28, 'TARGZ', '/sources/rtorrent', 'rTorrent', '0.9.4', 'rtorrent_v0.9.4.tar.gz', '', 'http://libtorrent.rakshasa.no/downloads/rtorrent-0.9.4.tar.gz', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (29, 'ZIP', '/sources/xmlrpc-c', 'XMLRPC', '1.42.0', 'xmlrpc-c_v1.42.0.zip', 'xmlrpc-c_v1.41.02.zip', 'https://github.com/toulousain79/MySB/raw/v2.2/files/xmlrpc-c_v1.42.0.zip', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (30, 'GIT', '/web/loadavg', 'LoadAvg', '2.2', 'loadavg_v2.2.zip', '', 'https://github.com/loadavg/loadavg.git', 1);
+INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (31, 'TARGZ', '/web/pydio', 'Pydio', '6.0.8', 'pydio_v6.0.8.tar.gz', '', 'http://downloads.sourceforge.net/project/ajaxplorer/pydio/stable-channel/6.0.8/pydio-core-6.0.8.tar.gz?r=&ts=1437345167&use_mirror=freefr', 0);
 
 COMMIT TRANSACTION;
 PRAGMA foreign_keys = on;

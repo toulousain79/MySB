@@ -27,7 +27,7 @@ source $(dirname $0)/../inc/includes_before
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=26
+TotalSTEP=27
 
 if [ "$BANNER" == "ON" ]; then
 	BannerGenerator
@@ -143,6 +143,18 @@ if [ "$ServerProvider" == "OVH" ] || [ "$ServerProvider" == "ONLINE" ]; then
 	StatusSTD
 else
 	echo -e "$Upgrade_NothingToDo"	
+fi
+
+#### Fail2Ban
+(( CurrentSTEP++ ))
+if [ "$ToInstall_Fail2Ban" == "YES" ] || [ "$ToInstall_Fail2Ban" == "YES" ]; then
+	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Fail2Ban';"
+	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Fail2Ban$CEND..."
+	screen -dmS Fail2Ban /bin/bash $MySB_InstallDir/install/Fail2Ban 'UPGRADE';
+	WaitingScreen Fail2Ban
+	StatusSTD
+else
+	echo -e "$Upgrade_NothingToDo"		
 fi
 
 #### NginX
