@@ -119,9 +119,9 @@ if ( isset($_POST['submit']) ) {
 				$type = 'error';
 				$message = User_OpenVPN_NoPassword;
 			}
-			
+
 			GenerateMessage($command, $type, $message, $args);
-			
+
 			if ( $type == 'success' ) {
 				header("Refresh: $RefreshPage; URL=/?user/openvpn-config-file.html");
 			}
@@ -135,16 +135,20 @@ if ( isset($_POST['submit']) ) {
 
 				header("Pragma: no-cache");
 				header("Expires: 0");
-				header("Cache-Control: must-revalidate, post-check=0, pre-check=0, public");
-				header("Content-Description: File Transfer");
-				header("Content-type: application/octet-stream");
+				header("Cache-Control: must-revalidate, pre-check=0, post-check=0, max-age=0, public");
+				header("Content-Description: OpenVPN Config File");
+				header("Content-type: application/zip");
 				if (preg_match('/MSIE 5.5/', $_ENV['HTTP_USER_AGENT']) || preg_match('/MSIE 6.0/', $_ENV['HTTP_USER_AGENT'])) {
 					header('Content-Disposition: filename = "'.$file_name.'"');
 				} else {
 					header('Content-Disposition: attachment; filename = "'.$file_name.'"');
 				}
-				header("Content-Transfer-Encoding: binary");
-				header("Content-Length: ".filesize($zip_file));
+				header('Date: '.$date);
+				header('Expires: '.gmdate(DATE_RFC1123, time()+1));
+				header('Last-Modified: '.gmdate(DATE_RFC1123, filemtime($zip_file)));
+				header("Content-Transfer-Encoding: none");
+				header('Content-MD5: '.base64_encode(md5_file($zip_file)));
+				//header("Content-Length: ".filesize($zip_file));
 				ob_end_flush();
 				@readfile($zip_file);
 			} else {

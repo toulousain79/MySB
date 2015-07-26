@@ -29,19 +29,28 @@ if ! CheckCommand 0 rtorrent; then
 	PackagesManage install "rtorrent buildtorrent mediainfo ffmpeg"
 fi
 
-#### Install rTorrent v0.9.4
+#### Install rTorrent
 # XMLRPC-C
 XmlrpcDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'XMLRPC'\"`"
 XmlrpcUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'XMLRPC'\"`"
 XmlrpcFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'XMLRPC'\"`"
+XmlrpcVersion="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT version FROM repositories WHERE name = 'XMLRPC'\"`"
+echo
+echo "########## XMLRPC-C"
+echo "Directory : "$XmlrpcDir
+echo "Version : "$XmlrpcVersion
+echo "File : "$XmlrpcFile
+echo "URL : "$XmlrpcUrl
+echo
 if [ ! -f $MySB_InstallDir/files/$XmlrpcFile ]; then
 	wget --no-check-certificate $XmlrpcUrl -O $MySB_InstallDir/files/$XmlrpcFile
 fi
 if [ ! -d $XmlrpcDir ] && [ -f $MySB_InstallDir/files/$XmlrpcFile ]; then
-	tar -zxvf $MySB_InstallDir/files/$XmlrpcFile -C $MySB_InstallDir/temp/	
-	SubDir="`tar -ztf $MySB_InstallDir/files/$XmlrpcFile | sed -e 's@/.*@@' | uniq`"
+	unzip $MySB_InstallDir/files/$XmlrpcFile -d $MySB_InstallDir/temp/
+	SubDir="`unzip -l $MySB_InstallDir/files/$XmlrpcFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
 	if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-		mv $MySB_InstallDir/temp/$SubDir $XmlrpcDir
+		mv -v $MySB_InstallDir/temp/$SubDir $MySB_InstallDir$RepoDir
+		chown -R root:root $MySB_InstallDir$RepoDir
 	fi
 fi
 cd $XmlrpcDir/
@@ -50,10 +59,18 @@ make clean
 make -j$PROCESSOR
 make install
 
-# LIBtorrent 0.13.4
+# LIBtorrent
 LibtorrentDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'LibTorrent'\"`"
 LibtorrentUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'LibTorrent'\"`"
 LibtorrentFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'LibTorrent'\"`"
+LibtorrentVersion="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT version FROM repositories WHERE name = 'LibTorrent'\"`"
+echo
+echo "########## LIBtorrent"
+echo "Directory : "$LibtorrentDir
+echo "Version : "$LibtorrentVersion
+echo "File : "$LibtorrentFile
+echo "URL : "$LibtorrentUrl
+echo
 if [ ! -f $MySB_InstallDir/files/$LibtorrentFile ]; then
 	wget --no-check-certificate $LibtorrentUrl -O $MySB_InstallDir/files/$LibtorrentFile
 fi
@@ -68,13 +85,21 @@ cd $LibtorrentDir/
 make clean
 ./autogen.sh
 ./configure --with-posix-fallocate
-make
+make -j$PROCESSOR
 make install
 
-# rTorrent 0.9.4
+# rTorrent
 RtorrentDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'rTorrent'\"`"
 RtorrentUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'rTorrent'\"`"
 RtorrentFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'rTorrent'\"`"
+RtorrentVersion="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT version FROM repositories WHERE name = 'rTorrent'\"`"
+echo
+echo "########## rTorrent"
+echo "Directory : "$LibtorrentDir
+echo "Version : "$RtorrentVersion
+echo "File : "$RtorrentFile
+echo "URL : "$RtorrentUrl
+echo
 if [ ! -f $MySB_InstallDir/files/$RtorrentFile ]; then
 	wget --no-check-certificate $RtorrentUrl -O $MySB_InstallDir/files/$RtorrentFile
 fi
@@ -89,10 +114,9 @@ cd $RtorrentDir/
 make clean
 ./autogen.sh
 ./configure --with-xmlrpc-c=/usr/local/bin/xmlrpc-c-config
-make
+make -j$PROCESSOR
 make install
 ldconfig
-
 
 #### Create certificates
 if [ ! -f $MySB_InstallDir/ssl/rtorrent.cert ]; then
