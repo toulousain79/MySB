@@ -1,5 +1,5 @@
 --
--- Fichier généré par SQLiteStudio v3.0.6sur dim. juil. 26 18:41:33 2015
+-- Fichier généré par SQLiteStudio v3.0.6sur dim. juil. 26 18:45:03 2015
 --
 -- Encodage texte utilisé: windows-1252
 --
@@ -10,8 +10,8 @@ BEGIN TRANSACTION;
 DROP TABLE IF EXISTS repositories;
 CREATE TABLE [repositories] ([id_repositories] INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, [type] VARCHAR (5) NOT NULL ON CONFLICT ABORT, [dir] VARCHAR (32) NOT NULL ON CONFLICT ABORT, [name] VARCHAR (32) NOT NULL ON CONFLICT ABORT, [version] VARCHAR (8), [file] VARCHAR (32), [old_file] VARCHAR (32), [url] VARCHAR (256) NOT NULL ON CONFLICT ABORT, [active] BOOLEAN (1));
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (1, 'GIT', '/web/rutorrent', 'ruTorrent', '3.7', 'ruTorrent_v3.7.zip', '', 'https://github.com/Novik/ruTorrent', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (2, 'TARGZ', '/web/rutorrent/plugins/chat', 'ruTorrent Plugin Chat', '2.0', 'chat-2.0.tar.gz', '', 'https://rutorrent-chat.googlecode.com/files/chat-2.0.tar.gz', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (3, 'TARGZ', '/web/rutorrent/plugins/logoff', 'ruTorrent Plugin Logoff', '1.3', 'logoff-1.3.tar.gz', '', 'https://rutorrent-logoff.googlecode.com/files/logoff-1.3.tar.gz', 1);
+INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (2, 'TARGZ', '/web/rutorrent/plugins/chat', 'ruTorrent Plugin Chat', '2.0', 'chat_v2.0.tar.gz', 'chat-2.0.tar.gz', 'https://rutorrent-chat.googlecode.com/files/chat-2.0.tar.gz', 1);
+INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (3, 'TARGZ', '/web/rutorrent/plugins/logoff', 'ruTorrent Plugin Logoff', '1.3', 'logoff_v1.3.tar.gz', 'logoff-1.3.tar.gz', 'https://rutorrent-logoff.googlecode.com/files/logoff-1.3.tar.gz', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (4, 'TARGZ', '/web/rutorrent/plugins/lbll-suite', 'ruTorrent Plugin tAdd-Labels', '1.1', 'tadd-labels_v1.1.tar.gz', 'tadd-labels_1.1.tar.gz', 'http://rutorrent-tadd-labels.googlecode.com/files/tadd-labels_1.1.tar.gz', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (5, 'TARGZ', '/web/rutorrent/plugins/nfo', 'ruTorrent Plugin NFO', '1337', 'nfo_v1337.tar.gz', '', 'http://srious.biz/nfo.tar.gz', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (6, 'GIT', '/web/rutorrent/plugins/ratiocolor', 'ruTorrent Plugin RatioColor', '0.5', 'ratiocolor_v0.5.zip', '', 'https://github.com/Gyran/rutorrent-ratiocolor', 1);
@@ -23,7 +23,7 @@ INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_f
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (12, 'ZIP', '/web/rutorrent/plugins/pausewebui', 'ruTorrent Plugin Pause WebUI', '13', 'pausewebui_v1.2.zip', '', 'https://rutorrent-pausewebui.googlecode.com/files/pausewebui.1.2.zip', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (13, 'GIT', '/web/rutorrent/plugins/mobile', 'ruTorrent Plugin Mobile', '1.0', 'mobile_v1.0.zip', '', 'https://github.com/xombiemp/rutorrentMobile.git', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (14, 'GIT', '/web/rutorrent/plugins/autodl-irssi', 'ruTorrent Plugin Autodl-irssi', '1.52', 'autodl_v1.52.zip', '', 'https://github.com/autodl-community/autodl-rutorrent.git', 0);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (15, 'GIT', '/sources/plowshare', 'Plowshare', '2.1.1', 'Plowshare_2.1.1.zip', 'Plowshare4.tar.gz', 'https://github.com/mcrapet/plowshare.git', 1);
+INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (15, 'GIT', '/sources/plowshare', 'Plowshare', '2.1.1', 'Plowshare_v2.1.1.zip', 'Plowshare4.tar.gz', 'https://github.com/mcrapet/plowshare.git', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (16, 'CURL', '/usr/bin/composer', 'Composer', '', 'composer.phar', '', 'http://getcomposer.org/installer', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (17, 'TARGZ', '/sources/nodejs', 'NodeJS', '0.12.7', 'node_v0.12.7.tar.gz', 'node-v0.12.2.tar.gz', 'https://nodejs.org/dist/v0.12.7/node-v0.12.7.tar.gz', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (18, 'GIT', '/web/seedbox-manager', 'Seedbox-Manager', '2.4.4', 'seedbox-manager_v2.4.4.zip', 'seedbox-manager_v0.1.zip', 'https://github.com/Magicalex/seedbox-manager.git', 1);
