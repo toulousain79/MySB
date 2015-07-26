@@ -29,9 +29,9 @@ if [ "$ToInstall_Fail2Ban" == "YES" ]; then
 	PackagesManage install "fail2ban"
 	
 	#### STOP services
-	ManageServices stop "fail2ban"	
+	ManageServices stop "fail2ban"
 
-	# conf fail2ban
+	# jail.local
 	cp $MySB_InstallDir/templates/etc.fail2ban.jail.local.template /etc/fail2ban/jail.local
 	sed -i 's/<Port_SSH>/'$Port_SSH'/g;' /etc/fail2ban/jail.local
 	sed -i 's/<Port_HTTP>/'$Port_HTTP'/g;' /etc/fail2ban/jail.local
@@ -39,23 +39,26 @@ if [ "$ToInstall_Fail2Ban" == "YES" ]; then
 	sed -i 's/<Port_FTP>/'$Port_FTP'/g;' /etc/fail2ban/jail.local
 	sed -i 's/<Port_FTP_Data>/'$Port_FTP_Data'/g;' /etc/fail2ban/jail.local
 
+	# fail2ban.conf
+	sed -i 's/loglevel = 3/loglevel = 2/g;' /etc/fail2ban/fail2ban.conf
+
 	cp $MySB_InstallDir/templates/etc.fail2ban.filter.d.nginx-auth.conf.template /etc/fail2ban/filter.d/nginx-auth.conf
 	cp $MySB_InstallDir/templates/etc.fail2ban.filter.d.nginx-badbots.conf.template /etc/fail2ban/filter.d/nginx-badbots.conf
 	cp $MySB_InstallDir/templates/etc.fail2ban.filter.d.nginx-login.template /etc/fail2ban/filter.d/nginx-login.conf
 
 	#### Add white list
 	Fail2BanWhitheList 0
-	
+
 	#### Disable init, Fail2Ban will be started by MySB_SecurityRules
 	update-rc.d fail2ban remove -f
 
 	#### Clean current log file
 	logrotate -f /etc/logrotate.d/fail2ban
-	
+
 	if CheckCommand 0 fail2ban; then
 		sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'Fail2Ban';"
 	fi
-	
+
 	#### Create new security rules
 	ScriptInvoke 'screen' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create'
 fi
