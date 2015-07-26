@@ -12,8 +12,8 @@
 			- NFS, disabling IPv6 support (v2.2)
 			- Samba, change some settings (v2.2)
 			- DynamicAddressResolver.bsh, corrocting bugs (v2.1 and v2.2)
-			- DNScrypt-proxy v1.5 (v2.2)
-			- NodeJS v0.12.6 (v2.2)
+			- DNScrypt-proxy v1.6 (v2.2)
+			- NodeJS v0.12.7 (v2.2)
 			- XMLRPC v1.42.0 (v2.2)
 			- Libsodium v1.04 (v2.2)
 

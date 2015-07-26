@@ -1,5 +1,5 @@
 --
--- Fichier généré par SQLiteStudio v3.0.6sur lun. juil. 20 00:49:50 2015
+-- Fichier généré par SQLiteStudio v3.0.6sur dim. juil. 26 18:13:49 2015
 --
 -- Encodage texte utilisé: windows-1252
 --
@@ -25,13 +25,13 @@ INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_f
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (14, 'GIT', '/web/rutorrent/plugins/autodl-irssi', 'ruTorrent Plugin Autodl-irssi', '1.52', 'autodl_v1.52.zip', '', 'https://github.com/autodl-community/autodl-rutorrent.git', 0);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (15, 'GIT', '/sources/plowshare', 'Plowshare', '2.1.1', 'Plowshare_2.1.1.zip', 'Plowshare4.tar.gz', 'https://github.com/mcrapet/plowshare.git', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (16, 'CURL', '/usr/bin/composer', 'Composer', '', 'composer.phar', '', 'http://getcomposer.org/installer', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (17, 'TARGZ', '/sources/nodejs', 'NodeJS', '0.12.6', 'node-v0.12.6.tar.gz', 'node-v0.12.2.tar.gz', 'https://nodejs.org/dist/v0.12.6/node-v0.12.6.tar.gz', 1);
+INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (17, 'TARGZ', '/sources/nodejs', 'NodeJS', '0.12.7', 'node-v0.12.7.tar.gz', 'node-v0.12.2.tar.gz', 'https://nodejs.org/dist/v0.12.7/node-v0.12.7.tar.gz', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (18, 'GIT', '/web/seedbox-manager', 'Seedbox-Manager', '2.4.4', 'seedbox-manager_v2.4.4.zip', 'seedbox-manager_v0.1.zip', 'https://github.com/Magicalex/seedbox-manager.git', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (19, 'GIT', '/web/rutorrent/plugins/linkseedboxmanager', 'ruTorrent Plugin Link Manager', '1.0', 'linkseedboxmanager_v1.0.zip', '', 'https://github.com/Hydrog3n/linkseedboxmanager.git', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (20, 'GIT', '/web/Cakebox-light', 'Cakebox-Light', '1.8.3', 'cakebox-light_v1.8.3.zip', '', 'https://github.com/Cakebox/Cakebox-light.git', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (21, 'GIT', '/web/rutorrent/plugins/linkcakebox', 'ruTorrent Plugin Link Cakebox', '1.0', 'linkcakebox_v1.0.zip', '', 'https://github.com/Cakebox/linkcakebox.git', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (22, 'GIT', '/sources/libsodium', 'Libsodium', '1.0.4', 'libsodium_v1.0.4.zip', 'libsodium_v1.0.2.zip', 'https://github.com/jedisct1/libsodium', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (23, 'TARGZ', '/sources/dnscrypt-proxy', 'DNScrypt-proxy', '1.5.0', 'dnscrypt-proxy_v1.5.0.tar.gz', 'dnscrypt-proxy_v1.4.3.tar.gz', 'http://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-proxy-1.5.0.tar.gz', 1);
+INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (23, 'TARGZ', '/sources/dnscrypt-proxy', 'DNScrypt-proxy', '1.6.0', 'dnscrypt-proxy_v1.6.0.tar.gz', 'dnscrypt-proxy_v1.4.3.tar.gz', 'http://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-proxy-1.6.0.tar.gz', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (24, 'WBM', '/files', 'OpenVPNadmin WebMin', '2.6', 'openvpn-2.6.wbm', '', 'http://www.openit.it/downloads/OpenVPNadmin/openvpn-2.6.wbm.gz', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (25, 'WBM', '/files', 'Nginx Webmin Module', '0.0.8', 'nginx-0.08.wbm', '', 'http://www.justindhoffman.com/sites/justindhoffman.com/files/nginx-0.08.wbm__0.gz', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (26, 'WBM', '/files', 'MiniDLNA Webmin Module', 'alpha1.12 svn26', 'minidlnawebmin_alpha1_12.wbm', '', 'http://downloads.sourceforge.net/project/minidlnawebmin/Webmin%20alpha1.12%20svn26/minidlnawebmin_alpha1_12.wbm?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fminidlnawebmin%2Ffiles%2FWebmin%2520alpha1.12%2520svn26%2F&ts=1420088634&use_mirror=freefr', 1);
