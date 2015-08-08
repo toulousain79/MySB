@@ -45,7 +45,7 @@ function Form() {
 	$SmtpPort = $smtp_datas["smtp_port"];
 	$SmtpEmail = $smtp_datas["smtp_email"];
 
-	$ProvidersList = array('LOCAL', 'FREE', 'YAHOO', 'OVH', 'GMAIL');
+	$ProvidersList = array('LOCAL', 'FREE', 'YAHOO', 'OVH', 'GMAIL', 'ZOHO');
 
 	echo '<script type="text/javascript">SMTP_ChangeValues("' . THEMES_PATH . 'MySB/js/SMTP_data.json", "'.$SmtpEmail.'", "'.$SmtpUsername.'", "'.$SmtpPasswd.'");</script>';
 

@@ -41,6 +41,9 @@ function SMTP_ChangeValues(JSON_File, Email, Username, Password) {
 							case 'GMAIL':
 								host = data.GMAIL;
 								break;
+							case 'ZOHO':
+								host = data.ZOHO;
+								break;
 						}
 
 						var $jsontwo = $("#json-host");
