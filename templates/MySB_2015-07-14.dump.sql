@@ -1,5 +1,5 @@
 --
--- Fichier généré par SQLiteStudio v3.0.6sur lun. août 17 20:21:33 2015
+-- Fichier généré par SQLiteStudio v3.0.6sur lun. août 17 20:39:15 2015
 --
 -- Encodage texte utilisé: windows-1252
 --
@@ -175,7 +175,7 @@ INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tc
 INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (21, 'Stunnel', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 1);
 INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (22, 'rTorrent v0.9.2', '/usr/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0, 1);
 INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (23, 'rTorrent v0.9.4', '/usr/local/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (24, 'Pydio', '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (24, 'ownCloud', '', '', '', '', '', '', '', '', '', 0, 0, 1);
 
 -- Table: system
 DROP TABLE IF EXISTS system;

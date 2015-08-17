@@ -1,0 +1,90 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+# https://doc.owncloud.org/server/8.1/admin_manual/installation/installation_wizard.html#setting-strong-directory-permissions
+# https://doc.owncloud.org/server/8.1/admin_manual/installation/nginx_configuration.html
+# https://doc.owncloud.org/server/8.1/user_manual/files/access_webdav.html
+#
+# https://srv1.lig2p.com:8889/owncloud/index.php/settings/admin#log-section
+
+if [ "$ToInstall_ownCloud" == "YES" ]; then
+	ownCloudDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ownCloud'\"`"
+	ownCloudDir_Escaped="`echo $ownCloudDir | sed s,/,\\\\\\\\\\/,g`"
+	ownCloud_DB_Escaped="`echo $ownCloud_DB | sed s,/,\\\\\\\\\\/,g`"
+
+	#### NginX
+	cp $MySB_InstallDir/templates/etc.nginx.locations.owncloud.conf.template /etc/nginx/locations/ownCloud.conf	
+	
+	
+	
+
+	#### PHP
+	perl -pi -e "s/post_max_size = 10M/post_max_size = 20G/g" /etc/php5/fpm/php.ini
+	perl -pi -e "s/upload_max_filesize = 10M/upload_max_filesize = 20G/g" /etc/php5/fpm/php.ini
+	perl -pi -e "s/max_file_uploads = 20/max_file_uploads = 20000/g" /etc/php5/fpm/php.ini
+	perl -pi -e "s/output_buffering = 4096/output_buffering = Off/g" /etc/php5/fpm/php.ini
+
+	#### Pydio Core
+	if [ "$1" == "REFRESH" ] || [ ! -d $PydioDir ]; then
+		PydioUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'Pydio'\"`"
+		PydioFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'Pydio'\"`"
+		if [ -d $PydioDir ]; then
+			rm -vrf $PydioDir
+		fi
+		if [ ! -f $MySB_InstallDir/files/$PydioFile ]; then
+			wget --no-check-certificate $PydioUrl -O $MySB_InstallDir/files/$PydioFile
+		fi
+		tar -zxvf $MySB_InstallDir/files/$PydioFile -C $MySB_InstallDir/temp/	
+		SubDirPydio="`tar -ztf $MySB_InstallDir/files/$PydioFile | cut -d '/' -f 1 | uniq`"
+		if [ -d $MySB_InstallDir/temp/$SubDirPydio ]; then
+			mv $MySB_InstallDir/temp/$SubDirPydio $PydioDir
+		fi
+	fi
+
+	# HTaccess needed
+	cp $MySB_InstallDir/templates/pydio.htaccess.template $PydioDir/.htaccess
+
+
+
+	
+	# pydio/data/plugins/boot.conf/bootstrap.json
+	cp $MySB_InstallDir/templates/pydio.bootstrap.json.template $PydioDir/conf/bootstrap.json
+	perl -pi -e "s/<pydio_db_dir>/$Pydio_DB_Escaped/g" $PydioDir/conf/bootstrap.json
+
+	# pydio/data/plugins/boot.conf/bootstrap_repositories.php
+	perl -pi -e "s/AJXP_DATA_PATH\/personal\/AJXP_USER/\/home\/AJXP_USER\/pydio/g" $PydioDir/conf/bootstrap_repositories.php
+
+	ajxp_plugin_configs
+	ajxp_repo
+	ajxp_repo_options
+	
+	#### START services
+	ManageServices start "php5-fpm nginx"
+fi
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################
