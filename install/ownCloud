@@ -35,10 +35,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	ownCloud_DB_Escaped="`echo $ownCloud_DB | sed s,/,\\\\\\\\\\/,g`"
 
 	#### NginX
-	cp $MySB_InstallDir/templates/etc.nginx.locations.owncloud.conf.template /etc/nginx/locations/ownCloud.conf	
-	
-	
-	
+	cp $MySB_InstallDir/templates/etc.nginx.locations.owncloud.conf.template /etc/nginx/locations/ownCloud.conf
 
 	#### PHP
 	perl -pi -e "s/post_max_size = 10M/post_max_size = 20G/g" /etc/php5/fpm/php.ini
@@ -46,39 +43,27 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	perl -pi -e "s/max_file_uploads = 20/max_file_uploads = 20000/g" /etc/php5/fpm/php.ini
 	perl -pi -e "s/output_buffering = 4096/output_buffering = Off/g" /etc/php5/fpm/php.ini
 
-	#### Pydio Core
-	if [ "$1" == "REFRESH" ] || [ ! -d $PydioDir ]; then
-		PydioUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'Pydio'\"`"
-		PydioFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'Pydio'\"`"
-		if [ -d $PydioDir ]; then
-			rm -vrf $PydioDir
+	#### ownCloud Core
+	if [ "$1" == "REFRESH" ] || [ ! -d $ownCloudDir ]; then
+		ownCloudUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'ownCloud'\"`"
+		ownCloudFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'ownCloud'\"`"
+		if [ -d $ownCloudDir ]; then
+			rm -vrf $ownCloudDir
 		fi
-		if [ ! -f $MySB_InstallDir/files/$PydioFile ]; then
-			wget --no-check-certificate $PydioUrl -O $MySB_InstallDir/files/$PydioFile
+		if [ ! -f $MySB_InstallDir/files/$ownCloudFile ]; then
+			wget --no-check-certificate $ownCloudUrl -O $MySB_InstallDir/files/$ownCloudFile
 		fi
-		tar -zxvf $MySB_InstallDir/files/$PydioFile -C $MySB_InstallDir/temp/	
-		SubDirPydio="`tar -ztf $MySB_InstallDir/files/$PydioFile | cut -d '/' -f 1 | uniq`"
-		if [ -d $MySB_InstallDir/temp/$SubDirPydio ]; then
-			mv $MySB_InstallDir/temp/$SubDirPydio $PydioDir
+		unzip $MySB_InstallDir/files/$ownCloudFile -d $MySB_InstallDir/temp/
+		SubDirownCloud="`unzip -l $MySB_InstallDir/files/$ownCloudFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+		if [ -d $MySB_InstallDir/temp/$SubDirownCloud ]; then
+			mv -v $MySB_InstallDir/temp/$SubDirownCloud $ownCloudDir
 		fi
 	fi
-
-	# HTaccess needed
-	cp $MySB_InstallDir/templates/pydio.htaccess.template $PydioDir/.htaccess
-
-
-
-	
-	# pydio/data/plugins/boot.conf/bootstrap.json
-	cp $MySB_InstallDir/templates/pydio.bootstrap.json.template $PydioDir/conf/bootstrap.json
-	perl -pi -e "s/<pydio_db_dir>/$Pydio_DB_Escaped/g" $PydioDir/conf/bootstrap.json
-
-	# pydio/data/plugins/boot.conf/bootstrap_repositories.php
-	perl -pi -e "s/AJXP_DATA_PATH\/personal\/AJXP_USER/\/home\/AJXP_USER\/pydio/g" $PydioDir/conf/bootstrap_repositories.php
-
-	ajxp_plugin_configs
-	ajxp_repo
-	ajxp_repo_options
+	cp $MySB_InstallDir/templates/owncloud.config.php.template $ownCloudDir/config/config.php
+	ownCloudVersion="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT version FROM repositories WHERE name = 'ownCloud'\"`"
+	perl -pi -e "s/<server_name>/$HostNameFQDN/g" $ownCloudDir/config/config.php
+	perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" $ownCloudDir/config/config.php
+	perl -pi -e "s/<Version>/$ownCloudVersion/g" $ownCloudDir/config/config.php
 	
 	#### START services
 	ManageServices start "php5-fpm nginx"
