@@ -25,21 +25,35 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### Install packages
-MySB_Install_Packages=`grep -rni 'TOOLS=' $MySB_InstallDir/install/MySB_Install.bsh | cut -d '"' -f 2`
-PackagesManage install "$MySB_Install_Packages sudo subversion htop build-essential automake libtool manpages-fr pkg-config curl unzip zip iperf csvtool whois vim nano ntpdate ntp update-notifier-common debian-goodies bridge-utils libxml2-dev libsigc++-2.0-dev libncurses5-dev libxmlrpc-c3-dev libcppunit-dev gnupg-curl python debianutils coreutils mailutils bc tcpdump bash-completion libcurl4-openssl-dev expect"
+PackagesManage install "mysql-server"
 
-PackagesManage install "rar"
-if [ $? -gt 0 ]; then
-	PackagesManage install "rar-free"
-fi
+MYSQL_ROOT_PASSWORD=abcd1234
 
-PackagesManage install "unrar"
-if [ $? -gt 0 ]; then
-	PackagesManage install "unrar-free"
-fi
+SECURE_MYSQL=$(expect -c "
+set timeout 10
+spawn mysql_secure_installation
+expect \"Enter current password for root (enter for none):\"
+send \"$MYSQL\r\"
+expect \"Change the root password?\"
+send \"n\r\"
+expect \"Remove anonymous users?\"
+send \"y\r\"
+expect \"Disallow root login remotely?\"
+send \"y\r\"
+expect \"Remove test database and access to it?\"
+send \"y\r\"
+expect \"Reload privilege tables now?\"
+send \"y\r\"
+expect eof
+")
 
-#### Purge packages
-PackagesManage purge "heirloom-mailx"
+echo "$SECURE_MYSQL"
+
+#### STOP services
+ManageServices stop "mysql"
+
+#### START services
+ManageServices start "mysql"
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after
