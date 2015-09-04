@@ -27,27 +27,21 @@ source $(dirname $0)/../inc/includes_before
 #### Install packages
 PackagesManage install "mysql-server"
 
-MYSQL_ROOT_PASSWORD=abcd1234
-
-SECURE_MYSQL=$(expect -c "
-set timeout 10
-spawn mysql_secure_installation
-expect \"Enter current password for root (enter for none):\"
-send \"$MYSQL\r\"
-expect \"Change the root password?\"
-send \"n\r\"
-expect \"Remove anonymous users?\"
-send \"y\r\"
-expect \"Disallow root login remotely?\"
-send \"y\r\"
-expect \"Remove test database and access to it?\"
-send \"y\r\"
-expect \"Reload privilege tables now?\"
-send \"y\r\"
-expect eof
-")
-
-echo "$SECURE_MYSQL"
+#### MySQL Secure
+RootPassword="`GenPassword 16`"
+MysbPassword="`GenPassword 8`"
+mysql -u root <<-EOF
+UPDATE mysql.user SET Password=PASSWORD('$RootPassword') WHERE User='root';
+DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
+DELETE FROM mysql.user WHERE User='';
+DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%';
+FLUSH PRIVILEGES;
+create database MySB_db;
+create user MySB_user;
+grant all on MySB_db.* to 'MySB_user'@'localhost' identified by '$MysbPassword';
+EOF
+echo $RootPassword | tee -a $MySB_InstallDir/files/MySQL_RootPassword
+echo $MysbPassword | tee -a $MySB_InstallDir/files/MySQL_MysbPassword
 
 #### STOP services
 ManageServices stop "mysql"
