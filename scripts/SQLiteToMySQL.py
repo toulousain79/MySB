@@ -1,6 +1,4 @@
-#!/bin/bash
-# ----------------------------------
-source $(dirname $0)/../inc/includes_before
+#! /usr/bin/env python
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -24,38 +22,45 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-#### Install packages
-PackagesManage install "mysql-server"
+import sys
 
-#### MySQL Secure
-RootPassword="`GenPassword 16`"
-MysbPassword="`GenPassword 8`"
-mysql -u root <<-EOF
-UPDATE mysql.user SET Password=PASSWORD('$RootPassword') WHERE User='root';
-DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
-DELETE FROM mysql.user WHERE User='';
-DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%';
-FLUSH PRIVILEGES;
-create database MySB_db;
-create user MySB_user;
-grant all on MySB_db.* to 'MySB_user'@'localhost' identified by '$MysbPassword';
-EOF
-echo $RootPassword | tee -a $MySB_InstallDir/files/MySQL_RootPassword
-echo $MysbPassword | tee -a $MySB_InstallDir/files/MySQL_MysbPassword
+def main():
+	print "SET sql_mode='NO_BACKSLASH_ESCAPES';"
+	lines = sys.stdin.read().splitlines()
+	for line in lines:
+		processLine(line)
 
-#### STOP services
-ManageServices stop "mysql"
+def processLine(line):
+	if (
+		line.startswith("PRAGMA") or 
+		line.startswith("BEGIN TRANSACTION;") or
+		line.startswith("COMMIT;") or
+		line.startswith("DELETE FROM sqlite_sequence;") or
+		line.startswith("INSERT INTO "sqlite_sequence"")
+		):
+        return
+		
+    line = line.replace("AUTOINCREMENT", "AUTO_INCREMENT")
+    line = line.replace("DEFAULT 't'", "DEFAULT '1'")
+    line = line.replace("DEFAULT 'f'", "DEFAULT '0'")
+    line = line.replace(",'t'", ",'1'")
+    line = line.replace(",'f'", ",'0'")
+    in_string = False
+    newLine = ''
+    for c in line:
+        if not in_string:
+            if c == "'":
+                in_string = True
+            elif c == '"':
+                newLine = newLine + '`'
+                continue
+        elif c == "'":
+            in_string = False
+        newLine = newLine + c
+    print newLine
 
-#### START services
-ManageServices start "mysql"
+if __name__ == "__main__":
+    main()
 
-if [ "$1" == "UPGRADE" ] && CheckCommand 0 mysql; then
-	sqlite3 $MySB_DB .dump > $MySB_InstallDir/temp/$MySB_DB
-	cat $MySB_InstallDir/temp/$MySB_DB | python $MySB_InstallDir/scripts/SQLiteToMySQL.py > $MySB_InstallDir/temp/MySB_MySQL.sql
-	mysql -u MySB_user -p$MysbPassword --database=MySB_db < $MySB_InstallDir/temp/MySB_MySQL.sql
-fi
-
-# -----------------------------------------
-source $(dirname $0)/../inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################
