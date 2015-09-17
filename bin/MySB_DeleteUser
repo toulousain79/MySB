@@ -60,7 +60,7 @@ ManageServices stop "cron"
 service rtorrent-$UserToDelete stop
 
 #### crontab
-log_daemon_msg "$DeleteUser_DeleteCron $UserToDelete"
+log_daemon_msg "$DeleteUser_DeleteCron [$UserToDelete]"
 crontab -l > /tmp/crontab.tmp
 sed -i '/'$UserToDelete'/d' /tmp/crontab.tmp
 crontab /tmp/crontab.tmp
@@ -68,30 +68,37 @@ rm -f /tmp/crontab.tmp
 StatusLSB
 
 #### FTP
-log_daemon_msg "$DeleteUser_DeleteFTP $UserToDelete"
+log_daemon_msg "$DeleteUser_DeleteFTP [$UserToDelete]"
 sed -i '/'$UserToDelete'/d' /etc/vsftpd.chroot_list
 umount /home/$UserToDelete/rtorrent/share &> /dev/null
 umount /home/$UserToDelete/rtorrent/torrents &> /dev/null
 StatusLSB 0
 
 #### NFS
-log_daemon_msg "$DeleteUser_DeleteNFS $UserToDelete"
+log_daemon_msg "$DeleteUser_DeleteNFS [$UserToDelete]"
 sed -i '/'$UserToDelete'/d' /etc/exports
 StatusLSB
 
 #### Samba
-log_daemon_msg "$DeleteUser_DeleteSamba $UserToDelete"
+log_daemon_msg "$DeleteUser_DeleteSamba [$UserToDelete]"
 smbpasswd -x $UserToDelete &> /dev/null
 StatusLSB
 
 #### NginX - remove current password from htpassword
-log_daemon_msg "$DeleteUser_DeleteWebAccount $UserToDelete"
+log_daemon_msg "$DeleteUser_DeleteWebAccount [$UserToDelete]"
 htpasswd -D /etc/nginx/passwd/MySB $UserToDelete &> /dev/null
 rm -f /etc/nginx/passwd/MySB_$UserToDelete
 StatusLSB
 
+#### ownCloud
+if [ "$IsInstalled_ownCloud" == "YES" ]; then
+	log_daemon_msg "$DeleteUser_DeleteOwnCloudAccount [$UserToDelete]"
+	su -s /bin/sh www-data -c 'php $ownCloudDir/occ user:delete $NewUser' &> /dev/null
+	StatusLSB
+fi
+
 #### remove files
-log_daemon_msg "$DeleteUser_RemoveFiles $UserToDelete"
+log_daemon_msg "$DeleteUser_RemoveFiles [$UserToDelete]"
 update-rc.d rtorrent-$UserToDelete remove -f &> /dev/null
 if [ -f /etc/init.d/rtorrent-$UserToDelete ]; then
 	rm -f /etc/init.d/rtorrent-$UserToDelete
@@ -146,7 +153,7 @@ for User in $UsersList; do
 done
 
 #### system user
-log_daemon_msg "$DeleteUser_SystemAccount $UserToDelete"
+log_daemon_msg "$DeleteUser_SystemAccount [$UserToDelete]"
 userdel --remove --force $UserToDelete &> /dev/null
 if [ -d /home/$UserToDelete ]; then
 	rm -rf /home/$UserToDelete
@@ -158,7 +165,7 @@ StatusLSB
 
 #### OpenVPN
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-	log_daemon_msg "$DeleteUser_RevokeOpenVPN $UserToDelete"
+	log_daemon_msg "$DeleteUser_RevokeOpenVPN [$UserToDelete]"
 	screen -dmS OpenVPN_Delete /bin/bash $MySB_InstallDir/install/OpenVPN delete "$UserToDelete" "SCREEN";
 	WaitingSTD OpenVPN_Delete
 	StatusLSB

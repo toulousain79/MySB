@@ -42,6 +42,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	perl -pi -e "s/upload_max_filesize = 10M/upload_max_filesize = 20G/g" /etc/php5/fpm/php.ini
 	perl -pi -e "s/max_file_uploads = 20/max_file_uploads = 20000/g" /etc/php5/fpm/php.ini
 	perl -pi -e "s/output_buffering = 4096/output_buffering = Off/g" /etc/php5/fpm/php.ini
+	echo "apc.enable_cli=1" >> /etc/php5/cli/conf.d/20-apcu.ini
 	perl -pi -e "s/^;env\[PATH\]/env\[PATH\]/g" /etc/php5/fpm/pool.d/www.conf
 
 	#### ownCloud Core
@@ -63,25 +64,38 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	cp $MySB_InstallDir/templates/owncloud.config.php.template $ownCloudDir/config/config.php
 	ownCloudVersion="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT version FROM repositories WHERE name = 'ownCloud'\"`"
 	MySQL_MysbPassword="`cat $MySB_InstallDir/files/MySQL_MysbPassword`"
+	TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
 	perl -pi -e "s/<server_name>/$HostNameFQDN/g" $ownCloudDir/config/config.php
 	perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" $ownCloudDir/config/config.php
 	perl -pi -e "s/<Version>/$ownCloudVersion/g" $ownCloudDir/config/config.php
 	perl -pi -e "s/<MySB_DB_User>/MySB_user/g" $ownCloudDir/config/config.php
 	perl -pi -e "s/<MySB_DB_Pass>/$MySQL_MysbPassword/g" $ownCloudDir/config/config.php
+	perl -pi -e "s/<TimeZone>/$TimeZoneEscaped/g" $ownCloudDir/config/config.php
 
 	#### MySQL
-	MySQL_MysbPassword="`cat $MySB_InstallDir/files/MySQL_RootPassword`"
-	mysql -u root -p$MySQL_MysbPassword <<-EOF
+	MySQL_RootPassword="`cat $MySB_InstallDir/files/MySQL_RootPassword`"
+	mysql -u root -p$MySQL_RootPassword <<-EOF
 	create database ownCloud_db;
 	grant all on ownCloud_db.* to 'MySB_user'@'localhost' identified by '$MySQL_MysbPassword';
 	FLUSH PRIVILEGES;
 	EOF
+	mysql -u MySB_user -p$MySQL_MysbPassword --database=owncloud_db < $MySB_InstallDir/templates/OC_2015-09-17.dump.sql
 
 	#### Missing files and directories
 	if [ ! -d /home/owncloud/admin/files ]; then mkdir -p /home/owncloud/admin/files; fi
 	if [ ! -f /home/owncloud/.ocdata ]; then touch /home/owncloud/.ocdata; fi
 	if [ ! -f /home/owncloud/index.html ]; then touch /home/owncloud/index.html; fi
-	
+
+	#### Manage Admin user
+	export OC_PASS=$MySQL_MysbPassword
+	su -s /bin/sh www-data -c 'php $ownCloudDir/occ user:resetpassword --password-from-env admin'
+
+	#### CRON
+	crontab -u www-data -l > /tmp/crontab.tmp
+	echo "*/15  *  *  *  * php -f $ownCloudDir/cron.php > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+	crontab -u www-data /tmp/crontab.tmp
+	rm -f /tmp/crontab.tmp
+
 	#### START services
 	ManageServices start "php5-fpm nginx"
 fi
