@@ -145,6 +145,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 	$DnscryptIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "DNScrypt-proxy"]);
 	$PlexMediaIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "Plex Media Server"]);
 	$PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
+	$ownCloudIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
 
     if ($page && count($page->children(null, array(), $hidden)) > 0) {
         echo ($startmenu) ? '<ul>' : '';
@@ -176,6 +177,11 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					break;
 				case "LoadAvg":
 					echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/loadavg/public/">LoadAvg</a>';
+					break;
+				case "ownCloud":
+					if ( $ownCloudIsInstalled == '1' ) {
+						echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/owncloud/">ownCloud</a>';
+					}
 					break;
 				case "Plex Media Server":
 					if ( ($PlexMediaIsInstalled != '1') && $PlexMediaIsInstalled != '0' ) {
