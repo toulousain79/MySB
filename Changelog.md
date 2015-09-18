@@ -17,6 +17,7 @@
 			- NodeJS v0.12.7 (v2.2)
 			- XMLRPC v1.42.0 (v2.2)
 			- Libsodium v1.04 (v2.2)
+			- ownCloud v8.1.3 (v2.2)
 			- Adding Zoho Mail support (v2.2, to be confirmed by Zoho users)
 
 	Version v2.1
