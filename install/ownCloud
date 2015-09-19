@@ -31,11 +31,11 @@ source $(dirname $0)/../inc/includes_before
 
 if [ "$ToInstall_ownCloud" == "YES" ]; then
 	ownCloudDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ownCloud'\"`"
-	ownCloudDir_Escaped="`echo $ownCloudDir | sed s,/,\\\\\\\\\\/,g`"
-	ownCloud_DB_Escaped="`echo $ownCloud_DB | sed s,/,\\\\\\\\\\/,g`"
 
 	#### NginX
 	cp $MySB_InstallDir/templates/etc.nginx.locations.owncloud.conf.template /etc/nginx/locations/ownCloud.conf
+	ownCloudDir_Escaped="`echo $ownCloudDir | sed s,/,\\\\\\\\\\/,g`"
+	perl -pi -e "s/<owncloud_rootdir>/$ownCloudDir_Escaped/g" /etc/nginx/locations/Seedbox-Manager.conf	
 
 	#### PHP
 	perl -pi -e "s/post_max_size = 10M/post_max_size = 20G/g" /etc/php5/fpm/php.ini
@@ -79,7 +79,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	grant all on ownCloud_db.* to 'MySB_user'@'localhost' identified by '$MySQL_MysbPassword';
 	FLUSH PRIVILEGES;
 	EOF
-	mysql -u MySB_user -p$MySQL_MysbPassword --database=owncloud_db < $MySB_InstallDir/templates/OC_2015-09-17.dump.sql
+	mysql -u root -p$MySQL_RootPassword --database=ownCloud_db < $MySB_InstallDir/templates/OC_2015-09-17.dump.sql
 
 	#### Missing files and directories
 	if [ ! -d /home/owncloud/admin/files ]; then mkdir -p /home/owncloud/admin/files; fi
@@ -88,13 +88,15 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 
 	#### Manage Admin user
 	export OC_PASS=$MySQL_MysbPassword
-	su -s /bin/sh www-data -c 'php $ownCloudDir/occ user:resetpassword --password-from-env admin'
+	su -s /bin/sh www-data -c "php $ownCloudDir/occ user:resetpassword --password-from-env admin"
 
 	#### CRON
 	crontab -u www-data -l > /tmp/crontab.tmp
 	echo "*/15  *  *  *  * php -f $ownCloudDir/cron.php > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
 	crontab -u www-data /tmp/crontab.tmp
 	rm -f /tmp/crontab.tmp
+
+	sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'ownCloud';"
 
 	#### START services
 	ManageServices start "php5-fpm nginx"
