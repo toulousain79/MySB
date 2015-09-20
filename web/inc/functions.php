@@ -184,7 +184,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					}
 					break;
 				case "Plex Media":
-					if ( ($PlexMediaIsInstalled == '1') {
+					if ($PlexMediaIsInstalled == '1') {
 						//echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 						echo '<li><a target="_blank"  href="https://app.plex.tv/web/app">Plex Media</a>';
 					}
