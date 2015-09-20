@@ -183,9 +183,10 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/owncloud/">ownCloud</a>';
 					}
 					break;
-				case "Plex Media Server":
+				case "Plex Media":
 					if ( ($PlexMediaIsInstalled != '1') && $PlexMediaIsInstalled != '0' ) {
-						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+						//echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+						echo '<li><a target="_blank"  href="https://app.plex.tv/web/app">Plex Media</a>';
 					}
 					break;
 				case "Webmin":
