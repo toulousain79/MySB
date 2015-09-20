@@ -36,6 +36,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	cp $MySB_InstallDir/templates/etc.nginx.locations.owncloud.conf.template /etc/nginx/locations/ownCloud.conf
 	ownCloudDir_Escaped="`echo $ownCloudDir | sed s,/,\\\\\\\\\\/,g`"
 	perl -pi -e "s/<owncloud_rootdir>/$ownCloudDir_Escaped/g" /etc/nginx/locations/ownCloud.conf
+	chmod 0644 /etc/nginx/locations/ownCloud.conf
 
 	#### PHP
 	perl -pi -e "s/post_max_size = 10M/post_max_size = 20G/g" /etc/php5/fpm/php.ini
@@ -86,20 +87,20 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	if [ ! -f /home/owncloud/.ocdata ]; then touch /home/owncloud/.ocdata; fi
 	if [ ! -f /home/owncloud/index.html ]; then touch /home/owncloud/index.html; fi
 
-	#### Manage Admin user
-	export OC_PASS=$MySQL_MysbPassword
-	su -s /bin/sh www-data -c "php $ownCloudDir/occ user:resetpassword --password-from-env admin"
-
 	#### CRON
 	crontab -u www-data -l > /tmp/crontab.tmp
 	echo "*/15  *  *  *  * php -f $ownCloudDir/cron.php > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
 	crontab -u www-data /tmp/crontab.tmp
 	rm -f /tmp/crontab.tmp
 
-	sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'ownCloud';"
-
 	#### START services
 	ManageServices start "php5-fpm nginx"
+
+	#### Manage Admin user
+	export OC_PASS=$MySQL_MysbPassword
+	su -s /bin/sh www-data -c "php $ownCloudDir/occ user:resetpassword --password-from-env admin"
+
+	sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'ownCloud';"
 fi
 
 # -----------------------------------------
