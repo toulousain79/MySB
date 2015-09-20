@@ -1,26 +1,26 @@
-	Version v2.2
+	Version v3.0
 		2015/07/14
-			- MySB portal, correcting Cakebox link in User Infos page (v2.1 and v2.2)
-			- MySB portal, add some new actions (v2.2)
+			- MySB portal, correcting Cakebox link in User Infos page (v2.1 and v3.0)
+			- MySB portal, add some new actions (v3.0)
 				* OpenVPN, possibility to change protocol
 				* Translation, language select French and English
 				* PeerGuardian, mail report management
 				* IP restriction, switch possibility
 				* DNScrypt-proxy, switch possibility
-			- Seedbox-Manager, now keep your config in administration page (v2.1 and v2.2)
-			- Nginx, some fixes (v2.2)
-			- NFS, disabling IPv6 support (v2.2)
-			- Samba, change some settings (v2.2)
-			- MySB_UpgradeSystem, minor change to force update of sources before an upgrade (v2.1 and v2.2)
-			- DynamicAddressResolver.bsh, corrocting bugs (v2.1 and v2.2)
-			- rTorrent v0.9.6 (v2.2)
-			- libTorrent v0.13.6 (v2.2)
-			- DNScrypt-proxy v1.6 (v2.2)
-			- NodeJS v0.12.7 (v2.2)
-			- XMLRPC v1.42.0 (v2.2)
-			- Libsodium v1.04 (v2.2)
-			- ownCloud v8.1.3 (v2.2)
-			- Adding Zoho Mail support (v2.2, to be confirmed by Zoho users)
+			- Seedbox-Manager, now keep your config in administration page (v2.1 and v3.0)
+			- Nginx, some fixes (v3.0)
+			- NFS, disabling IPv6 support (v3.0)
+			- Samba, change some settings (v3.0)
+			- MySB_UpgradeSystem, minor change to force update of sources before an upgrade (v2.1 and v3.0)
+			- DynamicAddressResolver.bsh, corrocting bugs (v2.1 and v3.0)
+			- rTorrent v0.9.6 (v3.0)
+			- libTorrent v0.13.6 (v3.0)
+			- DNScrypt-proxy v1.6 (v3.0)
+			- NodeJS v0.12.7 (v3.0)
+			- XMLRPC v1.42.0 (v3.0)
+			- Libsodium v1.04 (v3.0)
+			- ownCloud v8.1.3 (v3.0)
+			- Adding Zoho Mail support (v3.0, to be confirmed by Zoho users)
 
 	Version v2.1
 		2015/03/14
