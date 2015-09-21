@@ -1,249 +1,609 @@
+-- MySQL dump 10.13  Distrib 5.6.25, for debian-linux-gnu (x86_64)
 --
--- Fichier généré par SQLiteStudio v3.0.6sur lun. sept. 21 12:32:47 2015
+-- Host: localhost    Database: ownCloud_db
+-- ------------------------------------------------------
+-- Server version	5.6.25-1~dotdeb+7.1
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
 --
--- Encodage texte utilisé: windows-1252
+-- Table structure for table `oc_activity`
 --
--- PRAGMA foreign_keys = off;
-BEGIN TRANSACTION;
 
--- Table: providers_monitoring
-DROP TABLE IF EXISTS providers_monitoring;
-CREATE TABLE [providers_monitoring] ([id_providers_monitoring] INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, [provider] VARCHAR (16), [ipv4] VARCHAR (25), [hostname] VARCHAR (32));
-INSERT INTO providers_monitoring (id_providers_monitoring, provider, ipv4, hostname) VALUES (1, 'ONLINE', '62.210.16.0/24', NULL);
-INSERT INTO providers_monitoring (id_providers_monitoring, provider, ipv4, hostname) VALUES (2, 'OVH', NULL, 'proxy-rbx2.ovh.net');
-INSERT INTO providers_monitoring (id_providers_monitoring, provider, ipv4, hostname) VALUES (3, 'OVH', NULL, 'proxy-rbx.ovh.net');
-INSERT INTO providers_monitoring (id_providers_monitoring, provider, ipv4, hostname) VALUES (4, 'OVH', NULL, 'proxy.sbg.ovh.net');
-INSERT INTO providers_monitoring (id_providers_monitoring, provider, ipv4, hostname) VALUES (5, 'OVH', NULL, 'proxy.bhs.ovh.net');
-INSERT INTO providers_monitoring (id_providers_monitoring, provider, ipv4, hostname) VALUES (6, 'OVH', NULL, 'ping.ovh.net');
+DROP TABLE IF EXISTS `oc_activity`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_activity` (
+  `activity_id` int(11) NOT NULL AUTO_INCREMENT,
+  `timestamp` int(11) NOT NULL DEFAULT '0',
+  `priority` int(11) NOT NULL DEFAULT '0',
+  `type` varchar(255) COLLATE utf8_bin DEFAULT NULL,
+  `user` varchar(64) COLLATE utf8_bin DEFAULT NULL,
+  `affecteduser` varchar(64) COLLATE utf8_bin NOT NULL,
+  `app` varchar(255) COLLATE utf8_bin NOT NULL,
+  `subject` varchar(255) COLLATE utf8_bin NOT NULL,
+  `subjectparams` varchar(4000) COLLATE utf8_bin NOT NULL,
+  `message` varchar(255) COLLATE utf8_bin DEFAULT NULL,
+  `messageparams` varchar(4000) COLLATE utf8_bin DEFAULT NULL,
+  `file` varchar(4000) COLLATE utf8_bin DEFAULT NULL,
+  `link` varchar(4000) COLLATE utf8_bin DEFAULT NULL,
+  PRIMARY KEY (`activity_id`),
+  KEY `activity_user_time` (`affecteduser`,`timestamp`),
+  KEY `activity_filter_by` (`affecteduser`,`user`,`timestamp`),
+  KEY `activity_filter_app` (`affecteduser`,`app`,`timestamp`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Table: users_addresses
-DROP TABLE IF EXISTS users_addresses;
-CREATE TABLE users_addresses ( 
-    id_users_addresses INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                       NOT NULL ON CONFLICT ABORT
-                                       UNIQUE ON CONFLICT ABORT,
-    id_users           INTEGER         NOT NULL ON CONFLICT ABORT,
-    ipv4               VARCHAR( 15 )   NOT NULL ON CONFLICT ABORT,
-    hostname           VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT,
-    check_by           VARCHAR( 8 )    NOT NULL ON CONFLICT ABORT,
-    is_active          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                       DEFAULT ( 0 ) 
-);
+--
+-- Dumping data for table `oc_activity`
+--
 
--- Table: trackers_list_ipv4
-DROP TABLE IF EXISTS trackers_list_ipv4;
-CREATE TABLE trackers_list_ipv4 ( 
-    id_trackers_list_ipv4 INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                          NOT NULL ON CONFLICT ABORT
-                                          UNIQUE ON CONFLICT ABORT,
-    id_trackers_list      INTEGER         NOT NULL ON CONFLICT ABORT,
-    ipv4                  VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT 
-);
+LOCK TABLES `oc_activity` WRITE;
+/*!40000 ALTER TABLE `oc_activity` DISABLE KEYS */;
+/*!40000 ALTER TABLE `oc_activity` ENABLE KEYS */;
+UNLOCK TABLES;
 
--- Table: vars
-DROP TABLE IF EXISTS vars;
-CREATE TABLE vars ( 
-    id_vars            INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
-                                        NOT NULL ON CONFLICT ABORT,
-    fail2ban_whitelist VARCHAR( 12 ),
-    vpn_ip             VARCHAR( 37 ),
-    white_tcp_port_out VARCHAR( 16 ),
-    white_udp_port_out VARCHAR( 16 ) 
-);
-INSERT INTO vars (id_vars, fail2ban_whitelist, vpn_ip, white_tcp_port_out, white_udp_port_out) VALUES (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24,10.0.2.0/24', '80 443', NULL);
+--
+-- Table structure for table `oc_activity_mq`
+--
 
--- Table: dnscrypt_resolvers
-DROP TABLE IF EXISTS dnscrypt_resolvers;
-CREATE TABLE dnscrypt_resolvers (id_dnscrypt_resolvers INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, name VARCHAR (32) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, full_name VARCHAR (64) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, description VARCHAR (128), location VARCHAR (32), coordinates VARCHAR (32), url VARCHAR (128) NOT NULL ON CONFLICT ABORT, version VARCHAR (2), dnssec BOOLEAN (1) NOT NULL ON CONFLICT ABORT DEFAULT (0), no_logs BOOLEAN (1) NOT NULL ON CONFLICT ABORT DEFAULT (0), namecoin BOOLEAN (1) NOT NULL ON CONFLICT ABORT DEFAULT (0), resolver_address VARCHAR (64) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, provider_name VARCHAR (64), provider_public_key VARCHAR (128), provider_public_key_txt_record VARCHAR (64), is_activated BOOLEAN (1) DEFAULT (0), is_wished BOOLEAN (1) DEFAULT (0), forwarder VARCHAR (16));
+DROP TABLE IF EXISTS `oc_activity_mq`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_activity_mq` (
+  `mail_id` int(11) NOT NULL AUTO_INCREMENT,
+  `amq_timestamp` int(11) NOT NULL DEFAULT '0',
+  `amq_latest_send` int(11) NOT NULL DEFAULT '0',
+  `amq_type` varchar(255) COLLATE utf8_bin NOT NULL,
+  `amq_affecteduser` varchar(64) COLLATE utf8_bin NOT NULL,
+  `amq_appid` varchar(255) COLLATE utf8_bin NOT NULL,
+  `amq_subject` varchar(255) COLLATE utf8_bin NOT NULL,
+  `amq_subjectparams` varchar(4000) COLLATE utf8_bin NOT NULL,
+  PRIMARY KEY (`mail_id`),
+  KEY `amp_user` (`amq_affecteduser`),
+  KEY `amp_latest_send_time` (`amq_latest_send`),
+  KEY `amp_timestamp_time` (`amq_timestamp`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Table: commands
-DROP TABLE IF EXISTS commands;
-CREATE TABLE commands ( 
-    id_commands INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                NOT NULL ON CONFLICT ABORT
-                                UNIQUE ON CONFLICT ABORT,
-    commands    VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
-    reload      BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT,
-    priority    INTEGER( 2 )    NOT NULL ON CONFLICT ABORT,
-    args        VARCHAR( 128 ),
-    user        VARCHAR( 16 )   NOT NULL ON CONFLICT ABORT 
-);
+--
+-- Dumping data for table `oc_activity_mq`
+--
 
--- Table: blocklists
-DROP TABLE IF EXISTS blocklists;
-CREATE TABLE blocklists ( 
-    id_blocklists           INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                            NOT NULL ON CONFLICT ABORT
-                                            UNIQUE ON CONFLICT ABORT,
-    author                  VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
-    list_name               VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
-    url_infos               VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT
-                                            UNIQUE ON CONFLICT ABORT,
-    peerguardian_list       VARCHAR( 256 ),
-    rtorrent_list           VARCHAR( 256 ),
-    peerguardian_active     BOOLEAN( 1 )    DEFAULT ( 0 ),
-    rtorrent_active         BOOLEAN( 1 )    DEFAULT ( 0 ),
-    [default]               BOOLEAN( 1 )    DEFAULT ( 0 ),
-    comments                VARCHAR( 32 ),
-    peerguardian_lastupdate DATETIME,
-    rtorrent_lastupdate     DATETIME 
-);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (1, 'Abuse', 'ZeuS', 'https://www.iblocklist.com/list.php?list=ynkdjqsjyfmilsgbogqf', 'list.iblocklist.com/lists/abuse/zeus', 'http://list.iblocklist.com/?list=ynkdjqsjyfmilsgbogqf&fileformat=cidr&archiveformat=gz', 1, 1, 1, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (2, 'Atma', 'Atma', 'https://www.iblocklist.com/list.php?list=tzmtqbbsgbtfxainogvm', 'list.iblocklist.com/lists/atma/atma', 'http://list.iblocklist.com/?list=tzmtqbbsgbtfxainogvm&fileformat=cidr&archiveformat=gz', 1, 1, 1, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (3, 'Bluetack', 'Advertising Trackers and Bad Porn', 'https://www.iblocklist.com/list.php?list=dgxtneitpuvgqqcpfulq', 'list.iblocklist.com/lists/bluetack/ads-trackers-and-bad-pr0n', 'http://list.iblocklist.com/?list=dgxtneitpuvgqqcpfulq&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (4, 'Bluetack', 'Bad Peers', 'https://www.iblocklist.com/list.php?list=cwworuawihqvocglcoss', 'list.iblocklist.com/lists/bluetack/bad-peers', 'http://list.iblocklist.com/?list=cwworuawihqvocglcoss&fileformat=cidr&archiveformat=gz', 1, 1, 1, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (5, 'Bluetack', 'Bogon', 'https://www.iblocklist.com/list.php?list=gihxqmhyunbxhbmgqrla', 'list.iblocklist.com/lists/bluetack/bogon', 'http://list.iblocklist.com/?list=gihxqmhyunbxhbmgqrla&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (6, 'Bluetack', 'Dshield', 'https://www.iblocklist.com/list.php?list=xpbqleszmajjesnzddhv', 'list.iblocklist.com/lists/bluetack/dshield', 'http://list.iblocklist.com/?list=xpbqleszmajjesnzddhv&fileformat=cidr&archiveformat=gz', 1, 1, 1, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (7, 'Bluetack', 'Educational Institutions', 'https://www.iblocklist.com/list.php?list=imlmncgrkbnacgcwfjvh', 'list.iblocklist.com/lists/bluetack/edu', 'http://list.iblocklist.com/?list=imlmncgrkbnacgcwfjvh&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (8, 'Bluetack', 'For Non Lan Computers', 'https://www.iblocklist.com/list.php?list=jhaoawihmfxgnvmaqffp', 'list.iblocklist.com/lists/bluetack/for-non-lan-computers', 'http://list.iblocklist.com/?list=jhaoawihmfxgnvmaqffp&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (9, 'Bluetack', 'Forum Spam', 'https://www.iblocklist.com/list.php?list=ficutxiwawokxlcyoeye', 'list.iblocklist.com/lists/bluetack/forum-spam', 'http://list.iblocklist.com/?list=ficutxiwawokxlcyoeye&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (10, 'Bluetack', 'Hijacked', 'https://www.iblocklist.com/list.php?list=usrcshglbiilevmyfhse', 'list.iblocklist.com/lists/bluetack/hijacked', 'http://list.iblocklist.com/?list=usrcshglbiilevmyfhse&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (11, 'Bluetack', 'IANA-Multicast', 'https://www.iblocklist.com/list.php?list=pwqnlynprfgtjbgqoizj', 'list.iblocklist.com/lists/bluetack/iana-multicast', 'http://list.iblocklist.com/?list=pwqnlynprfgtjbgqoizj&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (12, 'Bluetack', 'IANA-Private', 'https://www.iblocklist.com/list.php?list=cslpybexmxyuacbyuvib', 'list.iblocklist.com/lists/bluetack/iana-private', 'http://list.iblocklist.com/?list=cslpybexmxyuacbyuvib&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (13, 'Bluetack', 'IANA-Reserved', 'https://www.iblocklist.com/list.php?list=bcoepfyewziejvcqyhqo', 'list.iblocklist.com/lists/bluetack/iana-reserved', 'http://list.iblocklist.com/?list=bcoepfyewziejvcqyhqo&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (14, 'Bluetack', 'Level 1', 'https://www.iblocklist.com/list.php?list=ydxerpxkpcfqjaybcssw', 'list.iblocklist.com/lists/bluetack/level-1', 'http://list.iblocklist.com/?list=ydxerpxkpcfqjaybcssw&fileformat=cidr&archiveformat=gz', 1, 1, 1, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (15, 'Bluetack', 'Level 2', 'https://www.iblocklist.com/list.php?list=gyisgnzbhppbvsphucsw', 'list.iblocklist.com/lists/bluetack/level-2', 'http://list.iblocklist.com/?list=gyisgnzbhppbvsphucsw&fileformat=cidr&archiveformat=gz', 1, 1, 1, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (16, 'Bluetack', 'Level 3', 'https://www.iblocklist.com/list.php?list=uwnukjqktoggdknzrhgh', 'list.iblocklist.com/lists/bluetack/level-3', 'http://list.iblocklist.com/?list=uwnukjqktoggdknzrhgh&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (17, 'Bluetack', 'Microsoft', 'https://www.iblocklist.com/list.php?list=xshktygkujudfnjfioro', 'list.iblocklist.com/lists/bluetack/microsoft', 'http://list.iblocklist.com/?list=xshktygkujudfnjfioro&fileformat=cidr&archiveformat=gz', 1, 1, 1, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (18, 'Bluetack', 'Proxy', 'https://www.iblocklist.com/list.php?list=xoebmbyexwuiogmbyprb', 'list.iblocklist.com/lists/bluetack/proxy', 'http://list.iblocklist.com/?list=xoebmbyexwuiogmbyprb&fileformat=cidr&archiveformat=gz', 1, 1, 1, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (19, 'Bluetack', 'Range Test', 'https://www.iblocklist.com/list.php?list=plkehquoahljmyxjixpu', 'list.iblocklist.com/lists/bluetack/range-test', 'http://list.iblocklist.com/?list=plkehquoahljmyxjixpu&fileformat=cidr&archiveformat=gz', 1, 1, 1, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (20, 'Bluetack', 'Spider', 'https://www.iblocklist.com/list.php?list=mcvxsnihddgutbjfbghy', 'list.iblocklist.com/lists/bluetack/spider', 'http://list.iblocklist.com/?list=mcvxsnihddgutbjfbghy&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (21, 'Bluetack', 'Spyware', 'https://www.iblocklist.com/list.php?list=llvtlsjyoyiczbkjsxpf', 'list.iblocklist.com/lists/bluetack/spyware', 'http://list.iblocklist.com/?list=llvtlsjyoyiczbkjsxpf&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (22, 'Bluetack', 'Web Exploit', 'https://www.iblocklist.com/list.php?list=ghlzqtqxnzctvvajwwag', 'list.iblocklist.com/lists/bluetack/web-exploit', 'http://list.iblocklist.com/?list=ghlzqtqxnzctvvajwwag&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (23, 'Bluetack', 'Web Exploit Forum Spam', 'https://www.iblocklist.com/list.php?list=bimsvyvtgxeelunveyal', 'list.iblocklist.com/lists/bluetack/webexploit-forumspam', 'http://list.iblocklist.com/?list=bimsvyvtgxeelunveyal&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (24, 'CIDR-Report', 'Bogon', 'https://www.iblocklist.com/list.php?list=lujdnbasfaaixitgmxpp', 'list.iblocklist.com/lists/cidr-report/bogon', 'http://list.iblocklist.com/?list=lujdnbasfaaixitgmxpp&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (25, 'DCHubAd', 'Faker', 'https://www.iblocklist.com/list.php?list=dhuwlruzmglnfaneeizx', 'list.iblocklist.com/lists/dchubad/faker', 'http://list.iblocklist.com/?list=dhuwlruzmglnfaneeizx&fileformat=cidr&archiveformat=gz', 1, 1, 1, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (26, 'DCHubAd', 'Hacker', 'https://www.iblocklist.com/list.php?list=qpuabqfzsykfvglktzkh', 'list.iblocklist.com/lists/dchubad/hacker', 'http://list.iblocklist.com/?list=qpuabqfzsykfvglktzkh&fileformat=cidr&archiveformat=gz', 1, 1, 1, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (27, 'DCHubAd', 'Pedophiles', 'https://www.iblocklist.com/list.php?list=zchgtvitlwnwcjfuxovf', 'list.iblocklist.com/lists/dchubad/pedophiles', 'http://list.iblocklist.com/?list=zchgtvitlwnwcjfuxovf&fileformat=cidr&archiveformat=gz', 1, 1, 1, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (28, 'DCHubAd', 'Spammer', 'https://www.iblocklist.com/list.php?list=falwwczjguruglzisxdr', 'list.iblocklist.com/lists/dchubad/spammer', 'http://list.iblocklist.com/?list=falwwczjguruglzisxdr&fileformat=cidr&archiveformat=gz', 1, 1, 1, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (29, 'I-Blocklist', 'RapidShare', 'https://www.iblocklist.com/list.php?list=zfucwtjkfwkalytktyiw', 'list.iblocklist.com/lists/peerblock/rapidshare', 'http://list.iblocklist.com/?list=zfucwtjkfwkalytktyiw&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (30, 'Spamhaus', 'DROP', 'https://www.iblocklist.com/list.php?list=zbdlwrqkabxbcppvrnos', 'list.iblocklist.com/lists/spamhaus/drop', 'http://list.iblocklist.com/?list=zbdlwrqkabxbcppvrnos&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (31, 'TBG', 'Bogon', 'https://www.iblocklist.com/list.php?list=ewqglwibdgjttwttrinl', 'list.iblocklist.com/lists/tbg/bogon', 'http://list.iblocklist.com/?list=ewqglwibdgjttwttrinl&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (32, 'TBG', 'Business ISPs', 'https://www.iblocklist.com/list.php?list=jcjfaxgyyshvdbceroxf', 'list.iblocklist.com/lists/tbg/business-isps', 'http://list.iblocklist.com/?list=jcjfaxgyyshvdbceroxf&fileformat=cidr&archiveformat=gz', 1, 1, 1, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (33, 'TBG', 'Educational Institutions', 'https://www.iblocklist.com/list.php?list=lljggjrpmefcwqknpalp', 'list.iblocklist.com/lists/tbg/educational-institutions', 'http://list.iblocklist.com/?list=lljggjrpmefcwqknpalp&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (34, 'TBG', 'General Corporate Ranges', 'https://www.iblocklist.com/list.php?list=ecqbsykllnadihkdirsh', 'list.iblocklist.com/lists/tbg/general-corporate-ranges', 'http://list.iblocklist.com/?list=ecqbsykllnadihkdirsh&fileformat=cidr&archiveformat=gz', 1, 1, 1, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (35, 'TBG', 'Hijacked', 'https://www.iblocklist.com/list.php?list=tbnuqfclfkemqivekikv', 'list.iblocklist.com/lists/tbg/hijacked', 'http://list.iblocklist.com/?list=tbnuqfclfkemqivekikv&fileformat=p2p&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (36, 'TBG', 'Primary Threats', 'https://www.iblocklist.com/list.php?list=ijfqtofzixtwayqovmxn', 'list.iblocklist.com/lists/tbg/primary-threats', 'http://list.iblocklist.com/?list=ijfqtofzixtwayqovmxn&fileformat=cidr&archiveformat=gz', 1, 1, 1, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (37, 'TBG', 'Search Engines', 'https://www.iblocklist.com/list.php?list=pfefqteoxlfzopecdtyw', 'list.iblocklist.com/lists/tbg/search-engines', 'http://list.iblocklist.com/?list=pfefqteoxlfzopecdtyw&fileformat=cidr&archiveformat=gz', 0, 0, 0, NULL, NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (38, 'Abuse', 'Palevo', 'https://www.iblocklist.com/list.php?list=erqajhwrxiuvjxqrrwfj', NULL, 'http://list.iblocklist.com/?list=zvjxsfuvdhoxktpeiokq&fileformat=cidr&archiveformat=gz', 0, 0, 0, 'rTorrent only', NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (39, 'Abuse', 'SpyEye', 'https://www.iblocklist.com/list.php?list=zvjxsfuvdhoxktpeiokq', NULL, 'http://list.iblocklist.com/?list=zvjxsfuvdhoxktpeiokq&fileformat=cidr&archiveformat=gz', 0, 0, 0, 'rTorrent only', NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (40, 'Bluetack', 'Exclusions', 'https://www.iblocklist.com/list.php?list=mtxmiireqmjzazcsoiem', NULL, 'http://list.iblocklist.com/?list=mtxmiireqmjzazcsoiem&fileformat=cidr&archiveformat=gz', 0, 0, 0, 'rTorrent only', NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (41, 'CI Army', 'Malicious', 'https://www.iblocklist.com/list.php?list=npkuuhuxcsllnhoamkvm', NULL, 'http://list.iblocklist.com/?list=npkuuhuxcsllnhoamkvm&fileformat=cidr&archiveformat=gz', 0, 0, 0, 'rTorrent only', NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (42, 'I-Blocklist', 'Pedophiles', 'https://www.iblocklist.com/list.php?list=dufcxgnbjsdwmwctgfuj', NULL, 'http://list.iblocklist.com/?list=dufcxgnbjsdwmwctgfuj&fileformat=cidr&archiveformat=gz', 0, 0, 0, 'rTorrent only', NULL, NULL);
-INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (43, 'Nexus23', 'ipfilterX', 'https://www.iblocklist.com/list.php?list=tqdjwkbxfurudwonprji', 'list.iblocklist.com/lists/nexus23/ipfilterx', NULL, 0, 0, 0, 'PeerGuardian Only, subscription needed', NULL, NULL);
+LOCK TABLES `oc_activity_mq` WRITE;
+/*!40000 ALTER TABLE `oc_activity_mq` DISABLE KEYS */;
+/*!40000 ALTER TABLE `oc_activity_mq` ENABLE KEYS */;
+UNLOCK TABLES;
 
--- Table: services
-DROP TABLE IF EXISTS services;
-CREATE TABLE services (id_services INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, serv_name VARCHAR (32) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT IGNORE, bin VARCHAR (32), port_tcp1 VARCHAR (11), port_tcp2 VARCHAR (11), port_tcp3 VARCHAR (11), ports_tcp_list VARCHAR (32), port_udp1 VARCHAR (11), port_udp2 VARCHAR (11), port_udp3 VARCHAR (11), ports_udp_list VARCHAR (32), to_install BOOLEAN (1) DEFAULT (0), is_installed BOOLEAN NOT NULL ON CONFLICT ABORT DEFAULT (0), calcul INTEGER (1) DEFAULT (1));
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (1, 'Seedbox-Manager', '', '', '', '', '', '', '', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (2, 'CakeBox-Light', '', '', '', '', '', '', '', '', '', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (3, 'Plex Media Server', '', '', '', '', '32400 32469', '', '', ' ', '1900 5353 32410 32412 32413 32414', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (4, 'Webmin', '', '8890', '', '', '', '', '', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (5, 'OpenVPN', '', '8893', '8894', '8895', '', '', '', '', '', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (6, 'LogWatch', '', '', '', '', '', '', '', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (7, 'Fail2Ban', '', '', '', '', '', '', '', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (8, 'PeerGuardian', '', '', '', '', '', '', '', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (9, 'rTorrent Block List', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (10, 'DNScrypt-proxy', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (11, 'CRON', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (12, 'NginX', '', '8889', '8888', '', '', '', '', '', '', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (13, 'SSH', '', '8892', '', '', '', '', '', '', '', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (14, 'VSFTPd', '', '8891', '8800', '65000:65535', '', '', '', '', '', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (15, 'PHP5-FPM', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (16, 'Postfix', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (17, 'Networking', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (18, 'Samba', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (19, 'NFS', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (20, 'BIND', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (21, 'Stunnel', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (22, 'rTorrent v0.9.2', '/usr/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (23, 'rTorrent v0.9.4', '/usr/local/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (24, 'ownCloud', '', '', '', '', '', '', '', '', '', 0, 0, 1);
+--
+-- Table structure for table `oc_appconfig`
+--
 
--- Table: smtp
-DROP TABLE IF EXISTS smtp;
-CREATE TABLE smtp ( 
-    id_smtp       INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
-                                   NOT NULL ON CONFLICT ABORT,
-    smtp_provider VARCHAR( 5 )     NOT NULL ON CONFLICT ABORT
-                                   UNIQUE ON CONFLICT IGNORE
-                                   DEFAULT ( 'LOCAL' ),
-    smtp_username VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
-    smtp_passwd   VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
-    smtp_host     VARCHAR( 128 )   UNIQUE ON CONFLICT IGNORE,
-    smtp_port     VARCHAR( 5 )     UNIQUE ON CONFLICT IGNORE,
-    smtp_email    VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE 
-);
-INSERT INTO smtp (id_smtp, smtp_provider, smtp_username, smtp_passwd, smtp_host, smtp_port, smtp_email) VALUES (1, '', '', '', '', '', '');
+DROP TABLE IF EXISTS `oc_appconfig`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_appconfig` (
+  `appid` varchar(32) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `configkey` varchar(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `configvalue` longtext COLLATE utf8_bin,
+  PRIMARY KEY (`appid`,`configkey`),
+  KEY `appconfig_config_key_index` (`configkey`),
+  KEY `appconfig_appid_key` (`appid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Table: repositories
-DROP TABLE IF EXISTS repositories;
-CREATE TABLE [repositories] ([id_repositories] INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, [type] VARCHAR (5) NOT NULL ON CONFLICT ABORT, [dir] VARCHAR (32) NOT NULL ON CONFLICT ABORT, [name] VARCHAR (32) NOT NULL ON CONFLICT ABORT, [version] VARCHAR (8), [file] VARCHAR (32), [old_file] VARCHAR (32), [url] VARCHAR (256) NOT NULL ON CONFLICT ABORT, [active] BOOLEAN (1));
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (1, 'GIT', '/web/rutorrent', 'ruTorrent', '3.7', 'ruTorrent_v3.7.zip', '', 'https://github.com/Novik/ruTorrent', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (2, 'TARGZ', '/web/rutorrent/plugins/chat', 'ruTorrent Plugin Chat', '2.0', 'chat_v2.0.tar.gz', 'chat-2.0.tar.gz', 'https://rutorrent-chat.googlecode.com/files/chat-2.0.tar.gz', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (3, 'TARGZ', '/web/rutorrent/plugins/logoff', 'ruTorrent Plugin Logoff', '1.3', 'logoff_v1.3.tar.gz', 'logoff-1.3.tar.gz', 'https://rutorrent-logoff.googlecode.com/files/logoff-1.3.tar.gz', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (4, 'TARGZ', '/web/rutorrent/plugins/lbll-suite', 'ruTorrent Plugin tAdd-Labels', '1.1', 'tadd-labels_v1.1.tar.gz', 'tadd-labels_1.1.tar.gz', 'http://rutorrent-tadd-labels.googlecode.com/files/tadd-labels_1.1.tar.gz', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (5, 'TARGZ', '/web/rutorrent/plugins/nfo', 'ruTorrent Plugin NFO', '1337', 'nfo_v1337.tar.gz', '', 'http://srious.biz/nfo.tar.gz', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (6, 'GIT', '/web/rutorrent/plugins/ratiocolor', 'ruTorrent Plugin RatioColor', '0.5', 'ratiocolor_v0.5.zip', '', 'https://github.com/Gyran/rutorrent-ratiocolor', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (7, 'SVN', '/web/rutorrent/plugins/filemanager', 'ruTorrent Plugin FileManager', '0.09', 'filemanager_v0.09.zip', '', 'http://svn.rutorrent.org/svn/filemanager/trunk/filemanager', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (8, 'SVN', '/web/rutorrent/plugins/fileupload', 'ruTorrent Plugin FileUpload', '0.02', 'fileupload_v0.02.zip', '', 'http://svn.rutorrent.org/svn/filemanager/trunk/fileupload', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (9, 'SVN', '/web/rutorrent/plugins/fileshare', 'ruTorrent Plugin FileShare', '0.03', 'fileshare_v0.03.zip', '', 'http://svn.rutorrent.org/svn/filemanager/trunk/fileshare', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (10, 'SVN', '/web/rutorrent/plugins/mediastream', 'ruTorrent Plugin MediaStream', '0.01', 'mediastream_v0.01.zip', '', 'http://svn.rutorrent.org/svn/filemanager/trunk/mediastream', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (11, 'TARGZ', '/web/rutorrent/plugins/stream', 'ruTorrent Plugin Stream', '1.0', 'stream_v1.0.tar.gz', '', 'https://rutorrent-stream-plugin.googlecode.com/files/stream.tar.gz', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (12, 'ZIP', '/web/rutorrent/plugins/pausewebui', 'ruTorrent Plugin Pause WebUI', '1.2', 'pausewebui_v1.2.zip', '', 'https://rutorrent-pausewebui.googlecode.com/files/pausewebui.1.2.zip', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (13, 'GIT', '/web/rutorrent/plugins/mobile', 'ruTorrent Plugin Mobile', '1.0', 'mobile_v1.0.zip', '', 'https://github.com/xombiemp/rutorrentMobile.git', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (14, 'GIT', '/web/rutorrent/plugins/autodl-irssi', 'ruTorrent Plugin Autodl-irssi', '1.52', 'autodl_v1.52.zip', '', 'https://github.com/autodl-community/autodl-rutorrent.git', 0);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (15, 'GIT', '/sources/plowshare', 'Plowshare', '2.1.1', 'Plowshare_v2.1.1.zip', 'Plowshare4.tar.gz', 'https://github.com/mcrapet/plowshare.git', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (16, 'CURL', '/usr/bin/composer', 'Composer', '', 'composer.phar', '', 'http://getcomposer.org/installer', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (17, 'TARGZ', '/sources/nodejs', 'NodeJS', '0.12.7', 'node_v0.12.7.tar.gz', 'node-v0.12.2.tar.gz', 'https://nodejs.org/dist/v0.12.7/node-v0.12.7.tar.gz', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (18, 'GIT', '/web/seedbox-manager', 'Seedbox-Manager', '2.4.4', 'seedbox-manager_v2.4.4.zip', 'seedbox-manager_v0.1.zip', 'https://github.com/Magicalex/seedbox-manager.git', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (19, 'GIT', '/web/rutorrent/plugins/linkseedboxmanager', 'ruTorrent Plugin Link Manager', '1.0', 'linkseedboxmanager_v1.0.zip', '', 'https://github.com/Hydrog3n/linkseedboxmanager.git', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (20, 'GIT', '/web/Cakebox-light', 'Cakebox-Light', '1.8.3', 'cakebox-light_v1.8.3.zip', '', 'https://github.com/Cakebox/Cakebox-light.git', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (21, 'GIT', '/web/rutorrent/plugins/linkcakebox', 'ruTorrent Plugin Link Cakebox', '1.0', 'linkcakebox_v1.0.zip', '', 'https://github.com/Cakebox/linkcakebox.git', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (22, 'GIT', '/sources/libsodium', 'Libsodium', '1.0.4', 'libsodium_v1.0.4.zip', 'libsodium_v1.0.2.zip', 'https://github.com/jedisct1/libsodium', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (23, 'TARGZ', '/sources/dnscrypt-proxy', 'DNScrypt-proxy', '1.6.0', 'dnscrypt-proxy_v1.6.0.tar.gz', 'dnscrypt-proxy_v1.4.3.tar.gz', 'http://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-proxy-1.6.0.tar.gz', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (24, 'WBM', '/files', 'OpenVPNadmin WebMin', '2.6', 'openvpn_v2.6.wbm', 'openvpn-2.6.wbm', 'http://www.openit.it/downloads/OpenVPNadmin/openvpn-2.6.wbm.gz', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (25, 'WBM', '/files', 'Nginx Webmin Module', '0.0.8', 'nginx_v0.08.wbm', 'nginx-0.08.wbm', 'http://www.justindhoffman.com/sites/justindhoffman.com/files/nginx-0.08.wbm__0.gz', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (26, 'WBM', '/files', 'MiniDLNA Webmin Module', 'alpha1.12 svn26', 'minidlnawebmin_alpha1_12.wbm', '', 'http://downloads.sourceforge.net/project/minidlnawebmin/Webmin%20alpha1.12%20svn26/minidlnawebmin_alpha1_12.wbm?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fminidlnawebmin%2Ffiles%2FWebmin%2520alpha1.12%2520svn26%2F&ts=1420088634&use_mirror=freefr', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (27, 'TARGZ', '/sources/libtorrent', 'LibTorrent', '0.13.6', 'libtorrent_v0.13.6.tar.gz', 'libtorrent_v0.13.4.tar.gz', 'http://rtorrent.net/downloads/libtorrent-0.13.6.tar.gz', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (28, 'TARGZ', '/sources/rtorrent', 'rTorrent', '0.9.6', 'rtorrent_v0.9.6.tar.gz', 'rtorrent_v0.9.4.tar.gz', 'http://rtorrent.net/downloads/rtorrent-0.9.6.tar.gz', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (29, 'ZIP', '/sources/xmlrpc-c', 'XMLRPC', '1.42.0', 'xmlrpc-c_v1.42.0.zip', 'xmlrpc-c_v1.41.02.zip', 'https://github.com/toulousain79/MySB/raw/v2.2/files/xmlrpc-c_v1.42.0.zip', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (30, 'GIT', '/web/loadavg', 'LoadAvg', '2.2', 'loadavg_v2.2.zip', '', 'https://github.com/loadavg/loadavg.git', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (31, 'ZIP', '/web/owncloud', 'ownCloud', '8.1.3.0', 'owncloud_v8.1.3.zip', '', 'https://download.owncloud.org/community/owncloud-8.1.3.zip', 1);
+--
+-- Dumping data for table `oc_appconfig`
+--
 
--- Table: trackers_list
-DROP TABLE IF EXISTS trackers_list;
-CREATE TABLE trackers_list ( 
-    id_trackers_list INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                     NOT NULL ON CONFLICT ABORT
-                                     UNIQUE ON CONFLICT ABORT,
-    tracker          VARCHAR( 128 )  NOT NULL ON CONFLICT IGNORE
-                                     UNIQUE ON CONFLICT IGNORE,
-    tracker_domain   VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT
-                                     UNIQUE ON CONFLICT IGNORE,
-    origin           VARCHAR( 9 )    NOT NULL ON CONFLICT ABORT,
-    is_ssl           BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                     DEFAULT ( 0 ),
-    is_active        BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                     DEFAULT ( 0 ),
-    to_check         BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                     DEFAULT ( 1 ),
-    ping             VARCHAR( 64 ) 
-);
+LOCK TABLES `oc_appconfig` WRITE;
+/*!40000 ALTER TABLE `oc_appconfig` DISABLE KEYS */;
+INSERT INTO `oc_appconfig` VALUES ('activity','enabled','yes'),('activity','installed_version','2.0.2'),('activity','types','filesystem'),('backgroundjob','lastjob','1'),('core','OC_Channel','production'),('core','backgroundjobs_mode','cron'),('core','installedat','1442842158.5313'),('core','lastcron','1442842201'),('core','lastupdateResult','{\"version\":{},\"versionstring\":{},\"url\":{},\"web\":{}}'),('core','lastupdatedat','1442842236'),('core','public_files','files_sharing/public.php'),('core','public_gallery','gallery/public.php'),('core','public_webdav','files_sharing/publicwebdav.php'),('core','remote_files','files/appinfo/remote.php'),('core','remote_webdav','files/appinfo/remote.php'),('files','enabled','yes'),('files','installed_version','1.1.10'),('files','types','filesystem'),('files_locking','enabled','yes'),('files_locking','installed_version',''),('files_locking','types','filesystem'),('files_pdfviewer','enabled','yes'),('files_pdfviewer','installed_version','0.7'),('files_pdfviewer','ocsid','166049'),('files_pdfviewer','types',''),('files_sharing','enabled','yes'),('files_sharing','installed_version','0.6.2'),('files_sharing','types','filesystem'),('files_texteditor','enabled','yes'),('files_texteditor','installed_version','0.4'),('files_texteditor','ocsid','166051'),('files_texteditor','types',''),('files_trashbin','enabled','yes'),('files_trashbin','installed_version','0.6.3'),('files_trashbin','types','filesystem'),('files_versions','enabled','yes'),('files_versions','installed_version','1.0.6'),('files_versions','types','filesystem'),('files_videoviewer','enabled','yes'),('files_videoviewer','installed_version','0.1.3'),('files_videoviewer','ocsid','166054'),('files_videoviewer','types',''),('firstrunwizard','enabled','yes'),('firstrunwizard','installed_version','1.1'),('firstrunwizard','ocsid','166055'),('firstrunwizard','types',''),('gallery','enabled','yes'),('gallery','installed_version','0.6.0'),('gallery','types',''),('provisioning_api','enabled','yes'),('provisioning_api','installed_version','0.2'),('provisioning_api','types','filesystem'),('templateeditor','enabled','yes'),('templateeditor','installed_version','0.1'),('templateeditor','types',''),('updater','enabled','yes'),('updater','installed_version','0.6'),('updater','types','');
+/*!40000 ALTER TABLE `oc_appconfig` ENABLE KEYS */;
+UNLOCK TABLES;
 
--- Table: users
-DROP TABLE IF EXISTS users;
-CREATE TABLE [users] ([id_users] INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, [users_ident] VARCHAR (32) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT IGNORE, [users_email] VARCHAR (260) NOT NULL ON CONFLICT ABORT, [users_passwd] VARCHAR (32), [rpc] VARCHAR (64), [sftp] BOOLEAN (1) DEFAULT(1), [sudo] BOOLEAN (1) DEFAULT(0), [admin] BOOLEAN (1) DEFAULT(0), [scgi_port] INTEGER (5), [rtorrent_port] INTEGER (5), [home_dir] VARCHAR (128), [is_active] BOOLEAN (1) DEFAULT(1), [rtorrent_version] VARCHAR (10) DEFAULT('v0.9.2'), [rtorrent_restart] BOOLEAN (1) DEFAULT('0'), [language] VARCHAR (2) DEFAULT('en'));
+--
+-- Table structure for table `oc_file_map`
+--
 
--- Table: renting
-DROP TABLE IF EXISTS renting;
-CREATE TABLE renting (id_renting INTEGER (1, 1) PRIMARY KEY ON CONFLICT IGNORE NOT NULL ON CONFLICT ABORT, model VARCHAR (64), tva NUMERIC, global_cost NUMERIC, nb_users NUMERIC (2), price_per_users NUMERIC (2), method BOOLEAN (1) DEFAULT (0));
-INSERT INTO renting (id_renting, model, tva, global_cost, nb_users, price_per_users, method) VALUES (1, NULL, NULL, NULL, NULL, NULL, 0);
+DROP TABLE IF EXISTS `oc_file_map`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_file_map` (
+  `logic_path` varchar(512) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `logic_path_hash` varchar(32) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `physic_path` varchar(512) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `physic_path_hash` varchar(32) COLLATE utf8_bin NOT NULL DEFAULT '',
+  PRIMARY KEY (`logic_path_hash`),
+  UNIQUE KEY `file_map_pp_index` (`physic_path_hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Table: system
-DROP TABLE IF EXISTS system;
-CREATE TABLE system (id_system INTEGER (1, 1) PRIMARY KEY ON CONFLICT IGNORE NOT NULL ON CONFLICT ABORT, mysb_version VARCHAR (6) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT IGNORE, mysb_user VARCHAR (32) UNIQUE ON CONFLICT IGNORE, mysb_password VARCHAR (32) UNIQUE ON CONFLICT IGNORE, hostname VARCHAR (128) UNIQUE ON CONFLICT IGNORE, ipv4 VARCHAR (15) UNIQUE ON CONFLICT IGNORE, primary_inet VARCHAR (16) UNIQUE ON CONFLICT IGNORE, timezone VARCHAR (64) UNIQUE ON CONFLICT IGNORE, cert_password VARCHAR (32) UNIQUE ON CONFLICT IGNORE, apt_update BOOLEAN (1) DEFAULT (1), apt_date DATETIME, server_provider VARCHAR (16), ip_restriction BOOLEAN (1) DEFAULT (1), pgl_email_stats BOOLEAN (1) DEFAULT (0), pgl_watchdog_email BOOLEAN (1) DEFAULT (0), dnscrypt BOOLEAN (1) DEFAULT (1));
-INSERT INTO system (id_system, mysb_version, mysb_user, mysb_password, hostname, ipv4, primary_inet, timezone, cert_password, apt_update, apt_date, server_provider, ip_restriction, pgl_email_stats, pgl_watchdog_email, dnscrypt) VALUES (1, '', '', '', '', '', '', '', '', 0, '', '', 1, 0, 0, 1);
+--
+-- Dumping data for table `oc_file_map`
+--
 
-COMMIT TRANSACTION;
-PRAGMA foreign_keys = on;
+LOCK TABLES `oc_file_map` WRITE;
+/*!40000 ALTER TABLE `oc_file_map` DISABLE KEYS */;
+/*!40000 ALTER TABLE `oc_file_map` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `oc_filecache`
+--
+
+DROP TABLE IF EXISTS `oc_filecache`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_filecache` (
+  `fileid` int(11) NOT NULL AUTO_INCREMENT,
+  `storage` int(11) NOT NULL DEFAULT '0',
+  `path` varchar(4000) COLLATE utf8_bin DEFAULT NULL,
+  `path_hash` varchar(32) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `parent` int(11) NOT NULL DEFAULT '0',
+  `name` varchar(250) COLLATE utf8_bin DEFAULT NULL,
+  `mimetype` int(11) NOT NULL DEFAULT '0',
+  `mimepart` int(11) NOT NULL DEFAULT '0',
+  `size` bigint(20) NOT NULL DEFAULT '0',
+  `mtime` int(11) NOT NULL DEFAULT '0',
+  `storage_mtime` int(11) NOT NULL DEFAULT '0',
+  `encrypted` int(11) NOT NULL DEFAULT '0',
+  `unencrypted_size` bigint(20) NOT NULL DEFAULT '0',
+  `etag` varchar(40) COLLATE utf8_bin DEFAULT NULL,
+  `permissions` int(11) DEFAULT '0',
+  PRIMARY KEY (`fileid`),
+  UNIQUE KEY `fs_storage_path_hash` (`storage`,`path_hash`),
+  KEY `fs_parent_name_hash` (`parent`,`name`),
+  KEY `fs_storage_mimetype` (`storage`,`mimetype`),
+  KEY `fs_storage_mimepart` (`storage`,`mimepart`),
+  KEY `fs_storage_size` (`storage`,`size`,`fileid`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `oc_filecache`
+--
+
+LOCK TABLES `oc_filecache` WRITE;
+/*!40000 ALTER TABLE `oc_filecache` DISABLE KEYS */;
+INSERT INTO `oc_filecache` VALUES (1,1,'','d41d8cd98f00b204e9800998ecf8427e',-1,'',2,1,0,1442842206,1442842206,0,0,'5600065ed2a13',23),(2,1,'files','45b963397aa40d4a0063e0d85e4fe7a1',1,'files',2,1,0,1442840600,1442840600,0,0,'5600062f97b89',31),(3,1,'cache','0fea6a13c52b4d4725368f24b045ca84',1,'cache',2,1,0,1442842206,1442842206,0,0,'5600065ecbc23',31);
+/*!40000 ALTER TABLE `oc_filecache` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `oc_files_trash`
+--
+
+DROP TABLE IF EXISTS `oc_files_trash`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_files_trash` (
+  `auto_id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` varchar(250) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `user` varchar(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `timestamp` varchar(12) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `location` varchar(512) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `type` varchar(4) COLLATE utf8_bin DEFAULT NULL,
+  `mime` varchar(255) COLLATE utf8_bin DEFAULT NULL,
+  PRIMARY KEY (`auto_id`),
+  KEY `id_index` (`id`),
+  KEY `timestamp_index` (`timestamp`),
+  KEY `user_index` (`user`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `oc_files_trash`
+--
+
+LOCK TABLES `oc_files_trash` WRITE;
+/*!40000 ALTER TABLE `oc_files_trash` DISABLE KEYS */;
+/*!40000 ALTER TABLE `oc_files_trash` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `oc_group_admin`
+--
+
+DROP TABLE IF EXISTS `oc_group_admin`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_group_admin` (
+  `gid` varchar(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `uid` varchar(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+  PRIMARY KEY (`gid`,`uid`),
+  KEY `group_admin_uid` (`uid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `oc_group_admin`
+--
+
+LOCK TABLES `oc_group_admin` WRITE;
+/*!40000 ALTER TABLE `oc_group_admin` DISABLE KEYS */;
+/*!40000 ALTER TABLE `oc_group_admin` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `oc_group_user`
+--
+
+DROP TABLE IF EXISTS `oc_group_user`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_group_user` (
+  `gid` varchar(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `uid` varchar(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+  PRIMARY KEY (`gid`,`uid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `oc_group_user`
+--
+
+LOCK TABLES `oc_group_user` WRITE;
+/*!40000 ALTER TABLE `oc_group_user` DISABLE KEYS */;
+INSERT INTO `oc_group_user` VALUES ('admin','admin');
+/*!40000 ALTER TABLE `oc_group_user` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `oc_groups`
+--
+
+DROP TABLE IF EXISTS `oc_groups`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_groups` (
+  `gid` varchar(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+  PRIMARY KEY (`gid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `oc_groups`
+--
+
+LOCK TABLES `oc_groups` WRITE;
+/*!40000 ALTER TABLE `oc_groups` DISABLE KEYS */;
+INSERT INTO `oc_groups` VALUES ('MySB'),('admin');
+/*!40000 ALTER TABLE `oc_groups` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `oc_jobs`
+--
+
+DROP TABLE IF EXISTS `oc_jobs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_jobs` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `class` varchar(255) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `argument` varchar(4000) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `last_run` int(11) DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `job_class_index` (`class`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `oc_jobs`
+--
+
+LOCK TABLES `oc_jobs` WRITE;
+/*!40000 ALTER TABLE `oc_jobs` DISABLE KEYS */;
+INSERT INTO `oc_jobs` VALUES (1,'OCA\\Activity\\BackgroundJob\\EmailNotification','null',1442842161),(2,'OCA\\Activity\\BackgroundJob\\ExpireActivities','null',1442842169),(3,'OCA\\Files_sharing\\Lib\\DeleteOrphanedSharesJob','null',1442842179);
+/*!40000 ALTER TABLE `oc_jobs` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `oc_mimetypes`
+--
+
+DROP TABLE IF EXISTS `oc_mimetypes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_mimetypes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `mimetype` varchar(255) COLLATE utf8_bin NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `mimetype_id_index` (`mimetype`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `oc_mimetypes`
+--
+
+LOCK TABLES `oc_mimetypes` WRITE;
+/*!40000 ALTER TABLE `oc_mimetypes` DISABLE KEYS */;
+INSERT INTO `oc_mimetypes` VALUES (1,'httpd'),(2,'httpd/unix-directory');
+/*!40000 ALTER TABLE `oc_mimetypes` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `oc_preferences`
+--
+
+DROP TABLE IF EXISTS `oc_preferences`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_preferences` (
+  `userid` varchar(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `appid` varchar(32) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `configkey` varchar(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `configvalue` longtext COLLATE utf8_bin,
+  PRIMARY KEY (`userid`,`appid`,`configkey`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `oc_preferences`
+--
+
+LOCK TABLES `oc_preferences` WRITE;
+/*!40000 ALTER TABLE `oc_preferences` DISABLE KEYS */;
+INSERT INTO `oc_preferences` VALUES ('admin','core','timezone','Europe/Berlin'),('admin','firstrunwizard','show','0'),('admin','login','lastLogin','1442842206');
+/*!40000 ALTER TABLE `oc_preferences` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `oc_privatedata`
+--
+
+DROP TABLE IF EXISTS `oc_privatedata`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_privatedata` (
+  `keyid` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user` varchar(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `app` varchar(255) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `key` varchar(255) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `value` varchar(255) COLLATE utf8_bin NOT NULL DEFAULT '',
+  PRIMARY KEY (`keyid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `oc_privatedata`
+--
+
+LOCK TABLES `oc_privatedata` WRITE;
+/*!40000 ALTER TABLE `oc_privatedata` DISABLE KEYS */;
+/*!40000 ALTER TABLE `oc_privatedata` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `oc_properties`
+--
+
+DROP TABLE IF EXISTS `oc_properties`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_properties` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `userid` varchar(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `propertypath` varchar(255) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `propertyname` varchar(255) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `propertyvalue` varchar(255) COLLATE utf8_bin NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `property_index` (`userid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `oc_properties`
+--
+
+LOCK TABLES `oc_properties` WRITE;
+/*!40000 ALTER TABLE `oc_properties` DISABLE KEYS */;
+/*!40000 ALTER TABLE `oc_properties` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `oc_share`
+--
+
+DROP TABLE IF EXISTS `oc_share`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_share` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `share_type` smallint(6) NOT NULL DEFAULT '0',
+  `share_with` varchar(255) COLLATE utf8_bin DEFAULT NULL,
+  `uid_owner` varchar(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `parent` int(11) DEFAULT NULL,
+  `item_type` varchar(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `item_source` varchar(255) COLLATE utf8_bin DEFAULT NULL,
+  `item_target` varchar(255) COLLATE utf8_bin DEFAULT NULL,
+  `file_source` int(11) DEFAULT NULL,
+  `file_target` varchar(512) COLLATE utf8_bin DEFAULT NULL,
+  `permissions` smallint(6) NOT NULL DEFAULT '0',
+  `stime` bigint(20) NOT NULL DEFAULT '0',
+  `accepted` smallint(6) NOT NULL DEFAULT '0',
+  `expiration` datetime DEFAULT NULL,
+  `token` varchar(32) COLLATE utf8_bin DEFAULT NULL,
+  `mail_send` smallint(6) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `item_share_type_index` (`item_type`,`share_type`),
+  KEY `file_source_index` (`file_source`),
+  KEY `token_index` (`token`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `oc_share`
+--
+
+LOCK TABLES `oc_share` WRITE;
+/*!40000 ALTER TABLE `oc_share` DISABLE KEYS */;
+/*!40000 ALTER TABLE `oc_share` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `oc_share_external`
+--
+
+DROP TABLE IF EXISTS `oc_share_external`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_share_external` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `remote` varchar(512) COLLATE utf8_bin NOT NULL COMMENT 'Url of the remove owncloud instance',
+  `remote_id` int(11) NOT NULL DEFAULT '-1',
+  `share_token` varchar(64) COLLATE utf8_bin NOT NULL COMMENT 'Public share token',
+  `password` varchar(64) COLLATE utf8_bin DEFAULT NULL COMMENT 'Optional password for the public share',
+  `name` varchar(64) COLLATE utf8_bin NOT NULL COMMENT 'Original name on the remote server',
+  `owner` varchar(64) COLLATE utf8_bin NOT NULL COMMENT 'User that owns the public share on the remote server',
+  `user` varchar(64) COLLATE utf8_bin NOT NULL COMMENT 'Local user which added the external share',
+  `mountpoint` varchar(4000) COLLATE utf8_bin NOT NULL COMMENT 'Full path where the share is mounted',
+  `mountpoint_hash` varchar(32) COLLATE utf8_bin NOT NULL COMMENT 'md5 hash of the mountpoint',
+  `accepted` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `sh_external_mp` (`user`,`mountpoint_hash`),
+  KEY `sh_external_user` (`user`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `oc_share_external`
+--
+
+LOCK TABLES `oc_share_external` WRITE;
+/*!40000 ALTER TABLE `oc_share_external` DISABLE KEYS */;
+/*!40000 ALTER TABLE `oc_share_external` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `oc_storages`
+--
+
+DROP TABLE IF EXISTS `oc_storages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_storages` (
+  `id` varchar(64) COLLATE utf8_bin DEFAULT NULL,
+  `numeric_id` int(11) NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`numeric_id`),
+  UNIQUE KEY `storages_id_index` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `oc_storages`
+--
+
+LOCK TABLES `oc_storages` WRITE;
+/*!40000 ALTER TABLE `oc_storages` DISABLE KEYS */;
+INSERT INTO `oc_storages` VALUES ('home::admin',1),('local::/home/owncloud/',2);
+/*!40000 ALTER TABLE `oc_storages` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `oc_users`
+--
+
+DROP TABLE IF EXISTS `oc_users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_users` (
+  `uid` varchar(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `displayname` varchar(64) COLLATE utf8_bin DEFAULT NULL,
+  `password` varchar(255) COLLATE utf8_bin NOT NULL DEFAULT '',
+  PRIMARY KEY (`uid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `oc_users`
+--
+
+LOCK TABLES `oc_users` WRITE;
+/*!40000 ALTER TABLE `oc_users` DISABLE KEYS */;
+INSERT INTO `oc_users` VALUES ('admin',NULL,'1|$2y$10$xdjOoNeJt0GjW4Yj3j.KkeSv61nKDOojP51Z3NGwvhwNVVYXedq52');
+/*!40000 ALTER TABLE `oc_users` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `oc_vcategory`
+--
+
+DROP TABLE IF EXISTS `oc_vcategory`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_vcategory` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `uid` varchar(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `type` varchar(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `category` varchar(255) COLLATE utf8_bin NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  KEY `uid_index` (`uid`),
+  KEY `type_index` (`type`),
+  KEY `category_index` (`category`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `oc_vcategory`
+--
+
+LOCK TABLES `oc_vcategory` WRITE;
+/*!40000 ALTER TABLE `oc_vcategory` DISABLE KEYS */;
+/*!40000 ALTER TABLE `oc_vcategory` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `oc_vcategory_to_object`
+--
+
+DROP TABLE IF EXISTS `oc_vcategory_to_object`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oc_vcategory_to_object` (
+  `objid` int(10) unsigned NOT NULL DEFAULT '0',
+  `categoryid` int(10) unsigned NOT NULL DEFAULT '0',
+  `type` varchar(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+  PRIMARY KEY (`categoryid`,`objid`,`type`),
+  KEY `vcategory_objectd_index` (`objid`,`type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `oc_vcategory_to_object`
+--
+
+LOCK TABLES `oc_vcategory_to_object` WRITE;
+/*!40000 ALTER TABLE `oc_vcategory_to_object` DISABLE KEYS */;
+/*!40000 ALTER TABLE `oc_vcategory_to_object` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping events for database 'ownCloud_db'
+--
+
+--
+-- Dumping routines for database 'ownCloud_db'
+--
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2015-09-21 15:31:27
