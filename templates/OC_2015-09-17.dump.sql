@@ -3,7 +3,7 @@
 --
 -- Encodage texte utilisé: windows-1252
 --
-PRAGMA foreign_keys = off;
+-- PRAGMA foreign_keys = off;
 BEGIN TRANSACTION;
 
 -- Table: providers_monitoring
