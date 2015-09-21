@@ -28,20 +28,23 @@ source $(dirname $0)/../inc/includes_before
 PackagesManage install "mysql-server"
 
 #### MySQL Secure
-RootPassword="`GenPassword 16`"
-MysbPassword="`GenPassword 8`"
-mysql -u root <<-EOF
-UPDATE mysql.user SET Password=PASSWORD('$RootPassword') WHERE User='root';
-DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
-DELETE FROM mysql.user WHERE User='';
-DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%';
-create database MySB_db;
-create user MySB_user;
-grant all on MySB_db.* to 'MySB_user'@'localhost' identified by '$MysbPassword';
-FLUSH PRIVILEGES;
-EOF
-echo $RootPassword | tee -a $MySB_InstallDir/files/MySQL_RootPassword
-echo $MysbPassword | tee -a $MySB_InstallDir/files/MySQL_MysbPassword
+if [ ! -f $MySB_InstallDir/files/MySQL_RootPassword ] && [ ! -f $MySB_InstallDir/files/MySQL_MysbPassword ]; then
+	RootPassword="`GenPassword 16`"
+	MysbPassword="`GenPassword 8`"
+
+	mysql -u root <<-EOF
+	UPDATE mysql.user SET Password=PASSWORD('$RootPassword') WHERE User='root';
+	DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
+	DELETE FROM mysql.user WHERE User='';
+	DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%';
+	create database MySB_db;
+	create user MySB_user;
+	grant all on MySB_db.* to 'MySB_user'@'localhost' identified by '$MysbPassword';
+	FLUSH PRIVILEGES;
+	EOF
+	echo $RootPassword | tee -a $MySB_InstallDir/files/MySQL_RootPassword
+	echo $MysbPassword | tee -a $MySB_InstallDir/files/MySQL_MysbPassword
+fi
 
 #### STOP services
 ManageServices stop "mysql"

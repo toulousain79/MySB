@@ -30,7 +30,12 @@ source $(dirname $0)/../inc/includes_before
 # https://srv1.lig2p.com:8889/owncloud/index.php/settings/admin#log-section
 
 if [ "$ToInstall_ownCloud" == "YES" ]; then
+	#### VARs
 	ownCloudDir=$MySB_InstallDir"`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT dir FROM repositories WHERE name = 'ownCloud'\"`"
+	MySQL_RootPassword="`cat $MySB_InstallDir/files/MySQL_RootPassword`"
+	MySQL_MysbPassword="`cat $MySB_InstallDir/files/MySQL_MysbPassword`"
+	ownCloudVersion="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT version FROM repositories WHERE name = 'ownCloud'\"`"
+	TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
 
 	#### NginX
 	cp $MySB_InstallDir/templates/etc.nginx.locations.owncloud.conf.template /etc/nginx/locations/ownCloud.conf
@@ -64,9 +69,6 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 
 	#### ownCloud config file
 	cp $MySB_InstallDir/templates/owncloud.config.php.template $ownCloudDir/config/config.php
-	ownCloudVersion="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT version FROM repositories WHERE name = 'ownCloud'\"`"
-	MySQL_MysbPassword="`cat $MySB_InstallDir/files/MySQL_MysbPassword`"
-	TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
 	perl -pi -e "s/<server_name>/$HostNameFQDN/g" $ownCloudDir/config/config.php
 	perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" $ownCloudDir/config/config.php
 	perl -pi -e "s/<Version>/$ownCloudVersion/g" $ownCloudDir/config/config.php
@@ -75,18 +77,21 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	perl -pi -e "s/<TimeZone>/$TimeZoneEscaped/g" $ownCloudDir/config/config.php
 
 	#### MySQL
-	MySQL_RootPassword="`cat $MySB_InstallDir/files/MySQL_RootPassword`"
-	/usr/bin/mysql -u root -p$MySQL_RootPassword <<-EOF
-	create database ownCloud_db;
-	grant all on ownCloud_db.* to 'MySB_user'@'localhost' identified by '$MySQL_MysbPassword';
-	FLUSH PRIVILEGES;
-	EOF
-	/usr/bin/mysql -u root -p$MySQL_RootPassword --database=ownCloud_db < $MySB_InstallDir/templates/OC_2015-09-17.dump.sql
+	if [ ! -f /var/lib/mysql/ownCloud_db/db.opt ]; then
+		/usr/bin/mysql -u root -p$MySQL_RootPassword <<-EOF
+		create database ownCloud_db;
+		grant all on ownCloud_db.* to 'MySB_user'@'localhost' identified by '$MySQL_MysbPassword';
+		FLUSH PRIVILEGES;
+		EOF
+	fi
 
-	#### Missing files and directories
-	if [ ! -d /home/owncloud/admin/files ]; then mkdir -p /home/owncloud/admin/files; fi
-	if [ ! -f /home/owncloud/.ocdata ]; then touch /home/owncloud/.ocdata; fi
-	if [ ! -f /home/owncloud/index.html ]; then touch /home/owncloud/index.html; fi
+	IfEmpty="`ls -a /var/lib/mysql/ownCloud_db/ 2> /dev/null | sed -e "/\.$/d" | wc -l`"
+	if [ $IfEmpty -eq 1 ]; then
+		/usr/bin/mysql -u root -p$MySQL_RootPassword --database=ownCloud_db < $MySB_InstallDir/templates/OC_2015-09-17.dump.sql
+	fi
+
+	#### Create directories & change rights
+	ManageDirectoriesAndFiles
 
 	#### CRON
 	crontab -u www-data -l > /tmp/crontab.tmp
@@ -98,6 +103,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	ManageServices start "php5-fpm nginx"
 
 	#### Manage Admin user
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
 	OC_PASS=$MySQL_MysbPassword
 	export OC_PASS
 	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:resetpassword --password-from-env admin"
