@@ -1,5 +1,5 @@
 --
--- Fichier généré par SQLiteStudio v3.0.6sur dim. sept. 20 21:31:30 2015
+-- Fichier généré par SQLiteStudio v3.0.6sur lun. sept. 21 14:11:42 2015
 --
 -- Encodage texte utilisé: windows-1252
 --
@@ -16,7 +16,7 @@ INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_f
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (5, 'TARGZ', '/web/rutorrent/plugins/nfo', 'ruTorrent Plugin NFO', '1337', 'nfo_v1337.tar.gz', '', 'http://srious.biz/nfo.tar.gz', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (6, 'GIT', '/web/rutorrent/plugins/ratiocolor', 'ruTorrent Plugin RatioColor', '0.5', 'ratiocolor_v0.5.zip', '', 'https://github.com/Gyran/rutorrent-ratiocolor', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (7, 'SVN', '/web/rutorrent/plugins/filemanager', 'ruTorrent Plugin FileManager', '0.09', 'filemanager_v0.09.zip', '', 'http://svn.rutorrent.org/svn/filemanager/trunk/filemanager', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (8, 'SVN', '/web/rutorrent/plugins/fileupload', 'ruTorrent Plugin FileUpload', '0.02', 'fileupload_v0.02.zip', '', 'http://svn.rutorrent.org/svn/filemanager/trunk/fileupload', 1);
+INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (8, 'SVN', '/web/rutorrent/plugins/fileupload', 'ruTorrent Plugin FileUpload', '0.02', 'fileupload_v0.02.zip', '', 'http://svn.rutorrent.org/svn/filemanager/trunk/fileupload', 0);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (9, 'SVN', '/web/rutorrent/plugins/fileshare', 'ruTorrent Plugin FileShare', '0.03', 'fileshare_v0.03.zip', '', 'http://svn.rutorrent.org/svn/filemanager/trunk/fileshare', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (10, 'SVN', '/web/rutorrent/plugins/mediastream', 'ruTorrent Plugin MediaStream', '0.01', 'mediastream_v0.01.zip', '', 'http://svn.rutorrent.org/svn/filemanager/trunk/mediastream', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (11, 'TARGZ', '/web/rutorrent/plugins/stream', 'ruTorrent Plugin Stream', '1.0', 'stream_v1.0.tar.gz', '', 'https://rutorrent-stream-plugin.googlecode.com/files/stream.tar.gz', 1);
@@ -39,27 +39,12 @@ INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_f
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (28, 'TARGZ', '/sources/rtorrent', 'rTorrent', '0.9.6', 'rtorrent_v0.9.6.tar.gz', 'rtorrent_v0.9.4.tar.gz', 'http://rtorrent.net/downloads/rtorrent-0.9.6.tar.gz', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (29, 'ZIP', '/sources/xmlrpc-c', 'XMLRPC', '1.42.0', 'xmlrpc-c_v1.42.0.zip', 'xmlrpc-c_v1.41.02.zip', 'https://github.com/toulousain79/MySB/raw/v2.2/files/xmlrpc-c_v1.42.0.zip', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (30, 'GIT', '/web/loadavg', 'LoadAvg', '2.2', 'loadavg_v2.2.zip', '', 'https://github.com/loadavg/loadavg.git', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (31, 'ZIP', '/web/owncloud', 'ownCloud', '8.1.3', 'owncloud_v8.1.3.zip', '', 'https://download.owncloud.org/community/owncloud-8.1.3.zip', 1);
+INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (31, 'ZIP', '/web/owncloud', 'ownCloud', '8.1.3.0', 'owncloud_v8.1.3.zip', '', 'https://download.owncloud.org/community/owncloud-8.1.3.zip', 1);
 
--- Table: smtp
-DROP TABLE IF EXISTS smtp;
-CREATE TABLE smtp ( 
-    id_smtp       INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
-                                   NOT NULL ON CONFLICT ABORT,
-    smtp_provider VARCHAR( 5 )     NOT NULL ON CONFLICT ABORT
-                                   UNIQUE ON CONFLICT IGNORE
-                                   DEFAULT ( 'LOCAL' ),
-    smtp_username VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
-    smtp_passwd   VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
-    smtp_host     VARCHAR( 128 )   UNIQUE ON CONFLICT IGNORE,
-    smtp_port     VARCHAR( 5 )     UNIQUE ON CONFLICT IGNORE,
-    smtp_email    VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE 
-);
-INSERT INTO smtp (id_smtp, smtp_provider, smtp_username, smtp_passwd, smtp_host, smtp_port, smtp_email) VALUES (1, '', '', '', '', '', '');
-
--- Table: users
-DROP TABLE IF EXISTS users;
-CREATE TABLE [users] ([id_users] INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, [users_ident] VARCHAR (32) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT IGNORE, [users_email] VARCHAR (260) NOT NULL ON CONFLICT ABORT, [users_passwd] VARCHAR (32), [rpc] VARCHAR (64), [sftp] BOOLEAN (1) DEFAULT(1), [sudo] BOOLEAN (1) DEFAULT(0), [admin] BOOLEAN (1) DEFAULT(0), [scgi_port] INTEGER (5), [rtorrent_port] INTEGER (5), [home_dir] VARCHAR (128), [is_active] BOOLEAN (1) DEFAULT(1), [rtorrent_version] VARCHAR (10) DEFAULT('v0.9.2'), [rtorrent_restart] BOOLEAN (1) DEFAULT('0'), [language] VARCHAR (2) DEFAULT('en'));
+-- Table: renting
+DROP TABLE IF EXISTS renting;
+CREATE TABLE renting (id_renting INTEGER (1, 1) PRIMARY KEY ON CONFLICT IGNORE NOT NULL ON CONFLICT ABORT, model VARCHAR (64), tva NUMERIC, global_cost NUMERIC, nb_users NUMERIC (2), price_per_users NUMERIC (2), method BOOLEAN (1) DEFAULT (0));
+INSERT INTO renting (id_renting, model, tva, global_cost, nb_users, price_per_users, method) VALUES (1, NULL, NULL, NULL, NULL, NULL, 0);
 
 -- Table: providers_monitoring
 DROP TABLE IF EXISTS providers_monitoring;
@@ -71,6 +56,41 @@ INSERT INTO providers_monitoring (id_providers_monitoring, provider, ipv4, hostn
 INSERT INTO providers_monitoring (id_providers_monitoring, provider, ipv4, hostname) VALUES (5, 'OVH', NULL, 'proxy.bhs.ovh.net');
 INSERT INTO providers_monitoring (id_providers_monitoring, provider, ipv4, hostname) VALUES (6, 'OVH', NULL, 'ping.ovh.net');
 
+-- Table: system
+DROP TABLE IF EXISTS system;
+CREATE TABLE system (id_system INTEGER (1, 1) PRIMARY KEY ON CONFLICT IGNORE NOT NULL ON CONFLICT ABORT, mysb_version VARCHAR (6) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT IGNORE, mysb_user VARCHAR (32) UNIQUE ON CONFLICT IGNORE, mysb_password VARCHAR (32) UNIQUE ON CONFLICT IGNORE, hostname VARCHAR (128) UNIQUE ON CONFLICT IGNORE, ipv4 VARCHAR (15) UNIQUE ON CONFLICT IGNORE, primary_inet VARCHAR (16) UNIQUE ON CONFLICT IGNORE, timezone VARCHAR (64) UNIQUE ON CONFLICT IGNORE, cert_password VARCHAR (32) UNIQUE ON CONFLICT IGNORE, apt_update BOOLEAN (1) DEFAULT (1), apt_date DATETIME, server_provider VARCHAR (16), ip_restriction BOOLEAN (1) DEFAULT (1), pgl_email_stats BOOLEAN (1) DEFAULT (0), pgl_watchdog_email BOOLEAN (1) DEFAULT (0), dnscrypt BOOLEAN (1) DEFAULT (1));
+INSERT INTO system (id_system, mysb_version, mysb_user, mysb_password, hostname, ipv4, primary_inet, timezone, cert_password, apt_update, apt_date, server_provider, ip_restriction, pgl_email_stats, pgl_watchdog_email, dnscrypt) VALUES (1, '', '', '', '', '', '', '', '', 0, '', '', 1, 0, 0, 1);
+
+-- Table: dnscrypt_resolvers
+DROP TABLE IF EXISTS dnscrypt_resolvers;
+CREATE TABLE dnscrypt_resolvers (id_dnscrypt_resolvers INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, name VARCHAR (32) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, full_name VARCHAR (64) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, description VARCHAR (128), location VARCHAR (32), coordinates VARCHAR (32), url VARCHAR (128) NOT NULL ON CONFLICT ABORT, version VARCHAR (2), dnssec BOOLEAN (1) NOT NULL ON CONFLICT ABORT DEFAULT (0), no_logs BOOLEAN (1) NOT NULL ON CONFLICT ABORT DEFAULT (0), namecoin BOOLEAN (1) NOT NULL ON CONFLICT ABORT DEFAULT (0), resolver_address VARCHAR (64) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, provider_name VARCHAR (64), provider_public_key VARCHAR (128), provider_public_key_txt_record VARCHAR (64), is_activated BOOLEAN (1) DEFAULT (0), is_wished BOOLEAN (1) DEFAULT (0), forwarder VARCHAR (16));
+
+-- Table: users_addresses
+DROP TABLE IF EXISTS users_addresses;
+CREATE TABLE users_addresses ( 
+    id_users_addresses INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                       NOT NULL ON CONFLICT ABORT
+                                       UNIQUE ON CONFLICT ABORT,
+    id_users           INTEGER         NOT NULL ON CONFLICT ABORT,
+    ipv4               VARCHAR( 15 )   NOT NULL ON CONFLICT ABORT,
+    hostname           VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT,
+    check_by           VARCHAR( 8 )    NOT NULL ON CONFLICT ABORT,
+    is_active          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
+                                       DEFAULT ( 0 ) 
+);
+
+-- Table: vars
+DROP TABLE IF EXISTS vars;
+CREATE TABLE vars ( 
+    id_vars            INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
+                                        NOT NULL ON CONFLICT ABORT,
+    fail2ban_whitelist VARCHAR( 12 ),
+    vpn_ip             VARCHAR( 37 ),
+    white_tcp_port_out VARCHAR( 16 ),
+    white_udp_port_out VARCHAR( 16 ) 
+);
+INSERT INTO vars (id_vars, fail2ban_whitelist, vpn_ip, white_tcp_port_out, white_udp_port_out) VALUES (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24,10.0.2.0/24', '80 443', NULL);
+
 -- Table: trackers_list_ipv4
 DROP TABLE IF EXISTS trackers_list_ipv4;
 CREATE TABLE trackers_list_ipv4 ( 
@@ -81,14 +101,46 @@ CREATE TABLE trackers_list_ipv4 (
     ipv4                  VARCHAR( 128 )  NOT NULL ON CONFLICT ABORT 
 );
 
--- Table: dnscrypt_resolvers
-DROP TABLE IF EXISTS dnscrypt_resolvers;
-CREATE TABLE dnscrypt_resolvers (id_dnscrypt_resolvers INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, name VARCHAR (32) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, full_name VARCHAR (64) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, description VARCHAR (128), location VARCHAR (32), coordinates VARCHAR (32), url VARCHAR (128) NOT NULL ON CONFLICT ABORT, version VARCHAR (2), dnssec BOOLEAN (1) NOT NULL ON CONFLICT ABORT DEFAULT (0), no_logs BOOLEAN (1) NOT NULL ON CONFLICT ABORT DEFAULT (0), namecoin BOOLEAN (1) NOT NULL ON CONFLICT ABORT DEFAULT (0), resolver_address VARCHAR (64) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, provider_name VARCHAR (64), provider_public_key VARCHAR (128), provider_public_key_txt_record VARCHAR (64), is_activated BOOLEAN (1) DEFAULT (0), is_wished BOOLEAN (1) DEFAULT (0), forwarder VARCHAR (16));
+-- Table: commands
+DROP TABLE IF EXISTS commands;
+CREATE TABLE commands ( 
+    id_commands INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
+                                NOT NULL ON CONFLICT ABORT
+                                UNIQUE ON CONFLICT ABORT,
+    commands    VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
+    reload      BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT,
+    priority    INTEGER( 2 )    NOT NULL ON CONFLICT ABORT,
+    args        VARCHAR( 128 ),
+    user        VARCHAR( 16 )   NOT NULL ON CONFLICT ABORT 
+);
 
--- Table: system
-DROP TABLE IF EXISTS system;
-CREATE TABLE system (id_system INTEGER (1, 1) PRIMARY KEY ON CONFLICT IGNORE NOT NULL ON CONFLICT ABORT, mysb_version VARCHAR (6) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT IGNORE, mysb_user VARCHAR (32) UNIQUE ON CONFLICT IGNORE, mysb_password VARCHAR (32) UNIQUE ON CONFLICT IGNORE, hostname VARCHAR (128) UNIQUE ON CONFLICT IGNORE, ipv4 VARCHAR (15) UNIQUE ON CONFLICT IGNORE, primary_inet VARCHAR (16) UNIQUE ON CONFLICT IGNORE, timezone VARCHAR (64) UNIQUE ON CONFLICT IGNORE, cert_password VARCHAR (32) UNIQUE ON CONFLICT IGNORE, apt_update BOOLEAN (1) DEFAULT (1), apt_date DATETIME, server_provider VARCHAR (16), ip_restriction BOOLEAN (1) DEFAULT (1), pgl_email_stats BOOLEAN (1) DEFAULT (0), pgl_watchdog_email BOOLEAN (1) DEFAULT (0), dnscrypt BOOLEAN (1) DEFAULT (1));
-INSERT INTO system (id_system, mysb_version, mysb_user, mysb_password, hostname, ipv4, primary_inet, timezone, cert_password, apt_update, apt_date, server_provider, ip_restriction, pgl_email_stats, pgl_watchdog_email, dnscrypt) VALUES (1, '', '', '', '', '', '', '', '', 0, '', '', 1, 0, 0, 1);
+-- Table: services
+DROP TABLE IF EXISTS services;
+CREATE TABLE services (id_services INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, serv_name VARCHAR (32) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT IGNORE, bin VARCHAR (32), port_tcp1 VARCHAR (11), port_tcp2 VARCHAR (11), port_tcp3 VARCHAR (11), ports_tcp_list VARCHAR (32), port_udp1 VARCHAR (11), port_udp2 VARCHAR (11), port_udp3 VARCHAR (11), ports_udp_list VARCHAR (32), to_install BOOLEAN (1) DEFAULT (0), is_installed BOOLEAN NOT NULL ON CONFLICT ABORT DEFAULT (0), calcul INTEGER (1) DEFAULT (1));
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (1, 'Seedbox-Manager', '', '', '', '', '', '', '', ' ', ' ', 0, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (2, 'CakeBox-Light', '', '', '', '', '', '', '', '', '', 0, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (3, 'Plex Media Server', '', '', '', '', '32400 32469', '', '', ' ', '1900 5353 32410 32412 32413 32414', 0, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (4, 'Webmin', '', '8890', '', '', '', '', '', ' ', ' ', 0, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (5, 'OpenVPN', '', '8893', '8894', '8895', '', '', '', '', '', 0, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (6, 'LogWatch', '', '', '', '', '', '', '', ' ', ' ', 0, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (7, 'Fail2Ban', '', '', '', '', '', '', '', ' ', ' ', 0, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (8, 'PeerGuardian', '', '', '', '', '', '', '', ' ', ' ', 0, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (9, 'rTorrent Block List', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (10, 'DNScrypt-proxy', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (11, 'CRON', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (12, 'NginX', '', '8889', '8888', '', '', '', '', '', '', 1, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (13, 'SSH', '', '8892', '', '', '', '', '', '', '', 1, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (14, 'VSFTPd', '', '8891', '8800', '65000:65535', '', '', '', '', '', 1, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (15, 'PHP5-FPM', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (16, 'Postfix', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (17, 'Networking', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (18, 'Samba', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (19, 'NFS', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (20, 'BIND', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (21, 'Stunnel', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (22, 'rTorrent v0.9.2', '/usr/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (23, 'rTorrent v0.9.4', '/usr/local/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0, 1);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (24, 'ownCloud', '', '', '', '', '', '', '', '', '', 0, 0, 1);
 
 -- Table: blocklists
 DROP TABLE IF EXISTS blocklists;
@@ -153,65 +205,25 @@ INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardia
 INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (42, 'I-Blocklist', 'Pedophiles', 'https://www.iblocklist.com/list.php?list=dufcxgnbjsdwmwctgfuj', NULL, 'http://list.iblocklist.com/?list=dufcxgnbjsdwmwctgfuj&fileformat=cidr&archiveformat=gz', 0, 0, 0, 'rTorrent only', NULL, NULL);
 INSERT INTO blocklists (id_blocklists, author, list_name, url_infos, peerguardian_list, rtorrent_list, peerguardian_active, rtorrent_active, "default", comments, peerguardian_lastupdate, rtorrent_lastupdate) VALUES (43, 'Nexus23', 'ipfilterX', 'https://www.iblocklist.com/list.php?list=tqdjwkbxfurudwonprji', 'list.iblocklist.com/lists/nexus23/ipfilterx', NULL, 0, 0, 0, 'PeerGuardian Only, subscription needed', NULL, NULL);
 
--- Table: commands
-DROP TABLE IF EXISTS commands;
-CREATE TABLE commands ( 
-    id_commands INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                NOT NULL ON CONFLICT ABORT
-                                UNIQUE ON CONFLICT ABORT,
-    commands    VARCHAR( 32 )   NOT NULL ON CONFLICT ABORT,
-    reload      BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT,
-    priority    INTEGER( 2 )    NOT NULL ON CONFLICT ABORT,
-    args        VARCHAR( 128 ),
-    user        VARCHAR( 16 )   NOT NULL ON CONFLICT ABORT 
+-- Table: users
+DROP TABLE IF EXISTS users;
+CREATE TABLE [users] ([id_users] INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, [users_ident] VARCHAR (32) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT IGNORE, [users_email] VARCHAR (260) NOT NULL ON CONFLICT ABORT, [users_passwd] VARCHAR (32), [rpc] VARCHAR (64), [sftp] BOOLEAN (1) DEFAULT(1), [sudo] BOOLEAN (1) DEFAULT(0), [admin] BOOLEAN (1) DEFAULT(0), [scgi_port] INTEGER (5), [rtorrent_port] INTEGER (5), [home_dir] VARCHAR (128), [is_active] BOOLEAN (1) DEFAULT(1), [rtorrent_version] VARCHAR (10) DEFAULT('v0.9.2'), [rtorrent_restart] BOOLEAN (1) DEFAULT('0'), [language] VARCHAR (2) DEFAULT('en'));
+
+-- Table: smtp
+DROP TABLE IF EXISTS smtp;
+CREATE TABLE smtp ( 
+    id_smtp       INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
+                                   NOT NULL ON CONFLICT ABORT,
+    smtp_provider VARCHAR( 5 )     NOT NULL ON CONFLICT ABORT
+                                   UNIQUE ON CONFLICT IGNORE
+                                   DEFAULT ( 'LOCAL' ),
+    smtp_username VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
+    smtp_passwd   VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE,
+    smtp_host     VARCHAR( 128 )   UNIQUE ON CONFLICT IGNORE,
+    smtp_port     VARCHAR( 5 )     UNIQUE ON CONFLICT IGNORE,
+    smtp_email    VARCHAR( 64 )    UNIQUE ON CONFLICT IGNORE 
 );
-
--- Table: users_addresses
-DROP TABLE IF EXISTS users_addresses;
-CREATE TABLE users_addresses ( 
-    id_users_addresses INTEGER         PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT
-                                       NOT NULL ON CONFLICT ABORT
-                                       UNIQUE ON CONFLICT ABORT,
-    id_users           INTEGER         NOT NULL ON CONFLICT ABORT,
-    ipv4               VARCHAR( 15 )   NOT NULL ON CONFLICT ABORT,
-    hostname           VARCHAR( 256 )  NOT NULL ON CONFLICT ABORT,
-    check_by           VARCHAR( 8 )    NOT NULL ON CONFLICT ABORT,
-    is_active          BOOLEAN( 1 )    NOT NULL ON CONFLICT ABORT
-                                       DEFAULT ( 0 ) 
-);
-
--- Table: services
-DROP TABLE IF EXISTS services;
-CREATE TABLE services (id_services INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, serv_name VARCHAR (32) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT IGNORE, bin VARCHAR (32), port_tcp1 VARCHAR (11), port_tcp2 VARCHAR (11), port_tcp3 VARCHAR (11), ports_tcp_list VARCHAR (32), port_udp1 VARCHAR (11), port_udp2 VARCHAR (11), port_udp3 VARCHAR (11), ports_udp_list VARCHAR (32), to_install BOOLEAN (1) DEFAULT (0), is_installed BOOLEAN NOT NULL ON CONFLICT ABORT DEFAULT (0), calcul INTEGER (1) DEFAULT (1));
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (1, 'Seedbox-Manager', '', '', '', '', '', '', '', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (2, 'CakeBox-Light', '', '', '', '', '', '', '', '', '', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (3, 'Plex Media Server', '', '', '', '', '32400 32469', '', '', ' ', '1900 5353 32410 32412 32413 32414', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (4, 'Webmin', '', '8890', '', '', '', '', '', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (5, 'OpenVPN', '', '8893', '8894', '8895', '', '', '', '', '', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (6, 'LogWatch', '', '', '', '', '', '', '', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (7, 'Fail2Ban', '', '', '', '', '', '', '', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (8, 'PeerGuardian', '', '', '', '', '', '', '', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (9, 'rTorrent Block List', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (10, 'DNScrypt-proxy', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (11, 'CRON', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (12, 'NginX', '', '8889', '8888', '', '', '', '', '', '', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (13, 'SSH', '', '8892', '', '', '', '', '', '', '', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (14, 'VSFTPd', '', '8891', '8800', '65000:65535', '', '', '', '', '', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (15, 'PHP5-FPM', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (16, 'Postfix', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (17, 'Networking', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (18, 'Samba', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (19, 'NFS', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (20, 'BIND', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (21, 'Stunnel', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (22, 'rTorrent v0.9.2', '/usr/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (23, 'rTorrent v0.9.4', '/usr/local/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0, 1);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed, calcul) VALUES (24, 'ownCloud', '', '', '', '', '', '', '', '', '', 0, 0, 1);
-
--- Table: renting
-DROP TABLE IF EXISTS renting;
-CREATE TABLE renting (id_renting INTEGER (1, 1) PRIMARY KEY ON CONFLICT IGNORE NOT NULL ON CONFLICT ABORT, model VARCHAR (64), tva NUMERIC, global_cost NUMERIC, nb_users NUMERIC (2), price_per_users NUMERIC (2), method BOOLEAN (1) DEFAULT (0));
-INSERT INTO renting (id_renting, model, tva, global_cost, nb_users, price_per_users, method) VALUES (1, NULL, NULL, NULL, NULL, NULL, 0);
+INSERT INTO smtp (id_smtp, smtp_provider, smtp_username, smtp_passwd, smtp_host, smtp_port, smtp_email) VALUES (1, '', '', '', '', '', '');
 
 -- Table: trackers_list
 DROP TABLE IF EXISTS trackers_list;
@@ -232,18 +244,6 @@ CREATE TABLE trackers_list (
                                      DEFAULT ( 1 ),
     ping             VARCHAR( 64 ) 
 );
-
--- Table: vars
-DROP TABLE IF EXISTS vars;
-CREATE TABLE vars ( 
-    id_vars            INTEGER( 1, 1 )  PRIMARY KEY ON CONFLICT IGNORE
-                                        NOT NULL ON CONFLICT ABORT,
-    fail2ban_whitelist VARCHAR( 12 ),
-    vpn_ip             VARCHAR( 37 ),
-    white_tcp_port_out VARCHAR( 16 ),
-    white_udp_port_out VARCHAR( 16 ) 
-);
-INSERT INTO vars (id_vars, fail2ban_whitelist, vpn_ip, white_tcp_port_out, white_udp_port_out) VALUES (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24,10.0.2.0/24', '80 443', NULL);
 
 COMMIT TRANSACTION;
 PRAGMA foreign_keys = on;
