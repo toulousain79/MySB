@@ -1,5 +1,5 @@
 --
--- Fichier généré par SQLiteStudio v3.0.6sur dim. sept. 20 21:32:39 2015
+-- Fichier généré par SQLiteStudio v3.0.6sur lun. sept. 21 12:32:28 2015
 --
 -- Encodage texte utilisé: windows-1252
 --
@@ -39,7 +39,7 @@ INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_f
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (28, 'TARGZ', '/sources/rtorrent', 'rTorrent', '0.9.6', 'rtorrent_v0.9.6.tar.gz', 'rtorrent_v0.9.4.tar.gz', 'http://rtorrent.net/downloads/rtorrent-0.9.6.tar.gz', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (29, 'ZIP', '/sources/xmlrpc-c', 'XMLRPC', '1.42.0', 'xmlrpc-c_v1.42.0.zip', 'xmlrpc-c_v1.41.02.zip', 'https://github.com/toulousain79/MySB/raw/v2.2/files/xmlrpc-c_v1.42.0.zip', 1);
 INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (30, 'GIT', '/web/loadavg', 'LoadAvg', '2.2', 'loadavg_v2.2.zip', '', 'https://github.com/loadavg/loadavg.git', 1);
-INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (31, 'ZIP', '/web/owncloud', 'ownCloud', '8.1.3', 'owncloud_v8.1.3.zip', '', 'https://download.owncloud.org/community/owncloud-8.1.3.zip', 1);
+INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) VALUES (31, 'ZIP', '/web/owncloud', 'ownCloud', '8.1.3.0', 'owncloud_v8.1.3.zip', '', 'https://download.owncloud.org/community/owncloud-8.1.3.zip', 1);
 
 COMMIT TRANSACTION;
 PRAGMA foreign_keys = on;
