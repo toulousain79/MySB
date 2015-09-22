@@ -277,7 +277,7 @@ CREATE TABLE `oc_groups` (
 
 LOCK TABLES `oc_groups` WRITE;
 /*!40000 ALTER TABLE `oc_groups` DISABLE KEYS */;
-INSERT INTO `oc_groups` VALUES ('MySB'),('admin');
+INSERT INTO `oc_groups` VALUES ('MySB_users'),('admin');
 /*!40000 ALTER TABLE `oc_groups` ENABLE KEYS */;
 UNLOCK TABLES;
 
