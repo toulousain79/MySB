@@ -25,14 +25,32 @@
 #### ownCloud
 Func_ownCloud_DB() {
 	Type="$1"
-	
+	Tables="$2"
+	Columns="$3"
+	Values="$3"
+	MySQL_MysbPassword="`cat $MySB_InstallDir/files/MySQL_MysbPassword`"
 
 	case "$Type" in
+		"CreateUser")
+			User="$2"
+			Mail="$3"
+			Lang="$4"
+		
+			/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword <<-EOF
+			INSERT INTO oc_preferences (userid, appid, configkey, configvalue) VALUES('$User', 'core', 'lang', '$Lang');
+			INSERT INTO oc_preferences (userid, appid, configkey, configvalue) VALUES('$User', 'settings', 'email', '$Mail');
+			INSERT INTO oc_preferences (id) VALUES('local::$NewUserHomedir');
+			EOF
+		;;
+		"DeleteUser")
+			User="$2"
+		
+			/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword <<-EOF
+			DELTE FROM oc_preferences WHERE id = 'local::$User';
+			EOF
+		;;			
 		"INSERT")
-			MySQL_MysbPassword="`cat $MySB_InstallDir/files/MySQL_MysbPassword`"
-			/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -e "INSERT INTO oc_preferences (userid, appid, configkey, configvalue) values ('$UserToCreate', 'core', 'lang', '$EnvLang')";
-			/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -e "INSERT INTO oc_preferences (userid, appid, configkey, configvalue) values ('$UserToCreate', 'settings', 'email', '$UserEmail')";
-			/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -e "INSERT INTO oc_storages (id) values ('local::$NewUserHomedir')";
+			/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -e "INSERT INTO $Tables ($Columns) VALUES ($Values)";
 		;;
 	esac
 }
