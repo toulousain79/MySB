@@ -329,7 +329,7 @@ CREATE TABLE `oc_mimetypes` (
 
 LOCK TABLES `oc_mimetypes` WRITE;
 /*!40000 ALTER TABLE `oc_mimetypes` DISABLE KEYS */;
-INSERT INTO `oc_mimetypes` VALUES (1,'httpd'),(2,'httpd/unix-directory');
+INSERT INTO `oc_mimetypes` VALUES (3,'application'),(7,'application/pdf'),(4,'application/vnd.oasis.opendocument.text'),(1,'httpd'),(2,'httpd/unix-directory'),(5,'image'),(6,'image/jpeg');
 /*!40000 ALTER TABLE `oc_mimetypes` ENABLE KEYS */;
 UNLOCK TABLES;
 
