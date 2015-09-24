@@ -26,6 +26,65 @@
 source $MySB_InstallDir/inc/funcs_sql
 source $MySB_InstallDir/inc/funcs_tools
 
+#### ownCloud 'mount.json'
+CreateOwnCloudMountJson() {
+	ListingUsers
+	CountingUsers
+	IdMount=1
+	NbUsers=1
+	MySQL_MysbPassword="`cat $MySB_InstallDir/files/MySQL_MysbPassword`"	
+	(
+	cat <<-EOF
+	{
+		"group": {
+			"MySB_users": {
+				"\/$user\/files\/MySB_share": {
+					"id": $IdMount,
+					"class": "\\OC\\Files\\Storage\\Local",
+					"options": {
+						"datadir": "\/home\/MySB_share\/"
+					},
+					"priority": 150,
+					"storage_id": "4"
+				}
+			}
+		},
+	EOF
+	) > /home/owncloud/mount.json
+	
+	for seedUser in $UsersList; do
+		(( IdMount++ ))
+		IdStorage="`/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -N -e "SELECT numeric_id FROM oc_storages WHERE id = 'local::/home/$seedUser/'";`"
+		(
+		cat <<-EOF
+		"user": {
+			"$seedUser": {
+				"\/$user\/files\/Home_$seedUser": {
+					"id": $IdMount,
+					"class": "\\OC\\Files\\Storage\\Local",
+					"options": {
+						"datadir": "\/home\/$seedUser\/"
+					},
+					"priority": 150,
+					"storage_id": "$IdStorage"
+				}
+			}
+		}
+		EOF
+		) >> /home/owncloud/mount.json
+		
+		(( NbUsers++ ))
+	done
+	
+	if [ $NbUsers -lt $TotalUsers ]; then
+		echo "}," >> /home/owncloud/mount.json
+		
+	else
+		echo "}" >> /home/owncloud/mount.json
+	fi
+	echo "}" >> /home/owncloud/mount.json
+}
+
 #### Delete Bad Sources
 DeleteBadSources() {
 	if [ -z "$1" ]; then
@@ -1244,6 +1303,7 @@ ManageDirectoriesAndFiles() {
 		if [ ! -f /home/owncloud/.ocdata ]; then touch /home/owncloud/.ocdata; fi
 		if [ ! -f /home/owncloud/index.html ]; then touch /home/owncloud/index.html; fi
 		if [ ! -d /home/owncloud/admin/files ]; then mkdir -p /home/owncloud/admin/files; fi
+		if [ -f /home/owncloud/mount.json ]; then chmod 0640 /home/owncloud/mount.json; fi
 		chown -R www-data:www-data /home/owncloud
 	fi
 

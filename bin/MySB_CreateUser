@@ -99,6 +99,8 @@ else
 	log_daemon_msg "$CreateUser_UpdateInfoDB"
 	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE users SET users_passwd = '', rpc = '$NEWRPC', scgi_port = '$ScgiPort', rtorrent_port = '$rTorrentPort', home_dir = '$NewUserHomedir' WHERE users_ident = '$UserToCreate';"
 fi
+ListingUsers
+CountingUsers
 StatusLSB
 
 #### create system user
@@ -248,7 +250,11 @@ if [ "$IsInstalled_ownCloud" == "YES" ]; then
 	StatusLSB
 
 	log_daemon_msg "$CreateUser_ownCloud_1 [$UserToCreate]"
-	Func_ownCloud_DB "CreateUser" "$UserToCreate" "$UserEmail" "$EnvLang"
+	Func_ownCloud_DB "CreateUser" "$UserToCreate" "$UserEmail" "$EnvLang" &> /dev/null
+	StatusLSB
+
+	log_daemon_msg "$CreateUser_ownCloud_2 [$UserToCreate]"
+	CreateOwnCloudMountJson
 	StatusLSB
 fi
 
@@ -273,8 +279,6 @@ rm -f /tmp/crontab.tmp
 StatusLSB
 
 #### rtorrent max memory & rTorrent Blocklist
-ListingUsers
-CountingUsers
 for seedUser in $UsersList; do
 	log_daemon_msg "$CreateUser_PiecesMemory [$seedUser]"
 	LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$seedUser/.rtorrent.rc)
