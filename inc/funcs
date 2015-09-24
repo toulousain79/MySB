@@ -34,52 +34,70 @@ CreateOwnCloudMountJson() {
 	NbUsers=0
 	MySQL_MysbPassword="`cat $MySB_InstallDir/files/MySQL_MysbPassword`"
 	IdStorage="`/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -N -e "SELECT numeric_id FROM oc_storages WHERE id = 'local::/home/MySB_share/'";`"
+
+	# Start
+	echo "{" > /home/owncloud/mount.json
+
+	# Group MySB_users
 	(
-	cat <<-EOF
-	{
-		"group": {
-			"MySB_users": {
-				"\/$user\/files\/MySB_share": {
-					"id": $IdMount,
-					"class": "\\OC\\Files\\Storage\\Local",
-					"options": {
-						"datadir": "\/home\/MySB_share\/"
-					},
-					"priority": 150,
-					"storage_id": "4"
-				}
-			}
-		},
-	EOF
-	) > /home/owncloud/mount.json
-	
+cat <<'EOF'
+    "group": {
+        "MySB_users": {
+            "\/$user\/files\/MySB_share": {
+                "id": $IdMount,
+                "class": "\\OC\\Files\\Storage\\Local",
+                "options": {
+                    "datadir": "\/home\/MySB_share\/"
+                },
+                "priority": 150,
+                "storage_id": "$IdStorage"
+            }
+        }
+    },
+	"user": {
+EOF
+	) >> /home/owncloud/mount.json
+
+	unset IdStorage
+
+	# Home for all users
 	for seedUser in $UsersList; do
 		(( IdMount++ ))
 		(( NbUsers++ ))
 		IdStorage="`/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -N -e "SELECT numeric_id FROM oc_storages WHERE id = 'local::/home/$seedUser/'";`"
+
 		(
-		cat <<-EOF
-		"user": {
-			"$seedUser": {
-				"\/$user\/files\/Home_$seedUser": {
-					"id": $IdMount,
-					"class": "\\OC\\Files\\Storage\\Local",
-					"options": {
-						"datadir": "\/home\/$seedUser\/"
-					},
-					"priority": 150,
-					"storage_id": "$IdStorage"
-				}
+cat <<'EOF'
+		"<seedUser>": {
+			"\/$user\/files\/Home_<seedUser>": {
+				"id": <IdMount>,
+				"class": "\\OC\\Files\\Storage\\Local",
+				"options": {
+					"datadir": "\/home\/<seedUser>\/"
+				},
+				"priority": 150,
+				"storage_id": "<IdStorage>"
 			}
-		EOF
+EOF
 		) >> /home/owncloud/mount.json
+		
+		perl -pi -e "s/<seedUser>/$seedUser/g" /home/owncloud/mount.json
+		perl -pi -e "s/<IdMount>/$IdMount/g" /home/owncloud/mount.json
+		perl -pi -e "s/<IdStorage>/$IdStorage/g" /home/owncloud/mount.json
+
+		if [ $NbUsers -lt $TotalUsers ]; then
+			echo "		}," >> /home/owncloud/mount.json
+		else
+			echo "		}" >> /home/owncloud/mount.json
+		fi
+
+		unset IdStorage
 	done
+
+	# user
+	echo "	}" >> /home/owncloud/mount.json	
 	
-	if [ $NbUsers -lt $TotalUsers ]; then
-		echo "}," >> /home/owncloud/mount.json
-	else
-		echo "}" >> /home/owncloud/mount.json
-	fi
+	# End
 	echo "}" >> /home/owncloud/mount.json
 }
 
@@ -128,7 +146,7 @@ BannerGenerator() {
 	if [ "`screen -ls | grep MySB`" == "" ]; then
 		echo "${CGREEN}#$CEND	$Header_CurrentFile ${CRED}$0$CEND" >> $MySB_InstallDir/files/banner_$MySB_CurrentVersion
 	fi
-	echo "${CGREEN}############################################################$CEND\"" >> $MySB_InstallDir/files/banner_$MySB_CurrentVersion		
+	echo "${CGREEN}############################################################$CEND\"" >> $MySB_InstallDir/files/banner_$MySB_CurrentVersion
 	if [ -f $MySB_InstallDir/files/banner_$MySB_CurrentVersion ]; then
 		sed -i "s/,/ /g;" $MySB_InstallDir/files/banner_dev &> /dev/null
 		sed -i "s/\`/ /g;" $MySB_InstallDir/files/banner_dev &> /dev/null
@@ -232,7 +250,7 @@ PackagesManage() {
 				fi
 			done
 			FinalList="`echo $FinalList | sed -e 's/^ //g;'`"
-			
+
 			if [ ! -z "$FinalList" ]; then
 				echo "$AptCommand $GlobalArgs install $FinalList"
 				$AptCommand $GlobalArgs -V install $FinalList
@@ -323,7 +341,7 @@ PeerGuardianFailed() {
 				if [ ! -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.txt ]; then
 					ScriptInvoke 'screen' "$MySB_InstallDir/scripts/BlocklistsRTorrent.bsh" 'REFRESH'
 				fi
-			
+
 				if [ -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.txt ] && [ -d /home/$FnUser/blocklist/ ]; then
 					cp $MySB_InstallDir/files/blocklists/* /home/$FnUser/blocklist/
 				fi
@@ -349,7 +367,7 @@ PeerGuardianFailed() {
 					if [ ! -z "$Check" ]; then
 						perl -pi -e "s/^ipv4_filter.load/#ipv4_filter.load/g" /home/$FnUser/.rtorrent.rc
 						perl -pi -e "s/^print/#print/g" /home/$FnUser/.rtorrent.rc
-						
+
 						service rtorrent-$FnUser status &> /dev/null
 						if [ $? -eq 0 ]; then
 							StatusLSB 0
@@ -446,7 +464,7 @@ ManageServices() {
 							
 							if [ $? -gt 0 ]; then # if pgl don't start maybe its due to a list update
 								StatusLSB 1
-								
+
 								case "$LOGSTD" in
 									"STDOUT")
 										echo `date +"%T"`" --> The updated list of PGL may have failed." >> $MySB_InstallDir/logs/$ScriptName.log
@@ -471,7 +489,7 @@ ManageServices() {
 
 								if [ $? -gt 0 ]; then # We have again a problem with PeerGuardian, test a force-restart
 									StatusLSB 1
-								
+
 									log_daemon_msg "Force Restarting PeerGuardian Linux"
 									pglcmd force-restart > /dev/null
 									if [ $? -gt 0 ]; then # Again ??
@@ -513,7 +531,7 @@ ManageServices() {
 									log_daemon_msg "Restarting $Service"
 									service $Service restart > /dev/null
 								fi
-								StatusLSB								
+								StatusLSB
 							;;
 							"nginx"|"php5-fpm"|"stunnel4"|"postfix"|"cron"|"vsftpd"|"nfs-kernel-server")
 								Continue=0
@@ -540,7 +558,7 @@ ManageServices() {
 							;;
 						esac
 
-						if [ "$Continue" == "1" ]; then						
+						if [ "$Continue" == "1" ]; then
 							service $Service $FinalCommand
 
 							if [ $? -gt 0 ] && [ "$FinalCommand" == "reload" ]; then
@@ -596,7 +614,7 @@ CleanBlockList() {
 				if [ ! "$RESULT_START" = "$START" ] || [ ! "$RESULT_END" = "$END" ]; then
 					sed -i '/$line/!d' $MySB_InstallDir/files/blocklists/$FILE.txt
 				fi
-			done < $MySB_InstallDir/files/blocklists/$FILE.txt		
+			done < $MySB_InstallDir/files/blocklists/$FILE.txt
 		;;
 		sort_uniq)
 			sort -g $MySB_InstallDir/files/blocklists/$FILE.tmp | uniq > $MySB_InstallDir/files/blocklists/$FILE.txt
