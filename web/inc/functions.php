@@ -22,6 +22,17 @@
 //
 //#################### FIRST LINE #####################################
 
+// Change ownCloud language
+function ChangeOwnCloudLanguage($user, $language) {
+	global $MySB_DB;
+
+	$ownCloudDatas = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
+
+	if ( $ownCloudDatas["is_installed"] == '1' ) {
+		$MySB_DB->update("oc_preferences", ["configvalue" => "$language"], ["userid" => "$user", "configkey" => "lang"]);
+	}
+}
+
 // Change Cakebox-light language
 function ChangeCakeboxLanguage($user, $language) {
 	global $MySB_DB;

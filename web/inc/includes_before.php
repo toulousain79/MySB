@@ -45,8 +45,9 @@ if ( isset($_GET['page']) ) {
 
 // Medoo framework
 require_once(FILE_MEDOO);
-$MySB_DB = new medoo(['database_file' => MySB_DB, 'database_name' => 'MySB']);
-$Wolf_DB = new medoo(['database_file' => Wolf_DB, 'database_name' => 'Wolf']);
+$MySB_DB = new Medoo_SQLite(['database_file' => MySB_DB, 'database_name' => 'MySB']);
+$Wolf_DB = new Medoo_SQLite(['database_file' => Wolf_DB, 'database_name' => 'Wolf']);
+$ownCloud_DB = new Medoo_MySQL(['database_name' => 'ownCloud']);
 
 // Users table
 if ( isset($_SERVER['PHP_AUTH_USER']) ) {

@@ -28,7 +28,7 @@ source $(dirname $0)/../inc/includes_before
 PackagesManage install "mysql-server"
 
 #### MySQL Secure
-if [ ! -f $MySB_InstallDir/files/MySQL_RootPassword ] && [ ! -f $MySB_InstallDir/files/MySQL_MysbPassword ]; then
+if [ -z $MySQL_RootPassword ] && [ -z $MySQL_MysbPassword ]; then
 	RootPassword="`GenPassword 16`"
 	MysbPassword="`GenPassword 8`"
 
@@ -42,8 +42,14 @@ if [ ! -f $MySB_InstallDir/files/MySQL_RootPassword ] && [ ! -f $MySB_InstallDir
 	grant all on MySB_db.* to 'MySB_user'@'localhost' identified by '$MysbPassword';
 	FLUSH PRIVILEGES;
 	EOF
-	echo $RootPassword | tee -a $MySB_InstallDir/files/MySQL_RootPassword
-	echo $MysbPassword | tee -a $MySB_InstallDir/files/MySQL_MysbPassword
+	
+	# Add MySQL password into MySB config files
+	echo "MySQL_RootPassword=\"$RootPassword\"" >> /etc/MySB/config
+	echo "MySQL_MysbPassword=\"$MysbPassword\"" >> /etc/MySB/config
+	NumLign=$(cat /etc/MySB/config.php | grep 'MySB_DB' -n -m 1 | cut -d ':' -f 1)
+	(( NumLign-- ))
+	sed -i ""$NumLign"i\define('MySQL_MysbPassword', '$MysbPassword');" /etc/MySB/config.php
+	sed -i ""$NumLign"i\define('MySQL_RootPassword', '$RootPassword');" /etc/MySB/config.php
 fi
 
 #### STOP services
