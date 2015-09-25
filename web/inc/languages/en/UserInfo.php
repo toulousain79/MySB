@@ -152,6 +152,9 @@ define('User_UserInfo_Comment_OpenVpnGui', 'Download here GUI for OpenVPN.');
 // CakeBox Light
 define('User_UserInfo_Title_Cakebox', 'CakeBox Light');
 define('User_UserInfo_Comment_Cakebox', 'Play here your media.');
+// ownCloud
+define('User_UserInfo_Title_ownCloud', 'ownCloud');
+define('User_UserInfo_Comment_ownCloud', 'Access, Sync and Share Your Data.');
 
 //////////////////////
 // Links (Main user)

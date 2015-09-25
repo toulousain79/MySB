@@ -47,6 +47,7 @@ function PrintContent($user, $Case) {
 	$CakeboxDatas = $MySB_DB->get("services", ["is_installed", "port_tcp1"], ["serv_name" => "CakeBox-Light"]);
 	$DNScryptDatas = $MySB_DB->get("services", ["is_installed"], ["serv_name" => "DNScrypt-proxy"]);
 	$WebminDatas = $MySB_DB->get("services", ["is_installed", "port_tcp1"], ["serv_name" => "Webmin"]);
+	$ownCloudInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
 	$RentingDatas = $MySB_DB->get("renting", "*", ["id_renting" => 1]);
 	// Users infos
 	$IPv4_List = $MySB_DB->select("users_addresses", "ipv4", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
@@ -417,6 +418,13 @@ function PrintContent($user, $Case) {
 			<td colspan="2"><a target="_blank" href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/cb/"><span class="Comments"><?php echo User_UserInfo_Comment_Cakebox; ?></span></a></td>
 		</tr>
 	<?php } ?>
+		<!-- // ownCloud -->
+	<?php if ( $ownCloudInstalled == '1' ) { ?>
+		<tr align="left">
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_ownCloud; ?></th>
+			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/owncloud"><span class="Comments"><?php echo User_UserInfo_Comment_ownCloud; ?></span></a></td>
+		</tr>
+	<?php } ?>	
 
 <?php } // $DisplayLinks ?>
 

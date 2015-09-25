@@ -151,6 +151,9 @@ define('User_UserInfo_Comment_OpenVpnGui', 'T&eacute;l&eacute;chargez ici un cli
 // CakeBox Light
 define('User_UserInfo_Title_Cakebox', 'CakeBox Light');
 define('User_UserInfo_Comment_Cakebox', 'Jouer ici vos m&eacute;dias.');
+// ownCloud
+define('User_UserInfo_Title_ownCloud', 'ownCloud');
+define('User_UserInfo_Comment_ownCloud', 'Plateforme de services de stockage et partage de fichiers.');
 
 //////////////////////
 // Links (Main user)

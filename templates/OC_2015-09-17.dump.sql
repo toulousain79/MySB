@@ -107,7 +107,7 @@ CREATE TABLE `oc_appconfig` (
 
 LOCK TABLES `oc_appconfig` WRITE;
 /*!40000 ALTER TABLE `oc_appconfig` DISABLE KEYS */;
-INSERT INTO `oc_appconfig` VALUES ('activity','enabled','yes'),('activity','installed_version','2.0.2'),('activity','types','filesystem'),('backgroundjob','lastjob','1'),('core','OC_Channel','production'),('core','backgroundjobs_mode','cron'),('core','installedat','1442842158.5313'),('core','lastcron','1442842201'),('core','lastupdateResult','{\"version\":{},\"versionstring\":{},\"url\":{},\"web\":{}}'),('core','lastupdatedat','1442842236'),('core','public_files','files_sharing/public.php'),('core','public_gallery','gallery/public.php'),('core','public_webdav','files_sharing/publicwebdav.php'),('core','remote_files','files/appinfo/remote.php'),('core','remote_webdav','files/appinfo/remote.php'),('files','enabled','yes'),('files','installed_version','1.1.10'),('files','types','filesystem'),('files_locking','enabled','yes'),('files_locking','installed_version',''),('files_locking','types','filesystem'),('files_pdfviewer','enabled','yes'),('files_pdfviewer','installed_version','0.7'),('files_pdfviewer','ocsid','166049'),('files_pdfviewer','types',''),('files_sharing','enabled','yes'),('files_sharing','installed_version','0.6.2'),('files_sharing','types','filesystem'),('files_texteditor','enabled','yes'),('files_texteditor','installed_version','0.4'),('files_texteditor','ocsid','166051'),('files_texteditor','types',''),('files_trashbin','enabled','yes'),('files_trashbin','installed_version','0.6.3'),('files_trashbin','types','filesystem'),('files_versions','enabled','yes'),('files_versions','installed_version','1.0.6'),('files_versions','types','filesystem'),('files_videoviewer','enabled','yes'),('files_videoviewer','installed_version','0.1.3'),('files_videoviewer','ocsid','166054'),('files_videoviewer','types',''),('firstrunwizard','enabled','yes'),('firstrunwizard','installed_version','1.1'),('firstrunwizard','ocsid','166055'),('firstrunwizard','types',''),('gallery','enabled','yes'),('gallery','installed_version','0.6.0'),('gallery','types',''),('provisioning_api','enabled','yes'),('provisioning_api','installed_version','0.2'),('provisioning_api','types','filesystem'),('templateeditor','enabled','yes'),('templateeditor','installed_version','0.1'),('templateeditor','types',''),('updater','enabled','yes'),('updater','installed_version','0.6'),('updater','types','');
+INSERT INTO `oc_appconfig` VALUES ('activity','enabled','yes'),('activity','installed_version','2.0.2'),('activity','types','filesystem'),('backgroundjob','lastjob','1'),('core','OC_Channel','production'),('core','backgroundjobs_mode','cron'),('core','installedat','1442842158.5313'),('core','lastcron','1443161702'),('core','lastupdateResult','{\"version\":{},\"versionstring\":{},\"url\":{},\"web\":{}}'),('core','lastupdatedat','1443161667'),('core','public_files','files_sharing/public.php'),('core','public_gallery','gallery/public.php'),('core','public_webdav','files_sharing/publicwebdav.php'),('core','remote_files','files/appinfo/remote.php'),('core','remote_webdav','files/appinfo/remote.php'),('core','shareapi_allow_mail_notification','yes'),('core','shareapi_allow_public_notification','yes'),('core','shareapi_default_expire_date','yes'),('core','shareapi_enforce_expire_date','no'),('files','enabled','yes'),('files','installed_version','1.1.10'),('files','types','filesystem'),('files_external','/MySB_share','1443161728'),('files_external','enabled','yes'),('files_external','installed_version','0.2.3'),('files_external','ocsid','166048'),('files_external','types','filesystem'),('files_external','user_mounting_backends','\\OC\\Files\\Storage\\AmazonS3,\\OC\\Files\\Storage\\Dropbox,\\OC\\Files\\Storage\\FTP,\\OC\\Files\\Storage\\Google,\\OC\\Files\\Storage\\Swift,\\OC\\Files\\Storage\\OwnCloud,\\OC\\Files\\Storage\\SFTP,\\OC\\Files\\Storage\\SFTP_Key,\\OC\\Files\\Storage\\SMB,\\OC\\Files\\Storage\\SMB_OC,\\OC\\Files\\Storage\\DAV'),('files_locking','enabled','yes'),('files_locking','installed_version',''),('files_locking','types','filesystem'),('files_pdfviewer','enabled','yes'),('files_pdfviewer','installed_version','0.7'),('files_pdfviewer','ocsid','166049'),('files_pdfviewer','types',''),('files_sharing','enabled','yes'),('files_sharing','installed_version','0.6.2'),('files_sharing','types','filesystem'),('files_texteditor','enabled','yes'),('files_texteditor','installed_version','0.4'),('files_texteditor','ocsid','166051'),('files_texteditor','types',''),('files_trashbin','enabled','yes'),('files_trashbin','installed_version','0.6.3'),('files_trashbin','types','filesystem'),('files_versions','enabled','yes'),('files_versions','installed_version','1.0.6'),('files_versions','types','filesystem'),('files_videoviewer','enabled','yes'),('files_videoviewer','installed_version','0.1.3'),('files_videoviewer','ocsid','166054'),('files_videoviewer','types',''),('firstrunwizard','enabled','yes'),('firstrunwizard','installed_version','1.1'),('firstrunwizard','ocsid','166055'),('firstrunwizard','types',''),('gallery','enabled','yes'),('gallery','installed_version','0.6.0'),('gallery','types',''),('provisioning_api','enabled','yes'),('provisioning_api','installed_version','0.2'),('provisioning_api','types','filesystem'),('templateeditor','enabled','yes'),('templateeditor','installed_version','0.1'),('templateeditor','types',''),('updater','enabled','yes'),('updater','installed_version','0.6'),('updater','types','');
 /*!40000 ALTER TABLE `oc_appconfig` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -175,7 +175,7 @@ CREATE TABLE `oc_filecache` (
 
 LOCK TABLES `oc_filecache` WRITE;
 /*!40000 ALTER TABLE `oc_filecache` DISABLE KEYS */;
-INSERT INTO `oc_filecache` VALUES (1,1,'','d41d8cd98f00b204e9800998ecf8427e',-1,'',2,1,0,1442842206,1442842206,0,0,'5600065ed2a13',23),(2,1,'files','45b963397aa40d4a0063e0d85e4fe7a1',1,'files',2,1,0,1442840600,1442840600,0,0,'5600062f97b89',31),(3,1,'cache','0fea6a13c52b4d4725368f24b045ca84',1,'cache',2,1,0,1442842206,1442842206,0,0,'5600065ecbc23',31);
+INSERT INTO `oc_filecache` VALUES (1,1,'','d41d8cd98f00b204e9800998ecf8427e',-1,'',2,1,0,1442842206,1442842206,0,0,'5600065ed2a13',23),(2,1,'files','45b963397aa40d4a0063e0d85e4fe7a1',1,'files',2,1,0,1443161731,1443121950,0,0,'5604e6835f9bc',31),(3,1,'cache','0fea6a13c52b4d4725368f24b045ca84',1,'cache',2,1,0,1442842206,1442842206,0,0,'5600065ecbc23',31);
 /*!40000 ALTER TABLE `oc_filecache` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -304,7 +304,7 @@ CREATE TABLE `oc_jobs` (
 
 LOCK TABLES `oc_jobs` WRITE;
 /*!40000 ALTER TABLE `oc_jobs` DISABLE KEYS */;
-INSERT INTO `oc_jobs` VALUES (1,'OCA\\Activity\\BackgroundJob\\EmailNotification','null',1442842161),(2,'OCA\\Activity\\BackgroundJob\\ExpireActivities','null',1442842169),(3,'OCA\\Files_sharing\\Lib\\DeleteOrphanedSharesJob','null',1442842179);
+INSERT INTO `oc_jobs` VALUES (1,'OCA\\Activity\\BackgroundJob\\EmailNotification','null',1443161702),(2,'OCA\\Activity\\BackgroundJob\\ExpireActivities','null',1443161702),(3,'OCA\\Files_sharing\\Lib\\DeleteOrphanedSharesJob','null',1443161702);
 /*!40000 ALTER TABLE `oc_jobs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -320,7 +320,7 @@ CREATE TABLE `oc_mimetypes` (
   `mimetype` varchar(255) COLLATE utf8_bin NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `mimetype_id_index` (`mimetype`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -355,7 +355,7 @@ CREATE TABLE `oc_preferences` (
 
 LOCK TABLES `oc_preferences` WRITE;
 /*!40000 ALTER TABLE `oc_preferences` DISABLE KEYS */;
-INSERT INTO `oc_preferences` VALUES ('admin','core','timezone','Europe/Berlin'),('admin','firstrunwizard','show','0'),('admin','login','lastLogin','1442842206');
+INSERT INTO `oc_preferences` VALUES ('admin','core','timezone','Europe/Paris'),('admin','files_external','/MySB_share','1443161731'),('admin','firstrunwizard','show','0'),('admin','login','lastLogin','1442842206');
 /*!40000 ALTER TABLE `oc_preferences` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -498,7 +498,7 @@ CREATE TABLE `oc_storages` (
   `numeric_id` int(11) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`numeric_id`),
   UNIQUE KEY `storages_id_index` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -507,7 +507,7 @@ CREATE TABLE `oc_storages` (
 
 LOCK TABLES `oc_storages` WRITE;
 /*!40000 ALTER TABLE `oc_storages` DISABLE KEYS */;
-INSERT INTO `oc_storages` VALUES ('home::admin',1),('local::/home/owncloud/',2);
+INSERT INTO `oc_storages` VALUES ('home::admin',1),('local::/',4),('local::/home/MySB_share/',3),('local::/home/owncloud/',2);
 /*!40000 ALTER TABLE `oc_storages` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -606,4 +606,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2015-09-21 15:31:27
+-- Dump completed on 2015-09-25  8:17:20

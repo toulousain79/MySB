@@ -224,6 +224,13 @@ function printUser($user) {
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_Cakebox . '</th>';
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">' . User_UserInfo_Comment_Cakebox . '</span></a></td></tr>';
 	}
+	// ownCloud
+	$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
+	if ( $is_installed == '1' ) {
+		$Link = 'https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/owncloud';
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_ownCloud . '</th>';
+		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">' . User_UserInfo_Comment_ownCloud . '</span></a></td></tr>';
+	}	
 
 	//////////////////////
 	// Links (Main user)
