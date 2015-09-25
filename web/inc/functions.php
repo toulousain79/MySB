@@ -24,12 +24,15 @@
 
 // Change ownCloud language
 function ChangeOwnCloudLanguage($user, $language) {
-	global $MySB_DB;
+	global $MySB_DB, $MySQL_ownCloud_DB;
 
 	$ownCloudDatas = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
 
 	if ( $ownCloudDatas["is_installed"] == '1' ) {
-		$MySQL_ownCloud_DB->update("oc_preferences", ["configvalue" => "$language"], ["userid" => "$user", "configkey" => "lang"]);
+		$MySQL_ownCloud_DB->update("oc_preferences", ["configvalue" => "$language"], ["AND" => [
+																						"userid" => "$user",
+																						"configkey" => "lang"
+																					]]);
 	}
 }
 
