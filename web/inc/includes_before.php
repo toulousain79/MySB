@@ -22,6 +22,8 @@
 //
 //#################### FIRST LINE #####################################
 
+header('Cache-control: private'); // IE 6 FIX
+
 // Config file
 require_once('/etc/MySB/config.php');
 
@@ -47,7 +49,8 @@ if ( isset($_GET['page']) ) {
 require_once(FILE_MEDOO);
 $MySB_DB = new Medoo_SQLite(['database_file' => MySB_DB, 'database_name' => 'MySB']);
 $Wolf_DB = new Medoo_SQLite(['database_file' => Wolf_DB, 'database_name' => 'Wolf']);
-$ownCloud_DB = new Medoo_MySQL(['database_name' => 'ownCloud']);
+$MySQL_MySB_DB = new Medoo_MySQL(['database_name' => 'MySB_db']);
+$MySQL_ownCloud_DB = new Medoo_MySQL(['database_name' => 'ownCloud_db']);
 
 // Users table
 if ( isset($_SERVER['PHP_AUTH_USER']) ) {
@@ -60,7 +63,6 @@ if ( isset($CurrentUser) ) {
 }
 
 // Language
-header('Cache-control: private'); // IE 6 FIX
 if ( isSet($users_datas["language"]) ) {
 	$Language = $users_datas["language"];
 	$_SESSION['Language'] = $Language;
