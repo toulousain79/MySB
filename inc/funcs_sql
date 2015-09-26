@@ -57,4 +57,44 @@ Func_ownCloud_DB() {
 	esac
 }
 
+Func_SQL_Command() {
+	DatabaseType="mysql"
+	Command="$1"
+
+	# MySQL or SQLite ?
+	IfEmpty="`ls -a /var/lib/mysql/MySB_db/ 2> /dev/null | sed -e "/\.$/d" | wc -l`"
+	if [ $IfEmpty -eq 1 ]; then
+		DatabaseType="sqlite3"
+	fi
+
+	case "$Command" in
+		"UPDATE")
+			Table="$2"
+			VarSet="$3"
+			VarWhere="$4"
+			case "$DatabaseType" in
+				"sqlite3")
+					/usr/bin/sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE $Table SET $VarSet WHERE $VarWhere;"
+				;;
+				"mysql")
+					/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -e "UPDATE $Table SET $VarSet WHERE $VarWhere";
+				;;
+			esac
+		;;
+		"INSERT")
+			Table="$2"
+			VarColumns="$3"
+			VarValues="$4"
+			case "$DatabaseType" in
+				"sqlite3")
+					sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT INTO $Table ($VarColumns) VALUES ($VarValues);"
+				;;
+				"mysql")
+					/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -e "INSERT INTO $Table ($VarColumns) VALUES ($VarValues)";
+				;;
+			esac
+		;;		
+	esac
+}
+
 ##################### LAST LINE ######################################
