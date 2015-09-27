@@ -11,8 +11,8 @@ class Medoo_SQLite{
 
 class Medoo_MySQL{
 	protected $database_type = 'mysql';
-	protected $server = 'localhost';
-	protected $username = 'MySB_user';
+	protected $server = MySQL_Hostname;
+	protected $username = MySQL_MysbUser;
 	protected $password = MySQL_MysbPassword;
 	protected $database_name;
 	protected $port = 3306;
