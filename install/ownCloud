@@ -68,7 +68,25 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	fi
 
 	#### ownCloud config file
+	curl --data "adminlogin=admin&adminpass=admin&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" --user $MySB_User:$MySB_Password "https://srv1.lig2p.com:8889/owncloud/" --cacert $MySB_InstallDir/ssl/nginx.cert &> /dev/null
+	if [ -f $ownCloudDir/config/config.php ]; then
+		InstanceId="`cat $ownCloudDir/config/config.php | grep 'instanceid' | awk '{ print $3 }'| cut -d "'" -f 2`"
+		PasswordSalt="`cat $ownCloudDir/config/config.php | grep 'passwordsalt' | awk '{ print $3 }'| cut -d "'" -f 2`"
+		Secret="`cat $ownCloudDir/config/config.php | grep 'secret' | awk '{ print $3 }'| cut -d "'" -f 2`"
+	fi
+	if [ -z "$InstanceId" ]; then
+		InstanceId="oc7yb4yj6xgr"
+	fi
+	if [ -z "$PasswordSalt" ]; then
+		PasswordSalt="6XwLz3yYlVlEIlFd0zHPPBF32X3xKM"
+	fi
+	if [ -z "$Secret" ]; then
+		Secret="iIrWBM79glEVZbxuVEFdPML29+axTxgTgPcOyI7wwVgEn9Nu"
+	fi	
 	cp -vf $MySB_InstallDir/templates/owncloud.config.php.template $ownCloudDir/config/config.php
+	perl -pi -e "s/<InstanceId>/$InstanceId/g" $ownCloudDir/config/config.php
+	perl -pi -e "s/<PasswordSalt>/$PasswordSalt/g" $ownCloudDir/config/config.php
+	perl -pi -e "s/<Secret>/$Secret/g" $ownCloudDir/config/config.php
 	perl -pi -e "s/<server_name>/$HostNameFQDN/g" $ownCloudDir/config/config.php
 	perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" $ownCloudDir/config/config.php
 	perl -pi -e "s/<Version>/$ownCloudVersion/g" $ownCloudDir/config/config.php
