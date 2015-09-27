@@ -35,11 +35,13 @@ switch ($IsMainUser) {
 		break;
 
 	case false:
+		if (GetVersion() == 'v3.0' ) {
+			echo sprintf(Home_AfterUpgrade, $system_datas["hostname"], $Port_HTTPs);
+		}
 		echo Home_NormalUser;
 		break;
 }
 
-	
 $zip_file = WEB_ROOT . '/openvpn/openvpn_' . $CurrentUser . '.zip';
 if ( file_exists($zip_file) ) {
 	unlink($zip_file);
