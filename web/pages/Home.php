@@ -35,7 +35,6 @@ switch ($IsMainUser) {
 		break;
 
 	case false:
-		echo GetVersion();
 		if (GetVersion() == 'v3.0' ) {
 			echo Home_AfterUpgrade;
 		}
