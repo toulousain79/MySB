@@ -33,23 +33,23 @@ if [ -z $MySQL_RootPassword ] && [ -z $MySQL_MysbPassword ]; then
 	MySQL_MysbPassword="`GenPassword 8`"
 
 	mysql -u root <<-EOF
-	UPDATE mysql.user SET Password=PASSWORD('$RootPassword') WHERE User='root';
+	UPDATE mysql.user SET Password=PASSWORD('$MySQL_RootPassword') WHERE User='root';
 	DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
 	DELETE FROM mysql.user WHERE User='';
 	DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%';
 	create database MySB_db;
 	create user MySB_user;
-	grant all on MySB_db.* to 'MySB_user'@'localhost' identified by '$MysbPassword';
+	grant all on MySB_db.* to 'MySB_user'@'localhost' identified by '$MySQL_MysbPassword';
 	FLUSH PRIVILEGES;
 	EOF
 
 	# Add MySQL password into MySB config files
+	echo "MySQL_RootPassword=\"$MySQL_RootPassword\"" >> $MySB_InstallDir/files/MySQL_RootPassword
+	echo "MySQL_MysbPassword=\"$MySQL_MysbPassword\"" >> $MySB_InstallDir/files/MySQL_MysbPassword
 	echo "MySQL_RootPassword=\"$MySQL_RootPassword\"" >> /etc/MySB/config
 	echo "MySQL_MysbPassword=\"$MySQL_MysbPassword\"" >> /etc/MySB/config
-	NumLign=$(cat /etc/MySB/config.php | grep 'MySB_DB' -n -m 1 | cut -d ':' -f 1)
-	(( NumLign-- ))
-	sed -i ""$NumLign"i\define('MySQL_MysbPassword', '$MySQL_MysbPassword');" /etc/MySB/config.php
-	sed -i ""$NumLign"i\define('MySQL_RootPassword', '$MySQL_RootPassword');" /etc/MySB/config.php
+	perl -pi -e "s/<MySQL_MysbPassword>/$MySQL_MysbPassword/g" /etc/MySB/config.php
+	chmod 0644 /etc/MySB/databases.php
 fi
 
 # if [ "$1" == "UPGRADE" ] && CheckCommand 0 mysql; then
