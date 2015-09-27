@@ -35,8 +35,9 @@ switch ($IsMainUser) {
 		break;
 
 	case false:
+		echo GetVersion();
 		if (GetVersion() == 'v3.0' ) {
-			echo sprintf(Home_AfterUpgrade, $system_datas["hostname"], $Port_HTTPs);
+			echo Home_AfterUpgrade;
 		}
 		echo Home_NormalUser;
 		break;

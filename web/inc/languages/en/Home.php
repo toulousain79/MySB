@@ -53,7 +53,7 @@ define('Home_NormalUser', '
 		<li>Download the configuration files for OpenVPN <span class="Comments">(if installed)</span></li>
 	</ul>
 ');
-define('Home_AfterUpgrade', 'To use ownCloud, thank you to reset your password on <a href="https://%s:%s/?user/change-password.html">this page</a>. <span class="Comments">(You can reuse the same password)</span>');
+define('Home_AfterUpgrade', 'To use ownCloud, thank you to reset your password on <a href="?user/change-password.html">this page</a>. <span class="Comments">(You can reuse the same password)</span>');
 
 //#################### LAST LINE ######################################
 ?>
