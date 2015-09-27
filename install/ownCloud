@@ -67,22 +67,18 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		fi
 	fi
 
-	#### MySQL
-	if [ ! -f /var/lib/mysql/ownCloud_db/db.opt ]; then
-		/usr/bin/mysql -u root -p$MySQL_RootPassword <<-EOF
-		create database ownCloud_db;
-		grant all on ownCloud_db.* to 'MySB_user'@'localhost' identified by '$MySQL_MysbPassword';
-		FLUSH PRIVILEGES;
-		EOF
-	fi
+	#### Create directories & change rights
+	ManageDirectoriesAndFiles
 
-	IfEmpty="`ls -a /var/lib/mysql/ownCloud_db/ 2> /dev/null | sed -e "/\.$/d" | wc -l`"
-	if [ $IfEmpty -eq 1 ]; then
-		/usr/bin/mysql -u root -p$MySQL_RootPassword --database=ownCloud_db < $MySB_InstallDir/templates/OC_2015-09-17.dump.sql
-		/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -e "UPDATE oc_preferences SET configvalue = '$TimeZone' WHERE configkey = 'timezone'";
-		#/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -e "INSERT INTO oc_preferences (userid, appid, configkey, configvalue) VALUES ('admin', 'files_external', '/MySB_share', '$TimeStamp')";
-		#/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -e "INSERT INTO oc_storages (id) VALUES ('local::/home/MySB_share/')";
-	fi
+	#### CRON
+	crontab -u www-data -l > /tmp/crontab.tmp
+	sed -i '/ownCloud/d' /tmp/crontab.tmp
+	echo "*/15  *  *  *  * php -f $ownCloudDir/cron.php > /dev/null 2>&1 # ownCloud" | tee -a /tmp/crontab.tmp
+	crontab -u www-data /tmp/crontab.tmp
+	rm -f /tmp/crontab.tmp
+
+	#### START services
+	ManageServices start "php5-fpm nginx cron"
 
 	#### ownCloud config file
 	curl --silent --retry 2 --data "adminlogin=admin&adminpass=admin&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" --user $MySB_User:$MySB_Password "https://srv1.lig2p.com:8889/owncloud/" --cacert $MySB_InstallDir/ssl/nginx.cert &> /dev/null
@@ -95,12 +91,15 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		Secret="`echo $Secret | sed s,/,\\\\\\\\\\/,g`"
 	fi
 	if [ -z "$InstanceId" ]; then
+		echo "InstanceId vide"
 		InstanceId="oc7yb4yj6xgr"
 	fi
 	if [ -z "$PasswordSalt" ]; then
+		echo "PasswordSalt vide"
 		PasswordSalt="6XwLz3yYlVlEIlFd0zHPPBF32X3xKM"
 	fi
 	if [ -z "$Secret" ]; then
+		echo "Secret vide"
 		Secret="iIrWBM79glEVZbxuVEFdPML29+axTxgTgPcOyI7wwVgEn9Nu"
 	fi
 	cp -vf $MySB_InstallDir/templates/owncloud.config.php.template $ownCloudDir/config/config.php
@@ -115,18 +114,20 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	perl -pi -e "s/<TimeZone>/$TimeZoneEscaped/g" $ownCloudDir/config/config.php
 	sed -i "s/'default_language' => 'en'/'default_language' => '$EnvLang'/g;" $ownCloudDir/config/config.php
 
-	#### Create directories & change rights
-	ManageDirectoriesAndFiles
+	#### MySQL
+	if [ ! -f /var/lib/mysql/ownCloud_db/db.opt ]; then
+		/usr/bin/mysql -u root -p$MySQL_RootPassword <<-EOF
+		create database ownCloud_db;
+		grant all on ownCloud_db.* to 'MySB_user'@'localhost' identified by '$MySQL_MysbPassword';
+		FLUSH PRIVILEGES;
+		EOF
+	fi
 
-	#### CRON
-	crontab -u www-data -l > /tmp/crontab.tmp
-	sed -i '/ownCloud/d' /tmp/crontab.tmp
-	echo "*/15  *  *  *  * php -f $ownCloudDir/cron.php > /dev/null 2>&1 # ownCloud" | tee -a /tmp/crontab.tmp
-	crontab -u www-data /tmp/crontab.tmp
-	rm -f /tmp/crontab.tmp
-
-	#### START services
-	ManageServices start "php5-fpm nginx cron"
+	IfEmpty="`ls -a /var/lib/mysql/ownCloud_db/ 2> /dev/null | sed -e "/\.$/d" | wc -l`"
+	if [ $IfEmpty -eq 1 ]; then
+		/usr/bin/mysql -u root -p$MySQL_RootPassword --database=ownCloud_db < $MySB_InstallDir/templates/OC_2015-09-17.dump.sql
+		/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -e "UPDATE oc_preferences SET configvalue = '$TimeZone' WHERE configkey = 'timezone'";
+	fi
 
 	#### Manage Admin user
 	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
@@ -138,11 +139,16 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	if [ "$1" == "UPGRADE" ] && [ -d $ownCloudDir ]; then
 		ListingUsers
 		for seedUser in $UsersList; do
-			FnUserMail="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT users_email FROM users WHERE users_ident = '$seedUser'\"`"
-			OC_PASS="`GenPassword 8`"
-			export OC_PASS
-			su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:add --password-from-env --display-name=\"$seedUser\" --group=\"MySB_users\" $seedUser" &> /dev/null
-			Func_ownCloud_DB "CreateUser" "$seedUser" "$FnUserMail" "$EnvLang" &> /dev/null
+			UserExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'uid' 'oc_users' "uid='$seedUser'"`"
+
+			if [ -z $UserExist ]; then
+				FnUserMail="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT users_email FROM users WHERE users_ident = '$seedUser'\"`"
+				OC_PASS="`GenPassword 8`"
+				export OC_PASS
+				su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:add --password-from-env --display-name=\"$seedUser\" --group=\"MySB_users\" $seedUser" &> /dev/null
+				Func_ownCloud_DB "CreateUser" "$seedUser" "$FnUserMail" "$EnvLang"
+			fi
+			unset UserExist
 		done
 
 		CreateOwnCloudMountJson &> /dev/null

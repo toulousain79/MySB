@@ -60,66 +60,67 @@ Func_ownCloud_DB() {
 Func_SQL_Command() {
 	DatabaseType="mysql"
 	Command="$1"
+	DataBase="$2"
 
 	# MySQL or SQLite ?
-	IfEmpty="`ls -a /var/lib/mysql/MySB_db/ 2> /dev/null | sed -e "/\.$/d" | wc -l`"
+	IfEmpty="`ls -a /var/lib/mysql/$DataBase/ 2> /dev/null | sed -e "/\.$/d" | wc -l`"
 	if [ $IfEmpty -eq 1 ]; then
 		DatabaseType="sqlite3"
 	fi
 
 	case "$Command" in
 		"UPDATE")
-			Table="$2"
-			VarSet="$3"
-			VarWhere="$4"
+			Table="$3"
+			VarSet="$4"
+			VarWhere="$5"
 			case "$DatabaseType" in
 				"sqlite3")
-					/usr/bin/sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE $Table SET $VarSet WHERE $VarWhere;"
+					/usr/bin/sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE $Table SET $VarSet WHERE $VarWhere;"
 				;;
 				"mysql")
-					/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -e "UPDATE $Table SET $VarSet WHERE $VarWhere";
+					/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword $DataBase -e "UPDATE $Table SET $VarSet WHERE $VarWhere";
 				;;
 			esac
 		;;
 		"INSERT")
-			Table="$2"
-			VarColumns="$3"
-			VarValues="$4"
+			Table="$3"
+			VarColumns="$4"
+			VarValues="$5"
 			case "$DatabaseType" in
 				"sqlite3")
-					/usr/bin/sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT INTO $Table ($VarColumns) VALUES ($VarValues);"
+					/usr/bin/sqlite3 -cmd '.timeout 150000' $DataBase "INSERT INTO $Table ($VarColumns) VALUES ($VarValues);"
 				;;
 				"mysql")
-					/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -e "INSERT INTO $Table ($VarColumns) VALUES ($VarValues)";
+					/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword $DataBase -e "INSERT INTO $Table ($VarColumns) VALUES ($VarValues)";
 				;;
 			esac
 		;;
 		"DELETE")
-			Table="$2"
-			VarWhere="$3"
+			Table="$3"
+			VarWhere="$4"
 			case "$DatabaseType" in
 				"sqlite3")
-					/usr/bin/sqlite3 -cmd '.timeout 150000' $MySB_DB "DELETE FROM $Table WHERE id_users = '$UserId'"
+					/usr/bin/sqlite3 -cmd '.timeout 150000' $DataBase "DELETE FROM $Table WHERE id_users = '$UserId'"
 				;;
 				"mysql")
-					/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -e "DELETE FROM $Table WHERE $VarWhere";
+					/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword $DataBase -e "DELETE FROM $Table WHERE $VarWhere";
 				;;
 			esac
 		;;
 		"SELECT")
-			Table="$2"
-			VarFrom="$3"
-			VarWhere="$4"
+			VarSelect="$3"
+			Table="$4"
+			VarWhere="$5"
 			case "$DatabaseType" in
 				"sqlite3")
-					Value="`/usr/bin/sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT $Table FROM $VarFrom WHERE $VarWhere;\"`"
+					Value="`/usr/bin/sqlite3 -cmd '.timeout 150000' $DataBase \"SELECT $VarSelect FROM $Table WHERE $VarWhere;\"`"
 				;;
 				"mysql")
-					Value="`/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -e \"SELECT $Table FROM $VarFrom WHERE $VarWhere\";`"
+					Value="`/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword $DataBase -N -s -e \"SELECT $VarSelect FROM $Table WHERE $VarWhere\";`"
 				;;
 			esac
-			return $Value
-		;;		
+			echo $Value
+		;;
 	esac
 }
 
