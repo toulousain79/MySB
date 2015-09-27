@@ -127,7 +127,7 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 			ProviderName="`echo $Line | awk '{split($0,a,\"|\"); print a[12]}' | sed 's/#/ /g;'`"
 			ProviderPublicKey="`echo $Line | awk '{split($0,a,\"|\"); print a[13]}' | sed 's/#/ /g;'`"
 			ProviderPublicKeyTxtRecord="`echo $Line | awk '{split($0,a,\"|\"); print a[14]}' | sed 's/#/ /g;'`"
-		
+
 			# Add new informations in DB (don't want IPv6)
 			if [ -z "`echo $Name | grep 'ipv6'`" ]; then
 				sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT INTO dnscrypt_resolvers (name,full_name,description,location,coordinates,url,version,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record,is_activated,is_wished) VALUES (\"$Name\",\"$FullName\",\"$Description\",\"$Location\",\"$Coordinates\",\"$URL\",\"$Version\",\"$DnssecVal\",\"$NoLogs\",\"$Namecoin\",\"$ResolverAddress\",\"$ProviderName\",\"$ProviderPublicKey\",\"$ProviderPublicKeyTxtRecord\",\"0\",\"0\");"
@@ -138,15 +138,10 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_wished = '1' WHERE dnssec = 'yes' AND no_logs='yes';"
 	fi
 
-	# Check service
-	# crontab -l > /tmp/crontab.tmp
-	# sed -i '/dnscrypt-proxy/d' /tmp/crontab.tmp
-	# echo "*/5 * * * * if ( ! /bin/ps ax | grep 'dnscrypt-proxy' | sed '/grep/d' > /dev/null ); then service dnscrypt-proxy restart &> /dev/null; fi" >> /tmp/crontab.tmp
-	# crontab /tmp/crontab.tmp
-	# rm -f /tmp/crontab.tmp
-
 	# Mark as installed
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '0',is_installed = '1' WHERE serv_name = 'DNScrypt-proxy';"
+	if CheckCommand 0 dnscrypt-proxy; then
+		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '0',is_installed = '1' WHERE serv_name = 'DNScrypt-proxy';"
+	fi
 
 	#### Logs
 	if [ ! -d /var/log/dnscrypt-proxy/archives ]; then mkdir -p /var/log/dnscrypt-proxy/archives; fi
@@ -160,7 +155,6 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	ScriptInvoke 'screen' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create'
 
 	#### START services
-	#ManageServices start "cron bind9 dnscrypt-proxy"
 	Switch="$1"
 	if [ "$Switch" != "UPGRADE" ]; then
 		ManageServices start "cron"
@@ -171,7 +165,7 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 		if ! GetPid dnscrypt-proxy; then
 			service dnscrypt-proxy status | tee -a $MySB_InstallDir/temp/continue
 		fi
-	fi	
+	fi
 fi
 
 # -----------------------------------------

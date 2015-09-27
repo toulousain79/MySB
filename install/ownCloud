@@ -38,7 +38,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	TimeStamp=$(date +%s)
 
 	#### NginX
-	cp $MySB_InstallDir/templates/etc.nginx.locations.owncloud.conf.template /etc/nginx/locations/ownCloud.conf
+	cp -vf $MySB_InstallDir/templates/etc.nginx.locations.owncloud.conf.template /etc/nginx/locations/ownCloud.conf
 	perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/locations/ownCloud.conf
 	chmod 0644 /etc/nginx/locations/ownCloud.conf
 
@@ -68,7 +68,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	fi
 
 	#### ownCloud config file
-	cp $MySB_InstallDir/templates/owncloud.config.php.template $ownCloudDir/config/config.php
+	cp -vf $MySB_InstallDir/templates/owncloud.config.php.template $ownCloudDir/config/config.php
 	perl -pi -e "s/<server_name>/$HostNameFQDN/g" $ownCloudDir/config/config.php
 	perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" $ownCloudDir/config/config.php
 	perl -pi -e "s/<Version>/$ownCloudVersion/g" $ownCloudDir/config/config.php
@@ -128,10 +128,12 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	fi
 
 	#### Logrotate
-	cp -v $MySB_InstallDir/templates/etc.logrotate.d.owncloud.template /etc/logrotate.d/owncloud
+	cp -vf $MySB_InstallDir/templates/etc.logrotate.d.owncloud.template /etc/logrotate.d/owncloud
 	logrotate -f /etc/logrotate.d/owncloud
 
-	sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'ownCloud';"
+	if CheckCommand 0 $ownCloudDir/occ; then
+		sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'ownCloud';"
+	fi
 fi
 
 # -----------------------------------------

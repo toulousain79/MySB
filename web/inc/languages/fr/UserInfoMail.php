@@ -50,9 +50,9 @@ define('User_UserInfoMail_Comment_ForceIP', 'Forcer l\'ajout de votre adresse IP
 // Links (Main user)
 //////////////////////
 // Trackers
-define('User_UserInfoMail_Comment_Trackers', '<a href="https://%s:%s/?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="https://%s:%s/?trackers/add-new-trackers.html">add new tracker here</a>.');
+define('User_UserInfoMail_Comment_Trackers', '<a href="https://%s:%s/?trackers/trackers-list.html">G&eacute;rer vos trackers ici.</a> Vous pouvez &eacute;galement <a href="https://%s:%s/?trackers/add-new-trackers.html">ajouter vos trackers ici</a>.');
 // Blocklists
-define('User_UserInfoMail_Comment_Blocklists', 'You can manage <a href="https://%s:%s/?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a> AND <a href="https://%s:%s/?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a>.');
+define('User_UserInfoMail_Comment_Blocklists', 'G&eacute;rer la <a href="https://%s:%s/?blocklists/rtorrent-blocklists.html">liste noire pour rTorrent</a> ET la <a href="https://%s:%s/?blocklists/peerguardian-blocklists.html">liste noire pour PeerGuardian</a>.');
 
 //#################### LAST LINE ######################################
 ?>

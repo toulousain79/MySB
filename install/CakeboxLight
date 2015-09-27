@@ -71,62 +71,42 @@ if [ "$ToInstall_Cakebox" == "YES" ]; then
 	#### NginX (alias with proxy)
 	CakeboxDirEscaped=`echo $CakeboxDir | sed s,/,\\\\\\\\\\/,g`
 	if [ -h /etc/nginx/sites-enabled/cakebox ]; then rm -vf /etc/nginx/sites-enabled/cakebox; fi
-	cp $MySB_InstallDir/templates/etc.nginx.site-enabled.cakebox.template /etc/nginx/sites-available/cakebox
+	cp -vf $MySB_InstallDir/templates/etc.nginx.site-enabled.cakebox.template /etc/nginx/sites-available/cakebox
 	perl -pi -e "s/<server_name>/$HostNameFQDN/g" /etc/nginx/sites-available/cakebox
 	perl -pi -e "s/<cakebox_rootdir>/$CakeboxDirEscaped/g" /etc/nginx/sites-available/cakebox
-	cp $MySB_InstallDir/templates/etc.nginx.locations.cakebox.conf.template /etc/nginx/locations/Cakebox-Light.conf
+	cp -vf $MySB_InstallDir/templates/etc.nginx.locations.cakebox.conf.template /etc/nginx/locations/Cakebox-Light.conf
 	if [ ! -h /etc/nginx/sites-enabled/cakebox ]; then ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox; fi
 	perl -pi -e "s/<cakebox_rootdir>/$CakeboxDirEscaped/g" /etc/nginx/locations/Cakebox-Light.conf
 	chmod 0644 /etc/nginx/locations/Cakebox-Light.conf
 
 	# Create proxy file
-	(
-cat <<'EOF'
-		# Cakebox-Light proxy
-		rewrite ^/cb(/.*)$ $1 break;
-		proxy_pass http://127.0.0.1:81;
-		proxy_set_header Host $host:$server_port;
-		proxy_set_header X-Real-IP $remote_addr;
-		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-		proxy_set_header X-Forwarded-Proto $scheme;
-		proxy_redirect off;
-EOF
-	) > /etc/nginx/proxy/Cakebox-Light.conf
+	cp -vf $MySB_InstallDir/templates/etc.nginx.proxy.Cakebox-Light.conf.template /etc/nginx/proxy/Cakebox-Light.conf
 
 	ListingUsers
 	for seedUser in $UsersList; do
-		(
-		cat <<'EOF'
-	location /<username>/ {
-		alias /home/<username>/;
-		add_header Content-Disposition "attachment";
-		satisfy any;
-		allow all;
-	}
-EOF
-		) > /etc/nginx/rpc/$seedUser.cakebox
+		cp -vf $MySB_InstallDir/templates/etc.nginx.rpc.user.cakebox.template /etc/nginx/rpc/$seedUser.cakebox
 		perl -pi -e "s/<username>/$seedUser/g" /etc/nginx/rpc/$seedUser.cakebox
 	done
-	
+
 	#### Delete unused files and directories
 	if [ -d $CakeboxDir/webconf-example ]; then rm -rf $CakeboxDir/webconf-example; fi
 	if [ -d $CakeboxDir/scripts ]; then rm -rf $CakeboxDir/scripts; fi
-	
+
 	#### Some modifications
 	if [ -f $CakeboxDir/public/app/directive/webplayer.js ]; then
 		sed -i "/location.host/s/+ data.url/+ \":$Port_HTTPS\" + data.url/g" $CakeboxDir/public/app/directive/webplayer.js
 	fi
 	if [ -f $CakeboxDir/public/app/controller/AppCtrl.js ]; then
 		sed -i "/location.host/s/+ data.access/+ \":$Port_HTTPS\" + data.access/g" $CakeboxDir/public/app/controller/AppCtrl.js
-	fi	
-	
+	fi
+
 	#### Create directories & change rights
-	ManageDirectoriesAndFiles	
-	
+	ManageDirectoriesAndFiles
+
 	sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'CakeBox-Light';"
-	
+
 	#### START services
-	ManageServices start "nginx"	
+	ManageServices start "nginx"
 fi
 
 # -----------------------------------------

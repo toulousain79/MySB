@@ -44,7 +44,7 @@ if [ "$ToInstall_Manager" == "YES" ]; then
 	ManagerUrl="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT url FROM repositories WHERE name = 'Seedbox-Manager'\"`"
 	ManagerFile="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT file FROM repositories WHERE name = 'Seedbox-Manager'\"`"
 
-	cp $MySB_InstallDir/templates/etc.nginx.locations.seedbox-manager.conf.template /etc/nginx/locations/Seedbox-Manager.conf
+	cp -vf $MySB_InstallDir/templates/etc.nginx.locations.seedbox-manager.conf.template /etc/nginx/locations/Seedbox-Manager.conf
 	ManagerDirEscaped="`echo $ManagerDir | sed s,/,\\\\\\\\\\/,g`"
 	perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/locations/Seedbox-Manager.conf
 	perl -pi -e "s/<manager_rootdir>/$ManagerDirEscaped/g" /etc/nginx/locations/Seedbox-Manager.conf
@@ -154,7 +154,7 @@ EOF
 	sed -i "/user.portSftp/s/Port FTP :/Port sFTP :/g" $ManagerDir/public/themes/spiritofbonobo/template/bloc-ftp.html
 	sed -i "s/Adresse http :/Adresse :/g;" $ManagerDir/public/themes/spiritofbonobo/template/bloc-ftp.html
 	sed -i "s/http:\/\/{{ host }}/$HostNameFQDN/g;" $ManagerDir/public/themes/spiritofbonobo/template/bloc-ftp.html	
-	
+
 	#### Add new line for the HTTPs port (default)
 	NumLign=$(cat $ManagerDir/public/themes/default/template/bloc-ftp.html | grep 'User transdroid' -n -m 1 | cut -d ':' -f 1)
 	sed -i ""$NumLign"i\<li>Port HTTP<strong>s<\/strong> : <em>$Port_HTTPS<\/em><\/li>\n" $ManagerDir/public/themes/default/template/bloc-ftp.html
@@ -169,7 +169,7 @@ EOF
 	#### Transdroid
 	sed -i "s/443/$Port_HTTPS/g;"  $ManagerDir/app/downloads.php
 	sed -i "/base_ftp_url/s/'ftp:\/\/'.\$userName.'@'.\$_SERVER\['SERVER_NAME'\].'\/torrents\/'/''/g" $ManagerDir/app/downloads.php
-	
+
 	#### Config FileZilla
 	sed -i "s/<Protocol>0<\/Protocol>/<Protocol>4<\/Protocol>/g;" $ManagerDir/app/downloads.php
 	sed -i "s/<Name>'.\$title_seedbox.'-ftp<\/Name>/<Name>MySB - FTPs - '.\$userName.'<\/Name>/g;" $ManagerDir/app/downloads.php
@@ -201,7 +201,9 @@ EOF
 	#### Create directories & change rights
 	ManageDirectoriesAndFiles
 
-	sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'Seedbox-Manager';"
+	if CheckCommand 0 $ManagerDir/reboot-rtorrent; then
+		sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'Seedbox-Manager';"
+	fi
 
 	#### START services
 	ManageServices start "nginx"

@@ -73,7 +73,7 @@ CreateServer() {
 	if [ ! -d $MySB_InstallDir/web/openvpn ]; then mkdir -p $MySB_InstallDir/web/openvpn; fi
 	if [ ! -d /etc/openvpn/easy-rsa ]; then
 		mkdir -p /etc/openvpn/easy-rsa
-		cp -r /usr/share/doc/openvpn/examples/easy-rsa/2.0/* /etc/openvpn/easy-rsa/
+		cp -vr /usr/share/doc/openvpn/examples/easy-rsa/2.0/* /etc/openvpn/easy-rsa/
 		chown -R $USER /etc/openvpn/easy-rsa/
 	fi
 
@@ -97,16 +97,16 @@ CreateServer() {
 	/usr/sbin/openvpn --genkey --secret keys/ta.key
 
 	#### Move created files
-	cp keys/dh1024.pem /etc/openvpn/$DH
-	cp keys/ca.crt /etc/openvpn/$CACRT
-	cp keys/ca.key /etc/openvpn/$CAKEY
-	cp keys/ta.key /etc/openvpn/$TAKEY
+	cp -vf keys/dh1024.pem /etc/openvpn/$DH
+	cp -vf keys/ca.crt /etc/openvpn/$CACRT
+	cp -vf keys/ca.key /etc/openvpn/$CAKEY
+	cp -vf keys/ta.key /etc/openvpn/$TAKEY
 	mv -v keys/$CRT /etc/openvpn/
 	mv -v keys/$KEY /etc/openvpn/
 
 	#### Config file Server TUN - With Redirect Gateway
 	# start with a clean config file for a new user
-	cp $MySB_InstallDir/templates/openvpn.server.conf.template /etc/openvpn/Server_TUN_WithGW.conf
+	cp -vf $MySB_InstallDir/templates/openvpn.server.conf.template /etc/openvpn/Server_TUN_WithGW.conf
 	# adapt this file
 	sed -i "s/<PORT>/$Port_OpenVPN_WithGW/g" /etc/openvpn/Server_TUN_WithGW.conf
 	sed -i "s/<PROTO>/$OpenVPN_Proto/g" /etc/openvpn/Server_TUN_WithGW.conf
@@ -121,7 +121,7 @@ CreateServer() {
 	sed -i '/^$/d' /etc/openvpn/Server_TUN_WithGW.conf
 
 	#### Config file Server TUN - Without Redirect Gateway
-	cp /etc/openvpn/Server_TUN_WithGW.conf /etc/openvpn/Server_TUN_WithoutGW.conf
+	cp -vf /etc/openvpn/Server_TUN_WithGW.conf /etc/openvpn/Server_TUN_WithoutGW.conf
 	sed -i "s/$Port_OpenVPN_WithGW/$Port_OpenVPN_WithoutGW/g" /etc/openvpn/Server_TUN_WithoutGW.conf
 	sed -i "s/$NetTunWithRedirectGW/$NetTunWithoutRedirectGW/g" /etc/openvpn/Server_TUN_WithoutGW.conf
 	sed -i '/dhcp-option DNS/d' /etc/openvpn/Server_TUN_WithoutGW.conf
@@ -134,7 +134,7 @@ CreateServer() {
 	#ScriptInvoke 'source' "$MySB_InstallDir/scripts/OpenVPN-Bridge.bsh" 'start'
 
 	#### Config file Server TAP - Without Redirect Gateway
-	cp $MySB_InstallDir/templates/openvpn.server.conf.template /etc/openvpn/Server_TAP_WithoutGW.conf
+	cp -vf $MySB_InstallDir/templates/openvpn.server.conf.template /etc/openvpn/Server_TAP_WithoutGW.conf
 	# adapt this file
 	sed -i '/server 10.0.0.0 255.255.255.0/d' /etc/openvpn/Server_TAP_WithoutGW.conf
 	sed -i '/redirect-gateway/d' /etc/openvpn/Server_TAP_WithoutGW.conf
@@ -158,7 +158,9 @@ CreateServer() {
 	sed -i '/^;/d' /etc/openvpn/Server_TAP_WithoutGW.conf
 	sed -i '/^$/d' /etc/openvpn/Server_TAP_WithoutGW.conf
 
-	sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'OpenVPN';"
+	if CheckCommand 0 openvpn; then
+		sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'OpenVPN';"
+	fi
 
 	#### START services
 	if [ "$2" != "INSTALL" ]; then
@@ -185,7 +187,7 @@ CreateClient() {
 
 	#### Configuration file with separate files - TUN - With Redirect Gateway
 	# start with a clean config file for a new user
-	cp $MySB_InstallDir/templates/openvpn.client.conf.template /etc/openvpn/clients/${CLIENTNAME}_TUN_WithGW.ovpn
+	cp -vf $MySB_InstallDir/templates/openvpn.client.conf.template /etc/openvpn/clients/${CLIENTNAME}_TUN_WithGW.ovpn
 	# adapt this file
 	sed -i "s/<PROTO>/$OpenVPN_Proto/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_WithGW.ovpn
 	sed -i "s/<SrvIpAddress>/$SrvIpAddress/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_WithGW.ovpn	
@@ -200,13 +202,13 @@ CreateClient() {
 	sed -i '/^$/d' /etc/openvpn/clients/${CLIENTNAME}_TUN_WithGW.ovpn
 
 	#### Configuration file with separate files - TUN - Without Redirect Gateway
-	cp /etc/openvpn/clients/${CLIENTNAME}_TUN_WithGW.ovpn /etc/openvpn/clients/${CLIENTNAME}_TUN_WithoutGW.ovpn
+	cp -vf /etc/openvpn/clients/${CLIENTNAME}_TUN_WithGW.ovpn /etc/openvpn/clients/${CLIENTNAME}_TUN_WithoutGW.ovpn
 	sed -i "s/$Port_OpenVPN_WithGW/$Port_OpenVPN_WithoutGW/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_WithoutGW.ovpn
 	sed -i "s/$NetTunWithRedirectGW/$NetTunWithoutRedirectGW/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_WithoutGW.ovpn
 
 	#### Single configuration file (all in one) - TUN - With Redirect Gateway
 	# start with a clean config file for a new user
-	cp $MySB_InstallDir/templates/openvpn.client.conf.template /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
+	cp -vf $MySB_InstallDir/templates/openvpn.client.conf.template /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
 	# adapt this file
 	sed -i "s/<PROTO>/$OpenVPN_Proto/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
 	sed -i "s/<SrvIpAddress>/$SrvIpAddress/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn	
@@ -232,11 +234,11 @@ CreateClient() {
 	echo "</tls-auth>" >> /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
 
 	#### Single configuration file (all in one) - TUN - Without Redirect Gateway
-	cp /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithoutGW.ovpn
+	cp -vf /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithoutGW.ovpn
 	sed -i "s/$Port_OpenVPN_WithGW/$Port_OpenVPN_WithoutGW/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithoutGW.ovpn
 
 	#### Single configuration file (all in one) - TAP - Without Redirect Gateway
-	cp /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithoutGW.ovpn
+	cp -vf /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithoutGW.ovpn
 	sed -i "s/$Port_OpenVPN_WithGW/$Port_OpenVPN_TAP_WithoutGW/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithoutGW.ovpn
 	sed -i "s/dev tun/dev tap/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithoutGW.ovpn
 	sed -i '/mtu-disc yes/d' /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithoutGW.ovpn
@@ -246,9 +248,9 @@ CreateClient() {
 	mv -v $CLIENTNAME.csr /etc/openvpn/clients/
 	mv -v $CLIENTNAME.key /etc/openvpn/clients/
 	chmod 400 /etc/openvpn/clients/*
-	
+
 	#### START services
-	ManageServices start "openvpn"	
+	ManageServices start "openvpn"
 }
 
 ZipClientFiles() {
@@ -352,12 +354,12 @@ DeleteUserFiles() {
 	mv -v /etc/openvpn/clients/$CLIENTNAME.csr /etc/openvpn/easy-rsa/keys/
 	mv -v /etc/openvpn/clients/$CLIENTNAME.key /etc/openvpn/easy-rsa/keys/
 	chmod 0660 /etc/openvpn/easy-rsa/keys/$CLIENTNAME.*
-	
+
 	cd /etc/openvpn/easy-rsa/
 	. ./vars
 	./revoke-full $CLIENTNAME
 	rm -fv /etc/openvpn/easy-rsa/keys/$CLIENTNAME.*
-	
+
 	#### START services
 	ManageServices start "openvpn"
 }
@@ -398,10 +400,10 @@ case "$COMMAND" in
 			#### Refresh Protocol
 			RefreshProto
 		fi
-	;;		
+	;;
 	*)
 		echo -e "${CBLUE}Usage:$CEND	${CYELLOW}bash $0$CEND ${CGREEN}{server|client <username>|zip <username> <user_password>|refresh}$CEND"
-		EndingScript 0	
+		EndingScript 0
 	;;
 esac
 
