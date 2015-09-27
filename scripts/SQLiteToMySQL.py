@@ -20,26 +20,29 @@
 #	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
+######################################################################
+#
+# http://www.redmine.org/attachments/download/6239/sqlite3-to-mysql.py
+#
 ##################### FIRST LINE #####################################
 
 import sys
 
 def main():
-	print "SET sql_mode='NO_BACKSLASH_ESCAPES';"
-	lines = sys.stdin.read().splitlines()
-	for line in lines:
-		processLine(line)
+    print "SET sql_mode='NO_BACKSLASH_ESCAPES';"
+    lines = sys.stdin.read().splitlines()
+    for line in lines:
+        processLine(line)
 
 def processLine(line):
-	if (
-		line.startswith("PRAGMA") or 
-		line.startswith("BEGIN TRANSACTION;") or
-		line.startswith("COMMIT;") or
-		line.startswith("DELETE FROM sqlite_sequence;") or
-		line.startswith("INSERT INTO "sqlite_sequence"")
-		):
+    if (
+        line.startswith("PRAGMA") or 
+        line.startswith("BEGIN TRANSACTION;") or
+        line.startswith("COMMIT;") or
+        line.startswith("DELETE FROM sqlite_sequence;") or
+        line.startswith("INSERT INTO \"sqlite_sequence\"")
+       ):
         return
-		
     line = line.replace("AUTOINCREMENT", "AUTO_INCREMENT")
     line = line.replace("DEFAULT 't'", "DEFAULT '1'")
     line = line.replace("DEFAULT 'f'", "DEFAULT '0'")
@@ -51,6 +54,12 @@ def processLine(line):
         if not in_string:
             if c == "'":
                 in_string = True
+            elif c == '[':
+                newLine = newLine + '`'
+                continue
+            elif c == ']':
+                newLine = newLine + '`'
+                continue
             elif c == '"':
                 newLine = newLine + '`'
                 continue
