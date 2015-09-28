@@ -314,11 +314,21 @@ StatusSTD
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_SendMail$CEND..."
 if [ -f $MySB_InstallDir/inc/vars ]; then source $MySB_InstallDir/inc/vars; fi
 if [ -f $MySB_InstallDir/inc/funcs ]; then source $MySB_InstallDir/inc/funcs; fi
+MainUserId="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_users FROM users WHERE admin = '1'\"`"
 ListingUsers
 for seedUser in $UsersList; do
+	UserId=$(sqlite3 -cmd '.timeout 150000' $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$seedUser'")
+	UserPassword="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT users_passwd FROM users WHERE users_ident = '$seedUser'\"`"
+
+	if [ "$UserId" == "$MainUserId" ] && [ ! -z "$UserPassword" ]; then
+		# Remove main user password from database
+		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE users SET users_passwd = '' WHERE admin = '1';"
+		ScriptInvoke "screen" "$MySB_InstallDir/bin/MySB_ChangeUserPassword" "$seedUser" "$UserPassword" "UPGRADE"
+	fi
+
 	Subject="$Upgrade_SubjectUpgraded $MySB_CurrentVersion"
 	Case="upgrade"
-	SendMail "$Subject" "$seedUser" "$Case"
+	SendMail "$Subject" "$seedUser" "$Case"	
 done
 StatusSTD
 
