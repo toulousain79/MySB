@@ -61,9 +61,6 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		fi
 	fi
 
-	#### Create directories & change rights
-	ManageDirectoriesAndFiles
-
 	#### CRON
 	crontab -u www-data -l > /tmp/crontab.tmp
 	sed -i '/ownCloud/d' /tmp/crontab.tmp
@@ -89,10 +86,14 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -e "UPDATE oc_preferences SET configvalue = '$TimeZone' WHERE configkey = 'timezone'";
 	fi
 
+	#### Create directories & change rights
+	ManageDirectoriesAndFiles
+
 	#### ownCloud config file
-	curl --silent --retry 2 --data "adminlogin=admin&adminpass=admin&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" --user $MySB_User:$MySB_Password "https://srv1.lig2p.com:8889/owncloud/" --cacert $MySB_InstallDir/ssl/nginx.cert &> /dev/null
+	curl --retry 2 --data "adminlogin=admin&adminpass=admin&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" --user $MySB_User:$MySB_Password "https://$HostNameFQDN:$Port_HTTPS/owncloud/" --cacert $MySB_InstallDir/ssl/nginx.cert &> /dev/null
 	sleep 5
 	if [ -f $ownCloudDir/config/config.php ]; then
+		cp -vf $ownCloudDir/config/config.php $ownCloudDir/config/config.php.backup
 		InstanceId="`cat $ownCloudDir/config/config.php | grep 'instanceid' | awk '{ print $3 }'| cut -d "'" -f 2`"
 		InstanceId="`echo $InstanceId | sed s,/,\\\\\\\\\\/,g`"
 		PasswordSalt="`cat $ownCloudDir/config/config.php | grep 'passwordsalt' | awk '{ print $3 }'| cut -d "'" -f 2`"
@@ -120,6 +121,8 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	perl -pi -e "s/<MySB_DB_Pass>/$MySQL_MysbPassword/g" $ownCloudDir/config/config.php
 	perl -pi -e "s/<TimeZone>/$TimeZoneEscaped/g" $ownCloudDir/config/config.php
 	sed -i "s/'default_language' => 'en'/'default_language' => '$EnvLang'/g;" $ownCloudDir/config/config.php
+	chown www-data:www-data $ownCloudDir/config/config.php
+	chmod 0640 $ownCloudDir/config/config.php
 
 	#### Manage Admin user
 	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
