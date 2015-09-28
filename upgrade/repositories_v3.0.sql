@@ -4,10 +4,10 @@
 -- Encodage texte utilisé: windows-1252
 --
 
-ALTER TABLE services RENAME TO sqlitestudio_temp_table;
-CREATE TABLE services (id_services INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, serv_name VARCHAR (32) NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT IGNORE, bin VARCHAR (32), port_tcp1 VARCHAR (11), port_tcp2 VARCHAR (11), port_tcp3 VARCHAR (11), ports_tcp_list VARCHAR (32), port_udp1 VARCHAR (11), port_udp2 VARCHAR (11), port_udp3 VARCHAR (11), ports_udp_list VARCHAR (32), to_install BOOLEAN (1) DEFAULT (0), is_installed BOOLEAN NOT NULL ON CONFLICT ABORT DEFAULT (0), calcul INTEGER (1) DEFAULT (1));
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed) SELECT id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed FROM sqlitestudio_temp_table;
-DROP TABLE sqlitestudio_temp_table;
+ALTER TABLE repositories RENAME TO repositories_temp;
+CREATE TABLE repositories (id_repositories INTEGER PRIMARY KEY ON CONFLICT IGNORE AUTOINCREMENT NOT NULL ON CONFLICT ABORT UNIQUE ON CONFLICT ABORT, type VARCHAR (5) NOT NULL ON CONFLICT ABORT, dir VARCHAR (64) NOT NULL ON CONFLICT ABORT, name VARCHAR (32) NOT NULL ON CONFLICT ABORT, version VARCHAR (8), file VARCHAR (32), old_file VARCHAR (32), url VARCHAR (256) NOT NULL ON CONFLICT ABORT, active BOOLEAN (1));
+INSERT INTO repositories (id_repositories, type, dir, name, version, file, old_file, url, active) SELECT id_repositories, type, dir, name, version, file, old_file, url, active FROM repositories_temp;
+DROP TABLE repositories_temp;
 
 PRAGMA foreign_keys = off;
 BEGIN TRANSACTION;
