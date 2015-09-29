@@ -1,0 +1,27 @@
+location ^~/owncloud {
+	root <MySB_InstallDir>/web;
+	index index.php;
+	access_log /var/log/nginx/owncloud-access.log;
+	error_log /var/log/nginx/owncloud-error.log;
+
+	include /etc/nginx/conf.d/static_files;
+	include /etc/nginx/conf.d/global_deny_access;
+	include /etc/nginx/conf.d/pagespeed;
+	include /etc/nginx/conf.d/ip_restriction;
+	include /etc/nginx/conf.d/auth_basic;	
+
+	# Uncomment if your server is build with the ngx_pagespeed module
+	# This module is currently not supported.
+	pagespeed off;
+
+	location ~ \.php(?:$|/) {
+		include /etc/nginx/conf.d/php-ssl;
+		fastcgi_split_path_info ^(.+\.php)(/.+)$;
+		include fastcgi_params;
+		fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+		fastcgi_param PATH_INFO $fastcgi_path_info;
+		fastcgi_param HTTPS on;
+		fastcgi_param modHeadersAvailable true; #Avoid sending the security headers twice
+		#fastcgi_pass php-handler;
+	}
+}

@@ -31,11 +31,12 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
 	TimeStamp=$(date +%s)
 
-	#### NginX
+	#### NginX configuration
 	cp -vf $MySB_InstallDir/templates/etc.nginx.locations.owncloud.conf.template /etc/nginx/locations/ownCloud.conf
 	perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/locations/ownCloud.conf
-	chmod 0644 /etc/nginx/locations/ownCloud.conf
-	cp -vf /etc/nginx/locations/ownCloud.conf /etc/nginx/locations/ownCloud.local
+	# To install ownCloud allows the generation of a ownCloud configuration file and obtain the valeures 'InstanceId', 'PasswordSalt' and 'Secret'.
+	cp -vf $MySB_InstallDir/templates/etc.nginx.locations.owncloud.local.template /etc/nginx/locations/ownCloud.local
+	perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/locations/ownCloud.local
 
 	#### PHP
 	perl -pi -e "s/post_max_size = 10M/post_max_size = 20G/g" /etc/php5/fpm/php.ini
@@ -94,7 +95,9 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	curl --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=admin&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "http://127.0.0.1:$Port_HTTP/owncloud/"
 	sleep 5
 	if [ -f $ownCloudDir/config/config.php ]; then
-		rm -vf /etc/nginx/locations/ownCloud.local
+		if [ -f $ownCloudDir/config/config.php ]; then
+			rm -vf /etc/nginx/locations/ownCloud.local
+		fi
 		cp -vf $ownCloudDir/config/config.php $ownCloudDir/config/config.php.backup
 		InstanceId="`cat $ownCloudDir/config/config.php | grep 'instanceid' | awk '{ print $3 }'| cut -d "'" -f 2`"
 		InstanceId="`echo $InstanceId | sed s,/,\\\\\\\\\\/,g`"
