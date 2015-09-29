@@ -68,9 +68,6 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	crontab -u www-data /tmp/crontab.tmp
 	rm -f /tmp/crontab.tmp
 
-	#### START services
-	ManageServices start "php5-fpm nginx cron"
-
 	#### MySQL
 	if [ ! -f /var/lib/mysql/ownCloud_db/db.opt ]; then
 		/usr/bin/mysql -u root -p$MySQL_RootPassword <<-EOF
@@ -89,8 +86,11 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	#### Create directories & change rights
 	ManageDirectoriesAndFiles
 
+	#### START services
+	ManageServices start "php5-fpm nginx cron mysql"
+
 	#### ownCloud config file
-	curl --retry 2 --data "adminlogin=admin&adminpass=admin&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" --user $MySB_User:$MySB_Password "https://$HostNameFQDN:$Port_HTTPS/owncloud/" --cacert $MySB_InstallDir/ssl/nginx.cert &> /dev/null
+	curl --data "adminlogin=admin&adminpass=admin&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "https://$HostNameFQDN:$Port_HTTPS/owncloud/" --cacert $MySB_InstallDir/ssl/nginx.cert &> /dev/null
 	sleep 5
 	if [ -f $ownCloudDir/config/config.php ]; then
 		cp -vf $ownCloudDir/config/config.php $ownCloudDir/config/config.php.backup
