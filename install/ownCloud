@@ -35,6 +35,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	cp -vf $MySB_InstallDir/templates/etc.nginx.locations.owncloud.conf.template /etc/nginx/locations/ownCloud.conf
 	perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/locations/ownCloud.conf
 	chmod 0644 /etc/nginx/locations/ownCloud.conf
+	cp -vf /etc/nginx/locations/ownCloud.conf /etc/nginx/locations/ownCloud.local
 
 	#### PHP
 	perl -pi -e "s/post_max_size = 10M/post_max_size = 20G/g" /etc/php5/fpm/php.ini
@@ -87,15 +88,13 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	ManageDirectoriesAndFiles
 
 	#### START services
-	ManageServices start "php5-fpm cron"
-
-	#### Create new security rules
-	ScriptInvoke 'screen' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create'
+	ManageServices start "php5-fpm nginx cron"
 
 	#### ownCloud config file
 	curl --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=admin&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "https://$HostNameFQDN:$Port_HTTPS/owncloud/" --cacert $MySB_InstallDir/ssl/nginx.cert
 	sleep 5
 	if [ -f $ownCloudDir/config/config.php ]; then
+		rm -vf /etc/nginx/locations/ownCloud.local
 		cp -vf $ownCloudDir/config/config.php $ownCloudDir/config/config.php.backup
 		InstanceId="`cat $ownCloudDir/config/config.php | grep 'instanceid' | awk '{ print $3 }'| cut -d "'" -f 2`"
 		InstanceId="`echo $InstanceId | sed s,/,\\\\\\\\\\/,g`"
