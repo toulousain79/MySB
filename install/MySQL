@@ -49,6 +49,13 @@ if [ -z $MySQL_RootPassword ] && [ -z $MySQL_MysbPassword ]; then
 	echo "MySQL_RootPassword=\"$MySQL_RootPassword\"" >> /etc/MySB/config
 	echo "MySQL_MysbPassword=\"$MySQL_MysbPassword\"" >> /etc/MySB/config
 	perl -pi -e "s/<MySQL_MysbPassword>/$MySQL_MysbPassword/g" /etc/MySB/config.php
+
+	# Create MySQL client config file for MySB_user
+	echo "[client]" > /root/.config.cnf
+	echo "user = MySB_user" >> /root/.config.cnf
+	echo "password = $MySQL_MysbPassword" >> /root/.config.cnf
+	echo "host = localhost" >> /root/.config.cnf
+	chmod 0600 /root/.config.cnf	
 fi
 
 if [ "$1" == "UPGRADE" ] && CheckCommand 0 mysql; then
@@ -56,8 +63,8 @@ if [ "$1" == "UPGRADE" ] && CheckCommand 0 mysql; then
 	cat $MySB_DB.dump | python $MySB_InstallDir/scripts/SQLiteToMySQL.py > $MySB_InstallDir/db/MySB_MySQL.sql
 	perl -pi -e "s/NULL/''/g" $MySB_InstallDir/db/MySB_MySQL.sql
 	perl -pi -e "s/' '/''/g" $MySB_InstallDir/db/MySB_MySQL.sql
-	mysql -u MySB_user -p$MySQL_MysbPassword --database=MySB_db < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Schema_2015-09-30.sql
-	mysql -u MySB_user -p$MySQL_MysbPassword --database=MySB_db < $MySB_InstallDir/db/MySB_MySQL.sql
+	mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Schema_2015-09-30.sql
+	mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/db/MySB_MySQL.sql
 	if [ -f $MySB_DB.dump ]; then rm -vf $MySB_DB.dump; fi
 	if [ -f $MySB_InstallDir/db/MySB_MySQL.sql ]; then rm -vf $MySB_InstallDir/db/MySB_MySQL.sql; fi
 fi
