@@ -180,7 +180,7 @@ do_start() {
 	bind_check
 
 	# Update DB
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '0', is_wished = '0', forwarder = '' WHERE 1;"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_activated = '0', is_wished = '0', forwarder = ''" "1"
 
 	i=0
 	Return=0
@@ -217,19 +217,19 @@ do_start() {
 			 >> $LOG_FILE
 
 		if [ $? -gt 0 ]; then
-			sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_wished = '1', is_activated = '0', forwarder = '' WHERE name = '$Resolver';"
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished = '1', is_activated = '0', forwarder = ''" "name = '$Resolver'"
 			delete_pid_file $DIR_PID/$Resolver.pid $Resolver
 			echo "--> NOT STARTED: $Resolver : "`date` >> $LOG_FILE
 			Return=2
 		else
 			# Update DB
-			sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_wished = '1', is_activated = '1', forwarder = '127.0.0.$i' WHERE name = '$Resolver';"
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished = '1', is_activated = '1', forwarder = '127.0.0.$i'" "name = '$Resolver'"
 			echo "--> STARTED: $Resolver : "`date` >> $LOG_FILE
 		fi
 	done
 
 	if [ -z "`ps ax | grep 'MySB_SecurityRules' | grep -e 'create' -e 'refresh' | grep -v 'grep'`" ]; then
-		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE system SET dnscrypt = '1' WHERE id_system = '1';"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "dnscrypt = '1'" "id_system = '1'"
 		screen -dmS MySB_SecurityRules /bin/bash <InstallDir>/bin/MySB_SecurityRules 'refresh' '--dnscrypt' 'SCREEN';
 	fi
 	
@@ -254,7 +254,7 @@ do_stop() {
 				echo "--> STOPPED: $Resolver : "`date` >> $LOG_FILE
 				delete_pid_file $DIR_PID/$Pid $Resolver
 				# Update DB
-				sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_activated = '0' WHERE name = '$Resolver';"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_activated = '0'" "name = '$Resolver'"
 			;;
 			2)
 				echo "--> NOT STOPPED: $Resolver : "`date` >> $LOG_FILE

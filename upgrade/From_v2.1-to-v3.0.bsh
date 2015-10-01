@@ -161,7 +161,7 @@ StatusSTD
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_DNScrypt$CEND..."
 if [ "$ToInstall_DNScrypt" == "YES" ] || [ "$IsInstalled_DNScrypt" == "YES" ]; then
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'DNScrypt-proxy';"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'DNScrypt-proxy'"
 	screen -dmS DNScrypt /bin/bash $MySB_InstallDir/install/DNScrypt 'UPGRADE';
 	WaitingScreen DNScrypt
 	StatusSTD
@@ -173,7 +173,7 @@ fi
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Fail2Ban$CEND..."
 if [ "$ToInstall_Fail2Ban" == "YES" ] || [ "$IsInstalled_Fail2Ban" == "YES" ]; then
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Fail2Ban';"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Fail2Ban'"
 	screen -dmS Fail2Ban /bin/bash $MySB_InstallDir/install/Fail2Ban 'UPGRADE';
 	WaitingScreen Fail2Ban
 	StatusSTD
@@ -225,7 +225,7 @@ fi
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_PlexMedia$CEND..."
 if [ "$ToInstall_PlexMedia" == "YES" ]; then
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Plex Media Server';"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Plex Media Server'"
 	screen -dmS PlexMedia /bin/bash $MySB_InstallDir/install/PlexMedia 'UPGRADE';
 	WaitingScreen PlexMedia
 	StatusSTD
@@ -237,7 +237,7 @@ fi
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Samba$CEND..."
 if [ "$ToInstall_OpenVPN" == "YES" ] || [ "$IsInstalled_OpenVPN" == "YES" ]; then
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Samba';"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Samba'"
 	screen -dmS Samba /bin/bash $MySB_InstallDir/install/Samba 'UPGRADE';
 	WaitingScreen Samba
 	StatusSTD
@@ -249,7 +249,7 @@ fi
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_ownCloud$CEND..."
 if [ "$ToInstall_ownCloud" == "YES" ] || [ "$IsInstalled_ownCloud" == "YES" ]; then
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'ownCloud';"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'ownCloud'"
 	screen -dmS ownCloud /bin/bash $MySB_InstallDir/install/ownCloud 'UPGRADE';
 	WaitingScreen ownCloud
 	StatusSTD
@@ -317,12 +317,12 @@ if [ -f $MySB_InstallDir/inc/funcs ]; then source $MySB_InstallDir/inc/funcs; fi
 MainUserId="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_users FROM users WHERE admin = '1'\"`"
 ListingUsers
 for seedUser in $UsersList; do
-	UserId=$(sqlite3 -cmd '.timeout 150000' $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$seedUser'")
-	UserPassword="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT users_passwd FROM users WHERE users_ident = '$seedUser'\"`"
+	UserId=$(Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$seedUser'")
+	UserPassword="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_passwd' 'users' "users_ident = '$seedUser'"`"
 
 	if [ "$UserId" == "$MainUserId" ] && [ ! -z "$UserPassword" ]; then
 		# Remove main user password from database
-		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE users SET users_passwd = '' WHERE admin = '1';"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "users_passwd = ''" "admin = '1'"
 		ScriptInvoke "screen" "$MySB_InstallDir/bin/MySB_ChangeUserPassword" "$seedUser" "$UserPassword" "UPGRADE"
 	else
 		Subject="$Upgrade_SubjectUpgraded $MySB_CurrentVersion"

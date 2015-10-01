@@ -49,7 +49,7 @@ DoApplyConfig() {
 				if [ $FirstCommandUser -ne $LastCommandUser ] && [ ! -z $FirstCommandUser ] && [ ! -z $LastCommandUser ]; then
 					while [ $FirstCommandUser -lt $LastCommandUser ]; do
 						# On supprime les premières commandes
-						echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE user = '$User' AND commands = '$CommandUser' AND priority = '$FirstCommandUser'"
+						echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "user = '$User' AND commands = '$CommandUser' AND priority = '$FirstCommandUser'"
 						(( FirstCommandUser++ ))
 					done
 				fi
@@ -65,7 +65,7 @@ DoApplyConfig() {
 	if [ $LastOneMin -ne $LastOneMax ] && [ ! -z $LastOneMin ] && [ ! -z $LastOneMax ]; then
 		while [ $LastOneMin -lt $LastOneMax ]; do
 			# On supprime les premières commandes
-			echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = 'MySB_SecurityRules' AND priority = '$LastOneMin' AND user = '$User'"
+			echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = 'MySB_SecurityRules' AND priority = '$LastOneMin' AND user = '$User'"
 			((  LastOneMin++ ))
 		done
 	fi
@@ -73,8 +73,7 @@ DoApplyConfig() {
 	# Maintenant on prend la priorité globale maxi toute commandes confondues, puis on incrémente de 1 'MySB_SecurityRules'.
 	LastPriority="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT max(priority) FROM commands WHERE user = '$User'\"`"
 	(( LastPriority++ ))
-	echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE commands SET priority = '$LastPriority' WHERE commands = 'MySB_SecurityRules' AND user = '$User';"
-
+	echo -n "	--> " && Func_SQL_Command 'UPDATE' 'MySB_db' 'commands' "priority = '$LastPriority'" "commands = 'MySB_SecurityRules' AND user = '$User'"
 	# 3 - On peut maintenant exécuté les commandes une à une dans l'ordre ascendant des priorités.
 	AllCommands="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT commands, priority FROM commands WHERE user = '$User' ORDER BY priority ASC\"`"
 
@@ -104,7 +103,7 @@ DoApplyConfig() {
 				WaitingSTD MySB_CreateUser
 				screen -dmS MySB_CreateUser /bin/bash $MySB_InstallDir/bin/MySB_CreateUser "$UserToCreate" "$UserSftp" "$UserSudo" "$UserMail" "APPLYCONFIG";
 				WaitingSTD MySB_CreateUser
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
+				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			"MySB_DeleteUser") # 1 args
@@ -113,7 +112,7 @@ DoApplyConfig() {
 				WaitingSTD MySB_DeleteUser
 				screen -dmS MySB_DeleteUser /bin/bash $MySB_InstallDir/bin/MySB_DeleteUser "$UserToDelete" "APPLYCONFIG";
 				WaitingSTD MySB_DeleteUser
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
+				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			"MySB_ChangeUserPassword") # ($1 = username, $2 = userpass)
@@ -127,42 +126,42 @@ DoApplyConfig() {
 				WaitingSTD MySB_SecurityRules
 				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "--users" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
+				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			"BlocklistsRTorrent.bsh")
 				WaitingSTD BlocklistsRTorrent
 				screen -dmS BlocklistsRTorrent /bin/bash $MySB_InstallDir/scripts/BlocklistsRTorrent.bsh "APPLYCONFIG";
 				WaitingSTD BlocklistsRTorrent
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
+				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			"Blocklists_PeerGuardian")
 				WaitingSTD MySB_SecurityRules
 				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "--blocklists" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
+				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			"DNScrypt")
 				WaitingSTD MySB_SecurityRules
 				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "--dnscrypt" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
+				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			"ManageAddresses")
 				WaitingSTD MySB_SecurityRules
 				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "--users" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
+				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			"MySB_SecurityRules")
 				WaitingSTD MySB_SecurityRules
 				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "create" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
+				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			"GetTrackersCert.bsh")
@@ -173,28 +172,28 @@ DoApplyConfig() {
 				WaitingSTD MySB_SecurityRules
 				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "--trackers" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
+				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			"Postfix")
 				WaitingSTD Postfix
 				screen -dmS Postfix /bin/bash $MySB_InstallDir/install/Postfix "APPLYCONFIG";
 				WaitingSTD Postfix
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
+				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			"Options_MySB")
 				WaitingSTD rTorrent-$User
 				screen -dmS rTorrent-$User service rtorrent-$User restart &> /dev/null;
 				WaitingSTD rTorrent-$User
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
+				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 
 			"Options_System")
 				WaitingSTD MySB_SecurityRules
 				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules "refresh" "--pglcmd" "APPLYCONFIG";
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
+				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 			
 			"OpenVPN") # ($1 = username, $2 = userpass)
@@ -205,7 +204,7 @@ DoApplyConfig() {
 				WaitingSTD OpenVPN
 				screen -dmS OpenVPN_Zip /bin/bash $MySB_InstallDir/install/OpenVPN zip "$UserName" "$UserPass" "APPLYCONFIG";
 				WaitingSTD OpenVPN
-				echo -n "	--> " && sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "DELETE FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'"
+				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"
 			;;
 		esac
 	done
@@ -214,7 +213,7 @@ DoApplyConfig() {
 case "$Switch" in
 	"DO_APPLY") # Execute by portal
 		screen -dmS ApplyConfig_$UserApplying /bin/bash $MySB_InstallDir/scripts/ApplyConfig.bsh "$UserApplying" "SCREEN";
-		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE commands SET reload = '0' WHERE user = '$UserApplying';"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'commands' "reload = '0'" "user = '$UserApplying'"
 	;;
 	"SCREEN")
 		echo `date +%H:%m:%S` "- Waiting authorization"

@@ -728,7 +728,7 @@ MonthlyPayment() {
 
 		ListingUsers
 		for SeedboxUser in $UsersList; do
-			SeedUserMail="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT users_email FROM users WHERE users_ident = '$SeedboxUser'\"`"
+			SeedUserMail="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$SeedboxUser'"`"
 			
 			if [ "$UserToIgnore" != "$SeedboxUser" ]; then	
 				SendMail "MySB - Changing monthly" "${SeedboxUser}" "new_user" "Changing Monthly"
@@ -754,7 +754,7 @@ GetRutorrentTrackers() {
 
 #### Get Users Trackers
 GetUsersTrackers() {
-	FnUsersTrackers="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT tracker FROM trackers_list WHERE origin = 'users'\"`"
+	FnUsersTrackers="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker' 'trackers_list' "origin = 'users'"`"
 	for FnTracker in $FnUsersTrackers; do
 		if [ ! -z "$FnTracker" ]; then
 			AddTracker $FnTracker "users"
@@ -783,44 +783,44 @@ AddTracker() {
 		if [ ! -z "$TrackerDomain" ]; then
 			DomainIPv4="$(nslookup $TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 			if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
-				IfExist="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"
+				IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
 				if [ -z $IfExist ]; then
 					log_daemon_msg "Add tracker domain : $TrackerDomain"
-					sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into trackers_list (tracker,tracker_domain,origin) VALUES (\"$TrackerDomain\",\"$TrackerDomain\",\"$Origin\");"
+					Func_SQL_Command 'INSERT' 'MySB_db' 'trackers_list' "(tracker,tracker_domain,origin)" "(\"$TrackerDomain\",\"$TrackerDomain\",\"$Origin\")"
 					StatusLSB
 				fi
 
 				TrackerIPv4="$(nslookup tracker.$TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 			else
-				IfExist="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"
+				IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
 				if [ ! -z $IfExist ]; then
 					log_daemon_msg "Delete tracker domain : $TrackerDomain"
-					sqlite3 -cmd '.timeout 150000' $MySB_DB "DELETE FROM trackers_list WHERE tracker_domain = '$TrackerDomain';"
+					Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list' "tracker_domain = '$TrackerDomain'"
 					StatusLSB
 				fi
 			fi
 
 			if [ ! -z "$TrackerIPv4" ] && [ "$TrackerIPv4" != "0.0.0.0" ] && [ "$TrackerIPv4" != "127.0.0.1" ]; then
 				TrackerIPv4="`echo $TrackerIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-				TrackersListID="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"	
+				TrackersListID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
 
 				if [ ! -z "$TrackersListID" ] && [ $TrackersListID -gt 0 ]; then
 					log_daemon_msg "Update trackers IPv4 for 'tracker.$TrackerDomain' --> '$TrackerIPv4'"
 					# Cleaning
-					ListIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$TrackersListID'\"`"
+					ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID'"`"
 					for IPv4 in $ListIPv4; do
 						SEARCH=$(echo "$TrackerIPv4" | grep "$IPv4")
 						if [ -z "$SEARCH" ]; then
-							sqlite3 -cmd '.timeout 150000' $MySB_DB "DELETE FROM trackers_list_ipv4 WHERE ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID';"
+							Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list_ipv4' "ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID'"
 						fi
 					done
 					unset ListIPv4 IPv4
 
 					# Add
 					for IPv4 in $TrackerIPv4; do
-						IfExist="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list_ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'\"`"
+						IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list_ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'"`"
 						if [ -z $IfExist ]; then
-							sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into trackers_list_ipv4 (id_trackers_list,ipv4) VALUES (\"$TrackersListID\",\"$IPv4\");"
+							Func_SQL_Command 'INSERT' 'MySB_db' 'trackers_list_ipv4' "(id_trackers_list,ipv4)" "(\"$TrackersListID\",\"$IPv4\")"
 						fi
 					done
 					unset IPv4 TrackerIPv4
@@ -830,24 +830,24 @@ AddTracker() {
 			else
 				if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
 					DomainIPv4="`echo $DomainIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-					TrackersListID="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list FROM trackers_list WHERE tracker_domain = '$TrackerDomain'\"`"
+					TrackersListID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
 
 					if [ ! -z "$TrackersListID" ] && [ $TrackersListID -gt 0 ]; then
 						log_daemon_msg "Update trackers IPv4 for '$TrackerDomain' --> '$DomainIPv4'"
 						# Cleaning
-						ListIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$TrackersListID'\"`"
+						ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list' "id_trackers_list = '$TrackersListID'"`"
 						for IPv4 in $ListIPv4; do
 							SEARCH=$(echo "$DomainIPv4" | grep "$IPv4")
 							if [ -z "$SEARCH" ]; then
-								sqlite3 -cmd '.timeout 150000' $MySB_DB "DELETE FROM trackers_list_ipv4 WHERE ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID';"
+								Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list_ipv4' "ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID'"
 							fi
 						done
 						unset ListIPv4 IPv4
 						# Add
 						for IPv4 in $DomainIPv4; do
-							IfExist="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list_ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'\"`"
+							IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list_ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'"`"
 							if [ -z $IfExist ]; then
-								sqlite3 -cmd '.timeout 150000' $MySB_DB "INSERT into trackers_list_ipv4 (id_trackers_list,ipv4) VALUES (\"$TrackersListID\",\"$IPv4\");"
+								Func_SQL_Command 'INSERT' 'MySB_db' 'trackers_list_ipv4' "(id_trackers_list,ipv4)" "(\"$TrackersListID\",\"$IPv4\")"
 							fi
 						done
 						unset IPv4 DomainIPv4
@@ -911,8 +911,8 @@ ScriptInvoke() {
 NetworkPortsGenerator() {
 	WHITE_TCP_IN=""
 	WHITE_UDP_IN=""
-	WHITE_TCP_OUT="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT white_tcp_port_out FROM vars WHERE 1\" | sed 's/,/ /g;'`"
-	WHITE_UDP_OUT="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT white_udp_port_out FROM vars WHERE 1\" | sed 's/,/ /g;'`"
+	WHITE_TCP_OUT="`Func_SQL_Command 'SELECT' 'MySB_db' 'white_tcp_port_out' 'vars' '1' | sed 's/,/ /g;'`"
+	WHITE_TCP_OUT="`Func_SQL_Command 'SELECT' 'MySB_db' 'white_udp_port_out' 'vars' '1' | sed 's/,/ /g;'`"
 
 	# TCP In
 	WHITE_TCP_IN="${Port_HTTPS}"

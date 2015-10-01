@@ -2,6 +2,7 @@
 # -----------------------------------------
 MySB_CurrentVersion="v3.0"
 MySB_InstallDir="/opt/MySB"
+EnvLang="$1"
 # -----------------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -197,7 +198,9 @@ CGREEN="${CSI}1;32m"
 CYELLOW="${CSI}1;33m"
 CBLUE="${CSI}1;34m"
 Continue=0
-EnvLang="`echo ${LANG:0:2}`"
+if [ -z "$EnvLang" ]; then
+	EnvLang="`echo ${LANG:0:2}`"
+fi
 
 case "$EnvLang" in
 	en)
@@ -533,6 +536,7 @@ if [ "$COMMAND" == "" ]; then
 			#### Create database
 			echo -e -n "$CreatingDB"
 			/bin/bash $MySB_InstallDir/install/SQLite 'INSTALL' >> /tmp/`basename $0`.log
+			/bin/bash $MySB_InstallDir/install/MySQL 'INSTALL' >> /tmp/`basename $0`.log
 			if [ $? -gt 0 ]; then
 				echo -e -n "$Failed"
 				echo ""
@@ -543,7 +547,7 @@ if [ "$COMMAND" == "" ]; then
 				exit 0
 			else
 				Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "mysb_version = '$MySB_CurrentVersion'" "id_system = '1'" >> /tmp/`basename $0`.log
-				sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "INSERT into users (users_ident,users_email,language) VALUES (\"MySB\",\"MySB\",\"$EnvLang\");" >> /tmp/`basename $0`.log
+				Func_SQL_Command 'INSERT' 'MySB_db' 'users' "(users_ident,users_email,language)" "(\"MySB\",\"MySB\",\"$EnvLang\")" >> /tmp/`basename $0`.log
 				source $MySB_InstallDir/inc/vars
 				source $MySB_InstallDir/inc/funcs
 				if [ $? -gt 0 ]; then
