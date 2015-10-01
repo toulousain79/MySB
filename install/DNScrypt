@@ -31,7 +31,7 @@ if [ "$USAGE" == "ON" ]; then
 		QuestionGetString NO "Install DNScrypt-proxy? " ToInstall_DNScrypt $Global_YES
 		ToInstall_DNScrypt="`echo $ToInstall_DNScrypt | tr '[:lower:]' '[:upper:]'`"
 
-		sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE services SET is_installed = '$(echo $ToInstall_DNScrypt | sed "s/$Global_NO/0/g;" | sed "s/$Global_YES/1/g;")' WHERE serv_name = 'DNScrypt-proxy';"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "is_installed = '$(echo $ToInstall_DNScrypt | sed "s/$Global_NO/0/g;" | sed "s/$Global_YES/1/g;")'" "serv_name = 'DNScrypt-proxy'"
 
 		if [ "$ToInstall_DNScrypt" != "YES" ]; then
 			EndingScript 0
@@ -135,12 +135,12 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 		done
 
 		# Force use of all provider taht accept 'dnssec' and 'no logs'
-		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE dnscrypt_resolvers SET is_wished = '1' WHERE dnssec = 'yes' AND no_logs='yes';"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished = '1'" "dnssec = 'yes' AND no_logs='yes'"
 	fi
 
 	# Mark as installed
 	if CheckCommand 0 dnscrypt-proxy; then
-		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '0',is_installed = '1' WHERE serv_name = 'DNScrypt-proxy';"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0',is_installed = '1'" "serv_name = 'DNScrypt-proxy'"
 	fi
 
 	#### Logs

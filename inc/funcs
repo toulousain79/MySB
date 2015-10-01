@@ -164,7 +164,7 @@ SendMail() {
 	FnCase="$3"
 	FnInfo="$4"
 	FnAttach=""
-	FnUserMail="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT users_email FROM users WHERE users_ident = '$FnUser'\"`"
+	FnUserMail="`Func_SQL_Command 'MySB_db' 'users_email' 'users' "users_ident = '$FnUser'"`"
 	if [ ! -z "$FnInfo" ]; then log_daemon_msg "$Funcs_SendMail_GenerateHTML $FnUser"; fi
 	perl -pi -e "s/##MySB_User##/$MySB_User/g" $MySB_InstallDir/web/pages/UserInfoMail.php
 
@@ -220,8 +220,8 @@ PackagesManage() {
 	#### Check last update
 	if [ "$Query" != "test" ]; then
 		if [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
-			AptUpdate="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT apt_update FROM system WHERE 1\"`"
-			AptDate="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT apt_date FROM system WHERE 1\"`"
+			AptUpdate="`Func_SQL_Command 'SELECT' 'MySB_db' 'apt_update' 'system' '1'`"
+			AptUpdate="`Func_SQL_Command 'SELECT' 'MySB_db' 'apt_date' 'system' '1'`"
 			AptDate=$(date -d "$AptDate" +"%Y-%m-%d %H")
 			Now=$(date +%Y-%m-%d\ %H)
 			t1=$(date --date="$AptDate" +'%-H')
@@ -233,7 +233,7 @@ PackagesManage() {
 				echo "$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update"
 				$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update
 				if [ $? -eq 0 ]; then
-					sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE system SET apt_update = 0, apt_date = datetime('now','localtime') WHERE id_system = 1;"
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "apt_update = 0, apt_date = datetime('now','localtime')" 'id_system = 1'
 				fi
 			fi
 		else
@@ -589,9 +589,9 @@ CleanBlockList() {
 			wget --no-check-certificate $URL -O $MySB_InstallDir/files/blocklists/$FILE.gz
 			if [ $? -eq 0 ] ; then
 				gzip -dc $MySB_InstallDir/files/blocklists/$FILE.gz | cut -d: -f2 > $MySB_InstallDir/files/blocklists/$FILE.txt
-				sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE blocklists SET rtorrent_lastupdate = datetime('now','localtime') WHERE rtorrent_list = '$URL';"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "rtorrent_lastupdate = datetime('now','localtime')" "rtorrent_list = '$URL'"
 			else
-				sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE blocklists SET rtorrent_lastupdate = 'failed' WHERE rtorrent_list = '$URL';"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "rtorrent_lastupdate = 'failed'" "rtorrent_list = '$URL'"
 			fi
 		;;
 		del_spaces)
@@ -723,7 +723,7 @@ MonthlyPayment() {
 		UserToIgnore="$1"
 
 		# add new renting info
-		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE renting SET model = '$RentingModel', tva = '$RentingTVA', global_cost = '$RentingGlobalCost', nb_users = '$TotalUsers', price_per_users = '$PriceByUser' WHERE id_renting = '1';"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'renting' "model = '$RentingModel', tva = '$RentingTVA', global_cost = '$RentingGlobalCost', nb_users = '$TotalUsers', price_per_users = '$PriceByUser'" "id_renting = '1'"
 		StatusLSB
 
 		ListingUsers
@@ -824,7 +824,7 @@ AddTracker() {
 						fi
 					done
 					unset IPv4 TrackerIPv4
-					sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE trackers_list SET tracker = 'tracker.$TrackerDomain' WHERE tracker_domain = '$TrackerDomain';"
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "tracker = 'tracker.$TrackerDomain'" "tracker_domain = '$TrackerDomain'"
 					StatusLSB
 				fi
 			else
@@ -851,7 +851,7 @@ AddTracker() {
 							fi
 						done
 						unset IPv4 DomainIPv4
-						sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE trackers_list SET tracker = '$TrackerDomain' WHERE tracker_domain = '$TrackerDomain';"
+						Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "tracker = '$TrackerDomain'" "tracker_domain = '$TrackerDomain'"
 						StatusLSB
 					fi
 				fi
@@ -1050,10 +1050,10 @@ EOF
 						for List in $CheckLog; do
 							echo `date +"%T"`" --> '$List' will be disabled." >> $MySB_InstallDir/logs/$ScriptName.log
 							# Force inactived list
-							sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE blocklists SET peerguardian_active = '0', peerguardian_lastupdate = 'failed' WHERE peerguardian_list = '$List';"
+							Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "peerguardian_active = '0', peerguardian_lastupdate = 'failed'" "peerguardian_list = '$List'"
 						done
 					else # Update OK
-						sqlite3 -cmd '.timeout 150000' -echo $MySB_DB "UPDATE blocklists SET peerguardian_lastupdate = datetime('now','localtime') WHERE peerguardian_list = '$List';"
+						Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "peerguardian_lastupdate = datetime('now','localtime')" "peerguardian_list = '$List'"
 					fi
 				;;
 				'CreateFile') # Now, we create the final blocklists with all active lists

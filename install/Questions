@@ -47,8 +47,8 @@ case "$TYPE" in
 		echo
 		echo -e "$Upgrade_MainUserPasswordConfirm"
 		QuestionGetString YES "$Questions_MainUserPassword" MainUserPassword
-		sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE users SET users_passwd = '$MainUserPassword' WHERE admin = '1';"
-		
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "users_passwd = '$MainUserPassword'" "admin = '1'"
+
 		# Language select
 		echo
 		echo -e "$Upgrade_LanguageSelect"
@@ -354,14 +354,14 @@ if [ "$TYPE" == "INSTALL" ]; then
 	else
 		IpRestriction="0"
 	fi	
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE system SET hostname = '$HostNameFQDN', ipv4 = '$SrvIpAddress', primary_inet = '$PrimaryInet', timezone = '$TimeZone', server_provider = '$ServerProvider', ip_restriction = '$IpRestriction' WHERE id_system = '1';"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "hostname = '$HostNameFQDN', ipv4 = '$SrvIpAddress', primary_inet = '$PrimaryInet', timezone = '$TimeZone', server_provider = '$ServerProvider', ip_restriction = '$IpRestriction'" "id_system = '1'"
 	
 	# 'smtp' table
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE smtp SET smtp_provider = '$SMTP_Provider', smtp_username = '$SMTP_Username', smtp_passwd = '$SMTP_Password', smtp_email ='$MainUserEmail' WHERE id_smtp = '1';"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'smtp' "smtp_provider = '$SMTP_Provider', smtp_username = '$SMTP_Username', smtp_passwd = '$SMTP_Password', smtp_email ='$MainUserEmail'" "id_smtp = '1'"
 
 	# 'users' table (Main user)
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE users SET users_ident = '$MainUser', users_email = '$MainUserEmail', users_passwd = '$MainUserPassword', sftp = '1', sudo = '1', admin = '1' WHERE users_ident = 'MySB';"
-	sqlite3 -cmd '.timeout 150000' $Wolf_DB "UPDATE user SET name = '$MainUser', email = '$MainUserEmail', username = '$MainUser' WHERE id = '2';"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "users_ident = '$MainUser', users_email = '$MainUserEmail', users_passwd = '$MainUserPassword', sftp = '1', sudo = '1', admin = '1'" "users_ident = 'MySB'"
+	Func_SQL_Command 'UPDATE' 'Wolf_db' 'user' "name = '$MainUser', email = '$MainUserEmail', username = '$MainUser'" "id = '2'"
 
 	# 'users_addresses' table
 	MainUserId=$(sqlite3 -cmd '.timeout 150000' $MySB_DB "SELECT id_users FROM users WHERE users_ident = '$MainUser'")	
@@ -374,20 +374,20 @@ if [ "$TYPE" == "INSTALL" ]; then
 
 	#### 'services' table
 	# HTTPs & HTTP
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET port_tcp1 = '$Port_HTTPS', port_tcp2 = '$Port_HTTP', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'NginX';"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '$Port_HTTPS', port_tcp2 = '$Port_HTTP', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'NginX'"
 	# SSH
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET port_tcp1 = '$Port_SSH', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'SSH';"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '$Port_SSH', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'SSH'"
 	# FTP
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET port_tcp1 = '$Port_FTP', port_tcp2 = '$Port_FTP_Data', port_tcp3 = '65000:65535', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = '' WHERE serv_name = 'VSFTPd';"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '$Port_FTP', port_tcp2 = '$Port_FTP_Data', port_tcp3 = '65000:65535', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'VSFTPd'"
 fi
 
 if [ "$ToInstall_Manager" == "$Global_YES" ]; then
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE services SET to_install = '1' WHERE serv_name = 'Seedbox-Manager';"
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE repositories SET active = '1' WHERE name = 'Seedbox-Manager';"
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE repositories SET active = '1' WHERE name = 'ruTorrent Plugin Link Manager';"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Seedbox-Manager'"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'Seedbox-Manager'"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'ruTorrent Plugin Link Manager'"
 else
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE repositories SET active = '0' WHERE name = 'Seedbox-Manager';"
-	sqlite3 -cmd '.timeout 150000' $MySB_DB "UPDATE repositories SET active = '0' WHERE name = 'ruTorrent Plugin Link Manager';"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'Seedbox-Manager'"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'ruTorrent Plugin Link Manager'"
 	if [ -d $ManagerDir ]; then rm -rf $ManagerDir; fi
 fi
 
