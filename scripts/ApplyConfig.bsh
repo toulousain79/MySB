@@ -71,11 +71,11 @@ DoApplyConfig() {
 	fi
 
 	# Maintenant on prend la priorité globale maxi toute commandes confondues, puis on incrémente de 1 'MySB_SecurityRules'.
-	LastPriority="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT max(priority) FROM commands WHERE user = '$User'\"`"
+	LastPriority="`Func_SQL_Command 'SELECT' 'MySB_db' 'max(priority)' 'commands' "user = '$User'"`"
 	(( LastPriority++ ))
 	echo -n "	--> " && Func_SQL_Command 'UPDATE' 'MySB_db' 'commands' "priority = '$LastPriority'" "commands = 'MySB_SecurityRules' AND user = '$User'"
 	# 3 - On peut maintenant exécuté les commandes une à une dans l'ordre ascendant des priorités.
-	AllCommands="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT commands, priority FROM commands WHERE user = '$User' ORDER BY priority ASC\"`"
+	AllCommands="`Func_SQL_Command 'SELECT' 'MySB_db' 'commands, priority' 'commands' "user = '$User' ORDER BY priority ASC"`"
 
 	#for MyCommand in $AllCommands; do
 	for CommandLine in $AllCommands; do
@@ -86,7 +86,7 @@ DoApplyConfig() {
 		case "$Command" in
 			MySB_CreateUser|MySB_DeleteUser|MySB_ChangeUserPassword|OpenVPN) # 3 args
 				echo `date +%H:%m:%S` "- Getting arguments for $Command"
-				CommandArg="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT args FROM commands WHERE commands = '$Command' AND user = '$User' AND priority = '$Priority'\"`"
+				CommandArg="`Func_SQL_Command 'SELECT' 'MySB_db' 'args' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"`"
 			;;
 		esac
 

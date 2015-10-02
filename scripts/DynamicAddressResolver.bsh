@@ -29,7 +29,7 @@ ResolveAddresses() {
 	Reload=0
 	AllIdUsers=""
 	if [ "$LOGSTD" == "NO" ]; then log_daemon_msg "Creating list of all dynamic IP addresses"; fi
-	AllHostname="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_users_addresses,id_users,hostname FROM users_addresses WHERE is_active = '1' AND check_by = 'hostname'\"`"
+	AllHostname="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users_addresses,id_users,hostname' 'users_addresses' "is_active = '1' AND check_by = 'hostname'"`"
 	ErrorCode=$?
 	if [ "$LOGSTD" == "NO" ]; then StatusLSB $ErrorCode; fi
 
@@ -39,7 +39,7 @@ ResolveAddresses() {
 		Hostname="`echo $Line | awk '{split($0,a,"|"); print a[3]}'`"
 
 		if [ ! -z "$Hostname" ] && [ ! -z "$IdUsers" ] && [ ! -z "$IdUsersAddresses" ]; then
-			ListIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE is_active = '1' AND check_by = 'hostname' AND hostname = '$Hostname'\"`"
+			ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'users_addresses' "is_active = '1' AND check_by = 'hostname' AND hostname = '$Hostname'"`"
 
 			IPv4="$(nslookup $Hostname | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
 
@@ -64,8 +64,8 @@ ResolveAddresses() {
 		if [ "$LOGSTD" == "NO" ]; then StatusLSB 0; fi
 
 		for IdUser in $AllIdUsers; do
-			UserEmail="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT users_email FROM users WHERE id_users = '$IdUser'\"`"
-			UserName="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT users_ident FROM users WHERE id_users = '$IdUser'\"`"
+			UserEmail="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "id_users = '$IdUser'"`"
+			UserName="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_ident' 'users' "id_users = '$IdUser'"`"
 
 			#if [ "$LOGSTD" == "NO" ]; then log_daemon_msg "Sending status to '$UserName'"; fi
 			SendMail "MySB - Dynamic IP addresses were updated" "$UserName" "ip_updated" "Dynamic IP updated"

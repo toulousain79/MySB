@@ -66,7 +66,7 @@ if [ $# -gt 1 ]; then
 	for Arg in "$@"; do
 		case "$Arg" in
 			--all)
-				All="WHERE 1"
+				All="1"
 			;;
 			--dnssec)
 				DNSsec="`echo $Arg | cut -d '=' -f 2 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
@@ -80,7 +80,7 @@ if [ $# -gt 1 ]; then
 				echo $Arg
 				GivenResolvers="`echo $Arg | cut -d '=' -f 2 | sed -e 's/,/ /g;' | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 				for Resolver in $GivenResolvers; do
-					IfExist="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_dnscrypt_resolvers FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+					IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_dnscrypt_resolvers' 'dnscrypt_resolvers' "name = '$Resolver'"`"
 					if [ ! -z "$IfExist" ]; then
 						ResolversSearched="$ResolversSearched AND name = '$Resolver'"
 					fi
@@ -90,16 +90,16 @@ if [ $# -gt 1 ]; then
 	done
 
 	if [ -z "$All" ]; then
-		Search="WHERE dnssec = '$DNSsec' AND no_logs = '$NoLogs' $ResolversSearched"
+		Search="dnssec = '$DNSsec' AND no_logs = '$NoLogs' $ResolversSearched"
 	else
 		Search="$All"
 	fi
 
 	# Get resolvers list (by command line)
-	AllResolvers="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT name FROM dnscrypt_resolvers $Search\"`"
+	AllResolvers="`Func_SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' "$Search"`"
 else
 	# Get resolvers list (by database)
-	AllResolvers="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT name FROM dnscrypt_resolvers WHERE is_wished = '1'\"`"	
+	AllResolvers="`Func_SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' "is_wished = '1'"`"
 fi
 
 # Cleaning the list (no IPv6)
@@ -124,10 +124,10 @@ if [ ! -d $DIR_LOG ]; then mkdir $DIR_LOG && chown $DAEMON_USER:$DAEMON_USER $DI
 # Create daemon option
 DeamonOption() {
 	Name="$1"
-	LocalAddress="$2"
-	ProviderAddress="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Name'\"`"
-	ProviderName="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT provider_name FROM dnscrypt_resolvers WHERE name = '$Name'\"`"
-	ProviderKey="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT provider_public_key FROM dnscrypt_resolvers WHERE name = '$Name'\"`"
+	LocalAddress="$2"	
+	ProviderAddress="`Func_SQL_Command 'SELECT' 'MySB_db' 'resolver_address' 'dnscrypt_resolvers' "name = '$Name'"`"
+	ProviderName="`Func_SQL_Command 'SELECT' 'MySB_db' 'provider_name' 'dnscrypt_resolvers' "name = '$Name'"`"
+	ProviderKey="`Func_SQL_Command 'SELECT' 'MySB_db' 'provider_public_key' 'dnscrypt_resolvers' "name = '$Name'"`"
 
 	DEAMON_OPT="--user=$DAEMON_USER --edns-payload-size=4096 --resolver-address=$ProviderAddress --provider-name=$ProviderName --provider-key=$ProviderKey --logfile=$DIR_LOG/$Resolver.log --local-address=$LocalAddress --ephemeral-keys"
 }
