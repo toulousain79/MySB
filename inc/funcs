@@ -1032,7 +1032,7 @@ PeerGuardianBlocklistsList() {
 EOF
 		) > /etc/pgl/blocklists.list
 
-		AllBlocklists="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT peerguardian_list,peerguardian_active FROM blocklists WHERE peerguardian_list != ''\"`"
+		AllBlocklists="`Func_SQL_Command 'SELECT' 'MySB_db' 'peerguardian_list,peerguardian_active' 'blocklists' "peerguardian_list != ''"`"
 		for Blocklist in $AllBlocklists; do
 			List=`echo $Blocklist | awk '{split($0,a,"|"); print a[1]}'`
 			IsActive=`echo $Blocklist | awk '{split($0,a,"|"); print a[2]}'`			
@@ -1097,8 +1097,8 @@ EOF
 		if [ ! -z "$UsersList" ] && [ "$IpRestriction" == "YES" ]; then
 			echo "## Allow all MySB users" >> /etc/pgl/allow.p2p
 			for FnUser in $UsersList; do
-				UserID="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_users FROM users WHERE users_ident = '$FnUser'\"`"
-				UserIP="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM users_addresses WHERE id_users = '$UserID'\"`"
+				UserID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$FnUser'"`"
+				UserIP="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'users_addresses' "id_users = '$UserID'"`"
 				for IPv4 in $UserIP; do
 					echo "$FnUser:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
 				done
@@ -1109,7 +1109,7 @@ EOF
 		if [ "$IsInstalled_DNScrypt" == "YES" ] && [ "$DNScrypt_Switch" == "1" ]; then
 			echo "## DNScrypt" >> /etc/pgl/allow.p2p
 			for Resolver in $ResolverName; do
-				ResolverAddress="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+				ResolverAddress="`Func_SQL_Command 'SELECT' 'MySB_db' 'resolver_address' 'dnscrypt_resolvers' "name = '$Resolver'"`"
 				ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
 				ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
 				if [ -z "$ResolverPort" ]; then ResolverPort="443"; fi
@@ -1119,12 +1119,12 @@ EOF
 		fi
 		
 		echo "## Trackers enabled" >> /etc/pgl/allow.p2p
-		AllTrackers="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT id_trackers_list, tracker FROM trackers_list WHERE is_active = '1'\"`"
+		AllTrackers="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list, tracker' 'trackers_list' "is_active = '1'"`"
 		for Tracker in $AllTrackers; do
 			IdTracker=`echo $Tracker | awk '{split($0,a,"|"); print a[1]}'`
 			TrackerName=`echo $Tracker | awk '{split($0,a,"|"); print a[2]}'`
 
-			ListIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list = '$IdTracker'\"`"
+			ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$IdTracker'"`"
 			for IPv4 in $ListIPv4; do
 				echo "$TrackerName:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
 			done
@@ -1142,7 +1142,7 @@ PeerGuardianIptablesInsert() {
 			# echo >> /etc/pgl/dnscrypt.insert.sh
 			# echo "# DNScrypt-proxy complementary rules" >> /etc/pgl/dnscrypt.insert.sh
 			# for Resolver in $ResolverName; do
-				# ResolverAddress="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT resolver_address FROM dnscrypt_resolvers WHERE name = '$Resolver'\"`"
+				# ResolverAddress="`Func_SQL_Command 'SELECT' 'MySB_db' 'resolver_address' 'dnscrypt_resolvers' "name = '$Resolver'"`"
 				# ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
 				# ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
 				# if [ -z "$ResolverPort" ]; then ResolverPort="443"; fi
@@ -1163,14 +1163,14 @@ PeerGuardianIptablesInsert() {
 			echo "# $ServerProvider monitoring complementary rules" >> /etc/pgl/monitoring.insert.sh
 			case "$ServerProvider" in
 				"OVH")
-					OvhIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM providers_monitoring WHERE provider = 'OVH'\"`"
+					OvhIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' "provider = 'OVH'"`"
 					for IPv4 in $OvhIPv4; do
 						echo "iptables -A pgl_in -p udp -s $IPv4 --destination-port 6100:6200 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
 						echo "iptables -I pgl_in -p icmp -s $IPv4 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
 					done
 				;;
 				"ONLINE")
-					OnlineIPv4="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT ipv4 FROM providers_monitoring WHERE provider = 'ONLINE'\"`"
+					OnlineIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' "provider = 'ONLINE'"`"
 					for IPv4 in $OnlineIPv4; do
 						echo "iptables -I pgl_in -p icmp -s $IPv4 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
 					done
@@ -1187,12 +1187,12 @@ PeerGuardianIptablesInsert() {
 PeerGuardianPglcmdConf() {
 	if [ -f /etc/pgl/pglcmd.conf ]; then
 		if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Logging and verbosity settings"; fi
-		STATS_MAILTO="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT pgl_email_stats FROM system WHERE 1\" | sed 's/0//g;' | sed 's/1/root/g;'`"
+		STATS_MAILTO="`Func_SQL_Command 'SELECT' 'MySB_db' 'pgl_email_stats' 'system' '1' | sed 's/0//g;' | sed 's/1/root/g;'`"
 		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "STATS_MAILTO=")
 		perl -pi -e "s/$SEARCH/STATS_MAILTO=\"$STATS_MAILTO\"/g" /etc/pgl/pglcmd.conf
 		unset SEARCH
 
-		WD_MAILTO="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT pgl_watchdog_email FROM system WHERE 1\" | sed 's/0//g;' | sed 's/1/root/g;'`"
+		WD_MAILTO="`Func_SQL_Command 'SELECT' 'MySB_db' 'pgl_watchdog_email' 'system' '1' | sed 's/0//g;' | sed 's/1/root/g;'`"
 		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WD_MAILTO=")
 		perl -pi -e "s/$SEARCH/WD_MAILTO=\"$WD_MAILTO\"/g" /etc/pgl/pglcmd.conf
 		unset SEARCH
@@ -1377,7 +1377,7 @@ ManageDirectoriesAndFiles() {
 #### Change rights for users
 ManageUserHomeDir() {
 	FnUser="$1"
-	FnHomeDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$FnUser'\"`"
+	FnHomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
 
 	# /home/user: O:rwx G:rx O:rx
 	if [ ! -d $FnHomeDir ]; then mkdir $FnHomeDir; fi
@@ -1435,7 +1435,7 @@ ManageUserHomeDir() {
 CakeboxUsersConfigs() {
 	if [ "$IsInstalled_Cakebox" == "YES" ]; then
 		FnUser="$1"
-		FnHomeDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$FnUser'\"`"
+		FnHomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
 		HomeDirEscaped=`echo $FnHomeDir | sed s,/,\\\\\\\\\\/,g`
 
 		if [ -f $CakeboxDir/config/default.php.dist ] && [ ! -f  $CakeboxDir/config/$FnUser.php ]; then
@@ -1457,9 +1457,9 @@ CakeboxUsersConfigs() {
 ManagerUsersConfigs() {
 	if [ "$IsInstalled_Manager" == "YES" ]; then
 		FnUser="$1"
-		FnHomeDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$FnUser'\"`"
+		FnHomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
 		HomeDirEscaped=`echo $FnHomeDir | sed s,/,\\\\\\\\\\/,g`
-		PortSCGI="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$FnUser'\"`"
+		PortSCGI="`Func_SQL_Command 'SELECT' 'MySB_db' 'scgi_port' 'users' "users_ident = '$FnUser'"`"
 		UserNameUpper=`echo $FnUser | tr '[:lower:]' '[:upper:]'`	
 
 		if [ ! -d $ManagerDir/conf/users/$FnUser ]; then mkdir -p $ManagerDir/conf/users/$FnUser; fi
@@ -1658,9 +1658,9 @@ ruTorrentGlobalConfigs() {
 ruTorrentUsersConfigs() {
 	LISTING=$(ls -1r $RutorrentPluginsDir/)
 	FnUser="$1"
-	FnHomeDir="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT home_dir FROM users WHERE users_ident = '$FnUser'\"`"
+	FnHomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
 	HomeDirEscaped=`echo $FnHomeDir | sed s,/,\\\\\\\\\\/,g`
-	PortSCGI="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT scgi_port FROM users WHERE users_ident = '$FnUser'\"`"
+	PortSCGI="`Func_SQL_Command 'SELECT' 'MySB_db' 'scgi_port' 'users' "users_ident = '$FnUser'"`"
 	UserNameUpper=`echo $FnUser | tr '[:lower:]' '[:upper:]'`	
 
 	# share

@@ -40,12 +40,12 @@ DoApplyConfig() {
 	User=$1
 
 	echo `date +%H:%m:%S` "- Creating order of execution for $UserApplying"
-	AllCommandsUser="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT commands FROM commands WHERE user = '$User'\"`"
+	AllCommandsUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'commands' 'commands' "user = '$User'"`"
 	for CommandUser in $AllCommandsUser; do
 		case "$CommandUser" in
 			BlocklistsRTorrent.bsh|MySB_SecurityRules*|GetTrackersCert.bsh|MySB_ChangeUserPassword|Postfix|Options_MySB|Options_System|OpenVPN) # On peut supprimer les doublons
-				FirstCommandUser="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT min(priority) FROM commands WHERE user = '$User' AND commands = '$CommandUser'\"`"
-				LastCommandUser="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT max(priority) FROM commands WHERE user = '$User' AND commands = '$CommandUser'\"`"
+				FirstCommandUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'min(priority)' 'commands' "user = '$User' AND commands = '$CommandUser'"`"
+				LastCommandUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'max(priority)' 'commands' "commands WHERE user = '$User' AND commands = '$CommandUser'"`"
 				if [ $FirstCommandUser -ne $LastCommandUser ] && [ ! -z $FirstCommandUser ] && [ ! -z $LastCommandUser ]; then
 					while [ $FirstCommandUser -lt $LastCommandUser ]; do
 						# On supprime les premières commandes
@@ -60,8 +60,8 @@ DoApplyConfig() {
 	# 2 - En fonction de l'ensemble des commandes, on réorganise certaines.
 	# Par exemple, la commande 'MySB_SecurityRules' devra être exécutée une seule fois et en dernier
 	# On en garde qu'une seule tout utilisateur confondu et assigne une priorité maxi.
-	LastOneMin="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT min(priority) FROM commands WHERE commands = 'MySB_SecurityRules' AND user = '$User'\"`"
-	LastOneMax="`sqlite3 -cmd '.timeout 150000' $MySB_DB \"SELECT max(priority) FROM commands WHERE commands = 'MySB_SecurityRules' AND user = '$User'\"`"	
+	LastOneMin="`Func_SQL_Command 'SELECT' 'MySB_db' 'min(priority)' 'commands' "commands = 'MySB_SecurityRules' AND user = '$User'"`"
+	LastOneMax="`Func_SQL_Command 'SELECT' 'MySB_db' 'max(priority)' 'commands' "commands = 'MySB_SecurityRules' AND user = '$User'"`"
 	if [ $LastOneMin -ne $LastOneMax ] && [ ! -z $LastOneMin ] && [ ! -z $LastOneMax ]; then
 		while [ $LastOneMin -lt $LastOneMax ]; do
 			# On supprime les premières commandes
