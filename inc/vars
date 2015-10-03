@@ -53,31 +53,8 @@ DEBIAN_Ver="`lsb_release -rs | cut -d '.' -f 1`"
 DEBIAN_VERSION="`lsb_release -cs`"
 IFPVEKERNEL="`uname -r | grep pve`"
 FILESYSTEMTYPE="`df -T "/home/" | awk '{print $2}' | tail -n1`"
-if [ -z "$HostNameFQDN" ]; then
-	HostNameFQDN="`hostname -f`"
-fi
 
-if [ -z "$SrvIpAddress" ]; then
-	SrvIpAddress=$(wget -qO- ipv4.icanhazip.com)
-	if [ -z "$SrvIpAddress" ]; then
-		SrvIpAddress="`ifconfig | sed -n 's/.*inet addr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
-		if [ -z "$SrvIpAddress" ]; then
-			SrvIpAddress="`ifconfig | sed -n 's/.*inet adr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
-		fi
-	fi
-fi
-
-if [ -z "$PrimaryInet" ]; then
-	PrimaryInet="`ip route get 8.8.8.8 | grep 8.8.8.8 | awk '{ print $5 }'`"
-fi
-
-if [ -f /etc/timezone ] && [ -z "$TimeZone" ]; then
-	TimeZone="`cat /etc/timezone`"
-else
-	TimeZone="Europe/Paris"
-fi
-
-if [ "`whereis mysql | awk '{ print $2 }'`" == "" ] && [ ! -z "$MySB_InstallDir" ] && [ "`ls -a /var/lib/mysql/MySB_db/ 2> /dev/null | sed -e "/\.$/d" | wc -l`" -eq 1 ]; then
+if [ "`whereis mysql | awk '{ print $2 }'`" == "" ] && [ ! -z "$MySB_InstallDir" ] && [ "`ls -a /var/lib/mysql/MySB_db/ 2> /dev/null | sed -e "/\.$/d" | wc -l`" -gt 1 ]; then
 	#### All Variables
 	# ----- System info
 	MySB_CurrentVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'mysb_version' 'system' "id_system = '1'"`"
@@ -97,6 +74,30 @@ if [ "`whereis mysql | awk '{ print $2 }'`" == "" ] && [ ! -z "$MySB_InstallDir"
 	Port_SSH="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp1' 'services' "serv_name = 'SSH'"`"
 	Port_HTTPS="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp1' 'services' "serv_name = 'NginX'"`"
 	Port_HTTP="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp2' 'services' "serv_name = 'NginX'"`"
+
+	if [ -z "$HostNameFQDN" ]; then
+		HostNameFQDN="`hostname -f`"
+	fi
+
+	if [ -z "$SrvIpAddress" ]; then
+		SrvIpAddress=$(wget -qO- ipv4.icanhazip.com)
+		if [ -z "$SrvIpAddress" ]; then
+			SrvIpAddress="`ifconfig | sed -n 's/.*inet addr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
+			if [ -z "$SrvIpAddress" ]; then
+				SrvIpAddress="`ifconfig | sed -n 's/.*inet adr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
+			fi
+		fi
+	fi
+
+	if [ -z "$PrimaryInet" ]; then
+		PrimaryInet="`ip route get 8.8.8.8 | grep 8.8.8.8 | awk '{ print $5 }'`"
+	fi
+
+	if [ -f /etc/timezone ] && [ -z "$TimeZone" ]; then
+		TimeZone="`cat /etc/timezone`"
+	else
+		TimeZone="Europe/Paris"
+	fi
 	# ----- System info
 
 	# ----- Main user info
