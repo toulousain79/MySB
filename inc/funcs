@@ -221,7 +221,7 @@ PackagesManage() {
 	if [ "$Query" != "test" ]; then
 		if [ -s $MySB_DB ] && CheckCommand 0 sqlite3; then
 			AptUpdate="`Func_SQL_Command 'SELECT' 'MySB_db' 'apt_update' 'system' '1'`"
-			AptUpdate="`Func_SQL_Command 'SELECT' 'MySB_db' 'apt_date' 'system' '1'`"
+			AptDate="`Func_SQL_Command 'SELECT' 'MySB_db' 'apt_date' 'system' '1'`"
 			AptDate=$(date -d "$AptDate" +"%Y-%m-%d %H")
 			Now=$(date +%Y-%m-%d\ %H)
 			t1=$(date --date="$AptDate" +'%-H')
@@ -233,7 +233,7 @@ PackagesManage() {
 				echo "$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update"
 				$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update
 				if [ $? -eq 0 ]; then
-					Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "apt_update = 0, apt_date = datetime('now','localtime')" 'id_system = 1'
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "apt_update = 0, apt_date = now()" 'id_system = 1'
 				fi
 			fi
 		else
@@ -444,25 +444,19 @@ ManageServices() {
 					if [ "$Service" == "pglcmd" ]; then
 						if CheckCommand 0 pglcmd; then
 							if GetPid $Service; then
-								# log_daemon_msg "Reloading PeerGuardian Linux"
-								# pglcmd reload > /dev/null
-								# if [ $? -gt 0 ]; then
-									# StatusLSB 1
-									
-									log_daemon_msg "Restarting PeerGuardian Linux"
-									pglcmd restart > /dev/null
-									if [ $? -gt 0 ]; then
-										StatusLSB 1
-										
-										log_daemon_msg "Force Restarting PeerGuardian Linux"
-										pglcmd force-restart > /dev/null
-									fi
-								#fi
+								log_daemon_msg "Restarting PeerGuardian Linux"
+								pglcmd restart > /dev/null
+								if [ $? -gt 0 ]; then
+									StatusLSB 1
+
+									log_daemon_msg "Force Restarting PeerGuardian Linux"
+									pglcmd force-restart > /dev/null
+								fi
 							else
 								log_daemon_msg "Starting PeerGuardian Linux"
 								pglcmd start > /dev/null
 							fi
-							
+
 							if [ $? -gt 0 ]; then # if pgl don't start maybe its due to a list update
 								StatusLSB 1
 
@@ -536,19 +530,21 @@ ManageServices() {
 							;;
 							"nginx"|"php5-fpm"|"stunnel4"|"postfix"|"cron"|"vsftpd"|"nfs-kernel-server")
 								Continue=0
-								if ! GetPid $Service; then
-									log_daemon_msg "Starting $Service"
-									service $Service start > /dev/null
-								else
-									log_daemon_msg "Reloading $Service"
-									service $Service reload > /dev/null
-									if [ $? -gt 0 ]; then
-										StatusLSB 1
-										log_daemon_msg "Restarting $Service"
-										service $Service restart > /dev/null
+								if CheckCommand 0 $Service; then
+									if ! GetPid $Service; then
+										log_daemon_msg "Starting $Service"
+										service $Service start > /dev/null
+									else
+										log_daemon_msg "Reloading $Service"
+										service $Service reload > /dev/null
+										if [ $? -gt 0 ]; then
+											StatusLSB 1
+											log_daemon_msg "Restarting $Service"
+											service $Service restart > /dev/null
+										fi
 									fi
+									StatusLSB
 								fi
-								StatusLSB
 							;;
 							*)
 								if ! GetPid $Service; then
@@ -589,7 +585,7 @@ CleanBlockList() {
 			wget --no-check-certificate $URL -O $MySB_InstallDir/files/blocklists/$FILE.gz
 			if [ $? -eq 0 ] ; then
 				gzip -dc $MySB_InstallDir/files/blocklists/$FILE.gz | cut -d: -f2 > $MySB_InstallDir/files/blocklists/$FILE.txt
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "rtorrent_lastupdate = datetime('now','localtime')" "rtorrent_list = '$URL'"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "rtorrent_lastupdate = now()" "rtorrent_list = '$URL'"
 			else
 				Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "rtorrent_lastupdate = 'failed'" "rtorrent_list = '$URL'"
 			fi
@@ -883,8 +879,8 @@ ScriptInvoke() {
 		"source"|"bash")
 			#### Prepare our script
 			# vars & funcs
-			echo "source $MySB_InstallDir/inc/vars" > $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
 			echo "source $MySB_InstallDir/inc/funcs" >> $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
+			echo "source $MySB_InstallDir/inc/vars" > $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
 			echo "source /lib/lsb/init-functions" >> $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
 			# copy it
 			cat $MYSCRIPT >> $MySB_InstallDir/temp/${ScriptName}_${SCRIPT}.invoked
@@ -1034,8 +1030,8 @@ EOF
 
 		AllBlocklists="`Func_SQL_Command 'SELECT' 'MySB_db' 'peerguardian_list,peerguardian_active' 'blocklists' "peerguardian_list != ''"`"
 		for Blocklist in $AllBlocklists; do
-			List=`echo $Blocklist | awk '{split($0,a,"|"); print a[1]}'`
-			IsActive=`echo $Blocklist | awk '{split($0,a,"|"); print a[2]}'`			
+			List="`echo $Blocklist | awk '{split($0,a,"|"); print a[1]}'`"
+			IsActive="`echo $Blocklist | awk '{split($0,a,"|"); print a[2]}'`"			
 
 			case "$2" in
 				'UpdateLists') # Update each list of PeerGuardian during installation
@@ -1053,7 +1049,7 @@ EOF
 							Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "peerguardian_active = '0', peerguardian_lastupdate = 'failed'" "peerguardian_list = '$List'"
 						done
 					else # Update OK
-						Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "peerguardian_lastupdate = datetime('now','localtime')" "peerguardian_list = '$List'"
+						Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "peerguardian_lastupdate = now()" "peerguardian_list = '$List'"
 					fi
 				;;
 				'CreateFile') # Now, we create the final blocklists with all active lists
@@ -1121,8 +1117,8 @@ EOF
 		echo "## Trackers enabled" >> /etc/pgl/allow.p2p
 		AllTrackers="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list, tracker' 'trackers_list' "is_active = '1'"`"
 		for Tracker in $AllTrackers; do
-			IdTracker=`echo $Tracker | awk '{split($0,a,"|"); print a[1]}'`
-			TrackerName=`echo $Tracker | awk '{split($0,a,"|"); print a[2]}'`
+			IdTracker="`echo $Tracker | awk '{split($0,a,"|"); print a[1]}'`"
+			TrackerName="`echo $Tracker | awk '{split($0,a,"|"); print a[2]}'`"
 
 			ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$IdTracker'"`"
 			for IPv4 in $ListIPv4; do
