@@ -284,15 +284,13 @@ PopulatingIcmpChain() {
 			if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "NONE" ]; then
 				case "$ServerProvider" in
 					"OVH")
-						OvhIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' "provider = 'OVH' AND ipv4 != ''"`"
-						for IPv4 in $OvhIPv4; do
+						Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' "provider = 'OVH' AND ipv4 != ''" | while read IPv4; do
 							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "$ServerProvider monitoring"
 							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j ACCEPT -m comment --comment "$ServerProvider monitoring"				
 						done
 					;;
 					"ONLINE")
-						OnlineIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' "provider = 'ONLINE' AND ipv4 != ''"`"
-						for IPv4 in $OnlineIPv4; do
+						Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' "provider = 'ONLINE' AND ipv4 != ''" | while read IPv4; do
 							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j LOG --log-prefix "fp=icmp_packets:2 a=ACCEPT " -m comment --comment "$ServerProvider monitoring"
 							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j ACCEPT -m comment --comment "$ServerProvider monitoring"
 						done
@@ -478,7 +476,7 @@ PopulatingUdpInboundChain() {
 	case "$1" in
 		"create")
 			if [ "$IsInstalled_DNScrypt" == "YES" ]; then
-				for Resolver in $ResolverName; do
+				Func_SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' "is_wished = '1'" | while read Resolver; do
 					ResolverAddress="`Func_SQL_Command 'SELECT' 'MySB_db' 'resolver_address' 'dnscrypt_resolvers' "name = '$Resolver'"`"
 					ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
 					ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"

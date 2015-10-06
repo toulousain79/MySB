@@ -121,7 +121,6 @@ case "$Switch" in
 esac
 
 if [ "$ApplyConfigBind" == "YES" ]; then
-	AllTrackersDomain="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker_domain' 'trackers_list' "is_active = '0' AND to_check = '0'"`"
 	ServicesToRestart="${ServicesToRestart} bind9"
 fi
 if [ "$ApplyConfigDnscrypt" == "YES" ]; then
@@ -191,9 +190,8 @@ CreateServicesRules() {
 	#### BIND
 	if [ "$ApplyConfigBind" == "YES" ]; then
 		log_daemon_msg "$SecurityRules_Bind_BlockOut"
-		AllTrackersDomain="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker_domain' 'trackers_list' "is_active = '0' AND to_check = '0'"`"
 		echo "#### MySB - Blacklisted domains (ex: inactive trackers)" > /etc/bind/MySB.zones.blakclists
-		for TrackerDomain in $AllTrackersDomain; do
+		Func_SQL_Command 'SELECT' 'MySB_db' 'tracker_domain' 'trackers_list' "is_active = '0' AND to_check = '0'" | while read TrackerDomain; do
 			echo "zone \"$TrackerDomain\" { type master; file \"/etc/bind/db.empty\"; };" >> /etc/bind/MySB.zones.blakclists
 		done
 		perl -pi -e "s/^#include \"\/etc\/bind\/MySB.zones.blakclists\";/include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
@@ -458,8 +456,7 @@ case "$Switch" in
 			NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'DNScrypt-proxy' -n -m 1 | cut -d ':' -f 1)
 			sed -i '/DNScrypt-proxy/d' $MySB_InstallDir/temp/current-iptables-rules
 
-			IFS=$'####'
-			for Resolver in $ResolverName; do
+			Func_SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' "is_wished = '1'" | while read Resolver; do
 				ResolverAddress="`Func_SQL_Command 'SELECT' 'MySB_db' 'resolver_address' 'dnscrypt_resolvers' "name = '$Resolver'"`"
 				ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
 				ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"

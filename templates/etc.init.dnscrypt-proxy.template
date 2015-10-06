@@ -89,22 +89,19 @@ if [ $# -gt 1 ]; then
 		esac
 	done
 
+	# Get resolvers list (by command line)
 	if [ -z "$All" ]; then
 		Search="dnssec = '$DNSsec' AND no_logs = '$NoLogs' $ResolversSearched"
 	else
 		Search="$All"
 	fi
-
-	# Get resolvers list (by command line)
-	AllResolvers="`Func_SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' "$Search"`"
 else
 	# Get resolvers list (by database)
-	AllResolvers="`Func_SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' "is_wished = '1'"`"
+	Search="is_wished = '1'"
 fi
 
 # Cleaning the list (no IPv6)
-IFS=$'####'
-for Resolver in $AllResolvers; do
+Func_SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' "$Search" | while read Resolver; do
 	if [ -z "`echo $Resolver | grep 'ipv6'`" ]; then
 		ResolversList="${ResolversList} ${Resolver}"
 	fi
@@ -137,7 +134,6 @@ DeamonOption() {
 bind_check() {
 	service bind9 stop &> /dev/null
 	service bind9 start &> /dev/null
-	#/usr/sbin/ntpdate -u 0.fr.pool.ntp.org > /dev/null 2>&1
 }
 
 # Add monitor with cron
