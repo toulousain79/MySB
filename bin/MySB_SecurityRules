@@ -191,7 +191,8 @@ CreateServicesRules() {
 	if [ "$ApplyConfigBind" == "YES" ]; then
 		log_daemon_msg "$SecurityRules_Bind_BlockOut"
 		echo "#### MySB - Blacklisted domains (ex: inactive trackers)" > /etc/bind/MySB.zones.blakclists
-		Func_SQL_Command 'SELECT' 'MySB_db' 'tracker_domain' 'trackers_list' "is_active = '0' AND to_check = '0'" | while read TrackerDomain; do
+		AllTrackersDomain="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker_domain' 'trackers_list' \"is_active = '0' AND to_check = '0'\"`"
+		for TrackerDomain in $AllTrackersDomain; do
 			echo "zone \"$TrackerDomain\" { type master; file \"/etc/bind/db.empty\"; };" >> /etc/bind/MySB.zones.blakclists
 		done
 		perl -pi -e "s/^#include \"\/etc\/bind\/MySB.zones.blakclists\";/include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
@@ -456,7 +457,8 @@ case "$Switch" in
 			NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'DNScrypt-proxy' -n -m 1 | cut -d ':' -f 1)
 			sed -i '/DNScrypt-proxy/d' $MySB_InstallDir/temp/current-iptables-rules
 
-			Func_SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' "is_wished = '1'" | while read Resolver; do
+			ResolverName="`Func_SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' \"is_wished = '1'\"`"
+			for Resolver in $ResolverName; do
 				ResolverAddress="`Func_SQL_Command 'SELECT' 'MySB_db' 'resolver_address' 'dnscrypt_resolvers' "name = '$Resolver'"`"
 				ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
 				ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"

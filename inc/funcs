@@ -750,7 +750,8 @@ GetRutorrentTrackers() {
 
 #### Get Users Trackers
 GetUsersTrackers() {
-	Func_SQL_Command 'SELECT' 'MySB_db' 'tracker' 'trackers_list' "origin = 'users'" | while read FnTracker; do
+	FnUsersTrackers="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker' 'trackers_list' \"origin = 'users'\"`"
+	for FnTracker in $FnUsersTrackers; do
 		if [ ! -z "$FnTracker" ]; then
 			AddTracker $FnTracker "users"
 		fi
@@ -830,7 +831,8 @@ AddTracker() {
 					if [ ! -z "$TrackersListID" ] && [ $TrackersListID -gt 0 ]; then
 						log_daemon_msg "Update trackers IPv4 for '$TrackerDomain' --> '$DomainIPv4'"
 						# Cleaning
-						Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list' "id_trackers_list = '$TrackersListID'" | while read IPv4; do
+						ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list' \"id_trackers_list = '$TrackersListID'\"`"
+						for IPv4 in $ListIPv4; do
 							SEARCH=$(echo "$DomainIPv4" | grep "$IPv4")
 							if [ -z "$SEARCH" ]; then
 								Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list_ipv4' "ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID'"
@@ -1023,16 +1025,17 @@ PeerGuardianBlocklistsList() {
 EOF
 		) > /etc/pgl/blocklists.list
 
-		Func_SQL_Command 'SELECT' 'MySB_db' 'peerguardian_list,peerguardian_active' 'blocklists' "peerguardian_list != ''" | while read Blocklist; do
+		AllBlocklists="`Func_SQL_Command 'SELECT' 'MySB_db' 'peerguardian_list,peerguardian_active' 'blocklists' \"peerguardian_list != ''\"`"
+		for Blocklist in $AllBlocklists; do
 			List="`echo $Blocklist | awk '{split($0,a,"|"); print a[1]}'`"
-			IsActive="`echo $Blocklist | awk '{split($0,a,"|"); print a[2]}'`"			
+			IsActive="`echo $Blocklist | awk '{split($0,a,"|"); print a[2]}'`"
 
 			case "$2" in
 				'UpdateLists') # Update each list of PeerGuardian during installation
 					echo "$List" > /etc/pgl/blocklists.list # One to one list, the file 'blocklists.list' is created for each list for update them
-					
+
 					pglcmd update
-					
+
 					if [ $? -gt 0 ]; then # if update fail maybe its due to a bad list 
 						if [ $1 -eq 0 ]; then echo `date +"%T"`" --> The updated list of PGL may have failed." >> $MySB_InstallDir/logs/$ScriptName.log; fi
 
@@ -1093,12 +1096,13 @@ EOF
 					echo "$FnUser:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
 				done
 			done
-		fi	
-		
+		fi
+
 		# DNScrypt
 		if [ "$IsInstalled_DNScrypt" == "YES" ] && [ "$DNScrypt_Switch" == "1" ]; then
 			echo "## DNScrypt" >> /etc/pgl/allow.p2p
-			Func_SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' "is_wished = '1'" | while read Resolver; do
+			ResolverName="`Func_SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' \"is_wished = '1'\"`"
+			for Resolver in $ResolverName; do
 				ResolverAddress="`Func_SQL_Command 'SELECT' 'MySB_db' 'resolver_address' 'dnscrypt_resolvers' "name = '$Resolver'"`"
 				ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
 				ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
@@ -1107,9 +1111,10 @@ EOF
 				echo "DNScrypt-proxy ($Resolver):$ResolverAddress-255.255.255.255" >> /etc/pgl/allow.p2p
 			done
 		fi
-		
+
 		echo "## Trackers enabled" >> /etc/pgl/allow.p2p
-		Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list, tracker' 'trackers_list' "is_active = '1'" | while read Tracker; do
+		AllTrackers="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list, tracker' 'trackers_list' \"is_active = '1'\"`"
+		for Tracker in $AllTrackers; do
 			IdTracker="`echo $Tracker | awk '{split($0,a,"|"); print a[1]}'`"
 			TrackerName="`echo $Tracker | awk '{split($0,a,"|"); print a[2]}'`"
 
@@ -1152,17 +1157,19 @@ PeerGuardianIptablesInsert() {
 			echo "# $ServerProvider monitoring complementary rules" >> /etc/pgl/monitoring.insert.sh
 			case "$ServerProvider" in
 				"OVH")
-					Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' "provider = 'OVH'" | while read IPv4; do
+					OvhIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'OVH'\"`"
+					for IPv4 in $OvhIPv4; do
 						echo "iptables -A pgl_in -p udp -s $IPv4 --destination-port 6100:6200 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
 						echo "iptables -I pgl_in -p icmp -s $IPv4 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
 					done
 				;;
 				"ONLINE")
-					Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' "provider = 'ONLINE'" | while read IPv4; do
+					OnlineIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'ONLINE'\"`"
+					for IPv4 in $OnlineIPv4; do
 						echo "iptables -I pgl_in -p icmp -s $IPv4 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
 					done
 				;;
-			esac			
+			esac
 		if [ $1 -eq 1 ]; then StatusLSB; fi
 	else
 		if [ -f /etc/pgl/monitoring.insert.sh ]; then rm -f /etc/pgl/monitoring.insert.sh; fi
