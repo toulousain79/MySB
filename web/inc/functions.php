@@ -24,12 +24,12 @@
 
 // Change ownCloud language
 function ChangeOwnCloudLanguage($user, $language) {
-	global $MySB_DB, $MySQL_ownCloud_DB;
+	global $MySB_DB, $ownCloud_DB;
 
 	$ownCloudDatas = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
 
 	if ( $ownCloudDatas["is_installed"] == '1' ) {
-		$MySQL_ownCloud_DB->update("oc_preferences", ["configvalue" => "$language"], ["AND" => [
+		$ownCloud_DB->update("oc_preferences", ["configvalue" => "$language"], ["AND" => [
 																						"userid" => "$user",
 																						"configkey" => "lang"
 																					]]);
@@ -46,23 +46,25 @@ function ChangeCakeboxLanguage($user, $language) {
 		$CakeboxDir = $MySB_DB->get("repositories", "dir", ["name" => "Cakebox-Light"]);
 		$ConfigFile = MYSB_ROOT.$CakeboxDir . "/config/" . $user . ".php";
 
-		$File = fopen($ConfigFile, 'r') or die("Config file missing R");
-		$Content = file_get_contents($ConfigFile);
+		if ( file_exists($ConfigFile) ) {
+			$File = fopen($ConfigFile, 'r') or die("Config file missing R");
+			$Content = file_get_contents($ConfigFile);
 
-		switch ($language) {
-			case 'fr':
-				$NewContent = str_replace('"en"', '"fr"', $Content);
-				break;
+			switch ($language) {
+				case 'fr':
+					$NewContent = str_replace('"en"', '"fr"', $Content);
+					break;
 
-			default:
-				$NewContent = str_replace('"fr"', '"en"', $Content);
+				default:
+					$NewContent = str_replace('"fr"', '"en"', $Content);
+			}
+			fclose($File);
+
+			//ouverture en écriture
+			$File = fopen($ConfigFile, 'w+') or die("Config file missing W");
+			fwrite($File, $NewContent);
+			fclose($File);
 		}
-		fclose($File);
-
-		//ouverture en écriture
-		$File = fopen($ConfigFile, 'w+') or die("Config file missing W");
-		fwrite($File, $NewContent);
-		fclose($File);
 	}
 }
 

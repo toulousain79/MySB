@@ -38,6 +38,16 @@ CGREEN="${CSI}1;32m"
 CYELLOW="${CSI}1;33m"
 CBLUE="${CSI}1;34m"
 
+#### Databases
+MySB_DB=$MySB_InstallDir"/db/MySB.sq3"
+Wolf_DB=$MySB_InstallDir"/db/Wolf.sq3"
+IsReady_MySB_DB="NO"
+if CheckCommand 0 mysql || CheckCommand 0 sqlite3; then
+	if [ "`ls -a /var/lib/mysql/MySB_db/ 2> /dev/null | sed -e "/\.$/d" | wc -l`" -gt 1 ] || [ -s $MySB_DB ]; then
+		IsReady_MySB_DB="YES"
+	fi
+fi
+
 #### System
 if [ "$0" != "-bash" ]; then
 	ScriptName=$(basename $0)
@@ -46,9 +56,6 @@ fi
 if [ -z "$EnvLang" ]; then
 	EnvLang="`echo ${LANG:0:2}`"
 fi
-MySB_DB=$MySB_InstallDir"/db/MySB.sq3"
-Wolf_DB=$MySB_InstallDir"/db/Wolf.sq3"
-ownCloud_DB=$MySB_InstallDir"/web/owncloud/data/owncloud.db"
 MySB_InstallDirEscaped="`echo $MySB_InstallDir | sed s,/,\\\\\\\\\\/,g`"
 PROCESSOR="`cat /proc/cpuinfo | grep processor | wc -l`"
 MEMORY="`free -m | grep Mem | awk '{ print $2 }'`"
@@ -56,14 +63,9 @@ DEBIAN_Ver="`lsb_release -rs | cut -d '.' -f 1`"
 DEBIAN_VERSION="`lsb_release -cs`"
 IFPVEKERNEL="`uname -r | grep pve`"
 FILESYSTEMTYPE="`df -T "/home/" | awk '{print $2}' | tail -n1`"
-if CheckCommand 0 mysql && [ "`ls -a /var/lib/mysql/MySB_db/ 2> /dev/null | sed -e "/\.$/d" | wc -l`" -gt 1 ]; then
-	IsInstalled_MySQL="YES"
-else
-	IsInstalled_MySQL="NO"
-fi
 
 #### All Variables
-if [ ! -z "$MySB_InstallDir" ] && [ "$IsInstalled_MySQL" == "YES" ]; then
+if [ ! -z "$MySB_InstallDir" ] && [ "$IsReady_MySB_DB" == "YES" ]; then
 	# ----- System info
 	MySB_CurrentVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'mysb_version' 'system' "id_system = '1'"`"
 	HostNameFQDN="`Func_SQL_Command 'SELECT' 'MySB_db' 'hostname' 'system' "id_system = '1'"`"
