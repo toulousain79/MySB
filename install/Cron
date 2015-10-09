@@ -1,0 +1,68 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### CRON for Synchro NTP, LogServer, DynamicAddressResolver, MySB_GitHubRepoUpdate
+echo
+crontab -l > /tmp/crontab.tmp
+
+#### Synchro NTP
+sed -i '/ntpdate/d' /tmp/crontab.tmp
+echo "0 0,6,12,18 * * * /usr/sbin/ntpdate -u 0.fr.pool.ntp.org > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+# Log HTML
+sed -i '/LogServer/d' /tmp/crontab.tmp
+echo "0 */1 * * * /bin/bash $MySB_InstallDir/scripts/LogServer.bsh CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+# Dynamic Address Resolver
+sed -i '/DynamicAddressResolver/d' /tmp/crontab.tmp
+echo "*/5 * * * * /bin/bash $MySB_InstallDir/scripts/DynamicAddressResolver.bsh $$ CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+# Update Actual Git Repo of MySB
+sed -i '/MySB_GitHubRepoUpdate/d' /tmp/crontab.tmp
+echo "0 12 */2 * * /bin/bash $MySB_InstallDir/bin/MySB_GitHubRepoUpdate CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+# Check update for MySB
+sed -i '/MySB_UpgradeMe/d' /tmp/crontab.tmp
+echo "0 4 */3 * * /bin/bash $MySB_InstallDir/bin/MySB_UpgradeMe CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+# GeoIP
+sed -i '/UpdateGeoIP.bsh/d' /tmp/crontab.tmp
+MAXIMUM=58 # DO NOT REMOVE
+MINIMUM=1 # DO NOT REMOVE
+UPGEOIP=$((MINIMUM+RANDOM*(1+MAXIMUM-MINIMUM)/32767))
+echo "$UPGEOIP 2 9 * * /bin/bash $MySB_InstallDir/scripts/UpdateGeoIP.bsh CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+# rTorrent Blocklists
+sed -i '/BlocklistsRTorrent/d' /tmp/crontab.tmp
+echo "0 23 * * * /bin/bash $MySB_InstallDir/scripts/BlocklistsRTorrent.bsh CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+
+crontab /tmp/crontab.tmp
+rm -f /tmp/crontab.tmp
+
+#### START services
+Switch="$1"
+if [ "$Switch" != "UPGRADE" ]; then
+	ManageServices start "cron"
+fi
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

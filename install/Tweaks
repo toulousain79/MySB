@@ -138,38 +138,6 @@ if [ "$Switch" != "UPGRADE" ]; then
 	SwitchDNS "standard"
 fi
 
-#### CRON for Synchro NTP, LogServer, DynamicAddressResolver, MySB_GitHubRepoUpdate
-echo
-crontab -l > /tmp/crontab.tmp
-
-#### Synchro NTP
-sed -i '/ntpdate/d' /tmp/crontab.tmp
-echo "0 0,6,12,18 * * * /usr/sbin/ntpdate -u 0.fr.pool.ntp.org > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
-# Log HTML
-sed -i '/LogServer/d' /tmp/crontab.tmp
-echo "0 */1 * * * /bin/bash $MySB_InstallDir/scripts/LogServer.bsh CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
-# Dynamic Address Resolver
-sed -i '/DynamicAddressResolver/d' /tmp/crontab.tmp
-echo "*/5 * * * * /bin/bash $MySB_InstallDir/scripts/DynamicAddressResolver.bsh $$ CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
-# Update Actual Git Repo of MySB
-sed -i '/MySB_GitHubRepoUpdate/d' /tmp/crontab.tmp
-echo "0 12 */2 * * /bin/bash $MySB_InstallDir/bin/MySB_GitHubRepoUpdate CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
-# Check update for MySB
-sed -i '/MySB_UpgradeMe/d' /tmp/crontab.tmp
-echo "0 4 */3 * * /bin/bash $MySB_InstallDir/bin/MySB_UpgradeMe CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
-# GeoIP
-sed -i '/UpdateGeoIP.bsh/d' /tmp/crontab.tmp
-MAXIMUM=58 # DO NOT REMOVE
-MINIMUM=1 # DO NOT REMOVE
-UPGEOIP=$((MINIMUM+RANDOM*(1+MAXIMUM-MINIMUM)/32767))
-echo "$UPGEOIP 2 9 * * /bin/bash $MySB_InstallDir/scripts/UpdateGeoIP.bsh CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
-# rTorrent Blocklists
-sed -i '/BlocklistsRTorrent/d' /tmp/crontab.tmp
-echo "0 23 * * * /bin/bash $MySB_InstallDir/scripts/BlocklistsRTorrent.bsh CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
-
-crontab /tmp/crontab.tmp
-rm -f /tmp/crontab.tmp
-
 #### /etc/network/interfaces
 echo
 # Remove IPv6
@@ -227,12 +195,6 @@ fi
 cp -v $MySB_InstallDir/templates/etc.init.MySB_SecurityRules_Init.template /etc/init.d/MySB_SecurityRules_Init
 chmod +x /etc/init.d/MySB_SecurityRules_Init
 update-rc.d MySB_SecurityRules_Init defaults
-
-#### START services
-Switch="$1"
-if [ "$Switch" != "UPGRADE" ]; then
-	ManageServices start "cron"
-fi
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after
