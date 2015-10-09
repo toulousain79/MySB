@@ -43,11 +43,19 @@ if [ -z $MySQL_RootPassword ] && [ -z $MySQL_MysbPassword ]; then
 	FLUSH PRIVILEGES;
 	EOF
 
+	if [ ! -f /var/lib/mysql/ownCloud_db/db.opt ]; then
+		/usr/bin/mysql -u root -p$MySQL_RootPassword <<-EOF
+		create database ownCloud_db;
+		grant all on ownCloud_db.* to 'MySB_user'@'localhost' identified by '$MySQL_MysbPassword';
+		FLUSH PRIVILEGES;
+		EOF
+	fi
+
 	# Add MySQL password into MySB config files
 	echo "MySQL_RootPassword=\"$MySQL_RootPassword\"" >> $MySB_InstallDir/files/MySQL_RootPassword
 	echo "MySQL_MysbPassword=\"$MySQL_MysbPassword\"" >> $MySB_InstallDir/files/MySQL_MysbPassword
-	echo "MySQL_RootPassword=\"$MySQL_RootPassword\"" >> /etc/MySB/config
-	echo "MySQL_MysbPassword=\"$MySQL_MysbPassword\"" >> /etc/MySB/config
+	echo "MySQL_RootPassword=\"$MySQL_RootPassword\"" >> /etc/MySB/config_db
+	echo "MySQL_MysbPassword=\"$MySQL_MysbPassword\"" >> /etc/MySB/config_db
 	perl -pi -e "s/<MySQL_MysbPassword>/$MySQL_MysbPassword/g" /etc/MySB/config.php
 
 	# Create MySQL client config file for MySB_user
