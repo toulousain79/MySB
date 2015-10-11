@@ -56,6 +56,13 @@ if [ -z $MySQL_RootPassword ] && [ -z $MySQL_MysbPassword ]; then
 	echo "MySQL_MysbPassword=\"$MySQL_MysbPassword\"" >> $MySB_InstallDir/files/MySQL_MysbPassword
 	echo "MySQL_RootPassword=\"$MySQL_RootPassword\"" >> /etc/MySB/config_db
 	echo "MySQL_MysbPassword=\"$MySQL_MysbPassword\"" >> /etc/MySB/config_db
+	if [ ! -f /etc/MySB/config.php ]; then
+		cp -f $MySB_InstallDir/templates/etc.mysb.config.php.template /etc/MySB/config.php
+		perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/MySB/config.php
+		if [ ! -z "$MySQL_MysbPassword" ]; then
+			perl -pi -e "s/<MySQL_MysbPassword>/$MySQL_MysbPassword/g" /etc/MySB/config.php
+		fi
+	fi	
 
 	# Create MySQL client config file for MySB_user
 	echo "[client]" > /root/.config.cnf
@@ -82,9 +89,6 @@ if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 mysql; then
 	if [ -f $MySB_InstallDir/db/MySB_MySQL.sql ]; then rm -vf $MySB_InstallDir/db/MySB_MySQL.sql; fi
 	if [ -f $MySB_DB ]; then mv -v $MySB_DB $MySB_DB.old; fi
 fi
-
-#### Create directories & change rights
-ManageDirectoriesAndFiles
 
 #### START services
 ManageServices start "mysql"
