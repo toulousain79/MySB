@@ -152,7 +152,7 @@ INSERT INTO `services` (`id_services`, `serv_name`, `bin`, `port_tcp1`, `port_tc
 (20, 'BIND', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0),
 (21, 'Stunnel', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0),
 (22, 'rTorrent v0.9.2', '/usr/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0),
-(23, 'rTorrent v0.9.4', '/usr/local/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0),
+(23, 'rTorrent v0.9.6', '/usr/local/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0),
 (24, 'ownCloud', '', '', '', '', '', '', '', '', '', 0, 0);
 
 --

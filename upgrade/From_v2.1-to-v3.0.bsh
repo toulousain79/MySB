@@ -317,10 +317,19 @@ StatusSTD
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_SendMail$CEND..."
 if [ -f $MySB_InstallDir/inc/vars ]; then source $MySB_InstallDir/inc/vars; fi
 VERSION="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "admin = '1'"`"
+RutorrentDirEscaped=`echo $RutorrentDir | sed s,/,\\\\\\\\\\/,g`
 ListingUsers
 for seedUser in $UsersList; do
 	UserId=$(Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$seedUser'")
 	UserPassword="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_passwd' 'users' "users_ident = '$seedUser'"`"
+
+	# New rTorrent init
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "rtorrent_version = 'v0.9.6'" "rtorrent_version = 'v0.9.4'"
+	cp $MySB_InstallDir/templates/etc.init.rtorrent.template /etc/init.d/rtorrent-$seedUser
+	perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/init.d/rtorrent-$seedUser
+	perl -pi -e "s/<username>/$seedUser/g" /etc/init.d/rtorrent-$seedUser
+	perl -pi -e "s/<rutorrent_dir>/$RutorrentDirEscaped/g" /etc/init.d/rtorrent-$seedUser
+	chmod +x /etc/init.d/rtorrent-$seedUser	
 
 	if [ "$UserId" == "$MainUserId" ] && [ ! -z "$UserPassword" ]; then
 		# Remove main user password from database

@@ -29,7 +29,7 @@ $PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
 $Command = 'message_only';
-$rTorrentVersionsList = array('v0.9.2', 'v0.9.4');
+$rTorrentVersionsList = array('v0.9.2', 'v0.9.6');
 $LanguagesList = array('english', 'french');
 
 if (isset($_POST['submit'])) {

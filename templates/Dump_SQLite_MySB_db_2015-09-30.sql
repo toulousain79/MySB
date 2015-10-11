@@ -233,7 +233,7 @@ INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tc
 INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed) VALUES (20, 'BIND', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0);
 INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed) VALUES (21, 'Stunnel', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0);
 INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed) VALUES (22, 'rTorrent v0.9.2', '/usr/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0);
-INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed) VALUES (23, 'rTorrent v0.9.4', '/usr/local/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0);
+INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed) VALUES (23, 'rTorrent v0.9.6', '/usr/local/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0);
 INSERT INTO services (id_services, serv_name, bin, port_tcp1, port_tcp2, port_tcp3, ports_tcp_list, port_udp1, port_udp2, port_udp3, ports_udp_list, to_install, is_installed) VALUES (24, 'ownCloud', '', '', '', '', '', '', '', '', '', 0, 0);
 
 -- Table: system
