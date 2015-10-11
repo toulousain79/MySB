@@ -211,6 +211,15 @@ if [ "$DisplayServices" == "YES" ]; then
 		echo
 		QuestionGetString NO "$Questions_InstallSeedboxManager" ToInstall_Manager $Global_YES
 		ToInstall_Manager="`echo $ToInstall_Manager | tr '[:lower:]' '[:upper:]'`"
+
+		if [ "$ToInstall_Manager" == "$Global_YES" ]; then
+			to_install=1
+		else
+			to_install=0
+		fi
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'Seedbox-Manager'"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '$to_install'" "name = 'Seedbox-Manager'"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '$to_install'" "name = 'ruTorrent Plugin Link Manager'"		
 	fi
 
 	# Cakebox Light
@@ -218,6 +227,15 @@ if [ "$DisplayServices" == "YES" ]; then
 		echo
 		QuestionGetString NO "$Questions_InstallCakeBox" ToInstall_Cakebox $Global_YES
 		ToInstall_Cakebox="`echo $ToInstall_Cakebox | tr '[:lower:]' '[:upper:]'`"
+
+		if [ "$ToInstall_Cakebox" == "$Global_YES" ]; then
+			to_install=1
+		else
+			to_install=0
+		fi
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'CakeBox-Light'"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '$to_install'" "name = 'CakeBox-Light'"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '$to_install'" "name = 'ruTorrent Plugin Link Cakebox'"		
 	fi
 
 	# Plexmedia server
@@ -225,6 +243,13 @@ if [ "$DisplayServices" == "YES" ]; then
 		echo
 		QuestionGetString NO "$Questions_InstallPlexMedia" ToInstall_PlexMedia $Global_NO
 		ToInstall_PlexMedia="`echo $ToInstall_PlexMedia | tr '[:lower:]' '[:upper:]'`"
+
+		if [ "$ToInstall_PlexMedia" == "$Global_YES" ]; then
+			to_install=1
+		else
+			to_install=0
+		fi
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'Plex Media Server'"
 	fi
 
 	# Webmin
@@ -235,6 +260,13 @@ if [ "$DisplayServices" == "YES" ]; then
 		if [ "$ToInstall_Webmin" == "$Global_YES" ]; then
 			QuestionGetString NO "$Questions_PortWebmin" Ports_Webmin $Ports_Webmin
 		fi
+
+		if [ "$ToInstall_Webmin" == "$Global_YES" ]; then
+			to_install=1
+		else
+			to_install=0
+		fi
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install', port_tcp1 = '$Ports_Webmin', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'Webmin'"
 	fi
 
 	# OpenVPN
@@ -265,13 +297,45 @@ if [ "$DisplayServices" == "YES" ]; then
 				EndingScript 0 $MySB_Install_PID
 			fi
 		fi
+
+		if [ "$ToInstall_OpenVPN" == "$Global_YES" ]; then
+			to_install=1
+
+			OpenVPN_Proto="`echo $OpenVPN_Proto | tr '[:upper:]' '[:lower:]'`"
+			case "$OpenVPN_Proto" in
+				"tcp")
+					UdpPortsList="port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''"
+					TcpPortsList="port_tcp1 = '$Port_OpenVPN_WithGW', port_tcp2 = '$Port_OpenVPN_WithoutGW', port_tcp3 = '$Port_OpenVPN_TAP_WithoutGW', ports_tcp_list = ''"
+				;;
+				"udp")
+					UdpPortsList="port_udp1 = '$Port_OpenVPN_WithGW', port_udp2 = '$Port_OpenVPN_WithoutGW', port_udp3 = '$Port_OpenVPN_TAP_WithoutGW', ports_udp_list = ''"
+					TcpPortsList="port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = ''"
+				;;
+			esac			
+		else
+			to_install=0
+			UdpPortsList="port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''"
+			TcpPortsList="port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = ''"
+		fi
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install', $TcpPortsList, $UdpPortsList" "serv_name = 'OpenVPN'"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'OpenVPN'"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'Samba'"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'NFS'"
 	fi
 
 	# ownCloud
 	if [ "$IsInstalled_ownCloud" != "YES" ]; then
 		echo
 		QuestionGetString NO "$Questions_InstallOwnCloud" ToInstall_ownCloud $Global_NO
-		ToInstall_ownCloud="`echo $ToInstall_ownCloud | tr '[:lower:]' '[:upper:]'`"		
+		ToInstall_ownCloud="`echo $ToInstall_ownCloud | tr '[:lower:]' '[:upper:]'`"
+
+		if [ "$ToInstall_ownCloud" == "$Global_YES" ]; then
+			to_install=1
+		else
+			to_install=0
+		fi
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install', port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'ownCloud'"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '$to_install'" "name = 'ownCloud'"
 	fi
 fi
 
@@ -287,13 +351,27 @@ if [ "$DisplaySecurity" == "YES" ]; then
 		echo
 		QuestionGetString NO "$Questions_InstallLogwatch" ToInstall_LogWatch $Global_YES
 		ToInstall_LogWatch="`echo $ToInstall_LogWatch | tr '[:lower:]' '[:upper:]'`"
-	fi
 
+		if [ "$ToInstall_LogWatch" == "$Global_YES" ]; then
+			to_install=1
+		else
+			to_install=0			
+		fi
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'LogWatch'"
+	fi
+	
 	# Fail2Ban
 	if [ "$IsInstalled_Fail2Ban" != "YES" ]; then
 		echo
 		QuestionGetString NO "$Questions_InstallFail2Ban" ToInstall_Fail2Ban $Global_YES
 		ToInstall_Fail2Ban="`echo $ToInstall_Fail2Ban | tr '[:lower:]' '[:upper:]'`"
+
+		if [ "$ToInstall_Fail2Ban" == "$Global_YES" ]; then
+			to_install=1
+		else
+			to_install=0
+		fi
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'Fail2Ban'"
 	fi
 
 	# Blocklist
@@ -323,6 +401,21 @@ if [ "$DisplaySecurity" == "YES" ]; then
 				QuestionGetString NO "$Questions_InstallBlockList_1" MySB_PeerBlock "rTorrent"
 			done
 		fi
+
+		case "$MySB_PeerBlock" in
+			"PeerGuardian")
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'PeerGuardian'"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0'" "serv_name = 'rTorrent Block List'"
+			;;
+			"rTorrent")
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0'" "serv_name = 'PeerGuardian'"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'rTorrent Block List'"
+			;;
+			*)
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0'" "serv_name = 'PeerGuardian'"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0'" "serv_name = 'rTorrent Block List'"
+			;;
+		esac
 	fi
 
 	# DNScrypt-proxy
@@ -335,6 +428,15 @@ if [ "$DisplaySecurity" == "YES" ]; then
 			echo -e "${CYELLOW}At the end of the installation, you should replace your DNS (/etc/resolv.conf) with ${CGREEN}nameserver 127.0.0.1$CEND${CYELLOW} through the OpenVZ host (eg Proxmox).$CEND"
 			echo -e "$Questions_Message_DNScrypt"
 			sleep 10
+		fi
+
+		if [ "$ToInstall_DNScrypt" == "$Global_YES" ]; then
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'DNScrypt-proxy'"
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'DNScrypt-proxy'"
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'Libsodium'"
+		else
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'DNScrypt-proxy'"
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'Libsodium'"
 		fi
 	fi
 fi
@@ -373,89 +475,6 @@ if [ "$TYPE" == "INSTALL" ]; then
 	# FTP
 	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '$Port_FTP', port_tcp2 = '$Port_FTP_Data', port_tcp3 = '65000:65535', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'VSFTPd'"
 fi
-
-if [ "$ToInstall_Manager" == "$Global_YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Seedbox-Manager'"
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'Seedbox-Manager'"
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'ruTorrent Plugin Link Manager'"
-else
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'Seedbox-Manager'"
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'ruTorrent Plugin Link Manager'"
-	if [ -d $ManagerDir ]; then rm -rf $ManagerDir; fi
-fi
-
-if [ "$ToInstall_Cakebox" == "$Global_YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1', port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'CakeBox-Light'"
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'CakeBox-Light'"
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'ruTorrent Plugin Link Cakebox'"
-else
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'CakeBox-Light'"
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'ruTorrent Plugin Link Cakebox'"
-	if [ -d $CakeboxDir ]; then rm -rf $CakeboxDir; fi
-fi
-
-if [ "$ToInstall_PlexMedia" == "$Global_YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Plex Media Server'"
-fi
-
-if [ "$ToInstall_Webmin" == "$Global_YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1', port_tcp1 = '$Ports_Webmin', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'Webmin'"
-fi
-
-if [ "$ToInstall_OpenVPN" == "$Global_YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'OpenVPN'"
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Samba'"
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'NFS'"
-	OpenVPN_Proto="`echo $OpenVPN_Proto | tr '[:upper:]' '[:lower:]'`"
-	case "$OpenVPN_Proto" in
-		"tcp")
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1', port_tcp1 = '$Port_OpenVPN_WithGW', port_tcp2 = '$Port_OpenVPN_WithoutGW', port_tcp3 = '$Port_OpenVPN_TAP_WithoutGW', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'OpenVPN'"
-		;;
-		"udp")
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1', port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '$Port_OpenVPN_WithGW', port_udp2 = '$Port_OpenVPN_WithoutGW', port_udp3 = '$Port_OpenVPN_TAP_WithoutGW', ports_udp_list = ''" "serv_name = 'OpenVPN'"
-		;;
-	esac
-fi
-
-if [ "$ToInstall_ownCloud" == "$Global_YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1', port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'ownCloud'"
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'ownCloud'"
-else
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'ownCloud'"
-	if [ -d $ownCloudDir ]; then rm -rf $ownCloudDir; fi
-fi
-
-if [ "$ToInstall_LogWatch" == "$Global_YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'LogWatch'"
-fi
-
-if [ "$ToInstall_Fail2Ban" == "$Global_YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Fail2Ban'"
-fi
-
-if [ "$ToInstall_DNScrypt" == "$Global_YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'DNScrypt-proxy'"
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'DNScrypt-proxy'"
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'Libsodium'"
-else
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'DNScrypt-proxy'"
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'Libsodium'"
-fi
-
-case "$MySB_PeerBlock" in
-	"PeerGuardian")
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'PeerGuardian'"
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0'" "serv_name = 'rTorrent Block List'"
-	;;
-	"rTorrent")
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0'" "serv_name = 'PeerGuardian'"
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'rTorrent Block List'"
-	;;
-	*)
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0'" "serv_name = 'PeerGuardian'"
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0'" "serv_name = 'rTorrent Block List'"		
-	;;
-esac
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after
