@@ -118,7 +118,7 @@ function StringTruncate($string, $minlen, $maxlen, $separator = ' ', $suffix = '
 function CountingUsers() {
 	global $MySB_DB;
 
-	$result = $MySB_DB->count("users", "");
+	$result = $MySB_DB->count("users");
 
 	return $result;
 }
