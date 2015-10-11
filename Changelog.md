@@ -22,6 +22,7 @@
 			- ownCloud v8.1.3 (v3.0)
 			- Adding Zoho Mail support (v3.0, to be confirmed by Zoho users)
 			- Disabling ruTorrent Plugin FileUpload
+			- Replace primary SQLite database by MySQL
 
 	Version v2.1
 		2015/03/14
