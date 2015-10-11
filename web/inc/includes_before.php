@@ -61,15 +61,32 @@ $MySB_DB = new medoo([
 		PDO::ATTR_ORACLE_NULLS => PDO::NULL_TO_STRING
 	]
 ]);
-if ( file_exists(MySB_DB) ) {
-	$MySB_DB = new medoo([
-		'database_type' => 'sqlite',
-		'database_file' => MySB_DB,
-		'database_name' => 'MySB'
-	]);
-}
-$Wolf_DB = new Medoo_SQLite(['database_file' => Wolf_DB, 'database_name' => 'Wolf']);
-$ownCloud_DB = new Medoo_MySQL(['database_name' => MySQL_ownCloud_DB]);
+// if ( file_exists(MySB_DB) ) {
+	// $MySB_DB = new medoo([
+		// 'database_type' => 'sqlite',
+		// 'database_file' => MySB_DB,
+		// 'database_name' => 'MySB'
+	// ]);
+// }
+$Wolf_DB = new medoo([
+	'database_type' => 'sqlite',
+	'database_file' => Wolf_DB,
+	'database_name' => 'Wolf'
+]);
+$ownCloud_DB = new medoo([
+	// required
+	'database_type' => 'mysql',
+	'database_name' => MySQL_ownCloud_DB,
+	'server' => 'localhost',
+	'username' => MySQL_MysbUser,
+	'password' => MySQL_MysbPassword,
+	'charset' => 'utf8',
+	'port' => 3306,
+	'option' => [
+		PDO::ATTR_CASE => PDO::CASE_NATURAL,
+		PDO::ATTR_ORACLE_NULLS => PDO::NULL_TO_STRING
+	]
+]);
 
 // Users table
 if ( isset($_SERVER['PHP_AUTH_USER']) ) {

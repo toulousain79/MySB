@@ -27,7 +27,7 @@ source $(dirname $0)/../inc/includes_before
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=30
+TotalSTEP=29
 
 if [ "$BANNER" == "ON" ]; then
 	BannerGenerator
@@ -290,6 +290,7 @@ StatusSTD
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Cleaning$CEND..."
 rm -rf $MySB_InstallDir/temp/* &> /dev/null
+Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "rtorrent_version = 'v0.9.6'" "rtorrent_version = 'v0.9.4'"
 StatusSTD
 
 #### Create missing directories and change rights
@@ -316,15 +317,14 @@ StatusSTD
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_SendMail$CEND..."
 if [ -f $MySB_InstallDir/inc/vars ]; then source $MySB_InstallDir/inc/vars; fi
-VERSION="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "admin = '1'"`"
-RutorrentDirEscaped=`echo $RutorrentDir | sed s,/,\\\\\\\\\\/,g`
+MainUserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "admin = '1'"`"
+RutorrentDirEscaped="`echo $RutorrentDir | sed s,/,\\\\\\\\\\/,g`"
 ListingUsers
 for seedUser in $UsersList; do
-	UserId=$(Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$seedUser'")
+	UserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$seedUser'"`"
 	UserPassword="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_passwd' 'users' "users_ident = '$seedUser'"`"
 
 	# New rTorrent init
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "rtorrent_version = 'v0.9.6'" "rtorrent_version = 'v0.9.4'"
 	cp $MySB_InstallDir/templates/etc.init.rtorrent.template /etc/init.d/rtorrent-$seedUser
 	perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/init.d/rtorrent-$seedUser
 	perl -pi -e "s/<username>/$seedUser/g" /etc/init.d/rtorrent-$seedUser
