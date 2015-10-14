@@ -507,7 +507,7 @@ CREATE TABLE `oc_storages` (
 
 LOCK TABLES `oc_storages` WRITE;
 /*!40000 ALTER TABLE `oc_storages` DISABLE KEYS */;
-INSERT INTO `oc_storages` VALUES ('home::admin',1),('local::/',4),('local::/home/MySB_share/',3),('local::/home/owncloud/',2);
+INSERT INTO `oc_storages` VALUES ('home::admin',1),('local::/home/owncloud/',2),('local::/home/$user/',3),('local::/',4);
 /*!40000 ALTER TABLE `oc_storages` ENABLE KEYS */;
 UNLOCK TABLES;
 
