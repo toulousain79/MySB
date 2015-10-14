@@ -261,6 +261,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `rtorrent_version` varchar(10) NOT NULL DEFAULT 'v0.9.2',
   `rtorrent_restart` tinyint(1) NOT NULL DEFAULT '0',
   `language` varchar(2) NOT NULL DEFAULT 'en',
+  `init_password` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_users`),
   UNIQUE KEY `users_ident` (`users_ident`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;

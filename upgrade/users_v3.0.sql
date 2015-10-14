@@ -18,7 +18,8 @@ CREATE TABLE users (
     is_active        BOOLEAN (1)   DEFAULT (1),
     rtorrent_version VARCHAR (10)  DEFAULT ('v0.9.2'),
     rtorrent_restart BOOLEAN (1)   DEFAULT ('0'),
-    language         VARCHAR (2)   DEFAULT ('en') 
+    language         VARCHAR (2)   DEFAULT ('en'),
+	init_password	 BOOLEAN (1)   DEFAULT ('0')
 );
 
 INSERT INTO users (

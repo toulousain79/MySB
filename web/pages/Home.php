@@ -22,12 +22,12 @@
 //
 //#################### FIRST LINE #####################################
 
-global $CurrentUser;
+global $CurrentUser, $MySB_DB;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
+$InitPassword = $users_datas['init_password'];
 
 echo '<h1><div align="center">'.sprintf(Home_Welcome, $CurrentUser).'</div></h1>';
-
 
 switch ($IsMainUser) {
 	case true:
@@ -35,8 +35,8 @@ switch ($IsMainUser) {
 		break;
 
 	case false:
-		if (GetVersion() == 'v3.0' ) {
-			echo Home_AfterUpgrade;
+		if ( (GetVersion() == 'v3.0') && ( $InitPassword == '1') ) {
+			echo Home_ownCloudAfterUpgrade;
 		}
 		echo Home_NormalUser;
 		break;
