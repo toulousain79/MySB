@@ -22,7 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-global $CurrentUser, $MySB_DB;
+global $CurrentUser, $users_datas;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 $InitPassword = $users_datas['init_password'];
