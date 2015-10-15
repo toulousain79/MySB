@@ -43,6 +43,7 @@ class Page extends Node {
     public $slug = '';
     public $breadcrumb;
 	// MySB - BoF
+	public $title_fr = '';
 	public $breadcrumb_fr;
 	// MySB - BoF
     public $keywords = '';
@@ -104,6 +105,11 @@ class Page extends Node {
         return $this->title;
     }
 
+	// MySB - BoF
+    public function title_fr() {
+        return $this->title_fr;
+    }
+	// MySB - BoF
 
     public function description() {
         return $this->description;

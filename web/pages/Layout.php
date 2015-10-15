@@ -26,7 +26,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
-	<title><?php echo $this->title(); ?></title>
+	<title><?php echo ($_SESSION['Language'] == 'en') ? $this->title() : $this->title_fr(); ?></title>
 	<meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
 	<meta name="robots" content="noindex, nofollow">
 	<meta name="robots" content="noarchive">
