@@ -46,6 +46,7 @@ define('Layout_Logout', 'Logout');
 define('Layout_OnGithub', 'MySB on GitHub');
 define('Layout_Wiki', 'MySB WiKi');
 define('Layout_Wolf', 'Wolf CMS');
+define('Layout_Medoo', 'Medoo');
 
 //#################### LAST LINE ######################################
 ?>
