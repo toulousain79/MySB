@@ -26,82 +26,6 @@
 source $MySB_InstallDir/inc/funcs_sql
 source $MySB_InstallDir/inc/funcs_tools
 
-#### ownCloud 'mount.json'
-CreateOwnCloudMountJson() {
-	ListingUsers
-	CountingUsers
-	IdMount=1
-	NbUsers=0
-	IdStorage="`/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=ownCloud_db -N -e "SELECT numeric_id FROM oc_storages WHERE id = 'local::/home/MySB_share/'";`"
-
-	# Start
-	echo "{" > /home/owncloud/mount.json
-
-	# Group MySB_users
-	(
-cat <<'EOF'
-    "group": {
-        "MySB_users": {
-            "\/$user\/files\/MySB_share": {
-                "id": <IdMount>,
-                "class": "\\OC\\Files\\Storage\\Local",
-                "options": {
-                    "datadir": "\/home\/MySB_share\/"
-                },
-                "priority": 150,
-                "storage_id": "<IdStorage>"
-            }
-        }
-    },
-	"user": {
-EOF
-	) >> /home/owncloud/mount.json
-	
-	perl -pi -e "s/<IdMount>/$IdMount/g" /home/owncloud/mount.json
-	perl -pi -e "s/<IdStorage>/$IdStorage/g" /home/owncloud/mount.json
-
-	unset IdStorage
-
-	# Home for all users
-	for seedUser in $UsersList; do
-		(( IdMount++ ))
-		(( NbUsers++ ))
-		IdStorage="`/usr/bin/mysql -u MySB_user -p$MySQL_MysbPassword ownCloud_db -N -e "SELECT numeric_id FROM oc_storages WHERE id = 'local::/home/$seedUser/'";`"
-
-		(
-cat <<'EOF'
-		"<seedUser>": {
-			"\/$user\/files\/Home_<seedUser>": {
-				"id": <IdMount>,
-				"class": "\\OC\\Files\\Storage\\Local",
-				"options": {
-					"datadir": "\/home\/<seedUser>\/"
-				},
-				"priority": 150,
-				"storage_id": "<IdStorage>"
-			}
-EOF
-		) >> /home/owncloud/mount.json
-
-		perl -pi -e "s/<seedUser>/$seedUser/g" /home/owncloud/mount.json
-		perl -pi -e "s/<IdMount>/$IdMount/g" /home/owncloud/mount.json
-		perl -pi -e "s/<IdStorage>/$IdStorage/g" /home/owncloud/mount.json
-
-		if [ $NbUsers -lt $TotalUsers ]; then
-			echo "		}," >> /home/owncloud/mount.json
-		else
-			echo "		}" >> /home/owncloud/mount.json
-		fi
-
-		unset IdStorage
-	done
-
-	# user
-	echo "	}" >> /home/owncloud/mount.json
-	# End
-	echo "}" >> /home/owncloud/mount.json
-}
-
 #### Delete Bad Sources
 DeleteBadSources() {
 	if [ -z "$1" ]; then
@@ -1466,7 +1390,14 @@ CakeboxUsersConfigs() {
 			cp $CakeboxDir/config/default.php.dist $CakeboxDir/config/$FnUser.php
 			sed -i "s/\/var\/www\//$HomeDirEscaped\/rtorrent\//g;" $CakeboxDir/config/$FnUser.php
 			sed -i "s/\/access\//\/$FnUser\/rtorrent\//g;" $CakeboxDir/config/$FnUser.php
-			sed -i "s/\"fr\"/\"en\"/g;" $CakeboxDir/config/$FnUser.php
+			case "$EnvLang" in
+				"fr")
+					perl -pi -e "s/\"en\"/\"$EnvLang\"/g" $CakeboxDir/config/$FnUser.php
+				;;
+				"en")
+					perl -pi -e "s/\"fr\"/\"$EnvLang\"/g" $CakeboxDir/config/$FnUser.php
+				;;
+			esac
 			sed -i "s/\"html5\"/\"divx\"/g;" $CakeboxDir/config/$FnUser.php
 		fi
 
