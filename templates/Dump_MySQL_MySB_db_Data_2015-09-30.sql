@@ -123,8 +123,7 @@ INSERT INTO `repositories` (`id_repositories`, `type`, `dir`, `name`, `version`,
 (28, 'TARGZ', '/sources/rtorrent', 'rTorrent', '0.9.6', 'rtorrent_v0.9.6.tar.gz', 'rtorrent_v0.9.4.tar.gz', 'http://rtorrent.net/downloads/rtorrent-0.9.6.tar.gz', 1),
 (29, 'ZIP', '/sources/xmlrpc-c', 'XMLRPC', '1.42.0', 'xmlrpc-c_v1.42.0.zip', 'xmlrpc-c_v1.41.02.zip', 'https://github.com/toulousain79/MySB/raw/v2.2/files/xmlrpc-c_v1.42.0.zip', 1),
 (30, 'GIT', '/web/loadavg', 'LoadAvg', '2.2', 'loadavg_v2.2.zip', '', 'https://github.com/loadavg/loadavg.git', 1),
-(31, 'ZIP', '/web/owncloud', 'ownCloud', '8.1.3.0', 'owncloud_v8.1.3.zip', '', 'https://download.owncloud.org/community/owncloud-8.1.3.zip', 1),
-(32, 'ZIP', '/web/rutorrent/plugins/instantsearch', 'ruTorrent Plugin InstantSearch', '1.0', 'instantsearch_v1.0.zip', '', 'https://rutorrent-instantsearch.googlecode.com/files/instantsearch.1.0.zip', 1);
+(31, 'ZIP', '/web/owncloud', 'ownCloud', '8.1.3.0', 'owncloud_v8.1.3.zip', '', 'https://download.owncloud.org/community/owncloud-8.1.3.zip', 1);
 
 --
 -- Contenu de la table `services`
