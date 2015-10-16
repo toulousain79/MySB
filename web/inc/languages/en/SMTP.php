@@ -29,6 +29,8 @@ define('MainUser_SMTP_Password', 'Password :');
 define('MainUser_SMTP_Confirm', 'Confirm :');
 define('MainUser_SMTP_Host', 'Host :');
 define('MainUser_SMTP_Port', 'Port :');
+define('MainUser_SMTP_AccountNotValid', 'The e-mail related to the SMTP account is not valid!');
+define('MainUser_SMTP_Verification', 'Error between password and verification.');
 
 //#################### LAST LINE ######################################
 ?>

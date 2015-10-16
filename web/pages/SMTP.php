@@ -137,19 +137,19 @@ if (isset($_POST['submit'])) {
 					$type = 'success';
 				} else {
 					$type = 'error';
-					$message = 'Failed ! It was not possible to update the MySB database.';
+					$message = Global_FailedUpdateMysbDB;
 				}
 			} else {
 				$type = 'error';
-				$message = 'Error between password and verification.';		
+				$message = MainUser_SMTP_Verification;		
 			}
 		} else {
 			$type = 'error';
-			$message = 'The e-mail related to the SMTP account is not valid!';
+			$message = MainUser_SMTP_AccountNotValid;
 		}
 	} else {
 		$type = 'information';
-		$message = 'Please, complete all fields.';
+		$message = Global_CompleteAllFields;
 	}
 
 	GenerateMessage('Postfix', $type, $message);

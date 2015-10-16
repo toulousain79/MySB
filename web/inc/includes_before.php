@@ -38,7 +38,7 @@ if ( isset($_GET['page']) ) {
 			break;
 
 		case "ManageAddresses":
-			if ( isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW']) ) { 
+			if ( isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW']) ) {
 				$_SESSION['page'] = $_GET['page'];
 			}
 			break;
@@ -61,13 +61,6 @@ $MySB_DB = new medoo([
 		PDO::ATTR_ORACLE_NULLS => PDO::NULL_TO_STRING
 	]
 ]);
-// if ( file_exists(MySB_DB) ) {
-	// $MySB_DB = new medoo([
-		// 'database_type' => 'sqlite',
-		// 'database_file' => MySB_DB,
-		// 'database_name' => 'MySB'
-	// ]);
-// }
 $Wolf_DB = new medoo([
 	'database_type' => 'sqlite',
 	'database_file' => Wolf_DB,

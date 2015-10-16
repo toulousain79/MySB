@@ -111,10 +111,10 @@ CREATE TABLE IF NOT EXISTS `providers_monitoring` (
 CREATE TABLE IF NOT EXISTS `renting` (
   `id_renting` int(1) NOT NULL,
   `model` varchar(64) NOT NULL,
-  `tva` decimal(10,0) NOT NULL,
-  `global_cost` decimal(10,0) NOT NULL,
+  `tva` decimal(4,2) NOT NULL,
+  `global_cost` decimal(4,2) NOT NULL,
   `nb_users` tinyint(2) NOT NULL,
-  `price_per_users` decimal(10,0) NOT NULL,
+  `price_per_users` decimal(4,2) NOT NULL,
   `method` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_renting`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
