@@ -128,6 +128,11 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	chown www-data:www-data $ownCloudDir/config/config.php
 	chmod 0640 $ownCloudDir/config/config.php
 
+	#### External Storage (mount.json)
+	IdStorage=$(Func_SQL_Command 'SELECT' 'ownCloud_db' 'numeric_id' 'oc_storages' "id = 'local::/home/\$user/'")
+	cp -vf $MySB_InstallDir/templates/home.owncloud.mount.json.template /home/owncloud/mount.json
+	perl -pi -e "s/<IdStorage>/$IdStorage/g" /home/owncloud/mount.json
+
 	#### Manage Admin user
 	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
 	OC_PASS=$MySQL_MysbPassword
@@ -135,6 +140,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:resetpassword --password-from-env admin"
 	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable files_external"
 
+	#### Create all existing MySB users
 	if [ "$1" == "UPGRADE" ] && [ -d $ownCloudDir ]; then
 		ListingUsers
 		for seedUser in $UsersList; do
@@ -149,10 +155,6 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 			fi
 			unset UserExist
 		done
-
-		IdStorage=$(Func_SQL_Command 'SELECT' 'ownCloud_db' 'numeric_id' 'oc_storages' "id = 'local::/home/\$user/'")
-		cp -vf $MySB_InstallDir/templates/home.owncloud.mount.json.template /home/owncloud/mount.json
-		perl -pi -e "s/<IdStorage>/$IdStorage/g" /home/owncloud/mount.json
 	fi
 
 	#### Logrotate
