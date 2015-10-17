@@ -6,6 +6,9 @@
 # MySB
 MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and could be renamed MySSB, My Secured SeedBox.
 
+* **Current version** _(stable)_: **v3.0**
+* Next version _(dev)_: ----
+
 ## All prerequisites listed below are MANDATORY!
 
 * **Designed** for **dedicated server** only with **Debian Wheezy** _(**Ubuntu** is **not supported**)_
