@@ -32,7 +32,7 @@ if (isset($_POST['submit'])) {
 	for($i=0, $count = count($_POST['id_blocklists']);$i<$count;$i++) {
 		$result = $MySB_DB->update("blocklists", ["rtorrent_active" => $_POST['rtorrent_active'][$i], "peerguardian_active" => $_POST['rtorrent_active'][$i]], ["id_blocklists" => $_POST['id_blocklists'][$i]]);
 
-		if ( $result != 1 ) {
+		if ( ($result < 0) || empty($result) ) {
 			$success = false;
 		}
 	}

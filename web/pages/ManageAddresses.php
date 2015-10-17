@@ -47,8 +47,8 @@ if(isset($_POST)==true && empty($_POST)==false) {
 						$success = false;
 						$message = User_ManageAddresses_NotValidIp;
 					} else {
-						$last_id_address = ManageUsersAddresses($CurrentUser, $IPv4, $CleanAddress, $_POST['is_active'][$i], 'hostname');
-						if ($last_id_address == false) {
+						$result = ManageUsersAddresses($CurrentUser, $IPv4, $CleanAddress, $_POST['is_active'][$i], 'hostname');
+						if ( ($result < 0) || empty($result) ) {
 							$success = false;
 							$message = User_ManageAddresses_HostnameUpdateFailed;
 						}
@@ -59,8 +59,8 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					if ( ValidateIPv4($CleanAddress) ) {
 						// IP is valid
 						$HostName = gethostbyaddr($CleanAddress);
-						$last_id_address = ManageUsersAddresses($CurrentUser, $CleanAddress, $HostName, $_POST['is_active'][$i], 'ipv4');
-						if ($last_id_address == false) {
+						$result = ManageUsersAddresses($CurrentUser, $CleanAddress, $HostName, $_POST['is_active'][$i], 'ipv4');
+						if ( ($result < 0) || empty($result) ) {
 							$success = false;
 							$message = User_ManageAddresses_Ipv4UpdateFailed;
 						}
@@ -88,14 +88,13 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			for($i=1; $i<=$count; $i++) {
 				$CleanIPv4 = preg_replace('/\s\s+/', '', $_POST['ipv4'][$i]); 
 				$CleanHostname = preg_replace('/\s\s+/', '', $_POST['hostname'][$i]); 
-				$last_id_address = $MySB_DB->update("users_addresses", ["is_active" => $_POST['is_active'][$i]], [
+				$result = $MySB_DB->update("users_addresses", ["is_active" => $_POST['is_active'][$i]], [
 																												"AND" => [
 																													"ipv4" => "$CleanIPv4",
 																													"hostname" => "$CleanHostname"
 																												]
 																											]);
-
-				if ($last_id_address == false) {
+				if ( ($result < 0) || empty($result) ) {
 					$success = false;
 				}
 			}

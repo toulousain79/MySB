@@ -32,11 +32,10 @@ define('User_ManageAddresses_Table_IPv4', 'IPv4');
 define('User_ManageAddresses_Table_Hostname', 'Nom d\'h&ocirc;te');
 define('User_ManageAddresses_Table_CheckBy', 'V&eacute;rifi&eacute; par');
 define('User_ManageAddresses_InfoBottom', '<b>NB</b>: Les adresses IP dynamiques sont v&eacute;rifi&eacute;es toutes les <b>5</b> minutes.<br />Si une adresse IP a chang&eacute;, la base de donn&eacute;es sera mise &agrave; jour et les r&egrave;gles de s&eacute;curit&eacute; seront adapt&eacute;es en cons&eacute;quence.');
-
 define('User_ManageAddresses_NotValidIp', 'Le nom d\'h&ocirc;te ne retourne pas une adresse IP valide.');
 define('User_ManageAddresses_HostnameUpdateFailed', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour le nom d\'h&ocirc;te dans la base de donn&eacute;es MySB.');
-define('User_ManageAddresses_Ipv4UpdateFailed', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour l\'adresse IPv4 dans la base de donn&eacute;es MySB.');
 define('User_ManageAddresses_PublicIpv4Address', 'Vous devez entrer une adresse IPv4 publique.');
+define('User_ManageAddresses_Ipv4UpdateFailed', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour l\'adresse IPv4 dans la base de donn&eacute;es MySB.');
 define('User_ManageAddresses_VerifAddresseConfirm', 'Succ&egrave;s !<br /><br />Merci de bien vouloir v&eacute;rifiez vos adresses,<br />puis cliquez sur \"%s\"');
 define('User_ManageAddresses_AddresseUpdateFailed', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour les informations concernant vos adresses.');
 define('User_ManageAddresses_MessageRedirect', 'Succ&egrave;s !<br /><br />Vous serez redirigez en 10 secondes.');

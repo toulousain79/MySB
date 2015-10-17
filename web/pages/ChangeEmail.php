@@ -27,8 +27,8 @@ require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__
 function Form() {
 	global $MySB_DB, $CurrentUser;
 
-	$UserEmail = $MySB_DB->get("users", "users_email", ["users_ident" => "$CurrentUser"]);	
-	
+	$UserEmail = $MySB_DB->get("users", "users_email", ["users_ident" => "$CurrentUser"]);
+
 	echo '<form class="form_settings" method="post" action="">
 			<div align="center">
 				<table border="0">
@@ -53,16 +53,16 @@ function Form() {
 if ( isset($_POST['submit']) ) {
 	global $MySB_DB, $CurrentUser;
 
-	$current_email = preg_replace('/\s\s+/', '', $_POST['current_email']); 
+	$current_email = preg_replace('/\s\s+/', '', $_POST['current_email']);
 	$new_email = preg_replace('/\s\s+/', '', $_POST['new_email']); 
-	$confirm_email = preg_replace('/\s\s+/', '', $_POST['confirm_email']); 
+	$confirm_email = preg_replace('/\s\s+/', '', $_POST['confirm_email']);
 
 	if ( ($current_email != '') && ($new_email != '') && ($confirm_email != '') ) {
 		if ( ValidateEmail($new_email) != false ) {
 			if ( $new_email == $confirm_email ) {
 				$result = $MySB_DB->update("users", ["users_email" => "$new_email"], ["users_ident" => "$CurrentUser"]);
 
-				if ( $result > 0 ) {
+				if ( $result >= 0 ) {
 					$type = 'success';
 				} else {
 					$type = 'error';

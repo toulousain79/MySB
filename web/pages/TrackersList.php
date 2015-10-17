@@ -45,7 +45,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 				$result = $MySB_DB->update("trackers_list", ["is_active" => $_POST['is_active'][$i], "to_check" => $to_check], ["tracker_domain" => $_POST['tracker_domain'][$i]]);
 
-				if ( $result != 1 ) {
+				if ( ($result < 0) || empty($result) ) {
 					$success = false;
 				}
 			}
@@ -54,7 +54,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$type = 'success';
 			} else {
 				$type = 'error';
-				$message = Global_FailedUpdateMysbDB;	
+				$message = Global_FailedUpdateMysbDB;
 			}
 			break;
 		default: //Delete

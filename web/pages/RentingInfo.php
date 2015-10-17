@@ -116,7 +116,7 @@ if (isset($_POST['submit'])) {
 
 		$result = $MySB_DB->update("renting", ["model" => "$Model", "tva" => "$TVA", "global_cost" => "$GlobalCost", "nb_users" => "$TotalUsers", "price_per_users" => "$PricePerUsers", "method" => "$Method"], ["id_renting" => 1]);
 
-		if( $result == 1 ) {
+		if( $result >= 0 ) {
 			$type = 'success';
 		} else {
 			$type = 'error';

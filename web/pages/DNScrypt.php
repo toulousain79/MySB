@@ -32,7 +32,7 @@ if (isset($_POST['submit'])) {
 		$MySB_DB->update("dnscrypt_resolvers", ["is_wished" => 0], ["AND" => ["is_wished" => 1, "is_activated" => 0]]);
 		$result = $MySB_DB->update("dnscrypt_resolvers", ["is_wished" => "1"], ["name" => "$SelectedResolver"]);
 
-		if( $result == 1 ) {
+		if( $result >= 0 ) {
 			$type = 'success';
 		} else {
 			$type = 'error';

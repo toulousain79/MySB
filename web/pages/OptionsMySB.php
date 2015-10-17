@@ -47,7 +47,7 @@ if (isset($_POST['submit'])) {
 
 	$result = $MySB_DB->update("users", ["rtorrent_version" => "$rTorrentVersion", "rtorrent_restart" => "$rTorrentRestart", "language" => "$Language"], ["users_ident" => "$CurrentUser"]);
 
-	if( $result == 1 ) {
+	if( $result >= 0 ) {
 		$type = 'success';
 	} else {
 		$type = 'error';

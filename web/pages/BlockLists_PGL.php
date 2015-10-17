@@ -35,7 +35,7 @@ if ( $IsInstalled == '1' ) {
 		for($i=0, $count = count($_POST['id_blocklists']);$i<$count;$i++) {
 			$result = $MySB_DB->update("blocklists", ["peerguardian_active" => $_POST['peerguardian_active'][$i], "rtorrent_active" => $_POST['peerguardian_active'][$i]], ["id_blocklists" => $_POST['id_blocklists'][$i]]);
 
-			if ( $result != 1 ) {
+			if ( ($result < 0) || empty($result) ) {
 				$success = false;
 			}
 		}

@@ -72,7 +72,7 @@ if (isset($_POST['submit'])) {
 				break;
 		}
 
-		if( $result != 1 ) {
+		if ( ($result < 0) || empty($result) ) {
 			$Command = 'message_only';
 			$type = 'error';
 			$message = Global_FailedUpdateMysbDB;
@@ -85,7 +85,7 @@ if (isset($_POST['submit'])) {
 	if (($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) || ($DNScrypt_db != $DNScrypt_post)) {
 		$result = $MySB_DB->update("system", ["ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats", "pgl_watchdog_email" => "$PGL_EmailWD", "dnscrypt" => "$DNScrypt_post"], ["id_system" => 1]);
 
-		if( $result == 1 ) {
+		if( $result >= 0 ) {
 			if ($ip_restriction_db != $IP_restriction_post) {
 				$Command = 'MySB_SecurityRules';
 				$NoChange = false;
