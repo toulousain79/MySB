@@ -27,22 +27,24 @@ require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
 if (isset($_POST['submit'])) {
-	$success = true;
-
 	for($i=0, $count = count($_POST['id_blocklists']);$i<$count;$i++) {
-		$result = $MySB_DB->update("blocklists", ["rtorrent_active" => $_POST['rtorrent_active'][$i], "peerguardian_active" => $_POST['rtorrent_active'][$i]], ["id_blocklists" => $_POST['id_blocklists'][$i]]);
+		$value = $MySB_DB->update("blocklists", ["rtorrent_active" => $_POST['rtorrent_active'][$i], "peerguardian_active" => $_POST['rtorrent_active'][$i]], ["id_blocklists" => $_POST['id_blocklists'][$i]]);
 
-		if ( ($result < 0) || empty($result) ) {
-			$success = false;
-		}
+		$result = $result+$value;
+	}
+
+	if ( $result == 0 ) {
+		$success = false;
+	} else {
+		$success = true;
 	}
 
 	if ( $success == true ) {
 		$type = 'success';
 		$message = MainUser_BlockLists_rTorrent_Success;
 	} else {
-		$type = 'error';
-		$message = MainUser_BlockLists_rTorrent_Failed;
+		$type = 'information';
+		$message = Global_NoChange;
 	}
 
 	GenerateMessage('BlocklistsRTorrent.bsh', $type, $message, '');

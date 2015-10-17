@@ -22,7 +22,6 @@
 //
 //#################### FIRST LINE #####################################
 
-define('MainUser_DNScrypt_FailedUpdateMysbDB', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.');
 define('MainUser_DNScrypt_Table_Name', 'Nom');
 define('MainUser_DNScrypt_Table_FullName', 'Nom complet');
 define('MainUser_DNScrypt_Table_Location', 'Localisation');

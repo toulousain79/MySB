@@ -30,22 +30,25 @@ $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
 if ( $IsInstalled == '1' ) {
 	if (isset($_POST['submit'])) {
-		$success = true;
 
 		for($i=0, $count = count($_POST['id_blocklists']);$i<$count;$i++) {
-			$result = $MySB_DB->update("blocklists", ["peerguardian_active" => $_POST['peerguardian_active'][$i], "rtorrent_active" => $_POST['peerguardian_active'][$i]], ["id_blocklists" => $_POST['id_blocklists'][$i]]);
+			$value = $MySB_DB->update("blocklists", ["peerguardian_active" => $_POST['peerguardian_active'][$i], "rtorrent_active" => $_POST['peerguardian_active'][$i]], ["id_blocklists" => $_POST['id_blocklists'][$i]]);
 
-			if ( ($result < 0) || empty($result) ) {
-				$success = false;
-			}
+			$result = $result+$value;
+		}
+
+		if ( $result == 0 ) {
+			$success = false;
+		} else {
+			$success = true;
 		}
 
 		if ( $success == true ) {
 			$type = 'success';
 			$message = BlockLists_PGL_Success;
 		} else {
-			$type = 'error';
-			$message = MainUser_BlockLists_PGL_Failed;
+			$type = 'information';
+			$message = Global_NoChange;
 		}
 
 		GenerateMessage('Blocklists_PeerGuardian' ,$type, $message, '');

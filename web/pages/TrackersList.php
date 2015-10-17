@@ -43,11 +43,15 @@ if(isset($_POST)==true && empty($_POST)==false) {
 						break;
 				}
 
-				$result = $MySB_DB->update("trackers_list", ["is_active" => $_POST['is_active'][$i], "to_check" => $to_check], ["tracker_domain" => $_POST['tracker_domain'][$i]]);
+				$value = $MySB_DB->update("trackers_list", ["is_active" => $_POST['is_active'][$i], "to_check" => $to_check], ["tracker_domain" => $_POST['tracker_domain'][$i]]);
 
-				if ( ($result < 0) || empty($result) ) {
-					$success = false;
-				}
+				$result = $result+$value;
+			}
+
+			if ( $result == 0 ) {
+				$success = false;
+			} else {
+				$success = true;
 			}
 
 			if ( $success == true ) {

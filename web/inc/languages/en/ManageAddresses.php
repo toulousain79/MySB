@@ -37,7 +37,6 @@ define('User_ManageAddresses_HostnameUpdateFailed', 'Failed !<br /><br />It was 
 define('User_ManageAddresses_PublicIpv4Address', 'You must enter a public IPv4 address.');
 define('User_ManageAddresses_Ipv4UpdateFailed', 'Failed !<br /><br />It was not possible to update IPv4 address in the MySB database.');
 define('User_ManageAddresses_VerifAddresseConfirm', 'Success !<br /><br />Please, Check your addresses,<br />and click on \"%s\"');
-define('User_ManageAddresses_AddresseUpdateFailed', 'Failed !<br /><br />It was not possible to update addresses informations.');
 define('User_ManageAddresses_MessageRedirect', 'Success !<br /><br />You will be redirect in 10 seconds.');
 define('User_ManageAddresses_NotAccessPortal', 'Failed !<br /><br />It was not possible to give you an access to MySB portal !');
 define('User_ManageAddresses_RememberCheck', 'Remember that your dynamic IP will be checked every 5 minutes.');

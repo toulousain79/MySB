@@ -50,8 +50,8 @@ if (isset($_POST['submit'])) {
 	if( $result >= 0 ) {
 		$type = 'success';
 	} else {
-		$type = 'error';
-		$message = Global_FailedUpdateMysbDB;
+		$type = 'information';
+		$message = Global_NoChange;
 	}
 
 	GenerateMessage($Command, $type, $message);

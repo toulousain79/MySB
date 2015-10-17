@@ -72,11 +72,7 @@ if (isset($_POST['submit'])) {
 				break;
 		}
 
-		if ( ($result < 0) || empty($result) ) {
-			$Command = 'message_only';
-			$type = 'error';
-			$message = Global_FailedUpdateMysbDB;
-		} else {
+		if ( $result == 0 ) {
 			$NoChange = false;
 		}
 	}
@@ -95,9 +91,7 @@ if (isset($_POST['submit'])) {
 			}
 			$NoChange = false;
 		} else {
-			$Command = 'message_only';
-			$type = 'error';
-			$message = Global_FailedUpdateMysbDB;
+			$NoChange = false;
 		}
 	}
 

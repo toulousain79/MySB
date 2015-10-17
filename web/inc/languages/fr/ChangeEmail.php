@@ -25,7 +25,6 @@
 define('User_ChangeEmail_CurrentAddress', 'Adresse actuelle :');
 define('User_ChangeEmail_NewAddress', 'Nouvelle adresse :');
 define('User_ChangeEmail_ConfirmAddress', 'Confirmation :');
-define('User_ChangeEmail_FailedUpdate', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.');
 define('User_ChangeEmail_ErrorConfirm', 'Erreur entre la nouvelle adresse et la confirmation.');
 define('User_ChangeEmail_ErrorNotValid', 'L\'adresse e-mail indiqu&eacute;e n\'est pas valide!');
 

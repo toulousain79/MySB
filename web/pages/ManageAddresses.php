@@ -82,28 +82,31 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			GenerateMessage('ManageAddresses', $type, $message, '');
 			break;
 		case Global_SaveChanges:
-			$success = true;
 			$count = count($_POST['input_id']);
 
 			for($i=1; $i<=$count; $i++) {
 				$CleanIPv4 = preg_replace('/\s\s+/', '', $_POST['ipv4'][$i]); 
 				$CleanHostname = preg_replace('/\s\s+/', '', $_POST['hostname'][$i]); 
-				$result = $MySB_DB->update("users_addresses", ["is_active" => $_POST['is_active'][$i]], [
+				$value = $MySB_DB->update("users_addresses", ["is_active" => $_POST['is_active'][$i]], [
 																												"AND" => [
 																													"ipv4" => "$CleanIPv4",
 																													"hostname" => "$CleanHostname"
 																												]
 																											]);
-				if ( ($result < 0) || empty($result) ) {
-					$success = false;
-				}
+				$result = $result+$value;
+			}
+
+			if ( $result == 0 ) {
+				$success = false;
+			} else {
+				$success = true;
 			}
 
 			if ( $success == true ) {
 				$type = 'success';
 			} else {
-				$type = 'error';
-				$message = User_ManageAddresses_AddresseUpdateFailed;
+				$type = 'information';
+				$message = Global_NoChange;
 			}
 
 			if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ManageAddresses') ) { // by NewUser.php

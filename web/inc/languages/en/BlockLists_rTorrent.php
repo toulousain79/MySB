@@ -23,7 +23,6 @@
 //#################### FIRST LINE #####################################
 
 define('MainUser_BlockLists_rTorrent_Success', 'Success!<br /><br />The blocklists have been apply for PeerGuardian AND rTorrent.');
-define('MainUser_BlockLists_rTorrent_Failed', 'Failed ! It was not possible to update tracker in the MySB database.');
 define('MainUser_BlockLists_rTorrent_Table_Name', 'Name');
 define('MainUser_BlockLists_rTorrent_Table_Blocklist', 'Blocklist');
 

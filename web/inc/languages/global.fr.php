@@ -33,7 +33,7 @@ define('Global_Table_Delete', 'Supprimer ?');
 define('Global_IsActive', 'Active ?');
 define('Global_Comment', 'Commentaires');
 define('Global_LastUpdate', 'Derni&egrave;re mise &agrave; jour');
-define('Global_FailedUpdateMysbDB', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre à jour la base de donn&eacute;es MySB.');
+define('Global_FailedUpdateMysbDB', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.');
 define('Global_CompleteAllFields', 'Merci de renseigner tous les champs.');
 define('Global_Success', 'Succ&egrave;s !');
 define('Global_SuccessAndApply', 'Succ&egrave;s !<br /><br />Merci de cliquer maintenant sur "Appliquer les modifications".');

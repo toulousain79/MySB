@@ -27,7 +27,7 @@ define('User_OpenVPN_Table_Proto', 'Protocole');
 define('User_OpenVPN_Table_Port', 'Port');
 define('User_OpenVPN_Table_ServerIP', 'IP du serveur OpenVPN');
 define('User_OpenVPN_Title_CongigTUN_1', 'Config TUN 1');
-define('User_OpenVPN_Comment_CongigTUN_1', 'Vous surfez sur Internet en utilisant l\'adresse IP de votre Seedbox.<br />Donc attention à ce que vous faites avec l\'adresse IP de votre serveur.<br />Aussi, si PeerGuardian est install&eacute;, une partie de vos requ&ecirc;tes peut ne pas aboutir.');
+define('User_OpenVPN_Comment_CongigTUN_1', 'Vous surfez sur Internet en utilisant l\'adresse IP de votre Seedbox.<br />Donc attention &agrave; ce que vous faites avec l\'adresse IP de votre serveur.<br />Aussi, si PeerGuardian est install&eacute;, une partie de vos requ&ecirc;tes peut ne pas aboutir.');
 define('User_OpenVPN_Title_CongigTUN_2', 'Config TUN 2');
 define('User_OpenVPN_Comment_CongigTUN_2', 'Avec cette configuration, vous disposez uniquement d\'un lien rout&eacute; entre votre Seedbox et vous.');
 define('User_OpenVPN_Title_CongigTAP_1', 'Config TAP 1');
