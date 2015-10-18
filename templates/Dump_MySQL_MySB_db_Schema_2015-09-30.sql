@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS `blocklists` (
   `id_blocklists` int(11) NOT NULL AUTO_INCREMENT,
   `author` varchar(32) NOT NULL,
   `list_name` varchar(32) NOT NULL,
+  `pgl_list_name` varchar(32) NOT NULL,
   `url_infos` varchar(256) NOT NULL,
   `peerguardian_list` varchar(256) NOT NULL,
   `rtorrent_list` varchar(256) NOT NULL,
