@@ -78,15 +78,15 @@ if (isset($_POST['submit'])) {
 	}
 	
 	// 2 - Second, we apply new paramaters WITH (maybe) needed of create again MySB Security rules
-	if (($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) || ($DNScrypt_db != $DNScrypt_post)) {
+	if ( ($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) || ($DNScrypt_db != $DNScrypt_post) ) {
 		$result = $MySB_DB->update("system", ["ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats", "pgl_watchdog_email" => "$PGL_EmailWD", "dnscrypt" => "$DNScrypt_post"], ["id_system" => 1]);
 
 		if( $result >= 0 ) {
-			if ($ip_restriction_db != $IP_restriction_post) {
+			if ( $ip_restriction_db != $IP_restriction_post ) {
 				$Command = 'MySB_SecurityRules';
 				$NoChange = false;
 			}
-			if (($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) || ($DNScrypt_db != $DNScrypt_post)) {
+			if ( ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) || ($DNScrypt_db != $DNScrypt_post) ) {
 				$NoChange = false;
 			}
 			$NoChange = false;
@@ -169,7 +169,7 @@ if (isset($_POST['submit'])) {
 						break;
 				} ?>
 				</select>
-			</td>
+			</td>		
 		</tr>
 	</table>
 	</fieldset>
