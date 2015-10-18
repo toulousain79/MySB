@@ -6,7 +6,7 @@ CREATE TABLE blocklists (
 										UNIQUE ON CONFLICT ABORTABORT, 
 	author 				VARCHAR (32) 	NOT NULL ON CONFLICT ABORTABORT, 
 	list_name 			VARCHAR (32) 	NOT NULL ON CONFLICT ABORTABORT, 
-	pgl_list_name 		VARCHAR (32), 
+	pgl_list_name 		VARCHAR (64), 
 	url_infos 			VARCHAR (256) 	NOT NULL ON CONFLICT ABORTABORT 
 										UNIQUE ON CONFLICT ABORTABORT, 
 	peerguardian_list 	VARCHAR (256), 

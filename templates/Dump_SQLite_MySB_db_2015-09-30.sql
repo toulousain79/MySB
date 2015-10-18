@@ -1,5 +1,5 @@
 --
--- Fichier généré par SQLiteStudio v3.0.6sur dim. oct. 18 13:51:04 2015
+-- Fichier généré par SQLiteStudio v3.0.6sur dim. oct. 18 14:58:40 2015
 --
 -- Encodage texte utilisé: windows-1252
 --

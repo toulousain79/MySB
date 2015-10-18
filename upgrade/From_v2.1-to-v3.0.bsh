@@ -27,7 +27,7 @@ source $(dirname $0)/../inc/includes_before
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=30
+TotalSTEP=31
 
 if [ "$BANNER" == "ON" ]; then
 	BannerGenerator
@@ -154,8 +154,10 @@ echo "& ~" >> /etc/rsyslog.d/iptables.conf
 if [ ! -f /var/log/iptables.log ]; then touch /var/log/iptables.log; fi
 cp $MySB_InstallDir/templates/etc.logrotate.d.iptables.template /etc/logrotate.d/iptables
 chmod 0644 /etc/logrotate.d/iptables
-service rsyslog restart
-logrotate -f /etc/logrotate.d/iptables
+service rsyslog restart &> /dev/null
+logrotate -f /etc/logrotate.d/iptables &> /dev/null
+cp -f $MySB_InstallDir/templates/etc.pgl.pglcmd.conf.template /etc/pgl/pglcmd.conf
+StatusSTD
 
 #### Getting information about OVH monitoring engine
 (( CurrentSTEP++ ))
@@ -299,6 +301,13 @@ if [ "$IsInstalled_Manager" == "YES" ]; then
 	fi
 fi
 WaitingScreen MySB_RefreshMe
+StatusSTD
+
+#### Cron
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Global_FinalSecurityRules$CEND..."
+screen -dmS Cron /bin/bash $MySB_InstallDir/install/Cron 'UPGRADE';
+WaitingScreen Cron
 StatusSTD
 
 #### Cleaning
