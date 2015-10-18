@@ -1,5 +1,5 @@
 	Version v3.0
-		2015/07/14
+		2015/10/18
 			- MySB portal, correcting Cakebox link in User Infos page (v2.1 and v3.0)
 			- MySB portal, add some new actions (v3.0)
 				* OpenVPN, possibility to change protocol
@@ -23,6 +23,7 @@
 			- Adding Zoho Mail support (v3.0, to be confirmed by Zoho users)
 			- Disabling ruTorrent Plugin FileUpload
 			- Replace primary SQLite database by MySQL
+			- Bug fixes
 
 	Version v2.1
 		2015/03/14
