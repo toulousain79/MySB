@@ -26,7 +26,7 @@ define('MainUser_TrackersAdd_UpdateFailed', 'Echec !<br /><br />Il n\'a pas &eac
 define('MainUser_TrackersAdd_AddMyTrackers', 'Ajouter mes trackers maintenant !');
 define('MainUser_TrackersAdd_Title_AddTrackers', 'Ajouter vos trackers ici');
 define('MainUser_TrackersAdd_TextAddress', 'Tracker <i>(domaine, nom d\'h&ocirc;te ou URL)</i>:');
-define('MainUser_TrackersAdd_Btn_AddNewDomain', 'Ajouter mes trackers');
+define('MainUser_TrackersAdd_Btn_AddNewDomain', 'Ajouter un tracker');
 define('MainUser_TrackersAdd_Btn_RemoveLastTracker', 'Supprimer le dernier tracker');
 define('MainUser_TrackersAdd_InfoAddTracker_1', 'Si une erreur se produit lorsque vous ajoutez un de vos trackers, il sera <b>pas ajout&eacute;</b>.<br />L\'erreur la plus commune est la v&eacute;rification des adresses IP associ&eacute;es avec le nom d\'h&ocirc;te (enregistrement DNS de type A).');
 define('MainUser_TrackersAdd_InfoAddTracker_2', 'Le processus d\'ajout et de v&eacute;rification des trackers est lanc&eacute; en arri&egrave;re-plan et peut prendre de <b>quelques secondes</b> &agrave; <b>quelques minutes</b>.<br />L\'ajout d\'un tracker est <b>confirm&eacute;</b> lorsque que celui-ci <b>reste</b> dans la liste <b>avec</b> les adresses IP associ&eacute;es.');

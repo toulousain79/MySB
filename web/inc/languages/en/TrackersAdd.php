@@ -26,7 +26,7 @@ define('MainUser_TrackersAdd_UpdateFailed', 'Failed !<br /><br />It was not poss
 define('MainUser_TrackersAdd_AddMyTrackers', 'Add my trackers now !');
 define('MainUser_TrackersAdd_Title_AddTrackers', 'Add your trackers here');
 define('MainUser_TrackersAdd_TextAddress', 'Tracker <i>(domain, hostname or URL)</i>:');
-define('MainUser_TrackersAdd_Btn_AddNewDomain', 'Add my trackers');
+define('MainUser_TrackersAdd_Btn_AddNewDomain', 'Add a tracker');
 define('MainUser_TrackersAdd_Btn_RemoveLastTracker', 'Remove last tracker');
 define('MainUser_TrackersAdd_InfoAddTracker_1', 'If an error occurs when you add one of your trackers, it will <b>not be added</b>.<br />The most common error is the verification of IP addresses associated with the host name (A type of DNS record).');
 define('MainUser_TrackersAdd_InfoAddTracker_2', 'The process of adding and trackers audit is started in the background and can take <b>several seconds</b> to <b>several minutes</b>.<br />The addition of a tracker is <b>confirmed</b> when it <b>remains</b> in the list <b>with</b> the IP addresses associated with it.');

@@ -48,8 +48,8 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			if ( $success == true ) {
 				$type = 'success';
 			} else {
-				$type = 'error';
-				$message = Global_FailedUpdateMysbDB;
+				$type = 'information';
+				$message = Global_NoChange;
 			}
 			break;
 		default: // delete
@@ -71,8 +71,8 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				if ( $success == true ) {
 					$type = 'success';
 				} else {
-					$type = 'error';
-					$message = MainUser_TrackersAdd_UpdateFailed;
+					$type = 'information';
+					$message = Global_NoChange;
 				}
 			}
 			break;
