@@ -87,12 +87,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			for($i=1; $i<=$count; $i++) {
 				$CleanIPv4 = preg_replace('/\s\s+/', '', $_POST['ipv4'][$i]); 
 				$CleanHostname = preg_replace('/\s\s+/', '', $_POST['hostname'][$i]); 
-				$value = $MySB_DB->update("users_addresses", ["is_active" => $_POST['is_active'][$i]], [
-																												"AND" => [
-																													"ipv4" => "$CleanIPv4",
-																													"hostname" => "$CleanHostname"
-																												]
-																											]);
+				$value = $MySB_DB->update("users_addresses", [ "is_active" => $_POST['is_active'][$i], "last_update" => "now()" ], [ "AND" => [ "ipv4" => "$CleanIPv4", "hostname" => "$CleanHostname" ]]);
 				$result = $result+$value;
 			}
 
@@ -203,6 +198,7 @@ $AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserI
 				<th style="text-align:center;"><?php echo User_ManageAddresses_Table_IPv4; ?></th>
 				<th style="text-align:center;"><?php echo User_ManageAddresses_Table_Hostname; ?></th>
 				<th style="text-align:center;"><?php echo User_ManageAddresses_Table_CheckBy; ?></th>
+				<th style="text-align:center;"><?php echo Global_LastUpdate; ?></th>
 				<th style="text-align:center;"><?php echo Global_IsActive; ?></th>
 				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
 			</tr>
@@ -239,6 +235,9 @@ foreach($AddressesList as $Address) {
 				<td>
 					<?php echo $Address["check_by"]; ?>
 				</td>
+				<td>
+					<?php echo $Address["last_update"]; ?>
+				</td>				
 				<td>
 					<?php echo $is_active; ?>
 				</td>

@@ -279,6 +279,7 @@ CREATE TABLE IF NOT EXISTS `users_addresses` (
   `hostname` varchar(256) NOT NULL,
   `check_by` varchar(8) NOT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT '0',
+  `last_update` datetime NOT NULL,
   PRIMARY KEY (`id_users_addresses`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 

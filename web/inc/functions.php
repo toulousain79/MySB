@@ -395,40 +395,28 @@ function ManageUsersAddresses($UserName, $IPv4, $HostName, $IsActive, $CheckBy) 
 		case 'ipv4':
 			switch ($CheckBy) {
 				case 'hostname':
-					$value = $MySB_DB->update("users_addresses", ["hostname" => "$HostName", "check_by" => "$CheckBy", "is_active" => "$IsActive"], [
-																																					"AND" => [
-																																						"id_users" => "$UserID",
-																																						"ipv4" => "$IPv4"
-																																					]
-																																				]);
+					$value = $MySB_DB->update("users_addresses", [	"hostname" => "$HostName",
+																	"check_by" => "$CheckBy",
+																	"is_active" => "$IsActive",
+																	"last_update" => "now()" ],
+																[ "AND" => [ "id_users" => "$UserID", "ipv4" => "$IPv4" ]]);
 					break;
 				default:
-					$value = $MySB_DB->update("users_addresses", ["is_active" => "$IsActive"], [
-																								"AND" => [
-																									"id_users" => "$UserID",
-																									"ipv4" => "$IPv4"
-																								]
-																							]);
+					$value = $MySB_DB->update("users_addresses", [ "is_active" => "$IsActive" ], [ "AND" => [ "id_users" => "$UserID", "ipv4" => "$IPv4" ]]);
 					break;
 			}
 			break;
 		case 'hostname':
 			switch ($CheckBy) {
 				case 'ipv4':
-					$value = $MySB_DB->update("users_addresses", ["hostname" => "$HostName", "check_by" => "$CheckBy", "is_active" => "$IsActive"], [
-																																					"AND" => [
-																																						"id_users" => "$UserID",
-																																						"ipv4" => "$IPv4"
-																																					]
-																																				]);
+					$value = $MySB_DB->update("users_addresses", [	"hostname" => "$HostName",
+																	"check_by" => "$CheckBy",
+																	"is_active" => "$IsActive",
+																	"last_update" => "now()" ],
+																[ "AND" => [ "id_users" => "$UserID", "ipv4" => "$IPv4" ]]);
 					break;
 				default:
-					$value = $MySB_DB->update("users_addresses", ["is_active" => "$IsActive"], [
-																								"AND" => [
-																									"id_users" => "$UserID",
-																									"ipv4" => "$IPv4"
-																								]
-																							]);					
+					$value = $MySB_DB->update("users_addresses", [ "is_active" => "$IsActive" ], [ "AND" => [ "id_users" => "$UserID", "ipv4" => "$IPv4" ]]);					
 					break;
 			}
 			break;
@@ -438,7 +426,8 @@ function ManageUsersAddresses($UserName, $IPv4, $HostName, $IsActive, $CheckBy) 
 													"ipv4" => "$IPv4",
 													"hostname" => "$HostName",
 													"check_by" => "$CheckBy",
-													"is_active" => "$IsActive"
+													"is_active" => "$IsActive",
+													"last_update" => "now()"
 												]);
 			break;
 	}
