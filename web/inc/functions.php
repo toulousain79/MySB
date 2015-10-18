@@ -381,6 +381,7 @@ function ManageUsersAddresses($UserName, $IPv4, $HostName, $IsActive, $CheckBy) 
 	global $MySB_DB;
 	
 	$UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$UserName"]);
+	$DateTime = date("Y-m-d H:i:s");
 	$value = false;
 
 	// Check if address exist
@@ -398,7 +399,7 @@ function ManageUsersAddresses($UserName, $IPv4, $HostName, $IsActive, $CheckBy) 
 					$value = $MySB_DB->update("users_addresses", [	"hostname" => "$HostName",
 																	"check_by" => "$CheckBy",
 																	"is_active" => "$IsActive",
-																	"last_update" => "now()" ],
+																	"last_update" => "$DateTime" ],
 																[ "AND" => [ "id_users" => "$UserID", "ipv4" => "$IPv4" ]]);
 					break;
 				default:
@@ -412,7 +413,7 @@ function ManageUsersAddresses($UserName, $IPv4, $HostName, $IsActive, $CheckBy) 
 					$value = $MySB_DB->update("users_addresses", [	"hostname" => "$HostName",
 																	"check_by" => "$CheckBy",
 																	"is_active" => "$IsActive",
-																	"last_update" => "now()" ],
+																	"last_update" => "$DateTime" ],
 																[ "AND" => [ "id_users" => "$UserID", "ipv4" => "$IPv4" ]]);
 					break;
 				default:
@@ -427,7 +428,7 @@ function ManageUsersAddresses($UserName, $IPv4, $HostName, $IsActive, $CheckBy) 
 													"hostname" => "$HostName",
 													"check_by" => "$CheckBy",
 													"is_active" => "$IsActive",
-													"last_update" => "now()"
+													"last_update" => "$DateTime"
 												]);
 			break;
 	}

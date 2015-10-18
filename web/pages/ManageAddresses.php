@@ -83,11 +83,12 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			break;
 		case Global_SaveChanges:
 			$count = count($_POST['input_id']);
+			$DateTime = date("Y-m-d H:i:s");
 
 			for($i=1; $i<=$count; $i++) {
 				$CleanIPv4 = preg_replace('/\s\s+/', '', $_POST['ipv4'][$i]); 
 				$CleanHostname = preg_replace('/\s\s+/', '', $_POST['hostname'][$i]); 
-				$value = $MySB_DB->update("users_addresses", [ "is_active" => $_POST['is_active'][$i], "last_update" => "now()" ], [ "AND" => [ "ipv4" => "$CleanIPv4", "hostname" => "$CleanHostname" ]]);
+				$value = $MySB_DB->update("users_addresses", [ "is_active" => $_POST['is_active'][$i], "last_update" => "$DateTime" ], [ "AND" => [ "ipv4" => "$CleanIPv4", "hostname" => "$CleanHostname" ]]);
 				$result = $result+$value;
 			}
 
