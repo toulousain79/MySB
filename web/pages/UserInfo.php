@@ -46,13 +46,14 @@ function printUser($user) {
 	echo '<td><span class="Comments">' . User_UserInfo_Comment_Username . '</a>.</span></td>';
 	// IP Address
 	$IPv4_List = $MySB_DB->select("users_addresses", "ipv4", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
+	$LastUpdate = $MySB_DB->get("users_addresses", "max(last_update)", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_IpAddress . '</th>';
 	if ( $IPv4_List != "" ) {
 		echo '<td><select style="cursor: pointer;">';
 		foreach($IPv4_List as $IPv4) {
 			echo '<option>' .$IPv4. '</option>';
 		}
-		echo '</select></td>';
+		echo '</select>' . $LastUpdate . '</td>';
 	} else {
 		echo '<td>' . User_UserInfo_Table_NoIpAddress . '</td>';
 	}
