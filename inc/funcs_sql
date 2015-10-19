@@ -61,6 +61,7 @@ Func_SQL_Command() {
 	DatabaseType="mysql"
 	Command="$1"
 	DataBase="$2"
+	AptDate=$(date +%Y-%m-%d\ %H:%M:%S)
 
 	# MySQL or SQLite ?
 	case "$DataBase" in
@@ -82,13 +83,12 @@ Func_SQL_Command() {
 			Table="$3"
 			VarSet="$4"
 			VarWhere="$5"
+			VarSet="`echo $VarSet | sed "s/NOW/$AptDate/g;"`"
 			case "$DatabaseType" in
 				"sqlite3")
-					VarSet="`echo $VarSet | sed "s/NOW/datetime('now','localtime')/g;"`"
 					/usr/bin/sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE $Table SET $VarSet WHERE $VarWhere;"
 				;;
 				"mysql")
-					VarSet="`echo $VarSet | sed "s/NOW/now()/g;"`"
 					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "UPDATE $Table SET $VarSet WHERE $VarWhere";
 				;;
 			esac
@@ -97,13 +97,12 @@ Func_SQL_Command() {
 			Table="$3"
 			VarColumns="$4"
 			VarValues="$5"
+			VarValues="`echo $VarValues | sed "s/NOW/$AptDate/g;"`"
 			case "$DatabaseType" in
 				"sqlite3")
-					VarValues="`echo $VarValues | sed "s/NOW/datetime('now','localtime')/g;"`"
 					/usr/bin/sqlite3 -cmd '.timeout 150000' $DataBase "INSERT INTO $Table ($VarColumns) VALUES ($VarValues);"
 				;;
 				"mysql")
-					VarValues="`echo $VarValues | sed "s/NOW/now()/g;"`"
 					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "INSERT INTO $Table ($VarColumns) VALUES ($VarValues)";
 				;;
 			esac
