@@ -129,9 +129,9 @@ PackagesManage() {
 	PackageList=$2
 
 	if [ "`dpkg --status aptitude | grep Status:`" == "Status: install ok installed" ]; then
-		AptCommand="export DEBIAN_FRONTEND=noninteractive ; aptitude -q"
+		AptCommand="aptitude -q"
 	else
-		AptCommand="export DEBIAN_FRONTEND=noninteractive ; apt-get"
+		AptCommand="apt-get"
 	fi
 
 	GlobalArgs="-y --assume-yes"
@@ -153,14 +153,14 @@ PackagesManage() {
 			#### Need of 'apt-get update' ? (must be greater than 2 hours OR forced)
 			if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ] || [ "$Query" == "upgrade" ]; then
 				echo "$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update"
-				$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update
+				export DEBIAN_FRONTEND=noninteractive ; $AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update
 				if [ $? -eq 0 ]; then
 					Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "apt_update = 0, apt_date = NOW" 'id_system = 1'
 				fi
 			fi
 		else
 			echo "$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update"
-			$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update
+			export DEBIAN_FRONTEND=noninteractive ; $AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update
 		fi
 	fi
 
@@ -176,16 +176,16 @@ PackagesManage() {
 
 			if [ ! -z "$FinalList" ]; then
 				echo "$AptCommand $GlobalArgs install $FinalList"
-				$AptCommand $GlobalArgs -V install $FinalList
+				export DEBIAN_FRONTEND=noninteractive ; $AptCommand $GlobalArgs -V install $FinalList
 			fi
 		;;
 		'upgrade')
 			if [ "`$AptCommand --help | grep safe-upgrade | awk '{ print $1 }'`" == "safe-upgrade" ]; then
 				echo "$AptCommand $GlobalArgs -V -o Dpkg::Options::="--force-confold" safe-upgrade"
-				$AptCommand $GlobalArgs -V -o Dpkg::Options::="--force-confold" safe-upgrade
+				export DEBIAN_FRONTEND=noninteractive ; $AptCommand $GlobalArgs -V -o Dpkg::Options::="--force-confold" safe-upgrade
 			else
 				echo "$AptCommand $GlobalArgs -V -o Dpkg::Options::="--force-confold" upgrade"
-				$AptCommand $GlobalArgs -V -o Dpkg::Options::="--force-confold" upgrade
+				export DEBIAN_FRONTEND=noninteractive ; $AptCommand $GlobalArgs -V -o Dpkg::Options::="--force-confold" upgrade
 			fi
 		;;
 		'purge')
@@ -199,7 +199,7 @@ PackagesManage() {
 
 			if [ ! -z "$FinalList" ]; then
 				echo "$AptCommand $GlobalArgs purge $FinalList"
-				$AptCommand $GlobalArgs purge $FinalList
+				export DEBIAN_FRONTEND=noninteractive ; $AptCommand $GlobalArgs purge $FinalList
 			fi
 		;;
 		'test')
