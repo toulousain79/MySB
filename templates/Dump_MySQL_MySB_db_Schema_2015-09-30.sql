@@ -1,36 +1,19 @@
--- phpMyAdmin SQL Dump
--- version 3.4.11.1deb2+deb7u1
--- http://www.phpmyadmin.net
---
--- Client: localhost
--- Généré le: Mer 30 Septembre 2015 à 08:40
--- Version du serveur: 5.5.43
--- Version de PHP: 5.4.41-0+deb7u1
-
 SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
-
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8 */;
 
---
--- Base de données: `MySB_db`
---
-
--- --------------------------------------------------------
-
---
--- Structure de la table `blocklists`
---
+CREATE DATABASE `MySB_db` DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci;
+USE `MySB_db`;
 
 CREATE TABLE IF NOT EXISTS `blocklists` (
   `id_blocklists` int(11) NOT NULL AUTO_INCREMENT,
   `author` varchar(32) NOT NULL,
   `list_name` varchar(32) NOT NULL,
-  `pgl_list_name` varchar(64) NOT NULL,
+  `pgl_list_name` varchar(32) NOT NULL,
   `url_infos` varchar(256) NOT NULL,
   `peerguardian_list` varchar(256) NOT NULL,
   `rtorrent_list` varchar(256) NOT NULL,
@@ -42,13 +25,7 @@ CREATE TABLE IF NOT EXISTS `blocklists` (
   `rtorrent_lastupdate` datetime NOT NULL,
   PRIMARY KEY (`id_blocklists`),
   UNIQUE KEY `url_infos` (`url_infos`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `commands`
---
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=44 ;
 
 CREATE TABLE IF NOT EXISTS `commands` (
   `id_commands` int(11) NOT NULL AUTO_INCREMENT,
@@ -59,12 +36,6 @@ CREATE TABLE IF NOT EXISTS `commands` (
   `user` varchar(16) NOT NULL,
   PRIMARY KEY (`id_commands`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `dnscrypt_resolvers`
---
 
 CREATE TABLE IF NOT EXISTS `dnscrypt_resolvers` (
   `id_dnscrypt_resolvers` int(11) NOT NULL AUTO_INCREMENT,
@@ -89,25 +60,13 @@ CREATE TABLE IF NOT EXISTS `dnscrypt_resolvers` (
   UNIQUE KEY `name` (`name`,`full_name`,`resolver_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
--- --------------------------------------------------------
-
---
--- Structure de la table `providers_monitoring`
---
-
 CREATE TABLE IF NOT EXISTS `providers_monitoring` (
   `id_providers_monitoring` int(11) NOT NULL AUTO_INCREMENT,
   `provider` varchar(16) NOT NULL,
   `ipv4` varchar(25) NOT NULL,
   `hostname` varchar(32) NOT NULL,
   PRIMARY KEY (`id_providers_monitoring`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `renting`
---
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=7 ;
 
 CREATE TABLE IF NOT EXISTS `renting` (
   `id_renting` int(1) NOT NULL,
@@ -120,12 +79,6 @@ CREATE TABLE IF NOT EXISTS `renting` (
   PRIMARY KEY (`id_renting`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
--- --------------------------------------------------------
-
---
--- Structure de la table `repositories`
---
-
 CREATE TABLE IF NOT EXISTS `repositories` (
   `id_repositories` int(11) NOT NULL AUTO_INCREMENT,
   `type` varchar(5) NOT NULL,
@@ -137,13 +90,7 @@ CREATE TABLE IF NOT EXISTS `repositories` (
   `url` varchar(256) NOT NULL,
   `active` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_repositories`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `services`
---
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=33 ;
 
 CREATE TABLE IF NOT EXISTS `services` (
   `id_services` int(11) NOT NULL AUTO_INCREMENT,
@@ -161,13 +108,7 @@ CREATE TABLE IF NOT EXISTS `services` (
   `is_installed` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_services`),
   UNIQUE KEY `serv_name` (`serv_name`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `smtp`
---
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=25 ;
 
 CREATE TABLE IF NOT EXISTS `smtp` (
   `id_smtp` int(11) NOT NULL AUTO_INCREMENT,
@@ -179,13 +120,7 @@ CREATE TABLE IF NOT EXISTS `smtp` (
   `smtp_email` varchar(64) NOT NULL,
   PRIMARY KEY (`id_smtp`),
   UNIQUE KEY `smtp_provider` (`smtp_provider`,`smtp_username`,`smtp_passwd`,`smtp_host`,`smtp_port`,`smtp_email`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `system`
---
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
 
 CREATE TABLE IF NOT EXISTS `system` (
   `id_system` int(11) NOT NULL,
@@ -208,12 +143,6 @@ CREATE TABLE IF NOT EXISTS `system` (
   UNIQUE KEY `mysb_version` (`mysb_version`,`mysb_user`,`mysb_password`,`hostname`,`ipv4`,`primary_inet`,`timezone`,`cert_password`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
--- --------------------------------------------------------
-
---
--- Structure de la table `trackers_list`
---
-
 CREATE TABLE IF NOT EXISTS `trackers_list` (
   `id_trackers_list` int(11) NOT NULL AUTO_INCREMENT,
   `tracker` varchar(128) NOT NULL,
@@ -227,24 +156,12 @@ CREATE TABLE IF NOT EXISTS `trackers_list` (
   UNIQUE KEY `tracker` (`tracker`,`tracker_domain`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
--- --------------------------------------------------------
-
---
--- Structure de la table `trackers_list_ipv4`
---
-
 CREATE TABLE IF NOT EXISTS `trackers_list_ipv4` (
   `id_trackers_list_ipv4` int(11) NOT NULL AUTO_INCREMENT,
   `id_trackers_list` int(11) NOT NULL,
   `ipv4` varchar(128) NOT NULL,
   PRIMARY KEY (`id_trackers_list_ipv4`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `users`
---
 
 CREATE TABLE IF NOT EXISTS `users` (
   `id_users` int(11) NOT NULL AUTO_INCREMENT,
@@ -267,12 +184,6 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `users_ident` (`users_ident`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
--- --------------------------------------------------------
-
---
--- Structure de la table `users_addresses`
---
-
 CREATE TABLE IF NOT EXISTS `users_addresses` (
   `id_users_addresses` int(11) NOT NULL AUTO_INCREMENT,
   `id_users` int(11) NOT NULL,
@@ -284,12 +195,6 @@ CREATE TABLE IF NOT EXISTS `users_addresses` (
   PRIMARY KEY (`id_users_addresses`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
--- --------------------------------------------------------
-
---
--- Structure de la table `vars`
---
-
 CREATE TABLE IF NOT EXISTS `vars` (
   `id_vars` int(11) NOT NULL AUTO_INCREMENT,
   `fail2ban_whitelist` varchar(12) NOT NULL,
@@ -297,7 +202,7 @@ CREATE TABLE IF NOT EXISTS `vars` (
   `white_tcp_port_out` varchar(16) NOT NULL,
   `white_udp_port_out` varchar(16) NOT NULL,
   PRIMARY KEY (`id_vars`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
