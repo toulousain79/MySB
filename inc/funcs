@@ -30,16 +30,16 @@ source $MySB_InstallDir/inc/funcs_tools
 CreateHostsFile() {
 	echo "127.0.0.1       localhost.localdomain localhost" > /etc/hosts
 	echo "$SrvIpAddress       $HostNameFQDN $(hostname -s)" >> /etc/hosts
+	echo "" >> /etc/hosts
+	echo "#### MySB - Force trackers resolution (ex: DNS liar)" >> /etc/hosts
 
 	Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list,tracker,tracker_domain' 'trackers_list' "is_active = '1'" | while read ROW; do
-		IdTracker="`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`"
+		IdTracker="`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`"
 		Tracker="`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`"
 		TrackerDomain="`echo $ROW | awk '{split($0,a,"|"); print a[3]}'`"
 		TrackerIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$IdTracker'"`"
 
-		if [ ! -z "$TrackerIPv4" ]; then
-			echo "" >> /etc/hosts
-			echo "#### MySB - Force trackers resolution (ex: DNS liar)" >> /etc/hosts		
+		if [ ! -z "$TrackerIPv4" ]; then	
 			if [ "$Tracker" == "$TrackerDomain" ]; then
 				Lign="$TrackerDomain"
 			else
