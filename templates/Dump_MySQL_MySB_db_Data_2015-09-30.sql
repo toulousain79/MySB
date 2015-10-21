@@ -6,9 +6,6 @@ SET time_zone = "+00:00";
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8 */;
 
-CREATE DATABASE `MySB_db` DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci;
-USE `MySB_db`;
-
 INSERT INTO `blocklists` (`id_blocklists`, `author`, `list_name`, `pgl_list_name`, `url_infos`, `peerguardian_list`, `rtorrent_list`, `peerguardian_active`, `rtorrent_active`, `default`, `comments`, `peerguardian_lastupdate`, `rtorrent_lastupdate`) VALUES
 (1, 'Abuse', 'ZeuS', 'abuse_zeus', 'https://www.iblocklist.com/list.php?list=ynkdjqsjyfmilsgbogqf', 'list.iblocklist.com/lists/abuse/zeus', 'http://list.iblocklist.com/?list=ynkdjqsjyfmilsgbogqf&fileformat=cidr&archiveformat=gz', 1, 1, 1, '', '0000-00-00 00:00:00', '0000-00-00 00:00:00'),
 (2, 'Atma', 'Atma', 'atma_atma', 'https://www.iblocklist.com/list.php?list=tzmtqbbsgbtfxainogvm', 'list.iblocklist.com/lists/atma/atma', 'http://list.iblocklist.com/?list=tzmtqbbsgbtfxainogvm&fileformat=cidr&archiveformat=gz', 1, 1, 1, '', '0000-00-00 00:00:00', '0000-00-00 00:00:00'),

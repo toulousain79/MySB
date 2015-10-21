@@ -6,9 +6,6 @@ SET time_zone = "+00:00";
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8 */;
 
-CREATE DATABASE `MySB_db` DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci;
-USE `MySB_db`;
-
 CREATE TABLE IF NOT EXISTS `blocklists` (
   `id_blocklists` int(11) NOT NULL AUTO_INCREMENT,
   `author` varchar(32) NOT NULL,
