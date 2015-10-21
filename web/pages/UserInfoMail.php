@@ -142,7 +142,7 @@ function PrintContent($user, $Case) {
 			$DisplayRenting			= true;
 			break;
 		case 'upgrade':
-			$DisplayGoTo 			= false;
+			$DisplayGoTo 			= true;
 			$DisplayCommand			= false;
 			$DisplayUserInfo		= true;
 			$DisplayUserInfoDetail 	= true;
@@ -209,17 +209,7 @@ function PrintContent($user, $Case) {
 		<!-- // IP Address -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_IpAddress; ?></th>
-			<td><?php
-				$LastUpdate = $MySB_DB->max("users_addresses", "last_update", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
-				$IPv4Updated = $MySB_DB->get("users_addresses", "ipv4", ["last_update" => "$LastUpdate"]);
-				foreach($User_IPv4 as $IPv4) {
-					if ( $IPv4Updated == $IPv4 ) {
-						echo '<span style="background-color: #00FF00">'.$IPv4.'</span>';
-					} else {
-						echo $IPv4;
-					}
-				}
-			?></td>
+			<td><?php echo $User_IPv4;?></td>
 			<td <?php echo $CommentAddressStyle;?>><?php echo $CommentAddress;?></td>
 		</tr>
 		<!-- // Password -->
@@ -558,7 +548,7 @@ function PrintContent($user, $Case) {
 		</tr>
 <?php } ?>
 	
-	<?php if ( isset($RentingDatas["global_cost"]) ) { ?>
+	<?php if ( (isset($RentingDatas["global_cost"])) && ($RentingDatas["global_cost"] != '0.00') ) { ?>
 		<!-- //////////////////////
 		// Price and Payment info
 		////////////////////// -->

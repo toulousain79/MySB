@@ -305,7 +305,7 @@ function printUser($user) {
 	}
 
 	$RentingDatas = $MySB_DB->get("renting", "*", ["id_renting" => 1]);
-	if ( isset($RentingDatas["global_cost"]) ) {
+	if ( (isset($RentingDatas["global_cost"])) && ($RentingDatas["global_cost"] != '0.00') ) {
 		//////////////////////
 		// Price and Payment info
 		//////////////////////
