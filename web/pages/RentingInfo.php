@@ -46,12 +46,12 @@ function Form() {
 				</tr>
 				<tr>
 					<td>' . MainUser_Renting_TVA . '</td>
-					<td><input class="text_small" name="tva" type="text" value="' . $TVA . ' required="required" /></td>
+					<td><input class="text_small" name="tva" type="text" value="' . $TVA . '" required="required" /></td>
 					<td><span class="Comments">' . MainUser_Renting_ExTVA . '</span></td>
 				</tr>
 				<tr>
 					<td>' . MainUser_Renting_Price . '</td>
-					<td><input class="text_small" name="global_cost" type="text" value="' . $GlobalCost . ' required="required" /></td>
+					<td><input class="text_small" name="global_cost" type="text" value="' . $GlobalCost . '" required="required" /></td>
 					<td><span class="Comments">' . MainUser_Renting_ExPrice . '</span></td>
 				</tr>
 				<tr>
