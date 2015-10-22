@@ -548,7 +548,7 @@ function PrintContent($user, $Case) {
 		</tr>
 <?php } ?>
 	
-	<?php if ( (isset($RentingDatas["global_cost"])) && ($RentingDatas["global_cost"] != '0.00') ) { ?>
+	<?php if ( !empty($RentingDatas["global_cost"]) && !empty($RentingDatas["model"]) ) { ?>
 		<!-- //////////////////////
 		// Price and Payment info
 		////////////////////// -->
