@@ -51,7 +51,7 @@ function PrintContent($user, $Case) {
 	$RentingDatas = $MySB_DB->get("renting", "*", ["id_renting" => 1]);
 	// Users infos
 	$IPv4_List = $MySB_DB->select("users_addresses", "ipv4", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
-	$LastUpdate = $MySB_DB->max("users_addresses", "last_update", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
+	$LastUpdate = $MySB_DB->max("users_addresses", "last_update", ["AND" => ["id_users" => "$UserID", "check_by" => "hostname", "is_active" => 1]]);
 	$IPv4Updated = $MySB_DB->get("users_addresses", "ipv4", ["last_update" => "$LastUpdate"]);	
 	if ( $IPv4_List != "" ) {
 		$User_IPv4 = '';
