@@ -1,5 +1,5 @@
 	Version v3.0
-		2015/10/18
+		2015/10/24
 			- MySB portal, correcting Cakebox link in User Infos page (v2.1 and v3.0)
 			- MySB portal, add some new actions (v3.0)
 				* OpenVPN, possibility to change protocol
@@ -19,7 +19,7 @@
 			- NodeJS v0.12.7 (v3.0)
 			- XMLRPC v1.42.0 (v3.0)
 			- Libsodium v1.04 (v3.0)
-			- ownCloud v8.1.3 (v3.0)
+			- ownCloud v8.2.0 (v3.0)
 			- Adding Zoho Mail support (v3.0, to be confirmed by Zoho users)
 			- Disabling ruTorrent Plugin FileUpload
 			- Replace primary SQLite database by MySQL
