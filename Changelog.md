@@ -1,3 +1,8 @@
+	Version v3.1
+		2015/10/25
+			- DNScrypt-proxy, bug fix in init script
+			- Cron job, bug fix
+
 	Version v3.0
 		2015/10/24
 			- MySB portal, correcting Cakebox link in User Infos page (v2.1 and v3.0)

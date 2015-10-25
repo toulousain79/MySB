@@ -351,4 +351,58 @@ UpgradeInProgress() {
 	esac
 }
 
+#### Delete Bad Sources
+DeleteBadSources() {
+	if [ -z "$1" ]; then
+		SourcesFile="/etc/apt/sources.list"
+	else
+		SourcesFile="$MySB_InstallDir/files/fastest_mirrors"
+	fi
+
+	# Delete bad sources
+	sed -i '/debian.advalem.net/d' $SourcesFile
+	sed -i '/mirrors.e2wsolutions.com/d' $SourcesFile
+	sed -i '/debian.corenetworks.net/d' $SourcesFile
+	sed -i '/ftp.informatik.uni-frankfurt.de/d' $SourcesFile
+	sed -i '/archive.mmu.edu.my/d' $SourcesFile
+	sed -i '/debian.osdn.org.ua/d' $SourcesFile
+	sed -i '/ftp.kfki.hu/d' $SourcesFile
+	sed -i '/mirror.internap.com/d' $SourcesFile
+	sed -i '/mirrors.serverhost.ro/d' $SourcesFile
+	sed -i '/ftp.roedu.net/d' $SourcesFile
+	sed -i '/ftp.debian.nl/d' $SourcesFile
+	sed -i '/archive.mmu.edu.my/d' $SourcesFile
+	sed -i '/russell.cs.bilgi.edu.tr/d' $SourcesFile
+	sed -i '/pubmirrors.dal.corespace.com/d' $SourcesFile
+	sed -i '/mirror.thelinuxfix.com/d' $SourcesFile
+	sed -i '/mirrors.xenir.com/d' $SourcesFile
+	sed -i '/debian.intergenia.de/d' $SourcesFile
+}
+
+#### Crete '/etc/hosts' file
+CreateHostsFile() {
+	echo "127.0.0.1       localhost.localdomain localhost" > /etc/hosts
+	echo "$SrvIpAddress       $HostNameFQDN $(hostname -s)" >> /etc/hosts
+	echo "" >> /etc/hosts
+	echo "#### MySB - Force trackers resolution (ex: DNS liar)" >> /etc/hosts
+
+	Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list,tracker,tracker_domain' 'trackers_list' "is_active = '1'" | while read ROW; do
+		IdTracker="`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`"
+		Tracker="`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`"
+		TrackerDomain="`echo $ROW | awk '{split($0,a,"|"); print a[3]}'`"
+		TrackerIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$IdTracker'"`"
+
+		if [ ! -z "$TrackerIPv4" ]; then
+			if [ "$Tracker" == "$TrackerDomain" ]; then
+				Lign="$TrackerDomain"
+			else
+				Lign="$Tracker, $TrackerDomain"
+			fi
+			for IPv4 in $TrackerIPv4; do
+				echo "$IPv4       $Lign" >> /etc/hosts
+			done
+		fi
+	done
+}
+
 ##################### LAST LINE ######################################
