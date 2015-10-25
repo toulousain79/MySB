@@ -142,87 +142,23 @@ else
 	echo -e "$Upgrade_NothingToDo"
 fi
 
+### Bind
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Bind$CEND..."
+# /etc/bind/named.conf.local
+cp -f $MySB_InstallDir/templates/etc.bind.named.conf.local.template /etc/bind/named.conf.local
+chmod 0644 /etc/bind/named.conf.local
+chown root:bind /etc/bind/named.conf.local
+StatusSTD
+
 ### DNScrypt-proxy
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_DNScrypt$CEND..."
 if [ "$ToInstall_DNScrypt" == "YES" ] || [ "$IsInstalled_DNScrypt" == "YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'DNScrypt-proxy'"
-	screen -dmS DNScrypt /bin/bash $MySB_InstallDir/install/DNScrypt 'UPGRADE';
-	WaitingScreen DNScrypt
-	StatusSTD
-else
-	echo -e "$Upgrade_NothingToDo"
-fi
-
-#### OpenVPN
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_OpenVPN$CEND..."
-if [ "$ToInstall_OpenVPN" == "YES" ]; then
-	screen -dmS OpenVPN /bin/bash $MySB_InstallDir/install/OpenVPN 'server' 'UPGRADE';
-	WaitingScreen OpenVPN
-	StatusSTD
-else
-	echo -e "$Upgrade_NothingToDo"
-fi
-
-#### NFS
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_NFS$CEND..."
-if [ "$IsInstalled_NFS" == "YES" ]; then
-	for seedUser in $UsersList; do
-		sed -i '/'$seedUser'/d' /etc/exports
-		uid=`grep $seedUser /etc/passwd | awk -F: '{ print $3 }'`
-		guid=`grep MySB_users /etc/group | awk -F: '{ print $3 }'`
-		echo "/home/$seedUser/rtorrent 10.0.0.0/255.255.255.0(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,fsid=0,crossmnt) 10.0.1.0/255.255.255.0(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,fsid=0,crossmnt) 10.0.2.0/255.255.255.0(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,fsid=0,crossmnt)" >> /etc/exports		
-	done
-	StatusSTD
-else
-	echo -e "$Upgrade_NothingToDo"
-fi
-
-### PlexMedia
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_PlexMedia$CEND..."
-if [ "$ToInstall_PlexMedia" == "YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Plex Media Server'"
-	screen -dmS PlexMedia /bin/bash $MySB_InstallDir/install/PlexMedia 'UPGRADE';
-	WaitingScreen PlexMedia
-	StatusSTD
-else
-	echo -e "$Upgrade_NothingToDo"
-fi
-
-#### Samba
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Samba$CEND..."
-if [ "$ToInstall_OpenVPN" == "YES" ] || [ "$IsInstalled_OpenVPN" == "YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Samba'"
-	screen -dmS Samba /bin/bash $MySB_InstallDir/install/Samba 'UPGRADE';
-	WaitingScreen Samba
-	StatusSTD
-else
-	echo -e "$Upgrade_NothingToDo"
-fi
-
-#### Fail2Ban
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Fail2Ban$CEND..."
-if [ "$ToInstall_Fail2Ban" == "YES" ] || [ "$IsInstalled_Fail2Ban" == "YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Fail2Ban'"
-	screen -dmS Fail2Ban /bin/bash $MySB_InstallDir/install/Fail2Ban 'UPGRADE';
-	WaitingScreen Fail2Ban
-	StatusSTD
-else
-	echo -e "$Upgrade_NothingToDo"
-fi
-
-#### LogWatch
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_LogWatch$CEND..."
-if [ "$ToInstall_LogWatch" == "YES" ] || [ "$IsInstalled_LogWatch" == "YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Logwatch'"
-	screen -dmS Logwatch /bin/bash $MySB_InstallDir/install/Logwatch 'UPGRADE';
-	WaitingScreen Logwatch
+	# /etc/init.d/dnscrypt-proxy
+	cp $MySB_InstallDir/templates/etc.init.dnscrypt-proxy.template /etc/init.d/dnscrypt-proxy
+	perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/init.d/dnscrypt-proxy
+	chmod +x /etc/init.d/dnscrypt-proxy
 	StatusSTD
 else
 	echo -e "$Upgrade_NothingToDo"
@@ -235,17 +171,6 @@ if [ "$ToInstall_ownCloud" == "YES" ] || [ "$IsInstalled_ownCloud" == "YES" ]; t
 	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'ownCloud'"
 	screen -dmS ownCloud /bin/bash $MySB_InstallDir/install/ownCloud 'UPGRADE';
 	WaitingScreen ownCloud
-	StatusSTD
-else
-	echo -e "$Upgrade_NothingToDo"
-fi
-
-#### Webmin
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Webmin$CEND..."
-if [ "$ToInstall_Webmin" == "YES" ]; then
-	screen -dmS Webmin /bin/bash $MySB_InstallDir/install/Webmin 'UPGRADE';
-	WaitingScreen Webmin
 	StatusSTD
 else
 	echo -e "$Upgrade_NothingToDo"

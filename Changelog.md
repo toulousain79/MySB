@@ -1,6 +1,7 @@
 	Version v3.1
 		2015/10/25
 			- DNScrypt-proxy, bug fix in init script
+			- Bind, bug fix
 			- Cron job, bug fix
 
 	Version v3.0
