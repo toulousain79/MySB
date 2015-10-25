@@ -91,56 +91,62 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	ManageServices start "php5-fpm nginx cron"
 
 	#### ownCloud config file
-	source /etc/MySB/config_db
-	curl --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=admin&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "http://127.0.0.1:$Port_HTTP/owncloud/" &> /dev/null
-	sleep 5
-	if [ -f $ownCloudDir/config/config.php ]; then
-		if [ -f /etc/nginx/locations/ownCloud.local ]; then
-			rm -vf /etc/nginx/locations/ownCloud.local
+	if [ ! -f $ownCloudDir/config/config.php ]; then
+		source /etc/MySB/config_db
+		curl --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=admin&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "http://127.0.0.1:$Port_HTTP/owncloud/" &> /dev/null
+		sleep 5
+		if [ -f $ownCloudDir/config/config.php ]; then
+			if [ -f /etc/nginx/locations/ownCloud.local ]; then
+				rm -vf /etc/nginx/locations/ownCloud.local
+			fi
+			InstanceId="`cat $ownCloudDir/config/config.php | grep 'instanceid' | awk '{ print $3 }'| cut -d "'" -f 2`"
+			InstanceId="`echo $InstanceId | sed s,/,\\\\\\\\\\/,g`"
+			PasswordSalt="`cat $ownCloudDir/config/config.php | grep 'passwordsalt' | awk '{ print $3 }'| cut -d "'" -f 2`"
+			PasswordSalt="`echo $PasswordSalt | sed s,/,\\\\\\\\\\/,g`"
+			Secret="`cat $ownCloudDir/config/config.php | grep 'secret' | awk '{ print $3 }'| cut -d "'" -f 2`"
+			Secret="`echo $Secret | sed s,/,\\\\\\\\\\/,g`"
 		fi
-		InstanceId="`cat $ownCloudDir/config/config.php | grep 'instanceid' | awk '{ print $3 }'| cut -d "'" -f 2`"
-		InstanceId="`echo $InstanceId | sed s,/,\\\\\\\\\\/,g`"
-		PasswordSalt="`cat $ownCloudDir/config/config.php | grep 'passwordsalt' | awk '{ print $3 }'| cut -d "'" -f 2`"
-		PasswordSalt="`echo $PasswordSalt | sed s,/,\\\\\\\\\\/,g`"
-		Secret="`cat $ownCloudDir/config/config.php | grep 'secret' | awk '{ print $3 }'| cut -d "'" -f 2`"
-		Secret="`echo $Secret | sed s,/,\\\\\\\\\\/,g`"
+		if [ -z "$InstanceId" ]; then
+			InstanceId="oc7yb4yj6xgr"
+		fi
+		if [ -z "$PasswordSalt" ]; then
+			PasswordSalt="6XwLz3yYlVlEIlFd0zHPPBF32X3xKM"
+		fi
+		if [ -z "$Secret" ]; then
+			Secret="iIrWBM79glEVZbxuVEFdPML29+axTxgTgPcOyI7wwVgEn9Nu"
+		fi
+		cp -vf $MySB_InstallDir/templates/owncloud.config.php.template $ownCloudDir/config/config.php
+		perl -pi -e "s/<InstanceId>/$InstanceId/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<PasswordSalt>/$PasswordSalt/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<Secret>/$Secret/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<server_name>/$HostNameFQDN/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<Version>/$ownCloudVersion/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<MySB_DB_User>/MySB_user/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<MySB_DB_Pass>/$MySQL_MysbPassword/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<TimeZone>/$TimeZoneEscaped/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<mail_from_address>/$MailFrom/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<mail_domain>/$MailDomain/g" $ownCloudDir/config/config.php
+		sed -i "s/'default_language' => 'en'/'default_language' => '$EnvLang'/g;" $ownCloudDir/config/config.php
+		chown www-data:www-data $ownCloudDir/config/config.php
+		chmod 0640 $ownCloudDir/config/config.php
 	fi
-	if [ -z "$InstanceId" ]; then
-		InstanceId="oc7yb4yj6xgr"
-	fi
-	if [ -z "$PasswordSalt" ]; then
-		PasswordSalt="6XwLz3yYlVlEIlFd0zHPPBF32X3xKM"
-	fi
-	if [ -z "$Secret" ]; then
-		Secret="iIrWBM79glEVZbxuVEFdPML29+axTxgTgPcOyI7wwVgEn9Nu"
-	fi
-	cp -vf $MySB_InstallDir/templates/owncloud.config.php.template $ownCloudDir/config/config.php
-	perl -pi -e "s/<InstanceId>/$InstanceId/g" $ownCloudDir/config/config.php
-	perl -pi -e "s/<PasswordSalt>/$PasswordSalt/g" $ownCloudDir/config/config.php
-	perl -pi -e "s/<Secret>/$Secret/g" $ownCloudDir/config/config.php
-	perl -pi -e "s/<server_name>/$HostNameFQDN/g" $ownCloudDir/config/config.php
-	perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" $ownCloudDir/config/config.php
-	perl -pi -e "s/<Version>/$ownCloudVersion/g" $ownCloudDir/config/config.php
-	perl -pi -e "s/<MySB_DB_User>/MySB_user/g" $ownCloudDir/config/config.php
-	perl -pi -e "s/<MySB_DB_Pass>/$MySQL_MysbPassword/g" $ownCloudDir/config/config.php
-	perl -pi -e "s/<TimeZone>/$TimeZoneEscaped/g" $ownCloudDir/config/config.php
-	perl -pi -e "s/<mail_from_address>/$MailFrom/g" $ownCloudDir/config/config.php
-	perl -pi -e "s/<mail_domain>/$MailDomain/g" $ownCloudDir/config/config.php
-	sed -i "s/'default_language' => 'en'/'default_language' => '$EnvLang'/g;" $ownCloudDir/config/config.php
-	chown www-data:www-data $ownCloudDir/config/config.php
-	chmod 0640 $ownCloudDir/config/config.php
 
 	#### External Storage (mount.json)
-	IdStorage=$(Func_SQL_Command 'SELECT' 'ownCloud_db' 'numeric_id' 'oc_storages' "id = 'local::/home/\$user/'")
-	cp -vf $MySB_InstallDir/templates/home.owncloud.mount.json.template /home/owncloud/mount.json
-	perl -pi -e "s/<IdStorage>/$IdStorage/g" /home/owncloud/mount.json
+	if [ ! -f /home/owncloud/mount.json ]; then
+		IdStorage=$(Func_SQL_Command 'SELECT' 'ownCloud_db' 'numeric_id' 'oc_storages' "id = 'local::/home/\$user/'")
+		cp -vf $MySB_InstallDir/templates/home.owncloud.mount.json.template /home/owncloud/mount.json
+		perl -pi -e "s/<IdStorage>/$IdStorage/g" /home/owncloud/mount.json
+	fi
 
 	#### Manage Admin user
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
-	OC_PASS=$MySQL_MysbPassword
-	export OC_PASS
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:resetpassword --password-from-env admin"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable files_external"
+	if [ "$1" == "INSTALL" ] && [ -d $ownCloudDir ]; then
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
+		OC_PASS=$MySQL_MysbPassword
+		export OC_PASS
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:resetpassword --password-from-env admin"
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable files_external"
+	fi
 
 	#### Create all existing MySB users
 	if [ "$1" == "UPGRADE" ] && [ -d $ownCloudDir ]; then

@@ -25,7 +25,9 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### Install packages
-PackagesManage install "mysql-server"
+if ! CheckCommand 0 mysql; then
+	PackagesManage install "mysql-server"
+fi
 
 #### MySQL Secure
 if [ -z $MySQL_RootPassword ] && [ -z $MySQL_MysbPassword ]; then
@@ -76,20 +78,6 @@ if [ -z $MySQL_RootPassword ] && [ -z $MySQL_MysbPassword ]; then
 		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Schema_2015-09-30.sql
 		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Data_2015-09-30.sql
 	fi
-fi
-
-if [ "$1" == "UPGRADE" ] && [ -s $MySB_DB ] && CheckCommand 0 mysql; then
-	sqlite3 $MySB_DB .dump | grep '^INSERT INTO' > $MySB_DB.dump
-	cat $MySB_DB.dump
-	cat $MySB_DB.dump | python $MySB_InstallDir/scripts/SQLiteToMySQL.py > $MySB_InstallDir/db/MySB_MySQL.sql
-	perl -pi -e "s/NULL/''/g" $MySB_InstallDir/db/MySB_MySQL.sql
-	perl -pi -e "s/' '/''/g" $MySB_InstallDir/db/MySB_MySQL.sql
-	cat $MySB_InstallDir/db/MySB_MySQL.sql
-	mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Schema_2015-09-30.sql
-	mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/db/MySB_MySQL.sql
-	if [ -f $MySB_DB.dump ]; then rm -vf $MySB_DB.dump; fi
-	if [ -f $MySB_InstallDir/db/MySB_MySQL.sql ]; then rm -vf $MySB_InstallDir/db/MySB_MySQL.sql; fi
-	if [ -f $MySB_DB ]; then mv -vf $MySB_DB $MySB_DB.old; fi
 fi
 
 #### START services

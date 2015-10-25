@@ -27,7 +27,7 @@ source $(dirname $0)/../inc/includes_before
 #### Count steps
 echo
 CurrentSTEP=0
-TotalSTEP=32
+TotalSTEP=$(cat $0 | grep 'CurrentSTEP++' | wc -l)
 
 if [ "$BANNER" == "ON" ]; then
 	BannerGenerator
@@ -35,13 +35,6 @@ fi
 echo
 echo -e "$Upgrade_Banner"
 echo
-
-#### SQLite
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_SqliteUpdateDatabase$CEND..."
-screen -dmS SQLite /bin/bash $MySB_InstallDir/install/SQLite 'UPGRADE';
-WaitingScreen SQLite
-StatusSTD
 
 #### Questions
 ScriptInvoke "source" "$MySB_InstallDir/install/Questions" "$$" "UPGRADE" "$MySB_InstallDir"
@@ -90,24 +83,8 @@ StatusSTD
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_MoveAndDelete$CEND..."
 # Temp Directory
 if [ -d $MySB_InstallDir/temp ]; then rm -rf $MySB_InstallDir/temp/* &> /dev/null; fi
-# MySB PHP config file
-if [ -f /etc/MySB/config.php ]; then rm -f /etc/MySB/config.php &> /dev/null; fi
-# NginX
-if [ -f /etc/nginx/nginx.conf.dpkg-dist ]; then rm -f /etc/nginx/nginx.conf.dpkg-dist &> /dev/null; fi
-if [ -f /etc/nginx/sites-available/default.dpkg-dist ]; then rm -f /etc/nginx/sites-available/default.dpkg-dist &> /dev/null; fi
-if [ -f /etc/logrotate.d/nginx.dpkg-dist ]; then mv /etc/logrotate.d/nginx.dpkg-dist /etc/logrotate.d/nginx &> /dev/null; fi
-if [ -f /etc/nginx/fastcgi.conf ]; then rm -f /etc/nginx/fastcgi.conf &> /dev/null; fi
-# Bind
-if [ -f /etc/default/bind9.dpkg-dist ]; then rm -f /etc/default/bind9.dpkg-dist &> /dev/null; fi
-# PlexMedia Server
-if [ -f /etc/init.d/plexmediaserver.dpkg-bak ]; then rm -f /etc/init.d/plexmediaserver.dpkg-bak &> /dev/null; fi
-# Resolv.conf
-if [ -f /etc/resolv.conf.back ]; then rm -f /etc/resolv.conf.back &> /dev/null; fi
 # Sources Directory
 if [ -d $MySB_InstallDir/sources ]; then rm -rf $MySB_InstallDir/sources/* &> /dev/null; fi
-# rtorrent
-if [ -f /home/*/.rtorrent.rc.bckp_v1.0_to_v1.1 ]; then rm -f /home/*/.rtorrent.rc.bckp_v1.0_to_v1.1 &> /dev/null; fi
-if [ -f /home/*/.rtorrent.rc.bckp_v1.1_to_v2.0 ]; then rm -f /home/*/.rtorrent.rc.bckp_v1.1_to_v2.0 &> /dev/null; fi
 # Seedbox-Manager
 if [ "$IsInstalled_Manager" == "YES" ]; then
 	if [ -d $ManagerDir/conf ]; then
@@ -117,18 +94,18 @@ if [ "$IsInstalled_Manager" == "YES" ]; then
 fi
 StatusSTD
 
-#### Packages
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_AllNeededPackages$CEND..."
-screen -dmS Packages /bin/bash $MySB_InstallDir/install/Packages 'UPGRADE';
-WaitingScreen Packages
-StatusSTD
-
 #### SourcesList
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_UpdateDebianSources$CEND..."
 screen -dmS SourcesList /bin/bash $MySB_InstallDir/install/SourcesList 'UPGRADE';
 WaitingScreen SourcesList
+StatusSTD
+
+#### Packages
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_AllNeededPackages$CEND..."
+screen -dmS Packages /bin/bash $MySB_InstallDir/install/Packages 'UPGRADE';
+WaitingScreen Packages
 StatusSTD
 
 #### MySQL
@@ -145,21 +122,14 @@ screen -dmS DownloadAll /bin/bash $MySB_InstallDir/install/DownloadAll 'UPGRADE'
 WaitingScreen DownloadAll
 StatusSTD
 
-######################################################################
-
-#### IPtables logging
+#### RKHunter
 (( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_IptablesLogging$CEND..."
-if [ -f /etc/rsyslog.d/iptables.conf ]; then rm -f /etc/rsyslog.d/iptables.conf; fi
-echo ":msg, contains, \"[netfilter] \"  -/var/log/iptables.log" > /etc/rsyslog.d/iptables.conf
-echo "& ~" >> /etc/rsyslog.d/iptables.conf
-if [ ! -f /var/log/iptables.log ]; then touch /var/log/iptables.log; fi
-cp $MySB_InstallDir/templates/etc.logrotate.d.iptables.template /etc/logrotate.d/iptables
-chmod 0644 /etc/logrotate.d/iptables
-service rsyslog restart &> /dev/null
-logrotate -f /etc/logrotate.d/iptables &> /dev/null
-cp -f $MySB_InstallDir/templates/etc.pgl.pglcmd.conf.template /etc/pgl/pglcmd.conf
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_RKhunter$CEND..."
+screen -dmS RKHunter /bin/bash $MySB_InstallDir/install/RKHunter 'UPGRADE';
+WaitingScreen RKHunter
 StatusSTD
+
+######################################################################
 
 #### Getting information about OVH monitoring engine
 (( CurrentSTEP++ ))
@@ -172,13 +142,6 @@ else
 	echo -e "$Upgrade_NothingToDo"
 fi
 
-#### NginX
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_NginX$CEND..."
-screen -dmS Nginx /bin/bash $MySB_InstallDir/install/Nginx 'UPGRADE';
-WaitingScreen Nginx
-StatusSTD
-
 ### DNScrypt-proxy
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_DNScrypt$CEND..."
@@ -190,32 +153,6 @@ if [ "$ToInstall_DNScrypt" == "YES" ] || [ "$IsInstalled_DNScrypt" == "YES" ]; t
 else
 	echo -e "$Upgrade_NothingToDo"
 fi
-
-#### Fail2Ban
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Fail2Ban$CEND..."
-if [ "$ToInstall_Fail2Ban" == "YES" ] || [ "$IsInstalled_Fail2Ban" == "YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Fail2Ban'"
-	screen -dmS Fail2Ban /bin/bash $MySB_InstallDir/install/Fail2Ban 'UPGRADE';
-	WaitingScreen Fail2Ban
-	StatusSTD
-else
-	echo -e "$Upgrade_NothingToDo"
-fi
-
-#### PHP
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_PHP$CEND..."
-screen -dmS PHP /bin/bash $MySB_InstallDir/install/PHP 'UPGRADE';
-WaitingScreen PHP
-StatusSTD
-
-#### RKHunter
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_RKhunter$CEND..."
-screen -dmS RKHunter /bin/bash $MySB_InstallDir/install/RKHunter 'UPGRADE';
-WaitingScreen RKHunter
-StatusSTD
 
 #### OpenVPN
 (( CurrentSTEP++ ))
@@ -262,6 +199,30 @@ if [ "$ToInstall_OpenVPN" == "YES" ] || [ "$IsInstalled_OpenVPN" == "YES" ]; the
 	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Samba'"
 	screen -dmS Samba /bin/bash $MySB_InstallDir/install/Samba 'UPGRADE';
 	WaitingScreen Samba
+	StatusSTD
+else
+	echo -e "$Upgrade_NothingToDo"
+fi
+
+#### Fail2Ban
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Fail2Ban$CEND..."
+if [ "$ToInstall_Fail2Ban" == "YES" ] || [ "$IsInstalled_Fail2Ban" == "YES" ]; then
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Fail2Ban'"
+	screen -dmS Fail2Ban /bin/bash $MySB_InstallDir/install/Fail2Ban 'UPGRADE';
+	WaitingScreen Fail2Ban
+	StatusSTD
+else
+	echo -e "$Upgrade_NothingToDo"
+fi
+
+#### LogWatch
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_LogWatch$CEND..."
+if [ "$ToInstall_LogWatch" == "YES" ] || [ "$IsInstalled_LogWatch" == "YES" ]; then
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Logwatch'"
+	screen -dmS Logwatch /bin/bash $MySB_InstallDir/install/Logwatch 'UPGRADE';
+	WaitingScreen Logwatch
 	StatusSTD
 else
 	echo -e "$Upgrade_NothingToDo"
@@ -316,7 +277,6 @@ StatusSTD
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Cleaning$CEND..."
 rm -rf $MySB_InstallDir/temp/* &> /dev/null
-Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "rtorrent_version = 'v0.9.6'" "rtorrent_version = 'v0.9.4'"
 StatusSTD
 
 #### Create missing directories and change rights
@@ -346,7 +306,6 @@ if [ -f $MySB_InstallDir/inc/vars ]; then source $MySB_InstallDir/inc/vars; fi
 MainUserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "admin = '1'"`"
 RutorrentDirEscaped="`echo $RutorrentDir | sed s,/,\\\\\\\\\\/,g`"
 # Add last time check for users addresses
-Func_SQL_Command 'UPDATE' 'MySB_db' 'users_addresses' "last_update = 'NOW'" "last_update = '0000-00-00 00:00:00'"
 ListingUsers
 for seedUser in $UsersList; do
 	UserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$seedUser'"`"
@@ -355,16 +314,9 @@ for seedUser in $UsersList; do
 	# New rTorrent Cron
 	crontab -l > /tmp/crontab.tmp
 	sed -i "/rtorrent-$seedUser/d" /tmp/crontab.tmp
-	echo "*/5 * * * * if ! ( /bin/ps U $seedUser | grep 'rtorrent' &> /dev/null ); then service rtorrent-$seedUser restart &> /dev/null; fi" >> /tmp/crontab.tmp
+	echo "*/5 * * * * if ! ( /bin/ps U $seedUser | grep 'rtorrent' > /dev/null ); then service rtorrent-$seedUser restart > /dev/null 2>&1; fi" >> /tmp/crontab.tmp
 	crontab /tmp/crontab.tmp
 	rm -f /tmp/crontab.tmp
-
-	# New rTorrent init
-	cp $MySB_InstallDir/templates/etc.init.rtorrent.template /etc/init.d/rtorrent-$seedUser
-	perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/init.d/rtorrent-$seedUser
-	perl -pi -e "s/<username>/$seedUser/g" /etc/init.d/rtorrent-$seedUser
-	perl -pi -e "s/<rutorrent_dir>/$RutorrentDirEscaped/g" /etc/init.d/rtorrent-$seedUser
-	chmod +x /etc/init.d/rtorrent-$seedUser	
 
 	if [ "$UserId" == "$MainUserId" ] && [ ! -z "$UserPassword" ]; then
 		# Remove main user password from database
