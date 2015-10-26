@@ -154,7 +154,7 @@ StatusSTD
 ### DNScrypt-proxy
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_DNScrypt$CEND..."
-if [ "$ToInstall_DNScrypt" == "YES" ] || [ "$IsInstalled_DNScrypt" == "YES" ]; then
+if [ "$IsInstalled_DNScrypt" == "YES" ]; then
 	# /etc/init.d/dnscrypt-proxy
 	cp $MySB_InstallDir/templates/etc.init.dnscrypt-proxy.template /etc/init.d/dnscrypt-proxy
 	perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/init.d/dnscrypt-proxy
@@ -164,10 +164,24 @@ else
 	echo -e "$Upgrade_NothingToDo"
 fi
 
+### PeerGuardian
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_DNScrypt$CEND..."
+if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
+	# Create config files
+	cp -f $MySB_InstallDir/templates/etc.pgl.pglcmd.conf.template /etc/pgl/pglcmd.conf
+	NumLign=$(sed -n "/CONTROL_MAIN=\"\/usr\/lib\/x86_64-linux-gnu\/pgl\/pglcmd.main\"/=" /etc/cron.daily/pglcmd)
+	(( NumLign++ ))
+	sed -i "${NumLign}i\VERBOSE=\"2\"" /etc/cron.daily/pglcmd
+	StatusSTD
+else
+	echo -e "$Upgrade_NothingToDo"
+fi
+
 #### ownCloud
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_ownCloud$CEND..."
-if [ "$ToInstall_ownCloud" == "YES" ] || [ "$IsInstalled_ownCloud" == "YES" ]; then
+if [ "$IsInstalled_ownCloud" == "YES" ]; then
 	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'ownCloud'"
 	screen -dmS ownCloud /bin/bash $MySB_InstallDir/install/ownCloud 'UPGRADE';
 	WaitingScreen ownCloud
