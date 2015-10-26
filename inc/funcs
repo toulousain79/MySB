@@ -1505,43 +1505,67 @@ ruTorrentGlobalConfigs() {
 				fi
 			;;
 			'filemanager')
-				if [ -f $RutorrentPluginsDir/filemanager/conf.php ]; then
-					sed -i "/'rar'/s/'';/'\/usr\/bin\/rar';/g" $RutorrentPluginsDir/filemanager/conf.php
-					sed -i "/'zip'/s/'';/'\/usr\/bin\/zip';/g" $RutorrentPluginsDir/filemanager/conf.php
-					sed -i "/'unzip'/s/'';/'\/usr\/bin\/unzip';/g" $RutorrentPluginsDir/filemanager/conf.php
-					sed -i "/'tar'/s/'';/'\/bin\/tar';/g" $RutorrentPluginsDir/filemanager/conf.php
-					if [ "`cat $RutorrentPluginsDir/filemanager/conf.php | grep "$pathToExternals\['bzip2'\]"`" == "" ]; then
-						NumLign=$(sed -n "/'\/bin\/tar'/=" $RutorrentPluginsDir/filemanager/conf.php)
-						(( NumLign++ ))
-						sed -i "${NumLign}i\$pathToExternals['bzip2'] = '\/bin\/bzip2';" $RutorrentPluginsDir/filemanager/conf.php
+				IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin FileManager'\"`"
+				if [ $IsActive -eq 1 ]; then
+					if [ -f $RutorrentPluginsDir/filemanager/conf.php ]; then
+						sed -i "/'rar'/s/'';/'\/usr\/bin\/rar';/g" $RutorrentPluginsDir/filemanager/conf.php
+						sed -i "/'zip'/s/'';/'\/usr\/bin\/zip';/g" $RutorrentPluginsDir/filemanager/conf.php
+						sed -i "/'unzip'/s/'';/'\/usr\/bin\/unzip';/g" $RutorrentPluginsDir/filemanager/conf.php
+						sed -i "/'tar'/s/'';/'\/bin\/tar';/g" $RutorrentPluginsDir/filemanager/conf.php
+						if [ "`cat $RutorrentPluginsDir/filemanager/conf.php | grep "$pathToExternals\['bzip2'\]"`" == "" ]; then
+							NumLign=$(sed -n "/'\/bin\/tar'/=" $RutorrentPluginsDir/filemanager/conf.php)
+							(( NumLign++ ))
+							sed -i "${NumLign}i\$pathToExternals['bzip2'] = '\/bin\/bzip2';" $RutorrentPluginsDir/filemanager/conf.php
+						fi
+					else
+						echo "Plugin $Plugin missing"
 					fi
 				else
-					echo "Plugin $Plugin missing"
+					if [ -d $RutorrentPluginsDir/filemanager ]; then
+						cd $RutorrentPluginsDir/ && rm -rf ./filemanager
+					fi
 				fi
+				unset IsActive
 			;;
 			'fileshare')
-				if [ -f $RutorrentPluginsDir/fileshare/conf.php ]; then
-					sed -i "/'duration'/s/1;/0;/g" $RutorrentPluginsDir/fileshare/conf.php
-					perl -pi -e "s/http:\/\/robits.org\/rutorrent\/share.php/https:\/\/$HostNameFQDN:$Port_HTTPS\/fileshare.php/g" $RutorrentPluginsDir/fileshare/conf.php
-				else
-					echo "Plugin $Plugin missing"
-				fi
-			;;
-			'fileupload')
-				if [ -f $RutorrentPluginsDir/fileupload/conf.php ]; then
-					if [ ! -z "$UsersList" ]; then
-						for FnUser in $UsersList; do
-							if [ ! -d $RutorrentDir/conf/users/$FnUser/$Plugin ]; then
-								mkdir -p $RutorrentDir/conf/users/$FnUser/$Plugin
-								if [ -f $RutorrentPluginsDir/fileupload/conf.php ] && [ ! -f $RutorrentDir/conf/users/$FnUser/fileupload/conf.php ]; then
-									cp $RutorrentPluginsDir/fileupload/conf.php $RutorrentDir/conf/users/$FnUser/fileupload/conf.php
-								fi
-							fi
-						done
+				IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin FileShare'\"`"
+				if [ $IsActive -eq 1 ]; then
+					if [ -f $RutorrentPluginsDir/fileshare/conf.php ]; then
+						sed -i "/'duration'/s/1;/0;/g" $RutorrentPluginsDir/fileshare/conf.php
+						perl -pi -e "s/http:\/\/robits.org\/rutorrent\/share.php/https:\/\/$HostNameFQDN:$Port_HTTPS\/fileshare.php/g" $RutorrentPluginsDir/fileshare/conf.php
+					else
+						echo "Plugin $Plugin missing"
 					fi
 				else
-					echo "Plugin $Plugin missing"
+					if [ -d $RutorrentPluginsDir/fileshare ]; then
+						cd $RutorrentPluginsDir/ && rm -rf ./fileshare
+					fi
 				fi
+				unset IsActive
+			;;
+			'fileupload')
+				IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin FileUpload'\"`"
+				if [ $IsActive -eq 1 ]; then
+					if [ -f $RutorrentPluginsDir/fileupload/conf.php ]; then
+						if [ ! -z "$UsersList" ]; then
+							for FnUser in $UsersList; do
+								if [ ! -d $RutorrentDir/conf/users/$FnUser/$Plugin ]; then
+									mkdir -p $RutorrentDir/conf/users/$FnUser/$Plugin
+									if [ -f $RutorrentPluginsDir/fileupload/conf.php ] && [ ! -f $RutorrentDir/conf/users/$FnUser/fileupload/conf.php ]; then
+										cp $RutorrentPluginsDir/fileupload/conf.php $RutorrentDir/conf/users/$FnUser/fileupload/conf.php
+									fi
+								fi
+							done
+						fi
+					else
+						echo "Plugin $Plugin missing"
+					fi
+				else
+					if [ -d $RutorrentPluginsDir/fileupload ]; then
+						cd $RutorrentPluginsDir/ && rm -rf ./fileupload
+					fi				
+				fi
+				unset IsActive
 			;;
 			'geoip')
 				if [ -f $RutorrentPluginsDir/geoip/conf.php ]; then
@@ -1551,26 +1575,50 @@ ruTorrentGlobalConfigs() {
 				fi
 			;;
 			'linkcakebox')
-				if [ -f $RutorrentPluginsDir/linkcakebox/conf.php ]; then
-					NumLign=$(sed -n "/\$url =/=" $RutorrentPluginsDir/linkcakebox/conf.php)
-					sed -i '/$url =/d' $RutorrentPluginsDir/linkcakebox/conf.php
-					sed -i "${NumLign}i\$url = 'https:\/\/$HostNameFQDN:$Port_HTTPS\/cb\/';" $RutorrentPluginsDir/linkcakebox/conf.php
-					perl -pi -e "s/\/torrents\//\/rtorrent\//g" $RutorrentPluginsDir/linkcakebox/conf.php
+				IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin Link Cakebox'\"`"
+				if [ $IsActive -eq 1 ]; then
+					if [ -f $RutorrentPluginsDir/linkcakebox/conf.php ]; then
+						NumLign=$(sed -n "/\$url =/=" $RutorrentPluginsDir/linkcakebox/conf.php)
+						sed -i '/$url =/d' $RutorrentPluginsDir/linkcakebox/conf.php
+						sed -i "${NumLign}i\$url = 'https:\/\/$HostNameFQDN:$Port_HTTPS\/cb\/';" $RutorrentPluginsDir/linkcakebox/conf.php
+						perl -pi -e "s/\/torrents\//\/rtorrent\//g" $RutorrentPluginsDir/linkcakebox/conf.php
+					else
+						echo "Plugin $Plugin missing"
+					fi
 				else
-					echo "Plugin $Plugin missing"
+					if [ -d $RutorrentPluginsDir/linkcakebox ]; then
+						cd $RutorrentPluginsDir/ && rm -rf ./linkcakebox
+					fi
 				fi
+				unset IsActive
 			;;
 			'linkseedboxmanager')
-				if [ -f $RutorrentPluginsDir/linkseedboxmanager/conf.php ]; then
-					perl -pi -e "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$HostNameFQDN:$Port_HTTPS\/sm\//g" $RutorrentPluginsDir/linkseedboxmanager/conf.php
+				IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin Link Manager'\"`"
+				if [ $IsActive -eq 1 ]; then
+					if [ -f $RutorrentPluginsDir/linkseedboxmanager/conf.php ]; then
+						perl -pi -e "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$HostNameFQDN:$Port_HTTPS\/sm\//g" $RutorrentPluginsDir/linkseedboxmanager/conf.php
+					fi
+				else
+					if [ -d $RutorrentPluginsDir/linkseedboxmanager ]; then
+						cd $RutorrentPluginsDir/ && rm -rf ./linkseedboxmanager
+					fi
 				fi
+				unset IsActive
 			;;
 			'logoff')
-				if [ -f $RutorrentPluginsDir/logoff/conf.php ]; then
-					perl -pi -e "s/scars,user1,user2//g" $RutorrentPluginsDir/logoff/conf.php
+				IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin Logoff'\"`"
+				if [ $IsActive -eq 1 ]; then
+					if [ -f $RutorrentPluginsDir/logoff/conf.php ]; then
+						perl -pi -e "s/scars,user1,user2//g" $RutorrentPluginsDir/logoff/conf.php
+					else
+						echo "Plugin $Plugin missing"
+					fi
 				else
-					echo "Plugin $Plugin missing"
+					if [ -d $RutorrentPluginsDir/logoff ]; then
+						cd $RutorrentPluginsDir/ && rm -rf ./logoff
+					fi
 				fi
+				unset IsActive
 			;;
 			'mediainfo')
 				if [ -f $RutorrentPluginsDir/mediainfo/conf.php ]; then
@@ -1581,11 +1629,19 @@ ruTorrentGlobalConfigs() {
 				fi
 			;;
 			'mediastream')
-				if [ -f $RutorrentPluginsDir/mediastream/conf.php ]; then
-					perl -pi -e "s/http:\/\/mydomain.com\/stream\/view.php/https:\/\/$HostNameFQDN:$Port_HTTPS\/view.php/g" $RutorrentPluginsDir/mediastream/conf.php
+				IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin MediaStream'\"`"
+				if [ $IsActive -eq 1 ]; then
+					if [ -f $RutorrentPluginsDir/mediastream/conf.php ]; then
+						perl -pi -e "s/http:\/\/mydomain.com\/stream\/view.php/https:\/\/$HostNameFQDN:$Port_HTTPS\/view.php/g" $RutorrentPluginsDir/mediastream/conf.php
+					else
+						echo "Plugin $Plugin missing"
+					fi
 				else
-					echo "Plugin $Plugin missing"
+					if [ -d $RutorrentPluginsDir/mediastream ]; then
+						cd $RutorrentPluginsDir/ && rm -rf ./mediastream
+					fi
 				fi
+				unset IsActive
 			;;
 			'screenshots')
 				if [ -f $RutorrentPluginsDir/screenshots/conf.php ]; then
@@ -1595,28 +1651,36 @@ ruTorrentGlobalConfigs() {
 				fi
 			;;
 			'stream')
-				if [ -f $RutorrentPluginsDir/stream/config.php ]; then
-					NumLign=$(sed -n "/\$username =/=" $RutorrentPluginsDir/stream/config.php)
-					if [ -z "$(sed -n "/\$username =/=" $RutorrentPluginsDir/stream/config.php)" ]; then
-						NumLign=$(sed -n "/\$auth =/=" $RutorrentPluginsDir/stream/config.php)
-						sed -i "${NumLign}i\$username = \$_SERVER['PHP_AUTH_USER'];" $RutorrentPluginsDir/stream/config.php
+				IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin Stream'\"`"
+				if [ $IsActive -eq 1 ]; then
+					if [ -f $RutorrentPluginsDir/stream/config.php ]; then
+						NumLign=$(sed -n "/\$username =/=" $RutorrentPluginsDir/stream/config.php)
+						if [ -z "$(sed -n "/\$username =/=" $RutorrentPluginsDir/stream/config.php)" ]; then
+							NumLign=$(sed -n "/\$auth =/=" $RutorrentPluginsDir/stream/config.php)
+							sed -i "${NumLign}i\$username = \$_SERVER['PHP_AUTH_USER'];" $RutorrentPluginsDir/stream/config.php
+						fi
+						NumLign=$(sed -n "/\$password =/=" $RutorrentPluginsDir/stream/config.php)
+						if [ -z "$NumLign" ]; then
+							NumLign=$(sed -n "/\$auth =/=" $RutorrentPluginsDir/stream/config.php)
+							sed -i "${NumLign}i\$password = \$_SERVER['PHP_AUTH_PW'];" $RutorrentPluginsDir/stream/config.php
+						fi
+						if [ -z "` cat $RutorrentPluginsDir/stream/config.php | grep '$auth = "$username:$password";'`" ]; then
+							NumLign=$(sed -n "/\$auth =/=" $RutorrentPluginsDir/stream/config.php)
+							sed -i '/$auth =/d' $RutorrentPluginsDir/stream/config.php
+							NumLign=$(( NumLign+2 ))
+							sed -i "${NumLign}i\$auth = \"\$username:\$password\";" $RutorrentPluginsDir/stream/config.php
+						fi
+						perl -pi -e "s/define\('USE_NGINX', false\);/define\('USE_NGINX', true\);/g" $RutorrentPluginsDir/stream/config.php
+						perl -pi -e "s/define\('SCHEME', 'http'\);/define\('SCHEME', 'https'\);/g" $RutorrentPluginsDir/stream/config.php
+					else
+						echo "Plugin $Plugin missing"
 					fi
-					NumLign=$(sed -n "/\$password =/=" $RutorrentPluginsDir/stream/config.php)
-					if [ -z "$NumLign" ]; then
-						NumLign=$(sed -n "/\$auth =/=" $RutorrentPluginsDir/stream/config.php)
-						sed -i "${NumLign}i\$password = \$_SERVER['PHP_AUTH_PW'];" $RutorrentPluginsDir/stream/config.php
-					fi
-					if [ -z "` cat $RutorrentPluginsDir/stream/config.php | grep '$auth = "$username:$password";'`" ]; then
-						NumLign=$(sed -n "/\$auth =/=" $RutorrentPluginsDir/stream/config.php)
-						sed -i '/$auth =/d' $RutorrentPluginsDir/stream/config.php
-						NumLign=$(( NumLign+2 ))
-						sed -i "${NumLign}i\$auth = \"\$username:\$password\";" $RutorrentPluginsDir/stream/config.php
-					fi
-					perl -pi -e "s/define\('USE_NGINX', false\);/define\('USE_NGINX', true\);/g" $RutorrentPluginsDir/stream/config.php
-					perl -pi -e "s/define\('SCHEME', 'http'\);/define\('SCHEME', 'https'\);/g" $RutorrentPluginsDir/stream/config.php
 				else
-					echo "Plugin $Plugin missing"
+					if [ -d $RutorrentPluginsDir/stream ]; then
+						cd $RutorrentPluginsDir/ && rm -rf ./stream
+					fi
 				fi
+				unset IsActive
 			;;
 			'theme')
 				if [ -f $RutorrentPluginsDir/stream/config.php ]; then
@@ -1697,6 +1761,24 @@ ruTorrentUsersConfigs() {
 							echo "[$Plugin]" >> $RutorrentDir/conf/users/$FnUser/plugins.ini
 							echo "enabled = yes" >> $RutorrentDir/conf/users/$FnUser/plugins.ini
 						fi
+					;;
+					'fileupload')
+						IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin FileUpload'\"`"
+						if [ $IsActive -eq 0 ]; then
+							if [ -f $RutorrentDir/share/users/$FnUser/settings/fileuploads.dat ]; then
+								rm -f $RutorrentDir/share/users/$FnUser/settings/fileuploads.dat
+							fi
+						fi
+						unset IsActive
+					;;
+					'fileshare')
+						IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin FileShare'\"`"
+						if [ $IsActive -eq 0 ]; then
+							if [ -f $RutorrentDir/share/users/$FnUser/settings/fileshare.dat ]; then
+								rm -f $RutorrentDir/share/users/$FnUser/settings/fileshare.dat
+							fi
+						fi
+						unset IsActive
 					;;
 					*)
 						# 3) Enable it for each user
