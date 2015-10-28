@@ -51,7 +51,7 @@
 
             // Generating noty bar
             var $bar = $('<div class="noty_bar noty_type_' + this.options.type + '"></div>').attr('id', this.options.id);
-            $bar.append(this.options.template).find('.noty_text').html(this.options.text);
+            $bar.append(this.options.tmpl).find('.noty_text').html(this.options.text);
 
             this.$bar = (this.options.layout.parent.object !== null) ? $(this.options.layout.parent.object).css(this.options.layout.parent.css).append($bar) : $bar;
 
