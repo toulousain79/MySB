@@ -156,20 +156,17 @@ StatusSTD
 ### Bind
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Bind$CEND..."
-# /etc/bind/named.conf.local
-cp -f $MySB_InstallDir/templates/bind/etc.bind.named.conf.local.tmpl /etc/bind/named.conf.local
-chmod 0644 /etc/bind/named.conf.local
-chown root:bind /etc/bind/named.conf.local
+screen -dmS Bind /bin/bash $MySB_InstallDir/install/Bind 'UPGRADE';
+WaitingScreen Bind
 StatusSTD
 
 ### DNScrypt-proxy
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_DNScrypt$CEND..."
-if [ "$IsInstalled_DNScrypt" == "YES" ]; then
-	# /etc/init.d/dnscrypt-proxy
-	cp -f $MySB_InstallDir/templates/init/etc.init.dnscrypt-proxy.tmpl /etc/init.d/dnscrypt-proxy
-	perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/init.d/dnscrypt-proxy
-	chmod +x /etc/init.d/dnscrypt-proxy
+if [ "$ToInstall_DNScrypt" == "YES" ] || [ "$IsInstalled_DNScrypt" == "YES" ]; then
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'DNScrypt-proxy'"
+	screen -dmS DNScrypt /bin/bash $MySB_InstallDir/install/DNScrypt 'UPGRADE';
+	WaitingScreen DNScrypt
 	StatusSTD
 else
 	echo -e "$Upgrade_NothingToDo"
@@ -204,9 +201,9 @@ fi
 #### LogWatch
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_LogWatch$CEND..."
-if [ "$IsInstalled_LogWatch" == "YES" ]; then
-	# Configuration file
-	cp -f $MySB_InstallDir/templates/etc.logwatch.conf.logwatch.conf.tmpl /etc/logwatch/conf/logwatch.conf
+if [ "$ToInstall_LogWatch" == "YES" ] || [ "$IsInstalled_LogWatch" == "YES" ]; then
+	screen -dmS Logwatch /bin/bash $MySB_InstallDir/install/Logwatch 'UPGRADE';
+	WaitingScreen Logwatch
 	StatusSTD
 else
 	echo -e "$Upgrade_NothingToDo"
@@ -227,14 +224,10 @@ fi
 ### Logrotate
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Logrotate$CEND..."
-LogRotate 'bind' > /dev/null 2>&1
 LogRotate 'nginx' > /dev/null 2>&1
 LogRotate 'iptables' > /dev/null 2>&1
 LogRotate 'mysb' > /dev/null 2>&1
 LogRotate 'mysql-server' > /dev/null 2>&1
-if [ "$IsInstalled_DNScrypt" == "YES" ]; then
-	LogRotate 'dnscrypt-proxy' > /dev/null 2>&1
-fi
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 	LogRotate 'samba' > /dev/null 2>&1
 fi
