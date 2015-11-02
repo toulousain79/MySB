@@ -133,6 +133,15 @@ screen -dmS RKHunter /bin/bash $MySB_InstallDir/install/RKHunter 'UPGRADE';
 WaitingScreen RKHunter
 StatusSTD
 
+#### NginX
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_NginX$CEND..."
+screen -dmS Nginx /bin/bash $MySB_InstallDir/install/Nginx 'UPGRADE';
+WaitingScreen Nginx
+StatusSTD
+
+
+
 ######################################################################
 
 #### Getting information about OVH monitoring engine
@@ -146,19 +155,17 @@ else
 	echo -e "$Upgrade_NothingToDo"
 fi
 
-#### NginX
+#### Fail2Ban
 (( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_NginX$CEND..."
-screen -dmS Nginx /bin/bash $MySB_InstallDir/install/Nginx 'UPGRADE';
-WaitingScreen Nginx
-StatusSTD
-
-### Bind
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Bind$CEND..."
-screen -dmS Bind /bin/bash $MySB_InstallDir/install/Bind 'UPGRADE';
-WaitingScreen Bind
-StatusSTD
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Fail2Ban$CEND..."
+if [ "$ToInstall_Fail2Ban" == "YES" ] || [ "$IsInstalled_Fail2Ban" == "YES" ]; then
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Fail2Ban'"
+	screen -dmS Fail2Ban /bin/bash $MySB_InstallDir/install/Fail2Ban 'UPGRADE';
+	WaitingScreen Fail2Ban
+	StatusSTD
+else
+	echo -e "$Upgrade_NothingToDo"
+fi
 
 ### DNScrypt-proxy
 (( CurrentSTEP++ ))
@@ -167,18 +174,6 @@ if [ "$ToInstall_DNScrypt" == "YES" ] || [ "$IsInstalled_DNScrypt" == "YES" ]; t
 	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'DNScrypt-proxy'"
 	screen -dmS DNScrypt /bin/bash $MySB_InstallDir/install/DNScrypt 'UPGRADE';
 	WaitingScreen DNScrypt
-	StatusSTD
-else
-	echo -e "$Upgrade_NothingToDo"
-fi
-
-#### Fail2Ban
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Fail2Ban$CEND..."
-if [ "$ToInstall_Fail2Ban" == "YES" ] || [ "$IsInstalled_Fail2Ban" == "YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Fail2Ban'"
-	screen -dmS Fail2Ban /bin/bash $MySB_InstallDir/install/Fail2Ban 'UPGRADE';
-	WaitingScreen Fail2Ban
 	StatusSTD
 else
 	echo -e "$Upgrade_NothingToDo"
