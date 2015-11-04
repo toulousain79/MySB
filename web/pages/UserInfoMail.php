@@ -24,7 +24,9 @@ require_once '/etc/MySB/config.php';
 //
 //#################### FIRST LINE #####################################
 
-if ($_SERVER['PHP_AUTH_USER'] == '##MySB_User##') {
+global $system_datas;
+
+if ($_SERVER['PHP_AUTH_USER'] == $system_datas["mysb_user"]) {
 	$UserName = $_GET['user'];
 	$Case = $_GET['case'];
 } else {
