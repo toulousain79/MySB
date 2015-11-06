@@ -64,7 +64,7 @@ if (isset($_POST['submit'])) {
 
 	// 1 - First, we apply new paramaters WITHOUT needed of create again MySB Security rules
 	if ($openvpn_proto_db != $OpenVPN_Proto_post) {
-		switch ($OpenVPN_Proto) {
+		switch ($OpenVPN_Proto_post) {
 			case 'TCP':
 				$result = $MySB_DB->update("services", 	["port_tcp1" => $openvpn_port1, "port_tcp2" => $openvpn_port2, "port_tcp3" => $openvpn_port3, "port_udp1" => "", "port_udp2" => "", "port_udp3" => ""], ["serv_name" => "OpenVPN"]);
 				break;
