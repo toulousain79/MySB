@@ -3,6 +3,9 @@
 			- DNScrypt-proxy, bug fix in init script (v3.0 and v3.1)
 			- Bind, bug fix
 			- Cron job, bug fix
+			- Poral, jQuery v1.11.3
+			- Portal, Modernizr v1.7
+			- Portal, Noty v2.3.7
 
 	Version v3.0
 		2015/10/24
