@@ -53,9 +53,6 @@ if [ "$0" != "-bash" ]; then
 	ScriptName=$(basename $0)
 	DirName=$(dirname $0)
 fi
-if [ -z "$EnvLang" ]; then
-	EnvLang="`echo ${LANG:0:2}`"
-fi
 MySB_InstallDirEscaped="`echo $MySB_InstallDir | sed s,/,\\\\\\\\\\/,g`"
 PROCESSOR="`cat /proc/cpuinfo | grep processor | wc -l`"
 MEMORY="`free -m | grep Mem | awk '{ print $2 }'`"
@@ -115,7 +112,9 @@ if [ ! -z "$MySB_InstallDir" ] && [ "$IsReady_MySB_DB" == "YES" ]; then
 	MainUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_ident' 'users' "admin = '1'"`"
 	MainUserPassword="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_passwd' 'users' "admin = '1'"`"
 	MainUserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "admin = '1'"`"
-	EnvLang="`Func_SQL_Command 'SELECT' 'MySB_db' 'language' 'users' "admin = '1'"`"
+	if [ -z "$EnvLang" ]; then
+		EnvLang="`Func_SQL_Command 'SELECT' 'MySB_db' 'language' 'users' "admin = '1'"`"
+	fi
 
 	unset MainUserIPs Temp
 	Temp="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'users_addresses' "is_active = '1' AND id_users = '$MainUserId'" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
@@ -254,6 +253,9 @@ if [ -f $MySB_InstallDir/files/current_version ]; then
 fi
 
 #### Language
+if [ -z "$EnvLang" ]; then
+	EnvLang="`echo ${LANG:0:2}`"
+fi
 if [ -f $MySB_InstallDir/inc/lang/$EnvLang/Global.lng ]; then
 	source $MySB_InstallDir/inc/lang/$EnvLang/Global.lng
 else
