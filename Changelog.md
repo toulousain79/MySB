@@ -3,6 +3,8 @@
 			- DNScrypt-proxy, bug fix in init script (v3.0 and v3.1)
 			- Bind, bug fix
 			- NginX, bug fix
+			- LogWatch, some modifications
+			- ownCloud, some modifications
 			- Cron job, bug fix
 			- Poral, jQuery v1.11.3
 			- Portal, Modernizr v1.7
@@ -10,6 +12,7 @@
 			- Portal, OpenVPN config files geneation
 			- Portal, user informations links
 			- ruTorrent, upload via GUI
+			- Bug fixes
 
 	Version v3.0
 		2015/10/24
