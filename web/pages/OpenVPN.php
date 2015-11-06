@@ -148,7 +148,6 @@ if ( isset($_POST['submit']) ) {
 				header('Last-Modified: '.gmdate(DATE_RFC1123, filemtime($zip_file)));
 				header("Content-Transfer-Encoding: none");
 				header('Content-MD5: '.base64_encode(md5_file($zip_file)));
-				//header("Content-Length: ".filesize($zip_file));
 				ob_end_flush();
 				@readfile($zip_file);
 			} else {
