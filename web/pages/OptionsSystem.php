@@ -59,8 +59,7 @@ if (isset($_POST['submit'])) {
 	$DNScrypt_post = $_POST['DNScrypt_post'];
 	$Command = 'Options_System';
 	$type = 'success';
-	$NoChange_OpenVPN = true;
-	$NoChange_Security = true;
+	$NoChange = true;
 
 	// 1 - First, we apply new paramaters WITHOUT needed of create again MySB Security rules
 	if ($openvpn_proto_db != $OpenVPN_Proto_post) {
@@ -73,8 +72,8 @@ if (isset($_POST['submit'])) {
 				break;
 		}
 
-		if ( $result >= 0 ) {
-			$NoChange_OpenVPN = false;
+		if ( $result == 0 ) {
+			$NoChange = false;
 		}
 	}
 	
@@ -85,13 +84,14 @@ if (isset($_POST['submit'])) {
 		if( $result >= 0 ) {
 			if ( $ip_restriction_db != $IP_restriction_post ) {
 				$Command = 'MySB_SecurityRules';
-				$NoChange_Security = false;
+				$NoChange = false;
 			}
 			if ( ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) || ($DNScrypt_db != $DNScrypt_post) ) {
-				$NoChange_Security = false;
+				$NoChange = false;
 			}
+			$NoChange = false;
 		} else {
-			$NoChange_Security = false;
+			$NoChange = false;
 		}
 	}
 
@@ -101,11 +101,10 @@ if (isset($_POST['submit'])) {
 	$ip_restriction_db = $IP_restriction_post;
 	$openvpn_proto_db = $OpenVPN_Proto_post;
 
-	if ( ($NoChange_OpenVPN) && ($NoChange_Security) ) {
+	if ($NoChange) {
 		GenerateMessage('message_only', 'information', Global_NoChange);
 	} else {
 		GenerateMessage($Command, $type, $message);
-		header("Refresh: $RefreshPage; URL=/?user/openvpn-config-file.html");
 	}
 }
 ?>
