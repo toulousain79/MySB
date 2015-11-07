@@ -61,7 +61,7 @@ This will depend on your server configuration and choice of services to install.
 
 Are you ready to install MySB ? (yes/no)$CEND "	
 
-	CustomKernel="${CRED}Your server use a custom kernel (maybe installed by OVH).
+	CustomKernel="${CRED}Your server use a custom kernel (maybe installed by OVH, DigiCube or other).
 This kernel does not support networking modules required by Iptables, PeerGuardian and OpenVPN.
 If you want install MySB, you must install a Debian standard kernel.$CEND
 
@@ -139,7 +139,7 @@ Cela dépendra de la configuration de votre serveur et du choix des services à 
 
 Êtes-vous prêt à installer MySB ? (oui/non)$CEND "
 
-	CustomKernel="${CRED}Votre serveur utilise un noyau personnalisé (peut-être installé par OVH).
+	CustomKernel="${CRED}Votre serveur utilise un noyau personnalisé (peut-être installé par OVH, DigiCube ou autre).
 Ce noyau ne supporte pas les modules requis par IPtables, OpenVPN et PeerGuardian.
 Si vous voulez installer MySB, vous devez installer un noyau Debian standard.$CEND
 
@@ -228,11 +228,11 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 #### Functions
-OvhReplaceKernel() {
+ReplaceKernel() {
 	if [ "`dpkg --status $1 2> /dev/null | grep 'Status' | cut -d ':' -f 2 | sed -e 's/^ //g;'`" == "install ok installed" ]; then
 		KernelFind="`aptitude -q search linux-image | grep -v 'rt-' | grep -v 'dummy' | grep -v 'dbg' | awk '{ print $2 }' | grep '[.]'`"
 	else
-		KernelFind="`apt-cache search search linux-image | grep -v 'rt-' | grep -v 'dummy' | grep -v 'dbg' | grep 'image' |  awk '{ print $1 }' | grep '[.]'`"
+		KernelFind="`apt-cache search linux-image | grep -v 'rt-' | grep -v 'dummy' | grep -v 'dbg' | grep 'image' |  awk '{ print $1 }' | grep '[.]'`"
 	fi
 
 	echo
@@ -243,8 +243,10 @@ OvhReplaceKernel() {
 			$AptCommand -y --assume-yes -o Acquire::Check-Valid-Until=false update
 			$AptCommand -y --assume-yes -V -o Dpkg::Options::="--force-confold" upgrade
 			$AptCommand -y --assume-yes install $KernelFind
-			mv /etc/grub.d/06_OVHkernel /etc/grub.d/99_OVHkernel
-			update-grub
+			if [ -f /etc/grub.d/06_OVHkerne ]; then
+				mv /etc/grub.d/06_OVHkernel /etc/grub.d/99_OVHkernel
+				update-grub
+			fi
 			echo
 			echo -e -n "$RebootBeforeInstall"
 
@@ -290,8 +292,10 @@ else
 	OS_Ver="`cat /etc/issue | sed '2,2d;$d' | awk '{ print $3 }'`"
 fi
 OS_Arch="`getconf LONG_BIT`"
+Inet6="cat /etc/network/interfaces | grep inet6"
 PVE_Kernel="`uname -r | grep 'pve'`"
 OVH_Kernel="`uname -r | grep 'xxxx'`"
+DigiCube_Kernel="`uname -a | grep 'Ubuntu'`"
 
 #### Check if Debian
 if [ "$OS_Id" != "Debian" ]; then
@@ -337,7 +341,7 @@ fi
 #### Check if Debian
 echo -e "${CYELLOW}Architecture	: $CEND${CGREEN}$OS_Arch$CEND"
 
-#### Check kernel if PVE kernel
+#### Check kernel if is a PVE kernel
 if [ ! -z "$PVE_Kernel" ]; then
 	Continue=1
 	echo -e "${CYELLOW}PVE kernel	: $CEND${CRED}Yes$CEND"
@@ -345,13 +349,31 @@ else
 	echo -e "${CYELLOW}PVE kernel	: $CEND${CGREEN}No$CEND"
 fi
 
-#### Check kernel if OVH kernel
+#### Check inet interfaces for IPv6
+if [ ! -z "$Inet6" ]; then
+	Continue=1
+	echo -e "${CYELLOW}IPv6	: $CEND${CRED}Yes$CEND"
+	echo -e "${CRED}Please, remove your inet6 interface from \"/etc/network/interfaces\"$CEND"
+else
+	echo -e "${CYELLOW}IPv6	: $CEND${CGREEN}No$CEND"
+fi
+
+#### Check kernel if is an Ubuntu kernel (DigiCube)
+if [ ! -z "$DigiCube_Kernel" ]; then
+	echo -e "${CYELLOW}Ubuntu kernel	: $CEND${CRED}Yes$CEND"
+else
+	echo -e "${CYELLOW}Ubuntu kernel	: $CEND${CGREEN}No$CEND"
+fi
+
+#### Check kernel if is an OVH kernel
 if [ ! -z "$OVH_Kernel" ]; then
 	echo -e "${CYELLOW}OVH kernel	: $CEND${CRED}Yes$CEND"
 else
 	echo -e "${CYELLOW}OVH kernel	: $CEND${CGREEN}No$CEND"
 fi
-if [ ! -z "$OVH_Kernel" ]; then
+
+#### Replace the kernel if needed
+if [ ! -z "$OVH_Kernel" ] || [ ! -z "$DigiCube_Kernel" ]; then
 	Answer=""
 	while [ -z "$Answer" ]; do
 		clear
@@ -361,7 +383,7 @@ if [ ! -z "$OVH_Kernel" ]; then
 			y|Y|yes|YES|o|O|oui|OUI)
 				echo -e "$LetsGo"
 				CountDown 3
-				OvhReplaceKernel
+				ReplaceKernel
 			;;
 			n|N|no|NO|non|NON)
 				Continue=1
