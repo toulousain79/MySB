@@ -154,8 +154,11 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable files_external"
 	fi
 
-	#### Create all existing MySB users
 	if [ "$1" == "UPGRADE" ] && [ -d $ownCloudDir ]; then
+		#### Upgrade
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
+
+		#### Create all existing MySB users
 		ListingUsers
 		for seedUser in $UsersList; do
 			UserExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'uid' 'oc_users' "uid='$seedUser'"`"
@@ -172,13 +175,15 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		done
 	fi
 
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:scan --all"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-db"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-js"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:repair"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ versions:cleanup"
+
 	#### Logrotate
 	LogRotate 'owncloud'
-
-	#### Upgrade
-	if [ "$1" == "UPGRADE" ] && [ -d $ownCloudDir ]; then
-		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
-	fi
 
 	if CheckCommand 0 $ownCloudDir/occ; then
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '1'" "serv_name = 'ownCloud'"

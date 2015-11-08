@@ -243,11 +243,19 @@ fi
 
 #### ownCloud
 if [ "$IsInstalled_ownCloud" == "YES" ]; then
-	log_daemon_msg "$CreateUser_ownCloud_0 [$UserToCreate]"
-	OC_PASS=$NewUserPassword
-	export OC_PASS
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:add --password-from-env --display-name=\"$UserToCreate\" --group=\"MySB_users\" $UserToCreate" &> /dev/null
-	StatusLSB
+	UserExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'uid' 'oc_users' "uid='$seedUser'"`"
+
+	if [ -z $UserExist ]; then
+		log_daemon_msg "$CreateUser_ownCloud_0 [$UserToCreate]"
+		OC_PASS=$NewUserPassword
+		export OC_PASS
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:add --password-from-env --display-name=\"$UserToCreate\" --group=\"MySB_users\" $UserToCreate" &> /dev/null
+		StatusLSB
+	else
+		OC_PASS=$NewUserPassword
+		export OC_PASS
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:resetpassword --password-from-env $UserToCreate" &> /dev/null
+	fi
 
 	log_daemon_msg "$CreateUser_ownCloud_1 [$UserToCreate]"
 	Func_ownCloud_DB "CreateUser" "$UserToCreate" "$UserEmail" "$EnvLang" &> /dev/null
