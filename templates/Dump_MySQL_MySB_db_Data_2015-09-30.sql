@@ -54,11 +54,12 @@ INSERT INTO `blocklists` (`id_blocklists`, `author`, `list_name`, `pgl_list_name
 INSERT INTO `providers_monitoring` (`id_providers_monitoring`, `provider`, `ipv4`, `hostname`) VALUES
 (1, 'ONLINE', '62.210.16.0/24', ''),
 (2, 'DIGICUBE', '95.130.8.5/32', ''),
-(3, 'OVH', '', 'proxy-rbx2.ovh.net'),
-(4, 'OVH', '', 'proxy-rbx.ovh.net'),
-(5, 'OVH', '', 'proxy.sbg.ovh.net'),
-(6, 'OVH', '', 'proxy.bhs.ovh.net'),
-(7, 'OVH', '', 'ping.ovh.net');
+(3, 'DIGICUBE', '95.130.8.210/32', ''),
+(4, 'OVH', '', 'proxy-rbx2.ovh.net'),
+(5, 'OVH', '', 'proxy-rbx.ovh.net'),
+(6, 'OVH', '', 'proxy.sbg.ovh.net'),
+(7, 'OVH', '', 'proxy.bhs.ovh.net'),
+(8, 'OVH', '', 'ping.ovh.net');
 
 INSERT INTO `renting` (`id_renting`, `model`, `tva`, `global_cost`, `nb_users`, `price_per_users`, `method`) VALUES
 (1, '', 0.00, 0.00, 0, 0.00, 0);
