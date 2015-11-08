@@ -475,7 +475,7 @@ ManageServices() {
 								fi
 								StatusLSB
 							;;
-							"nginx"|"php5-fpm"|"stunnel4"|"postfix"|"cron"|"vsftpd"|"nfs-kernel-server")
+							"php5-fpm"|"stunnel4"|"postfix"|"cron"|"vsftpd"|"nfs-kernel-server")
 								Continue=0
 								if CheckCommand 0 $Service; then
 									if ! GetPid $Service; then
@@ -493,6 +493,27 @@ ManageServices() {
 									StatusLSB
 								fi
 							;;
+							"nginx")
+								Continue=0
+								if CheckCommand 0 $Service; then
+									if ! GetPid $Service; then
+										log_daemon_msg "Starting $Service"
+										service $Service start > /dev/null
+									else
+										log_daemon_msg "Reloading $Service"
+										service $Service reload > /dev/null
+										if [ -z "`ps ax | grep 'nginx' | grep '/usr/sbin/nginx'`" ]; then
+											StatusLSB 1
+											log_daemon_msg "Killing $Service"
+											killall $Service
+											StatusLSB
+											log_daemon_msg "Starting $Service"
+											service $Service start > /dev/null
+										fi
+									fi
+									StatusLSB
+								fi
+							;;							
 							*)
 								if ! GetPid $Service; then
 									FinalCommand="start"
