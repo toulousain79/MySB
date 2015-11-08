@@ -42,7 +42,7 @@ define('User_UserInfoMail_Comment_Password_2', 'You can change your password <a 
 //////////////////////
 // Force IP address
 define('User_UserInfoMail_Title_ForceIP', 'Forcing your IP address');
-define('User_UserInfoMail_Comment_ForceIP', 'Force the addition of your current IP address in case of problems. (You need a valid password)');
+define('User_UserInfoMail_Comment_ForceIP', 'Force the addition of your current IP address in case of problems. <em>(You need a valid password)</em>');
 
 //////////////////////
 // Links (Main user)

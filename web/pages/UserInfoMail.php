@@ -464,7 +464,7 @@ function PrintContent($user, $Case) {
 			<!-- // DNScrypt-proxy -->
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_DNScrypt; ?></th>
-				<td colspan="2"><span class="Comments"><?php echo User_UserInfoMail_Comment_DNScrypt; ?></span></td>
+				<td colspan="2"><span class="Comments"><?php echo sprintf(User_UserInfoMail_Comment_DNScrypt, $system_datas["hostname"], $Port_HTTPs, $system_datas["hostname"], $Port_HTTPs); ?></span></td>
 			</tr>
 		<?php } ?>
 	

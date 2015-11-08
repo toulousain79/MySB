@@ -42,7 +42,7 @@ define('User_UserInfoMail_Comment_Password_2', 'Vous pouvez changer votre mot de
 //////////////////////
 // Force IP address
 define('User_UserInfoMail_Title_ForceIP', 'Forcer votre IP');
-define('User_UserInfoMail_Comment_ForceIP', 'Forcer l\'ajout de votre adresse IP actuelle en cas de probl&egrave;mes. <span class="Comments">(Vous avez besoin d\'un mot de passe valide)</span>');
+define('User_UserInfoMail_Comment_ForceIP', 'Forcer l\'ajout de votre adresse IP actuelle en cas de probl&egrave;mes. <em>(Vous avez besoin d\'un mot de passe valide)</em>');
 
 //////////////////////
 // Links (Main user)
