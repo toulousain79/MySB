@@ -82,9 +82,9 @@ $ownCloud_DB = new medoo([
 ]);
 
 // Users table
-if ( isset($_SERVER['PHP_AUTH_USER']) ) {
+if ( (isset($_SERVER['PHP_AUTH_USER'])) && (!isset($_GET['user'])) ) {
 	$CurrentUser = $_SERVER['PHP_AUTH_USER'];
-} elseif ( isset($_SESSION['page']) && isset($_GET['user']) ) {
+} elseif ( (isset($_SERVER['PHP_AUTH_USER'])) && (isset($_GET['user'])) ) {
 	$CurrentUser = $_GET['user'];
 }
 if ( isset($CurrentUser) ) {
