@@ -40,8 +40,6 @@ define('User_UserInfoMail_Comment_Password_2', 'You can change your password <a 
 //////////////////////
 // Links (Normal user)
 //////////////////////
-// User Info
-define('User_UserInfoMail_Comment_UserInfo', 'Current information page available on MySB portal.');
 // Force IP address
 define('User_UserInfoMail_Title_ForceIP', 'Forcing your IP address');
 define('User_UserInfoMail_Comment_ForceIP', 'Force the addition of your current IP address in case of problems. (You need a valid password)');
@@ -53,6 +51,8 @@ define('User_UserInfoMail_Comment_ForceIP', 'Force the addition of your current 
 define('User_UserInfoMail_Comment_Trackers', '<a href="https://%s:%s/?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="https://%s:%s/?trackers/add-new-trackers.html">add new tracker here</a>.');
 // Blocklists
 define('User_UserInfoMail_Comment_Blocklists', 'You can manage <a href="https://%s:%s/?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a> AND <a href="https://%s:%s/?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a>.');
+// DNScrypt-proxy
+define('User_UserInfoMail_Comment_DNScrypt', '<a href="https://%s:%s/?main-user/dnscrypt-proxy.html">Informations on resolvers used.</a>');
 
 //#################### LAST LINE ######################################
 ?>

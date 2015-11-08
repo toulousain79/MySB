@@ -240,12 +240,6 @@ function PrintContent($user, $Case) {
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SFTP; ?></th>
 			<td><?php echo $sftp;?></td>
 			<td><span class="Comments"><?php echo User_UserInfo_Comment_SFTP; ?></span></td>
-		</tr>	
-		<!-- // Sudo -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Sudo; ?></th>
-			<td><?php echo $sudo;?></td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_Sudo; ?></span></td>
 		</tr>
 
 		<!-- //////////////////////
@@ -253,12 +247,6 @@ function PrintContent($user, $Case) {
 		////////////////////// -->
 		<tr align="left">
 			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfo_Title_Directories; ?></h4></th>
-		</tr>
-		<!-- // Home -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Home; ?></th>
-			<td><?php echo $users_datas["home_dir"];?></td>
-			<td> </td>
 		</tr>		
 		<!-- // Session dir -->
 		<tr align="left">
@@ -376,11 +364,6 @@ function PrintContent($user, $Case) {
 		
 		
 <?php if ( $DisplayLinks == true ) { ?>
-		<!-- // User Info -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_UserInfo; ?></th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/user-infos.html"><span class="Comments"><?php echo User_UserInfoMail_Comment_UserInfo; ?></span></a></td>
-		</tr>
 		<!-- // Change password -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_ChangePass; ?></th>
@@ -439,7 +422,7 @@ function PrintContent($user, $Case) {
 		<!-- // Force IP address -->
 		<tr align="left">
 			<th width="15%" scope="row" style="color: #FF6666;" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_ForceIP; ?></th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ForceAddress.php?page=ManageAddresses"><span class="Comments"><?php echo User_UserInfoMail_Comment_ForceIP; ?></span></a></td>
+			<td colspan="2" style="background-color: #FF6666;"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ForceAddress.php?page=ManageAddresses"><span class="Comments"><?php echo User_UserInfoMail_Comment_ForceIP; ?></span></a></td>
 		</tr>
 	
 	<?php if ( $users_datas["admin"] == '1' ) { ?>
@@ -481,7 +464,7 @@ function PrintContent($user, $Case) {
 			<!-- // DNScrypt-proxy -->
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_DNScrypt; ?></th>
-				<td colspan="2"><span class="Comments"><?php echo User_UserInfo_Comment_DNScrypt; ?></span></td>
+				<td colspan="2"><span class="Comments"><?php echo User_UserInfoMail_Comment_DNScrypt; ?></span></td>
 			</tr>
 		<?php } ?>
 	
@@ -526,9 +509,8 @@ function PrintContent($user, $Case) {
 			<td width="25%">MySB_SecurityRules</td>
 			<td><span class="Comments"><?php echo User_UserInfo_Comment_MySB_SecurityRules; ?></span></td>
 		</tr>
-		<!-- // MySB Management -->
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle">MySB Management</th>
+			<th width="15%" scope="row"> </th>
 			<td width="25%">MySB_GitHubRepoUpdate</td>
 			<td><span class="Comments"><?php echo User_UserInfo_Comment_MySB_GitHubRepoUpdate; ?></span></td>
 		</tr>

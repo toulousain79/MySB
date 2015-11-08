@@ -72,7 +72,7 @@ if (isset($_POST['submit'])) {
 				break;
 		}
 
-		if ( $result == 0 ) {
+		if ( $result >= 0 ) {
 			$NoChange = false;
 		}
 	}
@@ -89,7 +89,6 @@ if (isset($_POST['submit'])) {
 			if ( ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) || ($DNScrypt_db != $DNScrypt_post) ) {
 				$NoChange = false;
 			}
-			$NoChange = false;
 		} else {
 			$NoChange = false;
 		}

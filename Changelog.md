@@ -6,6 +6,7 @@
 			- OpenVPN, config files generation bux fixes
 			- LogWatch, some modifications
 			- ownCloud, some modifications
+			- Monitoring, add DigiCube possibility
 			- Cron job, bug fix
 			- Poral, jQuery v1.11.3
 			- Portal, Modernizr v1.7

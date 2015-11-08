@@ -48,18 +48,13 @@ define('User_UserInfo_Comment_Email', ' ');
 define('User_UserInfo_Table_RPC', 'RPC');
 define('User_UserInfo_Comment_RPC', 'RPC value can be used to remotely connect to rTorrent via a smartphone. (see Seedbox-Manager)');
 // SFTP
-define('User_UserInfo_Table_SFTP', 'SFTP');
+define('User_UserInfo_Table_SFTP', 'sFTP');
 define('User_UserInfo_Comment_SFTP', ' ');
-// Sudo
-define('User_UserInfo_Table_Sudo', 'Sudo powers');
-define('User_UserInfo_Comment_Sudo', ' ');
 
 //////////////////////
 // Directories
 //////////////////////
 define('User_UserInfo_Title_Directories', 'Directories');
-// Home
-define('User_UserInfo_Table_Home', 'Home');
 // Session dir
 define('User_UserInfo_Table_Session', 'Session dir');
 define('User_UserInfo_Value_Session', '/rtorrent/.session');
@@ -127,9 +122,6 @@ define('User_UserInfo_Comment_NfsShare', 'mount -t nfs [10.0.x.1]:/home/%s/rtorr
 // Links (Normal user)
 //////////////////////
 define('User_UserInfo_Title_LinkNormal', 'Links (Normal user)');
-// User Info
-define('User_UserInfo_Title_UserInfo', 'User Info');
-define('User_UserInfo_Comment_UserInfo', 'Current information page.');
 // Change password
 define('User_UserInfo_Title_ChangePass', 'Change password');
 define('User_UserInfo_Comment_ChangePass', 'You can change your password here.');
@@ -177,7 +169,7 @@ define('User_UserInfo_Table_Blocklists', 'Blocklists');
 define('User_UserInfo_Comment_Blocklists', 'You can manage <a href="?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a> AND <a href="?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a>.');
 // DNScrypt-proxy
 define('User_UserInfo_Table_DNScrypt', 'DNScrypt-proxy');
-define('User_UserInfo_Comment_DNScrypt', 'Informations on resolvers used.');
+define('User_UserInfo_Comment_DNScrypt', '<a href="?main-user/dnscrypt-proxy.html">Informations on resolvers used.</a>');
 
 //////////////////////
 // SSH commands available
@@ -186,7 +178,7 @@ define('User_UserInfo_Title_SSHcommand', 'SSH commands available');
 // Users Management
 define('User_UserInfo_Table_UserManage', 'Users Management');
 define('User_UserInfo_Comment_MySB_CreateUser', ' ');
-define('User_UserInfo_Comment_MySB_ChangeUserPassword', '<pre>MySB_ChangeUserPassword <username> <new_password></pre>');
+define('User_UserInfo_Comment_MySB_ChangeUserPassword', '<pre>MySB_ChangeUserPassword username new_password</pre>');
 define('User_UserInfo_Comment_MySB_DeleteUser', ' ');
 // SeedBox Management
 define('User_UserInfo_Table_SeedboxManage', 'SeedBox Management');
@@ -197,8 +189,8 @@ define('User_UserInfo_Comment_MySB_GitHubRepoUpdate', 'Updates the repository of
 define('User_UserInfo_Comment_MySB_SecurityRules', '<pre>MySB_SecurityRules (new|clean)</pre>');
 // Main scripts
 define('User_UserInfo_Table_MainScript', 'Main scripts');
-define('User_UserInfo_Comment_BlocklistsRTorrent', 'Use this for generate rTorrent blocklist. (CRON every day)');
-define('User_UserInfo_Comment_GetTrackersCert', 'Get all SSL certificates for all trackers. This script is start every time you add/edit trackers list in MySB portal.');
+define('User_UserInfo_Comment_BlocklistsRTorrent', 'Use this for generate rTorrent blocklist. (CRON twice a day)');
+define('User_UserInfo_Comment_GetTrackersCert', 'Get all SSL certificates for all trackers. This script is start every time you add a tracker or modify the list in MySB portal.');
 
 //////////////////////
 // Price and Payment info

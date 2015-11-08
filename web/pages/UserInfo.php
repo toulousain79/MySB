@@ -90,27 +90,11 @@ function printUser($user) {
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SFTP . '</th>';
 	echo '<td>' . $sftp . '</td>';
 	echo '<td><span class="Comments">' . User_UserInfo_Comment_SFTP . '</span></td></tr>';
-	// Sudo
-	switch ($users_datas["sudo"]) {
-		case '0':
-			$sudo = User_UserInfo_NO;
-			break;
-		default:
-			$sudo = User_UserInfo_YES;
-			break;
-	}
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Sudo . '</th>';
-	echo '<td>' . $sudo . '</td>';
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_Sudo . '</span></td></tr>';
 
 	//////////////////////
 	// Directories
 	//////////////////////
 	echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_UserInfo_Title_Directories . '</h4></th></tr>';
-	// Home
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Home . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . '</td>';
-	echo '<td> </td></tr>';
 	// Session dir
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Session . '</th>';
 	echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_Session . '</td>';
@@ -186,9 +170,6 @@ function printUser($user) {
 	// Links (Normal user)
 	//////////////////////
 	echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_UserInfo_Title_LinkNormal . '</h4></th></tr>';
-	// User Info
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_UserInfo . '</th>';
-	echo '<td colspan="2"><a href="?user/user-infos.html"><span class="Comments">' . User_UserInfo_Comment_UserInfo . '</span></a></td></tr>';
 	// Change password
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_ChangePass . '</th>';
 	echo '<td colspan="2"><a href="?user/change-password.html"><span class="Comments">' . User_UserInfo_Comment_ChangePass . '</span></a></td></tr>';
@@ -297,10 +278,10 @@ function printUser($user) {
 		echo '<td><span class="Comments">' . User_UserInfo_Comment_MySB_SecurityRules . '</span></td></tr>';
 		// Main scripts
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_MainScript . '</th>';
-		echo '<td>'.$MySB_InstallDir.'/scripts/BlocklistsRTorrent.bsh</td>';
+		echo '<td>'.MYSB_ROOT.'/scripts/BlocklistsRTorrent.bsh</td>';
 		echo '<td><span class="Comments">' . User_UserInfo_Comment_BlocklistsRTorrent . '</span></td></tr>';
 		echo '<tr align="left"><th width="17%" scope="row"> </th>';
-		echo '<td>'.$MySB_InstallDir.'/scripts/GetTrackersCert.bsh</td>';
+		echo '<td>'.MYSB_ROOT.'/scripts/GetTrackersCert.bsh</td>';
 		echo '<td><span class="Comments">' . User_UserInfo_Comment_GetTrackersCert . '</span></td></tr>';
 	}
 

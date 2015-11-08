@@ -32,7 +32,7 @@ define('User_UserInfo_NotInstalled', 'MySB n\'est pas install&eacute;!');
 define('User_UserInfo_Title_PersonnalInfo', 'Informations personnelles de l\'utilisateur');
 // Username
 define('User_UserInfo_Table_Username', 'Nom d\'utilisateur');
-define('User_UserInfo_Comment_Username', 'Nom d\'utilisateur');
+define('User_UserInfo_Comment_Username', ' ');
 // IP Address
 define('User_UserInfo_Table_IpAddress', 'Adresses IP');
 define('User_UserInfo_Table_NoIpAddress', 'Aucune adresse renseign&eacute;e');
@@ -48,40 +48,35 @@ define('User_UserInfo_Comment_Email', ' ');
 define('User_UserInfo_Table_RPC', 'RPC');
 define('User_UserInfo_Comment_RPC', 'La valeur RPC peut &ecirc;tre utilis&eacute;e pour se connecter &agrave; distance &agrave; rTorrent via un smartphone. (voir Seedbox-Manager)');
 // SFTP
-define('User_UserInfo_Table_SFTP', 'SFTP');
+define('User_UserInfo_Table_SFTP', 'sFTP');
 define('User_UserInfo_Comment_SFTP', ' ');
-// Sudo
-define('User_UserInfo_Table_Sudo', 'Droits SUDO');
-define('User_UserInfo_Comment_Sudo', ' ');
 
 //////////////////////
 // Directories
 //////////////////////
 define('User_UserInfo_Title_Directories', 'R&eacute;pertoires');
-// Home
-define('User_UserInfo_Table_Home', 'Home');
 // Session dir
-define('User_UserInfo_Table_Session', 'R&eacute;pertoires Sessions');
+define('User_UserInfo_Table_Session', 'R&eacute;p. Sessions');
 define('User_UserInfo_Value_Session', '/rtorrent/.session');
 define('User_UserInfo_Comment_Session', 'Le r&eacute;pertoire des sessions permet &agrave; rTorrent de sauvegarder l\'avancement de vos torrents.');
 // Complete dir
-define('User_UserInfo_Table_CompleteDir', 'R&eacute;pertoires Complete');
+define('User_UserInfo_Table_CompleteDir', 'R&eacute;p. Complete');
 define('User_UserInfo_Value_CompleteDir', '/rtorrent/complete');
 define('User_UserInfo_Comment_CompleteDir', 'Les fichiers complets seront transf&eacute;r&eacute;s dans ce r&eacute;pertoire. Il est possible de le modifier via les Autotools de ruTorrent.');
 // Incomplete dir
-define('User_UserInfo_Table_IncompleteDir', 'R&eacute;pertoires Incomplete');
+define('User_UserInfo_Table_IncompleteDir', 'R&eacute;p. Incomplete');
 define('User_UserInfo_Value_IncompleteDir', '/rtorrent/incomplete');
 define('User_UserInfo_Comment_IncompleteDir', 'Les t&eacute;l&eacute;chargements partiels sont stock&eacute;s ici.');
 // Torrents dir
-define('User_UserInfo_Table_TorrentDir', 'R&eacute;pertoires Torrents');
+define('User_UserInfo_Table_TorrentDir', 'R&eacute;p. Torrents');
 define('User_UserInfo_Value_TorrentDir', '/rtorrent/torrents');
 define('User_UserInfo_Comment_TorrentDir', 'Une copie de tous les torrents ajout&eacute;s directement via ruTorrent sont copi&eacute;s dans ce dossier.');
 // Watch dir
-define('User_UserInfo_Table_WatchDir', 'R&eacute;pertoires Watch');
+define('User_UserInfo_Table_WatchDir', 'R&eacute;p. Watch');
 define('User_UserInfo_Value_WatchDir', '/rtorrent/watch');
 define('User_UserInfo_Comment_WatchDir', 'Enregistrer un fichier torrent dans ce r&eacute;pertoire commencera automatiquement le t&eacute;l&eacute;chargement dans ruTorrent.');
 // Share dir
-define('User_UserInfo_Table_ShareDir', 'R&eacute;pertoires Share');
+define('User_UserInfo_Table_ShareDir', 'R&eacute;p. Share');
 define('User_UserInfo_Value_ShareDir', '/rtorrent/share');
 define('User_UserInfo_Comment_ShareDir', 'Le dossier &laquo;share&raquo; (partage) est accessible par tous les utilisateurs du serveur. Vous pouvez facilement partager ce que vous voulez avec tout utilisateur. Vous pouvez utiliser le plugin de FileManager disponible dans ruTorrent, ou sFTP / FTPs ou Samba.');
 
@@ -127,14 +122,11 @@ define('User_UserInfo_Comment_NfsShare', 'mount -t nfs [10.0.x.1]:/home/%s/rtorr
 // Links (Normal user)
 //////////////////////
 define('User_UserInfo_Title_LinkNormal', 'Liens (utilisateur standard)');
-// User Info
-define('User_UserInfo_Title_UserInfo', 'Infos utilsiateur');
-define('User_UserInfo_Comment_UserInfo', 'Page actuelle');
 // Change password
-define('User_UserInfo_Title_ChangePass', 'Modifier votre mot de passe');
+define('User_UserInfo_Title_ChangePass', 'Mot de passe');
 define('User_UserInfo_Comment_ChangePass', 'Vous pouvez modifier votre mot de passe sur cette page.');
 // Manage Addresses
-define('User_UserInfo_Title_ManageAddresses', 'G&eacute;rer vos adresse');
+define('User_UserInfo_Title_ManageAddresses', 'G&eacute;rer vos adresses');
 define('User_UserInfo_Comment_ManageAddresses', 'Ajoutez ici vos adresses IPs et/ou vos DNS dynamiques qui seront ajout&eacute;s dans les diff&eacute;rentes liste blanches.');
 // ruTorrent
 define('User_UserInfo_Title_ruTorrent', 'ruTorrent');
@@ -177,16 +169,16 @@ define('User_UserInfo_Table_Blocklists', 'Listes noires');
 define('User_UserInfo_Comment_Blocklists', 'G&eacute;rer les <a href="?blocklists/rtorrent-blocklists.html">listes noire pour rTorrent</a> ET les <a href="?blocklists/peerguardian-blocklists.html">listes noires pour PeerGuardian</a>.');
 // DNScrypt-proxy
 define('User_UserInfo_Table_DNScrypt', 'DNScrypt-proxy');
-define('User_UserInfo_Comment_DNScrypt', 'Informations sur les serveurs utilis&eacute;s.');
+define('User_UserInfo_Comment_DNScrypt', '<a href="?main-user/dnscrypt-proxy.html">Informations sur les serveurs utilis&eacute;s.</a>');
 
 //////////////////////
 // SSH commands available
 //////////////////////
 define('User_UserInfo_Title_SSHcommand', 'Commandes SSH disponibles');
 // Users Management
-define('User_UserInfo_Table_UserManage', 'Gestion des utilsiateurs');
+define('User_UserInfo_Table_UserManage', 'Gestion des utilisateurs');
 define('User_UserInfo_Comment_MySB_CreateUser', ' ');
-define('User_UserInfo_Comment_MySB_ChangeUserPassword', '<pre>MySB_ChangeUserPassword <username> <new_password></pre>');
+define('User_UserInfo_Comment_MySB_ChangeUserPassword', '<pre>MySB_ChangeUserPassword username new_password</pre>');
 define('User_UserInfo_Comment_MySB_DeleteUser', ' ');
 // SeedBox Management
 define('User_UserInfo_Table_SeedboxManage', 'Gestion de la seedbox');
@@ -197,8 +189,8 @@ define('User_UserInfo_Comment_MySB_GitHubRepoUpdate', 'Mise &agrave; jour de la 
 define('User_UserInfo_Comment_MySB_SecurityRules', '<pre>MySB_SecurityRules (new|clean)</pre>');
 // Main scripts
 define('User_UserInfo_Table_MainScript', 'Scripts importants');
-define('User_UserInfo_Comment_BlocklistsRTorrent', 'Utilisez-le pour g&eacute;n&eacute;rer la liste de blocage pour rTorrent. (CRON chaque jour)');
-define('User_UserInfo_Comment_GetTrackersCert', 'Obtenez tous les certificats SSL pour tous les trackers. Ce script est ex&eacute;cut&eacute; &agrave; chaque fois que vous ajoutez/modifiez la liste des trackers dans le portail MySB.');
+define('User_UserInfo_Comment_BlocklistsRTorrent', 'Utilisez-le pour g&eacute;n&eacute;rer la liste de blocage pour rTorrent. (CRON 2 fois par jour)');
+define('User_UserInfo_Comment_GetTrackersCert', 'Obtenez tous les certificats SSL pour tous les trackers. Ce script est ex&eacute;cut&eacute; &agrave; chaque fois que vous ajoutez un tracker ou que vous modifiez la liste dans le portail MySB.');
 
 //////////////////////
 // Price and Payment info

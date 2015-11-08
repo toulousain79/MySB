@@ -182,9 +182,9 @@ KernelParameterConfiguration() {
 CreatingUserChain() {
 	# Create a chain to filter INVALID packets
 	iptables -N bad_packets
-	# Create another chain to filter bad tcp packets
+	# Create another chain to filter bad TCP packets
 	iptables -N bad_tcp_packets
-	# Create separate chains for icmp, tcp (incoming and outgoing), and incoming udp packets.
+	# Create separate chains for icmp, TCP (incoming and outgoing), and incoming UDP packets.
 	iptables -N icmp_packets
 	# Used for UDP packets inbound from the Internet
 	iptables -N udp_inbound
@@ -210,21 +210,21 @@ PopulatingBadChain() {
 	# Drop INVALID packets immediately
 	iptables -A bad_packets -p ALL -m state --state INVALID -j LOG --log-prefix "[netfilter] Invalid packet: "
 	iptables -A bad_packets -p ALL -m state --state INVALID -j DROP
-	# Then check the tcp packets for additional problems
-	iptables -A bad_packets -p tcp -j bad_tcp_packets
+	# Then check the TCP packets for additional problems
+	iptables -A bad_packets -p TCP -j bad_tcp_packets
 	# All good, so return
 	iptables -A bad_packets -p ALL -j RETURN
 
 	## bad_tcp_packets chain
-	# All tcp packets will traverse this chain.
+	# All TCP packets will traverse this chain.
 	# Every new connection attempt should begin with a syn packet.  If it doesn't, it is likely a port scan.
 	# This drops packets in state NEW that are not flagged as syn packets.
 	#
 	# Return to the calling chain if the bad packets originate from the local interface.
 	# This maintains the approach throughout this firewall of a largely trusted internal network.
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-		iptables -A bad_tcp_packets -p tcp -i tun+ -j RETURN
-		iptables -A bad_tcp_packets -p tcp -i br0 -j RETURN
+		iptables -A bad_tcp_packets -p TCP -i tun+ -j RETURN
+		iptables -A bad_tcp_packets -p TCP -i br0 -j RETURN
 	fi
 
 	# However, I originally did apply this filter to the forward chain for packets originating from the internal network.
@@ -232,24 +232,24 @@ PopulatingBadChain() {
 	# Apparently some ad systems have the browser initiate a NEW connection that is not flagged as a syn packet to retrieve the ad image.
 	# If you wish to experiment further comment the rule above. If you try it, you may also wish to uncomment the rule below.
 	# It will keep those packets from being logged. There are a lot of them.
-	# iptables -A bad_tcp_packets -p tcp -i tun+ ! --syn -m state --state NEW -j DROP
-	# iptables -A bad_tcp_packets -p tcp -i br0 ! --syn -m state --state NEW -j DROP
-	iptables -A bad_tcp_packets -p tcp ! --syn -m state --state NEW -j LOG --log-prefix "[netfilter] New not syn: "
-	iptables -A bad_tcp_packets -p tcp ! --syn -m state --state NEW -j DROP
-	iptables -A bad_tcp_packets -p tcp --tcp-flags ALL NONE -j LOG --log-prefix "[netfilter] Stealth scan: "
-	iptables -A bad_tcp_packets -p tcp --tcp-flags ALL NONE -j DROP
-	iptables -A bad_tcp_packets -p tcp --tcp-flags ALL ALL -j LOG --log-prefix "[netfilter] Stealth scan: "
-	iptables -A bad_tcp_packets -p tcp --tcp-flags ALL ALL -j DROP
-	iptables -A bad_tcp_packets -p tcp --tcp-flags ALL FIN,URG,PSH -j LOG --log-prefix "[netfilter] Stealth scan: "
-	iptables -A bad_tcp_packets -p tcp --tcp-flags ALL FIN,URG,PSH -j DROP
-	iptables -A bad_tcp_packets -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j LOG --log-prefix "[netfilter] Stealth scan: "
-	iptables -A bad_tcp_packets -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
-	iptables -A bad_tcp_packets -p tcp --tcp-flags SYN,RST SYN,RST -j LOG --log-prefix "[netfilter] Stealth scan: "
-	iptables -A bad_tcp_packets -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
-	iptables -A bad_tcp_packets -p tcp --tcp-flags SYN,FIN SYN,FIN -j LOG --log-prefix "[netfilter] Stealth scan: "
-	iptables -A bad_tcp_packets -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP
+	# iptables -A bad_tcp_packets -p TCP -i tun+ ! --syn -m state --state NEW -j DROP
+	# iptables -A bad_tcp_packets -p TCP -i br0 ! --syn -m state --state NEW -j DROP
+	iptables -A bad_tcp_packets -p TCP ! --syn -m state --state NEW -j LOG --log-prefix "[netfilter] New not syn: "
+	iptables -A bad_tcp_packets -p TCP ! --syn -m state --state NEW -j DROP
+	iptables -A bad_tcp_packets -p TCP --tcp-flags ALL NONE -j LOG --log-prefix "[netfilter] Stealth scan: "
+	iptables -A bad_tcp_packets -p TCP --tcp-flags ALL NONE -j DROP
+	iptables -A bad_tcp_packets -p TCP --tcp-flags ALL ALL -j LOG --log-prefix "[netfilter] Stealth scan: "
+	iptables -A bad_tcp_packets -p TCP --tcp-flags ALL ALL -j DROP
+	iptables -A bad_tcp_packets -p TCP --tcp-flags ALL FIN,URG,PSH -j LOG --log-prefix "[netfilter] Stealth scan: "
+	iptables -A bad_tcp_packets -p TCP --tcp-flags ALL FIN,URG,PSH -j DROP
+	iptables -A bad_tcp_packets -p TCP --tcp-flags ALL SYN,RST,ACK,FIN,URG -j LOG --log-prefix "[netfilter] Stealth scan: "
+	iptables -A bad_tcp_packets -p TCP --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
+	iptables -A bad_tcp_packets -p TCP --tcp-flags SYN,RST SYN,RST -j LOG --log-prefix "[netfilter] Stealth scan: "
+	iptables -A bad_tcp_packets -p TCP --tcp-flags SYN,RST SYN,RST -j DROP
+	iptables -A bad_tcp_packets -p TCP --tcp-flags SYN,FIN SYN,FIN -j LOG --log-prefix "[netfilter] Stealth scan: "
+	iptables -A bad_tcp_packets -p TCP --tcp-flags SYN,FIN SYN,FIN -j DROP
 	## All good, so return
-	iptables -A bad_tcp_packets -p tcp -j RETURN
+	iptables -A bad_tcp_packets -p TCP -j RETURN
 }
 
 #### Populate ICMP chain
@@ -281,7 +281,7 @@ PopulatingIcmpChain() {
 	# Allow provider monitoring by ICMP
 	case "$1" in
 		"create")
-			if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "$Global_NO" ]; then
+			if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "NONE" ]; then
 				case "$ServerProvider" in
 					"OVH")
 						OvhIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'OVH' AND ipv4 != ''\"`"
@@ -297,13 +297,6 @@ PopulatingIcmpChain() {
 							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j ACCEPT -m comment --comment "$ServerProvider monitoring"
 						done
 					;;
-					"DIGICUBE")
-						OnlineIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'DIGICUBE' AND ipv4 != ''\"`"
-						for IPv4 in $OnlineIPv4; do
-							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j LOG --log-prefix "[netfilter] Ping detected: " -m comment --comment "$ServerProvider monitoring"
-							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j ACCEPT -m comment --comment "$ServerProvider monitoring"
-						done
-					;;					
 				esac
 			fi
 		;;
@@ -408,7 +401,7 @@ PopulatingUdpInboundChain() {
 	# Provider monitoring
 	case "$1" in
 		"create")
-			if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "$Global_NO" ]; then
+			if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "NONE" ]; then
 				case "$ServerProvider" in
 					"OVH")
 						for IPv4 in $OvhIPv4; do
@@ -466,6 +459,17 @@ PopulatingUdpInboundChain() {
 				iptables -A udp_inbound -p UDP -s 0/0 -i $PrimaryInet --destination-port $Port_OpenVPN_WithGW -j ACCEPT -m comment --comment "OpenVPN with GW for users"
 				iptables -A udp_inbound -p UDP -s 0/0 -i $PrimaryInet --destination-port $Port_OpenVPN_WithoutGW -j ACCEPT -m comment --comment "OpenVPN without GW for users"
 				iptables -A udp_inbound -p UDP -s 0/0 -i $PrimaryInet --destination-port $Port_OpenVPN_TAP_WithoutGW -j ACCEPT -m comment --comment "OpenVPN bridged without GW for users"
+			fi
+		;;
+		"refresh")
+			if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$OpenVPN_Proto" == "udp" ]; then
+				NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'OpenVPN with GW for users' -n -m 1 | cut -d ':' -f 1)
+				sed -i '/OpenVPN with GW for users/d' $MySB_InstallDir/temp/current-iptables-rules
+				sed -i '/OpenVPN without GW for users/d' $MySB_InstallDir/temp/current-iptables-rules
+				sed -i '/OpenVPN bridged without GW for users/d' $MySB_InstallDir/temp/current-iptables-rules
+				sed -i ""$NumLign"i\-A udp_inbound -s 0/0 -p udp -m udp --dport $Port_OpenVPN_TAP_WithoutGW -m comment --comment \"OpenVPN bridged without GW for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
+				sed -i ""$NumLign"i\-A udp_inbound -s 0/0 -p udp -m udp --dport $Port_OpenVPN_WithoutGW -m comment --comment \"OpenVPN without GW for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
+				sed -i ""$NumLign"i\-A udp_inbound -s 0/0 -p udp -m udp --dport $Port_OpenVPN_WithGW -m comment --comment \"OpenVPN with GW for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
 			fi
 		;;
 	esac
@@ -608,6 +612,17 @@ PopulatingTcpInboundChain() {
 				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port $Port_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive over OpenVPN"
 			fi
 		;;
+		"refresh")
+			if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$OpenVPN_Proto" == "tcp" ]; then		
+				NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'OpenVPN with GW for users' -n -m 1 | cut -d ':' -f 1)
+				sed -i '/OpenVPN with GW for users/d' $MySB_InstallDir/temp/current-iptables-rules
+				sed -i '/OpenVPN without GW for users/d' $MySB_InstallDir/temp/current-iptables-rules
+				sed -i '/OpenVPN bridged without GW for users/d' $MySB_InstallDir/temp/current-iptables-rules
+				sed -i ""$NumLign"i\-A tcp_inbound -s 0/0 -p tcp -m tcp --dport $Port_OpenVPN_TAP_WithoutGW -m comment --comment \"OpenVPN bridged without GW for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
+				sed -i ""$NumLign"i\-A tcp_inbound -s 0/0 -p tcp -m tcp --dport $Port_OpenVPN_WithoutGW -m comment --comment \"OpenVPN without GW for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
+				sed -i ""$NumLign"i\-A tcp_inbound -s 0/0 -p tcp -m tcp --dport $Port_OpenVPN_WithGW -m comment --comment \"OpenVPN with GW for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
+			fi
+		;;		
 	esac
 
 	#### Webmin
@@ -766,12 +781,12 @@ ProcessForwardChain() {
 
 	if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 		# Accept TCP packets we want to forward from internal sources
-		iptables -A FORWARD -p tcp -i tun0 -j tcp_outbound
-		iptables -A FORWARD -p tcp -i br0 -j tcp_outbound
+		iptables -A FORWARD -p TCP -i tun0 -j tcp_outbound
+		iptables -A FORWARD -p TCP -i br0 -j tcp_outbound
 
 		# Accept UDP packets we want to forward from internal sources
-		iptables -A FORWARD -p udp -i tun0 -j udp_outbound
-		iptables -A FORWARD -p udp -i br0 -j udp_outbound
+		iptables -A FORWARD -p UDP -i tun0 -j udp_outbound
+		iptables -A FORWARD -p UDP -i br0 -j udp_outbound
 
 		# If not blocked, accept any other packets from the internal interface
 		iptables -A FORWARD -p ALL -i tun0 -j ACCEPT
