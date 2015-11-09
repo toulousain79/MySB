@@ -210,7 +210,7 @@ if [ "$DisplayServices" == "YES" ]; then
 	# Seedbox-Manager
 	if [ "$IsInstalled_Manager" != "YES" ]; then
 		echo
-		QuestionGetString NO "$Questions_InstallSeedboxManager" ToInstall_Manager $Global_YES
+		QuestionGetString NO "$Questions_InstallSeedboxManager" ToInstall_Manager $Global_NO
 		ToInstall_Manager="`echo $ToInstall_Manager | tr '[:lower:]' '[:upper:]'`"
 
 		if [ "$ToInstall_Manager" == "$Global_YES" ]; then
@@ -226,7 +226,7 @@ if [ "$DisplayServices" == "YES" ]; then
 	# Cakebox Light
 	if [ "$IsInstalled_Cakebox" != "YES" ]; then
 		echo
-		QuestionGetString NO "$Questions_InstallCakeBox" ToInstall_Cakebox $Global_YES
+		QuestionGetString NO "$Questions_InstallCakeBox" ToInstall_Cakebox $Global_NO
 		ToInstall_Cakebox="`echo $ToInstall_Cakebox | tr '[:lower:]' '[:upper:]'`"
 
 		if [ "$ToInstall_Cakebox" == "$Global_YES" ]; then
@@ -273,7 +273,7 @@ if [ "$DisplayServices" == "YES" ]; then
 	# OpenVPN
 	if [ "$IsInstalled_OpenVPN" != "YES" ]; then
 		echo
-		QuestionGetString NO "$Questions_InstallOpenVPN" ToInstall_OpenVPN $Global_YES
+		QuestionGetString NO "$Questions_InstallOpenVPN" ToInstall_OpenVPN $Global_NO
 		ToInstall_OpenVPN="`echo $ToInstall_OpenVPN | tr '[:lower:]' '[:upper:]'`"
 		if [ "$ToInstall_OpenVPN" == "$Global_YES" ]; then
 			OpenVPN_Proto=""
@@ -297,7 +297,7 @@ if [ "$DisplayServices" == "YES" ]; then
 					UdpPortsList="port_udp1 = '$Port_OpenVPN_WithGW', port_udp2 = '$Port_OpenVPN_WithoutGW', port_udp3 = '$Port_OpenVPN_TAP_WithoutGW', ports_udp_list = ''"
 					TcpPortsList="port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = ''"
 				;;
-			esac			
+			esac
 		else
 			to_install=0
 			UdpPortsList="port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''"
@@ -335,13 +335,13 @@ if [ "$DisplaySecurity" == "YES" ]; then
 	# Logwatch
 	if [ "$IsInstalled_LogWatch" != "YES" ]; then
 		echo
-		QuestionGetString NO "$Questions_InstallLogwatch" ToInstall_LogWatch $Global_YES
+		QuestionGetString NO "$Questions_InstallLogwatch" ToInstall_LogWatch $Global_NO
 		ToInstall_LogWatch="`echo $ToInstall_LogWatch | tr '[:lower:]' '[:upper:]'`"
 
 		if [ "$ToInstall_LogWatch" == "$Global_YES" ]; then
 			to_install=1
 		else
-			to_install=0			
+			to_install=0
 		fi
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'LogWatch'"
 	fi
@@ -358,6 +358,28 @@ if [ "$DisplaySecurity" == "YES" ]; then
 			to_install=0
 		fi
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'Fail2Ban'"
+	fi
+
+	# DNScrypt-proxy
+	if [ "$IsInstalled_DNScrypt" != "YES" ]; then
+		echo
+		QuestionGetString NO "$Questions_InstallDNScrypt" ToInstall_DNScrypt $Global_YES
+		ToInstall_DNScrypt="`echo $ToInstall_DNScrypt | tr '[:lower:]' '[:upper:]'`"
+		if [ ! -z $IFPVEKERNEL ] && [ "$ToInstall_DNScrypt" == "$Global_YES" ]; then
+			echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
+			echo -e "${CYELLOW}At the end of the installation, you should replace your DNS (/etc/resolv.conf) with ${CGREEN}nameserver 127.0.0.1$CEND${CYELLOW} through the OpenVZ host (eg Proxmox).$CEND"
+			echo -e "$Questions_Message_DNScrypt"
+			sleep 10
+		fi
+
+		if [ "$ToInstall_DNScrypt" == "$Global_YES" ]; then
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'DNScrypt-proxy'"
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'DNScrypt-proxy'"
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'Libsodium'"
+		else
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'DNScrypt-proxy'"
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'Libsodium'"
+		fi
 	fi
 
 	# Blocklist
@@ -402,28 +424,6 @@ if [ "$DisplaySecurity" == "YES" ]; then
 				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0'" "serv_name = 'rTorrent Block List'"
 			;;
 		esac
-	fi
-
-	# DNScrypt-proxy
-	if [ "$IsInstalled_DNScrypt" != "YES" ]; then
-		echo
-		QuestionGetString NO "$Questions_InstallDNScrypt" ToInstall_DNScrypt $Global_YES
-		ToInstall_DNScrypt="`echo $ToInstall_DNScrypt | tr '[:lower:]' '[:upper:]'`"
-		if [ ! -z $IFPVEKERNEL ] && [ "$ToInstall_DNScrypt" == "$Global_YES" ]; then
-			echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
-			echo -e "${CYELLOW}At the end of the installation, you should replace your DNS (/etc/resolv.conf) with ${CGREEN}nameserver 127.0.0.1$CEND${CYELLOW} through the OpenVZ host (eg Proxmox).$CEND"
-			echo -e "$Questions_Message_DNScrypt"
-			sleep 10
-		fi
-
-		if [ "$ToInstall_DNScrypt" == "$Global_YES" ]; then
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'DNScrypt-proxy'"
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'DNScrypt-proxy'"
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'Libsodium'"
-		else
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'DNScrypt-proxy'"
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'Libsodium'"
-		fi
 	fi
 fi
 
