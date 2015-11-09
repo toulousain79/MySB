@@ -90,11 +90,11 @@ fi
 #### Backup
 if [ "$Continue" == "1" ]; then
 	DateTime="`/bin/date +%Y%m%d-%H%M%S`"
-	echo -e "${CBLUE}$UpgradeMe_CreateBackup '$MySB_InstallDir/upgrade/backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz'$CEND"
+	echo -e "${CBLUE}$UpgradeMe_CreateBackup '/etc/MySB/backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz'$CEND"
 	echo -e -n "${CRED}$Global_PleaseWait $CEND"
 	CountDown 3
 
-	# DUMP MySQL
+	# MySQL databases DUMP
 	if [ -d /var/lib/mysql/MySB_db/ ]; then
 		mysqldump --defaults-extra-file=/root/.config.cnf MySB_db > $MySB_InstallDir/db/MySQL_MySB_$DateTime-$MySB_CurrentVersion.dump.sql
 	fi
@@ -102,18 +102,26 @@ if [ "$Continue" == "1" ]; then
 		mysqldump --defaults-extra-file=/root/.config.cnf ownCloud_db > $MySB_InstallDir/db/MySQL_ownCloud_$DateTime-$MySB_CurrentVersion.dump.sql
 	fi
 
-	if [ ! -d $MySB_InstallDir/upgrade/backup ]; then
-		mkdir -p $MySB_InstallDir/upgrade/backup
+	# Move older backup directory (MySB < v3.1)
+	if [ -d $MySB_InstallDir/upgrade/backup ] && [ ! -d /opt/MySB_backup ]; then
+		mv -v $MySB_InstallDir/upgrade/backup /opt/MySB_backup
+		rm -rf $MySB_InstallDir/upgrade/backup
+	elif [ -d $MySB_InstallDir/upgrade/backup ] && [ -d /opt/MySB_backup ]; then
+		mv -v $MySB_InstallDir/upgrade/backup/* /opt/MySB_backup/
+		rm -rf $MySB_InstallDir/upgrade/backup
 	fi
-	mv -v $MySB_InstallDir/upgrade/backup /tmp/MySB_backup_$DateTime
-	tar -zcvf /tmp/MySB_backup_$DateTime/Backup-$DateTime-$MySB_CurrentVersion.tar.gz $MySB_InstallDir
+	# Creating backup directory if doesn't exist
+	if [ ! -d /opt/MySB_backup ]; then
+		mkdir -p /opt/MySB_backup
+	fi
+
+	tar -zcvf /opt/MySB_backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz $MySB_InstallDir
 	if [ $? -gt 0 ]; then
 		Continue=0
 		UpgradeMe_Error_CreateBackup="`echo $UpgradeMe_Error_CreateBackup | sed "s/#file#/Backup-$DateTime-$MySB_CurrentVersion.tar.gz/g;"`"
 		Error="$UpgradeMe_Error_CreateBackup"
 	else
-		mv -v /tmp/MySB_backup_* $MySB_InstallDir/upgrade/backup
-		if  [ ! -f $MySB_InstallDir/upgrade/backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz ]; then
+		if  [ ! -f /opt/MySB_backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz ]; then
 			Continue=0
 			Error="$UpgradeMe_Error_BackupFailed"
 		fi
