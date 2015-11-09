@@ -102,7 +102,9 @@ ${CRED}############################################################$CEND"
 	CantWriteConfig="${CRED}I can't write the config file \"/etc/MySB/config\", aborting !$CEND"
 	LoadingVar="${CBLUE}Loading variables and functions$CEND..."
 	CreatingDir="${CBLUE}Creating directories$CEND..."
-	CreatingDB="${CBLUE}Creating databases$CEND..."
+	SourcesDebian="Generating of Debian 'source.lists' file"
+	CreatingMySQL_DB="${CBLUE}Creating MySQL databases$CEND..."
+	CreatingSQLite_DB="${CBLUE}Creating SQLite databases$CEND..."
 	SomeQuestions="${CBLUE}Please, answer to some questions$CEND..."
 	QStartInstall="How do you want to start the installation ? Type 'manual' or 'auto' ?"
 	StartingScreen="${CBLUE}Starting SCREEN session...$CEND"
@@ -179,7 +181,9 @@ ${CRED}############################################################$CEND"
 	CantWriteConfig="${CRED}Je ne peux pas écrire dans le fichier \"/etc/MySB/config\", abandon !$CEND"
 	LoadingVar="${CBLUE}Chargement des variables et fonctions$CEND..."
 	CreatingDir="${CBLUE}Création des répertoires$CEND..."
-	CreatingDB="${CBLUE}Création des bases de données$CEND..."
+	SourcesDebian="Génération du fichier 'sources.list' pour Debian"
+	CreatingMySQL_DB="${CBLUE}Création des bases de données MySQL$CEND..."
+	CreatingSQLite_DB="${CBLUE}Création des bases de données SQLite$CEND..."
 	SomeQuestions="${CBLUE}Merci de bien vouloir répondre à quelques questions$CEND..."
 	QStartInstall="Comment voulez-vous lancer l'installation? Tapez 'manuel' ou 'auto'."
 	StartingScreen="${CBLUE}Démarrage de la session SCREEN...$CEND"
@@ -488,12 +492,6 @@ if [ "$COMMAND" == "" ]; then
 		BannerInstall
 		echo -e -n "$UpdatingSource"
 		CountDown 3
-		echo "deb http://ftp.fr.debian.org/debian/ wheezy main contrib non-free" > /etc/apt/sources.list
-		echo "deb-src http://ftp.fr.debian.org/debian/ wheezy main contrib non-free" >> /etc/apt/sources.list
-		echo "deb http://ftp2.fr.debian.org/debian/ wheezy main contrib non-free" >> /etc/apt/sources.list
-		echo "deb-src http://ftp2.fr.debian.org/debian/ wheezy main contrib non-free" >> /etc/apt/sources.list
-		echo "deb http://security.debian.org wheezy/updates main contrib non-free" >> /etc/apt/sources.list
-		echo "deb-src http://security.debian.org wheezy/updates main contrib non-free" >> /etc/apt/sources.list
 		$AptCommand -y --assume-yes -o Acquire::Check-Valid-Until=false update
 		if [ $? -gt 0 ]; then
 			if [ -f /etc/MySB/config ]; then rm -f /etc/MySB/config; fi
@@ -515,7 +513,7 @@ if [ "$COMMAND" == "" ]; then
 		BannerInstall
 		echo -e -n "$NeededPackage"
 		CountDown 3
-		TOOLS="git-core dos2unix lsb-release screen ccze gnupg figlet mlocate dnsutils netselect-apt"	
+		TOOLS="git-core dos2unix lsb-release screen ccze gnupg figlet mlocate dnsutils netselect-apt"
 		$AptCommand -y --assume-yes install $TOOLS
 		if [ $? -gt 0 ]; then
 			echo -e "$SomethingWrong"
@@ -552,12 +550,23 @@ if [ "$COMMAND" == "" ]; then
 			#### Create directories
 			echo -e -n "$CreatingDir"
 			ManageDirectoriesAndFiles &> /dev/null
-			echo -e "$Done"	
+			echo -e "$Done"
+
+			#### Sources List
+			echo -e -n "$SourcesDebian..."
+			screen -dmS SourcesList /bin/bash $MySB_InstallDir/install/SourcesList 'INSTALL';
+			WaitingScreen SourcesList
+			StatusSTD
 
 			#### Create database
-			echo -e -n "$CreatingDB"
-			/bin/bash $MySB_InstallDir/install/MySQL 'INSTALL' >> /tmp/`basename $0`.log
-			/bin/bash $MySB_InstallDir/install/SQLite 'INSTALL' >> /tmp/`basename $0`.log
+			echo -e -n "$CreatingMySQL_DB"
+			screen -dmS MySQL /bin/bash $MySB_InstallDir/install/MySQL 'INSTALL';
+			WaitingScreen MySQL
+			StatusSTD
+			echo -e -n "$CreatingSQLite_DB"
+			screen -dmS SQLite /bin/bash $MySB_InstallDir/install/SQLite 'INSTALL';
+			WaitingScreen SQLite
+			StatusSTD
 			if [ $? -gt 0 ]; then
 				echo -e -n "$Failed"
 				echo ""
