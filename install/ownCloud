@@ -145,19 +145,22 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		perl -pi -e "s/<IdStorage>/$IdStorage/g" /home/owncloud/mount.json
 	fi
 
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:scan --all"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-db"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-js"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:repair"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ versions:cleanup"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable files_external"
+	
 	#### Manage Admin user
 	if [ "$1" == "INSTALL" ] && [ -d $ownCloudDir ]; then
-		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
 		OC_PASS=$MySQL_MysbPassword
 		export OC_PASS
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:resetpassword --password-from-env admin"
-		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable files_external"
 	fi
 
 	if [ "$1" == "UPGRADE" ] && [ -d $ownCloudDir ]; then
-		#### Upgrade
-		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
-
 		#### Create all existing MySB users
 		ListingUsers
 		for seedUser in $UsersList; do
@@ -174,13 +177,6 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 			unset UserExist
 		done
 	fi
-
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:scan --all"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-db"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-js"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:repair"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ versions:cleanup"
 
 	#### Logrotate
 	LogRotate 'owncloud'
