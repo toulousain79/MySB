@@ -164,17 +164,19 @@ PackagesManage() {
 	AptUpdate=0
 	tDiff=0
 
+	if [ "$IsReady_MySB_DB" == "YES" ]; then
+		AptUpdate="`Func_SQL_Command 'SELECT' 'MySB_db' 'apt_update' 'system' '1'`"
+		AptDate="`Func_SQL_Command 'SELECT' 'MySB_db' 'apt_date' 'system' '1'`"
+		AptDate=$(date -d "$AptDate" +"%Y-%m-%d %H")
+		Now=$(date +%Y-%m-%d\ %H)
+		t1=$(date --date="$AptDate" +'%-H')
+		t2=$(date --date="$Now" +'%-H')
+		let "tDiff=$t2-$t1"
+	fi
+	
 	#### Check last update
 	if [ "$Query" != "test" ]; then
 		if [ "$IsReady_MySB_DB" == "YES" ]; then
-			AptUpdate="`Func_SQL_Command 'SELECT' 'MySB_db' 'apt_update' 'system' '1'`"
-			AptDate="`Func_SQL_Command 'SELECT' 'MySB_db' 'apt_date' 'system' '1'`"
-			AptDate=$(date -d "$AptDate" +"%Y-%m-%d %H")
-			Now=$(date +%Y-%m-%d\ %H)
-			t1=$(date --date="$AptDate" +'%-H')
-			t2=$(date --date="$Now" +'%-H')
-			let "tDiff=$t2-$t1"
-
 			#### Need of 'apt-get update' ? (must be greater than 2 hours OR forced)
 			if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ] || [ "$Query" == "upgrade" ]; then
 				echo "$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update"
