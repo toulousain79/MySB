@@ -42,11 +42,9 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/locations/ownCloud.conf
 	chmod 0644 /etc/nginx/locations/ownCloud.conf
 	# To install ownCloud allows the generation of a ownCloud configuration file and obtain the valeures 'InstanceId', 'PasswordSalt' and 'Secret'.
-	if [ "$1" == "INSTALL" ]; then
-		cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.locations.owncloud.local.tmpl /etc/nginx/locations/ownCloud.local
-		perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/locations/ownCloud.local
-		chmod 0644 /etc/nginx/locations/ownCloud.local
-	fi
+	cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.locations.owncloud.local.tmpl /etc/nginx/locations/ownCloud.local
+	perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/locations/ownCloud.local
+	chmod 0644 /etc/nginx/locations/ownCloud.local
 
 	#### PHP
 	perl -pi -e "s/post_max_size = 10M/post_max_size = 20G/g" /etc/php5/fpm/php.ini
@@ -95,7 +93,19 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	ManageServices start "php5-fpm nginx cron"
 
 	#### ownCloud config file
-	if [ "$1" == "INSTALL" ] && [ -d $ownCloudDir ]; then
+	if [ "$1" == "UPGRADE" ] && [ -d $ownCloudDir ] && [ -f $ownCloudDir/config/config.php ]; then
+		if [ -f /etc/nginx/locations/ownCloud.local ]; then
+			rm -vf /etc/nginx/locations/ownCloud.local
+		fi
+		InstanceId="`cat $ownCloudDir/config/config.php | grep 'instanceid' | awk '{ print $3 }'| cut -d "'" -f 2`"
+		InstanceId="`echo $InstanceId | sed s,/,\\\\\\\\\\/,g`"
+		PasswordSalt="`cat $ownCloudDir/config/config.php | grep 'passwordsalt' | awk '{ print $3 }'| cut -d "'" -f 2`"
+		PasswordSalt="`echo $PasswordSalt | sed s,/,\\\\\\\\\\/,g`"
+		Secret="`cat $ownCloudDir/config/config.php | grep 'secret' | awk '{ print $3 }'| cut -d "'" -f 2`"
+		Secret="`echo $Secret | sed s,/,\\\\\\\\\\/,g`"
+	fi	
+
+	if [ -d $ownCloudDir ]; then
 		cp -vf $MySB_InstallDir/templates/owncloud/owncloud.config.php.tmpl $ownCloudDir/config/config.php
 		perl -pi -e "s/<server_name>/$HostNameFQDN/g" $ownCloudDir/config/config.php
 		perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" $ownCloudDir/config/config.php
@@ -106,17 +116,25 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		perl -pi -e "s/<TimeZone>/$TimeZoneEscaped/g" $ownCloudDir/config/config.php
 		perl -pi -e "s/<mail_from_address>/$MainUserEmail/g" $ownCloudDir/config/config.php
 		#perl -pi -e "s/<mail_domain>/$MailDomain/g" $ownCloudDir/config/config.php
-		sed -i "s/'default_language' => 'en'/'default_language' => '$EnvLang'/g;" $ownCloudDir/config/config.php
+		perl -pi -e "s/'en'/'$EnvLang'/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<InstanceId>/$InstanceId/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<PasswordSalt>/$PasswordSalt/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<Secret>/$Secret/g" $ownCloudDir/config/config.php
 		chown www-data:www-data $ownCloudDir/config/config.php
 		chmod 0640 $ownCloudDir/config/config.php
 
-		source /etc/MySB/config_db
-		curl --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=admin&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "http://127.0.0.1:$Port_HTTP/owncloud/" &> /dev/null
-		sleep 5
-		if [ -f /etc/nginx/locations/ownCloud.local ]; then
-			rm -vf /etc/nginx/locations/ownCloud.local
+		if [ "$1" == "INSTALL" ]; then
+			sed -i "/'instanceid'/d" $ownCloudDir/config/config.php
+			sed -i "/'passwordsalt'/d" $ownCloudDir/config/config.php
+			sed -i "/'secret'/d" $ownCloudDir/config/config.php
+			source /etc/MySB/config_db
+			curl --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=admin&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "http://127.0.0.1:$Port_HTTP/owncloud/" &> /dev/null
+			sleep 5
+			if [ -f /etc/nginx/locations/ownCloud.local ]; then
+				rm -vf /etc/nginx/locations/ownCloud.local
+			fi
+			perl -pi -e "s/'installed' => false/'installed' => true/g" $ownCloudDir/config/config.php
 		fi
-		perl -pi -e "s/'installed' => false/'installed' => true/g" $ownCloudDir/config/config.php
 	fi
 
 	#### External Storage (mount.json)
