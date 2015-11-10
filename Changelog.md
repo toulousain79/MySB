@@ -7,7 +7,7 @@
 			- LogWatch, some modifications
 			- ownCloud, some modifications
 			- Monitoring, add DigiCube possibility
-			- PHP5, change from PHP5.5 to PHP5.6, add a second repository
+			- Sources list, add a second DotDeb repository
 			- Cron job, bug fix
 			- Poral, jQuery v1.11.3
 			- Portal, Modernizr v1.7
