@@ -75,25 +75,7 @@ fi
 
 #### Count steps
 CurrentSTEP=0
-TotalSTEP=19
-if [ "$ServerProvider" == "OVH" ] || [ "$ServerProvider" == "ONLINE" ] || [ "$ServerProvider" == "DIGICUBE" ]; then
-	(( TotalSTEP++ ))
-fi
-if [ "$ToInstall_Cakebox" == "YES" ] || [ "$ToInstall_Manager" == "YES" ]; then # Tools
-	(( TotalSTEP++ ))
-fi
-if [ "$ToInstall_Cakebox" == "YES" ]; then
-	(( TotalSTEP++ ))
-fi
-if [ "$ToInstall_Manager" == "YES" ]; then
-	(( TotalSTEP++ ))
-fi
-if [ "$ToInstall_OpenVPN" == "YES" ]; then
-	TotalSTEP=$(( TotalSTEP+3 ))
-fi
-if [ "$ToInstall_Fail2Ban" == "YES" ]; then
-	(( TotalSTEP++ ))
-fi
+TotalSTEP=$(cat $0 | grep 'CurrentSTEP++' | wc -l)
 if [ "$ToInstall_Webmin" == "YES" ]; then
 	(( TotalSTEP++ ))
 fi
@@ -103,20 +85,9 @@ fi
 if [ "$ToInstall_PlexMedia" == "YES" ]; then
 	(( TotalSTEP++ ))
 fi
-if [ "$ToInstall_DNScrypt" == "YES" ]; then
-	(( TotalSTEP++ ))
-fi
 if [ "$ToInstall_ownCloud" == "YES" ]; then
 	(( TotalSTEP++ ))
 fi
-case $MySB_PeerBlock in
-	PeerGuardian)
-		TotalSTEP=$(( TotalSTEP+2 ))
-	;;
-	*)
-		(( TotalSTEP++ ))
-	;;
-esac
 
 #
 ########## PREPARE - BoF ##########
@@ -131,12 +102,14 @@ WaitingScreen SSH
 StatusSTD
 
 #### 1 - Getting information about OVH monitoring engine
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_ProviderInfos$CEND..."
 if [ "$ServerProvider" == "OVH" ]; then
-	(( CurrentSTEP++ ))
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_ProviderInfos$CEND..."
 	screen -dmS Monitoring /bin/bash $MySB_InstallDir/install/Monitoring 'INSTALL';
 	WaitingScreen Monitoring
 	StatusSTD
+else
+	echo -e "$Global_NothingToDo"
 fi
 
 #### 2 - Packages
@@ -236,18 +209,20 @@ WaitingScreen RKHunter
 StatusSTD
 
 #### 12 - Fail2Ban
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Fail2Ban$CEND..."
 if [ "$ToInstall_Fail2Ban" == "YES" ]; then
-	(( CurrentSTEP++ ))
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Fail2Ban$CEND..."
 	screen -dmS Fail2Ban /bin/bash $MySB_InstallDir/install/Fail2Ban 'INSTALL';
 	WaitingScreen Fail2Ban
 	StatusSTD
+else
+	echo -e "$Global_NothingToDo"
 fi
 
 ### 13 - DNScrypt-proxy
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring DNScrypt-proxy$CEND..."
 if [ "$ToInstall_DNScrypt" == "YES" ]; then
-	(( CurrentSTEP++ ))
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring DNScrypt-proxy$CEND..."
 	screen -dmS DNScrypt /bin/bash $MySB_InstallDir/install/DNScrypt 'INSTALL';
 	WaitingScreen DNScrypt
 	StatusSTD
@@ -259,10 +234,12 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 		cat $MySB_InstallDir/temp/continue
 		EndingScript 1
 	fi
+else
+	echo -e "$Global_NothingToDo"
 fi
 
 #### 14 - BlockList / PeerGuardian
-InstallRtorrent() {
+rTorrentBlocklist() {
 	(( CurrentSTEP++ ))
 	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_rTorrentBlocklist$CEND..."
 	screen -dmS Blocklist /bin/bash $MySB_InstallDir/install/Blocklists 'INSTALL';
@@ -278,13 +255,15 @@ case $MySB_PeerBlock in
 		WaitingScreen PeerGuardian
 		StatusSTD
 
-		InstallRtorrent $1
+		rTorrentBlocklist $1
 	;;
 	rTorrent)
-		InstallRtorrent $1
+		CurrentSTEP=$(( CurrentSTEP+1 ))
+		rTorrentBlocklist $1
 	;;
 	*)
 		(( CurrentSTEP++ ))
+		CurrentSTEP=$(( CurrentSTEP+1 ))
 		echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_NoBlocklist$CEND..."
 		StatusSTD
 	;;
@@ -315,30 +294,36 @@ WaitingScreen ruTorrent
 StatusSTD
 
 #### 17 - Tools
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Composer, Bower and NodeJS$CEND..."
 if [ "$ToInstall_Cakebox" == "YES" ] || [ "$ToInstall_Manager" == "YES" ]; then
-	(( CurrentSTEP++ ))
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Composer, Bower and NodeJS$CEND..."
 	screen -dmS Tools /bin/bash $MySB_InstallDir/install/Tools 'INSTALL';
 	WaitingScreen Tools
 	StatusSTD
+else
+	echo -e "$Global_NothingToDo"
 fi
 
 #### 18 - SeedboxManager
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Seedbox-Manager$CEND..."
 if [ "$ToInstall_Manager" == "YES" ]; then
-	(( CurrentSTEP++ ))
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Seedbox-Manager$CEND..."
 	screen -dmS SeedboxManager /bin/bash $MySB_InstallDir/install/SeedboxManager 'INSTALL';
 	WaitingScreen SeedboxManager
 	StatusSTD
+else
+	echo -e "$Global_NothingToDo"
 fi
 
 #### 19 - CakeboxLight
+(( CurrentSTEP++ ))
 if [ "$ToInstall_Cakebox" == "YES" ]; then
-	(( CurrentSTEP++ ))
 	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring CakeBox-Light$CEND..."
 	screen -dmS CakeboxLight /bin/bash $MySB_InstallDir/install/CakeboxLight 'INSTALL';
 	WaitingScreen CakeboxLight
 	StatusSTD
+else
+	echo -e "$Global_NothingToDo"
 fi
 
 #### 20 - LoadAvg
@@ -348,63 +333,81 @@ screen -dmS LoadAvg /bin/bash $MySB_InstallDir/install/LoadAvg 'INSTALL';
 WaitingScreen LoadAvg
 StatusSTD
 
+#### 21a - OpenVPN
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring OpenVPN$CEND..."
 if [ "$ToInstall_OpenVPN" == "YES" ]; then
-	#### 21a - OpenVPN
-	(( CurrentSTEP++ ))
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring OpenVPN$CEND..."
 	screen -dmS OpenVPN /bin/bash $MySB_InstallDir/install/OpenVPN 'server' 'INSTALL';
 	WaitingScreen OpenVPN
 	StatusSTD
+else
+	echo -e "$Global_NothingToDo"
+fi
 
-	#### 21b - Samba
-	(( CurrentSTEP++ ))
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Samba$CEND..."
+#### 21b - Samba
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Samba$CEND..."
+if [ "$ToInstall_OpenVPN" == "YES" ]; then
 	screen -dmS Samba /bin/bash $MySB_InstallDir/install/Samba 'INSTALL';
 	WaitingScreen Samba
 	StatusSTD
+else
+	echo -e "$Global_NothingToDo"
+fi
 
-	#### 21c - NFS
-	(( CurrentSTEP++ ))
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring NFS$CEND..."
+#### 21c - NFS
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring NFS$CEND..."
+if [ "$ToInstall_OpenVPN" == "YES" ]; then
 	screen -dmS NFS /bin/bash $MySB_InstallDir/install/NFS 'INSTALL';
-	Waiti2ngScreen NFS
+	WaitingScreen NFS
 	StatusSTD
+else
+	echo -e "$Global_NothingToDo"
 fi
 
 #### 22 - Logwatch
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Logwatch$CEND..."
 if [ "$ToInstall_LogWatch" == "YES" ]; then
-	(( CurrentSTEP++ ))
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Logwatch$CEND..."
 	screen -dmS Logwatch /bin/bash $MySB_InstallDir/install/Logwatch 'INSTALL';
 	WaitingScreen Logwatch
 	StatusSTD
+else
+	echo -e "$Global_NothingToDo"	
 fi
 
 ### 23 - PlexMedia
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring PlexMedia$CEND..."
 if [ "$ToInstall_PlexMedia" == "YES" ]; then
-	(( CurrentSTEP++ ))
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring PlexMedia$CEND..."
 	screen -dmS PlexMedia /bin/bash $MySB_InstallDir/install/PlexMedia 'INSTALL';
 	WaitingScreen PlexMedia
 	StatusSTD
+else
+	echo -e "$Global_NothingToDo"
 fi
 
 ### 24 - ownCloud
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring ownCloud$CEND..."
 if [ "$ToInstall_ownCloud" == "YES" ]; then
-	(( CurrentSTEP++ ))
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring ownCloud$CEND..."
 	screen -dmS ownCloud /bin/bash $MySB_InstallDir/install/ownCloud 'INSTALL';
 	WaitingScreen ownCloud
 	StatusSTD
+else
+	echo -e "$Global_NothingToDo"
 fi
 
 #### 25 - Webmin
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Webmin$CEND..."
 if [ "$ToInstall_Webmin" == "YES" ]; then
-	(( CurrentSTEP++ ))
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Webmin$CEND..."
 	screen -dmS Webmin /bin/bash $MySB_InstallDir/install/Webmin 'INSTALL';
 	WaitingScreen Webmin
 	StatusSTD
+else
+	echo -e "$Global_NothingToDo"
 fi
 
 #
