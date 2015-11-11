@@ -56,12 +56,14 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 
 	#### ownCloud Core
 	if [ "$1" == "UPGRADE" ] || [ ! -d $ownCloudDir ]; then
+		# Backup the existing config file
+		if [ -f $ownCloudDir/config/config.php ]; then
+			mv $ownCloudDir/config/config.php $MySB_InstallDir/temp/owncloud_config.php
+		fi
+
 		ownCloudUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'ownCloud'"`"
 		ownCloudFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'ownCloud'"`"
 		DeleteDirectory 1 "$ownCloudDir"
-		# if [ -d $ownCloudDir ]; then
-			# rm -vrf $ownCloudDir
-		# fi
 		if [ ! -f $MySB_InstallDir/files/$ownCloudFile ]; then
 			wget --no-check-certificate $ownCloudUrl -O $MySB_InstallDir/files/$ownCloudFile
 		fi
@@ -70,6 +72,10 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		if [ -d $MySB_InstallDir/temp/$SubDirownCloud ]; then
 			mv -v $MySB_InstallDir/temp/$SubDirownCloud $ownCloudDir
 		fi
+		# Restore the existing config file
+		if [ -f $MySB_InstallDir/temp/owncloud_config.php ]; then
+			mv $MySB_InstallDir/temp/owncloud_config.php $ownCloudDir/config/config.php
+		fi		
 	fi
 	if [ "$1" == "UPGRADE" ] && [ -d $ownCloudDir ]; then
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
