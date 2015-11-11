@@ -25,17 +25,25 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 if [ "$ToInstall_ownCloud" == "YES" ]; then
-	if CheckCommand 0 smbclient; then
+	if ! CheckCommand 0 smbclient; then
 		PackagesManage install "smbclient"
 	fi
-
+	
 	#### VARs
+	source /etc/MySB/config_db
 	ownCloudDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ownCloud'"`"
-	ownCloudVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'ownCloud'"`"
+	MailFrom="`echo $MainUserEmail | cut -d "@" -f 1`"
+	MailDomain="`echo $MainUserEmail | cut -d "@" -f 2`"	
 	TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
 	TimeStamp=$(date +%s)
-	#MailFrom="`echo $MainUserEmail | cut -d "@" -f 1`"
-	#MailDomain="`echo $MainUserEmail | cut -d "@" -f 2`"
+
+	#### PHP
+	perl -pi -e "s/post_max_size = 10M/post_max_size = 20G/g" /etc/php5/fpm/php.ini
+	perl -pi -e "s/upload_max_filesize = 10M/upload_max_filesize = 20G/g" /etc/php5/fpm/php.ini
+	perl -pi -e "s/max_file_uploads = 20/max_file_uploads = 20000/g" /etc/php5/fpm/php.ini
+	perl -pi -e "s/output_buffering = 4096/output_buffering = Off/g" /etc/php5/fpm/php.ini
+	echo "apc.enable_cli=1" >> /etc/php5/cli/conf.d/20-apcu.ini
+	perl -pi -e "s/^;env\[PATH\]/env\[PATH\]/g" /etc/php5/fpm/pool.d/www.conf	
 
 	#### NginX configuration
 	cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.locations.owncloud.conf.tmpl /etc/nginx/locations/ownCloud.conf
@@ -45,14 +53,6 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.locations.owncloud.local.tmpl /etc/nginx/locations/ownCloud.local
 	perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/locations/ownCloud.local
 	chmod 0644 /etc/nginx/locations/ownCloud.local
-
-	#### PHP
-	perl -pi -e "s/post_max_size = 10M/post_max_size = 20G/g" /etc/php5/fpm/php.ini
-	perl -pi -e "s/upload_max_filesize = 10M/upload_max_filesize = 20G/g" /etc/php5/fpm/php.ini
-	perl -pi -e "s/max_file_uploads = 20/max_file_uploads = 20000/g" /etc/php5/fpm/php.ini
-	perl -pi -e "s/output_buffering = 4096/output_buffering = Off/g" /etc/php5/fpm/php.ini
-	echo "apc.enable_cli=1" >> /etc/php5/cli/conf.d/20-apcu.ini
-	perl -pi -e "s/^;env\[PATH\]/env\[PATH\]/g" /etc/php5/fpm/pool.d/www.conf
 
 	#### ownCloud Core
 	if [ "$1" == "UPGRADE" ] || [ ! -d $ownCloudDir ]; then
@@ -79,18 +79,24 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	crontab -u www-data /tmp/crontab.tmp
 	rm -f /tmp/crontab.tmp
 
-	#### MySQL
-	IfEmpty="`ls -a /var/lib/mysql/ownCloud_db/ 2> /dev/null | sed -e "/\.$/d" | wc -l`"
-	if [ $IfEmpty -eq 1 ]; then
-		/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=ownCloud_db < $MySB_InstallDir/templates/Dump_MySQL_ownCloud_db_2015-09-17.sql
-		/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=ownCloud_db -e "UPDATE oc_preferences SET configvalue = '$TimeZone' WHERE configkey = 'timezone'";
-	fi
-
 	#### Create directories & change rights
 	ManageDirectoriesAndFiles
 
 	#### START services
 	ManageServices start "php5-fpm nginx cron"
+
+	#### Creating database
+	if [ "$1" == "INSTALL" ]; then
+		curl --insecure --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=$MySQL_MysbPassword&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "https://127.0.0.1:$Port_HTTPS/owncloud/"
+		if [ -f /etc/nginx/locations/ownCloud.local ]; then
+			rm -vf /etc/nginx/locations/ownCloud.local
+		fi
+		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_allow_mail_notification','yes'" '-echo'
+		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_allow_public_notification','yes'" '-echo'
+		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_default_expire_date','yes'" '-echo'
+		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' 'userid,appid,configkey,configvalue' "'admin','settings','email','$MainUserEmail'" '-echo'
+		Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$TimeZone'" "configkey = 'timezone'" '-echo'
+	fi
 
 	#### ownCloud config file
 	if [ -d $ownCloudDir ] && [ -f $ownCloudDir/config/config.php ]; then
@@ -106,62 +112,43 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		Secret="`cat $ownCloudDir/config/config.php | grep 'secret' | awk '{ print $3 }'| cut -d "'" -f 2`"
 		Secret="`echo $Secret | sed s,/,\\\\\\\\\\/,g`"
 		echo "Secret: "$Secret
-	fi	
-
-	if [ -d $ownCloudDir ]; then
-		source /etc/MySB/config_db
+		Version="`cat $ownCloudDir/config/config.php | grep 'version' | awk '{ print $3 }'| cut -d "'" -f 2`"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '$Version'" "name = 'ownCloud'"
+		echo "Version: "$Version
+	fi
+	if [ -d $ownCloudDir/config ]; then
 		cp -vf $MySB_InstallDir/templates/owncloud/owncloud.config.php.tmpl $ownCloudDir/config/config.php
 		perl -pi -e "s/<server_name>/$HostNameFQDN/g" $ownCloudDir/config/config.php
 		perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" $ownCloudDir/config/config.php
-		perl -pi -e "s/<PORT_HTTP>/$Port_HTTP/g" $ownCloudDir/config/config.php
-		perl -pi -e "s/<Version>/$ownCloudVersion/g" $ownCloudDir/config/config.php
-		perl -pi -e "s/<MySB_DB_User>/MySB_user/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<Version>/$Version/g" $ownCloudDir/config/config.php
 		perl -pi -e "s/<MySB_DB_Pass>/$MySQL_MysbPassword/g" $ownCloudDir/config/config.php
 		perl -pi -e "s/<TimeZone>/$TimeZoneEscaped/g" $ownCloudDir/config/config.php
-		perl -pi -e "s/<mail_from_address>/$MainUserEmail/g" $ownCloudDir/config/config.php
-		#perl -pi -e "s/<mail_domain>/$MailDomain/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<mail_domain>/$MailDomain/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<mail_from_address>/$MailFrom/g" $ownCloudDir/config/config.php
 		perl -pi -e "s/'en'/'$EnvLang'/g" $ownCloudDir/config/config.php
 		perl -pi -e "s/<InstanceId>/$InstanceId/g" $ownCloudDir/config/config.php
 		perl -pi -e "s/<PasswordSalt>/$PasswordSalt/g" $ownCloudDir/config/config.php
 		perl -pi -e "s/<Secret>/$Secret/g" $ownCloudDir/config/config.php
 		chown www-data:www-data $ownCloudDir/config/config.php
 		chmod 0640 $ownCloudDir/config/config.php
-
-		if [ "$1" == "INSTALL" ]; then
-			sed -i "/'instanceid'/d" $ownCloudDir/config/config.php
-			sed -i "/'passwordsalt'/d" $ownCloudDir/config/config.php
-			sed -i "/'secret'/d" $ownCloudDir/config/config.php
-			curl --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=admin&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "http://127.0.0.1:$Port_HTTP/owncloud/" &> /dev/null
-			sleep 5
-			if [ -f /etc/nginx/locations/ownCloud.local ]; then
-				rm -vf /etc/nginx/locations/ownCloud.local
-			fi
-			perl -pi -e "s/'installed' => false/'installed' => true/g" $ownCloudDir/config/config.php
-		fi
 	fi
 
+	#### ownCloud commands
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable files_external"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ background:cron"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:scan --all"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:repair"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-db"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-js"
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ versions:cleanup"
+	
 	#### External Storage (mount.json)
 	if [ ! -f /home/owncloud/mount.json ]; then
 		IdStorage=$(Func_SQL_Command 'SELECT' 'ownCloud_db' 'numeric_id' 'oc_storages' "id = 'local::/home/\$user/'")
 		cp -vf $MySB_InstallDir/templates/owncloud/home.owncloud.mount.json.tmpl /home/owncloud/mount.json
 		perl -pi -e "s/<IdStorage>/$IdStorage/g" /home/owncloud/mount.json
-	fi
-
-	#### ownCloud commands
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:scan --all"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-db"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-js"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:repair"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ versions:cleanup"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable files_external"
-
-	#### Manage Admin user
-	if [ "$1" == "INSTALL" ] && [ -d $ownCloudDir ]; then
-		OC_PASS=$MySQL_MysbPassword
-		export OC_PASS
-		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:resetpassword --password-from-env admin"
-	fi
+	fi	
 
 	if [ "$1" == "UPGRADE" ] && [ -d $ownCloudDir ]; then
 		#### Create all existing MySB users

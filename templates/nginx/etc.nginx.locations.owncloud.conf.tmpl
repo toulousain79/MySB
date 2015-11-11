@@ -19,6 +19,9 @@ location ^~/owncloud {
 	client_max_body_size 10G;
 	fastcgi_buffers 64 4K;
 
+	# Disable gzip to avoid the removal of the ETag header
+	gzip off;
+
 	# Uncomment if your server is build with the ngx_pagespeed module
 	# This module is currently not supported.
 	pagespeed off;
@@ -53,6 +56,20 @@ location ^~/owncloud {
 
 	location ~ \.php(?:$|/) {
 		include /etc/nginx/conf.d/php-ssl;
+	}
+
+	# Adding the cache control header for js and css files
+	# Make sure it is BELOW the location ~ \.php(?:$|/) { block
+	location ~* \.(?:css|js)$ {
+		add_header Cache-Control "public, max-age=7200";
+		# Add headers to serve security related headers
+		add_header Strict-Transport-Security "max-age=15768000; includeSubDomains; preload;";
+		add_header X-Content-Type-Options nosniff;
+		add_header X-Frame-Options "SAMEORIGIN";
+		add_header X-XSS-Protection "1; mode=block";
+		add_header X-Robots-Tag none;
+		# Optional: Don't log access to assets
+		access_log off;
 	}
 
 	# Optional: set long EXPIRES header on static assets
