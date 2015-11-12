@@ -70,9 +70,6 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 			mv -v $MySB_InstallDir/temp/$SubDirownCloud $ownCloudDir
 		fi
 	fi
-	if [ "$1" == "UPGRADE" ] && [ -d $ownCloudDir ]; then
-		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
-	fi
 
 	#### CRON
 	crontab -u www-data -l > /tmp/crontab.tmp
@@ -87,20 +84,47 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	#### START services
 	ManageServices start "php5-fpm nginx cron"
 
-	#### Creating database
-	if [ "$1" == "INSTALL" ]; then
-		curl --insecure --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=$MySQL_MysbPassword&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "https://127.0.0.1:$Port_HTTPS/owncloud/"
-		if [ -f /etc/nginx/locations/ownCloud.local ]; then
-			rm -vf /etc/nginx/locations/ownCloud.local
-		fi
+	#### Install VS Upgrade
+	case "$1" in
+		"INSTALL")
+			curl --insecure --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=$MySQL_MysbPassword&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "https://127.0.0.1:$Port_HTTPS/owncloud/"
+			if [ -f /etc/nginx/locations/ownCloud.local ]; then
+				rm -vf /etc/nginx/locations/ownCloud.local
+			fi
+		;;
+		"UPGRADE")
+			if [ -d $ownCloudDir ]; then
+				su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
+			fi
+		;;
+	esac
+
+	#### Update database
+	IExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configvalue='yes' AND configkey='shareapi_allow_mail_notification'"`"
+	if [ -z $IExist ]; then
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_allow_mail_notification','yes'" '-echo'
+	fi
+	IExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configvalue='yes' AND configkey='shareapi_allow_public_notification'"`"
+	if [ -z $IExist ]; then
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_allow_public_notification','yes'" '-echo'
+	fi
+	IExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configvalue='yes' AND configkey='shareapi_default_expire_date'"`"
+	if [ -z $IExist ]; then
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_default_expire_date','yes'" '-echo'
+	fi
+	IExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_preferences' "configvalue='$MainUserEmail' AND userid='admin'"`"
+	if [ -z $IExist ]; then
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' 'userid,appid,configkey,configvalue' "'admin','settings','email','$MainUserEmail'" '-echo'
-		Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$TimeZone'" "configkey = 'timezone'" '-echo'
+	fi
+	IExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'gid' 'oc_groups' "gid='MySB_users'"`"
+	if [ -z $IExist ]; then
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_groups' 'gid' "'MySB_users'" '-echo'
+	fi
+	IExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'id' 'oc_storages' "id='local::/home/\$user'"`"
+	if [ -z $IExist ]; then
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_storages' 'id' "'local::/home/\$user'" '-echo'
 	fi
+	Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$TimeZone'" "configkey = 'timezone'" '-echo'
 
 	#### ownCloud config file
 	if [ -d $ownCloudDir ] && [ -f $ownCloudDir/config/config.php ]; then
@@ -138,7 +162,6 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	fi
 
 	#### ownCloud commands
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
 	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable files_external"
 	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ background:cron"
 	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:scan --all"
@@ -146,7 +169,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-db"
 	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-js"
 	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ versions:cleanup"
-	
+
 	#### External Storage (mount.json)
 	if [ ! -f /home/owncloud/mount.json ]; then
 		IdStorage=$(Func_SQL_Command 'SELECT' 'ownCloud_db' 'numeric_id' 'oc_storages' "id = 'local::/home/\$user'")
