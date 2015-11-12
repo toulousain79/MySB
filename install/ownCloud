@@ -28,13 +28,15 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	if ! CheckCommand 0 smbclient; then
 		PackagesManage install "smbclient"
 	fi
-	
+
 	#### VARs
 	source /etc/MySB/config_db
 	ownCloudDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ownCloud'"`"
-	ownCloudOldFile=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'old_file' 'repositories' "name = 'ownCloud'"`"
+	ownCloudOldFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'old_file' 'repositories' "name = 'ownCloud'"`"
+	ownCloudUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'ownCloud'"`"
+	ownCloudFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'ownCloud'"`"	
 	MailFrom="`echo $MainUserEmail | cut -d "@" -f 1`"
-	MailDomain="`echo $MainUserEmail | cut -d "@" -f 2`"	
+	MailDomain="`echo $MainUserEmail | cut -d "@" -f 2`"
 	TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
 	TimeStamp=$(date +%s)
 
@@ -44,22 +46,34 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	perl -pi -e "s/max_file_uploads = 20/max_file_uploads = 20000/g" /etc/php5/fpm/php.ini
 	perl -pi -e "s/output_buffering = 4096/output_buffering = Off/g" /etc/php5/fpm/php.ini
 	echo "apc.enable_cli=1" >> /etc/php5/cli/conf.d/20-apcu.ini
-	perl -pi -e "s/^;env\[PATH\]/env\[PATH\]/g" /etc/php5/fpm/pool.d/www.conf	
+	perl -pi -e "s/^;env\[PATH\]/env\[PATH\]/g" /etc/php5/fpm/pool.d/www.conf
 
 	#### NginX configuration
 	cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.locations.owncloud.conf.tmpl /etc/nginx/locations/ownCloud.conf
 	perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/locations/ownCloud.conf
 	chmod 0644 /etc/nginx/locations/ownCloud.conf
-	# To install ownCloud allows the generation of a ownCloud configuration file and obtain the valeures 'InstanceId', 'PasswordSalt' and 'Secret'.
-	cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.locations.owncloud.local.tmpl /etc/nginx/locations/ownCloud.local
-	perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/locations/ownCloud.local
-	chmod 0644 /etc/nginx/locations/ownCloud.local
 
-	#### ownCloud Core
+	#### ownCloud Core, is it a new install ?
+	# Old archive exist ? So we force an upgrade
+	if [ -f $MySB_InstallDir/files/$ownCloudOldFile ]; then
+		# Backup the config file if needed
+		if [ -f $ownCloudDir/config/config.php ]; then
+			mv -v $ownCloudDir/config/config.php $MySB_InstallDir/temp/owncloud_config.php
+		fi
+		rm -vf $MySB_InstallDir/files/$ownCloudOldFile
+		if [ -f $MySB_InstallDir/files/$ownCloudFile ]; then
+			DeleteDirectory 1 "$ownCloudDir"
+		fi
+	fi
+
 	if [ ! -d $ownCloudDir ]; then
-		ownCloudUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'ownCloud'"`"
-		ownCloudFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'ownCloud'"`"
-		DeleteDirectory 1 "$ownCloudDir"
+		# If an old config file exist, we do not need to install ownCloud for the the first time
+		if [ -f $MySB_InstallDir/temp/owncloud_config.php ]; then
+			# To install ownCloud allows the generation of a ownCloud configuration file and obtain the valeures 'InstanceId', 'PasswordSalt' and 'Secret'.
+			cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.locations.owncloud.local.tmpl /etc/nginx/locations/ownCloud.local
+			perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/locations/ownCloud.local
+			chmod 0644 /etc/nginx/locations/ownCloud.local
+		fi
 
 		if [ ! -f $MySB_InstallDir/files/$ownCloudFile ]; then
 			wget --no-check-certificate $ownCloudUrl -O $MySB_InstallDir/files/$ownCloudFile
@@ -69,6 +83,10 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		if [ -d $MySB_InstallDir/temp/$SubDirownCloud ]; then
 			mv -v $MySB_InstallDir/temp/$SubDirownCloud $ownCloudDir
 		fi
+	fi
+	# Restore the old config file
+	if [ -f $MySB_InstallDir/temp/owncloud_config.php ]; then
+		mv -v $MySB_InstallDir/temp/owncloud_config.php $ownCloudDir/config/config.php
 	fi
 
 	#### CRON
@@ -82,24 +100,15 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	ManageDirectoriesAndFiles
 
 	#### START services
-	ManageServices start "php5-fpm nginx cron"
+	ManageServices start "php5-fpm nginx"
 
-	#### Install VS Upgrade
-	case "$1" in
-		"INSTALL")
-			curl --insecure --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=$MySQL_MysbPassword&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "https://127.0.0.1:$Port_HTTPS/owncloud/"
-			if [ -f /etc/nginx/locations/ownCloud.local ]; then
-				rm -vf /etc/nginx/locations/ownCloud.local
-			fi
-		;;
-		"UPGRADE")
-			if [ -d $ownCloudDir ]; then
-				su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
-			fi
-		;;
-	esac
+	#### 'ownCloud.local' exist ? So we do the first install
+	if [ -f /etc/nginx/locations/ownCloud.local ]; then
+		curl --insecure --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=$MySQL_MysbPassword&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "https://127.0.0.1:$Port_HTTPS/owncloud/"
+		rm -vf /etc/nginx/locations/ownCloud.local
+	fi
 
-	#### Update database
+	#### Update database with new values
 	IExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configvalue='yes' AND configkey='shareapi_allow_mail_notification'"`"
 	if [ -z $IExist ]; then
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_allow_mail_notification','yes'" '-echo'
@@ -120,17 +129,18 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	if [ -z $IExist ]; then
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_groups' 'gid' "'MySB_users'" '-echo'
 	fi
-	IExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'id' 'oc_storages' "id='local::/home/\$user'"`"
+	IExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'id' 'oc_storages' "id='local::/home/\$user/'"`"
 	if [ -z $IExist ]; then
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_storages' 'id' "'local::/home/\$user'" '-echo'
+		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_storages' 'id' "'local::/home/\$user/'" '-echo'
 	fi
+	IExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'id' 'oc_storages' "id='local::/'"`"
+	if [ ! -z $IExist ]; then
+		Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_storages' "id='local::/'" '-echo'
+	fi	
 	Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$TimeZone'" "configkey = 'timezone'" '-echo'
 
 	#### ownCloud config file
 	if [ -d $ownCloudDir ] && [ -f $ownCloudDir/config/config.php ]; then
-		if [ -f /etc/nginx/locations/ownCloud.local ]; then
-			rm -vf /etc/nginx/locations/ownCloud.local
-		fi
 		InstanceId="`cat $ownCloudDir/config/config.php | grep 'instanceid' | awk '{ print $3 }'| cut -d "'" -f 2`"
 		InstanceId="`echo $InstanceId | sed s,/,\\\\\\\\\\/,g`"
 		echo "InstanceId: "$InstanceId 
@@ -162,13 +172,13 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	fi
 
 	#### ownCloud commands
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable files_external"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ background:cron"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:scan --all"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:repair"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-db"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-js"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ versions:cleanup"
+	# su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:repair"
+	# su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
+	# su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable files_external"
+	# su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ background:cron"
+	# su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:scan --all"
+	# su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-db"
+	# su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-js"
 
 	#### External Storage (mount.json)
 	if [ ! -f /home/owncloud/mount.json ]; then
