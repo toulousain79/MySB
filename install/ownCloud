@@ -52,6 +52,10 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.locations.owncloud.conf.tmpl /etc/nginx/locations/ownCloud.conf
 	perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/locations/ownCloud.conf
 	chmod 0644 /etc/nginx/locations/ownCloud.conf
+	# To install ownCloud allows the generation of a ownCloud configuration file and obtain the valeures 'InstanceId', 'PasswordSalt' and 'Secret'.
+	cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.locations.owncloud.local.tmpl /etc/nginx/locations/ownCloud.local
+	perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/locations/ownCloud.local
+	chmod 0644 /etc/nginx/locations/ownCloud.local
 
 	#### ownCloud Core, is it a new install ?
 	# Old archive exist ? So we force an upgrade
@@ -67,14 +71,6 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	fi
 
 	if [ ! -d $ownCloudDir ]; then
-		# If an old config file exist, we do not need to install ownCloud for the the first time
-		if [ -f $MySB_InstallDir/temp/owncloud_config.php ]; then
-			# To install ownCloud allows the generation of a ownCloud configuration file and obtain the valeures 'InstanceId', 'PasswordSalt' and 'Secret'.
-			cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.locations.owncloud.local.tmpl /etc/nginx/locations/ownCloud.local
-			perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/locations/ownCloud.local
-			chmod 0644 /etc/nginx/locations/ownCloud.local
-		fi
-
 		if [ ! -f $MySB_InstallDir/files/$ownCloudFile ]; then
 			wget --no-check-certificate $ownCloudUrl -O $MySB_InstallDir/files/$ownCloudFile
 		fi
@@ -104,7 +100,8 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 
 	#### 'ownCloud.local' exist ? So we do the first install
 	if [ -f /etc/nginx/locations/ownCloud.local ]; then
-		curl --insecure --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=$MySQL_MysbPassword&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "https://127.0.0.1:$Port_HTTPS/owncloud/"
+		#curl --insecure --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=$MySQL_MysbPassword&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "https://127.0.0.1:$Port_HTTPS/owncloud/"
+		curl --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=$MySQL_MysbPassword&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "http://127.0.0.1:$Port_HTTP/owncloud/"
 		rm -vf /etc/nginx/locations/ownCloud.local
 	fi
 
