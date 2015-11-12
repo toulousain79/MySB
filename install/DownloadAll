@@ -55,13 +55,32 @@ for Repo in $AllRepos; do
 	echo "URL : "$RepoURL
 	echo
 
+	# Backup some config files or directory
+	case "$RepoName" in
+		"ownCloud")
+			if [ "$IsInstalled_ownCloud" == "YES" ]; then
+				if [ -f $ownCloudDir/config/config.php ]; then
+					mv -v $ownCloudDir/config/config.php $MySB_InstallDir/temp/owncloud_config.php
+				fi
+			fi
+		;;
+		"Seedbox-Manager")
+			if [ "$IsInstalled_Manager" == "YES" ]; then
+				if [ -d $ManagerDir/conf ]; then
+					mv -v $ManagerDir/conf $MySB_InstallDir/temp/sm_conf
+				fi
+			fi
+		;;
+	esac
+
+	# Delete old repo file
+	if [ -f $MySB_InstallDir/files/$RepoOldFile ]; then
+		rm -vf $MySB_InstallDir/files/$RepoOldFile
+	fi
+
+	# Download all
 	case "$RepoType" in
 		"TARGZ")
-			# Clean on version changed
-			if [ -f $MySB_InstallDir/files/$RepoOldFile ]; then
-				rm -vf $MySB_InstallDir/files/$RepoOldFile
-			fi
-
 			if [ ! -f $MySB_InstallDir/files/$RepoFile ]; then
 				wget --no-check-certificate $RepoURL -O $MySB_InstallDir/files/$RepoFile
 				Error=$?
@@ -71,10 +90,6 @@ for Repo in $AllRepos; do
 				case "$1" in
 					"UPGRADE"|"REFRESH")
 						DeleteDirectory 1 "$MySB_InstallDir$RepoDir"
-						# cd $MySB_InstallDir
-						# if [ -d .$RepoDir ]; then
-							# rm -vrf .$RepoDir
-						# fi
 					;;
 				esac
 			fi
@@ -91,22 +106,12 @@ for Repo in $AllRepos; do
 			fi
 		;;
 		"WBM")
-			# Clean on version changed
-			if [ -f $MySB_InstallDir/files/$RepoOldFile ]; then
-				rm -vf $MySB_InstallDir/files/$RepoOldFile
-			fi
-
 			if [ ! -f $MySB_InstallDir$RepoDir/$RepoFile ]; then
 				wget --no-check-certificate $RepoURL -O $MySB_InstallDir$RepoDir/$RepoFile
 				Error=$?
 			fi
 		;;
 		"SVN")
-			# Clean on version changed
-			if [ -f $MySB_InstallDir/files/$RepoOldFile ]; then
-				rm -vf $MySB_InstallDir/files/$RepoOldFile
-			fi
-
 			case "$1" in
 				"UPGRADE")
 					if [ -d $MySB_InstallDir$RepoDir ]; then
@@ -132,7 +137,7 @@ for Repo in $AllRepos; do
 									svn switch $RepoURL $MySB_InstallDir$RepoDir
 									Error=$?
 								fi
-							fi							
+							fi
 						else
 							svn co $RepoURL $MySB_InstallDir$RepoDir
 							Error=$?
@@ -151,11 +156,6 @@ for Repo in $AllRepos; do
 			esac
 		;;
 		"GIT")
-			# Clean on version changed
-			if [ -f $MySB_InstallDir/files/$RepoOldFile ]; then
-				rm -vf $MySB_InstallDir/files/$RepoOldFile
-			fi
-
 			case "$1" in
 				"UPGRADE")
 					if [ -d $MySB_InstallDir$RepoDir/ ]; then
@@ -187,7 +187,7 @@ for Repo in $AllRepos; do
 									git pull
 									Error=$?
 								fi
-							fi							
+							fi
 						else
 							git clone $RepoURL $MySB_InstallDir$RepoDir
 							Error=$?
@@ -228,23 +228,15 @@ for Repo in $AllRepos; do
 						if [ $Error -eq 0 ]; then
 							git pull
 							Error=$?
-						fi					
+						fi
 					fi
 				;;
 			esac
 		;;
 		"ZIP")
-			# Clean on version changed
-			if [ -f $MySB_InstallDir/files/$RepoOldFile ]; then
-				rm -vf $MySB_InstallDir/files/$RepoOldFile
-			fi
-
 			case "$1" in
 				"UPGRADE"|"REFRESH")
 					DeleteDirectory 1 "$MySB_InstallDir$RepoDir"
-					# if [ -d $MySB_InstallDir$RepoDir ]; then
-						# rm -vrf $MySB_InstallDir$RepoDir
-					# fi
 				;;
 			esac
 
@@ -257,10 +249,6 @@ for Repo in $AllRepos; do
 				case "$1" in
 					"UPGRADE"|"REFRESH")
 						DeleteDirectory 1 "$MySB_InstallDir$RepoDir"
-						# cd $MySB_InstallDir
-						# if [ -d .$RepoDir ]; then
-							# rm -vrf .$RepoDir
-						# fi
 					;;
 				esac
 			fi
@@ -278,6 +266,21 @@ for Repo in $AllRepos; do
 		;;
 	esac
 
+	# Restore some config files or directory
+	case "$RepoName" in
+		"ownCloud")
+			if [ -f $MySB_InstallDir/temp/owncloud_config.php ]; then
+				mv -v $MySB_InstallDir/temp/owncloud_config.php $ownCloudDir/config/config.php
+			fi
+		;;
+		"Seedbox-Manager")
+			if [ -d $MySB_InstallDir/temp/sm_conf ]; then
+				mv -v $MySB_InstallDir/temp/sm_conf $ManagerDir/conf
+			fi
+		;;
+	esac
+
+	# Switch on errors
 	if [ $Error -gt 0 ]; then
 		case "$RepoName" in
 			"Cakebox-Light")
@@ -309,8 +312,6 @@ if [ "$RemovePluginCakebox" == "YES" ]; then
 	echo "Directory : "$PluginDir
 	echo
 	DeleteDirectory 1 "$MySB_InstallDir$PluginDir"
-	# cd $MySB_InstallDir
-	# if [ -d .$PluginDir ]; then rm -vrf .$PluginDir; fi
 fi
 if [ "$RemovePluginManager" == "YES" ]; then
 	PluginDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ruTorrent Plugin Link Manager'"`"
@@ -319,8 +320,6 @@ if [ "$RemovePluginManager" == "YES" ]; then
 	echo "Directory : "$PluginDir
 	echo
 	DeleteDirectory 1 "$MySB_InstallDir$PluginDir"
-	# cd $MySB_InstallDir
-	# if [ -d .$PluginDir ]; then rm -vrf .$PluginDir; fi
 fi
 
 # -----------------------------------------
