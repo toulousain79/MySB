@@ -32,6 +32,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	#### VARs
 	source /etc/MySB/config_db
 	ownCloudDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ownCloud'"`"
+	ownCloudOldFile=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'old_file' 'repositories' "name = 'ownCloud'"`"
 	MailFrom="`echo $MainUserEmail | cut -d "@" -f 1`"
 	MailDomain="`echo $MainUserEmail | cut -d "@" -f 2`"	
 	TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
@@ -55,12 +56,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	chmod 0644 /etc/nginx/locations/ownCloud.local
 
 	#### ownCloud Core
-	if [ "$1" == "UPGRADE" ] || [ ! -d $ownCloudDir ]; then
-		# Backup the existing config file
-		if [ -f $ownCloudDir/config/config.php ]; then
-			mv -v $ownCloudDir/config/config.php $MySB_InstallDir/temp/owncloud_config.php
-		fi
-
+	if [ ! -d $ownCloudDir ]; then
 		ownCloudUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'ownCloud'"`"
 		ownCloudFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'ownCloud'"`"
 		DeleteDirectory 1 "$ownCloudDir"
@@ -73,10 +69,6 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		if [ -d $MySB_InstallDir/temp/$SubDirownCloud ]; then
 			mv -v $MySB_InstallDir/temp/$SubDirownCloud $ownCloudDir
 		fi
-		# Restore the existing config file
-		if [ -f $MySB_InstallDir/temp/owncloud_config.php ]; then
-			mv -v $MySB_InstallDir/temp/owncloud_config.php $ownCloudDir/config/config.php
-		fi		
 	fi
 	if [ "$1" == "UPGRADE" ] && [ -d $ownCloudDir ]; then
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
