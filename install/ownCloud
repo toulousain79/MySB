@@ -150,9 +150,6 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		echo "Secret: "$Secret
 	fi
 
-	#### ownCloud upgrade
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
-
 	#### New config file
 	if [ -d $ownCloudDir/config ]; then
 		# Get the new version
@@ -176,38 +173,11 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		chmod 0640 $ownCloudDir/config/config.php
 	fi
 
-	#### ownCloud upgrade
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:repair"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable files_external"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ background:cron"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:scan --all"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-db"
-	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-js"	
-
 	#### External Storage (mount.json)
 	if [ ! -f /home/owncloud/mount.json ]; then
 		IdStorage=$(Func_SQL_Command 'SELECT' 'ownCloud_db' 'numeric_id' 'oc_storages' "id = 'local::/home/\$user'")
 		cp -vf $MySB_InstallDir/templates/owncloud/home.owncloud.mount.json.tmpl /home/owncloud/mount.json
 		perl -pi -e "s/<IdStorage>/$IdStorage/g" /home/owncloud/mount.json
-	fi
-
-	if [ "$1" == "UPGRADE" ] && [ -d $ownCloudDir ]; then
-		#### Create all existing MySB users
-		ListingUsers
-		for seedUser in $UsersList; do
-			UserExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'uid' 'oc_users' "uid='$seedUser'"`"
-
-			if [ -z $UserExist ]; then
-				FnUserMail="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$seedUser'"`"
-				OC_PASS="`GenPassword 8`"
-				export OC_PASS
-				su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:add --password-from-env --display-name=\"$seedUser\" --group=\"MySB_users\" $seedUser" &> /dev/null
-				Func_ownCloud_DB "CreateUser" "$seedUser" "$FnUserMail" "$EnvLang"
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "init_password = '1'" "users_ident = '$seedUser'"
-			fi
-			unset UserExist
-		done
 	fi
 
 	#### Logrotate
