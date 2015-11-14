@@ -110,6 +110,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	fi
 
 	#### Update database with new values
+	# oc_appconfig
 	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configvalue='yes' AND configkey='shareapi_allow_mail_notification'"`"
 	if [ -z $IfExist ]; then
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_allow_mail_notification','yes'" '-echo'
@@ -122,6 +123,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	if [ -z $IfExist ]; then
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_default_expire_date','yes'" '-echo'
 	fi
+	# oc_preferences
 	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_preferences' "configvalue='$MainUserEmail' AND userid='admin'"`"
 	if [ -z $IfExist ]; then
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' 'userid,appid,configkey,configvalue' "'admin','settings','email','$MainUserEmail'" '-echo'
@@ -130,15 +132,10 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	if [ -z $IfExist ]; then
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_groups' 'gid' "'MySB_users'" '-echo'
 	fi
-	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'id' 'oc_storages' "id='local::/home/\$user/'"`"
-	if [ -z $IfExist ]; then
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_storages' 'id' "'local::/home/\$user/'" '-echo'
-	fi
-	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'id' 'oc_storages' "id='local::/'"`"
-	if [ ! -z $IfExist ]; then
-		Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_storages' "id='local::/'" '-echo'
-	fi
 	Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$TimeZone'" "configkey = 'timezone'" '-echo'
+	# oc_storages
+	Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_storages' "1" '-echo'
+	Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_storages' 'id' "'local::/home/\$user/'" '-echo'
 
 	#### Check old config file
 	if [ -d $ownCloudDir ] && [ -f $ownCloudDir/config/config.php ]; then
@@ -152,6 +149,8 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		Secret="`echo $Secret | sed s,/,\\\\\\\\\\/,g`"
 		echo "Secret: "$Secret
 	fi
+
+	ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/MySB_SecurityRules" 'create' 'UPGRADE'
 
 	#### ownCloud upgrade
 	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
