@@ -49,14 +49,20 @@ ApplyConfigBind=NO
 ApplyConfigDnscrypt=NO
 ApplyIptablesUsers=NO
 ApplyIptablesDnscrypt=NO
+LoadOnBoot=NO
 
 # Check by arguments
 for Arg in "$@"; do
 	case "$Arg" in
-		INSTALL|UPGRADE|INIT)
+		INSTALL|UPGRADE)
 			LoadKernelModules=YES
 			LoadKernelParameter=YES
 		;;
+		INIT)
+			LoadKernelModules=YES
+			LoadKernelParameter=YES
+			LoadOnBoot=YES
+		;;		
 	esac
 done
 
@@ -441,11 +447,12 @@ case "$Switch" in
 
 		#### Complete the previous upgrade
 		UpgradeFileList="`ls -A1 $MySB_InstallDir/upgrade/*.upg`"
-		if [ ! -z "$UpgradeFileList" ]; then
+		if [ ! -z "$UpgradeFileList" ] && [ "$LoadOnBoot" == "YES" ]; then
 			for File in $UpgradeFileList; do
 				log_daemon_msg "$SecurityRules_UpgradeEnd $File"
 				ScriptInvoke 'ScreenSTD' "$MySB_InstallDir/upgrade/$File" 'SCREEN'
 				StatusLSB
+				rm -f $MySB_InstallDir/upgrade/$File
 			done
 		fi
 	;;
