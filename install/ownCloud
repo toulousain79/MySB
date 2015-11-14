@@ -104,12 +104,8 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	ManageServices start "php5-fpm nginx"
 	
 	#### 'ownCloud.local' exist ? So we do the first install
-	if [ -f /etc/nginx/locations/ownCloud.local ]; then
-		if [ ! -f $ownCloudDir/config/config.php ]; then
-			curl --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=$MySQL_MysbPassword&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "http://127.0.0.1:$Port_HTTP/owncloud/"
-		else
-			curl --user $MySB_User:$MySB_Password "http://127.0.0.1:$Port_HTTP/owncloud/"
-		fi
+	if [ -f /etc/nginx/locations/ownCloud.local ] && [ ! -f $ownCloudDir/config/config.php ]; then
+		curl --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=$MySQL_MysbPassword&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "http://127.0.0.1:$Port_HTTP/owncloud/"
 		rm -vf /etc/nginx/locations/ownCloud.local
 	fi
 
@@ -141,7 +137,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'id' 'oc_storages' "id='local::/'"`"
 	if [ ! -z $IfExist ]; then
 		Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_storages' "id='local::/'" '-echo'
-	fi	
+	fi
 	Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$TimeZone'" "configkey = 'timezone'" '-echo'
 
 	#### Check old config file
@@ -166,7 +162,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		Version="`cat $ownCloudDir/config/config.php | grep 'version' | awk '{ print $3 }'| cut -d "'" -f 2`"
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '$Version'" "name = 'ownCloud'"
 		echo "Version: "$Version
-		
+
 		cp -vf $MySB_InstallDir/templates/owncloud/owncloud.config.php.tmpl $ownCloudDir/config/config.php
 		perl -pi -e "s/<server_name>/$HostNameFQDN/g" $ownCloudDir/config/config.php
 		perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" $ownCloudDir/config/config.php
