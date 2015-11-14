@@ -87,11 +87,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	fi
 	# Restore the old config file (rename it 'old_config' for force the upgrade of the database)
 	if [ -f $MySB_InstallDir/temp/owncloud_config.php ]; then
-		mv -v $MySB_InstallDir/temp/owncloud_config.php $ownCloudDir/config/old_config.php
-	fi
-	# Rename the current config file if needed (rename it 'old_config' for force the upgrade of the database)
-	if [ -f $ownCloudDir/config/config.php ]; then
-		mv -v $ownCloudDir/config/config.php $ownCloudDir/config/old_config.php
+		mv -v $MySB_InstallDir/temp/owncloud_config.php $ownCloudDir/config/config.php
 	fi
 
 	#### CRON
@@ -108,8 +104,12 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	ManageServices start "php5-fpm nginx"
 	
 	#### 'ownCloud.local' exist ? So we do the first install
-	if [ -f /etc/nginx/locations/ownCloud.local ] && [ ! -f $ownCloudDir/config/config.php ]; then
-		curl --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=$MySQL_MysbPassword&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "http://127.0.0.1:$Port_HTTP/owncloud/"
+	if [ -f /etc/nginx/locations/ownCloud.local ]; then
+		if [ ! -f $ownCloudDir/config/config.php ]; then
+			curl --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=$MySQL_MysbPassword&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "http://127.0.0.1:$Port_HTTP/owncloud/"
+		else
+			curl --user $MySB_User:$MySB_Password "http://127.0.0.1:$Port_HTTP/owncloud/"
+		fi
 		rm -vf /etc/nginx/locations/ownCloud.local
 	fi
 
@@ -145,7 +145,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$TimeZone'" "configkey = 'timezone'" '-echo'
 
 	#### ownCloud old_config file
-	if [ -d $ownCloudDir ] && [ -f $ownCloudDir/config/old_config.php ]; then
+	if [ -d $ownCloudDir ] && [ -f $ownCloudDir/config/config.php ]; then
 		InstanceId="`cat $ownCloudDir/config/old_config.php | grep 'instanceid' | awk '{ print $3 }'| cut -d "'" -f 2`"
 		InstanceId="`echo $InstanceId | sed s,/,\\\\\\\\\\/,g`"
 		echo "InstanceId: "$InstanceId 
@@ -158,8 +158,6 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		Version="`cat $ownCloudDir/config/old_config.php | grep 'version' | awk '{ print $3 }'| cut -d "'" -f 2`"
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '$Version'" "name = 'ownCloud'"
 		echo "Version: "$Version
-		# Delete the old config file
-		rm -vf $ownCloudDir/config/old_config.php
 	fi
 	if [ -d $ownCloudDir/config ]; then
 		cp -vf $MySB_InstallDir/templates/owncloud/owncloud.config.php.tmpl $ownCloudDir/config/config.php
