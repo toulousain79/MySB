@@ -54,8 +54,6 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 
 	if [ -d $LibsodiumDir ]; then
 		cd $LibsodiumDir/
-		LibsodiumUrl="`echo $LibsodiumUrl | sed 's/https/git/g;'`"
-		#git remote set-url origin $LibsodiumUrl
 		git stash
 		git pull
 		make clean
@@ -144,22 +142,18 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 
 	#### Logs
 	if [ ! -d /var/log/dnscrypt-proxy/archives ]; then mkdir -p /var/log/dnscrypt-proxy/archives; fi
-	if [ -f /var/log/dnscrypt-proxy.log ]; then mv /var/log/dnscrypt-proxy.log /var/log/dnscrypt-proxy; fi
-
-	#### Logrotate
-	LogRotate 'dnscrypt-proxy'
-
-	#### START services
-	Switch="$1"
-	if [ "$Switch" != "UPGRADE" ]; then
-		ManageServices start "cron dnscrypt-proxy"
-	fi
+	if [ -f /var/log/dnscrypt-proxy.log ]; then mv /var/log/dnscrypt-proxy.log /var/log/dnscrypt-proxy/; fi
 
 	#### Create new security rules
 	ScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create'
 
+	#### Logrotate
+	LogRotate 'dnscrypt-proxy'
+
 	#### Check if service is OK and running
 	if [ "$Switch" != "UPGRADE" ]; then
+		#Wait a moment for DNScrypt to start
+		sleep 5
 		if ! GetPid dnscrypt-proxy; then
 			service dnscrypt-proxy status | tee -a $MySB_InstallDir/temp/continue
 		fi

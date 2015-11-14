@@ -52,24 +52,24 @@ if [ "$USAGE" == "ON" ]; then
 
 	UserSFTP="$(echo $UserSFTP | sed "s/$Global_YES/1/g;" | sed "s/$Global_NO/0/g;")"
 	UserSUDO="$(echo $UserSUDO | sed "s/$Global_YES/1/g;" | sed "s/$Global_NO/0/g;")"
-	Type="MANUAL"
+	Switch="MANUAL"
 else
-	# user sftp sudo email type
+	# user sftp sudo email Switch
 	UserToCreate="$1"
 
 	case "$2" in
-		"INSTALL")	# INSTALL ($1 = user, $2 = type), user created by installation (main user)
+		"INSTALL")	# INSTALL ($1 = user, $2 = Switch), user created by installation (main user)
 			UserSFTP=1
 			UserSUDO=0
 			UserEmail="$MainUserEmail"
 			NewUserPassword="$MainUserPassword"
-			Type="$2"
+			Switch="$2"
 		;;	
-		*)			# APPLYCONFIG (user sftp sudo email type), user created by Web
+		*)			# APPLYCONFIG (user sftp sudo email Switch), user created by Web
 			UserSFTP=$2
 			UserSUDO=$3
 			UserEmail="$4"
-			Type="$5"
+			Switch="$5"
 			NewUserPassword="`GenPassword 8`"
 		;;
 	esac
@@ -307,15 +307,19 @@ done
 #### Assign password
 ScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_ChangeUserPassword" "$UserToCreate" "$NewUserPassword" 'INSTALL'
 
+#### Create new security rules
+log_daemon_msg "$CreateUser_SecurituRules"
+ScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--users' "$Switch"
+StatusLSB
+
 #### START services
 # For 'MySB_CreateUser' and 'MySB_ChangeUserPassword'
 # 'NginX is restarted by 'MySB_SecurityRules'
-ManageServices start "vsftpd nfs-kernel-server cron"
-
-#### Create new security rules
-log_daemon_msg "$CreateUser_SecurituRules"
-ScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--users' "$Type"
-StatusLSB
+ServicesToRestart="vsftpd nfs-kernel-server"
+if [ "$Switch" != "UPGRADE" ]; then
+	ServicesToRestart="${ServicesToRestart} cron"
+fi
+ManageServices start "${ServicesToRestart}"
 
 #### renting
 MonthlyPayment "$UserToCreate"
