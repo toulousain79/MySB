@@ -110,7 +110,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		else
 			curl --user $MySB_User:$MySB_Password "http://127.0.0.1:$Port_HTTP/owncloud/"
 		fi
-		#rm -vf /etc/nginx/locations/ownCloud.local
+		rm -vf /etc/nginx/locations/ownCloud.local
 	fi
 
 	#### Update database with new values
@@ -144,7 +144,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	fi	
 	Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$TimeZone'" "configkey = 'timezone'" '-echo'
 
-	#### ownCloud config file
+	#### Check old config file
 	if [ -d $ownCloudDir ] && [ -f $ownCloudDir/config/config.php ]; then
 		InstanceId="`cat $ownCloudDir/config/config.php | grep 'instanceid' | awk '{ print $3 }'| cut -d "'" -f 2`"
 		InstanceId="`echo $InstanceId | sed s,/,\\\\\\\\\\/,g`"
@@ -155,11 +155,18 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		Secret="`cat $ownCloudDir/config/config.php | grep 'secret' | awk '{ print $3 }'| cut -d "'" -f 2`"
 		Secret="`echo $Secret | sed s,/,\\\\\\\\\\/,g`"
 		echo "Secret: "$Secret
+	fi
+
+	#### ownCloud upgrade
+	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
+
+	#### New config file
+	if [ -d $ownCloudDir/config ]; then
+		# Get the new version
 		Version="`cat $ownCloudDir/config/config.php | grep 'version' | awk '{ print $3 }'| cut -d "'" -f 2`"
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '$Version'" "name = 'ownCloud'"
 		echo "Version: "$Version
-	fi
-	if [ -d $ownCloudDir/config ]; then
+		
 		cp -vf $MySB_InstallDir/templates/owncloud/owncloud.config.php.tmpl $ownCloudDir/config/config.php
 		perl -pi -e "s/<server_name>/$HostNameFQDN/g" $ownCloudDir/config/config.php
 		perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" $ownCloudDir/config/config.php
@@ -176,7 +183,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		chmod 0640 $ownCloudDir/config/config.php
 	fi
 
-	#### ownCloud commands
+	#### ownCloud upgrade
 	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
 	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:repair"
 	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable files_external"
