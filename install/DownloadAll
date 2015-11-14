@@ -44,7 +44,7 @@ for Repo in $AllRepos; do
 	RepoFile="`echo $Repo | awk '{split($0,a,"|"); print a[6]}'`"
 	RepoOldFile="`echo $Repo | awk '{split($0,a,"|"); print a[7]}'`"
 	RepoURL="`echo $Repo | awk '{split($0,a,"|"); print a[8]}'`"
-	ToDo=0
+	ToDelete=0
 	Error=0
 
 	echo
@@ -77,7 +77,9 @@ for Repo in $AllRepos; do
 	# Delete old repo file
 	if [ -f $MySB_InstallDir/files/$RepoOldFile ]; then
 		rm -vf $MySB_InstallDir/files/$RepoOldFile
-		ToDo=1
+		ToDelete=1
+		# Maybe need to launch a script on next reboot ?
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "on_boot = '1'" "name = '$RepoName'" '-echo'
 	fi
 
 	# Download all
@@ -91,7 +93,7 @@ for Repo in $AllRepos; do
 				# We can delete repo dir ONLY IF tar.gz file exist...
 				case "$1" in
 					"UPGRADE"|"REFRESH")
-						if [ $ToDo -eq 1 ]; then
+						if [ $ToDelete -eq 1 ]; then
 							DeleteDirectory 1 "$MySB_InstallDir$RepoDir"
 						fi
 					;;
@@ -246,7 +248,7 @@ for Repo in $AllRepos; do
 				# We can delete repo dir ONLY IF zip file exist...
 				case "$1" in
 					"UPGRADE"|"REFRESH")
-						if [ $ToDo -eq 1 ]; then
+						if [ $ToDelete -eq 1 ]; then
 							DeleteDirectory 1 "$MySB_InstallDir$RepoDir"
 						fi
 					;;
@@ -285,17 +287,17 @@ for Repo in $AllRepos; do
 		case "$RepoName" in
 			"Cakebox-Light")
 				RemovePluginCakebox=YES
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '0'" "serv_name = 'CakeBox-Light'"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '0'" "serv_name = 'CakeBox-Light'" '-echo'
 			;;
 			"Seedbox-Manager")
 				RemovePluginManager=YES
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '0'" "serv_name = 'Seedbox-Manager'"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '0'" "serv_name = 'Seedbox-Manager'" '-echo'
 			;;
 			"Composer"|"NodeJS")
 				RemovePluginCakebox=YES
 				RemovePluginManager=YES
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '0'" "serv_name = 'CakeBox-Light'"
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '0'" "serv_name = 'Seedbox-Manager'"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '0'" "serv_name = 'CakeBox-Light'" '-echo'
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '0'" "serv_name = 'Seedbox-Manager'" '-echo'
 			;;
 			"XMLRPC"|"LibTorrent"|"rTorrent"|"ruTorrent"|"ruTorrents Official Plugins")
 				echo "$RepoURL" >> $MySB_InstallDir/temp/continue

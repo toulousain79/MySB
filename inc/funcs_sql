@@ -22,46 +22,11 @@
 #
 ##################### FIRST LINE #####################################
 
-#### ownCloud
-Func_ownCloud_DB() {
-	Type="$1"
-	Tables="$2"
-	Columns="$3"
-	Values="$3"
-
-	case "$Type" in
-		"CreateUser")
-			User="$2"
-			Mail="$3"
-			Lang="$4"
-			TimeStamp=$(date +%s)
-
-			/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=ownCloud_db <<-EOF
-			INSERT INTO oc_preferences (userid, appid, configkey, configvalue) VALUES('admin', 'files_external', '/Home_$User', '$TimeStamp');
-			INSERT INTO oc_preferences (userid, appid, configkey, configvalue) VALUES('$User', 'core', 'lang', '$Lang');
-			INSERT INTO oc_preferences (userid, appid, configkey, configvalue) VALUES('$User', 'settings', 'email', '$Mail');
-			INSERT INTO oc_storages (id) VALUES('local::/home/$User/');
-			EOF
-		;;
-		"DeleteUser")
-			User="$2"
-
-			/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=ownCloud_db <<-EOF
-			DELETE FROM oc_storages WHERE id = 'local::/home/$User';
-			DELETE FROM oc_preferences WHERE configkey = '/Home_$User';
-			EOF
-		;;
-		"INSERT")
-			/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=ownCloud_db -e "INSERT INTO $Tables ($Columns) VALUES ($Values)";
-		;;
-	esac
-}
-
 Func_SQL_Command() {
 	DatabaseType="mysql"
 	Command="$1"
 	DataBase="$2"
-	AptDate="`date +%Y-%m-%d\ %H:%M:%S`"	
+	AptDate="`date +%Y-%m-%d\ %H:%M:%S`"
 
 	# MySQL or SQLite ?
 	case "$DataBase" in
@@ -89,10 +54,11 @@ Func_SQL_Command() {
 					/usr/bin/sqlite3 $Display -cmd '.timeout 150000' $DataBase "UPDATE $Table SET $VarSet WHERE $VarWhere;"
 				;;
 				"mysql")
+					Command="UPDATE $Table SET $VarSet WHERE $VarWhere"
 					if [ "$Display" == "-echo" ];then
-						echo "UPDATE $Table SET $VarSet WHERE $VarWhere"
-					fi				
-					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "UPDATE $Table SET $VarSet WHERE $VarWhere";
+						echo "$Command"
+					fi
+					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "$Command";
 				;;
 			esac
 		;;
@@ -106,10 +72,11 @@ Func_SQL_Command() {
 					/usr/bin/sqlite3 $Display  -cmd '.timeout 150000' $DataBase "INSERT INTO $Table ($VarColumns) VALUES ($VarValues);"
 				;;
 				"mysql")
+					Command="INSERT INTO $Table ($VarColumns) VALUES ($VarValues)"
 					if [ "$Display" == "-echo" ];then
-						echo "INSERT INTO $Table ($VarColumns) VALUES ($VarValues)"
-					fi				
-					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "INSERT INTO $Table ($VarColumns) VALUES ($VarValues)";
+						echo "$Command"
+					fi
+					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "$Command";
 				;;
 			esac
 		;;
@@ -118,14 +85,15 @@ Func_SQL_Command() {
 			VarWhere="$4"
 			Display="$5"
 			case "$DatabaseType" in
-				"sqlite3")			
+				"sqlite3")
 					/usr/bin/sqlite3 $Display -cmd '.timeout 150000' $DataBase "DELETE FROM $Table WHERE $VarWhere"
 				;;
 				"mysql")
+					Command="DELETE FROM $Table WHERE $VarWhere"
 					if [ "$Display" == "-echo" ];then
-						echo "DELETE FROM $Table WHERE $VarWhere"
+						echo "$Command"
 					fi
-					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "DELETE FROM $Table WHERE $VarWhere";
+					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "$Command";
 				;;
 			esac
 		;;
@@ -164,6 +132,21 @@ Func_SQL_Command() {
 				;;
 			esac
 		;;
+		"ALTER")
+			Table="$3"
+			NewColumn="$4"
+			Params="$5"
+			Display="$6"
+			case "$DatabaseType" in
+				"mysql")
+					Command="ALTER TABLE \`$Table\` ADD \`$NewColumn\` $Params"
+					if [ "$Display" == "-echo" ];then
+						echo "$Command"
+					fi
+					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "$Command";
+				;;
+			esac
+		;;		
 	esac
 }
 

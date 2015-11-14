@@ -86,6 +86,8 @@ CREATE TABLE IF NOT EXISTS `repositories` (
   `old_file` varchar(32) NOT NULL,
   `url` varchar(256) NOT NULL,
   `active` tinyint(1) NOT NULL DEFAULT '0',
+  `on_boot` int(1) NOT NULL DEFAULT '0',
+  `script` varchar(128) NOT NULL,  
   PRIMARY KEY (`id_repositories`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=33 ;
 

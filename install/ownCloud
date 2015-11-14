@@ -24,7 +24,13 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-if [ "$ToInstall_ownCloud" == "YES" ]; then
+#### Switch (INSTALL/UPGRADE/INIT)
+if [ ! -z "$1" ]; then
+	Switch="$1"
+fi
+
+#### Installation / Upgrade ?
+if [ "$ToInstall_ownCloud" == "YES" ] && [ "$Switch" != "INIT" ]; then
 	if ! CheckCommand 0 smbclient; then
 		PackagesManage install "smbclient"
 	fi
@@ -73,6 +79,8 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 		if [ -f $MySB_InstallDir/files/$ownCloudFile ]; then
 			DeleteDirectory 1 "$ownCloudDir"
 		fi
+		# Maybe need to launch a script on next reboot ?
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "on_boot = '1', script = '$0'" "name = '$RepoName'" '-echo'
 	fi
 
 	if [ ! -d $ownCloudDir ]; then
@@ -154,7 +162,7 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	if [ -d $ownCloudDir/config ]; then
 		# Get the new version
 		Version="`cat $ownCloudDir/config/config.php | grep 'version' | awk '{ print $3 }'| cut -d "'" -f 2`"
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '$Version'" "name = 'ownCloud'"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '$Version'" "name = 'ownCloud'" '-echo'
 		echo "Version: "$Version
 
 		cp -vf $MySB_InstallDir/templates/owncloud/owncloud.config.php.tmpl $ownCloudDir/config/config.php
@@ -184,7 +192,47 @@ if [ "$ToInstall_ownCloud" == "YES" ]; then
 	LogRotate 'owncloud'
 
 	if CheckCommand 0 $ownCloudDir/occ; then
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '1'" "serv_name = 'ownCloud'"
+		# ownCloud is installed
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '1'" "serv_name = 'ownCloud'" '-echo'
+		# Force upgrade script on next boot if needed
+		OnBoot="`Func_SQL_Command 'SELECT' 'MySB_db' 'on_boot' 'repositories' \"on_boot = '1' AND name = 'ownCloud'\"`"
+		if [ ! -z "$OnBoot" ]; then
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "script = '$0'" "name = 'ownCloud'" '-echo'
+		fi
+	fi
+fi
+
+#### Upgrade on boot
+if [ "$IsInstalled_ownCloud" == "YES" ] && [ "$Switch" == "INIT" ]; then
+	if [ ! -z "$ScriptOnBoot" ]; then
+		#### ownCloud upgrade
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:repair"
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable files_external"
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ background:cron"
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:scan --all"
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-db"
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-js"
+
+		#### Create all existing MySB users
+		ListingUsers
+		for seedUser in $UsersList; do
+			UserExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'uid' 'oc_users' "uid='$seedUser'"`"
+
+			if [ -z $UserExist ]; then
+				FnUserMail="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$seedUser'"`"
+				OC_PASS="`GenPassword 8`"
+				export OC_PASS
+				TimeStamp=$(date +%s)
+				su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:add --password-from-env --display-name=\"$seedUser\" --group=\"MySB_users\" $seedUser" &> /dev/null
+				Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'admin','files_external','/Home_$seedUser','$TimeStamp'"
+				Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'$seedUser','core','lang','$EnvLang'"
+				Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'$seedUser','settings','email','$EnvLang'"
+				Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_storages' "id" "'local::/home/$seedUser/'"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "init_password = '1'" "users_ident = '$seedUser'" '-echo'
+			fi
+			unset UserExist
+		done
 	fi
 fi
 

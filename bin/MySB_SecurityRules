@@ -446,14 +446,21 @@ case "$Switch" in
 		#### Save Iptables Rules for Webmin
 
 		#### Complete the previous upgrade
-		UpgradeFileList="`ls -A1 $MySB_InstallDir/upgrade/*.upg`"
-		if [ ! -z "$UpgradeFileList" ] && [ "$LoadOnBoot" == "YES" ]; then
-			for File in $UpgradeFileList; do
-				log_daemon_msg "$SecurityRules_UpgradeEnd $File"
-				ScriptInvoke 'ScreenSTD' "$File" 'SCREEN'
-				StatusLSB
-				rm -f $File
-			done
+		if [ "$LoadOnBoot" == "YES" ]; then
+			ScriptOnBoot="`Func_SQL_Command 'SELECT' 'MySB_db' 'name,script' 'repositories' \"on_boot = '1' AND active = '1'\"`"
+			if [ ! -z "$ScriptOnBoot" ]; then
+				IFS=$'\n'
+				for Script in $ScriptOnBoot; do
+					Name="`echo $Script | awk '{split($0,a,"|"); print a[2]}'`"
+					Script="`echo $Script | awk '{split($0,a,"|"); print a[3]}'`"
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "on_boot = '0'" "name = '$Name'"
+
+					log_daemon_msg "$SecurityRules_UpgradeEnd $Name"
+					ScriptInvoke 'ScreenSTD' "$Script" 'INIT'
+					StatusLSB
+				fi
+				unset IFS
+			fi
 		fi
 	;;
 
