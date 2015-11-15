@@ -26,7 +26,7 @@
 if [ "$0" != "-bash" ]; then
 	ScriptName=$(basename $0)
 	DirName=$(dirname $0)
-	CurrentPID=$$
+	CurrentPID="ParentPID:$$"
 fi
 if [ -f /etc/MySB/config ]; then
 	source /etc/MySB/config
@@ -40,8 +40,9 @@ fi
 if [ ! -z "$ScriptName" ]; then
 	case "$ScriptName" in
 		MySB_SecurityRules)
+			ParentPID="`ps -p $CurrentPID -f --no-headers | grep -Po '\w*ParentPID:\w*' | awk -F':' '{ print $2 }'`"
 			WaitingDuring=0
-			while [ ! -z "`ps ax | grep -e 'MySB_SecurityRules' -e 'create' -e 'refresh' | grep -v "$CurrentPID" | grep -v 'grep'`" ]; do
+			while [ ! -z "`ps ax | grep -e 'MySB_SecurityRules' -e 'create' -e 'refresh' | grep -v -e "$CurrentPID" -e "$ParentPID" | grep -v 'grep'`" ]; do
 				(( WaitingDuring++ ))
 				sleep 1
 			done
