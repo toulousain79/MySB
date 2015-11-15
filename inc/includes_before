@@ -26,7 +26,6 @@
 if [ "$0" != "-bash" ]; then
 	ScriptName=$(basename $0)
 	DirName=$(dirname $0)
-	CurrentPID="ParentPID:$$"
 fi
 if [ -f /etc/MySB/config ]; then
 	source /etc/MySB/config
@@ -36,16 +35,15 @@ else
 	exit 1
 fi
 
-#### 2 - Waiting after
+#### 2 - Add in 'commands' table to prevent simultaneous calls
 if [ ! -z "$ScriptName" ]; then
 	case "$ScriptName" in
 		MySB_SecurityRules)
-			ParentPID="`ps -p $CurrentPID -f --no-headers | grep -Po '\w*ParentPID:\w*' | awk -F':' '{ print $2 }'`"
-			WaitingDuring=0
-			while [ ! -z "`ps ax | grep -e 'MySB_SecurityRules' -e 'create' -e 'refresh' | grep -v -e "$CurrentPID" -e "$ParentPID" | grep -v 'grep'`" ]; do
-				(( WaitingDuring++ ))
-				sleep 1
+			echo `date +%H:%m:%S` "- Waiting authorization"
+			while [ ! -z "`AddSecurityInQueue 'check' 'MySB_SecurityRules'`" ]; do
+				sleep 5
 			done
+			AddSecurityInQueue 'add' 'MySB_SecurityRules' "$@ $$"
 		;;
 	esac
 fi
@@ -71,19 +69,13 @@ if [ "$BANNER" == "ON" ]; then
 	BannerGenerator
 fi
 
-#### 6 -STD Out/Err (after banner)
+#### 6 - STD Out/Err (after banner)
 if [ "$TIMESTAMP" == "ON" ]; then
 	echo "------------------------------------------------------------" >> $MySB_InstallDir/logs/$ScriptName.log
 	case "$ScriptName" in
 		MySB_CreateUser|MySB_ChangeUserPassword)
 			echo "START Out/Err: "`date` "-" $ScriptName $1 >> $MySB_InstallDir/logs/$ScriptName.log
 		;;
-		MySB_SecurityRules)
-			echo "START Out/Err: "`date` "-" $ScriptName $@ >> $MySB_InstallDir/logs/$ScriptName.log
-			if [ "$WaitingDuring" -gt 0 ]; then
-				echo "==> "`date` "- Waiting for authorization for $WaitingDuring seconds"
-			fi
-		;;		
 		*)
 			echo "START Out/Err: "`date` "-" $ScriptName $@ >> $MySB_InstallDir/logs/$ScriptName.log
 		;;

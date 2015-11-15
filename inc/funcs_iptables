@@ -284,7 +284,7 @@ PopulatingIcmpChain() {
 			if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "NONE" ]; then
 				case "$ServerProvider" in
 					"OVH")
-						OvhIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'OVH' AND ipv4 != ''\"`"
+						OvhIPv4="`SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'OVH' AND ipv4 != ''\"`"
 						for IPv4 in $OvhIPv4; do
 							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j LOG --log-prefix "[MySB] Ping detected: " -m comment --comment "$ServerProvider monitoring"
 							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j ACCEPT -m comment --comment "$ServerProvider monitoring"
@@ -292,7 +292,7 @@ PopulatingIcmpChain() {
 						unset OvhIPv4 IPv4
 					;;
 					"ONLINE")
-						OnlineIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'ONLINE' AND ipv4 != ''\"`"
+						OnlineIPv4="`SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'ONLINE' AND ipv4 != ''\"`"
 						for IPv4 in $OnlineIPv4; do
 							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j LOG --log-prefix "[MySB] Ping detected: " -m comment --comment "$ServerProvider monitoring"
 							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j ACCEPT -m comment --comment "$ServerProvider monitoring"
@@ -300,7 +300,7 @@ PopulatingIcmpChain() {
 						unset OnlineIPv4 IPv4
 					;;
 					"DIGICUBE")
-						DigicubeIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'DIGICUBE' AND ipv4 != ''\"`"
+						DigicubeIPv4="`SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'DIGICUBE' AND ipv4 != ''\"`"
 						for IPv4 in $DigicubeIPv4; do
 							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j LOG --log-prefix "[MySB] Ping detected: " -m comment --comment "$ServerProvider monitoring"
 							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j ACCEPT -m comment --comment "$ServerProvider monitoring"
@@ -501,9 +501,9 @@ PopulatingUdpInboundChain() {
 	case "$1" in
 		"create")
 			if [ "$IsInstalled_DNScrypt" == "YES" ]; then
-				ResolverName="`Func_SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' \"is_wished = '1'\"`"
+				ResolverName="`SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' \"is_wished = '1'\"`"
 				for Resolver in $ResolverName; do
-					ResolverAddress="`Func_SQL_Command 'SELECT' 'MySB_db' 'resolver_address' 'dnscrypt_resolvers' "name = '$Resolver'"`"
+					ResolverAddress="`SQL_Command 'SELECT' 'MySB_db' 'resolver_address' 'dnscrypt_resolvers' "name = '$Resolver'"`"
 					ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
 					ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
 					if [ -z "$ResolverPort" ]; then ResolverPort="443"; fi
@@ -680,8 +680,8 @@ PopulatingTcpInboundChain() {
 	case "$1" in
 		"create")
 			for SeedboxUser in $UsersList; do
-				PORT_START="`Func_SQL_Command 'SELECT' 'MySB_db' 'scgi_port' 'users' "users_ident = '$SeedboxUser'"`"
-				PORT_END="`Func_SQL_Command 'SELECT' 'MySB_db' 'rtorrent_port' 'users' "users_ident = '$SeedboxUser'"`"
+				PORT_START="`SQL_Command 'SELECT' 'MySB_db' 'scgi_port' 'users' "users_ident = '$SeedboxUser'"`"
+				PORT_END="`SQL_Command 'SELECT' 'MySB_db' 'rtorrent_port' 'users' "users_ident = '$SeedboxUser'"`"
 				iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $PORT_START:$PORT_END -j LOG --log-prefix "[MySB] rTorrent TCP IN: "
 				iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $PORT_START:$PORT_END -j ACCEPT -m comment --comment "rTorrent for users"				
 			done

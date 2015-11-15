@@ -40,16 +40,16 @@ DoApplyConfig() {
 	User=$1
 
 	echo `date +%H:%m:%S` "- Creating order of execution for $UserApplying"
-	AllCommandsUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'commands' 'commands' "user = '$User'"`"
+	AllCommandsUser="`SQL_Command 'SELECT' 'MySB_db' 'commands' 'commands' "user = '$User'"`"
 	for CommandUser in $AllCommandsUser; do
 		case "$CommandUser" in
 			BlocklistsRTorrent.bsh|MySB_SecurityRules*|GetTrackersCert.bsh|MySB_ChangeUserPassword|Postfix|Options_MySB|Options_System|OpenVPN) # On peut supprimer les doublons
-				FirstCommandUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'min(priority)' 'commands' "user = '$User' AND commands = '$CommandUser'"`"
-				LastCommandUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'max(priority)' 'commands' "user = '$User' AND commands = '$CommandUser'"`"
+				FirstCommandUser="`SQL_Command 'SELECT' 'MySB_db' 'min(priority)' 'commands' "user = '$User' AND commands = '$CommandUser'"`"
+				LastCommandUser="`SQL_Command 'SELECT' 'MySB_db' 'max(priority)' 'commands' "user = '$User' AND commands = '$CommandUser'"`"
 				if [ $FirstCommandUser -ne $LastCommandUser ] && [ ! -z $FirstCommandUser ] && [ ! -z $LastCommandUser ]; then
 					while [ $FirstCommandUser -lt $LastCommandUser ]; do
 						# On supprime les premières commandes
-						echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "user = '$User' AND commands = '$CommandUser' AND priority = '$FirstCommandUser'" '-echo'
+						echo -n "	--> " && SQL_Command 'DELETE' 'MySB_db' 'commands' "user = '$User' AND commands = '$CommandUser' AND priority = '$FirstCommandUser'" '-echo'
 						(( FirstCommandUser++ ))
 					done
 				fi
@@ -60,22 +60,22 @@ DoApplyConfig() {
 	# 2 - En fonction de l'ensemble des commandes, on réorganise certaines.
 	# Par exemple, la commande 'MySB_SecurityRules' devra être exécutée une seule fois et en dernier
 	# On en garde qu'une seule tout utilisateur confondu et assigne une priorité maxi.
-	LastOneMin="`Func_SQL_Command 'SELECT' 'MySB_db' 'min(priority)' 'commands' "commands = 'MySB_SecurityRules' AND user = '$User'"`"
-	LastOneMax="`Func_SQL_Command 'SELECT' 'MySB_db' 'max(priority)' 'commands' "commands = 'MySB_SecurityRules' AND user = '$User'"`"
+	LastOneMin="`SQL_Command 'SELECT' 'MySB_db' 'min(priority)' 'commands' "commands = 'MySB_SecurityRules' AND user = '$User'"`"
+	LastOneMax="`SQL_Command 'SELECT' 'MySB_db' 'max(priority)' 'commands' "commands = 'MySB_SecurityRules' AND user = '$User'"`"
 	if [ $LastOneMin -ne $LastOneMax ] && [ ! -z $LastOneMin ] && [ ! -z $LastOneMax ]; then
 		while [ $LastOneMin -lt $LastOneMax ]; do
 			# On supprime les premières commandes
-			echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = 'MySB_SecurityRules' AND priority = '$LastOneMin' AND user = '$User'" '-echo'
+			echo -n "	--> " && SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = 'MySB_SecurityRules' AND priority = '$LastOneMin' AND user = '$User'" '-echo'
 			((  LastOneMin++ ))
 		done
 	fi
 
 	# Maintenant on prend la priorité globale maxi toute commandes confondues, puis on incrémente de 1 'MySB_SecurityRules'.
-	LastPriority="`Func_SQL_Command 'SELECT' 'MySB_db' 'max(priority)' 'commands' "user = '$User'"`"
+	LastPriority="`SQL_Command 'SELECT' 'MySB_db' 'max(priority)' 'commands' "user = '$User'"`"
 	(( LastPriority++ ))
-	echo -n "	--> " && Func_SQL_Command 'UPDATE' 'MySB_db' 'commands' "priority = '$LastPriority'" "commands = 'MySB_SecurityRules' AND user = '$User'" '-echo'
+	echo -n "	--> " && SQL_Command 'UPDATE' 'MySB_db' 'commands' "priority = '$LastPriority'" "commands = 'MySB_SecurityRules' AND user = '$User'" '-echo'
 	# 3 - On peut maintenant exécuté les commandes une à une dans l'ordre ascendant des priorités.
-	AllCommands="`Func_SQL_Command 'SELECT' 'MySB_db' 'commands, priority' 'commands' "user = '$User' ORDER BY priority ASC"`"
+	AllCommands="`SQL_Command 'SELECT' 'MySB_db' 'commands, priority' 'commands' "user = '$User' ORDER BY priority ASC"`"
 
 	for CommandLine in $AllCommands; do
 		Command="`echo $CommandLine | awk '{split($0,a,"|"); print a[1]}'`"
@@ -85,7 +85,7 @@ DoApplyConfig() {
 		case "$Command" in
 			MySB_CreateUser|MySB_DeleteUser|MySB_ChangeUserPassword|OpenVPN) # 3 args
 				echo `date +%H:%m:%S` "- Getting arguments for $Command"
-				CommandArg="`Func_SQL_Command 'SELECT' 'MySB_db' 'args' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"`"
+				CommandArg="`SQL_Command 'SELECT' 'MySB_db' 'args' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"`"
 			;;
 		esac
 
@@ -102,7 +102,7 @@ DoApplyConfig() {
 				WaitingSTD MySB_CreateUser
 				screen -dmS MySB_CreateUser /bin/bash $MySB_InstallDir/bin/MySB_CreateUser "$UserToCreate" "$UserSftp" "$UserSudo" "$UserMail" 'APPLYCONFIG';
 				WaitingSTD MySB_CreateUser
-				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
+				echo -n "	--> " && SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
 			;;
 
 			"MySB_DeleteUser") # 1 args
@@ -111,7 +111,7 @@ DoApplyConfig() {
 				WaitingSTD MySB_DeleteUser
 				screen -dmS MySB_DeleteUser /bin/bash $MySB_InstallDir/bin/MySB_DeleteUser "$UserToDelete" 'APPLYCONFIG';
 				WaitingSTD MySB_DeleteUser
-				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
+				echo -n "	--> " && SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
 			;;
 
 			"MySB_ChangeUserPassword") # ($1 = username, $2 = userpass)
@@ -123,44 +123,44 @@ DoApplyConfig() {
 				screen -dmS MySB_ChangeUserPassword /bin/bash $MySB_InstallDir/bin/MySB_ChangeUserPassword "$UserName" "$UserPass" 'APPLYCONFIG';
 				WaitingSTD MySB_ChangeUserPassword
 				WaitingSTD MySB_SecurityRules
-				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--users' "$CurrentPID" 'APPLYCONFIG';
+				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--users' 'APPLYCONFIG';
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
+				echo -n "	--> " && SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
 			;;
 
 			"BlocklistsRTorrent.bsh")
 				WaitingSTD BlocklistsRTorrent
 				screen -dmS BlocklistsRTorrent /bin/bash $MySB_InstallDir/scripts/BlocklistsRTorrent.bsh 'APPLYCONFIG';
 				WaitingSTD BlocklistsRTorrent
-				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
+				echo -n "	--> " && SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
 			;;
 
 			"Blocklists_PeerGuardian")
 				WaitingSTD MySB_SecurityRules
-				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--blocklists' "$CurrentPID" 'APPLYCONFIG';
+				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--blocklists' 'APPLYCONFIG';
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
+				echo -n "	--> " && SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
 			;;
 
 			"DNScrypt")
 				WaitingSTD MySB_SecurityRules
-				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--dnscrypt' "$CurrentPID" 'APPLYCONFIG';
+				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--dnscrypt' 'APPLYCONFIG';
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
+				echo -n "	--> " && SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
 			;;
 
 			"ManageAddresses")
 				WaitingSTD MySB_SecurityRules
-				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--users' "$CurrentPID" 'APPLYCONFIG';
+				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--users' 'APPLYCONFIG';
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
+				echo -n "	--> " && SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
 			;;
 
 			"MySB_SecurityRules")
 				WaitingSTD MySB_SecurityRules
-				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'create' "$CurrentPID" 'APPLYCONFIG';
+				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'create' 'APPLYCONFIG';
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
+				echo -n "	--> " && SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
 			;;
 
 			"GetTrackersCert.bsh")
@@ -169,33 +169,33 @@ DoApplyConfig() {
 				WaitingSTD GetTrackersCert
 
 				WaitingSTD MySB_SecurityRules
-				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--trackers' "$CurrentPID" 'APPLYCONFIG';
+				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--trackers' 'APPLYCONFIG';
 				WaitingSTD MySB_SecurityRules
-				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
+				echo -n "	--> " && SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
 			;;
 
 			"Postfix")
 				WaitingSTD Postfix
 				screen -dmS Postfix /bin/bash $MySB_InstallDir/install/Postfix 'APPLYCONFIG';
 				WaitingSTD Postfix
-				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
+				echo -n "	--> " && SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
 			;;
 
 			"Options_MySB")
 				WaitingSTD rTorrent-$User
 				screen -dmS rTorrent-$User service rtorrent-$User restart &> /dev/null;
 				WaitingSTD rTorrent-$User
-				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
+				echo -n "	--> " && SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
 			;;
 
 			"Options_System")		
 				WaitingSTD MySB_SecurityRules
-				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--pglcmd' "$CurrentPID" 'APPLYCONFIG';
+				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--pglcmd' 'APPLYCONFIG';
 				WaitingSTD MySB_SecurityRules
 				WaitingSTD OpenVPN
 				screen -dmS OpenVPN_Zip /bin/bash $MySB_InstallDir/install/OpenVPN refresh 'APPLYCONFIG';
 				WaitingSTD OpenVPN
-				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
+				echo -n "	--> " && SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
 			;;
 			
 			"OpenVPN") # ($1 = username, $2 = userpass)
@@ -206,7 +206,7 @@ DoApplyConfig() {
 				WaitingSTD OpenVPN
 				screen -dmS OpenVPN_Zip /bin/bash $MySB_InstallDir/install/OpenVPN zip "$UserName" "$UserPass" 'APPLYCONFIG';
 				WaitingSTD OpenVPN
-				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
+				echo -n "	--> " && SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
 			;;
 		esac
 	done
@@ -215,7 +215,7 @@ DoApplyConfig() {
 case "$Switch" in
 	"DO_APPLY") # Execute by portal
 		screen -dmS ApplyConfig_$UserApplying /bin/bash $MySB_InstallDir/scripts/ApplyConfig.bsh "$UserApplying" 'SCREEN';
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'commands' "reload = '0'" "user = '$UserApplying'"
+		SQL_Command 'UPDATE' 'MySB_db' 'commands' "reload = '0'" "user = '$UserApplying'"
 	;;
 	"SCREEN")
 		echo `date +%H:%m:%S` "- Waiting authorization"

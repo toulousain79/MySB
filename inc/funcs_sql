@@ -22,7 +22,34 @@
 #
 ##################### FIRST LINE #####################################
 
-Func_SQL_Command() {
+#### Add MySB_SecurityRules command in queue
+AddSecurityInQueue() {
+	# Var
+	MySwitch="$1"
+	Command="$2"
+	Arguments="$3"
+	User="`whoami`"
+
+	case "$MySwitch" in
+		"add")
+			# Check the current priority
+			Priority="`SQL_Command 'SELECT' 'MySB_db' 'max(priority)' 'commands' '1'`"
+			(( Priority++ ))
+
+			# Add the commands in database
+			SQL_Command 'INSERT' 'MySB_db' 'commands' "commands='$Command',reload='1',priority='$Priority',args='$Arguments',user='$User'"
+		;;
+		"remove")
+			SQL_Command 'DELETE' 'MySB_db' 'commands' "commands='$Command',args='$Arguments',user='$User'"
+		;;
+		"check")
+			SQL_Command 'SELECT' 'MySB_db' 'commands' 'commands' "commands='$Command' AND user='$User'"
+		;;		
+	esac
+}
+
+#### SGBD commands (SELECT / UPDATE / INSERT / DELETE / ALTER)
+SQL_Command() {
 	DatabaseType="mysql"
 	Command="$1"
 	DataBase="$2"

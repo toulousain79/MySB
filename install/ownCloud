@@ -37,10 +37,10 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$Switch" != "INIT" ]; then
 
 	#### VARs
 	source /etc/MySB/config_db
-	ownCloudDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ownCloud'"`"
-	ownCloudOldFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'old_file' 'repositories' "name = 'ownCloud'"`"
-	ownCloudUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'ownCloud'"`"
-	ownCloudFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'ownCloud'"`"
+	ownCloudDir=$MySB_InstallDir"`SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ownCloud'"`"
+	ownCloudOldFile="`SQL_Command 'SELECT' 'MySB_db' 'old_file' 'repositories' "name = 'ownCloud'"`"
+	ownCloudUrl="`SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'ownCloud'"`"
+	ownCloudFile="`SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'ownCloud'"`"
 	MailFrom="`echo $MainUserEmail | cut -d "@" -f 1`"
 	MailDomain="`echo $MainUserEmail | cut -d "@" -f 2`"
 	TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
@@ -80,7 +80,7 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$Switch" != "INIT" ]; then
 			DeleteDirectory 1 "$ownCloudDir"
 		fi
 		# Maybe need to launch a script on next reboot ?
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "on_boot = '1', script = '$0'" "name = '$RepoName'" '-echo'
+		SQL_Command 'UPDATE' 'MySB_db' 'repositories' "on_boot = '1', script = '$0'" "name = '$RepoName'" '-echo'
 	fi
 
 	if [ ! -d $ownCloudDir ]; then
@@ -115,36 +115,36 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$Switch" != "INIT" ]; then
 	if [ -f /etc/nginx/locations/ownCloud.local ] && [ ! -f $ownCloudDir/config/config.php ]; then
 		curl --user $MySB_User:$MySB_Password --data "adminlogin=admin&adminpass=$MySQL_MysbPassword&directory=/home/owncloud&dbtype=mysql&dbuser=MySB_user&dbpass=$MySQL_MysbPassword&dbname=ownCloud_db&dbhost=localhost" "http://127.0.0.1:$Port_HTTP/owncloud/"
 		rm -vf /etc/nginx/locations/ownCloud.local
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "on_boot = '1', script = '$0'" "name = '$RepoName'" '-echo'
+		SQL_Command 'UPDATE' 'MySB_db' 'repositories' "on_boot = '1', script = '$0'" "name = '$RepoName'" '-echo'
 	fi
 
 	#### Update database with new values
 	# oc_appconfig
-	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configvalue='yes' AND configkey='shareapi_allow_mail_notification'"`"
+	IfExist="`SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configvalue='yes' AND configkey='shareapi_allow_mail_notification'"`"
 	if [ -z $IfExist ]; then
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_allow_mail_notification','yes'" '-echo'
+		SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_allow_mail_notification','yes'" '-echo'
 	fi
-	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configvalue='yes' AND configkey='shareapi_allow_public_notification'"`"
+	IfExist="`SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configvalue='yes' AND configkey='shareapi_allow_public_notification'"`"
 	if [ -z $IfExist ]; then
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_allow_public_notification','yes'" '-echo'
+		SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_allow_public_notification','yes'" '-echo'
 	fi
-	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configvalue='yes' AND configkey='shareapi_default_expire_date'"`"
+	IfExist="`SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configvalue='yes' AND configkey='shareapi_default_expire_date'"`"
 	if [ -z $IfExist ]; then
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_default_expire_date','yes'" '-echo'
+		SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_default_expire_date','yes'" '-echo'
 	fi
 	# oc_preferences
-	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_preferences' "configvalue='$MainUserEmail' AND userid='admin'"`"
+	IfExist="`SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_preferences' "configvalue='$MainUserEmail' AND userid='admin'"`"
 	if [ -z $IfExist ]; then
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' 'userid,appid,configkey,configvalue' "'admin','settings','email','$MainUserEmail'" '-echo'
+		SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' 'userid,appid,configkey,configvalue' "'admin','settings','email','$MainUserEmail'" '-echo'
 	fi
-	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'gid' 'oc_groups' "gid='MySB_users'"`"
+	IfExist="`SQL_Command 'SELECT' 'ownCloud_db' 'gid' 'oc_groups' "gid='MySB_users'"`"
 	if [ -z $IfExist ]; then
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_groups' 'gid' "'MySB_users'" '-echo'
+		SQL_Command 'INSERT' 'ownCloud_db' 'oc_groups' 'gid' "'MySB_users'" '-echo'
 	fi
-	Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$TimeZone'" "configkey = 'timezone'" '-echo'
+	SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$TimeZone'" "configkey = 'timezone'" '-echo'
 	# oc_storages
-	Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_storages' "1" '-echo'
-	Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_storages' 'id' "'local::/home/\$user/'" '-echo'
+	SQL_Command 'DELETE' 'ownCloud_db' 'oc_storages' "1" '-echo'
+	SQL_Command 'INSERT' 'ownCloud_db' 'oc_storages' 'id' "'local::/home/\$user/'" '-echo'
 
 	#### Check old config file
 	if [ -d $ownCloudDir ] && [ -f $ownCloudDir/config/config.php ]; then
@@ -163,7 +163,7 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$Switch" != "INIT" ]; then
 	if [ -d $ownCloudDir/config ]; then
 		# Get the new version
 		Version="`cat $ownCloudDir/config/config.php | grep 'version' | awk '{ print $3 }'| cut -d "'" -f 2`"
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '$Version'" "name = 'ownCloud'" '-echo'
+		SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '$Version'" "name = 'ownCloud'" '-echo'
 		echo "Version: "$Version
 
 		cp -vf $MySB_InstallDir/templates/owncloud/owncloud.config.php.tmpl $ownCloudDir/config/config.php
@@ -184,7 +184,7 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$Switch" != "INIT" ]; then
 
 	#### External Storage (mount.json)
 	if [ ! -f /home/owncloud/mount.json ]; then
-		IdStorage=$(Func_SQL_Command 'SELECT' 'ownCloud_db' 'numeric_id' 'oc_storages' "id = 'local::/home/\$user'")
+		IdStorage=$(SQL_Command 'SELECT' 'ownCloud_db' 'numeric_id' 'oc_storages' "id = 'local::/home/\$user'")
 		cp -vf $MySB_InstallDir/templates/owncloud/home.owncloud.mount.json.tmpl /home/owncloud/mount.json
 		perl -pi -e "s/<IdStorage>/$IdStorage/g" /home/owncloud/mount.json
 	fi
@@ -194,18 +194,18 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$Switch" != "INIT" ]; then
 
 	if CheckCommand 0 $ownCloudDir/occ; then
 		# ownCloud is installed
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '1'" "serv_name = 'ownCloud'" '-echo'
+		SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '1'" "serv_name = 'ownCloud'" '-echo'
 		# Force upgrade script on next boot if needed
-		OnBoot="`Func_SQL_Command 'SELECT' 'MySB_db' 'on_boot' 'repositories' \"on_boot = '1' AND name = 'ownCloud'\"`"
+		OnBoot="`SQL_Command 'SELECT' 'MySB_db' 'on_boot' 'repositories' \"on_boot = '1' AND name = 'ownCloud'\"`"
 		if [ ! -z "$OnBoot" ]; then
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "script = '$0'" "name = 'ownCloud'" '-echo'
+			SQL_Command 'UPDATE' 'MySB_db' 'repositories' "script = '$0'" "name = 'ownCloud'" '-echo'
 		fi
 	fi
 fi
 
 #### Upgrade on boot
 if [ "$IsInstalled_ownCloud" == "YES" ] && [ "$Switch" == "INIT" ]; then
-	OnBoot="`Func_SQL_Command 'SELECT' 'MySB_db' 'on_boot' 'repositories' \"on_boot = '1' AND name = 'ownCloud'\"`"
+	OnBoot="`SQL_Command 'SELECT' 'MySB_db' 'on_boot' 'repositories' \"on_boot = '1' AND name = 'ownCloud'\"`"
 
 	if [ "$OnBoot" -eq 1 ]; then
 		#### ownCloud upgrade
@@ -220,24 +220,24 @@ if [ "$IsInstalled_ownCloud" == "YES" ] && [ "$Switch" == "INIT" ]; then
 		#### Create all existing MySB users
 		ListingUsers
 		for seedUser in $UsersList; do
-			UserExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'uid' 'oc_users' "uid='$seedUser'"`"
+			UserExist="`SQL_Command 'SELECT' 'ownCloud_db' 'uid' 'oc_users' "uid='$seedUser'"`"
 
 			if [ -z $UserExist ]; then
-				FnUserMail="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$seedUser'"`"
+				FnUserMail="`SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$seedUser'"`"
 				OC_PASS="`GenPassword 8`"
 				export OC_PASS
 				TimeStamp=$(date +%s)
 				su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:add --password-from-env --display-name=\"$seedUser\" --group=\"MySB_users\" $seedUser" &> /dev/null
-				Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'admin','files_external','/Home_$seedUser','$TimeStamp'"
-				Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'$seedUser','core','lang','$EnvLang'"
-				Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'$seedUser','settings','email','$EnvLang'"
-				Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_storages' "id" "'local::/home/$seedUser/'"
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "init_password = '1'" "users_ident = '$seedUser'" '-echo'
+				SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'admin','files_external','/Home_$seedUser','$TimeStamp'"
+				SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'$seedUser','core','lang','$EnvLang'"
+				SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'$seedUser','settings','email','$EnvLang'"
+				SQL_Command 'INSERT' 'ownCloud_db' 'oc_storages' "id" "'local::/home/$seedUser/'"
+				SQL_Command 'UPDATE' 'MySB_db' 'users' "init_password = '1'" "users_ident = '$seedUser'" '-echo'
 			fi
 			unset UserExist
 		done
 
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "on_boot = '0', script = ''" "name = '$Name'"
+		SQL_Command 'UPDATE' 'MySB_db' 'repositories' "on_boot = '0', script = ''" "name = '$Name'"
 	fi
 fi
 
