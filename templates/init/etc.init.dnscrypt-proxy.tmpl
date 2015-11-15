@@ -175,6 +175,11 @@ delete_pid_file() {
 
 # Function START
 do_start() {
+	# Prepare security rules BEFORE starting DNScrypt-proxy
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "dnscrypt='1'" "id_system='1'"
+	ScriptInvoke 'InQueue' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--dnscrypt' 'SCREEN'
+
+	# Preapre Bind9
 	bind_check
 
 	# Update DB
@@ -226,9 +231,6 @@ do_start() {
 		fi
 	done
 
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "dnscrypt = '1'" "id_system = '1'"
-	ScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--dnscrypt' 'SCREEN'
-
 	return $Return
 }
 
@@ -270,7 +272,6 @@ do_stop() {
 }
 #### Functions - End
 
-
 #### CASE - Begin
 case "$1" in
 	start)
@@ -279,12 +280,17 @@ case "$1" in
 		case "$?" in
 			0|1)
 				check_crontab 'add'
-				SwitchDNS 'dnscrypt' 'init'
+				SwitchDNS 'dnscrypt'
+				# Finalize security rules
+				ScriptInvoke 'InQueue' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--dnscrypt' 'SCREEN'
 				log_end_msg 0
 			;;
 			2)
 				check_crontab 'remove'
-				SwitchDNS 'standard'
+				SwitchDNS 'bind'
+				# Finalize security rules
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "dnscrypt='0'" "id_system='1'"
+				ScriptInvoke 'InQueue' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--dnscrypt' 'SCREEN'
 				log_end_msg 1
 			;;
 		esac
@@ -292,9 +298,12 @@ case "$1" in
 
 	stop)
 		check_crontab 'remove'
-		SwitchDNS 'standard'
+		SwitchDNS 'bind'
 		log_daemon_msg "Stopping $DESC" "$NAME"
 		do_stop
+		# Finalize security rules
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "dnscrypt='0'" "id_system='1'"		
+		ScriptInvoke 'InQueue' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--dnscrypt' 'SCREEN'
 		log_end_msg 0
 	;;
 
@@ -305,12 +314,17 @@ case "$1" in
 		case "$?" in
 			0|1)
 				check_crontab 'add'
-				SwitchDNS 'dnscrypt' 'init'
+				SwitchDNS 'dnscrypt'
+				# Finalize security rules
+				ScriptInvoke 'InQueue' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--dnscrypt' 'SCREEN'
 				log_end_msg 0
 			;;
 			2)
 				check_crontab 'remove'
-				SwitchDNS 'standard'
+				SwitchDNS 'bind'
+				# Finalize security rules
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "dnscrypt='0'" "id_system='1'"
+				ScriptInvoke 'InQueue' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--dnscrypt' 'SCREEN'
 				log_end_msg 1
 			;;
 		esac
