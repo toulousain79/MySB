@@ -31,7 +31,7 @@ if [ "$USAGE" == "ON" ]; then
 		QuestionGetString NO "Install DNScrypt-proxy? " ToInstall_DNScrypt $Global_YES
 		ToInstall_DNScrypt="`echo $ToInstall_DNScrypt | tr '[:lower:]' '[:upper:]'`"
 
-		SQL_Command 'UPDATE' 'MySB_db' 'services' "is_installed = '$(echo $ToInstall_DNScrypt | sed "s/$Global_NO/0/g;" | sed "s/$Global_YES/1/g;")'" "serv_name = 'DNScrypt-proxy'" '-echo'
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "is_installed = '$(echo $ToInstall_DNScrypt | sed "s/$Global_NO/0/g;" | sed "s/$Global_YES/1/g;")'" "serv_name = 'DNScrypt-proxy'" '-echo'
 
 		if [ "$ToInstall_DNScrypt" != "YES" ]; then
 			EndingScript 0
@@ -49,8 +49,8 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	fi
 
 	# LIBsodium
-	LibsodiumDir=$MySB_InstallDir"`SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'Libsodium'"`"
-	LibsodiumUrl="`SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Libsodium'"`"
+	LibsodiumDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'Libsodium'"`"
+	LibsodiumUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Libsodium'"`"
 
 	if [ -d $LibsodiumDir ]; then
 		cd $LibsodiumDir/
@@ -71,9 +71,9 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	/sbin/ldconfig
 
 	# DNScrypt
-	DnscryptDir=$MySB_InstallDir"`SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'DNScrypt-proxy'"`"
-	DnscryptUrl="`SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'DNScrypt-proxy'"`"
-	DnscryptFile="`SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'DNScrypt-proxy'"`"
+	DnscryptDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'DNScrypt-proxy'"`"
+	DnscryptUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'DNScrypt-proxy'"`"
+	DnscryptFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'DNScrypt-proxy'"`"
 
 	if [ ! -f $MySB_InstallDir/files/$DnscryptFile ]; then
 		wget --no-check-certificate $DnscryptUrl -O $MySB_InstallDir/files/$DnscryptFile
@@ -104,7 +104,7 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	#### Update resolvers infos in db
 	if [ -f /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv ] && CheckCommand 0 csvtool; then
 		# Clean the table 'dnscrypt_resolvers'
-		SQL_Command 'DELETE' 'MySB_db' 'dnscrypt_resolvers' '1'
+		Func_SQL_Command 'DELETE' 'MySB_db' 'dnscrypt_resolvers' '1'
 
 		# Get resolvers information from 'dnscrypt-resolvers.csv'
 		ResolversTable="`csvtool -t ',' -u '|' cat /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv | csvtool drop 1 - | sed 's/ /#/g;'`"
@@ -126,17 +126,17 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 
 			# Add new informations in DB (don't want IPv6)
 			if [ -z "`echo $Name | grep 'ipv6'`" ]; then
-				SQL_Command 'INSERT' 'MySB_db' 'dnscrypt_resolvers' "name,full_name,description,location,coordinates,url,version,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record,is_activated,is_wished" "\"$Name\",\"$FullName\",\"$Description\",\"$Location\",\"$Coordinates\",\"$URL\",\"$Version\",\"$DnssecVal\",\"$NoLogs\",\"$Namecoin\",\"$ResolverAddress\",\"$ProviderName\",\"$ProviderPublicKey\",\"$ProviderPublicKeyTxtRecord\",\"0\",\"0\"" '-echo'
+				Func_SQL_Command 'INSERT' 'MySB_db' 'dnscrypt_resolvers' "name,full_name,description,location,coordinates,url,version,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record,is_activated,is_wished" "\"$Name\",\"$FullName\",\"$Description\",\"$Location\",\"$Coordinates\",\"$URL\",\"$Version\",\"$DnssecVal\",\"$NoLogs\",\"$Namecoin\",\"$ResolverAddress\",\"$ProviderName\",\"$ProviderPublicKey\",\"$ProviderPublicKeyTxtRecord\",\"0\",\"0\"" '-echo'
 			fi
 		done
 
 		# Force use of all provider taht accept 'dnssec' and 'no logs'
-		SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished = '1'" "dnssec = 'yes' AND no_logs='yes'" '-echo'
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished = '1'" "dnssec = 'yes' AND no_logs='yes'" '-echo'
 	fi
 
 	# Mark as installed
 	if CheckCommand 0 dnscrypt-proxy; then
-		SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0',is_installed = '1'" "serv_name = 'DNScrypt-proxy'" '-echo'
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0',is_installed = '1'" "serv_name = 'DNScrypt-proxy'" '-echo'
 	fi
 
 	#### Logs

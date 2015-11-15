@@ -24,32 +24,37 @@
 
 #### Add MySB_SecurityRules command in queue
 AddSecurityInQueue() {
-	# Var
+	# VARs
 	MySwitch="$1"
 	Command="$2"
-	Arguments="$3"
 	User="`whoami`"
+	Arguments=""
+	args=("$@")
+	for ((i=2; i < $#; i++)) { Arguments="$Arguments ${args[$i]}"; }
+	Arguments="`echo $Arguments | sed -e 's/^ //g;' | sed -e 's/^ //g;'`"
 
 	case "$MySwitch" in
 		"add")
 			# Check the current priority
-			Priority="`SQL_Command 'SELECT' 'MySB_db' 'max(priority)' 'commands' '1'`"
+			Priority="`Func_SQL_Command 'SELECT' 'MySB_db' 'max(priority)' 'commands' '1'`"
 			(( Priority++ ))
 
 			# Add the commands in database
-			SQL_Command 'INSERT' 'MySB_db' 'commands' "commands='$Command',reload='1',priority='$Priority',args='$Arguments',user='$User'"
+			Func_SQL_Command 'INSERT' 'MySB_db' 'commands' "commands,reload,priority,args,user" "'$Command','1','$Priority','$Arguments','$User'"
 		;;
 		"remove")
-			SQL_Command 'DELETE' 'MySB_db' 'commands' "commands='$Command',args='$Arguments',user='$User'"
+			Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands='$Command' AND args='$Arguments' AND user='$User'"
+			
+			Func_SQL_Command 'DELETE' 'MySB_db' 'users' "users_ident = '$UserToDelete'"
 		;;
 		"check")
-			SQL_Command 'SELECT' 'MySB_db' 'commands' 'commands' "commands='$Command' AND user='$User'"
-		;;		
+			Func_SQL_Command 'SELECT' 'MySB_db' 'commands' 'commands' "commands='$Command' AND user='$User'"
+		;;
 	esac
 }
 
 #### SGBD commands (SELECT / UPDATE / INSERT / DELETE / ALTER)
-SQL_Command() {
+Func_SQL_Command() {
 	DatabaseType="mysql"
 	Command="$1"
 	DataBase="$2"
@@ -81,11 +86,11 @@ SQL_Command() {
 					/usr/bin/sqlite3 $Display -cmd '.timeout 150000' $DataBase "UPDATE $Table SET $VarSet WHERE $VarWhere;"
 				;;
 				"mysql")
-					Command="UPDATE $Table SET $VarSet WHERE $VarWhere"
+					MyVar="UPDATE $Table SET $VarSet WHERE $VarWhere"
 					if [ "$Display" == "-echo" ];then
-						echo "$Command"
+						echo "$MyVar"
 					fi
-					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "$Command";
+					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "$MyVar";
 				;;
 			esac
 		;;
@@ -99,11 +104,11 @@ SQL_Command() {
 					/usr/bin/sqlite3 $Display  -cmd '.timeout 150000' $DataBase "INSERT INTO $Table ($VarColumns) VALUES ($VarValues);"
 				;;
 				"mysql")
-					Command="INSERT INTO $Table ($VarColumns) VALUES ($VarValues)"
+					MyVar="INSERT INTO $Table ($VarColumns) VALUES ($VarValues)"
 					if [ "$Display" == "-echo" ];then
-						echo "$Command"
+						echo "$MyVar"
 					fi
-					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "$Command";
+					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "$MyVar";
 				;;
 			esac
 		;;
@@ -116,11 +121,11 @@ SQL_Command() {
 					/usr/bin/sqlite3 $Display -cmd '.timeout 150000' $DataBase "DELETE FROM $Table WHERE $VarWhere"
 				;;
 				"mysql")
-					Command="DELETE FROM $Table WHERE $VarWhere"
+					MyVar="DELETE FROM $Table WHERE $VarWhere"
 					if [ "$Display" == "-echo" ];then
-						echo "$Command"
+						echo "$MyVar"
 					fi
-					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "$Command";
+					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "$MyVar";
 				;;
 			esac
 		;;
@@ -166,11 +171,11 @@ SQL_Command() {
 			Display="$6"
 			case "$DatabaseType" in
 				"mysql")
-					Command="ALTER TABLE \`$Table\` ADD \`$NewColumn\` $Params"
+					MyVar="ALTER TABLE \`$Table\` ADD \`$NewColumn\` $Params"
 					if [ "$Display" == "-echo" ];then
-						echo "$Command"
+						echo "$MyVar"
 					fi
-					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "$Command";
+					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "$MyVar";
 				;;
 			esac
 		;;		

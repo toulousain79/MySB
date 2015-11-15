@@ -157,7 +157,7 @@ fi
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Fail2Ban$CEND..."
 if [ "$ToInstall_Fail2Ban" == "YES" ] || [ "$IsInstalled_Fail2Ban" == "YES" ]; then
-	SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Fail2Ban'"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Fail2Ban'"
 	ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Fail2Ban" 'UPGRADE'
 	StatusSTD
 else
@@ -178,7 +178,7 @@ fi
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_LogWatch$CEND..."
 if [ "$ToInstall_LogWatch" == "YES" ] || [ "$IsInstalled_LogWatch" == "YES" ]; then
-	SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'LogWatch'"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'LogWatch'"
 	ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Logwatch" 'UPGRADE'
 	StatusSTD
 else
@@ -189,7 +189,7 @@ fi
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_ownCloud$CEND..."
 if [ "$IsInstalled_ownCloud" == "YES" ]; then
-	SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'ownCloud'"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'ownCloud'"
 	ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/ownCloud" 'UPGRADE'
 	StatusSTD
 	if [ -f $MySB_InstallDir/templates/owncloud/ownCloudUpgrade.tmpl ]; then
@@ -203,7 +203,7 @@ fi
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_DNScrypt$CEND..."
 if [ "$ToInstall_DNScrypt" == "YES" ] || [ "$IsInstalled_DNScrypt" == "YES" ]; then
-	SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'DNScrypt-proxy'"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'DNScrypt-proxy'"
 	ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/DNScrypt" 'UPGRADE'
 	StatusSTD
 else
@@ -259,13 +259,13 @@ StatusSTD
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_SendMail$CEND..."
 if [ -f $MySB_InstallDir/inc/vars ]; then source $MySB_InstallDir/inc/vars; fi
-MainUserId="`SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "admin = '1'"`"
+MainUserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "admin = '1'"`"
 RutorrentDirEscaped="`echo $RutorrentDir | sed s,/,\\\\\\\\\\/,g`"
 # Add last time check for users addresses
 ListingUsers
 for seedUser in $UsersList; do
-	UserId="`SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$seedUser'"`"
-	UserPassword="`SQL_Command 'SELECT' 'MySB_db' 'users_passwd' 'users' "users_ident = '$seedUser'"`"
+	UserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$seedUser'"`"
+	UserPassword="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_passwd' 'users' "users_ident = '$seedUser'"`"
 
 	# Script Init
 	cp $MySB_InstallDir/templates/init/etc.init.rtorrent.tmpl /etc/init.d/rtorrent-$seedUser
@@ -283,11 +283,11 @@ for seedUser in $UsersList; do
 
 	if [ "$UserId" == "$MainUserId" ] && [ ! -z "$UserPassword" ]; then
 		# Remove main user password from database
-		SQL_Command 'UPDATE' 'MySB_db' 'users' "users_passwd = ''" "admin = '1'"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "users_passwd = ''" "admin = '1'"
 		ScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_ChangeUserPassword" "$seedUser" "$UserPassword" 'UPGRADE'
 	else
 		# Init password required
-		SQL_Command 'UPDATE' 'MySB_db' 'users' "init_password = '1'" "users_ident = '$seedUser'"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "init_password = '1'" "users_ident = '$seedUser'"
 		Subject="$Upgrade_SubjectUpgraded $MySB_CurrentVersion"
 		Case="upgrade"
 		SendMail "$Subject" "$seedUser" "$Case"
@@ -310,7 +310,7 @@ StatusSTD
 #### Update version info
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Global_UpdatingVersion$CEND..."
-SQL_Command 'UPDATE' 'MySB_db' 'system' "mysb_version = '$MySB_CurrentVersion'" "id_system = '1'"
+Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "mysb_version = '$MySB_CurrentVersion'" "id_system = '1'"
 if [ -f $MySB_InstallDir/files/current_version ]; then
 	rm -f $MySB_InstallDir/files/current_version
 fi

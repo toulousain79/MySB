@@ -33,11 +33,11 @@ CreateHostsFile() {
 	echo "" >> /etc/hosts
 	echo "#### MySB - Force trackers resolution (ex: DNS liar)" >> /etc/hosts
 
-	SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list,tracker,tracker_domain' 'trackers_list' "1" | while read ROW; do
+	Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list,tracker,tracker_domain' 'trackers_list' "1" | while read ROW; do
 		IdTracker="`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`"
 		Tracker="`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`"
 		TrackerDomain="`echo $ROW | awk '{split($0,a,"|"); print a[3]}'`"
-		TrackerIPv4="`SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$IdTracker'"`"
+		TrackerIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$IdTracker'"`"
 
 		if [ ! -z "$TrackerIPv4" ]; then	
 			if [ "$Tracker" == "$TrackerDomain" ]; then
@@ -116,7 +116,7 @@ SendMail() {
 	FnCase="$3"
 	FnInfo="$4"
 	FnAttach=""
-	FnUserMail="`SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$FnUser'"`"
+	FnUserMail="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$FnUser'"`"
 	if [ ! -z "$FnInfo" ]; then log_daemon_msg "$Funcs_SendMail_GenerateHTML $FnUser"; fi
 
 	if ! GetPid $Service; then
@@ -167,8 +167,8 @@ PackagesManage() {
 	tDiff=0
 
 	if [ "$IsReady_MySB_DB" == "YES" ]; then
-		AptUpdate="`SQL_Command 'SELECT' 'MySB_db' 'apt_update' 'system' '1'`"
-		AptDate="`SQL_Command 'SELECT' 'MySB_db' 'apt_date' 'system' '1'`"
+		AptUpdate="`Func_SQL_Command 'SELECT' 'MySB_db' 'apt_update' 'system' '1'`"
+		AptDate="`Func_SQL_Command 'SELECT' 'MySB_db' 'apt_date' 'system' '1'`"
 		AptDate=$(date -d "$AptDate" +"%Y-%m-%d %H")
 		Now=$(date +%Y-%m-%d\ %H)
 		t1=$(date --date="$AptDate" +'%-H')
@@ -184,7 +184,7 @@ PackagesManage() {
 				echo "$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update"
 				export DEBIAN_FRONTEND=noninteractive ; $AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update
 				if [ $? -eq 0 ]; then
-					SQL_Command 'UPDATE' 'MySB_db' 'system' "apt_update = 0, apt_date = 'NOW'" 'id_system = 1'
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "apt_update = 0, apt_date = 'NOW'" 'id_system = 1'
 				fi
 			fi
 		else
@@ -575,9 +575,9 @@ CleanBlockList() {
 			wget --no-check-certificate $URL -O $MySB_InstallDir/files/blocklists/$FILE.gz
 			if [ $? -eq 0 ] ; then
 				gzip -dc $MySB_InstallDir/files/blocklists/$FILE.gz | cut -d: -f2 > $MySB_InstallDir/files/blocklists/$FILE.txt
-				SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "rtorrent_lastupdate = 'NOW'" "rtorrent_list = '$URL'"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "rtorrent_lastupdate = 'NOW'" "rtorrent_list = '$URL'"
 			else
-				SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "rtorrent_lastupdate = 'failed'" "rtorrent_list = '$URL'"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "rtorrent_lastupdate = 'failed'" "rtorrent_list = '$URL'"
 			fi
 		;;
 		del_spaces)
@@ -709,12 +709,12 @@ MonthlyPayment() {
 		UserToIgnore="$1"
 
 		# add new renting info
-		SQL_Command 'UPDATE' 'MySB_db' 'renting' "model = '$RentingModel', tva = '$RentingTVA', global_cost = '$RentingGlobalCost', nb_users = '$TotalUsers', price_per_users = '$PriceByUser'" "id_renting = '1'"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'renting' "model = '$RentingModel', tva = '$RentingTVA', global_cost = '$RentingGlobalCost', nb_users = '$TotalUsers', price_per_users = '$PriceByUser'" "id_renting = '1'"
 		StatusLSB
 
 		ListingUsers
 		for SeedboxUser in $UsersList; do
-			SeedUserMail="`SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$SeedboxUser'"`"
+			SeedUserMail="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$SeedboxUser'"`"
 			
 			if [ "$UserToIgnore" != "$SeedboxUser" ]; then	
 				SendMail "MySB - Changing monthly" "${SeedboxUser}" "new_user" "Changing Monthly"
@@ -740,7 +740,7 @@ GetRutorrentTrackers() {
 
 #### Get Users Trackers
 GetUsersTrackers() {
-	FnUsersTrackers="`SQL_Command 'SELECT' 'MySB_db' 'tracker' 'trackers_list' \"origin = 'users'\"`"
+	FnUsersTrackers="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker' 'trackers_list' \"origin = 'users'\"`"
 	for FnTracker in $FnUsersTrackers; do
 		if [ ! -z "$FnTracker" ]; then
 			AddTracker $FnTracker "users"
@@ -769,75 +769,75 @@ AddTracker() {
 		if [ ! -z "$TrackerDomain" ]; then
 			DomainIPv4="$(nslookup $TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 			if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
-				IfExist="`SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
+				IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
 				if [ -z $IfExist ]; then
 					log_daemon_msg "Add tracker domain : $TrackerDomain"
-					SQL_Command 'INSERT' 'MySB_db' 'trackers_list' "tracker,tracker_domain,origin" "\"$TrackerDomain\",\"$TrackerDomain\",\"$Origin\""
+					Func_SQL_Command 'INSERT' 'MySB_db' 'trackers_list' "tracker,tracker_domain,origin" "\"$TrackerDomain\",\"$TrackerDomain\",\"$Origin\""
 					StatusLSB
 				fi
 
 				TrackerIPv4="$(nslookup tracker.$TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 			else
-				IfExist="`SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
+				IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
 				if [ ! -z $IfExist ]; then
 					log_daemon_msg "Delete tracker domain : $TrackerDomain"
-					SQL_Command 'DELETE' 'MySB_db' 'trackers_list' "tracker_domain = '$TrackerDomain'"
+					Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list' "tracker_domain = '$TrackerDomain'"
 					StatusLSB
 				fi
 			fi
 
 			if [ ! -z "$TrackerIPv4" ] && [ "$TrackerIPv4" != "" ] && [ "$TrackerIPv4" != "0.0.0.0" ] && [ "$TrackerIPv4" != "127.0.0.1" ]; then
 				TrackerIPv4="`echo $TrackerIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-				TrackersListID="`SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
+				TrackersListID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
 
 				if [ ! -z "$TrackersListID" ] && [ $TrackersListID -gt 0 ]; then
 					log_daemon_msg "Update trackers IPv4 for 'tracker.$TrackerDomain' --> '$TrackerIPv4'"
 					# Cleaning
-					ListIPv4="`SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID'"`"
+					ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID'"`"
 					for IPv4 in $ListIPv4; do
 						SEARCH="`echo "$TrackerIPv4" | grep "$IPv4"`"
 						if [ -z "$SEARCH" ]; then
-							SQL_Command 'DELETE' 'MySB_db' 'trackers_list_ipv4' "ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID'"
+							Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list_ipv4' "ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID'"
 						fi
 					done
 					unset ListIPv4 IPv4
 
 					# Add
 					for IPv4 in $TrackerIPv4; do
-						IfExist="`SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list_ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'"`"
+						IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list_ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'"`"
 						if [ -z $IfExist ]; then
-							SQL_Command 'INSERT' 'MySB_db' 'trackers_list_ipv4' "id_trackers_list,ipv4" "\"$TrackersListID\",\"$IPv4\""
+							Func_SQL_Command 'INSERT' 'MySB_db' 'trackers_list_ipv4' "id_trackers_list,ipv4" "\"$TrackersListID\",\"$IPv4\""
 						fi
 					done
 					unset IPv4 TrackerIPv4
-					SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "tracker = 'tracker.$TrackerDomain'" "tracker_domain = '$TrackerDomain'"
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "tracker = 'tracker.$TrackerDomain'" "tracker_domain = '$TrackerDomain'"
 					StatusLSB
 				fi
 			else
 				if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
 					DomainIPv4="`echo $DomainIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-					TrackersListID="`SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
+					TrackersListID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
 
 					if [ ! -z "$TrackersListID" ] && [ $TrackersListID -gt 0 ]; then
 						log_daemon_msg "Update trackers IPv4 for '$TrackerDomain' --> '$DomainIPv4'"
 						# Cleaning
-						ListIPv4="`SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' \"id_trackers_list = '$TrackersListID'\"`"
+						ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' \"id_trackers_list = '$TrackersListID'\"`"
 						for IPv4 in $ListIPv4; do
 							SEARCH="`echo "$DomainIPv4" | grep "$IPv4"`"
 							if [ -z "$SEARCH" ]; then
-								SQL_Command 'DELETE' 'MySB_db' 'trackers_list_ipv4' "ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID'"
+								Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list_ipv4' "ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID'"
 							fi
 						done
 						unset ListIPv4 IPv4
 						# Add
 						for IPv4 in $DomainIPv4; do
-							IfExist="`SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list_ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'"`"
+							IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list_ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'"`"
 							if [ -z $IfExist ]; then
-								SQL_Command 'INSERT' 'MySB_db' 'trackers_list_ipv4' "id_trackers_list,ipv4" "\"$TrackersListID\",\"$IPv4\""
+								Func_SQL_Command 'INSERT' 'MySB_db' 'trackers_list_ipv4' "id_trackers_list,ipv4" "\"$TrackersListID\",\"$IPv4\""
 							fi
 						done
 						unset IPv4 DomainIPv4
-						SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "tracker = '$TrackerDomain'" "tracker_domain = '$TrackerDomain'"
+						Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "tracker = '$TrackerDomain'" "tracker_domain = '$TrackerDomain'"
 						StatusLSB
 					fi
 				fi
@@ -864,15 +864,6 @@ ScriptInvoke() {
 		Arguments="$Arguments ${args[$i]}"
 	}
 	Arguments="`echo $Arguments | sed -e 's/^ //g;' | sed -e 's/^ //g;'`"
-
-	#### Depending on the script, in addition queue
-	case "$ScriptName" in
-		MySB_SecurityRules)
-			if [ ! -z "`ps ax | grep -e 'MySB_SecurityRules' -e 'create' -e 'refresh' | grep -v 'grep'`" ]; then
-				AddSecurityInQueue 'add' 'MySB_SecurityRules' "$Arguments"
-			fi
-		;;
-	esac
 
 	#### Start invovation
 	case "$METHOD" in
@@ -913,8 +904,8 @@ ScriptInvoke() {
 NetworkPortsGenerator() {
 	WHITE_TCP_IN=""
 	WHITE_UDP_IN=""
-	WHITE_TCP_OUT="`SQL_Command 'SELECT' 'MySB_db' 'white_tcp_port_out' 'vars' '1' | sed 's/,/ /g;'`"
-	WHITE_UDP_OUT="`SQL_Command 'SELECT' 'MySB_db' 'white_udp_port_out' 'vars' '1' | sed 's/,/ /g;'`"
+	WHITE_TCP_OUT="`Func_SQL_Command 'SELECT' 'MySB_db' 'white_tcp_port_out' 'vars' '1' | sed 's/,/ /g;'`"
+	WHITE_UDP_OUT="`Func_SQL_Command 'SELECT' 'MySB_db' 'white_udp_port_out' 'vars' '1' | sed 's/,/ /g;'`"
 
 	# TCP In
 	WHITE_TCP_IN="${Port_HTTPS}"
@@ -1034,7 +1025,7 @@ PeerGuardianBlocklistsList() {
 EOF
 		) > /etc/pgl/blocklists.list
 
-		AllBlocklists="`SQL_Command 'SELECT' 'MySB_db' 'peerguardian_list,peerguardian_active' 'blocklists' \"peerguardian_list != ''\"`"
+		AllBlocklists="`Func_SQL_Command 'SELECT' 'MySB_db' 'peerguardian_list,peerguardian_active' 'blocklists' \"peerguardian_list != ''\"`"
 		for Blocklist in $AllBlocklists; do
 			List="`echo $Blocklist | awk '{split($0,a,"|"); print a[1]}'`"
 			IsActive="`echo $Blocklist | awk '{split($0,a,"|"); print a[2]}'`"
@@ -1052,10 +1043,10 @@ EOF
 						for List in $CheckLog; do
 							echo `date +"%T"`" --> '$List' will be disabled." >> $MySB_InstallDir/logs/$ScriptName.log
 							# Force inactived list
-							SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "peerguardian_active = '0', peerguardian_lastupdate = 'failed'" "peerguardian_list = '$List'"
+							Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "peerguardian_active = '0', peerguardian_lastupdate = 'failed'" "peerguardian_list = '$List'"
 						done
 					else # Update OK
-						SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "peerguardian_lastupdate = 'NOW'" "peerguardian_list = '$List'"
+						Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "peerguardian_lastupdate = 'NOW'" "peerguardian_list = '$List'"
 					fi
 				;;
 				'CreateFile') # Now, we create the final blocklists with all active lists
@@ -1099,8 +1090,8 @@ EOF
 		if [ ! -z "$UsersList" ] && [ "$IpRestriction" == "YES" ]; then
 			echo "## Allow all MySB users" >> /etc/pgl/allow.p2p
 			for FnUser in $UsersList; do
-				UserID="`SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$FnUser'"`"
-				UserIP="`SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'users_addresses' "id_users = '$UserID'"`"
+				UserID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$FnUser'"`"
+				UserIP="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'users_addresses' "id_users = '$UserID'"`"
 				for IPv4 in $UserIP; do
 					echo "$FnUser:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
 				done
@@ -1110,9 +1101,9 @@ EOF
 		# DNScrypt
 		if [ "$IsInstalled_DNScrypt" == "YES" ] && [ "$DNScrypt_Switch" == "1" ]; then
 			echo "## DNScrypt" >> /etc/pgl/allow.p2p
-			ResolverName="`SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' \"is_wished = '1'\"`"
+			ResolverName="`Func_SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' \"is_wished = '1'\"`"
 			for Resolver in $ResolverName; do
-				ResolverAddress="`SQL_Command 'SELECT' 'MySB_db' 'resolver_address' 'dnscrypt_resolvers' "name = '$Resolver'"`"
+				ResolverAddress="`Func_SQL_Command 'SELECT' 'MySB_db' 'resolver_address' 'dnscrypt_resolvers' "name = '$Resolver'"`"
 				ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
 				ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
 				if [ -z "$ResolverPort" ]; then ResolverPort="443"; fi
@@ -1122,12 +1113,12 @@ EOF
 		fi
 
 		echo "## Trackers enabled" >> /etc/pgl/allow.p2p
-		AllTrackers="`SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list, tracker' 'trackers_list' \"is_active = '1'\"`"
+		AllTrackers="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list, tracker' 'trackers_list' \"is_active = '1'\"`"
 		for Tracker in $AllTrackers; do
 			IdTracker="`echo $Tracker | awk '{split($0,a,"|"); print a[1]}'`"
 			TrackerName="`echo $Tracker | awk '{split($0,a,"|"); print a[2]}'`"
 
-			ListIPv4="`SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$IdTracker'"`"
+			ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$IdTracker'"`"
 			for IPv4 in $ListIPv4; do
 				echo "$TrackerName:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
 			done
@@ -1144,8 +1135,8 @@ PeerGuardianIptablesInsert() {
 			# echo "#!/bin/sh" > /etc/pgl/dnscrypt.insert.sh
 			# echo >> /etc/pgl/dnscrypt.insert.sh
 			# echo "# DNScrypt-proxy complementary rules" >> /etc/pgl/dnscrypt.insert.sh
-			# SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' "is_wished = '1'" | while read Resolver; do
-				# ResolverAddress="`SQL_Command 'SELECT' 'MySB_db' 'resolver_address' 'dnscrypt_resolvers' "name = '$Resolver'"`"
+			# Func_SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' "is_wished = '1'" | while read Resolver; do
+				# ResolverAddress="`Func_SQL_Command 'SELECT' 'MySB_db' 'resolver_address' 'dnscrypt_resolvers' "name = '$Resolver'"`"
 				# ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
 				# ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
 				# if [ -z "$ResolverPort" ]; then ResolverPort="443"; fi
@@ -1166,20 +1157,20 @@ PeerGuardianIptablesInsert() {
 			echo "# $ServerProvider monitoring complementary rules" >> /etc/pgl/monitoring.insert.sh
 			case "$ServerProvider" in
 				"OVH")
-					OvhIPv4="`SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'OVH'\"`"
+					OvhIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'OVH'\"`"
 					for IPv4 in $OvhIPv4; do
 						echo "iptables -A pgl_in -p udp -s $IPv4 --destination-port 6100:6200 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
 						echo "iptables -I pgl_in -p icmp -s $IPv4 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
 					done
 				;;
 				"ONLINE")
-					OnlineIPv4="`SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'ONLINE'\"`"
+					OnlineIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'ONLINE'\"`"
 					for IPv4 in $OnlineIPv4; do
 						echo "iptables -I pgl_in -p icmp -s $IPv4 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
 					done
 				;;
 				"DIGICUBE")
-					OnlineIPv4="`SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'DIGICUBE'\"`"
+					OnlineIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'DIGICUBE'\"`"
 					for IPv4 in $OnlineIPv4; do
 						echo "iptables -I pgl_in -p icmp -s $IPv4 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
 					done
@@ -1196,12 +1187,12 @@ PeerGuardianIptablesInsert() {
 PeerGuardianPglcmdConf() {
 	if [ -f /etc/pgl/pglcmd.conf ]; then
 		if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Logging and verbosity settings"; fi
-		STATS_MAILTO="`SQL_Command 'SELECT' 'MySB_db' 'pgl_email_stats' 'system' '1' | sed 's/0//g;' | sed 's/1/root/g;'`"
+		STATS_MAILTO="`Func_SQL_Command 'SELECT' 'MySB_db' 'pgl_email_stats' 'system' '1' | sed 's/0//g;' | sed 's/1/root/g;'`"
 		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "STATS_MAILTO=")
 		perl -pi -e "s/$SEARCH/STATS_MAILTO=\"$STATS_MAILTO\"/g" /etc/pgl/pglcmd.conf
 		unset SEARCH
 
-		WD_MAILTO="`SQL_Command 'SELECT' 'MySB_db' 'pgl_watchdog_email' 'system' '1' | sed 's/0//g;' | sed 's/1/root/g;'`"
+		WD_MAILTO="`Func_SQL_Command 'SELECT' 'MySB_db' 'pgl_watchdog_email' 'system' '1' | sed 's/0//g;' | sed 's/1/root/g;'`"
 		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WD_MAILTO=")
 		perl -pi -e "s/$SEARCH/WD_MAILTO=\"$WD_MAILTO\"/g" /etc/pgl/pglcmd.conf
 		unset SEARCH
@@ -1403,7 +1394,7 @@ ManageDirectoriesAndFiles() {
 #### Change rights for users
 ManageUserHomeDir() {
 	FnUser="$1"
-	FnHomeDir="`SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
+	FnHomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
 
 	#### Create missing directories
 	if [ ! -d $FnHomeDir ]; then mkdir $FnHomeDir; fi # /home/user
@@ -1477,7 +1468,7 @@ ManageUserHomeDir() {
 CakeboxUsersConfigs() {
 	if [ "$IsInstalled_Cakebox" == "YES" ] && [ -d $CakeboxDir ]; then
 		FnUser="$1"
-		FnHomeDir="`SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
+		FnHomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
 		HomeDirEscaped=`echo $FnHomeDir | sed s,/,\\\\\\\\\\/,g`
 
 		if [ -f $CakeboxDir/config/default.php.dist ] && [ ! -f  $CakeboxDir/config/$FnUser.php ]; then
@@ -1508,9 +1499,9 @@ CakeboxUsersConfigs() {
 ManagerUsersConfigs() {
 	if [ "$IsInstalled_Manager" == "YES" ]; then
 		FnUser="$1"
-		FnHomeDir="`SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
+		FnHomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
 		HomeDirEscaped=`echo $FnHomeDir | sed s,/,\\\\\\\\\\/,g`
-		PortSCGI="`SQL_Command 'SELECT' 'MySB_db' 'scgi_port' 'users' "users_ident = '$FnUser'"`"
+		PortSCGI="`Func_SQL_Command 'SELECT' 'MySB_db' 'scgi_port' 'users' "users_ident = '$FnUser'"`"
 		UserNameUpper=`echo $FnUser | tr '[:lower:]' '[:upper:]'`	
 
 		if [ ! -d $ManagerDir/conf/users/$FnUser ]; then mkdir -p $ManagerDir/conf/users/$FnUser; fi
@@ -1573,7 +1564,7 @@ ruTorrentGlobalConfigs() {
 				fi
 			;;
 			'filemanager')
-				IsActive="`SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin FileManager'\"`"
+				IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin FileManager'\"`"
 				if [ $IsActive -eq 1 ]; then
 					if [ -f $RutorrentPluginsDir/filemanager/conf.php ]; then
 						sed -i "/'rar'/s/'';/'\/usr\/bin\/rar';/g" $RutorrentPluginsDir/filemanager/conf.php
@@ -1594,7 +1585,7 @@ ruTorrentGlobalConfigs() {
 				unset IsActive
 			;;
 			'fileshare')
-				IsActive="`SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin FileShare'\"`"
+				IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin FileShare'\"`"
 				if [ $IsActive -eq 1 ]; then
 					if [ -f $RutorrentPluginsDir/fileshare/conf.php ]; then
 						sed -i "/'duration'/s/1;/0;/g" $RutorrentPluginsDir/fileshare/conf.php
@@ -1608,7 +1599,7 @@ ruTorrentGlobalConfigs() {
 				unset IsActive
 			;;
 			'fileupload')
-				IsActive="`SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin FileUpload'\"`"
+				IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin FileUpload'\"`"
 				if [ $IsActive -eq 1 ]; then
 					if [ -f $RutorrentPluginsDir/fileupload/conf.php ]; then
 						if [ ! -z "$UsersList" ]; then
@@ -1637,7 +1628,7 @@ ruTorrentGlobalConfigs() {
 				fi
 			;;
 			'linkcakebox')
-				IsActive="`SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin Link Cakebox'\"`"
+				IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin Link Cakebox'\"`"
 				if [ $IsActive -eq 1 ]; then
 					if [ -f $RutorrentPluginsDir/linkcakebox/conf.php ]; then
 						NumLign=$(sed -n "/\$url =/=" $RutorrentPluginsDir/linkcakebox/conf.php)
@@ -1653,7 +1644,7 @@ ruTorrentGlobalConfigs() {
 				unset IsActive
 			;;
 			'linkseedboxmanager')
-				IsActive="`SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin Link Manager'\"`"
+				IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin Link Manager'\"`"
 				if [ $IsActive -eq 1 ]; then
 					if [ -f $RutorrentPluginsDir/linkseedboxmanager/conf.php ]; then
 						perl -pi -e "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$HostNameFQDN:$Port_HTTPS\/sm\//g" $RutorrentPluginsDir/linkseedboxmanager/conf.php
@@ -1664,7 +1655,7 @@ ruTorrentGlobalConfigs() {
 				unset IsActive
 			;;
 			'logoff')
-				IsActive="`SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin Logoff'\"`"
+				IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin Logoff'\"`"
 				if [ $IsActive -eq 1 ]; then
 					if [ -f $RutorrentPluginsDir/logoff/conf.php ]; then
 						perl -pi -e "s/scars,user1,user2//g" $RutorrentPluginsDir/logoff/conf.php
@@ -1685,7 +1676,7 @@ ruTorrentGlobalConfigs() {
 				fi
 			;;
 			'mediastream')
-				IsActive="`SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin MediaStream'\"`"
+				IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin MediaStream'\"`"
 				if [ $IsActive -eq 1 ]; then
 					if [ -f $RutorrentPluginsDir/mediastream/conf.php ]; then
 						perl -pi -e "s/http:\/\/mydomain.com\/stream\/view.php/https:\/\/$HostNameFQDN:$Port_HTTPS\/view.php/g" $RutorrentPluginsDir/mediastream/conf.php
@@ -1705,7 +1696,7 @@ ruTorrentGlobalConfigs() {
 				fi
 			;;
 			'stream')
-				IsActive="`SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin Stream'\"`"
+				IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin Stream'\"`"
 				if [ $IsActive -eq 1 ]; then
 					if [ -f $RutorrentPluginsDir/stream/config.php ]; then
 						NumLign=$(sed -n "/\$username =/=" $RutorrentPluginsDir/stream/config.php)
@@ -1757,9 +1748,9 @@ ruTorrentGlobalConfigs() {
 ruTorrentUsersConfigs() {
 	LISTING=$(ls -1r $RutorrentPluginsDir/)
 	FnUser="$1"
-	FnHomeDir="`SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
+	FnHomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
 	HomeDirEscaped="`echo $FnHomeDir | sed s,/,\\\\\\\\\\/,g`"
-	PortSCGI="`SQL_Command 'SELECT' 'MySB_db' 'scgi_port' 'users' "users_ident = '$FnUser'"`"
+	PortSCGI="`Func_SQL_Command 'SELECT' 'MySB_db' 'scgi_port' 'users' "users_ident = '$FnUser'"`"
 	UserNameUpper="`echo $FnUser | tr '[:lower:]' '[:upper:]'`"
 
 	# share
@@ -1815,7 +1806,7 @@ ruTorrentUsersConfigs() {
 						fi
 					;;
 					'fileupload')
-						IsActive="`SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin FileUpload'\"`"
+						IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin FileUpload'\"`"
 						if [ $IsActive -eq 0 ]; then
 							if [ -f $RutorrentDir/share/users/$FnUser/settings/fileuploads.dat ]; then
 								rm -f $RutorrentDir/share/users/$FnUser/settings/fileuploads.dat
@@ -1824,7 +1815,7 @@ ruTorrentUsersConfigs() {
 						unset IsActive
 					;;
 					'fileshare')
-						IsActive="`SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin FileShare'\"`"
+						IsActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' \"name = 'ruTorrent Plugin FileShare'\"`"
 						if [ $IsActive -eq 0 ]; then
 							if [ -f $RutorrentDir/share/users/$FnUser/settings/fileshare.dat ]; then
 								rm -f $RutorrentDir/share/users/$FnUser/settings/fileshare.dat
