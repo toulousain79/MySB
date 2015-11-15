@@ -22,19 +22,37 @@
 #
 ##################### FIRST LINE #####################################
 
-#### 1 - includes
+#### 0 - Basic VARs
+if [ "$0" != "-bash" ]; then
+	ScriptName=$(basename $0)
+	DirName=$(dirname $0)
+fi
 if [ -f /etc/MySB/config ]; then
 	source /etc/MySB/config
-	source $MySB_InstallDir/inc/vars
-	source $MySB_InstallDir/inc/switches
-
 	export PATH="/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/bin:/usr/local/sbin"
 else
 	echo "The config file \"/etc/MySB/config\" does not exist, aborting !"
 	exit 1
 fi
 
-#### 2 - Check services again
+#### 2 - Waiting after
+if [ ! -z "$ScriptName" ]; then
+	case "$ScriptName" in
+		MySB_SecurityRules)
+			WaitingDuring=0
+			while [ ! -z "`ps ax | grep -e 'MySB_SecurityRules' -e 'create' -e 'refresh' | grep -v 'grep'`" ]; do
+				(( WaitingDuring++ ))
+				sleep 1
+			done
+		;;
+	esac
+fi
+
+#### 3 - Includes all VARs
+source $MySB_InstallDir/inc/vars
+source $MySB_InstallDir/inc/switches
+
+#### 4 - Check services again
 if [ "$IsInstalled_PlexMedia" == "YES" ]; then IsInstalled_PlexMedia="`CheckCommand 1 plexmediaserver`"; fi
 if [ "$IsInstalled_Webmin" == "YES" ]; then IsInstalled_Webmin="`CheckCommand 1 webmin`"; fi
 if [ "$IsInstalled_OpenVPN" == "YES" ]; then IsInstalled_OpenVPN="`CheckCommand 1 openvpn`"; fi
@@ -46,20 +64,26 @@ if [ "$IsInstalled_PeerGuardian" == "YES" ]; then IsInstalled_PeerGuardian="`Che
 if [ "$IsInstalled_DNScrypt" == "YES" ]; then IsInstalled_DNScrypt="`CheckCommand 1 dnscrypt-proxy`"; fi
 if [ "$IsInstalled_ownCloud" == "YES" ]; then IsInstalled_ownCloud="`CheckCommand 1 $ownCloudDir/occ`"; fi
 
-#### 3 - Create MySB banner
+#### 5 - Create MySB banner
 if [ "$BANNER" == "ON" ]; then
 	BannerGenerator
 fi
 
-#### 4 -STD Out/Err (after banner)
+#### 6 -STD Out/Err (after banner)
 if [ "$TIMESTAMP" == "ON" ]; then
 	echo "------------------------------------------------------------" >> $MySB_InstallDir/logs/$ScriptName.log
 	case "$ScriptName" in
+		MySB_CreateUser|MySB_ChangeUserPassword)
+			echo "START Out/Err: "`date` "-" $ScriptName $1 >> $MySB_InstallDir/logs/$ScriptName.log
+		;;
 		MySB_SecurityRules)
 			echo "START Out/Err: "`date` "-" $ScriptName $@ >> $MySB_InstallDir/logs/$ScriptName.log
-		;;
+			if [ "$WaitingDuring" -gt 0 ]; then
+				echo "==> "`date` "- Waiting for authorization for $WaitingDuring seconds"
+			fi
+		;;		
 		*)
-			echo "START Out/Err: "`date` "-" $ScriptName $1 >> $MySB_InstallDir/logs/$ScriptName.log
+			echo "START Out/Err: "`date` "-" $ScriptName $@ >> $MySB_InstallDir/logs/$ScriptName.log
 		;;
 	esac
 	echo "------------------------------------------------------------" >> $MySB_InstallDir/logs/$ScriptName.log
