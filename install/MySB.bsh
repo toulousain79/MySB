@@ -75,7 +75,7 @@ fi
 
 #### Count steps
 CurrentSTEP=0
-TotalSTEP=$(cat $0 | grep 'CurrentSTEP++' | wc -l)
+TotalSTEP=$(cat $0 | grep 'CurrentSTEP++' | grep -v 'TotalSTEP' | wc -l)
 if [ "$ToInstall_Webmin" == "YES" ]; then
 	(( TotalSTEP++ ))
 fi
@@ -231,33 +231,22 @@ else
 fi
 
 #### 14 - BlockList / PeerGuardian
-rTorrentBlocklist() {
-	(( CurrentSTEP++ ))
-	echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_rTorrentBlocklist$CEND..."
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_rTorrentBlocklist$CEND..."
+if [ "$MySB_PeerBlock" == "PeerGuardian" ] || [ "$MySB_PeerBlock" == "rTorrent" ]; then
 	ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Blocklists" 'INSTALL'
 	StatusSTD
-}
-
-case $MySB_PeerBlock in
-	PeerGuardian)
-		(( CurrentSTEP++ ))
-		echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_PeerGuardian$CEND..."
-		ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/PeerGuardian" 'INSTALL'
-		StatusSTD
-
-		rTorrentBlocklist $1
-	;;
-	rTorrent)
-		CurrentSTEP=$(( CurrentSTEP+1 ))
-		rTorrentBlocklist $1
-	;;
-	*)
-		(( CurrentSTEP++ ))
-		CurrentSTEP=$(( CurrentSTEP+1 ))
-		echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_NoBlocklist$CEND..."
-		StatusSTD
-	;;
-esac
+else
+	echo -e "$Global_NothingToDo"
+fi
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_PeerGuardian$CEND..."
+if [ "$MySB_PeerBlock" == "PeerGuardian" ]; then
+	ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/PeerGuardian" 'INSTALL'
+	StatusSTD
+else
+	echo -e "$Global_NothingToDo"
+fi
 
 #
 ########## SECURITY - EoF ##########
@@ -354,7 +343,7 @@ if [ "$ToInstall_LogWatch" == "YES" ]; then
 	ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Logwatch" 'INSTALL'
 	StatusSTD
 else
-	echo -e "$Global_NothingToDo"	
+	echo -e "$Global_NothingToDo"
 fi
 
 ### 23 - PlexMedia
