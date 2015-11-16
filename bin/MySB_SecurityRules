@@ -46,9 +46,6 @@ ApplyConfigNginx=NO
 ApplyConfigPeerGuardian=NO
 ApplyConfigFail2Ban=NO
 ApplyConfigBind=NO
-ApplyConfigDnscrypt=NO
-ApplyIptablesDnscrypt=NO
-DnscryptInitD=NO
 ApplyIptablesUsers=NO
 LoadOnBoot=NO
 
@@ -73,9 +70,6 @@ case "$Switch" in
 		ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
 		ApplyConfigFail2Ban=$IsInstalled_Fail2Ban
 		ApplyConfigBind="`CheckCommand 1 named`"
-		# if [ "$DNScrypt_Switch" == "1" ]; then
-			# ApplyConfigDnscrypt=$IsInstalled_DNScrypt
-		# fi
 	;;
 	clean)
 		ApplyConfigNginx="`CheckCommand 1 nginx`"
@@ -90,48 +84,26 @@ case "$Switch" in
 					ApplyConfigFail2Ban=$IsInstalled_Fail2Ban
 					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
 				;;
-				--dnscrypt)
-					#ApplyIptablesDnscrypt=$IsInstalled_DNScrypt
-					ApplyConfigBind="`CheckCommand 1 named`"
-					# if [ "$DNScrypt_Switch" == "1" ]; then
-						# ApplyConfigDnscrypt=$IsInstalled_DNScrypt
-					# fi
-					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
-				;;
 				--dnscrypt-initd)
-					#ApplyIptablesDnscrypt=$IsInstalled_DNScrypt
-					#ApplyConfigDnscrypt=$IsInstalled_DNScrypt
 					DnscryptInitD=$IsInstalled_DNScrypt
 					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
 				;;				
 				--trackers)
 					ApplyConfigBind="`CheckCommand 1 named`"
-					# if [ "$DNScrypt_Switch" == "1" ]; then
-						# ApplyConfigDnscrypt=$IsInstalled_DNScrypt
-					# fi
 					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
 				;;
 				--blocklists)
 					ApplyConfigBind="`CheckCommand 1 named`"
-					# if [ "$DNScrypt_Switch" == "1" ]; then
-						# ApplyConfigDnscrypt=$IsInstalled_DNScrypt
-					# fi
 					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
 				;;
 				--pglcmd)
 					ApplyIptablesUsers=YES
 					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
-					# if [ "$DNScrypt_Switch" == "1" ]; then
-						# ApplyConfigDnscrypt=$IsInstalled_DNScrypt
-					# fi
 				;;
 				--all)
 					ApplyIptablesUsers=YES
 					ApplyConfigNginx="`CheckCommand 1 nginx`"
 					ApplyConfigBind="`CheckCommand 1 named`"
-					# if [ "$DNScrypt_Switch" == "1" ]; then
-						# ApplyConfigDnscrypt=$IsInstalled_DNScrypt
-					# fi
 					ApplyConfigFail2Ban=$IsInstalled_Fail2Ban
 					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
 				;;
@@ -143,9 +115,6 @@ esac
 if [ "$ApplyConfigBind" == "YES" ]; then
 	ServicesToRestart="${ServicesToRestart} bind9"
 fi
-if [ "$ApplyConfigDnscrypt" == "YES" ] && [ "$DnscryptInitD" == "NO" ]; then
-	ServicesToRestart="${ServicesToRestart} dnscrypt-proxy"
-fi
 if [ "$ApplyConfigFail2Ban" == "YES" ]; then
 	ServicesToRestart="${ServicesToRestart} fail2ban"
 fi
@@ -155,9 +124,16 @@ fi
 if [ "$ApplyConfigNginx" == "YES" ]; then
 	ServicesToRestart="${ServicesToRestart} nginx"
 fi
-if [ "$DNScrypt_Switch" == "0" ]; then
-	ServicesToStop="dnscrypt-proxy"
-fi
+case "$DNScrypt_Switch" in
+	"0")
+		ServicesToStop="dnscrypt-proxy"
+	;;
+	"1")
+		if ! GetPid dnscrypt-proxy; then
+			ServicesToRestart="${ServicesToRestart} dnscrypt-proxy"
+		fi
+	;;
+esac
 #### Check arguments options
 
 #### Functions
