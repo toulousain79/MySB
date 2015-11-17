@@ -205,7 +205,7 @@ define('User_UserInfo_Table_TVA', 'TVA');
 // Total users
 define('User_UserInfo_Table_TotalUsers', 'Nombre d\'utilisateurs');
 // TOTAL per users
-define('User_UserInfo_Table_TotalPerUser', 'TOTAL par utilsiateur');
+define('User_UserInfo_Table_TotalPerUser', 'TOTAL par utilisateur');
 define('User_UserInfo_Table_TotalPerUser_Plus', ' &euro; TTC / mois');
 
 //#################### LAST LINE ######################################
