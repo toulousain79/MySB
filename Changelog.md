@@ -3,6 +3,7 @@
 			- DNScrypt-proxy, bug fix in init script (v3.0 and v3.1)
 			- Bind, bug fix
 			- NginX, bug fix
+			- MySQL, bug fix
 			- OpenVPN, config files generation bux fixes
 			- LogWatch, some modifications
 			- ownCloud, some modifications
