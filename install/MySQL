@@ -28,6 +28,9 @@ source $(dirname $0)/../inc/includes_before
 if ! CheckCommand 0 mysql; then
 	PackagesManage install "mysql-server"
 fi
+if ! CheckCommand 0 mysqltuner; then
+	PackagesManage install "mysqltuner"
+fi
 
 #### MySQL Secure
 if [ -f /etc/MySB/config_db ]; then source /etc/MySB/config_db; fi
@@ -95,11 +98,49 @@ if [ "$1" == "UPGRADE" ]; then
 	Func_SQL_Command 'ALTER' 'MySB_db' 'repositories' 'script' "VARCHAR( 128 ) NOT NULL" '-echo'
 fi
 
-#### logrotate
-LogRotate 'mysql-server'
+#### Temp directory in memory
+if [ ! -d /media/MySQL_TempDir ]; then
+	mkdir -pv /media/MySQL_TempDir
+	chmod 777 /media/MySQL_TempDir
+	mount -t tmpfs -o size=512M tmpfs /media/MySQL_TempDir
+	echo "# MySQL Temp Directory" >> /etc/fstab
+	echo "tmpfs   /media/MySQL_TempDir      tmpfs   defaults,size=512M 0 0" >> /etc/fstab
+fi
+
+#### Config file
+# Logging
+perl -pi -e "s/^#general_log_file/general_log_file/g" /etc/mysql/my.cnf
+# Caching
+NumLign=$(cat /etc/mysql/my.cnf | grep 'query_cache_limit' -n -m 1 | cut -d ':' -f 1)
+sed -i '/query_cache_limit/d' /etc/mysql/my.cnf
+sed -i "${NumLign}i\query_cache_limit       = 2M" /etc/mysql/my.cnf
+NumLign=$(cat /etc/mysql/my.cnf | grep 'query_cache_size' -n -m 1 | cut -d ':' -f 1)
+sed -i '/query_cache_size/d' /etc/mysql/my.cnf
+sed -i "${NumLign}i\query_cache_size       = 32M" /etc/mysql/my.cnf
+(( NumLign++ ))
+sed -i "${NumLign}i\query_cache_type        = 1" /etc/mysql/my.cnf
+# Optimizing
+if [ -d /media/MySQL_TempDir ]; then
+	NumLign=$(cat /etc/mysql/my.cnf | grep 'tmpdir' -n -m 1 | cut -d ':' -f 1)
+	sed -i '/tmpdir/d' /etc/mysql/my.cnf
+	sed -i "${NumLign}i\tmpdir          = /media/MySQL_TempDir" /etc/mysql/my.cnf
+fi
+
+#### Create certificate
+if [ ! -f $MySB_InstallDir/ssl/mysql.cert ]; then
+	ScriptInvoke 'source' "$MySB_InstallDir/install/Certificates" 'CreateServiceCertificate' 'mysql'
+fi
 
 #### START services
-ManageServices start "mysql"
+ManageServices 'restart' 'mysql'
+
+#### Logrotate
+LogRotate 'mysql-server'
+
+#### MySQL Tuner
+if CheckCommand 0 mysqltuner; then
+	mysqltuner --user root --pass $MySQL_RootPassword
+fi
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after

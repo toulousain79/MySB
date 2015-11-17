@@ -1,0 +1,83 @@
+#!/usr/bin/perl 
+#===============================================================================
+#
+#         FILE:  optimizer.pl
+#
+#        USAGE:  ./optimizer.pl  
+#
+#  DESCRIPTION:  MySQL Automatic Tables Optimizer
+#
+#      OPTIONS:  ---
+# REQUIREMENTS:  ---
+#         BUGS:  ---
+#        NOTES:  ---
+#       AUTHOR:  Pierre Mavro (), pierre@mavro.fr
+#      COMPANY:  
+#      VERSION:  0.1
+#      CREATED:  08/04/2010 17:50:23
+#     REVISION:  ---
+#===============================================================================
+ 
+use strict;
+use warnings;
+use DBI;
+ 
+# MySQL configuration
+# This user should have insert and select rights
+my $host = 'localhost';
+my $database = '<database>';
+my $user = '<user>';
+my $pw = '<password>';
+my @exclude_databases = qw/information_schema database1 database2/;
+ 
+########## DO NOT TOUCH NOW ##########
+ 
+# Vars
+my (@all_databases,@all_tables);
+my ($aref, $cur_database, $cur_table);
+ 
+# Connect to the BDD
+my $dbdetails = "DBI:mysql:$database;host=$host";
+my $dbh = DBI->connect($dbdetails, $user, $pw) or die "Could not connect to database: $DBI::errstr\n";
+ 
+# Get all databases
+my $sth=$dbh->prepare(q{SHOW DATABASES}) or die "Unable to prepare show databases: ". $dbh->errstr."\n";
+$sth->execute or die "Unable to exec show databases: ". $dbh->errstr."\n";
+while ($aref = $sth->fetchrow_arrayref)
+{
+    push(@all_databases,$aref->[0]);
+} 
+$sth->finish;
+# Disconnect the BDD
+$dbh->disconnect();
+ 
+# Optimize all tables of all databases
+my $unwanted_found=0;
+foreach $cur_database (@all_databases)
+{
+    # Exclude optimization on unwanted databases
+    foreach (@exclude_databases)
+    {
+        if ($cur_database eq $_)
+        {
+            $unwanted_found=1;
+            last;
+        }
+    }
+    if ($unwanted_found == 1)
+    {
+        $unwanted_found=0;
+        next;
+    }
+    # Connect on database
+    my $dbdetails = "DBI:mysql:$cur_database;host=$host";
+    my $dbh = DBI->connect($dbdetails, $user, $pw) or die "Could not connect to database: $DBI::errstr\n";
+    # Get the List of tables
+    @all_tables = $dbh->tables;
+    # Optimize all tables
+    foreach $cur_table (@all_tables)
+    {
+        $dbh->do("optimize table $cur_table");
+    }
+    $dbh->disconnect();
+}
