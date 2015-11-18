@@ -17,6 +17,7 @@
 			- Portal, user informations links
 			- ruTorrent, upload via GUI
 			- Seedbox-Manager, bug fix for config files generation
+			- Fail2Ban, bug fix
 			- Bug fixes
 
 	Version v3.0
