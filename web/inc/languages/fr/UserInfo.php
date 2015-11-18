@@ -185,7 +185,7 @@ define('User_UserInfo_Table_SeedboxManage', 'Gestion de la seedbox');
 define('User_UserInfo_Comment_MySB_RefreshMe', '<pre>MySB_RefreshMe (rutorrent|manager|cakebox|loadavg|all)</pre>');
 define('User_UserInfo_Comment_MySB_UpgradeMe', 'Permet la migration vers une nouvelle version de MySB.');
 define('User_UserInfo_Comment_MySB_UpgradeSystem', 'Effectue un "update" + "upgrade" + "update-ca-certificates"');
-define('User_UserInfo_Comment_MySB_GitHubRepoUpdate', 'Mise &agrave; jour de la version actuelle MySB. (CRON tous les 2 jours)');
+define('User_UserInfo_Comment_MySB_GitHubRepoUpdate', 'Mise &agrave; jour de la version actuelle MySB. (CRON tous les jours)');
 define('User_UserInfo_Comment_MySB_SecurityRules', '<pre>MySB_SecurityRules (new|clean)</pre>');
 // Main scripts
 define('User_UserInfo_Table_MainScript', 'Scripts importants');
