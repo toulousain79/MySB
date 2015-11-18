@@ -92,10 +92,10 @@ rTorrentPort=$LastPort
 
 #### user infos
 if [ "$UserToCreate" != "$MainUser" ]; then
-	log_daemon_msg "$CreateUser_InsertInfoDB"
+	log_daemon_msg "$CreateUser_InsertInfoDB [$UserToCreate]"
 	Func_SQL_Command 'INSERT' 'MySB_db' 'users' 'users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir,language' "\"$UserToCreate\",\"$UserEmail\",\"$NewUserPassword\",\"$NEWRPC\",\"$UserSFTP\",\"$UserSUDO\",\"$ScgiPort\",\"$rTorrentPort\",\"$NewUserHomedir\",\"$EnvLang\""
 else
-	log_daemon_msg "$CreateUser_UpdateInfoDB"
+	log_daemon_msg "$CreateUser_UpdateInfoDB [$UserToCreate]"
 	Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "users_passwd = '', rpc = '$NEWRPC', scgi_port = '$ScgiPort', rtorrent_port = '$rTorrentPort', home_dir = '$NewUserHomedir'" "users_ident = '$UserToCreate'"
 fi
 ListingUsers
@@ -242,26 +242,13 @@ fi
 #### ownCloud
 if [ "$IsInstalled_ownCloud" == "YES" ]; then
 	UserExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'uid' 'oc_users' "uid='$UserToCreate'"`"
-
-	if [ -z $UserExist ]; then
-		log_daemon_msg "$CreateUser_ownCloud_0 [$UserToCreate]"
-		OC_PASS=$NewUserPassword
-		export OC_PASS
-		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:add --password-from-env --display-name=\"$UserToCreate\" --group=\"MySB_users\" $UserToCreate" &> /dev/null
+	if [ -z "$UserExist" ]; then
+		log_daemon_msg "$CreateUser_ownCloud [$UserToCreate]"
+		ownCloudAccountManage 'create' "$UserToCreate" "$NewUserPassword"
 		StatusLSB
 	else
-		OC_PASS=$NewUserPassword
-		export OC_PASS
-		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:resetpassword --password-from-env $UserToCreate" &> /dev/null
+		ownCloudAccountManage 'edit' "$UserToCreate" "$NewUserPassword"
 	fi
-
-	log_daemon_msg "$CreateUser_ownCloud_1 [$UserToCreate]"
-	TimeStamp=$(date +%s)
-	Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'admin','files_external','/Home_$UserToCreate','$TimeStamp'"
-	Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'$UserToCreate','core','lang','$EnvLang'"
-	Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'$UserToCreate','settings','email','$EnvLang'"
-	Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_storages' "id" "'local::/home/$UserToCreate/'"
-	StatusLSB
 fi
 
 #### script init

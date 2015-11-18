@@ -21,6 +21,31 @@
 #
 ##################### FIRST LINE #####################################
 
+#### ownCloud account manage
+ownCloudAccountManage() {
+	MySwitch="$1"
+	FnUserAccount="$2"
+	FnPassword="$3"
+	FnTimeStamp=$(date +%s)
+	FnUserMail="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$FnUserAccount'"`"
+
+	OC_PASS=$FnPassword
+	export OC_PASS
+
+	case "$MySwitch" in
+		'create')
+			su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:add --password-from-env --display-name=\"$FnUserAccount\" --group=\"MySB_users\" $FnUserAccount" &> /dev/null
+			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'admin','files_external','/Home_$FnUserAccount','$FnTimeStamp'"
+			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'$FnUserAccount','core','lang','$EnvLang'"
+			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'$FnUserAccount','settings','email','$FnUserMail'"
+			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_storages' "id" "'local::/home/$FnUserAccount/'"
+		;;
+		'edit')
+			su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:resetpassword --password-from-env $FnUserAccount" &> /dev/null
+		;;
+	esac
+}
+
 #### Add MySB_SecurityRules command in queue
 AddSecurityInQueue() {
 	# VARs
