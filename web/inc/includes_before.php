@@ -86,6 +86,8 @@ if ( (isset($_SERVER['PHP_AUTH_USER'])) && (!isset($_GET['user'])) ) {
 	$CurrentUser = $_SERVER['PHP_AUTH_USER'];
 } elseif ( (isset($_SERVER['PHP_AUTH_USER'])) && (isset($_GET['user'])) ) {
 	$CurrentUser = $_GET['user'];
+} elseif ( (!isset($_SERVER['PHP_AUTH_USER'])) && (isset($_GET['user'])) ) {
+	$CurrentUser = $_GET['user'];
 }
 if ( isset($CurrentUser) ) {
 	$users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
