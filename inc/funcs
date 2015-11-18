@@ -966,13 +966,13 @@ Fail2BanWhitheList() {
 	if [ -f /etc/fail2ban/jail.local ]; then
 		Fail2banWhiteList=""
 		AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
-		AllUsersIPs=`echo $AllUsersIPs | sed -e "s/^ //g;"`
+		AllUsersIPs="`echo $AllUsersIPs | sed -e "s/^ //g;"`"
 
 		if [ $1 -eq 1 ]; then log_daemon_msg "$SecurityRules_Fail2Ban_IgnoreList"; fi
 		if [ "$IpRestriction" == "YES" ]; then
 			# All users IPs
 			for IPv4 in $AllUsersIPs; do
-				IfExist=`echo $Fail2banWhiteList | grep "$IPv4"`
+				IfExist="`echo $Fail2banWhiteList | grep "$IPv4"`"
 				if [ -z "$IfExist" ]; then
 					Fail2banWhiteList="${Fail2banWhiteList} ${IPv4}"
 				fi
@@ -980,25 +980,25 @@ Fail2BanWhitheList() {
 			unset IPv4
 		fi
 
-		# VPN local IPs	
+		# VPN local IPs
 		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-			for IPv4 in $VpnIPs; do 
-				IfExist=`echo $Fail2banWhiteList | grep $IPv4`
+			for IPv4 in $VpnIPs; do
+				IfExist="`echo $Fail2banWhiteList | grep $IPv4`"
 				if [ -z "$IfExist" ]; then
 					Fail2banWhiteList="${Fail2banWhiteList} ${IPv4}"
 				fi
 			done
 			unset IPv4
 		fi
-		
-		Fail2banWhiteList=`echo $Fail2banWhiteList | sed -e "s/^ //g;"`
-		Fail2banWhiteList=`echo $Fail2banWhiteList | sed s,/,\\\\\\\\\\/,g`
-		SEARCH=$(cat /etc/fail2ban/jail.local | grep "ignoreip =" | cut -d "=" -f 2)
-		SEARCH=`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`
-		if [ ! -z "$SEARCH" ]; then	
+
+		Fail2banWhiteList="`echo $Fail2banWhiteList | sed -e 's/^ //g;' | sed s,/,\\\\\\\\\\/,g`"
+		SEARCH="`cat /etc/fail2ban/jail.local | grep "ignoreip" | cut -d "=" -f 2 | sed -e 's/^ //g;' | sed s,/,\\\\\\\\\\/,g`"
+		if [ ! -z "$SEARCH" ]; then
 			perl -pi -e "s/$SEARCH/$Fail2banWhiteList/g" /etc/fail2ban/jail.local
 		else
-			sed -i "/ignoreip =/s/ignoreip =/ignoreip = $Fail2banWhiteList/g" /etc/fail2ban/jail.local
+			NumLign=$(cat /etc/fail2ban/jail.local | grep 'ignoreip' -n -m 1 | cut -d ':' -f 1)
+			sed -i '/ignoreip/d' /etc/fail2ban/jail.local
+			sed -i ""$NumLign"i\ignoreip        = $Fail2banWhiteList" /etc/fail2ban/jail.local
 		fi
 		unset SEARCH
 		if [ $1 -eq 1 ]; then StatusLSB; fi
