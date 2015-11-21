@@ -1,3 +1,6 @@
+	Version v3.2
+		2015/11/21	
+	
 	Version v3.1
 		2015/11/17
 			- DNScrypt-proxy, bug fix in init script (v3.0 and v3.1)
