@@ -125,53 +125,11 @@ StatusSTD
 
 ######################################################################
 
-#### Something to do...
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_IptablesLogging$CEND..."
-if [ -f /etc/rsyslog.d/iptables.conf ]; then rm -f /etc/rsyslog.d/iptables.conf; fi
-echo ":msg,contains,\"[MySB] \" /var/log/iptables.log" > /etc/rsyslog.d/iptables.conf
-echo "*.* ~" >> /etc/rsyslog.d/iptables.conf
-perl -pi -e "s/^#cron.*/cron.*/g" /etc/rsyslog.conf
-if [ ! -f /var/log/iptables.log ]; then touch /var/log/iptables.log; fi
-cp $MySB_InstallDir/templates/logrotate/etc.logrotate.d.iptables.tmpl /etc/logrotate.d/iptables
-chmod 0644 /etc/logrotate.d/iptables
-service rsyslog restart &> /dev/null
-logrotate -f /etc/logrotate.d/iptables &> /dev/null
-#### Create init script for MySB_SecurityRules_Init
-cp -f $MySB_InstallDir/templates/init/etc.init.MySB_SecurityRules_Init.tmpl /etc/init.d/MySB_SecurityRules_Init
-chmod +x /etc/init.d/MySB_SecurityRules_Init
-update-rc.d MySB_SecurityRules_Init defaults &> /dev/null
-#### NTP (disable IPv6)
-perl -pi -e "s/^restrict ::1/#restrict ::1/g" /etc/ntp.conf
-perl -pi -e "s/^restrict -6/#restrict -6/g" /etc/ntp.conf
-StatusSTD
-
 #### Getting information about OVH monitoring engine
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_ProviderInfos$CEND..."
 if [ "$ServerProvider" == "OVH" ] || [ "$ServerProvider" == "ONLINE" ] || [ "$ServerProvider" == "DIGICUBE" ]; then
 	ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Monitoring" 'UPGRADE'
-	StatusSTD
-else
-	echo -e "$Global_NothingToDo"
-fi
-
-#### Fail2Ban
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Fail2Ban$CEND..."
-if [ "$ToInstall_Fail2Ban" == "YES" ] || [ "$IsInstalled_Fail2Ban" == "YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Fail2Ban'"
-	ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Fail2Ban" 'UPGRADE'
-	StatusSTD
-else
-	echo -e "$Global_NothingToDo"
-fi
-
-### PeerGuardian
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_PeerGuardian$CEND..."
-if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
-	cp -f $MySB_InstallDir/templates/etc.pgl.pglcmd.conf.tmpl /etc/pgl/pglcmd.conf
 	StatusSTD
 else
 	echo -e "$Global_NothingToDo"
@@ -187,43 +145,6 @@ if [ "$ToInstall_LogWatch" == "YES" ] || [ "$IsInstalled_LogWatch" == "YES" ]; t
 else
 	echo -e "$Global_NothingToDo"
 fi
-
-#### ownCloud
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_ownCloud$CEND..."
-if [ "$IsInstalled_ownCloud" == "YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'ownCloud'"
-	ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/ownCloud" 'UPGRADE'
-	StatusSTD
-	if [ -f $MySB_InstallDir/templates/owncloud/ownCloudUpgrade.tmpl ]; then
-		cp $MySB_InstallDir/templates/owncloud/ownCloudUpgrade.tmpl $MySB_InstallDir/upgrade/ownCloud.upg
-	fi
-else
-	echo -e "$Global_NothingToDo"
-fi
-
-### DNScrypt-proxy
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_DNScrypt$CEND..."
-if [ "$ToInstall_DNScrypt" == "YES" ] || [ "$IsInstalled_DNScrypt" == "YES" ]; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'DNScrypt-proxy'"
-	ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/DNScrypt" 'UPGRADE'
-	StatusSTD
-else
-	echo -e "$Global_NothingToDo"
-fi
-
-### Logrotate
-(( CurrentSTEP++ ))
-echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Logrotate$CEND..."
-LogRotate 'nginx' > /dev/null 2>&1
-LogRotate 'iptables' > /dev/null 2>&1
-LogRotate 'mysb' > /dev/null 2>&1
-LogRotate 'mysql-server' > /dev/null 2>&1
-if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-	LogRotate 'samba' > /dev/null 2>&1
-fi
-StatusSTD
 
 ######################################################################
 
@@ -269,20 +190,6 @@ ListingUsers
 for seedUser in $UsersList; do
 	UserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$seedUser'"`"
 	UserPassword="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_passwd' 'users' "users_ident = '$seedUser'"`"
-
-	# Script Init
-	cp $MySB_InstallDir/templates/init/etc.init.rtorrent.tmpl /etc/init.d/rtorrent-$seedUser
-	RutorrentDirEscaped=`echo $RutorrentDir | sed s,/,\\\\\\\\\\/,g`
-	perl -pi -e "s/<username>/$seedUser/g" /etc/init.d/rtorrent-$seedUser
-	perl -pi -e "s/<rutorrent_dir>/$RutorrentDirEscaped/g" /etc/init.d/rtorrent-$seedUser
-	chmod +x /etc/init.d/rtorrent-$seedUser
-
-	# New rTorrent Cron
-	crontab -l > /tmp/crontab.tmp
-	sed -i "/rtorrent-$seedUser/d" /tmp/crontab.tmp
-	echo "*/5 * * * * if ! ( /bin/ps U $seedUser | grep 'rtorrent' > /dev/null ); then service rtorrent-$seedUser restart > /dev/null 2>&1; fi" >> /tmp/crontab.tmp
-	crontab /tmp/crontab.tmp
-	rm -f /tmp/crontab.tmp
 
 	if [ "$UserId" == "$MainUserId" ] && [ ! -z "$UserPassword" ]; then
 		# Remove main user password from database
