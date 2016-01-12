@@ -1,5 +1,7 @@
 	Version v3.2
 		2015/11/21	
+			- NodeJS v0.12.9 (v3.2)
+			- ownCloud v8.2.2 (v3.2)
 	
 	Version v3.1
 		2015/11/17
