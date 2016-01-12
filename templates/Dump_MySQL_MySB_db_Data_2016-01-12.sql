@@ -81,7 +81,7 @@ INSERT INTO `repositories` (`id_repositories`, `type`, `dir`, `name`, `version`,
 (14, 'GIT', '/web/rutorrent/plugins/autodl-irssi', 'ruTorrent Plugin Autodl-irssi', '1.52', 'autodl_v1.52.zip', '', 'https://github.com/autodl-community/autodl-rutorrent.git', 0),
 (15, 'GIT', '/sources/plowshare', 'Plowshare', '2.1.1', 'Plowshare_v2.1.1.zip', 'Plowshare4.tar.gz', 'https://github.com/mcrapet/plowshare.git', 1),
 (16, 'CURL', '/usr/bin/composer', 'Composer', '', 'composer.phar', '', 'http://getcomposer.org/installer', 1),
-(17, 'TARGZ', '/sources/nodejs', 'NodeJS', '0.12.7', 'node_v0.12.7.tar.gz', 'node-v0.12.2.tar.gz', 'https://nodejs.org/dist/v0.12.7/node-v0.12.7.tar.gz', 1),
+(17, 'TARGZ', '/sources/nodejs', 'NodeJS', '0.12.9', 'node_v0.12.9.tar.gz', 'node_v0.12.7.tar.gz', 'https://nodejs.org/dist/v0.12.9/node-v0.12.9.tar.gz', 1),
 (18, 'GIT', '/web/seedbox-manager', 'Seedbox-Manager', '2.4.4', 'seedbox-manager_v2.4.4.zip', 'seedbox-manager_v0.1.zip', 'https://github.com/Magicalex/seedbox-manager.git', 1),
 (19, 'GIT', '/web/rutorrent/plugins/linkseedboxmanager', 'ruTorrent Plugin Link Manager', '1.0', 'linkseedboxmanager_v1.0.zip', '', 'https://github.com/Hydrog3n/linkseedboxmanager.git', 1),
 (20, 'GIT', '/web/Cakebox-light', 'Cakebox-Light', '1.8.3', 'cakebox-light_v1.8.3.zip', '', 'https://github.com/Cakebox/Cakebox-light.git', 1),
@@ -95,7 +95,7 @@ INSERT INTO `repositories` (`id_repositories`, `type`, `dir`, `name`, `version`,
 (28, 'TARGZ', '/sources/rtorrent', 'rTorrent', '0.9.6', 'rtorrent_v0.9.6.tar.gz', 'rtorrent_v0.9.4.tar.gz', 'http://rtorrent.net/downloads/rtorrent-0.9.6.tar.gz', 1),
 (29, 'ZIP', '/sources/xmlrpc-c', 'XMLRPC', '1.42.0', 'xmlrpc-c_v1.42.0.zip', 'xmlrpc-c_v1.41.02.zip', 'https://github.com/toulousain79/MySB/raw/v2.2/files/xmlrpc-c_v1.42.0.zip', 1),
 (30, 'GIT', '/web/loadavg', 'LoadAvg', '2.2', 'loadavg_v2.2.zip', '', 'https://github.com/loadavg/loadavg.git', 1),
-(31, 'ZIP', '/web/owncloud', 'ownCloud', '8.2.0', 'owncloud_v8.2.0.zip', 'owncloud_v8.1.3.zip', 'https://download.owncloud.org/community/owncloud-8.2.0.zip', 1);
+(31, 'ZIP', '/web/owncloud', 'ownCloud', '8.2.2', 'owncloud_v8.2.2.zip', 'owncloud_v8.2.0.zip', 'https://download.owncloud.org/community/owncloud-8.2.2.zip', 1);
 
 INSERT INTO `services` (`id_services`, `serv_name`, `bin`, `port_tcp1`, `port_tcp2`, `port_tcp3`, `ports_tcp_list`, `port_udp1`, `port_udp2`, `port_udp3`, `ports_udp_list`, `to_install`, `is_installed`) VALUES
 (1, 'Seedbox-Manager', '', '', '', '', '', '', '', ' ', ' ', 0, 0),
