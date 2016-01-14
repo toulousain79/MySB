@@ -24,16 +24,30 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-#### Force PeerGuardian List Update
-if CheckCommand 0 pglcmd; then
-	pglcmd update > $MySB_InstallDir/temp/pglcmd_update.log
+Switch="$1"
 
-	#### Get date time from file
-	cat $MySB_InstallDir/temp/pglcmd_update.log | grep 'last modified:' | sed 's/)/:00/g;' | while read Lign; do
-		ListName="`echo $Lign | awk '{ print $1 }'`"
-		DateHour="`echo $Lign | sed 's/modified:/#/g;' | cut -d "#" -f 2 | sed 's/^ //g;'`"
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "peerguardian_lastupdate = '$DateHour'" "pgl_list_name = '$ListName'" '-echo'
-	done
+if [ ! -z "$Switch" ] && CheckCommand 0 pglcmd; then
+	case "$Switch" in
+		"update")
+			#### Force PeerGuardian List Update
+			pglcmd update > $MySB_InstallDir/temp/pglcmd_update.log
+
+			#### Get date time from file
+			cat $MySB_InstallDir/temp/pglcmd_update.log | grep 'last modified:' | sed 's/)/:00/g;' | while read Lign; do
+				ListName="`echo $Lign | awk '{ print $1 }'`"
+				DateHour="`echo $Lign | sed 's/modified:/#/g;' | cut -d "#" -f 2 | sed 's/^ //g;'`"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "peerguardian_lastupdate = '$DateHour'" "pgl_list_name = '$ListName'" '-echo'
+			done
+		;;
+		"check")
+			if ! GetPid pglcmd; then
+				ScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create' 'CRON'
+			fi
+			if ! GetPid pglcmd; then
+				SendMail "$Global_Subject_PeerGuardianCheck" "$MainUser" "PGL_check" "PeerGuardian is dead !"
+			fi			
+		;;
+	esac
 fi
 
 # -----------------------------------------

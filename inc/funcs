@@ -32,7 +32,7 @@ CreateHostsFile() {
 	echo "" >> /etc/hosts
 	echo "#### MySB - Force trackers resolution (ex: DNS liar)" >> /etc/hosts
 
-	Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list,tracker,tracker_domain' 'trackers_list' "1" | while read ROW; do
+	Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list,tracker,tracker_domain' 'trackers_list' 'is_active = 1' | while read ROW; do
 		IdTracker="`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`"
 		Tracker="`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`"
 		TrackerDomain="`echo $ROW | awk '{split($0,a,"|"); print a[3]}'`"
@@ -118,7 +118,7 @@ SendMail() {
 	FnUserMail="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$FnUser'"`"
 	if [ ! -z "$FnInfo" ]; then log_daemon_msg "$Funcs_SendMail_GenerateHTML $FnUser"; fi
 
-	if ! GetPid $Service; then
+	if ! GetPid nginx; then
 		service nginx restart &> /dev/null
 	fi
 
@@ -174,7 +174,7 @@ PackagesManage() {
 		t2=$(date --date="$Now" +'%-H')
 		let "tDiff=$t2-$t1"
 	fi
-	
+
 	#### Check last update
 	if [ "$Query" != "test" ]; then
 		if [ "$IsReady_MySB_DB" == "YES" ]; then
@@ -360,7 +360,7 @@ ManageServices() {
 		ServicesToManage="`echo $ServicesToManage | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 	fi
 
-	if [ ! -z "$ServicesToManage" ]; then	
+	if [ ! -z "$ServicesToManage" ]; then
 		case "$LOGSTD" in
 			"STDOUT")
 				echo "---- "`date +"%T"` >> $MySB_InstallDir/logs/$ScriptName.log
@@ -722,7 +722,7 @@ MonthlyPayment() {
 			SeedUserMail="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$SeedboxUser'"`"
 			
 			if [ "$UserToIgnore" != "$SeedboxUser" ]; then	
-				SendMail "$Global_MonthlyPayment" "${SeedboxUser}" "new_user" "Changing Monthly"
+				SendMail "$Global_Subject_MonthlyPayment" "${SeedboxUser}" "new_user" "Changing Monthly"
 			fi
 		done
 	fi
@@ -953,7 +953,7 @@ NetworkPortsGenerator() {
 		if [ "$IsInstalled_PlexMedia" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
 			UDP_PORTS_LIST="${WHITE_UDP_IN} ${Ports_UDP_PlexMedia}"
 		fi
-	fi	
+	fi
 
 	WHITE_TCP_IN=`echo $WHITE_TCP_IN | sed -e 's/^ //g;' | sed 's/\s+$//'`
 	WHITE_UDP_IN=`echo $WHITE_UDP_IN | sed -e 's/^ //g;' | sed 's/\s+$//'`
@@ -1197,15 +1197,15 @@ PeerGuardianPglcmdConf() {
 		NetworkPortsGenerator
 
 		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
-		if [ ! -z "$SEARCH" ]; then	
+		if [ ! -z "$SEARCH" ]; then
 			perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${WHITE_TCP_IN}\"/g" /etc/pgl/pglcmd.conf
 		fi
 		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=")
-		if [ ! -z "$SEARCH" ]; then	
+		if [ ! -z "$SEARCH" ]; then
 			perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"${WHITE_UDP_IN}\"/g" /etc/pgl/pglcmd.conf
 		fi
 		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
-		if [ ! -z "$SEARCH" ]; then	
+		if [ ! -z "$SEARCH" ]; then
 			perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"${WHITE_TCP_OUT}\"/g" /etc/pgl/pglcmd.conf
 		fi
 		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
@@ -1407,7 +1407,7 @@ ManageUserHomeDir() {
 	# /home/user/blocklist
 	# chmod -R 0740 $FnHomeDir/blocklist
 	# chmod 0754 $FnHomeDir/blocklist
-	chmod -R 0755 $FnHomeDir/blocklist	
+	chmod -R 0755 $FnHomeDir/blocklist
 	chown -R root:$FnUser $FnHomeDir/blocklist
 	# /home/user/logs
 	#chmod -R 0774 $FnHomeDir/logs
@@ -1430,9 +1430,6 @@ ManageUserHomeDir() {
 	# /home/user/rtorrent/.session
 	chown -R root:$FnUser $FnHomeDir/rtorrent/.session
 	chmod 0771 $FnHomeDir/rtorrent/.session
-	# /home/user/rtorrent/share
-	# chown root:MySB_users $FnHomeDir/rtorrent/share
-	# chmod 0770 $FnHomeDir/rtorrent/share
 
 	unset FnHomeDir
 }
@@ -1473,9 +1470,9 @@ ManagerUsersConfigs() {
 	if [ "$IsInstalled_Manager" == "YES" ]; then
 		FnUser="$1"
 		FnHomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
-		HomeDirEscaped=`echo $FnHomeDir | sed s,/,\\\\\\\\\\/,g`
+		HomeDirEscaped="`echo $FnHomeDir | sed s,/,\\\\\\\\\\/,g`"
 		PortSCGI="`Func_SQL_Command 'SELECT' 'MySB_db' 'scgi_port' 'users' "users_ident = '$FnUser'"`"
-		UserNameUpper=`echo $FnUser | tr '[:lower:]' '[:upper:]'`	
+		UserNameUpper="`echo $FnUser | tr '[:lower:]' '[:upper:]'`"
 
 		if [ ! -d $ManagerDir/conf/users/$FnUser ]; then mkdir -p $ManagerDir/conf/users/$FnUser; fi
 		if [ -f $ManagerDir/conf/config.ini ] && [ ! -f $ManagerDir/conf/users/$FnUser/config.ini ]; then
@@ -1589,7 +1586,7 @@ ruTorrentGlobalConfigs() {
 						echo "Plugin $Plugin missing"
 					fi
 				else
-					DeleteDirectory 0 "$RutorrentPluginsDir/fileupload"			
+					DeleteDirectory 0 "$RutorrentPluginsDir/fileupload"
 				fi
 				unset IsActive
 			;;

@@ -1,5 +1,7 @@
 	Version v3.2
 		2016/01/12
+			- funcs_iptables, small corrections (v3.1 and v3.2)
+			- funcs, small corrections (v3.1 and v3.2)
 			- NodeJS v0.12.9 (v3.2)
 			- ownCloud v8.2.2 (v3.2)
 	
