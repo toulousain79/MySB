@@ -2,6 +2,7 @@
 		2016/01/12
 			- funcs_iptables, small corrections (v3.1 and v3.2)
 			- funcs, small corrections (v3.1 and v3.2)
+			- LogServer.bsh, rewriting the script & reduce some HTML log files (iptables.html, pgld.html, pglcmd.html) (v3.1 and v3.2)
 			- NodeJS v0.12.9 (v3.2)
 			- ownCloud v8.2.2 (v3.2)
 	
