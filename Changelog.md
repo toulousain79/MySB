@@ -6,9 +6,11 @@
 			- ownCloud, add ignoreregex for Fail2Ban nginx-badbots filter (and v3.2)
 			- VSFTP, Desactivate logging of uploads & downloads (v3.1 and v3.2)
 			- RKHunter, small corrections (v3.1 and v3.2)
+			- Sources list manage by local mirrors with apt-mirror (PeerGuardian, Plex, Webmin) (v3.2)
 			- Improved functions calls (loading unused functions) (v3.2)
 			- NodeJS v0.12.9 (v3.2)
 			- ownCloud v8.2.2 (v3.2)
+			- PHP v5.6 (v3.2)
 	
 	Version v3.1
 		2015/11/17

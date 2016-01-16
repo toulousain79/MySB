@@ -49,4 +49,137 @@ DeleteBadSources() {
 	sed -i '/debian.intergenia.de/d' $SourcesFile
 }
 
+#### APT-mirror (local mirror for PeerGuardian, Webmin, Plexmedia Server)
+CreateLocalMirror() {
+	case "$1" in
+		"CONFIG")
+			# Directories
+			if [ ! -d $MySB_InstallDir/apt-mirror/mirrors ]; then mkdir -p $MySB_InstallDir/apt-mirror/mirrors ; fi
+			if [ ! -d $MySB_InstallDir/apt-mirror/skel ]; then mkdir $MySB_InstallDir/apt-mirror/skel ; fi
+			if [ ! -d $MySB_InstallDir/apt-mirror/var ]; then mkdir $MySB_InstallDir/apt-mirror/var ; fi
+			# /etc/apt/mirror.list
+			cp -vf $MySB_InstallDir/templates/etc.apt.mirror.list.tmpl $MySB_InstallDir/apt-mirror/mirror.list
+			perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" $MySB_InstallDir/apt-mirror/mirror.list
+			perl -pi -e "s/<Arch>/$Arch/g" $MySB_InstallDir/apt-mirror/mirror.list
+			# apt-mirror/var/postmirror.sh
+			echo "$MySB_InstallDir/apt-mirror/var/clean.sh" > $MySB_InstallDir/apt-mirror/var/postmirror.sh
+		;;
+		"ADD")
+			if [ "$ToInstall_PeerGuardian" == "YES" ] || [ "$IsInstalled_PeerGuardian" == "YES" ]; then
+				echo "# PeerGuardian" >> $MySB_InstallDir/apt-mirror/mirror.list
+				echo "deb http://moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" >> $MySB_InstallDir/apt-mirror/mirror.list
+				echo "deb-src http://moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" >> $MySB_InstallDir/apt-mirror/mirror.list
+				echo "clean http://moblock-deb.sourceforge.net/debian" >> $MySB_InstallDir/apt-mirror/mirror.list
+
+				if [ ! -f /etc/apt/sources.list.d/peerguardian.list ]; then
+					cd $MySB_InstallDir/files
+					until gpg --keyserver keyserver.ubuntu.com --recv-keys C0145138; do
+						sleep 1
+					done
+
+					until gpg --export --armor C0145138 | apt-key add -; do
+						sleep 1
+					done
+
+					#### Force apt-get update
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "apt_update = 1, apt_date = 'NOW'" "id_system = 1" '-echo'
+				fi
+
+				# peerguardian.list (local)
+				echo "# PeerGuardian" > /etc/apt/sources.list.d/peerguardian.list
+				echo "deb file:///etc/MySB/mirror/mirror/moblock-deb.sourceforge.net/debian	${DEBIAN_VERSION} main" >> /etc/apt/sources.list.d/peerguardian.list
+				echo "deb-src file:///etc/MySB/mirror/mirror/moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" >> /etc/apt/sources.list.d/peerguardian.list
+			fi
+			if [ "$ToInstall_Webmin" == "YES" ] || [ "$IsInstalled_Webmin" == "YES" ]; then
+				echo "# Webmin" >> $MySB_InstallDir/apt-mirror/mirror.list
+				echo "deb http://download.webmin.com/download/repository sarge contrib" >> $MySB_InstallDir/apt-mirror/mirror.list
+				echo "clean http://download.webmin.com/download/repository" >> $MySB_InstallDir/apt-mirror/mirror.list
+
+				if [ ! -f /etc/apt/sources.list.d/webmin.list ]; then
+					if [ ! -f $MySB_InstallDir/files/jcameron-key.asc ]; then
+						wget -t 5 http://www.webmin.com/jcameron-key.asc -O $MySB_InstallDir/files/jcameron-key.asc
+					fi
+					if [ -f $MySB_InstallDir/files/jcameron-key.asc ]; then
+						apt-key add $MySB_InstallDir/files/jcameron-key.asc
+					fi
+				fi
+
+				# webmin.list (local)
+				echo "# Webmin" > /etc/apt/sources.list.d/webmin.list
+				echo "deb file:///etc/MySB/mirror/mirror/download.webmin.com/download/repository sarge contrib" >> /etc/apt/sources.list.d/webmin.list
+			fi
+			if [ "$ToInstall_PlexMedia" == "YES" ] || [ "$IsInstalled_PlexMedia" == "YES" ]; then
+				echo "# PlexMedia" >> $MySB_InstallDir/apt-mirror/mirror.list
+				echo "deb http://shell.ninthgate.se/packages/debian $DEBIAN_VERSION main" >> $MySB_InstallDir/apt-mirror/mirror.list
+				echo "clean http://shell.ninthgate.se/packages/debian" >> $MySB_InstallDir/apt-mirror/mirror.list
+
+				if [ ! -f /etc/apt/sources.list.d/plexmedia.list ]; then
+					if [ ! -f $MySB_InstallDir/files/ninthgate.key ]; then
+						curl --silent http://shell.ninthgate.se/packages/shell-ninthgate-se-keyring.key > $MySB_InstallDir/files/plexmedia.key
+						apt-key add $MySB_InstallDir/files/plexmedia.key
+					fi
+				fi
+
+				# plexmedia.list (local)
+				echo "# PlexMedia" > /etc/apt/sources.list.d/plexmedia.list
+				echo "deb file:///etc/MySB/mirror/mirror/shell.ninthgate.se/packages/debian $DEBIAN_VERSION main" >> /etc/apt/sources.list.d/plexmedia.list
+			fi
+
+			#### Force apt-get update
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "apt_update = 1, apt_date = 'NOW'" "id_system = 1" '-echo'
+		;;
+	esac
+}
+
+#### Basics Sources List
+CreateBasicSourcesList() {
+	ReposInFile="`cat /etc/apt/sources.list | grep '^deb ' | grep -v 'security' | awk '{ print $2 }'`"
+	Destination="$1"
+
+	if [ -f $Destination ]; then rm $Destination; fi
+	for Repo in $ReposInFile; do
+		echo "deb $Repo $DEBIAN_VERSION main contrib non-free" >> $Destination
+		echo "deb-src $Repo $DEBIAN_VERSION main contrib non-free" >> $Destination
+	done
+
+	echo "# Security" >> $Destination
+	echo "deb http://security.debian.org $DEBIAN_VERSION/updates main contrib non-free" >> $Destination
+	echo "deb-src http://security.debian.org $DEBIAN_VERSION/updates main contrib non-free" >> $Destination
+}
+
+#### DotDeb Mirrors
+CreateDotDebRepo() {
+	# DotDeb NginX
+	if [ -f /etc/apt/sources.list.d/dotdeb.list ]; then rm -f /etc/apt/sources.list.d/dotdeb.list; fi
+	echo "# NginX" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "# wget http://www.dotdeb.org/dotdeb.gpg" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "# apt-key add dotdeb.gpg" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "deb http://packages.dotdeb.org <debian_version> all" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "deb-src http://packages.dotdeb.org <debian_version> all" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "deb http://dotdeb.thefox.com.fr <debian_version> all" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "deb-src http://dotdeb.thefox.com.fr <debian_version> all" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	sed -i "s/<debian_version>/$DEBIAN_VERSION/g;" /etc/apt/sources.list.d/dotdeb.list
+	wget http://nginx.org/keys/nginx_signing.key
+	apt-key add nginx_signing.key
+	rm -vf nginx_signing.key
+
+	# DotDeb PHP 5.6
+	if [ -f /etc/apt/sources.list.d/dotdeb_php56.list ]; then rm -f /etc/apt/sources.list.d/dotdeb_php56.list; fi
+	echo "# dotdeb php 5.6" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
+	echo "" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
+	echo "# wget http://www.dotdeb.org/dotdeb.gpg" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
+	echo "# apt-key add dotdeb.gpg" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
+	echo "" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
+	echo "deb http://packages.dotdeb.org <debian_version>-php56 all" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
+	echo "deb-src http://packages.dotdeb.org <debian_version>-php56 all" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
+	echo "deb http://dotdeb.thefox.com.fr <debian_version>-php56 all" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
+	echo "deb-src http://dotdeb.thefox.com.fr <debian_version>-php56 all" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
+	sed -i "s/<debian_version>/$DEBIAN_VERSION/g;" /etc/apt/sources.list.d/dotdeb_php56.list
+	wget http://www.dotdeb.org/dotdeb.gpg
+	apt-key add dotdeb.gpg
+	rm -vf dotdeb.gpg
+}
+
 ##################### LAST LINE ######################################

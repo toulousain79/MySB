@@ -24,6 +24,9 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+#### VARs
+TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
+
 #### Install packages
 PackagesManage install "php5 php5-common php5-cli php5-fpm php5-curl php5-geoip php5-xmlrpc php5-gd php5-sqlite php5-mcrypt php5-json php5-mysql php5-intl php5-imagick php-xml-rss php5-apcu php5-dev"
 
@@ -40,19 +43,21 @@ ManageServices stop "php5-fpm"
 if [ -f /etc/php5/fpm/pool.d/www.conf.dpkg-dist ]; then mv -v /etc/php5/fpm/pool.d/www.conf.dpkg-dist /etc/php5/fpm/pool.d/www.conf; fi
 if [ -f /etc/php5/fpm/php.ini.ucf-dist ]; then mv -v /etc/php5/fpm/php.ini.ucf-dist /etc/php5/fpm/php.ini; fi
 if [ -f /etc/php5/cli/php.ini.ucf-dist ]; then mv -v /etc/php5/cli/php.ini.ucf-dist /etc/php5/cli/php.ini; fi
-
-perl -pi -e "s/;listen = 127.0.0.1:9000/listen = \/var\/run\/php5-fpm.sock/g" /etc/php5/fpm/pool.d/www.conf
+# /etc/php5/fpm/pool.d/www.conf
+perl -pi -e "s/^;listen = 127.0.0.1:9000/listen = \/var\/run\/php5-fpm.sock/g" /etc/php5/fpm/pool.d/www.conf
 perl -pi -e "s/^;listen.owner = www-data/listen.owner = www-data/g" /etc/php5/fpm/pool.d/www.conf
 perl -pi -e "s/^;listen.group = www-data/listen.group = www-data/g" /etc/php5/fpm/pool.d/www.conf
 perl -pi -e "s/^;listen.mode = 0660/listen.mode = 0660/g" /etc/php5/fpm/pool.d/www.conf
 perl -pi -e "s/^;request_terminate_timeout = 0/request_terminate_timeout = 300/g" /etc/php5/fpm/pool.d/www.conf
+# /etc/php5/fpm/php.ini
 perl -pi -e "s/^expose_php = On/expose_php = Off/g" /etc/php5/fpm/php.ini
 perl -pi -e "s/file_uploads = Off/file_uploads = On/g" /etc/php5/fpm/php.ini
-perl -pi -e "s/post_max_size = 8M/post_max_size = 10M/g" /etc/php5/fpm/php.ini
-perl -pi -e "s/upload_max_filesize = 2M/upload_max_filesize = 10M/g" /etc/php5/fpm/php.ini
-perl -pi -e "s/^;date.timezone =/date.timezone = Europe\/Paris/g" /etc/php5/fpm/php.ini
+perl -pi -e "s/post_max_size = 8M/post_max_size = 16M/g" /etc/php5/fpm/php.ini
+perl -pi -e "s/upload_max_filesize = 2M/upload_max_filesize = 16M/g" /etc/php5/fpm/php.ini
+perl -pi -e "s/^;date.timezone =/date.timezone = $TimeZoneEscaped/g" /etc/php5/fpm/php.ini
+# /etc/php5/cli/php.ini
 perl -pi -e "s/^expose_php = On/expose_php = Off/g" /etc/php5/cli/php.ini
-perl -pi -e "s/^;date.timezone =/date.timezone = Europe\/Paris/g" /etc/php5/cli/php.ini
+perl -pi -e "s/^;date.timezone =/date.timezone = $TimeZoneEscaped/g" /etc/php5/cli/php.ini
 
 ScriptInvoke 'source' "$MySB_InstallDir/scripts/UpdateGeoIP.bsh" "INSTALL"
 
