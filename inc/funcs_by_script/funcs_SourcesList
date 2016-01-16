@@ -72,7 +72,6 @@ CreateLocalMirror() {
 				echo "clean http://moblock-deb.sourceforge.net/debian" >> $MySB_InstallDir/apt-mirror/mirror.list
 
 				if [ ! -f /etc/apt/sources.list.d/peerguardian.list ]; then
-					cd $MySB_InstallDir/files
 					until gpg --keyserver keyserver.ubuntu.com --recv-keys C0145138; do
 						sleep 1
 					done
@@ -96,11 +95,11 @@ CreateLocalMirror() {
 				echo "clean http://download.webmin.com/download/repository" >> $MySB_InstallDir/apt-mirror/mirror.list
 
 				if [ ! -f /etc/apt/sources.list.d/webmin.list ]; then
-					if [ ! -f $MySB_InstallDir/files/jcameron-key.asc ]; then
-						wget -t 5 http://www.webmin.com/jcameron-key.asc -O $MySB_InstallDir/files/jcameron-key.asc
+					if [ ! -f $MySB_InstallDir/files/repos_keys/webmin.key ]; then
+						wget -t 5 http://www.webmin.com/jcameron-key.asc -O $MySB_InstallDir/files/repos_keys/webmin.key
 					fi
-					if [ -f $MySB_InstallDir/files/jcameron-key.asc ]; then
-						apt-key add $MySB_InstallDir/files/jcameron-key.asc
+					if [ -f $MySB_InstallDir/files/repos_keys/webmin.key ]; then
+						apt-key add $MySB_InstallDir/files/repos_keys/webmin.key
 					fi
 				fi
 
@@ -114,10 +113,12 @@ CreateLocalMirror() {
 				echo "clean http://shell.ninthgate.se/packages/debian" >> $MySB_InstallDir/apt-mirror/mirror.list
 
 				if [ ! -f /etc/apt/sources.list.d/plexmedia.list ]; then
-					if [ ! -f $MySB_InstallDir/files/ninthgate.key ]; then
-						curl --silent http://shell.ninthgate.se/packages/shell-ninthgate-se-keyring.key > $MySB_InstallDir/files/plexmedia.key
-						apt-key add $MySB_InstallDir/files/plexmedia.key
+					if [ ! -f $MySB_InstallDir/files/repos_keys/plexmedia.key ]; then
+						wget -t 5 http://shell.ninthgate.se/packages/shell-ninthgate-se-keyring.key -O $MySB_InstallDir/files/repos_keys/plexmedia.key
 					fi
+					if [ -f $MySB_InstallDir/files/repos_keys/plexmedia.key ]; then
+						apt-key add $MySB_InstallDir/files/repos_keys/plexmedia.key
+					fi					
 				fi
 
 				# plexmedia.list (local)
@@ -151,35 +152,33 @@ CreateBasicSourcesList() {
 CreateDotDebRepo() {
 	# DotDeb NginX
 	if [ -f /etc/apt/sources.list.d/dotdeb.list ]; then rm -f /etc/apt/sources.list.d/dotdeb.list; fi
-	echo "# NginX" | tee -a /etc/apt/sources.list.d/dotdeb.list
-	echo "" | tee -a /etc/apt/sources.list.d/dotdeb.list
-	echo "# wget http://www.dotdeb.org/dotdeb.gpg" | tee -a /etc/apt/sources.list.d/dotdeb.list
-	echo "# apt-key add dotdeb.gpg" | tee -a /etc/apt/sources.list.d/dotdeb.list
-	echo "" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "# DotDeb NginX" | tee -a /etc/apt/sources.list.d/dotdeb.list
 	echo "deb http://packages.dotdeb.org <debian_version> all" | tee -a /etc/apt/sources.list.d/dotdeb.list
 	echo "deb-src http://packages.dotdeb.org <debian_version> all" | tee -a /etc/apt/sources.list.d/dotdeb.list
 	echo "deb http://dotdeb.thefox.com.fr <debian_version> all" | tee -a /etc/apt/sources.list.d/dotdeb.list
 	echo "deb-src http://dotdeb.thefox.com.fr <debian_version> all" | tee -a /etc/apt/sources.list.d/dotdeb.list
 	sed -i "s/<debian_version>/$DEBIAN_VERSION/g;" /etc/apt/sources.list.d/dotdeb.list
-	wget http://nginx.org/keys/nginx_signing.key
-	apt-key add nginx_signing.key
-	rm -vf nginx_signing.key
+	if [ ! -f $MySB_InstallDir/files/repos_keys/dotdeb_nginx.key ]; then
+		wget -t 5 http://nginx.org/keys/nginx_signing.key -O $MySB_InstallDir/files/repos_keys/dotdeb_nginx.key
+	fi
+	if [ -f $MySB_InstallDir/files/repos_keys/dotdeb_nginx.key ]; then
+		apt-key add $MySB_InstallDir/files/repos_keys/dotdeb_nginx.key
+	fi
 
 	# DotDeb PHP 5.6
 	if [ -f /etc/apt/sources.list.d/dotdeb_php56.list ]; then rm -f /etc/apt/sources.list.d/dotdeb_php56.list; fi
-	echo "# dotdeb php 5.6" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
-	echo "" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
-	echo "# wget http://www.dotdeb.org/dotdeb.gpg" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
-	echo "# apt-key add dotdeb.gpg" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
-	echo "" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
+	echo "# DotDeb PHP 5.6" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
 	echo "deb http://packages.dotdeb.org <debian_version>-php56 all" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
 	echo "deb-src http://packages.dotdeb.org <debian_version>-php56 all" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
 	echo "deb http://dotdeb.thefox.com.fr <debian_version>-php56 all" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
 	echo "deb-src http://dotdeb.thefox.com.fr <debian_version>-php56 all" | tee -a /etc/apt/sources.list.d/dotdeb_php56.list
 	sed -i "s/<debian_version>/$DEBIAN_VERSION/g;" /etc/apt/sources.list.d/dotdeb_php56.list
-	wget http://www.dotdeb.org/dotdeb.gpg
-	apt-key add dotdeb.gpg
-	rm -vf dotdeb.gpg
+	if [ ! -f $MySB_InstallDir/files/repos_keys/dotdeb_php56.key ]; then
+		wget -t 5 http://www.dotdeb.org/dotdeb.gpg -O $MySB_InstallDir/files/repos_keys/dotdeb_php56.key
+	fi
+	if [ -f $MySB_InstallDir/files/repos_keys/dotdeb_php56.key ]; then
+		apt-key add $MySB_InstallDir/files/repos_keys/dotdeb_php56.key
+	fi	
 }
 
 ##################### LAST LINE ######################################
