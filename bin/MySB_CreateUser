@@ -77,7 +77,6 @@ fi
 
 #### Users vars
 NewUserHomedir="/home/$UserToCreate"
-HOMEDIR_ESCAPED=`echo $NewUserHomedir | sed s,/,\\\\\\\\\\/,g`
 UPPERNEWUSER=`echo $UserToCreate | tr '[:lower:]' '[:upper:]'`
 NEWRPC="/"$UPPERNEWUSER
 
@@ -161,27 +160,7 @@ fi
 
 #### rTorrent (.rtorrent.rc)
 log_daemon_msg "$CreateUser_rTorrentfile [$UserToCreate]"
-cp $MySB_InstallDir/templates/rtorrent.rc.tmpl $NewUserHomedir/.rtorrent.rc
-perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" $NewUserHomedir/.rtorrent.rc
-perl -pi -e "s/<server_ip>/$SrvIpAddress/g" $NewUserHomedir/.rtorrent.rc
-perl -pi -e "s/<username>/$UserToCreate/g" $NewUserHomedir/.rtorrent.rc
-perl -pi -e "s/<homedir>/$HOMEDIR_ESCAPED/g" $NewUserHomedir/.rtorrent.rc
-perl -pi -e "s/<scgi_port>/$ScgiPort/g" $NewUserHomedir/.rtorrent.rc
-perl -pi -e "s/<port_range>/$rTorrentPort-$rTorrentPort/g" $NewUserHomedir/.rtorrent.rc
-if [ "$MySB_PeerBlock" == "rTorrent" ]; then
-	perl -pi -e "s/#{1}ipv4_filter.load/ipv4_filter.load/g" $NewUserHomedir/.rtorrent.rc
-	perl -pi -e "s/#{1}print/print/g" $NewUserHomedir/.rtorrent.rc
-	perl -pi -e "s/#{1}schedule=load_filter/schedule=load_filter/g" $NewUserHomedir/.rtorrent.rc
-fi
-
-case "$FILESYSTEMTYPE" in
-	"ext4"|"xfs"|"btrfs")
-		perl -pi -e "s/system.file_allocate.set = no/system.file_allocate.set = yes/g" $NewUserHomedir/.rtorrent.rc
-	;;	
-	*)
-		perl -pi -e "s/^system.file_allocate.set = yes/system.file_allocate.set = no/g" $NewUserHomedir/.rtorrent.rc
-	;;
-esac
+CreateRtorrentConfigFile "$UserToCreate"
 StatusLSB
 
 #### NginX

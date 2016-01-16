@@ -463,4 +463,36 @@ ruTorrentUsersConfigs() {
 	unset LISTING FnHomeDir HomeDirEscaped PortSCGI UserNameUpper
 }
 
+#### rTorrent Configuration file
+CreateRtorrentConfigFile() {
+	FnUser="$1"
+	PortSCGI="`Func_SQL_Command 'SELECT' 'MySB_db' 'scgi_port' 'users' "users_ident = '$FnUser'"`"
+	PortRtorrent="`Func_SQL_Command 'SELECT' 'MySB_db' 'rtorrent_port' 'users' "users_ident = '$FnUser'"`"
+
+	if [ -f /home/$FnUser/.rtorrent.rc ]; then
+		/home/$FnUser/.rtorrent.rc /home/$FnUser/.rtorrent.rc.old
+	fi
+	cp $MySB_InstallDir/templates/rtorrent.rc.tmpl /home/$FnUser/.rtorrent.rc
+	perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /home/$FnUser/.rtorrent.rc
+	perl -pi -e "s/<server_ip>/$SrvIpAddress/g" /home/$FnUser/.rtorrent.rc
+	perl -pi -e "s/<username>/$FnUser/g" /home/$FnUser/.rtorrent.rc
+	perl -pi -e "s/<homedir>/\/home\/$FnUser/g" /home/$FnUser/.rtorrent.rc
+	perl -pi -e "s/<scgi_port>/$PortSCGI/g" /home/$FnUser/.rtorrent.rc
+	perl -pi -e "s/<port_range>/$PortRtorrent-$PortRtorrent/g" /home/$FnUser/.rtorrent.rc
+	if [ "$MySB_PeerBlock" == "rTorrent" ]; then
+		perl -pi -e "s/#{1}ipv4_filter.load/ipv4_filter.load/g" /home/$FnUser/.rtorrent.rc
+		perl -pi -e "s/#{1}print/print/g" /home/$FnUser/.rtorrent.rc
+		perl -pi -e "s/#{1}schedule=load_filter/schedule=load_filter/g" /home/$FnUser/.rtorrent.rc
+	fi
+
+	case "$FILESYSTEMTYPE" in
+		"ext4"|"xfs"|"btrfs")
+			perl -pi -e "s/system.file_allocate.set = no/system.file_allocate.set = yes/g" /home/$FnUser/.rtorrent.rc
+		;;
+		*)
+			perl -pi -e "s/^system.file_allocate.set = yes/system.file_allocate.set = no/g" /home/$FnUser/.rtorrent.rc
+		;;
+	esac
+}
+
 ##################### LAST LINE ######################################

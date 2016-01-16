@@ -47,14 +47,16 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$Switch" != "INIT" ]; then
 	TimeStamp=$(date +%s)
 
 	#### STOP services
-	ManageServices stop "php5-fpm nginx"	
+	ManageServices stop "php5-fpm nginx"
 
 	#### PHP
 	perl -pi -e "s/post_max_size = 10M/post_max_size = 20G/g" /etc/php5/fpm/php.ini
 	perl -pi -e "s/upload_max_filesize = 10M/upload_max_filesize = 20G/g" /etc/php5/fpm/php.ini
 	perl -pi -e "s/max_file_uploads = 20/max_file_uploads = 20000/g" /etc/php5/fpm/php.ini
 	perl -pi -e "s/output_buffering = 4096/output_buffering = Off/g" /etc/php5/fpm/php.ini
-	echo "apc.enable_cli=1" >> /etc/php5/cli/conf.d/20-apcu.ini
+	if [ -z "`cat /etc/php5/mods-available/apcu.ini | grep 'apc.enable_cli'`" ]; then
+		echo "apc.enable_cli=1" >> /etc/php5/mods-available/apcu.ini
+	fi
 	perl -pi -e "s/^;env\[PATH\]/env\[PATH\]/g" /etc/php5/fpm/pool.d/www.conf
 
 	#### NginX configuration
