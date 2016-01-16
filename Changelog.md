@@ -3,6 +3,10 @@
 			- funcs_iptables, small corrections (v3.1 and v3.2)
 			- funcs, small corrections (v3.1 and v3.2)
 			- LogServer.bsh, rewriting the script & reduce some HTML log files (iptables.html, pgld.html, pglcmd.html) (v3.1 and v3.2)
+			- ownCloud, add ignoreregex for Fail2Ban nginx-badbots filter (and v3.2)
+			- VSFTP, Desactivate logging of uploads & downloads (v3.1 and v3.2)
+			- RKHunter, small corrections (v3.1 and v3.2)
+			- Improved functions calls (loading unused functions) (v3.2)
 			- NodeJS v0.12.9 (v3.2)
 			- ownCloud v8.2.2 (v3.2)
 	

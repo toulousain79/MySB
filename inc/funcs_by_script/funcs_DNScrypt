@@ -1,0 +1,64 @@
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### DNScrypt Resolvers
+DNScrypt_ResolversRenew() {
+	# Download new resolvers CSV list
+	UrlCsvFile="https://raw.githubusercontent.com/jedisct1/dnscrypt-proxy/master/dnscrypt-resolvers.csv"
+	DestCsvFile="$MySB_InstallDir/files/dnscrypt-resolvers.csv"
+	wget --no-check-certificate $UrlCsvFile -O $DestCsvFile
+
+	if [ -f $DestCsvFile ] && CheckCommand 0 csvtool; then
+		# Clean the table 'dnscrypt_resolvers'
+		Func_SQL_Command 'DELETE' 'MySB_db' 'dnscrypt_resolvers' '1'
+
+		# Get resolvers information from 'dnscrypt-resolvers.csv'
+		ResolversTable="`csvtool -t ',' -u '|' cat $DestCsvFile | csvtool drop 1 - | sed 's/ /#/g;'`"
+		for Line in $ResolversTable; do
+			Name="`echo $Line | awk '{split($0,a,\"|\"); print a[1]}' | sed 's/#/ /g;'`"
+			FullName="`echo $Line | awk '{split($0,a,\"|\"); print a[2]}' | sed 's/#/ /g;'`"
+			Description="`echo $Line | awk '{split($0,a,\"|\"); print a[3]}' | sed 's/#/ /g;'`"
+			Location="`echo $Line | awk '{split($0,a,\"|\"); print a[4]}' | sed 's/#/ /g;'`"
+			Coordinates="`echo $Line | awk '{split($0,a,\"|\"); print a[5]}' | sed 's/#/ /g;'`"
+			URL="`echo $Line | awk '{split($0,a,\"|\"); print a[6]}' | sed 's/#/ /g;' | sed 's/http.\/\//http:\/\//g;'`"
+			Version="`echo $Line | awk '{split($0,a,\"|\"); print a[7]}' | sed 's/#/ /g;'`"
+			DnssecVal="`echo $Line | awk '{split($0,a,\"|\"); print a[8]}' | sed 's/#/ /g;'`"
+			NoLogs="`echo $Line | awk '{split($0,a,\"|\"); print a[9]}' | sed 's/#/ /g;'`"
+			Namecoin="`echo $Line | awk '{split($0,a,\"|\"); print a[10]}' | sed 's/#/ /g;'`"
+			ResolverAddress="`echo $Line | awk '{split($0,a,\"|\"); print a[11]}' | sed 's/#/ /g;'`"
+			ProviderName="`echo $Line | awk '{split($0,a,\"|\"); print a[12]}' | sed 's/#/ /g;'`"
+			ProviderPublicKey="`echo $Line | awk '{split($0,a,\"|\"); print a[13]}' | sed 's/#/ /g;'`"
+			ProviderPublicKeyTxtRecord="`echo $Line | awk '{split($0,a,\"|\"); print a[14]}' | sed 's/#/ /g;'`"
+
+			# Add new informations in DB (don't want IPv6)
+			if [ -z "`echo $Name | grep 'ipv6'`" ]; then
+				Func_SQL_Command 'INSERT' 'MySB_db' 'dnscrypt_resolvers' "name,full_name,description,location,coordinates,url,version,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record,is_activated,is_wished" "\"$Name\",\"$FullName\",\"$Description\",\"$Location\",\"$Coordinates\",\"$URL\",\"$Version\",\"$DnssecVal\",\"$NoLogs\",\"$Namecoin\",\"$ResolverAddress\",\"$ProviderName\",\"$ProviderPublicKey\",\"$ProviderPublicKeyTxtRecord\",\"0\",\"0\"" '-echo'
+			fi
+		done
+
+		# Force use of all provider taht accept 'dnssec' and 'no logs'
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished = '1'" "dnssec = 'yes' AND no_logs='yes'" '-echo'
+	fi
+}
+
+##################### LAST LINE ######################################

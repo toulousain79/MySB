@@ -24,6 +24,9 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+#### Includes FUNCs
+source $MySB_InstallDir/inc/funcs_by_script/funcs_Install
+
 #### Count steps
 echo
 CurrentSTEP=0
@@ -115,18 +118,6 @@ echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_RKhunter$CEND..."
 ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/RKHunter" 'UPGRADE'
 StatusSTD
 
-#### NginX
-# (( CurrentSTEP++ ))
-# echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_NginX$CEND..."
-# ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Nginx" 'UPGRADE'
-# StatusSTD
-
-#### PHP
-# (( CurrentSTEP++ ))
-# echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_PHP$CEND..."
-# ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/PHP" 'UPGRADE'
-# StatusSTD
-
 ######################################################################
 
 #### Getting information about OVH monitoring engine
@@ -150,12 +141,54 @@ else
 	echo -e "$Global_NothingToDo"
 fi
 
+#### Fail2Ban
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_Fail2Ban$CEND..."
+if [ "$ToInstall_Fail2Ban" == "YES" ] || [ "$IsInstalled_Fail2Ban" == "YES" ]; then
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'Fail2Ban'"
+	ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Fail2Ban" 'UPGRADE'
+	StatusSTD
+else
+	echo -e "$Global_NothingToDo"
+fi
+
+#### ownCloud
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_ownCloud$CEND..."
+if [ "$IsInstalled_ownCloud" == "YES" ]; then
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'ownCloud'"
+	ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/ownCloud" 'UPGRADE'
+	StatusSTD
+	if [ -f $MySB_InstallDir/templates/owncloud/ownCloudUpgrade.tmpl ]; then
+		cp $MySB_InstallDir/templates/owncloud/ownCloudUpgrade.tmpl $MySB_InstallDir/upgrade/ownCloud.upg
+	fi	
+else
+	echo -e "$Global_NothingToDo"
+fi
+
+### DNScrypt-proxy
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_DNScrypt$CEND..."
+if [ "$ToInstall_DNScrypt" == "YES" ]; then
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'DNScrypt-proxy'"
+	ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/DNScrypt" 'UPGRADE'
+	StatusSTD
+else
+	echo -e "$Global_NothingToDo"
+fi
+
 ######################################################################
 
 #### Refresh tools
 (( CurrentSTEP++ ))
 echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_RefreshMe$CEND..."
 ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/bin/MySB_RefreshMe" "$Global_ALL" 'UPGRADE'
+StatusSTD
+
+#### Bulk changes
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Upgrade_BulkChanges$CEND..."
+ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/upgrade/BulkChanges.bsh" 'UPGRADE'
 StatusSTD
 
 #### Cleaning

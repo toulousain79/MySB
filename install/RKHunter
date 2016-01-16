@@ -27,20 +27,38 @@ source $(dirname $0)/../inc/includes_before
 #### Install packages
 PackagesManage install "rkhunter unhide unhide.rb"
 
+#### /etc/default/rkhunter
+perl -pi -e "s/CRON_DAILY_RUN=\"\"/CRON_DAILY_RUN=\"true\"/g" /etc/default/rkhunter
+perl -pi -e "s/CRON_DB_UPDATE=\"\"/CRON_DB_UPDATE=\"true\"/g" /etc/default/rkhunter
+perl -pi -e "s/APT_AUTOGEN=\"false\"/APT_AUTOGEN=\"true\"/g" /etc/default/rkhunter
+
 #### /etc/rkhunter.conf
-#perl -pi -e "s/MAIL-ON-WARNING=\"\"/MAIL-ON-WARNING=\"root\"/g" /etc/rkhunter.conf
 perl -pi -e "s/ALLOW_SSH_ROOT_USER=no/ALLOW_SSH_ROOT_USER=yes/g" /etc/rkhunter.conf
 perl -pi -e "s/#ALLOWHIDDENFILE/ALLOWHIDDENFILE/g" /etc/rkhunter.conf
 perl -pi -e "s/#ALLOWHIDDENDIR/ALLOWHIDDENDIR/g" /etc/rkhunter.conf
+perl -pi -e "s/DISABLE_TESTS=\"suspscan hidden_procs deleted_files packet_cap_apps apps\"/DISABLE_TESTS=\"suspscan hidden_procs deleted_files packet_cap_apps apps promisc\"/g" /etc/rkhunter.conf
 NumLign=$(sed -n "/ALLOWHIDDENDIR=\"\/etc\/.etckeeper\"/=" /etc/rkhunter.conf)
 (( NumLign++ ))
-sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.udev\"" /etc/rkhunter.conf
-sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.mdadm\"" /etc/rkhunter.conf
-sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.initramfs\"" /etc/rkhunter.conf
-rkhunter --versioncheck
-rkhunter --propupd
-rkhunter --update
-rkhunter --sk --check
+if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.udev'`" ]; then
+	sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.udev\"" /etc/rkhunter.conf
+fi
+if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.mdadm'`" ]; then
+	sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.mdadm\"" /etc/rkhunter.conf
+fi
+if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.initramfs'`" ]; then
+	sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.initramfs\"" /etc/rkhunter.conf
+fi
+NumLign=$(sed -n "/SCRIPTWHITELIST=\/usr\/sbin\/prelink/=" /etc/rkhunter.conf)
+(( NumLign++ ))
+if [ "`cat /etc/rkhunter.conf | grep 'SCRIPTWHITELIST' | grep '/usr/bin/unhide.rb'`" ]; then
+	sed -i "${NumLign}i\SCRIPTWHITELIST=\/usr\/bin\/unhide.rb" /etc/rkhunter.conf
+fi
+
+#### Execute
+rkhunter --versioncheck --nocolors
+rkhunter --propupd --nocolors
+rkhunter --update --nocolors
+rkhunter --sk --check --report-warnings-only
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after

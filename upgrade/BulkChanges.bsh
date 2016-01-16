@@ -1,7 +1,7 @@
 #!/bin/bash
-# ----------------------------------
+# -----------------------------------------
 source $(dirname $0)/../inc/includes_before
-# ----------------------------------
+# -----------------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 #    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -24,40 +24,25 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-#### Check GitHub access (switch DNS if needed)
-log_daemon_msg "$GitHubRepoUpdate_CheckAccess"
-Swithing=0
-ping -c2 github.com > /dev/null 2>&1
-if [ $? -gt 0 ]; then
-	SwitchDNS "bind"
-	Swithing=1
+#### DNScrypt resolvers
+source $MySB_InstallDir/inc/funcs_by_script/funcs_DNScrypt
+DNScrypt_ResolversRenew
+
+#### VSFTP
+perl -pi -e "s/xferlog_enable=YES/xferlog_enable=NO/g" /etc/vsftpd.conf
+
+#### RKHunter
+sed -i '/"\/dev\/.udev"/d' /etc/rkhunter.conf
+sed -i '/"\/dev\/.mdadm"/d' /etc/rkhunter.conf
+sed -i '/"\/dev\/.initramfs"/d' /etc/rkhunter.conf
+if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.udev'`" ]; then
+	sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.udev\"" /etc/rkhunter.conf
 fi
-StatusLSB
-
-#### change working directory
-cd $MySB_InstallDir/
-
-#### update Git Hub
-git stash
-git pull
-
-#### Create directories & change rights
-log_daemon_msg "$Global_OwnerAndRights"
-source $MySB_InstallDir/inc/vars
-ManageDirectoriesAndFiles
-StatusLSB
-
-#### Delete Bad Sources
-source $MySB_InstallDir/inc/funcs_by_script/funcs_SourcesList
-DeleteBadSources
-
-#### Switch DNS to DNScrypt-proxy if available
-if [ $Swithing -eq 1 ] && [ "$IsInstalled_DNScrypt" == "YES" ] && [ "$DNScrypt_Switch" == "1" ]; then
-	log_daemon_msg "$GitHubRepoUpdate_RestoreDNS"
-	cp $MySB_InstallDir/templates/init/etc.init.dnscrypt-proxy.tmpl /etc/init.d/dnscrypt-proxy
-	chmod +x /etc/init.d/dnscrypt-proxy
-	SwitchDNS "dnscrypt"
-	StatusLSB
+if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.mdadm'`" ]; then
+	sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.mdadm\"" /etc/rkhunter.conf
+fi
+if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.initramfs'`" ]; then
+	sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.initramfs\"" /etc/rkhunter.conf
 fi
 
 # -----------------------------------------

@@ -1,6 +1,3 @@
-#!/bin/bash
-# ----------------------------------
-source $(dirname $0)/../inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -24,43 +21,32 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-#### Check GitHub access (switch DNS if needed)
-log_daemon_msg "$GitHubRepoUpdate_CheckAccess"
-Swithing=0
-ping -c2 github.com > /dev/null 2>&1
-if [ $? -gt 0 ]; then
-	SwitchDNS "bind"
-	Swithing=1
-fi
-StatusLSB
-
-#### change working directory
-cd $MySB_InstallDir/
-
-#### update Git Hub
-git stash
-git pull
-
-#### Create directories & change rights
-log_daemon_msg "$Global_OwnerAndRights"
-source $MySB_InstallDir/inc/vars
-ManageDirectoriesAndFiles
-StatusLSB
-
 #### Delete Bad Sources
-source $MySB_InstallDir/inc/funcs_by_script/funcs_SourcesList
-DeleteBadSources
+DeleteBadSources() {
+	if [ -z "$1" ]; then
+		SourcesFile="/etc/apt/sources.list"
+	else
+		SourcesFile="$MySB_InstallDir/files/fastest_mirrors"
+	fi
 
-#### Switch DNS to DNScrypt-proxy if available
-if [ $Swithing -eq 1 ] && [ "$IsInstalled_DNScrypt" == "YES" ] && [ "$DNScrypt_Switch" == "1" ]; then
-	log_daemon_msg "$GitHubRepoUpdate_RestoreDNS"
-	cp $MySB_InstallDir/templates/init/etc.init.dnscrypt-proxy.tmpl /etc/init.d/dnscrypt-proxy
-	chmod +x /etc/init.d/dnscrypt-proxy
-	SwitchDNS "dnscrypt"
-	StatusLSB
-fi
+	# Delete bad sources
+	sed -i '/debian.advalem.net/d' $SourcesFile
+	sed -i '/mirrors.e2wsolutions.com/d' $SourcesFile
+	sed -i '/debian.corenetworks.net/d' $SourcesFile
+	sed -i '/ftp.informatik.uni-frankfurt.de/d' $SourcesFile
+	sed -i '/archive.mmu.edu.my/d' $SourcesFile
+	sed -i '/debian.osdn.org.ua/d' $SourcesFile
+	sed -i '/ftp.kfki.hu/d' $SourcesFile
+	sed -i '/mirror.internap.com/d' $SourcesFile
+	sed -i '/mirrors.serverhost.ro/d' $SourcesFile
+	sed -i '/ftp.roedu.net/d' $SourcesFile
+	sed -i '/ftp.debian.nl/d' $SourcesFile
+	sed -i '/archive.mmu.edu.my/d' $SourcesFile
+	sed -i '/russell.cs.bilgi.edu.tr/d' $SourcesFile
+	sed -i '/pubmirrors.dal.corespace.com/d' $SourcesFile
+	sed -i '/mirror.thelinuxfix.com/d' $SourcesFile
+	sed -i '/mirrors.xenir.com/d' $SourcesFile
+	sed -i '/debian.intergenia.de/d' $SourcesFile
+}
 
-# -----------------------------------------
-source $(dirname $0)/../inc/includes_after
-# -----------------------------------------
 ##################### LAST LINE ######################################

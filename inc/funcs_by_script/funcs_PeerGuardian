@@ -1,0 +1,344 @@
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### If PeerGuardian is failing
+PeerGuardianFailed() {
+	ListingUsers
+	
+	for FnUser in $UsersList; do
+		log_daemon_msg "$Funcs_PeerGuardianFailed_Switching $1" "$FnUser"
+		case "$1" in
+			"rTorrent")
+				if [ ! -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.txt ]; then
+					ScriptInvoke 'ScreenSTD' "$MySB_InstallDir/scripts/BlocklistsRTorrent.bsh" 'REFRESH'
+				fi
+
+				if [ -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.txt ] && [ -d /home/$FnUser/blocklist/ ]; then
+					cp $MySB_InstallDir/files/blocklists/* /home/$FnUser/blocklist/
+				fi
+
+				if [ -f /home/$FnUser/.rtorrent.rc ]; then
+					perl -pi -e "s/^#ipv4_filter.load/ipv4_filter.load/g" /home/$FnUser/.rtorrent.rc
+					perl -pi -e "s/^#print/print/g" /home/$FnUser/.rtorrent.rc
+
+					service rtorrent-$FnUser status &> /dev/null
+					if [ $? -eq 0 ]; then
+						StatusLSB 0
+						service rtorrent-$FnUser restart
+					else
+						StatusLSB 0
+					fi
+				else
+					StatusLSB 0
+				fi
+			;;
+			"PeerGuardian")
+				if [ -f /home/$FnUser/.rtorrent.rc ]; then
+					Check="`cat /home/$FnUser/.rtorrent.rc | grep '^ipv4_filter.load'`"
+					if [ ! -z "$Check" ]; then
+						perl -pi -e "s/^ipv4_filter.load/#ipv4_filter.load/g" /home/$FnUser/.rtorrent.rc
+						perl -pi -e "s/^print/#print/g" /home/$FnUser/.rtorrent.rc
+
+						service rtorrent-$FnUser status &> /dev/null
+						if [ $? -eq 0 ]; then
+							StatusLSB 0
+							service rtorrent-$FnUser restart
+						else
+							StatusLSB 0
+						fi
+					else
+						StatusLSB 0
+					fi
+				else
+					StatusLSB 0
+				fi
+			;;
+		esac
+	done
+}
+
+#### PeerGuardian Create blocklists.list
+PeerGuardianBlocklistsList() {
+	if [ -f /etc/pgl/pglcmd.conf ] && [ -f /etc/pgl/blocklists.list ]; then
+		# /etc/pgl/blocklists.list
+		if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Adding the blocklists to use"; fi
+		(
+		cat <<'EOF'
+# blocklists.list - lists the blocklists that are handled automatically by pglcmd
+
+# Place one URL per line for every blocklist.
+# Any line which starts with a # (hash) is a comment and is ignored.
+
+# Have a look at /usr/share/doc/pglcmd/README.blocklists.gz for detailed
+# information about some available blocklists.
+
+# Instead or additionally to the blocklists that are specified in this file,
+# you can manually put lists in MASTER_BLOCKLIST_DIR (/var/lib/pgl).
+# All blocklists in that directory (except those which end in "~" or have a "."
+# prefix) are used by pgld. They may be in any supported format and have to be
+# either unpacked or gzipped. Note that these manually installed blocklists are
+# neither updated automatically, nore does IP_REMOVE work for them.
+
+# Do a "pglcmd reload" (or "restart" or "update") when you have edited
+# this file.
+
+EOF
+		) > /etc/pgl/blocklists.list
+
+		AllBlocklists="`Func_SQL_Command 'SELECT' 'MySB_db' 'peerguardian_list,peerguardian_active' 'blocklists' \"peerguardian_list != ''\"`"
+		for Blocklist in $AllBlocklists; do
+			List="`echo $Blocklist | awk '{split($0,a,"|"); print a[1]}'`"
+			IsActive="`echo $Blocklist | awk '{split($0,a,"|"); print a[2]}'`"
+
+			case "$2" in
+				'UpdateLists') # Update each list of PeerGuardian during installation
+					echo "$List" > /etc/pgl/blocklists.list # One to one list, the file 'blocklists.list' is created for each list for update them
+
+					pglcmd update
+
+					if [ $? -gt 0 ]; then # if update fail maybe its due to a bad list 
+						if [ $1 -eq 0 ]; then echo `date +"%T"`" --> The updated list of PGL may have failed." >> $MySB_InstallDir/logs/$ScriptName.log; fi
+
+						CheckLog="`cat /var/log/pgl/pglcmd.log | grep failed | grep list.iblocklist.com | awk '{ print $6 }'`"
+						for List in $CheckLog; do
+							echo `date +"%T"`" --> '$List' will be disabled." >> $MySB_InstallDir/logs/$ScriptName.log
+							# Force inactived list
+							Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "peerguardian_active = '0', peerguardian_lastupdate = 'failed'" "peerguardian_list = '$List'"
+						done
+					else # Update OK
+						Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "peerguardian_lastupdate = 'NOW'" "peerguardian_list = '$List'"
+					fi
+				;;
+				'CreateFile') # Now, we create the final blocklists with all active lists
+					case "$IsActive" in
+						'1')
+							echo "$List" >> /etc/pgl/blocklists.list
+						;;
+						'0')
+							echo "#$List" >> /etc/pgl/blocklists.list
+						;;
+					esac
+				;;
+			esac
+		done
+
+		if [ $1 -eq 1 ]; then StatusLSB; fi
+	fi
+}
+
+#### PeerGuardian Create allow.p2p
+PeerGuardianAllowP2P() {
+	if [ -f /etc/pgl/pglcmd.conf ] && [ -f /etc/pgl/allow.p2p ]; then
+		# /etc/pgl/allow.p2p
+		if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Adding trackers to allow"; fi
+		(
+		cat <<'EOF'
+# allow.p2p - allow list for pglcmd
+#
+# This file contains IP ranges that shall not be checked.
+# They must be in the PeerGuardian .p2p text format like this:
+#   Some organization:1.0.0.0-1.255.255.255
+# This is also true if your blocklists are in another format.
+# Lines beginning with a hash (#) are comments and will be ignored.
+#
+# Do a "pglcmd restart" when you have edited this file.
+EOF
+		) > /etc/pgl/allow.p2p
+
+		# Allow all users
+		ListingUsers
+		if [ ! -z "$UsersList" ] && [ "$IpRestriction" == "YES" ]; then
+			echo "## Allow all MySB users" >> /etc/pgl/allow.p2p
+			for FnUser in $UsersList; do
+				UserID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$FnUser'"`"
+				UserIP="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'users_addresses' "id_users = '$UserID'"`"
+				for IPv4 in $UserIP; do
+					echo "$FnUser:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
+				done
+			done
+		fi
+
+		echo "## Trackers enabled" >> /etc/pgl/allow.p2p
+		AllTrackers="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list, tracker' 'trackers_list' \"is_active = '1'\"`"
+		for Tracker in $AllTrackers; do
+			IdTracker="`echo $Tracker | awk '{split($0,a,"|"); print a[1]}'`"
+			TrackerName="`echo $Tracker | awk '{split($0,a,"|"); print a[2]}'`"
+
+			ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$IdTracker'"`"
+			for IPv4 in $ListIPv4; do
+				echo "$TrackerName:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
+			done
+		done
+		if [ $1 -eq 1 ]; then StatusLSB; fi
+	fi
+}
+
+#### PeerGuardian Create all needed iptables complementary rules
+PeerGuardianIptablesInsert() {
+	# Monitoring
+	if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "$Global_NO" ]; then
+		if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Adding of iptables complementary rules for $ServerProvider monitoring"; fi
+			echo "#!/bin/sh" > /etc/pgl/monitoring.insert.sh
+			echo >> /etc/pgl/monitoring.insert.sh
+			echo "# $ServerProvider monitoring complementary rules" >> /etc/pgl/monitoring.insert.sh
+			case "$ServerProvider" in
+				"OVH")
+					OvhIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'OVH'\"`"
+					for IPv4 in $OvhIPv4; do
+						echo "iptables -A pgl_in -p udp -s $IPv4 --destination-port 6100:6200 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
+						echo "iptables -I pgl_in -p icmp -s $IPv4 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
+					done
+				;;
+				"ONLINE")
+					OnlineIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'ONLINE'\"`"
+					for IPv4 in $OnlineIPv4; do
+						echo "iptables -I pgl_in -p icmp -s $IPv4 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
+					done
+				;;
+				"DIGICUBE")
+					OnlineIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'DIGICUBE'\"`"
+					for IPv4 in $OnlineIPv4; do
+						echo "iptables -I pgl_in -p icmp -s $IPv4 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
+					done
+				;;
+			esac
+		if [ $1 -eq 1 ]; then StatusLSB; fi
+	else
+		if [ -f /etc/pgl/monitoring.insert.sh ]; then rm -f /etc/pgl/monitoring.insert.sh; fi
+	fi
+}
+
+#### PeerGuardian Create pglcmd.conf
+PeerGuardianPglcmdConf() {
+	if [ -f /etc/pgl/pglcmd.conf ]; then
+		if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Logging and verbosity settings"; fi
+		STATS_MAILTO="`Func_SQL_Command 'SELECT' 'MySB_db' 'pgl_email_stats' 'system' '1' | sed 's/0//g;' | sed 's/1/root/g;'`"
+		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "STATS_MAILTO=")
+		perl -pi -e "s/$SEARCH/STATS_MAILTO=\"$STATS_MAILTO\"/g" /etc/pgl/pglcmd.conf
+		unset SEARCH
+
+		WD_MAILTO="`Func_SQL_Command 'SELECT' 'MySB_db' 'pgl_watchdog_email' 'system' '1' | sed 's/0//g;' | sed 's/1/root/g;'`"
+		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WD_MAILTO=")
+		perl -pi -e "s/$SEARCH/WD_MAILTO=\"$WD_MAILTO\"/g" /etc/pgl/pglcmd.conf
+		unset SEARCH
+		if [ $1 -eq 1 ]; then StatusLSB; fi
+
+		if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Adding of authorized IP addresses"; fi
+		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_OUT=")
+		SEARCH="`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`"
+		if [ ! -z "$SEARCH" ]; then
+			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+				perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
+			else
+				perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"\"/g" /etc/pgl/pglcmd.conf
+			fi
+		fi
+		unset SEARCH
+
+		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_FWD=")
+		SEARCH="`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`"
+		if [ ! -z "$SEARCH" ]; then
+			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+				perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
+			else
+				perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"\"/g" /etc/pgl/pglcmd.conf
+			fi
+		fi
+		unset SEARCH
+
+		PeerGuardianNetworkPortsGenerator
+
+		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
+		if [ ! -z "$SEARCH" ]; then
+			perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${WHITE_TCP_IN}\"/g" /etc/pgl/pglcmd.conf
+		fi
+		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=")
+		if [ ! -z "$SEARCH" ]; then
+			perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"${WHITE_UDP_IN}\"/g" /etc/pgl/pglcmd.conf
+		fi
+		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
+		if [ ! -z "$SEARCH" ]; then
+			perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"${WHITE_TCP_OUT}\"/g" /etc/pgl/pglcmd.conf
+		fi
+		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
+		if [ ! -z "$SEARCH" ]; then
+			perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${WHITE_UDP_OUT}\"/g" /etc/pgl/pglcmd.conf
+		fi
+		if [ $1 -eq 1 ]; then StatusLSB; fi
+	fi
+}
+
+#### Network ports generator
+PeerGuardianNetworkPortsGenerator() {
+	WHITE_TCP_IN=""
+	WHITE_UDP_IN=""
+	WHITE_TCP_OUT="`Func_SQL_Command 'SELECT' 'MySB_db' 'white_tcp_port_out' 'vars' '1' | sed 's/,/ /g;'`"
+	WHITE_UDP_OUT="`Func_SQL_Command 'SELECT' 'MySB_db' 'white_udp_port_out' 'vars' '1' | sed 's/,/ /g;'`"
+
+	# TCP In
+	WHITE_TCP_IN="${Port_HTTPS}"
+	if [ "$IpRestriction" == "NO" ]; then
+		WHITE_TCP_IN="${WHITE_TCP_IN} ${Port_FTP} ${Port_SSH} ${Port_FTP_Data} ${Port_FTP_Passive}"
+	fi
+
+	# UDP In
+	if [ "$IpRestriction" == "NO" ]; then
+		WHITE_UDP_IN="${WHITE_UDP_IN}"
+	fi
+
+	# TCP Out
+	WHITE_TCP_OUT="${WHITE_TCP_OUT} ${SMTP_Port} ${Port_HTTPS} ${Port_FTP} ${Port_SSH} ${Port_FTP_Data} ${Port_FTP_Passive}"
+
+	# UDP Out
+	WHITE_UDP_OUT="${WHITE_UDP_OUT}"	
+
+	# Services
+	if [ "$IsInstalled_Webmin" == "YES" ] && [ "$IpRestriction" == "NO" ]; then
+		WHITE_TCP_IN="${WHITE_TCP_IN} ${Ports_Webmin}"
+	fi
+	if [ "$IsInstalled_PlexMedia" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
+		WHITE_TCP_IN="${WHITE_TCP_IN} ${Ports_TCP_PlexMedia}"
+	fi
+	if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$IpRestriction" == "NO" ]; then
+		case "$OpenVPN_Proto" in
+			"udp")
+				WHITE_UDP_IN="${WHITE_UDP_IN} ${Port_OpenVPN_WithGW} ${Port_OpenVPN_WithoutGW} ${Port_OpenVPN_TAP_WithoutGW}"
+			;;
+			"tcp")
+				WHITE_TCP_IN="${WHITE_TCP_IN} ${Port_OpenVPN_WithGW} ${Port_OpenVPN_WithoutGW} ${Port_OpenVPN_TAP_WithoutGW}"
+			;;
+		esac
+
+		# PlexMedia UDP ports opened only with OpenVPN installed
+		if [ "$IsInstalled_PlexMedia" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
+			UDP_PORTS_LIST="${WHITE_UDP_IN} ${Ports_UDP_PlexMedia}"
+		fi
+	fi
+
+	WHITE_TCP_IN=`echo $WHITE_TCP_IN | sed -e 's/^ //g;' | sed 's/\s+$//'`
+	WHITE_UDP_IN=`echo $WHITE_UDP_IN | sed -e 's/^ //g;' | sed 's/\s+$//'`
+	WHITE_TCP_OUT=`echo $WHITE_TCP_OUT | sed -e 's/^ //g;' | sed 's/\s+$//'`
+	WHITE_UDP_OUT=`echo $WHITE_UDP_OUT | sed -e 's/^ //g;' | sed 's/\s+$//'`	
+}
+
+##################### LAST LINE ######################################

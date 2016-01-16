@@ -40,17 +40,6 @@ CountingUsers() {
 	TotalUsers="`Func_SQL_Command 'SELECT' 'MySB_db' 'count(*)' 'users'`"
 }
 
-#### Check if a package is installed
-CheckPackage() {
-	Result="`dpkg --status $1 2> /dev/null | grep 'Status' | cut -d ':' -f 2 | sed -e 's/^ //g;'`"
-	
-	if [ "$Result" == "install ok installed" ]; then
-		return 0
-	else
-		return 1
-	fi
-}
-
 #### Check if service is started
 GetPid() {
 	PID=""
@@ -311,81 +300,6 @@ SwitchDNS() {
 			fi
 		;;
 	esac
-}
-
-#### Upgrade in progress (web page)
-UpgradeInProgress() {
-	case "$1" in
-		"on")
-			if [ "$IsInstalled_ownCloud" == "YES" ]; then
-				su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mode --on" &> /dev/null
-			fi
-			if [ -h /etc/nginx/sites-enabled/WiP ]; then rm -f /etc/nginx/sites-enabled/WiP; fi
-			if [ -h /etc/nginx/sites-enabled/default ]; then rm -f /etc/nginx/sites-enabled/default; fi
-			if [ -h /etc/nginx/sites-enabled/cakebox ]; then rm -f /etc/nginx/sites-enabled/cakebox; fi
-			cp $MySB_InstallDir/templates/nginx/etc.nginx.site-enabled.WiP.tmpl /etc/nginx/sites-available/WiP
-			RutorrentPluginsDirEscaped=`echo $RutorrentPluginsDir | sed s,/,\\\\\\\\\\/,g`
-			RutorrentDirEscaped=`echo $RutorrentDir | sed s,/,\\\\\\\\\\/,g`
-			perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/sites-available/WiP
-			perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" /etc/nginx/sites-available/WiP
-			perl -pi -e "s/<PORT_HTTP>/$Port_HTTP/g" /etc/nginx/sites-available/WiP
-			perl -pi -e "s/<server_name>/$HostNameFQDN/g" /etc/nginx/sites-available/WiP
-			perl -pi -e "s/<plugins_dir>/$RutorrentPluginsDirEscaped/g" /etc/nginx/sites-available/WiP
-			perl -pi -e "s/<rutorrent_dir>/$RutorrentDirEscaped/g" /etc/nginx/sites-available/WiP
-			if [ ! -h /etc/nginx/sites-enabled/WiP ]; then ln -s /etc/nginx/sites-available/WiP /etc/nginx/sites-enabled/WiP; fi
-			service nginx restart &> /dev/null
-			# Stopping CRON and rTorrent sessions
-			service cron stop &> /dev/null
-			RtorrentSeesions="`ls -1r /etc/init.d/rtorrent-* | cut -d '/' -f 4`"
-			for Session in $RtorrentSeesions; do
-				service $Session stop &> /dev/null
-			done
-		;;
-		"off")
-			if [ -h /etc/nginx/sites-enabled/WiP ]; then rm -f /etc/nginx/sites-enabled/WiP; fi
-			if [ ! -h /etc/nginx/sites-enabled/default ]; then ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default; fi
-			if [ ! -h /etc/nginx/sites-enabled/cakebox ]; then ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox; fi
-			service nginx restart &> /dev/null
-		;;
-	esac
-}
-
-#### Delete Bad Sources
-DeleteBadSources() {
-	if [ -z "$1" ]; then
-		SourcesFile="/etc/apt/sources.list"
-	else
-		SourcesFile="$MySB_InstallDir/files/fastest_mirrors"
-	fi
-
-	# Delete bad sources
-	sed -i '/debian.advalem.net/d' $SourcesFile
-	sed -i '/mirrors.e2wsolutions.com/d' $SourcesFile
-	sed -i '/debian.corenetworks.net/d' $SourcesFile
-	sed -i '/ftp.informatik.uni-frankfurt.de/d' $SourcesFile
-	sed -i '/archive.mmu.edu.my/d' $SourcesFile
-	sed -i '/debian.osdn.org.ua/d' $SourcesFile
-	sed -i '/ftp.kfki.hu/d' $SourcesFile
-	sed -i '/mirror.internap.com/d' $SourcesFile
-	sed -i '/mirrors.serverhost.ro/d' $SourcesFile
-	sed -i '/ftp.roedu.net/d' $SourcesFile
-	sed -i '/ftp.debian.nl/d' $SourcesFile
-	sed -i '/archive.mmu.edu.my/d' $SourcesFile
-	sed -i '/russell.cs.bilgi.edu.tr/d' $SourcesFile
-	sed -i '/pubmirrors.dal.corespace.com/d' $SourcesFile
-	sed -i '/mirror.thelinuxfix.com/d' $SourcesFile
-	sed -i '/mirrors.xenir.com/d' $SourcesFile
-	sed -i '/debian.intergenia.de/d' $SourcesFile
-}
-
-#### Logrotate
-LogRotate() {
-	if [ ! -z "$1" ] && [ -f $MySB_InstallDir/templates/logrotate/etc.logrotate.d.$1.tmpl ]; then
-		cp -vf $MySB_InstallDir/templates/logrotate/etc.logrotate.d.$1.tmpl /etc/logrotate.d/$1
-		perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/logrotate.d/$1
-		chmod 0644 /etc/logrotate.d/$1
-		logrotate -f /etc/logrotate.d/$1
-	fi
 }
 
 #### Delete directory
