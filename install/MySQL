@@ -27,8 +27,6 @@ source $(dirname $0)/../inc/includes_before
 #### Install packages
 if ! CheckCommand 0 mysql; then
 	PackagesManage install "mysql-server"
-	# Force mysql user homedir (Pas de répertoire, connexion avec HOME=/)
-	usermod -d /var/lib/mysql mysql
 fi
 
 #### MySQL Secure
@@ -121,8 +119,16 @@ if [ -d /media/MySQL_TempDir ]; then
 	sed -i "${NumLign}i\tmpdir          = /media/MySQL_TempDir" /etc/mysql/my.cnf
 fi
 
+#### STOP services
+ManageServices 'stop' 'mysql'
+
+# Force mysql user homedir (Pas de répertoire, connexion avec HOME=/)
+if [ -z "`getent passwd mysql | grep '/var/lib/mysql'`" ]; then
+	usermod -d /var/lib/mysql mysql
+fi
+
 #### START services
-ManageServices 'restart' 'mysql'
+ManageServices 'stop' 'mysql'
 
 #### Logrotate
 LogRotate 'mysql-server'
