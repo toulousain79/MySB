@@ -1,0 +1,151 @@
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+######################################################################
+funcs_GetTrackersCert=1
+##################### FIRST LINE #####################################
+
+#### Get ruTorrent Trackers
+GetRutorrentTrackers() {
+	FnAllEngines=$(ls -1r $RutorrentPluginsDir/extsearch/engines/)
+
+	for FnEngine in $FnAllEngines; do
+		Tracker=`cat $RutorrentPluginsDir/extsearch/engines/$FnEngine | grep "\$url" | grep "\=" | grep "http" | head -1 | sed 's/public//g;' | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
+		if [ ! -z "$Tracker" ]; then
+			AddTracker $Tracker "rutorrent"
+		fi
+		unset Tracker
+	done
+
+	unset FnAllEngines
+}
+
+#### Get Users Trackers
+GetUsersTrackers() {
+	FnUsersTrackers="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker' 'trackers_list' \"origin = 'users'\"`"
+	for FnTracker in $FnUsersTrackers; do
+		if [ ! -z "$FnTracker" ]; then
+			AddTracker $FnTracker "users"
+		fi
+	done
+	unset FnUsersTrackers
+}
+
+#### Add new trackers
+AddTracker() {
+	Tracker=$1
+	Origin=$2
+
+	if [ ! -z "$Tracker" ]; then
+		PART1="`echo ${Tracker} | cut -d "." -f 1`"
+		PART2="`echo ${Tracker} | cut -d "." -f 2`"
+		PART3="`echo ${Tracker} | cut -d "." -f 3`"
+
+		if [ -z "$PART3" ]; then
+			TrackerDomain="`echo $PART1`.`echo $PART2`"
+		else
+			TrackerDomain="`echo $PART2`.`echo $PART3`"
+		fi
+		unset PART1 PART2 PART3
+
+		if [ ! -z "$TrackerDomain" ]; then
+			DomainIPv4="$(nslookup $TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
+			if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
+				IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
+				if [ -z $IfExist ]; then
+					log_daemon_msg "Add tracker domain : $TrackerDomain"
+					Func_SQL_Command 'INSERT' 'MySB_db' 'trackers_list' "tracker,tracker_domain,origin" "\"$TrackerDomain\",\"$TrackerDomain\",\"$Origin\""
+					StatusLSB
+				fi
+
+				TrackerIPv4="$(nslookup tracker.$TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
+			else
+				IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
+				if [ ! -z $IfExist ]; then
+					log_daemon_msg "Delete tracker domain : $TrackerDomain"
+					Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list' "tracker_domain = '$TrackerDomain'"
+					StatusLSB
+				fi
+			fi
+
+			if [ ! -z "$TrackerIPv4" ] && [ "$TrackerIPv4" != "" ] && [ "$TrackerIPv4" != "0.0.0.0" ] && [ "$TrackerIPv4" != "127.0.0.1" ]; then
+				TrackerIPv4="`echo $TrackerIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+				TrackersListID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
+
+				if [ ! -z "$TrackersListID" ] && [ $TrackersListID -gt 0 ]; then
+					log_daemon_msg "Update trackers IPv4 for 'tracker.$TrackerDomain' --> '$TrackerIPv4'"
+					# Cleaning
+					ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID'"`"
+					for IPv4 in $ListIPv4; do
+						SEARCH="`echo "$TrackerIPv4" | grep "$IPv4"`"
+						if [ -z "$SEARCH" ]; then
+							Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list_ipv4' "ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID'"
+						fi
+					done
+					unset ListIPv4 IPv4
+
+					# Add
+					for IPv4 in $TrackerIPv4; do
+						IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list_ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'"`"
+						if [ -z $IfExist ]; then
+							Func_SQL_Command 'INSERT' 'MySB_db' 'trackers_list_ipv4' "id_trackers_list,ipv4" "\"$TrackersListID\",\"$IPv4\""
+						fi
+					done
+					unset IPv4 TrackerIPv4
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "tracker = 'tracker.$TrackerDomain'" "tracker_domain = '$TrackerDomain'"
+					StatusLSB
+				fi
+			else
+				if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
+					DomainIPv4="`echo $DomainIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+					TrackersListID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
+
+					if [ ! -z "$TrackersListID" ] && [ $TrackersListID -gt 0 ]; then
+						log_daemon_msg "Update trackers IPv4 for '$TrackerDomain' --> '$DomainIPv4'"
+						# Cleaning
+						ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' \"id_trackers_list = '$TrackersListID'\"`"
+						for IPv4 in $ListIPv4; do
+							SEARCH="`echo "$DomainIPv4" | grep "$IPv4"`"
+							if [ -z "$SEARCH" ]; then
+								Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list_ipv4' "ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID'"
+							fi
+						done
+						unset ListIPv4 IPv4
+						# Add
+						for IPv4 in $DomainIPv4; do
+							IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list_ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'"`"
+							if [ -z $IfExist ]; then
+								Func_SQL_Command 'INSERT' 'MySB_db' 'trackers_list_ipv4' "id_trackers_list,ipv4" "\"$TrackersListID\",\"$IPv4\""
+							fi
+						done
+						unset IPv4 DomainIPv4
+						Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "tracker = '$TrackerDomain'" "tracker_domain = '$TrackerDomain'"
+						StatusLSB
+					fi
+				fi
+			fi
+
+			unset TrackerDomain
+		fi
+	fi
+}
+
+##################### LAST LINE ######################################

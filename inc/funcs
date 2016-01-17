@@ -19,11 +19,17 @@
 #	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
+######################################################################
+funcs=1
 ##################### FIRST LINE #####################################
 
 #### Include tools functions
-source $MySB_InstallDir/inc/funcs_sql
-source $MySB_InstallDir/inc/funcs_tools
+if [ -z $funcs_sql ]; then
+	source $MySB_InstallDir/inc/funcs_sql
+fi
+if [ -z $funcs_tools ]; then
+	source $MySB_InstallDir/inc/funcs_tools
+fi
 
 #### Banner
 BannerGenerator() {
@@ -155,8 +161,10 @@ ManageServices() {
 				"start")
 					if [ "$Service" == "pglcmd" ]; then
 						if CheckCommand 0 pglcmd; then
-							source $MySB_InstallDir/inc/funcs_by_script/funcs_PeerGuardian
-						
+							if [ -z $funcs_PeerGuardian ]; then
+								source $MySB_InstallDir/inc/funcs_by_script/funcs_PeerGuardian
+							fi
+
 							if GetPid $Service; then
 								log_daemon_msg "Restarting PeerGuardian Linux"
 								pglcmd restart > /dev/null
@@ -412,158 +420,6 @@ QuestionGetString() {
 	eval $RETURN=\$NEWVAR1
 }
 
-#### Monthly payment
-MonthlyPayment() {
-	if [ ! -z "$RentingGlobalCost" ] && [ ! -z "$RentingTVA" ] && [ ! -z "$RentingModel" ]; then
-		log_daemon_msg "Calculate the monthly payment"
-		export LANG=""
-		CountingUsers
-		FnX=`echo "$RentingGlobalCost/$TotalUsers" | bc -l`
-		FnY=`echo "($FnX*$RentingTVA)/100" | bc -l`
-		PriceByUser=`echo "$FnX+$FnY" | bc -l`
-		PriceByUser=`printf '%.2f\n' $PriceByUser`
-		UserToIgnore="$1"
-
-		# add new renting info
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'renting' "model = '$RentingModel', tva = '$RentingTVA', global_cost = '$RentingGlobalCost', nb_users = '$TotalUsers', price_per_users = '$PriceByUser'" "id_renting = '1'"
-		StatusLSB
-
-		ListingUsers
-		for SeedboxUser in $UsersList; do
-			SeedUserMail="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$SeedboxUser'"`"
-			
-			if [ "$UserToIgnore" != "$SeedboxUser" ]; then	
-				SendMail "$Global_Subject_MonthlyPayment" "${SeedboxUser}" "new_user" "Changing Monthly"
-			fi
-		done
-	fi
-}
-
-#### Get ruTorrent Trackers
-GetRutorrentTrackers() {
-	FnAllEngines=$(ls -1r $RutorrentPluginsDir/extsearch/engines/)
-
-	for FnEngine in $FnAllEngines; do
-		Tracker=`cat $RutorrentPluginsDir/extsearch/engines/$FnEngine | grep "\$url" | grep "\=" | grep "http" | head -1 | sed 's/public//g;' | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`
-		if [ ! -z "$Tracker" ]; then
-			AddTracker $Tracker "rutorrent"
-		fi
-		unset Tracker
-	done
-
-	unset FnAllEngines
-}
-
-#### Get Users Trackers
-GetUsersTrackers() {
-	FnUsersTrackers="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker' 'trackers_list' \"origin = 'users'\"`"
-	for FnTracker in $FnUsersTrackers; do
-		if [ ! -z "$FnTracker" ]; then
-			AddTracker $FnTracker "users"
-		fi
-	done
-	unset FnUsersTrackers
-}
-
-#### Add new trackers
-AddTracker() {
-	Tracker=$1
-	Origin=$2
-
-	if [ ! -z "$Tracker" ]; then
-		PART1="`echo ${Tracker} | cut -d "." -f 1`"
-		PART2="`echo ${Tracker} | cut -d "." -f 2`"
-		PART3="`echo ${Tracker} | cut -d "." -f 3`"
-
-		if [ -z "$PART3" ]; then
-			TrackerDomain="`echo $PART1`.`echo $PART2`"
-		else
-			TrackerDomain="`echo $PART2`.`echo $PART3`"
-		fi
-		unset PART1 PART2 PART3
-
-		if [ ! -z "$TrackerDomain" ]; then
-			DomainIPv4="$(nslookup $TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
-			if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
-				IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
-				if [ -z $IfExist ]; then
-					log_daemon_msg "Add tracker domain : $TrackerDomain"
-					Func_SQL_Command 'INSERT' 'MySB_db' 'trackers_list' "tracker,tracker_domain,origin" "\"$TrackerDomain\",\"$TrackerDomain\",\"$Origin\""
-					StatusLSB
-				fi
-
-				TrackerIPv4="$(nslookup tracker.$TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
-			else
-				IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
-				if [ ! -z $IfExist ]; then
-					log_daemon_msg "Delete tracker domain : $TrackerDomain"
-					Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list' "tracker_domain = '$TrackerDomain'"
-					StatusLSB
-				fi
-			fi
-
-			if [ ! -z "$TrackerIPv4" ] && [ "$TrackerIPv4" != "" ] && [ "$TrackerIPv4" != "0.0.0.0" ] && [ "$TrackerIPv4" != "127.0.0.1" ]; then
-				TrackerIPv4="`echo $TrackerIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-				TrackersListID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
-
-				if [ ! -z "$TrackersListID" ] && [ $TrackersListID -gt 0 ]; then
-					log_daemon_msg "Update trackers IPv4 for 'tracker.$TrackerDomain' --> '$TrackerIPv4'"
-					# Cleaning
-					ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID'"`"
-					for IPv4 in $ListIPv4; do
-						SEARCH="`echo "$TrackerIPv4" | grep "$IPv4"`"
-						if [ -z "$SEARCH" ]; then
-							Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list_ipv4' "ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID'"
-						fi
-					done
-					unset ListIPv4 IPv4
-
-					# Add
-					for IPv4 in $TrackerIPv4; do
-						IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list_ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'"`"
-						if [ -z $IfExist ]; then
-							Func_SQL_Command 'INSERT' 'MySB_db' 'trackers_list_ipv4' "id_trackers_list,ipv4" "\"$TrackersListID\",\"$IPv4\""
-						fi
-					done
-					unset IPv4 TrackerIPv4
-					Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "tracker = 'tracker.$TrackerDomain'" "tracker_domain = '$TrackerDomain'"
-					StatusLSB
-				fi
-			else
-				if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
-					DomainIPv4="`echo $DomainIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-					TrackersListID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
-
-					if [ ! -z "$TrackersListID" ] && [ $TrackersListID -gt 0 ]; then
-						log_daemon_msg "Update trackers IPv4 for '$TrackerDomain' --> '$DomainIPv4'"
-						# Cleaning
-						ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' \"id_trackers_list = '$TrackersListID'\"`"
-						for IPv4 in $ListIPv4; do
-							SEARCH="`echo "$DomainIPv4" | grep "$IPv4"`"
-							if [ -z "$SEARCH" ]; then
-								Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list_ipv4' "ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID'"
-							fi
-						done
-						unset ListIPv4 IPv4
-						# Add
-						for IPv4 in $DomainIPv4; do
-							IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list_ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'"`"
-							if [ -z $IfExist ]; then
-								Func_SQL_Command 'INSERT' 'MySB_db' 'trackers_list_ipv4' "id_trackers_list,ipv4" "\"$TrackersListID\",\"$IPv4\""
-							fi
-						done
-						unset IPv4 DomainIPv4
-						Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "tracker = '$TrackerDomain'" "tracker_domain = '$TrackerDomain'"
-						StatusLSB
-					fi
-				fi
-			fi
-
-			unset TrackerDomain
-		fi
-	fi
-}
-
 #### Script Invocation
 ScriptInvoke() {
 	#### Use 'source' OR 'bash' OR 'screen' ?
@@ -617,162 +473,6 @@ ScriptInvoke() {
 			esac
 		;;
 	esac
-}
-
-#### Manage directories, files and rights
-ManageDirectoriesAndFiles() {
-	source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
-
-	#### Create missing directories
-	# Root Directories
-	if [ ! -d $MySB_InstallDir/db ]; then mkdir $MySB_InstallDir/db; fi
-	if [ ! -d $MySB_InstallDir/files ]; then mkdir $MySB_InstallDir/files; fi
-	if [ ! -d $MySB_InstallDir/logs/archives ]; then mkdir -p $MySB_InstallDir/logs/archives; fi
-	if [ ! -d $MySB_InstallDir/sources ]; then mkdir $MySB_InstallDir/sources; fi
-	if [ ! -d $MySB_InstallDir/ssl ]; then mkdir $MySB_InstallDir/ssl; fi
-	if [ ! -d $MySB_InstallDir/temp ]; then mkdir $MySB_InstallDir/temp; fi
-	if [ ! -d $MySB_InstallDir/web/openvpn ]; then mkdir -p $MySB_InstallDir/web/openvpn; fi
-	# Log directories
-	if [ ! -d $MySB_InstallDir/web/logs ]; then mkdir $MySB_InstallDir/web/logs; fi	
-	if [ ! -d $MySB_InstallDir/web/logs/bin ]; then mkdir $MySB_InstallDir/web/logs/bin; fi
-	if [ ! -d $MySB_InstallDir/web/logs/install ]; then mkdir $MySB_InstallDir/web/logs/install; fi
-	if [ ! -d $MySB_InstallDir/web/logs/nginx ]; then mkdir $MySB_InstallDir/web/logs/nginx; fi	
-	if [ ! -d $MySB_InstallDir/web/logs/scripts ]; then mkdir $MySB_InstallDir/web/logs/scripts; fi
-	if [ ! -d $MySB_InstallDir/web/logs/security ]; then mkdir $MySB_InstallDir/web/logs/security; fi
-	if [ ! -d $MySB_InstallDir/web/logs/upgrade ]; then mkdir $MySB_InstallDir/web/logs/upgrade; fi
-	if [ ! -d $MySB_InstallDir/web/logs/system ]; then mkdir $MySB_InstallDir/web/logs/system; fi
-	# Local mirrors
-	if [ ! -d $MySB_InstallDir/files/apt_mirrors/mirrors ]; then mkdir -p $MySB_InstallDir/files/apt_mirrors/mirrors ; fi
-	if [ ! -d $MySB_InstallDir/files/apt_mirrors/skel ]; then mkdir $MySB_InstallDir/files/apt_mirrors/skel ; fi
-	if [ ! -d $MySB_InstallDir/files/apt_mirrors/var ]; then mkdir $MySB_InstallDir/files/apt_mirrors/var ; fi
-
-	#### Convert with dos2unix
-	dos2unix $MySB_InstallDir/* &> /dev/null
-	dos2unix $MySB_InstallDir/bin/* &> /dev/null
-	dos2unix $MySB_InstallDir/files/* &> /dev/null
-	dos2unix $MySB_InstallDir/inc/* &> /dev/null
-	dos2unix $MySB_InstallDir/install/* &> /dev/null
-	dos2unix $MySB_InstallDir/scripts/* &> /dev/null
-	dos2unix $MySB_InstallDir/templates/* &> /dev/null
-	dos2unix $MySB_InstallDir/upgrade/* &> /dev/null	
-	
-	#### Change rights
-	# $MySB_InstallDir/
-	chmod -R 0700 $MySB_InstallDir
-	chmod 0755 $MySB_InstallDir
-	chown -R root:root $MySB_InstallDir
-	# $MySB_InstallDir/db
-	chmod 0770 $MySB_InstallDir/db
-	chmod 0660 $MySB_InstallDir/db/* &> /dev/null
-	chown -R root:www-data $MySB_InstallDir/db
-	# $MySB_InstallDir/ssl
-	chmod 0644 $MySB_InstallDir/ssl/*.cert &> /dev/null
-	# $MySB_InstallDir/install
-	chmod -R 0755 $MySB_InstallDir/install
-	# $MySB_InstallDir/temp
-	chown root:www-data $MySB_InstallDir/temp
-	chmod 0760 $MySB_InstallDir/temp
-	# $MySB_InstallDir/files/apt_mirrors
-	chown apt-mirror:apt-mirror $MySB_InstallDir/files/apt_mirrors
-	# $MySB_InstallDir/web
-	chown -R root:www-data $MySB_InstallDir/web
-	chown root:root $MySB_InstallDir/web
-	chmod -R 0640 $MySB_InstallDir/web
-	find $MySB_InstallDir/web -type d -iname "*" -print0 | xargs -I {} -0 chmod 0750 {}
-	chmod 0755 $MySB_InstallDir/web
-	# $MySB_InstallDir/web/openvpn
-	if [ -d $MySB_InstallDir/web/openvpn ]; then chmod 0770 $MySB_InstallDir/web/openvpn; fi
-	# /home/MySB_share
-	chown root:MySB_users /home/MySB_share
-	chmod 0770 /home/MySB_share
-
-	# Config files
-	if [ -f /etc/MySB/config ]; then
-		chown root:root /etc/MySB/config
-		chmod 0640 /etc/MySB/config
-	fi
-	if [ -f /etc/MySB/config_db ]; then
-		chown root:root /etc/MySB/config_db
-		chmod 0640 /etc/MySB/config_db
-	fi
-	if [ -f /etc/MySB/config.php ]; then
-		chmod 0640 /etc/MySB/config.php
-		chown root:www-data /etc/MySB/config.php
-	fi
-
-	# LoadAvg
-	if [ ! -z "$LoadAvgDir" ]; then
-		if [ -f $LoadAvgDir/configure ]; then chmod 0640 $LoadAvgDir/configure; fi
-		if [ ! -d $LoadAvgDir/logs ] && [ -d $LoadAvgDir ]; then mkdir $LoadAvgDir/logs; fi
-		if [ -d $LoadAvgDir/logs ]; then chmod 0777 $LoadAvgDir/logs; fi
-	fi
-
-	# ownCloud
-	if [ ! -z "$ownCloudDir" ] && [ -d $ownCloudDir ]; then
-		find $ownCloudDir/ -type f -print0 | xargs -0 chmod 0640
-		find $ownCloudDir/ -type d -print0 | xargs -0 chmod 0750
-		chmod 0750 $ownCloudDir/occ
-		chown -R root:www-data $ownCloudDir/
-		chown -R www-data:www-data $ownCloudDir/apps/
-		chown -R www-data:www-data $ownCloudDir/config/
-		chown -R www-data:www-data $ownCloudDir/themes/
-		if [ ! -d /home/owncloud ]; then mkdir -p /home/owncloud; fi
-		if [ ! -f /home/owncloud/.ocdata ]; then touch /home/owncloud/.ocdata; fi
-		if [ ! -f /home/owncloud/index.html ]; then touch /home/owncloud/index.html; fi
-		if [ ! -d /home/owncloud/admin/files ]; then mkdir -p /home/owncloud/admin/files; fi
-		if [ -f /home/owncloud/mount.json ]; then chmod 0640 /home/owncloud/mount.json; fi
-		chown -R www-data:www-data /home/owncloud
-		chown www-data:root /home/owncloud
-	fi
-
-	# ruTorrent Global Config
-	if [ ! -z "$RutorrentDir" ] && [ -d $RutorrentDir ]; then
-		ruTorrentGlobalConfigs
-	fi
-
-	# Users
-	if [ "$IsReady_MySB_DB" == "YES" ]; then
-		ListingUsers
-		if [ ! -z "$UsersList" ]; then
-			for FnUser in $UsersList; do
-				if [ ! -z "`getent passwd $FnUser`" ]; then
-					# Home
-					ManageUserHomeDir "$FnUser"
-
-					# ruTorrent
-					if [ ! -z "$RutorrentDir" ] && [ -d $RutorrentPluginsDir ]; then
-						ruTorrentUsersConfigs "$FnUser"
-					fi
-
-					# Seedbox-Manager
-					ManagerUsersConfigs "$FnUser"
-
-					# Cakebox-Light
-					CakeboxUsersConfigs "$FnUser"
-				fi
-			done
-		fi
-	fi
-
-	# ruTorrent
-	if [ ! -z "$RutorrentDir" ] && [ -d $RutorrentDir ]; then
-		if [ -d $RutorrentDir ]; then chmod -R 0755 $RutorrentDir; fi
-		if [ -d $RutorrentDir ]; then chown -R www-data:www-data $RutorrentDir; fi
-		if [ -d $RutorrentDir/share ]; then
-			find $RutorrentDir/share/ -type d -exec chmod 0777 {} \;
-			find $RutorrentDir/share/ -type f -exec chmod 0666 {} \;
-		fi
-		if [ -d $RutorrentPluginsDir/fileupload/scripts/upload ]; then chmod 0775 $RutorrentPluginsDir/fileupload/scripts/upload; fi
-	fi
-
-	# Seedbox-Manager
-	if [ ! -z "$ManagerDir" ] && [ -d $ManagerDir ]; then
-		if [ -d $ManagerDir ]; then chown -R www-data:www-data $ManagerDir; fi
-		if [ -f $ManagerDir/reboot-rtorrent ]; then
-			chown root:root $ManagerDir/reboot-rtorrent
-			chmod 4755 $ManagerDir/reboot-rtorrent
-		fi
-	fi
 }
 
 ##################### LAST LINE ######################################
