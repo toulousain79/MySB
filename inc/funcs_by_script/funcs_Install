@@ -46,8 +46,8 @@ CheckPackage() {
 
 #### apt-get OR aptitude
 PackagesManage() {
-	Query=$1
-	PackageList=$2
+	Query="$1"
+	PackageList="$2"
 
 	if CheckCommand 0 aptitude; then
 		AptCommand="aptitude -q"
@@ -59,6 +59,7 @@ PackagesManage() {
 	RETURN=0
 	AptUpdate=0
 	tDiff=0
+	LocalMirror=0
 
 	if [ "$IsReady_MySB_DB" == "YES" ]; then
 		AptUpdate="`Func_SQL_Command 'SELECT' 'MySB_db' 'apt_update' 'system' '1'`"
@@ -74,9 +75,26 @@ PackagesManage() {
 	if [ "$Query" != "test" ]; then
 		if [ "$IsReady_MySB_DB" == "YES" ]; then
 			#### Need of 'apt-get update' ? (must be greater than 2 hours OR forced)
-			if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ] || [ "$Query" == "upgrade" ]; then
+			if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ] || [ "$Query" == "upgrade" ]; then	
 				if CheckCommand 0 apt-mirror && [ -f $MySB_InstallDir/files/apt_mirrors/var/postmirror.sh ]; then
-					apt-mirror $MySB_InstallDir/files/apt_mirrors/mirror.list
+					case "$Query" in
+						'install')
+							for Package in $PackageList; do
+								case "$Package" in
+									'webmin'|'plexmediaserver'|'pgld'|'pglcmd'|'pglgui')
+										LocalMirror=1
+									;;
+								esac
+							done
+						;;
+						'upgrade')
+							LocalMirror=1
+						;;
+					esac
+
+					if [ $LocalMirror -eq 1 ]; then
+						apt-mirror $MySB_InstallDir/files/apt_mirrors/mirror.list
+					fi
 				fi
 
 				echo "$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update"
@@ -92,7 +110,7 @@ PackagesManage() {
 	fi
 
 	case "$Query" in
-		"install")
+		'install')
 			FinalList=""
 			for Package in $PackageList; do
 				if ! CheckPackage $Package; then

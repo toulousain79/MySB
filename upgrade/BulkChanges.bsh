@@ -24,36 +24,47 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-#### DNScrypt resolvers
-source $MySB_InstallDir/inc/funcs_by_script/funcs_DNScrypt
-DNScrypt_ResolversRenew
+case "$1" in
+	"BEFORE")
+		# Repositories
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '0.12.9', file= 'node_v0.12.9.tar.gz', old_file = 'node_v0.12.7.tar.gz', url = 'https://nodejs.org/dist/v0.12.9/node-v0.12.9.tar.gz'" "name = 'NodeJS'" '-echo'
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '8.2.2', file= 'owncloud_v8.2.2.zip', old_file = 'owncloud_v8.2.0.zip', url = 'https://download.owncloud.org/community/owncloud-8.2.2.zip'" "name = 'ownCloud'" '-echo'
 
-#### VSFTP
-perl -pi -e "s/xferlog_enable=YES/xferlog_enable=NO/g" /etc/vsftpd.conf
+		#### DNScrypt resolvers
+		source $MySB_InstallDir/inc/funcs_by_script/funcs_DNScrypt
+		DNScrypt_ResolversRenew
 
-#### DNScrypt-proxy - /etc/init.d/dnscrypt-proxy
-cp -vf $MySB_InstallDir/templates/init/etc.init.dnscrypt-proxy.tmpl /etc/init.d/dnscrypt-proxy
-chmod +x /etc/init.d/dnscrypt-proxy
+		#### VSFTP
+		perl -pi -e "s/xferlog_enable=YES/xferlog_enable=NO/g" /etc/vsftpd.conf
 
-#### PHP - /etc/php5/mods-available/apcu.ini
-if [ ! -z "`cat /etc/php5/mods-available/apcu.ini | grep 'apc.enable_cli'`" ]; then
-	sed -i '/apc.enable_cli/d' /etc/php5/mods-available/apcu.ini
-	echo "apc.enable_cli=1" >> /etc/php5/mods-available/apcu.ini
-fi
+		#### DNScrypt-proxy - /etc/init.d/dnscrypt-proxy
+		cp -vf $MySB_InstallDir/templates/init/etc.init.dnscrypt-proxy.tmpl /etc/init.d/dnscrypt-proxy
+		chmod +x /etc/init.d/dnscrypt-proxy
 
-#### RKHunter
-sed -i '/"\/dev\/.udev"/d' /etc/rkhunter.conf
-sed -i '/"\/dev\/.mdadm"/d' /etc/rkhunter.conf
-sed -i '/"\/dev\/.initramfs"/d' /etc/rkhunter.conf
-if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.udev'`" ]; then
-	sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.udev\"" /etc/rkhunter.conf
-fi
-if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.mdadm'`" ]; then
-	sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.mdadm\"" /etc/rkhunter.conf
-fi
-if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.initramfs'`" ]; then
-	sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.initramfs\"" /etc/rkhunter.conf
-fi
+		#### PHP - /etc/php5/mods-available/apcu.ini
+		if [ ! -z "`cat /etc/php5/mods-available/apcu.ini | grep 'apc.enable_cli'`" ]; then
+			sed -i '/apc.enable_cli/d' /etc/php5/mods-available/apcu.ini
+			echo "apc.enable_cli=1" >> /etc/php5/mods-available/apcu.ini
+		fi
+
+		#### RKHunter
+		sed -i '/"\/dev\/.udev"/d' /etc/rkhunter.conf
+		sed -i '/"\/dev\/.mdadm"/d' /etc/rkhunter.conf
+		sed -i '/"\/dev\/.initramfs"/d' /etc/rkhunter.conf
+		if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.udev'`" ]; then
+			sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.udev\"" /etc/rkhunter.conf
+		fi
+		if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.mdadm'`" ]; then
+			sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.mdadm\"" /etc/rkhunter.conf
+		fi
+		if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.initramfs'`" ]; then
+			sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.initramfs\"" /etc/rkhunter.conf
+		fi
+	;;
+	"AFTER")
+
+	;;
+esac
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after
