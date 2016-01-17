@@ -55,4 +55,3 @@ define('User_UserInfoMail_Comment_Blocklists', 'You can manage <a href="https://
 define('User_UserInfoMail_Comment_DNScrypt', '<a href="https://%s:%s/?main-user/dnscrypt-proxy.html">Informations on resolvers used.</a>');
 
 //#################### LAST LINE ######################################
-?>

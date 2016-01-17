@@ -29,4 +29,3 @@ define('User_ChangeEmail_ErrorConfirm', 'Error between the new typed email and v
 define('User_ChangeEmail_ErrorNotValid', 'The given e-mail address is not valid!');
 
 //#################### LAST LINE ######################################
-?>

@@ -38,4 +38,3 @@ define('MainUser_UserAdd_YES', 'YES');
 define('MainUser_UserAdd_NO', 'NO');
 
 //#################### LAST LINE ######################################
-?>

@@ -209,4 +209,3 @@ define('User_UserInfo_Table_TotalPerUser', 'TOTAL par utilisateur');
 define('User_UserInfo_Table_TotalPerUser_Plus', ' &euro; TTC / mois');
 
 //#################### LAST LINE ######################################
-?>

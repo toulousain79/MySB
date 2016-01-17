@@ -27,4 +27,3 @@ define('ApplyConfig_ErrorApply', 'Une erreur est survenue lors de l\'application
 define('ApplyConfig_NothingToApply', 'Il n\'y a rien &agrave; appliquer...');
 
 //#################### LAST LINE ######################################
-?>

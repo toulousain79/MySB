@@ -211,4 +211,3 @@ foreach($TrackersList as $Tracker) {
 
 <?php
 //#################### LAST LINE ######################################
-?>

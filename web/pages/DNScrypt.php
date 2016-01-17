@@ -141,4 +141,3 @@ foreach($ResolversList as $Resolver) {
 
 <?php
 //#################### LAST LINE ######################################
-?>

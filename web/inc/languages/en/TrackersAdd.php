@@ -37,4 +37,3 @@ define('MainUser_TrackersAdd_Table_PingResult', 'Ping Result');
 define('MainUser_TrackersAdd_Table_IsSSL', 'SSL ?');
 
 //#################### LAST LINE ######################################
-?>

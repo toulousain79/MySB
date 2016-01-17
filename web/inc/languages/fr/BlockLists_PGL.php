@@ -27,4 +27,3 @@ define('MainUser_BlockLists_PGL_Table_Name', 'Nom');
 define('MainUser_BlockLists_PGL_Table_Blocklist', 'Liste noire');
 
 //#################### LAST LINE ######################################
-?>

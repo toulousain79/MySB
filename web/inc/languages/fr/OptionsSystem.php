@@ -33,4 +33,3 @@ define('MainUser_OptionsSystem_Title_DNScrypt', 'DNScrypt-proxy');
 define('MainUser_OptionsSystem_DNScrypt_Activate', 'Activation');
 
 //#################### LAST LINE ######################################
-?>

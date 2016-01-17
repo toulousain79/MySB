@@ -33,4 +33,3 @@ define('MainUser_SMTP_AccountNotValid', 'The e-mail related to the SMTP account 
 define('MainUser_SMTP_Verification', 'Error between password and verification.');
 
 //#################### LAST LINE ######################################
-?>

@@ -33,4 +33,3 @@ define('User_ChangePassword_ErrorConfirm', 'Error between the new typed password
 define('User_ChangePassword_ErrorNotValid', 'The current password is not valid.');
 
 //#################### LAST LINE ######################################
-?>

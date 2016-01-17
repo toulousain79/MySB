@@ -43,4 +43,3 @@ define('User_ManageAddresses_RememberCheck', 'Remember that your dynamic IP will
 define('User_ManageAddresses_FailedDeleteAddress', 'Failed !<br /><br />It was not possible to delete address.');
 
 //#################### LAST LINE ######################################
-?>

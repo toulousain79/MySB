@@ -31,4 +31,3 @@ define('MainUser_DNScrypt_Table_NoLog', 'No<br />logs');
 define('MainUser_DNScrypt_Table_NameCoin', 'Namecoin');
 
 //#################### LAST LINE ######################################
-?>

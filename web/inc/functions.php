@@ -499,4 +499,3 @@ function GenerateMessage($commands, $type, $message, $args) {
 }
 
 //#################### LAST LINE ######################################
-?>

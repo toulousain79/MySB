@@ -29,4 +29,3 @@ define('User_ChangeEmail_ErrorConfirm', 'Erreur entre la nouvelle adresse et la 
 define('User_ChangeEmail_ErrorNotValid', 'L\'adresse e-mail indiqu&eacute;e n\'est pas valide!');
 
 //#################### LAST LINE ######################################
-?>

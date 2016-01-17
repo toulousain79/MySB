@@ -43,4 +43,3 @@ define('User_ManageAddresses_RememberCheck', 'Gardez en m&eacute;moire que vos a
 define('User_ManageAddresses_FailedDeleteAddress', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de supprimer l\'adresse.');
 
 //#################### LAST LINE ######################################
-?>

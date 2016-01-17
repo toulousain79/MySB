@@ -31,4 +31,3 @@ define('User_TrackersList_Table_PingResult', 'R&eacute;sultat du ping');
 define('User_TrackersList_Table_IsSSL', 'SSL ?');
 
 //#################### LAST LINE ######################################
-?>

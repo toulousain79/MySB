@@ -49,4 +49,3 @@ define('Layout_Wolf', 'CMS Wolf');
 define('Layout_Medoo', 'Medoo');
 
 //#################### LAST LINE ######################################
-?>

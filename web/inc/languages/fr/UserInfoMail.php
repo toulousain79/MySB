@@ -55,4 +55,3 @@ define('User_UserInfoMail_Comment_Blocklists', 'G&eacute;rer la <a href="https:/
 define('User_UserInfoMail_Comment_DNScrypt', '<a href="https://%s:%s/?main-user/dnscrypt-proxy.html">Informations sur les serveurs de r&eacute;solution de noms utilis&eacute;s.</a>');
 
 //#################### LAST LINE ######################################
-?>

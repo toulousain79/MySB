@@ -25,4 +25,3 @@
 define('Help_PlexMedia', 'Please, check <a target="_blank" href="https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-Plex-Media-Server" title="PlexMedia on MySB wiki">MySB wiki</a>');
 
 //#################### LAST LINE ######################################
-?>

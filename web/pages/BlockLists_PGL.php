@@ -150,4 +150,3 @@ if ( $IsInstalled == '1' ) {
 	echo '<h1>PeerGuardian is not installed...</h1>';
 }
 //#################### LAST LINE ######################################
-?>

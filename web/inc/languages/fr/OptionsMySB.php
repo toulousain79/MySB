@@ -30,4 +30,3 @@ define('User_OptionsMySB_Lang_French', 'Fran&ccedil;ais');
 define('User_OptionsMySB_Lang_English', 'Anglais');
 
 //#################### LAST LINE ######################################
-?>

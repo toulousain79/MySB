@@ -27,4 +27,3 @@ define('ApplyConfig_ErrorApply', 'Error occurred when applying your configuratio
 define('ApplyConfig_NothingToApply', 'Nothing to apply...');
 
 //#################### LAST LINE ######################################
-?>

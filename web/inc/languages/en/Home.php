@@ -67,4 +67,3 @@ define('Home_ownCloudAfterUpgrade', '
 ');
 
 //#################### LAST LINE ######################################
-?>

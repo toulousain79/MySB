@@ -37,4 +37,3 @@ define('MainUser_TrackersAdd_Table_PingResult', 'R&eacute;sultat du ping');
 define('MainUser_TrackersAdd_Table_IsSSL', 'SSL ?');
 
 //#################### LAST LINE ######################################
-?>

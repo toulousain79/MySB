@@ -42,4 +42,3 @@ define('User_OpenVPN_NoPassword', 'Echec !<br /><br />Votre session n\'est pas e
 define('User_OpenVPN_NoFile', 'Aucun fichier de configuration pour l\'utilisateur %s....');
 
 //#################### LAST LINE ######################################
-?>

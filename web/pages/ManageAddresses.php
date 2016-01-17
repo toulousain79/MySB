@@ -267,4 +267,3 @@ foreach($AddressesList as $Address) {
 
 <?php
 //#################### LAST LINE ######################################
-?>

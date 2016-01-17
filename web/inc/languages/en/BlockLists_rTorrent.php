@@ -27,4 +27,3 @@ define('MainUser_BlockLists_rTorrent_Table_Name', 'Name');
 define('MainUser_BlockLists_rTorrent_Table_Blocklist', 'Blocklist');
 
 //#################### LAST LINE ######################################
-?>

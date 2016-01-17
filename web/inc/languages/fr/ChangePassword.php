@@ -33,4 +33,3 @@ define('User_ChangePassword_ErrorConfirm', 'Erreur entre le nouveau mot de passe
 define('User_ChangePassword_ErrorNotValid', 'Le mot de passe actuel n\'est pas valide!');
 
 //#################### LAST LINE ######################################
-?>

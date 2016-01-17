@@ -38,4 +38,3 @@ define('MainUser_Renting_Method_1', '2 décimales arrondies');
 define('MainUser_Renting_TotalPerUser_Plus', ' &euro; TTC / mois');
 
 //#################### LAST LINE ######################################
-?>

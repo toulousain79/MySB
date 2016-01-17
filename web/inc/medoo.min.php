@@ -966,4 +966,3 @@ class medoo
 		return $output;
 	}
 }
-?>

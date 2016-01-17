@@ -27,4 +27,3 @@ require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__
 echo Help_PlexMedia;
 
 //#################### LAST LINE ######################################
-?>
