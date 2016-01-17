@@ -28,6 +28,9 @@ source $(dirname $0)/../inc/includes_before
 if ! CheckCommand 0 mysql; then
 	PackagesManage install "mysql-server"
 fi
+if ! CheckCommand 0 mysqltuner; then
+	PackagesManage install "mysqltuner"
+fi
 
 #### MySQL Secure
 if [ -f /etc/MySB/config_db ]; then source /etc/MySB/config_db; fi
@@ -128,10 +131,17 @@ if [ -z "`getent passwd mysql | grep '/var/lib/mysql'`" ]; then
 fi
 
 #### START services
-ManageServices 'stop' 'mysql'
+ManageServices 'start' 'mysql'
 
 #### Logrotate
 LogRotate 'mysql-server'
+
+#### MySQL Tuner
+mysqltuner --user root --pass $MySQL_RootPassword > $MySB_InstallDir/temp/mysqltuner.log
+cat $MySB_InstallDir/temp/mysqltuner.log
+if [ ! -z "`cat $MySB_InstallDir/temp/mysqltuner.log | grep 'Run OPTIMIZE TABLE'`" ]; then
+	mysqlcheck -u root -p$MySQL_RootPassword --auto-repair --optimize --all-databases
+fi
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after
