@@ -51,83 +51,86 @@ DeleteBadSources() {
 
 #### APT-mirror (local mirror for PeerGuardian, Webmin, Plexmedia Server)
 CreateLocalMirror() {
-	case "$1" in
-		"CONFIG")
-			# Directories
-			if [ ! -d $MySB_InstallDir/apt-mirror/mirrors ]; then mkdir -p $MySB_InstallDir/apt-mirror/mirrors ; fi
-			if [ ! -d $MySB_InstallDir/apt-mirror/skel ]; then mkdir $MySB_InstallDir/apt-mirror/skel ; fi
-			if [ ! -d $MySB_InstallDir/apt-mirror/var ]; then mkdir $MySB_InstallDir/apt-mirror/var ; fi
-			# /etc/apt/mirror.list
-			cp -vf $MySB_InstallDir/templates/etc.apt.mirror.list.tmpl $MySB_InstallDir/apt-mirror/mirror.list
-			perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" $MySB_InstallDir/apt-mirror/mirror.list
-			perl -pi -e "s/<Arch>/$Arch/g" $MySB_InstallDir/apt-mirror/mirror.list
-			# apt-mirror/var/postmirror.sh
-			echo "$MySB_InstallDir/apt-mirror/var/clean.sh" > $MySB_InstallDir/apt-mirror/var/postmirror.sh
-			chmod -R 0744 $MySB_InstallDir/apt-mirror
-		;;
-		"ADD")
-			if [ "$ToInstall_PeerGuardian" == "YES" ] || [ "$IsInstalled_PeerGuardian" == "YES" ]; then
-				echo "# PeerGuardian" >> $MySB_InstallDir/apt-mirror/mirror.list
-				echo "deb http://moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" >> $MySB_InstallDir/apt-mirror/mirror.list
-				echo "deb-src http://moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" >> $MySB_InstallDir/apt-mirror/mirror.list
-				echo "clean http://moblock-deb.sourceforge.net/debian" >> $MySB_InstallDir/apt-mirror/mirror.list
+	# Delete unused directories
+	if [ -d /var/spool/apt-mirror ] && [ ! -d $MySB_InstallDir/files/apt_mirrors ]; then
+		mv /var/spool/apt-mirror $MySB_InstallDir/files/apt_mirrors
+	fi
+	# mirror.list
+	if [ -f /etc/apt/mirror.list ]; then rm -f /etc/apt/mirror.list; fi
+	cp -vf $MySB_InstallDir/templates/etc.apt.mirror.list.tmpl $MySB_InstallDir/files/apt_mirrors/mirror.list
+	perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" $MySB_InstallDir/files/apt_mirrors/mirror.list
+	perl -pi -e "s/<Arch>/$Arch/g" $MySB_InstallDir/files/apt_mirrors/mirror.list
+	# postmirror.sh & clean.sh
+	if [ ! -f $MySB_InstallDir/files/apt_mirrors/var/clean.sh ]; then
+		touch $MySB_InstallDir/files/apt_mirrors/var/clean.sh
+	fi
+	echo '#!/bin/sh' > $MySB_InstallDir/files/apt_mirrors/var/postmirror.sh
+	echo "$MySB_InstallDir/files/apt_mirrors/var/clean.sh" >> $MySB_InstallDir/files/apt_mirrors/var/postmirror.sh
+	chmod 0700 $MySB_InstallDir/files/apt_mirrors/var/*.sh
+	chown apt-mirror:apt-mirror $MySB_InstallDir/files/apt_mirrors/var/*.sh	
+	# Local mirrors
+	if [ "$ToInstall_PeerGuardian" == "YES" ] || [ "$IsInstalled_PeerGuardian" == "YES" ]; then
+		echo "# PeerGuardian" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "deb http://moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "deb-src http://moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "clean http://moblock-deb.sourceforge.net/debian" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
 
-				if [ ! -f /etc/apt/sources.list.d/peerguardian.list ]; then
-					until gpg --keyserver keyserver.ubuntu.com --recv-keys C0145138; do
-						sleep 1
-					done
+		if [ ! -f /etc/apt/sources.list.d/peerguardian.list ]; then
+			until gpg --keyserver keyserver.ubuntu.com --recv-keys C0145138; do
+				sleep 1
+			done
 
-					until gpg --export --armor C0145138 | apt-key add -; do
-						sleep 1
-					done
-				fi
+			until gpg --export --armor C0145138 | apt-key add -; do
+				sleep 1
+			done
+		fi
 
-				# peerguardian.list (local)
-				echo "# PeerGuardian" > /etc/apt/sources.list.d/peerguardian.list
-				echo "deb file:///etc/MySB/apt-mirror/mirrors/moblock-deb.sourceforge.net/debian	${DEBIAN_VERSION} main" >> /etc/apt/sources.list.d/peerguardian.list
-				echo "deb-src file:///etc/MySB/apt-mirror/mirrors/moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" >> /etc/apt/sources.list.d/peerguardian.list
+		# peerguardian.list (local)
+		echo "# PeerGuardian" > /etc/apt/sources.list.d/peerguardian.list
+		echo "deb file:///etc/MySB/files/apt_mirrors/mirrors/moblock-deb.sourceforge.net/debian	${DEBIAN_VERSION} main" >> /etc/apt/sources.list.d/peerguardian.list
+		echo "deb-src file:///etc/MySB/files/apt_mirrors/mirrors/moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" >> /etc/apt/sources.list.d/peerguardian.list
+	fi
+	if [ "$ToInstall_Webmin" == "YES" ] || [ "$IsInstalled_Webmin" == "YES" ]; then
+		echo "# Webmin" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "deb http://download.webmin.com/download/repository sarge contrib" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "clean http://download.webmin.com/download/repository" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+
+		if [ ! -f /etc/apt/sources.list.d/webmin.list ]; then
+			if [ ! -f $MySB_InstallDir/files/repos_keys/webmin.key ]; then
+				wget -t 5 http://www.webmin.com/jcameron-key.asc -O $MySB_InstallDir/files/repos_keys/webmin.key
 			fi
-			if [ "$ToInstall_Webmin" == "YES" ] || [ "$IsInstalled_Webmin" == "YES" ]; then
-				echo "# Webmin" >> $MySB_InstallDir/apt-mirror/mirror.list
-				echo "deb http://download.webmin.com/download/repository sarge contrib" >> $MySB_InstallDir/apt-mirror/mirror.list
-				echo "clean http://download.webmin.com/download/repository" >> $MySB_InstallDir/apt-mirror/mirror.list
-
-				if [ ! -f /etc/apt/sources.list.d/webmin.list ]; then
-					if [ ! -f $MySB_InstallDir/files/repos_keys/webmin.key ]; then
-						wget -t 5 http://www.webmin.com/jcameron-key.asc -O $MySB_InstallDir/files/repos_keys/webmin.key
-					fi
-					if [ -f $MySB_InstallDir/files/repos_keys/webmin.key ]; then
-						apt-key add $MySB_InstallDir/files/repos_keys/webmin.key
-					fi
-				fi
-
-				# webmin.list (local)
-				echo "# Webmin" > /etc/apt/sources.list.d/webmin.list
-				echo "deb file:///etc/MySB/apt-mirror/mirrors/download.webmin.com/download/repository sarge contrib" >> /etc/apt/sources.list.d/webmin.list
+			if [ -f $MySB_InstallDir/files/repos_keys/webmin.key ]; then
+				apt-key add $MySB_InstallDir/files/repos_keys/webmin.key
 			fi
-			if [ "$ToInstall_PlexMedia" == "YES" ] || [ "$IsInstalled_PlexMedia" == "YES" ]; then
-				echo "# PlexMedia" >> $MySB_InstallDir/apt-mirror/mirror.list
-				echo "deb http://shell.ninthgate.se/packages/debian $DEBIAN_VERSION main" >> $MySB_InstallDir/apt-mirror/mirror.list
-				echo "clean http://shell.ninthgate.se/packages/debian" >> $MySB_InstallDir/apt-mirror/mirror.list
+		fi
 
-				if [ ! -f /etc/apt/sources.list.d/plexmedia.list ]; then
-					if [ ! -f $MySB_InstallDir/files/repos_keys/plexmedia.key ]; then
-						wget -t 5 http://shell.ninthgate.se/packages/shell-ninthgate-se-keyring.key -O $MySB_InstallDir/files/repos_keys/plexmedia.key
-					fi
-					if [ -f $MySB_InstallDir/files/repos_keys/plexmedia.key ]; then
-						apt-key add $MySB_InstallDir/files/repos_keys/plexmedia.key
-					fi
-				fi
+		# webmin.list (local)
+		echo "# Webmin" > /etc/apt/sources.list.d/webmin.list
+		echo "deb file:///etc/MySB/files/apt_mirrors/mirrors/download.webmin.com/download/repository sarge contrib" >> /etc/apt/sources.list.d/webmin.list
+	fi
+	if [ "$ToInstall_PlexMedia" == "YES" ] || [ "$IsInstalled_PlexMedia" == "YES" ]; then
+		echo "# PlexMedia" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "deb http://shell.ninthgate.se/packages/debian $DEBIAN_VERSION main" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "clean http://shell.ninthgate.se/packages/debian" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
 
-				# plexmedia.list (local)
-				echo "# PlexMedia" > /etc/apt/sources.list.d/plexmedia.list
-				echo "deb file:///etc/MySB/apt-mirror/mirrors/shell.ninthgate.se/packages/debian $DEBIAN_VERSION main" >> /etc/apt/sources.list.d/plexmedia.list
+		if [ ! -f /etc/apt/sources.list.d/plexmedia.list ]; then
+			if [ ! -f $MySB_InstallDir/files/repos_keys/plexmedia.key ]; then
+				wget -t 5 http://shell.ninthgate.se/packages/shell-ninthgate-se-keyring.key -O $MySB_InstallDir/files/repos_keys/plexmedia.key
 			fi
+			if [ -f $MySB_InstallDir/files/repos_keys/plexmedia.key ]; then
+				apt-key add $MySB_InstallDir/files/repos_keys/plexmedia.key
+			fi
+		fi
 
-			#### Download mirrors with 'apt-mirror'
-			apt-mirror $MySB_InstallDir/apt-mirror/mirror.list
-		;;
-	esac
+		# plexmedia.list (local)
+		echo "# PlexMedia" > /etc/apt/sources.list.d/plexmedia.list
+		echo "deb file:///etc/MySB/files/apt_mirrors/mirrors/shell.ninthgate.se/packages/debian $DEBIAN_VERSION main" >> /etc/apt/sources.list.d/plexmedia.list
+	fi
+
+	#### Download mirrors with 'apt-mirror'
+	chmod -R 0700 $MySB_InstallDir/files/apt_mirrors
+	chown -R apt-mirror:apt-mirror $MySB_InstallDir/files/apt_mirrors	
+	apt-mirror $MySB_InstallDir/files/apt_mirrors/mirror.list
 }
 
 #### Basics Sources List
