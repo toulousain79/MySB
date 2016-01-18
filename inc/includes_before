@@ -63,9 +63,16 @@ if [ "$BANNER" == "ON" ]; then
 fi
 
 #### 4 - Log rotate
-if [ ! -z "$IsScriptInstall" ] && [ -s $MySB_InstallDir/logs/$ScriptName.log ]; then
-	cat $MySB_InstallDir/logs/$ScriptName.log >> $MySB_InstallDir/logs/archives/$ScriptName.log.1
-	rm -f $MySB_InstallDir/logs/$ScriptName.log
+if [ "$LOGROTATE" == "ON" ]; then
+	if [ ! -z "$IsScriptInstall" ] && [ -s $MySB_InstallDir/logs/$ScriptName.log ]; then
+		FileDate=$(stat -c %y $MySB_InstallDir/logs/$ScriptName.log | awk '{ print $1}')
+		Now=$(date +%Y-%m-%d)
+		let DIFF=(`date +%s --date="$FileDate"`-`date +%s --date="$Now"`)/86400
+		if [ "$DIFF" -le "-1" ]; then
+			cat $MySB_InstallDir/logs/$ScriptName.log >> $MySB_InstallDir/logs/archives/$ScriptName.log.1
+			rm -f $MySB_InstallDir/logs/$ScriptName.log
+		fi
+	fi
 fi
 
 #### 5 - STD Out/Err (after banner)
