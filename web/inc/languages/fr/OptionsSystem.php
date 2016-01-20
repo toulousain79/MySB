@@ -22,7 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-define('MainUser_OptionsSystem_Title_PGL', 'PeerGuardian <i>(Raport e-mail)</i>');
+define('MainUser_OptionsSystem_Title_PGL', 'PeerGuardian <i>(Rapport e-mail)</i>');
 define('MainUser_OptionsSystem_PGL_Stats', 'Statistiques');
 define('MainUser_OptionsSystem_PGL_Whathdog', 'Watchdog');
 define('MainUser_OptionsSystem_Title_Iptables', 'IPtables');
