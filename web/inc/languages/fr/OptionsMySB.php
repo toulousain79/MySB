@@ -24,6 +24,9 @@
 
 define('User_OptionsMySB_Title_rTorrent', 'rTorrent');
 define('User_OptionsMySB_rTorrentVersion', 'Version de rTorrent:');
+define('User_OptionsMySB_rTorrentRestart', 'Red&eacute;marrer rTorrent ?');
+define('User_OptionsMySB_Title_rTorrentConfig', 'Fichier de Configuration rTorrent');
+define('User_OptionsMySB_rTorrentConfigDirectory', 'Sous-dossiers:');
 define('User_OptionsMySB_Title_Portal', 'Portail MySB');
 define('User_OptionsMySB_Language', 'Language');
 define('User_OptionsMySB_Lang_French', 'Fran&ccedil;ais');

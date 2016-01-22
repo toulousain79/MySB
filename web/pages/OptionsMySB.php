@@ -88,7 +88,7 @@ $language = $users_datas['language'];
 				} ?>
 				</select>
 			</td>
-			<td>Restart rTorrent ?</td>
+			<td><?php echo User_OptionsMySB_rTorrentRestart; ?></td>
 			<td>
 				<select name="rTorrentRestart" style="width:80px; height: 28px;">';
 				<?php switch ($rtorrent_restart) {
@@ -102,8 +102,9 @@ $language = $users_datas['language'];
 						break;
 				} ?>
 				</select>
-			</td>
+			</td>			
 		</tr>
+
 	</table>
 	</fieldset>
 
@@ -129,11 +130,31 @@ $language = $users_datas['language'];
 		</tr>
 	</table>
 	</fieldset>
+<br />
+	<fieldset>
+	<legend><?php echo User_OptionsMySB_Title_rTorrentConfig; ?></legend>
+		<div id="input1" class="clonedInput">
+			<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
+			<?php echo User_OptionsMySB_rTorrentConfigDirectory; ?>&nbsp;<input class="input_tracker_domain" id="directory" name="directory[1]" type="text" required="required" />
+		</div>
+
+		<div style="margin-top: 10px; margin-bottom: 20px;">
+			<input type="button" id="btnAdd" value="<?php echo 'Ajouter un dossier'; ?>" style="cursor: pointer;" />
+			<input type="button" id="btnDel" value="<?php echo 'Retirer le dernier dossier'; ?>" style="cursor: pointer;" />
+		</div>
+
+		<input class="submit" style="width:<?php echo strlen('Générer mon fichier de configuration')*10; ?>px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo 'Générer mon fichier de configuration'; ?>">
+		<div align="center"><p class="Comments"><?php echo 'Permet de gérer les sous dossiers dans "watch" et "complete".<br />Exemple, ajoutez un dossier "Films", et celui-ci sera créé et géré par rTorrent.<br />Un fichier torrent ajouté dans "watch\Films" sera automatiquement copié dans "complete\Films" à la fin du téléchargement.'; ?></p></div>
+	</fieldset>
+	
+	
 
 	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
 
 	</div>
 </form>
+
+<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-dynamically-adding-form-elements.js"></script>
 
 <?php
 //#################### LAST LINE ######################################
