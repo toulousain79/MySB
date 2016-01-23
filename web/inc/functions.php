@@ -61,7 +61,7 @@ function ChangeCakeboxLanguage($user, $language) {
 			fclose($File);
 
 			//ouverture en écriture
-			$File = fopen($ConfigFile, 'w+') or die("File missing W: $ConfigFile");
+			$File = fopen($ConfigFile, 'w+') or die("File missing W for: $ConfigFile");
 			fwrite($File, $NewContent);
 			fclose($File);
 		}
