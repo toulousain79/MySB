@@ -27,6 +27,13 @@ define('User_OptionsMySB_rTorrentVersion', 'rTorrent version:');
 define('User_OptionsMySB_rTorrentRestart', 'Restart rTorrent ?');
 define('User_OptionsMySB_Title_rTorrentConfig', 'rTorrent Configuration File');
 define('User_OptionsMySB_rTorrentConfigDirectory', 'Torrents directories:');
+define('User_OptionsMySB_rTorrentConfigAddDirectory', 'Add a sub-directory');
+define('User_OptionsMySB_rTorrentConfigDelDirectory', 'Remove the last sub-directory');
+define('User_OptionsMySB_rTorrentConfigComment', 'Can manage folders under "watch" and "complete" directories.<br />
+Example, add a "Movies" folder, and it will be created and managed by rTorrent.<br />
+A torrent file added to "watch\Movies" will start the download.<br />
+At the end thereof, the data is automatically copied into "complete\Movies".');
+define('User_OptionsMySB_rTorrentConfig_Table_Title', 'Actual sub-directories');
 define('User_OptionsMySB_Title_Portal', 'MySB Portal');
 define('User_OptionsMySB_Language', 'Language');
 define('User_OptionsMySB_Lang_French', 'French');

@@ -27,6 +27,13 @@ define('User_OptionsMySB_rTorrentVersion', 'Version de rTorrent:');
 define('User_OptionsMySB_rTorrentRestart', 'Red&eacute;marrer rTorrent ?');
 define('User_OptionsMySB_Title_rTorrentConfig', 'Fichier de Configuration rTorrent');
 define('User_OptionsMySB_rTorrentConfigDirectory', 'Sous-dossiers:');
+define('User_OptionsMySB_rTorrentConfigAddDirectory', 'Ajouter un sous-dossier');
+define('User_OptionsMySB_rTorrentConfigDelDirectory', 'Retirer le dernier sous-dossier');
+define('User_OptionsMySB_rTorrentConfigComment', 'Permet de g&eacute;rer les sous dossiers dans "watch" et "complete".<br />
+Exemple, ajoutez un dossier "Films", et celui-ci sera cr&eacute;&eacute; et g&eacute;r&eacute; par rTorrent.<br />
+Un fichier torrent ajout&eacute; dans "watch\Films" lancera le t&eacute;l&eacute;chargement.<br />
+A la fin de celui-ci, les donn&eacute;es seront automatiquement copi&eacute;es dans "complete\Films".');
+define('User_OptionsMySB_rTorrentConfig_Table_Title', 'Sous-dossiers actuels');
 define('User_OptionsMySB_Title_Portal', 'Portail MySB');
 define('User_OptionsMySB_Language', 'Language');
 define('User_OptionsMySB_Lang_French', 'Fran&ccedil;ais');

@@ -25,19 +25,49 @@
 global $MySB_DB, $users_datas, $CurrentUser, $system_datas;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
-$PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
-$IsMainUser = (MainUser($CurrentUser)) ? true : false;
-
+// VARs
+$UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$CurrentUser"]);
+$UserDirectories = $MySB_DB->select("users_rtorrent_cfg", "*", ["id_users" => "$UserID"]);
 $Command = 'message_only';
 $rTorrentVersionsList = array('v0.9.2', 'v0.9.6');
 $LanguagesList = array('english', 'french');
 
 if (isset($_POST['submit'])) {
+	switch ($_POST['submit']) {
+		case 'delete':
+			if (isset($_POST['delete'])) {
+echo $_POST['delete'];
+				foreach($_POST['delete'] as $key => $value) {
+					echo $key;
+				}
+			}
+			break;
+		default:
+
+			break;
+	}
+
 	$rTorrentVersion = $_POST['rTorrentVersion'];
 	$rTorrentRestart = $_POST['rTorrentRestart'];
 	$Language = $_POST['language'];
 	// Get values from database
 	$rtorrent_version = $users_datas['rtorrent_version'];
+
+			$count = count($_POST['input_id']);
+
+			for($i=1; $i<=$count; $i++) {
+				$Directory = preg_replace('/\s\s+/', '', $_POST['directory'][$i]);
+				$IfExist = $MySB_DB->get("users_rtorrent_cfg", "id_users_rtorrent_cfg", [
+																	"AND" => [
+																		"id_users" => $UserID,
+																		"sub_directory" => $Directory
+																	]
+																]);
+
+				if ( (!isset($IfExist)) || ($IfExist === false) ) {
+					$value = $MySB_DB->insert("users_rtorrent_cfg", ["id_users" => "$UserID", "sub_directory" => "$Directory"]);
+				}
+			}
 
 	// Users table
 	if ( ($rTorrentVersion != $rtorrent_version) || ($rTorrentRestart == "1") ) {
@@ -55,16 +85,17 @@ if (isset($_POST['submit'])) {
 	}
 
 	GenerateMessage($Command, $type, $message);
-	
+
 	// Change language of Cakebox-Light
 	ChangeCakeboxLanguage($CurrentUser, $Language);
-	
+
 	// Change language of ownCloud
-	ChangeOwnCloudLanguage($CurrentUser, $Language);	
+	ChangeOwnCloudLanguage($CurrentUser, $Language);
 }
 
 // Get values from database
 $users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
+$users_directories = $MySB_DB->select("users_rtorrent_cfg", "*", ["id_users" => "$UserID"]);
 $rtorrent_version = $users_datas['rtorrent_version'];
 $rtorrent_restart = $users_datas['rtorrent_restart'];
 $language = $users_datas['language'];
@@ -102,9 +133,8 @@ $language = $users_datas['language'];
 						break;
 				} ?>
 				</select>
-			</td>			
+			</td>
 		</tr>
-
 	</table>
 	</fieldset>
 
@@ -130,24 +160,36 @@ $language = $users_datas['language'];
 		</tr>
 	</table>
 	</fieldset>
-<br />
+
+	<br />
+
 	<fieldset>
 	<legend><?php echo User_OptionsMySB_Title_rTorrentConfig; ?></legend>
 		<div id="input1" class="clonedInput">
 			<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
-			<?php echo User_OptionsMySB_rTorrentConfigDirectory; ?>&nbsp;<input class="input_tracker_domain" id="directory" name="directory[1]" type="text" required="required" />
+			<?php echo User_OptionsMySB_rTorrentConfigDirectory; ?>&nbsp;<input class="input_directory" id="directory" name="directory[1]" type="text" />
 		</div>
-
 		<div style="margin-top: 10px; margin-bottom: 20px;">
-			<input type="button" id="btnAdd" value="<?php echo 'Ajouter un dossier'; ?>" style="cursor: pointer;" />
-			<input type="button" id="btnDel" value="<?php echo 'Retirer le dernier dossier'; ?>" style="cursor: pointer;" />
+			<input type="button" id="btnAdd" value="<?php echo User_OptionsMySB_rTorrentConfigAddDirectory; ?>" style="cursor: pointer;" />
+			<input type="button" id="btnDel" value="<?php echo User_OptionsMySB_rTorrentConfigDelDirectory; ?>" style="cursor: pointer;" />
 		</div>
-
-		<input class="submit" style="width:<?php echo strlen('Générer mon fichier de configuration')*10; ?>px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo 'Générer mon fichier de configuration'; ?>">
-		<div align="center"><p class="Comments"><?php echo 'Permet de gérer les sous dossiers dans "watch" et "complete".<br />Exemple, ajoutez un dossier "Films", et celui-ci sera créé et géré par rTorrent.<br />Un fichier torrent ajouté dans "watch\Films" sera automatiquement copié dans "complete\Films" à la fin du téléchargement.'; ?></p></div>
+		<div align="center"><p class="Comments"><?php echo User_OptionsMySB_rTorrentConfigComment; ?></p></div>
+		
+		<table>
+			<tr>
+				<th style="text-align:center;"><?php echo User_OptionsMySB_rTorrentConfig_Table_Title; ?></th>
+				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
+			</tr>
+<?php foreach($users_directories as $Directory) { ?>
+			<tr>
+				<td><?php echo $Directory['sub_directory']; ?></td>
+				<td>
+					<input class="submit" name="delete[<?php echo $Directory['sub_directory']; ?>]" type="submit" value="<?php echo Global_Delete; ?>" />
+				</td>				
+			</tr>
+<?php } ?>
+		</table>
 	</fieldset>
-	
-	
 
 	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
 

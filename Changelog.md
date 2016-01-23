@@ -12,6 +12,7 @@
 			- NodeJS v0.12.9 (v3.2)
 			- ownCloud v8.2.2 (v3.2)
 			- PHP v5.6 (v3.2)
+			- Medoo Framework v1.0.1 (v3.2)
 	
 	Version v3.1
 		2015/11/17
