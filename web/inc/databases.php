@@ -22,61 +22,40 @@
 //
 //#################### FIRST LINE #####################################
 
-header('Cache-control: private'); // IE 6 FIX
-
-// Config file
-require_once('/etc/MySB/config.php');
-
-// Session
-session_start();
-if ( isset($_GET['page']) ) {
-	switch ($_GET['page']) {
-		case "ChangePassword":
-			if ( isset($_GET['user']) && isset($_GET['passwd']) ) {
-				$_SESSION['page'] = $_GET['page'];
-			}
-			break;
-
-		case "ManageAddresses":
-			if ( isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW']) ) {
-				$_SESSION['page'] = $_GET['page'];
-			}
-			break;
-	}
-}
-
-// Databases framework
-require_once(WEB_INC . '/databases.php');
-
-// Users table
-if ( (isset($_SERVER['PHP_AUTH_USER'])) && (!isset($_GET['user'])) ) {
-	$CurrentUser = $_SERVER['PHP_AUTH_USER'];
-} elseif ( (isset($_SERVER['PHP_AUTH_USER'])) && (isset($_GET['user'])) ) {
-	$CurrentUser = $_GET['user'];
-} elseif ( (!isset($_SERVER['PHP_AUTH_USER'])) && (isset($_GET['user'])) ) {
-	$CurrentUser = $_GET['user'];
-}
-if ( isset($CurrentUser) ) {
-	$users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
-}
-
-// Language
-if ( isSet($users_datas["language"]) ) {
-	$Language = $users_datas["language"];
-	$_SESSION['Language'] = $Language;
-} else {
-	$Language = 'en';
-	$_SESSION['Language'] = $Language;
-}
-require_once(WEB_INC . '/languages/global.' . $Language . '.php');
-
-// Some Functions
-require_once(FILE_FUNCS);
-
-// Load System table
-$system_datas = $MySB_DB->get("system", "*", ["id_system" => 1]);
-
-// Services table
-$Port_HTTPs = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "NginX"]);
+// Medoo framework
+require_once(FILE_MEDOO);
+$MySB_DB = new medoo([
+	// required
+	'database_type' => 'mysql',
+	'database_name' => MySQL_MySB_DB,
+	'server' => 'localhost',
+	'username' => MySQL_MysbUser,
+	'password' => MySQL_MysbPassword,
+	'charset' => 'utf8',
+	'port' => 3306,
+	'option' => [
+		PDO::ATTR_CASE => PDO::CASE_NATURAL,
+		PDO::ATTR_ORACLE_NULLS => PDO::NULL_TO_STRING
+	]
+]);
+$Wolf_DB = new medoo([
+	'database_type' => 'sqlite',
+	'database_file' => Wolf_DB,
+	'database_name' => 'Wolf'
+]);
+$ownCloud_DB = new medoo([
+	// required
+	'database_type' => 'mysql',
+	'database_name' => MySQL_ownCloud_DB,
+	'server' => 'localhost',
+	'username' => MySQL_MysbUser,
+	'password' => MySQL_MysbPassword,
+	'charset' => 'utf8',
+	'port' => 3306,
+	'option' => [
+		PDO::ATTR_CASE => PDO::CASE_NATURAL,
+		PDO::ATTR_ORACLE_NULLS => PDO::NULL_TO_STRING
+	]
+]);
 
 //#################### LAST LINE #####################################

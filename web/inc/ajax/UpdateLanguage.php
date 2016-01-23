@@ -1,5 +1,5 @@
 <?php
-// ---------------------------
+// ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,61 +22,19 @@
 //
 //#################### FIRST LINE #####################################
 
-header('Cache-control: private'); // IE 6 FIX
+global $MySB_DB, $CurrentUser;
 
-// Config file
-require_once('/etc/MySB/config.php');
-
-// Session
-session_start();
-if ( isset($_GET['page']) ) {
-	switch ($_GET['page']) {
-		case "ChangePassword":
-			if ( isset($_GET['user']) && isset($_GET['passwd']) ) {
-				$_SESSION['page'] = $_GET['page'];
-			}
-			break;
-
-		case "ManageAddresses":
-			if ( isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW']) ) {
-				$_SESSION['page'] = $_GET['page'];
-			}
-			break;
-	}
+echo 'test';
+echo $CurrentUser;
+$language=$_POST['language'];
+$result = $MySB_DB->update("users", ["language" => "$language"], ["users_ident" => "$CurrentUser"]);
+if($result == 1)
+{
+echo "Record Updated Sucessfully";    
 }
+else
+{
+echo 'Try Again';    
+} 
 
-// Databases framework
-require_once(WEB_INC . '/databases.php');
-
-// Users table
-if ( (isset($_SERVER['PHP_AUTH_USER'])) && (!isset($_GET['user'])) ) {
-	$CurrentUser = $_SERVER['PHP_AUTH_USER'];
-} elseif ( (isset($_SERVER['PHP_AUTH_USER'])) && (isset($_GET['user'])) ) {
-	$CurrentUser = $_GET['user'];
-} elseif ( (!isset($_SERVER['PHP_AUTH_USER'])) && (isset($_GET['user'])) ) {
-	$CurrentUser = $_GET['user'];
-}
-if ( isset($CurrentUser) ) {
-	$users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
-}
-
-// Language
-if ( isSet($users_datas["language"]) ) {
-	$Language = $users_datas["language"];
-	$_SESSION['Language'] = $Language;
-} else {
-	$Language = 'en';
-	$_SESSION['Language'] = $Language;
-}
-require_once(WEB_INC . '/languages/global.' . $Language . '.php');
-
-// Some Functions
-require_once(FILE_FUNCS);
-
-// Load System table
-$system_datas = $MySB_DB->get("system", "*", ["id_system" => 1]);
-
-// Services table
-$Port_HTTPs = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "NginX"]);
-
-//#################### LAST LINE #####################################
+//#################### LAST LINE ######################################

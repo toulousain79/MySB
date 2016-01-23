@@ -70,8 +70,7 @@ function DoApplyConfig() {
 }
 
 // Apply Config
-function ApplyConfig(state)
-{
+function ApplyConfig(state) {
 	switch (state) {
 		case 'ToUpdate':
 			document.getElementById("ApplyConfigButtonState").className = "ApplyConfigButtonDO";
@@ -80,4 +79,21 @@ function ApplyConfig(state)
 			document.getElementById("ApplyConfigButtonState").className = "ApplyConfigButtonNothing";
 			break;
 	}
+}
+
+// Update Language
+function UpdateLanguage() {
+	var language=$("#language").val();
+	var user_ident=$("#user_ident").val(); 
+	var dataString = "language=" + language + "&user_ident=" + user_ident;
+		$.ajax({  
+			type: "POST",  
+			url: "ajax/UpdateLanguage.php",  
+			data: dataString,
+			beforeSend: function() 
+			{
+				$('html, body').animate({scrollTop:0}, 'slow');
+			},  
+			success: {}
+		});	
 }
