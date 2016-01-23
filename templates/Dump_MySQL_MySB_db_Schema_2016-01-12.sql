@@ -194,6 +194,13 @@ CREATE TABLE IF NOT EXISTS `users_addresses` (
   PRIMARY KEY (`id_users_addresses`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
+CREATE TABLE IF NOT EXISTS `users_rtorrent_cfg` (
+  `id_users_rtorrent_cfg` int(11) NOT NULL AUTO_INCREMENT,
+  `id_users` int(11) NOT NULL,
+  `sub_directory` varchar(16) NOT NULL,
+  PRIMARY KEY (`id_users_rtorrent_cfg`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
 CREATE TABLE IF NOT EXISTS `vars` (
   `id_vars` int(11) NOT NULL AUTO_INCREMENT,
   `fail2ban_whitelist` varchar(12) NOT NULL,
