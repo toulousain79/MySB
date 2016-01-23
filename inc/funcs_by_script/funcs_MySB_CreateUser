@@ -104,8 +104,8 @@ ManageUserHomeDir() {
 	chown root:$FnUser $FnHomeDir/rtorrent
 	chmod 0775 $FnHomeDir/rtorrent
 	# /home/user/rtorrent/watch
-	chown root:MySB_users $FnHomeDir/rtorrent/watch
-	chmod 0770 $FnHomeDir/rtorrent/watch
+	chown root:$FnUser $FnHomeDir/rtorrent/watch
+	chmod 0775 $FnHomeDir/rtorrent/watch
 	# /home/user/rtorrent/incomplete
 	chown root:$FnUser $FnHomeDir/rtorrent/incomplete
 	chmod 0775 $FnHomeDir/rtorrent/incomplete
@@ -243,33 +243,119 @@ ruTorrentUsersConfigs() {
 #### rTorrent Configuration file
 CreateRtorrentConfigFile() {
 	FnUser="$1"
-	PortSCGI="`Func_SQL_Command 'SELECT' 'MySB_db' 'scgi_port' 'users' "users_ident = '$FnUser'"`"
-	PortRtorrent="`Func_SQL_Command 'SELECT' 'MySB_db' 'rtorrent_port' 'users' "users_ident = '$FnUser'"`"
-
-	if [ -f /home/$FnUser/.rtorrent.rc ]; then
-		cp /home/$FnUser/.rtorrent.rc /home/$FnUser/.rtorrent.rc.old
+	if [ "$2" == "force" ]; then
+		CreateNewFile=1
+	else
+		CreateNewFile=0
 	fi
-	cp $MySB_InstallDir/templates/rtorrent.rc.tmpl /home/$FnUser/.rtorrent.rc
-	perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /home/$FnUser/.rtorrent.rc
-	perl -pi -e "s/<server_ip>/$SrvIpAddress/g" /home/$FnUser/.rtorrent.rc
-	perl -pi -e "s/<username>/$FnUser/g" /home/$FnUser/.rtorrent.rc
-	perl -pi -e "s/<homedir>/\/home\/$FnUser/g" /home/$FnUser/.rtorrent.rc
-	perl -pi -e "s/<scgi_port>/$PortSCGI/g" /home/$FnUser/.rtorrent.rc
-	perl -pi -e "s/<port_range>/$PortRtorrent-$PortRtorrent/g" /home/$FnUser/.rtorrent.rc
-	if [ "$MySB_PeerBlock" == "rTorrent" ]; then
-		perl -pi -e "s/#{1}ipv4_filter.load/ipv4_filter.load/g" /home/$FnUser/.rtorrent.rc
-		perl -pi -e "s/#{1}print/print/g" /home/$FnUser/.rtorrent.rc
-		perl -pi -e "s/#{1}schedule=load_filter/schedule=load_filter/g" /home/$FnUser/.rtorrent.rc
+	UserID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$FnUser'"`"
+	Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory,to_delete,can_be_deleted' 'users_rtorrent_cfg' "id_users = '$UserID'"`"
+
+	if [ ! -z "$Directories" ]; then
+		for Directory in $Directories; do
+			SubDirectory="`echo $Directory | awk '{split($0,a,"|"); print a[1]}'`"
+			ToDelete="`echo $Directory | awk '{split($0,a,"|"); print a[2]}'`"
+			CanBeDeleted="`echo $Directory | awk '{split($0,a,"|"); print a[3]}'`"
+
+			if [ -d $HOMEDIR/rtorrent/complete/$SubDirectory/ ] && [ -d $HOMEDIR/rtorrent/watch/$SubDirectory/ ]; then
+				CountFiles="`ls -A1 $HOMEDIR/rtorrent/complete/$SubDirectory/ | wc -l`"
+				if [ $CountFiles -eq 0 ]; then
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'users_rtorrent_cfg' "can_be_deleted = '1'" "users_ident = '$FnUser' AND sub_directory = '$SubDirectory'"
+					CanBeDeleted=0
+				else
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'users_rtorrent_cfg' "can_be_deleted = '0'" "users_ident = '$FnUser' AND sub_directory = '$SubDirectory'"
+					CanBeDeleted=1
+				fi
+			fi
+
+			case "$CanBeDeleted" in
+				1) # New directory OR maybe to delete
+					case "$ToDelete" in
+						1)
+							if [ -d $HOMEDIR/rtorrent/complete/$SubDirectory/ ]
+								rmdir $HOMEDIR/rtorrent/complete/$SubDirectory/ 2>> $LOG_FILE
+							fi
+							if [ $? -eq 0 ]; then
+								CompleteDeleted=1
+							else
+								CompleteDeleted=0
+							fi
+							if [ -d $HOMEDIR/rtorrent/watch/$SubDirectory/ ]
+								rm -rf $HOMEDIR/rtorrent/watch/$SubDirectory/ 2>> $LOG_FILE
+							fi
+							if [ $? -eq 0 ]; then
+								WatchDeleted=1
+							else
+								WatchDeleted=0
+							fi
+							if [ $CompleteDeleted -eq 1 ] && [ $WatchDeleted -eq 1 ]; then
+								Func_SQL_Command 'DELETE' 'MySB_db' 'users_rtorrent_cfg' "id_users = '$UserId' AND sub_directory = '$SubDirectory'"
+							fi
+						;;
+						0)
+							# Directory to create
+							if [ ! -d $HOMEDIR/rtorrent/complete/$SubDirectory ]; then
+								mkdir -p $HOMEDIR/rtorrent/complete/$SubDirectory 2>> $LOG_FILE
+								chown root:$FnUser $HOMEDIR/rtorrent/complete/$SubDirectory 2>> $LOG_FILE
+								chmod 0775 $HOMEDIR/rtorrent/complete/$SubDirectory 2>> $LOG_FILE
+							fi
+							if [ ! -d $HOMEDIR/rtorrent/watch/$SubDirectory ]; then
+								mkdir -p $HOMEDIR/rtorrent/watch/$SubDirectory 2>> $LOG_FILE
+								chown root:$FnUser $HOMEDIR/rtorrent/watch/$SubDirectory 2>> $LOG_FILE
+								chmod 0775 $HOMEDIR/rtorrent/watch/$SubDirectory 2>> $LOG_FILE
+							fi
+							CreateNewFile=1
+						;;
+					esac
+				;;
+			esac
+		done
 	fi
 
-	case "$FILESYSTEMTYPE" in
-		"ext4"|"xfs"|"btrfs")
-			perl -pi -e "s/system.file_allocate.set = no/system.file_allocate.set = yes/g" /home/$FnUser/.rtorrent.rc
-		;;
-		*)
-			perl -pi -e "s/^system.file_allocate.set = yes/system.file_allocate.set = no/g" /home/$FnUser/.rtorrent.rc
-		;;
-	esac
+	if [ $CreateNewFile -eq 1 ]; then
+		if [ -f /home/$FnUser/.rtorrent.rc ]; then
+			mv /home/$FnUser/.rtorrent.rc /home/$FnUser/.rtorrent.rc.old
+		fi
+		if [ ! -f /home/$FnUser/.rtorrent.rc ]; then
+			PortSCGI="`Func_SQL_Command 'SELECT' 'MySB_db' 'scgi_port' 'users' "users_ident = '$FnUser'"`"
+			PortRtorrent="`Func_SQL_Command 'SELECT' 'MySB_db' 'rtorrent_port' 'users' "users_ident = '$FnUser'"`"
+			Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory' 'users_rtorrent_cfg' "id_users = '$UserID'"`"
+
+			cp $MySB_InstallDir/templates/rtorrent.rc.tmpl /home/$FnUser/.rtorrent.rc
+			perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /home/$FnUser/.rtorrent.rc
+			perl -pi -e "s/<server_ip>/$SrvIpAddress/g" /home/$FnUser/.rtorrent.rc
+			perl -pi -e "s/<username>/$FnUser/g" /home/$FnUser/.rtorrent.rc
+			perl -pi -e "s/<homedir>/\/home\/$FnUser/g" /home/$FnUser/.rtorrent.rc
+			perl -pi -e "s/<scgi_port>/$PortSCGI/g" /home/$FnUser/.rtorrent.rc
+			perl -pi -e "s/<port_range>/$PortRtorrent-$PortRtorrent/g" /home/$FnUser/.rtorrent.rc
+			if [ "$MySB_PeerBlock" == "rTorrent" ]; then
+				perl -pi -e "s/#{1}ipv4_filter.load/ipv4_filter.load/g" /home/$FnUser/.rtorrent.rc
+				perl -pi -e "s/#{1}print/print/g" /home/$FnUser/.rtorrent.rc
+				perl -pi -e "s/#{1}schedule=load_filter/schedule=load_filter/g" /home/$FnUser/.rtorrent.rc
+			fi
+
+			case "$FILESYSTEMTYPE" in
+				"ext4"|"xfs"|"btrfs")
+					perl -pi -e "s/system.file_allocate.set = no/system.file_allocate.set = yes/g" /home/$FnUser/.rtorrent.rc
+				;;
+				*)
+					perl -pi -e "s/^system.file_allocate.set = yes/system.file_allocate.set = no/g" /home/$FnUser/.rtorrent.rc
+				;;
+			esac
+
+			# Watch directories
+			if [ ! -z "$Directories" ]; then
+				NumLign=$(sed -n "/watch_directory/=" /home/$FnUser/.rtorrent.rc)
+				sed -i '/watch_directory/d' /home/$FnUser/.rtorrent.rc
+				Count=0
+				for Directory in $Directories; do
+					sed -i "${NumLign}i\schedule = watch_directory_$Count,5,5,\"load_start=~\/rtorrent\/watch\/$Directory\/*.torrent,d.set_custom1=~\/rtorrent\/complete\/$Directory\/,d.delete_tied=\"" /home/$FnUser/.rtorrent.rc
+					(( NumLign++ ))
+					(( Count++ ))
+				done
+			fi
+		fi
+	fi
 }
 
 #### Monthly payment

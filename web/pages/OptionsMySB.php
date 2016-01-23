@@ -33,7 +33,10 @@ $rTorrentVersionsList = array('v0.9.2', 'v0.9.6');
 $LanguagesList = array('english', 'french');
 
 if (isset($_POST['submit'])) {
-	$Change=0;
+	$RefreshPage = 0;
+	$Change = 0;
+	$type = 'information';
+	$message = Global_NoChange;
 	// Get values from POST
 	$rTorrentVersion_POST = $_POST['rTorrentVersion'];
 	$rTorrentRestart_POST = $_POST['rTorrentRestart'];
@@ -47,18 +50,22 @@ if (isset($_POST['submit'])) {
 		$count = count($_POST['input_id']);
 		for($i=1; $i<=$count; $i++) {
 			$Directory = preg_replace('/\s\s+/', '', $_POST['directory'][$i]);
-			$IfExist = $MySB_DB->get("users_rtorrent_cfg", "id_users_rtorrent_cfg", [
-																"AND" => [
-																	"id_users" => $UserID,
-																	"sub_directory" => $Directory
-																]
-															]);
 
-			if ( !empty($IfExist) ) {
-				$result = $MySB_DB->insert("users_rtorrent_cfg", ["id_users" => "$UserID", "sub_directory" => "$Directory", "can_be_deleted" => 1]);
-				if( $result != 0 ) {
-					$Change++;
-					$rTorrentRestart_POST = 1;
+			if ( !empty($Directory) ) {
+				$IfExist = $MySB_DB->get("users_rtorrent_cfg", "id_users_rtorrent_cfg", [
+																	"AND" => [
+																		"id_users" => $UserID,
+																		"sub_directory" => $Directory
+																	]
+																]);
+
+				if ( empty($IfExist) ) {
+					$result = $MySB_DB->insert("users_rtorrent_cfg", ["id_users" => "$UserID", "sub_directory" => "$Directory", "can_be_deleted" => 1]);
+					if( $result != 0 ) {
+						$Change++;
+						$RefreshPage++;
+						$rTorrentRestart_POST = 1;
+					}
 				}
 			}
 		}
@@ -72,6 +79,7 @@ if (isset($_POST['submit'])) {
 			$result = $MySB_DB->update("users_rtorrent_cfg", ["to_delete" => 1], ["sub_directory" => "$ToDelDirectory"]);
 			if ( $result > 0 ) {
 				$Change++;
+				$RefreshPage++;
 				$rTorrentRestart_POST = 1;
 			}
 		}
@@ -81,26 +89,35 @@ if (isset($_POST['submit'])) {
 	if ( ($rTorrentVersion_POST != $rTorrentVersion_DB) || ($rTorrentRestart_POST == "1") ) {
 		$rTorrentRestart_POST = 1;
 		$Command = 'Options_MySB';
+		$Change++;
+		$RefreshPage++;
 	}
 
 	// Language
-	
-	$result = $MySB_DB->update("users", ["rtorrent_version" => "$rTorrentVersion_POST", "rtorrent_restart" => "$rTorrentRestart_POST"], ["users_ident" => "$CurrentUser"]);
+	if ( $Language_POST != $Language_DB ) {
+		$Change++;
+		$RefreshPage++;
+		// Change language of Cakebox-Light
+		ChangeCakeboxLanguage($CurrentUser, $Language_POST);
 
-	if( $result >= 0 ) {
-		$type = 'success';
-	} else {
-		$type = 'information';
-		$message = Global_NoChange;
+		// Change language of ownCloud
+		ChangeOwnCloudLanguage($CurrentUser, $Language_POST);
+	}
+
+	if( $Change >= 1 ) {
+		$result = $MySB_DB->update("users", ["rtorrent_version" => "$rTorrentVersion_POST", "rtorrent_restart" => "$rTorrentRestart_POST", "language" => "$Language_POST"], ["users_ident" => "$CurrentUser"]);
+
+		if( $result >= 0 ) {
+			$type = 'success';
+			unset($message);
+		}
 	}
 
 	GenerateMessage($Command, $type, $message);
-
-	// Change language of Cakebox-Light
-	ChangeCakeboxLanguage($CurrentUser, $Language_POST);
-
-	// Change language of ownCloud
-	ChangeOwnCloudLanguage($CurrentUser, $Language_POST);
+	
+	if( $RefreshPage == 1 ) {
+		header('Refresh: 2; URL='.$_SERVER['HTTP_REFERER'].'');
+	}
 }
 
 // Get values from database
@@ -119,7 +136,7 @@ $language = $users_datas['language'];
 	<table>
 		<tr>
 			<td><?php echo User_OptionsMySB_rTorrentVersion; ?></td>
-			<td>		
+			<td>
 				<select name="rTorrentVersion" style="width:80px; height: 28px;">';
 				<?php foreach($rTorrentVersionsList as $Version) {
 					if ( $rtorrent_version == $Version) {
@@ -155,20 +172,18 @@ $language = $users_datas['language'];
 		<tr>
 			<td><?php echo User_OptionsMySB_Language; ?></td>
 			<td>
-				<input id="user_ident" name="user_ident" type="hidden" value="<?php echo $CurrentUser; ?>" />
-				<select name="language" style="width:90px; height: 28px;" onchange="UpdateLanguage()">
+				<select name="language" style="width:90px; height: 28px;">';
 				<?php switch ($language) {
 					case 'fr':
-						echo '<option language="fr" selected="selected">' .User_OptionsMySB_Lang_French. '</option>';
-						echo '<option language="en">' .User_OptionsMySB_Lang_English. '</option>';
+						echo '<option selected="selected" value="fr">' .User_OptionsMySB_Lang_French. '</option>';
+						echo '<option value="en">' .User_OptionsMySB_Lang_English. '</option>';
 						break;
 					default:
-						echo '<option language="fr">' .User_OptionsMySB_Lang_French. '</option>';
-						echo '<option language="en" selected="selected">' .User_OptionsMySB_Lang_English. '</option>';
+						echo '<option value="fr">' .User_OptionsMySB_Lang_French. '</option>';
+						echo '<option selected="selected" value="en">' .User_OptionsMySB_Lang_English. '</option>';
 						break;
 				} ?>
 				</select>
-				<div id="response"></div>
 			</td>
 		</tr>
 	</table>
@@ -187,7 +202,7 @@ $language = $users_datas['language'];
 			<input type="button" id="btnDel" value="<?php echo User_OptionsMySB_rTorrentConfigDelDirectory; ?>" style="cursor: pointer;" />
 		</div>
 		<div align="center"><p class="Comments"><?php echo User_OptionsMySB_rTorrentConfigComment; ?></p></div>
-		
+
 		<table>
 			<tr>
 				<th style="text-align:center;"><?php echo User_OptionsMySB_rTorrentConfig_Table_Title; ?></th>
@@ -197,8 +212,8 @@ $language = $users_datas['language'];
 			<tr>
 				<td><?php echo $Directory['sub_directory']; ?></td>
 				<td>
-					<input class="submit" name="delete_dir[]" type="checkbox" value="<?php echo $Directory['sub_directory']; ?>" />
-				</td>				
+					<input class="submit" name="delete_dir[]" type="checkbox" value="<?php echo $Directory['sub_directory']; ?>" <?php echo ($Directory['to_delete'] == '1') ? 'checked' : ''; ?> />
+				</td>
 			</tr>
 <?php } ?>
 		</table>

@@ -36,122 +36,113 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 #### Includes
 source /etc/MySB/config
 source $MySB_InstallDir/inc/vars
+source /lib/lsb/init-functions
 
 ## Username to run rtorrent under, make sure you have a .rtorrent.rc in the
 ## home directory of this user!
-USER="<username>"
+Username="<username>"
 
 ## User home dir
-HOMEDIR="/home/$USER"
-
-## ruTorrent dir
-RUTORRENT_DIR="<rutorrent_dir>"
+HomeDir="/home/$Username"
 
 ## Absolute path to the rtorrent binary.
-VERSION="`Func_SQL_Command 'SELECT' 'MySB_db' 'rtorrent_version' 'users' "users_ident = '$USER'"`"
-case "$VERSION" in
+rTorrentVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'rtorrent_version' 'users' "users_ident = '$Username'"`"
+case "$rTorrentVersion" in
 	"v0.9.2")
-		RTORRENT="/usr/bin/rtorrent"
+		rTorrentBin="/usr/bin/rtorrent"
 	;;
 	"v0.9.6")
-		RTORRENT="/usr/local/bin/rtorrent"
+		rTorrentBin="/usr/local/bin/rtorrent"
 	;;
 	*)
-		RTORRENT="/usr/bin/rtorrent"
+		rTorrentBin="/usr/bin/rtorrent"
 	;;
 esac
 
 ## Absolute path to the screen binary.
-SCREEN="/usr/bin/screen"
+ScreenBin="/usr/bin/screen"
 
 ## the full path to the filename where you store your rtorrent configuration
-CONFIG="$HOMEDIR/.rtorrent.rc"
-
-## LOG
-LOG_FILE="$HOMEDIR/logs/rTorrentInit.log"
-
-NAME="rtorrent-$USER"
-DESC="rTorrent for $USER"
-
-## Absolute path to rtorrent's PID file.
-PID="/var/run/rtorrent-$USER.pid"
-
-. /lib/lsb/init-functions
+ConfigFile="$HomeDir/.rtorrent.rc"
 
 ## rTorrent session directory
-getsession() {
-    SESSION=`cat "$CONFIG" | grep "^[[:space:]]*session.path.set[[:space:]]*=" | sed "s/^[[:space:]]*session.path.set[[:space:]]*=[[:space:]]*//" `
-    echo $SESSION
-}
+SessionDir="`cat $ConfigFile | grep "^[[:space:]]*session.path.set[[:space:]]*=" | sed "s/^[[:space:]]*session.path.set[[:space:]]*=[[:space:]]*//"`"
 
-if ! [ -e $LOG_FILE ]; then
-	touch $LOG_FILE
+## Command Infos
+CommandName="rtorrent-$Username"
+CommandDescription="rTorrent for $Username"
+
+## Absolute path to rtorrent's PID file.
+PidFile="/var/run/rtorrent-$Username.pid"
+
+## LOG
+LogFile="$HomeDir/logs/rTorrentInit.log"
+if ! [ -e $LogFile ]; then
+	touch $LogFile
 fi
 
 ## Create PID file for rTorrent
-create_rtorrent_pid_file() {
-	SESSION=`getsession "$CONFIG"`
+CreatePidFile() {
 	sleep 2
-	if [ -e $SESSION/rtorrent.lock ]; then
-		cat $SESSION/rtorrent.lock | awk -F: '{print($2)}' | sed "s/[^0-9]//g" > $SESSION/rtorrent.pid
-		echo "Create rTorrent PID file: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
+	if [ -e $SessionDir/rtorrent.lock ]; then
+		cat $SessionDir/rtorrent.lock | awk -F: '{print($2)}' | sed "s/[^0-9]//g" > $SessionDir/rtorrent.pid
+		echo "Create rTorrent PID file: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
 	fi
 }
 
 ## Delete rtorrent.lock
-delete_lock_file() {
-	SESSION=`getsession "$CONFIG"`
-    if [ -e $SESSION/rtorrent.lock ]; then
-        rm -f $SESSION/rtorrent.lock
-		echo "Delete rTorrent LOCK file: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
+DeleteLockFile() {
+    if [ -e $SessionDir/rtorrent.lock ]; then
+        rm -f $SessionDir/rtorrent.lock
+		echo "Delete rTorrent LOCK file: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
     fi
-    if [ -e $SESSION/rtorrent.pid ]; then
-        rm -f $SESSION/rtorrent.pid
-		echo "Delete rTorrent PID file: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
+    if [ -e $SessionDir/rtorrent.pid ]; then
+        rm -f $SessionDir/rtorrent.pid
+		echo "Delete rTorrent PID file: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
     fi
 }
 
 ## Delete user PID file
-delete_pid_file() {
-    if [ -e $PID ]; then
-        rm -f $PID
-		echo "Delete screen PID file: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
+DeletePidFile() {
+    if [ -e $PidFile ]; then
+        rm -f $PidFile
+		echo "Delete screen PID file: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
     fi
 }
 
 ## mount share dir for seedbox users
-mount_share() {
-	MOUNT=`df -H 2> /dev/null | grep "$HOMEDIR/rtorrent/share"`
+MountShareDir() {
+	MOUNT="`df -H 2> /dev/null | grep "$HomeDir/rtorrent/share"`"
 
 	case "$1" in
 		"mount")
 			if [ -z "$MOUNT" ]; then
-				umount $HOMEDIR/rtorrent/share > /dev/null 2>&1
-				mount --bind /home/MySB_share $HOMEDIR/rtorrent/share 2>> $LOG_FILE
+				umount $HomeDir/rtorrent/share > /dev/null 2>&1
+				mount --bind /home/MySB_share $HomeDir/rtorrent/share 2>> $LogFile
 			fi
 		;;	
 		"umount")
 			if [ ! -z "$MOUNT" ]; then
-				umount $HOMEDIR/rtorrent/share 2>> $LOG_FILE
+				umount $HomeDir/rtorrent/share 2>> $LogFile
 			fi
 		;;
 	esac
 }
 
 ## mount torrents dir for seedbox users
-mount_torrents_storage() {
-	MOUNT=`df -H 2> /dev/null | grep "$HOMEDIR/rtorrent/torrents"`
+MountTorrentsDir() {
+	MOUNT="`df -H 2> /dev/null | grep "$HomeDir/rtorrent/torrents"`"
 
 	case "$1" in
 		"mount")
-			if [ -z "$MOUNT" ] && [ -d $RUTORRENT_DIR/share/users/$USER/torrents ]; then
-				umount $HOMEDIR/rtorrent/torrents > /dev/null 2>&1
-				mount --bind $RUTORRENT_DIR/share/users/$USER/torrents $HOMEDIR/rtorrent/torrents 2>> $LOG_FILE
+			if [ -z "$MOUNT" ] && [ -d $RutorrentDir/share/users/$Username/torrents ]; then
+				umount $HomeDir/rtorrent/torrents > /dev/null 2>&1
+				mount --bind $RutorrentDir/share/users/$Username/torrents $HomeDir/rtorrent/torrents 2>> $LogFile
 			fi
 		;;	
 		"umount")
 			if [ ! -z "$MOUNT" ]; then
-				umount $HOMEDIR/rtorrent/torrents 2>> $LOG_FILE
+				umount $HomeDir/rtorrent/torrents 2>> $LogFile
 			fi
 		;;
 	esac
@@ -160,19 +151,20 @@ mount_torrents_storage() {
 #
 # Function that starts the daemon/service
 #
-do_start() {
-	mount_share mount
-	mount_torrents_storage mount
+DoStart() {
+	MountShareDir 'mount'
+	MountTorrentsDir 'mount'
+	source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
+	CreateRtorrentConfigFile "$Username"
 
 	# Delete ghost screen pid file
-	if [ -e $PID ]; then
-		pidofproc -p $PID $SCREEN &> /dev/null || rm -f $PID
+	if [ -e $PidFile ]; then
+		pidofproc -p $PidFile $ScreenBin &> /dev/null || rm -f $PidFile
 	fi
 
 	# Delete ghost rtorrent lock file
-	if [ -e $SESSION/rtorrent.pid ]; then
-		SESSION=`getsession "$CONFIG"`
-		pidofproc -p $SESSION/rtorrent.pid $SCREEN &> /dev/null || rm -f $SESSION/rtorrent.pid $SESSION/rtorrent.lock 2>> $LOG_FILE
+	if [ -e $SessionDir/rtorrent.pid ]; then
+		pidofproc -p $SessionDir/rtorrent.pid $ScreenBin &> /dev/null || rm -f $SessionDir/rtorrent.pid $SessionDir/rtorrent.lock 2>> $LogFile
 	fi
 	
 	# Return
@@ -180,33 +172,33 @@ do_start() {
 	#   1 if daemon was already running
 	#   2 if daemon could not be started
 	start-stop-daemon --start --quiet --background --make-pidfile --test \
-		--pidfile $PID\
-		--chuid $USER\
-		--exec $SCREEN\
-		-- -DmUS $NAME $RTORRENT\
-		 2>> $LOG_FILE || return 1
+		--pidfile $PidFile\
+		--chuid $Username\
+		--exec $ScreenBin\
+		-- -DmUS $CommandName $rTorrentBin\
+		 2>> $LogFile || return 1
 
 	start-stop-daemon --start --quiet --background --make-pidfile \
-		--pidfile $PID\
-		--chuid $USER\
-		--exec $SCREEN\
-		-- -DmUS $NAME $RTORRENT\
-		 2>> $LOG_FILE || return 2
+		--pidfile $PidFile\
+		--chuid $Username\
+		--exec $ScreenBin\
+		-- -DmUS $CommandName $rTorrentBin\
+		 2>> $LogFile || return 2
 }
 
 #
 # Function that stops the daemon/service
 #
-do_stop() {
-	mount_share umount
-	mount_torrents_storage umount
+DoStop() {
+	MountShareDir 'umount'
+	MountTorrentsDir 'umount'
 
 	# Return
 	#   0 if daemon has been stopped
 	#   1 if daemon was already stopped
 	#   2 if daemon could not be stopped
 	#   other if a failure occurred
-	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PID --exec "$SCREEN" 2>> $LOG_FILE
+	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PidFile --exec "$ScreenBin" 2>> $LogFile
 	RETVAL="$?"	
 
 	sleep 1
@@ -216,44 +208,43 @@ do_stop() {
 #
 # Function that sends a SIGHUP to the daemon/service
 #
-do_reload() {
-	echo "RELOAD: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
+DoReload() {
+	echo "RELOAD: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
 	# Delete ghost screen pid file
-	if [ -e $PID ]; then
-		pidofproc -p $PID $SCREEN &> /dev/null || rm -f $PID
+	if [ -e $PidFile ]; then
+		pidofproc -p $PidFile $ScreenBin &> /dev/null || rm -f $PidFile
 	fi
 
 	# Delete ghost rtorrent lock file
-	if [ -e $SESSION/rtorrent.pid ]; then
-		SESSION=`getsession "$CONFIG"`
-		pidofproc -p $SESSION/rtorrent.pid $SCREEN &> /dev/null || rm -f $SESSION/rtorrent.pid $SESSION/rtorrent.lock 2>> $LOG_FILE
+	if [ -e $SessionDir/rtorrent.pid ]; then
+		pidofproc -p $SessionDir/rtorrent.pid $ScreenBin &> /dev/null || rm -f $SessionDir/rtorrent.pid $SessionDir/rtorrent.lock 2>> $LogFile
 	fi
 
-	start-stop-daemon --stop --signal HUP --quiet --pidfile $PID --exec "$SCREEN" 2>> $LOG_FILE
+	start-stop-daemon --stop --signal HUP --quiet --pidfile $PidFile --exec "$ScreenBin" 2>> $LogFile
 	return $?
 }
 
 #
 # Function stop case
 #
-restart_stop_case() {
-	do_start
+RestartStopCase() {
+	DoStart
 	case "$?" in
 		0)
-			echo "RESTART: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
-			create_rtorrent_pid_file
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "rtorrent_restart = '0'" "users_ident = '$USER'"
+			echo "RESTART: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+			CreatePidFile
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "rtorrent_restart = '0'" "users_ident = '$Username'"
 			log_end_msg 0
 		;;
 		1) # Old process is still running
-			echo "Could not be restarted, old process is still running: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
-			create_rtorrent_pid_file
+			echo "Could not be restarted, old process is still running: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+			CreatePidFile
 			log_end_msg 1
 		;;
 		*) # Failed to start
-			echo "Could not be restarted: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
-			delete_lock_file
-			delete_pid_file
+			echo "Could not be restarted: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+			DeleteLockFile
+			DeletePidFile
 			log_end_msg 1
 		;;
 	esac
@@ -261,77 +252,77 @@ restart_stop_case() {
 
 case "$1" in
 	start)
-		log_daemon_msg "Starting $DESC" "$NAME"
-		do_start
+		log_daemon_msg "Starting $CommandDescription" "$CommandName"
+		DoStart
 		case "$?" in
 			0)
-				echo "START: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
-				create_rtorrent_pid_file
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "rtorrent_restart = '0'" "users_ident = '$USER'"
+				echo "START: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+				CreatePidFile
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "rtorrent_restart = '0'" "users_ident = '$Username'"
 				log_end_msg 0
 			;;
 			1)
-				echo "Already running: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
-				create_rtorrent_pid_file
+				echo "Already running: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+				CreatePidFile
 				log_end_msg 0
 			;;
 			2)
-				echo "Could not be started: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
-				delete_lock_file
-				delete_pid_file
+				echo "Could not be started: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+				DeleteLockFile
+				DeletePidFile
 				log_end_msg 1
 			;;
 		esac
 	;;
 
 	stop)
-		log_daemon_msg "Stopping $DESC" "$NAME"
-		do_stop
+		log_daemon_msg "Stopping $CommandDescription" "$CommandName"
+		DoStop
 		case "$?" in
 			0)
-				echo "STOP: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
-				delete_lock_file
-				delete_pid_file
+				echo "STOP: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+				DeleteLockFile
+				DeletePidFile
 				log_end_msg 0
 			;;
 			1)
-				echo "Already stopped: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
-				delete_lock_file
-				delete_pid_file
+				echo "Already stopped: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+				DeleteLockFile
+				DeletePidFile
 				log_end_msg 0
 			;;
 			2)
-				echo "Could not be stopped: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
+				echo "Could not be stopped: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
 				log_end_msg 1
 			;;
 		esac
 	;;
 	
 	restart)
-		log_daemon_msg "Restarting $DESC" "$NAME"
-		do_stop
+		log_daemon_msg "Restarting $CommandDescription" "$CommandName"
+		DoStop
 		case "$?" in
 			0)
-				restart_stop_case
+				RestartStopCase
 			;;
 			1)
-				restart_stop_case
+				RestartStopCase
 			;;
 			*) # Failed to stop
-				echo "Could not be restarted: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
+				echo "Could not be restarted: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
 				log_end_msg 1
 			;;
 		esac
 	;;
 
 	reload)
-		log_daemon_msg "Reloading $DESC configuration" "$NAME"
-		do_reload
+		log_daemon_msg "Reloading $CommandDescription configuration" "$CommandName"
+		DoReload
 		log_end_msg $?
 	;;
 
 	status)
-		status_of_proc -p $PID "$SCREEN" "$NAME" && exit 0 || exit $?
+		status_of_proc -p $PidFile "$ScreenBin" "$CommandName" && exit 0 || exit $?
 	;;
 
 	*)

@@ -45,8 +45,41 @@ if ( isset($_GET['page']) ) {
 	}
 }
 
-// Databases framework
-require_once(WEB_INC . '/databases.php');
+// Databases
+require_once(FILE_MEDOO);
+$MySB_DB = new medoo([
+	// required
+	'database_type' => 'mysql',
+	'database_name' => MySQL_MySB_DB,
+	'server' => 'localhost',
+	'username' => MySQL_MysbUser,
+	'password' => MySQL_MysbPassword,
+	'charset' => 'utf8',
+	'port' => 3306,
+	'option' => [
+		PDO::ATTR_CASE => PDO::CASE_NATURAL,
+		PDO::ATTR_ORACLE_NULLS => PDO::NULL_TO_STRING
+	]
+]);
+$Wolf_DB = new medoo([
+	'database_type' => 'sqlite',
+	'database_file' => Wolf_DB,
+	'database_name' => 'Wolf'
+]);
+$ownCloud_DB = new medoo([
+	// required
+	'database_type' => 'mysql',
+	'database_name' => MySQL_ownCloud_DB,
+	'server' => 'localhost',
+	'username' => MySQL_MysbUser,
+	'password' => MySQL_MysbPassword,
+	'charset' => 'utf8',
+	'port' => 3306,
+	'option' => [
+		PDO::ATTR_CASE => PDO::CASE_NATURAL,
+		PDO::ATTR_ORACLE_NULLS => PDO::NULL_TO_STRING
+	]
+]);
 
 // Users table
 if ( (isset($_SERVER['PHP_AUTH_USER'])) && (!isset($_GET['user'])) ) {
