@@ -243,14 +243,14 @@ ruTorrentUsersConfigs() {
 #### rTorrent Configuration file
 CreateRtorrentConfigFile() {
 	FnUser="$1"
-	if [ "$2" == "force" ]; then
+	IdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$FnUser'"`"
+	HomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
+	Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory,to_delete,can_be_deleted' 'users_rtorrent_cfg' "id_users = '$IdUser'"`"
+	if [ "$2" == "force" ] || [ ! -f $HomeDir/.rtorrent.rc ]; then
 		CreateNewFile=1
 	else
 		CreateNewFile=0
 	fi
-	IdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$FnUser'"`"
-	HomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
-	Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory,to_delete,can_be_deleted' 'users_rtorrent_cfg' "id_users = '$IdUser'"`"
 
 	if [ ! -z "$Directories" ]; then
 		for Directory in $Directories; do
@@ -259,46 +259,40 @@ CreateRtorrentConfigFile() {
 			CanBeDeleted="`echo $Directory | awk '{split($0,a,"|"); print a[3]}'`"
 
 			if [ -d $HomeDir/rtorrent/complete/$SubDirectory/ ] && [ -d $HomeDir/rtorrent/watch/$SubDirectory/ ]; then
-				CountFiles="`ls -A1 $HomeDir/rtorrent/complete/$SubDirectory/ | wc -l`"
+				CountFiles="`ls -A1 $HomeDir/rtorrent/complete/$SubDirectory/ | wc -l`"	
 				if [ $CountFiles -eq 0 ]; then
 					Func_SQL_Command 'UPDATE' 'MySB_db' 'users_rtorrent_cfg' "can_be_deleted = '1'" "id_users = '$IdUser' AND sub_directory = '$SubDirectory'"
-					CanBeDeleted=0
+					CanBeDeleted=1
 				else
 					Func_SQL_Command 'UPDATE' 'MySB_db' 'users_rtorrent_cfg' "can_be_deleted = '0'" "id_users = '$IdUser' AND sub_directory = '$SubDirectory'"
-					CanBeDeleted=1
+					CanBeDeleted=0
 				fi
 			fi
 
 			case "$CanBeDeleted" in
-				1) # New directory OR maybe to delete
+				1) # New directory OR maybe to delete	
 					case "$ToDelete" in
 						1)
 							CompleteDeleted=0
 							WatchDeleted=0
 							if [ -d $HomeDir/rtorrent/complete/$SubDirectory/ ]; then
-								rmdir $HomeDir/rtorrent/complete/$SubDirectory/ &> /dev/null
-								if [ $? -eq 0 ]; then
-									CompleteDeleted=1
-								fi
+								rmdir $HomeDir/rtorrent/complete/$SubDirectory/
+								if [ $? -eq 0 ]; then CompleteDeleted=1; fi
 							else
 								CompleteDeleted=1
 							fi
 							if [ -d $HomeDir/rtorrent/watch/$SubDirectory/ ]; then
-								rm -rf $HomeDir/rtorrent/watch/$SubDirectory/ &> /dev/null
-								if [ $? -eq 0 ]; then
-									WatchDeleted=1
-								fi
+								rm -rf $HomeDir/rtorrent/watch/$SubDirectory/
+								if [ $? -eq 0 ]; then WatchDeleted=1; fi
 							else
 								WatchDeleted=1
 							fi
-
 							if [ $CompleteDeleted -eq 1 ] && [ $WatchDeleted -eq 1 ]; then
 								Func_SQL_Command 'DELETE' 'MySB_db' 'users_rtorrent_cfg' "id_users = '$IdUser' AND sub_directory = '$SubDirectory'"
 								CreateNewFile=1
 							fi
 						;;
 						0)
-						echo "$HomeDir/rtorrent/complete/$SubDirectory"
 							# Directory to create
 							if [ ! -d $HomeDir/rtorrent/complete/$SubDirectory ]; then
 								mkdir -p $HomeDir/rtorrent/complete/$SubDirectory &> /dev/null

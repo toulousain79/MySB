@@ -73,10 +73,16 @@ if (isset($_POST['submit'])) {
 
 	// Sub-Directories - Delete
 	if (isset($_POST['delete_dir'])) {
+		$MySB_DB->update("users_rtorrent_cfg", ["to_delete" => 0], ["id_users" => $UserID]);
 		$count = count($_POST['delete_dir']);
 		for($i=0; $i<=$count; $i++) {
 			$ToDelDirectory = preg_replace('/\s\s+/', '', $_POST['delete_dir'][$i]);
-			$result = $MySB_DB->update("users_rtorrent_cfg", ["to_delete" => 1], ["sub_directory" => "$ToDelDirectory"]);
+			$result = $MySB_DB->update("users_rtorrent_cfg", ["to_delete" => 1], [
+																					"AND" => [
+																						"id_users" => $UserID,
+																						"sub_directory" => $ToDelDirectory
+																					]
+																				]);
 			if ( $result > 0 ) {
 				$Change++;
 				$RefreshPage++;
