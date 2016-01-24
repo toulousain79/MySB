@@ -498,4 +498,22 @@ function GenerateMessage($commands, $type, $message, $args) {
 	echo '<script type="text/javascript">generate_message("'. $type . '", ' . $timeout . ', "' . $message . '");</script>';
 }
 
+// Replaces accented characters
+function ReplacesAccentedCharacters($str, $encoding='utf-8') {
+	// TO HTML entities
+	$str = htmlentities($str, ENT_NOQUOTES, $encoding);
+
+	// From HTML entities TO non accented characters
+	// Ex: "&ecute;" => "e", "&Ecute;" => "E", "Ã " => "a" ...
+	$str = preg_replace('#&([A-za-z])(?:acute|grave|cedil|circ|orn|ring|slash|th|tilde|uml);#', '\1', $str);
+
+	// Replace ligatures like : Œ, Æ ...
+	// Ex: "Å“" => "oe"
+	$str = preg_replace('#&([A-za-z]{2})(?:lig);#', '\1', $str);
+	// Supprimer tout le reste
+	$str = preg_replace('#&[^;]+;#', '', $str);
+
+	return $str;
+}
+
 //#################### LAST LINE ######################################
