@@ -58,6 +58,9 @@ case "$1" in
 			sed -i '/apc.enable_cli/d' /etc/php5/mods-available/apcu.ini
 			echo "apc.enable_cli=1" >> /etc/php5/mods-available/apcu.ini
 		fi
+		if [ -f /etc/php5/fpm/conf.d/20-htscanner.ini ]; then
+			rm -v /etc/php5/fpm/conf.d/20-htscanner.ini
+		fi
 
 		#### RKHunter
 		sed -i '/"\/dev\/.udev"/d' /etc/rkhunter.conf
@@ -71,10 +74,20 @@ case "$1" in
 		fi
 		if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.initramfs'`" ]; then
 			sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.initramfs\"" /etc/rkhunter.conf
-		fi	
+		fi
 	;;
 	"AFTER")
-		return
+		#### PHP - /etc/php5/mods-available/apcu.ini
+		if [ -f /usr/lib/php5/20121212/htscanner.so ]; then
+			rm -v /usr/lib/php5/20121212/htscanner.so
+		fi
+
+		#### /etc/sudoers.d/MySB_users
+		if [ -f /etc/sudoers.d/MySB_users ]; then rm -vf /etc/sudoers.d/MySB_users; fi
+		ListingUsers
+		for seedUser in $UsersList; do
+			echo "$seedUser ALL = (root) NOPASSWD: /bin/bash $MySB_InstallDir/scripts/ownCloud.bsh*" | tee -a /etc/sudoers.d/MySB_users
+		done
 	;;
 esac
 

@@ -31,9 +31,13 @@ TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
 PackagesManage install "php5 php5-common php5-cli php5-fpm php5-curl php5-geoip php5-xmlrpc php5-gd php5-sqlite php5-mcrypt php5-json php5-mysql php5-intl php5-imagick php-xml-rss php5-apcu php5-dev"
 
 #### PECL
+if [ ! -z "`pecl list | grep htscanner`" ]; then
+	pecl uninstall htscanner
+fi
 if [ -z "`pecl list | grep htscanner`" ]; then
 	pecl install htscanner
-	echo "extension=htscanner.so" | tee -a /etc/php5/fpm/conf.d/20-htscanner.ini
+	echo "extension=htscanner.so" | tee -a /etc/php5/mods-available/htscanner.ini
+	php5enmod htscanner
 fi
 
 #### STOP services
@@ -55,9 +59,11 @@ perl -pi -e "s/file_uploads = Off/file_uploads = On/g" /etc/php5/fpm/php.ini
 perl -pi -e "s/post_max_size = 8M/post_max_size = 16M/g" /etc/php5/fpm/php.ini
 perl -pi -e "s/upload_max_filesize = 2M/upload_max_filesize = 16M/g" /etc/php5/fpm/php.ini
 perl -pi -e "s/^;date.timezone =/date.timezone = $TimeZoneEscaped/g" /etc/php5/fpm/php.ini
+perl -pi -e "s/^;always_populate_raw_post_data/always_populate_raw_post_data/g" /etc/php5/fpm/php.ini
 # /etc/php5/cli/php.ini
 perl -pi -e "s/^expose_php = On/expose_php = Off/g" /etc/php5/cli/php.ini
 perl -pi -e "s/^;date.timezone =/date.timezone = $TimeZoneEscaped/g" /etc/php5/cli/php.ini
+perl -pi -e "s/^;always_populate_raw_post_data/always_populate_raw_post_data/g" /etc/php5/cli/php.ini
 # /etc/php5/mods-available
 if [ -f /etc/php5/mods-available/apcu.ini.dpkg-dist ]; then
 	if [ ! -z "`cat /etc/php5/mods-available/apcu.ini | grep 'apc.enable_cli'`" ]; then

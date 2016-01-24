@@ -99,6 +99,12 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$Switch" != "INIT" ]; then
 	if [ -f $MySB_InstallDir/temp/owncloud_config.php ]; then
 		mv -v $MySB_InstallDir/temp/owncloud_config.php $ownCloudDir/config/config.php
 	fi
+	# Create needed directories
+	if [ ! -d $ownCloudDir/assets ]; then
+		mkdir $ownCloudDir/assets
+		chown www-data:www-data $ownCloudDir/assets
+		chmod 0750 $ownCloudDir/assets
+	fi
 
 	#### CRON
 	crontab -u www-data -l > /tmp/crontab.tmp
@@ -181,6 +187,7 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$Switch" != "INIT" ]; then
 		perl -pi -e "s/<PasswordSalt>/$PasswordSalt/g" $ownCloudDir/config/config.php
 		perl -pi -e "s/<Secret>/$Secret/g" $ownCloudDir/config/config.php
 		perl -pi -e "s/<Version>/$Version/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" $ownCloudDir/config/config.php
 		chown www-data:www-data $ownCloudDir/config/config.php
 		chmod 0640 $ownCloudDir/config/config.php
 	fi
@@ -215,6 +222,15 @@ if [ "$IsInstalled_ownCloud" == "YES" ] && [ "$Switch" == "INIT" ]; then
 	OnBoot="`Func_SQL_Command 'SELECT' 'MySB_db' 'on_boot' 'repositories' \"on_boot = '1' AND name = 'ownCloud'\"`"
 
 	if [ "$OnBoot" -eq 1 ]; then
+		ListingUsers
+		for seedUser in $UsersList; do
+			if [ ! -d /home/owncloud/$seedUser ]; then
+				mkdir -v /home/owncloud/$seedUser
+				chown www-data:www-data /home/owncloud/$seedUser
+				chmod 0755 /home/owncloud/$seedUser
+			fi
+		done
+
 		#### ownCloud upgrade
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:repair"
@@ -225,7 +241,6 @@ if [ "$IsInstalled_ownCloud" == "YES" ] && [ "$Switch" == "INIT" ]; then
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-js"
 
 		#### Create all existing MySB users
-		ListingUsers
 		for seedUser in $UsersList; do
 			UserExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'uid' 'oc_users' "uid='$seedUser'"`"
 

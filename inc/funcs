@@ -58,6 +58,18 @@ BannerGenerator() {
 	echo
 }
 
+#### User directories listing for new files
+function UserNewFiles {
+	for i in $(ls -1AFho $1 | grep ".*/$"); do
+		dir=$1"$i"
+		if [[ -d $dir ]]; then
+			cd $dir
+			ls -1AFho | grep "`date +%b\ %d`" | awk '{ print $8 }'
+			UserNewFiles $dir
+		fi
+	done
+}
+
 #### Send Mail
 SendMail() {
 	FnSubject="$1"
@@ -72,17 +84,26 @@ SendMail() {
 		service nginx restart &> /dev/null
 	fi
 
-	curl --silent --retry 2 --user $MySB_User:$MySB_Password "http://127.0.0.1:$Port_HTTP/UserInfoMail.php?case=$FnCase&user=$FnUser" > $MySB_InstallDir/temp/$FnUser.html
+	case "$FnCase" in
+		'new_files')
+			type="plain"
+			FnAttach="$MySB_InstallDir/temp/$FnUser.txt"
+			UserNewFiles "/home/$FnUser/rtorrent/complete/" > $FnAttach
+		;;
+		*)
+			curl --silent --retry 2 --user $MySB_User:$MySB_Password "http://127.0.0.1:$Port_HTTP/UserInfoMail.php?case=$FnCase&user=$FnUser" > $MySB_InstallDir/temp/$FnUser.html
+			if [ -s $MySB_InstallDir/temp/$FnUser.html ]; then
+				FnAttach="$MySB_InstallDir/temp/$FnUser.html"
+				type="html"
+			else
+				type="plain"
+			fi
+		;;
+	esac
 
 	if [ ! -z "$FnInfo" ]; then StatusLSB; fi
 
 	if [ ! -z "$FnInfo" ]; then log_daemon_msg "$Funcs_SendMail_SendingEmail $FnUser ($FnInfo)"; fi
-	if [ -s $MySB_InstallDir/temp/$FnUser.html ]; then
-		FnAttach="$MySB_InstallDir/temp/$FnUser.html"
-		type="html"
-	else
-		type="plain"
-	fi
 
 	if [ -z "$FnAttach" ]; then
 		echo "" | mail -a "From: MySB <$MainUserEmail>" -a "MIME-Version: 1.0" -a "Content-Type: text/$type" -s "$FnSubject" $FnUserMail
@@ -593,6 +614,10 @@ ManageDirectoriesAndFiles() {
 			chown -R www-data:www-data $ownCloudDir/apps/
 			chown -R www-data:www-data $ownCloudDir/config/
 			chown -R www-data:www-data $ownCloudDir/themes/
+			if [ -d -d $ownCloudDir/assets ]; then
+				chown www-data:www-data $ownCloudDir/assets
+				chmod 0750 $ownCloudDir/assets
+			fi
 			if [ ! -d /home/owncloud ]; then mkdir -p /home/owncloud; fi
 			if [ ! -f /home/owncloud/.ocdata ]; then touch /home/owncloud/.ocdata; fi
 			if [ ! -f /home/owncloud/index.html ]; then touch /home/owncloud/index.html; fi

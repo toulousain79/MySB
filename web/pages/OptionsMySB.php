@@ -40,9 +40,11 @@ if (isset($_POST['submit'])) {
 	// Get values from POST
 	$rTorrentVersion_POST = $_POST['rTorrentVersion'];
 	$rTorrentRestart_POST = $_POST['rTorrentRestart'];
+	$rTorrentNotify_POST = $_POST['rTorrentNotify'];
 	$Language_POST = $_POST['language'];
 	// Get values from database
 	$rTorrentVersion_DB = $users_datas['rtorrent_version'];
+	$rTorrentNotify_DB = $users_datas['rtorrent_notify'];
 	$Language_DB = $users_datas['language'];
 
 	// Sub-Directories - Add
@@ -100,6 +102,11 @@ if (isset($_POST['submit'])) {
 		$Change++;
 		$RefreshPage++;
 	}
+	// Modification ?
+	if ( $rTorrentNotify_POST != $rTorrentNotify_DB ) {
+		$Change++;
+		$RefreshPage++;
+	}
 
 	// Language
 	if ( $Language_POST != $Language_DB ) {
@@ -113,7 +120,7 @@ if (isset($_POST['submit'])) {
 	}
 
 	if( $Change >= 1 ) {
-		$result = $MySB_DB->update("users", ["rtorrent_version" => "$rTorrentVersion_POST", "rtorrent_restart" => "$rTorrentRestart_POST", "language" => "$Language_POST"], ["users_ident" => "$CurrentUser"]);
+		$result = $MySB_DB->update("users", ["rtorrent_version" => "$rTorrentVersion_POST", "rtorrent_restart" => "$rTorrentRestart_POST", "rtorrent_notify" => "$rTorrentNotify_POST", "language" => "$Language_POST"], ["users_ident" => "$CurrentUser"]);
 
 		if( $result >= 0 ) {
 			$type = 'success';
@@ -133,6 +140,7 @@ $users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
 $users_directories = $MySB_DB->select("users_rtorrent_cfg", "*", ["id_users" => "$UserID"]);
 $rtorrent_version = $users_datas['rtorrent_version'];
 $rtorrent_restart = $users_datas['rtorrent_restart'];
+$rtorrent_notify = $users_datas['rtorrent_notify'];
 $language = $users_datas['language'];
 ?>
 
@@ -170,6 +178,21 @@ $language = $users_datas['language'];
 				} ?>
 				</select>
 			</td>
+			<td><?php echo User_OptionsMySB_NotifyEmail; ?></td>
+			<td>
+				<select name="rTorrentNotify" style="width:80px; height: 28px;">';
+				<?php switch ($rtorrent_notify) {
+					case '1':
+						echo '<option selected="selected" value="1">' .Global_Yes. '</option>';
+						echo '<option value="0">' .Global_No. '</option>';
+						break;
+					default:
+						echo '<option value="1">' .Global_Yes. '</option>';
+						echo '<option selected="selected" value="0">' .Global_No. '</option>';
+						break;
+				} ?>
+				</select>
+			</td>			
 		</tr>
 	</table>
 	</fieldset>

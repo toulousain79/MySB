@@ -25,6 +25,7 @@
 define('User_OptionsMySB_Title_rTorrent', 'rTorrent');
 define('User_OptionsMySB_rTorrentVersion', 'rTorrent version:');
 define('User_OptionsMySB_rTorrentRestart', 'Restart rTorrent ?');
+define('User_OptionsMySB_NotifyEmail', 'Email notification ?');
 define('User_OptionsMySB_Title_rTorrentConfig', 'rTorrent Configuration File');
 define('User_OptionsMySB_rTorrentConfigDirectory', 'Torrents directories:');
 define('User_OptionsMySB_rTorrentConfigAddDirectory', 'Add a sub-directory');
