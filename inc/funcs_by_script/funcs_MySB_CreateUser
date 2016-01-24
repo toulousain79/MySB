@@ -248,8 +248,9 @@ CreateRtorrentConfigFile() {
 	else
 		CreateNewFile=0
 	fi
-	UserID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$FnUser'"`"
-	Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory,to_delete,can_be_deleted' 'users_rtorrent_cfg' "id_users = '$UserID'"`"
+	IdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$FnUser'"`"
+	HomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
+	Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory,to_delete,can_be_deleted' 'users_rtorrent_cfg' "id_users = '$IdUser'"`"
 
 	if [ ! -z "$Directories" ]; then
 		for Directory in $Directories; do
@@ -257,13 +258,13 @@ CreateRtorrentConfigFile() {
 			ToDelete="`echo $Directory | awk '{split($0,a,"|"); print a[2]}'`"
 			CanBeDeleted="`echo $Directory | awk '{split($0,a,"|"); print a[3]}'`"
 
-			if [ -d $HOMEDIR/rtorrent/complete/$SubDirectory/ ] && [ -d $HOMEDIR/rtorrent/watch/$SubDirectory/ ]; then
-				CountFiles="`ls -A1 $HOMEDIR/rtorrent/complete/$SubDirectory/ | wc -l`"
+			if [ -d $HomeDir/rtorrent/complete/$SubDirectory/ ] && [ -d $HomeDir/rtorrent/watch/$SubDirectory/ ]; then
+				CountFiles="`ls -A1 $HomeDir/rtorrent/complete/$SubDirectory/ | wc -l`"
 				if [ $CountFiles -eq 0 ]; then
-					Func_SQL_Command 'UPDATE' 'MySB_db' 'users_rtorrent_cfg' "can_be_deleted = '1'" "users_ident = '$FnUser' AND sub_directory = '$SubDirectory'"
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'users_rtorrent_cfg' "can_be_deleted = '1'" "id_users = '$IdUser' AND sub_directory = '$SubDirectory'"
 					CanBeDeleted=0
 				else
-					Func_SQL_Command 'UPDATE' 'MySB_db' 'users_rtorrent_cfg' "can_be_deleted = '0'" "users_ident = '$FnUser' AND sub_directory = '$SubDirectory'"
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'users_rtorrent_cfg' "can_be_deleted = '0'" "id_users = '$IdUser' AND sub_directory = '$SubDirectory'"
 					CanBeDeleted=1
 				fi
 			fi
@@ -272,37 +273,42 @@ CreateRtorrentConfigFile() {
 				1) # New directory OR maybe to delete
 					case "$ToDelete" in
 						1)
-							if [ -d $HOMEDIR/rtorrent/complete/$SubDirectory/ ]; then
-								rmdir $HOMEDIR/rtorrent/complete/$SubDirectory/ 2>> $LOG_FILE
-							fi
-							if [ $? -eq 0 ]; then
+							CompleteDeleted=0
+							WatchDeleted=0
+							if [ -d $HomeDir/rtorrent/complete/$SubDirectory/ ]; then
+								rmdir $HomeDir/rtorrent/complete/$SubDirectory/ &> /dev/null
+								if [ $? -eq 0 ]; then
+									CompleteDeleted=1
+								fi
+							else
 								CompleteDeleted=1
+							fi
+							if [ -d $HomeDir/rtorrent/watch/$SubDirectory/ ]; then
+								rm -rf $HomeDir/rtorrent/watch/$SubDirectory/ &> /dev/null
+								if [ $? -eq 0 ]; then
+									WatchDeleted=1
+								fi
 							else
-								CompleteDeleted=0
-							fi
-							if [ -d $HOMEDIR/rtorrent/watch/$SubDirectory/ ]; then
-								rm -rf $HOMEDIR/rtorrent/watch/$SubDirectory/ 2>> $LOG_FILE
-							fi
-							if [ $? -eq 0 ]; then
 								WatchDeleted=1
-							else
-								WatchDeleted=0
 							fi
+
 							if [ $CompleteDeleted -eq 1 ] && [ $WatchDeleted -eq 1 ]; then
-								Func_SQL_Command 'DELETE' 'MySB_db' 'users_rtorrent_cfg' "id_users = '$UserId' AND sub_directory = '$SubDirectory'"
+								Func_SQL_Command 'DELETE' 'MySB_db' 'users_rtorrent_cfg' "id_users = '$IdUser' AND sub_directory = '$SubDirectory'"
+								CreateNewFile=1
 							fi
 						;;
 						0)
+						echo "$HomeDir/rtorrent/complete/$SubDirectory"
 							# Directory to create
-							if [ ! -d $HOMEDIR/rtorrent/complete/$SubDirectory ]; then
-								mkdir -p $HOMEDIR/rtorrent/complete/$SubDirectory 2>> $LOG_FILE
-								chown root:$FnUser $HOMEDIR/rtorrent/complete/$SubDirectory 2>> $LOG_FILE
-								chmod 0775 $HOMEDIR/rtorrent/complete/$SubDirectory 2>> $LOG_FILE
+							if [ ! -d $HomeDir/rtorrent/complete/$SubDirectory ]; then
+								mkdir -p $HomeDir/rtorrent/complete/$SubDirectory &> /dev/null
+								chown root:$FnUser $HomeDir/rtorrent/complete/$SubDirectory &> /dev/null
+								chmod 0775 $HomeDir/rtorrent/complete/$SubDirectory &> /dev/null
 							fi
-							if [ ! -d $HOMEDIR/rtorrent/watch/$SubDirectory ]; then
-								mkdir -p $HOMEDIR/rtorrent/watch/$SubDirectory 2>> $LOG_FILE
-								chown root:$FnUser $HOMEDIR/rtorrent/watch/$SubDirectory 2>> $LOG_FILE
-								chmod 0775 $HOMEDIR/rtorrent/watch/$SubDirectory 2>> $LOG_FILE
+							if [ ! -d $HomeDir/rtorrent/watch/$SubDirectory ]; then
+								mkdir -p $HomeDir/rtorrent/watch/$SubDirectory &> /dev/null
+								chown root:$FnUser $HomeDir/rtorrent/watch/$SubDirectory &> /dev/null
+								chmod 0775 $HomeDir/rtorrent/watch/$SubDirectory &> /dev/null
 							fi
 							CreateNewFile=1
 						;;
@@ -313,43 +319,48 @@ CreateRtorrentConfigFile() {
 	fi
 
 	if [ $CreateNewFile -eq 1 ]; then
-		if [ -f /home/$FnUser/.rtorrent.rc ]; then
-			mv /home/$FnUser/.rtorrent.rc /home/$FnUser/.rtorrent.rc.old
+		if [ -f $HomeDir/.rtorrent.rc ]; then
+			mv $HomeDir/.rtorrent.rc $HomeDir/.rtorrent.rc.old
 		fi
-		if [ ! -f /home/$FnUser/.rtorrent.rc ]; then
+		if [ ! -f $HomeDir/.rtorrent.rc ]; then
 			PortSCGI="`Func_SQL_Command 'SELECT' 'MySB_db' 'scgi_port' 'users' "users_ident = '$FnUser'"`"
 			PortRtorrent="`Func_SQL_Command 'SELECT' 'MySB_db' 'rtorrent_port' 'users' "users_ident = '$FnUser'"`"
-			Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory' 'users_rtorrent_cfg' "id_users = '$UserID'"`"
+			Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory' 'users_rtorrent_cfg' "id_users = '$IdUser'"`"
 
-			cp $MySB_InstallDir/templates/rtorrent.rc.tmpl /home/$FnUser/.rtorrent.rc
-			perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /home/$FnUser/.rtorrent.rc
-			perl -pi -e "s/<server_ip>/$SrvIpAddress/g" /home/$FnUser/.rtorrent.rc
-			perl -pi -e "s/<username>/$FnUser/g" /home/$FnUser/.rtorrent.rc
-			perl -pi -e "s/<homedir>/\/home\/$FnUser/g" /home/$FnUser/.rtorrent.rc
-			perl -pi -e "s/<scgi_port>/$PortSCGI/g" /home/$FnUser/.rtorrent.rc
-			perl -pi -e "s/<port_range>/$PortRtorrent-$PortRtorrent/g" /home/$FnUser/.rtorrent.rc
+			cp $MySB_InstallDir/templates/rtorrent.rc.tmpl $HomeDir/.rtorrent.rc
+			chown root:elohim13 $HomeDir/.rtorrent.rc
+			chmod 0740 $HomeDir/.rtorrent.rc
+			perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" $HomeDir/.rtorrent.rc
+			perl -pi -e "s/<server_ip>/$SrvIpAddress/g" $HomeDir/.rtorrent.rc
+			perl -pi -e "s/<username>/$FnUser/g" $HomeDir/.rtorrent.rc
+			perl -pi -e "s/<homedir>/\/home\/$FnUser/g" $HomeDir/.rtorrent.rc
+			perl -pi -e "s/<scgi_port>/$PortSCGI/g" $HomeDir/.rtorrent.rc
+			perl -pi -e "s/<port_range>/$PortRtorrent-$PortRtorrent/g" $HomeDir/.rtorrent.rc
 			if [ "$MySB_PeerBlock" == "rTorrent" ]; then
-				perl -pi -e "s/#{1}ipv4_filter.load/ipv4_filter.load/g" /home/$FnUser/.rtorrent.rc
-				perl -pi -e "s/#{1}print/print/g" /home/$FnUser/.rtorrent.rc
-				perl -pi -e "s/#{1}schedule=load_filter/schedule=load_filter/g" /home/$FnUser/.rtorrent.rc
+				perl -pi -e "s/#{1}ipv4_filter.load/ipv4_filter.load/g" $HomeDir/.rtorrent.rc
+				perl -pi -e "s/#{1}print/print/g" $HomeDir/.rtorrent.rc
+				perl -pi -e "s/#{1}schedule=load_filter/schedule=load_filter/g" $HomeDir/.rtorrent.rc
 			fi
 
 			case "$FILESYSTEMTYPE" in
 				"ext4"|"xfs"|"btrfs")
-					perl -pi -e "s/system.file_allocate.set = no/system.file_allocate.set = yes/g" /home/$FnUser/.rtorrent.rc
+					perl -pi -e "s/system.file_allocate.set = no/system.file_allocate.set = yes/g" $HomeDir/.rtorrent.rc
 				;;
 				*)
-					perl -pi -e "s/^system.file_allocate.set = yes/system.file_allocate.set = no/g" /home/$FnUser/.rtorrent.rc
+					perl -pi -e "s/^system.file_allocate.set = yes/system.file_allocate.set = no/g" $HomeDir/.rtorrent.rc
 				;;
 			esac
 
 			# Watch directories
 			if [ ! -z "$Directories" ]; then
-				NumLign=$(sed -n "/watch_directory/=" /home/$FnUser/.rtorrent.rc)
-				sed -i '/watch_directory/d' /home/$FnUser/.rtorrent.rc
+				NumLign=$(sed -n "/watch_directory/=" $HomeDir/.rtorrent.rc)
 				Count=0
+				sed -i '/watch_directory/d' $HomeDir/.rtorrent.rc
+				sed -i "${NumLign}i\schedule = watch_directory_$Count,5,5,\"load_start=~\/rtorrent\/watch\/*.torrent,d.set_custom1=~\/rtorrent\/complete\/,d.delete_tied=\"" $HomeDir/.rtorrent.rc
+				(( NumLign++ ))
+				(( Count++ ))
 				for Directory in $Directories; do
-					sed -i "${NumLign}i\schedule = watch_directory_$Count,5,5,\"load_start=~\/rtorrent\/watch\/$Directory\/*.torrent,d.set_custom1=~\/rtorrent\/complete\/$Directory\/,d.delete_tied=\"" /home/$FnUser/.rtorrent.rc
+					sed -i "${NumLign}i\schedule = watch_directory_$Count,5,5,\"load_start=~\/rtorrent\/watch\/$Directory\/*.torrent,d.set_custom1=~\/rtorrent\/complete\/$Directory\/,d.delete_tied=\"" $HomeDir/.rtorrent.rc
 					(( NumLign++ ))
 					(( Count++ ))
 				done
