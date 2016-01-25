@@ -1,5 +1,7 @@
 <?php
 // ----------------------------------
+require_once '/etc/MySB/config.php';
+// ----------------------------------
 //  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 //   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 //    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,19 +24,23 @@
 //
 //#################### FIRST LINE #####################################
 
-global $MySB_DB, $CurrentUser;
+// VARs
+$Username = $_POST['username'];
+$Filename = $_POST['file'];
+$Dirname = $_POST['dir'];
+$rTorrentNotify = $MySB_DB->get("users", "rtorrent_notify", ["users_ident" => "$Username"]);
+$UserMail = $MySB_DB->get("users", "users_email", ["users_ident" => "$Username"]);
+$IfownCloud = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
 
-echo 'test';
-echo $CurrentUser;
-$language=$_POST['language'];
-$result = $MySB_DB->update("users", ["language" => "$language"], ["users_ident" => "$CurrentUser"]);
-if($result == 1)
-{
-echo "Record Updated Sucessfully";    
+// Mail notification
+if ( ($rTorrentNotify == '1') && (!empty($UserMail)) ) {
+	$UserMail = $MySB_DB->get("users", "users_email", ["users_ident" => "$Username"]);
+	$Message = "$Dirname/$Filename";
+	mail($UserMail, 'MySB - New file', $Message);
 }
-else
-{
-echo 'Try Again';    
-} 
 
-//#################### LAST LINE ######################################
+// ownCloud files scan
+if ( $IfownCloud == '1' ) {
+	$MySB_DB->update("system", ["owncloud_cron" => 1], ["id_system" => 1]);
+}
+?>
