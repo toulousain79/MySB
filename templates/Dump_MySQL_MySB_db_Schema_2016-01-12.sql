@@ -138,6 +138,7 @@ CREATE TABLE IF NOT EXISTS `system` (
   `pgl_email_stats` tinyint(1) NOT NULL DEFAULT '0',
   `pgl_watchdog_email` tinyint(1) NOT NULL DEFAULT '0',
   `dnscrypt` tinyint(1) NOT NULL DEFAULT '0',
+  `owncloud_cron` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_system`),
   UNIQUE KEY `mysb_version` (`mysb_version`,`mysb_user`,`mysb_password`,`hostname`,`ipv4`,`primary_inet`,`timezone`,`cert_password`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;

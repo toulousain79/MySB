@@ -30,13 +30,17 @@ if [ "$IsInstalled_ownCloud" == "YES" ]; then
 		echo `/bin/date '+%Y-%m-%d - %H:%M:%S'`" --> Files scan for $1" | tee -a $MySB_InstallDir/logs/$ScriptName.log
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:scan $1"
 	else
-		ListingUsers
-		for seedUser in $UsersList; do
-			if [ ! -z "`getent passwd $seedUser`" ]; then
-				echo `/bin/date '+%Y-%m-%d - %H:%M:%S'`" --> Files scan for $seedUser" | tee -a $MySB_InstallDir/logs/$ScriptName.log
-				su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:scan $seedUser"
-			fi
-		done
+		IfCron="`Func_SQL_Command 'SELECT' 'MySB_db' 'owncloud_cron' 'system' "id_system = '1'"`"
+		if [ $IfCron -eq 1 ]; then
+			ListingUsers
+			for seedUser in $UsersList; do
+				if [ ! -z "`getent passwd $seedUser`" ]; then
+					echo `/bin/date '+%Y-%m-%d - %H:%M:%S'`" --> Files scan for $seedUser" | tee -a $MySB_InstallDir/logs/$ScriptName.log
+					su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:scan $seedUser"
+				fi
+			done
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "owncloud_cron = '0'" "id_system = '1'"
+		fi
 	fi
 	echo `/bin/date '+%Y-%m-%d - %H:%M:%S'`" --> Files cleanup" | tee -a $MySB_InstallDir/logs/$ScriptName.log
 	su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:cleanup"
