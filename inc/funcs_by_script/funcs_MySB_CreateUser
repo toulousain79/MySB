@@ -235,13 +235,6 @@ ruTorrentUsersConfigs() {
 						fi
 						unset IsActive
 					;;
-					'autotools')
-						echo "[$Plugin]" >> $RutorrentDir/conf/users/$FnUser/plugins.ini
-						echo "enabled = off" >> $RutorrentDir/conf/users/$FnUser/plugins.ini
-						if [ -f $RutorrentDir/share/users/$FnUser/settings/autotools.dat ]; then
-							rm -f $RutorrentDir/share/users/$FnUser/settings/autotools.dat
-						fi
-					;;
 					*)
 						# 3) Enable it for each user
 						echo "[$Plugin]" >> $RutorrentDir/conf/users/$FnUser/plugins.ini
@@ -327,7 +320,14 @@ CreateRtorrentConfigFile() {
 		done
 	fi
 
+	# rTorrent.bsh
+	cp $MySB_InstallDir/templates/rtorrent/rtorrent.bsh.tmpl $HomeDir/rTorrent.bsh
+	perl -pi -e "s/<username>/$FnUser/g" $HomeDir/rTorrent.bsh
+	chown root:$FnUser $HomeDir/rTorrent.bsh
+	chmod 0750 $HomeDir/rTorrent.bsh
+
 	if [ $CreateNewFile -eq 1 ]; then
+		# .rtorrent.rc
 		if [ -f $HomeDir/.rtorrent.rc ]; then
 			mv $HomeDir/.rtorrent.rc $HomeDir/.rtorrent.rc.old
 		fi
@@ -337,7 +337,7 @@ CreateRtorrentConfigFile() {
 			Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory' 'users_rtorrent_cfg' "id_users = '$IdUser'"`"
 
 			cp $MySB_InstallDir/templates/rtorrent/rtorrent.rc.tmpl $HomeDir/.rtorrent.rc
-			chown root:elohim13 $HomeDir/.rtorrent.rc
+			chown root:$FnUser $HomeDir/.rtorrent.rc
 			chmod 0740 $HomeDir/.rtorrent.rc
 			perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" $HomeDir/.rtorrent.rc
 			perl -pi -e "s/<server_ip>/$SrvIpAddress/g" $HomeDir/.rtorrent.rc
@@ -373,6 +373,26 @@ CreateRtorrentConfigFile() {
 					(( NumLign++ ))
 					(( Count++ ))
 				done
+
+				# Disabling 'autotools' plugins
+				NumLign=$(sed -n "/\[autotools\]/=" $RutorrentDir/conf/users/$FnUser/plugins.ini)
+				sed "$NumLign"d"" -i $RutorrentDir/conf/users/$FnUser/plugins.ini
+				sed "$NumLign"d"" -i $RutorrentDir/conf/users/$FnUser/plugins.ini
+				echo "[autotools]" >> $RutorrentDir/conf/users/$FnUser/plugins.ini
+				echo "enabled = off" >> $RutorrentDir/conf/users/$FnUser/plugins.ini
+				if [ -f $RutorrentDir/share/users/$FnUser/settings/autotools.dat ]; then
+					mv $RutorrentDir/share/users/$FnUser/settings/autotools.dat $RutorrentDir/share/users/$FnUser/settings/autotools.dat.bak
+				fi
+			else
+				# Disabling 'autotools' plugins
+				NumLign=$(sed -n "/\[autotools\]/=" $RutorrentDir/conf/users/$FnUser/plugins.ini)
+				sed "$NumLign"d"" -i $RutorrentDir/conf/users/$FnUser/plugins.ini
+				sed "$NumLign"d"" -i $RutorrentDir/conf/users/$FnUser/plugins.ini
+				echo "[autotools]" >> $RutorrentDir/conf/users/$FnUser/plugins.ini
+				echo "enabled = user-defined" >> $RutorrentDir/conf/users/$FnUser/plugins.ini
+				if [ -f $RutorrentDir/share/users/$FnUser/settings/autotools.dat.bak ]; then
+					mv $RutorrentDir/share/users/$FnUser/settings/autotools.dat.bak $RutorrentDir/share/users/$FnUser/settings/autotools.dat
+				fi
 			fi
 		fi
 	fi
