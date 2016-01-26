@@ -36,7 +36,7 @@ $IfownCloud = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownClou
 if ( ($rTorrentNotify == '1') && (!empty($UserMail)) ) {
 	$UserMail = $MySB_DB->get("users", "users_email", ["users_ident" => "$Username"]);
 	$Subject = 'MySB - New file';
-	$Message = "$Dirname/$Filename";
+	$Message = "Dirname: $Dirname"."\r\n"."Filename: $Filename";
 	$Headers  = "From: $UserMail"."\r\n";
 	$Headers .= "Reply-To: $UserMail"."\r\n";
 	$Headers .= 'MIME-Version: 1.0' . "\r\n";
