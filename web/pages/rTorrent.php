@@ -28,14 +28,24 @@ require_once '/etc/MySB/config.php';
 $Username = $_POST['username'];
 $Filename = $_POST['file'];
 $Dirname = $_POST['dir'];
+$Language = $_POST['lang'];
 $rTorrentNotify = $MySB_DB->get("users", "rtorrent_notify", ["users_ident" => "$Username"]);
 $UserMail = $MySB_DB->get("users", "users_email", ["users_ident" => "$Username"]);
 $IfownCloud = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
 
+// Language
+switch ($Language) {
+	case 'fr':
+		$Subject = "MySB - Nouveau fichier disponible !";
+		break;
+
+	default:
+		$Subject = "MySB - New file available";
+}
+
 // Mail notification
 if ( ($rTorrentNotify == '1') && (!empty($UserMail)) ) {
 	$UserMail = $MySB_DB->get("users", "users_email", ["users_ident" => "$Username"]);
-	$Subject = 'MySB - New file';
 	$Message = "$Dirname$Filename"."\r\n";
 	$Headers  = "From: $UserMail"."\r\n";
 	$Headers .= "Reply-To: $UserMail"."\r\n";

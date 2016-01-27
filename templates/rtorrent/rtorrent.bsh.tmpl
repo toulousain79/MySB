@@ -30,10 +30,37 @@ if [ -z "`getent passwd $UserName`" ] || [ -z "$File" ] || [ -z "$Dir" ]; then
 	exit 0
 fi
 
+#### Language
+EnvLang="`echo ${LANG:0:2}`"
+Lang_French() {
+	Readme_AvailableVariables="Variables disponibles:
+\"$File\"	--> Nom du fichier/dossier téléchargé.
+\"$Dir\"	--> Dossier de destination."
+}
+Lang_English() {
+	Readme_AvailableVariables="Available variables:
+\"$File\"	--> Name of the file/folder downloaded.
+\"$Dir\"	--> Destination folder."
+}
+case "$EnvLang" in
+	en)
+		Lang_English
+	;;
+	fr)
+		Lang_French
+	;;
+	*)
+		Lang_English
+	;;
+esac
+
 #### Execute PHP command
-curl --data "username=$UserName&file=$File&dir=$Dir" http://localhost:8888/rTorrent.php
+curl --data "username=$UserName&file=$File&dir=$Dir&lang=$EnvLang" http://localhost:8888/rTorrent.php
 
 #### Execute user scripts
+if [ ! -f /home/$UserName/scripts/README ]; then
+	echo "$Readme_AvailableVariables" > /home/$UserName/scripts/README
+fi
 UserScripts="`ls -A1 /home/$UserName/scripts/`"
 if [ ! -z "$UserScripts" ]; then
 	for Script in $UserScripts; do
