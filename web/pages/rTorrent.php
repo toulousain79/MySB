@@ -28,9 +28,11 @@ require_once '/etc/MySB/config.php';
 $Username = $_POST['username'];
 $Filename = $_POST['file'];
 $Dirname = $_POST['dir'];
-$Language = $_POST['lang'];
-$rTorrentNotify = $MySB_DB->get("users", "rtorrent_notify", ["users_ident" => "$Username"]);
-$UserMail = $MySB_DB->get("users", "users_email", ["users_ident" => "$Username"]);
+
+$users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$Username"]);
+$Language = $users_datas["language"];
+$rTorrentNotify = $users_datas["rtorrent_notify"];
+$UserMail = $users_datas["users_email"];
 $IfownCloud = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
 
 // Language
