@@ -26,21 +26,32 @@ get_base_path="$1"
 get_custom1="$2"
 get_name="$3"
 UserName="<username>"
-if [ -z "`getent passwd $UserName`" ] || [ -z "$get_base_path" ] || [ -z "$get_name" ]; then
+Timestamp="`/bin/date +%Y%m%d%H%M%S`"
+if [ -z "`getent passwd $UserName`" ] || [ -z "$get_base_path" ] || [ -z "$get_custom1" ] || [ -z "$get_name" ]; then
 	exit 0
 fi
 
-#### Language
+#### LanguageTransfert vers le NAS terminé
 EnvLang="`echo ${LANG:0:2}`"
 Lang_French() {
 	Readme_AvailableVariables="Variables disponibles:
-\"\$get_name\"	--> Nom du fichier/dossier téléchargé.
-\"\$get_custom1\"	--> Dossier de destination."
+\"\$get_base_path\"	--> Emplacement initial du téléchargement.
+\"\$get_custom1\"	--> Nouvelle arborescence du téléchargement.
+\"\$get_name\"		--> Nom du téléchargement.
+
+Pour envoyer un mail à partir de votre script, vous pouvez utiliser la commande suivante:
+	subject=\"MySB - Transfert vers le NAS terminé !\"
+	curl --data \"username=$UserName&get_base_path=$get_base_path&get_custom1=$get_custom1&get_name=$get_name&subject=$subject\" http://localhost:8888/rTorrent.php"
 }
 Lang_English() {
 	Readme_AvailableVariables="Available variables:
-\"\$get_name\"	--> Name of the file/folder downloaded.
-\"\$get_custom1\"	--> Destination folder."
+\"\$get_base_path\"	--> Initial download location.
+\"\$get_custom1\"	--> New tree download.
+\"\$get_name\"		--> Download name.
+
+To send mail from your script, you can use the following command:
+	subject=\"MySB - NAS transfer finished !\"
+	curl --data \"username=$UserName&get_base_path=$get_base_path&get_custom1=$get_custom1&get_name=$get_name&subject=$subject\" http://localhost:8888/rTorrent.php"
 }
 case "$EnvLang" in
 	fr)
@@ -54,17 +65,17 @@ esac
 #### Moving download
 mv -u $get_base_path $get_custom1
 
-#### Execute PHP command
-curl --data "username=$UserName&file=$get_name&dir=$get_custom1" http://localhost:8888/rTorrent.php
+#### Execute PHP command (Mail notification + ownCloud CRON)
+curl --data "username=$UserName&get_base_path=$get_base_path&get_custom1=$get_custom1&get_name=$get_name" http://localhost:8888/rTorrent.php
+
+#### Creating README file
+echo "$Readme_AvailableVariables" > /home/$UserName/scripts/README
 
 #### Execute user scripts
-if [ ! -f /home/$UserName/scripts/README ]; then
-	echo "$Readme_AvailableVariables" > /home/$UserName/scripts/README
-fi
 UserScripts="`ls -A1 /home/$UserName/scripts/ | grep '.sh'`"
 if [ ! -z "$UserScripts" ]; then
 	for Script in $UserScripts; do
-		bash /home/$UserName/scripts/$Script "$get_base_path" "$get_custom1" "$get_name"
+		/usr/bin/screen -dmS elohim13_$Timestamp /bin/bash /home/$UserName/scripts/$Script "$get_base_path" "$get_custom1" "$get_name"; >> $LogFile;
 	done
 fi
 
