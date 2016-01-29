@@ -27,43 +27,8 @@ source $(dirname $0)/../inc/includes_before
 #### install
 PackagesManage install "ssh openssh-server"
 
-perl -pi -e "s/^Port 22/Port $Port_SSH/g" /etc/ssh/sshd_config
-perl -pi -e "s/^#Protocol 2/Protocol 2/g" /etc/ssh/sshd_config
-perl -pi -e "s/^X11Forwarding yes/X11Forwarding no/g" /etc/ssh/sshd_config
-perl -pi -e "s/Subsystem sftp \/usr\/lib\/openssh\/sftp-server/Subsystem sftp internal-sftp -l ERROR/g" /etc/ssh/sshd_config
-
-if [ "`cat /etc/ssh/sshd_config | grep 'DebianBanner'`" == "" ]; then
-	NumLign="`sed -n '/UsePAM yes/=' /etc/ssh/sshd_config`"
-	(( NumLign++ ))
-	sed -i "${NumLign}i\DebianBanner no" /etc/ssh/sshd_config
-fi
-
-if [ "`cat /etc/ssh/sshd_config | grep 'AllowGroups sshdusers MySB_users'`" == "" ]; then
-	echo "" >> /etc/ssh/sshd_config
-	echo "AllowGroups sshdusers MySB_users" >> /etc/ssh/sshd_config
-fi
-if [ "`cat /etc/ssh/sshd_config | grep 'Match Group MySB_users'`" == "" ]; then
-	echo "" >> /etc/ssh/sshd_config
-	echo "Match Group MySB_users" >> /etc/ssh/sshd_config
-	echo "        ChrootDirectory %h" >> /etc/ssh/sshd_config
-	echo "        ForceCommand internal-sftp" >> /etc/ssh/sshd_config	
-	echo "        AllowTcpForwarding no" >> /etc/ssh/sshd_config
-	echo "        X11Forwarding no" >> /etc/ssh/sshd_config
-else
-	if [ "`cat /etc/ssh/sshd_config | grep 'ChrootDirectory /home/%u'`" != "" ]; then
-		perl -pi -e "s/ChrootDirectory \/home\/%u/ChrootDirectory %u/g" /etc/ssh/sshd_config
-	fi
-	if [ "`cat /etc/ssh/sshd_config | grep 'AllowTcpForwarding no'`" == "" ]; then
-		NumLign="`sed -n '/ForceCommand internal-sftp/=' /etc/ssh/sshd_config`"
-		(( NumLign++ ))
-		sed -i "${NumLign}i\        AllowTcpForwarding no" /etc/ssh/sshd_config
-	fi
-	if [ "`cat /etc/ssh/sshd_config | grep 'X11Forwarding no'`" == "" ]; then
-		NumLign="`sed -n '/ForceCommand internal-sftp/=' /etc/ssh/sshd_config`"
-		(( NumLign++ ))
-		sed -i "${NumLign}i\        X11Forwarding no" /etc/ssh/sshd_config
-	fi
-fi
+cp $MySB_InstallDir/templates/etc.ssh.sshd_config.tmpl /etc/ssh/sshd_config
+perl -pi -e "s/<port_ssh>/$Port_SSH/g" /etc/ssh/sshd_config
 
 if [ "`cat /etc/group | grep sshdusers`" == "" ]; then
 	groupadd sshdusers
