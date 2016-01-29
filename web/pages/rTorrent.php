@@ -26,8 +26,9 @@ require_once '/etc/MySB/config.php';
 
 // VARs
 $Username = $_POST['username'];
-$Filename = $_POST['file'];
-$Dirname = $_POST['dir'];
+$get_name = $_POST['get_name'];
+$get_custom1 = $_POST['get_custom1'];
+$get_base_path = $_POST['get_base_path'];
 
 $users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$Username"]);
 $Language = $users_datas["language"];
@@ -42,13 +43,18 @@ switch ($Language) {
 		break;
 
 	default:
-		$Subject = "MySB - New file available";
+		$Subject = "MySB - New file available !";
+}
+
+// Who is making the request ? (rTorrent / Username)
+if ( isset($_POST['subject']) ) {
+	$Subject = $_POST['subject'];
 }
 
 // Mail notification
 if ( ($rTorrentNotify == '1') && (!empty($UserMail)) ) {
 	$UserMail = $MySB_DB->get("users", "users_email", ["users_ident" => "$Username"]);
-	$Message = "$Dirname$Filename"."\r\n";
+	$Message = "$get_custom1$get_name"."\r\n";
 	$Headers  = "From: $UserMail"."\r\n";
 	$Headers .= "Reply-To: $UserMail"."\r\n";
 	$Headers .= 'MIME-Version: 1.0' . "\r\n";
