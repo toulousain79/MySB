@@ -22,10 +22,11 @@
 ##################### FIRST LINE #####################################
 
 #### VARs
-File="$1"
-Dir="$2"
+get_base_path="$1"
+get_custom1="$2"
+get_name="$3"
 UserName="<username>"
-if [ -z "`getent passwd $UserName`" ] || [ -z "$File" ] || [ -z "$Dir" ]; then
+if [ -z "`getent passwd $UserName`" ] || [ -z "$get_base_path" ] || [ -z "$get_name" ]; then
 	exit 0
 fi
 
@@ -33,13 +34,13 @@ fi
 EnvLang="`echo ${LANG:0:2}`"
 Lang_French() {
 	Readme_AvailableVariables="Variables disponibles:
-\"\$File\"	--> Nom du fichier/dossier téléchargé.
-\"\$Dir\"	--> Dossier de destination."
+\"\$get_name\"	--> Nom du fichier/dossier téléchargé.
+\"\$get_custom1\"	--> Dossier de destination."
 }
 Lang_English() {
 	Readme_AvailableVariables="Available variables:
-\"\$File\"	--> Name of the file/folder downloaded.
-\"\$Dir\"	--> Destination folder."
+\"\$get_name\"	--> Name of the file/folder downloaded.
+\"\$get_custom1\"	--> Destination folder."
 }
 case "$EnvLang" in
 	fr)
@@ -50,8 +51,11 @@ case "$EnvLang" in
 	;;
 esac
 
+#### Moving download
+mv -u $get_base_path $get_custom1
+
 #### Execute PHP command
-curl --data "username=$UserName&file=$File&dir=$Dir" http://localhost:8888/rTorrent.php
+curl --data "username=$UserName&file=$get_name&dir=$get_custom1" http://localhost:8888/rTorrent.php
 
 #### Execute user scripts
 if [ ! -f /home/$UserName/scripts/README ]; then
@@ -60,7 +64,7 @@ fi
 UserScripts="`ls -A1 /home/$UserName/scripts/ | grep '.sh'`"
 if [ ! -z "$UserScripts" ]; then
 	for Script in $UserScripts; do
-		bash /home/$UserName/scripts/$Script "$File" "$Dir" >> /home/$UserName/logs/$Script.log
+		bash /home/$UserName/scripts/$Script "$get_base_path" "$get_custom1" "$get_name"
 	done
 fi
 
