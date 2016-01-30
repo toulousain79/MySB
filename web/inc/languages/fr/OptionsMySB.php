@@ -45,10 +45,10 @@ define('User_OptionsMySB_Hours', 'Heures');
 define('User_OptionsMySB_Days', 'Jours<br/>mois');
 define('User_OptionsMySB_Months', 'Mois');
 define('User_OptionsMySB_NumDay', 'Jours<br/>semaine');
-define('User_OptionsMySB_Command', 'Commande');
+define('User_OptionsMySB_Command', 'Script');
 define('User_OptionsMySB_Add', 'Ajouter');
 define('User_OptionsMySB_Crontab_Comment', 'Planifier l\'&eacute;xecution de scripts personnels à la fin de vos t&eacute;l&eacute;chargements.<br />
-Vos scripts doivent &ecirc;tre enregistr&eacute;s dans ~/crontab/.<br/>
+Vos scripts doivent &ecirc;tre enregistr&eacute;s dans ~/scripts/ avec ".cron" comme extension.<br/>
 Validez votre planification ici ;-) <a target="_blank" href="http://crontab.guru/">crontab.guru</a>');
 
 //#################### LAST LINE ######################################

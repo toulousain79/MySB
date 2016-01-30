@@ -1,54 +1,55 @@
-#!/bin/sh
+#!/bin/bash
 
 #### VARs
-LogFile="$HOME/scripts/rsync.log"
-Timestamp="`/bin/date +%Y%m%d%H%M%S`"
-PasswordFile="$HOME/scripts/password"
-
-# Source
-get_base_path="$1"
-get_custom1="$2"
-get_name="$3"
-
-# Destination
+# Destination(RSYNC)
 DstDir=""			# Destination directory without ending '/'. (ex: /home/myuser)
 DstSrv=""			# Hostname OR IP address of the destination. (ex: myserver.mydomain.com)
 DstPort=""			# SSH Port (ex: 22)
 DstUser=""			# SSH Username (ex: my_user)
 DstPass=""			# SSH Password
 
+LogFile="$HOME/scripts/rsync.log"
+
+# DO NOT MODIFY
+Timestamp="`/bin/date +%Y%m%d%H%M%S`"
+get_base_path="$1"
+get_custom1="$2"
+get_name="$3"
+
 # The current download is added to the list
 echo "$get_custom1$get_name" >> $HOME/scripts/rsync.list
 
-# Rsync already launched: STOP
-if [ -e $HOME/scripts/rsync.lock ]; then
-    exit 0
-fi
+if [ $OnlyByCron -eq 0 ]; then
+	# Rsync already launched: STOP
+	if [ -e $HOME/scripts/rsync.lock ]; then
+		exit 0
+	fi
 
-# Creating a lock file for do not launch two instances of in parallel
-touch $HOME/scripts/rsync.lock
+	# Creating a lock file for do not launch two instances of in parallel
+	touch $HOME/scripts/rsync.lock
 
-# Retrieving files to transfer
-Listing() {
-	Lign="$1"
-	echo "$Lign --> $DstUser@$DstSrv:$DstDir/" >> $LogFile
-	rsync -avv --rsh="/usr/bin/sshpass -p $DstPass ssh -p$DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $Lign $DstUser@$DstSrv:$DstDir/ >> $LogFile
+	# Retrieving files to transfer
+	Listing() {
+		Lign="$1"
+		echo "$Lign --> $DstUser@$DstSrv:$DstDir/" >> $LogFile
+		rsync -avv --rsh="/usr/bin/sshpass -p $DstPass ssh -p$DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $Lign $DstUser@$DstSrv:$DstDir/ >> $LogFile
 
-	# Deleting the file from the list
-	Lign="`echo $Lign | sed s,/,\\\\\\\\\\/,g`"
-	sed -i "/$Lign/d" $HOME/scripts/rsync.list
+		# Deleting the file from the list
+		Lign="`echo $Lign | sed s,/,\\\\\\\\\\/,g`"
+		sed -i "/$Lign/d" $HOME/scripts/rsync.list
 
-	# E-mail notification
-	subject="MySB - Transfer to NAS completed !"
-	curl --data "username=$UserName&get_base_path=$get_base_path&get_custom1=$get_custom1&get_name=$get_name&subject=$subject" http://localhost:8888/rTorrent.php
-}
+		# E-mail notification
+		subject="MySB - Transfer to NAS completed !"
+		curl --data "username=$UserName&get_base_path=$get_base_path&get_custom1=$get_custom1&get_name=$get_name&subject=$subject" http://localhost:8888/rTorrent.php
+	}
 
-# Execute
-while read Lign; do
-	Listing "$Lign"
-done < $HOME/scripts/rsync.list
+	# Execute
+	while read Lign; do
+		Listing "$Lign"
+	done < $HOME/scripts/rsync.list
 
-# Removing the lock file
-if [ -e $HOME/scripts/rsync.lock ]; then
-    rm -f $HOME/scripts/rsync.lock
+	# Removing the lock file
+	if [ -e $HOME/scripts/rsync.lock ]; then
+		rm -f $HOME/scripts/rsync.lock
+	fi
 fi
