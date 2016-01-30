@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS `blocklists` (
   `rtorrent_lastupdate` datetime NOT NULL,
   PRIMARY KEY (`id_blocklists`),
   UNIQUE KEY `url_infos` (`url_infos`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=44 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `commands` (
   `id_commands` int(11) NOT NULL AUTO_INCREMENT,
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS `providers_monitoring` (
   `ipv4` varchar(25) NOT NULL,
   `hostname` varchar(32) NOT NULL,
   PRIMARY KEY (`id_providers_monitoring`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=7 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `renting` (
   `id_renting` int(1) NOT NULL,
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS `repositories` (
   `type` varchar(5) NOT NULL,
   `dir` varchar(64) NOT NULL,
   `name` varchar(32) NOT NULL,
-  `version` varchar(8) NOT NULL,
+  `version` varchar(16) NOT NULL,
   `file` varchar(32) NOT NULL,
   `old_file` varchar(32) NOT NULL,
   `url` varchar(256) NOT NULL,
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS `repositories` (
   `on_boot` int(1) NOT NULL DEFAULT '0',
   `script` varchar(128) NOT NULL,  
   PRIMARY KEY (`id_repositories`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=33 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `services` (
   `id_services` int(11) NOT NULL AUTO_INCREMENT,
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS `services` (
   `is_installed` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_services`),
   UNIQUE KEY `serv_name` (`serv_name`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=25 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `smtp` (
   `id_smtp` int(11) NOT NULL AUTO_INCREMENT,
@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS `smtp` (
   `smtp_email` varchar(64) NOT NULL,
   PRIMARY KEY (`id_smtp`),
   UNIQUE KEY `smtp_provider` (`smtp_provider`,`smtp_username`,`smtp_passwd`,`smtp_host`,`smtp_port`,`smtp_email`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `system` (
   `id_system` int(11) NOT NULL,
@@ -224,7 +224,7 @@ CREATE TABLE IF NOT EXISTS `vars` (
   `white_tcp_port_out` varchar(16) NOT NULL,
   `white_udp_port_out` varchar(16) NOT NULL,
   PRIMARY KEY (`id_vars`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
