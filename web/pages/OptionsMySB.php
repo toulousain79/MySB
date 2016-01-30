@@ -26,97 +26,169 @@ global $MySB_DB, $users_datas, $CurrentUser, $system_datas;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 // VARs
-$UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$CurrentUser"]);
-$UserDirectories = $MySB_DB->select("users_rtorrent_cfg", "*", ["id_users" => "$UserID"]);
+$UserID = $users_datas['id_users'];
 $Command = 'message_only';
 $rTorrentVersionsList = array('v0.9.2', 'v0.9.6');
 $LanguagesList = array('english', 'french');
+$RefreshPage = 0;
+$Change = 0;
+$type = 'information';
+$message = Global_NoChange;
+
+// Get values from POST
+$rTorrentVersion_POST = $_POST['rTorrentVersion'];
+$rTorrentRestart_POST = $_POST['rTorrentRestart'];
+$rTorrentNotify_POST = $_POST['rTorrentNotify'];
+$Language_POST = $_POST['language'];
 
 if (isset($_POST['submit'])) {
-	$RefreshPage = 0;
-	$Change = 0;
-	$type = 'information';
-	$message = Global_NoChange;
-	// Get values from POST
-	$rTorrentVersion_POST = $_POST['rTorrentVersion'];
-	$rTorrentRestart_POST = $_POST['rTorrentRestart'];
-	$rTorrentNotify_POST = $_POST['rTorrentNotify'];
-	$Language_POST = $_POST['language'];
-	// Get values from database
-	$rTorrentVersion_DB = $users_datas['rtorrent_version'];
-	$rTorrentNotify_DB = $users_datas['rtorrent_notify'];
-	$Language_DB = $users_datas['language'];
+	switch ($_POST['submit']) {
+		case User_OptionsMySB_Add:
+			// Crontab - Add
+			$CronID_POST = $_POST['cron_id'];
+			$CronMinutes_POST = $_POST['cron_minutes'];
+			$CronHours_POST = $_POST['cron_hours'];
+			$CronDays_POST = $_POST['cron_days'];
+			$CronMonths_POST = $_POST['cron_months'];
+			$CronNumday_POST = $_POST['cron_numday'];
+			$CronCommand_POST = $_POST['cron_command'];
+			$CronDelete_POST = $_POST['cron_delete'];
 
-	// Sub-Directories - Add
-	if (isset($_POST['input_id'])) {
-		$count = count($_POST['input_id']);
-		for($i=1; $i<=$count; $i++) {
-			$Directory = ReplacesAccentedCharacters($_POST['directory'][$i]);
-			$Directory = preg_replace('/\s\s+/', '', $Directory);
-			$Directory = preg_replace('/\s+/', '_', $Directory);
+			$IfExist = $MySB_DB->get("users_crontab", "id_users_crontab", [
+																			"AND" => [
+																				"id_users" => $UserID,
+																				"id_users_crontab" => $CronID_POST
+																			]
+																		]);
+			if ( empty($IfExist) ) {
+				$result = $MySB_DB->insert("users_crontab", [
+															"id_users" => "$UserID",
+															"minutes" => "$CronMinutes_POST",
+															"hours" => "$CronHours_POST",
+															"days" => "$CronDays_POST",
+															"months" => "$CronMonths_POST",
+															"numday" => "$CronNumday_POST",
+															"command" => "$CronCommand_POST",
+															]);
+				if( $result != 0 ) {
+					$Change++;
+					$RefreshPage++;
+					$rTorrentRestart_POST = 1;
+				}
+			} else {
+				$result = $MySB_DB->update("users_crontab", [
+															"id_users" => "$UserID",
+															"minutes" => "$CronMinutes_POST",
+															"hours" => "$CronHours_POST",
+															"days" => "$CronDays_POST",
+															"months" => "$CronMonths_POST",
+															"numday" => "$CronNumday_POST",
+															"command" => "$CronCommand_POST"
+															], [
+																"AND" => [
+																	"id_users" => $UserID,
+																	"id_users_crontab" => $CronID_POST
+																]
+															]);
+				if( $result != 0 ) {
+					$Change++;
+					$RefreshPage++;
+					$rTorrentRestart_POST = 1;
+				}
+			}
+			break;
 
-			if ( !empty($Directory) ) {
-				$IfExist = $MySB_DB->get("users_rtorrent_cfg", "id_users_rtorrent_cfg", [
-																	"AND" => [
-																		"id_users" => $UserID,
-																		"sub_directory" => $Directory
-																	]
-																]);
+		default:	// Global_SaveChanges
+			// Get values from database
+			$rTorrentVersion_DB = $users_datas['rtorrent_version'];
+			$rTorrentNotify_DB = $users_datas['rtorrent_notify'];
+			$Language_DB = $users_datas['language'];
 
-				if ( empty($IfExist) ) {
-					$result = $MySB_DB->insert("users_rtorrent_cfg", ["id_users" => "$UserID", "sub_directory" => "$Directory", "can_be_deleted" => 1]);
-					if( $result != 0 ) {
+			// Crontab - Delete
+			if ( isset($_POST['cron_delete']) ) {
+				foreach ($_POST['cron_delete'] as $key) {
+					$result = $MySB_DB->delete("users_crontab", ["id_users_crontab" => $key]);
+					if ( $result > 0 ) {
 						$Change++;
 						$RefreshPage++;
 						$rTorrentRestart_POST = 1;
 					}
 				}
 			}
-		}
-	}
 
-	// Sub-Directories - Delete
-	if (isset($_POST['delete_dir'])) {
-		$MySB_DB->update("users_rtorrent_cfg", ["to_delete" => 0], ["id_users" => $UserID]);
-		$count = count($_POST['delete_dir']);
-		for($i=0; $i<=$count; $i++) {
-			$ToDelDirectory = preg_replace('/\s\s+/', '', $_POST['delete_dir'][$i]);
-			$result = $MySB_DB->update("users_rtorrent_cfg", ["to_delete" => 1], [
-																					"AND" => [
-																						"id_users" => $UserID,
-																						"sub_directory" => $ToDelDirectory
-																					]
-																				]);
-			if ( $result > 0 ) {
+			// Sub-Directories - Add
+			if (isset($_POST['input_id'])) {
+				$count = count($_POST['input_id']);
+				for($i=1; $i<=$count; $i++) {
+					$Directory = ReplacesAccentedCharacters($_POST['directory'][$i]);
+					$Directory = preg_replace('/\s\s+/', '', $Directory);
+					$Directory = preg_replace('/\s+/', '_', $Directory);
+
+					if ( !empty($Directory) ) {
+						$IfExist = $MySB_DB->get("users_rtorrent_cfg", "id_users_rtorrent_cfg", [
+																			"AND" => [
+																				"id_users" => $UserID,
+																				"sub_directory" => $Directory
+																			]
+																		]);
+
+						if ( empty($IfExist) ) {
+							$result = $MySB_DB->insert("users_rtorrent_cfg", ["id_users" => "$UserID", "sub_directory" => "$Directory", "can_be_deleted" => 1]);
+							if( $result != 0 ) {
+								$Change++;
+								$RefreshPage++;
+								$rTorrentRestart_POST = 1;
+							}
+						}
+					}
+				}
+			}
+
+			// Sub-Directories - Delete
+			if (isset($_POST['delete_dir'])) {
+				$MySB_DB->update("users_rtorrent_cfg", ["to_delete" => 0], ["id_users" => $UserID]);
+				$count = count($_POST['delete_dir']);
+				for($i=0; $i<=$count; $i++) {
+					$ToDelDirectory = preg_replace('/\s\s+/', '', $_POST['delete_dir'][$i]);
+					$result = $MySB_DB->update("users_rtorrent_cfg", ["to_delete" => 1], [
+																							"AND" => [
+																								"id_users" => $UserID,
+																								"sub_directory" => $ToDelDirectory
+																							]
+																						]);
+					if ( $result > 0 ) {
+						$Change++;
+						$RefreshPage++;
+						$rTorrentRestart_POST = 1;
+					}
+				}
+			}
+
+			// Need to restart rTorrent ?
+			if ( ($rTorrentVersion_POST != $rTorrentVersion_DB) || ($rTorrentRestart_POST == "1") ) {
+				$rTorrentRestart_POST = 1;
+				$Command = 'Options_MySB';
 				$Change++;
 				$RefreshPage++;
-				$rTorrentRestart_POST = 1;
 			}
-		}
-	}
+			// Modification ?
+			if ( $rTorrentNotify_POST != $rTorrentNotify_DB ) {
+				$Change++;
+				$RefreshPage++;
+			}
 
-	// Need to restart rTorrent ?
-	if ( ($rTorrentVersion_POST != $rTorrentVersion_DB) || ($rTorrentRestart_POST == "1") ) {
-		$rTorrentRestart_POST = 1;
-		$Command = 'Options_MySB';
-		$Change++;
-		$RefreshPage++;
-	}
-	// Modification ?
-	if ( $rTorrentNotify_POST != $rTorrentNotify_DB ) {
-		$Change++;
-		$RefreshPage++;
-	}
+			// Language
+			if ( $Language_POST != $Language_DB ) {
+				$Change++;
+				$RefreshPage++;
+				// Change language of Cakebox-Light
+				ChangeCakeboxLanguage($CurrentUser, $Language_POST);
 
-	// Language
-	if ( $Language_POST != $Language_DB ) {
-		$Change++;
-		$RefreshPage++;
-		// Change language of Cakebox-Light
-		ChangeCakeboxLanguage($CurrentUser, $Language_POST);
+				// Change language of ownCloud
+				ChangeOwnCloudLanguage($CurrentUser, $Language_POST);
+			}
 
-		// Change language of ownCloud
-		ChangeOwnCloudLanguage($CurrentUser, $Language_POST);
+			break;
 	}
 
 	if( $Change >= 1 ) {
@@ -129,7 +201,7 @@ if (isset($_POST['submit'])) {
 	}
 
 	GenerateMessage($Command, $type, $message);
-	
+
 	if( $RefreshPage == 1 ) {
 		header('Refresh: 2; URL='.$_SERVER['HTTP_REFERER'].'');
 	}
@@ -138,6 +210,7 @@ if (isset($_POST['submit'])) {
 // Get values from database
 $users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
 $users_directories = $MySB_DB->select("users_rtorrent_cfg", "*", ["id_users" => "$UserID"]);
+$users_crontab = $MySB_DB->select("users_crontab", "*", ["id_users" => "$UserID"]);
 $rtorrent_version = $users_datas['rtorrent_version'];
 $rtorrent_restart = $users_datas['rtorrent_restart'];
 $rtorrent_notify = $users_datas['rtorrent_notify'];
@@ -192,7 +265,7 @@ $language = $users_datas['language'];
 						break;
 				} ?>
 				</select>
-			</td>			
+			</td>
 		</tr>
 	</table>
 	</fieldset>
@@ -221,7 +294,7 @@ $language = $users_datas['language'];
 	</fieldset>
 
 	<br />
-
+	
 	<fieldset>
 	<legend><?php echo User_OptionsMySB_Title_rTorrentConfig; ?></legend>
 		<div id="input1" class="clonedInput">
@@ -232,22 +305,79 @@ $language = $users_datas['language'];
 			<input type="button" id="btnAdd" value="<?php echo User_OptionsMySB_rTorrentConfigAddDirectory; ?>" style="cursor: pointer;" />
 			<input type="button" id="btnDel" value="<?php echo User_OptionsMySB_rTorrentConfigDelDirectory; ?>" style="cursor: pointer;" />
 		</div>
-		<div align="center"><p class="Comments"><?php echo User_OptionsMySB_rTorrentConfigComment; ?></p></div>
-
+		<div align="center"><p class="Comments"><?php echo User_OptionsMySB_rTorrentConfig_Comment; ?></p></div>
+<?php
+if ( !empty($users_directories) ) {
+?>
 		<table>
 			<tr>
 				<th style="text-align:center;"><?php echo User_OptionsMySB_rTorrentConfig_Table_Title; ?></th>
 				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
 			</tr>
-<?php foreach($users_directories as $Directory) { ?>
+<?php
+	foreach($users_directories as $Directory) {
+?>
 			<tr>
 				<td><?php echo $Directory['sub_directory']; ?></td>
 				<td>
 					<input class="submit" name="delete_dir[]" type="checkbox" value="<?php echo $Directory['sub_directory']; ?>" <?php echo ($Directory['to_delete'] == '1') ? 'checked' : ''; ?> />
 				</td>
 			</tr>
-<?php } ?>
+<?php
+	}
+}
+?>
 		</table>
+	</fieldset>
+
+	<fieldset>
+	<legend><?php echo User_OptionsMySB_Title_Crontab; ?></legend>
+		<table>
+			<tr>
+				<th style="text-align:center;"><?php echo User_OptionsMySB_Minutes; ?></th>
+				<th style="text-align:center;"><?php echo User_OptionsMySB_Hours; ?></th>
+				<th style="text-align:center;"><?php echo User_OptionsMySB_Days; ?></th>
+				<th style="text-align:center;"><?php echo User_OptionsMySB_Months; ?></th>
+				<th style="text-align:center;"><?php echo User_OptionsMySB_NumDay; ?></th>
+				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
+			</tr>
+<?php
+	foreach($users_crontab as $Crontab) {
+?>
+			<input id="cron_id_db" name="cron_id[<?php echo $Crontab['id_users_crontab']; ?>]" type="hidden" value="<?php echo $Crontab['id_users_crontab']; ?>" />
+			<tr>
+				<td><input class="text_small" name="cron_minutes[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['minutes']; ?>" /></td>
+				<td><input class="text_small" name="cron_hours[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['hours']; ?>" /></td>
+				<td><input class="text_small" name="cron_days[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['days']; ?>" /></td>
+				<td><input class="text_small" name="cron_months[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['months']; ?>" /></td>
+				<td><input class="text_small" name="cron_numday[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['numday']; ?>" /></td>
+				<td rowspan="2"><input class="submit" name="cron_delete[<?php echo $Crontab['id_users_crontab']; ?>]" type="checkbox" value="<?php echo $Crontab['id_users_crontab']; ?>" /></td>
+			</tr>
+			<tr>
+				<td style="text-align:center;"><?php echo 'Command'; ?></th>
+				<td colspan="4"><input style="width: 100%;" name="cron_command[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['command']; ?>" /></td>
+			</tr>
+<?php
+		$Crontab_ID = $Crontab['id_users_crontab'];
+	}
+
+	$Crontab_ID++;
+?>
+			<input name="cron_id" type="hidden" value="<?php echo $Crontab_ID; ?>" />
+			<tr>
+				<td><input class="text_small" name="cron_minutes" type="text" /></td>
+				<td><input class="text_small" name="cron_hours" type="text" /></td>
+				<td><input class="text_small" name="cron_days" type="text" /></td>
+				<td><input class="text_small" name="cron_months" type="text" /></td>
+				<td><input class="text_small" name="cron_numday" type="text" /></td>
+				<td rowspan="2"><input class="submit" name="submit" type="submit" value="<?php echo User_OptionsMySB_Add; ?>" /></td>
+			</tr>
+			<tr>
+				<td style="text-align:center;" class="Comments"><?php echo User_OptionsMySB_Command; ?></th>
+				<td colspan="4"><input style="width: 100%;" name="cron_command" type="text" /></td>
+			</tr>
+		</table>
+		<div align="center"><p class="Comments"><?php echo User_OptionsMySB_Crontab_Comment; ?></p></div>
 	</fieldset>
 
 	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />

@@ -94,11 +94,10 @@ if ( isset($CurrentUser) ) {
 }
 
 // Language
-if ( isSet($users_datas["language"]) ) {
+$Language = 'en';
+$_SESSION['Language'] = $Language;
+if ( !empty($users_datas["language"]) ) {
 	$Language = $users_datas["language"];
-	$_SESSION['Language'] = $Language;
-} else {
-	$Language = 'en';
 	$_SESSION['Language'] = $Language;
 }
 require_once(WEB_INC . '/languages/global.' . $Language . '.php');

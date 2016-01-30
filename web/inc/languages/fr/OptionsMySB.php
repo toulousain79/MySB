@@ -30,7 +30,7 @@ define('User_OptionsMySB_Title_rTorrentConfig', 'Fichier de Configuration rTorre
 define('User_OptionsMySB_rTorrentConfigDirectory', 'Sous-dossiers:');
 define('User_OptionsMySB_rTorrentConfigAddDirectory', 'Ajouter un sous-dossier');
 define('User_OptionsMySB_rTorrentConfigDelDirectory', 'Retirer le dernier sous-dossier');
-define('User_OptionsMySB_rTorrentConfigComment', 'Permet de g&eacute;rer les sous dossiers dans "watch" et "complete".<br />
+define('User_OptionsMySB_rTorrentConfig_Comment', 'Permet de g&eacute;rer les sous dossiers dans "watch" et "complete".<br />
 Exemple, ajoutez un dossier "Films", et celui-ci sera cr&eacute;&eacute; et g&eacute;r&eacute; par rTorrent.<br />
 Un fichier torrent ajout&eacute; dans "watch\Films" lancera le t&eacute;l&eacute;chargement.<br />
 A la fin de celui-ci, les donn&eacute;es seront automatiquement copi&eacute;es dans "complete\Films".');
@@ -39,5 +39,16 @@ define('User_OptionsMySB_Title_Portal', 'Portail MySB');
 define('User_OptionsMySB_Language', 'Language');
 define('User_OptionsMySB_Lang_French', 'Fran&ccedil;ais');
 define('User_OptionsMySB_Lang_English', 'Anglais');
+define('User_OptionsMySB_Title_Crontab', 'Crontab');
+define('User_OptionsMySB_Minutes', 'Minutes');
+define('User_OptionsMySB_Hours', 'Heures');
+define('User_OptionsMySB_Days', 'Jours<br/>mois');
+define('User_OptionsMySB_Months', 'Mois');
+define('User_OptionsMySB_NumDay', 'Jours<br/>semaine');
+define('User_OptionsMySB_Command', 'Commande');
+define('User_OptionsMySB_Add', 'Ajouter');
+define('User_OptionsMySB_Crontab_Comment', 'Planifier l\'&eacute;xecution de scripts personnels à la fin de vos t&eacute;l&eacute;chargements.<br />
+Vos scripts doivent &ecirc;tre enregistr&eacute;s dans ~/crontab/.<br/>
+Validez votre planification ici ;-) <a target="_blank" href="http://crontab.guru/">crontab.guru</a>');
 
 //#################### LAST LINE ######################################
