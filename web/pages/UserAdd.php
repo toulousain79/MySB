@@ -112,6 +112,8 @@ if(isset($_POST)==true && empty($_POST)==false) {
 Form();
 
 $UsersList = $MySB_DB->select("users", "*", ["AND" => ["admin" => "0"]]);
+
+if ( !empty($UsersList) ) {
 ?>
 	<form class="form_settings" method="post" action="">	
 		<div align="center" style="margin-top: 50px; margin-bottom: 20px;"><table style="border-spacing:1;">
@@ -124,24 +126,23 @@ $UsersList = $MySB_DB->select("users", "*", ["AND" => ["admin" => "0"]]);
 			</tr>
 
 <?php
-foreach($UsersList as $User) {
-	switch ($User["sftp"]) {
-		case '0':
-			$SFTP = MainUser_UserAdd_NO;
-			break;
-		default:
-			$SFTP = MainUser_UserAdd_YES;
-			break;
-	}
-	switch ($User["sudo"]) {
-		case '0':
-			$SUDO = MainUser_UserAdd_NO;
-			break;
-		default:
-			$SUDO = MainUser_UserAdd_YES;
-			break;
-	}		
-	
+	foreach($UsersList as $User) {
+		switch ($User["sftp"]) {
+			case '0':
+				$SFTP = MainUser_UserAdd_NO;
+				break;
+			default:
+				$SFTP = MainUser_UserAdd_YES;
+				break;
+		}
+		switch ($User["sudo"]) {
+			case '0':
+				$SUDO = MainUser_UserAdd_NO;
+				break;
+			default:
+				$SUDO = MainUser_UserAdd_YES;
+				break;
+		}
 ?>
 			<tr>
 				<td>
@@ -152,10 +153,10 @@ foreach($UsersList as $User) {
 					<input style="width:200px;" type="hidden" name="users_email[]" value="<?php echo $User["users_email"]; ?>" />					
 					<?php echo $User["users_email"]; ?>
 				</td>
-				<td>		
+				<td>
 					<?php echo $SFTP; ?>
 				</td>
-				<td>					
+				<td>
 					<?php echo $SUDO; ?>
 				</td>
 				<!--<td>
@@ -163,7 +164,8 @@ foreach($UsersList as $User) {
 				</td>-->
 			</tr>
 <?php
-} // foreach($UsersList as $User) {
+	}
+}
 ?>
 		</table></div>
 	</form>
