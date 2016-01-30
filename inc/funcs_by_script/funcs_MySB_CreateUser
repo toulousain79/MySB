@@ -268,6 +268,27 @@ CreateRtorrentConfigFile() {
 		CreateNewFile=0
 	fi
 
+	# Crontab
+	if [ -f $HomeDir/scripts/crontab ]; then
+		rm -f $HomeDir/scripts/crontab
+	fi
+	Func_SQL_Command 'SELECT' 'MySB_db' 'minutes,hours,days,months,numday,command' 'users_crontab' "id_users = '$IdUser'" | while read ROW; do
+		CronMinutes="`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`"
+		CronHours="`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`"
+		CronDays="`echo $ROW | awk '{split($0,a,"|"); print a[3]}'`"
+		CronMonths="`echo $ROW | awk '{split($0,a,"|"); print a[4]}'`"
+		CronNumday="`echo $ROW | awk '{split($0,a,"|"); print a[5]}'`"
+		CronCommand="`echo $ROW | awk '{split($0,a,"|"); print a[6]}'`"
+		
+		echo "$CronMinutes $CronHours $CronDays $CronMonths $CronNumday $CronCommand" >> $HomeDir/scripts/crontab
+	done
+	if [ -f $HomeDir/scripts/crontab ]; then
+		crontab < $HomeDir/scripts/crontab
+		/etc/init.d/cron reload &> /dev/null
+		rm -f $HomeDir/scripts/crontab
+	fi
+
+	# Sub-Directories
 	if [ ! -z "$Directories" ]; then
 		for Directory in $Directories; do
 			SubDirectory="`echo $Directory | awk '{split($0,a,"|"); print a[1]}'`"
