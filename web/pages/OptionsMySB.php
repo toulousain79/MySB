@@ -354,7 +354,7 @@ if ( !empty($users_directories) ) {
 				<td rowspan="2"><input class="submit" name="cron_delete[<?php echo $Crontab['id_users_crontab']; ?>]" type="checkbox" value="<?php echo $Crontab['id_users_crontab']; ?>" /></td>
 			</tr>
 			<tr>
-				<td style="text-align:center;"><?php echo 'Command'; ?></th>
+				<td style="text-align:center;"><?php echo User_OptionsMySB_Command; ?></th>
 				<td colspan="4"><input style="width: 100%;" name="cron_command[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['command']; ?>" /></td>
 			</tr>
 <?php
@@ -373,7 +373,7 @@ if ( !empty($users_directories) ) {
 				<td rowspan="2"><input class="submit" name="submit" type="submit" value="<?php echo User_OptionsMySB_Add; ?>" /></td>
 			</tr>
 			<tr>
-				<td style="text-align:center;" class="Comments"><?php echo User_OptionsMySB_Command; ?></th>
+				<td style="text-align:center;"><?php echo User_OptionsMySB_Command; ?></th>
 				<td colspan="4"><input style="width: 100%;" name="cron_command" type="text" /></td>
 			</tr>
 		</table>
