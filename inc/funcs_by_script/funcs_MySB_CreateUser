@@ -259,7 +259,7 @@ CreateRtorrentConfigFile() {
 	IdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$FnUser'"`"
 	HomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
 	Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory,to_delete,can_be_deleted' 'users_rtorrent_cfg' "id_users = '$IdUser'"`"
-	Crontab="`Func_SQL_Command 'SELECT' 'MySB_db' 'minutes,hours,days,months,numday,command' 'users_crontab' "id_users = '$IdUser'"`"
+	Crontab="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users_crontab,minutes,hours,days,months,numday,command' 'users_crontab' "id_users = '$IdUser'"`"
 	if [ "$2" == "force" ] || [ ! -f $HomeDir/.rtorrent.rc ]; then
 		CreateNewFile=1
 	else
@@ -272,15 +272,18 @@ CreateRtorrentConfigFile() {
 	fi
 	if [ ! -z "$Crontab" ]; then
 		for Cron in $Crontab; do
-			CronMinutes="`echo $Cron | awk '{split($0,a,"|"); print a[1]}'`"
-			CronHours="`echo $Cron | awk '{split($0,a,"|"); print a[2]}'`"
-			CronDays="`echo $Cron | awk '{split($0,a,"|"); print a[3]}'`"
-			CronMonths="`echo $Cron | awk '{split($0,a,"|"); print a[4]}'`"
-			CronNumday="`echo $Cron | awk '{split($0,a,"|"); print a[5]}'`"
-			CronCommand="`echo $Cron | awk '{split($0,a,"|"); print a[6]}'`"
+			CronID="`echo $Cron | awk '{split($0,a,"|"); print a[1]}'`"
+			CronMinutes="`echo $Cron | awk '{split($0,a,"|"); print a[2]}'`"
+			CronHours="`echo $Cron | awk '{split($0,a,"|"); print a[3]}'`"
+			CronDays="`echo $Cron | awk '{split($0,a,"|"); print a[4]}'`"
+			CronMonths="`echo $Cron | awk '{split($0,a,"|"); print a[5]}'`"
+			CronNumday="`echo $Cron | awk '{split($0,a,"|"); print a[6]}'`"
+			CronCommand="`echo $Cron | awk '{split($0,a,"|"); print a[7]}'`"
 			# Adding cron job only if script file is present
 			if [ -f $HomeDir/scripts/$CronCommand ]; then
 				echo "$CronMinutes $CronHours $CronDays $CronMonths $CronNumday /bin/bash ~/scripts/$CronCommand" >> $HomeDir/scripts/crontab
+			else
+				Func_SQL_Command 'DELETE' 'MySB_db' 'users_crontab' "id_users_crontab = '$CronID' AND id_users = '$IdUser'"
 			fi
 		done
 	fi
