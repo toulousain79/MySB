@@ -57,7 +57,7 @@ Listing() {
 	sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d $DstDir ]; then mkdir -p $DstDir; fi"
 
 	# Start synchroniszation with RSYNC
-	rsync -av --rsh="/usr/bin/sshpass -p $DstPass ssh -p$DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $ToSynchronize $DstUser@$DstSrv:$DstDir
+	rsync -a --rsh="/usr/bin/sshpass -p $DstPass ssh -p$DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $ToSynchronize $DstUser@$DstSrv:$DstDir
 
 	# Deleting the file from the list
 	Lign="`echo $ToSynchronize | sed s,/,\\\\\\\\\\/,g`"
@@ -77,15 +77,14 @@ Listing() {
 # Execute
 while read Lign; do
 	Listing "$Lign" >> $LogFile.$$
+	# Move log file content
+	if [ -f $LogFile.$$ ]; then
+		cat $LogFile.$$ >> $LogFile
+		rm -f $LogFile.$$
+	fi
 done < $FilesList
 
 # Removing the lock file
 if [ -e $LockFile ]; then
 	rm -f $LockFile
-fi
-
-# Move log file content
-if [ -f $LogFile.$$ ]; then
-	cat $LogFile.$$ >> $LogFile
-	rm -f $LogFile.$$
 fi
