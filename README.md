@@ -47,6 +47,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
  + Access restricted by IP for all server access _(can be disabled)_
  + Dynamic IP Management for IP restriction _(DynDNS, No-IP, ...)_
  + Language select _(English, French)_
+ + Use of scripts after finished download _(Directly OR Cron)_
 
 ## Additional ruTorrent plugins
 
@@ -63,11 +64,6 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * FileUpload
 * Stream
 * Favicons trackers
-
-## Coming soon
-
-* Possibility to add more blocklists
-* Possibility to delete/inactivate users
 
 ## Bugs
 
