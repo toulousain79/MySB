@@ -7,6 +7,8 @@ DstSrv=""			# Hostname OR IP address of the destination. (ex: myserver.mydomain.
 DstPort=""			# SSH Port (ex: 22)
 DstUser=""			# SSH Username (ex: my_user)
 DstPass=""			# SSH Password
+# Notification (if enabled)
+MailObject="MySB - Transfer to NAS completed !"
 
 # DO NOT MODIFY
 ScriptName=$(basename $0)
@@ -16,6 +18,10 @@ LockFile="$HOME/scripts/$ScriptName.lock"
 get_base_path="$1"
 get_custom1="$2"
 get_name="$3"
+LastDirectory="`echo $get_custom1 | sed "s/\/$get_name//g;"`"
+Count=`echo $LastDirectory |awk -F "/" '{print NF-1}'`
+(( Count++ ))
+LastDirectory="`echo $LastDirectory | awk '{split($0,a,"/"); print a[$Count]}'`"
 
 # Rsync already launched: STOP
 if [ -e $LockFile ] || [ ! -s $FilesList ]; then
@@ -28,24 +34,50 @@ touch $LockFile
 # Retrieving files to transfer
 Listing() {
 	Lign="$1"
-	echo "$Lign --> $DstUser@$DstSrv:$DstDir/"
-	rsync -avv --rsh="/usr/bin/sshpass -p $DstPass ssh -p$DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $Lign $DstUser@$DstSrv:$DstDir/
+	DstDir="$DstDir/$LastDirectory/"
+	# Log
+	echo "##################### START #####################################"
+	echo "From:		$Lign"
+	echo "To:		$DstDir"
+	echo "Server:	$DstUser@$DstSrv"
+	echo "Date:		`/bin/date +%Y/%m/%d`"
+	echo "Hour:		`/bin/date %H:%M:%S`"
+	echo "--------------------"
+	echo
+
+	# Creating sub-directory on destination
+	sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d $DstDir ]; then mkdir -p $DstDir; fi"
+
+	# Start synchroniszation with RSYNC
+	rsync -avv --rsh="/usr/bin/sshpass -p $DstPass ssh -p$DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $Lign $DstUser@$DstSrv:$DstDir
 
 	# Deleting the file from the list
 	Lign="`echo $Lign | sed s,/,\\\\\\\\\\/,g`"
 	sed -i "/$Lign/d" $FilesList
 
+	echo
+	echo "--------------------"
+	echo "Date:		`/bin/date +%Y/%m/%d`"
+	echo "Hour:		`/bin/date %H:%M:%S`"
+	echo "###################### END ######################################"
+
 	# E-mail notification
-	subject="MySB - Transfer to NAS completed !"
-	curl --data "username=$UserName&get_base_path=$get_base_path&get_custom1=$get_custom1&get_name=$get_name&subject=$subject" http://localhost:8888/rTorrent.php
+	content="$LogFile.$$"
+	curl --data "username=$UserName&get_base_path=$get_base_path&get_custom1=$get_custom1&get_name=$get_name&subject=$MailObject&content=$content" http://localhost:8888/rTorrent.php
 }
 
 # Execute
 while read Lign; do
-	Listing "$Lign" >> $LogFile
+	Listing "$Lign" >> $LogFile.$$
 done < $FilesList
 
 # Removing the lock file
 if [ -e $LockFile ]; then
 	rm -f $LockFile
+fi
+
+# Move log file content
+if [ -f $LogFile.$$ ]; then
+	cat $LogFile.$$ >> $LogFile
+	rm -f $LogFile.$$
 fi

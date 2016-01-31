@@ -36,29 +36,29 @@ $rTorrentNotify = $users_datas["rtorrent_notify"];
 $UserMail = $users_datas["users_email"];
 $IfownCloud = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
 
-// Language
-switch ($Language) {
-	case 'fr':
-		$Subject = "MySB - Nouveau fichier disponible !";
-		break;
-
-	default:
-		$Subject = "MySB - New file available !";
-}
-
-// Who is making the request ? (rTorrent / Username)
-if ( isset($_POST['subject']) ) {
-	$Subject = $_POST['subject'];
-}
-
 // Mail notification
 if ( ($rTorrentNotify == '1') && (!empty($UserMail)) ) {
+	switch ($Language) {
+		case 'fr':
+			$Subject = "MySB - Nouveau fichier disponible !";
+			break;
+
+		default:
+			$Subject = "MySB - New file available !";
+	}
+	if ( isset($_POST['subject']) ) {
+		$Subject = $_POST['subject'];
+	}
+	if ( isset($_POST['content']) ) {
+		$Content = file_get_contents($_POST['content']);
+	} else {
+		$Content = "$get_custom1$get_name"."\r\n";
+	}
 	$UserMail = $MySB_DB->get("users", "users_email", ["users_ident" => "$Username"]);
-	$Message = "$get_custom1$get_name"."\r\n";
 	$Headers  = "From: $UserMail"."\r\n";
 	$Headers .= "Reply-To: $UserMail"."\r\n";
 	$Headers .= 'MIME-Version: 1.0' . "\r\n";
-	$Headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
+	$Headers .= 'Content-type: text/plain; charset=utf-8' . "\r\n";
 
 	mail($UserMail, $Subject, $Message, $Headers);
 }
