@@ -15,13 +15,6 @@ ScriptName=$(basename $0)
 FilesList="$HOME/scripts/files.list"
 LogFile="$HOME/scripts/$ScriptName.log"
 LockFile="$HOME/scripts/$ScriptName.lock"
-get_base_path="$1"
-get_custom1="$2"
-get_name="$3"
-LastDirectory="`echo $get_custom1 | sed "s/\/$get_name//g;"`"
-Count=`echo $LastDirectory |awk -F "/" '{print NF-1}'`
-(( Count++ ))
-LastDirectory="`echo $LastDirectory | awk '{split($0,a,"/"); print a[$Count]}'`"
 
 # Rsync already launched: STOP
 if [ -e $LockFile ] || [ ! -s $FilesList ]; then
@@ -33,15 +26,24 @@ touch $LockFile
 
 # Retrieving files to transfer
 Listing() {
-	Lign="$1"
+	# VARs
+	ToSynchronize="$1"
+	Count=`echo $ToSynchronize |awk -F "/" '{print NF-1}'`
+	(( Count++ ))
+	get_name="`echo $ToSynchronize | awk '{split($0,a,"/"); print a['$Count']}'`"
+	LastDirectory="`echo $ToSynchronize | sed "s/\/$get_name//g;"`"
+	Count=`echo $LastDirectory |awk -F "/" '{print NF-1}'`
+	(( Count++ ))
+	LastDirectory="`echo $LastDirectory | awk '{split($0,a,"/"); print a['$Count']}'`"
 	DstDir="$DstDir/$LastDirectory/"
+
 	# Log
 	echo "##################### START #####################################"
-	echo "From:		$Lign"
-	echo "To:		$DstDir"
-	echo "Server:	$DstUser@$DstSrv"
+	echo "From:		$ToSynchronize"
+	echo "To:			$DstDir"
+	echo "Server:		$DstUser@$DstSrv"
 	echo "Date:		`/bin/date +%Y/%m/%d`"
-	echo "Hour:		`/bin/date %H:%M:%S`"
+	echo "Hour:		`/bin/date +%H:%M:%S`"
 	echo "--------------------"
 	echo
 
@@ -49,7 +51,7 @@ Listing() {
 	sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d $DstDir ]; then mkdir -p $DstDir; fi"
 
 	# Start synchroniszation with RSYNC
-	rsync -avv --rsh="/usr/bin/sshpass -p $DstPass ssh -p$DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $Lign $DstUser@$DstSrv:$DstDir
+	rsync -avv --rsh="/usr/bin/sshpass -p $DstPass ssh -p$DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $ToSynchronize $DstUser@$DstSrv:$DstDir
 
 	# Deleting the file from the list
 	Lign="`echo $Lign | sed s,/,\\\\\\\\\\/,g`"
@@ -58,12 +60,12 @@ Listing() {
 	echo
 	echo "--------------------"
 	echo "Date:		`/bin/date +%Y/%m/%d`"
-	echo "Hour:		`/bin/date %H:%M:%S`"
+	echo "Hour:		`/bin/date +%H:%M:%S`"
 	echo "###################### END ######################################"
 
 	# E-mail notification
 	content="$LogFile.$$"
-	curl --data "username=$UserName&get_base_path=$get_base_path&get_custom1=$get_custom1&get_name=$get_name&subject=$MailObject&content=$content" http://localhost:8888/rTorrent.php
+	curl --data "username=$UserName&get_custom1=$ToSynchronize&get_name=$get_name&subject=$MailObject&content=$content" http://localhost:8888/rTorrent.php
 }
 
 # Execute
