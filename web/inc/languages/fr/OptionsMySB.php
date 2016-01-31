@@ -49,6 +49,7 @@ define('User_OptionsMySB_Command', 'Script');
 define('User_OptionsMySB_Add', 'Ajouter');
 define('User_OptionsMySB_Crontab_Comment', 'Planifier l\'&eacute;xecution de scripts personnels à la fin de vos t&eacute;l&eacute;chargements.<br />
 Vos scripts doivent &ecirc;tre enregistr&eacute;s dans ~/scripts/ avec ".cron" comme extension.<br/>
-Validez votre planification ici ;-) <a target="_blank" href="http://crontab.guru/">crontab.guru</a>');
+Validez votre planification ici ;-) <a target="_blank" href="http://crontab.guru/">crontab.guru</a>.<br/>
+Lisez le fichier \'~/scripts/README\'.');
 
 //#################### LAST LINE ######################################

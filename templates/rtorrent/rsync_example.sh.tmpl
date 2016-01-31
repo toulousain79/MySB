@@ -1,0 +1,54 @@
+#!/bin/sh
+
+#### VARs
+# Destination(RSYNC)
+DstDir=""			# Destination directory without ending '/'. (ex: /home/myuser)
+DstSrv=""			# Hostname OR IP address of the destination. (ex: myserver.mydomain.com)
+DstPort=""			# SSH Port (ex: 22)
+DstUser=""			# SSH Username (ex: my_user)
+DstPass=""			# SSH Password
+
+# DO NOT MODIFY
+ScriptName=$(basename $0)
+FilesList="$HOME/scripts/files.list"
+LogFile="$HOME/scripts/$ScriptName.log"
+LockFile="$HOME/scripts/$ScriptName.lock"
+get_base_path="$1"
+get_custom1="$2"
+get_name="$3"
+
+# The current download is added to the list
+echo "$get_custom1$get_name" >> $FilesList
+
+# Rsync already launched: STOP
+if [ -e $LockFile ]; then
+	exit 0
+fi
+
+# Creating a lock file for do not launch two instances of in parallel
+touch $LockFile
+
+# Retrieving files to transfer
+Listing() {
+	Lign="$1"
+	echo "$Lign --> $DstUser@$DstSrv:$DstDir/" >> $LogFile
+	rsync -avv --rsh="/usr/bin/sshpass -p $DstPass ssh -p$DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $Lign $DstUser@$DstSrv:$DstDir/ >> $LogFile
+
+	# Deleting the file from the list
+	Lign="`echo $Lign | sed s,/,\\\\\\\\\\/,g`"
+	sed -i "/$Lign/d" $FilesList
+
+	# E-mail notification
+	subject="MySB - Transfer to NAS completed !"
+	curl --data "username=$UserName&get_base_path=$get_base_path&get_custom1=$get_custom1&get_name=$get_name&subject=$subject" http://localhost:8888/rTorrent.php
+}
+
+# Execute
+while read Lign; do
+	Listing "$Lign"
+done < $FilesList
+
+# Removing the lock file
+if [ -e $LockFile ]; then
+	rm -f $LockFile
+fi
