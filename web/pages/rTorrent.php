@@ -28,7 +28,6 @@ require_once '/etc/MySB/config.php';
 $Username = $_POST['username'];
 $get_name = $_POST['get_name'];
 $get_custom1 = $_POST['get_custom1'];
-$get_base_path = $_POST['get_base_path'];
 
 $users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$Username"]);
 $Language = $users_datas["language"];
