@@ -53,7 +53,6 @@ if ( ($rTorrentNotify == '1') && (!empty($UserMail)) ) {
 	} else {
 		$Content = "$get_custom1$get_name"."\r\n";
 	}
-	$UserMail = $MySB_DB->get("users", "users_email", ["users_ident" => "$Username"]);
 	$Headers  = "From: $UserMail"."\r\n";
 	$Headers .= "Reply-To: $UserMail"."\r\n";
 	$Headers .= 'MIME-Version: 1.0' . "\r\n";
