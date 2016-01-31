@@ -1,5 +1,5 @@
 	Version v3.2
-		2016/01/12
+		2016/01/31
 			- funcs_iptables, small corrections (v3.1 and v3.2)
 			- funcs, small corrections (v3.1 and v3.2)
 			- LogServer.bsh, rewriting the script & reduce some HTML log files (iptables.html, pgld.html, pglcmd.html) (v3.1 and v3.2)
