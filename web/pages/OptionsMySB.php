@@ -74,6 +74,7 @@ if (isset($_POST['submit'])) {
 					$Change++;
 					$RefreshPage++;
 					$rTorrentRestart_POST = 1;
+					$Command = 'Options_MySB';
 				}
 			} else {
 				$result = $MySB_DB->update("users_crontab", [
@@ -94,6 +95,7 @@ if (isset($_POST['submit'])) {
 					$Change++;
 					$RefreshPage++;
 					$rTorrentRestart_POST = 1;
+					$Command = 'Options_MySB';
 				}
 			}
 			break;
