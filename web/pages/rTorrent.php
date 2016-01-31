@@ -60,7 +60,7 @@ if ( ($rTorrentNotify == '1') && (!empty($UserMail)) ) {
 	$Headers .= 'MIME-Version: 1.0' . "\r\n";
 	$Headers .= 'Content-type: text/plain; charset=utf-8' . "\r\n";
 
-	mail($UserMail, $Subject, $Message, $Headers);
+	mail($UserMail, $Subject, $Content, $Headers);
 }
 
 // ownCloud files scan
