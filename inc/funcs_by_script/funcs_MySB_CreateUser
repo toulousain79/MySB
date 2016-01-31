@@ -111,8 +111,8 @@ ManageUserHomeDir() {
 	chmod -R 0775 $FnHomeDir/logs
 	chown -R root:$FnUser $FnHomeDir/logs
 	# /home/user/scripts
-	chmod -R 0775 $FnHomeDir/scripts
-	chown -R root:$FnUser $FnHomeDir/scripts	
+	chmod -R 0774 $FnHomeDir/scripts
+	chown -R root:$FnUser $FnHomeDir/scripts
 	# /home/user/rtorrent
 	chown root:$FnUser $FnHomeDir/rtorrent
 	chmod 0775 $FnHomeDir/rtorrent
@@ -128,9 +128,6 @@ ManageUserHomeDir() {
 	# /home/user/rtorrent/.session
 	chown root:$FnUser $FnHomeDir/rtorrent/.session
 	chmod 0771 $FnHomeDir/rtorrent/.session
-	# /home/user/rtorrent/script
-	chown root:$FnUser $FnHomeDir/scripts
-	chmod 0771 $FnHomeDir/scripts
 
 	unset FnHomeDir
 }
@@ -281,7 +278,10 @@ CreateRtorrentConfigFile() {
 			CronMonths="`echo $Cron | awk '{split($0,a,"|"); print a[4]}'`"
 			CronNumday="`echo $Cron | awk '{split($0,a,"|"); print a[5]}'`"
 			CronCommand="`echo $Cron | awk '{split($0,a,"|"); print a[6]}'`"
-			echo "$CronMinutes $CronHours $CronDays $CronMonths $CronNumday /bin/bash ~/scripts/$CronCommand" >> $HomeDir/scripts/crontab
+			# Adding cron job only if script file is present
+			if [ -f $HomeDir/scripts/$CronCommand ]; then
+				echo "$CronMinutes $CronHours $CronDays $CronMonths $CronNumday /bin/bash ~/scripts/$CronCommand" >> $HomeDir/scripts/crontab
+			fi
 		done
 	fi
 	if [ -f $HomeDir/scripts/crontab ]; then
@@ -298,7 +298,7 @@ CreateRtorrentConfigFile() {
 			CanBeDeleted="`echo $Directory | awk '{split($0,a,"|"); print a[3]}'`"
 
 			if [ -d $HomeDir/rtorrent/complete/$SubDirectory/ ] && [ -d $HomeDir/rtorrent/watch/$SubDirectory/ ]; then
-				CountFiles="`ls -A1 $HomeDir/rtorrent/complete/$SubDirectory/ | wc -l`"	
+				CountFiles="`ls -A1 $HomeDir/rtorrent/complete/$SubDirectory/ | wc -l`"
 				if [ $CountFiles -eq 0 ]; then
 					Func_SQL_Command 'UPDATE' 'MySB_db' 'users_rtorrent_cfg' "can_be_deleted = '1'" "id_users = '$IdUser' AND sub_directory = '$SubDirectory'"
 					CanBeDeleted=1
@@ -309,7 +309,7 @@ CreateRtorrentConfigFile() {
 			fi
 
 			case "$CanBeDeleted" in
-				1) # New directory OR maybe to delete	
+				1) # New directory OR maybe to delete
 					case "$ToDelete" in
 						1)
 							CompleteDeleted=0
@@ -457,8 +457,7 @@ MonthlyPayment() {
 		ListingUsers
 		for SeedboxUser in $UsersList; do
 			SeedUserMail="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$SeedboxUser'"`"
-			
-			if [ "$UserToIgnore" != "$SeedboxUser" ]; then	
+			if [ "$UserToIgnore" != "$SeedboxUser" ]; then
 				SendMail "$Global_Subject_MonthlyPayment" "${SeedboxUser}" "new_user" "Changing Monthly"
 			fi
 		done

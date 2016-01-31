@@ -217,10 +217,24 @@ $rtorrent_version = $users_datas['rtorrent_version'];
 $rtorrent_restart = $users_datas['rtorrent_restart'];
 $rtorrent_notify = $users_datas['rtorrent_notify'];
 $language = $users_datas['language'];
+
+$CronFiles = array();
+if($dossier = opendir('/home/elohim13/scripts')) {
+	while(false !== ($fichier = readdir($dossier))) {
+		if($fichier != '.' && $fichier != '..') {
+			$info = new SplFileInfo($fichier);
+			if ( $info->getExtension() == 'cron' ) {
+				array_push($CronFiles, $fichier);
+			}
+		}
+	}
+}
 ?>
 
 <form class="form_settings" method="post" action="">
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
+	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
+
 	<fieldset>
 	<legend><?php echo User_OptionsMySB_Title_rTorrent; ?></legend>
 
@@ -296,18 +310,9 @@ $language = $users_datas['language'];
 	</fieldset>
 
 	<br />
-	
-	<fieldset>
+
+	<fieldset style="vertical-align: text-top;">
 	<legend><?php echo User_OptionsMySB_Title_rTorrentConfig; ?></legend>
-		<div id="input1" class="clonedInput">
-			<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
-			<?php echo User_OptionsMySB_rTorrentConfigDirectory; ?>&nbsp;<input class="input_directory" id="directory" name="directory[1]" type="text" />
-		</div>
-		<div style="margin-top: 10px; margin-bottom: 20px;">
-			<input type="button" id="btnAdd" value="<?php echo User_OptionsMySB_rTorrentConfigAddDirectory; ?>" style="cursor: pointer;" />
-			<input type="button" id="btnDel" value="<?php echo User_OptionsMySB_rTorrentConfigDelDirectory; ?>" style="cursor: pointer;" />
-		</div>
-		<div align="center"><p class="Comments"><?php echo User_OptionsMySB_rTorrentConfig_Comment; ?></p></div>
 <?php
 if ( !empty($users_directories) ) {
 ?>
@@ -329,10 +334,20 @@ if ( !empty($users_directories) ) {
 	}
 }
 ?>
+			<tr><th colspan="2"></th></tr>
 		</table>
+		<div id="input1" class="clonedInput">
+			<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
+			<?php echo User_OptionsMySB_rTorrentConfigDirectory; ?>&nbsp;<input class="input_directory" id="directory" name="directory[1]" type="text" />
+		</div>
+		<div style="margin-top: 10px; margin-bottom: 20px;">
+			<input type="button" id="btnAdd" value="<?php echo User_OptionsMySB_rTorrentConfigAddDirectory; ?>" style="cursor: pointer;" />
+			<input type="button" id="btnDel" value="<?php echo User_OptionsMySB_rTorrentConfigDelDirectory; ?>" style="cursor: pointer;" />
+		</div>		
+		<div align="center"><p class="Comments"><?php echo User_OptionsMySB_rTorrentConfig_Comment; ?></p></div>
 	</fieldset>
 
-	<fieldset>
+	<fieldset style="vertical-align: text-top;">
 	<legend><?php echo User_OptionsMySB_Title_Crontab; ?></legend>
 		<table>
 			<tr>
@@ -346,24 +361,28 @@ if ( !empty($users_directories) ) {
 <?php
 	foreach($users_crontab as $Crontab) {
 ?>
-			<input id="cron_id_db" name="cron_id[<?php echo $Crontab['id_users_crontab']; ?>]" type="hidden" value="<?php echo $Crontab['id_users_crontab']; ?>" />
+			<input name="cron_id[<?php echo $Crontab['id_users_crontab']; ?>]" type="hidden" value="<?php echo $Crontab['id_users_crontab']; ?>" />
 			<tr>
-				<td><input class="text_small" name="cron_minutes[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['minutes']; ?>" /></td>
-				<td><input class="text_small" name="cron_hours[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['hours']; ?>" /></td>
-				<td><input class="text_small" name="cron_days[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['days']; ?>" /></td>
-				<td><input class="text_small" name="cron_months[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['months']; ?>" /></td>
-				<td><input class="text_small" name="cron_numday[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['numday']; ?>" /></td>
-				<td rowspan="2"><input class="submit" name="cron_delete[<?php echo $Crontab['id_users_crontab']; ?>]" type="checkbox" value="<?php echo $Crontab['id_users_crontab']; ?>" /></td>
+				<td><input class="text_small" name="cron_minutes[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['minutes']; ?>" readonly /></td>
+				<td><input class="text_small" name="cron_hours[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['hours']; ?>" readonly /></td>
+				<td><input class="text_small" name="cron_days[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['days']; ?>" readonly /></td>
+				<td><input class="text_small" name="cron_months[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['months']; ?>" readonly /></td>
+				<td><input class="text_small" name="cron_numday[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['numday']; ?>" readonly /></td>
+				<td rowspan="2"><input class="submit" name="cron_delete[<?php echo $Crontab['id_users_crontab']; ?>]" type="checkbox" value="<?php echo $Crontab['id_users_crontab']; ?>" readonly /></td>
 			</tr>
 			<tr>
 				<td style="text-align:center;"><?php echo User_OptionsMySB_Command; ?></th>
-				<td colspan="4"><input style="width: 100%;" name="cron_command[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['command']; ?>" /></td>
+				<td colspan="4"><input style="width: 100%;" name="cron_command[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['command']; ?>" readonly /></td>
 			</tr>
 <?php
+		$CronFiles = array_diff($CronFiles, array($Crontab['command']));
 		$Crontab_ID = $Crontab['id_users_crontab'];
 	}
 
-	$Crontab_ID++;
+	echo '<tr><th colspan="6"></th></tr>';
+	
+	if ( !empty($CronFiles) ) {
+		$Crontab_ID++;
 ?>
 			<input name="cron_id" type="hidden" value="<?php echo $Crontab_ID; ?>" />
 			<tr>
@@ -376,8 +395,19 @@ if ( !empty($users_directories) ) {
 			</tr>
 			<tr>
 				<td style="text-align:center;"><?php echo User_OptionsMySB_Command; ?></th>
-				<td colspan="4"><input style="width: 100%;" name="cron_command" type="text" /></td>
+				<td colspan="4">
+				<select name="cron_command" style="width: 100%;">';
+<?php
+				foreach($CronFiles as $Script) {
+					echo '<option selected="selected" value="' . $Script . '">' . $Script . '</option>';
+				}
+?>
+				</select>
+				</td>
 			</tr>
+<?php
+	}
+?>
 		</table>
 		<div align="center"><p class="Comments"><?php echo User_OptionsMySB_Crontab_Comment; ?></p></div>
 	</fieldset>
