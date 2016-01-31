@@ -11,6 +11,7 @@ DstPass=""			# SSH Password
 MailObject="MySB - Transfer to NAS completed !"
 
 # DO NOT MODIFY
+UserName="`whoami`"
 ScriptName=$(basename $0)
 FilesList="$HOME/scripts/files.list"
 LogFile="$HOME/scripts/$ScriptName.log"
@@ -47,7 +48,7 @@ Listing() {
 	# Log
 	echo "##################### START #####################################"
 	echo "From:		$ToSynchronize"
-	echo "To:			$DstDir"
+	echo "To:		$DstDir"
 	echo "Server:		$DstUser@$DstSrv"
 	echo "Date:		`/bin/date +%Y/%m/%d`"
 	echo "Hour:		`/bin/date +%H:%M:%S`"
@@ -55,10 +56,10 @@ Listing() {
 	echo
 
 	# Creating sub-directory on destination
-	sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d $DstDir ]; then mkdir -p $DstDir; fi"
+	sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d $DstDir ]; then mkdir -p $DstDir; fi" >> $LogFileTemp
 
 	# Start synchroniszation with RSYNC
-	rsync -av --rsh="/usr/bin/sshpass -p $DstPass ssh -p$DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $ToSynchronize $DstUser@$DstSrv:$DstDir
+	rsync -av --rsh="/usr/bin/sshpass -p $DstPass ssh -p$DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $ToSynchronize $DstUser@$DstSrv:$DstDir >> $LogFileTemp
 
 	# Deleting the file from the list
 	Lign="`echo $ToSynchronize | sed s,/,\\\\\\\\\\/,g`"
@@ -71,17 +72,18 @@ Listing() {
 	echo "###################### END ######################################"
 
 	# E-mail notification
-	content="$LogFile.$PID"
+	content="$LogFileTemp"
 	curl --data "username=$UserName&get_custom1=$ToSynchronize&get_name=$Filename&subject=$MailObject&content=$content" http://localhost:8888/rTorrent.php
 }
 
 # Execute
 while read Lign; do
-	Listing "$Lign" >> $LogFile.$PID
+	LogFileTemp="/tmp/$ScriptName.log.$PID"
+	Listing "$Lign" >> $LogFileTemp
 	# Move log file content
-	if [ -f $LogFile.$PID ]; then
-		cat $LogFile.$PID >> $LogFile
-		rm -f $LogFile.$PID
+	if [ -f $LogFileTemp ]; then
+		cat $LogFileTemp >> $LogFile
+		rm -f $LogFileTemp
 	fi
 done < $FilesList
 
