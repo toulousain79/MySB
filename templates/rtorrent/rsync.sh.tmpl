@@ -44,7 +44,13 @@ Listing() {
 	LastDirectory="`echo $FnLign | sed "s/$get_name_escaped//g;"`"
 	Count=`echo $LastDirectory |awk -F "/" '{print NF-1}'`
 	LastDirectory="`echo $LastDirectory | awk '{split($0,a,"/"); print a['$Count']}'`"
-	DstDir="$DstDir/$LastDirectory/"
+	CompleteDirs="`ls -A1 ~/rtorrent/complete/`"
+
+	if [ -z "`echo $CompleteDirs | grep "$LastDirectory"`" ]; then
+		FinalDst="$DstDir/"
+	else
+		FinalDst="$DstDir/$LastDirectory/"
+	fi
 
 	# Log
 	echo "##################### START #####################################"
@@ -60,7 +66,7 @@ Listing() {
 	sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d $DstDir ]; then mkdir -p $DstDir; fi" >> $LogFileTemp
 
 	# Start synchroniszation with RSYNC
-	rsync -av --rsh="/usr/bin/sshpass -p $DstPass ssh -p$DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $ToSynchronize $DstUser@$DstSrv:$DstDir >> $LogFileTemp
+	rsync -av --rsh="/usr/bin/sshpass -p $DstPass ssh -p$DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $ToSynchronize $DstUser@$DstSrv:$FinalDst >> $LogFileTemp
 
 	# Deleting the file from the list
 	Lign="`echo $ToSynchronize | sed s,/,\\\\\\\\\\/,g`"
