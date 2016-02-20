@@ -35,13 +35,13 @@ touch $LockFile
 # Retrieving files to transfer
 Listing() {
 	# VARs
-	FnLign="$1"	
-	ToSynchronize="`echo $FnLign | sed 's/\ /\\\ /g;'`"
-	Count=`echo $FnLign |awk -F "/" '{print NF-1}'`
+	FnLine="$1"
+	ToSynchronize="`echo $FnLine | sed 's/\ /\\\ /g;'`"
+	Count=`echo $FnLine |awk -F "/" '{print NF-1}'`
 	(( Count++ ))
-	get_name="`echo $FnLign | awk '{split($0,a,"/"); print a['$Count']}'`"
+	get_name="`echo $FnLine | awk '{split($0,a,"/"); print a['$Count']}'`"
 	get_name_escaped="`echo $get_name | sed s,/,\\\\\\\\\\/,g`"
-	LastDirectory="`echo $FnLign | sed "s/$get_name_escaped//g;"`"
+	LastDirectory="`echo $FnLine | sed "s/$get_name_escaped//g;"`"
 	Count=`echo $LastDirectory |awk -F "/" '{print NF-1}'`
 	LastDirectory="`echo $LastDirectory | awk '{split($0,a,"/"); print a['$Count']}'`"
 	CompleteDirs="`ls -A1 ~/rtorrent/complete/`"
@@ -54,8 +54,8 @@ Listing() {
 
 	# Log
 	echo "#### START ####"
-	echo "From:		$FnLign"
-	echo "To:		$DstDir"
+	echo "From:		$FnLine"
+	echo "To:		$FinalDst"
 	echo "Server:		$DstUser@$DstSrv"
 	echo "Date:		`/bin/date +%Y/%m/%d`"
 	echo "Hour:		`/bin/date +%H:%M:%S`"
@@ -66,11 +66,11 @@ Listing() {
 	sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d $DstDir ]; then mkdir -p $DstDir; fi" >> $LogFileTemp
 
 	# Start synchroniszation with RSYNC
-	rsync -av --rsh="/usr/bin/sshpass -p $DstPass ssh -p$DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$FnLign" $DstUser@$DstSrv:$FinalDst >> $LogFileTemp
+	rsync -av --rsh="/usr/bin/sshpass -p $DstPass ssh -p$DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$FnLine" $DstUser@$DstSrv:$FinalDst >> $LogFileTemp
 
 	# Deleting the file from the list
-	Lign="`echo $ToSynchronize | sed s,/,\\\\\\\\\\/,g`"
-	sed -i "/$Lign/d" $FilesList
+	FnLine="`echo $ToSynchronize | sed s,/,\\\\\\\\\\/,g`"
+	sed -i "/$FnLine/d" $FilesList
 
 	echo
 	echo "--------------------"
@@ -84,15 +84,17 @@ Listing() {
 }
 
 # Execute
-while read Lign; do
+Line="`head -n 1 $FilesList | tail -n 1`"
+while [ ! -z "$Line" ]; do
 	LogFileTemp="/tmp/$ScriptName.log.$PID"
-	Listing "$Lign" >> $LogFileTemp
+	Listing "$Line" >> $LogFileTemp
 	# Move log file content
 	if [ -f $LogFileTemp ]; then
 		cat $LogFileTemp >> $LogFile
 		rm -f $LogFileTemp
 	fi
-done < $FilesList
+	Line="`head -n 1 $FilesList | tail -n 1`"
+done
 
 # Removing the lock file
 if [ -e $LockFile ]; then
