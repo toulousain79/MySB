@@ -14,7 +14,7 @@ MailObject="MySB - Transfer to NAS completed !"
 UserName="`whoami`"
 ScriptName=$(basename $0)
 FilesList="$HOME/scripts/files.list"
-LogFile="$HOME/scripts/$ScriptName.log"
+LogFile="$HOME/logs/$ScriptName.log"
 LockFile="$HOME/scripts/$ScriptName.lock"
 PID="$$"
 get_base_path="$1"
@@ -69,8 +69,10 @@ Listing() {
 	rsync -av --rsh="/usr/bin/sshpass -p $DstPass ssh -p$DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$FnLine" $DstUser@$DstSrv:$FinalDst >> $LogFileTemp
 
 	# Deleting the file from the list
-	FnLine="`echo $ToSynchronize | sed s,/,\\\\\\\\\\/,g`"
-	sed -i "/$FnLine/d" $FilesList
+	if [ $? -eq 0 ]; then
+		FnLine="`echo $ToSynchronize | sed s,/,\\\\\\\\\\/,g`"
+		sed -i "/$FnLine/d" $FilesList
+	fi
 
 	echo
 	echo "--------------------"
@@ -90,7 +92,7 @@ while [ ! -z "$Line" ]; do
 	Listing "$Line" >> $LogFileTemp
 	# Move log file content
 	if [ -f $LogFileTemp ]; then
-		#cat $LogFileTemp >> $LogFile
+		cat $LogFileTemp >> $LogFile
 		rm -f $LogFileTemp
 	fi
 	Line="`head -n 1 $FilesList | tail -n 1`"
