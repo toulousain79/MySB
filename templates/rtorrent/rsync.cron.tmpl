@@ -8,6 +8,7 @@ DstPort=""			# SSH Port (ex: 22)
 DstUser=""			# SSH Username (ex: my_user)
 DstPass=""			# SSH Password
 MaxToSync=0			# Max sync to start from FilesList per cronjob ? (ex: 0 for sync all) 
+CreateSubDir=1		# Create a subdirectory for alone files (Used by some scraper)
 # Notification (if enabled)
 MailObject="MySB - Transfer to NAS completed !"
 
@@ -30,21 +31,33 @@ touch $LockFile
 # Retrieving files to transfer
 Listing() {
 	# VARs
-	FnLine="$1"	
+	FnLine="$1"
 	ToSynchronize="`echo $FnLine | sed 's/\ /\\\ /g;'`"
 	CountSlash=`echo $FnLine |awk -F "/" '{print NF-1}'`
 	(( CountSlash++ ))
 	get_name="`echo $FnLine | awk '{split($0,a,"/"); print a['$CountSlash']}'`"
 	get_name_escaped="`echo $get_name | sed s,/,\\\\\\\\\\/,g`"
-	LastDirectory="`echo $FnLine | sed "s/$get_name_escaped//g;"`"
-	CountSlash=`echo $LastDirectory |awk -F "/" '{print NF-1}'`
-	LastDirectory="`echo $LastDirectory | awk '{split($0,a,"/"); print a['$CountSlash']}'`"
+	Tree="`echo $FnLine | sed "s/$get_name_escaped//g;"`"
+	CountSlash=`echo $Tree | awk -F "/" '{print NF-1}'`
+	CategoryDir="`echo $Tree | awk '{split($0,a,"/"); print a['$CountSlash']}'`"
 	CompleteDirs="`ls -A1 ~/rtorrent/complete/`"
+	if [ -f "$FnLine" ] && [ $CreateSubDir -eq 1 ]; then
+		TreeEscaped="`echo $FnLine | sed "s/$get_name_escaped//g;" | sed s,/,\\\\\\\\\\/,g`"
+		SubDirectory="`echo ${FnLine%.*} | sed "s/$TreeEscaped//g;"`"
+	fi
 
-	if [ -z "`echo $CompleteDirs | grep "$LastDirectory"`" ]; then
-		FinalDst="$DstDir/"
+	if [ -z "`echo $CompleteDirs | grep "$CategoryDir"`" ]; then
+		if [ ! -z "$SubDirectory" ] && [ $CreateSubDir -eq 1 ]; then
+			FinalDst="$DstDir/$SubDirectory/"
+		else
+			FinalDst="$DstDir/"
+		fi
 	else
-		FinalDst="$DstDir/$LastDirectory/"
+		if [ ! -z "$SubDirectory" ] && [ $CreateSubDir -eq 1 ]; then
+			FinalDst="$DstDir/$CategoryDir/$SubDirectory/"
+		else
+			FinalDst="$DstDir/$CategoryDir/"
+		fi
 	fi
 
 	# Log
