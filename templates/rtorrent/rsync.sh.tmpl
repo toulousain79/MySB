@@ -7,6 +7,7 @@ DstSrv=""			# Hostname OR IP address of the destination. (ex: myserver.mydomain.
 DstPort=""			# SSH Port (ex: 22)
 DstUser=""			# SSH Username (ex: my_user)
 DstPass=""			# SSH Password
+MaxToSync=0			# Max sync to start from FilesList per cronjob ? (ex: 0 for sync all) 
 CreateSubDir=1		# Create a subdirectory for alone files (Used by some scraper)
 # Notification (if enabled)
 MailObject="MySB - Transfer to NAS completed !"
@@ -86,6 +87,7 @@ Listing() {
 		FnLine="`echo $ToSynchronize | sed s,/,\\\\\\\\\\/,g`"
 		sed -i "/$FnLine/d" $FilesList
 	fi
+	(( Count++ ))
 
 	echo
 	echo "--------------------"
@@ -99,6 +101,7 @@ Listing() {
 }
 
 # Execute
+Count=0
 Line="`head -n 1 $FilesList | tail -n 1`"
 while [ ! -z "$Line" ]; do
 	LogFileTemp="/tmp/$ScriptName.log.$PID"
@@ -109,6 +112,9 @@ while [ ! -z "$Line" ]; do
 		rm -f $LogFileTemp
 	fi
 	Line="`head -n 1 $FilesList | tail -n 1`"
+	if [ $Count -eq $MaxToSync ] && [ $MaxToSync -ne 0 ]; then
+		unset Line
+	fi
 done
 
 # Removing the lock file
