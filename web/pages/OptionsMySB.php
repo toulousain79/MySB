@@ -219,7 +219,7 @@ $rtorrent_notify = $users_datas['rtorrent_notify'];
 $language = $users_datas['language'];
 
 $CronFiles = array();
-if($dossier = opendir('/home/elohim13/scripts')) {
+if($dossier = opendir("/home/$CurrentUser/scripts")) {
 	while(false !== ($fichier = readdir($dossier))) {
 		if($fichier != '.' && $fichier != '..') {
 			$info = new SplFileInfo($fichier);
