@@ -499,7 +499,7 @@ function GenerateMessage($commands, $type, $message, $args) {
 }
 
 // Replaces accented characters
-function ReplacesAccentedCharacters($str, $encoding='utf-8') {
+function ReplacesSpecialCharacters($str, $encoding='utf-8') {
 	// TO HTML entities
 	$str = htmlentities($str, ENT_NOQUOTES, $encoding);
 
@@ -512,6 +512,7 @@ function ReplacesAccentedCharacters($str, $encoding='utf-8') {
 	$str = preg_replace('#&([A-za-z]{2})(?:lig);#', '\1', $str);
 	// Supprimer tout le reste
 	$str = preg_replace('#&[^;]+;#', '', $str);
+	$str = preg_replace('/\(|\)/', '', $str);
 
 	return $str;
 }
