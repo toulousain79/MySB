@@ -25,6 +25,7 @@
 get_base_path="$1"
 get_custom1="$2"
 get_name="$3"
+get_loaded_file="$4"
 UserName="<username>"
 Timestamp="`/bin/date +%Y%m%d%H%M%S`"
 if [ -z "`getent passwd $UserName`" ] || [ -z "$get_base_path" ] || [ -z "$get_custom1" ] || [ -z "$get_name" ]; then
@@ -34,15 +35,15 @@ fi
 #### Moving download
 mv -u "`echo $get_base_path | sed 's/\ /\\ /g;'`" $get_custom1
 
-#### Execute PHP command (Mail notification + ownCloud CRON)
-curl --data "username=$UserName&get_base_path=$get_base_path&get_custom1=$get_custom1&get_name=$get_name" http://localhost:8888/rTorrent.php
-
 #### Execute user scripts
 UserScripts="`ls -A1 /home/$UserName/scripts/ | grep '.sh$'`"
 if [ ! -z "$UserScripts" ]; then
 	for Script in "$UserScripts"; do
-		/usr/bin/screen -dmS $UserName_$Timestamp /bin/bash /home/$UserName/scripts/$Script "$get_base_path" "$get_custom1" "$get_name";
+		/usr/bin/screen -dmS $UserName_$Timestamp /bin/bash /home/$UserName/scripts/$Script "$get_base_path" "$get_custom1" "$get_name" "$get_loaded_file";
 	done
+else
+	#### Execute PHP command (Mail notification + ownCloud CRON)
+	curl --data "username=$UserName&get_base_path=$get_base_path&get_custom1=$get_custom1&get_name=$get_name&get_loaded_file=$get_loaded_file" http://localhost:8888/rTorrent.php
 fi
 
 ##################### LAST LINE ######################################
