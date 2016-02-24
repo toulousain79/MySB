@@ -125,6 +125,7 @@ if (isset($_POST['submit'])) {
 					$Directory = ReplacesSpecialCharacters($_POST['directory'][$i]);
 					$Directory = preg_replace('/\s\s+/', '', $Directory);
 					$Directory = preg_replace('/\s+/', '_', $Directory);
+					$Directory = preg_replace('/\W+/', '', $Directory);
 
 					if ( !empty($Directory) ) {
 						$IfExist = $MySB_DB->get("users_rtorrent_cfg", "id_users_rtorrent_cfg", [
