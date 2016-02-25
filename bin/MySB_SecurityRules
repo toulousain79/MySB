@@ -47,6 +47,7 @@ ApplyConfigPeerGuardian=NO
 ApplyConfigFail2Ban=NO
 ApplyConfigBind=NO
 ApplyIptablesUsers=NO
+ApplyIptablesLetsEncrypt=NO
 LoadOnBoot=NO
 
 # Check by arguments
@@ -78,6 +79,21 @@ case "$Switch" in
 	refresh)
 		for Arg in "$@"; do
 			case "$Arg" in
+				--letsencrypt)
+					unset LentsEncryptIPs Temp
+					LetsEncryptOpenPort="`Func_SQL_Command 'SELECT' 'MySB_db' 'letsencrypt_openport' 'system' "id_system = 1"`"
+					Temp="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'lets_encrypt' "1" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+					if [ "$IpRestriction" == "YES" ]; then
+						for ip in $Temp; do
+							LentsEncryptIPs="${LentsEncryptIPs} $ip/32"
+						done
+					else
+						LentsEncryptIPs="0/0"
+					fi
+					LentsEncryptIPs=$(echo "$LentsEncryptIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
+					ApplyIptablesLetsEncrypt=YES
+					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
+				;;
 				--users)
 					ApplyIptablesUsers=YES
 					ApplyConfigNginx="`CheckCommand 1 nginx`"
@@ -211,12 +227,14 @@ CreateServicesRules() {
 
 		# Create '/etc/pgl/pglcmd.conf'
 		PeerGuardianPglcmdConf 0
-		# Create '/etc/pgl/allow.p2p'
-		PeerGuardianAllowP2P 0
-		# Create '/etc/pgl/blocklists.list'
-		PeerGuardianBlocklistsList 0 "CreateFile"
-		# Create '/etc/pgl/*.insert.sh'
-		PeerGuardianIptablesInsert 0
+		if [ "$LetsEncryptOpenPort" == "0" ]; then
+			# Create '/etc/pgl/allow.p2p'
+			PeerGuardianAllowP2P 0
+			# Create '/etc/pgl/blocklists.list'
+			PeerGuardianBlocklistsList 0 "CreateFile"
+			# Create '/etc/pgl/*.insert.sh'
+			PeerGuardianIptablesInsert 0
+		fi
 	fi
 	#### PeerGuardian
 }
@@ -458,6 +476,19 @@ case "$Switch" in
 		#### IPtables - SAVE Iptables Rules
 
 		#### IPtables - ALTER Iptables Rules
+		if [ "$ApplyIptablesLetsEncrypt" == "YES" ]; then
+			log_daemon_msg "$SecurityRules_IPtables_LetEncrypt"
+
+			# icmp_packets chain
+			PopulatingIcmpChain 'letsencrypt'
+			# icmp_packets chain
+
+			# tcp_inbound chain
+			PopulatingTcpInboundChain 'letsencrypt'
+			# tcp_inbound chain
+
+			StatusLSB
+		fi		
 		if [ "$ApplyIptablesUsers" == "YES" ]; then
 			log_daemon_msg "$SecurityRules_IPtables_Refresh"
 

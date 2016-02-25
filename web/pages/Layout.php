@@ -44,7 +44,7 @@
 	<!-- jquery -->
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-1.12.0.min.js"></script>
 	<!-- modernizr enables HTML5 elements and feature detects -->
-	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/modernizr-1.7.min.js"></script>
+	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/modernizr-2.8.3.min.js"></script>
     <!-- noty -->
     <script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/noty/packaged/jquery.noty.packaged.min.js"></script>
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.create_message.js"></script>

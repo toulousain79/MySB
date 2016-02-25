@@ -72,13 +72,13 @@ function ChangeCakeboxLanguage($user, $language) {
 function PasswordGenerator ($length = 8) {
 	$password = "";
 	$possibilities = "012346789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
- 
+
 	$lengthMax = strlen($possibilities);
- 
+
 	if ($length > $lengthMax) {
 		$length = $lengthMax;
 	}
- 
+
 	$i = 0;
 	while ($i < $length) {
 		$caractere = substr($possibilities, mt_rand(0, $lengthMax-1), 1);
@@ -88,7 +88,7 @@ function PasswordGenerator ($length = 8) {
 			$i++;
 		}
 	}
- 
+
 	return $password;
 }
 
@@ -276,43 +276,63 @@ function CheckWolfDB($username, $password) {
 }
 
 // Get only domain
-function GetOnlyDomain($url) {
-	if (filter_var($url, FILTER_VALIDATE_URL)) {
-		$hostname = parse_url($url, PHP_URL_HOST);
-		$hostParts = explode('.', $hostname);
-		$numberParts = sizeof($hostParts);
-		$domain='';
+function CleanHostname($url) {
+	$hostParts = explode('.', $url);
+	$numberParts = sizeof($hostParts);
+	$domain='';
 
-		switch ($numberParts) {
-			case 1:
-				$domain = current($hostParts);
-				break;
-			case 2:
-				$hostParts = array_reverse($hostParts);
+	switch ($numberParts) {
+		case 1:
+			$domain = current($hostParts);
+			break;
+		case 2:
+			$hostParts = array_reverse($hostParts);
+			$domain = $hostParts[1] .'.'. $hostParts[0];
+			break;
+		case 3:
+			$hostParts = array_reverse($hostParts);
+			if ( ($hostParts[2] != 'www') || ($hostParts[2] != 'www2') ) {
+				$domain = $hostParts[2] .'.'. $hostParts[1] .'.'. $hostParts[0];
+			} else {
 				$domain = $hostParts[1] .'.'. $hostParts[0];
-				break;
-			default:
-				$hostParts = array_reverse($hostParts);
-				$domain = $hostParts[1] .'.'. $hostParts[0];
-				break;
-		}
-	} else {
-		$hostParts = explode('.', $url);
-		$hostParts = array_reverse($hostParts);
-		$domain = $hostParts[1] .'.'. $hostParts[0];
+			}
+			break;
+		default:
+			$hostParts = array_reverse($hostParts);
+			$domain = $hostParts[1] .'.'. $hostParts[0];
+			break;
 	}
 
 	return $domain;
 }
 
 // Manage User Trackers
-function ManageUsersTrackers($TrackerDomain, $IsActive) {
+function ManageUsersTrackers($TrackerHostname, $IsActive) {
 	global $MySB_DB;
 
+	$TrackerHostname = preg_replace('/\s\s+/', '', "$TrackerHostname");
+	if (filter_var($TrackerHostname, FILTER_VALIDATE_URL)) {
+		$TrackerHostname = parse_url($TrackerHostname, PHP_URL_HOST);
+	}
+	$hostParts = explode('.', $TrackerHostname);
+	$numberParts = sizeof($hostParts);
 	$value = false;
 
-	$TrackerDomain = preg_replace('/\s\s+/', '', "$TrackerDomain"); 
-	$TrackerAddress = "";
+	switch ($numberParts) {
+		case 3:
+			$hostParts = array_reverse($hostParts);
+			if ( ($hostParts[2] != 'www') && ($hostParts[2] != 'www2') ) {
+				$TrackerAddress = $hostParts[2] .'.'. $hostParts[1] .'.'. $hostParts[0];
+				$TrackerDomain = $hostParts[1] .'.'. $hostParts[0];
+			} else {
+				$TrackerDomain = $hostParts[1] .'.'. $hostParts[0];
+			}
+			break;
+		default: // 2
+			$hostParts = array_reverse($hostParts);
+			$TrackerDomain = $hostParts[1] .'.'. $hostParts[0];
+			break;
+	}
 
 	switch ($IsActive) {
 		case "1":
@@ -323,7 +343,12 @@ function ManageUsersTrackers($TrackerDomain, $IsActive) {
 			break;
 	}
 
-	$DnsRecords = dns_get_record("tracker.".$TrackerDomain, $type = DNS_A);
+	if ( isset($TrackerAddress) ) {
+		$DnsRecords = dns_get_record($TrackerAddress, $type = DNS_A);
+	} else {
+		$DnsRecords = dns_get_record("tracker.".$TrackerDomain, $type = DNS_A);
+	}
+	
 	$count = 0;
 	foreach($DnsRecords as $Record) {
 		if ( $Record['ip'] != "" ) {
@@ -332,7 +357,9 @@ function ManageUsersTrackers($TrackerDomain, $IsActive) {
 	}
 
 	if ( $count >= 1 ) {
-		$TrackerAddress = "tracker.".$TrackerDomain;
+		if ( !isset($TrackerAddress) ) {
+			$TrackerAddress = "tracker.".$TrackerDomain;
+		}
 	} else {
 		$TrackerAddress = $TrackerDomain;
 		$DnsRecords = dns_get_record($TrackerAddress, $type = DNS_A);
@@ -372,7 +399,7 @@ function ManageUsersTrackers($TrackerDomain, $IsActive) {
 			}
 		}
 	}
-	
+
 	return $value;
 }
 
@@ -449,7 +476,7 @@ function ValidateIPv4($ip) {
 // Can I activate 'Apply' button ?
 function IfApplyConfig() {
 	global $MySB_DB, $CurrentUser;
-	
+
 	$value = $MySB_DB->count("commands", "commands", ["AND" => ["user" => "$CurrentUser", "reload" => 1]]);
 
 	return $value;
@@ -470,7 +497,7 @@ function GenerateMessage($commands, $type, $message, $args) {
 			switch ($commands) {
 				case "message_only": // Used to only display a message
 					$timeout = 10000;
-					
+
 					break;
 
 				default: // Used for create a new command to apply
@@ -488,7 +515,7 @@ function GenerateMessage($commands, $type, $message, $args) {
 
 					break;
 			}
-			
+
 			break;
 		default:
 			$timeout = 7000;
@@ -499,7 +526,7 @@ function GenerateMessage($commands, $type, $message, $args) {
 }
 
 // Replaces accented characters
-function ReplacesSpecialCharacters($str, $encoding='utf-8') {
+function ReplacesAccentedCharacters($str, $encoding='utf-8') {
 	// TO HTML entities
 	$str = htmlentities($str, ENT_NOQUOTES, $encoding);
 
@@ -512,7 +539,6 @@ function ReplacesSpecialCharacters($str, $encoding='utf-8') {
 	$str = preg_replace('#&([A-za-z]{2})(?:lig);#', '\1', $str);
 	// Supprimer tout le reste
 	$str = preg_replace('#&[^;]+;#', '', $str);
-	$str = preg_replace('/\(|\)/', '', $str);
 
 	return $str;
 }

@@ -24,6 +24,9 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+#### VARs
+Switch="$1"
+
 #### Install packages
 if ! CheckCommand 0 mysql; then
 	PackagesToInstall="mysql-server"
@@ -83,55 +86,57 @@ if [ -z $MySQL_RootPassword ] && [ -z $MySQL_MysbPassword ]; then
 
 	# Create MySB database (ONLY during a new install, NOT during an upgrade)
 	if [ "$1" == "INSTALL" ]; then
-		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Schema_2016-01-12.sql
-		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Data_2016-01-12.sql
+		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Schema_2016-02-03.sql
+		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Data_2016-02-03.sql
 	fi
 else
 	if [ -f $MySB_InstallDir/files/MySQL_RootPassword ]; then rm -vf $MySB_InstallDir/files/MySQL_RootPassword; fi
 	if [ -f $MySB_InstallDir/files/MySQL_MysbPassword ]; then rm -vf $MySB_InstallDir/files/MySQL_MysbPassword; fi
 fi
 
-#### Temp directory in memory
-if [ ! -d /media/MySQL_TempDir ]; then
-	mkdir -pv /media/MySQL_TempDir
-	chmod 777 /media/MySQL_TempDir
-	mount -t tmpfs -o size=64M tmpfs /media/MySQL_TempDir
-	echo "# MySQL Temp Directory" >> /etc/fstab
-	echo "tmpfs   /media/MySQL_TempDir      tmpfs   defaults,size=64M 0 0" >> /etc/fstab
+if [ "$Switch" != "UPGRADE" ]; then
+	#### Temp directory in memory
+	if [ ! -d /media/MySQL_TempDir ]; then
+		mkdir -pv /media/MySQL_TempDir
+		chmod 777 /media/MySQL_TempDir
+		mount -t tmpfs -o size=64M tmpfs /media/MySQL_TempDir
+		echo "# MySQL Temp Directory" >> /etc/fstab
+		echo "tmpfs   /media/MySQL_TempDir      tmpfs   defaults,size=64M 0 0" >> /etc/fstab
+	fi
+
+	#### Config file
+	# Logging
+	perl -pi -e "s/^#general_log_file/general_log_file/g" /etc/mysql/my.cnf
+	# Caching
+	NumLign=$(cat /etc/mysql/my.cnf | grep 'query_cache_limit' -n -m 1 | cut -d ':' -f 1)
+	sed -i '/query_cache_limit/d' /etc/mysql/my.cnf
+	sed -i "${NumLign}i\query_cache_limit       = 2M" /etc/mysql/my.cnf
+	NumLign=$(cat /etc/mysql/my.cnf | grep 'query_cache_size' -n -m 1 | cut -d ':' -f 1)
+	sed -i '/query_cache_size/d' /etc/mysql/my.cnf
+	sed -i "${NumLign}i\query_cache_size       = 64M" /etc/mysql/my.cnf
+	(( NumLign++ ))
+	sed -i "${NumLign}i\query_cache_type        = 1" /etc/mysql/my.cnf
+	# Optimizing
+	if [ -d /media/MySQL_TempDir ]; then
+		NumLign=$(cat /etc/mysql/my.cnf | grep 'tmpdir' -n -m 1 | cut -d ':' -f 1)
+		sed -i '/tmpdir/d' /etc/mysql/my.cnf
+		sed -i "${NumLign}i\tmpdir          = /media/MySQL_TempDir" /etc/mysql/my.cnf
+	fi
+
+	#### STOP services
+	ManageServices 'stop' 'mysql'
+
+	#### Force mysql user homedir (Pas de répertoire, connexion avec HOME=/)
+	if [ -z "`getent passwd mysql | grep '/var/lib/mysql'`" ]; then
+		usermod -d /var/lib/mysql mysql
+	fi
+
+	#### START services
+	ManageServices 'start' 'mysql'
+
+	#### Logrotate
+	LogRotate 'mysql-server'
 fi
-
-#### Config file
-# Logging
-perl -pi -e "s/^#general_log_file/general_log_file/g" /etc/mysql/my.cnf
-# Caching
-NumLign=$(cat /etc/mysql/my.cnf | grep 'query_cache_limit' -n -m 1 | cut -d ':' -f 1)
-sed -i '/query_cache_limit/d' /etc/mysql/my.cnf
-sed -i "${NumLign}i\query_cache_limit       = 2M" /etc/mysql/my.cnf
-NumLign=$(cat /etc/mysql/my.cnf | grep 'query_cache_size' -n -m 1 | cut -d ':' -f 1)
-sed -i '/query_cache_size/d' /etc/mysql/my.cnf
-sed -i "${NumLign}i\query_cache_size       = 64M" /etc/mysql/my.cnf
-(( NumLign++ ))
-sed -i "${NumLign}i\query_cache_type        = 1" /etc/mysql/my.cnf
-# Optimizing
-if [ -d /media/MySQL_TempDir ]; then
-	NumLign=$(cat /etc/mysql/my.cnf | grep 'tmpdir' -n -m 1 | cut -d ':' -f 1)
-	sed -i '/tmpdir/d' /etc/mysql/my.cnf
-	sed -i "${NumLign}i\tmpdir          = /media/MySQL_TempDir" /etc/mysql/my.cnf
-fi
-
-#### STOP services
-ManageServices 'stop' 'mysql'
-
-# Force mysql user homedir (Pas de répertoire, connexion avec HOME=/)
-if [ -z "`getent passwd mysql | grep '/var/lib/mysql'`" ]; then
-	usermod -d /var/lib/mysql mysql
-fi
-
-#### START services
-ManageServices 'start' 'mysql'
-
-#### Logrotate
-LogRotate 'mysql-server'
 
 #### MySQL Tuner
 mysqltuner --user root --pass $MySQL_RootPassword --nocolor > $MySB_InstallDir/temp/mysqltuner.log

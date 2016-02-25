@@ -279,7 +279,7 @@ PopulatingIcmpChain() {
 		;;
 	esac
 
-	# Allow provider monitoring by ICMP
+	#### Allow provider monitoring by ICMP
 	case "$1" in
 		"create")
 			if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "NONE" ]; then
@@ -313,7 +313,7 @@ PopulatingIcmpChain() {
 		;;
 	esac
 
-	# Allow ICMP for all users
+	#### Allow ICMP for all users
 	case "$1" in
 		"create")
 			for ip in $AllUsersIPs; do
@@ -331,10 +331,10 @@ PopulatingIcmpChain() {
 				sed -i ""$NumLign"i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
 				(( NumLign++ ))
 			done
-		;;
+		;;	
 	esac
 
-	# Allow ICMP over VPN tunneling
+	#### Allow ICMP over VPN tunneling
 	case "$1" in
 		"create")
 			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
@@ -346,7 +346,20 @@ PopulatingIcmpChain() {
 		;;
 	esac
 
-	# By default, however, drop pings without logging. Blaster and other worms have infected systems blasting pings.
+	#### Allow ICMP for Let's Encrypt
+	case "$1" in
+		"letsencrypt")
+			NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep '\[MySB\] Ping blocked:' -n -m 1 | cut -d ':' -f 1)
+			for ip in $LentsEncryptIPs; do
+				sed -i ""$NumLign"i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for Let's Encrypt\" -j LOG --log-prefix \"[MySB] Ping detected:\"\n" $MySB_InstallDir/temp/current-iptables-rules
+				(( NumLign++ ))
+				sed -i ""$NumLign"i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for Let's Encrypt\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
+				(( NumLign++ ))
+			done
+		;;
+	esac
+
+	#### By default, however, drop pings without logging. Blaster and other worms have infected systems blasting pings.
 	case "$1" in
 		"create")
 			# Comment the line below if you want pings logged, but it will likely fill your logs.
@@ -667,12 +680,12 @@ PopulatingTcpInboundChain() {
 				PORT_START="`Func_SQL_Command 'SELECT' 'MySB_db' 'scgi_port' 'users' "users_ident = '$SeedboxUser'"`"
 				PORT_END="`Func_SQL_Command 'SELECT' 'MySB_db' 'rtorrent_port' 'users' "users_ident = '$SeedboxUser'"`"
 				iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $PORT_START:$PORT_END -j LOG --log-prefix "[MySB] rTorrent TCP IN: "
-				iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $PORT_START:$PORT_END -j ACCEPT -m comment --comment "rTorrent for users"				
+				iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $PORT_START:$PORT_END -j ACCEPT -m comment --comment "rTorrent for users"
 			done
 		;;
 	esac
 
-	# Network File System (NFS) Server
+	#### Network File System (NFS) Server
 	# Please note that additional services must be configured in order to support an NFS Server through the firewall.
 	# Read the help in the generator or this site:
 	# http://www.lowth.com/LinWiz/nfs_help.html
@@ -701,7 +714,18 @@ PopulatingTcpInboundChain() {
 		;;
 	esac
 
-	# Not matched, so return so it will be logged
+	#### Let's Encrypt
+	case "$1" in
+		"letsencrypt")
+			NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep '\[MySB\] TCP IN:' -n -m 1 | cut -d ':' -f 1)
+			for ip in $LentsEncryptIPs; do
+				sed -i ""$NumLign"i\-A tcp_inbound -s $ip -i $PrimaryInet -p tcp -m tcp --dport https -m comment --comment \"Let's Encrypt TCP\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
+				(( NumLign++ ))
+			done
+		;;
+	esac
+
+	#### Not matched, so return so it will be logged
 	case "$1" in
 		"create")
 			iptables -A tcp_inbound -p TCP -j LOG --log-prefix "[MySB] TCP IN: "

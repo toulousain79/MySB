@@ -26,86 +26,170 @@ source $(dirname $0)/../inc/includes_before
 
 case "$1" in
 	"BEFORE")
-		# MySQL
-		if [ -f /etc/MySB/config_db ]; then
-			source /etc/MySB/config_db
-			echo "grant all on MySB_db.* to 'MySB_user'@'%' Identified by '$MySQL_MysbPassword';"
-			mysql -u root -p$MySQL_RootPassword <<-EOF
-			grant all on MySB_db.* to 'MySB_user'@'%' Identified by '$MySQL_MysbPassword';
-			FLUSH PRIVILEGES;
-			EOF
-		fi
-		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Schema_2016-01-12.sql
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'system' 'owncloud_cron' "TINYINT( 1 ) NOT NULL DEFAULT '0'" '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'users' 'rtorrent_notify' "TINYINT( 1 ) NOT NULL DEFAULT '0'" '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'CHANGE' 'repositories' 'version' "VARCHAR( 16 )" '-echo'
+		####################################
+		#### To call for every upgrade - BoF
+		# Create missing directories and change rights
+		ManageDirectoriesAndFiles 'global'
 
-		# Repositories
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '0.12.9', file= 'node_v0.12.9.tar.gz', old_file = 'node_v0.12.7.tar.gz', url = 'https://nodejs.org/dist/v0.12.9/node-v0.12.9.tar.gz'" "name = 'NodeJS'" '-echo'
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '8.2.2', file= 'owncloud_v8.2.2.zip', old_file = 'owncloud_v8.2.0.zip', url = 'https://download.owncloud.org/community/owncloud-8.2.2.zip'" "name = 'ownCloud'" '-echo'
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '1.0.0-alpha11', file= 'composer.phar', old_file = '', url = 'https://getcomposer.org/installer'" "name = 'Composer'" '-echo'
+		# Upgrade in progress page
+		UpgradeInProgress "on"
 
-		#### DNScrypt resolvers
+		# Switching DNS
+		SwitchDNS "bind"
+
+		# Forcing NTP update
+		ping -c4 0.fr.pool.ntp.org
+		/usr/sbin/ntpdate -u 0.fr.pool.ntp.org
+		#### To call for every upgrade - EoF
+		####################################
+
+		#### MySQL
+		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Schema_2016-02-03.sql
+
+		#### Repositories
+		Func_SQL_Command 'ALTER' 'MySB_db' 'DROP' 'system' 'security_params' '-echo'
+		Func_SQL_Command 'ALTER' 'MySB_db' 'CHANGE' 'trackers_list_ipv4' 'ipv4' "VARCHAR( 15 )" '-echo'
+		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'system' 'letsencrypt_date' "DATE NOT NULL" '-echo'
+		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'system' 'letsencrypt_openport' "TINYINT( 1 ) NOT NULL DEFAULT '0'" '-echo'
+		Func_SQL_Command 'INSERT' 'MySB_db' 'repositories' 'type,dir,name,version,file,url,active' "'GIT','/sources/letsencrypt','Lets Encrypt', '0.3.0', 'LetsEncrypt_v0.3.0.zip', 'https://github.com/letsencrypt/letsencrypt', '1'" '-echo'
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '1.6.1', file= 'dnscrypt-proxy_v1.6.1.tar.gz', old_file = 'dnscrypt-proxy_v1.6.0.tar.gz', url = 'http://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-proxy-1.6.1.tar.gz'" "name = 'DNScrypt-proxy'" '-echo'
+		Func_SQL_Command 'INSERT' 'MySB_db' 'services' 'serv_name,port_tcp1,to_install' "'Lets Encrypt', '443', '1'" '-echo'
+		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses,ipv4' "'acme-v01.api.letsencrypt.org', '104.92.240.99'" '-echo'
+		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses,ipv4' "'outbound1.letsencrypt.org', '66.133.109.36'" '-echo'
+		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses,ipv4' "'outbound2.letsencrypt.org', '64.78.149.164'" '-echo'
+
+		#### DNScrypt-proxy - resolvers
 		source $MySB_InstallDir/inc/funcs_by_script/funcs_DNScrypt
 		DNScrypt_ResolversRenew
-
-		#### VSFTP
-		perl -pi -e "s/xferlog_enable=YES/xferlog_enable=NO/g" /etc/vsftpd.conf
 
 		#### DNScrypt-proxy - /etc/init.d/dnscrypt-proxy
 		cp -vf $MySB_InstallDir/templates/init/etc.init.dnscrypt-proxy.tmpl /etc/init.d/dnscrypt-proxy
 		chmod +x /etc/init.d/dnscrypt-proxy
 
-		#### PHP - /etc/php5/mods-available/apcu.ini
-		if [ ! -z "`cat /etc/php5/mods-available/apcu.ini | grep 'apc.enable_cli'`" ]; then
-			sed -i '/apc.enable_cli/d' /etc/php5/mods-available/apcu.ini
-			echo "apc.enable_cli=1" >> /etc/php5/mods-available/apcu.ini
+		#### PHP - Merge new config files
+		TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
+		if [ -f /etc/php5/cli/php.ini.ucf-dist ]; then
+			mv -v /etc/php5/cli/php.ini.ucf-dist /etc/php5/cli/php.ini
+			perl -pi -e "s/^;always_populate_raw_post_data/always_populate_raw_post_data/g" /etc/php5/fpm/php.ini
+			perl -pi -e "s/^;date.timezone =/date.timezone = $TimeZoneEscaped/g" /etc/php5/cli/php.ini
+			perl -pi -e "s/^expose_php = On/expose_php = Off/g" /etc/php5/cli/php.ini
 		fi
-		if [ -f /etc/php5/fpm/conf.d/20-htscanner.ini ]; then
-			rm -v /etc/php5/fpm/conf.d/20-htscanner.ini
-		fi
-
-		#### RKHunter
-		sed -i '/"\/dev\/.udev"/d' /etc/rkhunter.conf
-		sed -i '/"\/dev\/.mdadm"/d' /etc/rkhunter.conf
-		sed -i '/"\/dev\/.initramfs"/d' /etc/rkhunter.conf
-		if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.udev'`" ]; then
-			sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.udev\"" /etc/rkhunter.conf
-		fi
-		if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.mdadm'`" ]; then
-			sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.mdadm\"" /etc/rkhunter.conf
-		fi
-		if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.initramfs'`" ]; then
-			sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.initramfs\"" /etc/rkhunter.conf
+		if [ -f /etc/php5/fpm/php.ini.ucf-dist ]; then
+			mv -v /etc/php5/fpm/php.ini.ucf-dist /etc/php5/fpm/php.ini
+			perl -pi -e "s/^;always_populate_raw_post_data/always_populate_raw_post_data/g" /etc/php5/fpm/php.ini
+			perl -pi -e "s/upload_max_filesize = 2M/upload_max_filesize = 16M/g" /etc/php5/fpm/php.ini
+			perl -pi -e "s/post_max_size = 8M/post_max_size = 16M/g" /etc/php5/fpm/php.ini
+			perl -pi -e "s/^;date.timezone =/date.timezone = $TimeZoneEscaped/g" /etc/php5/fpm/php.ini
 		fi
 
-		#### Users
-		ListingUsers
-		for seedUser in $UsersList; do
-			# SSH Key
-			if [ ! -f /home/$seedUser/.ssh/id_rsa ]; then
-				ssh-keygen -q -t rsa -b 2048 -N "" -f /home/$seedUser/.ssh/id_rsa -C "$seedUser@$HostNameFQDN"
-			fi
-			if [ ! -f /home/$seedUser/.ssh/authorized_keys ]; then
-				touch /home/$seedUser/.ssh/authorized_keys
-			fi
-			chown root:$seedUser /home/$seedUser/.ssh/*
-			chmod 0660 /home/$seedUser/.ssh/*
+		#### Move some files & directories
+		# Sources List Directory
+		if [ -d /etc/apt/sources.list.d ]; then rm -f /etc/apt/sources.list.d/* &> /dev/null; fi
 
-			# Delete all torrent files in watch directories
-			rm -vf /home/$seedUser/rtorrent/watch/*.torrent
-			rm -vf /home/$seedUser/logs/rpc.*
+		#### Renew Certificate
+		rm -vrf $MySB_InstallDir/ssl/
+		ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Certificates" 'CreateCACertificate' 'INSTALL'
+		ScriptInvoke 'source' "$MySB_InstallDir/install/Certificates" 'CreateServiceCertificate' 'mysb'
 
-			# Logrotate
-			cp -vf $MySB_InstallDir/templates/logrotate/etc.logrotate.d.users.tmpl /etc/logrotate.d/rtorrent_$seedUser
-			perl -pi -e "s/<username>/$seedUser/g" /etc/logrotate.d/rtorrent_$seedUser
-		done
+		#### Samba
+		if [ "$IsInstalled_Samba" == "YES" ]; then
+			ManageServices stop "samba"
+			mv -vf /var/log/samba/log.nmbd* $MySB_InstallDir/temp/
+			mv -vf /var/log/samba/log.smbd* $MySB_InstallDir/temp/
+			mv -vf /var/log/samba/log.server-dp* $MySB_InstallDir/temp/
+			mv -vf /var/log/samba/cores $MySB_InstallDir/temp/
+			rm -vf /var/log/samba/*
+			mv -vf $MySB_InstallDir/temp/cores /var/log/samba/
+			mv -vf $MySB_InstallDir/temp/log.server-dp* /var/log/samba/
+			mv -vf $MySB_InstallDir/temp/log.smbd* /var/log/samba/
+			mv -vf $MySB_InstallDir/temp/log.nmbd* /var/log/samba/
+			cp -vf $MySB_InstallDir/templates/etc.samba.smb.conf.tmpl /etc/samba/smb.conf
+			ManageServices start "samba"
+		fi
+
+		#### Logwatch
+		cp -vf $MySB_InstallDir/templates/etc.logwatch.conf.logwatch.conf.tmpl /etc/logwatch/conf/logwatch.conf
+
+		#### Disable IPv6
+		/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6="1"
+		/sbin/sysctl -w net.ipv6.conf.default.disable_ipv6="1"
+		/sbin/sysctl -w net.ipv6.conf.lo.disable_ipv6="1"
+		/sbin/sysctl -w net.ipv6.conf.eth0.disable_ipv6="1"
+		sysctl -p
 	;;
 	"AFTER")
-		#### PHP - /etc/php5/mods-available/apcu.ini
-		if [ -f /usr/lib/php5/20121212/htscanner.so ]; then
-			rm -v /usr/lib/php5/20121212/htscanner.so
+		#### Some Cleaning
+		rm -rf $MySB_InstallDir/temp/* &> /dev/null
+		if [ -d /var/log/exim4 ]; then rm -rvf /var/log/exim4; fi
+		if [ -d /var/log/news ]; then rm -rvf /var/log/news; fi
+
+		#### Apply new certificate (Self-signed OR Let's Encrypt)
+		# Webmin
+		if [ "$IsInstalled_Webmin" == "YES" ]; then
+			if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
+				cat $MySB_InstallDir/ssl/privkey.pem > /etc/webmin/miniserv.pem
+				cat $MySB_InstallDir/ssl/fullchain.pem >> /etc/webmin/miniserv.pem
+			else
+				cat $MySB_InstallDir/ssl/mysb.cert > /etc/webmin/miniserv.pem
+				cat $MySB_InstallDir/ssl/mysb.key >> /etc/webmin/miniserv.pem
+			fi
 		fi
+		# Postfix / sTunnel / VSFTPd
+		perl -pi -e "s/postfix.cert/mysb.cert/g" /etc/postfix/main.cf
+		perl -pi -e "s/postfix.key/mysb.key/g" /etc/postfix/main.cf
+		perl -pi -e "s/stunnel.cert/mysb.cert/g" /etc/stunnel/stunnel.conf
+		perl -pi -e "s/stunnel.key/mysb.key/g" /etc/stunnel/stunnel.conf
+		perl -pi -e "s/vsftpd.cert/mysb.cert/g" /etc/vsftpd.conf
+		perl -pi -e "s/vsftpd.key/mysb.key/g" /etc/vsftpd.conf
+
+		####################################
+		#### To call for every upgrade - BoF
+		# Create missing directories and change rights
+		ManageDirectoriesAndFiles 'global'
+
+		# STOP & START services
+		ManageServices stop "ntp stunnel4 postfix"
+		ManageServices start "ntp stunnel4 postfix samba nginx dnscrypt-proxy webmin"
+
+		# Upgrade in progress page
+		UpgradeInProgress "off"
+
+		# Update version info
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "mysb_version = '$MySB_CurrentVersion'" "id_system = '1'"
+		if [ -f $MySB_InstallDir/files/current_version ]; then
+			rm -f $MySB_InstallDir/files/current_version
+		fi
+		figlet MySB $MySB_CurrentVersion > /etc/motd
+		echo >> /etc/motd
+		
+		# Send mail for each user with new version
+		if [ -f $MySB_InstallDir/inc/vars ]; then source $MySB_InstallDir/inc/vars; fi
+		MainUserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "admin = '1'"`"
+		RutorrentDirEscaped="`echo $RutorrentDir | sed s,/,\\\\\\\\\\/,g`"
+		ListingUsers
+		for seedUser in $UsersList; do
+			UserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$seedUser'"`"
+			UserPassword="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_passwd' 'users' "users_ident = '$seedUser'"`"
+			cp $MySB_InstallDir/templates/init/etc.init.rtorrent.tmpl /etc/init.d/rtorrent-$seedUser
+			perl -pi -e "s/<username>/$seedUser/g" /etc/init.d/rtorrent-$seedUser
+			chmod +x /etc/init.d/rtorrent-$seedUser
+			source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
+			CreateRtorrentConfigFile "$seedUser" 'force'
+
+			if [ "$UserId" == "$MainUserId" ] && [ ! -z "$UserPassword" ]; then
+				# Remove main user password from database
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "users_passwd = ''" "admin = '1'"
+				ScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_ChangeUserPassword" "$seedUser" "$UserPassword" 'UPGRADE'
+			else
+				# Init password required
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "init_password = '1'" "users_ident = '$seedUser'"
+				Subject="$Upgrade_SubjectUpgraded $MySB_CurrentVersion"
+				Case="upgrade"
+				SendMail "$Subject" "$seedUser" "$Case"
+			fi
+		done
+		#### To call for every upgrade - EoF
+		####################################
 	;;
 esac
 

@@ -1,3 +1,6 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -20,30 +23,22 @@
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
 ##################### FIRST LINE #####################################
+#http://www.server-world.info/en/note?os=Debian_7.0&p=quota
+#https://www.howtoforge.com/perfect-server-debian-wheezy-apache2-bind-dovecot-ispconfig-3-p4#-install-pureftpd-and-quota
 
 #### VARs
-get_base_path="$1"
-get_custom1="$2"
-get_name="$3"
-get_loaded_file="$4"
-UserName="<username>"
-Timestamp="`/bin/date +%Y%m%d%H%M%S`"
-if [ -z "`getent passwd $UserName`" ] || [ -z "$get_base_path" ] || [ -z "$get_custom1" ] || [ -z "$get_name" ]; then
-	exit 0
-fi
+HomeFreeSpace="`df -Pk /home/ | tail -1 | awk '{print $4}'`"
 
-#### Moving download
-mv -u "`echo $get_base_path | sed 's/\ /\\ /g;'`" $get_custom1
+#### Install packages
+PackagesManage install "quotatool"
 
-#### Execute PHP command (Mail notification + ownCloud CRON)
-curl --data "username=$UserName&get_base_path=$get_base_path&get_custom1=$get_custom1&get_name=$get_name" http://localhost:8888/rTorrent.php
+#### Configure
+perl -pi -e "s/errors=remount-ro/errors=remount-ro,usrquota/g" /etc/fstab
+mount -o remount /
+quotacheck -avugm
+quotaon -avug
 
-#### Execute user scripts
-UserScripts="`ls -A1 /home/$UserName/scripts/ | grep '.sh$'`"
-if [ ! -z "$UserScripts" ]; then
-	for Script in "$UserScripts"; do
-		/usr/bin/screen -dmS $UserName-$Timestamp /bin/bash /home/$UserName/scripts/$Script "$get_base_path" "$get_custom1" "$get_name" "$get_loaded_file";
-	done
-fi
-
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
 ##################### LAST LINE ######################################

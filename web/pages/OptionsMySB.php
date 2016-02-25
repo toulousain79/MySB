@@ -122,7 +122,7 @@ if (isset($_POST['submit'])) {
 			if (isset($_POST['input_id'])) {
 				$count = count($_POST['input_id']);
 				for($i=1; $i<=$count; $i++) {
-					$Directory = ReplacesSpecialCharacters($_POST['directory'][$i]);
+					$Directory = ReplacesAccentedCharacters($_POST['directory'][$i]);
 					$Directory = preg_replace('/\s\s+/', '', $Directory);
 					$Directory = preg_replace('/\s+/', '_', $Directory);
 					$Directory = preg_replace('/\W+/', '', $Directory);

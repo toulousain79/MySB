@@ -89,24 +89,24 @@ if ( $IsInstalled == '1' ) {
 		switch ($List["peerguardian_active"]) {
 			case '0':
 				if ( $IsMainUser ) {
-					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px;" class="redText" onchange="this.className=this.options[this.selectedIndex].className">
 										<option value="0" selected="selected" class="redText">' .Global_No. '</option>
 										<option value="1" class="greenText">' .Global_Yes. '</option>
 									</select>';
 				} else {
-					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px;" class="redText" id="mySelect" disabled>
+					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px;" class="redText" disabled>
 										<option value="0" selected="selected" class="redText">' .Global_No. '</option>
 									</select>';
 				}
 				break;
 			default:
 				if ( $IsMainUser ) {
-					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px;" class="greenText" onchange="this.className=this.options[this.selectedIndex].className">
 										<option value="0" class="redText">' .Global_No. '</option>
 										<option value="1" selected="selected" class="greenText">' .Global_Yes. '</option>
 									</select>';
 				} else {
-					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px;" class="greenText" id="mySelect" disabled>
+					$peerguardian_active = '	<select name="peerguardian_active[]" style="width:60px;" class="greenText" disabled>
 										<option value="1" selected="selected" class="greenText">' .Global_Yes. '</option>
 									</select>';
 				}

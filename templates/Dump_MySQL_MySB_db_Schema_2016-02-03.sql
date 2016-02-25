@@ -57,6 +57,13 @@ CREATE TABLE IF NOT EXISTS `dnscrypt_resolvers` (
   UNIQUE KEY `name` (`name`,`full_name`,`resolver_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
+CREATE TABLE IF NOT EXISTS `lets_encrypt` (
+  `id_lets_encrypt` int(11) NOT NULL AUTO_INCREMENT,
+  `addresses` varchar(128) NOT NULL,
+  `ipv4` varchar(15) NOT NULL,
+  PRIMARY KEY (`id_lets_encrypt`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
 CREATE TABLE IF NOT EXISTS `providers_monitoring` (
   `id_providers_monitoring` int(11) NOT NULL AUTO_INCREMENT,
   `provider` varchar(16) NOT NULL,
@@ -139,6 +146,8 @@ CREATE TABLE IF NOT EXISTS `system` (
   `pgl_watchdog_email` tinyint(1) NOT NULL DEFAULT '0',
   `dnscrypt` tinyint(1) NOT NULL DEFAULT '0',
   `owncloud_cron` tinyint(1) NOT NULL DEFAULT '0',
+  `letsencrypt_date` date NOT NULL,
+  `letsencrypt_openport` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_system`),
   UNIQUE KEY `mysb_version` (`mysb_version`,`mysb_user`,`mysb_password`,`hostname`,`ipv4`,`primary_inet`,`timezone`,`cert_password`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -159,7 +168,7 @@ CREATE TABLE IF NOT EXISTS `trackers_list` (
 CREATE TABLE IF NOT EXISTS `trackers_list_ipv4` (
   `id_trackers_list_ipv4` int(11) NOT NULL AUTO_INCREMENT,
   `id_trackers_list` int(11) NOT NULL,
-  `ipv4` varchar(128) NOT NULL,
+  `ipv4` varchar(15) NOT NULL,
   PRIMARY KEY (`id_trackers_list_ipv4`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 

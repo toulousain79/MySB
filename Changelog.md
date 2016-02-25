@@ -1,3 +1,15 @@
+	Version v3.3
+		2016/02/03
+			- DNScrypt-proxy v1.6.1 (v3.3)
+			- Use of Let's Encrypt (v3.3)
+			- OpenVPN.php, OpenVPN page (v3.2 and v3.3)
+			- OptionsMySB.php, minor changes (v3.2 and v3.3)
+			- ownCloud.bsh, review the scan process (v3.2 and v3.3)
+			- rTorrent's scripts template review (v3.2 and v3.3)
+			- Disable totaly IPv6 (v3.2 and v3.3)
+			- SourcesList, minor changes (v3.3)
+			- Renewing certificates
+
 	Version v3.2
 		2016/01/31
 			- funcs_iptables, small corrections (v3.1 and v3.2)
@@ -16,7 +28,7 @@
 			- ownCloud v8.2.2 (v3.2)
 			- PHP v5.6 (v3.2)
 			- Medoo Framework v1.0.1 (v3.2)
-	
+
 	Version v3.1
 		2015/11/17
 			- DNScrypt-proxy, bug fix in init script (v3.0 and v3.1)

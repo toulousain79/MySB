@@ -1,9 +1,3 @@
-// Select form change color
-var select = document.getElementById('mySelect');
-select.onchange = function () {
-	select.className = this.options[this.selectedIndex].className;
-}
-
 // Select change SMTP values
 function SMTP_ChangeValues(JSON_File, Email, Username, Password) {
 		$(function() {
@@ -79,21 +73,4 @@ function ApplyConfig(state) {
 			document.getElementById("ApplyConfigButtonState").className = "ApplyConfigButtonNothing";
 			break;
 	}
-}
-
-// Update Language
-function UpdateLanguage() {
-	var language=$("#language").val();
-	var user_ident=$("#user_ident").val(); 
-	var dataString = "language=" + language + "&user_ident=" + user_ident;
-		$.ajax({  
-			type: "POST",  
-			url: "ajax/UpdateLanguage.php",  
-			data: dataString,
-			beforeSend: function() 
-			{
-				$('html, body').animate({scrollTop:0}, 'slow');
-			},  
-			success: {}
-		});	
 }

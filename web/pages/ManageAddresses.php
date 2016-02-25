@@ -211,13 +211,13 @@ foreach($AddressesList as $Address) {
 
 	switch ($Address["is_active"]) {
 		case '0':
-			$is_active = '	<select name="is_active['.$i.']" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+			$is_active = '	<select name="is_active['.$i.']" style="width:60px; cursor: pointer;" class="redText" onchange="this.className=this.options[this.selectedIndex].className">
 								<option value="0" selected="selected" class="redText">' .Global_No. '</option>
 								<option value="1" class="greenText">' .Global_Yes. '</option>
 							</select>';
 			break;
 		default:
-			$is_active = '	<select name="is_active['.$i.']" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+			$is_active = '	<select name="is_active['.$i.']" style="width:60px; cursor: pointer;" class="greenText" onchange="this.className=this.options[this.selectedIndex].className">
 								<option value="0" class="redText">' .Global_No. '</option>
 								<option value="1" selected="selected" class="greenText">' .Global_Yes. '</option>
 							</select>';

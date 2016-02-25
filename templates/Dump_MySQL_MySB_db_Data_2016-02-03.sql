@@ -87,7 +87,7 @@ INSERT INTO `repositories` (`id_repositories`, `type`, `dir`, `name`, `version`,
 (20, 'GIT', '/web/Cakebox-light', 'Cakebox-Light', '1.8.3', 'cakebox-light_v1.8.3.zip', '', 'https://github.com/Cakebox/Cakebox-light.git', 1),
 (21, 'GIT', '/web/rutorrent/plugins/linkcakebox', 'ruTorrent Plugin Link Cakebox', '1.0', 'linkcakebox_v1.0.zip', '', 'https://github.com/Cakebox/linkcakebox.git', 1),
 (22, 'GIT', '/sources/libsodium', 'Libsodium', '1.0.4', 'libsodium_v1.0.4.zip', 'libsodium_v1.0.2.zip', 'https://github.com/jedisct1/libsodium', 1),
-(23, 'TARGZ', '/sources/dnscrypt-proxy', 'DNScrypt-proxy', '1.6.0', 'dnscrypt-proxy_v1.6.0.tar.gz', 'dnscrypt-proxy_v1.4.3.tar.gz', 'http://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-proxy-1.6.0.tar.gz', 1),
+(23, 'TARGZ', '/sources/dnscrypt-proxy', 'DNScrypt-proxy', '1.6.1', 'dnscrypt-proxy_v1.6.1.tar.gz', 'dnscrypt-proxy_v1.6.0.tar.gz', 'http://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-proxy-1.6.1.tar.gz', 1),
 (24, 'WBM', '/files', 'OpenVPNadmin WebMin', '2.6', 'openvpn_v2.6.wbm', 'openvpn-2.6.wbm', 'http://www.openit.it/downloads/OpenVPNadmin/openvpn-2.6.wbm.gz', 1),
 (25, 'WBM', '/files', 'Nginx Webmin Module', '0.0.8', 'nginx_v0.08.wbm', 'nginx-0.08.wbm', 'http://www.justindhoffman.com/sites/justindhoffman.com/files/nginx-0.08.wbm__0.gz', 1),
 (26, 'WBM', '/files', 'MiniDLNA Webmin Module', 'alpha1.1', 'minidlnawebmin_alpha1_12.wbm', '', 'http://downloads.sourceforge.net/project/minidlnawebmin/Webmin%20alpha1.12%20svn26/minidlnawebmin_alpha1_12.wbm?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fminidlnawebmin%2Ffiles%2FWebmin%2520alpha1.12%2520svn26%2F&ts=1420088634&use_mirror=freefr', 1),
@@ -95,7 +95,8 @@ INSERT INTO `repositories` (`id_repositories`, `type`, `dir`, `name`, `version`,
 (28, 'TARGZ', '/sources/rtorrent', 'rTorrent', '0.9.6', 'rtorrent_v0.9.6.tar.gz', 'rtorrent_v0.9.4.tar.gz', 'http://rtorrent.net/downloads/rtorrent-0.9.6.tar.gz', 1),
 (29, 'ZIP', '/sources/xmlrpc-c', 'XMLRPC', '1.42.0', 'xmlrpc-c_v1.42.0.zip', 'xmlrpc-c_v1.41.02.zip', 'https://github.com/toulousain79/MySB/raw/v2.2/files/xmlrpc-c_v1.42.0.zip', 1),
 (30, 'GIT', '/web/loadavg', 'LoadAvg', '2.2', 'loadavg_v2.2.zip', '', 'https://github.com/loadavg/loadavg.git', 1),
-(31, 'ZIP', '/web/owncloud', 'ownCloud', '8.2.2', 'owncloud_v8.2.2.zip', 'owncloud_v8.2.0.zip', 'https://download.owncloud.org/community/owncloud-8.2.2.zip', 1);
+(31, 'ZIP', '/web/owncloud', 'ownCloud', '8.2.2', 'owncloud_v8.2.2.zip', 'owncloud_v8.2.0.zip', 'https://download.owncloud.org/community/owncloud-8.2.2.zip', 1),
+(32, 'GIT', '/sources/letsencrypt', 'Lets Encrypt', '0.3.0', 'LetsEncrypt_v0.3.0.zip', '', 'https://github.com/letsencrypt/letsencrypt', 1);
 
 INSERT INTO `services` (`id_services`, `serv_name`, `bin`, `port_tcp1`, `port_tcp2`, `port_tcp3`, `ports_tcp_list`, `port_udp1`, `port_udp2`, `port_udp3`, `ports_udp_list`, `to_install`, `is_installed`) VALUES
 (1, 'Seedbox-Manager', '', '', '', '', '', '', '', ' ', ' ', 0, 0),
@@ -121,7 +122,8 @@ INSERT INTO `services` (`id_services`, `serv_name`, `bin`, `port_tcp1`, `port_tc
 (21, 'Stunnel', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0),
 (22, 'rTorrent v0.9.2', '/usr/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0),
 (23, 'rTorrent v0.9.4', '/usr/local/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0),
-(24, 'ownCloud', '', '', '', '', '', '', '', '', '', 0, 0);
+(24, 'ownCloud', '', '', '', '', '', '', '', '', '', 0, 0),
+(25, 'Lets Encrypt', '', '443', '', '', '', '', '', '', '', 1, 0);
 
 INSERT INTO `smtp` (`id_smtp`, `smtp_provider`, `smtp_username`, `smtp_passwd`, `smtp_host`, `smtp_port`, `smtp_email`) VALUES
 (1, '', '', '', '', '', '');
@@ -131,6 +133,11 @@ INSERT INTO `system` (`id_system`, `mysb_version`, `mysb_user`, `mysb_password`,
 
 INSERT INTO `vars` (`id_vars`, `fail2ban_whitelist`, `vpn_ip`, `white_tcp_port_out`, `white_udp_port_out`) VALUES
 (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24,10.0.2.0/24', '80 443', '');
+
+INSERT INTO `lets_encrypt` (`id_lets_encrypt`, `addresses`, `ipv4`) VALUES
+(1, 'acme-v01.api.letsencrypt.org', '104.92.240.99'),
+(2, 'outbound1.letsencrypt.org', '66.133.109.36'),
+(3, 'outbound2.letsencrypt.org', '64.78.149.164');
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

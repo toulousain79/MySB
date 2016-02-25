@@ -70,7 +70,6 @@ CreateCACertificate() {
 
 	# 3 - OpenSSL config
 	cp $MySB_InstallDir/templates/root.ca.cacert.conf.tmpl ./MySB_caconfig.cnf
-	MainUserEmailEscaped="`echo $MainUserEmail | sed s/\@/\\\\\\\\\\@/g`"
 	perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" ./MySB_caconfig.cnf
 	perl -pi -e "s/<servername>/$HostNameFQDN/g" ./MySB_caconfig.cnf
 	perl -pi -e "s/<ipaddress>/$SrvIpAddress/g" ./MySB_caconfig.cnf
@@ -94,10 +93,10 @@ CreateServiceCertificate() {
 	cd $MySB_InstallDir/ssl/CA/
 
 	CERTPASS="`Func_SQL_Command 'SELECT' 'MySB_db' 'cert_password' 'system' "id_system = '1'"`"
-	SUBJ="/C=FR/ST=FR/L=FR/O=MySB/CN=$HostNameFQDN/emailAddress=$MainUserEmail/OU=$SERVICENAME"
+	SUBJ="/C=FR/ST=FR/L=FR/O=MySB/CN=$HostNameFQDN/emailAddress=admin@localhost/OU=$SERVICENAME"
 
 	if [ ! -f $MySB_InstallDir/ssl/$SERVICENAME.key ]; then
-		openssl genrsa 1024 | tee ./$SERVICENAME.key
+		openssl genrsa 2048 | tee ./$SERVICENAME.key
 		openssl req -new -x509 -nodes -key ./$SERVICENAME.key -days 3650 -config ./MySB_caconfig.cnf -batch -subj $SUBJ | tee ./$SERVICENAME.cert
 		openssl ca -batch -keyfile ./private/cakey.pem -passin pass:$CERTPASS -subj $SUBJ -out ./$SERVICENAME.pem -config ./MySB_caconfig.cnf -passin pass:$CERTPASS -ss_cert ./$SERVICENAME.cert
 		chmod 600 ./$SERVICENAME.*
@@ -109,6 +108,7 @@ CreateServiceCertificate() {
 case "$COMMAND" in
 	"CreateCACertificate")
 		CreateCACertificate
+		CreateServiceCertificate "mysb"
 	;;
 	"CreateServiceCertificate")
 		if [ ! -z "$SERVICENAME" ]; then

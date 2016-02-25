@@ -35,11 +35,12 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			$count = count($_POST['input_id']);
 
 			for($i=1; $i<=$count; $i++) {
-				$TrackerDomain = preg_replace('/\s\s+/', '', $_POST['tracker_domain'][$i]); 
-				
-				$TrackerDomain = GetOnlyDomain($TrackerDomain);
-				$last_id_trackers_list = ManageUsersTrackers($TrackerDomain, $_POST['is_active'][$i]);
+				$TrackerHostname = preg_replace('/\s\s+/', '', $_POST['tracker_domain'][$i]);
 
+				if (filter_var($url, FILTER_VALIDATE_URL)) {
+					$TrackerHostname = parse_url($TrackerHostname, PHP_URL_HOST);
+				}
+				$last_id_trackers_list = ManageUsersTrackers($TrackerHostname, $_POST['is_active'][$i]);
 				if ( (!isset($last_id_trackers_list)) || ($last_id_trackers_list === false) ) {
 					$success = false;
 				}
