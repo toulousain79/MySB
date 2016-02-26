@@ -18,6 +18,7 @@ ScriptName=$(basename $0)
 FilesList="$HOME/scripts/files.list"
 LogFile="$HOME/logs/$ScriptName.log"
 LockFile="$HOME/scripts/$ScriptName.lock"
+RsyncCipher="aes128-ctr"
 PID="$$"
 get_base_path="$1"
 get_custom1="$2"
@@ -90,11 +91,8 @@ Listing() {
 	echo "--------------------"
 	echo
 
-	# Creating sub-directory on destination
-	sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d $FinalDst ]; then mkdir -p $FinalDst; fi"
-
 	# Start synchroniszation with RSYNC
-	rsync -rtvy --numeric-ids --partial --append --stats -e "/usr/bin/sshpass -p$DstPass ssh -p $DstPort -c arcfour -o Compression=no -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$FnLine" $DstUser@$DstSrv:$FinalDst
+	rsync -rtvy --numeric-ids --partial --append --stats --rsync-path="mkdir -p $FinalDst && rsync" -e "/usr/bin/sshpass -p$DstPass ssh -p $DstPort -c $RsyncCipher -o Compression=no -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$FnLine" $DstUser@$DstSrv:$FinalDst
 
 	# Deleting the file from the list
 	if [ $? -eq 0 ]; then
