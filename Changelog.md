@@ -7,6 +7,7 @@
 			- ownCloud.bsh, review the scan process (v3.2 and v3.3)
 			- rTorrent's scripts template review (v3.2 and v3.3)
 			- Disable totaly IPv6 (v3.2 and v3.3)
+			- ownCloud, correcting upgrade process (v3.2 and v3.3)
 			- SourcesList, minor changes (v3.3)
 			- Upgrade OpenSSH Server with Backports (v3.3)
 			- Renewing certificates
