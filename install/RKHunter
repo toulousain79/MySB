@@ -25,36 +25,30 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### Install packages
-if ! CheckCommand 0 rkhunter; then
-	PackagesManage install "rkhunter unhide unhide.rb"
-fi
+RKHunterDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'RKHunter'"`"
+RKHunterUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'RKHunter'"`"
+RKHunterFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'RKHunter'"`"
 
-#### /etc/default/rkhunter
-perl -pi -e "s/CRON_DAILY_RUN=\"\"/CRON_DAILY_RUN=\"true\"/g" /etc/default/rkhunter
-perl -pi -e "s/CRON_DB_UPDATE=\"\"/CRON_DB_UPDATE=\"true\"/g" /etc/default/rkhunter
-perl -pi -e "s/APT_AUTOGEN=\"false\"/APT_AUTOGEN=\"true\"/g" /etc/default/rkhunter
+if CheckCommand 0 rkhunter; then
+	if [ ! -f $MySB_InstallDir/files/$RKHunterFile ]; then
+		wget --no-check-certificate $RKHunterUrl -O $MySB_InstallDir/files/$RKHunterFile
+	fi
+	if [ ! -d $RKHunterDir ] && [ -f $MySB_InstallDir/files/$RKHunterFile ]; then
+		tar -zxvf $MySB_InstallDir/files/$RKHunterFile -C $MySB_InstallDir/temp/
+		SubDir="`tar -ztf $MySB_InstallDir/files/$RKHunterFile | sed -e 's@/.*@@' | uniq`"
+		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
+			mv $MySB_InstallDir/temp/$SubDir $RKHunterDir
+		fi
+	fi
+
+	cd $RKHunterDir/
+	./installer.sh --install
+fi
 
 #### /etc/rkhunter.conf
-perl -pi -e "s/ALLOW_SSH_ROOT_USER=no/ALLOW_SSH_ROOT_USER=yes/g" /etc/rkhunter.conf
-perl -pi -e "s/#ALLOWHIDDENFILE/ALLOWHIDDENFILE/g" /etc/rkhunter.conf
-perl -pi -e "s/#ALLOWHIDDENDIR/ALLOWHIDDENDIR/g" /etc/rkhunter.conf
-perl -pi -e "s/DISABLE_TESTS=\"suspscan hidden_procs deleted_files packet_cap_apps apps\"/DISABLE_TESTS=\"suspscan hidden_procs deleted_files packet_cap_apps apps promisc\"/g" /etc/rkhunter.conf
-NumLign=$(sed -n "/ALLOWHIDDENDIR=\"\/etc\/.etckeeper\"/=" /etc/rkhunter.conf)
-(( NumLign++ ))
-if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.udev'`" ]; then
-	sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.udev\"" /etc/rkhunter.conf
-fi
-if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.mdadm'`" ]; then
-	sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.mdadm\"" /etc/rkhunter.conf
-fi
-if [ "`cat /etc/rkhunter.conf | grep 'ALLOWHIDDENDIR' | grep '/dev/.initramfs'`" ]; then
-	sed -i "${NumLign}i\ALLOWHIDDENDIR=\"/dev/.initramfs\"" /etc/rkhunter.conf
-fi
-NumLign=$(sed -n "/SCRIPTWHITELIST=\/usr\/sbin\/prelink/=" /etc/rkhunter.conf)
-(( NumLign++ ))
-if [ -z "`cat /etc/rkhunter.conf | grep 'SCRIPTWHITELIST' | grep '/usr/bin/unhide.rb'`" ]; then
-	sed -i "${NumLign}i\SCRIPTWHITELIST=\/usr\/bin\/unhide.rb" /etc/rkhunter.conf
-fi
+perl -pi -e "s/^#ALLOW_SSH_ROOT_USER=no/ALLOW_SSH_ROOT_USER=yes/g" /etc/rkhunter.conf
+perl -pi -e "s/^#APP_WHITELIST=\"\"/APP_WHITELIST=\"openssl:1.0.1e gpg:1.4.12\"/g" /etc/rkhunter.conf
+perl -pi -e "s/^#ALLOWPROMISCIF=eth0/ALLOWPROMISCIF=eth0 tap0/g" /etc/rkhunter.conf
 
 #### Execute
 rkhunter --versioncheck --nocolors

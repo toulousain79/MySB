@@ -4,6 +4,7 @@
 			- Use of Let's Encrypt (v3.3)
 			- OpenVPN.php, OpenVPN page (v3.2 and v3.3)
 			- OptionsMySB.php, minor changes (v3.2 and v3.3)
+			- DownloadAll, correcting littler error (v3.2 and v3.3)
 			- ownCloud.bsh, review the scan process (v3.2 and v3.3)
 			- rTorrent's scripts template review (v3.2 and v3.3)
 			- Disable totaly IPv6 (v3.2 and v3.3)
