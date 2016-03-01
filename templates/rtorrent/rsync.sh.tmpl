@@ -10,7 +10,8 @@ DstPass=""			# SSH Password
 MaxToSync=0			# Max file to synchronize from 'FilesList' per cronjob ? (ex: 0 for sync all) 
 CreateSubDir=1		# Create a subdirectory for alone files (Used by some scraper)
 # Notification (if enabled)
-MailObject="MySB - Transfer to NAS completed !"
+MailObjectOK="MySB - Transfer to NAS completed !"
+MailObjectKO="MySB - Transfer to NAS failed !"
 
 # DO NOT MODIFY
 UserName="`whoami`"
@@ -83,6 +84,7 @@ Listing() {
 			FinalDst="$DstDir/$CategoryDir/"
 		fi
 	fi
+	FinalDst_Escaped="`echo $FinalDst | sed 's/\[//g;' | sed 's/\]//g;' | sed 's/(//g' | sed 's/)//g' | sed 's/\ /./g;'`"
 
 	# Log
 	echo "#### START ####"
@@ -96,12 +98,18 @@ Listing() {
 	echo
 
 	# Start synchroniszation with RSYNC
-	rsync -rtvy --numeric-ids --partial --append --stats --rsync-path="mkdir -p $FinalDst && rsync" -e "/usr/bin/sshpass -p$DstPass ssh -p $DstPort -c $RsyncCipher -o Compression=no -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$FnLine" $DstUser@$DstSrv:$FinalDst
+	# Creating sub-directory on destination
+	sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d $FinalDst_Escaped ]; then mkdir -p \"$FinalDst_Escaped\"; fi"
+
+	# Start synchroniszation with RSYNC
+	rsync -rtvy --numeric-ids --partial --append --stats -e "/usr/bin/sshpass -p$DstPass ssh -p $DstPort -c $RsyncCipher -o Compression=no -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$FnLine" $DstUser@$DstSrv:"$FinalDst_Escaped"
 
 	# Deleting the file from the list
 	if [ $? -eq 0 ]; then
 		FnGet_Name="`echo $FnGet_Name | sed s,/,\\\\\\\\\\/,g`"
 		sed -i "/$FnGet_Name/d" $FilesList
+	else
+		MailObjectOK="$MailObjectKO"
 	fi
 
 	echo
@@ -112,12 +120,13 @@ Listing() {
 
 	# E-mail notification
 	content="$LogFileTemp"
-	curl --data "username=$UserName&get_custom1=$ToSynchronize&get_name=$FnGet_Name&subject=$MailObject&content=$content" http://localhost:8888/rTorrent.php
+	curl --data "username=$UserName&get_custom1=$ToSynchronize&get_name=$FnGet_Name&subject=$MailObjectOK&content=$content" http://localhost:8888/rTorrent.php
 }
 
 # Execute
 Count=0
-Line="`head -n 1 $FilesList | tail -n 1`"
+NumLine=1
+Line="`head -n $NumLine $FilesList | tail -n 1`"
 while [ ! -z "$Line" ]; do
 	LogFileTemp="/tmp/$UserName-$ScriptName.log.$PID"
 	get_base_path="`echo $Line | awk '{split($0,a,\"|\"); print a[1]}'`"
@@ -125,16 +134,19 @@ while [ ! -z "$Line" ]; do
 	get_name="`echo $Line | awk '{split($0,a,\"|\"); print a[3]}'`"
 	get_loaded_file="`echo $Line | awk '{split($0,a,\"|\"); print a[4]}'`"
 	CategoryDir="`echo $Line | awk '{split($0,a,\"|\"); print a[5]}'`"
-	
+
 	Listing "$get_base_path" "$get_custom1" "$get_name" "$get_loaded_file" "$CategoryDir" > $LogFileTemp
-	Count=$(($Count + 1))
+
 	# Move log file content
 	if [ -f $LogFileTemp ]; then
 		cat $LogFileTemp >> $LogFile
 		cat $LogFileTemp >> $LockFile
 		rm -f $LogFileTemp
 	fi
-	Line="`head -n 1 $FilesList | tail -n 1`"
+
+	Count=$(($Count + 1))
+	NumLine=$(($NumLine + 1))
+	Line="`head -n $NumLine $FilesList | tail -n 1`"	
 	if [ $Count -eq $MaxToSync ] && [ $MaxToSync -ne 0 ]; then
 		unset Line
 	fi
