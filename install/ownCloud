@@ -222,24 +222,24 @@ if [ "$IsInstalled_ownCloud" == "YES" ] && [ "$Switch" == "INIT" ]; then
 	OnBoot="`Func_SQL_Command 'SELECT' 'MySB_db' 'on_boot' 'repositories' \"on_boot = '1' AND name = 'ownCloud'\"`"
 
 	if [ "$OnBoot" -eq 1 ]; then
-		ListingUsers
-		for seedUser in $UsersList; do
-			if [ ! -d /home/owncloud/$seedUser ]; then
-				mkdir -v /home/owncloud/$seedUser
-				chown www-data:www-data /home/owncloud/$seedUser
-				chmod 0755 /home/owncloud/$seedUser
-			fi
-		done
-
 		#### ownCloud upgrade
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:repair"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable files_external"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable notifications"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ background:cron"
-		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:scan --all"
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:cleanup"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-db"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-js"
+		ListingUsers
+		for seedUser in $UsersList; do
+			if [ ! -d /home/owncloud/$seedUser ]; then
+				mkdir -v /home/owncloud/$seedUser
+				chown www-data:www-data /home/owncloud/$seedUser
+				chmod 0755 /home/owncloud/$seedUser
+				su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:scan --path=\"/$seedUser/files/MySB_Home\""
+			fi
+		done
 
 		#### Create all existing MySB users
 		for seedUser in $UsersList; do

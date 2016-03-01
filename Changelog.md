@@ -1,6 +1,7 @@
 	Version v3.3
 		2016/02/03
 			- DNScrypt-proxy v1.6.1 (v3.3)
+			- RKHunter v1.4.2 (v3.3)
 			- Use of Let's Encrypt (v3.3)
 			- OpenVPN.php, OpenVPN page (v3.2 and v3.3)
 			- OptionsMySB.php, minor changes (v3.2 and v3.3)
@@ -11,6 +12,8 @@
 			- ownCloud, correcting upgrade process (v3.2 and v3.3)
 			- SourcesList, minor changes (v3.3)
 			- Upgrade OpenSSH Server with Backports (v3.3)
+			- PHP, increase performance with TMPFS (v3.3)
+			- Turning off filesystem access times (v3.3)
 			- Renewing certificates
 
 	Version v3.2

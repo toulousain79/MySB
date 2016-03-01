@@ -40,11 +40,15 @@ case "$1" in
 		# Forcing NTP update
 		ping -c4 0.fr.pool.ntp.org
 		/usr/sbin/ntpdate -u 0.fr.pool.ntp.org
-		#### To call for every upgrade - EoF
-		####################################
 
 		#### MySQL
 		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Schema_2016-02-03.sql
+
+		if [ -z $funcs_Install ] && [ ! -z "$IsScriptInstall" ]; then
+			source $MySB_InstallDir/inc/funcs_by_script/funcs_Install
+		fi
+		#### To call for every upgrade - EoF
+		####################################
 
 		#### Repositories
 		Func_SQL_Command 'ALTER' 'MySB_db' 'DROP' 'system' 'security_params' '-echo'
@@ -58,10 +62,6 @@ case "$1" in
 		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses,ipv4' "'acme-v01.api.letsencrypt.org', '104.92.240.99'" '-echo'
 		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses,ipv4' "'outbound1.letsencrypt.org', '66.133.109.36'" '-echo'
 		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses,ipv4' "'outbound2.letsencrypt.org', '64.78.149.164'" '-echo'
-
-		#### DNScrypt-proxy - resolvers
-		source $MySB_InstallDir/inc/funcs_by_script/funcs_DNScrypt
-		DNScrypt_ResolversRenew
 
 		#### ownCloud force upgrade to v8.2.2
 		if [ "$IsInstalled_ownCloud" == "YES" ]; then
@@ -85,10 +85,17 @@ case "$1" in
 			perl -pi -e "s/post_max_size = 8M/post_max_size = 16M/g" /etc/php5/fpm/php.ini
 			perl -pi -e "s/^;date.timezone =/date.timezone = $TimeZoneEscaped/g" /etc/php5/fpm/php.ini
 		fi
+		perl -pi -e "s/^;session.save_path/session.save_path/g" /etc/php5/fpm/php.ini
+		perl -pi -e "s/^;session.save_path/session.save_path/g" /etc/php5/cli/php.ini
+		# TMPFS
+		sed -i '/PHP TMPFS/d' /etc/fstab
+		sed -i '/\/var\/lib\/php5\/sessions/d' /etc/fstab
+		echo "# PHP TMPFS" >> /etc/fstab
+		echo "tmpfs   /var/lib/php5/sessions tmpfs defaults,nosuid,noatime,mode=1777 0 0" >> /etc/fstab
 
 		#### Move some files & directories
 		# Sources List Directory
-		if [ -d /etc/apt/sources.list.d ]; then rm -f /etc/apt/sources.list.d/* &> /dev/null; fi
+		if [ -d /etc/apt/sources.list.d ]; then rm -vf /etc/apt/sources.list.d/* &> /dev/null; fi
 
 		#### Renew Certificate
 		rm -vrf $MySB_InstallDir/ssl/
@@ -122,8 +129,14 @@ case "$1" in
 		sysctl -p
 
 		#### Remove RKHunter 1.4.0
-		if CheckCommand 0 rkhunter; then
-			PackagesManage purge "rkhunter unhide unhide.rb"
+		PackagesManage purge "rkhunter unhide unhide.rb"
+
+		#### Upgrade OpenSSH-server
+		PackagesManage install "openssh-server" "backports"
+
+		#### Turning off filesystem access times
+		if [ -z "`cat /etc/fstab | grep 'errors=remount-ro' | grep 'noatime,nodiratime'`" ]; then
+			perl -pi -e "s/errors=remount-ro/noatime,nodiratime,errors=remount-ro/g" /etc/fstab
 		fi
 	;;
 	"AFTER")
@@ -170,7 +183,7 @@ case "$1" in
 		fi
 		figlet MySB $MySB_CurrentVersion > /etc/motd
 		echo >> /etc/motd
-		
+
 		# Send mail for each user with new version
 		if [ -f $MySB_InstallDir/inc/vars ]; then source $MySB_InstallDir/inc/vars; fi
 		MainUserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "admin = '1'"`"
