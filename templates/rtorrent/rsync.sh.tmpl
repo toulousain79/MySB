@@ -57,7 +57,7 @@ Listing() {
 	FnGet_Base_Bath="$1"
 	FnGet_Custom1="$2"
 	FnGet_Name="$3"
-	FnGet_Loaded_File="$4"
+	FnGet_LoadedFile="$4"
 	FnCategoryDir="$5"
 	FnGet_NameEscaped="`echo $FnGet_Name | sed s,/,\\\\\\\\\\/,g`"
 	FnLine="$FnGet_Custom1$FnGet_Name"
@@ -84,7 +84,7 @@ Listing() {
 			FinalDst="$DstDir/$CategoryDir/"
 		fi
 	fi
-	FinalDst_Escaped="`echo $FinalDst | sed 's/\[//g;' | sed 's/\]//g;' | sed 's/(//g' | sed 's/)//g' | sed 's/\ /./g;'`"
+	FinalDstEscaped="`echo $FinalDst | sed 's/\[//g;' | sed 's/\]//g;' | sed 's/(//g' | sed 's/)//g' | sed 's/\ /./g;'`"
 
 	# Log
 	echo "#### START ####"
@@ -99,15 +99,15 @@ Listing() {
 
 	# Start synchroniszation with RSYNC
 	# Creating sub-directory on destination
-	sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d $FinalDst_Escaped ]; then mkdir -p \"$FinalDst_Escaped\"; fi"
+	sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d $FinalDstEscaped ]; then mkdir -p \"$FinalDstEscaped\"; fi"
 
 	# Start synchroniszation with RSYNC
-	rsync -rtvy --numeric-ids --partial --append --stats -e "/usr/bin/sshpass -p$DstPass ssh -p $DstPort -c $RsyncCipher -o Compression=no -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$FnLine" $DstUser@$DstSrv:"$FinalDst_Escaped"
+	rsync -rtvy --numeric-ids --partial --append --stats -e "/usr/bin/sshpass -p$DstPass ssh -p $DstPort -c $RsyncCipher -o Compression=no -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$FnLine" $DstUser@$DstSrv:"$FinalDstEscaped"
 
 	# Deleting the file from the list
 	if [ $? -eq 0 ]; then
-		FnGet_Name="`echo $FnGet_Name | sed s,/,\\\\\\\\\\/,g`"
-		sed -i "/$FnGet_Name/d" $FilesList
+		FnGet_LoadedFileEscaped="`echo $FnGet_LoadedFile | sed s,/,\\\\\\\\\\/,g`"
+		sed -i "/$FnGet_LoadedFileEscaped/d" $FilesList
 	else
 		MailObjectOK="$MailObjectKO"
 	fi
