@@ -43,7 +43,7 @@ DoApplyConfig() {
 	AllCommandsUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'commands' 'commands' "user = '$User'"`"
 	for CommandUser in $AllCommandsUser; do
 		case "$CommandUser" in
-			BlocklistsRTorrent.bsh|MySB_SecurityRules*|GetTrackersCert.bsh|MySB_ChangeUserPassword|Postfix|Options_MySB|Options_System|OpenVPN) # On peut supprimer les doublons
+			BlocklistsRTorrent.bsh|MySB_SecurityRules*|GetTrackersCert.bsh|MySB_ChangeUserPassword|Postfix|Options_MySB|Options_System|OpenVPN|Restart_rTorrent) # On peut supprimer les doublons
 				FirstCommandUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'min(priority)' 'commands' "user = '$User' AND commands = '$CommandUser'"`"
 				LastCommandUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'max(priority)' 'commands' "user = '$User' AND commands = '$CommandUser'"`"
 				if [ $FirstCommandUser -ne $LastCommandUser ] && [ ! -z $FirstCommandUser ] && [ ! -z $LastCommandUser ]; then
@@ -190,13 +190,21 @@ DoApplyConfig() {
 			;;
 
 			"Options_MySB")
+				WaitingSTD Options_MySB-$User
+				source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
+				UserCrontab "$User"
+				WaitingSTD Options_MySB-$User
+				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
+			;;
+
+			"Restart_rTorrent")
 				WaitingSTD rTorrent-$User
 				screen -dmS rTorrent-$User service rtorrent-$User restart &> /dev/null;
 				WaitingSTD rTorrent-$User
 				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
 			;;
 
-			"Options_System")		
+			"Options_System")
 				WaitingSTD MySB_SecurityRules
 				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--pglcmd' 'APPLYCONFIG';
 				WaitingSTD MySB_SecurityRules
@@ -205,12 +213,12 @@ DoApplyConfig() {
 				WaitingSTD OpenVPN
 				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
 			;;
-			
+
 			"OpenVPN") # ($1 = username, $2 = userpass)
 				IFS='|' read -a array <<< "$CommandArg"
 				UserName="${array[0]}"
 				UserPass="${array[1]}"
-			
+
 				WaitingSTD OpenVPN
 				screen -dmS OpenVPN_Zip /bin/bash $MySB_InstallDir/install/OpenVPN zip "$UserName" "$UserPass" 'APPLYCONFIG';
 				WaitingSTD OpenVPN

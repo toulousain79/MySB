@@ -9,7 +9,8 @@ jQuery( function ( $ ) {
 		// Add trackers (TrackersAdd.php)
         newElem.find('.input_tracker_domain').attr('id', 'tracker_domain' + newNum).attr('name', 'tracker_domain[' + newNum + ']').val('');
 		// Add directory (OptionsMySB.php)
-		newElem.find('.input_directory').attr('id', 'directory' + newNum).attr('name', 'directory[' + newNum + ']').val('');
+		newElem.find('.input_directory').attr('id', 'input_directory' + newNum).attr('name', 'input_directory[' + newNum + ']').val('');
+		newElem.find('.input_sync_mode').attr('id', 'input_sync_mode' + newNum).attr('name', 'input_sync_mode[' + newNum + ']').val('');
 		// Add address (TrackersAdd.php)
 		newElem.find('.input_address').attr('id', 'address' + newNum).attr('name', 'address[' + newNum + ']').val('');
 		// Add select (TrackersAdd.php)

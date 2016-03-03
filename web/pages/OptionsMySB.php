@@ -29,7 +29,6 @@ require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__
 $UserID = $users_datas['id_users'];
 $Command = 'message_only';
 $rTorrentVersionsList = array('v0.9.2', 'v0.9.6');
-$LanguagesList = array('english', 'french');
 $RefreshPage = 0;
 $Change = 0;
 $type = 'information';
@@ -73,7 +72,6 @@ if (isset($_POST['submit'])) {
 				if( $result != 0 ) {
 					$Change++;
 					$RefreshPage++;
-					$rTorrentRestart_POST = 1;
 					$Command = 'Options_MySB';
 				}
 			} else {
@@ -94,7 +92,6 @@ if (isset($_POST['submit'])) {
 				if( $result != 0 ) {
 					$Change++;
 					$RefreshPage++;
-					$rTorrentRestart_POST = 1;
 					$Command = 'Options_MySB';
 				}
 			}
@@ -113,19 +110,52 @@ if (isset($_POST['submit'])) {
 					if ( $result > 0 ) {
 						$Change++;
 						$RefreshPage++;
+						$Command = 'Options_MySB';
+					}
+				}
+			}
+
+			// Sub-Directories - Delete AND sync mode
+			$count_dir = count($_POST['directory']);
+			$count_del = count($_POST['delete_dir']);
+			for($i=0; $i<=$count_dir; $i++) {
+				$current_directory = preg_replace('/\s\s+/', '', $_POST['directory'][$i]);
+				$sync_mode = $_POST['sync_mode'][$i];
+				$to_delete = 0;
+
+				for($j=0; $j<=$count_del; $j++) {
+					if ( ($_POST['delete_dir'][$j] == $current_directory) ) {
+						$to_delete = 1;
+					}
+				}
+
+				$result = $MySB_DB->update("users_rtorrent_cfg", ["sync_mode" => $sync_mode, "to_delete" => $to_delete], [
+																						"AND" => [
+																							"id_users" => $UserID,
+																							"sub_directory" => $current_directory
+																						]
+																					]);
+				if ( $result > 0 ) {
+					$Change++;
+					$RefreshPage++;
+					if( $to_delete == 1 ) {
 						$rTorrentRestart_POST = 1;
+						$Command = 'Restart_rTorrent';
+					} else {
+						$Command = 'Options_MySB';
 					}
 				}
 			}
 
 			// Sub-Directories - Add
-			if (isset($_POST['input_id'])) {
+			if ( (isset($_POST['input_id'])) && (isset($_POST['input_directory'][1])) ) {
 				$count = count($_POST['input_id']);
 				for($i=1; $i<=$count; $i++) {
-					$Directory = ReplacesAccentedCharacters($_POST['directory'][$i]);
+					$Directory = ReplacesAccentedCharacters($_POST['input_directory'][$i]);
 					$Directory = preg_replace('/\s\s+/', '', $Directory);
 					$Directory = preg_replace('/\s+/', '_', $Directory);
 					$Directory = preg_replace('/\W+/', '', $Directory);
+					$SyncMode = $_POST['input_sync_mode'][$i];
 
 					if ( !empty($Directory) ) {
 						$IfExist = $MySB_DB->get("users_rtorrent_cfg", "id_users_rtorrent_cfg", [
@@ -136,33 +166,14 @@ if (isset($_POST['submit'])) {
 																		]);
 
 						if ( empty($IfExist) ) {
-							$result = $MySB_DB->insert("users_rtorrent_cfg", ["id_users" => "$UserID", "sub_directory" => "$Directory", "can_be_deleted" => 1]);
+							$result = $MySB_DB->insert("users_rtorrent_cfg", ["id_users" => "$UserID", "sub_directory" => "$Directory", "sync_mode" => $SyncMode, "can_be_deleted" => 1]);
 							if( $result != 0 ) {
 								$Change++;
 								$RefreshPage++;
 								$rTorrentRestart_POST = 1;
+								$Command = 'Restart_rTorrent';
 							}
 						}
-					}
-				}
-			}
-
-			// Sub-Directories - Delete
-			if (isset($_POST['delete_dir'])) {
-				$MySB_DB->update("users_rtorrent_cfg", ["to_delete" => 0], ["id_users" => $UserID]);
-				$count = count($_POST['delete_dir']);
-				for($i=0; $i<=$count; $i++) {
-					$ToDelDirectory = preg_replace('/\s\s+/', '', $_POST['delete_dir'][$i]);
-					$result = $MySB_DB->update("users_rtorrent_cfg", ["to_delete" => 1], [
-																							"AND" => [
-																								"id_users" => $UserID,
-																								"sub_directory" => $ToDelDirectory
-																							]
-																						]);
-					if ( $result > 0 ) {
-						$Change++;
-						$RefreshPage++;
-						$rTorrentRestart_POST = 1;
 					}
 				}
 			}
@@ -170,7 +181,7 @@ if (isset($_POST['submit'])) {
 			// Need to restart rTorrent ?
 			if ( ($rTorrentVersion_POST != $rTorrentVersion_DB) || ($rTorrentRestart_POST == "1") ) {
 				$rTorrentRestart_POST = 1;
-				$Command = 'Options_MySB';
+				$Command = 'Restart_rTorrent';
 				$Change++;
 				$RefreshPage++;
 			}
@@ -224,7 +235,7 @@ if($dossier = opendir("/home/$CurrentUser/scripts")) {
 	while(false !== ($fichier = readdir($dossier))) {
 		if($fichier != '.' && $fichier != '..') {
 			$info = new SplFileInfo($fichier);
-			if ( $info->getExtension() == 'cron' ) {
+			if ( $info->getExtension() == 'sh' ) {
 				array_push($CronFiles, $fichier);
 			}
 		}
@@ -320,13 +331,21 @@ if ( !empty($users_directories) ) {
 		<table>
 			<tr>
 				<th style="text-align:center;"><?php echo User_OptionsMySB_rTorrentConfig_Table_Title; ?></th>
+				<th style="text-align:center;"><?php echo User_OptionsMySB_Title_SyncMode; ?></th>
 				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
 			</tr>
 <?php
 	foreach($users_directories as $Directory) {
 ?>
 			<tr>
-				<td><?php echo $Directory['sub_directory']; ?></td>
+				<td><?php echo $Directory['sub_directory']; ?><input class="directory" id="directory" name="directory[]" type="hidden" value="<?php echo $Directory['sub_directory']; ?>" /></td>
+				<td>
+					<select name="sync_mode[]" style="width:300px; height: 28px;">
+						<option <?php echo ($Directory['sync_mode'] == '0') ? 'selected="selected"' : ''; ?> value="0"><?php echo User_OptionsMySB_IgnoreSync; ?></option>
+						<option <?php echo ($Directory['sync_mode'] == '1') ? 'selected="selected"' : ''; ?> value="1"><?php echo User_OptionsMySB_CronOnly; ?></option>
+						<option <?php echo ($Directory['sync_mode'] == '2') ? 'selected="selected"' : ''; ?> value="2"><?php echo User_OptionsMySB_DirectSync; ?></option>
+					</select>
+				</td>
 				<td>
 					<input class="submit" name="delete_dir[]" type="checkbox" value="<?php echo $Directory['sub_directory']; ?>" <?php echo ($Directory['to_delete'] == '1') ? 'checked' : ''; ?> />
 				</td>
@@ -335,11 +354,16 @@ if ( !empty($users_directories) ) {
 	}
 }
 ?>
-			<tr><th colspan="2"></th></tr>
+			<tr><th colspan="3"></th></tr>
 		</table>
 		<div id="input1" class="clonedInput">
 			<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
-			<?php echo User_OptionsMySB_rTorrentConfigDirectory; ?>&nbsp;<input class="input_directory" id="directory" name="directory[1]" type="text" />
+			<?php echo User_OptionsMySB_rTorrentConfigDirectory; ?>&nbsp;<input class="input_directory" id="input_directory" name="input_directory[1]" type="text" />
+			<select class="input_sync_mode" id="input_sync_mode" name="input_sync_mode[1]" style="width:280px; height: 28px;" >
+				<option value="0"><?php echo User_OptionsMySB_IgnoreSync; ?></option>
+				<option value="1"><?php echo User_OptionsMySB_CronOnly; ?></option>
+				<option value="2"><?php echo User_OptionsMySB_DirectSync; ?></option>
+			</select>
 		</div>
 		<div style="margin-top: 10px; margin-bottom: 20px;">
 			<input type="button" id="btnAdd" value="<?php echo User_OptionsMySB_rTorrentConfigAddDirectory; ?>" style="cursor: pointer;" />
@@ -397,7 +421,7 @@ if ( !empty($users_directories) ) {
 			<tr>
 				<td style="text-align:center;"><?php echo User_OptionsMySB_Command; ?></th>
 				<td colspan="4">
-				<select name="cron_command" style="width: 100%;">';
+				<select name="cron_command" style="width: 100%; height: 28px;">
 <?php
 				foreach($CronFiles as $Script) {
 					echo '<option selected="selected" value="' . $Script . '">' . $Script . '</option>';

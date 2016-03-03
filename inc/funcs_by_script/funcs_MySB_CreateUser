@@ -253,20 +253,23 @@ ruTorrentUsersConfigs() {
 	unset LISTING FnHomeDir HomeDirEscaped PortSCGI UserNameUpper
 }
 
-#### rTorrent Configuration file
-CreateRtorrentConfigFile() {
+#### Manage user crontab
+UserCrontab() {
 	FnUser="$1"
 	IdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$FnUser'"`"
 	HomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
-	Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory,to_delete,can_be_deleted' 'users_rtorrent_cfg' "id_users = '$IdUser'"`"
-	Crontab="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users_crontab,minutes,hours,days,months,numday,command' 'users_crontab' "id_users = '$IdUser'"`"
-	if [ "$2" == "force" ] || [ ! -f $HomeDir/.rtorrent.rc ]; then
-		CreateNewFile=1
-	else
-		CreateNewFile=0
-	fi
+	Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory,sync_mode' 'users_rtorrent_cfg' "id_users = '$IdUser'"`"
 
-	# Crontab
+	echo "# Sync Mode for finished download" > $HomeDir/scripts/sync_mode
+	echo "# 0	-->	Do not start any script (no synchro)" >> $HomeDir/scripts/sync_mode
+	echo "# 1	-->	Execute scripts by crontab (*.cron)" >> $HomeDir/scripts/sync_mode
+	echo "# 2	-->	Execute scripts directly when a download is finished (*.sh)" >> $HomeDir/scripts/sync_mode
+	for Directory in $Directories; do
+		SubDirectory="`echo $Directory | awk '{split($0,a,"|"); print a[1]}'`"
+		SyncMode="`echo $Directory | awk '{split($0,a,"|"); print a[2]}'`"
+		echo "$SubDirectory|$SyncMode" >> $HomeDir/scripts/sync_mode
+	done
+
 	if [ -f $HomeDir/scripts/crontab ]; then
 		rm -f $HomeDir/scripts/crontab
 	fi
@@ -281,7 +284,7 @@ CreateRtorrentConfigFile() {
 			CronCommand="`echo $Cron | awk '{split($0,a,"|"); print a[7]}'`"
 			# Adding cron job only if script file is present
 			if [ -f $HomeDir/scripts/$CronCommand ]; then
-				echo "$CronMinutes $CronHours $CronDays $CronMonths $CronNumday /bin/bash ~/scripts/$CronCommand  > /dev/null 2>&1" >> $HomeDir/scripts/crontab
+				echo "$CronMinutes $CronHours $CronDays $CronMonths $CronNumday /bin/bash ~/scripts/$CronCommand > /dev/null 2>&1" >> $HomeDir/scripts/crontab
 			else
 				Func_SQL_Command 'DELETE' 'MySB_db' 'users_crontab' "id_users_crontab = '$CronID' AND id_users = '$IdUser'"
 			fi
@@ -291,6 +294,20 @@ CreateRtorrentConfigFile() {
 		crontab -u $FnUser $HomeDir/scripts/crontab
 		/etc/init.d/cron reload &> /dev/null
 		rm -f $HomeDir/scripts/crontab
+	fi	
+}
+
+#### rTorrent Configuration file
+CreateRtorrentConfigFile() {
+	FnUser="$1"
+	IdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$FnUser'"`"
+	HomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
+	Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory,to_delete,can_be_deleted' 'users_rtorrent_cfg' "id_users = '$IdUser'"`"
+	Crontab="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users_crontab,minutes,hours,days,months,numday,command' 'users_crontab' "id_users = '$IdUser'"`"
+	if [ "$2" == "force" ] || [ ! -f $HomeDir/.rtorrent.rc ]; then
+		CreateNewFile=1
+	else
+		CreateNewFile=0
 	fi
 
 	# Sub-Directories
@@ -354,6 +371,9 @@ CreateRtorrentConfigFile() {
 		done
 	fi
 
+	# Crontab & sync mode
+	UserCrontab "$FnUser"
+
 	# .rTorrent.bsh
 	cp $MySB_InstallDir/templates/rtorrent/rtorrent.bsh.tmpl $HomeDir/.rTorrent.bsh
 	perl -pi -e "s/<username>/$FnUser/g" $HomeDir/.rTorrent.bsh
@@ -361,13 +381,12 @@ CreateRtorrentConfigFile() {
 	chmod 0750 $HomeDir/.rTorrent.bsh
 
 	# Example scripts
-	cp $MySB_InstallDir/templates/rtorrent/rsync.sh.tmpl /home/$FnUser/scripts/rsync.sh.example
-	cp $MySB_InstallDir/templates/rtorrent/list.sh.tmpl /home/$FnUser/scripts/list.sh.example
-	cp $MySB_InstallDir/templates/rtorrent/rsync.cron.tmpl /home/$FnUser/scripts/rsync.cron.example
+	rm /home/$FnUser/scripts/*.example &> /dev/null 
+	cp $MySB_InstallDir/templates/rtorrent/synchro.sh.tmpl /home/$FnUser/scripts/synchro.sh.example
 	echo "$Global_Readme_AvailableVariables" > /home/$FnUser/scripts/README
 	chown $FnUser:$FnUser /home/$FnUser/scripts/*
 	chmod 0770 /home/$FnUser/scripts/*
-	dos2unix /home/$FnUser/scripts/* &> /dev/null 
+	dos2unix /home/$FnUser/scripts/* &> /dev/null
 
 	if [ $CreateNewFile -eq 1 ]; then
 		# .rtorrent.rc

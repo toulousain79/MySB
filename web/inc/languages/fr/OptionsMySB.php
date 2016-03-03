@@ -51,5 +51,9 @@ define('User_OptionsMySB_Crontab_Comment', 'Planifier l\'&eacute;xecution de scr
 Vos scripts doivent &ecirc;tre enregistr&eacute;s dans ~/scripts/ avec ".cron" comme extension.<br/>
 Validez votre planification ici ;-) <a target="_blank" href="http://crontab.guru/">crontab.guru</a>.<br/>
 Lisez le fichier \'~/scripts/README\'.');
+define('User_OptionsMySB_Title_SyncMode', 'Mode de synchro');
+define('User_OptionsMySB_IgnoreSync', 'Ignore les scripts (Pas de synchro)');
+define('User_OptionsMySB_CronOnly', 'Synchro programm&eacute;e (.cron)');
+define('User_OptionsMySB_DirectSync', 'Synchro directe (.sh)');
 
 //#################### LAST LINE ######################################

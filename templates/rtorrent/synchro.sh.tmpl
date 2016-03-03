@@ -1,0 +1,203 @@
+#!/bin/sh
+
+#### VARs
+# Destination
+ModeSync="ftp"		# ftp OR rsync
+DstDir="./"			# Destination directory, WITH starting './' and WITHOUT ending '/'. (ex: ./home/myuser)
+DstSrv=""			# Hostname OR IP address of the destination. (ex: myserver.mydomain.com)
+DstPort=""			# Port (ex: 22)
+DstUser=""			# Username
+DstPass=""			# Password
+MaxToSync=0			# Max file to synchronize from 'FileList' per cronjob ? (0 for sync all)
+CreateSubDir=1		# 1: Create a subdirectory for alone files (needed by some scraper) | 0: Do not create subdirectory
+# Notification (if enabled on MySB options page in portal)
+MailObjectOK="MySB - Transfer to NAS completed !"
+MailObjectKO="MySB - Transfer to NAS failed !"
+
+# DO NOT MODIFY
+UserName="`whoami`"
+ScriptName=$(basename $0)
+FileSyncMode="$HOME/scripts/sync_mode"
+FileListDirect="$HOME/scripts/direct.list"
+FileListCron="$HOME/scripts/cron.list"
+FileLockDirect="$HOME/scripts/direct.lock"
+FileLockCron="$HOME/scripts/cron.lock"
+FileLog="$HOME/logs/$ScriptName.log"
+RsyncCipher="aes128-ctr"
+PID="$$"
+get_base_path="$1"
+get_custom1="$2"
+get_name="$3"
+get_loaded_file="$4"
+# DO NOT MODIFY
+
+# Start by cron OR directly ?
+if [ -z "$get_base_path" ] && [ -z "$get_custom1" ] && [ -z "$get_name" ] && [ -z "$get_loaded_file" ]; then
+	CronMode=1
+else
+	CronMode=0
+fi
+
+
+if [ $CronMode -eq 0 ]; then
+	# Sync Mode for finished download
+	# 0	-->	Do not start any script (no synchro)
+	# 1	-->	Execute scripts by crontab (*.cron)
+	# 2	-->	Execute scripts directly when a download is finished (*.sh)
+	FnGet_NameEscaped="`echo $get_name | sed s,/,\\\\\\\\\\/,g`"
+	Tree="`echo $get_custom1$get_name | sed "s/$FnGet_NameEscaped//g;"`"
+	CountSlash=`echo $Tree | awk -F "/" '{print NF-1}'`
+	FnCategoryDir="`echo $Tree | awk '{split($0,a,"/"); print a['$CountSlash']}'`"
+	if [ -e $FileSyncMode ] && [ -s $FileSyncMode ]; then
+		SyncMode="`cat $FileSyncMode | sed '/^#/d' | grep "^$FnCategoryDir|" | cut -d "|" -f 2`"
+
+		case "$SyncMode" in
+			1)
+				FileList="$FileListCron"
+			;;
+			2)
+				FileList="$FileListDirect"
+			;;
+			*)
+				exit 0
+			;;
+		esac
+	else
+		FileList="$FileListDirect"
+	fi
+
+	# Add entry to the list (cron OR direct)
+	echo "$get_base_path|$get_custom1|$get_name|$get_loaded_file|$FnCategoryDir" >> $FileList
+
+	# We are in direct sync mode
+	FileList="$FileListDirect"
+	FileLock="$FileLockDirect"
+else
+	# We are in cron sync mode
+	FileList="$FileListCron"
+	FileLock="$FileLockCron"
+fi
+
+# Synchro already started so STOP
+if [ -e $FileLock ] || [ ! -s $FileList ]; then
+	exit 0
+fi
+
+# Creating a lock file for do not launch two instances of in parallel
+touch $FileLock
+
+# Retrieving files to transfer
+Listing() {
+	# VARs
+	FnGet_Base_Bath="$1"
+	FnGet_Custom1="$2"
+	FnGet_Name="$3"
+	FnGet_LoadedFile="$4"
+	FnCategoryDir="$5"
+	FnGet_NameEscaped="`echo $FnGet_Name | sed s,/,\\\\\\\\\\/,g`"
+	FnLine="$FnGet_Custom1$FnGet_Name"
+	ToSynchronize="`echo $FnLine | sed 's/\ /\\\ /g;'`"
+	CompleteDirs="`ls -A1 ~/rtorrent/complete/`"
+	Tree="`echo $FnLine | sed "s/$FnGet_NameEscaped//g;"`"
+
+	if [ -f "$FnLine" ] && [ $CreateSubDir -eq 1 ]; then
+		FnGet_NameEscaped="`echo $FnGet_NameEscaped | sed 's/\[/\\\[/g;' | sed 's/\]/\\\]/g;' | sed 's/(/\\(/g' | sed 's/)/\\)/g'`"
+		TreeEscaped="`echo $FnLine | sed "s/$FnGet_NameEscaped//g;" | sed s,/,\\\\\\\\\\/,g`"
+		SubDirectory="`echo ${FnLine%.*} | sed "s/$TreeEscaped//g;"`"
+	fi
+
+	if [ -z "`echo $CompleteDirs | grep "$CategoryDir"`" ]; then
+		if [ ! -z "$SubDirectory" ] && [ $CreateSubDir -eq 1 ]; then
+			FinalDst="$DstDir/$SubDirectory"
+		else
+			FinalDst="$DstDir"
+		fi
+	else
+		if [ ! -z "$SubDirectory" ] && [ $CreateSubDir -eq 1 ]; then
+			FinalDst="$DstDir/$CategoryDir/$SubDirectory"
+		else
+			FinalDst="$DstDir/$CategoryDir"
+		fi
+	fi
+	FinalDstEscaped="`echo $FinalDst | sed 's/\[//g;' | sed 's/\]//g;' | sed 's/(//g' | sed 's/)//g' | sed 's/\ /./g;'`"
+
+	# Log
+	echo "#### START ####"
+	echo "Script:		$0"
+	echo "From:		$FnLine"
+	echo "To:		$FinalDst"
+	echo "Server:		$DstUser@$DstSrv"
+	echo "Date:		`/bin/date +%Y/%m/%d`"
+	echo "Hour:		`/bin/date +%H:%M:%S`"
+	echo "--------------------"
+	echo
+
+	case "$ModeSync" in
+		'rsync')
+			# Start synchroniszation with RSYNC
+			# Creating sub-directory on destination
+			sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d $FinalDstEscaped ]; then mkdir -p \"$FinalDstEscaped\"; fi"
+
+			# Start synchroniszation with RSYNC
+			rsync -rtvy --numeric-ids --partial --append --stats -e "/usr/bin/sshpass -p$DstPass ssh -p $DstPort -c $RsyncCipher -o Compression=no -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$FnLine" $DstUser@$DstSrv:"$FinalDstEscaped/"
+		;;
+		'ftp')
+			lftp -e "set ftp:ssl-protect-data true; set ssl:verify-certificate no; mkdir -p $FinalDstEscaped; put -O $FinalDstEscaped $FnLine; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
+		;;
+		*)
+			return
+		;;
+	esac
+
+	# Deleting the file from the list
+	if [ $? -eq 0 ]; then
+		FnGet_LoadedFileEscaped="`echo $FnGet_LoadedFile | sed s,/,\\\\\\\\\\/,g`"
+		sed -i "/$FnGet_LoadedFileEscaped/d" $FileList
+	else
+		MailObjectOK="$MailObjectKO"
+	fi
+
+	echo
+	echo "--------------------"
+	echo "Date:		`/bin/date +%Y/%m/%d`"
+	echo "Hour:		`/bin/date +%H:%M:%S`"
+	echo "##### END #####"
+
+	# E-mail notification
+	content="$FileLogTemp"
+	curl --data "username=$UserName&get_custom1=$ToSynchronize&get_name=$FnGet_Name&subject=$MailObjectOK&content=$content" http://localhost:8888/rTorrent.php
+}
+
+# Execute
+Count=0
+NumLine=1
+Line="`head -n $NumLine $FileList | tail -n 1`"
+while [ ! -z "$Line" ]; do
+	FileLogTemp="/tmp/$UserName-$ScriptName.log.$PID"
+	get_base_path="`echo $Line | awk '{split($0,a,\"|\"); print a[1]}'`"
+	get_custom1="`echo $Line | awk '{split($0,a,\"|\"); print a[2]}'`"
+	get_name="`echo $Line | awk '{split($0,a,\"|\"); print a[3]}'`"
+	get_loaded_file="`echo $Line | awk '{split($0,a,\"|\"); print a[4]}'`"
+	CategoryDir="`echo $Line | awk '{split($0,a,\"|\"); print a[5]}'`"
+
+	Listing "$get_base_path" "$get_custom1" "$get_name" "$get_loaded_file" "$CategoryDir" > $FileLogTemp
+
+	# Move log file content
+	if [ -f $FileLogTemp ]; then
+		cat $FileLogTemp >> $FileLog
+		cat $FileLogTemp >> $FileLock
+		rm -f $FileLogTemp
+	fi
+
+	Count=$(($Count + 1))
+	NumLine=$(($NumLine + 1))
+	Line="`head -n $NumLine $FileList | tail -n 1`"	
+	if [ $Count -eq $MaxToSync ] && [ $MaxToSync -ne 0 ]; then
+		unset Line
+	fi
+done
+
+# Removing the lock file
+if [ -e $FileLock ]; then
+	rm -f $FileLock
+fi

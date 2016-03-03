@@ -51,5 +51,9 @@ define('User_OptionsMySB_Crontab_Comment', 'Schedule your personal scripts at th
 Your scripts must be stored in ~/crontab/ with extension ".cron".<br/>
 Confirm your schedule here ;-) <a target="_blank" href="http://crontab.guru/">crontab.guru</a>.<br/>
 Read the file \'~/scripts/README\'.');
+define('User_OptionsMySB_Title_SyncMode', 'Sync mode');
+define('User_OptionsMySB_IgnoreSync', 'Ignore script (no sync)');
+define('User_OptionsMySB_CronOnly', 'Script by cron (.cron)');
+define('User_OptionsMySB_DirectSync', 'Direct when finished (.sh)');
 
 //#################### LAST LINE ######################################
