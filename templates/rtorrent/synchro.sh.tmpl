@@ -17,6 +17,7 @@ MailObjectKO="MySB - Transfer to NAS failed !"
 # DO NOT MODIFY
 UserName="`whoami`"
 ScriptName=$(basename $0)
+CompleteDir="/home/$UserName/rtorrent/complete/"
 FileSyncMode="$HOME/scripts/sync_mode"
 FileListDirect="$HOME/scripts/direct.list"
 FileListCron="$HOME/scripts/cron.list"
@@ -42,14 +43,12 @@ fi
 if [ $CronMode -eq 0 ]; then
 	# Sync Mode for finished download
 	# 0	-->	Do not start any script (no synchro)
-	# 1	-->	Execute scripts by crontab (*.cron)
-	# 2	-->	Execute scripts directly when a download is finished (*.sh)
-	FnGet_NameEscaped="`echo $get_name | sed s,/,\\\\\\\\\\/,g`"
-	Tree="`echo $get_custom1$get_name | sed "s/$FnGet_NameEscaped//g;"`"
-	CountSlash=`echo $Tree | awk -F "/" '{print NF-1}'`
-	FnCategoryDir="`echo $Tree | awk '{split($0,a,"/"); print a['$CountSlash']}'`"
+	# 1	-->	Execute scripts by crontab
+	# 2	-->	Execute scripts directly when a download is finished
+	CompleteDirEscaped="`echo $CompleteDir | sed s,/,\\\\\\\\\\/,g`"
+	CategoryDir="`echo $get_custom1 | sed "s/$CompleteDirEscaped//g;" | sed 's/\///g;'`"
 	if [ -e $FileSyncMode ] && [ -s $FileSyncMode ]; then
-		SyncMode="`cat $FileSyncMode | sed '/^#/d' | grep "^$FnCategoryDir|" | cut -d "|" -f 2`"
+		SyncMode="`cat $FileSyncMode | sed '/^#/d' | grep "^$CategoryDir|" | cut -d "|" -f 2`"
 
 		case "$SyncMode" in
 			1)
@@ -67,7 +66,7 @@ if [ $CronMode -eq 0 ]; then
 	fi
 
 	# Add entry to the list (cron OR direct)
-	echo "$get_base_path|$get_custom1|$get_name|$get_loaded_file|$FnCategoryDir" >> $FileList
+	echo "$get_base_path|$get_custom1|$get_name|$get_loaded_file|$CategoryDir" >> $FileList
 
 	# We are in direct sync mode
 	FileList="$FileListDirect"
@@ -96,35 +95,29 @@ Listing() {
 	FnCategoryDir="$5"
 	FnGet_NameEscaped="`echo $FnGet_Name | sed s,/,\\\\\\\\\\/,g`"
 	FnLine="$FnGet_Custom1$FnGet_Name"
-	CompleteDirs="`ls -A1 ~/rtorrent/complete/`"
-	Tree="`echo $FnLine | sed "s/$FnGet_NameEscaped//g;"`"
+	CompleteDirs="`ls -A1 $CompleteDir`"
 
+	# Need to create a subdirectory on destination ?
 	if [ -f "$FnLine" ] && [ $CreateSubDir -eq 1 ]; then
 		FnGet_NameEscaped="`echo $FnGet_NameEscaped | sed 's/\[/\\\[/g;' | sed 's/\]/\\\]/g;' | sed 's/(/\\(/g' | sed 's/)/\\)/g'`"
-		TreeEscaped="`echo $FnLine | sed "s/$FnGet_NameEscaped//g;" | sed s,/,\\\\\\\\\\/,g`"
-		SubDirectory="`echo ${FnLine%.*} | sed "s/$TreeEscaped//g;"`"
+		SubDirectory="`echo $FnLine | sed "s/$FnGet_NameEscaped//g;" | sed s,/,\\\\\\\\\\/,g`"
+		SubDirectory="`echo ${FnLine%.*} | sed "s/$SubDirectory//g;" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 	fi
 
-	if [ -z "`echo $CompleteDirs | grep "$CategoryDir"`" ]; then
-		if [ ! -z "$SubDirectory" ] && [ $CreateSubDir -eq 1 ]; then
-			FinalDst="$DstDir/$SubDirectory"
-		else
-			FinalDst="$DstDir"
-		fi
+	if [ ! -z "$SubDirectory" ] && [ $CreateSubDir -eq 1 ]; then
+		FnDstDir="$DstDir/$FnCategoryDir/$SubDirectory"
 	else
-		if [ ! -z "$SubDirectory" ] && [ $CreateSubDir -eq 1 ]; then
-			FinalDst="$DstDir/$CategoryDir/$SubDirectory"
-		else
-			FinalDst="$DstDir/$CategoryDir"
-		fi
+		FnDstDir="$DstDir/$FnCategoryDir"
 	fi
-	FinalDstEscaped="`echo $FinalDst | sed 's/\[//g;' | sed 's/\]//g;' | sed 's/(//g' | sed 's/)//g' | sed 's/\ /./g;'`"
+	FnDstDir="`echo $FnDstDir | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+	FnDstDir="`echo $FnDstDir | sed 's/\[//g;' | sed 's/\]//g;' | sed 's/(//g' | sed 's/)//g' | sed 's/\ /./g;'`"
 
 	# Log
 	echo "#### START ####"
 	echo "Script:		$0"
 	echo "From:		$FnLine"
-	echo "To:		$FinalDst"
+	echo "To:			$FnDstDir"
+	echo "Category:	$FnCategoryDir"
 	echo "Server:		$DstUser@$DstSrv"
 	echo "Date:		`/bin/date +%Y/%m/%d`"
 	echo "Hour:		`/bin/date +%H:%M:%S`"
@@ -141,14 +134,14 @@ Listing() {
 		'rsync')
 			# Start synchroniszation with RSYNC
 			# Creating sub-directory on destination
-			sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d $FinalDstEscaped ]; then mkdir -p \"$FinalDstEscaped\"; fi"
+			sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d \"$FnDstDir\" ]; then mkdir -p \"$FnDstDir\"; fi"
 
 			# Start synchroniszation with RSYNC
-			rsync -rtvy --numeric-ids --partial --append --stats -e "/usr/bin/sshpass -p$DstPass ssh -p $DstPort -c $RsyncCipher -o Compression=no -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$FnLine" $DstUser@$DstSrv:"$FinalDstEscaped/"
+			rsync -rtvy --numeric-ids --partial --append --stats --timeout=10 -e "/usr/bin/sshpass -p$DstPass ssh -p $DstPort -c $RsyncCipher -o Compression=no -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$FnLine" $DstUser@$DstSrv:"$FnDstDir/"
 		;;
 		'ftp')
 			LftpOptions="set ftp:ssl-protect-data true; set ssl:verify-certificate no; set net:max-retries 3; set net:reconnect-interval-base 5;"
-			lftp -e "$LftpOptions mkdir -p $FinalDstEscaped; put -O $FinalDstEscaped $FnLine; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
+			lftp -e "$LftpOptions mkdir -p $FnDstDir; put -O \"$FnDstDir\" \"$FnLine\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
 		;;
 		'no_such_file_or_directory')
 			echo $FnCheck
@@ -202,7 +195,7 @@ while [ ! -z "$Line" ]; do
 
 	Count=$(($Count + 1))
 	NumLine=$(($NumLine + 1))
-	Line="`head -n $NumLine $FileList | tail -n 1`"	
+	Line="`head -n $NumLine $FileList | tail -n 1`"
 	if [ $Count -eq $MaxToSync ] && [ $MaxToSync -ne 0 ]; then
 		unset Line
 	fi
