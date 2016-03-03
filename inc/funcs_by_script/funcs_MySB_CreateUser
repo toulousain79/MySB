@@ -259,6 +259,7 @@ UserCrontab() {
 	IdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$FnUser'"`"
 	HomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
 	Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory,sync_mode' 'users_rtorrent_cfg' "id_users = '$IdUser'"`"
+	Crontab="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users_crontab,minutes,hours,days,months,numday,command' 'users_crontab' "id_users = '$IdUser'"`"
 
 	echo "# Sync Mode for finished download" > $HomeDir/scripts/sync_mode
 	echo "# 0	-->	Do not start any script (no synchro)" >> $HomeDir/scripts/sync_mode
@@ -289,12 +290,14 @@ UserCrontab() {
 				Func_SQL_Command 'DELETE' 'MySB_db' 'users_crontab' "id_users_crontab = '$CronID' AND id_users = '$IdUser'"
 			fi
 		done
+	else
+		echo > $HomeDir/scripts/crontab
 	fi
 	if [ -f $HomeDir/scripts/crontab ]; then
 		crontab -u $FnUser $HomeDir/scripts/crontab
 		/etc/init.d/cron reload &> /dev/null
 		rm -f $HomeDir/scripts/crontab
-	fi	
+	fi
 }
 
 #### rTorrent Configuration file
@@ -303,7 +306,6 @@ CreateRtorrentConfigFile() {
 	IdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$FnUser'"`"
 	HomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
 	Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory,to_delete,can_be_deleted' 'users_rtorrent_cfg' "id_users = '$IdUser'"`"
-	Crontab="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users_crontab,minutes,hours,days,months,numday,command' 'users_crontab' "id_users = '$IdUser'"`"
 	if [ "$2" == "force" ] || [ ! -f $HomeDir/.rtorrent.rc ]; then
 		CreateNewFile=1
 	else

@@ -96,7 +96,6 @@ Listing() {
 	FnCategoryDir="$5"
 	FnGet_NameEscaped="`echo $FnGet_Name | sed s,/,\\\\\\\\\\/,g`"
 	FnLine="$FnGet_Custom1$FnGet_Name"
-	ToSynchronize="`echo $FnLine | sed 's/\ /\\\ /g;'`"
 	CompleteDirs="`ls -A1 ~/rtorrent/complete/`"
 	Tree="`echo $FnLine | sed "s/$FnGet_NameEscaped//g;"`"
 
@@ -132,6 +131,12 @@ Listing() {
 	echo "--------------------"
 	echo
 
+	# Check if files exist
+	FnCheck="`file "$FnLine"`"
+	if [ $? -ne 0 ]; then
+		ModeSync="no_such_file_or_directory"
+	fi
+
 	case "$ModeSync" in
 		'rsync')
 			# Start synchroniszation with RSYNC
@@ -142,10 +147,16 @@ Listing() {
 			rsync -rtvy --numeric-ids --partial --append --stats -e "/usr/bin/sshpass -p$DstPass ssh -p $DstPort -c $RsyncCipher -o Compression=no -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$FnLine" $DstUser@$DstSrv:"$FinalDstEscaped/"
 		;;
 		'ftp')
-			lftp -e "set ftp:ssl-protect-data true; set ssl:verify-certificate no; mkdir -p $FinalDstEscaped; put -O $FinalDstEscaped $FnLine; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
+			LftpOptions="set ftp:ssl-protect-data true; set ssl:verify-certificate no; set net:max-retries 3; set net:reconnect-interval-base 5;"
+			lftp -e "$LftpOptions mkdir -p $FinalDstEscaped; put -O $FinalDstEscaped $FnLine; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
+		;;
+		'no_such_file_or_directory')
+			echo $FnCheck
+			FnGet_LoadedFileEscaped="`echo $FnGet_LoadedFile | sed s,/,\\\\\\\\\\/,g`"
+			sed -i "/$FnGet_LoadedFileEscaped/d" $FileList
 		;;
 		*)
-			return
+			return 1
 		;;
 	esac
 
@@ -165,7 +176,7 @@ Listing() {
 
 	# E-mail notification
 	content="$FileLogTemp"
-	curl --data "username=$UserName&get_custom1=$ToSynchronize&get_name=$FnGet_Name&subject=$MailObjectOK&content=$content" http://localhost:8888/rTorrent.php
+	curl --data "username=$UserName&get_custom1=$FnLine&get_name=$FnGet_Name&subject=$MailObjectOK&content=$content" http://localhost:8888/rTorrent.php
 }
 
 # Execute
