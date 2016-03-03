@@ -53,7 +53,7 @@ Confirm your schedule here ;-) <a target="_blank" href="http://crontab.guru/">cr
 Read the file \'~/scripts/README\'.');
 define('User_OptionsMySB_Title_SyncMode', 'Sync mode');
 define('User_OptionsMySB_IgnoreSync', 'Ignore script (no sync)');
-define('User_OptionsMySB_CronOnly', 'Script by cron (.cron)');
-define('User_OptionsMySB_DirectSync', 'Direct when finished (.sh)');
+define('User_OptionsMySB_CronOnly', 'Script by cron');
+define('User_OptionsMySB_DirectSync', 'Direct when finished');
 
 //#################### LAST LINE ######################################

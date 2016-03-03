@@ -53,7 +53,7 @@ Validez votre planification ici ;-) <a target="_blank" href="http://crontab.guru
 Lisez le fichier \'~/scripts/README\'.');
 define('User_OptionsMySB_Title_SyncMode', 'Mode de synchro');
 define('User_OptionsMySB_IgnoreSync', 'Ignore les scripts (Pas de synchro)');
-define('User_OptionsMySB_CronOnly', 'Synchro programm&eacute;e (.cron)');
-define('User_OptionsMySB_DirectSync', 'Synchro directe (.sh)');
+define('User_OptionsMySB_CronOnly', 'Synchro programm&eacute;e');
+define('User_OptionsMySB_DirectSync', 'Synchro directe');
 
 //#################### LAST LINE ######################################
