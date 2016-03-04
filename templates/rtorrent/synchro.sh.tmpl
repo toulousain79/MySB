@@ -86,10 +86,13 @@ if [ -e $FileLock ]; then				# Check that the lock file has not been forgotten..
 		;;
 		*)								# Otherwise, we remove it and continue running the script.
 			rm -f $FileLock
+			if [ -e /tmp/$UserName-$ScriptName.log.$GetPid ]; then
+				rm -f /tmp/$UserName-$ScriptName.log.$GetPid
+			fi
 			if [ ! -s $FileList ]; then	# The list is empty, there is nothing to do. So we stop the script.
 				exit 0
 			else						# Otherwise, we continue and create a new lock file.
-				echo $$ > $FileLock
+				echo $PID > $FileLock
 			fi
 		;;
 	esac
@@ -97,43 +100,8 @@ else									# No file locking, we continue.
 	if [ ! -s $FileList ]; then			# The list is empty, there is nothing to do. So we stop the script.
 		exit 0
 	else								# Otherwise, we continue and create a new lock file.
-		echo $$ > $FileLock
+		echo $PID > $FileLock
 	fi
-fi
-
-#### EXECUTING: We read the list line by line. We read the list one line and execute the synchronization function.
-Count=0
-NumLine=1
-Line="`head -n $NumLine $FileList | tail -n 1`"
-while [ ! -z "$Line" ]; do
-	FileLogTemp="/tmp/$UserName-$ScriptName.log.$PID"
-	get_base_path="`echo $Line | awk '{split($0,a,\"|\"); print a[1]}'`"
-	get_custom1="`echo $Line | awk '{split($0,a,\"|\"); print a[2]}'`"
-	get_name="`echo $Line | awk '{split($0,a,\"|\"); print a[3]}'`"
-	get_loaded_file="`echo $Line | awk '{split($0,a,\"|\"); print a[4]}'`"
-	CategoryDir="`echo $Line | awk '{split($0,a,\"|\"); print a[5]}'`"
-
-	# Real process of synchronization
-	Listing "$get_base_path" "$get_custom1" "$get_name" "$get_loaded_file" "$CategoryDir" > $FileLogTemp
-
-	# Move log file content
-	if [ -f $FileLogTemp ]; then
-		cat $FileLogTemp >> $FileLog
-		rm -f $FileLogTemp
-	fi
-
-	# Read the next line if there is no execution limit (MaxToSync).
-	Count=$(($Count + 1))
-	NumLine=$(($NumLine + 1))
-	Line="`head -n $NumLine $FileList | tail -n 1`"
-	if [ $Count -eq $MaxToSync ] && [ $MaxToSync -ne 0 ]; then
-		unset Line
-	fi
-done
-
-#### Removing the lock file
-if [ -e $FileLock ]; then
-	rm -f $FileLock
 fi
 
 ############ FUNCTIONs - BoF ############
@@ -225,3 +193,38 @@ Listing() {
 	curl --data "username=$UserName&get_custom1=$FnLine&get_name=$FnGet_Name&subject=$FnMail_Object&content=$content" http://localhost:8888/rTorrent.php
 }
 ############ FUNCTIONs - BoF ############
+
+#### EXECUTING: We read the list line by line. We read the list one line and execute the synchronization function.
+Count=0
+NumLine=1
+Line="`head -n $NumLine $FileList | tail -n 1`"
+while [ ! -z "$Line" ]; do
+	FileLogTemp="/tmp/$UserName-$ScriptName.log.$PID"
+	get_base_path="`echo $Line | awk '{split($0,a,\"|\"); print a[1]}'`"
+	get_custom1="`echo $Line | awk '{split($0,a,\"|\"); print a[2]}'`"
+	get_name="`echo $Line | awk '{split($0,a,\"|\"); print a[3]}'`"
+	get_loaded_file="`echo $Line | awk '{split($0,a,\"|\"); print a[4]}'`"
+	CategoryDir="`echo $Line | awk '{split($0,a,\"|\"); print a[5]}'`"
+
+	# Real process of synchronization
+	Listing "$get_base_path" "$get_custom1" "$get_name" "$get_loaded_file" "$CategoryDir" > $FileLogTemp
+
+	# Move log file content
+	if [ -f $FileLogTemp ]; then
+		cat $FileLogTemp >> $FileLog
+		rm -f $FileLogTemp
+	fi
+
+	# Read the next line if there is no execution limit (MaxToSync).
+	Count=$(($Count + 1))
+	NumLine=$(($NumLine + 1))
+	Line="`head -n $NumLine $FileList | tail -n 1`"
+	if [ $Count -eq $MaxToSync ] && [ $MaxToSync -ne 0 ]; then
+		unset Line
+	fi
+done
+
+#### Removing the lock file
+if [ -e $FileLock ]; then
+	rm -f $FileLock
+fi
