@@ -60,12 +60,16 @@ AddTracker() {
 		PART3="`echo ${Tracker} | cut -d "." -f 3`"
 
 		if [ -z "$PART3" ]; then
-			TrackerDomain="`echo $PART1`.`echo $PART2`"
+			TrackerDomain="$PART1.$PART2"
 		else
-			TrackerDomain="`echo $PART2`.`echo $PART3`"
+			TrackerDomain="$PART2.$PART3"
+			TrackerAddress="$PART1.$TrackerDomain"
 		fi
 		unset PART1 PART2 PART3
 
+		# 1/ Check 'tracker.domain.com'
+		# 2/ Check 'given_hostname.domain.com'
+		# 3/ Check 'domain.com'
 		if [ ! -z "$TrackerDomain" ]; then
 			DomainIPv4="$(nslookup $TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 			if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
@@ -77,10 +81,17 @@ AddTracker() {
 				fi
 
 				TrackerIPv4="$(nslookup tracker.$TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
+				if [ -z "$TrackerIPv4" ] && [ ! -z "$TrackerAddress" ]; then
+					TrackerIPv4="$(nslookup $TrackerAddress | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
+				else
+					TrackerAddress="tracker.$TrackerDomain"
+				fi
 			else
 				IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
 				if [ ! -z $IfExist ]; then
 					log_daemon_msg "Delete tracker domain : $TrackerDomain"
+					TrackersListID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
+					Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list_ipv4' "id_trackers_list_ipv4 = '$TrackersListID'"
 					Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list' "tracker_domain = '$TrackerDomain'"
 					StatusLSB
 				fi
@@ -91,7 +102,7 @@ AddTracker() {
 				TrackersListID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
 
 				if [ ! -z "$TrackersListID" ] && [ $TrackersListID -gt 0 ]; then
-					log_daemon_msg "Update trackers IPv4 for 'tracker.$TrackerDomain' --> '$TrackerIPv4'"
+					log_daemon_msg "Update trackers IPv4 for '$TrackerAddress' --> '$TrackerIPv4'"
 					# Cleaning
 					ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID'"`"
 					for IPv4 in $ListIPv4; do
@@ -110,7 +121,7 @@ AddTracker() {
 						fi
 					done
 					unset IPv4 TrackerIPv4
-					Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "tracker = 'tracker.$TrackerDomain'" "tracker_domain = '$TrackerDomain'"
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "tracker = '$TrackerAddress'" "tracker_domain = '$TrackerDomain'"
 					StatusLSB
 				fi
 			else
@@ -143,7 +154,7 @@ AddTracker() {
 				fi
 			fi
 
-			unset TrackerDomain
+			unset TrackerDomain TrackerAddress
 		fi
 	fi
 }

@@ -55,9 +55,10 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					preg_match_all('#http(.*)://#',$Line,$Proto);
 					$Proto = $Proto[0][0];
 					$Proto = strstr($Proto, '://', true);
-					preg_match_all('#://(.*)/#',$Line,$TrackerAddress);
+					preg_match_all('#://(.*)/announce#',$Line,$TrackerAddress);
 					$TrackerAddress = $TrackerAddress[0][0];
 					$TrackerAddress = strstr($TrackerAddress, '//');
+					$TrackerAddress = str_replace("/announce", "", $TrackerAddress);
 					$TrackerAddress = str_replace("/", "", $TrackerAddress);
 					$tab = explode(":", $TrackerAddress);
 					$TrackerAddress = $tab[0];
@@ -217,9 +218,9 @@ foreach($TrackersList as $Tracker) {
 					<input style="width:150px;" type="hidden" name="tracker_domain[<?php echo $i; ?>]" value="<?php echo $Tracker["tracker_domain"]; ?>" />
 					<?php echo $Tracker["tracker_domain"]; ?>
 				</td>
-				<td>
+				<td>			
 					<input style="width:180px;" type="hidden" name="tracker[<?php echo $i; ?>]" value="<?php echo $Tracker["tracker"]; ?>" />
-					<?php echo $Tracker["tracker"]; ?>
+					<a target=_blank href="<?php echo ($Tracker["is_ssl"] == '0') ? 'http://' : 'https://'; echo $Tracker["tracker"]; ?>"><?php echo $Tracker["tracker"]; ?></a>
 				</td>
 				<td>
 					<select style="width:140px;">
