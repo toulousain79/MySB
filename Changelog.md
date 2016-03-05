@@ -3,6 +3,7 @@
 			- DNScrypt-proxy v1.6.1 (v3.3)
 			- RKHunter v1.4.2 (v3.3)
 			- Use of Let's Encrypt (v3.3)
+			- Medoo Framework v1.0.2 (v3.2)
 			- OpenVPN.php, minor changes on OpenVPN page (v3.2 and v3.3)
 			- OptionsMySB.php, minor changes (v3.2 and v3.3)
 			- OptionsMySB.php, add categories synchronize mode (v3.3)

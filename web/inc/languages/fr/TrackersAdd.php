@@ -35,5 +35,10 @@ define('MainUser_TrackersAdd_Table_Address', 'Adresse');
 define('MainUser_TrackersAdd_Table_IPv4', 'IPv4');
 define('MainUser_TrackersAdd_Table_PingResult', 'R&eacute;sultat du ping');
 define('MainUser_TrackersAdd_Table_IsSSL', 'SSL ?');
+define('MainUser_TrackersAdd_ExtractAddress', 'Extraire l\'adresse');
+define('MainUser_TrackersAdd_OnlyTorrent', 'D&eacute;sol&eacute;, seuls les fichiers TORRENT sont autoris&eacute;s.');
+define('MainUser_TrackersAdd_ErrorUpload', 'D&eacute;sol&eacute;, il y eu une erreur lors de l\'envoie de votre fichier.');
+define('MainUser_TrackersAdd_SelectTorrent', 'S&eacute;lectionnez un torrent:');
+define('MainUser_TrackersAdd_NoResult', 'Aucun r&eacute;sultat...');
 
 //#################### LAST LINE ######################################

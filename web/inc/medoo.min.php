@@ -2,7 +2,7 @@
 /*!
  * Medoo database framework
  * http://medoo.in
- * Version 1.0.1
+ * Version 1.0.2
  *
  * Copyright 2016, Angel Lai
  * Released under the MIT license
@@ -190,7 +190,7 @@ class medoo
 
 	protected function column_quote($string)
 	{
-		return '"' . $this->prefix . str_replace('.', '"."', preg_replace('/(^#|\(JSON\)\s*)/', '', $string)) . '"';
+		return '"' . str_replace('.', '"."', preg_replace('/(^#|\(JSON\)\s*)/', '', $string)) . '"';
 	}
 
 	protected function column_push($columns)
@@ -866,7 +866,7 @@ class medoo
 		}
 		else
 		{
-			require false;
+			return false;
 		}
 	}
 

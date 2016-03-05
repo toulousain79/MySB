@@ -28,19 +28,66 @@ global $MySB_DB;
 
 if(isset($_POST)==true && empty($_POST)==false) {
 	$success = true;
+	$DisplayMessage = true;
 
 	switch ($_POST['submit']) {
+		case MainUser_TrackersAdd_ExtractAddress:
+			$DisplayMessage = false;
+			$target_file = '/tmp/' . basename($_FILES["fileToUpload"]["name"]);
+			$uploadOk = 1;
+			$imageFileType = pathinfo($target_file,PATHINFO_EXTENSION);
+			// Check if file already exists
+			if (file_exists($target_file)) {
+				unlink($target_file);
+			}
+			// Allow certain file formats
+			if( $imageFileType != "torrent" ) {
+				$uploadOk = 0;
+				$type = 'warning';
+				$message = MainUser_TrackersAdd_OnlyTorrent;
+				GenerateMessage('message_only', $type, $message, '');
+			}
+			// Check if $uploadOk is set to 0 by an error
+			if ($uploadOk == 1) {
+				if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
+					$Content = fopen($target_file,"r");
+					$Line = fgets($Content);
+					preg_match_all('#http(.*)://#',$Line,$Proto);
+					$Proto = $Proto[0][0];
+					$Proto = strstr($Proto, '://', true);
+					preg_match_all('#://(.*)/#',$Line,$TrackerAddress);
+					$TrackerAddress = $TrackerAddress[0][0];
+					$TrackerAddress = strstr($TrackerAddress, '//');
+					$TrackerAddress = str_replace("/", "", $TrackerAddress);
+					$tab = explode(":", $TrackerAddress);
+					$TrackerAddress = $tab[0];
+					if ( $TrackerAddress != "" ) {
+						$type = 'information';
+						GenerateMessage('message_only', $type, $TrackerAddress, '');
+						$TrackerAddress = ' value="'.$TrackerAddress.'" ';
+					} else {
+						$type = 'information';
+						$message = MainUser_TrackersAdd_NoResult;
+						GenerateMessage('message_only', $type, $message, '');
+					}
+					unlink('/tmp/'.$_FILES["fileToUpload"]["name"]);
+				} else {
+					$type = 'error';
+					$message = MainUser_TrackersAdd_ErrorUpload;
+					GenerateMessage('message_only', $type, $message, '');
+				}
+			}
+			break;
 		case Global_SaveChanges:
 		case MainUser_TrackersAdd_AddMyTrackers:
 			$count = count($_POST['input_id']);
 
 			for($i=1; $i<=$count; $i++) {
-				$TrackerHostname = preg_replace('/\s\s+/', '', $_POST['tracker_domain'][$i]);
-
+				$Tracker = preg_replace('/\s\s+/', '', $_POST['input_tracker'][$i]);
 				if (filter_var($url, FILTER_VALIDATE_URL)) {
-					$TrackerHostname = parse_url($TrackerHostname, PHP_URL_HOST);
+					$Tracker = parse_url($Tracker, PHP_URL_HOST);
 				}
-				$last_id_trackers_list = ManageUsersTrackers($TrackerHostname, $_POST['is_active'][$i]);
+				$last_id_trackers_list = ManageUsersTrackers($Tracker, $_POST['is_active'][$i]);
 				if ( (!isset($last_id_trackers_list)) || ($last_id_trackers_list === false) ) {
 					$success = false;
 				}
@@ -79,7 +126,9 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			break;
 	}
 
-	GenerateMessage('GetTrackersCert.bsh', $type, $message);
+	if( $DisplayMessage == true ) {
+		GenerateMessage('GetTrackersCert.bsh', $type, $message);
+	}
 }
 
 $TrackersList = $MySB_DB->select("trackers_list", "*", ["origin" => "users", "ORDER" => "trackers_list.tracker_domain ASC"]);
@@ -91,7 +140,7 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["origin" => "users", "OR
 		<legend><?php echo MainUser_TrackersAdd_Title_AddTrackers; ?></legend>
 			<div id="input1" class="clonedInput">
 				<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
-				<?php echo MainUser_TrackersAdd_TextAddress; ?>&nbsp;<input class="input_tracker_domain" id="tracker_domain" name="tracker_domain[1]" type="text" required="required" />
+				<?php echo MainUser_TrackersAdd_TextAddress; ?>&nbsp;<input class="input_tracker" id="input_tracker" name="input_tracker[1]" type="text" required="required" <?php echo $TrackerAddress; ?> />
 				&nbsp;&nbsp;<?php echo Global_IsActive; ?>&nbsp;&nbsp;<select class="select_is_active" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required">
 									<option value="0" selected="selected"><?php echo Global_No; ?></option>
 									<option value="1"><?php echo Global_Yes; ?></option>
@@ -109,6 +158,13 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["origin" => "users", "OR
 			<p class="Comments"><?php echo MainUser_TrackersAdd_InfoAddTracker_2; ?></p>
 		</fieldset>
 	</form>
+	<form id="CheckTorrent" class="form_settings" action="" method="post" enctype="multipart/form-data">
+		<fieldset>
+			<?php echo MainUser_TrackersAdd_SelectTorrent; ?>&nbsp;
+			<input type="file" name="fileToUpload" id="fileToUpload" />
+			<input style="width:<?php echo strlen(MainUser_TrackersAdd_ExtractAddress)*10; ?>px;" name="submit" type="submit" value="<?php echo MainUser_TrackersAdd_ExtractAddress; ?>">
+		</fieldset>
+	</form>	
 </div>
 
 <form class="form_settings" method="post" action="">
