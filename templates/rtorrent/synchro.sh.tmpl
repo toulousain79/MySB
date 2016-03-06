@@ -118,6 +118,14 @@ Listing() {
 	FnLine="$FnGet_Custom1$FnGet_Name"
 	FnMail_Object="$MailObjectOK"
 
+	# Check if files exist
+	FnCheck="`file "$FnLine"`"
+	if [ $? -ne 0 ]; then
+		ModeSync="no_such_file_or_directory"
+	else
+		Type="`echo $FnCheck | cut -d ":" -f 2 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+	fi
+
 	# Need to create a subdirectory on destination ?
 	if [ -f "$FnLine" ] && [ $CreateSubDir -eq 1 ]; then
 		FnGet_NameEscaped="`echo $FnGet_NameEscaped | sed 's/\[/\\\[/g;' | sed 's/\]/\\\]/g;' | sed 's/(/\\(/g' | sed 's/)/\\)/g'`"
@@ -131,7 +139,7 @@ Listing() {
 		FnDstDir="$DstDir/$FnCategoryDir"
 	fi
 	FnDstDir="`echo $FnDstDir | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-	FnDstDir="`echo $FnDstDir | sed 's/\[//g;' | sed 's/\]//g;' | sed 's/(//g' | sed 's/)//g' | sed 's/\ /./g;'`"
+	FnDstDir="`echo $FnDstDir | sed 's/\[//g;' | sed 's/\]//g;' | sed 's/(//g' | sed 's/)//g' | sed 's/\ /./g;' | sed -e 's/\/\//\//g;'`"
 
 	# Log
 	echo "#### START ####"
@@ -145,12 +153,6 @@ Listing() {
 	echo "--------------------"
 	echo
 
-	# Check if files exist
-	FnCheck="`file "$FnLine"`"
-	if [ $? -ne 0 ]; then
-		ModeSync="no_such_file_or_directory"
-	fi
-
 	case "$ModeSync" in
 		'rsync')
 			# Start synchronization with RSYNC
@@ -162,7 +164,14 @@ Listing() {
 		;;
 		'ftp')
 			LftpOptions="set ftp:ssl-protect-data true; set ssl:verify-certificate no; set net:max-retries 3; set net:reconnect-interval-base 5;"
-			lftp -e "$LftpOptions mkdir -p $FnDstDir; put -O \"$FnDstDir\" \"$FnLine\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
+			case "$Type" in
+				'directory')
+					lftp -e "$LftpOptions mkdir -p \"$FnDstDir/$FnGet_NameEscaped\"; mirror -R \"$FnLine\" \"$FnDstDir/$FnGet_NameEscaped\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
+				;;
+				*)
+					lftp -e "$LftpOptions mkdir -p $FnDstDir; put -O \"$FnDstDir\" \"$FnLine\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
+				;;
+			esac
 		;;
 		'no_such_file_or_directory')
 			echo $FnCheck
