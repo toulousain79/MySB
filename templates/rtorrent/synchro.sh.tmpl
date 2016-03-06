@@ -188,6 +188,7 @@ Listing() {
 		FnGet_LoadedFileEscaped="`echo $FnGet_LoadedFile | sed s,/,\\\\\\\\\\/,g`"
 		sed -i "/$FnGet_LoadedFileEscaped/d" $FileList
 	else
+		Error=1
 		FnMail_Object="$MailObjectKO"
 	fi
 
@@ -206,7 +207,7 @@ Listing() {
 #### EXECUTING: We read the list line by line. We read the list one line and execute the synchronization function.
 Count=0
 NumLine=1
-Line="`head -n $NumLine $FileList | tail -n 1`"
+Line="`head -n $NumLine $FileList | tail -n 1 | sed '/^#/d'`"
 while [ ! -z "$Line" ]; do
 	FileLogTemp="/tmp/$UserName-$ScriptName.log.$PID"
 	get_base_path="`echo $Line | awk '{split($0,a,\"|\"); print a[1]}'`"
@@ -214,6 +215,7 @@ while [ ! -z "$Line" ]; do
 	get_name="`echo $Line | awk '{split($0,a,\"|\"); print a[3]}'`"
 	get_loaded_file="`echo $Line | awk '{split($0,a,\"|\"); print a[4]}'`"
 	CategoryDir="`echo $Line | awk '{split($0,a,\"|\"); print a[5]}'`"
+	Error=0
 
 	# Real process of synchronization
 	Listing "$get_base_path" "$get_custom1" "$get_name" "$get_loaded_file" "$CategoryDir" > $FileLogTemp
@@ -224,10 +226,16 @@ while [ ! -z "$Line" ]; do
 		rm -f $FileLogTemp
 	fi
 
+	if [ $Error -eq 1 ]; then
+		get_loaded_file="`echo $get_loaded_file | sed s,/,\\\\\\\\\\/,g`"
+		sed -i "/$get_loaded_file/d" $FileList
+		echo "#$Line" >> $FileList
+	fi
+
 	# Read the next line if there is no execution limit (MaxToSync).
 	Count=$(($Count + 1))
 	NumLine=$(($NumLine + 1))
-	Line="`head -n $NumLine $FileList | tail -n 1`"
+	Line="`head -n $NumLine $FileList | tail -n 1 | sed '/^#/d'`"
 	if [ $Count -eq $MaxToSync ] && [ $MaxToSync -ne 0 ]; then
 		unset Line
 	fi
