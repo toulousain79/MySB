@@ -1,5 +1,5 @@
 	Version v3.3
-		2016/02/03
+		2016/03/03
 			- DNScrypt-proxy v1.6.1 (v3.3)
 			- RKHunter v1.4.2 (v3.3)
 			- Use of Let's Encrypt (v3.3)

@@ -26,18 +26,20 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * **SFTP** _with Chroot_
 * **VSFTPd** _(FTP over TLS)_
 * **Postfix** with _(or without)_ SMTP authentication _(Gmail, Free, Ovh and Yahoo)_
-* **PeerGuardian** _(optionnal but **recommended**)_
-* **DNScrypt-proxy** with Bind9 as DNS caching _(optionnal but **recommended**)_
-* **Fail2ban** _(optionnal but **recommended**)_
 * **Seedbox-Manager** _(optionnal) (user interface is in french)_
 * **LoadAvg** _(free server analytics and monitoring)_
-* **ownCloud** _(optionnal)_
+* **ownCloud** _(optionnal but **recommended**)_
 * **OpenVPN** _(optionnal); Multi TUN/TAP configuration, with or without redirection of traffic. Add AES-NI support._
-* **Webmin** _(optionnal)_
 * **CakeBox-Light** _(optionnal)_
 * **PlexMedia Server** _(optionnal, VPN bridged access, requires additional setup)_
+* **Webmin** _(optionnal)_
 * **Samba share** for each users _(VPN access)_
 * **NFS share** for each users _(VPN access)_
+* **PeerGuardian** _(optionnal but **recommended**)_
+* **DNScrypt-proxy** with Bind9 as DNS caching _(optionnal but **recommended**)_
+* **Lets Encrypt** _(Obtaining a signed certificate for MySB portal access)_
+* **Fail2ban** _(optionnal but **recommended**)_
+* **RKHunter**
 * **MySB portal** (_ability to manage trackers, blocklists, logs, users, restart rTorrent, switch of rTorrent version, and more)_
 * **Special features of MySB**
  + Auto retrieve SSL certificates for all trackers _(if available)_
@@ -47,8 +49,11 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
  + Access restricted by IP for all server access _(can be disabled)_
  + Dynamic IP Management for IP restriction _(DynDNS, No-IP, ...)_
  + Language select _(English, French)_
- + Use of scripts after finished download _(Directly OR Cron)_
-
+ + Use of scripts after finished download _(direct or scheduled synchronization, via FTP or rsync)_
+ + Prioritize secure connections via SSL _(depends on trackers)_
+ + Automatic creation of several 'Watch' directory _(management via the portal)_
+ + Access to 'Watch' folders via FTP, ownCloud or Samba (OpenVPN)
+ 
 ## Additional ruTorrent plugins
 
 * Mobile
@@ -102,12 +107,12 @@ Copyright (c) 2013 toulousain79
 ====
 ## [WiKi](https://github.com/toulousain79/MySB/wiki)
 ### Installation / Upgrade / Uninstall
-* [Installation](https://github.com/toulousain79/MySB/wiki/Installation)
-* [Upgrade](https://github.com/toulousain79/MySB/wiki/Upgrade)
-* [Uninstall](https://github.com/toulousain79/MySB/wiki/Uninstall)
+* [Installation](https://github.com/toulousain79/MySB/wiki/%5BInstall%5D-Installation)
+* [Upgrade](https://github.com/toulousain79/MySB/wiki/%5BInstall%5D-Upgrade)
+* [Uninstall](https://github.com/toulousain79/MySB/wiki/%5BInstall%5D-Uninstall)
 
 ### Commands and scripts
-* [Commands](https://github.com/toulousain79/MySB/wiki/Commands)
+* [Commands](https://github.com/toulousain79/MySB/wiki/%5BCommands%5D-Commands-&-scripts)
 
 ### Portal
 * [Screenshots](https://github.com/toulousain79/MySB/wiki/%5BPortal%5D-Screenshots)
