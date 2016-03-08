@@ -37,7 +37,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * **NFS share** for each users _(VPN access)_
 * **PeerGuardian** _(optionnal but **recommended**)_
 * **DNScrypt-proxy** with Bind9 as DNS caching _(optionnal but **recommended**)_
-* **Lets Encrypt** _(Obtaining a signed certificate for MySB portal access)_
+* **Let's Encrypt** _(Obtaining a signed certificate for MySB portal access)_
 * **Fail2ban** _(optionnal but **recommended**)_
 * **RKHunter**
 * **MySB portal** (_ability to manage trackers, blocklists, logs, users, restart rTorrent, switch of rTorrent version, and more)_
