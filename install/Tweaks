@@ -150,6 +150,15 @@ echo
 /sbin/sysctl -w net.ipv6.conf.lo.disable_ipv6="1"
 /sbin/sysctl -w net.ipv6.conf.eth0.disable_ipv6="1"
 sysctl -p
+if [ -f /etc/default/grub ]; then
+	source /etc/default/grub
+	if [ ! -z $GRUB_CMDLINE_LINUX ] && [ -z "`echo $GRUB_CMDLINE_LINUX | grep 'ipv6.disable=1'`" ]; then
+		sed -i 's/'$GRUB_CMDLINE_LINUX'/'$GRUB_CMDLINE_LINUX ipv6.disable=1'/g;' /etc/default/grub
+	else
+		perl -pi -e "s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"ipv6.disable=1\"/g" /etc/default/grub
+	fi
+	update-grub
+fi
 
 cp /etc/network/interfaces /etc/network/interfaces.bckp
 #sed '/indet6/d' /etc/network/interfaces
