@@ -57,6 +57,7 @@ function ChangeCakeboxLanguage($user, $language) {
 
 				default:
 					$NewContent = str_replace('"fr"', '"en"', $Content);
+					break;
 			}
 			fclose($File);
 
