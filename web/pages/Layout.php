@@ -143,7 +143,7 @@
 			echo $FooterNavBar . '<br /><br />';
 		}
 
-		switch ($language) {
+		switch ($_SESSION['Language']) {
 			case 'fr':
 				$PaypalImg = THEMES_PATH . 'MySB/images/btn_donate_SM_fr.gif';
 				break;
