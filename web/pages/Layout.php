@@ -154,12 +154,6 @@
 ?>
 			<a target="_blank" href="https://github.com/toulousain79/MySB/" title="<?php echo Layout_OnGithub; ?>"><?php echo Layout_OnGithub; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/wiki" title="<?php echo Layout_Wiki; ?>"><?php echo Layout_Wiki; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/blob/<?php echo GetVersion(); ?>/Changelog.md" title="Changelog <?php echo GetVersion(); ?>">Changelog <?php echo GetVersion(); ?></a><br />
 			<a target="_blank" href="http://www.css3templates.co.uk">Copyright &copy; CSS3_two</a> | <a target="_blank" href="http://www.wolfcms.org/" title="<?php echo Layout_Wolf; ?>"><?php echo Layout_Wolf; ?></a> | <a target="_blank" href="http://medoo.in/" title="<?php echo Layout_Medoo; ?>"><?php echo Layout_Medoo; ?></a>
-			<p><form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank">
-				<input type="hidden" name="cmd" value="_s-xclick">
-				<input type="hidden" name="hosted_button_id" value="26PKHX8PGHLWG">
-				<input type="image" src="<?php echo $PaypalImg; ?>" border="0" name="submit" alt="PayPal – The safer, easier way to pay online.">
-				<img alt="" border="0" src="https://www.paypalobjects.com/fr_FR/i/scr/pixel.gif" width="1" height="1">
-			</form></p>
 		</footer>
 	</div>
 
