@@ -49,6 +49,10 @@ if [ -z $MySQL_RootPassword ] && [ -z $MySQL_MysbPassword ]; then
 	DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
 	DELETE FROM mysql.user WHERE User='';
 	DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%';
+	DELETE FROM mysql.plugin WHERE name='innodb';
+	DELETE FROM mysql.plugin WHERE name='federated';
+	DELETE FROM mysql.plugin WHERE name='blackhole';
+	DELETE FROM mysql.plugin WHERE name='archive';
 	create database MySB_db;
 	create user MySB_user;
 	grant all on MySB_db.* to 'MySB_user'@'localhost' identified by '$MySQL_MysbPassword';
@@ -105,23 +109,9 @@ if [ "$Switch" != "UPGRADE" ]; then
 	fi
 
 	#### Config file
-	# Logging
-	perl -pi -e "s/^#general_log_file/general_log_file/g" /etc/mysql/my.cnf
-	# Caching
-	NumLign=$(cat /etc/mysql/my.cnf | grep 'query_cache_limit' -n -m 1 | cut -d ':' -f 1)
-	sed -i '/query_cache_limit/d' /etc/mysql/my.cnf
-	sed -i "${NumLign}i\query_cache_limit       = 2M" /etc/mysql/my.cnf
-	NumLign=$(cat /etc/mysql/my.cnf | grep 'query_cache_size' -n -m 1 | cut -d ':' -f 1)
-	sed -i '/query_cache_size/d' /etc/mysql/my.cnf
-	sed -i "${NumLign}i\query_cache_size       = 64M" /etc/mysql/my.cnf
-	(( NumLign++ ))
-	sed -i "${NumLign}i\query_cache_type        = 1" /etc/mysql/my.cnf
-	# Optimizing
-	if [ -d /media/MySQL_TempDir ]; then
-		NumLign=$(cat /etc/mysql/my.cnf | grep 'tmpdir' -n -m 1 | cut -d ':' -f 1)
-		sed -i '/tmpdir/d' /etc/mysql/my.cnf
-		sed -i "${NumLign}i\tmpdir          = /media/MySQL_TempDir" /etc/mysql/my.cnf
-	fi
+	rm -v /etc/mysql/conf.d/*.cnf
+	perl -pi -e "s/key_buffer/key_buffer_size/g" /etc/mysql/my.cnf
+	cp -vf $MySB_InstallDir/templates/etc.mysql.conf.d.mysb.tmpl /etc/mysql/conf.d/MySB.cnf
 
 	#### STOP services
 	ManageServices 'stop' 'mysql'
