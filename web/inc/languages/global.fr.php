@@ -48,4 +48,6 @@ define('Layout_Wiki', 'WiKi MySB');
 define('Layout_Wolf', 'CMS Wolf');
 define('Layout_Medoo', 'Medoo');
 
+define('Layout_PaypalIMG', 'btn_donate_SM_fr.gif');
+
 //#################### LAST LINE ######################################
