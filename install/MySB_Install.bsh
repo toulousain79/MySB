@@ -119,7 +119,7 @@ ${CRED}############################################################$CEND"
 LoadFrench() {
 	AnswerYES="OUI"
 	AnswerNO="NON"
-	OnlyForDebian="${CRED}MySB est conçu uniquement pour Debian Wheezy 7 (32 ou 64bits).
+	OnlyForDebian="${CRED}MySB est conçu uniquement pour Debian 7 Wheezy (32 ou 64bits).
 Les systèmes avec un noyau PVE ne sont pas supportés.
 Un accès Internet valide est requis.
 Un noyau Debian standard est également nécessaire.
@@ -291,13 +291,18 @@ else
 	echo -e "${CYELLOW}Internet	: $CEND${CGREEN}OK$CEND"
 fi
 
-#### Must be Debian >= 7 (Wheezy) x86_64
+#### Must be Debian 7 Wheezy OR Debian 8 Jessie (x86_64)
 if type -P lsb_release > /dev/null; then
 	OS_Id="`lsb_release -is`"
 	OS_Ver="`lsb_release -rs | cut -d '.' -f 1`"
 else
-	OS_Id="`cat /etc/issue | sed '2,2d;$d' | awk '{ print $1 }'`"
-	OS_Ver="`cat /etc/issue | sed '2,2d;$d' | awk '{ print $3 }'`"
+	if [ -f /etc/issue.net ]; then
+		OS_Id="`cat /etc/issue.net | awk '{ print $1 }' | sed -e 's/^$//g;'`"
+		OS_Ver="`cat /etc/issue.net | awk '{ print $3 }' | sed -e 's/^$//g;'`"
+	elif [ -f /etc/lsb-release ]; then
+		OS_Id="`cat /etc/lsb-release | grep 'DISTRIB_ID' | cut -d '=' -f 2`"
+		OS_Ver="`cat /etc/lsb-release | grep 'DISTRIB_RELEASE' | cut -d '=' -f 2`"
+	fi
 fi
 OS_Arch="`getconf LONG_BIT`"
 PVE_Kernel="`uname -r | grep 'pve'`"
@@ -305,48 +310,29 @@ OVH_Kernel="`uname -r | grep 'xxxx'`"
 Flex_Kernel="`uname -a | grep 'Ubuntu'`"
 
 #### Check if Debian
+echo -e "${CYELLOW}Architecture	: $CEND${CGREEN}$OS_Arch$CEND"
+
 if [ "$OS_Id" != "Debian" ]; then
-	OS_Id="`cat /etc/issue | grep 'Debian' | awk '{ print $1 }'`"
-	
-	if [ "$OS_Id" != "Debian" ]; then
-		OS_Id="`cat /etc/issue.net | awk '{ print $1 }'`"
-	
-		if [ "$OS_Id" != "Debian" ]; then
-			if [ ! -f /etc/debian_version ]; then
-				Continue=1
-				echo -e "${CYELLOW}Distributor ID	: $CEND${CRED}$OS_Id$CEND"
-			else
-				echo -e "${CYELLOW}Distributor ID	: $CEND${CGREEN}??$CEND"
-			fi
-		else
-			echo -e "${CYELLOW}Distributor ID	: $CEND${CGREEN}$OS_Id$CEND"
-		fi	
+	if [ ! -f /etc/debian_version ]; then
+		Continue=1
+		echo -e "${CYELLOW}Distributor ID	: $CEND${CRED}$OS_Id$CEND"
 	else
-		echo -e "${CYELLOW}Distributor ID	: $CEND${CGREEN}$OS_Id$CEND"
+		echo -e "${CYELLOW}Distributor ID	: $CEND${CGREEN}Debian/Ubuntu$CEND"
+		OS_Ver="`cat /etc/debian_version | cut -d '.' -f 1`"
 	fi
 else
 	echo -e "${CYELLOW}Distributor ID	: $CEND${CGREEN}$OS_Id$CEND"
 
-	if [ $OS_Ver -gt 7 ]; then
-		if [ -f /etc/debian_version ]; then
-			OS_Ver="`cat /etc/debian_version | cut -d '.' -f 1`"
-			if [ $OS_Ver -gt 7 ]; then
-				Continue=1
-				echo -e "${CYELLOW}Release		: $CEND${CRED}$OS_Ver$CEND"
-			else
-				echo -e "${CYELLOW}Release		: $CEND${CGREEN}$OS_Ver$CEND"
-			fi
-		else
+	case "$OS_Ver" in
+		7)
+			echo -e "${CYELLOW}Release		: $CEND${CGREEN}$OS_Ver$CEND"
+		;;
+		*)
 			Continue=1
-			echo -e "${CYELLOW}Release		: $CEND${CRED}??$CEND"
-		fi
-	else
-		echo -e "${CYELLOW}Release		: $CEND${CGREEN}$OS_Ver$CEND"
-	fi
+			echo -e "${CYELLOW}Release		: $CEND${CRED}$OS_Ver$CEND"
+		;;		
+	esac
 fi
-
-#### Check if Debian
-echo -e "${CYELLOW}Architecture	: $CEND${CGREEN}$OS_Arch$CEND"
 
 #### Check kernel if is a PVE kernel
 if [ ! -z "$PVE_Kernel" ]; then
