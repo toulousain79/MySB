@@ -1,21 +1,26 @@
+	Version v3.4
+		2016/03/14
+			- Update provider monitoring for OVH (v3.3 and v3.4)
+			- MySQL, minor changes (v3.3 and v3.4)
+		
 	Version v3.3
 		2016/03/03
 			- DNScrypt-proxy v1.6.1 (v3.3)
 			- RKHunter v1.4.2 (v3.3)
 			- Use of Let's Encrypt (v3.3)
-			- Medoo Framework v1.0.2 (v3.3)
+			- Medoo Framework v1.0.2 (v3.2)
 			- TrackerAdd.php, minor changes for adding new one (v3.3)
 			- OpenVPN.php, minor changes on OpenVPN page (v3.2 and v3.3)
 			- OptionsMySB.php, minor changes (v3.2 and v3.3)
 			- OptionsMySB.php, add categories synchronize mode (v3.3)
 			- Personnal scripts template review (v3.2 and v3.3)
 			- Personnal scripts, add synchronize by FTPs and RSYNC (v3.3)
-			- DownloadAll, correcting minor error (v3.2 and v3.3)
+			- DownloadAll, correcting littler error (v3.2 and v3.3)
 			- ownCloud.bsh, review of the scan process (v3.2 and v3.3)
 			- Disable totaly IPv6 (v3.2 and v3.3)
 			- ownCloud, correcting upgrade process (v3.2 and v3.3)
 			- SourcesList, minor changes (v3.3)
-			- Upgrade OpenSSH Server with Backports sources (v3.3)
+			- Upgrade OpenSSH Server with Backports (v3.3)
 			- PHP, increase performance with TMPFS (v3.3)
 			- Turning off filesystem access times (v3.3)
 			- Renewing certificates (v3.3)

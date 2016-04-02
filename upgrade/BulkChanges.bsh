@@ -51,18 +51,25 @@ case "$1" in
 		####################################
 
 		#### MySQL
-		Func_SQL_Command 'ALTER' 'MySB_db' 'CHANGE' 'trackers_list_ipv4' 'ipv4' "VARCHAR( 15 )" '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'DROP' 'system' 'security_params' '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'system' 'letsencrypt_date' "DATE NOT NULL" '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'system' 'letsencrypt_openport' "TINYINT( 1 ) NOT NULL DEFAULT '0'" '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'users_rtorrent_cfg' 'sync_mode' "TINYINT( 1 ) NOT NULL DEFAULT '0'" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'repositories' 'type,dir,name,version,file,url,active' "'GIT','/sources/letsencrypt','Lets Encrypt', '0.3.0', 'LetsEncrypt_v0.3.0.zip', 'https://github.com/letsencrypt/letsencrypt', '1'" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'repositories' 'type,dir,name,version,file,url,active' "'TARGZ','/sources/rkhunter','RKHunter', '1.4.2', 'rkhunter_v1.4.2.tar.gz', 'http://downloads.sourceforge.net/project/rkhunter/rkhunter/1.4.2/rkhunter-1.4.2.tar.gz?r=&ts=1456674223&use_mirror=freefr', '1'" '-echo'
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '1.6.1', file= 'dnscrypt-proxy_v1.6.1.tar.gz', old_file = 'dnscrypt-proxy_v1.6.0.tar.gz', url = 'http://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-proxy-1.6.1.tar.gz'" "name = 'DNScrypt-proxy'" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'services' 'serv_name,port_tcp1,to_install' "'Lets Encrypt', '443', '1'" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses,ipv4' "'acme-v01.api.letsencrypt.org', '104.92.240.99'" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses,ipv4' "'outbound1.letsencrypt.org', '66.133.109.36'" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses,ipv4' "'outbound2.letsencrypt.org', '64.78.149.164'" '-echo'
+		source /etc/MySB/config_db
+		mysql -u root -p$MySQL_RootPassword <<-EOF
+		DELETE FROM mysql.plugin WHERE name='innodb';
+		DELETE FROM mysql.plugin WHERE name='federated';
+		DELETE FROM mysql.plugin WHERE name='blackhole';
+		DELETE FROM mysql.plugin WHERE name='archive';
+		EOF
+		rm -v /etc/mysql/conf.d/*.cnf
+		perl -pi -e "s/key_buffer/key_buffer_size/g" /etc/mysql/my.cnf
+		cp -vf $MySB_InstallDir/templates/etc.mysql.conf.d.mysb.tmpl /etc/mysql/conf.d/MySB.cnf
+		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '', 'proxy.p19.ovh.net'" '-echo'
+		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '', 'proxy.ovh.net'" '-echo'
+		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '92.222.184.0/24', ''" '-echo'
+		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '92.222.185.0/24', ''" '-echo'
+		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '92.222.186.0/24', ''" '-echo'
+		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '167.114.37.0/24', ''" '-echo'
+		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '151.80.231.244/32', ''" '-echo'
+		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '151.80.231.245/32', ''" '-echo'
+		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '151.80.231.246/32', ''" '-echo'
 
 		#### ownCloud force upgrade to v8.2.2
 		if [ "$IsInstalled_ownCloud" == "YES" ]; then
