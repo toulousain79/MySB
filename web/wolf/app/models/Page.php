@@ -45,7 +45,7 @@ class Page extends Node {
 	// MySB - BoF
 	public $title_fr = '';
 	public $breadcrumb_fr;
-	// MySB - BoF	
+	// MySB - BoF
     public $keywords = '';
     public $description = '';
     public $content;
