@@ -1,8 +1,17 @@
 	Version v3.4
-		2016/03/14
+		2016/04/03
 			- Update provider monitoring for OVH (v3.3 and v3.4)
 			- MySQL, minor changes (v3.3 and v3.4)
-		
+			- ownCloud v9.0.0
+			- Portal
+				* Wolf CMS v0.8.3.1
+				* Noty v2.3.8
+				* Modernizr v2.8.3
+				* jQuery v1.12.2
+			- Libsodium v1.0.9
+			- NodeJS v0.12.13
+			- Composer v1.0.0-beta2
+
 	Version v3.3
 		2016/03/03
 			- DNScrypt-proxy v1.6.1 (v3.3)
