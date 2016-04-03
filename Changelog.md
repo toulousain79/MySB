@@ -2,6 +2,7 @@
 		2016/04/03
 			- Update provider monitoring for OVH (v3.3 and v3.4)
 			- MySQL, minor changes (v3.3 and v3.4)
+			- Disable totaly IPv6 with grub (v3.3 and v3.4)
 			- Install, improving the detection of the public IP address
 			- ownCloud v9.0.0
 			- Portal
