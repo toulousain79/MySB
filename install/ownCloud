@@ -105,7 +105,14 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$Switch" != "INIT" ]; then
 	if [ ! -d $ownCloudDataDirectory ]; then
 		mkdir $ownCloudDataDirectory
 		chown www-data:www-data $ownCloudDataDirectory
-	fi	
+	fi
+	# Clean some files and directories
+	if [ -f $ownCloudDataDirectory/config/config.sample.php ]; then
+		rm -fv $ownCloudDataDirectory/config/config.sample.php
+	fi
+	if [ -d $ownCloudDataDirectory/core/skeleton ]; then
+		rm -rfv $ownCloudDataDirectory/core/skeleton/*
+	fi
 
 	#### CRON
 	crontab -u www-data -l > /tmp/crontab.tmp
@@ -125,7 +132,7 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$Switch" != "INIT" ]; then
 		chown -R www-data:www-data $ownCloudDir/
 		cd $ownCloudDir/
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:install --database \"mysql\" --database-host \"localhost\" --database-name \"ownCloud_db\" --database-user \"MySB_user\" --database-pass \"$MySQL_MysbPassword\" --admin-user \"admin\" --admin-pass \"$MySQL_MysbPassword\" --data-dir \"$ownCloudDataDirectory\" --no-interaction"
-		# Maybe need to launch a script on next reboot ?		
+		# Maybe need to launch a script on next reboot ?
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "on_boot = '1', script = '$0'" "name = 'ownCloud'" '-echo'
 	fi
 
@@ -134,16 +141,38 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$Switch" != "INIT" ]; then
 	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configvalue='yes' AND configkey='shareapi_allow_mail_notification'"`"
 	if [ -z $IfExist ]; then
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_allow_mail_notification','yes'" '-echo'
+	else
+		Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_appconfig' "configvalue = 'yes'" "appid='core' AND configkey='shareapi_allow_mail_notification'" '-echo'
 	fi
 	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configvalue='yes' AND configkey='shareapi_allow_public_notification'"`"
 	if [ -z $IfExist ]; then
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_allow_public_notification','yes'" '-echo'
+	else
+		Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_appconfig' "configvalue = 'yes'" "appid='core' AND configkey='shareapi_allow_public_notification'" '-echo'
 	fi
 	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configvalue='yes' AND configkey='shareapi_default_expire_date'"`"
 	if [ -z $IfExist ]; then
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_default_expire_date','yes'" '-echo'
+	else
+		Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_appconfig' "configvalue = 'yes'" "appid='core' AND configkey='shareapi_default_expire_date'" '-echo'
+	fi
+	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configkey='shareapi_enforce_links_password'"`"
+	if [ -z $IfExist ]; then
+		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_enforce_links_password','yes'" '-echo'
+	else
+		Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_appconfig' "configvalue = 'yes'" "appid='core' AND configkey='shareapi_enforce_links_password'" '-echo'
+	fi
+	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configkey='shareapi_enforce_expire_date'"`"
+	if [ -z $IfExist ]; then
+		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_enforce_expire_date','yes'" '-echo'
+	else
+		Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_appconfig' "configvalue = 'yes'" "appid='core' AND configkey='shareapi_enforce_expire_date'" '-echo'
 	fi
 	# oc_preferences
+	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_preferences' "configvalue='$EnvLang' AND userid='admin'"`"
+	if [ -z $IfExist ]; then
+		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' 'userid,appid,configkey,configvalue' "'admin','core','lang','$EnvLang'" '-echo'
+	fi
 	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_preferences' "configvalue='$MainUserEmail' AND userid='admin'"`"
 	if [ -z $IfExist ]; then
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' 'userid,appid,configkey,configvalue' "'admin','settings','email','$MainUserEmail'" '-echo'
@@ -175,12 +204,13 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$Switch" != "INIT" ]; then
 		echo "Version: "$Version
 
 		cp -vf $MySB_InstallDir/templates/owncloud/owncloud.config.php.tmpl $ownCloudDir/config/config.php
+		perl -pi -e "s/<version>/$Version/g" $ownCloudDir/config/config.php
+		perl -pi -e "s/<dbpassword>/$MySQL_MysbPassword/g" $ownCloudDir/config/config.php
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set instanceid --value=$InstanceId"
-		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set version --value=$Version"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set passwordsalt --value=$PasswordSalt"
-		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set dbpassword --value=$MySQL_MysbPassword"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set trusted_domains 1 --value=$HostNameFQDN"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set default_language --value=$EnvLang"
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set lost_password_link --value=https://$HostNameFQDN:$Port_HTTPS/?user/change-password.html"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set mail_from_address --value=$MailFrom"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set mail_domain --value=$MailDomain"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set overwritehost --value=$HostNameFQDN:$Port_HTTPS"
@@ -223,7 +253,7 @@ if [ "$IsInstalled_ownCloud" == "YES" ] && [ "$Switch" == "INIT" ]; then
 
 	if [ "$OnBoot" -eq 1 ]; then
 		#### ownCloud upgrade
-		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade"
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade -v"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:repair"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable files_external"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable notifications"
