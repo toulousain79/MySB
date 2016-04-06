@@ -103,7 +103,7 @@ INSERT INTO `repositories` (`id_repositories`, `type`, `dir`, `name`, `version`,
 (27, 'TARGZ', '/sources/rtorrent', 'rTorrent', '0.9.6', 'rtorrent_v0.9.6.tar.gz', 'rtorrent_v0.9.4.tar.gz', 'http://rtorrent.net/downloads/rtorrent-0.9.6.tar.gz', 1),
 (28, 'ZIP', '/sources/xmlrpc-c', 'XMLRPC', '1.42.0', 'xmlrpc-c_v1.42.0.zip', 'xmlrpc-c_v1.41.02.zip', 'https://github.com/toulousain79/MySB/raw/v2.2/files/xmlrpc-c_v1.42.0.zip', 1),
 (29, 'GIT', '/web/loadavg', 'LoadAvg', '2.2', 'loadavg_v2.2.zip', '', 'https://github.com/loadavg/loadavg.git', 1),
-(30, 'ZIP', '/web/owncloud', 'ownCloud', '9.0.0', 'owncloud_v9.0.0.zip', 'owncloud_v8.2.2.zip', 'https://download.owncloud.org/community/owncloud-9.0.0.zip', 1),
+(30, 'ZIP', '/web/owncloud', 'ownCloud', '9.0.0.19', 'owncloud_v9.0.0.zip', 'owncloud_v8.2.2.zip', 'https://download.owncloud.org/community/owncloud-9.0.0.zip', 1),
 (31, 'GIT', '/sources/letsencrypt', 'Lets Encrypt', '0.3.0', 'LetsEncrypt_v0.3.0.zip', '', 'https://github.com/letsencrypt/letsencrypt', 1),
 (32, 'TARGZ', '/sources/rkhunter', 'RKHunter', '1.4.2', 'rkhunter_v1.4.2.tar.gz', '', 'http://downloads.sourceforge.net/project/rkhunter/rkhunter/1.4.2/rkhunter-1.4.2.tar.gz?r=&ts=1456674223&use_mirror=freefr', 1);
 
