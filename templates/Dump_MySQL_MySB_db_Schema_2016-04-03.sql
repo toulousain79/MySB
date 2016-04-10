@@ -190,6 +190,8 @@ CREATE TABLE IF NOT EXISTS `users` (
   `rtorrent_notify` tinyint(1) NOT NULL DEFAULT '0',
   `language` varchar(2) NOT NULL DEFAULT 'en',
   `init_password` tinyint(1) NOT NULL DEFAULT '0',
+  `quota_default` int(16) NOT NULL,
+  `quota_defined` int(16) NOT NULL,
   PRIMARY KEY (`id_users`),
   UNIQUE KEY `users_ident` (`users_ident`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;

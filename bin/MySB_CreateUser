@@ -41,9 +41,6 @@ if [ "$USAGE" == "ON" ]; then
 
 	QuestionGetString NO "$CreateUser_SFTP" UserSFTP $Global_YES
 	UserSFTP="`echo $UserSFTP | tr '[:lower:]' '[:upper:]'`"
-
-	#QuestionGetString NO "Add user to sudoers? " UserSUDO $Global_NO
-	#UserSUDO="`echo $UserSUDO | tr '[:lower:]' '[:upper:]'`"
 	UserSUDO="$Global_NO"
 
 	while [ ! "`ValidateMail $UserEmail`" = "1" ]; do
@@ -69,7 +66,8 @@ else
 			UserSFTP=$2
 			UserSUDO=$3
 			UserEmail="$4"
-			Switch="$5"
+			UserQuota="$5"
+			Switch="$6"
 			NewUserPassword="`GenPassword 8`"
 		;;
 	esac
@@ -262,12 +260,24 @@ StatusLSB
 
 #### rtorrent max memory & rTorrent Blocklist
 for seedUser in $UsersList; do
+	# Quota
+	FreeSpace="`df --sync /home/ | awk '{ print $4 }' | tail -n 1`"
+	FreeSpaceToKeeped="`python -c "print 2 * 1024**2"`" # Keep a minimum of 2Go of free space
+	FreeSpace=$(($FreeSpace-$FreeSpaceToKeeped))
+	SpaceByUser=$(($FreeSpace-$TotalUsers))
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "quota_default = '$SpaceByUser'" "users_ident = '$seedUser'"
+	if [ -s "$UserQuota" ]; then # Applying default quota
+		setquota -u -F vfsv0 $seedUser $SpaceByUser $SpaceByUser 1000000 1000000 /
+	fi
+
+	# rTorrent config 'pieces.memory.max.set'
 	log_daemon_msg "$CreateUser_PiecesMemory [$seedUser]"
 	LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$seedUser/.rtorrent.rc)
 	sed -i ''$LIGN'd' /home/$seedUser/.rtorrent.rc
 	sed -i ''$LIGN'i\pieces.memory.max.set = '$(((($MEMORY/$TotalUsers)*1024)*1024))'\n' /home/$seedUser/.rtorrent.rc
 	StatusLSB
 
+	# rTorrent blocklist
 	if [ -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.txt ]; then
 		log_daemon_msg "$CreateUser_Blocklists [$seedUser]"
 		cp $MySB_InstallDir/files/blocklists/* $NewUserHomedir/blocklist/
@@ -278,6 +288,7 @@ for seedUser in $UsersList; do
 		StatusLSB
 	fi
 
+	# rTorrent restart
 	service rtorrent-$seedUser status &> /dev/null
 	if [ $? -eq 0 ]; then
 		service rtorrent-$seedUser restart

@@ -61,6 +61,7 @@ case "$1" in
 		rm -v /etc/mysql/conf.d/*.cnf
 		perl -pi -e "s/key_buffer/key_buffer_size/g" /etc/mysql/my.cnf
 		cp -vf $MySB_InstallDir/templates/etc.mysql.conf.d.mysb.tmpl /etc/mysql/conf.d/MySB.cnf
+		# providers_monitoring
 		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '', 'proxy.p19.ovh.net'" '-echo'
 		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '', 'proxy.ovh.net'" '-echo'
 		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '92.222.184.0/24', ''" '-echo'
@@ -70,10 +71,17 @@ case "$1" in
 		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '151.80.231.244/32', ''" '-echo'
 		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '151.80.231.245/32', ''" '-echo'
 		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '151.80.231.246/32', ''" '-echo'
+		# lets_encrypt
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'lets_encrypt' "ipv4 = '104.71.190.141/32'" "addresses = 'acme-v01.api.letsencrypt.org'" '-echo'
+		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses,ipv4' "'acme-staging.api.letsencrypt.org', '104.71.190.141/32', ''" '-echo'
+		# repositories
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '9.0.0.19', file= 'owncloud_v9.0.0.zip', old_file = 'owncloud_v8.2.2.zip', url = 'https://download.owncloud.org/community/owncloud-9.0.0.zip'" "name = 'ownCloud'" '-echo'
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '1.0.9', file= 'libsodium_v1.0.9.zip', old_file = 'libsodium_v1.0.4.zip'" "name = 'Libsodium'" '-echo'
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '1.0.0-beta2'" "name = 'Composer'" '-echo'
 		Func_SQL_Command 'DELETE' 'MySB_db' 'repositories' "name = 'MiniDLNA Webmin Module'"
+		# users
+		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'users' 'quota_default' "INT( 16 ) NOT NULL" '-echo'
+		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'users' 'quota_defined' "INT( 16 ) NOT NULL" '-echo'	
 
 		#### ownCloud force upgrade to v8.2.2
 		if [ "$IsInstalled_ownCloud" == "YES" ]; then
@@ -103,7 +111,7 @@ case "$1" in
 		sed -i '/PHP TMPFS/d' /etc/fstab
 		sed -i '/\/var\/lib\/php5\/sessions/d' /etc/fstab
 		echo "# PHP TMPFS" >> /etc/fstab
-		echo "tmpfs   /var/lib/php5/sessions tmpfs defaults,nosuid,noatime,mode=1777 0 0" >> /etc/fstab
+		echo "tmpfs   /var/lib/php5/sessions tmpfs defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
 
 		#### Move some files & directories
 		# Sources List Directory
@@ -146,6 +154,11 @@ case "$1" in
 		#### Turning off filesystem access times
 		if [ -z "`cat /etc/fstab | grep 'errors=remount-ro' | grep 'noatime,nodiratime'`" ]; then
 			perl -pi -e "s/errors=remount-ro/noatime,nodiratime,errors=remount-ro/g" /etc/fstab
+		fi
+
+		#### Quota, add journaled quotas to the interested partition
+		if [ -z "`cat /etc/fstab | grep 'noatime,nodiratime,errors=remount-ro'`" ]; then
+			perl -pi -e "s/noatime,nodiratime,errors=remount-ro/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0/g" /etc/fstab
 		fi
 	;;
 	"AFTER")

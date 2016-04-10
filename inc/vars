@@ -114,31 +114,33 @@ if [ ! -z "$MySB_InstallDir" ] && [ "$IsReady_MySB_DB" == "YES" ]; then
 		HostNameFQDN="`hostname -f`"
 	fi
 
+	if [ -z "$PrimaryInet" ]; then
+		PrimaryInet="`ip route get 8.8.8.8 | grep 8.8.8.8 | awk '{ print $5 }'`"
+	fi
+
 	if [ -z "$SrvIpAddress" ]; then
 		UrlCheckList="ipv4.icanhazip.com whatismyip.akamai.com ifconfig.me/ip checkip.dyndns.com"
 		for UrlCheck in $UrlCheckList; do
 			case "$UrlCheck" in
 				'checkip.dyndns.com')
-					SrvIpAddress="`curl --silent $UrlCheck | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'`"
+					SrvIpAddress_Ext="`curl --silent $UrlCheck | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'`"
 				;;
 				*)
-					SrvIpAddress="`curl --silent $UrlCheck`"
+					SrvIpAddress_Ext="`curl --silent $UrlCheck`"
 				;;
 			esac
-			if [ ! -z "$SrvIpAddress" ]; then
+			if [ ! -z "$SrvIpAddress_Ext" ]; then
 				break
 			fi
 		done
-		if [ -z "$SrvIpAddress" ]; then
-			SrvIpAddress="`ifconfig | sed -n 's/.*inet addr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
-			if [ -z "$SrvIpAddress" ]; then
-				SrvIpAddress="`ifconfig | sed -n 's/.*inet adr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
-			fi
+		SrvIpAddress_Loc="`ifconfig $PrimaryInet | sed -n 's/.*inet addr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
+		if [ -z "$SrvIpAddress_Loc" ]; then
+			SrvIpAddress_Loc="`ifconfig $PrimaryInet | sed -n 's/.*inet adr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
 		fi
-	fi
-
-	if [ -z "$PrimaryInet" ]; then
-		PrimaryInet="`ip route get 8.8.8.8 | grep 8.8.8.8 | awk '{ print $5 }'`"
+		# Compare IP address (external view) with real IP address (local view)
+		if [ ! -z "$SrvIpAddress_Loc" ] && [ "$SrvIpAddress_Ext" != "$SrvIpAddress_Loc" ]; then
+			SrvIpAddress="$SrvIpAddress_Loc"
+		fi
 	fi
 
 	if [ -f /etc/timezone ] && [ -z "$TimeZone" ]; then

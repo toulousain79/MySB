@@ -144,9 +144,10 @@ INSERT INTO `vars` (`id_vars`, `fail2ban_whitelist`, `vpn_ip`, `white_tcp_port_o
 (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24,10.0.2.0/24', '80 443', '');
 
 INSERT INTO `lets_encrypt` (`id_lets_encrypt`, `addresses`, `ipv4`) VALUES
-(1, 'acme-v01.api.letsencrypt.org', '104.92.240.99'),
-(2, 'outbound1.letsencrypt.org', '66.133.109.36'),
-(3, 'outbound2.letsencrypt.org', '64.78.149.164');
+(1, 'acme-v01.api.letsencrypt.org', '104.71.190.141'),
+(2, 'acme-staging.api.letsencrypt.org', '104.71.190.141'),
+(3, 'outbound1.letsencrypt.org', '66.133.109.36'),
+(4, 'outbound2.letsencrypt.org', '64.78.149.164');
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
