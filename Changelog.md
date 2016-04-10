@@ -3,7 +3,6 @@
 			- Update provider monitoring for OVH (v3.3 and v3.4)
 			- MySQL, minor changes (v3.3 and v3.4)
 			- Disable totaly IPv6 with grub (v3.3 and v3.4)
-			- Let's Encrypt, force tls-sni-01-port (v3.3 and v3.4)
 			- Install, improving the detection of the public IP address
 			- Pagespeed, reduce TMPFS cache to 64Mo
 			- PHP5, limit TMPFS cache to 64Mo
