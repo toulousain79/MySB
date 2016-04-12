@@ -66,8 +66,7 @@ else
 			UserSFTP=$2
 			UserSUDO=$3
 			UserEmail="$4"
-			UserQuota="$5"
-			Switch="$6"
+			Switch="$5"
 			NewUserPassword="`GenPassword 8`"
 		;;
 	esac
@@ -261,14 +260,11 @@ StatusLSB
 #### rtorrent max memory & rTorrent Blocklist
 for seedUser in $UsersList; do
 	# Quota
-	FreeSpace="`df --sync /home/ | awk '{ print $4 }' | tail -n 1`"
-	FreeSpaceToKeeped="`python -c "print 2 * 1024**2"`" # Keep a minimum of 2Go of free space
-	FreeSpace=$(($FreeSpace-$FreeSpaceToKeeped))
+	FreeSpace="`Func_SQL_Command 'SELECT' 'MySB_db' 'quota_default' 'system' '1'`"
 	SpaceByUser=$(($FreeSpace-$TotalUsers))
 	Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "quota_default = '$SpaceByUser'" "users_ident = '$seedUser'"
-	#if [ -z "$UserQuota" ]; then # Applying default quota
-		setquota -u -F vfsv0 $seedUser $SpaceByUser $SpaceByUser 1000000 1000000 /
-	#fi
+	# Applying default quota
+	setquota -u -F vfsv0 $seedUser $SpaceByUser $SpaceByUser 1000000 1000000 /
 
 	# rTorrent config 'pieces.memory.max.set'
 	log_daemon_msg "$CreateUser_PiecesMemory [$seedUser]"
