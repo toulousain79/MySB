@@ -82,125 +82,23 @@ case "$1" in
 		# system
 		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'system' 'quota_default' "INT( 32 ) NOT NULL" '-echo'
 		# users
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'users' 'quota' "INT( 32 ) NOT NULL" '-echo'	
+		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'users' 'quota' "INT( 32 ) NOT NULL" '-echo'
 
-		#### ownCloud force upgrade to v8.2.2
-		if [ "$IsInstalled_ownCloud" == "YES" ]; then
-			ownCloudFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'ownCloud'"`"
-			ownCloudOldFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'old_file' 'repositories' "name = 'ownCloud'"`"
-			cp -vf $MySB_InstallDir/files/$ownCloudFile $MySB_InstallDir/files/$ownCloudOldFile
-		fi
-
-		#### PHP - Merge new config files
-		TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
-		if [ -f /etc/php5/cli/php.ini.ucf-dist ]; then
-			mv -v /etc/php5/cli/php.ini.ucf-dist /etc/php5/cli/php.ini
-			perl -pi -e "s/^;always_populate_raw_post_data/always_populate_raw_post_data/g" /etc/php5/fpm/php.ini
-			perl -pi -e "s/^;date.timezone =/date.timezone = $TimeZoneEscaped/g" /etc/php5/cli/php.ini
-			perl -pi -e "s/^expose_php = On/expose_php = Off/g" /etc/php5/cli/php.ini
-		fi
-		if [ -f /etc/php5/fpm/php.ini.ucf-dist ]; then
-			mv -v /etc/php5/fpm/php.ini.ucf-dist /etc/php5/fpm/php.ini
-			perl -pi -e "s/^;always_populate_raw_post_data/always_populate_raw_post_data/g" /etc/php5/fpm/php.ini
-			perl -pi -e "s/upload_max_filesize = 2M/upload_max_filesize = 16M/g" /etc/php5/fpm/php.ini
-			perl -pi -e "s/post_max_size = 8M/post_max_size = 16M/g" /etc/php5/fpm/php.ini
-			perl -pi -e "s/^;date.timezone =/date.timezone = $TimeZoneEscaped/g" /etc/php5/fpm/php.ini
-		fi
-		perl -pi -e "s/^;session.save_path/session.save_path/g" /etc/php5/fpm/php.ini
-		perl -pi -e "s/^;session.save_path/session.save_path/g" /etc/php5/cli/php.ini
-		# TMPFS
+		#### TMPFS
 		sed -i '/PHP TMPFS/d' /etc/fstab
 		sed -i '/\/var\/lib\/php5\/sessions/d' /etc/fstab
 		echo "# PHP TMPFS" >> /etc/fstab
 		echo "tmpfs   /var/lib/php5/sessions tmpfs defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
 
-		#### Move some files & directories
-		# Sources List Directory
-		if [ -d /etc/apt/sources.list.d ]; then rm -vf /etc/apt/sources.list.d/* &> /dev/null; fi
-
-		#### Renew Certificate
-		rm -vrf $MySB_InstallDir/ssl/
-		ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Certificates" 'CreateCACertificate' 'INSTALL'
-		ScriptInvoke 'source' "$MySB_InstallDir/install/Certificates" 'CreateServiceCertificate' 'mysb'
-
-		#### Samba
-		if [ "$IsInstalled_Samba" == "YES" ]; then
-			ManageServices stop "samba"
-			mv -vf /var/log/samba/log.nmbd* $MySB_InstallDir/temp/
-			mv -vf /var/log/samba/log.smbd* $MySB_InstallDir/temp/
-			mv -vf /var/log/samba/log.server-dp* $MySB_InstallDir/temp/
-			mv -vf /var/log/samba/cores $MySB_InstallDir/temp/
-			rm -vf /var/log/samba/*
-			mv -vf $MySB_InstallDir/temp/cores /var/log/samba/
-			mv -vf $MySB_InstallDir/temp/log.server-dp* /var/log/samba/
-			mv -vf $MySB_InstallDir/temp/log.smbd* /var/log/samba/
-			mv -vf $MySB_InstallDir/temp/log.nmbd* /var/log/samba/
-			cp -vf $MySB_InstallDir/templates/etc.samba.smb.conf.tmpl /etc/samba/smb.conf
-			ManageServices start "samba"
-		fi
-
-		#### Logwatch
-		cp -vf $MySB_InstallDir/templates/etc.logwatch.conf.logwatch.conf.tmpl /etc/logwatch/conf/logwatch.conf
-
-		#### Disable IPv6
-		/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6="1"
-		/sbin/sysctl -w net.ipv6.conf.default.disable_ipv6="1"
-		/sbin/sysctl -w net.ipv6.conf.lo.disable_ipv6="1"
-		/sbin/sysctl -w net.ipv6.conf.eth0.disable_ipv6="1"
-		sysctl -p
-
-		#### Remove RKHunter 1.4.0
-		PackagesManage purge "rkhunter unhide unhide.rb"
-
-		#### Turning off filesystem access times
-		if [ -z "`cat /etc/fstab | grep 'errors=remount-ro' | grep 'noatime,nodiratime'`" ]; then
-			perl -pi -e "s/errors=remount-ro/noatime,nodiratime,errors=remount-ro/g" /etc/fstab
-		fi
-
 		#### Quota, add journaled quotas to the interested partition
 		if [ -z "`cat /etc/fstab | grep 'noatime,nodiratime,errors=remount-ro'`" ]; then
 			perl -pi -e "s/noatime,nodiratime,errors=remount-ro/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0/g" /etc/fstab
 		fi
+
+		#### Apply quota for current users
+		
 	;;
 	"AFTER")
-		#### Upgrade OpenSSH-server
-		PackagesManage install "openssh-server" "backports"
-
-		#### Install LFTP command
-		PackagesManage install "lftp"
-
-		#### Some Cleaning
-		rm -rf $MySB_InstallDir/temp/* &> /dev/null
-		if [ -d /var/log/exim4 ]; then rm -rvf /var/log/exim4; fi
-		if [ -d /var/log/news ]; then rm -rvf /var/log/news; fi
-		if [ -f /etc/init.d/plexmediaserver.dpkg-bak ]; then rm -vf /etc/init.d/plexmediaserver.dpkg-bak; fi
-		if [ -f /etc/samba/smb.conf.ucf-dist ]; then rm -vf /etc/samba/smb.conf.ucf-dist; fi
-		ListingUsers
-		for seedUser in $UsersList; do
-			rm /home/$FnUser/scripts/*.example &> /dev/null
-			rm /home/$FnUser/scripts/*.list &> /dev/null
-			rm /home/$FnUser/scripts/list* &> /dev/null
-		done
-
-		#### Apply new certificate (Self-signed OR Let's Encrypt)
-		# Webmin
-		if [ "$IsInstalled_Webmin" == "YES" ]; then
-			if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
-				cat $MySB_InstallDir/ssl/privkey.pem > /etc/webmin/miniserv.pem
-				cat $MySB_InstallDir/ssl/fullchain.pem >> /etc/webmin/miniserv.pem
-			else
-				cat $MySB_InstallDir/ssl/mysb.cert > /etc/webmin/miniserv.pem
-				cat $MySB_InstallDir/ssl/mysb.key >> /etc/webmin/miniserv.pem
-			fi
-		fi
-		# Postfix / sTunnel / VSFTPd
-		perl -pi -e "s/postfix.cert/mysb.cert/g" /etc/postfix/main.cf
-		perl -pi -e "s/postfix.key/mysb.key/g" /etc/postfix/main.cf
-		perl -pi -e "s/stunnel.cert/mysb.cert/g" /etc/stunnel/stunnel.conf
-		perl -pi -e "s/stunnel.key/mysb.key/g" /etc/stunnel/stunnel.conf
-		perl -pi -e "s/vsftpd.cert/mysb.cert/g" /etc/vsftpd.conf
-		perl -pi -e "s/vsftpd.key/mysb.key/g" /etc/vsftpd.conf
-
 		####################################
 		#### To call for every upgrade - BoF
 		# Create missing directories and change rights
