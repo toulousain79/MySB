@@ -7,15 +7,15 @@
 			- Pagespeed, reduce TMPFS cache to 64Mo
 			- PHP5, limit TMPFS cache to 64Mo
 			- Detect real IP address during installation
-			- ownCloud v9.0.0
+			- ownCloud v9.0.1
 			- Portal
 				* Wolf CMS v0.8.3.1
 				* Noty v2.3.8
 				* Modernizr v2.8.3
 				* jQuery v1.12.2
-			- Libsodium v1.0.9
+			- Libsodium v1.0.10
 			- NodeJS v0.12.13
-			- Composer v1.0.0-beta2
+			- Composer v1.0.2
 
 	Version v3.3
 		2016/03/03
