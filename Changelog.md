@@ -9,15 +9,12 @@
 			- Detect real IP address during installation
 			- Cakebox-Light, bug fix of playback _(Cakebox not streaming #12)_
 				* Tested with Firefox 45 (32 & 64 bits) + HTML 5 Web Player + MP4
-				* Tested with Firefox 45 (32bits) + VLC Web Player + MP4
-				* Tested with Firefox 45 (32bits) + VLC Web Player + AVI
-				* Tested with Firefox 45 (32bits) + VLC Web Player + MKV
+				* Tested with Firefox 45 (32bits) + VLC Web Player + MP4,AVI,MKV
 				* Tested with Chrome 49 + HTML 5 Web Player + MP4
 				* Tested with IE 11 + HTML 5 Web Player + MP4
+				* Tested with IE 11 + DivX Web Player + MP4
 				* Tested with Opera 36 + HTML 5 Web Player + MP4
-				* Tested with Opera 36 + VLC Web Player + MP4
-				* Tested with Opera 36 + VLC Web Player + AVI
-				* Tested with Opera 36 + VLC Web Player + MKV
+				* Tested with Opera 36 + VLC Web Player + MP4,AVI,MKV
 			- ownCloud v9.0.1
 			- Portal
 				* Wolf CMS v0.8.3.1
