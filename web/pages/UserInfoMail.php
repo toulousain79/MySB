@@ -406,7 +406,7 @@ function PrintContent($user, $Case) {
 		<!-- // CakeBox Light -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_Cakebox; ?></th>
-			<td colspan="2"><a target="_blank" href="http://<?php echo $system_datas["hostname"];?>:<?php echo $Port_Cakebox;?>/cb/"><span class="Comments"><?php echo User_UserInfo_Comment_Cakebox; ?></span></a></td>
+			<td colspan="2"><a target="_blank" href="http://<?php echo $system_datas["hostname"];?>:<?php echo $Port_Cakebox;?>/"><span class="Comments"><?php echo User_UserInfo_Comment_Cakebox; ?></span></a></td>
 		</tr>
 	<?php } ?>
 		<!-- // ownCloud -->

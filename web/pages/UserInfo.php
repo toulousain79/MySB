@@ -202,7 +202,7 @@ function printUser($user) {
 	// CakeBox Light
 	$CakeboxDatas = $MySB_DB->get("services", ["is_installed"], ["serv_name" => "CakeBox-Light"]);
 	if ( $CakeboxDatas["is_installed"] == '1' ) {
-		$Link = 'http://' . $system_datas["hostname"] . ':' . $Port_Cakebox . '/cb';
+		$Link = 'http://' . $system_datas["hostname"] . ':' . $Port_Cakebox . '/';
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_Cakebox . '</th>';
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">' . User_UserInfo_Comment_Cakebox . '</span></a></td></tr>';
 	}
