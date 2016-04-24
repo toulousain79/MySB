@@ -61,19 +61,16 @@ if [ "$ToInstall_Cakebox" == "YES" ]; then
 		git clone $PluginCakeboxUrl $PluginCakeboxDir
 	fi
 	chown -R www-data:www-data $PluginCakeboxDir
-	sed -i "s/'http:\/\/'.\$host;/'https:\/\/$HostNameFQDN:$Port_HTTPS\/cb\/';/g;" $PluginCakeboxDir/conf.php
+	sed -i "s/'http:\/\/'.\$host;/'http:\/\/$HostNameFQDN:$Port_Cakebox\/cb\/';/g;" $PluginCakeboxDir/conf.php
 	sed -i "s/torrents/rtorrent/g;" $PluginCakeboxDir/conf.php
 
 	#### NginX (alias with proxy)
 	CakeboxDirEscaped=`echo $CakeboxDir | sed s,/,\\\\\\\\\\/,g`
 	if [ -h /etc/nginx/sites-enabled/cakebox ]; then rm -vf /etc/nginx/sites-enabled/cakebox; fi
 	cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.site-enabled.cakebox.tmpl /etc/nginx/sites-available/cakebox
+	perl -pi -e "s/<port_cakebox>/$Port_Cakebox/g" /etc/nginx/sites-available/cakebox
 	perl -pi -e "s/<server_name>/$HostNameFQDN/g" /etc/nginx/sites-available/cakebox
 	perl -pi -e "s/<cakebox_rootdir>/$CakeboxDirEscaped/g" /etc/nginx/sites-available/cakebox
-	cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.locations.cakebox.conf.tmpl /etc/nginx/locations/Cakebox-Light.conf
-	if [ ! -h /etc/nginx/sites-enabled/cakebox ]; then ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox; fi
-	perl -pi -e "s/<cakebox_rootdir>/$CakeboxDirEscaped/g" /etc/nginx/locations/Cakebox-Light.conf
-	chmod 0644 /etc/nginx/locations/Cakebox-Light.conf
 
 	# Create proxy file
 	cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.proxy.Cakebox-Light.conf.tmpl /etc/nginx/proxy/Cakebox-Light.conf
@@ -92,12 +89,12 @@ if [ "$ToInstall_Cakebox" == "YES" ]; then
 	if [ -f $CakeboxDir/public/app/directive/webplayer.js ]; then
 		NumLign=$(sed -n "/$location.host()/=" $CakeboxDir/public/app/directive/webplayer.js)
 		sed -i "$NumLign"d"" $CakeboxDir/public/app/directive/webplayer.js
-		sed -i ""$NumLign"i\                        scope.url = \$location.protocol() + \"://\" + \$location.host() + ':$Port_HTTPS' + data.url;" $CakeboxDir/public/app/directive/webplayer.js
+		sed -i ""$NumLign"i\                        scope.url = \$location.protocol() + \"://\" + \$location.host() + ':$Port_Cakebox' + data.url;" $CakeboxDir/public/app/directive/webplayer.js
 	fi
 	if [ -f $CakeboxDir/public/app/controller/AppCtrl.js ]; then
 		NumLign=$(sed -n "/$location.host()/=" $CakeboxDir/public/app/controller/AppCtrl.js)
 		sed -i "$NumLign"d"" $CakeboxDir/public/app/controller/AppCtrl.js
-		sed -i ""$NumLign"i\            return \$location.protocol() + \"://\" + \$location.host() + \":$Port_HTTPS\" + data.access;" $CakeboxDir/public/app/controller/AppCtrl.js
+		sed -i ""$NumLign"i\            return \$location.protocol() + \"://\" + \$location.host() + \":$Port_Cakebox\" + data.access;" $CakeboxDir/public/app/controller/AppCtrl.js
 	fi
 
 	#### Create directories & change rights

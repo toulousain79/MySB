@@ -43,6 +43,7 @@ function PrintContent($user, $Case) {
 	// Ports
 	$Port_SSH = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "SSH"]);
 	$Port_FTP = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "VSFTPd"]);
+	$Port_Cakebox = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "CakeBox-Light"]);
 	// Services
 	$ManagerInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "Seedbox-Manager"]);
 	$OpenVpnInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "OpenVPN"]);
@@ -405,7 +406,7 @@ function PrintContent($user, $Case) {
 		<!-- // CakeBox Light -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_Cakebox; ?></th>
-			<td colspan="2"><a target="_blank" href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/cb/"><span class="Comments"><?php echo User_UserInfo_Comment_Cakebox; ?></span></a></td>
+			<td colspan="2"><a target="_blank" href="http://<?php echo $system_datas["hostname"];?>:<?php echo $Port_Cakebox;?>/cb/"><span class="Comments"><?php echo User_UserInfo_Comment_Cakebox; ?></span></a></td>
 		</tr>
 	<?php } ?>
 		<!-- // ownCloud -->

@@ -1,16 +1,30 @@
 server {
-	listen 81;
-	server_name _;
+	listen <port_cakebox>;
 
-	charset utf-8;
-	allow 127.0.0.1;
-	deny all;
+	server_name "<server_name>";
 
-	root <cakebox_rootdir>/public;
-	index index.php;
+	root <cakebox_rootdir>;
 
-	access_log off;
+	access_log /var/log/nginx/cakebox-access.log;
 	error_log /var/log/nginx/cakebox-error.log;
+
+	include /etc/nginx/conf.d/static_files;
+	include /etc/nginx/conf.d/global_deny_access;
+	include /etc/nginx/conf.d/pagespeed;
+	include /etc/nginx/conf.d/ip_restriction;
+	include /etc/nginx/conf.d/auth_basic;
+	location ~ \.php$ {
+		include /etc/nginx/conf.d/php;
+	}
+
+	location ~ /favicon.ico {
+		alias <cakebox_rootdir>/public/ressources/images/favicon.ico;
+	}
+	location ~ /(?:components|app|ressources|api|partials)/ {
+		access_log off;
+	}
+
+	include /etc/nginx/rpc/*.cakebox;
 
 	location = / {
 		try_files @site @site;
@@ -20,10 +34,12 @@ server {
 		try_files $uri $uri/ @site;
 	}
 
+	#return 404 for all php files as we do have a front controller
 	location ~ \.php$ {
 		return 404;
 	}
 
+	#main configuration
 	location @site {
 		include /etc/nginx/conf.d/php;
 		fastcgi_param  SCRIPT_FILENAME $document_root/index.php;

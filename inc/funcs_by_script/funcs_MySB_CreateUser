@@ -28,22 +28,17 @@ CakeboxUsersConfigs() {
 	if [ "$IsInstalled_Cakebox" == "YES" ] && [ -d $CakeboxDir ]; then
 		FnUser="$1"
 		FnHomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
-		HomeDirEscaped=`echo $FnHomeDir | sed s,/,\\\\\\\\\\/,g`
 
-		if [ -f $CakeboxDir/config/default.php.dist ] && [ ! -f  $CakeboxDir/config/$FnUser.php ]; then
-			cp $CakeboxDir/config/default.php.dist $CakeboxDir/config/$FnUser.php
-			sed -i "s/\/var\/www\//$HomeDirEscaped\/rtorrent\//g;" $CakeboxDir/config/$FnUser.php
-			sed -i "s/\/access\//\/$FnUser\//g;" $CakeboxDir/config/$FnUser.php
-			case "$EnvLang" in
-				"fr")
-					perl -pi -e "s/\"en\"/\"$EnvLang\"/g" $CakeboxDir/config/$FnUser.php
-				;;
-				"en")
-					perl -pi -e "s/\"fr\"/\"$EnvLang\"/g" $CakeboxDir/config/$FnUser.php
-				;;
-			esac
-			sed -i "s/\"html5\"/\"divx\"/g;" $CakeboxDir/config/$FnUser.php
-		fi
+		cp $MySB_InstallDir/templates/cakebox.config.user.tmpl $CakeboxDir/config/$FnUser.php
+		perl -pi -e "s/<server_name>/$FnUser/g" $CakeboxDir/config/$FnUser.php
+		case "$EnvLang" in
+			"fr")
+				perl -pi -e "s/<lang>/$EnvLang/g" $CakeboxDir/config/$FnUser.php
+			;;
+			"en")
+				perl -pi -e "s/<lang>/$EnvLang/g" $CakeboxDir/config/$FnUser.php
+			;;
+		esac
 
 		if [ -f  $CakeboxDir/config/$FnUser.php ]; then
 			chown root:www-data $CakeboxDir/config/$FnUser.php
@@ -147,7 +142,7 @@ ManagerUsersConfigs() {
 			sed -i "s/user_directory = \"\/\"/user_directory = \"$HomeDirEscaped\"/g;" $ManagerDir/conf/users/$FnUser/config.ini
 			sed -i "s/scgi_folder = \"\/RPC1\"/scgi_folder = \"\/$UserNameUpper\"/g;" $ManagerDir/conf/users/$FnUser/config.ini
 			sed -i "s/http:\/\/rutorrent.domaine.fr, name = rutorrent/https:\/\/$HostNameFQDN:$Port_HTTPS\/ru, name = ruTorrent/g;" $ManagerDir/conf/users/$FnUser/config.ini
-			sed -i "s/http:\/\/cakebox.domaine.fr, name = cakebox/https:\/\/$HostNameFQDN:$Port_HTTPS, name = MySB Portal/g;" $ManagerDir/conf/users/$FnUser/config.ini
+			sed -i "s/http:\/\/cakebox.domaine.fr, name = cakebox/http:\/\/$HostNameFQDN:$Port_Cakebox, name = MySB Portal/g;" $ManagerDir/conf/users/$FnUser/config.ini
 			sed -i "s/port_ftp = \"21\"/port_ftp = \"$Port_FTP\"/g;" $ManagerDir/conf/users/$FnUser/config.ini
 			sed -i "s/port_sftp = \"22\"/port_sftp = \"$Port_SSH\"/g;" $ManagerDir/conf/users/$FnUser/config.ini
 			sed -i "s/contact@exemple.com/$MainUserEmail/g;" $ManagerDir/conf/users/$FnUser/config.ini
