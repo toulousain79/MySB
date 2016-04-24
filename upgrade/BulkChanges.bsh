@@ -86,10 +86,21 @@ case "$1" in
 		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'users' 'quota' "INT( 32 ) NOT NULL" '-echo'
 
 		#### TMPFS
+		# PHP
 		sed -i '/PHP TMPFS/d' /etc/fstab
 		sed -i '/\/var\/lib\/php5\/sessions/d' /etc/fstab
 		echo "# PHP TMPFS" >> /etc/fstab
 		echo "tmpfs   /var/lib/php5/sessions tmpfs defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
+		# MySQL
+		sed -i '/MySQL/d' /etc/fstab
+		sed -i '/MySQL_TempDir/d' /etc/fstab
+		echo "# MySQL Temp Directory" >> /etc/fstab
+		echo "tmpfs   /media/MySQL_TempDir      tmpfs   defaults,nosuid,noatime,mode=1777 0 0" >> /etc/fstab
+		# NginX
+		sed -i '/PageSpeed/d' /etc/fstab
+		sed -i '/pagespeed/d' /etc/fstab
+		echo "# Nginx PageSpeed" >> /etc/fstab
+		echo "tmpfs   /usr/share/nginx/pagespeed      tmpfs   defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
 
 		#### Quota, add journaled quotas to the interested partition
 		if [ -z "`cat /etc/fstab | grep 'noatime,nodiratime,errors=remount-ro'`" ]; then
@@ -97,7 +108,41 @@ case "$1" in
 		fi
 
 		#### Apply quota for current users
-		
+		UsersSpaceUsed=0
+		for seedUser in $UsersList; do
+			if [ -d /home/$seedUser/ ]; then
+				HomeTemp="`du -bs /home/$seedUser/ | awk '{ print $1 }'`"
+				UsersSpaceUsed=$(($UsersSpaceUsed+$HomeTemp))
+			fi
+			if [ -d /home/owncloud/$seedUser/ ]; then
+				OwncloudTemp="`du -bs /home/owncloud/$seedUser/ | awk '{ print $1 }'`"
+				UsersSpaceUsed=$(($UsersSpaceUsed+$OwncloudTemp))
+			fi
+			unset HomeTemp OwncloudTemp
+		done
+		FreeSpaceToKeep="`python -c "print 2 * 1024**2"`" # Keep a minimum of 2Go of free space
+		FreeSpace="`df --sync /home/ | awk '{ print $4 }' | tail -n 1`"
+		FreeSpace=$(($FreeSpace-$FreeSpaceToKeep))
+		FreeSpace=$(($FreeSpace+$UsersSpaceUsed))
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "quota_default = '$FreeSpace'" "id_system = '1'"
+		SpaceByUser=$(($FreeSpace/$TotalUsers))
+		# Apply real space quota for each users
+		for seedUser in $UsersList; do
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "quota_default = '$SpaceByUser'" "users_ident = '$seedUser'"
+			setquota -u -F vfsv0 $seedUser $SpaceByUser $SpaceByUser 1000000 1000000 /
+
+			# ownCloud Quota
+			if [ "$IsInstalled_ownCloud" == "YES" ]; then
+				IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_preferences' "userid='$seedUser' AND configkey='quota'"`"
+				if [ -z $IfExist ]; then
+					Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' 'userid,appid,configkey,configvalue' "'$seedUser','files','quota','$SpaceByUser KB'" '-echo'
+				else
+					Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$SpaceByUser KB'" "userid='$seedUser' AND configkey='quota'" '-echo'
+				fi
+
+				unset IfExist
+			fi
+		done
 	;;
 	"AFTER")
 		####################################

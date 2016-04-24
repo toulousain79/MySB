@@ -147,6 +147,21 @@ MEMORY=`free -m | grep Mem | awk '{ print $2 }'`
 CountingUsers
 ListingUsers
 for User in $UsersList; do
+	log_daemon_msg "$DeleteUser_Quota $User"
+	FreeSpace="`Func_SQL_Command 'SELECT' 'MySB_db' 'quota_default' 'system' '1'`"
+	SpaceByUser=$(($FreeSpace/$TotalUsers))
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "quota_default = '$SpaceByUser'" "users_ident = '$User'"
+	setquota -u -F vfsv0 $User $SpaceByUser $SpaceByUser 1000000 1000000 /
+	if [ "$IsInstalled_ownCloud" == "YES" ]; then
+		IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_preferences' "userid='$seedUser' AND configkey='quota'"`"
+		if [ -z $IfExist ]; then
+			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' 'userid,appid,configkey,configvalue' "'$seedUser','files','quota','$SpaceByUser KB'"
+		else
+			Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$SpaceByUser KB'" "userid='$seedUser' AND configkey='quota'"
+		fi
+	fi
+	StatusLSB
+
 	log_daemon_msg "$DeleteUser_PiecesMemory $User"
 	LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$User/.rtorrent.rc)
 	sed -i ''$LIGN'd' /home/$User/.rtorrent.rc
