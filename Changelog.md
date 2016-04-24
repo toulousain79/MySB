@@ -7,6 +7,7 @@
 			- Pagespeed, reduce TMPFS cache to 64Mo
 			- PHP5, limit TMPFS cache to 64Mo
 			- Detect real IP address during installation
+			- Cakebox-Light, bug fix of playback _(Cakebox not streaming #12)_
 			- ownCloud v9.0.1
 			- Portal
 				* Wolf CMS v0.8.3.1
