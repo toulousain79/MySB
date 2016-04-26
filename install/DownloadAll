@@ -42,7 +42,7 @@ for Repo in $AllRepos; do
 	RepoDir="`echo $Repo | awk '{split($0,a,"|"); print a[3]}'`"
 	RepoName="`echo $Repo | awk '{split($0,a,"|"); print a[4]}'`"
 	RepoVersion="`echo $Repo | awk '{split($0,a,"|"); print a[5]}'`"
-	ToUpgrade="`echo $Repo | awk '{split($0,a,"|"); print a[6]}' | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	ToUpgrade="`echo $Repo | awk '{split($0,a,"|"); print a[6]}'`"
 	RepoFile="`echo $Repo | awk '{split($0,a,"|"); print a[7]}'`"
 	RepoURL="`echo $Repo | awk '{split($0,a,"|"); print a[8]}'`"
 	Error=0
@@ -52,12 +52,12 @@ for Repo in $AllRepos; do
 	echo "Directory : "$MySB_InstallDir$RepoDir
 	echo "Version : "$RepoVersion
 	echo "File : "$RepoFile
-	echo "To upgrade : "$ToUpgrade
+	echo "To upgrade : `echo $ToUpgrade | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
 	echo "URL : "$RepoURL
 	echo
 
 	# Delete old repo file
-	if [ "$ToUpgrade" == "YES" ]; then
+	if [ $ToUpgrade -eq 1 ]; then
 		# Backup some config files or directory
 		case "$RepoName" in
 			'ownCloud')
@@ -85,6 +85,9 @@ for Repo in $AllRepos; do
 				;;
 			esac
 		fi
+
+		# Disable the upgrade job
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "upgrade = '0'" "name = '$RepoName'" '-echo'		
 	fi
 
 	# Download all
