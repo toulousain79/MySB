@@ -35,6 +35,8 @@ case "$TYPE" in
 		DisplayServerInfo=YES
 		DisplayServices=YES
 		DisplaySecurity=YES
+		ServerProvider=""
+		SMTP_Provider=""
 	;;
 	"UPGRADE")
 		DisplayInfo=NO
@@ -50,14 +52,16 @@ case "$TYPE" in
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "users_passwd = '$MainUserPassword'" "admin = '1'"
 
 		# Language select
-		echo
-		echo -e "$Upgrade_LanguageSelect"
-		QuestionGetString NO "$Questions_LanguageSelect" LanguageSelect $EnvLang
-		LanguageSelect="`echo $LanguageSelect | tr '[:upper:]' '[:lower:]'`"
-		sed -i '/EnvLang/d' /etc/MySB/config
-		echo "EnvLang=\"$LanguageSelect\"" >> /etc/MySB/config
-		source /etc/MySB/config
-		source $Directory/inc/vars
+		if [ -z "$EnvLang" ]; then
+			echo
+			echo -e "$Upgrade_LanguageSelect"
+			QuestionGetString NO "$Questions_LanguageSelect" LanguageSelect $EnvLang
+			LanguageSelect="`echo $LanguageSelect | tr '[:upper:]' '[:lower:]'`"
+			sed -i '/EnvLang/d' /etc/MySB/config
+			echo "EnvLang=\"$LanguageSelect\"" >> /etc/MySB/config
+			source /etc/MySB/config
+			source $Directory/inc/vars
+		fi
 	;;
 esac
 
@@ -121,7 +125,6 @@ if [ "$DisplayUserInfo" == "YES" ]; then
 	# SMTP ?
 	echo
 	echo -e "$Questions_Message_SMTP_0"
-	SMTP_Provider=""
 	while [ ! "$SMTP_Provider" = "LOCAL" ] \
 		&& [ ! "$SMTP_Provider" = "FREE" ] \
 		&& [ ! "$SMTP_Provider" = "OVH" ] \
@@ -197,11 +200,10 @@ if [ "$DisplayServices" == "YES" ]; then
 	#Provider
 	echo
 	echo -e "$Questions_Message_ServerProvider"
-	ServerProvider=""
-	while [ "$ServerProvider" != "$Global_NO" ] \
-		&& [ "$ServerProvider" != "DIGICUBE" ] \
-		&& [ "$ServerProvider" != "OVH" ] \
-		&& [ "$ServerProvider" != "ONLINE" ]; do
+	while [ ! "$ServerProvider" = "$Global_NO" ] \
+		&& [ ! "$ServerProvider" = "DIGICUBE" ] \
+		&& [ ! "$ServerProvider" = "OVH" ] \
+		&& [ ! "$ServerProvider" = "ONLINE" ]; do
 
 		QuestionGetString NO "$Questions_ServerProvider" ServerProvider $Global_NO
 		ServerProvider="`echo $ServerProvider | tr '[:lower:]' '[:upper:]'`"
