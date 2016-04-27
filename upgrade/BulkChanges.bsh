@@ -115,11 +115,17 @@ case "$1" in
 		echo "# Nginx PageSpeed" >> /etc/fstab
 		echo "tmpfs   /usr/share/nginx/pagespeed      tmpfs   defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
 
+		#### Quota, add journaled quotas to the interested partition
+		if [ ! -z "`cat /etc/fstab | grep 'noatime,nodiratime,errors=remount-ro'`" ] && [ -z "`cat /etc/fstab | grep 'usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0' | grep -v '/boot'`" ]; then
+			perl -pi -e "s/noatime,nodiratime,errors=remount-ro/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0/g" /etc/fstab
+		fi
+
 		#### Install Quota
 		PackagesManage install "quota quotatool"
-		quotaoff -a
+		mount -o remount /
+		quotaoff -av
 		quotacheck -vagum
-		quotaon -a
+		quotaon -av
 	;;
 	"AFTER")
 		####################################
@@ -169,11 +175,6 @@ case "$1" in
 		done
 		#### To call for every upgrade - EoF
 		####################################
-
-		#### Quota, add journaled quotas to the interested partition
-		if [ ! -z "`cat /etc/fstab | grep 'noatime,nodiratime,errors=remount-ro'`" ] && [ -z "`cat /etc/fstab | grep 'usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0' | grep -v '/boot'`" ]; then
-			perl -pi -e "s/noatime,nodiratime,errors=remount-ro/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0/g" /etc/fstab
-		fi
 
 		#### Apply quota for current users
 		UsersSpaceUsed=0
