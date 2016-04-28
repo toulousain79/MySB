@@ -78,6 +78,7 @@ case "$1" in
 		Func_SQL_Command 'ALTER' 'MySB_db' 'CHANGE' 'repositories' 'on_boot' "TINYINT( 1 ) NOT NULL DEFAULT '0'" '-echo'
 		Func_SQL_Command 'ALTER' 'MySB_db' 'DROP' 'repositories' 'old_file' '-echo'
 		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'repositories' 'upgrade' "TINYINT( 1 ) NOT NULL DEFAULT '0' AFTER \`version\`" '-echo'
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '0.5.0', file= 'LetsEncrypt_v0.5.0.zip'" "name = 'ownCloud'" '-echo'
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '9.0.1', file= 'owncloud_v9.0.1.zip', upgrade = '1', url = 'https://download.owncloud.org/community/owncloud-9.0.1.zip'" "name = 'ownCloud'" '-echo'
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '1.0.10', file= 'libsodium_v1.0.10.zip', upgrade = '1'" "name = 'Libsodium'" '-echo'
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '1.0.2'" "name = 'Composer'" '-echo'
@@ -114,18 +115,6 @@ case "$1" in
 		sed -i '/pagespeed/d' /etc/fstab
 		echo "# Nginx PageSpeed" >> /etc/fstab
 		echo "tmpfs   /usr/share/nginx/pagespeed      tmpfs   defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
-
-		#### Quota, add journaled quotas to the interested partition
-		if [ ! -z "`cat /etc/fstab | grep 'noatime,nodiratime,errors=remount-ro'`" ] && [ -z "`cat /etc/fstab | grep 'usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0' | grep -v '/boot'`" ]; then
-			perl -pi -e "s/noatime,nodiratime,errors=remount-ro/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0/g" /etc/fstab
-		fi
-
-		#### Install Quota
-		PackagesManage install "quota quotatool"
-		mount -o remount /
-		quotaoff -av
-		quotacheck -vagum
-		quotaon -av
 	;;
 	"AFTER")
 		####################################
@@ -175,6 +164,16 @@ case "$1" in
 		done
 		#### To call for every upgrade - EoF
 		####################################
+
+		#### Quota, add journaled quotas to the interested partition
+		if [ ! -z "`cat /etc/fstab | grep 'noatime,nodiratime,errors=remount-ro'`" ] && [ -z "`cat /etc/fstab | grep 'usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0' | grep -v '/boot'`" ]; then
+			perl -pi -e "s/noatime,nodiratime,errors=remount-ro/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0/g" /etc/fstab
+		fi
+		mount -o remount /
+		quotaoff -av
+		quotacheck -vagum
+		quotaon -av
+		repquota -a
 
 		#### Apply quota for current users
 		UsersSpaceUsed=0

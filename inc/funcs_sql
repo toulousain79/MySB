@@ -133,7 +133,21 @@ Func_SQL_Command() {
 					/usr/bin/sqlite3 $Display  -cmd '.timeout 150000' $DataBase "INSERT INTO $Table ($VarColumns) VALUES ($VarValues);"
 				;;
 				"mysql")
-					VarColumns="`echo $VarColumns | sed 's/key/\`key\`/g;' | sed 's/value/\`value\`/g;'`"
+					IFS=$','; TempValue=""
+					for Column in $VarColumns; do
+						case "$DatabaseType" in
+							'key')
+								Column="`echo $Column | sed 's/key/\`key\`/g;'`"
+							;;
+							'value')
+								Column="`echo $Column | sed 's/value/\`value\`/g;'`"
+							;;
+						esac
+						TempValue="$TempValue,$Column"
+					do
+					unset IFS
+					TempValue="`echo $TempValue | sed 's/^,//g;' | sed 's/,$//g;'`"
+					VarColumns="$TempValue"
 					MyVar="INSERT INTO $Table ($VarColumns) VALUES ($VarValues)"
 					if [ "$Display" == "-echo" ];then
 						echo "$MyVar"
