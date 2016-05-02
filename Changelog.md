@@ -7,6 +7,7 @@
 			- Pagespeed, reduce TMPFS cache to 64Mo
 			- PHP5, limit TMPFS cache to 64Mo
 			- Detect real IP address during installation
+			- PlexMediaServer, new APT Key
 			- Cakebox-Light, bug fix of playback _(Cakebox not streaming #12)_
 				* Tested with Firefox 45 (32 & 64 bits) + HTML 5 Web Player + MP4
 				* Tested with Firefox 45 (32bits) + VLC Web Player + MP4,AVI,MKV
