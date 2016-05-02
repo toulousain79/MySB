@@ -229,12 +229,6 @@ function PrintContent($user, $Case) {
 		</tr>
 <?php } ?>
 
-		<!-- // Force IP address -->
-		<tr align="left">
-			<th width="15%" scope="row" style="color: #FF6666;" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_ForceIP; ?></th>
-			<td colspan="2" style="background-color: #FF6666;"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ForceAddress.php?page=ManageAddresses"><span class="Comments"><?php echo User_UserInfoMail_Comment_ForceIP; ?></span></a></td>
-		</tr>
-
 <?php if ( $DisplayUserInfoDetail == true ) { ?>
 		<!-- // RPC -->
 		<tr align="left">
@@ -248,7 +242,15 @@ function PrintContent($user, $Case) {
 			<td><?php echo $sftp;?></td>
 			<td><span class="Comments"><?php echo User_UserInfo_Comment_SFTP; ?></span></td>
 		</tr>
+<?php } ?>
 
+		<!-- // Force IP address -->
+		<tr align="left">
+			<th width="15%" scope="row" style="color: #FF6666;" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_ForceIP; ?></th>
+			<td colspan="2" style="background-color: #FF6666;"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ForceAddress.php?page=ManageAddresses"><span class="Comments"><?php echo User_UserInfoMail_Comment_ForceIP; ?></span></a></td>
+		</tr>
+
+<?php if ( $DisplayUserInfoDetail == true ) { ?>
 		<!-- //////////////////////
 		// Directories
 		////////////////////// -->
