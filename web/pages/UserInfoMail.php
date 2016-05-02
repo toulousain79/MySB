@@ -35,7 +35,7 @@ if ($_SERVER['PHP_AUTH_USER'] == $system_datas["mysb_user"]) {
 
 function PrintContent($user, $Case) {
 	global $MySB_DB, $system_datas, $Port_HTTPs;
-	
+
 	// Users table
 	$users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$user"]);
 	$UserID = $users_datas["id_users"];
@@ -229,6 +229,12 @@ function PrintContent($user, $Case) {
 		</tr>
 <?php } ?>
 
+		<!-- // Force IP address -->
+		<tr align="left">
+			<th width="15%" scope="row" style="color: #FF6666;" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_ForceIP; ?></th>
+			<td colspan="2" style="background-color: #FF6666;"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ForceAddress.php?page=ManageAddresses"><span class="Comments"><?php echo User_UserInfoMail_Comment_ForceIP; ?></span></a></td>
+		</tr>
+
 <?php if ( $DisplayUserInfoDetail == true ) { ?>
 		<!-- // RPC -->
 		<tr align="left">
@@ -248,13 +254,13 @@ function PrintContent($user, $Case) {
 		////////////////////// -->
 		<tr align="left">
 			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfo_Title_Directories; ?></h4></th>
-		</tr>		
+		</tr>
 		<!-- // Session dir -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Session; ?></th>
 			<td><?php echo $users_datas["home_dir"] . User_UserInfo_Value_Session;?></td>
 			<td><span class="Comments"><?php echo User_UserInfo_Comment_Session; ?></span></td>
-		</tr>		
+		</tr>
 		<!-- // Complete dir -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_CompleteDir; ?></th>
@@ -272,7 +278,7 @@ function PrintContent($user, $Case) {
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TorrentDir; ?></th>
 			<td><?php echo $users_datas["home_dir"] . User_UserInfo_Value_TorrentDir;?></td>
 			<td><span class="Comments"><?php echo User_UserInfo_Comment_TorrentDir; ?></span></td>
-		</tr>			
+		</tr>
 		<!-- // Watch dir -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_WatchDir; ?></th>
@@ -340,7 +346,7 @@ function PrintContent($user, $Case) {
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SrvIpBridge; ?></th>
 			<td><?php echo OpenVPN_SrvIpBridge; ?></td>
 			<td><span class="Comments"><?php echo User_UserInfo_Comment_SrvIpBridge; ?></span></td>
-		</tr>		
+		</tr>
 		<!-- // Samba share -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SambaShare; ?></th>
@@ -355,16 +361,14 @@ function PrintContent($user, $Case) {
 		</tr>
 <?php } ?>
 
-
+<?php if ( $DisplayLinks == true ) { ?>
 		<!-- //////////////////////
 		// Links (Normal user)
 		////////////////////// -->
 		<tr align="left">
 			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfo_Title_LinkNormal; ?></h4></th>
 		</tr>
-		
-		
-<?php if ( $DisplayLinks == true ) { ?>
+
 		<!-- // Change password -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_ChangePass; ?></th>
@@ -415,16 +419,9 @@ function PrintContent($user, $Case) {
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_ownCloud; ?></th>
 			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/owncloud"><span class="Comments"><?php echo User_UserInfo_Comment_ownCloud; ?></span></a></td>
 		</tr>
-	<?php } ?>	
+	<?php } ?>
 
 <?php } // $DisplayLinks ?>
-
-
-		<!-- // Force IP address -->
-		<tr align="left">
-			<th width="15%" scope="row" style="color: #FF6666;" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_ForceIP; ?></th>
-			<td colspan="2" style="background-color: #FF6666;"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ForceAddress.php?page=ManageAddresses"><span class="Comments"><?php echo User_UserInfoMail_Comment_ForceIP; ?></span></a></td>
-		</tr>
 	
 	<?php if ( $users_datas["admin"] == '1' ) { ?>
 
@@ -434,7 +431,7 @@ function PrintContent($user, $Case) {
 		<tr align="left">
 			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfo_Title_LinkMain; ?></h4></th>
 		</tr>
-		<!-- // Webmin -->		
+		<!-- // Webmin -->
 		<?php if ( $WebminDatas["is_installed"] == '1' ) { ?>
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Webmin; ?></th>
@@ -469,6 +466,45 @@ function PrintContent($user, $Case) {
 			</tr>
 		<?php } ?>
 	
+	<?php } ?>
+
+	<?php if ( !empty($RentingDatas["global_cost"]) && !empty($RentingDatas["model"]) ) { ?>
+		<!-- //////////////////////
+		// Price and Payment info
+		////////////////////// -->
+		<tr align="left">
+			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfo_Title_Renting; ?></h4></th>
+		</tr>
+		<!-- // Server model -->
+		<tr align="left">
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SrvModel; ?></th>
+			<td><?php echo $RentingDatas["model"];?></td>
+			<td> </td>
+		</tr>
+		<!-- // Global cost -->
+		<tr align="left">
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_GlobalCost; ?></th>
+			<td><?php echo $RentingDatas["global_cost"];?></td>
+			<td> </td>
+		</tr>
+		<!-- // TVA -->
+		<tr align="left">
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TVA; ?></th>
+			<td><?php echo $RentingDatas["tva"];?></td>
+			<td> </td>
+		</tr>
+		<!-- // Total users -->
+		<tr align="left">
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalUsers; ?></th>
+			<td><?php echo $RentingDatas["nb_users"];?></td>
+			<td> </td>
+		</tr>
+		<!-- // TOTAL per users -->
+		<tr align="left">
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalPerUser; ?></th>
+			<td><b><span class="FontInRed"><?php echo $RentingDatas["price_per_users"];?></span></b><?php echo User_UserInfo_Table_TotalPerUser_Plus; ?></td>
+			<td> </td>
+		</tr>
 	<?php } ?>
 
 	<?php if ( $DisplayCommand == true ) { ?>
@@ -532,49 +568,10 @@ function PrintContent($user, $Case) {
 			<td><span class="Comments"><?php echo User_UserInfo_Comment_GetTrackersCert; ?></span></td>
 		</tr>
 <?php } ?>
-	
-	<?php if ( !empty($RentingDatas["global_cost"]) && !empty($RentingDatas["model"]) ) { ?>
-		<!-- //////////////////////
-		// Price and Payment info
-		////////////////////// -->
-		<tr align="left">
-			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfo_Title_Renting; ?></h4></th>
-		</tr>
-		<!-- // Server model -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SrvModel; ?></th>
-			<td><?php echo $RentingDatas["model"];?></td>
-			<td> </td>
-		</tr>
-		<!-- // Global cost -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_GlobalCost; ?></th>
-			<td><?php echo $RentingDatas["global_cost"];?></td>
-			<td> </td>
-		</tr>
-		<!-- // TVA -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TVA; ?></th>
-			<td><?php echo $RentingDatas["tva"];?></td>
-			<td> </td>
-		</tr>
-		<!-- // Total users -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalUsers; ?></th>
-			<td><?php echo $RentingDatas["nb_users"];?></td>
-			<td> </td>
-		</tr>		
-		<!-- // TOTAL per users -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalPerUser; ?></th>
-			<td><b><span class="FontInRed"><?php echo $RentingDatas["price_per_users"];?></span></b><?php echo User_UserInfo_Table_TotalPerUser_Plus; ?></td>
-			<td> </td>
-		</tr>		
-	<?php } ?>
-	
+
 	</table>
-	
-<?php	
+
+<?php
 }
 
 if ( (CountingUsers() >= 1) && (GetVersion() != "") ) {
@@ -603,13 +600,13 @@ if ( (CountingUsers() >= 1) && (GetVersion() != "") ) {
 					.Comments {
 						font-size: 90%;
 						font-style: italic;
-					}				
+					}
 					h4 {
 						color: #09D4FF;
 					}
 					#BorderTopTitle {
 						border-top:solid 2px #E5E5DB;
-					}					
+					}
 				</style>
 			</head>
 			<body>';
