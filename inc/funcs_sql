@@ -115,6 +115,21 @@ Func_SQL_Command() {
 					/usr/bin/sqlite3 $Display -cmd '.timeout 150000' $DataBase "UPDATE $Table SET $VarSet WHERE $VarWhere;"
 				;;
 				"mysql")
+					IFS=$','; TempValue=""
+					for Var in $VarSet; do
+						case "$Var" in
+							'key')
+								Var="`echo $Var | sed 's/key/\`key\`/g;'`"
+							;;
+							'value')
+								Var="`echo $Var | sed 's/value/\`value\`/g;'`"
+							;;
+						esac
+						TempValue="$TempValue,$Var"
+					done
+					unset IFS
+					TempValue="`echo $TempValue | sed 's/^,//g;' | sed 's/,$//g;'`"
+					VarColumns="$TempValue"				
 					MyVar="UPDATE $Table SET $VarSet WHERE $VarWhere"
 					if [ "$Display" == "-echo" ];then
 						echo "$MyVar"
@@ -135,7 +150,7 @@ Func_SQL_Command() {
 				"mysql")
 					IFS=$','; TempValue=""
 					for Column in $VarColumns; do
-						case "$DatabaseType" in
+						case "$Column" in
 							'key')
 								Column="`echo $Column | sed 's/key/\`key\`/g;'`"
 							;;
