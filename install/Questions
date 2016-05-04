@@ -55,7 +55,7 @@ case "$TYPE" in
 		if [ -z "$EnvLang" ]; then
 			echo
 			echo -e "$Upgrade_LanguageSelect"
-			QuestionGetString NO "$Questions_LanguageSelect" LanguageSelect $EnvLang
+			QuestionGetString NO "$Questions_LanguageSelect" LanguageSelect "$EnvLang"
 			LanguageSelect="`echo $LanguageSelect | tr '[:upper:]' '[:lower:]'`"
 			sed -i '/EnvLang/d' /etc/MySB/config
 			echo "EnvLang=\"$LanguageSelect\"" >> /etc/MySB/config
@@ -97,7 +97,7 @@ if [ "$DisplayUserInfo" == "YES" ]; then
 	# User IP addresses
 	echo
 	echo -e "$Questions_Message_IpRestriction"
-	QuestionGetString NO "$Questions_UseIprestriction" IpRestriction $Global_YES
+	QuestionGetString NO "$Questions_UseIprestriction" IpRestriction "$Global_YES"
 	IpRestriction="`echo $IpRestriction | tr '[:lower:]' '[:upper:]'`"
 
 	echo
@@ -112,7 +112,7 @@ if [ "$DisplayUserInfo" == "YES" ]; then
 			fi
 		fi
 
-		QuestionGetString NO "$Questions_AddAddresses" MainUserIPs $MainUserIPs
+		QuestionGetString NO "$Questions_AddAddresses" MainUserIPs "$MainUserIPs"
 		IFS=$','
 		for ip in $MainUserIPs; do 
 			TEMP="`ValidateIP "$ip"`"
@@ -126,10 +126,11 @@ if [ "$DisplayUserInfo" == "YES" ]; then
 	echo
 	echo -e "$Questions_Message_SMTP_0"
 	while [ -z "$SMTP_Provider" ]; do
-		QuestionGetString NO "$Questions_SMTP" SMTP_Provider $SMTP_Provider
+		QuestionGetString NO "$Questions_SMTP" SMTP_Provider 'LOCAL'
+		SMTP_Provider="`echo $SMTP_Provider | tr '[:lower:]' '[:upper:]'`"
 		case "$SMTP_Provider" in
 			'LOCAL'|'FREE'|'OVH'|'GMAIL'|'YAHOO'|'ZOHO')
-				SMTP_Provider="`echo $SMTP_Provider | tr '[:lower:]' '[:upper:]'`"
+				continue
 			;;
 			*)
 				SMTP_Provider=""
@@ -165,30 +166,30 @@ if [ "$DisplayServerInfo" == "YES" ]; then
 
 	# Primary Inet
 	echo
-	QuestionGetString NO "$Questions_PrimaryNetwork" PrimaryInet $PrimaryInet
+	QuestionGetString NO "$Questions_PrimaryNetwork" PrimaryInet "$PrimaryInet"
 
 	# Box' IP
 	echo
 	while [ ! "$CHECK_SrvIpAddress" = "$SrvIpAddress" ] || [ -z "$SrvIpAddress" ]; do
-		QuestionGetString NO "$Questions_BoxIpAddress" SrvIpAddress $SrvIpAddress
+		QuestionGetString NO "$Questions_BoxIpAddress" SrvIpAddress "$SrvIpAddress"
 		CHECK_SrvIpAddress="`ValidateIP "$SrvIpAddress"`"
 	done
 
 	# Box' hostname
 	echo
-	QuestionGetString NO "$Questions_Hostname" HostNameFQDN $HostNameFQDN
+	QuestionGetString NO "$Questions_Hostname" HostNameFQDN "$HostNameFQDN"
 
 	# NginX HTTPs port
 	echo
-	QuestionGetString NO "$Questions_PortHTTPs" Port_HTTPS $Port_HTTPS
+	QuestionGetString NO "$Questions_PortHTTPs" Port_HTTPS "$Port_HTTPS"
 
 	# SSH port
 	echo
-	QuestionGetString NO "$Questions_PortSSH" Port_SSH $Port_SSH
+	QuestionGetString NO "$Questions_PortSSH" Port_SSH "$Port_SSH"
 
 	# FTP port
 	echo
-	QuestionGetString NO "$Questions_PortFTPs" Port_FTP $Port_FTP
+	QuestionGetString NO "$Questions_PortFTPs" Port_FTP "$Port_FTP"
 fi
 
 #### SERVICES
@@ -200,28 +201,30 @@ if [ "$DisplayServices" == "YES" ]; then
 
 	#Provider
 	echo
-	if [ -z "$ServerProvider" ] || [ "$ServerProvider" == "$Global_NO" ]; then
-		ServerProvider=""
+	if [ -z "$ServerProvider" ] || [ "$ServerProvider" == "$Global_None" ]; then
+		if [ -z "$ServerProvider" ]; then
+			ServerProvider="$Global_None"
+		fi
 		echo -e "$Questions_Message_ServerProvider"
 	fi
 
-	while [ -z "$ServerProvider" ]; do
-		QuestionGetString NO "$Questions_ServerProvider" ServerProvider $Global_NO
+	while [ -z "$ServerProvider" ] || [ "$ServerProvider" == "$Global_None" ]; do
+		QuestionGetString NO "$Questions_ServerProvider" ServerProvider "$ServerProvider"
+		ServerProvider="`echo $ServerProvider | tr '[:lower:]' '[:upper:]'`"
 		case "$ServerProvider" in
-			"$Global_NO"|'OVH'|'ONLINE'|'DIGICUBE')
-				ServerProvider="`echo $ServerProvider | tr '[:lower:]' '[:upper:]'`"
+			"$Global_None"|'OVH'|'ONLINE'|'DIGICUBE')
+				continue
 			;;
 			*)
 				ServerProvider=""
 			;;
 		esac
-		echo $ServerProvider
 	done
 
 	# Seedbox-Manager
 	if [ "$IsInstalled_Manager" != "YES" ]; then
 		echo
-		QuestionGetString NO "$Questions_InstallSeedboxManager" ToInstall_Manager $Global_NO
+		QuestionGetString NO "$Questions_InstallSeedboxManager" ToInstall_Manager "$Global_NO"
 		ToInstall_Manager="`echo $ToInstall_Manager | tr '[:lower:]' '[:upper:]'`"
 
 		if [ "$ToInstall_Manager" == "$Global_YES" ]; then
@@ -237,7 +240,7 @@ if [ "$DisplayServices" == "YES" ]; then
 	# Cakebox Light
 	if [ "$IsInstalled_Cakebox" != "YES" ]; then
 		echo
-		QuestionGetString NO "$Questions_InstallCakeBox" ToInstall_Cakebox $Global_NO
+		QuestionGetString NO "$Questions_InstallCakeBox" ToInstall_Cakebox "$Global_NO"
 		ToInstall_Cakebox="`echo $ToInstall_Cakebox | tr '[:lower:]' '[:upper:]'`"
 
 		if [ "$ToInstall_Cakebox" == "$Global_YES" ]; then
@@ -253,7 +256,7 @@ if [ "$DisplayServices" == "YES" ]; then
 	# Plexmedia server
 	if [ "$IsInstalled_PlexMedia" != "YES" ]; then
 		echo
-		QuestionGetString NO "$Questions_InstallPlexMedia" ToInstall_PlexMedia $Global_NO
+		QuestionGetString NO "$Questions_InstallPlexMedia" ToInstall_PlexMedia "$Global_NO"
 		ToInstall_PlexMedia="`echo $ToInstall_PlexMedia | tr '[:lower:]' '[:upper:]'`"
 
 		if [ "$ToInstall_PlexMedia" == "$Global_YES" ]; then
@@ -267,10 +270,10 @@ if [ "$DisplayServices" == "YES" ]; then
 	# Webmin
 	if [ "$IsInstalled_Webmin" != "YES" ]; then
 		echo
-		QuestionGetString NO "$Questions_InstallWebmin" ToInstall_Webmin $Global_NO
+		QuestionGetString NO "$Questions_InstallWebmin" ToInstall_Webmin "$Global_NO"
 		ToInstall_Webmin="`echo $ToInstall_Webmin | tr '[:lower:]' '[:upper:]'`"
 		if [ "$ToInstall_Webmin" == "$Global_YES" ]; then
-			QuestionGetString NO "$Questions_PortWebmin" Ports_Webmin $Ports_Webmin
+			QuestionGetString NO "$Questions_PortWebmin" Ports_Webmin "$Ports_Webmin"
 		fi
 
 		if [ "$ToInstall_Webmin" == "$Global_YES" ]; then
@@ -284,13 +287,13 @@ if [ "$DisplayServices" == "YES" ]; then
 	# OpenVPN
 	if [ "$IsInstalled_OpenVPN" != "YES" ]; then
 		echo
-		QuestionGetString NO "$Questions_InstallOpenVPN" ToInstall_OpenVPN $Global_NO
+		QuestionGetString NO "$Questions_InstallOpenVPN" ToInstall_OpenVPN "$Global_NO"
 		ToInstall_OpenVPN="`echo $ToInstall_OpenVPN | tr '[:lower:]' '[:upper:]'`"
 		if [ "$ToInstall_OpenVPN" == "$Global_YES" ]; then
 			OpenVPN_Proto=""
-			QuestionGetString NO "$Questions_PortOpenvpnTUNwithGW" Port_OpenVPN_WithGW $Port_OpenVPN_WithGW
-			QuestionGetString NO "$Questions_PortOpenvpnTUNwithoutGW" Port_OpenVPN_WithoutGW $Port_OpenVPN_WithoutGW
-			QuestionGetString NO "$Questions_PortOpenvpnTAPwithoutGW" Port_OpenVPN_TAP_WithoutGW $Port_OpenVPN_TAP_WithoutGW
+			QuestionGetString NO "$Questions_PortOpenvpnTUNwithGW" Port_OpenVPN_WithGW "$Port_OpenVPN_WithGW"
+			QuestionGetString NO "$Questions_PortOpenvpnTUNwithoutGW" Port_OpenVPN_WithoutGW "$Port_OpenVPN_WithoutGW"
+			QuestionGetString NO "$Questions_PortOpenvpnTAPwithoutGW" Port_OpenVPN_TAP_WithoutGW "$Port_OpenVPN_TAP_WithoutGW"
 			while [ ! "$OpenVPN_Proto" = "UDP" ] && [ ! "$OpenVPN_Proto" = "TCP" ]; do
 				QuestionGetString NO "$Questions_ProtoOpenVPN" OpenVPN_Proto UDP
 			done
@@ -323,7 +326,7 @@ if [ "$DisplayServices" == "YES" ]; then
 	# ownCloud
 	if [ "$IsInstalled_ownCloud" != "YES" ]; then
 		echo
-		QuestionGetString NO "$Questions_InstallOwnCloud" ToInstall_ownCloud $Global_NO
+		QuestionGetString NO "$Questions_InstallOwnCloud" ToInstall_ownCloud "$Global_NO"
 		ToInstall_ownCloud="`echo $ToInstall_ownCloud | tr '[:lower:]' '[:upper:]'`"
 
 		if [ "$ToInstall_ownCloud" == "$Global_YES" ]; then
@@ -346,7 +349,7 @@ if [ "$DisplaySecurity" == "YES" ]; then
 	# Logwatch
 	if [ "$IsInstalled_LogWatch" != "YES" ]; then
 		echo
-		QuestionGetString NO "$Questions_InstallLogwatch" ToInstall_LogWatch $Global_NO
+		QuestionGetString NO "$Questions_InstallLogwatch" ToInstall_LogWatch "$Global_NO"
 		ToInstall_LogWatch="`echo $ToInstall_LogWatch | tr '[:lower:]' '[:upper:]'`"
 
 		if [ "$ToInstall_LogWatch" == "$Global_YES" ]; then
@@ -360,7 +363,7 @@ if [ "$DisplaySecurity" == "YES" ]; then
 	# Fail2Ban
 	if [ "$IsInstalled_Fail2Ban" != "YES" ]; then
 		echo
-		QuestionGetString NO "$Questions_InstallFail2Ban" ToInstall_Fail2Ban $Global_YES
+		QuestionGetString NO "$Questions_InstallFail2Ban" ToInstall_Fail2Ban "$Global_YES"
 		ToInstall_Fail2Ban="`echo $ToInstall_Fail2Ban | tr '[:lower:]' '[:upper:]'`"
 
 		if [ "$ToInstall_Fail2Ban" == "$Global_YES" ]; then
@@ -374,7 +377,7 @@ if [ "$DisplaySecurity" == "YES" ]; then
 	# DNScrypt-proxy
 	if [ "$IsInstalled_DNScrypt" != "YES" ]; then
 		echo
-		QuestionGetString NO "$Questions_InstallDNScrypt" ToInstall_DNScrypt $Global_YES
+		QuestionGetString NO "$Questions_InstallDNScrypt" ToInstall_DNScrypt "$Global_YES"
 		ToInstall_DNScrypt="`echo $ToInstall_DNScrypt | tr '[:lower:]' '[:upper:]'`"
 		if [ ! -z $IFPVEKERNEL ] && [ "$ToInstall_DNScrypt" == "$Global_YES" ]; then
 			echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
