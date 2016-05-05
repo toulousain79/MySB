@@ -74,16 +74,13 @@ case "$1" in
 		# lets_encrypt
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'lets_encrypt' "ipv4 = ''" "addresses = 'acme-v01.api.letsencrypt.org'" '-echo'
 		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses,ipv4' "'acme-staging.api.letsencrypt.org', ''" '-echo'
-		# repositories	
+		# repositories
 		Func_SQL_Command 'ALTER' 'MySB_db' 'CHANGE' 'repositories' 'on_boot' "TINYINT( 1 ) NOT NULL DEFAULT '0'" '-echo'
 		Func_SQL_Command 'ALTER' 'MySB_db' 'DROP' 'repositories' 'old_file' '-echo'
 		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'repositories' 'upgrade' "TINYINT( 1 ) NOT NULL DEFAULT '0' AFTER \`version\`" '-echo'
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '0.5.0', file= 'LetsEncrypt_v0.5.0.zip'" "name = 'ownCloud'" '-echo'
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '9.0.1', file= 'owncloud_v9.0.1.zip', upgrade = '1', url = 'https://download.owncloud.org/community/owncloud-9.0.1.zip'" "name = 'ownCloud'" '-echo'
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '1.0.10', file= 'libsodium_v1.0.10.zip', upgrade = '1'" "name = 'Libsodium'" '-echo'
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '1.0.2'" "name = 'Composer'" '-echo'
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "url = 'https://github.com/toulousain79/MySB/raw/v3.4/files/xmlrpc-c_v1.42.0.zip'" "name = 'XMLRPC'" '-echo'
-		Func_SQL_Command 'DELETE' 'MySB_db' 'repositories' "name = 'MiniDLNA Webmin Module'"
+		Func_SQL_Command 'DELETE' 'MySB_db' 'repositories' "1"
+		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/upgrade/repositories_v3.4.sql
+
 		# system
 		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'system' 'quota_default' "INT( 32 ) NOT NULL" '-echo'
 		# users
@@ -99,22 +96,61 @@ case "$1" in
 			rm -f /etc/nginx/proxy/Cakebox-Light.conf
 		fi
 
+		#### SSH
+		cp -v $MySB_InstallDir/templates/etc.ssh.sshd_config.tmpl /etc/ssh/sshd_config
+		perl -pi -e "s/<port_ssh>/$Port_SSH/g" /etc/ssh/sshd_config
+		if [ -f /etc/ssh/sshd_config.orig ]; then
+			rm -vf /etc/ssh/sshd_config.orig
+		fi
+		figlet MySB $MySB_CurrentVersion > /etc/motd
+		echo >> /etc/motd
+		cat /etc/motd
+
 		#### TMPFS
+		ManageServices stop 'nginx php5-fpm mysql'
 		# PHP
+		if [ ! -z "`df -H | grep '/var/lib/php5/sessions'`" ]; then
+			umount /var/lib/php5/sessions &> /dev/null
+		fi
 		sed -i '/PHP TMPFS/d' /etc/fstab
 		sed -i '/\/var\/lib\/php5\/sessions/d' /etc/fstab
 		echo "# PHP TMPFS" >> /etc/fstab
 		echo "tmpfs   /var/lib/php5/sessions tmpfs defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
+		if [ -z "`df -H | grep '/var/lib/mysql/tmpfs'`" ]; then
+			mount /var/lib/php5/sessions &> /dev/null
+		fi
 		# MySQL
+		if [ ! -z "`df -H | grep '/media/MySQL_TempDir'`" ]; then
+			umount /media/MySQL_TempDir &> /dev/null
+		fi
 		sed -i '/MySQL/d' /etc/fstab
 		sed -i '/MySQL_TempDir/d' /etc/fstab
 		echo "# MySQL Temp Directory" >> /etc/fstab
-		echo "tmpfs   /media/MySQL_TempDir      tmpfs   defaults,nosuid,noatime,mode=1777 0 0" >> /etc/fstab
+		echo "tmpfs   /var/lib/mysql/tmpfs      tmpfs   defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
+		if [ ! -d /var/lib/mysql/tmpfs ]; then
+			mkdir -pv /var/lib/mysql/tmpfs
+			chown mysql:mysql /var/lib/mysql/tmpfs
+		fi
+		if [ -z "`df -H | grep '/var/lib/mysql/tmpfs'`" ]; then
+			mount /var/lib/mysql/tmpfs &> /dev/null
+		fi
 		# NginX
+		if [ ! -z "`df -H | grep '/usr/share/nginx/pagespeed'`" ]; then
+			umount /usr/share/nginx/pagespeed &> /dev/null
+		fi
 		sed -i '/PageSpeed/d' /etc/fstab
 		sed -i '/pagespeed/d' /etc/fstab
 		echo "# Nginx PageSpeed" >> /etc/fstab
 		echo "tmpfs   /usr/share/nginx/pagespeed      tmpfs   defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
+		if [ -z "`df -H | grep '/usr/share/nginx/pagespeed'`" ]; then
+			mount /usr/share/nginx/pagespeed &> /dev/null
+		fi
+		ManageServices start 'mysql nginx php5-fpm'
+
+		#### Turning off filesystem access times
+		if [ -z "`cat /etc/fstab | grep 'errors=remount-ro' | grep 'noatime,nodiratime' | grep -v '/boot'`" ]; then
+			perl -pi -e "s/errors=remount-ro/noatime,nodiratime,errors=remount-ro/g" /etc/fstab
+		fi
 	;;
 	"AFTER")
 		####################################
@@ -165,15 +201,6 @@ case "$1" in
 		#### To call for every upgrade - EoF
 		####################################
 
-		#### Quota, add journaled quotas to the interested partition
-		if [ ! -z "`cat /etc/fstab | grep 'noatime,nodiratime,errors=remount-ro'`" ] && [ -z "`cat /etc/fstab | grep 'usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0' | grep -v '/boot'`" ]; then
-			perl -pi -e "s/noatime,nodiratime,errors=remount-ro/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0/g" /etc/fstab
-		fi
-		mount -ov remount /
-		quotaoff -av
-		quotacheck -vagum
-		quotaon -av
-
 		#### Apply quota for current users
 		UsersSpaceUsed=0
 		for seedUser in $UsersList; do
@@ -212,6 +239,7 @@ case "$1" in
 			fi
 		done
 
+		#### Check actuel quota
 		repquota -a
 	;;
 esac

@@ -24,26 +24,18 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+#### Quota, add journaled quotas to the interested partition
+if [ ! -z "`cat /etc/fstab | grep 'noatime,nodiratime,errors=remount-ro'`" ] && [ -z "`cat /etc/fstab | grep 'usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0' | grep -v '/boot'`" ]; then
+	perl -pi -e "s/noatime,nodiratime,errors=remount-ro/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0/g" /etc/fstab
+	sed -i "/\/boot/s/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0/noatime,nodiratime,errors=remount-ro/g" /etc/fstab
+fi
+mount -ov remount /
+
 #### Install packages
-MySB_Install_Packages="`grep -rni 'TOOLS=' $MySB_InstallDir/install/MySB_Install.bsh | cut -d '"' -f 2`"
-PackagesManage install "$MySB_Install_Packages sudo subversion htop build-essential automake libtool manpages-fr pkg-config curl unzip zip iperf csvtool whois vim nano ntpdate ntp update-notifier-common debian-goodies bridge-utils libxml2-dev libsigc++-2.0-dev libncurses5-dev libxmlrpc-c3-dev libcppunit-dev gnupg-curl python debianutils coreutils mailutils bc tcpdump bash-completion libcurl4-openssl-dev expect rsyslog lftp cksfv"
+PackagesManage install "quota quotatool"
 
-if ! CheckCommand 0 rar; then
-	PackagesManage install "rar"
-	if [ $? -gt 0 ]; then
-		PackagesManage install "rar-free"
-	fi
-fi
-
-if ! CheckCommand 0 unrar; then
-	PackagesManage install "unrar"
-	if [ $? -gt 0 ]; then
-		PackagesManage install "unrar-free"
-	fi
-fi
-
-#### Purge packages
-PackagesManage purge "heirloom-mailx"
+#### Check actuel quota
+repquota -a
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after

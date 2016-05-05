@@ -25,6 +25,13 @@
 			- Libsodium v1.0.10
 			- NodeJS v0.12.13
 			- Composer v1.0.2
+			- ruTorrent Plugins
+				* NFO v3.6 (AceP1983)
+				* Check SFV v3.6 (AceP1983)
+				* Disk Log v3.6 (AceP1983)
+				* Speed Graph v3.6 (AceP1983)
+				* Show IP v3.6 (AceP1983)
+				* Fileshare v1.0 (nelu)
 
 	Version v3.3
 		2016/03/03
