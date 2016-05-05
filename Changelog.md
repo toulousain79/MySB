@@ -17,14 +17,15 @@
 				* Tested with Opera 36 + HTML 5 Web Player + MP4
 				* Tested with Opera 36 + VLC Web Player + MP4,AVI,MKV
 			- ownCloud v9.0.1
+			- Libsodium v1.0.10
+			- NodeJS v0.12.13
+			- Composer v1.1.0-RC
+			- Plowshare v2.1.4
 			- Portal
 				* Wolf CMS v0.8.3.1
 				* Noty v2.3.8
 				* Modernizr v2.8.3
 				* jQuery v1.12.2
-			- Libsodium v1.0.10
-			- NodeJS v0.12.13
-			- Composer v1.0.2
 			- ruTorrent Plugins
 				* NFO v3.6 (AceP1983)
 				* Check SFV v3.6 (AceP1983)
