@@ -9,18 +9,20 @@
 			- Detect real IP address during installation
 			- PlexMediaServer, new APT Key
 			- Cakebox-Light, bug fix of playback _(Cakebox not streaming #12)_
+				* Disable DivX Web Player (HTTPS not supported)
 				* Tested with Firefox 45 (32 & 64 bits) + HTML 5 Web Player + MP4
 				* Tested with Firefox 45 (32bits) + VLC Web Player + MP4,AVI,MKV
 				* Tested with Chrome 49 + HTML 5 Web Player + MP4
 				* Tested with IE 11 + HTML 5 Web Player + MP4
-				* Tested with IE 11 + DivX Web Player + MP4
 				* Tested with Opera 36 + HTML 5 Web Player + MP4
 				* Tested with Opera 36 + VLC Web Player + MP4,AVI,MKV
-			- ownCloud v9.0.1
+			- ownCloud v9.0.2
+			- ownCloud v1.8.6
 			- Libsodium v1.0.10
 			- NodeJS v0.12.13
 			- Composer v1.1.0-RC
 			- Plowshare v2.1.4
+			- XMLRPC-C Stable v1.4.3
 			- Portal
 				* Wolf CMS v0.8.3.1
 				* Noty v2.3.8

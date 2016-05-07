@@ -42,15 +42,26 @@ echo "Version : "$XmlrpcVersion
 echo "File : "$XmlrpcFile
 echo "URL : "$XmlrpcUrl
 echo
-if [ ! -f $MySB_InstallDir/files/$XmlrpcFile ]; then
-	wget --no-check-certificate $XmlrpcUrl -O $MySB_InstallDir/files/$XmlrpcFile
-fi
-if [ ! -d $XmlrpcDir ] && [ -f $MySB_InstallDir/files/$XmlrpcFile ]; then
-	unzip $MySB_InstallDir/files/$XmlrpcFile -d $MySB_InstallDir/temp/
-	SubDir="`unzip -l $MySB_InstallDir/files/$XmlrpcFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-	if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-		mv -v $MySB_InstallDir/temp/$SubDir $XmlrpcDir
-		chown -R root:root $XmlrpcDir
+if [ -d $XmlrpcDir ]; then
+	svn up $XmlrpcDir
+	if [ $? -gt 0 ]; then
+		svn switch $XmlrpcUrl $XmlrpcDir
+	fi
+else
+	if [ -f $MySB_InstallDir/files/$XmlrpcFile ]; then
+		unzip $MySB_InstallDir/files/$XmlrpcFile -d $MySB_InstallDir/temp/
+		SubDir="`unzip -l $MySB_InstallDir/files/$XmlrpcFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
+			mv -v $MySB_InstallDir/temp/$SubDir $XmlrpcDir
+		fi
+		if [ -d $XmlrpcDir/.svn ]; then
+			svn up $XmlrpcDir
+			if [ $? -gt 0 ]; then
+				svn switch $XmlrpcUrl $XmlrpcDir
+			fi
+		fi
+	else
+		svn co $XmlrpcUrl $XmlrpcDir
 	fi
 fi
 cd $XmlrpcDir/

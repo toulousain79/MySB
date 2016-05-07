@@ -51,23 +51,37 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	# LIBsodium
 	LibsodiumDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'Libsodium'"`"
 	LibsodiumUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Libsodium'"`"
-
+	LibsodiumFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Libsodium'"`"
+	LibsodiumVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'Libsodium'"`"	
+	echo
+	echo "########## LibSodium"
+	echo "Directory : "$LibsodiumDir
+	echo "Version : "$LibsodiumVersion
+	echo "File : "$LibsodiumFile
+	echo "URL : "$LibsodiumUrl
+	echo
 	if [ -d $LibsodiumDir ]; then
 		cd $LibsodiumDir/
 		git stash
 		git pull
+		git stash clear
 		make clean
 	else
-		LibsodiumFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Libsodium'"`"
-		LibsodiumVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'Libsodium'"`"
-		echo
-		echo "########## Libsodium"
-		echo "Directory : "$LibsodiumDir
-		echo "Version : "$LibsodiumVersion
-		echo "File : "$LibsodiumFile
-		echo "URL : "$LibsodiumUrl
-		echo
-		git clone $LibsodiumUrl $LibsodiumDir
+		if [ -f $MySB_InstallDir/files/$LibsodiumFile ]; then
+			unzip $MySB_InstallDir/files/$LibsodiumFile -d $MySB_InstallDir/temp/
+			SubDir="`unzip -l $MySB_InstallDir/files/$LibsodiumFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
+				mv -v $MySB_InstallDir/temp/$SubDir $LibsodiumDir
+			fi
+			if [ -d $LibsodiumDir ]; then
+				cd $LibsodiumDir/
+				git stash
+				git pull
+				git stash clear
+			fi
+		else
+			git clone $LibsodiumUrl $LibsodiumDir
+		fi
 	fi
 
 	cd $LibsodiumDir/

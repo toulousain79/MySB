@@ -26,24 +26,42 @@ source $(dirname $0)/../inc/includes_before
 
 #### VARs
 Switch="$1"
-LetsEncryptDir="/usr/local/src/letsencrypt"
-LetsEncryptTempDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'Lets Encrypt'"`"
-LetsEncryptUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Lets Encrypt'"`"
-LetsEncryptFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Lets Encrypt'"`"
 
 #### INSTALL
 PackagesManage install "augeas-lenses libaugeas0" "backports"
 PackagesManage install "dialog libexpat1-dev libffi-dev python-dev python-pkg-resources python-setuptools python-virtualenv python2.7-dev" "backports"
 
+# Let's Encrypt
+LetsEncryptDir="/usr/local/src/letsencrypt"
+LetsEncryptTempDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'Lets Encrypt'"`"
+LetsEncryptUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Lets Encrypt'"`"
+LetsEncryptFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Lets Encrypt'"`"
+LetsEncryptVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'Lets Encrypt'"`"
+echo
+echo "########## Let's Encryp"
+echo "Directory : "$LetsEncryptDir
+echo "Version : "$LetsEncryptVersion
+echo "File : "$LetsEncryptFile
+echo "URL : "$LetsEncryptUrl
+echo
 if [ -d $LetsEncryptDir ]; then
 	cd $LetsEncryptDir/
 	git stash
 	git pull
+	git stash clear
 else
-	if [ -d $LetsEncryptTempDir ]; then
-		cd $LetsEncryptTempDir/
-		git stash
-		git pull
+	if [ -f $MySB_InstallDir/files/$LetsEncryptFile ]; then
+		unzip $MySB_InstallDir/files/$LetsEncryptFile -d $MySB_InstallDir/temp/
+		SubDir="`unzip -l $MySB_InstallDir/files/$LetsEncryptFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
+			mv -v $MySB_InstallDir/temp/$SubDir $LetsEncryptTempDir
+		fi
+		if [ -d $LetsEncryptTempDir ]; then
+			cd $LetsEncryptTempDir/
+			git stash
+			git pull
+			git stash clear
+		fi
 	else
 		git clone $LetsEncryptUrl $LetsEncryptDir
 	fi

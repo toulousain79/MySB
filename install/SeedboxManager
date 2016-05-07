@@ -41,22 +41,44 @@ if [ "$USAGE" == "ON" ]; then
 fi
 
 if [ "$ToInstall_Manager" == "YES" ]; then
-	ManagerUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Seedbox-Manager'"`"
-	ManagerFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Seedbox-Manager'"`"
-
 	cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.locations.seedbox-manager.conf.tmpl /etc/nginx/locations/Seedbox-Manager.conf
 	ManagerDirEscaped="`echo $ManagerDir | sed s,/,\\\\\\\\\\/,g`"
 	perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/locations/Seedbox-Manager.conf
 	perl -pi -e "s/<manager_rootdir>/$ManagerDirEscaped/g" /etc/nginx/locations/Seedbox-Manager.conf
 	chmod 0644 /etc/nginx/locations/Seedbox-Manager.conf
 
-	## app
+	#### app
+	ManagerUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Seedbox-Manager'"`"
+	ManagerFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Seedbox-Manager'"`"
+	ManagerVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Seedbox-Manager'"`"	
+	echo
+	echo "########## Seedbox-Manager"
+	echo "Directory : "$ManagerDir
+	echo "Version : "$ManagerVersion
+	echo "File : "$ManagerFile
+	echo "URL : "$ManagerUrl
+	echo
 	if [ -d $ManagerDir ]; then
 		cd $ManagerDir/
 		git stash
 		git pull
+		git stash clear
 	else
-		git clone $ManagerUrl $ManagerDir
+		if [ -f $MySB_InstallDir/files/$ManagerFile ]; then
+			unzip $MySB_InstallDir/files/$ManagerFile -d $MySB_InstallDir/temp/
+			SubDir="`unzip -l $MySB_InstallDir/files/$ManagerFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
+				mv -v $MySB_InstallDir/temp/$SubDir $ManagerDir
+			fi
+			if [ -d $ManagerDir ]; then
+				cd $ManagerDir/
+				git stash
+				git pull
+				git stash clear
+			fi
+		else
+			git clone $ManagerUrl $ManagerDir
+		fi
 	fi
 
 	if [ -f $ManagerDir/source-reboot-rtorrent/kill_rtorrent.c ]; then
@@ -154,15 +176,39 @@ EOF
 	chmod +x install.sh
 	./install.sh
 
-	# seedbox-manager ruTorrent Plugin
+	#### ruTorrent Plugin Link Manager
 	PluginManagerDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ruTorrent Plugin Link Manager'"`"
 	PluginManagerUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'ruTorrent Plugin Link Manager'"`"
+	PluginManagerFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'ruTorrent Plugin Link Manager'"`"	
+	PluginManagerVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'ruTorrent Plugin Link Manager'"`"	
+	echo
+	echo "########## LibSodium"
+	echo "Directory : "$PluginManagerDir
+	echo "Version : "$PluginManagerVersion
+	echo "File : "$PluginManagerFile
+	echo "URL : "$PluginManagerUrl
+	echo	
 	if [ -d $PluginManagerDir ]; then
 		cd $PluginManagerDir
 		git stash
 		git pull
+		git stash clear
 	else
-		git clone $PluginManagerUrl $PluginManagerDir
+		if [ -f $MySB_InstallDir/files/$PluginManagerFile ]; then
+			unzip $MySB_InstallDir/files/$PluginManagerFile -d $MySB_InstallDir/temp/
+			SubDir="`unzip -l $MySB_InstallDir/files/$PluginManagerFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
+				mv -v $MySB_InstallDir/temp/$SubDir $PluginManagerDir
+			fi
+			if [ -d $PluginManagerDir ]; then
+				cd $PluginManagerDir/
+				git stash
+				git pull
+				git stash clear
+			fi
+		else
+			git clone $PluginManagerUrl $PluginManagerDir
+		fi
 	fi
 	sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$HostNameFQDN:$Port_HTTPS\/sm\//g;" $PluginManagerDir/conf.php
 

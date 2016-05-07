@@ -39,26 +39,80 @@ fi
 if [ "$ToInstall_Cakebox" == "YES" ]; then
 	#### app
 	CakeboxUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Cakebox-Light'"`"
+	CakeboxFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Cakebox-Light'"`"
+	CakeboxVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'Cakebox-Light'"`"
+	echo
+	echo "########## Cakebox-Light"
+	echo "Directory : "$CakeboxDir
+	echo "Version : "$CakeboxVersion
+	echo "File : "$CakeboxFile
+	echo "URL : "$CakeboxUrl
+	echo
 	if [ -d $CakeboxDir ]; then
 		cd $CakeboxDir/
-		git stash
-		git pull
+		git fetch --tags
+		git checkout $(git describe --tags $(git rev-list --tags --max-count=1))
+		composer self-update
+		composer update
+		bower update --allow-root --config.interactive=false
 	else
-		git clone $CakeboxUrl $CakeboxDir
+		if [ -f $MySB_InstallDir/files/$CakeboxFile ]; then
+			unzip $MySB_InstallDir/files/$CakeboxFile -d $MySB_InstallDir/temp/
+			SubDir="`unzip -l $MySB_InstallDir/files/$CakeboxFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
+				mv -v $MySB_InstallDir/temp/$SubDir $CakeboxDir
+			fi
+			if [ -d $CakeboxDir ]; then
+				cd $CakeboxDir/
+				git fetch --tags
+				git checkout $(git describe --tags $(git rev-list --tags --max-count=1))
+				composer self-update
+				composer update
+				bower update --allow-root --config.interactive=false
+			fi
+		else
+			git clone $CakeboxUrl $CakeboxDir
+			cd $CakeboxDir
+			LASTEST=$(git describe --abbrev=0)
+			git checkout tags/$LASTEST
+			composer install
+			bower update --allow-root --config.interactive=false
+		fi
 	fi
-	cd $CakeboxDir
-	composer install
-	bower update --allow-root --config.interactive=false	
-	
-	#### Plugin ruTorrent
+
+	#### ruTorrent Plugin Link Cakebox
 	PluginCakeboxDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ruTorrent Plugin Link Cakebox'"`"
-	PluginCakeboxUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'ruTorrent Plugin Link Cakebox'"`"	
+	PluginCakeboxUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'ruTorrent Plugin Link Cakebox'"`"
+	PluginCakeboxVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'ruTorrent Plugin Link Cakebox'"`"
+	PluginCakeboxFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'ruTorrent Plugin Link Cakebox'"`"
+	echo
+	echo "########## ruTorrent Plugin Link Cakebox"
+	echo "Directory : "$PluginCakeboxDir
+	echo "Version : "$PluginCakeboxVersion
+	echo "File : "$PluginCakeboxFile
+	echo "URL : "$PluginCakeboxUrl
+	echo	
 	if [ -d $PluginCakeboxDir ]; then
 		cd $PluginCakeboxDir
 		git stash
 		git pull
+		git stash clear
 	else
-		git clone $PluginCakeboxUrl $PluginCakeboxDir
+		if [ -f $MySB_InstallDir/files/$PluginCakeboxFile ]; then
+			unzip $MySB_InstallDir/files/$PluginCakeboxFile -d $MySB_InstallDir/temp/
+			SubDir="`unzip -l $MySB_InstallDir/files/$PluginCakeboxFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
+				mv -v $MySB_InstallDir/temp/$SubDir $PluginCakeboxDir
+			fi
+			if [ -d $PluginCakeboxDir ]; then
+				cd $PluginCakeboxDir/
+				git stash
+				git pull
+				git stash clear
+			fi
+		else
+			git clone $PluginCakeboxUrl $PluginCakeboxDir
+		fi
 	fi
 	chown -R www-data:www-data $PluginCakeboxDir
 	sed -i "s/'http:\/\/'.\$host;/'http:\/\/$HostNameFQDN:$Port_Cakebox\/cb\/';/g;" $PluginCakeboxDir/conf.php
@@ -68,14 +122,20 @@ if [ "$ToInstall_Cakebox" == "YES" ]; then
 	CakeboxDirEscaped=`echo $CakeboxDir | sed s,/,\\\\\\\\\\/,g`
 	if [ -h /etc/nginx/sites-enabled/cakebox ]; then rm -vf /etc/nginx/sites-enabled/cakebox; fi
 	cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.site-enabled.cakebox.tmpl /etc/nginx/sites-available/cakebox
-	perl -pi -e "s/<port_cakebox>/$Port_Cakebox/g" /etc/nginx/sites-available/cakebox
 	perl -pi -e "s/<server_name>/$HostNameFQDN/g" /etc/nginx/sites-available/cakebox
 	perl -pi -e "s/<cakebox_rootdir>/$CakeboxDirEscaped/g" /etc/nginx/sites-available/cakebox
+	cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.locations.cakebox.conf.tmpl /etc/nginx/locations/Cakebox-Light.conf
+	if [ ! -h /etc/nginx/sites-enabled/cakebox ]; then ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox; fi
+	perl -pi -e "s/<cakebox_rootdir>/$CakeboxDirEscaped/g" /etc/nginx/locations/Cakebox-Light.conf
+	chmod 0644 /etc/nginx/locations/Cakebox-Light.conf
+
+	# Create proxy file
+	cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.proxy.Cakebox-Light.conf.tmpl /etc/nginx/proxy/Cakebox-Light.conf	
 
 	ListingUsers
 	for seedUser in $UsersList; do
 		cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.rpc.user.cakebox.tmpl /etc/nginx/rpc/$seedUser.cakebox
-		perl -pi -e "s/<username>/$seedUser/g" /etc/nginx/rpc/$seedUser.cakebox	
+		perl -pi -e "s/<username>/$seedUser/g" /etc/nginx/rpc/$seedUser.cakebox
 	done
 
 	#### Delete unused files and directories
@@ -92,6 +152,12 @@ if [ "$ToInstall_Cakebox" == "YES" ]; then
 		NumLign=$(sed -n "/$location.host()/=" $CakeboxDir/public/app/controller/AppCtrl.js)
 		sed -i "$NumLign"d"" $CakeboxDir/public/app/controller/AppCtrl.js
 		sed -i ""$NumLign"i\            return \$location.protocol() + \"://\" + \$location.host() + \":$Port_Cakebox\" + data.access;" $CakeboxDir/public/app/controller/AppCtrl.js
+	fi
+	if [ -f $CakeboxDir/app/controllers/player.php ]; then
+		NumLign=$(sed -n "/VLC Web Player/=" $CakeboxDir/app/controllers/player.php)
+		sed -i "$NumLign"d"" $CakeboxDir/app/controllers/player.php
+		perl -pi -e "s/divx/vlc/g" $CakeboxDir/app/controllers/player.php
+		perl -pi -e "s/DivX Web Player/VLC Web Player/g" $CakeboxDir/app/controllers/player.php
 	fi
 
 	#### Create directories & change rights
