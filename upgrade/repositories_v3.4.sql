@@ -34,4 +34,4 @@ INSERT INTO `repositories` (`id_repositories`, `type`, `dir`, `name`, `version`,
 (33, 'GIT', '/web/loadavg', 'LoadAvg', '2.2', 'loadavg_v2.2.zip', '0', 'https://github.com/loadavg/loadavg.git', 1),
 (34, 'ZIP', '/web/owncloud', 'ownCloud', '9.0.2', 'owncloud_v9.0.2.zip', '1', 'https://download.owncloud.org/community/owncloud-9.0.2.zip', 1),
 (35, 'GIT', '/sources/letsencrypt', 'Lets Encrypt', '0.5.0', 'LetsEncrypt_v0.5.0.zip', '0', 'https://github.com/letsencrypt/letsencrypt', 1),
-(36, 'TARGZ', '/sources/rkhunter', 'RKHunter', '1.4.2', 'rkhunter_v1.4.2.tar.gz', '0', 'http://downloads.sourceforge.net/project/rkhunter/rkhunter/1.4.2/rkhunter-1.4.2.tar.gz?r=&ts=1456674223&use_mirror=freefr', 1),
+(36, 'TARGZ', '/sources/rkhunter', 'RKHunter', '1.4.2', 'rkhunter_v1.4.2.tar.gz', '0', 'http://downloads.sourceforge.net/project/rkhunter/rkhunter/1.4.2/rkhunter-1.4.2.tar.gz?r=&ts=1456674223&use_mirror=freefr', 1);
