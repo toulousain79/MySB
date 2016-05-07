@@ -19,7 +19,7 @@
 			- ownCloud v9.0.2
 			- ownCloud v1.8.6
 			- Libsodium v1.0.10
-			- NodeJS v0.12.13
+			- NodeJS v0.12.14
 			- Composer v1.1.0-RC
 			- Plowshare v2.1.4
 			- XMLRPC-C Stable v1.4.3
