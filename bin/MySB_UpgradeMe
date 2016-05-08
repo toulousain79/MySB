@@ -103,12 +103,19 @@ if [ "$Continue" == "1" ]; then
 	CleanBeforeUpgrade
 
 	# MySQL databases DUMP
-	if [ -d /var/lib/mysql/MySB_db/ ]; then
-		mysqldump --defaults-extra-file=/root/.config.cnf MySB_db > $MySB_InstallDir/db/MySQL_MySB_$DateTime-$MySB_CurrentVersion.dump.sql
-	fi
-	if [ -d /var/lib/mysql/ownCloud_db/ ]; then
-		mysqldump --defaults-extra-file=/root/.config.cnf ownCloud_db > $MySB_InstallDir/db/MySQL_ownCloud_$DateTime-$MySB_CurrentVersion.dump.sql
-	fi
+	DbList="`ls -1AFh /var/lib/mysql/`"
+	for Database in $DbList; do
+		if [ -d /var/lib/mysql/$Database/ ]; then
+			case "$Database" in
+				'mysql/'|'performance_schema/')
+					break
+				;;
+				*)
+					mysqldump --defaults-extra-file=/root/.config.cnf MySB_db > $MySB_InstallDir/db/MySQL_$Database-$DateTime-$MySB_CurrentVersion.dump.sql
+				;;
+			esac
+		fi
+	done
 
 	# Creating backup directory if doesn't exist
 	if [ ! -d /opt/MySB_backup ]; then
