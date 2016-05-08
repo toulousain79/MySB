@@ -134,7 +134,7 @@ INSERT INTO `services` (`id_services`, `serv_name`, `bin`, `port_tcp1`, `port_tc
 (20, 'BIND', '', '', '', '', '', '', ' ', ' ', ' ', 1, 0),
 (21, 'Stunnel', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0),
 (22, 'rTorrent v0.9.2', '/usr/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0),
-(23, 'rTorrent v0.9.4', '/usr/local/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0),
+(23, 'rTorrent v0.9.6', '/usr/local/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0),
 (24, 'ownCloud', '', '', '', '', '', '', '', '', '', 0, 0),
 (25, 'Lets Encrypt', '', '443', '', '', '', '', '', '', '', 1, 0);
 
@@ -142,7 +142,7 @@ INSERT INTO `smtp` (`id_smtp`, `smtp_provider`, `smtp_username`, `smtp_passwd`, 
 (1, '', '', '', '', '', '');
 
 INSERT INTO `system` (`id_system`, `mysb_version`, `mysb_user`, `mysb_password`, `hostname`, `ipv4`, `primary_inet`, `timezone`, `cert_password`, `apt_update`, `apt_date`, `server_provider`, `ip_restriction`, `pgl_email_stats`, `pgl_watchdog_email`, `dnscrypt`) VALUES
-(1, '', '', '', '', '', '', '', '', 0, '0000-00-00 00:00:00', '', 1, 0, 0, 1);
+(1, '', '', '', '', '', '', '', '', 0, 'NOW()', '', 1, 0, 0, 1);
 
 INSERT INTO `vars` (`id_vars`, `fail2ban_whitelist`, `vpn_ip`, `white_tcp_port_out`, `white_udp_port_out`) VALUES
 (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24,10.0.2.0/24', '80 443', '');

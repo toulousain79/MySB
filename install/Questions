@@ -38,6 +38,7 @@ case "$TYPE" in
 		ServerProvider=""
 		SMTP_Provider=""
 		Port_HTTPS="8888"
+		RepeatSurvey=NO
 	;;
 	"UPGRADE")
 		DisplayInfo=NO
@@ -66,7 +67,7 @@ case "$TYPE" in
 	;;
 esac
 
-Survey() {
+DisplaySurvey() {
 	#### Advertising
 	if [ "$DisplayInfo" == "YES" ]; then
 		echo
@@ -86,35 +87,53 @@ Survey() {
 
 		# Main User name
 		echo
-		while [ "`echo $MainUser | grep '@'`" != "" ] || [ -z "$MainUser" ]; do
-			QuestionGetString NO "$Questions_MainUserUsername" MainUser
+		if [ "$RepeatSurvey" == "YES" ]; then
+			Value="$MainUser"
+		else
+			Value=""
+		fi
+		MainUser=""
+		while [ ! -z "`echo $MainUser | grep '@'`" ] || [ -z "$MainUser" ]; do
+			QuestionGetString NO "$Questions_MainUserUsername" MainUser "$Value"
 		done
 
 		# Main User password
 		echo
+		if [ "$RepeatSurvey" == "YES" ]; then
+			Value="$MainUserPassword"
+		else
+			Value=""
+		fi
+		MainUserPassword=""
 		if [ -z "$MainUserPassword" ] || [ "$TYPE" == "UPGRADE" ]; then
-			QuestionGetString YES "$Questions_MainUserPassword" MainUserPassword
+			QuestionGetString YES "$Questions_MainUserPassword" MainUserPassword "$Value"
 		fi
 
 		# SMTP ?
 		echo
-		echo -e "$Questions_Message_SMTP_0"
-		while [ -z "$SMTP_Provider" ]; do
-			QuestionGetString NO "$Questions_SMTP" SMTP_Provider 'LOCAL'
+		if [ -z "$SMTP_Provider" ] || [ "$RepeatSurvey" == "YES" ]; then
+			echo -e "$Questions_Message_SMTP_0"
+			local Loop_SMTP_Provider=1
+		fi
+		if [ "$RepeatSurvey" == "YES" ]; then
+			Value="$SMTP_Provider"
+		else
+			Value="LOCAL"
+		fi
+
+		while [ $Loop_SMTP_Provider -eq 1 ]; do
+			QuestionGetString NO "$Questions_SMTP" SMTP_Provider "$Value"
 			SMTP_Provider="`echo $SMTP_Provider | tr '[:lower:]' '[:upper:]'`"
 			case "$SMTP_Provider" in
 				'LOCAL'|'FREE'|'OVH'|'GMAIL'|'YAHOO'|'ZOHO')
-					continue
-				;;
-				*)
-					SMTP_Provider=""
+					Loop_SMTP_Provider=0
 				;;
 			esac
 		done
 
 		if [ "$SMTP_Provider" != "LOCAL" ]; then
-			QuestionGetString NO "$Questions_SMTP_Username" SMTP_Username
-			QuestionGetString YES "$Questions_SMTP_Password" SMTP_Password
+			QuestionGetString NO "$Questions_SMTP_Username" SMTP_Username "$SMTP_Username"
+			QuestionGetString YES "$Questions_SMTP_Password" SMTP_Password "$SMTP_Password"
 		fi
 
 		# User e-mail
@@ -122,8 +141,14 @@ Survey() {
 			echo
 			echo -e "$Questions_Message_SMTP_1"
 		fi
-		while [ ! "`ValidateMail $MainUserEmail`" = "1" ] || [ -z "$MainUserEmail" ]; do
-			QuestionGetString NO "$Questions_EmailAddress" MainUserEmail
+		if [ "$RepeatSurvey" == "YES" ]; then
+			Value="$MainUserEmail"
+		else
+			Value=""
+		fi
+		MainUserEmail=""
+		while [ "`ValidateMail $MainUserEmail`" != "1" ] || [ -z "$MainUserEmail" ]; do
+			QuestionGetString NO "$Questions_EmailAddress" MainUserEmail "$Value"
 		done
 	fi
 
@@ -144,9 +169,15 @@ Survey() {
 
 		# Box' IP
 		echo
+		if [ "$RepeatSurvey" == "YES" ]; then
+			Value="$SrvIpAddress"
+		else
+			Value=""
+		fi
+		SrvIpAddress=""
 		while [ ! "$CHECK_SrvIpAddress" = "$SrvIpAddress" ] || [ -z "$SrvIpAddress" ]; do
-			QuestionGetString NO "$Questions_BoxIpAddress" SrvIpAddress "$SrvIpAddress"
-			CHECK_SrvIpAddress="`ValidateIP "$SrvIpAddress"`"
+			QuestionGetString NO "$Questions_BoxIpAddress" SrvIpAddress "$Value"
+			local CHECK_SrvIpAddress="`ValidateIP "$SrvIpAddress"`"
 		done
 
 		# Box' hostname
@@ -175,22 +206,21 @@ Survey() {
 
 		#Provider
 		echo
-		if [ -z "$ServerProvider" ] || [ "$ServerProvider" == "$Global_None" ]; then
-			if [ -z "$ServerProvider" ]; then
-				ServerProvider="$Global_None"
-			fi
+		if [ -z "$ServerProvider" ] || [ "$RepeatSurvey" == "YES" ]; then
 			echo -e "$Questions_Message_ServerProvider"
+			local Loop_ServerProvider=1
 		fi
-
-		while [ -z "$ServerProvider" ] || [ "$ServerProvider" == "$Global_None" ]; do
-			QuestionGetString NO "$Questions_ServerProvider" ServerProvider "$ServerProvider"
+		if [ "$RepeatSurvey" == "YES" ]; then
+			Value="$ServerProvider"
+		else
+			Value="$Global_None"
+		fi
+		while [ $Loop_ServerProvider -eq 1 ]; do
+			QuestionGetString NO "$Questions_ServerProvider" ServerProvider "$Value"
 			ServerProvider="`echo $ServerProvider | tr '[:lower:]' '[:upper:]'`"
 			case "$ServerProvider" in
 				"$Global_None"|'OVH'|'ONLINE'|'DIGICUBE')
-					continue
-				;;
-				*)
-					ServerProvider=""
+					Loop_ServerProvider=0
 				;;
 			esac
 		done
@@ -198,9 +228,20 @@ Survey() {
 		# Seedbox-Manager
 		if [ "$IsInstalled_Manager" != "YES" ]; then
 			echo
-			while [ ! "$ToInstall_Manager" = "$Global_YES" ] || [ ! "$ToInstall_Manager" = "$Global_NO" ]; do
-				QuestionGetString NO "$Questions_InstallSeedboxManager" ToInstall_Manager "$Global_NO"
+			local Loop_IsInstalled_Manager=1
+			if [ "$RepeatSurvey" == "YES" ]; then
+				Value="$ToInstall_Manager"
+			else
+				Value="$Global_NO"
+			fi
+			while [ $Loop_IsInstalled_Manager -eq 1 ]; do
+				QuestionGetString NO "$Questions_InstallSeedboxManager" ToInstall_Manager "$Value"
 				ToInstall_Manager="`echo $ToInstall_Manager | tr '[:lower:]' '[:upper:]'`"
+				case "$ToInstall_Manager" in
+					"$Global_NO"|"$Global_YES")
+						Loop_IsInstalled_Manager=0
+					;;
+				esac
 			done
 
 			if [ "$ToInstall_Manager" == "$Global_YES" ]; then
@@ -216,9 +257,20 @@ Survey() {
 		# Cakebox Light
 		if [ "$IsInstalled_Cakebox" != "YES" ]; then
 			echo
-			while [ ! "$ToInstall_Cakebox" = "$Global_YES" ] || [ ! "$ToInstall_Cakebox" = "$Global_NO" ]; do
-				QuestionGetString NO "$Questions_InstallCakeBox" ToInstall_Cakebox "$Global_NO"
+			local Loop_IsInstalled_Cakebox=1
+			if [ "$RepeatSurvey" == "YES" ]; then
+				Value="$ToInstall_Cakebox"
+			else
+				Value="$Global_NO"
+			fi
+			while [ $Loop_IsInstalled_Cakebox -eq 1 ]; do
+				QuestionGetString NO "$Questions_InstallCakeBox" ToInstall_Cakebox "$Value"
 				ToInstall_Cakebox="`echo $ToInstall_Cakebox | tr '[:lower:]' '[:upper:]'`"
+				case "$ToInstall_Cakebox" in
+					"$Global_NO"|"$Global_YES")
+						Loop_IsInstalled_Cakebox=0
+					;;
+				esac
 			done
 
 			if [ "$ToInstall_Cakebox" == "$Global_YES" ]; then
@@ -234,9 +286,21 @@ Survey() {
 		# Plexmedia server
 		if [ "$IsInstalled_PlexMedia" != "YES" ]; then
 			echo
-			while [ ! "$ToInstall_PlexMedia" = "$Global_YES" ] || [ ! "$ToInstall_PlexMedia" = "$Global_NO" ]; do
-				QuestionGetString NO "$Questions_InstallPlexMedia" ToInstall_PlexMedia "$Global_NO"
+			local Loop_ToInstall_PlexMedia=1
+			local Loop_IsInstalled_Cakebox=1
+			if [ "$RepeatSurvey" == "YES" ]; then
+				Value="$ToInstall_PlexMedia"
+			else
+				Value="$Global_NO"
+			fi
+			while [ $Loop_ToInstall_PlexMedia -eq 1 ]; do
+				QuestionGetString NO "$Questions_InstallPlexMedia" ToInstall_PlexMedia "$Value"
 				ToInstall_PlexMedia="`echo $ToInstall_PlexMedia | tr '[:lower:]' '[:upper:]'`"
+				case "$ToInstall_PlexMedia" in
+					"$Global_NO"|"$Global_YES")
+						Loop_ToInstall_PlexMedia=0
+					;;
+				esac
 			done
 
 			if [ "$ToInstall_PlexMedia" == "$Global_YES" ]; then
@@ -250,10 +314,22 @@ Survey() {
 		# Webmin
 		if [ "$IsInstalled_Webmin" != "YES" ]; then
 			echo
-			while [ ! "$ToInstall_Webmin" = "$Global_YES" ] || [ ! "$ToInstall_Webmin" = "$Global_NO" ]; do
-				QuestionGetString NO "$Questions_InstallWebmin" ToInstall_Webmin "$Global_NO"
+			local Loop_ToInstall_Webmin=1
+			if [ "$RepeatSurvey" == "YES" ]; then
+				Value="$ToInstall_Webmin"
+			else
+				Value="$Global_NO"
+			fi
+			while [ $Loop_ToInstall_Webmin -eq 1 ]; do
+				QuestionGetString NO "$Questions_InstallWebmin" ToInstall_Webmin "$Value"
 				ToInstall_Webmin="`echo $ToInstall_Webmin | tr '[:lower:]' '[:upper:]'`"
+				case "$ToInstall_Webmin" in
+					"$Global_NO"|"$Global_YES")
+						Loop_ToInstall_Webmin=0
+					;;
+				esac
 			done
+
 			if [ "$ToInstall_Webmin" == "$Global_YES" ]; then
 				QuestionGetString NO "$Questions_PortWebmin" Ports_Webmin "$Ports_Webmin"
 			fi
@@ -269,11 +345,24 @@ Survey() {
 		# OpenVPN
 		if [ "$IsInstalled_OpenVPN" != "YES" ]; then
 			echo
-			while [ ! "$ToInstall_OpenVPN" = "$Global_YES" ] || [ ! "$ToInstall_OpenVPN" = "$Global_NO" ]; do
-				QuestionGetString NO "$Questions_InstallOpenVPN" ToInstall_OpenVPN "$Global_NO"
+			local Loop_ToInstall_OpenVPN=1
+			if [ "$RepeatSurvey" == "YES" ]; then
+				Value="$ToInstall_OpenVPN"
+			else
+				Value="$Global_NO"
+			fi
+			while [ $Loop_ToInstall_OpenVPN -eq 1 ]; do
+				QuestionGetString NO "$Questions_InstallOpenVPN" ToInstall_OpenVPN "$Value"
 				ToInstall_OpenVPN="`echo $ToInstall_OpenVPN | tr '[:lower:]' '[:upper:]'`"
+				case "$ToInstall_OpenVPN" in
+					"$Global_NO"|"$Global_YES")
+						Loop_ToInstall_OpenVPN=0
+					;;
+				esac
 			done
+
 			if [ "$ToInstall_OpenVPN" == "$Global_YES" ]; then
+				to_install=1
 				OpenVPN_Proto=""
 				QuestionGetString NO "$Questions_PortOpenvpnTUNwithGW" Port_OpenVPN_WithGW "$Port_OpenVPN_WithGW"
 				QuestionGetString NO "$Questions_PortOpenvpnTUNwithoutGW" Port_OpenVPN_WithoutGW "$Port_OpenVPN_WithoutGW"
@@ -281,9 +370,6 @@ Survey() {
 				while [ ! "$OpenVPN_Proto" = "UDP" ] && [ ! "$OpenVPN_Proto" = "TCP" ]; do
 					QuestionGetString NO "$Questions_ProtoOpenVPN" OpenVPN_Proto UDP
 				done
-			fi
-			if [ "$ToInstall_OpenVPN" == "$Global_YES" ]; then
-				to_install=1
 
 				OpenVPN_Proto="`echo $OpenVPN_Proto | tr '[:upper:]' '[:lower:]'`"
 				case "$OpenVPN_Proto" in
@@ -310,9 +396,20 @@ Survey() {
 		# ownCloud
 		if [ "$IsInstalled_ownCloud" != "YES" ]; then
 			echo
-			while [ ! "$ToInstall_ownCloud" = "$Global_YES" ] || [ ! "$ToInstall_ownCloud" = "$Global_NO" ]; do
-				QuestionGetString NO "$Questions_InstallOwnCloud" ToInstall_ownCloud "$Global_NO"
+			local Loop_ToInstall_ownCloud=1
+			if [ "$RepeatSurvey" == "YES" ]; then
+				Value="$ToInstall_ownCloud"
+			else
+				Value="$Global_NO"
+			fi
+			while [ $Loop_ToInstall_ownCloud -eq 1 ]; do
+				QuestionGetString NO "$Questions_InstallOwnCloud" ToInstall_ownCloud "$Value"
 				ToInstall_ownCloud="`echo $ToInstall_ownCloud | tr '[:lower:]' '[:upper:]'`"
+				case "$ToInstall_ownCloud" in
+					"$Global_NO"|"$Global_YES")
+						Loop_ToInstall_ownCloud=0
+					;;
+				esac
 			done
 
 			if [ "$ToInstall_ownCloud" == "$Global_YES" ]; then
@@ -335,7 +432,12 @@ Survey() {
 		# IP restriction
 		echo
 		echo -e "$Questions_Message_IpRestriction"
-		QuestionGetString NO "$Questions_UseIprestriction" IpRestriction "$Global_YES"
+		if [ "$RepeatSurvey" == "YES" ]; then
+			Value="$IpRestriction"
+		else
+			Value="$Global_YES"
+		fi
+		QuestionGetString NO "$Questions_UseIprestriction" IpRestriction "$Value"
 		IpRestriction="`echo $IpRestriction | tr '[:lower:]' '[:upper:]'`"
 
 		echo
@@ -356,15 +458,26 @@ Survey() {
 				if [ ! -z $TEMP ]; then CHECK_MYIP="$CHECK_MYIP $TEMP"; fi
 			done
 			unset IFS
-			CHECK_MYIP="`echo $CHECK_MYIP | sed -e "s/\ /\,/g;" | sed -e "s/^$//g;"`"
+			local CHECK_MYIP="`echo $CHECK_MYIP | sed -e "s/\ /\,/g;" | sed -e "s/^$//g;"`"
 		done
 
 		# Logwatch
 		if [ "$IsInstalled_LogWatch" != "YES" ]; then
 			echo
-			while [ ! "$ToInstall_LogWatch" = "$Global_YES" ] || [ ! "$ToInstall_LogWatch" = "$Global_NO" ]; do
-				QuestionGetString NO "$Questions_InstallLogwatch" ToInstall_LogWatch "$Global_NO"
+			local Loop_ToInstall_LogWatch=1
+			if [ "$RepeatSurvey" == "YES" ]; then
+				Value="$ToInstall_LogWatch"
+			else
+				Value="$Global_NO"
+			fi
+			while [ $Loop_ToInstall_LogWatch -eq 1 ]; do
+				QuestionGetString NO "$Questions_InstallLogwatch" ToInstall_LogWatch "$Value"
 				ToInstall_LogWatch="`echo $ToInstall_LogWatch | tr '[:lower:]' '[:upper:]'`"
+				case "$ToInstall_LogWatch" in
+					"$Global_NO"|"$Global_YES")
+						Loop_ToInstall_LogWatch=0
+					;;
+				esac
 			done
 
 			if [ "$ToInstall_LogWatch" == "$Global_YES" ]; then
@@ -378,9 +491,20 @@ Survey() {
 		# Fail2Ban
 		if [ "$IsInstalled_Fail2Ban" != "YES" ]; then
 			echo
-			while [ ! "$ToInstall_Fail2Ban" = "$Global_YES" ] || [ ! "$ToInstall_Fail2Ban" = "$Global_NO" ]; do
-				QuestionGetString NO "$Questions_InstallFail2Ban" ToInstall_Fail2Ban "$Global_YES"
+			local Loop_ToInstall_Fail2Ban=1
+			if [ "$RepeatSurvey" == "YES" ]; then
+				Value="$ToInstall_Fail2Ban"
+			else
+				Value="$Global_YES"
+			fi
+			while [ $Loop_ToInstall_Fail2Ban -eq 1 ]; do
+				QuestionGetString NO "$Questions_InstallFail2Ban" ToInstall_Fail2Ban "$Value"
 				ToInstall_Fail2Ban="`echo $ToInstall_Fail2Ban | tr '[:lower:]' '[:upper:]'`"
+				case "$ToInstall_Fail2Ban" in
+					"$Global_NO"|"$Global_YES")
+						Loop_ToInstall_Fail2Ban=0
+					;;
+				esac
 			done
 
 			if [ "$ToInstall_Fail2Ban" == "$Global_YES" ]; then
@@ -394,11 +518,23 @@ Survey() {
 		# DNScrypt-proxy
 		if [ "$IsInstalled_DNScrypt" != "YES" ]; then
 			echo
-			while [ ! "$ToInstall_DNScrypt" = "$Global_YES" ] || [ ! "$ToInstall_DNScrypt" = "$Global_NO" ]; do
-				QuestionGetString NO "$Questions_InstallDNScrypt" ToInstall_DNScrypt "$Global_YES"
+			local Loop_ToInstall_DNScrypt=1
+			if [ "$RepeatSurvey" == "YES" ]; then
+				Value="$ToInstall_DNScrypt"
+			else
+				Value="$Global_YES"
+			fi
+			while [ $Loop_ToInstall_DNScrypt -eq 1 ]; do
+				QuestionGetString NO "$Questions_InstallDNScrypt" ToInstall_DNScrypt "$Value"
 				ToInstall_DNScrypt="`echo $ToInstall_DNScrypt | tr '[:lower:]' '[:upper:]'`"
+				case "$ToInstall_DNScrypt" in
+					"$Global_NO"|"$Global_YES")
+						Loop_ToInstall_DNScrypt=0
+					;;
+				esac
 			done
-			if [ ! -z $IFPVEKERNEL ] && [ "$ToInstall_DNScrypt" == "$Global_YES" ]; then
+
+			if [ ! -z "$IFPVEKERNEL" ] && [ "$ToInstall_DNScrypt" == "$Global_YES" ]; then
 				echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
 				echo -e "${CYELLOW}At the end of the installation, you should replace your DNS (/etc/resolv.conf) with ${CGREEN}nameserver 127.0.0.1$CEND${CYELLOW} through the OpenVZ host (eg Proxmox).$CEND"
 				echo -e "$Questions_Message_DNScrypt"
@@ -416,30 +552,41 @@ Survey() {
 		fi
 
 		# Blocklist
-		if [ "$MySB_PeerBlock" == "$Global_None" ] || [ -z "$MySB_PeerBlock" ]; then
+		if [ "$MySB_PeerBlock" == "$Global_None" ] || [ -z "$MySB_PeerBlock" ] || [ "$RepeatSurvey" == "YES" ]; then
 			echo
 			echo -e "$Questions_Message_Blocklists"
 
-			if [ -z $IFPVEKERNEL ]; then
-				if [ "$MEMORY" -lt "2048" ]; then
+			if [ -z "$IFPVEKERNEL" ]; then
+				if [ $MEMORY -lt 2048 ]; then
 					echo -e "$Questions_Message_Blocklists_0"
 				else
 					echo -e "$Questions_Message_Blocklists_1"
+				fi
+
+				if [ "$RepeatSurvey" == "YES" ]; then
+					Value="$MySB_PeerBlock"
+				else
+					Value="PeerGuardian"
 				fi
 				MySB_PeerBlock=""
 				while [ "$MySB_PeerBlock" != "$Global_None" ] \
 					&& [ "$MySB_PeerBlock" != "PeerGuardian" ] \
 					&& [ "$MySB_PeerBlock" != "rTorrent" ]; do
 
-					QuestionGetString NO "$Questions_InstallBlockList_0" MySB_PeerBlock "PeerGuardian"
+					QuestionGetString NO "$Questions_InstallBlockList_0" MySB_PeerBlock "$Value"
 				done
 			else
 				echo -e "$Questions_Message_NotPeerGuardian"
+				if [ "$RepeatSurvey" == "YES" ]; then
+					Value="$MySB_PeerBlock"
+				else
+					Value="rTorrent"
+				fi
 				MySB_PeerBlock=""
-				while [ "$MySB_PeerBlock" != "$Global_NO" ] \
+				while [ "$MySB_PeerBlock" != "$Global_None" ] \
 					&& [ "$MySB_PeerBlock" != "rTorrent" ]; do
 
-					QuestionGetString NO "$Questions_InstallBlockList_1" MySB_PeerBlock "rTorrent"
+					QuestionGetString NO "$Questions_InstallBlockList_1" MySB_PeerBlock "$Value"
 				done
 			fi
 
@@ -460,49 +607,11 @@ Survey() {
 		fi
 	fi
 
-	#### Add answer to database
-	if [ "$TYPE" == "INSTALL" ]; then
-		# 'system' table
-		if [ "$IpRestriction" == "$Global_YES" ]; then
-			IpRestriction="1"
-		else
-			IpRestriction="0"
-		fi
-		FreeSpace="`df --sync /home/ | awk '{ print $4 }' | tail -n 1`"
-		FreeSpaceToKeep="`python -c "print 2 * 1024**2"`" # Keep a minimum of 2Go of free space
-		FreeSpace=$(($FreeSpace-$FreeSpaceToKeep))
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "hostname = '$HostNameFQDN', ipv4 = '$SrvIpAddress', primary_inet = '$PrimaryInet', timezone = '$TimeZone', server_provider = '$ServerProvider', ip_restriction = '$IpRestriction', quota_default = '$FreeSpace'" "id_system = '1'"
-
-		# 'smtp' table
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'smtp' "smtp_provider = '$SMTP_Provider', smtp_username = '$SMTP_Username', smtp_passwd = '$SMTP_Password', smtp_email ='$MainUserEmail'" "id_smtp = '1'"
-
-		# 'users' table (Main user)
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "users_ident = '$MainUser', users_email = '$MainUserEmail', users_passwd = '$MainUserPassword', sftp = '1', sudo = '1', admin = '1'" "users_ident = 'MySB'"
-		Func_SQL_Command 'UPDATE' 'Wolf_db' 'user' "name = '$MainUser', email = '$MainUserEmail', username = '$MainUser'" "id = '2'"
-
-		# 'users_addresses' table
-		MainUserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' \"users_ident = '$MainUser'\"`"
-		MainUserIPs="`echo $MainUserIPs | sed "s/,/;/g;"`"
-		Func_SQL_Command 'DELETE' 'MySB_db' 'users_addresses' "id_users = '$MainUserId'"
-		IFS=$';'
-		for ip in $MainUserIPs; do
-			HostName="`nslookup $ip | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g'`"
-			Func_SQL_Command 'INSERT' 'MySB_db' 'users_addresses' "id_users,ipv4,hostname,check_by,is_active,last_update" "'$MainUserId','$ip','$HostName','ipv4','1','NOW'"
-		done
-		unset IFS
-
-		#### 'services' table
-		# HTTPs & HTTP
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '$Port_HTTPS', port_tcp2 = '$Port_HTTP', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'NginX'"
-		# SSH
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '$Port_SSH', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'SSH'"
-		# FTP
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '$Port_FTP', port_tcp2 = '$Port_FTP_Data', port_tcp3 = '65000:65535', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'VSFTPd'"
-	fi
+	RepeatSurvey=NO
 }
 
 #### Execute survey
-Survey
+DisplaySurvey
 
 #### Summary
 if [ "$TYPE" == "INSTALL" ]; then
@@ -554,6 +663,7 @@ if [ "$TYPE" == "INSTALL" ]; then
 		if [ "$ToInstall_Webmin" == "$Global_YES" ]; then
 			echo -e "$Summary_WebminPort" "${CGREEN}$Ports_Webmin$CEND"
 		fi
+		echo -e "$Summary_ownCloud" "${CGREEN}$IsInstalled_ownCloud$CEND"
 		echo -e "$Summary_OpenVPN" "${CGREEN}$IsInstalled_OpenVPN$CEND"
 		if [ "$ToInstall_OpenVPN" == "$Global_YES" ]; then
 			echo -e "$Summary_OpenVPN_Proto" "${CGREEN}$OpenVPN_Proto$CEND"
@@ -561,7 +671,6 @@ if [ "$TYPE" == "INSTALL" ]; then
 			echo -e "$Summary_OpenVPN_WithoutGW" "${CGREEN}$Port_OpenVPN_WithoutGW$CEND"
 			echo -e "$Summary_OpenVPN_TAP_WithoutGW" "${CGREEN}$Port_OpenVPN_TAP_WithoutGW$CEND"
 		fi
-		echo -e "$Summary_OpenownCloud" "${CGREEN}$IsInstalled_ownCloud$CEND"
 	fi
 
 	#### SECURITY
@@ -581,7 +690,7 @@ if [ "$TYPE" == "INSTALL" ]; then
 	#### Confirm
 	echo
 	echo -e "$Summary_ConfirmMessage"
-	while [ ! "$ConfirmValues" = "$Global_YES" ] || [ ! "$ConfirmValues" = "$Global_NO" ]; do
+	while [ ! "$ConfirmValues" = "$Global_YES" ] && [ ! "$ConfirmValues" = "$Global_NO" ]; do
 		QuestionGetString NO "$Summary_Confirm" ConfirmValues "$Global_NO"
 		ConfirmValues="`echo $ConfirmValues | tr '[:lower:]' '[:upper:]'`"
 	done
@@ -589,8 +698,47 @@ if [ "$TYPE" == "INSTALL" ]; then
 		# New page
 		BannerGenerator
 		# Execute survey
-		Survey
+		RepeatSurvey=YES
+		DisplaySurvey
 	done
+
+	#### Add answer to database
+	# 'system' table
+	if [ "$IpRestriction" == "$Global_YES" ]; then
+		IpRestriction="1"
+	else
+		IpRestriction="0"
+	fi
+	FreeSpace="`df --sync /home/ | awk '{ print $4 }' | tail -n 1`"
+	FreeSpaceToKeep="`python -c "print 2 * 1024**2"`" # Keep a minimum of 2Go of free space
+	FreeSpace=$(($FreeSpace-$FreeSpaceToKeep))
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "hostname = '$HostNameFQDN', ipv4 = '$SrvIpAddress', primary_inet = '$PrimaryInet', timezone = '$TimeZone', server_provider = '$ServerProvider', ip_restriction = '$IpRestriction', quota_default = '$FreeSpace'" "id_system = '1'"
+
+	# 'smtp' table
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'smtp' "smtp_provider = '$SMTP_Provider', smtp_username = '$SMTP_Username', smtp_passwd = '$SMTP_Password', smtp_email ='$MainUserEmail'" "id_smtp = '1'"
+
+	# 'users' table (Main user)
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "users_ident = '$MainUser', users_email = '$MainUserEmail', users_passwd = '$MainUserPassword', sftp = '1', sudo = '1', admin = '1'" "users_ident = 'MySB'"
+	Func_SQL_Command 'UPDATE' 'Wolf_db' 'user' "name = '$MainUser', email = '$MainUserEmail', username = '$MainUser'" "id = '2'"
+
+	# 'users_addresses' table
+	MainUserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' \"users_ident = '$MainUser'\"`"
+	MainUserIPs="`echo $MainUserIPs | sed "s/,/;/g;"`"
+	Func_SQL_Command 'DELETE' 'MySB_db' 'users_addresses' "id_users = '$MainUserId'"
+	IFS=$';'
+	for ip in $MainUserIPs; do
+		HostName="`nslookup $ip | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g'`"
+		Func_SQL_Command 'INSERT' 'MySB_db' 'users_addresses' "id_users,ipv4,hostname,check_by,is_active,last_update" "'$MainUserId','$ip','$HostName','ipv4','1','NOW'"
+	done
+	unset IFS
+
+	#### 'services' table
+	# HTTPs & HTTP
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '$Port_HTTPS', port_tcp2 = '$Port_HTTP', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'NginX'"
+	# SSH
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '$Port_SSH', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'SSH'"
+	# FTP
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '$Port_FTP', port_tcp2 = '$Port_FTP_Data', port_tcp3 = '65000:65535', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'VSFTPd'"	
 fi
 
 # -----------------------------------------
