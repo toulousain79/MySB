@@ -1,5 +1,5 @@
 	Version v3.4
-		2016/04/03
+		2016/04/03 -> 2016/05/08
 			- Update provider monitoring for OVH (v3.3 and v3.4)
 			- MySQL, minor changes (v3.3 and v3.4)
 			- Disable totaly IPv6 with grub (v3.3 and v3.4)
@@ -8,6 +8,7 @@
 			- PHP5, limit TMPFS cache to 64Mo
 			- Detect real IP address during installation
 			- PlexMediaServer, new APT Key
+			- Add survey confirmation before continue installation
 			- Cakebox-Light, bug fix of playback _(Cakebox not streaming #12)_
 				* Disable DivX Web Player (HTTPS not supported)
 				* Tested with Firefox 45 (32 & 64 bits) + HTML 5 Web Player + MP4
