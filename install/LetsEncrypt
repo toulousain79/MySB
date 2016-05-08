@@ -101,17 +101,15 @@ if [ ! -f /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem ]; then # Is it a ne
 	cd $LetsEncryptDir	
 	./letsencrypt-auto certonly --non-interactive --standalone --agree-tos --redirect --tls-sni-01-port $Port_HTTPS --config /tmp/cli.ini
 
-	if [ -f /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem ]; then
+	if [ -f /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem ] && [ ! -h $MySB_InstallDir/ssl/fullchain.pem ];; then
 		ln -s /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem $MySB_InstallDir/ssl/fullchain.pem
 		ln -s /etc/letsencrypt/live/$HostNameFQDN/chain.pem $MySB_InstallDir/ssl/chain.pem
 		ln -s /etc/letsencrypt/live/$HostNameFQDN/cert.pem $MySB_InstallDir/ssl/cert.pem
 		ln -s /etc/letsencrypt/live/$HostNameFQDN/privkey.pem $MySB_InstallDir/ssl/privkey.pem
+		Func_SQL_CommaFunc_SQL_Command 'UPDATE' 'MySB_db' 'system' "letsencrypt_date = 'NOW'" 'id_system = 1' '-echo'
 	fi
 
-	if [ $? -eq 1 ]; then
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "letsencrypt_date = 'NOW'" 'id_system = 1' '-echo'
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '1'" "serv_name = 'Lets Encrypt'" '-echo'
-	fi
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '1'" "serv_name = 'Lets Encrypt'" '-echo'
 else # Or is it a renew ?
 	if [ ! -h $MySB_InstallDir/ssl/fullchain.pem ]; then
 		ln -s /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem $MySB_InstallDir/ssl/fullchain.pem
@@ -122,14 +120,16 @@ else # Or is it a renew ?
 
 	if [ "$Switch" == "renew" ]; then
 		LetsEncryptDate="`Func_SQL_Command 'SELECT' 'MySB_db' 'letsencrypt_date' 'system' '1'`"
-		LetsEncryptDate=$(date -d "$LetsEncryptDate" +"%Y-%m-%d")
-		Now=$(date +%Y-%m-%d)
-		t1=$(date --date="$LetsEncryptDate" +'%-m')
-		t2=$(date --date="$Now" +'%-m')
-		let "tDiff=$t2-$t1"
+		if [ ! -z "$LetsEncryptDate" ]; then
+			LetsEncryptDate=$(date -d "$LetsEncryptDate" +"%Y-%m-%d")
+			Now=$(date +%Y-%m-%d)
+			t1=$(date --date="$LetsEncryptDate" +'%-m')
+			t2=$(date --date="$Now" +'%-m')
+			let "tDiff=$t2-$t1"
 
-		if [ "$tDiff" -gt "2" ]; then
-			./letsencrypt-auto renew
+			if [ "$tDiff" -gt "2" ]; then
+				./letsencrypt-auto renew
+			fi
 		fi
 	fi
 fi
