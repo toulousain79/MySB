@@ -37,6 +37,7 @@ case "$TYPE" in
 		DisplaySecurity=YES
 		ServerProvider=""
 		SMTP_Provider=""
+		Port_HTTPS="8888"
 	;;
 	"UPGRADE")
 		DisplayInfo=NO
@@ -65,419 +66,535 @@ case "$TYPE" in
 	;;
 esac
 
-#### Advertising
-if [ "$DisplayInfo" == "YES" ]; then
-	echo
-	echo -e "$Header_Install_0"
-	echo
-
-	echo
-	echo -e "$Questions_NeedSomeInfos"
-	echo
-fi
-
-#### MAIN USER INFO
-if [ "$DisplayUserInfo" == "YES" ]; then
+Survey() {
+	#### Advertising
 	if [ "$DisplayInfo" == "YES" ]; then
-		echo -e "$Questions_Category_MainUserInfos"
+		echo
+		echo -e "$Header_Install_0"
+		echo
+
+		echo
+		echo -e "$Questions_NeedSomeInfos"
+		echo
 	fi
 
-	# Main User name
-	echo
-	while [ "`echo $MainUser | grep '@'`" != "" ] || [ -z "$MainUser" ]; do
-		QuestionGetString NO "$Questions_MainUserUsername" MainUser
-	done
-
-	# Main User password
-	echo
-	if [ -z "$MainUserPassword" ] || [ "$TYPE" == "UPGRADE" ]; then
-		QuestionGetString YES "$Questions_MainUserPassword" MainUserPassword
-	fi
-
-	# User IP addresses
-	echo
-	echo -e "$Questions_Message_IpRestriction"
-	QuestionGetString NO "$Questions_UseIprestriction" IpRestriction "$Global_YES"
-	IpRestriction="`echo $IpRestriction | tr '[:lower:]' '[:upper:]'`"
-
-	echo
-	echo -e "$Questions_Message_AddAddresses"
-
-	while [ "$CHECK_MYIP" != "$MainUserIPs" ] || [ -z "$MainUserIPs" ]; do
-		MainUserIPs="`echo $SSH_CLIENT | awk '{ print $1 }'`"
-		if [ -z "$MainUserIPs" ]; then
-			MainUserIPs="`who --ips | awk '{print $6}' | grep ^[0123456789]`"
-			if [ -z "$MainUserIPs" ]; then
-				MainUserIPs="`who --ips | awk '{print $5}' | grep ^[0123456789]`"
-			fi
+	#### MAIN USER INFO
+	if [ "$DisplayUserInfo" == "YES" ]; then
+		if [ "$DisplayInfo" == "YES" ]; then
+			echo -e "$Questions_Category_MainUserInfos"
 		fi
 
-		QuestionGetString NO "$Questions_AddAddresses" MainUserIPs "$MainUserIPs"
-		IFS=$','
-		for ip in $MainUserIPs; do 
-			TEMP="`ValidateIP "$ip"`"
-			if [ ! -z $TEMP ]; then CHECK_MYIP="$CHECK_MYIP $TEMP"; fi
+		# Main User name
+		echo
+		while [ "`echo $MainUser | grep '@'`" != "" ] || [ -z "$MainUser" ]; do
+			QuestionGetString NO "$Questions_MainUserUsername" MainUser
 		done
-		unset IFS
-		CHECK_MYIP="`echo $CHECK_MYIP | sed -e "s/\ /\,/g;" | sed -e "s/^$//g;"`"
-	done
 
-	# SMTP ?
-	echo
-	echo -e "$Questions_Message_SMTP_0"
-	while [ -z "$SMTP_Provider" ]; do
-		QuestionGetString NO "$Questions_SMTP" SMTP_Provider 'LOCAL'
-		SMTP_Provider="`echo $SMTP_Provider | tr '[:lower:]' '[:upper:]'`"
-		case "$SMTP_Provider" in
-			'LOCAL'|'FREE'|'OVH'|'GMAIL'|'YAHOO'|'ZOHO')
-				continue
-			;;
-			*)
-				SMTP_Provider=""
-			;;
-		esac
-	done
-
-	if [ "$SMTP_Provider" != "LOCAL" ]; then
-		QuestionGetString NO "$Questions_SMTP_Username" SMTP_Username
-		QuestionGetString YES "$Questions_SMTP_Password" SMTP_Password
-	fi
-
-	# User e-mail
-	if [ "$SMTP_Provider" != "LOCAL" ]; then
+		# Main User password
 		echo
-		echo -e "$Questions_Message_SMTP_1"
-	fi
-	while [ ! "`ValidateMail $MainUserEmail`" = "1" ] || [ -z "$MainUserEmail" ]; do
-		QuestionGetString NO "$Questions_EmailAddress" MainUserEmail
-	done
-fi
-
-#### SERVER INFO
-if [ "$DisplayServerInfo" == "YES" ]; then
-	if [ "$DisplayInfo" == "YES" ]; then
-		echo
-		echo -e "$Questions_Category_ServerInfos"
-	fi
-
-	#Time Zone
-	echo
-	QuestionGetString NO "$Questions_TimeZone" TimeZone "$TimeZone"
-
-	# Primary Inet
-	echo
-	QuestionGetString NO "$Questions_PrimaryNetwork" PrimaryInet "$PrimaryInet"
-
-	# Box' IP
-	echo
-	while [ ! "$CHECK_SrvIpAddress" = "$SrvIpAddress" ] || [ -z "$SrvIpAddress" ]; do
-		QuestionGetString NO "$Questions_BoxIpAddress" SrvIpAddress "$SrvIpAddress"
-		CHECK_SrvIpAddress="`ValidateIP "$SrvIpAddress"`"
-	done
-
-	# Box' hostname
-	echo
-	QuestionGetString NO "$Questions_Hostname" HostNameFQDN "$HostNameFQDN"
-
-	# NginX HTTPs port
-	echo
-	QuestionGetString NO "$Questions_PortHTTPs" Port_HTTPS "$Port_HTTPS"
-
-	# SSH port
-	echo
-	QuestionGetString NO "$Questions_PortSSH" Port_SSH "$Port_SSH"
-
-	# FTP port
-	echo
-	QuestionGetString NO "$Questions_PortFTPs" Port_FTP "$Port_FTP"
-fi
-
-#### SERVICES
-if [ "$DisplayServices" == "YES" ]; then
-	if [ "$DisplayInfo" == "YES" ]; then
-		echo
-		echo -e "$Questions_Category_Services"
-	fi
-
-	#Provider
-	echo
-	if [ -z "$ServerProvider" ] || [ "$ServerProvider" == "$Global_None" ]; then
-		if [ -z "$ServerProvider" ]; then
-			ServerProvider="$Global_None"
-		fi
-		echo -e "$Questions_Message_ServerProvider"
-	fi
-
-	while [ -z "$ServerProvider" ] || [ "$ServerProvider" == "$Global_None" ]; do
-		QuestionGetString NO "$Questions_ServerProvider" ServerProvider "$ServerProvider"
-		ServerProvider="`echo $ServerProvider | tr '[:lower:]' '[:upper:]'`"
-		case "$ServerProvider" in
-			"$Global_None"|'OVH'|'ONLINE'|'DIGICUBE')
-				continue
-			;;
-			*)
-				ServerProvider=""
-			;;
-		esac
-	done
-
-	# Seedbox-Manager
-	if [ "$IsInstalled_Manager" != "YES" ]; then
-		echo
-		QuestionGetString NO "$Questions_InstallSeedboxManager" ToInstall_Manager "$Global_NO"
-		ToInstall_Manager="`echo $ToInstall_Manager | tr '[:lower:]' '[:upper:]'`"
-
-		if [ "$ToInstall_Manager" == "$Global_YES" ]; then
-			to_install=1
-		else
-			to_install=0
-		fi
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'Seedbox-Manager'"
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '$to_install'" "name = 'Seedbox-Manager'"
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '$to_install'" "name = 'ruTorrent Plugin Link Manager'"
-	fi
-
-	# Cakebox Light
-	if [ "$IsInstalled_Cakebox" != "YES" ]; then
-		echo
-		QuestionGetString NO "$Questions_InstallCakeBox" ToInstall_Cakebox "$Global_NO"
-		ToInstall_Cakebox="`echo $ToInstall_Cakebox | tr '[:lower:]' '[:upper:]'`"
-
-		if [ "$ToInstall_Cakebox" == "$Global_YES" ]; then
-			to_install=1
-		else
-			to_install=0
-		fi
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'CakeBox-Light'"
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '$to_install'" "name = 'CakeBox-Light'"
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '$to_install'" "name = 'ruTorrent Plugin Link Cakebox'"
-	fi
-
-	# Plexmedia server
-	if [ "$IsInstalled_PlexMedia" != "YES" ]; then
-		echo
-		QuestionGetString NO "$Questions_InstallPlexMedia" ToInstall_PlexMedia "$Global_NO"
-		ToInstall_PlexMedia="`echo $ToInstall_PlexMedia | tr '[:lower:]' '[:upper:]'`"
-
-		if [ "$ToInstall_PlexMedia" == "$Global_YES" ]; then
-			to_install=1
-		else
-			to_install=0
-		fi
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'Plex Media Server'"
-	fi
-
-	# Webmin
-	if [ "$IsInstalled_Webmin" != "YES" ]; then
-		echo
-		QuestionGetString NO "$Questions_InstallWebmin" ToInstall_Webmin "$Global_NO"
-		ToInstall_Webmin="`echo $ToInstall_Webmin | tr '[:lower:]' '[:upper:]'`"
-		if [ "$ToInstall_Webmin" == "$Global_YES" ]; then
-			QuestionGetString NO "$Questions_PortWebmin" Ports_Webmin "$Ports_Webmin"
+		if [ -z "$MainUserPassword" ] || [ "$TYPE" == "UPGRADE" ]; then
+			QuestionGetString YES "$Questions_MainUserPassword" MainUserPassword
 		fi
 
-		if [ "$ToInstall_Webmin" == "$Global_YES" ]; then
-			to_install=1
-		else
-			to_install=0
-		fi
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install', port_tcp1 = '$Ports_Webmin', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'Webmin'"
-	fi
-
-	# OpenVPN
-	if [ "$IsInstalled_OpenVPN" != "YES" ]; then
+		# SMTP ?
 		echo
-		QuestionGetString NO "$Questions_InstallOpenVPN" ToInstall_OpenVPN "$Global_NO"
-		ToInstall_OpenVPN="`echo $ToInstall_OpenVPN | tr '[:lower:]' '[:upper:]'`"
-		if [ "$ToInstall_OpenVPN" == "$Global_YES" ]; then
-			OpenVPN_Proto=""
-			QuestionGetString NO "$Questions_PortOpenvpnTUNwithGW" Port_OpenVPN_WithGW "$Port_OpenVPN_WithGW"
-			QuestionGetString NO "$Questions_PortOpenvpnTUNwithoutGW" Port_OpenVPN_WithoutGW "$Port_OpenVPN_WithoutGW"
-			QuestionGetString NO "$Questions_PortOpenvpnTAPwithoutGW" Port_OpenVPN_TAP_WithoutGW "$Port_OpenVPN_TAP_WithoutGW"
-			while [ ! "$OpenVPN_Proto" = "UDP" ] && [ ! "$OpenVPN_Proto" = "TCP" ]; do
-				QuestionGetString NO "$Questions_ProtoOpenVPN" OpenVPN_Proto UDP
-			done
-		fi
-		if [ "$ToInstall_OpenVPN" == "$Global_YES" ]; then
-			to_install=1
-
-			OpenVPN_Proto="`echo $OpenVPN_Proto | tr '[:upper:]' '[:lower:]'`"
-			case "$OpenVPN_Proto" in
-				"tcp")
-					UdpPortsList="port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''"
-					TcpPortsList="port_tcp1 = '$Port_OpenVPN_WithGW', port_tcp2 = '$Port_OpenVPN_WithoutGW', port_tcp3 = '$Port_OpenVPN_TAP_WithoutGW', ports_tcp_list = ''"
+		echo -e "$Questions_Message_SMTP_0"
+		while [ -z "$SMTP_Provider" ]; do
+			QuestionGetString NO "$Questions_SMTP" SMTP_Provider 'LOCAL'
+			SMTP_Provider="`echo $SMTP_Provider | tr '[:lower:]' '[:upper:]'`"
+			case "$SMTP_Provider" in
+				'LOCAL'|'FREE'|'OVH'|'GMAIL'|'YAHOO'|'ZOHO')
+					continue
 				;;
-				"udp")
-					UdpPortsList="port_udp1 = '$Port_OpenVPN_WithGW', port_udp2 = '$Port_OpenVPN_WithoutGW', port_udp3 = '$Port_OpenVPN_TAP_WithoutGW', ports_udp_list = ''"
-					TcpPortsList="port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = ''"
+				*)
+					SMTP_Provider=""
 				;;
 			esac
-		else
-			to_install=0
-			UdpPortsList="port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''"
-			TcpPortsList="port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = ''"
-		fi
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install', $TcpPortsList, $UdpPortsList" "serv_name = 'OpenVPN'"
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'OpenVPN'"
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'Samba'"
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'NFS'"
-	fi
+		done
 
-	# ownCloud
-	if [ "$IsInstalled_ownCloud" != "YES" ]; then
-		echo
-		QuestionGetString NO "$Questions_InstallOwnCloud" ToInstall_ownCloud "$Global_NO"
-		ToInstall_ownCloud="`echo $ToInstall_ownCloud | tr '[:lower:]' '[:upper:]'`"
-
-		if [ "$ToInstall_ownCloud" == "$Global_YES" ]; then
-			to_install=1
-		else
-			to_install=0
-		fi
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install', port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'ownCloud'"
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '$to_install'" "name = 'ownCloud'"
-	fi
-fi
-
-#### SECURITY
-if [ "$DisplaySecurity" == "YES" ]; then
-	if [ "$DisplayInfo" == "YES" ]; then
-		echo
-		echo -e "$Questions_Category_Security"
-	fi
-
-	# Logwatch
-	if [ "$IsInstalled_LogWatch" != "YES" ]; then
-		echo
-		QuestionGetString NO "$Questions_InstallLogwatch" ToInstall_LogWatch "$Global_NO"
-		ToInstall_LogWatch="`echo $ToInstall_LogWatch | tr '[:lower:]' '[:upper:]'`"
-
-		if [ "$ToInstall_LogWatch" == "$Global_YES" ]; then
-			to_install=1
-		else
-			to_install=0
-		fi
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'LogWatch'"
-	fi
-
-	# Fail2Ban
-	if [ "$IsInstalled_Fail2Ban" != "YES" ]; then
-		echo
-		QuestionGetString NO "$Questions_InstallFail2Ban" ToInstall_Fail2Ban "$Global_YES"
-		ToInstall_Fail2Ban="`echo $ToInstall_Fail2Ban | tr '[:lower:]' '[:upper:]'`"
-
-		if [ "$ToInstall_Fail2Ban" == "$Global_YES" ]; then
-			to_install=1
-		else
-			to_install=0
-		fi
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'Fail2Ban'"
-	fi
-
-	# DNScrypt-proxy
-	if [ "$IsInstalled_DNScrypt" != "YES" ]; then
-		echo
-		QuestionGetString NO "$Questions_InstallDNScrypt" ToInstall_DNScrypt "$Global_YES"
-		ToInstall_DNScrypt="`echo $ToInstall_DNScrypt | tr '[:lower:]' '[:upper:]'`"
-		if [ ! -z $IFPVEKERNEL ] && [ "$ToInstall_DNScrypt" == "$Global_YES" ]; then
-			echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
-			echo -e "${CYELLOW}At the end of the installation, you should replace your DNS (/etc/resolv.conf) with ${CGREEN}nameserver 127.0.0.1$CEND${CYELLOW} through the OpenVZ host (eg Proxmox).$CEND"
-			echo -e "$Questions_Message_DNScrypt"
-			sleep 10
+		if [ "$SMTP_Provider" != "LOCAL" ]; then
+			QuestionGetString NO "$Questions_SMTP_Username" SMTP_Username
+			QuestionGetString YES "$Questions_SMTP_Password" SMTP_Password
 		fi
 
-		if [ "$ToInstall_DNScrypt" == "$Global_YES" ]; then
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'DNScrypt-proxy'"
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'DNScrypt-proxy'"
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'Libsodium'"
-		else
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'DNScrypt-proxy'"
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'Libsodium'"
+		# User e-mail
+		if [ "$SMTP_Provider" != "LOCAL" ]; then
+			echo
+			echo -e "$Questions_Message_SMTP_1"
 		fi
+		while [ ! "`ValidateMail $MainUserEmail`" = "1" ] || [ -z "$MainUserEmail" ]; do
+			QuestionGetString NO "$Questions_EmailAddress" MainUserEmail
+		done
 	fi
 
-	# Blocklist
-	if [ "$MySB_PeerBlock" == "none" ] || [ "$MySB_PeerBlock" == "" ]; then
-		echo
-		echo -e "$Questions_Message_Blocklists"
+	#### SERVER INFO
+	if [ "$DisplayServerInfo" == "YES" ]; then
+		if [ "$DisplayInfo" == "YES" ]; then
+			echo
+			echo -e "$Questions_Category_ServerInfos"
+		fi
 
-		if [ -z $IFPVEKERNEL ]; then
-			if [ "$MEMORY" -lt "2048" ]; then
-				echo -e "$Questions_Message_Blocklists_0"
-			else
-				echo -e "$Questions_Message_Blocklists_1"
+		# Time Zone
+		echo
+		QuestionGetString NO "$Questions_TimeZone" TimeZone "$TimeZone"
+
+		# Primary Inet
+		echo
+		QuestionGetString NO "$Questions_PrimaryNetwork" PrimaryInet "$PrimaryInet"
+
+		# Box' IP
+		echo
+		while [ ! "$CHECK_SrvIpAddress" = "$SrvIpAddress" ] || [ -z "$SrvIpAddress" ]; do
+			QuestionGetString NO "$Questions_BoxIpAddress" SrvIpAddress "$SrvIpAddress"
+			CHECK_SrvIpAddress="`ValidateIP "$SrvIpAddress"`"
+		done
+
+		# Box' hostname
+		echo
+		QuestionGetString NO "$Questions_Hostname" HostNameFQDN "$HostNameFQDN"
+
+		# NginX HTTPs port
+		echo
+		QuestionGetString NO "$Questions_PortHTTPs" Port_HTTPS "$Port_HTTPS"
+
+		# SSH port
+		echo
+		QuestionGetString NO "$Questions_PortSSH" Port_SSH "$Port_SSH"
+
+		# FTP port
+		echo
+		QuestionGetString NO "$Questions_PortFTPs" Port_FTP "$Port_FTP"
+	fi
+
+	#### SERVICES
+	if [ "$DisplayServices" == "YES" ]; then
+		if [ "$DisplayInfo" == "YES" ]; then
+			echo
+			echo -e "$Questions_Category_Services"
+		fi
+
+		#Provider
+		echo
+		if [ -z "$ServerProvider" ] || [ "$ServerProvider" == "$Global_None" ]; then
+			if [ -z "$ServerProvider" ]; then
+				ServerProvider="$Global_None"
 			fi
-			MySB_PeerBlock=""
-			while [ "$MySB_PeerBlock" != "$Global_NO" ] \
-				&& [ "$MySB_PeerBlock" != "PeerGuardian" ] \
-				&& [ "$MySB_PeerBlock" != "rTorrent" ]; do
-
-				QuestionGetString NO "$Questions_InstallBlockList_0" MySB_PeerBlock "PeerGuardian"
-			done
-		else
-			echo -e "$Questions_Message_NotPeerGuardian"
-			MySB_PeerBlock=""
-			while [ "$MySB_PeerBlock" != "$Global_NO" ] \
-				&& [ "$MySB_PeerBlock" != "rTorrent" ]; do
-
-				QuestionGetString NO "$Questions_InstallBlockList_1" MySB_PeerBlock "rTorrent"
-			done
+			echo -e "$Questions_Message_ServerProvider"
 		fi
 
-		case "$MySB_PeerBlock" in
-			"PeerGuardian")
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'PeerGuardian'"
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0'" "serv_name = 'rTorrent Block List'"
-			;;
-			"rTorrent")
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0'" "serv_name = 'PeerGuardian'"
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'rTorrent Block List'"
-			;;
-			*)
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0'" "serv_name = 'PeerGuardian'"
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0'" "serv_name = 'rTorrent Block List'"
-			;;
-		esac
-	fi
-fi
+		while [ -z "$ServerProvider" ] || [ "$ServerProvider" == "$Global_None" ]; do
+			QuestionGetString NO "$Questions_ServerProvider" ServerProvider "$ServerProvider"
+			ServerProvider="`echo $ServerProvider | tr '[:lower:]' '[:upper:]'`"
+			case "$ServerProvider" in
+				"$Global_None"|'OVH'|'ONLINE'|'DIGICUBE')
+					continue
+				;;
+				*)
+					ServerProvider=""
+				;;
+			esac
+		done
 
-#### Add answer to SQLite db
+		# Seedbox-Manager
+		if [ "$IsInstalled_Manager" != "YES" ]; then
+			echo
+			while [ ! "$ToInstall_Manager" = "$Global_YES" ] || [ ! "$ToInstall_Manager" = "$Global_NO" ]; do
+				QuestionGetString NO "$Questions_InstallSeedboxManager" ToInstall_Manager "$Global_NO"
+				ToInstall_Manager="`echo $ToInstall_Manager | tr '[:lower:]' '[:upper:]'`"
+			done
+
+			if [ "$ToInstall_Manager" == "$Global_YES" ]; then
+				to_install=1
+			else
+				to_install=0
+			fi
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'Seedbox-Manager'"
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '$to_install'" "name = 'Seedbox-Manager'"
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '$to_install'" "name = 'ruTorrent Plugin Link Manager'"
+		fi
+
+		# Cakebox Light
+		if [ "$IsInstalled_Cakebox" != "YES" ]; then
+			echo
+			while [ ! "$ToInstall_Cakebox" = "$Global_YES" ] || [ ! "$ToInstall_Cakebox" = "$Global_NO" ]; do
+				QuestionGetString NO "$Questions_InstallCakeBox" ToInstall_Cakebox "$Global_NO"
+				ToInstall_Cakebox="`echo $ToInstall_Cakebox | tr '[:lower:]' '[:upper:]'`"
+			done
+
+			if [ "$ToInstall_Cakebox" == "$Global_YES" ]; then
+				to_install=1
+			else
+				to_install=0
+			fi
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'CakeBox-Light'"
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '$to_install'" "name = 'CakeBox-Light'"
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '$to_install'" "name = 'ruTorrent Plugin Link Cakebox'"
+		fi
+
+		# Plexmedia server
+		if [ "$IsInstalled_PlexMedia" != "YES" ]; then
+			echo
+			while [ ! "$ToInstall_PlexMedia" = "$Global_YES" ] || [ ! "$ToInstall_PlexMedia" = "$Global_NO" ]; do
+				QuestionGetString NO "$Questions_InstallPlexMedia" ToInstall_PlexMedia "$Global_NO"
+				ToInstall_PlexMedia="`echo $ToInstall_PlexMedia | tr '[:lower:]' '[:upper:]'`"
+			done
+
+			if [ "$ToInstall_PlexMedia" == "$Global_YES" ]; then
+				to_install=1
+			else
+				to_install=0
+			fi
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'Plex Media Server'"
+		fi
+
+		# Webmin
+		if [ "$IsInstalled_Webmin" != "YES" ]; then
+			echo
+			while [ ! "$ToInstall_Webmin" = "$Global_YES" ] || [ ! "$ToInstall_Webmin" = "$Global_NO" ]; do
+				QuestionGetString NO "$Questions_InstallWebmin" ToInstall_Webmin "$Global_NO"
+				ToInstall_Webmin="`echo $ToInstall_Webmin | tr '[:lower:]' '[:upper:]'`"
+			done
+			if [ "$ToInstall_Webmin" == "$Global_YES" ]; then
+				QuestionGetString NO "$Questions_PortWebmin" Ports_Webmin "$Ports_Webmin"
+			fi
+
+			if [ "$ToInstall_Webmin" == "$Global_YES" ]; then
+				to_install=1
+			else
+				to_install=0
+			fi
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install', port_tcp1 = '$Ports_Webmin', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'Webmin'"
+		fi
+
+		# OpenVPN
+		if [ "$IsInstalled_OpenVPN" != "YES" ]; then
+			echo
+			while [ ! "$ToInstall_OpenVPN" = "$Global_YES" ] || [ ! "$ToInstall_OpenVPN" = "$Global_NO" ]; do
+				QuestionGetString NO "$Questions_InstallOpenVPN" ToInstall_OpenVPN "$Global_NO"
+				ToInstall_OpenVPN="`echo $ToInstall_OpenVPN | tr '[:lower:]' '[:upper:]'`"
+			done
+			if [ "$ToInstall_OpenVPN" == "$Global_YES" ]; then
+				OpenVPN_Proto=""
+				QuestionGetString NO "$Questions_PortOpenvpnTUNwithGW" Port_OpenVPN_WithGW "$Port_OpenVPN_WithGW"
+				QuestionGetString NO "$Questions_PortOpenvpnTUNwithoutGW" Port_OpenVPN_WithoutGW "$Port_OpenVPN_WithoutGW"
+				QuestionGetString NO "$Questions_PortOpenvpnTAPwithoutGW" Port_OpenVPN_TAP_WithoutGW "$Port_OpenVPN_TAP_WithoutGW"
+				while [ ! "$OpenVPN_Proto" = "UDP" ] && [ ! "$OpenVPN_Proto" = "TCP" ]; do
+					QuestionGetString NO "$Questions_ProtoOpenVPN" OpenVPN_Proto UDP
+				done
+			fi
+			if [ "$ToInstall_OpenVPN" == "$Global_YES" ]; then
+				to_install=1
+
+				OpenVPN_Proto="`echo $OpenVPN_Proto | tr '[:upper:]' '[:lower:]'`"
+				case "$OpenVPN_Proto" in
+					"tcp")
+						UdpPortsList="port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''"
+						TcpPortsList="port_tcp1 = '$Port_OpenVPN_WithGW', port_tcp2 = '$Port_OpenVPN_WithoutGW', port_tcp3 = '$Port_OpenVPN_TAP_WithoutGW', ports_tcp_list = ''"
+					;;
+					"udp")
+						UdpPortsList="port_udp1 = '$Port_OpenVPN_WithGW', port_udp2 = '$Port_OpenVPN_WithoutGW', port_udp3 = '$Port_OpenVPN_TAP_WithoutGW', ports_udp_list = ''"
+						TcpPortsList="port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = ''"
+					;;
+				esac
+			else
+				to_install=0
+				UdpPortsList="port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''"
+				TcpPortsList="port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = ''"
+			fi
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install', $TcpPortsList, $UdpPortsList" "serv_name = 'OpenVPN'"
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'OpenVPN'"
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'Samba'"
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'NFS'"
+		fi
+
+		# ownCloud
+		if [ "$IsInstalled_ownCloud" != "YES" ]; then
+			echo
+			while [ ! "$ToInstall_ownCloud" = "$Global_YES" ] || [ ! "$ToInstall_ownCloud" = "$Global_NO" ]; do
+				QuestionGetString NO "$Questions_InstallOwnCloud" ToInstall_ownCloud "$Global_NO"
+				ToInstall_ownCloud="`echo $ToInstall_ownCloud | tr '[:lower:]' '[:upper:]'`"
+			done
+
+			if [ "$ToInstall_ownCloud" == "$Global_YES" ]; then
+				to_install=1
+			else
+				to_install=0
+			fi
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install', port_tcp1 = '', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'ownCloud'"
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '$to_install'" "name = 'ownCloud'"
+		fi
+	fi
+
+	#### SECURITY
+	if [ "$DisplaySecurity" == "YES" ]; then
+		if [ "$DisplayInfo" == "YES" ]; then
+			echo
+			echo -e "$Questions_Category_Security"
+		fi
+
+		# IP restriction
+		echo
+		echo -e "$Questions_Message_IpRestriction"
+		QuestionGetString NO "$Questions_UseIprestriction" IpRestriction "$Global_YES"
+		IpRestriction="`echo $IpRestriction | tr '[:lower:]' '[:upper:]'`"
+
+		echo
+		echo -e "$Questions_Message_AddAddresses"
+		while [ "$CHECK_MYIP" != "$MainUserIPs" ] || [ -z "$MainUserIPs" ]; do
+			MainUserIPs="`echo $SSH_CLIENT | awk '{ print $1 }'`"
+			if [ -z "$MainUserIPs" ]; then
+				MainUserIPs="`who --ips | awk '{print $6}' | grep ^[0123456789]`"
+				if [ -z "$MainUserIPs" ]; then
+					MainUserIPs="`who --ips | awk '{print $5}' | grep ^[0123456789]`"
+				fi
+			fi
+
+			QuestionGetString NO "$Questions_AddAddresses" MainUserIPs "$MainUserIPs"
+			IFS=$','
+			for ip in $MainUserIPs; do 
+				TEMP="`ValidateIP "$ip"`"
+				if [ ! -z $TEMP ]; then CHECK_MYIP="$CHECK_MYIP $TEMP"; fi
+			done
+			unset IFS
+			CHECK_MYIP="`echo $CHECK_MYIP | sed -e "s/\ /\,/g;" | sed -e "s/^$//g;"`"
+		done
+
+		# Logwatch
+		if [ "$IsInstalled_LogWatch" != "YES" ]; then
+			echo
+			while [ ! "$ToInstall_LogWatch" = "$Global_YES" ] || [ ! "$ToInstall_LogWatch" = "$Global_NO" ]; do
+				QuestionGetString NO "$Questions_InstallLogwatch" ToInstall_LogWatch "$Global_NO"
+				ToInstall_LogWatch="`echo $ToInstall_LogWatch | tr '[:lower:]' '[:upper:]'`"
+			done
+
+			if [ "$ToInstall_LogWatch" == "$Global_YES" ]; then
+				to_install=1
+			else
+				to_install=0
+			fi
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'LogWatch'"
+		fi
+
+		# Fail2Ban
+		if [ "$IsInstalled_Fail2Ban" != "YES" ]; then
+			echo
+			while [ ! "$ToInstall_Fail2Ban" = "$Global_YES" ] || [ ! "$ToInstall_Fail2Ban" = "$Global_NO" ]; do
+				QuestionGetString NO "$Questions_InstallFail2Ban" ToInstall_Fail2Ban "$Global_YES"
+				ToInstall_Fail2Ban="`echo $ToInstall_Fail2Ban | tr '[:lower:]' '[:upper:]'`"
+			done
+
+			if [ "$ToInstall_Fail2Ban" == "$Global_YES" ]; then
+				to_install=1
+			else
+				to_install=0
+			fi
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$to_install'" "serv_name = 'Fail2Ban'"
+		fi
+
+		# DNScrypt-proxy
+		if [ "$IsInstalled_DNScrypt" != "YES" ]; then
+			echo
+			while [ ! "$ToInstall_DNScrypt" = "$Global_YES" ] || [ ! "$ToInstall_DNScrypt" = "$Global_NO" ]; do
+				QuestionGetString NO "$Questions_InstallDNScrypt" ToInstall_DNScrypt "$Global_YES"
+				ToInstall_DNScrypt="`echo $ToInstall_DNScrypt | tr '[:lower:]' '[:upper:]'`"
+			done
+			if [ ! -z $IFPVEKERNEL ] && [ "$ToInstall_DNScrypt" == "$Global_YES" ]; then
+				echo -e "${CYELLOW}Your system is an$CEND ${CRED}OpenVZ container$CEND${CYELLOW}.$CEND"
+				echo -e "${CYELLOW}At the end of the installation, you should replace your DNS (/etc/resolv.conf) with ${CGREEN}nameserver 127.0.0.1$CEND${CYELLOW} through the OpenVZ host (eg Proxmox).$CEND"
+				echo -e "$Questions_Message_DNScrypt"
+				sleep 10
+			fi
+
+			if [ "$ToInstall_DNScrypt" == "$Global_YES" ]; then
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'DNScrypt-proxy'"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'DNScrypt-proxy'"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '1'" "name = 'Libsodium'"
+			else
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'DNScrypt-proxy'"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "active = '0'" "name = 'Libsodium'"
+			fi
+		fi
+
+		# Blocklist
+		if [ "$MySB_PeerBlock" == "$Global_None" ] || [ -z "$MySB_PeerBlock" ]; then
+			echo
+			echo -e "$Questions_Message_Blocklists"
+
+			if [ -z $IFPVEKERNEL ]; then
+				if [ "$MEMORY" -lt "2048" ]; then
+					echo -e "$Questions_Message_Blocklists_0"
+				else
+					echo -e "$Questions_Message_Blocklists_1"
+				fi
+				MySB_PeerBlock=""
+				while [ "$MySB_PeerBlock" != "$Global_None" ] \
+					&& [ "$MySB_PeerBlock" != "PeerGuardian" ] \
+					&& [ "$MySB_PeerBlock" != "rTorrent" ]; do
+
+					QuestionGetString NO "$Questions_InstallBlockList_0" MySB_PeerBlock "PeerGuardian"
+				done
+			else
+				echo -e "$Questions_Message_NotPeerGuardian"
+				MySB_PeerBlock=""
+				while [ "$MySB_PeerBlock" != "$Global_NO" ] \
+					&& [ "$MySB_PeerBlock" != "rTorrent" ]; do
+
+					QuestionGetString NO "$Questions_InstallBlockList_1" MySB_PeerBlock "rTorrent"
+				done
+			fi
+
+			case "$MySB_PeerBlock" in
+				"PeerGuardian")
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'PeerGuardian'"
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0'" "serv_name = 'rTorrent Block List'"
+				;;
+				"rTorrent")
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0'" "serv_name = 'PeerGuardian'"
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '1'" "serv_name = 'rTorrent Block List'"
+				;;
+				*)
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0'" "serv_name = 'PeerGuardian'"
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0'" "serv_name = 'rTorrent Block List'"
+				;;
+			esac
+		fi
+	fi
+
+	#### Add answer to database
+	if [ "$TYPE" == "INSTALL" ]; then
+		# 'system' table
+		if [ "$IpRestriction" == "$Global_YES" ]; then
+			IpRestriction="1"
+		else
+			IpRestriction="0"
+		fi
+		FreeSpace="`df --sync /home/ | awk '{ print $4 }' | tail -n 1`"
+		FreeSpaceToKeep="`python -c "print 2 * 1024**2"`" # Keep a minimum of 2Go of free space
+		FreeSpace=$(($FreeSpace-$FreeSpaceToKeep))
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "hostname = '$HostNameFQDN', ipv4 = '$SrvIpAddress', primary_inet = '$PrimaryInet', timezone = '$TimeZone', server_provider = '$ServerProvider', ip_restriction = '$IpRestriction', quota_default = '$FreeSpace'" "id_system = '1'"
+
+		# 'smtp' table
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'smtp' "smtp_provider = '$SMTP_Provider', smtp_username = '$SMTP_Username', smtp_passwd = '$SMTP_Password', smtp_email ='$MainUserEmail'" "id_smtp = '1'"
+
+		# 'users' table (Main user)
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "users_ident = '$MainUser', users_email = '$MainUserEmail', users_passwd = '$MainUserPassword', sftp = '1', sudo = '1', admin = '1'" "users_ident = 'MySB'"
+		Func_SQL_Command 'UPDATE' 'Wolf_db' 'user' "name = '$MainUser', email = '$MainUserEmail', username = '$MainUser'" "id = '2'"
+
+		# 'users_addresses' table
+		MainUserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' \"users_ident = '$MainUser'\"`"
+		MainUserIPs="`echo $MainUserIPs | sed "s/,/;/g;"`"
+		Func_SQL_Command 'DELETE' 'MySB_db' 'users_addresses' "id_users = '$MainUserId'"
+		IFS=$';'
+		for ip in $MainUserIPs; do
+			HostName="`nslookup $ip | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g'`"
+			Func_SQL_Command 'INSERT' 'MySB_db' 'users_addresses' "id_users,ipv4,hostname,check_by,is_active,last_update" "'$MainUserId','$ip','$HostName','ipv4','1','NOW'"
+		done
+		unset IFS
+
+		#### 'services' table
+		# HTTPs & HTTP
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '$Port_HTTPS', port_tcp2 = '$Port_HTTP', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'NginX'"
+		# SSH
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '$Port_SSH', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'SSH'"
+		# FTP
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '$Port_FTP', port_tcp2 = '$Port_FTP_Data', port_tcp3 = '65000:65535', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'VSFTPd'"
+	fi
+}
+
+#### Execute survey
+Survey
+
+#### Summary
 if [ "$TYPE" == "INSTALL" ]; then
-	# 'system' table
-	if [ "$IpRestriction" == "$Global_YES" ]; then
-		IpRestriction="1"
-	else
-		IpRestriction="0"
+	# New page
+	BannerGenerator
+	# Get values
+	source $MySB_InstallDir/inc/vars
+
+	#### MAIN USER INFO
+	if [ "$DisplayUserInfo" == "YES" ]; then
+		if [ "$DisplayInfo" == "YES" ]; then
+			echo -e "$Questions_Category_MainUserInfos"
+		fi
+		echo -e "$Summary_Language" "${CGREEN}$EnvLang$CEND"
+		echo -e "$Summary_MainUser" "${CGREEN}$MainUser$CEND"
+		echo -e "$Summary_MainUserPass" "${CGREEN}$MainUserPassword$CEND"
+		echo -e "$Summary_SmtpProvider" "${CGREEN}$SMTP_Provider$CEND"
+		if [ "$SMTP_Provider" != "LOCAL" ]; then
+			echo -e "$Summary_SmtpUsername" "${CGREEN}$SMTP_Username$CEND"
+			echo -e "$Summary_SmtpPassword" "${CGREEN}$SMTP_Password$CEND"
+		fi
+		echo -e "$Summary_MainUserMail" "${CGREEN}$MainUserEmail$CEND"
 	fi
-	FreeSpace="`df --sync /home/ | awk '{ print $4 }' | tail -n 1`"
-	FreeSpaceToKeep="`python -c "print 2 * 1024**2"`" # Keep a minimum of 2Go of free space
-	FreeSpace=$(($FreeSpace-$FreeSpaceToKeep))
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "hostname = '$HostNameFQDN', ipv4 = '$SrvIpAddress', primary_inet = '$PrimaryInet', timezone = '$TimeZone', server_provider = '$ServerProvider', ip_restriction = '$IpRestriction', quota_default = '$FreeSpace'" "id_system = '1'"
 
-	# 'smtp' table
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'smtp' "smtp_provider = '$SMTP_Provider', smtp_username = '$SMTP_Username', smtp_passwd = '$SMTP_Password', smtp_email ='$MainUserEmail'" "id_smtp = '1'"
+	#### SERVER INFO
+	if [ "$DisplayServerInfo" == "YES" ]; then
+		if [ "$DisplayInfo" == "YES" ]; then
+			echo
+			echo -e "$Questions_Category_ServerInfos"
+		fi
+		echo -e "$Summary_TimeZone" "${CGREEN}$TimeZone$CEND"
+		echo -e "$Summary_PrimaryInet" "${CGREEN}$PrimaryInet$CEND"
+		echo -e "$Summary_SrvIpAddress" "${CGREEN}$SrvIpAddress$CEND"
+		echo -e "$Summary_HostNameFQDN" "${CGREEN}$HostNameFQDN$CEND"
+		echo -e "$Summary_PortHTTPs" "${CGREEN}$Port_HTTPS$CEND"
+		echo -e "$Summary_Port_SSH" "${CGREEN}$Port_SSH$CEND"
+		echo -e "$Summary_Port_FTP" "${CGREEN}$Port_FTP$CEND"
+	fi
 
-	# 'users' table (Main user)
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "users_ident = '$MainUser', users_email = '$MainUserEmail', users_passwd = '$MainUserPassword', sftp = '1', sudo = '1', admin = '1'" "users_ident = 'MySB'"
-	Func_SQL_Command 'UPDATE' 'Wolf_db' 'user' "name = '$MainUser', email = '$MainUserEmail', username = '$MainUser'" "id = '2'"
+	#### SERVICES
+	if [ "$DisplayServices" == "YES" ]; then
+		if [ "$DisplayInfo" == "YES" ]; then
+			echo
+			echo -e "$Questions_Category_Services"
+		fi
+		echo -e "$Summary_ServerProvider" "${CGREEN}$ServerProvider$CEND"
+		echo -e "$Summary_SeedboxManager" "${CGREEN}$IsInstalled_Manager$CEND"
+		echo -e "$Summary_CakeboxLight" "${CGREEN}$IsInstalled_Cakebox$CEND"
+		echo -e "$Summary_PlexMedia" "${CGREEN}$IsInstalled_PlexMedia$CEND"
+		echo -e "$Summary_Webmin" "${CGREEN}$IsInstalled_Webmin$CEND"
+		if [ "$ToInstall_Webmin" == "$Global_YES" ]; then
+			echo -e "$Summary_WebminPort" "${CGREEN}$Ports_Webmin$CEND"
+		fi
+		echo -e "$Summary_OpenVPN" "${CGREEN}$IsInstalled_OpenVPN$CEND"
+		if [ "$ToInstall_OpenVPN" == "$Global_YES" ]; then
+			echo -e "$Summary_OpenVPN_Proto" "${CGREEN}$OpenVPN_Proto$CEND"
+			echo -e "$Summary_OpenVPN_WithGW" "${CGREEN}$Port_OpenVPN_WithGW$CEND"
+			echo -e "$Summary_OpenVPN_WithoutGW" "${CGREEN}$Port_OpenVPN_WithoutGW$CEND"
+			echo -e "$Summary_OpenVPN_TAP_WithoutGW" "${CGREEN}$Port_OpenVPN_TAP_WithoutGW$CEND"
+		fi
+		echo -e "$Summary_OpenownCloud" "${CGREEN}$IsInstalled_ownCloud$CEND"
+	fi
 
-	# 'users_addresses' table
-	MainUserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' \"users_ident = '$MainUser'\"`"
-	MainUserIPs="`echo $MainUserIPs | sed "s/,/;/g;"`"
-	IFS=$';'
-	for ip in $MainUserIPs; do
-		HostName="`nslookup $ip | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g'`"
-		Func_SQL_Command 'INSERT' 'MySB_db' 'users_addresses' "id_users,ipv4,hostname,check_by,is_active,last_update" "'$MainUserId','$ip','$HostName','ipv4','1','NOW'"
+	#### SECURITY
+	if [ "$DisplaySecurity" == "YES" ]; then
+		if [ "$DisplayInfo" == "YES" ]; then
+			echo
+			echo -e "$Questions_Category_Security"
+		fi
+		echo -e "$Summary_IpRestriction" "${CGREEN}$IpRestriction$CEND"
+		echo -e "$Summary_MainUserIPs" "${CGREEN}$MainUserIPs$CEND"
+		echo -e "$Summary_InstallLogWatch" "${CGREEN}$IsInstalled_LogWatch$CEND"
+		echo -e "$Summary_InstallFail2Ban" "${CGREEN}$IsInstalled_Fail2Ban$CEND"
+		echo -e "$Summary_InstallDNScrypt" "${CGREEN}$IsInstalled_DNScrypt$CEND"
+		echo -e "$Summary_PeerBlock" "${CGREEN}$MySB_PeerBlock$CEND"
+	fi
+
+	#### Confirm
+	echo
+	echo -e "$Summary_ConfirmMessage"
+	while [ ! "$ConfirmValues" = "$Global_YES" ] || [ ! "$ConfirmValues" = "$Global_NO" ]; do
+		QuestionGetString NO "$Summary_Confirm" ConfirmValues "$Global_NO"
+		ConfirmValues="`echo $ConfirmValues | tr '[:lower:]' '[:upper:]'`"
 	done
-	unset IFS
-
-	#### 'services' table
-	# HTTPs & HTTP
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '$Port_HTTPS', port_tcp2 = '$Port_HTTP', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'NginX'"
-	# SSH
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '$Port_SSH', port_tcp2 = '', port_tcp3 = '', ports_tcp_list = '', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'SSH'"
-	# FTP
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '$Port_FTP', port_tcp2 = '$Port_FTP_Data', port_tcp3 = '65000:65535', port_udp1 = '', port_udp2 = '', port_udp3 = '', ports_udp_list = ''" "serv_name = 'VSFTPd'"
+	while [ ! "$ConfirmValues" = "$Global_YES" ]; do
+		# New page
+		BannerGenerator
+		# Get values
+		source $MySB_InstallDir/inc/vars
+		# Execute survey
+		Survey
+	done
 fi
 
 # -----------------------------------------
