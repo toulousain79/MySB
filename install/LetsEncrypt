@@ -24,6 +24,7 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 # Server list:	https://letsencrypt.status.io/
+# For test:		Add '--test-cert'
 ######################################################################
 
 #### VARs
@@ -86,14 +87,19 @@ ScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--let
 
 if [ ! -f /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem ]; then # Is it a new certificate ?
 	# Config file
-	echo "rsa-key-size = 2048" | tee -a $MySB_InstallDir/temp/cli.ini
-	echo "email = $MainUserEmail" | tee -a $MySB_InstallDir/temp/cli.ini
-	echo "domains = $HostNameFQDN" | tee -a $MySB_InstallDir/temp/cli.ini
-	echo "standalone-supported-challenges = tls-sni-01" | tee -a $MySB_InstallDir/temp/cli.ini
-	echo "text = True" | tee -a $MySB_InstallDir/temp/cli.ini
+	echo "rsa-key-size = 2048" >/tmp/cli.ini
+	echo "email = $MainUserEmail" >>/tmp/cli.ini
+	echo "domains = $HostNameFQDN" >>/tmp/cli.ini
+	echo "standalone-supported-challenges = tls-sni-01" >>/tmp/cli.ini
+	echo "text = True" >>/tmp/cli.ini
+	echo "verbose = True" >>/tmp/cli.ini
+	# Dev mode ?
+	if [ -f $MySB_InstallDir/temp/dev ]; then
+		echo "test-cert = True" >>/tmp/cli.ini
+	fi
 
-	cd $LetsEncryptDir
-	./letsencrypt-auto certonly --non-interactive --standalone --agree-tos --redirect --config $MySB_InstallDir/temp/cli.ini
+	cd $LetsEncryptDir	
+	./letsencrypt-auto certonly --non-interactive --standalone --agree-tos --redirect --tls-sni-01-port $Port_HTTPS --config /tmp/cli.ini
 
 	if [ -f /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem ]; then
 		ln -s /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem $MySB_InstallDir/ssl/fullchain.pem
