@@ -97,23 +97,35 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	DnscryptDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'DNScrypt-proxy'"`"
 	DnscryptUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'DNScrypt-proxy'"`"
 	DnscryptFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'DNScrypt-proxy'"`"
-
-	if [ ! -f $MySB_InstallDir/files/$DnscryptFile ]; then
-		wget --no-check-certificate $DnscryptUrl -O $MySB_InstallDir/files/$DnscryptFile
-	fi
-	if [ ! -d $DnscryptDir ] && [ -f $MySB_InstallDir/files/$DnscryptFile ]; then
-		DnscryptVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'DNScrypt-proxy'"`"
-		echo
-		echo "########## DNScrypt-proxy"
-		echo "Directory : "$DnscryptDir
-		echo "Version : "$DnscryptVersion
-		echo "File : "$DnscryptFile
-		echo "URL : "$DnscryptUrl
-		echo
-		tar -zxvf $MySB_InstallDir/files/$DnscryptFile -C $MySB_InstallDir/temp/
-		SubDir="`tar -ztf $MySB_InstallDir/files/$DnscryptFile | sed -e 's@/.*@@' | uniq`"
-		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-			mv $MySB_InstallDir/temp/$SubDir $DnscryptDir
+	DnscryptVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'DNScrypt-proxy'"`"
+	echo
+	echo "########## DNScrypt-proxy"
+	echo "Directory : "$DnscryptDir
+	echo "Version : "$DnscryptVersion
+	echo "File : "$DnscryptFile
+	echo "URL : "$DnscryptUrl
+	echo
+	if [ -d $DnscryptDir ]; then
+		cd $DnscryptDir/
+		git stash
+		git pull
+		git stash clear
+		make clean
+	else
+		if [ -f $MySB_InstallDir/files/$DnscryptFile ]; then
+			unzip $MySB_InstallDir/files/$DnscryptFile -d $MySB_InstallDir/temp/
+			SubDir="`unzip -l $MySB_InstallDir/files/$DnscryptFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
+				mv -v $MySB_InstallDir/temp/$SubDir $DnscryptDir
+			fi
+			if [ -d $DnscryptDir ]; then
+				cd $DnscryptDir/
+				git stash
+				git pull
+				git stash clear
+			fi
+		else
+			git clone $DnscryptUrl $DnscryptDir
 		fi
 	fi
 

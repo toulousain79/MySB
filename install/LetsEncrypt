@@ -36,17 +36,20 @@ PackagesManage install "python-virtualenv python-dev gcc dialog libssl-dev libff
 
 # Let's Encrypt
 LetsEncryptDir="/usr/local/src/letsencrypt"
-LetsEncryptTempDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'Lets Encrypt'"`"
+LetsEncryptTempDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'Lets Encrypt'"`"
 LetsEncryptUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Lets Encrypt'"`"
 LetsEncryptFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Lets Encrypt'"`"
 LetsEncryptVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'Lets Encrypt'"`"
 echo
-echo "########## Let's Encryp"
+echo "########## Let's Encrypt"
 echo "Directory : "$LetsEncryptDir
 echo "Version : "$LetsEncryptVersion
 echo "File : "$LetsEncryptFile
 echo "URL : "$LetsEncryptUrl
 echo
+if [ -d $LetsEncryptTempDir ] && [ ! -d $LetsEncryptDir ]; then
+	mv -v $LetsEncryptTempDir $LetsEncryptDir
+fi
 if [ -d $LetsEncryptDir ]; then
 	cd $LetsEncryptDir/
 	git stash
@@ -57,10 +60,10 @@ else
 		unzip $MySB_InstallDir/files/$LetsEncryptFile -d $MySB_InstallDir/temp/
 		SubDir="`unzip -l $MySB_InstallDir/files/$LetsEncryptFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
 		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-			mv -v $MySB_InstallDir/temp/$SubDir $LetsEncryptTempDir
+			mv -v $MySB_InstallDir/temp/$SubDir $LetsEncryptDir
 		fi
-		if [ -d $LetsEncryptTempDir ]; then
-			cd $LetsEncryptTempDir/
+		if [ -d $LetsEncryptDir ]; then
+			cd $LetsEncryptDir/
 			git stash
 			git pull
 			git stash clear
@@ -70,16 +73,17 @@ else
 	fi
 fi
 
-if [ -d $LetsEncryptTempDir ] && [ ! -d $LetsEncryptDir ]; then
-	mv -v $LetsEncryptTempDir $LetsEncryptDir
-fi
-
 #### Generate
 ServerList="`Func_SQL_Command 'SELECT' 'MySB_db' 'addresses' 'lets_encrypt' "1" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+if [ ! -z "$ServerList" ]; then
+	Func_SQL_Command 'DELETE' 'MySB_db' 'lets_encrypt' "1" '-echo'
+fi
 for Server in $ServerList; do
 	ServerIPv4="$(nslookup $Server | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 	if [ ! -z "$ServerIPv4" ]; then
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'lets_encrypt' "ipv4 = '$ServerIPv4'" "addresses = '$Server'" '-echo'
+		for IPv4 in $ServerIPv4; do
+			Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'ipv4,addresses' "'$IPv4', '$Server', ''" '-echo'
+		done
 	fi
 done
 Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "letsencrypt_openport = '1'" 'id_system = 1' '-echo'
@@ -87,21 +91,21 @@ ScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--let
 
 if [ ! -f /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem ]; then # Is it a new certificate ?
 	# Config file
-	echo "rsa-key-size = 2048" >/tmp/cli.ini
-	echo "email = $MainUserEmail" >>/tmp/cli.ini
-	echo "domains = $HostNameFQDN" >>/tmp/cli.ini
-	echo "standalone-supported-challenges = tls-sni-01" >>/tmp/cli.ini
-	echo "text = True" >>/tmp/cli.ini
-	echo "verbose = True" >>/tmp/cli.ini
+	echo "rsa-key-size = 2048" > /tmp/cli.ini
+	echo "email = $MainUserEmail" >> /tmp/cli.ini
+	echo "domains = $HostNameFQDN" >> /tmp/cli.ini
+	echo "standalone-supported-challenges = tls-sni-01" >> /tmp/cli.ini
+	echo "text = True" >> /tmp/cli.ini
+	echo "verbose = True" >> /tmp/cli.ini
 	# Dev mode ?
 	if [ -f $MySB_InstallDir/temp/dev ]; then
-		echo "test-cert = True" >>/tmp/cli.ini
+		echo "test-cert = True" >> /tmp/cli.ini
 	fi
 
-	cd $LetsEncryptDir	
+	cd $LetsEncryptDir
 	./letsencrypt-auto certonly --non-interactive --standalone --agree-tos --redirect --tls-sni-01-port $Port_HTTPS --config /tmp/cli.ini
 
-	if [ -f /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem ] && [ ! -h $MySB_InstallDir/ssl/fullchain.pem ];; then
+	if [ -f /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem ] && [ ! -h $MySB_InstallDir/ssl/fullchain.pem ]; then
 		ln -s /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem $MySB_InstallDir/ssl/fullchain.pem
 		ln -s /etc/letsencrypt/live/$HostNameFQDN/chain.pem $MySB_InstallDir/ssl/chain.pem
 		ln -s /etc/letsencrypt/live/$HostNameFQDN/cert.pem $MySB_InstallDir/ssl/cert.pem
