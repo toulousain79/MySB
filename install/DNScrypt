@@ -60,38 +60,25 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	echo "File : "$LibsodiumFile
 	echo "URL : "$LibsodiumUrl
 	echo
-	if [ -d $LibsodiumDir ]; then
-		cd $LibsodiumDir/
-		git stash
-		git pull
-		#git stash clear
-		make clean
-	else
-		if [ -f $MySB_InstallDir/files/$LibsodiumFile ]; then
-			unzip $MySB_InstallDir/files/$LibsodiumFile -d $MySB_InstallDir/temp/
-			SubDir="`unzip -l $MySB_InstallDir/files/$LibsodiumFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-				mv -v $MySB_InstallDir/temp/$SubDir $LibsodiumDir
-			fi
-			if [ -d $LibsodiumDir ]; then
-				cd $LibsodiumDir/
-				git stash
-				git pull
-				#git stash clear
-			fi
-		else
-			git clone $LibsodiumUrl $LibsodiumDir
+	if [ ! -f $MySB_InstallDir/files/$LibsodiumFile ]; then
+		wget --no-check-certificate $LibsodiumUrl -O $MySB_InstallDir/files/$LibsodiumFile
+	fi
+	if [ ! -d $LibsodiumDir ]; then
+		tar -zxvf $MySB_InstallDir/files/$LibsodiumFile -C $MySB_InstallDir/temp/
+		SubDir="`tar -ztf $MySB_InstallDir/files/$LibsodiumFile | cut -d '/' -f 1 | uniq`"
+		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
+			mv -v $MySB_InstallDir/temp/$SubDir $LibsodiumDir
 		fi
 	fi
-
 	cd $LibsodiumDir/
+	make clean
 	chmod +x autogen.sh
 	./autogen.sh
-	./configure
+	./configure --enable-opt
 	make -j$PROCESSOR
 	make check
 	make install
-	/sbin/ldconfig
+	ldconfig
 
 	# DNScrypt
 	DnscryptDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'DNScrypt-proxy'"`"
@@ -105,30 +92,16 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	echo "File : "$DnscryptFile
 	echo "URL : "$DnscryptUrl
 	echo
-	if [ -d $DnscryptDir ]; then
-		cd $DnscryptDir/
-		git stash
-		git pull
-		#git stash clear
-		make clean
-	else
-		if [ -f $MySB_InstallDir/files/$DnscryptFile ]; then
-			unzip $MySB_InstallDir/files/$DnscryptFile -d $MySB_InstallDir/temp/
-			SubDir="`unzip -l $MySB_InstallDir/files/$DnscryptFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-				mv -v $MySB_InstallDir/temp/$SubDir $DnscryptDir
-			fi
-			if [ -d $DnscryptDir ]; then
-				cd $DnscryptDir/
-				git stash
-				git pull
-				#git stash clear
-			fi
-		else
-			git clone $DnscryptUrl $DnscryptDir
+	if [ ! -f $MySB_InstallDir/files/$DnscryptFile ]; then
+		wget --no-check-certificate $DnscryptUrl -O $MySB_InstallDir/files/$DnscryptFile
+	fi
+	if [ ! -d $DnscryptDir ]; then
+		tar -zxvf $MySB_InstallDir/files/$DnscryptFile -C $MySB_InstallDir/temp/
+		SubDir="`tar -ztf $MySB_InstallDir/files/$DnscryptFile | cut -d '/' -f 1 | uniq`"
+		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
+			mv -v $MySB_InstallDir/temp/$SubDir $DnscryptDir
 		fi
 	fi
-
 	cd $DnscryptDir/
 	make clean
 	chmod +x autogen.sh
