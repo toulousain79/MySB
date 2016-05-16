@@ -176,11 +176,11 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$replace.'<div id="ApplyConfigButton">'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr, $style).'</div>';
 					break;
 				case "ruTorrent":
-					echo '<li><a target="_blank"  href="ru">ruTorrent</a>';
+					echo '<li><a target="_blank" href="ru">ruTorrent</a>';
 					break;
 				case "Seedbox-Manager":
 					if ( $ManagerIsInstalled == '1' ) {
-						echo '<li><a target="_blank"  href="sm">Seedbox-Manager</a>';
+						echo '<li><a target="_blank" href="sm">Seedbox-Manager</a>';
 					}
 					break;
 				case "PeerGuardian BlockLists":
@@ -190,26 +190,25 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					break;
 				case "Cakebox-Light":
 					if ( $CakeboxIsInstalled == '1' ) {
-						echo '<li><a target="_blank"  href="http://' . $system_datas["hostname"] . ':' . $Port_Cakebox . '/">Cakebox-Light</a>';
+						echo '<li><a target="_blank" href="cb">Cakebox-Light</a>';
 					}
 					break;
 				case "LoadAvg":
-					echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/loadavg/public/">LoadAvg</a>';
+					echo '<li><a target="_blank" href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/loadavg/public/">LoadAvg</a>';
 					break;
 				case "ownCloud":
 					if ( $ownCloudIsInstalled == '1' ) {
-						echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/owncloud/">ownCloud</a>';
+						echo '<li><a target="_blank" href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/owncloud/">ownCloud</a>';
 					}
 					break;
 				case "Plex Media":
 					if ($PlexMediaIsInstalled == '1') {
-						//echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
-						echo '<li><a target="_blank"  href="https://app.plex.tv/web/app">Plex Media</a>';
+						echo '<li><a target="_blank" href="https://app.plex.tv/web/app">Plex Media</a>';
 					}
 					break;
 				case "Webmin":
 					if ( $WebminIsInstalled == '1' ) {
-						echo '<li><a target="_blank"  href="https://' . $system_datas["hostname"] . ':' . $WebminDatas["port_tcp1"] . '/">Webmin</a>';
+						echo '<li><a target="_blank" href="https://' . $system_datas["hostname"] . ':' . $WebminDatas["port_tcp1"] . '/">Webmin</a>';
 					}
 					break;
 				case "DNScrypt-proxy":
