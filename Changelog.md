@@ -19,6 +19,7 @@
 				* Tested with Opera 36 + VLC Web Player + MP4,AVI,MKV
 			- ownCloud v9.0.2
 			- ownCloud v1.8.6
+			- Seedbox-Manager v2.5.0
 			- Libsodium v1.0.10
 			- NodeJS v0.12.14
 			- Composer v1.1.0
