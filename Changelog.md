@@ -17,8 +17,8 @@
 				* Tested with IE 11 + HTML 5 Web Player + MP4
 				* Tested with Opera 36 + HTML 5 Web Player + MP4
 				* Tested with Opera 36 + VLC Web Player + MP4,AVI,MKV
+			- Cakebox-Light v1.8.6
 			- ownCloud v9.0.2
-			- ownCloud v1.8.6
 			- Seedbox-Manager v2.5.0
 			- Libsodium v1.0.10
 			- NodeJS v0.12.14

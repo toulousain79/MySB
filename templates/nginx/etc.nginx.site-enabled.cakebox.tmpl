@@ -2,38 +2,21 @@ server {
 	listen 81;
 	server_name _;
 
-	charset utf-8;
+	# only the proxy
 	allow 127.0.0.1;
 	deny all;
 
-	root /opt/MySB/web/cakebox-light/public;
-	index index.php;
+	root <cakebox_rootdir>/public;
 
 	access_log /var/log/nginx/cakebox-access.log;
 	error_log /var/log/nginx/cakebox-error.log;
 
-	include /etc/nginx/conf.d/static_files;
-	include /etc/nginx/conf.d/global_deny_access;
-	include /etc/nginx/conf.d/pagespeed;
-	include /etc/nginx/conf.d/ip_restriction;
-	include /etc/nginx/conf.d/auth_basic;
-	location ~ \.php$ {
-		include /etc/nginx/conf.d/php;
-	}
-
-	location ~ /favicon.ico {
-		alias /opt/MySB/web/cakebox-light/public/ressources/images/favicon.ico;
-	}
-	location ~ /(?:components|app|ressources|api|partials)/ {
-		access_log off;
-	}
-
-	include /etc/nginx/rpc/*.cakebox;
-
+	#site root is redirected to the app boot script
 	location = / {
 		try_files @site @site;
 	}
 
+	#all other locations try other files first and go to our front controller if none of them exists
 	location / {
 		try_files $uri $uri/ @site;
 	}
@@ -45,7 +28,7 @@ server {
 
 	#main configuration
 	location @site {
-		include /etc/nginx/conf.d/php;
+		include /etc/nginx/conf.d/php-ssl;
 		fastcgi_param  SCRIPT_FILENAME $document_root/index.php;
 	}
 }
