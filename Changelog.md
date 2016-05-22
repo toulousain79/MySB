@@ -22,7 +22,7 @@
 			- Seedbox-Manager v2.5.0
 			- Libsodium v1.0.10
 			- NodeJS v0.12.14
-			- Composer v1.1.0
+			- Composer v1.1.1
 			- Plowshare v2.1.4
 			- XMLRPC-C Stable v1.4.3
 			- Portal
