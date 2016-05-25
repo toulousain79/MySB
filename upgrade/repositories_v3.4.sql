@@ -1,5 +1,5 @@
 INSERT INTO `repositories` (`id_repositories`, `type`, `dir`, `name`, `version`, `file`, `upgrade`, `url`, `active`) VALUES
-(1, 'GIT', '/web/rutorrent', 'ruTorrent', '3.7', 'ruTorrent_v3.7.zip', '0', 'https://github.com/Novik/ruTorrent', 1),
+(1, 'GIT', '/web/rutorrent', 'ruTorrent', '3.7', 'ruTorrent_v3.7.zip', '1', 'https://github.com/Novik/ruTorrent', 1),
 (2, 'TARGZ', '/web/rutorrent/plugins/chat', 'ruTorrent Plugin Chat', '2.0', 'chat_v2.0.tar.gz', '0', 'https://rutorrent-chat.googlecode.com/files/chat-2.0.tar.gz', 1),
 (3, 'TARGZ', '/web/rutorrent/plugins/logoff', 'ruTorrent Plugin Logoff', '1.3', 'logoff_v1.3.tar.gz', '0', 'https://rutorrent-logoff.googlecode.com/files/logoff-1.3.tar.gz', 1),
 (4, 'TARGZ', '/web/rutorrent/plugins/lbll-suite', 'ruTorrent Plugin tAdd-Labels', '1.1', 'tadd-labels_v1.1.tar.gz', '0', 'http://rutorrent-tadd-labels.googlecode.com/files/tadd-labels_1.1.tar.gz', 1),
