@@ -41,13 +41,17 @@ if [ "$USAGE" == "ON" ]; then
 fi
 
 if [ "$ToInstall_Manager" == "YES" ]; then
+	#### VARs
+	Switch="$1"
+	
+	#### NginX
 	cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.locations.seedbox-manager.conf.tmpl /etc/nginx/locations/Seedbox-Manager.conf
 	ManagerDirEscaped="`echo $ManagerDir | sed s,/,\\\\\\\\\\/,g`"
 	perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/locations/Seedbox-Manager.conf
 	perl -pi -e "s/<manager_rootdir>/$ManagerDirEscaped/g" /etc/nginx/locations/Seedbox-Manager.conf
 	chmod 0644 /etc/nginx/locations/Seedbox-Manager.conf
 
-	#### app
+	#### App
 	ManagerUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Seedbox-Manager'"`"
 	ManagerFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Seedbox-Manager'"`"
 	ManagerVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Seedbox-Manager'"`"	
@@ -58,27 +62,26 @@ if [ "$ToInstall_Manager" == "YES" ]; then
 	echo "File : "$ManagerFile
 	echo "URL : "$ManagerUrl
 	echo
-	if [ -d $ManagerDir ]; then
-		cd $ManagerDir/
-		git stash
-		git pull
-		#git stash clear
-	else
-		if [ -f $MySB_InstallDir/files/$ManagerFile ]; then
-			unzip $MySB_InstallDir/files/$ManagerFile -d $MySB_InstallDir/temp/
-			SubDir="`unzip -l $MySB_InstallDir/files/$ManagerFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-				mv -v $MySB_InstallDir/temp/$SubDir $ManagerDir
-			fi
-			if [ -d $ManagerDir ]; then
-				cd $ManagerDir/
-				git stash
-				git pull
-				#git stash clear
-			fi
-		else
-			git clone $ManagerUrl $ManagerDir
+	if [ -d $ManagerDir ] && [ "$1" == "REFRESH" ]; then
+		if [ -d $ManagerDir/conf ]; then
+			mv -v $ManagerDir/conf $MySB_InstallDir/temp/sm_conf
 		fi
+		DeleteDirectory 1 "$ManagerDir"
+	fi
+	if [ -f $MySB_InstallDir/files/$ManagerFile ]; then
+		unzip $MySB_InstallDir/files/$ManagerFile -d $MySB_InstallDir/temp/
+		SubDir="`unzip -l $MySB_InstallDir/files/$ManagerFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
+			mv -v $MySB_InstallDir/temp/$SubDir $ManagerDir
+		fi
+		if [ -d $ManagerDir ]; then
+			GitStash $ManagerDir/
+		fi
+	else
+		git clone $ManagerUrl $ManagerDir
+	fi
+	if [ -d $MySB_InstallDir/temp/sm_conf ]; then
+		mv -v $MySB_InstallDir/temp/sm_conf $ManagerDir/conf
 	fi
 
 	if [ -f $ManagerDir/source-reboot-rtorrent/kill_rtorrent.c ]; then
@@ -86,7 +89,7 @@ if [ "$ToInstall_Manager" == "YES" ]; then
 		cat <<'EOF'
 #include "kill_rtorrent.h"
 
-void rtorrent_kill (char nickname[])
+void rtorrent_kill(char nickname[])
 {
     //Déclarations
     char chaine [100] = {0};
@@ -98,8 +101,8 @@ void rtorrent_kill (char nickname[])
 EOF
 		) > $ManagerDir/source-reboot-rtorrent/kill_rtorrent.c
 
-		sed -i '/screen_kill/d' $ManagerDir/source-reboot-rtorrent/main.c
-		sed -i '/supprLock/d' $ManagerDir/source-reboot-rtorrent/main.c
+		sed -i "s/screen_rtorrent_kill/rtorrent_kill/g;" $ManagerDir/source-reboot-rtorrent/main.c
+		sed -i "s/remove_lock_file/\/\/remove_lock_file/g;" $ManagerDir/source-reboot-rtorrent/main.c
 	fi
 
 	if [ -f $ManagerDir/source-reboot-rtorrent/start_rtorrent.c ]; then
@@ -189,10 +192,7 @@ EOF
 	echo "URL : "$PluginManagerUrl
 	echo	
 	if [ -d $PluginManagerDir ]; then
-		cd $PluginManagerDir
-		git stash
-		git pull
-		#git stash clear
+		GitStash $PluginManagerDir/
 	else
 		if [ -f $MySB_InstallDir/files/$PluginManagerFile ]; then
 			unzip $MySB_InstallDir/files/$PluginManagerFile -d $MySB_InstallDir/temp/
@@ -201,10 +201,7 @@ EOF
 				mv -v $MySB_InstallDir/temp/$SubDir $PluginManagerDir
 			fi
 			if [ -d $PluginManagerDir ]; then
-				cd $PluginManagerDir/
-				git stash
-				git pull
-				#git stash clear
+				GitStash $PluginManagerDir/
 			fi
 		else
 			git clone $PluginManagerUrl $PluginManagerDir
