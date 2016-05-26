@@ -92,7 +92,7 @@ for Repo in $AllRepos; do
 
 	# Download all
 	case "$RepoType" in
-		"TARGZ")
+		'TARGZ')
 			if [ ! -f $MySB_InstallDir/files/$RepoFile ]; then
 				wget --no-check-certificate $RepoURL -O $MySB_InstallDir/files/$RepoFile
 				Error=$?
@@ -108,13 +108,13 @@ for Repo in $AllRepos; do
 				fi
 			fi
 		;;
-		"WBM")
+		'WBM')
 			if [ ! -f $MySB_InstallDir$RepoDir/$RepoFile ]; then
 				wget --no-check-certificate $RepoURL -O $MySB_InstallDir$RepoDir/$RepoFile
 				Error=$?
 			fi
 		;;
-		"SVN")
+		'SVN')
 			case "$Switch" in
 				"UPGRADE")
 					if [ -d $MySB_InstallDir$RepoDir ]; then
@@ -157,7 +157,7 @@ for Repo in $AllRepos; do
 				;;
 			esac
 		;;
-		"GIT")
+		'GIT')
 			case "$Switch" in
 				"UPGRADE")
 					if [ -d $MySB_InstallDir$RepoDir/ ]; then
@@ -170,6 +170,17 @@ for Repo in $AllRepos; do
 							if [ $Error -eq 0 ]; then
 								git stash clear
 								Error=$?
+							else
+								git fetch --tags
+								Error=$?
+								if [ $Error -eq 0 ]; then
+									git checkout -b $(git describe --tags $(git rev-list --tags --max-count=1))
+									Error=$?
+									if [ $Error -eq 0 ]; then
+										git stash clear
+										Error=$?
+									fi
+								fi
 							fi
 						fi
 					else
@@ -192,12 +203,30 @@ for Repo in $AllRepos; do
 									if [ $Error -eq 0 ]; then
 										git stash clear
 										Error=$?
+									else
+										git fetch --tags
+										Error=$?
+										if [ $Error -eq 0 ]; then
+											git checkout -b $(git describe --tags $(git rev-list --tags --max-count=1))
+											Error=$?
+											if [ $Error -eq 0 ]; then
+												git stash clear
+												Error=$?
+											fi
+										fi
 									fi
 								fi
 							fi
 						else
 							git clone $RepoURL $MySB_InstallDir$RepoDir
 							Error=$?
+							if [ $Error -eq 0 ]; then
+								LASTEST=$(git describe --abbrev=0 --tags)
+								if [ ! -z "`echo "$LASTEST"`" ]; then
+									git checkout tags/$LASTEST
+									Error=$?
+								fi
+							fi
 						fi
 					fi
 				;;
@@ -245,7 +274,7 @@ for Repo in $AllRepos; do
 				;;
 			esac
 		;;
-		"ZIP")
+		'ZIP')
 			if [ ! -f $MySB_InstallDir/files/$RepoFile ]; then
 				wget --no-check-certificate $RepoURL -O $MySB_InstallDir/files/$RepoFile
 				Error=$?
@@ -261,7 +290,7 @@ for Repo in $AllRepos; do
 				fi
 			fi
 		;;
-		"CURL")
+		'CURL')
 			if [ ! -f $MySB_InstallDir/files/$RepoFile ]; then
 				curl --insecure -sS $RepoURL | php -- --install-dir=$MySB_InstallDir/files/
 				Error=$?
@@ -275,13 +304,16 @@ for Repo in $AllRepos; do
 
 	# Restore some config files or directory
 	case "$RepoName" in
-		"ownCloud")
+		'ownCloud')
 			if [ -f $MySB_InstallDir/temp/owncloud_config.php ]; then
 				mv -v $MySB_InstallDir/temp/owncloud_config.php $ownCloudDir/config/config.php
 			fi
 		;;
-		"Seedbox-Manager")
+		'Seedbox-Manager')
 			if [ -d $MySB_InstallDir/temp/sm_conf ]; then
+				if [ -d $ManagerDir/conf ]; then
+					rm -rfv $ManagerDir/conf
+				fi
 				mv -v $MySB_InstallDir/temp/sm_conf $ManagerDir/conf
 			fi
 		;;
@@ -290,22 +322,22 @@ for Repo in $AllRepos; do
 	# Switch on errors
 	if [ $Error -gt 0 ]; then
 		case "$RepoName" in
-			"Cakebox-Light")
+			'Cakebox-Light')
 				RemovePluginCakebox=YES
 				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '0'" "serv_name = 'CakeBox-Light'" '-echo'
 			;;
-			"Seedbox-Manager")
+			'Seedbox-Manager')
 				RemovePluginManager=YES
 				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '0'" "serv_name = 'Seedbox-Manager'" '-echo'
 			;;
-			"Composer"|"NodeJS")
+			'Composer'|'NodeJS')
 				RemovePluginCakebox=YES
 				RemovePluginManager=YES
 				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '0'" "serv_name = 'CakeBox-Light'" '-echo'
 				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '0'" "serv_name = 'Seedbox-Manager'" '-echo'
 				echo "$RepoURL" >> $MySB_InstallDir/temp/continue
 			;;
-			"XMLRPC"|"LibTorrent"|"rTorrent"|"ruTorrent"|"ruTorrents Official Plugins")
+			'XMLRPC'|'LibTorrent'|'rTorrent'|'ruTorrent'|'ruTorrents Official Plugins')
 				echo "$RepoURL" >> $MySB_InstallDir/temp/continue
 			;;
 		esac
