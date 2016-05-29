@@ -36,7 +36,6 @@
 				* Disk Log v3.6 (AceP1983)
 				* Speed Graph v3.6 (AceP1983)
 				* Show IP v3.6 (AceP1983)
-				* Fileshare v1.0 (nelu)
 
 	Version v3.3
 		2016/03/03
