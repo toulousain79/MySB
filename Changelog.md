@@ -8,6 +8,7 @@
 			- PHP5, limit TMPFS cache to 64Mo
 			- Detect real IP address during installation
 			- PlexMediaServer, new APT Key
+			- Let's Encrypt, scheduled renew certificate bug fix
 			- Add survey confirmation before continue installation
 			- Cakebox-Light, bug fix of playback _(Cakebox not streaming #12)_
 				* Disable DivX Web Player (HTTPS not supported)
@@ -49,7 +50,7 @@
 			- OptionsMySB.php, add categories synchronize mode (v3.3)
 			- Personnal scripts template review (v3.2 and v3.3)
 			- Personnal scripts, add synchronize by FTPs and RSYNC (v3.3)
-			- DownloadAll, correcting littler error (v3.2 and v3.3)
+			- DownloadAll, correcting little error (v3.2 and v3.3)
 			- ownCloud.bsh, review of the scan process (v3.2 and v3.3)
 			- Disable totaly IPv6 (v3.2 and v3.3)
 			- ownCloud, correcting upgrade process (v3.2 and v3.3)
