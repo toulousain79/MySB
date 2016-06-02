@@ -28,14 +28,11 @@ source $(dirname $0)/../inc/includes_before
 # Documentation:	https://certbot.eff.org/docs/intro.html
 ######################################################################
 
-#### VARs
-Switch="$1"
-
 #### INSTALL
 PackagesManage install "libaugeas0 augeas-lenses" "backports"
 PackagesManage install "python-virtualenv python-dev gcc dialog libssl-dev libffi-dev ca-certificates"
 
-# Let's Encrypt
+#### VARs
 LetsEncryptDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'Lets Encrypt'"`"
 LetsEncryptUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Lets Encrypt'"`"
 LetsEncryptFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Lets Encrypt'"`"
@@ -102,7 +99,7 @@ if [ ! -f /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem ]; then # Is it a ne
 		ln -sv /etc/letsencrypt/live/$HostNameFQDN/chain.pem $MySB_InstallDir/ssl/chain.pem
 		ln -sv /etc/letsencrypt/live/$HostNameFQDN/cert.pem $MySB_InstallDir/ssl/cert.pem
 		ln -sv /etc/letsencrypt/live/$HostNameFQDN/privkey.pem $MySB_InstallDir/ssl/privkey.pem
-		Func_SQL_CommaFunc_SQL_Command 'UPDATE' 'MySB_db' 'system' "letsencrypt_date = 'NOW'" 'id_system = 1' '-echo'
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "letsencrypt_date = 'NOW'" 'id_system = 1' '-echo'
 	fi
 
 	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '1'" "serv_name = 'Lets Encrypt'" '-echo'
@@ -114,7 +111,7 @@ else # Or is it a renew ?
 		ln -sv /etc/letsencrypt/live/$HostNameFQDN/privkey.pem $MySB_InstallDir/ssl/privkey.pem
 	fi
 
-	if [ "$Switch" == "renew" ]; then
+	if [ "$1" == "renew" ]; then
 		LetsEncryptDate="`Func_SQL_Command 'SELECT' 'MySB_db' 'letsencrypt_date' 'system' '1'`"
 		if [ ! -z "$LetsEncryptDate" ]; then
 			LetsEncryptDate=$(date -d "$LetsEncryptDate" +"%Y-%m-%d")
@@ -132,6 +129,7 @@ else # Or is it a renew ?
 fi
 
 Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "letsencrypt_openport = '0'" 'id_system = 1' '-echo'
+ScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create' 'CRON'
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after
