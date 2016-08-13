@@ -56,7 +56,7 @@ define('Home_NormalUser', '
 define('Home_ownCloudAfterUpgrade', '
 	<p></p>
 	<h2>ownCloud</h2>
-	<p>Pour utiliser ownCloud merci de r&eacute;initialiser votre mot de passe sur <a href="?user/change-password.html">cette page</a>. <span class="Comments">(Vous pouvez r&eacute;utiliser le m&ecirc;me mot de passe)</p>
+	<p>Pour utiliser ownCloud merci de r&eacute;initialiser votre mot de passe sur <a href="?user/change-password.html">cette page</a>. <span class="Comments">(Vous pouvez r&eacute;utiliser le m&ecirc;me mot de passe)</span></p>
 ');
 
 //#################### LAST LINE ######################################
