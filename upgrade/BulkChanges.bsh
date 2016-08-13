@@ -99,7 +99,6 @@ case "$1" in
 		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/upgrade/repositories_v3.4.sql
 
 		#### Cleaning
-		if [ -f /etc/init.d/plexmediaserver.dpkg-bak ]; then rm -vf /etc/init.d/plexmediaserver.dpkg-bak; fi
 		if [ -d $MySB_InstallDir/web/Cakebox-light ]; then
 			mv -v $MySB_InstallDir/web/Cakebox-light $MySB_InstallDir/web/cakebox-light
 		fi
@@ -144,6 +143,20 @@ case "$1" in
 			mount /var/lib/mysql/tmpfs &> /dev/null
 		fi
 		# NginX
+		ManageServices stop 'nginx'
+		cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.nginx.conf.tmpl /etc/nginx/nginx.conf
+		perl -pi -e "s/worker_processes auto;/worker_processes $PROCESSOR;/g" /etc/nginx/nginx.conf
+		if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
+			NumLign=$(cat /etc/nginx/nginx.conf | grep 'ssl_certificate' -n -m 1 | cut -d ':' -f 1)
+			sed -i '/ssl_certificate/d' /etc/nginx/nginx.conf
+			sed -i ""$NumLign"i\	ssl_certificate_key $MySB_InstallDir/ssl/privkey.pem; # Let's Encrypt certificate" /etc/nginx/nginx.conf
+			sed -i ""$NumLign"i\	ssl_certificate $MySB_InstallDir/ssl/fullchain.pem; # Let's Encrypt certificate" /etc/nginx/nginx.conf
+		else
+			NumLign=$(cat /etc/nginx/nginx.conf | grep 'ssl_certificate' -n -m 1 | cut -d ':' -f 1)
+			sed -i '/ssl_certificate/d' /etc/nginx/nginx.conf
+			sed -i ""$NumLign"i\	ssl_certificate_key $MySB_InstallDirEscaped/ssl/mysb.key;" /etc/nginx/nginx.conf
+			sed -i ""$NumLign"i\	ssl_certificate $MySB_InstallDirEscaped/ssl/mysb.cert;" /etc/nginx/nginx.conf
+		fi
 		if [ ! -z "`df -H | grep '/usr/share/nginx/pagespeed'`" ]; then
 			umount /usr/share/nginx/pagespeed &> /dev/null
 		fi
@@ -174,7 +187,7 @@ case "$1" in
 		ManageServices stop "ntp stunnel4 postfix"
 		ManageServices start "ntp stunnel4 postfix samba nginx dnscrypt-proxy webmin"
 
-		# Cleanup
+		# Cleaning
 		if [ -f /etc/logrotate.d/nginx.dpkg-old ]; then rm -vf /etc/logrotate.d/nginx.dpkg-old; fi
 		if [ -f /etc/logrotate.d/samba.dpkg-dist ]; then rm -vf /etc/logrotate.d/samba.dpkg-dist; fi
 		if [ -f /etc/vim/vimrc.dpkg-dist ]; then rm -vf /etc/vim/vimrc.dpkg-dist; fi
