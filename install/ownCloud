@@ -83,6 +83,7 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$LocSwitch" != "INIT" ]; then
 		# Disable the upgrade job
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "upgrade = '0'" "name = 'ownCloud'" '-echo'
 	fi
+	
 	if [ ! -d $ownCloudDir ]; then
 		if [ ! -f $MySB_InstallDir/files/$ownCloudFile ]; then
 			wget --no-check-certificate $ownCloudUrl -O $MySB_InstallDir/files/$ownCloudFile
@@ -213,12 +214,13 @@ if [ "$IsInstalled_ownCloud" == "YES" ] && [ "$LocSwitch" == "INIT" ]; then
 		#### ownCloud upgrade
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade -v"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:repair"
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-db"
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-js"
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mode --off"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable files_external"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ app:enable notifications"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ background:cron"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ files:cleanup"
-		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-db"
-		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mimetype:update-js"
 
 		#### Generatinf a new config file
 		if [ -d $ownCloudDir ] && [ -f $ownCloudDir/config/config.php ]; then
@@ -247,6 +249,12 @@ if [ "$IsInstalled_ownCloud" == "YES" ] && [ "$LocSwitch" == "INIT" ]; then
 			su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set logtimezone --value=$TimeZoneEscaped"
 			su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set secret --value=$Secret"
 			su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set assetdirectory --value=$MySB_InstallDirEscaped/web/owncloud"
+			su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set skeletondirectory --value=$MySB_InstallDirEscaped/web/owncloud/skeleton"
+			su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set versions_retention_obligation --value=auto"
+			su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set upgrade.disable-web --value=true"
+			su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set check_for_working_wellknown_setup --value=true"
+			su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set check_for_working_htaccess --value=true"
+			su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set updatechecker --value=true"
 			chown www-data:www-data $ownCloudDir/config/config.php
 			chmod 0640 $ownCloudDir/config/config.php
 		fi
