@@ -18,14 +18,15 @@
 				* Tested with IE 11 + HTML 5 Web Player + MP4
 				* Tested with Opera 36 + HTML 5 Web Player + MP4
 				* Tested with Opera 36 + VLC Web Player + MP4,AVI,MKV
+			- DNScrypt-proxy v1.7.0
 			- Cakebox-Light v1.8.6
-			- ownCloud v9.0.2
+			- ownCloud v9.1.0
 			- Seedbox-Manager v2.5.0
-			- Libsodium v1.0.10
+			- Libsodium v1.0.11
 			- NodeJS v0.12.14
-			- Composer v1.1.1
-			- Plowshare v2.1.4
-			- XMLRPC-C Stable v1.4.3
+			- Composer v1.2.0
+			- Plowshare v2.1.5
+			- XMLRPC-C Stable v1.43.03
 			- Portal
 				* Wolf CMS v0.8.3.1
 				* Noty v2.3.8
