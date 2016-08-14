@@ -123,11 +123,11 @@ case "$1" in
 		sed -i '/PHP TMPFS/d' /etc/fstab
 		sed -i '/\/var\/lib\/php5\/sessions/d' /etc/fstab
 		echo "# TMPFS - PHP" >> /etc/fstab
-		echo "tmpfs   /tmp/tmpfs_php tmpfs defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
-		if [ -d /var/lib/php5/sessions ]; then mv -v /var/lib/php5/sessions /tmp/tmpfs_php; fi
-		if [ ! -d /tmp/tmpfs_php ]; then mkdir -p /tmp/tmpfs_php; fi
-		if [ -z "`df -H | grep '/tmp/tmpfs_php'`" ]; then
-			mount /tmp/tmpfs_php &> /dev/null
+		echo "tmpfs   /mnt/tmpFS/php tmpfs defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
+		if [ -d /var/lib/php5/sessions ]; then mv -v /var/lib/php5/sessions /mnt/tmpFS/php; fi
+		if [ ! -d /mnt/tmpFS/php ]; then mkdir -p /mnt/tmpFS/php; fi
+		if [ -z "`df -H | grep '/mnt/tmpFS/php'`" ]; then
+			mount /mnt/tmpFS/php &> /dev/null
 		fi
 		# MySQL
 		if [ ! -z "`df -H | grep '/media/MySQL_TempDir'`" ]; then
@@ -135,14 +135,14 @@ case "$1" in
 		fi
 		sed -i '/MySQL/d' /etc/fstab
 		sed -i '/MySQL_TempDir/d' /etc/fstab
-		echo "# MySQL Temp Directory" >> /etc/fstab
-		echo "tmpfs   /tmp/tmpfs_mysql      tmpfs   defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
-		if [ ! -d /tmp/tmpfs_mysql ]; then
-			mkdir -pv /tmp/tmpfs_mysql
-			chown mysql:mysql /tmp/tmpfs_mysql
+		echo "# TMPFS - MySQL" >> /etc/fstab
+		echo "tmpfs   /mnt/tmpFS/mysql      tmpfs   defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
+		if [ ! -d /mnt/tmpFS/mysql ]; then
+			mkdir -pv /mnt/tmpFS/mysql
+			chown mysql:mysql /mnt/tmpFS/mysql
 		fi
-		if [ -z "`df -H | grep '/tmp/tmpfs_mysql'`" ]; then
-			mount /tmp/tmpfs_mysql &> /dev/null
+		if [ -z "`df -H | grep '/mnt/tmpFS/mysql'`" ]; then
+			mount /mnt/tmpFS/mysql &> /dev/null
 		fi
 		# NginX
 		ManageServices stop 'nginx'
@@ -166,12 +166,12 @@ case "$1" in
 		sed -i '/PageSpeed/d' /etc/fstab
 		sed -i '/pagespeed/d' /etc/fstab
 		echo "# TMPFS - Nginx PageSpeed" >> /etc/fstab
-		echo "tmpfs   /tmp/tmpfs_pagespeed      tmpfs   defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
-		if [ -d /usr/share/nginx/pagespeed ]; then mv -v /usr/share/nginx/pagespeed /tmp/tmpfs_pagespeed; fi
-		if [ ! -d /tmp/tmpfs_pagespeed ]; then mkdir -p /tmp/tmpfs_pagespeed; fi
-		chown -R www-data:www-data /tmp/tmpfs_pagespeed
-		if [ -z "`df -H | grep '/tmp/tmpfs_pagespeed'`" ]; then
-			mount /tmp/tmpfs_pagespeed &> /dev/null
+		echo "tmpfs   /mnt/tmpFS/pagespeed      tmpfs   defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
+		if [ -d /usr/share/nginx/pagespeed ]; then mv -v /usr/share/nginx/pagespeed /mnt/tmpFS/pagespeed; fi
+		if [ ! -d /mnt/tmpFS/pagespeed ]; then mkdir -p /mnt/tmpFS/pagespeed; fi
+		chown -R www-data:www-data /mnt/tmpFS/pagespeed
+		if [ -z "`df -H | grep '/mnt/tmpFS/pagespeed'`" ]; then
+			mount /mnt/tmpFS/pagespeed &> /dev/null
 		fi
 		ManageServices start 'mysql nginx php5-fpm'
 
@@ -195,7 +195,7 @@ case "$1" in
 				mv -v $ownCloudDir/config/config.php $MySB_InstallDir/temp/owncloud_config.php
 			fi
 			if [ -f $MySB_InstallDir/files/$ownCloudFile ]; then
-				DeleteDirectory 1 "$ownCloudDir"
+				DeleteDirectory 0 "$ownCloudDir"
 			fi
 			if [ ! -d $ownCloudDir ]; then
 				if [ ! -f $MySB_InstallDir/files/$ownCloudFile ]; then
@@ -218,6 +218,7 @@ case "$1" in
 		fi
 		ManageDirectoriesAndFiles 'global'
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade -v"
+		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:get version"
 	;;
 	"AFTER")
 		####################################
