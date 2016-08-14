@@ -307,6 +307,18 @@ function CleanHostname($url) {
 	return $domain;
 }
 
+// Get DNS Records
+function GetDnsRecords($address) {
+	$Value = array();
+	$DnsRecords = dns_get_record($address, $type = DNS_A);
+	foreach($DnsRecords as $Record) {
+		if ( $Record['ip'] != "" ) {
+			$Value[] = $Record['ip'];
+		}
+	}
+	return $Value;
+}
+
 // Manage User Trackers
 function ManageUsersTrackers($Tracker, $IsActive) {
 	global $MySB_DB;
@@ -319,17 +331,6 @@ function ManageUsersTrackers($Tracker, $IsActive) {
 	$numberParts = sizeof($hostParts);
 	$ValToReturn = false;
 	$IPv4_Tab = array();
-
-	function GetDnsRecords($address) {
-		$Value = array();
-		$DnsRecords = dns_get_record($address, $type = DNS_A);
-		foreach($DnsRecords as $Record) {
-			if ( $Record['ip'] != "" ) {
-				$Value[] = $Record['ip'];
-			}
-		}
-		return $Value;
-	}
 
 	switch ($numberParts) {
 		case 3:
@@ -351,11 +352,11 @@ function ManageUsersTrackers($Tracker, $IsActive) {
 	$IPv4_Tab = array_merge($IPv4_Tab, GetDnsRecords($TrackerAddress));
 
 	# 3/ Check 'tracker.domain.com'
-	if ( $TrackerAddress != 'tracker'.$TrackerDomain ) {
-		$Value = GetDnsRecords('tracker'.$TrackerDomain);
-		if ( array_count_values($Value) >= 1 ) {
+	if ( $TrackerAddress != "tracker.$TrackerDomain" ) {
+		$Value = GetDnsRecords("tracker.$TrackerDomain");
+		if ( count($Value) >= 1 ) {
 			$IPv4_Tab = array_merge($IPv4_Tab, $Value);
-			$TrackerAddress = 'tracker'.$TrackerDomain;
+			$TrackerAddress = "tracker.$TrackerDomain";
 		}
 	}
 
@@ -378,10 +379,10 @@ function ManageUsersTrackers($Tracker, $IsActive) {
 		}
 		if ( $id_trackers_list > 0 ) {
 			$MySB_DB->delete("trackers_list_ipv4", ["id_trackers_list" => $id_trackers_list]);
-			foreach($DnsRecords as $Record) {
+			foreach($IPv4_Tab as $IPv4) {
 				$ValToReturn = $MySB_DB->insert("trackers_list_ipv4", [
 																"id_trackers_list" => "$id_trackers_list",
-																"ipv4" => $Record['ip']
+																"ipv4" => $IPv4
 															]);
 			}
 		} else {
@@ -397,7 +398,7 @@ function ManageUsersTrackers($Tracker, $IsActive) {
 // Manage Users Addresses
 function ManageUsersAddresses($UserName, $IPv4, $HostName, $IsActive, $CheckBy) {
 	global $MySB_DB;
-	
+
 	$UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$UserName"]);
 	$DateTime = date("Y-m-d H:i:s");
 	$value = false;

@@ -108,19 +108,15 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			break;
 
 		case Global_SaveChanges:
-			foreach($_POST['is_active_list'] as $key => $value) {
-				switch ($value) {
-					case 0:
-						$old = 1;
-						break;
-					default:
-						$old = 0;
-						break;
+			$i=0;
+			foreach($_POST['is_active'] as $key => $value) {
+				$Value = $MySB_DB->update("trackers_list", ["is_active" => "$value", "to_check" => "$value"], ["id_trackers_list" => $key]);
+				if ( $Value >= 1 ) {
+					$i++;
 				}
-				$return = $MySB_DB->replace("trackers_list", "is_active", "$old", "$value", ["id_trackers_list" => $key]);
 			}
 
-			if ( $return >= 1 ) {
+			if ( $i >= 1 ) {
 				$type = 'success';
 			} else {
 				$type = 'information';
@@ -206,7 +202,7 @@ if (empty($TrackersList)) {
 	if ($ButtonSaveON) {
 ?>
 <form class="form_settings" method="post" action="">
-	<div align="center">	
+	<div align="center">
 		<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">
 	
 		<table style="border-spacing:1;">
@@ -241,15 +237,15 @@ foreach($TrackersList as $Tracker) {
 			break;
 	}
 
-	switch ($Tracker["is_active_list"]) {
+	switch ($Tracker["is_active"]) {
 		case '0':
-			$is_active_list = '	<select name="is_active_list['.$i.']" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+			$is_active = '	<select name="is_active['.$i.']" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 								<option value="0" selected="selected" class="redText">' .Global_No. '</option>
 								<option value="1" class="greenText">' .Global_Yes. '</option>
 							</select>';
 			break;
 		default:
-			$is_active_list = '	<select name="is_active_list['.$i.']" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+			$is_active = '	<select name="is_active['.$i.']" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 								<option value="0" class="redText">' .Global_No. '</option>
 								<option value="1" selected="selected" class="greenText">' .Global_Yes. '</option>
 							</select>';
@@ -261,7 +257,7 @@ foreach($TrackersList as $Tracker) {
 					<input style="width:150px;" type="hidden" name="tracker_domain[<?php echo $i; ?>]" value="<?php echo $Tracker["tracker_domain"]; ?>" />
 					<?php echo $Tracker["tracker_domain"]; ?>
 				</td>
-				<td>			
+				<td>
 					<input style="width:180px;" type="hidden" name="tracker[<?php echo $i; ?>]" value="<?php echo $Tracker["tracker"]; ?>" />
 					<a target=_blank href="<?php echo ($Tracker["is_ssl"] == '0') ? 'http://' : 'https://'; echo $Tracker["tracker"]; ?>"><?php echo $Tracker["tracker"]; ?></a>
 				</td>
@@ -282,7 +278,7 @@ foreach($TrackersList as $Tracker) {
 					<?php echo $is_ssl; ?>
 				</td>
 				<td>
-					<?php echo $is_active_list; ?>
+					<?php echo $is_active; ?>
 				</td>
 				<td>
 					<input class="submit" name="delete[<?php echo $Tracker["id_trackers_list"]; ?>]" type="submit" value="<?php echo Global_Delete; ?>" />
