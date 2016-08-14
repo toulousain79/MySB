@@ -104,19 +104,23 @@ if [ -z $MySQL_RootPassword ] && [ -z $MySQL_MysbPassword ]; then
 		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Data.sql
 	fi
 else
-	if [ -f $MySB_InstallDir/files/MySQL_RootPassword ]; then rm -vf $MySB_InstallDir/files/MySQL_RootPassword; fi
-	if [ -f $MySB_InstallDir/files/MySQL_MysbPassword ]; then rm -vf $MySB_InstallDir/files/MySQL_MysbPassword; fi
+	if [ "$IsInstalled_Webmin" == "YES" ] && [ -f /etc/webmin/mysql/config ]; then
+		sed -i '/login=/d' /etc/webmin/mysql/config
+		sed -i '/pass=/d' /etc/webmin/mysql/config
+		echo "login=root" >> /etc/webmin/mysql/config
+		echo "pass=$MySQL_RootPassword" >> /etc/webmin/mysql/config
+	fi
 fi
 
 if [ "$LocSwitch" != "UPGRADE" ]; then
 	#### Temp directory in memory
-	if [ ! -d /var/lib/mysql/tmpfs ]; then
-		mkdir -pv /var/lib/mysql/tmpfs
-		chown mysql:mysql /var/lib/mysql/tmpfs
+	if [ ! -d /tmp/tmpfs_mysql ]; then
+		mkdir -pv /tmp/tmpfs_mysql
+		chown mysql:mysql /tmp/tmpfs_mysql
 		sed -i '/MySQL/d' /etc/fstab
 		sed -i '/MySQL_TempDir/d' /etc/fstab
-		echo "# MySQL Temp Directory" >> /etc/fstab
-		echo "tmpfs   /var/lib/mysql/tmpfs      tmpfs   defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
+		echo "# TMPFS - MySQL" >> /etc/fstab
+		echo "tmpfs   /tmp/tmpfs_mysql      tmpfs   defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
 	fi
 
 	#### Config file

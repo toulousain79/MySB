@@ -32,6 +32,7 @@
 				* Noty v2.3.8
 				* Modernizr v2.8.3
 				* jQuery v1.12.2
+				* Medoo Framework v1.1.2
 			- ruTorrent Plugins
 				* NFO v3.6 (AceP1983)
 				* Check SFV v3.6 (AceP1983)

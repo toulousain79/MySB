@@ -122,10 +122,12 @@ case "$1" in
 		fi
 		sed -i '/PHP TMPFS/d' /etc/fstab
 		sed -i '/\/var\/lib\/php5\/sessions/d' /etc/fstab
-		echo "# PHP TMPFS" >> /etc/fstab
-		echo "tmpfs   /var/lib/php5/sessions tmpfs defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
-		if [ -z "`df -H | grep '/var/lib/mysql/tmpfs'`" ]; then
-			mount /var/lib/php5/sessions &> /dev/null
+		echo "# TMPFS - PHP" >> /etc/fstab
+		echo "tmpfs   /tmp/tmpfs_php tmpfs defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
+		if [ -d /var/lib/php5/sessions ]; then mv -v /var/lib/php5/sessions /tmp/tmpfs_php; fi
+		if [ ! -d /tmp/tmpfs_php ]; then mkdir -p /tmp/tmpfs_php; fi
+		if [ -z "`df -H | grep '/tmp/tmpfs_php'`" ]; then
+			mount /tmp/tmpfs_php &> /dev/null
 		fi
 		# MySQL
 		if [ ! -z "`df -H | grep '/media/MySQL_TempDir'`" ]; then
@@ -134,13 +136,13 @@ case "$1" in
 		sed -i '/MySQL/d' /etc/fstab
 		sed -i '/MySQL_TempDir/d' /etc/fstab
 		echo "# MySQL Temp Directory" >> /etc/fstab
-		echo "tmpfs   /var/lib/mysql/tmpfs      tmpfs   defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
-		if [ ! -d /var/lib/mysql/tmpfs ]; then
-			mkdir -pv /var/lib/mysql/tmpfs
-			chown mysql:mysql /var/lib/mysql/tmpfs
+		echo "tmpfs   /tmp/tmpfs_mysql      tmpfs   defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
+		if [ ! -d /tmp/tmpfs_mysql ]; then
+			mkdir -pv /tmp/tmpfs_mysql
+			chown mysql:mysql /tmp/tmpfs_mysql
 		fi
-		if [ -z "`df -H | grep '/var/lib/mysql/tmpfs'`" ]; then
-			mount /var/lib/mysql/tmpfs &> /dev/null
+		if [ -z "`df -H | grep '/tmp/tmpfs_mysql'`" ]; then
+			mount /tmp/tmpfs_mysql &> /dev/null
 		fi
 		# NginX
 		ManageServices stop 'nginx'
@@ -163,10 +165,13 @@ case "$1" in
 		fi
 		sed -i '/PageSpeed/d' /etc/fstab
 		sed -i '/pagespeed/d' /etc/fstab
-		echo "# Nginx PageSpeed" >> /etc/fstab
-		echo "tmpfs   /usr/share/nginx/pagespeed      tmpfs   defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
-		if [ -z "`df -H | grep '/usr/share/nginx/pagespeed'`" ]; then
-			mount /usr/share/nginx/pagespeed &> /dev/null
+		echo "# TMPFS - Nginx PageSpeed" >> /etc/fstab
+		echo "tmpfs   /tmp/tmpfs_pagespeed      tmpfs   defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
+		if [ -d /usr/share/nginx/pagespeed ]; then mv -v /usr/share/nginx/pagespeed /tmp/tmpfs_pagespeed; fi
+		if [ ! -d /tmp/tmpfs_pagespeed ]; then mkdir -p /tmp/tmpfs_pagespeed; fi
+		chown -R www-data:www-data /tmp/tmpfs_pagespeed
+		if [ -z "`df -H | grep '/tmp/tmpfs_pagespeed'`" ]; then
+			mount /tmp/tmpfs_pagespeed &> /dev/null
 		fi
 		ManageServices start 'mysql nginx php5-fpm'
 
@@ -179,10 +184,10 @@ case "$1" in
 		PackagesManage purge "subversion"
 
 		#### Upgrade ownCloud to v9.0.4 before v9.1.0
-		if [ "$IsInstalled_ownCloud" == "YES" ]; then
+		ownCloudFile="owncloud_v9.0.4.zip"
+		if [ -d $ownCloudDir ] && [ -f $MySB_InstallDir/files/$ownCloudFile ]; then
 			source /etc/MySB/config_db
 			ownCloudDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ownCloud'"`"
-			ownCloudFile="owncloud_v9.0.4.zip"
 			ownCloudUrl="https://download.owncloud.org/community/owncloud-9.0.4.zip"
 
 			if [ -f $ownCloudDir/config/config.php ]; then
@@ -234,6 +239,8 @@ case "$1" in
 		if [ -f /etc/nginx/nginx.conf.dpkg-dist ]; then rm -vf /etc/nginx/nginx.conf.dpkg-dist; fi
 		if [ -f /etc/nginx/sites-available/default.dpkg-old ]; then rm -vf /etc/nginx/sites-available/default.dpkg-old; fi
 		if [ -f /etc/nginx/sites-available/default.dpkg-dist ]; then rm -vf /etc/nginx/sites-available/default.dpkg-dist; fi
+		if [ -f $MySB_InstallDir/files/MySQL_RootPassword ]; then rm -vf $MySB_InstallDir/files/MySQL_RootPassword; fi
+		if [ -f $MySB_InstallDir/files/MySQL_MysbPassword ]; then rm -vf $MySB_InstallDir/files/MySQL_MysbPassword; fi
 
 		# Upgrade in progress page
 		UpgradeInProgress "off"

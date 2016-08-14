@@ -24,7 +24,8 @@
 
 define('MainUser_TrackersAdd_UpdateFailed', 'Failed !<br /><br />It was not possible to delete tracker.');
 define('MainUser_TrackersAdd_AddMyTrackers', 'Add my trackers now !');
-define('MainUser_TrackersAdd_Title_AddTrackers', 'Add your trackers here');
+define('MainUser_TrackersAdd_Title_AddTrackersFile', 'Add a tracker via a torrent file');
+define('MainUser_TrackersAdd_Title_AddTrackersManual', 'Add your trackers manually');
 define('MainUser_TrackersAdd_TextAddress', 'Tracker <i>(domain, hostname or URL)</i>:');
 define('MainUser_TrackersAdd_Btn_AddNewDomain', 'Add a tracker');
 define('MainUser_TrackersAdd_Btn_RemoveLastTracker', 'Remove last tracker');

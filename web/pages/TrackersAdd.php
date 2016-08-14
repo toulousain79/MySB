@@ -79,31 +79,58 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				}
 			}
 			break;
-		case Global_SaveChanges:
+
 		case MainUser_TrackersAdd_AddMyTrackers:
 			$count = count($_POST['input_id']);
 
 			for($i=1; $i<=$count; $i++) {
-				$Tracker = preg_replace('/\s\s+/', '', $_POST['input_tracker'][$i]);
-				if (filter_var($url, FILTER_VALIDATE_URL)) {
-					$Tracker = parse_url($Tracker, PHP_URL_HOST);
-				}
-				$last_id_trackers_list = ManageUsersTrackers($Tracker, $_POST['is_active'][$i]);
-				if ( (!isset($last_id_trackers_list)) || ($last_id_trackers_list === false) ) {
-					$success = false;
+				if (!empty($_POST['input_tracker'][$i])) {
+					$Tracker = preg_replace('/\s\s+/', '', $_POST['input_tracker'][$i]);
+					if (filter_var($url, FILTER_VALIDATE_URL)) {
+						$Tracker = parse_url($Tracker, PHP_URL_HOST);
+					}
+					$last_id_trackers_list = ManageUsersTrackers($Tracker, $_POST['is_active'][$i]);
+					if ( $last_id_trackers_list == 0 ) {
+						$success = false;
+					}
 				}
 			}
 
-			if ( $success == true ) {
+			switch ($success) {
+				case true:
+					$type = 'success';
+					break;
+				default:
+					$type = 'information';
+					$message = Global_NoChange;
+					break;
+			}
+			break;
+
+		case Global_SaveChanges:
+			foreach($_POST['is_active_list'] as $key => $value) {
+				switch ($value) {
+					case 0:
+						$old = 1;
+						break;
+					default:
+						$old = 0;
+						break;
+				}
+				$return = $MySB_DB->replace("trackers_list", "is_active", "$old", "$value", ["id_trackers_list" => $key]);
+			}
+
+			if ( $return >= 1 ) {
 				$type = 'success';
 			} else {
 				$type = 'information';
 				$message = Global_NoChange;
 			}
+
 			break;
+
 		default: // delete
 			if (isset($_POST['delete'])) {
-				$count = count($_POST['delete']);
 
 				foreach($_POST['delete'] as $key => $value) {
 					$result = $MySB_DB->delete("trackers_list_ipv4", ["id_trackers_list" => $key]);
@@ -133,43 +160,55 @@ if(isset($_POST)==true && empty($_POST)==false) {
 }
 
 $TrackersList = $MySB_DB->select("trackers_list", "*", ["origin" => "users", "ORDER" => "trackers_list.tracker_domain ASC"]);
+if (empty($TrackersList)) {
+	$ButtonSaveON = false;
+} else {
+	$ButtonSaveON = true;
+}
 ?>
 
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
-	<form id="myForm" class="form_settings" method="post" action="">
-		<fieldset>
-		<legend><?php echo MainUser_TrackersAdd_Title_AddTrackers; ?></legend>
-			<div id="input1" class="clonedInput">
-				<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
-				<?php echo MainUser_TrackersAdd_TextAddress; ?>&nbsp;<input class="input_tracker" id="input_tracker" name="input_tracker[1]" type="text" required="required" <?php echo $TrackerAddress; ?> />
-				&nbsp;&nbsp;<?php echo Global_IsActive; ?>&nbsp;&nbsp;<select class="select_is_active" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required">
-									<option value="0" selected="selected"><?php echo Global_No; ?></option>
-									<option value="1"><?php echo Global_Yes; ?></option>
-								</select>
-			</div>
-
-			<div style="margin-top: 10px; margin-bottom: 20px;">
-				<input type="button" id="btnAdd" value="<?php echo MainUser_TrackersAdd_Btn_AddNewDomain; ?>" style="cursor: pointer;" />
-				<input type="button" id="btnDel" value="<?php echo MainUser_TrackersAdd_Btn_RemoveLastTracker; ?>" style="cursor: pointer;" />
-			</div>
-
-			<input class="submit" style="width:<?php echo strlen(MainUser_TrackersAdd_AddMyTrackers)*10; ?>px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo MainUser_TrackersAdd_AddMyTrackers; ?>">
-			<p class="Comments"><?php echo MainUser_TrackersAdd_InfoAddTracker_1; ?></p>
-			<br />
-			<p class="Comments"><?php echo MainUser_TrackersAdd_InfoAddTracker_2; ?></p>
-		</fieldset>
-	</form>
 	<form id="CheckTorrent" class="form_settings" action="" method="post" enctype="multipart/form-data">
 		<fieldset>
+			<legend><?php echo MainUser_TrackersAdd_Title_AddTrackersFile; ?></legend>
 			<?php echo MainUser_TrackersAdd_SelectTorrent; ?>&nbsp;
 			<input type="file" name="fileToUpload" id="fileToUpload" />
-			<input style="width:<?php echo strlen(MainUser_TrackersAdd_ExtractAddress)*10; ?>px;" name="submit" type="submit" value="<?php echo MainUser_TrackersAdd_ExtractAddress; ?>">
+			<input style="background: #3B3B3B; color: #FFF; width:<?php echo strlen(MainUser_TrackersAdd_ExtractAddress)*10; ?>px;" name="submit" type="submit" value="<?php echo MainUser_TrackersAdd_ExtractAddress; ?>">
 		</fieldset>
-	</form>	
+	</form>
+	<p></p>
+	<form id="myForm" class="form_settings" method="post" action="">
+		<fieldset>
+		<legend><?php echo MainUser_TrackersAdd_Title_AddTrackersManual; ?></legend>
+				<div id="input1" class="clonedInput">
+					<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
+					<?php echo MainUser_TrackersAdd_TextAddress; ?>&nbsp;<input class="input_tracker" id="input_tracker" name="input_tracker[1]" type="text" required="required" <?php echo $TrackerAddress; ?> />
+					&nbsp;&nbsp;<?php echo Global_IsActive; ?>&nbsp;&nbsp;<select class="select_is_active" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required">
+										<option value="0" selected="selected"><?php echo Global_No; ?></option>
+										<option value="1"><?php echo Global_Yes; ?></option>
+									</select>
+				</div>
+
+				<div style="margin-top: 10px; margin-bottom: 20px;">
+					<input type="button" id="btnAdd" value="<?php echo MainUser_TrackersAdd_Btn_AddNewDomain; ?>" style="cursor: pointer;" />
+					<input type="button" id="btnDel" value="<?php echo MainUser_TrackersAdd_Btn_RemoveLastTracker; ?>" style="cursor: pointer;" />
+				</div>
+
+				<input class="submit" style="width:<?php echo strlen(MainUser_TrackersAdd_AddMyTrackers)*10; ?>px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo MainUser_TrackersAdd_AddMyTrackers; ?>">
+				<p class="Comments"><?php echo MainUser_TrackersAdd_InfoAddTracker_1; ?></p>
+				<br />
+				<p class="Comments"><?php echo MainUser_TrackersAdd_InfoAddTracker_2; ?></p>
+		</fieldset>
+	</form>
 </div>
 
+<?php
+	if ($ButtonSaveON) {
+?>
 <form class="form_settings" method="post" action="">
-	<div align="center">
+	<div align="center">	
+		<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">
+	
 		<table style="border-spacing:1;">
 			<tr>
 				<th style="text-align:center;"><?php echo MainUser_TrackersAdd_Table_Domain; ?></th>
@@ -183,7 +222,11 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["origin" => "users", "OR
 <?php
 $i = 0;
 foreach($TrackersList as $Tracker) {
-	$i++;
+	if (isset($Tracker)) {
+		$i = $Tracker["id_trackers_list"];
+	} else {
+		$i++;
+	}
 
 	switch ($Tracker["is_ssl"]) {
 		case '0':
@@ -198,15 +241,15 @@ foreach($TrackersList as $Tracker) {
 			break;
 	}
 
-	switch ($Tracker["is_active"]) {
+	switch ($Tracker["is_active_list"]) {
 		case '0':
-			$is_active = '	<select name="is_active['.$i.']" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+			$is_active_list = '	<select name="is_active_list['.$i.']" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 								<option value="0" selected="selected" class="redText">' .Global_No. '</option>
 								<option value="1" class="greenText">' .Global_Yes. '</option>
 							</select>';
 			break;
 		default:
-			$is_active = '	<select name="is_active['.$i.']" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+			$is_active_list = '	<select name="is_active_list['.$i.']" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 								<option value="0" class="redText">' .Global_No. '</option>
 								<option value="1" selected="selected" class="greenText">' .Global_Yes. '</option>
 							</select>';
@@ -239,20 +282,24 @@ foreach($TrackersList as $Tracker) {
 					<?php echo $is_ssl; ?>
 				</td>
 				<td>
-					<?php echo $is_active; ?>
+					<?php echo $is_active_list; ?>
 				</td>
 				<td>
 					<input class="submit" name="delete[<?php echo $Tracker["id_trackers_list"]; ?>]" type="submit" value="<?php echo Global_Delete; ?>" />
 				</td>
 			</tr>
-			<input class="input_id" id="input_id" name="input_id[<?php echo $i; ?>]" type="hidden" value="<?php echo $i; ?>" />
+			<input class="input_id_tab_tracker" id="input_id_tab_tracker" name="input_id_tab_tracker[<?php echo $i; ?>]" type="hidden" value="<?php echo $i; ?>" />
 <?php
 } // foreach($TrackersList as $Tracker) {
 ?>
 		</table>
+
 		<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">
 	</div>
 </form>
+<?php
+	}
+?>
 
 <script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-dynamically-adding-form-elements.js"></script>
 
