@@ -48,7 +48,7 @@ define('User_OptionsMySB_NumDay', 'Week<br/>days');
 define('User_OptionsMySB_Command', 'Script');
 define('User_OptionsMySB_Add', 'Add');
 define('User_OptionsMySB_Crontab_Comment', 'Schedule your personal scripts at the end of your downloads.<br/>
-Your scripts must be stored in ~/crontab/ with extension ".cron".<br/>
+Your scripts must be stored in ~/crontab/ with extension ".sh".<br/>
 Confirm your schedule here ;-) <a target="_blank" href="http://crontab.guru/">crontab.guru</a>.<br/>
 Read the file \'~/scripts/README\'.');
 define('User_OptionsMySB_Title_SyncMode', 'Sync mode');

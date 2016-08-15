@@ -284,15 +284,18 @@ UserCrontab() {
 	HomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
 	Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory,sync_mode' 'users_rtorrent_cfg' "id_users = '$IdUser'"`"
 	Crontab="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users_crontab,minutes,hours,days,months,numday,command' 'users_crontab' "id_users = '$IdUser'"`"
-
-	echo "# Sync Mode for finished download" > $HomeDir/scripts/sync_mode
-	echo "# 0	-->	Do not start any script (no synchro)" >> $HomeDir/scripts/sync_mode
-	echo "# 1	-->	Execute scripts by crontab (*.cron)" >> $HomeDir/scripts/sync_mode
-	echo "# 2	-->	Execute scripts directly when a download is finished (*.sh)" >> $HomeDir/scripts/sync_mode
+	Sync_DB="/home/$FnUser/scripts/$FnUser.sq3"
+	
+	# echo "# Sync Mode for finished download" > $HomeDir/scripts/sync_mode
+	# echo "# 0	-->	Do not start any script (no synchro)" >> $HomeDir/scripts/sync_mode
+	# echo "# 1	-->	Execute scripts by crontab (*.cron)" >> $HomeDir/scripts/sync_mode
+	# echo "# 2	-->	Execute scripts directly when a download is finished (*.sh)" >> $HomeDir/scripts/sync_mode
+	Func_SQL_Command 'DELETE' 'Sync_db' 'categories' "1"
 	for Directory in $Directories; do
 		SubDirectory="`echo $Directory | awk '{split($0,a,"|"); print a[1]}'`"
 		SyncMode="`echo $Directory | awk '{split($0,a,"|"); print a[2]}'`"
-		echo "$SubDirectory|$SyncMode" >> $HomeDir/scripts/sync_mode
+		/usr/bin/sqlite3 -cmd '.timeout 150000' $Sync_DB "INSERT INTO categories (name,sync_mode) VALUES ('$SubDirectory','$SyncMode');"
+		#echo "$SubDirectory|$SyncMode" >> $HomeDir/scripts/sync_mode
 	done
 
 	if [ -f $HomeDir/scripts/crontab ]; then

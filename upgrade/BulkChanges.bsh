@@ -282,6 +282,60 @@ case "$1" in
 		#### To call for every upgrade - EoF
 		####################################
 
+		#### Sync DB
+		for seedUser in $UsersList; do
+			# Copy a new empty DB
+			if [ ! -f /home/$seedUser/$seedUser.sq3 ]; then
+				mv $Sync_DB /home/$seedUser/$seedUser.sq3
+			fi
+			# Get existing data
+			if [ -f /home/$seedUser/scripts/sync_mode ]; then
+				cat /home/$seedUser/scripts/sync_mode | sed '/^#/d' | while read Line; do
+					Cat="`echo $Line | cut -d "|" -f 1`"
+					Mode="`echo $Line | cut -d "|" -f 2`"
+					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' /home/$seedUser/scripts/$seedUser.sq3 "INSERT INTO categories (name,sync_mode) VALUES ('$Cat','$Mode');"
+				done
+				rm -vf /home/$seedUser/scripts/sync_mode
+			fi
+			if [ -f /home/$seedUser/scripts/direct.list ]; then
+				while read Line; do
+					if [ "`echo $Line | grep '^#'`" ]; then
+						is_active=0
+						Line="`echo $Line | sed 's/^#//g;'`"
+					else
+						is_active=1
+					fi
+					list_category="direct"
+					get_base_path="`echo $Line | cut -d "|" -f 1`"
+					get_custom1="`echo $Line | cut -d "|" -f 2`"
+					get_name="`echo $Line | cut -d "|" -f 3`"
+					get_loaded_file="`echo $Line | cut -d "|" -f 4`"
+					CategoryDir="`echo $Line | cut -d "|" -f 5`"
+					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' /home/$seedUser/scripts/$seedUser.sq3 "INSERT INTO list (list_category,is_active,get_base_path,get_custom1,get_name,get_loaded_file,CategoryDir) VALUES ('$list_category','$is_active','$get_base_path','$get_custom1','$get_name','$get_loaded_file','$CategoryDir');"
+				done < /home/$seedUser/scripts/direct.list
+				rm -vf /home/$seedUser/scripts/direct.list
+			fi
+			if [ -f /home/$seedUser/scripts/cron.list ]; then
+				while read Line; do
+					if [ "`echo $Line | grep '^#'`" ]; then
+						is_active=0
+						Line="`echo $Line | sed 's/^#//g;'`"
+					else
+						is_active=1
+					fi
+					list_category="cron"
+					get_base_path="`echo $Line | cut -d "|" -f 1`"
+					get_custom1="`echo $Line | cut -d "|" -f 2`"
+					get_name="`echo $Line | cut -d "|" -f 3`"
+					get_loaded_file="`echo $Line | cut -d "|" -f 4`"
+					CategoryDir="`echo $Line | cut -d "|" -f 5`"
+					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' /home/$seedUser/scripts/$seedUser.sq3 "INSERT INTO list (list_category,is_active,get_base_path,get_custom1,get_name,get_loaded_file,CategoryDir) VALUES ('$list_category','$is_active','$get_base_path','$get_custom1','$get_name','$get_loaded_file','$CategoryDir');"
+				done < /home/$seedUser/scripts/cron.list
+				rm -vf /home/$seedUser/scripts/cron.list
+			fi			
+		done
+		
+		
 		#### Apply quota for current users
 		UsersSpaceUsed=0
 		for seedUser in $UsersList; do
