@@ -10,6 +10,7 @@
 			- PlexMediaServer, new APT Key
 			- Let's Encrypt, scheduled renew certificate bug fix
 			- Add survey confirmation before continue installation
+			- Change script of synchronization (use of SQlite DB)
 			- Cakebox-Light, bug fix of playback _(Cakebox not streaming #12)_
 				* Disable DivX Web Player (HTTPS not supported)
 				* Tested with Firefox 45 (32 & 64 bits) + HTML 5 Web Player + MP4
@@ -34,6 +35,7 @@
 				* jQuery v1.12.2
 				* Medoo Framework v1.1.2
 				* Tracker Add, minor changes
+				* Add view of files queue to synchro
 			- ruTorrent Plugins
 				* NFO v3.6 (AceP1983)
 				* Check SFV v3.6 (AceP1983)
