@@ -34,6 +34,12 @@ $Change = 0;
 $type = 'information';
 $message = Global_NoChange;
 
+$Sync_DB = new medoo([
+	'database_type' => 'sqlite',
+	'database_file' => "/home/$CurrentUser/db/$CurrentUser.sq3",
+	'database_name' => 'Sync'
+]);
+
 // Get values from POST
 $rTorrentVersion_POST = $_POST['rTorrentVersion'];
 $rTorrentRestart_POST = $_POST['rTorrentRestart'];
@@ -178,6 +184,28 @@ if (isset($_POST['submit'])) {
 				}
 			}
 
+			// Files waiting - Change some values
+			$ChangeList=0;
+			if ( (isset($_POST['list_id'])) ) {
+				foreach ($_POST['list_id'] as $key) {
+					$result = $Sync_DB->update("list", ["list_category" => $_POST['list_category'][$key], "is_active" => $_POST['is_active'][$key]], ["list_id" => $key]);				
+					if ( $result > 0 ) { $ChangeList++; }
+				}
+			}
+
+			// Files waiting - Delete some values
+			if ( (isset($_POST['delete_filewaiting'])) ) {
+				foreach ($_POST['delete_filewaiting'] as $key) {
+					$result = $Sync_DB->delete("list", ["list_id" => $key]);
+					if ( $result > 0 ) { $ChangeList++; }
+				}
+			}
+
+			if ( $ChangeList > 0 ) {
+				$type = 'success';
+				unset($message);
+			}
+
 			// Need to restart rTorrent ?
 			if ( ($rTorrentVersion_POST != $rTorrentVersion_DB) || ($rTorrentRestart_POST == "1") ) {
 				$rTorrentRestart_POST = 1;
@@ -216,7 +244,7 @@ if (isset($_POST['submit'])) {
 
 	GenerateMessage($Command, $type, $message);
 
-	if( $RefreshPage == 1 ) {
+	if( $RefreshPage >= 1 ) {
 		header('Refresh: 2; URL='.$_SERVER['HTTP_REFERER'].'');
 	}
 }
@@ -241,6 +269,8 @@ if($dossier = opendir("/home/$CurrentUser/scripts")) {
 		}
 	}
 }
+
+$FilesInQueue = $Sync_DB->select("list", "*");
 ?>
 
 <form class="form_settings" method="post" action="">
@@ -436,7 +466,71 @@ if ( !empty($users_directories) ) {
 		</table>
 		<div align="center"><p class="Comments"><?php echo User_OptionsMySB_Crontab_Comment; ?></p></div>
 	</fieldset>
-
+	
+<?php
+if ( count($FilesInQueue) > 0 ) {
+?>	
+	<fieldset style="vertical-align: text-top;">
+	<legend><?php echo User_OptionsMySB_Title_FilesToSync; ?></legend>
+		<table>
+			<tr>
+				<th style="text-align:center;"><?php echo User_OptionsMySB_SyncMode; ?></th>
+				<th style="text-align:center;"><?php echo Global_IsActive; ?></th>
+				<th style="text-align:center;"><?php echo User_OptionsMySB_FileName; ?></th>
+				<th style="text-align:center;"><?php echo User_OptionsMySB_rTorrentConfigDirectory; ?></th>
+				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
+			</tr>
+<?php
+	foreach($FilesInQueue as $Files) {
+		$Id_list = $Files['list_id'];
+		switch ($Files['is_active']) {
+			case '0':
+				$is_active = '	<select name="is_active['.$Id_list.']" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+									<option value="0" selected="selected" class="redText">' .Global_No. '</option>
+									<option value="1" class="greenText">' .Global_Yes. '</option>
+								</select>';
+				break;
+			default:
+				$is_active = '	<select name="is_active['.$Id_list.']" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+									<option value="0" class="redText">' .Global_No. '</option>
+									<option value="1" selected="selected" class="greenText">' .Global_Yes. '</option>
+								</select>';
+				break;
+		}
+		switch ($Files['list_category']) {
+			case 'direct':
+					$list_category = '	<select name="list_category['.$Id_list.']" style="width:90px; cursor: pointer;" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+											<option value="direct" selected="selected">' .User_OptionsMySB_SynchroDirect. '</option>
+											<option value="cron">' .User_OptionsMySB_SynchroCron. '</option>
+										</select>';
+					break;
+				default: // cron
+					$list_category = '	<select name="list_category['.$Id_list.']" style="width:90px; cursor: pointer;" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+											<option value="direct">' .User_OptionsMySB_SynchroDirect. '</option>
+											<option value="cron" selected="selected">' .User_OptionsMySB_SynchroCron. '</option>
+										</select>';
+					break;
+		}
+?>
+			<input name="list_id[<?php echo $Id_list; ?>]" type="hidden" value="<?php echo $Id_list; ?>" />
+			<tr>
+				<td><?php echo $list_category; ?></td>
+				<td><?php echo $is_active; ?></td>
+				<td><?php echo $Files['get_name']; ?></td>
+				<td><?php echo $Files['CategoryDir']; ?></td>
+				<td>
+					<input class="submit" name="delete_filewaiting[<?php echo $Id_list; ?>]" type="checkbox" value="<?php echo $Id_list; ?>" />
+				</td>
+			</tr>
+<?php
+	}
+?>
+		</table>
+	</fieldset>	
+<?php
+}
+?>
+	
 	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
 
 	</div>

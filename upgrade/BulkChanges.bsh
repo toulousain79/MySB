@@ -230,19 +230,6 @@ case "$1" in
 		ManageServices stop "ntp stunnel4 postfix"
 		ManageServices start "ntp stunnel4 postfix samba nginx dnscrypt-proxy webmin"
 
-		# Cleaning
-		if [ -f /etc/logrotate.d/nginx.dpkg-old ]; then rm -vf /etc/logrotate.d/nginx.dpkg-old; fi
-		if [ -f /etc/logrotate.d/samba.dpkg-dist ]; then rm -vf /etc/logrotate.d/samba.dpkg-dist; fi
-		if [ -f /etc/vim/vimrc.dpkg-dist ]; then rm -vf /etc/vim/vimrc.dpkg-dist; fi
-		if [ -f /etc/init.d/plexmediaserver.dpkg-bak ]; then rm -vf /etc/init.d/plexmediaserver.dpkg-bak; fi
-		if [ -f /etc/init.d/bind9.dpkg-dist ]; then rm -vf /etc/init.d/bind9.dpkg-dist; fi
-		if [ -f /etc/nginx/nginx.conf.dpkg-old ]; then rm -vf /etc/nginx/nginx.conf.dpkg-old; fi
-		if [ -f /etc/nginx/nginx.conf.dpkg-dist ]; then rm -vf /etc/nginx/nginx.conf.dpkg-dist; fi
-		if [ -f /etc/nginx/sites-available/default.dpkg-old ]; then rm -vf /etc/nginx/sites-available/default.dpkg-old; fi
-		if [ -f /etc/nginx/sites-available/default.dpkg-dist ]; then rm -vf /etc/nginx/sites-available/default.dpkg-dist; fi
-		if [ -f $MySB_InstallDir/files/MySQL_RootPassword ]; then rm -vf $MySB_InstallDir/files/MySQL_RootPassword; fi
-		if [ -f $MySB_InstallDir/files/MySQL_MysbPassword ]; then rm -vf $MySB_InstallDir/files/MySQL_MysbPassword; fi
-
 		# Upgrade in progress page
 		UpgradeInProgress "off"
 
@@ -282,18 +269,43 @@ case "$1" in
 		#### To call for every upgrade - EoF
 		####################################
 
+		# Cleaning
+		if [ -f /etc/logrotate.d/nginx.dpkg-old ]; then rm -vf /etc/logrotate.d/nginx.dpkg-old; fi
+		if [ -f /etc/logrotate.d/samba.dpkg-dist ]; then rm -vf /etc/logrotate.d/samba.dpkg-dist; fi
+		if [ -f /etc/vim/vimrc.dpkg-dist ]; then rm -vf /etc/vim/vimrc.dpkg-dist; fi
+		if [ -f /etc/init.d/plexmediaserver.dpkg-bak ]; then rm -vf /etc/init.d/plexmediaserver.dpkg-bak; fi
+		if [ -f /etc/init.d/bind9.dpkg-dist ]; then rm -vf /etc/init.d/bind9.dpkg-dist; fi
+		if [ -f /etc/nginx/nginx.conf.dpkg-old ]; then rm -vf /etc/nginx/nginx.conf.dpkg-old; fi
+		if [ -f /etc/nginx/nginx.conf.dpkg-dist ]; then rm -vf /etc/nginx/nginx.conf.dpkg-dist; fi
+		if [ -f /etc/nginx/sites-available/default.dpkg-old ]; then rm -vf /etc/nginx/sites-available/default.dpkg-old; fi
+		if [ -f /etc/nginx/sites-available/default.dpkg-dist ]; then rm -vf /etc/nginx/sites-available/default.dpkg-dist; fi
+		if [ -f $MySB_InstallDir/files/MySQL_RootPassword ]; then rm -vf $MySB_InstallDir/files/MySQL_RootPassword; fi
+		if [ -f $MySB_InstallDir/files/MySQL_MysbPassword ]; then rm -vf $MySB_InstallDir/files/MySQL_MysbPassword; fi
+		for seedUser in $UsersList; do
+			rm -v /home/$seedUser/logs/*
+		done
+
+		#### LogRotate
+		for seedUser in $UsersList; do
+			cp -f $MySB_InstallDir/templates/logrotate/etc.logrotate.d.users.tmpl /etc/logrotate.d/rtorrent_$seedUser
+			perl -pi -e "s/<username>/$seedUser/g" /etc/logrotate.d/rtorrent_$seedUser
+			chmod 0644 /etc/logrotate.d/rtorrent_$seedUser
+		done
+
 		#### Sync DB
 		for seedUser in $UsersList; do
+			# VARs
+			UserSync_DB="/home/$seedUser/db/$seedUser.sq3"
 			# Copy a new empty DB
-			if [ ! -f /home/$seedUser/$seedUser.sq3 ]; then
-				mv $Sync_DB /home/$seedUser/$seedUser.sq3
+			if [ ! -f $UserSync_DB ]; then
+				mv $Sync_DB $UserSync_DB
 			fi
 			# Get existing data
 			if [ -f /home/$seedUser/scripts/sync_mode ]; then
 				cat /home/$seedUser/scripts/sync_mode | sed '/^#/d' | while read Line; do
 					Cat="`echo $Line | cut -d "|" -f 1`"
 					Mode="`echo $Line | cut -d "|" -f 2`"
-					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' /home/$seedUser/scripts/$seedUser.sq3 "INSERT INTO categories (name,sync_mode) VALUES ('$Cat','$Mode');"
+					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' $UserSync_DB "INSERT INTO categories (name,sync_mode) VALUES ('$Cat','$Mode');"
 				done
 				rm -vf /home/$seedUser/scripts/sync_mode
 			fi
@@ -311,7 +323,7 @@ case "$1" in
 					get_name="`echo $Line | cut -d "|" -f 3`"
 					get_loaded_file="`echo $Line | cut -d "|" -f 4`"
 					CategoryDir="`echo $Line | cut -d "|" -f 5`"
-					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' /home/$seedUser/scripts/$seedUser.sq3 "INSERT INTO list (list_category,is_active,get_base_path,get_custom1,get_name,get_loaded_file,CategoryDir) VALUES ('$list_category','$is_active','$get_base_path','$get_custom1','$get_name','$get_loaded_file','$CategoryDir');"
+					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' $UserSync_DB "INSERT INTO list (list_category,is_active,get_base_path,get_custom1,get_name,get_loaded_file,CategoryDir) VALUES ('$list_category','$is_active','$get_base_path','$get_custom1','$get_name','$get_loaded_file','$CategoryDir');"
 				done < /home/$seedUser/scripts/direct.list
 				rm -vf /home/$seedUser/scripts/direct.list
 			fi
@@ -329,13 +341,12 @@ case "$1" in
 					get_name="`echo $Line | cut -d "|" -f 3`"
 					get_loaded_file="`echo $Line | cut -d "|" -f 4`"
 					CategoryDir="`echo $Line | cut -d "|" -f 5`"
-					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' /home/$seedUser/scripts/$seedUser.sq3 "INSERT INTO list (list_category,is_active,get_base_path,get_custom1,get_name,get_loaded_file,CategoryDir) VALUES ('$list_category','$is_active','$get_base_path','$get_custom1','$get_name','$get_loaded_file','$CategoryDir');"
+					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' $UserSync_DB "INSERT INTO list (list_category,is_active,get_base_path,get_custom1,get_name,get_loaded_file,CategoryDir) VALUES ('$list_category','$is_active','$get_base_path','$get_custom1','$get_name','$get_loaded_file','$CategoryDir');"
 				done < /home/$seedUser/scripts/cron.list
 				rm -vf /home/$seedUser/scripts/cron.list
-			fi			
+			fi
 		done
-		
-		
+
 		#### Apply quota for current users
 		UsersSpaceUsed=0
 		for seedUser in $UsersList; do
