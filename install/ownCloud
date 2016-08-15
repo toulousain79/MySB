@@ -112,9 +112,9 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$LocSwitch" != "INIT" ]; then
 	if [ -f $ownCloudDir/config/config.sample.php ]; then
 		rm -fv $ownCloudDir/config/config.sample.php
 	fi
-	if [ -d $ownCloudDir/core/skeleton ]; then
-		rm -rfv $ownCloudDir/core/skeleton/*
-	fi
+	# if [ -d $ownCloudDir/core/skeleton ]; then
+		# rm -rfv $ownCloudDir/core/skeleton/*
+	# fi
 
 	#### CRON
 	crontab -u www-data -l > /tmp/crontab.tmp
@@ -186,7 +186,7 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$LocSwitch" != "INIT" ]; then
 
 	#### External Storage (mount.json)
 	if [ ! -f $ownCloudDataDirectory/mount.json ]; then
-		IdStorage=$(Func_SQL_Command 'SELECT' 'ownCloud_db' 'numeric_id' 'oc_storages' "id = 'local::/home/\$user'")
+		IdStorage=$(Func_SQL_Command 'SELECT' 'ownCloud_db' 'numeric_id' 'oc_storages' "id = 'local::/home/\$user\/'")
 		cp -vf $MySB_InstallDir/templates/owncloud/home.owncloud.mount.json.tmpl $ownCloudDataDirectory/mount.json
 		perl -pi -e "s/<IdStorage>/$IdStorage/g" $ownCloudDataDirectory/mount.json
 	fi
@@ -211,6 +211,11 @@ if [ "$IsInstalled_ownCloud" == "YES" ] && [ "$LocSwitch" == "INIT" ]; then
 	ownCloudDataDirectory="/home/owncloud"
 
 	if [ "$OnBoot" -eq 1 ]; then
+		#### VARs
+		MailFrom="`echo $MainUserEmail | cut -d "@" -f 1`"
+		MailDomain="`echo $MainUserEmail | cut -d "@" -f 2`"
+		TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
+	
 		#### ownCloud upgrade
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade -v"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:repair"
@@ -234,10 +239,9 @@ if [ "$IsInstalled_ownCloud" == "YES" ] && [ "$LocSwitch" == "INIT" ]; then
 			# Get the new version
 			Version="`su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:get version"`"
 			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "version = '$Version'" "name = 'ownCloud'" '-echo'
-			echo "Version: "$Version
 			cp -vf $MySB_InstallDir/templates/owncloud/owncloud.config.php.tmpl $ownCloudDir/config/config.php
 			perl -pi -e "s/<version>/$Version/g" $ownCloudDir/config/config.php
-			perl -pi -e "s/<dbpassword>/$MySQL_MysbPassword/g" $ownCloudDir/config/config.php
+			perl -pi -e "s/<db_password>/$MySQL_MysbPassword/g" $ownCloudDir/config/config.php
 			su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set passwordsalt --value=$PasswordSalt"
 			su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set trusted_domains 1 --value=$HostNameFQDN"
 			su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:set default_language --value=$EnvLang"
@@ -269,12 +273,14 @@ if [ "$IsInstalled_ownCloud" == "YES" ] && [ "$LocSwitch" == "INIT" ]; then
 
 		#### Updating database
 		# oc_storages
+		IdStorage=$(Func_SQL_Command 'SELECT' 'ownCloud_db' 'numeric_id' 'oc_storages' "id = 'local::/home/\$user\/'")
+		if [ -z "$IdStorage" ]; then IdStorage=1; fi
 		Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_storages' "1" '-echo'
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_storages' 'id' "'local::/home/\$user/'" '-echo'
 		Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_external_applicable' "1" '-echo'
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_applicable' 'mount_id,type,value' "'1','2','MySB_users'" '-echo'
+		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_applicable' 'mount_id,type,value' "'$IdStorage','2','MySB_users'" '-echo'
 		Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_external_config' "1" '-echo'
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_config' 'mount_id,key,value' "'1','datadir','/home/\$user/'" '-echo'
+		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_config' 'mount_id,key,value' "'$IdStorage','datadir','/home/\$user/'" '-echo'
 		Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_external_mounts' "1" '-echo'
 		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_mounts' 'mount_point,storage_backend,auth_backend,priority,type' "'/MySB_Home','local','null::null','150','1'" '-echo'
 		Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_external_options' "1" '-echo'
