@@ -4,6 +4,7 @@
 			- MySQL, minor changes (v3.3 and v3.4)
 			- Disable totaly IPv6 with grub (v3.3 and v3.4)
 			- Install, improving the detection of the public IP address
+			- inc/funcs_sql, minor changes
 			- Pagespeed, reduce TMPFS cache to 64Mo
 			- PHP5, limit TMPFS cache to 64Mo
 			- Detect real IP address during installation
