@@ -116,7 +116,7 @@ Func_SQL_Command() {
 			Display="$6"
 			case "$DatabaseType" in
 				"sqlite3")
-					/usr/bin/sqlite3 $Display -cmd '.timeout 150000' $DataBase "UPDATE $Table SET $VarSet WHERE $VarWhere;"
+					/usr/bin/sqlite3 $Display -cmd '.timeout 150000' $DataBase "UPDATE \`$Table\` SET $VarSet WHERE $VarWhere;"
 				;;
 				"mysql")
 					IFS=$','; TempValue=""
@@ -128,13 +128,18 @@ Func_SQL_Command() {
 							'value')
 								Var="`echo $Var | sed 's/value/\`value\`/g;'`"
 							;;
+							*)
+								Key="`echo $Var | cut -d '=' -f 1 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+								Value="`echo $Var | cut -d '=' -f 2 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+								Var='`'"`echo $Key`"'`='"$Value"
+							;;
 						esac
 						TempValue="$TempValue,$Var"
 					done
 					unset IFS
 					TempValue="`echo $TempValue | sed 's/^,//g;' | sed 's/,$//g;'`"
-					VarColumns="$TempValue"				
-					MyVar="UPDATE $Table SET $VarSet WHERE $VarWhere"
+					VarSet="$TempValue"
+					MyVar="UPDATE \`$Table\` SET $VarSet WHERE $VarWhere"
 					if [ "$Display" == "-echo" ];then
 						echo "$MyVar"
 					fi
@@ -149,7 +154,7 @@ Func_SQL_Command() {
 			Display="$6"
 			case "$DatabaseType" in
 				"sqlite3")
-					/usr/bin/sqlite3 $Display -cmd '.timeout 150000' $DataBase "INSERT INTO $Table ($VarColumns) VALUES ($VarValues);"
+					/usr/bin/sqlite3 $Display -cmd '.timeout 150000' $DataBase "INSERT INTO \`$Table\` ($VarColumns) VALUES ($VarValues);"
 				;;
 				"mysql")
 					IFS=$','; TempValue=""
@@ -161,13 +166,18 @@ Func_SQL_Command() {
 							'value')
 								Column="`echo $Column | sed 's/value/\`value\`/g;'`"
 							;;
+							*)
+								Key="`echo $Column | cut -d '=' -f 1 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+								Value="`echo $Column | cut -d '=' -f 2 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+								Column='`'"`echo $Key`"'`='"$Value"
+							;;
 						esac
 						TempValue="$TempValue,$Column"
 					done
 					unset IFS
 					TempValue="`echo $TempValue | sed 's/^,//g;' | sed 's/,$//g;'`"
 					VarColumns="$TempValue"
-					MyVar="INSERT INTO $Table ($VarColumns) VALUES ($VarValues)"
+					MyVar="INSERT INTO \`$Table\` ($VarColumns) VALUES ($VarValues)"
 					if [ "$Display" == "-echo" ];then
 						echo "$MyVar"
 					fi
@@ -181,10 +191,10 @@ Func_SQL_Command() {
 			Display="$5"
 			case "$DatabaseType" in
 				"sqlite3")
-					/usr/bin/sqlite3 $Display -cmd '.timeout 150000' $DataBase "DELETE FROM $Table WHERE $VarWhere"
+					/usr/bin/sqlite3 $Display -cmd '.timeout 150000' $DataBase "DELETE FROM \`$Table\` WHERE $VarWhere"
 				;;
 				"mysql")
-					MyVar="DELETE FROM $Table WHERE $VarWhere"
+					MyVar="DELETE FROM \`$Table\` WHERE $VarWhere"
 					if [ "$Display" == "-echo" ];then
 						echo "$MyVar"
 					fi
@@ -200,17 +210,17 @@ Func_SQL_Command() {
 				"sqlite3")
 					case "$VarSelect" in
 						"count(*)")
-							/usr/bin/sqlite3 -cmd '.timeout 150000' $DataBase "SELECT $VarSelect FROM $Table;"
+							/usr/bin/sqlite3 -cmd '.timeout 150000' $DataBase "SELECT $VarSelect FROM \`$Table\`;"
 						;;
 						*)
-							/usr/bin/sqlite3 -cmd '.timeout 150000' $DataBase "SELECT $VarSelect FROM $Table WHERE $VarWhere;"
+							/usr/bin/sqlite3 -cmd '.timeout 150000' $DataBase "SELECT $VarSelect FROM \`$Table\` WHERE $VarWhere;"
 						;;
 					esac
 				;;
 				"mysql")
 					case "$VarSelect" in
 						min\(*\)|max\(*\))
-							Value="`/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -N -s -e \"SELECT $VarSelect FROM $Table WHERE $VarWhere\";`"
+							Value="`/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -N -s -e \"SELECT $VarSelect FROM \`$Table\` WHERE $VarWhere\";`"
 							if [ "$Value" == "NULL" ]; then
 								echo 0
 							else
@@ -218,10 +228,10 @@ Func_SQL_Command() {
 							fi
 						;;
 						"count(*)")
-							/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -N -s -e "SELECT $VarSelect FROM $Table";
+							/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -N -s -e "SELECT $VarSelect FROM \`$Table\`";
 						;;
 						*)
-							/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -N -s -e "SELECT $VarSelect FROM $Table WHERE $VarWhere" | sed 's/\t/|/g;';
+							/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -N -s -e "SELECT $VarSelect FROM \`$Table\` WHERE $VarWhere" | sed 's/\t/|/g;';
 						;;
 					esac
 				;;
@@ -244,7 +254,7 @@ Func_SQL_Command() {
 						;;
 						"DROP")
 							MyVar="ALTER TABLE \`$Table\` DROP \`$Column\`"
-						;;						
+						;;
 					esac
 					if [ "$Display" == "-echo" ];then
 						echo "$MyVar"

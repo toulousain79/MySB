@@ -184,13 +184,6 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$LocSwitch" != "INIT" ]; then
 	fi
 	Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$TimeZone'" "configkey = 'timezone'" '-echo'
 
-	#### External Storage (mount.json)
-	if [ ! -f $ownCloudDataDirectory/mount.json ]; then
-		IdStorage=$(Func_SQL_Command 'SELECT' 'ownCloud_db' 'numeric_id' 'oc_storages' "id = 'local::/home/\$user\/'")
-		cp -vf $MySB_InstallDir/templates/owncloud/home.owncloud.mount.json.tmpl $ownCloudDataDirectory/mount.json
-		perl -pi -e "s/<IdStorage>/$IdStorage/g" $ownCloudDataDirectory/mount.json
-	fi
-
 	#### Logrotate
 	LogRotate 'owncloud'
 
@@ -273,22 +266,46 @@ if [ "$IsInstalled_ownCloud" == "YES" ] && [ "$LocSwitch" == "INIT" ]; then
 		fi
 
 		#### Updating database
-		# oc_storages
-		IdStorage=$(Func_SQL_Command 'SELECT' 'ownCloud_db' 'numeric_id' 'oc_storages' "id = 'local::/home/\$user\/'")
-		if [ -z "$IdStorage" ]; then IdStorage=1; fi
-		Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_storages' "1" '-echo'
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_storages' 'id' "'local::/home/\$user/'" '-echo'
-		Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_external_applicable' "1" '-echo'
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_applicable' 'mount_id,type,value' "'$IdStorage','2','MySB_users'" '-echo'
-		Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_external_config' "1" '-echo'
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_config' 'mount_id,key,value' "'$IdStorage','datadir','/home/\$user/'" '-echo'
-		Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_external_mounts' "1" '-echo'
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_mounts' 'mount_point,storage_backend,auth_backend,priority,type' "'/MySB_Home','local','null::null','150','1'" '-echo'
-		Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_external_options' "1" '-echo'
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_options' 'mount_id,key,value' "'1','encrypt','false'" '-echo'
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_options' 'mount_id,key,value' "'1','previews','true'" '-echo'
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_options' 'mount_id,key,value' "'1','enable_sharing','false'" '-echo'
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_options' 'mount_id,key,value' "'1','filesystem_check_changes','0'" '-echo'
+		IdStorage=$(Func_SQL_Command 'SELECT' 'ownCloud_db' 'mount_id' 'oc_external_mounts' "mount_point='/MySB_Home'")
+		if [ -z "$IdStorage" ]; then
+			IdStorage=1
+
+			# oc_external_mounts
+			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_mounts' 'mount_point,storage_backend,auth_backend,priority,type' "'/MySB_Home','local','null::null','150','1'" '-echo'
+		fi
+	
+		# oc_external_applicable
+		IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'mount_id' 'oc_external_applicable' "value='MySB_users'"`"
+		if [ -z $IfExist ]; then
+			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_applicable' 'mount_id,type,value' "'$IdStorage','2','MySB_users'" '-echo'
+		else
+			Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_external_applicable' "mount_id='$IdStorage', type='2'" "value='MySB_users'" '-echo'
+		fi
+
+		# oc_external_config
+		IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'config_id' 'oc_external_config' "value='/home/\$user/'"`"
+		if [ -z $IfExist ]; then
+			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_config' 'mount_id,key,value' "'$IdStorage','datadir','/home/\$user/'" '-echo'
+		else
+			Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_external_config' "mount_id='$IdStorage', key='datadir'" "value='/home/\$user/'" '-echo'
+		fi
+
+		# oc_external_options
+		IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'option_id' 'oc_external_options' "mount_id='$IdStorage'"`"
+		if [ -z $IfExist ]; then
+			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_options' 'mount_id,key,value' "'$IdStorage','filesystem_check_changes','0'" '-echo'
+			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_options' 'mount_id,key,value' "'$IdStorage','encrypt','false'" '-echo'
+			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_options' 'mount_id,key,value' "'$IdStorage','previews','true'" '-echo'
+			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_options' 'mount_id,key,value' "'$IdStorage','enable_sharing','false'" '-echo'
+			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_external_options' 'mount_id,key,value' "'$IdStorage','encoding_compatibility','false'" '-echo'
+		else
+			Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_external_options' "key='filesystem_check_changes', value='false'" "mount_id='$IdStorage'" '-echo'
+			Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_external_options' "key='encrypt', value='false'" "mount_id='$IdStorage'" '-echo'
+			Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_external_options' "key='previews', value='true'" "mount_id='$IdStorage'" '-echo'
+			Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_external_options' "key='enable_sharing', value='false'" "mount_id='$IdStorage'" '-echo'
+			Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_external_options' "key='encoding_compatibility', value='false'" "mount_id='$IdStorage'" '-echo'
+		fi
+
 		IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configkey='allow_user_mounting'"`"
 		if [ -z $IfExist ]; then
 			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'files_external','allow_user_mounting','yes'" '-echo'
@@ -300,6 +317,12 @@ if [ "$IsInstalled_ownCloud" == "YES" ] && [ "$LocSwitch" == "INIT" ]; then
 			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'files_external','user_mounting_backends','ftp,dav,owncloud,sftp,amazons3,dropbox,googledrive,swift,smb,\\\OC\\\Files\\\Storage\\\SFTP_Key,\\\OC\\\Files\\\Storage\\\SMB_OC'" '-echo'
 		else
 			Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_appconfig' "configvalue = 'ftp,dav,owncloud,sftp,amazons3,dropbox,googledrive,swift,smb,\\\OC\\\Files\\\Storage\\\SFTP_Key,\\\OC\\\Files\\\Storage\\\SMB_OC'" "appid='files_external' AND configkey='user_mounting_backends'" '-echo'
+		fi
+
+		#### External Storage (mount.json)
+		if [ ! -f $ownCloudDataDirectory/mount.json ]; then
+			cp -vf $MySB_InstallDir/templates/owncloud/home.owncloud.mount.json.tmpl $ownCloudDataDirectory/mount.json
+			perl -pi -e "s/<IdStorage>/$IdStorage/g" $ownCloudDataDirectory/mount.json
 		fi
 
 		#### Scanning users' files
