@@ -101,7 +101,7 @@ Func_SQL_Command() {
 		"Sync_db")
 			DatabaseType="sqlite3"
 			DataBase=$Sync_DB
-		;;		
+		;;
 	esac
 
 	if ! GetPid mysqld && CheckCommand 0 mysql && [ "$DatabaseType" == "mysql" ]; then
@@ -119,26 +119,54 @@ Func_SQL_Command() {
 					/usr/bin/sqlite3 $Display -cmd '.timeout 150000' $DataBase "UPDATE \`$Table\` SET $VarSet WHERE $VarWhere;"
 				;;
 				"mysql")
-					IFS=$','; TempValue=""
-					for Var in $VarSet; do
-						case "$Var" in
+					IFS=$','
+					TempVars=''
+					for VarS in $VarSet; do
+						case "$VarS" in
 							'key')
-								Var="`echo $Var | sed 's/key/\`key\`/g;'`"
+								VarS="`echo $VarS | sed 's/key/\`key\`/g;'`"
 							;;
 							'value')
-								Var="`echo $Var | sed 's/value/\`value\`/g;'`"
+								VarS="`echo $VarS | sed 's/value/\`value\`/g;'`"
 							;;
 							*)
-								Key="`echo $Var | cut -d '=' -f 1 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-								Value="`echo $Var | cut -d '=' -f 2 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-								Var='`'"`echo $Key`"'`='"$Value"
+								Key="`echo $VarS | cut -d '=' -f 1 | sed 's/ //g;'`"
+								Value="`echo $VarS | cut -d '=' -f 2 | sed 's/ //g;'`"
+								VarS='`'"`echo $Key`"'`='"$Value"
 							;;
 						esac
-						TempValue="$TempValue,$Var"
+						if [ -z "$TempVars" ]; then
+							TempVars="$VarS"
+						else
+							TempVars="$TempVars $VarS"
+						fi
 					done
+					VarSet="`echo $TempVars | sed 's/ /, /g;' | sed 's/^,//g;' | sed 's/,$//g;'`"
+
+					TempVarsW=''
+					for VarW in $VarWhere; do
+						case "$VarW" in
+							'key')
+								VarW="`echo $VarW | sed 's/key/\`key\`/g;'`"
+							;;
+							'value')
+								VarW="`echo $VarW | sed 's/value/\`value\`/g;'`"
+							;;
+							*)
+								Key="`echo $VarW | cut -d '=' -f 1 | sed 's/ //g;'`"
+								Value="`echo $VarW | cut -d '=' -f 2 | sed 's/ //g;'`"
+								VarW='`'"`echo $Key`"'`='"$Value"
+							;;
+						esac
+						if [ -z "$TempVarsW" ]; then
+							TempVarsW="$VarW"
+						else
+							TempVarsW="$TempVarsW $VarW"
+						fi
+					done
+					VarWhere="`echo $TempVarsW | sed 's/ /, /g;' | sed 's/^,//g;' | sed 's/,$//g;'`"
+
 					unset IFS
-					TempValue="`echo $TempValue | sed 's/^,//g;' | sed 's/,$//g;'`"
-					VarSet="$TempValue"
 					MyVar="UPDATE \`$Table\` SET $VarSet WHERE $VarWhere"
 					if [ "$Display" == "-echo" ];then
 						echo "$MyVar"
