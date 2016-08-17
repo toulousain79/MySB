@@ -143,31 +143,37 @@ Func_SQL_Command() {
 					done
 					VarSet="`echo $TempVars | sed 's/ /, /g;' | sed 's/^,//g;' | sed 's/,$//g;'`"
 
-					TempVarsW=''
-					for VarW in $VarWhere; do
-						case "$VarW" in
-							'key')
-								VarW="`echo $VarW | sed 's/key/\`key\`/g;'`"
-							;;
-							'value')
-								VarW="`echo $VarW | sed 's/value/\`value\`/g;'`"
-							;;
-							*)
-								Key="`echo $VarW | cut -d '=' -f 1 | sed 's/ //g;'`"
-								Value="`echo $VarW | cut -d '=' -f 2 | sed 's/ //g;'`"
-								VarW='`'"`echo $Key`"'`='"$Value"
-							;;
-						esac
-						if [ -z "$TempVarsW" ]; then
-							TempVarsW="$VarW"
-						else
-							TempVarsW="$TempVarsW $VarW"
-						fi
-					done
-					VarWhere="`echo $TempVarsW | sed 's/ /, /g;' | sed 's/^,//g;' | sed 's/,$//g;'`"
-
+					case "$VarWhere" in
+						'ALL')
+							MyVar="UPDATE \`$Table\` SET $VarSet"
+						;;
+						*)
+							TempVarsW=''
+							for VarW in $VarWhere; do
+								case "$VarW" in
+									'key')
+										VarW="`echo $VarW | sed 's/key/\`key\`/g;'`"
+									;;
+									'value')
+										VarW="`echo $VarW | sed 's/value/\`value\`/g;'`"
+									;;
+									*)
+										Key="`echo $VarW | cut -d '=' -f 1 | sed 's/ //g;'`"
+										Value="`echo $VarW | cut -d '=' -f 2 | sed 's/ //g;'`"
+										VarW='`'"`echo $Key`"'`='"$Value"
+									;;
+								esac
+								if [ -z "$TempVarsW" ]; then
+									TempVarsW="$VarW"
+								else
+									TempVarsW="$TempVarsW $VarW"
+								fi
+							done
+							VarWhere="`echo $TempVarsW | sed 's/ /, /g;' | sed 's/^,//g;' | sed 's/,$//g;'`"
+							MyVar="UPDATE \`$Table\` SET $VarSet WHERE $VarWhere"
+						;;
+					esac
 					unset IFS
-					MyVar="UPDATE \`$Table\` SET $VarSet WHERE $VarWhere"
 					if [ "$Display" == "-echo" ];then
 						echo "$MyVar"
 					fi
