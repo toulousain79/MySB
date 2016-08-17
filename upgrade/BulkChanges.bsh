@@ -89,7 +89,7 @@ case "$1" in
 		# users
 		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'users' 'quota' "INT( 32 ) NOT NULL" '-echo'
 		# services
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '8887'" "serv_name = 'CakeBox-Light'" '-echo'
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = ''" "serv_name = 'CakeBox-Light'" '-echo'
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "serv_name = 'rTorrent v0.9.6'" "serv_name = 'rTorrent v0.9.4'" '-echo'
 		# repositories
 		Func_SQL_Command 'ALTER' 'MySB_db' 'CHANGE' 'repositories' 'on_boot' "TINYINT( 1 ) NOT NULL DEFAULT '0'" '-echo'
@@ -219,6 +219,72 @@ case "$1" in
 		ManageDirectoriesAndFiles 'global'
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade -v"
 		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:get version"
+
+		#### Sync DB
+		for seedUser in $UsersList; do
+			# VARs
+			UserSync_DB="/home/$seedUser/db/$seedUser.sq3"
+			# Copy a new empty DB
+			if [ ! -d /home/$seedUser/db ]; then
+				mkdir -v /home/$seedUser/db
+			fi
+			if [ ! -f $UserSync_DB ]; then
+				cp $Sync_DB $UserSync_DB
+			fi
+			chmod -R 0770 /home/$seedUser/db
+			chown -R $FnUser:www-data /home/$seedUser/db
+			# Get existing data
+			if [ -f /home/$seedUser/scripts/sync_mode ]; then
+				cat /home/$seedUser/scripts/sync_mode | sed '/^#/d' | while read Line; do
+					Cat="`echo $Line | cut -d "|" -f 1`"
+					Mode="`echo $Line | cut -d "|" -f 2`"
+					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' $UserSync_DB "INSERT INTO categories (name,sync_mode) VALUES ('$Cat','$Mode');"
+				done
+				rm -vf /home/$seedUser/scripts/sync_mode
+			fi
+			if [ -f /home/$seedUser/scripts/direct.list ]; then
+				while read Line; do
+					if [ "`echo $Line | grep '^#'`" ]; then
+						is_active=0
+						Line="`echo $Line | sed 's/^#//g;'`"
+					else
+						is_active=1
+					fi
+					list_category="direct"
+					get_base_path="`echo $Line | cut -d "|" -f 1`"
+					get_custom1="`echo $Line | cut -d "|" -f 2`"
+					get_name="`echo $Line | cut -d "|" -f 3`"
+					get_loaded_file="`echo $Line | cut -d "|" -f 4`"
+					CategoryDir="`echo $Line | cut -d "|" -f 5`"
+					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' $UserSync_DB "INSERT INTO list (list_category,is_active,get_base_path,get_custom1,get_name,get_loaded_file,CategoryDir) VALUES ('$list_category','$is_active','$get_base_path','$get_custom1','$get_name','$get_loaded_file','$CategoryDir');"
+				done < /home/$seedUser/scripts/direct.list
+				rm -vf /home/$seedUser/scripts/direct.list
+			fi
+			if [ -f /home/$seedUser/scripts/cron.list ]; then
+				while read Line; do
+					if [ "`echo $Line | grep '^#'`" ]; then
+						is_active=0
+						Line="`echo $Line | sed 's/^#//g;'`"
+					else
+						is_active=1
+					fi
+					list_category="cron"
+					get_base_path="`echo $Line | cut -d "|" -f 1`"
+					get_custom1="`echo $Line | cut -d "|" -f 2`"
+					get_name="`echo $Line | cut -d "|" -f 3`"
+					get_loaded_file="`echo $Line | cut -d "|" -f 4`"
+					CategoryDir="`echo $Line | cut -d "|" -f 5`"
+					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' $UserSync_DB "INSERT INTO list (list_category,is_active,get_base_path,get_custom1,get_name,get_loaded_file,CategoryDir) VALUES ('$list_category','$is_active','$get_base_path','$get_custom1','$get_name','$get_loaded_file','$CategoryDir');"
+				done < /home/$seedUser/scripts/cron.list
+				rm -vf /home/$seedUser/scripts/cron.list
+			fi
+			if [ -f /home/$seedUser/scripts/synchro.sh ]; then
+				mv /home/$seedUser/scripts/synchro.sh /home/$seedUser/scripts/synchro.sh.old
+				cp $MySB_InstallDir/templates/rtorrent/synchro.sh.tmpl /home/$FnUser/scripts/synchro.sh.example
+				head -n 16 /home/$seedUser/scripts/synchro.sh.old > /home/$seedUser/scripts/synchro.sh
+				tail -n +16 /home/$FnUser/scripts/synchro.sh.example >> /home/$seedUser/scripts/synchro.sh
+			fi
+		done
 	;;
 	"AFTER")
 		####################################
@@ -290,67 +356,6 @@ case "$1" in
 			cp -f $MySB_InstallDir/templates/logrotate/etc.logrotate.d.users.tmpl /etc/logrotate.d/rtorrent_$seedUser
 			perl -pi -e "s/<username>/$seedUser/g" /etc/logrotate.d/rtorrent_$seedUser
 			chmod 0644 /etc/logrotate.d/rtorrent_$seedUser
-		done
-
-		#### Sync DB
-		for seedUser in $UsersList; do
-			# VARs
-			UserSync_DB="/home/$seedUser/db/$seedUser.sq3"
-			# Copy a new empty DB
-			if [ ! -f $UserSync_DB ]; then
-				cp $Sync_DB $UserSync_DB
-			fi
-			# Get existing data
-			if [ -f /home/$seedUser/scripts/sync_mode ]; then
-				cat /home/$seedUser/scripts/sync_mode | sed '/^#/d' | while read Line; do
-					Cat="`echo $Line | cut -d "|" -f 1`"
-					Mode="`echo $Line | cut -d "|" -f 2`"
-					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' $UserSync_DB "INSERT INTO categories (name,sync_mode) VALUES ('$Cat','$Mode');"
-				done
-				rm -vf /home/$seedUser/scripts/sync_mode
-			fi
-			if [ -f /home/$seedUser/scripts/direct.list ]; then
-				while read Line; do
-					if [ "`echo $Line | grep '^#'`" ]; then
-						is_active=0
-						Line="`echo $Line | sed 's/^#//g;'`"
-					else
-						is_active=1
-					fi
-					list_category="direct"
-					get_base_path="`echo $Line | cut -d "|" -f 1`"
-					get_custom1="`echo $Line | cut -d "|" -f 2`"
-					get_name="`echo $Line | cut -d "|" -f 3`"
-					get_loaded_file="`echo $Line | cut -d "|" -f 4`"
-					CategoryDir="`echo $Line | cut -d "|" -f 5`"
-					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' $UserSync_DB "INSERT INTO list (list_category,is_active,get_base_path,get_custom1,get_name,get_loaded_file,CategoryDir) VALUES ('$list_category','$is_active','$get_base_path','$get_custom1','$get_name','$get_loaded_file','$CategoryDir');"
-				done < /home/$seedUser/scripts/direct.list
-				rm -vf /home/$seedUser/scripts/direct.list
-			fi
-			if [ -f /home/$seedUser/scripts/cron.list ]; then
-				while read Line; do
-					if [ "`echo $Line | grep '^#'`" ]; then
-						is_active=0
-						Line="`echo $Line | sed 's/^#//g;'`"
-					else
-						is_active=1
-					fi
-					list_category="cron"
-					get_base_path="`echo $Line | cut -d "|" -f 1`"
-					get_custom1="`echo $Line | cut -d "|" -f 2`"
-					get_name="`echo $Line | cut -d "|" -f 3`"
-					get_loaded_file="`echo $Line | cut -d "|" -f 4`"
-					CategoryDir="`echo $Line | cut -d "|" -f 5`"
-					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' $UserSync_DB "INSERT INTO list (list_category,is_active,get_base_path,get_custom1,get_name,get_loaded_file,CategoryDir) VALUES ('$list_category','$is_active','$get_base_path','$get_custom1','$get_name','$get_loaded_file','$CategoryDir');"
-				done < /home/$seedUser/scripts/cron.list
-				rm -vf /home/$seedUser/scripts/cron.list
-			fi
-			if [ -f /home/$seedUser/scripts/synchro.sh ]; then
-				mv /home/$seedUser/scripts/synchro.sh /home/$seedUser/scripts/synchro.sh.old
-				cp $MySB_InstallDir/templates/rtorrent/synchro.sh.tmpl /home/$FnUser/scripts/synchro.sh.example
-				head -n 16 /home/$seedUser/scripts/synchro.sh.old > /home/$seedUser/scripts/synchro.sh
-				tail -n +16 /home/$FnUser/scripts/synchro.sh.example >> /home/$seedUser/scripts/synchro.sh
-			fi
 		done
 
 		#### Apply quota for current users
