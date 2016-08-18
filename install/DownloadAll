@@ -172,15 +172,15 @@ for Repo in $AllRepos; do
 				"UPGRADE")
 					case "$RepoName" in
 						'Lets Encrypt')
-							Directory="$RepoDir"
+							TempRepoDir="$RepoDir"
 						;;
 						*)
-							Directory="$MySB_InstallDir$RepoDir"
+							TempRepoDir="$MySB_InstallDir$RepoDir"
 						;;
 					esac
 					
-					if [ -d $Directory/ ]; then
-						cd $Directory/
+					if [ -d $TempRepoDir/ ]; then
+						cd $TempRepoDir/
 						git stash
 						Error=$?
 						if [ $Error -eq 0 ]; then
@@ -205,19 +205,12 @@ for Repo in $AllRepos; do
 							unzip $MySB_InstallDir/files/$RepoFile -d $MySB_InstallDir/temp/
 							Error=$?
 							SubDir="`unzip -l $MySB_InstallDir/files/$RepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-							if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-								case "$RepoName" in
-									'Lets Encrypt')
-										mv -v $MySB_InstallDir/temp/$SubDir $RepoDir
-									;;
-									*)
-										mv -v $MySB_InstallDir/temp/$SubDir $MySB_InstallDir$RepoDir
-									;;
-								esac
+							if [ -d $MySB_InstallDir/temp/$SubDir ] && [ ! -d $TempRepoDir ]; then
+								mv -v $MySB_InstallDir/temp/$SubDir $TempRepoDir
 								Error=$?
 							fi
-							if [ -d $MySB_InstallDir$RepoDir ]; then
-								cd $MySB_InstallDir$RepoDir/
+							if [ -d $TempRepoDir ]; then
+								cd $TempRepoDir/
 								git stash
 								Error=$?
 								if [ $Error -eq 0 ]; then
@@ -238,14 +231,12 @@ for Repo in $AllRepos; do
 								fi
 							fi
 						else
-							git clone $RepoURL $MySB_InstallDir$RepoDir
+							git clone $RepoURL $TempRepoDir
 							Error=$?
 							if [ $Error -eq 0 ]; then
-								LASTEST=$(git describe --abbrev=0 --tags)
-								if [ ! -z "`echo "$LASTEST"`" ]; then
-									git checkout tags/$LASTEST
-									Error=$?
-								fi
+								cd $TempRepoDir/
+								git checkout -b $(git describe --tags $(git rev-list --tags --max-count=1))
+								Error=$?
 							fi
 						fi
 					fi
