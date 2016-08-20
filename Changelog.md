@@ -29,6 +29,7 @@
 			- Composer v1.2.0
 			- Plowshare v2.1.5
 			- XMLRPC-C Stable v1.43.03
+			- Let's Encrypt v0.8.1
 			- Portal
 				* Wolf CMS v0.8.3.1
 				* Noty v2.3.8
