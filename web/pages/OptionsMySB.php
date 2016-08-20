@@ -478,6 +478,7 @@ if ( count($FilesInQueue) > 0 ) {
 				<th style="text-align:center;"><?php echo Global_IsActive; ?></th>
 				<th style="text-align:center;"><?php echo User_OptionsMySB_FileName; ?></th>
 				<th style="text-align:center;"><?php echo User_OptionsMySB_rTorrentConfigDirectory; ?></th>
+				<th style="text-align:center;"><?php echo User_OptionsMySB_Comments; ?></th>
 				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
 			</tr>
 <?php
@@ -518,6 +519,7 @@ if ( count($FilesInQueue) > 0 ) {
 				<td><?php echo $is_active; ?></td>
 				<td><?php echo $Files['get_name']; ?></td>
 				<td><?php echo $Files['CategoryDir']; ?></td>
+				<td><?php echo $Files['comments']; ?></td>
 				<td>
 					<input class="submit" name="delete_filewaiting[<?php echo $Id_list; ?>]" type="checkbox" value="<?php echo $Id_list; ?>" />
 				</td>

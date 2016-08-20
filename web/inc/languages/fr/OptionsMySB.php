@@ -60,5 +60,6 @@ define('User_OptionsMySB_SyncMode', 'Synchro');
 define('User_OptionsMySB_FileName', 'Nom');
 define('User_OptionsMySB_SynchroDirect', 'Directe');
 define('User_OptionsMySB_SynchroCron', 'Planifi&eacute;e');
+define('User_OptionsMySB_Comments', 'Commentaires');
 
 //#################### LAST LINE ######################################
