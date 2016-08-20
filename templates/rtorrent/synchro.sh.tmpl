@@ -112,7 +112,9 @@ Listing() {
 	FnGet_NameEscaped="`echo $FnGet_Name | sed s,/,\\\\\\\\\\/,g`"
 	FnLine="$FnGet_Custom1$FnGet_Name"
 	FnMail_Object="$MailObjectOK"
-
+	FnStartDate="`/bin/date +%Y/%m/%d`"
+	FnStartHour="`/bin/date +%H:%M:%S`"
+	
 	# Check if files exist
 	FnCheck="`file "$FnLine"`"
 	if [ $? -ne 0 ]; then
@@ -143,16 +145,18 @@ Listing() {
 	echo "To:		$FnDstDir"
 	echo "Category:	$FnCategoryDir"
 	echo "Server:		$DstUser@$DstSrv"
-	echo "Date:		`/bin/date +%Y/%m/%d`"
-	echo "Hour:		`/bin/date +%H:%M:%S`"
+	echo "Date:		$FnStartDate"
+	echo "Hour:		$FnStartHour"
 	echo "--------------------"
 	echo
+
+	sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET comments = 'Start: $FnDate - $FnHour' WHERE list_id = '$FnGet_List_ID';"
 
 	case "$ModeSync" in
 		'rsync')
 			# Start synchronization with RSYNC
 			# Creating sub-directory on destination
-			sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d \"$FnDstDir\" ]; then mkdir -p \"$FnDstDir\"; fi"
+			sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d \"$FnDstDir\" ]; then mkdir -p \"$FnDstDir\"; fi" &> /dev/null
 
 			# Start synchronization with RSYNC
 			rsync -rtvy --numeric-ids --partial --append --stats --timeout=10 -e "/usr/bin/sshpass -p$DstPass ssh -p $DstPort -c $RsyncCipher -o Compression=no -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$FnLine" $DstUser@$DstSrv:"$FnDstDir/"
@@ -180,7 +184,7 @@ Listing() {
 	if [ $? -eq 0 ]; then
 		sqlite3 -echo -cmd '.timeout 150000' $DataBase "DELETE FROM list WHERE list_id = '$FnGet_List_ID'"
 	else
-		sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET is_active = '0' WHERE list_id = '$FnGet_List_ID';"
+		sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET is_active = '0', comments = 'Error: $FnDate - $FnHour' WHERE list_id = '$FnGet_List_ID';"
 		FnMail_Object="$MailObjectKO"
 	fi
 
