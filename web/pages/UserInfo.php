@@ -33,7 +33,6 @@ function printUser($user) {
 	// Ports
 	$Port_SSH = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "SSH"]);
 	$Port_FTP = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "VSFTPd"]);
-	$Port_Cakebox = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "CakeBox-Light"]);
 
 	echo '<table width="100%" border="0" align="left">';
 

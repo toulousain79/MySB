@@ -43,7 +43,6 @@ function PrintContent($user, $Case) {
 	// Ports
 	$Port_SSH = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "SSH"]);
 	$Port_FTP = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "VSFTPd"]);
-	$Port_Cakebox = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "CakeBox-Light"]);
 	// Services
 	$ManagerInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "Seedbox-Manager"]);
 	$OpenVpnInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "OpenVPN"]);

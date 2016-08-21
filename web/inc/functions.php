@@ -163,7 +163,6 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 	$PlexMediaIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "Plex Media Server"]);
 	$PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
 	$ownCloudIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
-	$Port_Cakebox = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "CakeBox-Light"]);
 
     if ($page && count($page->children(null, array(), $hidden)) > 0) {
         echo ($startmenu) ? '<ul>' : '';
