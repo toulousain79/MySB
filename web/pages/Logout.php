@@ -46,7 +46,7 @@ if ( preg_match( '~MSIE|Internet Explorer~i', $_SERVER['HTTP_USER_AGENT'] ) || (
  
 <script type="text/javascript">
     var request = new XMLHttpRequest();
-    request.open("get", "https://logout@<?php echo $system_datas["hostname"] . ':' . $Port_HTTPs . '/'; ?>", false);
+    request.open("get", "https://logout@<?php echo $system_datas["hostname"] . ':' . $Port_HTTPs . '/Logout.php'; ?>", false);
     request.send();
     window.location.replace('http://www.google.fr');
 </script>
