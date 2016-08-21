@@ -186,7 +186,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `rtorrent_port` varchar(5) NOT NULL,
   `home_dir` varchar(128) NOT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
-  `rtorrent_version` varchar(10) NOT NULL DEFAULT 'v0.9.2',
+  `rtorrent_version` varchar(10) NOT NULL DEFAULT 'v0.9.6',
   `rtorrent_restart` tinyint(1) NOT NULL DEFAULT '0',
   `rtorrent_notify` tinyint(1) NOT NULL DEFAULT '0',
   `language` varchar(2) NOT NULL DEFAULT 'en',
