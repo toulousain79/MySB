@@ -159,18 +159,22 @@ Listing() {
 			sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d \"$FnDstDir\" ]; then mkdir -p \"$FnDstDir\"; fi" &> /dev/null
 
 			# Start synchronization with RSYNC
-			rsync -rtvy --numeric-ids --partial --append --stats --timeout=10 -e "/usr/bin/sshpass -p$DstPass ssh -p $DstPort -c $RsyncCipher -o Compression=no -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$FnLine" $DstUser@$DstSrv:"$FnDstDir/"
+			for ((i = 2; i >= 1; i -= 1)); do
+				rsync -rtvy --numeric-ids --partial --append --stats --timeout=10 -e "/usr/bin/sshpass -p$DstPass ssh -p $DstPort -c $RsyncCipher -o Compression=no -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$FnLine" $DstUser@$DstSrv:"$FnDstDir/"
+			done
 		;;
 		'ftp')
 			LftpOptions="set ftp:ssl-protect-data true; set ssl:verify-certificate no; set net:max-retries 3; set net:reconnect-interval-base 5;"
-			case "$Type" in
-				'directory')
-					lftp -e "$LftpOptions mkdir -p \"$FnDstDir/$FnGet_NameEscaped\"; mirror -R \"$FnLine\" \"$FnDstDir/$FnGet_NameEscaped\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
-				;;
-				*)
-					lftp -e "$LftpOptions mkdir -p $FnDstDir; put -O \"$FnDstDir\" \"$FnLine\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
-				;;
-			esac
+			for ((i = 2; i >= 1; i -= 1)); do
+				case "$Type" in
+					'directory')
+						lftp -e "$LftpOptions mkdir -p \"$FnDstDir/$FnGet_NameEscaped\"; mirror -R \"$FnLine\" \"$FnDstDir/$FnGet_NameEscaped\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
+					;;
+					*)
+						lftp -e "$LftpOptions mkdir -p $FnDstDir; put -O \"$FnDstDir\" \"$FnLine\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
+					;;
+				esac
+			done
 		;;
 		'no_such_file_or_directory')
 			echo $FnCheck
