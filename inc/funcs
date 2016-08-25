@@ -176,6 +176,12 @@ ManageServices() {
 								Continue=0
 								log_daemon_msg "Stopping $Service"
 								service $Service stop > /dev/null
+								if [ $? -gt 0 ]; then
+									fuser -k 81/tcp
+									fuser -k $Port_HTTP/tcp
+									fuser -k $Port_HTTPs/tcp
+									StatusLSB 0
+								fi
 								if GetPid $Service || [ ! -z "`ps ax | grep 'nginx' | grep '/usr/sbin/nginx' | grep -v 'grep'`" ]; then
 									StatusLSB 1
 									log_daemon_msg "Killing $Service"
@@ -308,10 +314,13 @@ ManageServices() {
 							"nginx")
 								Continue=0
 								if CheckCommand 0 $Service; then
+									fuser -k 81/tcp
+									fuser -k $Port_HTTP/tcp
+									fuser -k $Port_HTTPs/tcp
 									if ! GetPid $Service; then
 										log_daemon_msg "Starting $Service"
 										service $Service start > /dev/null
-									else						
+									else
 										log_daemon_msg "Reloading $Service"
 										service $Service $FinalCommand > /dev/null
 										if [ -z "`ps ax | grep 'nginx' | grep '/usr/sbin/nginx' | grep -v 'grep'`" ]; then
