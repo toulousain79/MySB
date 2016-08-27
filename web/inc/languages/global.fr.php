@@ -25,6 +25,7 @@
 define('Global_Home', 'Accueil');
 define('Global_Yes', 'Oui');
 define('Global_No', 'Non');
+define('Global_All', 'Tout');
 define('Global_Delete', 'Supprimer');
 define('Global_NoChange', 'Aucune modification');
 define('Global_SaveChanges', 'Sauvegarder les modifications');

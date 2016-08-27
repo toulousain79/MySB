@@ -34,12 +34,6 @@ $Change = 0;
 $type = 'information';
 $message = Global_NoChange;
 
-$Sync_DB = new medoo([
-	'database_type' => 'sqlite',
-	'database_file' => "/home/$CurrentUser/db/$CurrentUser.sq3",
-	'database_name' => 'Sync'
-]);
-
 // Get values from POST
 $rTorrentVersion_POST = $_POST['rTorrentVersion'];
 $rTorrentRestart_POST = $_POST['rTorrentRestart'];
@@ -48,163 +42,11 @@ $Language_POST = $_POST['language'];
 
 if (isset($_POST['submit'])) {
 	switch ($_POST['submit']) {
-		case User_OptionsMySB_Add:
-			// Crontab - Add
-			$CronID_POST = $_POST['cron_id'];
-			$CronMinutes_POST = $_POST['cron_minutes'];
-			$CronHours_POST = $_POST['cron_hours'];
-			$CronDays_POST = $_POST['cron_days'];
-			$CronMonths_POST = $_POST['cron_months'];
-			$CronNumday_POST = $_POST['cron_numday'];
-			$CronCommand_POST = $_POST['cron_command'];
-			$CronDelete_POST = $_POST['cron_delete'];
-
-			$IfExist = $MySB_DB->get("users_crontab", "id_users_crontab", [
-																			"AND" => [
-																				"id_users" => $UserID,
-																				"id_users_crontab" => $CronID_POST
-																			]
-																		]);
-			if ( empty($IfExist) ) {
-				$result = $MySB_DB->insert("users_crontab", [
-															"id_users" => "$UserID",
-															"minutes" => "$CronMinutes_POST",
-															"hours" => "$CronHours_POST",
-															"days" => "$CronDays_POST",
-															"months" => "$CronMonths_POST",
-															"numday" => "$CronNumday_POST",
-															"command" => "$CronCommand_POST",
-															]);
-				if( $result != 0 ) {
-					$Change++;
-					$RefreshPage++;
-					$Command = 'Options_MySB';
-				}
-			} else {
-				$result = $MySB_DB->update("users_crontab", [
-															"id_users" => "$UserID",
-															"minutes" => "$CronMinutes_POST",
-															"hours" => "$CronHours_POST",
-															"days" => "$CronDays_POST",
-															"months" => "$CronMonths_POST",
-															"numday" => "$CronNumday_POST",
-															"command" => "$CronCommand_POST"
-															], [
-																"AND" => [
-																	"id_users" => $UserID,
-																	"id_users_crontab" => $CronID_POST
-																]
-															]);
-				if( $result != 0 ) {
-					$Change++;
-					$RefreshPage++;
-					$Command = 'Options_MySB';
-				}
-			}
-			break;
-
 		default:	// Global_SaveChanges
 			// Get values from database
 			$rTorrentVersion_DB = $users_datas['rtorrent_version'];
 			$rTorrentNotify_DB = $users_datas['rtorrent_notify'];
 			$Language_DB = $users_datas['language'];
-
-			// Crontab - Delete
-			if ( isset($_POST['cron_delete']) ) {
-				foreach ($_POST['cron_delete'] as $key) {
-					$result = $MySB_DB->delete("users_crontab", ["id_users_crontab" => $key]);
-					if ( $result > 0 ) {
-						$Change++;
-						$RefreshPage++;
-						$Command = 'Options_MySB';
-					}
-				}
-			}
-
-			// Sub-Directories - Delete AND sync mode
-			$count_dir = count($_POST['directory']);
-			$count_del = count($_POST['delete_dir']);
-			for($i=0; $i<=$count_dir; $i++) {
-				$current_directory = preg_replace('/\s\s+/', '', $_POST['directory'][$i]);
-				$sync_mode = $_POST['sync_mode'][$i];
-				$to_delete = 0;
-
-				for($j=0; $j<=$count_del; $j++) {
-					if ( ($_POST['delete_dir'][$j] == $current_directory) ) {
-						$to_delete = 1;
-					}
-				}
-
-				$result = $MySB_DB->update("users_rtorrent_cfg", ["sync_mode" => $sync_mode, "to_delete" => $to_delete], [
-																						"AND" => [
-																							"id_users" => $UserID,
-																							"sub_directory" => $current_directory
-																						]
-																					]);
-				if ( $result > 0 ) {
-					$Change++;
-					$RefreshPage++;
-					if( $to_delete == 1 ) {
-						$rTorrentRestart_POST = 1;
-						$Command = 'Restart_rTorrent';
-					} else {
-						$Command = 'Options_MySB';
-					}
-				}
-			}
-
-			// Sub-Directories - Add
-			if ( (isset($_POST['input_id'])) && (isset($_POST['input_directory'][1])) ) {
-				$count = count($_POST['input_id']);
-				for($i=1; $i<=$count; $i++) {
-					$Directory = ReplacesAccentedCharacters($_POST['input_directory'][$i]);
-					$Directory = preg_replace('/\s\s+/', '', $Directory);
-					$Directory = preg_replace('/\s+/', '_', $Directory);
-					$Directory = preg_replace('/\W+/', '', $Directory);
-					$SyncMode = $_POST['input_sync_mode'][$i];
-
-					if ( !empty($Directory) ) {
-						$IfExist = $MySB_DB->get("users_rtorrent_cfg", "id_users_rtorrent_cfg", [
-																			"AND" => [
-																				"id_users" => $UserID,
-																				"sub_directory" => $Directory
-																			]
-																		]);
-
-						if ( empty($IfExist) ) {
-							$result = $MySB_DB->insert("users_rtorrent_cfg", ["id_users" => "$UserID", "sub_directory" => "$Directory", "sync_mode" => $SyncMode, "can_be_deleted" => 1]);
-							if( $result != 0 ) {
-								$Change++;
-								$RefreshPage++;
-								$rTorrentRestart_POST = 1;
-								$Command = 'Restart_rTorrent';
-							}
-						}
-					}
-				}
-			}
-
-			// Files waiting - Change some values
-			$ChangeList=0;
-			if ( (isset($_POST['list_id'])) ) {
-				foreach ($_POST['list_id'] as $key) {
-					$result = $Sync_DB->update("list", ["list_category" => $_POST['list_category'][$key], "is_active" => $_POST['is_active'][$key]], ["list_id" => $key]);				
-					if ( $result > 0 ) { $ChangeList++; }
-				}
-			}
-
-			// Files waiting - Delete some values
-			if ( (isset($_POST['delete_filewaiting'])) ) {
-				foreach ($_POST['delete_filewaiting'] as $key) {
-					$result = $Sync_DB->delete("list", ["list_id" => $key]);
-					if ( $result > 0 ) { $ChangeList++; }
-				}
-			}
-
-			if ( $ChangeList > 0 ) {
-				$type = 'success';
-				unset($message);
-			}
 
 			// Need to restart rTorrent ?
 			if ( ($rTorrentVersion_POST != $rTorrentVersion_DB) || ($rTorrentRestart_POST == "1") ) {
@@ -213,7 +55,7 @@ if (isset($_POST['submit'])) {
 				$Change++;
 				$RefreshPage++;
 			}
-			// Modification ?
+			// Notifications ?
 			if ( $rTorrentNotify_POST != $rTorrentNotify_DB ) {
 				$Change++;
 				$RefreshPage++;
@@ -251,32 +93,14 @@ if (isset($_POST['submit'])) {
 
 // Get values from database
 $users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
-$users_directories = $MySB_DB->select("users_rtorrent_cfg", "*", ["id_users" => "$UserID"]);
-$users_crontab = $MySB_DB->select("users_crontab", "*", ["id_users" => "$UserID"]);
 $rtorrent_version = $users_datas['rtorrent_version'];
 $rtorrent_restart = $users_datas['rtorrent_restart'];
 $rtorrent_notify = $users_datas['rtorrent_notify'];
 $language = $users_datas['language'];
-
-$CronFiles = array();
-if($dossier = opendir("/home/$CurrentUser/scripts")) {
-	while(false !== ($fichier = readdir($dossier))) {
-		if($fichier != '.' && $fichier != '..') {
-			$info = new SplFileInfo($fichier);
-			if ( $info->getExtension() == 'sh' ) {
-				array_push($CronFiles, $fichier);
-			}
-		}
-	}
-}
-
-$FilesInQueue = $Sync_DB->select("list", "*");
 ?>
 
 <form class="form_settings" method="post" action="">
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
-	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
-
 	<fieldset>
 	<legend><?php echo User_OptionsMySB_Title_rTorrent; ?></legend>
 
@@ -296,7 +120,7 @@ $FilesInQueue = $Sync_DB->select("list", "*");
 			</td>
 			<td><?php echo User_OptionsMySB_rTorrentRestart; ?></td>
 			<td>
-				<select name="rTorrentRestart" style="width:80px; height: 28px;">';
+				<select name="rTorrentRestart" style="width:80px; height: 28px;">
 				<?php switch ($rtorrent_restart) {
 					case '1':
 						echo '<option selected="selected" value="1">' .Global_Yes. '</option>';
@@ -350,188 +174,6 @@ $FilesInQueue = $Sync_DB->select("list", "*");
 		</tr>
 	</table>
 	</fieldset>
-
-	<br />
-
-	<fieldset style="vertical-align: text-top;">
-	<legend><?php echo User_OptionsMySB_Title_rTorrentConfig; ?></legend>
-<?php
-if ( !empty($users_directories) ) {
-?>
-		<table>
-			<tr>
-				<th style="text-align:center;"><?php echo User_OptionsMySB_rTorrentConfig_Table_Title; ?></th>
-				<th style="text-align:center;"><?php echo User_OptionsMySB_Title_SyncMode; ?></th>
-				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
-			</tr>
-<?php
-	foreach($users_directories as $Directory) {
-?>
-			<tr>
-				<td><?php echo $Directory['sub_directory']; ?><input class="directory" id="directory" name="directory[]" type="hidden" value="<?php echo $Directory['sub_directory']; ?>" /></td>
-				<td>
-					<select name="sync_mode[]" style="width:300px; height: 28px;">
-						<option <?php echo ($Directory['sync_mode'] == '0') ? 'selected="selected"' : ''; ?> value="0"><?php echo User_OptionsMySB_IgnoreSync; ?></option>
-						<option <?php echo ($Directory['sync_mode'] == '1') ? 'selected="selected"' : ''; ?> value="1"><?php echo User_OptionsMySB_CronOnly; ?></option>
-						<option <?php echo ($Directory['sync_mode'] == '2') ? 'selected="selected"' : ''; ?> value="2"><?php echo User_OptionsMySB_DirectSync; ?></option>
-					</select>
-				</td>
-				<td>
-					<input class="submit" name="delete_dir[]" type="checkbox" value="<?php echo $Directory['sub_directory']; ?>" <?php echo ($Directory['to_delete'] == '1') ? 'checked' : ''; ?> />
-				</td>
-			</tr>
-<?php
-	}
-}
-?>
-			<tr><th colspan="3"></th></tr>
-		</table>
-		<div id="input1" class="clonedInput">
-			<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
-			<?php echo User_OptionsMySB_rTorrentConfigDirectory; ?>&nbsp;<input class="input_directory" id="input_directory" name="input_directory[1]" type="text" />
-			<select class="input_sync_mode" id="input_sync_mode" name="input_sync_mode[1]" style="width:280px; height: 28px;" >
-				<option value="0"><?php echo User_OptionsMySB_IgnoreSync; ?></option>
-				<option value="1"><?php echo User_OptionsMySB_CronOnly; ?></option>
-				<option value="2"><?php echo User_OptionsMySB_DirectSync; ?></option>
-			</select>
-		</div>
-		<div style="margin-top: 10px; margin-bottom: 20px;">
-			<input type="button" id="btnAdd" value="<?php echo User_OptionsMySB_rTorrentConfigAddDirectory; ?>" style="cursor: pointer;" />
-			<input type="button" id="btnDel" value="<?php echo User_OptionsMySB_rTorrentConfigDelDirectory; ?>" style="cursor: pointer;" />
-		</div>		
-		<div align="center"><p class="Comments"><?php echo User_OptionsMySB_rTorrentConfig_Comment; ?></p></div>
-	</fieldset>
-
-	<fieldset style="vertical-align: text-top;">
-	<legend><?php echo User_OptionsMySB_Title_Crontab; ?></legend>
-		<table>
-			<tr>
-				<th style="text-align:center;"><?php echo User_OptionsMySB_Minutes; ?></th>
-				<th style="text-align:center;"><?php echo User_OptionsMySB_Hours; ?></th>
-				<th style="text-align:center;"><?php echo User_OptionsMySB_Days; ?></th>
-				<th style="text-align:center;"><?php echo User_OptionsMySB_Months; ?></th>
-				<th style="text-align:center;"><?php echo User_OptionsMySB_NumDay; ?></th>
-				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
-			</tr>
-<?php
-	foreach($users_crontab as $Crontab) {
-?>
-			<input name="cron_id[<?php echo $Crontab['id_users_crontab']; ?>]" type="hidden" value="<?php echo $Crontab['id_users_crontab']; ?>" />
-			<tr>
-				<td><input class="text_small" name="cron_minutes[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['minutes']; ?>" readonly /></td>
-				<td><input class="text_small" name="cron_hours[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['hours']; ?>" readonly /></td>
-				<td><input class="text_small" name="cron_days[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['days']; ?>" readonly /></td>
-				<td><input class="text_small" name="cron_months[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['months']; ?>" readonly /></td>
-				<td><input class="text_small" name="cron_numday[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['numday']; ?>" readonly /></td>
-				<td rowspan="2"><input class="submit" name="cron_delete[<?php echo $Crontab['id_users_crontab']; ?>]" type="checkbox" value="<?php echo $Crontab['id_users_crontab']; ?>" readonly /></td>
-			</tr>
-			<tr>
-				<td style="text-align:center;"><?php echo User_OptionsMySB_Command; ?></th>
-				<td colspan="4"><input style="width: 100%;" name="cron_command[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['command']; ?>" readonly /></td>
-			</tr>
-<?php
-		$CronFiles = array_diff($CronFiles, array($Crontab['command']));
-		$Crontab_ID = $Crontab['id_users_crontab'];
-	}
-
-	echo '<tr><th colspan="6"></th></tr>';
-	
-	if ( !empty($CronFiles) ) {
-		$Crontab_ID++;
-?>
-			<input name="cron_id" type="hidden" value="<?php echo $Crontab_ID; ?>" />
-			<tr>
-				<td><input class="text_small" name="cron_minutes" type="text" /></td>
-				<td><input class="text_small" name="cron_hours" type="text" /></td>
-				<td><input class="text_small" name="cron_days" type="text" /></td>
-				<td><input class="text_small" name="cron_months" type="text" /></td>
-				<td><input class="text_small" name="cron_numday" type="text" /></td>
-				<td rowspan="2"><input class="submit" name="submit" type="submit" value="<?php echo User_OptionsMySB_Add; ?>" /></td>
-			</tr>
-			<tr>
-				<td style="text-align:center;"><?php echo User_OptionsMySB_Command; ?></th>
-				<td colspan="4">
-				<select name="cron_command" style="width: 100%; height: 28px;">
-<?php
-				foreach($CronFiles as $Script) {
-					echo '<option selected="selected" value="' . $Script . '">' . $Script . '</option>';
-				}
-?>
-				</select>
-				</td>
-			</tr>
-<?php
-	}
-?>
-		</table>
-		<div align="center"><p class="Comments"><?php echo User_OptionsMySB_Crontab_Comment; ?></p></div>
-	</fieldset>
-	
-<?php
-if ( count($FilesInQueue) > 0 ) {
-?>	
-	<fieldset style="vertical-align: text-top;">
-	<legend><?php echo User_OptionsMySB_Title_FilesToSync; ?></legend>
-		<table>
-			<tr>
-				<th style="text-align:center;"><?php echo User_OptionsMySB_SyncMode; ?></th>
-				<th style="text-align:center;"><?php echo Global_IsActive; ?></th>
-				<th style="text-align:center;"><?php echo User_OptionsMySB_FileName; ?></th>
-				<th style="text-align:center;"><?php echo User_OptionsMySB_rTorrentConfigDirectory; ?></th>
-				<th style="text-align:center;"><?php echo User_OptionsMySB_Comments; ?></th>
-				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
-			</tr>
-<?php
-	foreach($FilesInQueue as $Files) {
-		$Id_list = $Files['list_id'];
-		switch ($Files['is_active']) {
-			case '0':
-				$is_active = '	<select name="is_active['.$Id_list.']" style="width:60px; cursor: pointer;" class="redText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-									<option value="0" selected="selected" class="redText">' .Global_No. '</option>
-									<option value="1" class="greenText">' .Global_Yes. '</option>
-								</select>';
-				break;
-			default:
-				$is_active = '	<select name="is_active['.$Id_list.']" style="width:60px; cursor: pointer;" class="greenText" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-									<option value="0" class="redText">' .Global_No. '</option>
-									<option value="1" selected="selected" class="greenText">' .Global_Yes. '</option>
-								</select>';
-				break;
-		}
-		switch ($Files['list_category']) {
-			case 'direct':
-					$list_category = '	<select name="list_category['.$Id_list.']" style="width:90px; cursor: pointer;" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-											<option value="direct" selected="selected">' .User_OptionsMySB_SynchroDirect. '</option>
-											<option value="cron">' .User_OptionsMySB_SynchroCron. '</option>
-										</select>';
-					break;
-				default: // cron
-					$list_category = '	<select name="list_category['.$Id_list.']" style="width:90px; cursor: pointer;" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
-											<option value="direct">' .User_OptionsMySB_SynchroDirect. '</option>
-											<option value="cron" selected="selected">' .User_OptionsMySB_SynchroCron. '</option>
-										</select>';
-					break;
-		}
-?>
-			<input name="list_id[<?php echo $Id_list; ?>]" type="hidden" value="<?php echo $Id_list; ?>" />
-			<tr>
-				<td><?php echo $list_category; ?></td>
-				<td><?php echo $is_active; ?></td>
-				<td><?php echo $Files['get_name']; ?></td>
-				<td><?php echo $Files['CategoryDir']; ?></td>
-				<td><?php echo $Files['comments']; ?></td>
-				<td>
-					<input class="submit" name="delete_filewaiting[<?php echo $Id_list; ?>]" type="checkbox" value="<?php echo $Id_list; ?>" />
-				</td>
-			</tr>
-<?php
-	}
-?>
-		</table>
-	</fieldset>	
-<?php
-}
-?>
 	
 	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
 

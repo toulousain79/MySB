@@ -26,40 +26,9 @@ define('User_OptionsMySB_Title_rTorrent', 'rTorrent');
 define('User_OptionsMySB_rTorrentVersion', 'Version de rTorrent:');
 define('User_OptionsMySB_rTorrentRestart', 'Red&eacute;marrer rTorrent ?');
 define('User_OptionsMySB_NotifyEmail', 'Notification email ?');
-define('User_OptionsMySB_Title_rTorrentConfig', 'Fichier de Configuration rTorrent');
-define('User_OptionsMySB_rTorrentConfigDirectory', 'Sous-dossiers');
-define('User_OptionsMySB_rTorrentConfigAddDirectory', 'Ajouter un sous-dossier');
-define('User_OptionsMySB_rTorrentConfigDelDirectory', 'Retirer le dernier sous-dossier');
-define('User_OptionsMySB_rTorrentConfig_Comment', 'Permet de g&eacute;rer les sous dossiers dans "watch" et "complete".<br />
-Exemple, ajoutez un dossier "Films", et celui-ci sera cr&eacute;&eacute; et g&eacute;r&eacute; par rTorrent.<br />
-Un fichier torrent ajout&eacute; dans "watch\Films" lancera le t&eacute;l&eacute;chargement.<br />
-A la fin de celui-ci, les donn&eacute;es seront automatiquement copi&eacute;es dans "complete\Films".');
-define('User_OptionsMySB_rTorrentConfig_Table_Title', 'Sous-dossiers</br>existants');
 define('User_OptionsMySB_Title_Portal', 'Portail MySB');
 define('User_OptionsMySB_Language', 'Language');
 define('User_OptionsMySB_Lang_French', 'Fran&ccedil;ais');
 define('User_OptionsMySB_Lang_English', 'Anglais');
-define('User_OptionsMySB_Title_Crontab', 'Crontab');
-define('User_OptionsMySB_Minutes', 'Minutes');
-define('User_OptionsMySB_Hours', 'Heures');
-define('User_OptionsMySB_Days', 'Jours<br/>mois');
-define('User_OptionsMySB_Months', 'Mois');
-define('User_OptionsMySB_NumDay', 'Jours<br/>semaine');
-define('User_OptionsMySB_Command', 'Script');
-define('User_OptionsMySB_Add', 'Ajouter');
-define('User_OptionsMySB_Crontab_Comment', 'Planifier l\'&eacute;xecution de scripts personnels à la fin de vos t&eacute;l&eacute;chargements.<br />
-Vos scripts doivent &ecirc;tre enregistr&eacute;s dans ~/scripts/ avec ".cron" comme extension.<br/>
-Validez votre planification ici ;-) <a target="_blank" href="http://crontab.guru/">crontab.guru</a>.<br/>
-Lisez le fichier \'~/scripts/README\'.');
-define('User_OptionsMySB_Title_SyncMode', 'Mode de synchro');
-define('User_OptionsMySB_IgnoreSync', 'Ignore les scripts (Pas de synchro)');
-define('User_OptionsMySB_CronOnly', 'Synchro programm&eacute;e');
-define('User_OptionsMySB_DirectSync', 'Synchro directe');
-define('User_OptionsMySB_Title_FilesToSync', 'Fichiers en attente');
-define('User_OptionsMySB_SyncMode', 'Synchro');
-define('User_OptionsMySB_FileName', 'Nom');
-define('User_OptionsMySB_SynchroDirect', 'Directe');
-define('User_OptionsMySB_SynchroCron', 'Planifi&eacute;e');
-define('User_OptionsMySB_Comments', 'Commentaires');
 
 //#################### LAST LINE ######################################
