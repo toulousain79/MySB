@@ -2,7 +2,7 @@
 
 function generate_message(type, timeout, text) {
 	var n = noty({
-		layout      : 'center',
+		layout      : 'bottomCenter',
 		theme       : 'relax',
 		text        : text,
 		type        : type,

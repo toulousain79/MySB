@@ -29,5 +29,6 @@ define('MainUser_DNScrypt_Table_Version', 'Version');
 define('MainUser_DNScrypt_Table_DNSsec', 'Validation<br />DNSSEC');
 define('MainUser_DNScrypt_Table_NoLog', 'Pas de<br />logs');
 define('MainUser_DNScrypt_Table_NameCoin', 'Namecoin');
+define('MainUser_DNScrypt_Restart', 'Red&eacute;marrer le service DNScrypt-proxy');
 
 //#################### LAST LINE ######################################

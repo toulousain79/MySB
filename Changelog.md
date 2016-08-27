@@ -39,6 +39,7 @@
 				* Medoo Framework v1.1.2
 				* Tracker Add, minor changes
 				* Add view of files queue to synchro
+				* Add synchronization page
 			- ruTorrent Plugins
 				* NFO v3.6 (AceP1983)
 				* Check SFV v3.6 (AceP1983)

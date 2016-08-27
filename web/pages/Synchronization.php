@@ -174,9 +174,14 @@ if (isset($_POST['submit'])) {
 			}
 
 			// Identification
+			if ( $_POST['sync_dstdir'][1] == '' ) {
+					$IdentDstDir = './';
+			} else {
+				$IdentDstDir = $_POST['sync_dstdir'][1];
+			}
 			$result = $Sync_DB->update("ident", [
 													"mode_sync" => $_POST['mode_sync'][1],
-													"dst_dir" => $_POST['sync_dstdir'][1],
+													"dst_dir" => $IdentDstDir,
 													"dst_srv" => $_POST['sync_dstsrv'][1],
 													"dst_port" => $_POST['sync_dstport'][1],
 													"dst_user" => $_POST['sync_dstuser'][1],
@@ -395,11 +400,6 @@ if ( !empty($users_directories) ) {
 							</select></div>';
 			break;
 	}
-	if ( $IdentSync['dst_dir'] == '' ) {
-			$IdentDstDir = './';
-	} else {
-		$IdentDstDir = $IdentSync['dst_dir'];
-	}
 ?>
 	<fieldset style="vertical-align: text-top;">
 	<legend><?php echo User_Synchronization_Title_Ident; ?></legend>
@@ -417,7 +417,7 @@ if ( !empty($users_directories) ) {
 			<input name="ident_id[<?php echo $IdentSync['ident_id']; ?>]" type="hidden" value="<?php echo $IdentSync['ident_id']; ?>" />
 			<tr>
 				<td><?php echo $mode_sync; ?></td>
-				<td><input class="text_medium" name="sync_dstdir[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentDstDir; ?>" /></td>
+				<td><input class="text_medium" name="sync_dstdir[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['dst_dir']; ?>" /></td>
 				<td><input class="text_medium" name="sync_dstsrv[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['dst_srv']; ?>" /></td>
 				<td><input class="text_small" name="sync_dstport[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['dst_port']; ?>" /></td>
 				<td><input class="text_medium" name="sync_dstuser[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['dst_user']; ?>" /></td>

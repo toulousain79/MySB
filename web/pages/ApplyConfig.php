@@ -27,6 +27,8 @@ require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__
 if ( IfApplyConfig() > 0 ) {
 	global $MySB_DB, $CurrentUser;
 
+	echo '<div align="center"><img src="'. THEMES_PATH . 'MySB/images/toulousain79.gif" alt="toulousain79"></div>';
+
 	exec("sudo /bin/bash ".MYSB_ROOT."/scripts/ApplyConfig.bsh $CurrentUser DO_APPLY", $output, $result);
 
 	if ( $result == 0 ) {
