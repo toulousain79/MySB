@@ -63,7 +63,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			$args = false;
 
 			if ( ($username != '') && ($email != '') && ($confirm_email != '') ) {
-				$IfExist = $MySB_DB->get("users", "users_email", ["users_ident" => "$username"]);	
+				$IfExist = $MySB_DB->get("users", "users_email", ["users_ident" => "$username"]);
 				if ( $IfExist == '' ) {
 					if ( ValidateEmail($email) != false ) {
 						if ( $email == $confirm_email ) {
@@ -121,7 +121,7 @@ if ( !empty($UsersList) ) {
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Username; ?></th>
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Email; ?></th>
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_IsSftp; ?></th>
-				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_IsSudo; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Quota; ?></th>
 				<!--<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>-->
 			</tr>
 
@@ -129,35 +129,27 @@ if ( !empty($UsersList) ) {
 	foreach($UsersList as $User) {
 		switch ($User["sftp"]) {
 			case '0':
-				$SFTP = MainUser_UserAdd_NO;
+				$SFTP = Global_No;
 				break;
 			default:
-				$SFTP = MainUser_UserAdd_YES;
-				break;
-		}
-		switch ($User["sudo"]) {
-			case '0':
-				$SUDO = MainUser_UserAdd_NO;
-				break;
-			default:
-				$SUDO = MainUser_UserAdd_YES;
+				$SFTP = Global_Yes;
 				break;
 		}
 ?>
 			<tr>
 				<td>
-					<input style="width:80px;" type="hidden" name="users_ident[]" value="<?php echo $User["users_ident"]; ?>" />			
+					<input style="width:80px;" type="hidden" name="users_ident[]" value="<?php echo $User["users_ident"]; ?>" />
 					<?php echo $User["users_ident"]; ?>
 				</td>
 				<td>
-					<input style="width:200px;" type="hidden" name="users_email[]" value="<?php echo $User["users_email"]; ?>" />					
+					<input style="width:200px;" type="hidden" name="users_email[]" value="<?php echo $User["users_email"]; ?>" />
 					<?php echo $User["users_email"]; ?>
 				</td>
 				<td>
 					<?php echo $SFTP; ?>
 				</td>
 				<td>
-					<?php echo $SUDO; ?>
+					<?php echo GetSizeName($User["quota"]); ?>
 				</td>
 				<!--<td>
 					<input class="submit" name="delete[<?php echo $User["users_ident"]; ?>]" type="submit" value="<?php echo Global_Delete; ?>" />

@@ -33,8 +33,6 @@ define('MainUser_UserAdd_UserDontExist', 'Echec !<br /><br />L\'utilisateur n\'e
 define('MainUser_UserAdd_Table_Username', 'Nom d\'utilisateur');
 define('MainUser_UserAdd_Table_Email', 'E-mail');
 define('MainUser_UserAdd_Table_IsSftp', 'SFTP ?');
-define('MainUser_UserAdd_Table_IsSudo', 'Sudo ?');
-define('MainUser_UserAdd_YES', 'OUI');
-define('MainUser_UserAdd_NO', 'NON');
+define('MainUser_UserAdd_Table_Quota', 'Quota');
 
 //#################### LAST LINE ######################################
