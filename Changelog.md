@@ -1,5 +1,5 @@
 	Version v3.4
-		2016/04/03 -> 2016/05/08
+		2016/08/27
 			- Update provider monitoring for OVH (v3.3 and v3.4)
 			- MySQL, minor changes (v3.3 and v3.4)
 			- Disable totaly IPv6 with grub (v3.3 and v3.4)
