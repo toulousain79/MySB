@@ -10,6 +10,7 @@
 			- PHP5, limit TMPFS cache to 64Mo
 			- Detect real IP address during installation
 			- PlexMediaServer, new APT Key
+			- User cron jobs, minor changes
 			- Let's Encrypt, scheduled renew certificate bug fix
 			- Add survey confirmation before continue installation
 			- Change script of synchronization (use of SQlite DB)
@@ -39,7 +40,7 @@
 				* Medoo Framework v1.1.2
 				* Tracker Add, minor changes
 				* Add view of files queue to synchro
-				* Add synchronization page
+				* Add synchronization page (manage files in queue, manual synchronization, ...)
 			- ruTorrent Plugins
 				* NFO v3.6 (AceP1983)
 				* Check SFV v3.6 (AceP1983)
