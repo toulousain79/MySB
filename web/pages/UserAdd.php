@@ -111,7 +111,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 Form();
 
-$UsersList = $MySB_DB->select("users", "*", ["AND" => ["admin" => "0"]]);
+$UsersList = $MySB_DB->select("users", "*", ["AND" => ["is_active" => "1"]]);
 
 if ( !empty($UsersList) ) {
 ?>
@@ -149,7 +149,7 @@ if ( !empty($UsersList) ) {
 					<?php echo $SFTP; ?>
 				</td>
 				<td>
-					<?php echo GetSizeName($User["quota"]); ?>
+					<?php echo GetSizeName($User["quota"].'KB'); ?>
 				</td>
 				<!--<td>
 					<input class="submit" name="delete[<?php echo $User["users_ident"]; ?>]" type="submit" value="<?php echo Global_Delete; ?>" />

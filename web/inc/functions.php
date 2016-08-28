@@ -24,8 +24,17 @@
 
 // Get Size
 function GetSizeName($octet) {
+	switch (strtoupper(substr($octet,-2))) {
+		case 'KB':
+			$octet = $octet*1024;
+			break;
+
+		default:
+			break;
+	}
+	
     // Array contenant les differents unités 
-    $unite = array('octet','ko','mo','go');
+    $unite = array('Bytes','KB','MB','GB','TB');
 
     if ($octet < 1000) { // octet
         return $octet.' '.$unite[0];
