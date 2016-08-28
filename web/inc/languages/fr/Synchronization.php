@@ -31,7 +31,7 @@ Exemple, ajoutez un dossier "Films", et celui-ci sera cr&eacute;&eacute; et g&ea
 Un fichier torrent ajout&eacute; dans "watch\Films" lancera le t&eacute;l&eacute;chargement.<br />
 A la fin de celui-ci, les donn&eacute;es seront automatiquement copi&eacute;es dans "complete\Films".');
 define('User_Synchronization_rTorrentConfig_Table_Title', 'Sous-dossiers</br>existants');
-define('User_Synchronization_Title_Crontab', 'Crontab');
+define('User_Synchronization_Title_Crontab', 'Crontab / Scripts à utiliser');
 define('User_Synchronization_Minutes', 'Minutes');
 define('User_Synchronization_Hours', 'Heures');
 define('User_Synchronization_Days', 'Jours<br/>mois');
@@ -64,6 +64,12 @@ define('User_Synchronization_DstUser', 'Utilisateur');
 define('User_Synchronization_DstPass', 'Mot de passe');
 define('User_Synchronization_MaxSync', 'Max &agrave; synchroniser');
 define('User_Synchronization_Subdir', 'Sous-dossier');
+define('User_Synchronization_MailObjectOK', 'Sujet du mail pour une synchronisation r&eacute;ussie');
+define('User_Synchronization_MailObjectKO', 'Sujet du mail pour une synchronisation &eacute;chou&eacute;e');
 define('User_Synchronization_SyncComment', '');
+define('User_Synchronization_StartDirect', 'Lancer une synchronisation directe');
+define('User_Synchronization_StartPlanned', 'Lancer une synchronisation planifi&eacute;e');
+define('User_Synchronization_ScriptsDirect', 'Script à utiliser pour les synchronisation directe');
+define('User_Synchronization_ScriptsComment', 'Dans le cas o&ugrave; plusieurs scripts sont pr&eacute;sents,<br />s&eacute;lectionnez le script &agrave; utiliser pour une synchronisation directe.<br />Vos scripts doivent &ecirc;tre enregistr&eacute;s dans ~/scripts/ avec ".sh" comme extension.');
 
 //#################### LAST LINE ######################################

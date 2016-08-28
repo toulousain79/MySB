@@ -37,7 +37,7 @@ define('Global_LastUpdate', 'Last Update');
 define('Global_FailedUpdateMysbDB', 'Failed !<br /><br />It was not possible to update the MySB database.');
 define('Global_CompleteAllFields', 'Please, complete all fields.');
 define('Global_Success', 'Success !');
-define('Global_SuccessAndApply', 'Success !<br /><br />Please, click on "Apply configuration"');
+define('Global_SuccessAndApply', 'Success !<br /><br />Please, click on<br />\"Apply configuration\"');
 
 define('OpenVPN_SrvIpGw', '10.0.0.1');
 define('OpenVPN_SrvIp', '10.0.1.1');

@@ -516,7 +516,7 @@ function GenerateMessage($commands, $type, $message, $args) {
 
 				default: // Used for create a new command to apply
 					$timeout = 4000;
-					if ( !isset($message) || ($message == 'Success !') )  {
+					if ( !isset($message) || ($message == Global_Success) )  {
 						$message = Global_SuccessAndApply;
 					}
 

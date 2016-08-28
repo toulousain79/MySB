@@ -37,7 +37,7 @@ define('Global_LastUpdate', 'Derni&egrave;re mise &agrave; jour');
 define('Global_FailedUpdateMysbDB', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour la base de donn&eacute;es MySB.');
 define('Global_CompleteAllFields', 'Merci de renseigner tous les champs.');
 define('Global_Success', 'Succ&egrave;s !');
-define('Global_SuccessAndApply', 'Succ&egrave;s !<br /><br />Merci de cliquer maintenant sur "Appliquer les modifications".');
+define('Global_SuccessAndApply', 'Succ&egrave;s !<br /><br />Merci de cliquer maintenant sur<br />\"Appliquer les modifications\".');
 
 define('OpenVPN_SrvIpGw', '10.0.0.1');
 define('OpenVPN_SrvIp', '10.0.1.1');

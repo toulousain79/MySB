@@ -40,6 +40,27 @@ $Sync_DB = new medoo([
 ]);
 
 // Get values from POST
+if (isset($_POST['start'])) {
+	$ScriptName = $MySB_DB->get("users_scripts", "script", ["id_users" => "$UserID"]);
+	if ( $ScriptName != '' ) {
+		switch ($_POST['start']) {
+			case StartSynchroDirect:
+				$ScriptMode = 'DIRECT';
+				break;
+			default:
+			case StartSynchroCron:
+				$ScriptMode = 'CRON';
+				break;
+		}
+		$Command = 'UserScript_StartSynchro';
+		$type = 'success';
+		unset($message);
+		$args = "$ScriptName|$ScriptMode";
+
+		GenerateMessage($Command, $type, $message, $args);
+	}
+}
+
 if (isset($_POST['submit'])) {
 	switch ($_POST['submit']) {
 		case User_Synchronization_Add:
@@ -71,7 +92,6 @@ if (isset($_POST['submit'])) {
 															]);
 				if( $result != 0 ) {
 					$Change++;
-					$RefreshPage++;
 					$Command = 'Options_MySB';
 				}
 			} else {
@@ -91,20 +111,36 @@ if (isset($_POST['submit'])) {
 															]);
 				if( $result != 0 ) {
 					$Change++;
-					$RefreshPage++;
 					$Command = 'Options_MySB';
 				}
 			}
 			break;
 
 		default:	// Global_SaveChanges
+			// Script name for direct synchro
+			if ( isset($_POST['script_name']) ) {
+				$ScriptName = $_POST['script_name'];
+				$IfExist = $MySB_DB->get("users_scripts", "id_users_scripts", ["AND" => ["id_users" => $UserID,"sync_mode" => "direct"]]);
+
+				if ( empty($IfExist) ) {
+					$result = $MySB_DB->insert("users_scripts", ["id_users" => "$UserID","sync_mode" => "direct","script" => "$ScriptName"]);
+					if( $result != 0 ) {
+						$Change++;
+					}
+				} else {
+					$result = $MySB_DB->update("users_scripts", ["id_users" => "$UserID","sync_mode" => "direct","script" => "$ScriptName"], ["id_users" => $UserID]);
+					if( $result != 0 ) {
+						$Change++;
+					}
+				}
+			}
+
 			// Crontab - Delete
 			if ( isset($_POST['cron_delete']) ) {
 				foreach ($_POST['cron_delete'] as $key) {
 					$result = $MySB_DB->delete("users_crontab", ["id_users_crontab" => $key]);
 					if ( $result > 0 ) {
 						$Change++;
-						$RefreshPage++;
 						$Command = 'Options_MySB';
 					}
 				}
@@ -124,12 +160,15 @@ if (isset($_POST['submit'])) {
 					}
 				}
 
-				$result = $MySB_DB->update("users_rtorrent_cfg", ["sync_mode" => $sync_mode, "to_delete" => $to_delete], [
-																						"AND" => [
-																							"id_users" => $UserID,
-																							"sub_directory" => $current_directory
-																						]
-																					]);
+				$result = $MySB_DB->update("users_rtorrent_cfg", [
+																	"sync_mode" => $sync_mode,
+																	"to_delete" => $to_delete
+																], [
+																	"AND" => [
+																		"id_users" => $UserID,
+																		"sub_directory" => $current_directory
+																	]
+																]);
 				if ( $result > 0 ) {
 					$Change++;
 					$RefreshPage++;
@@ -187,7 +226,9 @@ if (isset($_POST['submit'])) {
 													"dst_user" => $_POST['sync_dstuser'][1],
 													"dst_pass" => $_POST['sync_dstpass'][1],
 													"max_to_sync" => $_POST['sync_maxsync'][1],
-													"create_subdir" => $_POST['create_subdir'][1]
+													"create_subdir" => $_POST['create_subdir'][1],
+													"MailObjectOK" => $_POST['MailObjectOK'][1],
+													"MailObjectKO" => $_POST['MailObjectKO'][1]
 												], ["ident_id" => 1]);
 			if ( $result > 0 ) { $ChangeList++; }
 
@@ -236,21 +277,21 @@ if (isset($_POST['submit'])) {
 $users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
 $users_directories = $MySB_DB->select("users_rtorrent_cfg", "*", ["id_users" => "$UserID"]);
 $users_crontab = $MySB_DB->select("users_crontab", "*", ["id_users" => "$UserID"]);
+$users_scripts = $MySB_DB->get("users_scripts", "*", ["id_users" => "$UserID"]);
+$IdentSync = $Sync_DB->get("ident", "*", ["ident_id" => 1]);
+$FilesInQueue = $Sync_DB->select("list", "*");
 
 $CronFiles = array();
-if($dossier = opendir("/home/$CurrentUser/scripts")) {
-	while(false !== ($fichier = readdir($dossier))) {
-		if($fichier != '.' && $fichier != '..') {
-			$info = new SplFileInfo($fichier);
+if($dir = opendir("/home/$CurrentUser/scripts")) {
+	while(false !== ($file = readdir($dir))) {
+		if($file != '.' && $file != '..') {
+			$info = new SplFileInfo($file);
 			if ( $info->getExtension() == 'sh' ) {
-				array_push($CronFiles, $fichier);
+				array_push($CronFiles, $file);
 			}
 		}
 	}
 }
-
-$IdentSync = $Sync_DB->get("ident", "*", ["ident_id" => 1]);
-$FilesInQueue = $Sync_DB->select("list", "*");
 ?>
 
 <form class="form_settings" method="post" action="">
@@ -269,16 +310,38 @@ if ( !empty($users_directories) ) {
 				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
 			</tr>
 <?php
+	$DisplayIdent=0;
 	foreach($users_directories as $Directory) {
+		switch ($Directory['sync_mode']) {
+			case '2':
+				$DisplayIdent++;
+				$sync_mode = '	<select name="sync_mode[]" style="width:300px; height:28px;">
+									<option value="2" selected="selected">' .User_Synchronization_DirectSync. '</option>
+									<option value="1">' .User_Synchronization_CronOnly. '</option>
+									<option value="0">' .User_Synchronization_IgnoreSync. '</option>
+								</select>';
+				break;
+			case '1':
+				$DisplayIdent++;
+				$sync_mode = '	<select name="sync_mode[]" style="width:300px; height:28px;">
+									<option value="2">' .User_Synchronization_DirectSync. '</option>
+									<option value="1" selected="selected">' .User_Synchronization_CronOnly. '</option>
+									<option value="0">' .User_Synchronization_IgnoreSync. '</option>
+								</select>';
+				break;				
+			default:
+				$sync_mode = '	<select name="sync_mode[]" style="width:300px; height:28px;">
+									<option value="2">' .User_Synchronization_DirectSync. '</option>
+									<option value="1">' .User_Synchronization_CronOnly. '</option>
+									<option value="0" selected="selected">' .User_Synchronization_IgnoreSync. '</option>
+								</select>';
+				break;
+		}
 ?>
 			<tr>
 				<td><?php echo $Directory['sub_directory']; ?><input class="directory" id="directory" name="directory[]" type="hidden" value="<?php echo $Directory['sub_directory']; ?>" /></td>
 				<td>
-					<select name="sync_mode[]" style="width:300px; height: 28px;">
-						<option <?php echo ($Directory['sync_mode'] == '0') ? 'selected="selected"' : ''; ?> value="0"><?php echo User_Synchronization_IgnoreSync; ?></option>
-						<option <?php echo ($Directory['sync_mode'] == '1') ? 'selected="selected"' : ''; ?> value="1"><?php echo User_Synchronization_CronOnly; ?></option>
-						<option <?php echo ($Directory['sync_mode'] == '2') ? 'selected="selected"' : ''; ?> value="2"><?php echo User_Synchronization_DirectSync; ?></option>
-					</select>
+					<?php echo $sync_mode; ?>
 				</td>
 				<td>
 					<input class="submit" name="delete_dir[]" type="checkbox" value="<?php echo $Directory['sub_directory']; ?>" <?php echo ($Directory['to_delete'] == '1') ? 'checked' : ''; ?> />
@@ -306,8 +369,35 @@ if ( !empty($users_directories) ) {
 		<div align="center"><p class="Comments"><?php echo User_Synchronization_rTorrentConfig_Comment; ?></p></div>
 	</fieldset>
 
+<?php
+if ( $DisplayIdent >= 1 ) {
+?>
 	<fieldset style="vertical-align: text-top;">
 	<legend><?php echo User_Synchronization_Title_Crontab; ?></legend>
+		<table>
+			<tr>
+				<th style="text-align:center;"><?php echo User_Synchronization_ScriptsDirect; ?></th>
+			</tr>
+			<tr>
+				<td>
+					<select name="script_name" style="width:100%; height: 28px;">
+<?php
+				foreach($CronFiles as $Script) {
+					if ( $users_scripts['script'] == $Script ) {
+						echo '<option selected="selected" value="' . $Script . '">' . $Script . '</option>';
+					} else {
+						echo '<option value="' . $Script . '">' . $Script . '</option>';
+					}
+				}
+?>
+					</select>
+				</td>
+			</tr>
+		</table>
+		<div align="center"><p class="Comments"><?php echo User_Synchronization_ScriptsComment; ?></p></div>
+		
+		<br />
+
 		<table>
 			<tr>
 				<th style="text-align:center;"><?php echo User_Synchronization_Minutes; ?></th>
@@ -372,6 +462,8 @@ if ( !empty($users_directories) ) {
 	</fieldset>
 
 <?php
+	} // if ( $DisplayIdent >= 1 ) {
+
 	switch ($IdentSync['mode_sync']) {
 		case 'rsync':
 			$mode_sync = '	<select name="mode_sync['.$IdentSync['ident_id'].']" style="width:80px; cursor: pointer;" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
@@ -400,6 +492,8 @@ if ( !empty($users_directories) ) {
 							</select></div>';
 			break;
 	}
+	
+if ( $DisplayIdent >= 1 ) {
 ?>
 	<fieldset style="vertical-align: text-top;">
 	<legend><?php echo User_Synchronization_Title_Ident; ?></legend>
@@ -442,10 +536,21 @@ if ( !empty($users_directories) ) {
 				<td><?php echo $create_subdir; ?></td>
 			</tr>
 		</table>
+		<table style="width:100%">
+			<tr>
+				<th style="text-align:center;"><?php echo User_Synchronization_MailObjectOK; ?></th>
+				<th style="text-align:center;"><?php echo User_Synchronization_MailObjectKO; ?></th>
+			</tr>
+			<tr>
+				<td><input style="width:100%; cursor: pointer;" name="MailObjectOK[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['MailObjectOK']; ?>" /></td>	
+				<td><input style="width:100%; cursor: pointer;" name="MailObjectKO[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['MailObjectKO']; ?>" /></td>
+			</tr>
+		</table>
 		<div align="center"><p class="Comments"><?php echo User_Synchronization_SyncComment; ?></p></div>
 	</fieldset>
 
 <?php
+} // if ( $DisplayIdent >= 1 ) {
 if ( count($FilesInQueue) > 0 ) {
 ?>
 	<fieldset style="vertical-align: text-top;">
@@ -460,6 +565,7 @@ if ( count($FilesInQueue) > 0 ) {
 				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
 			</tr>
 <?php
+	$CountDirect=0;
 	foreach($FilesInQueue as $Files) {
 		$Id_list = $Files['list_id'];
 		switch ($Files['is_active']) {
@@ -478,6 +584,7 @@ if ( count($FilesInQueue) > 0 ) {
 		}
 		switch ($Files['list_category']) {
 			case 'direct':
+					$CountDirect++;
 					$list_category = '	<select name="list_category['.$Id_list.']" style="width:90px; cursor: pointer;" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 											<option value="direct" selected="selected">' .User_Synchronization_SynchroDirect. '</option>
 											<option value="cron">' .User_Synchronization_SynchroCron. '</option>
@@ -506,7 +613,18 @@ if ( count($FilesInQueue) > 0 ) {
 	}
 ?>
 		</table>
-	</fieldset>	
+<?php
+	if ( ($CountDirect >= 1) && ($IdentSync['dst_dir'] != '') && ($IdentSync['dst_srv'] != '') && ($IdentSync['dst_port']) ) {
+		if ( $users_scripts['script'] != '' ) {
+			echo '<input style="cursor: pointer; width:' . strlen(User_Synchronization_StartDirect)*10 . 'px; margin-top: 10px; margin-bottom: 10px;" name="start" type="submit" value="'.User_Synchronization_StartDirect.'" />';
+		}
+		if ( count($users_crontab) > 0 ) {
+			echo '&nbsp;&nbsp;';
+			echo '<input style="cursor: pointer; width:' . strlen(User_Synchronization_StartPlanned)*10 . 'px; margin-top: 10px; margin-bottom: 10px;" name="start" type="submit" value="'.User_Synchronization_StartPlanned.'" />';
+		}
+	}
+?>
+	</fieldset>
 <?php
 }
 ?>

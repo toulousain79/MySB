@@ -57,13 +57,19 @@ define('User_Synchronization_Title_Ident', 'Identification');
 define('User_Synchronization_ModeSync', 'Method');
 define('User_Synchronization_ModeSync_FTP', 'FTP(s)');
 define('User_Synchronization_ModeSync_RSYNC', 'RSYNC');
-define('User_Synchronization_DstDir', 'Remote<br />folder');
-define('User_Synchronization_DstSrv', 'Remote<br />server');
+define('User_Synchronization_DstDir', 'Remote folder');
+define('User_Synchronization_DstSrv', 'Remote server');
 define('User_Synchronization_DstPort', 'Port');
 define('User_Synchronization_DstUser', 'User');
 define('User_Synchronization_DstPass', 'Password');
-define('User_Synchronization_MaxSync', 'Max files<br />to sync');
-define('User_Synchronization_Subdir', 'Create a<br />subfolder');
+define('User_Synchronization_MaxSync', 'Max files to sync');
+define('User_Synchronization_Subdir', 'Create a subfolder');
+define('User_Synchronization_MailObjectOK', 'Mail subject for a successful synchronization');
+define('User_Synchronization_MailObjectKO', 'Mail subject for a failed synchronization');
 define('User_Synchronization_SyncComment', '');
+define('User_Synchronization_StartDirect', 'Start direct synchronization');
+define('User_Synchronization_StartPlanned', 'Start planned synchronization');
+define('User_Synchronization_ScriptsDirect', 'Script to use for direct synchronization');
+define('User_Synchronization_ScriptsComment', 'In case several scripts are present,<br/>select the script to be used for direct synchronization.');
 
 //#################### LAST LINE ######################################

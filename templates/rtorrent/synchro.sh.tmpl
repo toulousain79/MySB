@@ -1,11 +1,19 @@
 #!/bin/bash
 
-#### VARs
-# Notification (if enabled on MySB options page in portal)
-MailObjectOK="MySB - Transfert vers le NAS terminé !"
-MailObjectKO="MySB - Transfert vers le NAS échoué !"
-
 #### DO NOT MODIFY
+UserName="`whoami`"
+ScriptName=$(basename $0)
+CompleteDir="$HOME/rtorrent/complete/"
+DataBase="$HOME/db/$UserName.sq3"
+FileLockDirect="$HOME/scripts/direct.lock"
+FileLockCron="$HOME/scripts/cron.lock"
+FileLog="$HOME/logs/$ScriptName.log"
+RsyncCipher="aes128-ctr"
+PID="$$"
+get_base_path="$1"
+get_custom1="$2"
+get_name="$3"
+get_loaded_file="$4"
 ## Destination
 # ftp OR rsync
 ModeSync="`sqlite3 -cmd '.timeout 150000' $DataBase "SELECT mode_sync FROM ident WHERE ident_id = '1';"`"
@@ -23,28 +31,24 @@ DstPass="`sqlite3 -cmd '.timeout 150000' $DataBase "SELECT dst_pass FROM ident W
 MaxToSync="`sqlite3 -cmd '.timeout 150000' $DataBase "SELECT max_to_sync FROM ident WHERE ident_id = '1';"`"
 # 1: Create a subdirectory for alone files (needed by some scraper) | 0: Do not create subdirectory
 CreateSubDir="`sqlite3 -cmd '.timeout 150000' $DataBase "SELECT create_subdir FROM ident WHERE ident_id = '1';"`"
-
-UserName="`whoami`"
-ScriptName=$(basename $0)
-CompleteDir="$HOME/rtorrent/complete/"
-DataBase="$HOME/db/$UserName.sq3"
-FileLockDirect="$HOME/scripts/direct.lock"
-FileLockCron="$HOME/scripts/cron.lock"
-FileLog="$HOME/logs/$ScriptName.log"
-RsyncCipher="aes128-ctr"
-PID="$$"
-get_base_path="$1"
-get_custom1="$2"
-get_name="$3"
-get_loaded_file="$4"
+# Notification (if enabled on MySB options page in portal)
+MailObjectOK="`sqlite3 -cmd '.timeout 150000' $DataBase "SELECT MailObjectOK FROM ident WHERE ident_id = '1';"`"
+MailObjectKO="`sqlite3 -cmd '.timeout 150000' $DataBase "SELECT MailObjectKO FROM ident WHERE ident_id = '1';"`"
 #### DO NOT MODIFY
 
 #### START BY: CRON (without args) or DIRECTLY (with args after a download) ?
-if [ -z "$get_base_path" ] || [ -z "$get_custom1" ] || [ -z "$get_name" ] || [ -z "$get_loaded_file" ]; then
-	CronMode=1
-else
-	CronMode=0
-fi
+case "$1" in
+	'CRON'|'DIRECT')
+		CronMode=1
+	;;
+	*)
+		if [ -z "$get_base_path" ] || [ -z "$get_custom1" ] || [ -z "$get_name" ] || [ -z "$get_loaded_file" ]; then
+			CronMode=1
+		else
+			CronMode=0
+		fi
+	;;
+esac
 
 #### LIST ADD:  Started DIECTLY means that we must add download informations to a list (or not).
 if [ $CronMode -eq 0 ]; then
@@ -159,7 +163,7 @@ Listing() {
 	echo "--------------------"
 	echo
 
-	sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET comments = 'Start: $FnDate - $FnHour' WHERE list_id = '$FnGet_List_ID';"
+	sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET comments = 'Start: $FnStartDate - $FnStartHour' WHERE list_id = '$FnGet_List_ID';"
 
 	case "$ModeSync" in
 		'rsync')
@@ -194,17 +198,19 @@ Listing() {
 	esac
 
 	# Deleting the file from the list
+	FnEndDate="`/bin/date +%Y/%m/%d`"
+	FnEndHour="`/bin/date +%H:%M:%S`"
 	if [ $? -eq 0 ]; then
-		sqlite3 -echo -cmd '.timeout 150000' $DataBase "DELETE FROM list WHERE list_id = '$FnGet_List_ID'"
+		sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET is_active = '0', to_del = '1', comments = 'End: $FnEndDate - $FnEndHour' WHERE list_id = '$FnGet_List_ID';"
 	else
-		sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET is_active = '0', comments = 'Error: $FnDate - $FnHour' WHERE list_id = '$FnGet_List_ID';"
+		sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET is_active = '0', comments = 'Error: $FnEndDate - $FnEndHour' WHERE list_id = '$FnGet_List_ID';"
 		FnMail_Object="$MailObjectKO"
 	fi
 
 	echo
 	echo "--------------------"
-	echo "Date:		`/bin/date +%Y/%m/%d`"
-	echo "Hour:		`/bin/date +%H:%M:%S`"
+	echo "Date:		$FnEndDate"
+	echo "Hour:		$FnEndHour"
 	echo "##### END #####"
 
 	# E-mail notification
@@ -217,14 +223,15 @@ Listing() {
 ############ FUNCTIONs - BoF ############
 
 #### EXECUTING: We read the list line by line.
-sqlite3 -cmd '.timeout 150000' $DataBase "SELECT * FROM list WHERE list_category = '$CategoryList' AND is_active = '1' LIMIT $MaxToSync;" | while read ROW; do
+MyList="`sqlite3 -cmd '.timeout 150000' $DataBase "SELECT list_id,get_base_path,get_custom1,get_name,get_loaded_file,CategoryDir FROM list WHERE list_category = '$CategoryList' AND is_active = '1' AND to_del = '0' LIMIT $MaxToSync;"`"
+for ROW in $MyList; do
 	FileLogTemp="/tmp/$UserName-$ScriptName.log.$PID"
 	list_id="`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`"
-	get_base_path="`echo $ROW | awk '{split($0,a,"|"); print a[4]}'`"
-	get_custom1="`echo $ROW | awk '{split($0,a,"|"); print a[5]}'`"
-	get_name="`echo $ROW | awk '{split($0,a,"|"); print a[6]}'`"
-	get_loaded_file="`echo $ROW | awk '{split($0,a,"|"); print a[7]}'`"
-	CategoryDir="`echo $ROW | awk '{split($0,a,"|"); print a[8]}'`"
+	get_base_path="`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`"
+	get_custom1="`echo $ROW | awk '{split($0,a,"|"); print a[3]}'`"
+	get_name="`echo $ROW | awk '{split($0,a,"|"); print a[4]}'`"
+	get_loaded_file="`echo $ROW | awk '{split($0,a,"|"); print a[5]}'`"
+	CategoryDir="`echo $ROW | awk '{split($0,a,"|"); print a[6]}'`"
 
 	# Real process of synchronization
 	Listing "$list_id" "$get_base_path" "$get_custom1" "$get_name" "$get_loaded_file" "$CategoryDir" > $FileLogTemp
@@ -235,6 +242,9 @@ sqlite3 -cmd '.timeout 150000' $DataBase "SELECT * FROM list WHERE list_category
 		rm -f $FileLogTemp
 	fi
 done
+
+#### Cleaning the list
+sqlite3 -cmd '.timeout 150000' $DataBase "DELETE FROM list WHERE to_del = '1'"
 
 #### Removing the lock file
 if [ -e $FileLock ]; then

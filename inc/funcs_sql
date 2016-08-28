@@ -122,59 +122,52 @@ Func_SQL_Command() {
 					IFS=$','
 					TempVars=''
 					for VarS in $VarSet; do
-						case "$VarS" in
-							'key')
-								VarS="`echo $VarS | sed 's/key/\`key\`/g;'`"
-							;;
-							'value')
-								VarS="`echo $VarS | sed 's/value/\`value\`/g;'`"
-							;;
-							*)
-								Key="`echo $VarS | cut -d '=' -f 1 | sed 's/ //g;'`"
-								Value="`echo $VarS | cut -d '=' -f 2 | sed 's/ /__##__/g;'`"
-								VarS='`'"`echo $Key`"'`='"$Value"
-							;;
-						esac
+						Key="`echo $VarS | cut -d '=' -f 1 | sed 's/ //g;'`"
+						Value="`echo $VarS | cut -d '=' -f 2 | sed 's/^ //g;'`"
+						VarS='`'"`echo $Key`"'`='"$Value"
 						if [ -z "$TempVars" ]; then
 							TempVars="$VarS"
 						else
-							TempVars="$TempVars $VarS"
+							TempVars="$TempVars, $VarS"
 						fi
 					done
-					VarSet="`echo $TempVars | sed 's/ /, /g;' | sed 's/^,//g;' | sed 's/,$//g;' | sed 's/__##__/ /g;'`"
+					unset IFS
+					VarSet="`echo $TempVars`"
 
 					case "$VarWhere" in
-						'ALL')
+						'ALL') # WHERE 'ALL'.
 							MyVar="UPDATE $Table SET $VarSet"
 						;;
 						*)
-							TempVarsW=''
-							for VarW in $VarWhere; do
-								case "$VarW" in
-									'key')
-										VarW="`echo $VarW | sed 's/key/\`key\`/g;'`"
-									;;
-									'value')
-										VarW="`echo $VarW | sed 's/value/\`value\`/g;'`"
-									;;
-									*)
-										Key="`echo $VarW | cut -d '=' -f 1 | sed 's/ //g;'`"
-										Value="`echo $VarW | cut -d '=' -f 2 | sed 's/ /__##__/g;'`"
-										VarW='`'"`echo $Key`"'`='"$Value"
-										echo $VarW >> /tmp/test.log
-									;;
-								esac
-								if [ -z "$TempVarsW" ]; then
-									TempVarsW="$VarW"
-								else
-									TempVarsW="$TempVarsW $VarW"
+							a="`echo "$VarWhere" | grep -o "' AND " | wc -l`"
+							b=$a; c=0
+							(( b++ ))
+							for (( i=1; i<=$b; i++ )); do
+								Var1="`echo $VarWhere | awk -F "' AND " "{print $"$i"}" | sed 's/^ //g;'`"
+								if [ ! -z "$Var1" ]; then
+									Key="`echo $Var1 | cut -d '=' -f 1 | sed 's/ //g;'`"
+									Value="`echo $Var1 | cut -d '=' -f 2 | sed 's/^ //g;'`"
+									Var1='`'"`echo $Key`"'`='"$Value"
+									if [ $c -lt $a ]; then
+										if [ -z "$VarWhereTemp" ]; then
+											VarWhereTemp="$Var1"
+										else
+											VarWhereTemp="$VarWhereTemp' AND $Var1"
+										fi
+									else
+										if [ -z "$VarWhereTemp" ]; then
+											VarWhereTemp="$Var1"
+										else
+											VarWhereTemp="$VarWhereTemp' AND $Var1"
+										fi
+									fi
+									(( c++ ))
 								fi
 							done
-							VarWhere="`echo $TempVarsW | sed 's/ /, /g;' | sed 's/^,//g;' | sed 's/,$//g;' | sed 's/__##__/ /g;' | sed 's/AND/ AND /g;'`"
-							MyVar="UPDATE $Table SET $VarSet WHERE $VarWhere"
+							MyVar="UPDATE $Table SET $VarSet WHERE $VarWhereTemp"
+							unset VarWhereTemp
 						;;
 					esac
-					unset IFS
 					if [ "$Display" == "-echo" ];then
 						echo "$MyVar"
 					fi
