@@ -78,9 +78,23 @@ if [ $CronMode -eq 0 ]; then
 	CategoryList="direct"
 	FileLock="$FileLockDirect"
 else
-	# We are in cron sync mode
-	CategoryList="cron"
-	FileLock="$FileLockCron"
+	case "$1" in
+		'CRON')
+			# We are in cron sync mode
+			CategoryList="cron"
+			FileLock="$FileLockCron"
+		;;
+		'DIRECT')
+			# We are in direct sync mode
+			CategoryList="direct"
+			FileLock="$FileLockDirect"
+		;;
+		*)
+			# We are in cron sync mode
+			CategoryList="cron"
+			FileLock="$FileLockCron"
+		;;
+	esac
 fi
 
 #### LOCKED: If a lock file exists means that synchronization is already in progress. Same thing if the list is empty.
@@ -156,7 +170,7 @@ Listing() {
 	echo "Script:		$0"
 	echo "From:		$FnLine"
 	echo "To:		$FnDstDir"
-	echo "Category:	$FnCategoryDir"
+	echo "Category:	$FnCategoryDir ($CategoryList)"
 	echo "Server:		$DstUser@$DstSrv"
 	echo "Date:		$FnStartDate"
 	echo "Hour:		$FnStartHour"
@@ -199,7 +213,7 @@ Listing() {
 
 	# Deleting the file from the list
 	FnEndDate="`/bin/date +%Y/%m/%d`"
-	FnEndHour="`/bin/date +%H:%M:%S`"
+	FnEndHour="`/bin/date +%H:%M:%S`"	
 	if [ $? -eq 0 ]; then
 		sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET is_active = '0', to_del = '1', comments = 'End: $FnEndDate - $FnEndHour' WHERE list_id = '$FnGet_List_ID';"
 	else

@@ -44,11 +44,11 @@ if (isset($_POST['start'])) {
 	$ScriptName = $MySB_DB->get("users_scripts", "script", ["id_users" => "$UserID"]);
 	if ( $ScriptName != '' ) {
 		switch ($_POST['start']) {
-			case StartSynchroDirect:
+			case User_Synchronization_StartDirect:
 				$ScriptMode = 'DIRECT';
 				break;
 			default:
-			case StartSynchroCron:
+			case User_Synchronization_StartPlanned:
 				$ScriptMode = 'CRON';
 				break;
 		}
@@ -566,6 +566,7 @@ if ( count($FilesInQueue) > 0 ) {
 			</tr>
 <?php
 	$CountDirect=0;
+	$CountCron=0;
 	foreach($FilesInQueue as $Files) {
 		$Id_list = $Files['list_id'];
 		switch ($Files['is_active']) {
@@ -591,6 +592,7 @@ if ( count($FilesInQueue) > 0 ) {
 										</select>';
 					break;
 				default: // cron
+					$CountCron++;
 					$list_category = '	<select name="list_category['.$Id_list.']" style="width:90px; cursor: pointer;" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
 											<option value="direct">' .User_Synchronization_SynchroDirect. '</option>
 											<option value="cron" selected="selected">' .User_Synchronization_SynchroCron. '</option>
@@ -614,11 +616,11 @@ if ( count($FilesInQueue) > 0 ) {
 ?>
 		</table>
 <?php
-	if ( ($CountDirect >= 1) && ($IdentSync['dst_dir'] != '') && ($IdentSync['dst_srv'] != '') && ($IdentSync['dst_port']) ) {
-		if ( $users_scripts['script'] != '' ) {
+	if ( ($IdentSync['dst_dir'] != '') && ($IdentSync['dst_srv'] != '') && ($IdentSync['dst_port']) ) {
+		if ( ($users_scripts['script'] != '') && ($CountDirect >= 1) ) {
 			echo '<input style="cursor: pointer; width:' . strlen(User_Synchronization_StartDirect)*10 . 'px; margin-top: 10px; margin-bottom: 10px;" name="start" type="submit" value="'.User_Synchronization_StartDirect.'" />';
 		}
-		if ( count($users_crontab) > 0 ) {
+		if ( (count($users_crontab) > 0) && ($CountCron >= 1) ) {
 			echo '&nbsp;&nbsp;';
 			echo '<input style="cursor: pointer; width:' . strlen(User_Synchronization_StartPlanned)*10 . 'px; margin-top: 10px; margin-bottom: 10px;" name="start" type="submit" value="'.User_Synchronization_StartPlanned.'" />';
 		}

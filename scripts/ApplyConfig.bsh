@@ -83,7 +83,7 @@ DoApplyConfig() {
 
 		# Creating arguments listing
 		case "$Command" in
-			MySB_CreateUser|MySB_DeleteUser|MySB_ChangeUserPassword|OpenVPN) # 3 args
+			MySB_CreateUser|MySB_DeleteUser|MySB_ChangeUserPassword|OpenVPN|UserScript_StartSynchro) # 3 args
 				echo `date +%H:%m:%S` "- Getting arguments for $Command"
 				CommandArg="`Func_SQL_Command 'SELECT' 'MySB_db' 'args' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"`"
 			;;
@@ -230,9 +230,12 @@ DoApplyConfig() {
 				UserScriptName="${array[0]}"
 				UserScriptMode="${array[1]}"
 
-				WaitingSTD UserScriptDirect
-				screen -dmS UserScriptDirect /bin/bash /home/$User/scripts/$UserScriptName "$UserScriptMode" 'APPLYCONFIG';
-				WaitingSTD UserScriptDirect
+				if [ -f /home/$User/scripts/$UserScriptName ]; then
+					WaitingSTD UserScript_StartSynchro
+					su -s /bin/sh $User -c "/bin/bash /home/$User/scripts/$UserScriptName '$UserScriptMode' > /dev/null 2>&1"
+					su -s /bin/sh $User -c "screen -dmS UserScript_StartSynchro /bin/bash /home/$User/scripts/$UserScriptName '$UserScriptMode'  > /dev/null 2>&1;"
+					WaitingSTD UserScript_StartSynchro
+				fi
 				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
 			;;
 		esac
