@@ -260,23 +260,6 @@ StatusLSB
 
 #### rtorrent max memory & rTorrent Blocklist
 for seedUser in $UsersList; do
-	# Quota
-	log_daemon_msg "$CreateUser_Quota [$seedUser]"
-	FreeSpace="`Func_SQL_Command 'SELECT' 'MySB_db' 'quota_default' 'system' '1'`"
-	SpaceByUser=$(($FreeSpace/$TotalUsers))
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "quota = '$SpaceByUser'" "users_ident = '$seedUser'"
-	# Applying default quota
-	setquota -u -F vfsv0 $seedUser $SpaceByUser $SpaceByUser 1000000 1000000 /
-	if [ "$IsInstalled_ownCloud" == "YES" ]; then
-		IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_preferences' "userid='$seedUser' AND configkey='quota'"`"
-		if [ -z "$IfExist" ]; then
-			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' 'userid,appid,configkey,configvalue' "'$seedUser','files','quota','$SpaceByUser KB'"
-		else
-			Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$SpaceByUser KB'" "userid='$seedUser' AND configkey='quota'"
-		fi
-	fi
-	StatusLSB
-
 	# rTorrent config 'pieces.memory.max.set'
 	log_daemon_msg "$CreateUser_PiecesMemory [$seedUser]"
 	LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$seedUser/.rtorrent.rc)
@@ -301,6 +284,9 @@ for seedUser in $UsersList; do
 		service rtorrent-$seedUser restart
 	fi
 done
+
+#### Quota
+ManageQuota "$CreateUser_Quota"
 
 #### Assign password
 ScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_ChangeUserPassword" "$UserToCreate" "$NewUserPassword" 'INSTALL'

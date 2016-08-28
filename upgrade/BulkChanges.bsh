@@ -228,8 +228,12 @@ case "$1" in
 			# VARs
 			UserSync_DB="/home/$seedUser/db/$seedUser.sq3"
 			# Copy a new empty DB
-			if [ ! -d /home/$seedUser/db ]; then mkdir -v /home/$seedUser/db; fi
-			if [ ! -f $UserSync_DB ]; then cp $Sync_DB $UserSync_DB; fi
+			if [ ! -d /home/$seedUser/db ]; then
+				mkdir -v /home/$seedUser/db
+			fi
+			if [ ! -f $UserSync_DB ]; then
+				cp $Sync_DB $UserSync_DB
+			fi
 			chmod -R 0770 /home/$seedUser/db
 			chown -R $seedUser:www-data /home/$seedUser/db
 			# Get existing data
@@ -282,9 +286,9 @@ case "$1" in
 				source /home/$seedUser/scripts/synchro.sh.old
 				/usr/bin/sqlite3 -echo -cmd '.timeout 150000' $UserSync_DB "UPDATE ident SET mode_sync = '$ModeSync', dst_dir = '$DstDir', dst_srv = '$DstSrv', dst_port = '$DstPort', dst_user = '$DstUser', dst_pass = '$DstPass', max_to_sync = '$MaxToSync', create_subdir = '$CreateSubDir' WHERE ident_id = '1';"
 				rm -vf /home/$seedUser/scripts/synchro.sh.old
-				mv $MySB_InstallDir/templates/rtorrent/synchro.sh /home/$seedUser/scripts/synchro.sh.old
-				cp $MySB_InstallDir/templates/rtorrent/synchro.sh.tmpl /home/$seedUser/scripts/synchro.sh
-				cp $MySB_InstallDir/templates/rtorrent/synchro.sh.tmpl /home/$seedUser/scripts/synchro.sh.example
+				mv $MySB_InstallDir/templates/rtorrent/synchro.sh /home/$FnUser/scripts/synchro.sh.old
+				cp $MySB_InstallDir/templates/rtorrent/synchro.sh.tmpl /home/$FnUser/scripts/synchro.sh
+				cp $MySB_InstallDir/templates/rtorrent/synchro.sh.tmpl /home/$FnUser/scripts/synchro.sh.example
 			fi
 		done
 	;;
@@ -371,44 +375,8 @@ case "$1" in
 			chmod 0644 /etc/logrotate.d/rtorrent_$seedUser
 		done
 
-		#### Apply quota for current users
-		UsersSpaceUsed=0
-		for seedUser in $UsersList; do
-			if [ -d /home/$seedUser/ ]; then
-				HomeTemp="`du -s /home/$seedUser/ | awk '{ print $1 }'`" # Kilo octets
-				UsersSpaceUsed=$(($UsersSpaceUsed+$HomeTemp))
-			fi
-			if [ -d /home/owncloud/$seedUser/ ]; then
-				OwncloudTemp="`du -s /home/owncloud/$seedUser/ | awk '{ print $1 }'`"
-				UsersSpaceUsed=$(($UsersSpaceUsed+$OwncloudTemp))
-			fi
-			unset HomeTemp OwncloudTemp
-		done
-		FreeSpaceToKeep="`python -c "print 2 * 1024**2"`" # Keep a minimum of 2Go of free space
-		FreeSpace="`df --sync /home/ | awk '{ print $4 }' | tail -n 1`" # Kilo octets
-		FreeSpace=$(($FreeSpace-$FreeSpaceToKeep))
-		FreeSpace=$(($FreeSpace+$UsersSpaceUsed))
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "quota_default = '$FreeSpace'" "id_system = '1'" '-echo'
-		CountingUsers
-		SpaceByUser=$(($FreeSpace/$TotalUsers))
-		# Apply real space quota for each users
-		for seedUser in $UsersList; do
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "quota = '$SpaceByUser'" "users_ident = '$seedUser'"
-			setquota -u -F vfsv0 $seedUser $SpaceByUser $SpaceByUser 1000000 1000000 /
-
-			# ownCloud Quota
-			if [ "$IsInstalled_ownCloud" == "YES" ]; then
-				KB=$(((SpaceByUser+512)/1024))
-				IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_preferences' "userid='$seedUser' AND configkey='quota'"`"
-				if [ -z $IfExist ]; then
-					Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' 'userid,appid,configkey,configvalue' "'$seedUser','files','quota','$KB KB'" '-echo'
-				else
-					Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$KB KB'" "userid='$seedUser' AND configkey='quota'" '-echo'
-				fi
-
-				unset IfExist
-			fi
-		done
+		#### Apply quota for users
+		ManageQuota
 
 		#### Check actuel quota
 		repquota -a

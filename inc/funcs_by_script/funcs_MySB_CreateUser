@@ -23,6 +23,59 @@
 funcs_MySB_CreateUser=1
 ##################### FIRST LINE #####################################
 
+#### Quota
+ManageQuota() {
+	if [ ! -z "$1" ]; then
+		Message="$1"
+	else
+		Message=""
+	fi
+	CountingUsers
+	ListingUsers
+
+	FreeSpace="`Func_SQL_Command 'SELECT' 'MySB_db' 'quota_default' 'system' '1'`"
+	if [ -z "$FreeSpace" ]; then
+		UsersSpaceUsed=0
+		for FnUser in $UsersList; do
+			if [ -d /home/$FnUser/ ]; then
+				HomeTemp="`du -s /home/$FnUser/ | awk '{ print $1 }'`" # (Kb)
+				UsersSpaceUsed=$(($UsersSpaceUsed+$HomeTemp))
+			fi
+			if [ -d /home/owncloud/$FnUser/ ]; then
+				OwncloudTemp="`du -s /home/owncloud/$FnUser/ | awk '{ print $1 }'`" # (Kb)
+				UsersSpaceUsed=$(($UsersSpaceUsed+$OwncloudTemp))
+			fi
+			unset HomeTemp OwncloudTemp
+		done
+		FreeSpaceToKeep="`python -c "print 2 * 1024**2"`" # Keep a minimum of 2Go of free space (Kb)
+		FreeSpace="`df --sync /home/ | awk '{ print $4 }' | tail -n 1`" # (Kb)
+		FreeSpace=$(($FreeSpace-$FreeSpaceToKeep)) # (Kb)
+		FreeSpace=$(($FreeSpace+$UsersSpaceUsed)) # (Kb)
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "quota_default = '$FreeSpace'" "id_system = '1'"
+	fi
+
+	SpaceByUser=$(($FreeSpace/$TotalUsers))
+
+	for FnUser in $UsersList; do
+		if [ ! -z "$Message" ]; then log_daemon_msg "$Message $FnUser"; fi
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "quota = '$SpaceByUser'" "users_ident = '$FnUser'"
+		setquota -u -F vfsv0 $FnUser $SpaceByUser $SpaceByUser 0 0 /
+
+		# ownCloud Quota
+		if [ "$IsInstalled_ownCloud" == "YES" ]; then
+			IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_preferences' "userid='$seedUser' AND configkey='quota'"`"
+			if [ -z "$IfExist" ]; then
+				Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' 'userid,appid,configkey,configvalue' "'$seedUser','files','quota','$SpaceByUser KB'" '-echo'
+			else
+				Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$SpaceByUser KB'" "userid='$seedUser' AND configkey='quota'" '-echo'
+			fi
+
+			unset IfExist
+		fi
+		if [ ! -z "$Message" ]; then StatusLSB; fi
+	done
+}
+
 #### Cakebox-Light Users Config
 CakeboxUsersConfigs() {
 	if [ "$IsInstalled_Cakebox" == "YES" ] && [ -d $CakeboxDir ]; then
