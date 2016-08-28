@@ -13,6 +13,7 @@
 			- User cron jobs, minor changes
 			- Let's Encrypt, scheduled renew certificate bug fix
 			- Add survey confirmation before continue installation
+			- Add a simple quota management
 			- Change script of synchronization (use of SQlite DB)
 			- Cakebox-Light, bug fix of playback _(Cakebox not streaming #12)_
 				* Disable DivX Web Player (HTTPS not supported)
