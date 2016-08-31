@@ -141,7 +141,8 @@ Listing() {
 	FnMail_Object="$MailObjectOK"
 	FnStartDate="`/bin/date +%Y/%m/%d`"
 	FnStartHour="`/bin/date +%H:%M:%S`"
-	
+	Error=0
+
 	# Check if files exist
 	FnCheck="`file "$FnLine"`"
 	if [ $? -ne 0 ]; then
@@ -188,6 +189,9 @@ Listing() {
 			# Start synchronization with RSYNC
 			for ((i = 2; i >= 1; i -= 1)); do
 				rsync -rtvy --numeric-ids --partial --append --stats --timeout=10 -e "/usr/bin/sshpass -p$DstPass ssh -p $DstPort -c $RsyncCipher -o Compression=no -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$FnLine" $DstUser@$DstSrv:"$FnDstDir/"
+				if [ $? -ne 0 ]; then
+					Error=$?
+				fi
 			done
 		;;
 		'ftp')
@@ -201,6 +205,9 @@ Listing() {
 						lftp -e "$LftpOptions mkdir -p $FnDstDir; put -O \"$FnDstDir\" \"$FnLine\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
 					;;
 				esac
+				if [ $? -ne 0 ]; then
+					Error=$?
+				fi
 			done
 		;;
 		'no_such_file_or_directory')
@@ -213,8 +220,8 @@ Listing() {
 
 	# Deleting the file from the list
 	FnEndDate="`/bin/date +%Y/%m/%d`"
-	FnEndHour="`/bin/date +%H:%M:%S`"	
-	if [ $? -eq 0 ]; then
+	FnEndHour="`/bin/date +%H:%M:%S`"
+	if [ $Error -eq 0 ]; then
 		sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET is_active = '0', to_del = '1', comments = 'End: $FnEndDate - $FnEndHour' WHERE list_id = '$FnGet_List_ID';"
 	else
 		sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET is_active = '0', comments = 'Error: $FnEndDate - $FnEndHour' WHERE list_id = '$FnGet_List_ID';"
