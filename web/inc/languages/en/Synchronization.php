@@ -72,4 +72,9 @@ define('User_Synchronization_StartPlanned', 'Start planned synchronization');
 define('User_Synchronization_ScriptsDirect', 'Script to use for direct synchronization');
 define('User_Synchronization_ScriptsComment', 'In case several scripts are present,<br/>select the script to be used for direct synchronization.');
 
+define('User_Synchronization_Title_DownloadedFiles', 'Put a download in the waiting list');
+define('User_Synchronization_Files', 'List of downloads');
+define('User_Synchronization_AddFiles', 'Add to list');
+define('User_Synchronization_AddFilesComment', 'Resets a download from the list of synchronizations.');
+
 //#################### LAST LINE ######################################

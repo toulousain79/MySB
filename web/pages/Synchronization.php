@@ -61,6 +61,23 @@ if (isset($_POST['start'])) {
 	}
 }
 
+if (isset($_POST['add_file'])) {
+	$downloaded_files = $_POST['downloaded_files'];
+	$addfile_sub_directory = $_POST['addfile_sub_directory'];
+	
+	$result = $Sync_DB->insert("list", [
+												"list_category" => "direct",
+												"is_active" => 1,
+												"get_name" => "$downloaded_files",
+												"CategoryDir" => "$addfile_sub_directory",
+												"to_del" => 0"
+												]);
+	if( $result != 0 ) {
+		$Change++;
+		$Command = 'Options_MySB';
+	}
+}
+
 if (isset($_POST['submit'])) {
 	switch ($_POST['submit']) {
 		case User_Synchronization_Add:
@@ -630,6 +647,37 @@ if ( count($FilesInQueue) > 0 ) {
 <?php
 }
 ?>
+
+	<fieldset style="vertical-align: text-top;">
+	<legend><?php echo User_Synchronization_Title_DownloadedFiles; ?></legend>
+		<table style="width:100%">
+			<tr>
+				<th style="text-align:center;"><?php echo User_Synchronization_Files; ?></th>
+				<th style="text-align:center;"><?php echo User_Synchronization_AddFiles; ?></th>
+			</tr>
+			<tr>
+				<td><div align="center"><select name="downloaded_files" style="width:100%; height: 28px;">
+<?php
+			//$DownloadedFiles = array();
+			foreach($users_directories as $Directory) {
+				if($dir = opendir("/home/$CurrentUser/rtorrent/complete/".$Directory['sub_directory']."/")) {
+					while(false !== ($file = readdir($dir))) {
+						if($file != '.' && $file != '..') {
+							//$info = new SplFileInfo($file);
+							//array_push($DownloadedFiles, $file);
+							echo '<input name="addfile_sub_directory" type="hidden" value="' . $Directory['sub_directory'] . '" />';
+							echo '<option value="' . $file . '">' . $file . ' (' . $Directory['sub_directory'] . ') ' . '</option>';
+						}
+					}
+				}
+			}
+?>
+				</select></div></td>
+				<td><input class="submit" name="add_file" type="submit" value="<?php echo User_Synchronization_AddFiles; ?>" /></td>
+			</tr>
+		</table>
+		<div align="center"><p class="Comments"><?php echo User_Synchronization_AddFilesComment; ?></p></div>
+	</fieldset>
 
 	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
 
