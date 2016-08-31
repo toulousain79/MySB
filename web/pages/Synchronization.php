@@ -62,16 +62,20 @@ if (isset($_POST['start'])) {
 }
 
 if (isset($_POST['add_file'])) {
-	$downloaded_files = $_POST['downloaded_files'];
-	$addfile_sub_directory = $_POST['addfile_sub_directory'];
+	$value = explode("|", $_POST['downloaded_files']);
+	$downloaded_files = $value[0];
+	$addfile_sub_directory = $value[1];
 	
 	$result = $Sync_DB->insert("list", [
-												"list_category" => "direct",
-												"is_active" => 1,
-												"get_name" => "$downloaded_files",
-												"CategoryDir" => "$addfile_sub_directory",
-												"to_del" => 0"
-												]);
+										"list_category" => "direct",
+										"is_active" => 1,
+										"get_base_path" => "/home/elohim13/rtorrent/incomplete/$downloaded_files",
+										"get_custom1" => "/home/elohim13/rtorrent/complete/$downloaded_files/",
+										"get_name" => "$downloaded_files",
+										"get_loaded_file" => "/home/elohim13/rtorrent/watch/$addfile_sub_directory",
+										"CategoryDir" => "$addfile_sub_directory",
+										"to_del" => 0
+										]);
 	if( $result != 0 ) {
 		$Change++;
 		$Command = 'Options_MySB';
@@ -658,22 +662,18 @@ if ( count($FilesInQueue) > 0 ) {
 			<tr>
 				<td><div align="center"><select name="downloaded_files" style="width:100%; height: 28px;">
 <?php
-			//$DownloadedFiles = array();
 			foreach($users_directories as $Directory) {
 				if($dir = opendir("/home/$CurrentUser/rtorrent/complete/".$Directory['sub_directory']."/")) {
 					while(false !== ($file = readdir($dir))) {
 						if($file != '.' && $file != '..') {
-							//$info = new SplFileInfo($file);
-							//array_push($DownloadedFiles, $file);
-							echo '<input name="addfile_sub_directory" type="hidden" value="' . $Directory['sub_directory'] . '" />';
-							echo '<option value="' . $file . '">' . $file . ' (' . $Directory['sub_directory'] . ') ' . '</option>';
+							echo '<option value="' .$file. '|' .$Directory['sub_directory']. '">' .$file. ' (' .$Directory['sub_directory']. ') ' . '</option>';
 						}
 					}
 				}
 			}
 ?>
 				</select></div></td>
-				<td><input class="submit" name="add_file" type="submit" value="<?php echo User_Synchronization_AddFiles; ?>" /></td>
+				<td><input class="submit" style="width:<?php echo strlen(User_Synchronization_AddFiles)*10; ?>px" name="add_file" type="submit" value="<?php echo User_Synchronization_AddFiles; ?>" /></td>
 			</tr>
 		</table>
 		<div align="center"><p class="Comments"><?php echo User_Synchronization_AddFilesComment; ?></p></div>
