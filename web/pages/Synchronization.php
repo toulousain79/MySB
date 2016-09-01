@@ -657,16 +657,20 @@ if ( count($FilesInQueue) > 0 ) {
 		<table style="width:100%">
 			<tr>
 				<th style="text-align:center;"><?php echo User_Synchronization_Files; ?></th>
-				<th style="text-align:center;"><?php echo User_Synchronization_AddFiles; ?></th>
+				<th style="text-align:center;"></th>
 			</tr>
 			<tr>
 				<td><div align="center"><select name="downloaded_files" style="width:100%; height: 28px;">
 <?php
 			foreach($users_directories as $Directory) {
-				if($dir = opendir("/home/$CurrentUser/rtorrent/complete/".$Directory['sub_directory']."/")) {
-					while(false !== ($file = readdir($dir))) {
-						if($file != '.' && $file != '..') {
-							echo '<option value="' .$file. '|' .$Directory['sub_directory']. '">' .$file. ' (' .$Directory['sub_directory']. ') ' . '</option>';
+				if ($dir = opendir("/home/$CurrentUser/rtorrent/complete/".$Directory['sub_directory']."/")) {
+					$files = array();
+					while ($files[] = readdir($dir));
+					sort($files);
+					closedir($dir);
+					foreach ($files as $file) {
+						if ($file != '.' && $file != '..' && $file != '') {
+							echo '<option value="' .$file. '|' .$Directory['sub_directory']. '">'. $Directory['sub_directory'] .'&nbsp;&nbsp;|&nbsp;&nbsp;'. $file . '</option>';
 						}
 					}
 				}
