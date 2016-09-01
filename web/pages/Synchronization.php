@@ -70,7 +70,7 @@ if (isset($_POST['add_file'])) {
 										"list_category" => "direct",
 										"is_active" => 1,
 										"get_base_path" => "/home/elohim13/rtorrent/incomplete/$downloaded_files",
-										"get_custom1" => "/home/elohim13/rtorrent/complete/$downloaded_files/",
+										"get_custom1" => "/home/elohim13/rtorrent/complete/$addfile_sub_directory/",
 										"get_name" => "$downloaded_files",
 										"get_loaded_file" => "/home/elohim13/rtorrent/watch/$addfile_sub_directory",
 										"CategoryDir" => "$addfile_sub_directory",
