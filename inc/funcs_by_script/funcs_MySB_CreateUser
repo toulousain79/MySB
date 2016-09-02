@@ -23,6 +23,31 @@
 funcs_MySB_CreateUser=1
 ##################### FIRST LINE #####################################
 
+#### ownCloud account manage
+ownCloudAccountManage() {
+	MySwitch="$1"
+	FnUserAccount="$2"
+	FnPassword="$3"
+	FnTimeStamp=$(date +%s)
+	FnUserMail="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$FnUserAccount'"`"
+
+	OC_PASS=$FnPassword
+	export OC_PASS
+
+	case "$MySwitch" in
+		'create')
+			su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:add --password-from-env --display-name=\"$FnUserAccount\" --group=\"MySB_users\" $FnUserAccount" &> /dev/null
+			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'admin','files_external','/Home_$FnUserAccount','$FnTimeStamp'"
+			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'$FnUserAccount','core','lang','$EnvLang'"
+			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' "userid,appid,configkey,configvalue" "'$FnUserAccount','settings','email','$FnUserMail'"
+			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_storages' "id" "'local::/home/$FnUserAccount/'"
+		;;
+		'edit')
+			su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ user:resetpassword --password-from-env $FnUserAccount" &> /dev/null
+		;;
+	esac
+}
+
 #### Quota
 ManageQuota() {
 	if [ ! -z "$1" ]; then
@@ -64,11 +89,11 @@ echo $TotalUsers
 
 		# ownCloud Quota
 		if [ "$IsInstalled_ownCloud" == "YES" ]; then
-			IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_preferences' "userid='$seedUser' AND configkey='quota'"`"
+			IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_preferences' "userid='$FnUser' AND configkey='quota'"`"
 			if [ -z "$IfExist" ]; then
-				Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' 'userid,appid,configkey,configvalue' "'$seedUser','files','quota','$SpaceByUser KB'" '-echo'
+				Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' 'userid,appid,configkey,configvalue' "'$FnUser','files','quota','$SpaceByUser KB'" '-echo'
 			else
-				Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$SpaceByUser KB'" "userid='$seedUser' AND configkey='quota'" '-echo'
+				Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$SpaceByUser KB'" "userid='$FnUser' AND configkey='quota'" '-echo'
 			fi
 
 			unset IfExist
