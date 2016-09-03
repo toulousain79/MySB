@@ -286,11 +286,11 @@ case "$1" in
 				rm -vf /home/$seedUser/scripts/cron.list
 			fi
 			if [ -f /home/$seedUser/scripts/synchro.sh ]; then
-				head -n 16 /home/$seedUser/scripts/synchro.sh > /home/$seedUser/scripts/synchro.sh.old				
+				head -n 16 /home/$seedUser/scripts/synchro.sh > /home/$seedUser/scripts/synchro.sh.old
 				source /home/$seedUser/scripts/synchro.sh.old
 				/usr/bin/sqlite3 -echo -cmd '.timeout 150000' $UserSync_DB "UPDATE ident SET mode_sync = '$ModeSync', dst_dir = '$DstDir', dst_srv = '$DstSrv', dst_port = '$DstPort', dst_user = '$DstUser', dst_pass = '$DstPass', max_to_sync = '$MaxToSync', create_subdir = '$CreateSubDir' WHERE ident_id = '1';"
-				mv -v /home/$seedUser/scripts/synchro.sh /home/$FnUser/scripts/synchro.sh.old
-				cp -v $MySB_InstallDir/templates/rtorrent/synchro.sh.tmpl /home/$FnUser/scripts/synchro.sh
+				mv -v /home/$seedUser/scripts/synchro.sh /home/$seedUser/scripts/synchro.sh.old
+				cp -v $MySB_InstallDir/templates/rtorrent/synchro.sh.tmpl /home/$seedUser/scripts/synchro.sh
 				unset ModeSync DstDir DstSrv DstPort DstUser DstPass MaxToSync CreateSubDir
 			fi
 		done
@@ -317,7 +317,8 @@ case "$1" in
 		echo >> /etc/motd
 
 		# Send mail for each user with new version
-		if [ -f $MySB_InstallDir/inc/vars ]; then source $MySB_InstallDir/inc/vars; fi
+		source $MySB_InstallDir/inc/vars
+		source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
 		MainUserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "admin = '1'"`"
 		RutorrentDirEscaped="`echo $RutorrentDir | sed s,/,\\\\\\\\\\/,g`"
 		for seedUser in $UsersList; do
@@ -326,7 +327,6 @@ case "$1" in
 			cp $MySB_InstallDir/templates/init/etc.init.rtorrent.tmpl /etc/init.d/rtorrent-$seedUser
 			perl -pi -e "s/<username>/$seedUser/g" /etc/init.d/rtorrent-$seedUser
 			chmod +x /etc/init.d/rtorrent-$seedUser
-			source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
 			CreateRtorrentConfigFile "$seedUser" 'force'
 
 			if [ "$UserId" == "$MainUserId" ] && [ ! -z "$UserPassword" ]; then
