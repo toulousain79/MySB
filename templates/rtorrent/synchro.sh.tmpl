@@ -253,7 +253,6 @@ case "$MaxToSync" in
 	;;
 esac
 MyList="`sqlite3 -cmd '.timeout 150000' $DataBase "SELECT list_id,get_base_path,get_custom1,get_name,get_loaded_file,CategoryDir FROM list WHERE list_category = '$CategoryList' AND is_active = '1' AND to_del = '0' $MaxToSync;"`"
-echo $MyList
 for ROW in $MyList; do
 	FileLogTemp="/tmp/$UserName-$ScriptName.log.$PID"
 	list_id="`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`"
@@ -263,8 +262,19 @@ for ROW in $MyList; do
 	get_loaded_file="`echo $ROW | awk '{split($0,a,"|"); print a[5]}'`"
 	CategoryDir="`echo $ROW | awk '{split($0,a,"|"); print a[6]}'`"
 
-	# Real process of synchronization
-	Listing "$list_id" "$get_base_path" "$get_custom1" "$get_name" "$get_loaded_file" "$CategoryDir" > $FileLogTemp
+	if [ ! -z "$DstDir" ] \
+		&& [ ! -z "$DstSrv" ] \
+		&& [ ! -z "$DstPort" ] \
+		&& [ ! -z "$DstUser" ] \
+		&& [ ! -z "$DstPass" ] \
+		&& [ ! -z "$MailObjectOK" ] \
+		&& [ ! -z "$MailObjectKO" ]; then
+
+		# Real process of synchronization
+		Listing "$list_id" "$get_base_path" "$get_custom1" "$get_name" "$get_loaded_file" "$CategoryDir" > $FileLogTemp
+	else
+		sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET comments = 'Error: Missing login information' WHERE list_id = '$list_id';"
+	fi
 
 	# Move log file content
 	if [ -f $FileLogTemp ]; then

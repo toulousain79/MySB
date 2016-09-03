@@ -22,16 +22,17 @@
 //
 //#################### FIRST LINE #####################################
 
-define('User_Synchronization_Title_rTorrentConfig', 'rTorrent Configuration File');
-define('User_Synchronization_rTorrentConfigDirectory', 'Sub-directories');
-define('User_Synchronization_rTorrentConfigAddDirectory', 'Add a sub-directory');
-define('User_Synchronization_rTorrentConfigDelDirectory', 'Remove the last sub-directory');
-define('User_Synchronization_rTorrentConfig_Comment', 'Can manage folders under "watch" and "complete" directories.<br />
-Example, add a "Movies" folder, and it will be created and managed by rTorrent.<br />
+define('User_Synchronization_Title_rTorrentConfig', '<b>1 - Create categories / Manage synchronizations</b>');
+define('User_Synchronization_rTorrentConfigDirectory', 'Category');
+define('User_Synchronization_rTorrentConfigAddDirectory', 'Add a category');
+define('User_Synchronization_rTorrentConfigDelDirectory', 'Remove the last category');
+define('User_Synchronization_rTorrentConfig_Comment', 'Can manage categories (subfolders) under "watch" and "complete" directories.<br />
+Example, add a "Movies" category, and it will be created and managed by rTorrent.<br />
 A torrent file added to "watch\Movies" will start the download.<br />
-At the end thereof, the data is automatically copied into "complete\Movies".');
-define('User_Synchronization_rTorrentConfig_Table_Title', 'Actual</br>sub-directories');
-define('User_Synchronization_Title_Crontab', 'Crontab');
+At the end thereof, the data is automatically moved into "complete\Movies".<br />
+You can also specify whether the data of a class must be synchronized<br />via FTP or rsync to a remote support (eg NAS).');
+define('User_Synchronization_rTorrentConfig_Table_Title', 'Actual</br>categories');
+define('User_Synchronization_Title_Scripts', '<b>2 - Crontab / Scripts to use</b>');
 define('User_Synchronization_Minutes', 'Minutes');
 define('User_Synchronization_Hours', 'Hours');
 define('User_Synchronization_Days', 'Month<br/>days');
@@ -41,8 +42,7 @@ define('User_Synchronization_Command', 'Script');
 define('User_Synchronization_Add', 'Add');
 define('User_Synchronization_Crontab_Comment', 'Schedule your personal scripts at the end of your downloads.<br/>
 Your scripts must be stored in ~/crontab/ with extension ".cron".<br/>
-Confirm your schedule here ;-) <a target="_blank" href="http://crontab.guru/">crontab.guru</a>.<br/>
-Read the file \'~/scripts/README\'.');
+Confirm your schedule here ;-) <a target="_blank" href="http://crontab.guru/">crontab.guru</a>. Read the file \'~/scripts/README\'.');
 define('User_Synchronization_Title_SyncMode', 'Sync mode');
 define('User_Synchronization_IgnoreSync', 'Ignore script (no sync)');
 define('User_Synchronization_CronOnly', 'Script by cron');
@@ -53,7 +53,7 @@ define('User_Synchronization_FileName', 'Name');
 define('User_Synchronization_SynchroDirect', 'Direct');
 define('User_Synchronization_SynchroCron', 'Planned');
 define('User_Synchronization_Comments', 'Comments');
-define('User_Synchronization_Title_Ident', 'Identification');
+define('User_Synchronization_Title_Ident', '<b>3 - Login informations for remote synchronizations (direct and programmed)</b>');
 define('User_Synchronization_ModeSync', 'Method');
 define('User_Synchronization_ModeSync_FTP', 'FTP(s)');
 define('User_Synchronization_ModeSync_RSYNC', 'RSYNC');
@@ -68,6 +68,7 @@ define('User_Synchronization_MailObjectOK', 'Mail subject for a successful synch
 define('User_Synchronization_MailObjectKO', 'Mail subject for a failed synchronization');
 define('User_Synchronization_SyncComment', '');
 define('User_Synchronization_StartDirect', 'Start direct synchronization');
+define('User_Synchronization_ScriptsCron', 'Planning for scheduled synchronizations');
 define('User_Synchronization_StartPlanned', 'Start planned synchronization');
 define('User_Synchronization_ScriptsDirect', 'Script to use for direct synchronization');
 define('User_Synchronization_ScriptsComment', 'In case several scripts are present,<br/>select the script to be used for direct synchronization.');

@@ -192,8 +192,8 @@ if (isset($_POST['submit'])) {
 																]);
 				if ( $result > 0 ) {
 					$Change++;
-					$RefreshPage++;
 					if( $to_delete == 1 ) {
+						$RefreshPage++;
 						$rTorrentRestart_POST = 1;
 						$Command = 'Restart_rTorrent';
 					} else {
@@ -332,10 +332,13 @@ if ( !empty($users_directories) ) {
 			</tr>
 <?php
 	$DisplayIdent=0;
+	$DisplayDirect=0;
+	$DisplayCron=0;
 	foreach($users_directories as $Directory) {
 		switch ($Directory['sync_mode']) {
 			case '2':
 				$DisplayIdent++;
+				$DisplayDirect++;
 				$sync_mode = '	<select name="sync_mode[]" style="width:300px; height:28px;">
 									<option value="2" selected="selected">' .User_Synchronization_DirectSync. '</option>
 									<option value="1">' .User_Synchronization_CronOnly. '</option>
@@ -344,6 +347,7 @@ if ( !empty($users_directories) ) {
 				break;
 			case '1':
 				$DisplayIdent++;
+				$DisplayCron++;
 				$sync_mode = '	<select name="sync_mode[]" style="width:300px; height:28px;">
 									<option value="2">' .User_Synchronization_DirectSync. '</option>
 									<option value="1" selected="selected">' .User_Synchronization_CronOnly. '</option>
@@ -394,7 +398,10 @@ if ( !empty($users_directories) ) {
 if ( $DisplayIdent >= 1 ) {
 ?>
 	<fieldset style="vertical-align: text-top;">
-	<legend><?php echo User_Synchronization_Title_Crontab; ?></legend>
+	<legend><?php echo User_Synchronization_Title_Scripts; ?></legend>
+<?php
+	if ( $DisplayDirect >= 1 ) {
+?>
 		<table>
 			<tr>
 				<th style="text-align:center;"><?php echo User_Synchronization_ScriptsDirect; ?></th>
@@ -416,10 +423,18 @@ if ( $DisplayIdent >= 1 ) {
 			</tr>
 		</table>
 		<div align="center"><p class="Comments"><?php echo User_Synchronization_ScriptsComment; ?></p></div>
-		
-		<br />
+<?php
+	}
+	if ( ($DisplayDirect >= 1) && ($DisplayCron >= 1) ) {
+		echo '<br />';
+	}
 
+	if ( $DisplayCron >= 1 ) {
+?>
 		<table>
+			<tr>
+				<th colspan="6" style="text-align:center;"><?php echo User_Synchronization_ScriptsCron; ?></th>
+			</tr>
 			<tr>
 				<th style="text-align:center;"><?php echo User_Synchronization_Minutes; ?></th>
 				<th style="text-align:center;"><?php echo User_Synchronization_Hours; ?></th>
@@ -450,7 +465,7 @@ if ( $DisplayIdent >= 1 ) {
 	}
 
 	echo '<tr><th colspan="6"></th></tr>';
-	
+
 	if ( !empty($CronFiles) ) {
 		$Crontab_ID++;
 ?>
@@ -480,6 +495,9 @@ if ( $DisplayIdent >= 1 ) {
 ?>
 		</table>
 		<div align="center"><p class="Comments"><?php echo User_Synchronization_Crontab_Comment; ?></p></div>
+<?php
+	}
+?>
 	</fieldset>
 
 <?php
@@ -650,8 +668,17 @@ if ( count($FilesInQueue) > 0 ) {
 	</fieldset>
 <?php
 }
-?>
 
+foreach($users_directories as $Directory) {
+	if ($dir = opendir("/home/$CurrentUser/rtorrent/complete/".$Directory['sub_directory']."/")) {
+		$files = array();
+		while ($files[] = readdir($dir));
+		sort($files);
+		closedir($dir);
+	}
+}
+if ( !empty($files) ) {
+?>
 	<fieldset style="vertical-align: text-top;">
 	<legend><?php echo User_Synchronization_Title_DownloadedFiles; ?></legend>
 		<table style="width:100%">
@@ -662,19 +689,11 @@ if ( count($FilesInQueue) > 0 ) {
 			<tr>
 				<td><div align="center"><select name="downloaded_files" style="width:100%; height: 28px;">
 <?php
-			foreach($users_directories as $Directory) {
-				if ($dir = opendir("/home/$CurrentUser/rtorrent/complete/".$Directory['sub_directory']."/")) {
-					$files = array();
-					while ($files[] = readdir($dir));
-					sort($files);
-					closedir($dir);
 					foreach ($files as $file) {
 						if ($file != '.' && $file != '..' && $file != '') {
 							echo '<option value="' .$file. '|' .$Directory['sub_directory']. '">'. $Directory['sub_directory'] .'&nbsp;&nbsp;|&nbsp;&nbsp;'. $file . '</option>';
 						}
 					}
-				}
-			}
 ?>
 				</select></div></td>
 				<td><input class="submit" style="width:<?php echo strlen(User_Synchronization_AddFiles)*10; ?>px" name="add_file" type="submit" value="<?php echo User_Synchronization_AddFiles; ?>" /></td>
@@ -682,6 +701,9 @@ if ( count($FilesInQueue) > 0 ) {
 		</table>
 		<div align="center"><p class="Comments"><?php echo User_Synchronization_AddFilesComment; ?></p></div>
 	</fieldset>
+<?php
+} //if ( !empty($users_directories) ) {
+?>
 
 	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
 

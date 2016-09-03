@@ -22,16 +22,17 @@
 //
 //#################### FIRST LINE #####################################
 
-define('User_Synchronization_Title_rTorrentConfig', 'Fichier de Configuration rTorrent');
-define('User_Synchronization_rTorrentConfigDirectory', 'Sous-dossiers');
-define('User_Synchronization_rTorrentConfigAddDirectory', 'Ajouter un sous-dossier');
-define('User_Synchronization_rTorrentConfigDelDirectory', 'Retirer le dernier sous-dossier');
-define('User_Synchronization_rTorrentConfig_Comment', 'Permet de g&eacute;rer les sous dossiers dans "watch" et "complete".<br />
-Exemple, ajoutez un dossier "Films", et celui-ci sera cr&eacute;&eacute; et g&eacute;r&eacute; par rTorrent.<br />
+define('User_Synchronization_Title_rTorrentConfig', '<b>1 - Cr&eacute;er des cat&eacute;gories / G&eacute;rer les synchronisations</b>');
+define('User_Synchronization_rTorrentConfigDirectory', 'Cat&eacute;gorie');
+define('User_Synchronization_rTorrentConfigAddDirectory', 'Ajouter une cat&eacute;gorie');
+define('User_Synchronization_rTorrentConfigDelDirectory', 'Retirer la derni&egrave;re cat&eacute;gorie');
+define('User_Synchronization_rTorrentConfig_Comment', 'Permet de g&eacute;rer des cat&eacute;gories (sous-dossiers) dans "watch" et "complete".<br />
+Exemple, ajoutez une cat&eacute;gorie "Films", et celui-ci sera cr&eacute;&eacute; et g&eacute;r&eacute; par rTorrent.<br />
 Un fichier torrent ajout&eacute; dans "watch\Films" lancera le t&eacute;l&eacute;chargement.<br />
-A la fin de celui-ci, les donn&eacute;es seront automatiquement copi&eacute;es dans "complete\Films".');
-define('User_Synchronization_rTorrentConfig_Table_Title', 'Sous-dossiers</br>existants');
-define('User_Synchronization_Title_Crontab', 'Crontab / Scripts à utiliser');
+A la fin de celui-ci, les donn&eacute;es seront automatiquement d&eacute;plac&eacute;es dans "complete\Films".<br />
+Vous pouvez également préciser si les données d\'une catégorie doivent être synchronisées<br />par FTP ou RSYNC vers un support distant (ex: NAS).');
+define('User_Synchronization_rTorrentConfig_Table_Title', 'Cat&eacute;gorie</br>existantes');
+define('User_Synchronization_Title_Scripts', '<b>2 - Crontab / Scripts &agrave; utiliser</b>');
 define('User_Synchronization_Minutes', 'Minutes');
 define('User_Synchronization_Hours', 'Heures');
 define('User_Synchronization_Days', 'Jours<br/>mois');
@@ -41,19 +42,18 @@ define('User_Synchronization_Command', 'Script');
 define('User_Synchronization_Add', 'Ajouter');
 define('User_Synchronization_Crontab_Comment', 'Planifier l\'ex&eacute;cution de scripts personnels &agrave; la fin de vos t&eacute;l&eacute;chargements.<br />
 Vos scripts doivent &ecirc;tre enregistr&eacute;s dans ~/scripts/ avec ".sh" comme extension.<br/>
-Validez votre planification ici ;-) <a target="_blank" href="http://crontab.guru/">crontab.guru</a>.<br/>
-Lisez le fichier \'~/scripts/README\'.');
+Validez votre planification ici ;-) <a target="_blank" href="http://crontab.guru/">crontab.guru</a>. Lisez le fichier \'~/scripts/README\'.');
 define('User_Synchronization_Title_SyncMode', 'Mode de synchro');
 define('User_Synchronization_IgnoreSync', 'Ignore les scripts (Pas de synchro)');
-define('User_Synchronization_CronOnly', 'Synchro programm&eacute;e');
-define('User_Synchronization_DirectSync', 'Synchro directe');
+define('User_Synchronization_CronOnly', 'Synchronisation programm&eacute;e');
+define('User_Synchronization_DirectSync', 'Synchronisation directe');
 define('User_Synchronization_Title_FilesToSync', 'Fichiers en attente');
-define('User_Synchronization_SyncMode', 'Synchro');
+define('User_Synchronization_SyncMode', 'Synchronisation');
 define('User_Synchronization_FileName', 'Nom');
 define('User_Synchronization_SynchroDirect', 'Directe');
 define('User_Synchronization_SynchroCron', 'Planifi&eacute;e');
 define('User_Synchronization_Comments', 'Commentaires');
-define('User_Synchronization_Title_Ident', 'Identification');
+define('User_Synchronization_Title_Ident', '<b>3 - Informations de connexion pour les synchronisations distantes (directes et programmées)</b>');
 define('User_Synchronization_ModeSync', 'M&eacute;thode');
 define('User_Synchronization_ModeSync_FTP', 'FTP(s)');
 define('User_Synchronization_ModeSync_RSYNC', 'RSYNC');
@@ -69,7 +69,8 @@ define('User_Synchronization_MailObjectKO', 'Sujet du mail pour une synchronisat
 define('User_Synchronization_SyncComment', '');
 define('User_Synchronization_StartDirect', 'Lancer une synchronisation directe');
 define('User_Synchronization_StartPlanned', 'Lancer une synchronisation planifi&eacute;e');
-define('User_Synchronization_ScriptsDirect', 'Script à utiliser pour les synchronisations directes');
+define('User_Synchronization_ScriptsDirect', 'Script &agrave; utiliser pour les synchronisations directes');
+define('User_Synchronization_ScriptsCron', 'Planification pour les synchronisations programm&eacute;es');
 define('User_Synchronization_ScriptsComment', 'Dans le cas o&ugrave; plusieurs scripts sont pr&eacute;sents,<br />s&eacute;lectionnez celui &agrave; utiliser pour une synchronisation directe.<br />Vos scripts doivent &ecirc;tre enregistr&eacute;s dans ~/scripts/ avec ".sh" comme extension.');
 define('User_Synchronization_Title_DownloadedFiles', 'Remettre un t&eacute;l&eacute;chargement dans la liste d\'attente');
 define('User_Synchronization_Files', 'Liste des t&eacute;l&eacute;chargements');
