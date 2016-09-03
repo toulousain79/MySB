@@ -47,7 +47,7 @@ define('User_Synchronization_Title_SyncMode', 'Mode de synchro');
 define('User_Synchronization_IgnoreSync', 'Ignore les scripts (Pas de synchro)');
 define('User_Synchronization_CronOnly', 'Synchronisation programm&eacute;e');
 define('User_Synchronization_DirectSync', 'Synchronisation directe');
-define('User_Synchronization_Title_FilesToSync', 'Fichiers en attente');
+define('User_Synchronization_Title_FilesToSync', '<b>Fichiers en attente</b>');
 define('User_Synchronization_SyncMode', 'Synchronisation');
 define('User_Synchronization_FileName', 'Nom');
 define('User_Synchronization_SynchroDirect', 'Directe');

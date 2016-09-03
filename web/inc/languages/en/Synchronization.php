@@ -47,7 +47,7 @@ define('User_Synchronization_Title_SyncMode', 'Sync mode');
 define('User_Synchronization_IgnoreSync', 'Ignore script (no sync)');
 define('User_Synchronization_CronOnly', 'Script by cron');
 define('User_Synchronization_DirectSync', 'Direct when finished');
-define('User_Synchronization_Title_FilesToSync', 'Files waiting');
+define('User_Synchronization_Title_FilesToSync', '<b>Files waiting</b>');
 define('User_Synchronization_SyncMode', 'Synchro');
 define('User_Synchronization_FileName', 'Name');
 define('User_Synchronization_SynchroDirect', 'Direct');
