@@ -669,15 +669,22 @@ if ( count($FilesInQueue) > 0 ) {
 <?php
 }
 
+$SelectOptions = array();
 foreach($users_directories as $Directory) {
 	if ($dir = opendir("/home/$CurrentUser/rtorrent/complete/".$Directory['sub_directory']."/")) {
 		$files = array();
 		while ($files[] = readdir($dir));
-		sort($files);
 		closedir($dir);
+		sort($files);
+		foreach ($files as $file) {
+			if($file != '.' && $file != '..' && $file != '') {
+				$SelectOptions[] = '<option value="' .$file. '|' .$Directory['sub_directory']. '">'. $Directory['sub_directory'] .'&nbsp;&nbsp;|&nbsp;&nbsp;'. $file . '</option>';
+			}
+		}
 	}
 }
-if ( !empty($files) ) {
+
+if ( !empty($SelectOptions) ) {
 ?>
 	<fieldset style="vertical-align: text-top;">
 	<legend><?php echo User_Synchronization_Title_DownloadedFiles; ?></legend>
@@ -689,11 +696,9 @@ if ( !empty($files) ) {
 			<tr>
 				<td><div align="center"><select name="downloaded_files" style="width:100%; height: 28px;">
 <?php
-					foreach ($files as $file) {
-						if ($file != '.' && $file != '..' && $file != '') {
-							echo '<option value="' .$file. '|' .$Directory['sub_directory']. '">'. $Directory['sub_directory'] .'&nbsp;&nbsp;|&nbsp;&nbsp;'. $file . '</option>';
-						}
-					}
+			foreach($SelectOptions as $Option) {
+				echo $Option;
+			}
 ?>
 				</select></div></td>
 				<td><input class="submit" style="width:<?php echo strlen(User_Synchronization_AddFiles)*10; ?>px" name="add_file" type="submit" value="<?php echo User_Synchronization_AddFiles; ?>" /></td>
@@ -702,7 +707,7 @@ if ( !empty($files) ) {
 		<div align="center"><p class="Comments"><?php echo User_Synchronization_AddFilesComment; ?></p></div>
 	</fieldset>
 <?php
-} //if ( !empty($users_directories) ) {
+} //if ( !empty($SelectOptions) ) {
 ?>
 
 	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
