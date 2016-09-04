@@ -141,6 +141,7 @@ Listing() {
 	FnMail_Object="$MailObjectOK"
 	FnStartDate="`/bin/date +%Y/%m/%d`"
 	FnStartHour="`/bin/date +%H:%M:%S`"
+	GetPid="`cat $FileLock`"
 	Error=0
 
 	# Check if files exist
@@ -178,7 +179,7 @@ Listing() {
 	echo "--------------------"
 	echo
 
-	sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET comments = 'Start: $FnStartDate - $FnStartHour' WHERE list_id = '$FnGet_List_ID';"
+	sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET comments = 'Start: $FnStartDate - $FnStartHour', pid = '$GetPid' WHERE list_id = '$FnGet_List_ID';"
 
 	case "$ModeSync" in
 		'rsync')
@@ -222,9 +223,9 @@ Listing() {
 	FnEndDate="`/bin/date +%Y/%m/%d`"
 	FnEndHour="`/bin/date +%H:%M:%S`"
 	if [ $Error -eq 0 ]; then
-		sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET is_active = '0', to_del = '1', comments = 'End: $FnEndDate - $FnEndHour' WHERE list_id = '$FnGet_List_ID';"
+		sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET is_active = '0', to_del = '1', pid = '', comments = 'End: $FnEndDate - $FnEndHour' WHERE list_id = '$FnGet_List_ID';"
 	else
-		sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET is_active = '0', comments = 'Error: $FnEndDate - $FnEndHour' WHERE list_id = '$FnGet_List_ID';"
+		sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET is_active = '0', pid = '', comments = 'Error: $FnEndDate - $FnEndHour' WHERE list_id = '$FnGet_List_ID';"
 		FnMail_Object="$MailObjectKO"
 	fi
 
@@ -273,7 +274,7 @@ for ROW in $MyList; do
 		# Real process of synchronization
 		Listing "$list_id" "$get_base_path" "$get_custom1" "$get_name" "$get_loaded_file" "$CategoryDir" > $FileLogTemp
 	else
-		sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET comments = 'Error: Missing login information' WHERE list_id = '$list_id';"
+		sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET comments = 'Error: Missing login information', pid = '' WHERE list_id = '$list_id';"
 	fi
 
 	# Move log file content

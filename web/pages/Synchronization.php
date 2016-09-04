@@ -657,11 +657,15 @@ if ( count($FilesInQueue) > 0 ) {
 <?php
 	if ( ($IdentSync['dst_dir'] != '') && ($IdentSync['dst_srv'] != '') && ($IdentSync['dst_port']) ) {
 		if ( ($users_scripts['script'] != '') && ($CountDirect >= 1) ) {
-			echo '<input style="cursor: pointer; width:' . strlen(User_Synchronization_StartDirect)*10 . 'px; margin-top: 10px; margin-bottom: 10px;" name="start" type="submit" value="'.User_Synchronization_StartDirect.'" />';
+			if ( ($IdentSync['pid'] == '') ) {
+				echo '<input style="cursor: pointer; width:' . strlen(User_Synchronization_StartDirect)*10 . 'px; margin-top: 10px; margin-bottom: 10px;" name="start" type="submit" value="'.User_Synchronization_StartDirect.'" />';
+			}
 		}
 		if ( (count($users_crontab) > 0) && ($CountCron >= 1) ) {
-			echo '&nbsp;&nbsp;';
-			echo '<input style="cursor: pointer; width:' . strlen(User_Synchronization_StartPlanned)*10 . 'px; margin-top: 10px; margin-bottom: 10px;" name="start" type="submit" value="'.User_Synchronization_StartPlanned.'" />';
+			if ( ($IdentSync['pid'] == '') ) {
+				echo '&nbsp;&nbsp;';
+				echo '<input style="cursor: pointer; width:' . strlen(User_Synchronization_StartPlanned)*10 . 'px; margin-top: 10px; margin-bottom: 10px;" name="start" type="submit" value="'.User_Synchronization_StartPlanned.'" />';
+			}
 		}
 	}
 ?>
