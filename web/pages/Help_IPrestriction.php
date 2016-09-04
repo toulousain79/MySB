@@ -22,8 +22,13 @@
 //
 //#################### FIRST LINE #####################################
 
+global $CurrentUser;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
-echo Help_IPrestriction;
+echo Help_IPrestriction_NormalUser;
+
+if (MainUser($CurrentUser)) {
+	echo Help_IPrestriction_MainUser;
+}
 
 //#################### LAST LINE ######################################

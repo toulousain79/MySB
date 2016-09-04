@@ -22,7 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-define('Help_IPrestriction', '
+define('Help_IPrestriction_NormalUser', '
 	<p>
 		IP restriction is applied for access to the MySB portal.<br />
 		In case you do not have a fixed IP address, you can use a service such as \'No-IP\' or \'DynDNS\'.<br />
@@ -34,6 +34,11 @@ define('Help_IPrestriction', '
 			<li><a target="_blank" href="https://account.dyn.com/entrance/">DynDNS.com</a></li>
 			<li>...</li>
 		</ul>
+	</p>
+');
+define('Help_IPrestriction_MainUser', '
+	<p>
+		You also have the option to disable this restriction <a href="?main-user/system.html">here</a>.
 	</p>
 ');
 

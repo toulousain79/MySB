@@ -22,19 +22,32 @@
 //
 //#################### FIRST LINE #####################################
 
-define('Help_Blocklists', '
-	<p>
-		It is possible to use a blocklist with rTorrent.<br />
-		Similarly, if you have decided to use PeerGuardian, a second blocklist will also be available.
-	</p>
-	<p>
-		Although PeerGuardian is installed, it\'s still a good idea to also select the lists for rTorrent.<br />
-		For if PeerGuardian has a problem and can not be launched, the blocklist of rTorrent will take over.
-		<ul>
-			<li><a href="?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a></li>
-			<li><a href="?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a></li>
-		</ul>
-	</p>
+define('Help_Blocklists', '<p>
+Blacklists or blocklists are IP address lists categorized.
+<br />
+These lists are used by PeerGuardian tool and/or rTorrent in order to block access to your server to selected IP categories (government agencies, organizations maveillantes, anti P2P organizations, ...).
+</p>
+<p>
+Some categories were selected by default to achieve a compromise between security and data sharing.
+<br />
+The PeerGuardian rTorrent and block lists are operated separately.<br />
+</p>
+<p>
+If you chose to install PeerGuardian, then your server will be fully protected. Lists for rTorrent will not be used.
+<br />
+rTorrent lists will be used in 2 situations.
+</p>
+<ul>
+	<li><b>IF</b> PeerGuardian if not installed</li>
+	<li><b>IF</b> PeerGuardian planted or if the service does not start</li>
+</ul>
+<p>
+Although rTorrent can use block lists, only your rTorrent connections will be protected. The rest of your server will not be.
+	<ul>
+		<li><a href="?blocklists/rtorrent-blocklists.html">Liste de blocage rTorrent</a></li>
+		<li><a href="?blocklists/peerguardian-blocklists.html">Liste de blocage PeerGuardian</a></li>
+	</ul>
+</p>
 ');
 
 //#################### LAST LINE ######################################

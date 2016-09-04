@@ -53,12 +53,10 @@ if (isset($_POST['submit'])) {
 				$rTorrentRestart_POST = 1;
 				$Command = 'Restart_rTorrent';
 				$Change++;
-				$RefreshPage++;
 			}
 			// Notifications ?
 			if ( $rTorrentNotify_POST != $rTorrentNotify_DB ) {
 				$Change++;
-				$RefreshPage++;
 			}
 
 			// Language
@@ -94,7 +92,11 @@ if (isset($_POST['submit'])) {
 // Get values from database
 $users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
 $rtorrent_version = $users_datas['rtorrent_version'];
-$rtorrent_restart = $users_datas['rtorrent_restart'];
+if ($rTorrentRestart_POST == "1") {
+	$rtorrent_restart = '0';
+} else {
+	$rtorrent_restart = $users_datas['rtorrent_restart'];
+}
 $rtorrent_notify = $users_datas['rtorrent_notify'];
 $language = $users_datas['language'];
 ?>
@@ -174,7 +176,7 @@ $language = $users_datas['language'];
 		</tr>
 	</table>
 	</fieldset>
-	
+
 	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
 
 	</div>

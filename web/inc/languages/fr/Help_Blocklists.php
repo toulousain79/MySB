@@ -22,19 +22,32 @@
 //
 //#################### FIRST LINE #####################################
 
-define('Help_Blocklists', '
-	<p>
-	Il est possible d\'utiliser une liste de blocage avec rTorrent.<br />
-	De m&ecirc;me, si vous avez d&eacute;cid&eacute; d\'utiliser PeerGuardian, une deuxi&egrave;me liste noire sera &eacute;galement disponible.
-	</p>
-	<p>
-	De m&ecirc;me, si vous avez d&eacute;cid&eacute; d\'utiliser PeerGuardian, une deuxi&egrave;me liste de blocage sera &eacute;galement disponible.<br />
-	Car si PeerGuardian a un probl&egrave;me et ne peut pas &ecirc;tre lanc&eacute;, la liste de blocage de rTorrent prendra le relais.
-		<ul>
-			<li><a href="?blocklists/rtorrent-blocklists.html">Liste de blocage rTorrent</a></li>
-			<li><a href="?blocklists/peerguardian-blocklists.html">Liste de blocage PeerGuardian</a></li>
-		</ul>
-	</p>
+define('Help_Blocklists', '<p>
+Les listes noires ou listes de blocage sont des listes d\'adresses IP class&eacute;es par cat&eacute;gories.
+<br />
+Ces listes sont exploit&eacute;es par l\'outil PeerGuardian et/ou rTorrent dans le but de bloquer l\'acc&egrave;s &agrave; votre serveur aux cat&eacute;gories d\'adresses IP s&eacute;lectionn&eacute;es (organismes gouvernementaux, organisations maveillantes, organisations anti P2P, ...).
+</p>
+<p>
+Certaines cat&eacute;gories ont &eacute;t&eacute; s&eacute;lectionn&eacute;es par d&eacute;faut pour obtenir un compromis entre s&eacute;curit&eacute; et partage des donn&eacute;es.
+<br />
+Les listes de blocage de PeerGuardian et rTorrent sont exploit&eacute;es distinctement.<br />
+</p>
+<p>
+Si vous avez choisi d\'installer PeerGuardian, alors votre serveur sera compl&egrave;tement prot&eacute;g&eacute;. Les listes pour rTorrent ne seront pas utilis&eacute;es.
+<br />
+Les listes pour rTorrent seront utilis&eacute;es dans 2 situations.
+</p>
+<ul>
+	<li><b>SI</b> PeerGuardian n\'est pas install&eacute;</li>
+	<li><b>SI</b> PeerGuardian a plant&eacute; ou si le service ne d&eacute;marre pas</li>
+</ul>
+<p>
+Même si rTorrent peut exploiter des listes de blocage, seules vos connexions rTorrent seront prot&eacute;g&eacute;es. Le reste de votre serveur ne le sera pas.
+	<ul>
+		<li><a href="?blocklists/rtorrent-blocklists.html">Liste de blocage rTorrent</a></li>
+		<li><a href="?blocklists/peerguardian-blocklists.html">Liste de blocage PeerGuardian</a></li>
+	</ul>
+</p>
 ');
 
 //#################### LAST LINE ######################################

@@ -31,6 +31,12 @@ define('Help_Trackers_MainUser', '
 		You also have the option to add your own trackers <a href="?trackers/add-new-trackers.html">here</a>.<br />
 		Your trackers will also be displayed in the global list available <a href="?trackers/trackers-list.html">here</a>.
 	</p>
+	<p>
+		Technically, all trackers operate without having to add them.<br />
+		The interest to add a new one is the ability to block it.<br />
+		If you want to block the use of a tracker in particular, simply add it AND disable it.
+		Connections to this tracker will be blocked.
+	</p>
 ');
 define('Help_Trackers_NormalUser', '
 	<p>

@@ -27,7 +27,7 @@ define('User_Synchronization_rTorrentConfigDirectory', 'Cat&eacute;gorie');
 define('User_Synchronization_rTorrentConfigAddDirectory', 'Ajouter une cat&eacute;gorie');
 define('User_Synchronization_rTorrentConfigDelDirectory', 'Retirer la derni&egrave;re cat&eacute;gorie');
 define('User_Synchronization_rTorrentConfig_Comment', 'Permet de g&eacute;rer des cat&eacute;gories (sous-dossiers) dans "watch" et "complete".<br />
-Exemple, ajoutez une cat&eacute;gorie "Films", et celui-ci sera cr&eacute;&eacute; et g&eacute;r&eacute; par rTorrent.<br />
+Exemple, ajoutez une cat&eacute;gorie "Films", et celle-ci sera cr&eacute;&eacute;e et g&eacute;r&eacute;e par rTorrent.<br />
 Un fichier torrent ajout&eacute; dans "watch\Films" lancera le t&eacute;l&eacute;chargement.<br />
 A la fin de celui-ci, les donn&eacute;es seront automatiquement d&eacute;plac&eacute;es dans "complete\Films".<br />
 Vous pouvez également préciser si les données d\'une catégorie doivent être synchronisées<br />par FTP ou RSYNC vers un support distant (ex: NAS).');

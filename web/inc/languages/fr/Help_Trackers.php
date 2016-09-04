@@ -31,12 +31,18 @@ define('Help_Trackers_MainUser', '
 		Vous avez &eacute;galement la possibilit&eacute; d\'ajouter vos propres trackers sur <a href="?trackers/add-new-trackers.html">cette page</a>.<br />
 		Vos trackers seront &eacute;galement affich&eacute;s dans la liste globale disponible sur <a href="?trackers/trackers-list.html">cette page</a>.
 	</p>
+	<p>
+		Techniquement, tous les trackers fonctionnent sans avoir besoin de les ajouter.<br />
+		L\'int&ecirc;ret d\'en ajouter r&eacute;side dans la possibilit&eacute; de les bloquer.<br />
+		Si vous voulez bloquer l\'utilisation d\'un tracker en particulier, il suffit de l\'ajouter ET de le d&eacute;sactiver.
+		Les connexions vers ce tracker seront bloqu&eacute;es.
+	</p>
 ');
 define('Help_Trackers_NormalUser', '
 	<p>
 		Peut-&ecirc;tre avez-vous besoin d\'ajouter un nouveau tracker?<br />
 		En tant qu\'utilisateur normal, vous devez soumettre une demande &agrave; l\'utilisateur principal.<br />
-		Seul l\'utilisateur principal peut ajouter / supprimer un nouveau tracker.
+		Seul l\'utilisateur principal peut ajouter ou supprimer un nouveau tracker.
 	</p>
 	<p>
 		Vous pouvez soumettre votre demande par e-mail ou en utilisant le chat ruTorrent.

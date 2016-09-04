@@ -22,11 +22,11 @@
 //
 //#################### FIRST LINE #####################################
 
-define('Help_IPrestriction', '
+define('Help_IPrestriction_NormalUser', '
 	<p>
 		La restriction par adresse IP est appliqu&eacute;e pour limiter l\'acc&egrave;s au portail MySB.<br />
 		Dans le cas o&ugrave; vous ne disposez pas d\'une adresse IP publique fixe, vous pouvez utiliser un service tel que &quot;No-IP&quot; ou &quot;DynDNS&quot;.<br />
-		Vous pourrez ainsi ajouter un nom d\'h&ocirc;te au lieu d\'une adresse IP sur <a href="?user/manage-addresses.html">cette page</a>.
+		Vous pourrez ainsi ajouter un nom d\'h&ocirc;te au lieu d\'une adresse IP sur <a href="?user/manage-addresses.html">cette page</a>.<br />
 
 		<ul>
 			<li><a target="_blank" href="http://www.noip.com/">No-IP.com</a></li>
@@ -34,6 +34,11 @@ define('Help_IPrestriction', '
 			<li><a target="_blank" href="https://account.dyn.com/entrance/">DynDNS.com</a></li>
 			<li>...</li>
 		</ul>
+	</p>
+');
+define('Help_IPrestriction_MainUser', '
+	<p>
+		Vous avez &eacute;galement la possibilit&eacute; de d&eacute;sactiver cette restriction <a href="?main-user/system.html">cette page</a>.
 	</p>
 ');
 
