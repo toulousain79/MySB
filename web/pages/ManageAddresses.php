@@ -185,8 +185,7 @@ $AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserI
 					<input type="button" id="btnDel" value="<?php echo User_ManageAddresses_Btn_RemoveLastLine; ?>" style="cursor: pointer;" />
 				</div>
 
-			<p class="Comments"><?php echo User_ManageAddresses_InfoAddAddresses; ?></p>
-				
+				<p class="Comments"><?php echo User_ManageAddresses_InfoAddAddresses; ?></p>
 				<input class="submit" style="width:<?php echo strlen(User_ManageAddresses_Btn_AddAddress)*10; ?>px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo User_ManageAddresses_Btn_AddAddress; ?>">
 			</fieldset>
 		</form>
@@ -238,7 +237,7 @@ foreach($AddressesList as $Address) {
 				</td>
 				<td>
 					<?php echo $Address["last_update"]; ?>
-				</td>				
+				</td>
 				<td>
 					<?php echo $is_active; ?>
 				</td>

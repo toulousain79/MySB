@@ -64,6 +64,24 @@ CREATE TABLE IF NOT EXISTS `lets_encrypt` (
   PRIMARY KEY (`id_lets_encrypt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
+CREATE TABLE IF NOT EXISTS `port_forwarding` (
+  `id_port_forwarding` int(11) NOT NULL AUTO_INCREMENT,
+  `description` varchar(64) NOT NULL,
+  `from_port` varchar(11) NOT NULL,
+  `proto` varchar(7) NOT NULL DEFAULT 'tcp/udp',
+  `to_port` varchar(11) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '0',
+  `is_reserved` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id_port_forwarding`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `port_forwarding_addresses` (
+  `id_port_forwarding_addresses` int(11) NOT NULL AUTO_INCREMENT,
+  `id_port_forwarding` int(11) NOT NULL,
+  `addresses` varchar(128) NOT NULL,
+  PRIMARY KEY (`id_port_forwarding_addresses`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
 CREATE TABLE IF NOT EXISTS `providers_monitoring` (
   `id_providers_monitoring` int(11) NOT NULL AUTO_INCREMENT,
   `provider` varchar(16) NOT NULL,
