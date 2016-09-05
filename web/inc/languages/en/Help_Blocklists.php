@@ -33,9 +33,8 @@ Some categories were selected by default to achieve a compromise between securit
 The PeerGuardian rTorrent and block lists are operated separately.<br />
 </p>
 <p>
-If you chose to install PeerGuardian, then your server will be fully protected. Lists for rTorrent will not be used.
-<br />
-rTorrent lists will be used in 2 situations.
+If you chose to install PeerGuardian, then your server will be fully protected.<br />
+Lists for rTorrent will not be used except in two situations:
 </p>
 <ul>
 	<li><b>IF</b> PeerGuardian if not installed</li>

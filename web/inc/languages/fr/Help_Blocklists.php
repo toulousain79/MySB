@@ -33,9 +33,8 @@ Certaines cat&eacute;gories ont &eacute;t&eacute; s&eacute;lectionn&eacute;es pa
 Les listes de blocage de PeerGuardian et rTorrent sont exploit&eacute;es distinctement.<br />
 </p>
 <p>
-Si vous avez choisi d\'installer PeerGuardian, alors votre serveur sera compl&egrave;tement prot&eacute;g&eacute;. Les listes pour rTorrent ne seront pas utilis&eacute;es.
-<br />
-Les listes pour rTorrent seront utilis&eacute;es dans 2 situations.
+Si vous avez choisi d\'installer PeerGuardian, alors votre serveur sera compl&egrave;tement prot&eacute;g&eacute;.<br />
+Les listes pour rTorrent ne seront pas utilis&eacute;es SAUF dans 2 situations:
 </p>
 <ul>
 	<li><b>SI</b> PeerGuardian n\'est pas install&eacute;</li>

@@ -38,7 +38,7 @@ define('Help_IPrestriction_NormalUser', '
 ');
 define('Help_IPrestriction_MainUser', '
 	<p>
-		Vous avez &eacute;galement la possibilit&eacute; de d&eacute;sactiver cette restriction <a href="?main-user/system.html">cette page</a>.
+		Vous avez &eacute;galement la possibilit&eacute; de d&eacute;sactiver cette restriction sur <a href="?main-user/system.html">cette page</a>.
 	</p>
 ');
 
