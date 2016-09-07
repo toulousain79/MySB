@@ -65,7 +65,6 @@ if ( $IsInstalled == '1' ) {
 			<table style="border-spacing:1;">
 				<tr>
 					<th style="text-align:center;"><?php echo MainUser_BlockLists_PGL_Table_Name; ?></th>
-					<!--<th style="text-align:center;"><?php echo MainUser_BlockLists_PGL_Table_Blocklist; ?></th>-->
 					<th style="text-align:center;"><?php echo Global_Comment; ?></th>
 					<th style="text-align:center;"><?php echo Global_LastUpdate; ?></th>
 					<th style="text-align:center;"><?php echo Global_IsDefault; ?></th>
@@ -116,13 +115,9 @@ if ( $IsInstalled == '1' ) {
 				<tr>
 					<td>
 						<input type="hidden" name="id_blocklists[]" value="<?php echo $List["id_blocklists"]; ?>" />
-						<input style="width:180px;" type="hidden" name="name[]" value="<?php echo $List["list_name"]; ?>" />
+						<input type="hidden" name="name[]" value="<?php echo $List["list_name"]; ?>" />
 						<?php echo '<a target="_blank" href="' . $List["url_infos"] . '">' . $List["author"].' - '.$List["list_name"] . '</a>'; ?>
 					</td>
-					<!--<td>
-						<input style="width:180px;" type="hidden" name="peerguardian_list[]" value="<?php echo $List["peerguardian_list"]; ?>" />
-						<?php echo $List["peerguardian_list"]; ?>
-					</td>-->
 					<td>
 						<?php echo $List["comments"]; ?>
 					</td>

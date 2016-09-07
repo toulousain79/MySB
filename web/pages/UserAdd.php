@@ -120,21 +120,12 @@ if ( !empty($UsersList) ) {
 			<tr>
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Username; ?></th>
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Email; ?></th>
-				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_IsSftp; ?></th>
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Quota; ?></th>
 				<!--<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>-->
 			</tr>
 
 <?php
 	foreach($UsersList as $User) {
-		switch ($User["sftp"]) {
-			case '0':
-				$SFTP = Global_No;
-				break;
-			default:
-				$SFTP = Global_Yes;
-				break;
-		}
 ?>
 			<tr>
 				<td>
@@ -144,9 +135,6 @@ if ( !empty($UsersList) ) {
 				<td>
 					<input style="width:200px;" type="hidden" name="users_email[]" value="<?php echo $User["users_email"]; ?>" />
 					<?php echo $User["users_email"]; ?>
-				</td>
-				<td>
-					<?php echo $SFTP; ?>
 				</td>
 				<td>
 					<?php echo GetSizeName($User["quota"].'KB'); ?>

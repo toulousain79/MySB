@@ -107,18 +107,26 @@ $TrackersList = $MySB_DB->select("trackers_list", "*", ["ORDER" => "trackers_lis
 				<th style="text-align:center;"><?php echo User_TrackersList_Table_PingResult; ?></th>
 				<th style="text-align:center;"><?php echo User_TrackersList_Table_IsSSL; ?></th>
 				<th style="text-align:center;"><?php echo Global_IsActive; ?></th>
+<?php if ( $IsMainUser ) { ?>
 				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
+<?php } ?>
 			</tr>
 <?php
 foreach($TrackersList as $Tracker) {
 	switch ($Tracker["origin"]) {
 		case 'users':
 			if ( $IsMainUser ) {
-				$origin = '<input class="submit" name="delete['. $Tracker["id_trackers_list"] .']" type="submit" value="Delete" />';
+				$origin = '<td><input class="submit" name="delete['. $Tracker["id_trackers_list"] .']" type="submit" value="Delete" /></td>';
+			} else {
+				$origin = '<td></td>';
 			}
 			break;
 		default:
-			$origin = '';
+			if ( $IsMainUser ) {
+				$origin = '<td></td>';
+			} else {
+				$origin = '';
+			}
 			break;
 	}
 
@@ -194,9 +202,7 @@ foreach($TrackersList as $Tracker) {
 				<td>
 					<?php echo $is_active; ?>
 				</td>
-				<td>
 					<?php echo $origin; ?>
-				</td>
 			</tr>
 <?php
 } // foreach($TrackersList as $Tracker) {

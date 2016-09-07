@@ -122,11 +122,8 @@ if [ ! -d $DIR_LOG ]; then mkdir $DIR_LOG && chown $DAEMON_USER:$DAEMON_USER $DI
 DeamonOption() {
 	Name="$1"
 	LocalAddress="$2"
-	ProviderAddress="`Func_SQL_Command 'SELECT' 'MySB_db' 'resolver_address' 'dnscrypt_resolvers' "name = '$Name'"`"
-	ProviderName="`Func_SQL_Command 'SELECT' 'MySB_db' 'provider_name' 'dnscrypt_resolvers' "name = '$Name'"`"
-	ProviderKey="`Func_SQL_Command 'SELECT' 'MySB_db' 'provider_public_key' 'dnscrypt_resolvers' "name = '$Name'"`"
 
-	DEAMON_OPT="--user=$DAEMON_USER --edns-payload-size=4096 --resolver-address=$ProviderAddress --provider-name=$ProviderName --provider-key=$ProviderKey --logfile=$DIR_LOG/$Resolver.log --local-address=$LocalAddress --ephemeral-keys"
+	DEAMON_OPT="--user=$DAEMON_USER --max-active-requests=250 --resolver-name=$Name --logfile=$DIR_LOG/$Resolver.log --local-address=$LocalAddress --ephemeral-keys"
 }
 
 # Function that check BIND status
@@ -179,8 +176,7 @@ do_start() {
 	# Update DB
 	Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_activated = '0', is_wished = '0', forwarder = ''" 'ALL'
 
-	i=0
-	Return=0
+	i=0; Return=0; Running=0; NotRunning=0
 	for Resolver in $ResolversList; do
 		(( i++ ))
 
@@ -204,7 +200,7 @@ do_start() {
 
 		if [ $? -gt 0 ]; then
 			echo "--> $Resolver already running: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
-			Return=1
+			(( Running++ ))
 		fi
 
 		start-stop-daemon --start --quiet --background --make-pidfile \
@@ -217,13 +213,38 @@ do_start() {
 			Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished = '1', is_activated = '0', forwarder = ''" "name = '$Resolver'"
 			delete_pid_file $DIR_PID/$Resolver.pid $Resolver
 			echo "--> NOT STARTED: $Resolver : "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
-			Return=2
+			(( NotRunning++ ))
 		else
 			# Update DB
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished = '1', is_activated = '1', forwarder = '127.0.0.$i'" "name = '$Resolver'"
-			echo "--> STARTED: $Resolver : "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
+			ResolverPid="`cat $DIR_PID/$Resolver.pid`"
+			if [ ! -z "$ResolverPid" ] && [ ! -z "`ps -p $ResolverPid | grep -v 'PID TTY'`" ]; then
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished = '1', is_activated = '1', forwarder = '127.0.0.$i'" "name = '$Resolver'"
+				echo "--> STARTED: $Resolver : "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
+				(( Running++ ))
+			else
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished = '1', is_activated = '0', forwarder = ''" "name = '$Resolver'"
+				delete_pid_file $DIR_PID/$Resolver.pid $Resolver
+				echo "--> NOT STARTED: $Resolver : "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
+				(( NotRunning++ ))
+			fi
 		fi
 	done
+
+	case "$Running" in
+		0)
+			case "$NotRunning" in
+				0)
+					Return=0
+				;;
+				*)
+					Return=2
+				;;
+			esac
+		;;
+		*)
+			Return=1
+		;;
+	esac
 
 	return $Return
 }
