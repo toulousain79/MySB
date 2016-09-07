@@ -164,9 +164,9 @@
 		});
 	</script>
 <?php if ( strstr($_SERVER['REQUEST_URI'], '/?main-user/logs.html') ) { ?>
-	<!-- jQuery Color Plugin --> 
+	<!-- jQuery Color Plugin -->
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.color.js"></script>
-	<!-- Import The jQuery Script --> 
+	<!-- Import The jQuery Script -->
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jMenu.js"></script>
 <?php } ?>
 </body>

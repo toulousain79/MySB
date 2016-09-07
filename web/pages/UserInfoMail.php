@@ -54,7 +54,7 @@ function PrintContent($user, $Case) {
 	// Users infos
 	$IPv4_List = $MySB_DB->select("users_addresses", "ipv4", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
 	$LastUpdate = $MySB_DB->max("users_addresses", "last_update", ["AND" => ["id_users" => "$UserID", "check_by" => "hostname", "is_active" => 1]]);
-	$IPv4Updated = $MySB_DB->get("users_addresses", "ipv4", ["last_update" => "$LastUpdate"]);	
+	$IPv4Updated = $MySB_DB->get("users_addresses", "ipv4", ["last_update" => "$LastUpdate"]);
 	if ( $IPv4_List != "" ) {
 		$User_IPv4 = '';
 		foreach($IPv4_List as $IPv4) {
@@ -134,7 +134,7 @@ function PrintContent($user, $Case) {
 			$DisplayUserInfoDetail 	= false;
 			$DisplayLinks 			= false;
 			$DisplayRenting			= true;
-			break;			
+			break;
 		case 'account_confirmed':
 			$DisplayGoTo 			= true;
 			$DisplayCommand			= false;
@@ -423,7 +423,7 @@ function PrintContent($user, $Case) {
 	<?php } ?>
 
 <?php } // $DisplayLinks ?>
-	
+
 	<?php if ( $users_datas["admin"] == '1' ) { ?>
 
 		<!-- //////////////////////
@@ -466,7 +466,7 @@ function PrintContent($user, $Case) {
 				<td colspan="2"><span class="Comments"><?php echo sprintf(User_UserInfoMail_Comment_DNScrypt, $system_datas["hostname"], $Port_HTTPs, $system_datas["hostname"], $Port_HTTPs); ?></span></td>
 			</tr>
 		<?php } ?>
-	
+
 	<?php } ?>
 
 	<?php if ( !empty($RentingDatas["global_cost"]) && !empty($RentingDatas["model"]) ) { ?>
@@ -593,7 +593,7 @@ if ( (CountingUsers() >= 1) && (GetVersion() != "") ) {
 					  padding: 7px 4px;
 					  text-align: left;
 					}
-					table tr td { 
+					table tr td {
 					  background: #E5E5DB;
 					  color: #47433F;
 					  border-top: 1px solid #FFF;

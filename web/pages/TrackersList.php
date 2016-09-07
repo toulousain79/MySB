@@ -91,7 +91,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 $TrackersList = $MySB_DB->select("trackers_list", "*", ["ORDER" => "trackers_list.tracker_domain ASC"]);
 ?>
 
-<form class="form_settings" method="post" action="">	
+<form class="form_settings" method="post" action="">
 	<div align="center">
 
 	<?php if ( $IsMainUser ) { ?>

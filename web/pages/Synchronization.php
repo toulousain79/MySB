@@ -65,7 +65,7 @@ if (isset($_POST['add_file'])) {
 	$value = explode("|", $_POST['downloaded_files']);
 	$downloaded_files = $value[0];
 	$addfile_sub_directory = $value[1];
-	
+
 	$result = $Sync_DB->insert("list", [
 										"list_category" => "direct",
 										"is_active" => 1,
@@ -257,7 +257,7 @@ if (isset($_POST['submit'])) {
 			$ChangeList=0;
 			if ( (isset($_POST['list_id'])) ) {
 				foreach ($_POST['list_id'] as $key) {
-					$result = $Sync_DB->update("list", ["list_category" => $_POST['list_category'][$key], "is_active" => $_POST['is_active'][$key]], ["list_id" => $key]);				
+					$result = $Sync_DB->update("list", ["list_category" => $_POST['list_category'][$key], "is_active" => $_POST['is_active'][$key]], ["list_id" => $key]);
 					if ( $result > 0 ) { $ChangeList++; }
 				}
 			}
@@ -353,7 +353,7 @@ if ( !empty($users_directories) ) {
 									<option value="1" selected="selected">' .User_Synchronization_CronOnly. '</option>
 									<option value="0">' .User_Synchronization_IgnoreSync. '</option>
 								</select>';
-				break;				
+				break;
 			default:
 				$sync_mode = '	<select name="sync_mode[]" style="width:300px; height:28px;">
 									<option value="2">' .User_Synchronization_DirectSync. '</option>
@@ -531,7 +531,7 @@ if ( $DisplayIdent >= 1 ) {
 							</select></div>';
 			break;
 	}
-	
+
 if ( $DisplayIdent >= 1 ) {
 ?>
 	<fieldset style="vertical-align: text-top;">
@@ -581,7 +581,7 @@ if ( $DisplayIdent >= 1 ) {
 				<th style="text-align:center;"><?php echo User_Synchronization_MailObjectKO; ?></th>
 			</tr>
 			<tr>
-				<td><input style="width:100%; cursor: pointer;" name="MailObjectOK[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['MailObjectOK']; ?>" /></td>	
+				<td><input style="width:100%; cursor: pointer;" name="MailObjectOK[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['MailObjectOK']; ?>" /></td>
 				<td><input style="width:100%; cursor: pointer;" name="MailObjectKO[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['MailObjectKO']; ?>" /></td>
 			</tr>
 		</table>

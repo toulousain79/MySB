@@ -33,7 +33,7 @@ if ( isset($_SESSION['page']) && ($_SESSION['page'] == 'ChangePassword') && isse
 		$AuthPassword = $_SERVER['PHP_AUTH_PW'];
 	} else {
 		$AuthPassword = "";
-	}	
+	}
 
 	$opts = '';
 }
@@ -77,13 +77,13 @@ if ( isset($_POST['submit']) ) {
 						$UserAddress = $_SERVER['REMOTE_ADDR'];
 						$HostName = gethostbyaddr($UserAddress);
 						ManageUsersAddresses($CurrentUser, $UserAddress, $HostName, '1', 'ipv4');
-						
+
 						$priority = $MySB_DB->max("commands", "priority");
 						$priority++;
 						$args = "$CurrentUser|$new_pwd";
 
 						$value = $MySB_DB->insert("commands", ["commands" => "$command", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
-					
+
 						if ( $value > 0 ) {
 							exec("sudo /bin/bash ".MYSB_ROOT."/scripts/ApplyConfig.bsh '$CurrentUser' 'DO_APPLY'", $output, $result);
 
@@ -117,7 +117,7 @@ if ( isset($_POST['submit']) ) {
 		}
 	} else {
 		$type = 'information';
-		$message = Global_CompleteAllFields;	
+		$message = Global_CompleteAllFields;
 	}
 
 	GenerateMessage($command, $type, $message, $args);

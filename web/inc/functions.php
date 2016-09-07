@@ -32,8 +32,8 @@ function GetSizeName($octet) {
 		default:
 			break;
 	}
-	
-    // Array contenant les differents unités 
+
+    // Array contenant les differents unités
     $unite = array('Bytes','KB','MB','GB','TB');
 
     if ($octet < 1000) { // octet
@@ -42,11 +42,11 @@ function GetSizeName($octet) {
         if ($octet < 1000000) { // ko
             $ko = round($octet/1024,2);
             return $ko.' '.$unite[1];
-        } else { // Mo ou Go 
-            if ($octet < 1000000000) { // Mo 
+        } else { // Mo ou Go
+            if ($octet < 1000000000) { // Mo
                 $mo = round($octet/(1024*1024),2);
                 return $mo.' '.$unite[2];
-            } else { // Go 
+            } else { // Go
                 $go = round($octet/(1024*1024*1024),2);
                 return $go.' '.$unite[3];
             }
@@ -115,7 +115,7 @@ function PasswordGenerator ($length = 8) {
 	$i = 0;
 	while ($i < $length) {
 		$caractere = substr($possibilities, mt_rand(0, $lengthMax-1), 1);
- 
+
 		if (!strstr($password, $caractere)) {
 			$password .= $caractere;
 			$i++;
@@ -275,7 +275,7 @@ function UpdateWolfDB($username, $password) {
 
 	if (!defined('IN_CMS')) { exit(); }
 
-	if ( MainUser($username) == true ) {	
+	if ( MainUser($username) == true ) {
 		if ( (isset($password)) && (isset($username)) ) {
 			$PDO = Record::getConnection();
 			$sql_update = '';
@@ -470,7 +470,7 @@ function ManageUsersAddresses($UserName, $IPv4, $HostName, $IsActive, $CheckBy) 
 																[ "AND" => [ "id_users" => "$UserID", "ipv4" => "$IPv4" ]]);
 					break;
 				default:
-					$value = $MySB_DB->update("users_addresses", [ "is_active" => "$IsActive" ], [ "AND" => [ "id_users" => "$UserID", "ipv4" => "$IPv4" ]]);					
+					$value = $MySB_DB->update("users_addresses", [ "is_active" => "$IsActive" ], [ "AND" => [ "id_users" => "$UserID", "ipv4" => "$IPv4" ]]);
 					break;
 			}
 			break;

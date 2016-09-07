@@ -123,7 +123,7 @@ foreach($BlockList as $List) {
 				</td>
 				<td>
 					<?php echo $List["rtorrent_lastupdate"]; ?>
-				</td>				
+				</td>
 				<td>
 					<?php echo $default; ?>
 				</td>

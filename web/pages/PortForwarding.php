@@ -73,12 +73,12 @@ $PortForwardingList = $MySB_DB->select("port_forwarding", "*");
 				<th style="text-align:center;"><?php echo Global_IsActive; ?></th>
 				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
 			</tr>
-			
+
 <?php
 $i = 0;
 foreach($PortForwardingList as $PortForwarding) {
 	$i++;
-	
+
 	switch ($PortForwarding["proto"]) {
 		case 'tcp':
 			switch ($PortForwarding["is_reserved"]) {
@@ -110,7 +110,7 @@ foreach($PortForwardingList as $PortForwarding) {
 										<option value="tcp/udp">TCP/UDP</option>
 								</select>';
 			}
-			break;			
+			break;
 		default:
 			$proto = '	<select name="proto['.$i.']" style="width:100px; cursor: pointer;">
 								<option value="tcp">TCP</option>
@@ -118,8 +118,8 @@ foreach($PortForwardingList as $PortForwarding) {
 								<option value="tcp/udp" selected="selected">TCP/UDP</option>
 						</select>';
 			break;
-	}	
-	
+	}
+
 	switch ($PortForwarding["is_active"]) {
 		case '0':
 			switch ($PortForwarding["is_reserved"]) {
@@ -168,7 +168,7 @@ foreach($PortForwardingList as $PortForwarding) {
 				</td>
 				<td>
 					<?php echo $PortForwarding["to_port"]; ?>
-				</td>				
+				</td>
 				<td>
 					<?php echo $is_active; ?>
 				</td>
@@ -189,8 +189,8 @@ foreach($PortForwardingList as $PortForwarding) {
 			<input class="input_id" id="input_id" name="input_id[<?php echo $i; ?>]" type="hidden" value="<?php echo $i; ?>" />
 <?php
 } // foreach($PortForwardingList as $PortForwarding) {
-?>			
-			
+?>
+
 		</table>
 
 		<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">

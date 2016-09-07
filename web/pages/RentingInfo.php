@@ -34,7 +34,7 @@ function Form() {
 	$Model = $renting_datas["model"];
 	$TVA = $renting_datas["tva"];
 	$GlobalCost = $renting_datas["global_cost"];
-	$Method = $renting_datas["method"];	
+	$Method = $renting_datas["method"];
 
 	echo '<form class="form_settings" method="post" action="">
 		<div align="center">

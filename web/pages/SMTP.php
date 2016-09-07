@@ -73,7 +73,7 @@ function Form() {
 				<tr>
 					<td>' . MainUser_SMTP_Address . '</td>
 					<td><input class="text_normal" id="SmtpEmail" name="SmtpEmail" type="text" value="' . $SmtpEmail . '" required="required" /></td>
-				</tr>			
+				</tr>
 				<tr>
 					<td>' . MainUser_SMTP_Username . '</td>
 					<td><input class="text_normal" id="SmtpUsername" name="SmtpUsername" type="text" value="' . $SmtpUsername . '" required="required" /></td>
@@ -112,16 +112,16 @@ function Form() {
 
 if (isset($_POST['submit'])) {
 	$SmtpProvider = $_POST['SmtpProvider'];
-	$SmtpUsername = preg_replace('/\s\s+/', '', $_POST['SmtpUsername']); 
-	$SmtpEmail = preg_replace('/\s\s+/', '', $_POST['SmtpEmail']); 	
+	$SmtpUsername = preg_replace('/\s\s+/', '', $_POST['SmtpUsername']);
+	$SmtpEmail = preg_replace('/\s\s+/', '', $_POST['SmtpEmail']);
 	$SmtpPasswd = $_POST['SmtpPasswd'];
 	$SmtpPasswdConfirm = $_POST['SmtpPasswdConfirm'];
 	$SmtpHost = $_POST['SmtpHost'];
 	$SmtpPort = $_POST['SmtpPort'];
-	
+
 
 	if ( (isset($SmtpProvider)) && (isset($SmtpUsername)) && (isset($SmtpPasswd)) && (isset($SmtpPasswdConfirm)) && (isset($SmtpHost)) && (isset($SmtpPort)) && (isset($SmtpEmail)) ) {
-		if ( ValidateEmail($SmtpEmail) != false ) {	
+		if ( ValidateEmail($SmtpEmail) != false ) {
 			if ( $SmtpPasswd == $SmtpPasswdConfirm ) {
 				global $MySB_DB;
 
@@ -141,7 +141,7 @@ if (isset($_POST['submit'])) {
 				}
 			} else {
 				$type = 'error';
-				$message = MainUser_SMTP_Verification;		
+				$message = MainUser_SMTP_Verification;
 			}
 		} else {
 			$type = 'error';

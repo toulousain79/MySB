@@ -115,7 +115,7 @@ $UsersList = $MySB_DB->select("users", "*", ["AND" => ["is_active" => "1"]]);
 
 if ( !empty($UsersList) ) {
 ?>
-	<form class="form_settings" method="post" action="">	
+	<form class="form_settings" method="post" action="">
 		<div align="center" style="margin-top: 50px; margin-bottom: 20px;"><table style="border-spacing:1;">
 			<tr>
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Username; ?></th>

@@ -204,7 +204,7 @@ if (empty($TrackersList)) {
 <form class="form_settings" method="post" action="">
 	<div align="center">
 		<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">
-	
+
 		<table style="border-spacing:1;">
 			<tr>
 				<th style="text-align:center;"><?php echo MainUser_TrackersAdd_Table_Domain; ?></th>

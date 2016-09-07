@@ -45,12 +45,12 @@ $path = "./logs/";
 	function printQueue($queue, $path) {
 		foreach ($queue as $file) {
 			printFile($file, $path);
-		} 
+		}
 	}
 
 	function printFile($file, $path) {
 		$SudDirectory = preg_replace('/.\/logs\//', '', "$path");
-		$SudDirectory = preg_replace('/\//', '', "$SudDirectory"); 
+		$SudDirectory = preg_replace('/\//', '', "$SudDirectory");
 		echo "<li><a href=\"/?main-user/logs.html?dir=".$SudDirectory."&file=".$file."\">$file</a></li>";
 	}
 

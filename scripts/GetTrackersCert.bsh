@@ -56,7 +56,7 @@ if [ "$DoCleanCertificates" == "1" ]; then
 			if [ ! -f $TARGET ]; then
 				rm -f /etc/ssl/certs/$Cert
 			fi
-			
+
 			unset Cert TARGET
 		fi
 	done
@@ -113,12 +113,12 @@ for Tracker in $TrackersList; do
 	PingCmd="`ping -c2 -w2 $Tracker | grep 'packets transmitted'`"
 	PacketsTransmitted="`echo $PingCmd | cut -d ',' -f 1 | awk '{ print $1 }'`"
 	PacketsReceived="`echo $PingCmd | cut -d ',' -f 2 | awk '{ print $1 }'`"
-	
+
 	if [ "$PacketsReceived" == "$PacketsTransmitted" ] ; then
 		if [ ! -h /etc/ssl/certs/$Tracker.pem ] || [ ! -f $MySB_InstallDir/ssl/trackers/$Tracker.pem ]; then
 			openssl s_client -connect $Tracker:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./$Tracker.crt
 			if [ -s ./$Tracker.crt ]; then
-				openssl x509 -in ./$Tracker.crt -out ./$Tracker.der -outform DER 
+				openssl x509 -in ./$Tracker.crt -out ./$Tracker.der -outform DER
 				openssl x509 -in ./$Tracker.der -inform DER -out ./$Tracker.pem -outform PEM
 				if [ -e ./$Tracker.pem ]; then
 					if [ -f /etc/ssl/certs/$Tracker.pem ]; then
@@ -137,7 +137,7 @@ for Tracker in $TrackersList; do
 	else
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "to_check = '0', ping = 'BAD'" "tracker = '$Tracker'"
 	fi
-	
+
 	if [ $RemoveAfter -eq 1 ] && [ "$IsInstalled_PeerGuardian" == "YES" ]; then
 		sed -i '/'$Tracker'/d' /etc/pgl/allow.p2p
 		pglcmd restart > /dev/null

@@ -76,7 +76,7 @@ if (isset($_POST['submit'])) {
 			$NoChange = false;
 		}
 	}
-	
+
 	// 2 - Second, we apply new paramaters WITH (maybe) needed of create again MySB Security rules
 	if ( ($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) || ($DNScrypt_db != $DNScrypt_post) ) {
 		$result = $MySB_DB->update("system", ["ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats", "pgl_watchdog_email" => "$PGL_EmailWD", "dnscrypt" => "$DNScrypt_post"], ["id_system" => 1]);
@@ -109,7 +109,7 @@ if (isset($_POST['submit'])) {
 ?>
 
 <form class="form_settings" method="post" action="">
-<div align="center" style="margin-top: 10px; margin-bottom: 20px;">	
+<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 	<?php if ($PeerguardianIsInstalled == '1') { ?>
 	<fieldset>
 	<legend><?php echo MainUser_OptionsSystem_Title_PGL; ?></legend>
@@ -168,7 +168,7 @@ if (isset($_POST['submit'])) {
 						break;
 				} ?>
 				</select>
-			</td>		
+			</td>
 		</tr>
 	</table>
 	</fieldset>
@@ -198,7 +198,7 @@ if (isset($_POST['submit'])) {
 	</table>
 	</fieldset>
 	<?php } ?>
-	
+
 	<?php if ($DNScryptIsInstalled == '1') { ?>
 	<fieldset>
 	<legend><?php echo MainUser_OptionsSystem_Title_DNScrypt; ?></legend>
@@ -222,7 +222,7 @@ if (isset($_POST['submit'])) {
 		</tr>
 	</table>
 	</fieldset>
-	<?php } ?>	
+	<?php } ?>
 
 	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
 

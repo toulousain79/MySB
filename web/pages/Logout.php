@@ -41,16 +41,16 @@ if ( preg_match( '~MSIE|Internet Explorer~i', $_SERVER['HTTP_USER_AGENT'] ) || (
 		window.location.href('http://www.google.fr');
 	} catch (exception) {}
 </script>
- 
+
 <?php } else {  // Logout HTTP Firefox/Safari/Chrome ?>
- 
+
 <script type="text/javascript">
     var request = new XMLHttpRequest();
     request.open("get", "https://logout@<?php echo $system_datas["hostname"] . ':' . $Port_HTTPs . '/Logout.php'; ?>", false);
     request.send();
     window.location.replace('http://www.google.fr');
 </script>
- 
+
 <?php
 
 }

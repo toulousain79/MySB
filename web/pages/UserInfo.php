@@ -27,9 +27,9 @@ require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__
 function printUser($user) {
 	global $MySB_DB, $system_datas, $users_datas, $Port_HTTPs;
 
-	// Users infos	
+	// Users infos
 	$UserID = $users_datas["id_users"];
-	$UserPasswd = $users_datas["users_passwd"];	
+	$UserPasswd = $users_datas["users_passwd"];
 	// Ports
 	$Port_SSH = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "SSH"]);
 	$Port_FTP = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "VSFTPd"]);
@@ -211,7 +211,7 @@ function printUser($user) {
 		$Link = 'https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/owncloud';
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_ownCloud . '</th>';
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">' . User_UserInfo_Comment_ownCloud . '</span></a></td></tr>';
-	}	
+	}
 
 	//////////////////////
 	// Links (Main user)
@@ -267,7 +267,7 @@ function printUser($user) {
 		echo '<tr align="left"><th width="17%" scope="row"> </th>';
 		echo '<td>MySB_UpgradeMe</td>';
 		echo '<td><span class="Comments">' . User_UserInfo_Comment_MySB_UpgradeMe . '</span></td></tr>';
-		echo '<tr align="left"><th width="17%" scope="row"> </th>';		
+		echo '<tr align="left"><th width="17%" scope="row"> </th>';
 		echo '<td>MySB_UpgradeSystem</td>';
 		echo '<td><span class="Comments">' . User_UserInfo_Comment_MySB_UpgradeSystem . '</span></td></tr>';
 		echo '<tr align="left"><th width="17%" scope="row"> </th>';

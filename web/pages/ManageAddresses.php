@@ -38,7 +38,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 			for($i=1; $i<=$count; $i++) {
 				// test if IP or hostname (dynamic IP)
-				$CleanAddress = preg_replace('/\s\s+/', '', $_POST['address'][$i]); 
+				$CleanAddress = preg_replace('/\s\s+/', '', $_POST['address'][$i]);
 				if ( !ValidateIPv4($CleanAddress) ) {
 					// IP is not valid (hostname)
 					$IPv4 = gethostbyname($CleanAddress);
@@ -55,7 +55,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					}
 				} else {
 					// IP is valid
-					$CleanAddress = preg_replace('/\s\s+/', '', $_POST['address'][$i]); 
+					$CleanAddress = preg_replace('/\s\s+/', '', $_POST['address'][$i]);
 					if ( ValidateIPv4($CleanAddress) ) {
 						// IP is valid
 						$HostName = gethostbyaddr($CleanAddress);
@@ -67,7 +67,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					} else {
 						// IP is not valid (private ?)
 						$success = false;
-						$message = User_ManageAddresses_PublicIpv4Address;	
+						$message = User_ManageAddresses_PublicIpv4Address;
 					}
 				}
 			}
@@ -86,8 +86,8 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			$DateTime = date("Y-m-d H:i:s");
 
 			for($i=1; $i<=$count; $i++) {
-				$CleanIPv4 = preg_replace('/\s\s+/', '', $_POST['ipv4'][$i]); 
-				$CleanHostname = preg_replace('/\s\s+/', '', $_POST['hostname'][$i]); 
+				$CleanIPv4 = preg_replace('/\s\s+/', '', $_POST['ipv4'][$i]);
+				$CleanHostname = preg_replace('/\s\s+/', '', $_POST['hostname'][$i]);
 				$value = $MySB_DB->update("users_addresses", [ "is_active" => $_POST['is_active'][$i], "last_update" => "$DateTime" ], [ "AND" => [ "ipv4" => "$CleanIPv4", "hostname" => "$CleanHostname" ]]);
 				$result = $result+$value;
 			}
@@ -156,7 +156,7 @@ $IfExist = $MySB_DB->get("users_addresses", "id_users_addresses", [
 																		"id_users" => "$UserID",
 																		"ipv4" => "$UserAddress"
 																	]
-																]);	
+																]);
 
 if ( $IfExist > 0 ) {
 	$add_current_ip = '';

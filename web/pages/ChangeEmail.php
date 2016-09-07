@@ -54,7 +54,7 @@ if ( isset($_POST['submit']) ) {
 	global $MySB_DB, $CurrentUser;
 
 	$current_email = preg_replace('/\s\s+/', '', $_POST['current_email']);
-	$new_email = preg_replace('/\s\s+/', '', $_POST['new_email']); 
+	$new_email = preg_replace('/\s\s+/', '', $_POST['new_email']);
 	$confirm_email = preg_replace('/\s\s+/', '', $_POST['confirm_email']);
 
 	if ( ($current_email != '') && ($new_email != '') && ($confirm_email != '') ) {

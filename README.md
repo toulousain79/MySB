@@ -53,7 +53,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
  + Prioritize secure connections via SSL _(depends on trackers)_
  + Automatic creation of several 'Watch' directory _(management via the portal)_
  + Access to 'Watch' folders via FTP, ownCloud or Samba (OpenVPN)
- 
+
 ## Additional ruTorrent plugins
 
 * Mobile
@@ -86,7 +86,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * **DO NOT** upgrade anything in your box, ask in the thread **before** even thinking about it.
 * **DO NOT** try to reconfigure packages using other tutorials or yourself.
 * **TO UPGRADE** your system, please use **MySB_UpgradeSystem** command. _(This command is comparable to an APT update + APT upgrade)_
-	
+
 ## OVH servers	_(OVH, KimSufi, SoYouStart)_
 * Use the **default distribution kernel**. In your OVH manager interface, when you start the installation process, choose **Custom install**, and **Use of kernel distribution**.
 
