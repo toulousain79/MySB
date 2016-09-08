@@ -93,6 +93,7 @@ if (isset($_POST['submit'])) {
 				$NoChange = false;
 				if ($LogWatch_db != $LogWatch_post) {
 					$Command = 'LogWatch';
+					$args = "$LogWatch_post";
 				}
 			}
 		} else {
@@ -110,7 +111,7 @@ if (isset($_POST['submit'])) {
 	if ($NoChange) {
 		GenerateMessage('message_only', 'information', Global_NoChange);
 	} else {
-		GenerateMessage($Command, $type, $message);
+		GenerateMessage($Command, $type, $message, $args);
 	}
 }
 ?>

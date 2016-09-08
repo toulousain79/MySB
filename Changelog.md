@@ -42,6 +42,7 @@
 				* Tracker Add, minor changes
 				* Add view of files queue to synchro
 				* Add synchronization page (manage files in queue, manual synchronization, ...)
+				* Possibility LogWatch activation
 			- ruTorrent Plugins
 				* NFO v3.6 (AceP1983)
 				* Check SFV v3.6 (AceP1983)
