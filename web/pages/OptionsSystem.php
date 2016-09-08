@@ -91,6 +91,9 @@ if (isset($_POST['submit'])) {
 			}
 			if ( ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) || ($DNScrypt_db != $DNScrypt_post) || ($LogWatch_db != $LogWatch_post) ) {
 				$NoChange = false;
+				if ($LogWatch_db != $LogWatch_post) {
+					$Command = 'LogWatch';
+				}
 			}
 		} else {
 			$NoChange = false;
@@ -102,6 +105,7 @@ if (isset($_POST['submit'])) {
 	$pgl_watchdog_email = $PGL_EmailWD;
 	$ip_restriction_db = $IP_restriction_post;
 	$openvpn_proto_db = $OpenVPN_Proto_post;
+	$LogWatch_db = $LogWatch_post;
 
 	if ($NoChange) {
 		GenerateMessage('message_only', 'information', Global_NoChange);
