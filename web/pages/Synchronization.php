@@ -301,6 +301,8 @@ $users_crontab = $MySB_DB->select("users_crontab", "*", ["id_users" => "$UserID"
 $users_scripts = $MySB_DB->get("users_scripts", "*", ["id_users" => "$UserID"]);
 $IdentSync = $Sync_DB->get("ident", "*", ["ident_id" => 1]);
 $FilesInQueue = $Sync_DB->select("list", "*");
+$DirectPid = $Sync_DB->get("list", "list_id", ["AND" => ["pid[!]" => '',"list_category" => "direct"]]);
+$CronPid = $Sync_DB->get("list", "list_id", ["AND" => ["pid[!]" => '',"list_category" => "cron"]]);
 
 $CronFiles = array();
 if($dir = opendir("/home/$CurrentUser/scripts")) {
@@ -657,12 +659,12 @@ if ( count($FilesInQueue) > 0 ) {
 <?php
 	if ( ($IdentSync['dst_dir'] != '') && ($IdentSync['dst_srv'] != '') && ($IdentSync['dst_port']) ) {
 		if ( ($users_scripts['script'] != '') && ($CountDirect >= 1) ) {
-			if ( ($IdentSync['pid'] == '') ) {
+			if ( ($DirectPid == '') ) {
 				echo '<input style="cursor: pointer; width:' . strlen(User_Synchronization_StartDirect)*10 . 'px; margin-top: 10px; margin-bottom: 10px;" name="start" type="submit" value="'.User_Synchronization_StartDirect.'" />';
 			}
 		}
 		if ( (count($users_crontab) > 0) && ($CountCron >= 1) ) {
-			if ( ($IdentSync['pid'] == '') ) {
+			if ( ($CronPid == '') ) {
 				echo '&nbsp;&nbsp;';
 				echo '<input style="cursor: pointer; width:' . strlen(User_Synchronization_StartPlanned)*10 . 'px; margin-top: 10px; margin-bottom: 10px;" name="start" type="submit" value="'.User_Synchronization_StartPlanned.'" />';
 			}
