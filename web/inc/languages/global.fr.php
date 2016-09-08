@@ -50,5 +50,6 @@ define('Layout_Wolf', 'CMS Wolf');
 define('Layout_Medoo', 'Medoo');
 
 define('Layout_PaypalIMG', 'btn_donate_SM_fr.gif');
+define('Layout_PaypalText', 'PayPal – The safer, easier way to pay online.');
 
 //#################### LAST LINE ######################################
