@@ -28,10 +28,12 @@ require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__
 $PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
 $OpenVPNIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "OpenVPN"]);
 $DNScryptIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "DNScrypt-proxy"]);
+$LogwatchIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "LogWatch"]);
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
 // Get values from database
 $DNScrypt_db = $system_datas['dnscrypt'];
+$LogWatch_db = $system_datas['logwatch'];
 $pgl_email_stats = $system_datas['pgl_email_stats'];
 $pgl_watchdog_email = $system_datas['pgl_watchdog_email'];
 $ip_restriction_db = $system_datas['ip_restriction'];
@@ -57,6 +59,7 @@ if (isset($_POST['submit'])) {
 	$IP_restriction_post = $_POST['IP_restriction_post'];
 	$OpenVPN_Proto_post = $_POST['OpenVPN_Proto_post'];
 	$DNScrypt_post = $_POST['DNScrypt_post'];
+	$LogWatch_post = $_POST['LogWatch_post'];
 	$Command = 'Options_System';
 	$type = 'success';
 	$NoChange = true;
@@ -78,15 +81,15 @@ if (isset($_POST['submit'])) {
 	}
 
 	// 2 - Second, we apply new paramaters WITH (maybe) needed of create again MySB Security rules
-	if ( ($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) || ($DNScrypt_db != $DNScrypt_post) ) {
-		$result = $MySB_DB->update("system", ["ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats", "pgl_watchdog_email" => "$PGL_EmailWD", "dnscrypt" => "$DNScrypt_post"], ["id_system" => 1]);
+	if ( ($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) || ($DNScrypt_db != $DNScrypt_post) || ($LogWatch_db != $LogWatch_post) ) {
+		$result = $MySB_DB->update("system", ["ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats", "pgl_watchdog_email" => "$PGL_EmailWD", "dnscrypt" => "$DNScrypt_post", "logwatch" => "$LogWatch_post"], ["id_system" => 1]);
 
 		if( $result >= 0 ) {
 			if ( $ip_restriction_db != $IP_restriction_post ) {
 				$Command = 'MySB_SecurityRules';
 				$NoChange = false;
 			}
-			if ( ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) || ($DNScrypt_db != $DNScrypt_post) ) {
+			if ( ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) || ($DNScrypt_db != $DNScrypt_post) || ($LogWatch_db != $LogWatch_post) ) {
 				$NoChange = false;
 			}
 		} else {
@@ -208,6 +211,31 @@ if (isset($_POST['submit'])) {
 			<td>
 				<select name="DNScrypt_post" style="width:80px; height: 28px;">';
 				<?php switch ($DNScrypt_db) {
+					case '1':
+						echo '<option selected="selected" value="1">' . Global_Yes . '</option>';
+						echo '<option value="0">' . Global_No . '</option>';
+						break;
+					default:
+						echo '<option value="1">' . Global_Yes . '</option>';
+						echo '<option selected="selected" value="0">' . Global_No . '</option>';
+						break;
+				} ?>
+				</select>
+			</td>
+		</tr>
+	</table>
+	</fieldset>
+	<?php } ?>
+
+	<?php if ($LogwatchIsInstalled == '1') { ?>
+	<fieldset>
+	<legend><?php echo MainUser_OptionsSystem_Title_Logwatch; ?></legend>
+	<table>
+		<tr>
+			<td><?php echo MainUser_OptionsSystem_Logwatch_Activate; ?></td>
+			<td>
+				<select name="LogWatch_post" style="width:80px; height: 28px;">';
+				<?php switch ($LogWatch_db) {
 					case '1':
 						echo '<option selected="selected" value="1">' . Global_Yes . '</option>';
 						echo '<option value="0">' . Global_No . '</option>';

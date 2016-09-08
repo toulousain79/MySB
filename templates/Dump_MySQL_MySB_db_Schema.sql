@@ -163,6 +163,7 @@ CREATE TABLE IF NOT EXISTS `system` (
   `pgl_email_stats` tinyint(1) NOT NULL DEFAULT '0',
   `pgl_watchdog_email` tinyint(1) NOT NULL DEFAULT '0',
   `dnscrypt` tinyint(1) NOT NULL DEFAULT '0',
+  `logwatch` tinyint(1) NOT NULL DEFAULT '0',
   `owncloud_cron` tinyint(1) NOT NULL DEFAULT '0',
   `letsencrypt_date` date NOT NULL,
   `letsencrypt_openport` tinyint(1) NOT NULL DEFAULT '0',
