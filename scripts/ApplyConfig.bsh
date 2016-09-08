@@ -39,7 +39,7 @@ DoApplyConfig() {
 	# 1 - Purger la base des entrées en double (command + user), uniquement l'entrée avec la priorité la plus haute sera conservée
 	User=$1
 
-	echo `date +%H:%m:%S` "- Creating order of execution for $UserApplying"
+	echo `/bin/date '+%H:%M:%S'` "- Creating order of execution for $UserApplying"
 	AllCommandsUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'commands' 'commands' "user = '$User'"`"
 	for CommandUser in $AllCommandsUser; do
 		case "$CommandUser" in
@@ -83,14 +83,14 @@ DoApplyConfig() {
 
 		# Creating arguments listing
 		case "$Command" in
-			MySB_CreateUser|MySB_DeleteUser|MySB_ChangeUserPassword|OpenVPN|UserScript_StartSynchro) # 3 args
-				echo `date +%H:%m:%S` "- Getting arguments for $Command"
+			MySB_CreateUser|MySB_DeleteUser|MySB_ChangeUserPassword|OpenVPN|LogWatch|UserScript_StartSynchro) # 3 args
+				echo `/bin/date '+%H:%M:%S'` "- Getting arguments for $Command"
 				CommandArg="`Func_SQL_Command 'SELECT' 'MySB_db' 'args' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'"`"
 			;;
 		esac
 
 		# Execute commands
-		echo `date +%H:%m:%S` "Executing $Command for $UserApplying"
+		echo `/bin/date '+%H:%M:%S'` "Executing $Command for $UserApplying"
 		case "$Command" in
 			"MySB_CreateUser") # ($1 = user, $2 = sftp, $3 = sudo, $4 = email)
 				IFS='|' read -a array <<< "$CommandArg"
@@ -205,17 +205,14 @@ DoApplyConfig() {
 			;;
 
 			"LogWatch")
-				ToDo="$CommandArg"
-				WaitingSTD LogWatch
-				case "$ToDo" in
+				case "$CommandArg" in
 					0)
-						screen -dmS LogWatch if [ -f /etc/cron.daily/00logwatch ]; then rm /etc/cron.daily/00logwatch; fi &> /dev/null;
+						if [ -f /etc/cron.daily/00logwatch ]; then rm /etc/cron.daily/00logwatch; fi
 					;;
 					1)
-						screen -dmS LogWatch if [ ! -f /etc/cron.daily/00logwatch ]; then install -g root -o root -m 0755 $MySB_InstallDir/templates/logwatch/etc.cron.daily.00logwatch.tmpl /etc/cron.daily/00logwatch; fi &> /dev/null;
+						if [ ! -f /etc/cron.daily/00logwatch ]; then install -g root -o root -m 0755 $MySB_InstallDir/templates/logwatch/etc.cron.daily.00logwatch.tmpl /etc/cron.daily/00logwatch; fi
 					;;
 				esac
-				WaitingSTD LogWatch
 				echo -n "	--> " && Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands = '$Command' AND user = '$User' AND priority = '$Priority'" '-echo'
 			;;
 
@@ -267,13 +264,13 @@ case "$LocSwitch" in
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'commands' "reload = '0'" "user = '$UserApplying'"
 	;;
 	"SCREEN")
-		echo `date +%H:%m:%S` "- Waiting authorization"
+		echo `/bin/date '+%H:%M:%S'` "- Waiting authorization"
 		while [ ! -z "`ps ax | grep 'ApplyConfig.bsh' | grep 'SCREEN'  | grep -v "$UserApplying" | grep -v 'grep'`" ]; do
 			sleep 1
 		done
 
 		if [ ! -z "$UserApplying" ]; then
-			echo `date +%H:%m:%S` "- Executing commands"
+			echo `/bin/date '+%H:%M:%S'` "- Executing commands"
 			DoApplyConfig $UserApplying
 		fi
 	;;
