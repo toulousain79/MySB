@@ -1,3 +1,7 @@
+	Version v3.5
+		2016/10/20
+			- ownCloud v9.1.1
+
 	Version v3.4
 		2016/09/09
 			- Update provider monitoring for OVH (v3.3 and v3.4)
