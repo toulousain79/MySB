@@ -1,6 +1,14 @@
 	Version v3.5
 		2016/10/20
-			- ownCloud v9.1.1
+			- ownCloud v9.1.2
+			- Plowshare v2.1.6
+			- Composer v1.2.2
+			- NodeJS v0.12.17
+			- Change some repositories
+			- ruTorrent Plugin Filemanager v0.09, repository change
+			- ruTorrent Plugin Fileshare v1.0, repository change
+			- ruTorrent Plugin Fileupload v0.02, repository change
+			- ruTorrent Plugin Mediastream v0.01, repository change
 
 	Version v3.4
 		2016/09/09
