@@ -55,60 +55,9 @@ case "$1" in
 		#### To call for every upgrade - EoF
 		####################################
 
-		#### MySQL
-		source /etc/MySB/config_db
-		mysql -u root -p$MySQL_RootPassword <<-EOF
-		DELETE FROM mysql.plugin WHERE name='innodb';
-		DELETE FROM mysql.plugin WHERE name='federated';
-		DELETE FROM mysql.plugin WHERE name='blackhole';
-		DELETE FROM mysql.plugin WHERE name='archive';
-		EOF
-		rm -v /etc/mysql/conf.d/*.cnf
-		perl -pi -e "s/key_buffer/key_buffer_size/g" /etc/mysql/my.cnf
-		cp -vf $MySB_InstallDir/templates/etc.mysql.conf.d.mysb.tmpl /etc/mysql/conf.d/MySB.cnf
-		# providers_monitoring
-		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '', 'proxy.p19.ovh.net'" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '', 'proxy.ovh.net'" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '92.222.184.0/24', ''" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '92.222.185.0/24', ''" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '92.222.186.0/24', ''" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '167.114.37.0/24', ''" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '151.80.231.244/32', ''" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '151.80.231.245/32', ''" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' 'provider,ipv4,hostname' "'OVH', '151.80.231.246/32', ''" '-echo'
-		# lets_encrypt
-		Func_SQL_Command 'DELETE' 'MySB_db' 'lets_encrypt' "1" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses' "'acme-v01.api.letsencrypt.org'" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses' "'acme-staging.api.letsencrypt.org'" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses' "'ocsp.staging-x1.letsencrypt.org'" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses' "'ocsp.root-x1.letsencrypt.org'" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses' "'ocsp.int-x1.letsencrypt.org'" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses' "'ocsp.int-x2.letsencrypt.org'" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses' "'ocsp.int-x3.letsencrypt.org'" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses' "'ocsp.int-x4.letsencrypt.org'" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses' "'outbound1.letsencrypt.org'" '-echo'
-		Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'addresses' "'outbound2.letsencrypt.org'" '-echo'
-		# system
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'system' 'quota_default' "INT( 32 ) NOT NULL" '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'system' 'logwatch' "TINYINT( 1 ) NOT NULL DEFAULT '0' AFTER \`dnscrypt\`" '-echo'
-		# users
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'users' 'quota' "INT( 32 ) NOT NULL" '-echo'
-		# services
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = ''" "serv_name = 'CakeBox-Light'" '-echo'
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "serv_name = 'rTorrent v0.9.6'" "serv_name = 'rTorrent v0.9.4'" '-echo'
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '32400', ports_tcp_list = '3005 8324 32469', ports_udp_list = '1900 5353 32410 32412 32413 32414'" "serv_name = 'Plex Media Server'" '-echo'
 		# repositories
-		Func_SQL_Command 'ALTER' 'MySB_db' 'CHANGE' 'repositories' 'on_boot' "TINYINT( 1 ) NOT NULL DEFAULT '0'" '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'DROP' 'repositories' 'old_file' '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'repositories' 'upgrade' "TINYINT( 1 ) NOT NULL DEFAULT '0' AFTER \`version\`" '-echo'
 		Func_SQL_Command 'DELETE' 'MySB_db' 'repositories' "1" '-echo'
 		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/upgrade/repositories_v3.5.sql
-
-		#### Cleaning
-		if [ -d $MySB_InstallDir/web/Cakebox-light ]; then
-			mv -v $MySB_InstallDir/web/Cakebox-light $MySB_InstallDir/web/cakebox-light
-		fi
-		DeleteDirectory 1 "$MySB_InstallDir/sources/letsencrypt"
 
 		#### SSH
 		cp -v $MySB_InstallDir/templates/etc.ssh.sshd_config.tmpl /etc/ssh/sshd_config
@@ -119,185 +68,6 @@ case "$1" in
 		figlet MySB $MySB_CurrentVersion > /etc/motd
 		echo >> /etc/motd
 		cat /etc/motd
-
-		#### TMPFS
-		ManageServices stop 'nginx php5-fpm mysql'
-		# PHP
-		if [ ! -z "`df -H | grep '/var/lib/php5/sessions'`" ]; then
-			umount /var/lib/php5/sessions &> /dev/null
-		fi
-		sed -i '/PHP TMPFS/d' /etc/fstab
-		sed -i '/\/var\/lib\/php5\/sessions/d' /etc/fstab
-		echo "# TMPFS - PHP" >> /etc/fstab
-		echo "tmpfs   /mnt/tmpFS/php tmpfs defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
-		if [ -d /var/lib/php5/sessions ]; then mv -v /var/lib/php5/sessions /mnt/tmpFS/php; fi
-		if [ ! -d /mnt/tmpFS/php ]; then mkdir -p /mnt/tmpFS/php; fi
-		if [ -z "`df -H | grep '/mnt/tmpFS/php'`" ]; then
-			mount /mnt/tmpFS/php &> /dev/null
-		fi
-		perl -pi -e "s/session.save_path = \"\/var\/lib\/php5\/sessions\"/session.save_path = \"\/mnt\/tmpFS\/php\"/g" /etc/php5/fpm/php.ini
-		# MySQL
-		if [ ! -z "`df -H | grep '/media/MySQL_TempDir'`" ]; then
-			umount /media/MySQL_TempDir &> /dev/null
-		fi
-		sed -i '/MySQL/d' /etc/fstab
-		sed -i '/MySQL_TempDir/d' /etc/fstab
-		echo "# TMPFS - MySQL" >> /etc/fstab
-		echo "tmpfs   /mnt/tmpFS/mysql      tmpfs   defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
-		if [ ! -d /mnt/tmpFS/mysql ]; then
-			mkdir -pv /mnt/tmpFS/mysql
-			chown mysql:mysql /mnt/tmpFS/mysql
-		fi
-		if [ -z "`df -H | grep '/mnt/tmpFS/mysql'`" ]; then
-			mount /mnt/tmpFS/mysql &> /dev/null
-		fi
-		cp -vf $MySB_InstallDir/templates/etc.mysql.conf.d.mysb.tmpl /etc/mysql/conf.d/MySB.cnf
-		# NginX
-		ManageServices stop 'nginx'
-		if [ ! -d /etc/nginx/modules-enabled ]; then mkdir /etc/nginx/modules-enabled; fi
-		cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.nginx.conf.tmpl /etc/nginx/nginx.conf
-		perl -pi -e "s/worker_processes auto;/worker_processes $PROCESSOR;/g" /etc/nginx/nginx.conf
-		if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
-			NumLign=$(cat /etc/nginx/nginx.conf | grep 'ssl_certificate' -n -m 1 | cut -d ':' -f 1)
-			sed -i '/ssl_certificate/d' /etc/nginx/nginx.conf
-			sed -i ""$NumLign"i\	ssl_certificate_key $MySB_InstallDir/ssl/privkey.pem; # Let's Encrypt certificate" /etc/nginx/nginx.conf
-			sed -i ""$NumLign"i\	ssl_certificate $MySB_InstallDir/ssl/fullchain.pem; # Let's Encrypt certificate" /etc/nginx/nginx.conf
-		else
-			NumLign=$(cat /etc/nginx/nginx.conf | grep 'ssl_certificate' -n -m 1 | cut -d ':' -f 1)
-			sed -i '/ssl_certificate/d' /etc/nginx/nginx.conf
-			sed -i ""$NumLign"i\	ssl_certificate_key $MySB_InstallDirEscaped/ssl/mysb.key;" /etc/nginx/nginx.conf
-			sed -i ""$NumLign"i\	ssl_certificate $MySB_InstallDirEscaped/ssl/mysb.cert;" /etc/nginx/nginx.conf
-		fi
-		if [ ! -z "`df -H | grep '/usr/share/nginx/pagespeed'`" ]; then
-			umount /usr/share/nginx/pagespeed &> /dev/null
-		fi
-		sed -i '/PageSpeed/d' /etc/fstab
-		sed -i '/pagespeed/d' /etc/fstab
-		echo "# TMPFS - Nginx PageSpeed" >> /etc/fstab
-		echo "tmpfs   /mnt/tmpFS/pagespeed      tmpfs   defaults,nosuid,noatime,mode=1777,size=64M 0 0" >> /etc/fstab
-		if [ -d /usr/share/nginx/pagespeed ]; then mv -v /usr/share/nginx/pagespeed /mnt/tmpFS/pagespeed; fi
-		if [ ! -d /mnt/tmpFS/pagespeed ]; then mkdir -p /mnt/tmpFS/pagespeed; fi
-		chown -R www-data:www-data /mnt/tmpFS/pagespeed
-		if [ -z "`df -H | grep '/mnt/tmpFS/pagespeed'`" ]; then
-			mount /mnt/tmpFS/pagespeed &> /dev/null
-		fi
-		ManageServices start 'mysql nginx php5-fpm'
-
-		#### Turning off filesystem access times
-		if [ -z "`cat /etc/fstab | grep 'errors=remount-ro' | grep 'noatime,nodiratime' | grep -v '/boot'`" ]; then
-			perl -pi -e "s/errors=remount-ro/noatime,nodiratime,errors=remount-ro/g" /etc/fstab
-		fi
-
-		#### Purge Subversion package (it will install again later with backports repos)
-		PackagesManage purge "subversion"
-
-		#### Upgrade ownCloud to v9.0.4 before v9.1.0
-		ownCloudFile="owncloud_v9.0.4.zip"
-		if [ -d $ownCloudDir ] && [ -f $MySB_InstallDir/files/$ownCloudFile ]; then
-			source /etc/MySB/config_db
-			ownCloudDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ownCloud'"`"
-			ownCloudUrl="https://download.owncloud.org/community/owncloud-9.0.4.zip"
-
-			if [ -f $ownCloudDir/config/config.php ]; then
-				su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mode --on"
-				mv -v $ownCloudDir/config/config.php $MySB_InstallDir/temp/owncloud_config.php
-			fi
-			if [ -f $MySB_InstallDir/files/$ownCloudFile ]; then
-				DeleteDirectory 0 "$ownCloudDir"
-			fi
-			if [ ! -d $ownCloudDir ]; then
-				if [ ! -f $MySB_InstallDir/files/$ownCloudFile ]; then
-					wget --no-check-certificate $ownCloudUrl -O $MySB_InstallDir/files/$ownCloudFile
-				fi
-				unzip $MySB_InstallDir/files/$ownCloudFile -d $MySB_InstallDir/temp/
-				SubDirownCloud="`unzip -l $MySB_InstallDir/files/$ownCloudFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-				if [ -d $MySB_InstallDir/temp/$SubDirownCloud ]; then
-					mv -v $MySB_InstallDir/temp/$SubDirownCloud $ownCloudDir
-				fi
-			fi
-		fi
-		if [ -f $MySB_InstallDir/temp/owncloud_config.php ]; then
-			mv -v $MySB_InstallDir/temp/owncloud_config.php $ownCloudDir/config/config.php
-		fi
-		if [ ! -d $ownCloudDir/assets ]; then
-			mkdir $ownCloudDir/assets
-			chown www-data:www-data $ownCloudDir/assets
-			chmod 0750 $ownCloudDir/assets
-		fi
-		ManageDirectoriesAndFiles 'global'
-		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ upgrade -v"
-		su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ config:system:get version"
-
-		#### Sync DB
-		for seedUser in $UsersList; do
-			# VARs
-			UserSync_DB="/home/$seedUser/db/$seedUser.sq3"
-			# Copy a new empty DB
-			if [ ! -d /home/$seedUser/db ]; then
-				mkdir -v /home/$seedUser/db
-			fi
-			if [ ! -f $UserSync_DB ]; then
-				cp $Sync_DB $UserSync_DB
-			fi
-			chmod -R 0770 /home/$seedUser/db
-			chown -R $seedUser:www-data /home/$seedUser/db
-			# Get existing data
-			if [ -f /home/$seedUser/scripts/sync_mode ]; then
-				cat /home/$seedUser/scripts/sync_mode | sed '/^#/d' | while read Line; do
-					Cat="`echo $Line | cut -d "|" -f 1`"
-					Mode="`echo $Line | cut -d "|" -f 2`"
-					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' $UserSync_DB "INSERT INTO categories (name,sync_mode) VALUES ('$Cat','$Mode');"
-				done
-				rm -vf /home/$seedUser/scripts/sync_mode
-			fi
-			if [ -f /home/$seedUser/scripts/direct.list ]; then
-				while read Line; do
-					if [ "`echo $Line | grep '^#'`" ]; then
-						is_active=0
-						Line="`echo $Line | sed 's/^#//g;'`"
-					else
-						is_active=1
-					fi
-					list_category="direct"
-					get_base_path="`echo $Line | cut -d "|" -f 1`"
-					get_custom1="`echo $Line | cut -d "|" -f 2`"
-					get_name="`echo $Line | cut -d "|" -f 3`"
-					get_loaded_file="`echo $Line | cut -d "|" -f 4`"
-					CategoryDir="`echo $Line | cut -d "|" -f 5`"
-					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' $UserSync_DB "INSERT INTO list (list_category,is_active,get_base_path,get_custom1,get_name,get_loaded_file,CategoryDir) VALUES ('$list_category','$is_active','$get_base_path','$get_custom1','$get_name','$get_loaded_file','$CategoryDir');"
-				done < /home/$seedUser/scripts/direct.list
-				rm -vf /home/$seedUser/scripts/direct.list
-			fi
-			if [ -f /home/$seedUser/scripts/cron.list ]; then
-				while read Line; do
-					if [ "`echo $Line | grep '^#'`" ]; then
-						is_active=0
-						Line="`echo $Line | sed 's/^#//g;'`"
-					else
-						is_active=1
-					fi
-					list_category="cron"
-					get_base_path="`echo $Line | cut -d "|" -f 1`"
-					get_custom1="`echo $Line | cut -d "|" -f 2`"
-					get_name="`echo $Line | cut -d "|" -f 3`"
-					get_loaded_file="`echo $Line | cut -d "|" -f 4`"
-					CategoryDir="`echo $Line | cut -d "|" -f 5`"
-					/usr/bin/sqlite3 -echo -cmd '.timeout 150000' $UserSync_DB "INSERT INTO list (list_category,is_active,get_base_path,get_custom1,get_name,get_loaded_file,CategoryDir) VALUES ('$list_category','$is_active','$get_base_path','$get_custom1','$get_name','$get_loaded_file','$CategoryDir');"
-				done < /home/$seedUser/scripts/cron.list
-				rm -vf /home/$seedUser/scripts/cron.list
-			fi
-			if [ -f /home/$seedUser/scripts/synchro.sh ]; then
-				head -n 16 /home/$seedUser/scripts/synchro.sh > /home/$seedUser/scripts/synchro.sh.old
-				source /home/$seedUser/scripts/synchro.sh.old
-				/usr/bin/sqlite3 -echo -cmd '.timeout 150000' $UserSync_DB "UPDATE ident SET mode_sync = '$ModeSync', dst_dir = '$DstDir', dst_srv = '$DstSrv', dst_port = '$DstPort', dst_user = '$DstUser', dst_pass = '$DstPass', max_to_sync = '$MaxToSync', create_subdir = '$CreateSubDir' WHERE ident_id = '1';"
-				mv -v /home/$seedUser/scripts/synchro.sh /home/$seedUser/scripts/synchro.sh.old
-				cp -v $MySB_InstallDir/templates/rtorrent/synchro.sh.tmpl /home/$seedUser/scripts/synchro.sh
-				unset ModeSync DstDir DstSrv DstPort DstUser DstPass MaxToSync CreateSubDir
-			fi
-			if [ -f /home/$seedUser/scripts/synchro.sh.example ]; then
-				rm -v /home/$seedUser/scripts/synchro.sh.example
-			fi
-		done
 	;;
 	"AFTER")
 		####################################
@@ -347,38 +117,11 @@ case "$1" in
 		#### To call for every upgrade - EoF
 		####################################
 
-		#### Webmin
-		if [ "$IsInstalled_Webmin" == "YES" ]; then
-			if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
-				cat $MySB_InstallDir/ssl/privkey.pem > /etc/webmin/miniserv.pem
-				cat $MySB_InstallDir/ssl/fullchain.pem >> /etc/webmin/miniserv.pem
-			else
-				cat $MySB_InstallDir/ssl/mysb.cert > /etc/webmin/miniserv.pem
-				cat $MySB_InstallDir/ssl/mysb.key >> /etc/webmin/miniserv.pem
-			fi
-		fi
-
 		# Cleaning
-		if [ -f /etc/logrotate.d/nginx.dpkg-old ]; then rm -vf /etc/logrotate.d/nginx.dpkg-old; fi
-		if [ -f /etc/logrotate.d/samba.dpkg-dist ]; then rm -vf /etc/logrotate.d/samba.dpkg-dist; fi
-		if [ -f /etc/vim/vimrc.dpkg-dist ]; then rm -vf /etc/vim/vimrc.dpkg-dist; fi
+		if [ -f /etc/logrotate.d/nginx.dpkg-dist ]; then rm -vf /etc/logrotate.d/nginx.dpkg-dist; fi
 		if [ -f /etc/init.d/plexmediaserver.dpkg-bak ]; then rm -vf /etc/init.d/plexmediaserver.dpkg-bak; fi
-		if [ -f /etc/init.d/bind9.dpkg-dist ]; then rm -vf /etc/init.d/bind9.dpkg-dist; fi
-		if [ -f /etc/nginx/nginx.conf.dpkg-old ]; then rm -vf /etc/nginx/nginx.conf.dpkg-old; fi
-		if [ -f /etc/nginx/nginx.conf.dpkg-dist ]; then rm -vf /etc/nginx/nginx.conf.dpkg-dist; fi
-		if [ -f /etc/nginx/sites-available/default.dpkg-old ]; then rm -vf /etc/nginx/sites-available/default.dpkg-old; fi
-		if [ -f /etc/nginx/sites-available/default.dpkg-dist ]; then rm -vf /etc/nginx/sites-available/default.dpkg-dist; fi
-		if [ -f $MySB_InstallDir/files/MySQL_RootPassword ]; then rm -vf $MySB_InstallDir/files/MySQL_RootPassword; fi
-		if [ -f $MySB_InstallDir/files/MySQL_MysbPassword ]; then rm -vf $MySB_InstallDir/files/MySQL_MysbPassword; fi
 		for seedUser in $UsersList; do
 			rm -v /home/$seedUser/logs/*
-		done
-
-		#### LogRotate
-		for seedUser in $UsersList; do
-			cp -f $MySB_InstallDir/templates/logrotate/etc.logrotate.d.users.tmpl /etc/logrotate.d/rtorrent_$seedUser
-			perl -pi -e "s/<username>/$seedUser/g" /etc/logrotate.d/rtorrent_$seedUser
-			chmod 0644 /etc/logrotate.d/rtorrent_$seedUser
 		done
 
 		#### Apply quota for users

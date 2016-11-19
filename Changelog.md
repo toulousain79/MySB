@@ -9,6 +9,10 @@
 			- ruTorrent Plugin Fileshare v1.0, repository change
 			- ruTorrent Plugin Fileupload v0.02, repository change
 			- ruTorrent Plugin Mediastream v0.01, repository change
+			- DotDeb, renewing repository GPG key
+			- Portal
+				* Medoo Framework v1.1.3
+				* jQuery v1.12.4
 
 	Version v3.4
 		2016/09/09
