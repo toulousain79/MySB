@@ -1,0 +1,99 @@
+<?php
+
+use app\Lib\Users;
+use app\Lib\Server;
+
+$title_seedbox = 'MySB - '.$userName;
+$user = new Users($file_user_ini, $userName);
+$serveur = new Server($file_user_ini, $userName);
+$passwd = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW']:null;
+$passwd = htmlspecialchars($passwd, ENT_NOQUOTES);
+
+// setting transdroid
+$tableau_conf_trandroid = array(
+    'ui_swipe_labels' => false,
+    'alarm_vibrate' => false,
+    'alarm_enabled' => false,
+    'alarm_check_rss_feeds' => false,
+    'websites' => array(),
+    'ui_refresh_interval' => '60',
+    'ui_hide_refresh' => false,
+    'search_sort_by' => 'sort_seeders',
+    'alarm_play_sound' => false,
+    'ui_enable_ads' => true,
+    'ui_only_show_transferring' => false,
+    'search_num_results' => '25',
+    'servers' => array(array(
+        'port' => '<Port_HTTPs>',
+        'host' => $_SERVER['SERVER_NAME'],
+        'ssl' => true,
+        'type' => 'daemon_rtorrent',
+        'password' => $passwd,
+        'os_type' => 'type_linux',
+        'folder' => $user->scgi_folder(),
+        'username' => $userName,
+        'use_auth' => true,
+        'name' => $title_seedbox,
+        'base_ftp_url' => '',
+        'download_alarm' => true,
+        'new_torrent_alarm' => true,
+        'ssl_accept_all' => true
+        )),
+
+    'alarm_interval' => '600000',
+    'rssfeeds' => array(),
+    'ui_ask_before_remove' => true
+);
+
+$conf_json_trandroid = json_encode($tableau_conf_trandroid);
+
+// setting filezilla
+$conf_xml_filezilla = '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>'."\n".
+'<FileZilla3>'."\n".
+    '<Servers>'."\n".
+        '<Server>'."\n".
+            '<Host>'.$_SERVER['SERVER_NAME'].'</Host>'."\n".
+            '<Port>'.$user->portFtp().'</Port>'."\n".
+            '<Protocol>4</Protocol>'."\n".
+            '<Type>0</Type>'."\n".
+            '<User>'.$userName.'</User>'."\n".
+            '<Pass>'.$passwd.'</Pass>'."\n".
+            '<Logontype>1</Logontype>'."\n".
+            '<TimezoneOffset>0</TimezoneOffset>'."\n".
+            '<PasvMode>MODE_DEFAULT</PasvMode>'."\n".
+            '<MaximumMultipleConnections>0</MaximumMultipleConnections>'."\n".
+            '<EncodingType>UTF-8</EncodingType>'."\n".
+            '<BypassProxy>0</BypassProxy>'."\n".
+            '<Name>MySB - FTPs - '.$userName.'</Name>'."\n".
+            '<Comments />'."\n".
+            '<LocalDir />'."\n".
+            '<RemoteDir />'."\n".
+            '<SyncBrowsing>0</SyncBrowsing>MySB - FTPs - '.$userName.'&#x0A;'."\n".
+        '</Server>'."\n".
+        '<Server>'."\n".
+            '<Host>'.$_SERVER['SERVER_NAME'].'</Host>'."\n".
+            '<Port>'.$user->portSftp().'</Port>'."\n".
+            '<Protocol>1</Protocol>'."\n".
+            '<Type>0</Type>'."\n".
+            '<User>'.$userName.'</User>'."\n".
+            '<Pass>'.$passwd.'</Pass>'."\n".
+            '<Logontype>1</Logontype>'."\n".
+            '<TimezoneOffset>0</TimezoneOffset>'."\n".
+            '<PasvMode>MODE_DEFAULT</PasvMode>'."\n".
+            '<MaximumMultipleConnections>0</MaximumMultipleConnections>'."\n".
+            '<EncodingType>Auto</EncodingType>'."\n".
+            '<BypassProxy>0</BypassProxy>'."\n".
+            '<Name>MySB - sFTP - '.$userName.'</Name>'."\n".
+            '<Comments />'."\n".
+            '<LocalDir />'."\n".
+            '<RemoteDir />'."\n".
+            '<SyncBrowsing>0</SyncBrowsing>MySB - sFTP - '.$userName.'&#x0A;'."\n".
+        '</Server>'."\n".
+    '</Servers>'."\n".
+'</FileZilla3>';
+
+if ($_GET['file'] == 'transdroid') {
+    $serveur->FileDownload('settings.json', $conf_json_trandroid);
+} elseif ($_GET['file'] == 'filezilla') {
+    $serveur->FileDownload('filezilla.xml', $conf_xml_filezilla);
+}
