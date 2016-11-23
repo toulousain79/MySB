@@ -162,9 +162,9 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$LocSwitch" != "INIT" ]; then
 	fi
 	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configkey='shareapi_enforce_expire_date'"`"
 	if [ -z $IfExist ]; then
-		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_enforce_expire_date','yes'" '-echo'
+		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'core','shareapi_enforce_expire_date','no'" '-echo'
 	else
-		Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_appconfig' "configvalue = 'yes'" "appid='core' AND configkey='shareapi_enforce_expire_date'" '-echo'
+		Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_appconfig' "configvalue = 'no'" "appid='core' AND configkey='shareapi_enforce_expire_date'" '-echo'
 	fi
 	# oc_preferences
 	IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_preferences' "configvalue='$EnvLang' AND userid='admin'"`"
@@ -181,9 +181,6 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$LocSwitch" != "INIT" ]; then
 	fi
 	Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$TimeZone'" "configkey = 'timezone'" '-echo'
 
-	#### Logrotate
-	LogRotate 'owncloud'
-
 	if CheckCommand 0 $ownCloudDir/occ; then
 		# ownCloud is installed
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '1'" "serv_name = 'ownCloud'" '-echo'
@@ -193,6 +190,9 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$LocSwitch" != "INIT" ]; then
 			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "script = '$0'" "name = 'ownCloud'" '-echo'
 		fi
 	fi
+
+	#### Logrotate
+	LogRotate 'owncloud'
 fi
 
 #### Upgrade on boot
@@ -294,11 +294,10 @@ if [ "$IsInstalled_ownCloud" == "YES" ] && [ "$LocSwitch" == "INIT" ]; then
 			Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_appconfig' "configvalue = 'yes'" "appid='files_external' AND configkey='allow_user_mounting'" '-echo'
 		fi
 		IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_appconfig' "configkey='user_mounting_backends'"`"
-		if [ -z $IfExist ]; then
-			Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'files_external','user_mounting_backends','ftp,dav,owncloud,sftp,amazons3,dropbox,googledrive,swift,smb,\\\OC\\\Files\\\Storage\\\SFTP_Key,\\\OC\\\Files\\\Storage\\\SMB_OC'" '-echo'
-		else
-			Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_appconfig' "configvalue = 'ftp,dav,owncloud,sftp,amazons3,dropbox,googledrive,swift,smb,\\\OC\\\Files\\\Storage\\\SFTP_Key,\\\OC\\\Files\\\Storage\\\SMB_OC'" "appid='files_external' AND configkey='user_mounting_backends'" '-echo'
+		if [ ! -z $IfExist ]; then
+			Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_appconfig' "appid='files_external' AND configkey='user_mounting_backends'"
 		fi
+		Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_appconfig' 'appid,configkey,configvalue' "'files_external','user_mounting_backends','ftp,dav,owncloud,sftp,amazons3,dropbox,googledrive,swift,smb,\\\OC\\\Files\\\Storage\\\SFTP_Key,\\\OC\\\Files\\\Storage\\\SMB_OC'" '-echo'
 
 		#### External Storage (mount.json)
 		if [ ! -f $ownCloudDataDirectory/mount.json ]; then

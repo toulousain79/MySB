@@ -99,24 +99,32 @@ ARCH="`dpkg --print-architecture`"
 
 #### 5 - All Variables
 if [ ! -z "$MySB_InstallDir" ] && [ "$IsReady_MySB_DB" == "YES" ]; then
-	# ----- System info
-	MySB_CurrentVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'mysb_version' 'system' "id_system = '1'"`"
-	HostNameFQDN="`Func_SQL_Command 'SELECT' 'MySB_db' 'hostname' 'system' "id_system = '1'"`"
-	SrvIpAddress="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'system' "id_system = '1'"`"
-	PrimaryInet="`Func_SQL_Command 'SELECT' 'MySB_db' 'primary_inet' 'system' "id_system = '1'"`"
-	TimeZone="`Func_SQL_Command 'SELECT' 'MySB_db' 'timezone' 'system' "id_system = '1'"`"
-	MySB_User="`Func_SQL_Command 'SELECT' 'MySB_db' 'mysb_user' 'system' "id_system = '1'"`"
-	MySB_Password="`Func_SQL_Command 'SELECT' 'MySB_db' 'mysb_password' 'system' "id_system = '1'"`"
-	ServerProvider="`Func_SQL_Command 'SELECT' 'MySB_db' 'server_provider' 'system' "id_system = '1'"`"
-	IpRestriction="`Func_SQL_Command 'SELECT' 'MySB_db' 'ip_restriction' 'system' "id_system = '1'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	DNScrypt_Switch="`Func_SQL_Command 'SELECT' 'MySB_db' 'dnscrypt' 'system' "id_system = '1'" 2> /dev/null`"
+	### ----- System info
+	## Table System
+	SystemValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'mysb_version,hostname,ipv4,primary_inet,timezone,mysb_user,mysb_password,server_provider,ip_restriction,dnscrypt' 'system' "id_system = '1'"`"
+	MySB_CurrentVersion="`echo $SystemValues | awk '{split($0,a,"|"); print a[1]}'`"
+	HostNameFQDN="`echo $SystemValues | awk '{split($0,a,"|"); print a[2]}'`"
+	SrvIpAddress="`echo $SystemValues | awk '{split($0,a,"|"); print a[3]}'`"
+	PrimaryInet="`echo $SystemValues | awk '{split($0,a,"|"); print a[4]}'`"
+	TimeZone="`echo $SystemValues | awk '{split($0,a,"|"); print a[5]}'`"
+	MySB_User="`echo $SystemValues | awk '{split($0,a,"|"); print a[6]}'`"
+	MySB_Password="`echo $SystemValues | awk '{split($0,a,"|"); print a[7]}'`"
+	ServerProvider="`echo $SystemValues | awk '{split($0,a,"|"); print a[8]}'`"
+	IpRestriction="`echo $SystemValues | awk '{split($0,a,"|"); print a[9]}' | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	DNScrypt_Switch="`echo $SystemValues | awk '{split($0,a,"|"); print a[10]}'`"
 
-	Port_FTP="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp1' 'services' "serv_name = 'VSFTPd'"`"
-	Port_FTP_Data="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp2' 'services' "serv_name = 'VSFTPd'"`"
-	Port_FTP_Passive="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp3' 'services' "serv_name = 'VSFTPd'"`"
+	## Table Services
+	# VSFTPd
+	SystemValues_VSFTPd="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp1,port_tcp2,port_tcp3' 'services' "serv_name = 'VSFTPd'"`"
+	Port_FTP="`echo $SystemValues_VSFTPd | awk '{split($0,a,"|"); print a[1]}'`"
+	Port_FTP_Data="`echo $SystemValues_VSFTPd | awk '{split($0,a,"|"); print a[2]}'`"
+	Port_FTP_Passive="`echo $SystemValues_VSFTPd | awk '{split($0,a,"|"); print a[3]}'`"
+	# NginX
+	SystemValues_NginX="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp1,port_tcp2' 'services' "serv_name = 'NginX'"`"
+	Port_HTTPS="`echo $SystemValues_NginX | awk '{split($0,a,"|"); print a[1]}'`"
+	Port_HTTP="`echo $SystemValues_NginX | awk '{split($0,a,"|"); print a[2]}'`"
+	# SSH
 	Port_SSH="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp1' 'services' "serv_name = 'SSH'"`"
-	Port_HTTPS="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp1' 'services' "serv_name = 'NginX'"`"
-	Port_HTTP="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp2' 'services' "serv_name = 'NginX'"`"
 
 	if [ -z "$HostNameFQDN" ]; then
 		HostNameFQDN="`hostname -f`"
@@ -158,15 +166,17 @@ if [ ! -z "$MySB_InstallDir" ] && [ "$IsReady_MySB_DB" == "YES" ]; then
 	else
 		TimeZone="Europe/Paris"
 	fi
-	# ----- System info
+	### ----- System info
 
-	# ----- Main user info
-	MainUserEmail="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "admin = '1'"`"
-	MainUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_ident' 'users' "admin = '1'"`"
-	MainUserPassword="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_passwd' 'users' "admin = '1'"`"
-	MainUserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "admin = '1'"`"
+	### ----- Main user info
+	## Table users
+	UsersValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email,users_ident,users_passwd,id_users,language' 'users' "admin = '1'"`"
+	MainUserEmail="`echo $UsersValues | awk '{split($0,a,"|"); print a[1]}'`"
+	MainUser="`echo $UsersValues | awk '{split($0,a,"|"); print a[2]}'`"
+	MainUserPassword="`echo $UsersValues | awk '{split($0,a,"|"); print a[3]}'`"
+	MainUserId="`echo $UsersValues | awk '{split($0,a,"|"); print a[4]}'`"
 	if [ -z "$EnvLang" ]; then
-		EnvLang="`Func_SQL_Command 'SELECT' 'MySB_db' 'language' 'users' "admin = '1'"`"
+		EnvLang="`echo $UsersValues | awk '{split($0,a,"|"); print a[5]}'`"
 	fi
 
 	unset MainUserIPs Temp
@@ -179,9 +189,9 @@ if [ ! -z "$MySB_InstallDir" ] && [ "$IsReady_MySB_DB" == "YES" ]; then
 		MainUserIPs="0/0"
 	fi
 	MainUserIPs=$(echo "$MainUserIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
-	# ----- Main user info
+	### ----- Main user info
 
-	# ----- Normal users info
+	### ----- Normal users info
 	unset SeedboxUsersIPs Temp
 	Temp="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'users_addresses' "is_active = '1' AND id_users != '$MainUserId'" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 	if [ "$IpRestriction" == "YES" ]; then
@@ -192,38 +202,106 @@ if [ ! -z "$MySB_InstallDir" ] && [ "$IsReady_MySB_DB" == "YES" ]; then
 		SeedboxUsersIPs="0/0"
 	fi
 	SeedboxUsersIPs=$(echo "$SeedboxUsersIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
-	# ----- Normal users info
+	### ----- Normal users info
 
-	# ----- Services info
-	ToInstall_Manager="`Func_SQL_Command 'SELECT' 'MySB_db' 'to_install' 'services' "serv_name = 'Seedbox-Manager'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	ToInstall_Cakebox="`Func_SQL_Command 'SELECT' 'MySB_db' 'to_install' 'services' "serv_name = 'CakeBox-Light'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	ToInstall_PlexMedia="`Func_SQL_Command 'SELECT' 'MySB_db' 'to_install' 'services' "serv_name = 'Plex Media Server'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	ToInstall_Webmin="`Func_SQL_Command 'SELECT' 'MySB_db' 'to_install' 'services' "serv_name = 'Webmin'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	ToInstall_OpenVPN="`Func_SQL_Command 'SELECT' 'MySB_db' 'to_install' 'services' "serv_name = 'OpenVPN'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	ToInstall_Samba="`Func_SQL_Command 'SELECT' 'MySB_db' 'to_install' 'services' "serv_name = 'Samba'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	ToInstall_NFS="`Func_SQL_Command 'SELECT' 'MySB_db' 'to_install' 'services' "serv_name = 'NFS'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	ToInstall_LogWatch="`Func_SQL_Command 'SELECT' 'MySB_db' 'to_install' 'services' "serv_name = 'LogWatch'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	ToInstall_Fail2Ban="`Func_SQL_Command 'SELECT' 'MySB_db' 'to_install' 'services' "serv_name = 'Fail2Ban'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	ToInstall_PeerGuardian="`Func_SQL_Command 'SELECT' 'MySB_db' 'to_install' 'services' "serv_name = 'PeerGuardian'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	ToInstall_Blocklist="`Func_SQL_Command 'SELECT' 'MySB_db' 'to_install' 'services' "serv_name = 'rTorrent Block List'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	ToInstall_DNScrypt="`Func_SQL_Command 'SELECT' 'MySB_db' 'to_install' 'services' "serv_name = 'DNScrypt-proxy'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	ToInstall_ownCloud="`Func_SQL_Command 'SELECT' 'MySB_db' 'to_install' 'services' "serv_name = 'ownCloud'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	ToInstall_LetsEncrypt="`Func_SQL_Command 'SELECT' 'MySB_db' 'to_install' 'services' "serv_name = 'Lets Encrypt'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	### ----- Services info
+	Func_SQL_Command 'SELECT' 'MySB_db' 'id_services,to_install' 'services' "1" | while read ROW; do
+		Id_Services="`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`"
+		To_Install="`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`"
+		case "$Id_Services" in
+			1)
+				ToInstall_Manager="`echo $To_Install | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			2)
+				ToInstall_Cakebox="`echo $To_Install | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			3)
+				ToInstall_PlexMedia="`echo $To_Install | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			4)
+				ToInstall_Webmin="`echo $To_Install | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			5)
+				ToInstall_OpenVPN="`echo $To_Install | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			6)
+				ToInstall_LogWatch="`echo $To_Install | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			7)
+				ToInstall_Fail2Ban="`echo $To_Install | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			8)
+				ToInstall_PeerGuardian="`echo $To_Install | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			9)
+				ToInstall_Blocklist="`echo $To_Install | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			10)
+				ToInstall_DNScrypt="`echo $To_Install | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			18)
+				ToInstall_Samba="`echo $To_Install | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			19)
+				ToInstall_NFS="`echo $To_Install | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			24)
+				ToInstall_ownCloud="`echo $To_Install | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			25)
+				ToInstall_LetsEncrypt="`echo $To_Install | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+		esac
+	done
 
-	IsInstalled_Manager="`Func_SQL_Command 'SELECT' 'MySB_db' 'is_installed' 'services' "serv_name = 'Seedbox-Manager'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	IsInstalled_Cakebox="`Func_SQL_Command 'SELECT' 'MySB_db' 'is_installed' 'services' "serv_name = 'CakeBox-Light'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	IsInstalled_PlexMedia="`Func_SQL_Command 'SELECT' 'MySB_db' 'is_installed' 'services' "serv_name = 'Plex Media Server'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	IsInstalled_Webmin="`Func_SQL_Command 'SELECT' 'MySB_db' 'is_installed' 'services' "serv_name = 'Webmin'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	IsInstalled_OpenVPN="`Func_SQL_Command 'SELECT' 'MySB_db' 'is_installed' 'services' "serv_name = 'OpenVPN'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	IsInstalled_Samba="`Func_SQL_Command 'SELECT' 'MySB_db' 'is_installed' 'services' "serv_name = 'Samba'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	IsInstalled_NFS="`Func_SQL_Command 'SELECT' 'MySB_db' 'is_installed' 'services' "serv_name = 'NFS'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	IsInstalled_LogWatch="`Func_SQL_Command 'SELECT' 'MySB_db' 'is_installed' 'services' "serv_name = 'LogWatch'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	IsInstalled_Fail2Ban="`Func_SQL_Command 'SELECT' 'MySB_db' 'is_installed' 'services' "serv_name = 'Fail2Ban'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	IsInstalled_PeerGuardian="`Func_SQL_Command 'SELECT' 'MySB_db' 'is_installed' 'services' "serv_name = 'PeerGuardian'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	IsInstalled_Blocklist="`Func_SQL_Command 'SELECT' 'MySB_db' 'is_installed' 'services' "serv_name = 'rTorrent Block List'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	IsInstalled_DNScrypt="`Func_SQL_Command 'SELECT' 'MySB_db' 'is_installed' 'services' "serv_name = 'DNScrypt-proxy'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	IsInstalled_ownCloud="`Func_SQL_Command 'SELECT' 'MySB_db' 'is_installed' 'services' "serv_name = 'ownCloud'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	IsInstalled_LetsEncrypt="`Func_SQL_Command 'SELECT' 'MySB_db' 'is_installed' 'services' "serv_name = 'Lets Encrypt'" | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	Func_SQL_Command 'SELECT' 'MySB_db' 'id_services,is_installed' 'services' "1" | while read ROW; do
+		Id_Services="`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`"
+		Is_Installed="`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`"
+		case "$Id_Services" in
+			1)
+				IsInstalled_Manager="`echo $Is_Installed | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			2)
+				IsInstalled_Cakebox="`echo $Is_Installed | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			3)
+				IsInstalled_PlexMedia="`echo $Is_Installed | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			4)
+				IsInstalled_Webmin="`echo $Is_Installed | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			5)
+				IsInstalled_OpenVPN="`echo $Is_Installed | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			6)
+				IsInstalled_LogWatch="`echo $Is_Installed | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			7)
+				IsInstalled_Fail2Ban="`echo $Is_Installed | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			8)
+				IsInstalled_PeerGuardian="`echo $Is_Installed | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			9)
+				IsInstalled_Blocklist="`echo $Is_Installed | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			10)
+				IsInstalled_DNScrypt="`echo $Is_Installed | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			18)
+				IsInstalled_Samba="`echo $Is_Installed | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			19)
+				IsInstalled_NFS="`echo $Is_Installed | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			24)
+				IsInstalled_ownCloud="`echo $Is_Installed | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			25)
+				IsInstalled_LetsEncrypt="`echo $Is_Installed | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+		esac
+	done
 
 	case "$ToInstall_PeerGuardian" in
 		"YES")
@@ -259,44 +337,48 @@ if [ ! -z "$MySB_InstallDir" ] && [ "$IsReady_MySB_DB" == "YES" ]; then
 	Ports_Webmin="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp1' 'services' "serv_name = 'Webmin'"`"
 
 	# OpenVPN
-	Port_OpenVPN_WithGW="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_udp1' 'services' "serv_name = 'OpenVPN'"`"
-	Port_OpenVPN_WithoutGW="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_udp2' 'services' "serv_name = 'OpenVPN'"`"
-	Port_OpenVPN_TAP_WithoutGW="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_udp3' 'services' "serv_name = 'OpenVPN'"`"
+	ServicesValues_OpenVPN="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_udp1,port_udp2,port_udp3' 'services' "serv_name = 'OpenVPN'"`"
+	Port_OpenVPN_WithGW="`echo $ServicesValues_OpenVPN | awk '{split($0,a,"|"); print a[1]}'`"
+	Port_OpenVPN_WithoutGW="`echo $ServicesValues_OpenVPN | awk '{split($0,a,"|"); print a[2]}'`"
+	Port_OpenVPN_TAP_WithoutGW="`echo $ServicesValues_OpenVPN | awk '{split($0,a,"|"); print a[3]}'`"
 	if [ ! -z "$Port_OpenVPN_WithGW" ]; then	# UDP
 		OpenVPN_Proto="udp"
 	else										# TCP
+		ServicesValues_OpenVPN="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp1,port_tcp2,port_tcp3' 'services' "serv_name = 'OpenVPN'"`"
+		Port_OpenVPN_WithGW="`echo $ServicesValues_OpenVPN | awk '{split($0,a,"|"); print a[1]}'`"
+		Port_OpenVPN_WithoutGW="`echo $ServicesValues_OpenVPN | awk '{split($0,a,"|"); print a[2]}'`"
+		Port_OpenVPN_TAP_WithoutGW="`echo $ServicesValues_OpenVPN | awk '{split($0,a,"|"); print a[3]}'`"
 		OpenVPN_Proto="tcp"
-		Port_OpenVPN_WithGW="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp1' 'services' "serv_name = 'OpenVPN'"`"
-		Port_OpenVPN_WithoutGW="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp2' 'services' "serv_name = 'OpenVPN'"`"
-		Port_OpenVPN_TAP_WithoutGW="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp3' 'services' "serv_name = 'OpenVPN'"`"
 	fi
-	# ----- Services info
+	### ----- Services info
 
-	# ----- White IP addresses
+	### ----- White IP addresses
 	Fail2banWhiteList="`Func_SQL_Command 'SELECT' 'MySB_db' 'fail2ban_whitelist' 'vars' '1'`"
 	VpnIPs="`Func_SQL_Command 'SELECT' 'MySB_db' 'vpn_ip' 'vars' '1' | sed 's/,/ /g;'`"
-	# ----- White IP addresses
+	### ----- White IP addresses
 
-	# ----- Networks ports (Services ports)
-	Ports_PlexMedia="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp1' 'services' "serv_name = 'Plex Media Server'" | sed 's/,/ /g;'`"
-	Ports_TCP_PlexMedia="`Func_SQL_Command 'SELECT' 'MySB_db' 'ports_tcp_list' 'services' "serv_name = 'Plex Media Server'" | sed 's/,/ /g;'`"
-	Ports_UDP_PlexMedia="`Func_SQL_Command 'SELECT' 'MySB_db' 'ports_udp_list' 'services' "serv_name = 'Plex Media Server'" | sed 's/,/ /g;'`"
-	# ----- Networks ports (Services ports)
+	### ----- Networks ports (Services ports)
+	ServicesValues_Plex="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp1,ports_tcp_list,ports_udp_list' 'services' "serv_name = 'Plex Media Server'"`"
+	Ports_PlexMedia="`echo $ServicesValues_Plex | awk '{split($0,a,"|"); print a[1]}' | sed 's/,/ /g;'`"
+	Ports_TCP_PlexMedia="`echo $ServicesValues_Plex | awk '{split($0,a,"|"); print a[2]}' | sed 's/,/ /g;'`"
+	Ports_UDP_PlexMedia="`echo $ServicesValues_Plex | awk '{split($0,a,"|"); print a[3]}' | sed 's/,/ /g;'`"
+	### ----- Networks ports (Services ports)
 
-	# ----- Renting infos
-	RentingModel="`Func_SQL_Command 'SELECT' 'MySB_db' 'model' 'renting' "id_renting = '1'"`"
-	RentingGlobalCost="`Func_SQL_Command 'SELECT' 'MySB_db' 'global_cost' 'renting' "id_renting = '1'"`"
-	RentingTVA="`Func_SQL_Command 'SELECT' 'MySB_db' 'tva' 'renting' "id_renting = '1'"`"
-	# ----- Renting infos
+	### ----- Renting infos
+	ServicesValues_Plex="`Func_SQL_Command 'SELECT' 'MySB_db' 'model,global_cost,tva' 'renting' "id_renting = '1'"`"
+	RentingModel="`echo $ServicesValues_Plex | awk '{split($0,a,"|"); print a[1]}'`"
+	RentingGlobalCost="`echo $ServicesValues_Plex | awk '{split($0,a,"|"); print a[2]}'`"
+	RentingTVA="`echo $ServicesValues_Plex | awk '{split($0,a,"|"); print a[3]}'`"
+	### ----- Renting infos
 
-	# ----- Repositories infos
+	### ----- Repositories infos
 	RutorrentDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ruTorrent'"`"
 	RutorrentPluginsDir=$RutorrentDir/plugins
 	LoadAvgDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'LoadAvg'"`"
 	ManagerDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'Seedbox-Manager'"`"
 	CakeboxDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'Cakebox-Light'"`"
 	ownCloudDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ownCloud'"`"
-	# ----- Repositories infos
+	### ----- Repositories infos
 fi
 
 #### 6 - Version for upgrade
