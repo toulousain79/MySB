@@ -130,6 +130,7 @@ CREATE TABLE IF NOT EXISTS `services` (
   `ports_udp_list` varchar(32) NOT NULL,
   `to_install` tinyint(1) NOT NULL DEFAULT '0',
   `is_installed` tinyint(1) NOT NULL DEFAULT '0',
+  `used` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_services`),
   UNIQUE KEY `serv_name` (`serv_name`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;

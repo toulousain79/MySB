@@ -112,6 +112,7 @@ if [ ! -z "$MySB_InstallDir" ] && [ "$IsReady_MySB_DB" == "YES" ]; then
 	ServerProvider="`echo $SystemValues | awk '{split($0,a,"|"); print a[8]}'`"
 	IpRestriction="`echo $SystemValues | awk '{split($0,a,"|"); print a[9]}' | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
 	DNScrypt_Switch="`echo $SystemValues | awk '{split($0,a,"|"); print a[10]}'`"
+	unset SystemValues
 
 	## Table Services
 	# VSFTPd
@@ -119,10 +120,12 @@ if [ ! -z "$MySB_InstallDir" ] && [ "$IsReady_MySB_DB" == "YES" ]; then
 	Port_FTP="`echo $SystemValues_VSFTPd | awk '{split($0,a,"|"); print a[1]}'`"
 	Port_FTP_Data="`echo $SystemValues_VSFTPd | awk '{split($0,a,"|"); print a[2]}'`"
 	Port_FTP_Passive="`echo $SystemValues_VSFTPd | awk '{split($0,a,"|"); print a[3]}'`"
+	unset SystemValues_VSFTPd
 	# NginX
 	SystemValues_NginX="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp1,port_tcp2' 'services' "serv_name = 'NginX'"`"
 	Port_HTTPS="`echo $SystemValues_NginX | awk '{split($0,a,"|"); print a[1]}'`"
 	Port_HTTP="`echo $SystemValues_NginX | awk '{split($0,a,"|"); print a[2]}'`"
+	unset SystemValues_NginX
 	# SSH
 	Port_SSH="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp1' 'services' "serv_name = 'SSH'"`"
 
@@ -178,6 +181,7 @@ if [ ! -z "$MySB_InstallDir" ] && [ "$IsReady_MySB_DB" == "YES" ]; then
 	if [ -z "$EnvLang" ]; then
 		EnvLang="`echo $UsersValues | awk '{split($0,a,"|"); print a[5]}'`"
 	fi
+	unset UsersValues
 
 	unset MainUserIPs Temp
 	Temp="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'users_addresses' "is_active = '1' AND id_users = '$MainUserId'" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
@@ -205,9 +209,10 @@ if [ ! -z "$MySB_InstallDir" ] && [ "$IsReady_MySB_DB" == "YES" ]; then
 	### ----- Normal users info
 
 	### ----- Services info
-	Func_SQL_Command 'SELECT' 'MySB_db' 'id_services,to_install' 'services' "1" | while read ROW; do
-		Id_Services="`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`"
-		To_Install="`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`"
+	ROW="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_services,to_install' 'services' "used = '1'"`"
+	for MyRow in $ROW; do
+		Id_Services="`echo $MyRow | awk '{split($0,a,"|"); print a[1]}'`"
+		To_Install="`echo $MyRow | awk '{split($0,a,"|"); print a[2]}'`"
 		case "$Id_Services" in
 			1)
 				ToInstall_Manager="`echo $To_Install | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
@@ -254,9 +259,10 @@ if [ ! -z "$MySB_InstallDir" ] && [ "$IsReady_MySB_DB" == "YES" ]; then
 		esac
 	done
 
-	Func_SQL_Command 'SELECT' 'MySB_db' 'id_services,is_installed' 'services' "1" | while read ROW; do
-		Id_Services="`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`"
-		Is_Installed="`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`"
+	ROW="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_services,is_installed' 'services' "used = '1'"`"
+	for MyRow in $ROW; do
+		Id_Services="`echo $MyRow | awk '{split($0,a,"|"); print a[1]}'`"
+		Is_Installed="`echo $MyRow | awk '{split($0,a,"|"); print a[2]}'`"
 		case "$Id_Services" in
 			1)
 				IsInstalled_Manager="`echo $Is_Installed | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
