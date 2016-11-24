@@ -114,31 +114,35 @@ Func_SQL_Command() {
 							MyVar="UPDATE $Table SET $VarSet"
 						;;
 						*)
-							a="`echo "$VarWhere" | grep -o "' AND " | wc -l`"
-							b=$a; c=0
-							(( b++ ))
-							for (( i=1; i<=$b; i++ )); do
-								Var1="`echo $VarWhere | awk -F "' AND " "{print $"$i"}" | sed 's/^ //g;'`"
-								if [ ! -z "$Var1" ]; then
-									Key="`echo $Var1 | cut -d '=' -f 1 | sed 's/ //g;'`"
-									Value="`echo $Var1 | cut -d '=' -f 2 | sed 's/^ //g;'`"
-									Var1='`'"`echo $Key`"'`='"$Value"
-									if [ $c -lt $a ]; then
-										if [ -z "$VarWhereTemp" ]; then
-											VarWhereTemp="$Var1"
+							if [ -z "`echo $VarWhere | grep 'IN'`" ]; then
+								a="`echo "$VarWhere" | grep -o "' AND " | wc -l`"
+								b=$a; c=0
+								(( b++ ))
+								for (( i=1; i<=$b; i++ )); do
+									Var1="`echo $VarWhere | awk -F "' AND " "{print $"$i"}" | sed 's/^ //g;'`"
+									if [ ! -z "$Var1" ]; then
+										Key="`echo $Var1 | cut -d '=' -f 1 | sed 's/ //g;'`"
+										Value="`echo $Var1 | cut -d '=' -f 2 | sed 's/^ //g;'`"
+										Var1='`'"`echo $Key`"'`='"$Value"
+										if [ $c -lt $a ]; then
+											if [ -z "$VarWhereTemp" ]; then
+												VarWhereTemp="$Var1"
+											else
+												VarWhereTemp="$VarWhereTemp' AND $Var1"
+											fi
 										else
-											VarWhereTemp="$VarWhereTemp' AND $Var1"
+											if [ -z "$VarWhereTemp" ]; then
+												VarWhereTemp="$Var1"
+											else
+												VarWhereTemp="$VarWhereTemp' AND $Var1"
+											fi
 										fi
-									else
-										if [ -z "$VarWhereTemp" ]; then
-											VarWhereTemp="$Var1"
-										else
-											VarWhereTemp="$VarWhereTemp' AND $Var1"
-										fi
+										(( c++ ))
 									fi
-									(( c++ ))
-								fi
-							done
+								done
+							else
+								VarWhereTemp="$VarWhere"
+							fi
 							MyVar="UPDATE $Table SET $VarSet WHERE $VarWhereTemp"
 							unset VarWhereTemp
 						;;
