@@ -4,6 +4,7 @@
 			- Plowshare v2.1.6
 			- Composer v1.2.2
 			- NodeJS v0.12.17
+			- Let's Encrypt v0.9.2
 			- Change some repositories
 			- ruTorrent Plugin Filemanager v0.09, repository change
 			- ruTorrent Plugin Fileshare v1.0, repository change
