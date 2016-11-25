@@ -207,11 +207,12 @@ PeerGuardianIptablesInsert() {
 			echo "#!/bin/sh" > /etc/pgl/monitoring.insert.sh
 			echo >> /etc/pgl/monitoring.insert.sh
 			echo "# $ServerProvider monitoring complementary rules" >> /etc/pgl/monitoring.insert.sh
+			cat /etc/pgl/monitoring.insert.sh > /etc/pgl/monitoring.remove.sh
 			case "$ServerProvider" in
 				"OVH")
 					OvhIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'OVH'\"`"
 					for IPv4 in $OvhIPv4; do
-						echo "iptables -A pgl_in -p udp -s $IPv4 --destination-port 6100:6200 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
+						echo "iptables -I pgl_in -p udp -s $IPv4 --destination-port 6100:6200 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
 						echo "iptables -I pgl_in -p icmp -s $IPv4 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
 					done
 				;;
@@ -228,10 +229,55 @@ PeerGuardianIptablesInsert() {
 					done
 				;;
 			esac
+			echo >> /etc/pgl/monitoring.insert.sh
+			echo "#### Prepare REMOVE script named '/etc/pgl/monitoring.remove.sh'" >> /etc/pgl/monitoring.insert.sh
+			cp /etc/pgl/monitoring.insert.sh /etc/pgl/monitoring.remove.sh
+			sed -i '/monitoring.remove.sh/d' /etc/pgl/monitoring.remove.sh
+			perl -pi -e "s/-I/-D/g" /etc/pgl/monitoring.remove.sh
 		if [ $1 -eq 1 ]; then StatusLSB; fi
 	else
 		if [ -f /etc/pgl/monitoring.insert.sh ]; then rm -f /etc/pgl/monitoring.insert.sh; fi
+		if [ -f /etc/pgl/monitoring.remove.sh ]; then rm -f /etc/pgl/monitoring.remove.sh; fi
 	fi
+
+	# DNScrypt-proxy
+	if [ "$IsInstalled_DNScrypt" == "YES" ] && CheckCommand 0 dnscrypt-proxy; then
+		if [ $1 -eq 1 ]; then log_daemon_msg "PeerGuardian - Adding of iptables complementary rules for DNScrypt-proxy"; fi
+		echo "#!/bin/sh" > /etc/pgl/dnscrypt.insert.sh
+		echo >> /etc/pgl/dnscrypt.insert.sh
+		echo "# DNScrypt-proxy complementary rules" >> /etc/pgl/dnscrypt.insert.sh
+		ResolverName="`Func_SQL_Command 'SELECT' 'MySB_db' 'name' 'dnscrypt_resolvers' \"is_wished = '1'\"`"
+		for Resolver in $ResolverName; do
+			ResolverAddress="`Func_SQL_Command 'SELECT' 'MySB_db' 'resolver_address' 'dnscrypt_resolvers' "name = '$Resolver'"`"
+			ResolverAddress="`echo $ResolverAddress | awk -F: '{ print $1 }'`"
+			ResolverPort="`echo $ResolverAddress | awk -F: '{ print $2 }'`"
+			if [ -z "$ResolverPort" ]; then ResolverPort="443"; fi
+
+			echo "iptables -I pgl_in -p tcp -s $ResolverAddress/32 -j RETURN -m comment --comment \"DNScrypt-proxy: $Resolver\"" >> /etc/pgl/dnscrypt.insert.sh
+			echo "iptables -I pgl_in -p udp -s $ResolverAddress/32 -j RETURN -m comment --comment \"DNScrypt-proxy: $Resolver\"" >> /etc/pgl/dnscrypt.insert.sh
+		done
+		echo >> /etc/pgl/dnscrypt.insert.sh
+		echo "#### Prepare REMOVE script named '/etc/pgl/dnscrypt.remove.sh'" >> /etc/pgl/dnscrypt.insert.sh
+		cp /etc/pgl/dnscrypt.insert.sh /etc/pgl/dnscrypt.remove.sh
+		sed -i '/dnscrypt.remove.sh/d' /etc/pgl/dnscrypt.remove.sh
+		perl -pi -e "s/-I/-D/g" /etc/pgl/dnscrypt.remove.sh
+		if [ $1 -eq 1 ]; then StatusLSB; fi
+	else
+		if [ -f /etc/pgl/dnscrypt.insert.sh ]; then rm -f /etc/pgl/dnscrypt.insert.sh; fi
+		if [ -f /etc/pgl/dnscrypt.remove.sh ]; then rm -f /etc/pgl/dnscrypt.remove.sh; fi
+	fi
+
+	# Block IPv6 completely
+	echo >> /etc/pgl/ipv6.insert.sh
+	echo "# Block IPv6 completely" >> /etc/pgl/ipv6.insert.sh
+	echo "ip6tables -I OUTPUT -j REJECT" >> /etc/pgl/ipv6.insert.sh
+	echo "ip6tables -I INPUT -j DROP" >> /etc/pgl/ipv6.insert.sh
+	echo "ip6tables -I FORWARD -j DROP" >> /etc/pgl/ipv6.insert.sh
+	echo >> /etc/pgl/ipv6.insert.sh
+	echo "#### Prepare REMOVE script named '/etc/pgl/ipv6.remove.sh'" >> /etc/pgl/ipv6.insert.sh
+	cp /etc/pgl/ipv6.insert.sh /etc/pgl/ipv6.remove.sh
+	sed -i '/ipv6.remove.sh/d' /etc/pgl/ipv6.remove.sh
+	perl -pi -e "s/-A/-D/g" /etc/pgl/ipv6.remove.sh
 }
 
 #### PeerGuardian Create pglcmd.conf
