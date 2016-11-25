@@ -40,8 +40,7 @@ source $MySB_InstallDir/inc/vars
 NAME="dnscrypt-proxy"
 DESC="OpenDNS DNScrypt-proxy"
 DIR_PID="/var/run/dnscrypt-proxy"
-DIR_LOG="/var/log/dnscrypt-proxy"
-LOG_FILE="$DIR_LOG/dnscrypt-proxy.log"
+LOG_FILE="/var/log/dnscrypt-proxy.log"
 DAEMON_USER="dnscrypt"
 DAEMON="/usr/local/sbin/dnscrypt-proxy"
 CSV_FILE="/usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv"
@@ -115,17 +114,8 @@ fi
 
 #### Check directories
 if [ ! -d $DIR_PID ]; then mkdir $DIR_PID && chown $DAEMON_USER:$DAEMON_USER $DIR_PID; fi
-if [ ! -d $DIR_LOG ]; then mkdir $DIR_LOG && chown $DAEMON_USER:$DAEMON_USER $DIR_LOG; fi
 
 #### Functions - Begin
-# Create daemon option
-DeamonOption() {
-	Name="$1"
-	LocalAddress="$2"
-
-	DEAMON_OPT="--user=$DAEMON_USER --max-active-requests=250 --resolver-name=$Name --logfile=$DIR_LOG/$Resolver.log --local-address=$LocalAddress --ephemeral-keys"
-}
-
 # Function that check BIND status
 bind_check() {
 	service bind9 stop &> /dev/null
@@ -164,7 +154,7 @@ delete_pid_file() {
 
     if [ -e $FnPid ]; then
         rm -f $FnPid
-		echo "--> PID: $FnPid file deleted : "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
+		echo "[INFO] Pid file \"$FnPid\" deleted" >> $LOG_FILE
     fi
 }
 
@@ -176,17 +166,16 @@ do_start() {
 	# Update DB
 	Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_activated = '0', is_wished = '0', forwarder = ''" 'ALL'
 
-	i=0; Return=0; Running=0; NotRunning=0
+	Count=0; Return=0; Running=0; NotRunning=0;
 	for Resolver in $ResolversList; do
-		(( i++ ))
+		(( Count++ ))
+
+		echo "--> Starting of resolver named \"$Resolver\" - "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
 
 		# Delete ghost screen pid file
 		if [ -e $DIR_PID/$Resolver.pid ]; then
 			pidofproc -p $DIR_PID/$Resolver.pid &> /dev/null || rm -f $DIR_PID/$Resolver.pid
 		fi
-
-		# Get options
-		DeamonOption "$Resolver" "127.0.0.$i:52"
 
 		# Return
 		#   0 if daemon has been started
@@ -195,37 +184,38 @@ do_start() {
 		start-stop-daemon --start --quiet --background --make-pidfile --test \
 			--pidfile $DIR_PID/$Resolver.pid\
 			--exec $DAEMON\
-			-- $DEAMON_OPT\
-			 >> $LOG_FILE
+			-- -R $Resolver -u $DAEMON_USER -t 3600 -l $LOG_FILE -m 3 -a 127.0.0.$Count:52 -E -N -L /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv\
+			>> $LOG_FILE
 
 		if [ $? -gt 0 ]; then
-			echo "--> $Resolver already running: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished = '1', is_activated = '1'" "name = '$Resolver'"
+			echo "[NOTICE] Resolver is already running." >> $LOG_FILE
 			(( Running++ ))
-		fi
-
-		start-stop-daemon --start --quiet --background --make-pidfile \
-			--pidfile $DIR_PID/$Resolver.pid\
-			--exec $DAEMON\
-			-- $DEAMON_OPT\
-			 >> $LOG_FILE
-
-		if [ $? -gt 0 ]; then
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished = '1', is_activated = '0', forwarder = ''" "name = '$Resolver'"
-			delete_pid_file $DIR_PID/$Resolver.pid $Resolver
-			echo "--> NOT STARTED: $Resolver : "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
-			(( NotRunning++ ))
 		else
-			# Update DB
-			ResolverPid="`cat $DIR_PID/$Resolver.pid`"
-			if [ ! -z "$ResolverPid" ] && [ ! -z "`ps -p $ResolverPid | grep -v 'PID TTY'`" ]; then
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished = '1', is_activated = '1', forwarder = '127.0.0.$i'" "name = '$Resolver'"
-				echo "--> STARTED: $Resolver : "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
-				(( Running++ ))
-			else
+			start-stop-daemon --start --quiet --background --make-pidfile \
+				--pidfile $DIR_PID/$Resolver.pid\
+				--exec $DAEMON\
+				-- -R $Resolver -u $DAEMON_USER -l $LOG_FILE -m 3 -a 127.0.0.$Count:52 -E -N -L /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv\
+				>> $LOG_FILE
+
+			if [ $? -gt 0 ]; then
 				Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished = '1', is_activated = '0', forwarder = ''" "name = '$Resolver'"
 				delete_pid_file $DIR_PID/$Resolver.pid $Resolver
-				echo "--> NOT STARTED: $Resolver : "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
+				echo "[WARNING] The resolver did not started." >> $LOG_FILE
 				(( NotRunning++ ))
+			else
+				# Update DB
+				ResolverPid="`cat $DIR_PID/$Resolver.pid`"
+				if [ ! -z "$ResolverPid" ] && [ ! -z "`ps -p $ResolverPid | grep -v 'PID TTY'`" ]; then
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished='1', is_activated='1', forwarder='127.0.0.$Count'" "name='$Resolver'"
+					echo "[NOTICE] Resolver startup completed." >> $LOG_FILE
+					(( Running++ ))
+				else
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished='1', is_activated='0', forwarder=''" "name='$Resolver'"
+					delete_pid_file $DIR_PID/$Resolver.pid $Resolver
+					echo "[WARNING] The resolver did not started because something was wrong." >> $LOG_FILE
+					(( NotRunning++ ))
+				fi
 			fi
 		fi
 	done
@@ -260,17 +250,19 @@ do_stop() {
 	#   other if a failure occurred
 	for Pid in $PidList; do
 		Resolver="`echo $Pid | cut -d '.' -f 1`"
+		echo "--> Stoping of resolver named \"$Resolver\" - "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
+
 		start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $DIR_PID/$Pid --exec "$DAEMON" 2>> $LOG_FILE
 
 		case "$?" in
 			0|1)
-				echo "--> STOPPED: $Resolver : "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
+				echo "[NOTICE] Resolver shutdown completed." >> $LOG_FILE
 				delete_pid_file $DIR_PID/$Pid $Resolver
 				# Update DB
 				Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_activated = '0'" "name = '$Resolver'"
 			;;
 			2)
-				echo "--> NOT STOPPED: $Resolver : "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LOG_FILE
+				echo "[WARNING] The resolver did not stoped." >> $LOG_FILE
 			;;
 		esac
 	done
