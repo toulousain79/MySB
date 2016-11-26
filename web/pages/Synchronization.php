@@ -22,10 +22,11 @@
 //
 //#################### FIRST LINE #####################################
 
-global $MySB_DB, $users_datas, $CurrentUser, $system_datas;
+global $MySB_DB, $CurrentUser;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 // VARs
+$users_datas = $MySB_DB->get("users", ["id_users"], ["users_ident" => "$Username"]);
 $UserID = $users_datas['id_users'];
 $Command = 'message_only';
 $RefreshPage = 0;
@@ -295,7 +296,6 @@ if (isset($_POST['submit'])) {
 }
 
 // Get values from database
-$users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
 $users_directories = $MySB_DB->select("users_rtorrent_cfg", "*", ["id_users" => "$UserID"]);
 $users_crontab = $MySB_DB->select("users_crontab", "*", ["id_users" => "$UserID"]);
 $users_scripts = $MySB_DB->get("users_scripts", "*", ["id_users" => "$UserID"]);

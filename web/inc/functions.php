@@ -158,9 +158,10 @@ function CountingUsers() {
 
 // MySB version
 function GetVersion() {
-	global $system_datas;
+	global $MySB_DB;
+	$MySB_Version = $MySB_DB->get("system", "mysb_version", ["id_system" => 1]);
 
-	return $system_datas["mysb_version"];
+	return $MySB_Version;
 }
 
 // Main user ?
@@ -183,9 +184,10 @@ function MainUser($user) {
 
 // Create menu with submenu
 function MenuDisplayChildren($page, $current, $startmenu = true) {
-	global $MySB_DB, $Port_HTTPs, $system_datas, $CurrentUser;
+	global $MySB_DB, $Port_HTTPs, $CurrentUser;
 
 	$hidden = (MainUser($CurrentUser)) ? true : false;
+	$Hostname = $MySB_DB->get("system", "hostname", ["id_system" => 1]);
 	$CakeboxDatas = $MySB_DB->get("services", "*", ["serv_name" => "CakeBox-Light"]);
 	$CakeboxIsInstalled = $CakeboxDatas["is_installed"];
 	$ManagerIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "Seedbox-Manager"]);
@@ -225,11 +227,11 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					}
 					break;
 				case "LoadAvg":
-					echo '<li><a target="_blank" href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/loadavg/public/">LoadAvg</a>';
+					echo '<li><a target="_blank" href="https://' . $Hostname . ':' . $Port_HTTPs . '/loadavg/public/">LoadAvg</a>';
 					break;
 				case "ownCloud":
 					if ( $ownCloudIsInstalled == '1' ) {
-						echo '<li><a target="_blank" href="https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/owncloud/">ownCloud</a>';
+						echo '<li><a target="_blank" href="https://' . $Hostname . ':' . $Port_HTTPs . '/owncloud/">ownCloud</a>';
 					}
 					break;
 				case "Plex Media":
@@ -239,7 +241,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					break;
 				case "Webmin":
 					if ( $WebminIsInstalled == '1' ) {
-						echo '<li><a target="_blank" href="https://' . $system_datas["hostname"] . ':' . $WebminDatas["port_tcp1"] . '/">Webmin</a>';
+						echo '<li><a target="_blank" href="https://' . $Hostname . ':' . $WebminDatas["port_tcp1"] . '/">Webmin</a>';
 					}
 					break;
 				case "DNScrypt-proxy":

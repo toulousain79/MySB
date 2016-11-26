@@ -24,9 +24,11 @@ require_once '/etc/MySB/config.php';
 //
 //#################### FIRST LINE #####################################
 
-global $system_datas;
+#### VARs
+global $MySB_DB;
+$MySB_User = $MySB_DB->get("system", "mysb_user", ["id_system" => 1]);
 
-if ($_SERVER['PHP_AUTH_USER'] == $system_datas["mysb_user"]) {
+if ($_SERVER['PHP_AUTH_USER'] == $MySB_User) {
 	$UserName = $_GET['user'];
 	$Case = $_GET['case'];
 } else {
@@ -34,10 +36,12 @@ if ($_SERVER['PHP_AUTH_USER'] == $system_datas["mysb_user"]) {
 }
 
 function PrintContent($user, $Case) {
-	global $MySB_DB, $system_datas, $Port_HTTPs;
+	global $MySB_DB, $Port_HTTPs;
 
+	// System table
+	$Hostname = $MySB_DB->get("system", "hostname", ["id_system" => 1]);
 	// Users table
-	$users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$user"]);
+	$users_datas = $MySB_DB->get("users", ["id_users", "users_passwd", "language", "admin", "users_email", "rpc", "sftp", "sudo", "home_dir", "scgi_port", "rtorrent_port"], ["users_ident" => "$user"]);
 	$UserID = $users_datas["id_users"];
 	$UserPasswd = $users_datas["users_passwd"];
 	// Ports
@@ -50,7 +54,7 @@ function PrintContent($user, $Case) {
 	$DNScryptDatas = $MySB_DB->get("services", ["is_installed"], ["serv_name" => "DNScrypt-proxy"]);
 	$WebminDatas = $MySB_DB->get("services", ["is_installed", "port_tcp1"], ["serv_name" => "Webmin"]);
 	$ownCloudInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
-	$RentingDatas = $MySB_DB->get("renting", "*", ["id_renting" => 1]);
+
 	// Users infos
 	$IPv4_List = $MySB_DB->select("users_addresses", "ipv4", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
 	$LastUpdate = $MySB_DB->max("users_addresses", "last_update", ["AND" => ["id_users" => "$UserID", "check_by" => "hostname", "is_active" => 1]]);
@@ -83,12 +87,12 @@ function PrintContent($user, $Case) {
 	if ( $UserPasswd != "" ) {
 		$CommentAddress = '<span class="Comments">' . User_UserInfoMail_Comment_Address_1 . '</span>';
 		$CommentAddressStyle = 'style="color: #FF6666;"';
-		$CommentPassword = sprintf(User_UserInfoMail_Comment_Password_1, $system_datas["hostname"], $Port_HTTPs, $user, $UserPasswd);
+		$CommentPassword = sprintf(User_UserInfoMail_Comment_Password_1, $Hostname, $Port_HTTPs, $user, $UserPasswd);
 		$CommentPasswordStyle = 'style="background-color: #FF6666; text-align=center"';
 	} else {
-		$CommentAddress = '<span class="Comments">' . sprintf(User_UserInfoMail_Comment_Address_2, $system_datas["hostname"], $Port_HTTPs) . '</span>';
+		$CommentAddress = '<span class="Comments">' . sprintf(User_UserInfoMail_Comment_Address_2, $Hostname, $Port_HTTPs) . '</span>';
 		$CommentAddressStyle = '';
-		$CommentPassword = '<span class="Comments">' . sprintf(User_UserInfoMail_Comment_Password_2, $system_datas["hostname"], $Port_HTTPs) . '</span>';
+		$CommentPassword = '<span class="Comments">' . sprintf(User_UserInfoMail_Comment_Password_2, $Hostname, $Port_HTTPs) . '</span>';
 		$CommentPasswordStyle = '';
 		$UserPasswd = '*****';
 	}
@@ -192,7 +196,7 @@ function PrintContent($user, $Case) {
 
 
 <?php if ( $DisplayGoTo == true ) { ?>
-		<tr><td colspan="3" scope="row"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>"><?php echo User_UserInfoMail_GoTo; ?></a></td></tr>
+		<tr><td colspan="3" scope="row"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>"><?php echo User_UserInfoMail_GoTo; ?></a></td></tr>
 <?php } ?>
 
 <?php if ( $DisplayUserInfo == true ) { ?>
@@ -246,7 +250,7 @@ function PrintContent($user, $Case) {
 		<!-- // Force IP address -->
 		<tr align="left">
 			<th width="15%" scope="row" style="color: #FF6666;" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_ForceIP; ?></th>
-			<td colspan="2" style="background-color: #FF6666;"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ForceAddress.php?page=ManageAddresses"><span class="Comments"><?php echo User_UserInfoMail_Comment_ForceIP; ?></span></a></td>
+			<td colspan="2" style="background-color: #FF6666;"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/ForceAddress.php?page=ManageAddresses"><span class="Comments"><?php echo User_UserInfoMail_Comment_ForceIP; ?></span></a></td>
 		</tr>
 
 <?php if ( $DisplayUserInfoDetail == true ) { ?>
@@ -373,24 +377,24 @@ function PrintContent($user, $Case) {
 		<!-- // Change password -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_ChangePass; ?></th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/change-password.html"><span class="Comments"><?php echo User_UserInfo_Comment_ChangePass; ?></span></a></td>
+			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/?user/change-password.html"><span class="Comments"><?php echo User_UserInfo_Comment_ChangePass; ?></span></a></td>
 		</tr>
 		<!-- // Manage Addresses -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_ManageAddresses; ?></th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/manage-addresses.html"><span class="Comments"><?php echo User_UserInfo_Comment_ManageAddresses; ?></span></a></td>
+			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/?user/manage-addresses.html"><span class="Comments"><?php echo User_UserInfo_Comment_ManageAddresses; ?></span></a></td>
 		</tr>
 
 		<!-- // ruTorrent -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_ruTorrent; ?></th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/ru"><span class="Comments"><?php echo User_UserInfo_Comment_ruTorrent; ?></span></a></td>
+			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/ru"><span class="Comments"><?php echo User_UserInfo_Comment_ruTorrent; ?></span></a></td>
 		</tr>
 		<!-- // Seedbox-Manager -->
 	<?php if ( $ManagerInstalled == '1' ) { ?>
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_Manager; ?></th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/sm"><span class="Comments"><?php echo User_UserInfo_Comment_Manager; ?></span></a></td>
+			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/sm"><span class="Comments"><?php echo User_UserInfo_Comment_Manager; ?></span></a></td>
 		</tr>
 	<?php } ?>
 
@@ -398,7 +402,7 @@ function PrintContent($user, $Case) {
 		<!-- // OpenVPN -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_OpenVpnConfig; ?></th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?user/openvpn-config-file.html"><span class="Comments"><?php echo User_UserInfo_Comment_OpenVpnConfig; ?></span></a></td>
+			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/?user/openvpn-config-file.html"><span class="Comments"><?php echo User_UserInfo_Comment_OpenVpnConfig; ?></span></a></td>
 		</tr>
 		<!-- // OpenVPN GUI -->
 		<tr align="left">
@@ -411,14 +415,14 @@ function PrintContent($user, $Case) {
 		<!-- // CakeBox Light -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_Cakebox; ?></th>
-			<td colspan="2"><a target="_blank" href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/cb"><span class="Comments"><?php echo User_UserInfo_Comment_Cakebox; ?></span></a></td>
+			<td colspan="2"><a target="_blank" href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/cb"><span class="Comments"><?php echo User_UserInfo_Comment_Cakebox; ?></span></a></td>
 		</tr>
 	<?php } ?>
 		<!-- // ownCloud -->
 	<?php if ( $ownCloudInstalled == '1' ) { ?>
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_ownCloud; ?></th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/owncloud"><span class="Comments"><?php echo User_UserInfo_Comment_ownCloud; ?></span></a></td>
+			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/owncloud"><span class="Comments"><?php echo User_UserInfo_Comment_ownCloud; ?></span></a></td>
 		</tr>
 	<?php } ?>
 
@@ -436,23 +440,23 @@ function PrintContent($user, $Case) {
 		<?php if ( $WebminDatas["is_installed"] == '1' ) { ?>
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Webmin; ?></th>
-				<td colspan="2"><a target="_blank" href="https://<?php echo $system_datas["hostname"];?>:<?php echo $WebminDatas["port_tcp1"];?>"><span class="Comments"><?php echo User_UserInfo_Comment_Webmin; ?></span></a></td>
+				<td colspan="2"><a target="_blank" href="https://<?php echo $Hostname;?>:<?php echo $WebminDatas["port_tcp1"];?>"><span class="Comments"><?php echo User_UserInfo_Comment_Webmin; ?></span></a></td>
 			</tr>
 		<?php } ?>
 		<!-- // Logs -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Logs; ?></th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?main-user/logs.html"><span class="Comments"><?php echo User_UserInfo_Comment_Logs; ?></span></a></td>
+			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/?main-user/logs.html"><span class="Comments"><?php echo User_UserInfo_Comment_Logs; ?></span></a></td>
 		</tr>
 		<!-- // Renting infos -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Renting; ?></th>
-			<td colspan="2"><a href="https://<?php echo $system_datas["hostname"];?>:<?php echo $Port_HTTPs;?>/?main-user/renting-infos.html"><span class="Comments"><?php echo User_UserInfo_Comment_Renting; ?></span></a></td>
+			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/?main-user/renting-infos.html"><span class="Comments"><?php echo User_UserInfo_Comment_Renting; ?></span></a></td>
 		</tr>
 		<!-- // Trackers -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Trackers; ?></th>
-			<td colspan="2"><span class="Comments"><?php echo sprintf(User_UserInfoMail_Comment_Trackers, $system_datas["hostname"], $Port_HTTPs, $system_datas["hostname"], $Port_HTTPs); ?></span></td>
+			<td colspan="2"><span class="Comments"><?php echo sprintf(User_UserInfoMail_Comment_Trackers, $Hostname, $Port_HTTPs, $Hostname, $Port_HTTPs); ?></span></td>
 		</tr>
 		<!-- // Blocklists -->
 		<tr align="left">
@@ -463,13 +467,17 @@ function PrintContent($user, $Case) {
 			<!-- // DNScrypt-proxy -->
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_DNScrypt; ?></th>
-				<td colspan="2"><span class="Comments"><?php echo sprintf(User_UserInfoMail_Comment_DNScrypt, $system_datas["hostname"], $Port_HTTPs, $system_datas["hostname"], $Port_HTTPs); ?></span></td>
+				<td colspan="2"><span class="Comments"><?php echo sprintf(User_UserInfoMail_Comment_DNScrypt, $Hostname, $Port_HTTPs, $Hostname, $Port_HTTPs); ?></span></td>
 			</tr>
 		<?php } ?>
 
 	<?php } ?>
 
-	<?php if ( !empty($RentingDatas["global_cost"]) && !empty($RentingDatas["model"]) ) { ?>
+<?php
+	$RentingDatas = $MySB_DB->get("system", "rt_global_cost,rt_model,rt_tva,rt_nb_users,rt_price_per_users", ["id_system" => 1]);
+
+	if ( !empty($RentingDatas["rt_global_cost"]) && !empty($RentingDatas["rt_model"]) ) {
+?>
 		<!-- //////////////////////
 		// Price and Payment info
 		////////////////////// -->
@@ -479,31 +487,31 @@ function PrintContent($user, $Case) {
 		<!-- // Server model -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SrvModel; ?></th>
-			<td><?php echo $RentingDatas["model"];?></td>
+			<td><?php echo $RentingDatas["rt_model"];?></td>
 			<td> </td>
 		</tr>
 		<!-- // Global cost -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_GlobalCost; ?></th>
-			<td><?php echo $RentingDatas["global_cost"];?></td>
+			<td><?php echo $RentingDatas["rt_global_cost"];?></td>
 			<td> </td>
 		</tr>
 		<!-- // TVA -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TVA; ?></th>
-			<td><?php echo $RentingDatas["tva"];?></td>
+			<td><?php echo $RentingDatas["rt_tva"];?></td>
 			<td> </td>
 		</tr>
 		<!-- // Total users -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalUsers; ?></th>
-			<td><?php echo $RentingDatas["nb_users"];?></td>
+			<td><?php echo $RentingDatas["rt_nb_users"];?></td>
 			<td> </td>
 		</tr>
 		<!-- // TOTAL per users -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalPerUser; ?></th>
-			<td><b><span class="FontInRed"><?php echo $RentingDatas["price_per_users"];?></span></b><?php echo User_UserInfo_Table_TotalPerUser_Plus; ?></td>
+			<td><b><span class="FontInRed"><?php echo $RentingDatas["rt_price_per_users"];?></span></b><?php echo User_UserInfo_Table_TotalPerUser_Plus; ?></td>
 			<td> </td>
 		</tr>
 	<?php } ?>

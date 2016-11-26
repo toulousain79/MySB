@@ -33,6 +33,7 @@ if ( isset($_SESSION['page']) ) {
 // Logout HTTP Internet Explorer
 if ( preg_match( '~MSIE|Internet Explorer~i', $_SERVER['HTTP_USER_AGENT'] ) || ( strpos( $_SERVER['HTTP_USER_AGENT'], 'Trident/7.0; rv:11.0') !== false ) ) {
 
+$Hostname = $MySB_DB->get("system", "hostname", ["id_system" => 1]);
 ?>
 
 <script type="text/javascript">
@@ -46,7 +47,7 @@ if ( preg_match( '~MSIE|Internet Explorer~i', $_SERVER['HTTP_USER_AGENT'] ) || (
 
 <script type="text/javascript">
     var request = new XMLHttpRequest();
-    request.open("get", "https://logout@<?php echo $system_datas["hostname"] . ':' . $Port_HTTPs . '/Logout.php'; ?>", false);
+    request.open("get", "https://logout@<?php echo $Hostname . ':' . $Port_HTTPs . '/Logout.php'; ?>", false);
     request.send();
     window.location.replace('http://www.google.fr');
 </script>

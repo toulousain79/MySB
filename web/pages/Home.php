@@ -22,10 +22,10 @@
 //
 //#################### FIRST LINE #####################################
 
-global $CurrentUser, $users_datas;
+global $CurrentUser;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
-$InitPassword = $users_datas['init_password'];
+$InitPassword = $MySB_DB->get("users", "init_password", ["users_ident" => "$CurrentUser"]);
 
 echo '<h1><div align="center">'.sprintf(Home_Welcome, $CurrentUser).'</div></h1>';
 

@@ -22,7 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-global $MySB_DB, $users_datas, $CurrentUser, $system_datas;
+global $MySB_DB, $CurrentUser;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 // VARs
@@ -90,7 +90,6 @@ if (isset($_POST['submit'])) {
 }
 
 // Get values from database
-$users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
 $rtorrent_version = $users_datas['rtorrent_version'];
 if ($rTorrentRestart_POST == "1") {
 	$rtorrent_restart = '0';

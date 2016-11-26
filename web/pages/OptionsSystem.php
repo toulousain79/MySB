@@ -22,7 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
-global $MySB_DB, $users_datas, $CurrentUser, $system_datas;
+global $MySB_DB, $CurrentUser;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 $PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
@@ -30,6 +30,7 @@ $OpenVPNIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => 
 $DNScryptIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "DNScrypt-proxy"]);
 $LogwatchIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "LogWatch"]);
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
+$system_datas = $MySB_DB->get("system", ["dnscrypt", "logwatch", "pgl_email_stats", "pgl_watchdog_email", "ip_restriction"], ["id_system" => 1]);
 
 // Get values from database
 $DNScrypt_db = $system_datas['dnscrypt'];

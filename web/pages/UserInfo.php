@@ -25,9 +25,12 @@
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 function printUser($user) {
-	global $MySB_DB, $system_datas, $users_datas, $Port_HTTPs;
+	global $MySB_DB, $Port_HTTPs;
 
+	// System infos
+	$Hostname = $MySB_DB->get("system", "hostname", ["id_system" => 1]);
 	// Users infos
+	$users_datas = $MySB_DB->get("users", ["id_users", "users_passwd", "admin", "users_email", "rpc", "sftp", "home_dir", "scgi_port", "rtorrent_port"], ["users_ident" => "$user"]);
 	$UserID = $users_datas["id_users"];
 	$UserPasswd = $users_datas["users_passwd"];
 	// Ports
@@ -177,13 +180,13 @@ function printUser($user) {
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_ManageAddresses . '</th>';
 	echo '<td colspan="2"><a href="?user/manage-addresses.html"><span class="Comments">' . User_UserInfo_Comment_ManageAddresses . '</span></a></td></tr>';
 	// ruTorrent
-	$Link = 'https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/ru';
+	$Link = 'https://' . $Hostname . ':' . $Port_HTTPs . '/ru';
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_ruTorrent . '</th>';
 	echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">' . User_UserInfo_Comment_ruTorrent . '</span></a></td></tr>';
 	// Seedbox-Manager
 	$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "Seedbox-Manager"]);
 	if ( $is_installed == '1' ) {
-		$Link = 'https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/sm';
+		$Link = 'https://' . $Hostname . ':' . $Port_HTTPs . '/sm';
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_Manager . '</th>';
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">' . User_UserInfo_Comment_Manager . '</span></a></td></tr>';
 	}
@@ -201,14 +204,14 @@ function printUser($user) {
 	// CakeBox Light
 	$CakeboxDatas = $MySB_DB->get("services", ["is_installed"], ["serv_name" => "CakeBox-Light"]);
 	if ( $CakeboxDatas["is_installed"] == '1' ) {
-		$Link = 'https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/ca';
+		$Link = 'https://' . $Hostname . ':' . $Port_HTTPs . '/ca';
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_Cakebox . '</th>';
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">' . User_UserInfo_Comment_Cakebox . '</span></a></td></tr>';
 	}
 	// ownCloud
 	$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
 	if ( $is_installed == '1' ) {
-		$Link = 'https://' . $system_datas["hostname"] . ':' . $Port_HTTPs . '/owncloud';
+		$Link = 'https://' . $Hostname . ':' . $Port_HTTPs . '/owncloud';
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_ownCloud . '</th>';
 		echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">' . User_UserInfo_Comment_ownCloud . '</span></a></td></tr>';
 	}
@@ -221,7 +224,7 @@ function printUser($user) {
 		// Webmin
 		$WebminDatas = $MySB_DB->get("services", ["is_installed", "port_tcp1"], ["serv_name" => "Webmin"]);
 		if ( $WebminDatas["is_installed"] == '1' ) {
-			$Link = 'https://' . $system_datas["hostname"] . ':' . $WebminDatas["port_tcp1"] . '/';
+			$Link = 'https://' . $Hostname . ':' . $WebminDatas["port_tcp1"] . '/';
 			echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Webmin . '</th>';
 			echo '<td colspan="2"><a target="_blank" href="' . $Link . '"><span class="Comments">' . User_UserInfo_Comment_Webmin . '</span></a></td></tr>';
 		}
@@ -233,7 +236,7 @@ function printUser($user) {
 		echo '<td colspan="2"><a href="?main-user/renting-infos.html"><span class="Comments">' . User_UserInfo_Comment_Renting . '</span></a></td></tr>';
 		// Trackers
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Trackers . '</th>';
-		echo '<td colspan="2"><span class="Comments">' . sprintf(User_UserInfo_Comment_Trackers, $system_datas["hostname"], $Port_HTTPs, $system_datas["hostname"], $Port_HTTPs) . '</span></td></tr>';
+		echo '<td colspan="2"><span class="Comments">' . sprintf(User_UserInfo_Comment_Trackers, $Hostname, $Port_HTTPs, $Hostname, $Port_HTTPs) . '</span></td></tr>';
 		// Blocklists
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Blocklists . '</th>';
 		echo '<td colspan="2"><span class="Comments">' . User_UserInfo_Comment_Blocklists . '</span></td></tr>';
@@ -285,31 +288,31 @@ function printUser($user) {
 		echo '<td><span class="Comments">' . User_UserInfo_Comment_GetTrackersCert . '</span></td></tr>';
 	}
 
-	$RentingDatas = $MySB_DB->get("renting", "*", ["id_renting" => 1]);
-	if ( !empty($RentingDatas["global_cost"]) && !empty($RentingDatas["model"]) ) {
+	$RentingDatas = $MySB_DB->get("system", "rt_global_cost,rt_model,rt_tva,rt_nb_users,rt_price_per_users", ["id_system" => 1]);
+	if ( !empty($RentingDatas["rt_global_cost"]) && !empty($RentingDatas["rt_model"]) ) {
 		//////////////////////
 		// Price and Payment info
 		//////////////////////
 		echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_UserInfo_Title_Renting . '</h4></th></tr>';
 		// Server model
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SrvModel . '</th>';
-		echo '<td>' . $RentingDatas["model"] . '</td>';
+		echo '<td>' . $RentingDatas["rt_model"] . '</td>';
 		echo '<td></td></tr>';
 		// Global cost
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_GlobalCost . '</th>';
-		echo '<td>' . $RentingDatas["global_cost"] . '</td>';
+		echo '<td>' . $RentingDatas["rt_global_cost"] . '</td>';
 		echo '<td></td></tr>';
 		// TVA
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_TVA . '</th>';
-		echo '<td>' . $RentingDatas["tva"] . '</td>';
+		echo '<td>' . $RentingDatas["rt_tva"] . '</td>';
 		echo '<td></td></tr>';
 		// Total users
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_TotalUsers . '</th>';
-		echo '<td>' . $RentingDatas["nb_users"] . '</td>';
+		echo '<td>' . $RentingDatas["rt_nb_users"] . '</td>';
 		echo '<td></td></tr>';
 		// TOTAL per users
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_TotalPerUser . '</th>';
-		echo '<td><b><span class="FontInRed">' . $RentingDatas["price_per_users"] . '</span></b>' . User_UserInfo_Table_TotalPerUser_Plus . '</td>';
+		echo '<td><b><span class="FontInRed">' . $RentingDatas["rt_price_per_users"] . '</span></b>' . User_UserInfo_Table_TotalPerUser_Plus . '</td>';
 		echo '<td></td></tr>';
 	}
 

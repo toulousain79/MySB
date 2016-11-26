@@ -29,7 +29,7 @@ $Username = $_POST['username'];
 $get_name = $_POST['get_name'];
 $get_custom1 = $_POST['get_custom1'];
 
-$users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$Username"]);
+$users_datas = $MySB_DB->get("users", ["language", "rtorrent_notify", "users_email"], ["users_ident" => "$Username"]);
 $Language = $users_datas["language"];
 $rTorrentNotify = $users_datas["rtorrent_notify"];
 $UserMail = $users_datas["users_email"];

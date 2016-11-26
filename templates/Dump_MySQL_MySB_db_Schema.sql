@@ -90,17 +90,6 @@ CREATE TABLE IF NOT EXISTS `providers_monitoring` (
   PRIMARY KEY (`id_providers_monitoring`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
-CREATE TABLE IF NOT EXISTS `renting` (
-  `id_renting` int(1) NOT NULL,
-  `model` varchar(64) NOT NULL,
-  `tva` decimal(4,2) NOT NULL,
-  `global_cost` decimal(4,2) NOT NULL,
-  `nb_users` tinyint(2) NOT NULL,
-  `price_per_users` decimal(4,2) NOT NULL,
-  `method` tinyint(1) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id_renting`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
 CREATE TABLE IF NOT EXISTS `repositories` (
   `id_repositories` int(11) NOT NULL AUTO_INCREMENT,
   `type` varchar(5) NOT NULL,
@@ -169,6 +158,12 @@ CREATE TABLE IF NOT EXISTS `system` (
   `letsencrypt_date` date NOT NULL,
   `letsencrypt_openport` tinyint(1) NOT NULL DEFAULT '0',
   `quota_default` int(16) NOT NULL,
+  `rt_model` varchar(64) NOT NULL,
+  `rt_tva` decimal(4,2) NOT NULL,
+  `rt_global_cost` decimal(4,2) NOT NULL,
+  `rt_nb_users` tinyint(2) NOT NULL,
+  `rt_price_per_users` decimal(4,2) NOT NULL,
+  `rt_method` tinyint(1) NOT NULL DEFAULT '0',  
   PRIMARY KEY (`id_system`),
   UNIQUE KEY `mysb_version` (`mysb_version`,`mysb_user`,`mysb_password`,`hostname`,`ipv4`,`primary_inet`,`timezone`,`cert_password`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -193,8 +188,8 @@ CREATE TABLE IF NOT EXISTS `trackers_list_ipv4` (
   PRIMARY KEY (`id_trackers_list_ipv4`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
-CREATE TABLE IF NOT EXISTS `tracking_rent` (
-  `id_tracking_rent` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE IF NOT EXISTS `tracking_history` (
+  `id_tracking_history` int(11) NOT NULL AUTO_INCREMENT,
   `id_users` int(11) NOT NULL,
   `monthly_price` decimal(4,2) NOT NULL,
   `nb_users` int(4) NOT NULL,
@@ -206,26 +201,9 @@ CREATE TABLE IF NOT EXISTS `tracking_rent` (
   `delete_day` tinyint(2) DEFAULT NULL,
   `remain_days` tinyint(2) DEFAULT NULL,
   `real_price` decimal(4,2) DEFAULT NULL,
-  `payment_date` int(11) DEFAULT NULL,
-  `comments` varchar(64) DEFAULT NULL,
   PRIMARY KEY (`id_tracking_rent`),
   KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-
-DROP TRIGGER IF EXISTS `add_user`;
-DELIMITER //
-CREATE TRIGGER `add_user` BEFORE INSERT ON `tracking_rent`
- FOR EACH ROW BEGIN
-	SET NEW.users_price = (NEW.monthly_price / NEW.nb_users);
-	SET NEW.year = YEAR(NOW());
-	SET NEW.month = MONTH(NOW());
-	SET NEW.nb_days = RIGHT(LAST_DAY(NOW()), 2);
-	SET NEW.added_day = DAY(NOW());
-	SET NEW.remain_days = (NEW.nb_days - NEW.added_day);
-	SET NEW.real_price = ((NEW.monthly_price/NEW.nb_users) / NEW.nb_days) * (NEW.nb_days-NEW.added_day);
-END
-//
-DELIMITER ;
 
 CREATE TABLE IF NOT EXISTS `users` (
   `id_users` int(11) NOT NULL AUTO_INCREMENT,

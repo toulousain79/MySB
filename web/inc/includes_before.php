@@ -90,23 +90,20 @@ if ( (isset($_SERVER['PHP_AUTH_USER'])) && (!isset($_GET['user'])) ) {
 	$CurrentUser = $_GET['user'];
 }
 if ( isset($CurrentUser) ) {
-	$users_datas = $MySB_DB->get("users", "*", ["users_ident" => "$CurrentUser"]);
+	$User_Language = $MySB_DB->get("users", "language", ["users_ident" => "$CurrentUser"]);
 }
 
 // Language
 $Language = 'en';
 $_SESSION['Language'] = $Language;
-if ( !empty($users_datas["language"]) ) {
-	$Language = $users_datas["language"];
+if ( !empty($User_Language) ) {
+	$Language = $User_Language;
 	$_SESSION['Language'] = $Language;
 }
 require_once(WEB_INC . '/languages/global.' . $Language . '.php');
 
 // Some Functions
 require_once(FILE_FUNCS);
-
-// Load System table
-$system_datas = $MySB_DB->get("system", "*", ["id_system" => 1]);
 
 // Services table
 $Port_HTTPs = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "NginX"]);

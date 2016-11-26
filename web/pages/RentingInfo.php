@@ -28,14 +28,14 @@ function Form() {
 	global $MySB_DB;
 
 	// Users table
-	$renting_datas = $MySB_DB->get("renting", ["model", "tva", "global_cost", "nb_users", "price_per_users", "method"], ["id_renting" => 1]);
-	$TotalUsers = $renting_datas["nb_users"];
-	$PricePerUser = $renting_datas["price_per_users"];
-	$Model = $renting_datas["model"];
-	$TVA = $renting_datas["tva"];
-	$GlobalCost = $renting_datas["global_cost"];
+	$renting_datas = $MySB_DB->get("system", ["rt_model", "rt_tva", "rt_global_cost", "rt_nb_users", "rt_price_per_users", "rt_method"], ["id_system" => 1]);
+	$TotalUsers = $renting_datas["rt_nb_users"];
+	$PricePerUser = $renting_datas["rt_price_per_users"];
+	$Model = $renting_datas["rt_model"];
+	$TVA = $renting_datas["rt_tva"];
+	$GlobalCost = $renting_datas["rt_global_cost"];
 	$GlobalCostTVA = $GlobalCost;
-	$Method = $renting_datas["method"];
+	$Method = $renting_datas["rt_method"];
 	$GlobalCostTVA = ($GlobalCost * $TVA) / 100;
 	$GlobalCostTVA = $GlobalCost + $GlobalCostTVA;
 	
@@ -131,7 +131,7 @@ if (isset($_POST['submit'])) {
 
 		global $MySB_DB;
 
-		$result = $MySB_DB->update("renting", ["model" => "$Model", "tva" => "$TVA", "global_cost" => "$GlobalCost", "nb_users" => "$TotalUsers", "price_per_users" => "$PricePerUsers", "method" => "$Method"], ["id_renting" => 1]);
+		$result = $MySB_DB->update("system", ["rt_model" => "$Model", "rt_tva" => "$TVA", "rt_global_cost" => "$GlobalCost", "rt_nb_users" => "$TotalUsers", "rt_price_per_users" => "$PricePerUsers", "rt_method" => "$Method"], ["id_system" => 1]);
 
 		if( $result >= 0 ) {
 			$type = 'success';

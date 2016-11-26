@@ -21,6 +21,10 @@
 //	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 //
 //#################### FIRST LINE #####################################
+
+#### VARs
+$MySB_Version = GetVersion();
+
 ?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -67,7 +71,7 @@
 						</a>
 <?php } ?>
 					</h1>
-					<h2> <?php echo GetVersion(); ?></h2>
+					<h2> <?php echo $MySB_Version; ?></h2>
 				</div>
 				<div id="logout">
 <?php if ( !isset($_SESSION['page']) ) { ?>
@@ -143,7 +147,7 @@
 			echo $FooterNavBar . '<br /><br />';
 		}
 ?>
-			<a target="_blank" href="https://github.com/toulousain79/MySB/" title="<?php echo Layout_OnGithub; ?>"><?php echo Layout_OnGithub; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/wiki" title="<?php echo Layout_Wiki; ?>"><?php echo Layout_Wiki; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/blob/<?php echo GetVersion(); ?>/Changelog.md" title="Changelog <?php echo GetVersion(); ?>">Changelog <?php echo GetVersion(); ?></a><br />
+			<a target="_blank" href="https://github.com/toulousain79/MySB/" title="<?php echo Layout_OnGithub; ?>"><?php echo Layout_OnGithub; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/wiki" title="<?php echo Layout_Wiki; ?>"><?php echo Layout_Wiki; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/blob/<?php echo $MySB_Version; ?>/Changelog.md" title="Changelog <?php echo $MySB_Version; ?>">Changelog <?php echo $MySB_Version; ?></a><br />
 			<a target="_blank" href="http://www.css3templates.co.uk">Copyright &copy; CSS3_two</a> | <a target="_blank" href="http://www.wolfcms.org/" title="<?php echo Layout_Wolf; ?>"><?php echo Layout_Wolf; ?></a> | <a target="_blank" href="http://medoo.in/" title="<?php echo Layout_Medoo; ?>"><?php echo Layout_Medoo; ?></a>
 			<p><form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
 				<input type="hidden" name="cmd" value="_s-xclick">
