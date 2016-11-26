@@ -170,6 +170,9 @@ foreach($PortForwardingList as $PortForwarding) {
 					<?php echo $PortForwarding["to_port"]; ?>
 				</td>
 				<td>
+					<?php echo $PortForwarding["from_port"]; ?>
+				</td>				
+				<td>
 					<?php echo $is_active; ?>
 				</td>
 				<td>

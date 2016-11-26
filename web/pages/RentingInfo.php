@@ -34,7 +34,19 @@ function Form() {
 	$Model = $renting_datas["model"];
 	$TVA = $renting_datas["tva"];
 	$GlobalCost = $renting_datas["global_cost"];
+	$GlobalCostTVA = $GlobalCost;
 	$Method = $renting_datas["method"];
+	$GlobalCostTVA = ($GlobalCost * $TVA) / 100;
+	$GlobalCostTVA = $GlobalCost + $GlobalCostTVA;
+	
+	switch ($Method) {
+		case '1':
+			$GlobalCostTVA = round($GlobalCostTVA, 2);
+			break;
+		default:
+			$GlobalCostTVA = ceil($GlobalCostTVA);
+			break;
+	}
 
 	echo '<form class="form_settings" method="post" action="">
 		<div align="center">
@@ -75,6 +87,11 @@ function Form() {
 					<td><span class="Comments">' . MainUser_Renting_ExPriceToDiplay . '</span></td>
 				</tr>
 				<tr>
+					<td>' . MainUser_Renting_CostTVA . '</td>
+					<td><div align="center"><b>'.$GlobalCostTVA.'</b></div></td>
+					<td><span class="Comments">' . MainUser_Renting_CostTVA_Comments . '</span></td>
+				</tr>
+				<tr>
 					<td>' . MainUser_Renting_TotalUser . '</td>
 					<td><div align="center">'.$TotalUsers.'</div></td>
 					<td></td>
@@ -82,7 +99,7 @@ function Form() {
 				<tr>
 					<td>' . MainUser_Renting_PricePerUser . '</td>
 					<td><div align="center"><b>'.$PricePerUser.'</b>' . MainUser_Renting_TotalPerUser_Plus . '</div></td>
-					<td><span class="Comments">TTC / mois</span></td>
+					<td><span class="Comments">' . MainUser_Renting_PricePerUser_Comments . '</span></td>
 				</tr>
 			</table>
 			<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' . Global_SaveChanges . '" />
