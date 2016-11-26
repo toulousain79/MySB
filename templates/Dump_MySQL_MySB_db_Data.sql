@@ -70,9 +70,6 @@ INSERT INTO `providers_monitoring` (`id_providers_monitoring`, `provider`, `ipv4
 (16, 'OVH', '151.80.231.245/32', ''),
 (17, 'OVH', '151.80.231.246/32', '');
 
-INSERT INTO `renting` (`id_renting`, `model`, `tva`, `global_cost`, `nb_users`, `price_per_users`, `method`) VALUES
-(1, '', 0.00, 0.00, 0, 0.00, 0);
-
 INSERT INTO `repositories` (`id_repositories`, `type`, `dir`, `name`, `version`, `file`, `upgrade`, `url`, `active`) VALUES
 (1, 'GIT', '/web/rutorrent', 'ruTorrent', '3.7', 'ruTorrent_v3.7.zip', '0', 'https://github.com/Novik/ruTorrent', 1),
 (2, 'TARGZ', '/web/rutorrent/plugins/chat', 'ruTorrent Plugin Chat', '2.0', 'chat_v2.0.tar.gz', '0', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-chat/chat-2.0.tar.gz', 1),
@@ -141,8 +138,8 @@ INSERT INTO `services` (`id_services`, `serv_name`, `bin`, `port_tcp1`, `port_tc
 INSERT INTO `smtp` (`id_smtp`, `smtp_provider`, `smtp_username`, `smtp_passwd`, `smtp_host`, `smtp_port`, `smtp_email`) VALUES
 (1, '', '', '', '', '', '');
 
-INSERT INTO `system` (`id_system`, `mysb_version`, `mysb_user`, `mysb_password`, `hostname`, `ipv4`, `primary_inet`, `timezone`, `cert_password`, `apt_update`, `apt_date`, `server_provider`, `ip_restriction`, `pgl_email_stats`, `pgl_watchdog_email`, `dnscrypt`) VALUES
-(1, '', '', '', '', '', '', '', '', 0, 'NOW()', '', 1, 0, 0, 1);
+INSERT INTO `system` (`id_system`, `mysb_version`, `mysb_user`, `mysb_password`, `hostname`, `ipv4`, `primary_inet`, `timezone`, `cert_password`, `apt_update`, `apt_date`, `server_provider`, `ip_restriction`, `pgl_email_stats`, `pgl_watchdog_email`, `dnscrypt`, `rt_model`, `rt_tva`, `rt_global_cost`, `rt_nb_users`, `rt_price_per_users`, `rt_method`) VALUES
+(1, '', '', '', '', '', '', '', '', 0, 'NOW()', '', 1, 0, 0, 1, '', 0.00, 0.00, 0, 0.00, 0);
 
 INSERT INTO `vars` (`id_vars`, `fail2ban_whitelist`, `vpn_ip`, `white_tcp_port_out`, `white_udp_port_out`) VALUES
 (1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24,10.0.2.0/24', '80 443', '');
