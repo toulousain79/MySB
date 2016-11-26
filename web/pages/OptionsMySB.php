@@ -26,6 +26,7 @@ global $MySB_DB, $CurrentUser;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 // VARs
+$users_datas = $MySB_DB->get("users", ["id_users", "rtorrent_version", "rtorrent_notify", "rtorrent_restart", "language"], ["users_ident" => "$CurrentUser"]);
 $UserID = $users_datas['id_users'];
 $Command = 'message_only';
 $rTorrentVersionsList = array('v0.9.2', 'v0.9.6');
