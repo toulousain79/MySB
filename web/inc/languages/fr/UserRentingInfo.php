@@ -22,47 +22,9 @@
 //
 //#################### FIRST LINE #####################################
 
-require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
-
-function Form() {
-	global $MySB_DB;
-
-	// Users table
-	$Rent_Payments = $MySB_DB->select("tracking_rent_payments", ["id_tracking_rent_payments", "id_users", "payment_date", "amount", "balance"]);
-
-	if (!empty($Rent_Payments)) {
-		echo '<div align="center">
-				<form class="form_settings" method="post" action="">
-					<table style="border-spacing:1;">
-						<tr>
-							<th style="text-align:center;">' . MainUser_Renting_TitleUser . '</th>
-							<th style="text-align:center;">' . MainUser_Renting_TitleDate . '</th>
-							<th style="text-align:center;">' . MainUser_Renting_TitleAmount . '</th>
-							<th style="text-align:center;">' . MainUser_Renting_TitleBalance . '</th>
-						</tr>';
-
-			foreach($Rent_Payments as $Payment) {
-				$UserName = $MySB_DB->get("users", "users_ident", ["id_users" => $Payment["id_users"]]);
-				$Date = $Payment["payment_date"];
-				$Amount = $Payment["amount"];
-				$Balance = $Payment["balance"];
-
-				echo '	<tr>
-							<td><div align="center">' . $UserName . '</div></td>
-							<td><div align="center">' . $Date . '</div></td>
-							<td><div align="center">' . $Amount . '</div></td>
-							<td><div align="center">' . $Balance . '</div></td>
-						</tr>';
-			}
-
-			echo '	</table>
-				</form>
-			</div>';
-	}
-
-	echo '<script type="text/javascript" src="' . THEMES_PATH . 'MySB/js/jquery-dynamically-adding-form-elements.js"></script>';
-}
-
-Form();
+define('MainUser_Renting_TitleUser', 'Utilisateur');
+define('MainUser_Renting_TitleDate', 'Date');
+define('MainUser_Renting_TitleAmount', 'Versement');
+define('MainUser_Renting_TitleBalance', 'Balance');
 
 //#################### LAST LINE ######################################
