@@ -278,6 +278,18 @@ CREATE TABLE IF NOT EXISTS `system` (
   UNIQUE KEY `mysb_version` (`mysb_version`,`mysb_user`,`mysb_password`,`hostname`,`ipv4`,`primary_inet`,`timezone`,`cert_password`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+--
+-- Déclencheurs `system`
+--
+DROP TRIGGER IF EXISTS `PricePerUser`;
+DELIMITER //
+CREATE TRIGGER `PricePerUser` BEFORE UPDATE ON `system`
+ FOR EACH ROW BEGIN
+	SET NEW.rt_price_per_users = (NEW.rt_cost_tva / NEW.rt_nb_users);
+END
+//
+DELIMITER ;
+
 -- --------------------------------------------------------
 
 --
@@ -347,6 +359,26 @@ CREATE TABLE IF NOT EXISTS `tracking_rent_history` (
   PRIMARY KEY (`id_tracking_rent_history`),
   KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+--
+-- Déclencheurs `tracking_rent_history`
+--
+DROP TRIGGER IF EXISTS `PeriodPrice`;
+DELIMITER //
+CREATE TRIGGER `PeriodPrice` BEFORE INSERT ON `tracking_rent_history`
+ FOR EACH ROW BEGIN
+	SET NEW.year = YEAR(NOW());
+	SET NEW.month = MONTH(NOW());
+	SET NEW.users_price = (NEW.monthly_price / NEW.nb_users);
+	SET NEW.nb_days_month = RIGHT(LAST_DAY(NOW()), 2);
+	SET NEW.start_of_used = DAY(NOW());
+	SET NEW.end_of_used = NEW.nb_days_month;
+	SET NEW.remain_days = (NEW.nb_days_month - NEW.start_of_used + 1);
+	SET NEW.period_price = (((NEW.monthly_price / NEW.nb_users) / NEW.nb_days_month) * NEW.remain_days);
+	SET NEW.treasury = 0.00;
+END
+//
+DELIMITER ;
 
 --
 -- RELATIONS POUR LA TABLE `tracking_rent_history`:
