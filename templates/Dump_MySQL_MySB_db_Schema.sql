@@ -315,7 +315,6 @@ CREATE TABLE IF NOT EXISTS `tracking_rent_history` (
   `end_of_used` tinyint(2) DEFAULT NULL,
   `remain_days` tinyint(2) DEFAULT NULL,
   `period_price` decimal(4,2) DEFAULT NULL,
-  `treasury` decimal(4,2) DEFAULT NULL,
   PRIMARY KEY (`id_tracking_rent_history`),
   KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
@@ -335,7 +334,7 @@ CREATE TRIGGER `PeriodPrice` BEFORE INSERT ON `tracking_rent_history`
 	SET NEW.end_of_used = NEW.nb_days_month;
 	SET NEW.remain_days = (NEW.nb_days_month - NEW.start_of_used + 1);
 	SET NEW.period_price = (((NEW.monthly_price / NEW.nb_users) / NEW.nb_days_month) * NEW.remain_days);
-	SET NEW.treasury = 0.00;
+	UPDATE tracking_rent_status SET monthly_cost=NEW.users_price WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month;
 END
 //
 DELIMITER ;

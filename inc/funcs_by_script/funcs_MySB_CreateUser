@@ -571,17 +571,27 @@ CreateRtorrentConfigFile() {
 #### Monthly payment
 MonthlyPayment() {
 	if [ ! -z "$1" ] && [ ! -z "$RentingGlobalCost" ] && [ ! -z "$RentingCostTva" ] && [ ! -z "$RentingTVA" ] && [ ! -z "$RentingModel" ]; then
-		# VARs
 		User="$1"
-		IdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$User'"`"
 
 		# Renting
 		log_daemon_msg "$FnCreateUser_MonthlyPayments"
-		Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,date,monthly_price,nb_users' "\"$IdUser\",\"$(date +%Y-%m-%d)\",\"$RentingCostTva\",\"$TotalUsers\""
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "rt_model = '$RentingModel', rt_tva = '$RentingTVA', rt_global_cost = '$RentingGlobalCost', rt_cost_tva = '$RentingCostTva', rt_nb_users = '$TotalUsers'" "id_system = '1'"
+		case "$ScriptName" in
+			MySB_CreateUser)
+				IdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$User'"`"
+				# 1/	On ajoute une entrée dans 'tracking_rent_status'.
+				Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_status' 'id_users,year,month,monthly_cost' "\"$IdUser\",\"$(date +%Y)\",\"$(date +%m)\""
+				# 2/	On ajoute maintenant une entrée dans 'tracking_rent_history'.
+				#		Cette table dispose d'un TRIGGER mettant à jour d'autres tables dont 'tracking_rent_status'.
+				Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,date,monthly_price,nb_users' "\"$IdUser\",\"$(date +%Y-%m-%d)\",\"$RentingCostTva\",\"$TotalUsers\""
+				
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "rt_model = '$RentingModel', rt_tva = '$RentingTVA', rt_global_cost = '$RentingGlobalCost', rt_cost_tva = '$RentingCostTva', rt_nb_users = '$TotalUsers'" "id_system = '1'"
+			;;
+			#MySB_DeleteUser)
+				# Servira à envoyer un récapitulatif à l'utilisateur, comme le montant de sa dette par exemple.
+			#;;
+		esac
 		StatusLSB
 
-		ListingUsers
 		for SeedboxUser in $UsersList; do
 			# Renting
 			IdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$User'"`"
