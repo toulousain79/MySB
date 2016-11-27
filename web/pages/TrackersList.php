@@ -61,13 +61,15 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$message = Global_FailedUpdateMysbDB;
 			}
 			break;
-		default: //Delete
-			if (isset($_POST['delete'])) {
-				foreach($_POST['delete'] as $key => $value) {
-					$result = $MySB_DB->delete("trackers_list_ipv4", ["id_trackers_list" => $key]);
-					if ( $result = 0 ) {
-						$success = false;
-					}
+
+		//default: //Delete
+		case Global_Delete:
+			if (isset($_POST['submit'])) {
+				foreach($_POST['submit'] as $key => $value) {
+					// $result = $MySB_DB->delete("trackers_list_ipv4", ["id_trackers_list" => $key]);
+					// if ( $result = 0 ) {
+						// $success = false;
+					// }
 
 					$result = $MySB_DB->delete("trackers_list", ["id_trackers_list" => $key]);
 					if ( $result = 0 ) {
@@ -116,7 +118,7 @@ foreach($TrackersList as $Tracker) {
 	switch ($Tracker["origin"]) {
 		case 'users':
 			if ( $IsMainUser ) {
-				$origin = '<td><input class="submit" name="delete['. $Tracker["id_trackers_list"] .']" type="submit" value="Delete" /></td>';
+				$origin = '<td><input class="submit" name="submit['. $Tracker["id_trackers_list"] .']" type="submit" value="' . Global_Delete . '" /></td>';
 			} else {
 				$origin = '<td></td>';
 			}

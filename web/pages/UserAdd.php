@@ -88,11 +88,12 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 			GenerateMessage('MySB_CreateUser', $type, $message, $args);
 			break;
-		default: //Delete
-			if (isset($_POST['delete'])) {
+		//default: //Delete
+		case Global_Delete:
+			if (isset($_POST['submit'])) {
 				$args = false;
 
-				foreach($_POST['delete'] as $key => $value) {
+				foreach($_POST['submit'] as $key => $value) {
 					$IfExist = $MySB_DB->get("users", "users_ident", ["users_ident" => "$key"]);
 					if ( $IfExist != '' ) {
 						$type = 'success';
@@ -150,7 +151,7 @@ if ( !empty($UsersList) ) {
 					<b><?php echo $Subtotal; ?></b>
 				</td>
 				<!--<td>
-					<input class="submit" name="delete[<?php echo $User["users_ident"]; ?>]" type="submit" value="<?php echo Global_Delete; ?>" />
+					<input class="submit" name="submit[<?php echo $User["users_ident"]; ?>]" type="submit" value="<?php echo Global_Delete; ?>" />
 				</td>-->
 			</tr>
 <?php

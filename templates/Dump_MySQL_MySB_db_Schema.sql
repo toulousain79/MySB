@@ -1,10 +1,32 @@
+-- phpMyAdmin SQL Dump
+-- version 3.4.11.1deb2+deb7u6
+-- http://www.phpmyadmin.net
+--
+-- Client: localhost
+-- Généré le: Dim 27 Novembre 2016 à 17:58
+-- Version du serveur: 5.5.53
+-- Version de PHP: 5.4.45-0+deb7u5
+
 SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
+
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8 */;
+
+--
+-- Base de données: `MySB_db`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `blocklists`
+--
+-- Création: Dim 27 Novembre 2016 à 16:18
+--
 
 CREATE TABLE IF NOT EXISTS `blocklists` (
   `id_blocklists` int(11) NOT NULL AUTO_INCREMENT,
@@ -24,6 +46,14 @@ CREATE TABLE IF NOT EXISTS `blocklists` (
   UNIQUE KEY `url_infos` (`url_infos`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `commands`
+--
+-- Création: Dim 27 Novembre 2016 à 16:18
+--
+
 CREATE TABLE IF NOT EXISTS `commands` (
   `id_commands` int(11) NOT NULL AUTO_INCREMENT,
   `commands` varchar(32) NOT NULL,
@@ -33,6 +63,14 @@ CREATE TABLE IF NOT EXISTS `commands` (
   `user` varchar(16) NOT NULL,
   PRIMARY KEY (`id_commands`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `dnscrypt_resolvers`
+--
+-- Création: Dim 27 Novembre 2016 à 16:18
+--
 
 CREATE TABLE IF NOT EXISTS `dnscrypt_resolvers` (
   `id_dnscrypt_resolvers` int(11) NOT NULL AUTO_INCREMENT,
@@ -57,12 +95,28 @@ CREATE TABLE IF NOT EXISTS `dnscrypt_resolvers` (
   UNIQUE KEY `name` (`name`,`full_name`,`resolver_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `lets_encrypt`
+--
+-- Création: Dim 27 Novembre 2016 à 16:18
+--
+
 CREATE TABLE IF NOT EXISTS `lets_encrypt` (
   `id_lets_encrypt` int(11) NOT NULL AUTO_INCREMENT,
   `addresses` varchar(128) NOT NULL,
   `ipv4` varchar(15) NOT NULL,
   PRIMARY KEY (`id_lets_encrypt`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `port_forwarding`
+--
+-- Création: Dim 27 Novembre 2016 à 16:18
+--
 
 CREATE TABLE IF NOT EXISTS `port_forwarding` (
   `id_port_forwarding` int(11) NOT NULL AUTO_INCREMENT,
@@ -73,14 +127,37 @@ CREATE TABLE IF NOT EXISTS `port_forwarding` (
   `is_active` tinyint(1) NOT NULL DEFAULT '0',
   `is_reserved` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_port_forwarding`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `port_forwarding_addresses`
+--
+-- Création: Dim 27 Novembre 2016 à 16:29
+--
 
 CREATE TABLE IF NOT EXISTS `port_forwarding_addresses` (
   `id_port_forwarding_addresses` int(11) NOT NULL AUTO_INCREMENT,
   `id_port_forwarding` int(11) NOT NULL,
   `addresses` varchar(128) NOT NULL,
-  PRIMARY KEY (`id_port_forwarding_addresses`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+  PRIMARY KEY (`id_port_forwarding_addresses`),
+  KEY `id_port_forwarding` (`id_port_forwarding`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+--
+-- RELATIONS POUR LA TABLE `port_forwarding_addresses`:
+--   `id_port_forwarding`
+--       `port_forwarding` -> `id_port_forwarding`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `providers_monitoring`
+--
+-- Création: Dim 27 Novembre 2016 à 16:18
+--
 
 CREATE TABLE IF NOT EXISTS `providers_monitoring` (
   `id_providers_monitoring` int(11) NOT NULL AUTO_INCREMENT,
@@ -89,6 +166,14 @@ CREATE TABLE IF NOT EXISTS `providers_monitoring` (
   `hostname` varchar(32) NOT NULL,
   PRIMARY KEY (`id_providers_monitoring`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `repositories`
+--
+-- Création: Dim 27 Novembre 2016 à 16:18
+--
 
 CREATE TABLE IF NOT EXISTS `repositories` (
   `id_repositories` int(11) NOT NULL AUTO_INCREMENT,
@@ -104,6 +189,14 @@ CREATE TABLE IF NOT EXISTS `repositories` (
   `script` varchar(128) NOT NULL,
   PRIMARY KEY (`id_repositories`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `services`
+--
+-- Création: Dim 27 Novembre 2016 à 16:18
+--
 
 CREATE TABLE IF NOT EXISTS `services` (
   `id_services` int(11) NOT NULL AUTO_INCREMENT,
@@ -124,6 +217,14 @@ CREATE TABLE IF NOT EXISTS `services` (
   UNIQUE KEY `serv_name` (`serv_name`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `smtp`
+--
+-- Création: Dim 27 Novembre 2016 à 16:18
+--
+
 CREATE TABLE IF NOT EXISTS `smtp` (
   `id_smtp` int(11) NOT NULL AUTO_INCREMENT,
   `smtp_provider` varchar(5) NOT NULL DEFAULT 'LOCAL',
@@ -135,6 +236,14 @@ CREATE TABLE IF NOT EXISTS `smtp` (
   PRIMARY KEY (`id_smtp`),
   UNIQUE KEY `smtp_provider` (`smtp_provider`,`smtp_username`,`smtp_passwd`,`smtp_host`,`smtp_port`,`smtp_email`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `system`
+--
+-- Création: Dim 27 Novembre 2016 à 16:18
+--
 
 CREATE TABLE IF NOT EXISTS `system` (
   `id_system` int(11) NOT NULL,
@@ -169,6 +278,14 @@ CREATE TABLE IF NOT EXISTS `system` (
   UNIQUE KEY `mysb_version` (`mysb_version`,`mysb_user`,`mysb_password`,`hostname`,`ipv4`,`primary_inet`,`timezone`,`cert_password`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `trackers_list`
+--
+-- Création: Dim 27 Novembre 2016 à 16:18
+--
+
 CREATE TABLE IF NOT EXISTS `trackers_list` (
   `id_trackers_list` int(11) NOT NULL AUTO_INCREMENT,
   `tracker` varchar(128) NOT NULL,
@@ -180,31 +297,120 @@ CREATE TABLE IF NOT EXISTS `trackers_list` (
   `ping` varchar(64) NOT NULL,
   PRIMARY KEY (`id_trackers_list`),
   UNIQUE KEY `tracker` (`tracker`,`tracker_domain`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `trackers_list_ipv4`
+--
+-- Création: Dim 27 Novembre 2016 à 16:26
+--
 
 CREATE TABLE IF NOT EXISTS `trackers_list_ipv4` (
   `id_trackers_list_ipv4` int(11) NOT NULL AUTO_INCREMENT,
   `id_trackers_list` int(11) NOT NULL,
   `ipv4` varchar(15) NOT NULL,
-  PRIMARY KEY (`id_trackers_list_ipv4`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+  PRIMARY KEY (`id_trackers_list_ipv4`),
+  KEY `id_trackers_list` (`id_trackers_list`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
-CREATE TABLE IF NOT EXISTS `tracking_history` (
-  `id_tracking_history` int(11) NOT NULL AUTO_INCREMENT,
+--
+-- RELATIONS POUR LA TABLE `trackers_list_ipv4`:
+--   `id_trackers_list`
+--       `trackers_list` -> `id_trackers_list`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `tracking_rent_history`
+--
+-- Création: Dim 27 Novembre 2016 à 16:31
+--
+
+CREATE TABLE IF NOT EXISTS `tracking_rent_history` (
+  `id_tracking_rent_history` int(11) NOT NULL AUTO_INCREMENT,
   `id_users` int(11) NOT NULL,
+  `date` date NOT NULL,
+  `year` smallint(4) DEFAULT NULL,
+  `month` tinyint(2) DEFAULT NULL,
   `monthly_price` decimal(4,2) NOT NULL,
   `nb_users` int(4) NOT NULL,
   `users_price` decimal(4,2) DEFAULT NULL,
-  `year` smallint(4) DEFAULT NULL,
-  `month` tinyint(2) DEFAULT NULL,
-  `nb_days` tinyint(2) DEFAULT NULL,
-  `added_day` tinyint(2) DEFAULT NULL,
-  `delete_day` tinyint(2) DEFAULT NULL,
+  `nb_days_month` tinyint(2) DEFAULT NULL,
+  `start_of_used` tinyint(2) DEFAULT NULL,
+  `end_of_used` tinyint(2) DEFAULT NULL,
   `remain_days` tinyint(2) DEFAULT NULL,
-  `real_price` decimal(4,2) DEFAULT NULL,
-  PRIMARY KEY (`id_tracking_rent`),
+  `period_price` decimal(4,2) DEFAULT NULL,
+  `treasury` decimal(4,2) DEFAULT NULL,
+  PRIMARY KEY (`id_tracking_rent_history`),
   KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+--
+-- RELATIONS POUR LA TABLE `tracking_rent_history`:
+--   `id_users`
+--       `users` -> `id_users`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `tracking_rent_payments`
+--
+-- Création: Dim 27 Novembre 2016 à 16:31
+--
+
+CREATE TABLE IF NOT EXISTS `tracking_rent_payments` (
+  `id_tracking_rent_payments` int(11) NOT NULL AUTO_INCREMENT,
+  `id_users` int(11) NOT NULL,
+  `payment_date` date DEFAULT NULL,
+  `amount` decimal(4,2) DEFAULT NULL,
+  `balance` decimal(4,2) DEFAULT NULL,
+  PRIMARY KEY (`id_tracking_rent_payments`),
+  KEY `id_users` (`id_users`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+--
+-- RELATIONS POUR LA TABLE `tracking_rent_payments`:
+--   `id_users`
+--       `users` -> `id_users`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `tracking_rent_status`
+--
+-- Création: Dim 27 Novembre 2016 à 16:31
+--
+
+CREATE TABLE IF NOT EXISTS `tracking_rent_status` (
+  `id_tracking_rent_status` int(11) NOT NULL AUTO_INCREMENT,
+  `id_users` int(11) NOT NULL,
+  `year` smallint(4) DEFAULT NULL,
+  `month` tinyint(2) DEFAULT NULL,
+  `nb_days_used` tinyint(2) DEFAULT NULL,
+  `monthly_cost` decimal(4,2) DEFAULT NULL,
+  `treasury` decimal(4,2) DEFAULT NULL,
+  PRIMARY KEY (`id_tracking_rent_status`),
+  KEY `id_users` (`id_users`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+--
+-- RELATIONS POUR LA TABLE `tracking_rent_status`:
+--   `id_users`
+--       `users` -> `id_users`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `users`
+--
+-- Création: Dim 27 Novembre 2016 à 16:33
+--
 
 CREATE TABLE IF NOT EXISTS `users` (
   `id_users` int(11) NOT NULL AUTO_INCREMENT,
@@ -226,9 +432,16 @@ CREATE TABLE IF NOT EXISTS `users` (
   `init_password` tinyint(1) NOT NULL DEFAULT '0',
   `quota` int(32) NOT NULL,
   `treasury` decimal(4,2) DEFAULT NULL,
-  PRIMARY KEY (`id_users`),
-  UNIQUE KEY `users_ident` (`users_ident`)
+  PRIMARY KEY (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `users_addresses`
+--
+-- Création: Dim 27 Novembre 2016 à 16:27
+--
 
 CREATE TABLE IF NOT EXISTS `users_addresses` (
   `id_users_addresses` int(11) NOT NULL AUTO_INCREMENT,
@@ -238,8 +451,23 @@ CREATE TABLE IF NOT EXISTS `users_addresses` (
   `check_by` varchar(8) NOT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT '0',
   `last_update` datetime NOT NULL,
-  PRIMARY KEY (`id_users_addresses`)
+  PRIMARY KEY (`id_users_addresses`),
+  KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+--
+-- RELATIONS POUR LA TABLE `users_addresses`:
+--   `id_users`
+--       `users` -> `id_users`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `users_crontab`
+--
+-- Création: Dim 27 Novembre 2016 à 16:27
+--
 
 CREATE TABLE IF NOT EXISTS `users_crontab` (
   `id_users_crontab` int(11) NOT NULL AUTO_INCREMENT,
@@ -250,8 +478,23 @@ CREATE TABLE IF NOT EXISTS `users_crontab` (
   `months` varchar(16) NOT NULL,
   `numday` varchar(16) NOT NULL,
   `command` varchar(32) NOT NULL,
-  PRIMARY KEY (`id_users_crontab`)
+  PRIMARY KEY (`id_users_crontab`),
+  KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+--
+-- RELATIONS POUR LA TABLE `users_crontab`:
+--   `id_users`
+--       `users` -> `id_users`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `users_rtorrent_cfg`
+--
+-- Création: Dim 27 Novembre 2016 à 16:28
+--
 
 CREATE TABLE IF NOT EXISTS `users_rtorrent_cfg` (
   `id_users_rtorrent_cfg` int(11) NOT NULL AUTO_INCREMENT,
@@ -260,16 +503,46 @@ CREATE TABLE IF NOT EXISTS `users_rtorrent_cfg` (
   `can_be_deleted` tinyint(1) NOT NULL DEFAULT '0',
   `to_delete` tinyint(1) NOT NULL DEFAULT '0',
   `sync_mode` tinyint(1) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id_users_rtorrent_cfg`)
+  PRIMARY KEY (`id_users_rtorrent_cfg`),
+  KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+--
+-- RELATIONS POUR LA TABLE `users_rtorrent_cfg`:
+--   `id_users`
+--       `users` -> `id_users`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `users_scripts`
+--
+-- Création: Dim 27 Novembre 2016 à 16:28
+--
 
 CREATE TABLE IF NOT EXISTS `users_scripts` (
   `id_users_scripts` int(11) NOT NULL AUTO_INCREMENT,
   `id_users` int(11) NOT NULL,
   `sync_mode` varchar(7) NOT NULL,
   `script` varchar(32) NOT NULL,
-  PRIMARY KEY (id_users_scripts)
+  PRIMARY KEY (`id_users_scripts`),
+  KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+--
+-- RELATIONS POUR LA TABLE `users_scripts`:
+--   `id_users`
+--       `users` -> `id_users`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `vars`
+--
+-- Création: Dim 27 Novembre 2016 à 16:20
+--
 
 CREATE TABLE IF NOT EXISTS `vars` (
   `id_vars` int(11) NOT NULL AUTO_INCREMENT,
@@ -279,6 +552,64 @@ CREATE TABLE IF NOT EXISTS `vars` (
   `white_udp_port_out` varchar(16) NOT NULL,
   PRIMARY KEY (`id_vars`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+--
+-- Contraintes pour les tables exportées
+--
+
+--
+-- Contraintes pour la table `port_forwarding_addresses`
+--
+ALTER TABLE `port_forwarding_addresses`
+  ADD CONSTRAINT `port_forwarding_addresses_ibfk_1` FOREIGN KEY (`id_port_forwarding`) REFERENCES `port_forwarding` (`id_port_forwarding`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `trackers_list_ipv4`
+--
+ALTER TABLE `trackers_list_ipv4`
+  ADD CONSTRAINT `trackers_list_ipv4_ibfk_1` FOREIGN KEY (`id_trackers_list`) REFERENCES `trackers_list` (`id_trackers_list`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `tracking_rent_history`
+--
+ALTER TABLE `tracking_rent_history`
+  ADD CONSTRAINT `tracking_rent_history_ibfk_1` FOREIGN KEY (`id_users`) REFERENCES `users` (`id_users`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `tracking_rent_payments`
+--
+ALTER TABLE `tracking_rent_payments`
+  ADD CONSTRAINT `tracking_rent_payments_ibfk_1` FOREIGN KEY (`id_users`) REFERENCES `users` (`id_users`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `tracking_rent_status`
+--
+ALTER TABLE `tracking_rent_status`
+  ADD CONSTRAINT `tracking_rent_status_ibfk_1` FOREIGN KEY (`id_users`) REFERENCES `users` (`id_users`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `users_addresses`
+--
+ALTER TABLE `users_addresses`
+  ADD CONSTRAINT `users_addresses_ibfk_1` FOREIGN KEY (`id_users`) REFERENCES `users` (`id_users`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `users_crontab`
+--
+ALTER TABLE `users_crontab`
+  ADD CONSTRAINT `users_crontab_ibfk_1` FOREIGN KEY (`id_users`) REFERENCES `users` (`id_users`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `users_rtorrent_cfg`
+--
+ALTER TABLE `users_rtorrent_cfg`
+  ADD CONSTRAINT `users_rtorrent_cfg_ibfk_1` FOREIGN KEY (`id_users`) REFERENCES `users` (`id_users`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `users_scripts`
+--
+ALTER TABLE `users_scripts`
+  ADD CONSTRAINT `users_scripts_ibfk_1` FOREIGN KEY (`id_users`) REFERENCES `users` (`id_users`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

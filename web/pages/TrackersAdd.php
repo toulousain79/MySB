@@ -125,14 +125,15 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 			break;
 
-		default: // delete
-			if (isset($_POST['delete'])) {
+		//default: // delete
+		case Global_Delete;
+			if (isset($_POST['submit'])) {
 
-				foreach($_POST['delete'] as $key => $value) {
-					$result = $MySB_DB->delete("trackers_list_ipv4", ["id_trackers_list" => $key]);
-					if ( $result = 0 ) {
-						$success = false;
-					}
+				foreach($_POST['submit'] as $key => $value) {
+					// $result = $MySB_DB->delete("trackers_list_ipv4", ["id_trackers_list" => $key]);
+					// if ( $result = 0 ) {
+						// $success = false;
+					// }
 
 					$result = $MySB_DB->delete("trackers_list", ["id_trackers_list" => $key]);
 					if ( $result = 0 ) {
@@ -281,7 +282,7 @@ foreach($TrackersList as $Tracker) {
 					<?php echo $is_active; ?>
 				</td>
 				<td>
-					<input class="submit" name="delete[<?php echo $Tracker["id_trackers_list"]; ?>]" type="submit" value="<?php echo Global_Delete; ?>" />
+					<input class="submit" name="submit[<?php echo $Tracker["id_trackers_list"]; ?>]" type="submit" value="<?php echo Global_Delete; ?>" />
 				</td>
 			</tr>
 			<input class="input_id_tab_tracker" id="input_id_tab_tracker" name="input_id_tab_tracker[<?php echo $i; ?>]" type="hidden" value="<?php echo $i; ?>" />
