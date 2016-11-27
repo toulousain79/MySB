@@ -108,4 +108,7 @@ require_once(FILE_FUNCS);
 // Services table
 $Port_HTTPs = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "NginX"]);
 
+// Load System table
+$Hostname = $MySB_DB->get("system", "hostname", ["id_system" => 1]);
+
 //#################### LAST LINE #####################################
