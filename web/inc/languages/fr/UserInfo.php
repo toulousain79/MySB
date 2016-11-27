@@ -50,6 +50,9 @@ define('User_UserInfo_Comment_RPC', 'La valeur RPC peut &ecirc;tre utilis&eacute
 // SFTP
 define('User_UserInfo_Table_SFTP', 'sFTP');
 define('User_UserInfo_Comment_SFTP', ' ');
+// Quota
+define('User_UserInfo_Table_Quota', 'Quota');
+define('User_UserInfo_Comment_Quota', 'Espace disque qui vous est r&eacute;serv&eacute;. Evolue en fonction de la quantit&eacute; d\'utilisateur.');
 
 //////////////////////
 // Directories
@@ -92,7 +95,7 @@ define('User_UserInfo_Table_FtpsPort', 'Port FTPs (TLS)');
 define('User_UserInfo_Comment_FtpsPort', 'Il est n&eacute;cessaire de configurer votre logiciel client FTP en sp&eacute;cifiant ce num&eacute;ro de port. Vous devez s&eacute;lectionner &quot;FTPs&quot; et "Connexion FTP explicite TLS". Plus simple, t&eacute;l&eacute;chargez directement le fichier XML pr&eacute;-param&eacute;tr&eacute; via Seedbox-Manager.');
 // SCGI Port
 define('User_UserInfo_Table_ScgiPort', 'Port SCGI');
-define('User_UserInfo_Comment_ScgiPort', 'Cette valeur est utilisée conjointement avec RPC.');
+define('User_UserInfo_Comment_ScgiPort', 'Cette valeur est utilis&eacute;e conjointement avec RPC.');
 // rTorrent Port
 define('User_UserInfo_Table_RtorrentPort', 'Port rTorrent');
 define('User_UserInfo_Comment_RtorrentPort', 'Correspond au port r&eacute;seau de votre session rTorrent.');
@@ -198,14 +201,28 @@ define('User_UserInfo_Comment_GetTrackersCert', 'Obtenez tous les certificats SS
 define('User_UserInfo_Title_Renting', 'Informations location');
 // Server model
 define('User_UserInfo_Table_SrvModel', 'Mod&egrave;le du serveur');
-// Global cost
-define('User_UserInfo_Table_GlobalCost', 'Co&ucirc;t global');
+define('User_UserInfo_Comment_SrvModel', 'R&eacute;f&eacute;rence de cette SeedBox');
 // TVA
 define('User_UserInfo_Table_TVA', 'TVA');
+define('User_UserInfo_Comment_TVA', 'Taux de la taxe incluse');
+// Global cost Duty free
+define('User_UserInfo_Table_GlobalCost', 'Co&ucirc;t global HT');
+define('User_UserInfo_Comment_GlobalCost', 'Co&ucirc;t global mensuel du serveur Hors Taxe');
+define('User_UserInfo_Table_GlobalCost_Plus', ' &euro; HT / mois');
+// Global cost Inc. Tax
+define('User_UserInfo_Table_GlobalCostTva', 'Co&ucirc;t global TTC');
+define('User_UserInfo_Comment_GlobalCostTva', 'Co&ucirc;t global mensuel du serveur Toute Taxe Comprise');
+define('User_UserInfo_Table_GlobalCostTva_Plus', ' &euro; TTC / mois');
 // Total users
 define('User_UserInfo_Table_TotalUsers', 'Nombre d\'utilisateurs');
+define('User_UserInfo_Comment_TotalUsers', 'Avec combien d\'utilisateur partagez-vous cette SeedBox ?');
 // TOTAL per users
 define('User_UserInfo_Table_TotalPerUser', 'TOTAL par utilisateur');
 define('User_UserInfo_Table_TotalPerUser_Plus', ' &euro; TTC / mois');
+define('User_UserInfo_Comment_TotalPerUser', 'Votre participation pour l\'utilisation de cette SeedBox.');
+// User Treasury
+define('User_UserInfo_Table_Treasury', 'Tr&eacute;sorerie');
+define('User_UserInfo_Table_Treasury_Plus', ' &euro;');
+define('User_UserInfo_Comment_Treasury', 'Etes-vous d&eacute;biteur ou cr&eacute;diteur ?');
 
 //#################### LAST LINE ######################################

@@ -245,6 +245,12 @@ function PrintContent($user, $Case) {
 			<td><?php echo $sftp;?></td>
 			<td><span class="Comments"><?php echo User_UserInfo_Comment_SFTP; ?></span></td>
 		</tr>
+		<!-- // Quota -->
+		<tr align="left">
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Quota; ?></th>
+			<td><?php echo GetSizeName($users_datas["quota"].'KB');?></td>
+			<td><span class="Comments"><?php echo User_UserInfo_Comment_Quota; ?></span></td>
+		</tr>
 <?php } ?>
 
 		<!-- // Force IP address -->
@@ -489,31 +495,43 @@ function PrintContent($user, $Case) {
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SrvModel; ?></th>
 				<td><?php echo $RentingDatas["rt_model"];?></td>
-				<td> </td>
-			</tr>
-			<!-- // Global cost -->
-			<tr align="left">
-				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_GlobalCost; ?></th>
-				<td><?php echo $RentingDatas["rt_global_cost"];?></td>
-				<td> </td>
+				<td><?php echo User_UserInfo_Comment_SrvModel; ?></td>
 			</tr>
 			<!-- // TVA -->
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TVA; ?></th>
 				<td><?php echo $RentingDatas["rt_tva"];?></td>
-				<td> </td>
+				<td><?php echo User_UserInfo_Comment_TVA; ?></td>
+			</tr>
+			<!-- // Global cost Duty Free -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_GlobalCost; ?></th>
+				<td><?php echo $RentingDatas["rt_global_cost"] . User_UserInfo_Table_GlobalCost_Plus;?></td>
+				<td><?php echo User_UserInfo_Comment_GlobalCost; ?></td>
+			</tr>
+			<!-- // Global cost Inc. Tax -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_GlobalCostTva; ?></th>
+				<td><?php echo $RentingDatas["rt_global_cost"] . User_UserInfo_Table_GlobalCostTva_Plus;?></td>
+				<td><?php echo User_UserInfo_Comment_GlobalCostTva; ?></td>
 			</tr>
 			<!-- // Total users -->
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalUsers; ?></th>
 				<td><?php echo $RentingDatas["rt_nb_users"];?></td>
-				<td> </td>
+				<td><?php echo User_UserInfo_Comment_TotalUsers; ?></td>
 			</tr>
 			<!-- // TOTAL per users -->
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalPerUser; ?></th>
 				<td><b><span class="FontInRed"><?php echo $RentingDatas["rt_price_per_users"];?></span></b><?php echo User_UserInfo_Table_TotalPerUser_Plus; ?></td>
-				<td> </td>
+				<td><?php echo User_UserInfo_Comment_TotalPerUser; ?></td>
+			</tr>
+			<!-- // User Treasury -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Treasury; ?></th>
+				<td><b><span class="FontInRed"><?php echo $RentingDatas["rt_price_per_users"];?></span></b><?php echo User_UserInfo_Table_Treasury_Plus; ?></td>
+				<td><?php echo User_UserInfo_Comment_Treasury; ?></td>
 			</tr>
 <?php
 		}

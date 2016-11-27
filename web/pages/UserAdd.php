@@ -111,7 +111,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 Form();
 
-$UsersList = $MySB_DB->select("users", "*", ["AND" => ["is_active" => "1"]]);
+$UsersList = $MySB_DB->select("users", ["id_users", "users_ident", "users_email", "quota"], ["AND" => ["is_active" => "1"]]);
 
 if ( !empty($UsersList) ) {
 ?>
@@ -121,11 +121,18 @@ if ( !empty($UsersList) ) {
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Username; ?></th>
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Email; ?></th>
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Quota; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Treasury; ?></th>
 				<!--<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>-->
 			</tr>
 
 <?php
 	foreach($UsersList as $User) {
+		$Subtotal = $MySB_DB->sum("tracking_rent_payments", "balance", ["id_users" => $User["id_users"]]);
+		if (is_numeric($Subtotal) && $Subtotal > 0) {
+			$Color = 'color: #00DF00;';
+		} else {
+			$Color = 'color: #FF0000;';
+		}
 ?>
 			<tr>
 				<td>
@@ -138,6 +145,9 @@ if ( !empty($UsersList) ) {
 				</td>
 				<td>
 					<?php echo GetSizeName($User["quota"].'KB'); ?>
+				</td>
+				<td style="text-align:center; <?php echo $Color; ?>">
+					<b><?php echo $Subtotal; ?></b>
 				</td>
 				<!--<td>
 					<input class="submit" name="delete[<?php echo $User["users_ident"]; ?>]" type="submit" value="<?php echo Global_Delete; ?>" />

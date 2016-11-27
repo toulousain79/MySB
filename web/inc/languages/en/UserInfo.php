@@ -50,6 +50,9 @@ define('User_UserInfo_Comment_RPC', 'RPC value can be used to remotely connect t
 // SFTP
 define('User_UserInfo_Table_SFTP', 'sFTP');
 define('User_UserInfo_Comment_SFTP', ' ');
+// Quota
+define('User_UserInfo_Table_Quota', 'Quota');
+define('User_UserInfo_Comment_Quota', 'Disk space reserved for you. Evolves according to the amount of user.');
 
 //////////////////////
 // Directories
@@ -198,14 +201,28 @@ define('User_UserInfo_Comment_GetTrackersCert', 'Get all SSL certificates for al
 define('User_UserInfo_Title_Renting', 'Price and Payment info');
 // Server model
 define('User_UserInfo_Table_SrvModel', 'Server model');
-// Global cost
-define('User_UserInfo_Table_GlobalCost', 'Global cost');
+define('User_UserInfo_Comment_SrvModel', 'Reference of this SeedBox');
 // TVA
 define('User_UserInfo_Table_TVA', 'TVA');
+define('User_UserInfo_Comment_TVA', 'Rate of tax included');
+// Global cost Duty free
+define('User_UserInfo_Table_GlobalCost', 'Global cost Duty Free');
+define('User_UserInfo_Comment_GlobalCost', 'Total monthly cost excluding tax');
+define('User_UserInfo_Table_GlobalCost_Plus', ' &euro; Duty free / month');
+// Global cost Inc. Tax
+define('User_UserInfo_Table_GlobalCostTva', 'Global cost Incl. Tax');
+define('User_UserInfo_Comment_GlobalCostTva', 'Total monthly cost including tax');
+define('User_UserInfo_Table_GlobalCostTva_Plus', ' &euro; Incl. Tax / month');
 // Total users
 define('User_UserInfo_Table_TotalUsers', 'Total users');
+define('User_UserInfo_Comment_TotalUsers', 'With how many users do you share this SeedBox?');
 // TOTAL per users
 define('User_UserInfo_Table_TotalPerUser', 'TOTAL per user');
-define('User_UserInfo_Table_TotalPerUser_Plus', ' &euro; TTC / month');
+define('User_UserInfo_Table_TotalPerUser_Plus', ' &euro; Incl. Tax / month');
+define('User_UserInfo_Comment_TotalPerUser', 'Your participation in the use of this SeedBox.');
+// User Treasury
+define('User_UserInfo_Table_Treasury', 'Treasury');
+define('User_UserInfo_Table_Treasury_Plus', ' &euro;');
+define('User_UserInfo_Comment_Treasury', 'Are you debtor or creditor ?');
 
 //#################### LAST LINE ######################################

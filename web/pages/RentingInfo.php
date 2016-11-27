@@ -119,7 +119,7 @@ function Form() {
 
 	echo '				</select>&nbsp;&nbsp;'
 						 . MainUser_Renting_Date . '&nbsp;
-						 <input class="input_date" id="input_date" name="input_date[1]" type="date" max="2017-12-31" min="2015-11-01" style="cursor: pointer;" required />
+						 <input class="input_date" id="input_date" name="input_date[1]" type="date" max="'. date("Y-m-d") .'" min="2015-11-01" style="cursor: pointer;" required />
 					</div>
 
 					<div style="margin-top: 10px; margin-bottom: 20px;">
@@ -216,9 +216,11 @@ if (isset($_POST['submit'])) {
 				$Date = $_POST['input_date'][$i];
 				if ( (isset($Amount) && ($Amount != 0.00)) && (isset($IdUser)) && (isset($Date)) ) {
 					global $MySB_DB;
+					$Subtotal = $MySB_DB->sum("tracking_rent_payments", "balance", ["id_users" => $IdUser]);
 					$result = $MySB_DB->insert("tracking_rent_payments", ["id_users" => "$IdUser", "payment_date" => "$Date", "amount" => "$Amount", "balance" => "$Amount"]);
 
 					if ( $result >= 1 ) {
+						$MySB_DB->update("users", ["treasury" => "$Subtotal"], ["id_users" => $IdUser]);
 						$type = 'success';
 					} else {
 						$type = 'information';

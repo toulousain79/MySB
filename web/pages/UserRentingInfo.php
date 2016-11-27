@@ -25,17 +25,31 @@
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 function Form() {
-	global $MySB_DB;
+	global $MySB_DB, $CurrentUser;
 
-	// Users table
-	$Rent_Payments = $MySB_DB->select("tracking_rent_payments", ["id_tracking_rent_payments", "id_users", "payment_date", "amount", "balance"]);
+	$UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$CurrentUser"]);
+	$Rent_Payments = $MySB_DB->select("tracking_rent_payments", ["id_tracking_rent_payments", "id_users", "payment_date", "amount", "balance"], ["id_users" => "$UserID"]);
+	$Subtotal = $MySB_DB->sum("tracking_rent_payments", "balance", ["id_users" => "$UserID"]);
+	if (is_numeric($Subtotal) && $Subtotal > 0) {
+		$Color = 'color: #00DF00;';
+	} else {
+		$Color = 'color: #FF0000;';
+	}
+
+	echo '	<div align="center"><table style="border-spacing:1; width:300px;">
+				<tr>
+					<th style="text-align:center;">' . MainUser_Renting_TitleTreasury . '</th>
+				</tr>
+				<tr>
+					<td style="text-align:center; height: 28px; font-size: 150%; '.$Color.'"><b>' . $Subtotal . '</b></td>
+				</tr>
+			</table></div>';
 
 	if (!empty($Rent_Payments)) {
 		echo '<div align="center">
 				<form class="form_settings" method="post" action="">
-					<table style="border-spacing:1;">
+					<table style="border-spacing:1; width:300px;">
 						<tr>
-							<th style="text-align:center;">' . MainUser_Renting_TitleUser . '</th>
 							<th style="text-align:center;">' . MainUser_Renting_TitleDate . '</th>
 							<th style="text-align:center;">' . MainUser_Renting_TitleAmount . '</th>
 							<th style="text-align:center;">' . MainUser_Renting_TitleBalance . '</th>
@@ -48,7 +62,6 @@ function Form() {
 				$Balance = $Payment["balance"];
 
 				echo '	<tr>
-							<td><div align="center">' . $UserName . '</div></td>
 							<td><div align="center">' . $Date . '</div></td>
 							<td><div align="center">' . $Amount . '</div></td>
 							<td><div align="center">' . $Balance . '</div></td>

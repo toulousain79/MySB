@@ -30,12 +30,14 @@ function printUser($user) {
 	// System infos
 	$system_datas = $MySB_DB->get("system", ["hostname", "rt_model", "rt_tva", "rt_global_cost", "rt_cost_tva", "rt_nb_users", "rt_price_per_users", "rt_method"], ["id_system" => 1]);
 	// Users infos
-	$users_datas = $MySB_DB->get("users", ["id_users", "users_passwd", "admin", "users_email", "rpc", "sftp", "home_dir", "scgi_port", "rtorrent_port"], ["users_ident" => "$user"]);
+	$users_datas = $MySB_DB->get("users", ["id_users", "users_passwd", "admin", "users_email", "rpc", "sftp", "home_dir", "scgi_port", "rtorrent_port", "quota"], ["users_ident" => "$user"]);
 	$UserID = $users_datas["id_users"];
 	$UserPasswd = $users_datas["users_passwd"];
 	// Ports
 	$Port_SSH = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "SSH"]);
 	$Port_FTP = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "VSFTPd"]);
+	// User Treasury
+	$Subtotal = $MySB_DB->sum("tracking_rent_payments", "balance", ["id_users" => "$UserID"]);
 
 	echo '<table width="100%" border="0" align="left">';
 
@@ -93,6 +95,10 @@ function printUser($user) {
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SFTP . '</th>';
 	echo '<td>' . $sftp . '</td>';
 	echo '<td><span class="Comments">' . User_UserInfo_Comment_SFTP . '</span></td></tr>';
+	// Quota
+	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Quota . '</th>';
+	echo '<td>' . GetSizeName($users_datas["quota"].'KB') . '</td>';
+	echo '<td><span class="Comments">' . User_UserInfo_Comment_Quota . '</span></td></tr>';
 
 	//////////////////////
 	// Directories
@@ -291,23 +297,36 @@ function printUser($user) {
 		// Server model
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SrvModel . '</th>';
 		echo '<td>' . $system_datas["rt_model"] . '</td>';
-		echo '<td></td></tr>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_SrvModel . '</span></td></tr>';
 		// TVA
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_TVA . '</th>';
 		echo '<td>' . $system_datas["rt_tva"] . '</td>';
-		echo '<td></td></tr>';		
-		// Global cost
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_TVA . '</span></td></tr>';
+		// Global cost Duty free
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_GlobalCost . '</th>';
-		echo '<td>' . $system_datas["rt_global_cost"] . '</td>';
-		echo '<td></td></tr>';
+		echo '<td>' . $system_datas["rt_global_cost"] . '</b>' . User_UserInfo_Table_GlobalCost_Plus . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_GlobalCost . '</span></td></tr>';
+		// Global cost Inc. Tax
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_GlobalCostTva . '</th>';
+		echo '<td>' . $system_datas["rt_cost_tva"] . '</b>' . User_UserInfo_Table_GlobalCostTva_Plus . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_GlobalCostTva . '</span></td></tr>';
 		// Total users
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_TotalUsers . '</th>';
 		echo '<td>' . $system_datas["rt_nb_users"] . '</td>';
-		echo '<td></td></tr>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_TotalUsers . '</span></td></tr>';
 		// TOTAL per users
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_TotalPerUser . '</th>';
-		echo '<td><b><span class="FontInRed">' . $system_datas["rt_price_per_users"] . '</span></b>' . User_UserInfo_Table_TotalPerUser_Plus . '</td>';
-		echo '<td></td></tr>';
+		echo '<td><b>' . $system_datas["rt_price_per_users"] . '</b>' . User_UserInfo_Table_TotalPerUser_Plus . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_TotalPerUser . '</span></td></tr>';
+		// User Treasury
+		if (is_numeric($Subtotal) && $Subtotal > 0) {
+			$Color = 'color: #00DF00;';
+		} else {
+			$Color = 'color: #FF0000;';
+		}
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Treasury . '</th>';
+		echo '<td style="'.$Color.'"><b>' . $Subtotal . '</b>' . User_UserInfo_Table_Treasury_Plus . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_Treasury . '</span></td></tr>';
 	}
 
 	echo '</table>';
@@ -316,7 +335,7 @@ function printUser($user) {
 if ( (CountingUsers() >= 1) && (GetVersion() != "") ) {
 	printUser($_SERVER['PHP_AUTH_USER']);
 } else {
-	echo '<p><h1 class="FontInRed">' . User_UserInfo_NotInstalled . '</h1></p>';
+	echo '<p><h1>' . User_UserInfo_NotInstalled . '</h1></p>';
 }
 
 //#################### LAST LINE ######################################

@@ -22,6 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
+define('MainUser_Renting_TitleTreasury', 'Treasury');
 define('MainUser_Renting_TitleUser', 'User');
 define('MainUser_Renting_TitleDate', 'Date');
 define('MainUser_Renting_TitleAmount', 'Amount');

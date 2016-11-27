@@ -34,5 +34,6 @@ define('MainUser_UserAdd_Table_Username', 'Nom d\'utilisateur');
 define('MainUser_UserAdd_Table_Email', 'E-mail');
 define('MainUser_UserAdd_Table_IsSftp', 'SFTP ?');
 define('MainUser_UserAdd_Table_Quota', 'Quota');
+define('MainUser_UserAdd_Table_Treasury', 'Tr&eacute;sorerie');
 
 //#################### LAST LINE ######################################

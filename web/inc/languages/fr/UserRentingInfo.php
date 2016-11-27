@@ -22,6 +22,7 @@
 //
 //#################### FIRST LINE #####################################
 
+define('MainUser_Renting_TitleTreasury', 'Tr&eacute;sorerie');
 define('MainUser_Renting_TitleUser', 'Utilisateur');
 define('MainUser_Renting_TitleDate', 'Date');
 define('MainUser_Renting_TitleAmount', 'Versement');
