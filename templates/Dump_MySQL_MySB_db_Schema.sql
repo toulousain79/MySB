@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Client: localhost
--- Généré le: Dim 27 Novembre 2016 à 17:58
+-- Généré le: Dim 27 Novembre 2016 à 23:23
 -- Version du serveur: 5.5.53
 -- Version de PHP: 5.4.45-0+deb7u5
 
@@ -17,15 +17,13 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8 */;
 
 --
--- Base de données: `MySB_db`
+-- Base de données: `c3_mysb_db`
 --
 
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `blocklists`
---
--- Création: Dim 27 Novembre 2016 à 16:18
 --
 
 CREATE TABLE IF NOT EXISTS `blocklists` (
@@ -44,14 +42,12 @@ CREATE TABLE IF NOT EXISTS `blocklists` (
   `rtorrent_lastupdate` datetime NOT NULL,
   PRIMARY KEY (`id_blocklists`),
   UNIQUE KEY `url_infos` (`url_infos`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=44 ;
 
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `commands`
---
--- Création: Dim 27 Novembre 2016 à 16:18
 --
 
 CREATE TABLE IF NOT EXISTS `commands` (
@@ -68,8 +64,6 @@ CREATE TABLE IF NOT EXISTS `commands` (
 
 --
 -- Structure de la table `dnscrypt_resolvers`
---
--- Création: Dim 27 Novembre 2016 à 16:18
 --
 
 CREATE TABLE IF NOT EXISTS `dnscrypt_resolvers` (
@@ -100,22 +94,18 @@ CREATE TABLE IF NOT EXISTS `dnscrypt_resolvers` (
 --
 -- Structure de la table `lets_encrypt`
 --
--- Création: Dim 27 Novembre 2016 à 16:18
---
 
 CREATE TABLE IF NOT EXISTS `lets_encrypt` (
   `id_lets_encrypt` int(11) NOT NULL AUTO_INCREMENT,
   `addresses` varchar(128) NOT NULL,
   `ipv4` varchar(15) NOT NULL,
   PRIMARY KEY (`id_lets_encrypt`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=11 ;
 
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `port_forwarding`
---
--- Création: Dim 27 Novembre 2016 à 16:18
 --
 
 CREATE TABLE IF NOT EXISTS `port_forwarding` (
@@ -134,8 +124,6 @@ CREATE TABLE IF NOT EXISTS `port_forwarding` (
 --
 -- Structure de la table `port_forwarding_addresses`
 --
--- Création: Dim 27 Novembre 2016 à 16:29
---
 
 CREATE TABLE IF NOT EXISTS `port_forwarding_addresses` (
   `id_port_forwarding_addresses` int(11) NOT NULL AUTO_INCREMENT,
@@ -145,18 +133,10 @@ CREATE TABLE IF NOT EXISTS `port_forwarding_addresses` (
   KEY `id_port_forwarding` (`id_port_forwarding`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
---
--- RELATIONS POUR LA TABLE `port_forwarding_addresses`:
---   `id_port_forwarding`
---       `port_forwarding` -> `id_port_forwarding`
---
-
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `providers_monitoring`
---
--- Création: Dim 27 Novembre 2016 à 16:18
 --
 
 CREATE TABLE IF NOT EXISTS `providers_monitoring` (
@@ -165,14 +145,12 @@ CREATE TABLE IF NOT EXISTS `providers_monitoring` (
   `ipv4` varchar(25) NOT NULL,
   `hostname` varchar(32) NOT NULL,
   PRIMARY KEY (`id_providers_monitoring`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=18 ;
 
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `repositories`
---
--- Création: Dim 27 Novembre 2016 à 16:18
 --
 
 CREATE TABLE IF NOT EXISTS `repositories` (
@@ -188,14 +166,12 @@ CREATE TABLE IF NOT EXISTS `repositories` (
   `on_boot` tinyint(1) NOT NULL DEFAULT '0',
   `script` varchar(128) NOT NULL,
   PRIMARY KEY (`id_repositories`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=37 ;
 
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `services`
---
--- Création: Dim 27 Novembre 2016 à 16:18
 --
 
 CREATE TABLE IF NOT EXISTS `services` (
@@ -215,14 +191,12 @@ CREATE TABLE IF NOT EXISTS `services` (
   `used` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_services`),
   UNIQUE KEY `serv_name` (`serv_name`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=26 ;
 
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `smtp`
---
--- Création: Dim 27 Novembre 2016 à 16:18
 --
 
 CREATE TABLE IF NOT EXISTS `smtp` (
@@ -235,14 +209,12 @@ CREATE TABLE IF NOT EXISTS `smtp` (
   `smtp_email` varchar(64) NOT NULL,
   PRIMARY KEY (`id_smtp`),
   UNIQUE KEY `smtp_provider` (`smtp_provider`,`smtp_username`,`smtp_passwd`,`smtp_host`,`smtp_port`,`smtp_email`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
 
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `system`
---
--- Création: Dim 27 Novembre 2016 à 16:18
 --
 
 CREATE TABLE IF NOT EXISTS `system` (
@@ -295,8 +267,6 @@ DELIMITER ;
 --
 -- Structure de la table `trackers_list`
 --
--- Création: Dim 27 Novembre 2016 à 16:18
---
 
 CREATE TABLE IF NOT EXISTS `trackers_list` (
   `id_trackers_list` int(11) NOT NULL AUTO_INCREMENT,
@@ -309,14 +279,12 @@ CREATE TABLE IF NOT EXISTS `trackers_list` (
   `ping` varchar(64) NOT NULL,
   PRIMARY KEY (`id_trackers_list`),
   UNIQUE KEY `tracker` (`tracker`,`tracker_domain`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
 
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `trackers_list_ipv4`
---
--- Création: Dim 27 Novembre 2016 à 16:26
 --
 
 CREATE TABLE IF NOT EXISTS `trackers_list_ipv4` (
@@ -325,20 +293,12 @@ CREATE TABLE IF NOT EXISTS `trackers_list_ipv4` (
   `ipv4` varchar(15) NOT NULL,
   PRIMARY KEY (`id_trackers_list_ipv4`),
   KEY `id_trackers_list` (`id_trackers_list`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-
---
--- RELATIONS POUR LA TABLE `trackers_list_ipv4`:
---   `id_trackers_list`
---       `trackers_list` -> `id_trackers_list`
---
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
 
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `tracking_rent_history`
---
--- Création: Dim 27 Novembre 2016 à 16:31
 --
 
 CREATE TABLE IF NOT EXISTS `tracking_rent_history` (
@@ -380,18 +340,10 @@ END
 //
 DELIMITER ;
 
---
--- RELATIONS POUR LA TABLE `tracking_rent_history`:
---   `id_users`
---       `users` -> `id_users`
---
-
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `tracking_rent_payments`
---
--- Création: Dim 27 Novembre 2016 à 16:31
 --
 
 CREATE TABLE IF NOT EXISTS `tracking_rent_payments` (
@@ -405,17 +357,21 @@ CREATE TABLE IF NOT EXISTS `tracking_rent_payments` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 --
--- RELATIONS POUR LA TABLE `tracking_rent_payments`:
---   `id_users`
---       `users` -> `id_users`
+-- Déclencheurs `tracking_rent_payments`
 --
+DROP TRIGGER IF EXISTS `UsersTreasuryUpdate`;
+DELIMITER //
+CREATE TRIGGER `UsersTreasuryUpdate` AFTER DELETE ON `tracking_rent_payments`
+ FOR EACH ROW BEGIN
+	UPDATE users SET treasury=(SELECT (SUM(balance)-OLD.balance) FROM tracking_rent_payments) WHERE id_users=OLD.id_users;
+END
+//
+DELIMITER ;
 
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `tracking_rent_status`
---
--- Création: Dim 27 Novembre 2016 à 16:31
 --
 
 CREATE TABLE IF NOT EXISTS `tracking_rent_status` (
@@ -430,18 +386,10 @@ CREATE TABLE IF NOT EXISTS `tracking_rent_status` (
   KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
---
--- RELATIONS POUR LA TABLE `tracking_rent_status`:
---   `id_users`
---       `users` -> `id_users`
---
-
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `users`
---
--- Création: Dim 27 Novembre 2016 à 16:33
 --
 
 CREATE TABLE IF NOT EXISTS `users` (
@@ -472,8 +420,6 @@ CREATE TABLE IF NOT EXISTS `users` (
 --
 -- Structure de la table `users_addresses`
 --
--- Création: Dim 27 Novembre 2016 à 16:27
---
 
 CREATE TABLE IF NOT EXISTS `users_addresses` (
   `id_users_addresses` int(11) NOT NULL AUTO_INCREMENT,
@@ -487,18 +433,10 @@ CREATE TABLE IF NOT EXISTS `users_addresses` (
   KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
---
--- RELATIONS POUR LA TABLE `users_addresses`:
---   `id_users`
---       `users` -> `id_users`
---
-
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `users_crontab`
---
--- Création: Dim 27 Novembre 2016 à 16:27
 --
 
 CREATE TABLE IF NOT EXISTS `users_crontab` (
@@ -514,18 +452,10 @@ CREATE TABLE IF NOT EXISTS `users_crontab` (
   KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
---
--- RELATIONS POUR LA TABLE `users_crontab`:
---   `id_users`
---       `users` -> `id_users`
---
-
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `users_rtorrent_cfg`
---
--- Création: Dim 27 Novembre 2016 à 16:28
 --
 
 CREATE TABLE IF NOT EXISTS `users_rtorrent_cfg` (
@@ -539,18 +469,10 @@ CREATE TABLE IF NOT EXISTS `users_rtorrent_cfg` (
   KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
---
--- RELATIONS POUR LA TABLE `users_rtorrent_cfg`:
---   `id_users`
---       `users` -> `id_users`
---
-
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `users_scripts`
---
--- Création: Dim 27 Novembre 2016 à 16:28
 --
 
 CREATE TABLE IF NOT EXISTS `users_scripts` (
@@ -562,18 +484,10 @@ CREATE TABLE IF NOT EXISTS `users_scripts` (
   KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
---
--- RELATIONS POUR LA TABLE `users_scripts`:
---   `id_users`
---       `users` -> `id_users`
---
-
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `vars`
---
--- Création: Dim 27 Novembre 2016 à 16:20
 --
 
 CREATE TABLE IF NOT EXISTS `vars` (
@@ -583,7 +497,7 @@ CREATE TABLE IF NOT EXISTS `vars` (
   `white_tcp_port_out` varchar(16) NOT NULL,
   `white_udp_port_out` varchar(16) NOT NULL,
   PRIMARY KEY (`id_vars`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
 
 --
 -- Contraintes pour les tables exportées

@@ -27,10 +27,10 @@ require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__
 function Form() {
 	global $MySB_DB, $CurrentUser;
 
-	$UserID = $MySB_DB->get("users", "id_users", ["users_ident" => "$CurrentUser"]);
-	$Rent_Payments = $MySB_DB->select("tracking_rent_payments", ["id_tracking_rent_payments", "id_users", "payment_date", "amount", "balance"], ["id_users" => "$UserID"]);
-	$Subtotal = $MySB_DB->sum("tracking_rent_payments", "balance", ["id_users" => "$UserID"]);
-	if (is_numeric($Subtotal) && $Subtotal > 0) {
+	$users_data = $MySB_DB->get("users", ["id_users", "treasury"], ["users_ident" => "$CurrentUser"]);
+	$Rent_Payments = $MySB_DB->select("tracking_rent_payments", ["id_tracking_rent_payments", "id_users", "payment_date", "amount", "balance"], ["id_users" => $users_data['id_users']]);
+	$Treasury = $users_data['treasury'];
+	if (is_numeric($Treasury) && $Treasury > 0) {
 		$Color = 'color: #00DF00;';
 	} else {
 		$Color = 'color: #FF0000;';
@@ -41,7 +41,7 @@ function Form() {
 					<th style="text-align:center;">' . MainUser_Renting_TitleTreasury . '</th>
 				</tr>
 				<tr>
-					<td style="text-align:center; height: 28px; font-size: 150%; '.$Color.'"><b>' . $Subtotal . '</b></td>
+					<td style="text-align:center; height: 28px; font-size: 150%; '.$Color.'"><b>' . $Treasury . '</b></td>
 				</tr>
 			</table></div>';
 

@@ -127,26 +127,23 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 		//default: // delete
 		case Global_Delete;
-			if (isset($_POST['submit'])) {
+			foreach($_POST['submit'] as $key => $value) {
+				// $result = $MySB_DB->delete("trackers_list_ipv4", ["id_trackers_list" => $key]);
+				// if ( $result = 0 ) {
+					// $success = false;
+				// }
 
-				foreach($_POST['submit'] as $key => $value) {
-					// $result = $MySB_DB->delete("trackers_list_ipv4", ["id_trackers_list" => $key]);
-					// if ( $result = 0 ) {
-						// $success = false;
-					// }
-
-					$result = $MySB_DB->delete("trackers_list", ["id_trackers_list" => $key]);
-					if ( $result = 0 ) {
-						$success = false;
-					}
+				$result = $MySB_DB->delete("trackers_list", ["id_trackers_list" => $key]);
+				if ( $result = 0 ) {
+					$success = false;
 				}
+			}
 
-				if ( $success == true ) {
-					$type = 'success';
-				} else {
-					$type = 'information';
-					$message = Global_NoChange;
-				}
+			if ( $success == true ) {
+				$type = 'success';
+			} else {
+				$type = 'information';
+				$message = Global_NoChange;
 			}
 			break;
 	}

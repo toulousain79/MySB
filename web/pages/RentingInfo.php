@@ -146,16 +146,14 @@ function Form() {
 
 			foreach($Rent_Payments as $Payment) {
 				$UserName = $MySB_DB->get("users", "users_ident", ["id_users" => $Payment["id_users"]]);
-				$Date = $Payment["payment_date"];
-				$Amount = $Payment["amount"];
-				$Balance = $Payment["balance"];
 
 				echo '	<tr>
+							<input type="hidden" name="id" value="'.$Payment["id_tracking_rent_payments"].'" />
 							<td><div align="center">' . $UserName . '</div></td>
-							<td><div align="center">' . $Date . '</div></td>
-							<td><div align="center">' . $Amount . '</div></td>
-							<td><div align="center">' . $Balance . '</div></td>
-							<td><div align="center"><input class="submit" name="delete['.$Payment["id_tracking_rent_payments"].']" type="submit" value="' . Global_Delete . '" /></div></td>
+							<td><div align="center">' . $Payment["payment_date"] . '</div></td>
+							<td><div align="center">' . $Payment["amount"] . '</div></td>
+							<td><div align="center">' . $Payment["balance"] . '</div></td>
+							<td><div align="center"><input class="submit" name="submit" type="submit" value="' . Global_Delete . '" /></div></td>
 						</tr>';
 			}
 
@@ -168,6 +166,8 @@ function Form() {
 }
 
 if (isset($_POST['submit'])) {
+	global $MySB_DB;
+
 	switch ($_POST['submit']) {
 		case Global_SaveChanges:
 			$Model = $_POST['model'];
@@ -194,7 +194,6 @@ if (isset($_POST['submit'])) {
 						break;
 				}
 
-				global $MySB_DB;
 				$result = $MySB_DB->update("system", ["rt_model" => "$Model", "rt_tva" => "$TVA", "rt_global_cost" => "$GlobalCost", "rt_cost_tva" => "$GlobalCostTva", "rt_nb_users" => "$TotalUsers", "rt_price_per_users" => "$PricePerUsers", "rt_method" => "$Method"], ["id_system" => 1]);
 
 				if( $result >= 0 ) {
@@ -210,26 +209,39 @@ if (isset($_POST['submit'])) {
 			break;
 		case MainUser_Renting_SaveAmount:
 			$count = count($_POST['input_id']);
+			$Success=0;
 			for($i=1; $i<=$count; $i++) {
 				$Amount = $_POST['input_amount'][$i];
 				$IdUser = $_POST['select_user'][$i];
 				$Date = $_POST['input_date'][$i];
 				if ( (isset($Amount) && ($Amount != 0.00)) && (isset($IdUser)) && (isset($Date)) ) {
-					global $MySB_DB;
-					$Subtotal = $MySB_DB->sum("tracking_rent_payments", "balance", ["id_users" => $IdUser]);
 					$result = $MySB_DB->insert("tracking_rent_payments", ["id_users" => "$IdUser", "payment_date" => "$Date", "amount" => "$Amount", "balance" => "$Amount"]);
-
 					if ( $result >= 1 ) {
-						$MySB_DB->update("users", ["treasury" => "$Subtotal"], ["id_users" => $IdUser]);
-						$type = 'success';
-					} else {
-						$type = 'information';
-						$message = Global_NoChange;
-					}
+						$Success++;
+					}					
 				} else {
 					$type = 'information';
 					$message = Global_CompleteAllFields;
 				}
+			}
+
+			if ( $Success >= 1 ) {
+				$Subtotal = $MySB_DB->sum("tracking_rent_payments", "balance", ["id_users" => $IdUser]);
+				$MySB_DB->update("users", ["treasury" => "$Subtotal"], ["id_users" => $IdUser]);
+				$type = 'success';
+			} else {
+				$type = 'information';
+				$message = Global_NoChange;
+			}
+
+			break;
+		case Global_Delete:
+			$result = $MySB_DB->delete("tracking_rent_payments", ["id_tracking_rent_payments " => $_POST['id']]);
+			if ( $result >= 1 ) {
+				$type = 'success';
+			} else {
+				$type = 'error';
+				$message = Global_NoChange;
 			}
 			break;
 	}
