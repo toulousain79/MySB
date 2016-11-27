@@ -474,47 +474,51 @@ function PrintContent($user, $Case) {
 	<?php } ?>
 
 <?php
-	$RentingDatas = $MySB_DB->get("system", "rt_global_cost,rt_model,rt_tva,rt_nb_users,rt_price_per_users", ["id_system" => 1]);
+	if ( $DisplayRenting == true ) {
+		$RentingDatas = $MySB_DB->get("system", "rt_global_cost,rt_model,rt_tva,rt_nb_users,rt_price_per_users", ["id_system" => 1]);
 
-	if ( !empty($RentingDatas["rt_global_cost"]) && !empty($RentingDatas["rt_model"]) ) {
+		if ( !empty($RentingDatas["rt_global_cost"]) && !empty($RentingDatas["rt_model"]) ) {
 ?>
-		<!-- //////////////////////
-		// Price and Payment info
-		////////////////////// -->
-		<tr align="left">
-			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfo_Title_Renting; ?></h4></th>
-		</tr>
-		<!-- // Server model -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SrvModel; ?></th>
-			<td><?php echo $RentingDatas["rt_model"];?></td>
-			<td> </td>
-		</tr>
-		<!-- // Global cost -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_GlobalCost; ?></th>
-			<td><?php echo $RentingDatas["rt_global_cost"];?></td>
-			<td> </td>
-		</tr>
-		<!-- // TVA -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TVA; ?></th>
-			<td><?php echo $RentingDatas["rt_tva"];?></td>
-			<td> </td>
-		</tr>
-		<!-- // Total users -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalUsers; ?></th>
-			<td><?php echo $RentingDatas["rt_nb_users"];?></td>
-			<td> </td>
-		</tr>
-		<!-- // TOTAL per users -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalPerUser; ?></th>
-			<td><b><span class="FontInRed"><?php echo $RentingDatas["rt_price_per_users"];?></span></b><?php echo User_UserInfo_Table_TotalPerUser_Plus; ?></td>
-			<td> </td>
-		</tr>
-	<?php } ?>
+			<!-- //////////////////////
+			// Price and Payment info
+			////////////////////// -->
+			<tr align="left">
+				<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfo_Title_Renting; ?></h4></th>
+			</tr>
+			<!-- // Server model -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SrvModel; ?></th>
+				<td><?php echo $RentingDatas["rt_model"];?></td>
+				<td> </td>
+			</tr>
+			<!-- // Global cost -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_GlobalCost; ?></th>
+				<td><?php echo $RentingDatas["rt_global_cost"];?></td>
+				<td> </td>
+			</tr>
+			<!-- // TVA -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TVA; ?></th>
+				<td><?php echo $RentingDatas["rt_tva"];?></td>
+				<td> </td>
+			</tr>
+			<!-- // Total users -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalUsers; ?></th>
+				<td><?php echo $RentingDatas["rt_nb_users"];?></td>
+				<td> </td>
+			</tr>
+			<!-- // TOTAL per users -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalPerUser; ?></th>
+				<td><b><span class="FontInRed"><?php echo $RentingDatas["rt_price_per_users"];?></span></b><?php echo User_UserInfo_Table_TotalPerUser_Plus; ?></td>
+				<td> </td>
+			</tr>
+<?php
+		}
+	}
+?>
 
 	<?php if ( $DisplayCommand == true ) { ?>
 		<!-- //////////////////////

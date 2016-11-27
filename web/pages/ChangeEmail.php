@@ -34,15 +34,15 @@ function Form() {
 				<table border="0">
 					<tr>
 						<td>' . User_ChangeEmail_CurrentAddress . '</td>
-						<td><input style="cursor: default;" name="current_email" type="text" readonly="true" value="' . $UserEmail . '"/></td>
+						<td><input style="cursor: default;" name="current_email" type="email" readonly="true" value="' . $UserEmail . '"/></td>
 					</tr>
 					<tr>
 						<td>' . User_ChangeEmail_NewAddress . '</td>
-						<td><input name="new_email" type="text" /></td>
+						<td><input name="new_email" type="email" required /></td>
 					</tr>
 					<tr>
 						<td>' . User_ChangeEmail_ConfirmAddress . '</td>
-						<td><input name="confirm_email" type="text" /></td>
+						<td><input name="confirm_email" type="email" required /></td>
 					</tr>
 				</table>
 				<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' .Global_SaveChanges. '"">

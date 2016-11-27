@@ -38,11 +38,11 @@ function Form() {
 					</tr>
 					<tr>
 						<td>' . MainUser_UserAdd_UserEmail . '</td>
-						<td><input name="email" type="text" /></td>
+						<td><input name="email" type="email" /></td>
 					</tr>
 					<tr>
 						<td>' . MainUser_UserAdd_ConfirmEmail . '</td>
-						<td><input name="confirm_email" type="text" /></td>
+						<td><input name="confirm_email" type="email" /></td>
 					</tr>
 				</table>
 				<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' .MainUser_UserAdd_AddUser. '"">

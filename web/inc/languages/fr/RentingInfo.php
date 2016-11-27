@@ -24,7 +24,7 @@
 
 define('MainUser_Renting_ExModel', 'Exemple:	Serveur Dedibox XC');
 define('MainUser_Renting_ExTVA', 'Exemple:	20');
-define('MainUser_Renting_ExPrice', 'Exemple:	19.99 (valeur hors taxe)');
+define('MainUser_Renting_ExPrice', 'Exemple:	19.99');
 define('MainUser_Renting_ReadOnly', 'Lecture seule, pour information.');
 define('MainUser_Renting_Model', 'Mod&egrave;le :');
 define('MainUser_Renting_TVA', 'TVA (%) :');
@@ -38,6 +38,16 @@ define('MainUser_Renting_Calcul', 'Prix &agrave; afficher :');
 define('MainUser_Renting_ExPriceToDiplay', 'M&eacute;thode d\'affichage du prix pour les utilisateurs');
 define('MainUser_Renting_Method_0', 'Entier sup&eacute;rieur');
 define('MainUser_Renting_Method_1', '2 décimales arrondies');
-define('MainUser_Renting_TotalPerUser_Plus', ' &euro; TTC / mois');
+define('MainUser_Renting_AddPayment', 'Ajouter des paiements');
+define('MainUser_Renting_Amount', 'Montant :');
+define('MainUser_Renting_User', 'Utilisateur :');
+define('MainUser_Renting_Date', 'Date :');
+define('MainUser_Renting_AddAmount', 'Ajouter un autre versement');
+define('MainUser_Renting_DelAmount', 'Retirer le dernier versement');
+define('MainUser_Renting_SaveAmount', 'Enregistrer les versements');
+define('MainUser_Renting_TitleUser', 'Utilisateur');
+define('MainUser_Renting_TitleDate', 'Date');
+define('MainUser_Renting_TitleAmount', 'Versement');
+define('MainUser_Renting_TitleBalance', 'Balance');
 
 //#################### LAST LINE ######################################

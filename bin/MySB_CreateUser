@@ -257,8 +257,21 @@ crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
 StatusLSB
 
-#### rtorrent max memory & rTorrent Blocklist
+#### Renting infos / rtorrent max memory / rTorrent Blocklist
 for seedUser in $UsersList; do
+	# Renting infos
+	IdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$seedUser'"`"
+	PriceByUser=$((RentingCostTva/TotalUsers))
+	NbDayInMonth="`date -d "$(date +%Y-%m-01) +1 month -1 day" +%d`"
+	Today=$(date +%d)
+	RemainDays=$((NbDayInMonth-Today+1))
+	Treasury="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'tracking_rent_payments' "users_ident = '$seedUser'"`"
+	
+	
+	Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,year,month,monthly_price,nb_users,users_price,nb_days_month,start_of_used,end_of_used,remain_days,period_prices,treasury' "\"$IdUser\",\"$(date +%Y)\",\"$(date +%m)\",\"$RentingCostTva\",\"$TotalUsers\",\"$PriceByUser\",\"$NbDayInMonth\",\"$(date +%d)\",\"$NbDayInMonth\",\"$RemainDays\",\"$Treasury\""
+	
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "users_passwd = '', rpc = '$NEWRPC', scgi_port = '$ScgiPort', rtorrent_port = '$rTorrentPort', home_dir = '$NewUserHomedir'" "users_ident = '$UserToCreate'"
+
 	# rTorrent config 'pieces.memory.max.set'
 	log_daemon_msg "$CreateUser_PiecesMemory [$seedUser]"
 	LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$seedUser/.rtorrent.rc)

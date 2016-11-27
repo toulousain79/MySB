@@ -22,32 +22,49 @@
 //
 //#################### FIRST LINE #####################################
 
-define('MainUser_Renting_ExModel', 'Example:	Serveur Dedibox XC');
-define('MainUser_Renting_ExTVA', 'Example:	20');
-define('MainUser_Renting_ExPrice', 'Example:	19.99');
-define('MainUser_Renting_ReadOnly', 'Readonly, only for information.');
-define('MainUser_Renting_Model', 'Model :');
-define('MainUser_Renting_TVA', 'TVA (%) :');
-define('MainUser_Renting_Price', 'Unit price without tax (per month) :');
-define('MainUser_Renting_CostTVA', 'Unit price incl. taxes (per month) :');
-define('MainUser_Renting_CostTVA_Comments', 'includ. taxes / month');
-define('MainUser_Renting_TotalUser', 'Total users :');
-define('MainUser_Renting_PricePerUser', 'Price per user :');
-define('MainUser_Renting_PricePerUser_Comments', 'includ. taxes / month');
-define('MainUser_Renting_Calcul', 'Price to display :');
-define('MainUser_Renting_ExPriceToDiplay', 'The price display method for users');
-define('MainUser_Renting_Method_0', 'Upper integer');
-define('MainUser_Renting_Method_1', '2 decimals rounded');
-define('MainUser_Renting_AddPayment', 'Add payments');
-define('MainUser_Renting_Amount', 'Amount :');
-define('MainUser_Renting_User', 'User :');
-define('MainUser_Renting_Date', 'Date :');
-define('MainUser_Renting_AddAmount', 'Add an other amount');
-define('MainUser_Renting_DelAmount', 'Remove the last amount');
-define('MainUser_Renting_SaveAmount', 'Save amounts');
-define('MainUser_Renting_TitleUser', 'User');
-define('MainUser_Renting_TitleDate', 'Date');
-define('MainUser_Renting_TitleAmount', 'Amount');
-define('MainUser_Renting_TitleBalance', 'Balance');
+require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
+
+function Form() {
+	global $MySB_DB;
+
+	// Users table
+	$Rent_Payments = $MySB_DB->select("tracking_rent_payments", ["id_tracking_rent_payments", "id_users", "payment_date", "amount", "balance"]);
+
+	if (!empty($Rent_Payments)) {
+		echo '<div align="center">
+				<form class="form_settings" method="post" action="">
+					<table style="border-spacing:1;">
+						<tr>
+							<th style="text-align:center;">' . MainUser_Renting_TitleUser . '</th>
+							<th style="text-align:center;">' . MainUser_Renting_TitleDate . '</th>
+							<th style="text-align:center;">' . MainUser_Renting_TitleAmount . '</th>
+							<th style="text-align:center;">' . MainUser_Renting_TitleBalance . '</th>
+							<th style="text-align:center;">' . Global_Table_Delete . '</th>
+						</tr>';
+
+			foreach($Rent_Payments as $Payment) {
+				$UserName = $MySB_DB->get("users", "users_ident", ["id_users" => $Payment["id_users"]]);
+				$Date = $Payment["payment_date"];
+				$Amount = $Payment["amount"];
+				$Balance = $Payment["balance"];
+
+				echo '	<tr>
+							<td><div align="center">' . $UserName . '</div></td>
+							<td><div align="center">' . $Date . '</div></td>
+							<td><div align="center">' . $Amount . '</div></td>
+							<td><div align="center">' . $Balance . '</div></td>
+							<td><div align="center"><input class="submit" name="delete['.$Payment["id_tracking_rent_payments"].']" type="submit" value="' . Global_Delete . '" /></div></td>
+						</tr>';
+			}
+
+			echo '	</table>
+				</form>
+			</div>';
+	}
+
+	echo '<script type="text/javascript" src="' . THEMES_PATH . 'MySB/js/jquery-dynamically-adding-form-elements.js"></script>';
+}
+
+Form();
 
 //#################### LAST LINE ######################################
