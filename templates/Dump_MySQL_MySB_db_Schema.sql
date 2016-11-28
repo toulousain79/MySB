@@ -304,7 +304,6 @@ CREATE TABLE IF NOT EXISTS `trackers_list_ipv4` (
 CREATE TABLE IF NOT EXISTS `tracking_rent_history` (
   `id_tracking_rent_history` int(11) NOT NULL AUTO_INCREMENT,
   `id_users` int(11) NOT NULL,
-  `date` date NOT NULL,
   `year` smallint(4) DEFAULT NULL,
   `month` tinyint(2) DEFAULT NULL,
   `monthly_price` decimal(4,2) NOT NULL,
@@ -322,9 +321,9 @@ CREATE TABLE IF NOT EXISTS `tracking_rent_history` (
 --
 -- Déclencheurs `tracking_rent_history`
 --
-DROP TRIGGER IF EXISTS `PeriodPrice`;
+DROP TRIGGER IF EXISTS `PeriodPrice_OnInsert`;
 DELIMITER //
-CREATE TRIGGER `PeriodPrice` BEFORE INSERT ON `tracking_rent_history`
+CREATE TRIGGER `PeriodPrice_OnInsert` BEFORE INSERT ON `tracking_rent_history`
  FOR EACH ROW BEGIN
 	SET NEW.year = YEAR(NOW());
 	SET NEW.month = MONTH(NOW());
@@ -332,12 +331,29 @@ CREATE TRIGGER `PeriodPrice` BEFORE INSERT ON `tracking_rent_history`
 	SET NEW.nb_days_month = RIGHT(LAST_DAY(NOW()), 2);
 	SET NEW.start_of_used = DAY(NOW());
 	SET NEW.end_of_used = NEW.nb_days_month;
-	SET NEW.remain_days = (NEW.nb_days_month - NEW.start_of_used + 1);
+	SET NEW.remain_days = (NEW.end_of_used - NEW.start_of_used + 1);
 	SET NEW.period_price = (((NEW.monthly_price / NEW.nb_users) / NEW.nb_days_month) * NEW.remain_days);
-	UPDATE tracking_rent_status SET monthly_cost=NEW.users_price WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month;
+	SET @CurrentMonthlyCost = (SELECT monthly_cost FROM tracking_rent_status WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month); 
+	UPDATE tracking_rent_status SET monthly_cost=(@CurrentMonthlyCost + NEW.period_price) AND nb_days_used=NEW.remain_days WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month;
+	UPDATE system SET rt_nb_users=NEW.nb_users WHERE id_system=1;
 END
 //
 DELIMITER ;
+
+-- DROP TRIGGER IF EXISTS `PeriodPrice_OnUpdate`;
+-- DELIMITER //
+-- CREATE TRIGGER `PeriodPrice_OnUpdate` BEFORE UPDATE ON `tracking_rent_history`
+ -- FOR EACH ROW BEGIN
+	-- SET NEW.users_price = (NEW.monthly_price / NEW.nb_users);
+	-- SET NEW.remain_days = (NEW.end_of_used - NEW.start_of_used + 1);
+	-- SET NEW.period_price = (((NEW.monthly_price / NEW.nb_users) / NEW.nb_days_month) * NEW.remain_days);
+	-- UPDATE tracking_rent_status SET
+			-- monthly_cost=(SELECT SUM(period_price) FROM tracking_rent_history WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month),
+			-- nb_days_used=NEW.remain_days
+		-- WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month;
+-- END
+-- //
+-- DELIMITER ;
 
 -- --------------------------------------------------------
 

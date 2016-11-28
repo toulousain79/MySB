@@ -28,7 +28,8 @@ function Form() {
 	global $MySB_DB, $CurrentUser;
 
 	$users_data = $MySB_DB->get("users", ["id_users", "treasury"], ["users_ident" => "$CurrentUser"]);
-	$Rent_Payments = $MySB_DB->select("tracking_rent_payments", ["id_tracking_rent_payments", "id_users", "payment_date", "amount", "balance"], ["id_users" => $users_data['id_users']]);
+	$Rent_Payments = $MySB_DB->select("tracking_rent_payments", ["id_tracking_rent_payments", "payment_date", "amount", "balance"], ["id_users" => $users_data['id_users']]);
+	$Rent_Status = $MySB_DB->select("tracking_rent_status", ["id_tracking_rent_status", "year", "month", "nb_days_used", "monthly_cost", "treasury"], ["id_users" => $users_data['id_users']]);
 	$Treasury = $users_data['treasury'];
 	if (is_numeric($Treasury) && $Treasury > 0) {
 		$Color = 'color: #00DF00;';
@@ -45,35 +46,64 @@ function Form() {
 				</tr>
 			</table></div>';
 
+
+	echo '<div align="center">';
 	if (!empty($Rent_Payments)) {
-		echo '<div align="center">
-				<form class="form_settings" method="post" action="">
-					<table style="border-spacing:1; width:300px;">
-						<tr>
-							<th style="text-align:center;">' . MainUser_Renting_TitleDate . '</th>
-							<th style="text-align:center;">' . MainUser_Renting_TitleAmount . '</th>
-							<th style="text-align:center;">' . MainUser_Renting_TitleBalance . '</th>
-						</tr>';
+		echo '	<fieldset>
+					<legend>Versements</legend>
+						<table style="border-spacing:1;">
+							<tr>
+								<th style="text-align:center;">' . MainUser_Renting_TitleDate . '</th>
+								<th style="text-align:center;">' . MainUser_Renting_TitleAmount . '</th>
+								<th style="text-align:center;">' . MainUser_Renting_TitleBalance . '</th>
+							</tr>';
 
-			foreach($Rent_Payments as $Payment) {
-				$UserName = $MySB_DB->get("users", "users_ident", ["id_users" => $Payment["id_users"]]);
-				$Date = $Payment["payment_date"];
-				$Amount = $Payment["amount"];
-				$Balance = $Payment["balance"];
+		foreach($Rent_Payments as $Payment) {
+			$Date = $Payment["payment_date"];
+			$Amount = $Payment["amount"];
+			$Balance = $Payment["balance"];
 
-				echo '	<tr>
-							<td><div align="center">' . $Date . '</div></td>
-							<td><div align="center">' . $Amount . '</div></td>
-							<td><div align="center">' . $Balance . '</div></td>
-						</tr>';
-			}
+			echo '			<tr>
+								<td><div align="center">' . $Date . '</div></td>
+								<td><div align="center">' . $Amount . '</div></td>
+								<td><div align="center">' . $Balance . '</div></td>
+							</tr>';
+		}
 
-			echo '	</table>
-				</form>
-			</div>';
+		echo '			</table>
+				</fieldset>';
 	}
 
-	echo '<script type="text/javascript" src="' . THEMES_PATH . 'MySB/js/jquery-dynamically-adding-form-elements.js"></script>';
+	if (!empty($Rent_Status)) {
+		echo '	<fieldset>
+					<legend>Status</legend>
+						<table style="border-spacing:1;">
+							<tr>
+								<th style="text-align:center;">Mois</th>
+								<th style="text-align:center;">Nombre de jour</br>d\'utilisation</th>
+								<th style="text-align:center;">Coût dela</br>période</th>
+								<th style="text-align:center;">Trésorerie</th>
+							</tr>';
+
+			foreach($Rent_Status as $Status) {
+				$Year = $Status["year"];
+				$Month = $Status["month"];
+				$DaysUsed = $Status["nb_days_used"];
+				$MonthlyCost = $Status["monthly_cost"];
+				$Treasury = $Status["treasury"];
+
+				echo '		<tr>
+								<td><div align="center">' . $Year.'/'.$Month . '</div></td>
+								<td><div align="center">' . $DaysUsed . '</div></td>
+								<td><div align="center">' . $MonthlyCost . '</div></td>
+								<td><div align="center">' . $Treasury . '</div></td>
+							</tr>';
+			}
+
+		echo '			</table>
+				</fieldset>';
+	}
+	echo '</div>';
 }
 
 Form();
