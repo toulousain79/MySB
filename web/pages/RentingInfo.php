@@ -100,37 +100,39 @@ function Form() {
 		</div>
 	</form>';
 
-	echo '
-	<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
-		<form id="myForm" class="form_settings" method="post" action="">
-			<fieldset>
-			<legend>' . MainUser_Renting_AddPayment . '</legend>
-					<div id="input1" class="clonedInput">
-						<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />'
-						. MainUser_Renting_Amount . '&nbsp;
-						<input class="input_amount" id="input_amount" name="input_amount[1]" type="text" style="width:60px;" pattern="\d+(\.\d{2})?" required />&nbsp;&nbsp;'
-						. MainUser_Renting_User . '&nbsp;
-						<select class="select_user" id="select_user" name="select_user[1]" style="width:200px; height: 28px; cursor: pointer;" required>';
+	if ( (isset($GlobalCost) && ($GlobalCost != 0.00)) && (isset($TotalUsers)) && (isset($Model)) && (isset($Method)) ) {
+		echo '
+		<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
+			<form id="myForm" class="form_settings" method="post" action="">
+				<fieldset>
+				<legend>' . MainUser_Renting_AddPayment . '</legend>
+						<div id="input1" class="clonedInput">
+							<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />'
+							. MainUser_Renting_Amount . '&nbsp;
+							<input class="input_amount" id="input_amount" name="input_amount[1]" type="text" style="width:60px;" pattern="\d+(\.\d{2})?" required />&nbsp;&nbsp;'
+							. MainUser_Renting_User . '&nbsp;
+							<select class="select_user" id="select_user" name="select_user[1]" style="width:200px; height: 28px; cursor: pointer;" required>';
 
-						$AllUsers = $MySB_DB->select("users", ["id_users", "users_ident"]);
-						foreach($AllUsers as $User) {
-							echo '<option value="' . $User["id_users"] . '">' . $User["users_ident"] . '</option>';
-						}
+							$AllUsers = $MySB_DB->select("users", ["id_users", "users_ident"]);
+							foreach($AllUsers as $User) {
+								echo '<option value="' . $User["id_users"] . '">' . $User["users_ident"] . '</option>';
+							}
 
-	echo '				</select>&nbsp;&nbsp;'
-						 . MainUser_Renting_Date . '&nbsp;
-						 <input class="input_date" id="input_date" name="input_date[1]" type="date" max="'. date("Y-m-d") .'" min="2015-11-01" style="cursor: pointer;" required />
-					</div>
+		echo '				</select>&nbsp;&nbsp;'
+							 . MainUser_Renting_Date . '&nbsp;
+							 <input class="input_date" id="input_date" name="input_date[1]" type="date" max="'. date("Y-m-d") .'" min="2015-11-01" style="cursor: pointer;" required />
+						</div>
 
-					<div style="margin-top: 10px; margin-bottom: 20px;">
-						<input type="button" id="btnAdd" value="' . MainUser_Renting_AddAmount . '" style="cursor: pointer;" />
-						<input type="button" id="btnDel" value="' . MainUser_Renting_DelAmount . '" style="cursor: pointer;" />
-					</div>
+						<div style="margin-top: 10px; margin-bottom: 20px;">
+							<input type="button" id="btnAdd" value="' . MainUser_Renting_AddAmount . '" style="cursor: pointer;" />
+							<input type="button" id="btnDel" value="' . MainUser_Renting_DelAmount . '" style="cursor: pointer;" />
+						</div>
 
-					<input class="submit" style="width:' . strlen(MainUser_Renting_SaveAmount)*10 . 'px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="' . MainUser_Renting_SaveAmount . '">
-			</fieldset>
-		</form>
-	</div>';
+						<input class="submit" style="width:' . strlen(MainUser_Renting_SaveAmount)*10 . 'px; margin-top: 10px; margin-bottom: 10px;" name="submit" type="submit" value="' . MainUser_Renting_SaveAmount . '">
+				</fieldset>
+			</form>
+		</div>';
+	}
 
 	if (!empty($Rent_Payments)) {
 		echo '<div align="center">
@@ -153,8 +155,11 @@ function Form() {
 							<td><div align="center">' . $Payment["payment_date"] . '</div></td>
 							<td><div align="center">' . $Payment["amount"] . '</div></td>
 							<td><div align="center">' . $Payment["balance"] . '</div></td>
-							<td><div align="center"><input class="submit" name="submit" type="submit" value="' . Global_Delete . '" /></div></td>
-						</tr>';
+							<td><div align="center">';
+				if ( $Payment["balance"] != '0.00' ) {
+					echo '	<input class="submit" name="submit" type="submit" value="' . Global_Delete . '" />';
+				}
+				echo '	</div></td></tr>';
 			}
 
 			echo '	</table>
@@ -176,35 +181,30 @@ if (isset($_POST['submit'])) {
 			$Method = $_POST['method'];
 			$TotalUsers = CountingUsers();
 
-			if ( (isset($GlobalCost) && ($GlobalCost != 0.00)) && (isset($TotalUsers)) && (isset($Model)) && (isset($TVA)) && (isset($Method)) ) {
-				$B = ($GlobalCost * $TVA) / 100;
-				$GlobalCostTva = $GlobalCost + $B;
-				$X = $GlobalCost / $TotalUsers;
-				$Y = ($X * $TVA) / 100;
-				$PricePerUsers = $X + $Y;
+			$B = ($GlobalCost * $TVA) / 100;
+			$GlobalCostTva = $GlobalCost + $B;
+			$X = $GlobalCost / $TotalUsers;
+			$Y = ($X * $TVA) / 100;
+			$PricePerUsers = $X + $Y;
 
-				switch ($Method) {
-					case '1':
-						$PricePerUsers = round($PricePerUsers, 2);
-						$GlobalCostTva = round($GlobalCostTva, 2);
-						break;
-					default:
-						$PricePerUsers = ceil($PricePerUsers);
-						$GlobalCostTva = ceil($GlobalCostTva);
-						break;
-				}
+			switch ($Method) {
+				case '1':
+					$PricePerUsers = round($PricePerUsers, 2);
+					$GlobalCostTva = round($GlobalCostTva, 2);
+					break;
+				default:
+					$PricePerUsers = ceil($PricePerUsers);
+					$GlobalCostTva = ceil($GlobalCostTva);
+					break;
+			}
 
-				$result = $MySB_DB->update("system", ["rt_model" => "$Model", "rt_tva" => "$TVA", "rt_global_cost" => "$GlobalCost", "rt_cost_tva" => "$GlobalCostTva", "rt_nb_users" => "$TotalUsers", "rt_price_per_users" => "$PricePerUsers", "rt_method" => "$Method"], ["id_system" => 1]);
+			$result = $MySB_DB->update("system", ["rt_model" => "$Model", "rt_tva" => "$TVA", "rt_global_cost" => "$GlobalCost", "rt_cost_tva" => "$GlobalCostTva", "rt_nb_users" => "$TotalUsers", "rt_price_per_users" => "$PricePerUsers", "rt_method" => "$Method"], ["id_system" => 1]);
 
-				if( $result >= 0 ) {
-					$type = 'success';
-				} else {
-					$type = 'information';
-					$message = Global_NoChange;
-				}
+			if( $result >= 0 ) {
+				$type = 'success';
 			} else {
 				$type = 'information';
-				$message = Global_CompleteAllFields;
+				$message = Global_NoChange;
 			}
 			break;
 		case MainUser_Renting_SaveAmount:
@@ -218,7 +218,7 @@ if (isset($_POST['submit'])) {
 					$result = $MySB_DB->insert("tracking_rent_payments", ["id_users" => "$IdUser", "payment_date" => "$Date", "amount" => "$Amount", "balance" => "$Amount"]);
 					if ( $result >= 1 ) {
 						$Success++;
-					}					
+					}
 				} else {
 					$type = 'information';
 					$message = Global_CompleteAllFields;

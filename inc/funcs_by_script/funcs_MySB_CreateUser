@@ -570,45 +570,81 @@ CreateRtorrentConfigFile() {
 
 #### Monthly payment
 MonthlyPayment() {
-	if [ ! -z "$1" ] && [ ! -z "$RentingGlobalCost" ] && [ ! -z "$RentingCostTva" ] && [ ! -z "$RentingTVA" ] && [ ! -z "$RentingModel" ]; then
+	if [ ! -z "$1" ] &&
+		[ ! -z "$RentingGlobalCost" ] && 
+		[ ! -z "$RentingCostTva" ] && [ "$RentingCostTva" != "0.00" ] &&
+		[ ! -z "$RentingTVA" ] && 
+		[ ! -z "$RentingModel" ]; then
 		User="$1"
+		Year="`date +%Y`"
+		Month="`date +%m`"
+		Today="`date +%d`"
+		EndOfUse="`date -d "`date +"%Y-%m-01"` +1 month -1 day" +%d`"
+		if [ -z "$UsersList" ]; then ListingUsers; fi
 
-		# Renting
 		log_daemon_msg "$FnCreateUser_MonthlyPayments"
-		case "$ScriptName" in
-			MySB_CreateUser)
-				IdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$User'"`"
-				# 1/	On ajoute une entrée dans 'tracking_rent_status'.
-				Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_status' 'id_users,monthly_cost' "\"$IdUser\",\"$RentingCostTva\""
-				# 2/	On ajoute maintenant une entrée dans 'tracking_rent_history'.
-				#		Cette table dispose d'un TRIGGER mettant à jour d'autres tables dont 'tracking_rent_status'.
-				Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,monthly_price,nb_users' "\"$IdUser\",\"$RentingCostTva\",\"$TotalUsers\""			
-			;;
-			PaymentReminder.bsh)
+
+		ListingUsers
+		for SeedboxUser in $UsersList; do
+			FnIdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$SeedboxUser'"`"
+			SeedUserMail="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$SeedboxUser'"`"
+			CreateNewPeriodPrice=0
+
+			case "$ScriptName" in
+				PaymentReminder.bsh)
+					Subject="$Global_Subject_PaymentReminder $seedUser"
+					Case="renting"
+					Message="Payment Reminder"
+					CreateNewPeriodPrice=1
+				;;
+				MySB_CreateUser)
+					if [ "$User" != "$SeedboxUser" ]; then
+						# DO NOT send email about new monthly for the existing user.
+						# DO NOT create new entries for renting for the existing user.
+						Subject="$Global_Subject_MonthlyPayment"
+						Case="new_user"
+						Message="Changing Monthly"
+						CreateNewPeriodPrice=1
+					else
+						Subject="$CreateUser_SubjectAccountCreated [$NewUser]"
+						Case="account_created"
+						Message="$CreateUser_MessageAccountCreated"
+						# ICI, traitement pour l'ajout d'un nouvel utilisateur.
+						# 1/	On ajoute une entrée dans 'tracking_rent_status'.
+						Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_status' 'id_users,monthly_cost' "\"$FnIdUser\",\"$RentingCostTva\""
+						# 2/	On ajoute maintenant une entrée dans 'tracking_rent_history'.
+						#		==> Utilisation du trigger 'PeriodPrice_OnInsert' pour renseigner certains champs.
+						Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,monthly_price,nb_users,start_of_use,end_of_use' "\"$FnIdUser\",\"$RentingCostTva\",\"$TotalUsers\",\"$Today\",\"$EndOfUse\""
+					fi
+				;;
+				#MySB_DeleteUser)
+					# Servira à envoyer un récapitulatif à l'utilisateur, comme le montant de sa dette par exemple.
+				#;;
+			esac
+
+			if [ $CreateNewPeriodPrice -eq 1 ]; then
 				# 1/ Clôture du mois précédent dans:
-				#		- modification de 'tracking_rent_history'
+				#		- modification de 'tracking_rent_history' en modifiant le champs 'end_of_use' à la date du jour
+				#		==> Utilisation d'un trigger sur UPDATE pour calculer le prix de la période
 				#		- modification de 'tracking_rent_status'
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_history' "end_of_use='$Today'" "id_users='$FnIdUser' AND year='$Year' AND month='$Month' AND end_of_use='$EndOfUse'"
 				# 2/ Ajout du nouveau mois:
 				#		- ajout d'une entrée dans 'tracking_rent_status'.
 				#		- On ajoute maintenant une entrée dans 'tracking_rent_history'.
-			;;			
-			#MySB_DeleteUser)
-				# Servira à envoyer un récapitulatif à l'utilisateur, comme le montant de sa dette par exemple.
-			#;;
-		esac
-		StatusLSB
-
-		for SeedboxUser in $UsersList; do
-			# Renting
-			IdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$User'"`"
-			Balance="`Func_SQL_Command 'SELECT' 'MySB_db' 'SUM(balance)' 'tracking_rent_payments' "id_users = '$IdUser'"`"
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "balance = '$Balance'" "users_ident = '$User'"
-
-			SeedUserMail="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$SeedboxUser'"`"
-			if [ "$User" != "$SeedboxUser" ]; then
-				SendMail "$Global_Subject_MonthlyPayment" "${SeedboxUser}" "new_user" "Changing Monthly"
+				Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,monthly_price,nb_users,start_of_use,end_of_use' "\"$FnIdUser\",\"$RentingCostTva\",\"$TotalUsers\",\"$Today\",\"$EndOfUse\""
 			fi
+			# 3/ DAns tous les cas, on met à jour la table 'tracking_rent_status'.
+			#	- !nb_days_used!
+			#	- !monthly_cost!
+			#	- !treasury!
+			UserTreasury="`Func_SQL_Command 'SELECT' 'MySB_db' 'treasury' 'users' "id_users = '$FnIdUser'"`"
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_status' "treasury='$UserTreasury'" "id_users='$FnIdUser'"
+
+			# Send email for all users
+			SendMail "$Subject" "${SeedboxUser}" "$Case" "$Message"
 		done
+
+		StatusLSB
 	fi
 }
 
