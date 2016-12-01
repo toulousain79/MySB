@@ -215,7 +215,7 @@ if (isset($_POST['submit'])) {
 				$IdUser = $_POST['select_user'][$i];
 				$Date = $_POST['input_date'][$i];
 				if ( (isset($Amount) && ($Amount != 0.00)) && (isset($IdUser)) && (isset($Date)) ) {
-					$result = $MySB_DB->insert("tracking_rent_payments", ["id_users" => "$IdUser", "payment_date" => "$Date", "amount" => "$Amount", "balance" => "$Amount"]);
+					$result = $MySB_DB->insert("tracking_rent_payments", ["id_users" => "$IdUser", "payment_date" => "$Date", "amount" => "$Amount"]);
 					if ( $result >= 1 ) {
 						$Success++;
 					}
