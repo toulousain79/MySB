@@ -17,7 +17,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8 */;
 
 --
--- Base de données: `c3_mysb_db`
+-- Base de données: `MySB_db`
 --
 
 -- --------------------------------------------------------
@@ -257,9 +257,26 @@ DROP TRIGGER IF EXISTS `PricePerUser`;
 DELIMITER //
 CREATE TRIGGER `PricePerUser` BEFORE UPDATE ON `system`
  FOR EACH ROW BEGIN
-	IF (NEW.rt_cost_tva != '0.00') THEN
-		SET NEW.rt_price_per_users = (NEW.rt_cost_tva / NEW.rt_nb_users);
-	END IF; 
+	SET NEW.rt_price_per_users = (NEW.rt_cost_tva / NEW.rt_nb_users);
+
+	IF (NEW.rt_cost_tva != '0.00' AND OLD.rt_cost_tva != NEW.rt_cost_tva) THEN
+		SET @NbUsers = NEW.rt_nb_users;
+		SET @TempIdUser = 1;
+		IF (@NbUsers > 0) THEN
+			WHILE @NbUsers > 0 DO
+				SET @IdUserExist = (SELECT count(id_users) FROM users WHERE id_users=@TempIdUser);
+				IF (@IdUserExist > 0) THEN
+					SET @Exist = (SELECT count(id_tracking_rent_history) FROM tracking_rent_history WHERE id_users=@TempIdUser LIMIT 1);
+					IF (@Exist = 0) THEN
+						INSERT INTO tracking_rent_status (id_users,monthly_cost) VALUES (@TempIdUser,NEW.rt_cost_tva);
+						INSERT INTO tracking_rent_history (id_users,monthly_price,nb_users,start_of_use,end_of_use) VALUES (@TempIdUser,NEW.rt_cost_tva,@NbUsers,DAY(NOW()),DAY(NOW()));
+					END IF;
+				END IF;
+				SET @NbUsers = @NbUsers-1;
+				SET @TempIdUser = @TempIdUser+1;
+			END WHILE;
+		END IF;
+	END IF;
 END
 //
 DELIMITER ;
@@ -396,6 +413,22 @@ CREATE TABLE IF NOT EXISTS `tracking_rent_status` (
   KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
+--
+-- Déclencheurs `tracking_rent_status`
+--
+DROP TRIGGER IF EXISTS `NewStatus_OnInsert`;
+DELIMITER //
+CREATE TRIGGER `NewStatus_OnInsert` BEFORE INSERT ON `tracking_rent_status`
+ FOR EACH ROW BEGIN
+	SET NEW.year = YEAR(NOW());
+	SET NEW.month = MONTH(NOW());
+	SET NEW.nb_days_used = 0;
+	SET NEW.already_payed = '0.00';
+	SET NEW.treasury = '0.00';
+ END
+//
+DELIMITER ;
+
 -- --------------------------------------------------------
 
 --
@@ -420,15 +453,16 @@ CREATE TABLE IF NOT EXISTS `users` (
   `rtorrent_notify` tinyint(1) NOT NULL DEFAULT '0',
   `language` varchar(2) NOT NULL DEFAULT 'en',
   `init_password` tinyint(1) NOT NULL DEFAULT '0',
-  `quota` int(32) DEFAULT '0',
-  `period_price` decimal(4,2) NOT NULL DEFAULT '0.00',
-  `treasury` decimal(4,2) NOT NULL DEFAULT '0.00',
+  `quota` int(32) NOT NULL DEFAULT '0',
+  `period_price` decimal(4,2) DEFAULT NULL DEFAULT '0.00',
+  `period_days` tinyint(2) DEFAULT NULL DEFAULT '0',
+  `treasury` decimal(4,2) DEFAULT NULL DEFAULT '0.00',
   `created_at` date NOT NULL DEFAULT '0000-00-00',
   PRIMARY KEY (`id_users`),
-  UNIQUE KEY `users_ident` (`users_ident`),
   KEY `users_email` (`users_email`),
+  KEY `users_ident` (`users_ident`),
   KEY `created_at` (`created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 --
 -- Déclencheurs `users`
@@ -437,7 +471,7 @@ DROP TRIGGER IF EXISTS `AddUsersHistory_BeforeInsert`;
 DELIMITER //
 CREATE TRIGGER `AddUsersHistory_BeforeInsert` BEFORE INSERT ON `users`
  FOR EACH ROW BEGIN
-	SET NEW.created_at=CURDATE();
+	SET NEW.created_at=NOW();
 	UPDATE system SET rt_nb_users=rt_nb_users+1 WHERE id_system=1;
 END
 //
@@ -450,20 +484,20 @@ CREATE TRIGGER `AddUsersHistory_AfterInsert` AFTER INSERT ON `users`
 END
 //
 DELIMITER ;
+DROP TRIGGER IF EXISTS `KeepUserHistory_BeforeDelete`;
+DELIMITER //
+CREATE TRIGGER `KeepUserHistory_BeforeDelete` BEFORE DELETE ON `users`
+ FOR EACH ROW BEGIN
+	UPDATE system SET rt_nb_users=rt_nb_users+1 WHERE id_system=1;
+	UPDATE users_history SET deleted_at=NOW() WHERE id_users=OLD.id_users;
+END
+//
+DELIMITER ;
 DROP TRIGGER IF EXISTS `UpdateUsersHistory_BeforeUpdate`;
 DELIMITER //
 CREATE TRIGGER `UpdateUsersHistory_BeforeUpdate` BEFORE UPDATE ON `users`
  FOR EACH ROW BEGIN
 	UPDATE users_history SET users_ident=NEW.users_ident, users_email=NEW.users_email, created_at=NEW.created_at WHERE id_users=NEW.id_users;
-END
-//
-DELIMITER ;
-DROP TRIGGER IF EXISTS `KeepUserHistory_BeforeDelete`;
-DELIMITER //
-CREATE TRIGGER `KeepUserHistory_BeforeDelete` BEFORE DELETE ON `users`
- FOR EACH ROW BEGIN
-	UPDATE system SET rt_nb_users=rt_nb_users-1 WHERE id_system=1;
-	UPDATE users_history SET deleted_at=NOW() WHERE id_users=OLD.id_users;
 END
 //
 DELIMITER ;
