@@ -29,5 +29,6 @@ define('User_TrackersList_Table_Origin', 'Origin');
 define('User_TrackersList_Table_IPv4', 'IPv4');
 define('User_TrackersList_Table_PingResult', 'Ping Result');
 define('User_TrackersList_Table_IsSSL', 'SSL ?');
+define('User_TrackersList_Table_Expiration', 'Certificate<br />Expiration');
 
 //#################### LAST LINE ######################################

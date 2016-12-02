@@ -236,7 +236,7 @@ CREATE TABLE IF NOT EXISTS `system` (
   `dnscrypt` tinyint(1) NOT NULL DEFAULT '0',
   `logwatch` tinyint(1) NOT NULL DEFAULT '0',
   `owncloud_cron` tinyint(1) NOT NULL DEFAULT '0',
-  `letsencrypt_date` date NOT NULL,
+  `letsencrypt_date` date NOT NULL DEFAULT '0000-00-00',
   `letsencrypt_openport` tinyint(1) NOT NULL DEFAULT '0',
   `quota_default` int(16) NOT NULL,
   `rt_model` varchar(64) NOT NULL,
@@ -297,6 +297,7 @@ CREATE TABLE IF NOT EXISTS `trackers_list` (
   `to_check` tinyint(1) NOT NULL DEFAULT '1',
   `to_delete` tinyint(1) NOT NULL DEFAULT '0',
   `ping` varchar(64) NOT NULL,
+  `cert_expiration` date NOT NULL DEFAULT '0000-00-00',
   PRIMARY KEY (`id_trackers_list`),
   UNIQUE KEY `tracker` (`tracker`,`tracker_domain`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
@@ -388,7 +389,7 @@ DELIMITER ;
 CREATE TABLE IF NOT EXISTS `tracking_rent_payments` (
   `id_tracking_rent_payments` int(11) NOT NULL AUTO_INCREMENT,
   `id_users` int(11) NOT NULL,
-  `payment_date` date DEFAULT NULL,
+  `payment_date` date NOT NULL DEFAULT '0000-00-00',
   `amount` decimal(4,2) DEFAULT NULL,
   `balance` decimal(4,2) DEFAULT NULL,
   PRIMARY KEY (`id_tracking_rent_payments`),

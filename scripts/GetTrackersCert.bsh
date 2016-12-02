@@ -30,13 +30,25 @@ if [ ! -d $MySB_InstallDir/ssl/trackers/ ]; then
 fi
 
 case "$1" in
-	"APPLYCONFIG")
+	'APPLYCONFIG')
+		DoDeleteTracker=1
+		DoRenewCertificates=0
+		DoCleanCertificates=1
+		DoGetRutorrentTrackers=0
+		DoGetUsersTrackers=0
+		DoUpdateUsersTracker=0
+	;;
+	'CRON')
+		DoDeleteTracker=0
+		DoRenewCertificates=1
 		DoCleanCertificates=1
 		DoGetRutorrentTrackers=0
 		DoGetUsersTrackers=0
 		DoUpdateUsersTracker=0
 	;;
 	*) # "REFRESH" or "INSTALL"
+		DoDeleteTracker=0
+		DoRenewCertificates=1
 		DoCleanCertificates=1
 		DoGetRutorrentTrackers=1
 		DoGetUsersTrackers=1
@@ -45,13 +57,27 @@ case "$1" in
 esac
 
 #### Removing deleted trackers from the portal
-RemovedTrackersList="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker_domain' 'trackers_list' "to_delete = '1'"`"
-for RemovedTracker in $RemovedTrackersList; do
-	log_daemon_msg "Get certificate for $RemovedTracker"
-	rm -f $MySB_InstallDir/ssl/trackers/*$RemovedTracker.pem
-	Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list' "tracker_domain = '$RemovedTracker'"
-	StatusLSB
-done
+if [ "$DoDeleteTracker" == "1" ]; then
+	RemovedTrackersList="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker_domain' 'trackers_list' "to_delete='1'"`"
+	for RemovedTracker in $RemovedTrackersList; do
+		log_daemon_msg "Remove of tracker $RemovedTracker"
+		rm -f $MySB_InstallDir/ssl/trackers/*$RemovedTracker.pem
+		Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list' "tracker_domain='$RemovedTracker'"
+		StatusLSB
+	done
+fi
+
+#### Renew expirated certificates
+if [ "$DoRenewCertificates" == "1" ]; then
+	Today="`date +%Y-%m-%d`"
+	ExpiratedTrackersList="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker_domain' 'trackers_list' "cert_expiration='$Today'"`"
+	for ExpiratedTracker in $ExpiratedTrackersList; do
+		log_daemon_msg "Renew certificate for $ExpiratedTracker"
+		rm -f $MySB_InstallDir/ssl/trackers/*$RemovedTracker.pem
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "is_ssl='0', cert_expiration='0000-00-00'" "tracker_domain='$ExpiratedTracker'"
+		StatusLSB
+	done
+fi
 
 #### Clean certificates with bad links
 if [ "$DoCleanCertificates" == "1" ]; then
@@ -90,7 +116,7 @@ fi
 
 #### Update users trackers data
 if [ "$DoUpdateUsersTrackers" == "1" ]; then
-	TrackersList="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker' 'trackers_list' "origin = 'users' AND to_check = '1'"`"
+	TrackersList="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker' 'trackers_list' "origin='users' AND to_check='1'"`"
 
 	for Tracker in $TrackersList; do
 		AddTracker $Tracker "users"
@@ -98,7 +124,7 @@ if [ "$DoUpdateUsersTrackers" == "1" ]; then
 fi
 
 #### Get certificates
-TrackersList="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker' 'trackers_list' "to_check = '1'"`"
+TrackersList="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker' 'trackers_list' "to_check='1'"`"
 DoRehash=0
 
 for Tracker in $TrackersList; do
@@ -106,13 +132,15 @@ for Tracker in $TrackersList; do
 	if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
 		RemoveAfter=0
 		if [ -z "`cat /etc/pgl/allow.p2p | grep $Tracker`" ]; then
-			TrackersID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker = '$Tracker'"`"
-			TrackersIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersID'"`"
+			TrackersID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker='$Tracker'"`"
+			TrackersIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list='$TrackersID'"`"
 			if [ ! -z "$TrackersIPv4" ]; then
-				RemoveAfter=1
 				for IPv4 in $TrackersIPv4; do
+					sed -i '/'$Tracker'/d' /etc/pgl/allow.p2p
 					echo "$Tracker:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
 				done
+			else
+				RemoveAfter=1
 			fi
 		fi
 	fi
@@ -132,7 +160,12 @@ for Tracker in $TrackersList; do
 					if [ -f /etc/ssl/certs/$Tracker.pem ]; then
 						rm -f /etc/ssl/certs/$Tracker.pem
 					fi
-					Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "is_ssl = '1'" "tracker = '$Tracker'"
+					# Extract certificate expiration date
+					ExpirationDate="`openssl x509 -enddate -noout -in ./$Tracker.pem | cut -d "=" -f 2`"
+					ExpirationDate="`date -d "$ExpirationDate" '+%Y-%m-%d'`"
+					ExpirationDate="`date --date "$ExpirationDate 2 days ago" '+%Y-%m-%d'`"
+					# Update database
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "is_ssl='1', cert_expiration='$ExpirationDate'" "tracker='$Tracker'"
 					DoRehash=1
 				fi
 
@@ -140,10 +173,10 @@ for Tracker in $TrackersList; do
 			fi
 		fi
 
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "to_check = '0', ping = 'GOOD'" "tracker = '$Tracker'"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "to_check='0', ping='GOOD'" "tracker='$Tracker'"
 		rm -f ./$Tracker.crt
 	else
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "to_check = '0', ping = 'BAD'" "tracker = '$Tracker'"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "to_check='0', ping='BAD'" "tracker='$Tracker'"
 	fi
 
 	if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
@@ -168,8 +201,8 @@ ManageServices start "$ServicesToRestart"
 #### Create again certificates listing in system
 if [ "$DoRehash" == 1 ]; then
 	log_daemon_msg "Certificates Rehash"
-	c_rehash $MySB_InstallDir/ssl/trackers/
-	update-ca-certificates
+	c_rehash $MySB_InstallDir/ssl/trackers/ &> /dev/null
+	update-ca-certificates &> /dev/null
 	StatusLSB
 fi
 

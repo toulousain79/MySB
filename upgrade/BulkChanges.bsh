@@ -42,7 +42,6 @@ case "$1" in
 		/usr/sbin/ntpdate -u 0.fr.pool.ntp.org
 
 		#### MySQL
-		Func_SQL_Command 'DROP' 'MySB_db' 'renting' '-echo'
 		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Schema.sql
 		rm -f $MySB_InstallDir/db/*.sql &> /dev/null
 
@@ -56,6 +55,8 @@ case "$1" in
 		#### To call for every upgrade - EoF
 		####################################
 
+		# renting
+		Func_SQL_Command 'DROP' 'MySB_db' 'renting' '-echo'
 		# repositories
 		Func_SQL_Command 'DELETE' 'MySB_db' 'repositories' "1" '-echo'
 		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/upgrade/repositories_v3.5.sql
@@ -69,6 +70,7 @@ case "$1" in
 		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'users' 'treasury' "DECIMAL( 4,2 ) NOT NULL" '-echo'
 		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'users' 'created_at' "DATE NOT NULL DEFAULT '0000-00-00'" '-echo'
 		# system
+		Func_SQL_Command 'ALTER' 'MySB_db' 'CHANGE' 'system' 'letsencrypt_date' "DATE NOT NULL DEFAULT '0000-00-00'" '-echo'
 		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'system' 'logwatch' "TINYINT( 1 ) NOT NULL DEFAULT '0' AFTER \`dnscrypt\`" '-echo'
 		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'system' 'rt_model' "VARCHAR( 64 ) NOT NULL" '-echo'
 		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'system' 'rt_tva' "DECIMAL( 4,2 ) NOT NULL" '-echo'
@@ -83,6 +85,7 @@ case "$1" in
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "rt_model = '$RentingModel', rt_tva = '$RentingTVA', rt_global_cost = '$RentingGlobalCost', rt_nb_users = '$TotalUsers', rt_price_per_users = '$PriceByUser', rt_method = '$Method'" "id_system = '1'"
 		# trackers_list
 		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'trackers_list' 'to_delete' "TINYINT(1) NOT NULL DEFAULT '0'" '-echo'
+		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'trackers_list' 'cert_expiration' "DATE NOT NULL DEFAULT '0000-00-00'" '-echo'
 
 		#### SSH
 		cp -v $MySB_InstallDir/templates/etc.ssh.sshd_config.tmpl /etc/ssh/sshd_config
@@ -108,6 +111,10 @@ case "$1" in
 
 		#### APT-Mirror Cron
 		sed -i "s/^#0 4/0 4/g;" /etc/cron.d/apt-mirror
+		
+		#### Remove all tracker certificate
+		rm -vf $MySB_InstallDir/ssl/trackers/*.pem
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "is_ssl='0', cert_expiration='0000-00-00'" 'ALL'		
 	;;
 	"AFTER")
 		####################################

@@ -36,6 +36,7 @@ define('MainUser_TrackersAdd_Table_Address', 'Address');
 define('MainUser_TrackersAdd_Table_IPv4', 'IPv4');
 define('MainUser_TrackersAdd_Table_PingResult', 'Ping Result');
 define('MainUser_TrackersAdd_Table_IsSSL', 'SSL ?');
+define('MainUser_TrackersAdd_Table_Expiration', 'Certificate<br />expiration');
 define('MainUser_TrackersAdd_ExtractAddress', 'Extract address');
 define('MainUser_TrackersAdd_ErrorUpload', 'Sorry, there was an error uploading your file.');
 define('MainUser_TrackersAdd_SelectTorrent', 'Select a torrent file:');

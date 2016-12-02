@@ -156,7 +156,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 	}
 }
 
-$TrackersList = $MySB_DB->select("trackers_list", ["id_trackers_list", "tracker", "tracker_domain", "origin", "is_ssl", "is_active", "ping"], ["AND" => ["origin" => "users", "to_delete" => 0]], ["ORDER" => "trackers_list.tracker_domain ASC"]);
+$TrackersList = $MySB_DB->select("trackers_list", ["id_trackers_list", "tracker", "tracker_domain", "origin", "is_ssl", "is_active", "ping", "cert_expiration"], ["AND" => ["origin" => "users", "to_delete" => 0]], ["ORDER" => "trackers_list.tracker_domain ASC"]);
 if (empty($TrackersList)) {
 	$ButtonSaveON = false;
 } else {
@@ -213,6 +213,7 @@ if (empty($TrackersList)) {
 				<th style="text-align:center;"><?php echo MainUser_TrackersAdd_Table_IPv4; ?></th>
 				<th style="text-align:center;"><?php echo MainUser_TrackersAdd_Table_PingResult; ?></th>
 				<th style="text-align:center;"><?php echo MainUser_TrackersAdd_Table_IsSSL; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_TrackersAdd_Table_Expiration; ?></th>
 				<th style="text-align:center;"><?php echo Global_IsActive; ?></th>
 				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
 			</tr>
@@ -277,6 +278,9 @@ foreach($TrackersList as $Tracker) {
 				</td>
 				<td>
 					<?php echo $is_ssl; ?>
+				</td>
+				<td>
+					<?php echo $Tracker["cert_expiration"]; ?>
 				</td>
 				<td>
 					<?php echo $is_active; ?>
