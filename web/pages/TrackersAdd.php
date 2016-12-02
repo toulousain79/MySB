@@ -125,15 +125,18 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 			break;
 
-		//default: // delete
-		case Global_Delete;
+		default: // delete
 			foreach($_POST['submit'] as $key => $value) {
 				// $result = $MySB_DB->delete("trackers_list_ipv4", ["id_trackers_list" => $key]);
 				// if ( $result = 0 ) {
 					// $success = false;
 				// }
 
-				$result = $MySB_DB->delete("trackers_list", ["id_trackers_list" => $key]);
+				// $result = $MySB_DB->delete("trackers_list", ["id_trackers_list" => $key]);
+				// if ( $result = 0 ) {
+					// $success = false;
+				// }
+				$result = $MySB_DB->update("trackers_list", ["to_delete" => 1], ["id_trackers_list" => $key]);
 				if ( $result = 0 ) {
 					$success = false;
 				}
@@ -153,7 +156,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 	}
 }
 
-$TrackersList = $MySB_DB->select("trackers_list", "*", ["origin" => "users", "ORDER" => "trackers_list.tracker_domain ASC"]);
+$TrackersList = $MySB_DB->select("trackers_list", ["id_trackers_list", "tracker", "tracker_domain", "origin", "is_ssl", "is_active", "ping"], ["AND" => ["origin" => "users", "to_delete" => 0]], ["ORDER" => "trackers_list.tracker_domain ASC"]);
 if (empty($TrackersList)) {
 	$ButtonSaveON = false;
 } else {

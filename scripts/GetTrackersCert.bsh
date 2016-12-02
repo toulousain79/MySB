@@ -29,10 +29,9 @@ if [ ! -d $MySB_InstallDir/ssl/trackers/ ]; then
 	mkdir $MySB_InstallDir/ssl/trackers/
 fi
 
-#### Clean certificates with bad links
 case "$1" in
 	"APPLYCONFIG")
-		DoCleanCertificates=0
+		DoCleanCertificates=1
 		DoGetRutorrentTrackers=0
 		DoGetUsersTrackers=0
 		DoUpdateUsersTracker=0
@@ -45,6 +44,16 @@ case "$1" in
 	;;
 esac
 
+#### Removing deleted trackers from the portal
+RemovedTrackersList="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker_domain' 'trackers_list' "to_delete = '1'"`"
+for RemovedTracker in $RemovedTrackersList; do
+	log_daemon_msg "Get certificate for $RemovedTracker"
+	rm -f $MySB_InstallDir/ssl/trackers/*$RemovedTracker.pem
+	Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list' "tracker_domain = '$RemovedTracker'"
+	StatusLSB
+done
+
+#### Clean certificates with bad links
 if [ "$DoCleanCertificates" == "1" ]; then
 	log_daemon_msg "Clean certificates with bad links"
 	LIST_CERTS=$(ls -la /etc/ssl/certs/ | awk '{ print $9 }')
@@ -66,7 +75,7 @@ fi
 
 # Allow all trackers in BIND
 perl -pi -e "s/^include \"\/etc\/bind\/MySB.zones.blakclists\";/#include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
-service bind9 reload
+ManageServices start "bind9"
 
 #### Create trackers listing
 # 1 - Add ruTorrent trackers in db
@@ -104,7 +113,6 @@ for Tracker in $TrackersList; do
 				for IPv4 in $TrackersIPv4; do
 					echo "$Tracker:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
 				done
-				pglcmd restart > /dev/null
 			fi
 		fi
 	fi
@@ -138,16 +146,24 @@ for Tracker in $TrackersList; do
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "to_check = '0', ping = 'BAD'" "tracker = '$Tracker'"
 	fi
 
-	if [ $RemoveAfter -eq 1 ] && [ "$IsInstalled_PeerGuardian" == "YES" ]; then
-		sed -i '/'$Tracker'/d' /etc/pgl/allow.p2p
-		pglcmd restart > /dev/null
+	if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
+		if [ $RemoveAfter -eq 1 ] && [ -f /etc/pgl/allow.p2p ]; then
+			sed -i '/'$Tracker'/d' /etc/pgl/allow.p2p
+		fi
 	fi
 	StatusLSB
 done
 
+if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
+	ServicesToRestart="pglcmd"
+fi
+
 # Block all inactive trackers in BIND
 perl -pi -e "s/^#include \"\/etc\/bind\/MySB.zones.blakclists\";/include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
-service bind9 reload
+ServicesToRestart="${ServicesToRestart} bind9"
+
+#### Restart services
+ManageServices start "$ServicesToRestart"
 
 #### Create again certificates listing in system
 if [ "$DoRehash" == 1 ]; then

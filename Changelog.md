@@ -13,6 +13,7 @@
 			- DotDeb, renewing repository GPG key
 			- Fix NginX upgrade bug
 			- Fix DNScrypt-proxy bug
+			- Get tracker certificate
 			- Portal
 				* Medoo Framework v1.1.3
 				* jQuery v1.12.4

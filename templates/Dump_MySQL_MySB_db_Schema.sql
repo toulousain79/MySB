@@ -295,6 +295,7 @@ CREATE TABLE IF NOT EXISTS `trackers_list` (
   `is_ssl` tinyint(1) NOT NULL DEFAULT '0',
   `is_active` tinyint(1) NOT NULL DEFAULT '0',
   `to_check` tinyint(1) NOT NULL DEFAULT '1',
+  `to_delete` tinyint(1) NOT NULL DEFAULT '0',
   `ping` varchar(64) NOT NULL,
   PRIMARY KEY (`id_trackers_list`),
   UNIQUE KEY `tracker` (`tracker`,`tracker_domain`)

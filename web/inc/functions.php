@@ -22,6 +22,13 @@
 //
 //#################### FIRST LINE #####################################
 
+// Users renting  treasury
+function UpdateUserTreasury() {
+	global $MySB_DB;
+	
+	
+}
+
 // Get Size
 function GetSizeName($octet) {
 	switch (strtoupper(substr($octet,-2))) {
@@ -388,13 +395,13 @@ function ManageUsersTrackers($Tracker, $IsActive) {
 	$IPv4_Tab = array_merge($IPv4_Tab, GetDnsRecords($TrackerAddress));
 
 	# 3/ Check 'tracker.domain.com'
-	if ( $TrackerAddress != "tracker.$TrackerDomain" ) {
-		$Value = GetDnsRecords("tracker.$TrackerDomain");
-		if ( count($Value) >= 1 ) {
-			$IPv4_Tab = array_merge($IPv4_Tab, $Value);
-			$TrackerAddress = "tracker.$TrackerDomain";
-		}
-	}
+	// if ( $TrackerAddress != "tracker.$TrackerDomain" ) {
+		// $Value = GetDnsRecords("tracker.$TrackerDomain");
+		// if ( count($Value) >= 1 ) {
+			// $IPv4_Tab = array_merge($IPv4_Tab, $Value);
+			// $TrackerAddress = "tracker.$TrackerDomain";
+		// }
+	// }
 
 	// IPv4 listing
 	$IPv4_Tab = array_unique($IPv4_Tab);

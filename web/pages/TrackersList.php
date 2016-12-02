@@ -62,8 +62,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			}
 			break;
 
-		//default: //Delete
-		case Global_Delete:
+		default: //Delete
 			if (isset($_POST['submit'])) {
 				foreach($_POST['submit'] as $key => $value) {
 					// $result = $MySB_DB->delete("trackers_list_ipv4", ["id_trackers_list" => $key]);
@@ -71,7 +70,11 @@ if(isset($_POST)==true && empty($_POST)==false) {
 						// $success = false;
 					// }
 
-					$result = $MySB_DB->delete("trackers_list", ["id_trackers_list" => $key]);
+					// $result = $MySB_DB->delete("trackers_list", ["id_trackers_list" => $key]);
+					// if ( $result = 0 ) {
+						// $success = false;
+					// }
+					$result = $MySB_DB->update("trackers_list", ["to_delete" => 1], ["id_trackers_list" => $key]);
 					if ( $result = 0 ) {
 						$success = false;
 					}
@@ -90,7 +93,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 	GenerateMessage('GetTrackersCert.bsh', $type, $message);
 }
 
-$TrackersList = $MySB_DB->select("trackers_list", "*", ["ORDER" => "trackers_list.tracker_domain ASC"]);
+$TrackersList = $MySB_DB->select("trackers_list", ["id_trackers_list", "tracker", "tracker_domain", "origin", "is_ssl", "is_active", "ping"], ["to_delete" => 0, "ORDER" => "trackers_list.tracker_domain ASC"]);
 ?>
 
 <form class="form_settings" method="post" action="">
