@@ -2,7 +2,7 @@
 		2016/10/20
 			- ownCloud v9.1.2
 			- Plowshare v2.1.6
-			- Composer v1.2.2
+			- Composer v1.2.3
 			- NodeJS v0.12.17
 			- Let's Encrypt v0.9.2
 			- Change some repositories
@@ -13,7 +13,8 @@
 			- DotDeb, renewing repository GPG key
 			- Fix NginX upgrade bug
 			- Fix DNScrypt-proxy bug
-			- Get tracker certificate
+			- Get/Renew tracker certificate
+			- Creating a new certificate
 			- Portal
 				* Medoo Framework v1.1.3
 				* jQuery v1.12.4

@@ -34,16 +34,18 @@ TYPE="$3" # INSTALL / UPGRADE
 
 #### Create CA
 CreateCACertificate() {
-	if [ -z "$TYPE" ] && [ -f $MySB_InstallDir/ssl/CA/serial ]; then
-		echo -e "${CYELLOW}CA certificate already exist. Do you want to create it again ?$CEND"
-		echo -e "${CYELLOW}If you create new CA, you must create again certificates for services.$CEND"
-		echo -e "${CYELLOW}Do you understand ?$CEND"
-		QuestionGetString NO "$Global_WantToContinue" CONTINUE $Global_YES
-		if [ "$CONTINUE" == "$Global_YES" ]; then
-			echo -e "$Global_SeeYouLater"
-			echo
-			echo
-			EndingScript 0
+	if [ "$TYPE" != "UPGRADE" ]; then
+		if [ -f $MySB_InstallDir/ssl/CA/serial ]; then
+			echo -e "${CYELLOW}CA certificate already exist. Do you want to create it again ?$CEND"
+			echo -e "${CYELLOW}If you create new CA, you must create again certificates for services.$CEND"
+			echo -e "${CYELLOW}Do you understand ?$CEND"
+			QuestionGetString NO "$Global_WantToContinue" CONTINUE $Global_YES
+			if [ "$CONTINUE" == "$Global_YES" ]; then
+				echo -e "$Global_SeeYouLater"
+				echo
+				echo
+				EndingScript 0
+			fi
 		fi
 	fi
 
@@ -92,25 +94,27 @@ CreateCACertificate() {
 CreateServiceCertificate() {
 	cd $MySB_InstallDir/ssl/CA/
 
-	CERTPASS="`Func_SQL_Command 'SELECT' 'MySB_db' 'cert_password' 'system' "id_system = '1'"`"
-	SUBJ="/C=FR/ST=FR/L=FR/O=MySB/CN=$HostNameFQDN/emailAddress=admin@localhost/OU=$SERVICENAME"
+	CERTPASS="`Func_SQL_Command 'SELECT' 'MySB_db' 'cert_password' 'system' "id_system = '1'" '-echo'`"
+	Service="$1"
+	SUBJ="/C=FR/ST=FR/L=FR/O=MySB/CN=$HostNameFQDN/emailAddress=admin@localhost/OU=$Service"
 
-	if [ ! -f $MySB_InstallDir/ssl/$SERVICENAME.key ]; then
-		openssl genrsa 2048 | tee ./$SERVICENAME.key
-		openssl req -new -x509 -nodes -key ./$SERVICENAME.key -days 3650 -config ./MySB_caconfig.cnf -batch -subj $SUBJ | tee ./$SERVICENAME.cert
-		openssl ca -batch -keyfile ./private/cakey.pem -passin pass:$CERTPASS -subj $SUBJ -out ./$SERVICENAME.pem -config ./MySB_caconfig.cnf -passin pass:$CERTPASS -ss_cert ./$SERVICENAME.cert
-		chmod 600 ./$SERVICENAME.*
-		mv -v ./$SERVICENAME.* ../
-		chmod 644 ../$SERVICENAME.cert
+	if [ "$TYPE" == "UPGRADE" ]; then
+		rm -vf $MySB_InstallDir/ssl/*.key
+	fi
+	if [ ! -f $MySB_InstallDir/ssl/$Service.key ]; then
+		openssl genrsa 2048 | tee ./$Service.key
+		openssl req -new -x509 -nodes -key ./$Service.key -days 3650 -config ./MySB_caconfig.cnf -batch -subj $SUBJ | tee ./$Service.cert
+		openssl ca -batch -keyfile ./private/cakey.pem -passin pass:$CERTPASS -subj $SUBJ -out ./$SERVICENAME.pem -config ./MySB_caconfig.cnf -passin pass:$CERTPASS -ss_cert ./$Service.cert
+		chmod 600 ./$Service.*
+		mv -v ./$Service.* ../
+		chmod 644 ../$Service.cert
 	fi
 }
 
 case "$COMMAND" in
 	"CreateCACertificate")
 		CreateCACertificate
-		if [ "$TYPE" == "INSTALL" ]; then
-			CreateServiceCertificate 'mysb'
-		fi
+		CreateServiceCertificate 'mysb'
 	;;
 	"CreateServiceCertificate")
 		if [ ! -z "$SERVICENAME" ]; then
