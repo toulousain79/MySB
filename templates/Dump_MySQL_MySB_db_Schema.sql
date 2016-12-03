@@ -558,7 +558,12 @@ DROP TRIGGER IF EXISTS `UpdateUsersHistory_BeforeUpdate`;
 DELIMITER //
 CREATE TRIGGER `UpdateUsersHistory_BeforeUpdate` BEFORE UPDATE ON `users`
  FOR EACH ROW BEGIN
-	UPDATE users_history SET users_ident=NEW.users_ident, users_email=NEW.users_email, created_at=NEW.created_at WHERE id_users=NEW.id_users;
+	IF (NEW.created_at = '0000-00-00') THEN
+		SET NEW.created_at = NOW();
+		INSERT INTO users_history (id_users,users_ident,users_email,created_at) VALUES (NEW.id_users,NEW.users_ident,NEW.users_email,NEW.created_at);
+	ELSE
+		UPDATE users_history SET users_email=NEW.users_email, created_at=NEW.created_at WHERE id_users=IdUser;
+	END IF;
 END
 //
 DELIMITER ;

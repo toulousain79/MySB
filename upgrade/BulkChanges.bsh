@@ -122,11 +122,17 @@ case "$1" in
 		echo >> /etc/motd
 
 		# Send mail for each user with new version
+		ListingUsers
 		source $MySB_InstallDir/inc/vars
 		source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
 		MainUserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "admin = '1'"`"
 		RutorrentDirEscaped="`echo $RutorrentDir | sed s,/,\\\\\\\\\\/,g`"
 		for seedUser in $UsersList; do
+			########## ONLY USED FOR v3.5 UPGRADE, TO DELETE ON NEXT VERSION - BoF ##########
+			# Adding the user creation date
+			CreationDate="`date -r /home/$seedUser/rtorrent '+%Y-%m-%d'`"
+			########## ONLY USED FOR v3.5 UPGRADE, TO DELETE ON NEXT VERSION - EoF ##########
+
 			UserId="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$seedUser'"`"
 			UserPassword="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_passwd' 'users' "users_ident = '$seedUser'"`"
 			install -g root -o root -m 0755 $MySB_InstallDir/templates/init/etc.init.rtorrent.tmpl /etc/init.d/rtorrent-$seedUser
@@ -135,11 +141,11 @@ case "$1" in
 
 			if [ "$UserId" == "$MainUserId" ] && [ ! -z "$UserPassword" ]; then
 				# Remove main user password from database
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "users_passwd = ''" "admin = '1'"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "created_at = '$CreationDate', users_passwd = ''" "admin = '1'"
 				ScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_ChangeUserPassword" "$seedUser" "$UserPassword" 'UPGRADE'
 			else
 				# Init password required
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "init_password = '1'" "users_ident = '$seedUser'"
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "created_at = '$CreationDate', init_password = '1'" "users_ident = '$seedUser'"
 				Subject="$Upgrade_SubjectUpgraded $MySB_CurrentVersion"
 				Case="upgrade"
 				SendMail "$Subject" "$seedUser" "$Case"
