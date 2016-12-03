@@ -260,11 +260,11 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($CurrentUser);
 					break;
 				case "Port Forwarding":
-					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+					//echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					break;
 				case "Renting Payments":
 					if ( (isset($SystemDatas["rt_cost_tva"]) && ($SystemDatas["rt_cost_tva"] != 0.00)) && (isset($SystemDatas["rt_nb_users"])) && (isset($SystemDatas["rt_model"])) && (isset($SystemDatas["rt_method"])) ) {
-						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($CurrentUser);
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					}
 					break;
 				default:
