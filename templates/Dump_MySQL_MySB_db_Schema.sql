@@ -240,11 +240,11 @@ CREATE TABLE IF NOT EXISTS `system` (
   `letsencrypt_openport` tinyint(1) NOT NULL DEFAULT '0',
   `quota_default` int(16) NOT NULL,
   `rt_model` varchar(64) NOT NULL,
-  `rt_tva` decimal(4,2) NOT NULL,
-  `rt_global_cost` decimal(4,2) NOT NULL,
-  `rt_cost_tva` decimal(4,2) NOT NULL,
+  `rt_tva` decimal(4,2) NOT NULL DEFAULT '0.00',
+  `rt_global_cost` decimal(4,2) NOT NULL DEFAULT '0.00',
+  `rt_cost_tva` decimal(4,2) NOT NULL DEFAULT '0.00',
   `rt_nb_users` tinyint(2) NOT NULL DEFAULT '0',
-  `rt_price_per_users` decimal(4,2) DEFAULT NULL,
+  `rt_price_per_users` decimal(4,2) DEFAULT NULL DEFAULT '0.00',
   `rt_method` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_system`),
   UNIQUE KEY `mysb_version` (`mysb_version`,`mysb_user`,`mysb_password`,`hostname`,`ipv4`,`primary_inet`,`timezone`,`cert_password`)
@@ -327,6 +327,7 @@ CREATE TABLE IF NOT EXISTS `tracking_rent_history` (
   `id_users` int(11) NOT NULL,
   `year` smallint(4) DEFAULT NULL,
   `month` tinyint(2) DEFAULT NULL,
+  `date`  mediumint(6) NOT NULL DEFAULT  '000000',
   `monthly_price` decimal(4,2) NOT NULL,
   `nb_users` int(4) NOT NULL,
   `users_price` decimal(4,2) DEFAULT NULL,
@@ -350,6 +351,7 @@ CREATE TRIGGER `PeriodPrice_OnInsert` BEFORE INSERT ON `tracking_rent_history`
  FOR EACH ROW BEGIN
 	SET NEW.year = YEAR(NOW());
 	SET NEW.month = MONTH(NOW());
+	SET NEW.date = CONCAT(YEAR(NOW()), MONTH(NOW()));
 	SET NEW.users_price = (NEW.monthly_price / NEW.nb_users);
 	SET NEW.nb_days_month = RIGHT(LAST_DAY(NOW()), 2);
 	SET NEW.remain_days = (NEW.end_of_use - NEW.start_of_use + 1);
@@ -390,11 +392,72 @@ CREATE TABLE IF NOT EXISTS `tracking_rent_payments` (
   `id_tracking_rent_payments` int(11) NOT NULL AUTO_INCREMENT,
   `id_users` int(11) NOT NULL,
   `payment_date` date NOT NULL DEFAULT '0000-00-00',
-  `amount` decimal(4,2) DEFAULT NULL,
-  `balance` decimal(4,2) DEFAULT NULL,
+  ``amount` decimal(4,2) DEFAULT NULL DEFAULT '0.00',
   PRIMARY KEY (`id_tracking_rent_payments`),
   KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+--
+-- Déclencheurs `tracking_rent_payments`
+--
+DROP TRIGGER IF EXISTS `TreasuryUpdate_OnInsert`;
+DELIMITER //
+CREATE TRIGGER `TreasuryUpdate_OnInsert` BEFORE INSERT ON `tracking_rent_payments`
+ FOR EACH ROW BEGIN
+	DECLARE IdStatus INTEGER DEFAULT 0;
+	DECLARE MonthlyCost DECIMAL(4,2) DEFAULT '0.00';
+	DECLARE AlreadyPayed DECIMAL(4,2) DEFAULT '0.00';
+	SET @Treasury = ((SELECT treasury FROM users WHERE id_users=NEW.id_users)+NEW.amount);
+	SET @NbStatus = (SELECT count(id_tracking_rent_status) FROM tracking_rent_status WHERE id_users=NEW.id_users AND monthly_cost!=already_payed);
+
+	IF (@NbStatus > 0) THEN
+		WHILE @NbStatus > 0 DO
+			SELECT id_tracking_rent_status, monthly_cost, already_payed INTO IdStatus, MonthlyCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=NEW.id_users AND monthly_cost!=already_payed ORDER BY CONCAT(year, month) ASC LIMIT 1;
+			SET @Treasury = (@Treasury-(MonthlyCost-AlreadyPayed));
+			IF (@Treasury >= 0) THEN
+				SET @NewAlreadyPayed = MonthlyCost;
+			ELSE
+				SET @NewAlreadyPayed = '0.00';
+			END IF;
+			UPDATE tracking_rent_status SET already_payed=@NewAlreadyPayed WHERE id_tracking_rent_status=IdStatus;
+
+			SET @NbStatus = @NbStatus-1;
+		END WHILE;
+	END IF;
+
+	UPDATE users SET treasury=@Treasury WHERE id_users=NEW.id_users;
+ END
+//
+DELIMITER ;
+DROP TRIGGER IF EXISTS `TreasuryUpdate_OnDelete`;
+DELIMITER //
+CREATE TRIGGER `TreasuryUpdate_OnDelete` BEFORE DELETE ON `tracking_rent_payments`
+ FOR EACH ROW BEGIN
+	DECLARE IdStatus INTEGER DEFAULT 0;
+	DECLARE MonthlyCost DECIMAL(4,2) DEFAULT '0.00';
+	DECLARE AlreadyPayed DECIMAL(4,2) DEFAULT '0.00';
+	SET @Treasury = ((SELECT treasury FROM users WHERE id_users=OLD.id_users)-OLD.amount);
+	SET @NbStatus = (SELECT count(id_tracking_rent_status) FROM tracking_rent_status WHERE id_users=OLD.id_users AND monthly_cost!=already_payed);
+
+	IF (@NbStatus > 0) THEN
+		WHILE @NbStatus > 0 DO
+			SELECT id_tracking_rent_status, monthly_cost, already_payed INTO IdStatus, MonthlyCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=OLD.id_users AND monthly_cost!=already_payed ORDER BY CONCAT(year, month) DESC LIMIT 1;
+			IF (@Treasury >= AlreadyPayed) THEN
+				SET @NewAlreadyPayed = -MonthlyCost;
+				SET @Treasury = (@Treasury-MonthlyCost);
+			ELSE
+				SET @NewAlreadyPayed = MonthlyCost-@Treasury;
+				SET @Treasury = @Treasury-(MonthlyCost-@NewAlreadyPayed);
+			END IF;
+			UPDATE tracking_rent_status SET already_payed=@NewAlreadyPayed WHERE id_tracking_rent_status=IdStatus;
+			SET @NbStatus = @NbStatus-1;
+		END WHILE;
+	END IF;
+
+	UPDATE users SET treasury=@Treasury WHERE id_users=OLD.id_users;
+ END
+//
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -407,10 +470,9 @@ CREATE TABLE IF NOT EXISTS `tracking_rent_status` (
   `id_users` int(11) NOT NULL,
   `year` smallint(4) DEFAULT NULL,
   `month` tinyint(2) DEFAULT NULL,
-  `nb_days_used` tinyint(2) DEFAULT NULL,
-  `monthly_cost` decimal(4,2) DEFAULT NULL,
-  `already_payed` decimal(4,2) DEFAULT NULL,
-  `treasury` decimal(4,2) DEFAULT NULL,
+  `nb_days_used` tinyint(2) DEFAULT NULL DEFAULT '0',
+  `monthly_cost` decimal(4,2) DEFAULT NULL DEFAULT '0.00',
+  `already_payed` decimal(4,2) DEFAULT NULL DEFAULT '0.00',
   PRIMARY KEY (`id_tracking_rent_status`),
   KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
