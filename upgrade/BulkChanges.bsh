@@ -55,31 +55,21 @@ case "$1" in
 		#### To call for every upgrade - EoF
 		####################################
 
+		# Import  BeforeUpgrade.log
+		if [ -f $MySB_InstallDir/temp/BeforeUpgrade.log ]; then
+			cat $MySB_InstallDir/temp/BeforeUpgrade.log
+			rm -fv $MySB_InstallDir/temp/BeforeUpgrade.log
+		fi
 		# renting
 		Func_SQL_Command 'DROP' 'MySB_db' 'renting' '-echo'
 		# repositories
 		Func_SQL_Command 'DELETE' 'MySB_db' 'repositories' "1" '-echo'
 		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db < $MySB_InstallDir/upgrade/repositories_v3.5.sql
-		# users
-		Func_SQL_Command 'ALTER' 'MySB_db' 'CHANGE' 'users' 'quota' "INT( 32 ) NOT NULL DEFAULT '0'" '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'DROP INDEX' 'users' 'users_ident' '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD UNIQUE' 'users' '(users_ident)' '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD INDEX' 'users' 'users_email' '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'users' 'period_price' "DECIMAL( 4,2 ) NOT NULL DEFAULT '0.00'" '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'users' 'period_days' "INT( 2 ) NOT NULL DEFAULT '0'" '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'users' 'treasury' "DECIMAL( 4,2 ) NOT NULL DEFAULT '0.00'" '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'users' 'created_at' "DATE NOT NULL DEFAULT '0000-00-00'" '-echo'
 		# system
-		Func_SQL_Command 'ALTER' 'MySB_db' 'CHANGE' 'system' 'quota_default' "INT( 32 ) NOT NULL DEFAULT '0'" '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'CHANGE' 'system' 'letsencrypt_date' "DATE NOT NULL DEFAULT '0000-00-00'" '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'system' 'logwatch' "TINYINT( 1 ) NOT NULL DEFAULT '0' AFTER \`dnscrypt\`" '-echo'
 		RentingValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'rt_price_per_users,rt_method' 'system' "id_system = '1'"`"
 		PriceByUser="`echo $RentingValues | awk '{split($0,a,"|"); print a[1]}'`"
 		Method="`echo $RentingValues | awk '{split($0,a,"|"); print a[2]}'`"
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "rt_model = '$RentingModel', rt_tva = '$RentingTVA', rt_global_cost = '$RentingGlobalCost', rt_nb_users = '$TotalUsers', rt_price_per_users = '$PriceByUser', rt_method = '$Method'" "id_system = '1'"
-		# trackers_list
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'trackers_list' 'to_delete' "TINYINT(1) NOT NULL DEFAULT '0'" '-echo'
-		Func_SQL_Command 'ALTER' 'MySB_db' 'ADD' 'trackers_list' 'cert_expiration' "DATE NOT NULL DEFAULT '0000-00-00'" '-echo'
 
 		#### SSH
 		cp -v $MySB_InstallDir/templates/etc.ssh.sshd_config.tmpl /etc/ssh/sshd_config

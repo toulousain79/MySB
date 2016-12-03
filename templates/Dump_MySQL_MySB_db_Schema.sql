@@ -522,9 +522,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `treasury` decimal(4,2) NOT NULL DEFAULT '0.00',
   `created_at` date NOT NULL DEFAULT '0000-00-00',
   PRIMARY KEY (`id_users`),
-  KEY `users_email` (`users_email`),
-  KEY `users_ident` (`users_ident`),
-  KEY `created_at` (`created_at`)
+  UNIQUE KEY `users_ident` (`users_ident`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 --
