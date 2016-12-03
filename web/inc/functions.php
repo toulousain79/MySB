@@ -25,8 +25,8 @@
 // Users renting  treasury
 function UpdateUserTreasury() {
 	global $MySB_DB;
-	
-	
+
+
 }
 
 // Get Size
@@ -194,7 +194,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 	global $MySB_DB, $Port_HTTPs, $CurrentUser;
 
 	$hidden = (MainUser($CurrentUser)) ? true : false;
-	$Hostname = $MySB_DB->get("system", "hostname", ["id_system" => 1]);
+	$SystemDatas = $MySB_DB->get("system", ["hostname", "rt_model", "rt_cost_tva", "rt_nb_users", "rt_price_per_users", "rt_method"], ["id_system" => 1]);
 	$CakeboxDatas = $MySB_DB->get("services", "*", ["serv_name" => "CakeBox-Light"]);
 	$CakeboxIsInstalled = $CakeboxDatas["is_installed"];
 	$ManagerIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "Seedbox-Manager"]);
@@ -234,11 +234,11 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					}
 					break;
 				case "LoadAvg":
-					echo '<li><a target="_blank" href="https://' . $Hostname . ':' . $Port_HTTPs . '/loadavg/public/">LoadAvg</a>';
+					echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/loadavg/public/">LoadAvg</a>';
 					break;
 				case "ownCloud":
 					if ( $ownCloudIsInstalled == '1' ) {
-						echo '<li><a target="_blank" href="https://' . $Hostname . ':' . $Port_HTTPs . '/owncloud/">ownCloud</a>';
+						echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/owncloud/">ownCloud</a>';
 					}
 					break;
 				case "Plex Media":
@@ -248,7 +248,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					break;
 				case "Webmin":
 					if ( $WebminIsInstalled == '1' ) {
-						echo '<li><a target="_blank" href="https://' . $Hostname . ':' . $WebminDatas["port_tcp1"] . '/">Webmin</a>';
+						echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $WebminDatas["port_tcp1"] . '/">Webmin</a>';
 					}
 					break;
 				case "DNScrypt-proxy":
@@ -260,7 +260,12 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($CurrentUser);
 					break;
 				case "Port Forwarding":
-					//echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($CurrentUser);
+					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+					break;
+				case "Renting Payments":
+					if ( (isset($SystemDatas["rt_cost_tva"]) && ($SystemDatas["rt_cost_tva"] != 0.00)) && (isset($SystemDatas["rt_nb_users"])) && (isset($SystemDatas["rt_model"])) && (isset($SystemDatas["rt_method"])) ) {
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($CurrentUser);
+					}
 					break;
 				default:
 					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);

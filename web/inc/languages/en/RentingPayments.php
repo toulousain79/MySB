@@ -22,21 +22,15 @@
 //
 //#################### FIRST LINE #####################################
 
-define('MainUser_Renting_ExModel', 'Example:	Serveur Dedibox XC');
-define('MainUser_Renting_ExTVA', 'Example:	20');
-define('MainUser_Renting_ExPrice', 'Example:	19.99');
-define('MainUser_Renting_ReadOnly', 'Readonly, only for information.');
-define('MainUser_Renting_Model', 'Model :');
-define('MainUser_Renting_TVA', 'TVA (%) :');
-define('MainUser_Renting_Price', 'Unit price without tax (per month) :');
-define('MainUser_Renting_CostTVA', 'Unit price incl. taxes (per month) :');
-define('MainUser_Renting_CostTVA_Comments', 'includ. taxes / month');
-define('MainUser_Renting_TotalUser', 'Total users :');
-define('MainUser_Renting_PricePerUser', 'Price per user :');
-define('MainUser_Renting_PricePerUser_Comments', 'includ. taxes / month');
-define('MainUser_Renting_Calcul', 'Price to display :');
-define('MainUser_Renting_ExPriceToDiplay', 'The price display method for users');
-define('MainUser_Renting_Method_0', 'Upper integer');
-define('MainUser_Renting_Method_1', '2 decimals rounded');
+define('MainUser_Renting_AddPayment', 'Add payments');
+define('MainUser_Renting_Amount', 'Amount :');
+define('MainUser_Renting_User', 'User :');
+define('MainUser_Renting_Date', 'Date :');
+define('MainUser_Renting_AddAmount', 'Add an other amount');
+define('MainUser_Renting_DelAmount', 'Remove the last amount');
+define('MainUser_Renting_SaveAmount', 'Save amounts');
+define('MainUser_Renting_TitleUser', 'User');
+define('MainUser_Renting_TitleDate', 'Date');
+define('MainUser_Renting_TitleAmount', 'Amount');
 
 //#################### LAST LINE ######################################
