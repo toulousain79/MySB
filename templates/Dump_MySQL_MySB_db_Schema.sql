@@ -392,7 +392,7 @@ CREATE TABLE IF NOT EXISTS `tracking_rent_payments` (
   `id_tracking_rent_payments` int(11) NOT NULL AUTO_INCREMENT,
   `id_users` int(11) NOT NULL,
   `payment_date` date NOT NULL DEFAULT '0000-00-00',
-  ``amount` decimal(4,2) DEFAULT NULL DEFAULT '0.00',
+  `amount` decimal(4,2) NOT NULL DEFAULT '0.00',
   PRIMARY KEY (`id_tracking_rent_payments`),
   KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
@@ -488,7 +488,6 @@ CREATE TRIGGER `NewStatus_OnInsert` BEFORE INSERT ON `tracking_rent_status`
 	SET NEW.month = MONTH(NOW());
 	SET NEW.nb_days_used = 0;
 	SET NEW.already_payed = '0.00';
-	SET NEW.treasury = '0.00';
  END
 //
 DELIMITER ;
@@ -621,7 +620,7 @@ CREATE TABLE IF NOT EXISTS `users_history` (
   KEY `users_ident` (`users_ident`),
   KEY `users_email` (`users_email`),
   KEY `created_at` (`created_at`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=14 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 -- --------------------------------------------------------
 
@@ -668,7 +667,7 @@ CREATE TABLE IF NOT EXISTS `vars` (
   `white_tcp_port_out` varchar(16) NOT NULL,
   `white_udp_port_out` varchar(16) NOT NULL,
   PRIMARY KEY (`id_vars`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 --
 -- Contraintes pour les tables exportées
