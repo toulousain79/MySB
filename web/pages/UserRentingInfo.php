@@ -27,9 +27,9 @@ require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__
 function Form() {
 	global $MySB_DB, $CurrentUser;
 
-	$users_data = $MySB_DB->get("users", ["id_users", "treasury"], ["users_ident" => "$CurrentUser"]);
-	$Rent_Payments = $MySB_DB->select("tracking_rent_payments", ["id_tracking_rent_payments", "payment_date", "amount", "balance"], ["id_users" => $users_data['id_users']]);
-	$Rent_Status = $MySB_DB->select("tracking_rent_status", ["id_tracking_rent_status", "year", "month", "nb_days_used", "monthly_cost", "treasury"], ["id_users" => $users_data['id_users']]);
+	$users_data = $MySB_DB->get("users", ["id_users", "period_price", "period_days", "treasury"], ["users_ident" => "$CurrentUser"]);
+	$Rent_Payments = $MySB_DB->select("tracking_rent_payments", ["id_tracking_rent_payments", "payment_date", "amount"], ["id_users" => $users_data['id_users']]);
+	$Rent_Status = $MySB_DB->select("tracking_rent_status", ["id_tracking_rent_status", "year", "month", "nb_days_used", "monthly_cost", "already_payed"], ["id_users" => $users_data['id_users']]);
 	$Treasury = $users_data['treasury'];
 	if (is_numeric($Treasury) && $Treasury > 0) {
 		$Color = 'color: #00DF00;';
@@ -55,7 +55,6 @@ function Form() {
 							<tr>
 								<th style="text-align:center;">' . MainUser_Renting_TitleDate . '</th>
 								<th style="text-align:center;">' . MainUser_Renting_TitleAmount . '</th>
-								<th style="text-align:center;">' . MainUser_Renting_TitleBalance . '</th>
 							</tr>';
 
 		foreach($Rent_Payments as $Payment) {
@@ -66,7 +65,6 @@ function Form() {
 			echo '			<tr>
 								<td><div align="center">' . $Date . '</div></td>
 								<td><div align="center">' . $Amount . '</div></td>
-								<td><div align="center">' . $Balance . '</div></td>
 							</tr>';
 		}
 
