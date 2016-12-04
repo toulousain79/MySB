@@ -562,7 +562,7 @@ CREATE TRIGGER `UpdateUsersHistory_BeforeUpdate` BEFORE UPDATE ON `users`
 		SET NEW.created_at = NOW();
 		INSERT INTO users_history (id_users,users_ident,users_email,created_at) VALUES (NEW.id_users,NEW.users_ident,NEW.users_email,NEW.created_at);
 	ELSE
-		UPDATE users_history SET users_email=NEW.users_email, created_at=NEW.created_at WHERE id_users=IdUser;
+		UPDATE users_history SET users_email=NEW.users_email, created_at=NEW.created_at WHERE id_users=NEW.id_users;
 	END IF;
 END
 //
