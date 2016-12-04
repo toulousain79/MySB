@@ -13,8 +13,9 @@
 			- DotDeb, renewing repository GPG key
 			- Fix NginX upgrade bug
 			- Fix DNScrypt-proxy bug
-			- Get/Renew tracker certificate
-			- Creating a new certificate
+			- Get/Renew tracker SSL certificate
+			- Creating a new SSL certificate
+			- Improvement of the rental system
 			- Portal
 				* Medoo Framework v1.1.3
 				* jQuery v1.12.4

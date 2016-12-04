@@ -60,7 +60,7 @@ esac
 if [ "$DoDeleteTracker" == "1" ]; then
 	RemovedTrackersList="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker_domain' 'trackers_list' "to_delete='1'"`"
 	for RemovedTracker in $RemovedTrackersList; do
-		log_daemon_msg "Remove of tracker $RemovedTracker"
+		log_daemon_msg "$RemoveOfTracker $RemovedTracker"
 		rm -f $MySB_InstallDir/ssl/trackers/*$RemovedTracker.pem
 		Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list' "tracker_domain='$RemovedTracker'"
 		StatusLSB
@@ -72,7 +72,7 @@ if [ "$DoRenewCertificates" == "1" ]; then
 	Today="`date +%Y-%m-%d`"
 	ExpiratedTrackersList="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker_domain' 'trackers_list' "cert_expiration='$Today'"`"
 	for ExpiratedTracker in $ExpiratedTrackersList; do
-		log_daemon_msg "Renew certificate for $ExpiratedTracker"
+		log_daemon_msg "$RenewCertificate $ExpiratedTracker"
 		rm -f $MySB_InstallDir/ssl/trackers/*$RemovedTracker.pem
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "is_ssl='0', cert_expiration='0000-00-00'" "tracker_domain='$ExpiratedTracker'"
 		StatusLSB
@@ -81,7 +81,7 @@ fi
 
 #### Clean certificates with bad links
 if [ "$DoCleanCertificates" == "1" ]; then
-	log_daemon_msg "Clean certificates with bad links"
+	log_daemon_msg "$CleanCertificatesBadLinks"
 	LIST_CERTS=$(ls -la /etc/ssl/certs/ | awk '{ print $9 }')
 	for Cert in ${LIST_CERTS}; do
 		if [ "$Cert" != "" ] && [ "$Cert" != "." ] && [ "$Cert" != ".." ]; then
@@ -128,7 +128,7 @@ TrackersList="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker' 'trackers_list' "to
 DoRehash=0
 
 for Tracker in $TrackersList; do
-	log_daemon_msg "Get certificate for $Tracker"
+	log_daemon_msg "$GetCertificateFor $Tracker"
 	if [ "$IsInstalled_PeerGuardian" == "YES" ]; then
 		RemoveAfter=0
 		if [ -z "`cat /etc/pgl/allow.p2p | grep $Tracker`" ]; then
@@ -200,7 +200,7 @@ ManageServices start "$ServicesToRestart"
 
 #### Create again certificates listing in system
 if [ "$DoRehash" == 1 ]; then
-	log_daemon_msg "Certificates Rehash"
+	log_daemon_msg "$CertificateRehash"
 	c_rehash $MySB_InstallDir/ssl/trackers/ &> /dev/null
 	update-ca-certificates &> /dev/null
 	StatusLSB
