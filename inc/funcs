@@ -160,19 +160,19 @@ ManageServices() {
 						case "$Service" in
 							"pglcmd")
 								Continue=0
-								log_daemon_msg "Stopping PeerGuardian Linux" "pglcmd"
+								log_daemon_msg "$Funcs_Stopping PeerGuardian Linux" "pglcmd"
 								pglcmd stop > /dev/null
 								StatusLSB
 							;;
 							"php5-fpm"|"stunnel4"|"vsftpd"|"fail2ban"|"nfs-kernel-server")
 								Continue=0
-								log_daemon_msg "Stopping $Service"
+								log_daemon_msg "$Funcs_Stopping $Service"
 								service $Service stop > /dev/null
 								StatusLSB
 							;;
 							"nginx")
 								Continue=0
-								log_daemon_msg "Stopping $Service"
+								log_daemon_msg "$Funcs_Stopping $Service"
 								service $Service stop > /dev/null
 								if [ $? -gt 0 ]; then
 									fuser -k 81/tcp &> /dev/null
@@ -182,7 +182,7 @@ ManageServices() {
 								fi
 								if GetPid $Service || [ ! -z "`ps ax | grep 'nginx' | grep '/usr/sbin/nginx' | grep -v 'grep'`" ]; then
 									StatusLSB 1
-									log_daemon_msg "Killing $Service"
+									log_daemon_msg "$Funcs_Killing $Service"
 									killall $Service
 									StatusLSB
 								else
@@ -195,7 +195,7 @@ ManageServices() {
 							service $Service stop
 						fi
 					else
-						log_daemon_msg "Service already stopped" "$Service"
+						log_daemon_msg "$Funcs_AlreadyStopped" "$Service"
 						StatusLSB 0
 					fi
 				;;
@@ -207,16 +207,16 @@ ManageServices() {
 							fi
 
 							if GetPid $Service; then
-								log_daemon_msg "Restarting PeerGuardian Linux"
+								log_daemon_msg "$Funcs_Restarting PeerGuardian Linux"
 								pglcmd restart > /dev/null
 								if [ $? -gt 0 ]; then
 									StatusLSB 1
 
-									log_daemon_msg "Force Restarting PeerGuardian Linux"
+									log_daemon_msg "$Funcs_ForceStarting PeerGuardian Linux"
 									pglcmd force-restart > /dev/null
 								fi
 							else
-								log_daemon_msg "Starting PeerGuardian Linux"
+								log_daemon_msg "$Funcs_Starting PeerGuardian Linux"
 								pglcmd start > /dev/null
 							fi
 
@@ -242,13 +242,13 @@ ManageServices() {
 									List=`echo $List | sed s,/,\\\\\\\\\\/,g`
 									sed -i "s/^$List/#$List/g" /etc/pgl/blocklists.list
 								done
-								log_daemon_msg "Force Restarting PeerGuardian Linux"
+								log_daemon_msg "$Funcs_ForceStarting PeerGuardian Linux"
 								pglcmd restart > /dev/null
 
 								if [ $? -gt 0 ]; then # We have again a problem with PeerGuardian, test a force-restart
 									StatusLSB 1
 
-									log_daemon_msg "Force Restarting PeerGuardian Linux"
+									log_daemon_msg "$Funcs_ForceStarting PeerGuardian Linux"
 									pglcmd force-restart > /dev/null
 									if [ $? -gt 0 ]; then # Again ??
 										StatusLSB 1
@@ -290,10 +290,10 @@ ManageServices() {
 							"fail2ban")
 								Continue=0
 								if ! GetPid $Service; then
-									log_daemon_msg "Starting $Service"
+									log_daemon_msg "$Funcs_Starting $Service"
 									service $Service start > /dev/null
 								else
-									log_daemon_msg "Restarting $Service"
+									log_daemon_msg "$Funcs_Restarting $Service"
 									service $Service restart > /dev/null
 								fi
 								StatusLSB
@@ -302,14 +302,14 @@ ManageServices() {
 								Continue=0
 								if CheckCommand 0 $Service; then
 									if ! GetPid $Service; then
-										log_daemon_msg "Starting $Service"
+										log_daemon_msg "$Funcs_Starting $Service"
 										service $Service start > /dev/null
 									else
-										log_daemon_msg "Reloading $Service"
+										log_daemon_msg "$Funcs_Reloading $Service"
 										service $Service $FinalCommand > /dev/null
 										if [ $? -gt 0 ]; then
 											StatusLSB 1
-											log_daemon_msg "Restarting $Service"
+											log_daemon_msg "$Funcs_Restarting $Service"
 											service $Service restart > /dev/null
 										fi
 									fi
@@ -320,25 +320,25 @@ ManageServices() {
 								Continue=0
 								if CheckCommand 0 $Service; then
 									if ! GetPid $Service; then
-										log_daemon_msg "Starting $Service"
+										log_daemon_msg "$Funcs_Starting $Service"
 										service $Service start > /dev/null
 									else
-										log_daemon_msg "Reloading $Service"
+										log_daemon_msg "$Funcs_Reloading $Service"
 										service $Service $FinalCommand > /dev/null
 										if [ -z "`ps ax | grep 'nginx' | grep '/usr/sbin/nginx' | grep -v 'grep'`" ]; then
 											StatusLSB 1
-											log_daemon_msg "Restarting $Service"
+											log_daemon_msg "$Funcs_Restarting $Service"
 											fuser -k 81/tcp &> /dev/null
 											fuser -k $Port_HTTP/tcp &> /dev/null
 											fuser -k $Port_HTTPS/tcp &> /dev/null
 											service $Service restart > /dev/null
 											if [ -z "`ps ax | grep 'nginx' | grep '/usr/sbin/nginx' | grep -v 'grep'`" ]; then
 												StatusLSB 1
-												log_daemon_msg "Killing $Service"
+												log_daemon_msg "$Funcs_Killing $Service"
 												service $Service stop > /dev/null
 												killall $Service
 												StatusLSB
-												log_daemon_msg "Starting $Service"
+												log_daemon_msg "$Funcs_Starting $Service"
 												service $Service start > /dev/null
 											fi
 										fi
@@ -350,14 +350,14 @@ ManageServices() {
 								Continue=0
 								if CheckCommand 0 $Service; then
 									if ! GetPid $Service; then
-										log_daemon_msg "Starting $Service"
+										log_daemon_msg "$Funcs_Starting $Service"
 										service $Service start > /dev/null
 									else
-										log_daemon_msg "Reloading $Service"
+										log_daemon_msg "$Funcs_Reloading $Service"
 										service $Service $FinalCommand > /dev/null
 										if [ -z "`ps ax | grep 'named -u bind' | grep -v 'grep'`" ]; then
 											StatusLSB 1
-											log_daemon_msg "Restarting $Service"
+											log_daemon_msg "$Funcs_Restarting $Service"
 											service $Service restart > /dev/null
 										fi
 									fi
