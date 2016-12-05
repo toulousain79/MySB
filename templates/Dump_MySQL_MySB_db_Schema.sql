@@ -325,15 +325,15 @@ CREATE TABLE IF NOT EXISTS `trackers_list_ipv4` (
 CREATE TABLE IF NOT EXISTS `tracking_rent_history` (
   `id_tracking_rent_history` int(11) NOT NULL AUTO_INCREMENT,
   `id_users` int(11) NOT NULL,
-  `year` smallint(4) DEFAULT NULL,
-  `month` tinyint(2) DEFAULT NULL,
-  `date`  mediumint(6) NOT NULL DEFAULT  '000000',
+  `year` smallint(4) DEFAULT NULL DEFAULT '0000',
+  `month` tinyint(2) DEFAULT NULL DEFAULT '00',
+  `date` mediumint(6) NOT NULL DEFAULT '000000',
   `monthly_price` decimal(4,2) NOT NULL,
   `nb_users` int(4) NOT NULL,
   `users_price` decimal(4,2) DEFAULT NULL,
   `nb_days_month` tinyint(2) DEFAULT NULL,
-  `start_of_use` tinyint(2) DEFAULT NULL,
-  `end_of_use` tinyint(2) DEFAULT NULL,
+  `start_of_use` tinyint(2) DEFAULT NULL DEFAULT '00',
+  `end_of_use` tinyint(2) DEFAULT NULL DEFAULT '00',
   `remain_days` tinyint(2) DEFAULT NULL,
   `period_price` decimal(4,2) DEFAULT NULL,
   `old_period_price` decimal(4,2) DEFAULT NULL,
@@ -349,11 +349,18 @@ DROP TRIGGER IF EXISTS `PeriodPrice_OnInsert`;
 DELIMITER //
 CREATE TRIGGER `PeriodPrice_OnInsert` BEFORE INSERT ON `tracking_rent_history`
  FOR EACH ROW BEGIN
-	SET NEW.year = YEAR(NOW());
-	SET NEW.month = MONTH(NOW());
-	SET NEW.date = CONCAT(YEAR(NOW()), MONTH(NOW()));
+	IF (NEW.year = '0000') THEN
+		SET NEW.year = YEAR(NOW());
+	END IF;
+	IF (NEW.month = '00') THEN
+		SET NEW.month = MONTH(NOW());
+	END IF;
+	SET NEW.date = CONCAT(NEW.year, NEW.month);
 	SET NEW.users_price = (NEW.monthly_price / NEW.nb_users);
-	SET NEW.nb_days_month = RIGHT(LAST_DAY(NOW()), 2);
+	SET NEW.nb_days_month = RIGHT(LAST_DAY( CONCAT(NEW.year,NEW.month,'01') ), 2);	
+	IF (NEW.end_of_use = '00') THEN
+		SET NEW.end_of_use = NEW.nb_days_month;
+	END IF;		
 	SET NEW.remain_days = (NEW.end_of_use - NEW.start_of_use + 1);
 	SET NEW.period_price = (((NEW.monthly_price / NEW.nb_users) / NEW.nb_days_month) * NEW.remain_days);
 	IF (NEW.start_of_use = '01') THEN
@@ -468,8 +475,8 @@ DELIMITER ;
 CREATE TABLE IF NOT EXISTS `tracking_rent_status` (
   `id_tracking_rent_status` int(11) NOT NULL AUTO_INCREMENT,
   `id_users` int(11) NOT NULL,
-  `year` smallint(4) DEFAULT NULL,
-  `month` tinyint(2) DEFAULT NULL,
+  `year` smallint(4) DEFAULT NULL DEFAULT '0000',
+  `month` tinyint(2) DEFAULT NULL DEFAULT '00',
   `nb_days_used` tinyint(2) DEFAULT NULL DEFAULT '0',
   `monthly_cost` decimal(4,2) DEFAULT NULL DEFAULT '0.00',
   `already_payed` decimal(4,2) DEFAULT NULL DEFAULT '0.00',
@@ -484,8 +491,12 @@ DROP TRIGGER IF EXISTS `NewStatus_OnInsert`;
 DELIMITER //
 CREATE TRIGGER `NewStatus_OnInsert` BEFORE INSERT ON `tracking_rent_status`
  FOR EACH ROW BEGIN
-	SET NEW.year = YEAR(NOW());
-	SET NEW.month = MONTH(NOW());
+	IF (NEW.year = '0000') THEN
+		SET NEW.year = YEAR(NOW());
+	END IF;
+	IF (NEW.month = '00') THEN
+		SET NEW.month = MONTH(NOW());
+	END IF;	
 	SET NEW.nb_days_used = 0;
 	SET NEW.already_payed = '0.00';
  END
@@ -558,8 +569,10 @@ DROP TRIGGER IF EXISTS `UpdateUsersHistory_BeforeUpdate`;
 DELIMITER //
 CREATE TRIGGER `UpdateUsersHistory_BeforeUpdate` BEFORE UPDATE ON `users`
  FOR EACH ROW BEGIN
-	IF (NEW.created_at = '0000-00-00') THEN
-		SET NEW.created_at = NOW();
+	IF (OLD.created_at = '0000-00-00') THEN
+		IF (NEW.created_at = '0000-00-00') THEN
+			SET NEW.created_at = NOW();
+		END IF;
 		INSERT INTO users_history (id_users,users_ident,users_email,created_at) VALUES (NEW.id_users,NEW.users_ident,NEW.users_email,NEW.created_at);
 	ELSE
 		UPDATE users_history SET users_email=NEW.users_email, created_at=NEW.created_at WHERE id_users=NEW.id_users;

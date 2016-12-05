@@ -579,6 +579,7 @@ MonthlyPayment() {
 		Year="`date +%Y`"
 		Month="`date +%m`"
 		Today="`date +%d`"
+		NbUserTemp=0
 
 		if [ -z "$UsersList" ]; then ListingUsers; fi
 
@@ -586,8 +587,10 @@ MonthlyPayment() {
 
 		ListingUsers
 		for SeedboxUser in $UsersList; do
-			FnIdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$SeedboxUser'"`"
-			SeedUserMail="`Func_SQL_Command 'SELECT' 'MySB_db' 'users_email' 'users' "users_ident = '$SeedboxUser'"`"
+			UserValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users,users_email,created_at' 'renting' "users_ident = '$SeedboxUser'"`"
+			FnIdUser="`echo $UserValues | awk '{split($0,a,"|"); print a[1]}'`"
+			SeedUserMail="`echo $UserValues | awk '{split($0,a,"|"); print a[2]}'`"
+			CreatedAt="`echo $UserValues | awk '{split($0,a,"|"); print a[3]}'`"
 			CreateNewPeriodPrice=0
 			UpdateCurrentPeriodPrice=0
 
@@ -633,11 +636,12 @@ MonthlyPayment() {
 				;;
 				MySB_CreateUser)
 					if [ "$User" != "$SeedboxUser" ]; then
-						# DO NOT send email about new monthly for the existing user.
-						# DO NOT create new entries for renting for the existing user.
+						# DO NOT send email about new monthly for the new user.
+						# DO NOT create new entries for renting for the new user.
 						Subject="$Global_Subject_MonthlyPayment"
 						Case="new_user"
 						Message="Changing Monthly"
+						EndOfUse="$Today"
 						UpdateCurrentPeriodPrice=1
 						CreateNewPeriodPrice=1
 					else
@@ -652,6 +656,38 @@ MonthlyPayment() {
 						Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,monthly_price,nb_users,start_of_use,end_of_use' "\"$FnIdUser\",\"$RentingCostTva\",\"$TotalUsers\",\"$Today\",\"$Today\""
 					fi
 				;;
+				BulkChanges.bsh)
+					(( NbUserTemp++ ))
+					CreatedAtYear="`date -d "$CreatedAt" '+%Y'`"
+					CreatedAtMonth="`date -d "$CreatedAt" '+%m'`"
+					# On calcul le nombre de mois écoulés depuis la création jusqu'au mois précédent actuel.
+					LastMonth="`date +'%m' -d 'last month'`"
+					Start="`echo $CreatedAt | sed "s/-//g;"`"
+					Start=$(date -d "$Start" +%s)
+					End="`date +'%Y'`${LastMonth}01"
+					End=$(date -d "$End" +%s)
+					NbMonth=$(date -d "1970-01-01 UTC $((Start-End-86400)) seconds" +"%m")	
+					(( NbMonth++ ))					
+						
+					for (( month=0; month<=$NbMonth; month++ )); do					
+						Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_status' 'id_users,monthly_cost' "\"$FnIdUser\",\"$RentingCostTva\""
+						Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,year,month,monthly_price,nb_users,start_of_use' "\"$FnIdUser\",\"$CreatedAtYear\",\"$CreatedAtMonth\",\"$RentingCostTva\",\"$NbUserTemp\",\"01\""
+
+						case "$CreatedAtMonth" in
+							12)
+								(( CreatedAtYear++ ))
+								CreatedAtMonth="01"
+							;;
+							11|10)
+								(( CreatedAtMonth++ ))
+							;;						
+							*)
+								(( CreatedAtMonth++ ))
+								CreatedAtMonth='0'$CreatedAtMonth
+							;;
+						esac
+					done
+				;;				
 				#MySB_DeleteUser)
 					# Servira à envoyer un récapitulatif à l'utilisateur, comme le montant de sa dette par exemple.
 				#;;

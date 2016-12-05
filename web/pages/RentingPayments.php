@@ -35,7 +35,7 @@ function Form() {
 	$GlobalCostTVA = $renting_datas["rt_cost_tva"];
 	$Method = $renting_datas["rt_method"];
 
-	if ( (isset($GlobalCostTVA) && ($GlobalCostTVA != 0.00)) && (isset($TotalUsers)) && (isset($Model)) && (isset($Method)) ) {
+	if ( ($GlobalCostTVA != 0.00) && ($TotalUsers >= 1) && (isset($Model)) && (isset($Method)) ) {
 		echo '
 		<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 			<form id="myForm" class="form_settings" method="post" action="">

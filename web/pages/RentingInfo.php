@@ -76,7 +76,7 @@ function Form() {
 					<td><span class="Comments">' . MainUser_Renting_ExPriceToDiplay . '</span></td>
 				</tr>';
 
-		if ( (isset($GlobalCostTVA) && ($GlobalCostTVA != 0.00)) && (isset($TotalUsers)) && (isset($Model)) && (isset($Method)) ) {
+		if ( ($GlobalCostTVA != 0.00) && ($TotalUsers >= 1) && (isset($Model)) && (isset($Method)) ) {
 			echo '	<tr>
 						<td>' . MainUser_Renting_CostTVA . '</td>
 						<td><div align="center"><b>'.$GlobalCostTVA.'</b></div></td>
