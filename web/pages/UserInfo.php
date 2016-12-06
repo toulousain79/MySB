@@ -30,14 +30,12 @@ function printUser($user) {
 	// System infos
 	$system_datas = $MySB_DB->get("system", ["hostname", "rt_model", "rt_tva", "rt_global_cost", "rt_cost_tva", "rt_nb_users", "rt_price_per_users", "rt_method"], ["id_system" => 1]);
 	// Users infos
-	$users_datas = $MySB_DB->get("users", ["id_users", "users_passwd", "admin", "users_email", "rpc", "sftp", "home_dir", "scgi_port", "rtorrent_port", "quota"], ["users_ident" => "$user"]);
+	$users_datas = $MySB_DB->get("users", ["id_users", "users_passwd", "admin", "users_email", "rpc", "sftp", "home_dir", "scgi_port", "rtorrent_port", "quota", "treasury"], ["users_ident" => "$user"]);
 	$UserID = $users_datas["id_users"];
 	$UserPasswd = $users_datas["users_passwd"];
 	// Ports
 	$Port_SSH = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "SSH"]);
 	$Port_FTP = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "VSFTPd"]);
-	// User Treasury
-	$Subtotal = $MySB_DB->sum("tracking_rent_payments", "balance", ["id_users" => "$UserID"]);
 
 	echo '<table width="100%" border="0" align="left">';
 
@@ -319,13 +317,13 @@ function printUser($user) {
 		echo '<td><b>' . $system_datas["rt_price_per_users"] . '</b>' . User_UserInfo_Table_TotalPerUser_Plus . '</td>';
 		echo '<td><span class="Comments">' . User_UserInfo_Comment_TotalPerUser . '</span></td></tr>';
 		// User Treasury
-		if (is_numeric($Subtotal) && $Subtotal > 0) {
+		if (is_numeric($users_datas["treasury"]) && $users_datas["treasury"] > 0) {
 			$Color = 'color: #00DF00;';
 		} else {
 			$Color = 'color: #FF0000;';
 		}
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Treasury . '</th>';
-		echo '<td style="'.$Color.'"><b>' . $Subtotal . '</b>' . User_UserInfo_Table_Treasury_Plus . '</td>';
+		echo '<td style="'.$Color.'"><b>' . $users_datas["treasury"] . '</b>' . User_UserInfo_Table_Treasury_Plus . '</td>';
 		echo '<td><span class="Comments">' . User_UserInfo_Comment_Treasury . '</span></td></tr>';
 	}
 

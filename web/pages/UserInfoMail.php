@@ -41,7 +41,7 @@ function PrintContent($user, $Case) {
 	// System table
 	$Hostname = $MySB_DB->get("system", "hostname", ["id_system" => 1]);
 	// Users table
-	$users_datas = $MySB_DB->get("users", ["id_users", "users_passwd", "language", "admin", "users_email", "rpc", "sftp", "sudo", "home_dir", "scgi_port", "rtorrent_port"], ["users_ident" => "$user"]);
+	$users_datas = $MySB_DB->get("users", ["id_users", "users_email", "users_passwd", "rpc", "sftp", "sudo", "admin", "scgi_port", "rtorrent_port", "home_dir", "language", "quota", "treasury"], ["users_ident" => "$user"]);
 	$UserID = $users_datas["id_users"];
 	$UserPasswd = $users_datas["users_passwd"];
 	// Ports
@@ -54,7 +54,6 @@ function PrintContent($user, $Case) {
 	$DNScryptDatas = $MySB_DB->get("services", ["is_installed"], ["serv_name" => "DNScrypt-proxy"]);
 	$WebminDatas = $MySB_DB->get("services", ["is_installed", "port_tcp1"], ["serv_name" => "Webmin"]);
 	$ownCloudInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
-
 	// Users infos
 	$IPv4_List = $MySB_DB->select("users_addresses", "ipv4", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
 	$LastUpdate = $MySB_DB->max("users_addresses", "last_update", ["AND" => ["id_users" => "$UserID", "check_by" => "hostname", "is_active" => 1]]);
@@ -489,7 +488,7 @@ function PrintContent($user, $Case) {
 
 <?php
 	if ( $DisplayRenting == true ) {
-		$RentingDatas = $MySB_DB->get("system", "rt_global_cost,rt_model,rt_tva,rt_nb_users,rt_price_per_users", ["id_system" => 1]);
+		$RentingDatas = $MySB_DB->get("system", "rt_global_cost,rt_cost_tva,rt_model,rt_tva,rt_nb_users,rt_price_per_users", ["id_system" => 1]);
 
 		if ( !empty($RentingDatas["rt_global_cost"]) && !empty($RentingDatas["rt_model"]) ) {
 ?>
@@ -503,43 +502,56 @@ function PrintContent($user, $Case) {
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SrvModel; ?></th>
 				<td><?php echo $RentingDatas["rt_model"];?></td>
-				<td><?php echo User_UserInfo_Comment_SrvModel; ?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_SrvModel; ?></span></td>
 			</tr>
 			<!-- // TVA -->
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TVA; ?></th>
 				<td><?php echo $RentingDatas["rt_tva"];?></td>
-				<td><?php echo User_UserInfo_Comment_TVA; ?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_TVA; ?></span></td>
 			</tr>
 			<!-- // Global cost Duty Free -->
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_GlobalCost; ?></th>
 				<td><?php echo $RentingDatas["rt_global_cost"] . User_UserInfo_Table_GlobalCost_Plus;?></td>
-				<td><?php echo User_UserInfo_Comment_GlobalCost; ?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_GlobalCost; ?></span></td>
 			</tr>
 			<!-- // Global cost Inc. Tax -->
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_GlobalCostTva; ?></th>
-				<td><?php echo $RentingDatas["rt_global_cost"] . User_UserInfo_Table_GlobalCostTva_Plus;?></td>
-				<td><?php echo User_UserInfo_Comment_GlobalCostTva; ?></td>
+				<td><?php echo $RentingDatas["rt_cost_tva"] . User_UserInfo_Table_GlobalCostTva_Plus;?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_GlobalCostTva; ?></span></td>
 			</tr>
 			<!-- // Total users -->
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalUsers; ?></th>
 				<td><?php echo $RentingDatas["rt_nb_users"];?></td>
-				<td><?php echo User_UserInfo_Comment_TotalUsers; ?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_TotalUsers; ?></span></td>
 			</tr>
 			<!-- // TOTAL per users -->
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalPerUser; ?></th>
 				<td><b><span class="FontInRed"><?php echo $RentingDatas["rt_price_per_users"];?></span></b><?php echo User_UserInfo_Table_TotalPerUser_Plus; ?></td>
-				<td><?php echo User_UserInfo_Comment_TotalPerUser; ?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_TotalPerUser; ?></span></td>
 			</tr>
 			<!-- // User Treasury -->
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Treasury; ?></th>
 				<td><b><span class="FontInRed"><?php echo $RentingDatas["rt_price_per_users"];?></span></b><?php echo User_UserInfo_Table_Treasury_Plus; ?></td>
-				<td><?php echo User_UserInfo_Comment_Treasury; ?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_Treasury; ?></span></td>
+			</tr>
+<?php
+		// User Treasury
+		if (is_numeric($users_datas["treasury"]) && $users_datas["treasury"] > 0) {
+			$Color = 'color: #00DF00;';
+		} else {
+			$Color = 'color: #FF0000;';
+		}
+?>
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Treasury; ?></th>
+				<td style="'.$Color.'"><b><span class="FontInRed"><?php echo $users_datas["treasury"];?></span></b><?php echo User_UserInfo_Table_Treasury_Plus; ?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_Treasury; ?></span></td>
 			</tr>
 <?php
 		}
