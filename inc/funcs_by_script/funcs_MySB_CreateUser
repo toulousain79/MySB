@@ -53,8 +53,7 @@ ManageQuota() {
 	else
 		Message=""
 	fi
-	CountingUsers
-	ListingUsers
+	ListCountUsers
 	FreeSpace="`Func_SQL_Command 'SELECT' 'MySB_db' 'quota_default' 'system' '1'`"
 	if [ -z "$FreeSpace" ] || [ $FreeSpace -eq 0 ]; then
 		UsersSpaceUsed=0
@@ -214,9 +213,10 @@ ManageUserHomeDir() {
 ManagerUsersConfigs() {
 	if [ "$IsInstalled_Manager" == "YES" ]; then
 		FnUser="$1"
-		FnHomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
+		UserValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'scgi_port,home_dir' 'users' "users_ident = '$FnUser'"`"
+		PortSCGI="`echo $UserValues | awk '{split($0,a,"|"); print a[1]}'`"
+		FnHomeDir="`echo $UserValues | awk '{split($0,a,"|"); print a[2]}'`"
 		HomeDirEscaped="`echo $FnHomeDir | sed s,/,\\\\\\\\\\/,g`"
-		PortSCGI="`Func_SQL_Command 'SELECT' 'MySB_db' 'scgi_port' 'users' "users_ident = '$FnUser'"`"
 		UserNameUpper="`echo $FnUser | tr '[:lower:]' '[:upper:]'`"
 
 		if [ ! -d $ManagerDir/conf/users/$FnUser ]; then mkdir -p $ManagerDir/conf/users/$FnUser; fi
@@ -243,9 +243,10 @@ ManagerUsersConfigs() {
 ruTorrentUsersConfigs() {
 	LISTING=$(ls -1r $RutorrentPluginsDir/)
 	FnUser="$1"
-	FnHomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
+	UserValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'scgi_port,home_dir' 'users' "users_ident = '$FnUser'"`"
+	PortSCGI="`echo $UserValues | awk '{split($0,a,"|"); print a[1]}'`"
+	FnHomeDir="`echo $UserValues | awk '{split($0,a,"|"); print a[2]}'`"
 	HomeDirEscaped="`echo $FnHomeDir | sed s,/,\\\\\\\\\\/,g`"
-	PortSCGI="`Func_SQL_Command 'SELECT' 'MySB_db' 'scgi_port' 'users' "users_ident = '$FnUser'"`"
 	UserNameUpper="`echo $FnUser | tr '[:lower:]' '[:upper:]'`"
 
 	# share
@@ -360,8 +361,9 @@ ruTorrentUsersConfigs() {
 #### Manage user crontab
 UserCrontab() {
 	FnUser="$1"
-	IdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$FnUser'"`"
-	HomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
+	UserValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users,home_dir' 'users' "users_ident = '$FnUser'"`"
+	IdUser="`echo $UserValues | awk '{split($0,a,"|"); print a[1]}'`"
+	HomeDir="`echo $UserValues | awk '{split($0,a,"|"); print a[2]}'`"
 	Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory,sync_mode' 'users_rtorrent_cfg' "id_users = '$IdUser'"`"
 	Crontab="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users_crontab,minutes,hours,days,months,numday,command' 'users_crontab' "id_users = '$IdUser'"`"
 	Sync_DB="/home/$FnUser/db/$FnUser.sq3"
@@ -410,9 +412,13 @@ UserCrontab() {
 #### rTorrent Configuration file
 CreateRtorrentConfigFile() {
 	FnUser="$1"
-	IdUser="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$FnUser'"`"
-	HomeDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'home_dir' 'users' "users_ident = '$FnUser'"`"
-	Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory,to_delete,can_be_deleted' 'users_rtorrent_cfg' "id_users = '$IdUser'"`"
+	UserValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users,scgi_port,rtorrent_port,home_dir' 'users' "users_ident = '$FnUser'"`"
+	IdUser="`echo $UserValues | awk '{split($0,a,"|"); print a[1]}'`"
+	PortSCGI="`echo $UserValues | awk '{split($0,a,"|"); print a[2]}'`"
+	PortRtorrent="`echo $UserValues | awk '{split($0,a,"|"); print a[3]}'`"
+	HomeDir="`echo $UserValues | awk '{split($0,a,"|"); print a[4]}'`"
+	Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory,can_be_deleted,to_delete' 'users_rtorrent_cfg' "id_users = '$IdUser'"`"
+
 	if [ "$2" == "force" ] || [ ! -f $HomeDir/.rtorrent.rc ]; then
 		CreateNewFile=1
 	else
@@ -423,8 +429,8 @@ CreateRtorrentConfigFile() {
 	if [ ! -z "$Directories" ]; then
 		for Directory in $Directories; do
 			SubDirectory="`echo $Directory | awk '{split($0,a,"|"); print a[1]}'`"
-			ToDelete="`echo $Directory | awk '{split($0,a,"|"); print a[2]}'`"
-			CanBeDeleted="`echo $Directory | awk '{split($0,a,"|"); print a[3]}'`"
+			CanBeDeleted="`echo $Directory | awk '{split($0,a,"|"); print a[2]}'`"
+			ToDelete="`echo $Directory | awk '{split($0,a,"|"); print a[3]}'`"
 
 			if [ -d $HomeDir/rtorrent/complete/$SubDirectory/ ] && [ -d $HomeDir/rtorrent/watch/$SubDirectory/ ]; then
 				CountFiles="`ls -A1 $HomeDir/rtorrent/complete/$SubDirectory/ | wc -l`"
@@ -502,10 +508,6 @@ CreateRtorrentConfigFile() {
 			mv $HomeDir/.rtorrent.rc $HomeDir/.rtorrent.rc.old
 		fi
 		if [ ! -f $HomeDir/.rtorrent.rc ]; then
-			PortSCGI="`Func_SQL_Command 'SELECT' 'MySB_db' 'scgi_port' 'users' "users_ident = '$FnUser'"`"
-			PortRtorrent="`Func_SQL_Command 'SELECT' 'MySB_db' 'rtorrent_port' 'users' "users_ident = '$FnUser'"`"
-			Directories="`Func_SQL_Command 'SELECT' 'MySB_db' 'sub_directory' 'users_rtorrent_cfg' "id_users = '$IdUser'"`"
-
 			cp $MySB_InstallDir/templates/rtorrent/rtorrent.rc.tmpl $HomeDir/.rtorrent.rc
 			chown root:$FnUser $HomeDir/.rtorrent.rc
 			chmod 0740 $HomeDir/.rtorrent.rc
@@ -539,6 +541,7 @@ CreateRtorrentConfigFile() {
 				(( NumLign++ ))
 				(( Count++ ))
 				for Directory in $Directories; do
+					Directory="`echo $Directory | awk '{split($0,a,"|"); print a[1]}'`"
 					sed -i "${NumLign}i\schedule = watch_directory_$Count,5,5,\"load_start=~\/rtorrent\/watch\/$Directory\/*.torrent,d.set_custom1=~\/rtorrent\/complete\/$Directory\/,d.delete_tied=\"" $HomeDir/.rtorrent.rc
 					(( NumLign++ ))
 					(( Count++ ))
@@ -575,17 +578,16 @@ MonthlyPayment() {
 		[ ! -z "$RentingModel" ] &&
 		[ "$RentingGlobalCost" != "0.00" ] &&
 		[ "$RentingCostTva" != "0.00" ]; then
+		log_daemon_msg "$FnCreateUser_MonthlyPayments"
+
+		# VARs
 		User="$1"
 		Year="`date +%Y`"
 		Month="`date +%m`"
 		Today="`date +%d`"
+		ListCountUsers
 		NbUserTemp=0
 
-		if [ -z "$UsersList" ]; then ListingUsers; fi
-
-		log_daemon_msg "$FnCreateUser_MonthlyPayments"
-
-		ListingUsers
 		for SeedboxUser in $UsersList; do
 			UserValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users,users_email,created_at' 'users' "users_ident = '$SeedboxUser'"`"
 			FnIdUser="`echo $UserValues | awk '{split($0,a,"|"); print a[1]}'`"
@@ -663,8 +665,8 @@ MonthlyPayment() {
 					FirstMonth="`date -d "$FirstDate" '+%m'`"
 					FirstYear="`date -d "$FirstDate" '+%Y'`"
 					FirstDay="`date -d "$FirstDate" '+%Y-%m-%d'`"
-					EndDay="`date -d "$FirstDate" '+%Y-%m'`"
-					EndDay="`date -d "$EndDay-01 +1 month -1 day" +%Y-%m-%d`"
+					FirstEndDay="`date -d "$FirstDate" '+%Y-%m'`"
+					FirstEndDay="`date -d "$EndDay-01 +1 month -1 day" +%Y-%m-%d`"
 					# Quel est le mois précédent à ajourd'hui ? Et son dernier jour ?
 					LastMonth="`date +'%Y-%m' -d 'last month'`"
 					EndOfLastMonth="`date -d "$LastMonth-01 +1 month -1 day" +%Y-%m-%d`"
@@ -672,14 +674,6 @@ MonthlyPayment() {
 					Y=$(date -d@$(( ( $(date -ud "$EndOfLastMonth" +'%s') - $(date -ud "$FirstDate" +'%s') ) )) +'%Y')
 					M=$(date -d@$(( ( $(date -ud "$EndOfLastMonth" +'%s') - $(date -ud "$FirstDate" +'%s') ) )) +'%m')
 					NbMonths=$(( (($(echo $Y | sed -r 's/^([0-9]+).*/\1/') - 1970) * 12) + $M ))
-echo "FirstDate $FirstDate"
-echo "FirstMonth $FirstMonth"
-echo "FirstYear $FirstYear"
-echo "FirstDay $FirstDay"
-echo "EndDay $EndDay"
-echo "LastMonth $LastMonth"
-echo "EndOfLastMonth $EndOfLastMonth"
-echo "NbMonths $NbMonths"
 					# Maintenant on peut créer autant d'entrées dans l'historique que de nombre de mois.
 					for (( i=1; i<=$NbMonths; i++ )); do
 						CurrentYear="`date -d "$FirstDay" '+%Y'`"
@@ -693,7 +687,7 @@ echo "NbMonths $NbMonths"
 						EndDay="`date -d "$EndDay-01 +1 month -1 day" +%Y-%m-%d`"
 					done
 					# On ajoute ensuite la dernière période (mois en cours).
-					Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_history' "nb_users='$TotalUsers', start_of_use='01', end_of_use='$Today'" "id_users='$FnIdUser' AND year='$Year' AND month='$Month' AND end_of_use='$Today'"
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_history' "nb_users='$TotalUsers', start_of_use='01', end_of_use='$Today'" "id_users='$FnIdUser' AND year='$Year' AND month='$Month' AND end_of_use='$Today'" '-echo'
 				;;
 				#MySB_DeleteUser)
 					# Servira à envoyer un récapitulatif à l'utilisateur, comme le montant de sa dette par exemple.
@@ -721,8 +715,8 @@ echo "NbMonths $NbMonths"
 			#	- !nb_days_used!
 			#	- !monthly_cost!
 			#	- !treasury!
-			UserTreasury="`Func_SQL_Command 'SELECT' 'MySB_db' 'treasury' 'users' "id_users = '$FnIdUser'"`"
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "treasury='$UserTreasury'" "id_users='$FnIdUser'"
+			# UserTreasury="`Func_SQL_Command 'SELECT' 'MySB_db' 'treasury' 'users' "id_users = '$FnIdUser'"`"
+			# Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "treasury='$UserTreasury'" "id_users='$FnIdUser'"
 		done
 
 		StatusLSB
