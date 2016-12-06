@@ -150,9 +150,9 @@ function PrintContent($user, $Case) {
 			$DisplayGoTo 			= true;
 			$DisplayCommand			= false;
 			$DisplayUserInfo		= true;
-			$DisplayUserInfoDetail 	= true;
+			$DisplayUserInfoDetail 	= false;
 			$DisplayLinks 			= false;
-			$DisplayRenting			= false;
+			$DisplayRenting			= true;
 			if ( $users_datas["admin"] == '1' ) {
 				$DisplayGoTo 			= true;
 				$DisplayCommand			= true;
@@ -176,7 +176,7 @@ function PrintContent($user, $Case) {
 			$DisplayUserInfo		= true;
 			$DisplayUserInfoDetail 	= false;
 			$DisplayLinks 			= false;
-			$DisplayRenting			= true;
+			$DisplayRenting			= false;
 			break;
 		case 'new_version':
 			$DisplayGoTo 			= false;
@@ -184,6 +184,14 @@ function PrintContent($user, $Case) {
 			if ( $users_datas["admin"] == '1' ) {
 				$DisplayCommand			= true;
 			}
+			$DisplayUserInfo		= false;
+			$DisplayUserInfoDetail 	= false;
+			$DisplayLinks 			= false;
+			$DisplayRenting			= false;
+			break;
+		case 'pgl_check':
+			$DisplayGoTo 			= false;
+			$DisplayCommand			= true;
 			$DisplayUserInfo		= false;
 			$DisplayUserInfoDetail 	= false;
 			$DisplayLinks 			= false;
