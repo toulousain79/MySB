@@ -190,6 +190,14 @@ function PrintContent($user, $Case) {
 			$DisplayLinks 			= false;
 			$DisplayRenting			= false;
 			break;
+		default:
+			$DisplayGoTo 			= false;
+			$DisplayCommand			= false;
+			$DisplayUserInfo		= false;
+			$DisplayUserInfoDetail 	= false;
+			$DisplayLinks 			= false;
+			$DisplayRenting			= false;
+			break;
 	}
 ?>
 	<table width="100%" border="0" align="left">
