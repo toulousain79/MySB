@@ -269,7 +269,7 @@ CREATE TRIGGER `PricePerUser` BEFORE UPDATE ON `system`
 					SET @Exist = (SELECT count(id_tracking_rent_history) FROM tracking_rent_history WHERE id_users=@TempIdUser LIMIT 1);
 					IF (@Exist = 0) THEN
 						INSERT INTO tracking_rent_status (id_users,monthly_cost) VALUES (@TempIdUser,NEW.rt_cost_tva);
-						INSERT INTO tracking_rent_history (id_users,monthly_price,nb_users,start_of_use,end_of_use) VALUES (@TempIdUser,NEW.rt_cost_tva,@NbUsers,DAY(NOW()),DAY(NOW()));
+						INSERT INTO tracking_rent_history (id_users,monthly_price,nb_users,start_of_use,end_of_use) VALUES (@TempIdUser,NEW.rt_cost_tva,@NbUsers,DATE_FORMAT(NOW(),'%d'),DATE_FORMAT(NOW(),'%d'));
 					END IF;
 				END IF;
 				SET @NbUsers = @NbUsers-1;
@@ -350,17 +350,17 @@ DELIMITER //
 CREATE TRIGGER `PeriodPrice_OnInsert` BEFORE INSERT ON `tracking_rent_history`
  FOR EACH ROW BEGIN
 	IF (NEW.year = '0000') THEN
-		SET NEW.year = YEAR(NOW());
+		SET NEW.year = DATE_FORMAT(NOW(),'%Y');
 	END IF;
 	IF (NEW.month = '00') THEN
-		SET NEW.month = MONTH(NOW());
+		SET NEW.month = DATE_FORMAT(NOW(),'%m');
 	END IF;
 	SET NEW.date = CONCAT(NEW.year, NEW.month);
 	SET NEW.users_price = (NEW.monthly_price / NEW.nb_users);
-	SET NEW.nb_days_month = RIGHT(LAST_DAY( CONCAT(NEW.year,NEW.month,'01') ), 2);	
+	SET NEW.nb_days_month = RIGHT(LAST_DAY( CONCAT(NEW.year,NEW.month,'01') ), 2);
 	IF (NEW.end_of_use = '00') THEN
 		SET NEW.end_of_use = NEW.nb_days_month;
-	END IF;		
+	END IF;
 	SET NEW.remain_days = (NEW.end_of_use - NEW.start_of_use + 1);
 	SET NEW.period_price = (((NEW.monthly_price / NEW.nb_users) / NEW.nb_days_month) * NEW.remain_days);
 	IF (NEW.start_of_use = '01') THEN
@@ -492,11 +492,11 @@ DELIMITER //
 CREATE TRIGGER `NewStatus_OnInsert` BEFORE INSERT ON `tracking_rent_status`
  FOR EACH ROW BEGIN
 	IF (NEW.year = '0000') THEN
-		SET NEW.year = YEAR(NOW());
+		SET NEW.year = DATE_FORMAT(NOW(),'%Y');
 	END IF;
 	IF (NEW.month = '00') THEN
-		SET NEW.month = MONTH(NOW());
-	END IF;	
+		SET NEW.month = DATE_FORMAT(NOW(),'%m');
+	END IF;
 	SET NEW.nb_days_used = 0;
 	SET NEW.already_payed = '0.00';
  END
@@ -543,7 +543,7 @@ DROP TRIGGER IF EXISTS `AddUsersHistory_BeforeInsert`;
 DELIMITER //
 CREATE TRIGGER `AddUsersHistory_BeforeInsert` BEFORE INSERT ON `users`
  FOR EACH ROW BEGIN
-	SET NEW.created_at=NOW();
+	SET NEW.created_at=DATE_FORMAT(NOW(),'%Y-%m-%d');
 	UPDATE system SET rt_nb_users=rt_nb_users+1 WHERE id_system=1;
 END
 //
@@ -561,7 +561,7 @@ DELIMITER //
 CREATE TRIGGER `KeepUserHistory_BeforeDelete` BEFORE DELETE ON `users`
  FOR EACH ROW BEGIN
 	UPDATE system SET rt_nb_users=rt_nb_users+1 WHERE id_system=1;
-	UPDATE users_history SET deleted_at=NOW() WHERE id_users=OLD.id_users;
+	UPDATE users_history SET deleted_at=DATE_FORMAT(NOW(),'%Y-%m-%d') WHERE id_users=OLD.id_users;
 END
 //
 DELIMITER ;
@@ -571,7 +571,7 @@ CREATE TRIGGER `UpdateUsersHistory_BeforeUpdate` BEFORE UPDATE ON `users`
  FOR EACH ROW BEGIN
 	IF (OLD.created_at = '0000-00-00') THEN
 		IF (NEW.created_at = '0000-00-00') THEN
-			SET NEW.created_at = NOW();
+			SET NEW.created_at = DATE_FORMAT(NOW(),'%Y-%m-%d');
 		END IF;
 		INSERT INTO users_history (id_users,users_ident,users_email,created_at) VALUES (NEW.id_users,NEW.users_ident,NEW.users_email,NEW.created_at);
 	ELSE
