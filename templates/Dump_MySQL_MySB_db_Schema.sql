@@ -477,6 +477,7 @@ CREATE TABLE IF NOT EXISTS `tracking_rent_status` (
   `id_users` int(11) NOT NULL,
   `year` smallint(4) unsigned zerofill DEFAULT NULL DEFAULT '0000',
   `month` tinyint(2) unsigned zerofill DEFAULT NULL DEFAULT '00',
+  `date` mediumint(6) NOT NULL DEFAULT '000000',
   `nb_days_used` tinyint(2) DEFAULT NULL DEFAULT '0',
   `monthly_cost` decimal(4,2) DEFAULT NULL DEFAULT '0.00',
   `already_payed` decimal(4,2) DEFAULT NULL DEFAULT '0.00',
@@ -497,6 +498,7 @@ CREATE TRIGGER `NewStatus_OnInsert` BEFORE INSERT ON `tracking_rent_status`
 	IF (NEW.month = '00') THEN
 		SET NEW.month = DATE_FORMAT(NOW(),'%m');
 	END IF;
+	SET NEW.date = CONCAT(NEW.year, NEW.month);
 	SET NEW.nb_days_used = 0;
 	SET NEW.already_payed = '0.00';
  END

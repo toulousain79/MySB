@@ -29,7 +29,7 @@ function Form() {
 
 	$users_data = $MySB_DB->get("users", ["id_users", "period_price", "period_days", "treasury"], ["users_ident" => "$CurrentUser"]);
 	$Rent_Payments = $MySB_DB->select("tracking_rent_payments", ["id_tracking_rent_payments", "payment_date", "amount"], ["id_users" => $users_data['id_users']]);
-	$Rent_Status = $MySB_DB->select("tracking_rent_status", ["id_tracking_rent_status", "year", "month", "nb_days_used", "monthly_cost", "already_payed"], ["id_users" => $users_data['id_users']]);
+	$Rent_Status = $MySB_DB->select("tracking_rent_status", ["id_tracking_rent_status", "year", "month", "nb_days_used", "monthly_cost", "already_payed"], ["id_users" => $users_data['id_users']], ["ORDER" => ["date" => "ASC"]]);
 	$Treasury = $users_data['treasury'];
 	if (is_numeric($Treasury) && $Treasury > 0) {
 		$Color = 'color: #00DF00;';

@@ -665,9 +665,10 @@ MonthlyPayment() {
 					FirstMonth="`date -d "$FirstDate" '+%m'`"
 					FirstYear="`date -d "$FirstDate" '+%Y'`"
 					FirstDay="`date -d "$FirstDate" '+%Y-%m-%d'`"
-					FirstEndDay="`date -d "$FirstDate" '+%Y-%m'`"
-					FirstEndDay="`date -d "$FirstEndDay-01 +1 month -1 day" +%Y-%m-%d`"
-					
+					StartOfUse="`date -d "$FirstDate" '+%d'`"
+					EndOfUse="`date -d "$FirstDate" '+%Y-%m'`"
+					EndOfUse="`date -d "$EndOfUse-01 +1 month -1 day" +%d`"
+
 					# Quel est le mois précédent à ajourd'hui ? Et son dernier jour ?
 					LastMonth="`date +'%Y-%m' -d 'last month'`"
 					EndOfLastMonth="`date -d "$LastMonth-01 +1 month -1 day" +%Y-%m-%d`"
@@ -680,15 +681,19 @@ MonthlyPayment() {
 						CurrentYear="`date -d "$FirstDay" '+%Y'`"
 						CurrentMonth="`date -d "$FirstDay" '+%m'`"
 						Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_status' 'id_users,year,month,monthly_cost' "\"$FnIdUser\",\"$CurrentYear\",\"$CurrentMonth\",\"$RentingCostTva\"" '-echo'
-						Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,year,month,monthly_price,nb_users,start_of_use,end_of_use' "\"$FnIdUser\",\"$CurrentYear\",\"$CurrentMonth\",\"$RentingCostTva\",\"$TotalUsers\",\"$FirstDay\",\"$FirstEndDay\"" '-echo'
+						Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,year,month,monthly_price,nb_users,start_of_use,end_of_use' "\"$FnIdUser\",\"$CurrentYear\",\"$CurrentMonth\",\"$RentingCostTva\",\"$TotalUsers\",\"$StartOfUse\",\"$EndOfUse\"" '-echo'
 
 						# New first day of period (month)
 						FirstDay="`date -d "$FirstYear-$FirstMonth-01 +$i month" +%Y-%m-%d`"
-						FirstEndDay="`date -d "$FirstDay" '+%Y-%m'`"
-						FirstEndDay="`date -d "$FirstEndDay-01 +1 month -1 day" +%Y-%m-%d`"
+						StartOfUse="01"
+						EndOfUse="`date -d "$FirstDay" '+%Y-%m'`"
+						EndOfUse="`date -d "$EndOfUse-01 +1 month -1 day" +%Y-%m-%d`"
+
+						if [ $i -eq $NbMonths ]; then
+							# On met ensuite la dernière période à jour (mois en cours) crée par un trigger.
+							Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_history' "nb_users='$TotalUsers', start_of_use='01', end_of_use='$Today'" "id_users='$FnIdUser' AND year='$Year' AND month='$Month' AND end_of_use='$Today'" '-echo'
+						fi
 					done
-					# On ajoute ensuite la dernière période (mois en cours).
-					Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_history' "nb_users='$TotalUsers', start_of_use='01', end_of_use='$Today'" "id_users='$FnIdUser' AND year='$Year' AND month='$Month' AND end_of_use='$Today'" '-echo'
 				;;
 				#MySB_DeleteUser)
 					# Servira à envoyer un récapitulatif à l'utilisateur, comme le montant de sa dette par exemple.
