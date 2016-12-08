@@ -39,7 +39,7 @@ function PrintContent($user, $Case) {
 	global $MySB_DB, $Port_HTTPs;
 
 	// System table
-	$system_datas = $MySB_DB->get("users", ["hostname", "rt_method"], ["id_system" => 1]);
+	$system_datas = $MySB_DB->get("system", ["hostname", "rt_method"], ["id_system" => 1]);
 	$Hostname = $system_datas["hostname"];
 	$Method = $system_datas["rt_method"];
 	// Users table
