@@ -26,5 +26,8 @@ define('MainUser_Renting_TitleTreasury', 'Treasury');
 define('MainUser_Renting_TitleUser', 'User');
 define('MainUser_Renting_TitleDate', 'Date');
 define('MainUser_Renting_TitleAmount', 'Amount');
+define('MainUser_Renting_TitleYearMonth', 'Months');
+define('MainUser_Renting_TitleDaysUsed', 'Total days<br />of use');
+define('MainUser_Renting_TitleDaysUsed', 'Cost of<br />the period');
 
 //#################### LAST LINE ######################################

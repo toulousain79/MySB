@@ -39,7 +39,9 @@ function PrintContent($user, $Case) {
 	global $MySB_DB, $Port_HTTPs;
 
 	// System table
-	$Hostname = $MySB_DB->get("system", "hostname", ["id_system" => 1]);
+	$system_datas = $MySB_DB->get("users", ["hostname", "rt_method"], ["id_system" => 1]);
+	$Hostname = $system_datas["hostname"];
+	$Method = $system_datas["rt_method"];
 	// Users table
 	$users_datas = $MySB_DB->get("users", ["id_users", "users_email", "users_passwd", "rpc", "sftp", "sudo", "admin", "scgi_port", "rtorrent_port", "home_dir", "language", "quota", "treasury"], ["users_ident" => "$user"]);
 	$UserID = $users_datas["id_users"];
@@ -498,7 +500,22 @@ function PrintContent($user, $Case) {
 	if ( $DisplayRenting == true ) {
 		$RentingDatas = $MySB_DB->get("system", "rt_global_cost,rt_cost_tva,rt_model,rt_tva,rt_nb_users,rt_price_per_users", ["id_system" => 1]);
 
-		if ( !empty($RentingDatas["rt_global_cost"]) && !empty($RentingDatas["rt_model"]) ) {
+		if ( !empty($RentingDatas["rt_cost_tva"]) && !empty($RentingDatas["rt_model"]) ) {
+
+			switch ($Method) {
+				case '1':
+					$GlobalCost = round($RentingDatas["rt_global_cost"], 2);
+					$GlobalCostTva = round($RentingDatas["rt_cost_tva"], 2);
+					$PricePerUsers = round($RentingDatas["rt_price_per_users"], 2);
+					$Treasury = round($users_datas["treasury"], 2);
+					break;
+				default:
+					$GlobalCost = ceil($RentingDatas["rt_global_cost"]);
+					$GlobalCostTva = ceil($RentingDatas["rt_cost_tva"]);
+					$PricePerUsers = ceil($RentingDatas["rt_price_per_users"], 2);
+					$Treasury = ceil($users_datas["treasury"], 2);
+					break;
+			}
 ?>
 			<!-- //////////////////////
 			// Price and Payment info
@@ -521,13 +538,13 @@ function PrintContent($user, $Case) {
 			<!-- // Global cost Duty Free -->
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_GlobalCost; ?></th>
-				<td><?php echo $RentingDatas["rt_global_cost"] . User_UserInfo_Table_GlobalCost_Plus;?></td>
+				<td><?php echo $GlobalCost . User_UserInfo_Table_GlobalCost_Plus;?></td>
 				<td><span class="Comments"><?php echo User_UserInfo_Comment_GlobalCost; ?></span></td>
 			</tr>
 			<!-- // Global cost Inc. Tax -->
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_GlobalCostTva; ?></th>
-				<td><?php echo $RentingDatas["rt_cost_tva"] . User_UserInfo_Table_GlobalCostTva_Plus;?></td>
+				<td><?php echo $GlobalCostTva . User_UserInfo_Table_GlobalCostTva_Plus;?></td>
 				<td><span class="Comments"><?php echo User_UserInfo_Comment_GlobalCostTva; ?></span></td>
 			</tr>
 			<!-- // Total users -->
@@ -539,18 +556,18 @@ function PrintContent($user, $Case) {
 			<!-- // TOTAL per users -->
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalPerUser; ?></th>
-				<td><b><span class="FontInRed"><?php echo $RentingDatas["rt_price_per_users"];?></span></b><?php echo User_UserInfo_Table_TotalPerUser_Plus; ?></td>
+				<td><b><span class="FontInRed"><?php echo $PricePerUsers;?></span></b><?php echo User_UserInfo_Table_TotalPerUser_Plus; ?></td>
 				<td><span class="Comments"><?php echo User_UserInfo_Comment_TotalPerUser; ?></span></td>
 			</tr>
 			<!-- // User Treasury -->
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Treasury; ?></th>
-				<td><b><span class="FontInRed"><?php echo $RentingDatas["rt_price_per_users"];?></span></b><?php echo User_UserInfo_Table_Treasury_Plus; ?></td>
+				<td><b><span class="FontInRed"><?php echo $PricePerUsers;?></span></b><?php echo User_UserInfo_Table_Treasury_Plus; ?></td>
 				<td><span class="Comments"><?php echo User_UserInfo_Comment_Treasury; ?></span></td>
 			</tr>
 <?php
 		// User Treasury
-		if (is_numeric($users_datas["treasury"]) && $users_datas["treasury"] > 0) {
+		if (is_numeric($Treasury) && $Treasury > 0) {
 			$Color = 'color: #00DF00;';
 		} else {
 			$Color = 'color: #FF0000;';
@@ -558,7 +575,7 @@ function PrintContent($user, $Case) {
 ?>
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Treasury; ?></th>
-				<td style="'.$Color.'"><b><span class="FontInRed"><?php echo $users_datas["treasury"];?></span></b><?php echo User_UserInfo_Table_Treasury_Plus; ?></td>
+				<td style="'.$Color.'"><b><span class="FontInRed"><?php echo $Treasury;?></span></b><?php echo User_UserInfo_Table_Treasury_Plus; ?></td>
 				<td><span class="Comments"><?php echo User_UserInfo_Comment_Treasury; ?></span></td>
 			</tr>
 <?php
