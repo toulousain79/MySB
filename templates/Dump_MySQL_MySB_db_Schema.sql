@@ -500,7 +500,6 @@ CREATE TRIGGER `NewStatus_OnInsert` BEFORE INSERT ON `tracking_rent_status`
 	END IF;
 	SET NEW.date = CONCAT(NEW.year, NEW.month);
 	SET NEW.nb_days_used = 0;
-	SET NEW.already_payed = '0.00';
  END
 //
 DELIMITER ;
