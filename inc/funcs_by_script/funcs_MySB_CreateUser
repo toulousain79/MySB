@@ -725,57 +725,50 @@ MonthlyPayment() {
 				# Send email for all users
 				SendMail "$Subject" "${SeedboxUser}" "$Case" "$Message"
 			fi
-			# 3/ Dans tous les cas, on met à jour la table 'tracking_rent_status'.
+
+			# 3/ Dans tous les cas, on met à jour les tables 'tracking_rent_status' et 'users'.
 			#	- !nb_days_used!s
 			#	- !monthly_cost!
 			#	- !treasury!
-			UserTreasury="`Func_SQL_Command 'SELECT' 'MySB_db' 'treasury' 'users' "id_users = '$FnIdUser'"`"
-			AllRemaining="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_tracking_rent_status,monthly_cost,already_payed' 'tracking_rent_status' "id_users='$FnIdUser' AND already_payed!=monthly_cost"`"
-			for Remaining in $AllRemaining; do
-				IdStatus="`echo $Remaining | awk '{split($0,a,"|"); print a[1]}'`"
-				MonthlyCost="`echo $Remaining | awk '{split($0,a,"|"); print a[2]}'`"
-				AlreadyPayed="`echo $Remaining | awk '{split($0,a,"|"); print a[3]}'`"
+			# On traite si l'utilisateur courant N'est PAS l'utilisateur principal.
+			# Dans le cas de l'utilisateur principal, il n'y aura pas de paiements à faire.
+			# Sa trésorerie correspond au total du reste à payer des autres utilisateurs.
+			# SOIT 0.00 SI tous les utilisateurs ont payés
+			# SOIT -x.xx SI certains utilisateurs n'ont pas payé
+			if [ "$FnIdUser" != "$MainUserId" ]; then
+				UserTreasury="`Func_SQL_Command 'SELECT' 'MySB_db' 'treasury' 'users' "id_users = '$FnIdUser'"`"
+				AllRemaining="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_tracking_rent_status,monthly_cost,already_payed' 'tracking_rent_status' "id_users='$FnIdUser' AND already_payed!=monthly_cost"`"
+				for Remaining in $AllRemaining; do
+					IdStatus="`echo $Remaining | awk '{split($0,a,"|"); print a[1]}'`"
+					MonthlyCost="`echo $Remaining | awk '{split($0,a,"|"); print a[2]}'`"
+					AlreadyPayed="`echo $Remaining | awk '{split($0,a,"|"); print a[3]}'`"
+					RemainingCost=`echo "($MonthlyCost - $AlreadyPayed)" | bc`
 
-				# On traite si l'utilisateur courant N'est PAS l'utilisateur principal.
-				# Dans le cas de l'utilisateur principal, il n'y aura pas de paiements à faire.
-				# Sa trésorerie correspond au total du reste à payer des autres utilisateurs.
-				# SOIT 0.00 SI tous les utilisateurs ont payés
-				# SOIT -x.xx SI certains utilisateurs n'ont pas payé
-				if [ "$FnIdUser" != "$MainUserId" ]; then
-					# UT = Trésorerie de l'utilisateur sur la mensualité en cours
-					# AP = Déjà payé sur la mensualité en cours
-					# RC = Coût restant à payer sur la mensualité en cours
-					RC=`echo "($MonthlyCost - $AlreadyPayed)" | bc`
-
-					# On vérifie si une partie de la mensualité peut être payée en fonction de la trésorerie de l'utilisateur.
-					# UT = UT - (MonthlyCost - AP)
-					UT=`echo "($UserTreasury - $RC)" | bc`
+					UT=`echo "($UserTreasury - $RemainingCost)" | bc`
 					if (( $(echo "$UT < 0.00" | bc -l) )); then	# < 0	La trésorerie devient négative
 						# NV = Valeur négative à soustraire du reste à payer
-						NV=$UT
-						# UT = UT - (RC + NV)
-						UT=`echo "($UserTreasury - ($RC + $NV))" | bc`
-						# AP = AP - $NV
-						AP=`echo "($AlreadyPayed + ($RC + $NV))" | bc`
+						AlreadyPayed=`echo "($AlreadyPayed+($RemainingCost+($MonthlyCost-$AlreadyPayed)-($RemainingCost-$UserTreasury)))" | bc`
+						UserTreasury=`echo "($UserTreasury -($AP-$AlreadyPayed))" | bc`
 					else										# >= 0	La trésorerie est toujours positive OU égale à 0
-						AP="$MonthlyCost"
-						UT="$UT"
+						AlreadyPayed="$MonthlyCost"
+						UserTreasury=`echo "($UserTreasury - $MonthlyCost)" | bc`
 					fi
-				fi
 
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_status' "already_payed='$AP'" "id_tracking_rent_status='$IdStatus'" '-echo'
-			done
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_status' "already_payed='$AP'" "id_tracking_rent_status='$IdStatus'" '-echo'
+				done
 
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "treasury='$UT'" "id_users='$FnIdUser'" '-echo'
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "treasury='$UserTreasury'" "id_users='$FnIdUser'" '-echo'
+			fi
 		done
 
 		# Update treasury for the main user
-		RentStatusValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'sum(monthly_cost), sum(already_payed)' 'tracking_rent_status' "id_users!='$MainUserId' AND already_payed!=monthly_cost"`"
-		SumMonthlyCost="`echo $RentStatusValues | awk '{split($0,a,"|"); print a[1]}'`"
-		SumAlreadyPayed="`echo $RentStatusValues | awk '{split($0,a,"|"); print a[2]}'`"
-		UT=`echo "($SumAlreadyPayed - $SumMonthlyCost)" | bc`
-		AP="$MonthlyCost"
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "treasury='$UT'" "id_users='$MainUserId'" '-echo'
+		if [ "$FnIdUser" == "$MainUserId" ]; then
+			RentStatusValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'sum(monthly_cost), sum(already_payed)' 'tracking_rent_status' "id_users!='$MainUserId' AND already_payed!=monthly_cost"`"
+			SumMonthlyCost="`echo $RentStatusValues | awk '{split($0,a,"|"); print a[1]}'`"
+			SumAlreadyPayed="`echo $RentStatusValues | awk '{split($0,a,"|"); print a[2]}'`"
+			UserTreasury=`echo "($SumAlreadyPayed - $SumMonthlyCost)" | bc`
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "treasury='$UserTreasury'" "id_users='$MainUserId'" '-echo'
+		fi
 
 		StatusLSB
 	fi
