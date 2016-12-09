@@ -82,7 +82,8 @@ function Form() {
 								<th style="text-align:center;">' . MainUser_Renting_TitleYearMonth . '</th>
 								<th style="text-align:center;">' . MainUser_Renting_TitleDaysUsed . '</th>
 								<th style="text-align:center;">' . MainUser_Renting_TitleCostPeriod . '</th>
-								<th style="text-align:center;">' . MainUser_Renting_TitleTreasury . '</th>
+								<th style="text-align:center;">' . MainUser_Renting_AlreadyPayed . '</th>
+								<th style="text-align:center;">' . MainUser_Renting_RemainingCost . '</th>
 							</tr>';
 
 			foreach(array_sort($Rent_Status, 'date', SORT_DESC) as $Status) {
@@ -91,14 +92,17 @@ function Form() {
 				$DaysUsed = $Status["nb_days_used"];
 				$MonthlyCost = $Status["monthly_cost"];
 				$AlreadyPayed = $Status["already_payed"];
+				$RemaingCost = $MonthlyCost + $AlreadyPayed;
 				switch ($Method) {
 					case '1':
 						$MonthlyCost = round($MonthlyCost, 2);
 						$AlreadyPayed = round($AlreadyPayed, 2);
+						$RemaingCost = round($RemaingCost, 2);
 						break;
 					default:
 						$MonthlyCost = ceil($MonthlyCost);
 						$AlreadyPayed = ceil($AlreadyPayed);
+						$RemaingCost = ceil($RemaingCost);
 						break;
 				}
 
@@ -107,6 +111,7 @@ function Form() {
 								<td><div align="center">' . $DaysUsed . '</div></td>
 								<td><div align="center">' . $MonthlyCost . '</div></td>
 								<td><div align="center">' . $AlreadyPayed . '</div></td>
+								<td><div align="center">' . $RemaingCost . '</div></td>
 							</tr>';
 			}
 

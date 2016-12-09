@@ -761,12 +761,6 @@ MonthlyPayment() {
 						AP="$MonthlyCost"
 						UT="$UT"
 					fi
-				else
-					MainUserTreasury="`Func_SQL_Command 'SELECT' 'MySB_db' 'sum(monthly_cost), sum(already_payed)' 'tracking_rent_status' "id_users!='$FnIdUser' AND already_payed!=monthly_cost"`"
-					SumMonthlyCost="`echo $MainUserTreasury | awk '{split($0,a,"|"); print a[1]}'`"
-					SumAlreadyPayed="`echo $MainUserTreasury | awk '{split($0,a,"|"); print a[2]}'`"
-					UT=`echo "($SumAlreadyPayed - $SumMonthlyCost)" | bc`
-					AP="$MonthlyCost"
 				fi
 
 				Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_status' "already_payed='$AP'" "id_tracking_rent_status='$IdStatus'" '-echo'
@@ -774,6 +768,14 @@ MonthlyPayment() {
 
 			Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "treasury='$UT'" "id_users='$FnIdUser'" '-echo'
 		done
+
+		# Update treasury for the main user
+		RentStatusValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'sum(monthly_cost), sum(already_payed)' 'tracking_rent_status' "id_users!='$MainUserId' AND already_payed!=monthly_cost"`"
+		SumMonthlyCost="`echo $RentStatusValues | awk '{split($0,a,"|"); print a[1]}'`"
+		SumAlreadyPayed="`echo $RentStatusValues | awk '{split($0,a,"|"); print a[2]}'`"
+		UT=`echo "($SumAlreadyPayed - $SumMonthlyCost)" | bc`
+		AP="$MonthlyCost"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "treasury='$UT'" "id_users='$MainUserId'" '-echo'
 
 		StatusLSB
 	fi

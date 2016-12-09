@@ -29,5 +29,7 @@ define('MainUser_Renting_TitleAmount', 'Versement');
 define('MainUser_Renting_TitleYearMonth', 'Mois');
 define('MainUser_Renting_TitleDaysUsed', 'Total de jours<br />d\'utilisation');
 define('MainUser_Renting_TitleCostPeriod', 'Co&ucirc;t de la<br />p&eacute;riode');
+define('MainUser_Renting_AlreadyPayed', 'D&eacute;j&#224;<br />pay&eacute;');
+define('MainUser_Renting_RemainingCost', 'Restant<br />d&ucirc;');
 
 //#################### LAST LINE ######################################
