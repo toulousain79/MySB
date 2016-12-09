@@ -746,18 +746,17 @@ MonthlyPayment() {
 
 					UT=`echo "($UserTreasury - $RemainingCost)" | bc`
 					if (( $(echo "$UT < 0.00" | bc -l) )); then	# < 0	La trésorerie devient négative
-						# NV = Valeur négative à soustraire du reste à payer
-						AlreadyPayed=`echo "($AlreadyPayed+($RemainingCost+($MonthlyCost-$AlreadyPayed)-($RemainingCost-$UserTreasury)))" | bc`
-						UserTreasury=`echo "($UserTreasury -($AP-$AlreadyPayed))" | bc`
+						NewAlreadyPayed=`echo "($AlreadyPayed+($RemainingCost+($MonthlyCost-$AlreadyPayed)-($RemainingCost-$UserTreasury)))" | bc`
+						NewUserTreasury=`echo "($UserTreasury -($NewAlreadyPayed-$AlreadyPayed))" | bc`
 					else										# >= 0	La trésorerie est toujours positive OU égale à 0
-						AlreadyPayed="$MonthlyCost"
-						UserTreasury=`echo "($UserTreasury - $MonthlyCost)" | bc`
+						NewAlreadyPayed="$MonthlyCost"
+						NewUserTreasury=`echo "($UserTreasury - $MonthlyCost)" | bc`
 					fi
 
-					Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_status' "already_payed='$AP'" "id_tracking_rent_status='$IdStatus'" '-echo'
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_status' "already_payed='$NewAlreadyPayed'" "id_tracking_rent_status='$IdStatus'" '-echo'
 				done
 
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "treasury='$UserTreasury'" "id_users='$FnIdUser'" '-echo'
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "treasury='$NewUserTreasury'" "id_users='$FnIdUser'" '-echo'
 			fi
 		done
 
