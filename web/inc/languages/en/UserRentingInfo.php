@@ -29,7 +29,7 @@ define('MainUser_Renting_TitleAmount', 'Amount');
 define('MainUser_Renting_TitleYearMonth', 'Months');
 define('MainUser_Renting_TitleDaysUsed', 'Total days<br />of use');
 define('MainUser_Renting_TitleDaysUsed', 'Cost of<br />the period');
-define('MainUser_Renting_RemainingCost', 'Already<br />payed');
+define('MainUser_Renting_AlreadyPayed', 'Already<br />payed');
 define('MainUser_Renting_RemainingCost', 'Remaining<br />cost');
 
 //#################### LAST LINE ######################################
