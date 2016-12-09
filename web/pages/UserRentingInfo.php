@@ -30,9 +30,9 @@ function Form() {
 	$Method = $MySB_DB->get("system", "rt_method", ["id_system" => 1]);
 	$users_data = $MySB_DB->get("users", ["id_users", "period_price", "period_days", "treasury"], ["users_ident" => "$CurrentUser"]);
 	$Rent_Payments = $MySB_DB->select("tracking_rent_payments", ["id_tracking_rent_payments", "payment_date", "amount"], ["id_users" => $users_data['id_users']]);
-	$Rent_Status = $MySB_DB->select("tracking_rent_status", ["id_tracking_rent_status", "year", "month", "nb_days_used", "monthly_cost", "already_payed"], ["id_users" => $users_data['id_users']], ["ORDER" => ["date" => "ASC"]]);
+	$Rent_Status = $MySB_DB->select("tracking_rent_status", ["id_tracking_rent_status", "year", "month", "date", "nb_days_used", "monthly_cost", "already_payed"], ["id_users" => $users_data['id_users']]);
 	$Treasury = $users_data['treasury'];
-	if (is_numeric($Treasury) && $Treasury > 0) {
+	if (is_numeric($Treasury) && $Treasury > 0.00) {
 		$Color = 'color: #00DF00;';
 	} else {
 		$Color = 'color: #FF0000;';
@@ -57,6 +57,7 @@ function Form() {
 								<th style="text-align:center;">' . MainUser_Renting_TitleDate . '</th>
 								<th style="text-align:center;">' . MainUser_Renting_TitleAmount . '</th>
 							</tr>';
+
 
 		foreach($Rent_Payments as $Payment) {
 			$Date = $Payment["payment_date"];
@@ -84,20 +85,20 @@ function Form() {
 								<th style="text-align:center;">' . MainUser_Renting_TitleTreasury . '</th>
 							</tr>';
 
-			foreach($Rent_Status as $Status) {
+			foreach(array_sort($Rent_Status, 'date', SORT_DESC) as $Status) {
 				$Year = $Status["year"];
 				$Month = $Status["month"];
 				$DaysUsed = $Status["nb_days_used"];
 				$MonthlyCost = $Status["monthly_cost"];
-				$Treasury = $Status["treasury"];
+				$AlreadyPayed = $Status["already_payed"];
 				switch ($Method) {
 					case '1':
 						$MonthlyCost = round($MonthlyCost, 2);
-						$Treasury = round($Treasury, 2);
+						$AlreadyPayed = round($AlreadyPayed, 2);
 						break;
 					default:
 						$MonthlyCost = ceil($MonthlyCost);
-						$Treasury = ceil($Treasury);
+						$AlreadyPayed = ceil($AlreadyPayed);
 						break;
 				}
 
@@ -105,7 +106,7 @@ function Form() {
 								<td><div align="center">' . $Year.'/'.$Month . '</div></td>
 								<td><div align="center">' . $DaysUsed . '</div></td>
 								<td><div align="center">' . $MonthlyCost . '</div></td>
-								<td><div align="center">' . $Treasury . '</div></td>
+								<td><div align="center">' . $AlreadyPayed . '</div></td>
 							</tr>';
 			}
 
