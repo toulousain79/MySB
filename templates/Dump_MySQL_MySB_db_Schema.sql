@@ -240,11 +240,11 @@ CREATE TABLE IF NOT EXISTS `system` (
   `letsencrypt_openport` tinyint(1) NOT NULL DEFAULT '0',
   `quota_default` int(32) NOT NULL,
   `rt_model` varchar(64) NOT NULL,
-  `rt_tva` decimal(4,2) NOT NULL DEFAULT '0.00',
-  `rt_global_cost` decimal(4,2) NOT NULL DEFAULT '0.00',
-  `rt_cost_tva` decimal(4,2) NOT NULL DEFAULT '0.00',
+  `rt_tva` decimal(6,2) NOT NULL DEFAULT '0.00',
+  `rt_global_cost` decimal(6,2) NOT NULL DEFAULT '0.00',
+  `rt_cost_tva` decimal(6,2) NOT NULL DEFAULT '0.00',
   `rt_nb_users` tinyint(2) NOT NULL DEFAULT '0',
-  `rt_price_per_users` decimal(4,2) DEFAULT NULL DEFAULT '0.00',
+  `rt_price_per_users` decimal(6,2) DEFAULT NULL DEFAULT '0.00',
   `rt_method` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_system`),
   UNIQUE KEY `mysb_version` (`mysb_version`,`mysb_user`,`mysb_password`,`hostname`,`ipv4`,`primary_inet`,`timezone`,`cert_password`)
@@ -261,6 +261,7 @@ CREATE TRIGGER `PricePerUser` BEFORE UPDATE ON `system`
 
 	IF (NEW.rt_cost_tva != '0.00' AND OLD.rt_cost_tva != NEW.rt_cost_tva) THEN
 		SET @NbUsers = NEW.rt_nb_users;
+		SET @TotalUsers = NEW.rt_nb_users;
 		SET @TempIdUser = 1;
 		IF (@NbUsers > 0) THEN
 			WHILE @NbUsers > 0 DO
@@ -269,7 +270,7 @@ CREATE TRIGGER `PricePerUser` BEFORE UPDATE ON `system`
 					SET @Exist = (SELECT count(id_tracking_rent_history) FROM tracking_rent_history WHERE id_users=@TempIdUser LIMIT 1);
 					IF (@Exist = 0) THEN
 						INSERT INTO tracking_rent_status (id_users) VALUES (@TempIdUser);
-						INSERT INTO tracking_rent_history (id_users,monthly_price,nb_users,start_of_use,end_of_use) VALUES (@TempIdUser,NEW.rt_cost_tva,@NbUsers,DATE_FORMAT(NOW(),'%d'),DATE_FORMAT(NOW(),'%d'));
+						INSERT INTO tracking_rent_history (id_users,monthly_price,nb_users,start_of_use,end_of_use) VALUES (@TempIdUser,NEW.rt_cost_tva,@TotalUsers,DATE_FORMAT(NOW(),'%d'),DATE_FORMAT(NOW(),'%d'));
 					END IF;
 				END IF;
 				SET @NbUsers = @NbUsers-1;
@@ -328,15 +329,15 @@ CREATE TABLE IF NOT EXISTS `tracking_rent_history` (
   `year` smallint(4) unsigned zerofill DEFAULT NULL DEFAULT '0000',
   `month` tinyint(2) unsigned zerofill DEFAULT NULL DEFAULT '00',
   `date` mediumint(6) NOT NULL DEFAULT '000000',
-  `monthly_price` decimal(4,2) NOT NULL,
+  `monthly_price` decimal(6,2) NOT NULL,
   `nb_users` int(4) NOT NULL,
-  `users_price` decimal(4,2) DEFAULT NULL,
+  `users_price` decimal(6,2) DEFAULT NULL,
   `nb_days_month` tinyint(2) DEFAULT NULL,
   `start_of_use` tinyint(2) unsigned zerofill DEFAULT NULL DEFAULT '01',
   `end_of_use` tinyint(2) unsigned zerofill DEFAULT NULL DEFAULT '00',
   `remain_days` tinyint(2) DEFAULT NULL,
-  `period_price` decimal(4,2) DEFAULT NULL,
-  `old_period_price` decimal(4,2) DEFAULT NULL,
+  `period_price` decimal(6,2) DEFAULT NULL,
+  `old_period_price` decimal(6,2) DEFAULT NULL,
   `old_remain_days` tinyint(2) DEFAULT NULL,
   PRIMARY KEY (`id_tracking_rent_history`),
   KEY `id_users` (`id_users`)
@@ -380,6 +381,7 @@ DROP TRIGGER IF EXISTS `PeriodPrice_OnUpdate`;
 DELIMITER //
 CREATE TRIGGER `PeriodPrice_OnUpdate` BEFORE UPDATE ON `tracking_rent_history`
  FOR EACH ROW BEGIN
+	SET NEW.date = CONCAT(NEW.year, NEW.month);
 	SET NEW.users_price = (NEW.monthly_price / NEW.nb_users);
 	SET NEW.remain_days = (NEW.end_of_use - NEW.start_of_use + 1);
 	SET NEW.period_price = (((NEW.monthly_price / NEW.nb_users) / NEW.nb_days_month) * NEW.remain_days);
@@ -399,7 +401,7 @@ CREATE TABLE IF NOT EXISTS `tracking_rent_payments` (
   `id_tracking_rent_payments` int(11) NOT NULL AUTO_INCREMENT,
   `id_users` int(11) NOT NULL,
   `payment_date` date NOT NULL DEFAULT '0000-00-00',
-  `amount` decimal(4,2) NOT NULL DEFAULT '0.00',
+  `amount` decimal(6,2) NOT NULL DEFAULT '0.00',
   PRIMARY KEY (`id_tracking_rent_payments`),
   KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
@@ -479,8 +481,8 @@ CREATE TABLE IF NOT EXISTS `tracking_rent_status` (
   `month` tinyint(2) unsigned zerofill DEFAULT NULL DEFAULT '00',
   `date` mediumint(6) NOT NULL DEFAULT '000000',
   `nb_days_used` tinyint(2) DEFAULT NULL DEFAULT '0',
-  `period_cost` decimal(4,2) DEFAULT NULL DEFAULT '0.00',
-  `already_payed` decimal(4,2) DEFAULT NULL DEFAULT '0.00',
+  `period_cost` decimal(6,2) DEFAULT NULL DEFAULT '0.00',
+  `already_payed` decimal(6,2) DEFAULT NULL DEFAULT '0.00',
   PRIMARY KEY (`id_tracking_rent_status`),
   KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
@@ -499,10 +501,18 @@ CREATE TRIGGER `NewStatus_OnInsert` BEFORE INSERT ON `tracking_rent_status`
 		SET NEW.month = DATE_FORMAT(NOW(),'%m');
 	END IF;
 	SET NEW.date = CONCAT(NEW.year, NEW.month);
-	IF (NEW.already_payed = 'MAIN_USER') THEN
-		SET NEW.already_payed = NEW.period_cost;
-	END IF;
  END
+//
+DELIMITER ;
+DROP TRIGGER IF EXISTS `NewStatus_OnUpdate`;
+DELIMITER //
+CREATE TRIGGER `NewStatus_OnUpdate` BEFORE UPDATE ON `tracking_rent_status`
+ FOR EACH ROW BEGIN
+	SET NEW.date = CONCAT(NEW.year, NEW.month);
+	IF (NEW.already_payed = '9999.99') THEN
+		SET NEW.already_payed = NEW.period_cost;
+	END IF;	
+END
 //
 DELIMITER ;
 
@@ -531,9 +541,9 @@ CREATE TABLE IF NOT EXISTS `users` (
   `language` varchar(2) NOT NULL DEFAULT 'en',
   `init_password` tinyint(1) NOT NULL DEFAULT '0',
   `quota` int(32) NOT NULL DEFAULT '0',
-  `period_price` decimal(4,2) NOT NULL DEFAULT '0.00',
+  `period_price` decimal(6,2) NOT NULL DEFAULT '0.00',
   `period_days` tinyint(2) NOT NULL DEFAULT '0',
-  `treasury` decimal(4,2) NOT NULL DEFAULT '0.00',
+  `treasury` decimal(6,2) NOT NULL DEFAULT '0.00',
   `created_at` date NOT NULL DEFAULT '0000-00-00',
   PRIMARY KEY (`id_users`),
   UNIQUE KEY `users_ident` (`users_ident`)
