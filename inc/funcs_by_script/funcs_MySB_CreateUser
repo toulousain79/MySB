@@ -652,7 +652,7 @@ MonthlyPayment() {
 						Message="$CreateUser_MessageAccountCreated"
 						# ICI, traitement pour l'ajout d'un nouvel utilisateur.
 						# 1/	On ajoute une entrée dans 'tracking_rent_status'.
-						Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_status' 'id_users,monthly_cost' "\"$FnIdUser\",\"$RentingCostTva\""
+						Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_status' 'id_users' "\"$FnIdUser\""
 						# 2/	On ajoute maintenant une entrée dans 'tracking_rent_history'.
 						#		==> Utilisation du trigger 'PeriodPrice_OnInsert' pour renseigner certains champs.
 						Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,monthly_price,nb_users,start_of_use,end_of_use' "\"$FnIdUser\",\"$RentingCostTva\",\"$TotalUsers\",\"$Today\",\"$Today\""
@@ -684,12 +684,11 @@ MonthlyPayment() {
 						else
 							CurrentYear="`date -d "$FirstDay" '+%Y'`"
 							CurrentMonth="`date -d "$FirstDay" '+%m'`"
-							if [ "$FnIdUser" != "$MainUserId" ]; then
-								Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_status' 'id_users,year,month,monthly_cost' "\"$FnIdUser\",\"$CurrentYear\",\"$CurrentMonth\",\"$RentingCostTva\"" '-echo'
-							else
-								Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_status' 'id_users,year,month,monthly_cost,already_payed' "\"$FnIdUser\",\"$CurrentYear\",\"$CurrentMonth\",\"$RentingCostTva\",\"$RentingCostTva\"" '-echo'
-							fi
+							Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_status' 'id_users,year,month' "\"$FnIdUser\",\"$CurrentYear\",\"$CurrentMonth\"" '-echo'
 							Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,year,month,monthly_price,nb_users,start_of_use,end_of_use' "\"$FnIdUser\",\"$CurrentYear\",\"$CurrentMonth\",\"$RentingCostTva\",\"$TotalUsers\",\"$StartOfUse\",\"$EndOfUse\"" '-echo'
+						fi
+						if [ "$FnIdUser" == "$MainUserId" ]; then
+							Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_status' "already_payed='MAIN_USER'" "id_users='$FnIdUser' AND year='$Year' AND month='$Month'" '-echo'
 						fi
 
 						# New first day of period (month)
@@ -698,6 +697,8 @@ MonthlyPayment() {
 						EndOfUse="`date -d "$FirstDay" '+%Y-%m'`"
 						EndOfUse="`date -d "$EndOfUse-01 +1 month -1 day" +%d`"
 					done
+
+
 				;;
 				#MySB_DeleteUser)
 					# Servira à envoyer un récapitulatif à l'utilisateur, comme le montant de sa dette par exemple.
@@ -710,17 +711,20 @@ MonthlyPayment() {
 				#		==> Utilisation d'un trigger sur UPDATE pour calculer le prix de la période
 				#		- modification de 'tracking_rent_status'
 				Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_history' "end_of_use='$Today'" "id_users='$FnIdUser' AND year='$Year' AND month='$Month' AND end_of_use='$EndOfUse'" '-echo'
+				if [ "$FnIdUser" == "$MainUserId" ]; then
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_status' "already_payed='MAIN_USER'" "id_users='$FnIdUser' AND year='$Year' AND month='$Month'" '-echo'
+				fi
 			fi
+
 			if [ $CreateNewPeriodPrice -eq 1 ]; then
 				# 2/ Ajout du nouveau mois:
 				#		- ajout d'une entrée dans 'tracking_rent_status'.
 				#		- On ajoute maintenant une entrée dans 'tracking_rent_history'.
-				if [ "$FnIdUser" != "$MainUserId" ]; then
-					Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_status' 'id_users,monthly_cost' "\"$FnIdUser\",\"$RentingCostTva\"" '-echo'
-				else
-					Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_status' 'id_users,monthly_cost,already_payed' "\"$FnIdUser\",\"$RentingCostTva\",\"$RentingCostTva\"" '-echo'
-				fi
+				Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_status' 'id_users' "\"$FnIdUser\"" '-echo'
 				Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,monthly_price,nb_users,start_of_use,end_of_use' "\"$FnIdUser\",\"$RentingCostTva\",\"$TotalUsers\",\"$Today\",\"$Today\"" '-echo'
+				if [ "$FnIdUser" == "$MainUserId" ]; then
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_status' "already_payed='MAIN_USER'" "id_users='$FnIdUser' AND year='$Year' AND month='$Month'" '-echo'
+				fi
 
 				# Send email for all users
 				SendMail "$Subject" "${SeedboxUser}" "$Case" "$Message"
@@ -728,7 +732,7 @@ MonthlyPayment() {
 
 			# 3/ Dans tous les cas, on met à jour les tables 'tracking_rent_status' et 'users'.
 			#	- !nb_days_used!s
-			#	- !monthly_cost!
+			#	- !period_cost!
 			#	- !treasury!
 			# On traite si l'utilisateur courant N'est PAS l'utilisateur principal.
 			# Dans le cas de l'utilisateur principal, il n'y aura pas de paiements à faire.
@@ -737,20 +741,20 @@ MonthlyPayment() {
 			# SOIT -x.xx SI certains utilisateurs n'ont pas payé
 			if [ "$FnIdUser" != "$MainUserId" ]; then
 				UserTreasury="`Func_SQL_Command 'SELECT' 'MySB_db' 'treasury' 'users' "id_users = '$FnIdUser'"`"
-				AllRemaining="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_tracking_rent_status,monthly_cost,already_payed' 'tracking_rent_status' "id_users='$FnIdUser' AND already_payed!=monthly_cost"`"
+				AllRemaining="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_tracking_rent_status,period_cost,already_payed' 'tracking_rent_status' "id_users='$FnIdUser' AND already_payed!=period_cost"`"
 				for Remaining in $AllRemaining; do
 					IdStatus="`echo $Remaining | awk '{split($0,a,"|"); print a[1]}'`"
-					MonthlyCost="`echo $Remaining | awk '{split($0,a,"|"); print a[2]}'`"
+					PeriodCost="`echo $Remaining | awk '{split($0,a,"|"); print a[2]}'`"
 					AlreadyPayed="`echo $Remaining | awk '{split($0,a,"|"); print a[3]}'`"
-					RemainingCost=`echo "($MonthlyCost - $AlreadyPayed)" | bc`
+					RemainingCost=`echo "($PeriodCost - $AlreadyPayed)" | bc`
 
 					UT=`echo "($UserTreasury - $RemainingCost)" | bc`
 					if (( $(echo "$UT < 0.00" | bc -l) )); then	# < 0	La trésorerie devient négative
-						NewAlreadyPayed=`echo "($AlreadyPayed+($RemainingCost+($MonthlyCost-$AlreadyPayed)-($RemainingCost-$UserTreasury)))" | bc`
+						NewAlreadyPayed=`echo "($AlreadyPayed+($RemainingCost+($PeriodCost-$AlreadyPayed)-($RemainingCost-$UserTreasury)))" | bc`
 						NewUserTreasury=`echo "($UserTreasury -($NewAlreadyPayed-$AlreadyPayed))" | bc`
 					else										# >= 0	La trésorerie est toujours positive OU égale à 0
-						NewAlreadyPayed="$MonthlyCost"
-						NewUserTreasury=`echo "($UserTreasury - $MonthlyCost)" | bc`
+						NewAlreadyPayed="$PeriodCost"
+						NewUserTreasury=`echo "($UserTreasury - $PeriodCost)" | bc`
 					fi
 
 					Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_status' "already_payed='$NewAlreadyPayed'" "id_tracking_rent_status='$IdStatus'" '-echo'
@@ -762,10 +766,10 @@ MonthlyPayment() {
 
 		# Update treasury for the main user
 		if [ "$FnIdUser" == "$MainUserId" ]; then
-			RentStatusValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'sum(monthly_cost), sum(already_payed)' 'tracking_rent_status' "id_users!='$MainUserId' AND already_payed!=monthly_cost"`"
-			SumMonthlyCost="`echo $RentStatusValues | awk '{split($0,a,"|"); print a[1]}'`"
+			RentStatusValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'sum(period_cost), sum(already_payed)' 'tracking_rent_status' "id_users!='$MainUserId' AND already_payed!=period_cost"`"
+			SumPeriodCost="`echo $RentStatusValues | awk '{split($0,a,"|"); print a[1]}'`"
 			SumAlreadyPayed="`echo $RentStatusValues | awk '{split($0,a,"|"); print a[2]}'`"
-			UserTreasury=`echo "($SumAlreadyPayed - $SumMonthlyCost)" | bc`
+			UserTreasury=`echo "($SumAlreadyPayed - $SumPeriodCost)" | bc`
 			Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "treasury='$UserTreasury'" "id_users='$MainUserId'" '-echo'
 		fi
 

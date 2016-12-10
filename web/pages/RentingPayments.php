@@ -48,7 +48,7 @@ function Form() {
 							. MainUser_Renting_User . '&nbsp;
 							<select class="select_user" id="select_user" name="select_user[1]" style="width:200px; height: 28px; cursor: pointer;" required>';
 
-							$AllUsers = $MySB_DB->select("users", ["id_users", "users_ident"]);
+							$AllUsers = $MySB_DB->select("users", ["id_users", "users_ident"], ["id_users[!]" => 1]);
 							foreach($AllUsers as $User) {
 								echo '<option value="' . $User["id_users"] . '">' . $User["users_ident"] . '</option>';
 							}

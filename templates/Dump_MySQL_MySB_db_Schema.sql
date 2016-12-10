@@ -268,7 +268,7 @@ CREATE TRIGGER `PricePerUser` BEFORE UPDATE ON `system`
 				IF (@IdUserExist > 0) THEN
 					SET @Exist = (SELECT count(id_tracking_rent_history) FROM tracking_rent_history WHERE id_users=@TempIdUser LIMIT 1);
 					IF (@Exist = 0) THEN
-						INSERT INTO tracking_rent_status (id_users,monthly_cost) VALUES (@TempIdUser,NEW.rt_cost_tva);
+						INSERT INTO tracking_rent_status (id_users) VALUES (@TempIdUser);
 						INSERT INTO tracking_rent_history (id_users,monthly_price,nb_users,start_of_use,end_of_use) VALUES (@TempIdUser,NEW.rt_cost_tva,@NbUsers,DATE_FORMAT(NOW(),'%d'),DATE_FORMAT(NOW(),'%d'));
 					END IF;
 				END IF;
@@ -372,7 +372,7 @@ CREATE TRIGGER `PeriodPrice_OnInsert` BEFORE INSERT ON `tracking_rent_history`
 	END IF;
 
 	UPDATE users SET period_days=NEW.remain_days, period_price=NEW.period_price WHERE id_users=NEW.id_users;
-	UPDATE tracking_rent_status SET nb_days_used=NEW.remain_days, monthly_cost=NEW.period_price WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month;
+	UPDATE tracking_rent_status SET nb_days_used=NEW.remain_days, period_cost=NEW.period_price WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month;
 END
 //
 DELIMITER ;
@@ -384,7 +384,7 @@ CREATE TRIGGER `PeriodPrice_OnUpdate` BEFORE UPDATE ON `tracking_rent_history`
 	SET NEW.remain_days = (NEW.end_of_use - NEW.start_of_use + 1);
 	SET NEW.period_price = (((NEW.monthly_price / NEW.nb_users) / NEW.nb_days_month) * NEW.remain_days);
 	UPDATE users SET period_price=NEW.period_price, period_days=NEW.remain_days WHERE id_users=NEW.id_users;
-	UPDATE tracking_rent_status SET nb_days_used=(NEW.old_remain_days+NEW.remain_days), monthly_cost=(NEW.old_period_price+NEW.period_price) WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month;
+	UPDATE tracking_rent_status SET nb_days_used=(NEW.old_remain_days+NEW.remain_days), period_cost=(NEW.old_period_price+NEW.period_price) WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month;
 END
 //
 DELIMITER ;
@@ -412,17 +412,17 @@ DELIMITER //
 CREATE TRIGGER `TreasuryUpdate_OnInsert` BEFORE INSERT ON `tracking_rent_payments`
  FOR EACH ROW BEGIN
 	DECLARE IdStatus INTEGER DEFAULT 0;
-	DECLARE MonthlyCost DECIMAL(4,2) DEFAULT '0.00';
+	DECLARE PeriodCost DECIMAL(4,2) DEFAULT '0.00';
 	DECLARE AlreadyPayed DECIMAL(4,2) DEFAULT '0.00';
 	SET @Treasury = ((SELECT treasury FROM users WHERE id_users=NEW.id_users)+NEW.amount);
-	SET @NbStatus = (SELECT count(id_tracking_rent_status) FROM tracking_rent_status WHERE id_users=NEW.id_users AND monthly_cost!=already_payed);
+	SET @NbStatus = (SELECT count(id_tracking_rent_status) FROM tracking_rent_status WHERE id_users=NEW.id_users AND period_cost!=already_payed);
 
 	IF (@NbStatus > 0) THEN
 		WHILE @NbStatus > 0 DO
-			SELECT id_tracking_rent_status, monthly_cost, already_payed INTO IdStatus, MonthlyCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=NEW.id_users AND monthly_cost!=already_payed ORDER BY CONCAT(year, month) ASC LIMIT 1;
-			SET @Treasury = (@Treasury-(MonthlyCost-AlreadyPayed));
+			SELECT id_tracking_rent_status, period_cost, already_payed INTO IdStatus, PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=NEW.id_users AND period_cost!=already_payed ORDER BY CONCAT(year, month) ASC LIMIT 1;
+			SET @Treasury = (@Treasury-(PeriodCost-AlreadyPayed));
 			IF (@Treasury >= 0) THEN
-				SET @NewAlreadyPayed = MonthlyCost;
+				SET @NewAlreadyPayed = PeriodCost;
 			ELSE
 				SET @NewAlreadyPayed = '0.00';
 			END IF;
@@ -441,20 +441,20 @@ DELIMITER //
 CREATE TRIGGER `TreasuryUpdate_OnDelete` BEFORE DELETE ON `tracking_rent_payments`
  FOR EACH ROW BEGIN
 	DECLARE IdStatus INTEGER DEFAULT 0;
-	DECLARE MonthlyCost DECIMAL(4,2) DEFAULT '0.00';
+	DECLARE PeriodCost DECIMAL(4,2) DEFAULT '0.00';
 	DECLARE AlreadyPayed DECIMAL(4,2) DEFAULT '0.00';
 	SET @Treasury = ((SELECT treasury FROM users WHERE id_users=OLD.id_users)-OLD.amount);
-	SET @NbStatus = (SELECT count(id_tracking_rent_status) FROM tracking_rent_status WHERE id_users=OLD.id_users AND monthly_cost!=already_payed);
+	SET @NbStatus = (SELECT count(id_tracking_rent_status) FROM tracking_rent_status WHERE id_users=OLD.id_users AND period_cost!=already_payed);
 
 	IF (@NbStatus > 0) THEN
 		WHILE @NbStatus > 0 DO
-			SELECT id_tracking_rent_status, monthly_cost, already_payed INTO IdStatus, MonthlyCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=OLD.id_users AND monthly_cost!=already_payed ORDER BY CONCAT(year, month) DESC LIMIT 1;
+			SELECT id_tracking_rent_status, period_cost, already_payed INTO IdStatus, PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=OLD.id_users AND period_cost!=already_payed ORDER BY CONCAT(year, month) DESC LIMIT 1;
 			IF (@Treasury >= AlreadyPayed) THEN
-				SET @NewAlreadyPayed = -MonthlyCost;
-				SET @Treasury = (@Treasury-MonthlyCost);
+				SET @NewAlreadyPayed = -PeriodCost;
+				SET @Treasury = (@Treasury-PeriodCost);
 			ELSE
-				SET @NewAlreadyPayed = MonthlyCost-@Treasury;
-				SET @Treasury = @Treasury-(MonthlyCost-@NewAlreadyPayed);
+				SET @NewAlreadyPayed = PeriodCost-@Treasury;
+				SET @Treasury = @Treasury-(PeriodCost-@NewAlreadyPayed);
 			END IF;
 			UPDATE tracking_rent_status SET already_payed=@NewAlreadyPayed WHERE id_tracking_rent_status=IdStatus;
 			SET @NbStatus = @NbStatus-1;
@@ -479,7 +479,7 @@ CREATE TABLE IF NOT EXISTS `tracking_rent_status` (
   `month` tinyint(2) unsigned zerofill DEFAULT NULL DEFAULT '00',
   `date` mediumint(6) NOT NULL DEFAULT '000000',
   `nb_days_used` tinyint(2) DEFAULT NULL DEFAULT '0',
-  `monthly_cost` decimal(4,2) DEFAULT NULL DEFAULT '0.00',
+  `period_cost` decimal(4,2) DEFAULT NULL DEFAULT '0.00',
   `already_payed` decimal(4,2) DEFAULT NULL DEFAULT '0.00',
   PRIMARY KEY (`id_tracking_rent_status`),
   KEY `id_users` (`id_users`)
@@ -499,7 +499,9 @@ CREATE TRIGGER `NewStatus_OnInsert` BEFORE INSERT ON `tracking_rent_status`
 		SET NEW.month = DATE_FORMAT(NOW(),'%m');
 	END IF;
 	SET NEW.date = CONCAT(NEW.year, NEW.month);
-	SET NEW.nb_days_used = 0;
+	IF (NEW.already_payed = 'MAIN_USER') THEN
+		SET NEW.already_payed = NEW.period_cost;
+	END IF;
  END
 //
 DELIMITER ;
