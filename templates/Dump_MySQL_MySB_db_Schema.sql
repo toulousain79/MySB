@@ -414,8 +414,8 @@ DELIMITER //
 CREATE TRIGGER `TreasuryUpdate_OnInsert` BEFORE INSERT ON `tracking_rent_payments`
  FOR EACH ROW BEGIN
 	DECLARE IdStatus INTEGER DEFAULT 0;
-	DECLARE PeriodCost DECIMAL(4,2) DEFAULT '0.00';
-	DECLARE AlreadyPayed DECIMAL(4,2) DEFAULT '0.00';
+	DECLARE PeriodCost DECIMAL(6,2) DEFAULT '0.00';
+	DECLARE AlreadyPayed DECIMAL(6,2) DEFAULT '0.00';
 	SET @Treasury = ((SELECT treasury FROM users WHERE id_users=NEW.id_users)+NEW.amount);
 	SET @NbStatus = (SELECT count(id_tracking_rent_status) FROM tracking_rent_status WHERE id_users=NEW.id_users AND period_cost!=already_payed);
 
@@ -443,8 +443,8 @@ DELIMITER //
 CREATE TRIGGER `TreasuryUpdate_OnDelete` BEFORE DELETE ON `tracking_rent_payments`
  FOR EACH ROW BEGIN
 	DECLARE IdStatus INTEGER DEFAULT 0;
-	DECLARE PeriodCost DECIMAL(4,2) DEFAULT '0.00';
-	DECLARE AlreadyPayed DECIMAL(4,2) DEFAULT '0.00';
+	DECLARE PeriodCost DECIMAL(6,2) DEFAULT '0.00';
+	DECLARE AlreadyPayed DECIMAL(6,2) DEFAULT '0.00';
 	SET @Treasury = ((SELECT treasury FROM users WHERE id_users=OLD.id_users)-OLD.amount);
 	SET @NbStatus = (SELECT count(id_tracking_rent_status) FROM tracking_rent_status WHERE id_users=OLD.id_users AND period_cost!=already_payed);
 

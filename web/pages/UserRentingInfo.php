@@ -31,6 +31,7 @@ function Form() {
 	$users_data = $MySB_DB->get("users", ["id_users", "period_price", "period_days", "treasury"], ["users_ident" => "$CurrentUser"]);
 	$Rent_Payments = $MySB_DB->select("tracking_rent_payments", ["id_tracking_rent_payments", "payment_date", "amount"], ["id_users" => $users_data['id_users']]);
 	$Rent_Status = $MySB_DB->select("tracking_rent_status", ["id_tracking_rent_status", "year", "month", "date", "nb_days_used", "period_cost", "already_payed"], ["id_users" => $users_data['id_users']]);
+
 	$Treasury = $users_data['treasury'];
 	if (is_numeric($Treasury) && $Treasury > 0.00) {
 		$Color = 'color: #00DF00;';
@@ -105,13 +106,23 @@ function Form() {
 						$RemaingCost = ceil($RemaingCost);
 						break;
 				}
+				if ($AlreadyPayed > 0.00) {
+					$ColorPayed = 'color: #00DF00;';
+				} else {
+					$ColorPayed = 'color: black;';
+				}
+				if ($RemaingCost > 0.00) {
+					$ColorRemain = 'color: #FF0000;';
+				} else {
+					$ColorRemain = 'color: black;';
+				}
 
 				echo '		<tr>
 								<td><div align="center">' . $Year.'/'.$Month . '</div></td>
 								<td><div align="center">' . $DaysUsed . '</div></td>
 								<td><div align="center">' . $MonthlyCost . '</div></td>
-								<td><div align="center">' . $AlreadyPayed . '</div></td>
-								<td><div align="center">' . $RemaingCost . '</div></td>
+								<td style="'.$ColorPayed.'"><div align="center"><b>' . $AlreadyPayed . '</b></div></td>
+								<td style="'.$ColorRemain.'"><div align="center"><b>' . $RemaingCost . '</b></div></td>
 							</tr>';
 			}
 
