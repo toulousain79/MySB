@@ -85,11 +85,10 @@ function Form() {
 				$UserName = $MySB_DB->get("users", "users_ident", ["id_users" => $Payment["id_users"]]);
 
 				echo '	<tr>
-							<input type="hidden" name="id" value="'.$Payment["id_tracking_rent_payments"].'" />
 							<td><div align="center">' . $UserName . '</div></td>
 							<td><div align="center">' . $Payment["payment_date"] . '</div></td>
 							<td><div align="center">' . $Payment["amount"] . '</div></td>
-							<td><div align="center"><input class="submit" name="submit" type="submit" value="' . Global_Delete . '" /></div></td>
+							<td><div align="center"><input class="submit" name="submit['.$Payment["id_tracking_rent_payments"].']" type="submit" value="' . Global_Delete . '" /></div></td>
 						</tr>';
 			}
 
@@ -122,13 +121,15 @@ if (isset($_POST['submit'])) {
 			}
 
 			break;
-		case Global_Delete:
-			$result = $MySB_DB->delete("tracking_rent_payments", ["id_tracking_rent_payments " => $_POST['id']]);
-			if ( $result >= 1 ) {
-				$type = 'success';
-			} else {
-				$type = 'error';
-				$message = Global_NoChange;
+		default: // delete
+			foreach($_POST['submit'] as $key => $value) {
+				$result = $MySB_DB->delete("tracking_rent_payments", ["id_tracking_rent_payments " => $key]);
+				if ( $result >= 1 ) {
+					$type = 'success';
+				} else {
+					$type = 'error';
+					$message = Global_NoChange;
+				}
 			}
 			break;
 	}
