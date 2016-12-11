@@ -33,6 +33,14 @@ function Form() {
 	$Rent_Status = $MySB_DB->select("tracking_rent_status", ["id_tracking_rent_status", "year", "month", "date", "nb_days_used", "period_cost", "already_payed"], ["id_users" => $users_data['id_users']]);
 
 	$Treasury = $users_data['treasury'];
+	switch ($Method) {
+		case '1':
+			$Treasury = round($Treasury, 2);
+			break;
+		default:
+			$Treasury = ceil($Treasury);
+			break;
+	}
 	if (is_numeric($Treasury) && $Treasury > 0.00) {
 		$Color = 'color: #00DF00;';
 	} else {
@@ -63,7 +71,14 @@ function Form() {
 		foreach($Rent_Payments as $Payment) {
 			$Date = $Payment["payment_date"];
 			$Amount = $Payment["amount"];
-			$Balance = $Payment["balance"];
+			switch ($Method) {
+				case '1':
+					$Amount = round($Amount, 2);
+					break;
+				default:
+					$Amount = ceil($Amount);
+					break;
+			}
 
 			echo '			<tr>
 								<td><div align="center">' . $Date . '</div></td>

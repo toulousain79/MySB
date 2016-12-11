@@ -462,24 +462,26 @@ CREATE TRIGGER `TreasuryUpdate_OnDelete` BEFORE DELETE ON `tracking_rent_payment
 	SET @Treasury = (SELECT treasury FROM users WHERE id_users=OLD.id_users) - @Amount;
 	SET @NbStatus = (SELECT count(id_tracking_rent_status) FROM tracking_rent_status WHERE id_users=OLD.id_users AND period_cost!=0.00 AND (period_cost!=already_payed OR period_cost=already_payed));
 
- 	IF (@NbStatus > 0) THEN
-		WHILE @NbStatus > 0 DO
-			SELECT id_tracking_rent_status, period_cost, already_payed INTO IdStatus, PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=OLD.id_users AND already_payed!='0.00' ORDER BY CONCAT(year, month) DESC LIMIT 1;
+	IF (@Treasury < 0.00) THEN
+		IF (@NbStatus > 0) THEN
+			WHILE @NbStatus > 0 DO
+				SELECT id_tracking_rent_status, period_cost, already_payed INTO IdStatus, PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=OLD.id_users AND already_payed!='0.00' ORDER BY CONCAT(year, month) DESC LIMIT 1;
 
-			IF (AlreadyPayed <= @Amount) THEN
-				SET AlreadyPayed = '0.00';
-				SET @Amount = @Amount-AlreadyPayed;
-			ELSE
-				WHILE (@Amount > 0.00) AND (AlreadyPayed > 0.00) DO
-					SET AlreadyPayed = AlreadyPayed-0.01;
-					SET @Amount = @Amount-0.01;
-				END WHILE;
-			END IF;
+				IF (AlreadyPayed <= @Amount) THEN
+					SET AlreadyPayed = '0.00';
+					SET @Amount = @Amount-AlreadyPayed;
+				ELSE
+					WHILE (@Amount > 0.00) AND (AlreadyPayed > 0.00) DO
+						SET AlreadyPayed = AlreadyPayed-0.01;
+						SET @Amount = @Amount-0.01;
+					END WHILE;
+				END IF;
 
-			UPDATE tracking_rent_status SET already_payed=AlreadyPayed WHERE id_tracking_rent_status=IdStatus;
+				UPDATE tracking_rent_status SET already_payed=AlreadyPayed WHERE id_tracking_rent_status=IdStatus;
 
-			SET @NbStatus = @NbStatus-1;
-		END WHILE;
+				SET @NbStatus = @NbStatus-1;
+			END WHILE;
+		END IF;
 	END IF;
 
 	UPDATE users SET treasury=@Treasury WHERE id_users=OLD.id_users;
@@ -592,7 +594,7 @@ DROP TRIGGER IF EXISTS `KeepUserHistory_BeforeDelete`;
 DELIMITER //
 CREATE TRIGGER `KeepUserHistory_BeforeDelete` BEFORE DELETE ON `users`
  FOR EACH ROW BEGIN
-	UPDATE system SET rt_nb_users=rt_nb_users+1 WHERE id_system=1;
+	UPDATE system SET rt_nb_users=rt_nb_users-1 WHERE id_system=1;
 	UPDATE users_history SET deleted_at=DATE_FORMAT(NOW(),'%Y-%m-%d') WHERE id_users=OLD.id_users;
 END
 //
@@ -601,6 +603,8 @@ DROP TRIGGER IF EXISTS `UpdateUsersHistory_BeforeUpdate`;
 DELIMITER //
 CREATE TRIGGER `UpdateUsersHistory_BeforeUpdate` BEFORE UPDATE ON `users`
  FOR EACH ROW BEGIN
+	DECLARE SumPeriodCost DECIMAL(6,2) DEFAULT '0.00';
+	DECLARE SumAlreadyPayed DECIMAL(6,2) DEFAULT '0.00'; 
 	IF (OLD.created_at = '0000-00-00') THEN
 		IF (NEW.created_at = '0000-00-00') THEN
 			SET NEW.created_at = DATE_FORMAT(NOW(),'%Y-%m-%d');
