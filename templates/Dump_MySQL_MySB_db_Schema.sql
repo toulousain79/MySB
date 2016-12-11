@@ -385,7 +385,10 @@ CREATE TRIGGER `PeriodPrice_OnUpdate` BEFORE UPDATE ON `tracking_rent_history`
 	SET NEW.users_price = (NEW.monthly_price / NEW.nb_users);
 	SET NEW.remain_days = (NEW.end_of_use - NEW.start_of_use + 1);
 	SET NEW.period_price = (((NEW.monthly_price / NEW.nb_users) / NEW.nb_days_month) * NEW.remain_days);
-	UPDATE users SET period_price=NEW.period_price, period_days=NEW.remain_days WHERE id_users=NEW.id_users;
+	SET @Treasury = (SELECT treasury FROM users WHERE id_users=NEW.id_users);
+	SET @Treasury = (@Treasury-(NEW.period_price-OLD.period_price));
+
+	UPDATE users SET period_price=NEW.period_price, period_days=NEW.remain_days, treasury=@Treasury WHERE id_users=NEW.id_users;
 	UPDATE tracking_rent_status SET nb_days_used=(NEW.old_remain_days+NEW.remain_days), period_cost=(NEW.old_period_price+NEW.period_price) WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month;
 END
 //
@@ -416,24 +419,34 @@ CREATE TRIGGER `TreasuryUpdate_OnInsert` BEFORE INSERT ON `tracking_rent_payment
 	DECLARE IdStatus INTEGER DEFAULT 0;
 	DECLARE PeriodCost DECIMAL(6,2) DEFAULT '0.00';
 	DECLARE AlreadyPayed DECIMAL(6,2) DEFAULT '0.00';
-	SET @Treasury = ((SELECT treasury FROM users WHERE id_users=NEW.id_users)+NEW.amount);
+	SET @Amount = NEW.amount;
+	SET @Treasury = (SELECT treasury FROM users WHERE id_users=NEW.id_users);
 	SET @NbStatus = (SELECT count(id_tracking_rent_status) FROM tracking_rent_status WHERE id_users=NEW.id_users AND period_cost!=already_payed);
 
 	IF (@NbStatus > 0) THEN
 		WHILE @NbStatus > 0 DO
 			SELECT id_tracking_rent_status, period_cost, already_payed INTO IdStatus, PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=NEW.id_users AND period_cost!=already_payed ORDER BY CONCAT(year, month) ASC LIMIT 1;
-			SET @Treasury = (@Treasury-(PeriodCost-AlreadyPayed));
-			IF (@Treasury >= 0) THEN
-				SET @NewAlreadyPayed = PeriodCost;
+			SET @Diff = PeriodCost-AlreadyPayed;
+
+			IF (@Amount >= @Diff) THEN
+				SET AlreadyPayed = AlreadyPayed+@Diff;
+				SET @Treasury = @Treasury+@Diff;
+				SET @Amount = @Amount-@Diff;
 			ELSE
-				SET @NewAlreadyPayed = '0.00';
+				WHILE (@Amount > 0.00) AND (@Diff <= PeriodCost) DO
+					SET AlreadyPayed = AlreadyPayed+0.01;
+					SET @Treasury = @Treasury+0.01;
+					SET @Amount = @Amount-0.01;
+				END WHILE;
 			END IF;
-			UPDATE tracking_rent_status SET already_payed=@NewAlreadyPayed WHERE id_tracking_rent_status=IdStatus;
+
+			UPDATE tracking_rent_status SET already_payed=AlreadyPayed WHERE id_tracking_rent_status=IdStatus;
 
 			SET @NbStatus = @NbStatus-1;
 		END WHILE;
 	END IF;
 
+	SET @Treasury = @Treasury+@Amount;
 	UPDATE users SET treasury=@Treasury WHERE id_users=NEW.id_users;
  END
 //
@@ -445,20 +458,26 @@ CREATE TRIGGER `TreasuryUpdate_OnDelete` BEFORE DELETE ON `tracking_rent_payment
 	DECLARE IdStatus INTEGER DEFAULT 0;
 	DECLARE PeriodCost DECIMAL(6,2) DEFAULT '0.00';
 	DECLARE AlreadyPayed DECIMAL(6,2) DEFAULT '0.00';
-	SET @Treasury = ((SELECT treasury FROM users WHERE id_users=OLD.id_users)-OLD.amount);
-	SET @NbStatus = (SELECT count(id_tracking_rent_status) FROM tracking_rent_status WHERE id_users=OLD.id_users AND period_cost!=already_payed);
+	SET @Amount = OLD.amount;
+	SET @Treasury = (SELECT treasury FROM users WHERE id_users=OLD.id_users) - @Amount;
+	SET @NbStatus = (SELECT count(id_tracking_rent_status) FROM tracking_rent_status WHERE id_users=OLD.id_users AND period_cost!=0.00 AND (period_cost!=already_payed OR period_cost=already_payed));
 
-	IF (@NbStatus > 0) THEN
+ 	IF (@NbStatus > 0) THEN
 		WHILE @NbStatus > 0 DO
-			SELECT id_tracking_rent_status, period_cost, already_payed INTO IdStatus, PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=OLD.id_users AND period_cost!=already_payed ORDER BY CONCAT(year, month) DESC LIMIT 1;
-			IF (@Treasury >= AlreadyPayed) THEN
-				SET @NewAlreadyPayed = -PeriodCost;
-				SET @Treasury = (@Treasury-PeriodCost);
+			SELECT id_tracking_rent_status, period_cost, already_payed INTO IdStatus, PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=OLD.id_users AND already_payed!='0.00' ORDER BY CONCAT(year, month) DESC LIMIT 1;
+
+			IF (AlreadyPayed <= @Amount) THEN
+				SET AlreadyPayed = '0.00';
+				SET @Amount = @Amount-AlreadyPayed;
 			ELSE
-				SET @NewAlreadyPayed = PeriodCost-@Treasury;
-				SET @Treasury = @Treasury-(PeriodCost-@NewAlreadyPayed);
+				WHILE (@Amount > 0.00) AND (AlreadyPayed > 0.00) DO
+					SET AlreadyPayed = AlreadyPayed-0.01;
+					SET @Amount = @Amount-0.01;
+				END WHILE;
 			END IF;
-			UPDATE tracking_rent_status SET already_payed=@NewAlreadyPayed WHERE id_tracking_rent_status=IdStatus;
+
+			UPDATE tracking_rent_status SET already_payed=AlreadyPayed WHERE id_tracking_rent_status=IdStatus;
+
 			SET @NbStatus = @NbStatus-1;
 		END WHILE;
 	END IF;
@@ -511,7 +530,7 @@ CREATE TRIGGER `NewStatus_OnUpdate` BEFORE UPDATE ON `tracking_rent_status`
 	SET NEW.date = CONCAT(NEW.year, NEW.month);
 	IF (NEW.already_payed = '9999.99') THEN
 		SET NEW.already_payed = NEW.period_cost;
-	END IF;	
+	END IF;
 END
 //
 DELIMITER ;

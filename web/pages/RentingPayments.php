@@ -106,7 +106,6 @@ if (isset($_POST['submit'])) {
 	switch ($_POST['submit']) {
 		case MainUser_Renting_SaveAmount:
 			$count = count($_POST['input_id']);
-			$Success=0;
 			for($i=1; $i<=$count; $i++) {
 				$Amount = $_POST['input_amount'][$i];
 				$IdUser = $_POST['select_user'][$i];
@@ -114,21 +113,12 @@ if (isset($_POST['submit'])) {
 				if ( (isset($Amount) && ($Amount != 0.00)) && (isset($IdUser)) && (isset($Date)) ) {
 					$result = $MySB_DB->insert("tracking_rent_payments", ["id_users" => "$IdUser", "payment_date" => "$Date", "amount" => "$Amount"]);
 					if ( $result >= 1 ) {
-						$Success++;
+						$type = 'success';
 					}
 				} else {
 					$type = 'information';
 					$message = Global_CompleteAllFields;
 				}
-			}
-
-			if ( $Success >= 1 ) {
-				$Subtotal = $MySB_DB->sum("tracking_rent_payments", "balance", ["id_users" => $IdUser]);
-				$MySB_DB->update("users", ["treasury" => "$Subtotal"], ["id_users" => $IdUser]);
-				$type = 'success';
-			} else {
-				$type = 'information';
-				$message = Global_NoChange;
 			}
 
 			break;
