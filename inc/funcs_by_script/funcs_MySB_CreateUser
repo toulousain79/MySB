@@ -595,6 +595,7 @@ MonthlyPayment() {
 			CreatedAt="`echo $UserValues | awk '{split($0,a,"|"); print a[3]}'`"
 			CreateNewPeriodPrice=0
 			UpdateCurrentPeriodPrice=0
+			SendMail=0
 
 			case "$ScriptName" in
 				PaymentReminder.bsh)
@@ -628,6 +629,7 @@ MonthlyPayment() {
 								Message="Payment Reminder"
 								UpdateCurrentPeriodPrice=1
 								CreateNewPeriodPrice=1
+								SendMail=1
 							fi
 						;;
 						*)
@@ -642,11 +644,13 @@ MonthlyPayment() {
 						# DO NOT create new entries for renting for the new user.
 						Subject="$Global_Subject_MonthlyPayment"
 						Case="new_user"
-						Message="Changing Monthly"
+						Message="$CreateUser_MessageAccountChangeMonthly"
 						EndOfUse="$Today"
 						UpdateCurrentPeriodPrice=1
 						CreateNewPeriodPrice=1
+						SendMail=1
 					else
+						SendMail=1
 						Subject="$CreateUser_SubjectAccountCreated [$NewUser]"
 						Case="account_created"
 						Message="$CreateUser_MessageAccountCreated"
@@ -688,8 +692,8 @@ MonthlyPayment() {
 							CurrentYear="`date -d "$FirstDay" '+%Y'`"
 							CurrentMonth="`date -d "$FirstDay" '+%m'`"
 						fi
-						Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_status' 'id_users,year,month' "\"$FnIdUser\",\"$CurrentYear\",\"$CurrentMonth\"" '-echo'
-						Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,year,month,monthly_price,nb_users,start_of_use,end_of_use' "\"$FnIdUser\",\"$CurrentYear\",\"$CurrentMonth\",\"$RentingCostTva\",\"$TotalUsers\",\"$StartOfUse\",\"$EndOfUse\"" '-echo'
+						Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_status' 'id_users,year,month' "\"$FnIdUser\",\"$CurrentYear\",\"$CurrentMonth\""
+						Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,year,month,monthly_price,nb_users,start_of_use,end_of_use' "\"$FnIdUser\",\"$CurrentYear\",\"$CurrentMonth\",\"$RentingCostTva\",\"$TotalUsers\",\"$StartOfUse\",\"$EndOfUse\""
 
 						# New first day of period (month)
 						FirstDay="`date -d "$FirstYear-$FirstMonth-01 +$i month" +%Y-%m-%d`"
@@ -698,7 +702,7 @@ MonthlyPayment() {
 						EndOfUse="`date -d "$EndOfUse-01 +1 month -1 day" +%d`"
 					done
 					if [ "$FnIdUser" == "$MainUserId" ]; then
-						Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_status' "already_payed='9999.99'" "id_users='$FnIdUser'" '-echo'
+						Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_status' "already_payed='9999.99'" "id_users='$FnIdUser'"
 					fi
 				;;
 				#MySB_DeleteUser)
@@ -721,12 +725,14 @@ MonthlyPayment() {
 				# 2/ Ajout du nouveau mois:
 				#		- ajout d'une entrée dans 'tracking_rent_status'.
 				#		- On ajoute maintenant une entrée dans 'tracking_rent_history'.
-				Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_status' 'id_users' "\"$FnIdUser\"" '-echo'
-				Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,monthly_price,nb_users,start_of_use,end_of_use' "\"$FnIdUser\",\"$RentingCostTva\",\"$TotalUsers\",\"$Today\",\"$Today\"" '-echo'
+				Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_status' 'id_users' "\"$FnIdUser\""
+				Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,monthly_price,nb_users,start_of_use,end_of_use' "\"$FnIdUser\",\"$RentingCostTva\",\"$TotalUsers\",\"$Today\",\"$Today\""
 				if [ "$FnIdUser" == "$MainUserId" ]; then
-					Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_status' "already_payed='9999.99'" "id_users='$FnIdUser' AND year='$Year' AND month='$Month'" '-echo'
+					Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_status' "already_payed='9999.99'" "id_users='$FnIdUser' AND year='$Year' AND month='$Month'"
 				fi
+			fi
 
+			if [ $SendMail -eq 1 ]; then
 				# Send email for all users
 				SendMail "$Subject" "${SeedboxUser}" "$Case" "$Message"
 			fi
@@ -775,7 +781,7 @@ MonthlyPayment() {
 		SumPeriodCost="`echo $RentStatusValues | awk '{split($0,a,"|"); print a[1]}'`"
 		SumAlreadyPayed="`echo $RentStatusValues | awk '{split($0,a,"|"); print a[2]}'`"
 		UserTreasury=`echo "($SumAlreadyPayed - $SumPeriodCost)" | bc`
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "treasury='$UserTreasury'" "id_users='$MainUserId'" '-echo'
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "treasury='$UserTreasury'" "id_users='$MainUserId'"
 
 		StatusLSB
 	fi
