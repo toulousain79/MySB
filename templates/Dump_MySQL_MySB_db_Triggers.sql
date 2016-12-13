@@ -53,16 +53,10 @@ CREATE TRIGGER `PeriodPrice_OnInsert` BEFORE INSERT ON `tracking_rent_history`
 	END IF;
 	SET NEW.remain_days = (NEW.end_of_use - NEW.start_of_use + 1);
 	SET NEW.period_price = ROUND((((NEW.monthly_price / NEW.nb_users) / NEW.nb_days_month) * NEW.remain_days), 2);
-	IF (NEW.start_of_use = '01') THEN
-		SET NEW.old_period_price = '0.00';
-		SET NEW.old_remain_days = 0;
-	ELSE
-		SET NEW.old_period_price = (SELECT period_price FROM users WHERE id_users=NEW.id_users);
-		SET NEW.old_remain_days = (SELECT period_days FROM users WHERE id_users=NEW.id_users);
-	END IF;
+	SET NEW.old_period_price = (SELECT period_price FROM users WHERE id_users=NEW.id_users);
+	SET NEW.old_remain_days = (SELECT period_days FROM users WHERE id_users=NEW.id_users);
+	SET @Treasury = ROUND(((SELECT treasury FROM users WHERE id_users=NEW.id_users)+NEW.old_period_price-NEW.period_price), 2);
 
-	SET @Treasury = (SELECT treasury FROM users WHERE id_users=NEW.id_users);
-	SET @Treasury = ROUND((@Treasury-NEW.period_price), 2);
 	SELECT period_cost, already_payed INTO PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=NEW.id_users AND period_cost!=already_payed AND year=NEW.year AND month=NEW.month;
 	SET PeriodCost = ROUND((PeriodCost+NEW.period_price), 2);
 
@@ -88,8 +82,10 @@ CREATE TRIGGER `PeriodPrice_OnUpdate` BEFORE UPDATE ON `tracking_rent_history`
 	SET NEW.users_price = ROUND((NEW.monthly_price / NEW.nb_users), 2);
 	SET NEW.remain_days = (NEW.end_of_use - NEW.start_of_use + 1);
 	SET NEW.period_price = ROUND((((NEW.monthly_price / NEW.nb_users) / NEW.nb_days_month) * NEW.remain_days), 2);
-	SET @Treasury = (SELECT treasury FROM users WHERE id_users=NEW.id_users);
-	SET @Treasury = ROUND((@Treasury+OLD.period_price-NEW.period_price), 2);
+	SET NEW.old_period_price = (SELECT period_price FROM users WHERE id_users=NEW.id_users);
+	SET NEW.old_remain_days = (SELECT period_days FROM users WHERE id_users=NEW.id_users);
+	SET @Treasury = ROUND(((SELECT treasury FROM users WHERE id_users=NEW.id_users)+NEW.old_period_price-NEW.period_price), 2);
+	-40.61+4.64-5.03
 
 	SELECT period_cost, already_payed INTO PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=NEW.id_users AND period_cost!=already_payed AND year=NEW.year AND month=NEW.month;
 	SET PeriodCost = ROUND((PeriodCost+(NEW.period_price-OLD.period_price)), 2);
