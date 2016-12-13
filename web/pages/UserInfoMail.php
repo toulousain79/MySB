@@ -140,6 +140,14 @@ function PrintContent($user, $Case) {
 			$DisplayLinks 			= false;
 			$DisplayRenting			= true;
 			break;
+		case 'delete_user':
+			$DisplayGoTo 			= false;
+			$DisplayCommand			= false;
+			$DisplayUserInfo		= false;
+			$DisplayUserInfoDetail 	= false;
+			$DisplayLinks 			= false;
+			$DisplayRenting			= true;
+			break;			
 		case 'account_confirmed':
 			$DisplayGoTo 			= true;
 			$DisplayCommand			= false;
