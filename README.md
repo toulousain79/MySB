@@ -110,6 +110,7 @@ Copyright (c) 2013 toulousain79
 * [Installation](https://github.com/toulousain79/MySB/wiki/%5BInstall%5D-Installation)
 * [Upgrade](https://github.com/toulousain79/MySB/wiki/%5BInstall%5D-Upgrade)
 * [Uninstall](https://github.com/toulousain79/MySB/wiki/%5BInstall%5D-Uninstall)
+* [Screenshots](https://github.com/toulousain79/MySB/wiki/%5BInstall%5D-Screenshots)
 
 ### Commands and scripts
 * [Commands](https://github.com/toulousain79/MySB/wiki/%5BCommands%5D-Commands-&-scripts)
@@ -119,10 +120,13 @@ Copyright (c) 2013 toulousain79
 * [Users rights](https://github.com/toulousain79/MySB/wiki/%5BPortal%5D-Users-rights)
 
 ### Help
+* [Blocklists](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-Blocklists)
 * [Cakebox Light](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-Cakebox-Light)
+* [OpenVPN](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-OpenVPN)
+* [ownCloud v9+](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-ownCloud-v9-)
 * [Plex Media Server](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-Plex-Media-Server)
-* [FAQ](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-FAQ)
+* [DNScrypt](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-Renew-DNScrypt-Resolvers)
 
 ### More
 * [ToDo & Ideas](https://github.com/toulousain79/MySB/wiki/%5BMore%5D-ToDo-&-Ideas)
-* [Sources, inspiration and tools](https://github.com/toulousain79/MySB/wiki/%5BMore%5D-Sources-and-Tools)
+* [Tools, Sources & HowTo](https://github.com/toulousain79/MySB/wiki/%5BMore%5D-Tools,-Sources-and-HowTo)
