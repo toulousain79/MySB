@@ -58,7 +58,7 @@ CREATE TRIGGER `PeriodPrice_OnInsert` BEFORE INSERT ON `tracking_rent_history`
 		SET NEW.old_period_price = (SELECT period_price FROM users WHERE id_users=NEW.id_users);
 		SET NEW.old_remain_days = (SELECT period_days FROM users WHERE id_users=NEW.id_users);
 	END IF;
-	SET NEW.remain_days = (NEW.end_of_use - NEW.start_of_use + 1 + NEW.old_remain_days);
+	SET NEW.remain_days = (NEW.end_of_use - NEW.start_of_use + 1);
 	SET NEW.period_price = ROUND((((NEW.monthly_price / NEW.nb_users) / NEW.nb_days_month) * NEW.remain_days), 2);
 
 	SET @Treasury = ROUND(((SELECT treasury FROM users WHERE id_users=NEW.id_users)+NEW.old_period_price-NEW.period_price), 2);
@@ -73,7 +73,7 @@ CREATE TRIGGER `PeriodPrice_OnInsert` BEFORE INSERT ON `tracking_rent_history`
 		END WHILE;
 	END IF;
 
-	UPDATE users SET period_price=NEW.period_price, period_days=NEW.remain_days, treasury=@Treasury WHERE id_users=NEW.id_users;
+	UPDATE users SET period_price=NEW.period_price, period_days=(NEW.remain_days + NEW.old_remain_days), treasury=@Treasury WHERE id_users=NEW.id_users;
 	UPDATE tracking_rent_status SET nb_days_used=NEW.remain_days, period_cost=PeriodCost WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month;
 END
 //

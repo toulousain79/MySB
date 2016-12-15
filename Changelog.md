@@ -16,6 +16,7 @@
 			- Get/Renew tracker SSL certificate
 			- Creating a new SSL certificate
 			- Improvement of the rental system
+			- MySB_DeleteUser, correcting bugs
 			- Portal
 				* Medoo Framework v1.1.3
 				* jQuery v1.12.4

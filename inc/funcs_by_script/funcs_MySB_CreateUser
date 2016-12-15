@@ -48,11 +48,14 @@ ownCloudAccountManage() {
 
 #### Quota
 ManageQuota() {
+	# VARs
 	if [ ! -z "$1" ]; then
 		Message="$1"
 	else
 		Message=""
 	fi
+	UserToIgnore
+
 	ListCountUsers
 	FreeSpace="`Func_SQL_Command 'SELECT' 'MySB_db' 'quota_default' 'system' '1'`"
 	if [ -z "$FreeSpace" ] || [ $FreeSpace -eq 0 ]; then
@@ -78,22 +81,24 @@ ManageQuota() {
 	SpaceByUser=$(($FreeSpace/$TotalUsers))
 
 	for FnUser in $UsersList; do
-		if [ ! -z "$Message" ]; then log_daemon_msg "$Message $FnUser"; fi
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "quota = '$SpaceByUser'" "users_ident = '$FnUser'"
-		setquota -u -F vfsv0 $FnUser $SpaceByUser $SpaceByUser 0 0 /
+		if [ "$User" != "$UserToDelete" ]; then
+			if [ ! -z "$Message" ]; then log_daemon_msg "$Message $FnUser"; fi
+			Func_SQL_Command 'UPDATE' 'MySB_db' 'users' "quota = '$SpaceByUser'" "users_ident = '$FnUser'"
+			setquota -u -F vfsv0 $FnUser $SpaceByUser $SpaceByUser 0 0 /
 
-		# ownCloud Quota
-		if [ "$IsInstalled_ownCloud" == "YES" ]; then
-			IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_preferences' "userid='$FnUser' AND configkey='quota'"`"
-			if [ -z "$IfExist" ]; then
-				Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' 'userid,appid,configkey,configvalue' "'$FnUser','files','quota','$SpaceByUser KB'"
-			else
-				Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$SpaceByUser KB'" "userid='$FnUser' AND configkey='quota'"
+			# ownCloud Quota
+			if [ "$IsInstalled_ownCloud" == "YES" ]; then
+				IfExist="`Func_SQL_Command 'SELECT' 'ownCloud_db' 'configvalue' 'oc_preferences' "userid='$FnUser' AND configkey='quota'"`"
+				if [ -z "$IfExist" ]; then
+					Func_SQL_Command 'INSERT' 'ownCloud_db' 'oc_preferences' 'userid,appid,configkey,configvalue' "'$FnUser','files','quota','$SpaceByUser KB'"
+				else
+					Func_SQL_Command 'UPDATE' 'ownCloud_db' 'oc_preferences' "configvalue = '$SpaceByUser KB'" "userid='$FnUser' AND configkey='quota'"
+				fi
+
+				unset IfExist
 			fi
-
-			unset IfExist
+			if [ ! -z "$Message" ]; then StatusLSB; fi
 		fi
-		if [ ! -z "$Message" ]; then StatusLSB; fi
 	done
 }
 
@@ -663,6 +668,25 @@ MonthlyPayment() {
 						Func_SQL_Command 'INSERT' 'MySB_db' 'tracking_rent_history' 'id_users,monthly_price,nb_users,start_of_use,end_of_use' "\"$FnIdUser\",\"$RentingCostTva\",\"$TotalUsers\",\"$Today\",\"$Today\""
 					fi
 				;;
+				MySB_DeleteUser)
+					# Servira à envoyer un récapitulatif à l'utilisateur, comme le montant de sa dette par exemple.
+					if [ "$User" != "$SeedboxUser" ]; then
+						# DO NOT send email about new monthly for the new user.
+						# DO NOT create new entries for renting for the new user.
+						Subject="$Global_Subject_MonthlyPayment"
+						Case="new_user"
+						Message="$CreateUser_MessageAccountChangeMonthly"
+						EndOfUse="$Today"
+						UpdateCurrentPeriodPrice=1
+						CreateNewPeriodPrice=1
+						SendMail=1
+					else
+						SendMail=1
+						Subject="$DeleteUser_SubjectDelete [$NewUser]"
+						Case="delete_user"
+						Message="$DeleteUser_MessageDelete"
+					fi
+				;;
 				BulkChanges.bsh)
 					# On crée un historique depuis la date de création du dernier utilisateur.
 					# Quelle est la dadte d'ajout ddu dernier utilisateur ?
@@ -705,25 +729,6 @@ MonthlyPayment() {
 					if [ "$FnIdUser" == "$MainUserId" ]; then
 						Func_SQL_Command 'UPDATE' 'MySB_db' 'tracking_rent_status' "already_payed='9999.99'" "id_users='$FnIdUser'"
 					fi
-				;;
-				MySB_DeleteUser)
-					# Servira à envoyer un récapitulatif à l'utilisateur, comme le montant de sa dette par exemple.
-					if [ "$User" != "$SeedboxUser" ]; then
-						# DO NOT send email about new monthly for the new user.
-						# DO NOT create new entries for renting for the new user.
-						Subject="$Global_Subject_MonthlyPayment"
-						Case="new_user"
-						Message="$CreateUser_MessageAccountChangeMonthly"
-						EndOfUse="$Today"
-						UpdateCurrentPeriodPrice=1
-						CreateNewPeriodPrice=1
-						SendMail=1
-					else
-						SendMail=1
-						Subject="$DeleteUser_SubjectDelete [$NewUser]"
-						Case="delete_user"
-						Message="$DeleteUser_MessageDelete"
-					fi					
 				;;
 			esac
 
