@@ -233,7 +233,16 @@ DROP TRIGGER IF EXISTS `AddUsersHistory_AfterInsert`;
 DELIMITER //
 CREATE TRIGGER `AddUsersHistory_AfterInsert` AFTER INSERT ON `users`
  FOR EACH ROW BEGIN
-	INSERT INTO users_history (id_users,users_ident,users_email,created_at) VALUES (NEW.id_users,NEW.users_ident,NEW.users_email,NEW.created_at);
+	DECLARE UserId INT(11) DEFAULT 0;
+ 	DECLARE UserIdent VARCHAR(32) DEFAULT '';
+	DECLARE UserEmail VARCHAR(256) DEFAULT '';
+	SELECT id_users, users_ident, users_email INTO UserId, UserIdent, UserEmail FROM users_history WHERE users_ident=NEW.users_ident AND users_email=NEW.users_email;
+
+	IF (UserIdent != '') AND (UserEmail != '') THEN
+		UPDATE users_history SET id_users=NEW.id_users, created_at=DATE_FORMAT(NOW(),'%Y-%m-%d'), deleted_at='0000-00-00' WHERE id_users=UserId;
+	ELSE
+		INSERT INTO users_history (id_users,users_ident,users_email,created_at) VALUES (NEW.id_users,NEW.users_ident,NEW.users_email,NEW.created_at);
+	END IF;
 END
 //
 DELIMITER ;
