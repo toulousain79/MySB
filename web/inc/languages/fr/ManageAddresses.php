@@ -36,7 +36,7 @@ define('User_ManageAddresses_NotValidIp', 'Le nom d\'h&ocirc;te ne retourne pas 
 define('User_ManageAddresses_HostnameUpdateFailed', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour le nom d\'h&ocirc;te dans la base de donn&eacute;es MySB.');
 define('User_ManageAddresses_PublicIpv4Address', 'Vous devez entrer une adresse IPv4 publique.');
 define('User_ManageAddresses_Ipv4UpdateFailed', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de mettre &agrave; jour l\'adresse IPv4 dans la base de donn&eacute;es MySB.');
-define('User_ManageAddresses_VerifAddresseConfirm', 'Succ&egrave;s !<br /><br />Merci de bien vouloir v&eacute;rifiez vos adresses,<br />puis cliquez sur \"%s\"');
+define('User_ManageAddresses_VerifAddresseConfirm', 'Succ&egrave;s !<br /><br />Merci de bien vouloir v&eacute;rifier vos adresses,<br />puis cliquez sur \"%s\"');
 define('User_ManageAddresses_MessageRedirect', 'Succ&egrave;s !<br /><br />Vous serez redirig&eacute; sur la page d\'accueil dans 10 secondes.');
 define('User_ManageAddresses_NotAccessPortal', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible pour vous donner un acc&egrave;s au portail MySB !');
 define('User_ManageAddresses_RememberCheck', 'Gardez en m&eacute;moire que vos addresses IP dynamiques seront v&eacute;rifi&eacute;es toutes les 5 minutes.');

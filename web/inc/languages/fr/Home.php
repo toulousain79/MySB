@@ -47,9 +47,9 @@ define('Home_NormalUser', '
 	<p></p>
 	<p>En tant qu\'utilisateur normal, vous diposez des fonctionnalit&eacute;s suivantes :</p>
 	<ul style="margin-left: 100px">
-		<li>Afficher les informations de votre compte</li>
+		<li>Afficher les informations de votre compte et/ou votre e-mail</li>
 		<li>Changez votre mot de passe</li>
-		<li>G&eacute;rer vos adresses de connexion autoris&eacute;s <span class="Comments">(IP ou DNS dynamique)</span></li>
+		<li>G&eacute;rer vos adresses de connexion autoris&eacute;es <span class="Comments">(IP ou DNS dynamique)</span></li>
 		<li>T&eacute;l&eacute;charger vos fichiers de configuration pour OpenVPN <span class="Comments">(si install&eacute;)</span></li>
 	</ul>
 ');

@@ -45,8 +45,9 @@ define('Help_Trackers_NormalUser', '
 		Seul l\'utilisateur principal peut ajouter ou supprimer un nouveau tracker.
 	</p>
 	<p>
-		Vous pouvez soumettre votre demande par e-mail ou en utilisant le chat ruTorrent.
+		Vous pouvez lui soumettre votre demande par %s ou en utilisant le chat ruTorrent en vous adressant &agrave; %s.
 	</p>
 ');
+define('Help_SendMailSubject', 'MySB - Demande d\'ajout d\'un nouveau tracker');
 
 //#################### LAST LINE ######################################

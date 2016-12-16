@@ -25,6 +25,8 @@
 global $CurrentUser;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
+$MainUserInfos->get("users", ["users_ident", "users_email"], ["id_system" => 1]);
+
 switch (MainUser($CurrentUser)) {
 	case true:
 		echo Help_Trackers_MainUser;
@@ -32,7 +34,7 @@ switch (MainUser($CurrentUser)) {
 		break;
 
 	case false:
-		echo Help_Trackers_NormalUser;
+		echo sprintf(Help_Trackers_NormalUser, '<a href="mailto:'.$MainUserInfos["users_email"].'?subject='.Help_SendMailSubject.'">Send Email</a>' , $MainUserInfos["users_ident"]);
 
 		break;
 }

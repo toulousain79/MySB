@@ -45,8 +45,9 @@ define('Help_Trackers_NormalUser', '
 		Only the primary user can add / remove a new tracker.
 	</p>
 	<p>
-		You can submit your request by e-mail or using the ruTorrent chat.
+		You can submit your request by %s or using the ruTorrent chat by contacting %s.
 	</p>
 ');
+define('Help_SendMailSubject', 'MySB - Request to add a new tracker');
 
 //#################### LAST LINE ######################################
