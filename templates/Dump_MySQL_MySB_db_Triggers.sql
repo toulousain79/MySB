@@ -90,14 +90,22 @@ CREATE TRIGGER `PeriodPrice_OnUpdate` BEFORE UPDATE ON `tracking_rent_history`
 	SET NEW.period_price = ROUND((((NEW.monthly_price / NEW.nb_users) / NEW.nb_days_month) * NEW.remain_days), 2);
 	SET NEW.old_period_price = (SELECT period_price FROM users WHERE id_users=NEW.id_users);
 	SET NEW.old_remain_days = (SELECT period_days FROM users WHERE id_users=NEW.id_users);
-	SET @Treasury = ROUND(((SELECT treasury FROM users WHERE id_users=NEW.id_users)+(NEW.period_price-NEW.old_period_price)), 2);
+	SET @Treasury = ROUND((SELECT treasury FROM users WHERE id_users=NEW.id_users), 2);
+	SET @DiffPeriodCost = (NEW.period_price-OLD.period_price);
 
 	SELECT period_cost, already_payed INTO PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=NEW.id_users AND period_cost!=already_payed AND year=NEW.year AND month=NEW.month;
-	SET PeriodCost = ROUND((PeriodCost+(NEW.period_price-OLD.period_price)), 2);
+	SET PeriodCost = ROUND((PeriodCost+@DiffPeriodCost), 2);
 
-	IF (@Treasury > 0.00) AND (AlreadyPayed < PeriodCost) THEN
-		WHILE (@Treasury >= 0.00) AND (AlreadyPayed <= PeriodCost) DO
-			SET AlreadyPayed = AlreadyPayed+0.01;
+	IF (@Treasury > 0.00) THEN
+		IF (AlreadyPayed < PeriodCost) THEN
+			WHILE (@Treasury >= 0.00) AND (AlreadyPayed <= PeriodCost) DO
+				SET AlreadyPayed = AlreadyPayed+0.01;
+				SET @Treasury = @Treasury-0.01;
+			END WHILE;
+		END IF;
+	ELSE
+		WHILE (@DiffPeriodCost > 0.00) DO
+			SET @DiffPeriodCost = @DiffPeriodCost-0.01;
 			SET @Treasury = @Treasury-0.01;
 		END WHILE;
 	END IF;
