@@ -48,9 +48,6 @@ CREATE TRIGGER `PeriodPrice_OnInsert` BEFORE INSERT ON `tracking_rent_history`
 	SET NEW.date = CONCAT(NEW.year, NEW.month);
 	SET NEW.users_price = ROUND((NEW.monthly_price / NEW.nb_users), 2);
 	SET NEW.nb_days_month = RIGHT(LAST_DAY( CONCAT(NEW.year,NEW.month,'01') ), 2);
-	IF (NEW.end_of_use = '00') THEN
-		SET NEW.end_of_use = NEW.nb_days_month;
-	END IF;
 	IF (NEW.start_of_use = '01') THEN
 		SET NEW.old_period_price = '0.00';
 		SET NEW.old_remain_days = 0;
@@ -58,19 +55,25 @@ CREATE TRIGGER `PeriodPrice_OnInsert` BEFORE INSERT ON `tracking_rent_history`
 		SET NEW.old_period_price = (SELECT period_price FROM users WHERE id_users=NEW.id_users);
 		SET NEW.old_remain_days = (SELECT period_days FROM users WHERE id_users=NEW.id_users);
 	END IF;
+	IF (NEW.end_of_use = '00') THEN
+		SET NEW.end_of_use = NEW.nb_days_month;
+	END IF;
 	SET NEW.remain_days = (NEW.end_of_use - NEW.start_of_use + 1);
 	SET NEW.period_price = ROUND((((NEW.monthly_price / NEW.nb_users) / NEW.nb_days_month) * NEW.remain_days), 2);
 
-	SET @Treasury = ROUND(((SELECT treasury FROM users WHERE id_users=NEW.id_users)+(NEW.period_price-NEW.old_period_price)), 2);
-
+	SET @Treasury = ROUND(((SELECT treasury FROM users WHERE id_users=NEW.id_users)), 2);
 	SELECT period_cost, already_payed INTO PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=NEW.id_users AND period_cost!=already_payed AND year=NEW.year AND month=NEW.month;
 	SET PeriodCost = ROUND((PeriodCost+NEW.period_price), 2);
 
-	IF (@Treasury > 0.00) AND (AlreadyPayed < PeriodCost) THEN
-		WHILE (@Treasury >= 0.00) AND (AlreadyPayed <= PeriodCost) DO
-			SET AlreadyPayed = AlreadyPayed+0.01;
-			SET @Treasury = @Treasury-0.01;
-		END WHILE;
+	IF (@Treasury > 0.00) THEN
+		IF (AlreadyPayed < PeriodCost) THEN
+			WHILE (@Treasury >= 0.00) AND (AlreadyPayed <= PeriodCost) DO
+				SET AlreadyPayed = AlreadyPayed+0.01;
+				SET @Treasury = @Treasury-0.01;
+			END WHILE;
+		END IF;
+	ELSE
+		SET @Treasury = @Treasury - (NEW.period_price-NEW.old_period_price);
 	END IF;
 
 	UPDATE users SET period_price=NEW.period_price, period_days=(NEW.remain_days + NEW.old_remain_days), treasury=@Treasury WHERE id_users=NEW.id_users;
@@ -84,12 +87,16 @@ CREATE TRIGGER `PeriodPrice_OnUpdate` BEFORE UPDATE ON `tracking_rent_history`
  FOR EACH ROW BEGIN
 	DECLARE PeriodCost DECIMAL(6,2) DEFAULT '0.00';
 	DECLARE AlreadyPayed DECIMAL(6,2) DEFAULT '0.00';
+	DECLARE SumPeriodCost DECIMAL(6,2) DEFAULT '0.00';
+	DECLARE SumAlreadyPayed DECIMAL(6,2) DEFAULT '0.00';
+	DECLARE Amounts DECIMAL(6,2) DEFAULT '0.00';
 	SET NEW.date = CONCAT(NEW.year, NEW.month);
 	SET NEW.users_price = ROUND((NEW.monthly_price / NEW.nb_users), 2);
 	SET NEW.remain_days = (NEW.end_of_use - NEW.start_of_use + 1);
 	SET NEW.period_price = ROUND((((NEW.monthly_price / NEW.nb_users) / NEW.nb_days_month) * NEW.remain_days), 2);
-	SET NEW.old_period_price = (SELECT period_price FROM users WHERE id_users=NEW.id_users);
-	SET NEW.old_remain_days = (SELECT period_days FROM users WHERE id_users=NEW.id_users);
+	SET NEW.old_period_price = OLD.period_price;
+	SET NEW.old_remain_days = OLD.remain_days;
+
 	SET @Treasury = ROUND((SELECT treasury FROM users WHERE id_users=NEW.id_users), 2);
 	SET @DiffPeriodCost = (NEW.period_price-OLD.period_price);
 
