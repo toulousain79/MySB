@@ -87,9 +87,6 @@ CREATE TRIGGER `PeriodPrice_OnUpdate` BEFORE UPDATE ON `tracking_rent_history`
  FOR EACH ROW BEGIN
 	DECLARE PeriodCost DECIMAL(6,2) DEFAULT '0.00';
 	DECLARE AlreadyPayed DECIMAL(6,2) DEFAULT '0.00';
-	DECLARE SumPeriodCost DECIMAL(6,2) DEFAULT '0.00';
-	DECLARE SumAlreadyPayed DECIMAL(6,2) DEFAULT '0.00';
-	DECLARE Amounts DECIMAL(6,2) DEFAULT '0.00';
 	SET NEW.date = CONCAT(NEW.year, NEW.month);
 	SET NEW.users_price = ROUND((NEW.monthly_price / NEW.nb_users), 2);
 	SET NEW.remain_days = (NEW.end_of_use - NEW.start_of_use + 1);
