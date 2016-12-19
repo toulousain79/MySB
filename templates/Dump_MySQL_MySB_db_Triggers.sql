@@ -37,6 +37,7 @@ DROP TRIGGER IF EXISTS `PeriodPrice_OnInsert`;
 DELIMITER //
 CREATE TRIGGER `PeriodPrice_OnInsert` BEFORE INSERT ON `tracking_rent_history`
  FOR EACH ROW BEGIN
+	DECLARE NbDaysUsed TYNYINT(2) DEFAULT '00';
 	DECLARE PeriodCost DECIMAL(6,2) DEFAULT '0.00';
 	DECLARE AlreadyPayed DECIMAL(6,2) DEFAULT '0.00';
 	IF (NEW.year = '0000') THEN
@@ -62,7 +63,7 @@ CREATE TRIGGER `PeriodPrice_OnInsert` BEFORE INSERT ON `tracking_rent_history`
 	SET NEW.period_price = ROUND((((NEW.monthly_price / NEW.nb_users) / NEW.nb_days_month) * NEW.remain_days), 2);
 
 	SET @Treasury = ROUND(((SELECT treasury FROM users WHERE id_users=NEW.id_users)), 2);
-	SELECT period_cost, already_payed INTO PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=NEW.id_users AND period_cost!=already_payed AND year=NEW.year AND month=NEW.month;
+	SELECT nb_days_used, period_cost, already_payed INTO NbDaysUsed, PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=NEW.id_users AND period_cost!=already_payed AND year=NEW.year AND month=NEW.month;
 	SET PeriodCost = ROUND((PeriodCost+NEW.period_price), 2);
 
 	IF (@Treasury > 0.00) THEN
@@ -77,7 +78,7 @@ CREATE TRIGGER `PeriodPrice_OnInsert` BEFORE INSERT ON `tracking_rent_history`
 	END IF;
 
 	UPDATE users SET period_price=NEW.period_price, period_days=(NEW.remain_days + NEW.old_remain_days), treasury=@Treasury WHERE id_users=NEW.id_users;
-	UPDATE tracking_rent_status SET nb_days_used=NEW.remain_days, period_cost=PeriodCost WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month;
+	UPDATE tracking_rent_status SET nb_days_used=(NbDaysUsed+NEW.remain_days), period_cost=PeriodCost WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month;
 END
 //
 DELIMITER ;
