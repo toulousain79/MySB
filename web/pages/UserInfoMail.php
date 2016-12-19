@@ -124,12 +124,7 @@ function PrintContent($user, $Case) {
 			$DisplayLinks 			= true;
 			$DisplayRenting			= true;
 			if ( $users_datas["admin"] == '1' ) {
-				$DisplayGoTo 			= true;
 				$DisplayCommand			= true;
-				$DisplayUserInfo		= true;
-				$DisplayUserInfoDetail 	= true;
-				$DisplayLinks 			= true;
-				$DisplayRenting			= true;
 			}
 			break;
 		case 'new_user':
@@ -147,7 +142,7 @@ function PrintContent($user, $Case) {
 			$DisplayUserInfoDetail 	= false;
 			$DisplayLinks 			= false;
 			$DisplayRenting			= true;
-			break;			
+			break;
 		case 'account_confirmed':
 			$DisplayGoTo 			= true;
 			$DisplayCommand			= false;
@@ -164,12 +159,9 @@ function PrintContent($user, $Case) {
 			$DisplayLinks 			= false;
 			$DisplayRenting			= true;
 			if ( $users_datas["admin"] == '1' ) {
-				$DisplayGoTo 			= true;
 				$DisplayCommand			= true;
-				$DisplayUserInfo		= true;
 				$DisplayUserInfoDetail 	= true;
 				$DisplayLinks 			= true;
-				$DisplayRenting			= true;
 			}
 			break;
 		case 'renting':
