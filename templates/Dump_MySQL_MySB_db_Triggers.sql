@@ -63,7 +63,7 @@ CREATE TRIGGER `PeriodPrice_OnInsert` BEFORE INSERT ON `tracking_rent_history`
 	SET NEW.period_price = ROUND((((NEW.monthly_price / NEW.nb_users) / NEW.nb_days_month) * NEW.remain_days), 2);
 
 	SET @Treasury = ROUND(((SELECT treasury FROM users WHERE id_users=NEW.id_users)), 2);
-	SELECT nb_days_used, period_cost, already_payed INTO NbDaysUsed, PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=NEW.id_users AND period_cost!=already_payed AND year=NEW.year AND month=NEW.month;
+	SELECT nb_days_used, period_cost, already_payed INTO NbDaysUsed, PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month;
 	SET PeriodCost = ROUND((PeriodCost+NEW.period_price), 2);
 
 	IF (@Treasury > 0.00) THEN
