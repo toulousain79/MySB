@@ -498,7 +498,7 @@ function PrintContent($user, $Case) {
 
 <?php
 	if ( $DisplayRenting == true ) {
-		$RentingDatas = $MySB_DB->get("system", "rt_global_cost,rt_cost_tva,rt_model,rt_tva,rt_nb_users,rt_price_per_users", ["id_system" => 1]);
+		$RentingDatas = $MySB_DB->get("system", ["rt_global_cost", "rt_cost_tva", "rt_model", "rt_tva", "rt_nb_users", "rt_price_per_users"], ["id_system" => 1]);
 
 		if ( !empty($RentingDatas["rt_cost_tva"]) && !empty($RentingDatas["rt_model"]) ) {
 
