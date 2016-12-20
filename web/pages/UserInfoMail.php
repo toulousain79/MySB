@@ -559,12 +559,6 @@ function PrintContent($user, $Case) {
 				<td><b><span class="FontInRed"><?php echo $PricePerUsers;?></span></b><?php echo User_UserInfo_Table_TotalPerUser_Plus; ?></td>
 				<td><span class="Comments"><?php echo User_UserInfo_Comment_TotalPerUser; ?></span></td>
 			</tr>
-			<!-- // User Treasury -->
-			<tr align="left">
-				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Treasury; ?></th>
-				<td><b><span class="FontInRed"><?php echo $PricePerUsers;?></span></b><?php echo User_UserInfo_Table_Treasury_Plus; ?></td>
-				<td><span class="Comments"><?php echo User_UserInfo_Comment_Treasury; ?></span></td>
-			</tr>
 <?php
 		// User Treasury
 		if (is_numeric($Treasury) && $Treasury > 0) {
