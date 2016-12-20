@@ -96,10 +96,15 @@ CREATE TRIGGER `PeriodPrice_OnUpdate` BEFORE UPDATE ON `tracking_rent_history`
 	SET NEW.old_remain_days = OLD.remain_days;
 
 	SET @Treasury = ROUND((SELECT treasury FROM users WHERE id_users=NEW.id_users), 2);
-	SET @DiffPeriodCost = (NEW.period_price-OLD.period_price);
-
 	SELECT period_cost, already_payed INTO PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month;
-	SET PeriodCost = ROUND((PeriodCost+@DiffPeriodCost), 2);
+	IF (NEW.nb_users != OLD.nb_users) THEN
+		SET @Treasury = @Treasury + OLD.period_price;
+		SET @DiffPeriodCost = NEW.period_price;
+		SET PeriodCost = ROUND((PeriodCost-OLD.period_price+NEW.period_price), 2);
+	ELSE
+		SET @DiffPeriodCost = (NEW.period_price-OLD.period_price);
+		SET PeriodCost = ROUND((PeriodCost+@DiffPeriodCost), 2);
+	END IF;
 
 	IF (@Treasury > 0.00) THEN
 		IF (AlreadyPayed < PeriodCost) THEN
