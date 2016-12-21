@@ -186,11 +186,10 @@ fi
 echo
 if [ -f /etc/rsyslog.d/iptables.conf ]; then rm -vf /etc/rsyslog.d/iptables.conf; fi
 if [ ! -f /var/log/iptables.log ]; then touch /var/log/iptables.log; fi
-echo ":msg,contains,\"[MySB] \" /var/log/iptables.log" | tee -a /etc/rsyslog.d/iptables.conf
-echo "*.* ~" | tee -a /etc/rsyslog.d/iptables.conf
-#perl -pi -e "s/^#cron/cron/g" /etc/rsyslog.conf
+echo "if ($msg contains '[MySB] ' or $msg contains 'IN=') then /var/log/iptables.log" | tee -a /etc/rsyslog.d/iptables.conf
+echo "& ~" | tee -a /etc/rsyslog.d/iptables.conf
 LogRotate 'iptables'
-service rsyslog restart
+ServicesToRestart="rsyslog"
 
 #### AES-NI Crypto Acceleration
 echo
@@ -214,7 +213,7 @@ fi
 #### NTP (disable IPv6)
 perl -pi -e "s/^restrict ::1/#restrict ::1/g" /etc/ntp.conf
 perl -pi -e "s/^restrict -6/#restrict -6/g" /etc/ntp.conf
-ManageServices 'restart' 'ntp'
+ServicesToRestart="${ServicesToRestart} ntp"
 
 #### Turning off filesystem access times
 if [ -z "`cat /etc/fstab | grep 'errors=remount-ro' | grep 'noatime,nodiratime' | grep -v '/boot'`" ]; then
@@ -227,6 +226,9 @@ if [ -d /var/log/news ]; then rm -rvf /var/log/news; fi
 
 #### Logrotate
 LogRotate 'mysb'
+
+#### Restart services
+ManageServices restart "$ServicesToRestart"
 
 #### Create init script for MySB_SecurityRules_Init
 install -g root -o root -m 0755 $MySB_InstallDir/templates/init/etc.init.MySB_SecurityRules_Init.tmpl /etc/init.d/MySB_SecurityRules_Init
