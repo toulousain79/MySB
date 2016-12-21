@@ -1,8 +1,8 @@
 	Version v3.5
-		2016/10/20
+		2016/12/21
 			- ownCloud v9.1.3
 			- Plowshare v2.1.6
-			- Composer v1.2.3
+			- Composer v1.2.4
 			- NodeJS v0.12.17
 			- Let's Encrypt v0.9.2
 			- Change some repositories
