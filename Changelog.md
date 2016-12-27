@@ -1,6 +1,5 @@
 	Version v3.5
-		2016/12/21
-			- DNScrypt-proxy v1.8.1
+		2016/12/27
 			- ownCloud v9.1.3
 			- Plowshare v2.1.6
 			- Composer v1.2.4
