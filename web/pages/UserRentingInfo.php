@@ -60,7 +60,7 @@ function Form() {
 	echo '<div align="center">';
 	if (!empty($Rent_Payments)) {
 		echo '	<fieldset>
-					<legend>Versements</legend>
+					<legend>' . MainUser_Renting_TitleAmount . '</legend>
 						<table style="border-spacing:1;">
 							<tr>
 								<th style="text-align:center;">' . MainUser_Renting_TitleDate . '</th>
@@ -92,7 +92,7 @@ function Form() {
 
 	if (!empty($Rent_Status)) {
 		echo '	<fieldset>
-					<legend>Status</legend>
+					<legend>' . MainUser_Renting_TitleStatus . '</legend>
 						<table style="border-spacing:1;">
 							<tr>
 								<th style="text-align:center;">' . MainUser_Renting_TitleYearMonth . '</th>

@@ -137,6 +137,7 @@ CREATE TRIGGER `TreasuryUpdate_OnInsert` BEFORE INSERT ON `tracking_rent_payment
 	DECLARE PeriodCost DECIMAL(6,2) DEFAULT '0.00';
 	DECLARE AlreadyPayed DECIMAL(6,2) DEFAULT '0.00';
 	SET @Amount = NEW.amount;
+	SET @MainUserId = (SELECT id_users FROM users WHERE admin=1);
 	SET @Treasury = (SELECT treasury FROM users WHERE id_users=NEW.id_users);
 	SET @NbStatus = (SELECT count(id_tracking_rent_status) FROM tracking_rent_status WHERE id_users=NEW.id_users AND period_cost!=already_payed);
 
@@ -165,6 +166,10 @@ CREATE TRIGGER `TreasuryUpdate_OnInsert` BEFORE INSERT ON `tracking_rent_payment
 
 	SET @Treasury = @Treasury+@Amount;
 	UPDATE users SET treasury=@Treasury WHERE id_users=NEW.id_users;
+
+	SELECT sum(period_cost), sum(already_payed) INTO PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users!=@MainUserId AND already_payed!=period_cost;
+	SET @Treasury = AlreadyPayed-PeriodCost;
+	UPDATE users SET treasury=@Treasury WHERE id_users=@MainUserId;
  END
 //
 DELIMITER ;
@@ -176,6 +181,7 @@ CREATE TRIGGER `TreasuryUpdate_OnDelete` BEFORE DELETE ON `tracking_rent_payment
 	DECLARE PeriodCost DECIMAL(6,2) DEFAULT '0.00';
 	DECLARE AlreadyPayed DECIMAL(6,2) DEFAULT '0.00';
 	SET @Amount = OLD.amount;
+	SET @MainUserId = (SELECT id_users FROM users WHERE admin=1);
 	SET @Treasury = (SELECT treasury FROM users WHERE id_users=OLD.id_users) - @Amount;
 	SET @NbStatus = (SELECT count(id_tracking_rent_status) FROM tracking_rent_status WHERE id_users=OLD.id_users AND period_cost!=0.00 AND (period_cost!=already_payed OR period_cost=already_payed));
 
@@ -202,6 +208,10 @@ CREATE TRIGGER `TreasuryUpdate_OnDelete` BEFORE DELETE ON `tracking_rent_payment
 	END IF;
 
 	UPDATE users SET treasury=@Treasury WHERE id_users=OLD.id_users;
+
+	SELECT sum(period_cost), sum(already_payed) INTO PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users!=@MainUserId AND already_payed!=period_cost;
+	SET @Treasury = AlreadyPayed-PeriodCost;
+	UPDATE users SET treasury=@Treasury WHERE id_users=@MainUserId;
  END
 //
 DELIMITER ;

@@ -24,19 +24,21 @@
 
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
-function Form() {
-	global $MySB_DB;
+global $MySB_DB, $CurrentUser;
+// System values
+$renting_datas = $MySB_DB->get("system", ["rt_model", "rt_tva", "rt_global_cost", "rt_cost_tva", "rt_nb_users", "rt_price_per_users", "rt_method"], ["id_system" => 1]);
+$TotalUsers = $renting_datas["rt_nb_users"];
+$PricePerUser = $renting_datas["rt_price_per_users"];
+$Model = $renting_datas["rt_model"];
+$TVA = $renting_datas["rt_tva"];
+$GlobalCost = $renting_datas["rt_global_cost"];
+$GlobalCostTVA = $renting_datas["rt_cost_tva"];
+$Method = $renting_datas["rt_method"];
+// Users values
+$users_data = $MySB_DB->select("users", ["users_ident", "period_price", "period_days", "treasury"]);
 
-	// Users table
-	$renting_datas = $MySB_DB->get("system", ["rt_model", "rt_tva", "rt_global_cost", "rt_cost_tva", "rt_nb_users", "rt_price_per_users", "rt_method"], ["id_system" => 1]);
-	$TotalUsers = $renting_datas["rt_nb_users"];
-	$PricePerUser = $renting_datas["rt_price_per_users"];
-	$Model = $renting_datas["rt_model"];
-	$TVA = $renting_datas["rt_tva"];
-	$GlobalCost = $renting_datas["rt_global_cost"];
-	$GlobalCostTVA = $renting_datas["rt_cost_tva"];
-	$Method = $renting_datas["rt_method"];
 
+function Form($TotalUsers, $PricePerUser, $Model, $TVA, $GlobalCost, $GlobalCostTVA, $Method) {
 	echo '<div align="center">
 			<form class="form_settings" method="post" action="">
 			<table border="0">
@@ -102,8 +104,6 @@ function Form() {
 }
 
 if (isset($_POST['submit'])) {
-	global $MySB_DB;
-
 	$Model = $_POST['model'];
 	$TVA = $_POST['tva'];
 	$GlobalCost = $_POST['global_cost'];
@@ -139,6 +139,41 @@ if (isset($_POST['submit'])) {
 	GenerateMessage('message_only', $type, $message);
 }
 
-Form();
+Form($TotalUsers, $PricePerUser, $Model, $TVA, $GlobalCost, $GlobalCostTVA, $Method);
+
+echo '<div align="center">';
+echo '	<fieldset>
+			<legend>' . MainUser_Renting_UsersTreasury . '</legend>
+				<table style="border-spacing:1;">
+					<tr>
+						<th style="text-align:center;">' . MainUser_Renting_TitleUsers . '</th>
+						<th style="text-align:center;">' . MainUser_Renting_TitleUsersTreasury . '</th>
+					</tr>';
+
+foreach($users_data as $UsersData) {
+	$Treasury = $UsersData['treasury'];
+	switch ($Method) {
+		case '1':
+			$Treasury = round($Treasury, 2);
+			break;
+		default:
+			$Treasury = ceil($Treasury);
+			break;
+	}
+	if (is_numeric($Treasury) && $Treasury >= 0.00) {
+		$Color = 'color: #00DF00;';
+	} else {
+		$Color = 'color: #FF0000;';
+	}
+
+	echo '		<tr>
+					<td><div align="center">' . $UsersData["users_ident"] . '</div></td>
+					<td style="'.$Color.'"><div align="center"><b>' . $Treasury . '</b></div></td>
+				</tr>';
+}
+
+echo '			</table>
+		</fieldset>';
+echo '</div>';
 
 //#################### LAST LINE ######################################

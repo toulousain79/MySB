@@ -38,5 +38,8 @@ define('MainUser_Renting_Calcul', 'Price to display :');
 define('MainUser_Renting_ExPriceToDiplay', 'The price display method for users');
 define('MainUser_Renting_Method_0', 'Upper integer');
 define('MainUser_Renting_Method_1', '2 decimals rounded');
+define('MainUser_Renting_UsersTreasury', 'Users treasury');
+define('MainUser_Renting_TitleUsers', 'Users');
+define('MainUser_Renting_TitleUsersTreasury', 'Treasury');
 
 //#################### LAST LINE ######################################

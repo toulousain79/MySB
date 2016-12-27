@@ -26,6 +26,7 @@ define('MainUser_Renting_TitleTreasury', 'Tr&eacute;sorerie');
 define('MainUser_Renting_TitleUser', 'Utilisateur');
 define('MainUser_Renting_TitleDate', 'Date');
 define('MainUser_Renting_TitleAmount', 'Versement');
+define('MainUser_Renting_TitleStatus', 'Status des p&eacute;riodes');
 define('MainUser_Renting_TitleYearMonth', 'Mois');
 define('MainUser_Renting_TitleDaysUsed', 'Total de jours<br />d\'utilisation');
 define('MainUser_Renting_TitleCostPeriod', 'Co&ucirc;t de la<br />p&eacute;riode');

@@ -38,5 +38,8 @@ define('MainUser_Renting_Calcul', 'Prix &agrave; afficher :');
 define('MainUser_Renting_ExPriceToDiplay', 'M&eacute;thode d\'affichage du prix pour les utilisateurs');
 define('MainUser_Renting_Method_0', 'Entier sup&eacute;rieur');
 define('MainUser_Renting_Method_1', '2 d&eacute;cimales arrondies');
+define('MainUser_Renting_UsersTreasury', 'Tr&eacute;sorerie des utilisateurs');
+define('MainUser_Renting_TitleUsers', 'Utilisateurs');
+define('MainUser_Renting_TitleUsersTreasury', 'Tr&eacute;sorerie');
 
 //#################### LAST LINE ######################################
