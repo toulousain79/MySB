@@ -27,10 +27,12 @@ funcs_DNScrypt=1
 DNScrypt_ResolversRenew() {
 	case "$ScriptName" in
 		MySB_GitHubRepoUpdate)
-			Display=''
+			DisplayCMD=''
+			DisplaySQL=''
 		;;
 		*)
-			Display=' -echo'
+			DisplayCMD='-v'
+			DisplaySQL='-echo'
 		;;
 	esac
 
@@ -38,16 +40,16 @@ DNScrypt_ResolversRenew() {
 	UrlCsvFile="https://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-resolvers.csv"
 	DestCsvFile="$MySB_InstallDir/files/dnscrypt-resolvers.csv"
 	if [ -f $MySB_InstallDir/files/dnscrypt-resolvers.csv ]; then
-		rm -f $MySB_InstallDir/files/dnscrypt-resolvers.csv
+		rm -f $DisplayCMD $MySB_InstallDir/files/dnscrypt-resolvers.csv
 	fi
 	wget --no-check-certificate $UrlCsvFile -O $DestCsvFile
 	if [ ! -f $MySB_InstallDir/files/dnscrypt-resolvers.csv ]; then
-		cp /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv $MySB_InstallDir/files/dnscrypt-resolvers.csv
+		cp $DisplayCMD /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv $MySB_InstallDir/files/dnscrypt-resolvers.csv
 	fi
 
 	if [ -f $DestCsvFile ] && CheckCommand 0 csvtool; then
 		# Clean the table 'dnscrypt_resolvers'
-		Func_SQL_Command 'DELETE' 'MySB_db' 'dnscrypt_resolvers' '1' "$Display"
+		Func_SQL_Command 'DELETE' 'MySB_db' 'dnscrypt_resolvers' '1' "$DisplaySQL"
 
 		# Get resolvers information from 'dnscrypt-resolvers.csv'
 		ResolversTable="`csvtool -t ',' -u '|' cat $DestCsvFile | csvtool drop 1 - | sed 's/ /#/g;'`"
@@ -69,12 +71,12 @@ DNScrypt_ResolversRenew() {
 
 			# Add new informations in DB (don't want IPv6)
 			if [ -z "`echo $Name | grep 'ipv6'`" ]; then
-				Func_SQL_Command 'INSERT' 'MySB_db' 'dnscrypt_resolvers' "name,full_name,description,location,coordinates,url,version,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record,is_activated,is_wished" "\"$Name\",\"$FullName\",\"$Description\",\"$Location\",\"$Coordinates\",\"$URL\",\"$Version\",\"$DnssecVal\",\"$NoLogs\",\"$Namecoin\",\"$ResolverAddress\",\"$ProviderName\",\"$ProviderPublicKey\",\"$ProviderPublicKeyTxtRecord\",\"0\",\"0\"" "$Display"
+				Func_SQL_Command 'INSERT' 'MySB_db' 'dnscrypt_resolvers' "name,full_name,description,location,coordinates,url,version,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record,is_activated,is_wished" "\"$Name\",\"$FullName\",\"$Description\",\"$Location\",\"$Coordinates\",\"$URL\",\"$Version\",\"$DnssecVal\",\"$NoLogs\",\"$Namecoin\",\"$ResolverAddress\",\"$ProviderName\",\"$ProviderPublicKey\",\"$ProviderPublicKeyTxtRecord\",\"0\",\"0\"" "$DisplaySQL"
 			fi
 		done
 
 		# Force use of all provider taht accept 'dnssec' and 'no logs'
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished='1'" "dnssec='yes' AND no_logs='yes'" "$Display"
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished='1'" "dnssec='yes' AND no_logs='yes'" "$DisplaySQL"
 	fi
 }
 
