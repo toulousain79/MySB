@@ -26,7 +26,7 @@ global $MySB_DB, $CurrentUser;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 // VARs
-$users_datas = $MySB_DB->get("users", ["id_users"], ["users_ident" => "$Username"]);
+$users_datas = $MySB_DB->get("users", ["id_users"], ["users_ident" => "$CurrentUser"]);
 $UserID = $users_datas['id_users'];
 $Command = 'message_only';
 $RefreshPage = 0;
