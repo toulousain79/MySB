@@ -32,51 +32,31 @@ case "$ServerProvider" in
 			rm -f $MySB_InstallDir/temp/monitoring.infos
 		fi
 
-		while [ ! -s $MySB_InstallDir/temp/monitoring.infos ]; do tcpdump -v -t host $SrvIpAddress | grep 'ICMP' >> $MySB_InstallDir/temp/monitoring.infos & sleep 60; kill $!; done
-
-		OvhHostnames="`cat $MySB_InstallDir/temp/monitoring.infos | awk '{print $2}' | grep 'ovh'`"
-		OvhHostnames=$(echo "$OvhHostnames"|tr " " "\n"|sort|uniq|tr "\n" " ")
-
-		for Hostname in $OvhHostnames; do
-			IPv4="$(nslookup $Hostname | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
-
-			if [ ! -z "$IPv4" ]; then
-				Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' "provider, ipv4, hostname" "\"OVH\",\"$IPv4/32\",\"$HostName\"" '-echo'
-			fi
-		done
-
-		OvhHostnames="`Func_SQL_Command 'SELECT' 'MySB_db' 'hostname' 'providers_monitoring' "provider = 'OVH' and hostname != ''"`"
-		for Hostname in $OvhHostnames; do
-			IPv4="$(nslookup $Hostname | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
-
-			if [ ! -z "$IPv4" ]; then
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'providers_monitoring' "ipv4 = '$IPv4/32'" "provider = 'OVH' AND hostname = '$Hostname'" '-echo'
-			fi
-		done
 
 		# RTM (IP.251)
 		for ((i = 1; i <= 4; i += 1)); do
-			Temp="`echo $ServerIpAddress | cut -d '.' -f $i`"
+			Temp="`echo $SrvIpAddress | cut -d '.' -f $i`"
 			if [ $i -eq 4 ]; then
 				Temp="`echo $Temp | sed "s/$Temp/251/g;"`"
 			else
-				Temp="`echo $ServerIpAddress | cut -d '.' -f $i`"
+				Temp="`echo $SrvIpAddress | cut -d '.' -f $i`"
 			fi
-			if [ -z "$OvhHgIp" ]; then
-				OvhHgIp="$Temp"
+			if [ -z "$OvhRtmIp" ]; then
+				OvhRtmIp="$Temp"
 			else
-				OvhHgIp="$OvhHgIp.$Temp"
+				OvhRtmIp="$OvhRtmIp.$Temp"
 			fi
 		done
 		HostName="$(nslookup $OvhRtmIp | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
 		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' "provider, ipv4, hostname" "\"OVH\",\"$OvhRtmIp/32\",\"$HostName\"" '-echo'
+
 		# SLA (IP.250)
 		for ((i = 1; i <= 4; i += 1)); do
-			Temp="`echo $ServerIpAddress | cut -d '.' -f $i`"
+			Temp="`echo $SrvIpAddress | cut -d '.' -f $i`"
 			if [ $i -eq 4 ]; then
 				Temp="`echo $Temp | sed "s/$Temp/250/g;"`"
 			else
-				Temp="`echo $ServerIpAddress | cut -d '.' -f $i`"
+				Temp="`echo $SrvIpAddress | cut -d '.' -f $i`"
 			fi
 			if [ -z "$OvhSlaIp" ]; then
 				OvhSlaIp="$Temp"
@@ -86,13 +66,14 @@ case "$ServerProvider" in
 		done
 		HostName="$(nslookup $OvhSlaIp | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
 		Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' "provider, ipv4, hostname" "\"OVH\",\"$OvhSlaIp/32\",\"$HostName\"" '-echo'
+
 		# Server HG (IP.249)
 		for ((i = 1; i <= 4; i += 1)); do
-			Temp="`echo $ServerIpAddress | cut -d '.' -f $i`"
+			Temp="`echo $SrvIpAddress | cut -d '.' -f $i`"
 			if [ $i -eq 4 ]; then
 				Temp="`echo $Temp | sed "s/$Temp/249/g;"`"
 			else
-				Temp="`echo $ServerIpAddress | cut -d '.' -f $i`"
+				Temp="`echo $SrvIpAddress | cut -d '.' -f $i`"
 			fi
 			if [ -z "$OvhHgIp" ]; then
 				OvhHgIp="$Temp"
