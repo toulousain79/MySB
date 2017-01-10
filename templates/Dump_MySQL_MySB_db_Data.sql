@@ -145,7 +145,7 @@ INSERT INTO `repositories` (`id_repositories`, `type`, `dir`, `name`, `version`,
 (30, 'TARGZ', '/sources/rtorrent', 'rTorrent', '0.9.6', 0, 'rtorrent_v0.9.6.tar.gz', 'http://rtorrent.net/downloads/rtorrent-0.9.6.tar.gz', 1, 0, ''),
 (31, 'SVN', '/sources/xmlrpc-c', 'XMLRPC', '1.43.03', 0, 'xmlrpc-c_v1.43.03.zip', 'http://svn.code.sf.net/p/xmlrpc-c/code/stable', 1, 0, ''),
 (32, 'GIT', '/web/loadavg', 'LoadAvg', '2.2', 0, 'loadavg_v2.2.zip', 'https://github.com/loadavg/loadavg.git', 1, 0, ''),
-(33, 'ZIP', '/web/owncloud', 'ownCloud', '9.1.3', 0, 'owncloud_v9.1.3.zip', 'https://download.owncloud.org/community/owncloud-9.1.3.zip', 1, 0, ''),
+(33, 'ZIP', '/web/oc', 'ownCloud', '9.1.3', 0, 'owncloud_v9.1.3.zip', 'https://download.owncloud.org/community/owncloud-9.1.3.zip', 1, 0, ''),
 (34, 'GIT', '/usr/local/src/letsencrypt', 'Lets Encrypt', '0.9.2', 0, 'LetsEncrypt_v0.9.2.zip', 'https://github.com/certbot/certbot', 1, 0, ''),
 (35, 'TARGZ', '/sources/rkhunter', 'RKHunter', '1.4.2', 0, 'rkhunter_v1.4.2.tar.gz', 'http://downloads.sourceforge.net/project/rkhunter/rkhunter/1.4.2/rkhunter-1.4.2.tar.gz?r=&ts=1456674223&use_mirror=freefr', 1, 0, '');
 
