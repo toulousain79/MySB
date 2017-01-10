@@ -32,6 +32,25 @@ case "$ServerProvider" in
 			rm -f $MySB_InstallDir/temp/monitoring.infos
 		fi
 
+		while [ ! -s $MySB_InstallDir/temp/monitoring.infos ]; do tcpdump -v -t host $SrvIpAddress | grep 'ICMP' >> $MySB_InstallDir/temp/monitoring.infos & sleep 60; kill $!; done
+
+		OvhHostnames="`cat $MySB_InstallDir/temp/monitoring.infos | awk '{print $3}' | grep 'ovh' | sed -e 's/://g;'`"
+		OvhHostnames=$(echo "$OvhHostnames"|tr " " "\n"|sort|uniq|tr "\n" " ")
+
+		for Hostname in $OvhHostnames; do
+			IPv4="$(nslookup $Hostname | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
+			if [ ! -z "$IPv4" ]; then
+				Func_SQL_Command 'INSERT' 'MySB_db' 'providers_monitoring' "provider, ipv4, hostname" "\"OVH\",\"$IPv4/32\",\"$HostName\"" '-echo'
+			fi
+		done
+
+		OvhHostnames="`Func_SQL_Command 'SELECT' 'MySB_db' 'hostname' 'providers_monitoring' "provider = 'OVH' and hostname != ''"`"
+		for Hostname in $OvhHostnames; do
+			IPv4="$(nslookup $Hostname | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
+			if [ ! -z "$IPv4" ]; then
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'providers_monitoring' "ipv4 = '$IPv4/32'" "provider = 'OVH' AND hostname = '$Hostname'" '-echo'
+			fi
+		done
 
 		# RTM (IP.251)
 		for ((i = 1; i <= 4; i += 1)); do
