@@ -49,6 +49,7 @@ ApplyConfigBind=NO
 ApplyIptablesUsers=NO
 ApplyIptablesLetsEncrypt=NO
 LoadOnBoot=NO
+Debug=NO
 
 # Check by arguments
 for Arg in "$@"; do
@@ -101,6 +102,7 @@ case "$LocSwitch" in
 					ApplyConfigNginx="`CheckCommand 1 nginx`"
 					ApplyConfigFail2Ban=$IsInstalled_Fail2Ban
 					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
+					Debug=YES
 				;;
 				--trackers)
 					ApplyConfigBind="`CheckCommand 1 named`"
@@ -516,7 +518,12 @@ case "$LocSwitch" in
 
 		#### IPtables - RESTORE Iptables Rules
 		log_daemon_msg "$SecurityRules_IPtables_Restore"
+if [ "$Debug" == "YES" ]; then cp $MySB_InstallDir/temp/current-iptables-rules /tmp/current-iptables-rules.before; fi
 		sed -i '/^$/d' $MySB_InstallDir/temp/current-iptables-rules
+if [ "$Debug" == "YES" ]; then
+	cp $MySB_InstallDir/temp/current-iptables-rules /tmp/current-iptables-rules.after
+	cat /tmp/current-iptables-rules.before /tmp/current-iptables-rules.after | mail -a "From: MySB <$MainUserEmail>" -a "MIME-Version: 1.0" -a "Content-Type: text/plain" -s "iptables-restore" $MainUserEmail
+fi
 		iptables-restore < $MySB_InstallDir/temp/current-iptables-rules
 		StatusLSB
 		#### IPtables - RESTORE Iptables Rules

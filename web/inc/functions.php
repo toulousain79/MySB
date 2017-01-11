@@ -262,11 +262,11 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					}
 					break;
 				case "LoadAvg":
-					echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/loadavg/public/">LoadAvg</a>';
+					echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/la/public/">LoadAvg</a>';
 					break;
 				case "ownCloud":
 					if ( $ownCloudIsInstalled == '1' ) {
-						echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/owncloud/">ownCloud</a>';
+						echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/oc/">ownCloud</a>';
 					}
 					break;
 				case "Plex Media":

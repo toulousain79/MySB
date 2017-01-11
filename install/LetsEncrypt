@@ -29,7 +29,7 @@ source $(dirname $0)/../inc/includes_before
 ######################################################################
 
 #### VARs
-LocSwitch="$2"	# INSTALL / UPGRADE / CRON
+LocSwitch="$1"	# INSTALL / UPGRADE / renew
 LetsEncryptDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'Lets Encrypt'"`"
 LetsEncryptUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Lets Encrypt'"`"
 LetsEncryptFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Lets Encrypt'"`"
@@ -95,7 +95,6 @@ if [ ! -f /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem ] && [ ! -f $MySB_In
 	fi
 
 	cd $LetsEncryptDir
-	#./certbot-auto certonly --standalone --non-interactive --agree-tos --tls-sni-01-port $Port_HTTPS --hsts --uir --config /tmp/cli.ini --pre-hook "service nginx stop" --post-hook "service nginx start"
 	./certbot-auto certonly --standalone --non-interactive --agree-tos --hsts --uir --config /tmp/cli.ini --pre-hook "service nginx stop" --post-hook "service nginx start"
 
 	if [ -f /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem ] && [ ! -h $MySB_InstallDir/ssl/fullchain.pem ]; then
@@ -115,7 +114,7 @@ else # Or is it a renew ?
 		ln -sv /etc/letsencrypt/live/$HostNameFQDN/privkey.pem $MySB_InstallDir/ssl/privkey.pem
 	fi
 
-	if [ "$1" == "renew" ]; then
+	if [ "$LocSwitch" == "renew" ]; then
 		if [ -f $MySB_InstallDir/temp/dev ]; then
 			LetsEncryptDate="DEV"
 		else
@@ -134,6 +133,14 @@ else # Or is it a renew ?
 			fi
 		fi
 	fi
+fi
+
+#### NginX
+if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
+	NumLign=$(cat /etc/nginx/nginx.conf | grep 'ssl_certificate' -n -m 1 | cut -d ':' -f 1)
+	sed -i '/ssl_certificate/d' /etc/nginx/nginx.conf
+	sed -i ""$NumLign"i\	ssl_certificate_key $MySB_InstallDir/ssl/privkey.pem; # Let's Encrypt certificate" /etc/nginx/nginx.conf
+	sed -i ""$NumLign"i\	ssl_certificate $MySB_InstallDir/ssl/fullchain.pem; # Let's Encrypt certificate" /etc/nginx/nginx.conf
 fi
 
 #### Webmin
