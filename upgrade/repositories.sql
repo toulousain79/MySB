@@ -33,4 +33,5 @@ INSERT INTO `repositories` (`id_repositories`, `type`, `dir`, `name`, `version`,
 (32, 'GIT', '/web/apps/la', 'LoadAvg', '2.2', 'loadavg_v2.2.zip', '0', 'https://github.com/loadavg/loadavg.git', 1),
 (33, 'ZIP', '/web/apps/oc', 'ownCloud', '9.1.3', 'owncloud_v9.1.3.zip', '1', 'https://download.owncloud.org/community/owncloud-9.1.3.zip', 1),
 (34, 'GIT', '/usr/local/src/letsencrypt', 'Lets Encrypt', '0.9.2', 'LetsEncrypt_v0.9.2.zip', '0', 'https://github.com/certbot/certbot', 1),
-(35, 'TARGZ', '/sources/rkhunter', 'RKHunter', '1.4.2', 'rkhunter_v1.4.2.tar.gz', '0', 'http://downloads.sourceforge.net/project/rkhunter/rkhunter/1.4.2/rkhunter-1.4.2.tar.gz?r=&ts=1456674223&use_mirror=freefr', 1);
+(35, 'TARGZ', '/sources/rkhunter', 'RKHunter', '1.4.2', 0, 'rkhunter_v1.4.2.tar.gz', 'http://downloads.sourceforge.net/project/rkhunter/rkhunter/1.4.2/rkhunter-1.4.2.tar.gz?r=&ts=1456674223&use_mirror=freefr', 1, 0, ''),
+(36, 'TARGZ', '/sources/wget', 'Wget', '1.18', 0, 'wget_v1.18.tar.gz', 'http://ftp.gnu.org/gnu/wget/wget-1.18.tar.gz', 1, 0, '');
