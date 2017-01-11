@@ -1,5 +1,5 @@
 	Version v3.5
-		2016/12/29
+		2016/01/11
 			- ownCloud v9.1.3
 			- Plowshare v2.1.6
 			- Composer v1.2.4
@@ -17,6 +17,13 @@
 			- Creating a new SSL certificate
 			- Improvement of the rental system
 			- MySB_DeleteUser, correcting bugs
+			- Monitoring OVH, correcting bugs
+			- Change apps directories
+				* Cakebox-Light:	web/apps/cb
+				* LoadAvg:			web/apps/la
+				* ownCloud:			web/apps/oc
+				* ruTorrent:		web/apps/ru
+				* Seedbox-Manager:	web/apps/sm
 			- Portal
 				* Medoo Framework v1.1.3
 				* jQuery v1.12.4

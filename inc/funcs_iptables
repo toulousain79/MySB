@@ -347,17 +347,17 @@ PopulatingIcmpChain() {
 	esac
 
 	#### Allow ICMP for Let's Encrypt
-	case "$1" in
-		"letsencrypt")
-			NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep '\[MySB\] Ping blocked:' -n -m 1 | cut -d ':' -f 1)
-			for ip in $LetsEncryptIPs; do
-				sed -i ""$NumLign"i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for Let's Encrypt\" -j LOG --log-prefix \"[MySB] Ping detected:\"\n" $MySB_InstallDir/temp/current-iptables-rules
-				(( NumLign++ ))
-				sed -i ""$NumLign"i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for Let's Encrypt\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
-				(( NumLign++ ))
-			done
-		;;
-	esac
+	# case "$1" in
+		# "letsencrypt")
+			# NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep '\[MySB\] Ping blocked:' -n -m 1 | cut -d ':' -f 1)
+			# for ip in $LetsEncryptIPs; do
+				# sed -i ""$NumLign"i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for Let's Encrypt\" -j LOG --log-prefix \"[MySB] Ping detected:\"\n" $MySB_InstallDir/temp/current-iptables-rules
+				# (( NumLign++ ))
+				# sed -i ""$NumLign"i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for Let's Encrypt\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
+				# (( NumLign++ ))
+			# done
+		# ;;
+	# esac
 
 	#### By default, however, drop pings without logging. Blaster and other worms have infected systems blasting pings.
 	case "$1" in
@@ -409,9 +409,12 @@ PopulatingUdpInboundChain() {
 		"create")
 			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
 				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 123 -j ACCEPT -m comment --comment "NTP over OpenVPN"
+				iptables -A icmp_packets -p UDP -s 0/0 -i tun+ --destination-port 123 -j LOG --log-prefix "[MySB] NTP request: " -m comment --comment "NTP over OpenVPN"
 				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 123 -j ACCEPT -m comment --comment "NTP over OpenVPN"
+				iptables -A icmp_packets -p UDP -s 0/0 -i br0 --destination-port 123 -j LOG --log-prefix "[MySB] NTP request: " -m comment --comment "NTP over OpenVPN"
 			fi
 			for IPv4 in $AllUsersIPs; do
+				iptables -A icmp_packets -p UDP -s $IPv4 --destination-port 123 -j LOG --log-prefix "[MySB] NTP request: " -m comment --comment "NTP for users"
 				iptables -A udp_inbound -p UDP -s $IPv4 --destination-port 123 -j ACCEPT -m comment --comment "NTP for users"
 			done
 		;;
@@ -419,7 +422,10 @@ PopulatingUdpInboundChain() {
 			NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'NTP for users' -n -m 1 | cut -d ':' -f 1)
 			sed -i '/NTP for users/d' $MySB_InstallDir/temp/current-iptables-rules
 			for ip in $AllUsersIPs; do
+				sed -i ""$NumLign"i\-A udp_inbound -s $ip -p udp -m udp --dport 123 -m comment --comment \"NTP for users\" -j LOG --log-prefix \"[MySB] NTP request:\"\n" $MySB_InstallDir/temp/current-iptables-rules
+				(( NumLign++ ))
 				sed -i ""$NumLign"i\-A udp_inbound -s $ip -p udp -m udp --dport 123 -m comment --comment \"NTP for users\" -j ACCEPT\n" $MySB_InstallDir/temp/current-iptables-rules
+				(( NumLign++ ))
 			done
 		;;
 	esac
@@ -558,7 +564,7 @@ PopulatingTcpInboundChain() {
 			#iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $Port_HTTP -j ACCEPT -m comment --comment "HTTP"
 
 			# HTTPS (Secure Web Server)
-			iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $Port_HTTPS -j ACCEPT -m comment --comment "HTTPs"
+			iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $Port_HTTPS -j ACCEPT -m comment --comment "NginX HTTPs"
 
 			for ip in $AllUsersIPs; do
 				# SSHd
@@ -579,7 +585,7 @@ PopulatingTcpInboundChain() {
 			sed -i '/FTP for users/d' $MySB_InstallDir/temp/current-iptables-rules
 			sed -i '/FTP Data for users/d' $MySB_InstallDir/temp/current-iptables-rules
 			sed -i '/FTP Passive for users/d' $MySB_InstallDir/temp/current-iptables-rules
-			NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'comment --comment HTTPs -j ACCEPT' -n -m 1 | cut -d ':' -f 1)
+			NumLign=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep 'comment --comment "NginX HTTPs" -j ACCEPT' -n -m 1 | cut -d ':' -f 1)
 			for ip in $AllUsersIPs; do
 				# SSHd
 				(( NumLign++ ))
