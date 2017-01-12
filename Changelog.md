@@ -5,11 +5,13 @@
 			- Composer v1.2.4
 			- NodeJS v0.12.17
 			- Let's Encrypt v0.9.2
+			- Wget v1.18
 			- Change some repositories
 			- ruTorrent Plugin Filemanager v0.09, repository change
 			- ruTorrent Plugin Fileshare v1.0, repository change
 			- ruTorrent Plugin Fileupload v0.02, repository change
 			- ruTorrent Plugin Mediastream v0.01, repository change
+			- ownCloud, editing the configuration file
 			- DotDeb, renewing repository GPG key
 			- Fix NginX upgrade bug
 			- Fix DNScrypt-proxy bug
@@ -18,6 +20,9 @@
 			- Improvement of the rental system
 			- MySB_DeleteUser, correcting bugs
 			- Monitoring OVH, correcting bugs
+			- Pagespeed, reduce TMPFS cache to 32Mo
+			- PHP5, limit TMPFS cache to 32Mo
+			- MySQL, limit TMPFS cache to 32Mo
 			- Change apps directories
 				* Cakebox-Light:	web/apps/cb
 				* LoadAvg:			web/apps/la
