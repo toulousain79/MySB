@@ -56,6 +56,7 @@ GivenResolvers=""
 ResolversSearched=""
 DNSsec="yes"
 NoLogs="yes"
+NameCoin="yes"
 All=""
 
 if [ $# -gt 1 ]; then
@@ -72,6 +73,10 @@ if [ $# -gt 1 ]; then
 				NoLogs="`echo $Arg | cut -d '=' -f 2 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 				NoLogs="$NoLogs"
 			;;
+			--namecoin)
+				NameCoin="`echo $Arg | cut -d '=' -f 2 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+				NameCoin="$NameCoin"
+			;;
 			--resolver*)
 				GivenResolvers="`echo $Arg | cut -d '=' -f 2 | sed -e 's/,/ /g;' | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 				for Resolver in $GivenResolvers; do
@@ -86,7 +91,7 @@ if [ $# -gt 1 ]; then
 
 	# Get resolvers list (by command line)
 	if [ -z "$All" ]; then
-		Search="dnssec = '$DNSsec' AND no_logs = '$NoLogs' $ResolversSearched"
+		Search="dnssec = '$DNSsec' AND no_logs = '$NoLogs' AND namecoin = '$NameCoin' $ResolversSearched"
 	else
 		Search="$All"
 	fi
@@ -198,7 +203,7 @@ do_start() {
 				-- -R $Resolver -u $DAEMON_USER -l $LOG_FILE -m 3 -a 127.0.0.$Count:52 -E -N -L $CSV_FILE\
 				>> $LOG_FILE
 
-			sleep 0.1
+			sleep 0.2
 			if [ $? -gt 0 ] || [ ! -f $DIR_PID/$Resolver.pid ]; then
 				Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished = '1', is_activated = '0', forwarder = ''" "name = '$Resolver'"
 				delete_pid_file $DIR_PID/$Resolver.pid $Resolver
@@ -329,13 +334,13 @@ case "$1" in
 	;;
 
 	*)
-		echo "Usage: service dnscrypt-proxy {stop|status} [{start|restart} [--all] [[--nologs=yes/no] [--dnssec=yes/no] [--resolver=resolver1,resolver2,...]]]"
+		echo "Usage: service dnscrypt-proxy {stop|status} [{start|restart} [--all] [[--nologs=yes/no] [--dnssec=yes/no] [--namecoin=yes/no] [--resolver=resolver1,resolver2,...]]]"
 		echo
 		echo "Default, \"--nologs=yes\" and \"--dnssec=yes\""
 		echo
 		echo "Example 1: \"service dnscrypt-proxy start --all\", DNScrypt-proxy will start using all available providers."
-		echo "Example 2: \"service dnscrypt-proxy start --nologs=no --dnssec=yes\", DNScrypt-proxy will start using all available providers that accept DNSsec and doesn't accept No Logs."
-		echo "Example 3: \"service dnscrypt-proxy start --resolver=resolver1,resolver2 --dnssec=yes\", DNScrypt-proxy will start using selected providers only that accept DNSsec."
+		echo "Example 2: \"service dnscrypt-proxy start --nologs=yes --dnssec=yes --namecoin=yes\", DNScrypt-proxy will start using all available providers with DNSsec, No Logs and NameCoin."
+		echo "Example 3: \"service dnscrypt-proxy start --resolver=resolver1,resolver2 --dnssec=yes --namecoin=no --nologs=no\", DNScrypt-proxy will start using selected providers only that accept DNSsec."
 		echo
 		exit 3
 	;;

@@ -205,6 +205,7 @@ if (isset($_POST['submit'])) {
 
 			// Sub-Directories - Add
 			if ( (isset($_POST['input_id'])) && (isset($_POST['input_directory'][1])) ) {
+				$IfownCloud = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
 				$count = count($_POST['input_id']);
 				for($i=1; $i<=$count; $i++) {
 					$Directory = ReplacesAccentedCharacters($_POST['input_directory'][$i]);
@@ -228,6 +229,10 @@ if (isset($_POST['submit'])) {
 								$RefreshPage++;
 								$rTorrentRestart_POST = 1;
 								$Command = 'Restart_rTorrent';
+							}
+							// ownCloud files scan
+							if ( $IfownCloud == '1' ) {
+								$MySB_DB->update("system", ["owncloud_cron" => 1], ["id_system" => 1]);
 							}
 						}
 					}
