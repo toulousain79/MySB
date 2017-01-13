@@ -34,6 +34,7 @@ chown root:root /root/.bashrc
 chown root:root /root/.bash_logout
 chown root:root /root/.profile
 perl -pi -e "s/#force_color_prompt=yes/force_color_prompt=yes/g" /root/.bashrc
+perl -pi -e "s/#alias/alias/g" /root/.bashrc
 
 #### permanently adding scripts to PATH to all users and root
 if [ -z "`cat /etc/profile | grep 'PATH=' | grep "$MySB_InstallDir/bin"`" ]; then
@@ -110,6 +111,11 @@ EOF
 	) | tee -a /root/.bash_profile
 fi
 
+#### Motd
+cp -v $MySB_InstallDir/templates/etc.rc.local.template /etc/rc.local
+chmod 0755 /etc/rc.local
+perl -pi -e "s/<MySB_Version>/$MySB_CurrentVersion/g" /etc/rc.local
+
 #### Change timezone
 if [ ! -z "$TimeZone" ]; then
 	if [ -f /etc/timezone ]; then rm -vf /etc/timezone; fi
@@ -177,6 +183,11 @@ if [ "`cat /etc/network/interfaces | grep 'post-up iptables-restore < /etc/iptab
 	sed -i "${NumLign}i\        post-up iptables-restore < /etc/iptables.up.rules" /etc/network/interfaces
 fi
 
+#### NTP (disable IPv6)
+perl -pi -e "s/^restrict ::1/#restrict ::1/g" /etc/ntp.conf
+perl -pi -e "s/^restrict -6/#restrict -6/g" /etc/ntp.conf
+ServicesToRestart="${ServicesToRestart} ntp"
+
 #### SSH Keygen
 if [ ! -d /root/.ssh/ ]; then
 	mkdir /root/.ssh/.ssh/ &> /dev/null
@@ -213,11 +224,6 @@ if [ -z "$IFPVEKERNEL" ]; then
 	fi
 fi
 
-#### NTP (disable IPv6)
-perl -pi -e "s/^restrict ::1/#restrict ::1/g" /etc/ntp.conf
-perl -pi -e "s/^restrict -6/#restrict -6/g" /etc/ntp.conf
-ServicesToRestart="${ServicesToRestart} ntp"
-
 #### Turning off filesystem access times
 if [ -z "`cat /etc/fstab | grep 'errors=remount-ro' | grep 'noatime,nodiratime' | grep -v '/boot'`" ]; then
 	perl -pi -e "s/errors=remount-ro/noatime,nodiratime,errors=remount-ro/g" /etc/fstab
@@ -236,7 +242,7 @@ echo "File : "$WgetFile
 echo "URL : "$WgetUrl
 echo
 if [ ! -f $MySB_InstallDir/files/$WgetFile ]; then
-	wget --no-check-certificate $WgetUrl -O $MySB_InstallDir/files/$DnscryptFile
+	$WGET --no-check-certificate $WgetUrl -O $MySB_InstallDir/files/$DnscryptFile
 fi
 if [ ! -d $WgetDir ]; then
 	tar -zxvf $MySB_InstallDir/files/$WgetFile -C $MySB_InstallDir/temp/
@@ -251,13 +257,6 @@ make -j$PROCESSOR
 make check
 make install
 make installcheck
-
-if [ -f /root/.bash_aliases ]; then
-	sed -i '/alias wget/d' /root/.bash_aliases
-	echo "alias wget='/usr/local/bin/wget'" >> /root/.bash_aliases
-else
-	echo "alias wget='/usr/local/bin/wget'" > /root/.bash_aliases
-fi
 
 #### Cleaning
 if [ -d /var/log/exim4 ]; then rm -rvf /var/log/exim4; fi

@@ -1,0 +1,47 @@
+#!/bin/sh -e
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+
+MySB_Version="<MySB_Version>"
+
+true > /etc/motd
+
+figlet MySB $MySB_Version				 		  >> /etc/motd
+echo                                              >> /etc/motd
+echo "Debian GNU/Linux $(cat /etc/debian_version)">> /etc/motd
+echo                                              >> /etc/motd
+if [ -f /root/.mdg ]; then
+	echo "Server    : `cat /root/.mdg 2>/dev/null`"   >> /etc/motd
+fi
+echo "Hostname  : `hostname`"                     >> /etc/motd
+#
+# search interfaces that are connected
+#
+for net_interface in `ip link show | grep eth | grep UP | awk {'print $2'} | sed 's/://g'`
+do
+        # IPv4
+        IPV4=`ip addr show ${net_interface} | grep 'inet ' | grep -Eo '\<[[:digit:]]{1,3}(\.[[:digit:]]{1,3}){3}\>' | head -1 `
+        echo "${net_interface} IPv4 : ${IPV4}"                  >> /etc/motd
+        #IPv6
+        for IPV6 in `ip -6 addr show ${net_interface} | grep 'inet6' | awk {'print $2'}`
+        do
+                if [[ "${IPV6}" =~ ^fe80.* ]]; then
+                        echo "   ... Link-Local-Adresse IPv6"
+                else
+                        echo "${net_interface} IPv6 : ${IPV6}"  >> /etc/motd
+                fi
+        done
+done
+
+echo                                              >> /etc/motd
+
+exit 0
