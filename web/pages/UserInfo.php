@@ -212,7 +212,7 @@ function printUser($user) {
 	$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
 	if ( $is_installed == '1' ) {
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_ownCloud . '</th>';
-		echo '<td colspan="2"><a target="_blank" href="/owncloud"><span class="Comments">' . User_UserInfo_Comment_ownCloud . '</span></a></td></tr>';
+		echo '<td colspan="2"><a target="_blank" href="/oc"><span class="Comments">' . User_UserInfo_Comment_ownCloud . '</span></a></td></tr>';
 	}
 
 	//////////////////////

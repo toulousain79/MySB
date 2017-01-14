@@ -445,7 +445,7 @@ function PrintContent($user, $Case) {
 	<?php if ( $ownCloudInstalled == '1' ) { ?>
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_ownCloud; ?></th>
-			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/owncloud"><span class="Comments"><?php echo User_UserInfo_Comment_ownCloud; ?></span></a></td>
+			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/oc"><span class="Comments"><?php echo User_UserInfo_Comment_ownCloud; ?></span></a></td>
 		</tr>
 	<?php } ?>
 
