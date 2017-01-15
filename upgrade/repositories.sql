@@ -1,8 +1,8 @@
 INSERT INTO `repositories` (`id_repositories`, `type`, `dir`, `name`, `version`, `file`, `upgrade`, `url`, `active`) VALUES
-(1, 'GIT', '/web/apps/ru', 'ruTorrent', '3.7', 'ruTorrent_v3.7.zip', '1', 'https://github.com/Novik/ruTorrent', 1),
+(1, 'GIT', '/web/apps/ru', 'ruTorrent', '3.7', 'ruTorrent_v3.7.zip', '1', 'https://github.com/Novik/ruTorrent.git', 1),
 (2, 'TARGZ', '/web/apps/ru/plugins/chat', 'ruTorrent Plugin Chat', '2.0', 'chat_v2.0.tar.gz', '0', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-chat/chat-2.0.tar.gz', 1),
 (3, 'TARGZ', '/web/apps/ru/plugins/logoff', 'ruTorrent Plugin Logoff', '1.3', 'logoff_v1.3.tar.gz', '0', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-logoff/logoff-1.3.tar.gz', 1),
-(4, 'TARGZ', '/web/apps/ru/plugins/lbll-suite', 'ruTorrent Plugin LBLL-Suite', '0.8.1', 'lbll-suite_v0.8.1.tar.gz', '1', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-tadd-labels/lbll-suite_0.8.1.tar.gz', 1),
+(4, 'TARGZ', '/web/apps/ru/plugins/lbll-suite', 'ruTorrent Plugin tAdd-Labels', '0.8.1', 'lbll-suite_v0.8.1.tar.gz', '1', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-tadd-labels/lbll-suite_0.8.1.tar.gz', 1),
 (5, 'SVN', '/web/apps/ru/plugins/nfo', 'ruTorrent Plugin NFO', '3.6', 'nfo_v3.6.zip', '1', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/nfo', 1),
 (6, 'SVN', '/web/apps/ru/plugins/checksfv', 'ruTorrent Plugin Check SFV', '3.6', 'checksfv_v3.6.zip', '1', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/checksfv', 1),
 (7, 'SVN', '/web/apps/ru/plugins/disklog', 'ruTorrent Plugin Disk Log', '3.6', 'disklog_v3.6.zip', '1', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/disklog', 1),
