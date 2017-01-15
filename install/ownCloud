@@ -82,9 +82,8 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$LocSwitch" != "INIT" ]; then
 			DeleteDirectory 1 "$ownCloudDir"
 		fi
 		# Maybe need to launch a script on next reboot ?
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "on_boot = '1', script = '$0'" "name = 'ownCloud'" '-echo'
 		# Disable the upgrade job
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "upgrade = '0'" "name = 'ownCloud'" '-echo'
+		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "upgrade = '0', on_boot = '1', script = '$0'" "name = 'ownCloud'" '-echo'
 	fi
 
 	if [ ! -d $ownCloudDir ]; then
@@ -109,16 +108,16 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$LocSwitch" != "INIT" ]; then
 	fi
 	# Create needed directories
 	if [ ! -d $ownCloudDir/assets ]; then
-		mkdir $ownCloudDir/assets
+		mkdir -v $ownCloudDir/assets
 		chown www-data:www-data $ownCloudDir/assets
 		chmod 0755 $ownCloudDir/assets
 	fi
 	if [ ! -d $ownCloudDataDirectory ]; then
-		mkdir $ownCloudDataDirectory
+		mkdir -v $ownCloudDataDirectory
 		chown www-data:www-data $ownCloudDataDirectory
 	fi
 	if [ ! -d /home/admin ]; then
-		mkdir /home/admin
+		mkdir -v /home/admin
 		chown www-data:www-data /home/admin
 	fi
 	# Clean some files and directories
@@ -198,8 +197,8 @@ if [ "$ToInstall_ownCloud" == "YES" ] && [ "$LocSwitch" != "INIT" ]; then
 		# ownCloud is installed
 		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '1'" "serv_name = 'ownCloud'" '-echo'
 		# Force upgrade script on next boot if needed
-		OnBoot="`Func_SQL_Command 'SELECT' 'MySB_db' 'on_boot' 'repositories' \"on_boot = '1' AND name = 'ownCloud'\"`"
-		if [ ! -z "$OnBoot" ]; then
+		ScriptOnBoot="`Func_SQL_Command 'SELECT' 'MySB_db' 'script' 'repositories' \"on_boot = '1' AND name = 'ownCloud'\"`"
+		if [ ! -z "$ScriptOnBoot" ]; then
 			Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "script = '$0'" "name = 'ownCloud'" '-echo'
 		fi
 	fi
