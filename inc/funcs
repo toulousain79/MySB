@@ -275,9 +275,9 @@ ManageServices() {
 						case "$Service" in
 							"dnscrypt-proxy")
 								if GetPid $Service; then
-									FinalCommand="restart --nologs=yes --dnssec=yes --namecoin=yes"
+									FinalCommand="restart --nologs=yes --dnssec=yes"
 								else
-									FinalCommand="start --nologs=yes --dnssec=yes --namecoin=yes"
+									FinalCommand="start --nologs=yes --dnssec=yes"
 								fi
 							;;
 							"webmin")
@@ -651,22 +651,36 @@ ManageDirectoriesAndFiles() {
 
 		# ownCloud
 		if [ ! -z "$ownCloudDir" ] && [ -d $ownCloudDir ]; then
-			chmod 0750 $ownCloudDir/occ
-			#chown -R root:www-data $ownCloudDir/
-			chown -R www-data:www-data $ownCloudDir/apps/
-			chown -R www-data:www-data $ownCloudDir/config/
-			chown -R www-data:www-data $ownCloudDir/themes/
-			if [ -d $ownCloudDir/assets ]; then
-				chown -R www-data:www-data $ownCloudDir/assets
-				chmod -R 0755 $ownCloudDir/assets
-			fi
 			if [ ! -d /home/owncloud ]; then mkdir -p /home/owncloud; fi
+			if [ ! -d /home/owncloud/admin/files ]; then mkdir -p /home/owncloud/admin/files; fi
+			if [ ! -d $ownCloudDir/assets ]; then mkdir -p $ownCloudDir/assets; fi
+			if [ ! -d $ownCloudDir/updater ]; then mkdir -p $ownCloudDir/updater; fi
+
 			if [ ! -f /home/owncloud/.ocdata ]; then touch /home/owncloud/.ocdata; fi
 			if [ ! -f /home/owncloud/index.html ]; then touch /home/owncloud/index.html; fi
-			if [ ! -d /home/owncloud/admin/files ]; then mkdir -p /home/owncloud/admin/files; fi
 			if [ -f /home/owncloud/mount.json ]; then chmod 0640 /home/owncloud/mount.json; fi
-			chown www-data:root /home/owncloud
-			chown www-data:www-data /home/owncloud/*
+
+			find $ownCloudDir/ -type f -print0 | xargs -0 chmod 0640
+			find $ownCloudDir/ -type d -print0 | xargs -0 chmod 0750
+
+			chown -R root:www-data $ownCloudDir
+			chown -R www-data:www-data $ownCloudDir/apps/
+			chown -R www-data:www-data $ownCloudDir/assets/
+			chown -R www-data:www-data $ownCloudDir/config/
+			chown -R www-data:www-data $ownCloudDir/themes/
+			chown -R www-data:www-data $ownCloudDir/updater/
+			chown -R www-data:www-data /home/owncloud/
+
+			chmod 0750 $ownCloudDir/occ
+
+			if [ -f $ownCloudDir/.htaccess ]; then
+				chmod 0644 $ownCloudDir/.htaccess
+				chown root:www-data $ownCloudDir/.htaccess
+			fi
+			if [ -f /home/owncloud/.htaccess ]; then
+				chmod 0644 /home/owncloud/.htaccess
+				chown root:www-data /home/owncloud/.htaccess
+			fi
 		fi
 
 		# ruTorrent Global Config

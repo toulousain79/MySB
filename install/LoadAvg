@@ -25,9 +25,10 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### LoadAvg
-LoadAvgUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'LoadAvg'"`"
-LoadAvgFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'LoadAvg'"`"
-LoadAvgVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'LoadAvg'"`"
+LoadAvgValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'url,file,version' 'repositories' "name = 'LoadAvg'"`"
+LoadAvgUrl="`echo $LoadAvgValues | awk '{split($0,a,"|"); print a[1]}'`"
+LoadAvgFile="`echo $LoadAvgValues | awk '{split($0,a,"|"); print a[2]}'`"
+LoadAvgVersion="`echo $LoadAvgValues | awk '{split($0,a,"|"); print a[3]}'`"
 echo
 echo "########## LoadAvg"
 echo "Directory : "$LoadAvgDir
@@ -35,20 +36,14 @@ echo "Version : "$LoadAvgVersion
 echo "File : "$LoadAvgFile
 echo "URL : "$LoadAvgUrl
 echo
-if [ -d $LoadAvgDir/ ]; then
-	GitPull $LoadAvgDir/
-else
-	if [ -f $MySB_InstallDir/files/$LoadAvgFile ]; then
-		unzip $MySB_InstallDir/files/$LoadAvgFile -d $MySB_InstallDir/temp/
-		SubDir="`unzip -l $MySB_InstallDir/files/$LoadAvgFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-			mv -v $MySB_InstallDir/temp/$SubDir $LoadAvgDir
-		fi
-		if [ -d $LoadAvgDir ]; then
-			GitPull $LoadAvgDir/
-		fi
-	else
-		git clone $LoadAvgUrl $LoadAvgDir
+if [ ! -f $MySB_InstallDir/files/$LoadAvgFile ]; then
+	curl --retry 2 -kSL -o "$MySB_InstallDir/files/$LoadAvgFile" "$LoadAvgUrl"
+fi
+if [ ! -d $LoadAvgDir ] && [ -f $MySB_InstallDir/files/$LoadAvgFile ]; then
+	tar -zxvf $MySB_InstallDir/files/$LoadAvgFile -C $MySB_InstallDir/temp/
+	SubDir="`tar -ztf $MySB_InstallDir/files/$LoadAvgFile | sed -e 's@/.*@@' | uniq`"
+	if [ -d $MySB_InstallDir/temp/$SubDir ]; then
+		mv $MySB_InstallDir/temp/$SubDir $LoadAvgDir
 	fi
 fi
 
