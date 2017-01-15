@@ -68,22 +68,19 @@ for Repo in $AllRepos; do
 		# Backup some config files or directory
 		case "$RepoName" in
 			'ownCloud')
-				if [ "$IsInstalled_ownCloud" == "YES" ]; then
-					if [ -f $ownCloudDir/config/config.php ]; then
-						mv -v $ownCloudDir/config/config.php $MySB_InstallDir/temp/owncloud_config.php
-					fi
-					if [ -d $ownCloudDir/apps ]; then
-						mv -v $ownCloudDir/apps $MySB_InstallDir/temp/owncloud_apps
-					fi
-					# Maybe need to launch a script on next reboot ?
-					Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "on_boot = '1'" "name = '$RepoName'" '-echo'
+				if [ -f $ownCloudDir/config/config.php ]; then
+					su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mode --on"
+					mv -v $ownCloudDir/config/config.php $MySB_InstallDir/temp/owncloud_config.php
 				fi
+				if [ -d $ownCloudDir/apps ]; then
+					mv -v $ownCloudDir/apps $MySB_InstallDir/temp/owncloud_apps
+				fi
+				# Maybe need to launch a script on next reboot ?
+				Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "on_boot = '1', script = '$MySB_InstallDir/install/ownCloud'" "name = '$RepoName'" '-echo'
 			;;
 			'Seedbox-Manager')
-				if [ "$IsInstalled_Manager" == "YES" ]; then
-					if [ -d $ManagerDir/conf ]; then
-						mv -v $ManagerDir/conf $MySB_InstallDir/temp/sm_conf
-					fi
+				if [ -d $ManagerDir/conf ]; then
+					mv -v $ManagerDir/conf $MySB_InstallDir/temp/sm_conf
 				fi
 			;;
 			'ruTorrent')
