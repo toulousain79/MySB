@@ -113,12 +113,18 @@ Func_SQL_Command() {
 							MyVar="UPDATE $Table SET $VarSet"
 						;;
 						*)
-							if [ ! -z "`echo $VarWhere | grep 'IN'`" ]; then
-								a="`echo "$VarWhere" | grep -o "' AND " | wc -l`"
+							if [ -z "`echo $VarWhere | grep 'IN'`" ]; then
+								if [ ! -z "`echo $VarWhere | grep 'OR'`" ]; then
+									Conjunction="OR"
+								elif [ ! -z "`echo $VarWhere | grep 'AND'`" ]; then
+									Conjunction="AND"
+								fi
+
+								a="`echo "$VarWhere" | grep -o "' $Conjunction " | wc -l`"
 								b=$a; c=0
 								(( b++ ))
 								for (( i=1; i<=$b; i++ )); do
-									Var1="`echo $VarWhere | awk -F "' AND " "{print $"$i"}" | sed 's/^ //g;'`"
+									Var1="`echo $VarWhere | awk -F "' $Conjunction " "{print $"$i"}" | sed 's/^ //g;'`"
 									if [ ! -z "$Var1" ]; then
 										Key="`echo $Var1 | cut -d '=' -f 1 | sed 's/ //g;'`"
 										Value="`echo $Var1 | cut -d '=' -f 2 | sed 's/^ //g;'`"
@@ -127,39 +133,13 @@ Func_SQL_Command() {
 											if [ -z "$VarWhereTemp" ]; then
 												VarWhereTemp="$Var1"
 											else
-												VarWhereTemp="$VarWhereTemp' AND $Var1"
+												VarWhereTemp="$VarWhereTemp' $Conjunction $Var1"
 											fi
 										else
 											if [ -z "$VarWhereTemp" ]; then
 												VarWhereTemp="$Var1"
 											else
-												VarWhereTemp="$VarWhereTemp' AND $Var1"
-											fi
-										fi
-										(( c++ ))
-									fi
-								done
-							elif [ ! -z "`echo $VarWhere | grep 'OR'`" ]; then
-								a="`echo "$VarWhere" | grep -o "' OR " | wc -l`"
-								b=$a; c=0
-								(( b++ ))
-								for (( i=1; i<=$b; i++ )); do
-									Var1="`echo $VarWhere | awk -F "' OR " "{print $"$i"}" | sed 's/^ //g;'`"
-									if [ ! -z "$Var1" ]; then
-										Key="`echo $Var1 | cut -d '=' -f 1 | sed 's/ //g;'`"
-										Value="`echo $Var1 | cut -d '=' -f 2 | sed 's/^ //g;'`"
-										Var1='`'"`echo $Key`"'`='"$Value"
-										if [ $c -lt $a ]; then
-											if [ -z "$VarWhereTemp" ]; then
-												VarWhereTemp="$Var1"
-											else
-												VarWhereTemp="$VarWhereTemp' OR $Var1"
-											fi
-										else
-											if [ -z "$VarWhereTemp" ]; then
-												VarWhereTemp="$Var1"
-											else
-												VarWhereTemp="$VarWhereTemp' OR $Var1"
+												VarWhereTemp="$VarWhereTemp' $Conjunction $Var1"
 											fi
 										fi
 										(( c++ ))
