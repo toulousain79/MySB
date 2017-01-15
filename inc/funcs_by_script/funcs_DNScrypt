@@ -23,33 +23,48 @@
 funcs_DNScrypt=1
 ##################### FIRST LINE #####################################
 
+#### VARs
+DNScryptSigPubkey="RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3"
+
 #### DNScrypt Resolvers
 DNScrypt_ResolversRenew() {
 	case "$ScriptName" in
 		MySB_GitHubRepoUpdate)
-			DisplayCMD=''
+			DisplayCMD='-f'
 			DisplaySQL=''
 		;;
 		*)
-			DisplayCMD='-v'
+			DisplayCMD='-fv'
 			DisplaySQL='-echo'
 		;;
 	esac
 
 	# Download new resolvers CSV list
-	UrlCsvFile="https://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-resolvers.csv"
-	DestCsvFile="/usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv"
-	$WGET --no-check-certificate $UrlCsvFile -O $DestCsvFile
+	ResolversCsvUrl="https://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-resolvers.csv"
+	ResolversCsvFile="/usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv"
+	ResolversCsvFileTmp="${ResolversCsvFile}.tmp"
+	ResolversSigUrl="${ResolversCsvUrl}.minisig"
+	curl --retry 2 -kSL "$ResolversCsvUrl" -o "$ResolversCsvFileTmp"
+	if [ $? -eq 0 ]; then
+		if $(which minisign > /dev/null 2>&1); then
+			curl --retry 2 -kSL -o "$ResolversCsvFileTmp.minisig" "$ResolversSigUrl"
+			minisign -V -P "$DNScryptSigPubkey" -m "$ResolversCsvFileTmp"
+			#mv $DisplayCMD "${ResolversCsvFileTmp}.minisig" "${ResolversCsvFile}.minisig"
+			install -c -m 0644 "${ResolversCsvFileTmp}.minisig" "${ResolversCsvFile}.minisig"
+		fi
+		#mv $DisplayCMD "$ResolversCsvFileTmp" "$ResolversCsvFile"
+		install -c -m 0644 "$ResolversCsvFileTmp" "$ResolversCsvFile"
+	fi
 	if [ -f $MySB_InstallDir/files/dnscrypt-resolvers.csv ]; then
 		rm $DisplayCMD $MySB_InstallDir/files/dnscrypt-resolvers.csv
 	fi
 
-	if [ -f $DestCsvFile ] && CheckCommand 0 csvtool; then
+	if [ -f $ResolversCsvFile ] && CheckCommand 0 csvtool; then
 		# Clean the table 'dnscrypt_resolvers'
 		Func_SQL_Command 'DELETE' 'MySB_db' 'dnscrypt_resolvers' '1' "$DisplaySQL"
 
 		# Get resolvers information from 'dnscrypt-resolvers.csv'
-		ResolversTable="`csvtool -t ',' -u '|' cat $DestCsvFile | csvtool drop 1 - | sed 's/ /#/g;'`"
+		ResolversTable="`csvtool -t ',' -u '|' cat $ResolversCsvFile | csvtool drop 1 - | sed 's/ /#/g;'`"
 		for Line in $ResolversTable; do
 			Name="`echo $Line | awk '{split($0,a,\"|\"); print a[1]}' | sed 's/#/ /g;'`"
 			FullName="`echo $Line | awk '{split($0,a,\"|\"); print a[2]}' | sed 's/#/ /g;'`"

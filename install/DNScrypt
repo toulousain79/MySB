@@ -69,7 +69,7 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	echo "URL : "$LibsodiumUrl
 	echo
 	if [ ! -f $MySB_InstallDir/files/$LibsodiumFile ]; then
-		$WGET --no-check-certificate $LibsodiumUrl -O $MySB_InstallDir/files/$LibsodiumFile
+		curl --retry 2 -kSL -o "$MySB_InstallDir/files/$LibsodiumFile" "$LibsodiumUrl"
 	fi
 	if [ ! -d $LibsodiumDir ]; then
 		tar -zxvf $MySB_InstallDir/files/$LibsodiumFile -C $MySB_InstallDir/temp/
@@ -101,7 +101,7 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 	echo "URL : "$DnscryptUrl
 	echo
 	if [ ! -f $MySB_InstallDir/files/$DnscryptFile ]; then
-		$WGET --no-check-certificate $DnscryptUrl -O $MySB_InstallDir/files/$DnscryptFile
+		curl --retry 2 -kSL -o "$MySB_InstallDir/files/$DnscryptFile" "$DnscryptUrl"
 	fi
 	if [ ! -d $DnscryptDir ]; then
 		tar -zxvf $MySB_InstallDir/files/$DnscryptFile -C $MySB_InstallDir/temp/
@@ -139,6 +139,7 @@ if [ "$ToInstall_DNScrypt" == "YES" ]; then
 
 	#### START services
 	ManageServices stop "dnscrypt-proxy"
+	Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_activated = '0', is_wished = '0', forwarder = ''" 'ALL' '-echo'
 	Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished='1'" "dnssec='yes' AND no_logs='yes' AND namecoin='yes'" '-echo'
 	ManageServices start "dnscrypt-proxy"
 
