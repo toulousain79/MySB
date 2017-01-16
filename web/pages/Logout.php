@@ -47,7 +47,7 @@ $Hostname = $MySB_DB->get("system", "hostname", ["id_system" => 1]);
 
 <script type="text/javascript">
     var request = new XMLHttpRequest();
-    request.open("get", "https://logout@<?php echo $Hostname . ':' . $Port_HTTPs . '/Logout'; ?>", false);
+    request.open("get", "https://logout@<?php echo $Hostname . ':' . $Port_HTTPs . '/Logout.php'; ?>", false);
     request.send();
     window.location.replace('http://www.google.fr');
 </script>
