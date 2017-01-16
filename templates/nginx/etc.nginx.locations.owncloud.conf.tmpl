@@ -9,7 +9,7 @@ location ^~/oc {
 	auth_basic off;
 
 	# set max upload size
-	client_max_body_size 10G;
+	client_max_body_size 512M;
 	fastcgi_buffers 64 4K;
 
 	# Disable gzip to avoid the removal of the ETag header
@@ -40,35 +40,61 @@ location ^~/oc {
 	rewrite ^/.well-known/host-meta /public.php?service=host-meta last;
 	rewrite ^/.well-known/host-meta.json /public.php?service=host-meta-json last;
 
-	rewrite ^/.well-known/carddav /remote.php/carddav/ redirect;
-	rewrite ^/.well-known/caldav /remote.php/caldav/ redirect;
+    location ~ /.well-known/carddav {
+        return 301 $scheme://$host/remote.php/dav;
+    }
+    location ~ /.well-known/caldav {
+        return 301 $scheme://$host/remote.php/dav;
+    }
 
-	rewrite ^(/core/doc/[^\/]+/)$ $1/index.html;
+	location ~ /.well-known/acme-challenge { }
 
 	try_files $uri $uri/ /index.php;
+    # location ~ / {
+        # rewrite ^ /index.php$uri;
+    # }
+
+    location ~ ^/(?:build|tests|config|lib|3rdparty|templates|data)/ {
+        return 404;
+    }
+    location ~ ^/(?:\.|autotest|occ|issue|indie|db_|console) {
+        return 404;
+    }
 
 	location ~ \.php(?:$|/) {
+	#location ~ ^/(?:index|remote|public|cron|core/ajax/update|status|ocs/v[12]|updater/.+|ocs-provider/.+|core/templates/40[34])\.php(?:$|/) {
 		include /etc/nginx/conf.d/php-ssl;
+		#fastcgi_param front_controller_active true;
+		fastcgi_intercept_errors on;
+		fastcgi_request_buffering on;
 	}
 
-	# Adding the cache control header for js and css files
-	# Make sure it is BELOW the location ~ \.php(?:$|/) { block
-	location ~* \.(?:css|js)$ {
-		add_header Cache-Control "public, max-age=7200";
-		# Add headers to serve security related headers
-		add_header Strict-Transport-Security "max-age=15768000; includeSubDomains; preload;";
-		add_header X-Content-Type-Options nosniff;
-		add_header X-Frame-Options "SAMEORIGIN";
-		add_header X-XSS-Protection "1; mode=block";
-		add_header X-Robots-Tag none;
-		# Optional: Don't log access to assets
-		access_log off;
-	}
+    location ~ ^/(?:updater|ocs-provider)(?:$|/) {
+        try_files $uri $uri/ =404;
+        index index.php;
+    }
 
-	# Optional: set long EXPIRES header on static assets
-	location ~* \.(?:jpg|jpeg|gif|bmp|ico|png|css|js|swf)$ {
-		expires 30d;
-		# Optional: Don't log access to assets
-		access_log off;
-	}
+    # Adding the cache control header for js and css files
+    # Make sure it is BELOW the PHP block
+    location ~* \.(?:css|js)$ {
+        try_files $uri /index.php$uri$is_args$args;
+        add_header Cache-Control "public, max-age=7200";
+        # Add headers to serve security related headers (It is intended to have those duplicated to the ones above)
+        # Before enabling Strict-Transport-Security headers please read into this topic first.
+        #add_header Strict-Transport-Security "max-age=15552000; includeSubDomains";
+        add_header X-Content-Type-Options nosniff;
+        add_header X-Frame-Options "SAMEORIGIN";
+        add_header X-XSS-Protection "1; mode=block";
+        add_header X-Robots-Tag none;
+        add_header X-Download-Options noopen;
+        add_header X-Permitted-Cross-Domain-Policies none;
+        # Optional: Don't log access to assets
+        access_log off;
+    }
+
+    location ~* \.(?:svg|gif|png|html|ttf|woff|ico|jpg|jpeg)$ {
+        try_files $uri /index.php$uri$is_args$args;
+        # Optional: Don't log access to other assets
+        access_log off;
+    }
 }

@@ -1,3 +1,7 @@
+upstream php-handler {
+	server unix:/var/run/php5-fpm.sock;
+}
+
 server {
 	listen <PORT_HTTP> default_server;
 	server_name "<server_name>";
@@ -9,33 +13,23 @@ server {
 	include /etc/nginx/conf.d/auth_basic;
 
 	#### Permit to generate mail to send to all users (server only)
-	location /UserInfoMail.php {
+	location /UserInfoMail {
 		alias <InstallDir>/web/pages/UserInfoMail.php;
 		access_log /var/log/nginx/UserInfoMail-access.log combined;
 		error_log /var/log/nginx/UserInfoMail-error.log error;
 		allow 127.0.0.1;
 		deny all;
-		include /etc/nginx/fastcgi_params;
-		fastcgi_pass unix:/var/run/php5-fpm.sock;
-		fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-		fastcgi_param APPLICATION_ENV production;
-		fastcgi_param PHP_VALUE "";
-		fastcgi_param PHP_ADMIN_VALUE "display_errors=On";
+		include /etc/nginx/conf.d/php;
 	}
 	#### Permit to rTorrent users to execute some commands
-	location /rTorrent.php {
+	location /rTorrent {
 		alias <InstallDir>/web/pages/rTorrent.php;
 		access_log /var/log/nginx/rTorrent-access.log combined;
 		error_log /var/log/nginx/rTorrent-error.log error;
 		allow 127.0.0.1;
 		deny all;
 		auth_basic off;
-		include /etc/nginx/fastcgi_params;
-		fastcgi_pass unix:/var/run/php5-fpm.sock;
-		fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-		fastcgi_param APPLICATION_ENV production;
-		fastcgi_param PHP_VALUE "";
-		fastcgi_param PHP_ADMIN_VALUE "display_errors=On";
+		include /etc/nginx/conf.d/php;
 	}
 
 	#### Temporary configurations (ownCloud install)
@@ -69,8 +63,8 @@ server {
 
 	#### MySB Portal
 	location ^~ / {
-		if ($scheme = 'http') {
-		  rewrite ^ https://$http_host$request_uri? permanent;
+		if ($scheme = http) {
+			return 301 https://$server_name$request_uri;
 		}
 
 		access_log /var/log/nginx/MySB-access.log combined;
@@ -113,7 +107,7 @@ server {
 		}
 
 		#### For new users, permit to confirmed their account (IP + password)
-		location /NewUser.php {
+		location /NewUser {
 			alias <InstallDir>/web/pages/NewUser.php;
 			access_log /var/log/nginx/NewUser-access.log combined;
 			error_log /var/log/nginx/NewUser-error.log error;
@@ -124,7 +118,7 @@ server {
 		}
 
 		#### For created users, permit to force to add their actual IP address
-		location /ForceAddress.php {
+		location /ForceAddress {
 			alias <InstallDir>/web/pages/ForceAddress.php;
 			access_log /var/log/nginx/ForceAddress-access.log combined;
 			error_log /var/log/nginx/ForceAddress-error.log error;
@@ -133,7 +127,7 @@ server {
 		}
 
 		#### Logout
-		location /Logout.php {
+		location /Logout {
 			alias <InstallDir>/web/pages/Logout.php;
 			include /etc/nginx/conf.d/php-ssl;
 			access_log off;
@@ -141,7 +135,7 @@ server {
 		}
 
 		#### ruTorrent Plugin Fileshare
-		location /fileshare.php {
+		location /fileshare {
 			alias <plugins_dir>/fileshare/share.php;
 			access_log /var/log/nginx/fileshare-access.log combined;
 			error_log /var/log/nginx/fileshare-error.log error;
@@ -152,7 +146,7 @@ server {
 		}
 
 		#### ruTorrent Plugin Mediastream
-		location /view.php {
+		location /view {
 			alias <plugins_dir>/mediastream/view.php;
 			access_log /var/log/nginx/view-access.log combined;
 			error_log /var/log/nginx/view-error.log error;
@@ -179,8 +173,7 @@ server {
 
 		#### ruTorrent
 		location ^~ /ru {
-			alias <rutorrent_dir>;
-
+			root <InstallDir>/web/apps;
 			access_log /var/log/nginx/rutorrent-access.log combined;
 			error_log /var/log/nginx/rutorrent-error.log error;
 			index index.html;

@@ -34,7 +34,7 @@ define('User_UserInfoMail_NotInstalled', 'MySB is not installed !');
 define('User_UserInfoMail_Comment_Address_1', 'Please, change your password. Your current IP address will be add for get a valid access.');
 define('User_UserInfoMail_Comment_Address_2', 'Public IP addresses used for access restriction. You can manage this list <a href="https://%s:%s/?user/manage-addresses.html">here</a>.');
 // Password
-define('User_UserInfoMail_Comment_Password_1', '<a href="https://%s:%s/NewUser.php?user=%s&passwd=%s&page=ChangePassword">Please, change your your password now.');
+define('User_UserInfoMail_Comment_Password_1', '<a href="https://%s:%s/NewUser?user=%s&passwd=%s&page=ChangePassword">Please, change your your password now.');
 define('User_UserInfoMail_Comment_Password_2', 'You can change your password <a href="https://%s:%s/?user/change-password.html">here</a>.');
 
 //////////////////////

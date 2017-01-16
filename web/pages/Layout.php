@@ -75,7 +75,7 @@ $MySB_Version = GetVersion();
 				</div>
 				<div id="logout">
 <?php if ( !isset($_SESSION['page']) ) { ?>
-					<a href="/Logout.php"><?php echo Layout_Logout; ?></a>
+					<a href="/Logout"><?php echo Layout_Logout; ?></a>
 <?php } ?>
 				</div>
 			</div>
