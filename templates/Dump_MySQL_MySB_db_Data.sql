@@ -106,7 +106,9 @@ INSERT INTO `providers_monitoring` (`id_providers_monitoring`, `provider`, `ipv4
 (14, 'OVH', '167.114.37.0/24', ''),
 (15, 'OVH', '151.80.231.244/32', ''),
 (16, 'OVH', '151.80.231.245/32', ''),
-(17, 'OVH', '151.80.231.246/32', '');
+(17, 'OVH', '151.80.231.246/32', ''),
+(18, 'OVH', '151.80.231.247/32', ''),
+(19, 'OVH', '37.187.231.251/32', '');
 
 --
 -- Contenu de la table `repositories`
