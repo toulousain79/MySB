@@ -147,9 +147,9 @@ define('User_UserInfo_Comment_OpenVpnGui', 'Download here GUI for OpenVPN.');
 // CakeBox Light
 define('User_UserInfo_Title_Cakebox', 'CakeBox Light');
 define('User_UserInfo_Comment_Cakebox', 'Play here your media.');
-// ownCloud
-define('User_UserInfo_Title_ownCloud', 'ownCloud');
-define('User_UserInfo_Comment_ownCloud', 'Access, Sync and Share Your Data.');
+// NextCloud
+define('User_UserInfo_Title_NextCloud', 'NextCloud');
+define('User_UserInfo_Comment_NextCloud', 'Access, Sync and Share Your Data.');
 
 //////////////////////
 // Links (Main user)
@@ -185,7 +185,6 @@ define('User_UserInfo_Comment_MySB_ChangeUserPassword', '<pre>MySB_ChangeUserPas
 define('User_UserInfo_Comment_MySB_DeleteUser', ' ');
 // SeedBox Management
 define('User_UserInfo_Table_SeedboxManage', 'SeedBox Management');
-define('User_UserInfo_Comment_MySB_RefreshMe', '<pre>MySB_RefreshMe (rutorrent|manager|cakebox|loadavg|all)</pre>');
 define('User_UserInfo_Comment_MySB_UpgradeMe', 'Enables migration to a new version of MySB.');
 define('User_UserInfo_Comment_MySB_UpgradeSystem', 'Performs an update + upgrade + update-ca-certificates');
 define('User_UserInfo_Comment_MySB_GitHubRepoUpdate', 'Updates the repository of the current version of MySB. (CRON every days)');

@@ -29,109 +29,93 @@ source $(dirname $0)/../inc/includes_before
 ######################################################################
 
 #### VARs
-LocSwitch="$1"	# INSTALL / UPGRADE / renew
-LetsEncryptDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'Lets Encrypt'"`"
-LetsEncryptUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Lets Encrypt'"`"
-LetsEncryptFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Lets Encrypt'"`"
-LetsEncryptVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'Lets Encrypt'"`"
+sLocSwitch="$1"	# renew ?
+
+#### Fonction certificate end date next renewal
+fnNextRenewal() {
+	local dEndDate dRenewDay dRenewMonth
+
+	if [ -f /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem ]; then
+		dEndDate="`openssl x509 -in /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem -noout -dates | grep 'notAfter' | cut -d "=" -f 2`"
+		dEndDate="`date -d"$dEndDate" +%Y-%m-%d`"
+		dRenewDay="`date -d "$dEndDate +2 month -7 day" +%d`"
+		dRenewMonth="`date -d "$dEndDate +2 month -7 day" +%m`"
+		# Crontab
+		crontab -l > /tmp/crontab.tmp
+		sed -i '/LetsEncrypt/d' /tmp/crontab.tmp
+		echo "`date +%M` `date +%H` $dRenewDay $dRenewMonth * /bin/bash $MySB_InstallDir/install/LetsEncrypt renew CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+		crontab /tmp/crontab.tmp
+		rm -f /tmp/crontab.tmp
+		# update DB
+		cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_date='$dEndDate' WHERE id_system='1';" -v
+	fi
+}
 
 #### INSTALL
-if [ "$LocSwitch" == "INSTALL" ]; then
-	PackagesManage install "libaugeas0 augeas-lenses" "backports"
-	PackagesManage install "python-virtualenv python-dev gcc dialog libssl-dev libffi-dev ca-certificates psutils"
-fi
-
-echo
-echo "########## Let's Encrypt"
-echo "Directory : "$LetsEncryptDir
-echo "Version : "$LetsEncryptVersion
-echo "File : "$LetsEncryptFile
-echo "URL : "$LetsEncryptUrl
-echo
-if [ -d $LetsEncryptDir ]; then
-	GitPull $LetsEncryptDir/
-else
-	if [ -f $MySB_InstallDir/files/$LetsEncryptFile ]; then
-		unzip $MySB_InstallDir/files/$LetsEncryptFile -d $MySB_InstallDir/temp/
-		SubDir="`unzip -l $MySB_InstallDir/files/$LetsEncryptFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-			mv -v $MySB_InstallDir/temp/$SubDir $LetsEncryptDir
-		fi
-		if [ -d $LetsEncryptDir ]; then
-			GitPull $LetsEncryptDir/
-		fi
-	else
-		git clone $LetsEncryptUrl $LetsEncryptDir
-	fi
-fi
+gfnPackagesManage install 'libaugeas0 augeas-lenses' 'backports'
+gfnPackageBundleInstall 'python-virtualenv python-dev gcc dialog libssl-dev libffi-dev ca-certificates psutils python-augeas'
 
 #### Generate
-ServerList="`Func_SQL_Command 'SELECT' 'MySB_db' 'addresses' 'lets_encrypt' "1" | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+sServerList="`cmdMySQL 'MySB_db' "SELECT addresses FROM lets_encrypt;" | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
 if [ ! -z "$ServerList" ]; then
-	Func_SQL_Command 'DELETE' 'MySB_db' 'lets_encrypt' "1" '-echo'
+	cmdMySQL 'MySB_db' "DELETE FROM lets_encrypt;" -v
 fi
-for Server in $ServerList; do
-	ServerIPv4="$(nslookup $Server | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
-	if [ ! -z "$ServerIPv4" ]; then
-		for IPv4 in $ServerIPv4; do
-			Func_SQL_Command 'INSERT' 'MySB_db' 'lets_encrypt' 'ipv4,addresses' "'$IPv4', '$Server'" '-echo'
-		done
-	fi
+
+for sServer in $sServerList; do
+	sIpList="`nslookup $sServer | grep 'Address:' | awk '{ print $2 }' | tail -n +2`"
+	for IPv4 in $sIpList; do
+		cmdMySQL 'MySB_db' "INSERT INTO lets_encrypt (addresses,ipv4) VALUES ('$sServer','$IPv4');" -v
+	done
 done
-Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "letsencrypt_openport='1'" "id_system='1'" '-echo'
-ScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--letsencrypt'
+cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_openport='1' WHERE id_system='1';" -v
+gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--letsencrypt'
 
-if [ ! -f /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem ] && [ ! -f $MySB_InstallDir/temp/dev ]; then # Is it a new certificate ?
-	# Config file
-	echo "rsa-key-size = 2048" > /tmp/cli.ini
-	echo "email = $MainUserEmail" >> /tmp/cli.ini
-	echo "domains = $HostNameFQDN" >> /tmp/cli.ini
-	echo "standalone-supported-challenges = tls-sni-01" >> /tmp/cli.ini
-	echo "text = True" >> /tmp/cli.ini
-	echo "verbose = True" >> /tmp/cli.ini
+if [ ! -f /etc/letsencrypt/live/$gsHostNameFqdn/fullchain.pem ]; then # Is it a new certificate ?
+	# Params
+	sParams="--standalone --standalone --verbose --update-registration --no-eff-email --agree-tos --rsa-key-size 2048"
 	# Dev mode ?
-	if [ -f $MySB_InstallDir/temp/dev ]; then
-		echo "test-cert = True" >> /tmp/cli.ini
+	[ $gbDevMode -eq 1 ] && sParams="$sParams --test-cert"
+
+	cd $MySB_InstallDir/files/
+	./certbot-auto certonly $sParams --email $gsMainUserEmail --preferred-challenges "tls-sni-01,dns" --domain $gsHostNameFqdn
+
+	if [ -f /etc/letsencrypt/live/$gsHostNameFqdn/fullchain.pem ] && [ ! -h $MySB_InstallDir/ssl/fullchain.pem ]; then
+		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/fullchain.pem $MySB_InstallDir/ssl/fullchain.pem
+		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/chain.pem $MySB_InstallDir/ssl/chain.pem
+		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem $MySB_InstallDir/ssl/cert.pem
+		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/privkey.pem $MySB_InstallDir/ssl/privkey.pem
+		# Certificate end date (+2 month -7 days)
+		fnNextRenewal
 	fi
 
-	cd $LetsEncryptDir
-	./certbot-auto certonly --standalone --non-interactive --agree-tos --hsts --uir --config /tmp/cli.ini --pre-hook "service nginx stop" --post-hook "service nginx start"
-
-	if [ -f /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem ] && [ ! -h $MySB_InstallDir/ssl/fullchain.pem ]; then
-		ln -sv /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem $MySB_InstallDir/ssl/fullchain.pem
-		ln -sv /etc/letsencrypt/live/$HostNameFQDN/chain.pem $MySB_InstallDir/ssl/chain.pem
-		ln -sv /etc/letsencrypt/live/$HostNameFQDN/cert.pem $MySB_InstallDir/ssl/cert.pem
-		ln -sv /etc/letsencrypt/live/$HostNameFQDN/privkey.pem $MySB_InstallDir/ssl/privkey.pem
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "letsencrypt_date='NOW'" "id_system='1'" '-echo'
-	fi
-
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '1'" "serv_name = 'Lets Encrypt'" '-echo'
+	cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='1' WHERE serv_name='Lets Encrypt';" -v
 else # Or is it a renew ?
 	if [ ! -h $MySB_InstallDir/ssl/fullchain.pem ]; then
-		ln -sv /etc/letsencrypt/live/$HostNameFQDN/fullchain.pem $MySB_InstallDir/ssl/fullchain.pem
-		ln -sv /etc/letsencrypt/live/$HostNameFQDN/chain.pem $MySB_InstallDir/ssl/chain.pem
-		ln -sv /etc/letsencrypt/live/$HostNameFQDN/cert.pem $MySB_InstallDir/ssl/cert.pem
-		ln -sv /etc/letsencrypt/live/$HostNameFQDN/privkey.pem $MySB_InstallDir/ssl/privkey.pem
+		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/fullchain.pem $MySB_InstallDir/ssl/fullchain.pem
+		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/chain.pem $MySB_InstallDir/ssl/chain.pem
+		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem $MySB_InstallDir/ssl/cert.pem
+		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/privkey.pem $MySB_InstallDir/ssl/privkey.pem
 	fi
 
-	if [ "$LocSwitch" == "renew" ]; then
-		if [ -f $MySB_InstallDir/temp/dev ]; then
-			LetsEncryptDate="DEV"
-		else
-			LetsEncryptDate="`Func_SQL_Command 'SELECT' 'MySB_db' 'letsencrypt_date' 'system' '1'`"
-		fi
-		if [ ! -z "$LetsEncryptDate" ] && [ "$LetsEncryptDate" != "DEV" ]; then
-			LetsEncryptDate=$(date -d "$LetsEncryptDate" +"%Y-%m-%d")
+	if [ "$sLocSwitch" == "renew" ]; then
+		dEndDate="`cmdMySQL 'MySB_db' "SELECT letsencrypt_date FROM system WHERE id_system='1';"`"
+		if [ ! -z "$dEndDate" ] && [ $gbDevMode -eq 0 ] ; then
+			dEndDate=$(date -d "$dEndDate" +"%Y-%m-%d")
 			Now=$(date +%Y-%m-%d)
-			t1=$(date --date="$LetsEncryptDate" +'%-m')
+			t1=$(date --date="$dEndDate" +'%-m')
 			t2=$(date --date="$Now" +'%-m')
 			let "tDiff=$t2-$t1"
 
 			if [ "$tDiff" -gt "2" ]; then
-				cd $LetsEncryptDir
+				cd $gsRepoDir
 				./certbot-auto renew
+				dNewEndDate="`openssl x509 -in /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem -noout -dates | grep 'notAfter'  | cut -d "=" -f 2`"
+				[ "$dNewEndDate" != "$dEndDate" ] && fnNextRenewal
+				gfnManageServices restart "nginx webmin"
 			fi
 		fi
+	else
+		fnNextRenewal
 	fi
 fi
 
@@ -152,10 +136,12 @@ if [ -f /etc/webmin/miniserv.pem ]; then
 		cat $MySB_InstallDir/ssl/mysb.cert > /etc/webmin/miniserv.pem
 		cat $MySB_InstallDir/ssl/mysb.key >> /etc/webmin/miniserv.pem
 	fi
+	ServicesToRestart="webmin"
 fi
 
-Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "letsencrypt_openport = '0'" 'id_system = 1' '-echo'
-ScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create' 'CRON'
+cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_openport='0' WHERE id_system='1';" -v
+gfnManageServices start "$ServicesToRestart nginx"
+gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create' 'CRON'
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after

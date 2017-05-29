@@ -1,3 +1,41 @@
+	Version v4.0
+		2016/01/19
+			- Composer v1.4.2
+			- NodeJS v0.12.18
+			- XMLRPC-C Advanced v1.49.0
+			- DNScrypt-proxy v1.9.5
+			- Wget v1.19.1
+			- Certbot-auto script v0.14.1
+			- ruTorrent Plugin InstantSearch v1.0
+			- Libsodium v1.0.12
+			- Minisign v0.7.5
+			- Seedbox-Manager v3.0.1
+			- DNScrypt-proxy, new init script (greatly inspired by DNSCrypt-Loader)
+				* new command lines and interactive mode (**service dnscrypt-proxy help**)
+				* config option, _resolvers select filters_
+					+ select IP version (but forced to IPv4)
+					+ selection of resolvers that do not keep logs of queries (No Logs)
+					+ selection of resolvers that accept the DNSsec protocol
+					+ selection of resolvers that accept the NameCoin protocol
+				* update option
+					+ download online 'dnscrypt-resolvers.csv'
+					+ minisign check of 'dnscrypt-resolvers.csv'
+					+ verify certificate validity of filtred resolvers
+					+ speed test of filtred resolvers
+				* speed-test option, _allows to start DNScrypt with the fastest resolvers_
+			- Replacing ownCloud v9.1.3 with NextCloud v12.0.0
+			- Add Maxmind GeoIP automatic update script v2.3.1
+			- Let's Encrypt (certbot), certificate checks end date review for scheduled renew
+			- Use of Backup-Manager for automatics update (For now only used for MySB upgrades)
+			- Remove MySB_RefreshMe bin
+			- Remove DNScrypt.bsh script
+			- Remove UpdateGeoIP.bsh script
+			- Let's Encrypt, schedules the next task following a certificate renewal
+			- rTorrent synchro script, compare local and remote size before
+			- Portal
+				* Medoo Framework v1.4.3
+				* Add DNScrypt-proxy configuration
+
 	Version v3.5
 		2016/01/11
 			- ownCloud v9.1.3

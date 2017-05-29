@@ -36,7 +36,7 @@ switch ($IsMainUser) {
 
 	case false:
 		if ( (GetVersion() == 'v3.3') && ( $InitPassword == '1') ) {
-			echo Home_ownCloudAfterUpgrade;
+			echo Home_NextCloudAfterUpgrade;
 		}
 		echo Home_NormalUser;
 		break;

@@ -89,17 +89,46 @@ function GetSizeName($octet) {
     }
 }
 
-// Change ownCloud language
-function ChangeOwnCloudLanguage($user, $language) {
-	global $MySB_DB, $ownCloud_DB;
+// Change NextCloud language
+function ChangeNextCloudLanguage($user, $language) {
+	global $MySB_DB, $NextCloud_DB;
 
-	$ownCloudDatas = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
+	$NextCloudDatas = $MySB_DB->get("services", "is_installed", ["serv_name" => "NextCloud"]);
 
-	if ( $ownCloudDatas["is_installed"] == '1' ) {
-		$ownCloud_DB->update("oc_preferences", ["configvalue" => "$language"], ["AND" => [
+	if ( $NextCloudDatas["is_installed"] == '1' ) {
+		$NextCloud_DB->update("nc_preferences", ["configvalue" => "$language"], ["AND" => [
 																						"userid" => "$user",
 																						"configkey" => "lang"
 																					]]);
+	}
+}
+
+// Change ruTorrent language
+function ChangeRuTorrentLanguage($user, $language) {
+	global $MySB_DB;
+
+	$ConfigFile = "apps/ru/share/users/" . $user . "/settings/uisettings.json";
+
+	if ( is_writable($ConfigFile) ) {
+
+		$File = fopen($ConfigFile, 'r') or die("Config file missing R");
+		$Content = file_get_contents($ConfigFile);
+
+		switch ($language) {
+			case 'fr':
+				$NewContent = str_replace('"en"', '"fr"', $Content);
+				break;
+
+			default:
+				$NewContent = str_replace('"fr"', '"en"', $Content);
+				break;
+		}
+		fclose($File);
+
+		//ouverture en écriture
+		$File = fopen($ConfigFile, 'w+') or die("File missing W for: $ConfigFile");
+		fwrite($File, $NewContent);
+		fclose($File);
 	}
 }
 
@@ -110,10 +139,42 @@ function ChangeCakeboxLanguage($user, $language) {
 	$CakeboxDatas = $MySB_DB->get("services", "is_installed", ["serv_name" => "CakeBox-Light"]);
 
 	if ( $CakeboxDatas["is_installed"] == '1' ) {
-		$CakeboxDir = $MySB_DB->get("repositories", "dir", ["name" => "Cakebox-Light"]);
-		$ConfigFile = MYSB_ROOT.$CakeboxDir . "/config/" . $user . ".php";
+		$ConfigFile = "apps/cb/config/" . $user . ".php";
 
-		if ( file_exists($ConfigFile) ) {
+		if ( is_writable($ConfigFile) ) {
+
+			$File = fopen($ConfigFile, 'r') or die("Config file missing R");
+			$Content = file_get_contents($ConfigFile);
+
+			switch ($language) {
+				case 'fr':
+					$NewContent = str_replace('"en"', '"fr"', $Content);
+					break;
+
+				default:
+					$NewContent = str_replace('"fr"', '"en"', $Content);
+					break;
+			}
+			fclose($File);
+
+			//ouverture en écriture
+			$File = fopen($ConfigFile, 'w+') or die("File missing W for: $ConfigFile");
+			fwrite($File, $NewContent);
+			fclose($File);
+		}
+	}
+}
+
+// Change Cakebox-light language
+function ChangeManagerLanguage($user, $language) {
+	global $MySB_DB;
+
+	$ManagerDatas = $MySB_DB->get("services", "is_installed", ["serv_name" => "Seedbox-Manager"]);
+
+	if ( $ManagerDatas["is_installed"] == '1' ) {
+		$ConfigFile = "apps/sm/conf/users/" . $user . "/config.ini";
+
+		if ( is_writable($ConfigFile) ) {
 			$File = fopen($ConfigFile, 'r') or die("Config file missing R");
 			$Content = file_get_contents($ConfigFile);
 
@@ -231,7 +292,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 	$DnscryptIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "DNScrypt-proxy"]);
 	$PlexMediaIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "Plex Media Server"]);
 	$PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
-	$ownCloudIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
+	$NextCloudIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "NextCloud"]);
 
     if ($page && count($page->children(null, array(), $hidden)) > 0) {
         echo ($startmenu) ? '<ul>' : '';
@@ -264,9 +325,9 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 				case "LoadAvg":
 					echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/la/public/">LoadAvg</a>';
 					break;
-				case "ownCloud":
-					if ( $ownCloudIsInstalled == '1' ) {
-						echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/oc/">ownCloud</a>';
+				case "NextCloud":
+					if ( $NextCloudIsInstalled == '1' ) {
+						echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/nc/">NextCloud</a>';
 					}
 					break;
 				case "Plex Media":
@@ -286,9 +347,6 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					break;
 				case "User":
 					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($CurrentUser);
-					break;
-				case "Port Forwarding":
-					//echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					break;
 				case "Payments":
 					if ( MainUser($CurrentUser) == false ) {
@@ -412,7 +470,7 @@ function ManageUsersTrackers($Tracker, $IsActive) {
 	}
 	$hostParts = explode('.', $Tracker);
 	$numberParts = sizeof($hostParts);
-	$ValToReturn = false;
+	$ValToReturn = 0;
 	$IPv4_Tab = array();
 
 	switch ($numberParts) {
@@ -450,23 +508,23 @@ function ManageUsersTrackers($Tracker, $IsActive) {
 	if ( ($TrackerDomain != '') && ($TrackerAddress != '') ) {
 		$id_trackers_list = $MySB_DB->get("trackers_list", "id_trackers_list", ["tracker_domain" => "$TrackerDomain"]);
 		if ( $id_trackers_list > 0 ) {
-			$id_trackers_list = $MySB_DB->update("trackers_list", ["tracker" => "$TrackerAddress", "is_active" => "$IsActive", "to_check" => "$IsActive", "origin" => "users"], ["tracker_domain" => "$TrackerDomain"]);
+			$MySB_DB->update("trackers_list", ["tracker" => "$TrackerAddress", "is_active" => "$IsActive", "to_check" => "$IsActive", "origin" => "users"], ["tracker_domain" => "$TrackerDomain"]);
+			$id_trackers_list = $MySB_DB->id();
 		} else {
-			$id_trackers_list = $MySB_DB->insert("trackers_list", [
+			$MySB_DB->insert("trackers_list", [
 																	"tracker" => "$TrackerAddress",
 																	"tracker_domain" => "$TrackerDomain",
 																	"origin" => "users",
 																	"is_active" => "$IsActive",
 																	"to_check" => "$IsActive"
 																]);
+			$id_trackers_list = $MySB_DB->id();
 		}
 		if ( $id_trackers_list > 0 ) {
 			$MySB_DB->delete("trackers_list_ipv4", ["id_trackers_list" => $id_trackers_list]);
 			foreach($IPv4_Tab as $IPv4) {
-				$ValToReturn = $MySB_DB->insert("trackers_list_ipv4", [
-																"id_trackers_list" => "$id_trackers_list",
-																"ipv4" => $IPv4
-															]);
+				$MySB_DB->insert("trackers_list_ipv4", ["id_trackers_list" => "$id_trackers_list", "ipv4" => "$IPv4"]);
+				$ValToReturn = $MySB_DB->id();
 			}
 		} else {
 			$ValToReturn = 0;
@@ -519,7 +577,8 @@ function ManageUsersAddresses($UserName, $IPv4, $HostName, $IsActive, $CheckBy) 
 																[ "AND" => [ "id_users" => "$UserID", "ipv4" => "$IPv4" ]]);
 					break;
 				default:
-					$value = $MySB_DB->update("users_addresses", [ "is_active" => "$IsActive" ], [ "AND" => [ "id_users" => "$UserID", "ipv4" => "$IPv4" ]]);
+					$MySB_DB->update("users_addresses", [ "is_active" => "$IsActive" ], [ "AND" => [ "id_users" => "$UserID", "ipv4" => "$IPv4" ]]);
+					$value = $MySB_DB->id();
 					break;
 			}
 			break;
@@ -584,7 +643,8 @@ function GenerateMessage($commands, $type, $message, $args) {
 					$priority = $MySB_DB->max("commands", "priority");
 					$priority++;
 
-					$value = $MySB_DB->insert("commands", ["commands" => "$commands", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
+					$MySB_DB->insert("commands", ["commands" => "$commands", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
+					$value = $MySB_DB->id();
 
 					echo '<script type="text/javascript">ApplyConfig("ToUpdate");</script>';
 

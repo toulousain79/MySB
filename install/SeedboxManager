@@ -26,164 +26,87 @@ source $(dirname $0)/../inc/includes_before
 
 if [ "$USAGE" == "ON" ]; then
 	if [ "`screen -ls | grep SeedboxManager`" == "" ]; then
-		if [ "$IsInstalled_Manager" == "NO" ]; then
+		if [ "$gbIsInstalled_Manager" == "NO" ]; then
 			echo
 			echo -e "${CYELLOW}SeedBox-Manager is not installed!$CEND"
-			QuestionGetString NO  "Install Seedbox-Manager? " ToInstall_Manager $ToInstall_Manager
+			gfnQuestionGetString NO  "Install Seedbox-Manager? " gbToInstall_Manager $gbToInstall_Manager
 
-			if [ "$ToInstall_Manager" == "YES" ]; then
-				QuestionGetString NO  "Contact email for Seedbox-Manager: " MainUserEmail $MainUserEmail
+			if [ "$gbToInstall_Manager" == "YES" ]; then
+				gfnQuestionGetString NO  "Contact email for Seedbox-Manager: " gsMainUserEmail $gsMainUserEmail
 			fi
 
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '$(echo $ToInstall_Manager | sed 's/NO/0/g;' | sed 's/YES/1/g;')'" "serv_name = 'Seedbox-Manager'" '-echo'
+			cmdMySQL 'MySB_db' "UPDATE services SET to_install = '$(echo $gbToInstall_Manager | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name='Seedbox-Manager';" -v
 		fi
 	fi
 fi
 
-if [ "$ToInstall_Manager" == "YES" ]; then
+if [ "$gbToInstall_Manager" == "YES" ]; then
 	#### NginX
-	cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.locations.seedbox-manager.conf.tmpl /etc/nginx/locations/Seedbox-Manager.conf
-	ManagerDirEscaped="`echo $ManagerDir | sed s,/,\\\\\\\\\\/,g`"
-	perl -pi -e "s/<manager_rootdir>/$ManagerDirEscaped/g" /etc/nginx/locations/Seedbox-Manager.conf
-	chmod 0644 /etc/nginx/locations/Seedbox-Manager.conf
+	install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.locations.seedbox-manager.conf.tmpl /etc/nginx/locations/Seedbox-Manager.conf
+	gsManagerDirEscaped="`echo $gsManagerDir | sed s,/,\\\\\\\\\\/,g`"
+	perl -pi -e "s/<manager_rootdir>/$gsManagerDirEscaped/g" /etc/nginx/locations/Seedbox-Manager.conf
 
-	#### App
-	ManagerUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Seedbox-Manager'"`"
-	ManagerFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Seedbox-Manager'"`"
-	ManagerVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Seedbox-Manager'"`"
-	ManagerToUpgrade="`Func_SQL_Command 'SELECT' 'MySB_db' 'upgrade' 'repositories' "name = 'Seedbox-Manager'"`"
-	echo
-	echo "########## Seedbox-Manager"
-	echo "Directory : "$ManagerDir
-	echo "Version : "$ManagerVersion
-	echo "File : "$ManagerFile
-	echo "URL : "$ManagerUrl
-	echo
-	if [ -d $ManagerDir ] && [ "$1" == "REFRESH" ] && [ $ManagerToUpgrade -eq 1 ]; then
-		if [ -d $ManagerDir/conf ]; then
-			mv -v $ManagerDir/conf $MySB_InstallDir/temp/sm_conf
+	#### Seedbox-Manager
+	gfnGetRepoValues 'Seedbox-Manager'
+	if [ "$1" == "REFRESH" ] || [ $gnRepoUpgrade -eq 1 ]; then
+		if [ -d $gsManagerDir/conf ]; then
+			mv -v $gsManagerDir/conf $MySB_InstallDir/temp/sm_conf
 		fi
-		DeleteDirectory 1 "$ManagerDir"
+		gfnDeleteDirectory 1 "$gsManagerDir"
 	fi
-	if [ ! -d $ManagerDir ]; then
-		if [ -f $MySB_InstallDir/files/$ManagerFile ]; then
-			unzip $MySB_InstallDir/files/$ManagerFile -d $MySB_InstallDir/temp/
-			SubDir="`unzip -l $MySB_InstallDir/files/$ManagerFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-				mv -v $MySB_InstallDir/temp/$SubDir $ManagerDir
-			fi
-		else
-			git clone $ManagerUrl $ManagerDir
-		fi
-	fi
-	if [ -d $ManagerDir ]; then
-		GitPull $ManagerDir/
-	fi
+	gfnRepoManageByType
+
+	cd $gsManagerDir/
+	composer update
+
 	if [ -d $MySB_InstallDir/temp/sm_conf ]; then
-		mv -v $MySB_InstallDir/temp/sm_conf $ManagerDir/conf
+		mv -v $MySB_InstallDir/temp/sm_conf $gsManagerDir/conf
 	fi
-
-	if [ -f $ManagerDir/source-reboot-rtorrent/kill_rtorrent.c ]; then
-		(
-		cat <<'EOF'
-#include "kill_rtorrent.h"
-
-void rtorrent_kill(char nickname[])
-{
-    //Déclarations
-    char chaine [100] = {0};
-
-    snprintf(chaine, 100, "service rtorrent-%s stop\n", nickname);
-    printf("%s", chaine);
-    system (chaine);
-}
-EOF
-		) > $ManagerDir/source-reboot-rtorrent/kill_rtorrent.c
-
-		sed -i "s/screen_rtorrent_kill/rtorrent_kill/g;" $ManagerDir/source-reboot-rtorrent/main.c
-		sed -i "s/remove_lock_file/\/\/remove_lock_file/g;" $ManagerDir/source-reboot-rtorrent/main.c
-	fi
-
-	if [ -f $ManagerDir/source-reboot-rtorrent/start_rtorrent.c ]; then
-		(
-		cat <<'EOF'
-#include "start_rtorrent.h"
-
-void start_rtorrent (char nickname[])
-{
-    //Déclarations
-    char chaine [100] = {0};
-
-    snprintf(chaine, 100, "service rtorrent-%s start\n", nickname);
-    printf("%s", chaine);
-    system (chaine);
-}
-EOF
-	) > $ManagerDir/source-reboot-rtorrent/start_rtorrent.c
-	fi
-
-	#### Blocs FTP (default)
-	cp -vf $MySB_InstallDir/templates/manager/public.themes.default.template.bloc-ftp.html.tmpl $ManagerDir/public/themes/default/template/bloc-ftp.html
-	perl -pi -e "s/<HostNameFQDN>/$HostNameFQDN/g" $ManagerDir/public/themes/default/template/bloc-ftp.html
-	perl -pi -e "s/<Port_HTTPs>/$Port_HTTPS/g" $ManagerDir/public/themes/default/template/bloc-ftp.html
-	#### Blocs FTP (spiritofbonobo)
-	cp -vf $ManagerDir/public/themes/default/template/bloc-ftp.html $ManagerDir/public/themes/spiritofbonobo/template/bloc-ftp.html
-
-	#### Global configs
-	cp -vf $MySB_InstallDir/templates/manager/app.downloads.php.tmpl $ManagerDir/app/downloads.php
-	perl -pi -e "s/<Port_HTTPs>/$Port_HTTPS/g" $ManagerDir/app/downloads.php
-
-	#### Seedbbox-Manager Bug fix (ob_clean(): failed to delete buffer. No buffer to delete in seedbox-manager/app/Lib/Server.php on line 66)
-	sed -i "s/ob_clean();/\/\/ob_clean();/g;" $ManagerDir/app/Lib/Server.php
 
 	#### Install
-	cd $ManagerDir/
-	composer install
-	bower install --allow-root --config.interactive=false
-	chown -R www-data:www-data $ManagerDir/
-	cd ./source-reboot-rtorrent/
-	chmod +x install.sh
-	./install.sh
+	cd ./source/
+	chmod +x install.sh && ./install.sh
+
+	#### Language FR
+	perl -pi -e "s/Les accès FTP - SFTP - Transdroid/Les accès FTPs - sFTP - Transdroid/g" $gsManagerDir/locale/core.fr.yml
+	perl -pi -e "s/Serveur FTP et SFTP/Serveur FTPs et sFTP/g" $gsManagerDir/locale/core.fr.yml
+	perl -pi -e "s/ \(s\)FTP//g" $gsManagerDir/locale/core.fr.yml
+	perl -pi -e "s/ Port FTP/ Port FTPs/g" $gsManagerDir/locale/core.fr.yml
+	#### Language EN
+	perl -pi -e "s/FTP \/ SFTP \/ Transdroid - Access/FTPs \/ sFTP \/ Transdroid - Access/g" $gsManagerDir/locale/core.en.yml
+	perl -pi -e "s/FTP and SFTP Server/FTPs and sFTP Server/g" $gsManagerDir/locale/core.en.yml
+	perl -pi -e "s/ \(S\)FTP//g" $gsManagerDir/locale/core.en.yml
+	perl -pi -e "s/ FTP port/ FTPs port/g" $gsManagerDir/locale/core.en.yml
+	perl -pi -e "s/ SFTP port/ sFTP port/g" $gsManagerDir/locale/core.en.yml
+	#### Template
+	perl -pi -e "s/\(s\)ftp:\/\///g" $gsManagerDir/view/index.twig.html
+	perl -pi -e "s/https:\/\/filezilla.fr\//http:\/\/filezilla-project.org\//g" $gsManagerDir/view/index.twig.html
+	#### src/Seedbox/FileConfiguration.php
+	perl -pi -e "s/seedbox-/MySB-/g" $gsManagerDir/src/Seedbox/FileConfiguration.php
+	perl -pi -e "s/-ftp/-ftps/g" $gsManagerDir/src/Seedbox/FileConfiguration.php
+	nNumLign=$(cat $gsManagerDir/src/Seedbox/FileConfiguration.php | grep 'base_ftp_url' -n -m 1 | cut -d ':' -f 1)
+	sed -i '/base_ftp_url/d' $gsManagerDir/src/Seedbox/FileConfiguration.php
+	sed -i ""$nNumLign"i\                'base_ftp_url' => ''," $gsManagerDir/src/Seedbox/FileConfiguration.php
+	#### src/Controller/DownloadController.php
+	nNumLign=$(cat $gsManagerDir/src/Controller/DownloadController.php | grep 'getServerParams' -n -m 1 | cut -d ':' -f 1)
+	(( nNumLign++ ))
+	sed -i ""$nNumLign"i\        \$host = strstr(\$host, ':', true);" $gsManagerDir/src/Controller/DownloadController.php
+	#### Clean cache
+	rm -rfv $gsManagerDir/cache/*
 
 	#### ruTorrent Plugin Link Manager
-	PluginManagerDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ruTorrent Plugin Link Manager'"`"
-	PluginManagerUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'ruTorrent Plugin Link Manager'"`"
-	PluginManagerFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'ruTorrent Plugin Link Manager'"`"
-	PluginManagerVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'ruTorrent Plugin Link Manager'"`"
-	echo
-	echo "########## ruTorrent Plugin Link Manager"
-	echo "Directory : "$PluginManagerDir
-	echo "Version : "$PluginManagerVersion
-	echo "File : "$PluginManagerFile
-	echo "URL : "$PluginManagerUrl
-	echo
-	if [ -d $PluginManagerDir ]; then
-		GitPull $PluginManagerDir/
-	else
-		if [ -f $MySB_InstallDir/files/$PluginManagerFile ]; then
-			unzip $MySB_InstallDir/files/$PluginManagerFile -d $MySB_InstallDir/temp/
-			SubDir="`unzip -l $MySB_InstallDir/files/$PluginManagerFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-				mv -v $MySB_InstallDir/temp/$SubDir $PluginManagerDir
-			fi
-			if [ -d $PluginManagerDir ]; then
-				GitPull $PluginManagerDir/
-			fi
-		else
-			git clone $PluginManagerUrl $PluginManagerDir
-		fi
-	fi
-	sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$HostNameFQDN:$Port_HTTPS\/sm\//g;" $PluginManagerDir/conf.php
+	gfnGetRepoValues 'ruTorrent Plugin Link Manager' && gfnRepoManageByType
+	sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/sm\//g;" $gsRepoDir/conf.php
 
 	#### Create directories & change rights
-	ManageDirectoriesAndFiles 'global'
+	gfnManageDirAndFiles 'global'
 
-	if CheckCommand 0 $ManagerDir/reboot-rtorrent; then
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '1'" "serv_name = 'Seedbox-Manager'" '-echo'
+	if gfnCheckCommand 0 $gsManagerDir/reboot-rtorrent; then
+		cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='Seedbox-Manager';" -v
 	fi
 
 	#### START services
-	ManageServices start "nginx"
+	gfnManageServices start "nginx"
 fi
 
 # -----------------------------------------

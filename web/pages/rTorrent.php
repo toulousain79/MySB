@@ -33,7 +33,7 @@ $users_datas = $MySB_DB->get("users", ["language", "rtorrent_notify", "users_ema
 $Language = $users_datas["language"];
 $rTorrentNotify = $users_datas["rtorrent_notify"];
 $UserMail = $users_datas["users_email"];
-$IfownCloud = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
+$IfNextCloud = $MySB_DB->get("services", "is_installed", ["serv_name" => "NextCloud"]);
 
 // Mail notification
 if ( ($rTorrentNotify == '1') && (!empty($UserMail)) ) {
@@ -61,8 +61,8 @@ if ( ($rTorrentNotify == '1') && (!empty($UserMail)) ) {
 	mail($UserMail, $Subject, $Content, $Headers);
 }
 
-// ownCloud files scan
-if ( $IfownCloud == '1' ) {
-	$MySB_DB->update("system", ["owncloud_cron" => 1], ["id_system" => 1]);
+// NextCloud files scan
+if ( $IfNextCloud == '1' ) {
+	$MySB_DB->update("system", ["nextcloud_cron" => 1], ["id_system" => 1]);
 }
 ?>

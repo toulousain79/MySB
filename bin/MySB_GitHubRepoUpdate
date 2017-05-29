@@ -29,42 +29,36 @@ log_daemon_msg "$GitHubRepoUpdate_CheckAccess"
 Swithing=0
 ping -c2 github.com > /dev/null 2>&1
 if [ $? -gt 0 ]; then
-	SwitchDNS "bind"
+	gfnSwitchDNS "bind"
 	Swithing=1
 fi
-StatusLSB
+gfnStatusLSB
 
 #### update Git Hub
 echo
-GitPull $MySB_InstallDir/
+cd $MySB_InstallDir/
+git stash
+git pull
+git stash clear
 echo
-
-#### DEV - To force an upgrade
-if [ -f $MySB_InstallDir/temp/dev ]; then
-	NextVersionUpgrade="`cat $MySB_InstallDir/temp/dev`"
-	if [ ! -z "$NextVersionUpgrade" ]; then
-		echo "$NextVersionUpgrade" > $MySB_InstallDir/version
-	fi
-fi
 
 #### Create directories & change rights
 log_daemon_msg "$Global_OwnerAndRights"
 source $MySB_InstallDir/inc/vars
-ManageDirectoriesAndFiles 'no_user'
-StatusLSB
+gfnManageDirAndFiles 'no_user'
+gfnStatusLSB
 
 #### Delete Bad Sources
 source $MySB_InstallDir/inc/funcs_by_script/funcs_SourcesList
-DeleteBadSources
+gfnDeleteBadSources
 
 #### Switch DNS to DNScrypt-proxy if available
-if [ $Swithing -eq 1 ] && [ "$IsInstalled_DNScrypt" == "YES" ] && [ "$DNScrypt_Switch" == "1" ]; then
+if [ $Swithing -eq 1 ] && [ "$gbIsInstalled_DNScrypt" == "YES" ] && [ "$gbDnsCryptSwitch" == "1" ]; then
 	log_daemon_msg "$GitHubRepoUpdate_RestoreDNS"
-	install -g root -o root -m 0755 $MySB_InstallDir/templates/init/etc.init.dnscrypt-proxy.tmpl /etc/init.d/dnscrypt-proxy
-	source /opt/MySB/inc/funcs_by_script/funcs_DNScrypt
-	DNScrypt_ResolversRenew
-	SwitchDNS "dnscrypt"
-	StatusLSB
+	install -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.dnscrypt-proxy.tmpl /etc/init.d/dnscrypt-proxy
+	service dnscrypt-proxy update &> /dev/null
+	service dnscrypt-proxy restart &> /dev/null
+	gfnStatusLSB
 fi
 
 # -----------------------------------------

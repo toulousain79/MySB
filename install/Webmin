@@ -24,9 +24,9 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-if [ "$ToInstall_Webmin" == "YES" ]; then
+if [ "$gbToInstall_Webmin" == "YES" ]; then
 	#### Install package
-	PackagesManage install "webmin libwrap0 libwrap0-dev"
+	gfnPackageBundleInstall 'webmin libwrap0 libwrap0-dev'
 
 	#### Create certificate
 	if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
@@ -39,48 +39,43 @@ if [ "$ToInstall_Webmin" == "YES" ]; then
 
 	#### Config
 	source /etc/MySB/config_db
-	perl -pi -e "s/10000/$Ports_Webmin/g" /etc/webmin/miniserv.conf
+	sed -i '/preroot=/d' /etc/webmin/miniserv.conf
+	echo "preroot=authentic-theme" >> /etc/webmin/miniserv.conf
+	perl -pi -e "s/10000/$gsPorts_Webmin/g" /etc/webmin/miniserv.conf
 	perl -pi -e "s/force_init=0/force_init=1/g" /etc/webmin/firewall/config
 	sed -i '/sched_action/d' /etc/webmin/package-updates/config
 	echo "sched_action=1" >> /etc/webmin/package-updates/config
 	sed -i '/sched_email/d' /etc/webmin/package-updates/config
-	echo "sched_email=$MainUserEmail" >> /etc/webmin/package-updates/config
+	echo "sched_email=$gsMainUserEmail" >> /etc/webmin/package-updates/config
 	sed -i '/login=/d' /etc/webmin/mysql/config
 	sed -i '/pass=/d' /etc/webmin/mysql/config
 	echo "login=root" >> /etc/webmin/mysql/config
 	echo "pass=$MySQL_RootPassword" >> /etc/webmin/mysql/config
+	sed -i '/theme=/d' /etc/webmin/config
+	echo "theme=authentic-theme" >> /etc/webmin/config
+	sed -i '/lang_root=/d' /etc/webmin/config
+	case "$EnvLang" in
+		en)	echo "lang_root=en.UTF-8" >> /etc/webmin/config;;
+		fr)	echo "lang_root=fr.UTF-8" >> /etc/webmin/config;;
+	esac
 
 	#### Webmin modules
-	PluginOpenVpnActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' "name = 'OpenVPNadmin WebMin'"`"
-	PluginOpenVpnFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'OpenVPNadmin WebMin'"`"
-	PluginOpenVpnUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'OpenVPNadmin WebMin'"`"
-	if [ "$PluginOpenVpnActive" == "1" ]; then
-		if [ ! -f $MySB_InstallDir/files/$PluginOpenVpnFile ]; then
-			curl --retry 2 -kSL -o "$MySB_InstallDir/files/$PluginOpenVpnFile" "$PluginOpenVpnUrl"
-		fi
-	fi
+	gfnGetRepoValues 'OpenVPNadmin Webmin' && gfnRepoManageByType
 	if [ -f $MySB_InstallDir/files/$PluginOpenVpnFile ]; then
 		perl /usr/share/webmin/install-module.pl $MySB_InstallDir/files/$PluginOpenVpnFile
 	fi
 
-	PluginNginxActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' "name = 'Nginx Webmin Module'"`"
-	PluginNginxFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Nginx Webmin Module'"`"
-	PluginNginxUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Nginx Webmin Module'"`"
-	if [ "$PluginNginxActive" == "1" ]; then
-		if [ ! -f $MySB_InstallDir/files/$PluginNginxFile ]; then
-			curl --retry 2 -kSL -o "$MySB_InstallDir/files/$PluginNginxFile" "$PluginNginxUrl"
-		fi
-	fi
+	gfnGetRepoValues 'Nginx Webmin Module' && gfnRepoManageByType
 	if [ -f $MySB_InstallDir/files/$PluginNginxFile ]; then
 		perl /usr/share/webmin/install-module.pl $MySB_InstallDir/files/$PluginNginxFile
 	fi
 
-	if CheckCommand 0 webmin; then
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "port_tcp1 = '$Ports_Webmin', to_install = '0', is_installed = '1'" "serv_name = 'Webmin'" '-echo'
+	if gfnCheckCommand 0 webmin; then
+		cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1 = '$gsPorts_Webmin', to_install = '0', is_installed = '1' WHERE serv_name='Webmin';" -v
 	fi
 
 	#### START services
-	ManageServices start "webmin"
+	gfnManageServices start "webmin"
 fi
 
 # -----------------------------------------

@@ -25,15 +25,15 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### VARs
-TYPE="$1"
-RutorrentPluginsDirEscaped="`echo $RutorrentPluginsDir | sed s,/,\\\\\\\\\\/,g`"
-LoadavgDirEscaped="`echo $LoadAvgDir | sed s,/,\\\\\\\\\\/,g`"
+gsRutorrentDirEscaped="`echo $gsRutorrentDir | sed s,/,\\\\\\\\\\/,g`"
+gsRutorrentPluginsDirEscaped="`echo $gsRutorrentPluginsDir | sed s,/,\\\\\\\\\\/,g`"
+LoadavgDirEscaped="`echo $gsLoadAvgDir | sed s,/,\\\\\\\\\\/,g`"
 
 #### Install packages
-PackagesManage install "nginx-extras apache2-utils"
+gfnPackageBundleInstall 'nginx-extras apache2-utils'
 
 #### STOP services
-ManageServices stop "nginx"
+gfnManageServices stop "nginx"
 
 #### Create directories & remove some files
 if [ ! -d /etc/nginx/sites-available ]; then mkdir /etc/nginx/sites-available; fi
@@ -47,22 +47,22 @@ rm -f /etc/nginx/locations/* &> /dev/null
 rm -f /etc/nginx/conf.d/* &> /dev/null
 
 #### /etc/nginx/passwd/MySB
-if [ ! -z "$MySB_User" ]; then
-	sed -i '/'$MySB_User'/d' /etc/nginx/passwd/MySB
+if [ ! -z "$gsMySB_User" ]; then
+	sed -i '/'$gsMySB_User'/d' /etc/nginx/passwd/MySB
 fi
-MySB_Password="`GenPassword 16`"
-MySB_User="`GenPassword 8`"
-Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "mysb_user = '$MySB_User', mysb_password = '$MySB_Password'" "id_system = '1'" '-echo'
+sPassword="`gfnGenPassword 16`"
+sUser="`gfnGenPassword 8`"
+cmdMySQL 'MySB_db' "UPDATE system SET mysb_user = '$sUser', mysb_password = '$sPassword' WHERE id_system='1';" -v
 if [ ! -f /etc/nginx/passwd/MySB ]; then
 	touch /etc/nginx/passwd/MySB
 fi
-htpasswd -bs /etc/nginx/passwd/MySB $MySB_User $MySB_Password &> /dev/null
+htpasswd -bs /etc/nginx/passwd/MySB $sUser $sPassword &> /dev/null
 chmod 640 /etc/nginx/passwd/MySB
 chown www-data:www-data /etc/nginx/passwd/MySB
 
 #### nginx.conf
-cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.nginx.conf.tmpl /etc/nginx/nginx.conf
-perl -pi -e "s/worker_processes auto;/worker_processes $PROCESSOR;/g" /etc/nginx/nginx.conf
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.nginx.conf.tmpl /etc/nginx/nginx.conf
+perl -pi -e "s/worker_processes auto;/worker_processes $gsProcessors;/g" /etc/nginx/nginx.conf
 if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
 	NumLign=$(cat /etc/nginx/nginx.conf | grep 'ssl_certificate' -n -m 1 | cut -d ':' -f 1)
 	sed -i '/ssl_certificate/d' /etc/nginx/nginx.conf
@@ -71,28 +71,29 @@ if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
 else
 	NumLign=$(cat /etc/nginx/nginx.conf | grep 'ssl_certificate' -n -m 1 | cut -d ':' -f 1)
 	sed -i '/ssl_certificate/d' /etc/nginx/nginx.conf
-	sed -i ""$NumLign"i\	ssl_certificate_key $MySB_InstallDirEscaped/ssl/mysb.key;" /etc/nginx/nginx.conf
-	sed -i ""$NumLign"i\	ssl_certificate $MySB_InstallDirEscaped/ssl/mysb.cert;" /etc/nginx/nginx.conf
+	sed -i ""$NumLign"i\	ssl_certificate_key $gsInstallDirEscaped/ssl/mysb.key;" /etc/nginx/nginx.conf
+	sed -i ""$NumLign"i\	ssl_certificate $gsInstallDirEscaped/ssl/mysb.cert;" /etc/nginx/nginx.conf
 fi
 
 #### Default Server
-cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.site-enabled.default.tmpl /etc/nginx/sites-available/default
-perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/sites-available/default
-perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" /etc/nginx/sites-available/default
-perl -pi -e "s/<PORT_HTTP>/$Port_HTTP/g" /etc/nginx/sites-available/default
-perl -pi -e "s/<server_name>/$HostNameFQDN/g" /etc/nginx/sites-available/default
-perl -pi -e "s/<plugins_dir>/$RutorrentPluginsDirEscaped/g" /etc/nginx/sites-available/default
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.site-enabled.default.tmpl /etc/nginx/sites-available/default
+perl -pi -e "s/<InstallDir>/$gsInstallDirEscaped/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<PORT_HTTPS>/$gsPort_HTTPS/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<PORT_HTTP>/$gsPort_HTTP/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<server_name>/$gsHostNameFqdn/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<rutorrent_dir>/$gsRutorrentDirEscaped/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<plugins_dir>/$gsRutorrentPluginsDirEscaped/g" /etc/nginx/sites-available/default
 perl -pi -e "s/<loadavg_dir>/$LoadavgDirEscaped/g" /etc/nginx/sites-available/default
 
 #### Work in progress page
-cp $MySB_InstallDir/templates/nginx/etc.nginx.site-enabled.WiP.tmpl /etc/nginx/sites-available/WiP
-perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/nginx/sites-available/WiP
-perl -pi -e "s/<PORT_HTTPS>/$Port_HTTPS/g" /etc/nginx/sites-available/WiP
-perl -pi -e "s/<PORT_HTTP>/$Port_HTTP/g" /etc/nginx/sites-available/WiP
-perl -pi -e "s/<server_name>/$HostNameFQDN/g" /etc/nginx/sites-available/WiP
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.site-enabled.WiP.tmpl /etc/nginx/sites-available/WiP
+perl -pi -e "s/<InstallDir>/$gsInstallDirEscaped/g" /etc/nginx/sites-available/WiP
+perl -pi -e "s/<PORT_HTTPS>/$gsPort_HTTPS/g" /etc/nginx/sites-available/WiP
+perl -pi -e "s/<PORT_HTTP>/$gsPort_HTTP/g" /etc/nginx/sites-available/WiP
+perl -pi -e "s/<server_name>/$gsHostNameFqdn/g" /etc/nginx/sites-available/WiP
 
 #### PageSpeed Conf
-cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.pagespeed.tmpl /etc/nginx/conf.d/pagespeed
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.pagespeed.tmpl /etc/nginx/conf.d/pagespeed
 sed -i '/# TMPFS - Nginx PageSpeed/d' /etc/fstab
 sed -i '/\/mnt\/tmpFS\/pagespeed/d' /etc/fstab
 echo "# TMPFS - Nginx PageSpeed" >> /etc/fstab
@@ -104,24 +105,23 @@ if [ -z "`df -H | grep '/mnt/tmpFS/pagespeed'`" ]; then
 fi
 
 #### PHP conf.d
-cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.auth_basic.tmpl /etc/nginx/conf.d/auth_basic
-cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.global_deny_access.tmpl /etc/nginx/conf.d/global_deny_access
-cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.static_files.tmpl /etc/nginx/conf.d/static_files
-cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.php-ssl.tmpl /etc/nginx/conf.d/php-ssl
-cp -vf $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.php.tmpl /etc/nginx/conf.d/php
-echo "	satisfy all;" > /etc/nginx/conf.d/ip_restriction
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.global_deny_access.tmpl /etc/nginx/conf.d/global_deny_access
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.ip_restriction.tmpl /etc/nginx/conf.d/ip_restriction
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.static_files.tmpl /etc/nginx/conf.d/static_files
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.auth_basic.tmpl /etc/nginx/conf.d/auth_basic
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.php-ssl.tmpl /etc/nginx/conf.d/php-ssl
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.php.tmpl /etc/nginx/conf.d/php
 
 #### logrotate
-LogRotate 'nginx'
+gfnLogRotate 'nginx'
 
 #### Wolf CMS
-cp -vf $MySB_InstallDir/templates/mysb/wolf.config.php.tmpl $MySB_InstallDir/web/config.php
-cp -vf $MySB_InstallDir/templates/mysb/wolf.page.php.tmpl $MySB_InstallDir/web/wolf/app/models/Page.php
-AdminDir="`GenPassword 32`"
-TimeZoneEscaped="`echo $TimeZone | sed s,/,\\\\\\\\\\/,g`"
+gfnGetRepoValues 'Wolf CMS' && gfnRepoManageByType
+install -v -o root -g www-data -m 0640 $MySB_InstallDir/templates/mysb/wolf.config.php.tmpl $MySB_InstallDir/web/config.php
+install -v -o root -g www-data -m 0640 $MySB_InstallDir/templates/mysb/wolf.page.php.tmpl $MySB_InstallDir/web/wolf/app/models/Page.php
+AdminDir="`gfnGenPassword 32`"
 perl -pi -e "s/<admin_dir>/$AdminDir/g" $MySB_InstallDir/web/config.php
-perl -pi -e "s/<TimeZone>/$TimeZoneEscaped/g" $MySB_InstallDir/web/config.php
-chmod 0400 $MySB_InstallDir/web/config.php
+perl -pi -e "s/<gsTimeZone>/$gsTimeZoneEscaped/g" $MySB_InstallDir/web/config.php
 
 #### Sudo
 if [ -f /etc/sudoers.d/MySB_nginx ]; then rm -vf /etc/sudoers.d/MySB_nginx; fi
@@ -135,7 +135,7 @@ rm -f /var/log/nginx/error.log &> /dev/null
 rm -f /var/log/nginx/*-error.log &> /dev/null
 
 #### START services
-ManageServices start "nginx"
+gfnManageServices start "nginx"
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after

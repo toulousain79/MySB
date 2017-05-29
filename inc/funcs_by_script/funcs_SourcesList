@@ -23,8 +23,13 @@
 funcs_SourcesList=1
 ##################### FIRST LINE #####################################
 
+#### VARs
+binCURL="curl -skLS --retry 3"
+
 #### Delete Bad Sources
-DeleteBadSources() {
+gfnDeleteBadSources() {
+	local SourcesFile
+
 	if [ -z "$1" ]; then
 		SourcesFile="/etc/apt/sources.list"
 	else
@@ -53,25 +58,27 @@ DeleteBadSources() {
 }
 
 #### Apt-Key Manage
-AptKeyManage() {
+gfnAptKeyManage() {
+	local sKey="$1"
+
 	# DotDeb Renew key
-	if [ ! -z "`apt-key list | grep '7BD9BF62'`" ]; then
-		apt-key adv --keyserver keys.gnupg.net --recv-keys 7BD9BF62
+	if [ ! -z "`apt-key list | grep "$sKey"`" ]; then
+		apt-key adv --keyserver keys.gnupg.net --recv-keys $sKey
 	fi
 }
 
 #### APT-mirror (local mirror for PeerGuardian, Webmin, Plexmedia Server)
-CreateLocalMirror() {
-	# Delete unused directories
+gfnCreateLocalMirror() {
+	#### Delete unused directories
 	if [ -d /var/spool/apt-mirror ] && [ ! -d $MySB_InstallDir/files/apt_mirrors ]; then
 		mv /var/spool/apt-mirror $MySB_InstallDir/files/apt_mirrors
 	fi
-	# mirror.list
+	#### mirror.list
 	if [ -f /etc/apt/mirror.list ]; then rm -f /etc/apt/mirror.list; fi
 	cp -vf $MySB_InstallDir/templates/etc.apt.mirror.list.tmpl $MySB_InstallDir/files/apt_mirrors/mirror.list
-	perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" $MySB_InstallDir/files/apt_mirrors/mirror.list
+	perl -pi -e "s/<MySB_InstallDir>/$gsInstallDirEscaped/g" $MySB_InstallDir/files/apt_mirrors/mirror.list
 	perl -pi -e "s/<Arch>/$Arch/g" $MySB_InstallDir/files/apt_mirrors/mirror.list
-	# postmirror.sh & clean.sh
+	#### postmirror.sh & clean.sh
 	if [ ! -f $MySB_InstallDir/files/apt_mirrors/var/clean.sh ]; then
 		touch $MySB_InstallDir/files/apt_mirrors/var/clean.sh
 	fi
@@ -79,66 +86,90 @@ CreateLocalMirror() {
 	echo "$MySB_InstallDir/files/apt_mirrors/var/clean.sh" >> $MySB_InstallDir/files/apt_mirrors/var/postmirror.sh
 	chmod 0700 $MySB_InstallDir/files/apt_mirrors/var/*.sh
 	chown apt-mirror:apt-mirror $MySB_InstallDir/files/apt_mirrors/var/*.sh
-	# Local mirrors
-	if [ "$ToInstall_PeerGuardian" == "YES" ] || [ "$IsInstalled_PeerGuardian" == "YES" ]; then
-		echo "# PeerGuardian" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
-		echo "deb http://moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
-		echo "deb-src http://moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
-		echo "clean http://moblock-deb.sourceforge.net/debian" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
 
+	#### Git LFS
+	# GPG Key
+	if [ ! -f /etc/apt/sources.list.d/git-lfs.list ]; then
+		if [ ! -f $MySB_InstallDir/files/repos_keys/git-lfs.key ]; then
+			$binCURL -o "$MySB_InstallDir/files/repos_keys/git-lfs.key" "https://packagecloud.io/github/git-lfs/gpgkey"
+		fi
+		if [ -f $MySB_InstallDir/files/repos_keys/git-lfs.key ]; then
+			apt-key add $MySB_InstallDir/files/repos_keys/git-lfs.key
+		fi
+	fi
+	# Local mirrors
+	echo "# Git LFS" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+	echo "deb https://packagecloud.io/github/git-lfs/debian/ ${gsDebianRelease} main" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+	echo "deb-src https://packagecloud.io/github/git-lfs/debian/ ${gsDebianRelease} main" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+	echo "clean https://packagecloud.io/github/git-lfs/debian/" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+	# git-lfs.list (local)
+	echo "# Git LFS" > /etc/apt/sources.list.d/git-lfs.list
+	echo "deb file://$MySB_InstallDir/files/apt_mirrors/mirrors/packagecloud.io/github/git-lfs/debian/ ${gsDebianRelease} main" >> /etc/apt/sources.list.d/git-lfs.list
+	echo "deb-src file://$MySB_InstallDir/files/apt_mirrors/mirrors/packagecloud.io/github/git-lfs/debian/ ${gsDebianRelease} main" >> /etc/apt/sources.list.d/git-lfs.list
+
+	#### Peerguardian
+	if [ "$gbToInstall_PeerGuardian" == "YES" ] || [ "$gbIsInstalled_PeerGuardian" == "YES" ]; then
+		# GPG Key
 		if [ ! -f /etc/apt/sources.list.d/peerguardian.list ]; then
 			until gpg --keyserver keyserver.ubuntu.com --recv-keys C0145138; do
 				sleep 1
 			done
-
 			until gpg --export --armor C0145138 | apt-key add -; do
 				sleep 1
 			done
 		fi
-
+		# Local mirrors
+		echo "# PeerGuardian" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "deb http://moblock-deb.sourceforge.net/debian ${gsDebianRelease} main" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "deb-src http://moblock-deb.sourceforge.net/debian ${gsDebianRelease} main" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "clean http://moblock-deb.sourceforge.net/debian" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
 		# peerguardian.list (local)
 		echo "# PeerGuardian" > /etc/apt/sources.list.d/peerguardian.list
-		echo "deb file://$MySB_InstallDir/files/apt_mirrors/mirrors/moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" >> /etc/apt/sources.list.d/peerguardian.list
-		echo "deb-src file://$MySB_InstallDir/files/apt_mirrors/mirrors/moblock-deb.sourceforge.net/debian ${DEBIAN_VERSION} main" >> /etc/apt/sources.list.d/peerguardian.list
+		echo "deb file://$MySB_InstallDir/files/apt_mirrors/mirrors/moblock-deb.sourceforge.net/debian ${gsDebianRelease} main" >> /etc/apt/sources.list.d/peerguardian.list
+		echo "deb-src file://$MySB_InstallDir/files/apt_mirrors/mirrors/moblock-deb.sourceforge.net/debian ${gsDebianRelease} main" >> /etc/apt/sources.list.d/peerguardian.list
 	fi
-	if [ "$ToInstall_Webmin" == "YES" ] || [ "$IsInstalled_Webmin" == "YES" ]; then
-		echo "# Webmin" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
-		echo "deb http://download.webmin.com/download/repository sarge contrib" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
-		echo "clean http://download.webmin.com/download/repository" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
 
+	#### Webmin
+	if [ "$gbToInstall_Webmin" == "YES" ] || [ "$gbIsInstalled_Webmin" == "YES" ]; then
+		# GPG Key
 		if [ ! -f /etc/apt/sources.list.d/webmin.list ]; then
 			if [ ! -f $MySB_InstallDir/files/repos_keys/webmin.key ]; then
-				curl --retry 5 -kSL -o "$MySB_InstallDir/files/repos_keys/webmin.key" "http://www.webmin.com/jcameron-key.asc"
+				$binCURL -o "$MySB_InstallDir/files/repos_keys/webmin.key" "http://www.webmin.com/jcameron-key.asc"
 			fi
 			if [ -f $MySB_InstallDir/files/repos_keys/webmin.key ]; then
 				apt-key add $MySB_InstallDir/files/repos_keys/webmin.key
 			fi
 		fi
-
+		# Local mirrors
+		echo "# Webmin" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "deb http://download.webmin.com/download/repository sarge contrib" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "clean http://download.webmin.com/download/repository" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
 		# webmin.list (local)
 		echo "# Webmin" > /etc/apt/sources.list.d/webmin.list
 		echo "deb file://$MySB_InstallDir/files/apt_mirrors/mirrors/download.webmin.com/download/repository sarge contrib" >> /etc/apt/sources.list.d/webmin.list
 	fi
-	if [ "$ToInstall_PlexMedia" == "YES" ] || [ "$IsInstalled_PlexMedia" == "YES" ]; then
-		echo "# PlexMedia" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
-		echo "deb http://shell.ninthgate.se/packages/debian $DEBIAN_VERSION main" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
-		echo "clean http://shell.ninthgate.se/packages/debian" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
 
+	#### Plex Media
+	if [ "$gbToInstall_PlexMedia" == "YES" ] || [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
+		# GPG Key
 		if [ ! -f /etc/apt/sources.list.d/plexmedia.list ]; then
 			if [ ! -f $MySB_InstallDir/files/repos_keys/plexmedia.key ]; then
-				curl --retry 5 -kSL -o "$MySB_InstallDir/files/repos_keys/plexmedia.key" "http://shell.ninthgate.se/packages/shell.ninthgate.se.gpg.key"
+				$binCURL -o "$MySB_InstallDir/files/repos_keys/plexmedia.key" "http://shell.ninthgate.se/packages/shell.ninthgate.se.gpg.key"
 				if [ $? -ne 0 ]; then
-					curl --retry 5 -kSL -o "$MySB_InstallDir/files/repos_keys/plexmedia.key" "http://shell.ninthgate.se/packages/shell-ninthgate-se-keyring.key"
+					$binCURL -o "$MySB_InstallDir/files/repos_keys/plexmedia.key" "http://shell.ninthgate.se/packages/shell-ninthgate-se-keyring.key"
 				fi
 			fi
 			if [ -f $MySB_InstallDir/files/repos_keys/plexmedia.key ]; then
 				apt-key add $MySB_InstallDir/files/repos_keys/plexmedia.key
 			fi
 		fi
-
+		# Local mirrors
+		echo "# PlexMedia" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "deb http://shell.ninthgate.se/packages/debian $gsDebianRelease main" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "clean http://shell.ninthgate.se/packages/debian" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
 		# plexmedia.list (local)
 		echo "# PlexMedia" > /etc/apt/sources.list.d/plexmedia.list
-		echo "deb file://$MySB_InstallDir/files/apt_mirrors/mirrors/shell.ninthgate.se/packages/debian $DEBIAN_VERSION main" >> /etc/apt/sources.list.d/plexmedia.list
+		echo "deb file://$MySB_InstallDir/files/apt_mirrors/mirrors/shell.ninthgate.se/packages/debian $gsDebianRelease main" >> /etc/apt/sources.list.d/plexmedia.list
 	fi
 
 	#### Download mirrors with 'apt-mirror'
@@ -148,27 +179,29 @@ CreateLocalMirror() {
 }
 
 #### Basics Sources List
-CreateBasicSourcesList() {
-	ReposInFile="`cat /etc/apt/sources.list | grep '^deb ' | grep -v 'security' | grep -v 'updates' | awk '{ print $2 }'`"
-	ReposInFile="$ReposInFile http://ftp.fr.debian.org/debian/ http://ftp2.fr.debian.org/debian/"
-	SourcesList="/etc/apt/sources.list"
+gfnCreateBasicSourcesList() {
+	local sReposInFile sSourcesList sRepo
 
-	echo "# Basic Sources List" > $SourcesList
-	for Repo in $ReposInFile; do
-		if [ -z "`cat $SourcesList | grep $Repo`" ]; then
-			echo "" >> $SourcesList
-			echo "# $Repo" >> $SourcesList
-			echo "deb $Repo $DEBIAN_VERSION main contrib non-free" >> $SourcesList
-			echo "deb-src $Repo $DEBIAN_VERSION main contrib non-free" >> $SourcesList
-			echo "deb $Repo $DEBIAN_VERSION-updates main contrib non-free" >> $SourcesList
-			echo "deb-src $Repo $DEBIAN_VERSION-updates main contrib non-free" >> $SourcesList
+	sReposInFile="`cat /etc/apt/sources.list | grep '^deb ' | grep -v 'security' | grep -v 'updates' | awk '{ print $2 }'`"
+	sReposInFile="$sReposInFile http://ftp.fr.debian.org/debian/ http://ftp2.fr.debian.org/debian/"
+	sSourcesList="/etc/apt/sources.list"
+
+	echo "# Basic Sources List" > $sSourcesList
+	for sRepo in $sReposInFile; do
+		if [ -z "`cat $sSourcesList | grep $sRepo`" ]; then
+			echo "" >> $sSourcesList
+			echo "# $sRepo" >> $sSourcesList
+			echo "deb $sRepo $gsDebianRelease main contrib non-free" >> $sSourcesList
+			echo "deb-src $sRepo $gsDebianRelease main contrib non-free" >> $sSourcesList
+			echo "deb $sRepo $gsDebianRelease-updates main contrib non-free" >> $sSourcesList
+			echo "deb-src $sRepo $gsDebianRelease-updates main contrib non-free" >> $sSourcesList
 		fi
 	done
 
-	echo "" >> $SourcesList
-	echo "# Security" >> $SourcesList
-	echo "deb http://security.debian.org $DEBIAN_VERSION/updates main contrib non-free" >> $SourcesList
-	echo "deb-src http://security.debian.org $DEBIAN_VERSION/updates main contrib non-free" >> $SourcesList
+	echo "" >> $sSourcesList
+	echo "# Security" >> $sSourcesList
+	echo "deb http://security.debian.org $gsDebianRelease/updates main contrib non-free" >> $sSourcesList
+	echo "deb-src http://security.debian.org $gsDebianRelease/updates main contrib non-free" >> $sSourcesList
 
 	#### DotDeb (NginX, PHP, MySQL)
 	CreateDotDebRepo
@@ -180,19 +213,19 @@ CreateDotDebRepo() {
 	rm -f /etc/apt/sources.list.d/dotdeb*.list &> /dev/null
 	# DotDeb NginX
 	echo "# DotDeb NginX" | tee -a /etc/apt/sources.list.d/dotdeb.list
-	echo "deb http://packages.dotdeb.org $DEBIAN_VERSION all" | tee -a /etc/apt/sources.list.d/dotdeb.list
-	echo "deb-src http://packages.dotdeb.org $DEBIAN_VERSION all" | tee -a /etc/apt/sources.list.d/dotdeb.list
-	echo "deb http://dotdeb.thefox.com.fr $DEBIAN_VERSION all" | tee -a /etc/apt/sources.list.d/dotdeb.list
-	echo "deb-src http://dotdeb.thefox.com.fr $DEBIAN_VERSION all" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "deb http://packages.dotdeb.org $gsDebianRelease all" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "deb-src http://packages.dotdeb.org $gsDebianRelease all" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "deb http://dotdeb.thefox.com.fr $gsDebianRelease all" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "deb-src http://dotdeb.thefox.com.fr $gsDebianRelease all" | tee -a /etc/apt/sources.list.d/dotdeb.list
 	# DotDeb PHP 5.6 with ZTS
 	echo "# DotDeb PHP 5.6" | tee -a /etc/apt/sources.list.d/dotdeb.list
-	echo "deb http://packages.dotdeb.org $DEBIAN_VERSION-php56-zts all" | tee -a /etc/apt/sources.list.d/dotdeb.list
-	echo "deb-src http://packages.dotdeb.org $DEBIAN_VERSION-php56-zts all" | tee -a /etc/apt/sources.list.d/dotdeb.list
-	echo "deb http://dotdeb.thefox.com.fr $DEBIAN_VERSION-php56-zts all" | tee -a /etc/apt/sources.list.d/dotdeb.list
-	echo "deb-src http://dotdeb.thefox.com.fr $DEBIAN_VERSION-php56-zts all" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "deb http://packages.dotdeb.org $gsDebianRelease-php56-zts all" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "deb-src http://packages.dotdeb.org $gsDebianRelease-php56-zts all" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "deb http://dotdeb.thefox.com.fr $gsDebianRelease-php56-zts all" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "deb-src http://dotdeb.thefox.com.fr $gsDebianRelease-php56-zts all" | tee -a /etc/apt/sources.list.d/dotdeb.list
 	# DotDeb GPG key
 	if [ ! -f $MySB_InstallDir/files/repos_keys/dotdeb.key ]; then
-		curl --retry 5 -kSL -o "$MySB_InstallDir/files/repos_keys/dotdeb.key" "http://www.dotdeb.org/dotdeb.gpg"
+		$binCURL -o "$MySB_InstallDir/files/repos_keys/dotdeb.key" "http://www.dotdeb.org/dotdeb.gpg"
 	fi
 	if [ -f $MySB_InstallDir/files/repos_keys/dotdeb.key ]; then
 		apt-key add $MySB_InstallDir/files/repos_keys/dotdeb.key

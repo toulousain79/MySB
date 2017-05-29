@@ -24,28 +24,20 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-if [ "$ToInstall_LogWatch" == "YES" ]; then
+if [ "$gbToInstall_LogWatch" == "YES" ]; then
 	#### Install packages
-	if ! CheckCommand 0 logwatch; then
-		PackagesManage install "logwatch"
-	fi
+	gfnPackageBundleInstall 'logwatch'
 
 	# Config
 	if [ ! -d /var/cache/logwatch ]; then
 		mkdir -p /var/cache/logwatch
 	fi
 	# Configuration file
-	if [ -f /usr/share/logwatch/default.conf/services/http.conf ]; then
-		rm -vf /usr/share/logwatch/default.conf/services/http.conf
-	fi
-	cp -vf $MySB_InstallDir/templates/logwatch/etc.logwatch.conf.logwatch.conf.tmpl /etc/logwatch/conf/logwatch.conf
-	cp -vf $MySB_InstallDir/templates/logwatch/usr.share.logwatch.default.conf.logfiles.nginx.conf.tmpl /usr/share/logwatch/default.conf/logfiles/nginx.conf
-	cp -vf $MySB_InstallDir/templates/logwatch/usr.share.logwatch.default.conf.services.nginx.conf.tmpl /usr/share/logwatch/default.conf/services/nginx.conf
-	cp -vf /usr/share/logwatch/scripts/services/http /usr/share/logwatch/scripts/services/nginx
+	install -v -o root -g root -m 0755 $MySB_InstallDir/templates/logwatch/logwatch.conf.tmpl /usr/share/logwatch/default.conf/logwatch.conf
 
-	if CheckCommand 0 logwatch; then
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '1'" "serv_name = 'LogWatch'" '-echo'
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "logwatch = '1'" "id_system = '1'" '-echo'
+	if gfnCheckCommand 0 logwatch; then
+		cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='1' WHERE serv_name='LogWatch';" -v
+		cmdMySQL 'MySB_db' "UPDATE system SET logwatch='1' WHERE id_system='1';" -v
 	fi
 fi
 

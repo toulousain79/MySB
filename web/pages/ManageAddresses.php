@@ -173,10 +173,10 @@ $AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserI
 			<legend><?php echo User_ManageAddresses_TitleAdd; ?></legend>
 				<div id="input1" class="clonedInput">
 					<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
-					<?php echo User_ManageAddresses_TextAddress; ?>&nbsp;<input class="input_address" id="address" name="address[1]" type="text" required="required" <?php echo $add_current_ip; ?> />
-					&nbsp;&nbsp;<?php echo Global_IsActive; ?>&nbsp;&nbsp;<select class="select_is_active" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required">
-										<option value="0" selected="selected"><?php echo Global_No; ?></option>
-										<option value="1"><?php echo Global_Yes; ?></option>
+					<?php echo User_ManageAddresses_TextAddress; ?>&nbsp;<input class="input_address" id="address" name="address[1]" type="text" required="required"  <?php echo $add_current_ip; ?> />
+					&nbsp;&nbsp;<?php echo Global_IsActive; ?>&nbsp;&nbsp;<select class="redText" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required" onchange="this.className=this.options[this.selectedIndex].className">
+										<option value="0" selected="selected" class="redText"><?php echo Global_No; ?></option>
+										<option value="1" class="greenText"><?php echo Global_Yes; ?></option>
 									</select>
 				</div>
 

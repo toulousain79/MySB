@@ -24,52 +24,56 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-if [ "$ToInstall_PeerGuardian" == "YES" ]; then
+if [ "$gbToInstall_PeerGuardian" == "YES" ]; then
 	#### Cleaning security rules
-	ScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'clean'
+	gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'clean'
+	if gfnCheckCommand 0 dnscrypt-proxy; then
+		gfnManageServices stop "dnscrypt-proxy"
+	fi
 
 	#### Install Packages
-	if ! CheckCommand 0 pglcmd; then
-		PackagesManage install "pgld pglcmd pglgui"
+	if ! gfnCheckCommand 0 pglcmd; then
+		gfnPackageBundleInstall 'pgld pglcmd pglgui'
 	fi
 
 	#### Create config files
 	cp -vf $MySB_InstallDir/templates/etc.pgl.pglcmd.conf.tmpl /etc/pgl/pglcmd.conf
 
 	# Create '/etc/pgl/pglcmd.conf'
-	PeerGuardianPglcmdConf 0
+	gfnPeerGuardianPglcmdConf 0
 
 	# Create '/etc/pgl/allow.p2p'
-	PeerGuardianAllowP2P 0
+	gfnPeerGuardianAllowP2P 0
 
 	# Restart PeerGuardian with the params
 	pglcmd restart
 
 	# Create '/etc/pgl/blocklists.list'
-	PeerGuardianBlocklistsList 0 "UpdateLists"
+	gfnPeerGuardianBlocklistsList 0 "UpdateLists"
 
 	# Create '/etc/pgl/blocklists.list'
-	PeerGuardianBlocklistsList 0 "CreateFile"
+	gfnPeerGuardianBlocklistsList 0 "CreateFile"
 
 	#### Disable init, service will be started by MySB_SecurityRules
 	update-rc.d pgl remove -f
 
 	#### START services
-	ManageServices start "pglcmd"
+	gfnManageServices start "pglcmd"
 
 	#### Clean current log file
-	LogRotate 'pglcmd'
-	LogRotate 'pgld'
+	gfnLogRotate 'pglcmd'
+	gfnLogRotate 'pgld'
 
 	#### Check if service is OK and running
-	if CheckCommand 0 pgld; then
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '1'" "serv_name = 'PeerGuardian'" '-echo'
-
-		#### Create empty security rules
-		ScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create'
+	if gfnCheckCommand 0 pgld; then
+		cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='1' WHERE serv_name='PeerGuardian';" -v
+		gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create'
 	else
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '0'" "serv_name = 'PeerGuardian'" '-echo'
+		cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='PeerGuardian';" -v
 	fi
+
+	#### Check internet
+	ping -c5 github.com
 fi
 
 # -----------------------------------------

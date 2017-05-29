@@ -25,748 +25,158 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### STOP services
-ManageServices stop "cron"
-ListCountUsers
-for seedUser in $UsersList; do
+gfnManageServices stop "cron"
+gfnListCountUsers
+for seedUser in $gsUsersList; do
 	service rtorrent-$seedUser status &> /dev/null
 	if [ $? -eq 0 ]; then
 		service rtorrent-$seedUser stop
 	fi
 done
 
+#### Remove old ruTorrent trackers
+case "$gsSwitch" in
+	UPGRADE)	cmdMySQL 'MySB_db' "DELETE FROM trackers_list WHERE origin='rutorrent' AND is_active='0';" -v;;
+esac
+
 #### ruTorrent + Official Plugins
-RutorrentValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'url,file,version' 'repositories' "name = 'ruTorrent'"`"
-RutorrentUrl="`echo $RutorrentValues | awk '{split($0,a,"|"); print a[1]}'`"
-RutorrentFile="`echo $RutorrentValues | awk '{split($0,a,"|"); print a[2]}'`"
-RutorrentVersion="`echo $RutorrentValues | awk '{split($0,a,"|"); print a[3]}'`"
-echo
-echo "########## ruTorrent + Official Plugins"
-echo "Directory : "$RutorrentDir
-echo "Version : "$RutorrentVersion
-echo "File : "$RutorrentFile
-echo "URL : "$RutorrentUrl
-echo
-if [ -d $RutorrentDir ]; then
-	GitPull $RutorrentDir/
-else
-	if [ -f $MySB_InstallDir/files/$RutorrentFile ]; then
-		unzip $MySB_InstallDir/files/$RutorrentFile -d $MySB_InstallDir/temp/
-		SubDir="`unzip -l $MySB_InstallDir/files/$RutorrentFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-			mv -v $MySB_InstallDir/temp/$SubDir $RutorrentDir
-		fi
-		if [ -d $RutorrentDir ]; then
-			GitPull $RutorrentDir/
-		fi
-	else
-		git clone $RutorrentUrl $RutorrentDir
-	fi
-fi
-cd $RutorrentDir
+gfnGetRepoValues 'ruTorrent' && gfnRepoManageByType
 
 #### Plugin Chat
-PluginChatValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'active,dir,url,file,version' 'repositories' "name = 'ruTorrent Plugin Chat'"`"
-PluginChatActive="`echo $PluginChatValues | awk '{split($0,a,"|"); print a[1]}'`"
-PluginChatDir=$MySB_InstallDir"`echo $PluginChatValues | awk '{split($0,a,"|"); print a[2]}'`"
-PluginChatUrl="`echo $PluginChatValues | awk '{split($0,a,"|"); print a[3]}'`"
-PluginChatFile="`echo $PluginChatValues | awk '{split($0,a,"|"); print a[4]}'`"
-PluginChatVersion="`echo $PluginChatValues | awk '{split($0,a,"|"); print a[5]}'`"
-echo
-echo "########## Plugin Chat"
-echo "Directory : "$PluginChatDir
-echo "Active : "`echo $PluginChatActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`
-echo "Version : "$PluginChatVersion
-echo "File : "$PluginChatFile
-echo "URL : "$PluginChatUrl
-echo
-if [ "$PluginChatActive" == "1" ]; then
-	if [ "$1" == "REFRESH" ] || [ ! -d $PluginChatDir ]; then
-		DeleteDirectory 1 "$PluginChatDir"
-		if [ ! -f $MySB_InstallDir/files/$PluginChatFile ]; then
-			curl --retry 2 -kSL -o "$MySB_InstallDir/files/$PluginChatFile" "$PluginChatUrl"
-		fi
-		tar -zxvf $MySB_InstallDir/files/$PluginChatFile -C $MySB_InstallDir/temp/
-		SubDirChat="`tar -ztf $MySB_InstallDir/files/$PluginChatFile | cut -d '/' -f 1 | uniq`"
-		if [ -d $MySB_InstallDir/temp/$SubDirChat ]; then
-			mv -v $MySB_InstallDir/temp/$SubDirChat $PluginChatDir
-		fi
-	fi
-else
-	DeleteDirectory 1 "$PluginChatDir"
-fi
+gfnGetRepoValues 'ruTorrent Plugin Chat' && gfnRepoManageByType
 
 #### Plugin Logoff
-PluginLogoffValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'active,dir,url,file,version' 'repositories' "name = 'ruTorrent Plugin Logoff'"`"
-PluginLogoffActive="`echo $PluginLogoffValues | awk '{split($0,a,"|"); print a[1]}'`"
-PluginLogoffDir=$MySB_InstallDir"`echo $PluginLogoffValues | awk '{split($0,a,"|"); print a[2]}'`"
-PluginLogoffUrl="`echo $PluginLogoffValues | awk '{split($0,a,"|"); print a[3]}'`"
-PluginLogoffFile="`echo $PluginLogoffValues | awk '{split($0,a,"|"); print a[4]}'`"
-PluginLogoffVersion="`echo $PluginLogoffValues | awk '{split($0,a,"|"); print a[5]}'`"
-echo
-echo "########## Plugin Logoff"
-echo "Directory : "$PluginLogoffDir
-echo "Active : "`echo $PluginLogoffActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`
-echo "Version : "$PluginLogoffVersion
-echo "File : "$PluginLogoffFile
-echo "URL : "$PluginLogoffUrl
-echo
-if [ "$PluginLogoffActive" == "1" ]; then
-	if [ "$1" == "REFRESH" ] || [ ! -d $PluginLogoffDir ]; then
-		DeleteDirectory 1 "$PluginLogoffDir"
-		if [ ! -f $MySB_InstallDir/files/$PluginLogoffFile ]; then
-			curl --retry 2 -kSL -o "$MySB_InstallDir/files/$PluginLogoffFile" "$PluginLogoffUrl"
-		fi
-		tar -zxvf $MySB_InstallDir/files/$PluginLogoffFile -C $MySB_InstallDir/temp/
-		SubDirLogoff="`tar -ztf $MySB_InstallDir/files/$PluginLogoffFile | cut -d '/' -f 1 | uniq`"
-		if [ -d $MySB_InstallDir/temp/$SubDirLogoff ]; then
-			mv -v $MySB_InstallDir/temp/$SubDirLogoff $PluginLogoffDir
-		fi
-	fi
-else
-	DeleteDirectory 1 "$PluginLogoffDir"
-fi
+gfnGetRepoValues 'ruTorrent Plugin Logoff' && gfnRepoManageByType
 
 #### Plugin tAdd-Labels
-PluginLbllValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'active,dir,url,file,version' 'repositories' "name = 'ruTorrent Plugin tAdd-Labels'"`"
-PluginLbllActive="`echo $PluginLbllValues | awk '{split($0,a,"|"); print a[1]}'`"
-PluginLbllDir=$MySB_InstallDir"`echo $PluginLbllValues | awk '{split($0,a,"|"); print a[2]}'`"
-PluginLbllUrl="`echo $PluginLbllValues | awk '{split($0,a,"|"); print a[3]}'`"
-PluginLbllFile="`echo $PluginLbllValues | awk '{split($0,a,"|"); print a[4]}'`"
-PluginLbllVersion="`echo $PluginLbllValues | awk '{split($0,a,"|"); print a[5]}'`"
-echo
-echo "########## Plugin tAdd-Labels"
-echo "Directory : "$PluginLbllDir
-echo "Active : "`echo $PluginLbllActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`
-echo "Version : "$PluginLbllVersion
-echo "File : "$PluginLbllFile
-echo "URL : "$PluginLbllUrl
-echo
-if [ "$PluginLbllActive" == "1" ]; then
-	if [ "$1" == "REFRESH" ] || [ ! -d $PluginLbllDir ]; then
-		DeleteDirectory 1 "$PluginLbllDir"
-		if [ ! -f $MySB_InstallDir/files/$PluginLbllFile ]; then
-			curl --retry 2 -kSL -o "$MySB_InstallDir/files/$PluginLbllFile" "$PluginLbllUrl"
-		fi
-		tar -zxvf $MySB_InstallDir/files/$PluginLbllFile -C $MySB_InstallDir/temp/
-		SubDirLbll="`tar -ztf $MySB_InstallDir/files/$PluginLbllFile | cut -d '/' -f 1 | uniq`"
-		if [ -d $MySB_InstallDir/temp/$SubDirLbll ]; then
-			mv -v $MySB_InstallDir/temp/$SubDirLbll $PluginLbllDir
-		fi
-	fi
-else
-	DeleteDirectory 1 "$PluginLbllDir"
-fi
+gfnGetRepoValues 'ruTorrent Plugin LBLL-Suite' && gfnRepoManageByType
 
 #### Plugin NFO
-PluginNfoValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'active,dir,url,file,version' 'repositories' "name = 'ruTorrent Plugin NFO'"`"
-PluginNfoActive="`echo $PluginNfoValues | awk '{split($0,a,"|"); print a[1]}'`"
-PluginNfoDir=$MySB_InstallDir"`echo $PluginNfoValues | awk '{split($0,a,"|"); print a[2]}'`"
-PluginNfoUrl="`echo $PluginNfoValues | awk '{split($0,a,"|"); print a[3]}'`"
-PluginNfoFile="`echo $PluginNfoValues | awk '{split($0,a,"|"); print a[4]}'`"
-PluginNfoVersion="`echo $PluginNfoValues | awk '{split($0,a,"|"); print a[5]}'`"
-echo
-echo "########## Plugin NFO"
-echo "Directory : "$PluginNfoDir
-echo "Active : "`echo $PluginNfoActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`
-echo "Version : "$PluginNfoVersion
-echo "File : "$PluginNfoFile
-echo "URL : "$PluginNfoUrl
-echo
-if [ "$PluginNfoActive" == "1" ]; then
-	if [ -d $PluginNfoDir ]; then
-		svn up --non-interactive --trust-server-cert $PluginNfoDir
-		if [ $? -gt 0 ]; then
-			svn switch $PluginNfoUrl $PluginNfoDir
-		fi
-	else
-		if [ -f $MySB_InstallDir/files/$PluginNfoFile ]; then
-			unzip $MySB_InstallDir/files/$PluginNfoFile -d $MySB_InstallDir/temp/
-			SubDir="`unzip -l $MySB_InstallDir/files/$PluginNfoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-				mv -v $MySB_InstallDir/temp/$SubDir $PluginNfoDir
-			fi
-			if [ -d $PluginNfoDir/.svn ]; then
-				svn up --non-interactive --trust-server-cert $PluginNfoDir
-				if [ $? -gt 0 ]; then
-					svn switch $PluginNfoUrl $PluginNfoDir
-				fi
-			fi
-		else
-			svn co --non-interactive --trust-server-cert $PluginNfoUrl $PluginNfoDir
-		fi
-	fi
-	if [ ! -f $PluginNfoDir/lang/fr.js ];then
-		cp -v $PluginNfoDir/lang/en.js $PluginNfoDir/lang/fr.js
-		perl -pi -e "s/NFO Viewer/Visionneuse NFO/g" $PluginNfoDir/lang/fr.js
-		perl -pi -e "s/Could not open NFO/Impossible d'ouvrir le NFO/g" $PluginNfoDir/lang/fr.js
-		perl -pi -e "s/ERROR/ERREUR/g" $PluginNfoDir/lang/fr.js
-	fi
-else
-	DeleteDirectory 1 "$PluginNfoDir"
+gfnGetRepoValues 'ruTorrent Plugin NFO' && gfnRepoManageByType
+if [ ! -f $gsRepoDir/lang/fr.js ]; then
+	cp -v $gsRepoDir/lang/en.js $gsRepoDir/lang/fr.js
+	perl -pi -e "s/NFO Viewer/Visionneuse NFO/g" $gsRepoDir/lang/fr.js
+	perl -pi -e "s/Could not open NFO/Impossible d'ouvrir le NFO/g" $gsRepoDir/lang/fr.js
+	perl -pi -e "s/ERROR/ERREUR/g" $gsRepoDir/lang/fr.js
 fi
 
 #### Plugin Check SFV
-PluginCheckSfvValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'active,dir,url,file,version' 'repositories' "name = 'ruTorrent Plugin Check SFV'"`"
-PluginCheckSfvActive="`echo $PluginCheckSfvValues | awk '{split($0,a,"|"); print a[1]}'`"
-PluginCheckSfvDir=$MySB_InstallDir"`echo $PluginCheckSfvValues | awk '{split($0,a,"|"); print a[2]}'`"
-PluginCheckSfvUrl="`echo $PluginCheckSfvValues | awk '{split($0,a,"|"); print a[3]}'`"
-PluginCheckSfvFile="`echo $PluginCheckSfvValues | awk '{split($0,a,"|"); print a[4]}'`"
-PluginCheckSfvVersion="`echo $PluginCheckSfvValues | awk '{split($0,a,"|"); print a[5]}'`"
-echo
-echo "########## Plugin Check SFV"
-echo "Directory : "$PluginCheckSfvDir
-echo "Active : "`echo $PluginCheckSfvActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`
-echo "Version : "$PluginCheckSfvVersion
-echo "File : "$PluginCheckSfvFile
-echo "URL : "$PluginCheckSfvUrl
-echo
-if [ "$PluginCheckSfvActive" == "1" ]; then
-	if [ -d $PluginCheckSfvDir ]; then
-		svn up --non-interactive --trust-server-cert $PluginCheckSfvDir
-		if [ $? -gt 0 ]; then
-			svn switch $PluginCheckSfvUrl $PluginCheckSfvDir
-		fi
-	else
-		if [ -f $MySB_InstallDir/files/$PluginCheckSfvFile ]; then
-			unzip $MySB_InstallDir/files/$PluginCheckSfvFile -d $MySB_InstallDir/temp/
-			SubDir="`unzip -l $MySB_InstallDir/files/$PluginCheckSfvFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-				mv -v $MySB_InstallDir/temp/$SubDir $PluginCheckSfvDir
-			fi
-			if [ -d $PluginCheckSfvDir/.svn ]; then
-				svn up --non-interactive --trust-server-cert $PluginCheckSfvDir
-				if [ $? -gt 0 ]; then
-					svn switch $PluginCheckSfvUrl $PluginCheckSfvDir
-				fi
-			fi
-		else
-			svn co --non-interactive --trust-server-cert $PluginCheckSfvUrl $PluginCheckSfvDir
-		fi
-	fi
-	perl -pi -e "s/'';/'\/usr\/bin\/cksfv';/g" $PluginCheckSfvDir/conf.php
-	if [ ! -f $PluginCheckSfvDir/lang/fr.js ];then
-		cp -v $PluginCheckSfvDir/lang/en.js $PluginCheckSfvDir/lang/fr.js
-		perl -pi -e "s/Check SFV/Vérification SFV/g" $PluginCheckSfvDir/lang/fr.js
-	fi
-else
-	DeleteDirectory 1 "$PluginCheckSfvDir"
+gfnGetRepoValues 'ruTorrent Plugin Check SFV' && gfnRepoManageByType
+if [ -f $gsRepoDir/conf.php ]; then
+	perl -pi -e "s/'';/'\/usr\/bin\/cksfv';/g" $gsRepoDir/conf.php
 fi
+if [ ! -f $gsRepoDir/lang/fr.js ]; then
+	cp -v $gsRepoDir/lang/en.js $gsRepoDir/lang/fr.js
+	perl -pi -e "s/Check SFV/Vérification SFV/g" $gsRepoDir/lang/fr.js
+fi
+
+#### Plugin InstantSearch
+gfnGetRepoValues 'ruTorrent Plugin InstantSearch' && gfnRepoManageByType
 
 #### Plugin Disk Log
-PluginDiskLogValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'active,dir,url,file,version' 'repositories' "name = 'ruTorrent Plugin Disk Log'"`"
-PluginDiskLogActive="`echo $PluginDiskLogValues | awk '{split($0,a,"|"); print a[1]}'`"
-PluginDiskLogDir=$MySB_InstallDir"`echo $PluginDiskLogValues | awk '{split($0,a,"|"); print a[2]}'`"
-PluginDiskLogUrl="`echo $PluginDiskLogValues | awk '{split($0,a,"|"); print a[3]}'`"
-PluginDiskLogFile="`echo $PluginDiskLogValues | awk '{split($0,a,"|"); print a[4]}'`"
-PluginDiskLogVersion="`echo $PluginDiskLogValues | awk '{split($0,a,"|"); print a[5]}'`"
-echo
-echo "########## Plugin Disk Log"
-echo "Directory : "$PluginDiskLogDir
-echo "Active : "`echo $PluginDiskLogActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`
-echo "Version : "$PluginDiskLogVersion
-echo "File : "$PluginDiskLogFile
-echo "URL : "$PluginDiskLogUrl
-echo
-if [ "$PluginDiskLogActive" == "1" ]; then
-	if [ -d $PluginDiskLogDir ]; then
-		svn up --non-interactive --trust-server-cert $PluginDiskLogDir
-		if [ $? -gt 0 ]; then
-			svn switch $PluginDiskLogUrl $PluginDiskLogDir
-		fi
-	else
-		if [ -f $MySB_InstallDir/files/$PluginDiskLogFile ]; then
-			unzip $MySB_InstallDir/files/$PluginDiskLogFile -d $MySB_InstallDir/temp/
-			SubDir="`unzip -l $MySB_InstallDir/files/$PluginDiskLogFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-				mv -v $MySB_InstallDir/temp/$SubDir $PluginDiskLogDir
-			fi
-			if [ -d $PluginDiskLogDir/.svn ]; then
-				svn up --non-interactive --trust-server-cert $PluginDiskLogDir
-				if [ $? -gt 0 ]; then
-					svn switch $PluginDiskLogUrl $PluginDiskLogDir
-				fi
-			fi
-		else
-			svn co --non-interactive --trust-server-cert $PluginDiskLogUrl $PluginDiskLogDir
-		fi
-	fi
-else
-	DeleteDirectory 1 "$PluginDiskLogDir"
-fi
+gfnGetRepoValues 'ruTorrent Plugin Disk Log' && gfnRepoManageByType
 
 #### Plugin Show IP
-PluginShowIpValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'active,dir,url,file,version' 'repositories' "name = 'ruTorrent Plugin Show IP'"`"
-PluginShowIpActive="`echo $PluginShowIpValues | awk '{split($0,a,"|"); print a[1]}'`"
-PluginShowIpDir=$MySB_InstallDir"`echo $PluginShowIpValues | awk '{split($0,a,"|"); print a[2]}'`"
-PluginShowIpUrl="`echo $PluginShowIpValues | awk '{split($0,a,"|"); print a[3]}'`"
-PluginShowIpFile="`echo $PluginShowIpValues | awk '{split($0,a,"|"); print a[4]}'`"
-PluginShowIpVersion="`echo $PluginShowIpValues | awk '{split($0,a,"|"); print a[5]}'`"
-echo
-echo "########## Plugin Show IP"
-echo "Directory : "$PluginShowIpDir
-echo "Active : "`echo $PluginShowIpActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`
-echo "Version : "$PluginShowIpVersion
-echo "File : "$PluginShowIpFile
-echo "URL : "$PluginShowIpUrl
-echo
-if [ "$PluginShowIpActive" == "1" ]; then
-	if [ -d $PluginShowIpDir ]; then
-		svn up --non-interactive --trust-server-cert $PluginShowIpDir
-		if [ $? -gt 0 ]; then
-			svn switch $PluginShowIpUrl $PluginShowIpDir
-		fi
-	else
-		if [ -f $MySB_InstallDir/files/$PluginShowIpFile ]; then
-			unzip $MySB_InstallDir/files/$PluginShowIpFile -d $MySB_InstallDir/temp/
-			SubDir="`unzip -l $MySB_InstallDir/files/$PluginShowIpFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-				mv -v $MySB_InstallDir/temp/$SubDir $PluginShowIpDir
-			fi
-			if [ -d $PluginShowIpDir/.svn ]; then
-				svn up --non-interactive --trust-server-cert $PluginShowIpDir
-				if [ $? -gt 0 ]; then
-					svn switch $PluginShowIpUrl $PluginShowIpDir
-				fi
-			fi
-		else
-			svn co --non-interactive --trust-server-cert $PluginShowIpUrl $PluginShowIpDir
-		fi
-	fi
-else
-	DeleteDirectory 1 "$PluginShowIpDir"
-fi
+gfnGetRepoValues 'ruTorrent Plugin Show IP' && gfnRepoManageByType
 
 #### Plugin Speed Graph
-PluginSpeedGraphValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'active,dir,url,file,version' 'repositories' "name = 'ruTorrent Plugin Speed Graph'"`"
-PluginSpeedGraphActive="`echo $PluginSpeedGraphValues | awk '{split($0,a,"|"); print a[1]}'`"
-PluginSpeedGraphDir=$MySB_InstallDir"`echo $PluginSpeedGraphValues | awk '{split($0,a,"|"); print a[2]}'`"
-PluginSpeedGraphUrl="`echo $PluginSpeedGraphValues | awk '{split($0,a,"|"); print a[3]}'`"
-PluginSpeedGraphFile="`echo $PluginSpeedGraphValues | awk '{split($0,a,"|"); print a[4]}'`"
-PluginSpeedGraphVersion="`echo $PluginSpeedGraphValues | awk '{split($0,a,"|"); print a[5]}'`"
-echo
-echo "########## Plugin Speed Graph"
-echo "Directory : "$PluginSpeedGraphDir
-echo "Active : "`echo $PluginSpeedGraphActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`
-echo "Version : "$PluginSpeedGraphVersion
-echo "File : "$PluginSpeedGraphFile
-echo "URL : "$PluginSpeedGraphUrl
-echo
-if [ "$PluginSpeedGraphActive" == "1" ]; then
-	if [ -d $PluginSpeedGraphDir ]; then
-		svn up --non-interactive --trust-server-cert $PluginSpeedGraphDir
-		if [ $? -gt 0 ]; then
-			svn switch $PluginSpeedGraphUrl $PluginSpeedGraphDir
-		fi
-	else
-		if [ -f $MySB_InstallDir/files/$PluginSpeedGraphFile ]; then
-			unzip $MySB_InstallDir/files/$PluginSpeedGraphFile -d $MySB_InstallDir/temp/
-			SubDir="`unzip -l $MySB_InstallDir/files/$PluginSpeedGraphFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-				mv -v $MySB_InstallDir/temp/$SubDir $PluginSpeedGraphDir
-			fi
-			if [ -d $PluginSpeedGraphDir/.svn ]; then
-				svn up --non-interactive --trust-server-cert $PluginSpeedGraphDir
-				if [ $? -gt 0 ]; then
-					svn switch $PluginSpeedGraphUrl $PluginSpeedGraphDir
-				fi
-			fi
-		else
-			svn co --non-interactive --trust-server-cert $PluginSpeedGraphUrl $PluginSpeedGraphDir
-		fi
-	fi
-	if [ ! -f $PluginSpeedGraphDir/lang/fr.js ];then
-		cp -v $PluginSpeedGraphDir/lang/en.js $PluginSpeedGraphDir/lang/fr.js
-		perl -pi -e "s/Monitoring Time/Surveillance du temps/g" $PluginSpeedGraphDir/lang/fr.js
-		perl -pi -e "s/Speed Graph/Graphique de vitesse/g" $PluginSpeedGraphDir/lang/fr.js
-	fi
-else
-	DeleteDirectory 1 "$PluginSpeedGraphDir"
+gfnGetRepoValues 'ruTorrent Plugin Speed Graph' && gfnRepoManageByType
+if [ ! -f $gsRepoDir/lang/fr.js ];then
+	cp -v $gsRepoDir/lang/en.js $gsRepoDir/lang/fr.js
+	perl -pi -e "s/Monitoring Time/Surveillance du temps/g" $gsRepoDir/lang/fr.js
+	perl -pi -e "s/Speed Graph/Graphique de vitesse/g" $gsRepoDir/lang/fr.js
 fi
 
 #### Plugin Ratiocolor
-PluginRatiocolorValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'active,dir,url,file,version' 'repositories' "name = 'ruTorrent Plugin RatioColor'"`"
-PluginRatiocolorActive="`echo $PluginRatiocolorValues | awk '{split($0,a,"|"); print a[1]}'`"
-PluginRatiocolorDir=$MySB_InstallDir"`echo $PluginRatiocolorValues | awk '{split($0,a,"|"); print a[2]}'`"
-PluginRatiocolorUrl="`echo $PluginRatiocolorValues | awk '{split($0,a,"|"); print a[3]}'`"
-PluginRatiocolorFile="`echo $PluginRatiocolorValues | awk '{split($0,a,"|"); print a[4]}'`"
-PluginRatiocolorVersion="`echo $PluginRatiocolorValues | awk '{split($0,a,"|"); print a[5]}'`"
-echo
-echo "########## Plugin Ratiocolor"
-echo "Directory : "$PluginRatiocolorDir
-echo "Active : "`echo $PluginRatiocolorActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`
-echo "Version : "$PluginRatiocolorVersion
-echo "File : "$PluginRatiocolorFile
-echo "URL : "$PluginRatiocolorUrl
-echo
-if [ "$PluginRatiocolorActive" == "1" ]; then
-	if [ -d $PluginRatiocolorDir ]; then
-		GitPull $PluginRatiocolorDir/
-	else
-		if [ -f $MySB_InstallDir/files/$PluginRatiocolorFile ]; then
-			unzip $MySB_InstallDir/files/$PluginRatiocolorFile -d $MySB_InstallDir/temp/
-			SubDir="`unzip -l $MySB_InstallDir/files/$PluginRatiocolorFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-				mv -v $MySB_InstallDir/temp/$SubDir $PluginRatiocolorDir
-			fi
-			if [ -d $PluginRatiocolorDir ]; then
-				GitPull $PluginRatiocolorDir/
-			fi
-		else
-			git clone $PluginRatiocolorUrl $PluginRatiocolorDir
-		fi
-	fi
-	perl -pi -e "s/changeWhat = \"cell-background\";/changeWhat = \"font\";/g" $PluginRatiocolorDir/init.js
-else
-	DeleteDirectory 1 "$PluginRatiocolorDir"
+gfnGetRepoValues 'ruTorrent Plugin RatioColor' && gfnRepoManageByType
+if [ -f $gsRepoDir/init.js ]; then
+	perl -pi -e "s/changeWhat = \"cell-background\";/changeWhat = \"font\";/g" $gsRepoDir/init.js
 fi
 
 #### Plugin Filemanager
-PluginFilemanagerValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'active,dir,url,file,version' 'repositories' "name = 'ruTorrent Plugin FileManager'"`"
-PluginFilemanagerActive="`echo $PluginFilemanagerValues | awk '{split($0,a,"|"); print a[1]}'`"
-PluginFilemanagerDir=$MySB_InstallDir"`echo $PluginFilemanagerValues | awk '{split($0,a,"|"); print a[2]}'`"
-PluginFilemanagerUrl="`echo $PluginFilemanagerValues | awk '{split($0,a,"|"); print a[3]}'`"
-PluginFilemanagerFile="`echo $PluginFilemanagerValues | awk '{split($0,a,"|"); print a[4]}'`"
-PluginFilemanagerVersion="`echo $PluginFilemanagerValues | awk '{split($0,a,"|"); print a[5]}'`"
-echo
-echo "########## Plugin Filemanager"
-echo "Directory : "$PluginFilemanagerDir
-echo "Active : "`echo $PluginFilemanagerActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`
-echo "Version : "$PluginFilemanagerVersion
-echo "File : "$PluginFilemanagerFile
-echo "URL : "$PluginFilemanagerUrl
-echo
-if [ "$PluginFilemanagerActive" == "1" ]; then
-	if [ "$1" == "REFRESH" ] || [ ! -d $PluginFilemanagerDir ]; then
-		DeleteDirectory 1 "$PluginFilemanagerDir"
-		if [ ! -f $MySB_InstallDir/files/$PluginFilemanagerFile ]; then
-			curl --retry 2 -kSL -o "$MySB_InstallDir/files/$PluginFilemanagerFile" "$PluginFilemanagerUrl"
-		fi
-		unzip $MySB_InstallDir/files/$PluginFilemanagerFile -d $MySB_InstallDir/temp/
-		SubDir="`unzip -l $MySB_InstallDir/files/$PluginFilemanagerFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-			mv -v $MySB_InstallDir/temp/$SubDir $PluginFilemanagerDir
-		fi
-	fi
-else
-	DeleteDirectory 1 "$PluginFilemanagerDir"
-fi
+gfnGetRepoValues 'ruTorrent Plugin FileManager' && gfnRepoManageByType
 
 #### Plugin FileUpload
-PluginFileuploadActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' "name = 'ruTorrent Plugin FileUpload'"`"
-PluginFileuploadDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ruTorrent Plugin FileUpload'"`"
-PluginFileuploadUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'ruTorrent Plugin FileUpload'"`"
-PluginFileuploadFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'ruTorrent Plugin FileUpload'"`"
-PluginFileuploadVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'ruTorrent Plugin FileUpload'"`"
-echo
-echo "########## Plugin FileUpload"
-echo "Directory : "$PluginFileuploadDir
-echo "Active : "`echo $PluginFileuploadActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`
-echo "Version : "$PluginFileuploadVersion
-echo "File : "$PluginFileuploadFile
-echo "URL : "$PluginFileuploadUrl
-echo
-if [ "$PluginFileuploadActive" == "1" ]; then
-	if [ "$1" == "REFRESH" ] || [ ! -d $PluginFileuploadDir ]; then
-		DeleteDirectory 1 "$PluginFileuploadDir"
-		if [ ! -f $MySB_InstallDir/files/$PluginFileuploadFile ]; then
-			curl --retry 2 -kSL -o "$MySB_InstallDir/files/$PluginFileuploadFile" "$PluginFileuploadUrl"
-		fi
-		unzip $MySB_InstallDir/files/$PluginFileuploadFile -d $MySB_InstallDir/temp/
-		SubDir="`unzip -l $MySB_InstallDir/files/$PluginFileuploadFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-			mv -v $MySB_InstallDir/temp/$SubDir $PluginFileuploadDir
-		fi
-	fi
-else
-	DeleteDirectory 1 "$PluginFileuploadDir"
-fi
+gfnGetRepoValues 'ruTorrent Plugin FileUpload' && gfnRepoManageByType
 
 #### Plugin Fileshare
-PluginFileshareActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' "name = 'ruTorrent Plugin FileShare'"`"
-PluginFileshareDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ruTorrent Plugin FileShare'"`"
-PluginFileshareUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'ruTorrent Plugin FileShare'"`"
-PluginFileshareFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'ruTorrent Plugin FileShare'"`"
-PluginFileshareVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'ruTorrent Plugin FileShare'"`"
-echo
-echo "########## Plugin Fileshare"
-echo "Directory : "$PluginFileshareDir
-echo "Active : "`echo $PluginFileshareActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`
-echo "Version : "$PluginFileshareVersion
-echo "File : "$PluginFileshareFile
-echo "URL : "$PluginFileshareUrl
-echo
-if [ "$PluginFileshareActive" == "1" ]; then
-	if [ "$1" == "REFRESH" ] || [ ! -d $PluginFileshareDir ]; then
-		DeleteDirectory 1 "$PluginFileshareDir"
-		if [ ! -f $MySB_InstallDir/files/$PluginFileshareFile ]; then
-			curl --retry 2 -kSL -o "$MySB_InstallDir/files/$PluginFileshareFile" "$PluginFileshareUrl"
-		fi
-		unzip $MySB_InstallDir/files/$PluginFileshareFile -d $MySB_InstallDir/temp/
-		SubDir="`unzip -l $MySB_InstallDir/files/$PluginFileshareFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-			mv -v $MySB_InstallDir/temp/$SubDir $PluginFileshareDir
-		fi
-	fi
-	perl -pi -e "s/http:\/\/mydomain.com\/share.php/https:\/\/$HostNameFQDN:$Port_HTTPS\/fileshare.php/g" $PluginFileshareDir/conf.php
-else
-	DeleteDirectory 1 "$PluginFileshareDir"
+gfnGetRepoValues 'ruTorrent Plugin FileShare' && gfnRepoManageByType
+if [ -f $gsRepoDir/conf.php ]; then
+	perl -pi -e "s/http:\/\/mydomain.com\/share.php/https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/fileshare.php/g" $gsRepoDir/conf.php
 fi
 
 #### Plugin Mediastream
-PluginMediastreamActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' "name = 'ruTorrent Plugin MediaStream'"`"
-PluginMediastreamDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ruTorrent Plugin MediaStream'"`"
-PluginMediastreamUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'ruTorrent Plugin MediaStream'"`"
-PluginMediastreamFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'ruTorrent Plugin MediaStream'"`"
-PluginMediastreamVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'ruTorrent Plugin MediaStream'"`"
-echo
-echo "########## Plugin Mediastream"
-echo "Directory : "$PluginMediastreamDir
-echo "Active : "`echo $PluginMediastreamActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`
-echo "Version : "$PluginMediastreamVersion
-echo "File : "$PluginMediastreamFile
-echo "URL : "$PluginMediastreamUrl
-echo
-if [ "$PluginMediastreamActive" == "1" ]; then
-	if [ "$1" == "REFRESH" ] || [ ! -d $PluginMediastreamDir ]; then
-		DeleteDirectory 1 "$PluginMediastreamDir"
-		if [ ! -f $MySB_InstallDir/files/$PluginMediastreamFile ]; then
-			curl --retry 2 -kSL -o "$MySB_InstallDir/files/$PluginMediastreamFile" "$PluginMediastreamUrl"
-		fi
-		unzip $MySB_InstallDir/files/$PluginMediastreamFile -d $MySB_InstallDir/temp/
-		SubDir="`unzip -l $MySB_InstallDir/files/$PluginMediastreamFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-			mv -v $MySB_InstallDir/temp/$SubDir $PluginMediastreamDir
-		fi
-	fi
-	perl -pi -e "s/http:\/\/mydomain.com\/stream\/view.php/https:\/\/$HostNameFQDN:$Port_HTTPS\/view/g" $PluginMediastreamDir/conf.php
-else
-	DeleteDirectory 1 "$PluginMediastreamDir"
+gfnGetRepoValues 'ruTorrent Plugin MediaStream' && gfnRepoManageByType
+if [ -f $gsRepoDir/conf.php ]; then
+	perl -pi -e "s/http:\/\/mydomain.com\/stream\/view.php/https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/view/g" $gsRepoDir/conf.php
 fi
 
 #### Plugin Stream
-PluginStreamActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' "name = 'ruTorrent Plugin Stream'"`"
-PluginStreamDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ruTorrent Plugin Stream'"`"
-PluginStreamUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'ruTorrent Plugin Stream'"`"
-PluginStreamFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'ruTorrent Plugin Stream'"`"
-PluginStreamVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'ruTorrent Plugin Stream'"`"
-echo
-echo "########## Plugin Stream"
-echo "Directory : "$PluginStreamDir
-echo "Active : "`echo $PluginStreamActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`
-echo "Version : "$PluginStreamVersion
-echo "File : "$PluginStreamFile
-echo "URL : "$PluginStreamUrl
-echo
-if [ "$PluginStreamActive" == "1" ]; then
-	if [ "$1" == "REFRESH" ] || [ ! -d $PluginStreamDir ]; then
-		DeleteDirectory 1 "$PluginStreamDir"
-		if [ ! -f $MySB_InstallDir/files/$PluginStreamFile ]; then
-			curl --retry 2 -kSL -o "$MySB_InstallDir/files/$PluginStreamFile" "$PluginStreamUrl"
-		fi
-		tar -zxvf $MySB_InstallDir/files/$PluginStreamFile -C $MySB_InstallDir/temp/
-		SubDirStream="`tar -ztf $MySB_InstallDir/files/$PluginStreamFile | cut -d '/' -f 1 | uniq`"
-		if [ -d $MySB_InstallDir/temp/$SubDirStream ]; then
-			mv -v $MySB_InstallDir/temp/$SubDirStream $PluginStreamDir
-		fi
-	fi
-	perl -pi -e "s/define\('USE_NGINX', false\);/define\('USE_NGINX', true\);/g" $PluginStreamDir/config.php
-	perl -pi -e "s/define\('SCHEME', 'http'\);/define\('SCHEME', 'https'\);/g" $PluginStreamDir/config.php
-else
-	DeleteDirectory 1 "$PluginStreamDir"
+gfnGetRepoValues 'ruTorrent Plugin Stream' && gfnRepoManageByType
+if [ -f $gsRepoDir/config.php ]; then
+	perl -pi -e "s/define\('USE_NGINX', false\);/define\('USE_NGINX', true\);/g" $gsRepoDir/config.php
+	perl -pi -e "s/define\('SCHEME', 'http'\);/define\('SCHEME', 'https'\);/g" $gsRepoDir/config.php
 fi
 
 #### Pause WebUI
-PluginWebUiActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' "name = 'ruTorrent Plugin Pause WebUI'"`"
-PluginWebUiDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ruTorrent Plugin Pause WebUI'"`"
-PluginWebUiUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'ruTorrent Plugin Pause WebUI'"`"
-PluginWebUiFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'ruTorrent Plugin Pause WebUI'"`"
-PluginWebUiVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'ruTorrent Plugin WebUI'"`"
-echo
-echo "########## Plugin WebUI"
-echo "Directory : "$PluginWebUiDir
-echo "Active : "`echo $PluginWebUiActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`
-echo "Version : "$PluginWebUiVersion
-echo "File : "$PluginWebUiFile
-echo "URL : "$PluginWebUiUrl
-echo
-if [ "$PluginWebUiActive" == "1" ]; then
-	if [ "$1" == "REFRESH" ] || [ ! -d $PluginWebUiDir ]; then
-		DeleteDirectory 1 "$PluginWebUiDir"
-		if [ ! -f $MySB_InstallDir/files/$PluginWebUiFile ]; then
-			curl --retry 2 -kSL -o "$MySB_InstallDir/files/$PluginWebUiFile" "$PluginWebUiUrl"
-		fi
-		unzip $MySB_InstallDir/files/$PluginWebUiFile -d $MySB_InstallDir/temp/
-		SubDirWebUi="`unzip -l $MySB_InstallDir/files/$PluginWebUiFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-		if [ -d $MySB_InstallDir/temp/$SubDirWebUi ]; then
-			mv -v $MySB_InstallDir/temp/$SubDirWebUi $PluginWebUiDir
-		fi
-	fi
-else
-	DeleteDirectory 1 "$PluginWebUiDir"
-fi
+gfnGetRepoValues 'ruTorrent Plugin Pause WebUI' && gfnRepoManageByType
 
 #### Mobile
-PluginMobileActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' "name = 'ruTorrent Plugin Mobile'"`"
-PluginMobileDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ruTorrent Plugin Mobile'"`"
-PluginMobileUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'ruTorrent Plugin Mobile'"`"
-PluginMobileFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'ruTorrent Plugin Pause Mobile'"`"
-PluginMobileVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'ruTorrent Plugin Mobile'"`"
-echo
-echo "########## Plugin Mobile"
-echo "Directory : "$PluginMobileDir
-echo "Active : "`echo $PluginMobileActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`
-echo "Version : "$PluginMobileVersion
-echo "File : "$PluginMobileFile
-echo "URL : "$PluginMobileUrl
-echo
-if [ "$PluginMobileActive" == "1" ]; then
-	if [ -d $PluginMobileDir ]; then
-		GitPull $PluginMobileDir/
-	else
-		if [ -f $MySB_InstallDir/files/$PluginMobileFile ]; then
-			unzip $MySB_InstallDir/files/$PluginMobileFile -d $MySB_InstallDir/temp/
-			SubDir="`unzip -l $MySB_InstallDir/files/$PluginMobileFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-			if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-				mv -v $MySB_InstallDir/temp/$SubDir $PluginMobileDir
-			fi
-			if [ -d $PluginMobileDir ]; then
-				GitPull $PluginMobileDir/
-			fi
-		else
-			git clone $PluginMobileUrl $PluginMobileDir
-		fi
-	fi
-else
-	DeleteDirectory 1 "$PluginMobileDir"
-fi
+gfnGetRepoValues 'ruTorrent Plugin Mobile' && gfnRepoManageByType
 
 #### Autodl-irssi
-# PluginAutodlActive="`Func_SQL_Command 'SELECT' 'MySB_db' 'active' 'repositories' "name = 'ruTorrent Plugin Autodl-irssi'"`"
-# PluginAutodlDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ruTorrent Plugin Autodl-irssi'"`"
-# PluginAutodlUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'ruTorrent Plugin Autodl-irssi'"`"
-# PluginAutodlFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'ruTorrent Plugin Autodl-irssi'"`"
-# PluginAutodlVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'ruTorrent Plugin Autodl-irssi'"`"
-# echo
-# echo "########## Plugin Autodl-irssi"
-# echo "Directory : "$PluginAutodlDir
-# echo "Active : "`echo $PluginAutodlActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`
-# echo "Version : "$PluginAutodlVersion
-# echo "File : "$PluginAutodlFile
-# echo "URL : "$PluginAutodlUrl
-# echo
-# if [ "$PluginAutodlActive" == "1" ]; then
-	# if [ -d $PluginAutodlDir ]; then
-		# GitPull $PluginAutodlDir/
-	# else
-		# if [ -f $MySB_InstallDir/files/$PluginAutodlFile ]; then
-			# unzip $MySB_InstallDir/files/$PluginAutodlFile -d $MySB_InstallDir/temp/
-			# SubDir="`unzip -l $MySB_InstallDir/files/$PluginAutodlFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-			# if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-				# mv -v $MySB_InstallDir/temp/$SubDir $PluginAutodlDir
-			# fi
-			# if [ -d $PluginAutodlDir ]; then
-				# GitPull $PluginAutodlDir/
-			# fi
-		# else
-			# git clone $PluginAutodlUrl $PluginAutodlDir
-		# fi
-	# fi
-# else
-	# DeleteDirectory 1 "$PluginAutodlDir"
-# fi
+#gfnGetRepoValues 'ruTorrent Plugin Autodl-irssi' && gfnRepoManageByType
 
 #### Theme
 echo
 echo "########## Plugin Theme"
 echo
-if [ "`cat $RutorrentDir/css/style.css | grep 'for Oblivion'`" == "" ]; then
-	echo "" | tee -a $RutorrentDir/css/style.css
-	echo "/* for Oblivion */" | tee -a $RutorrentDir/css/style.css
-	echo ".meter-value-start-color { background-color: #E05400 }" | tee -a $RutorrentDir/css/style.css
-	echo ".meter-value-end-color { background-color: #8FBC00 }" | tee -a $RutorrentDir/css/style.css
-	echo "::-webkit-scrollbar {width:12px;height:12px;padding:0px;margin:0px;}" | tee -a $RutorrentDir/css/style.css
+if [ "`cat $gsRutorrentDir/css/style.css | grep 'for Oblivion'`" == "" ]; then
+	echo "" | tee -a $gsRutorrentDir/css/style.css
+	echo "/* for Oblivion */" | tee -a $gsRutorrentDir/css/style.css
+	echo ".meter-value-start-color { background-color: #E05400 }" | tee -a $gsRutorrentDir/css/style.css
+	echo ".meter-value-end-color { background-color: #8FBC00 }" | tee -a $gsRutorrentDir/css/style.css
+	echo "::-webkit-scrollbar {width:12px;height:12px;padding:0px;margin:0px;}" | tee -a $gsRutorrentDir/css/style.css
 fi
-perl -pi -e "s/\$defaultTheme \= \"\"\;/\$defaultTheme \= \"Oblivion\"\;/g" $RutorrentPluginsDir/theme/conf.php
+perl -pi -e "s/\$defaultTheme \= \"\"\;/\$defaultTheme \= \"Oblivion\"\;/g" $gsRutorrentPluginsDir/theme/conf.php
 
 #### ruTorrent favicons trackers
 echo
 echo "########## ruTorrent favicons trackers"
 echo
-TrackersFavicons=$(ls -1r $MySB_InstallDir/files/trackers_favicons/)
+TrackersFavicons="`ls -1r $MySB_InstallDir/files/trackers_favicons/`"
 for Favicons in $TrackersFavicons; do
-	if [ ! -f $RutorrentPluginsDir/tracklabels/trackers/$Favicons ]; then
-		cp -v $MySB_InstallDir/files/trackers_favicons/$Favicons $RutorrentPluginsDir/tracklabels/trackers/
+	if [ ! -f $gsRutorrentPluginsDir/tracklabels/trackers/$Favicons ]; then
+		cp -v $MySB_InstallDir/files/trackers_favicons/$Favicons $gsRutorrentPluginsDir/tracklabels/trackers/
 	fi
 done
 
 #### Plowshare
-PluginPlowshareDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'Plowshare'"`"
-PluginPlowshareUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Plowshare'"`"
-PluginPlowshareFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Plowshare'"`"
-PluginPlowshareType="`Func_SQL_Command 'SELECT' 'MySB_db' 'type' 'repositories' "name = 'Plowshare'"`"
-echo
-echo "########## Plowshare"
-echo "Directory : "$PluginPlowshareDir
-echo "Version : "$PluginAutodlVersion
-echo "File : "$PluginPlowshareFile
-echo "Type : "$PluginPlowshareType
-echo "URL : "$PluginPlowshareUrl
-echo
-case "$PluginPlowshareType" in
-	"GIT")
-		if [ -d $PluginPlowshareDir ]; then
-			GitCheckout $PluginPlowshareDir/
-		else
-			if [ -f $MySB_InstallDir/files/$PluginPlowshareFile ]; then
-				unzip $MySB_InstallDir/files/$PluginPlowshareFile -d $MySB_InstallDir/temp/
-				SubDir="`unzip -l $MySB_InstallDir/files/$PluginPlowshareFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-				if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-					mv -v $MySB_InstallDir/temp/$SubDir $PluginPlowshareDir
-				fi
-				if [ -d $PluginPlowshareDir ]; then
-					GitCheckout $PluginPlowshareDir/
-				fi
-			else
-				git clone $PluginPlowshareUrl $PluginPlowshareDir
-			fi
-		fi
-	;;
-	*)
-		if [ "$1" == "REFRESH" ]; then
-			DeleteDirectory 1 "$PluginPlowshareDir"
-		fi
-		if [ ! -f $MySB_InstallDir/files/$PluginPlowshareFile ]; then
-			curl --retry 2 -kSL -o "$MySB_InstallDir/files/$PluginPlowshareFile" "$PluginPlowshareUrl"
-		fi
-		tar -zxvf $MySB_InstallDir/files/$PluginPlowshareFile -C $MySB_InstallDir/temp/
-		SubDirPlowshare="`tar -ztf $MySB_InstallDir/files/$PluginPlowshareFile | cut -d '/' -f 1 | uniq`"
-		if [ -d $MySB_InstallDir/temp/$SubDirPlowshare ] && [ ! -d $PluginPlowshareDir ]; then
-			mv -v $MySB_InstallDir/temp/$SubDirPlowshare $PluginPlowshareDir
-		fi
-	;;
-esac
-
-cd $PluginPlowshareDir
+gfnGetRepoValues 'Plowshare'
+if [ "$gsSwitch" == "REFRESH" ]; then
+	gfnDeleteDirectory 1 "$gsRepoDir"
+fi
+gfnRepoManageByType
+cd $gsRepoDir
 make clean
 make install
 
 #### Create directories & change rights
 echo
 log_daemon_msg "Change owners and rights for files and directories"
-ManageDirectoriesAndFiles 'global'
-StatusLSB
+gfnManageDirAndFiles 'global'
+gfnStatusLSB
 
 #### Get Tracker Certificates
 log_daemon_msg "Check and get all trackers certs"
-ScriptInvoke 'ScreenSTD' "$MySB_InstallDir/scripts/GetTrackersCert.bsh" 'REFRESH'
-StatusLSB
+gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/scripts/GetTrackersCert.bsh" 'REFRESH'
+gfnStatusLSB
 
 #### START services
-LocSwitch="$1"
-if [ "$LocSwitch" != "UPGRADE" ]; then
-	ManageServices start "cron"
+if [ "$gsSwitch" != "UPGRADE" ]; then
+	gfnManageServices start "cron"
 
-	for seedUser in $UsersList; do
+	for seedUser in $gsUsersList; do
 		if [ -f /etc/init.d/rtorrent-$seedUser ]; then
 			service rtorrent-$seedUser status &> /dev/null
 			if [ $? -gt 0 ]; then

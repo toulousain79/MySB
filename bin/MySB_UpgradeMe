@@ -26,21 +26,21 @@ source $(dirname $0)/../inc/includes_before
 
 #### VARs
 Type="$1"
-Continue=1
+Continue=0
 Error=""
 
 #### Updating clock
 echo -e -n "${CBLUE}$UpgradeMe_Clock$CEND..."
 ping -c4 0.fr.pool.ntp.org > /dev/null 2>&1
 if [ $? -gt 0 ]; then
-	SwitchDNS "bind"
+	gfnSwitchDNS "bind"
 fi
 /usr/sbin/ntpdate -u 0.fr.pool.ntp.org > /dev/null 2>&1
 if [ $? -eq 0 ]; then
 	echo -e "$Global_Done"
 else
 	echo -e "$Global_Failed"
-	Continue=0
+	Continue=1
 	Error="$UpgradeMe_Error_Clock"
 fi
 
@@ -51,188 +51,167 @@ if [ $? -eq 0 ]; then
 	echo -e "$Global_Done"
 else
 	echo -e "$Global_Failed"
-	Continue=0
+	Continue=2
 	Error="$UpgradeMe_Error_GitHubAccess"
 fi
 
 #### Update actual repo
-if [ "$Continue" == "1" ]; then
+if [ $Continue -eq 0 ]; then
 	echo -e -n "${CBLUE}$UpgradeMe_UpdateGithub$CEND..."
-	ScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/bin/MySB_GitHubRepoUpdate" 'REFRESH'
-	StatusSTD
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/bin/MySB_GitHubRepoUpdate" 'REFRESH'
+	gfnStatusSTD
+fi
 
-	#### Check if new version
-	MySB_NewVersion="`curl --retry 3 -sk https://raw.githubusercontent.com/toulousain79/MySB/rev/version`"
+if [ $Continue -eq 0 ]; then
+	if [ -f $MySB_InstallDir/dev ]; then
+		#### DEV - To force an upgrade
+		MySB_NewVersion="`cat $MySB_InstallDir/dev`"
+	else
+		#### Check if new version
+		MySB_NewVersion="`curl -skLS --retry 3 https://raw.githubusercontent.com/toulousain79/MySB/rev/version`"
+	fi
 
-	if [ "$MySB_CurrentVersion" == "$MySB_NewVersion" ]; then
+	if [ "$gsCurrentVersion" == "$MySB_NewVersion" ]; then
 		UpgradeMe_UpToDate="`echo $UpgradeMe_UpToDate | sed "s/#version#/$MySB_NewVersion/g;"`"
 		echo
 		echo -e "$UpgradeMe_UpToDate"
 		echo
-		EndingScript 0
+		gfnEndingScript 0
 	else
 		case "$Type" in
 			"CRON")
-				SendMail "MySB - $UpgradeMe_NewVersion ($MySB_NewVersion)" "$MainUser" "new_version" "$UpgradeMe_NewVersion"
-
-				EndingScript 0
+				curl -skLS --retry 3 https://raw.githubusercontent.com/toulousain79/MySB/$MySB_NewVersion/Changelog.md -o $MySB_InstallDir/temp/changelog
+				gfnSendMail "MySB - $UpgradeMe_NewVersion ($MySB_NewVersion)" "$gsMainUserName" "new_version" "$UpgradeMe_NewVersion"
+				[ -f $MySB_InstallDir/temp/changelog ] && rm -f $MySB_InstallDir/temp/changelog
+				gfnEndingScript 0
 			;;
 			*)
 				UpgradeMe_Msg_VersionAvailable="`echo $UpgradeMe_Msg_VersionAvailable | sed "s/#version#/$MySB_NewVersion/g;"`"
 				echo
 				echo -e "$UpgradeMe_Msg_VersionAvailable"
 				echo
-				QuestionGetString NO "$Global_WantToContinue" CONTINUE $Global_NO
-				CONTINUE="`echo $CONTINUE | tr '[:lower:]' '[:upper:]'`"
-				if [ "$CONTINUE" == "$Global_NO" ]; then
-					EndingScript 0
+				gfnQuestionGetString NO "$Global_WantToContinue" WantToContinue $Global_NO
+				WantToContinue="`echo $WantToContinue | tr '[:lower:]' '[:upper:]'`"
+				if [ "$WantToContinue" == "$Global_NO" ]; then
+					gfnEndingScript 0
 				fi
 			;;
 		esac
 	fi
 
 	#### Backup
-	DateTime="`/bin/date +%Y%m%d-%H%M%S`"
-	echo -e "${CBLUE}$UpgradeMe_CreateBackup '${MySB_InstallDir}_backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz'$CEND"
+	echo -e "${CBLUE}$UpgradeMe_CreateBackup$CEND"
 	echo -e -n "${CRED}$Global_PleaseWait $CEND"
-	CountDown 3
+	gfnCountDown 3
 
 	# Cleaning MySB before compress
-	CleanBeforeUpgrade
+	gfnCleanBeforeUpgrade
 
-	# MySQL databases DUMP
-	DbList="`ls -1AFh /var/lib/mysql/`"
-	for Database in $DbList; do
-		if [ -d /var/lib/mysql/$Database/ ]; then
-			case "$Database" in
-				'mysql/'|'performance_schema/')
-					continue
-				;;
-				*)
-					mysqldump --defaults-extra-file=/root/.config.cnf $Database > $MySB_InstallDir/db/MySQL_$Database-$DateTime-$MySB_CurrentVersion.dump.sql
-					if [ $? -ne 0 ]; then
-						Continue=0
-						Error="`echo $UpgradeMe_Error_BackupDatabase | sed "s/#database#/$Database/g;"`"
-					fi
-				;;
-			esac
-		fi
-	done
+	# Creating backup with Backup-Manager
+	[ $gbDevMode -eq 1 ] && backup-manager-tools remove "$MySB_InstallDir"
+	/usr/sbin/backup-manager -c /etc/MySB/BM_MySB.conf
 
-	# Creating backup directory if doesn't exist
-	if [ ! -d ${MySB_InstallDir}_backup ]; then
-		mkdir -p ${MySB_InstallDir}_backup
-	fi
-
-	# Creating archive
-	if [ -f $MySB_InstallDir/temp/dev ]; then
-		tar -zcvf ${MySB_InstallDir}_backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz /etc
-	else
-		tar -zcvf ${MySB_InstallDir}_backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz $MySB_InstallDir /etc
-	fi
 	if [ $? -gt 0 ]; then
-		Continue=0
-		Error="`echo $UpgradeMe_Error_CreateBackup | sed "s/#file#/Backup-$DateTime-$MySB_CurrentVersion.tar.gz/g;"`"
-	else
-		if  [ ! -f ${MySB_InstallDir}_backup/Backup-$DateTime-$MySB_CurrentVersion.tar.gz ]; then
-			Continue=0
-			Error="$UpgradeMe_Error_BackupFailed"
-		fi
+		Continue=3
+		Error="UpgradeMe_Error_BackupFailed"
 	fi
+
+	[ $gbDevMode -eq 1 ] && backup-manager-tools add "$MySB_InstallDir"
 fi
 
 #### MySB Script GitHub
-if [ "$Continue" == "1" ]; then
+if [ $Continue -eq 0 ]; then
 	echo
-	UpgradeMe_Merge="`echo $UpgradeMe_Merge | sed "s/#current_version#/$MySB_CurrentVersion/g;" | sed "s/#new_version#/$MySB_NewVersion/g;"`"
+	UpgradeMe_Merge="`echo $UpgradeMe_Merge | sed "s/#current_version#/$gsCurrentVersion/g;" | sed "s/#new_version#/$MySB_NewVersion/g;"`"
 	echo -e "${CBLUE}$UpgradeMe_Merge$CEND"
 	echo -e -n "${CRED}$Global_PleaseWait $CEND"
-	CountDown 3
+	gfnCountDown 3
 	echo
+
+	#### Upgrade in progress page + Stop Cron service
+	gfnUpgradeInProgress "on"
 
 	cd $MySB_InstallDir/
 
 	git fetch --all
 	if [ $? -gt 0 ]; then
-		Continue=0
+		Continue=4
 		Error="$UpgradeMe_Error_GitFetch"
 	fi
 
-	if [ "$Continue" == "1" ]; then
+	if [ $Continue -eq 0 ]; then
 		git stash
 		if [ $? -gt 0 ]; then
-			Continue=0
+			Continue=5
 			Error="$UpgradeMe_Error_GitPull"
 		fi
 	fi
 
-	if [ "$Continue" == "1" ]; then
+	if [ $Continue -eq 0 ]; then
 		git checkout -b $MySB_NewVersion origin/$MySB_NewVersion
 		if [ $? -gt 0 ]; then
-			Continue=0
+			Continue=6
 			UpgradeMe_Error_GitCheckout="`echo $UpgradeMe_Error_GitCheckout | sed "s/#new_version#/$MySB_NewVersion/g;"`"
 			Error="$UpgradeMe_Error_GitCheckout"
 		fi
 	fi
 
-	if [ "$Continue" == "1" ]; then
+	if [ $Continue -eq 0 ]; then
 		git pull
 		if [ $? -gt 0 ]; then
-			Continue=0
+			Continue=7
 			Error="$UpgradeMe_Error_GitPull"
 		else
+			git stash clear
 			# Cleaning old branch
-			CleanBeforeUpgrade		
+			gfnCleanBeforeUpgrade
 		fi
-	fi
-
-	if [ "$Continue" == "1" ]; then
-		#### Update version info
-		echo
-		echo -e -n "${CBLUE}$Global_UpdatingVersion$CEND..."
-		echo "MySB_CurrentVersion=\"$MySB_NewVersion\"" > $MySB_InstallDir/files/current_version
-		rm -f $MySB_InstallDir/files/banner_*
-		echo -e "$Global_Done"
 	fi
 fi
 
 #### Completing the upgrade
 MySB_NewVersion="`cat $MySB_InstallDir/version`"
-MySB_NewVersion="`curl --retry 3 -sk https://raw.githubusercontent.com/toulousain79/MySB/rev/version`"
 MySB_RepoVersion="`cd $MySB_InstallDir/ && git branch | grep '*' | awk '{ print $2 }'`"
 
-if [ "$Continue" == "1" ] && [ "$MySB_NewVersion" == "$MySB_CurrentVersion" ]; then
-	if [ -f $MySB_InstallDir/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh ]; then
-		echo
-		echo -e "${CBLUE}$UpgradeMe_StartScreen$CEND"
-		screen -wipe &> /dev/null
-		screen -dmS MySB_Upgrade /bin/bash $MySB_InstallDir/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh;
-		echo -e -n "${CRED}$Global_PleaseWait $CEND"
-		CountDown 10
+if [ $Continue -eq 0 ]; then
+	if [ "$MySB_NewVersion" == "$MySB_RepoVersion" ]; then
+		if [ -f $MySB_InstallDir/upgrade/From_$gsCurrentVersion-to-$MySB_NewVersion.bsh ]; then
+			echo
+			echo -e "${CBLUE}$UpgradeMe_StartScreen$CEND"
+			screen -wipe &> /dev/null
+			screen -dmS MySB_Upgrade /bin/bash $MySB_InstallDir/upgrade/From_$gsCurrentVersion-to-$MySB_NewVersion.bsh;
+			echo -e -n "${CRED}$Global_PleaseWait $CEND"
+			gfnCountDown 10
 
-		screen -r MySB_Upgrade
-	else
-		Continue=0
-		Error="$UpgradeMe_Error_UpgradeSciptMissing ($MySB_InstallDir/upgrade/From_$MySB_CurrentVersion-to-$MySB_NewVersion.bsh)"
+			screen -r MySB_Upgrade
+		else
+			Continue=8
+			Error="$UpgradeMe_Error_UpgradeSciptMissing ($MySB_InstallDir/upgrade/From_$gsCurrentVersion-to-$MySB_NewVersion.bsh)"
+		fi
 	fi
 fi
 
+#### Upgrade in progress page + Start Cron service
+gfnUpgradeInProgress "off"
+
 #### Finished
 clear
-if [ -f $MySB_InstallDir/temp/dev ]; then
-	rm -f $MySB_InstallDir/temp/dev
+if [ -f $MySB_InstallDir/dev ]; then
+	rm -f $MySB_InstallDir/dev
 fi
-if [ "$Continue" == "1" ]; then
+if [ $Continue -eq 0 ]; then
 	echo -e "${CGREEN}$UpgradeMe_UpgradeFinished$CEND"
 	echo
 else
 	echo -e "${CRED}$UpgradeMe_ErrorOccured$CEND"
 	echo -e "${CRED}$Error$CEND"
+	echo -e "${CRED}Code: $Continue$CEND"
 	echo
-	EndingScript 0
+	gfnEndingScript 0
 fi
 
 # -----------------------------------------
+funcs=0; funcs_sql=0; funcs_tools=0;
 source $(dirname $0)/../inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

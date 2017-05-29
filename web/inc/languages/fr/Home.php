@@ -53,10 +53,10 @@ define('Home_NormalUser', '
 		<li>T&eacute;l&eacute;charger vos fichiers de configuration pour OpenVPN <span class="Comments">(si install&eacute;)</span></li>
 	</ul>
 ');
-define('Home_ownCloudAfterUpgrade', '
+define('Home_NextCloudAfterUpgrade', '
 	<p></p>
-	<h2>ownCloud</h2>
-	<p>Pour utiliser ownCloud merci de r&eacute;initialiser votre mot de passe sur <a href="?user/change-password.html">cette page</a>. <span class="Comments">(Vous pouvez r&eacute;utiliser le m&ecirc;me mot de passe)</span></p>
+	<h2>NextCloud</h2>
+	<p>Pour utiliser NextCloud merci de r&eacute;initialiser votre mot de passe sur <a href="?user/change-password.html">cette page</a>. <span class="Comments">(Vous pouvez r&eacute;utiliser le m&ecirc;me mot de passe)</span></p>
 ');
 
 //#################### LAST LINE ######################################

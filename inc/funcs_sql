@@ -23,267 +23,46 @@
 funcs_sql=1
 ##################### FIRST LINE #####################################
 
-#### Add MySB_SecurityRules command in queue
-AddSecurityInQueue() {
-	# VARs
-	MySwitch="$1"
-	Command="$2"
-	User="`whoami`"
-	Arguments=""
-	args=("$@")
-	for ((i=2; i < $#; i++)) { Arguments="$Arguments ${args[$i]}"; }
-	Arguments="`echo $Arguments | sed -e 's/^ //g;' | sed -e 's/^ //g;'`"
+#### MySQL command
+cmdMySQL() {
+	local sDatabase sRequest
 
-	case "$MySwitch" in
-		"add")
-			# Check the current priority
-			Priority="`Func_SQL_Command 'SELECT' 'MySB_db' 'max(priority)' 'commands' '1'`"
-			(( Priority++ ))
-
-			# Add the commands in database
-			Func_SQL_Command 'INSERT' 'MySB_db' 'commands' "commands,reload,priority,args,user" "'$Command','1','$Priority','$Arguments','$User'"
-		;;
-		"remove")
-			Func_SQL_Command 'DELETE' 'MySB_db' 'commands' "commands='$Command' AND args='$Arguments' AND user='$User'"
-		;;
-		"check")
-			Func_SQL_Command 'SELECT' 'MySB_db' 'args' 'commands' "commands='$Command' AND user='$User'"
-		;;
-	esac
+	if [ -z "$1" ] || [ -z "$2" ]; then
+		return 1
+	else
+		sDatabase="$1"
+		sRequest="$2"
+		sVerbose="$3"
+	fi
+	mysql --defaults-extra-file=/root/.config.cnf --database=$sDatabase -w --connect-timeout=10 -s -N -e "$sRequest" $sVerbose
 }
 
-#### SGBD commands (SELECT / UPDATE / INSERT / DELETE / ALTER)
-Func_SQL_Command() {
-	DatabaseType="mysql"
-	Command="$1"
-	DataBase="$2"
-	AptDate="`date +%Y-%m-%d\ %H:%M:%S`"
+#### Add MySB_SecurityRules command in queue
+gfnAddSecurityInQueue() {
+	local sSwitch sCommand sUser sFields sArgs nPriority
 
-	# MySQL or SQLite ?
-	case "$DataBase" in
-		'MySB_db')
-			# <= 1
-			if [ "`ls -a /var/lib/mysql/MySB_db/ 2> /dev/null | sed -e "/\.$/d" | wc -l`" -le 1 ] && [ -f $MySB_InstallDir"/db/MySB.sq3" ]; then
-				DatabaseType="sqlite3"
-				DataBase=$MySB_DB
-			fi
-		;;
-		'Wolf_db')
-			DatabaseType="sqlite3"
-			DataBase=$Wolf_DB
-		;;
-		'Sync_db')
-			DatabaseType="sqlite3"
-			DataBase=$Sync_DB
-		;;
-	esac
+	sSwitch="$1"
+	sCommand="$2"
+	sUser="`whoami`"
+	sFields=("$@")
 
-	if ! GetPid mysqld && CheckCommand 0 mysql && [ "$DatabaseType" == "mysql" ]; then
-		service mysql restart &> /dev/null
-	fi
+	for ((i=2; i < $#; i++)) { sArgs="$sArgs ${sFields[$i]}"; }
+	sArgs="`echo $sArgs | sed -e 's/^ //g;' | sed -e 's/^ //g;'`"
 
-	case "$Command" in
-		"UPDATE")
-			Table="$3"
-			VarSet="`echo $4 | sed "s/NOW/$AptDate/g;"`"
-			VarWhere="$5"
-			Display="$6"
-			case "$DatabaseType" in
-				"sqlite3")
-					/usr/bin/sqlite3 $Display -cmd '.timeout 150000' $DataBase "UPDATE $Table SET $VarSet WHERE $VarWhere;"
-				;;
-				"mysql")
-					IFS=$','
-					TempVars=''
-					for VarS in $VarSet; do
-						Key="`echo $VarS | cut -d '=' -f 1 | sed 's/ //g;'`"
-						Value="`echo $VarS | cut -d '=' -f 2 | sed 's/^ //g;'`"
-						VarS='`'"`echo $Key`"'`='"$Value"
-						if [ -z "$TempVars" ]; then
-							TempVars="$VarS"
-						else
-							TempVars="$TempVars, $VarS"
-						fi
-					done
-					unset IFS
-					VarSet="`echo $TempVars`"
+	case "$sSwitch" in
+		"add")
+			# Check the current priority
+			nPriority="`cmdMySQL 'MySB_db' "SELECT max(priority) FROM commands;"`"
+			(( nPriority++ ))
 
-					case "$VarWhere" in
-						'ALL') # WHERE 'ALL'.
-							MyVar="UPDATE $Table SET $VarSet"
-						;;
-						*)
-							if [ -z "`echo $VarWhere | grep 'IN'`" ]; then
-								if [ ! -z "`echo $VarWhere | grep 'OR'`" ]; then
-									Conjunction="OR"
-								elif [ ! -z "`echo $VarWhere | grep 'AND'`" ]; then
-									Conjunction="AND"
-								fi
-
-								a="`echo "$VarWhere" | grep -o "' $Conjunction " | wc -l`"
-								b=$a; c=0
-								(( b++ ))
-								for (( i=1; i<=$b; i++ )); do
-									Var1="`echo $VarWhere | awk -F "' $Conjunction " "{print $"$i"}" | sed 's/^ //g;'`"
-									if [ ! -z "$Var1" ]; then
-										Key="`echo $Var1 | cut -d '=' -f 1 | sed 's/ //g;'`"
-										Value="`echo $Var1 | cut -d '=' -f 2 | sed 's/^ //g;'`"
-										Var1='`'"`echo $Key`"'`='"$Value"
-										if [ $c -lt $a ]; then
-											if [ -z "$VarWhereTemp" ]; then
-												VarWhereTemp="$Var1"
-											else
-												VarWhereTemp="$VarWhereTemp' $Conjunction $Var1"
-											fi
-										else
-											if [ -z "$VarWhereTemp" ]; then
-												VarWhereTemp="$Var1"
-											else
-												VarWhereTemp="$VarWhereTemp' $Conjunction $Var1"
-											fi
-										fi
-										(( c++ ))
-									fi
-								done
-							else
-								VarWhereTemp="$VarWhere"
-							fi
-							MyVar="UPDATE $Table SET $VarSet WHERE $VarWhereTemp"
-							unset VarWhereTemp
-						;;
-					esac
-					if [ "$Display" == "-echo" ];then
-						echo "$MyVar"
-					fi
-					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "$MyVar";
-				;;
-			esac
+			# Add the commands in database
+			cmdMySQL 'MySB_db' "INSERT INTO commands (commands,reload,priority,args,user) VALUES ('$sCommand','1','$nPriority','$sArgs','$sUser');"
 		;;
-		"INSERT")
-			Table="$3"
-			VarColumns="$4"
-			VarValues="`echo $5 | sed "s/NOW/$AptDate/g;"`"
-			Display="$6"
-			case "$DatabaseType" in
-				"sqlite3")
-					/usr/bin/sqlite3 $Display -cmd '.timeout 150000' $DataBase "INSERT INTO $Table ($VarColumns) VALUES ($VarValues);"
-				;;
-				"mysql")
-					IFS=$','; TempValue=""
-					for Column in $VarColumns; do
-						case "$Column" in
-							'key')
-								Column="`echo $Column | sed 's/key/\`key\`/g;'`"
-							;;
-							'value')
-								Column="`echo $Column | sed 's/value/\`value\`/g;'`"
-							;;
-							*)
-								Column="`echo $Column | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-								Column='`'"`echo $Column`"'`'
-							;;
-						esac
-						TempValue="$TempValue,$Column"
-					done
-					unset IFS
-					TempValue="`echo $TempValue | sed 's/^,//g;' | sed 's/,$//g;'`"
-					VarColumns="$TempValue"
-					MyVar="INSERT INTO $Table ($VarColumns) VALUES ($VarValues)"
-					if [ "$Display" == "-echo" ];then
-						echo "$MyVar"
-					fi
-					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "$MyVar";
-				;;
-			esac
+		"remove")
+			cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$sCommand' AND args='$sArgs' AND user='$sUser';"
 		;;
-		"DELETE")
-			Table="$3"
-			VarWhere="$4"
-			Display="$5"
-			case "$DatabaseType" in
-				"sqlite3")
-					/usr/bin/sqlite3 $Display -cmd '.timeout 150000' $DataBase "DELETE FROM $Table WHERE $VarWhere"
-				;;
-				"mysql")
-					MyVar="DELETE FROM $Table WHERE $VarWhere"
-					if [ "$Display" == "-echo" ];then
-						echo "$MyVar"
-					fi
-					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "$MyVar";
-				;;
-			esac
-		;;
-		"SELECT")
-			VarSelect="$3"
-			Table="$4"
-			VarWhere="$5"
-			case "$DatabaseType" in
-				"sqlite3")
-					case "$VarSelect" in
-						"count(*)")
-							/usr/bin/sqlite3 -cmd '.timeout 150000' $DataBase "SELECT $VarSelect FROM $Table;"
-						;;
-						*)
-							/usr/bin/sqlite3 -cmd '.timeout 150000' $DataBase "SELECT $VarSelect FROM $Table WHERE $VarWhere;"
-						;;
-					esac
-				;;
-				"mysql")
-					case "$VarSelect" in
-						min\(*\)|max\(*\))
-							Value="`/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -N -s -e \"SELECT $VarSelect FROM $Table WHERE $VarWhere\";`"
-							if [ "$Value" == "NULL" ]; then
-								echo 0
-							else
-								echo $Value
-							fi
-						;;
-						"count(*)")
-							/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -N -s -e "SELECT $VarSelect FROM $Table";
-						;;
-						*)
-							/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -N -s -e "SELECT $VarSelect FROM $Table WHERE $VarWhere" | sed 's/\t/|/g;';
-						;;
-					esac
-				;;
-			esac
-		;;
-		"ALTER")
-			Type="$3"
-			Table="$4"
-			Column="$5"
-			Params="$6"
-			Display="$7"
-			case "$DatabaseType" in
-				"mysql")
-					case "$Type" in
-						"ADD")
-							MyVar="ALTER TABLE $Table ADD \`$Column\` $Params"
-						;;
-						"CHANGE")
-							MyVar="ALTER TABLE $Table CHANGE \`$Column\` \`$Column\` $Params"
-						;;
-						"DROP")
-							MyVar="ALTER TABLE $Table DROP \`$Column\`"
-						;;
-						*)
-							MyVar="ALTER TABLE $Table $Type $Column"
-						;;
-					esac
-					if [ "$Display" == "-echo" ];then
-						echo "$MyVar"
-					fi
-					/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "$MyVar";
-				;;
-			esac
-		;;
-		"DROP")
-			Table="$3"
-			MyVar="DROP TABLE \`$Table\`"
-			if [ "$Display" == "-echo" ];then
-				echo "$MyVar"
-			fi
-			/usr/bin/mysql --defaults-extra-file=/root/.config.cnf --database=$DataBase -e "$MyVar";
+		"check")
+			nPriority="`cmdMySQL 'MySB_db' "SELECT args FROM commands WHERE commands='$sCommand' AND user='$sUser';"`"
 		;;
 	esac
 }

@@ -24,26 +24,28 @@ funcs_MySB_SecurityRules=1
 ##################### FIRST LINE #####################################
 
 #### Crete '/etc/hosts' file
-CreateHostsFile() {
+gfnCreateHostsFile() {
+	local nIdTracker sTracker sTrackerDomain sTrackerIPv4 sIPv4 sLign sROW
+
 	echo "127.0.0.1       localhost.localdomain localhost" > /etc/hosts
-	echo "$SrvIpAddress       $HostNameFQDN $(hostname -s)" >> /etc/hosts
+	echo "$gsSrvIpAddress       $gsHostNameFqdn $(hostname -s)" >> /etc/hosts
 	echo "" >> /etc/hosts
 	echo "#### MySB - Force trackers resolution (ex: DNS liar)" >> /etc/hosts
 
-	Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list,tracker,tracker_domain' 'trackers_list' "is_active = '1'" | while read ROW; do
-		IdTracker="`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`"
-		Tracker="`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`"
-		TrackerDomain="`echo $ROW | awk '{split($0,a,"|"); print a[3]}'`"
-		TrackerIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$IdTracker'"`"
+	cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker,tracker_domain FROM trackers_list WHERE is_active='1';" | sed 's/\t/|/g;' | while read sROW; do
+		nIdTracker="`echo $sROW | awk '{split($0,a,"|"); print a[1]}'`"
+		sTracker="`echo $sROW | awk '{split($0,a,"|"); print a[2]}'`"
+		sTrackerDomain="`echo $sROW | awk '{split($0,a,"|"); print a[3]}'`"
+		sTrackerIPv4="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list='$nIdTracker';"`"
 
-		if [ ! -z "$TrackerIPv4" ]; then
-			if [ "$Tracker" == "$TrackerDomain" ]; then
-				Lign="$TrackerDomain"
+		if [ ! -z "$sTrackerIPv4" ]; then
+			if [ "$sTracker" == "$sTrackerDomain" ]; then
+				sLign="$sTrackerDomain"
 			else
-				Lign="$Tracker, $TrackerDomain"
+				sLign="$sTracker, $sTrackerDomain"
 			fi
-			for IPv4 in $TrackerIPv4; do
-				echo "$IPv4       $Lign" >> /etc/hosts
+			for sIPv4 in $sTrackerIPv4; do
+				echo "$sIPv4       $sLign" >> /etc/hosts
 			done
 		fi
 	done

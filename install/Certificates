@@ -39,21 +39,21 @@ CreateCACertificate() {
 			echo -e "${CYELLOW}CA certificate already exist. Do you want to create it again ?$CEND"
 			echo -e "${CYELLOW}If you create new CA, you must create again certificates for services.$CEND"
 			echo -e "${CYELLOW}Do you understand ?$CEND"
-			QuestionGetString NO "$Global_WantToContinue" CONTINUE $Global_YES
+			gfnQuestionGetString NO "$Global_WantToContinue" CONTINUE $Global_YES
 			if [ "$CONTINUE" == "$Global_YES" ]; then
 				echo -e "$Global_SeeYouLater"
 				echo
 				echo
-				EndingScript 0
+				gfnEndingScript 0
 			fi
 		fi
 	fi
 
-	CERTPASS="`GenPassword 16`"
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "cert_password = '$CERTPASS'" "id_system = '1'" '-echo'
+	CERTPASS="`gfnGenPassword 16`"
+	cmdMySQL 'MySB_db' "UPDATE system SET cert_password = '$CERTPASS' WHERE id_system='1';" -v
 
 	# create needed files and directories
-	DeleteDirectory 0 "$MySB_InstallDir/ssl/CA"
+	gfnDeleteDirectory 0 "$MySB_InstallDir/ssl/CA"
 	if [ ! -d $MySB_InstallDir/ssl/CA/private/ ]; then
 		mkdir -p $MySB_InstallDir/ssl/CA/private/
 	fi
@@ -72,9 +72,9 @@ CreateCACertificate() {
 
 	# 3 - OpenSSL config
 	cp $MySB_InstallDir/templates/root.ca.cacert.conf.tmpl ./MySB_caconfig.cnf
-	perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" ./MySB_caconfig.cnf
-	perl -pi -e "s/<servername>/$HostNameFQDN/g" ./MySB_caconfig.cnf
-	perl -pi -e "s/<ipaddress>/$SrvIpAddress/g" ./MySB_caconfig.cnf
+	perl -pi -e "s/<InstallDir>/$gsInstallDirEscaped/g" ./MySB_caconfig.cnf
+	perl -pi -e "s/<servername>/$gsHostNameFqdn/g" ./MySB_caconfig.cnf
+	perl -pi -e "s/<ipaddress>/$gsSrvIpAddress/g" ./MySB_caconfig.cnf
 
 	#### 4 - Certificate Authority
 	echo '01' > ./serial
@@ -94,9 +94,9 @@ CreateCACertificate() {
 CreateServiceCertificate() {
 	cd $MySB_InstallDir/ssl/CA/
 
-	CERTPASS="`Func_SQL_Command 'SELECT' 'MySB_db' 'cert_password' 'system' "id_system = '1'" '-echo'`"
+	CERTPASS="`cmdMySQL 'MySB_db' "SELECT cert_password FROM system WHERE id_system='1';"`"
 	Service="$1"
-	SUBJ="/C=FR/ST=FR/L=FR/O=MySB/CN=$HostNameFQDN/emailAddress=admin@localhost/OU=$Service"
+	SUBJ="/C=FR/ST=FR/L=FR/O=MySB/CN=$gsHostNameFqdn/emailAddress=admin@localhost/OU=$Service"
 
 	if [ "$TYPE" == "UPGRADE" ]; then
 		rm -vf $MySB_InstallDir/ssl/*.key
@@ -126,7 +126,7 @@ case "$COMMAND" in
 	;;
 	*)
 		echo -e "${CBLUE}Usage:$CEND	${CYELLOW}bash $0$CEND ${CGREEN}{CreateCACertificate|CreateServiceCertificate <service_name>}$CEND"
-		EndingScript 0
+		gfnEndingScript 0
 	;;
 esac
 

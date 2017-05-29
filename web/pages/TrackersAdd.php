@@ -127,15 +127,6 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 		default: // delete
 			foreach($_POST['submit'] as $key => $value) {
-				// $result = $MySB_DB->delete("trackers_list_ipv4", ["id_trackers_list" => $key]);
-				// if ( $result = 0 ) {
-					// $success = false;
-				// }
-
-				// $result = $MySB_DB->delete("trackers_list", ["id_trackers_list" => $key]);
-				// if ( $result = 0 ) {
-					// $success = false;
-				// }
 				$result = $MySB_DB->update("trackers_list", ["to_delete" => 1], ["id_trackers_list" => $key]);
 				if ( $result = 0 ) {
 					$success = false;
@@ -180,12 +171,11 @@ if (empty($TrackersList)) {
 				<div id="input1" class="clonedInput">
 					<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
 					<?php echo MainUser_TrackersAdd_TextAddress; ?>&nbsp;<input class="input_tracker" id="input_tracker" name="input_tracker[1]" type="text" required="required" <?php echo $TrackerAddress; ?> />
-					&nbsp;&nbsp;<?php echo Global_IsActive; ?>&nbsp;&nbsp;<select class="select_is_active" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required">
-										<option value="0" selected="selected"><?php echo Global_No; ?></option>
-										<option value="1"><?php echo Global_Yes; ?></option>
+					&nbsp;&nbsp;<?php echo Global_IsActive; ?>&nbsp;&nbsp;<select class="redText" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required" onchange="this.className=this.options[this.selectedIndex].className">
+										<option value="0" selected="selected" class="redText"><?php echo Global_No; ?></option>
+										<option value="1" class="greenText"><?php echo Global_Yes; ?></option>
 									</select>
 				</div>
-
 				<div style="margin-top: 10px; margin-bottom: 20px;">
 					<input type="button" id="btnAdd" value="<?php echo MainUser_TrackersAdd_Btn_AddNewDomain; ?>" style="cursor: pointer;" />
 					<input type="button" id="btnDel" value="<?php echo MainUser_TrackersAdd_Btn_RemoveLastTracker; ?>" style="cursor: pointer;" />

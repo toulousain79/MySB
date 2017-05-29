@@ -33,14 +33,15 @@ function Form() {
 	$Rent_Status = $MySB_DB->select("tracking_rent_status", ["id_tracking_rent_status", "year", "month", "date", "nb_days_used", "period_cost", "already_payed"], ["id_users" => $users_data['id_users']]);
 
 	$Treasury = $users_data['treasury'];
-	switch ($Method) {
-		case '1':
-			$Treasury = round($Treasury, 2);
-			break;
-		default:
-			$Treasury = ceil($Treasury);
-			break;
-	}
+	// switch ($Method) {
+		// case '1':
+			// $Treasury = round($Treasury, 2);
+			// break;
+		// default:
+			// $Treasury = round($Treasury,2);
+			// break;
+	// }
+	$Treasury = round($Treasury, 2);
 	if (is_numeric($Treasury) && $Treasury > 0.00) {
 		$Color = 'color: #00DF00;';
 	} else {
@@ -109,18 +110,21 @@ function Form() {
 				$MonthlyCost = $Status["period_cost"];
 				$AlreadyPayed = $Status["already_payed"];
 				$RemaingCost = $MonthlyCost - $AlreadyPayed;
-				switch ($Method) {
-					case '1':
-						$MonthlyCost = round($MonthlyCost, 2);
-						$AlreadyPayed = round($AlreadyPayed, 2);
-						$RemaingCost = round($RemaingCost, 2);
-						break;
-					default:
-						$MonthlyCost = ceil($MonthlyCost);
-						$AlreadyPayed = ceil($AlreadyPayed);
-						$RemaingCost = ceil($RemaingCost);
-						break;
-				}
+				// switch ($Method) {
+					// case '1':
+						// $MonthlyCost = round($MonthlyCost, 2);
+						// $AlreadyPayed = round($AlreadyPayed, 2);
+						// $RemaingCost = round($RemaingCost, 2);
+						// break;
+					// default:
+						// $MonthlyCost = ceil($MonthlyCost);
+						// $AlreadyPayed = ceil($AlreadyPayed);
+						// $RemaingCost = ceil($RemaingCost);
+						// break;
+				// }
+				$MonthlyCost = round($MonthlyCost, 2);
+				$AlreadyPayed = round($AlreadyPayed, 2);
+				$RemaingCost = round($RemaingCost, 2);
 				if ($AlreadyPayed > 0.00) {
 					$ColorPayed = 'color: #00DF00;';
 				} else {

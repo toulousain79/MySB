@@ -75,7 +75,7 @@ $MySB_Version = GetVersion();
 				</div>
 				<div id="logout">
 <?php if ( !isset($_SESSION['page']) ) { ?>
-					<a href="/Logout.php"><?php echo Layout_Logout; ?></a>
+					<a href="/Logout"><?php echo Layout_Logout; ?></a>
 <?php } ?>
 				</div>
 			</div>
@@ -90,9 +90,7 @@ $MySB_Version = GetVersion();
 					<ul class="sf-menu" id="nav">
 						<?php MenuDisplayChildren($page, $this, false); ?>
 					</ul>
-<?php
-				}
-?>
+<?php } ?>
 					<div id="breadcrumb">
 						<?php echo ($_SESSION['Language'] == 'en') ? $this->breadcrumb() : $this->breadcrumb_fr(); ?>
 					</div>

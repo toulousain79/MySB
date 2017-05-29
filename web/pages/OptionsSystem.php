@@ -126,33 +126,36 @@ if (isset($_POST['submit'])) {
 		<tr>
 			<td><?php echo MainUser_OptionsSystem_PGL_Stats; ?></td>
 			<td>
-				<select name="PGL_EmailStats" style="width:80px; height: 28px;">';
+
 				<?php switch ($pgl_email_stats) {
 					case '1':
-						echo '<option selected="selected" value="1">' .Global_Yes. '</option>';
-						echo '<option value="0">' .Global_No. '</option>';
+						$class = 'greenText';
+						$options = '<option selected="selected" value="1" class="greenText">' .Global_Yes. '</option>';
+						$options .= '<option value="0" class="redText">' .Global_No. '</option>';
 						break;
 					default:
-						echo '<option value="1">' .Global_Yes. '</option>';
-						echo '<option selected="selected" value="0">' .Global_No. '</option>';
+						$class = 'redText';
+						$options = '<option value="1" class="greenText">' .Global_Yes. '</option>';
+						$options .= '<option selected="selected" value="0" class="redText">' .Global_No. '</option>';
 						break;
 				} ?>
-				</select>
+				<select name="PGL_EmailStats" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
 			</td>
 			<td><?php echo MainUser_OptionsSystem_PGL_Whathdog; ?></td>
 			<td>
-				<select name="PGL_EmailWD" style="width:80px; height: 28px;">';
 				<?php switch ($pgl_watchdog_email) {
 					case '1':
-						echo '<option selected="selected" value="1">' .Global_Yes. '</option>';
-						echo '<option value="0">' .Global_No. '</option>';
+						$class = 'greenText';
+						$options = '<option selected="selected" value="1" class="greenText">' .Global_Yes. '</option>';
+						$options .= '<option value="0" class="redText">' .Global_No. '</option>';
 						break;
 					default:
-						echo '<option value="1">' .Global_Yes. '</option>';
-						echo '<option selected="selected" value="0">' .Global_No. '</option>';
+						$class = 'redText';
+						$options = '<option value="1" class="greenText">' .Global_Yes. '</option>';
+						$options .= '<option selected="selected" value="0" class="redText">' .Global_No. '</option>';
 						break;
 				} ?>
-				</select>
+				<select name="PGL_EmailWD" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
 			</td>
 		</tr>
 	</table>
@@ -165,18 +168,19 @@ if (isset($_POST['submit'])) {
 		<tr>
 			<td><?php echo MainUser_OptionsSystem_Iptables_Restrict; ?></td>
 			<td>
-				<select name="IP_restriction_post" style="width:80px; height: 28px;">';
 				<?php switch ($ip_restriction_db) {
 					case '1':
-						echo '<option selected="selected" value="1">' .Global_Yes. '</option>';
-						echo '<option value="0">' .Global_No. '</option>';
+						$class = 'greenText';
+						$options = '<option selected="selected" value="1" class="greenText">' .Global_Yes. '</option>';
+						$options .= '<option value="0" class="redText">' .Global_No. '</option>';
 						break;
 					default:
-						echo '<option value="1">' .Global_Yes. '</option>';
-						echo '<option selected="selected" value="0">' .Global_No. '</option>';
+						$class = 'redText';
+						$options = '<option value="1" class="greenText">' .Global_Yes. '</option>';
+						$options .= '<option selected="selected" value="0" class="redText">' .Global_No. '</option>';
 						break;
 				} ?>
-				</select>
+				<select name="IP_restriction_post" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
 			</td>
 		</tr>
 	</table>
@@ -190,7 +194,7 @@ if (isset($_POST['submit'])) {
 		<tr>
 			<td><?php echo MainUser_OptionsSystem_OpenVPN_Proto; ?></td>
 			<td>
-				<select name="OpenVPN_Proto_post" style="width:80px; height: 28px;">';
+				<select name="OpenVPN_Proto_post" style="width:80px; height: 28px;">
 				<?php switch ($openvpn_proto_db) {
 					case 'UDP':
 						echo '<option selected="selected" value="UDP">UDP</option>';
@@ -215,18 +219,19 @@ if (isset($_POST['submit'])) {
 		<tr>
 			<td><?php echo MainUser_OptionsSystem_DNScrypt_Activate; ?></td>
 			<td>
-				<select name="DNScrypt_post" style="width:80px; height: 28px;">';
 				<?php switch ($DNScrypt_db) {
 					case '1':
-						echo '<option selected="selected" value="1">' . Global_Yes . '</option>';
-						echo '<option value="0">' . Global_No . '</option>';
+						$class = 'greenText';
+						$options = '<option selected="selected" value="1" class="greenText">' . Global_Yes . '</option>';
+						$options .= '<option value="0" class="redText">' . Global_No . '</option>';
 						break;
 					default:
-						echo '<option value="1">' . Global_Yes . '</option>';
-						echo '<option selected="selected" value="0">' . Global_No . '</option>';
+						$class = 'redText';
+						$options = '<option value="1" class="greenText">' . Global_Yes . '</option>';
+						$options .= '<option selected="selected" value="0" class="redText">' . Global_No . '</option>';
 						break;
 				} ?>
-				</select>
+				<select name="DNScrypt_post" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
 			</td>
 		</tr>
 	</table>
@@ -240,18 +245,19 @@ if (isset($_POST['submit'])) {
 		<tr>
 			<td><?php echo MainUser_OptionsSystem_Logwatch_Activate; ?></td>
 			<td>
-				<select name="LogWatch_post" style="width:80px; height: 28px;">';
 				<?php switch ($LogWatch_db) {
 					case '1':
-						echo '<option selected="selected" value="1">' . Global_Yes . '</option>';
-						echo '<option value="0">' . Global_No . '</option>';
+						$class = 'greenText';
+						$options = '<option selected="selected" value="1" class="greenText">' . Global_Yes . '</option>';
+						$options .= '<option value="0" class="redText">' . Global_No . '</option>';
 						break;
 					default:
-						echo '<option value="1">' . Global_Yes . '</option>';
-						echo '<option selected="selected" value="0">' . Global_No . '</option>';
+						$class = 'redText';
+						$options = '<option value="1" class="greenText">' . Global_Yes . '</option>';
+						$options .= '<option selected="selected" value="0" class="redText">' . Global_No . '</option>';
 						break;
 				} ?>
-				</select>
+				<select name="LogWatch_post" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
 			</td>
 		</tr>
 	</table>

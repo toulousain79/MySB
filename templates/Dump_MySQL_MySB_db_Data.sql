@@ -17,7 +17,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8 */;
 
 --
--- Base de données: `c3_mysb_db`
+-- Base de données: `MySB_db`
 --
 
 --
@@ -70,18 +70,25 @@ INSERT INTO `blocklists` (`id_blocklists`, `author`, `list_name`, `pgl_list_name
 (43, 'Nexus23', 'ipfilterX', 'nexus23_ipfilterx', 'https://www.iblocklist.com/list.php?list=tqdjwkbxfurudwonprji', 'list.iblocklist.com/lists/nexus23/ipfilterx', '', 0, 0, 0, 'PeerGuardian Only, subscription ', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
 
 --
+-- Contenu de la table `dnscrypt_config`
+--
+
+INSERT INTO `dnscrypt_config` (`sig_key`, `csv_url`) VALUES
+('RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3','https://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-resolvers.csv');
+
+--
 -- Contenu de la table `lets_encrypt`
 --
 
 INSERT INTO `lets_encrypt` (`id_lets_encrypt`, `addresses`, `ipv4`) VALUES
-(1, 'acme-v01.api.letsencrypt.org', '104.98.130.119'),
-(2, 'acme-staging.api.letsencrypt.org', '92.122.117.72'),
-(3, 'ocsp.staging-x1.letsencrypt.org', '2.16.4.219'),
-(4, 'ocsp.root-x1.letsencrypt.org', '195.215.247.8'),
-(5, 'ocsp.int-x1.letsencrypt.org', '88.221.144.27'),
-(6, 'ocsp.int-x2.letsencrypt.org', '23.65.29.67'),
-(7, 'ocsp.int-x3.letsencrypt.org', '81.25.198.161'),
-(8, 'ocsp.int-x4.letsencrypt.org', '81.25.198.248'),
+(1, 'acme-v01.api.letsencrypt.org', '23.38.4.37'),
+(2, 'acme-staging.api.letsencrypt.org', '23.38.4.37'),
+(3, 'ocsp.staging-x1.letsencrypt.org', '88.221.14.10'),
+(4, 'ocsp.root-x1.letsencrypt.org', '88.221.14.11'),
+(5, 'ocsp.int-x1.letsencrypt.org', '92.122.122.145'),
+(6, 'ocsp.int-x2.letsencrypt.org', '92.122.122.152'),
+(7, 'ocsp.int-x3.letsencrypt.org', '92.122.122.138'),
+(8, 'ocsp.int-x4.letsencrypt.org', '92.122.122.162'),
 (9, 'outbound1.letsencrypt.org', '66.133.109.36'),
 (10, 'outbound2.letsencrypt.org', '64.78.149.164');
 
@@ -93,67 +100,68 @@ INSERT INTO `providers_monitoring` (`id_providers_monitoring`, `provider`, `ipv4
 (1, 'ONLINE', '62.210.16.0/24', ''),
 (2, 'DIGICUBE', '95.130.8.5/32', ''),
 (3, 'DIGICUBE', '95.130.8.210/32', ''),
-(4, 'OVH', '', 'proxy.rbx.ovh.net'),
-(5, 'OVH', '', 'proxy-rbx2.ovh.net'),
-(6, 'OVH', '', 'proxy-rbx.ovh.net'),
-(7, 'OVH', '', 'proxy.sbg.ovh.net'),
-(8, 'OVH', '', 'proxy.bhs.ovh.net'),
-(9, 'OVH', '', 'ping.ovh.net'),
-(10, 'OVH', '', 'proxy.p19.ovh.net'),
-(11, 'OVH', '', 'proxy.ovh.net'),
-(12, 'OVH', '', 'rtm-collector.ovh.net'),
-(13, 'OVH', '', 'a2.ovh.net'),
-(14, 'OVH', '92.222.184.0/24', ''),
-(15, 'OVH', '92.222.185.0/24', ''),
-(16, 'OVH', '92.222.186.0/24', ''),
-(17, 'OVH', '167.114.37.0/24', ''),
-(18, 'OVH', '151.80.231.244/32', ''),
-(19, 'OVH', '151.80.231.245/32', ''),
-(20, 'OVH', '151.80.231.246/32', ''),
-(21, 'OVH', '151.80.231.247/32', '');
+(4, 'OVH', '', 'proxy-rbx2.ovh.net'),
+(5, 'OVH', '', 'proxy-rbx.ovh.net'),
+(6, 'OVH', '', 'proxy.sbg.ovh.net'),
+(7, 'OVH', '', 'proxy.bhs.ovh.net'),
+(8, 'OVH', '', 'ping.ovh.net'),
+(9, 'OVH', '', 'proxy.p19.ovh.net'),
+(10, 'OVH', '', 'proxy.ovh.net'),
+(11, 'OVH', '92.222.184.0/24', ''),
+(12, 'OVH', '92.222.185.0/24', ''),
+(13, 'OVH', '92.222.186.0/24', ''),
+(14, 'OVH', '167.114.37.0/24', ''),
+(15, 'OVH', '151.80.231.244/32', ''),
+(16, 'OVH', '151.80.231.245/32', ''),
+(17, 'OVH', '151.80.231.246/32', ''),
+(18, 'OVH', '151.80.231.247/32', ''),
+(19, 'OVH', '37.187.231.251/32', '');
 
 --
 -- Contenu de la table `repositories`
 --
 
-INSERT INTO `repositories` (`id_repositories`, `type`, `dir`, `name`, `version`, `upgrade`, `file`, `url`, `active`, `on_boot`, `script`) VALUES
-(1, 'GIT', '/web/apps/ru', 'ruTorrent', '3.7', 0, 'ruTorrent_v3.7.zip', 'https://github.com/Novik/ruTorrent.git', 1, 0, ''),
-(2, 'TARGZ', '/web/apps/ru/plugins/chat', 'ruTorrent Plugin Chat', '2.0', 0, 'chat_v2.0.tar.gz', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-chat/chat-2.0.tar.gz', 1, 0, ''),
-(3, 'TARGZ', '/web/apps/ru/plugins/logoff', 'ruTorrent Plugin Logoff', '1.3', 0, 'logoff_v1.3.tar.gz', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-logoff/logoff-1.3.tar.gz', 1, 0, ''),
-(4, 'TARGZ', '/web/apps/ru/plugins/lbll-suite', 'ruTorrent Plugin tAdd-Labels', '0.8.1', 0, 'lbll-suite_v0.8.1.tar.gz', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-tadd-labels/lbll-suite_0.8.1.tar.gz', 1, 0, ''),
-(5, 'SVN', '/web/apps/ru/plugins/nfo', 'ruTorrent Plugin NFO', '3.6', 0, 'nfo_v3.6.zip', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/nfo', 1, 0, ''),
-(6, 'SVN', '/web/apps/ru/plugins/checksfv', 'ruTorrent Plugin Check SFV', '3.6', 0, 'checksfv_v3.6.zip', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/checksfv', 1, 0, ''),
-(7, 'SVN', '/web/apps/ru/plugins/disklog', 'ruTorrent Plugin Disk Log', '3.6', 0, 'disklog_v3.6.zip', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/disklog', 1, 0, ''),
-(8, 'SVN', '/web/apps/ru/plugins/showip', 'ruTorrent Plugin Show IP', '3.6', 0, 'showip_v3.6.zip', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/showip', 1, 0, ''),
-(9, 'SVN', '/web/apps/ru/plugins/speedgraph', 'ruTorrent Plugin Speed Graph', '3.6', 0, 'speedgraph_v3.6.zip', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/speedgraph', 1, 0, ''),
-(10, 'ZIP', '/web/apps/ru/plugins/filemanager', 'ruTorrent Plugin FileManager', '0.09', 0, 'filemanager_v0.09.zip', 'https://github.com/toulousain79/MySB/raw/v3.5/files/filemanager_v0.09.zip', 1, 0, ''),
-(11, 'ZIP', '/web/apps/ru/plugins/fileupload', 'ruTorrent Plugin FileUpload', '0.02', 0, 'fileupload_v0.02.zip', 'https://github.com/toulousain79/MySB/raw/v3.5/files/fileupload_v0.02.zip', 0, 0, ''),
-(12, 'ZIP', '/web/apps/ru/plugins/fileshare', 'ruTorrent Plugin FileShare', '1.0', 0, 'fileshare_v1.0.zip', 'https://github.com/toulousain79/MySB/raw/v3.5/files/fileshare_v0.03.zip', 1, 0, ''),
-(13, 'ZIP', '/web/apps/ru/plugins/mediastream', 'ruTorrent Plugin MediaStream', '0.01', 0, 'mediastream_v0.01.zip', 'https://github.com/toulousain79/MySB/raw/v3.5/files/mediastream_v0.01.zip', 1, 0, ''),
-(14, 'GIT', '/web/apps/ru/plugins/ratiocolor', 'ruTorrent Plugin RatioColor', '0.5', 0, 'ratiocolor_v0.5.zip', 'https://github.com/Gyran/rutorrent-ratiocolor', 1, 0, ''),
-(15, 'TARGZ', '/web/apps/ru/plugins/stream', 'ruTorrent Plugin Stream', '1.0', 0, 'stream_v1.0.tar.gz', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-stream-plugin/stream.tar.gz', 1, 0, ''),
-(16, 'ZIP', '/web/apps/ru/plugins/pausewebui', 'ruTorrent Plugin Pause WebUI', '1.2', 0, 'pausewebui_v1.2.zip', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-pausewebui/pausewebui.1.2.zip', 1, 0, ''),
-(17, 'GIT', '/web/apps/ru/plugins/mobile', 'ruTorrent Plugin Mobile', '1.0', 0, 'mobile_v1.0.zip', 'https://github.com/xombiemp/rutorrentMobile.git', 1, 0, ''),
-(18, 'GIT', '/web/apps/ru/plugins/linkseedboxmanager', 'ruTorrent Plugin Link Manager', '1.0', 0, 'linkseedboxmanager_v1.0.zip', 'https://github.com/Hydrog3n/linkseedboxmanager.git', 1, 0, ''),
-(19, 'GIT', '/web/apps/ru/plugins/linkcakebox', 'ruTorrent Plugin Link Cakebox', '1.0', 0, 'linkcakebox_v1.0.zip', 'https://github.com/Cakebox/linkcakebox.git', 1, 0, ''),
-(20, 'GIT', '/sources/plowshare', 'Plowshare', '2.1.6', 0, 'Plowshare_v2.1.6.zip', 'https://github.com/mcrapet/plowshare.git', 1, 0, ''),
-(21, 'CURL', '/usr/bin/composer', 'Composer', '1.2.4', 0, 'composer.phar', 'https://getcomposer.org/installer', 1, 0, ''),
-(22, 'TARGZ', '/sources/nodejs', 'NodeJS', '0.12.17', 0, 'node_v0.12.17.tar.gz', 'https://nodejs.org/dist/v0.12.17/node-v0.12.17.tar.gz', 1, 0, ''),
-(23, 'GIT', '/web/apps/sm', 'Seedbox-Manager', '2.5.0', 0, 'seedbox-manager_v2.5.0.zip', 'https://github.com/Magicalex/seedbox-manager.git', 1, 0, ''),
-(24, 'GIT', '/web/apps/cb', 'Cakebox-Light', '1.8.6', 0, 'cakebox-light_v1.8.6.zip', 'https://github.com/Cakebox/Cakebox-light.git', 1, 0, ''),
-(25, 'TARGZ', '/sources/libsodium', 'Libsodium', '1.0.11', 0, 'libsodium_v1.0.11.tar.gz', 'https://download.libsodium.org/libsodium/releases/libsodium-1.0.11.tar.gz', 1, 0, ''),
-(26, 'TARGZ', '/sources/dnscrypt-proxy', 'DNScrypt-proxy', '1.7.0', 0, 'dnscrypt-proxy_v1.7.0.tar.gz', 'https://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-proxy-1.7.0.tar.gz', 1, 0, ''),
-(27, 'WBM', '/files', 'OpenVPNadmin WebMin', '2.6', 0, 'openvpn_v2.6.wbm', 'http://www.openit.it/downloads/OpenVPNadmin/openvpn-2.6.wbm.gz', 1, 0, ''),
-(28, 'WBM', '/files', 'Nginx Webmin Module', '0.10', 1, 'nginx_v0.10.wbm', 'https://www.justindhoffman.com/sites/justindhoffman.com/files/nginx-0.10.wbm_.gz', 1, 0, ''),
-(29, 'TARGZ', '/sources/libtorrent', 'LibTorrent', '0.13.6', 0, 'libtorrent_v0.13.6.tar.gz', 'http://rtorrent.net/downloads/libtorrent-0.13.6.tar.gz', 1, 0, ''),
-(30, 'TARGZ', '/sources/rtorrent', 'rTorrent', '0.9.6', 0, 'rtorrent_v0.9.6.tar.gz', 'http://rtorrent.net/downloads/rtorrent-0.9.6.tar.gz', 1, 0, ''),
-(31, 'SVN', '/sources/xmlrpc-c', 'XMLRPC', '1.43.03', 0, 'xmlrpc-c_v1.43.03.zip', 'http://svn.code.sf.net/p/xmlrpc-c/code/stable', 1, 0, ''),
-(32, 'TARGZ', '/web/apps/la', 'LoadAvg', '2.2', 0, 'loadavg_v2.2.tar.gz', 'http://www.loadavg.com/files/loadavg.tar.gz', 1, 0, ''),
-(33, 'ZIP', '/web/apps/oc', 'ownCloud', '9.1.3', 0, 'owncloud_v9.1.3.zip', 'https://download.owncloud.org/community/owncloud-9.1.3.zip', 1, 0, ''),
-(34, 'GIT', '/usr/local/src/letsencrypt', 'Lets Encrypt', '0.9.2', 0, 'LetsEncrypt_v0.9.2.zip', 'https://github.com/certbot/certbot', 1, 0, ''),
-(35, 'TARGZ', '/sources/rkhunter', 'RKHunter', '1.4.2', 0, 'rkhunter_v1.4.2.tar.gz', 'http://downloads.sourceforge.net/project/rkhunter/rkhunter/1.4.2/rkhunter-1.4.2.tar.gz?r=&ts=1456674223&use_mirror=freefr', 1, 0, ''),
-(36, 'TARGZ', '/sources/wget', 'Wget', '1.18', 0, 'wget_v1.18.tar.gz', 'http://ftp.gnu.org/gnu/wget/wget-1.18.tar.gz', 1, 0, '');
-
+INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`, `url`, `active`, `on_boot`, `script`) VALUES
+('GIT', '<InstallDir>/web/apps/ru', 'ruTorrent', '3.7', 0, 'ruTorrent_v3.7.zip', 'https://github.com/Novik/ruTorrent.git', 1, 0, ''),
+('TARGZ', '<InstallDir>/web/apps/ru/plugins/chat', 'ruTorrent Plugin Chat', '2.0', 0, 'chat_v2.0.tar.gz', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-chat/chat-2.0.tar.gz', 1, 0, ''),
+('TARGZ', '<InstallDir>/web/apps/ru/plugins/logoff', 'ruTorrent Plugin Logoff', '1.3', 0, 'logoff_v1.3.tar.gz', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-logoff/logoff-1.3.tar.gz', 1, 0, ''),
+('TARGZ', '<InstallDir>/web/apps/ru/plugins/lbll-suite', 'ruTorrent Plugin LBLL-Suite', '0.8.1', 0, 'lbll-suite_v0.8.1.tar.gz', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-tadd-labels/lbll-suite_0.8.1.tar.gz', 1, 0, ''),
+('SVN', '<InstallDir>/web/apps/ru/plugins/nfo', 'ruTorrent Plugin NFO', '3.6', 0, 'nfo_v3.6.zip', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/nfo', 1, 0, ''),
+('SVN', '<InstallDir>/web/apps/ru/plugins/checksfv', 'ruTorrent Plugin Check SFV', '3.6', 0, 'checksfv_v3.6.zip', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/checksfv', 1, 0, ''),
+('SVN', '<InstallDir>/web/apps/ru/plugins/disklog', 'ruTorrent Plugin Disk Log', '3.6', 0, 'disklog_v3.6.zip', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/disklog', 1, 0, ''),
+('SVN', '<InstallDir>/web/apps/ru/plugins/showip', 'ruTorrent Plugin Show IP', '3.6', 0, 'showip_v3.6.zip', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/showip', 0, 0, ''),
+('SVN', '<InstallDir>/web/apps/ru/plugins/speedgraph', 'ruTorrent Plugin Speed Graph', '3.6', 0, 'speedgraph_v3.6.zip', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/speedgraph', 1, 0, ''),
+('ZIP', '<InstallDir>/web/apps/ru/plugins/filemanager', 'ruTorrent Plugin FileManager', '0.09', 0, 'filemanager_v0.09.zip', 'https://github.com/toulousain79/MySB/raw/v3.6/files/filemanager_v0.09.zip', 1, 0, ''),
+('ZIP', '<InstallDir>/web/apps/ru/plugins/fileupload', 'ruTorrent Plugin FileUpload', '0.02', 0, 'fileupload_v0.02.zip', 'https://github.com/toulousain79/MySB/raw/v3.6/files/fileupload_v0.02.zip', 0, 0, ''),
+('ZIP', '<InstallDir>/web/apps/ru/plugins/fileshare', 'ruTorrent Plugin FileShare', '1.0', 0, 'fileshare_v1.0.zip', 'https://github.com/toulousain79/MySB/raw/v3.6/files/fileshare_v0.03.zip', 1, 0, ''),
+('ZIP', '<InstallDir>/web/apps/ru/plugins/mediastream', 'ruTorrent Plugin MediaStream', '0.01', 0, 'mediastream_v0.01.zip', 'https://github.com/toulousain79/MySB/raw/v3.6/files/mediastream_v0.01.zip', 1, 0, ''),
+('GIT', '<InstallDir>/web/apps/ru/plugins/ratiocolor', 'ruTorrent Plugin RatioColor', '0.5', 0, 'ratiocolor_v0.5.zip', 'https://github.com/Gyran/rutorrent-ratiocolor', 1, 0, ''),
+('TARGZ', '<InstallDir>/web/apps/ru/plugins/stream', 'ruTorrent Plugin Stream', '1.0', 0, 'stream_v1.0.tar.gz', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-stream-plugin/stream.tar.gz', 1, 0, ''),
+('ZIP', '<InstallDir>/web/apps/ru/plugins/pausewebui', 'ruTorrent Plugin Pause WebUI', '1.2', 0, 'pausewebui_v1.2.zip', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-pausewebui/pausewebui.1.2.zip', 1, 0, ''),
+('GIT', '<InstallDir>/web/apps/ru/plugins/mobile', 'ruTorrent Plugin Mobile', '1.0', 0, 'mobile_v1.0.zip', 'https://github.com/xombiemp/rutorrentMobile.git', 1, 0, ''),
+('ZIP', '<InstallDir>/web/apps/ru/plugins/instantsearch', 'ruTorrent Plugin InstantSearch', '1.0', 0, 'instantsearch_v1.0.zip', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-instantsearch/instantsearch.1.0.zip', 1, 0, ''),
+('GIT', '<InstallDir>/web/apps/ru/plugins/linkseedboxmanager', 'ruTorrent Plugin Link Manager', '1.0', 0, 'linkseedboxmanager_v1.0.zip', 'https://github.com/Hydrog3n/linkseedboxmanager.git', 1, 0, ''),
+('GIT', '<InstallDir>/web/apps/ru/plugins/linkcakebox', 'ruTorrent Plugin Link Cakebox', '1.0', 0, 'linkcakebox_v1.0.zip', 'https://github.com/Cakebox/linkcakebox.git', 1, 0, ''),
+('GIT', '<InstallDir>/sources/plowshare', 'Plowshare', '2.1.6', 0, 'Plowshare_v2.1.6.zip', 'https://github.com/mcrapet/plowshare.git', 1, 0, ''),
+('CURL', '/usr/bin/composer', 'Composer', '1.4.2', 0, 'composer.phar', 'https://getcomposer.org/download/1.4.2/composer.phar', 1, 0, ''),
+('TARGZ', '<InstallDir>/sources/nodejs', 'NodeJS', '0.12.18', 0, 'node_v0.12.18.tar.gz', 'https://nodejs.org/dist/latest-v0.12.x/node-v0.12.18.tar.gz', 1, 0, ''),
+('GIT', '<InstallDir>/web/apps/sm', 'Seedbox-Manager', '3.0.1', 0, 'seedbox-manager_v3.0.1.zip', 'https://github.com/Magicalex/seedbox-manager.git', 1, 0, ''),
+('GIT', '<InstallDir>/web/apps/cb', 'Cakebox-Light', '1.8.6', 0, 'cakebox-light_v1.8.6.zip', 'https://github.com/Cakebox/Cakebox-light.git', 1, 0, ''),
+('TARGZ', '<InstallDir>/sources/libsodium', 'Libsodium', '1.0.12', 0, 'libsodium_v1.0.12.tar.gz', 'https://download.libsodium.org/libsodium/releases/libsodium-1.0.12.tar.gz', 1, 0, ''),
+('TARGZ', '<InstallDir>/sources/minisign', 'Minisign', '0.7.5', 0, 'minisign_v0.7.5.tar.gz', 'https://github.com/jedisct1/minisign/tarball/master', 1, 0, ''),
+('TARGZ', '<InstallDir>/sources/dnscrypt-proxy', 'DNScrypt-proxy', '1.9.5', 0, 'dnscrypt-proxy_v1.9.5.tar.gz', 'https://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-proxy-1.9.5.tar.gz', 1, 0, ''),
+('WBM', '<InstallDir>/files', 'OpenVPNadmin Webmin', '2.6', 0, 'openvpn_v2.6.wbm', 'http://www.openit.it/downloads/OpenVPNadmin/openvpn-2.6.wbm.gz', 1, 0, ''),
+('WBM', '<InstallDir>/files', 'Nginx Webmin Module', '0.10', 1, 'nginx_v0.10.wbm', 'https://www.justindhoffman.com/sites/justindhoffman.com/files/nginx-0.10.wbm_.gz', 1, 0, ''),
+('TARGZ', '<InstallDir>/sources/libtorrent', 'LibTorrent', '0.13.6', 0, 'libtorrent_v0.13.6.tar.gz', 'http://rtorrent.net/downloads/libtorrent-0.13.6.tar.gz', 1, 0, ''),
+('TARGZ', '<InstallDir>/sources/rtorrent', 'rTorrent', '0.9.6', 0, 'rtorrent_v0.9.6.tar.gz', 'http://rtorrent.net/downloads/rtorrent-0.9.6.tar.gz', 1, 0, ''),
+('SVN', '<InstallDir>/sources/xmlrpc-c', 'XMLRPC', '1.49.0', 0, 'xmlrpc-c_v1.49.0.zip', 'http://svn.code.sf.net/p/xmlrpc-c/code/advanced/', 1, 0, ''),
+('TARGZ', '<InstallDir>/web/apps/la', 'LoadAvg', '2.2', 0, 'loadavg_v2.2.tar.gz', 'http://www.loadavg.com/files/loadavg.tar.gz', 1, 0, ''),
+('ZIP', '<InstallDir>/web/apps/nc', 'NextCloud', '12.0.0', 0, 'nextcloud_v12.0.0.zip', 'https://download.nextcloud.com/server/releases/nextcloud-12.0.0.zip', 1, 0, ''),
+('TARGZ', '<InstallDir>/sources/rkhunter', 'RKHunter', '1.4.2', 0, 'rkhunter_v1.4.2.tar.gz', 'http://downloads.sourceforge.net/project/rkhunter/rkhunter/1.4.2/rkhunter-1.4.2.tar.gz?r=&ts=1456674223&use_mirror=freefr', 1, 0, ''),
+('TARGZ', '<InstallDir>/sources/wget', 'Wget', '1.19.1', 0, 'wget_v1.19.1.tar.gz', 'http://ftp.gnu.org/gnu/wget/wget-1.19.1.tar.gz', 1, 0, ''),
+('TARGZ', '<InstallDir>/sources/geoipupdate', 'GeoIPupdate', '2.3.1', 0, 'GeoIPupdate_v2.3.1.tar.gz', 'https://github.com/maxmind/geoipupdate/releases/download/v2.3.1/geoipupdate-2.3.1.tar.gz', 1, 0, ''),
+('ZIP', '<InstallDir>/web/wolf', 'Wolf CMS', '0.8.3.1', 0, 'wolf_v0.8.3.1.zip', 'https://github.com/toulousain79/MySB/raw/v4.0/files/wolf_v0.8.3.1.zip', 1, 0, ''),
+('GIT', '/opt/plexpy', 'PlexPy', '1.4.18', 0, 'PlexPy_v1.4.18.zip', 'https://github.com/JonnyWong16/plexpy.git', 1, 0, '');
 --
 -- Contenu de la table `services`
 --
@@ -182,7 +190,7 @@ INSERT INTO `services` (`id_services`, `serv_name`, `bin`, `port_tcp1`, `port_tc
 (21, 'Stunnel', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 0),
 (22, 'rTorrent v0.9.2', '/usr/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0, 0),
 (23, 'rTorrent v0.9.6', '/usr/local/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0, 0),
-(24, 'ownCloud', '', '', '', '', '', '', '', '', '', 0, 0, 1),
+(24, 'NextCloud', '', '', '', '', '', '', '', '', '', 0, 0, 1),
 (25, 'Lets Encrypt', '', '443', '', '', '', '', '', '', '', 0, 0, 1);
 
 --
@@ -196,15 +204,8 @@ INSERT INTO `smtp` (`id_smtp`, `smtp_provider`, `smtp_username`, `smtp_passwd`, 
 -- Contenu de la table `system`
 --
 
-INSERT INTO `system` (`id_system`, `mysb_version`, `mysb_user`, `mysb_password`, `hostname`, `ipv4`, `primary_inet`, `timezone`, `cert_password`, `apt_update`, `apt_date`, `server_provider`, `ip_restriction`, `pgl_email_stats`, `pgl_watchdog_email`, `dnscrypt`, `logwatch`, `owncloud_cron`, `letsencrypt_date`, `letsencrypt_openport`, `quota_default`, `rt_model`, `rt_tva`, `rt_global_cost`, `rt_cost_tva`, `rt_nb_users`, `rt_price_per_users`, `rt_method`) VALUES
+INSERT INTO `system` (`id_system`, `mysb_version`, `mysb_user`, `mysb_password`, `hostname`, `ipv4`, `primary_inet`, `timezone`, `cert_password`, `apt_update`, `apt_date`, `server_provider`, `ip_restriction`, `pgl_email_stats`, `pgl_watchdog_email`, `dnscrypt`, `logwatch`, `nextcloud_cron`, `letsencrypt_date`, `letsencrypt_openport`, `quota_default`, `rt_model`, `rt_tva`, `rt_global_cost`, `rt_cost_tva`, `rt_nb_users`, `rt_price_per_users`, `rt_method`) VALUES
 (1, '', '', '', '', '', '', '', '', 0, '0000-00-00 00:00:00', '', 1, 0, 0, 1, 0, 0, '0000-00-00', 0, 0, '', 0.00, 0.00, 0.00, 0, 0.00, 0);
-
---
--- Contenu de la table `vars`
---
-
-INSERT INTO `vars` (`id_vars`, `fail2ban_whitelist`, `vpn_ip`, `white_tcp_port_out`, `white_udp_port_out`) VALUES
-(1, '127.0.0.1/32', '10.0.0.0/24,10.0.1.0/24,10.0.2.0/24', '80 443', '');
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

@@ -24,55 +24,57 @@ funcs_PeerGuardian=1
 ##################### FIRST LINE #####################################
 
 #### If PeerGuardian is failing
-PeerGuardianFailed() {
-	ListCountUsers
+gfnPeerGuardianFailed() {
+	local sUser
 
-	for FnUser in $UsersList; do
-		log_daemon_msg "$Funcs_PeerGuardianFailed_Switching $1" "$FnUser"
+	gfnListCountUsers
+
+	for sUser in $gsUsersList; do
+		log_daemon_msg "$Funcs_PeerGuardianFailed_Switching $1" "$sUser"
 		case "$1" in
 			"rTorrent")
 				if [ ! -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.txt ]; then
-					ScriptInvoke 'ScreenSTD' "$MySB_InstallDir/scripts/BlocklistsRTorrent.bsh" 'REFRESH'
+					gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/scripts/BlocklistsRTorrent.bsh" 'REFRESH'
 				fi
 
-				if [ -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.txt ] && [ -d /home/$FnUser/blocklist/ ]; then
-					cp $MySB_InstallDir/files/blocklists/* /home/$FnUser/blocklist/
+				if [ -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.txt ] && [ -d /home/$sUser/blocklist/ ]; then
+					cp $MySB_InstallDir/files/blocklists/* /home/$sUser/blocklist/
 				fi
 
-				if [ -f /home/$FnUser/.rtorrent.rc ]; then
-					perl -pi -e "s/^#ipv4_filter.load/ipv4_filter.load/g" /home/$FnUser/.rtorrent.rc
-					perl -pi -e "s/^#print/print/g" /home/$FnUser/.rtorrent.rc
+				if [ -f /home/$sUser/.rtorrent.rc ]; then
+					perl -pi -e "s/^#ipv4_filter.load/ipv4_filter.load/g" /home/$sUser/.rtorrent.rc
+					perl -pi -e "s/^#print/print/g" /home/$sUser/.rtorrent.rc
 
-					service rtorrent-$FnUser status &> /dev/null
+					service rtorrent-$sUser status &> /dev/null
 					if [ $? -eq 0 ]; then
-						StatusLSB 0
-						service rtorrent-$FnUser restart
+						gfnStatusLSB 0
+						service rtorrent-$sUser restart
 					else
-						StatusLSB 0
+						gfnStatusLSB 0
 					fi
 				else
-					StatusLSB 0
+					gfnStatusLSB 0
 				fi
 			;;
 			"PeerGuardian")
-				if [ -f /home/$FnUser/.rtorrent.rc ]; then
-					Check="`cat /home/$FnUser/.rtorrent.rc | grep '^ipv4_filter.load'`"
+				if [ -f /home/$sUser/.rtorrent.rc ]; then
+					Check="`cat /home/$sUser/.rtorrent.rc | grep '^ipv4_filter.load'`"
 					if [ ! -z "$Check" ]; then
-						perl -pi -e "s/^ipv4_filter.load/#ipv4_filter.load/g" /home/$FnUser/.rtorrent.rc
-						perl -pi -e "s/^print/#print/g" /home/$FnUser/.rtorrent.rc
+						perl -pi -e "s/^ipv4_filter.load/#ipv4_filter.load/g" /home/$sUser/.rtorrent.rc
+						perl -pi -e "s/^print/#print/g" /home/$sUser/.rtorrent.rc
 
-						service rtorrent-$FnUser status &> /dev/null
+						service rtorrent-$sUser status &> /dev/null
 						if [ $? -eq 0 ]; then
-							StatusLSB 0
-							service rtorrent-$FnUser restart
+							gfnStatusLSB 0
+							service rtorrent-$sUser restart
 						else
-							StatusLSB 0
+							gfnStatusLSB 0
 						fi
 					else
-						StatusLSB 0
+						gfnStatusLSB 0
 					fi
 				else
-					StatusLSB 0
+					gfnStatusLSB 0
 				fi
 			;;
 		esac
@@ -80,7 +82,9 @@ PeerGuardianFailed() {
 }
 
 #### PeerGuardian Create blocklists.list
-PeerGuardianBlocklistsList() {
+gfnPeerGuardianBlocklistsList() {
+	local sAllBlocklists sList bIsActive sCheckLog
+
 	if [ -f /etc/pgl/pglcmd.conf ] && [ -f /etc/pgl/blocklists.list ]; then
 		# /etc/pgl/blocklists.list
 		if [ $1 -eq 1 ]; then log_daemon_msg "$Peerguardian_AddingSelectedBlocklist"; fi
@@ -111,49 +115,47 @@ PeerGuardianBlocklistsList() {
 EOF
 		) > /etc/pgl/blocklists.list
 
-		AllBlocklists="`Func_SQL_Command 'SELECT' 'MySB_db' 'peerguardian_list,peerguardian_active' 'blocklists' \"peerguardian_list != ''\"`"
-		for Blocklist in $AllBlocklists; do
-			List="`echo $Blocklist | awk '{split($0,a,"|"); print a[1]}'`"
-			IsActive="`echo $Blocklist | awk '{split($0,a,"|"); print a[2]}'`"
+		sAllBlocklists="`cmdMySQL 'MySB_db' "SELECT peerguardian_list,peerguardian_active FROM blocklists WHERE peerguardian_list != '';" | sed 's/\t/|/g;'`"
+		for Blocklist in $sAllBlocklists; do
+			sList="`echo $Blocklist | awk '{split($0,a,"|"); print a[1]}'`"
+			bIsActive="`echo $Blocklist | awk '{split($0,a,"|"); print a[2]}'`"
 
 			case "$2" in
 				'UpdateLists') # Update each list of PeerGuardian during installation
-					echo "$List" > /etc/pgl/blocklists.list # One to one list, the file 'blocklists.list' is created for each list for update them
+					echo "$sList" > /etc/pgl/blocklists.list # One to one list, the file 'blocklists.list' is created for each list for update them
 
 					pglcmd update
 
 					if [ $? -gt 0 ]; then # if update fail maybe its due to a bad list
-						if [ $1 -eq 0 ]; then echo `date +"%T"`" --> The updated list of PGL may have failed." >> $MySB_InstallDir/logs/$ScriptName.log; fi
+						if [ $1 -eq 0 ]; then echo `date +"%T"`" --> The updated list of PGL may have failed." >> $MySB_InstallDir/logs/$gsScriptName.log; fi
 
-						CheckLog="`cat /var/log/pgl/pglcmd.log | grep failed | grep list.iblocklist.com | awk '{ print $6 }'`"
-						for List in $CheckLog; do
-							echo `date +"%T"`" --> '$List' will be disabled." >> $MySB_InstallDir/logs/$ScriptName.log
+						sCheckLog="`cat /var/log/pgl/pglcmd.log | grep failed | grep list.iblocklist.com | awk '{ print $6 }'`"
+						for sList in $sCheckLog; do
+							echo `date +"%T"`" --> '$sList' will be disabled." >> $MySB_InstallDir/logs/$gsScriptName.log
 							# Force inactived list
-							Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "peerguardian_active = '0', peerguardian_lastupdate = 'failed'" "peerguardian_list = '$List'"
+							cmdMySQL 'MySB_db' "UPDATE blocklists SET peerguardian_active='0', peerguardian_lastupdate='failed' WHERE peerguardian_list='$sList';"
 						done
 					else # Update OK
-						Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "peerguardian_lastupdate = 'NOW'" "peerguardian_list = '$List'"
+						cmdMySQL 'MySB_db' "UPDATE blocklists SET peerguardian_lastupdate='`date +%Y-%m-%d\ %H:%M:%S`' WHERE peerguardian_list='$sList';"
 					fi
 				;;
 				'CreateFile') # Now, we create the final blocklists with all active lists
-					case "$IsActive" in
-						'1')
-							echo "$List" >> /etc/pgl/blocklists.list
-						;;
-						'0')
-							echo "#$List" >> /etc/pgl/blocklists.list
-						;;
+					case "$bIsActive" in
+						1)	echo "$sList" >> /etc/pgl/blocklists.list;;
+						0)	echo "#$sList" >> /etc/pgl/blocklists.list;;
 					esac
 				;;
 			esac
 		done
 
-		if [ $1 -eq 1 ]; then StatusLSB; fi
+		if [ $1 -eq 1 ]; then gfnStatusLSB; fi
 	fi
 }
 
 #### PeerGuardian Create allow.p2p
-PeerGuardianAllowP2P() {
+gfnPeerGuardianAllowP2P() {
+	local sUser nUserID sUserIP sAllTrackers sTracker nIdTracker sTrackerName sListIPv4 sIPv4
+
 	if [ -f /etc/pgl/pglcmd.conf ] && [ -f /etc/pgl/allow.p2p ]; then
 		# /etc/pgl/allow.p2p
 		if [ $1 -eq 1 ]; then log_daemon_msg "$Peerguardian_PermissionSelectedTrackers"; fi
@@ -171,61 +173,98 @@ PeerGuardianAllowP2P() {
 EOF
 		) > /etc/pgl/allow.p2p
 
+		# Allow ruTorrent Check port plugin
+		sIPv4="$(nslookup www.canyouseeme.org | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
+		if [ ! -z "$sIPv4" ]; then
+			echo "## Allow ruTorrent Check port plugin" >> /etc/pgl/allow.p2p
+			echo "canyouseeme:$sIPv4-255.255.255.255" >> /etc/pgl/allow.p2p
+		fi
+
 		# Allow all users
-		ListCountUsers
-		if [ ! -z "$UsersList" ] && [ "$IpRestriction" == "YES" ]; then
+		gfnListCountUsers
+		if [ ! -z "$gsUsersList" ] && [ "$gsIpRestriction" == "YES" ]; then
 			echo "## Allow all MySB users" >> /etc/pgl/allow.p2p
-			for FnUser in $UsersList; do
-				UserID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_users' 'users' "users_ident = '$FnUser'"`"
-				UserIP="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'users_addresses' "id_users = '$UserID'"`"
-				for IPv4 in $UserIP; do
-					echo "$FnUser:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
+			for sUser in $gsUsersList; do
+				nUserID="`cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='$sUser';"`"
+				sUserIP="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM users_addresses WHERE id_users='$nUserID';"`"
+				for sIPv4 in $sUserIP; do
+					echo "$sUser:$sIPv4-255.255.255.255" >> /etc/pgl/allow.p2p
 				done
 			done
 		fi
 
 		echo "## Trackers enabled" >> /etc/pgl/allow.p2p
-		AllTrackers="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list,tracker' 'trackers_list' \"is_active = '1'\"`"
-		for Tracker in $AllTrackers; do
-			IdTracker="`echo $Tracker | awk '{split($0,a,"|"); print a[1]}'`"
-			TrackerName="`echo $Tracker | awk '{split($0,a,"|"); print a[2]}'`"
+		sAllTrackers="`cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker FROM trackers_list WHERE is_active='1';" | sed 's/\t/|/g;'`"
+		for sTracker in $sAllTrackers; do
+			nIdTracker="`echo $sTracker | awk '{split($0,a,"|"); print a[1]}'`"
+			sTrackerName="`echo $sTracker | awk '{split($0,a,"|"); print a[2]}'`"
 
-			ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$IdTracker'"`"
-			for IPv4 in $ListIPv4; do
-				echo "$TrackerName:$IPv4-255.255.255.255" >> /etc/pgl/allow.p2p
+			sListIPv4="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list='$nIdTracker';"`"
+			for sIPv4 in $sListIPv4; do
+				echo "$sTrackerName:$sIPv4-255.255.255.255" >> /etc/pgl/allow.p2p
 			done
 		done
-		if [ $1 -eq 1 ]; then StatusLSB; fi
+		if [ $1 -eq 1 ]; then gfnStatusLSB; fi
 	fi
 }
 
 #### PeerGuardian Create all needed iptables complementary rules
-PeerGuardianIptablesInsert() {
+gfnPeerGuardianIptablesInsert() {
+	local sOvhIPv4 sOnlineIPv4 sDigicubeIPv4 sIPv4 sResolverName sResolverAddress sAddress nPort sROW
+
+	# DNScrypt
+	if [ "$gbIsInstalled_DNScrypt" == "YES" ]; then
+		if [ $1 -eq 1 ]; then log_daemon_msg "$DNScrypt_ResolversRules"; fi
+		echo "#!/bin/sh" > /etc/pgl/dnscrypt.insert.sh
+		echo >> /etc/pgl/dnscrypt.insert.sh
+		echo "# DNScrypt-proxy resolvers complementary rules" >> /etc/pgl/dnscrypt.insert.sh
+		cat /etc/pgl/dnscrypt.insert.sh > /etc/pgl/dnscrypt.remove.sh
+
+		cmdMySQL 'MySB_db' "SELECT name,resolver_address FROM dnscrypt_resolvers WHERE ip_version='ipv4';" | sed 's/\t/|/g;' | while read sROW; do
+			sResolverName="`echo $sROW | awk '{split($0,a,"|"); print a[1]}'`"
+			sResolverAddress="`echo $sROW | awk '{split($0,a,"|"); print a[2]}'`"
+			sAddress="`echo $sResolverAddress | awk '{split($0,a,":"); print a[1]}'`"
+			nPort="`echo $sResolverAddress | awk '{split($0,a,":"); print a[2]}'`"
+			[ -z $nPort ] && nPort=443
+			echo "iptables -I pgl_in -p udp -s $sAddress --destination-port $nPort -j RETURN -m comment --comment \"DNScrypt - $sResolverName\"" >> /etc/pgl/dnscrypt.insert.sh
+		done
+
+		echo >> /etc/pgl/dnscrypt.insert.sh
+		echo "#### Prepare REMOVE script named '/etc/pgl/dnscrypt.remove.sh'" >> /etc/pgl/dnscrypt.insert.sh
+		cp /etc/pgl/dnscrypt.insert.sh /etc/pgl/dnscrypt.remove.sh
+		sed -i '/dnscrypt.remove.sh/d' /etc/pgl/dnscrypt.remove.sh
+		perl -pi -e "s/-I/-D/g" /etc/pgl/dnscrypt.remove.sh
+		if [ $1 -eq 1 ]; then gfnStatusLSB; fi
+	else
+		if [ -f /etc/pgl/dnscrypt.insert.sh ]; then rm -f /etc/pgl/dnscrypt.insert.sh; fi
+		if [ -f /etc/pgl/dnscrypt.remove.sh ]; then rm -f /etc/pgl/dnscrypt.remove.sh; fi
+	fi
+
 	# Monitoring
-	if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "$Global_NO" ]; then
-		if [ $1 -eq 1 ]; then log_daemon_msg "$Peerguardian_SupervisionRules $ServerProvider"; fi
+	if [ ! -z "$gsServerProvider" ] && [ "$gsServerProvider" != "$Global_NO" ]; then
+		if [ $1 -eq 1 ]; then log_daemon_msg "$Peerguardian_SupervisionRules $gsServerProvider"; fi
 			echo "#!/bin/sh" > /etc/pgl/monitoring.insert.sh
 			echo >> /etc/pgl/monitoring.insert.sh
-			echo "# $ServerProvider monitoring complementary rules" >> /etc/pgl/monitoring.insert.sh
+			echo "# $gsServerProvider monitoring complementary rules" >> /etc/pgl/monitoring.insert.sh
 			cat /etc/pgl/monitoring.insert.sh > /etc/pgl/monitoring.remove.sh
-			case "$ServerProvider" in
+			case "$gsServerProvider" in
 				"OVH")
-					OvhIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'OVH'\"`"
-					for IPv4 in $OvhIPv4; do
-						echo "iptables -I pgl_in -p udp -s $IPv4 --destination-port 6100:6200 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
-						echo "iptables -I pgl_in -p icmp -s $IPv4 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
+					sOvhIPv4="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider='OVH';"`"
+					for sIPv4 in $sOvhIPv4; do
+						echo "iptables -I pgl_in -p udp -s $sIPv4 --destination-port 6100:6200 -j RETURN -m comment --comment \"$gsServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
+						echo "iptables -I pgl_in -p icmp -s $sIPv4 -j RETURN -m comment --comment \"$gsServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
 					done
 				;;
 				"ONLINE")
-					OnlineIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'ONLINE'\"`"
-					for IPv4 in $OnlineIPv4; do
-						echo "iptables -I pgl_in -p icmp -s $IPv4 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
+					sOnlineIPv4="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider='ONLINE';"`"
+					for sIPv4 in $sOnlineIPv4; do
+						echo "iptables -I pgl_in -p icmp -s $sIPv4 -j RETURN -m comment --comment \"$gsServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
 					done
 				;;
 				"DIGICUBE")
-					OnlineIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'providers_monitoring' \"provider = 'DIGICUBE'\"`"
-					for IPv4 in $OnlineIPv4; do
-						echo "iptables -I pgl_in -p icmp -s $IPv4 -j RETURN -m comment --comment \"$ServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
+					sDigicubeIPv4="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider='DIGICUBE';"`"
+					for sIPv4 in $sDigicubeIPv4; do
+						echo "iptables -I pgl_in -p icmp -s $sIPv4 -j RETURN -m comment --comment \"$gsServerProvider monitoring\"" >> /etc/pgl/monitoring.insert.sh
 					done
 				;;
 			esac
@@ -234,7 +273,7 @@ PeerGuardianIptablesInsert() {
 			cp /etc/pgl/monitoring.insert.sh /etc/pgl/monitoring.remove.sh
 			sed -i '/monitoring.remove.sh/d' /etc/pgl/monitoring.remove.sh
 			perl -pi -e "s/-I/-D/g" /etc/pgl/monitoring.remove.sh
-		if [ $1 -eq 1 ]; then StatusLSB; fi
+		if [ $1 -eq 1 ]; then gfnStatusLSB; fi
 	else
 		if [ -f /etc/pgl/monitoring.insert.sh ]; then rm -f /etc/pgl/monitoring.insert.sh; fi
 		if [ -f /etc/pgl/monitoring.remove.sh ]; then rm -f /etc/pgl/monitoring.remove.sh; fi
@@ -254,119 +293,136 @@ PeerGuardianIptablesInsert() {
 }
 
 #### PeerGuardian Create pglcmd.conf
-PeerGuardianPglcmdConf() {
+gfnPeerGuardianPglcmdConf() {
+	local sStatsMailTo sWatchDogMailTo sSearch
+
 	if [ -f /etc/pgl/pglcmd.conf ]; then
 		if [ $1 -eq 1 ]; then log_daemon_msg "$Peerguardian_LoggingAndVerbosity"; fi
-		STATS_MAILTO="`Func_SQL_Command 'SELECT' 'MySB_db' 'pgl_email_stats' 'system' '1' | sed 's/0//g;' | sed 's/1/root/g;'`"
-		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "STATS_MAILTO=")
-		perl -pi -e "s/$SEARCH/STATS_MAILTO=\"$STATS_MAILTO\"/g" /etc/pgl/pglcmd.conf
-		unset SEARCH
+		sStatsMailTo="`cmdMySQL 'MySB_db' "SELECT pgl_email_stats FROM system;" | sed 's/0//g;' | sed 's/1/root/g;'`"
+		sSearch=$(cat /etc/pgl/pglcmd.conf | grep "STATS_MAILTO=")
+		perl -pi -e "s/$sSearch/STATS_MAILTO=\"$sStatsMailTo\"/g" /etc/pgl/pglcmd.conf
+		unset sSearch
 
-		WD_MAILTO="`Func_SQL_Command 'SELECT' 'MySB_db' 'pgl_watchdog_email' 'system' '1' | sed 's/0//g;' | sed 's/1/root/g;'`"
-		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WD_MAILTO=")
-		perl -pi -e "s/$SEARCH/WD_MAILTO=\"$WD_MAILTO\"/g" /etc/pgl/pglcmd.conf
-		unset SEARCH
-		if [ $1 -eq 1 ]; then StatusLSB; fi
+		sWatchDogMailTo="`cmdMySQL 'MySB_db' "SELECT pgl_watchdog_email FROM system;" | sed 's/0//g;' | sed 's/1/root/g;'`"
+		sSearch=$(cat /etc/pgl/pglcmd.conf | grep "WD_MAILTO=")
+		perl -pi -e "s/$sSearch/WD_MAILTO=\"$sWatchDogMailTo\"/g" /etc/pgl/pglcmd.conf
+		unset sSearch
+		if [ $1 -eq 1 ]; then gfnStatusLSB; fi
 
 		if [ $1 -eq 1 ]; then log_daemon_msg "$Peerguardian_AddingAllowedAddresses"; fi
-		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_OUT=")
-		SEARCH="`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`"
-		if [ ! -z "$SEARCH" ]; then
-			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-				perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
+		sSearch=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_OUT=")
+		sSearch="`echo $sSearch | sed s,/,\\\\\\\\\\/,g`"
+		if [ ! -z "$sSearch" ]; then
+			if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
+				perl -pi -e "s/$sSearch/WHITE_IP_OUT=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
 			else
-				perl -pi -e "s/$SEARCH/WHITE_IP_OUT=\"\"/g" /etc/pgl/pglcmd.conf
+				perl -pi -e "s/$sSearch/WHITE_IP_OUT=\"\"/g" /etc/pgl/pglcmd.conf
 			fi
 		fi
-		unset SEARCH
+		unset sSearch
 
-		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_FWD=")
-		SEARCH="`echo $SEARCH | sed s,/,\\\\\\\\\\/,g`"
-		if [ ! -z "$SEARCH" ]; then
-			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-				perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
+		sSearch=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_IP_FWD=")
+		sSearch="`echo $sSearch | sed s,/,\\\\\\\\\\/,g`"
+		if [ ! -z "$sSearch" ]; then
+			if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
+				perl -pi -e "s/$sSearch/WHITE_IP_FWD=\"10.0.0.0\/24\"/g" /etc/pgl/pglcmd.conf
 			else
-				perl -pi -e "s/$SEARCH/WHITE_IP_FWD=\"\"/g" /etc/pgl/pglcmd.conf
+				perl -pi -e "s/$sSearch/WHITE_IP_FWD=\"\"/g" /etc/pgl/pglcmd.conf
 			fi
 		fi
-		unset SEARCH
+		unset sSearch
 
-		PeerGuardianNetworkPortsGenerator
+		gfnPeerGuardianNetworkPortsGenerator
 
-		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
-		if [ ! -z "$SEARCH" ]; then
-			perl -pi -e "s/$SEARCH/WHITE_TCP_IN=\"${WHITE_TCP_IN}\"/g" /etc/pgl/pglcmd.conf
+		sSearch=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_IN=")
+		if [ ! -z "$sSearch" ]; then
+			perl -pi -e "s/$sSearch/WHITE_TCP_IN=\"${WHITE_TCP_IN}\"/g" /etc/pgl/pglcmd.conf
 		fi
-		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=")
-		if [ ! -z "$SEARCH" ]; then
-			perl -pi -e "s/$SEARCH/WHITE_UDP_IN=\"${WHITE_UDP_IN}\"/g" /etc/pgl/pglcmd.conf
+		sSearch=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_IN=")
+		if [ ! -z "$sSearch" ]; then
+			perl -pi -e "s/$sSearch/WHITE_UDP_IN=\"${WHITE_UDP_IN}\"/g" /etc/pgl/pglcmd.conf
 		fi
-		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
-		if [ ! -z "$SEARCH" ]; then
-			perl -pi -e "s/$SEARCH/WHITE_TCP_OUT=\"${WHITE_TCP_OUT}\"/g" /etc/pgl/pglcmd.conf
+		sSearch=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_TCP_OUT=")
+		if [ ! -z "$sSearch" ]; then
+			perl -pi -e "s/$sSearch/WHITE_TCP_OUT=\"${WHITE_TCP_OUT}\"/g" /etc/pgl/pglcmd.conf
 		fi
-		SEARCH=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
-		if [ ! -z "$SEARCH" ]; then
-			perl -pi -e "s/$SEARCH/WHITE_UDP_OUT=\"${WHITE_UDP_OUT}\"/g" /etc/pgl/pglcmd.conf
+		sSearch=$(cat /etc/pgl/pglcmd.conf | grep "WHITE_UDP_OUT=")
+		if [ ! -z "$sSearch" ]; then
+			perl -pi -e "s/$sSearch/WHITE_UDP_OUT=\"${WHITE_UDP_OUT}\"/g" /etc/pgl/pglcmd.conf
 		fi
-		if [ $1 -eq 1 ]; then StatusLSB; fi
+		if [ ! -z "$gbDevMode" ] && [ $gbDevMode -eq 1 ]; then
+			cat /etc/pgl/pglcmd.conf >> $MySB_InstallDir/logs/${gsScriptName}_PGLCMD.log
+		fi
+		if [ $1 -eq 1 ]; then gfnStatusLSB; fi
 	fi
 }
 
 #### Network ports generator
-PeerGuardianNetworkPortsGenerator() {
-	WHITE_TCP_IN=""
-	WHITE_UDP_IN=""
-	WHITE_TCP_OUT="`Func_SQL_Command 'SELECT' 'MySB_db' 'white_tcp_port_out' 'vars' '1' | sed 's/,/ /g;'`"
-	WHITE_UDP_OUT="`Func_SQL_Command 'SELECT' 'MySB_db' 'white_udp_port_out' 'vars' '1' | sed 's/,/ /g;'`"
+gfnPeerGuardianNetworkPortsGenerator() {
+	local bLetsEncryptOpenPort sPorts_LetsEncrypt sResolversAddresses sAddress nPort sPortList
+
+	WHITE_TCP_IN=''
+	WHITE_UDP_IN=''
+	WHITE_TCP_OUT='80 443'
+	WHITE_UDP_OUT=''
 
 	# TCP In
-	WHITE_TCP_IN="${Port_HTTPS}"
-	if [ "$IsInstalled_Cakebox" == "YES" ] || [ "$ToInstall_Cakebox" == "YES" ]; then
+	WHITE_TCP_IN="${gsPort_HTTPS}"
+	if [ "$gbIsInstalled_Cakebox" == "YES" ] || [ "$gbToInstall_Cakebox" == "YES" ]; then
 		WHITE_TCP_IN="${WHITE_TCP_IN}"
 	fi
-	if [ "$IpRestriction" == "NO" ]; then
-		WHITE_TCP_IN="${WHITE_TCP_IN} ${Port_FTP} ${Port_SSH} ${Port_FTP_Data} ${Port_FTP_Passive}"
+	if [ "$gsIpRestriction" == "NO" ]; then
+		WHITE_TCP_IN="${WHITE_TCP_IN} ${gsPort_FTP} ${gsPort_SSH} ${gsPort_FTP_Data} ${gsPort_FTP_Passive}"
 	fi
 
 	# UDP In
-	if [ "$IpRestriction" == "NO" ]; then
+	if [ "$gsIpRestriction" == "NO" ]; then
 		WHITE_UDP_IN="${WHITE_UDP_IN}"
 	fi
 
 	# TCP Out
-	WHITE_TCP_OUT="${WHITE_TCP_OUT} ${SMTP_Port} ${Port_HTTPS} ${Port_FTP} ${Port_SSH} ${Port_FTP_Data} ${Port_FTP_Passive}"
+	WHITE_TCP_OUT="${WHITE_TCP_OUT} ${gsPort_SMTP} ${gsPort_HTTPS} ${gsPort_FTP} ${gsPort_SSH} ${gsPort_FTP_Data} ${gsPort_FTP_Passive}"
 
 	# UDP Out
 	WHITE_UDP_OUT="${WHITE_UDP_OUT}"
+	if [ "$gbIsInstalled_DNScrypt" == "YES" ]; then
+		sResolversAddresses="`cmdMySQL 'MySB_db' "SELECT resolver_address FROM dnscrypt_resolvers WHERE ip_version='ipv4';"`"
+		for sAddress in $sResolversAddresses; do
+			nPort="`echo $sAddress | awk '{split($0,a,":"); print a[2]}'`"
+			[ -z $nPort ] && nPort=443
+			sPortList="${sPortList} ${nPort}"
+		done
+
+		sPortList="`echo $sPortList | xargs -n1 | sort -n -u | xargs`"
+		WHITE_UDP_OUT="${WHITE_UDP_OUT} ${sPortList}"
+	fi
 
 	# Services
-	if [ "$IsInstalled_Webmin" == "YES" ] && [ "$IpRestriction" == "NO" ]; then
-		WHITE_TCP_IN="${WHITE_TCP_IN} ${Ports_Webmin}"
+	if [ "$gbIsInstalled_Webmin" == "YES" ] && [ "$gsIpRestriction" == "NO" ]; then
+		WHITE_TCP_IN="${WHITE_TCP_IN} ${gsPorts_Webmin}"
 	fi
-	if [ "$IsInstalled_PlexMedia" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
-		WHITE_TCP_IN="${WHITE_TCP_IN} ${Ports_PlexMedia} ${Ports_TCP_PlexMedia}"
+	if [ "$gbIsInstalled_PlexMedia" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
+		WHITE_TCP_IN="${WHITE_TCP_IN} ${gsPorts_PlexMedia} ${gsPorts_TCP_PlexMedia}"
 	fi
-	if [ "$ToInstall_LetsEncrypt" == "YES" ] || [ "$IsInstalled_LetsEncrypt" == "YES" ]; then
-		LetsEncryptOpenPort="`Func_SQL_Command 'SELECT' 'MySB_db' 'letsencrypt_openport' 'system' "id_system = 1"`"
-		if [ "$LetsEncryptOpenPort" == "1" ]; then
-			Ports_LetsEncrypt="`Func_SQL_Command 'SELECT' 'MySB_db' 'port_tcp1' 'services' "serv_name = 'Lets Encrypt'"`"
-			WHITE_TCP_IN="${WHITE_TCP_IN} ${Ports_LetsEncrypt}"
+	if [ "$gbToInstall_LetsEncrypt" == "YES" ] || [ "$gbIsInstalled_LetsEncrypt" == "YES" ]; then
+		bLetsEncryptOpenPort="`cmdMySQL 'MySB_db' "SELECT letsencrypt_openport FROM system WHERE id_system='1';"`"
+		if [ $bLetsEncryptOpenPort -eq 1 ]; then
+			WHITE_TCP_IN="${WHITE_TCP_IN} 443"
 		fi
 	fi
-	if [ "$IsInstalled_OpenVPN" == "YES" ] && [ "$IpRestriction" == "NO" ]; then
-		case "$OpenVPN_Proto" in
+	if [ "$gbIsInstalled_OpenVPN" == "YES" ] && [ "$gsIpRestriction" == "NO" ]; then
+		case "$gsOpenVPN_Proto" in
 			"udp")
-				WHITE_UDP_IN="${WHITE_UDP_IN} ${Port_OpenVPN_WithGW} ${Port_OpenVPN_WithoutGW} ${Port_OpenVPN_TAP_WithoutGW}"
+				WHITE_UDP_IN="${WHITE_UDP_IN} ${gsPort_OpenVPN_WithGW} ${gsPort_OpenVPN_WithoutGW} ${gsPort_OpenVPN_TAP_WithoutGW}"
 			;;
 			"tcp")
-				WHITE_TCP_IN="${WHITE_TCP_IN} ${Port_OpenVPN_WithGW} ${Port_OpenVPN_WithoutGW} ${Port_OpenVPN_TAP_WithoutGW}"
+				WHITE_TCP_IN="${WHITE_TCP_IN} ${gsPort_OpenVPN_WithGW} ${gsPort_OpenVPN_WithoutGW} ${gsPort_OpenVPN_TAP_WithoutGW}"
 			;;
 		esac
 
 		# PlexMedia UDP ports opened only with OpenVPN installed
-		if [ "$IsInstalled_PlexMedia" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
-			UDP_PORTS_LIST="${WHITE_UDP_IN} ${Ports_UDP_PlexMedia}"
+		if [ "$gbIsInstalled_PlexMedia" == "YES" ] && [ -f "/usr/lib/plexmediaserver/start.sh" ]; then
+			UDP_PORTS_LIST="${WHITE_UDP_IN} ${gsPorts_UDP_PlexMedia}"
 		fi
 	fi
 

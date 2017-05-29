@@ -30,12 +30,12 @@ function Form() {
 	// Users table
 	$renting_datas = $MySB_DB->get("system", ["rt_model", "rt_cost_tva", "rt_nb_users", "rt_method"], ["id_system" => 1]);
 	$Rent_Payments = $MySB_DB->select("tracking_rent_payments", ["id_tracking_rent_payments", "id_users", "payment_date", "amount"]);
-	$TotalUsers = $renting_datas["rt_nb_users"];
+	$nTotalUsers = $renting_datas["rt_nb_users"];
 	$Model = $renting_datas["rt_model"];
 	$GlobalCostTVA = $renting_datas["rt_cost_tva"];
 	$Method = $renting_datas["rt_method"];
 
-	if ( ($GlobalCostTVA != 0.00) && ($TotalUsers >= 1) && (isset($Model)) && (isset($Method)) ) {
+	if ( ($GlobalCostTVA != 0.00) && ($nTotalUsers >= 1) && (isset($Model)) && (isset($Method)) ) {
 		echo '
 		<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 			<form id="myForm" class="form_settings" method="post" action="">
@@ -110,7 +110,8 @@ if (isset($_POST['submit'])) {
 				$IdUser = $_POST['select_user'][$i];
 				$Date = $_POST['input_date'][$i];
 				if ( (isset($Amount) && ($Amount != 0.00)) && (isset($IdUser)) && (isset($Date)) ) {
-					$result = $MySB_DB->insert("tracking_rent_payments", ["id_users" => "$IdUser", "payment_date" => "$Date", "amount" => "$Amount"]);
+					$MySB_DB->insert("tracking_rent_payments", ["id_users" => "$IdUser", "payment_date" => "$Date", "amount" => "$Amount"]);
+					$result = $MySB_DB->id();
 					if ( $result >= 1 ) {
 						$type = 'success';
 					}

@@ -208,11 +208,11 @@ function printUser($user) {
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_Cakebox . '</th>';
 		echo '<td colspan="2"><a target="_blank" href="/ca"><span class="Comments">' . User_UserInfo_Comment_Cakebox . '</span></a></td></tr>';
 	}
-	// ownCloud
-	$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
+	// NextCloud
+	$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "NextCloud"]);
 	if ( $is_installed == '1' ) {
-		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_ownCloud . '</th>';
-		echo '<td colspan="2"><a target="_blank" href="/oc"><span class="Comments">' . User_UserInfo_Comment_ownCloud . '</span></a></td></tr>';
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_NextCloud . '</th>';
+		echo '<td colspan="2"><a target="_blank" href="/nc"><span class="Comments">' . User_UserInfo_Comment_NextCloud . '</span></a></td></tr>';
 	}
 
 	//////////////////////
@@ -264,9 +264,6 @@ function printUser($user) {
 		echo '<td><span class="Comments">' . User_UserInfo_Comment_MySB_DeleteUser . '</span></td></tr>';
 		// SeedBox Management
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SeedboxManage . '</th>';
-		echo '<td>MySB_RefreshMe</td>';
-		echo '<td><span class="Comments">' . User_UserInfo_Comment_MySB_RefreshMe . '</span></td></tr>';
-		echo '<tr align="left"><th width="17%" scope="row"> </th>';
 		echo '<td>MySB_UpgradeMe</td>';
 		echo '<td><span class="Comments">' . User_UserInfo_Comment_MySB_UpgradeMe . '</span></td></tr>';
 		echo '<tr align="left"><th width="17%" scope="row"> </th>';

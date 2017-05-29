@@ -32,15 +32,15 @@ source $MySB_InstallDir/inc/funcs_iptables
 
 #### VARs
 LocSwitch="$1"
-ListCountUsers #($UsersList)
-AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
-AllUsersIPs=$(echo "$AllUsersIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
+gfnListCountUsers #($gsUsersList)
+AllUsersIPs="${gsSeedboxUsersIPs} ${gsMainUserIPs}"
+AllUsersIPs="`echo $AllUsersIPs | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
 ServicesToRestart=""
 ServicesToStop=""
 #### VARs
 
 #### Check arguments options
-LoadModules=NO
+LoadKernelModules=NO
 LoadKernelParameter=NO
 ApplyConfigNginx=NO
 ApplyConfigPeerGuardian=NO
@@ -64,62 +64,67 @@ for Arg in "$@"; do
 			LoadOnBoot=YES
 			ServicesToRestart='cron'
 		;;
+		*)
+			ApplyIptablesUsers=YES
+			ServicesToRestart='cron'
+		;;
 	esac
 done
 
 case "$LocSwitch" in
 	create)
-		ApplyConfigNginx="`CheckCommand 1 nginx`"
-		ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
-		ApplyConfigFail2Ban=$IsInstalled_Fail2Ban
-		ApplyConfigBind="`CheckCommand 1 named`"
+		ApplyConfigNginx="`gfnCheckCommand 1 nginx`"
+		ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
+		ApplyConfigFail2Ban=$gbIsInstalled_Fail2Ban
+		ApplyConfigBind="`gfnCheckCommand 1 named`"
 	;;
 	clean)
-		ApplyConfigNginx="`CheckCommand 1 nginx`"
-		ApplyConfigBind="`CheckCommand 1 named`"
+		ApplyConfigNginx="`gfnCheckCommand 1 nginx`"
+		ApplyConfigBind="`gfnCheckCommand 1 named`"
 	;;
 	refresh)
 		for Arg in "$@"; do
 			case "$Arg" in
 				--letsencrypt)
 					unset LetsEncryptIPs Temp
-					LetsEncryptOpenPort="`Func_SQL_Command 'SELECT' 'MySB_db' 'letsencrypt_openport' 'system' "id_system = 1"`"
-					Temp="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'lets_encrypt' '1' | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-					if [ "$IpRestriction" == "YES" ]; then
+					LetsEncryptOpenPort="`cmdMySQL 'MySB_db' "SELECT letsencrypt_openport FROM system WHERE id_system='1';"`"
+					Temp="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM lets_encrypt;"`"
+					if [ "$gsIpRestriction" == "YES" ]; then
 						for ip in $Temp; do
 							LetsEncryptIPs="${LetsEncryptIPs} $ip/32"
 						done
 					else
 						LetsEncryptIPs="0/0"
 					fi
-					LetsEncryptIPs=$(echo "$LetsEncryptIPs"|tr " " "\n"|sort|uniq|tr "\n" " ") # sort as uniq
+					LetsEncryptIPs="`echo $LetsEncryptIPs | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
+					ApplyIptablesUsers=NO
 					ApplyIptablesLetsEncrypt=YES
-					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
+					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
 				;;
 				--users)
 					ApplyIptablesUsers=YES
-					ApplyConfigNginx="`CheckCommand 1 nginx`"
-					ApplyConfigFail2Ban=$IsInstalled_Fail2Ban
-					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
+					ApplyConfigNginx="`gfnCheckCommand 1 nginx`"
+					ApplyConfigFail2Ban=$gbIsInstalled_Fail2Ban
+					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
 				;;
 				--trackers)
-					ApplyConfigBind="`CheckCommand 1 named`"
-					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
+					ApplyConfigBind="`gfnCheckCommand 1 named`"
+					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
 				;;
 				--blocklists)
-					ApplyConfigBind="`CheckCommand 1 named`"
-					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
+					ApplyConfigBind="`gfnCheckCommand 1 named`"
+					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
 				;;
 				--pglcmd)
 					ApplyIptablesUsers=YES
-					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
+					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
 				;;
 				--all)
 					ApplyIptablesUsers=YES
-					ApplyConfigNginx="`CheckCommand 1 nginx`"
-					ApplyConfigBind="`CheckCommand 1 named`"
-					ApplyConfigFail2Ban=$IsInstalled_Fail2Ban
-					ApplyConfigPeerGuardian=$IsInstalled_PeerGuardian
+					ApplyConfigNginx="`gfnCheckCommand 1 nginx`"
+					ApplyConfigBind="`gfnCheckCommand 1 named`"
+					ApplyConfigFail2Ban=$gbIsInstalled_Fail2Ban
+					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
 				;;
 			esac
 		done
@@ -138,52 +143,48 @@ fi
 if [ "$ApplyConfigNginx" == "YES" ]; then
 	ServicesToRestart="${ServicesToRestart} nginx"
 fi
-case "$DNScrypt_Switch" in
-	"0")
-		ServicesToStop="dnscrypt-proxy"
-	;;
-	"1")
-		if ! GetPid dnscrypt-proxy; then
-			ServicesToRestart="${ServicesToRestart} dnscrypt-proxy"
-		fi
-	;;
-esac
+if gfnCheckCommand 0 dnscrypt-proxy; then
+	case "$gbDnsCryptSwitch" in
+		'0')	ServicesToStop="dnscrypt-proxy";;
+		'1')	ServicesToRestart="${ServicesToRestart} dnscrypt-proxy";;
+	esac
+fi
 #### Check arguments options
 
 #### Functions
 # Create all rules for services (config files)
 CreateServicesRules() {
 	#### NginX
-	if [ "$ApplyConfigNginx" == "YES" ] && [ "$IpRestriction" == "YES" ]; then
+	if [ "$ApplyConfigNginx" == "YES" ] && [ "$gsIpRestriction" == "YES" ]; then
 		log_daemon_msg "$SecurityRules_NginX_AllUsers"
 		echo "	# Users allowed IP" > /etc/nginx/conf.d/ip_restriction
 		for IPv4 in $AllUsersIPs; do
 			echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
 		done
 		unset IPv4
-		StatusLSB
+		gfnStatusLSB
 	fi
 	#### NginX
 
 	#### NginX
 	if [ "$ApplyConfigNginx" == "YES" ]; then
-		if [ "$IpRestriction" == "YES" ]; then
-			if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+		if [ "$gsIpRestriction" == "YES" ]; then
+			if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
 				# OpenVPN local IP addresses
 				log_daemon_msg "$SecurityRules_NginX_OpenVPN"
 				echo "	# Restricted IP for OpenVPN users" >> /etc/nginx/conf.d/ip_restriction
-				for IPv4 in $VpnIPs; do
+				for IPv4 in $gsVpnLocalIps; do
 					echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
 				done
 				unset IPv4
-				StatusLSB
+				gfnStatusLSB
 			fi
 
 			# Loopback
 			log_daemon_msg "$SecurityRules_NginX_Loopback"
 			echo "	# Localhost" >> /etc/nginx/conf.d/ip_restriction
 			echo "	allow 127.0.0.1;" >> /etc/nginx/conf.d/ip_restriction
-			StatusLSB
+			gfnStatusLSB
 
 			# Deny all others
 			echo "	# Deny all others" >> /etc/nginx/conf.d/ip_restriction
@@ -192,7 +193,7 @@ CreateServicesRules() {
 			log_daemon_msg "$SecurityRules_NginX_SatisfyAll"
 			echo "	# Allow any one" >> /etc/nginx/conf.d/ip_restriction
 			echo "	satisfy all;" > /etc/nginx/conf.d/ip_restriction
-			StatusLSB
+			gfnStatusLSB
 		fi
 	fi
 	#### NginX
@@ -201,23 +202,23 @@ CreateServicesRules() {
 	if [ "$ApplyConfigBind" == "YES" ]; then
 		log_daemon_msg "$SecurityRules_Bind_BlockOut"
 		echo "#### MySB - Blacklisted domains (ex: inactive trackers)" > /etc/bind/MySB.zones.blakclists
-		AllTrackersDomain="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker_domain' 'trackers_list' \"is_active = '0' AND to_check = '0'\"`"
+		AllTrackersDomain="`cmdMySQL 'MySB_db' "SELECT tracker_domain FROM trackers_list WHERE is_active='0' AND to_check='0';"`"
 		for TrackerDomain in $AllTrackersDomain; do
 			echo "zone \"$TrackerDomain\" { type master; file \"/etc/bind/db.empty\"; };" >> /etc/bind/MySB.zones.blakclists
 		done
 		perl -pi -e "s/^#include \"\/etc\/bind\/MySB.zones.blakclists\";/include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
-		StatusLSB 0
+		gfnStatusLSB 0
 
 		log_daemon_msg "$SecurityRules_Bind_TrackersHosts"
-		CreateHostsFile
-		StatusLSB 0
+		gfnCreateHostsFile
+		gfnStatusLSB 0
 	fi
 	#### BIND
 
 	#### Fail2Ban
 	if [ "$ApplyConfigFail2Ban" == "YES" ]; then
 		source $MySB_InstallDir/inc/funcs_by_script/funcs_Fail2Ban
-		Fail2BanWhitheList 1
+		gfnFail2BanWhitheList 1
 	fi
 	#### Fail2Ban
 
@@ -228,15 +229,13 @@ CreateServicesRules() {
 		fi
 
 		# Create '/etc/pgl/pglcmd.conf'
-		PeerGuardianPglcmdConf 0
-		if [ -z "$LetsEncryptOpenPort" ] || [ "$LetsEncryptOpenPort" == "0" ]; then
-			# Create '/etc/pgl/allow.p2p'
-			PeerGuardianAllowP2P 0
-			# Create '/etc/pgl/blocklists.list'
-			PeerGuardianBlocklistsList 0 "CreateFile"
-			# Create '/etc/pgl/*.insert.sh'
-			PeerGuardianIptablesInsert 0
-		fi
+		gfnPeerGuardianPglcmdConf 0
+		# Create '/etc/pgl/allow.p2p'
+		gfnPeerGuardianAllowP2P 0
+		# Create '/etc/pgl/blocklists.list'
+		gfnPeerGuardianBlocklistsList 0 "CreateFile"
+		# Create '/etc/pgl/*.insert.sh'
+		gfnPeerGuardianIptablesInsert 0
 	fi
 	#### PeerGuardian
 }
@@ -245,7 +244,7 @@ CreateServicesRules() {
 RestartRtorrentSessions() {
 	case "$1" in
 		stop)
-			for FnUser in $UsersList; do
+			for FnUser in $gsUsersList; do
 				if [ -f /etc/init.d/rtorrent-$FnUser ]; then
 					service rtorrent-$FnUser stop
 				fi
@@ -254,7 +253,7 @@ RestartRtorrentSessions() {
 		start)
 			service cron status > /dev/null
 			if [ $? -eq 0 ]; then
-				for FnUser in $UsersList; do
+				for FnUser in $gsUsersList; do
 					if [ -f /etc/init.d/rtorrent-$FnUser ]; then
 						service rtorrent-$FnUser status &> /dev/null
 						if [ $? -ne 0 ]; then
@@ -273,13 +272,13 @@ case "$LocSwitch" in
 	clean)
 		#### STOP services
 		RestartRtorrentSessions "stop"
-		ManageServices stop "pglcmd fail2ban cron"
+		gfnManageServices stop "pglcmd fail2ban cron"
 		#### STOP services
 
 		#### IPtables - Removal of existing rules
 		log_daemon_msg "$SecurityRules_IPtables_RemoveAll"
-		FlushingTables
-		StatusLSB
+		gfnFlushingIptables
+		gfnStatusLSB
 		#### IPtables - Removal of existing rules
 
 		#### NginX - Satisfy all
@@ -287,10 +286,10 @@ case "$LocSwitch" in
 			log_daemon_msg "$SecurityRules_NginX_SatisfyAll"
 			echo "	# Allow any one" >> /etc/nginx/conf.d/ip_restriction
 			echo "	satisfy all;" > /etc/nginx/conf.d/ip_restriction
-			StatusLSB
+			gfnStatusLSB
 		else
 			log_daemon_msg "$SecurityRules_NginX_NotInstalled"
-			StatusLSB
+			gfnStatusLSB
 		fi
 		#### NginX - Satisfy all
 
@@ -298,26 +297,29 @@ case "$LocSwitch" in
 		if [ "$ApplyConfigBind" == "YES" ]; then
 			log_daemon_msg "$SecurityRules_Bind_UnblockTracker"
 			perl -pi -e "s/^include \"\/etc\/bind\/MySB.zones.blakclists\";/#include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
-			StatusLSB
+			gfnStatusLSB
 		else
 			log_daemon_msg "$SecurityRules_Bind_NotInstalled"
-			StatusLSB
+			gfnStatusLSB
 		fi
 		#### Bind - Unblock inactive tracker domains
 
 		#### START services
-		ManageServices start "nginx bind9"
+		gfnManageServices start "nginx bind9"
 		#### START services
 
 		#### STOP services
-		ManageServices stop "$ServicesToStop"
+		gfnManageServices stop "$ServicesToStop"
 		#### STOP services
 
 		#### IPtables - SAVE Iptables Rules
 		iptables-save > /etc/iptables.up.rules
 		cp -f /etc/iptables.up.rules $MySB_InstallDir/files/current-iptables-rules
-		if [ "$IsInstalled_Webmin" == "YES" ] && [ -d /etc/webmin/firewall/ ]; then
+		if [ "$gbIsInstalled_Webmin" == "YES" ] && [ -d /etc/webmin/firewall/ ]; then
 			cp -f /etc/iptables.up.rules /etc/webmin/firewall/iptables.save
+		fi
+		if [ ! -z "$gbDevMode" ] && [ $gbDevMode -eq 1 ]; then
+			cat /etc/iptables.up.rules >> $MySB_InstallDir/logs/${gsScriptName}_IPTABLES.log
 		fi
 		#### IPtables - SAVE Iptables Rules
 	;;
@@ -325,29 +327,29 @@ case "$LocSwitch" in
 	create)
 		#### STOP services
 		RestartRtorrentSessions "stop"
-		ManageServices stop "cron pglcmd fail2ban"
+		gfnManageServices stop "cron pglcmd fail2ban"
 		#### STOP services
 
 		#### Kernel - Loading modules
-		log_daemon_msg "$SecurityRules_Kernel_Loading"
 		if [ "$LoadKernelModules" == "YES" ]; then
-			LoadingKernelModules
+			log_daemon_msg "$SecurityRules_Kernel_Loading"
+			gfnLoadingKernelModules
+			gfnStatusLSB
 		fi
-		StatusLSB
 		#### Kernel - Loading modules
 
 		#### Kernel - Parameter Configuration
-		log_daemon_msg "$SecurityRules_Kernel_Parameter"
 		if [ "$LoadKernelParameter" == "YES" ]; then
-			KernelParameterConfiguration
+			log_daemon_msg "$SecurityRules_Kernel_Parameter"
+			gfnKernelParamConfig
+			gfnStatusLSB
 		fi
-		StatusLSB
 		#### Kernel - Parameter Configuration
 
 		#### IPtables - Removal of existing rules
 		log_daemon_msg "$SecurityRules_IPtables_RemoveAll"
-		FlushingTables
-		StatusLSB
+		gfnFlushingIptables
+		gfnStatusLSB
 		#### IPtables - Removal of existing rules
 
 		#### IPtables - Prohibit any incoming/outgoing connections
@@ -355,77 +357,77 @@ case "$LocSwitch" in
 		iptables -P INPUT DROP
 		iptables -P FORWARD DROP
 		iptables -P OUTPUT DROP
-		StatusLSB
+		gfnStatusLSB
 		#### IPtables - Prohibit any incoming/outgoing connections
 
 		#### IPtables - Creating user chains
 		log_daemon_msg "$SecurityRules_IPtables_UserChains"
-		CreatingUserChain
-		StatusLSB
+		gfnCreatingUserChain
+		gfnStatusLSB
 		#### IPtables - Creating user chains
 
 		#### IPtables - Populating user chains
 		log_daemon_msg "$SecurityRules_IPtables_BadChains"
-		PopulatingBadChain
-		StatusLSB
+		gfnPopulatingBadChain
+		gfnStatusLSB
 		#### IPtables - Populating user chains
 
 		#### IPtables - Populating ICMP chain
 		Message="$SecurityRules_IPtables_ICMP_0"
-		if [ ! -z "$ServerProvider" ] && [ "$ServerProvider" != "$Global_NO" ]; then
+		if [ ! -z "$gsServerProvider" ] && [ "$gsServerProvider" != "$Global_NO" ]; then
 			Message="$SecurityRules_IPtables_ICMP_1"
 		fi
 		log_daemon_msg "$Message"
-		PopulatingIcmpChain 'create'
-		StatusLSB
+		gfnPopulatingIcmpChain 'create'
+		gfnStatusLSB
 		#### IPtables - Populating ICMP chain
 
 		#### IPtables - Populating UDP inboud user chain
 		log_daemon_msg "$SecurityRules_IPtables_UdpIn"
-		PopulatingUdpInboundChain 'create'
-		StatusLSB
+		gfnPopulatingUdpInboundChain 'create'
+		gfnStatusLSB
 		#### IPtables - Populating UDP inboud chain
 
 		#### IPtables - Populating UDP outbound chain
 		log_daemon_msg "$SecurityRules_IPtables_UdpOut"
-		PopulatingUdpOutboundChain
-		StatusLSB
+		gfnPopulatingUdpOutboundChain
+		gfnStatusLSB
 		#### IPtables - Populating UDP outbound chain
 
 		#### IPtables - Populating TCP inboud user chain
 		log_daemon_msg "$SecurityRules_IPtables_TcpIn"
-		PopulatingTcpInboundChain 'create'
-		StatusLSB
+		gfnPopulatingTcpInboundChain 'create'
+		gfnStatusLSB
 		#### IPtables - Populating TCP inboud chain
 
 		#### IPtables - Populating TCP outbound user chain
 		log_daemon_msg "$SecurityRules_IPtables_TcpOut"
-		PopulatingTcpOutboundChain
-		StatusLSB
+		gfnPopulatingTcpOutboundChain
+		gfnStatusLSB
 		#### IPtables - Populating TCP outbound chain
 
 		#### IPtables - Process INPUT chain
 		log_daemon_msg "$SecurityRules_IPtables_Input"
-		ProcessInputChain
-		StatusLSB
+		gfnProcessInputChain
+		gfnStatusLSB
 		#### IPtables - Process INPUT chain
 
 		#### IPtables - Process FORWARD chain
 		log_daemon_msg "$SecurityRules_IPtables_Forward"
-		ProcessForwardChain
-		StatusLSB
+		gfnProcessForwardChain
+		gfnStatusLSB
 		#### IPtables - Process FORWARD chain
 
 		#### IPtables - Process OUTPUT chain
 		log_daemon_msg "$SecurityRules_IPtables_Output"
-		ProcessOutputChain
-		StatusLSB
+		gfnProcessOutputChain
+		gfnStatusLSB
 		#### IPtables - Process OUTPUT chain
 
 		#### IPtables - Process POSTROUTING chain
 		log_daemon_msg "$SecurityRules_IPtables_Postrouting"
-		ProcessPostroutingChain
-		StatusLSB
+		gfnProcessPostroutingChain
+		gfnStatusLSB
 		#### IPtables - Process POSTROUTING chain
 
 		#### Services - Create all security rules for services
@@ -433,25 +435,28 @@ case "$LocSwitch" in
 		#### Services - Create all security rules for services
 
 		#### START services
-		ManageServices start "$ServicesToRestart"
+		gfnManageServices start "$ServicesToRestart"
 		RestartRtorrentSessions "start"
 		#### START services
 
 		#### STOP services
-		ManageServices stop "$ServicesToStop"
+		gfnManageServices stop "$ServicesToStop"
 		#### STOP services
 
 		#### IPtables - SAVE Iptables Rules
 		iptables-save > /etc/iptables.up.rules
 		cp -f /etc/iptables.up.rules $MySB_InstallDir/files/current-iptables-rules
-		if [ "$IsInstalled_Webmin" == "YES" ] && [ -d /etc/webmin/firewall/ ]; then
+		if [ "$gbIsInstalled_Webmin" == "YES" ] && [ -d /etc/webmin/firewall/ ]; then
 			cp /etc/iptables.up.rules /etc/webmin/firewall/iptables.save
+		fi
+		if [ ! -z "$gbDevMode" ] && [ $gbDevMode -eq 1 ]; then
+			cat /etc/iptables.up.rules >> $MySB_InstallDir/logs/${gsScriptName}_IPTABLES.log
 		fi
 		#### IPtables - SAVE Iptables Rules
 
-		#### Complete the previous upgrade
+		#### Complete previous upgrade
 		if [ "$LoadOnBoot" == "YES" ]; then
-			ScriptOnBoot="`Func_SQL_Command 'SELECT' 'MySB_db' 'name,script' 'repositories' \"on_boot = '1' AND active = '1'\"`"
+			ScriptOnBoot="`cmdMySQL 'MySB_db' "SELECT name,script FROM repositories WHERE on_boot='1' AND active='1';" | sed 's/\t/|/g;'`"
 			if [ ! -z "$ScriptOnBoot" ]; then
 				IFS=$'\n'
 				for Script in $ScriptOnBoot; do
@@ -459,8 +464,8 @@ case "$LocSwitch" in
 					File="`echo $Script | awk '{split($0,a,"|"); print a[2]}'`"
 
 					log_daemon_msg "$SecurityRules_UpgradeEnd $Name"
-					ScriptInvoke 'ScreenSTD' "$File" 'INIT'
-					StatusLSB
+					gfnScriptInvoke 'ScreenSTD' "$File" 'INIT'
+					gfnStatusLSB
 				done
 				unset IFS
 			fi
@@ -471,39 +476,38 @@ case "$LocSwitch" in
 		#### IPtables - SAVE Iptables Rules
 		log_daemon_msg "$SecurityRules_IPtables_Save"
 		iptables-save > $MySB_InstallDir/temp/current-iptables-rules
-		StatusLSB
+		if [ ! -z "$gbDevMode" ] && [ $gbDevMode -eq 1 ]; then
+			cat $MySB_InstallDir/temp/current-iptables-rules >> $MySB_InstallDir/logs/${gsScriptName}_IPTABLES.log
+		fi
+		gfnStatusLSB
 		#### IPtables - SAVE Iptables Rules
 
 		#### IPtables - ALTER Iptables Rules
 		if [ "$ApplyIptablesLetsEncrypt" == "YES" ]; then
 			log_daemon_msg "$SecurityRules_IPtables_LetEncrypt"
 
-			# icmp_packets chain
-			PopulatingIcmpChain 'letsencrypt'
-			# icmp_packets chain
-
 			# tcp_inbound chain
-			PopulatingTcpInboundChain 'letsencrypt'
+			gfnPopulatingTcpInboundChain 'letsencrypt'
 			# tcp_inbound chain
 
-			StatusLSB
+			gfnStatusLSB
 		fi
 		if [ "$ApplyIptablesUsers" == "YES" ]; then
 			log_daemon_msg "$SecurityRules_IPtables_Refresh"
 
 			# icmp_packets chain
-			PopulatingIcmpChain 'refresh'
+			gfnPopulatingIcmpChain 'refresh'
 			# icmp_packets chain
 
 			# udp_inbound chain
-			PopulatingUdpInboundChain 'refresh'
+			gfnPopulatingUdpInboundChain 'refresh'
 			# udp_inbound chain
 
 			# tcp_inbound chain
-			PopulatingTcpInboundChain 'refresh'
+			gfnPopulatingTcpInboundChain 'refresh'
 			# tcp_inbound chain
 
-			StatusLSB
+			gfnStatusLSB
 		fi
 		#### IPtables - ALTER Iptables Rules
 
@@ -513,28 +517,34 @@ case "$LocSwitch" in
 
 		#### IPtables - RESTORE Iptables Rules
 		log_daemon_msg "$SecurityRules_IPtables_Restore"
-		sed -i '/^$/d' $MySB_InstallDir/temp/current-iptables-rules
+		#sed -i '/^$/d' $MySB_InstallDir/temp/current-iptables-rules
+		if [ ! -z "$gbDevMode" ] && [ $gbDevMode -eq 1 ]; then
+			cat $MySB_InstallDir/temp/current-iptables-rules >> $MySB_InstallDir/logs/${gsScriptName}_IPTABLES.log
+		fi
 		iptables-restore < $MySB_InstallDir/temp/current-iptables-rules
-		StatusLSB
+		gfnStatusLSB
 		#### IPtables - RESTORE Iptables Rules
 
 		#### START services
-		ManageServices start "$ServicesToRestart"
+		gfnManageServices start "$ServicesToRestart"
 		#### START services
 
 		#### STOP services
-		ManageServices stop "$ServicesToStop"
+		gfnManageServices stop "$ServicesToStop"
 		#### STOP services
 
 		#### IPtables - SAVE Iptables Rules
 		iptables-save > /etc/iptables.up.rules
 		cp -f /etc/iptables.up.rules $MySB_InstallDir/files/current-iptables-rules
-		if [ "$IsInstalled_Webmin" == "YES" ] && [ -d /etc/webmin/firewall/ ]; then
+		if [ "$gbIsInstalled_Webmin" == "YES" ] && [ -d /etc/webmin/firewall/ ]; then
 			cp -f /etc/iptables.up.rules /etc/webmin/firewall/iptables.save
+		fi
+		if [ ! -z "$gbDevMode" ] && [ $gbDevMode -eq 1 ]; then
+			cat /etc/iptables.up.rules >> $MySB_InstallDir/logs/${gsScriptName}_IPTABLES.log
 		fi
 		#### IPtables - SAVE Iptables Rules
 
-		if CheckCommand 0 postfix && GetPid $Service; then postfix flush; fi
+		if gfnCheckCommand 0 postfix && gfnGetPid $Service; then postfix flush; fi
 
 		RestartRtorrentSessions "start"
 	;;
@@ -543,7 +553,7 @@ case "$LocSwitch" in
 		echo -e "$SecurityRules_Usage"
 		echo
 		END=OFF
-		EndingScript 0
+		gfnEndingScript 0
 	;;
 esac
 

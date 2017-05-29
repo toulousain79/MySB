@@ -24,27 +24,25 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-#### VARs
-LocSwitch="$1"
-
 #### Install packages
-if ! CheckCommand 0 mysql; then
-	PackagesToInstall="mysql-server"
-fi
-if ! CheckCommand 0 mysqltuner; then
-	PackagesToInstall="$PackagesToInstall mysqltuner"
-fi
-if [ ! -z "$PackagesToInstall" ]; then
-	PackagesManage install "$PackagesToInstall"
+gfnPackageBundleInstall 'mysql-server mysqltuner sqlite3'
+
+#### Wolf database
+if gfnCheckCommand 0 sqlite3; then
+	if [ -f $gsWolf_DB ] || [ -s $gsWolf_DB ]; then
+		sqlite3 -cmd '.timeout 150000' $gsWolf_DB "DELETE FROM secure_token WHERE 1"
+		sqlite3 -cmd '.timeout 150000' $gsWolf_DB "UPDATE user SET name='', email='', username='', password='', salt='', last_login='', last_failure='', last_failure='', created_on='', updated_on='' WHERE id='2';"
+	fi
 fi
 
 #### MySQL Secure
 if [ -f /etc/MySB/config_db ]; then source /etc/MySB/config_db; fi
 if [ -z $MySQL_RootPassword ] && [ -z $MySQL_MysbPassword ]; then
-	MySQL_RootPassword="`GenPassword 32`"
-	MySQL_MysbPassword="`GenPassword 16`"
+	MySQL_RootPassword="`gfnGenPassword 32`"
+	MySQL_MysbPassword="`gfnGenPassword 16`"
+	MySQL_BackupManager="`gfnGenPassword 16`"
 
-	mysql -u root <<-EOF
+	mysql -u root --verbose <<-EOF
 	UPDATE mysql.user SET Password=PASSWORD('$MySQL_RootPassword') WHERE User='root';
 	DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
 	DELETE FROM mysql.user WHERE User='';
@@ -53,18 +51,19 @@ if [ -z $MySQL_RootPassword ] && [ -z $MySQL_MysbPassword ]; then
 	DELETE FROM mysql.plugin WHERE name='federated';
 	DELETE FROM mysql.plugin WHERE name='blackhole';
 	DELETE FROM mysql.plugin WHERE name='archive';
-	create database MySB_db;
-	create user MySB_user;
-	grant all on MySB_db.* to 'MySB_user'@'localhost' identified by '$MySQL_MysbPassword';
-	grant all on MySB_db.* to 'MySB_user'@'%' Identified by '$MySQL_MysbPassword';
+	CREATE DATABASE MySB_db;
+	CREATE USER 'MySB_user'@'localhost';
+	CREATE USER 'BM_user'@'localhost';
+	GRANT ALL ON MySB_db.* to 'MySB_user'@'localhost' IDENTIFIED BY '$MySQL_MysbPassword';
+	GRANT SHOW DATABASES,SELECT,LOCK TABLES ON *.* TO 'BM_user'@'localhost' IDENTIFIED BY '$MySQL_BackupManager';
 	FLUSH PRIVILEGES;
 	EOF
 
-	if [ "$ToInstall_ownCloud" == "YES" ] || [ "$IsInstalled_ownCloud" != "INIT" ]; then
-		if [ ! -f /var/lib/mysql/ownCloud_db/db.opt ]; then
-			mysql -u root -p$MySQL_RootPassword <<-EOF
-			create database ownCloud_db;
-			grant all on ownCloud_db.* to 'MySB_user'@'localhost' identified by '$MySQL_MysbPassword';
+	if [ "$gbToInstall_NextCloud" == "YES" ] || [ "$gbIsInstalled_NextCloud" != "INIT" ]; then
+		if [ ! -f /var/lib/mysql/NextCloud_db/db.opt ]; then
+			mysql -u root -p$MySQL_RootPassword --verbose <<-EOF
+			CREATE DATABASE NextCloud_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+			GRANT ALL ON NextCloud_db.* to 'MySB_user'@'localhost' IDENTIFIED BY '$MySQL_MysbPassword';
 			FLUSH PRIVILEGES;
 			EOF
 		fi
@@ -73,9 +72,10 @@ if [ -z $MySQL_RootPassword ] && [ -z $MySQL_MysbPassword ]; then
 	# Add MySQL password into MySB config files
 	echo "MySQL_RootPassword=\"$MySQL_RootPassword\"" >> /etc/MySB/config_db
 	echo "MySQL_MysbPassword=\"$MySQL_MysbPassword\"" >> /etc/MySB/config_db
+	echo "MySQL_BackupManager=\"$MySQL_BackupManager\"" >> /etc/MySB/config_db
 	if [ ! -f /etc/MySB/config.php ]; then
-		cp -f $MySB_InstallDir/templates/mysb/etc.mysb.config.php.tmpl /etc/MySB/config.php
-		perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/MySB/config.php
+		cp -vf $MySB_InstallDir/templates/mysb/etc.mysb.config.php.tmpl /etc/MySB/config.php
+		perl -pi -e "s/<MySB_InstallDir>/$gsInstallDirEscaped/g" /etc/MySB/config.php
 		if [ ! -z "$MySQL_MysbPassword" ]; then
 			perl -pi -e "s/<MySQL_MysbPassword>/$MySQL_MysbPassword/g" /etc/MySB/config.php
 		fi
@@ -89,13 +89,13 @@ if [ -z $MySQL_RootPassword ] && [ -z $MySQL_MysbPassword ]; then
 	chmod 0600 /root/.config.cnf
 
 	# Create MySB database (ONLY during a new install, NOT during an upgrade)
-	if [ "$1" == "INSTALL" ]; then
+	if [ "$gsSwitch" == "INSTALL" ]; then
 		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Schema.sql
 		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Triggers.sql
 		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Data.sql
 	fi
 else
-	if [ "$IsInstalled_Webmin" == "YES" ] && [ -f /etc/webmin/mysql/config ]; then
+	if [ "$gbIsInstalled_Webmin" == "YES" ] && [ -f /etc/webmin/mysql/config ]; then
 		sed -i '/login=/d' /etc/webmin/mysql/config
 		sed -i '/pass=/d' /etc/webmin/mysql/config
 		echo "login=root" >> /etc/webmin/mysql/config
@@ -103,11 +103,12 @@ else
 	fi
 fi
 
-if [ "$LocSwitch" != "UPGRADE" ]; then
+if [ "$gsSwitch" != "UPGRADE" ]; then
 	#### Temp directory in memory
 	sed -i '/# TMPFS - MySQL/d' /etc/fstab
 	sed -i '/\/mnt\/tmpFS\/mysql/d' /etc/fstab
-	echo "# TMPFS - MySQL" >> /etc/fstab
+	sed -i '/TMPFS - MySQL/d' /etc/fstab
+	sed -i '/mysql/d' /etc/fstab
 	echo "tmpfs   /mnt/tmpFS/mysql      tmpfs   defaults,nosuid,noatime,mode=1777,size=32M 0 0" >> /etc/fstab
 	if [ ! -d /mnt/tmpFS/mysql ]; then
 		mkdir -pv /mnt/tmpFS/mysql
@@ -119,10 +120,10 @@ if [ "$LocSwitch" != "UPGRADE" ]; then
 
 	#### Config file
 	rm -v /etc/mysql/conf.d/*.cnf
-	cp -vf $MySB_InstallDir/templates/etc.mysql.conf.d.mysb.tmpl /etc/mysql/conf.d/MySB.cnf
+	install -v -o root -g root -m 0600 $MySB_InstallDir/templates/etc.mysql.conf.d.mysb.tmpl /etc/mysql/conf.d/MySB.cnf
 
 	#### STOP services
-	ManageServices 'stop' 'mysql'
+	gfnManageServices 'stop' 'mysql'
 
 	#### Force mysql user homedir
 	if [ -z "`getent passwd mysql | grep '/var/lib/mysql'`" ]; then
@@ -130,13 +131,14 @@ if [ "$LocSwitch" != "UPGRADE" ]; then
 	fi
 
 	#### Logrotate
-	LogRotate 'mysql-server'
+	gfnLogRotate 'mysql-server'
 fi
 
 #### START services
-ManageServices 'start' 'mysql'
+gfnManageServices 'start' 'mysql'
 
 #### MySQL Tuner
+[ -z "$MySQL_RootPassword" ] && source /etc/MySB/config_db
 mysqltuner --user root --pass $MySQL_RootPassword --nocolor > $MySB_InstallDir/temp/mysqltuner.log
 cat $MySB_InstallDir/temp/mysqltuner.log
 if [ ! -z "`cat $MySB_InstallDir/temp/mysqltuner.log | grep 'Run OPTIMIZE TABLE'`" ]; then

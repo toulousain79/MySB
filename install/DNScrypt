@@ -25,136 +25,118 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 if [ "$USAGE" == "ON" ]; then
-	if [ "$IsInstalled_DNScrypt" == "NO" ]; then
+	if [ "$gbIsInstalled_DNScrypt" == "NO" ]; then
 		echo
 		echo -e "${CYELLOW}DNScrypt-proxy is not installed!$CEND"
-		QuestionGetString NO "Install DNScrypt-proxy? " ToInstall_DNScrypt $Global_YES
-		ToInstall_DNScrypt="`echo $ToInstall_DNScrypt | tr '[:lower:]' '[:upper:]'`"
+		gfnQuestionGetString NO "Install DNScrypt-proxy? " gbToInstall_DNScrypt $Global_YES
+		gbToInstall_DNScrypt="`echo $gbToInstall_DNScrypt | tr '[:lower:]' '[:upper:]'`"
 
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "is_installed = '$(echo $ToInstall_DNScrypt | sed "s/$Global_NO/0/g;" | sed "s/$Global_YES/1/g;")'" "serv_name = 'DNScrypt-proxy'" '-echo'
+		cmdMySQL 'MySB_db' "UPDATE services SET is_installed = '$(echo $gbToInstall_DNScrypt | sed "s/$Global_NO/0/g;" | sed "s/$Global_YES/1/g;")' WHERE serv_name='DNScrypt-proxy';"
 
-		if [ "$ToInstall_DNScrypt" != "YES" ]; then
-			EndingScript 0
+		if [ "$gbToInstall_DNScrypt" != "YES" ]; then
+			gfnEndingScript 0
 		fi
 	fi
 fi
 
-if [ "$ToInstall_DNScrypt" == "YES" ]; then
-	#### VARs
-	LocSwitch="$1"
+if [ "$gbToInstall_DNScrypt" == "YES" ]; then
+	# Check packages to install
+	gfnPackageBundleInstall 'ldnsutils libldns-dev rng-tools haveged'
 
-	if [ "$LocSwitch" == "UPGRADE" ]; then
-		#### STOP services
-		ManageServices stop "dnscrypt-proxy"
-	else
-		#### Install packages
-		PackagesManage install "ldnsutils libldns-dev"
+	# STOP services
+	pkill -f dnscrypt-proxy
+	rm -f /var/run/dnscrypt-proxy/*
 
+	# RNG-Tools
+	nNumLign=$(cat /etc/default/rng-tools | grep '#HRNGDEVICE=/dev/null' -n -m 1 | cut -d ':' -f 1)
+	(( nNumLign++ ))
+	sed -i ""$nNumLign"i\HRNGDEVICE=/dev/urandom" /etc/default/rng-tools
+
+	# Switch to bind
+	gfnSwitchDNS "bind"
+
+	if [ "$gsSwitch" == "INSTALL" ]; then
 		#### Add dnscrypt user
-		if [ "`cat /etc/passwd | grep dnscrypt`" == "" ]; then
-			adduser --system --group --quiet --home /var/run/dnscrypt-proxy --shell /bin/false --disabled-password --disabled-login dnscrypt
+		if [ -z "`cat /etc/passwd | grep dnscrypt`" ]; then
+			useradd --system -d "/usr/local/share/dnscrypt-proxy" -c "DNScrypt-proxy user" -s /bin/nologin dnscrypt
+			install -o dnscrypt -m 750 -d "/usr/local/share/dnscrypt-proxy"
 		fi
 	fi
 
 	# LIBsodium
-	LibsodiumDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'Libsodium'"`"
-	LibsodiumUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Libsodium'"`"
-	LibsodiumFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Libsodium'"`"
-	LibsodiumVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'Libsodium'"`"
-	echo
-	echo "########## LibSodium"
-	echo "Directory : "$LibsodiumDir
-	echo "Version : "$LibsodiumVersion
-	echo "File : "$LibsodiumFile
-	echo "URL : "$LibsodiumUrl
-	echo
-	if [ ! -f $MySB_InstallDir/files/$LibsodiumFile ]; then
-		curl --retry 2 -kSL -o "$MySB_InstallDir/files/$LibsodiumFile" "$LibsodiumUrl"
-	fi
-	if [ ! -d $LibsodiumDir ]; then
-		tar -zxvf $MySB_InstallDir/files/$LibsodiumFile -C $MySB_InstallDir/temp/
-		SubDir="`tar -ztf $MySB_InstallDir/files/$LibsodiumFile | cut -d '/' -f 1 | uniq`"
-		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-			mv -v $MySB_InstallDir/temp/$SubDir $LibsodiumDir
-		fi
-	fi
-	cd $LibsodiumDir/
+	gfnGetRepoValues 'Libsodium' && gfnRepoManageByType
+	cd $gsRepoDir/
 	make clean
 	chmod +x autogen.sh
 	./autogen.sh
-	./configure --enable-opt
-	make -j$PROCESSOR
+	./configure --enable-minimal
+	make -j$gsProcessors
 	make check
 	make install
 	ldconfig
 
+	# Minisign
+	gfnGetRepoValues 'Minisign' && gfnRepoManageByType
+	cd $gsRepoDir/
+	mkdir build
+	cd build
+	cmake ..
+	make
+	make install
+
 	# DNScrypt
-	DnscryptDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'DNScrypt-proxy'"`"
-	DnscryptUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'DNScrypt-proxy'"`"
-	DnscryptFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'DNScrypt-proxy'"`"
-	DnscryptVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'DNScrypt-proxy'"`"
-	echo
-	echo "########## DNScrypt-proxy"
-	echo "Directory : "$DnscryptDir
-	echo "Version : "$DnscryptVersion
-	echo "File : "$DnscryptFile
-	echo "URL : "$DnscryptUrl
-	echo
-	if [ ! -f $MySB_InstallDir/files/$DnscryptFile ]; then
-		curl --retry 2 -kSL -o "$MySB_InstallDir/files/$DnscryptFile" "$DnscryptUrl"
-	fi
-	if [ ! -d $DnscryptDir ]; then
-		tar -zxvf $MySB_InstallDir/files/$DnscryptFile -C $MySB_InstallDir/temp/
-		SubDir="`tar -ztf $MySB_InstallDir/files/$DnscryptFile | cut -d '/' -f 1 | uniq`"
-		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-			mv -v $MySB_InstallDir/temp/$SubDir $DnscryptDir
-		fi
-	fi
-	cd $DnscryptDir/
+	gfnGetRepoValues 'DNScrypt-proxy' && gfnRepoManageByType
+	cd $gsRepoDir/
 	make clean
 	chmod +x autogen.sh
 	./autogen.sh
 	./configure
-	make -j$PROCESSOR
+	make -j$gsProcessors
 	make check
 	make install
 
-	#### STOP services
-	ManageServices stop "bind9"
-
 	#### DNScrypt-proxy - /etc/init.d/dnscrypt-proxy
-	install -g root -o root -m 0755 $MySB_InstallDir/templates/init/etc.init.dnscrypt-proxy.tmpl /etc/init.d/dnscrypt-proxy
-
-	#### Update resolvers infos in db
-	DNScrypt_ResolversRenew
+	install -v -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.dnscrypt-proxy.tmpl /etc/init.d/dnscrypt-proxy
 
 	# Mark as installed
-	if CheckCommand 0 dnscrypt-proxy; then
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0',is_installed = '1'" "serv_name = 'DNScrypt-proxy'" '-echo'
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "dnscrypt='1'" "id_system='1'" '-echo'
+	if gfnCheckCommand 0 dnscrypt-proxy; then
+		cmdMySQL 'MySB_db' "UPDATE services SET to_install='0',is_installed='1' WHERE serv_name='DNScrypt-proxy';" -v
 	fi
 
-	#### Logs
-	if [ -f /var/log/dnscrypt-proxy.log ]; then mv /var/log/dnscrypt-proxy.log /var/log/dnscrypt-proxy/; fi
+	#### Logrotate
+	gfnLogRotate 'dnscrypt-proxy'
 
-	#### START services
-	ManageServices stop "dnscrypt-proxy"
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_activated = '0', is_wished = '0', forwarder = ''" 'ALL' '-echo'
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'dnscrypt_resolvers' "is_wished='1'" "dnssec='yes' AND no_logs='yes' AND namecoin='no'" '-echo'
-	ManageServices start "dnscrypt-proxy"
+	#### Opening ports for PeerGuardian
+	if gfnCheckCommand 0 pgld; then
+		# Perform a small update to add resolvers in database for PeerGuardian
+		service dnscrypt-proxy update
+		cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='0' WHERE id_system='1';" -v
+		gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create'
+	fi
+	cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='1' WHERE id_system='1';" -v
 
-	#### Check proceses
-	ps ax | grep dnscrypt-proxy | grep -v 'grep'
+	#### START services & Update resolvers infos in db
+	service dnscrypt-proxy full-update
+	sleep 5
+	if gfnCheckCommand 0 pgld; then
+		gfnManageServices stop "dnscrypt-proxy"
+		gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create'
+	else
+		gfnManageServices stop "dnscrypt-proxy"
+		sleep 5
+		gfnManageServices start "dnscrypt-proxy"
+		sleep 5
+	fi
 	ping -c5 github.com
 
-	#### Logrotate
-	LogRotate 'dnscrypt-proxy'
+	#### Check procese
+	service dnscrypt-proxy status-details
 
 	#### Check if service is OK and running
-	if [ "$LocSwitch" != "UPGRADE" ]; then
+	if [ "$gsSwitch" != "UPGRADE" ]; then
 		#Wait a moment for DNScrypt to start
 		sleep 5
-		if ! GetPid dnscrypt-proxy; then
+		if ! gfnGetPid dnscrypt-proxy; then
 			service dnscrypt-proxy status | tee -a $MySB_InstallDir/temp/continue
 		fi
 	fi

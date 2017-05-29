@@ -25,24 +25,17 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### VARs
-Type="$1"
-SMTP_Provider="`Func_SQL_Command 'SELECT' 'MySB_db' 'smtp_provider' 'smtp' "id_smtp = '1'"`"
-SMTP_Username="`Func_SQL_Command 'SELECT' 'MySB_db' 'smtp_username' 'smtp' "id_smtp = '1'"`"
-SMTP_Password="`Func_SQL_Command 'SELECT' 'MySB_db' 'smtp_passwd' 'smtp' "id_smtp = '1'"`"
-SMTP_Host="`Func_SQL_Command 'SELECT' 'MySB_db' 'smtp_host' 'smtp' "id_smtp = '1'"`"
-SMTP_Port="`Func_SQL_Command 'SELECT' 'MySB_db' 'smtp_port' 'smtp' "id_smtp = '1'"`"
+SmtpValues="`cmdMySQL 'MySB_db' "SELECT smtp_provider,smtp_username,smtp_passwd,smtp_host,smtp_port FROM smtp WHERE id_smtp='1';" | sed 's/\t/|/g;'`"
+SMTP_Provider="`echo $SmtpValues | awk '{split($0,a,"|"); print a[1]}'`"
+SMTP_Username="`echo $SmtpValues | awk '{split($0,a,"|"); print a[2]}'`"
+SMTP_Password="`echo $SmtpValues | awk '{split($0,a,"|"); print a[3]}'`"
+SMTP_Host="`echo $SmtpValues | awk '{split($0,a,"|"); print a[4]}'`"
+SMTP_Port="`echo $SmtpValues | awk '{split($0,a,"|"); print a[5]}'`"
 
 #### Install packages
-if ! CheckCommand 0 postfix; then
-	PackagesManage install "postfix"
-fi
+gfnPackageBundleInstall 'postfix stunnel4 gnutls-bin'
 
 if [ "$SMTP_Provider" != "LOCAL" ]; then
-	#### Install packages
-	if ! CheckCommand 0 stunnel4; then
-		PackagesManage install "stunnel4 gnutls-bin"
-	fi
-
 	#### stunnel
 	if [ -f /var/log/stunnel4/stunnel.log ] && [ ! -h /var/log/stunnel4/stunnel.log ]; then
 		rm -vf /var/log/stunnel4/stunnel.log
@@ -58,10 +51,10 @@ if [ "$SMTP_Provider" != "LOCAL" ]; then
 fi
 
 #### main.cf
-cp $MySB_InstallDir/templates/etc.postfix.main.conf.tmpl /etc/postfix/main.cf
-perl -pi -e "s/<hostname>/$HostNameFQDN/g" /etc/postfix/main.cf
+cp $MySB_InstallDir/templates/postfix/main.conf.tmpl /etc/postfix/main.cf
+perl -pi -e "s/<hostname>/$gsHostNameFqdn/g" /etc/postfix/main.cf
 perl -pi -e "s/<domain>/$(hostname -d)/g" /etc/postfix/main.cf
-echo "$HostNameFQDN" > /etc/mailname
+echo "$gsHostNameFqdn" > /etc/mailname
 
 #### Alias
 echo "# /etc/aliases" > /etc/aliases
@@ -77,7 +70,7 @@ echo "ftp: root" >> /etc/aliases
 echo "abuse: root" >> /etc/aliases
 echo "noc: root" >> /etc/aliases
 echo "security: root" >> /etc/aliases
-echo "root: $MainUserEmail" >> /etc/aliases
+echo "root: $gsMainUserEmail" >> /etc/aliases
 newaliases
 
 SMTP_Host="localhost"
@@ -126,8 +119,8 @@ if [ "$SMTP_Provider" != "LOCAL" ]; then
 	case "$Smtp_Security" in
 		"SSL")
 			# stunnel.conf
-			cp $MySB_InstallDir/templates/etc.stunnel.stunnel.conf.tmpl /etc/stunnel/stunnel.conf
-			perl -pi -e "s/<InstallDir>/$MySB_InstallDirEscaped/g" /etc/stunnel/stunnel.conf
+			cp $MySB_InstallDir/templates/postfix/stunnel.conf.tmpl /etc/stunnel/stunnel.conf
+			perl -pi -e "s/<InstallDir>/$gsInstallDirEscaped/g" /etc/stunnel/stunnel.conf
 			perl -pi -e "s/<smtp_host>:<smtp_port>/$SMTP_Host:$SMTP_Port/g" /etc/stunnel/stunnel.conf
 			perl -pi -e "s/ENABLED=0/ENABLED=1/g" /etc/default/stunnel4
 			echo "127.0.0.1:23000              $SMTP_Username:$SMTP_Password" > /etc/postfix/sasl/sasl_passwd
@@ -164,33 +157,32 @@ if [ "$SMTP_Provider" != "LOCAL" ]; then
 
 	#### START services
 	ServicesToRestart="stunnel4"
-
 fi
 
-if CheckCommand 0 postfix; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "is_installed = '1'" "serv_name = 'Postfix'" '-echo'
+if gfnCheckCommand 0 postfix; then
+	cmdMySQL 'MySB_db' "UPDATE services SET is_installed='1' WHERE serv_name='Postfix';" -v
 fi
-if CheckCommand 0 stunnel4; then
-	Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "is_installed = '1'" "serv_name = 'Stunnel'" '-echo'
+if gfnCheckCommand 0 stunnel4; then
+	cmdMySQL 'MySB_db' "UPDATE services SET is_installed='1' WHERE serv_name='Stunnel';" -v
 fi
-Func_SQL_Command 'UPDATE' 'MySB_db' 'smtp' "smtp_provider = '$SMTP_Provider', smtp_username = '$SMTP_Username', smtp_passwd = '$SMTP_Password', smtp_host = '$SMTP_Host', smtp_port = '$SMTP_Port'" "id_smtp = '1'"
+cmdMySQL 'MySB_db' "UPDATE smtp SET smtp_provider='$SMTP_Provider', smtp_username='$SMTP_Username', smtp_passwd='$SMTP_Password', smtp_host='$SMTP_Host', smtp_port='$SMTP_Port' WHERE id_smtp='1';"
 
 #### START services
-if [ "$IsInstalled_DNScrypt" == "YES" ]; then
+if [ "$gbIsInstalled_DNScrypt" == "YES" ]; then
 	ServicesToRestart="${ServicesToRestart} dnscrypt-proxy"
 fi
 ServicesToRestart="${ServicesToRestart} postfix"
-ManageServices start "$ServicesToRestart"
+gfnManageServices start "$ServicesToRestart"
 
 #### Add some hosts in cache
-if [ "$Type" == "INSTALL" ] || [ "$Type" == "UPGRADE" ]; then
+if [ "$gsSwitch" == "INSTALL" ] || [ "$gsSwitch" == "UPGRADE" ]; then
 	if [ "$SMTP_Provider" != "LOCAL" ]; then
 		ping -c5 $SMTP_Host
 	fi
 fi
 
 #### Flush mail queue
-if CheckCommand 0 postfix; then postfix flush; fi
+if gfnCheckCommand 0 postfix; then postfix flush; fi
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after

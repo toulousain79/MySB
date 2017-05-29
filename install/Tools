@@ -24,47 +24,46 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+#### Wget
+gfnGetRepoValues 'Wget' && gfnRepoManageByType
+cd $gsRepoDir/
+./configure --with-ssl=openssl --with-openssl=yes
+make -j$gsProcessors
+make check
+make install
+make installcheck
+
+#### GeoIP update
+gfnGetRepoValues 'GeoIPupdate' && gfnRepoManageByType
+cd $gsRepoDir/
+./configure
+make -j$gsProcessors
+make install
+perl -pi -e "s/# ProductIds/ProductIds/g" /usr/local/etc/GeoIP.conf
+perl -pi -e "s/GeoLite-Legacy-IPv6-Country GeoLite-Legacy-IPv6-City//g" /usr/local/etc/GeoIP.conf
+perl -pi -e "s/# DatabaseDirectory \/usr\/local\/share\/GeoIP/DatabaseDirectory \/usr\/share\/GeoIP/g" /usr/local/etc/GeoIP.conf
+
 #### Composer
-ComposerDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'Composer'"`"
-ComposerUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Composer'"`"
-ComposerFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Composer'"`"
-ComposerToUpgrade="`Func_SQL_Command 'SELECT' 'MySB_db' 'upgrade' 'repositories' "name = 'Composer'"`"
-if ! CheckCommand 0 composer || [ $ComposerToUpgrade -eq 1 ]; then
-	if [ -f $MySB_InstallDir/files/$ComposerFile ]; then
-		cp -v $MySB_InstallDir/files/$ComposerFile $ComposerDir
-	else
-		curl --retry 2 --insecure -sS $ComposerUrl | php -- --install-dir=$MySB_InstallDir/files/
-		cp -v $MySB_InstallDir/files/$ComposerFile $ComposerDir
-	fi
+gfnGetRepoValues 'Composer'
+if ! gfnCheckCommand 0 composer || [ $gnRepoUpgrade -eq 1 ]; then
+	gfnRepoManageByType
 fi
 chmod +x /usr/bin/composer
 composer self-update
 
 #### NodeJS
-NodeDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'NodeJS'"`"
-NodeUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'NodeJS'"`"
-NodeFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'NodeJS'"`"
-if [ ! -f $MySB_InstallDir/files/$NodeFile ]; then
-	curl --retry 2 -kSL -o "$MySB_InstallDir/files/$NodeFile" "$NodeUrl"
-fi
-if [ ! -d $NodeDir ]; then
-	tar -zxvf $MySB_InstallDir/files/$NodeFile -C $MySB_InstallDir/temp/
-	SubDir="`tar -ztf $MySB_InstallDir/files/$NodeFile | cut -d '/' -f 1 | uniq`"
-	if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-		mv -v $MySB_InstallDir/temp/$SubDir $NodeDir
-	fi
-fi
-cd $NodeDir
+gfnGetRepoValues 'NodeJS' && gfnRepoManageByType
+cd $gsRepoDir
 if [ -d out/ ]; then
 	make clean
 fi
 ./configure
-make -j$PROCESSOR
+make -j$gsProcessors
 make install
 /sbin/ldconfig
 
 #### Bower
-if CheckCommand 0 bower; then
+if gfnCheckCommand 0 bower; then
 	bower update --allow-root --config.interactive=false
 else
 	npm install -g bower

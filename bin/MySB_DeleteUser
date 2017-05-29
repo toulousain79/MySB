@@ -28,10 +28,10 @@ source $(dirname $0)/../inc/includes_before
 source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
 
 if [ "$USAGE" == "ON" ]; then
-	ListCountUsers
+	gfnListCountUsers
 	LIST=""
-	for User in $UsersList; do
-		if [ "$User" != "$MainUser" ]; then
+	for User in $gsUsersList; do
+		if [ "$User" != "$gsMainUserName" ]; then
 			LIST="$LIST|${CYELLOW}$User$CEND"
 		fi
 	done
@@ -42,20 +42,20 @@ if [ "$USAGE" == "ON" ]; then
 		echo -e "$Global_CancelUserChoice"
 	else
 		echo -e "$DeleteUser_NoUser $LIST"
-		EndingScript 0 0
+		gfnEndingScript 0
 	fi
 
 	UserToDelete=""
 	TEMP_UserToDelete=""
 	while [ -z "$UserToDelete" ] \
-		|| [ "$UserToDelete" == "$MainUser" ] \
-		|| [ -z "`echo $UsersList | grep $UserToDelete`" ]; do
+		|| [ "$UserToDelete" == "$gsMainUserName" ] \
+		|| [ -z "`echo $gsUsersList | grep $UserToDelete`" ]; do
 
-		QuestionGetString NO "$DeleteUser_TypeUser" UserToDelete
+		gfnQuestionGetString NO "$DeleteUser_TypeUser" UserToDelete
 		TEMP_UserToDelete="`echo $UserToDelete | tr '[:lower:]' '[:upper:]'`"
 
 		if [ "$TEMP_UserToDelete" == "$Global_NO" ]; then
-			EndingScript 0 0
+			gfnEndingScript 0
 		fi
 	done
 else
@@ -63,7 +63,7 @@ else
 fi
 
 #### STOP services
-ManageServices stop "cron"
+gfnManageServices stop "cron"
 service rtorrent-$UserToDelete stop
 
 #### crontab
@@ -72,41 +72,41 @@ crontab -l > /tmp/crontab.tmp
 sed -i '/'$UserToDelete'/d' /tmp/crontab.tmp
 crontab /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
-StatusLSB
+gfnStatusLSB
 
 #### FTP
 log_daemon_msg "$DeleteUser_DeleteFTP [$UserToDelete]"
 sed -i '/'$UserToDelete'/d' /etc/vsftpd.chroot_list
 umount /home/$UserToDelete/rtorrent/share &> /dev/null
 umount /home/$UserToDelete/rtorrent/torrents &> /dev/null
-StatusLSB 0
+gfnStatusLSB 0
 
 #### NFS
 log_daemon_msg "$DeleteUser_DeleteNFS [$UserToDelete]"
 sed -i '/'$UserToDelete'/d' /etc/exports
-StatusLSB
+gfnStatusLSB
 
 #### Samba
 log_daemon_msg "$DeleteUser_DeleteSamba [$UserToDelete]"
 smbpasswd -x $UserToDelete &> /dev/null
-StatusLSB
+gfnStatusLSB
 
 #### NginX - remove current password from htpassword
 log_daemon_msg "$DeleteUser_DeleteWebAccount [$UserToDelete]"
 htpasswd -D /etc/nginx/passwd/MySB $UserToDelete &> /dev/null
 rm -f /etc/nginx/passwd/MySB_$UserToDelete
-StatusLSB
+gfnStatusLSB
 
-#### ownCloud
-if [ "$IsInstalled_ownCloud" == "YES" ]; then
-	log_daemon_msg "$DeleteUser_DeleteOwnCloudAccount [$UserToDelete]"
-	su -s /bin/sh www-data -c "/usr/bin/php  $ownCloudDir/occ user:delete $UserToDelete" &> /dev/null
-	Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_storages' "id = 'local::/home/$UserToDelete/'"
-	Func_SQL_Command 'DELETE' 'ownCloud_db' 'oc_preferences' "configkey = '/Home_$UserToDelete'"
-	if [ -d /home/owncloud/$UserToDelete ]; then
-		mv /home/owncloud/$UserToDelete /home/owncloud/TODEL_$UserToDelete
+#### NextCloud
+if [ "$gbIsInstalled_NextCloud" == "YES" ]; then
+	log_daemon_msg "$DeleteUser_DeleteNextCloudAccount [$UserToDelete]"
+	su -s /bin/sh www-data -c "/usr/bin/php  $gsNextCloudDir/occ user:delete $UserToDelete" &> /dev/null
+	cmdMySQL 'NextCloud_db' "DELETE nc_storages WHERE id='local::/home/$UserToDelete/';"
+	cmdMySQL 'NextCloud_db' "DELETE nc_preferences WHERE configkey='/Home_$UserToDelete';"
+	if [ -d /home/nextcloud/$UserToDelete ]; then
+		mv /home/nextcloud/$UserToDelete /home/nextcloud/TODEL_$UserToDelete
 	fi
-	StatusLSB
+	gfnStatusLSB
 fi
 
 #### remove files
@@ -124,61 +124,61 @@ fi
 if [ -f $MySB_InstallDir/web/openvpn/openvpn_$UserToDelete.zip ]; then
 	rm -f $MySB_InstallDir/web/openvpn/openvpn_$UserToDelete.zip
 fi
-if [ -f $CakeboxDir/config/$UserToDelete.php ]; then
-	rm -f $CakeboxDir/config/$UserToDelete.php
+if [ -f $gsCakeboxDir/config/$UserToDelete.php ]; then
+	rm -f $gsCakeboxDir/config/$UserToDelete.php
 fi
 if [ -f /etc/logrotate.d/rtorrent_$UserToDelete ]; then
 	rm -f /etc/logrotate.d/rtorrent_$UserToDelete
 fi
-DeleteDirectory 0 "$RutorrentDir/conf/users/$UserToDelete"
-DeleteDirectory 0 "$RutorrentDir/share/users/$UserToDelete"
-DeleteDirectory 0 "$ManagerDir/conf/users/$UserToDelete"
-StatusLSB
+gfnDeleteDirectory 0 "$gsRutorrentDir/conf/users/$UserToDelete"
+gfnDeleteDirectory 0 "$gsRutorrentDir/share/users/$UserToDelete"
+gfnDeleteDirectory 0 "$gsManagerDir/conf/users/$UserToDelete"
+gfnStatusLSB
 
 #### Remove user from database
 log_daemon_msg "$DeleteUser_RemoveFromDB"
-Func_SQL_Command 'DELETE' 'MySB_db' 'users' "users_ident = '$UserToDelete'"
-StatusLSB
+cmdMySQL 'MySB_db' "DELETE FROM users WHERE users_ident = '$UserToDelete';"
+gfnStatusLSB
 
 #### system user
 log_daemon_msg "$DeleteUser_SystemAccount [$UserToDelete]"
 userdel --remove --force $UserToDelete &> /dev/null
-DeleteDirectory 0 "/home/$UserToDelete"
-DeleteDirectory 0 "/var/run/screen/S-$UserToDelete"
-StatusLSB
+gfnDeleteDirectory 0 "/home/$UserToDelete"
+gfnDeleteDirectory 0 "/var/run/screen/S-$UserToDelete"
+gfnStatusLSB
 
 #### OpenVPN
-if [ "$IsInstalled_OpenVPN" == "YES" ]; then
+if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
 	log_daemon_msg "$DeleteUser_RevokeOpenVPN [$UserToDelete]"
-	ScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/OpenVPN" 'delete' "$UserToDelete" 'SCREEN'
-	StatusLSB
+	gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/OpenVPN" 'delete' "$UserToDelete" 'SCREEN'
+	gfnStatusLSB
 fi
 
 #### rtorrent max memory
-ListCountUsers
-for User in $UsersList; do
+gfnListCountUsers
+for User in $gsUsersList; do
 	if [ "$User" != "$UserToDelete" ]; then
 		log_daemon_msg "$DeleteUser_PiecesMemory $User"
 		LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$User/.rtorrent.rc)
 		sed -i ''$LIGN'd' /home/$User/.rtorrent.rc
-		sed -i ''$LIGN'i\#pieces.memory.max.set = '$(((($MEMORY/$TotalUsers)*1024)*1024))'\n' /home/$User/.rtorrent.rc
-		StatusLSB
+		sed -i ''$LIGN'i\#pieces.memory.max.set = '$(((($gsMemory/$gnTotalUsers)*1024)*1024))'\n' /home/$User/.rtorrent.rc
+		gfnStatusLSB
 	fi
 done
 
 #### Quota
-ManageQuota "$DeleteUser_Quota"
+gfnManageQuota "$DeleteUser_Quota"
 
 #### renting
-MonthlyPayment "$UserToDelete"
+gfnMonthlyPayment "$UserToDelete"
 
 #### Create new security rules
 log_daemon_msg "$DeleteUser_SecurituRules"
-ScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--users' 'SCREEN'
-StatusLSB
+gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--users' 'SCREEN'
+gfnStatusLSB
 
 #### START services
-ManageServices start "cron nfs-kernel-server vsftpd samba nginx"
+gfnManageServices start "cron nfs-kernel-server vsftpd samba nginx"
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after

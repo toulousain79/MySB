@@ -25,110 +25,35 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### Install rTorrent v0.9.2
-if ! CheckCommand 0 rtorrent; then
-	PackagesManage install "rtorrent buildtorrent mediainfo ffmpeg"
-fi
+gfnPackageBundleInstall 'rtorrent buildtorrent mediainfo ffmpeg'
 
 #### Install rTorrent
 # XMLRPC-C
-XmlrpcDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'XMLRPC'"`"
-XmlrpcUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'XMLRPC'"`"
-XmlrpcFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'XMLRPC'"`"
-XmlrpcVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'XMLRPC'"`"
-echo
-echo "########## XMLRPC-C"
-echo "Directory : "$XmlrpcDir
-echo "Version : "$XmlrpcVersion
-echo "File : "$XmlrpcFile
-echo "URL : "$XmlrpcUrl
-echo
-if [ -d $XmlrpcDir ]; then
-	svn up --non-interactive --trust-server-cert $XmlrpcDir
-	if [ $? -gt 0 ]; then
-		svn switch $XmlrpcUrl $XmlrpcDir
-	fi
-else
-	if [ -f $MySB_InstallDir/files/$XmlrpcFile ]; then
-		unzip $MySB_InstallDir/files/$XmlrpcFile -d $MySB_InstallDir/temp/
-		SubDir="`unzip -l $MySB_InstallDir/files/$XmlrpcFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-		if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-			mv -v $MySB_InstallDir/temp/$SubDir $XmlrpcDir
-		fi
-		if [ -d $XmlrpcDir/.svn ]; then
-			svn up --non-interactive --trust-server-cert $XmlrpcDir
-			if [ $? -gt 0 ]; then
-				svn switch $XmlrpcUrl $XmlrpcDir
-			fi
-		fi
-	else
-		svn co --non-interactive --trust-server-cert $XmlrpcUrl $XmlrpcDir
-	fi
-fi
-cd $XmlrpcDir/
+gfnGetRepoValues 'XMLRPC' && gfnRepoManageByType
+cd $gsRepoDir/
 if [ -f config.mk ] && [ -f common.mk ]; then
 	make clean
 fi
-#./configure --enable-libxml2-backend --disable-abyss-server --disable-cgi-server --disable-cplusplus --disable-libwww-client --disable-wininet-client
 ./configure --disable-abyss-server --disable-cgi-server --disable-cplusplus --disable-libwww-client --disable-wininet-client
-make -j$PROCESSOR
+make -j$gsProcessors
 make install
 
 # LIBtorrent
-LibtorrentDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'LibTorrent'"`"
-LibtorrentUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'LibTorrent'"`"
-LibtorrentFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'LibTorrent'"`"
-LibtorrentVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'LibTorrent'"`"
-echo
-echo "########## LIBtorrent"
-echo "Directory : "$LibtorrentDir
-echo "Version : "$LibtorrentVersion
-echo "File : "$LibtorrentFile
-echo "URL : "$LibtorrentUrl
-echo
-if [ ! -f $MySB_InstallDir/files/$LibtorrentFile ]; then
-	curl --retry 2 -kSL -o "$MySB_InstallDir/files/$LibtorrentFile" "$LibtorrentUrl"
-fi
-if [ ! -d $LibtorrentDir ] && [ -f $MySB_InstallDir/files/$LibtorrentFile ]; then
-	tar -zxvf $MySB_InstallDir/files/$LibtorrentFile -C $MySB_InstallDir/temp/
-	SubDir="`tar -ztf $MySB_InstallDir/files/$LibtorrentFile | sed -e 's@/.*@@' | uniq`"
-	if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-		mv -v $MySB_InstallDir/temp/$SubDir $LibtorrentDir
-	fi
-fi
-cd $LibtorrentDir/
+gfnGetRepoValues 'LibTorrent' && gfnRepoManageByType
+cd $gsRepoDir/
 make clean
 ./autogen.sh
 ./configure --with-posix-fallocate
-make -j$PROCESSOR
+make -j$gsProcessors
 make install
 
 # rTorrent
-RtorrentDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'rTorrent'"`"
-RtorrentUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'rTorrent'"`"
-RtorrentFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'rTorrent'"`"
-RtorrentVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'rTorrent'"`"
-echo
-echo "########## rTorrent"
-echo "Directory : "$LibtorrentDir
-echo "Version : "$RtorrentVersion
-echo "File : "$RtorrentFile
-echo "URL : "$RtorrentUrl
-echo
-if [ ! -f $MySB_InstallDir/files/$RtorrentFile ]; then
-	curl --retry 2 -kSL -o "$MySB_InstallDir/files/$RtorrentFile" "$RtorrentUrl"
-fi
-if [ ! -d $RtorrentDir ] && [ -f $MySB_InstallDir/files/$RtorrentFile ]; then
-	tar -zxvf $MySB_InstallDir/files/$RtorrentFile -C $MySB_InstallDir/temp/
-	SubDir="`tar -ztf $MySB_InstallDir/files/$RtorrentFile | sed -e 's@/.*@@' | uniq`"
-	if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-		mv -v $MySB_InstallDir/temp/$SubDir $RtorrentDir
-	fi
-fi
-cd $RtorrentDir/
+gfnGetRepoValues 'rTorrent' && gfnRepoManageByType
+cd $gsRepoDir/
 make clean
 ./autogen.sh
-./configure --with-xmlrpc-c=/usr/local/bin/xmlrpc-c-config
-make -j$PROCESSOR
+./configure --with-xmlrpc-c=/usr/bin/xmlrpc-c-config
+make -j$gsProcessors
 make install
 ldconfig
 

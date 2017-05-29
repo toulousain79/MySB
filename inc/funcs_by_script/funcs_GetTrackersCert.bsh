@@ -24,144 +24,138 @@ funcs_GetTrackersCert=1
 ##################### FIRST LINE #####################################
 
 #### Get ruTorrent Trackers
-GetRutorrentTrackers() {
-	FnAllEngines="`ls -1r $RutorrentPluginsDir/extsearch/engines/`"
+gfnGetRutorrentTrackers() {
+	local sAllEngines="`ls -1r $gsRutorrentPluginsDir/extsearch/engines/`"
 
-	for FnEngine in $FnAllEngines; do
-		Tracker="`cat $RutorrentPluginsDir/extsearch/engines/$FnEngine | grep "\$url" | grep "\=" | grep "http" | head -1 | sed 's/public//g;' | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`"
+	for FnEngine in $sAllEngines; do
+		Tracker="`cat $gsRutorrentPluginsDir/extsearch/engines/$FnEngine | grep "\$url" | grep "\=" | grep "http" | head -1 | sed 's/public//g;' | awk '{ print $3 }' | cut -d "/" -f 3 | cut -d "'" -f 1`"
 		if [ ! -z "$Tracker" ]; then
-			AddTracker $Tracker "rutorrent"
+			gfnAddTracker $Tracker "rutorrent"
 		fi
-		unset Tracker
 	done
-
-	unset FnAllEngines
 }
 
 #### Get Users Trackers
-GetUsersTrackers() {
-	FnUsersTrackers="`Func_SQL_Command 'SELECT' 'MySB_db' 'tracker' 'trackers_list' \"origin = 'users'\"`"
-	for FnTracker in $FnUsersTrackers; do
+gfnGetUsersTrackers() {
+	local sUsersTrackers
+
+	sUsersTrackers="`cmdMySQL 'MySB_db' "SELECT tracker FROM trackers_list WHERE origin='users';"`"
+	for FnTracker in $sUsersTrackers; do
 		if [ ! -z "$FnTracker" ]; then
-			AddTracker $FnTracker "users"
+			gfnAddTracker $FnTracker "users"
 		fi
 	done
-	unset FnUsersTrackers
 }
 
 #### Add new trackers
-AddTracker() {
-	Tracker=$1
-	Origin=$2
+gfnAddTracker() {
+	local sTracker sOrigin sPart1 sPart2 sPart3 sTrackerDomain sDomainIPv4 sTrackerIPv4 sTrackerAddress sIfExist sTrackersListId sSearch
 
-	if [ ! -z "$Tracker" ]; then
-		PART1="`echo ${Tracker} | cut -d "." -f 1`"
-		PART2="`echo ${Tracker} | cut -d "." -f 2`"
-		PART3="`echo ${Tracker} | cut -d "." -f 3`"
+	sTracker="$1"
+	sOrigin="$2"
 
-		if [ -z "$PART3" ]; then
-			TrackerDomain="$PART1.$PART2"
+	if [ ! -z "$sTracker" ]; then
+		sPart1="`echo ${sTracker} | cut -d "." -f 1`"
+		sPart2="`echo ${sTracker} | cut -d "." -f 2`"
+		sPart3="`echo ${sTracker} | cut -d "." -f 3`"
+
+		if [ -z "$sPart3" ]; then
+			sTrackerDomain="$sPart1.$sPart2"
 		else
-			TrackerDomain="$PART2.$PART3"
-			TrackerAddress="$PART1.$TrackerDomain"
+			sTrackerDomain="$sPart2.$sPart3"
+			sTrackerAddress="$sPart1.$sTrackerDomain"
 		fi
-		unset PART1 PART2 PART3
 
 		# 1/ Check 'tracker.domain.com'
 		# 2/ Check 'given_hostname.domain.com'
 		# 3/ Check 'domain.com'
-		if [ ! -z "$TrackerDomain" ]; then
-			DomainIPv4="$(nslookup $TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
-			if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
-				IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
-				if [ -z $IfExist ]; then
-					log_daemon_msg "$AddTrackerDomain $TrackerDomain"
-					case "$Origin" in
+		if [ ! -z "$sTrackerDomain" ]; then
+			sDomainIPv4="$(nslookup $sTrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
+			if [ ! -z "$sDomainIPv4" ] && [ "$sDomainIPv4" != "" ] && [ "$sDomainIPv4" != "0.0.0.0" ] && [ "$sDomainIPv4" != "127.0.0.1" ]; then
+				sIfExist="`cmdMySQL 'MySB_db' "SELECT id_trackers_list FROM trackers_list WHERE tracker_domain='$sTrackerDomain';"`"
+				if [ -z "$sIfExist" ]; then
+					log_daemon_msg "$AddTrackerDomain $sTrackerDomain"
+					case "$sOrigin" in
 						'rutorrent')
-							Func_SQL_Command 'INSERT' 'MySB_db' 'trackers_list' "tracker,tracker_domain,origin,is_active,to_check" "\"$TrackerDomain\",\"$TrackerDomain\",\"$Origin\",\"0\",\"0\""
+							cmdMySQL 'MySB_db' "INSERT INTO trackers_list (tracker,tracker_domain,origin,is_active,to_check) VALUES ('$sTrackerDomain','$sTrackerDomain','$sOrigin','0','0');"
 						;;
 						*)
-							Func_SQL_Command 'INSERT' 'MySB_db' 'trackers_list' "tracker,tracker_domain,origin" "\"$TrackerDomain\",\"$TrackerDomain\",\"$Origin\""
+							cmdMySQL 'MySB_db' "INSERT INTO trackers_list (tracker,tracker_domain,origin) VALUES ('$sTrackerDomain','$sTrackerDomain','$sOrigin');"
 						;;
 					esac
-					StatusLSB
+					gfnStatusLSB
 				fi
 
-				TrackerIPv4="$(nslookup tracker.$TrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
-				if [ -z "$TrackerIPv4" ] && [ ! -z "$TrackerAddress" ]; then
-					TrackerIPv4="$(nslookup $TrackerAddress | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
+				sTrackerIPv4="$(nslookup tracker.$sTrackerDomain | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
+				if [ -z "$sTrackerIPv4" ] && [ ! -z "$sTrackerAddress" ]; then
+					sTrackerIPv4="$(nslookup $sTrackerAddress | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
 				else
-					TrackerAddress="tracker.$TrackerDomain"
+					sTrackerAddress="tracker.$sTrackerDomain"
 				fi
 			else
-				IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
-				if [ ! -z $IfExist ]; then
-					log_daemon_msg "$DeleteTrackerDomain $TrackerDomain"
-					TrackersListID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
-					#Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list_ipv4' "id_trackers_list_ipv4 = '$TrackersListID'"
-					Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list' "tracker_domain = '$TrackerDomain'"
-					StatusLSB
+				sIfExist="`cmdMySQL 'MySB_db' "SELECT id_trackers_list FROM trackers_list WHERE tracker_domain='$sTrackerDomain';"`"
+				if [ ! -z "$sIfExist" ]; then
+					log_daemon_msg "$DeleteTrackerDomain $sTrackerDomain"
+					sTrackersListId="`cmdMySQL 'MySB_db' "SELECT id_trackers_list FROM trackers_list WHERE tracker_domain='$sTrackerDomain';"`"
+					cmdMySQL 'MySB_db' "DELETE FROM trackers_list WHERE tracker_domain='$sTrackerDomain';"
+					gfnStatusLSB
 				fi
 			fi
 
-			if [ ! -z "$TrackerIPv4" ] && [ "$TrackerIPv4" != "" ] && [ "$TrackerIPv4" != "0.0.0.0" ] && [ "$TrackerIPv4" != "127.0.0.1" ]; then
-				TrackerIPv4="`echo $TrackerIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-				TrackersListID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
-
-				if [ ! -z "$TrackersListID" ] && [ $TrackersListID -gt 0 ]; then
-					log_daemon_msg "$UpdateTrackersIPv4 '$TrackerAddress' --> '$TrackerIPv4'"
+			if [ ! -z "$sTrackerIPv4" ] && [ "$sTrackerIPv4" != "" ] && [ "$sTrackerIPv4" != "0.0.0.0" ] && [ "$sTrackerIPv4" != "127.0.0.1" ]; then
+				sTrackerIPv4="`echo $sTrackerIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+				sTrackersListId="`cmdMySQL 'MySB_db' "SELECT id_trackers_list FROM trackers_list WHERE tracker_domain='$sTrackerDomain';"`"
+				if [ ! -z "$sTrackersListId" ] && [ $sTrackersListId -gt 0 ]; then
+					log_daemon_msg "$UpdateTrackersIPv4 '$sTrackerAddress' --> '$sTrackerIPv4'"
 					# Cleaning
-					ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID'"`"
+					ListIPv4="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list='$sTrackersListId';"`"
 					for IPv4 in $ListIPv4; do
-						SEARCH="`echo "$TrackerIPv4" | grep "$IPv4"`"
-						if [ -z "$SEARCH" ]; then
-							Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list_ipv4' "ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID'"
+						sSearch="`echo "$sTrackerIPv4" | grep "$IPv4"`"
+						if [ -z "$sSearch" ]; then
+							cmdMySQL 'MySB_db' "DELETE FROM trackers_list_ipv4 WHERE ipv4='$IPv4' AND id_trackers_list='$sTrackersListId';"
 						fi
 					done
-					unset ListIPv4 IPv4
+					unset IPv4 ListIPv4
 
 					# Add
-					for IPv4 in $TrackerIPv4; do
-						IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list_ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'"`"
-						if [ -z $IfExist ]; then
-							Func_SQL_Command 'INSERT' 'MySB_db' 'trackers_list_ipv4' "id_trackers_list,ipv4" "\"$TrackersListID\",\"$IPv4\""
+					for IPv4 in $sTrackerIPv4; do
+						sIfExist="`cmdMySQL 'MySB_db' "SELECT id_trackers_list_ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list='$sTrackersListId' AND ipv4='$IPv4';"`"
+						if [ -z "$sIfExist" ]; then
+							cmdMySQL 'MySB_db' "INSERT INTO trackers_list_ipv4 (id_trackers_list,ipv4) VALUES ('$sTrackersListId','$IPv4');"
 						fi
 					done
-					unset IPv4 TrackerIPv4
-					Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "tracker = '$TrackerAddress'" "tracker_domain = '$TrackerDomain'"
-					StatusLSB
+					unset IPv4 sTrackerIPv4
+					cmdMySQL 'MySB_db' "UPDATE trackers_list SET tracker='$sTrackerAddress' WHERE tracker_domain='$sTrackerDomain';"
+					gfnStatusLSB
 				fi
 			else
-				if [ ! -z "$DomainIPv4" ] && [ "$DomainIPv4" != "0.0.0.0" ] && [ "$DomainIPv4" != "127.0.0.1" ]; then
-					DomainIPv4="`echo $DomainIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-					TrackersListID="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list' 'trackers_list' "tracker_domain = '$TrackerDomain'"`"
-
-					if [ ! -z "$TrackersListID" ] && [ $TrackersListID -gt 0 ]; then
-						log_daemon_msg "$UpdateTrackersIPv4 '$TrackerDomain' --> '$DomainIPv4'"
+				if [ ! -z "$sDomainIPv4" ] && [ "$sDomainIPv4" != "0.0.0.0" ] && [ "$sDomainIPv4" != "127.0.0.1" ]; then
+					sDomainIPv4="`echo $sDomainIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+					sTrackersListId="`cmdMySQL 'MySB_db' "SELECT id_trackers_list FROM trackers_list WHERE tracker_domain='$sTrackerDomain';"`"
+					if [ ! -z "$sTrackersListId" ] && [ $sTrackersListId -gt 0 ]; then
+						log_daemon_msg "$UpdateTrackersIPv4 '$sTrackerDomain' --> '$sDomainIPv4'"
 						# Cleaning
-						ListIPv4="`Func_SQL_Command 'SELECT' 'MySB_db' 'ipv4' 'trackers_list_ipv4' \"id_trackers_list = '$TrackersListID'\"`"
+						ListIPv4="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list='$sTrackersListId';"`"
 						for IPv4 in $ListIPv4; do
-							SEARCH="`echo "$DomainIPv4" | grep "$IPv4"`"
-							if [ -z "$SEARCH" ]; then
-								Func_SQL_Command 'DELETE' 'MySB_db' 'trackers_list_ipv4' "ipv4 = '$IPv4' AND id_trackers_list = '$TrackersListID'"
+							sSearch="`echo "$sDomainIPv4" | grep "$IPv4"`"
+							if [ -z "$sSearch" ]; then
+								cmdMySQL 'MySB_db' "DELETE FROM trackers_list_ipv4 WHERE ipv4='$IPv4' AND id_trackers_list='$sTrackersListId';"
 							fi
 						done
-						unset ListIPv4 IPv4
+						unset IPv4 ListIPv4
 						# Add
-						for IPv4 in $DomainIPv4; do
-							IfExist="`Func_SQL_Command 'SELECT' 'MySB_db' 'id_trackers_list_ipv4' 'trackers_list_ipv4' "id_trackers_list = '$TrackersListID' AND ipv4 = '$IPv4'"`"
-							if [ -z $IfExist ]; then
-								Func_SQL_Command 'INSERT' 'MySB_db' 'trackers_list_ipv4' "id_trackers_list,ipv4" "\"$TrackersListID\",\"$IPv4\""
+						for IPv4 in $sDomainIPv4; do
+							sIfExist="`cmdMySQL 'MySB_db' "SELECT id_trackers_list_ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list='$sTrackersListId' AND ipv4='$IPv4';"`"
+							if [ -z "$sIfExist" ]; then
+								cmdMySQL 'MySB_db' "INSERT INTO trackers_list_ipv4 (id_trackers_list,ipv4) VALUES ('$sTrackersListId','$IPv4');"
 							fi
 						done
-						unset IPv4 DomainIPv4
-						Func_SQL_Command 'UPDATE' 'MySB_db' 'trackers_list' "tracker = '$TrackerDomain'" "tracker_domain = '$TrackerDomain'"
-						StatusLSB
+						unset IPv4 sDomainIPv4
+						cmdMySQL 'MySB_db' "UPDATE trackers_list SET tracker='$sTrackerDomain' WHERE tracker_domain='$sTrackerDomain';"
+						gfnStatusLSB
 					fi
 				fi
 			fi
-
-			unset TrackerDomain TrackerAddress
 		fi
 	fi
 }

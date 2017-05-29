@@ -47,6 +47,7 @@ if ( isset($_GET['page']) ) {
 
 // Databases
 require_once(FILE_MEDOO);
+use Medoo\Medoo;
 $MySB_DB = new medoo([
 	// required
 	'database_type' => 'mysql',
@@ -66,10 +67,10 @@ $Wolf_DB = new medoo([
 	'database_file' => Wolf_DB,
 	'database_name' => 'Wolf'
 ]);
-$ownCloud_DB = new medoo([
+$NextCloud_DB = new medoo([
 	// required
 	'database_type' => 'mysql',
-	'database_name' => MySQL_ownCloud_DB,
+	'database_name' => MySQL_NextCloud_DB,
 	'server' => 'localhost',
 	'username' => MySQL_MysbUser,
 	'password' => MySQL_MysbPassword,

@@ -64,11 +64,14 @@ if (isset($_POST['submit'])) {
 			if ( $Language_POST != $Language_DB ) {
 				$Change++;
 				$RefreshPage++;
+				// Change language of ruTorrent
+				ChangeRuTorrentLanguage($CurrentUser, $Language_POST);				
 				// Change language of Cakebox-Light
 				ChangeCakeboxLanguage($CurrentUser, $Language_POST);
-
-				// Change language of ownCloud
-				ChangeOwnCloudLanguage($CurrentUser, $Language_POST);
+				// Change language of Seedbox-Maanger
+				ChangeManagerLanguage($CurrentUser, $Language_POST);
+				// Change language of NextCloud
+				ChangeNextCloudLanguage($CurrentUser, $Language_POST);
 			}
 
 			break;
@@ -122,33 +125,37 @@ $language = $users_datas['language'];
 			</td>
 			<td><?php echo User_OptionsMySB_rTorrentRestart; ?></td>
 			<td>
-				<select name="rTorrentRestart" style="width:80px; height: 28px;">
+
 				<?php switch ($rtorrent_restart) {
 					case '1':
-						echo '<option selected="selected" value="1">' .Global_Yes. '</option>';
-						echo '<option value="0">' .Global_No. '</option>';
+						$class = 'greenText';
+						$options = '<option selected="selected" value="1" class="greenText">' .Global_Yes. '</option>';
+						$options .= '<option value="0" class="redText">' .Global_No. '</option>';
 						break;
 					default:
-						echo '<option value="1">' .Global_Yes. '</option>';
-						echo '<option selected="selected" value="0">' .Global_No. '</option>';
+						$class = 'redText';
+						$options = '<option value="1" class="greenText">' .Global_Yes. '</option>';
+						$options .= '<option selected="selected" value="0" class="redText">' .Global_No. '</option>';
 						break;
 				} ?>
-				</select>
+				<select name="rTorrentRestart" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
 			</td>
 			<td><?php echo User_OptionsMySB_NotifyEmail; ?></td>
 			<td>
-				<select name="rTorrentNotify" style="width:80px; height: 28px;">';
+
 				<?php switch ($rtorrent_notify) {
 					case '1':
-						echo '<option selected="selected" value="1">' .Global_Yes. '</option>';
-						echo '<option value="0">' .Global_No. '</option>';
+						$class = 'greenText';
+						$options = '<option selected="selected" value="1" class="greenText">' .Global_Yes. '</option>';
+						$options .= '<option value="0" class="redText">' .Global_No. '</option>';
 						break;
 					default:
-						echo '<option value="1">' .Global_Yes. '</option>';
-						echo '<option selected="selected" value="0">' .Global_No. '</option>';
+						$class = 'redText';
+						$options = '<option value="1" class="greenText">' .Global_Yes. '</option>';
+						$options .= '<option selected="selected" value="0" class="redText">' .Global_No. '</option>';
 						break;
 				} ?>
-				</select>
+				<select name="rTorrentNotify" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
 			</td>
 		</tr>
 	</table>

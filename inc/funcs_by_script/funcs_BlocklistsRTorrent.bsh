@@ -24,47 +24,51 @@ funcs_BlocklistsRTorrent=1
 ##################### FIRST LINE #####################################
 
 #### Clean the rTorrent blocklist
-CleanBlockList() {
-	FILE="$2"
-	URL="$3"
-	ListName="$4"
-	Author="`echo $FILE | cut -d '#' -f 1`"
+gfnCleanBlockList() {
+	local sCommand sFile sUrl sListName sAuthor sLastUpdate
 
-	case $1 in
-		download)
-			curl --retry 2 -ksSL -o "$MySB_InstallDir/files/blocklists/$FILE.gz" "$URL"
+	sCommand="$1"
+	sFile="$2"
+	sUrl="$3"
+	sListName="$4"
+	sAuthor="`echo $sFile | cut -d '#' -f 1`"
+
+	case $sCommand in
+		'download')
+			curl -skLS --retry 3 -o "$MySB_InstallDir/files/blocklists/$sFile.gz" "$sUrl"
 			if [ $? -eq 0 ] ; then
-				gzip -dc $MySB_InstallDir/files/blocklists/$FILE.gz | cut -d: -f2 > $MySB_InstallDir/files/blocklists/$FILE.txt
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "rtorrent_lastupdate = 'NOW'" "author = '$Author' AND list_name = '$ListName'" '-echo'
+				gzip -dc $MySB_InstallDir/files/blocklists/$sFile.gz | cut -d: -f2 > $MySB_InstallDir/files/blocklists/$sFile.txt
+				sLastUpdate="`date +%Y-%m-%d\ %H:%M:%S`"
 			else
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'blocklists' "rtorrent_lastupdate = 'failed'" "author = '$Author' AND list_name = '$ListName'" '-echo'
+				sLastUpdate="failed"
 			fi
+			cmdMySQL 'MySB_db' "UPDATE blocklists SET rtorrent_lastupdate='$sLastUpdate' WHERE author='$sAuthor' AND list_name='$sListName';" -v
 		;;
-		del_spaces)
-			sed -i '/\ /d' $MySB_InstallDir/files/blocklists/$FILE.tmp
+		'del_spaces')
+			sed -i '/\ /d' $MySB_InstallDir/files/blocklists/$sFile.tmp
 		;;
-		not_numeric)
-			sed -i '/^[0123456789]/!d' $MySB_InstallDir/files/blocklists/$FILE.tmp
+		'not_numeric')
+			sed -i '/^[0123456789]/!d' $MySB_InstallDir/files/blocklists/$sFile.tmp
 		;;
-		not_cidr)
-			sed -i '/\//!d' $MySB_InstallDir/files/blocklists/$FILE.tmp
+		'not_cidr')
+			sed -i '/\//!d' $MySB_InstallDir/files/blocklists/$sFile.tmp
 		;;
-		del_RC)
-			sed -i '/^M/d' $MySB_InstallDir/files/blocklists/$FILE.tmp
+		'del_RC')
+			sed -i '/^M/d' $MySB_InstallDir/files/blocklists/$sFile.tmp
 		;;
-		is_ip)
+		'is_ip')
 			while read line; do
 				START=`echo $line | cut -d '-' -f 1`
 				END=`echo $line | cut -d '-' -f 2`
 				RESULT_START=`printf $START | grep -E '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'`
 				RESULT_END=`printf $END | grep -E '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'`
 				if [ ! "$RESULT_START" = "$START" ] || [ ! "$RESULT_END" = "$END" ]; then
-					sed -i '/$line/!d' $MySB_InstallDir/files/blocklists/$FILE.txt
+					sed -i '/$line/!d' $MySB_InstallDir/files/blocklists/$sFile.txt
 				fi
-			done < $MySB_InstallDir/files/blocklists/$FILE.txt
+			done < $MySB_InstallDir/files/blocklists/$sFile.txt
 		;;
-		sort_uniq)
-			sort -g $MySB_InstallDir/files/blocklists/$FILE.tmp | uniq > $MySB_InstallDir/files/blocklists/$FILE.txt
+		'sort_uniq')
+			sort -g $MySB_InstallDir/files/blocklists/$sFile.tmp | uniq > $MySB_InstallDir/files/blocklists/$sFile.txt
 			if [ -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp ]; then
 				rm -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
 			fi

@@ -24,10 +24,10 @@ funcs_Install=1
 ##################### FIRST LINE #####################################
 
 #### Logrotate
-LogRotate() {
+gfnLogRotate() {
 	if [ ! -z "$1" ] && [ -f $MySB_InstallDir/templates/logrotate/etc.logrotate.d.$1.tmpl ]; then
 		cp -vf $MySB_InstallDir/templates/logrotate/etc.logrotate.d.$1.tmpl /etc/logrotate.d/$1
-		perl -pi -e "s/<MySB_InstallDir>/$MySB_InstallDirEscaped/g" /etc/logrotate.d/$1
+		perl -pi -e "s/<MySB_InstallDir>/$gsInstallDirEscaped/g" /etc/logrotate.d/$1
 		chmod 0644 /etc/logrotate.d/$1
 		if [ ! -z "$2" ] && [ $2 -eq 1 ]; then
 			logrotate -f /etc/logrotate.d/$1
@@ -35,8 +35,28 @@ LogRotate() {
 	fi
 }
 
+#### Installation of a package bundle
+gfnPackageBundleInstall() {
+	local sPackagesRequired sPackagesToInstall
+
+	sPackagesRequired="$1"
+
+	for sPackage in $sPackagesRequired; do
+		if ! gfnCheckCommand 0 $sPackage; then
+			sPackagesToInstall="$sPackagesToInstall $sPackage"
+		fi
+		if ! dpkg -s $sPackage &> /dev/null; then
+			sPackagesToInstall="$sPackagesToInstall $sPackage"
+		fi
+	done
+	sPackagesToInstall="`echo $sPackagesToInstall | xargs -n1 | sort -u | xargs | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+	if [ ! -z "$sPackagesToInstall" ]; then
+		gfnPackagesManage install "$sPackagesToInstall"
+	fi
+}
+
 #### Check if a package is installed
-CheckPackage() {
+fnCheckPackage() {
 	if [ ! -z "`dpkg-query -f '${binary:Package}\n' -W | grep "^$1$"`" ]; then
 		return 0
 	else
@@ -45,167 +65,170 @@ CheckPackage() {
 }
 
 #### apt-get OR aptitude
-PackagesManage() {
-	Query="$1"
-	PackageList="$2"
-	Backports="$3"
+gfnPackagesManage() {
+	local sQuery sPackageList sFinalList sBackports sAptCmd sGlobalArgs sError sIgnore sMirrorsError sSystemValues
+	local nReturn nAptUpdate tDiff nLocalMirror tNow tVar1 tVar2 dAptDate
 
-	if CheckCommand 0 aptitude; then
-		AptCommand="aptitude -q"
-	else
-		AptCommand="apt-get"
-	fi
-
-	if [ -z "$Backports" ]; then
-		GlobalArgs="-y --assume-yes"
-	else
-		GlobalArgs="-y --assume-yes -t $DEBIAN_VERSION-$Backports"
-	fi
-	RETURN=0
-	AptUpdate=0
+	sQuery="$1"
+	sPackageList="$2"
+	sBackports="$3"
+	nReturn=0
+	nAptUpdate=0
 	tDiff=0
-	LocalMirror=0
+	nLocalMirror=0
 
-	if [ "$IsReady_MySB_DB" == "YES" ]; then
-		SystemValues="`Func_SQL_Command 'SELECT' 'MySB_db' 'apt_update,apt_date' 'system' "id_system = '1'"`"
-		AptUpdate="`echo $SystemValues | awk '{split($0,a,"|"); print a[1]}'`"
-		AptDate="`echo $SystemValues | awk '{split($0,a,"|"); print a[2]}'`"
-		if [ "$AptDate" == "0000-00-00 00:00:00" ]; then
-			Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "apt_update = 'NOW'" "id_system = '1'"
-			AptDate="`date +%Y-%m-%d\ %H:%M:%S`"
+	if gfnCheckCommand 0 aptitude; then
+		sAptCmd="aptitude -q"
+	else
+		sAptCmd="apt-get"
+	fi
+
+	if [ -z "$sBackports" ]; then
+		sGlobalArgs="-y --assume-yes"
+	else
+		sGlobalArgs="-y --assume-yes -t $gsDebianRelease-$sBackports"
+	fi
+
+	if [ "$gbIsReady_MySB_Db" == "YES" ]; then
+		sSystemValues="`cmdMySQL 'MySB_db' "SELECT apt_update,apt_date FROM system WHERE id_system='1';" | sed 's/\t/|/g;'`"
+		nAptUpdate="`echo $sSystemValues | awk '{split($0,a,"|"); print a[1]}'`"
+		dAptDate="`echo $sSystemValues | awk '{split($0,a,"|"); print a[2]}'`"
+		if [ "$dAptDate" == "0000-00-00 00:00:00" ]; then
+			dAptDate="`date +%Y-%m-%d\ %H:%M:%S`"
+			cmdMySQL 'MySB_db' "UPDATE system SET apt_date='$dAptDate' WHERE id_system='1';"
 		fi
-		AptDate=$(date -d "$AptDate" +"%Y-%m-%d %H")
-		Now=$(date +%Y-%m-%d\ %H)
-		t1=$(date --date="$AptDate" +'%-H')
-		t2=$(date --date="$Now" +'%-H')
-		let "tDiff=$t2-$t1"
+		dAptDate=$(date -d "$dAptDate" +"%Y-%m-%d %H")
+		tNow=$(date +%Y-%m-%d\ %H)
+		tVar1=$(date --date="$dAptDate" +'%-H')
+		tVar2=$(date --date="$tNow" +'%-H')
+		let "tDiff=$tVar2-$tVar1"
 	fi
 
 	#### Check last update
-	if [ "$Query" != "test" ]; then
-		if [ "$IsReady_MySB_DB" == "YES" ]; then
+	if [ "$sQuery" != "test" ]; then
+		if [ "$gbIsReady_MySB_Db" == "YES" ]; then
 			#### Need of 'apt-get update' ? (must be greater than 2 hours OR forced)
-			if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ] || [ "$Query" == "upgrade" ]; then
-				if CheckCommand 0 apt-mirror && [ -f $MySB_InstallDir/files/apt_mirrors/var/postmirror.sh ]; then
-					case "$Query" in
+			if [ $nAptUpdate -eq 1 ] || [ $tDiff -gt 2 ] || [ "$sQuery" == "upgrade" ]; then
+				if gfnCheckCommand 0 apt-mirror && [ -f $MySB_InstallDir/files/apt_mirrors/var/postmirror.sh ]; then
+					case "$sQuery" in
 						'install')
-							for Package in $PackageList; do
+							for Package in $sPackageList; do
 								case "$Package" in
 									'webmin'|'plexmediaserver'|'pgld'|'pglcmd'|'pglgui')
-										LocalMirror=1
+										nLocalMirror=1
 									;;
 								esac
 							done
 						;;
 						'upgrade')
-							LocalMirror=1
+							nLocalMirror=1
 						;;
 					esac
 
-					if [ $LocalMirror -eq 1 ]; then
+					if [ $nLocalMirror -eq 1 ]; then
 						apt-mirror $MySB_InstallDir/files/apt_mirrors/mirror.list
 					fi
 				fi
 
-				echo "$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update"
-				export DEBIAN_FRONTEND=noninteractive ; $AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update
+				echo "$sAptCmd $sGlobalArgs -o Acquire::Check-Valid-Until=false update"
+				export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs -o Acquire::Check-Valid-Until=false update
 				if [ $? -eq 0 ]; then
-					Func_SQL_Command 'UPDATE' 'MySB_db' 'system' "apt_update='0', apt_date='NOW'" "id_system='1'"
+					cmdMySQL 'MySB_db' "UPDATE system SET apt_update='0', apt_date='`date +%Y-%m-%d\ %H:%M:%S`' WHERE id_system='1';"
 				fi
 			fi
 		else
-			echo "$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update"
-			export DEBIAN_FRONTEND=noninteractive ; $AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update
+			echo "$sAptCmd $sGlobalArgs -o Acquire::Check-Valid-Until=false update"
+			export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs -o Acquire::Check-Valid-Until=false update
 		fi
 	fi
 
-	case "$Query" in
+	case "$sQuery" in
 		'install')
-			FinalList=""
-			for Package in $PackageList; do
-				if ! CheckPackage $Package; then
-					FinalList="${FinalList} $Package"
+			sFinalList=""
+			for Package in $sPackageList; do
+				if ! fnCheckPackage $Package; then
+					sFinalList="${sFinalList} $Package"
 				fi
 			done
-			FinalList="`echo $FinalList | sed -e 's/^ //g;'`"
+			sFinalList="`echo $sFinalList | sed -e 's/^ //g;'`"
 
-			if [ ! -z "$FinalList" ]; then
-				echo "$AptCommand $GlobalArgs -V -o Dpkg::Options::=\"--force-confold\" install $FinalList"
-				export DEBIAN_FRONTEND=noninteractive ; $AptCommand $GlobalArgs -V -o Dpkg::Options::="--force-confold" install $FinalList
+			if [ ! -z "$sFinalList" ]; then
+				echo "$sAptCmd $sGlobalArgs -V -o Dpkg::Options::=\"--force-confold\" install $sFinalList"
+				export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs -V -o Dpkg::Options::="--force-confold" install $sFinalList
 			fi
 		;;
 		'upgrade')
-			if [ "`$AptCommand --help | grep safe-upgrade | awk '{ print $1 }'`" == "safe-upgrade" ]; then
-				echo "$AptCommand $GlobalArgs -V -o Dpkg::Options::=\"--force-confold\" safe-upgrade"
-				export DEBIAN_FRONTEND=noninteractive ; $AptCommand $GlobalArgs -V -o Dpkg::Options::="--force-confold" safe-upgrade
+			if [ "`$sAptCmd --help | grep safe-upgrade | awk '{ print $1 }'`" == "safe-upgrade" ]; then
+				echo "$sAptCmd $sGlobalArgs -V -o Dpkg::Options::=\"--force-confold\" safe-upgrade"
+				export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs -V -o Dpkg::Options::="--force-confold" safe-upgrade
 			else
-				echo "$AptCommand $GlobalArgs -V -o Dpkg::Options::=\"--force-confold\" upgrade"
-				export DEBIAN_FRONTEND=noninteractive ; $AptCommand $GlobalArgs -V -o Dpkg::Options::="--force-confold" upgrade
+				echo "$sAptCmd $sGlobalArgs -V -o Dpkg::Options::=\"--force-confold\" upgrade"
+				export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs -V -o Dpkg::Options::="--force-confold" upgrade
 			fi
 		;;
 		'purge')
-			FinalList=""
-			for Package in $PackageList; do
-				if CheckPackage $Package; then
-					FinalList="${FinalList} $Package"
+			sFinalList=""
+			for Package in $sPackageList; do
+				if fnCheckPackage $Package; then
+					sFinalList="${sFinalList} $Package"
 				fi
 			done
-			FinalList="`echo $FinalList | sed -e 's/^ //g;'`"
+			sFinalList="`echo $sFinalList | sed -e 's/^ //g;'`"
 
-			if [ ! -z "$FinalList" ]; then
-				echo "$AptCommand $GlobalArgs purge $FinalList"
-				export DEBIAN_FRONTEND=noninteractive ; $AptCommand $GlobalArgs purge $FinalList
+			if [ ! -z "$sFinalList" ]; then
+				echo "$sAptCmd $sGlobalArgs purge $sFinalList"
+				export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs purge $sFinalList
 			fi
 		;;
 		'test')
-			$AptCommand $GlobalArgs -o Acquire::Check-Valid-Until=false update > $MySB_InstallDir/temp/netselect-apt
-			case "$AptCommand" in
+			$sAptCmd $sGlobalArgs -o Acquire::Check-Valid-Until=false update > $MySB_InstallDir/temp/netselect-apt
+			case "$sAptCmd" in
 				"aptitude -q")
-					Erreur="$Funcs_PackagesManage_Aptitude_0"
-					Ignore="$Funcs_PackagesManage_Aptitude_1"
+					sError="$Funcs_PackagesManage_Aptitude_0"
+					sIgnore="$Funcs_PackagesManage_Aptitude_1"
 				;;
 				"apt-get")
-					Erreur="$Funcs_PackagesManage_AptGet_0"
-					Ignore="$Funcs_PackagesManage_AptGet_1"
+					sError="$Funcs_PackagesManage_AptGet_0"
+					sIgnore="$Funcs_PackagesManage_AptGet_1"
 				;;
 			esac
 
 			if [ -f $MySB_InstallDir/temp/netselect-apt ]; then
-				MirrorsError="`cat $MySB_InstallDir/temp/netselect-apt | grep "^$Erreur" | awk '{ print $2 }'`"
-				for Mirror in $MirrorsError; do
+				sMirrorsError="`cat $MySB_InstallDir/temp/netselect-apt | grep "^$sError" | awk '{ print $2 }'`"
+				for Mirror in $sMirrorsError; do
 					sed -i '/'$Mirror'/d' $MySB_InstallDir/files/fastest_mirrors
 				done
-				MirrorsError="`cat $MySB_InstallDir/temp/netselect-apt | grep "^$Ignore" | awk '{ print $2 }'`"
-				for Mirror in $MirrorsError; do
+				sMirrorsError="`cat $MySB_InstallDir/temp/netselect-apt | grep "^$sIgnore" | awk '{ print $2 }'`"
+				for Mirror in $sMirrorsError; do
 					sed -i '/'$Mirror'/d' $MySB_InstallDir/files/fastest_mirrors
 				done
 			fi
 		;;
 	esac
 
-	RETURN=$?
+	nReturn=$?
 
-	if [ "$Query" != "test" ]; then
-		if [ "$IsReady_MySB_DB" == "YES" ]; then
+	if [ "$sQuery" != "test" ]; then
+		if [ "$gbIsReady_MySB_Db" == "YES" ]; then
 			#### Need of cleaning ? (must be greater than 2 hours OR forced)
-			if [ "$AptUpdate" == "1" ] || [ "$tDiff" -gt "2" ]; then
-				if [ $RETURN -eq 0 ]; then
-					if [ "`$AptCommand --help | grep autoremove | awk '{ print $1 }'`" == "autoremove" ]; then
-						echo "$AptCommand $GlobalArgs autoremove"
-						$AptCommand $GlobalArgs autoremove
-					elif [ "`$AptCommand --help | grep autoclean | awk '{ print $1 }'`" == "autoclean" ]; then
-						echo "$AptCommand $GlobalArgs autoclean"
-						$AptCommand $GlobalArgs autoclean
+			if [ $nAptUpdate -eq 1 ] || [ $tDiff -gt 2 ]; then
+				if [ $nReturn -eq 0 ]; then
+					if [ "`$sAptCmd --help | grep autoremove | awk '{ print $1 }'`" == "autoremove" ]; then
+						echo "$sAptCmd $sGlobalArgs autoremove"
+						$sAptCmd $sGlobalArgs autoremove
+					elif [ "`$sAptCmd --help | grep autoclean | awk '{ print $1 }'`" == "autoclean" ]; then
+						echo "$sAptCmd $sGlobalArgs autoclean"
+						$sAptCmd $sGlobalArgs autoclean
 					fi
 
-					echo "$AptCommand $GlobalArgs install"
-					$AptCommand $GlobalArgs install
+					echo "$sAptCmd $sGlobalArgs install"
+					$sAptCmd $sGlobalArgs install
 				fi
 			fi
 		fi
 	fi
 
-	return $RETURN
+	return $nReturn
 }
 
 ##################### LAST LINE ######################################

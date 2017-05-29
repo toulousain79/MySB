@@ -82,7 +82,8 @@ if ( isset($_POST['submit']) ) {
 						$priority++;
 						$args = "$CurrentUser|$new_pwd";
 
-						$value = $MySB_DB->insert("commands", ["commands" => "$command", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
+						$MySB_DB->insert("commands", ["commands" => "$command", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
+						$value = $MySB_DB->id();
 
 						if ( $value > 0 ) {
 							exec("sudo /bin/bash ".MYSB_ROOT."/scripts/ApplyConfig.bsh '$CurrentUser' 'DO_APPLY'", $output, $result);

@@ -23,12 +23,18 @@
 //#################### FIRST LINE #####################################
 
 define('MainUser_DNScrypt_Table_Name', 'Nom');
-define('MainUser_DNScrypt_Table_FullName', 'Nom complet');
-define('MainUser_DNScrypt_Table_Location', 'Localisation');
-define('MainUser_DNScrypt_Table_Version', 'Version');
 define('MainUser_DNScrypt_Table_DNSsec', 'Validation<br />DNSSEC');
 define('MainUser_DNScrypt_Table_NoLog', 'Pas de<br />logs');
 define('MainUser_DNScrypt_Table_NameCoin', 'Namecoin');
+define('MainUser_DNScrypt_Table_Certificate', 'Validit&eacute;<br />certificat');
+define('MainUser_DNScrypt_Table_Speed', 'Vitesse<br />(msec)');
+define('MainUser_DNScrypt_Table_Pid', 'Processus<br />(PID)');
 define('MainUser_DNScrypt_Restart', 'Red&eacute;marrer le service DNScrypt-proxy');
+define('MainUser_DNScrypt_Title_Config', 'Configuration de DNScrypt-proxy');
+define('MainUser_DNScrypt_NoLogs', 'No Logs');
+define('MainUser_DNScrypt_DNSSec', 'DNS Sec');
+define('MainUser_DNScrypt_Namecoin', 'Namecoin');
+define('MainUser_DNScrypt_Daemon', 'Démons');
+define('MainUser_DNScrypt_Random', 'Al&eacute;atoire');
 
 //#################### LAST LINE ######################################

@@ -112,10 +112,10 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 Form();
 
-$UsersList = $MySB_DB->select("users", ["id_users", "users_ident", "users_email", "quota"], ["AND" => ["is_active" => "1"]]);
+$sUsersList = $MySB_DB->select("users", ["id_users", "users_ident", "users_email", "quota"], ["AND" => ["is_active" => "1"]]);
 $system_datas = $MySB_DB->get("system", ["rt_model", "rt_cost_tva"], ["id_system" => 1]);
 
-if ( !empty($UsersList) ) {
+if ( !empty($sUsersList) ) {
 ?>
 	<form class="form_settings" method="post" action="">
 		<div align="center" style="margin-top: 50px; margin-bottom: 20px;"><table style="border-spacing:1;">
@@ -134,7 +134,7 @@ if ( !empty($UsersList) ) {
 			</tr>
 
 <?php
-	foreach($UsersList as $User) {
+	foreach($sUsersList as $User) {
 		$Subtotal = $MySB_DB->get("users", "treasury", ["id_users" => $User["id_users"]]);
 		if (is_numeric($Subtotal) && $Subtotal > 0) {
 			$Color = 'color: #00DF00;';

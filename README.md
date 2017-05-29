@@ -5,8 +5,8 @@
 # MySB
 MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and could be renamed MySSB, My Secured SeedBox.
 
-* **Current version** _(stable)_: **v3.5**
-* Next version _(dev)_: _v3.6_
+* **Current version** _(stable)_: **----**
+* Next version _(dev)_: _----_
 
 ## All prerequisites listed below are MANDATORY!
 
@@ -25,10 +25,10 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * **PHP5-FPM** _(php5-apcu, FastCGI, SSL)_
 * **SFTP** _with Chroot_
 * **VSFTPd** _(FTP over TLS)_
-* **Postfix** with _(or without)_ SMTP authentication _(Gmail, Free, Ovh and Yahoo)_
-* **Seedbox-Manager** _(optionnal) (user interface is in french)_
+* **Postfix** with _(or without)_ SMTP authentication _(Gmail, Free, Ovh, Yahoo and Zoho)_
+* **Seedbox-Manager** _(optionnal)_
 * **LoadAvg** _(free server analytics and monitoring)_
-* **ownCloud** _(optionnal but **recommended**)_
+* **NextCloud** _(optionnal but **recommended**)_
 * **OpenVPN** _(optionnal); Multi TUN/TAP configuration, with or without redirection of traffic. Add AES-NI support._
 * **CakeBox-Light** _(optionnal)_
 * **PlexMedia Server** _(optionnal, VPN bridged access, requires additional setup)_
@@ -42,17 +42,17 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 * **RKHunter**
 * **MySB portal** (_ability to manage trackers, blocklists, logs, users, restart rTorrent, switch of rTorrent version, and more)_
 * **Special features of MySB**
- + Auto retrieve SSL certificates for all trackers _(if available)_
- + Block all possibilities to use any listed trackers that was not activated in MySB portal
- + BlockList usage _(optionnal) (PeerGuardian or rTorrent, if PeerGuardian failed to start, rTorrent will use its own blocklists)_
- + Monitoring service available _(OVH and Online)_
- + Access restricted by IP for all server access _(can be disabled)_
- + Dynamic IP Management for IP restriction _(DynDNS, No-IP, ...)_
- + Language select _(English, French)_
- + Use of scripts after finished download _(direct or scheduled synchronization, via FTP or rsync)_
- + Prioritize secure connections via SSL _(depends on trackers)_
- + Automatic creation of several 'Watch' directory _(management via the portal)_
- + Access to 'Watch' folders via FTP, ownCloud or Samba (OpenVPN)
+  + Auto retrieve SSL certificates for all trackers _(if available)_
+  + Block all possibilities to use any listed trackers that was not activated in MySB portal
+  + BlockList usage _(optionnal) (PeerGuardian or rTorrent, if PeerGuardian failed to start, rTorrent will use its own blocklists)_
+  + Monitoring service available _(OVH and Online)_
+  + Access restricted by IP for all server access _(can be disabled)_
+  + Dynamic IP Management for IP restriction _(DynDNS, No-IP, ...)_
+  + Language select _(English, French)_
+  + Use of scripts after finished download _(direct or scheduled synchronization, via FTP or rsync)_
+  + Prioritize secure connections via SSL _(depends on trackers)_
+  + Automatic creation of several 'Watch' directory _(management via the portal)_
+  + Access to 'Watch' folders via FTP, NextCloud or Samba (OpenVPN)
 
 ## Additional ruTorrent plugins
 
@@ -97,7 +97,7 @@ MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and co
 ====
 ## Changelog
 
-Take a look at [Changelog.md](https://github.com/toulousain79/MySB/blob/v3.5/Changelog.md), it's all there.
+Take a look at [Changelog.md](https://github.com/toulousain79/MySB/blob/v4.0/Changelog.md), it's all there.
 
 ## License
 
@@ -123,7 +123,7 @@ Copyright (c) 2013 toulousain79
 * [Blocklists](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-Blocklists)
 * [Cakebox Light](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-Cakebox-Light)
 * [OpenVPN](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-OpenVPN)
-* [ownCloud v9+](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-ownCloud-v9-)
+* [NextCloud](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-NextCloud)
 * [Plex Media Server](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-Plex-Media-Server)
 * [DNScrypt](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-Renew-DNScrypt-Resolvers)
 

@@ -24,18 +24,15 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-if [ "$ToInstall_NFS" == "YES" ]; then
+if [ "$gbToInstall_NFS" == "YES" ]; then
 	#### install
 	if [ ! -f /etc/init.d/nfs-kernel-server ]; then
-		PackagesManage purge "nfs-common"
-		PackagesManage purge "rpcbind"
-		PackagesManage install "rpcbind"
-		PackagesManage install "nfs-common"
-		PackagesManage install "nfs-kernel-server"
+		gfnPackagesManage purge "nfs-common rpcbind"
+		gfnPackageBundleInstall 'rpcbind nfs-common nfs-kernel-server'
 	fi
 
 	#### STOP services
-	ManageServices stop "nfs-kernel-server"
+	gfnManageServices stop "nfs-kernel-server"
 
 	#### Disable IPv6
 	perl -pi -e "s/^udp6/#udp6/g" /etc/netconfig
@@ -48,12 +45,12 @@ if [ "$ToInstall_NFS" == "YES" ]; then
 	sed -i "${NumLign}i\        service rpcbind restart" /etc/init.d/nfs-kernel-server
 	chmod +x /etc/init.d/nfs-kernel-server
 
-	if CheckCommand 0 nfs-kernel-server; then
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '1'" "serv_name = 'NFS'" '-echo'
+	if gfnCheckCommand 0 nfs-kernel-server; then
+		cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='NFS';" -v
 	fi
 
 	#### START services
-	ManageServices start "nfs-kernel-server"
+	gfnManageServices start "nfs-kernel-server"
 fi
 
 # -----------------------------------------

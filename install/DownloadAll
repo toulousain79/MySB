@@ -30,294 +30,131 @@ if [ -f $MySB_InstallDir/temp/continue ]; then
 fi
 
 #### VARs
-LocSwitch="$1"
 RemovePluginCakebox=NO
 RemovePluginManager=NO
 
 #### Get all repos
-AllRepos="`Func_SQL_Command 'SELECT' 'MySB_db' '*' 'repositories' \"active = '1'\"`"
-IFS=$'\n'
-for Repo in $AllRepos; do
-	RepoType="`echo $Repo | awk '{split($0,a,"|"); print a[2]}'`"
-	RepoDir="`echo $Repo | awk '{split($0,a,"|"); print a[3]}'`"
-	RepoName="`echo $Repo | awk '{split($0,a,"|"); print a[4]}'`"
-	RepoVersion="`echo $Repo | awk '{split($0,a,"|"); print a[5]}'`"
-	ToUpgrade="`echo $Repo | awk '{split($0,a,"|"); print a[6]}'`"
-	RepoFile="`echo $Repo | awk '{split($0,a,"|"); print a[7]}'`"
-	RepoURL="`echo $Repo | awk '{split($0,a,"|"); print a[8]}'`"
-	Error=0
-
-	echo
-	echo "########## $RepoType: $RepoName"
-	case "$RepoName" in
-		'Lets Encrypt')
-			echo "Directory : "$RepoDir
-		;;
-		*)
-			echo "Directory : "$MySB_InstallDir$RepoDir
-		;;
-	esac
-	echo "Version : "$RepoVersion
-	echo "File : "$RepoFile
-	echo "To upgrade : `echo $ToUpgrade | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	echo "URL : "$RepoURL
-	echo
+cmdMySQL 'MySB_db' "SELECT name FROM repositories WHERE active='1';" | while read sRepoName; do \
+	gfnGetRepoValues "$sRepoName"
+	if [ -z "$gnRepoActive" ]; then
+		continue
+	fi
+	gnError=0
 
 	# Delete old repo file
-	if [ $ToUpgrade -eq 1 ]; then
+	if [ $gnRepoUpgrade -eq 1 ]; then
 		# Backup some config files or directory
-		case "$RepoName" in
-			'ownCloud')
-				if [ -f $ownCloudDir/config/config.php ]; then
-					su -s /bin/sh www-data -c "/usr/bin/php $ownCloudDir/occ maintenance:mode --on"
-					mv -v $ownCloudDir/config/config.php $MySB_InstallDir/temp/owncloud_config.php
+		case "$sRepoName" in
+			'NextCloud')
+				if [ -f $gsNextCloudDir/config/config.php ]; then
+					su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --on"
+					mv -v $gsNextCloudDir/config/config.php $MySB_InstallDir/temp/nextcloud_config.php
 				fi
-				if [ -d $ownCloudDir/apps ]; then
-					mv -v $ownCloudDir/apps $MySB_InstallDir/temp/owncloud_apps
+				if [ -d $gsNextCloudDir/apps2 ]; then
+					mv -v $gsNextCloudDir/apps2 $MySB_InstallDir/temp/nextcloud_apps2
 				fi
 				# Maybe need to launch a script on next reboot ?
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "on_boot = '1', script = '$MySB_InstallDir/install/ownCloud'" "name = '$RepoName'" '-echo'
+				cmdMySQL 'MySB_db' "UPDATE repositories SET on_boot='1', script='$MySB_InstallDir/install/NextCloud' WHERE name='$sRepoName';" -v
 			;;
 			'Seedbox-Manager')
-				if [ -d $ManagerDir/conf ]; then
-					mv -v $ManagerDir/conf $MySB_InstallDir/temp/sm_conf
+				if [ -d $gsManagerDir/conf ]; then
+					mv -v $gsManagerDir/conf $MySB_InstallDir/temp/sm_conf
 				fi
 			;;
 			'ruTorrent')
-				if [ -d $RutorrentDir/share/users ]; then
-					mv -v $RutorrentDir/share/users $MySB_InstallDir/temp/rutorrent_share_users
+				if [ -d $gsRutorrentDir/share/users ]; then
+					mv -v $gsRutorrentDir/share/users $MySB_InstallDir/temp/rutorrent_share_users
 				fi
 			;;
 		esac
 
 		# We can delete repo dir ONLY IF repo file exist...
-		if [ -f $MySB_InstallDir/files/$RepoFile ]; then
-			case "$LocSwitch" in
-				'UPGRADE'|'REFRESH')
-					DeleteDirectory 1 "$MySB_InstallDir$RepoDir"
+		if [ -f $MySB_InstallDir/files/$gsRepoFile ]; then
+			case "$gsSwitch" in
+				'UPGRADE')
+					gfnDeleteDirectory 1 "$gsRepoDir"
 				;;
 			esac
 		fi
 
 		# Disable the upgrade job
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'repositories' "upgrade = '0'" "name = '$RepoName'" '-echo'
+		cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='$sRepoName';" -v
 	fi
 
 	# Download all
-	case "$RepoType" in
-		'TARGZ')
-			if [ ! -f $MySB_InstallDir/files/$RepoFile ]; then
-				curl --retry 2 -kSL -o "$MySB_InstallDir/files/$RepoFile" "$RepoURL"
-				Error=$?
-			fi
-			if [ ! -d $MySB_InstallDir$RepoDir ] && [ $Error -eq 0 ]; then
-				tar -zxvf $MySB_InstallDir/files/$RepoFile -C $MySB_InstallDir/temp/
-				Error=$?
-				SubDir="`tar -ztf $MySB_InstallDir/files/$RepoFile | cut -d '/' -f 1 | uniq`"
-				if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-					mv -v $MySB_InstallDir/temp/$SubDir $MySB_InstallDir$RepoDir
-					chown -R root:root $MySB_InstallDir$RepoDir
-					Error=$?
-				fi
-			fi
-		;;
-		'WBM')
-			if [ ! -f $MySB_InstallDir$RepoDir/$RepoFile ]; then
-				curl --retry 2 -kSL -o "$MySB_InstallDir$RepoDir/$RepoFile" "$RepoURL"
-				Error=$?
-			fi
-		;;
-		'SVN')
-			case "$LocSwitch" in
-				"UPGRADE")
-					if [ -d $MySB_InstallDir$RepoDir ]; then
-						svn up --non-interactive --trust-server-cert $MySB_InstallDir$RepoDir
-						Error=$?
-						if [ $Error -gt 0 ]; then
-							svn switch $RepoURL $MySB_InstallDir$RepoDir
-							Error=$?
-						fi
-					else
-						# GitHub project download directly from 'github.com', so it is a ZIP file.
-						if [ -f $MySB_InstallDir/files/$RepoFile ]; then
-							unzip $MySB_InstallDir/files/$RepoFile -d $MySB_InstallDir/temp/
-							Error=$?
-							SubDir="`unzip -l $MySB_InstallDir/files/$RepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-							if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-								mv -v $MySB_InstallDir/temp/$SubDir $MySB_InstallDir$RepoDir
-								Error=$?
-							fi
-						else
-							svn co --non-interactive --trust-server-cert $RepoURL $MySB_InstallDir$RepoDir
-							Error=$?
-						fi
-					fi
-				;;
-				*)
-					if [ ! -d $MySB_InstallDir$RepoDir/.svn ]; then
-						svn co --non-interactive --trust-server-cert $RepoURL $MySB_InstallDir$RepoDir
-						Error=$?
-					fi
-				;;
-			esac
-		;;
-		'GIT')
-			case "$LocSwitch" in
-				"UPGRADE")
-					case "$RepoName" in
-						'Lets Encrypt')
-							TempRepoDir="$RepoDir"
-						;;
-						*)
-							TempRepoDir="$MySB_InstallDir$RepoDir"
-						;;
-					esac
-
-					# GitHub project download directly from 'github.com', so it is a ZIP file.
-					if [ -f $MySB_InstallDir/files/$RepoFile ]; then
-						unzip $MySB_InstallDir/files/$RepoFile -d $MySB_InstallDir/temp/
-						Error=$?
-						SubDir="`unzip -l $MySB_InstallDir/files/$RepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-						if [ -d $MySB_InstallDir/temp/$SubDir ] && [ ! -d $TempRepoDir ]; then
-							mv -v $MySB_InstallDir/temp/$SubDir $TempRepoDir
-							Error=$?
-						fi
-					else
-						git clone $RepoURL $TempRepoDir
-						Error=$?
-						if [ $Error -eq 0 ]; then
-							cd $TempRepoDir/
-							git checkout -b $(git describe --tags $(git rev-list --tags --max-count=1))
-							Error=$?
-						fi
-					fi
-				;;
-				*)
-					if [ ! -d $MySB_InstallDir$RepoDir ]; then
-						# GitHub project download directly from 'github.com', so it is a ZIP file.
-						if [ -f $MySB_InstallDir/files/$RepoFile ]; then
-							unzip $MySB_InstallDir/files/$RepoFile -d $MySB_InstallDir/temp/
-							Error=$?
-							SubDir="`unzip -l $MySB_InstallDir/files/$RepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-							if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-								case "$RepoName" in
-									'Lets Encrypt')
-										mv -v $MySB_InstallDir/temp/$SubDir $RepoDir
-									;;
-									*)
-										mv -v $MySB_InstallDir/temp/$SubDir $MySB_InstallDir$RepoDir
-									;;
-								esac
-								Error=$?
-							fi
-						else
-							git clone $RepoURL $MySB_InstallDir$RepoDir
-							Error=$?
-						fi
-					fi
-				;;
-			esac
-		;;
-		'ZIP')
-			if [ ! -f $MySB_InstallDir/files/$RepoFile ]; then
-				curl --retry 2 -kSL -o "$MySB_InstallDir/files/$RepoFile" "$RepoURL"
-				Error=$?
-			fi
-			if [ ! -d $MySB_InstallDir$RepoDir ] && [ $Error -eq 0 ]; then
-				unzip $MySB_InstallDir/files/$RepoFile -d $MySB_InstallDir/temp/
-				Error=$?
-				SubDir="`unzip -l $MySB_InstallDir/files/$RepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
-				if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-					mv -v $MySB_InstallDir/temp/$SubDir $MySB_InstallDir$RepoDir
-					chown -R root:root $MySB_InstallDir$RepoDir
-					Error=$?
-				fi
-			fi
-		;;
-		'CURL')
-			if [ ! -f $MySB_InstallDir/files/$RepoFile ]; then
-				curl --insecure -S $RepoURL | php -- --install-dir=$MySB_InstallDir/files/
-				Error=$?
-			fi
-			if [ -f $MySB_InstallDir/files/$RepoFile ]; then
-				cp -v $MySB_InstallDir/files/$RepoFile $RepoDir
-				Error=$?
-			fi
-		;;
-	esac
+	gfnRepoManageByType
 
 	# Restore some config files or directory
-	case "$RepoName" in
-		'ownCloud')
-			if [ -f $MySB_InstallDir/temp/owncloud_config.php ]; then
-				mv -v $MySB_InstallDir/temp/owncloud_config.php $ownCloudDir/config/config.php
+	case "$sRepoName" in
+		'NextCloud')
+			if [ -f $MySB_InstallDir/temp/nextcloud_config.php ]; then
+				mv -v $MySB_InstallDir/temp/nextcloud_config.php $gsNextCloudDir/config/config.php
 			fi
-			if [ -d $MySB_InstallDir/temp/owncloud_apps ]; then
-				if [ -d $ownCloudDir/apps ]; then
-					rm -rfv $ownCloudDir/apps
+			if [ -d $MySB_InstallDir/temp/nextcloud_apps2 ]; then
+				if [ -d $gsNextCloudDir/apps2 ]; then
+					rm -rfv $gsNextCloudDir/apps2
 				fi
-				mv -v $MySB_InstallDir/temp/owncloud_apps $ownCloudDir/apps
+				mv -v $MySB_InstallDir/temp/nextcloud_apps2 $gsNextCloudDir/apps2
 			fi
 		;;
 		'Seedbox-Manager')
 			if [ -d $MySB_InstallDir/temp/sm_conf ]; then
-				if [ -d $ManagerDir/conf ]; then
-					rm -rfv $ManagerDir/conf
+				if [ -d $gsManagerDir/conf ]; then
+					rm -rfv $gsManagerDir/conf
 				fi
-				mv -v $MySB_InstallDir/temp/sm_conf $ManagerDir/conf
+				mv -v $MySB_InstallDir/temp/sm_conf $gsManagerDir/conf
 			fi
 		;;
 		'ruTorrent')
 			if [ -d $MySB_InstallDir/temp/rutorrent_share_users ]; then
-				if [ -d $RutorrentDir/share/users ]; then
-					rm -rfv $RutorrentDir/share/users
+				if [ -d $gsRutorrentDir/share/users ]; then
+					rm -rfv $gsRutorrentDir/share/users
 				fi
-				mv -v $MySB_InstallDir/temp/rutorrent_share_users $RutorrentDir/share/users
+				mv -v $MySB_InstallDir/temp/rutorrent_share_users $gsRutorrentDir/share/users
 			fi
 		;;
 	esac
 
 	# Switch on errors
-	if [ $Error -gt 0 ]; then
-		case "$RepoName" in
+	if [ $gnError -gt 0 ]; then
+		case "$sRepoName" in
 			'Cakebox-Light')
 				RemovePluginCakebox=YES
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '0'" "serv_name = 'Cakebox-Light'" '-echo'
+				cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='Cakebox-Light';" -v
 			;;
 			'Seedbox-Manager')
 				RemovePluginManager=YES
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '0'" "serv_name = 'Seedbox-Manager'" '-echo'
+				cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='Seedbox-Manager';" -v
 			;;
 			'Composer'|'NodeJS')
 				RemovePluginCakebox=YES
 				RemovePluginManager=YES
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '0'" "serv_name = 'Cakebox-Light'" '-echo'
-				Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '0'" "serv_name = 'Seedbox-Manager'" '-echo'
-				echo "$RepoURL" >> $MySB_InstallDir/temp/continue
+				cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='Cakebox-Light';" -v
+				cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='Seedbox-Manager';" -v
+				echo "$gcRepoURL" >> $MySB_InstallDir/temp/continue
 			;;
 			'XMLRPC'|'LibTorrent'|'rTorrent'|'ruTorrent'|'ruTorrents Official Plugins')
-				echo "$RepoURL" >> $MySB_InstallDir/temp/continue
+				echo "$gcRepoURL" >> $MySB_InstallDir/temp/continue
 			;;
 		esac
 	fi
 done
-unset IFS
 
 if [ "$RemovePluginCakebox" == "YES" ]; then
-	PluginDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ruTorrent Plugin Link Cakebox'"`"
+	PluginDir="`cmdMySQL 'MySB_db' "SELECT dir FROM repositories WHERE name='ruTorrent Plugin Link Cakebox';"`"
 	echo
 	echo "########## Remove: ruTorrent Plugin Link Cakebox"
 	echo "Directory : "$PluginDir
 	echo
-	DeleteDirectory 1 "$MySB_InstallDir$PluginDir"
+	gfnDeleteDirectory 1 "$PluginDir"
 fi
 if [ "$RemovePluginManager" == "YES" ]; then
-	PluginDir="`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'ruTorrent Plugin Link Manager'"`"
+	PluginDir="`cmdMySQL 'MySB_db' "SELECT dir FROM repositories WHERE name='ruTorrent Plugin Link Manager';"`"
 	echo
 	echo "########## Remove: ruTorrent Plugin Link Manager"
 	echo "Directory : "$PluginDir
 	echo
-	DeleteDirectory 1 "$MySB_InstallDir$PluginDir"
+	gfnDeleteDirectory 1 "$PluginDir"
 fi
 
 # -----------------------------------------

@@ -55,7 +55,7 @@ function PrintContent($user, $Case) {
 	$CakeboxDatas = $MySB_DB->get("services", ["is_installed", "port_tcp1"], ["serv_name" => "CakeBox-Light"]);
 	$DNScryptDatas = $MySB_DB->get("services", ["is_installed"], ["serv_name" => "DNScrypt-proxy"]);
 	$WebminDatas = $MySB_DB->get("services", ["is_installed", "port_tcp1"], ["serv_name" => "Webmin"]);
-	$ownCloudInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
+	$NextCloudInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "NextCloud"]);
 	// Users infos
 	$IPv4_List = $MySB_DB->select("users_addresses", "ipv4", ["AND" => ["id_users" => "$UserID", "is_active" => 1]]);
 	$LastUpdate = $MySB_DB->max("users_addresses", "last_update", ["AND" => ["id_users" => "$UserID", "check_by" => "hostname", "is_active" => 1]]);
@@ -273,7 +273,7 @@ function PrintContent($user, $Case) {
 		<!-- // Force IP address -->
 		<tr align="left">
 			<th width="15%" scope="row" style="color: #FF6666;" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_ForceIP; ?></th>
-			<td colspan="2" style="background-color: #FF6666;"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/ForceAddress.php?page=ManageAddresses"><span class="Comments"><?php echo User_UserInfoMail_Comment_ForceIP; ?></span></a></td>
+			<td colspan="2" style="background-color: #FF6666;"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/ForceAddress?page=ManageAddresses"><span class="Comments"><?php echo User_UserInfoMail_Comment_ForceIP; ?></span></a></td>
 		</tr>
 
 <?php if ( $DisplayUserInfoDetail == true ) { ?>
@@ -441,18 +441,15 @@ function PrintContent($user, $Case) {
 			<td colspan="2"><a target="_blank" href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/cb"><span class="Comments"><?php echo User_UserInfo_Comment_Cakebox; ?></span></a></td>
 		</tr>
 	<?php } ?>
-		<!-- // ownCloud -->
-	<?php if ( $ownCloudInstalled == '1' ) { ?>
+		<!-- // NextCloud -->
+	<?php if ( $NextCloudInstalled == '1' ) { ?>
 		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_ownCloud; ?></th>
-			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/oc"><span class="Comments"><?php echo User_UserInfo_Comment_ownCloud; ?></span></a></td>
+			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_NextCloud; ?></th>
+			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/nc"><span class="Comments"><?php echo User_UserInfo_Comment_NextCloud; ?></span></a></td>
 		</tr>
 	<?php } ?>
 
-<?php } // $DisplayLinks ?>
-
 	<?php if ( $users_datas["admin"] == '1' ) { ?>
-
 		<!-- //////////////////////
 		// Links (Main user)
 		////////////////////// -->
@@ -492,30 +489,30 @@ function PrintContent($user, $Case) {
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_DNScrypt; ?></th>
 				<td colspan="2"><span class="Comments"><?php echo sprintf(User_UserInfoMail_Comment_DNScrypt, $Hostname, $Port_HTTPs, $Hostname, $Port_HTTPs); ?></span></td>
 			</tr>
-		<?php } ?>
-
-	<?php } ?>
+<?php
+			} // if ( $DNScryptDatas["is_installed"] == '1' ) {
+		} // if ( $users_datas["admin"] == '1' ) {
+	} // $DisplayLinks
+?>
 
 <?php
 	if ( $DisplayRenting == true ) {
 		$RentingDatas = $MySB_DB->get("system", ["rt_global_cost", "rt_cost_tva", "rt_model", "rt_tva", "rt_nb_users", "rt_price_per_users"], ["id_system" => 1]);
 
 		if ( !empty($RentingDatas["rt_cost_tva"]) && !empty($RentingDatas["rt_model"]) ) {
-
 			switch ($Method) {
 				case '1':
 					$GlobalCost = round($RentingDatas["rt_global_cost"], 2);
 					$GlobalCostTva = round($RentingDatas["rt_cost_tva"], 2);
 					$PricePerUsers = round($RentingDatas["rt_price_per_users"], 2);
-					$Treasury = round($users_datas["treasury"], 2);
 					break;
 				default:
 					$GlobalCost = ceil($RentingDatas["rt_global_cost"]);
 					$GlobalCostTva = ceil($RentingDatas["rt_cost_tva"]);
-					$PricePerUsers = ceil($RentingDatas["rt_price_per_users"], 2);
-					$Treasury = ceil($users_datas["treasury"], 2);
+					$PricePerUsers = ceil($RentingDatas["rt_price_per_users"]);
 					break;
 			}
+			$Treasury = round($users_datas["treasury"], 2);
 ?>
 			<!-- //////////////////////
 			// Price and Payment info
@@ -603,8 +600,6 @@ function PrintContent($user, $Case) {
 		<!-- // SeedBox Management -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SeedboxManage; ?></th>
-			<td width="25%">MySB_RefreshMe</td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_MySB_RefreshMe; ?></span></td>
 		</tr>
 		<tr align="left">
 			<th width="15%" scope="row"> </th>

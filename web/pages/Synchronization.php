@@ -34,6 +34,7 @@ $Change = 0;
 $type = 'information';
 $message = Global_NoChange;
 
+use Medoo\Medoo;
 $Sync_DB = new medoo([
 	'database_type' => 'sqlite',
 	'database_file' => "/home/$CurrentUser/db/$CurrentUser.sq3",
@@ -67,7 +68,7 @@ if (isset($_POST['add_file'])) {
 	$downloaded_files = $value[0];
 	$addfile_sub_directory = $value[1];
 
-	$result = $Sync_DB->insert("list", [
+	$Sync_DB->insert("list", [
 										"list_category" => "direct",
 										"is_active" => 1,
 										"get_base_path" => "/home/elohim13/rtorrent/incomplete/$downloaded_files",
@@ -77,6 +78,8 @@ if (isset($_POST['add_file'])) {
 										"CategoryDir" => "$addfile_sub_directory",
 										"to_del" => 0
 										]);
+	$result = $Sync_DB->id();
+
 	if( $result != 0 ) {
 		$Change++;
 		$Command = 'Options_MySB';
@@ -103,7 +106,7 @@ if (isset($_POST['submit'])) {
 																			]
 																		]);
 			if ( empty($IfExist) ) {
-				$result = $MySB_DB->insert("users_crontab", [
+				$MySB_DB->insert("users_crontab", [
 															"id_users" => "$UserID",
 															"minutes" => "$CronMinutes_POST",
 															"hours" => "$CronHours_POST",
@@ -112,6 +115,8 @@ if (isset($_POST['submit'])) {
 															"numday" => "$CronNumday_POST",
 															"command" => "$CronCommand_POST",
 															]);
+				$result = $MySB_DB->id();
+
 				if( $result != 0 ) {
 					$Change++;
 					$Command = 'Options_MySB';
@@ -145,12 +150,13 @@ if (isset($_POST['submit'])) {
 				$IfExist = $MySB_DB->get("users_scripts", "id_users_scripts", ["AND" => ["id_users" => $UserID,"sync_mode" => "direct"]]);
 
 				if ( empty($IfExist) ) {
-					$result = $MySB_DB->insert("users_scripts", ["id_users" => "$UserID","sync_mode" => "direct","script" => "$ScriptName"]);
+					$MySB_DB->insert("users_scripts", ["id_users" => "$UserID", "sync_mode" => "direct", "script" => "$ScriptName"]);
+					$result = $MySB_DB->id();
 					if( $result != 0 ) {
 						$Change++;
 					}
 				} else {
-					$result = $MySB_DB->update("users_scripts", ["id_users" => "$UserID","sync_mode" => "direct","script" => "$ScriptName"], ["id_users" => $UserID]);
+					$result = $MySB_DB->update("users_scripts", ["id_users" => "$UserID", "sync_mode" => "direct", "script" => "$ScriptName"], ["id_users" => $UserID]);
 					if( $result != 0 ) {
 						$Change++;
 					}
@@ -205,7 +211,7 @@ if (isset($_POST['submit'])) {
 
 			// Sub-Directories - Add
 			if ( (isset($_POST['input_id'])) && (isset($_POST['input_directory'][1])) ) {
-				$IfownCloud = $MySB_DB->get("services", "is_installed", ["serv_name" => "ownCloud"]);
+				$IfNextCloud = $MySB_DB->get("services", "is_installed", ["serv_name" => "NextCloud"]);
 				$count = count($_POST['input_id']);
 				for($i=1; $i<=$count; $i++) {
 					$Directory = ReplacesAccentedCharacters($_POST['input_directory'][$i]);
@@ -223,16 +229,17 @@ if (isset($_POST['submit'])) {
 																		]);
 
 						if ( empty($IfExist) ) {
-							$result = $MySB_DB->insert("users_rtorrent_cfg", ["id_users" => "$UserID", "sub_directory" => "$Directory", "sync_mode" => $SyncMode, "can_be_deleted" => 1]);
+							$MySB_DB->insert("users_rtorrent_cfg", ["id_users" => "$UserID", "sub_directory" => "$Directory", "sync_mode" => $SyncMode, "can_be_deleted" => 1]);
+							$result = $MySB_DB->id();
 							if( $result != 0 ) {
 								$Change++;
 								$RefreshPage++;
 								$rTorrentRestart_POST = 1;
 								$Command = 'Restart_rTorrent';
 							}
-							// ownCloud files scan
-							if ( $IfownCloud == '1' ) {
-								$MySB_DB->update("system", ["owncloud_cron" => 1], ["id_system" => 1]);
+							// NextCloud files scan
+							if ( $IfNextCloud == '1' ) {
+								$MySB_DB->update("system", ["nextcloud_cron" => 1], ["id_system" => 1]);
 							}
 						}
 					}
@@ -512,13 +519,13 @@ if ( $DisplayIdent >= 1 ) {
 
 	switch ($IdentSync['mode_sync']) {
 		case 'rsync':
-			$mode_sync = '	<select name="mode_sync['.$IdentSync['ident_id'].']" style="width:80px; cursor: pointer;" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+			$mode_sync = '	<select name="mode_sync['.$IdentSync['ident_id'].']" style="width:80px; cursor: pointer;" id="mySelect">
 								<option value="rsync" selected="selected">' .User_Synchronization_ModeSync_RSYNC. '</option>
 								<option value="ftp">' .User_Synchronization_ModeSync_FTP. '</option>
 							</select>';
 			break;
 		default:
-			$mode_sync = '	<select name="mode_sync['.$IdentSync['ident_id'].']" style="width:80px; cursor: pointer;" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+			$mode_sync = '	<select name="mode_sync['.$IdentSync['ident_id'].']" style="width:80px; cursor: pointer;" id="mySelect">
 								<option value="rsync">' .User_Synchronization_ModeSync_RSYNC. '</option>
 								<option value="ftp" selected="selected">' .User_Synchronization_ModeSync_FTP. '</option>
 							</select>';
@@ -526,13 +533,13 @@ if ( $DisplayIdent >= 1 ) {
 	}
 	switch ($IdentSync['create_subdir']) {
 		case '0':
-			$create_subdir = '<div align="center"><select name="create_subdir['.$IdentSync['ident_id'].']" style="width:60px; cursor: pointer;" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+			$create_subdir = '<div align="center"><select name="create_subdir['.$IdentSync['ident_id'].']" style="width:60px; cursor: pointer;" id="mySelect">
 								<option value="0" selected="selected">' .Global_No. '</option>
 								<option value="1">' .Global_Yes. '</option>
 							</select></div>';
 			break;
 		default:
-			$create_subdir = '<div align="center"><select name="create_subdir['.$IdentSync['ident_id'].']" style="width:60px; cursor: pointer;" id="mySelect" onchange="this.className=this.options[this.selectedIndex].className">
+			$create_subdir = '<div align="center"><select name="create_subdir['.$IdentSync['ident_id'].']" style="width:60px; cursor: pointer;" id="mySelect">
 								<option value="0">' .Global_No. '</option>
 								<option value="1" selected="selected">' .Global_Yes. '</option>
 							</select></div>';

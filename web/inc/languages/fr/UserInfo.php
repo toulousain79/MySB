@@ -147,9 +147,9 @@ define('User_UserInfo_Comment_OpenVpnGui', 'T&eacute;l&eacute;chargez ici un cli
 // CakeBox Light
 define('User_UserInfo_Title_Cakebox', 'CakeBox Light');
 define('User_UserInfo_Comment_Cakebox', 'Jouer ici vos m&eacute;dias.');
-// ownCloud
-define('User_UserInfo_Title_ownCloud', 'ownCloud');
-define('User_UserInfo_Comment_ownCloud', 'Plateforme de services de stockage et partage de fichiers.');
+// NextCloud
+define('User_UserInfo_Title_NextCloud', 'NextCloud');
+define('User_UserInfo_Comment_NextCloud', 'Plateforme de services de stockage et partage de fichiers.');
 
 //////////////////////
 // Links (Main user)
@@ -185,7 +185,6 @@ define('User_UserInfo_Comment_MySB_ChangeUserPassword', '<pre>MySB_ChangeUserPas
 define('User_UserInfo_Comment_MySB_DeleteUser', ' ');
 // SeedBox Management
 define('User_UserInfo_Table_SeedboxManage', 'Gestion de la seedbox');
-define('User_UserInfo_Comment_MySB_RefreshMe', '<pre>MySB_RefreshMe (rutorrent|manager|cakebox|loadavg|all)</pre>');
 define('User_UserInfo_Comment_MySB_UpgradeMe', 'Permet la migration vers une nouvelle version de MySB.');
 define('User_UserInfo_Comment_MySB_UpgradeSystem', 'Effectue un "update" + "upgrade" + "update-ca-certificates"');
 define('User_UserInfo_Comment_MySB_GitHubRepoUpdate', 'Mise &agrave; jour de la version actuelle MySB. (CRON tous les jours)');

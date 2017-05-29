@@ -24,8 +24,6 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-LocSwitch="$1"
-
 #### Console tweaks
 cp -vf /etc/skel/.bashrc /root/
 cp -vf /etc/skel/.bash_logout /root/
@@ -97,7 +95,7 @@ if [ -z "`cat /etc/nanorc | grep '## Config Files (.conf)'`" ]; then
 fi
 
 #### bash_profile
-if [ ! -f /root/.bash_profile ] || [ -z "`cat /root/.bash_profile | grep 'bash_completion'`" ]; then
+if [ ! -f /root/.bash_profile ] || [ -z "`cat /root/.bash_profile | grep 'bash_completion'`" ] || [ -z "`cat /root/.bash_profile | grep '.bashrc'`" ]; then
 	(
 	cat <<'EOF'
 if [ -f /etc/bash_completion ]; then
@@ -112,14 +110,13 @@ EOF
 fi
 
 #### Motd
-cp -v $MySB_InstallDir/templates/etc.rc.local.template /etc/rc.local
-chmod 0755 /etc/rc.local
-perl -pi -e "s/<MySB_Version>/$MySB_CurrentVersion/g" /etc/rc.local
+install -v -o root -g root -m 0755 $MySB_InstallDir/templates/etc.rc.local.template /etc/rc.local
+perl -pi -e "s/<MySB_Version>/$gsCurrentVersion/g" /etc/rc.local
 
 #### Change timezone
-if [ ! -z "$TimeZone" ]; then
+if [ ! -z "$gsTimeZone" ]; then
 	if [ -f /etc/timezone ]; then rm -vf /etc/timezone; fi
-	echo "$TimeZone" | tee -a /etc/timezone
+	echo "$gsTimeZone" | tee -a /etc/timezone
 	if [ -f /etc/adjtime ]; then
 		sed -i "s/UTC/LOCAL/g;" /etc/adjtime
 	fi
@@ -127,9 +124,8 @@ if [ ! -z "$TimeZone" ]; then
 fi
 
 #### Swappiness
-MEMORY=`free -m | grep Mem | awk '{ print $2 }'`
-SWAP=`free -m | grep Swap | awk '{ print $2 }'`
-if [ "$MEMORY" -lt "2048" ] && [ "$SWAP" != "0" ]; then
+SWAP="`free -m | grep 'Swap' | awk '{ print $2 }'`"
+if [ "$gsMemory" -lt "2048" ] && [ "$SWAP" != "0" ]; then
 	echo 80 > /proc/sys/vm/swappiness
 	if [ "`cat /etc/sysctl.conf | grep 'vm.swappiness'`" == "" ]; then
 		echo "vm.swappiness = 80" | tee -a /etc/sysctl.conf
@@ -142,28 +138,22 @@ locale > $MySB_InstallDir/files/locale
 #### /etc/hostname
 echo
 if [ -f /etc/hostname ]; then rm -vf /etc/hostname; fi
-echo "$HostNameFQDN" | tee -a /etc/hostname
+echo "$gsHostNameFqdn" | tee -a /etc/hostname
 /bin/sh /etc/init.d/hostname.sh
 
 # /etc/hosts
 if [ -z $funcs_MySB_SecurityRules ]; then
 	source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_SecurityRules
 fi
-CreateHostsFile
-
-#### Resolv.conf
-echo
-if [ "$LocSwitch" != "UPGRADE" ]; then
-	SwitchDNS "bind"
-fi
+gfnCreateHostsFile
 
 #### /etc/network/interfaces
 echo
 # Remove IPv6
-/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6="1"
-/sbin/sysctl -w net.ipv6.conf.default.disable_ipv6="1"
-/sbin/sysctl -w net.ipv6.conf.lo.disable_ipv6="1"
-/sbin/sysctl -w net.ipv6.conf.eth0.disable_ipv6="1"
+/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6="1" 2> /dev/null
+/sbin/sysctl -w net.ipv6.conf.default.disable_ipv6="1" 2> /dev/null
+/sbin/sysctl -w net.ipv6.conf.lo.disable_ipv6="1" 2> /dev/null
+/sbin/sysctl -w net.ipv6.conf.eth0.disable_ipv6="1" 2> /dev/null
 sysctl -p
 if [ -f /etc/default/grub ]; then
 	source /etc/default/grub
@@ -178,7 +168,7 @@ fi
 cp /etc/network/interfaces /etc/network/interfaces.bckp
 # Add iptables-restore
 if [ "`cat /etc/network/interfaces | grep 'post-up iptables-restore < /etc/iptables.up.rules'`" == "" ]; then
-	NumLign=$(cat /etc/network/interfaces | grep -v inet6 | sed -n "/^iface $PrimaryInet inet/=")
+	NumLign=$(cat /etc/network/interfaces | grep -v inet6 | sed -n "/^iface $gsPrimaryInet inet/=")
 	(( NumLign++ ))
 	sed -i "${NumLign}i\        post-up iptables-restore < /etc/iptables.up.rules" /etc/network/interfaces
 fi
@@ -202,24 +192,22 @@ if [ -f /etc/rsyslog.d/iptables.conf ]; then rm -vf /etc/rsyslog.d/iptables.conf
 if [ ! -f /var/log/iptables.log ]; then touch /var/log/iptables.log; fi
 echo "if (\$msg contains '[MySB] ' or \$msg contains 'IN=') then /var/log/iptables.log" | tee -a /etc/rsyslog.d/iptables.conf
 echo "& ~" | tee -a /etc/rsyslog.d/iptables.conf
-LogRotate 'iptables'
+gfnLogRotate 'iptables'
 ServicesToRestart="rsyslog"
 
 #### AES-NI Crypto Acceleration
 echo
-if [ -z "$IFPVEKERNEL" ]; then
-	if [ "`cat /proc/cpuinfo | grep aes`" != "" ]; then
-		## load
-		modprobe aesni_intel
+if [ "`cat /proc/cpuinfo | grep aes`" != "" ]; then
+	## load
+	modprobe aesni_intel
 
-		if [ "`lsmod | grep aes	`" != "" ]; then
-			## make permanent
-			if [ "`cat /etc/modules | grep 'aesni_intel'`" == "" ]; then
-				echo aesni_intel | tee -a /etc/modules
-			fi
-			if [ "`cat /etc/environment | grep 'OPENSSL_ia32cap=~0x200000200000000'`" == "" ]; then
-				echo "OPENSSL_ia32cap=~0x200000200000000" | tee -a /etc/environment
-			fi
+	if [ "`lsmod | grep aes	`" != "" ]; then
+		## make permanent
+		if [ "`cat /etc/modules | grep 'aesni_intel'`" == "" ]; then
+			echo aesni_intel | tee -a /etc/modules
+		fi
+		if [ "`cat /etc/environment | grep 'OPENSSL_ia32cap=~0x200000200000000'`" == "" ]; then
+			echo "OPENSSL_ia32cap=~0x200000200000000" | tee -a /etc/environment
 		fi
 	fi
 fi
@@ -229,47 +217,18 @@ if [ -z "`cat /etc/fstab | grep 'errors=remount-ro' | grep 'noatime,nodiratime' 
 	perl -pi -e "s/errors=remount-ro/noatime,nodiratime,errors=remount-ro/g" /etc/fstab
 fi
 
-#### Wget
-WgetDir=$MySB_InstallDir"`Func_SQL_Command 'SELECT' 'MySB_db' 'dir' 'repositories' "name = 'Wget'"`"
-WgetUrl="`Func_SQL_Command 'SELECT' 'MySB_db' 'url' 'repositories' "name = 'Wget'"`"
-WgetFile="`Func_SQL_Command 'SELECT' 'MySB_db' 'file' 'repositories' "name = 'Wget'"`"
-WgetVersion="`Func_SQL_Command 'SELECT' 'MySB_db' 'version' 'repositories' "name = 'Wget'"`"
-echo
-echo "########## Wget"
-echo "Directory : "$WgetDir
-echo "Version : "$WgetVersion
-echo "File : "$WgetFile
-echo "URL : "$WgetUrl
-echo
-if [ ! -f $MySB_InstallDir/files/$WgetFile ]; then
-	curl --retry 2 -kSL -o "$MySB_InstallDir/files/$WgetFile" "$WgetUrl"
-fi
-if [ ! -d $WgetDir ]; then
-	tar -zxvf $MySB_InstallDir/files/$WgetFile -C $MySB_InstallDir/temp/
-	SubDir="`tar -ztf $MySB_InstallDir/files/$WgetFile | cut -d '/' -f 1 | uniq`"
-	if [ -d $MySB_InstallDir/temp/$SubDir ]; then
-		mv -v $MySB_InstallDir/temp/$SubDir $WgetDir
-	fi
-fi
-cd $WgetDir/
-./configure --with-ssl=openssl --with-openssl=yes
-make -j$PROCESSOR
-make check
-make install
-make installcheck
-
 #### Cleaning
 if [ -d /var/log/exim4 ]; then rm -rvf /var/log/exim4; fi
 if [ -d /var/log/news ]; then rm -rvf /var/log/news; fi
 
 #### Logrotate
-LogRotate 'mysb'
+gfnLogRotate 'mysb'
 
 #### Restart services
-ManageServices restart "$ServicesToRestart"
+gfnManageServices restart "$ServicesToRestart"
 
 #### Create init script for MySB_SecurityRules_Init
-install -g root -o root -m 0755 $MySB_InstallDir/templates/init/etc.init.MySB_SecurityRules_Init.tmpl /etc/init.d/MySB_SecurityRules_Init
+install -v -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.MySB_SecurityRules_Init.tmpl /etc/init.d/MySB_SecurityRules_Init
 update-rc.d MySB_SecurityRules_Init defaults
 
 # -----------------------------------------

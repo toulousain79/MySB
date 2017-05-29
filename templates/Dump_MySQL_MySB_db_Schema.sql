@@ -63,6 +63,24 @@ CREATE TABLE IF NOT EXISTS `commands` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `dnscrypt_config`
+--
+
+CREATE TABLE IF NOT EXISTS `dnscrypt_config` (
+  `id_dnscrypt_config` int(11) NOT NULL DEFAULT '1',
+  `ip_version` varchar(4) NOT NULL DEFAULT 'ipv4',
+  `processes_qty` tinyint(1) NOT NULL DEFAULT '4',
+  `no_logs` varchar(3) NOT NULL DEFAULT 'yes',
+  `dnssec` varchar(3) NOT NULL DEFAULT 'yes',
+  `namecoin` varchar(3) NOT NULL DEFAULT 'no',
+  `random` varchar(3) NOT NULL DEFAULT 'no',
+  `sig_key` varchar(128) NOT NULL DEFAULT 'RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3',
+  `csv_url` varchar(128) NOT NULL DEFAULT 'https://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-resolvers.csv',
+  PRIMARY KEY (`id_dnscrypt_config`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 ;
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `dnscrypt_resolvers`
 --
 
@@ -82,9 +100,12 @@ CREATE TABLE IF NOT EXISTS `dnscrypt_resolvers` (
   `provider_name` varchar(64) NOT NULL,
   `provider_public_key` varchar(128) NOT NULL,
   `provider_public_key_txt_record` varchar(64) NOT NULL,
-  `is_activated` tinyint(1) NOT NULL DEFAULT '0',
-  `is_wished` tinyint(1) NOT NULL DEFAULT '0',
   `forwarder` varchar(16) NOT NULL,
+  `ip_version` varchar(4) NOT NULL DEFAULT 'ipv4',
+  `certificate` tinyint(1) NOT NULL DEFAULT '0',
+  `pid` smallint(5) NOT NULL,
+  `speed` smallint(5) NOT NULL,
+  `comments` varchar(64) NOT NULL,
   PRIMARY KEY (`id_dnscrypt_resolvers`),
   UNIQUE KEY `name` (`name`,`full_name`,`resolver_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
@@ -155,7 +176,7 @@ CREATE TABLE IF NOT EXISTS `providers_monitoring` (
 
 CREATE TABLE IF NOT EXISTS `repositories` (
   `id_repositories` int(11) NOT NULL AUTO_INCREMENT,
-  `type` varchar(5) NOT NULL,
+  `type` varchar(8) NOT NULL,
   `dir` varchar(64) NOT NULL,
   `name` varchar(32) NOT NULL,
   `version` varchar(16) NOT NULL,
@@ -200,16 +221,16 @@ CREATE TABLE IF NOT EXISTS `services` (
 --
 
 CREATE TABLE IF NOT EXISTS `smtp` (
-  `id_smtp` int(11) NOT NULL AUTO_INCREMENT,
+  `id_smtp` int(11) NOT NULL,
   `smtp_provider` varchar(5) NOT NULL DEFAULT 'LOCAL',
-  `smtp_username` varchar(64) NOT NULL,
-  `smtp_passwd` varchar(64) NOT NULL,
-  `smtp_host` varchar(128) NOT NULL,
-  `smtp_port` varchar(5) NOT NULL,
-  `smtp_email` varchar(64) NOT NULL,
+  `smtp_username` varchar(64) NOT NULL DEFAULT '',
+  `smtp_passwd` varchar(64) NOT NULL DEFAULT '',
+  `smtp_host` varchar(128) NOT NULL DEFAULT '',
+  `smtp_port` varchar(5) NOT NULL DEFAULT '',
+  `smtp_email` varchar(64) NOT NULL DEFAULT '',
   PRIMARY KEY (`id_smtp`),
   UNIQUE KEY `smtp_provider` (`smtp_provider`,`smtp_username`,`smtp_passwd`,`smtp_host`,`smtp_port`,`smtp_email`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 ;
 
 -- --------------------------------------------------------
 
@@ -224,6 +245,7 @@ CREATE TABLE IF NOT EXISTS `system` (
   `mysb_password` varchar(32) NOT NULL,
   `hostname` varchar(128) NOT NULL,
   `ipv4` varchar(15) NOT NULL,
+  `ipv4_ext` varchar(15) NOT NULL,
   `primary_inet` varchar(16) NOT NULL,
   `timezone` varchar(64) NOT NULL,
   `cert_password` varchar(32) NOT NULL,
@@ -233,9 +255,9 @@ CREATE TABLE IF NOT EXISTS `system` (
   `ip_restriction` tinyint(1) NOT NULL DEFAULT '0',
   `pgl_email_stats` tinyint(1) NOT NULL DEFAULT '0',
   `pgl_watchdog_email` tinyint(1) NOT NULL DEFAULT '0',
-  `dnscrypt` tinyint(1) NOT NULL DEFAULT '0',
   `logwatch` tinyint(1) NOT NULL DEFAULT '0',
-  `owncloud_cron` tinyint(1) NOT NULL DEFAULT '0',
+  `dnscrypt` tinyint(1) NOT NULL DEFAULT '0',
+  `nextcloud_cron` tinyint(1) NOT NULL DEFAULT '0',
   `letsencrypt_date` date NOT NULL DEFAULT '0000-00-00',
   `letsencrypt_openport` tinyint(1) NOT NULL DEFAULT '0',
   `quota_default` int(32) NOT NULL,
@@ -468,19 +490,6 @@ CREATE TABLE IF NOT EXISTS `users_scripts` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 -- --------------------------------------------------------
-
---
--- Structure de la table `vars`
---
-
-CREATE TABLE IF NOT EXISTS `vars` (
-  `id_vars` int(11) NOT NULL AUTO_INCREMENT,
-  `fail2ban_whitelist` varchar(12) NOT NULL,
-  `vpn_ip` varchar(37) NOT NULL,
-  `white_tcp_port_out` varchar(16) NOT NULL,
-  `white_udp_port_out` varchar(16) NOT NULL,
-  PRIMARY KEY (`id_vars`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 --
 -- Contraintes pour les tables exportées

@@ -24,73 +24,70 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-if [ "$ToInstall_Fail2Ban" == "YES" ]; then
-	#### VARs
-	Switch="$1"
-
-	#### Install packages
-	if ! CheckCommand 0 fail2ban; then
-		PackagesManage install "fail2ban"
-	fi
+if [ "$gbToInstall_Fail2Ban" == "YES" ]; then
+	# Check packages to install
+	gfnPackageBundleInstall 'fail2ban'
 
 	#### STOP services
-	ManageServices stop "fail2ban"
+	gfnManageServices stop "fail2ban"
 
 	# jail.local
-	cp -vf $MySB_InstallDir/templates/fail2ban/etc.fail2ban.jail.local.tmpl /etc/fail2ban/jail.local
-	# ownCloud
-	if [ "$ToInstall_ownCloud" == "YES" ] || [ "$IsInstalled_ownCloud" == "YES" ]; then
-		(
-cat <<'EOF'
-
-[owncloud]
+	install -v -g root -o root -m 0644 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.jail.local.tmpl /etc/fail2ban/jail.local
+	if [ "$gbIsInstalled_NextCloud" == "YES" ] || [ "$gbToInstall_NextCloud" == "YES" ]; then
+	(
+	cat <<'EOF'
+[nextcloud]
 enabled  	= true
 port     	= <Port_HTTPS>
-filter   	= owncloud
-logpath  	= /home/owncloud/owncloud.log
+filter   	= nextcloud
+logpath  	= /home/nextcloud/nextcloud.log
 EOF
-		) >> /etc/fail2ban/jail.local
+	) >> /etc/fail2ban/jail.local
 	fi
-	sed -i 's/<Port_SSH>/'$Port_SSH'/g;' /etc/fail2ban/jail.local
-	sed -i 's/<Port_HTTP>/'$Port_HTTP'/g;' /etc/fail2ban/jail.local
-	sed -i 's/<Port_HTTPS>/'$Port_HTTPS'/g;' /etc/fail2ban/jail.local
-	sed -i 's/<Port_FTP>/'$Port_FTP'/g;' /etc/fail2ban/jail.local
-	sed -i 's/<Port_FTP_Data>/'$Port_FTP_Data'/g;' /etc/fail2ban/jail.local
+	sed -i 's/<Port_SSH>/'$gsPort_SSH'/g;' /etc/fail2ban/jail.local
+	sed -i 's/<Port_HTTP>/'$gsPort_HTTP'/g;' /etc/fail2ban/jail.local
+	sed -i 's/<Port_HTTPS>/'$gsPort_HTTPS'/g;' /etc/fail2ban/jail.local
+	sed -i 's/<Port_FTP>/'$gsPort_FTP'/g;' /etc/fail2ban/jail.local
+	sed -i 's/<Port_FTP_Data>/'$gsPort_FTP_Data'/g;' /etc/fail2ban/jail.local
 
 	# fail2ban.conf
 	sed -i 's/loglevel = 3/loglevel = 2/g;' /etc/fail2ban/fail2ban.conf
 
 	# action.d
-	cp -vf $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.mail.conf.tmpl /etc/fail2ban/action.d/mail.conf
-	cp -vf $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.sendmail.conf.tmpl /etc/fail2ban/action.d/sendmail.conf
-	cp -vf $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.sendmail-buffered.conf.tmpl /etc/fail2ban/action.d/sendmail-buffered.conf
-	cp -vf $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.sendmail-whois.conf.tmpl /etc/fail2ban/action.d/sendmail-whois.conf
-	cp -vf $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.sendmail-whois-lines.conf.tmpl /etc/fail2ban/action.d/sendmail-whois-lines.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.mail.conf.tmpl /etc/fail2ban/action.d/mail.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.mail-buffered.conf.tmpl /etc/fail2ban/action.d/mail-buffered.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.mail-whois.conf.tmpl /etc/fail2ban/action.d/mail-whois.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.mail-whois-lines.conf.tmpl /etc/fail2ban/action.d/mail-whois-lines.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.sendmail.conf.tmpl /etc/fail2ban/action.d/sendmail.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.sendmail-buffered.conf.tmpl /etc/fail2ban/action.d/sendmail-buffered.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.sendmail-whois.conf.tmpl /etc/fail2ban/action.d/sendmail-whois.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.sendmail-whois-lines.conf.tmpl /etc/fail2ban/action.d/sendmail-whois-lines.conf
 
 	# filter.d
-	cp -vf $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.nginx-auth.conf.tmpl /etc/fail2ban/filter.d/nginx-auth.conf
-	cp -vf $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.nginx-badbots.conf.tmpl /etc/fail2ban/filter.d/nginx-badbots.conf
-	if [ "$IsInstalled_ownCloud" == "YES" ]; then
-		sed -i 's/ignoreregex =/ignoreregex = .*\"GET \/(owncloud|remote.php).*/g;' /etc/fail2ban/filter.d/nginx-badbots.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.nginx-auth.conf.tmpl /etc/fail2ban/filter.d/nginx-auth.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.nginx-badbots.conf.tmpl /etc/fail2ban/filter.d/nginx-badbots.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.nginx-login.tmpl /etc/fail2ban/filter.d/nginx-login.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.nginx-req-limit.conf.tmpl /etc/fail2ban/filter.d/nginx-req-limit.conf
+	if [ "$gbIsInstalled_NextCloud" == "YES" ] || [ "$gbToInstall_NextCloud" == "YES" ]; then
+		install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.nextcloud.tmpl /etc/fail2ban/filter.d/nextcloud.conf
+		sed -i 's/ignoreregex =/ignoreregex = .*\"GET \/(nextcloud|remote.php).*/g;' /etc/fail2ban/filter.d/nginx-badbots.conf
 	fi
-	cp -vf $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.nginx-login.tmpl /etc/fail2ban/filter.d/nginx-login.conf
-	cp -vf $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.owncloud.tmpl /etc/fail2ban/filter.d/owncloud.conf
 
 	#### Add white list
-	Fail2BanWhitheList 0
+	gfnFail2BanWhitheList 0
 
 	#### Disable init, Fail2Ban will be started by MySB_SecurityRules
 	update-rc.d fail2ban remove -f
 
-	if CheckCommand 0 fail2ban; then
-		Func_SQL_Command 'UPDATE' 'MySB_db' 'services' "to_install = '0', is_installed = '1'" "serv_name = 'Fail2Ban'" '-echo'
+	if gfnCheckCommand 0 fail2ban; then
+		cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='1' WHERE serv_name='Fail2Ban';" -v
 	fi
 
 	#### Create new security rules
-	ScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create' "$Switch"
+	gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create' "$gsSwitch"
 
 	#### logrotate (to run after Security Rules)
-	LogRotate 'fail2ban'
+	gfnLogRotate 'fail2ban'
 fi
 
 # -----------------------------------------

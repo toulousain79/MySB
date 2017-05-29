@@ -65,15 +65,6 @@ if(isset($_POST)==true && empty($_POST)==false) {
 		default: //Delete
 			if (isset($_POST['submit'])) {
 				foreach($_POST['submit'] as $key => $value) {
-					// $result = $MySB_DB->delete("trackers_list_ipv4", ["id_trackers_list" => $key]);
-					// if ( $result = 0 ) {
-						// $success = false;
-					// }
-
-					// $result = $MySB_DB->delete("trackers_list", ["id_trackers_list" => $key]);
-					// if ( $result = 0 ) {
-						// $success = false;
-					// }
 					$result = $MySB_DB->update("trackers_list", ["to_delete" => 1], ["id_trackers_list" => $key]);
 					if ( $result = 0 ) {
 						$success = false;

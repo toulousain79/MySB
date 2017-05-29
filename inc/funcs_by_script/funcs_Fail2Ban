@@ -24,46 +24,45 @@ funcs_Fail2Ban=1
 ##################### FIRST LINE #####################################
 
 #### Fail2Ban White List
-Fail2BanWhitheList() {
+gfnFail2BanWhitheList() {
+	local sFail2banWhiteList sAllUsersIPs sIfExist sSearch nNumLign
+
 	if [ -f /etc/fail2ban/jail.local ]; then
-		Fail2banWhiteList=""
-		AllUsersIPs="${SeedboxUsersIPs} ${MainUserIPs}"
-		AllUsersIPs="`echo $AllUsersIPs | sed -e "s/^ //g;"`"
+		sFail2banWhiteList="127.0.0.1/32"
+		sAllUsersIPs="${gsSeedboxUsersIPs} ${gsMainUserIPs}"
+		sAllUsersIPs="`echo $sAllUsersIPs | sed -e "s/^ //g;"`"
 
 		if [ $1 -eq 1 ]; then log_daemon_msg "$SecurityRules_Fail2Ban_IgnoreList"; fi
-		if [ "$IpRestriction" == "YES" ]; then
+		if [ "$gsIpRestriction" == "YES" ]; then
 			# All users IPs
-			for IPv4 in $AllUsersIPs; do
-				IfExist="`echo $Fail2banWhiteList | grep "$IPv4"`"
-				if [ -z "$IfExist" ]; then
-					Fail2banWhiteList="${Fail2banWhiteList} ${IPv4}"
+			for IPv4 in $sAllUsersIPs; do
+				sIfExist="`echo $sFail2banWhiteList | grep "$IPv4"`"
+				if [ -z "$sIfExist" ]; then
+					sFail2banWhiteList="${sFail2banWhiteList} ${IPv4}"
 				fi
 			done
-			unset IPv4
 		fi
 
 		# VPN local IPs
-		if [ "$IsInstalled_OpenVPN" == "YES" ]; then
-			for IPv4 in $VpnIPs; do
-				IfExist="`echo $Fail2banWhiteList | grep $IPv4`"
-				if [ -z "$IfExist" ]; then
-					Fail2banWhiteList="${Fail2banWhiteList} ${IPv4}"
+		if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
+			for IPv4 in $gsVpnLocalIps; do
+				sIfExist="`echo $sFail2banWhiteList | grep $IPv4`"
+				if [ -z "$sIfExist" ]; then
+					sFail2banWhiteList="${sFail2banWhiteList} ${IPv4}"
 				fi
 			done
-			unset IPv4
 		fi
 
-		Fail2banWhiteList="`echo $Fail2banWhiteList | sed -e 's/^ //g;' | sed s,/,\\\\\\\\\\/,g`"
-		SEARCH="`cat /etc/fail2ban/jail.local | grep "ignoreip" | cut -d "=" -f 2 | sed -e 's/^ //g;' | sed s,/,\\\\\\\\\\/,g`"
-		if [ ! -z "$SEARCH" ]; then
-			perl -pi -e "s/$SEARCH/$Fail2banWhiteList/g" /etc/fail2ban/jail.local
+		sFail2banWhiteList="`echo $sFail2banWhiteList | sed -e 's/^ //g;' | sed s,/,\\\\\\\\\\/,g`"
+		sSearch="`cat /etc/fail2ban/jail.local | grep "ignoreip" | cut -d "=" -f 2 | sed -e 's/^ //g;' | sed s,/,\\\\\\\\\\/,g`"
+		if [ ! -z "$sSearch" ]; then
+			perl -pi -e "s/$sSearch/$sFail2banWhiteList/g" /etc/fail2ban/jail.local
 		else
-			NumLign=$(cat /etc/fail2ban/jail.local | grep 'ignoreip' -n -m 1 | cut -d ':' -f 1)
+			nNumLign=$(cat /etc/fail2ban/jail.local | grep 'ignoreip' -n -m 1 | cut -d ':' -f 1)
 			sed -i '/ignoreip/d' /etc/fail2ban/jail.local
-			sed -i ""$NumLign"i\ignoreip        = $Fail2banWhiteList" /etc/fail2ban/jail.local
+			sed -i ""$nNumLign"i\ignoreip        = $sFail2banWhiteList" /etc/fail2ban/jail.local
 		fi
-		unset SEARCH
-		if [ $1 -eq 1 ]; then StatusLSB; fi
+		if [ $1 -eq 1 ]; then gfnStatusLSB; fi
 	fi
 }
 
