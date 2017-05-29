@@ -335,6 +335,11 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						echo '<li><a target="_blank" href="https://app.plex.tv/web/app">Plex Media</a>';
 					}
 					break;
+				case "PlexPy":
+					if ($PlexMediaIsInstalled == '1') {
+						echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/pp">PlexPy</a>';
+					}
+					break;
 				case "Webmin":
 					if ( $WebminIsInstalled == '1' ) {
 						echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $WebminDatas["port_tcp1"] . '/">Webmin</a>';
