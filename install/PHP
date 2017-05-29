@@ -1,0 +1,75 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### Install packages
+gfnPackageBundleInstall "php5 php5-common php5-cli php5-fpm php5-curl php5-geoip php5-xmlrpc php5-gd php5-sqlite php5-mcrypt php5-mysql php5-intl php5-imagick php-xml-rss php5-redis php5-dev php5-imap php5-gmp"
+
+#### PECL
+if [ ! -z "`pecl list | grep htscanner`" ]; then
+	pecl uninstall htscanner
+fi
+if [ -z "`pecl list | grep htscanner`" ]; then
+	pecl install htscanner
+	echo "extension=htscanner.so" > /etc/php5/mods-available/htscanner.ini
+	php5enmod htscanner
+fi
+if [ -z "`pecl list | grep smbclient`" ]; then
+	pecl install smbclient
+	echo "extension=smbclient.so" > /etc/php5/mods-available/smbclient.ini
+	php5enmod smbclient
+fi
+
+#### STOP services
+gfnManageServices stop "php5-fpm"
+
+# /etc/php5/fpm/pool.d/www.conf
+cp -v $MySB_InstallDir/templates/php5/etc.php5.fpm.pool.d.www.conf.tmpl /etc/php5/fpm/pool.d/www.conf
+# /etc/php5/fpm/php.ini
+cp -v $MySB_InstallDir/templates/php5/etc.php5.fpm.php.ini.tmpl /etc/php5/fpm/php.ini
+# /etc/php5/cli/php.ini
+cp -v $MySB_InstallDir/templates/php5/etc.php5.cli.php.ini.tmpl /etc/php5/cli/php.ini
+
+# TMPFS
+sed -i '/TMPFS - PHP/d' /etc/fstab
+sed -i '/\/mnt\/tmpFS\/php/d' /etc/fstab
+echo "# TMPFS - PHP" >> /etc/fstab
+echo "tmpfs   /mnt/tmpFS/php tmpfs defaults,nosuid,noatime,mode=1777,size=32M 0 0" >> /etc/fstab
+if [ ! -d /mnt/tmpFS/php ]; then
+	mkdir -pv /mnt/tmpFS/php
+fi
+if [ -z "`df -H | grep '/mnt/tmpFS/php'`" ]; then
+	mount /mnt/tmpFS/php
+fi
+
+if gfnCheckCommand 0 geoipupdate; then geoipupdate; fi
+
+#### START services
+gfnManageServices start "php5-fpm"
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

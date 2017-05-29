@@ -1,0 +1,67 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### Check GitHub access (switch DNS if needed)
+log_daemon_msg "$GitHubRepoUpdate_CheckAccess"
+Swithing=0
+ping -c2 github.com > /dev/null 2>&1
+if [ $? -gt 0 ]; then
+	gfnSwitchDNS "bind"
+	Swithing=1
+fi
+gfnStatusLSB
+
+#### update Git Hub
+echo
+cd $MySB_InstallDir/
+git stash
+git pull
+git stash clear
+echo
+
+#### Create directories & change rights
+log_daemon_msg "$Global_OwnerAndRights"
+source $MySB_InstallDir/inc/vars
+gfnManageDirAndFiles 'no_user'
+gfnStatusLSB
+
+#### Delete Bad Sources
+source $MySB_InstallDir/inc/funcs_by_script/funcs_SourcesList
+gfnDeleteBadSources
+
+#### Switch DNS to DNScrypt-proxy if available
+if [ $Swithing -eq 1 ] && [ "$gbIsInstalled_DNScrypt" == "YES" ] && [ "$gbDnsCryptSwitch" == "1" ]; then
+	log_daemon_msg "$GitHubRepoUpdate_RestoreDNS"
+	install -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.dnscrypt-proxy.tmpl /etc/init.d/dnscrypt-proxy
+	service dnscrypt-proxy update &> /dev/null
+	service dnscrypt-proxy restart &> /dev/null
+	gfnStatusLSB
+fi
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

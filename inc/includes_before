@@ -1,0 +1,92 @@
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### 0 - Basic VARs
+if [ "$0" != "-bash" ]; then
+	ScriptName=$(basename $0)
+	IsScriptInstall="`echo $0 | grep '/install/'`"
+fi
+if [ -f /etc/MySB/config ]; then
+	source /etc/MySB/config
+	export PATH="/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/bin:/usr/local/sbin"
+else
+	echo "The config file \"/etc/MySB/config\" does not exist, aborting !"
+	exit 1
+fi
+
+#### 1 - Includes all VARs & FUNCs
+source $MySB_InstallDir/inc/vars
+source $MySB_InstallDir/inc/switches
+if [ -z $funcs_Install ] && [ ! -z "$IsScriptInstall" ]; then
+	source $MySB_InstallDir/inc/funcs_by_script/funcs_Install
+fi
+if [ -f $MySB_InstallDir/inc/funcs_by_script/funcs_$gsScriptName ]; then
+	source $MySB_InstallDir/inc/funcs_by_script/funcs_$gsScriptName
+fi
+case "$gsScriptName" in
+	From_*|BulkChanges.bsh)
+		if [ -z $funcs_Install ]; then
+			source $MySB_InstallDir/inc/funcs_by_script/funcs_Install
+		fi
+		if [ -z $funcs_Upgrade ]; then
+			source $MySB_InstallDir/inc/funcs_by_script/funcs_Upgrade
+		fi
+	;;
+esac
+
+#### 2 - Check services again
+if [ "$gbIsInstalled_PlexMedia" == "YES" ]; then gbIsInstalled_PlexMedia="`gfnCheckCommand 1 plexmediaserver`"; fi
+if [ "$gbIsInstalled_Webmin" == "YES" ]; then gbIsInstalled_Webmin="`gfnCheckCommand 1 webmin`"; fi
+if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then gbIsInstalled_OpenVPN="`gfnCheckCommand 1 openvpn`"; fi
+if [ "$gbIsInstalled_Samba" == "YES" ]; then gbIsInstalled_Samba="`gfnCheckCommand 1 smbd`"; fi
+if [ "$gbIsInstalled_NFS" == "YES" ]; then gbIsInstalled_NFS="`gfnCheckCommand 1 nfs-kernel-server`"; fi
+if [ "$gbIsInstalled_LogWatch" == "YES" ]; then gbIsInstalled_LogWatch="`gfnCheckCommand 1 logwatch`"; fi
+if [ "$gbIsInstalled_Fail2Ban" == "YES" ]; then gbIsInstalled_Fail2Ban="`gfnCheckCommand 1 fail2ban`"; fi
+if [ "$gbIsInstalled_PeerGuardian" == "YES" ]; then gbIsInstalled_PeerGuardian="`gfnCheckCommand 1 pgld`"; fi
+if [ "$gbIsInstalled_DNScrypt" == "YES" ]; then gbIsInstalled_DNScrypt="`gfnCheckCommand 1 dnscrypt-proxy`"; fi
+if [ "$gbIsInstalled_NextCloud" == "YES" ]; then gbIsInstalled_NextCloud="`gfnCheckCommand 1 $gsNextCloudDir/occ`"; fi
+
+#### 3 - Create MySB banner
+if [ "$BANNER" == "ON" ]; then
+	gfnBannerGenerator
+fi
+
+#### 4 - gfnLogRotate (Upgrade)
+case "$gsScriptName" in
+	From_*)	gfnLogRotate 'mysb' 1 &> /dev/null;;
+esac
+
+#### 5 - STD Out/Err (after banner)
+if [ "$TIMESTAMP" == "ON" ]; then
+	echo "------------------------------------------------------------" >> $MySB_InstallDir/logs/$gsScriptName.log
+	case "$gsScriptName" in
+		MySB_CreateUser|MySB_ChangeUserPassword)	echo "START Out/Err: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` "-" $gsScriptName $1 >> $MySB_InstallDir/logs/$gsScriptName.log;;
+		*)											echo "START Out/Err: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` "-" $gsScriptName $@ >> $MySB_InstallDir/logs/$gsScriptName.log;;
+	esac
+	echo "------------------------------------------------------------" >> $MySB_InstallDir/logs/$gsScriptName.log
+fi
+if [ "$LOGSTD" == "STDOUT" ]; then
+	exec >> $MySB_InstallDir/logs/$gsScriptName.log 2>&1
+fi
+
+##################### LAST LINE ######################################

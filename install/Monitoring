@@ -1,0 +1,112 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+# OVH:	http://guide.ovh.com/firewall
+# OVH:	https://docs.ovh.com/pages/releaseview.action?pageId=9928706
+######################################################################
+
+case "$gsServerProvider" in
+	'OVH')
+		if [ -f $MySB_InstallDir/temp/monitoring.infos ]; then
+			rm -f $MySB_InstallDir/temp/monitoring.infos
+		fi
+
+		while [ ! -s $MySB_InstallDir/temp/monitoring.infos ]; do tcpdump -v -t host $gsSrvIpAddress | grep 'ICMP' >> $MySB_InstallDir/temp/monitoring.infos & sleep 60; kill $!; done
+
+		OvhHostnames="`cat $MySB_InstallDir/temp/monitoring.infos | awk '{print $3}' | grep 'ovh' | sed -e 's/://g;'`"
+		OvhHostnames="`echo $OvhHostnames | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
+
+		for Hostname in $OvhHostnames; do
+			IPv4="$(nslookup $Hostname | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
+			if [ ! -z "$IPv4" ]; then
+				cmdMySQL 'MySB_db' "INSERT INTO providers_monitoring (provider,ipv4,hostname) VALUES ('OVH','$IPv4/32','$HostName');" -v
+			fi
+		done
+
+		OvhHostnames="`cmdMySQL 'MySB_db' "SELECT hostname FROM providers_monitoring WHERE provider = 'OVH' and hostname != '';"`"
+		for Hostname in $OvhHostnames; do
+			IPv4="$(nslookup $Hostname | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
+			if [ ! -z "$IPv4" ]; then
+				cmdMySQL 'MySB_db' "UPDATE providers_monitoring SET ipv4 = '$IPv4/32' WHERE provider = 'OVH' AND hostname = '$Hostname';" -v
+			fi
+		done
+
+		# RTM (IP.251)
+		for ((i = 1; i <= 4; i += 1)); do
+			Temp="`echo $gsSrvIpAddress | cut -d '.' -f $i`"
+			if [ $i -eq 4 ]; then
+				Temp="`echo $Temp | sed "s/$Temp/251/g;"`"
+			else
+				Temp="`echo $gsSrvIpAddress | cut -d '.' -f $i`"
+			fi
+			if [ -z "$OvhRtmIp" ]; then
+				OvhRtmIp="$Temp"
+			else
+				OvhRtmIp="$OvhRtmIp.$Temp"
+			fi
+		done
+		HostName="$(nslookup $OvhRtmIp | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
+		cmdMySQL 'MySB_db' "INSERT INTO providers_monitoring (provider,ipv4,hostname) VALUES ('OVH','$OvhRtmIp/32','$HostName');" -v
+
+		# SLA (IP.250)
+		for ((i = 1; i <= 4; i += 1)); do
+			Temp="`echo $gsSrvIpAddress | cut -d '.' -f $i`"
+			if [ $i -eq 4 ]; then
+				Temp="`echo $Temp | sed "s/$Temp/250/g;"`"
+			else
+				Temp="`echo $gsSrvIpAddress | cut -d '.' -f $i`"
+			fi
+			if [ -z "$OvhSlaIp" ]; then
+				OvhSlaIp="$Temp"
+			else
+				OvhSlaIp="$OvhSlaIp.$Temp"
+			fi
+		done
+		HostName="$(nslookup $OvhSlaIp | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
+		cmdMySQL 'MySB_db' "INSERT INTO providers_monitoring (provider,ipv4,hostname) VALUES ('OVH','$OvhSlaIp/32','$HostName');" -v
+
+		# Server HG (IP.249)
+		for ((i = 1; i <= 4; i += 1)); do
+			Temp="`echo $gsSrvIpAddress | cut -d '.' -f $i`"
+			if [ $i -eq 4 ]; then
+				Temp="`echo $Temp | sed "s/$Temp/249/g;"`"
+			else
+				Temp="`echo $gsSrvIpAddress | cut -d '.' -f $i`"
+			fi
+			if [ -z "$OvhHgIp" ]; then
+				OvhHgIp="$Temp"
+			else
+				OvhHgIp="$OvhHgIp.$Temp"
+			fi
+		done
+		HostName="$(nslookup $OvhHgIp | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
+		cmdMySQL 'MySB_db' "INSERT INTO providers_monitoring (provider,ipv4,hostname) VALUES ('OVH','$OvhHgIp/32','$HostName');" -v
+	;;
+esac
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

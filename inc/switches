@@ -1,0 +1,137 @@
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### SWITCHES
+BANNER=ON		# Banner for all script (ON/OFF)
+LOGSTD=NO		# Standard Outpout redirected to 'scriptname.log' (STDOUT/NO)
+USAGE=ON		# All usage display to user, like questions (ON/OFF)
+END=OFF			# Launch some commands at the end (ldconfig, updatedb, drop cache, mandb) (see includes_after) (ON/OFF)
+TIMESTAMP=OFF	# Adds a time stamp at the beginning and end of the script in the logs (ON/OFF)
+
+# Check by script name BEFORE arguments (to force switches)
+case "$gsScriptName" in
+	ApplyConfig.bsh) # Launched by ApplyConfig.bsh (web)
+		BANNER=OFF
+		LOGSTD=NO
+		USAGE=OFF
+		END=OFF
+		TIMESTAMP=OFF
+	;;
+esac
+
+# Check by arguments
+for Arg in "$@"; do
+	case "$Arg" in
+		INSTALL|REFRESH)
+			BANNER=OFF
+			LOGSTD=STDOUT
+			USAGE=OFF
+			END=ON
+			TIMESTAMP=ON
+			gsSwitch="$Arg"
+		;;
+		UPGRADE)
+			BANNER=OFF
+			LOGSTD=STDOUT
+			USAGE=OFF
+			END=ON
+			TIMESTAMP=ON
+			gsSwitch="$Arg"
+		;;
+		CRON|APPLYCONFIG|INIT|SCREEN)
+			BANNER=OFF
+			LOGSTD=STDOUT
+			USAGE=OFF
+			END=OFF
+			TIMESTAMP=ON
+			gsSwitch="$Arg"
+		;;
+		*)
+			gsSwitch="$Arg"
+		;;
+	esac
+done
+
+# Check by script name AFTER arguments (to reassigne switches again if needed)
+case "$gsScriptName" in
+	MySB_UpgradeMe|DynamicAddressResolver.bsh) # Maybe used with CRON args
+		TIMESTAMP=OFF
+		END=OFF
+	;;
+	PaymentReminder.bsh)
+		BANNER=OFF
+		LOGSTD=NO
+		USAGE=OFF
+		END=OFF
+		TIMESTAMP=OFF
+	;;
+	PeerGuardian.bsh)
+		for Arg in "$@"; do
+			case "$Arg" in
+				check)
+					TIMESTAMP=OFF
+				;;
+			esac
+		done
+	;;
+	NextCloud.bsh|'.rTorrent.bsh')
+		TIMESTAMP=OFF
+	;;
+	MySB.bsh) # Install ?
+		BANNER=ON
+		LOGSTD=NO
+		USAGE=ON
+		END=ON
+		TIMESTAMP=OFF
+		sleep 10
+	;;
+	From_*) # Upgrade ?
+		BANNER=ON
+		LOGSTD=NO
+		USAGE=ON
+		END=OFF
+		TIMESTAMP=OFF
+		[ -z "$EnvLang" ] && EnvLang="en"
+
+		#### update Git Hub
+		cd $MySB_InstallDir/
+		gsCurrentVersion="v4.0"
+		sleep 10
+	;;
+	Questions)
+		BANNER=ON
+		LOGSTD=NO
+		USAGE=ON
+		END=OFF
+		TIMESTAMP=OFF
+	;;
+	MySB_Install.bsh)
+		BANNER=ON
+		LOGSTD=NO
+		USAGE=ON
+		TIMESTAMP=ON
+		END=OFF
+	;;
+esac
+
+##################### LAST LINE ######################################

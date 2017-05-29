@@ -1,0 +1,62 @@
+#### 1 - ALTER some tables - BoF
+# services
+cmdMySQL 'MySB_db' "UPDATE services SET serv_name='NextCloud' WHERE serv_name='ownCloud';" -v
+# system
+cmdMySQL 'MySB_db' "ALTER TABLE system DROP owncloud_cron;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE system ADD nextcloud_cron TINYINT(1) NOT NULL DEFAULT '0';" -v
+cmdMySQL 'MySB_db' "ALTER TABLE system ADD ipv4_ext VARCHAR(15) NOT NULL AFTER ipv4;" -v
+# dnscrypt_resolvers
+cmdMySQL 'MySB_db' "ALTER TABLE dnscrypt_resolvers DROP is_activated;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE dnscrypt_resolvers DROP is_wished;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE dnscrypt_resolvers ADD ip_version VARCHAR(4) NOT NULL DEFAULT 'ipv4';" -v
+cmdMySQL 'MySB_db' "ALTER TABLE dnscrypt_resolvers ADD certificate TINYINT(1) NOT NULL DEFAULT '9';" -v
+cmdMySQL 'MySB_db' "ALTER TABLE dnscrypt_resolvers ADD pid SMALLINT(5) NOT NULL;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE dnscrypt_resolvers ADD speed SMALLINT(5) NOT NULL;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE dnscrypt_resolvers ADD comments VARCHAR(64) NOT NULL;" -v
+cmdMySQL 'MySB_db' "DELETE FROM dnscrypt_resolvers;" -v
+# repositories
+cmdMySQL 'MySB_db' "ALTER TABLE repositories CHANGE type type VARCHAR(8) NOT NULL;" -v
+# smtp
+cmdMySQL 'MySB_db' "ALTER TABLE smtp CHANGE id_smtp id_smtp INT(1) NOT NULL DEFAULT '1';" -v
+cmdMySQL 'MySB_db' "ALTER TABLE smtp CHANGE smtp_username smtp_username VARCHAR(64) NOT NULL DEFAULT '';" -v
+cmdMySQL 'MySB_db' "ALTER TABLE smtp CHANGE smtp_passwd smtp_passwd VARCHAR(64) NOT NULL DEFAULT '';" -v
+cmdMySQL 'MySB_db' "ALTER TABLE smtp CHANGE smtp_host smtp_host VARCHAR(128) NOT NULL DEFAULT '';" -v
+cmdMySQL 'MySB_db' "ALTER TABLE smtp CHANGE smtp_port smtp_port VARCHAR(5) NOT NULL DEFAULT '';" -v
+cmdMySQL 'MySB_db' "ALTER TABLE smtp CHANGE smtp_email smtp_email VARCHAR(64) NOT NULL DEFAULT '';" -v
+# vars
+cmdMySQL 'MySB_db' "DROP TABLE vars;" -v
+#### 1 - ALTER some tables - EoF
+
+#### 2 - Import Schema for new tables, triggers & constraints - BoF
+source /etc/MySB/config_db
+MySQL_BackupManager="`gfnGenPassword 16`" && echo "MySQL_BackupManager=\"$MySQL_BackupManager\"" >> /etc/MySB/config_db
+mysql -u root -p$MySQL_RootPassword --verbose <<-EOF
+DROP USER 'MySB_user'@'%';
+DROP USER 'MySB_user'@'localhost';
+FLUSH PRIVILEGES;
+CREATE USER 'MySB_user'@'localhost';
+CREATE USER 'BM_user'@'localhost';
+GRANT ALL ON MySB_db.* to 'MySB_user'@'localhost' IDENTIFIED BY '$MySQL_MysbPassword';
+GRANT ALL ON ownCloud_db.* to 'MySB_user'@'localhost' IDENTIFIED BY '$MySQL_MysbPassword';
+GRANT SHOW DATABASES,SELECT,LOCK TABLES ON *.* TO 'BM_user'@'localhost' IDENTIFIED BY '$MySQL_BackupManager';
+FLUSH PRIVILEGES;
+EOF
+mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Schema.sql
+mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Triggers.sql
+#### 2 - Import Schema for new tables, triggers & constraints - EoF
+
+#### 3 - UPDATE some tables - BoF
+# dnscrypt_config
+cmdMySQL 'MySB_db' "INSERT INTO dnscrypt_config (sig_key,csv_url) VALUES ('RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3','https://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-resolvers.csv');" -v
+# repositories
+cmdMySQL 'MySB_db' "DELETE FROM repositories;" -v
+mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/upgrade/repositories.sql
+# lets_encrypt
+cmdMySQL 'MySB_db' "DELETE FROM lets_encrypt;" -v
+mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/upgrade/lets_encrypt.sql
+# services
+cmdMySQL 'MySB_db' "UPDATE services SET used='1' WHERE id_services IN(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 19, 24, 25);" -v
+# trackers_list
+cmdMySQL 'MySB_db' "UPDATE trackers_list SET is_ssl='0', cert_expiration='0000-00-00';" -v
+cmdMySQL 'MySB_db' "UPDATE trackers_list SET to_check='1' WHERE is_active='1';" -v
+#### 3 - UPDATE some tables - EoF

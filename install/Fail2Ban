@@ -1,0 +1,96 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+if [ "$gbToInstall_Fail2Ban" == "YES" ]; then
+	# Check packages to install
+	gfnPackageBundleInstall 'fail2ban'
+
+	#### STOP services
+	gfnManageServices stop "fail2ban"
+
+	# jail.local
+	install -v -g root -o root -m 0644 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.jail.local.tmpl /etc/fail2ban/jail.local
+	if [ "$gbIsInstalled_NextCloud" == "YES" ] || [ "$gbToInstall_NextCloud" == "YES" ]; then
+	(
+	cat <<'EOF'
+[nextcloud]
+enabled  	= true
+port     	= <Port_HTTPS>
+filter   	= nextcloud
+logpath  	= /home/nextcloud/nextcloud.log
+EOF
+	) >> /etc/fail2ban/jail.local
+	fi
+	sed -i 's/<Port_SSH>/'$gsPort_SSH'/g;' /etc/fail2ban/jail.local
+	sed -i 's/<Port_HTTP>/'$gsPort_HTTP'/g;' /etc/fail2ban/jail.local
+	sed -i 's/<Port_HTTPS>/'$gsPort_HTTPS'/g;' /etc/fail2ban/jail.local
+	sed -i 's/<Port_FTP>/'$gsPort_FTP'/g;' /etc/fail2ban/jail.local
+	sed -i 's/<Port_FTP_Data>/'$gsPort_FTP_Data'/g;' /etc/fail2ban/jail.local
+
+	# fail2ban.conf
+	sed -i 's/loglevel = 3/loglevel = 2/g;' /etc/fail2ban/fail2ban.conf
+
+	# action.d
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.mail.conf.tmpl /etc/fail2ban/action.d/mail.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.mail-buffered.conf.tmpl /etc/fail2ban/action.d/mail-buffered.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.mail-whois.conf.tmpl /etc/fail2ban/action.d/mail-whois.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.mail-whois-lines.conf.tmpl /etc/fail2ban/action.d/mail-whois-lines.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.sendmail.conf.tmpl /etc/fail2ban/action.d/sendmail.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.sendmail-buffered.conf.tmpl /etc/fail2ban/action.d/sendmail-buffered.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.sendmail-whois.conf.tmpl /etc/fail2ban/action.d/sendmail-whois.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.action.d.sendmail-whois-lines.conf.tmpl /etc/fail2ban/action.d/sendmail-whois-lines.conf
+
+	# filter.d
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.nginx-auth.conf.tmpl /etc/fail2ban/filter.d/nginx-auth.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.nginx-badbots.conf.tmpl /etc/fail2ban/filter.d/nginx-badbots.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.nginx-login.tmpl /etc/fail2ban/filter.d/nginx-login.conf
+	install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.nginx-req-limit.conf.tmpl /etc/fail2ban/filter.d/nginx-req-limit.conf
+	if [ "$gbIsInstalled_NextCloud" == "YES" ] || [ "$gbToInstall_NextCloud" == "YES" ]; then
+		install -v -g root -o root -m 0664 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.nextcloud.tmpl /etc/fail2ban/filter.d/nextcloud.conf
+		sed -i 's/ignoreregex =/ignoreregex = .*\"GET \/(nextcloud|remote.php).*/g;' /etc/fail2ban/filter.d/nginx-badbots.conf
+	fi
+
+	#### Add white list
+	gfnFail2BanWhitheList 0
+
+	#### Disable init, Fail2Ban will be started by MySB_SecurityRules
+	update-rc.d fail2ban remove -f
+
+	if gfnCheckCommand 0 fail2ban; then
+		cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='1' WHERE serv_name='Fail2Ban';" -v
+	fi
+
+	#### Create new security rules
+	gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create' "$gsSwitch"
+
+	#### logrotate (to run after Security Rules)
+	gfnLogRotate 'fail2ban'
+fi
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

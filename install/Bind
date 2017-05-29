@@ -1,0 +1,78 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### Install packages
+if ! gfnCheckCommand 0 named; then
+	gfnPackageBundleInstall 'bind9'
+fi
+
+#### Correcting minor bug display in Bind9 init script
+install -v -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.bind9.tmpl /etc/init.d/bind9
+
+#### START services
+gfnManageServices stop "bind9"
+
+#### /etc/bind/named.conf.local
+install -v -o root -g bind -m 0644 $MySB_InstallDir/templates/bind/etc.bind.named.conf.local.tmpl /etc/bind/named.conf.local
+
+#### /etc/bind/log.conf
+install -v -o root -g bind -m 0644 $MySB_InstallDir/templates/bind/etc.bind.log.conf.tmpl /etc/bind/log.conf
+if [ ! -d /var/log/bind ]; then
+	mkdir /var/log/bind
+	chown -R bind:bind /var/log/bind
+	chmod 0755 /var/log/bind
+fi
+
+#### /etc/bind/named.conf.options
+install -v -o root -g bind -m 0644 $MySB_InstallDir/templates/bind/etc.bind.log.conf.tmpl /etc/bind/log.conf
+sed -i "s/<gsSrvIpAddress>/$gsSrvIpAddress/g;" /etc/bind/named.conf.options
+
+#### /etc/bind/MySB.zones.blakclists
+echo "#### MySB - Blacklisted domains (ex: inactive trackers)" > /etc/bind/MySB.zones.blakclists
+chmod 0644 /etc/bind/MySB.zones.blakclists
+chown root:bind /etc/bind/MySB.zones.blakclists
+
+#### logrotate
+gfnLogRotate 'bind'
+
+#### Disable init
+update-rc.d bind9 remove -f
+
+#### START services
+gfnManageServices start "bind9"
+
+#### Check if service is OK and running
+if ! gfnGetPid bind9 || ! gfnCheckCommand 0 bind9; then
+	cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '0' WHERE serv_name = 'BIND';" -v
+	service bind9 status | tee -a $MySB_InstallDir/temp/continue
+else
+	cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'BIND';" -v
+fi
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

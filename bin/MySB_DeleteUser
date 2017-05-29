@@ -1,0 +1,186 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### Includes
+source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
+
+if [ "$USAGE" == "ON" ]; then
+	gfnListCountUsers
+	LIST=""
+	for User in $gsUsersList; do
+		if [ "$User" != "$gsMainUserName" ]; then
+			LIST="$LIST|${CYELLOW}$User$CEND"
+		fi
+	done
+
+	if [ ! -z "$LIST" ]; then
+		LIST="`echo \($LIST\) | sed -e 's/^ //g;' | sed -e 's/(|/(/g;'`"
+		echo -e "$Global_AvailableUsers $LIST"
+		echo -e "$Global_CancelUserChoice"
+	else
+		echo -e "$DeleteUser_NoUser $LIST"
+		gfnEndingScript 0
+	fi
+
+	UserToDelete=""
+	TEMP_UserToDelete=""
+	while [ -z "$UserToDelete" ] \
+		|| [ "$UserToDelete" == "$gsMainUserName" ] \
+		|| [ -z "`echo $gsUsersList | grep $UserToDelete`" ]; do
+
+		gfnQuestionGetString NO "$DeleteUser_TypeUser" UserToDelete
+		TEMP_UserToDelete="`echo $UserToDelete | tr '[:lower:]' '[:upper:]'`"
+
+		if [ "$TEMP_UserToDelete" == "$Global_NO" ]; then
+			gfnEndingScript 0
+		fi
+	done
+else
+	UserToDelete=$1
+fi
+
+#### STOP services
+gfnManageServices stop "cron"
+service rtorrent-$UserToDelete stop
+
+#### crontab
+log_daemon_msg "$DeleteUser_DeleteCron [$UserToDelete]"
+crontab -l > /tmp/crontab.tmp
+sed -i '/'$UserToDelete'/d' /tmp/crontab.tmp
+crontab /tmp/crontab.tmp
+rm -f /tmp/crontab.tmp
+gfnStatusLSB
+
+#### FTP
+log_daemon_msg "$DeleteUser_DeleteFTP [$UserToDelete]"
+sed -i '/'$UserToDelete'/d' /etc/vsftpd.chroot_list
+umount /home/$UserToDelete/rtorrent/share &> /dev/null
+umount /home/$UserToDelete/rtorrent/torrents &> /dev/null
+gfnStatusLSB 0
+
+#### NFS
+log_daemon_msg "$DeleteUser_DeleteNFS [$UserToDelete]"
+sed -i '/'$UserToDelete'/d' /etc/exports
+gfnStatusLSB
+
+#### Samba
+log_daemon_msg "$DeleteUser_DeleteSamba [$UserToDelete]"
+smbpasswd -x $UserToDelete &> /dev/null
+gfnStatusLSB
+
+#### NginX - remove current password from htpassword
+log_daemon_msg "$DeleteUser_DeleteWebAccount [$UserToDelete]"
+htpasswd -D /etc/nginx/passwd/MySB $UserToDelete &> /dev/null
+rm -f /etc/nginx/passwd/MySB_$UserToDelete
+gfnStatusLSB
+
+#### NextCloud
+if [ "$gbIsInstalled_NextCloud" == "YES" ]; then
+	log_daemon_msg "$DeleteUser_DeleteNextCloudAccount [$UserToDelete]"
+	su -s /bin/sh www-data -c "/usr/bin/php  $gsNextCloudDir/occ user:delete $UserToDelete" &> /dev/null
+	cmdMySQL 'NextCloud_db' "DELETE nc_storages WHERE id='local::/home/$UserToDelete/';"
+	cmdMySQL 'NextCloud_db' "DELETE nc_preferences WHERE configkey='/Home_$UserToDelete';"
+	if [ -d /home/nextcloud/$UserToDelete ]; then
+		mv /home/nextcloud/$UserToDelete /home/nextcloud/TODEL_$UserToDelete
+	fi
+	gfnStatusLSB
+fi
+
+#### remove files
+log_daemon_msg "$DeleteUser_RemoveFiles [$UserToDelete]"
+update-rc.d rtorrent-$UserToDelete remove -f &> /dev/null
+if [ -f /etc/init.d/rtorrent-$UserToDelete ]; then
+	rm -f /etc/init.d/rtorrent-$UserToDelete
+fi
+if [ -f /etc/nginx/rpc/$UserToDelete.conf ]; then
+	rm -f /etc/nginx/rpc/$UserToDelete.conf
+fi
+if [ -f /etc/nginx/rpc/$UserToDelete.cakebox ]; then
+	rm -f /etc/nginx/rpc/$UserToDelete.cakebox
+fi
+if [ -f $MySB_InstallDir/web/openvpn/openvpn_$UserToDelete.zip ]; then
+	rm -f $MySB_InstallDir/web/openvpn/openvpn_$UserToDelete.zip
+fi
+if [ -f $gsCakeboxDir/config/$UserToDelete.php ]; then
+	rm -f $gsCakeboxDir/config/$UserToDelete.php
+fi
+if [ -f /etc/logrotate.d/rtorrent_$UserToDelete ]; then
+	rm -f /etc/logrotate.d/rtorrent_$UserToDelete
+fi
+gfnDeleteDirectory 0 "$gsRutorrentDir/conf/users/$UserToDelete"
+gfnDeleteDirectory 0 "$gsRutorrentDir/share/users/$UserToDelete"
+gfnDeleteDirectory 0 "$gsManagerDir/conf/users/$UserToDelete"
+gfnStatusLSB
+
+#### Remove user from database
+log_daemon_msg "$DeleteUser_RemoveFromDB"
+cmdMySQL 'MySB_db' "DELETE FROM users WHERE users_ident = '$UserToDelete';"
+gfnStatusLSB
+
+#### system user
+log_daemon_msg "$DeleteUser_SystemAccount [$UserToDelete]"
+userdel --remove --force $UserToDelete &> /dev/null
+gfnDeleteDirectory 0 "/home/$UserToDelete"
+gfnDeleteDirectory 0 "/var/run/screen/S-$UserToDelete"
+gfnStatusLSB
+
+#### OpenVPN
+if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
+	log_daemon_msg "$DeleteUser_RevokeOpenVPN [$UserToDelete]"
+	gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/OpenVPN" 'delete' "$UserToDelete" 'SCREEN'
+	gfnStatusLSB
+fi
+
+#### rtorrent max memory
+gfnListCountUsers
+for User in $gsUsersList; do
+	if [ "$User" != "$UserToDelete" ]; then
+		log_daemon_msg "$DeleteUser_PiecesMemory $User"
+		LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$User/.rtorrent.rc)
+		sed -i ''$LIGN'd' /home/$User/.rtorrent.rc
+		sed -i ''$LIGN'i\#pieces.memory.max.set = '$(((($gsMemory/$gnTotalUsers)*1024)*1024))'\n' /home/$User/.rtorrent.rc
+		gfnStatusLSB
+	fi
+done
+
+#### Quota
+gfnManageQuota "$DeleteUser_Quota"
+
+#### renting
+gfnMonthlyPayment "$UserToDelete"
+
+#### Create new security rules
+log_daemon_msg "$DeleteUser_SecurituRules"
+gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--users' 'SCREEN'
+gfnStatusLSB
+
+#### START services
+gfnManageServices start "cron nfs-kernel-server vsftpd samba nginx"
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

@@ -1,0 +1,234 @@
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+######################################################################
+funcs_Install=1
+##################### FIRST LINE #####################################
+
+#### Logrotate
+gfnLogRotate() {
+	if [ ! -z "$1" ] && [ -f $MySB_InstallDir/templates/logrotate/etc.logrotate.d.$1.tmpl ]; then
+		cp -vf $MySB_InstallDir/templates/logrotate/etc.logrotate.d.$1.tmpl /etc/logrotate.d/$1
+		perl -pi -e "s/<MySB_InstallDir>/$gsInstallDirEscaped/g" /etc/logrotate.d/$1
+		chmod 0644 /etc/logrotate.d/$1
+		if [ ! -z "$2" ] && [ $2 -eq 1 ]; then
+			logrotate -f /etc/logrotate.d/$1
+		fi
+	fi
+}
+
+#### Installation of a package bundle
+gfnPackageBundleInstall() {
+	local sPackagesRequired sPackagesToInstall
+
+	sPackagesRequired="$1"
+
+	for sPackage in $sPackagesRequired; do
+		if ! gfnCheckCommand 0 $sPackage; then
+			sPackagesToInstall="$sPackagesToInstall $sPackage"
+		fi
+		if ! dpkg -s $sPackage &> /dev/null; then
+			sPackagesToInstall="$sPackagesToInstall $sPackage"
+		fi
+	done
+	sPackagesToInstall="`echo $sPackagesToInstall | xargs -n1 | sort -u | xargs | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+	if [ ! -z "$sPackagesToInstall" ]; then
+		gfnPackagesManage install "$sPackagesToInstall"
+	fi
+}
+
+#### Check if a package is installed
+fnCheckPackage() {
+	if [ ! -z "`dpkg-query -f '${binary:Package}\n' -W | grep "^$1$"`" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+#### apt-get OR aptitude
+gfnPackagesManage() {
+	local sQuery sPackageList sFinalList sBackports sAptCmd sGlobalArgs sError sIgnore sMirrorsError sSystemValues
+	local nReturn nAptUpdate tDiff nLocalMirror tNow tVar1 tVar2 dAptDate
+
+	sQuery="$1"
+	sPackageList="$2"
+	sBackports="$3"
+	nReturn=0
+	nAptUpdate=0
+	tDiff=0
+	nLocalMirror=0
+
+	if gfnCheckCommand 0 aptitude; then
+		sAptCmd="aptitude -q"
+	else
+		sAptCmd="apt-get"
+	fi
+
+	if [ -z "$sBackports" ]; then
+		sGlobalArgs="-y --assume-yes"
+	else
+		sGlobalArgs="-y --assume-yes -t $gsDebianRelease-$sBackports"
+	fi
+
+	if [ "$gbIsReady_MySB_Db" == "YES" ]; then
+		sSystemValues="`cmdMySQL 'MySB_db' "SELECT apt_update,apt_date FROM system WHERE id_system='1';" | sed 's/\t/|/g;'`"
+		nAptUpdate="`echo $sSystemValues | awk '{split($0,a,"|"); print a[1]}'`"
+		dAptDate="`echo $sSystemValues | awk '{split($0,a,"|"); print a[2]}'`"
+		if [ "$dAptDate" == "0000-00-00 00:00:00" ]; then
+			dAptDate="`date +%Y-%m-%d\ %H:%M:%S`"
+			cmdMySQL 'MySB_db' "UPDATE system SET apt_date='$dAptDate' WHERE id_system='1';"
+		fi
+		dAptDate=$(date -d "$dAptDate" +"%Y-%m-%d %H")
+		tNow=$(date +%Y-%m-%d\ %H)
+		tVar1=$(date --date="$dAptDate" +'%-H')
+		tVar2=$(date --date="$tNow" +'%-H')
+		let "tDiff=$tVar2-$tVar1"
+	fi
+
+	#### Check last update
+	if [ "$sQuery" != "test" ]; then
+		if [ "$gbIsReady_MySB_Db" == "YES" ]; then
+			#### Need of 'apt-get update' ? (must be greater than 2 hours OR forced)
+			if [ $nAptUpdate -eq 1 ] || [ $tDiff -gt 2 ] || [ "$sQuery" == "upgrade" ]; then
+				if gfnCheckCommand 0 apt-mirror && [ -f $MySB_InstallDir/files/apt_mirrors/var/postmirror.sh ]; then
+					case "$sQuery" in
+						'install')
+							for Package in $sPackageList; do
+								case "$Package" in
+									'webmin'|'plexmediaserver'|'pgld'|'pglcmd'|'pglgui')
+										nLocalMirror=1
+									;;
+								esac
+							done
+						;;
+						'upgrade')
+							nLocalMirror=1
+						;;
+					esac
+
+					if [ $nLocalMirror -eq 1 ]; then
+						apt-mirror $MySB_InstallDir/files/apt_mirrors/mirror.list
+					fi
+				fi
+
+				echo "$sAptCmd $sGlobalArgs -o Acquire::Check-Valid-Until=false update"
+				export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs -o Acquire::Check-Valid-Until=false update
+				if [ $? -eq 0 ]; then
+					cmdMySQL 'MySB_db' "UPDATE system SET apt_update='0', apt_date='`date +%Y-%m-%d\ %H:%M:%S`' WHERE id_system='1';"
+				fi
+			fi
+		else
+			echo "$sAptCmd $sGlobalArgs -o Acquire::Check-Valid-Until=false update"
+			export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs -o Acquire::Check-Valid-Until=false update
+		fi
+	fi
+
+	case "$sQuery" in
+		'install')
+			sFinalList=""
+			for Package in $sPackageList; do
+				if ! fnCheckPackage $Package; then
+					sFinalList="${sFinalList} $Package"
+				fi
+			done
+			sFinalList="`echo $sFinalList | sed -e 's/^ //g;'`"
+
+			if [ ! -z "$sFinalList" ]; then
+				echo "$sAptCmd $sGlobalArgs -V -o Dpkg::Options::=\"--force-confold\" install $sFinalList"
+				export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs -V -o Dpkg::Options::="--force-confold" install $sFinalList
+			fi
+		;;
+		'upgrade')
+			if [ "`$sAptCmd --help | grep safe-upgrade | awk '{ print $1 }'`" == "safe-upgrade" ]; then
+				echo "$sAptCmd $sGlobalArgs -V -o Dpkg::Options::=\"--force-confold\" safe-upgrade"
+				export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs -V -o Dpkg::Options::="--force-confold" safe-upgrade
+			else
+				echo "$sAptCmd $sGlobalArgs -V -o Dpkg::Options::=\"--force-confold\" upgrade"
+				export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs -V -o Dpkg::Options::="--force-confold" upgrade
+			fi
+		;;
+		'purge')
+			sFinalList=""
+			for Package in $sPackageList; do
+				if fnCheckPackage $Package; then
+					sFinalList="${sFinalList} $Package"
+				fi
+			done
+			sFinalList="`echo $sFinalList | sed -e 's/^ //g;'`"
+
+			if [ ! -z "$sFinalList" ]; then
+				echo "$sAptCmd $sGlobalArgs purge $sFinalList"
+				export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs purge $sFinalList
+			fi
+		;;
+		'test')
+			$sAptCmd $sGlobalArgs -o Acquire::Check-Valid-Until=false update > $MySB_InstallDir/temp/netselect-apt
+			case "$sAptCmd" in
+				"aptitude -q")
+					sError="$Funcs_PackagesManage_Aptitude_0"
+					sIgnore="$Funcs_PackagesManage_Aptitude_1"
+				;;
+				"apt-get")
+					sError="$Funcs_PackagesManage_AptGet_0"
+					sIgnore="$Funcs_PackagesManage_AptGet_1"
+				;;
+			esac
+
+			if [ -f $MySB_InstallDir/temp/netselect-apt ]; then
+				sMirrorsError="`cat $MySB_InstallDir/temp/netselect-apt | grep "^$sError" | awk '{ print $2 }'`"
+				for Mirror in $sMirrorsError; do
+					sed -i '/'$Mirror'/d' $MySB_InstallDir/files/fastest_mirrors
+				done
+				sMirrorsError="`cat $MySB_InstallDir/temp/netselect-apt | grep "^$sIgnore" | awk '{ print $2 }'`"
+				for Mirror in $sMirrorsError; do
+					sed -i '/'$Mirror'/d' $MySB_InstallDir/files/fastest_mirrors
+				done
+			fi
+		;;
+	esac
+
+	nReturn=$?
+
+	if [ "$sQuery" != "test" ]; then
+		if [ "$gbIsReady_MySB_Db" == "YES" ]; then
+			#### Need of cleaning ? (must be greater than 2 hours OR forced)
+			if [ $nAptUpdate -eq 1 ] || [ $tDiff -gt 2 ]; then
+				if [ $nReturn -eq 0 ]; then
+					if [ "`$sAptCmd --help | grep autoremove | awk '{ print $1 }'`" == "autoremove" ]; then
+						echo "$sAptCmd $sGlobalArgs autoremove"
+						$sAptCmd $sGlobalArgs autoremove
+					elif [ "`$sAptCmd --help | grep autoclean | awk '{ print $1 }'`" == "autoclean" ]; then
+						echo "$sAptCmd $sGlobalArgs autoclean"
+						$sAptCmd $sGlobalArgs autoclean
+					fi
+
+					echo "$sAptCmd $sGlobalArgs install"
+					$sAptCmd $sGlobalArgs install
+				fi
+			fi
+		fi
+	fi
+
+	return $nReturn
+}
+
+##################### LAST LINE ######################################

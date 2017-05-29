@@ -1,0 +1,502 @@
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+######################################################################
+funcs_tools=1
+##################### FIRST LINE #####################################
+
+#### Count down
+gfnCountDown() {
+	for ((i = $1; i >= 0; i -= 1)); do
+		echo -n " $i"
+		sleep 1
+	done
+	echo
+}
+
+#### Count & Create user listing
+gfnListCountUsers() {
+	gsUsersList="`cmdMySQL 'MySB_db' "SELECT users_ident FROM users;"`"
+	gnTotalUsers="`echo $gsUsersList | wc -w`"
+}
+
+#### Check if service is started
+gfnGetPid() {
+	local sPid=""
+
+	case "$1" in
+		"fail2ban")
+			if [ -f /var/run/fail2ban/fail2ban.pid ]; then
+				sPid="`cat /var/run/fail2ban/fail2ban.pid`"
+			fi
+		;;
+		"webmin")
+			if [ -f /var/webmin/miniserv.pid ]; then
+				sPid="`cat /var/webmin/miniserv.pid`"
+			fi
+		;;
+		"ssh")		sPid="`pidof sshd`";;
+		"pglcmd")	sPid="`pidof pgld`";;
+		"bind9")	sPid="`pidof named`";;
+		"mysql")	sPid="`pidof mysqld`";;
+		*)			sPid="`pidof $1`";;
+	esac
+
+	if [ ! -z "$sPid" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+#### Check status for screen
+gfnStatusSTD() {
+	if [ $? -gt 0 ]; then
+		echo -e "$Global_Failed"
+		echo ""
+		echo -e "$Global_Error_StatusSTD"
+		gfnEndingScript 1
+	else
+		echo -e "$Global_Done"
+	fi
+}
+
+#### Check status for LSB
+gfnStatusLSB() {
+	if [ $? -gt 0 ]; then
+		if [ ! -z "$1" ]; then
+			if [ $1 -gt 0 ]; then
+				log_end_msg 1
+			else
+				log_end_msg 0
+			fi
+		else
+			log_end_msg 1
+		fi
+	else
+		log_end_msg 0
+	fi
+}
+
+#### Waiting standard
+gfnWaitingSTD() {
+	while [ ! -z "`screen -ls | grep $1`" ]; do
+		sleep 1
+	done
+}
+
+#### Password generator
+gfnGenPassword() {
+	local nLenght=$1
+	[ -z "$nLenght" ] && nLenght=16
+	tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${nLenght} | xargs
+}
+
+#### Check if is a correct IP
+gfnValidateIP() {
+	local sValue
+
+	if [ ! -z "$1" ]; then
+		sValue=`printf $1 | awk -F'.' 'NF==4 && $1>0 && $1!=127 && $1<256 && $2<256 && $3<256 && $4<256 && !/\.\./'`
+	fi
+	echo $sValue
+}
+
+#### Check if mail syntax is good
+gfnValidateMail() {
+	local sRegex nDig nReg sAddress sMailDomain
+
+	sAddress="$1"
+	nDig=0
+	nReg=0
+	sMailDomain="`echo $sAddress | awk 'BEGIN { FS = "@" } ; { print $2 }'`"
+	sRegex="^[a-z0-9!#\$%&'*+/=?^_\`{|}~-]+(\.[a-z0-9!#$%&'*+/=?^_\`{|}~-]+)*@([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]*[a-z0-9])?\$"
+
+	# Domain Check
+	fnCheckDNS() {
+		echo $sMailDomain | awk 'BEGIN { FS = "@" } ; { print $2 }' | xargs dig $sMailDomain +noauthority +noadditional +nostats | grep "ANSWER: 0" 1>/dev/null || nDig=1
+	}
+
+	# Regexp
+	fnCheckReg() {
+		if [[ $sAddress =~ $sRegex ]]; then
+			nReg=1
+		fi
+	}
+
+	# Execute
+	fnCheckReg
+	fnCheckDNS
+
+	# Results
+	if [ $nReg -eq 1 ] && [ $nDig -eq 1 ]; then
+		echo 1
+	else
+		echo 0
+	fi
+}
+
+#### Ending script
+gfnEndingScript() {
+	if [ -f $(dirname $0)/../inc/includes_after ]; then source $(dirname $0)/../inc/includes_after; fi
+	if [ ! -z "$2" ]; then
+		echo -e "$2"
+	fi
+	exit $1
+}
+
+#### Check if a command/package exist
+gfnCheckCommand() {
+	type -P $2 > /dev/null
+	local nValue="$?"
+
+	if [ $nValue -gt 0 ]; then # Try WHEREIS, some tools does not have command but are present and can be started
+		if [ -z "`whereis $2 | awk '{ print $2 }'`" ]; then
+			if [ "`dpkg -l | grep "$2" | awk '{ print $2 }'`" == "$2" ]; then # Try DPKG
+				case "$1" in
+					0)	return 0;;
+					1)	echo "YES";;
+				esac
+			else
+				case "$1" in
+					0)	return 1;;
+					1)	echo "NO";;
+				esac
+			fi
+		else
+			case "$1" in
+				0)	return 0;;
+				1)	echo "YES";;
+			esac
+		fi
+	else # Command/Package verified
+		case "$1" in
+			0)	return $nValue;;
+			1)
+				case "$nValue" in
+					0)	echo "YES";;
+					*)	echo "NO";;
+				esac
+			;;
+		esac
+	fi
+}
+
+#### Switch DNS (standard / DNScrypt-proxy)
+gfnSwitchDNS() {
+	local sCommand sBindForwarders sForwarders nNumberOfDemon
+
+	sCommand="$1"
+	nNumberOfDemon="$2"; [ -z "$nNumberOfDemon" ] && nNumberOfDemon=0
+
+	case "$sCommand" in
+		'dnscrypt')
+			if gfnCheckCommand 0 dnscrypt-proxy && gfnCheckCommand 0 bind9 && [ $nNumberOfDemon -gt 0 ]; then
+				# resolv.conf
+				sed -i '/nameserver/d' /etc/resolv.conf
+				echo "nameserver 127.0.0.1" >> /etc/resolv.conf
+				# BIND with DNScrypt-proxy support
+				install -o root -g bind -m 0644 $MySB_InstallDir/templates/bind/etc.bind.named.conf.options.tmpl /etc/bind/named.conf.options
+				sed -i "s/<gsSrvIpAddress>/$gsSrvIpAddress/g;" /etc/bind/named.conf.options
+				for ((i=1; i<=$nNumberOfDemon; i++)); do
+					sBindForwarders="$sBindForwarders 127.0.0.$i port 52;"
+				done
+				sBindForwarders="`echo $sBindForwarders | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+				NumLign=$(sed -n "/#### MARKER - DoNotDelete ####/=" /etc/bind/named.conf.options)
+				(( NumLign++ ))
+				sed -i "${NumLign}i\        // DNScrypt-proxy - BoF" /etc/bind/named.conf.options
+				(( NumLign++ ))
+				sed -i "${NumLign}i\        forwarders { $sBindForwarders };" /etc/bind/named.conf.options
+				(( NumLign++ ))
+				sed -i "${NumLign}i\        forward only;" /etc/bind/named.conf.options
+				(( NumLign++ ))
+				sed -i "${NumLign}i\        version \"MySB Secured DNS server\";" /etc/bind/named.conf.options
+				(( NumLign++ ))
+				sed -i "${NumLign}i\        // DNScrypt-proxy - EoF" /etc/bind/named.conf.options
+				# BIND delete DNScrypt-proxy support
+				if [ -z "`crontab -l | grep 'dnscrypt-proxy'`" ]; then
+					crontab -l > /tmp/crontab.tmp 2> /dev/null
+					echo "*/5 * * * * service dnscrypt-proxy cron-check > /dev/null 2>&1" >> /tmp/crontab.tmp
+					crontab /tmp/crontab.tmp 2> /dev/null
+					rm -f /tmp/crontab.tmp > /dev/null 2>&1
+					if gfnGetPid cron; then service cron reload > /dev/null 2>&1; fi
+					gfnMessage 'info' 'log' 'Crontab added'
+				fi
+				service bind9 restart > /dev/null
+			fi
+		;;
+		'bind')
+			# resolv.conf
+			sed -i '/nameserver/d' /etc/resolv.conf
+			echo "nameserver 208.67.220.220" >> /etc/resolv.conf
+			echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.1" >> /etc/resolv.conf
+			echo "nameserver 208.67.222.222" >> /etc/resolv.conf
+			echo "nameserver 8.8.4.4" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.2" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.3" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.4" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.5" >> /etc/resolv.conf
+			echo "nameserver 4.2.2.6" >> /etc/resolv.conf
+			# BIND delete DNScrypt-proxy support
+			crontab -l > /tmp/crontab.tmp 2> /dev/null
+			sed -i "/dnscrypt-proxy/d" /tmp/crontab.tmp
+			crontab /tmp/crontab.tmp 2> /dev/null
+			rm -f /tmp/crontab.tmp > /dev/null 2>&1
+			if gfnGetPid cron; then service cron reload > /dev/null 2>&1; fi
+			if gfnCheckCommand 0 bind9; then
+				sed -i '/forwarders/d' /etc/bind/named.conf.options
+				sed -i '/forward only;/d' /etc/bind/named.conf.options
+				sed -i '/version/d' /etc/bind/named.conf.options
+				sed -i '/DNScrypt-proxy/d' /etc/bind/named.conf.options
+				service bind9 restart > /dev/null
+			fi
+		;;
+	esac
+}
+
+#### Delete directory
+gfnDeleteDirectory() {
+	local nVerbose sDirectory sOpts
+
+	nVerbose="$1"
+	sDirectory="${2%/}"
+
+	if [ "$nVerbose" -eq 1 ]; then
+		sOpts="-vrf"
+	else
+		sOpts="-rf"
+	fi
+
+	if [ -d $sDirectory ] && [ "$sDirectory" != "$MySB_InstallDir" ]; then
+		rm $sOpts $sDirectory
+	fi
+}
+
+#### Cleaning MySB before compress
+gfnCleanBeforeUpgrade() {
+	# Clean '.git' directory
+	clear
+	echo -e "${CBLUE}$UpgradeMe_CleanGit$CEND"
+	echo -e -n "${CRED}$Global_PleaseWait $CEND"
+	gfnCountDown 3
+	cd $MySB_InstallDir/
+	git branch | grep -v "$gsCurrentVersion" | xargs git branch -D
+	git gc
+	git repack -Ad
+	git prune
+
+	# Clean 'sources' directory
+	clear
+	echo -e "${CBLUE}$UpgradeMe_DeleteTempFiles$CEND"
+	echo -e -n "${CRED}$Global_PleaseWait $CEND"
+	gfnCountDown 3
+	if [ -d $MySB_InstallDir/sources ]; then rm -vrf $MySB_InstallDir/sources/*; fi
+	# Clean 'temp' directory
+	if [ -d $MySB_InstallDir/temp ]; then rm -vrf $MySB_InstallDir/temp/*; fi
+	# Clean 'db' directory
+	if [ -d $MySB_InstallDir/db ]; then
+		rm -vrf $MySB_InstallDir/db/*.old
+		rm -vrf $MySB_InstallDir/db/*.dump.sql
+	fi
+}
+
+#### Get Values Repositories
+gfnGetRepoValues() {
+	local sValues sRepoName
+
+	if [ -z "$1" ]; then
+		return 1
+	else
+		sRepoName="$1"
+	fi
+
+	sValues="`cmdMySQL 'MySB_db' "SELECT type,dir,version,upgrade,file,url,active FROM repositories WHERE name='$sRepoName';" | sed "s/<InstallDir>/$gsInstallDirEscaped/g;" | sed 's/\t/|/g;'`"
+	gsRepoType="`echo $sValues | awk '{split($0,a,"|"); print a[1]}'`"
+	gsRepoDir="`echo $sValues | awk '{split($0,a,"|"); print a[2]}'`"
+	gsRepoVersion="`echo $sValues | awk '{split($0,a,"|"); print a[3]}'`"
+	gnRepoUpgrade="`echo $sValues | awk '{split($0,a,"|"); print a[4]}'`"
+	gsRepoFile="`echo $sValues | awk '{split($0,a,"|"); print a[5]}'`"
+	gsRepoURL="`echo $sValues | awk '{split($0,a,"|"); print a[6]}'`"
+	gnRepoActive="`echo $sValues | awk '{split($0,a,"|"); print a[7]}'`"
+	echo
+	echo "########## $sRepoName"
+	echo "Directory : $gsRepoDir"
+	echo "Version : $gsRepoVersion"
+	echo "File : $gsRepoFile"
+	echo "To upgrade : `echo $gnRepoUpgrade | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	echo "Type : $gsRepoType"
+	echo "Active : `echo $gnRepoActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	echo "URL : $gsRepoURL"
+	echo
+}
+
+#### Repository Manage by type
+gfnRepoManageByType() {
+	local sSubDir
+
+	if [ -z "$gnRepoActive" ]; then
+		return 1
+	fi
+	if [ "$gsSwitch" == "REFRESH" ] || [ $gnRepoActive -eq 0 ]; then
+		gfnDeleteDirectory 1 "$gsRepoDir"
+	fi
+
+	if [ $gnRepoActive -eq 1 ]; then
+		gnError=0
+
+		case "$gsRepoType" in
+			'TARGZ')
+				if [ ! -f $MySB_InstallDir/files/$gsRepoFile ]; then
+					$binCURL -o "$MySB_InstallDir/files/$gsRepoFile" "$gsRepoURL"
+					gnError=$?
+				fi
+				if [ ! -d $gsRepoDir ] && [ $gnError -eq 0 ]; then
+					tar -zxvf $MySB_InstallDir/files/$gsRepoFile -C $MySB_InstallDir/temp/
+					gnError=$?
+					sSubDir="`tar -ztf $MySB_InstallDir/files/$gsRepoFile | cut -d '/' -f 1 | uniq`"
+					if [ -d $MySB_InstallDir/temp/$sSubDir ]; then
+						mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
+						chown -R root:root $gsRepoDir
+						gnError=$?
+					fi
+				fi
+			;;
+			'WBM')
+				if [ ! -f $gsRepoDir/$gsRepoFile ]; then
+					$binCURL -o "$gsRepoDir/$gsRepoFile" "$gsRepoURL"
+					gnError=$?
+				fi
+			;;
+			'SVN')
+				case "$gsSwitch" in
+					"UPGRADE")
+						if [ -d $gsRepoDir ]; then
+							svn up --non-interactive --trust-server-cert $gsRepoDir
+							gnError=$?
+							if [ $gnError -eq 0 ]; then
+								svn switch $gsRepoURL $gsRepoDir
+								gnError=$?
+							fi
+						else
+							# GitHub project download directly from 'github.com', so it is a ZIP file.
+							if [ -f $MySB_InstallDir/files/$gsRepoFile ]; then
+								unzip $MySB_InstallDir/files/$gsRepoFile -d $MySB_InstallDir/temp/
+								gnError=$?
+								sSubDir="`unzip -l $MySB_InstallDir/files/$gsRepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+								if [ -d $MySB_InstallDir/temp/$sSubDir ]; then
+									mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
+									gnError=$?
+								fi
+							else
+								svn co --non-interactive --trust-server-cert $gsRepoURL $gsRepoDir
+								gnError=$?
+							fi
+						fi
+					;;
+					*)
+						if [ ! -d $gsRepoDir/.svn ]; then
+							svn co --non-interactive --trust-server-cert $gsRepoURL $gsRepoDir
+							gnError=$?
+						fi
+					;;
+				esac
+			;;
+			'GIT')
+				if [ ! -d $gsRepoDir ]; then
+					# GitHub project download directly from 'github.com', so it is a ZIP file.
+					if [ -f $MySB_InstallDir/files/$gsRepoFile ]; then
+						unzip $MySB_InstallDir/files/$gsRepoFile -d $MySB_InstallDir/temp/
+						gnError=$?
+						sSubDir="`unzip -l $MySB_InstallDir/files/$gsRepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+						if [ $gnError -eq 0 ] && [ -d $MySB_InstallDir/temp/$sSubDir ]; then
+							mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
+							gnError=$?
+						fi
+						if [ $gnError -eq 0 ] && [ -d $gsRepoDir ]; then
+							cd $gsRepoDir/
+							case "$sRepoName" in
+								'Cakebox-Light')
+									git fetch --tags
+									git checkout -b $(git describe --tags $(git rev-list --tags --max-count=1))
+									gnError=$?
+								;;
+								*)
+									git stash
+									git pull
+									gnError=$?
+									git stash clear
+								;;
+							esac
+						fi
+					else
+						git clone $gsRepoURL $gsRepoDir
+						gnError=$?
+					fi
+				fi
+			;;
+			'ZIP')
+				if [ ! -f $MySB_InstallDir/files/$gsRepoFile ]; then
+					$binCURL -o "$MySB_InstallDir/files/$gsRepoFile" "$gsRepoURL"
+					gnError=$?
+				fi
+				if [ ! -d $gsRepoDir ] && [ $gnError -eq 0 ]; then
+					unzip $MySB_InstallDir/files/$gsRepoFile -d $MySB_InstallDir/temp/
+					gnError=$?
+					sSubDir="`unzip -l $MySB_InstallDir/files/$gsRepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+					if [ -d $MySB_InstallDir/temp/$sSubDir ]; then
+						mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
+						chown -R root:root $gsRepoDir
+						gnError=$?
+					fi
+				fi
+			;;
+			'CURL')
+				if [ ! -f $MySB_InstallDir/files/$gsRepoFile ]; then
+					$binCURL $gsRepoURL | php -- --install-dir=$MySB_InstallDir/files/
+					gnError=$?
+				fi
+				if [ -f $MySB_InstallDir/files/$gsRepoFile ]; then
+					cp -v $MySB_InstallDir/files/$gsRepoFile $gsRepoDir
+					gnError=$?
+				fi
+			;;
+			'COMPOSER')
+				if [ ! -d $gsRepoDir ]; then
+					if [ -f $MySB_InstallDir/files/$gsRepoFile ]; then
+						unzip $MySB_InstallDir/files/$gsRepoFile -d $MySB_InstallDir/temp/
+						gnError=$?
+						sSubDir="`unzip -l $MySB_InstallDir/files/$gsRepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+						if [ $gnError -eq 0 ] && [ -d $MySB_InstallDir/temp/$sSubDir ]; then
+							mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
+							gnError=$?
+						fi
+					else
+						composer create-project $gsRepoURL $gsRepoDir
+						gnError=$?
+					fi
+				fi
+			;;
+		esac
+	fi
+}
+
+##################### LAST LINE ######################################

@@ -1,0 +1,126 @@
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### 1 - Includes
+if [ -f /etc/MySB/config ]; then
+	source /etc/MySB/config
+	funcs=0; funcs_sql=0; funcs_tools=0;
+	source $MySB_InstallDir/inc/vars
+else
+	echo "The config file \"/etc/MySB/config\" does not exist, aborting !"
+	exit 1
+fi
+
+#### 2 - Cleaning/Banner
+case "$gsScriptName" in
+	"MySB_Install.bsh")
+		if [ "$gsDirName/MySB_Install.bsh" != "$MySB_InstallDir/install/MySB_Install.bsh" ]; then
+			rm -vf $0
+		fi
+	;;
+	"MySB_CreateUser")
+		if [ "`screen -ls | grep MySB`" != "" ]; then
+			#### 4 - Create MySB banner
+			if [ "$BANNER" == "ON" ]; then
+				gfnBannerGenerator
+			fi
+		fi
+	;;
+esac
+
+#### 3 - End Script
+if [ "$END" == "ON" ]; then
+	echo "--------------------"
+	log_daemon_msg "$IncAfter_UpdateManDB"
+	/usr/bin/mandb -q
+	gfnStatusLSB
+
+	if gfnCheckCommand 0 updatedb; then
+		log_daemon_msg "$IncAfter_UpdateSlocate"
+		/usr/bin/updatedb
+		gfnStatusLSB
+	fi
+	if gfnCheckCommand 0 ldconfig; then
+		log_daemon_msg "$IncAfter_ConfigureDynamicLinks"
+		/sbin/ldconfig
+		gfnStatusLSB
+	fi
+	log_daemon_msg "$IncAfter_CleaningCacheSystem"
+	#### Free cache server
+	## To free pagecache, dentries and inodes
+	sync; echo 3 > /proc/sys/vm/drop_caches
+	gfnStatusLSB
+fi
+
+#### 4 - Specify the log directory
+case "$gsDirName" in
+	"$MySB_InstallDir/bin")		DirLog="$MySB_InstallDir/web/logs/bin";;
+	"$MySB_InstallDir/install")	DirLog="$MySB_InstallDir/web/logs/install";;
+	"$MySB_InstallDir/scripts")	DirLog="$MySB_InstallDir/web/logs/scripts";;
+	"$MySB_InstallDir/upgrade")	DirLog="$MySB_InstallDir/web/logs/upgrade";;
+	*)							DirLog="$MySB_InstallDir/web/logs";;
+esac
+if [ ! -d $DirLog ]; then mkdir -p $DirLog; fi
+
+if [ "$gsScriptName" == "MySB_Install.bsh" ]; then
+	TIMESTAMP=ON
+	DirLog="$MySB_InstallDir/web/logs/install"
+	if [ -f /tmp/$gsScriptName.log ]; then
+		cat /tmp/$gsScriptName.log > $MySB_InstallDir/logs/$gsScriptName.log
+		rm -f /tmp/$gsScriptName.log
+	fi
+fi
+
+#### 5 - STD Out/Err (after banner)
+if [ "$TIMESTAMP" == "ON" ]; then
+	echo "------------------------------------------------------------" >> $MySB_InstallDir/logs/$gsScriptName.log
+	case "$gsScriptName" in
+		MySB_CreateUser|MySB_ChangeUserPassword)	echo "END Out/Err: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` "-" $gsScriptName $1 >> $MySB_InstallDir/logs/$gsScriptName.log;;
+		*)											echo "END Out/Err: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` "-" $gsScriptName $@ >> $MySB_InstallDir/logs/$gsScriptName.log;;
+	esac
+	echo "------------------------------------------------------------" >> $MySB_InstallDir/logs/$gsScriptName.log
+fi
+
+#### 6 - Create ccze files (HTML)
+if [ -f $MySB_InstallDir/logs/$gsScriptName.log ]; then
+	ccze -h -o nolookups -o transparent -o cssfile="$MySB_InstallDir/web/public/themes/MySB/css/ccze.css" < $MySB_InstallDir/logs/$gsScriptName.log > $DirLog/$gsScriptName-log.html
+fi
+
+#### 7 - Add in 'commands' table to prevent simultaneous calls
+if [ ! -z "$gsScriptName" ]; then
+	case "$gsScriptName" in
+		MySB_SecurityRules)	gfnAddSecurityInQueue 'remove' 'MySB_SecurityRules' "$@ $$";;
+	esac
+fi
+
+#### 8 - Reboot after an install or an upgrade
+if [ "$REBOOT" == "$Global_YES" ]; then
+	#### Flush mail queue
+	if gfnCheckCommand 0 postfix; then postfix flush; fi
+	echo ""
+	echo -e -n "${CRED}$Global_ServerWillRestart$CEND"
+	gfnCountDown 30
+	reboot
+fi
+
+##################### LAST LINE ######################################

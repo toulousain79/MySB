@@ -1,0 +1,143 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### VARs
+gsRutorrentDirEscaped="`echo $gsRutorrentDir | sed s,/,\\\\\\\\\\/,g`"
+gsRutorrentPluginsDirEscaped="`echo $gsRutorrentPluginsDir | sed s,/,\\\\\\\\\\/,g`"
+LoadavgDirEscaped="`echo $gsLoadAvgDir | sed s,/,\\\\\\\\\\/,g`"
+
+#### Install packages
+gfnPackageBundleInstall 'nginx-extras apache2-utils'
+
+#### STOP services
+gfnManageServices stop "nginx"
+
+#### Create directories & remove some files
+if [ ! -d /etc/nginx/sites-available ]; then mkdir /etc/nginx/sites-available; fi
+if [ ! -d /etc/nginx/sites-enabled ]; then mkdir /etc/nginx/sites-enabled; fi
+if [ ! -d /etc/nginx/modules-enabled ]; then mkdir /etc/nginx/modules-enabled; fi
+if [ ! -d /etc/nginx/passwd ]; then mkdir /etc/nginx/passwd; fi
+if [ ! -d /etc/nginx/locations ]; then mkdir /etc/nginx/locations; fi
+if [ ! -d /etc/nginx/rpc ]; then mkdir /etc/nginx/rpc; fi
+if [ ! -d /etc/nginx/proxy ]; then mkdir /etc/nginx/proxy; fi
+rm -f /etc/nginx/locations/* &> /dev/null
+rm -f /etc/nginx/conf.d/* &> /dev/null
+
+#### /etc/nginx/passwd/MySB
+if [ ! -z "$gsMySB_User" ]; then
+	sed -i '/'$gsMySB_User'/d' /etc/nginx/passwd/MySB
+fi
+sPassword="`gfnGenPassword 16`"
+sUser="`gfnGenPassword 8`"
+cmdMySQL 'MySB_db' "UPDATE system SET mysb_user = '$sUser', mysb_password = '$sPassword' WHERE id_system='1';" -v
+if [ ! -f /etc/nginx/passwd/MySB ]; then
+	touch /etc/nginx/passwd/MySB
+fi
+htpasswd -bs /etc/nginx/passwd/MySB $sUser $sPassword &> /dev/null
+chmod 640 /etc/nginx/passwd/MySB
+chown www-data:www-data /etc/nginx/passwd/MySB
+
+#### nginx.conf
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.nginx.conf.tmpl /etc/nginx/nginx.conf
+perl -pi -e "s/worker_processes auto;/worker_processes $gsProcessors;/g" /etc/nginx/nginx.conf
+if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
+	NumLign=$(cat /etc/nginx/nginx.conf | grep 'ssl_certificate' -n -m 1 | cut -d ':' -f 1)
+	sed -i '/ssl_certificate/d' /etc/nginx/nginx.conf
+	sed -i ""$NumLign"i\	ssl_certificate_key $MySB_InstallDir/ssl/privkey.pem; # Let's Encrypt certificate" /etc/nginx/nginx.conf
+	sed -i ""$NumLign"i\	ssl_certificate $MySB_InstallDir/ssl/fullchain.pem; # Let's Encrypt certificate" /etc/nginx/nginx.conf
+else
+	NumLign=$(cat /etc/nginx/nginx.conf | grep 'ssl_certificate' -n -m 1 | cut -d ':' -f 1)
+	sed -i '/ssl_certificate/d' /etc/nginx/nginx.conf
+	sed -i ""$NumLign"i\	ssl_certificate_key $gsInstallDirEscaped/ssl/mysb.key;" /etc/nginx/nginx.conf
+	sed -i ""$NumLign"i\	ssl_certificate $gsInstallDirEscaped/ssl/mysb.cert;" /etc/nginx/nginx.conf
+fi
+
+#### Default Server
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.site-enabled.default.tmpl /etc/nginx/sites-available/default
+perl -pi -e "s/<InstallDir>/$gsInstallDirEscaped/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<PORT_HTTPS>/$gsPort_HTTPS/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<PORT_HTTP>/$gsPort_HTTP/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<server_name>/$gsHostNameFqdn/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<rutorrent_dir>/$gsRutorrentDirEscaped/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<plugins_dir>/$gsRutorrentPluginsDirEscaped/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<loadavg_dir>/$LoadavgDirEscaped/g" /etc/nginx/sites-available/default
+
+#### Work in progress page
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.site-enabled.WiP.tmpl /etc/nginx/sites-available/WiP
+perl -pi -e "s/<InstallDir>/$gsInstallDirEscaped/g" /etc/nginx/sites-available/WiP
+perl -pi -e "s/<PORT_HTTPS>/$gsPort_HTTPS/g" /etc/nginx/sites-available/WiP
+perl -pi -e "s/<PORT_HTTP>/$gsPort_HTTP/g" /etc/nginx/sites-available/WiP
+perl -pi -e "s/<server_name>/$gsHostNameFqdn/g" /etc/nginx/sites-available/WiP
+
+#### PageSpeed Conf
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.pagespeed.tmpl /etc/nginx/conf.d/pagespeed
+sed -i '/# TMPFS - Nginx PageSpeed/d' /etc/fstab
+sed -i '/\/mnt\/tmpFS\/pagespeed/d' /etc/fstab
+echo "# TMPFS - Nginx PageSpeed" >> /etc/fstab
+echo "tmpfs   /mnt/tmpFS/pagespeed      tmpfs   defaults,nosuid,noatime,mode=1777,size=32M 0 0" >> /etc/fstab
+if [ ! -d /mnt/tmpFS/pagespeed ]; then mkdir -pv /mnt/tmpFS/pagespeed; fi
+chown -R www-data:www-data /mnt/tmpFS/pagespeed
+if [ -z "`df -H | grep '/mnt/tmpFS/pagespeed'`" ]; then
+	mount /mnt/tmpFS/pagespeed
+fi
+
+#### PHP conf.d
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.global_deny_access.tmpl /etc/nginx/conf.d/global_deny_access
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.ip_restriction.tmpl /etc/nginx/conf.d/ip_restriction
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.static_files.tmpl /etc/nginx/conf.d/static_files
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.auth_basic.tmpl /etc/nginx/conf.d/auth_basic
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.php-ssl.tmpl /etc/nginx/conf.d/php-ssl
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.conf.d.php.tmpl /etc/nginx/conf.d/php
+
+#### logrotate
+gfnLogRotate 'nginx'
+
+#### Wolf CMS
+gfnGetRepoValues 'Wolf CMS' && gfnRepoManageByType
+install -v -o root -g www-data -m 0640 $MySB_InstallDir/templates/mysb/wolf.config.php.tmpl $MySB_InstallDir/web/config.php
+install -v -o root -g www-data -m 0640 $MySB_InstallDir/templates/mysb/wolf.page.php.tmpl $MySB_InstallDir/web/wolf/app/models/Page.php
+AdminDir="`gfnGenPassword 32`"
+perl -pi -e "s/<admin_dir>/$AdminDir/g" $MySB_InstallDir/web/config.php
+perl -pi -e "s/<gsTimeZone>/$gsTimeZoneEscaped/g" $MySB_InstallDir/web/config.php
+
+#### Sudo
+if [ -f /etc/sudoers.d/MySB_nginx ]; then rm -vf /etc/sudoers.d/MySB_nginx; fi
+echo "www-data ALL = (root) NOPASSWD: /bin/bash $MySB_InstallDir/scripts/ApplyConfig.bsh*" | tee -a /etc/sudoers.d/MySB_nginx
+
+#### Add www-data to MySB_users group
+addgroup www-data MySB_users &> /dev/null
+
+#### Remove errors logs
+rm -f /var/log/nginx/error.log &> /dev/null
+rm -f /var/log/nginx/*-error.log &> /dev/null
+
+#### START services
+gfnManageServices start "nginx"
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

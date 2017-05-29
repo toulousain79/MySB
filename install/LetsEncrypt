@@ -1,0 +1,149 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+# Server list:		https://letsencrypt.status.io/
+# For test:			Add '--test-cert'
+# Documentation:	https://certbot.eff.org/docs/intro.html
+######################################################################
+
+#### VARs
+sLocSwitch="$1"	# renew ?
+
+#### Fonction certificate end date next renewal
+fnNextRenewal() {
+	local dEndDate dRenewDay dRenewMonth
+
+	if [ -f /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem ]; then
+		dEndDate="`openssl x509 -in /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem -noout -dates | grep 'notAfter' | cut -d "=" -f 2`"
+		dEndDate="`date -d"$dEndDate" +%Y-%m-%d`"
+		dRenewDay="`date -d "$dEndDate +2 month -7 day" +%d`"
+		dRenewMonth="`date -d "$dEndDate +2 month -7 day" +%m`"
+		# Crontab
+		crontab -l > /tmp/crontab.tmp
+		sed -i '/LetsEncrypt/d' /tmp/crontab.tmp
+		echo "`date +%M` `date +%H` $dRenewDay $dRenewMonth * /bin/bash $MySB_InstallDir/install/LetsEncrypt renew CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+		crontab /tmp/crontab.tmp
+		rm -f /tmp/crontab.tmp
+		# update DB
+		cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_date='$dEndDate' WHERE id_system='1';" -v
+	fi
+}
+
+#### INSTALL
+gfnPackagesManage install 'libaugeas0 augeas-lenses' 'backports'
+gfnPackageBundleInstall 'python-virtualenv python-dev gcc dialog libssl-dev libffi-dev ca-certificates psutils python-augeas'
+
+#### Generate
+sServerList="`cmdMySQL 'MySB_db' "SELECT addresses FROM lets_encrypt;" | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
+if [ ! -z "$ServerList" ]; then
+	cmdMySQL 'MySB_db' "DELETE FROM lets_encrypt;" -v
+fi
+
+for sServer in $sServerList; do
+	sIpList="`nslookup $sServer | grep 'Address:' | awk '{ print $2 }' | tail -n +2`"
+	for IPv4 in $sIpList; do
+		cmdMySQL 'MySB_db' "INSERT INTO lets_encrypt (addresses,ipv4) VALUES ('$sServer','$IPv4');" -v
+	done
+done
+cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_openport='1' WHERE id_system='1';" -v
+gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--letsencrypt'
+
+if [ ! -f /etc/letsencrypt/live/$gsHostNameFqdn/fullchain.pem ]; then # Is it a new certificate ?
+	# Params
+	sParams="--standalone --standalone --verbose --update-registration --no-eff-email --agree-tos --rsa-key-size 2048"
+	# Dev mode ?
+	[ $gbDevMode -eq 1 ] && sParams="$sParams --test-cert"
+
+	cd $MySB_InstallDir/files/
+	./certbot-auto certonly $sParams --email $gsMainUserEmail --preferred-challenges "tls-sni-01,dns" --domain $gsHostNameFqdn
+
+	if [ -f /etc/letsencrypt/live/$gsHostNameFqdn/fullchain.pem ] && [ ! -h $MySB_InstallDir/ssl/fullchain.pem ]; then
+		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/fullchain.pem $MySB_InstallDir/ssl/fullchain.pem
+		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/chain.pem $MySB_InstallDir/ssl/chain.pem
+		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem $MySB_InstallDir/ssl/cert.pem
+		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/privkey.pem $MySB_InstallDir/ssl/privkey.pem
+		# Certificate end date (+2 month -7 days)
+		fnNextRenewal
+	fi
+
+	cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='1' WHERE serv_name='Lets Encrypt';" -v
+else # Or is it a renew ?
+	if [ ! -h $MySB_InstallDir/ssl/fullchain.pem ]; then
+		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/fullchain.pem $MySB_InstallDir/ssl/fullchain.pem
+		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/chain.pem $MySB_InstallDir/ssl/chain.pem
+		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem $MySB_InstallDir/ssl/cert.pem
+		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/privkey.pem $MySB_InstallDir/ssl/privkey.pem
+	fi
+
+	if [ "$sLocSwitch" == "renew" ]; then
+		dEndDate="`cmdMySQL 'MySB_db' "SELECT letsencrypt_date FROM system WHERE id_system='1';"`"
+		if [ ! -z "$dEndDate" ] && [ $gbDevMode -eq 0 ] ; then
+			dEndDate=$(date -d "$dEndDate" +"%Y-%m-%d")
+			Now=$(date +%Y-%m-%d)
+			t1=$(date --date="$dEndDate" +'%-m')
+			t2=$(date --date="$Now" +'%-m')
+			let "tDiff=$t2-$t1"
+
+			if [ "$tDiff" -gt "2" ]; then
+				cd $gsRepoDir
+				./certbot-auto renew
+				dNewEndDate="`openssl x509 -in /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem -noout -dates | grep 'notAfter'  | cut -d "=" -f 2`"
+				[ "$dNewEndDate" != "$dEndDate" ] && fnNextRenewal
+				gfnManageServices restart "nginx webmin"
+			fi
+		fi
+	else
+		fnNextRenewal
+	fi
+fi
+
+#### NginX
+if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
+	NumLign=$(cat /etc/nginx/nginx.conf | grep 'ssl_certificate' -n -m 1 | cut -d ':' -f 1)
+	sed -i '/ssl_certificate/d' /etc/nginx/nginx.conf
+	sed -i ""$NumLign"i\	ssl_certificate_key $MySB_InstallDir/ssl/privkey.pem; # Let's Encrypt certificate" /etc/nginx/nginx.conf
+	sed -i ""$NumLign"i\	ssl_certificate $MySB_InstallDir/ssl/fullchain.pem; # Let's Encrypt certificate" /etc/nginx/nginx.conf
+fi
+
+#### Webmin
+if [ -f /etc/webmin/miniserv.pem ]; then
+	if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
+		cat $MySB_InstallDir/ssl/privkey.pem > /etc/webmin/miniserv.pem
+		cat $MySB_InstallDir/ssl/fullchain.pem >> /etc/webmin/miniserv.pem
+	else
+		cat $MySB_InstallDir/ssl/mysb.cert > /etc/webmin/miniserv.pem
+		cat $MySB_InstallDir/ssl/mysb.key >> /etc/webmin/miniserv.pem
+	fi
+	ServicesToRestart="webmin"
+fi
+
+cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_openport='0' WHERE id_system='1';" -v
+gfnManageServices start "$ServicesToRestart nginx"
+gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create' 'CRON'
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

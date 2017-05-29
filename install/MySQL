@@ -1,0 +1,152 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### Install packages
+gfnPackageBundleInstall 'mysql-server mysqltuner sqlite3'
+
+#### Wolf database
+if gfnCheckCommand 0 sqlite3; then
+	if [ -f $gsWolf_DB ] || [ -s $gsWolf_DB ]; then
+		sqlite3 -cmd '.timeout 150000' $gsWolf_DB "DELETE FROM secure_token WHERE 1"
+		sqlite3 -cmd '.timeout 150000' $gsWolf_DB "UPDATE user SET name='', email='', username='', password='', salt='', last_login='', last_failure='', last_failure='', created_on='', updated_on='' WHERE id='2';"
+	fi
+fi
+
+#### MySQL Secure
+if [ -f /etc/MySB/config_db ]; then source /etc/MySB/config_db; fi
+if [ -z $MySQL_RootPassword ] && [ -z $MySQL_MysbPassword ]; then
+	MySQL_RootPassword="`gfnGenPassword 32`"
+	MySQL_MysbPassword="`gfnGenPassword 16`"
+	MySQL_BackupManager="`gfnGenPassword 16`"
+
+	mysql -u root --verbose <<-EOF
+	UPDATE mysql.user SET Password=PASSWORD('$MySQL_RootPassword') WHERE User='root';
+	DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
+	DELETE FROM mysql.user WHERE User='';
+	DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%';
+	DELETE FROM mysql.plugin WHERE name='innodb';
+	DELETE FROM mysql.plugin WHERE name='federated';
+	DELETE FROM mysql.plugin WHERE name='blackhole';
+	DELETE FROM mysql.plugin WHERE name='archive';
+	CREATE DATABASE MySB_db;
+	CREATE USER 'MySB_user'@'localhost';
+	CREATE USER 'BM_user'@'localhost';
+	GRANT ALL ON MySB_db.* to 'MySB_user'@'localhost' IDENTIFIED BY '$MySQL_MysbPassword';
+	GRANT SHOW DATABASES,SELECT,LOCK TABLES ON *.* TO 'BM_user'@'localhost' IDENTIFIED BY '$MySQL_BackupManager';
+	FLUSH PRIVILEGES;
+	EOF
+
+	if [ "$gbToInstall_NextCloud" == "YES" ] || [ "$gbIsInstalled_NextCloud" != "INIT" ]; then
+		if [ ! -f /var/lib/mysql/NextCloud_db/db.opt ]; then
+			mysql -u root -p$MySQL_RootPassword --verbose <<-EOF
+			CREATE DATABASE NextCloud_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+			GRANT ALL ON NextCloud_db.* to 'MySB_user'@'localhost' IDENTIFIED BY '$MySQL_MysbPassword';
+			FLUSH PRIVILEGES;
+			EOF
+		fi
+	fi
+
+	# Add MySQL password into MySB config files
+	echo "MySQL_RootPassword=\"$MySQL_RootPassword\"" >> /etc/MySB/config_db
+	echo "MySQL_MysbPassword=\"$MySQL_MysbPassword\"" >> /etc/MySB/config_db
+	echo "MySQL_BackupManager=\"$MySQL_BackupManager\"" >> /etc/MySB/config_db
+	if [ ! -f /etc/MySB/config.php ]; then
+		cp -vf $MySB_InstallDir/templates/mysb/etc.mysb.config.php.tmpl /etc/MySB/config.php
+		perl -pi -e "s/<MySB_InstallDir>/$gsInstallDirEscaped/g" /etc/MySB/config.php
+		if [ ! -z "$MySQL_MysbPassword" ]; then
+			perl -pi -e "s/<MySQL_MysbPassword>/$MySQL_MysbPassword/g" /etc/MySB/config.php
+		fi
+	fi
+
+	# Create MySQL client config file for MySB_user
+	echo "[client]" > /root/.config.cnf
+	echo "user = MySB_user" >> /root/.config.cnf
+	echo "password = $MySQL_MysbPassword" >> /root/.config.cnf
+	echo "host = localhost" >> /root/.config.cnf
+	chmod 0600 /root/.config.cnf
+
+	# Create MySB database (ONLY during a new install, NOT during an upgrade)
+	if [ "$gsSwitch" == "INSTALL" ]; then
+		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Schema.sql
+		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Triggers.sql
+		mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/Dump_MySQL_MySB_db_Data.sql
+	fi
+else
+	if [ "$gbIsInstalled_Webmin" == "YES" ] && [ -f /etc/webmin/mysql/config ]; then
+		sed -i '/login=/d' /etc/webmin/mysql/config
+		sed -i '/pass=/d' /etc/webmin/mysql/config
+		echo "login=root" >> /etc/webmin/mysql/config
+		echo "pass=$MySQL_RootPassword" >> /etc/webmin/mysql/config
+	fi
+fi
+
+if [ "$gsSwitch" != "UPGRADE" ]; then
+	#### Temp directory in memory
+	sed -i '/# TMPFS - MySQL/d' /etc/fstab
+	sed -i '/\/mnt\/tmpFS\/mysql/d' /etc/fstab
+	sed -i '/TMPFS - MySQL/d' /etc/fstab
+	sed -i '/mysql/d' /etc/fstab
+	echo "tmpfs   /mnt/tmpFS/mysql      tmpfs   defaults,nosuid,noatime,mode=1777,size=32M 0 0" >> /etc/fstab
+	if [ ! -d /mnt/tmpFS/mysql ]; then
+		mkdir -pv /mnt/tmpFS/mysql
+		chown mysql:mysql /mnt/tmpFS/mysql
+	fi
+	if [ -z "`df -H | grep '/mnt/tmpFS/mysql'`" ]; then
+		mount /mnt/tmpFS/mysql
+	fi
+
+	#### Config file
+	rm -v /etc/mysql/conf.d/*.cnf
+	install -v -o root -g root -m 0600 $MySB_InstallDir/templates/etc.mysql.conf.d.mysb.tmpl /etc/mysql/conf.d/MySB.cnf
+
+	#### STOP services
+	gfnManageServices 'stop' 'mysql'
+
+	#### Force mysql user homedir
+	if [ -z "`getent passwd mysql | grep '/var/lib/mysql'`" ]; then
+		usermod -d /var/lib/mysql mysql
+	fi
+
+	#### Logrotate
+	gfnLogRotate 'mysql-server'
+fi
+
+#### START services
+gfnManageServices 'start' 'mysql'
+
+#### MySQL Tuner
+[ -z "$MySQL_RootPassword" ] && source /etc/MySB/config_db
+mysqltuner --user root --pass $MySQL_RootPassword --nocolor > $MySB_InstallDir/temp/mysqltuner.log
+cat $MySB_InstallDir/temp/mysqltuner.log
+if [ ! -z "`cat $MySB_InstallDir/temp/mysqltuner.log | grep 'Run OPTIMIZE TABLE'`" ]; then
+	mysqlcheck -u root -p$MySQL_RootPassword --auto-repair --optimize --all-databases
+fi
+rm -vf $MySB_InstallDir/temp/mysqltuner.log
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

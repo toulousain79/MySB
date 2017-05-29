@@ -1,0 +1,100 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+echo
+crontab -l > /tmp/crontab.tmp
+
+#### Synchro NTP
+sed -i '/ntpdate/d' /tmp/crontab.tmp
+echo "0 0,6,12,18 * * * /usr/sbin/ntpdate -u 0.fr.pool.ntp.org > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+# Log HTML
+sed -i '/LogServer/d' /tmp/crontab.tmp
+echo "0 */1 * * * /bin/bash $MySB_InstallDir/scripts/LogServer.bsh CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+# Dynamic Address Resolver
+sed -i '/DynamicAddressResolver/d' /tmp/crontab.tmp
+echo "*/5 * * * * /bin/bash $MySB_InstallDir/scripts/DynamicAddressResolver.bsh $$ CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+# Update Actual Git Repo of MySB
+sed -i '/MySB_GitHubRepoUpdate/d' /tmp/crontab.tmp
+echo "0 12 * * * /bin/bash $MySB_InstallDir/bin/MySB_GitHubRepoUpdate CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+# Check update for MySB
+sed -i '/MySB_UpgradeMe/d' /tmp/crontab.tmp
+echo "0 4 */3 * * /bin/bash $MySB_InstallDir/bin/MySB_UpgradeMe CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+# GeoIP
+sed -i '/geoipupdate/d' /tmp/crontab.tmp
+MAXIMUM=58 # DO NOT REMOVE
+MINIMUM=1 # DO NOT REMOVE
+UPGEOIP=$((MINIMUM+RANDOM*(1+MAXIMUM-MINIMUM)/32767))
+echo "$UPGEOIP 2 9 * * /usr/local/bin/geoipupdate > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+# rTorrent Blocklists
+sed -i '/BlocklistsRTorrent/d' /tmp/crontab.tmp
+echo "10 11,23 * * * /bin/bash $MySB_InstallDir/scripts/BlocklistsRTorrent.bsh CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+# PaymentReminder.bsh
+sed -i '/PaymentReminder/d' /tmp/crontab.tmp
+echo "5 0 */1 * * /bin/bash $MySB_InstallDir/scripts/PaymentReminder.bsh CRON > /dev/null 2>&1" >> /tmp/crontab.tmp
+# GetTrackersCert.bsh
+sed -i '/GetTrackersCert/d' /tmp/crontab.tmp
+echo "10 0 */1 * * /bin/bash $MySB_InstallDir/scripts/GetTrackersCert.bsh CRON > /dev/null 2>&1" >> /tmp/crontab.tmp
+# RKHunter
+if gfnCheckCommand 0 rkhunter; then
+	sed -i '/rkhunter/d' /tmp/crontab.tmp
+	echo "0 4 * * * /usr/local/bin/rkhunter --cronjob --update --quiet > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+fi
+# NextCloud
+if [ "$gbIsInstalled_NextCloud" == "YES" ]; then
+	sed -i '/NextCloud/d' /tmp/crontab.tmp
+	echo "10 0 * * * /bin/bash $MySB_InstallDir/scripts/NextCloud.bsh clean CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+	echo "*/5 * * * * /bin/bash $MySB_InstallDir/scripts/NextCloud.bsh scan CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+fi
+# PeerGuardian
+if [ "$gbIsInstalled_PeerGuardian" == "YES" ]; then
+	sed -i '/PeerGuardian/d' /tmp/crontab.tmp
+	echo "30 23 * * * /bin/bash $MySB_InstallDir/scripts/PeerGuardian.bsh update CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+	echo "*/5 * * * * /bin/bash $MySB_InstallDir/scripts/PeerGuardian.bsh check CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+fi
+# DNScrypt-proxy
+if [ "$gbIsInstalled_DNScrypt" == "YES" ]; then
+	sed -i '/DNScrypt-proxy/d' /tmp/crontab.tmp
+	echo "0 4 * * * service dnscrypt-proxy full-update > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
+fi
+
+crontab /tmp/crontab.tmp
+rm -f /tmp/crontab.tmp
+
+#### Disable init, cron will be started by MySB_SecurityRules
+update-rc.d cron remove -f
+
+#### START services
+perl -pi -e "s/^#cron/cron/g" /etc/rsyslog.conf
+ServicesToRestart="rsyslog"
+if [ "$gsSwitch" != "UPGRADE" ]; then
+	ServicesToRestart="${ServicesToRestart} cron"
+fi
+gfnManageServices start "$ServicesToRestart"
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

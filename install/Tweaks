@@ -1,0 +1,237 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### Console tweaks
+cp -vf /etc/skel/.bashrc /root/
+cp -vf /etc/skel/.bash_logout /root/
+cp -vf /etc/skel/.profile /root/
+chown root:root /root/.bashrc
+chown root:root /root/.bash_logout
+chown root:root /root/.profile
+perl -pi -e "s/#force_color_prompt=yes/force_color_prompt=yes/g" /root/.bashrc
+perl -pi -e "s/#alias/alias/g" /root/.bashrc
+
+#### permanently adding scripts to PATH to all users and root
+if [ -z "`cat /etc/profile | grep 'PATH=' | grep "$MySB_InstallDir/bin"`" ]; then
+	echo "" | tee -a /etc/profile
+	echo "PATH=$PATH:$MySB_InstallDir/bin:/sbin" | tee -a /etc/profile &> /dev/null
+	echo "export PATH" | tee -a /etc/profile &> /dev/null
+fi
+if [ -z "`cat /root/.bashrc | grep 'PATH=' | grep "$MySB_InstallDir/bin"`" ]; then
+	echo "" | tee -a /root/.bashrc
+	echo "PATH=$PATH:$MySB_InstallDir/bin:/sbin" | tee -a /root/.bashrc &> /dev/null
+	echo "export PATH" | tee -a /root/.bashrc &> /dev/null
+fi
+
+#### Coloration syntaxic for vim
+perl -pi -e "s/^\"syntax on/syntax on/g" /etc/vim/vimrc
+
+#### Coloration syntaxic for nano
+if [ -f /usr/share/nano/ini.nanorc ]; then rm -vf /usr/share/nano/ini.nanorc; fi
+(
+cat <<'EOF'
+## ini highlighting
+syntax "ini" "\.ini(\.old|~)?$"
+color brightred "=.*$"
+color green "="
+color brightblue "-?[0-9\.]+\s*($|;)"
+color brightmagenta "ON|OFF|On|Off|on|off\s*($|;)"
+color brightcyan "^\s*\[.*\]"
+color cyan "^\s*[a-zA-Z0-9_\.]+"
+color brightyellow ";.*$"
+
+EOF
+) | tee -a /usr/share/nano/ini.nanorc
+
+if [ -f /usr/share/nano/conf.nanorc ]; then rm -vf /usr/share/nano/conf.nanorc; fi
+(
+cat <<'EOF'
+## Generic *.conf file syntax highlighting
+syntax "conf" "\.(c(onf|nf|fg))$"
+icolor yellow ""(\\.|[^"])*""
+icolor brightyellow start="=" end="$"
+icolor magenta start="(^|[[:space:]])[0-9a-z-]" end="="
+icolor brightred "(^|[[:space:]])((\[|\()[0-9a-z_!@#$%^&*-]+(\]|\)))"
+color green "[[:space:]][0-9.KM]+"
+color cyan start="(^|[[:space:]])(#|;).*$" end="$"
+color brightblue "(^|[[:space:]])(#|;)"
+
+EOF
+) | tee -a /usr/share/nano/conf.nanorc
+
+if [ -z "`cat /etc/nanorc | grep '## Config Files (.ini)'`" ]; then
+	echo "" | tee -a /etc/nanorc
+	echo "## Config Files (.ini)" | tee -a /etc/nanorc
+	echo "include \"/usr/share/nano/ini.nanorc\"" | tee -a /etc/nanorc
+fi
+
+if [ -z "`cat /etc/nanorc | grep '## Config Files (.conf)'`" ]; then
+	echo "" | tee -a /etc/nanorc
+	echo "## Config Files (.conf)" | tee -a /etc/nanorc
+	echo "include \"/usr/share/nano/conf.nanorc\"" | tee -a /etc/nanorc
+fi
+
+#### bash_profile
+if [ ! -f /root/.bash_profile ] || [ -z "`cat /root/.bash_profile | grep 'bash_completion'`" ] || [ -z "`cat /root/.bash_profile | grep '.bashrc'`" ]; then
+	(
+	cat <<'EOF'
+if [ -f /etc/bash_completion ]; then
+	. /etc/bash_completion
+fi
+if [ -f "$HOME/.bashrc" ]; then
+	. "$HOME/.bashrc"
+fi
+
+EOF
+	) | tee -a /root/.bash_profile
+fi
+
+#### Motd
+install -v -o root -g root -m 0755 $MySB_InstallDir/templates/etc.rc.local.template /etc/rc.local
+perl -pi -e "s/<MySB_Version>/$gsCurrentVersion/g" /etc/rc.local
+
+#### Change timezone
+if [ ! -z "$gsTimeZone" ]; then
+	if [ -f /etc/timezone ]; then rm -vf /etc/timezone; fi
+	echo "$gsTimeZone" | tee -a /etc/timezone
+	if [ -f /etc/adjtime ]; then
+		sed -i "s/UTC/LOCAL/g;" /etc/adjtime
+	fi
+	dpkg-reconfigure -f noninteractive tzdata
+fi
+
+#### Swappiness
+SWAP="`free -m | grep 'Swap' | awk '{ print $2 }'`"
+if [ "$gsMemory" -lt "2048" ] && [ "$SWAP" != "0" ]; then
+	echo 80 > /proc/sys/vm/swappiness
+	if [ "`cat /etc/sysctl.conf | grep 'vm.swappiness'`" == "" ]; then
+		echo "vm.swappiness = 80" | tee -a /etc/sysctl.conf
+	fi
+fi
+
+#### locale
+locale > $MySB_InstallDir/files/locale
+
+#### /etc/hostname
+echo
+if [ -f /etc/hostname ]; then rm -vf /etc/hostname; fi
+echo "$gsHostNameFqdn" | tee -a /etc/hostname
+/bin/sh /etc/init.d/hostname.sh
+
+# /etc/hosts
+if [ -z $funcs_MySB_SecurityRules ]; then
+	source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_SecurityRules
+fi
+gfnCreateHostsFile
+
+#### /etc/network/interfaces
+echo
+# Remove IPv6
+/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6="1" 2> /dev/null
+/sbin/sysctl -w net.ipv6.conf.default.disable_ipv6="1" 2> /dev/null
+/sbin/sysctl -w net.ipv6.conf.lo.disable_ipv6="1" 2> /dev/null
+/sbin/sysctl -w net.ipv6.conf.eth0.disable_ipv6="1" 2> /dev/null
+sysctl -p
+if [ -f /etc/default/grub ]; then
+	source /etc/default/grub
+	if [ ! -z "$GRUB_CMDLINE_LINUX" ] && [ -z "`echo $GRUB_CMDLINE_LINUX | grep 'ipv6.disable=1'`" ]; then
+		sed -i "s/$GRUB_CMDLINE_LINUX/$GRUB_CMDLINE_LINUX ipv6.disable=1/g;" /etc/default/grub
+	else
+		perl -pi -e "s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"ipv6.disable=1\"/g" /etc/default/grub
+	fi
+	update-grub
+fi
+
+cp /etc/network/interfaces /etc/network/interfaces.bckp
+# Add iptables-restore
+if [ "`cat /etc/network/interfaces | grep 'post-up iptables-restore < /etc/iptables.up.rules'`" == "" ]; then
+	NumLign=$(cat /etc/network/interfaces | grep -v inet6 | sed -n "/^iface $gsPrimaryInet inet/=")
+	(( NumLign++ ))
+	sed -i "${NumLign}i\        post-up iptables-restore < /etc/iptables.up.rules" /etc/network/interfaces
+fi
+
+#### NTP (disable IPv6)
+perl -pi -e "s/^restrict ::1/#restrict ::1/g" /etc/ntp.conf
+perl -pi -e "s/^restrict -6/#restrict -6/g" /etc/ntp.conf
+ServicesToRestart="${ServicesToRestart} ntp"
+
+#### SSH Keygen
+if [ ! -d /root/.ssh/ ]; then
+	mkdir /root/.ssh/.ssh/ &> /dev/null
+fi
+if [ ! -f /root/.ssh/id_rsa ]; then
+	ssh-keygen -q -t rsa -b 2048 -N "" -f /root/.ssh/id_rsa &> /dev/null
+fi
+
+#### IPtables Logging
+echo
+if [ -f /etc/rsyslog.d/iptables.conf ]; then rm -vf /etc/rsyslog.d/iptables.conf; fi
+if [ ! -f /var/log/iptables.log ]; then touch /var/log/iptables.log; fi
+echo "if (\$msg contains '[MySB] ' or \$msg contains 'IN=') then /var/log/iptables.log" | tee -a /etc/rsyslog.d/iptables.conf
+echo "& ~" | tee -a /etc/rsyslog.d/iptables.conf
+gfnLogRotate 'iptables'
+ServicesToRestart="rsyslog"
+
+#### AES-NI Crypto Acceleration
+echo
+if [ "`cat /proc/cpuinfo | grep aes`" != "" ]; then
+	## load
+	modprobe aesni_intel
+
+	if [ "`lsmod | grep aes	`" != "" ]; then
+		## make permanent
+		if [ "`cat /etc/modules | grep 'aesni_intel'`" == "" ]; then
+			echo aesni_intel | tee -a /etc/modules
+		fi
+		if [ "`cat /etc/environment | grep 'OPENSSL_ia32cap=~0x200000200000000'`" == "" ]; then
+			echo "OPENSSL_ia32cap=~0x200000200000000" | tee -a /etc/environment
+		fi
+	fi
+fi
+
+#### Turning off filesystem access times
+if [ -z "`cat /etc/fstab | grep 'errors=remount-ro' | grep 'noatime,nodiratime' | grep -v '/boot'`" ]; then
+	perl -pi -e "s/errors=remount-ro/noatime,nodiratime,errors=remount-ro/g" /etc/fstab
+fi
+
+#### Cleaning
+if [ -d /var/log/exim4 ]; then rm -rvf /var/log/exim4; fi
+if [ -d /var/log/news ]; then rm -rvf /var/log/news; fi
+
+#### Logrotate
+gfnLogRotate 'mysb'
+
+#### Restart services
+gfnManageServices restart "$ServicesToRestart"
+
+#### Create init script for MySB_SecurityRules_Init
+install -v -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.MySB_SecurityRules_Init.tmpl /etc/init.d/MySB_SecurityRules_Init
+update-rc.d MySB_SecurityRules_Init defaults
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

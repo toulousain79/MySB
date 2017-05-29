@@ -1,0 +1,369 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### Switch (INSTALL/UPGRADE/INIT)
+if [ ! -z "$1" ]; then
+	gsSwitch="$1"
+fi
+
+#### Installation / Upgrade ?
+if [ "$gbToInstall_NextCloud" == "YES" ] && [ "$gsSwitch" != "INIT" ]; then
+	if ! gfnCheckCommand 0 smbclient; then
+		gfnPackageBundleInstall 'smbclient'
+	fi
+
+	#### VARs
+	source /etc/MySB/config_db
+	MailFrom="`echo $gsMainUserEmail | cut -d "@" -f 1`"
+	MailDomain="`echo $gsMainUserEmail | cut -d "@" -f 2`"
+	TimeStamp=$(date +%s)
+	NextCloudDataDirectory="/home/nextcloud"
+	gfnGetRepoValues 'NextCloud'
+
+	#### STOP services
+	gfnManageServices stop "php5-fpm nginx"
+
+	#### PHP
+	perl -pi -e "s/post_max_size = 10M/post_max_size = 20G/g" /etc/php5/fpm/php.ini
+	perl -pi -e "s/upload_max_filesize = 10M/upload_max_filesize = 20G/g" /etc/php5/fpm/php.ini
+	perl -pi -e "s/max_file_uploads = 20/max_file_uploads = 20000/g" /etc/php5/fpm/php.ini
+	perl -pi -e "s/output_buffering = 4096/output_buffering = Off/g" /etc/php5/fpm/php.ini
+	perl -pi -e "s/^;env\[PATH\]/env\[PATH\]/g" /etc/php5/fpm/pool.d/www.conf
+
+	#### NginX configuration
+	install -g root -o root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.locations.nextcloud.conf.tmpl /etc/nginx/locations/NextCloud.conf
+	perl -pi -e "s/<MySB_InstallDir>/$gsInstallDirEscaped/g" /etc/nginx/locations/NextCloud.conf
+
+	#### An upgrade ?
+	if [ $gnRepoUpgrade -eq 1 ]; then
+		# Backup the config file if needed
+		if [ -f $gsNextCloudDir/config/config.php ]; then
+			mv -v $gsNextCloudDir/config/config.php $MySB_InstallDir/temp/nextcloud_config.php
+		fi
+		if [ -d $gsNextCloudDir/apps2 ]; then
+			mv -v $gsNextCloudDir/apps2 $MySB_InstallDir/temp/nextcloud_apps2
+		fi
+		if [ -f $MySB_InstallDir/files/$gsRepoFile ]; then
+			gfnDeleteDirectory 1 "$gsNextCloudDir"
+		fi
+		# Maybe need to launch a script on next reboot ?
+		# Disable the upgrade job
+		cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '0', on_boot = '1', script = '$0' WHERE name='NextCloud';" -v
+	fi
+
+	if [ ! -d $gsNextCloudDir ]; then
+		gfnRepoManageByType
+	fi
+	# Restore the old config file
+	if [ -f $MySB_InstallDir/temp/nextcloud_config.php ]; then
+		mv -v $MySB_InstallDir/temp/nextcloud_config.php $gsNextCloudDir/config/config.php
+	fi
+	if [ -d $MySB_InstallDir/temp/nextcloud_apps2 ]; then
+		if [ -d $gsNextCloudDir/apps2 ]; then
+			rm -rfv $gsNextCloudDir/apps2
+		fi
+		mv -v $MySB_InstallDir/temp/nextcloud_apps2 $gsNextCloudDir/apps2
+	fi
+	# Create needed directories
+	if [ ! -d $NextCloudDataDirectory ]; then
+		mkdir -v $NextCloudDataDirectory
+		chown www-data:www-data $NextCloudDataDirectory
+	fi
+	if [ ! -d /home/admin ]; then
+		mkdir -v /home/admin
+		chown www-data:www-data /home/admin
+	fi
+	# Clean some files and directories
+	if [ -f $gsNextCloudDir/config/config.sample.php ]; then
+		rm -fv $gsNextCloudDir/config/config.sample.php
+	fi
+
+	#### CRON
+	crontab -u www-data -l > /tmp/crontab.tmp
+	sed -i '/NextCloud/d' /tmp/crontab.tmp
+	echo "*/15  *  *  *  * php -f $gsNextCloudDir/cron.php > /dev/null 2>&1 # NextCloud" | tee -a /tmp/crontab.tmp
+	crontab -u www-data /tmp/crontab.tmp
+	rm -f /tmp/crontab.tmp
+
+	#### Create directories & change rights
+	gfnManageDirAndFiles 'global'
+
+	#### START services
+	gfnManageServices start "php5-fpm nginx"
+
+	#### Database directory does not exist ? So we do the first install !
+	if [ ! -f $gsNextCloudDir/config/config.php ] && [ "`ls -la /var/lib/mysql/NextCloud_db/*.* | wc -l`" -le 1 ]; then
+		chown -R www-data:www-data $gsNextCloudDir/
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:install --database \"mysql\" --database-host \"localhost\" --database-name \"NextCloud_db\" --database-user \"MySB_user\" --database-pass \"$MySQL_MysbPassword\" --admin-user \"admin\" --admin-pass \"$MySQL_MysbPassword\" --database-table-prefix \"nc_\" --data-dir \"$NextCloudDataDirectory\" --no-interaction"
+		# Maybe need to launch a script on next reboot ?
+		cmdMySQL 'MySB_db' "UPDATE repositories SET on_boot = '1', script = '$0' WHERE name='NextCloud';" -v
+	fi
+
+	#### Update database with new values
+	# nc_appconfig
+	IfExist="`cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_appconfig WHERE configvalue='yes' AND configkey='shareapi_allow_mail_notification';"`"
+	if [ -z "$IfExist" ]; then
+		cmdMySQL 'NextCloud_db' "INSERT INTO nc_appconfig (appid,configkey,configvalue) VALUES ('core','shareapi_allow_mail_notification','yes');" -v
+	else
+		cmdMySQL 'NextCloud_db' "UPDATE nc_appconfig SET configvalue='yes' WHERE appid='core' AND configkey='shareapi_allow_mail_notification';" -v
+	fi
+	IfExist="`cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_appconfig WHERE configvalue='yes' AND configkey='shareapi_allow_public_notification';"`"
+	if [ -z "$IfExist" ]; then
+		cmdMySQL 'NextCloud_db' "INSERT INTO nc_appconfig (appid,configkey,configvalue) VALUES ('core','shareapi_allow_public_notification','yes');" -v
+	else
+		cmdMySQL 'NextCloud_db' "UPDATE nc_appconfig SET configvalue='yes' WHERE appid='core' AND configkey='shareapi_allow_public_notification';" -v
+	fi
+	IfExist="`cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_appconfig WHERE configvalue='yes' AND configkey='shareapi_default_expire_date';"`"
+	if [ -z "$IfExist" ]; then
+		cmdMySQL 'NextCloud_db' "INSERT INTO nc_appconfig (appid,configkey,configvalue) VALUES ('core','shareapi_default_expire_date','yes');" -v
+	else
+		cmdMySQL 'NextCloud_db' "UPDATE nc_appconfig SET configvalue='yes' WHERE appid='core' AND configkey='shareapi_default_expire_date';" -v
+	fi
+	IfExist="`cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_appconfig WHERE configkey='shareapi_enforce_links_password';"`"
+	if [ -z "$IfExist" ]; then
+		cmdMySQL 'NextCloud_db' "INSERT INTO nc_appconfig (appid,configkey,configvalue) VALUES ('core','shareapi_enforce_links_password','yes');" -v
+	else
+		cmdMySQL 'NextCloud_db' "UPDATE nc_appconfig SET configvalue='yes' WHERE appid='core' AND configkey='shareapi_enforce_links_password';" -v
+	fi
+	IfExist="`cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_appconfig WHERE configkey='shareapi_enforce_expire_date';"`"
+	if [ -z "$IfExist" ]; then
+		cmdMySQL 'NextCloud_db' "INSERT INTO nc_appconfig (appid,configkey,configvalue) VALUES ('core','shareapi_enforce_expire_date','no');" -v
+	else
+		cmdMySQL 'NextCloud_db' "UPDATE nc_appconfig SET configvalue='no' WHERE appid='core' AND configkey='shareapi_enforce_expire_date';" -v
+	fi
+	IfExist="`cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_appconfig WHERE configkey='enforceNonCommonPassword';"`"
+	if [ -z "$IfExist" ]; then
+		cmdMySQL 'NextCloud_db' "INSERT INTO nc_appconfig (appid,configkey,configvalue) VALUES ('password_policy','enforceNonCommonPassword','0');" -v
+	else
+		cmdMySQL 'NextCloud_db' "UPDATE nc_appconfig SET configvalue='0' WHERE appid='password_policy' AND configkey='enforceNonCommonPassword';" -v
+	fi	
+	# nc_preferences
+	IfExist="`cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_preferences WHERE configvalue='$EnvLang' AND userid='admin';"`"
+	if [ -z "$IfExist" ]; then
+		cmdMySQL 'NextCloud_db' "INSERT INTO nc_preferences (userid,appid,configkey,configvalue) VALUES ('admin','core','lang','$EnvLang');" -v
+	fi
+	IfExist="`cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_preferences WHERE configvalue='$gsMainUserEmail' AND userid='admin';"`"
+	if [ -z "$IfExist" ]; then
+		cmdMySQL 'NextCloud_db' "INSERT INTO nc_preferences (userid,appid,configkey,configvalue) VALUES ('admin','settings','email','$gsMainUserEmail');" -v
+	fi
+	cmdMySQL 'NextCloud_db' "UPDATE nc_preferences SET configvalue='$gsTimeZone' WHERE configkey='timezone';" -v
+	# nc_groups
+	IfExist="`cmdMySQL 'NextCloud_db' "SELECT gid FROM nc_groups WHERE gid='MySB_users';"`"
+	if [ -z "$IfExist" ]; then
+		cmdMySQL 'NextCloud_db' "INSERT INTO nc_groups (gid) VALUES ('MySB_users');" -v
+	fi
+
+	if gfnCheckCommand 0 $gsNextCloudDir/occ; then
+		# NextCloud is installed
+		cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='NextCloud';" -v
+
+		# Force upgrade script on next boot if needed
+		ScriptOnBoot="`cmdMySQL 'MySB_db' "SELECT script FROM repositories WHERE on_boot = '1' AND name = 'NextCloud';"`"
+		if [ ! -z "$ScriptOnBoot" ]; then
+			cmdMySQL 'MySB_db' "UPDATE repositories SET script = '$0' WHERE name='NextCloud';" -v
+		fi
+	fi
+
+	#### Logrotate
+	gfnLogRotate 'nextcloud'
+
+	#### Fail2Ban
+	if [ "$gbToInstall_Fail2Ban" == "YES" ] || [ "$gbIsInstalled_Fail2Ban" == "YES" ] && [ -d /etc/fail2ban/filter.d ]; then
+		install -v -g root -o root -m 0700 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.nextcloud.tmpl /etc/fail2ban/filter.d/nextcloud.conf
+		(
+cat <<'EOF'
+
+[nextcloud]
+enabled  	= true
+port     	= <Port_HTTPS>
+filter   	= nextcloud
+logpath  	= /home/nextcloud/nextcloud.log
+EOF
+		) >> /etc/fail2ban/jail.local
+		sed -i 's/<Port_HTTPS>/'$gsPort_HTTPS'/g;' /etc/fail2ban/jail.local
+	fi
+fi
+
+#### Upgrade on boot
+if [ "$gbIsInstalled_NextCloud" == "YES" ] && [ "$gsSwitch" == "INIT" ]; then
+	OnBoot="`cmdMySQL 'MySB_db' "SELECT on_boot FROM repositories WHERE name = 'NextCloud';"`"
+	NextCloudDataDirectory="/home/nextcloud"
+
+	#### Fail2Ban
+	if [ "$gbToInstall_Fail2Ban" == "YES" ] || [ "$gbIsInstalled_Fail2Ban" == "YES" ]; then
+		if [ -d /etc/fail2ban ]; then
+			install -v -g root -o root -m 0700 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.nextcloud.tmpl /etc/fail2ban/filter.d/nextcloud.conf
+			(
+			cat <<'EOF'
+
+[nextcloud]
+enabled  	= true
+port     	= <Port_HTTPS>
+filter   	= nextcloud
+logpath  	= /home/nextcloud/nextcloud.log
+EOF
+			) >> /etc/fail2ban/jail.local
+			sed -i 's/<Port_HTTPS>/'$gsPort_HTTPS'/g;' /etc/fail2ban/jail.local
+		fi
+	fi
+
+	if [ "$OnBoot" -eq 1 ]; then
+		#### VARs
+		MailFrom="`echo $gsMainUserEmail | cut -d "@" -f 1`"
+		MailDomain="`echo $gsMainUserEmail | cut -d "@" -f 2`"
+
+		#### NextCloud upgrade
+		cd $MySB_InstallDir/temp/
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ upgrade -v"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --off"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:repair"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mimetype:update-db"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mimetype:update-js"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ app:enable files_external"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ app:enable notifications"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ background:cron"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files:scan --all"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files:cleanup"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:get version"
+
+		#### Generatinf a new config file
+		if [ -d $gsNextCloudDir ] && [ -f $gsNextCloudDir/config/config.php ]; then
+			#### Check old config file
+			PasswordSalt="`su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:get passwordsalt"`"
+			echo "PasswordSalt: "$PasswordSalt
+			Secret="`su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:get secret"`"
+			echo "Secret: "$Secret
+
+			#### New config file
+			# Get the new version
+			Version="`su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:get version"`"
+			cmdMySQL 'MySB_db' "UPDATE repositories SET version = '$Version' WHERE name='NextCloud';" -v
+			install -g www-data -o www-data -m 0640 $MySB_InstallDir/templates/nextcloud/nextcloud.config.php.tmpl $gsNextCloudDir/config/config.php
+			perl -pi -e "s/<version>/$Version/g" $gsNextCloudDir/config/config.php
+			source /etc/MySB/config_db
+			perl -pi -e "s/<db_password>/$MySQL_MysbPassword/g" $gsNextCloudDir/config/config.php
+			su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set passwordsalt --value=$PasswordSalt"
+			su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set trusted_domains 1 --value=$gsHostNameFqdn:$gsPort_HTTPS"
+			su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set default_language --value=$EnvLang"
+			su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set lost_password_link --value=https://$gsHostNameFqdn:$gsPort_HTTPS/?user/change-password.html"
+			su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set mail_from_address --value=$MailFrom"
+			su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set mail_domain --value=$MailDomain"
+			su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set overwritehost --value=$gsHostNameFqdn:$gsPort_HTTPS"
+			su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set overwrite.cli.url --value=https://127.0.0.1:$gsPort_HTTPS/nc"
+			su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set logtimezone --value=$gsTimeZone"
+			su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set secret --value=$Secret"
+			su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set assetdirectory --value=$gsNextCloudDir"
+			su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set skeletondirectory --value=$gsNextCloudDir/core/skeleton"
+		fi
+
+		#### Display 'config.php' for logs
+		cat $gsNextCloudDir/config/config.php
+
+		#### Backuping config file
+		if [ -f $gsNextCloudDir/config/config.php ]; then
+			cp -v $gsNextCloudDir/config/config.php $MySB_InstallDir/files/nextcloud_config.php
+		fi
+
+		#### Updating database
+		IdStorage=$(cmdMySQL 'NextCloud_db' "SELECT mount_id FROM nc_external_mounts WHERE mount_point='/MySB_Home';")
+		if [ -z "$IdStorage" ]; then
+			IdStorage=1
+
+			# nc_external_mounts
+			cmdMySQL 'NextCloud_db' "INSERT INTO nc_external_mounts (mount_point,storage_backend,auth_backend,priority,type) VALUES ('/MySB_Home','local','null::null','150','1');" -v
+		fi
+
+		# nc_external_applicable
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:applicable --remove-all $IdStorage"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:applicable --add-group MySB_users $IdStorage"
+
+		# nc_external_config
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:config $IdStorage datadir '/home/\$user/'"
+
+		# nc_external_options
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:option $IdStorage filesystem_check_changes 'true'"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:option $IdStorage encrypt 'false'"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:option $IdStorage previews 'true'"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:option $IdStorage enable_sharing 'true'"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:option $IdStorage encoding_compatibility 'false'"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:verify $IdStorage"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:option $IdStorage encoding_compatibility 'false'"
+
+		IfExist="`cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_appconfig WHERE configkey='allow_user_mounting';"`"
+		if [ -z "$IfExist" ]; then
+			cmdMySQL 'NextCloud_db' "INSERT INTO nc_appconfig (appid,configkey,configvalue) VALUES ('files_external','allow_user_mounting','yes');" -v
+		else
+			cmdMySQL 'NextCloud_db' "UPDATE nc_appconfig SET configvalue='yes' WHERE appid='files_external' AND configkey='allow_user_mounting';" -v
+		fi
+		IfExist="`cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_appconfig WHERE configkey='user_mounting_backends';"`"
+		if [ ! -z "$IfExist" ]; then
+			cmdMySQL 'NextCloud_db' "DELETE FROM nc_appconfig WHERE appid='files_external' AND configkey='user_mounting_backends';" -v
+		fi
+		cmdMySQL 'NextCloud_db' "INSERT INTO nc_appconfig (appid,configkey,configvalue) VALUES ('files_external','user_mounting_backends','ftp,dav,owncloud,sftp,amazons3,dropbox,googledrive,swift,smb,\\\OC\\\Files\\\Storage\\\SFTP_Key,\\\OC\\\Files\\\Storage\\\SMB_OC');" -v
+
+		#### External Storage (mount.json)
+		if [ ! -f $NextCloudDataDirectory/mount.json ]; then
+			cp -vf $MySB_InstallDir/templates/nextcloud/home.nextcloud.mount.json.tmpl $NextCloudDataDirectory/mount.json
+			perl -pi -e "s/<IdStorage>/$IdStorage/g" $NextCloudDataDirectory/mount.json
+		fi
+
+		#### Create all existing MySB users AND Scanning users' files
+		if [ -d $gsNextCloudDir/data ]; then
+			rm -rfv $gsNextCloudDir/data
+		fi
+		for seedUser in $gsUsersList; do
+			if [ ! -d $NextCloudDataDirectory/$seedUser ]; then
+				mkdir -v $NextCloudDataDirectory/$seedUser
+				chown www-data:www-data $NextCloudDataDirectory/$seedUser
+				chmod 0755 $NextCloudDataDirectory/$seedUser
+			fi
+
+			UserExist="`cmdMySQL 'NextCloud_db' "SELECT uid FROM nc_users WHERE uid='$seedUser';"`"
+			if [ -z "$UserExist" ]; then
+				FnUserMail="`cmdMySQL 'MySB_db' "SELECT users_email FROM users WHERE users_ident='$seedUser';"`"
+				OC_PASS="`gfnGenPassword 8`"
+				export OC_PASS
+				TimeStamp=$(date +%s)
+				su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ user:add --password-from-env --display-name=\"$seedUser\" --group=\"MySB_users\" $seedUser" &> /dev/null
+				cmdMySQL 'NextCloud_db' "INSERT INTO nc_preferences (userid,appid,configkey,configvalue) VALUES ('admin','files_external','/Home_$seedUser','$TimeStamp');" -v
+				cmdMySQL 'NextCloud_db' "INSERT INTO nc_preferences (userid,appid,configkey,configvalue) VALUES ('$seedUser','core','lang','$EnvLang');" -v
+				cmdMySQL 'NextCloud_db' "INSERT INTO nc_preferences (userid,appid,configkey,configvalue) VALUES ('$seedUser','settings','email','$FnUserMail');" -v
+				cmdMySQL 'NextCloud_db' "INSERT INTO nc_storages (id) VALUES ('local::/home/$seedUser/');" -v
+				cmdMySQL 'MySB_db' "UPDATE users SET init_password = '1' WHERE users_ident='$seedUser';" -v
+			else
+				su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files:scan --path=\"/$seedUser/files/MySB_Home\""
+			fi
+			unset UserExist
+		done
+
+		cmdMySQL 'MySB_db' "UPDATE repositories SET on_boot = '0', script = '' WHERE name='NextCloud';" -v
+	fi
+fi
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

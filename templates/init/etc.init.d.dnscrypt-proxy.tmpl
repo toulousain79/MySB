@@ -1,0 +1,1754 @@
+#!/bin/bash
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+######################################################################
+#
+# Public Resolver List: https://dnscrypt.org/dnscrypt-resolvers.html
+#
+# This init script was greatly inspired by DNSCrypt-Loader: https://github.com/GortCodex/DNSCrypt-Loader
+#
+##################### FIRST LINE #####################################
+
+### BEGIN INIT INFO
+# Provides:          dnscrypt
+# Required-Start:    $remote_fs $network $mysql
+# Required-Stop:     $remote_fs $network $mysql
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start DNScrypt-proxy
+# Description:       Encrypt DNS queries.
+### END INIT INFO
+
+#### Includes
+source /etc/MySB/config || exit 0
+source $MySB_InstallDir/inc/vars || exit 0
+
+######################################################################
+#
+# S T A R T   C U S T O M I Z A T I O N S
+#
+######################################################################
+
+#------------------------------------------------------------
+# DNScrypt-proxy infos
+#------------------------------------------------------------
+gsProxyName="dnscrypt-proxy"				# bin name
+gsProxyDesc="DNScrypt-proxy"				# description
+gsProxyDir="/usr/local/sbin"				# bin name directory
+gsProxyApp="$gsProxyDir/$gsProxyName"		# full path to bin name
+gsLogFile="/var/log/$gsProxyName.log"		# log file
+gsPidDir="/var/run/$gsProxyName"			# pid directory
+gsWorkDir="/usr/local/share/$gsProxyName"	# default working directory
+gsTmpDir="/tmp/$gsProxyName"				# temp directory
+#------------------------------------------------------------
+# Chroot user who executes dnscrypt-proxy, please change root user by unprivileged user to avoid security problems
+#------------------------------------------------------------
+gsDeamonUser="dnscrypt"
+#------------------------------------------------------------
+# dnscrypt-resolvers.csv path
+#------------------------------------------------------------
+gsCsvDir="$gsWorkDir"
+gsCsvName="dnscrypt-resolvers.csv"
+gsCsvFile="$gsCsvDir/$gsCsvName"
+#------------------------------------------------------------
+# dnscrypt-resolvers.csv.minisig path
+#------------------------------------------------------------
+gsSigDir="$gsWorkDir"
+gsSigName="dnscrypt-resolvers.csv.minisig"
+gsSigFile="$gsSigDir/$gsSigName"
+#------------------------------------------------------------
+# URL
+#	dnscrypt-resolvers.csv
+#	dnscrypt-resolvers.csv.minisig
+#------------------------------------------------------------
+gsCsvUrl="https://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-resolvers.csv"
+gsSigUrl="$gsCsvUrl.minisig"
+#------------------------------------------------------------
+# Minisig public key
+#	Get public key at https://github.com/jedisct1/minisign
+#------------------------------------------------------------
+gsSigKey="RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3"
+#------------------------------------------------------------
+# IP version of resolvers to used
+#	Options:
+#	"ipv4" = show only ipv4 resolvers (default)
+#	"ipv6" = show only ipv6 resolvers
+#	"all"  = show ipv4 and ipv6 resolvers
+#------------------------------------------------------------
+gsIpVersion="ipv4"
+#------------------------------------------------------------
+# Number of DNScrypt-proxy processes wished
+#	Options:
+#	"N"	= Where N is a number from 1 to 6 (default: 2)
+#------------------------------------------------------------
+gnNumberOfDaemon=4
+#------------------------------------------------------------
+# Selection mode of resolvers
+#	Options:
+#	"yes"	= resolvers will selected randomly
+#	"no"	= resolvers will selected by DNS speed time
+#------------------------------------------------------------
+gbRandomResolvers=no
+#------------------------------------------------------------
+# Resolvers filers: Logs (no privacy) or No Logs (privacy)
+#	gbOnlyNoLogs = yes	--> No Logs (privacy): display only anonymous resolvers (default and recommended)
+#	gbOnlyNoLogs = no		--> Logs (no privacy): display all resolvers
+#	gbOnlyDNSSec = yes	--> DNSsec support: display only DNSsec compatible resolvers (default and recommended)
+#	gbOnlyDNSSec = no		--> DNSsec support: display all resolvers
+#	gbOnlyNameCoin = yes	--> NameCoin support: display only NameCoin compatible resolvers (default and recommended)
+#	gbOnlyNameCoin = no	--> NameCoin support: display all resolvers
+#------------------------------------------------------------
+gbOnlyNoLogs=yes
+gbOnlyDNSSec=yes
+gbOnlyNameCoin=no
+#------------------------------------------------------------
+# User interface
+#	whiptail or dialog
+#------------------------------------------------------------
+gsGUI="whiptail"
+
+######################################################################
+#
+# From here begins the main script code.
+# You do not need to customize anything here.
+#
+######################################################################
+
+######################################################################
+#
+# E N D   C U S T O M I Z A T I O N S
+#
+######################################################################
+
+######################################################################
+#
+# S T A R T   W O R K S P A C E
+#
+######################################################################
+
+#------------------------------------------------------------
+# Functions - Begin
+#------------------------------------------------------------
+# Checking prerequisites
+gfnCheckPrerequisites() {
+	local nExit sMode
+
+	nExit=0
+	sMode=''
+
+	# User privileges
+	if [ $(id -u) -ne 0 ]; then
+		sMode='con'
+		gsMess='\nYou need root privileges to run this script.\n'
+		nExit=1
+	fi
+
+	# Check if DNScrypt-proxy is installed
+	if ! gfnCheckCommand 0 $gsProxyName; then
+		sMode='con'
+		gsMess="\nSorry '$gsProxyName' was not found.\n"
+		gsMess+="Please check if the program was installed.\n"
+		nExit=1
+	fi
+
+	# Check if csvtool is installed
+	if ! gfnCheckCommand 0 csvtool; then
+		sMode='con'
+		gsMess="\nSorry 'csvtool' was not found.\n"
+		gsMess+="Please check if the program was installed.\n"
+		nExit=1
+	fi
+
+	# Check if dig is installed
+	if ! gfnCheckCommand mysql; then
+		sMode='con'
+		gsMess="\nSorry 'mysql' was not found.\n"
+		gsMess+="Please check if the program was installed.\n"
+		nExit=1
+	fi
+
+	# Check if whiptail is installed
+	if ! gfnCheckCommand 0 whiptail; then
+		gsGUI="dialog"
+	fi
+
+	if [ $nExit -eq 1 ]; then
+		gfnMessage 'error' "$sMode" "$gsMess"
+		exit $nExit
+	fi
+}
+
+# Check files and directories
+gfnCheckDirAndFiles() {
+	local nReturn sProxyPath sProxyDir sCsvFile sCsvDir
+
+	nReturn=0
+
+	# set environment
+	if [ ! -d $gsPidDir ]; then mkdir $gsPidDir && chown $gsDeamonUser:$gsDeamonUser $gsPidDir; fi
+	if [ ! -d $gsTmpDir ]; then mkdir $gsTmpDir && chown $gsDeamonUser:$gsDeamonUser $gsTmpDir; fi
+
+	# Path conflict?
+	sProxyPath="`which $gsProxyDir/$gsProxyName`"
+	sProxyDir="`dirname $sProxyPath`"
+	if [ "$sProxyDir" != "$gsProxyDir" ]; then
+		gsMess="\nThe $sProxyPath path on this init script differs from $gsProxyDesc setup.\n"
+		gsMess+="Please change 'gsProxyDir' parameter to:\n"
+		gsMess+="	gsProxyDir='$sProxyDir'\n"
+		gsMess+="in\n"
+		gsMess+="	'$0'\n"
+
+		gfnMessage 'error' 'con' "$gsMess"
+		nReturn=1
+	fi
+
+	if [ "$gsCsvDir" != "$gsSigDir" ]; then
+		gsMess="\nThe path to '$gsCsvName' and '$gsSigName' on this init script must be equal.\n"
+		gsMess+="Please change 'gsCsvDir' and 'gsSigDir' parameters to:\n"
+		gsMess+="	gsCsvDir='$sCsvDir/'\n"
+		gsMess+="	gsSigDir='$sCsvDir/'\n"
+		gsMess+="in\n"
+		gsMess+="	'$0'\n"
+
+		gfnMessage 'error' 'con' "$gsMess"
+		nReturn=1
+	fi
+
+	# file found or empty ?
+	if [ ! -e $gsCsvFile ] || [ ! -s $gsCsvFile ]; then
+		gsMess="\nFile '$gsCsvName' not found or empty.\n"
+		gsMess+="Please do an update option from menu OR by command line to download a new version from official source.\n"
+		gsMess+="	service $gsProxyName update\n"
+
+		gfnMessage 'error' 'con' "$gsMess"
+	fi
+
+	return $nReturn
+}
+
+# Check resolvers certificate validity
+gfnCheckCertificateValidity() {
+	local sResolversList sType nCount sResolverGiven sListToRead sProxyParams nProxyTestMargin
+
+	nProxyTestMargin=720 # In minutes: 720 min = 12 hours = 0.5 days
+	sResolverGiven="$1"
+	sListToRead="$gsResolversList"
+	nCount=1
+
+	if [ ! -z "$sResolverGiven" ] && [ ! -z "`echo $gsResolversList | grep "$sResolverGiven"`" ]; then
+		sListToRead="$sResolverGiven"
+	fi
+
+	for sResolver in $sListToRead; do
+		gfnMessage "notice" 'log' "Checking certificate for: '$sResolver'"
+
+		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nCount -e $gnCountResolver -t 'Checking certificate		:' -m "($nCount/$gnCountResolver	- $sResolver)"
+
+		eval "${gsProxyApp} -R ${sResolver} -t ${nProxyTestMargin} -u ${gsDeamonUser} -L ${gsCsvFile} -l ${gsTmpDir}/${sResolver}.log -m 7 >> ${gsTmpDir}/${sResolver}.log 2>&1"
+		gnCertificate=$?
+
+		case "$gnCertificate" in
+			0) #  a valid certificate can be used
+				sType='info'
+				gsMess="A valid certificate can be used"
+				cmdMySQL 'MySB_db' "UPDATE dnscrypt_resolvers SET certificate='$gnCertificate', comments='$gsMess' WHERE name='$sResolver';"
+				if [ -z "$sResolverGiven" ]; then
+					sResolversList="$sResolversList $sResolver"
+				fi
+			;;
+			*)
+				sType='warning'
+				case "$gnCertificate" in
+					2)	gsMess="No valid certificates can be used";;
+					3)	gsMess="A timeout occurred";;
+					4)	gsMess="A currently valid certificate is going to expire before margin $nProxyTestMargin";;
+					*) # ???
+						sType='error'
+						gsMess="An unknow error occurred: $gnCertificate"
+					;;
+				esac
+
+				cmdMySQL 'MySB_db' "UPDATE dnscrypt_resolvers SET forwarder='', certificate='$gnCertificate', pid='', comments='$gsMess' WHERE name='$sResolver';"
+			;;
+		esac
+
+		case "$gbShowMessages" in
+			'yes')	(( nCount++ ));;
+			'no')	return $gnCertificate;;
+		esac
+
+		gfnMessage "$sType" 'log' "$gsMess for: '$sResolver'"
+	done
+
+	gsResolversList="`echo $sResolversList | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+	gnCountResolver="`echo $gsResolversList | wc -w`"
+}
+
+#------------------------------------------------------------
+# DNS LEAK TEST (IPv4)
+#
+# This function is just a command line bonus. It depends of third party software that can change any time.
+#
+# Note: DNS-OARC is not a DNS Leak Test site itself but produces the exactly same results when we observe the DNS Servers tested
+# This site was chosen because is secure and it does not use javascript, permitting download of data inside html code
+#
+#
+# No magic here. This function extracts the DNS IP addresses detected on entropy.dns-oarc.net/test test page.
+# So you can check if the DNSCrypt-proxy resolvers you choosed really is working.
+#
+# But the most important is verify if your real IP address is listed.
+# If yes, it means you are not protected by VPN or if you are using DNSCrypt-proxy as Forwarder on DNS (BIND) server,
+# the directive "Forward only;"  must be applied,
+# since this server will forward all requests and should not attempt to resolve requests on its own,
+# bypassing DNSCrypt-proxy.
+#
+# Obviously, you can use DNS Leak test pages to do the same.
+# Please refer to https://www.dns-oarc.net/ for details
+#
+#------------------------------------------------------------
+gfnCheckDnsLeak() {
+	local sDNSIPFilter sHTMLTestPage sDnsOarcTestURL sLeakTest sIP
+
+	sDNSIPFilter="(\\b\\name\\b\=.[[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}.)"
+	sHTMLTestPage="$gsTmpDir/dnscrypt-checkleak.html"
+	sDnsOarcTestURL="entropy.dns-oarc.net/test"
+
+	SAVEIFS=$IFS; IFS='%'
+
+	sLeakTest=$(printf  "%-16s %s" " --- Running DNS Leak Test. Please wait ---"  " ")
+	gfnMessage 'notice' 'con' "$sLeakTest"
+
+	if [ -f $sHTMLTestPage ]; then rm -f $sHTMLTestPage; fi
+
+	$binCURL $sDnsOarcTestURL -o $sHTMLTestPage
+	if [ -f $sHTMLTestPage ]; then
+		sLeakTest=$(printf  "\n\n%-16s %s" " --- DNS Servers detected during DNS Leak Test ---"  " ")
+		gfnMessage 'notice' 'con' "$sLeakTest"
+
+		IFS=$SAVEIFS
+
+		# Filter file by html tag and IP pattern
+		sIP=$(grep -oEw "$sDNSIPFilter" $sHTMLTestPage | awk -F'"' '{print $2}')
+
+		declare -a "aIP=($sIP)"
+
+		for i in "${aIP[@]}"; do
+			sLeakTest=$(printf  "%-16s %-16s %s\n" " Your DNS Server: " "$i" "$(dig +noall +answer +short -x $i) ")
+			gfnMessage 'notice' 'con' "$sLeakTest"
+		done
+	fi
+}
+
+# Test resolver speed
+gfnCheckDnsSpeed() {
+	local sProcess sProxyIP sIp tTime sResolver sPidList sPids nProcess nCount tabAverage sType sMode nVal sDigTarget nDigTries nDigTime
+
+	sDigTarget="internic.net"	# Domain used to test resolver
+	nDigTries=2					# number of tries to resolve address
+	nDigTime=2					# time in seconds per try
+	sPidList="`ls -1tr $gsPidDir/`"
+	nProcess="`echo $sPidList | wc -w`"
+	nCount=0
+	tabAverage=()
+	sType='info'
+
+	if [ "$gbShowMessages" == yes ]; then
+		sMode='con'
+	else
+		sMode='log'
+	fi
+
+	if [ ! -z "$sPidList" ]; then
+		gsMess="\n"
+
+		for sPidFile in $sPidList; do
+			(( nCount++ ))
+			sResolver="`echo $sPidFile | sed 's/.pid//g;'`"
+			sPids="`pidof $gsProxyName`"
+			if [ ! -z "$sPids" ]; then
+				sProcess=$(ps -p "$sPids" -o args= | grep "$sResolver")
+				sProxyIP=$(echo $sProcess | awk '{print $5 = substr($5, 1, 100)}')
+				sIp="`echo $sProxyIP | cut -d ":" -f 1`"
+
+				[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nCount -e $nProcess -t 'Speed test			:' -m "($nCount/$nProcess	- $sResolver)"
+
+				gsMess+="Resolver name: '$sResolver'\n"
+				nVal=0
+				for (( i=1; i<=4; i++ )); do
+					tTime=$(dig $sDigTarget +time=$nDigTime +tries=$nDigTries +noall +stats @$sIp -p 52 $gsDigProto | awk '/Query/{sum+=$4}END{print sum}')
+					if [ -z $tTime ]; then
+						tTime=9999
+					else
+						(( nVal++ ))
+						tabAverage[$nVal]=$tTime
+					fi
+					if [ $i -eq 1 ]; then
+						gsMess+="		Pass $i : $tTime msec (ignored)\n"
+					else
+						gsMess+="		Pass $i : $tTime msec\n"
+					fi
+				done
+
+				case $nVal in
+					0)	[ $tTime -eq 9999 ] && nAverage=$tTime || nAverage=000;;
+					1)	let nAverage=(${tabAverage[1]})/$nVal;;
+					2)	let nAverage=(${tabAverage[2]})/$nVal;;
+					3)	let nAverage=(${tabAverage[2]}+${tabAverage[3]})/$nVal;;
+					4)	let nAverage=(${tabAverage[2]}+${tabAverage[3]}+${tabAverage[4]})/$nVal;;
+				esac
+				gsMess+="		Average: $nAverage msec\n\n"
+
+				cmdMySQL 'MySB_db' "UPDATE dnscrypt_resolvers SET speed='$nAverage' WHERE name='$sResolver';"
+			else
+				sType='error'
+				gsMess="Speed test canceled: no processes found for '$sPidFile'!\n"
+			fi
+		done
+	else
+		sType='notice'
+		gsMess="Speed test canceled: no processes found!\n"
+	fi
+
+	[ "$gbUpdate" == no ] && gfnMessage "$sType" "$sMode" "$gsMess"
+}
+
+# Command line arguments
+gfnCheckResolversWished() {
+	local sWhere fnGetResolvers sResolver
+
+	# Get resolvers list (from database)
+	fnGetResolvers() {
+		local sSearchByIpVersion
+
+		case $gsIpVersion in
+			'all')	sSearchByIpVersion="";;
+			*)		sSearchByIpVersion=" AND ip_version='$gsIpVersion'";;
+		esac
+
+		if [ "$gbUpdate" == yes ]; then
+			sWhere="dnssec='$gbOnlyDNSSec' AND no_logs='$gbOnlyNoLogs' AND namecoin='$gbOnlyNameCoin' $sSearchByIpVersion"
+		else
+			sWhere="dnssec='$gbOnlyDNSSec' AND no_logs='$gbOnlyNoLogs' AND namecoin='$gbOnlyNameCoin' AND certificate='0' $sSearchByIpVersion ORDER BY speed"
+		fi
+		gsResolversList="`cmdMySQL 'MySB_db' "SELECT name FROM dnscrypt_resolvers WHERE $sWhere;"`"
+		gsResolversList="`echo $gsResolversList | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+		[ "$gbRandomResolvers" == yes ] && gsResolversList="`echo $gsResolversList | sort -u | xargs -n1 | sort -R | xargs`"
+		gnCountResolver="`echo $gsResolversList | wc -w`"
+	}
+	fnGetResolvers
+
+	if [ ! -z "$gsResolversList" ]; then
+		for sResolver in $gsResolversList; do
+			gfnMessage 'info' 'log' "Added to whish list: $sResolver"
+		done
+	else	# If resolvers list is empty
+		gbOnlyNameCoin=no
+		gfnSaveConfig 'no_display'
+		gfnUpdateResolvers 'full'
+		fnGetResolvers
+		if [ -z "$gsResolversList" ]; then
+			gsMess="\n"
+			gsMess+="${gsR}No DNS resolver found !${gsN}\n"
+			gsMess+="Try to update resolvers list with the following command:\n"
+			gsMess+="		${gsG}service $gsProxyName full-update${gsN}\n"
+			gfnMessage 'error' 'con' "$gsMess"
+			exit 1
+		fi
+	fi
+}
+
+# Check function for cron job
+gfnCheckFromCron() {
+	local bRestart sPids sLookupResult
+
+	bRestart=0
+
+	sPids="`pidof $gsProxyName`"
+	if [ -z "$sPids" ]; then
+		bRestart=1
+	else
+		sLookupResult="`nslookup github.com | grep 'Address:' | awk '{ print $2 }' | tail -n +2 | tail -n 1`"
+		if [ -z "$sLookupResult" ]; then
+			bRestart=1
+		fi
+	fi
+
+	[ $bRestart -eq 1 ] && gfnStop; gfnStart
+}
+
+# Show dnscrypt-proxy daemon status
+gfnGetStatusDetails() {
+	local sPids sMess sPidFiles nCount nCountInfos nPid sDateInit sTimeElap sProxyIP tabDnsInfo sResolverTest nSpeed
+
+	sPids="`pidof $gsProxyName`"
+	if [ -z "$sPids" ]; then
+		gsMess="Warning: $gsProxyName is not running.\n"
+		gsMess+="Please configure '$gsProxyName' using the following command:\n"
+		gsMess+="	service $gsProxyName config\n"
+		gfnMessage 'warning' 'con' "$gsMess"
+		return
+	fi
+
+	sMess=$(printf   "%-16s %s" " $gsProxyDesc"   "Loaded instances" )
+	sMess+=$(printf  "\n\n%-16s %s" " --- Configs ---"  " " )
+	sMess+=$(printf  "\n%-16s %s" " Daemon name    =" "$gsProxyName" )
+	sMess+=$(printf  "\n%-16s %s" " Running as     =" "$gsDeamonUser" )
+	sMess+=$(printf  "\n%-16s %s" " Deamon wished  =" "$gnNumberOfDaemon" )
+	sMess+=$(printf  "\n%-16s %s" " No Logs        =" "$gbOnlyNoLogs" )
+	sMess+=$(printf  "\n%-16s %s" " DNSSec         =" "$gbOnlyDNSSec" )
+	sMess+=$(printf  "\n%-16s %s" " NameCoin       =" "$gbOnlyNameCoin" )
+	sMess+=$(printf  "\n%-16s %s" " Random         =" "$gbRandomResolvers" )
+	sMess+=$(printf  "\n%-16s %s" " IP Version     =" "$gsIpVersion" )
+
+	declare -A tabDnsInfo
+	sPidFiles="`ls -1tr $gsPidDir/`"
+	if [ ! -z "$sPidFiles" ]; then
+		for sFile in $sPidFiles; do
+			sResolver="`echo $sFile | sed 's/.pid//g;'`"
+			if [ ! -z "$sResolver" ]; then
+				sPids="`pidof $gsProxyName`"
+				if [ ! -z "$sPids" ]; then
+					sProcess=$(ps -p "$sPids" -o pid= -o user= -o stime= -o etime= -o args= | grep "$sResolver")
+					nSpeed="`cmdMySQL 'MySB_db' "SELECT speed FROM dnscrypt_resolvers WHERE name='$sResolver';"`"
+
+					if [ ! -z "$sProcess" ]; then
+						# PID
+						nPid=$(          echo $sProcess | awk '{print $1 = substr($1, 1, 100)}')
+						# Date start
+						sDateInit=$(     echo $sProcess | awk '{print $3 = substr($3, 1, 100)}')
+						# Elsapsed time
+						sTimeElap=$(     echo $sProcess | awk '{print $4 = substr($4, 1, 100)}')
+						# Local Address
+						sProxyIP=$(      echo $sProcess | awk '{print $9 = substr($9, 1, 100)}')
+
+						nCount="`echo $sProxyIP | cut -d ':' -f 1 | cut -d '.' -f 4`"
+						nCountInfos=0
+						tabDnsInfo[$nCount $nCountInfos]="$sResolver"; (( nCountInfos++ ))
+						tabDnsInfo[$nCount $nCountInfos]="$nPid"; (( nCountInfos++ ))
+						tabDnsInfo[$nCount $nCountInfos]="$sDateInit"; (( nCountInfos++ ))
+						tabDnsInfo[$nCount $nCountInfos]="$sTimeElap"; (( nCountInfos++ ))
+						tabDnsInfo[$nCount $nCountInfos]="$sProxyIP"; (( nCountInfos++ ))
+						tabDnsInfo[$nCount $nCountInfos]="$nSpeed"
+					fi
+				fi
+			fi
+		done
+
+		# Gives ordered results (DNS 1, DNS 2, DNS 3,  DNS 4)
+		for (( i=1; i<=$nCount; i++ )); do
+			sResolver=${tabDnsInfo[$i 0]}
+			nPid=${tabDnsInfo[$i 1]}
+			sDateInit=${tabDnsInfo[$i 2]}
+			sTimeElap=${tabDnsInfo[$i 3]}
+			sProxyIP=${tabDnsInfo[$i 4]}
+			sResolverTest=${tabDnsInfo[$i 5]}
+
+			sMess+=$(printf  "\n\n%-16s %s" " --- DNS $i ---"  " " )
+			sMess+=$(printf  "\n%-16s %s" " Resolver name  =" "$sResolver" )
+			sMess+=$(printf  "\n%-16s %s" " Proxy IP       =" "$sProxyIP" )
+			sMess+=$(printf  "\n%-16s %s" " Pid            =" "$nPid" )
+			sMess+=$(printf  "\n%-16s %s" " Start at       =" "$sDateInit (Date days-hh:mm:ss)" )
+			sMess+=$(printf  "\n%-16s %s" " Execution time =" "$sTimeElap (Date days-hh:mm:ss)" )
+			sMess+=$(printf  "\n%-16s %s" " Resolver test  =" "$sResolverTest msec" )
+		done
+	else
+		sMess+=$(printf  "\n%-16s %s" " No process" "found !" )
+	fi
+
+	sMess+=$(printf  "\n %s" )
+	sMess+=$(printf  "\n %s" )
+
+	gfnMessage 'notice' 'con' "$sMess"
+}
+
+# Do an update resolvers list
+gfnUpdateResolvers() {
+	local sSwitch
+
+	sSwitch="$1"
+
+	# Start info logs
+	case "$sSwitch" in
+		'full')	gfnMessage 'info' 'log' "Full update resolvers list - Start";;
+		*)		gfnMessage 'info' 'log' "Basic update resolvers list - Start";;
+	esac
+
+	gbUpdate=yes
+	gbShowMessages=yes
+	gfnStop
+	gfnDownloadCsvFile
+	gfnUpdateDatabase
+	if [ "$sSwitch" == "full" ]; then
+		cmdMySQL 'MySB_db' "UPDATE dnscrypt_resolvers SET certificate='0' WHERE ip_version='$gsIpVersion' AND dnssec='$gbOnlyDNSSec' AND no_logs='$gbOnlyNoLogs' AND namecoin='$gbOnlyNameCoin';"
+		gfnCheckResolversWished
+		gfnCheckCertificateValidity
+		gfnCheckResolversWished
+		gfnStop
+		gfnStart
+		gfnCheckDnsSpeed
+		gfnStop
+		gbUpdate=no
+		log_daemon_msg "Starting $gsProxyDesc" "$gsProxyName"
+		gfnStart
+		# Return
+		# 0	: if daemon could not be started
+		# 1+	: if daemon has been started
+		case "$?" in
+			0)	log_end_msg 1;;
+			*)	log_end_msg 0;;
+		esac
+	fi
+	gbShowMessages=no
+	gbUpdate=no
+
+	# End info logs
+	case "$sSwitch" in
+		'full')	gfnMessage 'info' 'log' "Full update resolvers list - End";;
+		*)		gfnMessage 'info' 'log' "Basic update resolvers list - End";;
+	esac
+}
+
+# Download resolvers.csv from official source
+gfnDownloadCsvFile() {
+	local sCsvTemp sSigTemp sType sMode sTitle nReturn nStep nTotalSteps
+
+	sCsvTemp="$gsCsvFile.tmp"
+	sSigTemp="$gsSigFile.tmp"
+	sTitle='Getting the resolver list	:'
+	sType='notice'
+	sMode='log'
+	nReturn=0
+	nStep=0
+	nTotalSteps=8
+
+	# Step 1 - Remove old temp files
+	(( nStep++ ))
+	[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Removes temp files)"
+	[ -f $sCsvTemp ] && rm -f $sCsvTemp
+	[ -f $sSigTemp ] && rm -f $sSigTemp
+	gfnMessage 'notice' 'log' "Remove temp files"
+
+	# Step 2 - HTTP Status: dnscrypt-resolvers.csv
+	(( nStep++ ))
+	[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - HTTP Status: '$gsCsvName')";
+	gfnHttpStatus "$gsCsvUrl" || nReturn=1
+
+	# Step 3 - HTTP Status: dnscrypt-resolvers.csv.minisig
+	(( nStep++ ))
+	[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - HTTP Status: '$gsSigName')"
+	gfnHttpStatus "$gsSigUrl" || nReturn=1
+
+	if [ $nReturn -eq 0 ]; then
+		# Step 4 - Download 'dnscrypt-resolvers.csv'
+		(( nStep++ ))
+		gfnMessage 'notice' 'log' "Download '$gsCsvName'"
+		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Downloads: '$gsCsvName')"
+		$binCURL -o $sCsvTemp $gsCsvUrl
+
+		# Step 5 - Backup and update 'dnscrypt-resolvers.csv' in /usr/local/share/dnscrypt-proxy/
+		(( nStep++ ))
+		gfnMessage 'notice' 'log' "Move '$gsCsvName'"
+		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Moves: '$gsCsvName')"
+		if [ -e "$sCsvTemp" ] && [ -s "$sCsvTemp" ]; then
+			if [ -e "$gsCsvFile" ]; then
+				mv -f $gsCsvFile $gsCsvFile.old
+			fi
+			mv -f $sCsvTemp $gsCsvFile
+			gfnMessage 'info' 'log' "Successful download of the file '$gsCsvName'"
+		else
+			gfnMessage 'error' 'con' "Failed download of the file '$gsCsvName'"
+			nReturn=1
+		fi
+
+		# Step 6 - Download 'dnscrypt-resolvers.csv.minisig'
+		(( nStep++ ))
+		gfnMessage 'notice' 'log' "Download '$gsSigName'"
+		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Downloads: '$gsSigName')"
+		$binCURL -o $sSigTemp $gsSigUrl
+
+		# Step 7 - Backup and update 'dnscrypt-resolvers.csv.minisig' in /usr/local/share/dnscrypt-proxy/
+		(( nStep++ ))
+		gfnMessage 'notice' 'log' "Move '$gsSigName'"
+		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Moves: '$gsSigName')"
+		if [ -e "$sSigTemp" ] && [ -s "$sSigTemp" ]; then
+			if [ -e "$gsSigFile" ]; then
+				mv -f $gsSigFile $gsSigFile.old
+			fi
+			mv -f $sSigTemp $gsSigFile
+			gfnMessage 'info' 'log' "Successful download of the file '$gsSigName' signature"
+		else
+			gfnMessage 'error' 'con' "Failed download of the file '$gsSigName' signature"
+			nReturn=1
+		fi
+
+		if [ $nReturn -eq 0 ]; then
+			# Minisign check of 'dnscrypt-resolvers.csv'
+			# Step 8
+			(( nStep++ ))
+			gfnMessage 'notice' 'log' "Checks '$gsCsvName'"
+			[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Checks: '$gsCsvName')"
+			if gfnCheckCommand 0 minisign; then
+				minisign -q -VP "$gsSigKey" -m "$gsCsvFile"
+				if [ $? -ne 0 ]; then
+					sType='warning'
+					sMode='con'
+					gsMess="The '$gsCsvName' file has been changed or is corrupted.\n"
+					gsMess+="Is strongly recommended download a new copy.\n"
+					gsMess+="Your system may be leaking DNS queries.\n"
+					gsMess+="Execute the following command: ${gsG}service $gsProxyName update${gsN}\n"
+				else
+					sType='info'
+					gsMess="The '$gsCsvName' file is good."
+				fi
+			else
+				sType='error'
+				gsMess="Minisign is not installed !"
+			fi
+
+			gfnMessage "$sType" "$sMode" "$gsMess"
+		fi
+	fi
+}
+
+# Update resolvers list table
+gfnUpdateDatabase() {
+	local sListName sIfExist sValues sIpVersion nCount
+	local sName sFullName sDescription sLocation sCoordinates sUrl sVersion sDnsSec sNoLogs sNameCoin sResolverAddress sProviderName sPubKey sPubKeyTxt
+	local sFullNameOld sDescriptionOld sLocationOld sCoordinatesOld sUrlOld sVersionOld sDnsSecOld sNoLogsOld sNameCoinOld sResolverAddressOld sProviderNameOld sPubKeyOld sPubKeyTxtOld
+
+	#------------------------------------------------------------
+	# dnscrypt-resolvers.csv CSV format
+	#------------------------------------------------------------
+	# dnscrypt-resolvers.csv Columns
+	# 1 Name
+	# 2 Full name
+	# 3 Description
+	# 4 Location
+	# 5 Coordinates
+	# 6 URL
+	# 7 Version
+	# 8 DNSSEC validation
+	# 9 No logs
+	# 10 Namecoin
+	# 11 Resolver address
+	# 12 Provider name
+	# 13 Provider public key
+	# 14 Provider public key TXT record
+	#------------------------------------------------------------
+
+	if [ -f $gsCsvFile ]; then
+		# Before, we will delete old resolver does not exist in the new CSV file
+		gfnMessage 'notice' 'log' 'Cleaning of the database'
+		nCount=0
+		gnCountResolver="`cmdMySQL 'MySB_db' "SELECT count(name) FROM dnscrypt_resolvers;"`"
+		sListName="`cmdMySQL 'MySB_db' "SELECT name FROM dnscrypt_resolvers;"`"
+		if [ ! -z "$sListName" ]; then
+			for sName in $sListName; do
+				(( nCount++ ))
+				[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nCount -e $gnCountResolver -t 'Cleaning the database		:' -m "($nCount/$gnCountResolver	- $sName)"
+				sIfExist="`cat $gsCsvFile | grep "$sName"`"
+				if [ -z "$sIfExist" ]; then
+					gfnMessage "info" "log" "Deleting from database: '$sName'"
+					cmdMySQL 'MySB_db' "DELETE FROM dnscrypt_resolvers WHERE name='$sName';"
+				fi
+			done
+		fi
+
+		# Get resolvers information from 'dnscrypt-resolvers.csv'
+		gfnMessage 'notice' 'log' 'Updating the database'
+		nCount=0
+		gnCountResolver="`csvtool -t ',' -u '|' cat $gsCsvFile | csvtool drop 1 - | wc -l`"
+		sValues="`csvtool -t ',' -u '|' cat $gsCsvFile | csvtool drop 1 - | sed "s/'//g;" | sed 's/"//g;' | sed 's/ /#/g;'`"
+		for sLine in $sValues; do
+			sLine="`echo $sLine | sed 's/#/ /g;'`"
+			sName="`echo $sLine | awk '{split($0,a,\"|\"); print a[1]}'`"
+			sFullName="`echo $sLine | awk '{split($0,a,\"|\"); print a[2]}'`"
+			sDescription="`echo $sLine | awk '{split($0,a,\"|\"); print a[3]}'`"
+			sLocation="`echo $sLine | awk '{split($0,a,\"|\"); print a[4]}'`"
+			sCoordinates="`echo $sLine | awk '{split($0,a,\"|\"); print a[5]}'`"
+			sUrl="`echo $sLine | awk '{split($0,a,\"|\"); print a[6]}'`"
+			sVersion="`echo $sLine | awk '{split($0,a,\"|\"); print a[7]}'`"
+			sDnsSec="`echo $sLine | awk '{split($0,a,\"|\"); print a[8]}'`"
+			sNoLogs="`echo $sLine | awk '{split($0,a,\"|\"); print a[9]}'`"
+			sNameCoin="`echo $sLine | awk '{split($0,a,\"|\"); print a[10]}'`"
+			sResolverAddress="`echo $sLine | awk '{split($0,a,\"|\"); print a[11]}'`"
+			sProviderName="`echo $sLine | awk '{split($0,a,\"|\"); print a[12]}'`"
+			sPubKey="`echo $sLine | awk '{split($0,a,\"|\"); print a[13]}'`"
+			sPubKeyTxt="`echo $sLine | awk '{split($0,a,\"|\"); print a[14]}'`"
+			case $sName in
+				*ipv6*)	sIpVersion='ipv6';;
+				*)		sIpVersion='ipv4';;
+			esac
+
+			# Add or update new informations in DB
+			(( nCount++ ))
+			[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nCount -e $gnCountResolver -t 'Updating the database		:' -m "($nCount/$gnCountResolver	- $sName)"
+			sIfExist="`cmdMySQL 'MySB_db' "SELECT full_name,description,location,coordinates,url,version,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record FROM dnscrypt_resolvers WHERE name='$sName';" | sed 's/\t/|/g;'`"
+			sFullNameOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[1]}'`"
+			sDescriptionOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[2]}'`"
+			sLocationOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[3]}'`"
+			sCoordinatesOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[4]}'`"
+			sUrlOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[5]}'`"
+			sVersionOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[6]}'`"
+			sDnsSecOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[7]}'`"
+			sNoLogsOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[8]}'`"
+			sNameCoinOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[9]}'`"
+			sResolverAddressOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[10]}'`"
+			sProviderNameOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[11]}'`"
+			sPubKeyOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[12]}'`"
+			sPubKeyTxtOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[13]}'`"
+
+			if [ ! -z "$sIfExist" ]; then
+				if 	[ "$sFullNameOld" != "$sFullName" ] \
+					|| [ "$sDescriptionOld" != "$sDescription" ] \
+					|| [ "$sLocationOld" != "$sLocation" ] \
+					|| [ "$sCoordinatesOld" != "$sCoordinates" ] \
+					|| [ "$sUrlOld" != "$sUrl" ] \
+					|| [ "$sVersionOld" != "$sVersion" ] \
+					|| [ "$sDnsSecOld" != "$sDnsSec" ] \
+					|| [ "$sNoLogsOld" != "$sNoLogs" ] \
+					|| [ "$sNameCoinOld" != "$sNameCoin" ] \
+					|| [ "$sResolverAddressOld" != "$sResolverAddress" ] \
+					|| [ "$sProviderNameOld" != "$sProviderName" ] \
+					|| [ "$sPubKeyOld" != "$sPubKey" ] \
+					|| [ "$sPubKeyTxtOld" != "$sPubKeyTxt" ]; then
+
+					gfnMessage "info" "log" "Resolver updated: '$sName'"
+					cmdMySQL 'MySB_db' "UPDATE dnscrypt_resolvers SET full_name='$sFullName', description='$sDescription', location='$sLocation', coordinates='$sCoordinates', url='$sUrl', version='$sVersion', dnssec='$sDnsSec', no_logs='$sNoLogs', namecoin='$sNameCoin', resolver_address='$sResolverAddress', provider_name='$sProviderName', provider_public_key='$sPubKey', provider_public_key_txt_record='$sPubKeyTxt', ip_version='$sIpVersion', certificate='0' WHERE name='$sName';"
+				fi
+			else
+				gfnMessage "info" "log" "Resolver added: '$sName'"
+				cmdMySQL 'MySB_db' "INSERT INTO dnscrypt_resolvers (full_name,description,location,coordinates,url,version,name,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record,ip_version) VALUES ('$sFullName','$sDescription','$sLocation','$sCoordinates','$sUrl','$sVersion','$sName','$sDnsSec','$sNoLogs','$sNameCoin','$sResolverAddress','$sProviderName','$sPubKey','$sPubKeyTxt','$sIpVersion');"
+			fi
+		done
+	fi
+}
+
+# Function START
+gfnStart() {
+	local sPids nPid nRunning nCountProcess nCountResolver nResolverQty sType
+
+	sPids=''
+	nPid=''
+	nRunning=0
+	nCountResolver=0
+	gnCertificate=0
+	gbShowMessages=no
+
+	# Stop others processes
+	sPids="`pidof $gsProxyName`"
+	if [ ! -z "$sPids" ]; then
+		nRunning="`echo $sPids | wc -w`"
+		gfnMessage 'info' 'log' "$gsProxyDesc is already running, processes: $nRunning"
+	else
+		# Get list of resolvers wished (gsResolversList)
+		gfnCheckResolversWished
+
+		# Force all resolvers to be inactive in DB
+		cmdMySQL 'MySB_db' "UPDATE dnscrypt_resolvers SET forwarder='', pid='';"
+
+		if [ "$gbUpdate" == no ]; then
+			nResolverQty=$gnNumberOfDaemon
+		else
+			nResolverQty=$gnCountResolver
+		fi
+
+		gfnSwitchDNS 'dnscrypt' $nResolverQty;
+
+		for sResolver in $gsResolversList; do
+			if [ $nRunning -ne $nResolverQty ]; then
+				(( nCountResolver++ ))
+				[ "$gbUpdate" == yes ] && gfnProgressBar -s $nCountResolver -e $gnCountResolver -t "Starting all resolvers		:" -m "($nCountResolver/$gnCountResolver	- $sResolver)"
+
+				# Delete ghost screen pid file
+				if [ -e $gsPidDir/$sResolver.pid ]; then
+					pidofproc -p $gsPidDir/$sResolver.pid &> /dev/null || rm -f $gsPidDir/$sResolver.pid
+				fi
+
+				[ "$gbUpdate" == no ] && gfnCheckCertificateValidity "$sResolver"
+				# Resolver certificate validity
+				# 0: a valid certificate can be used, resolver will be used
+				# 2: no valid certificates can be used, continue witout this sone
+				# 3: a timeout  occurred, continue witout this sone
+				# 4: a currently valid certificate is going to expire before margin, continue witout this sone
+				if [ $gnCertificate -ne 0 ]; then
+					sType='warning'
+					case "$gnCertificate" in
+						2)	gsMess="No valid certificates can be used";;
+						3)	gsMess="A timeout occurred";;
+						4)	gsMess="A currently valid certificate is going to expire before margin";;
+						*)	sType='error'; gsMess="An unknow error occurred: $gnCertificate";;
+					esac
+
+					# Update DB
+					cmdMySQL 'MySB_db' "UPDATE dnscrypt_resolvers SET certificate='$gnCertificate', comments='$gsMess' WHERE name='$sResolver';"
+				else
+					let nCountProcess=${nRunning}+1
+
+					$gsProxyName -R $sResolver -a 127.0.0.$nCountProcess:52 -p $gsPidDir/$sResolver.pid $gsProxyParams >> $gsLogFile 2>> $gsTmpDir/$sResolver.log
+					sleep 0.2
+
+					sPids="`pidof $gsProxyName`"
+					if [ ! -z "$sPids" ]; then
+						nPid=$(ps -p "$sPids" -o pid= -o user= -o args= | grep "127.0.0.$nCountProcess:52" | awk '{print $1 = substr($1, 1, 100)}')
+					fi
+					if [ ! -z "$nPid" ]; then
+						# Start OK
+						sType='info'
+						gsMess="'$sResolver' is started completly"
+						(( nRunning++ ))
+						# Update DB
+						cmdMySQL 'MySB_db' "UPDATE dnscrypt_resolvers SET forwarder='127.0.0.$nCountProcess', pid='$nPid' WHERE name='$sResolver';"
+					else
+						# Start KO
+						sType='error'
+						gsMess="'$sResolver' did not started"
+					fi
+				fi
+
+				gfnMessage "$sType" 'log' "$gsMess"
+			fi
+		done
+	fi
+
+	# Return
+	# 0	: if daemon could not be started
+	# 1+	: if daemon has been started
+	if [ "$gbUpdate" == no ]; then
+		case "$nRunning" in
+			0)	gfnStop;;
+			*)	gfnCheckDnsSpeed&;;
+		esac
+	fi
+
+	# Restore boolean
+	gbShowMessages=yes
+
+	return $nRunning
+}
+
+# Function STOP the daemon/service
+gfnStop() {
+	local sType sPidList sPids sResolver nCount nCountResolvers
+
+	sType='info'
+	sPidList="`ls -1tr $gsPidDir/`"
+	sPids=''
+	nCount=0
+
+	if [ -z "$sPidList" ]; then
+		gsMess="$gsProxyDesc is not running !"
+	else
+		nCountResolvers="`echo $sPidList | wc -w`"
+		for sPidFile in $sPidList; do
+			(( nCount++ ))
+			sResolver="`echo $sPidFile | sed 's/.pid//g;'`"
+			[ "$gbUpdate" == yes ] && gfnProgressBar -s $nCount -e $nCountResolvers -t "Stopping processes		:" -m "($nCount/$nCountResolvers	- $sResolver)"
+			start-stop-daemon --stop --quiet --oknodo --pidfile $gsPidDir/$sPidFile 2>> $gsLogFile
+		done
+	fi
+
+	# Ghost processes ?
+	sPids="`pidof $gsProxyName`"
+	if [ ! -z "$sPids" ]; then
+		pkill -f $gsProxyName >> $gsLogFile
+		sType='notice'
+		gsMess="\nForce kill for ghost processes !"
+	fi
+
+	# Log file
+	gfnMessage "$sType" 'log' "$gsMess"
+	# Update DB
+	cmdMySQL 'MySB_db' "UPDATE dnscrypt_resolvers SET forwarder='', pid='';"
+	# Switch DNS
+	gfnSwitchDNS 'bind'
+}
+
+# Variables stored in database
+gfnVariableFormat() {
+	local sConfigValues sIpVersion nNumberOfDaemon bOnlyNoLogs bOnlyDNSSec bOnlyNameCoin bRandom sSigKey sCsvUrl nResolversDb
+
+	# Add resolvers to database
+	nResolversDb="`cmdMySQL 'MySB_db' "SELECT count(name) FROM dnscrypt_resolvers;"`"
+	if [ $nResolversDb -eq 0 ] && [ -z "`echo $@ | grep 'update'`" ] && [ -z "`echo $@ | grep 'full-update'`" ]; then
+		gsMess="\n"
+		gsMess+="${gsR}No DNS resolver found !${gsN}\n"
+		gsMess+="Try to update resolvers list with the following command:\n"
+		gsMess+="		${gsG}service $gsProxyName full-update${gsN}\n"
+		gfnMessage 'ERROR' 'con' "$gsMess"
+		exit 1
+	fi
+
+	# Get config from database
+	sConfigValues="`cmdMySQL 'MySB_db' "SELECT ip_version,processes_qty,no_logs,dnssec,namecoin,random,sig_key,csv_url FROM dnscrypt_config WHERE id_dnscrypt_config='1';" | sed 's/\t/|/g;'`"
+	sIpVersion="`echo $sConfigValues | awk '{split($0,a,"|"); print a[1]}'`"
+	nNumberOfDaemon="`echo $sConfigValues | awk '{split($0,a,"|"); print a[2]}'`"
+	bOnlyNoLogs="`echo $sConfigValues | awk '{split($0,a,"|"); print a[3]}'`"
+	bOnlyDNSSec="`echo $sConfigValues | awk '{split($0,a,"|"); print a[4]}'`"
+	bOnlyNameCoin="`echo $sConfigValues | awk '{split($0,a,"|"); print a[5]}'`"
+	bRandom="`echo $sConfigValues | awk '{split($0,a,"|"); print a[6]}'`"
+	sSigKey="`echo $sConfigValues | awk '{split($0,a,"|"); print a[7]}'`"
+	sCsvUrl="`echo $sConfigValues | awk '{split($0,a,"|"); print a[8]}'`"
+
+	# Ip Version
+	case $sIpVersion in
+		'ipv4'|'ipv6'|'all') gsIpVersion="$sIpVersion";;
+	esac
+	case $gsIpVersion in
+		'ipv4')	gsDigProto='-4';;
+		'ipv6')	gsDigProto='-6';;
+	esac
+	# Number of wanted daemons
+	if [ $nNumberOfDaemon -ge 1 ] && [ $nNumberOfDaemon -le 6 ]; then
+		gnNumberOfDaemon=$nNumberOfDaemon
+	fi
+	# No Logs
+	case $bOnlyNoLogs in
+		'yes'|'no') gbOnlyNoLogs="$bOnlyNoLogs";;
+	esac
+	# -E, --ephemeral-keys,  Not enabled by default because it may be slow, especially on non-Intel CPUs.
+	# We activate it only if the remote server is logging activity.
+	if [ "$gbOnlyNoLogs" == no ] && [ -z "`echo $gsProxyParams | grep '\-E'`" ]; then
+		gsProxyParams="$gsProxyParams -E"
+	fi
+	# DNSsec
+	case $bOnlyDNSSec in
+		'yes'|'no') gbOnlyDNSSec="$bOnlyDNSSec";;
+	esac
+	# NameCoin
+	case $bOnlyNameCoin in
+		'yes'|'no') gbOnlyNameCoin="$bOnlyNameCoin";;
+	esac
+	# Random resolvers
+	case $bRandom in
+		'yes'|'no') gbRandomResolvers="$bRandom";;
+	esac
+	# Sig Key
+	if [ ! -z "$sSigKey" ]; then gsSigKey="$sSigKey"; fi
+	# CSV URL
+	if [ ! -z "$sCsvUrl" ]; then gsCsvUrl="$sCsvUrl"; fi
+
+	# Variable format
+	gbOnlyNoLogs="`echo $gbOnlyNoLogs | tr '[:upper:]' '[:lower:]'`"
+	gbOnlyDNSSec="`echo $gbOnlyDNSSec | tr '[:upper:]' '[:lower:]'`"
+	gbOnlyNameCoin="`echo $gbOnlyNameCoin | tr '[:upper:]' '[:lower:]'`"
+	gbRandomResolvers="`echo $gbRandomResolvers | tr '[:upper:]' '[:lower:]'`"
+	gsResolversList=''
+	gnCountResolver=0
+	gbUpdate=no
+	gsMess=''
+}
+
+# Save configuration in interactive mode
+gfnSaveConfig() {
+	local nNumberOfDaemon nCountResolver sSearchByIpVersion
+
+	case $gsIpVersion in
+		'all')	sSearchByIpVersion="";;
+		*)		sSearchByIpVersion=" AND ip_version='$gsIpVersion'";;
+	esac
+
+	nCountResolver="`cmdMySQL 'MySB_db' "SELECT count(name) FROM dnscrypt_resolvers WHERE dnssec='$gbOnlyDNSSec' AND no_logs='$gbOnlyNoLogs' AND namecoin='$gbOnlyNameCoin' $sSearchByIpVersion;"`"
+	if [ $nCountResolver -lt $gnNumberOfDaemon ]; then
+		nNumberOfDaemon=$nCountResolver
+	elif [ $nCountResolver -eq 0 ]; then
+		gbOnlyNameCoin=no
+		nCountResolver="`cmdMySQL 'MySB_db' "SELECT count(name) FROM dnscrypt_resolvers WHERE dnssec='$gbOnlyDNSSec' AND no_logs='$gbOnlyNoLogs' AND namecoin='$gbOnlyNameCoin' $sSearchByIpVersion;"`"
+	else
+		nNumberOfDaemon=$gnNumberOfDaemon
+	fi
+	cmdMySQL 'MySB_db' "UPDATE dnscrypt_config SET processes_qty='$nNumberOfDaemon', no_logs='$gbOnlyNoLogs', dnssec='$gbOnlyDNSSec', namecoin='$gbOnlyNameCoin', random='$gbRandomResolvers' WHERE id_dnscrypt_config='1';"
+
+	if [ -z "$1" ]; then
+		gsMess="Configuration saved:\n\n"
+		gsMess+="  Process qty         : $nNumberOfDaemon\n"
+		gsMess+="  IP version          : $gsIpVersion\n"
+		gsMess+="  Random              : $gbRandomResolvers\n"
+		gsMess+="  No Logs             : $gbOnlyNoLogs\n"
+		gsMess+="  DNSSec              : $gbOnlyDNSSec\n"
+		gsMess+="  NameCoin            : $gbOnlyNameCoin\n"
+		gsMess+="  Available resolvers : $nCountResolver\n\n"
+		gfnMessage 'info' 'con' "$gsMess"
+	fi
+}
+
+# Basic cURL connection test filtering "HTTP/1.1" pattern to extract http status
+# HTTP/1.1 200 OK
+# HTTP/1.1 301 Moved Permanently (if file not found)
+# and none if internet or DNS fail
+gfnHttpStatus() {
+	local sUrl sStatus sType nReturn
+
+	sUrl="$1"
+	sType='notice'
+	nReturn=0
+
+	case "$($binCURL --no-buffer --head $sUrl)" in
+		*"200 OK"*)                  sStatus="200";;
+		*"404 Not Found"*)           sStatus="404";;
+		*"301 Moved Permanently"*)   sStatus="301";;
+		*""*)                        sStatus="?";;
+	esac
+	if [ "$sStatus" == "301" ] || [ "$sStatus" == "404" ] || [ "$sStatus" == "?" ]; then
+		gsMess="\nRemote file '$sUrl' not found.\n\n"
+		gsMess+="Please verify internet connection and URL.\n"
+		gsMess+="HTTP Error: ${sStatus}"
+
+		sType='error'
+		nReturn=1
+	else
+		gsMess="HTTP Status: ${sStatus} for $sUrl"
+	fi
+
+	gfnMessage "$sType" 'log' "$gsMess"
+	return $nReturn
+}
+
+# Progress Bar - https://github.com/fearside/ProgressBar/
+gfnProgressBar() {
+	local sTitle sMessage sLine nStart nEnd nWidth nProgress nDone nLeft nPrevious
+
+	nStart=0
+	nEnd=100
+	sTitle='Progress :'
+	sMessage=''
+	nWidth=40
+
+	# Get the options.
+	OPTS=`getopt --shell bash --options s:e:t:m:w: --name "Progress bar" -- "$@"`
+	if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
+	eval set -- "$OPTS"
+	while true; do
+		case "$1" in
+			-s) nStart="$2"; shift 2;;		# Sets the minimal progress value (default 0)
+			-e) nEnd="$2"; shift 2;;		# Sets the maximal progress value (default 100)
+			-t) sTitle="$2"; shift 2;;		# Sets the title
+			-m) sMessage="$2"; shift 2;;	# Sets a message at the end of line
+			-w) nWidth="$2"; shift 2;;		# Sets the width of the progress-bar (default 40)
+			--)	shift; break;;
+		esac
+	done
+	if [ $# -ne 0 ]; then
+		echo "Unknown arguments: $@" 1>&2
+		exit 1
+	fi
+
+	# Process data
+	let nProgress=(${nStart}*100/${nEnd}*100)/100
+	let nDone=(${nProgress}*4)/10
+	let nLeft=${nWidth}-${nDone}
+	# Build progressbar string lengths
+	nDone=$(printf "%${nDone}s")
+	nLeft=$(printf "%${nLeft}s")
+
+	# To clean end line if a dynamic message is given
+	if [ ! -z "$sMessage" ]; then
+		nPrevious=${gnLenght}
+		[ -z $nPrevious ] && nPrevious=$(echo "$sMessage" | wc -m)
+		gnLenght=$(echo "$sMessage" | wc -m)
+		sMessage=$(echo $sMessage | awk '{printf("%-'$nPrevious's", $0) }')
+	fi
+
+	# Build progressbar strings and print the ProgressBar line
+	sLine=$(printf "\r$sTitle [${nDone// /#}${nLeft// /-}] ${nProgress}%% ${sMessage}")
+	echo -en "${sLine}\r"
+
+	# New line at the end
+	if [ $nProgress -eq 100 ]; then
+		echo
+	fi
+}
+
+# Show Messages
+gfnMessage() {
+	local sType sMode sMess
+
+	# Options:
+	# $1:	[notice|info|warning|error]
+	# 		notice - send message to log [NOTICE]
+	# 		info - send message to log [INFO]
+	#		warning - send message to log [WARNING]
+	#		error - send message to log [ERROR]
+	# $2:	[con|log]
+	# 		con - send message to whiptail box OR console
+	# 		log - send message only into log
+	# $3:	[message]
+	sType="$1"
+	sMode="$2"
+	sMess="$3"
+
+	fnWriteToLogFile() {
+		local sType sLineStart SaveLang LANG sMess
+
+		sType="`echo $1 | tr '[:lower:]' '[:upper:]'`"
+		sLineStart=''
+		SaveLang=$LANG
+		LANG=en_us_8859_1
+		sMess="$2"
+
+		case "$1" in
+			'error')	sType="$sType";;
+			'warning')	sType="$sType";;
+			'notice')	sType="$sType";;
+			'info')		sType="$sType";;
+		esac
+
+		sLineStart="`/bin/date '+%a %b %d %T %Y'` [$sType]";
+		while IFS=$'\n' read -ra sLogLine; do
+			for sLine in "${sLogLine[@]}"; do
+				echo -e "$sLineStart $sLine" >> $gsLogFile
+			done
+		done <<< "$sMess"
+		LANG=$SaveLang
+	}
+
+	case "$sMode" in
+		'con')
+			if [ "$gbCommandLine" == no ] && [ "$gbShowMessages" == yes ]; then
+				$gsGUI --title "`echo $sType | tr '[:lower:]' '[:upper:]'`" --msgbox "$sMess"  0 0
+			else
+				printf "$sMess"
+			fi
+			fnWriteToLogFile "$sType" "$sMess"
+		;;
+		'log')
+			fnWriteToLogFile "$sType" "$sMess"
+		;;
+	esac
+}
+
+# To execute when this script will exited whith integer (ex: exit 0, exit 1, ...)
+gfnSigInt() {
+	echo " Exiting... "
+	exit 1
+}
+
+#------------------------------------------------------------
+# START GRAPHIC MODE
+#------------------------------------------------------------
+gfnMenuShowConfig() {
+	local sDescription sSelect
+
+	while :
+	do
+		SelectedTask=$($gsGUI --title "$gsProxyDesc tasks" --menu "Choose your option" 22 70 15 \
+		"1"  "Sets resolver filter (No Logs, DNSSec, NameCoin)"\
+		"2"  "Sets number of resolver to use"\
+		"3"  "Sort the resolvers randomly ?"\
+		" "  ""\
+		"4"  "Update the list of resolvers from the official source ?"\
+		" "  ""\
+		"5"  "Check resolver's certificate validity ?"\
+		"6"  "Performs a speed test for started resolvers ?"\
+		" "  ""\
+		"7"  "Start/Restart $gsProxyDesc"\
+		"8"  "$gsProxyDesc status"\
+		"9"  "Stop $gsProxyDesc"\
+		" "  ""\
+		"10" "Quit"  3>&1 1>&2 2>&3)
+
+		if [ $? -ne 0 ]; then
+			return 1
+		fi
+
+		case $SelectedTask in
+			# 1)	# Sets IP Version Filter
+				# gfnMenuShowIpVersion
+				# if [ $? -ne 0 ]; then
+					# continue
+				# fi
+			# ;;
+			1)	gfnMenuShowFilters;;
+			2)	gfnMenuShowProcessQty;;
+			3)	gfnMenuShowRandomly;;
+			4)
+				sDescription="What type of update do you want to perform ?\n\n"
+				sDescription+="Basic update: Download and check '$gsCsvName' file.\n"
+				sDescription+="Full update : Basic update + check certificate validity and do a speed test.\n\n"
+				sDescription+="NOTE: A full update may take several minutes to complete."
+				sSelect=$($gsGUI --title "Update resolvers list" \
+						--menu "$sDescription" 15 80 2 \
+						"1" "Basic update" \
+						"2" "Full update" \
+						3>&1 1>&2 2>&3)
+
+				if [ $? = 0 ]; then
+					case "$sSelect" in
+						1)	gfnUpdateResolvers;;
+						2)
+							$gsGUI --title "Full resolvers update" --yesno "Perform a full update now ?" 0 0
+							if [ $? -eq 0 ]; then
+								gfnUpdateResolvers 'full'
+							fi
+						;;
+					esac
+				fi
+			;;
+			5)
+				$gsGUI --title "Check certificates" --yesno "Check resolver's certificate validity ?" 0 0
+				if [ $? -eq 0 ]; then
+					gfnCheckResolversWished
+					gfnStop
+					gfnCheckCertificateValidity
+				fi
+			;;
+			6)
+				sDescription="Performs a speed test for started resolvers ?\n\n"
+				sDescription+="NOTE: A speed test is performed every time $gsProxyDesc starts (for started resolvers).\n"
+				sDescription+="NOTE: A speed test is performed during a full update (for filtered resolvers)."
+				$gsGUI --title "Resolvers Speed Test" --yesno "$sDescription" 0 0
+				if [ $? -eq 0 ]; then
+					gfnCheckResolversWished
+					gfnCheckDnsSpeed
+				fi
+			;;
+			7)
+				$gsGUI --title "$gsProxyDesc" --yesno "Are you sure you want to start $gsProxyDesc ?" 0 0
+				if [ $? -eq 0 ]; then
+					gfnStop
+					gfnStart
+					gfnGetStatusDetails
+				fi
+			;;
+			8)	gfnGetStatusDetails;;
+			9)
+				$gsGUI --title "$gsProxyDesc" --yesno "Are you sure you want to stop $gsProxyDesc?" 0 0
+				if [ $? -eq 0 ]; then
+					gfnStop
+				fi
+			;;
+			10)		clear; exit 0;;
+			" ")	continue;;
+			*)		clear; exit;;
+		esac
+	done
+}
+
+# Sets number of resolver to use
+gfnMenuShowProcessQty() {
+	local nNumberOfDaemon nOne nTwo nThree nFour nFive nSix
+
+	case "$gnNumberOfDaemon" in
+		1)	nOne=ON; nTwo=OFF; nThree=OFF; nFour=OFF; nFive=OFF; nSix=OFF;;
+		2)	nOne=OFF; nTwo=ON; nThree=OFF; nFour=OFF; nFive=OFF; nSix=OFF;;
+		3)	nOne=OFF; nTwo=OFF; nThree=ON; nFour=OFF; nFive=OFF; nSix=OFF;;
+		4)	nOne=OFF; nTwo=OFF; nThree=OFF; nFour=ON; nFive=OFF; nSix=OFF;;
+		5)	nOne=OFF; nTwo=OFF; nThree=OFF; nFour=OFF; nFive=ON; nSix=OFF;;
+		6)	nOne=OFF; nTwo=OFF; nThree=OFF; nFour=OFF; nFive=OFF; nSix=ON;;
+	esac
+
+	nNumberOfDaemon=$($gsGUI --title "Sets number of resolver to use" \
+					--radiolist "\nHow many resolver would you like to use ?\nDefault: 2" 15 50 6 \
+					--noitem \
+					"1" $nOne\
+					"2" $nTwo\
+					"3" $nThree\
+					"4" $nFour\
+					"5" $nFive\
+					"6" $nSix \
+					3>&1 1>&2 2>&3)
+
+	if [ $? -eq 0 ]; then
+		gnNumberOfDaemon=$nNumberOfDaemon
+
+		# Update DB
+		gfnSaveConfig
+
+		return 0
+	else
+		return 1
+	fi
+}
+
+# Sort the resolvers randomly ?
+gfnMenuShowRandomly() {
+	local bRandomResolvers sYes sNo
+
+	case "$gbRandomResolvers" in
+		'yes')	sYes=ON; sNo=OFF;;
+		'no')	sYes=OFF; sNo=ON;;
+	esac
+
+	bRandomResolvers=$($gsGUI --title "Sort the resolvers randomly" \
+					--radiolist "\nSort the resolvers randomly ?\n\nNOTE: The resolvers are sorted by speed each time." 10 60 2 \
+					"yes" "Sort by speed and randomly" $sYes\
+					"no" "Sort only by speed" $sNo\
+					3>&1 1>&2 2>&3)
+
+	if [ $? -eq 0 ]; then
+		gbRandomResolvers=$bRandomResolvers
+
+		# Update DB
+		gfnSaveConfig
+
+		return 0
+	else
+		return 1
+	fi
+}
+
+# IP Version user filter
+gfnMenuShowIpVersion() {
+	local sIpVersion sAll sIPv4 sIPv6
+
+	case "$gsIpVersion" in
+		'all')	sAll=ON; sIPv4=OFF; sIPv6=OFF;;
+		'ipv4')	sAll=OFF; sIPv4=ON; sIPv6=OFF;;
+		'ipv6')	sAll=OFF; sIPv4=OFF; sIPv6=ON;;
+	esac
+
+	sIpVersion=$($gsGUI --title "IP Version Filter" \
+				--radiolist "Filter resolvers by IP format" 10 50 3 \
+				"ipv4" "Show only IPv4 resolvers" $sIPv4 \
+				"ipv6" "Show only IPv6 resolvers" $sIPv6 \
+				"all"  "Show IPv4 and IPv6 resolvers" $sAll \
+				3>&1 1>&2 2>&3)
+
+	if [ $? -eq 0 ]; then
+		gsIpVersion="$sIpVersion"
+
+		# Update DB
+		gfnSaveConfig
+
+		return 0
+	else
+		return 1
+	fi
+}
+
+# Secure resolver filter
+gfnMenuShowFilters() {
+	local sValue
+
+	sValue=$($gsGUI --title "Resolvers filters" --checklist \
+	"Choose the filters to apply to the resolvers list." 10 90 3 \
+	"NoLogs" "Check to hide the resolvers that store logs." $gbOnlyNoLogs \
+	"DNSSec" "Check to show the resolvers that accept the DNSSec protocol." $gbOnlyDNSSec \
+	"NameCoin" "Check to show the resolvers that accept the NameCoin protocol." $gbOnlyNameCoin 3>&1 1>&2 2>&3)
+
+	if [ $? -eq 0 ]; then
+		if [ "`echo $sValue | grep 'NoLogs'`" ]; then
+			gbOnlyNoLogs=yes
+		else
+			gbOnlyNoLogs=no
+		fi
+		if [ "`echo $sValue | grep 'DNSSec'`" ]; then
+			gbOnlyDNSSec=yes
+		else
+			gbOnlyDNSSec=no
+		fi
+		if [ "`echo $sValue | grep 'NameCoin'`" ]; then
+			gbOnlyNameCoin=yes
+		else
+			gbOnlyNameCoin=no
+		fi
+
+		# Update DB
+		gfnSaveConfig
+
+		return 0
+	else
+		return 1
+	fi
+}
+
+# Usage congig
+gfnCmdShowUsageConfig() {
+	local sUsage_Config
+
+	sUsage_Config="  ${gsG}config${gsN}          Without option, start $gsProxyDesc configuration in interative mode (service $gsProxyName config).\n"
+	sUsage_Config+="                  With option(s), start $gsProxyDesc configuration in command line (service $gsProxyName config [options]).\n"
+	sUsage_Config+="                  ${gsY}Options format example:${gsN}\n"
+	sUsage_Config+="                    service $gsProxyName config --nologs=no --proc=4\n"
+	sUsage_Config+="                  ${gsY}Available options:${gsN}\n"
+	# sUsage_Config+="                    ${gsG}--ipv${gsN}     Sets filter to use addressing ipv4, ipv6 or both.\n"
+	# sUsage_Config+="                                  Without argument, matches to the default value.\n"
+	# sUsage_Config+="                                  Values  : [ipv4|ipv6|all]\n"
+	# sUsage_Config+="                                  Default : ipv4\n"
+	sUsage_Config+="                   ${gsG}--nologs${gsN}   Sets filter to include resolvers who store dns query logs.\n"
+	sUsage_Config+="                                  Without argument, matches to the default value.\n"
+	sUsage_Config+="                                  Values  : [yes|no] (yes = Privacy, no = No privacy)\n"
+	sUsage_Config+="                                  Default : yes\n"
+	sUsage_Config+="                   ${gsG}--dnssec${gsN}   Sets filter to include resolvers who accept or not DNSSec protocol.\n"
+	sUsage_Config+="                                  Without argument, matches to the default value.\n"
+	sUsage_Config+="                                  Values  : [yes|no] (yes = With DNSSec, no = Without DNSSec)\n"
+	sUsage_Config+="                                  Default : yes\n"
+	sUsage_Config+="                   ${gsG}--namecoin${gsN} Sets filter to include resolvers who accept or not NameCoin protocol.\n"
+	sUsage_Config+="                                  Without argument, matches to the default value.\n"
+	sUsage_Config+="                                  Values  : [yes|no] (yes = With NameCoin, no = Without NameCoin)\n"
+	sUsage_Config+="                                  Default : yes\n"
+	sUsage_Config+="                   ${gsG}--random${gsN}   Sets randomly filter for resolvers list.\n"
+	sUsage_Config+="                                  Without argument, matches to the default value.\n"
+	sUsage_Config+="                                  Values  : [yes|no] (yes = random, no = no random)\n"
+	sUsage_Config+="                                  Default : yes\n"
+	sUsage_Config+="                   ${gsG}--proc${gsN}     Sets the number of DNScrypt processes to run.\n"
+	sUsage_Config+="                                  Without argument, matches to the default value.\n"
+	sUsage_Config+="                                  Values  : [1-6]\n"
+	sUsage_Config+="                                  Default : 2\n"
+
+	printf "$sUsage_Config"
+}
+
+# Usage global
+gfnCmdShowUsage() {
+	local sUsage
+
+	sUsage="${gsN}\n"
+	sUsage+="${gsY}Usage:${gsN} service $gsProxyName {stop|status|status-details|config|update|full-update|speed-test}\n"
+	sUsage+="${gsY}Usage:${gsN} service $gsProxyName {start|restart} [options]\n"
+	sUsage+="\n"
+	sUsage+="  ${gsG}start${gsN}           Load $gsProxyDesc using a resolver previously selected by user on interactive mode (config) OR randomly choosed.\n"
+	sUsage+="  ${gsG}stop${gsN}            Stop all $gsProxyDesc processes.\n"
+	sUsage+="  ${gsG}restart${gsN}         Stop all $gsProxyDesc processes, then load $gsProxyDesc using a resolver previously selected by user on interactive mode (config) OR randomly choosed.\n"
+	sUsage+="  ${gsG}status${gsN}          Show a quick status of resolvers started.\n"
+	sUsage+="  ${gsG}status-details${gsN}  Show a full status of resolvers started.\n"
+	sUsage+="  ${gsG}update${gsN}          1/ Download the '$gsCsvName' file from official source;\n"
+	sUsage+="                  2/ Performs signature check with Minisig (if available);\n"
+	sUsage+="                  3/ Update resolvers informations stored in database;\n"
+	sUsage+="  ${gsG}full-update${gsN}     1/ Download the '$gsCsvName' file from official source;\n"
+	sUsage+="                  2/ Performs signature check with Minisig (if available);\n"
+	sUsage+="                  3/ Update resolvers informations stored in database;\n"
+	sUsage+="                  4/ Performs a certificate validity for all resolvers;\n"
+	sUsage+="                     ${gsU}NOTE${gsN}: If a resolver's certificate is not OK, it will be disabled in database for block to use it later.\n"
+	sUsage+="                  5/ Performs a speed test for all resolvers filtered.\n"
+	sUsage+="                     ${gsU}NOTE${gsN}: The time will be stored in the database to sort the resolvers in order of speed.\n"
+	sUsage+="                  ${gsU}NOTE${gsN}: The full update process can make a moment for done completly.\n"
+	#sUsage+="  ${gsG}dns-leak${gsN}        Performs a DNS Leak test (beta).\n"
+	sUsage+="  ${gsG}speed-test${gsN}      Performs a speed test for started resolvers.\n"
+	sUsage+="  ${gsG}cron-check${gsN}      Checks whether the DNScrypt process is operational and functional.\n"
+	sUsage+="  ${gsG}help${gsN}            Show this help.\n"
+	sUsage+="${gsN}\n"
+
+	printf "$sUsage"
+	gfnCmdShowUsageConfig
+}
+
+#------------------------------------------------------------
+# Functions - End
+#------------------------------------------------------------
+
+######################################################################
+#
+# E N D   W O R K S P A C E
+#
+######################################################################
+
+######################################################################
+#
+# S T A R T   C O M M A N D   L I N E   M O D E
+#
+######################################################################
+
+# DNScrypt-proyx global paramters
+gsProxyParams="-d -u ${gsDeamonUser} -n 250 -m 6 -L $gsCsvFile -l $gsLogFile"
+
+# Bin CURL
+binCURL="curl -skLS --retry 3"
+
+# Colors - http://misc.flogisoft.com/bash/tip_colors_and_formatting
+gsN="\e[0m\e[39m"	# normal
+gsU="\e[4m"			# underline
+gsB="\e[34m"		# blue
+gsBl="\e[94m"		# blue light
+gsY="\e[33m"		# yellow
+gsYl="\e[93m"		# yellow light
+gsG="\e[32m"		# green
+gsGl="\e[92m"		# green light
+gsR="\e[31m"		# red
+gsRl="\e[91m"		# red light
+
+# Default: we are in command line mode
+gbCommandLine=yes
+
+# Default: we display all message & progress bar
+gbShowMessages=yes
+
+# Default: it's not a resolvers update
+gbUpdate=no
+
+# Start some functions
+gfnCheckPrerequisites
+gfnCheckDirAndFiles
+gfnVariableFormat "$@"
+
+# Options
+if [ $# -ge 1 ]; then
+	for Arg in "$@"; do
+		case "$Arg" in
+			'start')
+				log_daemon_msg "Starting $gsProxyDesc" "$gsProxyName"
+				gfnStart
+				# Return
+				# 0	: if daemon could not be started
+				# 1+	: if daemon has been started
+				case "$?" in
+					0)		log_end_msg 1;;
+					[1-9]*)	log_end_msg 0;;
+				esac
+			;;
+			'stop')
+				log_daemon_msg "Stopping $gsProxyDesc" "$gsProxyName"
+				gfnStop
+				log_end_msg 0
+			;;
+			'restart')
+				log_daemon_msg "Restarting $gsProxyDesc" "$gsProxyName"
+				gfnStop
+				gfnStart
+				# Return
+				# 0	: if daemon could not be started
+				# 1+	: if daemon has been started
+				case "$?" in
+					0)		log_end_msg 1;;
+					[1-9]*)	log_end_msg 0;;
+				esac
+			;;
+			'status'|'status-details')
+				case "$Arg" in
+					status)
+						sPidFiles="`ls -1r $gsPidDir/`"
+						if [ ! -z "$sPidFiles" ]; then
+							for sFile in $sPidFiles; do
+								status_of_proc -p "$gsPidDir/$sFile" "$gsProxyName" "`echo $sFile | sed 's/.pid//g;'`" && log_end_msg
+							done
+						else
+							gfnMessage 'notice' 'con' "$gsProxyDesc is not running !"
+						fi
+					;;
+					status-details)
+						gfnGetStatusDetails
+					;;
+				esac
+			;;
+			'update'|'full-update')
+				case "$Arg" in
+					'update')		gfnUpdateResolvers;;
+					'full-update')	gfnUpdateResolvers 'full';;
+				esac
+			;;
+			'speed-test')
+				gfnCheckResolversWished
+				gfnCheckDnsSpeed
+			;;
+			'cron-check')
+				gfnCheckFromCron
+			;;
+			# 'dns-leak')
+				# gfnCheckDnsLeak
+			# ;;
+			'config')
+				trap gfnSigInt INT
+				gbUpdateDb=no
+				OPTS=$(getopt --shell bash -l proc::,ipv::,dnssec::,nologs::,namecoin::,random:: -n "$gsProxyDesc init" -- "$@")
+				if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
+				eval set -- "$OPTS"
+				while true; do
+					case "$1" in
+						--proc)
+							case "$2" in
+								[1-6])					gbUpdateDb=yes; gnNumberOfDaemon="$2"; shift 2;;
+								'')						gbUpdateDb=yes; gnNumberOfDaemon=2; shift 2;;
+								[7-9]*)					gfnCmdShowUsageConfig; shift; exit 1;;
+							esac
+						;;
+						# --ipv)
+							# case "$2" in
+								# 'ipv4'|'ipv6'|'all')		gbUpdateDb=yes; gsIpVersion="$2"; shift 2;;
+								# '')					gbUpdateDb=yes; gsIpVersion=ipv4; shift 2;;
+								# *)						gfnCmdShowUsageConfig; shift; exit 1;;
+							# esac
+						# ;;
+						--dnssec)
+							case "$2" in
+								'yes'|'no')				gbUpdateDb=yes; gbOnlyDNSSec="$2"; shift 2;;
+								'')						gbUpdateDb=yes; gbOnlyDNSSec=yes; shift 2;;
+								*)						gfnCmdShowUsageConfig; shift; exit 1;;
+							esac
+						;;
+						--nologs)
+							case "$2" in
+								'yes'|'no')				gbUpdateDb=yes; gbOnlyNoLogs="$2"; shift 2;;
+								'')						gbUpdateDb=yes; gbOnlyNoLogs=yes; shift 2;;
+								*)						gfnCmdShowUsageConfig; shift; exit 1;;
+							esac
+						;;
+						--namecoin)
+							case "$2" in
+								'yes'|'no')				gbUpdateDb=yes; gbOnlyNameCoin="$2"; shift 2;;
+								'')						gbUpdateDb=yes; gbOnlyNameCoin=yes; shift 2;;
+								*)						gfnCmdShowUsageConfig; shift; exit 1;;
+							esac
+						;;
+						--random)
+							case "$2" in
+								'yes'|'no')				gbUpdateDb=yes; gbRandomResolvers="$2"; shift 2;;
+								'')						gbUpdateDb=yes; gbRandomResolvers=yes; shift 2;;
+								*)						gfnCmdShowUsageConfig; shift; exit 1;;
+							esac
+						;;
+						*)
+							if [ "$gbUpdateDb" == no ]; then
+								gbCommandLine=no
+								gbShowMessages=yes
+								gfnMenuShowConfig
+								gbCommandLine=yes
+								gbShowMessages=no
+							fi
+							break
+						;;
+						\?)
+							gbUpdateDb=no
+							gfnMessage 'error' 'con' "Unknown Option"
+							gfnCmdShowUsageConfig
+							exit 1
+						;;
+						:)
+							gbUpdateDb=no
+							gfnMessage 'error' 'con' "missing required parameter for Option $opt"
+							exit 1
+						;;
+						--)	shift; break;;
+					esac
+				done
+
+				# Update DB
+				if [ "$gbUpdateDb" == yes ]; then
+					gfnSaveConfig; shift; break
+				fi
+			;;
+			'help')	gfnCmdShowUsage; exit 0;;
+			*)		gfnCmdShowUsage; exit 0;;
+		esac
+	done
+else
+	gfnCmdShowUsage; exit 0;
+fi
+
+######################################################################
+#
+# E N D   C O M M A N D   L I N E   M O D E
+#
+######################################################################
+
+exit 0
+
+##################### LAST LINE ######################################

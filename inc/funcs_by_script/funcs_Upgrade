@@ -1,0 +1,62 @@
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+######################################################################
+funcs_Upgrade=1
+##################### FIRST LINE #####################################
+
+#### Upgrade in progress (web page)
+gfnUpgradeInProgress() {
+	local sRtorrentSessions sSession
+
+	case "$1" in
+		"on")
+			if [ "$gbIsInstalled_NextCloud" == "YES" ]; then
+				su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --on" &> /dev/null
+			fi
+			if [ -h /etc/nginx/sites-enabled/WiP ]; then rm -f /etc/nginx/sites-enabled/WiP; fi
+			if [ -h /etc/nginx/sites-enabled/default ]; then rm -f /etc/nginx/sites-enabled/default; fi
+			if [ -h /etc/nginx/sites-enabled/cakebox ]; then rm -f /etc/nginx/sites-enabled/cakebox; fi
+			cp $MySB_InstallDir/templates/nginx/etc.nginx.site-enabled.WiP.tmpl /etc/nginx/sites-available/WiP
+			perl -pi -e "s/<InstallDir>/$gsInstallDirEscaped/g" /etc/nginx/sites-available/WiP
+			perl -pi -e "s/<PORT_HTTPS>/$gsPort_HTTPS/g" /etc/nginx/sites-available/WiP
+			perl -pi -e "s/<PORT_HTTP>/$gsPort_HTTP/g" /etc/nginx/sites-available/WiP
+			perl -pi -e "s/<server_name>/$gsHostNameFqdn/g" /etc/nginx/sites-available/WiP
+			if [ ! -h /etc/nginx/sites-enabled/WiP ]; then ln -s /etc/nginx/sites-available/WiP /etc/nginx/sites-enabled/WiP; fi
+			service nginx restart &> /dev/null
+			# Stopping CRON and rTorrent sessions
+			service cron stop &> /dev/null
+			sRtorrentSessions="`ls -1r /etc/init.d/rtorrent-* | cut -d '/' -f 4`"
+			for sSession in $sRtorrentSessions; do
+				service $sSession stop &> /dev/null
+			done
+		;;
+		"off")
+			if [ -h /etc/nginx/sites-enabled/WiP ]; then rm -f /etc/nginx/sites-enabled/WiP; fi
+			if [ ! -h /etc/nginx/sites-enabled/default ]; then ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default; fi
+			if [ ! -h /etc/nginx/sites-enabled/cakebox ]; then ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox; fi
+			service nginx restart &> /dev/null
+			service cron start &> /dev/null
+		;;
+	esac
+}
+
+##################### LAST LINE ######################################

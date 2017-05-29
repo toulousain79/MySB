@@ -1,0 +1,54 @@
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+######################################################################
+funcs_MySB_SecurityRules=1
+##################### FIRST LINE #####################################
+
+#### Crete '/etc/hosts' file
+gfnCreateHostsFile() {
+	local nIdTracker sTracker sTrackerDomain sTrackerIPv4 sIPv4 sLign sROW
+
+	echo "127.0.0.1       localhost.localdomain localhost" > /etc/hosts
+	echo "$gsSrvIpAddress       $gsHostNameFqdn $(hostname -s)" >> /etc/hosts
+	echo "" >> /etc/hosts
+	echo "#### MySB - Force trackers resolution (ex: DNS liar)" >> /etc/hosts
+
+	cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker,tracker_domain FROM trackers_list WHERE is_active='1';" | sed 's/\t/|/g;' | while read sROW; do
+		nIdTracker="`echo $sROW | awk '{split($0,a,"|"); print a[1]}'`"
+		sTracker="`echo $sROW | awk '{split($0,a,"|"); print a[2]}'`"
+		sTrackerDomain="`echo $sROW | awk '{split($0,a,"|"); print a[3]}'`"
+		sTrackerIPv4="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list='$nIdTracker';"`"
+
+		if [ ! -z "$sTrackerIPv4" ]; then
+			if [ "$sTracker" == "$sTrackerDomain" ]; then
+				sLign="$sTrackerDomain"
+			else
+				sLign="$sTracker, $sTrackerDomain"
+			fi
+			for sIPv4 in $sTrackerIPv4; do
+				echo "$sIPv4       $sLign" >> /etc/hosts
+			done
+		fi
+	done
+}
+
+##################### LAST LINE ######################################

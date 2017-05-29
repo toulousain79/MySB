@@ -1,0 +1,136 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+#
+# Usage:	Certificates$CEND {CreateCACertificate|CreateServiceCertificate <service_name>}
+#
+##################### FIRST LINE #####################################
+
+COMMAND="$1"
+SERVICENAME="$2"
+TYPE="$3" # INSTALL / UPGRADE
+
+#### Create CA
+CreateCACertificate() {
+	if [ "$TYPE" != "UPGRADE" ]; then
+		if [ -f $MySB_InstallDir/ssl/CA/serial ]; then
+			echo -e "${CYELLOW}CA certificate already exist. Do you want to create it again ?$CEND"
+			echo -e "${CYELLOW}If you create new CA, you must create again certificates for services.$CEND"
+			echo -e "${CYELLOW}Do you understand ?$CEND"
+			gfnQuestionGetString NO "$Global_WantToContinue" CONTINUE $Global_YES
+			if [ "$CONTINUE" == "$Global_YES" ]; then
+				echo -e "$Global_SeeYouLater"
+				echo
+				echo
+				gfnEndingScript 0
+			fi
+		fi
+	fi
+
+	CERTPASS="`gfnGenPassword 16`"
+	cmdMySQL 'MySB_db' "UPDATE system SET cert_password = '$CERTPASS' WHERE id_system='1';" -v
+
+	# create needed files and directories
+	gfnDeleteDirectory 0 "$MySB_InstallDir/ssl/CA"
+	if [ ! -d $MySB_InstallDir/ssl/CA/private/ ]; then
+		mkdir -p $MySB_InstallDir/ssl/CA/private/
+	fi
+	if [ ! -d $MySB_InstallDir/ssl/CA/newcerts/ ]; then
+		mkdir -p $MySB_InstallDir/ssl/CA/newcerts/
+	fi
+	if [ ! -d $MySB_InstallDir/ssl/CA/certs/ ]; then
+		mkdir -p $MySB_InstallDir/ssl/CA/certs/
+	fi
+	if [ ! -d $MySB_InstallDir/ssl/crl/ ]; then
+		mkdir -p $MySB_InstallDir/ssl/CA/crl/
+	fi
+
+	# 2 - Change working directory
+	cd $MySB_InstallDir/ssl/CA/
+
+	# 3 - OpenSSL config
+	cp $MySB_InstallDir/templates/root.ca.cacert.conf.tmpl ./MySB_caconfig.cnf
+	perl -pi -e "s/<InstallDir>/$gsInstallDirEscaped/g" ./MySB_caconfig.cnf
+	perl -pi -e "s/<servername>/$gsHostNameFqdn/g" ./MySB_caconfig.cnf
+	perl -pi -e "s/<ipaddress>/$gsSrvIpAddress/g" ./MySB_caconfig.cnf
+
+	#### 4 - Certificate Authority
+	echo '01' > ./serial
+	touch ./index.txt
+
+	openssl req -new -x509 -extensions v3_ca -keyout ./private/cakey.pem -passout pass:$CERTPASS -out ./certs/cacert.pem -days 3650 -config ./MySB_caconfig.cnf
+	openssl req -new -nodes -out ./req.pem -passout pass:$CERTPASS -config ./MySB_caconfig.cnf
+	openssl ca -batch -out ./cert.pem -config ./MySB_caconfig.cnf -passin pass:$CERTPASS -infiles ./req.pem
+	mv -v ./cert.pem ./tmp.pem
+	openssl x509 -in ./tmp.pem -out ./cert.pem
+	cat ./key.pem ./cert.pem > ./key-cert.pem
+	chmod 644 ./cert.pem
+	chmod 644 ./key.pem
+}
+
+# Services Certificate
+CreateServiceCertificate() {
+	cd $MySB_InstallDir/ssl/CA/
+
+	CERTPASS="`cmdMySQL 'MySB_db' "SELECT cert_password FROM system WHERE id_system='1';"`"
+	Service="$1"
+	SUBJ="/C=FR/ST=FR/L=FR/O=MySB/CN=$gsHostNameFqdn/emailAddress=admin@localhost/OU=$Service"
+
+	if [ "$TYPE" == "UPGRADE" ]; then
+		rm -vf $MySB_InstallDir/ssl/*.key
+	fi
+	if [ ! -f $MySB_InstallDir/ssl/$Service.key ]; then
+		openssl genrsa 2048 | tee ./$Service.key
+		openssl req -new -x509 -nodes -key ./$Service.key -days 3650 -config ./MySB_caconfig.cnf -batch -subj $SUBJ | tee ./$Service.cert
+		openssl ca -batch -keyfile ./private/cakey.pem -passin pass:$CERTPASS -subj $SUBJ -out ./$SERVICENAME.pem -config ./MySB_caconfig.cnf -passin pass:$CERTPASS -ss_cert ./$Service.cert
+		chmod 600 ./$Service.*
+		mv -v ./$Service.* ../
+		chmod 644 ../$Service.cert
+	fi
+}
+
+case "$COMMAND" in
+	"CreateCACertificate")
+		CreateCACertificate
+		CreateServiceCertificate 'mysb'
+	;;
+	"CreateServiceCertificate")
+		if [ ! -z "$SERVICENAME" ]; then
+			CreateServiceCertificate '$SERVICENAME'
+		else
+			echo -e "${CBLUE}Usage:$CEND	${CYELLOW}bash $0$CEND ${CGREEN}{CreateCACertificate|CreateServiceCertificate <service_name>}$CEND"
+			echo -e "${CBLUE}Give me the service name too please.$CEND"
+		fi
+	;;
+	*)
+		echo -e "${CBLUE}Usage:$CEND	${CYELLOW}bash $0$CEND ${CGREEN}{CreateCACertificate|CreateServiceCertificate <service_name>}$CEND"
+		gfnEndingScript 0
+	;;
+esac
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

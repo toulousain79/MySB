@@ -1,0 +1,417 @@
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### 0 - Includes
+if [ -f /etc/MySB/config ] && [ -z "$MySB_InstallDir" ]; then
+	source /etc/MySB/config
+fi
+if [ -f /lib/lsb/init-functions ] && [ -z "`command -v start_daemon`" ]; then
+	source /lib/lsb/init-functions
+fi
+if [ -f /root/.bash_aliases ]; then
+	source /root/.bash_aliases
+fi
+if [ ! -z "$MySB_InstallDir" ] && [ -f $MySB_InstallDir/inc/funcs ]; then
+	if [ -z "$funcs" ] || [ "$funcs" -eq 0 ]; then
+		source $MySB_InstallDir/inc/funcs
+	fi
+else
+	exit 1
+fi
+
+#### 1 - Add in 'commands' table to prevent simultaneous calls
+if [ ! -z "$gsScriptName" ]; then
+	case "$gsScriptName" in
+		MySB_UpgradeSystem)
+			if [ "$gbIsInstalled_DNScrypt" == "YES" ] && [ -f $MySB_InstallDir/templates/init/etc.init.d.dnscrypt-proxy.tmpl ]; then
+				install -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.dnscrypt-proxy.tmpl /etc/init.d/dnscrypt-proxy
+			fi
+		;;
+		MySB_SecurityRules)
+			sCheck="`gfnAddSecurityInQueue 'check' 'MySB_SecurityRules'`"
+			# If arguments in database are different than currents
+			if [ "$sCheck" != "`echo $@ $$`" ]; then
+				# We will wait
+				while [ ! -z "$sCheck" ]; do
+					sleep 5
+					sCheck="`gfnAddSecurityInQueue 'check' 'MySB_SecurityRules'`"
+				done
+
+				gfnAddSecurityInQueue 'add' 'MySB_SecurityRules' "$@ $$"
+			fi
+			unset sCheck
+		;;
+	esac
+fi
+
+#### 2 - Colors
+CEND="\033[0m"
+CBLACK="\033[0;30m"
+CRED="\033[1;31m"
+CGREEN="\033[1;32m"
+CYELLOW="\033[1;33m"
+CBLUE="\033[1;34m"
+
+#### 3 - System
+if [ "$0" != "-bash" ]; then
+	gsScriptName=$(basename $0)
+	gsDirName=$(dirname $0)
+fi
+gsInstallDirEscaped="`echo $MySB_InstallDir | sed s,/,\\\\\\\\\\/,g`"
+gsProcessors="`cat /proc/cpuinfo | grep 'processor' | wc -l`"
+gsMemory="`free -m | grep 'Mem' | awk '{ print $2 }'`"
+gsDebianRelease="`lsb_release -cs`"
+gsUrlCheckList="ipv4.icanhazip.com whatismyip.akamai.com phihag.de/ip checkip.dyndns.com"
+binWGET='/usr/local/bin/wget'
+type -P $binWGET > /dev/null
+if [ $? -gt 0 ]; then
+	binWGET='/usr/bin/wget'
+fi
+binCURL='curl --retry 3 --silent --insecure --location --show-error'
+
+#### 4 - Databases
+gsWolf_DB=$MySB_InstallDir"/db/Wolf.sq3"
+gsSync_DB=$MySB_InstallDir"/db/Sync.sq3"
+gbIsReady_MySB_Db="NO"
+if gfnCheckCommand 0 mysql && gfnCheckCommand 0 sqlite3; then
+	if [ "`ls -a /var/lib/mysql/MySB_db/ 2> /dev/null | sed -e "/\.$/d" | wc -l`" -gt 1 ]; then
+		if ! gfnGetPid mysql; then
+			gfnManageServices start "mysql"
+		fi
+		if gfnGetPid mysql; then
+			gbIsReady_MySB_Db="YES"
+		fi
+	fi
+fi
+
+#### 5 - All Variables
+if [ ! -z "$MySB_InstallDir" ] && [ "$gbIsReady_MySB_Db" == "YES" ]; then
+	########## USED FOR DATABASE UPGRADE - BoF ##########
+	case "$gsScriptName" in
+		From_*)
+			if [ "`cat $MySB_InstallDir/version`" == "v4.0" ] && [ -f $MySB_InstallDir/upgrade/MySQL.bsh ] && [ ! -f /tmp/MySQL.bsh.log ]; then
+				source $MySB_InstallDir/upgrade/MySQL.bsh > /tmp/MySQL.bsh.log 2>&1
+			fi
+		;;
+	esac
+	########## USED FOR DATABASE UPGRADE - EoF ##########
+	binMySQL="mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N -e"
+
+	### ----- System info
+	## Table System
+	sRequestValues="`$binMySQL "SELECT mysb_version,hostname,ipv4,ipv4_ext,primary_inet,timezone,mysb_user,mysb_password,server_provider,ip_restriction,dnscrypt,rt_model,rt_tva,rt_global_cost,rt_cost_tva FROM system WHERE id_system='1';" | sed 's/\t/|/g;'`"
+	gsCurrentVersion="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
+	gsHostNameFqdn="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
+	gsSrvIpAddress="`echo $sRequestValues | awk '{split($0,a,"|"); print a[3]}'`"
+	gsSrvIpAddressExt="`echo $sRequestValues | awk '{split($0,a,"|"); print a[4]}'`"
+	gsPrimaryInet="`echo $sRequestValues | awk '{split($0,a,"|"); print a[5]}'`"
+	gsTimeZone="`echo $sRequestValues | awk '{split($0,a,"|"); print a[6]}'`"
+	gsMySB_User="`echo $sRequestValues | awk '{split($0,a,"|"); print a[7]}'`"
+	gsMySB_Password="`echo $sRequestValues | awk '{split($0,a,"|"); print a[8]}'`"
+	gsServerProvider="`echo $sRequestValues | awk '{split($0,a,"|"); print a[9]}'`"
+	gsIpRestriction="`echo $sRequestValues | awk '{split($0,a,"|"); print a[10]}' | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	gbDnsCryptSwitch="`echo $sRequestValues | awk '{split($0,a,"|"); print a[11]}'`"
+	### ----- Renting infos
+	gsRentingModel="`echo $sRequestValues | awk '{split($0,a,"|"); print a[12]}'`"
+	gsRentingTVA="`echo $sRequestValues | awk '{split($0,a,"|"); print a[13]}'`"
+	gsRentingGlobalCost="`echo $sRequestValues | awk '{split($0,a,"|"); print a[14]}'`"
+	gsRentingCostTva="`echo $sRequestValues | awk '{split($0,a,"|"); print a[15]}'`"
+	### ----- Renting infos
+	gsTimeZoneEscaped="`echo $gsTimeZone | sed s,/,\\\\\\\\\\/,g`"
+	unset sRequestValues
+
+	## Table Services
+	# VSFTPd
+	sRequestValues="`$binMySQL "SELECT port_tcp1,port_tcp2,port_tcp3 FROM services WHERE serv_name='VSFTPd';" | sed 's/\t/|/g;'`"
+	gsPort_FTP="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
+	gsPort_FTP_Data="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
+	gsPort_FTP_Passive="`echo $sRequestValues | awk '{split($0,a,"|"); print a[3]}'`"
+	unset sRequestValues
+	# NginX
+	sRequestValues="`$binMySQL "SELECT port_tcp1,port_tcp2 FROM services WHERE serv_name='NginX';" | sed 's/\t/|/g;'`"
+	gsPort_HTTPS="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
+	gsPort_HTTP="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
+	unset sRequestValues
+	# SSH
+	gsPort_SSH="`$binMySQL "SELECT port_tcp1 FROM services WHERE serv_name='SSH';"`"
+
+	[ -z "$gsHostNameFqdn" ] && gsHostNameFqdn="`hostname -f`"
+
+	[ -z "$gsPrimaryInet" ] && gsPrimaryInet="`ip route get 8.8.8.8 | grep 8.8.8.8 | awk '{ print $5 }'`"
+
+	if [ -z "$gsSrvIpAddress" ] || [ -z "$gsSrvIpAddressExt" ]; then
+		for sUrlCheck in $gsUrlCheckList; do
+			case "$sUrlCheck" in
+				'checkip.dyndns.com')	gsSrvIpAddressExt="`curl --silent $sUrlCheck | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'`";;
+				'phihag.de/ip')			gsSrvIpAddressExt="`curl --silent -k https://$sUrlCheck`";;
+				*)						gsSrvIpAddressExt="`curl --silent $sUrlCheck`";;
+			esac
+			[ ! -z "$gsSrvIpAddressExt" ] && break
+		done
+		gsSrvIpAddress="`ifconfig $gsPrimaryInet | sed -n 's/.*inet addr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
+		if [ -z "$gsSrvIpAddress" ]; then
+			gsSrvIpAddress="`ifconfig $gsPrimaryInet | sed -n 's/.*inet adr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
+		fi
+		# Compare IP address (external view) with real IP address (local view)
+		if [ -z "$gsSrvIpAddress" ]; then
+			gsSrvIpAddress="$gsSrvIpAddressExt"
+		fi
+
+		unset sUrlCheck
+	fi
+
+	if [ -f /etc/timezone ] && [ -z "$gsTimeZone" ]; then
+		gsTimeZone="`cat /etc/timezone`"
+	else
+		gsTimeZone="Europe/Paris"
+	fi
+	### ----- System info
+
+	### ----- Main user info
+	## Table users
+	sRequestValues="`$binMySQL "SELECT users_email,users_ident,users_passwd,id_users,language FROM users WHERE admin='1';" | sed 's/\t/|/g;'`"
+	gsMainUserEmail="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
+	gsMainUserName="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
+	gsMainUserPassword="`echo $sRequestValues | awk '{split($0,a,"|"); print a[3]}'`"
+	gnMainUserId="`echo $sRequestValues | awk '{split($0,a,"|"); print a[4]}'`"
+	[ -z "$EnvLang" ] && EnvLang="`echo $sRequestValues | awk '{split($0,a,"|"); print a[5]}'`"
+	[ -z "$EnvLang" ] && EnvLang="`echo ${LANG:0:2}`"
+	unset sRequestValues
+
+	if [ "$gsIpRestriction" == "YES" ]; then
+		unset gsMainUserIPs
+		sTemp="`$binMySQL "SELECT ipv4 FROM users_addresses WHERE is_active='1' AND id_users='$gnMainUserId';"`"
+		for sIp in $sTemp; do
+			sIp="`echo $sIp | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+			gsMainUserIPs="$gsMainUserIPs $sIp/32"
+		done
+		unset sTemp sIp
+	else
+		gsMainUserIPs="0/0"
+	fi
+	gsMainUserIPs="`echo $gsMainUserIPs | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
+	### ----- Main user info
+
+	### ----- Normal users info
+	if [ "$gsIpRestriction" == "YES" ]; then
+		unset gsSeedboxUsersIPs
+		sTemp="`$binMySQL "SELECT ipv4 FROM users_addresses WHERE is_active='1' AND id_users!='$gnMainUserId';"`"
+		if [ ! -z "$sTemp" ]; then
+			for sIp in $sTemp; do
+				sIp="`echo $sIp | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+				gsSeedboxUsersIPs="${gsSeedboxUsersIPs} $sIp/32"
+			done
+		fi
+		unset sTemp sIp
+	else
+		gsSeedboxUsersIPs="0/0"
+	fi
+	gsSeedboxUsersIPs="`echo $gsSeedboxUsersIPs | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
+	### ----- Normal users info
+
+	### ----- Services info
+	sRequestValues="`$binMySQL "SELECT id_services,to_install,is_installed FROM services WHERE used='1';" | sed 's/\t/|/g;'`"
+	for sValues in $sRequestValues; do
+		nIdService="`echo $sValues | awk '{split($0,a,"|"); print a[1]}'`"
+		bToInstall="`echo $sValues | awk '{split($0,a,"|"); print a[2]}'`"
+		bIsInstalled="`echo $sValues | awk '{split($0,a,"|"); print a[3]}'`"
+		case "$nIdService" in
+			1)	gbToInstall_Manager="`echo $bToInstall | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+				gbIsInstalled_Manager="`echo $bIsInstalled | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			2)	gbToInstall_Cakebox="`echo $bToInstall | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+				gbIsInstalled_Cakebox="`echo $bIsInstalled | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			3)	gbToInstall_PlexMedia="`echo $bToInstall | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+				gbIsInstalled_PlexMedia="`echo $bIsInstalled | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			4)	gbToInstall_Webmin="`echo $bToInstall | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+				gbIsInstalled_Webmin="`echo $bIsInstalled | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			5)	gbToInstall_OpenVPN="`echo $bToInstall | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+				gbIsInstalled_OpenVPN="`echo $bIsInstalled | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			6)	gbToInstall_LogWatch="`echo $bToInstall | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+				gbIsInstalled_LogWatch="`echo $bIsInstalled | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			7)	gbToInstall_Fail2Ban="`echo $bToInstall | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+				gbIsInstalled_Fail2Ban="`echo $bIsInstalled | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			8)	gbToInstall_PeerGuardian="`echo $bToInstall | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+				gbIsInstalled_PeerGuardian="`echo $bIsInstalled | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			9)	gbToInstall_Blocklist="`echo $bToInstall | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+				gbIsInstalled_Blocklist="`echo $bIsInstalled | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			10)	gbToInstall_DNScrypt="`echo $bToInstall | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+				gbIsInstalled_DNScrypt="`echo $bIsInstalled | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			18)	gbToInstall_Samba="`echo $bToInstall | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+				gbIsInstalled_Samba="`echo $bIsInstalled | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			19)	gbToInstall_NFS="`echo $bToInstall | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+				gbIsInstalled_NFS="`echo $bIsInstalled | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			24)	gbToInstall_NextCloud="`echo $bToInstall | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+				gbIsInstalled_NextCloud="`echo $bIsInstalled | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+			25)	gbToInstall_LetsEncrypt="`echo $bToInstall | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+				gbIsInstalled_LetsEncrypt="`echo $bIsInstalled | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+			;;
+		esac
+		unset nIdService bToInstall bIsInstalled
+	done
+	unset sRequestValues sValues
+
+	case "$gbToInstall_PeerGuardian" in
+		"YES")	gsMySB_PeerBlock="PeerGuardian";;
+		"NO")
+			case "$gbIsInstalled_PeerGuardian" in
+				"YES")	gsMySB_PeerBlock="PeerGuardian";;
+				"NO")
+					case "$gbToInstall_Blocklist" in
+						"YES")	gsMySB_PeerBlock="rTorrent";;
+						"NO")
+							case "$gbIsInstalled_Blocklist" in
+								"YES")	gsMySB_PeerBlock="rTorrent";;
+								"NO")	gsMySB_PeerBlock="$Global_None";;
+							esac
+						;;
+					esac
+				;;
+			esac
+		;;
+	esac
+
+	# Webmin port
+	gsPorts_Webmin="`$binMySQL "SELECT port_tcp1 FROM services WHERE serv_name='Webmin';"`"
+
+	# OpenVPN
+	sRequestValues="`$binMySQL "SELECT port_udp1,port_udp2,port_udp3 FROM services WHERE serv_name='OpenVPN';" | sed 's/\t/|/g;'`"
+	gsPort_OpenVPN_WithGW="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
+	gsPort_OpenVPN_WithoutGW="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
+	gsPort_OpenVPN_TAP_WithoutGW="`echo $sRequestValues | awk '{split($0,a,"|"); print a[3]}'`"
+	if [ ! -z "$gsPort_OpenVPN_WithGW" ]; then	# UDP
+		gsOpenVPN_Proto="udp"
+	else										# TCP
+		sRequestValues="`$binMySQL "SELECT port_tcp1,port_tcp2,port_tcp3 FROM services WHERE serv_name='OpenVPN';" | sed 's/\t/|/g;'`"
+		gsPort_OpenVPN_WithGW="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
+		gsPort_OpenVPN_WithoutGW="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
+		gsPort_OpenVPN_TAP_WithoutGW="`echo $sRequestValues | awk '{split($0,a,"|"); print a[3]}'`"
+		gsOpenVPN_Proto="tcp"
+	fi
+	unset sRequestValues
+	### ----- Services info
+
+	### ----- White IP addresses
+	gsVpnLocalIps='10.0.0.0/24 10.0.1.0/24 10.0.2.0/24'
+	### ----- White IP addresses
+
+	### ----- Networks ports (Services ports)
+	sRequestValues="`$binMySQL "SELECT port_tcp1,ports_tcp_list,ports_udp_list FROM services WHERE serv_name='Plex Media Server';" | sed 's/\t/|/g;'`"
+	gsPorts_PlexMedia="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
+	gsPorts_TCP_PlexMedia="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
+	gsPorts_UDP_PlexMedia="`echo $sRequestValues | awk '{split($0,a,"|"); print a[3]}'`"
+	unset sRequestValues
+	### ----- Networks ports (Services ports)
+
+	### ----- Repositories infos
+	sRequestValues="`$binMySQL "SELECT dir FROM repositories WHERE name='ruTorrent' OR name='Seedbox-Manager' OR name='Cakebox-Light' OR name='LoadAvg' OR name='NextCloud';" | sed "s/<InstallDir>/$gsInstallDirEscaped/g;"`"
+	gsRutorrentDir="`echo $sRequestValues | awk '{split($0,a," "); print a[1]}'`"
+	gsManagerDir="`echo $sRequestValues | awk '{split($0,a," "); print a[2]}'`"
+	gsCakeboxDir="`echo $sRequestValues | awk '{split($0,a," "); print a[3]}'`"
+	gsLoadAvgDir="`echo $sRequestValues | awk '{split($0,a," "); print a[4]}'`"
+	gsNextCloudDir="`echo $sRequestValues | awk '{split($0,a," "); print a[5]}'`"
+	gsRutorrentPluginsDir=$gsRutorrentDir/plugins
+	unset sRequestValues
+	### ----- Repositories infos
+fi
+
+#### 6 - Version for upgrade
+if [ -f $MySB_InstallDir/version ]; then
+	gsCurrentVersion="`cat $MySB_InstallDir/version`"
+fi
+
+#### Language
+gfnLoadLanguage() {
+	local sScriptLang
+
+	if [ -f $MySB_InstallDir/inc/lang/$EnvLang/Global.lng ]; then
+		source $MySB_InstallDir/inc/lang/$EnvLang/Global.lng
+	else
+		source $MySB_InstallDir/inc/lang/en/Global.lng
+	fi
+
+	if [ -z "$1" ]; then
+		sScriptLang="$gsScriptName"
+	else
+		sScriptLang="$1"
+	fi
+	if [ -f $MySB_InstallDir/inc/lang/$EnvLang/$sScriptLang.lng ]; then
+		source $MySB_InstallDir/inc/lang/$EnvLang/$sScriptLang.lng
+	else
+		if [ -f $MySB_InstallDir/inc/lang/en/$sScriptLang.lng ]; then
+			source $MySB_InstallDir/inc/lang/en/$sScriptLang.lng
+		fi
+	fi
+
+	case "$sScriptLang" in
+		BulkChanges.bsh|From_*) # Upgrade ?
+			if [ -f $MySB_InstallDir/inc/lang/$EnvLang/Upgrade.lng ]; then
+				source $MySB_InstallDir/inc/lang/$EnvLang/Upgrade.lng
+			else
+				source $MySB_InstallDir/inc/lang/en/Upgrade.lng
+			fi
+		;;
+		funcs_MySB_CreateUser)
+			if [ -f $MySB_InstallDir/inc/lang/$EnvLang/MySB_CreateUser.lng ]; then
+				source $MySB_InstallDir/inc/lang/$EnvLang/MySB_CreateUser.lng
+			else
+				source $MySB_InstallDir/inc/lang/en/MySB_CreateUser.lng
+			fi
+		;;
+		funcs_GetTrackersCert.bsh)
+			if [ -f $MySB_InstallDir/inc/lang/$EnvLang/GetTrackersCert.bsh.lng ]; then
+				source $MySB_InstallDir/inc/lang/$EnvLang/GetTrackersCert.bsh.lng
+			else
+				source $MySB_InstallDir/inc/lang/en/GetTrackersCert.bsh.lng
+			fi
+		;;
+		PeerGuardian)
+			if [ -f $MySB_InstallDir/inc/lang/$EnvLang/MySB_SecurityRules.lng ]; then
+				source $MySB_InstallDir/inc/lang/$EnvLang/MySB_SecurityRules.lng
+			else
+				source $MySB_InstallDir/inc/lang/en/MySB_SecurityRules.lng
+			fi
+		;;
+	esac
+}
+gfnLoadLanguage
+
+# Dev mode, Save all variables
+[ -f $MySB_InstallDir/dev ] && gbDevMode=1 || gbDevMode=0
+if [ ! -z "$gbDevMode" ] && [ $gbDevMode -eq 1 ] && [ -d $MySB_InstallDir/logs ]; then
+	( set -o posix ; set ) |  grep -e '^gs' -e '^gb' -e '^gn' > $MySB_InstallDir/logs/${gsScriptName}_VARs.log
+fi
+
+##################### LAST LINE ######################################
