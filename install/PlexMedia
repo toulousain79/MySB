@@ -28,34 +28,38 @@ if [ "$gbToInstall_PlexMedia" == "YES" ]; then
 	#### Install package
 	gfnPackageBundleInstall 'alsa-base alsa-oss oss-compat libasound2-plugins plexmediaserver'
 
-	# PlexPy
-	gfnGetRepoValues 'PlexPy' && gfnRepoManageByType
-
-	if [ ! -z $gsRepoDir ] && [ -d $gsRepoDir ]; then
-		# NginX
-		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.locations.plexpy.conf.tmpl /etc/nginx/locations/PlexPy.conf
-		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.proxy.plexpy.conf.tmpl /etc/nginx/proxy/PlexPy.conf
-		# Config.ini
-		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/plexpy/config.ini.tmpl $gsRepoDir/config.ini
-		# Webserver.py
-		perl -pi -e "s/plexpy.HTTP_ROOT \+ \"welcome\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/welcome\"/g" $gsRepoDir/plexpy/webserve.py
-		perl -pi -e "s/plexpy.HTTP_ROOT \+ \"home\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/home\"/g" $gsRepoDir/plexpy/webserve.py
-		perl -pi -e "s/plexpy.HTTP_ROOT \+ \"logs\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/logs\"/g" $gsRepoDir/plexpy/webserve.py
-		# /etc/default/plexpy
-		touch /etc/default/plexpy
-		# Init script
-		adduser --system --no-create-home plexpy
-		chown plexpy:nogroup -R $gsRepoDir
-		chmod +x $gsRepoDir/init-scripts/init.ubuntu
-		ln -s $gsRepoDir/init-scripts/init.ubuntu /etc/init.d/plexpy
-		update-rc.d plexpy defaults
-
-		#### START services
-		gfnManageServices start "nginx"
-	fi
-
 	if gfnCheckCommand 0 plexmediaserver; then
 		cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='Plex Media Server';" -v
+
+		# PlexPy
+		gfnGetRepoValues 'PlexPy' && gfnRepoManageByType
+
+		if [ ! -z $gsRepoDir ] && [ -d $gsRepoDir ]; then
+			# NginX
+			install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.locations.plexpy.conf.tmpl /etc/nginx/locations/PlexPy.conf
+			install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.proxy.plexpy.conf.tmpl /etc/nginx/proxy/PlexPy.conf
+			# Config.ini
+			install -v -o root -g root -m 0644 $MySB_InstallDir/templates/plexpy/config.ini.tmpl $gsRepoDir/config.ini
+			# Webserver.py
+			perl -pi -e "s/plexpy.HTTP_ROOT \+ \"welcome\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/welcome\"/g" $gsRepoDir/plexpy/webserve.py
+			perl -pi -e "s/plexpy.HTTP_ROOT \+ \"home\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/home\"/g" $gsRepoDir/plexpy/webserve.py
+			perl -pi -e "s/plexpy.HTTP_ROOT \+ \"logs\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/logs\"/g" $gsRepoDir/plexpy/webserve.py
+			# /etc/default/plexpy
+			touch /etc/default/plexpy
+			# Init script
+			adduser --system --no-create-home plexpy
+			chown plexpy:nogroup -R $gsRepoDir
+			chmod +x $gsRepoDir/init-scripts/init.ubuntu
+			ln -s $gsRepoDir/init-scripts/init.ubuntu /etc/init.d/plexpy
+			update-rc.d plexpy defaults
+
+			#### START services
+			gfnManageServices start "nginx"
+
+			if [ -f $gsRepoDir/PlexPy.py ]; then
+				cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='PlexPy';" -v
+			fi
+		fi
 	fi
 fi
 

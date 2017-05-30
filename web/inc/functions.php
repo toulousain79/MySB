@@ -291,6 +291,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 	$WebminIsInstalled = $WebminDatas["is_installed"];
 	$DnscryptIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "DNScrypt-proxy"]);
 	$PlexMediaIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "Plex Media Server"]);
+	$PlexPyIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PlexPy"]);
 	$PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
 	$NextCloudIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "NextCloud"]);
 
@@ -336,7 +337,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					}
 					break;
 				case "PlexPy":
-					if ($PlexMediaIsInstalled == '1') {
+					if ($PlexPyIsInstalled == '1') {
 						echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/pp">PlexPy</a>';
 					}
 					break;
