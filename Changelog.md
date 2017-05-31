@@ -1,17 +1,18 @@
 	Version v4.0
-		2016/01/19
+		2016/05/31
 			- Composer v1.4.2
 			- NodeJS v0.12.18
 			- XMLRPC-C Advanced v1.49.0
 			- DNScrypt-proxy v1.9.5
 			- Wget v1.19.1
-			- Certbot-auto script v0.14.1
+			- Certbot-auto script v0.14.2
 			- ruTorrent Plugin InstantSearch v1.0
 			- Libsodium v1.0.12
 			- Minisign v0.7.5
 			- Seedbox-Manager v3.0.1
 			- Add PlexPy v1.4.18
 			- Add Shell In a Box
+			- ruTorrent Plugin Diskspace, add quota check
 			- DNScrypt-proxy, new init script (greatly inspired by DNSCrypt-Loader)
 				* new command lines and interactive mode (**service dnscrypt-proxy help**)
 				* config option, _resolvers select filters_
@@ -26,7 +27,7 @@
 					+ speed test of filtred resolvers
 				* speed-test option, _allows to start DNScrypt with the fastest resolvers_
 			- Replacing ownCloud v9.1.3 with NextCloud v12.0.0
-			- Add Maxmind GeoIP automatic update script v2.3.1
+			- Add Maxmind GeoIP automatic update script v2.4.0
 			- Let's Encrypt (certbot), certificate checks end date review for scheduled renew
 			- Use of Backup-Manager for automatics update (For now only used for MySB upgrades)
 			- Remove MySB_RefreshMe bin
