@@ -10,7 +10,8 @@
 			- Libsodium v1.0.12
 			- Minisign v0.7.5
 			- Seedbox-Manager v3.0.1
-			- PlexPy v1.4.18
+			- Add PlexPy v1.4.18
+			- Add Shell In a Box
 			- DNScrypt-proxy, new init script (greatly inspired by DNSCrypt-Loader)
 				* new command lines and interactive mode (**service dnscrypt-proxy help**)
 				* config option, _resolvers select filters_

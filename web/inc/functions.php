@@ -341,6 +341,9 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/pp">PlexPy</a>';
 					}
 					break;
+				case "Shell In a Box":
+					echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/sb">Shell In a Box</a>';
+					break;
 				case "Webmin":
 					if ( $WebminIsInstalled == '1' ) {
 						echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $WebminDatas["port_tcp1"] . '/">Webmin</a>';
