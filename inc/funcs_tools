@@ -422,11 +422,18 @@ gfnRepoManageByType() {
 			;;
 			'GIT')
 				if [ ! -d $gsRepoDir ]; then
-					# GitHub project download directly from 'github.com', so it is a ZIP file.
+					# The GitHub project may have a ZIP archive.
 					if [ -f $MySB_InstallDir/files/$gsRepoFile ]; then
 						unzip $MySB_InstallDir/files/$gsRepoFile -d $MySB_InstallDir/temp/
 						gnError=$?
+						# If a package has 2 archives (*_2.zip)
+						if [ $gnError -eq 0 ] && [ -f $MySB_InstallDir/files/`echo $gsRepoFile | sed "s/.zip/_2.zip/g;"` ]; then
+							unzip $MySB_InstallDir/files/`echo $gsRepoFile | sed "s/.zip/_2.zip/g;"` -d $MySB_InstallDir/temp/
+							gnError=$?
+						fi
+						# Detect the subdirectory into archive
 						sSubDir="`unzip -l $MySB_InstallDir/files/$gsRepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+						# Move the temp extracted directory to the final destination
 						if [ $gnError -eq 0 ] && [ -d $MySB_InstallDir/temp/$sSubDir ]; then
 							mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
 							gnError=$?
