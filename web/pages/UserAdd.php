@@ -44,7 +44,17 @@ function Form() {
 						<td>' . MainUser_UserAdd_ConfirmEmail . '</td>
 						<td><input name="confirm_email" type="email" /></td>
 					</tr>
+					<tr>
+						<td>' . MainUser_UserAdd_AccountType . '</td>
+						<td>
+							<select name="account_type" style="width:120px; height: 28px;">
+								<option selected="selected" value="normal">normal</option>
+								<option value="plex">plex</option>
+							</select>
+						</td>
+					</tr>
 				</table>
+				<div align="center"><p class="Comments">' . MainUser_UserAdd_Comment . '</p></div>
 				<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' .MainUser_UserAdd_AddUser. '"">
 			</div>
 		</form>';
@@ -58,6 +68,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			$username = $_POST['username'];
 			$email = $_POST['email'];
 			$confirm_email = $_POST['confirm_email'];
+			$account_type = $_POST['account_type'];
 			$sftp = 1;
 			$sudo = 0;
 			$args = false;
@@ -68,7 +79,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					if ( ValidateEmail($email) != false ) {
 						if ( $email == $confirm_email ) {
 							$type = 'success';
-							$args = "$username|$sftp|$sudo|$email";
+							$args = "$username|$sftp|$sudo|$email|$account_type";
 						} else {
 							$type = 'error';
 							$message = MainUser_UserAdd_VerifError;
@@ -112,7 +123,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 Form();
 
-$sUsersList = $MySB_DB->select("users", ["id_users", "users_ident", "users_passwd", "users_email", "quota"], ["AND" => ["is_active" => "1"]]);
+$sUsersList = $MySB_DB->select("users", ["id_users", "users_ident", "users_passwd", "users_email", "quota", "account_type"], ["AND" => ["is_active" => "1"]]);
 $system_datas = $MySB_DB->get("system", ["rt_model", "rt_cost_tva"], ["id_system" => 1]);
 
 if ( !empty($sUsersList) ) {
@@ -122,7 +133,8 @@ if ( !empty($sUsersList) ) {
 			<tr>
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Username; ?></th>
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Email; ?></th>
-				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Status; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Password; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_AccountType; ?></th>
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Quota; ?></th>
 <?php
 	if ( !empty($system_datas["rt_cost_tva"]) && !empty($system_datas["rt_model"]) ) {
@@ -131,7 +143,7 @@ if ( !empty($sUsersList) ) {
 <?php
 	}
 ?>
-				<!--<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>-->
+				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
 			</tr>
 
 <?php
@@ -156,16 +168,27 @@ if ( !empty($sUsersList) ) {
 					<?php switch ($User["users_passwd"]) {
 						case '':
 							$class = 'greenText';
-							$options = '<option selected="selected" value="1" class="greenText">' .Global_Enabled. '</option>';
-							$options .= '<option value="0" class="redText">' .Global_Disabled. '</option>';
+							$options = '<option selected="selected" class="greenText">' .MainUser_UserAdd_PasswordOK. '</option>';
 							break;
 						default:
 							$class = 'redText';
-							$options = '<option value="1" class="greenText">' .Global_Enabled. '</option>';
-							$options .= '<option selected="selected" value="0" class="redText">' .Global_Disabled. '</option>';
+							$options .= '<option selected="selected" class="redText">' .MainUser_UserAdd_PasswordKO. '</option>';
 							break;
 					} ?>
 					<select name="IsActive" style="width:120px; height: 28px;" class="<?php echo $class; ?>" disabled><?php echo $options; ?></select>
+				</td>
+				<td>
+					<?php switch ($User["account_type"]) {
+						case 'plex':
+							$options = '<option value="plex" selected="selected">plex</option>';
+							$options .= '<option value="normal">normal</option>';
+							break;
+						default:
+							$options = '<option value="plex">plex</option>';
+							$options .= '<option value="normal" selected="selected">normal</option>';
+							break;
+					} ?>
+					<select name="IsActive" style="width:120px; height: 28px;" disabled><?php echo $options; ?></select>
 				</td>
 				<td>
 					<?php echo GetSizeName($User["quota"].'KB'); ?>
@@ -179,9 +202,9 @@ if ( !empty($sUsersList) ) {
 <?php
 	}
 ?>
-				<!--<td>
+				<td>
 					<input class="submit" name="submit[<?php echo $User["users_ident"]; ?>]" type="submit" value="<?php echo Global_Delete; ?>" />
-				</td>-->
+				</td>
 			</tr>
 <?php
 	}

@@ -26,7 +26,7 @@ global $MySB_DB, $CurrentUser;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 // VARs
-$users_datas = $MySB_DB->get("users", ["id_users", "rtorrent_version", "rtorrent_notify", "rtorrent_restart", "language"], ["users_ident" => "$CurrentUser"]);
+$users_datas = $MySB_DB->get("users", ["id_users", "rtorrent_version", "rtorrent_notify", "rtorrent_restart", "language", "account_type"], ["users_ident" => "$CurrentUser"]);
 $UserID = $users_datas['id_users'];
 $Command = 'message_only';
 $rTorrentVersionsList = array('v0.9.2', 'v0.9.6');
@@ -65,7 +65,7 @@ if (isset($_POST['submit'])) {
 				$Change++;
 				$RefreshPage++;
 				// Change language of ruTorrent
-				ChangeRuTorrentLanguage($CurrentUser, $Language_POST);				
+				ChangeRuTorrentLanguage($CurrentUser, $Language_POST);
 				// Change language of Cakebox-Light
 				ChangeCakeboxLanguage($CurrentUser, $Language_POST);
 				// Change language of Seedbox-Maanger
@@ -111,6 +111,9 @@ $language = $users_datas['language'];
 
 	<table>
 		<tr>
+<?php
+if ( $users_datas['rtorrent_version'] == 'normal' ) {
+?>
 			<td><?php echo User_OptionsMySB_rTorrentVersion; ?></td>
 			<td>
 				<select name="rTorrentVersion" style="width:80px; height: 28px;">';
@@ -140,6 +143,9 @@ $language = $users_datas['language'];
 				} ?>
 				<select name="rTorrentRestart" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
 			</td>
+<?php
+}
+?>
 			<td><?php echo User_OptionsMySB_NotifyEmail; ?></td>
 			<td>
 

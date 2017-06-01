@@ -294,6 +294,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 	$PlexPyIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PlexPy"]);
 	$PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
 	$NextCloudIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "NextCloud"]);
+	$UserAccountType = $MySB_DB->get("users", "account_type", ["users_ident" => "$CurrentUser"]);
 
     if ($page && count($page->children(null, array(), $hidden)) > 0) {
         echo ($startmenu) ? '<ul>' : '';
@@ -306,10 +307,12 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$replace.'<div id="ApplyConfigButton">'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr, $style).'</div>';
 					break;
 				case "ruTorrent":
-					echo '<li><a target="_blank" href="ru">ruTorrent</a>';
+					if ( $UserAccountType == 'normal' ) {
+						echo '<li><a target="_blank" href="ru">ruTorrent</a>';
+					}
 					break;
 				case "Seedbox-Manager":
-					if ( $ManagerIsInstalled == '1' ) {
+					if ( ($ManagerIsInstalled == '1') && ($UserAccountType == 'normal') ) {
 						echo '<li><a target="_blank" href="sm">Seedbox-Manager</a>';
 					}
 					break;
@@ -319,10 +322,19 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					}
 					break;
 				case "Cakebox-Light":
-					if ( $CakeboxIsInstalled == '1' ) {
+					if ( ($CakeboxIsInstalled == '1') && ($UserAccountType == 'normal') ) {
 						echo '<li><a target="_blank" href="cb">Cakebox-Light</a>';
 					}
 					break;
+				case "Synchronization":
+				case "Synchronisation":
+				case "Trackers":
+				case "Blocklists":
+				case "Listes noires":
+					if ( $UserAccountType == 'normal' ) {
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+					}
+					break;				
 				case "LoadAvg":
 					echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/la/public/">LoadAvg</a>';
 					break;

@@ -62,6 +62,16 @@ define('Home_NormalUser', '
 		<li>Manage categories and synchronization of your downloads <span class="Comments">(direct synchronization and/or scheduled to a NAS for example)</span></li>
 	</ul>
 ');
+define('Home_PlexlUser', '
+	<p></p>
+	<p>As a normal user, you have the following possibilities :</p>
+	<ul style="margin-left: 100px">
+		<li>View your account information</li>
+		<li>Change your password</li>
+		<li>Manage your authorized connection addresses <span class="Comments">(IP or dynamic DNS)</span></li>
+		<li>Download your configuration files for OpenVPN <span class="Comments">(if installed)</span></li>
+	</ul>
+');
 define('Home_NextCloudAfterUpgrade', '
 	<p></p>
 	<h2>NextCloud</h2>

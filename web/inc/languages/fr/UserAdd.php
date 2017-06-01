@@ -25,6 +25,7 @@
 define('MainUser_UserAdd_Username', 'Nom d\'utilisateur :');
 define('MainUser_UserAdd_UserEmail', 'E-mail de l\'utilisateur :');
 define('MainUser_UserAdd_ConfirmEmail', 'Confirmation :');
+define('MainUser_UserAdd_AccountType', 'Type de compte :');
 define('MainUser_UserAdd_AddUser', 'Ajouter cet utilisateur');
 define('MainUser_UserAdd_VerifError', 'Erreur entre l\'email saisie et la v&eacute;rification.');
 define('MainUser_UserAdd_BadAddress', 'L\'adresse e-mail indiqu&eacute;e n\'est pas valide !');
@@ -34,7 +35,11 @@ define('MainUser_UserAdd_Table_Username', 'Nom d\'utilisateur');
 define('MainUser_UserAdd_Table_Email', 'E-mail');
 define('MainUser_UserAdd_Table_IsSftp', 'SFTP ?');
 define('MainUser_UserAdd_Table_Quota', 'Quota');
-define('MainUser_UserAdd_Table_Status', 'Statut du compte');
+define('MainUser_UserAdd_Table_Password', 'Mot de passe');
+define('MainUser_UserAdd_Table_AccountType', 'Type de compte');
 define('MainUser_UserAdd_Table_Treasury', 'Tr&eacute;sorerie');
+define('MainUser_UserAdd_PasswordOK', 'Modifi&eacute;');
+define('MainUser_UserAdd_PasswordKO', 'Temporaire');
+define('MainUser_UserAdd_Comment', 'Un compte "<b>normal</b>" disposera de tous les services.<br />Un compte "<b>plex</b>" disposera de tous les services SAUF rTorrent. Ce type de compte est conseill&eacute; pour les utilisateurs acc&eacute;dant uniquement à Plex.<br />Les services tels que ruTorrent, Cakebox, Seedbox Manager ne seront pas disponibles.');
 
 //#################### LAST LINE ######################################

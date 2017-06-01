@@ -62,6 +62,16 @@ define('Home_NormalUser', '
 		<li>G&eacute;rer les cat&eacute;gories et la synchronisation de vos t&eacute;l&eacute;chargements <span class="Comments">(synchronisations directes et/ou programm&eacute;es vers un NAS par exemple)</span></li>
 	</ul>
 ');
+define('Home_PlexlUser', '
+	<p></p>
+	<p>En tant qu\'utilisateur normal, vous diposez des fonctionnalit&eacute;s suivantes :</p>
+	<ul style="margin-left: 100px">
+		<li>Afficher les informations de votre compte</li>
+		<li>Changer votre mot de passe</li>
+		<li>G&eacute;rer vos adresses de connexion autoris&eacute;es <span class="Comments">(IP ou DNS dynamique)</span></li>
+		<li>T&eacute;l&eacute;charger vos fichiers de configuration pour OpenVPN <span class="Comments">(si install&eacute;)</span></li>
+	</ul>
+');
 define('Home_NextCloudAfterUpgrade', '
 	<p></p>
 	<h2>NextCloud</h2>

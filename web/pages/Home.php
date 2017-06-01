@@ -26,6 +26,7 @@ global $MySB_DB, $CurrentUser;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 $InitPassword = $MySB_DB->get("users", "init_password", ["users_ident" => "$CurrentUser"]);
+$UserAccountType = $MySB_DB->get("users", "account_type", ["users_ident" => "$CurrentUser"]);
 
 echo '<h1><div align="center">'.sprintf(Home_Welcome, $CurrentUser).'</div></h1>';
 
@@ -38,7 +39,11 @@ switch ($IsMainUser) {
 		if ( (GetVersion() == 'v3.3') && ( $InitPassword == '1') ) {
 			echo Home_NextCloudAfterUpgrade;
 		}
-		echo Home_NormalUser;
+		if ( $UserAccountType == 'normal' ) {
+			echo Home_NormalUser;
+		} else {
+			echo Home_PlexlUser;
+		}
 		break;
 }
 

@@ -29,7 +29,7 @@ if [ "$USAGE" == "ON" ]; then
 	UserToCreate=""
 	while [ -z "$UserToCreate" ]; do
 		gfnQuestionGetString NO "$CreateUser_Username" UserToCreate
-		if [ ! "`echo "$LIST" | grep $UserToCreate`" = "" ]; then
+		if [ "`echo "$LIST" | grep $UserToCreate`" != "" ]; then
 			UserToCreate=""
 		fi
 	done
@@ -47,6 +47,11 @@ if [ "$USAGE" == "ON" ]; then
 		gfnQuestionGetString NO "$CreateUser_Email" UserEmail
 	done
 
+	UserAccountType=""
+	while [ "$UserAccountType" != "normal" ] || [ "$UserAccountType" != "plex" ]; do
+		gfnQuestionGetString NO "$CreateUser_AccountType" UserAccountType "normal"
+	done
+
 	UserSFTP="$(echo $UserSFTP | sed "s/$Global_YES/1/g;" | sed "s/$Global_NO/0/g;")"
 	UserSUDO="$(echo $UserSUDO | sed "s/$Global_YES/1/g;" | sed "s/$Global_NO/0/g;")"
 	LocSwitch="MANUAL"
@@ -60,13 +65,15 @@ else
 			UserSUDO=0
 			UserEmail="$gsMainUserEmail"
 			NewUserPassword="$gsMainUserPassword"
+			UserAccountType="normal"
 			LocSwitch="$2"
 		;;
 		*)			# APPLYCONFIG (user sftp sudo email LocSwitch), user created by Web
 			UserSFTP=$2
 			UserSUDO=$3
 			UserEmail="$4"
-			LocSwitch="$5"
+			UserAccountType="$5"
+			LocSwitch="$6"
 			NewUserPassword="`gfnGenPassword 8`"
 		;;
 	esac
@@ -89,7 +96,7 @@ rTorrentPort=$LastPort
 #### user infos
 if [ "$UserToCreate" != "$gsMainUserName" ]; then
 	log_daemon_msg "$CreateUser_InsertInfoDB [$UserToCreate]"
-	cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir,language) VALUES ('$UserToCreate','$UserEmail','$NewUserPassword','$NEWRPC','$UserSFTP','$UserSUDO','$ScgiPort','$rTorrentPort','$NewUserHomedir','$EnvLang');"
+	cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir,language,account_type) VALUES ('$UserToCreate','$UserEmail','$NewUserPassword','$NEWRPC','$UserSFTP','$UserSUDO','$ScgiPort','$rTorrentPort','$NewUserHomedir','$EnvLang', '$UserAccountType');"
 else
 	log_daemon_msg "$CreateUser_UpdateInfoDB [$UserToCreate]"
 	cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='', rpc='$NEWRPC', scgi_port='$ScgiPort', rtorrent_port='$rTorrentPort', home_dir='$NewUserHomedir' WHERE users_ident='$UserToCreate';"
@@ -176,18 +183,8 @@ gfnStatusLSB
 
 #### NginX
 log_daemon_msg "$CreateUser_RpcFile [$UserToCreate]"
-(
-cat <<'EOF'
-location /<USERNAME> {
-	include scgi_params;
-	scgi_pass 127.0.0.1:5995;
-	auth_basic "Restricted area";
-	auth_basic_user_file "/etc/nginx/passwd/MySB_<username>";
-}
-
-EOF
-) > /etc/nginx/rpc/$UserToCreate.conf
-perl -pi -e "s/5995/$ScgiPort/g" /etc/nginx/rpc/$UserToCreate.conf
+install -g root -o root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.rpc.user.conf.tmpl /etc/nginx/rpc/$UserToCreate.conf
+perl -pi -e "s/<scgi_port>/$ScgiPort/g" /etc/nginx/rpc/$UserToCreate.conf
 perl -pi -e "s/<username>/$UserToCreate/g" /etc/nginx/rpc/$UserToCreate.conf
 perl -pi -e "s/<USERNAME>/$UPPERNEWUSER/g" /etc/nginx/rpc/$UserToCreate.conf
 gfnStatusLSB
@@ -228,56 +225,62 @@ if [ "$gbIsInstalled_NextCloud" == "YES" ]; then
 	else
 		gfnNextCloudAccountManage 'edit' "$UserToCreate" "$NewUserPassword"
 	fi
-	su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files:scan --path=\"/$UserToCreate/files/MySB_Home\" --quiet"
+	if [ "$UserAccountType" == "normal" ]; then
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files:scan --path=\"/$UserToCreate/files/MySB_Home\" --quiet"
+	fi
 fi
 
-#### script init
-log_daemon_msg "$CreateUser_rTorrentInit [$UserToCreate]"
-install -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.rtorrent.tmpl /etc/init.d/rtorrent-$UserToCreate
-perl -pi -e "s/<username>/$UserToCreate/g" /etc/init.d/rtorrent-$UserToCreate
-gfnStatusLSB
-
-#### cron
-log_daemon_msg "$CreateUser_InitCron [$UserToCreate]"
-crontab -l > /tmp/crontab.tmp
-sed -i '/'$UserToCreate'/d' /tmp/crontab.tmp
-echo "*/5 * * * * if ! ( /bin/ps U $UserToCreate | grep 'rtorrent' > /dev/null ); then service rtorrent-$UserToCreate restart > /dev/null 2>&1; fi" >> /tmp/crontab.tmp
-crontab /tmp/crontab.tmp
-rm -f /tmp/crontab.tmp
-gfnStatusLSB
-
-#### rtorrent max memory / rTorrent Blocklist
-for seedUser in $gsUsersList; do
-	# rTorrent config 'pieces.memory.max.set'
-	log_daemon_msg "$CreateUser_PiecesMemory [$seedUser]"
-	LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$seedUser/.rtorrent.rc)
-	sed -i ''$LIGN'd' /home/$seedUser/.rtorrent.rc
-	sed -i ''$LIGN'i\pieces.memory.max.set = '$(((($gsMemory/$gnTotalUsers)*1024)*1024))'\n' /home/$seedUser/.rtorrent.rc
-	gfnStatusLSB
-
-	# rTorrent blocklist
-	if [ -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.txt ]; then
-		log_daemon_msg "$CreateUser_Blocklists [$seedUser]"
-		cp $MySB_InstallDir/files/blocklists/* $NewUserHomedir/blocklist/
+case "$UserAccountType" in
+	'normal')
+		#### script init
+		log_daemon_msg "$CreateUser_rTorrentInit [$UserToCreate]"
+		install -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.rtorrent.tmpl /etc/init.d/rtorrent-$UserToCreate
+		perl -pi -e "s/<username>/$UserToCreate/g" /etc/init.d/rtorrent-$UserToCreate
 		gfnStatusLSB
-	else
-		log_daemon_msg "$CreateUser_NewBlocklists [$seedUser]"
-		gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/scripts/BlocklistsRTorrent.bsh" 'REFRESH'
+
+		#### cron
+		log_daemon_msg "$CreateUser_InitCron [$UserToCreate]"
+		crontab -l > /tmp/crontab.tmp
+		sed -i '/'$UserToCreate'/d' /tmp/crontab.tmp
+		echo "*/5 * * * * if ! ( /bin/ps U $UserToCreate | grep 'rtorrent' > /dev/null ); then service rtorrent-$UserToCreate restart > /dev/null 2>&1; fi" >> /tmp/crontab.tmp
+		crontab /tmp/crontab.tmp
+		rm -f /tmp/crontab.tmp
 		gfnStatusLSB
-	fi
 
-	# rTorrent restart
-	service rtorrent-$seedUser status &> /dev/null
-	if [ $? -eq 0 ]; then
-		service rtorrent-$seedUser restart
-	fi
-done
+		#### rtorrent max memory / rTorrent Blocklist
+		for seedUser in $gsUsersList; do
+			# rTorrent config 'pieces.memory.max.set'
+			log_daemon_msg "$CreateUser_PiecesMemory [$seedUser]"
+			LIGN=$(sed -n '/pieces.memory.max.set/=' /home/$seedUser/.rtorrent.rc)
+			sed -i ''$LIGN'd' /home/$seedUser/.rtorrent.rc
+			sed -i ''$LIGN'i\pieces.memory.max.set = '$(((($gsMemory/$gnTotalUsers)*1024)*1024))'\n' /home/$seedUser/.rtorrent.rc
+			gfnStatusLSB
 
-#### Quota
-gfnManageQuota "$CreateUser_Quota"
+			# rTorrent blocklist
+			if [ -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.txt ]; then
+				log_daemon_msg "$CreateUser_Blocklists [$seedUser]"
+				cp $MySB_InstallDir/files/blocklists/* $NewUserHomedir/blocklist/
+				gfnStatusLSB
+			else
+				log_daemon_msg "$CreateUser_NewBlocklists [$seedUser]"
+				gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/scripts/BlocklistsRTorrent.bsh" 'REFRESH'
+				gfnStatusLSB
+			fi
 
-#### ruTorrent Plugin Check Disk quotas included
-PluginCheckdiskQuotas
+			# rTorrent restart
+			service rtorrent-$seedUser status &> /dev/null
+			if [ $? -eq 0 ]; then
+				service rtorrent-$seedUser restart
+			fi
+		done
+
+		#### Quota
+		gfnManageQuota "$CreateUser_Quota"
+
+		#### ruTorrent Plugin Check Disk quotas included
+		PluginCheckdiskQuotas
+	;;
+esac
 
 #### Assign password
 gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_ChangeUserPassword" "$UserToCreate" "$NewUserPassword" 'INSTALL'

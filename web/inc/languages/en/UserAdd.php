@@ -25,6 +25,7 @@
 define('MainUser_UserAdd_Username', 'Username :');
 define('MainUser_UserAdd_UserEmail', 'User e-mail :');
 define('MainUser_UserAdd_ConfirmEmail', 'Confirm e-mail :');
+define('MainUser_UserAdd_AccountType', 'Account type :');
 define('MainUser_UserAdd_AddUser', 'Add this user');
 define('MainUser_UserAdd_VerifError', 'Error between the typed email and verification.');
 define('MainUser_UserAdd_BadAddress', 'The given e-mail address is not valid !');
@@ -34,7 +35,11 @@ define('MainUser_UserAdd_Table_Username', 'Username');
 define('MainUser_UserAdd_Table_Email', 'E-mail');
 define('MainUser_UserAdd_Table_IsSftp', 'SFTP ?');
 define('MainUser_UserAdd_Table_Quota', 'Quota');
-define('MainUser_UserAdd_Table_Status', 'Account status');
+define('MainUser_UserAdd_Table_Password', 'Password');
+define('MainUser_UserAdd_Table_AccountType', 'Account type');
 define('MainUser_UserAdd_Table_Treasury', 'Treasury');
+define('MainUser_UserAdd_PasswordOK', 'Changed');
+define('MainUser_UserAdd_PasswordKO', 'Temporary');
+define('MainUser_UserAdd_Comment', 'A "<b>normal</b>" account will have all services.<br />A "<b>plex</b>" account will have all services EXCEPT rTorrent. This type of account is recommended for users accessing Plex only.<br />Services such as ruTorrent, Cakebox, Seedbox Manager will not be available.');
 
 //#################### LAST LINE ######################################
