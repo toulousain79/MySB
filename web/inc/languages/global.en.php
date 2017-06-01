@@ -32,6 +32,8 @@ define('Global_SaveChanges', 'Save Changes');
 define('Global_IsDefault', 'Default ?');
 define('Global_Table_Delete', 'Delete ?');
 define('Global_IsActive', 'Active ?');
+define('Global_Enabled', 'Enabled');
+define('Global_Disabled', 'Disabled');
 define('Global_Comment', 'Comments');
 define('Global_LastUpdate', 'Last Update');
 define('Global_FailedUpdateMysbDB', 'Failed !<br /><br />It was not possible to update the MySB database.');

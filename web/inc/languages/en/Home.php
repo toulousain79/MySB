@@ -27,30 +27,39 @@ define('Home_MainUser', '
 	<p></p>
 	<p>As the main user you have additional features, such as:</p>
 	<ul style="margin-left: 100px">
-		<li>The trackers activation</li>
-		<li>The addition of new trackers</li>
-		<li>Blocklists activation for rTorrent and/or PeerGuardian <span class="Comments">(if installed)</span></li>
-		<li>Rental management</li>
+		<li>Activating trackers</li>
+		<li>Adding new trackers</li>
+		<li>Activating black lists for rTorrent and/or PeerGuardian <span class="Comments">(if installed)</span></li>
+		<li>Access to <b>PlexPy</b> to view Plexmedia Server statistics <span class="Comments">(if installed)</span></li>
+		<li>Access to <b>Shell</b> In a Box, an SSH console via a web page</li>
+		<li><a href="?main-user/renting-infos.html">Rental management</a> <span class="Comments">(description, tax and cost of the server)</span>, and input of your users\' payments <span class="Comments">(It is advisable to set BEFORE adding new users)</span></li>
 		<li>SMTP management</li>
-		<li>Users management</li>
-		<li>Viewing logs</li>
+		<li>User management</li>
+		<li>Visualization of logs</li>
+		<li>Manage <b>DNScrypt-proxy</b> <span class="Comments">(if installed)</span></li>
 	</ul>
-	<p>More of the following:</p>
+	<p>As well as the basic functions :</p>
 	<ul style="margin-left: 100px">
-		<li>Display your account information</li>
+		<li>Access to <b>ruTorrent</b>, <b>Cakebox</b>, <b>Seedbox Manager</b>, <b>Nextcloud</b> and <b>LoadAvg</b></li>
+		<li>View your account information</li>
 		<li>Change your password</li>
+		<li>Restart or change the version of your rTorrent session</li>
 		<li>Manage your authorized connection addresses <span class="Comments">(IP or dynamic DNS)</span></li>
-		<li>Download the configuration files for OpenVPN <span class="Comments">(if installed)</span></li>
+		<li>Download your configuration files for OpenVPN <span class="Comments">(if installed)</span></li>
+		<li>Manage categories and synchronization of your downloads <span class="Comments">(direct synchronization and/or scheduled to a NAS for example)</span></li>
 	</ul>
 ');
 define('Home_NormalUser', '
 	<p></p>
-	<p>As a normal user, you have the following possibilities:</p>
+	<p>As a normal user, you have the following possibilities :</p>
 	<ul style="margin-left: 100px">
-		<li>Display your account information</li>
+		<li>Access to <b>ruTorrent</b>, <b>Cakebox</b>, <b>Seedbox Manager</b>, <b>Nextcloud</b> and <b>LoadAvg</b></li>
+		<li>View your account information</li>
 		<li>Change your password</li>
+		<li>Restart or change the version of your rTorrent session</li>
 		<li>Manage your authorized connection addresses <span class="Comments">(IP or dynamic DNS)</span></li>
-		<li>Download the configuration files for OpenVPN <span class="Comments">(if installed)</span></li>
+		<li>Download your configuration files for OpenVPN <span class="Comments">(if installed)</span></li>
+		<li>Manage categories and synchronization of your downloads <span class="Comments">(direct synchronization and/or scheduled to a NAS for example)</span></li>
 	</ul>
 ');
 define('Home_NextCloudAfterUpgrade', '

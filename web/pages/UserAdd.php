@@ -112,7 +112,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 Form();
 
-$sUsersList = $MySB_DB->select("users", ["id_users", "users_ident", "users_email", "quota"], ["AND" => ["is_active" => "1"]]);
+$sUsersList = $MySB_DB->select("users", ["id_users", "users_ident", "users_passwd", "users_email", "quota"], ["AND" => ["is_active" => "1"]]);
 $system_datas = $MySB_DB->get("system", ["rt_model", "rt_cost_tva"], ["id_system" => 1]);
 
 if ( !empty($sUsersList) ) {
@@ -122,6 +122,7 @@ if ( !empty($sUsersList) ) {
 			<tr>
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Username; ?></th>
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Email; ?></th>
+				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Status; ?></th>
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Quota; ?></th>
 <?php
 	if ( !empty($system_datas["rt_cost_tva"]) && !empty($system_datas["rt_model"]) ) {
@@ -150,6 +151,21 @@ if ( !empty($sUsersList) ) {
 				<td>
 					<input style="width:200px;" type="hidden" name="users_email[]" value="<?php echo $User["users_email"]; ?>" />
 					<?php echo $User["users_email"]; ?>
+				</td>
+				<td>
+					<?php switch ($User["users_passwd"]) {
+						case '':
+							$class = 'greenText';
+							$options = '<option selected="selected" value="1" class="greenText">' .Global_Enabled. '</option>';
+							$options .= '<option value="0" class="redText">' .Global_Disabled. '</option>';
+							break;
+						default:
+							$class = 'redText';
+							$options = '<option value="1" class="greenText">' .Global_Enabled. '</option>';
+							$options .= '<option selected="selected" value="0" class="redText">' .Global_Disabled. '</option>';
+							break;
+					} ?>
+					<select name="IsActive" style="width:120px; height: 28px;" class="<?php echo $class; ?>" disabled><?php echo $options; ?></select>
 				</td>
 				<td>
 					<?php echo GetSizeName($User["quota"].'KB'); ?>

@@ -337,12 +337,14 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					}
 					break;
 				case "PlexPy":
-					if ($PlexPyIsInstalled == '1') {
+					if ( ($PlexPyIsInstalled == '1') && ($hidden == true) ) {
 						echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/pp">PlexPy</a>';
 					}
 					break;
 				case "Shell In a Box":
-					echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/sb">Shell In a Box</a>';
+					if ($hidden == true) {
+						echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/sb">Shell In a Box</a>';
+					}
 					break;
 				case "Webmin":
 					if ( $WebminIsInstalled == '1' ) {

@@ -126,7 +126,6 @@ if (isset($_POST['submit'])) {
 		<tr>
 			<td><?php echo MainUser_OptionsSystem_PGL_Stats; ?></td>
 			<td>
-
 				<?php switch ($pgl_email_stats) {
 					case '1':
 						$class = 'greenText';

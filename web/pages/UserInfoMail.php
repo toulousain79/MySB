@@ -120,8 +120,8 @@ function PrintContent($user, $Case) {
 			$DisplayGoTo 			= true;
 			$DisplayCommand			= false;
 			$DisplayUserInfo		= true;
-			$DisplayUserInfoDetail 	= true;
-			$DisplayLinks 			= true;
+			$DisplayUserInfoDetail 	= false;
+			$DisplayLinks 			= false;
 			$DisplayRenting			= true;
 			if ( $users_datas["admin"] == '1' ) {
 				$DisplayCommand			= true;
@@ -268,15 +268,12 @@ function PrintContent($user, $Case) {
 			<td><?php echo GetSizeName($users_datas["quota"].'KB');?></td>
 			<td><span class="Comments"><?php echo User_UserInfo_Comment_Quota; ?></span></td>
 		</tr>
-<?php } ?>
-
 		<!-- // Force IP address -->
 		<tr align="left">
 			<th width="15%" scope="row" style="color: #FF6666;" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_ForceIP; ?></th>
 			<td colspan="2" style="background-color: #FF6666;"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/ForceAddress?page=ManageAddresses"><span class="Comments"><?php echo User_UserInfoMail_Comment_ForceIP; ?></span></a></td>
 		</tr>
 
-<?php if ( $DisplayUserInfoDetail == true ) { ?>
 		<!-- //////////////////////
 		// Directories
 		////////////////////// -->
