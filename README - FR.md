@@ -11,8 +11,8 @@ Tout l'intérêt de MySB réside dans la sécurité via la gestion de liste de b
 
 ## Toutes les conditions préalables énumérées ci-dessous sont OBLIGATOIRES!
 
-* **Conçu** pour **serveur dédié** uniquement avec **Debian Wheezy** _(Ubuntu **n'**est **pas** pris en charge) _
-* Vous **devez** avoir un **noyau Debian standard**! Si vous ne pouvez pas installer un noyau **standard**, MySB **N'**est **PAS** pour vous... _ (**noyau PVE** **ne** sont **pas** pris en charge) _
+* **Conçu** pour **serveur dédié** uniquement avec **Debian Wheezy** _(Ubuntu **n**'est **pas** pris en charge)_
+* Vous **devez** avoir un **noyau Debian standard**! Si vous ne pouvez pas installer un noyau **standard**, MySB **N'**est **PAS** pour vous... _(**noyau PVE** **ne** sont **pas** pris en charge)_
 * Virtual Private Server (VPS) sont **non compatibles**! _(Voir le point précédent)_
 * Vous devez avoir un serveur dédié **vierge** de toutes installation.
 * Votre interface réseau principale doit être configurée de manière **statique**, et non en DHCP _(Ex.: Serveurs Online)_
