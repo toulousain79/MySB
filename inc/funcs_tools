@@ -34,7 +34,14 @@ gfnCountDown() {
 
 #### Count & Create user listing
 gfnListCountUsers() {
-	gsUsersList="`cmdMySQL 'MySB_db' "SELECT users_ident FROM users WHERE is_active='1' AND account_type='normal';"`"
+	local sWhere
+
+	case "$1" in
+		'all')		sWhere="";;
+		'normal')	sWhere="WHERE account_type='normal'";;
+		*)			sWhere="WHERE is_active='1'";;
+	esac
+	gsUsersList="`cmdMySQL 'MySB_db' "SELECT users_ident FROM users $sWhere;"`"
 	gnTotalUsers="`echo $gsUsersList | wc -w`"
 }
 
@@ -508,7 +515,7 @@ gfnRepoManageByType() {
 
 #### ruTorrent Plugin Check Disk quotas included
 PluginCheckdiskQuotas() {
-	gfnListCountUsers
+	gfnListCountUsers 'normal'
 	for seedUser in $gsUsersList; do
 		Total="`repquota -u / | grep ^$seedUser | awk '{printf $4*1024}'`"
 		Free="`repquota -u / | grep ^$seedUser | awk '{printf ($4-$3)*1024}'`"
