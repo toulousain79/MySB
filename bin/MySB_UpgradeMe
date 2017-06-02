@@ -71,13 +71,11 @@ if [ $Continue -eq 0 ]; then
 		MySB_NewVersion="`curl -skLS --retry 3 https://raw.githubusercontent.com/toulousain79/MySB/rev/version`"
 	fi
 
-	if [ "$gsCurrentVersion" == "$MySB_NewVersion" ]; then
-		UpgradeMe_UpToDate="`echo $UpgradeMe_UpToDate | sed "s/#version#/$MySB_NewVersion/g;"`"
-		echo
-		echo -e "$UpgradeMe_UpToDate"
-		echo
-		gfnEndingScript 0
-	else
+	MySB_CurrVersionDiff="`echo $gsCurrentVersion | sed "s/v//g;" | sed "s/.//g;"`"	# v3.5 --> 35
+	MySB_NewVersionDiff="`echo $MySB_NewVersion | sed "s/v//g;" | sed "s/.//g;"`"	# v4.0 --> 40
+
+	# New version is greater than current version, so we can do an upgrade of MySB
+	if [ "$MySB_NewVersionDiff" -gt "$MySB_CurrVersionDiff" ]; then
 		case "$Type" in
 			"CRON")
 				curl -skLS --retry 3 https://raw.githubusercontent.com/toulousain79/MySB/$MySB_NewVersion/Changelog.md -o $MySB_InstallDir/temp/changelog
@@ -97,6 +95,12 @@ if [ $Continue -eq 0 ]; then
 				fi
 			;;
 		esac
+	else
+		UpgradeMe_UpToDate="`echo $UpgradeMe_UpToDate | sed "s/#version#/$MySB_NewVersion/g;"`"
+		echo
+		echo -e "$UpgradeMe_UpToDate"
+		echo
+		gfnEndingScript 0
 	fi
 
 	#### Backup

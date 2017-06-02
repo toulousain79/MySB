@@ -69,7 +69,6 @@ define('Home_PlexlUser', '
 		<li>Afficher les informations de votre compte</li>
 		<li>Changer votre mot de passe</li>
 		<li>G&eacute;rer vos adresses de connexion autoris&eacute;es <span class="Comments">(IP ou DNS dynamique)</span></li>
-		<li>T&eacute;l&eacute;charger vos fichiers de configuration pour OpenVPN <span class="Comments">(si install&eacute;)</span></li>
 	</ul>
 ');
 define('Home_NextCloudAfterUpgrade', '

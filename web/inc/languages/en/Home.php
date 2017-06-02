@@ -69,7 +69,6 @@ define('Home_PlexlUser', '
 		<li>View your account information</li>
 		<li>Change your password</li>
 		<li>Manage your authorized connection addresses <span class="Comments">(IP or dynamic DNS)</span></li>
-		<li>Download your configuration files for OpenVPN <span class="Comments">(if installed)</span></li>
 	</ul>
 ');
 define('Home_NextCloudAfterUpgrade', '

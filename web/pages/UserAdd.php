@@ -99,8 +99,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 			GenerateMessage('MySB_CreateUser', $type, $message, $args);
 			break;
-		//default: //Delete
-		case Global_Delete:
+		default: //Delete
 			if (isset($_POST['submit'])) {
 				$args = false;
 

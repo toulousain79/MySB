@@ -43,7 +43,7 @@ function PrintContent($user, $Case) {
 	$Hostname = $system_datas["hostname"];
 	$Method = $system_datas["rt_method"];
 	// Users table
-	$users_datas = $MySB_DB->get("users", ["id_users", "users_email", "users_passwd", "rpc", "sftp", "sudo", "admin", "scgi_port", "rtorrent_port", "home_dir", "language", "quota", "treasury"], ["users_ident" => "$user"]);
+	$users_datas = $MySB_DB->get("users", ["id_users", "users_email", "users_passwd", "rpc", "sftp", "sudo", "admin", "scgi_port", "rtorrent_port", "home_dir", "language", "quota", "treasury", "account_type"], ["users_ident" => "$user"]);
 	$UserID = $users_datas["id_users"];
 	$UserPasswd = $users_datas["users_passwd"];
 	// Ports
@@ -249,25 +249,28 @@ function PrintContent($user, $Case) {
 		</tr>
 <?php } ?>
 
-<?php if ( $DisplayUserInfoDetail == true ) { ?>
-		<!-- // RPC -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_RPC; ?></th>
-			<td><?php echo $users_datas["rpc"];?></td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_RPC; ?></span></td>
-		</tr>
-		<!-- // SFTP -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SFTP; ?></th>
-			<td><?php echo $sftp;?></td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_SFTP; ?></span></td>
-		</tr>
-		<!-- // Quota -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Quota; ?></th>
-			<td><?php echo GetSizeName($users_datas["quota"].'KB');?></td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_Quota; ?></span></td>
-		</tr>
+<?php if ( $DisplayUserInfoDetail == true ) {
+		if ( $users_datas["account_type"] == 'normal' ) { ?>
+			<!-- // RPC -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_RPC; ?></th>
+				<td><?php echo $users_datas["rpc"];?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_RPC; ?></span></td>
+			</tr>
+			<!-- // SFTP -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SFTP; ?></th>
+				<td><?php echo $sftp;?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_SFTP; ?></span></td>
+			</tr>
+			<!-- // Quota -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Quota; ?></th>
+				<td><?php echo GetSizeName($users_datas["quota"].'KB');?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_Quota; ?></span></td>
+			</tr>
+		<?php } ?>
+
 		<!-- // Force IP address -->
 		<tr align="left">
 			<th width="15%" scope="row" style="color: #FF6666;" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_ForceIP; ?></th>
@@ -277,114 +280,121 @@ function PrintContent($user, $Case) {
 		<!-- //////////////////////
 		// Directories
 		////////////////////// -->
-		<tr align="left">
-			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfo_Title_Directories; ?></h4></th>
-		</tr>
-		<!-- // Session dir -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Session; ?></th>
-			<td><?php echo $users_datas["home_dir"] . User_UserInfo_Value_Session;?></td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_Session; ?></span></td>
-		</tr>
-		<!-- // Complete dir -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_CompleteDir; ?></th>
-			<td><?php echo $users_datas["home_dir"] . User_UserInfo_Value_CompleteDir;?></td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_CompleteDir; ?></span></td>
-		</tr>
-		<!-- // Incomplete dir -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_IncompleteDir; ?></th>
-			<td><?php echo $users_datas["home_dir"] . User_UserInfo_Value_IncompleteDir;?></td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_IncompleteDir; ?></span></td>
-		</tr>
-		<!-- // Torrents dir -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TorrentDir; ?></th>
-			<td><?php echo $users_datas["home_dir"] . User_UserInfo_Value_TorrentDir;?></td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_TorrentDir; ?></span></td>
-		</tr>
-		<!-- // Watch dir -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_WatchDir; ?></th>
-			<td><?php echo $users_datas["home_dir"] . User_UserInfo_Value_WatchDir;?></td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_WatchDir; ?></span></td>
-		</tr>
-		<!-- // Share dir -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_ShareDir; ?></th>
-			<td><?php echo $users_datas["home_dir"] . User_UserInfo_Value_ShareDir;?></td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_ShareDir; ?></span></td>
-		</tr>
+		<?php if ( $users_datas["account_type"] == 'normal' ) { ?>
+			<tr align="left">
+				<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfo_Title_Directories; ?></h4></th>
+			</tr>
+			<!-- // Session dir -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Session; ?></th>
+				<td><?php echo $users_datas["home_dir"] . User_UserInfo_Value_Session;?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_Session; ?></span></td>
+			</tr>
+			<!-- // Complete dir -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_CompleteDir; ?></th>
+				<td><?php echo $users_datas["home_dir"] . User_UserInfo_Value_CompleteDir;?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_CompleteDir; ?></span></td>
+			</tr>
+			<!-- // Incomplete dir -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_IncompleteDir; ?></th>
+				<td><?php echo $users_datas["home_dir"] . User_UserInfo_Value_IncompleteDir;?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_IncompleteDir; ?></span></td>
+			</tr>
+			<!-- // Torrents dir -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TorrentDir; ?></th>
+				<td><?php echo $users_datas["home_dir"] . User_UserInfo_Value_TorrentDir;?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_TorrentDir; ?></span></td>
+			</tr>
+			<!-- // Watch dir -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_WatchDir; ?></th>
+				<td><?php echo $users_datas["home_dir"] . User_UserInfo_Value_WatchDir;?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_WatchDir; ?></span></td>
+			</tr>
+			<!-- // Share dir -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_ShareDir; ?></th>
+				<td><?php echo $users_datas["home_dir"] . User_UserInfo_Value_ShareDir;?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_ShareDir; ?></span></td>
+			</tr>
+		<?php } ?>
 
 		<!-- //////////////////////
 		// Ports
 		////////////////////// -->
-		<tr align="left">
-			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfo_Title_Ports; ?></h4></th>
-		</tr>
-		<!-- // SFTP Port -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SftpPort; ?></th>
-			<td><?php echo $Port_SSH;?></td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_SftpPort; ?></span></td>
-		</tr>
-		<!-- // FTPs Port -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_FtpsPort; ?></th>
-			<td><?php echo $Port_FTP;?></td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_FtpsPort; ?></span></td>
-		</tr>
-		<!-- // SCGI Port -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_ScgiPort; ?></th>
-			<td><?php echo $users_datas["scgi_port"];?></td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_ScgiPort; ?></span></td>
-		</tr>
-		<!-- // rTorrent Port -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_RtorrentPort; ?></th>
-			<td><?php echo $users_datas["rtorrent_port"];?></td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_RtorrentPort; ?></span></td>
-		</tr>
+		<?php if ( $users_datas["account_type"] == 'normal' ) { ?>
+			<tr align="left">
+				<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfo_Title_Ports; ?></h4></th>
+			</tr>
+			<!-- // SFTP Port -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SftpPort; ?></th>
+				<td><?php echo $Port_SSH;?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_SftpPort; ?></span></td>
+			</tr>
+			<!-- // FTPs Port -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_FtpsPort; ?></th>
+				<td><?php echo $Port_FTP;?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_FtpsPort; ?></span></td>
+			</tr>
+			<!-- // SCGI Port -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_ScgiPort; ?></th>
+				<td><?php echo $users_datas["scgi_port"];?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_ScgiPort; ?></span></td>
+			</tr>
+			<!-- // rTorrent Port -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_RtorrentPort; ?></th>
+				<td><?php echo $users_datas["rtorrent_port"];?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_RtorrentPort; ?></span></td>
+			</tr>
+		<?php } ?>
 
 		<!-- //////////////////////
 		// OpenVPN
 		////////////////////// -->
-		<tr align="left">
-			<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfo_Title_OpenVPN; ?></h4></th>
-		</tr>
-		<!-- // Server IP GW -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SrvIpGw; ?></th>
-			<td><?php echo OpenVPN_SrvIpGw; ?></td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_SrvIpGw; ?></span></td>
-		</tr>
-		<!-- // Server IP -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SrvIp; ?></th>
-			<td><?php echo OpenVPN_SrvIp; ?></td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_SrvIp; ?></span></td>
-		</tr>
-		<!-- // Server IP bridged -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SrvIpBridge; ?></th>
-			<td><?php echo OpenVPN_SrvIpBridge; ?></td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_SrvIpBridge; ?></span></td>
-		</tr>
-		<!-- // Samba share -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SambaShare; ?></th>
-			<td><?php echo $users_datas["home_dir"];?></td>
-			<td><span class="Comments"><?php echo sprintf(User_UserInfo_Comment_SambaShare, $user, $user); ?></span></td>
-		</tr>
-		<!-- // NFS share -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_NfsShare; ?></th>
-			<td><?php echo $users_datas["home_dir"] . User_UserInfo_Value_NfsShare;?></td>
-			<td><span class="Comments"><?php echo sprintf(User_UserInfo_Comment_NfsShare, $user, $user); ?></span></td>
-		</tr>
-<?php } ?>
+		<?php if ( $users_datas["account_type"] == 'normal' ) { ?>
+			<tr align="left">
+				<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfo_Title_OpenVPN; ?></h4></th>
+			</tr>
+			<!-- // Server IP GW -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SrvIpGw; ?></th>
+				<td><?php echo OpenVPN_SrvIpGw; ?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_SrvIpGw; ?></span></td>
+			</tr>
+			<!-- // Server IP -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SrvIp; ?></th>
+				<td><?php echo OpenVPN_SrvIp; ?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_SrvIp; ?></span></td>
+			</tr>
+			<!-- // Server IP bridged -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SrvIpBridge; ?></th>
+				<td><?php echo OpenVPN_SrvIpBridge; ?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_SrvIpBridge; ?></span></td>
+			</tr>
+			<!-- // Samba share -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SambaShare; ?></th>
+				<td><?php echo $users_datas["home_dir"];?></td>
+				<td><span class="Comments"><?php echo sprintf(User_UserInfo_Comment_SambaShare, $user, $user); ?></span></td>
+			</tr>
+			<!-- // NFS share -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_NfsShare; ?></th>
+				<td><?php echo $users_datas["home_dir"] . User_UserInfo_Value_NfsShare;?></td>
+				<td><span class="Comments"><?php echo sprintf(User_UserInfo_Comment_NfsShare, $user, $user); ?></span></td>
+			</tr>
+<?php 	}
+	}
+ ?>
 
 <?php if ( $DisplayLinks == true ) { ?>
 		<!-- //////////////////////
@@ -406,45 +416,47 @@ function PrintContent($user, $Case) {
 		</tr>
 
 		<!-- // ruTorrent -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_ruTorrent; ?></th>
-			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/ru"><span class="Comments"><?php echo User_UserInfo_Comment_ruTorrent; ?></span></a></td>
-		</tr>
-		<!-- // Seedbox-Manager -->
-	<?php if ( $ManagerInstalled == '1' ) { ?>
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_Manager; ?></th>
-			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/sm"><span class="Comments"><?php echo User_UserInfo_Comment_Manager; ?></span></a></td>
-		</tr>
-	<?php } ?>
+		<?php if ( $users_datas["account_type"] == 'normal' ) { ?>
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_ruTorrent; ?></th>
+				<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/ru"><span class="Comments"><?php echo User_UserInfo_Comment_ruTorrent; ?></span></a></td>
+			</tr>
+			<!-- // Seedbox-Manager -->
+			<?php if ( $ManagerInstalled == '1' ) { ?>
+				<tr align="left">
+					<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_Manager; ?></th>
+					<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/sm"><span class="Comments"><?php echo User_UserInfo_Comment_Manager; ?></span></a></td>
+				</tr>
+			<?php } ?>
 
-	<?php if ( $OpenVpnInstalled == '1' ) { ?>
-		<!-- // OpenVPN -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_OpenVpnConfig; ?></th>
-			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/?user/openvpn-config-file.html"><span class="Comments"><?php echo User_UserInfo_Comment_OpenVpnConfig; ?></span></a></td>
-		</tr>
-		<!-- // OpenVPN GUI -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_OpenVpnGui; ?></th>
-			<td colspan="2"><a target="_blank" href="<?php echo User_UserInfo_Value_OpenVpnGui; ?>"><span class="Comments"><?php echo User_UserInfo_Comment_OpenVpnGui; ?></span></a></td>
-		</tr>
-	<?php } ?>
+			<?php if ( $OpenVpnInstalled == '1' ) { ?>
+				<!-- // OpenVPN -->
+				<tr align="left">
+					<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_OpenVpnConfig; ?></th>
+					<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/?user/openvpn-config-file.html"><span class="Comments"><?php echo User_UserInfo_Comment_OpenVpnConfig; ?></span></a></td>
+				</tr>
+				<!-- // OpenVPN GUI -->
+				<tr align="left">
+					<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_OpenVpnGui; ?></th>
+					<td colspan="2"><a target="_blank" href="<?php echo User_UserInfo_Value_OpenVpnGui; ?>"><span class="Comments"><?php echo User_UserInfo_Comment_OpenVpnGui; ?></span></a></td>
+				</tr>
+			<?php } ?>
 
-	<?php if ( $CakeboxDatas["is_installed"] == '1' ) { ?>
-		<!-- // CakeBox Light -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_Cakebox; ?></th>
-			<td colspan="2"><a target="_blank" href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/cb"><span class="Comments"><?php echo User_UserInfo_Comment_Cakebox; ?></span></a></td>
-		</tr>
-	<?php } ?>
-		<!-- // NextCloud -->
-	<?php if ( $NextCloudInstalled == '1' ) { ?>
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_NextCloud; ?></th>
-			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/nc"><span class="Comments"><?php echo User_UserInfo_Comment_NextCloud; ?></span></a></td>
-		</tr>
-	<?php } ?>
+			<?php if ( $CakeboxDatas["is_installed"] == '1' ) { ?>
+				<!-- // CakeBox Light -->
+				<tr align="left">
+					<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_Cakebox; ?></th>
+					<td colspan="2"><a target="_blank" href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/cb"><span class="Comments"><?php echo User_UserInfo_Comment_Cakebox; ?></span></a></td>
+				</tr>
+			<?php } ?>
+			<!-- // NextCloud -->
+			<?php if ( $NextCloudInstalled == '1' ) { ?>
+				<tr align="left">
+					<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_NextCloud; ?></th>
+					<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/nc"><span class="Comments"><?php echo User_UserInfo_Comment_NextCloud; ?></span></a></td>
+				</tr>
+			<?php } ?>
+		<?php } ?>
 
 	<?php if ( $users_datas["admin"] == '1' ) { ?>
 		<!-- //////////////////////

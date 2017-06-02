@@ -30,7 +30,7 @@ function printUser($user) {
 	// System infos
 	$system_datas = $MySB_DB->get("system", ["hostname", "rt_model", "rt_tva", "rt_global_cost", "rt_cost_tva", "rt_nb_users", "rt_price_per_users", "rt_method"], ["id_system" => 1]);
 	// Users infos
-	$users_datas = $MySB_DB->get("users", ["id_users", "users_passwd", "admin", "users_email", "rpc", "sftp", "home_dir", "scgi_port", "rtorrent_port", "quota", "treasury"], ["users_ident" => "$user"]);
+	$users_datas = $MySB_DB->get("users", ["id_users", "users_passwd", "admin", "users_email", "rpc", "sftp", "home_dir", "scgi_port", "rtorrent_port", "quota", "treasury", "account_type"], ["users_ident" => "$user"]);
 	$UserID = $users_datas["id_users"];
 	$UserPasswd = $users_datas["users_passwd"];
 	// Ports
@@ -77,101 +77,110 @@ function printUser($user) {
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Email . '</th>';
 	echo '<td>' . $users_datas["users_email"] . '</td>';
 	echo '<td><span class="Comments">' . User_UserInfo_Comment_Email . '</span></td></tr>';
-	// RPC
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_RPC . '</th>';
-	echo '<td>' . $users_datas["rpc"] . '</td>';
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_RPC . '</span></td></tr>';
-	// SFTP
-	switch ($users_datas["sftp"]) {
-		case '0':
-			$sftp = User_UserInfo_NO;
-			break;
-		default:
-			$sftp = User_UserInfo_YES;
-			break;
+
+	if ( $users_datas["account_type"] == 'normal' ) {
+		// RPC
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_RPC . '</th>';
+		echo '<td>' . $users_datas["rpc"] . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_RPC . '</span></td></tr>';
+		// SFTP
+		switch ($users_datas["sftp"]) {
+			case '0':
+				$sftp = User_UserInfo_NO;
+				break;
+			default:
+				$sftp = User_UserInfo_YES;
+				break;
+		}
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SFTP . '</th>';
+		echo '<td>' . $sftp . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_SFTP . '</span></td></tr>';
+		// Quota
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Quota . '</th>';
+		echo '<td>' . GetSizeName($users_datas["quota"].'KB') . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_Quota . '</span></td></tr>';
 	}
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SFTP . '</th>';
-	echo '<td>' . $sftp . '</td>';
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_SFTP . '</span></td></tr>';
-	// Quota
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Quota . '</th>';
-	echo '<td>' . GetSizeName($users_datas["quota"].'KB') . '</td>';
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_Quota . '</span></td></tr>';
 
 	//////////////////////
 	// Directories
 	//////////////////////
-	echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_UserInfo_Title_Directories . '</h4></th></tr>';
-	// Session dir
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Session . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_Session . '</td>';
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_Session . '</span></td></tr>';
-	// Complete dir
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_CompleteDir . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_CompleteDir . '</td>';
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_CompleteDir . '</span></td></tr>';
-	// Incomplete dir
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_IncompleteDir . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_IncompleteDir . '</td>';
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_IncompleteDir . '</span></td></tr>';
-	// Torrents dir
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_TorrentDir . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_TorrentDir . '</td>';
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_TorrentDir . '</span></td></tr>';
-	// Watch dir
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_WatchDir . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_WatchDir . '</td>';
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_WatchDir . '</span></td></tr>';
-	// Share dir
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_ShareDir . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_ShareDir . '</td>';
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_ShareDir . '</span></td></tr>';
+	if ( $users_datas["account_type"] == 'normal' ) {
+		echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_UserInfo_Title_Directories . '</h4></th></tr>';
+		// Session dir
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Session . '</th>';
+		echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_Session . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_Session . '</span></td></tr>';
+		// Complete dir
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_CompleteDir . '</th>';
+		echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_CompleteDir . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_CompleteDir . '</span></td></tr>';
+		// Incomplete dir
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_IncompleteDir . '</th>';
+		echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_IncompleteDir . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_IncompleteDir . '</span></td></tr>';
+		// Torrents dir
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_TorrentDir . '</th>';
+		echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_TorrentDir . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_TorrentDir . '</span></td></tr>';
+		// Watch dir
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_WatchDir . '</th>';
+		echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_WatchDir . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_WatchDir . '</span></td></tr>';
+		// Share dir
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_ShareDir . '</th>';
+		echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_ShareDir . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_ShareDir . '</span></td></tr>';
+	}
 
 	//////////////////////
 	// Ports
 	//////////////////////
-	echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_UserInfo_Title_Ports . '</h4></th></tr>';
-	// sFTP Port
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SftpPort . '</th>';
-	echo '<td>' . $Port_SSH . '</td>';
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_SftpPort . '</span></td></tr>';
-	// FTPs Port
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_FtpsPort . '</th>';
-	echo '<td>' . $Port_FTP . '</td>';
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_FtpsPort . '</span></td></tr>';
-	// SCGI Port
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_ScgiPort . '</th>';
-	echo '<td>' . $users_datas["scgi_port"] . '</td>';
-	echo '<td><span class="Comments"' . User_UserInfo_Comment_ScgiPort . '</span></td></tr>';
-	// rTorrent Port
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_RtorrentPort . '</th>';
-	echo '<td>' . $users_datas["rtorrent_port"] . '</td>';
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_RtorrentPort . '</span></td></tr>';
+	if ( $users_datas["account_type"] == 'normal' ) {
+		echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_UserInfo_Title_Ports . '</h4></th></tr>';
+		// sFTP Port
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SftpPort . '</th>';
+		echo '<td>' . $Port_SSH . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_SftpPort . '</span></td></tr>';
+		// FTPs Port
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_FtpsPort . '</th>';
+		echo '<td>' . $Port_FTP . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_FtpsPort . '</span></td></tr>';
+		// SCGI Port
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_ScgiPort . '</th>';
+		echo '<td>' . $users_datas["scgi_port"] . '</td>';
+		echo '<td><span class="Comments"' . User_UserInfo_Comment_ScgiPort . '</span></td></tr>';
+		// rTorrent Port
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_RtorrentPort . '</th>';
+		echo '<td>' . $users_datas["rtorrent_port"] . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_RtorrentPort . '</span></td></tr>';
+	}
 
 	//////////////////////
 	// OpenVPN
 	//////////////////////
-	echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_UserInfo_Title_OpenVPN . '</h4></th></tr>';
-	// Server IP GW
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SrvIpGw . '</th>';
-	echo '<td>' . OpenVPN_SrvIpGw . '</td>';
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_SrvIpGw . '</span></td></tr>';
-	// Server IP
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SrvIp . '</th>';
-	echo '<td>' . OpenVPN_SrvIp . '</td>';
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_SrvIp . '</span></td></tr>';
-	// Server IP bridged
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SrvIpBridge . '</th>';
-	echo '<td>' . OpenVPN_SrvIpBridge . '</td>';
-	echo '<td><span class="Comments">' . User_UserInfo_Comment_SrvIpBridge . '</span></td></tr>';
-	// Samba share
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SambaShare . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . '</td>';
-	echo '<td><span class="Comments">' . sprintf(User_UserInfo_Comment_SambaShare, $user, $user) . '</span></td></tr>';
-	// NFS share
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_NfsShare . '</th>';
-	echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_NfsShare . '</td>';
-	echo '<td><span class="Comments">' . sprintf(User_UserInfo_Comment_NfsShare, $user, $user) . '</span></td></tr>';
+	if ( $users_datas["account_type"] == 'normal' ) {
+		echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_UserInfo_Title_OpenVPN . '</h4></th></tr>';
+		// Server IP GW
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SrvIpGw . '</th>';
+		echo '<td>' . OpenVPN_SrvIpGw . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_SrvIpGw . '</span></td></tr>';
+		// Server IP
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SrvIp . '</th>';
+		echo '<td>' . OpenVPN_SrvIp . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_SrvIp . '</span></td></tr>';
+		// Server IP bridged
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SrvIpBridge . '</th>';
+		echo '<td>' . OpenVPN_SrvIpBridge . '</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_SrvIpBridge . '</span></td></tr>';
+		// Samba share
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SambaShare . '</th>';
+		echo '<td>' . $users_datas["home_dir"] . '</td>';
+		echo '<td><span class="Comments">' . sprintf(User_UserInfo_Comment_SambaShare, $user, $user) . '</span></td></tr>';
+		// NFS share
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_NfsShare . '</th>';
+		echo '<td>' . $users_datas["home_dir"] . User_UserInfo_Value_NfsShare . '</td>';
+		echo '<td><span class="Comments">' . sprintf(User_UserInfo_Comment_NfsShare, $user, $user) . '</span></td></tr>';
+	}
 
 	//////////////////////
 	// Links (Normal user)
@@ -183,36 +192,38 @@ function printUser($user) {
 	// Manage Addresses
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_ManageAddresses . '</th>';
 	echo '<td colspan="2"><a href="?user/manage-addresses.html"><span class="Comments">' . User_UserInfo_Comment_ManageAddresses . '</span></a></td></tr>';
-	// ruTorrent
-	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_ruTorrent . '</th>';
-	echo '<td colspan="2"><a target="_blank" href="/ru"><span class="Comments">' . User_UserInfo_Comment_ruTorrent . '</span></a></td></tr>';
-	// Seedbox-Manager
-	$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "Seedbox-Manager"]);
-	if ( $is_installed == '1' ) {
-		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_Manager . '</th>';
-		echo '<td colspan="2"><a target="_blank" href="/sm"><span class="Comments">' . User_UserInfo_Comment_Manager . '</span></a></td></tr>';
-	}
-	// OpenVPN
-	$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "OpenVPN"]);
-	if ( $is_installed == '1' ) {
-		// OpenVPN config
-		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_OpenVpnConfig . '</th>';
-		echo '<td colspan="2"><a href="?user/openvpn-config-file.html"><span class="Comments">' . User_UserInfo_Comment_OpenVpnConfig . '</span></a></td></tr>';
-		// OpenVPN GUI
-		echo '<tr align="left"><th width="17%" scope="row"' . User_UserInfo_Title_OpenVpnGui . '</th>';
-		echo '<td colspan="2"><a target="_blank" href="' . $User_UserInfo_Value_OpenVpnGui . '"><span class="Comments">' . User_UserInfo_Comment_OpenVpnGui . '</span></a></td></tr>';
-	}
-	// CakeBox Light
-	$CakeboxDatas = $MySB_DB->get("services", ["is_installed"], ["serv_name" => "CakeBox-Light"]);
-	if ( $CakeboxDatas["is_installed"] == '1' ) {
-		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_Cakebox . '</th>';
-		echo '<td colspan="2"><a target="_blank" href="/ca"><span class="Comments">' . User_UserInfo_Comment_Cakebox . '</span></a></td></tr>';
-	}
-	// NextCloud
-	$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "NextCloud"]);
-	if ( $is_installed == '1' ) {
-		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_NextCloud . '</th>';
-		echo '<td colspan="2"><a target="_blank" href="/nc"><span class="Comments">' . User_UserInfo_Comment_NextCloud . '</span></a></td></tr>';
+	if ( $users_datas["account_type"] == 'normal' ) {
+		// ruTorrent
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_ruTorrent . '</th>';
+		echo '<td colspan="2"><a target="_blank" href="/ru"><span class="Comments">' . User_UserInfo_Comment_ruTorrent . '</span></a></td></tr>';
+		// Seedbox-Manager
+		$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "Seedbox-Manager"]);
+		if ( $is_installed == '1' ) {
+			echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_Manager . '</th>';
+			echo '<td colspan="2"><a target="_blank" href="/sm"><span class="Comments">' . User_UserInfo_Comment_Manager . '</span></a></td></tr>';
+		}
+		// OpenVPN
+		$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "OpenVPN"]);
+		if ( $is_installed == '1' ) {
+			// OpenVPN config
+			echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_OpenVpnConfig . '</th>';
+			echo '<td colspan="2"><a href="?user/openvpn-config-file.html"><span class="Comments">' . User_UserInfo_Comment_OpenVpnConfig . '</span></a></td></tr>';
+			// OpenVPN GUI
+			echo '<tr align="left"><th width="17%" scope="row"' . User_UserInfo_Title_OpenVpnGui . '</th>';
+			echo '<td colspan="2"><a target="_blank" href="' . $User_UserInfo_Value_OpenVpnGui . '"><span class="Comments">' . User_UserInfo_Comment_OpenVpnGui . '</span></a></td></tr>';
+		}
+		// CakeBox Light
+		$CakeboxDatas = $MySB_DB->get("services", ["is_installed"], ["serv_name" => "CakeBox-Light"]);
+		if ( $CakeboxDatas["is_installed"] == '1' ) {
+			echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_Cakebox . '</th>';
+			echo '<td colspan="2"><a target="_blank" href="/ca"><span class="Comments">' . User_UserInfo_Comment_Cakebox . '</span></a></td></tr>';
+		}
+		// NextCloud
+		$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "NextCloud"]);
+		if ( $is_installed == '1' ) {
+			echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_NextCloud . '</th>';
+			echo '<td colspan="2"><a target="_blank" href="/nc"><span class="Comments">' . User_UserInfo_Comment_NextCloud . '</span></a></td></tr>';
+		}
 	}
 
 	//////////////////////

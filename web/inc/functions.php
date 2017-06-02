@@ -331,15 +331,16 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 				case "Trackers":
 				case "Blocklists":
 				case "Listes noires":
+				case "OpenVPN":
 					if ( $UserAccountType == 'normal' ) {
 						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					}
-					break;				
+					break;
 				case "LoadAvg":
 					echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/la/public/">LoadAvg</a>';
 					break;
 				case "NextCloud":
-					if ( $NextCloudIsInstalled == '1' ) {
+					if ( ($NextCloudIsInstalled == '1') && ($UserAccountType == 'normal') ) {
 						echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/nc/">NextCloud</a>';
 					}
 					break;
