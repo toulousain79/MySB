@@ -112,7 +112,7 @@ $language = $users_datas['language'];
 	<table>
 		<tr>
 <?php
-if ( $users_datas['rtorrent_version'] == 'normal' ) {
+if ( $users_datas['account_type'] == 'normal' ) {
 ?>
 			<td><?php echo User_OptionsMySB_rTorrentVersion; ?></td>
 			<td>
