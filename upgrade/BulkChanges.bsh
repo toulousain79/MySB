@@ -188,7 +188,7 @@ EOF
 		fi
 		ownCloudDir="$gsNextCloudDir"
 
-		# Upgrade step 1/5 - Last relaese of ownCloud
+		# Upgrade step 1/6 - Last relaese of ownCloud
 		gfnManageDirAndFiles 'global'
 		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --off"
 		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set dbpassword --value=$MySQL_MysbPassword"
@@ -240,7 +240,7 @@ EOF
 		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:get version"
 		cat $gsNextCloudDir/config/config.php
 
-		# Upgrade step 2/5 - Rename MySQL database
+		# Upgrade step 2/6 - Rename MySQL database
 		if [ -f /var/lib/mysql/ownCloud_db/db.opt ]; then
 			mysql -u root -p$MySQL_RootPassword --verbose <<-EOF
 			CREATE DATABASE NextCloud_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
@@ -270,7 +270,7 @@ EOF
 			mysql -u root -p$MySQL_RootPassword NextCloud_db < $MySB_InstallDir/temp/NextCloud_db.sql
 		fi
 
-		# Upgrade step 3/5 - Move /home/owncloud/ to /home/nextcloud/ AND ownCloud.log, ownCloud.bsh.log
+		# Upgrade step 3/6 - Move /home/owncloud/ to /home/nextcloud/ AND ownCloud.log, ownCloud.bsh.log
 		[ -f /etc/nginx/locations/ownCloud.conf ] && rm -vf /etc/nginx/locations/ownCloud.conf
 		[ -d /home/nextcloud ] && rm -rfv /home/nextcloud
 		gfnManageDirAndFiles 'global'
@@ -308,7 +308,7 @@ EOF
 		[ -f /var/log/nginx/owncloud-error.log.6 ] && mv -v /var/log/nginx/owncloud-error.log.6 /var/log/nginx/owncloud-error.log.6
 		[ -f /var/log/nginx/owncloud-error.log.7 ] && mv -v /var/log/nginx/owncloud-error.log.7 /var/log/nginx/owncloud-error.log.7
 
-		# Upgrade step 4/5 - Prepare config file for migration
+		# Upgrade step 4/6 - Prepare config file for migration
 		source $MySB_InstallDir/inc/vars
 		source /etc/MySB/config_db
 		mv -vf $ownCloudDir $gsNextCloudDir
@@ -328,8 +328,53 @@ EOF
 		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set logtimezone --value=$gsTimeZone"
 		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set assetdirectory --value=$gsNextCloudDir"
 
-		# Upgrade step 5/5 - First release of NextCloud for the migration
+		# Upgrade step 5/6 - First release of NextCloud for the migration
 		NextCloudVersion="10.0.4"
+		NextCloudFile="nextcloud_v$NextCloudVersion.zip"
+		NextCloudUrl="https://download.nextcloud.com/server/releases/nextcloud-$NextCloudVersion.zip"
+		echo
+		echo "########## NextCloud"
+		echo "Directory : $gsNextCloudDir"
+		echo "Version : $NextCloudVersion"
+		echo "File : $NextCloudFile"
+		echo "URL : $NextCloudUrl"
+		echo
+		if [ ! -f $MySB_InstallDir/temp/$NextCloudFile ]; then
+			curl -skLS --retry 3 -o "$MySB_InstallDir/temp/$NextCloudFile" "$NextCloudUrl"
+		fi
+		if [ -f $MySB_InstallDir/temp/$NextCloudFile ] && [ -d $gsNextCloudDir ]; then
+			if [ -f $gsNextCloudDir/config/config.php ]; then
+				mv -v $gsNextCloudDir/config/config.php $MySB_InstallDir/temp/owncloud_config.php
+			fi
+			if [ -d $gsNextCloudDir/apps2 ]; then mv -v $gsNextCloudDir/apps2 $MySB_InstallDir/temp/owncloud_apps2; fi
+			if [ -f $MySB_InstallDir/temp/$NextCloudFile ]; then gfnDeleteDirectory 1 "$gsNextCloudDir"; fi
+			if [ ! -d $gsNextCloudDir ]; then
+				unzip $MySB_InstallDir/temp/$NextCloudFile -d $MySB_InstallDir/temp/
+				SubDirNextCloud="`unzip -l $MySB_InstallDir/temp/$NextCloudFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d'`"
+				if [ -d $MySB_InstallDir/temp/$SubDirNextCloud ]; then mv -v $MySB_InstallDir/temp/$SubDirNextCloud $gsNextCloudDir; fi
+			fi
+		fi
+		# Restore configs & apps2
+		if [ -f $MySB_InstallDir/temp/owncloud_config.php ]; then mv -v $MySB_InstallDir/temp/owncloud_config.php $gsNextCloudDir/config/config.php; fi
+		if [ -d $MySB_InstallDir/temp/owncloud_apps2 ]; then
+			if [ -d $gsNextCloudDir/apps2 ]; then rm -rfv $gsNextCloudDir/apps2; fi
+			mv -v $MySB_InstallDir/temp/owncloud_apps2 $gsNextCloudDir/apps2
+		fi
+		gfnManageDirAndFiles 'global'
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ upgrade -v"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:repair"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mimetype:update-db"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mimetype:update-js"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ app:enable files_external"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ app:enable notifications"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ background:cron"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files:scan --all"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files:cleanup"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:get version"
+		cat $gsNextCloudDir/config/config.php
+
+		# Upgrade step 6/6 - First release of NextCloud for the migration
+		NextCloudVersion="11.0.3"
 		NextCloudFile="nextcloud_v$NextCloudVersion.zip"
 		NextCloudUrl="https://download.nextcloud.com/server/releases/nextcloud-$NextCloudVersion.zip"
 		echo
