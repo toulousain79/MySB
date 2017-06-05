@@ -190,7 +190,14 @@ if ( !empty($sUsersList) ) {
 					<select name="IsActive" style="width:120px; height: 28px;" disabled><?php echo $options; ?></select>
 				</td>
 				<td>
-					<?php echo GetSizeName($User["quota"].'KB'); ?>
+					<?php switch ($User["account_type"]) {
+						case 'plex':
+							echo '';
+							break;
+						default:
+							echo GetSizeName($User["quota"].'KB');
+							break;
+					} ?>
 				</td>
 <?php
 	if ( !empty($system_datas["rt_cost_tva"]) && !empty($system_datas["rt_model"]) ) {
