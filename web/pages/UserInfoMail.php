@@ -247,6 +247,12 @@ function PrintContent($user, $Case) {
 			<td><?php echo $users_datas["users_email"];?></td>
 			<td><span class="Comments"><?php echo User_UserInfo_Comment_Email; ?></span></td>
 		</tr>
+
+		<!-- // Force IP address -->
+		<tr align="left">
+			<th width="15%" scope="row" style="color: #FF6666;" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_ForceIP; ?></th>
+			<td colspan="2" style="background-color: #FF6666;"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/ForceAddress?page=ManageAddresses"><span class="Comments"><?php echo User_UserInfoMail_Comment_ForceIP; ?></span></a></td>
+		</tr>
 <?php } ?>
 
 <?php if ( $DisplayUserInfoDetail == true ) {
@@ -270,12 +276,6 @@ function PrintContent($user, $Case) {
 				<td><span class="Comments"><?php echo User_UserInfo_Comment_Quota; ?></span></td>
 			</tr>
 		<?php } ?>
-
-		<!-- // Force IP address -->
-		<tr align="left">
-			<th width="15%" scope="row" style="color: #FF6666;" id="BorderTopTitle"><?php echo User_UserInfoMail_Title_ForceIP; ?></th>
-			<td colspan="2" style="background-color: #FF6666;"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/ForceAddress?page=ManageAddresses"><span class="Comments"><?php echo User_UserInfoMail_Comment_ForceIP; ?></span></a></td>
-		</tr>
 
 		<!-- //////////////////////
 		// Directories
