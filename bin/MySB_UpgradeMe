@@ -113,12 +113,29 @@ if [ $Continue -eq 0 ]; then
 	# Cleaning MySB before compress
 	gfnCleanBeforeUpgrade
 
+	# MySQL databases DUMP
+	DbList="`ls -1r /var/lib/mysql/`"
+	for Database in $DbList; do
+		if [ -d /var/lib/mysql/$Database/ ]; then
+			case "$Database" in
+				'mysql'|'performance_schema')	continue;;
+				*)
+					mysqldump --defaults-extra-file=/root/.config.cnf $Database > $MySB_InstallDir/db/MySQL_$Database-$DateTime-$MySB_CurrentVersion.dump.sql
+					if [ $? -ne 0 ]; then
+						Continue=3
+						Error="`echo $UpgradeMe_Error_BackupDatabase | sed "s/#database#/$Database/g;"`"
+					fi
+				;;
+			esac
+		fi
+	done
+
 	# Creating backup with Backup-Manager
 	[ $gbDevMode -eq 1 ] && backup-manager-tools remove "$MySB_InstallDir"
-	/usr/sbin/backup-manager -c /etc/MySB/BM_MySB.conf
+	backup-manager -c /etc/MySB/BM_MySB.conf
 
 	if [ $? -gt 0 ]; then
-		Continue=3
+		Continue=4
 		Error="UpgradeMe_Error_BackupFailed"
 	fi
 
@@ -141,14 +158,14 @@ if [ $Continue -eq 0 ]; then
 
 	git fetch --all
 	if [ $? -gt 0 ]; then
-		Continue=4
+		Continue=5
 		Error="$UpgradeMe_Error_GitFetch"
 	fi
 
 	if [ $Continue -eq 0 ]; then
 		git stash
 		if [ $? -gt 0 ]; then
-			Continue=5
+			Continue=6
 			Error="$UpgradeMe_Error_GitPull"
 		fi
 	fi
@@ -156,7 +173,7 @@ if [ $Continue -eq 0 ]; then
 	if [ $Continue -eq 0 ]; then
 		git checkout -b $MySB_NewVersion origin/$MySB_NewVersion
 		if [ $? -gt 0 ]; then
-			Continue=6
+			Continue=7
 			UpgradeMe_Error_GitCheckout="`echo $UpgradeMe_Error_GitCheckout | sed "s/#new_version#/$MySB_NewVersion/g;"`"
 			Error="$UpgradeMe_Error_GitCheckout"
 		fi
@@ -165,7 +182,7 @@ if [ $Continue -eq 0 ]; then
 	if [ $Continue -eq 0 ]; then
 		git pull
 		if [ $? -gt 0 ]; then
-			Continue=7
+			Continue=8
 			Error="$UpgradeMe_Error_GitPull"
 		else
 			git stash clear
@@ -191,7 +208,7 @@ if [ $Continue -eq 0 ]; then
 
 			screen -r MySB_Upgrade
 		else
-			Continue=8
+			Continue=9
 			Error="$UpgradeMe_Error_UpgradeSciptMissing ($MySB_InstallDir/upgrade/From_$gsCurrentVersion-to-$MySB_NewVersion.bsh)"
 		fi
 	fi
