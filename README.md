@@ -1,7 +1,7 @@
 #### This script is not intended to solicit illegal actions! I can not be held responsible for the use that you could doing it! Thank you to reconsider the installation and use of MySB. I developed this tool only for pleasure and passion for my job.
 #### You are not allowed to use MySB for resale as a service!!!
+===
 
-====
 # MySB
 MySB is a multi-user seedbox for dedicated server under Debian 7 (Wheezy) and could be renamed MySSB, My Secured SeedBox.
 All of MySB's interest lies in security through block list management with PeerGuardian (or rTorrent) for incoming requests, as well as encrypting DNS queries with DNScrypt-proxy for outbound requests.
