@@ -118,7 +118,7 @@ Copyright (c) 2013 toulousain79
 * [Captures d'écran](https://github.com/toulousain79/MySB/wiki/%5BPortal%5D-Screenshots)
 * [Droits des utilisateurs](https://github.com/toulousain79/MySB/wiki/%5BPortal%5D-Users-rights)
 
-### Help
+### Aide
 * [Liste de blocage](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-Blocklists)
 * [Cakebox Light](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-Cakebox-Light)
 * [OpenVPN](https://github.com/toulousain79/MySB/wiki/%5BHelp%5D-OpenVPN)
