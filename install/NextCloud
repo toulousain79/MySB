@@ -46,11 +46,21 @@ if [ "$gbToInstall_NextCloud" == "YES" ] && [ "$gsSwitch" != "INIT" ]; then
 	#### STOP services
 	gfnManageServices stop "php5-fpm nginx"
 
-	#### PHP
+	#### /etc/php5/fpm/php.ini
 	perl -pi -e "s/post_max_size = 10M/post_max_size = 20G/g" /etc/php5/fpm/php.ini
 	perl -pi -e "s/upload_max_filesize = 10M/upload_max_filesize = 20G/g" /etc/php5/fpm/php.ini
 	perl -pi -e "s/max_file_uploads = 20/max_file_uploads = 20000/g" /etc/php5/fpm/php.ini
 	perl -pi -e "s/output_buffering = 4096/output_buffering = Off/g" /etc/php5/fpm/php.ini
+	# OPCache
+	perl -pi -e "s/;opcache.enable=0/opcache.enable=1/g" /etc/php5/fpm/php.ini
+	perl -pi -e "s/;opcache.enable_cli=0/opcache.enable_cli=1/g" /etc/php5/fpm/php.ini
+	perl -pi -e "s/;opcache.interned_strings_buffer=4/opcache.interned_strings_buffer=8/g" /etc/php5/fpm/php.ini
+	perl -pi -e "s/;opcache.max_accelerated_files=2000/opcache.max_accelerated_files=10000/g" /etc/php5/fpm/php.ini
+	perl -pi -e "s/;opcache.memory_consumption=64/opcache.memory_consumption=128/g" /etc/php5/fpm/php.ini
+	perl -pi -e "s/;opcache.save_comments=1/opcache.save_comments=1/g" /etc/php5/fpm/php.ini
+	perl -pi -e "s/;opcache.revalidate_freq=2/opcache.revalidate_freq=1/g" /etc/php5/fpm/php.ini
+	perl -pi -e "s/;opcache.revalidate_freq=2/opcache.revalidate_freq=1/g" /etc/php5/fpm/php.ini
+	#### /etc/php5/fpm/pool.d/www.conf
 	perl -pi -e "s/^;env\[PATH\]/env\[PATH\]/g" /etc/php5/fpm/pool.d/www.conf
 
 	#### NginX configuration
@@ -159,7 +169,7 @@ if [ "$gbToInstall_NextCloud" == "YES" ] && [ "$gsSwitch" != "INIT" ]; then
 		cmdMySQL 'NextCloud_db' "INSERT INTO nc_appconfig (appid,configkey,configvalue) VALUES ('password_policy','enforceNonCommonPassword','0');" -v
 	else
 		cmdMySQL 'NextCloud_db' "UPDATE nc_appconfig SET configvalue='0' WHERE appid='password_policy' AND configkey='enforceNonCommonPassword';" -v
-	fi	
+	fi
 	# nc_preferences
 	IfExist="`cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_preferences WHERE configvalue='$EnvLang' AND userid='admin';"`"
 	if [ -z "$IfExist" ]; then
