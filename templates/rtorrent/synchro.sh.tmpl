@@ -119,7 +119,7 @@ fi
 
 #### Retrieving files to transfer
 fnListing() {
-	local nListId sGetBasePath sGetCustom1 sGetName sGetLoadedFile sCategoryDir sGetNameEscaped sLine sMailObject sSubDirectory dStartDate dStartHour nPid sLocalSize sRemoteSize sRemoteDir nError
+	local nListId sGetBasePath sGetCustom1 sGetName sGetLoadedFile sCategoryDir sGetNameEscaped sLine sMailObject sSubDirectory dStartDate dStartHour nPid sLocalSize sRemoteSize sDstDir sRemoteDir nError
 
 	# VARs
 	nListId="$1"
@@ -158,20 +158,21 @@ fnListing() {
 	sLocalSize="`du -hs $sLine | awk '{ print $1 }' | sed -e 's/,/./g;'`"
 
 	if [ ! -z "$sSubDirectory" ] && [ $CreateSubDir -eq 1 ]; then
-		FnDstDir="$DstDir/$sCategoryDir/$sSubDirectory"
-		sRemoteDir="$FnDstDir"
+		sDstDir="$DstDir/$sCategoryDir/$sSubDirectory"
+		sRemoteDir="$sDstDir"
 	else
-		FnDstDir="$DstDir/$sCategoryDir"
-		sRemoteDir="$FnDstDir/$sGetName"
+		sDstDir="$DstDir/$sCategoryDir"
+		sRemoteDir="$sDstDir/$sGetName"
 	fi
-	FnDstDir="`echo $FnDstDir | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-	FnDstDir="`echo $FnDstDir | sed 's/\[//g;' | sed 's/\]//g;' | sed 's/(//g' | sed 's/)//g' | sed 's/\ /./g;' | sed -e 's/\/\//\//g;'`"
+	sDstDir="`echo $sDstDir | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+	sDstDir="`echo $sDstDir | sed 's/\[//g;' | sed 's/\]//g;' | sed 's/(//g' | sed 's/)//g' | sed 's/\ /./g;' | sed -e 's/\/\//\//g;'`"
+	sRemoteDir="`echo $sRemoteDir | sed 's/\[//g;' | sed 's/\]//g;' | sed 's/(//g' | sed 's/)//g' | sed 's/\ /\\\ /g;' | sed -e 's/\/\//\//g;'`"
 
 	# Log
 	echo "#### START ####"
 	echo "Script:		$0"
 	echo "From:		$sLine"
-	echo "To:		$FnDstDir"
+	echo "To:		$sDstDir"
 	echo "Size:		$sLocalSize (local)"
 	echo "Category:	$sCategoryDir ($CategoryList)"
 	echo "Server:		$DstUser@$DstSrv"
@@ -185,11 +186,11 @@ fnListing() {
 	case "$ModeSync" in
 		'rsync')
 			# Creating sub-directory on destination
-			sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d \"$FnDstDir\" ]; then mkdir -p \"$FnDstDir\"; fi" 2> /dev/null
+			sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "if [ ! -d \"$sDstDir\" ]; then mkdir -p \"$sDstDir\"; fi" 2> /dev/null
 
 			# Start synchronization with RSYNC
 			for ((i = 3; i >= 1; i -= 1)); do
-				rsync -rtvy --numeric-ids --partial --append --stats --timeout=10 -e "/usr/bin/sshpass -p$DstPass ssh -p $DstPort -c $RsyncCipher -o Compression=no -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$sLine" $DstUser@$DstSrv:"$FnDstDir/"
+				rsync -rtvy --numeric-ids --partial --append --stats --timeout=10 -e "/usr/bin/sshpass -p$DstPass ssh -p $DstPort -c $RsyncCipher -o Compression=no -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$sLine" $DstUser@$DstSrv:"$sDstDir/"
 				nError=$?
 				# Check remote file or directory size
 				sRemoteSize="`sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "du -hs \"$sRemoteDir\"" 2> /dev/null`"
@@ -204,16 +205,16 @@ fnListing() {
 			for ((i = 3; i >= 1; i -= 1)); do
 				case "$Type" in
 					'directory')
-						lftp -e "$LftpOptions mkdir -p \"$FnDstDir/$sGetNameEscaped\"; mirror -R \"$sLine\" \"$FnDstDir/$sGetNameEscaped\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
+						lftp -e "$LftpOptions mkdir -p \"$sDstDir/$sGetNameEscaped\"; mirror -R \"$sLine\" \"$sDstDir/$sGetNameEscaped\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
 						nError=$?
 						# Check remote size
-						sRemoteSize="`lftp -e "$LftpOptions du -hs \"$FnDstDir/$sGetNameEscaped\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"`"
+						sRemoteSize="`lftp -e "$LftpOptions du -hs \"$sDstDir/$sGetNameEscaped\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"`"
 					;;
 					*)
-						lftp -e "$LftpOptions mkdir -p $FnDstDir; put -O \"$FnDstDir\" \"$sLine\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
+						lftp -e "$LftpOptions mkdir -p $sDstDir; put -O \"$sDstDir\" \"$sLine\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
 						nError=$?
 						# Check remote size
-						sRemoteSize="`lftp -e "$LftpOptions du -hs \"$FnDstDir\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"`"
+						sRemoteSize="`lftp -e "$LftpOptions du -hs \"$sDstDir\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"`"
 					;;
 				esac
 				sRemoteSize="`echo $sRemoteSize | awk '{ print $1 }'`"
