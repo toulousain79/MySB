@@ -5,7 +5,7 @@
 			- XMLRPC-C Advanced v1.49.0
 			- DNScrypt-proxy v1.9.5
 			- Wget v1.19.1
-			- Certbot-auto script v0.14.2
+			- Certbot-auto script v0.15.0
 			- ruTorrent Plugin InstantSearch v1.0
 			- Libsodium v1.0.12
 			- Minisign v0.7.5
