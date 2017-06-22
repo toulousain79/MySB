@@ -193,11 +193,11 @@ fnListing() {
 				rsync -rtvy --numeric-ids --partial --append --stats --timeout=10 -e "/usr/bin/sshpass -p$DstPass ssh -p $DstPort -c $RsyncCipher -o Compression=no -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$sLine" $DstUser@$DstSrv:"$sDstDir/"
 				nError=$?
 				# Check remote file or directory size
-				sRemoteSize="`sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "du -hs \"$sRemoteDir\"" 2> /dev/null`"
-				sRemoteSize="`echo $sRemoteSize | awk '{ print $1 }'`"
-				if [ $sLocalSize == $sRemoteSize ]; then
-					break
-				fi
+				# sRemoteSize="`sshpass -p $DstPass ssh -p $DstPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DstUser@$DstSrv "du -hs \"$sRemoteDir\"" 2> /dev/null`"
+				# sRemoteSize="`echo $sRemoteSize | awk '{ print $1 }'`"
+				# if [ $sLocalSize == $sRemoteSize ]; then
+					# break
+				# fi
 			done
 		;;
 		'ftp')
@@ -208,16 +208,16 @@ fnListing() {
 						lftp -e "$LftpOptions mkdir -p \"$sDstDir/$sGetNameEscaped\"; mirror -R \"$sLine\" \"$sDstDir/$sGetNameEscaped\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
 						nError=$?
 						# Check remote size
-						sRemoteSize="`lftp -e "$LftpOptions du -hs \"$sDstDir/$sGetNameEscaped\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"`"
+						#sRemoteSize="`lftp -e "$LftpOptions du -hs \"$sDstDir/$sGetNameEscaped\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"`"
 					;;
 					*)
 						lftp -e "$LftpOptions mkdir -p $sDstDir; put -O \"$sDstDir\" \"$sLine\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"
 						nError=$?
 						# Check remote size
-						sRemoteSize="`lftp -e "$LftpOptions du -hs \"$sDstDir\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"`"
+						#sRemoteSize="`lftp -e "$LftpOptions du -hs \"$sDstDir\"; bye" -u "$DstUser","$DstPass" "$DstSrv" -p "$DstPort"`"
 					;;
 				esac
-				sRemoteSize="`echo $sRemoteSize | awk '{ print $1 }'`"
+				#sRemoteSize="`echo $sRemoteSize | awk '{ print $1 }'`"
 			done
 		;;
 		'no_such_file_or_directory')	echo $FnCheck;;
@@ -228,11 +228,11 @@ fnListing() {
 	FnEndDate="`/bin/date +%Y/%m/%d`"
 	FnEndHour="`/bin/date +%H:%M:%S`"
 	if [ $nError -eq 0 ]; then
-		if [ $sLocalSize == $sRemoteSize ]; then
+		# if [ $sLocalSize == $sRemoteSize ]; then
 			sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET is_active = '0', to_del = '1', pid = '', comments = 'End: $FnEndDate - $FnEndHour' WHERE list_id = '$nListId';"
-		else
-			sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET is_active = '1', to_del = '0', pid = '', comments = 'Local size: $sLocalSize, Remote size: $sRemoteSize' WHERE list_id = '$nListId';"
-		fi
+		# else
+			# sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET is_active = '1', to_del = '0', pid = '', comments = 'Local size: $sLocalSize, Remote size: $sRemoteSize' WHERE list_id = '$nListId';"
+		# fi
 	else
 		sqlite3 -cmd '.timeout 150000' $DataBase "UPDATE list SET is_active = '0', pid = '', comments = 'Error: $FnEndDate - $FnEndHour' WHERE list_id = '$nListId';"
 		sMailObject="$MailObjectKO"
@@ -240,7 +240,7 @@ fnListing() {
 
 	echo
 	echo "--------------------"
-	echo "Size:		$sRemoteSize (remote)"
+	#echo "Size:		$sRemoteSize (remote)"
 	echo "Date:		$FnEndDate"
 	echo "Hour:		$FnEndHour"
 	echo "##### END #####"
