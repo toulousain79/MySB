@@ -1,5 +1,5 @@
 	Version v4.0
-		2016/06/03
+		2016/06/30
 			- Composer v1.4.2
 			- NodeJS v0.12.18
 			- XMLRPC-C Advanced v1.49.0
@@ -36,7 +36,7 @@
 			- Let's Encrypt, schedules the next task following a certificate renewal
 			- rTorrent synchro script, compare local and remote size before
 			- Portal
-				* Medoo Framework v1.4.4
+				* Medoo Framework v1.4.5
 				* Add DNScrypt-proxy configuration
 				* Added the ability to create a designated account for Plex. Thus the disk quota will not be imputed to other users.
 
