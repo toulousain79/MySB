@@ -40,25 +40,29 @@ if [ "$gbToInstall_PlexMedia" == "YES" ]; then
 			install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.proxy.plexpy.conf.tmpl /etc/nginx/proxy/PlexPy.conf
 			perl -pi -e "s/<MainUser>/$gsMainUserName/g" /etc/nginx/locations/PlexPy.conf
 			# Config.ini
-			install -v -o plexpy -g plexpy -m 0644 $MySB_InstallDir/templates/plexpy/config.ini.tmpl $gsRepoDir/config.ini
-			if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
-				perl -pi -e "s/<https_cert>/$gsInstallDirEscaped\/ssl\/cert.pem/g" $gsRepoDir/config.ini
-				perl -pi -e "s/<https_key>/$gsInstallDirEscaped\/ssl\/privkey.pem/g" $gsRepoDir/config.ini
-			else
-				perl -pi -e "s/<https_cert>/$gsInstallDirEscaped\/ssl\/mysb.cert/g" $gsRepoDir/config.ini
-				perl -pi -e "s/<https_key>/$gsInstallDirEscaped\/ssl\/mysb.key/g" $gsRepoDir/config.ini
+			if [ ! -f $gsRepoDir/config.ini ]; then
+				install -v -o plexpy -g plexpy -m 0644 $MySB_InstallDir/templates/plexpy/config.ini.tmpl $gsRepoDir/config.ini
+				if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
+					perl -pi -e "s/<https_cert>/$gsInstallDirEscaped\/ssl\/cert.pem/g" $gsRepoDir/config.ini
+					perl -pi -e "s/<https_key>/$gsInstallDirEscaped\/ssl\/privkey.pem/g" $gsRepoDir/config.ini
+				else
+					perl -pi -e "s/<https_cert>/$gsInstallDirEscaped\/ssl\/mysb.cert/g" $gsRepoDir/config.ini
+					perl -pi -e "s/<https_key>/$gsInstallDirEscaped\/ssl\/mysb.key/g" $gsRepoDir/config.ini
+				fi
 			fi
 			# Webserver.py
 			perl -pi -e "s/plexpy.HTTP_ROOT \+ \"welcome\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/welcome\"/g" $gsRepoDir/plexpy/webserve.py
 			perl -pi -e "s/plexpy.HTTP_ROOT \+ \"home\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/home\"/g" $gsRepoDir/plexpy/webserve.py
 			perl -pi -e "s/plexpy.HTTP_ROOT \+ \"logs\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/logs\"/g" $gsRepoDir/plexpy/webserve.py
 			# /etc/default/plexpy
-			touch /etc/default/plexpy
+			[ ! -f /etc/default/plexpy ] && touch /etc/default/plexpy
 			# Init script
-			adduser --system --group --disabled-login plexpy --home /opt/plexpy --shell /bin/nologin
+			if [ -z "`cat /etc/passwd | grep 'plexpy'`" ]; then
+				adduser --system --group --disabled-login plexpy --home /opt/plexpy --shell /bin/nologin
+			fi
 			chown plexpy:plexpy -R $gsRepoDir
 			chmod +x $gsRepoDir/init-scripts/init.ubuntu
-			ln -s $gsRepoDir/init-scripts/init.ubuntu /etc/init.d/plexpy
+			[ ! -h /etc/init.d/plexpy ] && ln -s $gsRepoDir/init-scripts/init.ubuntu /etc/init.d/plexpy
 			update-rc.d plexpy defaults
 
 			#### START services
