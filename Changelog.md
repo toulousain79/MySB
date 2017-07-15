@@ -1,6 +1,10 @@
 	Version v4.1
 		2016/07/10
 			- ruTorrent v3.8
+			- PlexPy v1.4.21
+			- Libsodium v1.0.13
+			- Minisign v0.7.8
+			- Certbot-auto script v0.16.0
 	
 	Version v4.0
 		2016/06/30
