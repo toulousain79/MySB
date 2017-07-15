@@ -35,6 +35,10 @@ if [ "$gbToInstall_PlexMedia" == "YES" ]; then
 		gfnGetRepoValues 'PlexPy' && gfnRepoManageByType
 
 		if [ ! -z $gsRepoDir ] && [ -d $gsRepoDir ]; then
+			# System user
+			if [ -z "`cat /etc/passwd | grep 'plexpy'`" ]; then
+				adduser --system --group --disabled-login plexpy --home /opt/plexpy --shell /bin/nologin
+			fi
 			# NginX
 			install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.locations.plexpy.conf.tmpl /etc/nginx/locations/PlexPy.conf
 			install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.proxy.plexpy.conf.tmpl /etc/nginx/proxy/PlexPy.conf
@@ -57,13 +61,11 @@ if [ "$gbToInstall_PlexMedia" == "YES" ]; then
 			# /etc/default/plexpy
 			[ ! -f /etc/default/plexpy ] && touch /etc/default/plexpy
 			# Init script
-			if [ -z "`cat /etc/passwd | grep 'plexpy'`" ]; then
-				adduser --system --group --disabled-login plexpy --home /opt/plexpy --shell /bin/nologin
-			fi
-			chown plexpy:plexpy -R $gsRepoDir
 			chmod +x $gsRepoDir/init-scripts/init.ubuntu
 			[ ! -h /etc/init.d/plexpy ] && ln -s $gsRepoDir/init-scripts/init.ubuntu /etc/init.d/plexpy
 			update-rc.d plexpy defaults
+			# Directory rights
+			chown plexpy:plexpy -R $gsRepoDir
 
 			#### START services
 			gfnManageServices start "nginx"
