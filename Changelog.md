@@ -5,6 +5,7 @@
 			- Libsodium v1.0.13
 			- Minisign v0.7.8
 			- Certbot-auto script v0.16.0
+			- SourcesList, deletion of the restriction by Country 
 	
 	Version v4.0
 		2016/06/30
