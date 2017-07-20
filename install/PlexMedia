@@ -32,6 +32,7 @@ if [ "$gbToInstall_PlexMedia" == "YES" ]; then
 		cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='Plex Media Server';" -v
 
 		gfnGetRepoValues 'PlexPy' && gfnRepoManageByType
+		gsRepoDirEscaped="`echo $gsRepoDir | sed s,/,\\\\\\\\\\/,g`"
 
 		if [ ! -z $gsRepoDir ] && [ -d $gsRepoDir ]; then
 			# System user
@@ -43,14 +44,10 @@ if [ "$gbToInstall_PlexMedia" == "YES" ]; then
 			[ ! -p $gsRepoDir/logs ] && mkdir $gsRepoDir/logs
 			[ ! -p $gsRepoDir/cache ] && mkdir $gsRepoDir/cache
 
-			# Config.py
-			nNumLine=$(cat $gsRepoDir/plexpy/config.py | grep "'HTTP_ROOT':" -n -m 1 | cut -d ':' -f 1)
-			sed -i "/'HTTP_ROOT':/d" $gsRepoDir/plexpy/config.py
-			sed -i ""$nNumLine"i\    'HTTP_ROOT': (str, 'General', 'https://$gsHostNameFqdn:$gsPort_HTTPS/pp/')," $gsRepoDir/plexpy/config.py
-
 			# Config.ini
 			if [ ! -f $gsRepoDir/config.ini ]; then
 				install -v -o plexpy -g nogroup -m 0644 $MySB_InstallDir/templates/plexpy/config.ini.tmpl $gsRepoDir/config.ini
+				perl -pi -e "s/<gsRepoDir>/$gsRepoDirEscaped/g" $gsRepoDir/config.ini
 				if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
 					perl -pi -e "s/<https_cert>/$gsInstallDirEscaped\/ssl\/cert.pem/g" $gsRepoDir/config.ini
 					perl -pi -e "s/<https_key>/$gsInstallDirEscaped\/ssl\/privkey.pem/g" $gsRepoDir/config.ini
@@ -60,19 +57,23 @@ if [ "$gbToInstall_PlexMedia" == "YES" ]; then
 				fi
 			fi
 
+			# Config.py
+			nNumLine=$(cat $gsRepoDir/plexpy/config.py | grep "'HTTP_ROOT':" -n -m 1 | cut -d ':' -f 1)
+			sed -i "/'HTTP_ROOT':/d" $gsRepoDir/plexpy/config.py
+			sed -i ""$nNumLine"i\    'HTTP_ROOT': (str, 'General', 'https://$gsHostNameFqdn:$gsPort_HTTPS/pp/')," $gsRepoDir/plexpy/config.py
+
 			# Webauth.py
-			# perl -pi -e "s/plexpy.HTTP_ROOT \+ \"auth\/logout\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/auth\/logout\"/g" $gsRepoDir/plexpy/webauth.py
-			# perl -pi -e "s/plexpy.HTTP_ROOT \+ \"auth\/login\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/auth\/login\"/g" $gsRepoDir/plexpy/webauth.py
-			# perl -pi -e "s/\(plexpy.HTTP_ROOT\)/\(\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\"\)/g" $gsRepoDir/plexpy/webauth.py
+			perl -pi -e "s/plexpy.HTTP_ROOT \+ \"auth\/logout\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/auth\/logout\"/g" $gsRepoDir/plexpy/webauth.py
+			perl -pi -e "s/plexpy.HTTP_ROOT \+ \"auth\/login\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/auth\/login\"/g" $gsRepoDir/plexpy/webauth.py
+			perl -pi -e "s/\(plexpy.HTTP_ROOT\)/\(\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\"\)/g" $gsRepoDir/plexpy/webauth.py
 			# Webserver.py
-			# perl -pi -e "s/plexpy.HTTP_ROOT \+ \"welcome\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/welcome\"/g" $gsRepoDir/plexpy/webserve.py
-			# perl -pi -e "s/plexpy.HTTP_ROOT \+ \"home\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/home\"/g" $gsRepoDir/plexpy/webserve.py
-			# perl -pi -e "s/plexpy.HTTP_ROOT \+ \"logs\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/logs\"/g" $gsRepoDir/plexpy/webserve.py
-			# perl -pi -e "s/\(plexpy.HTTP_ROOT\)/\(\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\"\)/g" $gsRepoDir/plexpy/webserve.py
+			perl -pi -e "s/plexpy.HTTP_ROOT \+ \"welcome\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/welcome\"/g" $gsRepoDir/plexpy/webserve.py
+			perl -pi -e "s/plexpy.HTTP_ROOT \+ \"home\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/home\"/g" $gsRepoDir/plexpy/webserve.py
+			perl -pi -e "s/plexpy.HTTP_ROOT \+ \"logs\"/\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\/logs\"/g" $gsRepoDir/plexpy/webserve.py
+			perl -pi -e "s/\(plexpy.HTTP_ROOT\)/\(\"https:\/\/$gsHostNameFqdn:$gsPort_HTTPS\/pp\"\)/g" $gsRepoDir/plexpy/webserve.py
 
 			# Init script
 			install -v -o root -g root -m 0644 $MySB_InstallDir/templates/plexpy/etc.default.plexpy.tmpl /etc/default/plexpy
-			gsRepoDirEscaped="`echo $gsRepoDir | sed s,/,\\\\\\\\\\/,g`"
 			perl -pi -e "s/<gsRepoDir>/$gsRepoDirEscaped/g" /etc/default/plexpy
 
 			chmod +x $gsRepoDir/init-scripts/init.ubuntu
