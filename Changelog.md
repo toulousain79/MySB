@@ -4,6 +4,7 @@
 			- PlexPy v1.4.21
 			- Libsodium v1.0.13
 			- Minisign v0.7.8
+			- RKHunter v1.4.4
 			- Certbot-auto script v0.16.0
 			- SourcesList, deletion of the restriction by Country
 			- PlexPy, minor changes
