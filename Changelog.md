@@ -1,3 +1,6 @@
+	Version v4.2
+		2016/07/25
+
 	Version v4.1
 		2016/07/23
 			- ruTorrent v3.8
@@ -8,7 +11,7 @@
 			- Certbot-auto script v0.16.0
 			- SourcesList, deletion of the restriction by Country
 			- PlexPy, minor changes
-	
+
 	Version v4.0
 		2016/06/30
 			- Composer v1.4.2
