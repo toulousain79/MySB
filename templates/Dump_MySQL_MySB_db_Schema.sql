@@ -185,7 +185,7 @@ CREATE TABLE IF NOT EXISTS `repositories` (
   `url` varchar(256) NOT NULL,
   `active` tinyint(1) NOT NULL DEFAULT '0',
   `on_boot` tinyint(1) NOT NULL DEFAULT '0',
-  `script` varchar(128) NOT NULL,
+  `script` varchar(128) NOT NULL DEFAULT '',
   PRIMARY KEY (`id_repositories`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
