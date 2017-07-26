@@ -1,5 +1,7 @@
 	Version v4.2
 		2016/07/25
+			- Upgrade Debian Wheezy to Jessie
+			- Downgrade XMLRPC-C to v1.43.6 (stable)
 
 	Version v4.1
 		2016/07/23
