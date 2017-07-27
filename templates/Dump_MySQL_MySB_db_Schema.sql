@@ -103,9 +103,9 @@ CREATE TABLE IF NOT EXISTS `dnscrypt_resolvers` (
   `forwarder` varchar(16) NOT NULL DEFAULT '',
   `ip_version` varchar(4) NOT NULL DEFAULT 'ipv4',
   `certificate` tinyint(1) NOT NULL DEFAULT '0',
-  `pid` smallint(5) NOT NULL,
-  `speed` smallint(5) NOT NULL,
-  `comments` varchar(64) NOT NULL,
+  `pid` varchar(5) NOT NULL DEFAULT '',
+  `speed` varchar(5) NOT NULL DEFAULT '',
+  `comments` varchar(64) NOT NULL DEFAULT '',
   PRIMARY KEY (`id_dnscrypt_resolvers`),
   UNIQUE KEY `name` (`name`,`full_name`,`resolver_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
