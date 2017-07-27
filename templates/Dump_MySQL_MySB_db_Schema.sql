@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS `dnscrypt_resolvers` (
   `certificate` tinyint(1) NOT NULL DEFAULT '0',
   `pid` varchar(16) NOT NULL DEFAULT '',
   `speed` varchar(5) NOT NULL DEFAULT '',
-  `comments` varchar(64) NOT NULL DEFAULT '',
+  `comments` varchar(128) NOT NULL DEFAULT '',
   PRIMARY KEY (`id_dnscrypt_resolvers`),
   UNIQUE KEY `name` (`name`,`full_name`,`resolver_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
@@ -287,7 +287,7 @@ CREATE TABLE IF NOT EXISTS `trackers_list` (
   `is_active` tinyint(1) NOT NULL DEFAULT '0',
   `to_check` tinyint(1) NOT NULL DEFAULT '1',
   `to_delete` tinyint(1) NOT NULL DEFAULT '0',
-  `ping` varchar(64) NOT NULL,
+  `ping` varchar(64) NOT NULL DEFAULT '',
   `cert_expiration` date NOT NULL DEFAULT '0000-00-00',
   PRIMARY KEY (`id_trackers_list`),
   UNIQUE KEY `tracker` (`tracker`,`tracker_domain`)
