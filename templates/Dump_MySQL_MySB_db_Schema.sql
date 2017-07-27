@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS `dnscrypt_resolvers` (
   `provider_name` varchar(64) NOT NULL,
   `provider_public_key` varchar(128) NOT NULL,
   `provider_public_key_txt_record` varchar(64) NOT NULL,
-  `forwarder` varchar(16) NOT NULL,
+  `forwarder` varchar(16) NOT NULL DEFAULT '',
   `ip_version` varchar(4) NOT NULL DEFAULT 'ipv4',
   `certificate` tinyint(1) NOT NULL DEFAULT '0',
   `pid` smallint(5) NOT NULL,
