@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS `dnscrypt_resolvers` (
   `forwarder` varchar(16) NOT NULL DEFAULT '',
   `ip_version` varchar(4) NOT NULL DEFAULT 'ipv4',
   `certificate` tinyint(1) NOT NULL DEFAULT '0',
-  `pid` varchar(5) NOT NULL DEFAULT '',
+  `pid` varchar(16) NOT NULL DEFAULT '',
   `speed` varchar(5) NOT NULL DEFAULT '',
   `comments` varchar(64) NOT NULL DEFAULT '',
   PRIMARY KEY (`id_dnscrypt_resolvers`),
