@@ -39,11 +39,15 @@ if [ "$gbToInstall_NFS" == "YES" ]; then
 	perl -pi -e "s/^tcp6/#tcp6/g" /etc/netconfig
 
 	#### rpcbind bug
-	sed -i '/service rpcbind restart/d' /etc/init.d/nfs-kernel-server
-	NumLign="`sed -n '/  start)/=' /etc/init.d/nfs-kernel-server`"
-	(( NumLign++ ))
-	sed -i "${NumLign}i\        service rpcbind restart" /etc/init.d/nfs-kernel-server
-	chmod +x /etc/init.d/nfs-kernel-server
+	case "$gsDebianRelease" in
+		'wheezy')
+			sed -i '/service rpcbind restart/d' /etc/init.d/nfs-kernel-server
+			NumLign="`sed -n '/  start)/=' /etc/init.d/nfs-kernel-server`"
+			(( NumLign++ ))
+			sed -i "${NumLign}i\        service rpcbind restart" /etc/init.d/nfs-kernel-server
+			chmod +x /etc/init.d/nfs-kernel-server
+		;;
+	esac
 
 	if gfnCheckCommand 0 nfs-kernel-server; then
 		cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='NFS';" -v
