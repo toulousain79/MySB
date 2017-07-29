@@ -37,9 +37,10 @@ gfnLogRotate() {
 
 #### Installation of a package bundle
 gfnPackageBundleInstall() {
-	local sPackagesRequired sPackagesToInstall
+	local sPackagesRequired sPackagesToInstall sBackports
 
 	sPackagesRequired="$1"
+	sBackports="$2"
 
 	for sPackage in $sPackagesRequired; do
 		if ! gfnCheckCommand 0 $sPackage; then
@@ -51,7 +52,7 @@ gfnPackageBundleInstall() {
 	done
 	sPackagesToInstall="`echo $sPackagesToInstall | xargs -n1 | sort -u | xargs | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 	if [ ! -z "$sPackagesToInstall" ]; then
-		gfnPackagesManage install "$sPackagesToInstall"
+		gfnPackagesManage install "$sPackagesToInstall" "$sBackports"
 	fi
 }
 
@@ -133,12 +134,12 @@ gfnPackagesManage() {
 				fi
 
 				echo "$sAptCmd $sGlobalArgs -o Acquire::Check-Valid-Until=false update"
-				export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs -o 'Acquire::Check-Valid-Until=false' update
+				export DEBIAN_FRONTEND=noninteractive; $sAptCmd $sGlobalArgs -o 'Acquire::Check-Valid-Until=false' update
 				cmdMySQL 'MySB_db' "UPDATE system SET apt_update='0', apt_date='`date +%Y-%m-%d\ %H:%M:%S`' WHERE id_system='1';" -v
 			fi
 		else
 			echo "$sAptCmd $sGlobalArgs -o Acquire::Check-Valid-Until=false update (140)"
-			export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs -o 'Acquire::Check-Valid-Until=false' update
+			export DEBIAN_FRONTEND=noninteractive; $sAptCmd $sGlobalArgs -o 'Acquire::Check-Valid-Until=false' update
 		fi
 	fi
 
@@ -154,16 +155,16 @@ gfnPackagesManage() {
 
 			if [ ! -z "$sFinalList" ]; then
 				echo "$sAptCmd $sGlobalArgs -V -o Dpkg::Options::=\"--force-confold\" install $sFinalList"
-				export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs -V -o Dpkg::Options::="--force-confold" install $sFinalList
+				export DEBIAN_FRONTEND=noninteractive; $sAptCmd $sGlobalArgs -V -o Dpkg::Options::="--force-confold" install $sFinalList
 			fi
 		;;
 		'upgrade')
 			if [ "`$sAptCmd --help | grep safe-upgrade | awk '{ print $1 }'`" == "safe-upgrade" ]; then
 				echo "$sAptCmd $sGlobalArgs -V -o Dpkg::Options::=\"--force-confold\" safe-upgrade"
-				export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs -V -o Dpkg::Options::="--force-confold" safe-upgrade
+				export DEBIAN_FRONTEND=noninteractive; $sAptCmd $sGlobalArgs -V -o Dpkg::Options::="--force-confold" safe-upgrade
 			else
 				echo "$sAptCmd $sGlobalArgs -V -o Dpkg::Options::=\"--force-confold\" upgrade"
-				export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs -V -o Dpkg::Options::="--force-confold" upgrade
+				export DEBIAN_FRONTEND=noninteractive; $sAptCmd $sGlobalArgs -V -o Dpkg::Options::="--force-confold" upgrade
 			fi
 		;;
 		'purge')
@@ -177,7 +178,7 @@ gfnPackagesManage() {
 
 			if [ ! -z "$sFinalList" ]; then
 				echo "$sAptCmd $sGlobalArgs purge $sFinalList"
-				export DEBIAN_FRONTEND=noninteractive ; $sAptCmd $sGlobalArgs purge $sFinalList
+				export DEBIAN_FRONTEND=noninteractive; $sAptCmd $sGlobalArgs purge $sFinalList
 			fi
 		;;
 		'test')
