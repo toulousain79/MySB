@@ -1,5 +1,8 @@
 	Version v4.2
 		2016/07/25
+			- NextCloud v12.0.1
+			- Composer v1.5.1
+			- Plowshare v2.1.7
 			- Upgrade Debian Wheezy to Jessie
 			- Downgrade XMLRPC-C to v1.43.6 (stable)
 
