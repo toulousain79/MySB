@@ -1,10 +1,9 @@
 	Version v4.2
 		2016/07/25
-			- NextCloud v12.0.1
+			- NextCloud v12.0.2
 			- Composer v1.5.1
 			- Plowshare v2.1.7
 			- Certbot-auto script v0.17.0
-			- Upgrade Debian Wheezy to Jessie
 			- Downgrade XMLRPC-C to v1.43.6 (stable)
 
 	Version v4.1
