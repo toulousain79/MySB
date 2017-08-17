@@ -48,7 +48,6 @@ ApplyConfigFail2Ban=NO
 ApplyConfigBind=NO
 ApplyIptablesUsers=NO
 ApplyIptablesLetsEncrypt=NO
-ApplyDnscryptProxy=YES
 LoadOnBoot=NO
 
 # Check by arguments
@@ -116,10 +115,6 @@ case "$LocSwitch" in
 					ApplyConfigBind="`gfnCheckCommand 1 named`"
 					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
 				;;
-				--dnscrypt)
-					ApplyDnscryptProxy=NO
-					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
-				;;
 				--pglcmd)
 					ApplyIptablesUsers=YES
 					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
@@ -148,13 +143,11 @@ fi
 if [ "$ApplyConfigNginx" == "YES" ]; then
 	ServicesToRestart="${ServicesToRestart} nginx"
 fi
-if [ "$ApplyDnscryptProxy" == "YES" ]; then
-	if gfnCheckCommand 0 dnscrypt-proxy; then
-		case "$gbDnsCryptSwitch" in
-			'0')	ServicesToStop="dnscrypt-proxy";;
-			'1')	ServicesToRestart="${ServicesToRestart} dnscrypt-proxy";;
-		esac
-	fi
+if gfnCheckCommand 0 dnscrypt-proxy; then
+	case "$gbDnsCryptSwitch" in
+		'0')	ServicesToStop="dnscrypt-proxy";;
+		'1')	ServicesToRestart="${ServicesToRestart} dnscrypt-proxy";;
+	esac
 fi
 #### Check arguments options
 
@@ -249,30 +242,28 @@ CreateServicesRules() {
 
 # Restart all rTorrent session if needed
 RestartRtorrentSessions() {
-	if [ "$ApplyDnscryptProxy" == "YES" ]; then
-		case "$1" in
-			stop)
+	case "$1" in
+		stop)
+			for FnUser in $gsUsersList; do
+				if [ -f /etc/init.d/rtorrent-$FnUser ]; then
+					service rtorrent-$FnUser stop
+				fi
+			done
+		;;
+		start)
+			service cron status > /dev/null
+			if [ $? -eq 0 ]; then
 				for FnUser in $gsUsersList; do
 					if [ -f /etc/init.d/rtorrent-$FnUser ]; then
-						service rtorrent-$FnUser stop
+						service rtorrent-$FnUser status &> /dev/null
+						if [ $? -ne 0 ]; then
+							service rtorrent-$FnUser restart
+						fi
 					fi
 				done
-			;;
-			start)
-				service cron status > /dev/null
-				if [ $? -eq 0 ]; then
-					for FnUser in $gsUsersList; do
-						if [ -f /etc/init.d/rtorrent-$FnUser ]; then
-							service rtorrent-$FnUser status &> /dev/null
-							if [ $? -ne 0 ]; then
-								service rtorrent-$FnUser restart
-							fi
-						fi
-					done
-				fi
-			;;
-		esac
-	fi
+			fi
+		;;
+	esac
 }
 #### Functions
 
