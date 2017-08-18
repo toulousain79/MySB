@@ -360,13 +360,20 @@ gfnPeerGuardianPglcmdConf() {
 
 #### Network ports generator
 gfnPeerGuardianNetworkPortsGenerator() {
-	local bLetsEncryptOpenPort sPorts_LetsEncrypt sResolversAddresses sAddress nPort sTcpPortList sUdpPortList
+	local bLetsEncryptOpenPort sPorts_LetsEncrypt sResolversAddresses sAddress nPort sPortList
 
 	WHITE_TCP_IN=''
 	WHITE_UDP_IN=''
 	WHITE_TCP_OUT='80 443'
 	WHITE_UDP_OUT=''
-	[ "$gbIsInstalled_DNScrypt" == "YES" ] && sResolversAddresses="`cmdMySQL 'MySB_db' "SELECT resolver_address FROM dnscrypt_resolvers WHERE ip_version='ipv4';"`"
+	if [ "$gbIsInstalled_DNScrypt" == "YES" ]; then
+		sResolversAddresses="`cmdMySQL 'MySB_db' "SELECT resolver_address FROM dnscrypt_resolvers WHERE ip_version='ipv4';"`"
+		for sAddress in $sResolversAddresses; do
+			nPort="`echo $sAddress | awk '{split($0,a,":"); print a[2]}'`"
+			[ -z $nPort ] && nPort=443
+			sPortList="${sPortList} ${nPort}"
+		done
+	fi
 
 	# TCP In
 	WHITE_TCP_IN="${gsPort_HTTPS}"
@@ -384,27 +391,13 @@ gfnPeerGuardianNetworkPortsGenerator() {
 
 	# TCP Out
 	WHITE_TCP_OUT="${WHITE_TCP_OUT} ${gsPort_SMTP} ${gsPort_HTTPS} ${gsPort_FTP} ${gsPort_SSH} ${gsPort_FTP_Data} ${gsPort_FTP_Passive}"
-	if [ "$gbIsInstalled_DNScrypt" == "YES" ]; then
-		for sAddress in $sResolversAddresses; do
-			nPort="`echo $sAddress | awk '{split($0,a,":"); print a[2]}'`"
-			[ -z $nPort ] && nPort=443
-			sTcpPortList="${sTcpPortList} ${nPort}"
-		done
-		WHITE_TCP_OUT="${WHITE_TCP_OUT} ${sTcpPortList}"
-		WHITE_TCP_OUT="`echo $WHITE_TCP_OUT | xargs -n1 | sort -n -u | xargs`"
-	fi
+	[ "$gbIsInstalled_DNScrypt" == "YES" ] && WHITE_TCP_OUT="${WHITE_TCP_OUT} ${sPortList}"
+	WHITE_TCP_OUT="`echo $WHITE_TCP_OUT | xargs -n1 | sort -n -u | xargs`"
 
 	# UDP Out
 	WHITE_UDP_OUT="${WHITE_UDP_OUT}"
-	if [ "$gbIsInstalled_DNScrypt" == "YES" ]; then
-		for sAddress in $sResolversAddresses; do
-			nPort="`echo $sAddress | awk '{split($0,a,":"); print a[2]}'`"
-			[ -z $nPort ] && nPort=443
-			sUdpPortList="${sUdpPortList} ${nPort}"
-		done
-		WHITE_UDP_OUT="${WHITE_UDP_OUT} ${sUdpPortList}"
-		WHITE_TCP_OUT="`echo $WHITE_UDP_OUT | xargs -n1 | sort -n -u | xargs`"
-	fi
+	[ "$gbIsInstalled_DNScrypt" == "YES" ] && WHITE_UDP_OUT="${WHITE_UDP_OUT} ${sPortList}"
+	WHITE_UDP_OUT="`echo $WHITE_UDP_OUT | xargs -n1 | sort -n -u | xargs`"
 
 	# Services
 	if [ "$gbIsInstalled_Webmin" == "YES" ] && [ "$gsIpRestriction" == "NO" ]; then
