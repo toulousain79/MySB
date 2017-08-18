@@ -360,7 +360,7 @@ gfnPeerGuardianPglcmdConf() {
 
 #### Network ports generator
 gfnPeerGuardianNetworkPortsGenerator() {
-	local bLetsEncryptOpenPort sPorts_LetsEncrypt sResolversAddresses sAddress nPort sPortList
+	local bLetsEncryptOpenPort sPorts_LetsEncrypt sResolversAddresses sAddress nPort sTcpPortList sUdpPortList
 
 	WHITE_TCP_IN=''
 	WHITE_UDP_IN=''
@@ -383,6 +383,16 @@ gfnPeerGuardianNetworkPortsGenerator() {
 
 	# TCP Out
 	WHITE_TCP_OUT="${WHITE_TCP_OUT} ${gsPort_SMTP} ${gsPort_HTTPS} ${gsPort_FTP} ${gsPort_SSH} ${gsPort_FTP_Data} ${gsPort_FTP_Passive}"
+	if [ "$gbIsInstalled_DNScrypt" == "YES" ]; then
+		sResolversAddresses="`cmdMySQL 'MySB_db' "SELECT resolver_address FROM dnscrypt_resolvers WHERE ip_version='ipv4';"`"
+		for sAddress in $sResolversAddresses; do
+			nPort="`echo $sAddress | awk '{split($0,a,":"); print a[2]}'`"
+			[ -z $nPort ] && nPort=443
+			sTcpPortList="${sTcpPortList} ${nPort}"
+		done
+		sTcpPortList="`echo $sTcpPortList | xargs -n1 | sort -n -u | xargs`"
+		WHITE_TCP_OUT="${WHITE_TCP_OUT} ${sTcpPortList}"
+	fi
 
 	# UDP Out
 	WHITE_UDP_OUT="${WHITE_UDP_OUT}"
@@ -391,11 +401,10 @@ gfnPeerGuardianNetworkPortsGenerator() {
 		for sAddress in $sResolversAddresses; do
 			nPort="`echo $sAddress | awk '{split($0,a,":"); print a[2]}'`"
 			[ -z $nPort ] && nPort=443
-			sPortList="${sPortList} ${nPort}"
+			sUdpPortList="${sUdpPortList} ${nPort}"
 		done
-
-		sPortList="`echo $sPortList | xargs -n1 | sort -n -u | xargs`"
-		WHITE_UDP_OUT="${WHITE_UDP_OUT} ${sPortList}"
+		sUdpPortList="`echo $sUdpPortList | xargs -n1 | sort -n -u | xargs`"
+		WHITE_UDP_OUT="${WHITE_UDP_OUT} ${sUdpPortList}"
 	fi
 
 	# Services
