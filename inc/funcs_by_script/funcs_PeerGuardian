@@ -366,6 +366,7 @@ gfnPeerGuardianNetworkPortsGenerator() {
 	WHITE_UDP_IN=''
 	WHITE_TCP_OUT='80 443'
 	WHITE_UDP_OUT=''
+	[ "$gbIsInstalled_DNScrypt" == "YES" ] && sResolversAddresses="`cmdMySQL 'MySB_db' "SELECT resolver_address FROM dnscrypt_resolvers WHERE ip_version='ipv4';"`"
 
 	# TCP In
 	WHITE_TCP_IN="${gsPort_HTTPS}"
@@ -384,27 +385,25 @@ gfnPeerGuardianNetworkPortsGenerator() {
 	# TCP Out
 	WHITE_TCP_OUT="${WHITE_TCP_OUT} ${gsPort_SMTP} ${gsPort_HTTPS} ${gsPort_FTP} ${gsPort_SSH} ${gsPort_FTP_Data} ${gsPort_FTP_Passive}"
 	if [ "$gbIsInstalled_DNScrypt" == "YES" ]; then
-		sResolversAddresses="`cmdMySQL 'MySB_db' "SELECT resolver_address FROM dnscrypt_resolvers WHERE ip_version='ipv4';"`"
 		for sAddress in $sResolversAddresses; do
 			nPort="`echo $sAddress | awk '{split($0,a,":"); print a[2]}'`"
 			[ -z $nPort ] && nPort=443
 			sTcpPortList="${sTcpPortList} ${nPort}"
 		done
-		sTcpPortList="`echo $sTcpPortList | xargs -n1 | sort -n -u | xargs`"
 		WHITE_TCP_OUT="${WHITE_TCP_OUT} ${sTcpPortList}"
+		WHITE_TCP_OUT="`echo $WHITE_TCP_OUT | xargs -n1 | sort -n -u | xargs`"
 	fi
 
 	# UDP Out
 	WHITE_UDP_OUT="${WHITE_UDP_OUT}"
 	if [ "$gbIsInstalled_DNScrypt" == "YES" ]; then
-		sResolversAddresses="`cmdMySQL 'MySB_db' "SELECT resolver_address FROM dnscrypt_resolvers WHERE ip_version='ipv4';"`"
 		for sAddress in $sResolversAddresses; do
 			nPort="`echo $sAddress | awk '{split($0,a,":"); print a[2]}'`"
 			[ -z $nPort ] && nPort=443
 			sUdpPortList="${sUdpPortList} ${nPort}"
 		done
-		sUdpPortList="`echo $sUdpPortList | xargs -n1 | sort -n -u | xargs`"
 		WHITE_UDP_OUT="${WHITE_UDP_OUT} ${sUdpPortList}"
+		WHITE_TCP_OUT="`echo $WHITE_UDP_OUT | xargs -n1 | sort -n -u | xargs`"
 	fi
 
 	# Services
