@@ -129,10 +129,10 @@ INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`,
 ('SVN', '<InstallDir>/web/apps/ru/plugins/nfo', 'ruTorrent Plugin NFO', '3.6', 0, 'nfo_v3.6.zip', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/nfo', 1, 0, ''),
 ('SVN', '<InstallDir>/web/apps/ru/plugins/checksfv', 'ruTorrent Plugin Check SFV', '3.6', 0, 'checksfv_v3.6.zip', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/checksfv', 1, 0, ''),
 ('SVN', '<InstallDir>/web/apps/ru/plugins/disklog', 'ruTorrent Plugin Disk Log', '3.6', 0, 'disklog_v3.6.zip', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/disklog', 1, 0, ''),
-('SVN', '<InstallDir>/web/apps/ru/plugins/showip', 'ruTorrent Plugin Show IP', '3.6', 0, 'showip_v3.6.zip', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/showip', 0, 0, ''),
+('SVN', '<InstallDir>/web/apps/ru/plugins/showip', 'ruTorrent Plugin Show IP', '3.6', 0, 'showip_v3.6.zip', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/showip', 1, 0, ''),
 ('SVN', '<InstallDir>/web/apps/ru/plugins/speedgraph', 'ruTorrent Plugin Speed Graph', '3.6', 0, 'speedgraph_v3.6.zip', 'https://github.com/AceP1983/ruTorrent-plugins/trunk/speedgraph', 1, 0, ''),
 ('ZIP', '<InstallDir>/web/apps/ru/plugins/filemanager', 'ruTorrent Plugin FileManager', '0.09', 0, 'filemanager_v0.09.zip', 'https://github.com/toulousain79/MySB/raw/v4.2/files/filemanager_v0.09.zip', 1, 0, ''),
-('ZIP', '<InstallDir>/web/apps/ru/plugins/fileupload', 'ruTorrent Plugin FileUpload', '0.02', 0, 'fileupload_v0.02.zip', 'https://github.com/toulousain79/MySB/raw/v4.2/files/fileupload_v0.02.zip', 0, 0, ''),
+('ZIP', '<InstallDir>/web/apps/ru/plugins/fileupload', 'ruTorrent Plugin FileUpload', '0.02', 0, 'fileupload_v0.02.zip', 'https://github.com/toulousain79/MySB/raw/v4.2/files/fileupload_v0.02.zip', 1, 0, ''),
 ('ZIP', '<InstallDir>/web/apps/ru/plugins/fileshare', 'ruTorrent Plugin FileShare', '1.0', 0, 'fileshare_v1.0.zip', 'https://github.com/toulousain79/MySB/raw/v4.2/files/fileshare_v0.03.zip', 1, 0, ''),
 ('ZIP', '<InstallDir>/web/apps/ru/plugins/mediastream', 'ruTorrent Plugin MediaStream', '0.01', 0, 'mediastream_v0.01.zip', 'https://github.com/toulousain79/MySB/raw/v4.2/files/mediastream_v0.01.zip', 1, 0, ''),
 ('GIT', '<InstallDir>/web/apps/ru/plugins/ratiocolor', 'ruTorrent Plugin RatioColor', '0.5', 0, 'ratiocolor_v0.5.zip', 'https://github.com/Gyran/rutorrent-ratiocolor', 1, 0, ''),
@@ -161,7 +161,7 @@ INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`,
 ('TARGZ', '<InstallDir>/sources/wget', 'Wget', '1.19.1', 0, 'wget_v1.19.1.tar.gz', 'http://ftp.gnu.org/gnu/wget/wget-1.19.1.tar.gz', 1, 0, ''),
 ('TARGZ', '<InstallDir>/sources/geoipupdate', 'GeoIPupdate', '2.4.0', 0, 'GeoIPupdate_v2.4.0.tar.gz', 'https://github.com/maxmind/geoipupdate/releases/download/v2.4.0/geoipupdate-2.4.0.tar.gz', 1, 0, ''),
 ('ZIP', '<InstallDir>/web/wolf', 'Wolf CMS', '0.8.3.1', 0, 'wolf_v0.8.3.1.zip', 'https://github.com/toulousain79/MySB/raw/v4.2/files/wolf_v0.8.3.1.zip', 1, 0, ''),
-('GIT', '/opt/plexpy', 'PlexPy', '1.4.21', 0, 'PlexPy_v1.4.21.zip', 'https://github.com/JonnyWong16/plexpy.git', 1, 0, '');
+('GIT', '/opt/plexpy', 'PlexPy', '1.4.22', 0, 'PlexPy_v1.4.22.zip', 'https://github.com/JonnyWong16/plexpy.git', 1, 0, '');
 --
 -- Contenu de la table `services`
 --
