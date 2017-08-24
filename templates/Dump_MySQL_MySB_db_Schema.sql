@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS `commands` (
 CREATE TABLE IF NOT EXISTS `dnscrypt_config` (
   `id_dnscrypt_config` int(11) NOT NULL DEFAULT '1',
   `ip_version` varchar(4) NOT NULL DEFAULT 'ipv4',
-  `processes_qty` tinyint(1) NOT NULL DEFAULT '4',
+  `processes_qty` tinyint(1) NOT NULL DEFAULT '6',
   `no_logs` varchar(3) NOT NULL DEFAULT 'yes',
   `dnssec` varchar(3) NOT NULL DEFAULT 'yes',
   `namecoin` varchar(3) NOT NULL DEFAULT 'no',
