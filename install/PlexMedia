@@ -80,9 +80,20 @@ if [ "$gbToInstall_PlexMedia" == "YES" ]; then
 			# Init script
 			install -v -o root -g root -m 0644 $MySB_InstallDir/templates/plexpy/etc.default.plexpy.tmpl /etc/default/plexpy
 			perl -pi -e "s/<gsRepoDir>/$gsRepoDirEscaped/g" /etc/default/plexpy
-			chmod +x $gsRepoDir/init-scripts/init.ubuntu
-			[ ! -h /etc/init.d/plexpy ] && ln -sv $gsRepoDir/init-scripts/init.ubuntu /etc/init.d/plexpy
-			update-rc.d plexpy defaults
+			case "$gsDebianRelease" in
+				'wheezy')
+					chmod +x $gsRepoDir/init-scripts/init.ubuntu
+					[ ! -h /etc/init.d/plexpy ] && ln -sv $gsRepoDir/init-scripts/init.ubuntu /etc/init.d/plexpy
+					update-rc.d plexpy defaults
+				;;
+				'jessie'|'strech')
+					chmod 0644 $gsRepoDir/init-scripts/init.systemd
+					[ ! -h /lib/systemd/system/plexpy.service ] && ln -sv $gsRepoDir/init-scripts/init.systemd /lib/systemd/system/plexpy.service
+					systemctl daemon-reload
+					systemctl enable plexpy.service
+					systemctl start plexpy.service
+				;;
+			esac
 
 			# NginX
 			install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.locations.plexpy.conf.tmpl /etc/nginx/locations/PlexPy.conf

@@ -1,11 +1,14 @@
+	Version v5.0
+		2016/08/27
+		
 	Version v4.2
-		2016/07/25
-			- NextCloud v12.0.2
-			- Composer v1.5.1
-			- Plowshare v2.1.7
-			- PlexPy v1.4.22
-			- Certbot-auto script v0.17.0
-			- Downgrade XMLRPC-C to v1.43.6 (stable)
+		2016/08/26
+		- NextCloud v12.0.2
+		- Composer v1.5.1
+		- Plowshare v2.1.7
+		- PlexPy v1.4.22
+		- Certbot-auto script v0.17.0
+		- Downgrade XMLRPC-C to v1.43.6 (stable)
 
 	Version v4.1
 		2016/07/23
