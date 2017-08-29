@@ -31,24 +31,7 @@ else
 	exit 1
 fi
 
-#### 2 - Cleaning/Banner
-case "$gsScriptName" in
-	"MySB_Install.bsh")
-		if [ "$gsDirName/MySB_Install.bsh" != "$MySB_InstallDir/install/MySB_Install.bsh" ]; then
-			rm -vf $0
-		fi
-	;;
-	"MySB_CreateUser")
-		if [ "`screen -ls | grep MySB`" != "" ]; then
-			#### 4 - Create MySB banner
-			if [ "$BANNER" == "ON" ]; then
-				gfnBannerGenerator
-			fi
-		fi
-	;;
-esac
-
-#### 3 - End Script
+#### 2 - End Script
 if [ "$END" == "ON" ]; then
 	echo "--------------------"
 	log_daemon_msg "$IncAfter_UpdateManDB"
@@ -72,7 +55,7 @@ if [ "$END" == "ON" ]; then
 	gfnStatusLSB
 fi
 
-#### 4 - Specify the log directory
+#### 3 - Specify the log directory
 case "$gsDirName" in
 	"$MySB_InstallDir/bin")		DirLog="$MySB_InstallDir/web/logs/bin";;
 	"$MySB_InstallDir/install")	DirLog="$MySB_InstallDir/web/logs/install";;
@@ -82,14 +65,26 @@ case "$gsDirName" in
 esac
 if [ ! -d $DirLog ]; then mkdir -p $DirLog; fi
 
-if [ "$gsScriptName" == "MySB_Install.bsh" ]; then
-	TIMESTAMP=ON
-	DirLog="$MySB_InstallDir/web/logs/install"
-	if [ -f /tmp/$gsScriptName.log ]; then
-		cat /tmp/$gsScriptName.log > $MySB_InstallDir/logs/$gsScriptName.log
-		rm -f /tmp/$gsScriptName.log
-	fi
-fi
+#### 4 - Cleaning
+case "$gsScriptName" in
+	"MySB_Install.bsh")
+		if [ "$0" != "$MySB_InstallDir/install/MySB_Install.bsh" ]; then
+			rm -vf $0 >> /tmp/$gsScriptName.log
+		fi
+		TIMESTAMP=ON
+		DirLog="$MySB_InstallDir/web/logs/install"
+		if [ -f /tmp/$gsScriptName.log ]; then
+			cat /tmp/$gsScriptName.log > $MySB_InstallDir/logs/$gsScriptName.log
+			rm -f /tmp/$gsScriptName.log
+		fi
+	;;
+	"MySB_CreateUser")
+		if [ ! -z "`screen -ls | grep MySB`" ]; then
+			# Create new MySB banner
+			[ "$BANNER" == "ON" ] && gfnBannerGenerator
+		fi
+	;;
+esac
 
 #### 5 - STD Out/Err (after banner)
 if [ "$TIMESTAMP" == "ON" ]; then
