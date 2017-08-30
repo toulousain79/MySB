@@ -56,6 +56,13 @@ gfnManageQuota() {
 
 	[ ! -z "$1" ] && sMessage="$1"
 
+	# By default, force disabling quota for all users
+	gfnListCountUsers 'all'
+	for sUser in $gsUsersList; do
+		cmdMySQL 'MySB_db' "UPDATE users SET quota='0' WHERE users_ident='$sUser';"
+		setquota -u $sUser 0 0 0 0 -a
+	done
+
 	gfnListCountUsers 'normal'
 	nFreeSpace="`cmdMySQL 'MySB_db' "SELECT quota_default FROM system WHERE id_system='1';"`"
 	if [ -z "$nFreeSpace" ] || [ $nFreeSpace -eq 0 ]; then
