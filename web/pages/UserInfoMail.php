@@ -212,11 +212,13 @@ function PrintContent($user, $Case) {
 	<table width="100%" border="0" align="left">
 
 
-<?php if ( $DisplayGoTo == true ) { ?>
+<?php if ( ($DisplayGoTo == true) && ($users_datas["account_type"] == 'normal') ) { ?>
 		<tr><td colspan="3" scope="row"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>"><?php echo User_UserInfoMail_GoTo; ?></a></td></tr>
 <?php } ?>
 
-<?php if ( $DisplayUserInfo == true ) { ?>
+<?php
+	if ( ($DisplayUserInfo == true) && ($users_datas["account_type"] == 'normal') ) {
+?>
 		<!-- //////////////////////
 		// User personal info
 		////////////////////// -->
@@ -255,8 +257,10 @@ function PrintContent($user, $Case) {
 		</tr>
 <?php } ?>
 
-<?php if ( $DisplayUserInfoDetail == true ) {
-		if ( $users_datas["account_type"] == 'normal' ) { ?>
+<?php
+	if ( $DisplayUserInfoDetail == true ) {
+		if ( $users_datas["account_type"] == 'normal' ) {
+?>
 			<!-- // RPC -->
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_RPC; ?></th>
@@ -506,17 +510,15 @@ function PrintContent($user, $Case) {
 
 <?php
 	if ( $DisplayRenting == true ) {
-		$RentingDatas = $MySB_DB->get("system", ["rt_global_cost", "rt_cost_tva", "rt_model", "rt_tva", "rt_nb_users", "rt_price_per_users"], ["id_system" => 1]);
+		$RentingDatas = $MySB_DB->get("system", ["rt_cost_tva", "rt_model", "rt_nb_users", "rt_price_per_users"], ["id_system" => 1]);
 
 		if ( !empty($RentingDatas["rt_cost_tva"]) && !empty($RentingDatas["rt_model"]) ) {
 			switch ($Method) {
 				case '1':
-					$GlobalCost = round($RentingDatas["rt_global_cost"], 2);
 					$GlobalCostTva = round($RentingDatas["rt_cost_tva"], 2);
 					$PricePerUsers = round($RentingDatas["rt_price_per_users"], 2);
 					break;
 				default:
-					$GlobalCost = ceil($RentingDatas["rt_global_cost"]);
 					$GlobalCostTva = ceil($RentingDatas["rt_cost_tva"]);
 					$PricePerUsers = ceil($RentingDatas["rt_price_per_users"]);
 					break;
@@ -534,18 +536,6 @@ function PrintContent($user, $Case) {
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SrvModel; ?></th>
 				<td><?php echo $RentingDatas["rt_model"];?></td>
 				<td><span class="Comments"><?php echo User_UserInfo_Comment_SrvModel; ?></span></td>
-			</tr>
-			<!-- // TVA -->
-			<tr align="left">
-				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TVA; ?></th>
-				<td><?php echo $RentingDatas["rt_tva"];?></td>
-				<td><span class="Comments"><?php echo User_UserInfo_Comment_TVA; ?></span></td>
-			</tr>
-			<!-- // Global cost Duty Free -->
-			<tr align="left">
-				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_GlobalCost; ?></th>
-				<td><?php echo $GlobalCost . User_UserInfo_Table_GlobalCost_Plus;?></td>
-				<td><span class="Comments"><?php echo User_UserInfo_Comment_GlobalCost; ?></span></td>
 			</tr>
 			<!-- // Global cost Inc. Tax -->
 			<tr align="left">
