@@ -25,33 +25,59 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### Install packages
-gfnPackageBundleInstall "php5 php5-common php5-cli php5-fpm php5-curl php5-geoip php5-xmlrpc php5-gd php5-sqlite php5-mcrypt php5-mysql php5-intl php5-imagick php-xml-rss php5-redis php5-dev php5-imap php5-gmp"
+case "$gsDebianRelease" in
+	'wheezy'|'jessie')
+		gfnPackageBundleInstall "php5 php5-common php5-cli php5-fpm php5-curl php5-geoip php5-xmlrpc php5-gd php5-sqlite php5-mcrypt php5-mysql php5-intl php5-imagick php-xml-rss php5-redis php5-dev php5-imap php5-gmp"
+		sPhpDir="/etc/php5"
+	;;
+	'stretch')
+		gfnPackageBundleInstall "php php-common php-cli php-fpm php-curl php-geoip php-xmlrpc php-gd php-sqlite3 php-mcrypt php-mysql php-intl php-imagick php-xml php-redis php-dev php-imap php-gmp"
+		gfnPackagesManage purge "apache2"
+		sPhpDir="/etc/php/7.0"
+	;;
+esac
 
 #### PECL
 pecl channel-update pecl.php.net
-if [ ! -z "`pecl list | grep htscanner`" ]; then
-	pecl uninstall htscanner
-fi
-if [ -z "`pecl list | grep htscanner`" ]; then
-	pecl install htscanner
-	echo "extension=htscanner.so" > /etc/php5/mods-available/htscanner.ini
-	php5enmod htscanner
-fi
+case "$gsDebianRelease" in
+	'wheezy'|'jessie')
+		if [ ! -z "`pecl list | grep htscanner`" ]; then
+			pecl uninstall htscanner
+		fi
+		if [ -z "`pecl list | grep htscanner`" ]; then
+			pecl install htscanner
+			echo "extension=htscanner.so" > $sPhpDir/mods-available/htscanner.ini
+			php5enmod htscanner
+		fi
+	;;
+esac
 if [ -z "`pecl list | grep smbclient`" ]; then
 	pecl install smbclient
-	echo "extension=smbclient.so" > /etc/php5/mods-available/smbclient.ini
+	echo "extension=smbclient.so" > $sPhpDir/mods-available/smbclient.ini
 	php5enmod smbclient
 fi
 
 #### STOP services
-gfnManageServices stop "php5-fpm"
+gfnManageServices stop "$binPhpFpm"
 
-# /etc/php5/fpm/pool.d/www.conf
-cp -v $MySB_InstallDir/templates/php5/etc.php5.fpm.pool.d.www.conf.tmpl /etc/php5/fpm/pool.d/www.conf
-# /etc/php5/fpm/php.ini
-cp -v $MySB_InstallDir/templates/php5/etc.php5.fpm.php.ini.tmpl /etc/php5/fpm/php.ini
-# /etc/php5/cli/php.ini
-cp -v $MySB_InstallDir/templates/php5/etc.php5.cli.php.ini.tmpl /etc/php5/cli/php.ini
+case "$gsDebianRelease" in
+	'wheezy'|'jessie')
+		# $sPhpDir/fpm/pool.d/www.conf
+		cp -v $MySB_InstallDir/templates/php/etc.php5.fpm.pool.d.www.conf.tmpl $sPhpDir/fpm/pool.d/www.conf
+		# $sPhpDir/fpm/php.ini
+		cp -v $MySB_InstallDir/templates/php/etc.php5.fpm.php.ini.tmpl $sPhpDir/fpm/php.ini
+		# $sPhpDir/cli/php.ini
+		cp -v $MySB_InstallDir/templates/php/etc.php5.cli.php.ini.tmpl $sPhpDir/cli/php.ini
+	;;
+	'stretch')
+		# $sPhpDir/fpm/pool.d/www.conf
+		cp -v $MySB_InstallDir/templates/php/etc.php.7.0.fpm.pool.d.www.conf.tmpl $sPhpDir/fpm/pool.d/www.conf
+		# $sPhpDir/fpm/php.ini
+		cp -v $MySB_InstallDir/templates/php/etc.php.7.0.fpm.php.ini.tmpl $sPhpDir/fpm/php.ini
+		# $sPhpDir/cli/php.ini
+		cp -v $MySB_InstallDir/templates/php/etc.php.7.0.cli.php.ini.tmpl $sPhpDir/cli/php.ini
+	;;
+esac
 
 # TMPFS
 sed -i '/TMPFS - PHP/d' /etc/fstab
@@ -68,7 +94,7 @@ fi
 if gfnCheckCommand 0 geoipupdate; then geoipupdate; fi
 
 #### START services
-gfnManageServices start "php5-fpm"
+gfnManageServices start "$binPhpFpm"
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after
