@@ -204,7 +204,7 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
 		$Pid=$Resolver["pid"];
 		$Speed=$Resolver["speed"];
 
-		if ( $Pid != '0' ) {
+		if ( $Pid != '' ) {
 			$style = "style=\"background-color:#00FF66\"";
 			$PidValue = $Pid;
 		} else {
