@@ -4,7 +4,7 @@
 ====
 # MySB
 
-[![Don](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=26PKHX8PGHLWG)
+[![Faire un don](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=26PKHX8PGHLWG)
 
 MySB (My SeedBox) est une seedbox multi-utilisateurs pour un serveur dédié sous Debian 7 (Wheezy) et pourrait être renommée MySSB, My Secured SeedBox.
 Tout l'intérêt de MySB réside dans la sécurité via la gestion de liste de blocage avec PeerGuardian (ou rTorrent) pour les requêtes entrantes, ainsi que le cryptage des requêtes DNS grâce à DNScrypt-proxy pour les requêtes sortantes.
