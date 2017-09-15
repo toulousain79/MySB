@@ -1,5 +1,8 @@
 	Version v5.0
-		2016/08/27
+		2016/09/15
+			- Composer v1.5.2
+			- Certbot-auto script v0.18.1
+			- Minisign v0.7.9
 			- Migration from Wheezy to Jessie
 
 	Version v4.2
