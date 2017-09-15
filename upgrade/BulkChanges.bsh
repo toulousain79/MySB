@@ -62,18 +62,6 @@ case "$1" in
 		#### APT-Mirror
 		echo "0 7 * * * root /usr/bin/apt-mirror $MySB_InstallDir/files/apt_mirrors/mirror.list > /var/spool/apt-mirror/var/cron.log" > /etc/cron.d/apt-mirror
 
-		#### Wheezy to Jessie
-		# Git LFS
-		[ -f /etc/apt/sources.list.d/git-lfs.list ] && rm -vf /etc/apt/sources.list.d/git-lfs.list
-		[ -d $MySB_InstallDir/files/apt_mirrors/mirrors/packagecloud.io ] && rm -vrf $MySB_InstallDir/files/apt_mirrors/mirrors/packagecloud.io
-		# PeerGuardian
-		[ -d $MySB_InstallDir/files/apt_mirrors/mirrors/moblock-deb.sourceforge.net ] && rm -vrf $MySB_InstallDir/files/apt_mirrors/mirrors/moblock-deb.sourceforge.net
-		# PlexMedia
-		[ -d $MySB_InstallDir/files/apt_mirrors/mirrors/shell.ninthgate.se ] && rm -vrf $MySB_InstallDir/files/apt_mirrors/mirrors/shell.ninthgate.se
-
-		# Remove some packages
-		gfnPackagesManage purge "update-notifier-common python3.2 gnupg-curl libav-tools libhttp-daemon-ssl-perl"
-
 		# Watchdog rTorrent services
 		gfnListCountUsers 'normal'
 		crontab -l > /tmp/crontab.tmp
@@ -83,6 +71,22 @@ case "$1" in
 		done
 		crontab /tmp/crontab.tmp
 		rm -f /tmp/crontab.tmp
+
+		#### Wheezy to Jessie
+		# Git LFS
+		[ -f /etc/apt/sources.list.d/git-lfs.list ] && rm -vf /etc/apt/sources.list.d/git-lfs.list
+		[ -d $MySB_InstallDir/files/apt_mirrors/mirrors/packagecloud.io ] && rm -vrf $MySB_InstallDir/files/apt_mirrors/mirrors/packagecloud.io
+		# PeerGuardian
+		[ -d $MySB_InstallDir/files/apt_mirrors/mirrors/moblock-deb.sourceforge.net ] && rm -vrf $MySB_InstallDir/files/apt_mirrors/mirrors/moblock-deb.sourceforge.net
+		# PlexMedia
+		[ -d $MySB_InstallDir/files/apt_mirrors/mirrors/shell.ninthgate.se ] && rm -vrf $MySB_InstallDir/files/apt_mirrors/mirrors/shell.ninthgate.se
+		# Remove some packages
+		gfnPackagesManage purge "update-notifier-common python3.2 gnupg-curl libav-tools libhttp-daemon-ssl-perl"
+		# For update of sources list
+		gfnCheckCommand 0 dnscrypt-proxy && service dnscrypt-proxy restart
+		cmdMySQL 'MySB_db' "UPDATE system SET apt_update = 1, apt_date = '`date +%Y-%m-%d\ %H:%M:%S`' WHERE id_system='1';" -v
+		source $MySB_InstallDir/inc/funcs_by_script/funcs_Install
+		gfnPackagesManage 'dist-upgrade'
 	;;
 	"AFTER")
 		####################################

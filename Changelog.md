@@ -4,6 +4,8 @@
 			- Certbot-auto script v0.18.1
 			- Minisign v0.7.9
 			- Migration from Wheezy to Jessie
+			- Watchdog for Plex Media Server
+			- Correct user's rTorrent service watchdog
 
 	Version v4.2
 		2016/08/26
