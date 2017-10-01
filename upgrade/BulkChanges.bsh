@@ -62,7 +62,7 @@ case "$1" in
 		#### APT-Mirror
 		echo "0 7 * * * root /usr/bin/apt-mirror $MySB_InstallDir/files/apt_mirrors/mirror.list > /var/spool/apt-mirror/var/cron.log" > /etc/cron.d/apt-mirror
 
-		# Watchdog rTorrent services
+		#### Watchdog rTorrent services
 		gfnListCountUsers 'normal'
 		crontab -l > /tmp/crontab.tmp
 		for seedUser in $gsUsersList; do
@@ -71,6 +71,18 @@ case "$1" in
 		done
 		crontab /tmp/crontab.tmp
 		rm -f /tmp/crontab.tmp
+
+		#### Wheezy to Jessie upgrade
+		gfnPackagesManage purge "update-notifier-common python3.2 gnupg-curl libav-tools libhttp-daemon-ssl-perl aptitude php-pear"
+		cmdMySQL 'MySB_db' "UPDATE system SET apt_update = 1, apt_date = '`date +%Y-%m-%d\ %H:%M:%S`' WHERE id_system='1';" -v
+		gfnPackagesManage 'upgrade'
+		gfnPackagesManage 'dist-upgrade'
+		[ -f /etc/apt/sources.list.d/git-lfs.list ] && rm -vf /etc/apt/sources.list.d/git-lfs.list
+		[ -d $MySB_InstallDir/files/apt_mirrors/mirrors/packagecloud.io ] && rm -vrf $MySB_InstallDir/files/apt_mirrors/mirrors/packagecloud.io
+		[ -d $MySB_InstallDir/files/apt_mirrors/mirrors/moblock-deb.sourceforge.net ] && rm -vrf $MySB_InstallDir/files/apt_mirrors/mirrors/moblock-deb.sourceforge.net
+		[ -d $MySB_InstallDir/files/apt_mirrors/mirrors/shell.ninthgate.se ] && rm -vrf $MySB_InstallDir/files/apt_mirrors/mirrors/shell.ninthgate.se
+		apt-get autoclean -y
+		apt-get autoremove -y
 	;;
 	"AFTER")
 		####################################

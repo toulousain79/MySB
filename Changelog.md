@@ -1,5 +1,8 @@
 	Version v5.0
 		2016/09/15
+			- PlexPy v1.4.23
+			- NextCloud v12.0.3
+			- LibSodium v1.0.15
 			- Composer v1.5.2
 			- Certbot-auto script v0.18.1
 			- Minisign v0.7.9
