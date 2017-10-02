@@ -161,7 +161,7 @@ INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`,
 ('TARGZ', '<InstallDir>/sources/wget', 'Wget', '1.19.1', 1, 'wget_v1.19.1.tar.gz', 'http://ftp.gnu.org/gnu/wget/wget-1.19.1.tar.gz', 1, 0, ''),
 ('TARGZ', '<InstallDir>/sources/geoipupdate', 'GeoIPupdate', '2.4.0', 1, 'GeoIPupdate_v2.4.0.tar.gz', 'https://github.com/maxmind/geoipupdate/releases/download/v2.4.0/geoipupdate-2.4.0.tar.gz', 1, 0, ''),
 ('ZIP', '<InstallDir>/web/wolf', 'Wolf CMS', '0.8.3.1', 1, 'wolf_v0.8.3.1.zip', 'https://github.com/toulousain79/MySB/raw/v5.0/files/wolf_v0.8.3.1.zip', 1, 0, ''),
-('GIT', '/opt/plexpy', 'PlexPy', '1.4.23', 1, 'PlexPy_v1.4.23.zip', 'https://github.com/JonnyWong16/plexpy.git', 1, 0, '');
+('GIT', '/opt/plexpy', 'PlexPy', '1.4.24', 1, 'PlexPy_v1.4.24.zip', 'https://github.com/JonnyWong16/plexpy.git', 1, 0, '');
 --
 -- Contenu de la table `services`
 --
