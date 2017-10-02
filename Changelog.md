@@ -1,5 +1,5 @@
 	Version v5.0
-		2016/09/15
+		2017/10/02
 			- PlexPy v1.4.24
 			- NextCloud v12.0.3
 			- LibSodium v1.0.15
@@ -12,7 +12,7 @@
 			- Correct user's rTorrent service watchdog
 
 	Version v4.2
-		2016/08/26
+		2017/08/26
 			- NextCloud v12.0.2
 			- Composer v1.5.1
 			- Plowshare v2.1.7
@@ -21,7 +21,7 @@
 			- Downgrade XMLRPC-C to v1.43.6 (stable)
 
 	Version v4.1
-		2016/07/23
+		2017/07/23
 			- ruTorrent v3.8
 			- PlexPy v1.4.21
 			- Libsodium v1.0.13
@@ -32,7 +32,7 @@
 			- PlexPy, minor changes
 
 	Version v4.0
-		2016/06/30
+		2017/06/30
 			- Composer v1.4.2
 			- NodeJS v0.12.18
 			- XMLRPC-C Advanced v1.49.0
@@ -74,7 +74,7 @@
 				* Added the ability to create a designated account for Plex. Thus the disk quota will not be imputed to other users.
 
 	Version v3.5
-		2016/01/11
+		2017/01/11
 			- ownCloud v9.1.3
 			- Plowshare v2.1.6
 			- Composer v1.2.4
