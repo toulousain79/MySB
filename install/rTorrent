@@ -27,10 +27,14 @@ source $(dirname $0)/../inc/includes_before
 #### Install rTorrent v0.9.2
 gfnPackageBundleInstall 'rtorrent buildtorrent mediainfo ffmpeg'
 
+#### VARs
+gnRTorrentUpgrade=0
+
 #### Install rTorrent
 # XMLRPC-C
 gfnGetRepoValues 'XMLRPC' && gfnRepoManageByType
 if [ $gnRepoUpgrade -eq 1 ]; then
+	gnRTorrentUpgrade=1
 	cd $gsRepoDir/
 	if [ -f config.mk ] && [ -f common.mk ]; then
 		make clean
@@ -38,22 +42,27 @@ if [ $gnRepoUpgrade -eq 1 ]; then
 	./configure --disable-abyss-server --disable-cgi-server --disable-cplusplus --disable-libwww-client --disable-wininet-client
 	make -j$gsProcessors
 	make install
+	# Disable the upgrade job
+	cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='XMLRPC';" -v
 fi
 
 # LIBtorrent
 gfnGetRepoValues 'LibTorrent' && gfnRepoManageByType
 if [ $gnRepoUpgrade -eq 1 ]; then
+	gnRTorrentUpgrade=1
 	cd $gsRepoDir/
 	make clean
 	./autogen.sh
 	./configure --with-posix-fallocate
 	make -j$gsProcessors
 	make install
+	# Disable the upgrade job
+	cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='LibTorrent';" -v
 fi
 
 # rTorrent
 gfnGetRepoValues 'rTorrent' && gfnRepoManageByType
-if [ $gnRepoUpgrade -eq 1 ]; then
+if [ $gnRepoUpgrade -eq 1 ] || [ $gnRTorrentUpgrade -eq 1 ]; then
 	cd $gsRepoDir/
 	make clean
 	./autogen.sh
@@ -61,6 +70,8 @@ if [ $gnRepoUpgrade -eq 1 ]; then
 	make -j$gsProcessors
 	make install
 	ldconfig
+	# Disable the upgrade job
+	cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='rTorrent';" -v
 fi
 
 # -----------------------------------------
