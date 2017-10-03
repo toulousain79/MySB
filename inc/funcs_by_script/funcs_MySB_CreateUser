@@ -51,15 +51,22 @@ gfnNextCloudAccountManage() {
 
 #### Quota
 gfnManageQuota() {
-	local sMessage nFreeSpace nUsersSpaceUsed nHomeSpace nNextCloudSpace nFreeSpaceToKeep sIfExist sUser
+	local sMessage nFreeSpace nUsersSpaceUsed nHomeSpace nNextCloudSpace nFreeSpaceToKeep sIfExist sUser sVerbose
 	sMessage=""
+	sVerbose=""
 
-	[ ! -z "$1" ] && sMessage="$1"
+	if [ ! -z "$1" ]; then
+		if [ "$1" == "-v" ]; then
+			sVerbose="$1"
+		else
+			sMessage="$1"
+		fi
+	fi
 
 	# By default, force disabling quota for all users
 	gfnListCountUsers 'all'
 	for sUser in $gsUsersList; do
-		cmdMySQL 'MySB_db' "UPDATE users SET quota='0' WHERE users_ident='$sUser';"
+		cmdMySQL 'MySB_db' "UPDATE users SET quota='0' WHERE users_ident='$sUser';" $sVerbose
 		setquota -u $sUser 0 0 0 0 -a
 	done
 
@@ -81,7 +88,7 @@ gfnManageQuota() {
 		nFreeSpace="`df --sync /home/ | awk '{ print $4 }' | tail -n 1`" # (Kb)
 		nFreeSpace=$(($nFreeSpace-$nFreeSpaceToKeep)) # (Kb)
 		nFreeSpace=$(($nFreeSpace+$nUsersSpaceUsed)) # (Kb)
-		cmdMySQL 'MySB_db' "UPDATE system SET quota_default='$nFreeSpace' WHERE id_system='1';"
+		cmdMySQL 'MySB_db' "UPDATE system SET quota_default='$nFreeSpace' WHERE id_system='1';" $sVerbose
 	fi
 
 	SpaceByUser=$(($nFreeSpace/$gnTotalUsers))
@@ -89,7 +96,7 @@ gfnManageQuota() {
 	for sUser in $gsUsersList; do
 		if [ "$sUser" != "$UserToDelete" ]; then
 			if [ ! -z "$sMessage" ]; then log_daemon_msg "$sMessage [$sUser]"; fi
-			cmdMySQL 'MySB_db' "UPDATE users SET quota='$SpaceByUser' WHERE users_ident='$sUser';"
+			cmdMySQL 'MySB_db' "UPDATE users SET quota='$SpaceByUser' WHERE users_ident='$sUser';" $sVerbose
 			setquota -u -F vfsv0 $sUser $SpaceByUser $SpaceByUser 0 0 /
 
 			# NextCloud Quota
@@ -97,9 +104,9 @@ gfnManageQuota() {
 				sIfExist="`cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_preferences WHERE userid='$sUser' AND configkey='quota';"`"
 
 				if [ -z "$sIfExist" ]; then
-					cmdMySQL 'NextCloud_db' "INSERT INTO nc_preferences (userid,appid,configkey,configvalue) VALUES ('$sUser','files','quota','$SpaceByUser KB');"
+					cmdMySQL 'NextCloud_db' "INSERT INTO nc_preferences (userid,appid,configkey,configvalue) VALUES ('$sUser','files','quota','$SpaceByUser KB');" $sVerbose
 				else
-					cmdMySQL 'NextCloud_db' "UPDATE nc_preferences SET configvalue='$SpaceByUser KB' WHERE userid='$sUser' AND configkey='quota';"
+					cmdMySQL 'NextCloud_db' "UPDATE nc_preferences SET configvalue='$SpaceByUser KB' WHERE userid='$sUser' AND configkey='quota';" $sVerbose
 				fi
 			fi
 			if [ ! -z "$sMessage" ]; then gfnStatusLSB; fi
