@@ -1,5 +1,5 @@
 	Version v5.0
-		2017/10/02
+		2017/10/07
 			- PlexPy v1.4.24
 			- NextCloud v12.0.3
 			- LibSodium v1.0.15
