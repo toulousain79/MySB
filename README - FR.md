@@ -6,7 +6,7 @@
 
 [![Faire un don](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=26PKHX8PGHLWG)
 
-MySB (My SeedBox) est une seedbox multi-utilisateurs pour un serveur dédié sous Debian 7 (Wheezy) et pourrait être renommée MySSB, My Secured SeedBox.
+MySB (My SeedBox) est une seedbox multi-utilisateurs pour un serveur dédié sous Debian 8 (Jessie) et pourrait être renommée MySSB, My Secured SeedBox.
 Tout l'intérêt de MySB réside dans la sécurité via la gestion de liste de blocage avec PeerGuardian (ou rTorrent) pour les requêtes entrantes, ainsi que le cryptage des requêtes DNS grâce à DNScrypt-proxy pour les requêtes sortantes.
 
 * **Version actuelle** _(stable)_: **v4.2**
@@ -14,7 +14,7 @@ Tout l'intérêt de MySB réside dans la sécurité via la gestion de liste de b
 
 ## Toutes les conditions préalables énumérées ci-dessous sont OBLIGATOIRES!
 
-* **Conçu** pour **serveur dédié** uniquement avec **Debian Wheezy** _(Ubuntu **N**'est **PAS** pris en charge)_
+* **Conçu** pour **serveur dédié** uniquement avec **Debian Jessie** _(Ubuntu **N**'est **PAS** pris en charge)_
 * Vous **devez** avoir un **noyau Debian standard**! Si vous ne pouvez pas installer un noyau **standard**, MySB **N**'est **PAS** pour vous... _(**noyau PVE** **ne** sont **pas** pris en charge)_
 * Virtual Private Server (VPS) sont **non compatibles**! _(Voir le point précédent)_
 * Vous devez avoir un serveur dédié **vierge** de toutes installation.
