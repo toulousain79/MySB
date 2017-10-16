@@ -167,15 +167,13 @@ gfnManageServices() {
 							"php7.0-fpm"|"php5-fpm"|"stunnel4"|"vsftpd"|"fail2ban"|"nfs-kernel-server")
 								nContinue=0
 								log_daemon_msg "$Funcs_Stopping $Service"
-								service $Service stop &> /dev/null
-								#service $Service stop > /dev/null
+								service $Service stop > /dev/null
 								gfnStatusLSB
 							;;
 							"nginx")
 								nContinue=0
 								log_daemon_msg "$Funcs_Stopping $Service"
-								service $Service stop &> /dev/null
-								#service $Service stop > /dev/null
+								service $Service stop > /dev/null
 								if [ $? -gt 0 ]; then
 									fuser -k 81/tcp &> /dev/null
 									fuser -k $gsPort_HTTP/tcp &> /dev/null
@@ -195,7 +193,6 @@ gfnManageServices() {
 
 						if [ "$nContinue" == "1" ]; then
 							service $Service stop
-							#service $Service stop
 						fi
 					else
 						log_daemon_msg "$Funcs_AlreadyStopped" "$Service"
@@ -294,12 +291,10 @@ gfnManageServices() {
 								nContinue=0
 								if ! gfnGetPid $Service; then
 									log_daemon_msg "$Funcs_Starting $Service"
-									service $Service start &> /dev/null
-									#service $Service start > /dev/null
+									service $Service start > /dev/null
 								else
 									log_daemon_msg "$Funcs_Restarting $Service"
-									service $Service restart &> /dev/null
-									#service $Service restart > /dev/null
+									service $Service restart > /dev/null
 								fi
 								gfnStatusLSB
 							;;
@@ -308,17 +303,14 @@ gfnManageServices() {
 								if gfnCheckCommand 0 $Service; then
 									if ! gfnGetPid $Service; then
 										log_daemon_msg "$Funcs_Starting $Service"
-										service $Service start &> /dev/null
-										#service $Service start > /dev/null
+										service $Service start > /dev/null
 									else
 										log_daemon_msg "$Funcs_Reloading $Service"
-										service $Service $sFinalCmd &> /dev/null
-										#service $Service $sFinalCmd > /dev/null
+										service $Service $sFinalCmd > /dev/null
 										if [ $? -gt 0 ]; then
 											gfnStatusLSB 1
 											log_daemon_msg "$Funcs_Restarting $Service"
-											service $Service restart &> /dev/null
-											#service $Service restart > /dev/null
+											service $Service restart > /dev/null
 										fi
 									fi
 									gfnStatusLSB
@@ -329,30 +321,25 @@ gfnManageServices() {
 								if gfnCheckCommand 0 $Service; then
 									if ! gfnGetPid $Service; then
 										log_daemon_msg "$Funcs_Starting $Service"
-										service $Service start &> /dev/null
-										#service $Service start > /dev/null
+										service $Service start > /dev/null
 									else
 										log_daemon_msg "$Funcs_Reloading $Service"
-										service $Service $sFinalCmd &> /dev/null
-										#service $Service $sFinalCmd > /dev/null
+										service $Service $sFinalCmd > /dev/null
 										if [ -z "`ps ax | grep 'nginx' | grep '/usr/sbin/nginx' | grep -v 'grep'`" ]; then
 											gfnStatusLSB 1
 											log_daemon_msg "$Funcs_Restarting $Service"
 											fuser -k 81/tcp &> /dev/null
 											fuser -k $gsPort_HTTP/tcp &> /dev/null
 											fuser -k $gsPort_HTTPS/tcp &> /dev/null
-											service $Service restart &> /dev/null
-											#service $Service restart &> /dev/null
+											service $Service restart > /dev/null
 											if [ -z "`ps ax | grep 'nginx' | grep '/usr/sbin/nginx' | grep -v 'grep'`" ]; then
 												gfnStatusLSB 1
 												log_daemon_msg "$Funcs_Killing $Service"
-												service $Service stop &> /dev/null
-												#service $Service stop > /dev/null
+												service $Service stop > /dev/null
 												killall $Service
 												gfnStatusLSB
 												log_daemon_msg "$Funcs_Starting $Service"
-												service $Service start &> /dev/null
-												#service $Service start > /dev/null
+												service $Service start > /dev/null
 											fi
 										fi
 									fi
@@ -361,29 +348,21 @@ gfnManageServices() {
 							;;
 							"bind9")
 								nContinue=0
-								# if ! gfnGetPid dnscrypt-proxy; then
-									if gfnCheckCommand 0 $Service; then
-										if ! gfnGetPid $Service; then
-											log_daemon_msg "$Funcs_Starting $Service"
-											service $Service start &> /dev/null
-											#service $Service start > /dev/null
-										else
-											log_daemon_msg "$Funcs_Reloading $Service"
-											service $Service $sFinalCmd &> /dev/null
-											#service $Service $sFinalCmd > /dev/null
-											if [ -z "`ps ax | grep 'named -u bind' | grep -v 'grep'`" ]; then
-												gfnStatusLSB 1
-												log_daemon_msg "$Funcs_Restarting $Service"
-												service $Service restart &> /dev/null
-												#service $Service restart > /dev/null
-											fi
+								if gfnCheckCommand 0 $Service; then
+									if ! gfnGetPid $Service; then
+										log_daemon_msg "$Funcs_Starting $Service"
+										service $Service start > /dev/null
+									else
+										log_daemon_msg "$Funcs_Reloading $Service"
+										service $Service $sFinalCmd > /dev/null
+										if [ -z "`ps ax | grep 'named -u bind' | grep -v 'grep'`" ]; then
+											gfnStatusLSB 1
+											log_daemon_msg "$Funcs_Restarting $Service"
+											service $Service restart > /dev/null
 										fi
-										gfnStatusLSB
 									fi
-								# else
-									#service dnscrypt-proxy restart > /dev/null
-									# service dnscrypt-proxy restart > /dev/null
-								# fi
+									gfnStatusLSB
+								fi
 							;;
 							*)
 								if ! gfnGetPid $Service; then
@@ -396,11 +375,9 @@ gfnManageServices() {
 
 						if [ "$nContinue" == "1" ]; then
 							service $Service $sFinalCmd
-							#service $Service $sFinalCmd
 
 							if [ $? -gt 0 ] && [ "$sFinalCmd" == "reload" ]; then
 								service $Service restart
-								#service $Service restart
 							fi
 						fi
 					fi
