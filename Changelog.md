@@ -1,11 +1,11 @@
 	Version v5.0
-		2017/10/09
+		2017/10/18
 			- PlexPy v1.4.25
 			- NextCloud v12.0.3
 			- LibSodium v1.0.15
 			- Composer v1.5.2
 			- Certbot-auto script v0.19.0
-			- Minisign v0.7.9
+			- Minisign v0.7.11
 			- Migration from Wheezy to Jessie
 			- Watchdog for Plex Media Server
 			- Correct user's rTorrent service watchdog
