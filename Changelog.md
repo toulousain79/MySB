@@ -1,3 +1,8 @@
+	Version v5.1
+		2017/10/30
+			- Wget v1.19.2
+			- OpenVPN Admin for Webmin v3.1
+
 	Version v5.0
 		2017/10/18
 			- PlexPy v1.4.25
