@@ -161,7 +161,7 @@ INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`,
 ('ZIP', '<InstallDir>/web/apps/nc', 'NextCloud', '12.0.3', 0, 'nextcloud_v12.0.3.zip', 'https://download.nextcloud.com/server/releases/nextcloud-12.0.3.zip', 1, 0, ''),
 ('TARGZ', '<InstallDir>/sources/rkhunter', 'RKHunter', '1.4.4', 0, 'rkhunter_v1.4.4.tar.gz', 'https://downloads.sourceforge.net/project/rkhunter/rkhunter/1.4.4/rkhunter-1.4.4.tar.gz?r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Frkhunter%2Ffiles%2Frkhunter%2F1.4.4%2F&ts=1500813184&use_mirror=kent', 1, 0, ''),
 ('TARGZ', '<InstallDir>/sources/wget', 'Wget', '1.19.2', 0, 'wget_v1.19.2.tar.gz', 'http://ftp.gnu.org/gnu/wget/wget-1.19.2.tar.gz', 1, 0, ''),
-('TARGZ', '<InstallDir>/sources/geoipupdate', 'GeoIPupdate', '2.4.0', 0, 'GeoIPupdate_v2.4.0.tar.gz', 'https://github.com/maxmind/geoipupdate/releases/download/v2.4.0/geoipupdate-2.4.0.tar.gz', 1, 0, ''),
+('TARGZ', '<InstallDir>/sources/geoipupdate', 'GeoIPupdate', '2.5.0', 0, 'GeoIPupdate_v2.5.0.tar.gz', 'https://github.com/maxmind/geoipupdate/releases/download/v2.5.0/geoipupdate-2.5.0.tar.gz', 1, 0, ''),
 ('ZIP', '<InstallDir>/web/wolf', 'Wolf CMS', '0.8.3.1', 0, 'wolf_v0.8.3.1.zip', 'https://github.com/toulousain79/MySB/raw/v5.1/files/wolf_v0.8.3.1.zip', 1, 0, ''),
 ('GIT', '/opt/plexpy', 'PlexPy', '1.4.25', 0, 'PlexPy_v1.4.25.zip', 'https://github.com/JonnyWong16/plexpy.git', 1, 0, '');
 --
