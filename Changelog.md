@@ -4,6 +4,7 @@
 			- OpenVPN Admin for Webmin v3.1
 			- Maxmind GeoIP v2.5.0
 			- Pagespeed, increase TMPFS cache to 128Mo
+			- Add monitoring provider (Hetzner)
 
 	Version v5.0
 		2017/10/18
