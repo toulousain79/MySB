@@ -27,9 +27,12 @@ source $(dirname $0)/../inc/includes_before
 #### Quota, add journaled quotas to the interested partition
 if [ "$gsServerProvider" == "HETZNER" ]; then
 	sRootDir="`cat /etc/fstab | grep ' / '`"
-	sed -i '/$sRootDir/d' /etc/fstab
-	nNumLine=$(cat /etc/fstab | grep 'TMPFS - MySQL' -n -m 1 | cut -d ':' -f 1)
-	sed -i ""$nNumLine"i\$sRootDir noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0" /etc/fstab
+	sOptions="`echo $sRootDir | sed "s/defaults/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0/g;"`"
+	sRootDirEscaped="`echo $sOptions | sed s,/,\\\\\\\\\\/,g`"
+	nNumLine=$(cat /etc/fstab | grep ' / ' -n -m 1 | cut -d ':' -f 1)
+	sed -i ''$nNumLine'd' /etc/fstab
+	sed -i ""$nNumLine"i\<sRootDir>" /etc/fstab
+	perl -pi -e "s/<sRootDir>/$sRootDirEscaped/g" /etc/fstab
 else
 	if [ ! -z "`cat /etc/fstab | grep 'noatime,nodiratime,errors=remount-ro'`" ] && [ -z "`cat /etc/fstab | grep 'usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0' | grep -v '/boot'`" ]; then
 		perl -pi -e "s/noatime,nodiratime,errors=remount-ro/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0/g" /etc/fstab
