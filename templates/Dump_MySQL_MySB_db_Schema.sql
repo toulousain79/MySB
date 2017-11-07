@@ -260,7 +260,7 @@ CREATE TABLE IF NOT EXISTS `system` (
   `nextcloud_cron` tinyint(1) NOT NULL DEFAULT '0',
   `letsencrypt_date` date NOT NULL DEFAULT '0000-00-00',
   `letsencrypt_openport` tinyint(1) NOT NULL DEFAULT '0',
-  `quota_default` int(32) NOT NULL,
+  `quota_default` bigint(32) NOT NULL,
   `rt_model` varchar(64) NOT NULL,
   `rt_tva` decimal(6,2) NOT NULL DEFAULT '0.00',
   `rt_global_cost` decimal(6,2) NOT NULL DEFAULT '0.00',
