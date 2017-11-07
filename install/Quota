@@ -26,7 +26,16 @@ source $(dirname $0)/../inc/includes_before
 
 #### Quota, add journaled quotas to the interested partition
 if [ "$gsServerProvider" == "HETZNER" ]; then
+	# /
 	sRootDir="`cat /etc/fstab | grep ' / '`"
+	sOptions="`echo $sRootDir | sed "s/defaults/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0/g;"`"
+	sRootDirEscaped="`echo $sOptions | sed s,/,\\\\\\\\\\/,g`"
+	nNumLine=$(cat /etc/fstab | grep ' / ' -n -m 1 | cut -d ':' -f 1)
+	sed -i ''$nNumLine'd' /etc/fstab
+	sed -i ""$nNumLine"i\<sRootDir>" /etc/fstab
+	perl -pi -e "s/<sRootDir>/$sRootDirEscaped/g" /etc/fstab
+	# /home
+	sRootDir="`cat /etc/fstab | grep ' /home '`"
 	sOptions="`echo $sRootDir | sed "s/defaults/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0/g;"`"
 	sRootDirEscaped="`echo $sOptions | sed s,/,\\\\\\\\\\/,g`"
 	nNumLine=$(cat /etc/fstab | grep ' / ' -n -m 1 | cut -d ':' -f 1)

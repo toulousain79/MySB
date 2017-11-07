@@ -391,7 +391,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `rtorrent_notify` tinyint(1) NOT NULL DEFAULT '0',
   `language` varchar(2) NOT NULL DEFAULT 'en',
   `init_password` tinyint(1) NOT NULL DEFAULT '0',
-  `quota` int(32) NOT NULL DEFAULT '0',
+  `quota` bigint(32) NOT NULL DEFAULT '0',
   `period_price` decimal(6,2) NOT NULL DEFAULT '0.00',
   `period_days` tinyint(2) NOT NULL DEFAULT '0',
   `treasury` decimal(6,2) NOT NULL DEFAULT '0.00',
