@@ -23,7 +23,7 @@ source $(dirname $0)/../inc/includes_before
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
 ##################### FIRST LINE #####################################
-
+/dev/md/2 / ext4 defaults 0 0
 #### Quota, add journaled quotas to the interested partition
 if [ "$gsServerProvider" == "HETZNER" ]; then
 	# /
@@ -33,15 +33,19 @@ if [ "$gsServerProvider" == "HETZNER" ]; then
 	nNumLine=$(cat /etc/fstab | grep ' / ' -n -m 1 | cut -d ':' -f 1)
 	sed -i ''$nNumLine'd' /etc/fstab
 	sed -i ""$nNumLine"i\<sRootDir>" /etc/fstab
+	echo "" >> /etc/fstab
 	perl -pi -e "s/<sRootDir>/$sRootDirEscaped/g" /etc/fstab
 	# /home
 	sRootDir="`cat /etc/fstab | grep ' /home '`"
-	sOptions="`echo $sRootDir | sed "s/defaults/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0/g;"`"
-	sRootDirEscaped="`echo $sOptions | sed s,/,\\\\\\\\\\/,g`"
-	nNumLine=$(cat /etc/fstab | grep ' /home ' -n -m 1 | cut -d ':' -f 1)
-	sed -i ''$nNumLine'd' /etc/fstab
-	sed -i ""$nNumLine"i\<sRootDir>" /etc/fstab
-	perl -pi -e "s/<sRootDir>/$sRootDirEscaped/g" /etc/fstab
+	if [ ! -z "$sRootDir" ]; then
+		sOptions="`echo $sRootDir | sed "s/defaults/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0/g;"`"
+		sRootDirEscaped="`echo $sOptions | sed s,/,\\\\\\\\\\/,g`"
+		nNumLine=$(cat /etc/fstab | grep ' /home ' -n -m 1 | cut -d ':' -f 1)
+		sed -i ''$nNumLine'd' /etc/fstab
+		sed -i ""$nNumLine"i\<sRootDir>" /etc/fstab
+		echo "" >> /etc/fstab
+		perl -pi -e "s/<sRootDir>/$sRootDirEscaped/g" /etc/fstab
+	fi
 else
 	if [ ! -z "`cat /etc/fstab | grep 'noatime,nodiratime,errors=remount-ro'`" ] && [ -z "`cat /etc/fstab | grep 'usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0' | grep -v '/boot'`" ]; then
 		perl -pi -e "s/noatime,nodiratime,errors=remount-ro/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0/g" /etc/fstab
