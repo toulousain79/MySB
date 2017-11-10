@@ -31,7 +31,20 @@ source $(dirname $0)/../inc/includes_before
 source $MySB_InstallDir/inc/funcs_iptables
 
 #### VARs
-LocSwitch="$1"
+nNbArgs=$#
+for (( nArgs=1; nArgs<=$nNbArgs; nArgs++ )); do
+	case "$nArgs" in
+		1)	InitSwitch="$1";;
+		2)
+			case "$2" in
+				'--*')	RefreshSwitch="$2";;
+				*)		ModeSwitch="$2";;
+			esac
+		;;
+		3)	ModeSwitch="$3";;
+	esac
+done
+
 gfnListCountUsers 'normal' #($gsUsersList)
 AllUsersIPs="${gsSeedboxUsersIPs} ${gsMainUserIPs}"
 AllUsersIPs="`echo $AllUsersIPs | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
@@ -51,27 +64,28 @@ ApplyIptablesLetsEncrypt=NO
 LoadOnBoot=NO
 
 # Check by arguments
-for Arg in "$@"; do
-	case "$Arg" in
-		INSTALL|UPGRADE)
-			LoadKernelModules=YES
-			LoadKernelParameter=YES
-			ServicesToRestart=''
-		;;
-		INIT)
-			LoadKernelModules=YES
-			LoadKernelParameter=YES
-			LoadOnBoot=YES
-			ServicesToRestart='cron'
-		;;
-		*)
-			ApplyIptablesUsers=YES
-			ServicesToRestart='cron'
-		;;
-	esac
-done
+case "$ModeSwitch" in
+	INSTALL|UPGRADE)
+		echo "INSTALL|UPGRADE"
+		LoadKernelModules=YES
+		LoadKernelParameter=YES
+		ServicesToRestart=''
+	;;
+	INIT)
+		echo "INIT"
+		LoadKernelModules=YES
+		LoadKernelParameter=YES
+		LoadOnBoot=YES
+		ServicesToRestart='cron'
+	;;
+	*)
+		echo "CRON"
+		ApplyIptablesUsers=YES
+		ServicesToRestart='cron'
+	;;
+esac
 
-case "$LocSwitch" in
+case "$InitSwitch" in
 	create)
 		ApplyConfigNginx="`gfnCheckCommand 1 nginx`"
 		ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
@@ -83,51 +97,49 @@ case "$LocSwitch" in
 		ApplyConfigBind="`gfnCheckCommand 1 named`"
 	;;
 	refresh)
-		for Arg in "$@"; do
-			case "$Arg" in
-				--letsencrypt)
-					unset LetsEncryptIPs Temp
-					LetsEncryptOpenPort="`cmdMySQL 'MySB_db' "SELECT letsencrypt_openport FROM system WHERE id_system='1';"`"
-					Temp="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM lets_encrypt;"`"
-					if [ "$gsIpRestriction" == "YES" ]; then
-						for ip in $Temp; do
-							LetsEncryptIPs="${LetsEncryptIPs} $ip/32"
-						done
-					else
-						LetsEncryptIPs="0/0"
-					fi
-					LetsEncryptIPs="`echo $LetsEncryptIPs | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
-					ApplyIptablesUsers=NO
-					ApplyIptablesLetsEncrypt=YES
-					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
-				;;
-				--users)
-					ApplyIptablesUsers=YES
-					ApplyConfigNginx="`gfnCheckCommand 1 nginx`"
-					ApplyConfigFail2Ban=$gbIsInstalled_Fail2Ban
-					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
-				;;
-				--trackers)
-					ApplyConfigBind="`gfnCheckCommand 1 named`"
-					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
-				;;
-				--blocklists)
-					ApplyConfigBind="`gfnCheckCommand 1 named`"
-					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
-				;;
-				--pglcmd)
-					ApplyIptablesUsers=YES
-					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
-				;;
-				--all)
-					ApplyIptablesUsers=YES
-					ApplyConfigNginx="`gfnCheckCommand 1 nginx`"
-					ApplyConfigBind="`gfnCheckCommand 1 named`"
-					ApplyConfigFail2Ban=$gbIsInstalled_Fail2Ban
-					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
-				;;
-			esac
-		done
+		case "$RefreshSwitch" in
+			--letsencrypt)
+				unset LetsEncryptIPs Temp
+				LetsEncryptOpenPort="`cmdMySQL 'MySB_db' "SELECT letsencrypt_openport FROM system WHERE id_system='1';"`"
+				Temp="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM lets_encrypt;"`"
+				if [ "$gsIpRestriction" == "YES" ]; then
+					for ip in $Temp; do
+						LetsEncryptIPs="${LetsEncryptIPs} $ip/32"
+					done
+				else
+					LetsEncryptIPs="0/0"
+				fi
+				LetsEncryptIPs="`echo $LetsEncryptIPs | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
+				ApplyIptablesUsers=NO
+				ApplyIptablesLetsEncrypt=YES
+				ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
+			;;
+			--users)
+				ApplyIptablesUsers=YES
+				ApplyConfigNginx="`gfnCheckCommand 1 nginx`"
+				ApplyConfigFail2Ban=$gbIsInstalled_Fail2Ban
+				ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
+			;;
+			--trackers)
+				ApplyConfigBind="`gfnCheckCommand 1 named`"
+				ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
+			;;
+			--blocklists)
+				ApplyConfigBind="`gfnCheckCommand 1 named`"
+				ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
+			;;
+			--pglcmd)
+				ApplyIptablesUsers=YES
+				ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
+			;;
+			--all)
+				ApplyIptablesUsers=YES
+				ApplyConfigNginx="`gfnCheckCommand 1 nginx`"
+				ApplyConfigBind="`gfnCheckCommand 1 named`"
+				ApplyConfigFail2Ban=$gbIsInstalled_Fail2Ban
+				ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
+			;;
+		esac
 	;;
 esac
 
@@ -266,7 +278,7 @@ RestartRtorrentSessions() {
 #### Functions
 
 #### Begin
-case "$LocSwitch" in
+case "$InitSwitch" in
 	clean)
 		#### STOP services
 		RestartRtorrentSessions "stop"
