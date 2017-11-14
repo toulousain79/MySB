@@ -46,15 +46,18 @@ source $MySB_InstallDir/inc/vars
 
 case "$1" in
 	"start")
-		#### Force users quota
-		source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
-		gfnManageQuota
-
+		while [ -z "`service mysql status | grep 'Active: active (running)'`" ]; do
+			sleep 1
+		done
 		#### We apply first MySB security rules (Iptables, NginX IP restriction, Fail2Ban, PeerGuardian, DNScrypt and Bind)
 		# All services not started will be start, also rTorrent sessions...
 		log_daemon_msg "Applying all MySB security rules"
 		/bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'create' 'INIT'
 		log_end_msg 0
+
+		#### Force users quota
+		source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
+		gfnManageQuota
 
 		gfnListCountUsers 'normal'
 		for User in $gsUsersList; do
