@@ -42,7 +42,6 @@
 
 #### Includes
 source /etc/MySB/config
-source $MySB_InstallDir/inc/vars
 
 case "$1" in
 	"start")
@@ -54,28 +53,11 @@ case "$1" in
 		log_daemon_msg "Applying all MySB security rules"
 		/bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'create' 'INIT'
 		log_end_msg 0
-
-		#### Force users quota
-		source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
-		gfnManageQuota
-
-		gfnListCountUsers 'normal'
-		for User in $gsUsersList; do
-			service rtorrent-$User status > /dev/null
-			if [ $? -eq 3 ]; then
-				service rtorrent-$User start
-			fi
-		done
 	;;
 	"stop")
-		# 1 - First we stop all rtorrent processes
-		gfnListCountUsers 'normal'
-		for User in $gsUsersList; do
-			service rtorrent-$User stop
-		done
-
-		#### 2 - We stop services
-		gfnManageServices stop "pglcmd fail2ban dnscrypt-proxy bind9"
+		log_daemon_msg "Stopping all MySB security rules"
+		/bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'stop' 'STOP'
+		log_end_msg 0
 	;;
 	*)
         echo "Usage: $0 { start | stop }"

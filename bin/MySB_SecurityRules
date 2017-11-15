@@ -76,6 +76,9 @@ case "$ModeSwitch" in
 		LoadOnBoot=YES
 		ServicesToRestart='cron'
 	;;
+	STOP)
+		ServicesToStop='pglcmd fail2ban dnscrypt-proxy bind9'
+	;;
 	*)
 		ApplyIptablesUsers=YES
 		ServicesToRestart='cron'
@@ -461,6 +464,19 @@ case "$InitSwitch" in
 		fi
 		#### IPtables - SAVE Iptables Rules
 
+		if [ "$ModeSwitch" == "INIT" ]; then
+			#### Force users quota
+			source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
+			gfnManageQuota
+
+			for User in $gsUsersList; do
+				service rtorrent-$User status > /dev/null
+				if [ $? -eq 3 ]; then
+					service rtorrent-$User start
+				fi
+			done
+		fi
+
 		#### Complete previous upgrade
 		if [ "$LoadOnBoot" == "YES" ]; then
 			ScriptOnBoot="`cmdMySQL 'MySB_db' "SELECT name,script FROM repositories WHERE on_boot='1' AND active='1';" | sed 's/\t/|/g;'`"
@@ -553,6 +569,16 @@ case "$InitSwitch" in
 		if gfnCheckCommand 0 postfix && gfnGetPid $Service; then postfix flush; fi
 
 		RestartRtorrentSessions "start"
+	;;
+
+	stop)
+		# 1 - First we stop all rtorrent processes
+		for User in $gsUsersList; do
+			service rtorrent-$User stop
+		done
+
+		#### 2 - We stop services
+		gfnManageServices stop "$ServicesToStop"
 	;;
 
 	*)
