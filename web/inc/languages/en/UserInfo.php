@@ -142,7 +142,6 @@ define('User_UserInfo_Title_OpenVpnConfig', 'OpenVPN config');
 define('User_UserInfo_Comment_OpenVpnConfig', 'Download here configuration files for OpenVPN.');
 // OpenVPN GUI
 define('User_UserInfo_Title_OpenVpnGui', 'OpenVPN GUI');
-define('User_UserInfo_Value_OpenVpnGui', 'https://openvpn.net/index.php/open-source/downloads.html');
 define('User_UserInfo_Comment_OpenVpnGui', 'Download here GUI for OpenVPN.');
 // CakeBox Light
 define('User_UserInfo_Title_Cakebox', 'CakeBox Light');

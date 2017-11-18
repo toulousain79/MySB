@@ -442,7 +442,7 @@ function PrintContent($user, $Case) {
 				<!-- // OpenVPN GUI -->
 				<tr align="left">
 					<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_OpenVpnGui; ?></th>
-					<td colspan="2"><a target="_blank" href="<?php echo User_UserInfo_Value_OpenVpnGui; ?>"><span class="Comments"><?php echo User_UserInfo_Comment_OpenVpnGui; ?></span></a></td>
+					<td colspan="2"><a target="_blank" href="https://openvpn.net/index.php/open-source/downloads.html"><span class="Comments"><?php echo User_UserInfo_Comment_OpenVpnGui; ?></span></a></td>
 				</tr>
 			<?php } ?>
 

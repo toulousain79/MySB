@@ -255,7 +255,7 @@ gfnPopulatingBadChain() {
 
 #### Populate ICMP chain
 gfnPopulatingIcmpChain() {
-	local sOvhIPv4 sOnlineIPv4 sDigicubeIPv4 nNumLine
+	local sOvhIPv4 sOnlineIPv4 sDigicubeIPv4 sHetznerIPv4 nNumLine
 
 	## icmp_packets chain
 	# This chain is for inbound (from the Internet) icmp packets only.
@@ -303,6 +303,13 @@ gfnPopulatingIcmpChain() {
 					"DIGICUBE")
 						sDigicubeIPv4="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider = 'DIGICUBE' AND ipv4 !='';"`"
 						for IPv4 in $sDigicubeIPv4; do
+							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j LOG --log-prefix "[MySB] Ping detected: " -m comment --comment "$gsServerProvider monitoring"
+							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j ACCEPT -m comment --comment "$gsServerProvider monitoring"
+						done
+					;;
+					"HETZNER")
+						sHetznerIPv4="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider = 'HETZNER' AND ipv4 !='';"`"
+						for IPv4 in $sHetznerIPv4; do
 							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j LOG --log-prefix "[MySB] Ping detected: " -m comment --comment "$gsServerProvider monitoring"
 							iptables -A icmp_packets -p ICMP -s $IPv4 --icmp-type 8 -j ACCEPT -m comment --comment "$gsServerProvider monitoring"
 						done

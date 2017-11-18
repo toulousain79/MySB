@@ -210,7 +210,7 @@ function printUser($user) {
 			echo '<td colspan="2"><a href="?user/openvpn-config-file.html"><span class="Comments">' . User_UserInfo_Comment_OpenVpnConfig . '</span></a></td></tr>';
 			// OpenVPN GUI
 			echo '<tr align="left"><th width="17%" scope="row"' . User_UserInfo_Title_OpenVpnGui . '</th>';
-			echo '<td colspan="2"><a target="_blank" href="' . $User_UserInfo_Value_OpenVpnGui . '"><span class="Comments">' . User_UserInfo_Comment_OpenVpnGui . '</span></a></td></tr>';
+			echo '<td colspan="2"><a target="_blank" href="https://openvpn.net/index.php/open-source/downloads.html"><span class="Comments">' . User_UserInfo_Comment_OpenVpnGui . '</span></a></td></tr>';
 		}
 		// CakeBox Light
 		$CakeboxDatas = $MySB_DB->get("services", ["is_installed"], ["serv_name" => "CakeBox-Light"]);
