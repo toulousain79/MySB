@@ -358,9 +358,10 @@ gfnPopulatingIcmpChain() {
 			iptables -A icmp_packets -p ICMP -s 0/0 --icmp-type 8 -j LOG --log-prefix "[MySB] Ping blocked: " -m comment --comment "Ping blocked"
 			iptables -A icmp_packets -p ICMP -s 0/0 --icmp-type 8 -j DROP
 			# Time Exceeded
-			iptables -A icmp_packets -p ICMP -s 0/0 --icmp-type 11 -j LOG --log-prefix "[MySB] Time Exceeded: " -m comment --comment "Time Exceeded"
+			iptables -A icmp_packets -p ICMP -s 0/0 --icmp-type 11 -j LOG --log-prefix "[MySB] Ping time exceeded: " -m comment --comment "Ping time exceeded"
 			iptables -A icmp_packets -p ICMP -s 0/0 --icmp-type 11 -j ACCEPT
 			# Not matched, so return so it will be logged
+			iptables -A icmp_packets -p UDP -j LOG --log-prefix "[MySB] Return ICMP: " -m comment --comment "Return ICMP"
 			iptables -A icmp_packets -p ICMP -j RETURN
 		;;
 	esac
@@ -403,12 +404,12 @@ gfnPopulatingUdpInboundChain() {
 		"create")
 			if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
 				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 123 -j ACCEPT -m comment --comment "NTP over OpenVPN"
-				iptables -A icmp_packets -p UDP -s 0/0 -i tun+ --destination-port 123 -j LOG --log-prefix "[MySB] NTP request: " -m comment --comment "NTP over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 123 -j LOG --log-prefix "[MySB] NTP request: " -m comment --comment "NTP over OpenVPN"
 				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 123 -j ACCEPT -m comment --comment "NTP over OpenVPN"
-				iptables -A icmp_packets -p UDP -s 0/0 -i br0 --destination-port 123 -j LOG --log-prefix "[MySB] NTP request: " -m comment --comment "NTP over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 123 -j LOG --log-prefix "[MySB] NTP request: " -m comment --comment "NTP over OpenVPN"
 			fi
 			for IPv4 in $AllUsersIPs; do
-				iptables -A icmp_packets -p UDP -s $IPv4 --destination-port 123 -j LOG --log-prefix "[MySB] NTP request: " -m comment --comment "NTP for users"
+				iptables -A udp_inbound -p UDP -s $IPv4 --destination-port 123 -j LOG --log-prefix "[MySB] NTP request: " -m comment --comment "NTP for users"
 				iptables -A udp_inbound -p UDP -s $IPv4 --destination-port 123 -j ACCEPT -m comment --comment "NTP for users"
 			done
 		;;
@@ -443,7 +444,7 @@ gfnPopulatingUdpInboundChain() {
 	# DNS Server
 	# Configure the server to use port 53 as the source port for requests.
 	# Note, if you run a caching-only name server that only accepts queries from the private network or localhost, you can comment out this line.
-	#iptables -A udp_inbound -p UDP -s 0/0 --destination-port 53 -j ACCEPT
+	iptables -A udp_inbound -p UDP -s 0/0 --destination-port 53 -j ACCEPT
 
 	# If you don't query-source the server to port 53 and you have problems, uncomment this rule.
 	# It specifically allows responses to queries initiated to another server from a high UDP port.
@@ -515,7 +516,7 @@ gfnPopulatingUdpInboundChain() {
 	# Not matched, so return for logging
 	case "$1" in
 		"create")
-			iptables -A udp_inbound -p UDP -j LOG --log-prefix "[MySB] Not matched UDP IN: " -m comment --comment "Logging not matched UDP IN"
+			iptables -A udp_inbound -p UDP -j LOG --log-prefix "[MySB] Return UDP IN: " -m comment --comment "Return UDP IN"
 			iptables -A udp_inbound -p UDP -j RETURN
 		;;
 	esac
@@ -529,7 +530,7 @@ gfnPopulatingUdpOutboundChain() {
 	# Ends with an ACCEPT
 
 	# No match, so ACCEPT
-	iptables -A udp_outbound -p UDP -s 0/0 -j LOG --log-prefix "[MySB] Accept UDP OUT: " -m comment --comment "Accept UDP OUT"
+	#iptables -A udp_outbound -p UDP -s 0/0 -j LOG --log-prefix "[MySB] Accept UDP OUT: " -m comment --comment "Accept UDP OUT"
 	iptables -A udp_outbound -p UDP -s 0/0 -j ACCEPT
 }
 
@@ -733,7 +734,7 @@ gfnPopulatingTcpInboundChain() {
 	#### Not matched, so return so it will be logged
 	case "$1" in
 		"create")
-			iptables -A tcp_inbound -p TCP -j LOG --log-prefix "[MySB] Not matched TCP IN: " -m comment --comment "Logging not matched TCP IN"
+			iptables -A tcp_inbound -p TCP -j LOG --log-prefix "[MySB] Return TCP IN: " -m comment --comment "Return TCP IN"
 			iptables -A tcp_inbound -p TCP -j RETURN
 		;;
 	esac
@@ -747,7 +748,7 @@ gfnPopulatingTcpOutboundChain() {
 	# Ends with an ACCEPT
 
 	# No match, so ACCEPT
-	iptables -A tcp_outbound -p TCP -s 0/0 -j LOG --log-prefix "[MySB] Not matched TCP OUT: " -m comment --comment "Logging not matched TCP OUT"
+	#iptables -A tcp_outbound -p TCP -s 0/0 -j LOG --log-prefix "[MySB] Accept TCP OUT: " -m comment --comment "Accept TCP OUT"
 	iptables -A tcp_outbound -p TCP -s 0/0 -j ACCEPT
 }
 
@@ -790,9 +791,13 @@ gfnProcessInputChain() {
 	iptables -A INPUT -p ALL -i $gsPrimaryInet -m state --state ESTABLISHED,RELATED -j ACCEPT
 
 	# Route the rest to the appropriate user chain
-	iptables -A INPUT -p TCP -i $gsPrimaryInet -j tcp_inbound
-	iptables -A INPUT -p UDP -i $gsPrimaryInet -j udp_inbound
 	iptables -A INPUT -p ICMP -i $gsPrimaryInet -j icmp_packets
+	iptables -A INPUT -p ICMP -i tun+ -j icmp_packets
+	iptables -A INPUT -p ICMP -i br0 -j icmp_packets
+	iptables -A INPUT -p TCP -i $gsPrimaryInet -j tcp_inbound
+	iptables -A INPUT -p TCP -i tun+ -j tcp_inbound
+	iptables -A INPUT -p UDP -i $gsPrimaryInet -j udp_inbound
+	iptables -A INPUT -p UDP -i tun+ -j udp_inbound
 
 	# Drop without logging broadcasts that get this far.
 	# Cuts down on log clutter.
@@ -800,7 +805,7 @@ gfnProcessInputChain() {
 	iptables -A INPUT -m pkttype --pkt-type broadcast -j DROP
 
 	# Log packets that still don't match
-	#iptables -A INPUT -j LOG --log-prefix "[MySB] INPUT packet died: " -m comment --comment "INPUT packet died"
+	iptables -A INPUT -j LOG --log-prefix "[MySB] INPUT packet died: " -m comment --comment "INPUT packet died"
 }
 
 # Process FORWARD Chain
@@ -811,15 +816,15 @@ gfnProcessForwardChain() {
 
 	if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
 		# Accept TCP packets we want to forward from internal sources
-		iptables -A FORWARD -p TCP -i tun0 -j tcp_outbound
+		iptables -A FORWARD -p TCP -i tun1 -j tcp_outbound
 		iptables -A FORWARD -p TCP -i br0 -j tcp_outbound
 
 		# Accept UDP packets we want to forward from internal sources
-		iptables -A FORWARD -p UDP -i tun0 -j udp_outbound
+		iptables -A FORWARD -p UDP -i tun1 -j udp_outbound
 		iptables -A FORWARD -p UDP -i br0 -j udp_outbound
 
 		# If not blocked, accept any other packets from the internal interface
-		iptables -A FORWARD -p ALL -i tun0 -j ACCEPT
+		iptables -A FORWARD -p ALL -i tun1 -j ACCEPT
 		iptables -A FORWARD -p ALL -i br0 -j ACCEPT
 
 		iptables -A FORWARD -i tun1 -o $gsPrimaryInet -s 10.0.0.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN with redirect GW"
