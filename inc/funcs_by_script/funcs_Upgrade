@@ -25,13 +25,33 @@ funcs_Upgrade=1
 
 #### Upgrade in progress (web page)
 gfnUpgradeInProgress() {
-	local sRtorrentSessions sSession
+	local sRtorrentSessions sSession sServicesToStop
+	sServicesToStop="nginx cron"
 
 	case "$1" in
 		"on")
+			# Nextcloud
 			if [ "$gbIsInstalled_NextCloud" == "YES" ]; then
 				su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --on" &> /dev/null
 			fi
+			# rTorrent sessions
+			sRtorrentSessions="`ls -1r /etc/init.d/rtorrent-* | cut -d '/' -f 4`"
+			for sSession in $sRtorrentSessions; do
+				ServicesToStop="${ServicesToStop} $sSession"
+			done
+			# Stopping some services like Plex or OpenVPN
+			if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
+				ServicesToStop="${ServicesToStop} openvpn"
+			fi
+			if [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
+				ServicesToStop="${ServicesToStop} plexmediaserver"
+			fi
+			if [ "$gbIsInstalled_PlexPy" == "YES" ]; then
+				ServicesToStop="${ServicesToStop} plexpy"
+			fi
+			# Stop services
+			gfnManageServices 'stop' "$ServicesToStop"
+			# NginX
 			if [ -h /etc/nginx/sites-enabled/WiP ]; then rm -f /etc/nginx/sites-enabled/WiP; fi
 			if [ -h /etc/nginx/sites-enabled/default ]; then rm -f /etc/nginx/sites-enabled/default; fi
 			if [ -h /etc/nginx/sites-enabled/cakebox ]; then rm -f /etc/nginx/sites-enabled/cakebox; fi
@@ -41,20 +61,15 @@ gfnUpgradeInProgress() {
 			perl -pi -e "s/<PORT_HTTP>/$gsPort_HTTP/g" /etc/nginx/sites-available/WiP
 			perl -pi -e "s/<server_name>/$gsHostNameFqdn/g" /etc/nginx/sites-available/WiP
 			if [ ! -h /etc/nginx/sites-enabled/WiP ]; then ln -s /etc/nginx/sites-available/WiP /etc/nginx/sites-enabled/WiP; fi
-			service nginx restart &> /dev/null
-			# Stopping CRON and rTorrent sessions
-			service cron stop &> /dev/null
-			sRtorrentSessions="`ls -1r /etc/init.d/rtorrent-* | cut -d '/' -f 4`"
-			for sSession in $sRtorrentSessions; do
-				service $sSession stop &> /dev/null
-			done
+			# Start services
+			gfnManageServices 'start' "nginx"
 		;;
 		"off")
+			gfnManageServices 'stop' "nginx"
 			if [ -h /etc/nginx/sites-enabled/WiP ]; then rm -f /etc/nginx/sites-enabled/WiP; fi
 			if [ ! -h /etc/nginx/sites-enabled/default ]; then ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default; fi
 			if [ ! -h /etc/nginx/sites-enabled/cakebox ]; then ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox; fi
-			service nginx restart &> /dev/null
-			service cron start &> /dev/null
+			gfnManageServices 'start' "nginx cron"
 		;;
 	esac
 }

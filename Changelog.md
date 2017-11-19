@@ -1,11 +1,12 @@
 	Version v5.1
-		2017/10/30
+		2017/11/19
 			- Wget v1.19.2
 			- OpenVPN Admin for Webmin v3.1
 			- Maxmind GeoIP v2.5.0
 			- Plex Media Server v1.9.6.4429
 			- Pagespeed, increase TMPFS cache to 128Mo
 			- Add monitoring provider (Hetzner)
+			- funcs_iptables, minor changes
 
 	Version v5.0
 		2017/10/18
