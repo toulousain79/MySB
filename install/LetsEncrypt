@@ -31,6 +31,12 @@ source $(dirname $0)/../inc/includes_before
 #### VARs
 sLocSwitch="$1"	# renew ?
 
+#### INSTALL
+if [ "$sLocSwitch" != "renew" ]; then
+	gfnPackagesManage install 'libaugeas0 augeas-lenses' 'backports'
+	gfnPackageBundleInstall 'python-virtualenv python-dev gcc dialog libssl-dev libffi-dev ca-certificates psutils python-augeas'
+fi
+
 #### Fonction certificate end date next renewal
 fnNextRenewal() {
 	local dEndDate dRenewDay dRenewMonth
@@ -38,35 +44,42 @@ fnNextRenewal() {
 	if [ -f /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem ]; then
 		dEndDate="`openssl x509 -in /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem -noout -dates | grep 'notAfter' | cut -d "=" -f 2`"
 		dEndDate="`date -d "$dEndDate" +%Y-%m-%d`"
-		dRenewDay="`date -d "$dEndDate +2 month -7 day" +%d`"
-		dRenewMonth="`date -d "$dEndDate -7 day" +%m`"
 		# update DB
 		cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_date='$dEndDate' WHERE id_system='1';" -v
 	fi
 }
 
-#### INSTALL
-if [ "$sLocSwitch" != "renew" ]; then
-	gfnPackagesManage install 'libaugeas0 augeas-lenses' 'backports'
-	gfnPackageBundleInstall 'python-virtualenv python-dev gcc dialog libssl-dev libffi-dev ca-certificates psutils python-augeas'
-fi
+#### Fonction for firewalling
+fnFirewalling() {
+	local sServerList sServer sIpList IPv4
+
+	case "$1" in
+		'before')
+			sServerList="`cmdMySQL 'MySB_db' "SELECT addresses FROM lets_encrypt;" | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
+			if [ ! -z "$sServerList" ]; then
+				cmdMySQL 'MySB_db' "DELETE FROM lets_encrypt;" -v
+			fi
+
+			for sServer in $sServerList; do
+				sIpList="`nslookup $sServer | grep 'Address:' | awk '{ print $2 }' | tail -n +2`"
+				for IPv4 in $sIpList; do
+					cmdMySQL 'MySB_db' "INSERT INTO lets_encrypt (addresses,ipv4) VALUES ('$sServer','$IPv4');" -v
+				done
+			done
+			cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_openport='1' WHERE id_system='1';" -v
+			gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--letsencrypt'
+		;;
+		'after')
+			cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_openport='0' WHERE id_system='1';" -v
+			gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create' 'CRON'
+		;;
+	esac
+}
 
 #### Generate
-sServerList="`cmdMySQL 'MySB_db' "SELECT addresses FROM lets_encrypt;" | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
-if [ ! -z "$ServerList" ]; then
-	cmdMySQL 'MySB_db' "DELETE FROM lets_encrypt;" -v
-fi
-
-for sServer in $sServerList; do
-	sIpList="`nslookup $sServer | grep 'Address:' | awk '{ print $2 }' | tail -n +2`"
-	for IPv4 in $sIpList; do
-		cmdMySQL 'MySB_db' "INSERT INTO lets_encrypt (addresses,ipv4) VALUES ('$sServer','$IPv4');" -v
-	done
-done
-cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_openport='1' WHERE id_system='1';" -v
-gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--letsencrypt'
-
 if [ ! -f /etc/letsencrypt/live/$gsHostNameFqdn/fullchain.pem ]; then # Is it a new certificate ?
+	fnFirewalling 'before'
+
 	# Params
 	sParams="--standalone --standalone --verbose --update-registration --no-eff-email --agree-tos --rsa-key-size 2048"
 	# Dev mode ?
@@ -80,11 +93,13 @@ if [ ! -f /etc/letsencrypt/live/$gsHostNameFqdn/fullchain.pem ]; then # Is it a 
 		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/chain.pem $MySB_InstallDir/ssl/chain.pem
 		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem $MySB_InstallDir/ssl/cert.pem
 		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/privkey.pem $MySB_InstallDir/ssl/privkey.pem
-		# Certificate end date (+2 month -7 days)
+		# Certificate end date (-21 days)
 		fnNextRenewal
 	fi
 
 	cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='1' WHERE serv_name='Lets Encrypt';" -v
+
+	fnFirewalling 'after'
 else # Or is it a renew ?
 	if [ ! -h $MySB_InstallDir/ssl/fullchain.pem ]; then
 		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/fullchain.pem $MySB_InstallDir/ssl/fullchain.pem
@@ -95,19 +110,19 @@ else # Or is it a renew ?
 
 	if [ "$sLocSwitch" == "renew" ]; then
 		dEndDate="`cmdMySQL 'MySB_db' "SELECT letsencrypt_date FROM system WHERE id_system='1';"`"
-		if [ ! -z "$dEndDate" ] && [ $gbDevMode -eq 0 ] ; then
-			dEndDate=$(date -d "$dEndDate" +"%Y-%m-%d")
-			Now=$(date +%Y-%m-%d)
-			t1=$(date --date="$dEndDate" +'%-m')
-			t2=$(date --date="$Now" +'%-m')
-			let "tDiff=$t2-$t1"
 
-			if [ "$tDiff" -eq "1" ]; then
+		if [ ! -z "$dEndDate" ] && [ $gbDevMode -eq 0 ] ; then
+			dEndDate="`date -d "$dEndDate" +%Y%m%d`"
+			dNow="`date +%Y%m%d`"
+			tDiff=$(( ($(date --date="$dEndDate" +%s) - $(date --date="$dNow" +%s) )/(60*60*24) ))
+
+			if [ "$tDiff" -le "21" ]; then
+				fnFirewalling 'before'
 				cd $MySB_InstallDir/files/
 				./certbot-auto renew
 				dNewEndDate="`openssl x509 -in /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem -noout -dates | grep 'notAfter'  | cut -d "=" -f 2`"
 				[ "$dNewEndDate" != "$dEndDate" ] && fnNextRenewal
-				gfnManageServices restart "nginx webmin"
+				fnFirewalling 'after'
 			fi
 		fi
 	else
@@ -121,6 +136,7 @@ if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
 	sed -i '/ssl_certificate/d' /etc/nginx/nginx.conf
 	sed -i ""$NumLign"i\	ssl_certificate_key $MySB_InstallDir/ssl/privkey.pem; # Let's Encrypt certificate" /etc/nginx/nginx.conf
 	sed -i ""$NumLign"i\	ssl_certificate $MySB_InstallDir/ssl/fullchain.pem; # Let's Encrypt certificate" /etc/nginx/nginx.conf
+	ServicesToRestart="$ServicesToRestart nginx"
 fi
 
 #### Webmin
@@ -132,12 +148,11 @@ if [ -f /etc/webmin/miniserv.pem ]; then
 		cat $MySB_InstallDir/ssl/mysb.cert > /etc/webmin/miniserv.pem
 		cat $MySB_InstallDir/ssl/mysb.key >> /etc/webmin/miniserv.pem
 	fi
-	ServicesToRestart="webmin"
+	ServicesToRestart="$ServicesToRestart webmin"
 fi
 
-cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_openport='0' WHERE id_system='1';" -v
-gfnManageServices start "$ServicesToRestart nginx"
-gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create' 'CRON'
+#### Restart services
+[ ! -z "$ServicesToRestart" ] && gfnManageServices start "$ServicesToRestart"
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after
