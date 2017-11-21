@@ -8,6 +8,7 @@
 			- Add monitoring provider (Hetzner)
 			- funcs_iptables, minor changes
 			- Let's Encrypt, changing the certificate renewal method
+			- Digicube, add monitoring network
 
 	Version v5.0
 		2017/10/18
