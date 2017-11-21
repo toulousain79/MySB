@@ -40,20 +40,16 @@ fnNextRenewal() {
 		dEndDate="`date -d "$dEndDate" +%Y-%m-%d`"
 		dRenewDay="`date -d "$dEndDate +2 month -7 day" +%d`"
 		dRenewMonth="`date -d "$dEndDate -7 day" +%m`"
-		# Crontab
-		crontab -l > /tmp/crontab.tmp
-		sed -i '/LetsEncrypt/d' /tmp/crontab.tmp
-		echo "`date +%M` `date +%H` $dRenewDay $dRenewMonth * /bin/bash $MySB_InstallDir/install/LetsEncrypt renew CRON > /dev/null 2>&1" | tee -a /tmp/crontab.tmp
-		crontab /tmp/crontab.tmp
-		rm -f /tmp/crontab.tmp
 		# update DB
 		cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_date='$dEndDate' WHERE id_system='1';" -v
 	fi
 }
 
 #### INSTALL
-gfnPackagesManage install 'libaugeas0 augeas-lenses' 'backports'
-gfnPackageBundleInstall 'python-virtualenv python-dev gcc dialog libssl-dev libffi-dev ca-certificates psutils python-augeas'
+if [ "$sLocSwitch" != "renew" ]; then
+	gfnPackagesManage install 'libaugeas0 augeas-lenses' 'backports'
+	gfnPackageBundleInstall 'python-virtualenv python-dev gcc dialog libssl-dev libffi-dev ca-certificates psutils python-augeas'
+fi
 
 #### Generate
 sServerList="`cmdMySQL 'MySB_db' "SELECT addresses FROM lets_encrypt;" | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
@@ -106,7 +102,7 @@ else # Or is it a renew ?
 			t2=$(date --date="$Now" +'%-m')
 			let "tDiff=$t2-$t1"
 
-			if [ "$tDiff" -le "2" ]; then
+			if [ "$tDiff" -eq "1" ]; then
 				cd $MySB_InstallDir/files/
 				./certbot-auto renew
 				dNewEndDate="`openssl x509 -in /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem -noout -dates | grep 'notAfter'  | cut -d "=" -f 2`"
