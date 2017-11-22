@@ -50,6 +50,8 @@ AllUsersIPs="${gsSeedboxUsersIPs} ${gsMainUserIPs}"
 AllUsersIPs="`echo $AllUsersIPs | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
 ServicesToRestart=""
 ServicesToStop=""
+rTorrentToStop=""
+rTorrentToStart=""
 #### VARs
 
 #### Check arguments options
@@ -157,7 +159,7 @@ if [ "$ApplyConfigNginx" == "YES" ]; then
 fi
 if gfnCheckCommand 0 dnscrypt-proxy; then
 	case "$gbDnsCryptSwitch" in
-		'0')	ServicesToStop="dnscrypt-proxy";;
+		'0')	ServicesToStop="${ServicesToStop} dnscrypt-proxy";;
 		'1')	ServicesToRestart="${ServicesToRestart} dnscrypt-proxy";;
 	esac
 fi
@@ -252,22 +254,35 @@ CreateServicesRules() {
 
 # Restart all rTorrent session if needed
 RestartRtorrentSessions() {
+	local bToRestart bCreateAfterClean
+
 	case "$1" in
 		stop)
 			for FnUser in $gsUsersList; do
 				if [ -f /etc/init.d/rtorrent-$FnUser ]; then
-					service rtorrent-$FnUser stop
+					rTorrentToStop="${rTorrentToStop} rtorrent-$FnUser"
+					bToRestart="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser';"`"
+					service rtorrent-$FnUser status &> /dev/null
+					if [ $? -eq 0 ]; then
+						bToRestart=1
+					fi
+					cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='$bToRestart' WHERE users_ident='$FnUser';"
 				fi
 			done
 		;;
 		start)
-			service cron status > /dev/null
+			service cron status &> /dev/null
 			if [ $? -eq 0 ]; then
+				bCreateAfterClean=1
+			else
+				bCreateAfterClean="`cmdMySQL 'MySB_db' "SELECT max(rtorrent_restart) FROM users;"`"
+			fi
+			if [ "$bCreateAfterClean" -eq 1 ]; then
 				for FnUser in $gsUsersList; do
 					if [ -f /etc/init.d/rtorrent-$FnUser ]; then
-						service rtorrent-$FnUser status &> /dev/null
-						if [ $? -ne 0 ]; then
-							service rtorrent-$FnUser restart
+						bToRestart="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser';"`"
+						if [ "$bToRestart" -eq 1 ]; then
+							rTorrentToStart="${rTorrentToStart} rtorrent-$FnUser"
 						fi
 					fi
 				done
@@ -282,7 +297,7 @@ case "$InitSwitch" in
 	clean)
 		#### STOP services
 		RestartRtorrentSessions "stop"
-		gfnManageServices stop "pglcmd fail2ban cron"
+		gfnManageServices stop "${ServicesToStop} ${rTorrentToStop} pglcmd fail2ban cron"
 		#### STOP services
 
 		#### IPtables - Removal of existing rules
@@ -318,10 +333,6 @@ case "$InitSwitch" in
 		gfnManageServices start "nginx bind9"
 		#### START services
 
-		#### STOP services
-		gfnManageServices stop "$ServicesToStop"
-		#### STOP services
-
 		#### IPtables - SAVE Iptables Rules
 		iptables-save > /etc/iptables.up.rules
 		[ -f /etc/iptables.up.rules ] && cp -f /etc/iptables.up.rules $MySB_InstallDir/files/current-iptables-rules
@@ -337,7 +348,8 @@ case "$InitSwitch" in
 	create)
 		#### STOP services
 		RestartRtorrentSessions "stop"
-		gfnManageServices stop "cron pglcmd fail2ban"
+		RestartRtorrentSessions "start"
+		gfnManageServices stop "${ServicesToStop} ${rTorrentToStop} cron pglcmd fail2ban"
 		#### STOP services
 
 		#### Kernel - Loading modules
@@ -444,14 +456,20 @@ case "$InitSwitch" in
 		CreateServicesRules
 		#### Services - Create all security rules for services
 
-		#### START services
-		gfnManageServices start "$ServicesToRestart"
-		RestartRtorrentSessions "start"
-		#### START services
+		#### Force users quota
+		if [ "$ModeSwitch" == "INIT" ]; then
+			source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
+			gfnManageQuota
+		fi
+		#### Force users quota
 
 		#### STOP services
-		gfnManageServices stop "$ServicesToStop"
+		gfnManageServices stop "${ServicesToStop}"
 		#### STOP services
+
+		#### START services
+		gfnManageServices start "${ServicesToRestart} ${rTorrentToStart}"
+		#### START services
 
 		#### IPtables - SAVE Iptables Rules
 		iptables-save > /etc/iptables.up.rules
@@ -463,19 +481,6 @@ case "$InitSwitch" in
 			cat /etc/iptables.up.rules >> $MySB_InstallDir/logs/${gsScriptName}_IPTABLES.log
 		fi
 		#### IPtables - SAVE Iptables Rules
-
-		if [ "$ModeSwitch" == "INIT" ]; then
-			#### Force users quota
-			source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
-			gfnManageQuota
-
-			for User in $gsUsersList; do
-				service rtorrent-$User status > /dev/null
-				if [ $? -eq 3 ]; then
-					service rtorrent-$User start
-				fi
-			done
-		fi
 
 		#### Complete previous upgrade
 		if [ "$LoadOnBoot" == "YES" ]; then
@@ -548,11 +553,13 @@ case "$InitSwitch" in
 		#### IPtables - RESTORE Iptables Rules
 
 		#### START services
-		gfnManageServices start "$ServicesToRestart"
+		RestartRtorrentSessions "stop"
+		RestartRtorrentSessions "start"
+		gfnManageServices start "${ServicesToRestart} ${rTorrentToStart}"
 		#### START services
 
 		#### STOP services
-		gfnManageServices stop "$ServicesToStop"
+		gfnManageServices stop "${ServicesToStop}"
 		#### STOP services
 
 		#### IPtables - SAVE Iptables Rules
@@ -567,18 +574,6 @@ case "$InitSwitch" in
 		#### IPtables - SAVE Iptables Rules
 
 		if gfnCheckCommand 0 postfix && gfnGetPid $Service; then postfix flush; fi
-
-		RestartRtorrentSessions "start"
-	;;
-
-	stop)
-		# 1 - First we stop all rtorrent processes
-		for User in $gsUsersList; do
-			service rtorrent-$User stop
-		done
-
-		#### 2 - We stop services
-		gfnManageServices stop "$ServicesToStop"
 	;;
 
 	*)

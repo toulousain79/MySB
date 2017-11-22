@@ -53,6 +53,7 @@ gfnGetPid() {
 		"fail2ban")	[ -f /var/run/fail2ban/fail2ban.pid ] && sPid="`cat /var/run/fail2ban/fail2ban.pid`";;
 		"webmin")	[ -f /var/webmin/miniserv.pid ] && sPid="`cat /var/webmin/miniserv.pid`";;
 		"plexpy")	[ -f /var/run/plexpy/plexpy.pid ] && sPid="`cat /var/run/plexpy/plexpy.pid`";;
+		rtorrent-*)	[ -f /var/run/$1.pid ] && sPid="`cat /var/run/$1.pid`";;
 		"ssh")		sPid="`pidof sshd`";;
 		"pglcmd")	sPid="`pidof pgld`";;
 		"bind9")	sPid="`pidof named`";;
@@ -169,24 +170,36 @@ gfnCheckCommand() {
 	local nValue="$?"
 
 	if [ $nValue -gt 0 ]; then # Try WHEREIS, some tools does not have command but are present and can be started
-		if [ -z "`whereis $2 | awk '{ print $2 }'`" ]; then
-			if [ "`dpkg -l | grep "$2" | awk '{ print $2 }'`" == "$2" ]; then # Try DPKG
-				case "$1" in
-					0)	return 0;;
-					1)	echo "YES";;
-				esac
-			else
-				case "$1" in
-					0)	return 1;;
-					1)	echo "NO";;
-				esac
-			fi
-		else
-			case "$1" in
-				0)	return 0;;
-				1)	echo "YES";;
-			esac
-		fi
+		case "$2" in
+			rtorrent-*)
+				if [ -f /etc/init.d/$2 ]; then
+					case "$1" in
+						0)	return 0;;
+						1)	echo "YES";;
+					esac
+				fi
+			;;
+			*)
+				if [ -z "`whereis $2 | awk '{ print $2 }'`" ]; then
+					if [ "`dpkg -l | grep "$2" | awk '{ print $2 }'`" == "$2" ]; then # Try DPKG
+						case "$1" in
+							0)	return 0;;
+							1)	echo "YES";;
+						esac
+					else
+						case "$1" in
+							0)	return 1;;
+							1)	echo "NO";;
+						esac
+					fi
+				else
+					case "$1" in
+						0)	return 0;;
+						1)	echo "YES";;
+					esac
+				fi
+			;;
+		esac
 	else # Command/Package verified
 		case "$1" in
 			0)	return $nValue;;
