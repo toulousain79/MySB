@@ -79,7 +79,7 @@ case "$gsScriptName" in
 			cat /tmp/$gsScriptName.log > $MySB_InstallDir/logs/$gsScriptName.log
 			rm -f /tmp/$gsScriptName.log
 		fi
-		#### Reboot after install
+		#### Engage a reboot after an install
 		REBOOT=YES
 	;;
 	"MySB_CreateUser")
@@ -87,6 +87,17 @@ case "$gsScriptName" in
 			# Create new MySB banner
 			[ "$BANNER" == "ON" ] && gfnBannerGenerator
 		fi
+	;;
+	From_*) # Upgrade ?
+		#### Upgrade in progress page + Start Cron service
+		gfnUpgradeInProgress "off"
+
+		clear
+		[ -f $MySB_InstallDir/dev ] && rm -f $MySB_InstallDir/dev
+		echo -e "${CGREEN}$UpgradeMe_UpgradeFinished$CEND"
+		echo
+		#### Engage a reboot after an upgrade
+		REBOOT=YES
 	;;
 esac
 
@@ -113,10 +124,7 @@ if [ ! -z "$gsScriptName" ]; then
 fi
 
 #### 8 - Reboot after an install or an upgrade
-echo "$gsScriptName: $REBOOT" >> /root/reboot.log
-if [ "$REBOOT" == "YES" ] || [ -f /root/reboot.now ]; then
-	[ -f /root/reboot.now ] && rm -f /root/reboot.now
-
+if [ "$REBOOT" == "YES" ]; then
 	#### Flush mail queue
 	if gfnCheckCommand 0 postfix; then postfix flush; fi
 	#### Update CA certificates
