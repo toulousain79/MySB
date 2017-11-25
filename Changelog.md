@@ -10,6 +10,7 @@
 			- Let's Encrypt, changing the certificate renewal method
 			- MySB_SecurityRules, minor changes
 			- Digicube, add monitoring network
+			- rTorrent synchro.sh, add compression for rsync
 
 	Version v5.0
 		2017/10/18
