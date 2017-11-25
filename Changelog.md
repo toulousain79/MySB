@@ -11,6 +11,8 @@
 			- MySB_SecurityRules, minor changes
 			- Digicube, add monitoring network
 			- rTorrent synchro.sh, add compression for rsync
+			- Portal
+				* Medoo Framework v1.5.1
 
 	Version v5.0
 		2017/10/18
