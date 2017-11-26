@@ -39,9 +39,10 @@ function PrintContent($user, $Case) {
 	global $MySB_DB, $Port_HTTPs;
 
 	// System table
-	$system_datas = $MySB_DB->get("system", ["hostname", "rt_method"], ["id_system" => 1]);
+	$system_datas = $MySB_DB->get("system", ["hostname", "rt_method", "proxy"], ["id_system" => 1]);
 	$Hostname = $system_datas["hostname"];
 	$Method = $system_datas["rt_method"];
+	$Proxy = $system_datas["proxy"];
 	// Users table
 	$users_datas = $MySB_DB->get("users", ["id_users", "users_email", "users_passwd", "rpc", "sftp", "sudo", "admin", "scgi_port", "rtorrent_port", "home_dir", "language", "quota", "treasury", "account_type"], ["users_ident" => "$user"]);
 	$UserID = $users_datas["id_users"];
@@ -258,7 +259,7 @@ function PrintContent($user, $Case) {
 <?php } ?>
 
 <?php
-	if ( $DisplayUserInfoDetail == true ) {
+	if ( ($DisplayUserInfoDetail == true) && ($system_datas["proxy"] == '0') ) {
 		if ( $users_datas["account_type"] == 'normal' ) {
 ?>
 			<!-- // RPC -->
@@ -420,7 +421,7 @@ function PrintContent($user, $Case) {
 		</tr>
 
 		<!-- // ruTorrent -->
-		<?php if ( $users_datas["account_type"] == 'normal' ) { ?>
+		<?php if ( ($users_datas["account_type"] == 'normal') && ($system_datas["proxy"] == '0') ) { ?>
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Title_ruTorrent; ?></th>
 				<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/ru"><span class="Comments"><?php echo User_UserInfo_Comment_ruTorrent; ?></span></a></td>
@@ -481,20 +482,30 @@ function PrintContent($user, $Case) {
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Logs; ?></th>
 			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/?main-user/logs.html"><span class="Comments"><?php echo User_UserInfo_Comment_Logs; ?></span></a></td>
 		</tr>
-		<!-- // Renting infos -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Renting; ?></th>
-			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/?main-user/renting-infos.html"><span class="Comments"><?php echo User_UserInfo_Comment_Renting; ?></span></a></td>
-		</tr>
-		<!-- // Trackers -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Trackers; ?></th>
-			<td colspan="2"><span class="Comments"><?php echo sprintf(User_UserInfoMail_Comment_Trackers, $Hostname, $Port_HTTPs, $Hostname, $Port_HTTPs); ?></span></td>
-		</tr>
+		<?php if ( $system_datas["proxy"] == '0' ) { ?>
+			<!-- // Renting infos -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Renting; ?></th>
+				<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/?main-user/renting-infos.html"><span class="Comments"><?php echo User_UserInfo_Comment_Renting; ?></span></a></td>
+			</tr>
+			<!-- // Trackers -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Trackers; ?></th>
+				<td colspan="2"><span class="Comments"><?php echo sprintf(User_UserInfoMail_Comment_Trackers, $Hostname, $Port_HTTPs, $Hostname, $Port_HTTPs); ?></span></td>
+			</tr>
+		<?php } ?>
 		<!-- // Blocklists -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Blocklists; ?></th>
-			<td colspan="2"><span class="Comments"><?php echo User_UserInfoMail_Comment_Blocklists; ?></span></td>
+			<td colspan="2"><span class="Comments">
+<?php
+			if ( $system_datas["proxy"] == '0' ) {
+				echo User_UserInfoMail_Comment_Blocklists;
+			} else {
+				echo User_UserInfo_Comment_BlocklistsProxy;
+			}
+?>
+			</span></td>
 		</tr>
 		<?php if ( $DNScryptDatas["is_installed"] == '1' ) { ?>
 			<!-- // DNScrypt-proxy -->
@@ -509,7 +520,7 @@ function PrintContent($user, $Case) {
 ?>
 
 <?php
-	if ( $DisplayRenting == true ) {
+	if ( ($DisplayRenting == true) && ($system_datas["proxy"] == '0') ) {
 		$RentingDatas = $MySB_DB->get("system", ["rt_cost_tva", "rt_model", "rt_nb_users", "rt_price_per_users"], ["id_system" => 1]);
 
 		if ( !empty($RentingDatas["rt_cost_tva"]) && !empty($RentingDatas["rt_model"]) ) {
@@ -556,12 +567,12 @@ function PrintContent($user, $Case) {
 				<td><span class="Comments"><?php echo User_UserInfo_Comment_TotalPerUser; ?></span></td>
 			</tr>
 <?php
-		// User Treasury
-		if (is_numeric($Treasury) && $Treasury > 0) {
-			$Color = 'color: #00DF00;';
-		} else {
-			$Color = 'color: #FF0000;';
-		}
+			// User Treasury
+			if (is_numeric($Treasury) && $Treasury > 0) {
+				$Color = 'color: #00DF00;';
+			} else {
+				$Color = 'color: #FF0000;';
+			}
 ?>
 			<tr align="left">
 				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Treasury; ?></th>
@@ -621,18 +632,21 @@ function PrintContent($user, $Case) {
 			<td><span class="Comments"><?php echo User_UserInfo_Comment_MySB_UpgradeMe; ?></span></td>
 		</tr>
 		<!-- // Main scripts -->
-		<tr align="left">
-			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_MainScript; ?></th>
-			<td width="25%"><?php echo MYSB_ROOT;?>/scripts/BlocklistsRTorrent.bsh</td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_BlocklistsRTorrent; ?></span></td>
-		</tr>
-		<tr align="left">
-			<th width="15%" scope="row"> </th>
-			<td width="25%"><?php echo MYSB_ROOT;?>/scripts/GetTrackersCert.bsh</td>
-			<td><span class="Comments"><?php echo User_UserInfo_Comment_GetTrackersCert; ?></span></td>
-		</tr>
-<?php } ?>
-
+		<?php if ( $system_datas["proxy"] == '0' ) { ?>
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_MainScript; ?></th>
+				<td width="25%"><?php echo MYSB_ROOT;?>/scripts/BlocklistsRTorrent.bsh</td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_BlocklistsRTorrent; ?></span></td>
+			</tr>
+			<tr align="left">
+				<th width="15%" scope="row"> </th>
+				<td width="25%"><?php echo MYSB_ROOT;?>/scripts/GetTrackersCert.bsh</td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_GetTrackersCert; ?></span></td>
+			</tr>
+<?php
+		}
+	}
+?>
 	</table>
 
 <?php

@@ -110,7 +110,6 @@ function ChangeRuTorrentLanguage($user, $language) {
 	$ConfigFile = "apps/ru/share/users/" . $user . "/settings/uisettings.json";
 
 	if ( is_writable($ConfigFile) ) {
-
 		$File = fopen($ConfigFile, 'r') or die("Config file missing R");
 		$Content = file_get_contents($ConfigFile);
 
@@ -142,7 +141,6 @@ function ChangeCakeboxLanguage($user, $language) {
 		$ConfigFile = "apps/cb/config/" . $user . ".php";
 
 		if ( is_writable($ConfigFile) ) {
-
 			$File = fopen($ConfigFile, 'r') or die("Config file missing R");
 			$Content = file_get_contents($ConfigFile);
 
@@ -283,7 +281,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 	global $MySB_DB, $Port_HTTPs, $CurrentUser;
 
 	$hidden = (MainUser($CurrentUser)) ? true : false;
-	$SystemDatas = $MySB_DB->get("system", ["hostname", "rt_model", "rt_cost_tva", "rt_nb_users", "rt_price_per_users", "rt_method"], ["id_system" => 1]);
+	$SystemDatas = $MySB_DB->get("system", ["hostname", "rt_model", "rt_cost_tva", "rt_nb_users", "rt_price_per_users", "rt_method", "proxy"], ["id_system" => 1]);
 	$CakeboxDatas = $MySB_DB->get("services", "*", ["serv_name" => "CakeBox-Light"]);
 	$CakeboxIsInstalled = $CakeboxDatas["is_installed"];
 	$ManagerIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "Seedbox-Manager"]);
@@ -294,6 +292,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 	$PlexPyIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PlexPy"]);
 	$PeerguardianIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "PeerGuardian"]);
 	$NextCloudIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "NextCloud"]);
+	$OpenVPNIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "OpenVPN"]);
 	$UserAccountType = $MySB_DB->get("users", "account_type", ["users_ident" => "$CurrentUser"]);
 
     if ($page && count($page->children(null, array(), $hidden)) > 0) {
@@ -301,13 +300,50 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 
         foreach($page->children(null, array(), $hidden) as $menu) :
 			switch ($menu->title) {
-				case "Apply configuration":
-					$replace = '<div id="ApplyConfigButtonReplace" style="padding-top: 8px; padding-left: 10px; text-align:center; display:none; height: 24px;"><img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading..."></div>';
-					$style = "id=\"ApplyConfigButtonState\" class=\"ApplyConfigButtonNothing\" onclick=\"ButtonClicked('config')\"";
-					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$replace.'<div id="ApplyConfigButton">'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr, $style).'</div>';
-					break;
-				case "ruTorrent":
+				// Blocklists menu
+				case "Blocklists":
+				case "Listes noires":
 					if ( $UserAccountType == 'normal' ) {
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+					}
+					break;
+				case "PeerGuardian BlockLists":
+					if ( $PeerguardianIsInstalled == '1' ) {
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+					}
+					break;
+				case "rTorrent Blocklists":
+					if ( $SystemDatas["proxy"] == '0' ) {
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+					}
+					break;
+
+				// Trackers menu
+				case "Trackers":
+					if ( ($UserAccountType == 'normal') && ($SystemDatas["proxy"] == '0') ) {
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+					}
+					break;
+
+				// User menu
+				case "User":
+					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($CurrentUser);
+					break;
+				case "OpenVPN":
+					if ( ($UserAccountType == 'normal') && ($OpenVPNIsInstalled == '1') && ($SystemDatas["proxy"] == '0') ) {
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+					}
+					break;
+				case "Synchronization":
+				case "Synchronisation":
+					if ( ($UserAccountType == 'normal') && ($SystemDatas["proxy"] == '0') ) {
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+					}
+					break;
+
+				// Services menu
+				case "ruTorrent":
+					if ( ($UserAccountType == 'normal') && ($SystemDatas["proxy"] == '0') ) {
 						echo '<li><a target="_blank" href="ru">ruTorrent</a>';
 					}
 					break;
@@ -316,28 +352,10 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						echo '<li><a target="_blank" href="sm">Seedbox-Manager</a>';
 					}
 					break;
-				case "PeerGuardian BlockLists":
-					if ( $PeerguardianIsInstalled == '1' ) {
-						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
-					}
-					break;
 				case "Cakebox-Light":
 					if ( ($CakeboxIsInstalled == '1') && ($UserAccountType == 'normal') ) {
 						echo '<li><a target="_blank" href="cb">Cakebox-Light</a>';
 					}
-					break;
-				case "Synchronization":
-				case "Synchronisation":
-				case "Trackers":
-				case "Blocklists":
-				case "Listes noires":
-				case "OpenVPN":
-					if ( $UserAccountType == 'normal' ) {
-						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
-					}
-					break;
-				case "LoadAvg":
-					echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/la/public/">LoadAvg</a>';
 					break;
 				case "NextCloud":
 					if ( ($NextCloudIsInstalled == '1') && ($UserAccountType == 'normal') ) {
@@ -359,6 +377,16 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/sb">Shell In a Box</a>';
 					}
 					break;
+				case "LoadAvg":
+					echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/la/public/">LoadAvg</a>';
+					break;
+
+				// Admin menu
+				case "Add User":
+					if ( $SystemDatas["proxy"] == '0' ) {
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+					}
+					break;
 				case "Webmin":
 					if ( $WebminIsInstalled == '1' ) {
 						echo '<li><a target="_blank" href="https://' . $SystemDatas["hostname"] . ':' . $WebminDatas["port_tcp1"] . '/">Webmin</a>';
@@ -369,9 +397,6 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					}
 					break;
-				case "User":
-					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($CurrentUser);
-					break;
 				case "Payments":
 					if ( MainUser($CurrentUser) == false ) {
 						if ( (isset($SystemDatas["rt_cost_tva"]) && ($SystemDatas["rt_cost_tva"] != 0.00)) && (isset($SystemDatas["rt_nb_users"])) && (isset($SystemDatas["rt_model"])) && (isset($SystemDatas["rt_method"])) ) {
@@ -379,10 +404,22 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						}
 					}
 					break;
+				case "Renting Infos":
+					if ( $SystemDatas["proxy"] == '0' ) {
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+					}
+					break;
 				case "Renting Payments":
 						if ( (isset($SystemDatas["rt_cost_tva"]) && ($SystemDatas["rt_cost_tva"] != 0.00)) && (isset($SystemDatas["rt_nb_users"])) && (isset($SystemDatas["rt_model"])) && (isset($SystemDatas["rt_method"])) ) {
 							echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 						}
+					break;
+
+				// Default
+				case "Apply configuration":
+					$replace = '<div id="ApplyConfigButtonReplace" style="padding-top: 8px; padding-left: 10px; text-align:center; display:none; height: 24px;"><img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading..."></div>';
+					$style = "id=\"ApplyConfigButtonState\" class=\"ApplyConfigButtonNothing\" onclick=\"ButtonClicked('config')\"";
+					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$replace.'<div id="ApplyConfigButton">'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr, $style).'</div>';
 					break;
 				default:
 					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);

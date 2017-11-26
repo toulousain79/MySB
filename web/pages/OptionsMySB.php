@@ -26,6 +26,7 @@ global $MySB_DB, $CurrentUser;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 // VARs
+$SystemDatas = $MySB_DB->get("system", ["proxy"], ["id_system" => 1]);
 $users_datas = $MySB_DB->get("users", ["id_users", "rtorrent_version", "rtorrent_notify", "rtorrent_restart", "language", "account_type"], ["users_ident" => "$CurrentUser"]);
 $UserID = $users_datas['id_users'];
 $Command = 'message_only';
@@ -106,14 +107,15 @@ $language = $users_datas['language'];
 
 <form class="form_settings" method="post" action="">
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
+
+<?php
+if ( ($users_datas['account_type'] == 'normal') && ($SystemDatas['proxy'] == '0') ) {
+?>
 	<fieldset>
 	<legend><?php echo User_OptionsMySB_Title_rTorrent; ?></legend>
 
 	<table>
 		<tr>
-<?php
-if ( $users_datas['account_type'] == 'normal' ) {
-?>
 			<td><?php echo User_OptionsMySB_rTorrentVersion; ?></td>
 			<td>
 				<select name="rTorrentVersion" style="width:80px; height: 28px;">';
@@ -143,9 +145,6 @@ if ( $users_datas['account_type'] == 'normal' ) {
 				} ?>
 				<select name="rTorrentRestart" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
 			</td>
-<?php
-}
-?>
 			<td><?php echo User_OptionsMySB_NotifyEmail; ?></td>
 			<td>
 
@@ -166,6 +165,9 @@ if ( $users_datas['account_type'] == 'normal' ) {
 		</tr>
 	</table>
 	</fieldset>
+<?php
+}
+?>
 
 	<fieldset>
 	<legend><?php echo User_OptionsMySB_Title_Portal; ?></legend>

@@ -169,6 +169,7 @@ define('User_UserInfo_Comment_Trackers', '<a href="?trackers/trackers-list.html"
 // Blocklists
 define('User_UserInfo_Table_Blocklists', 'Blocklists');
 define('User_UserInfo_Comment_Blocklists', 'You can manage <a href="?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a> AND <a href="?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a>.');
+define('User_UserInfo_Comment_BlocklistsProxy', 'You can manage <a href="?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a>.');
 // DNScrypt-proxy
 define('User_UserInfo_Table_DNScrypt', 'DNScrypt-proxy');
 define('User_UserInfo_Comment_DNScrypt', '<a href="?main-user/dnscrypt-proxy.html">Informations on resolvers used.</a>');
