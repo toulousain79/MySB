@@ -58,7 +58,7 @@ case "$TYPE" in
 esac
 
 DisplaySurvey() {
-	local nLoop sValue sIp bToInstall sValueProto sUdpPortsList sTcpPortsList sTempIPs sCheckIp nFreeSpace nFreeSpaceToKeep sHostName sTmp
+	local nLoop sValue sIp bToInstall sValueProto sUdpPortsList sTcpPortsList sTempIPs sCheckIp nFreeSpace nFreeSpaceToKeep sHostName sTmp sQuestion
 
 	# New page
 	if [ $FirstTime -eq 0 ]; then
@@ -627,9 +627,10 @@ DisplaySurvey() {
 			echo
 			if [ "$gbProxyMode" -eq 1 ]; then	# Install a proxy ?
 				echo -e "$Questions_Message_Blocklists_Proxy"
-				echo -e "$Questions_Message_Blocklists_Proxy_0"
+				sQuestion="$Questions_Install_Blocklists_Proxy"
 			else								# Not a proxy
 				echo -e "$Questions_Message_Blocklists"
+				sQuestion="$Questions_InstallBlockList_0"
 
 				if [ $gsMemory -lt 2048 ]; then
 					echo -e "$Questions_Message_Blocklists_0"
@@ -648,7 +649,7 @@ DisplaySurvey() {
 				&& [ "$gsMySB_PeerBlock" != "PeerGuardian" ] \
 				&& [ "$gsMySB_PeerBlock" != "rTorrent" ]; do
 
-				gfnQuestionGetString NO "$Questions_InstallBlockList_0" gsMySB_PeerBlock "$sValue"
+				gfnQuestionGetString NO "$sQuestion" gsMySB_PeerBlock "$sValue"
 			done
 
 			case "$gsMySB_PeerBlock" in
@@ -677,13 +678,9 @@ DisplaySurvey() {
 		else
 			sValue="0"
 		fi
-		if [ "$gbProxyMode" -eq 0 ]; then
-			nFreeSpace="`df --sync /home/ | awk '{ print $4 }' | tail -n 1`"
-			nFreeSpaceToKeep="`python -c "print 2 * 1024**2"`" # Keep a minimum of 2Go of free space
-			nFreeSpace=$(($nFreeSpace-$nFreeSpaceToKeep))
-		else
-			nFreeSpace=0
-		fi
+		nFreeSpace="`df --sync /home/ | awk '{ print $4 }' | tail -n 1`"
+		nFreeSpaceToKeep="`python -c "print 2 * 1024**2"`" # Keep a minimum of 2Go of free space
+		nFreeSpace=$(($nFreeSpace-$nFreeSpaceToKeep))
 		cmdMySQL 'MySB_db' "UPDATE system SET hostname='$gsHostNameFqdn', ipv4='$gsSrvIpAddress', ipv4_ext='$gsSrvIpAddressExt', primary_inet='$gsPrimaryInet', timezone='$gsTimeZone', server_provider='$gsServerProvider', ip_restriction='$sValue', quota_default='$nFreeSpace' WHERE id_system='1';" -v >> $gsLogFile
 
 		# 'smtp' table
@@ -754,7 +751,7 @@ ConfirmSurvey() {
 		echo -e "$Summary_gsHostNameFqdn" "${CGREEN}$gsHostNameFqdn$CEND"
 		echo -e "$Summary_PortHTTPs" "${CGREEN}$gsPort_HTTPS$CEND"
 		echo -e "$Summary_Port_SSH" "${CGREEN}$gsPort_SSH$CEND"
-		echo -e "$Summary_Port_FTP" "${CGREEN}$gsPort_FTP$CEND"
+		[ "$gbProxyMode" -eq 0 ] && echo -e "$Summary_Port_FTP" "${CGREEN}$gsPort_FTP$CEND"
 	fi
 
 	#### SERVICES
@@ -764,15 +761,15 @@ ConfirmSurvey() {
 			echo -e "$Questions_Category_Services"
 		fi
 		echo -e "$Summary_ServerProvider" "${CGREEN}$gsServerProvider$CEND"
-		echo -e "$Summary_SeedboxManager" "${CGREEN}$gbToInstall_Manager$CEND"
-		echo -e "$Summary_CakeboxLight" "${CGREEN}$gbToInstall_Cakebox$CEND"
-		echo -e "$Summary_PlexMedia" "${CGREEN}$gbToInstall_PlexMedia$CEND"
+		[ "$gbProxyMode" -eq 0 ] && echo -e "$Summary_SeedboxManager" "${CGREEN}$gbToInstall_Manager$CEND"
+		[ "$gbProxyMode" -eq 0 ] && echo -e "$Summary_CakeboxLight" "${CGREEN}$gbToInstall_Cakebox$CEND"
+		[ "$gbProxyMode" -eq 0 ] && echo -e "$Summary_PlexMedia" "${CGREEN}$gbToInstall_PlexMedia$CEND"
 		echo -e "$Summary_Webmin" "${CGREEN}$gbToInstall_Webmin$CEND"
 		if [ "$gbToInstall_Webmin" == "$Global_YES" ]; then
 			echo -e "$Summary_WebminPort" "${CGREEN}$gsPorts_Webmin$CEND"
 		fi
-		echo -e "$Summary_NextCloud" "${CGREEN}$gbToInstall_NextCloud$CEND"
-		echo -e "$Summary_OpenVPN" "${CGREEN}$gbToInstall_OpenVPN$CEND"
+		[ "$gbProxyMode" -eq 0 ] && echo -e "$Summary_NextCloud" "${CGREEN}$gbToInstall_NextCloud$CEND"
+		[ "$gbProxyMode" -eq 0 ] && echo -e "$Summary_OpenVPN" "${CGREEN}$gbToInstall_OpenVPN$CEND"
 		if [ "$gbToInstall_OpenVPN" == "$Global_YES" ]; then
 			echo -e "$Summary_gsOpenVPN_Proto" "${CGREEN}$gsOpenVPN_Proto$CEND"
 			echo -e "$Summary_OpenVPN_WithGW" "${CGREEN}$gsPort_OpenVPN_WithGW$CEND"
