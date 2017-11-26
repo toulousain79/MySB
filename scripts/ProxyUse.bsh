@@ -1,3 +1,6 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -19,60 +22,18 @@
 #	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
-######################################################################
-funcs_sql=1
 ##################### FIRST LINE #####################################
 
-#### MySQL command
-cmdMySQL() {
-	local sDatabase sRequest sConfigFile
+#### MySQL
+if [ "$gbProxyClient" -eq 1 ] && [ ! -f "/root/.config_proxy.cnf" ] && [ -z "`ps ax | grep ssh | grep '3307:localhost:3306'`" ]; then
+	# Get MySQL proxy infos
+	rsync -avz --timeout=10 -e "sshpass -p $gsProxySshPass ssh -p $gsProxySshPort -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $gsProxySshUser@$gsProxyAddress:/root/.config.cnf /root/.config_proxy.cnf
+	perl -pi -e "s/3306/3307/g" /root/.config_proxy.cnf
+	# Start SSH tunnel for access to MySQL proxy
+	sshpass -p $gsProxySshPass ssh -fN -L 3307:localhost:3306 $gsProxySshUser@$gsProxyAddress -p $gsProxySshPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+fi
 
-	if [ -z "$1" ] || [ -z "$2" ]; then
-		return 1
-	else
-		sDatabase="$1"
-		sRequest="$2"
-		sVerbose="$3"
-	fi
-	case "$sDatabase" in
-		'Proxy_db')
-			sDatabase="MySB_db"
-			sConfigFile="/root/.config_proxy.cnf"
-			[ ! -f ] && return 1
-		;;
-		*)	sConfigFile="/root/.config.cnf";;
-	esac
-	mysql --defaults-extra-file=$sConfigFile --database=$sDatabase -w --connect-timeout=10 -s -N -e "$sRequest" $sVerbose
-}
-
-#### Add MySB_SecurityRules command in queue
-gfnAddSecurityInQueue() {
-	local sSwitch sCommand sUser sFields sArgs nPriority
-
-	sSwitch="$1"
-	sCommand="$2"
-	sUser="`whoami`"
-	sFields=("$@")
-
-	for ((i=2; i < $#; i++)) { sArgs="$sArgs ${sFields[$i]}"; }
-	sArgs="`echo $sArgs | sed -e 's/^ //g;' | sed -e 's/^ //g;'`"
-
-	case "$sSwitch" in
-		"add")
-			# Check the current priority
-			nPriority="`cmdMySQL 'MySB_db' "SELECT max(priority) FROM commands;"`"
-			(( nPriority++ ))
-
-			# Add the commands in database
-			cmdMySQL 'MySB_db' "INSERT INTO commands (commands,reload,priority,args,user) VALUES ('$sCommand','1','$nPriority','$sArgs','$sUser');"
-		;;
-		"remove")
-			cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$sCommand' AND args='$sArgs' AND user='$sUser';"
-		;;
-		"check")
-			nPriority="`cmdMySQL 'MySB_db' "SELECT args FROM commands WHERE commands='$sCommand' AND user='$sUser';"`"
-		;;
-	esac
-}
-
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
 ##################### LAST LINE ######################################

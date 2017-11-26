@@ -67,20 +67,24 @@ $Wolf_DB = new medoo([
 	'database_file' => Wolf_DB,
 	'database_name' => 'Wolf'
 ]);
-$NextCloud_DB = new medoo([
-	// required
-	'database_type' => 'mysql',
-	'database_name' => MySQL_NextCloud_DB,
-	'server' => 'localhost',
-	'username' => MySQL_MysbUser,
-	'password' => MySQL_MysbPassword,
-	'charset' => 'utf8',
-	'port' => 3306,
-	'option' => [
-		PDO::ATTR_CASE => PDO::CASE_NATURAL,
-		PDO::ATTR_ORACLE_NULLS => PDO::NULL_TO_STRING
-	]
-]);
+
+$NextCloudIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "NextCloud"]);
+if ( $NextCloudIsInstalled == '1' ) {
+	$NextCloud_DB = new medoo([
+		// required
+		'database_type' => 'mysql',
+		'database_name' => MySQL_NextCloud_DB,
+		'server' => 'localhost',
+		'username' => MySQL_MysbUser,
+		'password' => MySQL_MysbPassword,
+		'charset' => 'utf8',
+		'port' => 3306,
+		'option' => [
+			PDO::ATTR_CASE => PDO::CASE_NATURAL,
+			PDO::ATTR_ORACLE_NULLS => PDO::NULL_TO_STRING
+		]
+	]);
+}
 
 // Users table
 if ( (isset($_SERVER['PHP_AUTH_USER'])) && (!isset($_GET['user'])) ) {

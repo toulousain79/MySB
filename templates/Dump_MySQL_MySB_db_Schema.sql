@@ -171,6 +171,21 @@ CREATE TABLE IF NOT EXISTS `providers_monitoring` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `proxy`
+--
+
+CREATE TABLE IF NOT EXISTS `proxy` (
+  `id_proxy` int(11) NOT NULL,
+  `address` varchar(32) NOT NULL,
+  `ssh_port` int(5) NOT NULL,
+  `ssh_user` varchar(32) NOT NULL,
+  `ssh_pass` varchar(32) NOT NULL,
+  PRIMARY KEY (`id_proxy`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 ;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `repositories`
 --
 
@@ -417,6 +432,7 @@ CREATE TABLE IF NOT EXISTS `users_addresses` (
   `check_by` varchar(8) NOT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT '0',
   `last_update` datetime NOT NULL,
+  `imported` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_users_addresses`),
   KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
