@@ -211,8 +211,10 @@ DisplaySurvey() {
 		gfnQuestionGetString NO "$Questions_PortSSH" gsPort_SSH "$gsPort_SSH"
 
 		# FTP port
-		echo
-		gfnQuestionGetString NO "$Questions_PortFTPs" gsPort_FTP "$gsPort_FTP"
+		if [ "$gbProxyMode" -eq 0 ]; then
+			echo
+			gfnQuestionGetString NO "$Questions_PortFTPs" gsPort_FTP "$gsPort_FTP"
+		fi
 	fi
 
 	#### SERVICES
@@ -248,7 +250,7 @@ DisplaySurvey() {
 		unset sValue nLoop
 
 		# Seedbox-Manager
-		if [ "$gbIsInstalled_Manager" != "YES" ]; then
+		if [ "$gbIsInstalled_Manager" != "YES" ] && [ "$gbProxyMode" -eq 0 ]; then
 			echo
 			nLoop=1
 			if [ "$RepeatSurvey" == "YES" ]; then
@@ -277,7 +279,7 @@ DisplaySurvey() {
 		fi
 
 		# Cakebox Light
-		if [ "$gbIsInstalled_Cakebox" != "YES" ]; then
+		if [ "$gbIsInstalled_Cakebox" != "YES" ] && [ "$gbProxyMode" -eq 0 ]; then
 			echo
 			nLoop=1
 			if [ "$RepeatSurvey" == "YES" ]; then
@@ -306,7 +308,7 @@ DisplaySurvey() {
 		fi
 
 		# Plexmedia server
-		if [ "$gbIsInstalled_PlexMedia" != "YES" ]; then
+		if [ "$gbIsInstalled_PlexMedia" != "YES" ] && [ "$gbProxyMode" -eq 0 ]; then
 			echo
 			nLoop=1
 			if [ "$RepeatSurvey" == "YES" ]; then
@@ -334,7 +336,7 @@ DisplaySurvey() {
 		fi
 
 		# NextCloud
-		if [ "$gbIsInstalled_NextCloud" != "YES" ]; then
+		if [ "$gbIsInstalled_NextCloud" != "YES" ] && [ "$gbProxyMode" -eq 0 ]; then
 			echo
 			nLoop=1
 			if [ "$RepeatSurvey" == "YES" ]; then
@@ -395,7 +397,7 @@ DisplaySurvey() {
 		fi
 
 		# OpenVPN
-		if [ "$gbIsInstalled_OpenVPN" != "YES" ]; then
+		if [ "$gbIsInstalled_OpenVPN" != "YES" ] && [ "$gbProxyMode" -eq 0 ]; then
 			echo
 			nLoop=1
 			if [ "$RepeatSurvey" == "YES" ]; then
@@ -623,12 +625,17 @@ DisplaySurvey() {
 		fi
 		if [ "$gsMySB_PeerBlock" == "$Global_None" ] || [ -z "$gsMySB_PeerBlock" ]; then
 			echo
-			echo -e "$Questions_Message_Blocklists"
+			if [ "$gbProxyMode" -eq 1 ]; then	# Install a proxy ?
+				echo -e "$Questions_Message_Blocklists_Proxy"
+				echo -e "$Questions_Message_Blocklists_Proxy_0"
+			else								# Not a proxy
+				echo -e "$Questions_Message_Blocklists"
 
-			if [ $gsMemory -lt 2048 ]; then
-				echo -e "$Questions_Message_Blocklists_0"
-			else
-				echo -e "$Questions_Message_Blocklists_1"
+				if [ $gsMemory -lt 2048 ]; then
+					echo -e "$Questions_Message_Blocklists_0"
+				else
+					echo -e "$Questions_Message_Blocklists_1"
+				fi
 			fi
 
 			if [ "$RepeatSurvey" == "YES" ]; then
@@ -670,9 +677,13 @@ DisplaySurvey() {
 		else
 			sValue="0"
 		fi
-		nFreeSpace="`df --sync /home/ | awk '{ print $4 }' | tail -n 1`"
-		nFreeSpaceToKeep="`python -c "print 2 * 1024**2"`" # Keep a minimum of 2Go of free space
-		nFreeSpace=$(($nFreeSpace-$nFreeSpaceToKeep))
+		if [ "$gbProxyMode" -eq 0 ]; then
+			nFreeSpace="`df --sync /home/ | awk '{ print $4 }' | tail -n 1`"
+			nFreeSpaceToKeep="`python -c "print 2 * 1024**2"`" # Keep a minimum of 2Go of free space
+			nFreeSpace=$(($nFreeSpace-$nFreeSpaceToKeep))
+		else
+			nFreeSpace=0
+		fi
 		cmdMySQL 'MySB_db' "UPDATE system SET hostname='$gsHostNameFqdn', ipv4='$gsSrvIpAddress', ipv4_ext='$gsSrvIpAddressExt', primary_inet='$gsPrimaryInet', timezone='$gsTimeZone', server_provider='$gsServerProvider', ip_restriction='$sValue', quota_default='$nFreeSpace' WHERE id_system='1';" -v >> $gsLogFile
 
 		# 'smtp' table
@@ -699,7 +710,9 @@ DisplaySurvey() {
 		# SSH
 		cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_SSH', port_tcp2='$gsPort_HTTP', port_tcp3='', ports_tcp_list='', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='SSH';" -v >> $gsLogFile
 		# FTP
-		cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_FTP', port_tcp2='$gsPort_FTP_Data', port_tcp3='65000:65535', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='VSFTPd';" -v >> $gsLogFile
+		if [ "$gbProxyMode" -eq 0 ]; then
+			cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_FTP', port_tcp2='$gsPort_FTP_Data', port_tcp3='65000:65535', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='VSFTPd';" -v >> $gsLogFile
+		fi
 	fi
 
 	# Enable loop survey

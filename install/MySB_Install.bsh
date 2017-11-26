@@ -25,7 +25,14 @@
 ##################### VARS ###########################################
 gsCurrentVersion="v5.1"
 MySB_InstallDir="/opt/MySB"
-EnvLang="$1"
+EnvLang=""
+ProxyMode="NO"
+for Arg in "$@"; do
+	case "$Arg" in
+		fr|en)	EnvLang="$Arg";;
+		proxy)	ProxyMode="YES";;
+	esac
+done
 # Colors
 CEND="\033[0m"
 CRED="\033[1;31m"
@@ -212,9 +219,9 @@ KernelReplace() {
 	if [ ! -z "$KernelFind" ]; then
 		echo -e "$LatestKernel${CGREEN}$KernelFind$CEND"
 		echo
-		$AptCommand -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update
-		$AptCommand -y --assume-yes -V -o Dpkg::Options::="--force-confold" upgrade
-		$AptCommand -y --assume-yes install $KernelFind
+		apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update
+		apt-get -y --assume-yes -V -o Dpkg::Options::="--force-confold" upgrade
+		apt-get -y --assume-yes install $KernelFind
 		if [ -f /etc/grub.d/06_OVHkerne ]; then
 			mv /etc/grub.d/06_OVHkernel /etc/grub.d/99_OVHkernel
 			update-grub
@@ -392,9 +399,6 @@ BannerInstall
 # Some verifications
 SystemChecks
 
-# apt-get
-AptCommand="apt-get"
-
 # Check if ths script is already running with screen
 if type -P screen > /dev/null; then
 	if [ ! -z "`screen -ls | grep MySB 2>/dev/null`" ]; then
@@ -457,23 +461,23 @@ sysctl -w net.ipv6.conf.all.disable_ipv6=1
 BannerInstall
 echo -e -n "$UpdatingSource"
 fnCountDown 3
-$AptCommand -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update
-[ $? -gt 0 ] && ExitOnError 1 "$AptCommand -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update"
+apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update
+[ $? -gt 0 ] && ExitOnError 1 "apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update"
 
 # Next we do an upgrade
 BannerInstall
 echo -e -n "$UpgradingSystem"
 fnCountDown 3
-$AptCommand -y --assume-yes -V -o Dpkg::Options::="--force-confold" upgrade
-[ $? -gt 0 ] && ExitOnError 1 "$AptCommand -y --assume-yes -V -o Dpkg::Options::="--force-confold" upgrade"
+apt-get -y --assume-yes -V -o Dpkg::Options::="--force-confold" upgrade
+[ $? -gt 0 ] && ExitOnError 1 "apt-get -y --assume-yes -V -o Dpkg::Options::="--force-confold" upgrade"
 
 # Now we can install required packages
 BannerInstall
 echo -e -n "$NeededPackage"
 fnCountDown 3
 TOOLS="git-core dos2unix lsb-release screen ccze gnupg figlet mlocate dnsutils curl man-db python" # DO NO RENAME 'TOOLS' VARIABLES !
-$AptCommand -y --assume-yes install $TOOLS
-[ $? -gt 0 ] && ExitOnError 1 "$AptCommand -y --assume-yes install $TOOLS"
+apt-get -y --assume-yes install $TOOLS
+[ $? -gt 0 ] && ExitOnError 1 "apt-get -y --assume-yes install $TOOLS"
 
 #### download files from Git
 BannerInstall
@@ -514,10 +518,11 @@ gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/MySQL" 'INSTALL'
 gfnStatusSTD
 
 # Update DB with usable values
-cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='$gsCurrentVersion' WHERE id_system='1';" -v >> /tmp/`basename $0`.log
-[ $? -gt 0 ] && ExitOnError 1 "UPDATE system"
+[ "$ProxyMode" == "YES" ] && ProxyMode="1" || ProxyMode="0"
+cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='$gsCurrentVersion', proxy='$ProxyMode' WHERE id_system='1';" -v >> /tmp/`basename $0`.log
+[ $? -gt 0 ] && ExitOnError 1 "UPDATE system SET mysb_version='$gsCurrentVersion', proxy='$ProxyMode' WHERE id_system='1';"
 cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,language,admin) VALUES ('MySB','MySB','$EnvLang','1');" -v >> /tmp/`basename $0`.log
-[ $? -gt 0 ] && ExitOnError 1 "INSERT INTO users"
+[ $? -gt 0 ] && ExitOnError 1 "INSERT INTO users (users_ident,users_email,language,admin) VALUES ('MySB','MySB','$EnvLang','1');"
 source $MySB_InstallDir/inc/vars
 [ $? -gt 0 ] && ExitOnError 1 "source $MySB_InstallDir/inc/vars"
 
