@@ -177,7 +177,7 @@ CREATE TABLE IF NOT EXISTS `providers_monitoring` (
 CREATE TABLE IF NOT EXISTS `proxy` (
   `id_proxy` int(11) NOT NULL,
   `address` varchar(32) NOT NULL,
-  `ssh_port` int(5) NOT NULL,
+  `ssh_port` varchar(5) NOT NULL,
   `ssh_user` varchar(32) NOT NULL,
   `ssh_pass` varchar(32) NOT NULL,
   PRIMARY KEY (`id_proxy`)

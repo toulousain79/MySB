@@ -28,7 +28,7 @@ define('MainUser_Proxy_SshUser', 'SSH User :');
 define('MainUser_Proxy_SshPass', 'SSH password :');
 define('MainUser_Proxy_SshPassConfirm', 'Confirmation :');
 define('MainUser_Proxy_Verification', 'Error between password and verification.');
-define('MainUser_Proxy_Success', 'Succ&egrave;s !');
-define('MainUser_Proxy_Failded', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible d\'appliquer les changements.');
+define('MainUser_Proxy_Success', 'Success !');
+define('MainUser_Proxy_Failded', 'Failed !<br /><br />It was not possible to apply the changes.');
 
 //#################### LAST LINE ######################################

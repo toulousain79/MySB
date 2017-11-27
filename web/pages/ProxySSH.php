@@ -75,8 +75,8 @@ function Form() {
 }
 
 if (isset($_POST['submit'])) {
-	$ProxySshPort = preg_replace('/\s\s+/', '', $_POST['ProxySshPort']);
 	$ProxyAddress = preg_replace('/\s\s+/', '', $_POST['ProxyAddress']);
+	$ProxySshPort = preg_replace('/\s\s+/', '', $_POST['ProxySshPort']);
 	$ProxySshUser = preg_replace('/\s\s+/', '', $_POST['ProxySshUser']);
 	$ProxySshPass = $_POST['ProxySshPass'];
 	$ProxySshPassConfirm = $_POST['ProxySshPassConfirm'];
@@ -86,7 +86,7 @@ if (isset($_POST['submit'])) {
 		if ( $ProxySshPass == $ProxySshPassConfirm ) {
 			global $MySB_DB;
 
-			$result = $MySB_DB->update("smtp", ["address" => "$ProxyAddress",
+			$result = $MySB_DB->update("proxy", ["address" => "$ProxyAddress",
 											"ssh_port" => "$ProxySshPort",
 											"ssh_user" => "$ProxySshUser",
 											"ssh_pass" => "$ProxySshPass"],
@@ -116,7 +116,7 @@ if (isset($_POST['submit'])) {
 		$message = Global_CompleteAllFields;
 	}
 
-	GenerateMessage('Postfix', $type, $message);
+	GenerateMessage('ProxyUse.bsh', $type, $message);
 }
 
 Form();
