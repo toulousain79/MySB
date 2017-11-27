@@ -75,85 +75,6 @@ DisplaySurvey() {
 		echo
 	fi
 
-	#### MAIN USER INFO
-	if [ "$DisplayUserInfo" == "YES" ]; then
-		if [ "$DisplayInfo" == "YES" ]; then
-			echo -e "$Questions_Category_MainUserInfos"
-		fi
-
-		# Main User name
-		echo
-		if [ "$RepeatSurvey" == "YES" ]; then
-			sValue="$gsMainUserName"
-		else
-			sValue=""
-		fi
-		gsMainUserName=""
-		while [ ! -z "`echo $gsMainUserName | grep '@'`" ] || [ -z "$gsMainUserName" ]; do
-			gfnQuestionGetString NO "$Questions_MainUserUsername" gsMainUserName "$sValue"
-		done
-		unset sValue
-
-		# Main User password
-		echo
-		if [ "$RepeatSurvey" == "YES" ]; then
-			sValue="$gsMainUserPassword"
-		else
-			sValue=""
-			gsMainUserPassword=""
-		fi
-
-		if [ -z "$gsMainUserPassword" ] || [ "$TYPE" == "UPGRADE" ] || [ "$RepeatSurvey" == "YES" ]; then
-			gfnQuestionGetString NO "$Questions_MainUserPassword" gsMainUserPassword "$sValue"
-		fi
-		unset sValue
-
-		# SMTP ?
-		echo
-		if [ -z "$gsSmtpProvider" ] || [ "$RepeatSurvey" == "YES" ]; then
-			echo -e "$Questions_Message_SMTP_0"
-			nLoop=1
-		else
-			nLoop=0
-		fi
-		if [ "$RepeatSurvey" == "YES" ]; then
-			sValue="$gsSmtpProvider"
-		else
-			sValue="LOCAL"
-		fi
-
-		while [ $nLoop -eq 1 ]; do
-			gfnQuestionGetString NO "$Questions_SMTP" gsSmtpProvider "$sValue"
-			gsSmtpProvider="`echo $gsSmtpProvider | tr '[:lower:]' '[:upper:]'`"
-			case "$gsSmtpProvider" in
-				'LOCAL'|'FREE'|'OVH'|'GMAIL'|'YAHOO'|'ZOHO')
-					nLoop=0
-				;;
-			esac
-		done
-
-		if [ "$gsSmtpProvider" != "LOCAL" ]; then
-			gfnQuestionGetString NO "$Questions_SMTP_Username" SMTP_Username "$SMTP_Username"
-			gfnQuestionGetString NO "$Questions_SMTP_Password" SMTP_Password "$SMTP_Password"
-		fi
-		unset sValue nLoop
-
-		# User e-mail
-		echo
-		if [ "$gsSmtpProvider" != "LOCAL" ]; then
-			echo -e "$Questions_Message_SMTP_1"
-		fi
-		if [ "$RepeatSurvey" == "YES" ]; then
-			sValue="$gsMainUserEmail"
-		else
-			sValue="$SMTP_Username"
-		fi
-		while [ "`gfnValidateMail $gsMainUserEmail`" -ne 1 ] || [ -z "$gsMainUserEmail" ]; do
-			gfnQuestionGetString NO "$Questions_EmailAddress" gsMainUserEmail "$sValue"
-		done
-		unset sValue
-	fi
-
 	#### SERVER INFO
 	if [ "$DisplayServerInfo" == "YES" ]; then
 		if [ "$DisplayInfo" == "YES" ]; then
@@ -216,6 +137,156 @@ DisplaySurvey() {
 		fi
 	fi
 
+	#### PROXY / Infos main MySB server
+	if [ "$gbProxyMode" -eq 1 ]; then
+		echo
+		echo -e "$Questions_ProxyNeedSomeInfos"
+		echo
+
+		nLoop=1
+		while [ $nLoop -eq 1 ]; do
+			# ROOT password
+			echo
+			if [ "$RepeatSurvey" == "YES" ]; then
+				sValue="$gsMainServerRootPassword"
+			else
+				sValue=""
+				gsMainServerRootPassword=""
+			fi
+
+			if [ -z "$gsMainServerRootPassword" ] || [ "$TYPE" == "UPGRADE" ] || [ "$RepeatSurvey" == "YES" ]; then
+				gfnQuestionGetString NO "$Questions_MainServerRootPassword" gsMainServerRootPassword "$sValue"
+			fi
+			unset sValue
+
+			# Hostname
+			echo
+			gfnQuestionGetString NO "$Questions_MainServerHostname" gsMainServerHostNameFqdn "$gsMainServerHostNameFqdn"
+
+			# Port SSH
+			echo
+			gsMainServerPort_SSH=$gsPort_SSH
+			gfnQuestionGetString NO "$Questions_MainServerPortSSH" gsMainServerPort_SSH "$gsMainServerPort_SSH"
+
+			# Get MySQL infos of remote server
+			rsync -az --timeout=10 -e "sshpass -p $gsMainServerRootPassword ssh -p $gsMainServerPort_SSH -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" root@$gsMainServerHostNameFqdn:/etc/MySB/config /etc/MySB/config_remote
+			if [ -f /etc/MySB/config_remote ]; then
+				sed -i '/EnvLang/d' /etc/MySB/config_remote
+				perl -pi -e "s/MySB_InstallDir/MySB_RemoteDir/g" /etc/MySB/config_remote
+				source /etc/MySB/config_remote
+			fi
+			rsync -az --timeout=10 -e "sshpass -p $gsMainServerRootPassword ssh -p $gsMainServerPort_SSH -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" root@$gsMainServerHostNameFqdn:/root/.config.cnf /root/.config_remote.cnf
+			if [ -f /root/.config_proxy.cnf ]; then
+				perl -pi -e "s/localhost/127.0.0.1/g" /root/.config_proxy.cnf
+				perl -pi -e "s/3306/3307/g" /root/.config_proxy.cnf
+				# Start SSH tunnel for access to MySQL on proxy server
+				sshpass -p $gsMainServerRootPassword ssh -fN -L 3307:localhost:3306 root@$gsMainServerHostNameFqdn -p $gsMainServerPort_SSH -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+
+				[ -z "`ps ax | grep ssh | grep '3307:localhost:3306'`" ] && nLoop=0
+			fi
+		done
+	fi
+
+	#### MAIN USER INFO
+	if [ "$DisplayUserInfo" == "YES" ]; then
+		if [ "$DisplayInfo" == "YES" ]; then
+			echo -e "$Questions_Category_MainUserInfos"
+		fi
+
+		# Main User name
+		if [ "$gbProxyMode" -eq 0 ]; then
+			echo
+			if [ "$RepeatSurvey" == "YES" ]; then
+				sValue="$gsMainUserName"
+			else
+				sValue=""
+			fi
+			gsMainUserName=""
+			while [ ! -z "`echo $gsMainUserName | grep '@'`" ] || [ -z "$gsMainUserName" ]; do
+				gfnQuestionGetString NO "$Questions_MainUserUsername" gsMainUserName "$sValue"
+			done
+			unset sValue
+		else
+			UserValues="`cmdMySQL 'Proxy_db' "SELECT users_ident,users_email,scgi_port,rtorrent_port FROM users WHERE id_users='1';" | sed 's/\t/|/g;'`"
+			gsMainUserName="`echo $UserValues | awk '{split($0,a,"|"); print a[1]}'`"
+			gsMainUserEmail="`echo $UserValues | awk '{split($0,a,"|"); print a[2]}'`"
+			gsMainUserScgiPort="`echo $UserValues | awk '{split($0,a,"|"); print a[3]}'`"
+			gsMainUserRtorrentPort="`echo $UserValues | awk '{split($0,a,"|"); print a[4]}'`"
+		fi
+
+		# Main User password
+		echo
+		if [ "$RepeatSurvey" == "YES" ]; then
+			sValue="$gsMainUserPassword"
+		else
+			sValue=""
+			gsMainUserPassword=""
+		fi
+
+		if [ -z "$gsMainUserPassword" ] || [ "$TYPE" == "UPGRADE" ] || [ "$RepeatSurvey" == "YES" ]; then
+			if [ "$gbProxyMode" -eq 0 ]; then
+				gfnQuestionGetString NO "$Questions_MainUserPassword" gsMainUserPassword "$sValue"
+			else
+				gfnQuestionGetString NO "$Questions_MainServerUserPassword" gsMainUserPassword "$sValue"
+			fi
+		fi
+		unset sValue
+
+		# SMTP ?
+		if [ "$gbProxyMode" -eq 0 ]; then
+			echo
+			if [ -z "$gsSmtpProvider" ] || [ "$RepeatSurvey" == "YES" ]; then
+				echo -e "$Questions_Message_SMTP_0"
+				nLoop=1
+			else
+				nLoop=0
+			fi
+			if [ "$RepeatSurvey" == "YES" ]; then
+				sValue="$gsSmtpProvider"
+			else
+				sValue="LOCAL"
+			fi
+
+			while [ $nLoop -eq 1 ]; do
+				gfnQuestionGetString NO "$Questions_SMTP" gsSmtpProvider "$sValue"
+				gsSmtpProvider="`echo $gsSmtpProvider | tr '[:lower:]' '[:upper:]'`"
+				case "$gsSmtpProvider" in
+					'LOCAL'|'FREE'|'OVH'|'GMAIL'|'YAHOO'|'ZOHO')
+						nLoop=0
+					;;
+				esac
+			done
+
+			if [ "$gsSmtpProvider" != "LOCAL" ]; then
+				gfnQuestionGetString NO "$Questions_SMTP_Username" SMTP_Username "$SMTP_Username"
+				gfnQuestionGetString NO "$Questions_SMTP_Password" SMTP_Password "$SMTP_Password"
+			fi
+			unset sValue nLoop
+		else
+			SmtpValues="`cmdMySQL 'Proxy_db' "SELECT smtp_provider,smtp_username,smtp_passwd FROM smtp WHERE id_smtp='1';" | sed 's/\t/|/g;'`"
+			gsSmtpProvider="`echo $SmtpValues | awk '{split($0,a,"|"); print a[1]}'`"
+			SMTP_Username="`echo $SmtpValues | awk '{split($0,a,"|"); print a[2]}'`"
+			SMTP_Password="`echo $SmtpValues | awk '{split($0,a,"|"); print a[3]}'`"
+		fi
+
+		# User e-mail
+		if [ "$gbProxyMode" -eq 0 ]; then
+			echo
+			if [ "$gsSmtpProvider" != "LOCAL" ]; then
+				echo -e "$Questions_Message_SMTP_1"
+			fi
+			if [ "$RepeatSurvey" == "YES" ]; then
+				sValue="$gsMainUserEmail"
+			else
+				sValue="$SMTP_Username"
+			fi
+			while [ "`gfnValidateMail $gsMainUserEmail`" -ne 1 ] || [ -z "$gsMainUserEmail" ]; do
+				gfnQuestionGetString NO "$Questions_EmailAddress" gsMainUserEmail "$sValue"
+			done
+			unset sValue
+		fi
+	fi
+
 	#### SERVICES
 	if [ "$DisplayServices" == "YES" ]; then
 		if [ "$DisplayInfo" == "YES" ]; then
@@ -223,7 +294,7 @@ DisplaySurvey() {
 			echo -e "$Questions_Category_Services"
 		fi
 
-		#Provider
+		# Provider
 		echo
 		if [ -z "$gsServerProvider" ] || [ "$RepeatSurvey" == "YES" ]; then
 			echo -e "$Questions_Message_ServerProvider"
@@ -689,6 +760,10 @@ DisplaySurvey() {
 		cmdMySQL 'MySB_db' "UPDATE users SET users_ident='$gsMainUserName', users_email='$gsMainUserEmail', users_passwd='$gsMainUserPassword', sftp='1', sudo='1', admin='1' WHERE users_ident='MySB' OR admin='1';" -v >> $gsLogFile
 		cmdMySQL 'MySB_db' "UPDATE users_history SET users_ident='$gsMainUserName' WHERE users_ident='MySB';" -v >> $gsLogFile
 		sqlite3 -echo -cmd '.timeout 150000' $gsWolf_DB "UPDATE user SET name='$gsMainUserName', email='$gsMainUserEmail', username='$gsMainUserName' WHERE id='2';" >> $gsLogFile
+		if [ "$gbProxyMode" -eq 1 ]; then
+			rsync -az --timeout=10 -e "sshpass -p $gsMainServerRootPassword ssh -p $gsMainServerPort_SSH -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" root@$gsMainServerHostNameFqdn:$MySB_RemoteDir/db/Wolf.sq3 $MySB_InstallDir/db/Wolf.sq3
+			cmdMySQL 'MySB_db' "UPDATE users SET scgi_port='$gsMainUserScgiPort', rtorrent_port='$gsMainUserRtorrentPort' WHERE users_ident='MySB' OR admin='1';" -v >> $gsLogFile
+		fi
 
 		# 'users_addresses' table
 		gnMainUserId="`cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='$gsMainUserName';"`"
@@ -699,6 +774,10 @@ DisplaySurvey() {
 			cmdMySQL 'MySB_db' "INSERT INTO users_addresses (id_users,ipv4,hostname,check_by,is_active,last_update) VALUES ('$gnMainUserId','$sIp','$sHostName','ipv4','1','`date +%Y-%m-%d\ %H:%M:%S`');" -v >> $gsLogFile
 		done
 		unset IFS sIp
+		if [ "$gbProxyMode" -eq 1 ]; then
+			sIPv4="$(nslookup $gsMainServerHostNameFqdn | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
+			cmdMySQL 'MySB_db' "INSERT INTO users_addresses (id_users,ipv4,hostname,check_by,is_active,last_update) VALUES ('$gnMainUserId','$sIPv4','$gsMainServerHostNameFqdn','ipv4','1','`date +%Y-%m-%d\ %H:%M:%S`');" -v >> $gsLogFile
+		fi
 
 		#### 'services' table
 		# HTTPs & HTTP

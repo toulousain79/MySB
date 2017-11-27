@@ -85,9 +85,7 @@ UPPERNEWUSER=`echo $UserToCreate | tr '[:lower:]' '[:upper:]'`
 NEWRPC="/$UPPERNEWUSER"
 
 LastPort="`cmdMySQL 'MySB_db' "SELECT max(rtorrent_port) FROM users;"`"
-if [ -z "$LastPort" ] || [ "$LastPort" == "" ]; then
-	LastPort=51100
-fi
+[ -z "$LastPort" ] && LastPort=51100
 (( LastPort++ ))
 ScgiPort=$LastPort
 (( LastPort++ ))
@@ -99,7 +97,12 @@ if [ "$UserToCreate" != "$gsMainUserName" ]; then
 	cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir,language,account_type) VALUES ('$UserToCreate','$UserEmail','$NewUserPassword','$NEWRPC','$UserSFTP','$UserSUDO','$ScgiPort','$rTorrentPort','$NewUserHomedir','$EnvLang', '$UserAccountType');"
 else
 	log_daemon_msg "$CreateUser_UpdateInfoDB [$UserToCreate]"
-	cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='', rpc='$NEWRPC', scgi_port='$ScgiPort', rtorrent_port='$rTorrentPort', home_dir='$NewUserHomedir' WHERE users_ident='$UserToCreate';"
+	if [ "$gbProxyMode" -eq 0 ]; then
+		cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='', rpc='$NEWRPC', scgi_port='$ScgiPort', rtorrent_port='$rTorrentPort', home_dir='$NewUserHomedir' WHERE users_ident='$UserToCreate';"
+	else
+
+		cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='', rpc='$NEWRPC', home_dir='$NewUserHomedir' WHERE users_ident='$UserToCreate';"
+	fi
 fi
 gfnListCountUsers
 gfnStatusLSB

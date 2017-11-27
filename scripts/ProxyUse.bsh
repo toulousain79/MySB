@@ -28,10 +28,26 @@ source $(dirname $0)/../inc/includes_before
 if [ "$gbProxyClient" -eq 1 ] && [ ! -f "/root/.config_proxy.cnf" ] && [ -z "`ps ax | grep ssh | grep '3307:localhost:3306'`" ]; then
 	# Get MySQL proxy infos
 	rsync -avz --timeout=10 -e "sshpass -p $gsProxySshPass ssh -p $gsProxySshPort -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $gsProxySshUser@$gsProxyAddress:/root/.config.cnf /root/.config_proxy.cnf
-	perl -pi -e "s/localhost/127.0.0.1/g" /root/.config_proxy.cnf
-	perl -pi -e "s/3306/3307/g" /root/.config_proxy.cnf
-	# Start SSH tunnel for access to MySQL proxy
-	sshpass -p $gsProxySshPass ssh -fN -L 3307:localhost:3306 $gsProxySshUser@$gsProxyAddress -p $gsProxySshPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+	if [ -f /root/.config_proxy.cnf ]; then
+		perl -pi -e "s/localhost/127.0.0.1/g" /root/.config_proxy.cnf
+		perl -pi -e "s/3306/3307/g" /root/.config_proxy.cnf
+		# Start SSH tunnel for access to MySQL on proxy server
+		sshpass -p $gsProxySshPass ssh -fN -L 3307:localhost:3306 $gsProxySshUser@$gsProxyAddress -p $gsProxySshPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null		
+	fi
+	
+	# Add all users on proxy
+	
+	# Update users port on proxy
+					sRequestValues="`cmdMySQL 'MySB_db' "SELECT ipv4,hostname,check_by,is_active FROM users_addresses WHERE is_active='1' AND id_users='$gnMainUserId';" | sed 's/\t/|/g;'`"
+					for Infos in $sRequestValues; do
+						IPv4="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
+						Hostname="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
+						CheckBy="`echo $sRequestValues | awk '{split($0,a,"|"); print a[3]}'`"
+						IsActive="`echo $sRequestValues | awk '{split($0,a,"|"); print a[4]}'`"
+						cmdMySQL 'MySB_db' "INSERT INTO users_addresses (id_users,ipv4,hostname,check_by,is_active,imported,last_update) VALUES ('$gnMainUserId','$IPv4','$Hostname','$CheckBy','$IsActive','1','`date +%Y-%m-%d\ %H:%M:%S`');" -v
+					done
+
+					sshpass -p $gsProxySshPass ssh -p $gsProxySshPort -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $gsProxySshUser@$gsProxyAddress screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--users' 'APPLYCONFIG';	
 fi
 
 # -----------------------------------------
