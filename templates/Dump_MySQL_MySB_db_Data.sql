@@ -127,8 +127,7 @@ INSERT INTO `providers_monitoring` (`id_providers_monitoring`, `provider`, `ipv4
 -- Contenu de la table `proxy`
 --
 
-INSERT INTO `proxy` (`id_proxy`, `address`, `ssh_port`, `ssh_user`, `ssh_pass`) VALUES
-(1, '', '', '', '', '', '');
+INSERT INTO `proxy` (`id_proxy`, `address`, `ssh_port`, `ssh_user`, `ssh_pass`) VALUES (1, '', '', '', '');
 
 --
 -- Contenu de la table `repositories`
