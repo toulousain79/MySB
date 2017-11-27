@@ -390,12 +390,19 @@ gfnPopulatingUdpInboundChain() {
 	case "$1" in
 		"create")
 			if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
-				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 137 -j ACCEPT -m comment --comment "Samba over OpenVPN"
-				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 138 -j ACCEPT -m comment --comment "Samba over OpenVPN"
-				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 137 -j ACCEPT -m comment --comment "Samba over OpenVPN"
-				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 138 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 135 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 137:139 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 445 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 135 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 137:139 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 445 -j ACCEPT -m comment --comment "Samba over OpenVPN"
 			fi
-			iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 137 -j DROP
+			iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 135 -j DROP
+			iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 135 -j LOG --log-prefix "[MySB] NetBIOS UDP IN 135: " -m comment --comment "NetBIOS UDP IN"
+			iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 137:139 -j DROP
+			iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 137:139 -j LOG --log-prefix "[MySB] NetBIOS UDP IN 137:139: " -m comment --comment "NetBIOS UDP IN"
+			iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 445 -j DROP
+			iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 445 -j LOG --log-prefix "[MySB] NetBIOS UDP IN 445: " -m comment --comment "NetBIOS UDP IN"
 		;;
 	esac
 
@@ -461,6 +468,8 @@ gfnPopulatingUdpInboundChain() {
 				# NFS Server - portmapper
 				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 111 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
 				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 111 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 111 -j DROP
+				iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 111 -j LOG --log-prefix "[MySB] Portmapper UDP IN: " -m comment --comment "Portmapper UDP IN"
 				# NFS Server - statd
 				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9400 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
 				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 9400 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
@@ -608,6 +617,19 @@ gfnPopulatingTcpInboundChain() {
 					iptables -A tcp_inbound -p TCP -s 0/0 -i $gsPrimaryInet --destination-port $gsPort_OpenVPN_WithGW -j ACCEPT -m comment --comment "OpenVPN with GW for users"
 					iptables -A tcp_inbound -p TCP -s 0/0 -i $gsPrimaryInet --destination-port $gsPort_OpenVPN_WithoutGW -j ACCEPT -m comment --comment "OpenVPN without GW for users"
 					iptables -A tcp_inbound -p TCP -s 0/0 -i $gsPrimaryInet --destination-port $gsPort_OpenVPN_TAP_WithoutGW -j ACCEPT -m comment --comment "OpenVPN bridged without GW for users"
+					# Samba
+					iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 135 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+					iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 137:139 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+					iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 445 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+					iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 135 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+					iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 137:139 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+					iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 445 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+					iptables -A tcp_inbound -p TCP -s 0/0 -i $gsPrimaryInet --destination-port 135 -j DROP
+					iptables -A tcp_inbound -p TCP -s 0/0 -i $gsPrimaryInet --destination-port 135 -j LOG --log-prefix "[MySB] NetBIOS UDP IN 135: " -m comment --comment "NetBIOS UDP IN"
+					iptables -A tcp_inbound -p TCP -s 0/0 -i $gsPrimaryInet --destination-port 137:139 -j DROP
+					iptables -A tcp_inbound -p TCP -s 0/0 -i $gsPrimaryInet --destination-port 137:139 -j LOG --log-prefix "[MySB] NetBIOS UDP IN 137:139: " -m comment --comment "NetBIOS UDP IN"
+					iptables -A tcp_inbound -p TCP -s 0/0 -i $gsPrimaryInet --destination-port 445 -j DROP
+					iptables -A tcp_inbound -p TCP -s 0/0 -i $gsPrimaryInet --destination-port 445 -j LOG --log-prefix "[MySB] NetBIOS UDP IN 445: " -m comment --comment "NetBIOS UDP IN"
 				fi
 
 				# SSHd
@@ -701,6 +723,8 @@ gfnPopulatingTcpInboundChain() {
 				# NFS Server - portmapper
 				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 111 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
 				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 111 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+				iptables -A tcp_inbound -p TCP -s 0/0 -i $gsPrimaryInet --destination-port 111 -j DROP
+				iptables -A tcp_inbound -p TCP -s 0/0 -i $gsPrimaryInet --destination-port 111 -j LOG --log-prefix "[MySB] Portmapper TCP IN: " -m comment --comment "Portmapper TCP IN"
 				# NFS Server - statd
 				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9400 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
 				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 9400 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
