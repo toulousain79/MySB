@@ -169,20 +169,35 @@ DisplaySurvey() {
 			gfnQuestionGetString NO "$Questions_MainServerPortSSH" gsMainServerPort_SSH "$gsMainServerPort_SSH"
 
 			# Get MySQL infos of remote server
-			rsync -az --timeout=10 -e "sshpass -p $gsMainServerRootPassword ssh -p $gsMainServerPort_SSH -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" root@$gsMainServerHostNameFqdn:/etc/MySB/config /etc/MySB/config_remote
-			if [ -f /etc/MySB/config_remote ]; then
-				sed -i '/EnvLang/d' /etc/MySB/config_remote
-				perl -pi -e "s/MySB_InstallDir/MySB_RemoteDir/g" /etc/MySB/config_remote
-				source /etc/MySB/config_remote
+			echo
+			log_daemon_msg "$Message_DownloadConfig"
+			rsync -az --timeout=10 -e "sshpass -p $gsMainServerRootPassword ssh -p $gsMainServerPort_SSH -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" root@$gsMainServerHostNameFqdn:/etc/MySB/config /etc/MySB/config_remote &> /dev/null
+			if [ $? -eq 0 ]; then
+				gfnStatusLSB 0
+				if [ -f /etc/MySB/config_remote ]; then
+					sed -i '/EnvLang/d' /etc/MySB/config_remote
+					perl -pi -e "s/MySB_InstallDir/MySB_RemoteDir/g" /etc/MySB/config_remote
+					source /etc/MySB/config_remote
+				fi				
+			else
+				gfnStatusLSB 1
 			fi
-			rsync -az --timeout=10 -e "sshpass -p $gsMainServerRootPassword ssh -p $gsMainServerPort_SSH -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" root@$gsMainServerHostNameFqdn:/root/.config.cnf /root/.config_proxy.cnf
-			if [ -f /root/.config_proxy.cnf ]; then
-				perl -pi -e "s/localhost/127.0.0.1/g" /root/.config_proxy.cnf
-				perl -pi -e "s/3306/3307/g" /root/.config_proxy.cnf
-				# Start SSH tunnel for access to MySQL on proxy server
-				sshpass -p $gsMainServerRootPassword ssh -fN -L 3307:localhost:3306 root@$gsMainServerHostNameFqdn -p $gsMainServerPort_SSH -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
 
-				[ -z "`ps ax | grep ssh | grep '3307:localhost:3306'`" ] && nLoop=0
+			echo
+			log_daemon_msg "$Message_DownloadConfigMySQL"
+			rsync -az --timeout=10 -e "sshpass -p $gsMainServerRootPassword ssh -p $gsMainServerPort_SSH -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" root@$gsMainServerHostNameFqdn:/root/.config.cnf /root/.config_proxy.cnf &> /dev/null
+			if [ $? -eq 0 ]; then
+				gfnStatusLSB 0
+				if [ -f /root/.config_proxy.cnf ]; then
+					perl -pi -e "s/localhost/127.0.0.1/g" /root/.config_proxy.cnf
+					perl -pi -e "s/3306/3307/g" /root/.config_proxy.cnf
+					# Start SSH tunnel for access to MySQL on proxy server
+					sshpass -p $gsMainServerRootPassword ssh -fN -L 3307:localhost:3306 root@$gsMainServerHostNameFqdn -p $gsMainServerPort_SSH -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+
+					[ -z "`ps ax | grep ssh | grep '3307:localhost:3306'`" ] && nLoop=0
+				fi				
+			else
+				gfnStatusLSB 1
 			fi
 		done
 	fi
