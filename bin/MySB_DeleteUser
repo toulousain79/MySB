@@ -64,7 +64,7 @@ fi
 
 #### STOP services
 gfnManageServices stop "cron"
-service rtorrent-$UserToDelete stop
+[ -f /etc/init.d/rtorrent-$UserToDelete ] && service rtorrent-$UserToDelete stop
 
 #### crontab
 log_daemon_msg "$DeleteUser_DeleteCron [$UserToDelete]"
@@ -77,8 +77,12 @@ gfnStatusLSB
 #### FTP
 log_daemon_msg "$DeleteUser_DeleteFTP [$UserToDelete]"
 sed -i '/'$UserToDelete'/d' /etc/vsftpd.chroot_list
-umount /home/$UserToDelete/rtorrent/share &> /dev/null
-umount /home/$UserToDelete/rtorrent/torrents &> /dev/null
+if [ ! -z "`df -H 2> /dev/null | grep "/home/$UserToDelete/rtorrent/share"`" ]; then
+	umount /home/$UserToDelete/rtorrent/share &> /dev/null
+fi
+if [ ! -z "`df -H 2> /dev/null | grep "/home/$UserToDelete/rtorrent/torrents"`" ]; then
+	umount /home/$UserToDelete/rtorrent/torrents &> /dev/null
+fi
 gfnStatusLSB 0
 
 #### NFS
@@ -104,7 +108,7 @@ if [ "$gbIsInstalled_NextCloud" == "YES" ]; then
 	cmdMySQL 'NextCloud_db' "DELETE FROM nc_storages WHERE id='local::/home/$UserToDelete/';"
 	cmdMySQL 'NextCloud_db' "DELETE FROM nc_preferences WHERE configkey='/Home_$UserToDelete';"
 	if [ -d /home/nextcloud/$UserToDelete ]; then
-		mv /home/nextcloud/$UserToDelete /home/nextcloud/TODEL_$UserToDelete
+		rm -rf /home/nextcloud/$UserToDelete
 	fi
 	gfnStatusLSB
 fi
@@ -166,11 +170,13 @@ for User in $gsUsersList; do
 	fi
 done
 
-#### Quota
-gfnManageQuota "$DeleteUser_Quota"
+if [ "$gbProxyMode" -eq 0 ]; then
+	#### Quota
+	gfnManageQuota "$DeleteUser_Quota"
 
-#### renting
-gfnMonthlyPayment "$UserToDelete"
+	#### renting
+	gfnMonthlyPayment "$UserToDelete"
+fi
 
 #### Create new security rules
 log_daemon_msg "$DeleteUser_SecurituRules"
