@@ -37,11 +37,19 @@ case "$gsDebianRelease" in
 	;;
 esac
 
+#### STOP services
+gfnManageServices stop "$binPhpFpm"
+
 #### PECL
+# htscanner
 pecl channel-update pecl.php.net
 case "$gsDebianRelease" in
 	'wheezy'|'jessie')
 		if [ ! -z "`pecl list | grep htscanner`" ]; then
+			php5dismod htscanner
+			rm -fv $sPhpDir/mods-available/htscanner.ini
+			[ -f $sPhpDir/cli/conf.d/20-htscanner.ini ] && rm -fv $sPhpDir/cli/conf.d/20-htscanner.ini
+			[ -f $sPhpDir/fpm/conf.d/20-htscanner.ini ] && rm -fv $sPhpDir/fpm/conf.d/20-htscanner.ini
 			pecl uninstall htscanner
 		fi
 		if [ -z "`pecl list | grep htscanner`" ]; then
@@ -51,17 +59,42 @@ case "$gsDebianRelease" in
 		fi
 	;;
 esac
-if [ ! -z "`pecl list | grep smbclient`" ]; then
-	pecl uninstall smbclient
-fi
-if [ -z "`pecl list | grep smbclient`" ]; then
-	pecl install smbclient
-	echo "extension=smbclient.so" > $sPhpDir/mods-available/smbclient.ini
-	php5enmod smbclient
-fi
+# smbclient
+case "$gsDebianRelease" in
+	'wheezy')
+		if [ ! -z "`pecl list | grep smbclient`" ]; then
+			php5dismod smbclient
+			rm -fv $sPhpDir/mods-available/smbclient.ini
+			[ -f $sPhpDir/cli/conf.d/20-smbclient.ini ] && rm -fv $sPhpDir/cli/conf.d/20-smbclient.ini
+			[ -f $sPhpDir/fpm/conf.d/20-smbclient.ini ] && rm -fv $sPhpDir/fpm/conf.d/20-smbclient.ini
+			pecl uninstall smbclient
+		fi
+		if [ -z "`pecl list | grep smbclient`" ]; then
+			pecl install smbclient
+			echo "extension=smbclient.so" > $sPhpDir/mods-available/smbclient.ini
+			php5enmod smbclient
+		fi
+	;;
+	'jessie')
+		php5dismod smbclient
+		rm -fv $sPhpDir/mods-available/smbclient.ini
+		[ -f $sPhpDir/cli/conf.d/20-smbclient.ini ] && rm -fv $sPhpDir/cli/conf.d/20-smbclient.ini
+		[ -f $sPhpDir/fpm/conf.d/20-smbclient.ini ] && rm -fv $sPhpDir/fpm/conf.d/20-smbclient.ini
 
-#### STOP services
-gfnManageServices stop "$binPhpFpm"
+		gfnGetRepoValues 'libsmbclient-php' && gfnRepoManageByType
+		if [ $gnRepoUpgrade -eq 1 ] || [ "$gsSwitch" == "INSTALL" ]; then
+			cd $gsRepoDir/
+			phpize
+			./configure
+			make
+			make install
+			echo "extension=smbclient.so" > $sPhpDir/mods-available/smbclient.ini
+			php5enmod smbclient
+			# Disable the upgrade job
+			cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='Wget';" -v
+		fi
+	;;
+esac
 
 case "$gsDebianRelease" in
 	'wheezy'|'jessie')
