@@ -24,16 +24,23 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+if [ "$gnProxyMode" -eq 2 ]; then
+	echo -e "${CRED}$Global_ProxyOn_NoFonction$CEND"
+	gfnEndingScript 0
+fi
+
 #### MySQL
-# gbProxyMode = 0: disabled, 1: enabled, 2: proxy mode
-if [ "$gbProxyClient" -eq 1 ] && [ "$gbProxyMode" -eq 2 ] && [ -z "`ps ax | grep ssh | grep '3307:localhost:3306'`" ]; then
+# gnProxyMode = 0: disabled, 1: enabled, 2: proxy mode
+if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ]; then
 	## Get MySQL proxy infos
 	rsync -avz --timeout=10 -e "sshpass -p $gsProxySshPass ssh -p $gsProxySshPort -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $gsProxySshUser@$gsProxyAddress:/root/.config.cnf /root/.config_proxy.cnf &> /dev/null
 	if [ -f /root/.config_proxy.cnf ]; then
 		perl -pi -e "s/localhost/127.0.0.1/g" /root/.config_proxy.cnf
 		perl -pi -e "s/3306/3307/g" /root/.config_proxy.cnf
 		# Start SSH tunnel for access to MySQL on proxy server
-		sshpass -p $gsProxySshPass ssh -4 -fN -L 3307:localhost:3306 $gsProxySshUser@$gsProxyAddress -p $gsProxySshPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null &> /dev/null
+		if [ -z "`ps ax | grep ssh | grep '3307:localhost:3306'`" ]; then
+			sshpass -p $gsProxySshPass ssh -4 -fN -L 3307:localhost:3306 $gsProxySshUser@$gsProxyAddress -p $gsProxySshPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null &> /dev/null
+		fi
 	fi
 
 	## Add all users on proxy
@@ -82,11 +89,6 @@ if [ "$gbProxyClient" -eq 1 ] && [ "$gbProxyMode" -eq 2 ] && [ -z "`ps ax | grep
 		sValues="`cmdMySQL 'MySB_db' "SELECT rtorrent_port FROM users WHERE users_ident='$SeedboxUser';" | sed 's/\t/|/g;'`"
 		rTorrentPort="`echo $sValues | awk '{split($0,a,"|"); print a[1]}'`"
 
-		gsProxySshPass="GvI7jDxZ12."
-		gsProxyAddress=""
-		gsProxySshUser="root"
-		gsProxySshPort="8192"
-		rTorrentPort=""
 		sshpass -p $gsProxySshPass ssh -4 -fN -R $gsProxyAddress:$rTorrentPort:localhost:$rTorrentPort $gsProxySshUser@$gsProxyAddress -p $gsProxySshPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null &> /dev/null
 	done
 fi

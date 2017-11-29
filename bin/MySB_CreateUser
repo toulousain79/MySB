@@ -16,45 +16,50 @@ source $(dirname $0)/../inc/includes_before
 ######################################################################
 
 if [ "$USAGE" == "ON" ]; then
-	gfnListCountUsers
-	for seedUser in $gsUsersList; do
-		LIST="$LIST|$seedUser"
-	done
-	LIST="`echo \($LIST\) | sed -e 's/(|/(/g;'`"
+	if [ "$gnProxyMode" -eq 2 ]; then
+		echo -e "${CRED}$Global_ProxyOn_NoFonction$CEND"
+		gfnEndingScript 0
+	else
+		gfnListCountUsers
+		for seedUser in $gsUsersList; do
+			LIST="$LIST|$seedUser"
+		done
+		LIST="`echo \($LIST\) | sed -e 's/(|/(/g;'`"
 
-	if [ ! -z "$LIST" ]; then
-		echo -e "${CBLUE}$CreateUser_Usage$CEND${CYELLOW}$LIST$CEND"
-	fi
-
-	UserToCreate=""
-	while [ -z "$UserToCreate" ]; do
-		gfnQuestionGetString NO "$CreateUser_Username" UserToCreate
-		if [ "`echo "$LIST" | grep $UserToCreate`" != "" ]; then
-			UserToCreate=""
+		if [ ! -z "$LIST" ]; then
+			echo -e "${CBLUE}$CreateUser_Usage$CEND${CYELLOW}$LIST$CEND"
 		fi
-	done
 
-	NewUserPassword="`gfnGenPassword 8`"
-	if [ -z "NewUserPassword" ]; then
-		gfnQuestionGetString YES "$CreateUser_Password [$UserToCreate]: " NewUserPassword
+		UserToCreate=""
+		while [ -z "$UserToCreate" ]; do
+			gfnQuestionGetString NO "$CreateUser_Username" UserToCreate
+			if [ "`echo "$LIST" | grep $UserToCreate`" != "" ]; then
+				UserToCreate=""
+			fi
+		done
+
+		NewUserPassword="`gfnGenPassword 8`"
+		if [ -z "NewUserPassword" ]; then
+			gfnQuestionGetString YES "$CreateUser_Password [$UserToCreate]: " NewUserPassword
+		fi
+
+		gfnQuestionGetString NO "$CreateUser_SFTP" UserSFTP $Global_YES
+		UserSFTP="`echo $UserSFTP | tr '[:lower:]' '[:upper:]'`"
+		UserSUDO="$Global_NO"
+
+		while [ ! "`gfnValidateMail $UserEmail`" = "1" ]; do
+			gfnQuestionGetString NO "$CreateUser_Email" UserEmail
+		done
+
+		UserAccountType=""
+		while [ "$UserAccountType" != "normal" ] || [ "$UserAccountType" != "plex" ]; do
+			gfnQuestionGetString NO "$CreateUser_AccountType" UserAccountType "normal"
+		done
+
+		UserSFTP="$(echo $UserSFTP | sed "s/$Global_YES/1/g;" | sed "s/$Global_NO/0/g;")"
+		UserSUDO="$(echo $UserSUDO | sed "s/$Global_YES/1/g;" | sed "s/$Global_NO/0/g;")"
+		LocSwitch="MANUAL"
 	fi
-
-	gfnQuestionGetString NO "$CreateUser_SFTP" UserSFTP $Global_YES
-	UserSFTP="`echo $UserSFTP | tr '[:lower:]' '[:upper:]'`"
-	UserSUDO="$Global_NO"
-
-	while [ ! "`gfnValidateMail $UserEmail`" = "1" ]; do
-		gfnQuestionGetString NO "$CreateUser_Email" UserEmail
-	done
-
-	UserAccountType=""
-	while [ "$UserAccountType" != "normal" ] || [ "$UserAccountType" != "plex" ]; do
-		gfnQuestionGetString NO "$CreateUser_AccountType" UserAccountType "normal"
-	done
-
-	UserSFTP="$(echo $UserSFTP | sed "s/$Global_YES/1/g;" | sed "s/$Global_NO/0/g;")"
-	UserSUDO="$(echo $UserSUDO | sed "s/$Global_YES/1/g;" | sed "s/$Global_NO/0/g;")"
-	LocSwitch="MANUAL"
 else
 	# user sftp sudo email Switch
 	UserToCreate="$1"
@@ -97,7 +102,7 @@ if [ "$UserToCreate" != "$gsMainUserName" ]; then
 	cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir,language,account_type) VALUES ('$UserToCreate','$UserEmail','$NewUserPassword','$NEWRPC','$UserSFTP','$UserSUDO','$ScgiPort','$rTorrentPort','$NewUserHomedir','$EnvLang', '$UserAccountType');"
 else
 	log_daemon_msg "$CreateUser_UpdateInfoDB [$UserToCreate]"
-	if [ "$gbProxyMode" -eq 2 ]; then
+	if [ "$gnProxyMode" -eq 2 ]; then
 		cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='', rpc='$NEWRPC', home_dir='$NewUserHomedir' WHERE users_ident='$UserToCreate';"
 	else
 		cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='', rpc='$NEWRPC', scgi_port='$ScgiPort', rtorrent_port='$rTorrentPort', home_dir='$NewUserHomedir' WHERE users_ident='$UserToCreate';"
@@ -113,7 +118,7 @@ gfnStatusLSB
 
 case "$UserAccountType" in
 	'normal')
-		if [ "$gbProxyMode" -ne 2 ]; then
+		if [ "$gnProxyMode" -ne 2 ]; then
 			#### create directories
 			log_daemon_msg "$CreateUser_ManageFilesDir [$UserToCreate]"
 			# Home
@@ -177,7 +182,7 @@ case "$UserAccountType" in
 		chown root:$UserToCreate $NewUserHomedir/.ssh/*
 		chmod 0660 $NewUserHomedir/.ssh/*
 
-		if [ "$gbProxyMode" -ne 2 ]; then
+		if [ "$gnProxyMode" -ne 2 ]; then
 			# Logrotate
 			cp -f $MySB_InstallDir/templates/logrotate/etc.logrotate.d.users.tmpl /etc/logrotate.d/rtorrent_$UserToCreate
 			perl -pi -e "s/<username>/$UserToCreate/g" /etc/logrotate.d/rtorrent_$UserToCreate
@@ -238,7 +243,7 @@ case "$UserAccountType" in
 			fi
 		fi
 
-		if [ "$gbProxyMode" -ne 2 ]; then
+		if [ "$gnProxyMode" -ne 2 ]; then
 			#### script init
 			log_daemon_msg "$CreateUser_rTorrentInit [$UserToCreate]"
 			install -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.rtorrent.tmpl /etc/init.d/rtorrent-$UserToCreate
@@ -262,7 +267,7 @@ case "$UserAccountType" in
 		fi
 
 		#### rtorrent max memory / rTorrent Blocklist
-		if [ "$gbProxyMode" -ne 2 ]; then
+		if [ "$gnProxyMode" -ne 2 ]; then
 			for seedUser in $gsUsersList; do
 				# rTorrent config 'pieces.memory.max.set'
 				log_daemon_msg "$CreateUser_PiecesMemory [$seedUser]"

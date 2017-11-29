@@ -28,36 +28,41 @@ source $(dirname $0)/../inc/includes_before
 source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
 
 if [ "$USAGE" == "ON" ]; then
-	gfnListCountUsers 'all'
-	LIST=""
-	for User in $gsUsersList; do
-		if [ "$User" != "$gsMainUserName" ]; then
-			LIST="$LIST|${CYELLOW}$User$CEND"
-		fi
-	done
-
-	if [ ! -z "$LIST" ]; then
-		LIST="`echo \($LIST\) | sed -e 's/^ //g;' | sed -e 's/(|/(/g;'`"
-		echo -e "$Global_AvailableUsers $LIST"
-		echo -e "$Global_CancelUserChoice"
-	else
-		echo -e "$DeleteUser_NoUser $LIST"
+	if [ "$gnProxyMode" -eq 2 ]; then
+		echo -e "${CRED}$Global_ProxyOn_NoFonction$CEND"
 		gfnEndingScript 0
-	fi
+	else
+		gfnListCountUsers 'all'
+		LIST=""
+		for User in $gsUsersList; do
+			if [ "$User" != "$gsMainUserName" ]; then
+				LIST="$LIST|${CYELLOW}$User$CEND"
+			fi
+		done
 
-	UserToDelete=""
-	TEMP_UserToDelete=""
-	while [ -z "$UserToDelete" ] \
-		|| [ "$UserToDelete" == "$gsMainUserName" ] \
-		|| [ -z "`echo $gsUsersList | grep $UserToDelete`" ]; do
-
-		gfnQuestionGetString NO "$DeleteUser_TypeUser" UserToDelete
-		TEMP_UserToDelete="`echo $UserToDelete | tr '[:lower:]' '[:upper:]'`"
-
-		if [ "$TEMP_UserToDelete" == "$Global_NO" ]; then
+		if [ ! -z "$LIST" ]; then
+			LIST="`echo \($LIST\) | sed -e 's/^ //g;' | sed -e 's/(|/(/g;'`"
+			echo -e "$Global_AvailableUsers $LIST"
+			echo -e "$Global_CancelUserChoice"
+		else
+			echo -e "$DeleteUser_NoUser $LIST"
 			gfnEndingScript 0
 		fi
-	done
+
+		UserToDelete=""
+		TEMP_UserToDelete=""
+		while [ -z "$UserToDelete" ] \
+			|| [ "$UserToDelete" == "$gsMainUserName" ] \
+			|| [ -z "`echo $gsUsersList | grep $UserToDelete`" ]; do
+
+			gfnQuestionGetString NO "$DeleteUser_TypeUser" UserToDelete
+			TEMP_UserToDelete="`echo $UserToDelete | tr '[:lower:]' '[:upper:]'`"
+
+			if [ "$TEMP_UserToDelete" == "$Global_NO" ]; then
+				gfnEndingScript 0
+			fi
+		done
+	fi
 else
 	UserToDelete=$1
 fi
@@ -170,7 +175,7 @@ for User in $gsUsersList; do
 	fi
 done
 
-if [ "$gbProxyMode" -ne 2 ]; then
+if [ "$gnProxyMode" -ne 2 ]; then
 	#### Quota
 	gfnManageQuota "$DeleteUser_Quota"
 
