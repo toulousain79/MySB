@@ -89,7 +89,7 @@ DoApplyConfig() {
 
 		# Creating arguments listing
 		case "$Command" in
-			MySB_CreateUser|MySB_DeleteUser|MySB_ChangeUserPassword|OpenVPN|LogWatch|UserScript_StartSynchro) # 3 args
+			MySB_CreateUser|MySB_DeleteUser|MySB_ChangeUserPassword|OpenVPN|LogWatch|UserScript_StartSynchro|Options_System)
 				echo `/bin/date '+%H:%M:%S'` "- Getting arguments for $Command"
 				CommandArg="`cmdMySQL 'MySB_db' "SELECT args FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"`"
 			;;
@@ -237,22 +237,32 @@ DoApplyConfig() {
 				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 			;;
 
-			"LogWatch")
-				case "$CommandArg" in
+			"Options_System") # ($1 = OpenVPN:[0|1], $2 = LogWatch:[-1|0|1], $3 = MySB_SecurityRules])
+				IFS='|' read -a array <<< "$CommandArg"
+				OpenVpnSwitch="${array[0]}"
+				LogwatchSwitch="${array[1]}"
+				SecurityRules="${array[2]}"
+
+				OpenVpnValue="`echo $OpenVpnSwitch | cut -d ":" -f 2`"
+				case "$LogwatchValue" in
+					1)
+						gfnWaitingSTD OpenVPN
+						screen -dmS OpenVPN_Zip /bin/bash $MySB_InstallDir/install/OpenVPN refresh 'APPLYCONFIG';
+						gfnWaitingSTD OpenVPN
+					;;
+				esac
+
+				LogwatchValue="`echo $LogwatchSwitch | cut -d ":" -f 2`"
+				case "$LogwatchValue" in
 					0) if [ -f /etc/cron.daily/00logwatch ]; then rm /etc/cron.daily/00logwatch; fi;;
 					1) if [ ! -f /etc/cron.daily/00logwatch ]; then install -g root -o root -m 0755 $MySB_InstallDir/templates/logwatch/etc.cron.daily.00logwatch.tmpl /etc/cron.daily/00logwatch; fi;;
 				esac
-				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
-				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
-			;;
 
-			"Options_System")
-				gfnWaitingSTD MySB_SecurityRules
-				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--pglcmd' 'APPLYCONFIG';
-				gfnWaitingSTD MySB_SecurityRules
-				gfnWaitingSTD OpenVPN
-				screen -dmS OpenVPN_Zip /bin/bash $MySB_InstallDir/install/OpenVPN refresh 'APPLYCONFIG';
-				gfnWaitingSTD OpenVPN
+				if [ ! -z "$SecurityRules" ]; then
+					gfnWaitingSTD MySB_SecurityRules
+					screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--pglcmd' 'APPLYCONFIG';
+					gfnWaitingSTD MySB_SecurityRules
+				fi
 				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 			;;

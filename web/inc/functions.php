@@ -303,7 +303,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 				// Blocklists menu
 				case "Blocklists":
 				case "Listes noires":
-					if ( ($UserAccountType == 'normal') && ( $SystemDatas["proxy"] == '0') ) {
+					if ( ($UserAccountType == 'normal') && ( $SystemDatas["proxy"] != '1') ) {
 						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					}
 					break;
@@ -320,7 +320,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 
 				// Trackers menu
 				case "Trackers":
-					if ( ($UserAccountType == 'normal') && ($SystemDatas["proxy"] == '0') ) {
+					if ( ($UserAccountType == 'normal') && ($SystemDatas["proxy"] != '1') ) {
 						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					}
 					break;
@@ -330,20 +330,20 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link($CurrentUser);
 					break;
 				case "OpenVPN":
-					if ( ($UserAccountType == 'normal') && ($OpenVPNIsInstalled == '1') && ($SystemDatas["proxy"] == '0') ) {
+					if ( ($UserAccountType == 'normal') && ($OpenVPNIsInstalled == '1') && ($SystemDatas["proxy"] != '1') ) {
 						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					}
 					break;
 				case "Synchronization":
 				case "Synchronisation":
-					if ( ($UserAccountType == 'normal') && ($SystemDatas["proxy"] == '0') ) {
+					if ( ($UserAccountType == 'normal') && ($SystemDatas["proxy"] != '1') ) {
 						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					}
 					break;
 
 				// Services menu
 				case "ruTorrent":
-					if ( ($UserAccountType == 'normal') && ($SystemDatas["proxy"] == '0') ) {
+					if ( ($UserAccountType == 'normal') && ($SystemDatas["proxy"] != '1') ) {
 						echo '<li><a target="_blank" href="ru">ruTorrent</a>';
 					}
 					break;
@@ -383,7 +383,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 
 				// Admin menu
 				case "Add User":
-					if ( $SystemDatas["proxy"] == '0' ) {
+					if ( $SystemDatas["proxy"] != '1' ) {
 						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					}
 					break;
@@ -405,7 +405,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					}
 					break;
 				case "Renting Infos":
-					if ( $SystemDatas["proxy"] == '0' ) {
+					if ( $SystemDatas["proxy"] != '1' ) {
 						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					}
 					break;
@@ -415,7 +415,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						}
 					break;
 				case "Proxy SSH":
-					if ( $SystemDatas["proxy"] == '0' ) {
+					if ( $SystemDatas["proxy"] != '1' ) {
 						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					}
 					break;

@@ -146,7 +146,21 @@ DisplaySurvey() {
 			echo -e "$Questions_ProxyNeedSomeInfos"
 			echo
 
-			# ROOT password
+			# ROOT password of current server (proxy)
+			echo
+			if [ "$RepeatSurvey" == "YES" ]; then
+				sValue="$gsCurrentServerRootPassword"
+			else
+				sValue=""
+				gsCurrentServerRootPassword=""
+			fi
+
+			if [ -z "$gsCurrentServerRootPassword" ] || [ "$TYPE" == "UPGRADE" ] || [ "$RepeatSurvey" == "YES" ]; then
+				gfnQuestionGetString NO "$Questions_CurrentServerRootPassword" gsCurrentServerRootPassword "$sValue"
+			fi
+			unset sValue
+
+			# ROOT password of main server
 			echo
 			if [ "$RepeatSurvey" == "YES" ]; then
 				sValue="$gsMainServerRootPassword"
@@ -810,7 +824,7 @@ DisplaySurvey() {
 
 		#### 'proxy' table
 		if [ "$gbProxyMode" -eq 1 ]; then
-			cmdMySQL 'Proxy_db' "UPDATE proxy SET address='$gsMainServerHostNameFqdn', ssh_port='$gsMainServerPort_SSH', ssh_user='root', ssh_pass='$gsMainServerRootPassword' WHERE id_proxy='1';" -v >> $gsLogFile
+			cmdMySQL 'Proxy_db' "UPDATE proxy SET address='$gsHostNameFqdn', ssh_port='$gsPort_SSH', ssh_user='root', ssh_pass='$gsMainServerRootPassword' WHERE id_proxy='1';" -v >> $gsLogFile
 		fi
 	fi
 
@@ -838,6 +852,8 @@ ConfirmSurvey() {
 			echo -e "$Summary_SmtpPassword" "${CGREEN}$SMTP_Password$CEND"
 		fi
 		echo -e "$Summary_MainUserMail" "${CGREEN}$gsMainUserEmail$CEND"
+		[ "$gbProxyMode" -eq 1 ] && echo -e "$Summary_RootPassCurrentServer" "${CGREEN}$gsCurrentServerRootPassword$CEND"
+		[ "$gbProxyMode" -eq 1 ] && echo -e "$Summary_RootPassMainServer" "${CGREEN}$gsMainServerRootPassword$CEND"
 	fi
 
 	#### SERVER INFO
@@ -854,6 +870,8 @@ ConfirmSurvey() {
 		echo -e "$Summary_PortHTTPs" "${CGREEN}$gsPort_HTTPS$CEND"
 		echo -e "$Summary_Port_SSH" "${CGREEN}$gsPort_SSH$CEND"
 		[ "$gbProxyMode" -eq 0 ] && echo -e "$Summary_Port_FTP" "${CGREEN}$gsPort_FTP$CEND"
+		[ "$gbProxyMode" -eq 1 ] && echo -e "$Summary_MainServerHostname" "${CGREEN}$gsMainServerHostNameFqdn$CEND"
+		[ "$gbProxyMode" -eq 1 ] && echo -e "$Summary_MainServerPortSSH" "${CGREEN}$gsMainServerPort_SSH$CEND"
 	fi
 
 	#### SERVICES
