@@ -24,13 +24,14 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+# gnProxyMode = 0: disabled, 1: enabled, 2: proxy mode
+
 if [ "$gnProxyMode" -eq 2 ]; then
 	echo -e "${CRED}$Global_ProxyOn_NoFonction$CEND"
 	gfnEndingScript 0
 fi
 
 #### MySQL
-# gnProxyMode = 0: disabled, 1: enabled, 2: proxy mode
 if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ]; then
 	## Get MySQL proxy infos
 	rsync -avz --timeout=10 -e "sshpass -p $gsProxySshPass ssh -p $gsProxySshPort -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $gsProxySshUser@$gsProxyAddress:/root/.config.cnf /root/.config_proxy.cnf &> /dev/null
@@ -38,7 +39,7 @@ if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ]; then
 		perl -pi -e "s/localhost/127.0.0.1/g" /root/.config_proxy.cnf
 		perl -pi -e "s/3306/3307/g" /root/.config_proxy.cnf
 		# Start SSH tunnel for access to MySQL on proxy server
-		if [ -z "`ps ax | grep ssh | grep '3307:localhost:3306'`" ]; then
+		if [ -z "`ps ax | grep 'ssh' | grep '3307:localhost:3306'`" ]; then
 			sshpass -p $gsProxySshPass ssh -4 -fN -L 3307:localhost:3306 $gsProxySshUser@$gsProxyAddress -p $gsProxySshPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null &> /dev/null
 		fi
 	fi
@@ -47,33 +48,33 @@ if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ]; then
 	cmdMySQL 'Proxy_db' "DELETE FROM users WHERE users_ident != '$gsMainUserName';"
 	sRequestValues="`cmdMySQL 'MySB_db' "SELECT id_users,users_ident,users_email,scgi_port,rtorrent_port,is_active FROM users;" | sed 's/\t/|/g;'`"
 	for Infos in $sRequestValues; do
-		UserId="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
-		UserIdent="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
-		UserMail="`echo $sRequestValues | awk '{split($0,a,"|"); print a[3]}'`"
-		ScgiPort="`echo $sRequestValues | awk '{split($0,a,"|"); print a[4]}'`"
-		RtorrentPort="`echo $sRequestValues | awk '{split($0,a,"|"); print a[5]}'`"
-		IsActive="`echo $sRequestValues | awk '{split($0,a,"|"); print a[6]}'`"
+		UserId="`echo $Infos | awk '{split($0,a,"|"); print a[1]}'`"
+		UserIdent="`echo $Infos | awk '{split($0,a,"|"); print a[2]}'`"
+		UserMail="`echo $Infos | awk '{split($0,a,"|"); print a[3]}'`"
+		ScgiPort="`echo $Infos | awk '{split($0,a,"|"); print a[4]}'`"
+		RtorrentPort="`echo $Infos | awk '{split($0,a,"|"); print a[5]}'`"
+		IsActive="`echo $Infos | awk '{split($0,a,"|"); print a[6]}'`"
 
 		if [ "$UserIdent" != "$gsMainUserName" ]; then
 			cmdMySQL 'Proxy_db' "INSERT INTO users (id_users,users_ident,users_email,scgi_port,rtorrent_port,is_active) VALUES ('$UserId','$UserIdent','$UserMail','$ScgiPort','$RtorrentPort','$IsActive');" -v
 		else
-			cmdMySQL 'Proxy_db' "UPDATE users SET users_email='$UserMail', scgi_port='$ScgiPort', rtorrent_port='$RtorrentPort' WHERE id_proxy='1';" -v
+			cmdMySQL 'Proxy_db' "UPDATE users SET users_email='$UserMail', scgi_port='$ScgiPort', rtorrent_port='$RtorrentPort' WHERE users_ident='$gsMainUserName';" -v
 		fi
 	done
 
 	## Update users addresses on proxy
 	# Delete all on proxy
-	cmdMySQL 'Proxy_db' "DELETE FROM users_addresses;"
+	cmdMySQL 'Proxy_db' "DELETE FROM users_addresses WHERE imported='1';"
 	# Add main server into proxy
 	cmdMySQL 'Proxy_db' "INSERT INTO users_addresses (id_users,ipv4,hostname,check_by,is_active,imported,last_update) VALUES ('$gnMainUserId','$gsSrvIpAddressExt','$gsHostNameFqdn','hostname','1','1','`date +%Y-%m-%d\ %H:%M:%S`');" -v
 	# Add all on proxy
 	sRequestValues="`cmdMySQL 'MySB_db' "SELECT id_users,ipv4,hostname,check_by,is_active FROM users_addresses WHERE is_active='1';" | sed 's/\t/|/g;'`"
 	for Infos in $sRequestValues; do
-		UserId="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
-		IPv4="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
-		Hostname="`echo $sRequestValues | awk '{split($0,a,"|"); print a[3]}'`"
-		CheckBy="`echo $sRequestValues | awk '{split($0,a,"|"); print a[4]}'`"
-		IsActive="`echo $sRequestValues | awk '{split($0,a,"|"); print a[5]}'`"
+		UserId="`echo $Infos | awk '{split($0,a,"|"); print a[1]}'`"
+		IPv4="`echo $Infos | awk '{split($0,a,"|"); print a[2]}'`"
+		Hostname="`echo $Infos | awk '{split($0,a,"|"); print a[3]}'`"
+		CheckBy="`echo $Infos | awk '{split($0,a,"|"); print a[4]}'`"
+		IsActive="`echo $Infos | awk '{split($0,a,"|"); print a[5]}'`"
 
 		if [ "$Hostname" != "$gsProxyAddress" ]; then
 			cmdMySQL 'Proxy_db' "INSERT INTO users_addresses (id_users,ipv4,hostname,check_by,is_active,imported,last_update) VALUES ('$gnMainUserId','$IPv4','$Hostname','$CheckBy','$IsActive','1','`date +%Y-%m-%d\ %H:%M:%S`');" -v
@@ -81,7 +82,7 @@ if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ]; then
 	done
 
 	## Apply security rules (users' addresses & ports)
-	sshpass -p $gsProxySshPass ssh -p $gsProxySshPort -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $gsProxySshUser@$gsProxyAddress screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--users' 'APPLYCONFIG';
+	#sshpass -p $gsProxySshPass ssh -p $gsProxySshPort -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $gsProxySshUser@$gsProxyAddress screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--users' 'APPLYCONFIG';
 
 	## rTorrent sessions
 	gfnListCountUsers 'normal' #($gsUsersList)
@@ -89,7 +90,9 @@ if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ]; then
 		sValues="`cmdMySQL 'MySB_db' "SELECT rtorrent_port FROM users WHERE users_ident='$SeedboxUser';" | sed 's/\t/|/g;'`"
 		rTorrentPort="`echo $sValues | awk '{split($0,a,"|"); print a[1]}'`"
 
-		sshpass -p $gsProxySshPass ssh -4 -fN -R $gsProxyAddress:$rTorrentPort:localhost:$rTorrentPort $gsProxySshUser@$gsProxyAddress -p $gsProxySshPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null &> /dev/null
+		if [ -z "`ps ax | grep 'ssh' | grep "$gsProxyAddress:$rTorrentPort:localhost:$rTorrentPort"`" ]; then
+			sshpass -p $gsProxySshPass ssh -4 -fN -R $gsProxyAddress:$rTorrentPort:localhost:$rTorrentPort $gsProxySshUser@$gsProxyAddress -p $gsProxySshPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null &> /dev/null
+		fi
 	done
 fi
 

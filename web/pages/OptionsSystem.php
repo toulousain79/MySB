@@ -277,7 +277,7 @@ if (isset($_POST['submit'])) {
 		<tr>
 			<td><?php echo MainUser_OptionsSystem_Proxy_Activate; ?></td>
 			<td>
-				<?php switch ($Proxy_db) {
+				<?php switch ($proxy_db) {
 					case '1':
 						$class = 'greenText';
 						$options = '<option selected="selected" value="1" class="greenText">' . Global_Yes . '</option>';

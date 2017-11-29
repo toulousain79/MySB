@@ -272,15 +272,11 @@ RestartRtorrentSessions() {
 		;;
 		start)
 			service cron status &> /dev/null
-			if [ $? -eq 0 ]; then
-				bCreateAfterClean=1
-			else
-				bCreateAfterClean="`cmdMySQL 'MySB_db' "SELECT max(rtorrent_restart) FROM users;"`"
-			fi
-			[ "$ModeSwitch" == "INIT" ] && bCreateAfterClean="`cmdMySQL 'MySB_db' "SELECT is_active FROM users;"`"
+			[ $? -eq 0 ] && bCreateAfterClean=1
 
-			if [ "$bCreateAfterClean" -eq 1 ]; then
-				for FnUser in $gsUsersList; do
+			for FnUser in $gsUsersList; do
+				bCreateAfterClean="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser' AND is_active='1';"`"
+				if [ "$bCreateAfterClean" -eq 1 ]; then
 					if [ -f /etc/init.d/rtorrent-$FnUser ]; then
 						bToRestart="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser';"`"
 						[ "$ModeSwitch" == "INIT" ] && bToRestart="`cmdMySQL 'MySB_db' "SELECT is_active FROM users;"`"
@@ -289,8 +285,8 @@ RestartRtorrentSessions() {
 						fi
 					fi
 					cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='$FnUser';"
-				done
-			fi
+				fi
+			done
 		;;
 	esac
 }
