@@ -67,12 +67,12 @@ function check_binary {
 # @return void
 function fix_targets_ids {
   COUNTER=0
-  for LINE_NUMBER in $(command grep --line-number '^BM_TARBALL_TARGETS\[' '/etc/backup-manager.conf' \
+  for LINE_NUMBER in $(command grep --line-number '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
           | command cut --delimiter=':' --fields=1); do
 
     command sed -i \
         -e "${LINE_NUMBER}s/^BM_TARBALL_TARGETS\[[0-9]*\]/BM_TARBALL_TARGETS[${COUNTER}]/" \
-        '/etc/backup-manager.conf'
+        '/etc/MySB/BM_MySB.conf'
 
     COUNTER=$((${COUNTER} + 1))
   done
@@ -87,7 +87,7 @@ check_binary "mktemp" "mktemp"
 check_binary "sed" "sed"
 check_binary "backup-manager" "backup-manager"
 
-command test ! -e '/etc/backup-manager.conf' && exit 1
+command test ! -e '/etc/MySB/BM_MySB.conf' && exit 1
 
 # Check if at least one args given.
 command test ${#} -eq 0 && usage 1
@@ -95,7 +95,7 @@ command test ${#} -eq 0 && usage 1
 case "${1}" in
 
   list )
-    command grep '^BM_TARBALL_TARGETS\[' '/etc/backup-manager.conf' \
+    command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
         | command sed -e 's/^.*TARGETS\[\([^]]*\)\]="\([^"]*\)".*$/\1 : \2/'
     exit 0
     ;;
@@ -103,7 +103,7 @@ case "${1}" in
 
 
   cleanup )
-    command grep '^BM_TARBALL_TARGETS\[' '/etc/backup-manager.conf' \
+    command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
         | command sed -e 's/^.*="\([^"]*\)".*$/\1/' \
         | command xargs -rI TARGET sh -c "test ! -e 'TARGET' && echo 'TARGET'" \
         | command xargs -rI TARGET ${0} remove 'TARGET'
@@ -119,13 +119,13 @@ case "${1}" in
     realpath "${2}"
     TARGET_PATH="${REALPATH}"
 
-    if [ -z "$(command grep '^BM_TARBALL_TARGETS\[' '/etc/backup-manager.conf' \
+    if [ -z "$(command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
         | command sed -e 's/^.*="\([^"]*\)".*$/\1/' \
         | command grep "${TARGET_PATH}")" ]; then
 
       command sed -i -e "/^export BM_TARBALL_TARGETS/i\
 BM_TARBALL_TARGETS[]=\"${TARGET_PATH}\"" \
-          '/etc/backup-manager.conf'
+          '/etc/MySB/BM_MySB.conf'
 
       # Fix array numbers.
       fix_targets_ids
@@ -148,28 +148,28 @@ BM_TARBALL_TARGETS[]=\"${TARGET_PATH}\"" \
     realpath "${ORIGINAL_PATH}"
     TARGET_PATH="${REALPATH}"
 
-    if [ -n "${TARGET_PATH}" -a -n "$(command grep '^BM_TARBALL_TARGETS\[' '/etc/backup-manager.conf' \
+    if [ -n "${TARGET_PATH}" -a -n "$(command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
         | command sed -e 's/^.*="\([^"]*\)".*$/\1/' \
         | command grep "${TARGET_PATH}")" ]; then
 
-      command grep --line-number "BM_TARBALL_TARGETS\[.*[\"']${TARGET_PATH}[\"']" '/etc/backup-manager.conf' \
+      command grep --line-number "BM_TARBALL_TARGETS\[.*[\"']${TARGET_PATH}[\"']" '/etc/MySB/BM_MySB.conf' \
           | command cut --delimiter=':' --fields=1 \
           | command xargs --no-run-if-empty -iLINE sed -i -e "LINEd" \
-              '/etc/backup-manager.conf'
+              '/etc/MySB/BM_MySB.conf'
 
       # Fix array numbers.
       fix_targets_ids
 
       echo "Path '${TARGET_PATH}' removed from backup targets."
  
-    elif [ -n "${ORIGINAL_PATH}" -a -n "$(command grep '^BM_TARBALL_TARGETS\[' '/etc/backup-manager.conf' \
+    elif [ -n "${ORIGINAL_PATH}" -a -n "$(command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
         | command sed -e 's/^.*="\([^"]*\)".*$/\1/' \
         | command grep "${ORIGINAL_PATH}")" ]; then
 
-      command grep --line-number "BM_TARBALL_TARGETS\[.*[\"']${ORIGINAL_PATH}[\"']" '/etc/backup-manager.conf' \
+      command grep --line-number "BM_TARBALL_TARGETS\[.*[\"']${ORIGINAL_PATH}[\"']" '/etc/MySB/BM_MySB.conf' \
           | command cut --delimiter=':' --fields=1 \
           | command xargs --no-run-if-empty -iLINE sed -i -e "LINEd" \
-              '/etc/backup-manager.conf'
+              '/etc/MySB/BM_MySB.conf'
 
       # Fix array numbers.
       fix_targets_ids
