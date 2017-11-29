@@ -95,7 +95,7 @@ if (isset($_POST['submit'])) {
 			$NoChange = false;
 
 			if ( $LogWatch_db != $LogWatch_post ) {
-				// $Proxy_post: 0 disabled / 1 enabled
+				// $LogWatch_post: 0 disabled / 1 enabled
 				$args = "$args|LogWatch:$LogWatch_post";				
 			} else {
 				$args = "$args|LogWatch:-1";
@@ -278,14 +278,14 @@ if (isset($_POST['submit'])) {
 			<td><?php echo MainUser_OptionsSystem_Proxy_Activate; ?></td>
 			<td>
 				<?php switch ($Proxy_db) {
-					case '3':
+					case '1':
 						$class = 'greenText';
-						$options = '<option selected="selected" value="3" class="greenText">' . Global_Yes . '</option>';
+						$options = '<option selected="selected" value="1" class="greenText">' . Global_Yes . '</option>';
 						$options .= '<option value="0" class="redText">' . Global_No . '</option>';
 						break;
 					case '0':
 						$class = 'redText';
-						$options = '<option value="3" class="greenText">' . Global_Yes . '</option>';
+						$options = '<option value="1" class="greenText">' . Global_Yes . '</option>';
 						$options .= '<option selected="selected" value="0" class="redText">' . Global_No . '</option>';
 						break;					
 				} ?>

@@ -396,13 +396,13 @@ gfnPopulatingUdpInboundChain() {
 				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 135 -j ACCEPT -m comment --comment "Samba over OpenVPN"
 				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 137:139 -j ACCEPT -m comment --comment "Samba over OpenVPN"
 				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 445 -j ACCEPT -m comment --comment "Samba over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 135 -j DROP
+				iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 135 -j LOG --log-prefix "[MySB] NetBIOS UDP IN 135: " -m comment --comment "NetBIOS UDP IN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 137:139 -j DROP
+				iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 137:139 -j LOG --log-prefix "[MySB] NetBIOS UDP IN 137:139: " -m comment --comment "NetBIOS UDP IN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 445 -j DROP
+				iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 445 -j LOG --log-prefix "[MySB] NetBIOS UDP IN 445: " -m comment --comment "NetBIOS UDP IN"
 			fi
-			iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 135 -j DROP
-			iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 135 -j LOG --log-prefix "[MySB] NetBIOS UDP IN 135: " -m comment --comment "NetBIOS UDP IN"
-			iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 137:139 -j DROP
-			iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 137:139 -j LOG --log-prefix "[MySB] NetBIOS UDP IN 137:139: " -m comment --comment "NetBIOS UDP IN"
-			iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 445 -j DROP
-			iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 445 -j LOG --log-prefix "[MySB] NetBIOS UDP IN 445: " -m comment --comment "NetBIOS UDP IN"
 		;;
 	esac
 
@@ -576,14 +576,16 @@ gfnPopulatingTcpInboundChain() {
 				# SSHd
 				iptables -A tcp_inbound -p TCP -s $ip --destination-port $gsPort_SSH -j ACCEPT -m comment --comment "SSH and SFTP for users"
 
-				# FTP Server (Control)
-				iptables -A tcp_inbound -p TCP -s $ip --destination-port $gsPort_FTP -j ACCEPT -m comment --comment "FTP for users"
+				if [ "$gbProxyMode" -ne 2 ]; then
+					# FTP Server (Control)
+					iptables -A tcp_inbound -p TCP -s $ip --destination-port $gsPort_FTP -j ACCEPT -m comment --comment "FTP for users"
 
-				# FTP Client (Data Port for non-PASV transfers)
-				iptables -A tcp_inbound -p TCP -s $ip --source-port $gsPort_FTP_Data -j ACCEPT -m comment --comment "FTP Data for users"
+					# FTP Client (Data Port for non-PASV transfers)
+					iptables -A tcp_inbound -p TCP -s $ip --source-port $gsPort_FTP_Data -j ACCEPT -m comment --comment "FTP Data for users"
 
-				# Passive FTP
-				iptables -A tcp_inbound -p TCP -s $ip --destination-port $gsPort_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive for users"
+					# Passive FTP
+					iptables -A tcp_inbound -p TCP -s $ip --destination-port $gsPort_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive for users"
+				fi
 			done
 		;;
 		"refresh")
@@ -596,15 +598,18 @@ gfnPopulatingTcpInboundChain() {
 				# SSHd
 				(( nNumLine++ ))
 				sed -i ""$nNumLine"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $gsPort_SSH -m comment --comment \"SSH and SFTP for users\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
-				# FTP Server (Control)
-				(( nNumLine++ ))
-				sed -i ""$nNumLine"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $gsPort_FTP -m comment --comment \"FTP for users\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
-				# FTP Client (Data Port for non-PASV transfers)
-				(( nNumLine++ ))
-				sed -i ""$nNumLine"i\-A tcp_inbound -s $ip -p tcp -m tcp --sport $gsPort_FTP_Data -m comment --comment \"FTP Data for users\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
-				# Passive FTP
-				(( nNumLine++ ))
-				sed -i ""$nNumLine"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $gsPort_FTP_Passive -m comment --comment \"FTP Passive for users\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
+
+				if [ "$gbProxyMode" -ne 2 ]; then
+					# FTP Server (Control)
+					(( nNumLine++ ))
+					sed -i ""$nNumLine"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $gsPort_FTP -m comment --comment \"FTP for users\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
+					# FTP Client (Data Port for non-PASV transfers)
+					(( nNumLine++ ))
+					sed -i ""$nNumLine"i\-A tcp_inbound -s $ip -p tcp -m tcp --sport $gsPort_FTP_Data -m comment --comment \"FTP Data for users\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
+					# Passive FTP
+					(( nNumLine++ ))
+					sed -i ""$nNumLine"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $gsPort_FTP_Passive -m comment --comment \"FTP Passive for users\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
+				fi
 			done
 		;;
 	esac
@@ -703,13 +708,21 @@ gfnPopulatingTcpInboundChain() {
 	#### rTorrent
 	case "$1" in
 		"create")
-			for SeedboxUser in $gsUsersList; do
-				sValues="`cmdMySQL 'MySB_db' "SELECT scgi_port,rtorrent_port FROM users WHERE users_ident='$SeedboxUser';" | sed 's/\t/|/g;'`"
-				rTorrentPortStart="`echo $sValues | awk '{split($0,a,"|"); print a[1]}'`"
-				rTorrentPortEnd="`echo $sValues | awk '{split($0,a,"|"); print a[2]}'`"
-				#iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $rTorrentPortStart:$rTorrentPortEnd -j LOG --log-prefix "[MySB] rTorrent TCP IN: " -m comment --comment "rTorrent TCP IN"
-				iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $rTorrentPortStart:$rTorrentPortEnd -j ACCEPT -m comment --comment "rTorrent for users"
-			done
+			if [ "$gbProxyMode" -eq 2 ]; then
+				for SeedboxUser in $gsUsersList; do
+					sValues="`cmdMySQL 'MySB_db' "SELECT rtorrent_port FROM users WHERE users_ident='$SeedboxUser';" | sed 's/\t/|/g;'`"
+					rTorrentPortEnd="`echo $sValues | awk '{split($0,a,"|"); print a[1]}'`"
+					iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $rTorrentPortEnd -j ACCEPT -m comment --comment "rTorrent for users"
+				done
+			else
+				for SeedboxUser in $gsUsersList; do
+					sValues="`cmdMySQL 'MySB_db' "SELECT scgi_port,rtorrent_port FROM users WHERE users_ident='$SeedboxUser';" | sed 's/\t/|/g;'`"
+					rTorrentPortStart="`echo $sValues | awk '{split($0,a,"|"); print a[1]}'`"
+					rTorrentPortEnd="`echo $sValues | awk '{split($0,a,"|"); print a[2]}'`"
+					#iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $rTorrentPortStart:$rTorrentPortEnd -j LOG --log-prefix "[MySB] rTorrent TCP IN: " -m comment --comment "rTorrent TCP IN"
+					iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $rTorrentPortStart:$rTorrentPortEnd -j ACCEPT -m comment --comment "rTorrent for users"
+				done
+			fi
 		;;
 	esac
 
@@ -816,12 +829,15 @@ gfnProcessInputChain() {
 
 	# Route the rest to the appropriate user chain
 	iptables -A INPUT -p ICMP -i $gsPrimaryInet -j icmp_packets
-	iptables -A INPUT -p ICMP -i tun+ -j icmp_packets
-	iptables -A INPUT -p ICMP -i br0 -j icmp_packets
 	iptables -A INPUT -p TCP -i $gsPrimaryInet -j tcp_inbound
-	iptables -A INPUT -p TCP -i tun+ -j tcp_inbound
 	iptables -A INPUT -p UDP -i $gsPrimaryInet -j udp_inbound
-	iptables -A INPUT -p UDP -i tun+ -j udp_inbound
+
+	if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
+		iptables -A INPUT -p ICMP -i tun+ -j icmp_packets
+		iptables -A INPUT -p ICMP -i br0 -j icmp_packets
+		iptables -A INPUT -p TCP -i tun+ -j tcp_inbound
+		iptables -A INPUT -p UDP -i tun+ -j udp_inbound
+	fi
 
 	# Drop without logging broadcasts that get this far.
 	# Cuts down on log clutter.
