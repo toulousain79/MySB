@@ -49,23 +49,23 @@ function Form() {
 			<table border="0">
 				<tr>
 					<td>' . MainUser_Proxy_Address . '</td>
-					<td><input class="text_normal" id="ProxyAddress" name="ProxyAddress" type="text" value="' . $ProxyAddress . '" required="required" /></td>
+					<td><input class="text_normal" id="ProxyAddress" name="ProxyAddress" type="text" value="' . $ProxyAddress . '" /></td>
 				</tr>
 				<tr>
 					<td>' . MainUser_Proxy_SshPort . '</td>
-					<td><input class="text_normal" id="ProxySshPort" name="ProxySshPort" type="text" style="width:80px;" value="' . $ProxySshPort . '" required="required" /></td>
+					<td><input class="text_normal" id="ProxySshPort" name="ProxySshPort" type="text" style="width:80px;" value="' . $ProxySshPort . '" /></td>
 				</tr>
 				<tr>
 					<td>' . MainUser_Proxy_SshUser . '</td>
-					<td><input class="text_normal" id="ProxySshUser" name="ProxySshUser" type="text" value="' . $ProxySshUser . '" required="required" /></td>
+					<td><input class="text_normal" id="ProxySshUser" name="ProxySshUser" type="text" value="' . $ProxySshUser . '" /></td>
 				</tr>
 				<tr>
 					<td>' . MainUser_Proxy_SshPass . '</td>
-					<td><input class="text_normal" id="ProxySshPass" name="ProxySshPass" type="password" value="' . $ProxySshPass . '" required="required" /></td>
+					<td><input class="text_normal" id="ProxySshPass" name="ProxySshPass" type="password" value="' . $ProxySshPass . '" /></td>
 				</tr>
 				<tr>
 					<td>' . MainUser_Proxy_SshPassConfirm . '</td>
-					<td><input class="text_normal" id="ProxySshPassConfirm" name="ProxySshPassConfirm" type="password" value="' . $ProxySshPass . '" required="required" /></td>
+					<td><input class="text_normal" id="ProxySshPassConfirm" name="ProxySshPassConfirm" type="password" value="' . $ProxySshPass . '" /></td>
 				</tr>
 			</table>
 			<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' . Global_SaveChanges . '" />

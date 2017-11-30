@@ -154,7 +154,10 @@ DoApplyConfig() {
 				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 
 				if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ] && [ "$User" == "$gsMainUserName" ]; then
-					gfnScriptInvoke 'source' "$MySB_InstallDir/scripts/ProxyUse.bsh" 'blocklists' 'APPLYCONFIG'
+					echo `/bin/date '+%H:%M:%S'` "- Executing $MySB_InstallDir/scripts/ProxyUse.bsh 'blocklists'"
+					gfnWaitingSTD ProxyUse_blocklists
+					screen -dmS ProxyUse_blocklists /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'blocklists' 'APPLYCONFIG';
+					gfnWaitingSTD ProxyUse_blocklists
 				fi
 			;;
 
@@ -166,7 +169,10 @@ DoApplyConfig() {
 				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 
 				if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ] && [ "$User" == "$gsMainUserName" ]; then
-					gfnScriptInvoke 'source' "$MySB_InstallDir/scripts/ProxyUse.bsh" 'manage_addresses' 'APPLYCONFIG'
+					echo `/bin/date '+%H:%M:%S'` "- Executing $MySB_InstallDir/scripts/ProxyUse.bsh 'manage_addresses'"
+					gfnWaitingSTD ProxyUse_Addresses
+					screen -dmS ProxyUse_Addresses /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'manage_addresses' 'APPLYCONFIG';
+					gfnWaitingSTD ProxyUse_Addresses
 				fi
 			;;
 
@@ -205,11 +211,6 @@ DoApplyConfig() {
 				gfnWaitingSTD Options_MySB-$User
 				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
-
-				# Report system table to proxy
-				if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ] && [ "$User" == "$gsMainUserName" ]; then
-					gfnScriptInvoke 'source' "$MySB_InstallDir/scripts/ProxyUse.bsh" 'options_mysb' 'APPLYCONFIG'
-				fi
 			;;
 
 			"Restart_rTorrent")
@@ -259,14 +260,16 @@ DoApplyConfig() {
 				ProxyValue="`echo $ProxySwitch | cut -d ":" -f 2`"
 				case "$ProxyValue" in
 					0)
-						gfnWaitingSTD ProxyUse
-						screen -dmS ProxyUse /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'stop' 'APPLYCONFIG';
-						gfnWaitingSTD ProxyUse
+						echo `/bin/date '+%H:%M:%S'` "- Executing $MySB_InstallDir/scripts/ProxyUse.bsh 'stop'"
+						gfnWaitingSTD ProxyUse_Init
+						screen -dmS ProxyUse_Init /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'stop' 'APPLYCONFIG';
+						gfnWaitingSTD ProxyUse_Init
 					;;
 					1)
-						gfnWaitingSTD ProxyUse
-						screen -dmS ProxyUse /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'start' 'APPLYCONFIG';
-						gfnWaitingSTD ProxyUse
+						echo `/bin/date '+%H:%M:%S'` "- Executing $MySB_InstallDir/scripts/ProxyUse.bsh 'start'"
+						gfnWaitingSTD ProxyUse_Init
+						screen -dmS ProxyUse_Init /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'start' 'APPLYCONFIG';
+						gfnWaitingSTD ProxyUse_Init
 					;;
 				esac
 
@@ -281,7 +284,10 @@ DoApplyConfig() {
 
 				# Report system table to proxy
 				if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ] && [ "$User" != "$gsMainUserName" ]; then
-					gfnScriptInvoke 'source' "$MySB_InstallDir/scripts/ProxyUse.bsh" 'options_system' "$CommandArg" 'APPLYCONFIG'
+					echo `/bin/date '+%H:%M:%S'` "- Executing $MySB_InstallDir/scripts/ProxyUse.bsh 'options_system'"
+					gfnWaitingSTD ProxyUse_system
+					screen -dmS ProxyUse_system /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'options_system' "$CommandArg" 'APPLYCONFIG';
+					gfnWaitingSTD ProxyUse_system
 				fi
 			;;
 
@@ -313,9 +319,15 @@ DoApplyConfig() {
 			;;
 
 			"ProxyUse.bsh")
-				gfnWaitingSTD ProxyUse
-				screen -dmS ProxyUse /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'APPLYCONFIG';
-				gfnWaitingSTD ProxyUse
+				if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ]; then
+					gfnWaitingSTD ProxyUse_Init
+					screen -dmS ProxyUse_Init /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'start' 'APPLYCONFIG';
+					gfnWaitingSTD ProxyUse_Init
+				else
+					gfnWaitingSTD ProxyUse_Init
+					screen -dmS ProxyUse_Init /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'stop' 'APPLYCONFIG';
+					gfnWaitingSTD ProxyUse_Init
+				fi
 				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 			;;

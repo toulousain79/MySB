@@ -109,7 +109,7 @@ $language = $users_datas['language'];
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 
 <?php
-if ( ($users_datas['account_type'] == 'normal') && ($SystemDatas['proxy'] == '0') ) {
+if ( ($users_datas['account_type'] == 'normal') && ($SystemDatas['proxy'] != '2') ) {
 ?>
 	<fieldset>
 	<legend><?php echo User_OptionsMySB_Title_rTorrent; ?></legend>

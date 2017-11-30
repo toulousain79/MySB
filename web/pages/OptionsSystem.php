@@ -38,7 +38,7 @@ $LogWatch_db = $system_datas['logwatch'];
 $pgl_email_stats = $system_datas['pgl_email_stats'];
 $pgl_watchdog_email = $system_datas['pgl_watchdog_email'];
 $ip_restriction_db = $system_datas['ip_restriction'];
-$proxy_db = $system_datas['proxy'];
+$Proxy_db = $system_datas['proxy'];
 $openvpn_proto_db =  $MySB_DB->get("services", "port_udp1", ["serv_name" => "OpenVPN"]);
 switch ($openvpn_proto_db) {
 	case '':
@@ -117,7 +117,7 @@ if (isset($_POST['submit'])) {
 			}
 		}
 	} else {
-		$args = "$args|LogWatch:-1";
+		$args = "$args|LogWatch:-1|DNScrypt:-1|Proxy:-1";
 	}
 
 	// Get new values from database
@@ -282,14 +282,14 @@ if (isset($_POST['submit'])) {
 	</fieldset>
 	<?php } ?>
 
-	<?php if ($proxy_db != '2') { ?>
+	<?php if ($Proxy_db != '2') { ?>
 	<fieldset>
 	<legend><?php echo MainUser_OptionsSystem_Title_Proxy; ?></legend>
 	<table>
 		<tr>
 			<td><?php echo MainUser_OptionsSystem_Proxy_Activate; ?></td>
 			<td>
-				<?php switch ($proxy_db) {
+				<?php switch ($Proxy_db) {
 					case '1':
 						$class = 'greenText';
 						$options = '<option selected="selected" value="1" class="greenText">' . Global_Yes . '</option>';
