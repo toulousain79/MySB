@@ -31,20 +31,89 @@ if [ "$gnProxyMode" -eq 2 ]; then
 	gfnEndingScript 0
 fi
 
-#### MySQL
-if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ]; then
-	## Get MySQL proxy infos
+#### VARs
+nNbArgs=$#
+for (( nArgs=1; nArgs<=$nNbArgs; nArgs++ )); do
+	case "$nArgs" in
+		1)	InitSwitch="$1";;
+		2)
+			case "$2" in
+				--*)	SomeArgs="$2";;
+				*)		ModeSwitch="$2";;
+			esac
+		;;
+		3)	ModeSwitch="$3";;
+	esac
+done
+# By default, bContinue must egal 1
+bContinue=1
+
+#------------------------------------------------------------
+# Functions - Begin
+#------------------------------------------------------------
+
+# Get proxy config infos
+fnGetProxyConfigInfos() {
+	# Get MySQL proxy infos
+	log_daemon_msg "$ProxyUse_GetConfigMysqlProxy"
 	rsync -avz --timeout=10 -e "sshpass -p $gsProxySshPass ssh -p $gsProxySshPort -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $gsProxySshUser@$gsProxyAddress:/root/.config.cnf /root/.config_proxy.cnf &> /dev/null
 	if [ -f /root/.config_proxy.cnf ]; then
 		perl -pi -e "s/localhost/127.0.0.1/g" /root/.config_proxy.cnf
 		perl -pi -e "s/3306/3307/g" /root/.config_proxy.cnf
-		# Start SSH tunnel for access to MySQL on proxy server
-		if [ -z "`ps ax | grep 'ssh' | grep '3307:localhost:3306'`" ]; then
-			sshpass -p $gsProxySshPass ssh -4 -fN -L 3307:localhost:3306 $gsProxySshUser@$gsProxyAddress -p $gsProxySshPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null &> /dev/null
-		fi
+		gfnStatusLSB 0
+	else
+		(( bContinue++ )) && gfnStatusLSB 1
 	fi
 
+	# Get MySB proxy infos
+	log_daemon_msg "$ProxyUse_GetConfigMysbProxy"
+	rsync -avz --timeout=10 -e "sshpass -p $gsProxySshPass ssh -p $gsProxySshPort -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" $gsProxySshUser@$gsProxyAddress:/etc/MySB/config /etc/MySB/config_proxy &> /dev/null
+	if [ -f /etc/MySB/config_proxy ]; then
+		perl -pi -e "s/MySB_InstallDir/Proxy_InstallDir/g" /etc/MySB/config_proxy
+		sed -i '/EnvLang/d' /etc/MySB/config_proxy
+		gfnStatusLSB 0
+	else
+		(( bContinue++ )) && gfnStatusLSB 1
+	fi
+}
+
+# MySQL init
+fnInitProxyMySQL() {
+	case "$InitSwitch" in
+		'start')
+			log_daemon_msg "$ProxyUse_InitProxyMySQL"
+			if [ -f /root/.config_proxy.cnf ]; then
+				# Start SSH tunnel for access to MySQL on proxy server
+				if [ -z "`ps ax | grep 'ssh' | grep '3307:localhost:3306'`" ]; then
+					sshpass -p $gsProxySshPass ssh -M -S Proxy_MySQL -4 -fN -L 3307:localhost:3306 $gsProxySshUser@$gsProxyAddress -p $gsProxySshPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null &> /dev/null
+					ssh -S Proxy_MySQL -O check $gsProxySshUser@$gsProxyAddress
+					if [ $? -ne 0 ]; then
+						(( bContinue++ )) && gfnStatusLSB 1
+					else
+						gfnStatusLSB 0
+					fi
+				else
+					gfnStatusLSB 0
+				fi
+			else
+				(( bContinue++ )) && gfnStatusLSB 1
+			fi
+		;;
+		'stop')
+			log_daemon_msg "$ProxyUse_StopProxyMySQL"
+			ssh -S Proxy_MySQL -O exit $gsProxySshUser@$gsProxyAddress
+			case $? in
+				0|255)	gfnStatusLSB 0;;
+				*)		(( bContinue++ )) && gfnStatusLSB 1;;
+			done
+		;;
+	done
+}
+
+# Add local informations into proxy DB
+fnPopulateProxyDataBase() {
 	## Add all users on proxy
+	log_daemon_msg "$ProxyUse_AddAllUsers"
 	cmdMySQL 'Proxy_db' "DELETE FROM users WHERE users_ident != '$gsMainUserName';"
 	sRequestValues="`cmdMySQL 'MySB_db' "SELECT id_users,users_ident,users_email,scgi_port,rtorrent_port,is_active FROM users;" | sed 's/\t/|/g;'`"
 	for Infos in $sRequestValues; do
@@ -56,17 +125,19 @@ if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ]; then
 		IsActive="`echo $Infos | awk '{split($0,a,"|"); print a[6]}'`"
 
 		if [ "$UserIdent" != "$gsMainUserName" ]; then
-			cmdMySQL 'Proxy_db' "INSERT INTO users (id_users,users_ident,users_email,scgi_port,rtorrent_port,is_active) VALUES ('$UserId','$UserIdent','$UserMail','$ScgiPort','$RtorrentPort','$IsActive');" -v
+			cmdMySQL 'Proxy_db' "INSERT INTO users (id_users,users_ident,users_email,scgi_port,rtorrent_port,is_active) VALUES ('$UserId','$UserIdent','$UserMail','$ScgiPort','$RtorrentPort','$IsActive');"
 		else
-			cmdMySQL 'Proxy_db' "UPDATE users SET users_email='$UserMail', scgi_port='$ScgiPort', rtorrent_port='$RtorrentPort' WHERE users_ident='$gsMainUserName';" -v
+			cmdMySQL 'Proxy_db' "UPDATE users SET users_email='$UserMail', scgi_port='$ScgiPort', rtorrent_port='$RtorrentPort' WHERE users_ident='$gsMainUserName';"
 		fi
 	done
+	gfnStatusLSB
 
 	## Update users addresses on proxy
+	log_daemon_msg "$ProxyUse_UpdateUsersAddresses"
 	# Delete all on proxy
 	cmdMySQL 'Proxy_db' "DELETE FROM users_addresses WHERE imported='1';"
 	# Add main server into proxy
-	cmdMySQL 'Proxy_db' "INSERT INTO users_addresses (id_users,ipv4,hostname,check_by,is_active,imported,last_update) VALUES ('$gnMainUserId','$gsSrvIpAddressExt','$gsHostNameFqdn','hostname','1','1','`date +%Y-%m-%d\ %H:%M:%S`');" -v
+	cmdMySQL 'Proxy_db' "INSERT INTO users_addresses (id_users,ipv4,hostname,check_by,is_active,imported,last_update) VALUES ('$gnMainUserId','$gsSrvIpAddressExt','$gsHostNameFqdn','hostname','1','1','`date +%Y-%m-%d\ %H:%M:%S`');"
 	# Add all on proxy
 	sRequestValues="`cmdMySQL 'MySB_db' "SELECT id_users,ipv4,hostname,check_by,is_active FROM users_addresses WHERE is_active='1';" | sed 's/\t/|/g;'`"
 	for Infos in $sRequestValues; do
@@ -77,24 +148,252 @@ if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ]; then
 		IsActive="`echo $Infos | awk '{split($0,a,"|"); print a[5]}'`"
 
 		if [ "$Hostname" != "$gsProxyAddress" ]; then
-			cmdMySQL 'Proxy_db' "INSERT INTO users_addresses (id_users,ipv4,hostname,check_by,is_active,imported,last_update) VALUES ('$gnMainUserId','$IPv4','$Hostname','$CheckBy','$IsActive','1','`date +%Y-%m-%d\ %H:%M:%S`');" -v
+			cmdMySQL 'Proxy_db' "INSERT INTO users_addresses (id_users,ipv4,hostname,check_by,is_active,imported,last_update) VALUES ('$gnMainUserId','$IPv4','$Hostname','$CheckBy','$IsActive','1','`date +%Y-%m-%d\ %H:%M:%S`');"
 		fi
 	done
+	gfnStatusLSB
 
 	## Apply security rules (users' addresses & ports)
-	#sshpass -p $gsProxySshPass ssh -p $gsProxySshPort -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $gsProxySshUser@$gsProxyAddress screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--users' 'APPLYCONFIG';
+	log_daemon_msg "$ProxyUse_ApplySecurityRules"
+	if [ -f /etc/MySB/config_proxy ]; then
+		source /etc/MySB/config_proxy
+		sshpass -p $gsProxySshPass ssh -p $gsProxySshPort -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $gsProxySshUser@$gsProxyAddress screen -dmS MySB_SecurityRules /bin/bash $Proxy_InstallDir/bin/MySB_SecurityRules 'refresh' '--users' 'SCREEN';
+		gfnStatusLSB 0
+	else
+		gfnStatusLSB 1
+	fi
+}
 
-	## rTorrent sessions
-	gfnListCountUsers 'normal' #($gsUsersList)
-	for SeedboxUser in $gsUsersList; do
-		sValues="`cmdMySQL 'MySB_db' "SELECT rtorrent_port FROM users WHERE users_ident='$SeedboxUser';" | sed 's/\t/|/g;'`"
-		rTorrentPort="`echo $sValues | awk '{split($0,a,"|"); print a[1]}'`"
+# Init SSH tunnel for all users
+fnInitProxyUsers() {
+	case "$InitSwitch" in
+		'start')
+			# rTorrent sessions
+			gfnListCountUsers 'normal' #($gsUsersList)
+			for SeedboxUser in $gsUsersList; do
+				log_daemon_msg "$ProxyUse_CreateUserTunnel [$SeedboxUser]"
+				sValues="`cmdMySQL 'MySB_db' "SELECT rtorrent_port FROM users WHERE users_ident='$SeedboxUser';" | sed 's/\t/|/g;'`"
+				rTorrentPort="`echo $sValues | awk '{split($0,a,"|"); print a[1]}'`"
 
-		if [ -z "`ps ax | grep 'ssh' | grep "$gsProxyAddress:$rTorrentPort:localhost:$rTorrentPort"`" ]; then
-			sshpass -p $gsProxySshPass ssh -4 -fN -R $gsProxyAddress:$rTorrentPort:localhost:$rTorrentPort $gsProxySshUser@$gsProxyAddress -p $gsProxySshPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null &> /dev/null
-		fi
+				if [ -z "`ps ax | grep 'ssh' | grep "$gsProxyAddress:$rTorrentPort:localhost:$rTorrentPort"`" ]; then
+					sshpass -p $gsProxySshPass ssh -M -S Proxy_${SeedboxUser} -4 -fN -R $gsProxyAddress:$rTorrentPort:localhost:$rTorrentPort $gsProxySshUser@$gsProxyAddress -p $gsProxySshPort -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null &> /dev/null
+					ssh -S Proxy_${SeedboxUser} -O check $gsProxySshUser@$gsProxyAddress
+					if [ $? -ne 0 ]; then
+						(( bContinue++ ))
+						gfnStatusLSB 1
+					else
+						gfnStatusLSB 0
+					fi
+				else
+					gfnStatusLSB 0
+				fi
+			done
+		;;
+		'stop')
+			for SeedboxUser in $gsUsersList; do
+				log_daemon_msg "$ProxyUse_StopUserTunnel [$SeedboxUser]"
+				ssh -S Proxy_${SeedboxUser} -O exit $gsProxySshUser@$gsProxyAddress
+				case $? in
+					0|255)	gfnStatusLSB 0;;
+					*)		gfnStatusLSB 1;;
+				done
+			done
+		;;
+	done
+}
+
+#------------------------------------------------------------
+# Functions - End
+#------------------------------------------------------------
+
+
+######################################################################
+#
+# S T A R T   C O M M A N D   L I N E   M O D E
+#
+######################################################################
+
+if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ]; then
+	case "$InitSwitch" in
+		'start')
+			fnGetProxyConfigInfos
+			[ $bContinue -eq 1 ] && fnInitProxyMySQL "$InitSwitch"
+			[ $bContinue -eq 1 ] && fnPopulateProxyDataBase
+			[ $bContinue -eq 1 ] && fnInitProxyUsers
+			if [ $bContinue -gt 1 ]; then
+				echo -e "${CRED}$ProxyUse_ErrorOccured$CEND"
+				echo -e "${CRED}Code: $bContinue$CEND"
+				echo
+			fi
+		;;
+		'stop')
+			fnInitProxyUsers "$InitSwitch"
+			fnInitProxyMySQL "$InitSwitch"
+		;;
+		'add_user')
+			if [ ! -z "$SomeArgs" ]; then
+				# Get infos for last user added
+				sRequestValues="`cmdMySQL 'MySB_db' "SELECT users_email,rtorrent_port,account_type FROM users WHERE users_ident='$SomeArgs';"`"
+				sUserEmail="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
+				sUserRtorrentPort="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
+				sUserAccountType="`echo $sRequestValues | awk '{split($0,a,"|"); print a[3]}'`"
+
+				if [ ! -z "$sUserEmail" ] && [ ! -z "$sUserRtorrentPort" ] && [ "$sUserAccountType" == "normal" ]; then
+					# Init MySQL tunnel
+					fnInitProxyMySQL 'start'
+					# Add new user into proxy DB
+					log_daemon_msg "$ProxyUse_AddNewUser [$SeedboxUser]"
+					if [ $bContinue -eq 1 ]; then
+						cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,rtorrent_port,account_type) VALUES ('$SomeArgs','$sUserEmail','$sUserRtorrentPort','$sUserAccountType');"
+						gfnStatusLSB 0
+					else
+						gfnStatusLSB 1
+					fi
+				fi
+			fi
+
+		;;
+		'del_user')
+			if [ ! -z "$SomeArgs" ]; then
+				# Init MySQL tunnel
+				fnInitProxyMySQL 'start'
+				# Delete user's tunnel
+				log_daemon_msg "$ProxyUse_StopUserTunnel [$SomeArgs]"
+				ssh -S Proxy_${SomeArgs} -O exit $gsProxySshUser@$gsProxyAddress
+				case $? in
+					0|255)	gfnStatusLSB 0;;
+					*)		gfnStatusLSB 1;;
+				done
+				# Delete user from proxy database
+				log_daemon_msg "$ProxyUse_DeleteUser [$SomeArgs]"
+				cmdMySQL 'Proxy_db' "DELETE FROM users WHERE users_ident='$SomeArgs';"
+				gfnStatusLSB
+				# Update proxy security rules
+				log_daemon_msg "$ProxyUse_ApplySecurityRules"
+				if [ -f /etc/MySB/config_proxy ]; then
+					source /etc/MySB/config_proxy
+					sshpass -p $gsProxySshPass ssh -p $gsProxySshPort -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $gsProxySshUser@$gsProxyAddress screen -dmS MySB_SecurityRules /bin/bash $Proxy_InstallDir/bin/MySB_SecurityRules 'refresh' '--users' 'SCREEN';
+					gfnStatusLSB 0
+				else
+					gfnStatusLSB 1
+				fi
+			fi
+		;;
+		'options_system')
+			if [ ! -z "$SomeArgs" ]; then
+				# Init MySQL tunnel
+				fnInitProxyMySQL 'start'
+
+				log_daemon_msg "$ProxyUse_UpdateSystemTable"
+				# Get table system values
+				sRequestValues="`cmdMySQL 'MySB_db' "SELECT ip_restriction,pgl_email_stats,pgl_watchdog_email,dnscrypt,logwatch FROM system WHERE id_system='1';"`"
+				bIpResctiction="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
+				bPglEmailStats="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
+				bPglWatchEmail="`echo $sRequestValues | awk '{split($0,a,"|"); print a[3]}'`"
+				bDNScrypt="`echo $sRequestValues | awk '{split($0,a,"|"); print a[4]}'`"
+				bLogwatch="`echo $sRequestValues | awk '{split($0,a,"|"); print a[5]}'`"
+				# Update table system into proxy
+				cmdMySQL 'Proxy_db' "UPDATE system SET ip_restriction='$bIpResctiction', pgl_email_stats='$bPglEmailStats', pgl_watchdog_email='$bPglWatchEmail', dnscrypt='$bDNScrypt', logwatch='$bLogwatch' WHERE id_system='1';"
+				gfnStatusLSB 0
+
+				log_daemon_msg "$ProxyUse_ApplyConfig"
+				# Add command for ApplyConfig scripts
+				nPriority="`cmdMySQL 'Proxy_db' "SELECT max(priority) FROM commands;"`"
+				[ "$nPriority" == "NULL" ] && nPriority=1 || (( nPriority++ ))
+				cmdMySQL 'Proxy_db' "INSERT INTO commands (commands,reload,priority,args,user) VALUES ('Options_System','1','$nPriority','$SomeArgs','$gsMainUserName');"
+				# Execute ApplyConfig script from proxy
+				if [ -f /etc/MySB/config_proxy ]; then
+					source /etc/MySB/config_proxy
+					sshpass -p $gsProxySshPass ssh -p $gsProxySshPort -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $gsProxySshUser@$gsProxyAddress screen -dmS ApplyConfig /bin/bash $Proxy_InstallDir/scripts/ApplyConfig.bsh "$gsMainUserName" 'DO_APPLY';
+					gfnStatusLSB 0
+				else
+					gfnStatusLSB 1
+				fi
+			fi
+		;;
+		'dnscrypt_config')
+			# Init MySQL tunnel
+			fnInitProxyMySQL 'start'
+
+			log_daemon_msg "$ProxyUse_UpdateSystemTDnscryptConfig"
+			# Get table system values
+			sRequestValues="`cmdMySQL 'MySB_db' "SELECT processes_qty,no_logs,dnssec,namecoin,random FROM dnscrypt_config WHERE id_dnscrypt_config='1';"`"
+			nProcessQty="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
+			sNoLogs="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
+			sDNSsec="`echo $sRequestValues | awk '{split($0,a,"|"); print a[3]}'`"
+			sNamecoin="`echo $sRequestValues | awk '{split($0,a,"|"); print a[4]}'`"
+			sRandom="`echo $sRequestValues | awk '{split($0,a,"|"); print a[5]}'`"
+			# Update table system into proxy
+			cmdMySQL 'Proxy_db' "UPDATE dnscrypt_config SET processes_qty='$nProcessQty', no_logs='$sNoLogs', dnssec='$sDNSsec', namecoin='$sNamecoin', random='$sRandom' WHERE id_dnscrypt_config='1';"
+			gfnStatusLSB 0
+
+			# Apply security rules on proxy
+			log_daemon_msg "$ProxyUse_ApplySecurityRules"
+			if [ -f /etc/MySB/config_proxy ]; then
+				source /etc/MySB/config_proxy
+				sshpass -p $gsProxySshPass ssh -p $gsProxySshPort -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $gsProxySshUser@$gsProxyAddress screen -dmS MySB_SecurityRules /bin/bash $Proxy_InstallDir/bin/MySB_SecurityRules 'create' 'APPLYCONFIG';
+				gfnStatusLSB 0
+			else
+				gfnStatusLSB 1
+			fi
+		;;
+		'blocklists')
+			# Init MySQL tunnel
+			fnInitProxyMySQL 'start'
+
+			# Dump 'blocklists' table
+			log_daemon_msg "$ProxyUse_DumpBlocklists"
+			mysqldump --defaults-extra-file=/root/.config.cnf MySB_db blocklists > $MySB_InstallDir/temp/blocklists.sql
+			[ $? -eq 0 ] && gfnStatusLSB 0 || gfnStatusLSB 1
+			# Restore 'blocklists' table into proxy
+			log_daemon_msg "$ProxyUse_RestoreBlocklists"
+			mysql --defaults-extra-file=/root/.config_proxy.cnf --database=MySB_db < $MySB_InstallDir/temp/blocklists.sql
+			[ $? -eq 0 ] && gfnStatusLSB 0 || gfnStatusLSB 1
+		;;
+		'manage_addresses')
+			# Init MySQL tunnel
+			fnInitProxyMySQL 'start'
+
+			# Delete all imported addesses
+			cmdMySQL 'Proxy_db' "DELETE FROM users_addresses WHERE imported='1';" -v
+			# Add all main user addresses to proxy
+			sRequestValues="`cmdMySQL 'MySB_db' "SELECT ipv4,hostname,check_by,is_active FROM users_addresses WHERE is_active='1' AND id_users='$gnMainUserId';" | sed 's/\t/|/g;'`"
+			for Infos in $sRequestValues; do
+				IPv4="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
+				Hostname="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
+				CheckBy="`echo $sRequestValues | awk '{split($0,a,"|"); print a[3]}'`"
+				IsActive="`echo $sRequestValues | awk '{split($0,a,"|"); print a[4]}'`"
+				cmdMySQL 'Proxy_db' "INSERT INTO users_addresses (id_users,ipv4,hostname,check_by,is_active,imported,last_update) VALUES ('$gnMainUserId','$IPv4','$Hostname','$CheckBy','$IsActive','1','`date +%Y-%m-%d\ %H:%M:%S`');" -v
+			done
+
+			# Apply security rules on proxy
+			log_daemon_msg "$ProxyUse_ApplySecurityRules"
+			if [ -f /etc/MySB/config_proxy ]; then
+				source /etc/MySB/config_proxy
+				sshpass -p $gsProxySshPass ssh -p $gsProxySshPort -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $gsProxySshUser@$gsProxyAddress screen -dmS MySB_SecurityRules /bin/bash $Proxy_InstallDir/bin/MySB_SecurityRules 'refresh' '--users' 'APPLYCONFIG';
+				gfnStatusLSB 0
+			else
+				gfnStatusLSB 1
+			fi
+		;;
+		'options_mysb')
+			# Init MySQL tunnel
+			fnInitProxyMySQL 'start'
+
+			# Update language for main user into proxy
+			log_daemon_msg "$ProxyUse_UpdateLanguage"
+			sLanguage="`cmdMySQL 'MySB_db' "SELECT language FROM users WHERE users_ident='$gsMainUserName';"`"
+			cmdMySQL 'Proxy_db' "UPDATE users SET language='$sLanguage' WHERE users_ident='$gsMainUserName';"
+			gfnStatusLSB
+		;;
 	done
 fi
+
+######################################################################
+#
+# E N D   C O M M A N D   L I N E   M O D E
+#
+######################################################################
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after

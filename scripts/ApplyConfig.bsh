@@ -152,22 +152,10 @@ DoApplyConfig() {
 				gfnWaitingSTD MySB_SecurityRules
 				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
-				if [ "$gbProxyInfos" -eq 1 ] && [ ! -z "`ps ax | grep ssh | grep '3307:localhost:3306'`" ]; then
-					mysqldump --defaults-extra-file=/root/.config.cnf MySB_db blocklists > $MySB_InstallDir/temp/blocklists.sql
-					mysql --defaults-extra-file=/root/.config_proxy.cnf --database=MySB_db < $MySB_InstallDir/temp/blocklists.sql
-				fi
-			;;
 
-			"DNScrypt")
-				case "$gbDnsCryptSwitch" in
-					"0")	DnsService='bind';;
-					"1")	DnsService='dnscrypt';;
-				esac
-				gfnWaitingSTD DNScrypt
-				screen -dmS DNScrypt gfnSwitchDNS "$DnsService";
-				gfnWaitingSTD DNScrypt
-				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
-				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+				if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ] && [ "$User" != "$gsMainUserName" ]; then
+					gfnScriptInvoke 'source' "$MySB_InstallDir/scripts/ProxyUse.bsh" 'blocklists' 'APPLYCONFIG'
+				fi
 			;;
 
 			"ManageAddresses")
@@ -176,19 +164,9 @@ DoApplyConfig() {
 				gfnWaitingSTD MySB_SecurityRules
 				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
-				if [ "$gbProxyInfos" -eq 1 ] && [ ! -z "`ps ax | grep ssh | grep '3307:localhost:3306'`" ]; then
-					cmdMySQL 'Proxy_db' "DELETE FROM users_addresses WHERE imported='1';" -v
 
-					sRequestValues="`cmdMySQL 'MySB_db' "SELECT ipv4,hostname,check_by,is_active FROM users_addresses WHERE is_active='1' AND id_users='$gnMainUserId';" | sed 's/\t/|/g;'`"
-					for Infos in $sRequestValues; do
-						IPv4="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
-						Hostname="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
-						CheckBy="`echo $sRequestValues | awk '{split($0,a,"|"); print a[3]}'`"
-						IsActive="`echo $sRequestValues | awk '{split($0,a,"|"); print a[4]}'`"
-						cmdMySQL 'MySB_db' "INSERT INTO users_addresses (id_users,ipv4,hostname,check_by,is_active,imported,last_update) VALUES ('$gnMainUserId','$IPv4','$Hostname','$CheckBy','$IsActive','1','`date +%Y-%m-%d\ %H:%M:%S`');" -v
-					done
-
-					sshpass -p $gsProxySshPass ssh -p $gsProxySshPort -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $gsProxySshUser@$gsProxyAddress screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--users' 'APPLYCONFIG';
+				if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ] && [ "$User" == "$gsMainUserName" ]; then
+					gfnScriptInvoke 'source' "$MySB_InstallDir/scripts/ProxyUse.bsh" 'manage_addresses' 'APPLYCONFIG'
 				fi
 			;;
 
@@ -226,7 +204,12 @@ DoApplyConfig() {
 				gfnUserCrontab "$User"
 				gfnWaitingSTD Options_MySB-$User
 				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
-				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"				
+
+				# Report system table to proxy
+				if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ] && [ "$User" == "$gsMainUserName" ]; then
+					gfnScriptInvoke 'source' "$MySB_InstallDir/scripts/ProxyUse.bsh" 'options_mysb' 'APPLYCONFIG'
+				fi				
 			;;
 
 			"Restart_rTorrent")
@@ -237,14 +220,15 @@ DoApplyConfig() {
 				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 			;;
 
-			"Options_System") # ($1 = OpenVPN:[0|1], $2 = LogWatch:[-1|0|1], $3 = MySB_SecurityRules])
+			"Options_System") # ($1 = OpenVPN:[0|1], $2 = LogWatch:[-1|0|1], $3 = DNScrypt:[-1|0|1], $4 = MySB_SecurityRules])
 				IFS='|' read -a array <<< "$CommandArg"
 				OpenVpnSwitch="${array[0]}"
 				LogwatchSwitch="${array[1]}"
-				SecurityRules="${array[2]}"
+				DNScryptSwitch="${array[1]}"
+				SecurityRules="${array[3]}"
 
 				OpenVpnValue="`echo $OpenVpnSwitch | cut -d ":" -f 2`"
-				case "$LogwatchValue" in
+				case "$OpenVpnValue" in
 					1)
 						gfnWaitingSTD OpenVPN
 						screen -dmS OpenVPN_Zip /bin/bash $MySB_InstallDir/install/OpenVPN refresh 'APPLYCONFIG';
@@ -258,13 +242,32 @@ DoApplyConfig() {
 					1) if [ ! -f /etc/cron.daily/00logwatch ]; then install -g root -o root -m 0755 $MySB_InstallDir/templates/logwatch/etc.cron.daily.00logwatch.tmpl /etc/cron.daily/00logwatch; fi;;
 				esac
 
+				DNScryptValue="`echo $DNScryptSwitch | cut -d ":" -f 2`"
+				case "$DNScryptValue" in
+					0|1)
+						case "$gbDnsCryptSwitch" in
+							"0")	DnsService='bind';;
+							"1")	DnsService='dnscrypt';;
+						esac
+						gfnWaitingSTD DNScrypt
+						screen -dmS DNScrypt gfnSwitchDNS "$DnsService";
+						gfnWaitingSTD DNScrypt
+					;;
+				esac
+
 				if [ ! -z "$SecurityRules" ]; then
 					gfnWaitingSTD MySB_SecurityRules
 					screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--pglcmd' 'APPLYCONFIG';
 					gfnWaitingSTD MySB_SecurityRules
 				fi
+
 				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
-				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"				
+				
+				# Report system table to proxy
+				if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ] && [ "$User" != "$gsMainUserName" ]; then
+					gfnScriptInvoke 'source' "$MySB_InstallDir/scripts/ProxyUse.bsh" 'options_system' "$CommandArg" 'APPLYCONFIG'
+				fi
 			;;
 
 			"OpenVPN") # ($1 = username, $2 = userpass)

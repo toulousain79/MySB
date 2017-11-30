@@ -100,7 +100,13 @@ if (isset($_POST['submit'])) {
 			} else {
 				$args = "$args|LogWatch:-1";
 			}
-			if ( ($ip_restriction_db != $IP_restriction_post) || ($DNScrypt_db != $DNScrypt_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) ) {
+			if ( $DNScrypt_db != $DNScrypt_post ) {
+				// $DNScrypt_post: 0 disabled / 1 enabled / -1 no changes
+				$args = "$args|DNScrypt:$DNScrypt_post";
+			} else {
+				$args = "$args|DNScrypt:-1";
+			}			
+			if ( ($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) ) {
 				$args = "$args|MySB_SecurityRules";
 			}
 		}
