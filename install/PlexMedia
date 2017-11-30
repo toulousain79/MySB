@@ -24,9 +24,12 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-if [ "$gbToInstall_PlexMedia" == "YES" ]; then
-	#### Install package
-	gfnPackageBundleInstall 'alsa-base alsa-oss oss-compat libasound2-plugins'
+#### VARs
+sLocSwitch="$1"
+
+#### FUNCTIONs
+# Install DEB package
+fnInstallDebPackage() {
 	sPlexMediaVersion="1.9.7.4460-a39b25852"
 	case `getconf LONG_BIT` in
 		64)	sPlexDeb="plexmediaserver_${sPlexMediaVersion}_amd64.deb";;
@@ -42,6 +45,25 @@ if [ "$gbToInstall_PlexMedia" == "YES" ]; then
 			systemctl enable plexmediaserver.service
 		;;
 	esac
+}
+
+#### CRON UPGRADE
+if [ "$sLocSwitch" == "CRON" ] && [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
+	# Stop services
+	gfnManageServices stop "plexmediaserver plexpy"
+	# Install DEB package
+	fnInstallDebPackage
+	# Start services
+	gfnManageServices start "plexmediaserver plexpy"
+fi
+
+#### INSTALL
+if [ "$gbToInstall_PlexMedia" == "YES" ]; then
+	#### Install package
+	gfnPackageBundleInstall 'alsa-base alsa-oss oss-compat libasound2-plugins'
+
+	#### Install DEB package
+	fnInstallDebPackage
 
 	if gfnCheckCommand 0 plexmediaserver; then
 		cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='Plex Media Server';" -v

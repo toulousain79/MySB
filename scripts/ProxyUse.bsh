@@ -118,6 +118,22 @@ fnInitProxyMySQL() {
 				;;
 			esac
 		;;
+		'status')
+			log_daemon_msg "$ProxyUse_StatusProxyMySQL"
+			case "$gbProxyInfos" in
+				0)
+					sPid="`ps ax | grep 'ssh' | grep 'Proxy_MySQL' | awk '{ print $1 }'`"
+					[ ! -z "$sPid" ] && gfnStatusLSB 0 || gfnStatusLSB 1
+				;;
+				1)
+					ssh -S Proxy_MySQL -O check $gsProxySshUser@$gsProxyAddress &> /dev/null
+					case "$?" in
+						0)	gfnStatusLSB 0;;
+						*)	gfnStatusLSB 1;;
+					esac
+				;;
+			esac
+		;;
 	esac
 }
 
@@ -225,7 +241,77 @@ fnInitProxyUsers() {
 				esac
 			done
 		;;
+		'status')
+			gfnListCountUsers 'normal' #($gsUsersList)
+			for SeedboxUser in $gsUsersList; do
+				log_daemon_msg "$ProxyUse_StatusUserTunnel [$SeedboxUser]"
+
+				case "$gbProxyInfos" in
+					0)
+						sPid="`ps ax | grep 'ssh' | grep "Proxy_${SeedboxUser}" | awk '{ print $1 }'`"
+						[ ! -z "$sPid" ] && gfnStatusLSB 0 || gfnStatusLSB 1
+					;;
+					1)
+						ssh -S Proxy_${SeedboxUser} -O check $gsProxySshUser@$gsProxyAddress &> /dev/null
+						case $? in
+							0)	gfnStatusLSB 0;;
+							*)	gfnStatusLSB 1;;
+						esac
+					;;
+				esac
+			done
+		;;
 	esac
+}
+
+# Edit .rtorrent.rc files
+fnEditRtorrentConfigFiles() {
+	local nNumLine nRtorrentPort bCreateAfterClean
+
+	gfnListCountUsers 'normal' #($gsUsersList)
+	for SeedboxUser in $gsUsersList; do
+		# rTorrent stop
+		if [ -f /etc/init.d/rtorrent-$SeedboxUser ]; then
+			bToRestart="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$SeedboxUser';"`"
+			service rtorrent-$SeedboxUser status &> /dev/null
+			[ $? -eq 0 ] && bToRestart=1
+			cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='$bToRestart' WHERE users_ident='$SeedboxUser';"
+			service rtorrent-$SeedboxUser stop
+		fi
+
+		log_daemon_msg "$ProxyUse_EditRtorrentConfigFiles [$SeedboxUser]"
+		case "$InitSwitch" in
+			'start')
+				nRtorrentPort="`cmdMySQL 'MySB_db' "SELECT rtorrent_port FROM users WHERE users_ident='$SeedboxUser';"`"
+				nNumLine=$(cat /home/$SeedboxUser/.rtorrent.rc | grep 'http_proxy =' -n -m 1 | cut -d ':' -f 1)
+				sed -i '/http_proxy =/d' /home/$SeedboxUser/.rtorrent.rc
+				sed -i ""$nNumLine"i\http_proxy = localhost:$nRtorrentPort" /home/$SeedboxUser/.rtorrent.rc
+				nNumLine=$(cat /home/$SeedboxUser/.rtorrent.rc | grep 'network.http.proxy_address.set =' -n -m 1 | cut -d ':' -f 1)
+				sed -i '/network.http.proxy_address.set =/d' /home/$SeedboxUser/.rtorrent.rc
+				sed -i ""$nNumLine"i\network.http.proxy_address.set = localhost:$nRtorrentPort" /home/$SeedboxUser/.rtorrent.rc
+			;;
+			'stop')
+				nNumLine=$(cat /home/$SeedboxUser/.rtorrent.rc | grep 'http_proxy =' -n -m 1 | cut -d ':' -f 1)
+				sed -i '/http_proxy =/d' /home/$SeedboxUser/.rtorrent.rc
+				sed -i ""$nNumLine"i\http_proxy =" /home/$SeedboxUser/.rtorrent.rc
+				nNumLine=$(cat /home/$SeedboxUser/.rtorrent.rc | grep 'network.http.proxy_address.set =' -n -m 1 | cut -d ':' -f 1)
+				sed -i '/network.http.proxy_address.set =/d' /home/$SeedboxUser/.rtorrent.rc
+				sed -i ""$nNumLine"i\network.http.proxy_address.set =" /home/$SeedboxUser/.rtorrent.rc
+			;;
+		esac
+		gfnStatusLSB
+
+		# rTorrent restart
+		service cron status &> /dev/null
+		[ $? -eq 0 ] && bCreateAfterClean=1
+		bCreateAfterClean="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$SeedboxUser' AND is_active='1';"`"
+
+		if [ "$bCreateAfterClean" -eq 1 ] && [ -f /etc/init.d/rtorrent-$SeedboxUser ]; then
+			bToRestart="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$SeedboxUser';"`"
+			[ "$bToRestart" -eq 1 ] && service rtorrent-$SeedboxUser start
+			cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='$SeedboxUser';"
+		fi
+	done
 }
 
 #------------------------------------------------------------
@@ -249,15 +335,17 @@ elif [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ]; then
 			[ $bContinue -eq 1 ] && fnInitProxyMySQL "$InitSwitch"
 			[ $bContinue -eq 1 ] && fnPopulateProxyDataBase
 			[ $bContinue -eq 1 ] && fnInitProxyUsers
+			[ $bContinue -eq 1 ] && fnEditRtorrentConfigFiles
 			if [ $bContinue -gt 1 ]; then
 				echo -e "${CRED}$ProxyUse_ErrorOccured$CEND"
 				echo -e "${CRED}Code: $bContinue$CEND"
 				echo
 			fi
 		;;
-		'stop')
-			fnInitProxyUsers "$InitSwitch"
+		'stop'|'status')
 			fnInitProxyMySQL "$InitSwitch"
+			fnInitProxyUsers "$InitSwitch"
+			[ "$InitSwitch" == "stop" ] && fnEditRtorrentConfigFiles
 		;;
 		'add_user')
 			if [ ! -z "$SomeArgs" ]; then
@@ -420,6 +508,12 @@ elif [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ]; then
 			else
 				gfnStatusLSB 1
 			fi
+		;;
+		*)
+			echo -e "$ProxyUse_Usage"
+			echo
+			END=OFF
+			gfnEndingScript 0
 		;;
 	esac
 fi
