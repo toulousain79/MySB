@@ -204,12 +204,12 @@ DoApplyConfig() {
 				gfnUserCrontab "$User"
 				gfnWaitingSTD Options_MySB-$User
 				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
-				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"				
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 
 				# Report system table to proxy
 				if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ] && [ "$User" == "$gsMainUserName" ]; then
 					gfnScriptInvoke 'source' "$MySB_InstallDir/scripts/ProxyUse.bsh" 'options_mysb' 'APPLYCONFIG'
-				fi				
+				fi
 			;;
 
 			"Restart_rTorrent")
@@ -220,12 +220,13 @@ DoApplyConfig() {
 				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 			;;
 
-			"Options_System") # ($1 = OpenVPN:[0|1], $2 = LogWatch:[-1|0|1], $3 = DNScrypt:[-1|0|1], $4 = MySB_SecurityRules])
+			"Options_System") # ($1 = OpenVPN:[0|1], $2 = LogWatch:[-1|0|1], $3 = DNScrypt:[-1|0|1], $4 = Proxy:[-1|0|1], $5 = MySB_SecurityRules])
 				IFS='|' read -a array <<< "$CommandArg"
 				OpenVpnSwitch="${array[0]}"
 				LogwatchSwitch="${array[1]}"
-				DNScryptSwitch="${array[1]}"
-				SecurityRules="${array[3]}"
+				DNScryptSwitch="${array[2]}"
+				ProxySwitch="${array[3]}"
+				SecurityRules="${array[4]}"
 
 				OpenVpnValue="`echo $OpenVpnSwitch | cut -d ":" -f 2`"
 				case "$OpenVpnValue" in
@@ -255,6 +256,20 @@ DoApplyConfig() {
 					;;
 				esac
 
+				ProxyValue="`echo $ProxySwitch | cut -d ":" -f 2`"
+				case "$ProxyValue" in
+					0)
+						gfnWaitingSTD ProxyUse
+						screen -dmS ProxyUse /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'stop' 'APPLYCONFIG';
+						gfnWaitingSTD ProxyUse
+					;;
+					1)
+						gfnWaitingSTD ProxyUse
+						screen -dmS ProxyUse /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'start' 'APPLYCONFIG';
+						gfnWaitingSTD ProxyUse
+					;;
+				esac
+
 				if [ ! -z "$SecurityRules" ]; then
 					gfnWaitingSTD MySB_SecurityRules
 					screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--pglcmd' 'APPLYCONFIG';
@@ -262,8 +277,8 @@ DoApplyConfig() {
 				fi
 
 				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
-				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"				
-				
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+
 				# Report system table to proxy
 				if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ] && [ "$User" != "$gsMainUserName" ]; then
 					gfnScriptInvoke 'source' "$MySB_InstallDir/scripts/ProxyUse.bsh" 'options_system' "$CommandArg" 'APPLYCONFIG'

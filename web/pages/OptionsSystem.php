@@ -105,7 +105,13 @@ if (isset($_POST['submit'])) {
 				$args = "$args|DNScrypt:$DNScrypt_post";
 			} else {
 				$args = "$args|DNScrypt:-1";
-			}			
+			}
+			if ( $Proxy_db != $Proxy_post ) {
+				// $Proxy_post: 0 disabled / 1 enabled / -1 no changes
+				$args = "$args|Proxy:$Proxy_post";
+			} else {
+				$args = "$args|Proxy:-1";
+			}
 			if ( ($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) ) {
 				$args = "$args|MySB_SecurityRules";
 			}
