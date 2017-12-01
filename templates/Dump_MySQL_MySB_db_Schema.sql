@@ -171,21 +171,6 @@ CREATE TABLE IF NOT EXISTS `providers_monitoring` (
 -- --------------------------------------------------------
 
 --
--- Structure de la table `proxy`
---
-
-CREATE TABLE IF NOT EXISTS `proxy` (
-  `id_proxy` int(11) NOT NULL,
-  `address` varchar(32) NOT NULL,
-  `ssh_port` varchar(5) NOT NULL,
-  `ssh_user` varchar(32) NOT NULL,
-  `ssh_pass` varchar(32) NOT NULL,
-  PRIMARY KEY (`id_proxy`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 ;
-
--- --------------------------------------------------------
-
---
 -- Structure de la table `repositories`
 --
 
@@ -201,7 +186,6 @@ CREATE TABLE IF NOT EXISTS `repositories` (
   `active` tinyint(1) NOT NULL DEFAULT '0',
   `on_boot` tinyint(1) NOT NULL DEFAULT '0',
   `script` varchar(128) NOT NULL DEFAULT '',
-  `proxy_use` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_repositories`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
@@ -284,7 +268,6 @@ CREATE TABLE IF NOT EXISTS `system` (
   `rt_nb_users` tinyint(2) NOT NULL DEFAULT '0',
   `rt_price_per_users` decimal(6,2) DEFAULT NULL DEFAULT '0.00',
   `rt_method` tinyint(1) NOT NULL DEFAULT '0',
-  `proxy` tinyint(1) NOT NULL DEFAULT '0',
   `ipv4_additional` varchar(128) NOT NULL,  
   PRIMARY KEY (`id_system`),
   UNIQUE KEY `mysb_version` (`mysb_version`,`mysb_user`,`mysb_password`,`hostname`,`ipv4`,`primary_inet`,`timezone`,`cert_password`)

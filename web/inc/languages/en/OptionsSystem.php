@@ -33,7 +33,5 @@ define('MainUser_OptionsSystem_Title_DNScrypt', 'DNScrypt-proxy');
 define('MainUser_OptionsSystem_DNScrypt_Activate', 'Activation');
 define('MainUser_OptionsSystem_Title_Logwatch', 'LogWatch');
 define('MainUser_OptionsSystem_Logwatch_Activate', 'Activation');
-define('MainUser_OptionsSystem_Title_Proxy', 'Proxy SSH');
-define('MainUser_OptionsSystem_Proxy_Activate', 'Activation');
 
 //#################### LAST LINE ######################################

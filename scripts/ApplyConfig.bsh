@@ -152,13 +152,6 @@ DoApplyConfig() {
 				gfnWaitingSTD MySB_SecurityRules
 				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
-
-				if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ] && [ "$User" == "$gsMainUserName" ]; then
-					echo `/bin/date '+%H:%M:%S'` "- Executing $MySB_InstallDir/scripts/ProxyUse.bsh 'blocklists'"
-					gfnWaitingSTD ProxyUse_blocklists
-					screen -dmS ProxyUse_blocklists /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'blocklists' 'APPLYCONFIG';
-					gfnWaitingSTD ProxyUse_blocklists
-				fi
 			;;
 
 			"ManageAddresses")
@@ -167,13 +160,6 @@ DoApplyConfig() {
 				gfnWaitingSTD MySB_SecurityRules
 				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
-
-				if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ] && [ "$User" == "$gsMainUserName" ]; then
-					echo `/bin/date '+%H:%M:%S'` "- Executing $MySB_InstallDir/scripts/ProxyUse.bsh 'manage_addresses'"
-					gfnWaitingSTD ProxyUse_Addresses
-					screen -dmS ProxyUse_Addresses /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'manage_addresses' 'APPLYCONFIG';
-					gfnWaitingSTD ProxyUse_Addresses
-				fi
 			;;
 
 			"MySB_SecurityRules")
@@ -221,13 +207,12 @@ DoApplyConfig() {
 				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 			;;
 
-			"Options_System") # ($1 = OpenVPN:[0|1], $2 = LogWatch:[-1|0|1], $3 = DNScrypt:[-1|0|1], $4 = Proxy:[-1|0|1], $5 = MySB_SecurityRules])
+			"Options_System") # ($1 = OpenVPN:[0|1], $2 = LogWatch:[-1|0|1], $3 = DNScrypt:[-1|0|1], $4 = MySB_SecurityRules])
 				IFS='|' read -a array <<< "$CommandArg"
 				OpenVpnSwitch="${array[0]}"
 				LogwatchSwitch="${array[1]}"
 				DNScryptSwitch="${array[2]}"
-				ProxySwitch="${array[3]}"
-				SecurityRules="${array[4]}"
+				SecurityRules="${array[3]}"
 
 				OpenVpnValue="`echo $OpenVpnSwitch | cut -d ":" -f 2`"
 				case "$OpenVpnValue" in
@@ -257,22 +242,6 @@ DoApplyConfig() {
 					;;
 				esac
 
-				ProxyValue="`echo $ProxySwitch | cut -d ":" -f 2`"
-				case "$ProxyValue" in
-					0)
-						echo `/bin/date '+%H:%M:%S'` "- Executing $MySB_InstallDir/scripts/ProxyUse.bsh 'stop'"
-						gfnWaitingSTD ProxyUse_Init
-						screen -dmS ProxyUse_Init /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'stop' 'APPLYCONFIG';
-						gfnWaitingSTD ProxyUse_Init
-					;;
-					1)
-						echo `/bin/date '+%H:%M:%S'` "- Executing $MySB_InstallDir/scripts/ProxyUse.bsh 'start'"
-						gfnWaitingSTD ProxyUse_Init
-						screen -dmS ProxyUse_Init /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'start' 'APPLYCONFIG';
-						gfnWaitingSTD ProxyUse_Init
-					;;
-				esac
-
 				if [ ! -z "$SecurityRules" ]; then
 					gfnWaitingSTD MySB_SecurityRules
 					screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--pglcmd' 'APPLYCONFIG';
@@ -281,14 +250,6 @@ DoApplyConfig() {
 
 				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
-
-				# Report system table to proxy
-				if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ] && [ "$User" != "$gsMainUserName" ]; then
-					echo `/bin/date '+%H:%M:%S'` "- Executing $MySB_InstallDir/scripts/ProxyUse.bsh 'options_system'"
-					gfnWaitingSTD ProxyUse_system
-					screen -dmS ProxyUse_system /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'options_system' "$CommandArg" 'APPLYCONFIG';
-					gfnWaitingSTD ProxyUse_system
-				fi
 			;;
 
 			"OpenVPN") # ($1 = username, $2 = userpass)
@@ -313,20 +274,6 @@ DoApplyConfig() {
 						'DIRECT')	screen -dmS UserScript_StartSynchro su -s /bin/sh $User -c "/bin/bash /home/$User/scripts/$UserScriptName 'DIRECT' > /dev/null 2>&1";;
 						'CRON')		screen -dmS UserScript_StartSynchro su -s /bin/sh $User -c "/bin/bash /home/$User/scripts/$UserScriptName 'CRON' > /dev/null 2>&1";;
 					esac
-				fi
-				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
-				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
-			;;
-
-			"ProxyUse.bsh")
-				if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ]; then
-					gfnWaitingSTD ProxyUse_Init
-					screen -dmS ProxyUse_Init /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'start' 'APPLYCONFIG';
-					gfnWaitingSTD ProxyUse_Init
-				else
-					gfnWaitingSTD ProxyUse_Init
-					screen -dmS ProxyUse_Init /bin/bash $MySB_InstallDir/scripts/ProxyUse.bsh 'stop' 'APPLYCONFIG';
-					gfnWaitingSTD ProxyUse_Init
 				fi
 				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
 				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"

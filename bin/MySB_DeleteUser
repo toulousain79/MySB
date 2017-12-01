@@ -28,41 +28,36 @@ source $(dirname $0)/../inc/includes_before
 source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
 
 if [ "$USAGE" == "ON" ]; then
-	if [ "$gnProxyMode" -eq 2 ]; then
-		echo -e "${CRED}$Global_ProxyOn_NoFonction$CEND"
-		gfnEndingScript 0
-	else
-		gfnListCountUsers 'all'
-		LIST=""
-		for User in $gsUsersList; do
-			if [ "$User" != "$gsMainUserName" ]; then
-				LIST="$LIST|${CYELLOW}$User$CEND"
-			fi
-		done
+	gfnListCountUsers 'all'
+	LIST=""
+	for User in $gsUsersList; do
+		if [ "$User" != "$gsMainUserName" ]; then
+			LIST="$LIST|${CYELLOW}$User$CEND"
+		fi
+	done
 
-		if [ ! -z "$LIST" ]; then
-			LIST="`echo \($LIST\) | sed -e 's/^ //g;' | sed -e 's/(|/(/g;'`"
-			echo -e "$Global_AvailableUsers $LIST"
-			echo -e "$Global_CancelUserChoice"
-		else
-			echo -e "$DeleteUser_NoUser $LIST"
+	if [ ! -z "$LIST" ]; then
+		LIST="`echo \($LIST\) | sed -e 's/^ //g;' | sed -e 's/(|/(/g;'`"
+		echo -e "$Global_AvailableUsers $LIST"
+		echo -e "$Global_CancelUserChoice"
+	else
+		echo -e "$DeleteUser_NoUser $LIST"
+		gfnEndingScript 0
+	fi
+
+	UserToDelete=""
+	TEMP_UserToDelete=""
+	while [ -z "$UserToDelete" ] \
+		|| [ "$UserToDelete" == "$gsMainUserName" ] \
+		|| [ -z "`echo $gsUsersList | grep $UserToDelete`" ]; do
+
+		gfnQuestionGetString NO "$DeleteUser_TypeUser" UserToDelete
+		TEMP_UserToDelete="`echo $UserToDelete | tr '[:lower:]' '[:upper:]'`"
+
+		if [ "$TEMP_UserToDelete" == "$Global_NO" ]; then
 			gfnEndingScript 0
 		fi
-
-		UserToDelete=""
-		TEMP_UserToDelete=""
-		while [ -z "$UserToDelete" ] \
-			|| [ "$UserToDelete" == "$gsMainUserName" ] \
-			|| [ -z "`echo $gsUsersList | grep $UserToDelete`" ]; do
-
-			gfnQuestionGetString NO "$DeleteUser_TypeUser" UserToDelete
-			TEMP_UserToDelete="`echo $UserToDelete | tr '[:lower:]' '[:upper:]'`"
-
-			if [ "$TEMP_UserToDelete" == "$Global_NO" ]; then
-				gfnEndingScript 0
-			fi
-		done
-	fi
+	done
 else
 	UserToDelete=$1
 fi
@@ -175,18 +170,11 @@ for User in $gsUsersList; do
 	fi
 done
 
-if [ "$gnProxyMode" -ne 2 ]; then
-	#### Quota
-	gfnManageQuota "$DeleteUser_Quota"
+#### Quota
+gfnManageQuota "$DeleteUser_Quota"
 
-	#### renting
-	gfnMonthlyPayment "$UserToDelete"
-fi
-
-#### Delete user from proxy server
-if [ "$gbProxyInfos" -eq 1 ] && [ "$gnProxyMode" -eq 1 ]; then
-	gfnScriptInvoke 'source' "$MySB_InstallDir/scripts/ProxyUse.bsh" 'del_user' "$UserToDelete" "$LocSwitch"
-fi
+#### renting
+gfnMonthlyPayment "$UserToDelete"
 
 #### Create new security rules
 log_daemon_msg "$DeleteUser_SecurituRules"

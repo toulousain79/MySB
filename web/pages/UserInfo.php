@@ -28,7 +28,7 @@ function printUser($user) {
 	global $MySB_DB, $Port_HTTPs;
 
 	// System infos
-	$system_datas = $MySB_DB->get("system", ["hostname", "rt_model", "rt_tva", "rt_global_cost", "rt_cost_tva", "rt_nb_users", "rt_price_per_users", "rt_method", "proxy"], ["id_system" => 1]);
+	$system_datas = $MySB_DB->get("system", ["hostname", "rt_model", "rt_tva", "rt_global_cost", "rt_cost_tva", "rt_nb_users", "rt_price_per_users", "rt_method"], ["id_system" => 1]);
 	// Users infos
 	$users_datas = $MySB_DB->get("users", ["id_users", "users_passwd", "admin", "users_email", "rpc", "sftp", "home_dir", "scgi_port", "rtorrent_port", "quota", "treasury", "account_type"], ["users_ident" => "$user"]);
 	$UserID = $users_datas["id_users"];
@@ -62,17 +62,15 @@ function printUser($user) {
 	echo '<td><span class="Comments">' . User_UserInfo_Comment_IpAddress . '</span></td>';
 	echo '</tr>';
 	// Password
-	if ( $system_datas["proxy"] != '2' ) {
-		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Password . '</th>';
-		if ( ($UserPasswd != "") && ($users_datas["admin"] != '1') ) {
-			echo '<td>' . $UserPasswd . '</td>';
-			echo '<td  style="background-color: #FF6666; text-align: center;">';
-			echo '<span class="Comments">' . User_UserInfo_Comment_Password_1 . '</span>';
-			echo '</td>';
-		} else {
-			echo '<td>*****</td>';
-			echo '<td><span class="Comments">' . User_UserInfo_Comment_Password_2 . '</span></td>';
-		}
+	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Password . '</th>';
+	if ( ($UserPasswd != "") && ($users_datas["admin"] != '1') ) {
+		echo '<td>' . $UserPasswd . '</td>';
+		echo '<td  style="background-color: #FF6666; text-align: center;">';
+		echo '<span class="Comments">' . User_UserInfo_Comment_Password_1 . '</span>';
+		echo '</td>';
+	} else {
+		echo '<td>*****</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_Password_2 . '</span></td>';
 	}
 	echo '</tr>';
 	// E-mail
@@ -80,7 +78,7 @@ function printUser($user) {
 	echo '<td>' . $users_datas["users_email"] . '</td>';
 	echo '<td><span class="Comments">' . User_UserInfo_Comment_Email . '</span></td></tr>';
 
-	if ( ($users_datas["account_type"] == 'normal') && ($system_datas["proxy"] != '2') ) {
+	if ( $users_datas["account_type"] == 'normal' ) {
 		// RPC
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_RPC . '</th>';
 		echo '<td>' . $users_datas["rpc"] . '</td>';
@@ -106,7 +104,7 @@ function printUser($user) {
 	//////////////////////
 	// Directories
 	//////////////////////
-	if ( ($users_datas["account_type"] == 'normal') && ($system_datas["proxy"] != '2') ) {
+	if ( $users_datas["account_type"] == 'normal' ) {
 		echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_UserInfo_Title_Directories . '</h4></th></tr>';
 		// Session dir
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Session . '</th>';
@@ -137,7 +135,7 @@ function printUser($user) {
 	//////////////////////
 	// Ports
 	//////////////////////
-	if ( ($users_datas["account_type"] == 'normal') && ($system_datas["proxy"] != '2') ) {
+	if ( $users_datas["account_type"] == 'normal' ) {
 		echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_UserInfo_Title_Ports . '</h4></th></tr>';
 		// sFTP Port
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SftpPort . '</th>';
@@ -160,7 +158,7 @@ function printUser($user) {
 	//////////////////////
 	// OpenVPN
 	//////////////////////
-	if ( ($users_datas["account_type"] == 'normal') && ($system_datas["proxy"] != '2') ) {
+	if ( $users_datas["account_type"] == 'normal' ) {
 		echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_UserInfo_Title_OpenVPN . '</h4></th></tr>';
 		// Server IP GW
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SrvIpGw . '</th>';
@@ -189,14 +187,12 @@ function printUser($user) {
 	//////////////////////
 	echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_UserInfo_Title_LinkNormal . '</h4></th></tr>';
 	// Change password
-	if ( $system_datas["proxy"] != '2' ) {
-		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_ChangePass . '</th>';
-		echo '<td colspan="2"><a href="?user/change-password.html"><span class="Comments">' . User_UserInfo_Comment_ChangePass . '</span></a></td></tr>';
-	}
+	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_ChangePass . '</th>';
+	echo '<td colspan="2"><a href="?user/change-password.html"><span class="Comments">' . User_UserInfo_Comment_ChangePass . '</span></a></td></tr>';
 	// Manage Addresses
 	echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_ManageAddresses . '</th>';
 	echo '<td colspan="2"><a href="?user/manage-addresses.html"><span class="Comments">' . User_UserInfo_Comment_ManageAddresses . '</span></a></td></tr>';
-	if ( ($users_datas["account_type"] == 'normal') && ($system_datas["proxy"] != '2') ) {
+	if ( $users_datas["account_type"] == 'normal' ) {
 		// ruTorrent
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_ruTorrent . '</th>';
 		echo '<td colspan="2"><a target="_blank" href="/ru"><span class="Comments">' . User_UserInfo_Comment_ruTorrent . '</span></a></td></tr>';
@@ -245,19 +241,15 @@ function printUser($user) {
 		// Logs
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Logs . '</th>';
 		echo '<td colspan="2"><a href="?main-user/logs.html"><span class="Comments">' . User_UserInfo_Comment_Logs . '</span></a></td></tr>';
-		if ( $system_datas["proxy"] != '2' ) {
-			// Renting infos
-			echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Renting . '</th>';
-			echo '<td colspan="2"><a href="?main-user/renting-infos.html"><span class="Comments">' . User_UserInfo_Comment_Renting . '</span></a></td></tr>';
-			// Trackers
-			echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Trackers . '</th>';
-			echo '<td colspan="2"><span class="Comments">' . sprintf(User_UserInfo_Comment_Trackers, $system_datas["hostname"], $Port_HTTPs, $system_datas["hostname"], $Port_HTTPs) . '</span></td></tr>';
-		}
+		// Renting infos
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Renting . '</th>';
+		echo '<td colspan="2"><a href="?main-user/renting-infos.html"><span class="Comments">' . User_UserInfo_Comment_Renting . '</span></a></td></tr>';
+		// Trackers
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Trackers . '</th>';
+		echo '<td colspan="2"><span class="Comments">' . sprintf(User_UserInfo_Comment_Trackers, $system_datas["hostname"], $Port_HTTPs, $system_datas["hostname"], $Port_HTTPs) . '</span></td></tr>';
 		// Blocklists
-		if ( $system_datas["proxy"] != '2' ) {
-			echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Blocklists . '</th>';
-			echo '<td colspan="2"><span class="Comments">' . User_UserInfo_Comment_Blocklists . '</span></td></tr>';
-		}
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Blocklists . '</th>';
+		echo '<td colspan="2"><span class="Comments">' . User_UserInfo_Comment_Blocklists . '</span></td></tr>';
 		// DNScrypt-proxy
 		$DNScryptDatas = $MySB_DB->get("services", ["is_installed"], ["serv_name" => "DNScrypt-proxy"]);
 		if ( $DNScryptDatas["is_installed"] == '1' ) {
@@ -272,17 +264,15 @@ function printUser($user) {
 	if ( $users_datas["admin"] == '1' ) {
 		echo '<tr align="left"><th colspan="3" scope="row"><h4>' . User_UserInfo_Title_SSHcommand . '</h4></th></tr>';
 		// Users Management
-		if ( $system_datas["proxy"] != '2' ) {
-			echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_UserManage . '</th>';
-			echo '<td>MySB_CreateUser</td>';
-			echo '<td><span class="Comments">' . User_UserInfo_Comment_MySB_CreateUser . '</span></td></tr>';
-			echo '<tr align="left"><th width="17%" scope="row"> </th>';
-			echo '<td>MySB_ChangeUserPassword</td>';
-			echo '<td><span class="Comments">' . User_UserInfo_Comment_MySB_ChangeUserPassword . '</span></td></tr>';
-			echo '<tr align="left"><th width="17%" scope="row"> </th>';
-			echo '<td>MySB_DeleteUser</td>';
-			echo '<td><span class="Comments">' . User_UserInfo_Comment_MySB_DeleteUser . '</span></td></tr>';
-		}
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_UserManage . '</th>';
+		echo '<td>MySB_CreateUser</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_MySB_CreateUser . '</span></td></tr>';
+		echo '<tr align="left"><th width="17%" scope="row"> </th>';
+		echo '<td>MySB_ChangeUserPassword</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_MySB_ChangeUserPassword . '</span></td></tr>';
+		echo '<tr align="left"><th width="17%" scope="row"> </th>';
+		echo '<td>MySB_DeleteUser</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_MySB_DeleteUser . '</span></td></tr>';
 		// SeedBox Management
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_SeedboxManage . '</th>';
 		echo '<td>MySB_UpgradeMe</td>';
@@ -297,14 +287,12 @@ function printUser($user) {
 		echo '<td>MySB_SecurityRules</td>';
 		echo '<td><span class="Comments">' . User_UserInfo_Comment_MySB_SecurityRules . '</span></td></tr>';
 		// Main scripts
-		if ( $system_datas["proxy"] != '2' ) {
-			echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_MainScript . '</th>';
-			echo '<td>'.MYSB_ROOT.'/scripts/BlocklistsRTorrent.bsh</td>';
-			echo '<td><span class="Comments">' . User_UserInfo_Comment_BlocklistsRTorrent . '</span></td></tr>';
-			echo '<tr align="left"><th width="17%" scope="row"> </th>';
-			echo '<td>'.MYSB_ROOT.'/scripts/GetTrackersCert.bsh</td>';
-			echo '<td><span class="Comments">' . User_UserInfo_Comment_GetTrackersCert . '</span></td></tr>';
-		}
+		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_MainScript . '</th>';
+		echo '<td>'.MYSB_ROOT.'/scripts/BlocklistsRTorrent.bsh</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_BlocklistsRTorrent . '</span></td></tr>';
+		echo '<tr align="left"><th width="17%" scope="row"> </th>';
+		echo '<td>'.MYSB_ROOT.'/scripts/GetTrackersCert.bsh</td>';
+		echo '<td><span class="Comments">' . User_UserInfo_Comment_GetTrackersCert . '</span></td></tr>';
 	}
 
 	if ( !empty($system_datas["rt_global_cost"]) && !empty($system_datas["rt_model"]) ) {

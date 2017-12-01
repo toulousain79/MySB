@@ -14,11 +14,6 @@
 			- Backup-Manager, minor changes
 			- Portal
 				* Medoo Framework v1.5.1
-				* Add proxy SSH page configuration
-				* Admin System Options, add switch for use proxy SSH
-			- New SSH Proxy feature
-				* Possibility of installing a new server (like a VPS) in proxy mode (minimal installation)
-				* When the feature is enabled, all rTorrent ports go through multiple SSH tunnels and exit to the MySB server installed in proxy mode.
 
 	Version v5.0
 		2017/10/18

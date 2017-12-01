@@ -26,7 +26,6 @@ global $MySB_DB, $CurrentUser;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
 // VARs
-$SystemDatas = $MySB_DB->get("system", ["proxy"], ["id_system" => 1]);
 $users_datas = $MySB_DB->get("users", ["id_users", "rtorrent_version", "rtorrent_notify", "rtorrent_restart", "language", "account_type"], ["users_ident" => "$CurrentUser"]);
 $UserID = $users_datas['id_users'];
 $Command = 'message_only';
@@ -109,7 +108,7 @@ $language = $users_datas['language'];
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 
 <?php
-if ( ($users_datas['account_type'] == 'normal') && ($SystemDatas['proxy'] != '2') ) {
+if ( $users_datas['account_type'] == 'normal' ) {
 ?>
 	<fieldset>
 	<legend><?php echo User_OptionsMySB_Title_rTorrent; ?></legend>

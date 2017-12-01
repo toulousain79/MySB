@@ -30,7 +30,7 @@ $OpenVPNIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => 
 $DNScryptIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "DNScrypt-proxy"]);
 $LogwatchIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "LogWatch"]);
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
-$system_datas = $MySB_DB->get("system", ["dnscrypt", "logwatch", "pgl_email_stats", "pgl_watchdog_email", "ip_restriction", "proxy"], ["id_system" => 1]);
+$system_datas = $MySB_DB->get("system", ["dnscrypt", "logwatch", "pgl_email_stats", "pgl_watchdog_email", "ip_restriction"], ["id_system" => 1]);
 
 // Get values from database
 $DNScrypt_db = $system_datas['dnscrypt'];
@@ -38,7 +38,6 @@ $LogWatch_db = $system_datas['logwatch'];
 $pgl_email_stats = $system_datas['pgl_email_stats'];
 $pgl_watchdog_email = $system_datas['pgl_watchdog_email'];
 $ip_restriction_db = $system_datas['ip_restriction'];
-$Proxy_db = $system_datas['proxy'];
 $openvpn_proto_db =  $MySB_DB->get("services", "port_udp1", ["serv_name" => "OpenVPN"]);
 switch ($openvpn_proto_db) {
 	case '':
@@ -62,7 +61,6 @@ if (isset($_POST['submit'])) {
 	$OpenVPN_Proto_post = $_POST['OpenVPN_Proto_post'];
 	$DNScrypt_post = $_POST['DNScrypt_post'];
 	$LogWatch_post = $_POST['LogWatch_post'];
-	$Proxy_post = $_POST['Proxy_post'];
 	$type = 'success';
 	$NoChange = true;
 
@@ -88,8 +86,8 @@ if (isset($_POST['submit'])) {
 	}
 
 	// 2 - Next, we apply new paramaters WITH (maybe) needed of create again MySB Security rules
-	if ( ($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) || ($DNScrypt_db != $DNScrypt_post) || ($LogWatch_db != $LogWatch_post) || ($Proxy_db != $Proxy_post) ) {
-		$result = $MySB_DB->update("system", ["ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats", "pgl_watchdog_email" => "$PGL_EmailWD", "dnscrypt" => "$DNScrypt_post", "logwatch" => "$LogWatch_post", "proxy" => "$Proxy_post"], ["id_system" => 1]);
+	if ( ($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) || ($DNScrypt_db != $DNScrypt_post) || ($LogWatch_db != $LogWatch_post) ) {
+		$result = $MySB_DB->update("system", ["ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats", "pgl_watchdog_email" => "$PGL_EmailWD", "dnscrypt" => "$DNScrypt_post", "logwatch" => "$LogWatch_post"], ["id_system" => 1]);
 
 		if( $result >= 0 ) {
 			$NoChange = false;
@@ -106,18 +104,12 @@ if (isset($_POST['submit'])) {
 			} else {
 				$args = "$args|DNScrypt:-1";
 			}
-			if ( $Proxy_db != $Proxy_post ) {
-				// $Proxy_post: 0 disabled / 1 enabled / -1 no changes
-				$args = "$args|Proxy:$Proxy_post";
-			} else {
-				$args = "$args|Proxy:-1";
-			}
 			if ( ($ip_restriction_db != $IP_restriction_post) || ($pgl_email_stats != $PGL_EmailStats) || ($pgl_watchdog_email != $PGL_EmailWD) ) {
 				$args = "$args|MySB_SecurityRules";
 			}
 		}
 	} else {
-		$args = "$args|LogWatch:-1|DNScrypt:-1|Proxy:-1";
+		$args = "$args|LogWatch:-1|DNScrypt:-1";
 	}
 
 	// Get new values from database
@@ -126,7 +118,6 @@ if (isset($_POST['submit'])) {
 	$ip_restriction_db = $IP_restriction_post;
 	$openvpn_proto_db = $OpenVPN_Proto_post;
 	$LogWatch_db = $LogWatch_post;
-	$Proxy_db = $Proxy_post;
 
 	if ($NoChange) {
 		GenerateMessage('message_only', 'information', Global_NoChange);
@@ -276,32 +267,6 @@ if (isset($_POST['submit'])) {
 						break;
 				} ?>
 				<select name="LogWatch_post" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
-			</td>
-		</tr>
-	</table>
-	</fieldset>
-	<?php } ?>
-
-	<?php if ($Proxy_db != '2') { ?>
-	<fieldset>
-	<legend><?php echo MainUser_OptionsSystem_Title_Proxy; ?></legend>
-	<table>
-		<tr>
-			<td><?php echo MainUser_OptionsSystem_Proxy_Activate; ?></td>
-			<td>
-				<?php switch ($Proxy_db) {
-					case '1':
-						$class = 'greenText';
-						$options = '<option selected="selected" value="1" class="greenText">' . Global_Yes . '</option>';
-						$options .= '<option value="0" class="redText">' . Global_No . '</option>';
-						break;
-					case '0':
-						$class = 'redText';
-						$options = '<option value="1" class="greenText">' . Global_Yes . '</option>';
-						$options .= '<option selected="selected" value="0" class="redText">' . Global_No . '</option>';
-						break;
-				} ?>
-				<select name="Proxy_post" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
 			</td>
 		</tr>
 	</table>

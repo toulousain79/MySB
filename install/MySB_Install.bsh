@@ -25,14 +25,7 @@
 ##################### VARS ###########################################
 gsCurrentVersion="v5.1.1"
 MySB_InstallDir="/opt/MySB"
-EnvLang=""
-sProxyMode="NO"
-for Arg in "$@"; do
-	case "$Arg" in
-		fr|en)	EnvLang="$Arg";;
-		proxy)	sProxyMode="YES";;
-	esac
-done
+EnvLang="$1"
 # Colors
 CEND="\033[0m"
 CRED="\033[1;31m"
@@ -250,18 +243,11 @@ KernelReplace() {
 
 # Banner
 BannerInstall() {
-	local sText
-
-	case "$sProxyMode" in
-		YES)	sText="${CYELLOW}MySB$CEND ${CRED}$gsCurrentVersion$CEND ${CBLUE}proxy$CEND";;
-		NO)		sText="${CYELLOW}MySB$CEND ${CRED}$gsCurrentVersion$CEND";;
-	esac
-
 	#### Banner
 	clear
 	echo -e "${CGREEN}############################################################$CEND"
 	echo -e "${CGREEN}#$CEND"
-	echo -e "${CGREEN}#$CEND 			$sText"
+	echo -e "${CGREEN}#$CEND 			${CYELLOW}MySB$CEND ${CRED}$gsCurrentVersion$CEND"
 	echo -e "${CGREEN}#$CEND"
 	echo -e "${CGREEN}############################################################$CEND"
 	echo
@@ -525,9 +511,8 @@ gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/MySQL" 'INSTALL'
 gfnStatusSTD
 
 # Update DB with usable values
-[ "$sProxyMode" == "YES" ] && sProxyMode="2" || sProxyMode="0"
-cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='$gsCurrentVersion', proxy='$sProxyMode' WHERE id_system='1';" -v >> /tmp/`basename $0`.log
-[ $? -gt 0 ] && ExitOnError 1 "UPDATE system SET mysb_version='$gsCurrentVersion', proxy='$sProxyMode' WHERE id_system='1';"
+cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='$gsCurrentVersion' WHERE id_system='1';" -v >> /tmp/`basename $0`.log
+[ $? -gt 0 ] && ExitOnError 1 "UPDATE system SET mysb_version='$gsCurrentVersion' WHERE id_system='1';"
 cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,language,admin) VALUES ('MySB','MySB','$EnvLang','1');" -v >> /tmp/`basename $0`.log
 [ $? -gt 0 ] && ExitOnError 1 "INSERT INTO users (users_ident,users_email,language,admin) VALUES ('MySB','MySB','$EnvLang','1');"
 source $MySB_InstallDir/inc/vars

@@ -576,16 +576,14 @@ gfnPopulatingTcpInboundChain() {
 				# SSHd
 				iptables -A tcp_inbound -p TCP -s $ip --destination-port $gsPort_SSH -j ACCEPT -m comment --comment "SSH and SFTP for users"
 
-				if [ "$gnProxyMode" -ne 2 ]; then
-					# FTP Server (Control)
-					iptables -A tcp_inbound -p TCP -s $ip --destination-port $gsPort_FTP -j ACCEPT -m comment --comment "FTP for users"
+				# FTP Server (Control)
+				iptables -A tcp_inbound -p TCP -s $ip --destination-port $gsPort_FTP -j ACCEPT -m comment --comment "FTP for users"
 
-					# FTP Client (Data Port for non-PASV transfers)
-					iptables -A tcp_inbound -p TCP -s $ip --source-port $gsPort_FTP_Data -j ACCEPT -m comment --comment "FTP Data for users"
+				# FTP Client (Data Port for non-PASV transfers)
+				iptables -A tcp_inbound -p TCP -s $ip --source-port $gsPort_FTP_Data -j ACCEPT -m comment --comment "FTP Data for users"
 
-					# Passive FTP
-					iptables -A tcp_inbound -p TCP -s $ip --destination-port $gsPort_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive for users"
-				fi
+				# Passive FTP
+				iptables -A tcp_inbound -p TCP -s $ip --destination-port $gsPort_FTP_Passive -j ACCEPT -m comment --comment "FTP Passive for users"
 			done
 		;;
 		"refresh")
@@ -599,17 +597,15 @@ gfnPopulatingTcpInboundChain() {
 				(( nNumLine++ ))
 				sed -i ""$nNumLine"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $gsPort_SSH -m comment --comment \"SSH and SFTP for users\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
 
-				if [ "$gnProxyMode" -ne 2 ]; then
-					# FTP Server (Control)
-					(( nNumLine++ ))
-					sed -i ""$nNumLine"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $gsPort_FTP -m comment --comment \"FTP for users\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
-					# FTP Client (Data Port for non-PASV transfers)
-					(( nNumLine++ ))
-					sed -i ""$nNumLine"i\-A tcp_inbound -s $ip -p tcp -m tcp --sport $gsPort_FTP_Data -m comment --comment \"FTP Data for users\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
-					# Passive FTP
-					(( nNumLine++ ))
-					sed -i ""$nNumLine"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $gsPort_FTP_Passive -m comment --comment \"FTP Passive for users\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
-				fi
+				# FTP Server (Control)
+				(( nNumLine++ ))
+				sed -i ""$nNumLine"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $gsPort_FTP -m comment --comment \"FTP for users\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
+				# FTP Client (Data Port for non-PASV transfers)
+				(( nNumLine++ ))
+				sed -i ""$nNumLine"i\-A tcp_inbound -s $ip -p tcp -m tcp --sport $gsPort_FTP_Data -m comment --comment \"FTP Data for users\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
+				# Passive FTP
+				(( nNumLine++ ))
+				sed -i ""$nNumLine"i\-A tcp_inbound -s $ip -p tcp -m tcp --dport $gsPort_FTP_Passive -m comment --comment \"FTP Passive for users\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
 			done
 		;;
 	esac
@@ -708,21 +704,13 @@ gfnPopulatingTcpInboundChain() {
 	#### rTorrent
 	case "$1" in
 		"create")
-			if [ "$gnProxyMode" -eq 2 ]; then
-				for SeedboxUser in $gsUsersList; do
-					sValues="`cmdMySQL 'MySB_db' "SELECT rtorrent_port FROM users WHERE users_ident='$SeedboxUser';" | sed 's/\t/|/g;'`"
-					rTorrentPortEnd="`echo $sValues | awk '{split($0,a,"|"); print a[1]}'`"
-					iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $rTorrentPortEnd -j ACCEPT -m comment --comment "rTorrent for users"
-				done
-			else
-				for SeedboxUser in $gsUsersList; do
-					sValues="`cmdMySQL 'MySB_db' "SELECT scgi_port,rtorrent_port FROM users WHERE users_ident='$SeedboxUser';" | sed 's/\t/|/g;'`"
-					rTorrentPortStart="`echo $sValues | awk '{split($0,a,"|"); print a[1]}'`"
-					rTorrentPortEnd="`echo $sValues | awk '{split($0,a,"|"); print a[2]}'`"
-					#iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $rTorrentPortStart:$rTorrentPortEnd -j LOG --log-prefix "[MySB] rTorrent TCP IN: " -m comment --comment "rTorrent TCP IN"
-					iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $rTorrentPortStart:$rTorrentPortEnd -j ACCEPT -m comment --comment "rTorrent for users"
-				done
-			fi
+			for SeedboxUser in $gsUsersList; do
+				sValues="`cmdMySQL 'MySB_db' "SELECT scgi_port,rtorrent_port FROM users WHERE users_ident='$SeedboxUser';" | sed 's/\t/|/g;'`"
+				rTorrentPortStart="`echo $sValues | awk '{split($0,a,"|"); print a[1]}'`"
+				rTorrentPortEnd="`echo $sValues | awk '{split($0,a,"|"); print a[2]}'`"
+				#iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $rTorrentPortStart:$rTorrentPortEnd -j LOG --log-prefix "[MySB] rTorrent TCP IN: " -m comment --comment "rTorrent TCP IN"
+				iptables -A tcp_inbound -p TCP -s 0/0 --destination-port $rTorrentPortStart:$rTorrentPortEnd -j ACCEPT -m comment --comment "rTorrent for users"
+			done
 		;;
 	esac
 

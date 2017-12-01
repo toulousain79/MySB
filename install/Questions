@@ -103,7 +103,7 @@ DisplaySurvey() {
 			CHECK_SrvIpAddress="`gfnValidateIP "$gsSrvIpAddress"`"
 		done
 		unset sValue
-		
+
 		# Box' local IP (more than one local IP ?)
 		if [ ! -z "$gsSrvAdditionnalIpAddresses" ]; then
 			echo
@@ -144,93 +144,8 @@ DisplaySurvey() {
 		gfnQuestionGetString NO "$Questions_PortSSH" gsPort_SSH "$gsPort_SSH"
 
 		# FTP port
-		if [ "$gnProxyMode" -ne 2 ]; then
-			echo
-			gfnQuestionGetString NO "$Questions_PortFTPs" gsPort_FTP "$gsPort_FTP"
-		fi
-	fi
-
-	#### PROXY / Infos main MySB server
-	if [ "$gnProxyMode" -eq 2 ]; then
-		nLoop=1
-		while [ $nLoop -eq 1 ]; do
-			echo
-			echo
-			Questions_ProxyNeedSomeInfos="`echo $Questions_ProxyNeedSomeInfos | sed "s/##gsHostNameFqdn##/$gsHostNameFqdn/g;"`"
-			echo -e "$Questions_ProxyNeedSomeInfos"
-			echo
-
-			# ROOT password of current server (proxy)
-			echo
-			if [ "$RepeatSurvey" == "YES" ]; then
-				sValue="$gsCurrentServerRootPassword"
-			else
-				sValue=""
-				gsCurrentServerRootPassword=""
-			fi
-
-			if [ -z "$gsCurrentServerRootPassword" ] || [ "$TYPE" == "UPGRADE" ] || [ "$RepeatSurvey" == "YES" ]; then
-				gfnQuestionGetString NO "$Questions_CurrentServerRootPassword" gsCurrentServerRootPassword "$sValue"
-			fi
-			unset sValue
-
-			# ROOT password of main server
-			echo
-			if [ "$RepeatSurvey" == "YES" ]; then
-				sValue="$gsMainServerRootPassword"
-			else
-				sValue=""
-				gsMainServerRootPassword=""
-			fi
-
-			if [ -z "$gsMainServerRootPassword" ] || [ "$TYPE" == "UPGRADE" ] || [ "$RepeatSurvey" == "YES" ]; then
-				gfnQuestionGetString NO "$Questions_MainServerRootPassword" gsMainServerRootPassword "$sValue"
-			fi
-			unset sValue
-
-			# Hostname
-			echo
-			gfnQuestionGetString NO "$Questions_MainServerHostname" gsMainServerHostNameFqdn "$gsMainServerHostNameFqdn"
-
-			# Port SSH
-			echo
-			gsMainServerPort_SSH=$gsPort_SSH
-			gfnQuestionGetString NO "$Questions_MainServerPortSSH" gsMainServerPort_SSH "$gsMainServerPort_SSH"
-
-			# Get MySQL infos of remote server
-			echo
-			log_daemon_msg "$Message_DownloadConfig"
-			rsync -az --timeout=10 -e "sshpass -p $gsMainServerRootPassword ssh -p $gsMainServerPort_SSH -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" root@$gsMainServerHostNameFqdn:/etc/MySB/config /etc/MySB/config_remote &> /dev/null
-			if [ $? -eq 0 ]; then
-				gfnStatusLSB 0
-				if [ -f /etc/MySB/config_remote ]; then
-					sed -i '/EnvLang/d' /etc/MySB/config_remote
-					perl -pi -e "s/MySB_InstallDir/MySB_RemoteDir/g" /etc/MySB/config_remote
-					source /etc/MySB/config_remote
-				fi
-			else
-				gfnStatusLSB 1
-			fi
-
-			echo
-			log_daemon_msg "$Message_DownloadConfigMySQL"
-			rsync -az --timeout=10 -e "sshpass -p $gsMainServerRootPassword ssh -p $gsMainServerPort_SSH -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" root@$gsMainServerHostNameFqdn:/root/.config.cnf /root/.config_proxy.cnf &> /dev/null
-			if [ $? -eq 0 ]; then
-				gfnStatusLSB 0
-				if [ -f /root/.config_proxy.cnf ]; then
-					perl -pi -e "s/localhost/127.0.0.1/g" /root/.config_proxy.cnf
-					perl -pi -e "s/3306/3307/g" /root/.config_proxy.cnf
-					# Start SSH tunnel for access to MySQL on remote server
-					sshpass -p $gsMainServerRootPassword ssh -4 -fN -L 3307:localhost:3306 root@$gsMainServerHostNameFqdn -p $gsMainServerPort_SSH -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null &> /dev/null
-
-					[ ! -z "`ps ax | grep ssh | grep '3307:localhost:3306'`" ] && nLoop=0
-				fi
-			else
-				gfnStatusLSB 1
-			fi
-		done
 		echo
-		echo
+		gfnQuestionGetString NO "$Questions_PortFTPs" gsPort_FTP "$gsPort_FTP"
 	fi
 
 	#### MAIN USER INFO
@@ -241,25 +156,17 @@ DisplaySurvey() {
 		fi
 
 		# Main User name
-		if [ "$gnProxyMode" -ne 2 ]; then
-			echo
-			if [ "$RepeatSurvey" == "YES" ]; then
-				sValue="$gsMainUserName"
-			else
-				sValue=""
-			fi
-			gsMainUserName=""
-			while [ ! -z "`echo $gsMainUserName | grep '@'`" ] || [ -z "$gsMainUserName" ]; do
-				gfnQuestionGetString NO "$Questions_MainUserUsername" gsMainUserName "$sValue"
-			done
-			unset sValue
+		echo
+		if [ "$RepeatSurvey" == "YES" ]; then
+			sValue="$gsMainUserName"
 		else
-			UserValues="`cmdMySQL 'Proxy_db' "SELECT users_ident,users_email,scgi_port,rtorrent_port FROM users WHERE id_users='1';" | sed 's/\t/|/g;'`"
-			gsMainUserName="`echo $UserValues | awk '{split($0,a,"|"); print a[1]}'`"
-			gsMainUserEmail="`echo $UserValues | awk '{split($0,a,"|"); print a[2]}'`"
-			gsMainUserScgiPort="`echo $UserValues | awk '{split($0,a,"|"); print a[3]}'`"
-			gsMainUserRtorrentPort="`echo $UserValues | awk '{split($0,a,"|"); print a[4]}'`"
+			sValue=""
 		fi
+		gsMainUserName=""
+		while [ ! -z "`echo $gsMainUserName | grep '@'`" ] || [ -z "$gsMainUserName" ]; do
+			gfnQuestionGetString NO "$Questions_MainUserUsername" gsMainUserName "$sValue"
+		done
+		unset sValue
 
 		# Main User password
 		echo
@@ -271,68 +178,54 @@ DisplaySurvey() {
 		fi
 
 		if [ -z "$gsMainUserPassword" ] || [ "$TYPE" == "UPGRADE" ] || [ "$RepeatSurvey" == "YES" ]; then
-			if [ "$gnProxyMode" -ne 2 ]; then
-				gfnQuestionGetString NO "$Questions_MainUserPassword" gsMainUserPassword "$sValue"
-			else
-				Questions_MainServerUserPassword="`echo $Questions_MainServerUserPassword | sed "s/##gsMainUserName##/$gsMainUserName/g;" | sed "s/##gsMainServerHostNameFqdn##/$gsMainServerHostNameFqdn/g;"`"
-				gfnQuestionGetString NO "$Questions_MainServerUserPassword" gsMainUserPassword "$sValue"
-			fi
+			gfnQuestionGetString NO "$Questions_MainUserPassword" gsMainUserPassword "$sValue"
 		fi
 		unset sValue
 
 		# SMTP ?
-		if [ "$gnProxyMode" -ne 2 ]; then
-			echo
-			if [ -z "$gsSmtpProvider" ] || [ "$RepeatSurvey" == "YES" ]; then
-				echo -e "$Questions_Message_SMTP_0"
-				nLoop=1
-			else
-				nLoop=0
-			fi
-			if [ "$RepeatSurvey" == "YES" ]; then
-				sValue="$gsSmtpProvider"
-			else
-				sValue="LOCAL"
-			fi
-
-			while [ $nLoop -eq 1 ]; do
-				gfnQuestionGetString NO "$Questions_SMTP" gsSmtpProvider "$sValue"
-				gsSmtpProvider="`echo $gsSmtpProvider | tr '[:lower:]' '[:upper:]'`"
-				case "$gsSmtpProvider" in
-					'LOCAL'|'FREE'|'OVH'|'GMAIL'|'YAHOO'|'ZOHO')
-						nLoop=0
-					;;
-				esac
-			done
-
-			if [ "$gsSmtpProvider" != "LOCAL" ]; then
-				gfnQuestionGetString NO "$Questions_SMTP_Username" SMTP_Username "$SMTP_Username"
-				gfnQuestionGetString NO "$Questions_SMTP_Password" SMTP_Password "$SMTP_Password"
-			fi
-			unset sValue nLoop
+		echo
+		if [ -z "$gsSmtpProvider" ] || [ "$RepeatSurvey" == "YES" ]; then
+			echo -e "$Questions_Message_SMTP_0"
+			nLoop=1
 		else
-			SmtpValues="`cmdMySQL 'Proxy_db' "SELECT smtp_provider,smtp_username,smtp_passwd FROM smtp WHERE id_smtp='1';" | sed 's/\t/|/g;'`"
-			gsSmtpProvider="`echo $SmtpValues | awk '{split($0,a,"|"); print a[1]}'`"
-			SMTP_Username="`echo $SmtpValues | awk '{split($0,a,"|"); print a[2]}'`"
-			SMTP_Password="`echo $SmtpValues | awk '{split($0,a,"|"); print a[3]}'`"
+			nLoop=0
 		fi
+		if [ "$RepeatSurvey" == "YES" ]; then
+			sValue="$gsSmtpProvider"
+		else
+			sValue="LOCAL"
+		fi
+
+		while [ $nLoop -eq 1 ]; do
+			gfnQuestionGetString NO "$Questions_SMTP" gsSmtpProvider "$sValue"
+			gsSmtpProvider="`echo $gsSmtpProvider | tr '[:lower:]' '[:upper:]'`"
+			case "$gsSmtpProvider" in
+				'LOCAL'|'FREE'|'OVH'|'GMAIL'|'YAHOO'|'ZOHO')
+					nLoop=0
+				;;
+			esac
+		done
+
+		if [ "$gsSmtpProvider" != "LOCAL" ]; then
+			gfnQuestionGetString NO "$Questions_SMTP_Username" SMTP_Username "$SMTP_Username"
+			gfnQuestionGetString NO "$Questions_SMTP_Password" SMTP_Password "$SMTP_Password"
+		fi
+		unset sValue nLoop
 
 		# User e-mail
-		if [ "$gnProxyMode" -ne 2 ]; then
-			echo
-			if [ "$gsSmtpProvider" != "LOCAL" ]; then
-				echo -e "$Questions_Message_SMTP_1"
-			fi
-			if [ "$RepeatSurvey" == "YES" ]; then
-				sValue="$gsMainUserEmail"
-			else
-				sValue="$SMTP_Username"
-			fi
-			while [ "`gfnValidateMail $gsMainUserEmail`" -ne 1 ] || [ -z "$gsMainUserEmail" ]; do
-				gfnQuestionGetString NO "$Questions_EmailAddress" gsMainUserEmail "$sValue"
-			done
-			unset sValue
+		echo
+		if [ "$gsSmtpProvider" != "LOCAL" ]; then
+			echo -e "$Questions_Message_SMTP_1"
 		fi
+		if [ "$RepeatSurvey" == "YES" ]; then
+			sValue="$gsMainUserEmail"
+		else
+			sValue="$SMTP_Username"
+		fi
+		while [ "`gfnValidateMail $gsMainUserEmail`" -ne 1 ] || [ -z "$gsMainUserEmail" ]; do
+			gfnQuestionGetString NO "$Questions_EmailAddress" gsMainUserEmail "$sValue"
+		done
+		unset sValue
 	fi
 
 	#### SERVICES
@@ -368,7 +261,7 @@ DisplaySurvey() {
 		unset sValue nLoop
 
 		# Seedbox-Manager
-		if [ "$gbIsInstalled_Manager" != "YES" ] && [ "$gnProxyMode" -ne 2 ]; then
+		if [ "$gbIsInstalled_Manager" != "YES" ]; then
 			echo
 			nLoop=1
 			if [ "$RepeatSurvey" == "YES" ]; then
@@ -397,7 +290,7 @@ DisplaySurvey() {
 		fi
 
 		# Cakebox Light
-		if [ "$gbIsInstalled_Cakebox" != "YES" ] && [ "$gnProxyMode" -ne 2 ]; then
+		if [ "$gbIsInstalled_Cakebox" != "YES" ]; then
 			echo
 			nLoop=1
 			if [ "$RepeatSurvey" == "YES" ]; then
@@ -426,7 +319,7 @@ DisplaySurvey() {
 		fi
 
 		# Plexmedia server
-		if [ "$gbIsInstalled_PlexMedia" != "YES" ] && [ "$gnProxyMode" -ne 2 ]; then
+		if [ "$gbIsInstalled_PlexMedia" != "YES" ]; then
 			echo
 			nLoop=1
 			if [ "$RepeatSurvey" == "YES" ]; then
@@ -454,7 +347,7 @@ DisplaySurvey() {
 		fi
 
 		# NextCloud
-		if [ "$gbIsInstalled_NextCloud" != "YES" ] && [ "$gnProxyMode" -ne 2 ]; then
+		if [ "$gbIsInstalled_NextCloud" != "YES" ]; then
 			echo
 			nLoop=1
 			if [ "$RepeatSurvey" == "YES" ]; then
@@ -743,18 +636,13 @@ DisplaySurvey() {
 		fi
 		if [ "$gsMySB_PeerBlock" == "$Global_None" ] || [ -z "$gsMySB_PeerBlock" ]; then
 			echo
-			if [ "$gnProxyMode" -eq 2 ]; then	# Install a proxy ?
-				echo -e "$Questions_Message_Blocklists_Proxy"
-				sQuestion="$Questions_Install_Blocklists_Proxy"
-			else								# Not a proxy
-				echo -e "$Questions_Message_Blocklists"
-				sQuestion="$Questions_InstallBlockList_0"
+			echo -e "$Questions_Message_Blocklists"
+			sQuestion="$Questions_InstallBlockList_0"
 
-				if [ $gsMemory -lt 2048 ]; then
-					echo -e "$Questions_Message_Blocklists_0"
-				else
-					echo -e "$Questions_Message_Blocklists_1"
-				fi
+			if [ $gsMemory -lt 2048 ]; then
+				echo -e "$Questions_Message_Blocklists_0"
+			else
+				echo -e "$Questions_Message_Blocklists_1"
 			fi
 
 			if [ "$RepeatSurvey" == "YES" ]; then
@@ -808,9 +696,6 @@ DisplaySurvey() {
 		cmdMySQL 'MySB_db' "UPDATE users SET users_ident='$gsMainUserName', users_email='$gsMainUserEmail', users_passwd='$gsMainUserPassword', sftp='1', sudo='1', admin='1' WHERE users_ident='MySB' OR admin='1';" -v >> $gsLogFile
 		cmdMySQL 'MySB_db' "UPDATE users_history SET users_ident='$gsMainUserName' WHERE users_ident='MySB';" -v >> $gsLogFile
 		sqlite3 -echo -cmd '.timeout 150000' $gsWolf_DB "UPDATE user SET name='$gsMainUserName', email='$gsMainUserEmail', username='$gsMainUserName' WHERE id='2';" >> $gsLogFile
-		if [ "$gnProxyMode" -eq 2 ]; then
-			cmdMySQL 'MySB_db' "UPDATE users SET scgi_port='$gsMainUserScgiPort', rtorrent_port='$gsMainUserRtorrentPort' WHERE users_ident='$gsMainUserName';" -v >> $gsLogFile
-		fi
 
 		# 'users_addresses' table
 		gnMainUserId="`cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='$gsMainUserName';"`"
@@ -821,10 +706,6 @@ DisplaySurvey() {
 			cmdMySQL 'MySB_db' "INSERT INTO users_addresses (id_users,ipv4,hostname,check_by,is_active,last_update) VALUES ('$gnMainUserId','$sIp','$sHostName','ipv4','1','`date +%Y-%m-%d\ %H:%M:%S`');" -v >> $gsLogFile
 		done
 		unset IFS sIp
-		if [ "$gnProxyMode" -eq 2 ]; then
-			sIPv4="$(nslookup $gsMainServerHostNameFqdn | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
-			cmdMySQL 'MySB_db' "INSERT INTO users_addresses (id_users,ipv4,hostname,check_by,is_active,last_update) VALUES ('$gnMainUserId','$sIPv4','$gsMainServerHostNameFqdn','hostname','1','`date +%Y-%m-%d\ %H:%M:%S`');" -v >> $gsLogFile
-		fi
 
 		#### 'services' table
 		# HTTPs & HTTP
@@ -832,14 +713,7 @@ DisplaySurvey() {
 		# SSH
 		cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_SSH', port_tcp2='$gsPort_HTTP', port_tcp3='', ports_tcp_list='', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='SSH';" -v >> $gsLogFile
 		# FTP
-		if [ "$gnProxyMode" -ne 2 ]; then
-			cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_FTP', port_tcp2='$gsPort_FTP_Data', port_tcp3='65000:65535', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='VSFTPd';" -v >> $gsLogFile
-		fi
-
-		#### 'proxy' table
-		if [ "$gnProxyMode" -eq 2 ]; then
-			cmdMySQL 'Proxy_db' "UPDATE proxy SET address='$gsHostNameFqdn', ssh_port='$gsPort_SSH', ssh_user='root', ssh_pass='$gsCurrentServerRootPassword' WHERE id_proxy='1';" -v >> $gsLogFile
-		fi
+		cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_FTP', port_tcp2='$gsPort_FTP_Data', port_tcp3='65000:65535', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='VSFTPd';" -v >> $gsLogFile
 	fi
 
 	# Enable loop survey
@@ -866,8 +740,6 @@ ConfirmSurvey() {
 			echo -e "$Summary_SmtpPassword" "${CGREEN}$SMTP_Password$CEND"
 		fi
 		echo -e "$Summary_MainUserMail" "${CGREEN}$gsMainUserEmail$CEND"
-		[ "$gnProxyMode" -eq 2 ] && echo -e "$Summary_RootPassCurrentServer" "${CGREEN}$gsCurrentServerRootPassword$CEND"
-		[ "$gnProxyMode" -eq 2 ] && echo -e "$Summary_RootPassMainServer" "${CGREEN}$gsMainServerRootPassword$CEND"
 	fi
 
 	#### SERVER INFO
@@ -883,9 +755,7 @@ ConfirmSurvey() {
 		echo -e "$Summary_gsHostNameFqdn" "${CGREEN}$gsHostNameFqdn$CEND"
 		echo -e "$Summary_PortHTTPs" "${CGREEN}$gsPort_HTTPS$CEND"
 		echo -e "$Summary_Port_SSH" "${CGREEN}$gsPort_SSH$CEND"
-		[ "$gnProxyMode" -ne 2 ] && echo -e "$Summary_Port_FTP" "${CGREEN}$gsPort_FTP$CEND"
-		[ "$gnProxyMode" -eq 2 ] && echo -e "$Summary_MainServerHostname" "${CGREEN}$gsMainServerHostNameFqdn$CEND"
-		[ "$gnProxyMode" -eq 2 ] && echo -e "$Summary_MainServerPortSSH" "${CGREEN}$gsMainServerPort_SSH$CEND"
+		echo -e "$Summary_Port_FTP" "${CGREEN}$gsPort_FTP$CEND"
 	fi
 
 	#### SERVICES
@@ -895,15 +765,15 @@ ConfirmSurvey() {
 			echo -e "$Questions_Category_Services"
 		fi
 		echo -e "$Summary_ServerProvider" "${CGREEN}$gsServerProvider$CEND"
-		[ "$gnProxyMode" -ne 2 ] && echo -e "$Summary_SeedboxManager" "${CGREEN}$gbToInstall_Manager$CEND"
-		[ "$gnProxyMode" -ne 2 ] && echo -e "$Summary_CakeboxLight" "${CGREEN}$gbToInstall_Cakebox$CEND"
-		[ "$gnProxyMode" -ne 2 ] && echo -e "$Summary_PlexMedia" "${CGREEN}$gbToInstall_PlexMedia$CEND"
+		echo -e "$Summary_SeedboxManager" "${CGREEN}$gbToInstall_Manager$CEND"
+		echo -e "$Summary_CakeboxLight" "${CGREEN}$gbToInstall_Cakebox$CEND"
+		echo -e "$Summary_PlexMedia" "${CGREEN}$gbToInstall_PlexMedia$CEND"
 		echo -e "$Summary_Webmin" "${CGREEN}$gbToInstall_Webmin$CEND"
 		if [ "$gbToInstall_Webmin" == "$Global_YES" ]; then
 			echo -e "$Summary_WebminPort" "${CGREEN}$gsPorts_Webmin$CEND"
 		fi
-		[ "$gnProxyMode" -ne 2 ] && echo -e "$Summary_NextCloud" "${CGREEN}$gbToInstall_NextCloud$CEND"
-		[ "$gnProxyMode" -ne 2 ] && echo -e "$Summary_OpenVPN" "${CGREEN}$gbToInstall_OpenVPN$CEND"
+		echo -e "$Summary_NextCloud" "${CGREEN}$gbToInstall_NextCloud$CEND"
+		echo -e "$Summary_OpenVPN" "${CGREEN}$gbToInstall_OpenVPN$CEND"
 		if [ "$gbToInstall_OpenVPN" == "$Global_YES" ]; then
 			echo -e "$Summary_gsOpenVPN_Proto" "${CGREEN}$gsOpenVPN_Proto$CEND"
 			echo -e "$Summary_OpenVPN_WithGW" "${CGREEN}$gsPort_OpenVPN_WithGW$CEND"
