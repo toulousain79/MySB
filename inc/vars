@@ -126,7 +126,7 @@ if [ ! -z "$MySB_InstallDir" ] && [ "$gbIsReady_MySB_Db" == "YES" ]; then
 
 	### ----- System info
 	## Table System
-	sRequestValues="`$binMySQL "SELECT mysb_version,hostname,ipv4,ipv4_ext,primary_inet,timezone,mysb_user,mysb_password,server_provider,ip_restriction,dnscrypt,rt_model,rt_tva,rt_global_cost,rt_cost_tva,proxy FROM system WHERE id_system='1';" | sed 's/\t/|/g;'`"
+	sRequestValues="`$binMySQL "SELECT mysb_version,hostname,ipv4,ipv4_ext,primary_inet,timezone,mysb_user,mysb_password,server_provider,ip_restriction,dnscrypt,rt_model,rt_tva,rt_global_cost,rt_cost_tva,proxy,ipv4_additional FROM system WHERE id_system='1';" | sed 's/\t/|/g;'`"
 	gsCurrentVersion="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
 	gsHostNameFqdn="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
 	gsSrvIpAddress="`echo $sRequestValues | awk '{split($0,a,"|"); print a[3]}'`"
@@ -145,6 +145,7 @@ if [ ! -z "$MySB_InstallDir" ] && [ "$gbIsReady_MySB_Db" == "YES" ]; then
 	gsRentingCostTva="`echo $sRequestValues | awk '{split($0,a,"|"); print a[15]}'`"
 	### ----- Proxy
 	gnProxyMode="`echo $sRequestValues | awk '{split($0,a,"|"); print a[16]}'`"
+	gsSrvAdditionnalIpAddresses="`echo $sRequestValues | awk '{split($0,a,"|"); print a[17]}'`"
 	### ----- Renting infos
 	gsTimeZoneEscaped="`echo $gsTimeZone | sed s,/,\\\\\\\\\\/,g`"
 	unset sRequestValues
@@ -184,6 +185,15 @@ if [ ! -z "$MySB_InstallDir" ] && [ "$gbIsReady_MySB_Db" == "YES" ]; then
 				gsSrvIpAddress="`ifconfig $gsPrimaryInet | sed -n 's/.*inet adr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`"
 			fi
 		fi
+		for sIp in $gsSrvIpAddress; do
+			if [ -z "$sPrimary" ]; then
+				sPrimary="$sIp"
+			else		
+				[ -z "$sOthers" ] && sOthers="$sIp" || sOthers="$sOthers $sIp"
+			fi
+		done
+		gsSrvIpAddress="$sPrimary"
+		[ ! -z "$sOthers" ] && gsSrvAdditionnalIpAddresses="$sOthers"
 		# Compare IP address (external view) with real IP address (local view)
 		if [ -z "$gsSrvIpAddress" ]; then
 			gsSrvIpAddress="$gsSrvIpAddressExt"
