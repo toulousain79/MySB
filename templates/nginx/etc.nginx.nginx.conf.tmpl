@@ -1,0 +1,124 @@
+include /etc/nginx/modules-enabled/*.conf;
+user www-data;
+worker_processes auto;
+pid /var/run/nginx.pid;
+
+events {
+	worker_connections 1024;
+	multi_accept on;
+}
+
+http {
+	#### LOG
+	error_log /var/log/nginx/error.log error;
+	access_log /var/log/nginx/access.log combined;
+
+	#### useful for multi-servers
+	add_header X-Server $hostname;
+
+	#### ngx_http_ssl_module
+	ssl_buffer_size 4k;
+	ssl_certificate <InstallDir>/ssl/mysb.cert;
+	ssl_certificate_key <InstallDir>/ssl/mysb.key;
+	ssl_prefer_server_ciphers on;
+	#ssl_ciphers ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS;
+	ssl_ciphers ECDH+AESGCM:ECDH+AES256:ECDH+AES128:DH+3DES:!ADH:!AECDH:!MD5;
+	ssl_protocols TLSv1 TLSv1.1 TLSv1.2; # Dropping SSLv3, ref: POODLE
+	ssl_session_cache shared:SSL:20m;
+	ssl_session_timeout 10m;
+
+	#### ngx_http_core_module
+	expires 10m;
+	default_type application/octet-stream;
+	keepalive_disable msie6;
+	keepalive_requests 100;
+	keepalive_timeout 70;
+	log_not_found on;
+	sendfile on;
+	server_tokens off;
+	tcp_nodelay on;
+	tcp_nopush on;
+	types_hash_max_size 2048;
+	server_names_hash_bucket_size 64;
+	server_name_in_redirect off;
+	client_max_body_size 4000M;
+
+	#### PageSpeed
+	# Turning the module on and off
+	pagespeed on;
+	# Configuring PageSpeed Filters (PassThrough, CoreFilters, or OptimizeForBandwidth)
+	pagespeed RewriteLevel OptimizeForBandwidth;
+	# Needs to exist and be writable by nginx.  Use tmpfs for best performance.
+	pagespeed FileCachePath "/mnt/tmpFS/pagespeed";
+	pagespeed FileCacheSizeKb            102400;
+	pagespeed FileCacheCleanIntervalMs   3600000;
+	pagespeed FileCacheInodeLimit        500000;
+	pagespeed LRUCacheKbPerProcess     8192;
+	pagespeed LRUCacheByteLimit        16384;
+	# More filters
+	pagespeed EnableFilters remove_quotes;
+	pagespeed EnableFilters remove_comments;
+	pagespeed EnableFilters combine_heads;
+	pagespeed EnableFilters move_css_to_head;
+	pagespeed EnableFilters rewrite_css;
+	# Disabled for NextCloud
+	#pagespeed EnableFilters defer_javascript;
+
+	# PageSpeed GZIP
+	pagespeed FetchWithGzip on;
+	# gzip on;
+	# gzip_vary on;
+	# gzip_proxied any;
+	gzip_comp_level 6;
+	gzip_buffers 16 8k;
+	# gzip_http_version 1.1;
+	# Disable for IE < 6 because there are some known problems
+	gzip_disable "MSIE [1-6].(?!.*SV1)";
+	# Types
+	# gzip_types application/atom+xml;
+	# gzip_types application/ecmascript;
+	# gzip_types application/javascript;
+	# gzip_types application/x-javascript;
+	# gzip_types application/json;
+	# gzip_types application/ld+json;
+	# gzip_types application/x-web-app-manifest+json;
+	# gzip_types application/manifest+json;
+	# gzip_types application/pdf;
+	# gzip_types application/postscript;
+	# gzip_types application/vnd.ms-fontobject;
+	# gzip_types application/vnd.geo+json;
+	# gzip_types application/rss+xml;
+	# gzip_types application/xhtml+xml;
+	# gzip_types application/xml;
+	# gzip_types application/x-font-ttf;
+	# gzip_types image/svg+xml;
+	# gzip_types image/bmp;
+	# gzip_types image/x-icon;
+	# gzip_types text/css;
+	# gzip_types text/csv;
+	# gzip_types text/javascript;
+	# gzip_types text/plain;
+	# gzip_types text/xml;
+	# gzip_types text/x-js;
+	# gzip_types text/x-component;
+	# gzip_types text/x-cross-domain-policy;
+	# gzip_types text/cache-manifest;
+	# gzip_types text/vcard;
+	# gzip_types text/vnd.rim.location.xloc;
+	# gzip_types text/vtt;
+	# gzip_types font/truetype;
+	# gzip_types font/opentype;
+
+	# Add headers to serve security related headers
+	# Before enabling Strict-Transport-Security headers please read into this topic first.
+	add_header Strict-Transport-Security "max-age=15768000; includeSubDomains; preload;";
+	add_header X-Content-Type-Options nosniff;
+	add_header X-XSS-Protection "1; mode=block";
+	add_header X-Robots-Tag none;
+	add_header X-Download-Options noopen;
+	add_header X-Permitted-Cross-Domain-Policies none;
+
+	#### Incudes
+	include /etc/nginx/mime.types;
+	include /etc/nginx/sites-enabled/*;
+}

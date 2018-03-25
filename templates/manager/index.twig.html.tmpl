@@ -1,0 +1,157 @@
+{% extends 'layout.twig.html' %}
+
+{% block content %}
+<h1 class="page-header dashboard"><i class="fa fa-tachometer" aria-hidden="true"></i> {{ 'core.index.dashboard'|trans }}</h1>
+{% if notifications.rtorrent.0.statusReboot is defined and notifications.rtorrent.0.statusReboot == 0 %}
+<div class="alert alert-success">
+    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+    {{ 'core.index.succes_reboot_rtorrent'|trans }}
+</div>
+{% elseif notifications.rtorrent is defined or notifications.rtorrent.0.statusReboot != 0 %}
+<div class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+    {{ 'core.index.error_reboot_rtorrent'|trans|raw }}
+</div>
+{% endif %}
+{% if notifications.rtorrent.0.statusReboot is defined and notifications.rtorrent.0.statusReboot == 0 %}
+<div class="alert alert-info">
+    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+    <h4>{{ 'core.index.log'|trans }}</h4>
+    <strong>{{ 'core.index.command_exec'|trans }} :</strong> {{ notifications.rtorrent.0.command }}<br>
+    <strong>{{ 'core.index.status'|trans }} :</strong> {{ notifications.rtorrent.0.statusReboot }}<br>
+    <strong>{{ 'core.index.result_command'|trans }} :</strong> <br>
+    {% for logs in notifications.rtorrent.0.logReboot %}
+        # {{ logs }}<br>
+    {% endfor %}
+</div>
+{% endif %}
+{% if server.CheckUpdate != false and user.isAdmin == true %}
+<div class="alert alert-info">
+    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+    <h4>{{ 'core.index.new_version'|trans }} (v{{ server.CheckUpdate.version }})</h4>
+    <ul>{% for new in server.CheckUpdate.news %}<li class="text-info">{{ new }}</li>{% endfor %}</ul>
+    <small style="display:block;margin-top:5px;">{{ 'core.index.participants'|trans }}: {{ server.CheckUpdate.contributors }}</small>
+</div>
+{% endif %}
+<section class="row">
+    {% if user.enableInfo == true %}
+    <article class="col-md-6" id ="bloc-info">
+        <div class="well well-sm">
+            <h4 class="titre-head"><i class="fa fa-home"></i> {{ 'core.index.title_info_user'|trans }}</h4>
+            <div class="trait"></div>
+            <p><i class="fa fa-map-marker" aria-hidden="true"></i> <strong>{{ 'core.index.ip_address'|trans }}</strong></p>
+            <ul>
+                <li><strong class="text-success">{{ ipUser }}</strong></li>
+            </ul>
+            <p><i class="fa fa-hdd-o" aria-hidden="true"></i> <strong>{{ 'core.index.disk_space'|trans }}</strong></p>
+            <p class="text-center text-defaut-color">
+                <em>{{ 'core.index.used'|trans }} <strong>{{ user.userdisk.used_disk.octets }} {{ 'core.index.%s'|format(user.userdisk.used_disk.unit)|trans }}</strong></em>,
+                <em>{{ 'core.index.available'|trans }} <strong>{{ user.userdisk.free_disk.octets }} {{ 'core.index.%s'|format(user.userdisk.free_disk.unit)|trans }}</strong></em>,
+                <em>{{ 'core.index.total'|trans }} <strong>{{ user.userdisk.total_disk.octets }} {{ 'core.index.%s'|format(user.userdisk.total_disk.unit)|trans }}</strong></em>
+            </p>
+            <div class="progress progress-striped fix-progress">
+                {% if user.userdisk.percentage_used < 95 and user.userdisk.percentage_used >= 85 %}{% set color = 'progress-bar-warning' %}{% elseif user.userdisk.percentage_used >= 95 %}{% set color = 'progress-bar-danger' %}{% endif %}
+                <div class="progress-bar {{ color }}" role="progressbar" aria-valuenow="{{ user.userdisk.percentage_used }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ user.userdisk.percentage_used }}%;">
+                    {{ user.userdisk.percentage_used }}%
+                </div>
+            </div>
+            <p><i class="fa fa-clock-o" aria-hidden="true"></i> <strong>{{ 'core.index.uptime_server'|trans }}</strong></p>
+            <ul>
+                <li>
+                    <strong class="text-success">
+                    {% if server.getUptime.days != 0 %}{{ server.getUptime.days }} {{ 'core.index.days'|trans }}{% endif %}
+                    {% if server.getUptime.hours != 0 %}{{ server.getUptime.hours }} {{ 'core.index.hours'|trans }}{% endif %}
+                    {{ server.getUptime.minutes }} {{ 'core.index.minutes'|trans }}
+                    </strong>
+                </li>
+            </ul>
+            <p><i class="fa fa-tasks" aria-hidden="true"></i> <strong>{{ 'core.index.load_average'|trans }}</strong></p>
+            <ul>
+                <li class="uptime">
+                    <span data-original-title="{{ 'core.index.load_average_1'|trans }}" class="label label-primary load-average">{{ server.load_average.0 }}</span>
+                    <span data-original-title="{{ 'core.index.load_average_5'|trans }}" class="label label-primary load-average">{{ server.load_average.1 }}</span>
+                    <span data-original-title="{{ 'core.index.load_average_15'|trans }}" class="label label-primary load-average">{{ server.load_average.2 }}</span>
+                </li>
+                <li class="uptime">
+                    <strong>
+                    {% if server.load_average.0 < 5 %}
+                    <em class="text-success">{{ 'core.index.info_load_good'|trans }}</em>
+                    {% elseif server.load_average.0 < 10 %}
+                    <em class="text-warning">{{ 'core.index.info_load_warning'|trans }}</em>
+                    {% else %}
+                    <em class="text-danger">{{ 'core.index.info_load_danger'|trans }}</em>
+                    {% endif %}
+                    </strong>
+                </li>
+            </ul>
+        </div>
+    </article>
+    {% endif %}
+    {% if user.enableFtp == true %}
+    <article class="col-md-6" id="bloc-ftp">
+        <div class="well well-sm">
+            <h4 class="titre-head"><i class="fa fa-link"></i> {{ 'core.index.title_access'|trans }}</h4>
+            <div class="trait"></div>
+            <h5 class="device"><i class="fa fa-desktop"></i> <strong>{{ 'core.index.server_ftp'|trans }}</strong></h5>
+            <ul>
+                <li>{{ 'core.index.address_ftp'|trans }} : <em>{{ host.hostname }}</em></li>
+                <li>{{ 'core.index.user_ftp'|trans }} : <em>{{ user.username }}</em></li>
+                <li>{{ 'core.index.port_ftp'|trans }} : <em>{{ user.portFtp }}</em></li>
+                <li>{{ 'core.index.port_sftp'|trans }} : <em>{{ user.portSftp }}</em></li>
+                <li><a class="btn btn-info btn-xs" href="http://filezilla-project.org/" target="_blank"><i class="fa fa-download" aria-hidden="true"></i> {{ 'core.index.download_filezilla'|trans }}</a></li>
+                <li><a id="popupfilezilla" class="btn btn-info btn-xs" data-toggle="popover" href="{{ path_for('download', {'file': 'filezilla'}) }}"><i class="fa fa-files-o"></i> {{ 'core.index.configuration_file'|trans }}</a></li>
+            </ul>
+            <h5 class="device"><i class="fa fa-android"></i> <strong>{{ 'core.index.app_transdroid'|trans }}</strong></h5>
+            <ul>
+                <li>{{ 'core.index.folder_scgi'|trans }} : <em><strong>{{ user.scgi_folder }}</strong></em></li>
+                <li>{{ 'core.index.http_address'|trans }} : <em>{{ host.url }}</em></li>
+                <li>{{ 'core.index.user_transdroid'|trans }} : <em>{{ user.username }}</em></li>
+                <li><a class="btn btn-info btn-xs" href="http://transdroid.org/latest"><i class="fa fa-download" aria-hidden="true"></i> {{ 'core.index.download_transdroid'|trans }}</a></li>
+                <li><a id="popuptransdroid" class="btn btn-info btn-xs" data-toggle="popover" href="{{ path_for('download', {'file': 'transdroid'}) }}"><i class="fa fa-files-o"></i> {{ 'core.index.configuration_file'|trans }}</a></li>
+            </ul>
+        </div>
+    </article>
+    {% endif %}
+</section>
+<section class="row">
+{% if user.enableRtorrent == true %}
+<article class="col-md-6">
+    <div class="well well-sm">
+        <h4 class="titre-head"><i class="fa fa-terminal" aria-hidden="true"></i> {{ 'core.index.restart_rtorrent'|trans }}</h4>
+        <div class="trait"></div>
+        <p class="text-center btn-reboot">
+            <a data-toggle="modal" href="#popupreboot" class="btn btn-info btn-lg" style="vertical-align: middle;">
+                <i class="fa fa-refresh" aria-hidden="true"></i> {{ 'core.index.restart_rtorrent'|trans }}
+            </a>
+        </p>
+        {% if read_data_reboot.file_exist %}
+        <small class="text-defaut-color"><em>{{ 'core.index.last_restart'|trans }} {{ read_data_reboot.read_file|date('core.date'|trans) }}</em></small>
+        {% endif %}
+    </div>
+</article>
+{% endif %}
+</section>
+{% endblock %}
+
+{% block modal %}
+<div class="modal fade" id="popupreboot" tabindex="-1" role="dialog" aria-labelledby="target-rtorrent" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ path_for('reboot') }}" method="post">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="target-rtorrent">{{ 'core.index.modal.warning'|trans }}</h4>
+                </div>
+                <div class="modal-body">
+                    <p>{{ 'core.index.modal.do_you_want_restart'|trans|raw }}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">{{ 'core.index.modal.cancel'|trans }}</button>
+                    <input type="hidden" name="reboot" value="true">
+                    <input type="submit" value="{{ 'core.index.modal.restart'|trans }}" class="btn btn-info">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,96 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+ResolveAddresses() {
+	local nReload nErrorCode sAllHostname nIdUsersAddresses nIdUsers sHostname sUserName sListIPv4 sIPv4 sAllIdUsers sLine
+	nReload=0
+	sAllIdUsers=""
+
+	#### Update all IPs from hostname
+	if [ "$LOGSTD" == "NO" ]; then log_daemon_msg "$CreatingListAllDynamicAddresses"; fi
+	sAllHostname="`cmdMySQL 'MySB_db' "SELECT id_users_addresses,id_users,hostname FROM users_addresses WHERE is_active='1' AND check_by='hostname';" | sed 's/\t/|/g;'`"
+	nErrorCode=$?
+	if [ "$LOGSTD" == "NO" ]; then gfnStatusLSB $nErrorCode; fi
+
+	for sLine in $sAllHostname; do
+		nIdUsersAddresses="`echo $sLine | awk '{split($0,a,"|"); print a[1]}'`"
+		nIdUsers="`echo $sLine | awk '{split($0,a,"|"); print a[2]}'`"
+		sHostname="`echo $sLine | awk '{split($0,a,"|"); print a[3]}'`"
+		sUserName="`cmdMySQL 'MySB_db' "SELECT users_ident FROM users WHERE id_users='$nIdUsers';"`"
+
+		if [ ! -z "$sHostname" ] && [ ! -z "$nIdUsers" ] && [ ! -z "$nIdUsersAddresses" ]; then
+			sListIPv4="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM users_addresses WHERE is_active='1' AND check_by='hostname' AND hostname='$sHostname';"`"
+			sIPv4="$(nslookup $sHostname | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
+
+			if [ ! -z "$sIPv4" ] && [ -z "`echo $sListIPv4 | grep $sIPv4`" ]; then
+				if [ "$LOGSTD" == "NO" ]; then log_daemon_msg "$UpdatingHostname $sHostname"; fi
+				cmdMySQL 'MySB_db' "UPDATE users_addresses SET ipv4='$sIPv4', last_update='`date +%Y-%m-%d\ %H:%M:%S`' WHERE hostname='$sHostname' AND id_users_addresses='$nIdUsersAddresses';"
+				nErrorCode=$?
+				if [ "$LOGSTD" == "NO" ]; then gfnStatusLSB $nErrorCode; fi
+
+				echo `/bin/date '+%Y-%m-%d - %H:%M:%S'`" --> UPDATE $sHostname WITH $sIPv4 FOR $sUserName" >> $MySB_InstallDir/logs/$gsScriptName.log
+				nReload=1
+				sAllIdUsers="${sAllIdUsers} $nIdUsers"
+			fi
+		fi
+	done
+
+	if [ $nReload -eq 1 ]; then
+		if [ "$LOGSTD" == "NO" ]; then log_daemon_msg "$UpdatingSecurityRules"; fi
+		gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--users' 'SCREEN'
+		echo `/bin/date '+%Y-%m-%d - %H:%M:%S'`" --> UPDATE security rules" >> $MySB_InstallDir/logs/$gsScriptName.log
+		ccze -h -o nolookups -o transparent -o cssfile="$MySB_InstallDir/web/public/themes/MySB/css/ccze.css" < $MySB_InstallDir/logs/$gsScriptName.log > $MySB_InstallDir/web/logs/scripts/$gsScriptName-log.html
+		if [ "$LOGSTD" == "NO" ]; then gfnStatusLSB 0; fi
+
+		sAllIdUsers="`echo $sAllIdUsers | sed -e 's/^ //g;' | sed 's/\s+$//' | xargs -n1 | sort -n -u | xargs`"
+		for IdUser in $sAllIdUsers; do
+			sUserName="`cmdMySQL 'MySB_db' "SELECT users_ident FROM users WHERE id_users='$IdUser';"`"
+			if [ "$LOGSTD" == "NO" ]; then log_daemon_msg "$SendingStatusTo '$sUserName'"; fi
+			gfnSendMail "$UpdatedAddressSubject" "$sUserName" "ip_updated"
+			if [ "$LOGSTD" == "NO" ]; then gfnStatusLSB; fi
+		done
+	else
+		if [ "$LOGSTD" == "NO" ]; then log_daemon_msg "$NoHostnameRequiredUpdating" && gfnStatusLSB 0; fi
+	fi
+}
+
+IfRunning="`ps ax | grep 'DynamicAddressResolver.bsh' | grep -v 'grep' | awk '{ print $1 }'`"
+
+if [ ! -z "$IfRunning" ]; then
+	while [ ! -z "`ps ax | grep 'DynamicAddressResolver.bsh $IfRunning CRON' | grep -v 'grep'`" ]; do
+		sleep 1
+	done
+fi
+
+ResolveAddresses
+
+#### ruTorrent Plugin Check Disk quotas included
+gfnPluginCheckdiskQuotas
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

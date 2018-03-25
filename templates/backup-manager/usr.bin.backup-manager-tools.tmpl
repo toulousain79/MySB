@@ -1,0 +1,194 @@
+#!/bin/bash
+#
+# Backup Manager tools.
+#
+# For suggestion, bug reports, please contact
+# Pierre-Yves Landuré <pierre-yves dot landure at biapy dot fr>
+#
+VERSION="1.2.2"
+
+SCRIPT_NAME="$(command basename ${0})"
+
+# Print this script help.
+function usage {
+  command echo "Backup Manager tools v${VERSION}
+This tool ease Backup Manager administration from command line.
+
+Usage :
+
+  ${SCRIPT_NAME} list
+  ${SCRIPT_NAME} cleanup
+  ${SCRIPT_NAME} add path
+  ${SCRIPT_NAME} remove path
+
+  * list : List current backup targets.
+  * cleanup : Remove invalid backup targets.
+  * add path : Add the given path to backup targets.
+  * remove path : Remove the given path from backup targets.
+"
+
+  test -n "${1}" && exit ${1}
+} # usage
+
+
+
+# Get the absolute path for a file or directory.
+#
+# @param string $path A relative path.
+#
+# @return ${REALPATH} A absolute path.
+REALPATH=""
+function realpath {
+  command test ${#} -ne 1 && exit 1
+  REALPATH=$(/bin/readlink -f "${1}")
+} # realpath
+
+
+
+# Check if a binary is present
+#
+# @param string $binary The binary to check.
+# @param string $package The package the binary come from.
+#
+# @return Exit with error if the binary is missing.
+function check_binary {
+  command test ${#} -ne 2 && exit 1
+
+  # Test the binary presence.
+  if [ -z "$(which "${1}")" ]; then
+    echo "Error : '${1}' is missing. Please install package '${2}'." >&2
+    exit 1
+  fi
+} # check_binary
+
+
+# Compute the backup targets array ids.
+#
+# @return void
+function fix_targets_ids {
+  COUNTER=0
+  for LINE_NUMBER in $(command grep --line-number '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
+          | command cut --delimiter=':' --fields=1); do
+
+    command sed -i \
+        -e "${LINE_NUMBER}s/^BM_TARBALL_TARGETS\[[0-9]*\]/BM_TARBALL_TARGETS[${COUNTER}]/" \
+        '/etc/MySB/BM_MySB.conf'
+
+    COUNTER=$((${COUNTER} + 1))
+  done
+} # fix_targets_ids
+
+
+# Check for binaries presence
+check_binary "basename" "coreutils"
+check_binary "dirname" "coreutils"
+check_binary "tar" "tar"
+check_binary "mktemp" "mktemp"
+check_binary "sed" "sed"
+check_binary "backup-manager" "backup-manager"
+
+command test ! -e '/etc/MySB/BM_MySB.conf' && exit 1
+
+# Check if at least one args given.
+command test ${#} -eq 0 && usage 1
+
+case "${1}" in
+
+  list )
+    command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
+        | command sed -e 's/^.*TARGETS\[\([^]]*\)\]="\([^"]*\)".*$/\1 : \2/'
+    exit 0
+    ;;
+
+
+
+  cleanup )
+    command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
+        | command sed -e 's/^.*="\([^"]*\)".*$/\1/' \
+        | command xargs -rI TARGET sh -c "test ! -e 'TARGET' && echo 'TARGET'" \
+        | command xargs -rI TARGET ${0} remove 'TARGET'
+    exit 0
+    ;;
+
+
+
+  add )
+    # Check if valid number of arguments given (1).
+    command test ${#} -ne 2 && usage
+
+    realpath "${2}"
+    TARGET_PATH="${REALPATH}"
+
+    if [ -z "$(command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
+        | command sed -e 's/^.*="\([^"]*\)".*$/\1/' \
+        | command grep "${TARGET_PATH}")" ]; then
+
+      command sed -i -e "/^export BM_TARBALL_TARGETS/i\
+BM_TARBALL_TARGETS[]=\"${TARGET_PATH}\"" \
+          '/etc/MySB/BM_MySB.conf'
+
+      # Fix array numbers.
+      fix_targets_ids
+
+      echo "Path '${TARGET_PATH}' added to backup targets."
+    else
+      echo "Path '${TARGET_PATH}' is already a backup target."
+    fi
+
+    exit 0
+    ;;
+
+
+
+  remove )
+    # Check if valid number of arguments given (1).
+    command test ${#} -ne 2 && usage
+
+    ORIGINAL_PATH="${2}"
+    realpath "${ORIGINAL_PATH}"
+    TARGET_PATH="${REALPATH}"
+
+    if [ -n "${TARGET_PATH}" -a -n "$(command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
+        | command sed -e 's/^.*="\([^"]*\)".*$/\1/' \
+        | command grep "${TARGET_PATH}")" ]; then
+
+      command grep --line-number "BM_TARBALL_TARGETS\[.*[\"']${TARGET_PATH}[\"']" '/etc/MySB/BM_MySB.conf' \
+          | command cut --delimiter=':' --fields=1 \
+          | command xargs --no-run-if-empty -iLINE sed -i -e "LINEd" \
+              '/etc/MySB/BM_MySB.conf'
+
+      # Fix array numbers.
+      fix_targets_ids
+
+      echo "Path '${TARGET_PATH}' removed from backup targets."
+ 
+    elif [ -n "${ORIGINAL_PATH}" -a -n "$(command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
+        | command sed -e 's/^.*="\([^"]*\)".*$/\1/' \
+        | command grep "${ORIGINAL_PATH}")" ]; then
+
+      command grep --line-number "BM_TARBALL_TARGETS\[.*[\"']${ORIGINAL_PATH}[\"']" '/etc/MySB/BM_MySB.conf' \
+          | command cut --delimiter=':' --fields=1 \
+          | command xargs --no-run-if-empty -iLINE sed -i -e "LINEd" \
+              '/etc/MySB/BM_MySB.conf'
+
+      # Fix array numbers.
+      fix_targets_ids
+
+      echo "Path '${ORIGINAL_PATH}' removed from backup targets."
+    else
+      echo "Path '${ORIGINAL_PATH}' is not a backup target."
+    fi
+
+    exit 0
+    ;;
+
+
+
+  * )
+    echo "Error : '${1}' is not a valid action." >&2
+    usage 1
+    ;;
+esac
+
+exit 0
+

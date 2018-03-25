@@ -1,0 +1,176 @@
+#!/bin/bash
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_before
+# -----------------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+case "$1" in
+	"BEFORE")
+		####################################
+		#### To call for every upgrade - BoF
+		# Get new vars after MySQL.bsh script
+		source $MySB_InstallDir/inc/vars
+
+		# Create missing directories and change rights
+		gfnManageDirAndFiles 'global'
+
+		# Switching DNS
+		gfnSwitchDNS "bind"
+
+		# Forcing NTP update
+		ping -c4 0.fr.pool.ntp.org
+		/usr/sbin/ntpdate -u 0.fr.pool.ntp.org
+
+		# MySQL
+		[ -f /tmp/MySQL.bsh.log ] && cat /tmp/MySQL.bsh.log >> $MySB_InstallDir/logs/BulkChanges.bsh.log
+
+		# VARs & Functions
+		[ -z $funcs_Install ] && source $MySB_InstallDir/inc/funcs_by_script/funcs_Install
+		[ -z $funcs_SourcesList ] && source $MySB_InstallDir/inc/funcs_by_script/funcs_SourcesList
+
+		# Remove old banners
+		rm -fv $MySB_InstallDir/files/banner_*
+
+		# Force install for depends
+		source $MySB_InstallDir/inc/funcs_by_script/funcs_Install
+		gfnPackagesManage install
+		#### To call for every upgrade - EoF
+		####################################
+
+		#### Add MySB files directories
+		echo "MySB_InstallDir=\"$MySB_InstallDir\"" > /etc/MySB/config
+		echo "MySB_Files=\"${MySB_InstallDir}_files\"" >> /etc/MySB/config
+		echo "EnvLang=\"$EnvLang\"" >> /etc/MySB/config
+		chmod 0640 /etc/MySB/config
+
+		#### Remove old certificates
+		rm -rfv $MySB_InstallDir/ssl/GeoTrust/
+		rm -rfv $MySB_InstallDir/ssl/GoDaddy/
+
+		#### Remove rTorrent incomplete directory && remove old sync DB
+		for seedUser in $gsUsersList; do
+			rm -rfv /home/$seedUser/rtorrent/incomplete/
+			rm -fv /home/$seedUser/db/old.sq3
+		done
+
+		#### PlexPy cleaning
+		gfnManageServices stop "plexpy"
+		userdel -f plexpy
+		for LogFile in $(ls -A1 /var/log/nginx/plexpy-*); do
+			mv -v $LogFile $(echo $LogFile | sed "s/plexpy/tautulli/g;")
+		done
+		rm -fv /etc/nginx/locations/PlexPy.conf
+		rm -fv /etc/nginx/proxy/PlexPy.conf
+		rm -fv /etc/default/plexpy
+		rm -fv /etc/init.d/plexpy
+		[ -f /opt/plexpy/plexpy.db ] && cp -v /opt/plexpy/plexpy.db $MySB_InstallDir/files/tautulli.db
+		gfnDeleteDirectory 1 "/opt/plexpy"
+
+		#### Crontab
+		gfnListCountUsers 'normal'
+		crontab -l > /tmp/crontab.tmp
+		sed -i '/LogServer/d' /tmp/crontab.tmp
+		echo "0 */1 * * * /bin/bash $MySB_InstallDir/scripts/LogServerAndQuota.bsh CRON > /dev/null 2>&1" >> /tmp/crontab.tmp
+		sed -i '/plexpy/d' /tmp/crontab.tmp
+		for seedUser in $gsUsersList; do
+			sed -i '/'$seedUser'/d' /tmp/crontab.tmp
+			echo "*/5 * * * * systemctl status rtorrent-$seedUser.service >/dev/null || systemctl restart rtorrent-$seedUser.service" >> /tmp/crontab.tmp
+		done
+		crontab /tmp/crontab.tmp
+		rm -f /tmp/crontab.tmp
+	;;
+	"AFTER")
+		####################################
+		#### To call for every upgrade - BoF
+		# Create missing directories and change rights
+		gfnManageDirAndFiles 'global'
+
+		# STOP & START services
+		gfnManageServices stop "ntp stunnel4 postfix"
+		gfnManageServices start "ntp stunnel4 postfix smbd nginx dnscrypt-proxy webmin"
+
+		# Update version info
+		cmdMySQL 'MySB_db' "UPDATE system SET mysb_version = '$gsCurrentVersion' WHERE id_system='1';" -v
+
+		# Send mail for each user with new version
+		source $MySB_InstallDir/inc/vars
+		source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
+		gfnListCountUsers 'normal'
+		gsRutorrentDirEscaped="`echo $gsRutorrentDir | sed s,/,\\\\\\\\\\/,g`"
+		for seedUser in $gsUsersList; do
+			sRequestValues="`cmdMySQL 'MySB_db' "SELECT id_users,users_passwd FROM users WHERE users_ident = '$seedUser';" | sed 's/\t/|/g;'`"
+			UserId="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
+			UserPassword="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
+			# rTorrent init
+			install -v -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.rtorrent.tmpl /etc/init.d/rtorrent-$seedUser
+			perl -pi -e "s/<username>/$seedUser/g" /etc/init.d/rtorrent-$seedUser
+			systemctl daemon-reload
+			systemctl enable rtorrent-$seedUser.service
+			# rTorrent Config File
+			gfnCreateRtorrentConfigFile "$seedUser" 'force'
+
+			if [ "$UserId" == "$gnMainUserId" ] && [ ! -z "$UserPassword" ]; then
+				# Remove main user password from database
+				cmdMySQL 'MySB_db' "UPDATE users SET users_passwd = '' WHERE admin = '1';" -v
+				gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_ChangeUserPassword" "$seedUser" "$UserPassword" 'UPGRADE'
+			else
+				# Init password required
+				cmdMySQL 'MySB_db' "UPDATE users SET init_password = '1' WHERE users_ident = '$seedUser';" -v
+				Subject="$Upgrade_SubjectUpgraded $gsCurrentVersion"
+				gfnSendMail "$Subject" "$seedUser" "upgrade"
+			fi
+		done
+		#### To call for every upgrade - EoF
+		####################################
+
+		#### Cleaning
+		rm -vf /etc/init.d/plexmediaserver.dpkg-bak
+		rm -vf /etc/samba/smb.conf.ucf-dist
+		rm -vf /etc/logrotate.d/fail2ban.dpkg-dist
+		rm -vf /etc/logrotate.d/samba.dpkg-dist
+		rm -vf /etc/vim/vimrc.dpkg-dist
+		rm -vf /etc/default/stunnel4.dpkg-dist
+		rm -vf /etc/init.d/nfs-kernel-server.dpkg-dist
+		rm -vf /etc/init.d/bind9.dpkg-dist
+		rm -vf /etc/vsftpd.conf.dpkg-dist
+		rm -vf /etc/fail2ban/fail2ban.conf.dpkg-dist
+		rm -vf $MySB_InstallDir/web/logs/system/sy.html
+
+		#### Remove old files
+		rm -vf $MySB_InstallDir/files/*.zip
+		rm -vf $MySB_InstallDir/files/*.wbm
+		rm -vf $MySB_InstallDir/files/*.tar.gz
+		rm -vf $MySB_InstallDir/files/*.deb
+
+		#### Apply quota for users
+		gfnManageQuota '-v'
+
+		#### Check actuel quota
+		repquota -a
+	;;
+esac
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

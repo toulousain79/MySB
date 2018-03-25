@@ -1,0 +1,86 @@
+upstream php-handler {
+	server unix:<php_fpm_sock>;
+}
+
+server {
+	listen <PORT_HTTP> default_server;
+	server_name "<server_name>";
+
+	access_log /var/log/nginx/default-access.log combined;
+	error_log /var/log/nginx/default-error.log error;
+
+	root /etc/MySB/web;
+
+	include /etc/nginx/conf.d/static_files;
+	include /etc/nginx/conf.d/global_deny_access;
+	include /etc/nginx/conf.d/pagespeed;
+	include /etc/nginx/conf.d/auth_basic;
+	allow 127.0.0.1;
+	deny all;
+
+	location ^~ / {
+		#### Permit to generate mail to send to all users (server only)
+		location /UserInfoMail {
+			alias <InstallDir>/web/pages/UserInfoMail.php;
+			access_log /var/log/nginx/UserInfoMail-access.log combined;
+			error_log /var/log/nginx/UserInfoMail-error.log error;
+			include /etc/nginx/conf.d/php;
+		}
+	}
+}
+
+server {
+	listen <PORT_HTTPS> default_server ssl;
+	server_name "<server_name>";
+	ssl on;
+	index index.php;
+	charset utf-8;
+
+	access_log /var/log/nginx/default-access.log combined;
+	error_log /var/log/nginx/default-error.log error;
+
+	root <InstallDir>/web;
+
+	include /etc/nginx/conf.d/static_files;
+	include /etc/nginx/conf.d/global_deny_access;
+	include /etc/nginx/conf.d/pagespeed;
+	include /etc/nginx/conf.d/ip_restriction;
+	location ~ \.php$ {
+		include /etc/nginx/conf.d/php-ssl;
+	}
+
+	#### Upgrade in progress
+	error_page 503 @maintenance;
+	location @maintenance {
+		satisfy any;
+		allow all;
+		auth_basic off;
+		rewrite ^(.*)$ /WiP.html break;
+	}
+
+	#### MySB Portal
+	location ^~ / {
+		access_log /var/log/nginx/MySB-access.log combined;
+		error_log /var/log/nginx/MySB-error.log error;
+
+		include /etc/nginx/conf.d/php-ssl;
+		fastcgi_index index.php;
+
+		location ~ ^/favicon.ico {
+			alias <InstallDir>/web/favicon.ico;
+			satisfy any;
+		}
+
+		location ~ ^/public/themes/MySB/(css|js|fonts|images)/.*.(ico|css|js|gif|jpe?g|png|eot|ttf|woff|svg|json)$ {
+			access_log off;
+			satisfy any;
+			allow all;
+			auth_basic off;
+		}
+
+		#### Upgrade in progress
+		if (-f $document_root/WiP.html) {
+			return 503;
+		}
+	}
+}

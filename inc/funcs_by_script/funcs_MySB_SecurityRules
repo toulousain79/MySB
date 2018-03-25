@@ -1,0 +1,286 @@
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+######################################################################
+funcs_MySB_SecurityRules=1
+##################### FIRST LINE #####################################
+
+#### Loading vars
+gfnLoadingVars() {
+	gfnListCountUsers 'normal' #($gsUsersList)
+	AllUsersIPs="${gsSeedboxUsersIPs} ${gsMainUserIPs}"
+	AllUsersIPs="`echo $AllUsersIPs | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
+	ServicesToRestart=""
+	ServicesToStop=""
+	rTorrentToStop=""
+	rTorrentToStart=""
+
+	# Check arguments options
+	LoadKernelModules=NO
+	LoadKernelParameter=NO
+	ApplyConfigNginx=NO
+	ApplyConfigPeerGuardian=NO
+	ApplyConfigFail2Ban=NO
+	ApplyConfigBind=NO
+	ApplyIptablesUsers=NO
+	ApplyIptablesLetsEncrypt=NO
+	LoadOnBoot=NO
+
+	# Check by arguments
+	case "$ModeSwitch" in
+		INSTALL|UPGRADE)
+			LoadKernelModules=YES
+			LoadKernelParameter=YES
+			ServicesToRestart=''
+		;;
+		INIT)
+			LoadKernelModules=YES
+			LoadKernelParameter=YES
+			LoadOnBoot=YES
+			ServicesToRestart='cron'
+		;;
+		STOP)
+			ServicesToStop='pglcmd fail2ban dnscrypt-proxy bind9'
+		;;
+		*)
+			ApplyIptablesUsers=YES
+			ServicesToRestart='cron'
+		;;
+	esac
+
+	case "$InitSwitch" in
+		create)
+			ApplyConfigNginx="`gfnCheckCommand 1 nginx`"
+			ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
+			ApplyConfigFail2Ban=$gbIsInstalled_Fail2Ban
+			ApplyConfigBind="`gfnCheckCommand 1 named`"
+		;;
+		clean)
+			ApplyConfigNginx="`gfnCheckCommand 1 nginx`"
+			ApplyConfigBind="`gfnCheckCommand 1 named`"
+		;;
+		refresh)
+			case "$RefreshSwitch" in
+				--letsencrypt)
+					unset LetsEncryptIPs Temp
+					LetsEncryptOpenPort="`cmdMySQL 'MySB_db' "SELECT letsencrypt_openport FROM system WHERE id_system='1';"`"
+					Temp="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM lets_encrypt;"`"
+					if [ "$gsIpRestriction" == "YES" ]; then
+						for ip in $Temp; do
+							LetsEncryptIPs="${LetsEncryptIPs} $ip/32"
+						done
+					else
+						LetsEncryptIPs="0/0"
+					fi
+					LetsEncryptIPs="`echo $LetsEncryptIPs | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
+					ApplyIptablesUsers=NO
+					ApplyIptablesLetsEncrypt=YES
+					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
+				;;
+				--users)
+					ApplyIptablesUsers=YES
+					ApplyConfigNginx="`gfnCheckCommand 1 nginx`"
+					ApplyConfigFail2Ban=$gbIsInstalled_Fail2Ban
+					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
+				;;
+				--trackers)
+					ApplyConfigBind="`gfnCheckCommand 1 named`"
+					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
+				;;
+				--blocklists)
+					ApplyConfigBind="`gfnCheckCommand 1 named`"
+					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
+				;;
+				--pglcmd)
+					ApplyIptablesUsers=YES
+					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
+				;;
+				--all)
+					ApplyIptablesUsers=YES
+					ApplyConfigNginx="`gfnCheckCommand 1 nginx`"
+					ApplyConfigBind="`gfnCheckCommand 1 named`"
+					ApplyConfigFail2Ban=$gbIsInstalled_Fail2Ban
+					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
+				;;
+			esac
+		;;
+	esac
+
+	[ "$ApplyConfigBind" == "YES" ] && ServicesToRestart="${ServicesToRestart} bind9"
+	[ "$ApplyConfigFail2Ban" == "YES" ] && ServicesToRestart="${ServicesToRestart} fail2ban"
+	[ "$ApplyConfigPeerGuardian" == "YES" ] && ServicesToRestart="${ServicesToRestart} pglcmd"
+	[ "$ApplyConfigNginx" == "YES" ] && ServicesToRestart="${ServicesToRestart} nginx"
+	if gfnCheckCommand 0 dnscrypt-proxy; then
+		case "$gbDnsCryptSwitch" in
+			'0')	ServicesToStop="${ServicesToStop} dnscrypt-proxy";;
+			'1')	ServicesToRestart="${ServicesToRestart} dnscrypt-proxy";;
+		esac
+	fi
+}
+
+#### Create all rules for services (config files)
+gfnCreateServicesRules() {
+	#### NginX
+	if [ "$ApplyConfigNginx" == "YES" ] && [ "$gsIpRestriction" == "YES" ]; then
+		log_daemon_msg "$SecurityRules_NginX_AllUsers"
+		echo "	# Users allowed IP" > /etc/nginx/conf.d/ip_restriction
+		for IPv4 in $AllUsersIPs; do
+			echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
+		done
+		unset IPv4
+		gfnStatusLSB
+	fi
+	#### NginX
+
+	#### NginX
+	if [ "$ApplyConfigNginx" == "YES" ]; then
+		if [ "$gsIpRestriction" == "YES" ]; then
+			if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
+				# OpenVPN local IP addresses
+				log_daemon_msg "$SecurityRules_NginX_OpenVPN"
+				echo "	# Restricted IP for OpenVPN users" >> /etc/nginx/conf.d/ip_restriction
+				for IPv4 in $gsVpnLocalIps; do
+					echo "	allow $IPv4;" >> /etc/nginx/conf.d/ip_restriction
+				done
+				unset IPv4
+				gfnStatusLSB
+			fi
+
+			# Loopback
+			log_daemon_msg "$SecurityRules_NginX_Loopback"
+			echo "	# Localhost" >> /etc/nginx/conf.d/ip_restriction
+			echo "	allow 127.0.0.1;" >> /etc/nginx/conf.d/ip_restriction
+			gfnStatusLSB
+
+			# Deny all others
+			echo "	# Deny all others" >> /etc/nginx/conf.d/ip_restriction
+			echo "	deny all;" >> /etc/nginx/conf.d/ip_restriction
+		else
+			log_daemon_msg "$SecurityRules_NginX_SatisfyAll"
+			echo "	# Allow any one" >> /etc/nginx/conf.d/ip_restriction
+			echo "	satisfy all;" > /etc/nginx/conf.d/ip_restriction
+			gfnStatusLSB
+		fi
+	fi
+	#### NginX
+
+	#### BIND
+	if [ "$ApplyConfigBind" == "YES" ]; then
+		log_daemon_msg "$SecurityRules_Bind_BlockOut"
+		echo "#### MySB - Blacklisted domains (ex: inactive trackers)" > /etc/bind/MySB.zones.blakclists
+		AllTrackersDomain="`cmdMySQL 'MySB_db' "SELECT tracker_domain FROM trackers_list WHERE is_active='0' AND to_check='0';"`"
+		for TrackerDomain in $AllTrackersDomain; do
+			echo "zone \"$TrackerDomain\" { type master; file \"/etc/bind/db.empty\"; };" >> /etc/bind/MySB.zones.blakclists
+		done
+		perl -pi -e "s/^#include \"\/etc\/bind\/MySB.zones.blakclists\";/include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
+		gfnStatusLSB 0
+
+		log_daemon_msg "$SecurityRules_Bind_TrackersHosts"
+		gfnCreateHostsFile
+		gfnStatusLSB 0
+	fi
+	#### BIND
+
+	#### Fail2Ban
+	if [ "$ApplyConfigFail2Ban" == "YES" ]; then
+		source $MySB_InstallDir/inc/funcs_by_script/funcs_Fail2Ban
+		gfnFail2BanJailLocal
+		gfnFail2BanWhitheList 1
+	fi
+	#### Fail2Ban
+
+	#### PeerGuardian
+	if [ "$ApplyConfigPeerGuardian" == "YES" ]; then
+		[ -z $funcs_PeerGuardian ] && source $MySB_InstallDir/inc/funcs_by_script/funcs_PeerGuardian
+
+		# Create '/etc/pgl/pglcmd.conf'
+		gfnPeerGuardianPglcmdConf 0
+		# Create '/etc/pgl/allow.p2p'
+		gfnPeerGuardianAllowP2P 0
+		# Create '/etc/pgl/blocklists.list'
+		gfnPeerGuardianBlocklistsList 0 "CreateFile"
+		# Create '/etc/pgl/*.insert.sh'
+		gfnPeerGuardianIptablesInsert 0
+	fi
+	#### PeerGuardian
+}
+
+#### Restart all rTorrent session if needed
+gfnRestartRtorrentSessions() {
+	local bToRestart bCreateAfterClean
+
+	case "$1" in
+		stop)
+			for FnUser in $gsUsersList; do
+				if [ -f /etc/init.d/rtorrent-$FnUser ]; then
+					rTorrentToStop="${rTorrentToStop} rtorrent-$FnUser"
+					bToRestart="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser';"`"
+					service rtorrent-$FnUser status &> /dev/null
+					[ $? -eq 0 ] && bToRestart=1
+					cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='$bToRestart' WHERE users_ident='$FnUser';"
+				fi
+			done
+		;;
+		start)
+			for FnUser in $gsUsersList; do
+				service cron status &> /dev/null
+				[ $? -eq 0 ] && bCreateAfterClean=1 || bCreateAfterClean="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser' AND is_active='1';"`"
+
+				if [ "$bCreateAfterClean" -eq 1 ] && [ -f /etc/init.d/rtorrent-$FnUser ]; then
+					bToRestart="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser';"`"
+					[ "$ModeSwitch" == "INIT" ] && bToRestart="`cmdMySQL 'MySB_db' "SELECT is_active FROM users WHERE users_ident='$FnUser';"`"
+					[ "$bToRestart" -eq 1 ] && rTorrentToStart="${rTorrentToStart} rtorrent-$FnUser"
+					cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='$FnUser';"
+				fi
+			done
+		;;
+	esac
+}
+
+#### Crete '/etc/hosts' file
+gfnCreateHostsFile() {
+	local nIdTracker sTracker sTrackerDomain sTrackerIPv4 sIPv4 sLign sROW
+
+	echo "127.0.0.1       localhost.localdomain localhost" > /etc/hosts
+	echo "$gsSrvIpAddress       $gsHostNameFqdn $(hostname -s)" >> /etc/hosts
+	echo "" >> /etc/hosts
+	echo "#### MySB - Force trackers resolution (ex: DNS liar)" >> /etc/hosts
+
+	cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker,tracker_domain FROM trackers_list WHERE is_active='1';" | sed 's/\t/|/g;' | while read sROW; do
+		nIdTracker="`echo $sROW | awk '{split($0,a,"|"); print a[1]}'`"
+		sTracker="`echo $sROW | awk '{split($0,a,"|"); print a[2]}'`"
+		sTrackerDomain="`echo $sROW | awk '{split($0,a,"|"); print a[3]}'`"
+		sTrackerIPv4="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list='$nIdTracker';"`"
+
+		if [ ! -z "$sTrackerIPv4" ]; then
+			if [ "$sTracker" == "$sTrackerDomain" ]; then
+				sLign="$sTrackerDomain"
+			else
+				sLign="$sTracker, $sTrackerDomain"
+			fi
+			for sIPv4 in $sTrackerIPv4; do
+				echo "$sIPv4       $sLign" >> /etc/hosts
+			done
+		fi
+	done
+}
+
+##################### LAST LINE ######################################
