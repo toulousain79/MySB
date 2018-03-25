@@ -57,47 +57,18 @@ case "$1" in
 		#### To call for every upgrade - EoF
 		####################################
 
-		#### Add MySB files directories
-		echo "MySB_InstallDir=\"$MySB_InstallDir\"" > /etc/MySB/config
-		echo "MySB_Files=\"${MySB_InstallDir}_files\"" >> /etc/MySB/config
-		echo "EnvLang=\"$EnvLang\"" >> /etc/MySB/config
-		chmod 0640 /etc/MySB/config
-
-		#### Remove old certificates
-		rm -rfv $MySB_InstallDir/ssl/GeoTrust/
-		rm -rfv $MySB_InstallDir/ssl/GoDaddy/
-
-		#### Remove rTorrent incomplete directory && remove old sync DB
-		for seedUser in $gsUsersList; do
-			rm -rfv /home/$seedUser/rtorrent/incomplete/
-			rm -fv /home/$seedUser/db/old.sq3
-		done
-
-		#### PlexPy cleaning
-		gfnManageServices stop "plexpy"
-		userdel -f plexpy
-		for LogFile in $(ls -A1 /var/log/nginx/plexpy-*); do
-			mv -v $LogFile $(echo $LogFile | sed "s/plexpy/tautulli/g;")
-		done
-		rm -fv /etc/nginx/locations/PlexPy.conf
-		rm -fv /etc/nginx/proxy/PlexPy.conf
-		rm -fv /etc/default/plexpy
-		rm -fv /etc/init.d/plexpy
-		[ -f /opt/plexpy/plexpy.db ] && cp -v /opt/plexpy/plexpy.db $MySB_InstallDir/files/tautulli.db
-		gfnDeleteDirectory 1 "/opt/plexpy"
-
-		#### Crontab
-		gfnListCountUsers 'normal'
-		crontab -l > /tmp/crontab.tmp
-		sed -i '/LogServer/d' /tmp/crontab.tmp
-		echo "0 */1 * * * /bin/bash $MySB_InstallDir/scripts/LogServerAndQuota.bsh CRON > /dev/null 2>&1" >> /tmp/crontab.tmp
-		sed -i '/plexpy/d' /tmp/crontab.tmp
-		for seedUser in $gsUsersList; do
-			sed -i '/'$seedUser'/d' /tmp/crontab.tmp
-			echo "*/5 * * * * systemctl status rtorrent-$seedUser.service >/dev/null || systemctl restart rtorrent-$seedUser.service" >> /tmp/crontab.tmp
-		done
-		crontab /tmp/crontab.tmp
-		rm -f /tmp/crontab.tmp
+		#### Wheezy to Jessie upgrade
+		gfnPackagesManage purge "update-notifier-common python3.4 gnupg-curl libav-tools libhttp-daemon-ssl-perl aptitude php-pear"
+		cmdMySQL 'MySB_db' "UPDATE system SET apt_update = 1, apt_date = '`date +%Y-%m-%d\ %H:%M:%S`' WHERE id_system='1';" -v
+		gfnPackagesManage 'upgrade'
+		gfnPackagesManage 'dist-upgrade'
+		[ -f /etc/apt/sources.list.d/git-lfs.list ] && rm -vf /etc/apt/sources.list.d/git-lfs.list
+		[ -d $MySB_InstallDir/files/apt_mirrors/mirrors/packagecloud.io ] && rm -vrf $MySB_InstallDir/files/apt_mirrors/mirrors/packagecloud.io
+		[ -d $MySB_InstallDir/files/apt_mirrors/mirrors/moblock-deb.sourceforge.net ] && rm -vrf $MySB_InstallDir/files/apt_mirrors/mirrors/moblock-deb.sourceforge.net
+		[ -d $MySB_InstallDir/files/apt_mirrors/mirrors/shell.ninthgate.se ] && rm -vrf $MySB_InstallDir/files/apt_mirrors/mirrors/shell.ninthgate.se
+		apt-get clean -y
+		apt-get autoclean -y
+		apt-get autoremove -y
 	;;
 	"AFTER")
 		####################################
@@ -140,6 +111,12 @@ case "$1" in
 				gfnSendMail "$Subject" "$seedUser" "upgrade"
 			fi
 		done
+
+		#### Apply quota for users
+		gfnManageQuota '-v'
+
+		#### Check actuel quota
+		repquota -a
 		#### To call for every upgrade - EoF
 		####################################
 
@@ -154,19 +131,6 @@ case "$1" in
 		rm -vf /etc/init.d/bind9.dpkg-dist
 		rm -vf /etc/vsftpd.conf.dpkg-dist
 		rm -vf /etc/fail2ban/fail2ban.conf.dpkg-dist
-		rm -vf $MySB_InstallDir/web/logs/system/sy.html
-
-		#### Remove old files
-		rm -vf $MySB_InstallDir/files/*.zip
-		rm -vf $MySB_InstallDir/files/*.wbm
-		rm -vf $MySB_InstallDir/files/*.tar.gz
-		rm -vf $MySB_InstallDir/files/*.deb
-
-		#### Apply quota for users
-		gfnManageQuota '-v'
-
-		#### Check actuel quota
-		repquota -a
 	;;
 esac
 
