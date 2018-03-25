@@ -8,7 +8,7 @@
 --
 
 INSERT INTO `dnscrypt_config` (`sig_key`, `csv_url`) VALUES
-('RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3','https://raw.githubusercontent.com/toulousain79/MySB/v5.2/files/dnscrypt-resolvers.csv');
+('RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3','https://raw.githubusercontent.com/toulousain79/MySB/v0.0/files/dnscrypt-resolvers.csv');
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

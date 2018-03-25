@@ -1,3 +1,7 @@
+	Version v0.0
+		(start at: 2018/03/25)
+			- Migration from Jessie to Stretch
+		
 	Version v5.2
 		2018/03/24 (start at: 2018/01/18)
 			- NextCloud v13.0.1
