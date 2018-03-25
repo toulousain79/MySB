@@ -1,6 +1,7 @@
-	Version v0.0
+	Version v99.99
 		(start at: 2018/03/25)
 			- Migration from Jessie to Stretch
+			- Upgrade PHP5 to PHP7
 		
 	Version v5.2
 		2018/03/24 (start at: 2018/01/18)
