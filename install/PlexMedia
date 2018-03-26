@@ -30,26 +30,39 @@ sLocSwitch="$1"
 #### FUNCTIONs
 # Install DEB package
 fnInstallDebPackage() {
+	local sPlexMediaVersion sVersionInstalled sPlexDeb sServices
+
 	sPlexMediaVersion="1.12.1.4885-1046ba85f"
 	case `getconf LONG_BIT` in
 		64)	sPlexDeb="plexmediaserver_${sPlexMediaVersion}_amd64.deb";;
 		*)	sPlexDeb="plexmediaserver_${sPlexMediaVersion}_i386.deb";;
 	esac
+	sVersionInstalled="`dpkg -l plexmediaserver | grep 'plexmediaserver' | awk '{ print $3 }'`"
+
 	[ ! -f $MySB_Files/$sPlexDeb ] && curl --retry 3 --silent --insecure --location --show-error -o "$MySB_Files/$sPlexDeb" "https://downloads.plex.tv/plex-media-server/${sPlexMediaVersion}/$sPlexDeb"
 
-	[ -f $MySB_Files/$sPlexDeb ] && dpkg -i $MySB_Files/$sPlexDeb
-	systemctl daemon-reload
-	systemctl enable plexmediaserver.service
+	if [ "$sPlexMediaVersion" != "$sVersionInstalled" ]; then
+		sServices="plexmediaserver"
+		[ "$gbIsInstalled_Tautulli" == "YES" ] && sServices="$sServices tautulli"
+
+		# Stop services
+		gfnManageServices stop "$sServices"
+
+		[ -f $MySB_Files/$sPlexDeb ] && dpkg -i $MySB_Files/$sPlexDeb
+		systemctl daemon-reload
+		systemctl enable plexmediaserver.service
+
+		# Start Tautulli service
+		gfnManageServices start "$sServices"
+	else
+		echo "PlexMedia version $sPlexMediaVersion is already installed"
+	fi
 }
 
 #### CRON UPGRADE
 if [ "$sLocSwitch" == "CRON" ] && [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
-	# Stop services
-	gfnManageServices stop "plexmediaserver tautulli"
 	# Install DEB package
 	fnInstallDebPackage
-	# Start services
-	gfnManageServices start "plexmediaserver tautulli"
 fi
 
 #### INSTALL
