@@ -38,52 +38,10 @@ if [ -z "`cat /etc/profile | grep 'PATH=' | grep "$MySB_InstallDir/bin"`" ]; the
 fi
 
 #### Coloration syntaxic for vim
-perl -pi -e "s/^\"syntax on/syntax on/g" /etc/vim/vimrc
+install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/etc.vimrc.tmpl /etc/vim/vimrc
 
-#### Coloration syntaxic for nano
-if [ -f /usr/share/nano/ini.nanorc ]; then rm -vf /usr/share/nano/ini.nanorc; fi
-(
-cat <<'EOF'
-## ini highlighting
-syntax "ini" "\.ini(\.old|~)?$"
-color brightred "=.*$"
-color green "="
-color brightblue "-?[0-9\.]+\s*($|;)"
-color brightmagenta "ON|OFF|On|Off|on|off\s*($|;)"
-color brightcyan "^\s*\[.*\]"
-color cyan "^\s*[a-zA-Z0-9_\.]+"
-color brightyellow ";.*$"
-
-EOF
-) | tee -a /usr/share/nano/ini.nanorc
-
-if [ -f /usr/share/nano/conf.nanorc ]; then rm -vf /usr/share/nano/conf.nanorc; fi
-(
-cat <<'EOF'
-## Generic *.conf file syntax highlighting
-syntax "conf" "\.(c(onf|nf|fg))$"
-icolor yellow ""(\\.|[^"])*""
-icolor brightyellow start="=" end="$"
-icolor magenta start="(^|[[:space:]])[0-9a-z-]" end="="
-icolor brightred "(^|[[:space:]])((\[|\()[0-9a-z_!@#$%^&*-]+(\]|\)))"
-color green "[[:space:]][0-9.KM]+"
-color cyan start="(^|[[:space:]])(#|;).*$" end="$"
-color brightblue "(^|[[:space:]])(#|;)"
-
-EOF
-) | tee -a /usr/share/nano/conf.nanorc
-
-if [ -z "`cat /etc/nanorc | grep '## Config Files (.ini)'`" ]; then
-	echo "" | tee -a /etc/nanorc
-	echo "## Config Files (.ini)" | tee -a /etc/nanorc
-	echo "include \"/usr/share/nano/ini.nanorc\"" | tee -a /etc/nanorc
-fi
-
-if [ -z "`cat /etc/nanorc | grep '## Config Files (.conf)'`" ]; then
-	echo "" | tee -a /etc/nanorc
-	echo "## Config Files (.conf)" | tee -a /etc/nanorc
-	echo "include \"/usr/share/nano/conf.nanorc\"" | tee -a /etc/nanorc
-fi
+#### Nano
+install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/etc.nanorc.tmpl /etc/nanorc
 
 #### bash_profile
 if [ ! -f /root/.bash_profile ] || [ -z "`cat /root/.bash_profile | grep 'bash_completion'`" ] || [ -z "`cat /root/.bash_profile | grep '.bashrc'`" ]; then
@@ -114,11 +72,14 @@ if [ ! -z "$gsTimeZone" ]; then
 	dpkg-reconfigure -f noninteractive tzdata
 fi
 
+#### Sysctl
+install -v -o root -g root -m 0755 $MySB_InstallDir/templates/tweaks/etc.sysctl.conf.tmpl /etc/sysctl.conf
+
 #### Swappiness
 SWAP="`free -m | grep 'Swap' | awk '{ print $2 }'`"
 if [ "$gsMemory" -lt "2048" ] && [ "$SWAP" != "0" ]; then
 	echo 80 > /proc/sys/vm/swappiness
-	if [ "`cat /etc/sysctl.conf | grep 'vm.swappiness'`" == "" ]; then
+	if [ -z "`grep 'vm.swappiness' /etc/sysctl.conf`" == "" ]; then
 		echo "vm.swappiness = 80" | tee -a /etc/sysctl.conf
 	fi
 fi
@@ -167,9 +128,12 @@ if [ -z "`cat /etc/network/interfaces | grep 'post-up iptables-restore < /etc/ip
 fi
 
 #### NTP (disable IPv6)
-perl -pi -e "s/^restrict ::1/#restrict ::1/g" /etc/ntp.conf
-perl -pi -e "s/^restrict -6/#restrict -6/g" /etc/ntp.conf
+install -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/etc.ntp.conf.tmpl /etc/ntp.conf
 ServicesToRestart="${ServicesToRestart} ntp"
+
+#### RSyslog
+install -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/etc.rsyslog.conf.tmpl /etc/rsyslog.conf
+ServicesToRestart="${ServicesToRestart} ntp rsyslog"
 
 #### SSH Keygen
 [ ! -d /root/.ssh/ ] && mkdir /root/.ssh/
@@ -207,14 +171,6 @@ if [ -f /proc/cpuinfo ]; then
 fi
 
 #### Tweaks for Redis
-if [ -z "`grep 'net.core.somaxconn' /etc/sysctl.conf`" ]; then
-	sed -i '/net.core.somaxconn/d' /etc/sysctl.conf
-	echo 'net.core.somaxconn = 1024' >> /etc/sysctl.conf
-fi
-if [ -z "`grep 'vm.overcommit_memory' /etc/sysctl.conf`" ]; then
-	sed -i '/vm.overcommit_memory/d' /etc/sysctl.conf
-	echo 'vm.overcommit_memory = 1' >> /etc/sysctl.conf
-fi
 if [ -f /etc/default/grub ]; then
 	source /etc/default/grub
 	if [ ! -z "$GRUB_CMDLINE_LINUX" ] && [ -z "`echo $GRUB_CMDLINE_LINUX | grep 'transparent_hugepage=never'`" ]; then

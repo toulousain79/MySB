@@ -80,6 +80,22 @@ case "$1" in
 		source $MySB_InstallDir/inc/funcs_by_script/funcs_Fail2Ban
 		gfnFail2BanJailLocal
 		sed -i '/anyport/d' /etc/fail2ban/jail.local
+		# NginX
+		install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.nginx.conf.tmpl /etc/nginx/nginx.conf
+		perl -pi -e "s/worker_processes auto;/worker_processes $gsProcessors;/g" /etc/nginx/nginx.conf
+		if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
+			NumLign=$(cat /etc/nginx/nginx.conf | grep 'ssl_certificate' -n -m 1 | cut -d ':' -f 1)
+			sed -i '/ssl_certificate/d' /etc/nginx/nginx.conf
+			sed -i ""$NumLign"i\	ssl_certificate_key $MySB_InstallDir/ssl/privkey.pem; # Let's Encrypt certificate" /etc/nginx/nginx.conf
+			sed -i ""$NumLign"i\	ssl_certificate $MySB_InstallDir/ssl/fullchain.pem; # Let's Encrypt certificate" /etc/nginx/nginx.conf
+		else
+			NumLign=$(cat /etc/nginx/nginx.conf | grep 'ssl_certificate' -n -m 1 | cut -d ':' -f 1)
+			sed -i '/ssl_certificate/d' /etc/nginx/nginx.conf
+			sed -i ""$NumLign"i\	ssl_certificate_key $gsInstallDirEscaped/ssl/mysb.key;" /etc/nginx/nginx.conf
+			sed -i ""$NumLign"i\	ssl_certificate $gsInstallDirEscaped/ssl/mysb.cert;" /etc/nginx/nginx.conf
+		fi
+		install -v -g root -o root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.locations.nextcloud.conf.tmpl /etc/nginx/locations/NextCloud.conf
+		perl -pi -e "s/<MySB_InstallDir>/$gsInstallDirEscaped/g" /etc/nginx/locations/NextCloud.conf
 	;;
 	"AFTER")
 		####################################
@@ -132,17 +148,29 @@ case "$1" in
 		####################################
 
 		#### Cleaning
-		# rm -vf /etc/init.d/plexmediaserver.dpkg-bak
-		# rm -vf /etc/samba/smb.conf.ucf-dist
-		# rm -vf /etc/logrotate.d/fail2ban.dpkg-dist
-		# rm -vf /etc/logrotate.d/samba.dpkg-dist
-		# rm -vf /etc/vim/vimrc.dpkg-dist
-		# rm -vf /etc/default/stunnel4.dpkg-dist
-		# rm -vf /etc/init.d/nfs-kernel-server.dpkg-dist
-		# rm -vf /etc/init.d/bind9.dpkg-dist
-		# rm -vf /etc/vsftpd.conf.dpkg-dist
-		# rm -vf /etc/fail2ban/fail2ban.conf.dpkg-dist
-		# rm -vf /etc/apt/sources.list~
+		rm -vf /etc/vim/vimrc.dpkg-dist
+		rm -vf /etc/vsftpd.conf.dpkg-dist
+		rm -vf /etc/nanorc.dpkg-dist
+		rm -vf /usr/share/nano/conf.nanorc
+		rm -vf /usr/share/nano/ini.nanorc
+		rm -vf /etc/init.d/rpcbind.dpkg-dist
+		rm -vf /etc/init.d/bind9.dpkg-dist
+		rm -vf /etc/logrotate.d/mysql-server.dpkg-dist
+		rm -vf /etc/logrotate.d/samba.dpkg-dist
+		rm -vf /etc/fail2ban/fail2ban.conf.dpkg-dist
+		rm -vf /etc/ntp.conf.dpkg-dist
+		rm -vf /etc/rsyslog.conf.dpkg-dist
+		rm -vf /etc/sysctl.conf.dpkg-dist
+		rm -vf /etc/nginx/nginx.conf.dpkg-dist
+		rm -vf /etc/nginx/sites-available/default.dpkg-dist
+		rm -vf /etc/fail2ban/action.d/mail-whois.conf.dpkg-dist
+		rm -vf /etc/fail2ban/action.d/mail-whois-lines.conf.dpkg-dist
+		rm -vf /etc/fail2ban/action.d/sendmail.conf.dpkg-dist
+		rm -vf /etc/fail2ban/action.d/sendmail-whois.conf.dpkg-dist
+		rm -vf /etc/fail2ban/action.d/mail-whois-lines.conf.dpkg-dist
+		rm -vf /etc/samba/smb.conf.ucf-dist
+		rm -vf /etc/ssh/sshd_config.ucf-dist
+		rm -vf /etc/apt/sources.list~
 	;;
 esac
 

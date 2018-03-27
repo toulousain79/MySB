@@ -2,9 +2,11 @@
 #
 # Author: Cyril Jaquier
 # Modified-By: Yaroslav Halchenko to include grepping on IP over log files
-# $Revision$
 #
 
+[INCLUDES]
+
+before = mail-whois-common.conf
 [Definition]
 
 # Option:  actionstart
@@ -12,9 +14,9 @@
 # Values:  CMD
 #
 # actionstart = printf %%b "Hi,\n
-              # The jail <name> has been started successfully.\n
-              # Regards,\n
-              # Fail2Ban"|mail -s "[Fail2Ban] <name>: started" <dest>
+              The jail <name> has been started successfully.\n
+              Regards,\n
+              Fail2Ban"|mail -s "[Fail2Ban] <name>: started on `uname -n`" <dest>
 actionstart =
 
 # Option:  actionstop
@@ -22,9 +24,9 @@ actionstart =
 # Values:  CMD
 #
 # actionstop = printf %%b "Hi,\n
-             # The jail <name> has been stopped.\n
-             # Regards,\n
-             # Fail2Ban"|mail -s "[Fail2Ban] <name>: stopped" <dest>
+             The jail <name> has been stopped.\n
+             Regards,\n
+             Fail2Ban"|mail -s "[Fail2Ban] <name>: stopped on `uname -n`" <dest>
 actionstop =
 
 # Option:  actioncheck
@@ -36,35 +38,30 @@ actioncheck =
 # Option:  actionban
 # Notes.:  command executed when banning an IP. Take care that the
 #          command is executed with Fail2Ban user rights.
-# Tags:    <ip>  IP address
-#          <failures>  number of failures
-#          <failtime>  unix timestamp of the last failure
-#          <bantime>  unix timestamp of the ban time
+# Tags:    See jail.conf(5) man page
 # Values:  CMD
 #
 actionban = printf %%b "Hi,\n
             The IP <ip> has just been banned by Fail2Ban after
             <failures> attempts against <name>.\n\n
-            Here are more information about <ip>:\n
-            `whois <ip>`\n\n
+            Here is more information about <ip> :\n
+            `%(_whois_command)s`\n\n
             Lines containing IP:<ip> in <logpath>\n
-            `grep '\<<ip>\>' <logpath>`\n\n
+            `grep -E <grepopts> '(^|[^0-9])<ip>([^0-9]|$)' <logpath>`\n\n
             Regards,\n
-            Fail2Ban"|mail -s "[Fail2Ban] <name>: banned <ip>" <dest>
+            Fail2Ban"|mail -s "[Fail2Ban] <name>: banned <ip> from  `uname -n`" <dest>
 
 # Option:  actionunban
 # Notes.:  command executed when unbanning an IP. Take care that the
 #          command is executed with Fail2Ban user rights.
-# Tags:    <ip>  IP address
-#          <bantime>  unix timestamp of the ban time
-#          <unbantime>  unix timestamp of the unban time
+# Tags:    See jail.conf(5) man page
 # Values:  CMD
 #
 actionunban =
 
 [Init]
 
-# Defaut name of the chain
+# Default name of the chain
 #
 name = default
 
