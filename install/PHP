@@ -25,7 +25,7 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### STOP services
-gfnManageServices stop "$binPhpFpm"
+gfnManageServices stop "php7.0-fpm"
 
 #### Install packages
 case "$gsDebianRelease" in
@@ -47,22 +47,22 @@ esac
 #### Configuration files
 case "$gsDebianRelease" in
 	'jessie')
-		# $gsPhpDir/fpm/pool.d/www.conf
-		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php5.fpm.pool.d.www.conf.tmpl $gsPhpDir/fpm/pool.d/www.conf
-		# $gsPhpDir/fpm/php.ini
-		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php5.php.ini.tmpl $gsPhpDir/fpm/php.ini
-		# $gsPhpDir/cli/php.ini
-		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php5.php.ini.tmpl $gsPhpDir/cli/php.ini
-		perl -pi -e "s/disable_functions = /;disable_functions = /g" $gsPhpDir/cli/php.ini
+		# /etc/php/7.0/fpm/pool.d/www.conf
+		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php5.fpm.pool.d.www.conf.tmpl /etc/php/7.0/fpm/pool.d/www.conf
+		# /etc/php/7.0/fpm/php.ini
+		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php5.php.ini.tmpl /etc/php/7.0/fpm/php.ini
+		# /etc/php/7.0/cli/php.ini
+		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php5.php.ini.tmpl /etc/php/7.0/cli/php.ini
+		perl -pi -e "s/disable_functions = /;disable_functions = /g" /etc/php/7.0/cli/php.ini
 	;;
 	'stretch')
-		# $gsPhpDir/fpm/pool.d/www.conf
-		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php.7.0.fpm.pool.d.www.conf.tmpl $gsPhpDir/fpm/pool.d/www.conf
-		# $gsPhpDir/fpm/php.ini
-		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php.7.0.php.ini.tmpl $gsPhpDir/fpm/php.ini
-		# $gsPhpDir/cli/php.ini
-		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php.7.0.php.ini.tmpl $gsPhpDir/cli/php.ini
-		perl -pi -e "s/disable_functions = /;disable_functions = /g" $gsPhpDir/cli/php.ini
+		# /etc/php/7.0/fpm/pool.d/www.conf
+		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php.7.0.fpm.pool.d.www.conf.tmpl /etc/php/7.0/fpm/pool.d/www.conf
+		# /etc/php/7.0/fpm/php.ini
+		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php.7.0.php.ini.tmpl /etc/php/7.0/fpm/php.ini
+		# /etc/php/7.0/cli/php.ini
+		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php.7.0.php.ini.tmpl /etc/php/7.0/cli/php.ini
+		perl -pi -e "s/disable_functions = /;disable_functions = /g" /etc/php/7.0/cli/php.ini
 	;;
 esac
 
@@ -73,27 +73,27 @@ sAllExtList="`echo $sAllExtList | xargs -n1 | sort -u | xargs | sed -e 's/^ //g;
 
 #### Disable all modules
 for Ext in $sPeclModules; do
-	[ -f $gsPhpDir/mods-available/$Ext.ini ] && php5dismod $Ext
-	rm -fv $gsPhpDir/mods-available/$Ext.ini
+	[ -f /etc/php/7.0/mods-available/$Ext.ini ] && php5dismod $Ext
+	rm -fv /etc/php/7.0/mods-available/$Ext.ini
 	[ ! -z "`pecl list | grep "$Ext"`" ] && pecl uninstall $Ext
 done
 if [ -d "${sExtDir}-zts" ]; then
 	sExtListZts="`ls -A1 ${sExtDir}-zts | cut -d "." -f 1`"
 	for Ext in $sExtListZts; do
-		[ -f $gsPhpDir/mods-available/$Ext.ini ] && php5dismod $Ext
-		rm -fv $gsPhpDir/mods-available/$Ext.ini
+		[ -f /etc/php/7.0/mods-available/$Ext.ini ] && php5dismod $Ext
+		rm -fv /etc/php/7.0/mods-available/$Ext.ini
 	done
 	rm -rfv ${sExtDir}-zts
 fi
 for Ext in $sAllExtList; do
 	[ -f $sExtDir/$Ext.ini ] && php5dismod $Ext
-	rm -fv $gsPhpDir/mods-available/$Ext.ini
+	rm -fv /etc/php/7.0/mods-available/$Ext.ini
 done
 
 #### PEAR/PECL config
 update-ca-certificates --verbose --fresh &> /dev/null
 pear config-set auto_discover 1
-pear config-set php_ini $gsPhpDir/cli/php.ini
+pear config-set php_ini /etc/php/7.0/cli/php.ini
 pear config-set ext_dir $sExtDir
 pear channel-update pear.php.net
 pecl channel-update pecl.php.net
@@ -103,12 +103,12 @@ pear install -o PEAR
 for Ext in $sAllExtList; do
 	case "$Ext" in
 		'opcache')
-			echo "zend_extension=opcache.so" > $gsPhpDir/mods-available/opcache.ini
-			[ -z "`php -m | grep 'opcache'`" ] && $binPenEnmod opcache
+			echo "zend_extension=opcache.so" > /etc/php/7.0/mods-available/opcache.ini
+			[ -z "`php -m | grep 'opcache'`" ] && phpenmod opcache
 		;;
 		*)
-			echo "extension=$Ext.so" > $gsPhpDir/mods-available/$Ext.ini
-			[ -z "`php -m | grep "$Ext"`" ] && $binPenEnmod $Ext
+			echo "extension=$Ext.so" > /etc/php/7.0/mods-available/$Ext.ini
+			[ -z "`php -m | grep "$Ext"`" ] && phpenmod $Ext
 		;;
 	esac
 done
@@ -123,23 +123,23 @@ for Ext in $sPeclModules; do
 			make
 			make install
 			make test
-			echo "extension=smbclient.so" > $gsPhpDir/mods-available/smbclient.ini
-			$binPenEnmod smbclient
+			echo "extension=smbclient.so" > /etc/php/7.0/mods-available/smbclient.ini
+			phpenmod smbclient
 		;;
 		'htscanner')
 			pecl install htscanner
-			echo "extension=htscanner.so" > $gsPhpDir/mods-available/htscanner.ini
-			$binPenEnmod htscanner
-			rm -fv $gsPhpDir/cli/conf.d/20-htscanner.ini
+			echo "extension=htscanner.so" > /etc/php/7.0/mods-available/htscanner.ini
+			phpenmod htscanner
+			rm -fv /etc/php/7.0/cli/conf.d/20-htscanner.ini
 		;;
 	esac
 done
 chmod 644 $sExtDir/*.so
 
 #### Check modules installation
-$binPhpFpm -i | grep 'htscanner'
+php-fpm7.0 -i | grep 'htscanner'
 echo
-$binPhpFpm -i | grep 'smbclient'
+php-fpm7.0 -i | grep 'smbclient'
 
 #### TMPFS
 sed -i '/TMPFS - PHP/d' /etc/fstab
@@ -153,7 +153,7 @@ echo "tmpfs   /mnt/tmpFS/php tmpfs defaults,nosuid,noatime,mode=1777,size=32M 0 
 if gfnCheckCommand 0 geoipupdate; then geoipupdate; fi
 
 #### START services
-gfnManageServices start "$binPhpFpm"
+gfnManageServices start "php7.0-fpm"
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after
