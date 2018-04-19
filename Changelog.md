@@ -3,7 +3,7 @@
 			- Migration from Jessie to Stretch
 			- Upgrade PHP5 to PHP7
 			- Tautulli v2.0.28
-			- PexMedia v1.12.2.4929
+			- PexMedia v1.12.3.4973
 			- Portal
 				* Medoo Framework v1.5.6
 
