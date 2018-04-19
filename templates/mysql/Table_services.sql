@@ -10,7 +10,7 @@
 INSERT INTO `services` (`id_services`, `serv_name`, `bin`, `port_tcp1`, `port_tcp2`, `port_tcp3`, `ports_tcp_list`, `port_udp1`, `port_udp2`, `port_udp3`, `ports_udp_list`, `to_install`, `is_installed`, `used`) VALUES
 (1, 'Seedbox-Manager', '', '', '', '', '', '', '', ' ', ' ', 0, 0, 1),
 (2, 'CakeBox-Light', '', '', '', '', '', '', '', '', '', 0, 0, 1),
-(3, 'Plex Media Server', '', '32400', '', '', '3005 8324 32469', '', '', ' ', '1900 5353 32410 32412 32413 3241', 0, 0, 1),
+(3, 'Plex Media Server', '', '32400', '', '', '3005 8324 32469', '', '', '', '1900 5353 32410 32412 32413 32414', 0, 0, 1),
 (4, 'Webmin', '', '8190', '', '', '', '', '', '', '', 0, 0, 1),
 (5, 'OpenVPN', '', '', '', '', '', '8193', '8194', '8195', '', 0, 0, 1),
 (6, 'LogWatch', '', '', '', '', '', '', '', ' ', ' ', 0, 0, 1),
