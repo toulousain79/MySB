@@ -38,7 +38,9 @@ fnInstallDebPackage() {
 	gfnGetRepoValues 'Plex Media Server'
 
 	if [ -z "$gsRepoVersion" ]; then
-		cmdMySQL 'MySB_db' "INSERT INTO repositories (type,dir,name,version,file,url,active) VALUES ('DEB','<InstallDir>_files','Plex Media Server','1.12.3.4973','plexmediaserver_1.12.3.4973-215c28d86_amd64.deb','https://downloads.plex.tv/plex-media-server/1.12.3.4973-215c28d86/plexmediaserver_1.12.3.4973-215c28d86_amd64.deb','1');"
+		cmdMySQL 'MySB_db' "ALTER TABLE repositories CHANGE name name VARCHAR(64) NOT NULL;" -v
+		cmdMySQL 'MySB_db' "ALTER TABLE repositories CHANGE version version VARCHAR(32) NOT NULL;" -v
+		cmdMySQL 'MySB_db' "INSERT INTO repositories (type,dir,name,version,file,url,active) VALUES ('DEB','<InstallDir>_files','Plex Media Server','1.12.3.4973-215c28d86','plexmediaserver_1.12.3.4973-215c28d86_amd64.deb','https://downloads.plex.tv/plex-media-server/1.12.3.4973-215c28d86/plexmediaserver_1.12.3.4973-215c28d86_amd64.deb','1');"
 		gfnGetRepoValues 'Plex Media Server'
 	fi
 
@@ -60,6 +62,8 @@ fnInstallDebPackage() {
 	sVersionInstalled="`dpkg -l plexmediaserver | grep 'plexmediaserver' | awk '{ print $3 }'`"
 
 	# Install Plex if needed
+	echo "sVersionInstalled: $sVersionInstalled"
+	echo "sNewVersion: $sNewVersion"
 	if [ "$sNewVersion" != "$sVersionInstalled" ]; then
 		sServices="plexmediaserver"
 		[ "$gbIsInstalled_Tautulli" == "YES" ] && sServices="$sServices tautulli"
@@ -93,18 +97,28 @@ fnInstallZipTautulli() {
 	if [ -f $gsRepoDir/release.lock ]; then
 		sVersionInstalled="`cat $gsRepoDir/release.lock`"
 	elif [ -f $gsRepoDir/plexpy/version.py ]; then
-		source $gsRepoDir/plexpy/version.py
-		sVersionInstalled="$PLEXPY_RELEASE_VERSION"
+		sVersionInstalled="`grep 'PLEXPY_RELEASE_VERSION' $gsRepoDir/plexpy/version.py | cut -d '=' -f 2| cut -d '"' -f 2`"
 	else
-		sVersionInstalled="$gsRepoVersion"
+		sVersionInstalled="v$gsRepoVersion"
 	fi
 
 	# Check if a new version is available
 	sNewVersion="v`grep 'Tautulli' $MySB_InstallDir/templates/mysql/Table_repositories.sql | cut -d ',' -f 4 | cut -d "'" -f 2`"
 
+	echo "sVersionInstalled: $sVersionInstalled"
+	echo "sNewVersion: $sNewVersion"
 	if [ "$sNewVersion" != "$sVersionInstalled" ]; then
 		if [ ! -z $gsRepoDir ] && [ -d $gsRepoDir ]; then
 			[ "$gbIsInstalled_Tautulli" == "YES" ] && gfnManageServices stop "tautulli"
+
+			# Backup if needed
+			if [ "$sLocSwitch" == "CRON" ]; then
+				[ -f $gsRepoDir/config.ini ] && mv -v $gsRepoDir/config.ini $MySB_InstallDir/temp/tautulli_conf
+				[ -f $gsRepoDir/tautulli.db ] && mv -v $gsRepoDir/tautulli.db $MySB_InstallDir/temp/tautulli_db
+				[ -d $gsRepoDir/backups ] && mv -v $gsRepoDir/backups $MySB_InstallDir/temp/tautulli_backups
+				[ -d $gsRepoDir/logs ] && mv -v $gsRepoDir/logs $MySB_InstallDir/temp/tautulli_logs
+				[ -d $gsRepoDir/cache ] && mv -v $gsRepoDir/cache $MySB_InstallDir/temp/tautulli_cache
+			fi
 
 			# Install PyOpenSSL for Python
 			easy_install PyOpenSSL
@@ -112,6 +126,20 @@ fnInstallZipTautulli() {
 			# System user
 			if [ -z "`grep 'tautulli' /etc/passwd`" ]; then
 				adduser --system --no-create-home tautulli
+			fi
+
+			if [ -f $MySB_Files/$gsRepoFile ]; then
+				gfnDeleteDirectory 1 "$gsRepoDir"
+			fi
+			gfnRepoManageByType
+
+			# Restore if needed
+			if [ "$sLocSwitch" == "CRON" ]; then
+				[ -f $MySB_InstallDir/temp/tautulli_conf ] && mv -v $MySB_InstallDir/temp/tautulli_conf $gsRepoDir/config.ini
+				[ -f $MySB_InstallDir/temp/tautulli_db ] && mv -v $MySB_InstallDir/temp/tautulli_db $gsRepoDir/tautulli.db
+				[ -d $MySB_InstallDir/temp/tautulli_backups ] && mv -v $MySB_InstallDir/temp/tautulli_backups $gsRepoDir/backups
+				[ -d $MySB_InstallDir/temp/tautulli_logs ] && mv -v $MySB_InstallDir/temp/tautulli_logs $gsRepoDir/logs
+				[ -d $MySB_InstallDir/temp/tautulli_cache ] && mv -v $MySB_InstallDir/temp/tautulli_cache $gsRepoDir/cache
 			fi
 
 			# Directories
