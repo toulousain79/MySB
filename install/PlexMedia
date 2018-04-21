@@ -30,9 +30,23 @@ source $(dirname $0)/../inc/includes_before
 sLocSwitch="$1"
 
 #### FUNCTIONs
+# Update repositories table
+fnUpdateRepositoriesTable() {
+	local sName sVersion sFile sUrl
+	sName="$1"
+
+	if [ ! -z "$sName" ]; then
+		sVersion="`grep "$sName" $MySB_InstallDir/templates/mysql/Table_repositories.sql | cut -d ',' -f 4 | cut -d "'" -f 2`"
+		sFile="`grep "$sName" $MySB_InstallDir/templates/mysql/Table_repositories.sql | cut -d ',' -f 6 | cut -d "'" -f 2`"
+		sUrl="`grep "$sName" $MySB_InstallDir/templates/mysql/Table_repositories.sql | cut -d ',' -f 7 | cut -d "'" -f 2`"
+
+		cmdMySQL 'MySB_db' "UPDATE repositories SET version = '$sVersion', file = '$sFile', url = '$sUrl' WHERE name='$sName';" -v
+	fi
+}
+
 # Install Plex DEB package
 fnInstallDebPackage() {
-	local sVersionInstalled sServices sNewVersion
+	local sVersionInstalled sServices
 
 	# Loading repository informations
 	gfnGetRepoValues 'Plex Media Server'
@@ -42,8 +56,13 @@ fnInstallDebPackage() {
 		cmdMySQL 'MySB_db' "ALTER TABLE repositories CHANGE version version VARCHAR(32) NOT NULL;" -v
 		cmdMySQL 'MySB_db' "ALTER TABLE repositories CHANGE file file VARCHAR(64) NOT NULL;" -v
 		cmdMySQL 'MySB_db' "INSERT INTO repositories (type,dir,name,version,file,url,active) VALUES ('DEB','<InstallDir>_files','Plex Media Server','1.12.3.4973-215c28d86','plexmediaserver_1.12.3.4973-215c28d86_amd64.deb','https://downloads.plex.tv/plex-media-server/1.12.3.4973-215c28d86/plexmediaserver_1.12.3.4973-215c28d86_amd64.deb','1');"
-		gfnGetRepoValues 'Plex Media Server'
+	else
+		# Update DB
+		fnUpdateRepositoriesTable 'Plex Media Server'
 	fi
+
+	# Loading repository informations
+	gfnGetRepoValues 'Plex Media Server'
 
 	# Change architecture if needed
 	case `getconf LONG_BIT` in
@@ -56,23 +75,20 @@ fnInstallDebPackage() {
 	# Downloading the DEB file
 	gfnRepoManageByType
 
-	# Check if a new version is available
-	sNewVersion="`grep 'Plex Media Server' $MySB_InstallDir/templates/mysql/Table_repositories.sql | cut -d ',' -f 4 | cut -d "'" -f 2`"
-
 	# Loading current installed version
-	sVersionInstalled="`dpkg -l plexmediaserver | grep 'plexmediaserver' | awk '{ print $3 }'`"
+	sVersionInstalled="`dpkg -l plexmediaserver 2> /dev/null | grep 'plexmediaserver' | awk '{ print $3 }'`"
 
 	# Install Plex if needed
 	echo "sVersionInstalled: $sVersionInstalled"
-	echo "sNewVersion: $sNewVersion"
-	if [ "$sNewVersion" != "$sVersionInstalled" ]; then
+	echo "gsRepoVersion: $gsRepoVersion"
+	if [ "$gsRepoVersion" != "$sVersionInstalled" ]; then
 		sServices="plexmediaserver"
 		[ "$gbIsInstalled_Tautulli" == "YES" ] && sServices="$sServices tautulli"
 
 		# Stop services
 		gfnManageServices stop "$sServices"
 
-		[ -f $MySB_Files/$sPlexDeb ] && dpkg -i $MySB_Files/$sPlexDeb
+		[ -f $gsRepoDir/$gsRepoFile ] && dpkg -i $gsRepoDir/$gsRepoFile
 		systemctl daemon-reload
 		systemctl enable plexmediaserver.service
 
@@ -81,16 +97,18 @@ fnInstallDebPackage() {
 
 		# Update DB
 		cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='Plex Media Server';" -v
-		fnUpdateRepositoriesTable 'Plex Media Server'
 	else
-		echo "PlexMedia version $sNewVersion is already installed"
+		echo "PlexMedia version $gsRepoVersion is already installed"
 	fi
 }
 
 # Install Tautulli
 fnInstallZipTautulli() {
-	local sRepoDirEscaped sVersionInstalled sNewVersion
+	local sRepoDirEscaped sVersionInstalled
 
+	# Update DB
+	fnUpdateRepositoriesTable 'Tautulli'
+	# Get Tautulli infos
 	gfnGetRepoValues 'Tautulli' && gfnRepoManageByType
 	sRepoDirEscaped="`echo $gsRepoDir | sed s,/,\\\\\\\\\\/,g`"
 
@@ -100,15 +118,12 @@ fnInstallZipTautulli() {
 	elif [ -f $gsRepoDir/plexpy/version.py ]; then
 		sVersionInstalled="`grep 'PLEXPY_RELEASE_VERSION' $gsRepoDir/plexpy/version.py | cut -d '=' -f 2| cut -d '"' -f 2`"
 	else
-		sVersionInstalled="v$gsRepoVersion"
+		sVersionInstalled="Not installed"
 	fi
 
-	# Check if a new version is available
-	sNewVersion="v`grep 'Tautulli' $MySB_InstallDir/templates/mysql/Table_repositories.sql | cut -d ',' -f 4 | cut -d "'" -f 2`"
-
 	echo "sVersionInstalled: $sVersionInstalled"
-	echo "sNewVersion: $sNewVersion"
-	if [ "$sNewVersion" != "$sVersionInstalled" ]; then
+	echo "gsRepoVersion: v$gsRepoVersion"
+	if [ "v$gsRepoVersion" != "$sVersionInstalled" ]; then
 		if [ ! -z $gsRepoDir ] && [ -d $gsRepoDir ]; then
 			[ "$gbIsInstalled_Tautulli" == "YES" ] && gfnManageServices stop "tautulli"
 
@@ -198,25 +213,9 @@ fnInstallZipTautulli() {
 				# Disable the upgrade job
 				cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='Tautulli';" -v
 			fi
-
-			fnUpdateRepositoriesTable 'Tautulli'
 		fi
 	else
-		echo "Tautulli version $sNewVersion is already installed"
-	fi
-}
-
-# Update repositories table
-fnUpdateRepositoriesTable() {
-	local sName sVersion sFile sUrl
-	sName="$1"
-
-	if [ ! -z "$sName" ]; then
-		sVersion="`grep "$sName" $MySB_InstallDir/templates/mysql/Table_repositories.sql | cut -d ',' -f 4 | cut -d "'" -f 2`"
-		sFile="`grep "$sName" $MySB_InstallDir/templates/mysql/Table_repositories.sql | cut -d ',' -f 6 | cut -d "'" -f 2`"
-		sUrl="`grep "$sName" $MySB_InstallDir/templates/mysql/Table_repositories.sql | cut -d ',' -f 7 | cut -d "'" -f 2`"
-
-		cmdMySQL 'MySB_db' "UPDATE repositories SET version = '$sVersion', file = '$sFile', url = '$sUrl' WHERE name='$sName';" -v
+		echo "Tautulli version $gsRepoVersion is already installed"
 	fi
 }
 
