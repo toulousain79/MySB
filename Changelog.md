@@ -4,6 +4,7 @@
 			- Upgrade PHP5 to PHP7
 			- Tautulli v2.0.28
 			- PexMedia v1.12.3.4973
+			- PlexMedia & Tautulli, daily check for new version and install it if needed
 			- Portal
 				* Medoo Framework v1.5.6
 
