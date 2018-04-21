@@ -168,7 +168,7 @@ CREATE TABLE IF NOT EXISTS `repositories` (
   `name` varchar(64) NOT NULL,
   `version` varchar(32) NOT NULL,
   `upgrade` tinyint(1) NOT NULL DEFAULT '0',
-  `file` varchar(32) NOT NULL,
+  `file` varchar(64) NOT NULL,
   `url` varchar(256) NOT NULL,
   `active` tinyint(1) NOT NULL DEFAULT '0',
   `on_boot` tinyint(1) NOT NULL DEFAULT '0',
