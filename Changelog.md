@@ -2,6 +2,8 @@
 		(start at: 2018/03/25)
 			- Migration from Jessie to Stretch
 			- Upgrade PHP5 to PHP7
+			- XMLRPC-C to v1.43.7
+			- Composer v1.6.4			
 			- Tautulli v2.0.28
 			- PexMedia v1.12.3.4973
 			- PlexMedia & Tautulli, daily check for new version and install it if needed
