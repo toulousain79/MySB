@@ -68,12 +68,12 @@ function Form() {
 		</div>';
 	}
 
-	echo '<div align="center"><table><tr>';
+	echo '<div align="center"><table><tr align="center">';
 	foreach($AllUsers as $User) {
 		$Rent_Payments = $MySB_DB->select("tracking_rent_payments", ["id_tracking_rent_payments", "id_users", "payment_date", "amount"], ["id_users" => $User["id_users"]]);
 
 		if (!empty($Rent_Payments)) {
-			echo '	<td style="margin:0; padding:0; border:0; outline:0; font-size:100%; vertical-align:top; background:transparent;">
+			echo '	<td style="margin:0; padding:5; border:0; outline:0; font-size:100%; vertical-align:top; background:transparent; display: inline-flex;">
 					<form class="form_settings" method="post" action="">
 					<fieldset><legend>'.$User["users_ident"].'</legend>
 						<table style="border-spacing:1;">
