@@ -26,16 +26,18 @@
 
 [ ca ]
 # `man ca`
-default_ca      		= CA_default
+default_ca      		= local_ca
 
-[ CA_default ]
+[ local_ca ]
 name_opt               	= ca_default
 cert_opt               	= ca_default
 default_days          	= 3650
 preserve              	= no
-policy                	= policy_strict
+policy                	= local_ca_policy
 x509_extensions       	= local_ca_extensions
 email_in_dn           	= no
+certopt               	= default_ca
+nameopt               	= default_ca
 # Directory and file locations.
 dir                   	= <InstallDir>/ssl/CA			# WARNING: if you change that, change the default_keyfile in the [req] section below too
 certs 					= $dir/certs
@@ -60,32 +62,29 @@ subjectAltName      	= IP:<ipaddress>
 basicConstraints    	= CA:false
 nsCertType          	= server
 
-[ policy_strict ]
+[ local_ca_policy ]
 # The root CA should only sign intermediate certificates that match.
 # See the POLICY FORMAT section of `man ca`.
-countryName             = match
-stateOrProvinceName     = match
-organizationName        = match
-organizationalUnitName  = optional
-commonName              = supplied
-emailAddress            = optional
-
-[ policy_loose ]
-# Allow the intermediate CA to sign a more diverse range of certificates.
-# See the POLICY FORMAT section of the `ca` man page.
-countryName             = optional
-stateOrProvinceName     = optional
-localityName            = optional
-organizationName        = optional
-organizationalUnitName  = optional
+countryName             = supplied
+stateOrProvinceName     = supplied
+organizationName        = supplied
+organizationalUnitName  = supplied
 commonName              = supplied
 emailAddress            = optional
 
 [ req ]
 # Options for the `req` tool (`man req`).
+dir                   	= <InstallDir>/ssl/CA
+default_keyfile			= $dir/key.pem
+prompt              	= no
+subjectKeyIdentifier	= hash
+authorityKeyIdentifier	= keyid:always,issuer
+basicConstraints 		= CA:true
 default_bits        	= 2048
-distinguished_name		= req_distinguished_name
+distinguished_name		= root_ca_distinguished_name
 string_mask 			= utf8only
+req_extensions      	= v3_req
+policy                  = policy_anything
 
 # SHA-1 is deprecated, so use SHA-2 instead.
 default_md          	= sha256
@@ -93,12 +92,13 @@ default_md          	= sha256
 # Extension to add when the -x509 option is used.
 x509_extensions			= v3_ca
 
-[ req_distinguished_name ]
+[ root_ca_distinguished_name ]
 # See <https://en.wikipedia.org/wiki/Certificate_signing_request>.
 countryName             = FR
 stateOrProvinceName     = FR
 localityName			= FR
 0.organizationName		= MySB
+organizationName 		= MySB
 organizationalUnitName  = MySB
 commonName 				= <servername>
 emailAddress            = admin@localhost
@@ -124,6 +124,10 @@ subjectKeyIdentifier	= hash
 authorityKeyIdentifier	= keyid:always,issuer
 basicConstraints		= critical, CA:true, pathlen:0
 keyUsage				= critical, digitalSignature, cRLSign, keyCertSign
+
+[ v3_req ]
+basicConstraints  		= CA:FALSE
+subjectKeyIdentifier  	= hash
 
 [ usr_cert ]
 # Extensions for client certificates (`man x509v3_config`).
@@ -156,5 +160,3 @@ subjectKeyIdentifier	= hash
 authorityKeyIdentifier	= keyid,issuer
 keyUsage				= critical, digitalSignature
 extendedKeyUsage		= critical, OCSPSigning
-
-##################### LAST LINE ######################################
