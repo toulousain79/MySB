@@ -21,41 +21,30 @@
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
 ##################### FIRST LINE #####################################
-# https://jamielinux.com/docs/openssl-certificate-authority/_downloads/root-config.txt
-######################################################################
 
 [ ca ]
-# `man ca`
 default_ca      		= local_ca
 
 [ local_ca ]
-name_opt               	= ca_default
-cert_opt               	= ca_default
-default_days          	= 3650
-preserve              	= no
-policy                	= local_ca_policy
-x509_extensions       	= local_ca_extensions
-email_in_dn           	= no
-certopt               	= default_ca
-nameopt               	= default_ca
-# Directory and file locations.
 dir                   	= <InstallDir>/ssl/CA			# WARNING: if you change that, change the default_keyfile in the [req] section below too
 certs 					= $dir/certs
 crl_dir 				= $dir/crl
-new_certs_dir 			= $dir/newcerts
 database              	= $dir/index.txt
-serial                	= $dir/serial
-RANDFILE 				= $dir/private/.rand
-# The root key and root certificate.
-private_key 			= $dir/private/cakey.pem	# WARNING: if you change that, change the default_keyfile in the [req] section below too
+new_certs_dir 			= $dir/newcerts
 certificate 			= $dir/certs/cacert.pem
-# For certificate revocation lists.
-crlnumber				= $dir/crlnumber
+serial                	= $dir/serial
 crl 					= $dir/crl/cacrl.pem
-crl_extensions			= crl_ext
-default_crl_days      	= 60
-# SHA-1 is deprecated, so use SHA-2 instead.
+private_key 			= $dir/private/cakey.pem	# WARNING: if you change that, change the default_keyfile in the [req] section below too
+RANDFILE 				= $dir/private/.rand
+x509_extensions       	= local_ca_extensions
+default_days          	= 3650
+default_crl_days      	= 3650
 default_md            	= sha256
+preserve              	= no
+policy                	= local_ca_policy
+certopt               	= default_ca
+email_in_dn           	= no
+nameopt               	= default_ca
 
 [ local_ca_extensions ]
 subjectAltName      	= IP:<ipaddress>
@@ -63,100 +52,46 @@ basicConstraints    	= CA:false
 nsCertType          	= server
 
 [ local_ca_policy ]
-# The root CA should only sign intermediate certificates that match.
-# See the POLICY FORMAT section of `man ca`.
-countryName             = supplied
+commonName              = supplied
 stateOrProvinceName     = supplied
+countryName             = supplied
+emailAddress            = supplied
 organizationName        = supplied
 organizationalUnitName  = supplied
-commonName              = supplied
-emailAddress            = optional
 
 [ req ]
-# Options for the `req` tool (`man req`).
 dir                   	= <InstallDir>/ssl/CA
 default_keyfile			= $dir/key.pem
+default_md          	= sha256
 prompt              	= no
 subjectKeyIdentifier	= hash
 authorityKeyIdentifier	= keyid:always,issuer
-basicConstraints 		= CA:true
-default_bits        	= 2048
-distinguished_name		= root_ca_distinguished_name
 string_mask 			= utf8only
+basicConstraints 		= CA:true
+distinguished_name		= root_ca_distinguished_name
+default_bits        	= 2048
+x509_extensions			= root_ca_extensions
 req_extensions      	= v3_req
 policy                  = policy_anything
 
-# SHA-1 is deprecated, so use SHA-2 instead.
-default_md          	= sha256
-
-# Extension to add when the -x509 option is used.
-x509_extensions			= v3_ca
-
 [ root_ca_distinguished_name ]
-# See <https://en.wikipedia.org/wiki/Certificate_signing_request>.
-countryName             = FR
+commonName 				= <servername>
 stateOrProvinceName     = FR
-localityName			= FR
-0.organizationName		= MySB
+countryName             = FR
+emailAddress            = admin@localhost
 organizationName 		= MySB
 organizationalUnitName  = MySB
-commonName 				= <servername>
-emailAddress            = admin@localhost
-
-# Optionally, specify some defaults.
-countryName_default             = FR
-stateOrProvinceName_default     = France
-localityName_default            =
-0.organizationName_default      = MySB
-organizationalUnitName_default  = MySB
-emailAddress_default            = admin@localhost
-
-[ v3_ca ]
-# Extensions for a typical CA (`man x509v3_config`).
-subjectKeyIdentifier 	= hash
-authorityKeyIdentifier 	= keyid:always,issuer
-basicConstraints 		= critical, CA:true
-keyUsage				= critical, digitalSignature, cRLSign, keyCertSign
-
-[ v3_intermediate_ca ]
-# Extensions for a typical intermediate CA (`man x509v3_config`).
-subjectKeyIdentifier	= hash
-authorityKeyIdentifier	= keyid:always,issuer
-basicConstraints		= critical, CA:true, pathlen:0
-keyUsage				= critical, digitalSignature, cRLSign, keyCertSign
 
 [ v3_req ]
 basicConstraints  		= CA:FALSE
 subjectKeyIdentifier  	= hash
 
-[ usr_cert ]
-# Extensions for client certificates (`man x509v3_config`).
-basicConstraints		= CA:FALSE
-nsCertType				= client, email
-nsComment				= "OpenSSL Generated Client Certificate"
-subjectKeyIdentifier	= hash
-authorityKeyIdentifier	= keyid,issuer
-keyUsage				= critical, nonRepudiation, digitalSignature, keyEncipherment
-extendedKeyUsage		= clientAuth, emailProtection
+[ v3_ca ]
+basicConstraints 		= CA:TRUE
+subjectKeyIdentifier 	= hash
+authorityKeyIdentifier 	= keyid:always,issuer:always
 
-[ server_cert ]
-# Extensions for server certificates (`man x509v3_config`).
-basicConstraints		= CA:FALSE
-nsCertType				= server
-nsComment				= "OpenSSL Generated Server Certificate"
-subjectKeyIdentifier	= hash
-authorityKeyIdentifier	= keyid,issuer:always
-keyUsage				= critical, digitalSignature, keyEncipherment
-extendedKeyUsage		= serverAuth
+[ root_ca_extensions ]
+basicConstraints        = CA:true
 
-[ crl_ext ]
-# Extension for CRLs (`man x509v3_config`).
-authorityKeyIdentifier	= keyid:always
-
-[ ocsp ]
-# Extension for OCSP signing certificates (`man ocsp`).
-basicConstraints		= CA:FALSE
-subjectKeyIdentifier	= hash
-authorityKeyIdentifier	= keyid,issuer
-keyUsage				= critical, digitalSignature
-extendedKeyUsage		= critical, OCSPSigning
+##################### LAST LINE ######################################
