@@ -217,6 +217,71 @@ function PrintContent($user, $Case) {
 <?php } ?>
 
 <?php
+	if ( $DisplayRenting == true ) {
+		$RentingDatas = $MySB_DB->get("system", ["rt_cost_tva", "rt_model", "rt_nb_users", "rt_price_per_users"], ["id_system" => 1]);
+
+		if ( !empty($RentingDatas["rt_cost_tva"]) && !empty($RentingDatas["rt_model"]) ) {
+			switch ($Method) {
+				case '1':
+					$GlobalCostTva = round($RentingDatas["rt_cost_tva"], 2);
+					$PricePerUsers = round($RentingDatas["rt_price_per_users"], 2);
+					break;
+				default:
+					$GlobalCostTva = ceil($RentingDatas["rt_cost_tva"]);
+					$PricePerUsers = ceil($RentingDatas["rt_price_per_users"]);
+					break;
+			}
+			$Treasury = round($users_datas["treasury"], 2);
+?>
+			<!-- //////////////////////
+			// Price and Payment info
+			////////////////////// -->
+			<tr align="left">
+				<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfo_Title_Renting; ?></h4></th>
+			</tr>
+			<!-- // Server model -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SrvModel; ?></th>
+				<td><?php echo $RentingDatas["rt_model"];?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_SrvModel; ?></span></td>
+			</tr>
+			<!-- // Global cost Inc. Tax -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_GlobalCostTva; ?></th>
+				<td><?php echo $GlobalCostTva . User_UserInfo_Table_GlobalCostTva_Plus;?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_GlobalCostTva; ?></span></td>
+			</tr>
+			<!-- // Total users -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalUsers; ?></th>
+				<td><?php echo $RentingDatas["rt_nb_users"];?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_TotalUsers; ?></span></td>
+			</tr>
+			<!-- // TOTAL per users -->
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalPerUser; ?></th>
+				<td><b><span class="FontInRed"><?php echo $PricePerUsers;?></span></b><?php echo User_UserInfo_Table_TotalPerUser_Plus; ?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_TotalPerUser; ?></span></td>
+			</tr>
+<?php
+			// User Treasury
+			if (is_numeric($Treasury) && $Treasury > 0) {
+				$Color = 'color: #00DF00;';
+			} else {
+				$Color = 'color: #FF0000;';
+			}
+?>
+			<tr align="left">
+				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Treasury; ?></th>
+				<td style="'.$Color.'"><b><span class="FontInRed"><?php echo $Treasury;?></span></b><?php echo User_UserInfo_Table_Treasury_Plus; ?></td>
+				<td><span class="Comments"><?php echo User_UserInfo_Comment_Treasury; ?></span></td>
+			</tr>
+<?php
+		}
+	}
+?>
+
+<?php
 	if ( ($DisplayUserInfo == true) && ($users_datas["account_type"] == 'normal') ) {
 ?>
 		<!-- //////////////////////
@@ -500,71 +565,6 @@ function PrintContent($user, $Case) {
 			} // if ( $DNScryptDatas["is_installed"] == '1' ) {
 		} // if ( $users_datas["admin"] == '1' ) {
 	} // $DisplayLinks
-?>
-
-<?php
-	if ( $DisplayRenting == true ) {
-		$RentingDatas = $MySB_DB->get("system", ["rt_cost_tva", "rt_model", "rt_nb_users", "rt_price_per_users"], ["id_system" => 1]);
-
-		if ( !empty($RentingDatas["rt_cost_tva"]) && !empty($RentingDatas["rt_model"]) ) {
-			switch ($Method) {
-				case '1':
-					$GlobalCostTva = round($RentingDatas["rt_cost_tva"], 2);
-					$PricePerUsers = round($RentingDatas["rt_price_per_users"], 2);
-					break;
-				default:
-					$GlobalCostTva = ceil($RentingDatas["rt_cost_tva"]);
-					$PricePerUsers = ceil($RentingDatas["rt_price_per_users"]);
-					break;
-			}
-			$Treasury = round($users_datas["treasury"], 2);
-?>
-			<!-- //////////////////////
-			// Price and Payment info
-			////////////////////// -->
-			<tr align="left">
-				<th colspan="3" scope="row" id="BorderTopTitle"><h4><?php echo User_UserInfo_Title_Renting; ?></h4></th>
-			</tr>
-			<!-- // Server model -->
-			<tr align="left">
-				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_SrvModel; ?></th>
-				<td><?php echo $RentingDatas["rt_model"];?></td>
-				<td><span class="Comments"><?php echo User_UserInfo_Comment_SrvModel; ?></span></td>
-			</tr>
-			<!-- // Global cost Inc. Tax -->
-			<tr align="left">
-				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_GlobalCostTva; ?></th>
-				<td><?php echo $GlobalCostTva . User_UserInfo_Table_GlobalCostTva_Plus;?></td>
-				<td><span class="Comments"><?php echo User_UserInfo_Comment_GlobalCostTva; ?></span></td>
-			</tr>
-			<!-- // Total users -->
-			<tr align="left">
-				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalUsers; ?></th>
-				<td><?php echo $RentingDatas["rt_nb_users"];?></td>
-				<td><span class="Comments"><?php echo User_UserInfo_Comment_TotalUsers; ?></span></td>
-			</tr>
-			<!-- // TOTAL per users -->
-			<tr align="left">
-				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_TotalPerUser; ?></th>
-				<td><b><span class="FontInRed"><?php echo $PricePerUsers;?></span></b><?php echo User_UserInfo_Table_TotalPerUser_Plus; ?></td>
-				<td><span class="Comments"><?php echo User_UserInfo_Comment_TotalPerUser; ?></span></td>
-			</tr>
-<?php
-			// User Treasury
-			if (is_numeric($Treasury) && $Treasury > 0) {
-				$Color = 'color: #00DF00;';
-			} else {
-				$Color = 'color: #FF0000;';
-			}
-?>
-			<tr align="left">
-				<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Treasury; ?></th>
-				<td style="'.$Color.'"><b><span class="FontInRed"><?php echo $Treasury;?></span></b><?php echo User_UserInfo_Table_Treasury_Plus; ?></td>
-				<td><span class="Comments"><?php echo User_UserInfo_Comment_Treasury; ?></span></td>
-			</tr>
-<?php
-		}
-	}
 ?>
 
 	<?php if ( $DisplayCommand == true ) { ?>
