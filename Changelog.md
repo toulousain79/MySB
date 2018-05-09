@@ -3,9 +3,9 @@
 			- Migration from Jessie to Stretch
 			- Upgrade PHP5 to PHP7
 			- XMLRPC-C to v1.43.7
-			- Composer v1.6.4			
-			- Tautulli v2.0.28
-			- PexMedia v1.12.3.4973
+			- Composer v1.6.4
+			- Tautulli v2.1.4
+			- PlexMedia v1.13.0.5023
 			- PlexMedia & Tautulli, daily check for new version and install it if needed
 			- Portal
 				* Medoo Framework v1.5.6

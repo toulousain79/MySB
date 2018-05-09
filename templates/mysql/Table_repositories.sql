@@ -44,9 +44,9 @@ INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`,
 ('TARGZ', '<InstallDir>/sources/rkhunter', 'RKHunter', '1.4.6', 0, 'rkhunter_v1.4.6.tar.gz', 'https://github.com/toulousain79/MySB_files/raw/v99.99/rkhunter_v1.4.6.tar.gz', 1, 0, ''),
 ('TARGZ', '<InstallDir>/sources/geoipupdate', 'GeoIPupdate', '2.5.0', 0, 'GeoIPupdate_v2.5.0.tar.gz', 'https://github.com/maxmind/geoipupdate/releases/download/v2.5.0/geoipupdate-2.5.0.tar.gz', 1, 0, ''),
 ('ZIP', '<InstallDir>/web/wolf', 'Wolf CMS', '0.8.3.1', 0, 'wolf_v0.8.3.1.zip', 'https://github.com/toulousain79/MySB_files/raw/v99.99/wolf_v0.8.3.1.zip', 1, 0, ''),
-('TARGZ', '<InstallDir>/web/apps/tt', 'Tautulli', '2.0.28', 0, 'Tautulli_v2.0.28.tar.gz', 'https://github.com/Tautulli/Tautulli/archive/v2.0.28.tar.gz', 1, 0, ''),
+('TARGZ', '<InstallDir>/web/apps/tt', 'Tautulli', '2.1.4', 0, 'Tautulli_v2.1.4.tar.gz', 'https://github.com/Tautulli/Tautulli/archive/v2.1.4.tar.gz', 1, 0, ''),
 ('GIT', '<InstallDir>/sources/libsmbclient-php', 'libsmbclient-php', '0.9.0', 0, 'libsmbclient-php_v0.9.0.zip', 'https://github.com/eduardok/libsmbclient-php.git', 1, 0, ''),
-('DEB', '<InstallDir>_files', 'Plex Media Server', '1.12.3.4973-215c28d86', 0, 'plexmediaserver_1.12.3.4973-215c28d86_amd64.deb', 'https://downloads.plex.tv/plex-media-server/1.12.3.4973-215c28d86/plexmediaserver_1.12.3.4973-215c28d86_amd64.deb', 1, 0, '');
+('DEB', '<InstallDir>_files', 'Plex Media Server', '1.13.0.5023-31d3c0c65', 0, 'plexmediaserver_1.13.0.5023-31d3c0c65_amd64.deb', 'https://downloads.plex.tv/plex-media-server/1.13.0.5023-31d3c0c65/plexmediaserver_1.13.0.5023-31d3c0c65_amd64.deb', 1, 0, '');
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
