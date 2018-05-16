@@ -189,7 +189,7 @@ CREATE TABLE IF NOT EXISTS `services` (
   `port_tcp1` varchar(11) DEFAULT '',
   `port_tcp2` varchar(11) DEFAULT '',
   `port_tcp3` varchar(11) DEFAULT '',
-  `ports_tcp_list` varchar(32) DEFAULT '',
+  `ports_tcp_list` varchar(48) DEFAULT '',
   `port_udp1` varchar(11) DEFAULT '',
   `port_udp2` varchar(11) DEFAULT '',
   `port_udp3` varchar(11) DEFAULT '',
