@@ -4,7 +4,7 @@
 /*!40101 SET NAMES utf8 */;
 
 --
--- Base de données: `MySB_db`
+-- Base de donnÃ©es: `MySB_db`
 --
 
 -- --------------------------------------------------------
@@ -193,7 +193,7 @@ CREATE TABLE IF NOT EXISTS `services` (
   `port_udp1` varchar(11) DEFAULT '',
   `port_udp2` varchar(11) DEFAULT '',
   `port_udp3` varchar(11) DEFAULT '',
-  `ports_udp_list` varchar(32) DEFAULT '',
+  `ports_udp_list` varchar(48) DEFAULT '',
   `to_install` tinyint(1) NOT NULL DEFAULT '0',
   `is_installed` tinyint(1) NOT NULL DEFAULT '0',
   `used` tinyint(1) NOT NULL DEFAULT '0',
@@ -483,7 +483,7 @@ CREATE TABLE IF NOT EXISTS `users_scripts` (
 -- --------------------------------------------------------
 
 --
--- Contraintes pour les tables exportées
+-- Contraintes pour les tables exportÃ©es
 --
 
 --
