@@ -71,7 +71,7 @@ gfnSendMail() {
 
 	if [ ! -z "$sInfo" ]; then log_daemon_msg "$Funcs_SendMail_GenerateHTML [$sUser]"; fi
 	if ! gfnGetPid nginx; then
-		service nginx restart &> /dev/null
+		systemctl restart nginx &> /dev/null
 	fi
 
 	case "$sCase" in
@@ -161,19 +161,19 @@ gfnManageServices() {
 							"pglcmd")
 								nContinue=0
 								log_daemon_msg "$Funcs_Stopping PeerGuardian Linux" "pglcmd"
-								pglcmd stop > /dev/null
+								pglcmd stop &> /dev/null
 								gfnStatusLSB
 							;;
 							"$binPhpService"|"stunnel4"|"vsftpd"|"fail2ban"|"nfs-kernel-server"|"tautulli"|"plexmediaserver"|rtorrent-*)
 								nContinue=0
 								log_daemon_msg "$Funcs_Stopping $Service"
-								service $Service stop > /dev/null
+								systemctl stop $Service &> /dev/null
 								gfnStatusLSB
 							;;
 							"nginx")
 								nContinue=0
 								log_daemon_msg "$Funcs_Stopping $Service"
-								service $Service stop > /dev/null
+								systemctl stop $Service &> /dev/null
 								if [ $? -gt 0 ]; then
 									fuser -k 81/tcp &> /dev/null
 									fuser -k $gsPort_HTTP/tcp &> /dev/null
@@ -194,7 +194,7 @@ gfnManageServices() {
 
 						if [ "$nContinue" == "1" ]; then
 							log_daemon_msg "$Funcs_Stopping $Service"
-							service $Service stop > /dev/null
+							systemctl stop $Service &> /dev/null
 							gfnStatusLSB
 						fi
 					else
@@ -211,16 +211,16 @@ gfnManageServices() {
 
 							if gfnGetPid $Service; then
 								log_daemon_msg "$Funcs_Restarting PeerGuardian Linux"
-								pglcmd restart > /dev/null
+								pglcmd restart &> /dev/null
 								if [ $? -gt 0 ]; then
 									gfnStatusLSB 1
 
 									log_daemon_msg "$Funcs_ForceStarting PeerGuardian Linux"
-									pglcmd force-restart > /dev/null
+									pglcmd force-restart &> /dev/null
 								fi
 							else
 								log_daemon_msg "$Funcs_Starting PeerGuardian Linux"
-								pglcmd start > /dev/null
+								pglcmd start &> /dev/null
 							fi
 
 							if [ $? -gt 0 ]; then # if pgl don't start maybe its due to a list update
@@ -246,13 +246,13 @@ gfnManageServices() {
 									sed -i "s/^$List/#$List/g" /etc/pgl/blocklists.list
 								done
 								log_daemon_msg "$Funcs_ForceStarting PeerGuardian Linux"
-								pglcmd restart > /dev/null
+								pglcmd restart &> /dev/null
 
 								if [ $? -gt 0 ]; then # We have again a problem with PeerGuardian, test a force-restart
 									gfnStatusLSB 1
 
 									log_daemon_msg "$Funcs_ForceStarting PeerGuardian Linux"
-									pglcmd force-restart > /dev/null
+									pglcmd force-restart &> /dev/null
 									if [ $? -gt 0 ]; then # Again ??
 										gfnStatusLSB 1
 										# We will use rTorrent Blocklist
@@ -294,10 +294,10 @@ gfnManageServices() {
 								nContinue=0
 								if ! gfnGetPid $Service; then
 									log_daemon_msg "$Funcs_Starting $Service"
-									service $Service start > /dev/null
+									systemctl start $Service &> /dev/null
 								else
 									log_daemon_msg "$Funcs_Restarting $Service"
-									service $Service restart > /dev/null
+									systemctl restart $Service &> /dev/null
 								fi
 								gfnStatusLSB
 							;;
@@ -306,14 +306,14 @@ gfnManageServices() {
 								if gfnCheckCommand 0 $Service; then
 									if ! gfnGetPid $Service; then
 										log_daemon_msg "$Funcs_Starting $Service"
-										service $Service start > /dev/null
+										systemctl start $Service &> /dev/null
 									else
 										log_daemon_msg "$Funcs_Reloading $Service"
-										service $Service $sFinalCmd > /dev/null
+										systemctl $sFinalCmd $Service &> /dev/null
 										if [ $? -gt 0 ]; then
 											gfnStatusLSB 1
 											log_daemon_msg "$Funcs_Restarting $Service"
-											service $Service restart > /dev/null
+											systemctl restart $Service &> /dev/null
 										fi
 									fi
 									gfnStatusLSB
@@ -324,25 +324,25 @@ gfnManageServices() {
 								if gfnCheckCommand 0 $Service; then
 									if ! gfnGetPid $Service; then
 										log_daemon_msg "$Funcs_Starting $Service"
-										service $Service start > /dev/null
+										systemctl start $Service &> /dev/null
 									else
 										log_daemon_msg "$Funcs_Reloading $Service"
-										service $Service $sFinalCmd > /dev/null
+										systemctl $sFinalCmd $Service &> /dev/null
 										if [ -z "`ps ax | grep 'nginx' | grep '/usr/sbin/nginx' | grep -v 'grep'`" ]; then
 											gfnStatusLSB 1
 											log_daemon_msg "$Funcs_Restarting $Service"
 											fuser -k 81/tcp &> /dev/null
 											fuser -k $gsPort_MySB_HTTP/tcp &> /dev/null
 											fuser -k $gsPort_MySB_HTTPS/tcp &> /dev/null
-											service $Service restart > /dev/null
+											systemctl restart $Service &> /dev/null
 											if [ -z "`ps ax | grep 'nginx' | grep '/usr/sbin/nginx' | grep -v 'grep'`" ]; then
 												gfnStatusLSB 1
 												log_daemon_msg "$Funcs_Killing $Service"
-												service $Service stop > /dev/null
+												systemctl stop $Service &> /dev/null
 												killall $Service
 												gfnStatusLSB
 												log_daemon_msg "$Funcs_Starting $Service"
-												service $Service start > /dev/null
+												systemctl start $Service &> /dev/null
 											fi
 										fi
 									fi
@@ -354,14 +354,14 @@ gfnManageServices() {
 								if gfnCheckCommand 0 $Service; then
 									if ! gfnGetPid $Service; then
 										log_daemon_msg "$Funcs_Starting $Service"
-										service $Service start > /dev/null
+										systemctl start $Service &> /dev/null
 									else
 										log_daemon_msg "$Funcs_Reloading $Service"
-										service $Service $sFinalCmd > /dev/null
+										systemctl $sFinalCmd $Service &> /dev/null
 										if [ -z "`ps ax | grep 'named -u bind' | grep -v 'grep'`" ]; then
 											gfnStatusLSB 1
 											log_daemon_msg "$Funcs_Restarting $Service"
-											service $Service restart > /dev/null
+											systemctl restart $Service &> /dev/null
 										fi
 									fi
 									gfnStatusLSB
@@ -377,10 +377,14 @@ gfnManageServices() {
 						esac
 
 						if [ "$nContinue" == "1" ]; then
-							service $Service $sFinalCmd
+							log_daemon_msg "$Funcs_Starting $Service"
+							systemctl $sFinalCmd $Service &> /dev/null
+							gfnStatusLSB
 
 							if [ $? -gt 0 ] && [ "$sFinalCmd" == "reload" ]; then
-								service $Service restart
+								log_daemon_msg "$Funcs_Restarting $Service"
+								systemctl restart $Service &> /dev/null
+								gfnStatusLSB
 							fi
 						fi
 					fi

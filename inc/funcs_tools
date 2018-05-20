@@ -140,6 +140,50 @@ gfnValidateIP() {
 	echo $sValue
 }
 
+#### Check if FQDN
+gfnCheckFQDN() {
+	local sHostname nReturn sHostResult sPingResult
+	sHostname="$1"
+	# nReturn = 0: All is OK
+	# nReturn = 1: Is not a FQDN
+	# nReturn = 2: FQDN not coresponding to public IP address
+	# nReturn = 3: FQDN coresponding to public IP address but FQDN not corresponding to local IP address
+	nReturn=1
+
+	if [ "`host -N 0 "$sHostname" > /dev/null 2>&1; echo $?`" -eq 0 ]; then
+		sHostResult="`host -N 0 "$sHostname" | awk '{ print $4 }'`"
+		sPingResult="`ping -q -c 1 "$sHostname" | head -n 1 | awk '{ print $3 }' | sed 's/(//g;' | sed 's/)//g;'`"
+
+		if [ "$gsSrvIpAddress" == "$gsSrvIpAddressExt" ]; then
+			#### Case Not behind a firewall (Public IP address)
+			if [ "$sHostResult" == "$gsSrvIpAddressExt" ]; then
+				nReturn=0	# All is OK
+			else
+				nReturn=2	# FQDN not coresponding to public IP address
+			fi
+		else
+			#### Case behind a firewall (Local IP address)
+			if [ "$sHostResult" == "$gsSrvIpAddressExt" ]; then
+				if [ "$sPingResult" == "$gsSrvIpAddress" ]; then
+					nReturn=0	# All is OK
+				else
+					nReturn=2	# FQDN not coresponding to public IP address
+				fi
+			else
+				if [ "$sPingResult" == "$gsSrvIpAddress" ]; then
+					nReturn=2	# FQDN not coresponding to public IP address
+				else
+					nReturn=3	# FQDN coresponding to public IP address but FQDN not corresponding to local IP address
+				fi
+			fi
+		fi
+	else
+		nReturn=1
+	fi
+
+	echo nReturn
+}
+
 #### Check if mail syntax is good
 gfnValidateMail() {
 	local sRegex nDig nReg sAddress sMailDomain
@@ -270,10 +314,11 @@ gfnSwitchDNS() {
 				echo "*/5 * * * * service dnscrypt-proxy cron-check > /dev/null 2>&1" >> /tmp/crontab.tmp
 				crontab /tmp/crontab.tmp 2> /dev/null
 				rm -f /tmp/crontab.tmp > /dev/null 2>&1
-				if gfnGetPid cron; then service cron reload > /dev/null 2>&1; fi
+				if gfnGetPid cron; then
+					systemctl reload cron > /dev/null 2>&1
 					gfnMessage 'info' 'log' 'Crontab added'
 				fi
-				service bind9 restart > /dev/null
+				systemctl restart bind9 &> /dev/null
 			fi
 		;;
 		'bind')
@@ -294,13 +339,13 @@ gfnSwitchDNS() {
 			sed -i "/dnscrypt-proxy/d" /tmp/crontab.tmp
 			crontab /tmp/crontab.tmp 2> /dev/null
 			rm -f /tmp/crontab.tmp
-			if gfnGetPid cron; then service cron reload > /dev/null 2>&1; fi
+			if gfnGetPid cron; then systemctl reload cron > /dev/null 2>&1; fi
 			if gfnCheckCommand 0 bind9; then
 				sed -i '/forwarders/d' /etc/bind/named.conf.options
 				sed -i '/forward only;/d' /etc/bind/named.conf.options
 				sed -i '/version/d' /etc/bind/named.conf.options
 				sed -i '/DNScrypt-proxy/d' /etc/bind/named.conf.options
-				service bind9 restart > /dev/null
+				systemctl restart bind9 &> /dev/null
 			fi
 		;;
 	esac

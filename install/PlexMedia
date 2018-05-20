@@ -48,8 +48,18 @@ fnUpdateRepositoriesTable() {
 fnInstallDebPackage() {
 	local sVersionInstalled sServices
 
-	# Update DB
-	fnUpdateRepositoriesTable 'Plex Media Server'
+	# Loading repository informations
+	gfnGetRepoValues 'Plex Media Server'
+
+	if [ -z "$gsRepoVersion" ]; then
+		cmdMySQL 'MySB_db' "ALTER TABLE repositories CHANGE name name VARCHAR(64) NOT NULL;" -v
+		cmdMySQL 'MySB_db' "ALTER TABLE repositories CHANGE version version VARCHAR(32) NOT NULL;" -v
+		cmdMySQL 'MySB_db' "ALTER TABLE repositories CHANGE file file VARCHAR(64) NOT NULL;" -v
+		cmdMySQL 'MySB_db' "INSERT INTO repositories (type,dir,name,version,file,url,active) VALUES ('DEB','<InstallDir>_files','Plex Media Server','1.12.3.4973-215c28d86','plexmediaserver_1.12.3.4973-215c28d86_amd64.deb','https://downloads.plex.tv/plex-media-server/1.12.3.4973-215c28d86/plexmediaserver_1.12.3.4973-215c28d86_amd64.deb','1');"
+	else
+		# Update DB
+		fnUpdateRepositoriesTable 'Plex Media Server'
+	fi
 
 	# Loading repository informations
 	gfnGetRepoValues 'Plex Media Server'
@@ -81,7 +91,7 @@ fnInstallDebPackage() {
 
 		[ -f $gsRepoDir/$gsRepoFile ] && dpkg -i $gsRepoDir/$gsRepoFile
 		systemctl daemon-reload
-		systemctl enable plexmediaserver.service
+		systemctl enable plexmediaserver
 
 		# Start Tautulli service
 		gfnManageServices start "$sServices"
@@ -104,14 +114,10 @@ fnInstallZipTautulli() {
 	sRepoDirEscaped="`echo $gsRepoDir | sed s,/,\\\\\\\\\\/,g`"
 
 	# Loading current installed version
-	if [ "$sLocSwitch" == "CRON" ]; then
-		if [ -f $gsRepoDir/release.lock ]; then
-			sVersionInstalled="`cat $gsRepoDir/release.lock`"
-		elif [ -f $gsRepoDir/plexpy/version.py ]; then
-			sVersionInstalled="`grep 'PLEXPY_RELEASE_VERSION' $gsRepoDir/plexpy/version.py | cut -d '=' -f 2| cut -d '"' -f 2`"
-		else
-			sVersionInstalled="Not installed"
-		fi
+	if [ -f $gsRepoDir/release.lock ]; then
+		sVersionInstalled="`cat $gsRepoDir/release.lock`"
+	elif [ -f $gsRepoDir/plexpy/version.py ]; then
+		sVersionInstalled="`grep 'PLEXPY_RELEASE_VERSION' $gsRepoDir/plexpy/version.py | cut -d '=' -f 2| cut -d '"' -f 2`"
 	else
 		sVersionInstalled="Not installed"
 	fi
@@ -130,6 +136,9 @@ fnInstallZipTautulli() {
 				[ -d $gsRepoDir/logs ] && mv -v $gsRepoDir/logs $MySB_InstallDir/temp/tautulli_logs
 				[ -d $gsRepoDir/cache ] && mv -v $gsRepoDir/cache $MySB_InstallDir/temp/tautulli_cache
 			fi
+
+			# Install PyOpenSSL for Python
+			easy_install PyOpenSSL
 
 			# System user
 			if [ -z "`grep 'tautulli' /etc/passwd`" ]; then
@@ -182,15 +191,19 @@ fnInstallZipTautulli() {
 
 			# Init script
 			install -v -o root -g root -m 0755 $gsRepoDir/init-scripts/init.ubuntu /etc/init.d/tautulli
-			update-rc.d tautulli defaults
 			systemctl daemon-reload
-			systemctl enable tautulli.service
+			systemctl enable tautulli
+
+			# NginX
+			install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.locations.tautulli.conf.tmpl /etc/nginx/locations/Tautulli.conf
+			install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.proxy.tautulli.conf.tmpl /etc/nginx/proxy/Tautulli.conf
+			perl -pi -e "s/<MainUser>/$gsMainUserName/g" /etc/nginx/locations/Tautulli.conf
 
 			# Update certificates for python
 			update-ca-certificates --fresh &> /dev/null
 
 			# START services
-			gfnManageServices start "plexmediaserver tautulli"
+			gfnManageServices start "plexmediaserver nginx tautulli"
 
 			# Force update users' table history
 			#sqlite3 -echo -cmd '.timeout 150000' $gsRepoDir/tautulli.db "UPDATE users SET do_notify='1', keep_history='1' WHERE 1;"
@@ -223,18 +236,14 @@ if [ "$gbToInstall_PlexMedia" == "YES" ]; then
 	#### Install DEB package
 	fnInstallDebPackage
 
-	if gfnCheckCommand 0 plexmediaserver; then
-		fnInstallZipTautulli
-	fi
-
 	#### NginX
 	install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.locations.plexmediaserver.conf.tmpl /etc/nginx/locations/PlexMediaServer.conf
 	install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.upstream.plexmediaserver.conf.tmpl /etc/nginx/upstream/PlexMediaServer.conf
 	install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.proxy.plexmediaserver.conf.tmpl /etc/nginx/proxy/PlexMediaServer.conf
-	install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.locations.tautulli.conf.tmpl /etc/nginx/locations/Tautulli.conf
-	install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.proxy.tautulli.conf.tmpl /etc/nginx/proxy/Tautulli.conf
-	perl -pi -e "s/<MainUser>/$gsMainUserName/g" /etc/nginx/locations/Tautulli.conf
-	gfnManageServices start "nginx"
+
+	if gfnCheckCommand 0 plexmediaserver; then
+		fnInstallZipTautulli
+	fi
 fi
 
 # -----------------------------------------
