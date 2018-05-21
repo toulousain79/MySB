@@ -64,28 +64,26 @@ gsTmpDir="/tmp/$gsProxyName"				# temp directory
 #------------------------------------------------------------
 gsDeamonUser="dnscrypt"
 #------------------------------------------------------------
-# dnscrypt-resolvers.csv path
+# dnscrypt-resolvers.csv
 #------------------------------------------------------------
 gsCsvDir="$gsWorkDir"
 gsCsvName="dnscrypt-resolvers.csv"
 gsCsvFile="$gsCsvDir/$gsCsvName"
+gsCsvUrl="https://raw.githubusercontent.com/toulousain79/MySB/v99.99/files/dnscrypt-resolvers/dnscrypt-resolvers.csv"
 #------------------------------------------------------------
-# dnscrypt-resolvers.csv.minisig path
+# dnscrypt-resolvers.csv.minisig
 #------------------------------------------------------------
 gsSigDir="$gsWorkDir"
 gsSigName="dnscrypt-resolvers.csv.minisig"
 gsSigFile="$gsSigDir/$gsSigName"
+gsSigUrl="https://raw.githubusercontent.com/toulousain79/MySB/v99.99/files/dnscrypt-resolvers/dnscrypt-resolvers.csv.minisig"
 #------------------------------------------------------------
-# URLs
-#	dnscrypt-resolvers.csv
-#	dnscrypt-resolvers.csv.minisig
+# minisign.pub
 #------------------------------------------------------------
-gsCsvUrl="https://raw.githubusercontent.com/toulousain79/MySB/v99.99/files/dnscrypt-resolvers.csv"
-gsSigUrl="$gsCsvUrl.minisig"
-#------------------------------------------------------------
-# Minisig public key
-#------------------------------------------------------------
-gsSigKey="RWRqszgzFlgzR9zApO8/2za8oWKT/Wdpbesn9PlKUpdR1VpcEkQrR0G+"
+gsPubKeyDir="$gsWorkDir"
+gsPubKeyName="minisign.pub"
+gsPubKeyFile="$gsPubKeyDir/$gsPubKeyName"
+gsPubKeyUrl="https://raw.githubusercontent.com/toulousain79/MySB/v99.99/files/dnscrypt-resolvers/minisign.pub"
 #------------------------------------------------------------
 # IP version of resolvers to used
 #	Options:
@@ -628,10 +626,11 @@ gfnUpdateResolvers() {
 
 # Download resolvers.csv from official source
 gfnDownloadCsvFile() {
-	local sCsvTemp sSigTemp sType sMode sTitle nReturn nStep nTotalSteps
+	local sCsvTemp sSigTemp sPubKeyTemp sType sMode sTitle nReturn nStep nTotalSteps
 
 	sCsvTemp="$gsCsvFile.tmp"
 	sSigTemp="$gsSigFile.tmp"
+	sPubKeyTemp="$gsPubKeyFile.tmp"
 	sTitle='Getting the resolver list	:'
 	sType='notice'
 	sMode='log'
@@ -656,14 +655,19 @@ gfnDownloadCsvFile() {
 	[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - HTTP Status: '$gsSigName')"
 	gfnHttpStatus "$gsSigUrl" || nReturn=1
 
+	# Step 4 - HTTP Status: minisign.pub
+	(( nStep++ ))
+	[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - HTTP Status: '$gsPubKeyName')"
+	gfnHttpStatus "$gsPubKeyUrl" || nReturn=1
+
 	if [ $nReturn -eq 0 ]; then
-		# Step 4 - Download 'dnscrypt-resolvers.csv'
+		# Step 5 - Download 'dnscrypt-resolvers.csv'
 		(( nStep++ ))
 		gfnMessage 'notice' 'log' "Download '$gsCsvName'"
 		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Downloads: '$gsCsvName')"
 		$binCURL -o $sCsvTemp $gsCsvUrl
 
-		# Step 5 - Backup and update 'dnscrypt-resolvers.csv' in /usr/local/share/dnscrypt-proxy/
+		# Step 6 - Backup and update 'dnscrypt-resolvers.csv' in /usr/local/share/dnscrypt-proxy/
 		(( nStep++ ))
 		gfnMessage 'notice' 'log' "Move '$gsCsvName'"
 		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Moves: '$gsCsvName')"
@@ -678,13 +682,13 @@ gfnDownloadCsvFile() {
 			nReturn=1
 		fi
 
-		# Step 6 - Download 'dnscrypt-resolvers.csv.minisig'
+		# Step 7 - Download 'dnscrypt-resolvers.csv.minisig'
 		(( nStep++ ))
 		gfnMessage 'notice' 'log' "Download '$gsSigName'"
 		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Downloads: '$gsSigName')"
 		$binCURL -o $sSigTemp $gsSigUrl
 
-		# Step 7 - Backup and update 'dnscrypt-resolvers.csv.minisig' in /usr/local/share/dnscrypt-proxy/
+		# Step 8 - Backup and update 'dnscrypt-resolvers.csv.minisig' in /usr/local/share/dnscrypt-proxy/
 		(( nStep++ ))
 		gfnMessage 'notice' 'log' "Move '$gsSigName'"
 		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Moves: '$gsSigName')"
@@ -693,20 +697,41 @@ gfnDownloadCsvFile() {
 				mv -f $gsSigFile $gsSigFile.old
 			fi
 			mv -f $sSigTemp $gsSigFile
-			gfnMessage 'info' 'log' "Successful download of the file '$gsSigName' signature"
+			gfnMessage 'info' 'log' "Successful download of the file '$gsSigName'"
 		else
-			gfnMessage 'error' 'con' "Failed download of the file '$gsSigName' signature"
+			gfnMessage 'error' 'con' "Failed download of the file '$gsSigName'"
+			nReturn=1
+		fi
+
+		# Step 9 - Download 'minisign.pub'
+		(( nStep++ ))
+		gfnMessage 'notice' 'log' "Download '$gsPubKeyName'"
+		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Downloads: '$gsPubKeyName')"
+		$binCURL -o $sPubKeyTemp $gsPubKeyUrl
+
+		# Step 10 - Backup and update 'minisign.pub' in /usr/local/share/dnscrypt-proxy/
+		(( nStep++ ))
+		gfnMessage 'notice' 'log' "Move '$gsPubKeyName'"
+		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Moves: '$gsPubKeyName')"
+		if [ -e "$sPubKeyTemp" ] && [ -s "$sPubKeyTemp" ]; then
+			if [ -e "$gsPubKeyFile" ]; then
+				mv -f $gsPubKeyFile $gsPubKeyFile.old
+			fi
+			mv -f $sPubKeyTemp $gsPubKeyFile
+			gfnMessage 'info' 'log' "Successful download of the file '$gsPubKeyName'"
+		else
+			gfnMessage 'error' 'con' "Failed download of the file '$gsPubKeyName'"
 			nReturn=1
 		fi
 
 		if [ $nReturn -eq 0 ]; then
 			# Minisign check of 'dnscrypt-resolvers.csv'
-			# Step 8
+			# Step 11
 			(( nStep++ ))
 			gfnMessage 'notice' 'log' "Checks '$gsCsvName'"
 			[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Checks: '$gsCsvName')"
 			if gfnCheckCommand 0 minisign; then
-				minisign -q -VP "$gsSigKey" -m "$gsCsvFile" -x "$gsSigFile"
+				minisign -q -Vm "$gsCsvFile" -x "$gsSigFile" -p "$gsPubKeyFile"
 				if [ $? -ne 0 ]; then
 					sType='warning'
 					sMode='con'
@@ -995,7 +1020,7 @@ gfnStop() {
 
 # Variables stored in database
 gfnVariableFormat() {
-	local sConfigValues sIpVersion nNumberOfDaemon bOnlyNoLogs bOnlyDNSSec bOnlyNameCoin bRandom sSigKey sCsvUrl nResolversDb
+	local sConfigValues sIpVersion nNumberOfDaemon bOnlyNoLogs bOnlyDNSSec bOnlyNameCoin bRandom nResolversDb
 
 	# Add resolvers to database
 	nResolversDb="`cmdMySQL 'MySB_db' "SELECT count(name) FROM dnscrypt_resolvers;"`"
@@ -1009,15 +1034,13 @@ gfnVariableFormat() {
 	fi
 
 	# Get config from database
-	sConfigValues="`cmdMySQL 'MySB_db' "SELECT ip_version,processes_qty,no_logs,dnssec,namecoin,random,sig_key,csv_url FROM dnscrypt_config WHERE id_dnscrypt_config='1';" | sed 's/\t/|/g;'`"
+	sConfigValues="`cmdMySQL 'MySB_db' "SELECT ip_version,processes_qty,no_logs,dnssec,namecoin,random FROM dnscrypt_config WHERE id_dnscrypt_config='1';" | sed 's/\t/|/g;'`"
 	sIpVersion="`echo $sConfigValues | awk '{split($0,a,"|"); print a[1]}'`"
 	nNumberOfDaemon="`echo $sConfigValues | awk '{split($0,a,"|"); print a[2]}'`"
 	bOnlyNoLogs="`echo $sConfigValues | awk '{split($0,a,"|"); print a[3]}'`"
 	bOnlyDNSSec="`echo $sConfigValues | awk '{split($0,a,"|"); print a[4]}'`"
 	bOnlyNameCoin="`echo $sConfigValues | awk '{split($0,a,"|"); print a[5]}'`"
 	bRandom="`echo $sConfigValues | awk '{split($0,a,"|"); print a[6]}'`"
-	sSigKey="`echo $sConfigValues | awk '{split($0,a,"|"); print a[7]}'`"
-	sCsvUrl="`echo $sConfigValues | awk '{split($0,a,"|"); print a[8]}'`"
 
 	# Ip Version
 	case $sIpVersion in
@@ -1052,10 +1075,6 @@ gfnVariableFormat() {
 	case $bRandom in
 		'yes'|'no') gbRandomResolvers="$bRandom";;
 	esac
-	# Sig Key
-	if [ ! -z "$sSigKey" ]; then gsSigKey="$sSigKey"; fi
-	# CSV URL
-	if [ ! -z "$sCsvUrl" ]; then gsCsvUrl="$sCsvUrl"; fi
 
 	# Variable format
 	gbOnlyNoLogs="`echo $gbOnlyNoLogs | tr '[:upper:]' '[:lower:]'`"
