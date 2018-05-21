@@ -1,10 +1,14 @@
 	Version v99.99
 		(start at: 2018/03/25)
+			- DNScrypt-proxy, review resolvers list
+			- Let's Encrypt, review resolvers list
+			- Systemctl, review services management
 			- Migration from Jessie to Stretch
 			- Upgrade PHP5 to PHP7
 			- XMLRPC-C to v1.43.7
-			- Composer v1.6.4
-			- Tautulli v2.1.4
+			- NextCloud v13.0.2
+			- Composer v1.6.5
+			- Tautulli v2.1.9
 			- PlexMedia v1.13.0.5023
 			- PlexMedia & Tautulli, daily check for new version and install it if needed
 			- Portal

@@ -283,18 +283,38 @@ gfnManageServices() {
 									sFinalCmd="start"
 								fi
 							;;
-							"fail2ban")
+							"tautulli"|"$binPhpService"|"stunnel4"|"postfix"|"cron"|"vsftpd"|"nfs-kernel-server"|"mysql"|"plexmediaserver"|"fail2ban"|rtorrent-*)
 								nContinue=0
-								if ! gfnGetPid $Service; then
-									log_daemon_msg "$Funcs_Starting $Service"
-									systemctl start $Service &> /dev/null
-								else
-									log_daemon_msg "$Funcs_Restarting $Service"
-									systemctl restart $Service &> /dev/null
+								if gfnCheckCommand 0 $Service; then
+									if ! gfnGetPid $Service; then
+										log_daemon_msg "$Funcs_Starting $Service"
+										systemctl start $Service &> /dev/null
+									else
+										log_daemon_msg "$Funcs_Restarting $Service"
+										systemctl restart $Service &> /dev/null
+									fi
+									gfnStatusLSB
 								fi
-								gfnStatusLSB
 							;;
-							"$binPhpService"|"stunnel4"|"postfix"|"cron"|"vsftpd"|"nfs-kernel-server"|"mysql"|"tautulli"|"plexmediaserver"|rtorrent-*)
+							# "$binPhpService"|"stunnel4"|"postfix"|"cron"|"vsftpd"|"nfs-kernel-server"|"mysql"|"plexmediaserver"|"fail2ban"|rtorrent-*)
+								# nContinue=0
+								# if gfnCheckCommand 0 $Service; then
+									# if ! gfnGetPid $Service; then
+										# log_daemon_msg "$Funcs_Starting $Service"
+										# systemctl start $Service &> /dev/null
+									# else
+										# log_daemon_msg "$Funcs_Reloading $Service"
+										# systemctl $sFinalCmd $Service &> /dev/null
+										# if [ $? -gt 0 ]; then
+											# gfnStatusLSB 1
+											# log_daemon_msg "$Funcs_Restarting $Service"
+											# systemctl restart $Service &> /dev/null
+										# fi
+									# fi
+									# gfnStatusLSB
+								# fi
+							# ;;
+							"bind9")
 								nContinue=0
 								if gfnCheckCommand 0 $Service; then
 									if ! gfnGetPid $Service; then
@@ -303,7 +323,7 @@ gfnManageServices() {
 									else
 										log_daemon_msg "$Funcs_Reloading $Service"
 										systemctl $sFinalCmd $Service &> /dev/null
-										if [ $? -gt 0 ]; then
+										if [ -z "`ps ax | grep 'named -f -u bind' | grep -v 'grep'`" ]; then
 											gfnStatusLSB 1
 											log_daemon_msg "$Funcs_Restarting $Service"
 											systemctl restart $Service &> /dev/null
@@ -337,24 +357,6 @@ gfnManageServices() {
 												log_daemon_msg "$Funcs_Starting $Service"
 												systemctl start $Service &> /dev/null
 											fi
-										fi
-									fi
-									gfnStatusLSB
-								fi
-							;;
-							"bind9")
-								nContinue=0
-								if gfnCheckCommand 0 $Service; then
-									if ! gfnGetPid $Service; then
-										log_daemon_msg "$Funcs_Starting $Service"
-										systemctl start $Service &> /dev/null
-									else
-										log_daemon_msg "$Funcs_Reloading $Service"
-										systemctl $sFinalCmd $Service &> /dev/null
-										if [ -z "`ps ax | grep 'named -u bind' | grep -v 'grep'`" ]; then
-											gfnStatusLSB 1
-											log_daemon_msg "$Funcs_Restarting $Service"
-											systemctl restart $Service &> /dev/null
 										fi
 									fi
 									gfnStatusLSB
