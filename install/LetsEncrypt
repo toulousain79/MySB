@@ -44,7 +44,6 @@ fi
 fnNextRenewal() {
 	local dEndDate dRenewDay dRenewMonth sHostname sTarGz
 	sHostname="`hostname -a`"
-	sTarGz="${MySB_InstallDir}_backup/${sHostname}_${dEndDate}_letsencrypt.tar.gz"
 
 	if [ -f /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem ]; then
 		dEndDate="`openssl x509 -in /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem -noout -dates | grep 'notAfter' | cut -d "=" -f 2`"
@@ -52,6 +51,7 @@ fnNextRenewal() {
 		# update DB
 		cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_date='$dEndDate' WHERE id_system='1';" -v
 		# Backup certificates
+		sTarGz="${MySB_InstallDir}_backup/${sHostname}_${dEndDate}_letsencrypt.tar.gz"
 		mkdir -p ${MySB_InstallDir}_backup
 		if [ ! -f $sTarGz ]; then
 			tar zcvf $sTarGz /etc/letsencrypt/
@@ -130,6 +130,9 @@ else # Or is it a renew ?
 			fi
 		fi
 
+		# Debug
+		echo "dEndDate: $dEndDate"
+		echo "bContinue: $bContinue"
 		if [ ! -z "$dEndDate" ] && [ $bContinue -eq 1 ] ; then
 			dEndDate="`date -d "$dEndDate" +%Y%m%d`"
 			dNow="`date +%Y%m%d`"
@@ -149,6 +152,8 @@ else # Or is it a renew ?
 
 				# Firewall
 				fnFirewalling 'after'
+			else
+				echo "tDiff: $tDiff"
 			fi
 		fi
 	else
