@@ -51,15 +51,15 @@ source $MySB_InstallDir/inc/vars || exit 0
 #------------------------------------------------------------
 # DNScrypt-proxy infos
 #------------------------------------------------------------
-gsProxyName="dnscrypt-proxy"				# bin name
-gsProxyDesc="DNScrypt-proxy"				# description
-gsProxyDir="/usr/local/sbin"				# bin name directory
-gsProxyApp="$gsProxyDir/$gsProxyName"		# full path to bin name
-gsLogFile="/var/log/$gsProxyName.log"		# log file
-gsPidDir="/var/run/$gsProxyName"			# pid directory
-gsWorkDir="/usr/local/share/$gsProxyName"	# default working directory
-gsTmpDir="/tmp/$gsProxyName"				# temp directory
-gsRootUrl="https://raw.githubusercontent.com/toulousain79/MySB/v99.99/files/dnscrypt-resolvers"
+gsProxyName="dnscrypt-proxy" # bin name
+gsProxyDesc="DNScrypt-proxy" # description
+gsProxyDir="/usr/local/sbin" # bin name directory
+gsProxyApp="$gsProxyDir/$gsProxyName" # full path to bin name
+gsLogFile="/var/log/$gsProxyName.log" # log file
+gsPidDir="/var/run/$gsProxyName" # pid directory
+gsWorkDir="/usr/local/share/$gsProxyName" # default working directory
+gsTmpDir="/tmp/$gsProxyName" # temp directory
+gsRootUrl="https://raw.githubusercontent.com/toulousain79/MySB/v99.99/files/dnscrypt-resolvers" # Root URL for CSV, minisign and PUB files
 #------------------------------------------------------------
 # Chroot user who executes dnscrypt-proxy, please change root user by unprivileged user to avoid security problems
 #------------------------------------------------------------
@@ -67,24 +67,21 @@ gsDeamonUser="dnscrypt"
 #------------------------------------------------------------
 # dnscrypt-resolvers.csv
 #------------------------------------------------------------
-gsCsvDir="$gsWorkDir"
 gsCsvName="dnscrypt-resolvers.csv"
-gsCsvFile="$gsCsvDir/$gsCsvName"
-gsCsvUrl="gsRootUrl/$gsCsvName"
+gsCsvFile="$gsWorkDir/$gsCsvName"
+gsCsvUrl="$gsRootUrl/$gsCsvName"
 #------------------------------------------------------------
 # dnscrypt-resolvers.csv.minisig
 #------------------------------------------------------------
-gsSigDir="$gsWorkDir"
 gsSigName="dnscrypt-resolvers.csv.minisig"
-gsSigFile="$gsSigDir/$gsSigName"
-gsCsvUrl="gsRootUrl/$gsSigName"
+gsSigFile="$gsWorkDir/$gsSigName"
+gsSigUrl="$gsRootUrl/$gsSigName"
 #------------------------------------------------------------
 # minisign.pub
 #------------------------------------------------------------
-gsPubKeyDir="$gsWorkDir"
 gsPubKeyName="minisign.pub"
-gsPubKeyFile="$gsPubKeyDir/$gsPubKeyName"
-gsCsvUrl="gsRootUrl/$gsPubKeyName"
+gsPubKeyFile="$gsWorkDir/$gsPubKeyName"
+gsPubKeyUrl="$gsRootUrl/$gsPubKeyName"
 #------------------------------------------------------------
 # IP version of resolvers to used
 #	Options:
@@ -212,18 +209,6 @@ gfnCheckDirAndFiles() {
 		gsMess="\nThe $sProxyPath path on this init script differs from $gsProxyDesc setup.\n"
 		gsMess+="Please change 'gsProxyDir' parameter to:\n"
 		gsMess+="	gsProxyDir='$sProxyDir'\n"
-		gsMess+="in\n"
-		gsMess+="	'$0'\n"
-
-		gfnMessage 'error' 'con' "$gsMess"
-		nReturn=1
-	fi
-
-	if [ "$gsCsvDir" != "$gsSigDir" ]; then
-		gsMess="\nThe path to '$gsCsvName' and '$gsSigName' on this init script must be equal.\n"
-		gsMess+="Please change 'gsCsvDir' and 'gsSigDir' parameters to:\n"
-		gsMess+="	gsCsvDir='$sCsvDir/'\n"
-		gsMess+="	gsSigDir='$sCsvDir/'\n"
 		gsMess+="in\n"
 		gsMess+="	'$0'\n"
 
@@ -637,7 +622,7 @@ gfnDownloadCsvFile() {
 	sMode='log'
 	nReturn=0
 	nStep=0
-	nTotalSteps=8
+	nTotalSteps=11
 
 	# Step 1 - Remove old temp files
 	(( nStep++ ))
@@ -678,6 +663,7 @@ gfnDownloadCsvFile() {
 			fi
 			mv -f $sCsvTemp $gsCsvFile
 			gfnMessage 'info' 'log' "Successful download of the file '$gsCsvName'"
+			unix2dos $gsCsvFile &> /dev/null
 		else
 			gfnMessage 'error' 'con' "Failed download of the file '$gsCsvName'"
 			nReturn=1
@@ -732,7 +718,7 @@ gfnDownloadCsvFile() {
 			gfnMessage 'notice' 'log' "Checks '$gsCsvName'"
 			[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Checks: '$gsCsvName')"
 			if gfnCheckCommand 0 minisign; then
-				minisign -q -Vm "$gsCsvFile" -x "$gsSigFile" -p "$gsPubKeyFile"
+				minisign -q -V -m "$gsCsvFile" -x "$gsSigFile" -p "$gsPubKeyFile"
 				if [ $? -ne 0 ]; then
 					sType='warning'
 					sMode='con'
