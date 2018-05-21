@@ -30,6 +30,9 @@ source $(dirname $0)/../inc/includes_before
 
 #### VARs
 sLocSwitch="$1"	# renew ?
+# Certbot params
+sCerbotCommonParams='--preferred-challenges=http --pre-hook "systemctl stop nginx" --post-hook "systemctl start nginx"'
+sCerbotParams="certonly --authenticator standalone --verbose --update-registration --no-eff-email --agree-tos --rsa-key-size 2048 --email $gsMainUserEmail -d $gsHostNameFqdn"
 
 #### INSTALL
 if [ "$sLocSwitch" != "renew" ]; then
@@ -37,9 +40,11 @@ if [ "$sLocSwitch" != "renew" ]; then
 	gfnPackageBundleInstall 'python-virtualenv python-dev gcc dialog libssl-dev libffi-dev ca-certificates psutils python-augeas'
 fi
 
-#### Fonction certificate end date next renewal
+#### Function certificate end date next renewal
 fnNextRenewal() {
-	local dEndDate dRenewDay dRenewMonth
+	local dEndDate dRenewDay dRenewMonth sHostname sTarGz
+	sHostname="`hostname -a`"
+	sTarGz="${MySB_InstallDir}_backup/${sHostname}_${dEndDate}_letsencrypt.tar.gz"
 
 	if [ -f /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem ]; then
 		dEndDate="`openssl x509 -in /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem -noout -dates | grep 'notAfter' | cut -d "=" -f 2`"
@@ -48,27 +53,18 @@ fnNextRenewal() {
 		cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_date='$dEndDate' WHERE id_system='1';" -v
 		# Backup certificates
 		mkdir -p ${MySB_InstallDir}_backup
-		tar zcvf ${MySB_InstallDir}_backup/`hostname -a`_`date +%Y%m%d`_letsencrypt.tar.gz /etc/letsencrypt/
+		if [ ! -f $sTarGz ]; then
+			tar zcvf $sTarGz /etc/letsencrypt/
+		fi
 	fi
 }
 
-#### Fonction for firewalling
+#### Function for firewalling
 fnFirewalling() {
 	local sServerList sServer sIpList IPv4
 
 	case "$1" in
 		'before')
-			# sServerList="`cmdMySQL 'MySB_db' "SELECT addresses FROM lets_encrypt;" | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
-			# if [ ! -z "$sServerList" ]; then
-				# cmdMySQL 'MySB_db' "DELETE FROM lets_encrypt;" -v
-			# fi
-
-			# for sServer in $sServerList; do
-				# sIpList="`nslookup $sServer | grep 'Address:' | awk '{ print $2 }' | tail -n +2`"
-				# for IPv4 in $sIpList; do
-					# cmdMySQL 'MySB_db' "INSERT INTO lets_encrypt (addresses,ipv4) VALUES ('$sServer','$IPv4');" -v
-				# done
-			# done
 			cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_openport='1' WHERE id_system='1';" -v
 			gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--letsencrypt'
 			echo
@@ -86,16 +82,15 @@ if [ ! -f /etc/letsencrypt/live/$gsHostNameFqdn/fullchain.pem ]; then # Is it a 
 	# Update certificates for python
 	update-ca-certificates --fresh &> /dev/null
 
+	# Firewall
 	fnFirewalling 'before'
 
-	# Params
-	sParams="certonly --authenticator standalone --verbose --update-registration --no-eff-email --agree-tos --rsa-key-size 2048 --email $gsMainUserEmail -d $gsHostNameFqdn"
 	# Dev mode ?
-	[ $gbDevMode -eq 1 ] && sParams="$sParams --test-cert"
+	[ $gbDevMode -eq 1 ] && sCerbotParams="$sCerbotParams --test-cert"
 
 	cd $MySB_Files/
 	chmod +x certbot-auto
-	./certbot-auto $sParams --preferred-challenges=http --pre-hook "systemctl stop nginx" --post-hook "systemctl start nginx"
+	./certbot-auto $sCerbotParams $sCerbotCommonParams
 
 	if [ -f /etc/letsencrypt/live/$gsHostNameFqdn/fullchain.pem ] && [ ! -h $MySB_InstallDir/ssl/fullchain.pem ]; then
 		ln -sv /etc/letsencrypt/live/$gsHostNameFqdn/fullchain.pem $MySB_InstallDir/ssl/fullchain.pem
@@ -108,6 +103,7 @@ if [ ! -f /etc/letsencrypt/live/$gsHostNameFqdn/fullchain.pem ]; then # Is it a 
 
 	cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='1' WHERE serv_name='Lets Encrypt';" -v
 
+	# Firewall
 	fnFirewalling 'after'
 else # Or is it a renew ?
 	if [ ! -h $MySB_InstallDir/ssl/fullchain.pem ]; then
@@ -119,6 +115,10 @@ else # Or is it a renew ?
 
 	if [ "$sLocSwitch" == "renew" ] || [ "$sLocSwitch" == "UPGRADE" ] || [ "$sLocSwitch" == "INSTALL" ]; then
 		dEndDate="`cmdMySQL 'MySB_db' "SELECT letsencrypt_date FROM system WHERE id_system='1';"`"
+		if [ "$dEndDate" == "0000-00-00" ]; then
+			fnNextRenewal
+			dEndDate="`cmdMySQL 'MySB_db' "SELECT letsencrypt_date FROM system WHERE id_system='1';"`"
+		fi
 
 		if [ "$sLocSwitch" == "UPGRADE" ]; then
 			bContinue=1
@@ -138,12 +138,16 @@ else # Or is it a renew ?
 			if [ "$tDiff" -le "21" ]; then
 				# Update certificates for python
 				update-ca-certificates --fresh &> /dev/null
+				# Firewall
 				fnFirewalling 'before'
+
 				cd $MySB_Files/
 				chmod +x certbot-auto
-				./certbot-auto renew --preferred-challenges=http --pre-hook "systemctl stop nginx" --post-hook "systemctl start nginx"
+				./certbot-auto renew $sCerbotCommonParams
 				dNewEndDate="`openssl x509 -in /etc/letsencrypt/live/$gsHostNameFqdn/cert.pem -noout -dates | grep 'notAfter'  | cut -d "=" -f 2`"
 				[ "$dNewEndDate" != "$dEndDate" ] && fnNextRenewal
+
+				# Firewall
 				fnFirewalling 'after'
 			fi
 		fi
