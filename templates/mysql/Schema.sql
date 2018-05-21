@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS `dnscrypt_config` (
   `ip_version` varchar(4) NOT NULL DEFAULT 'ipv4',
   `processes_qty` tinyint(1) NOT NULL DEFAULT '6',
   `no_logs` varchar(3) NOT NULL DEFAULT 'yes',
-  `dnssec` varchar(3) NOT NULL DEFAULT 'no',
+  `dnssec` varchar(3) NOT NULL DEFAULT 'yes',
   `namecoin` varchar(3) NOT NULL DEFAULT 'no',
   `random` varchar(3) NOT NULL DEFAULT 'no',
   PRIMARY KEY (`id_dnscrypt_config`)
