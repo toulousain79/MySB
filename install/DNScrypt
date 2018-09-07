@@ -1,0 +1,198 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#	 _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#	  _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#	   _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#		_\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#		 _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#		  _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+# https://dnscrypt.info/faq/
+# https://dnscrypt.info/public-servers
+#
+# https://jedisct1.github.io/minisign/
+#
+# https://raw.githubusercontent.com/cryptostorm/cstorm_deepDNS/master/dnscrypt-resolvers.csv
+# https://gist.githubusercontent.com/legendtang/db7265c5f5f82c9aed70/raw/5fc8bbc6d0acf7a0da5f5be7f5b7b7e243ec8931/dnscrypt-resolvers.csv
+# https://raw.githubusercontent.com/dyne/dnscrypt-proxy/master/dnscrypt-resolvers.csv
+# https://dnsrec.meo.ws/
+# https://dns.d0wn.biz/
+######################################################################
+
+if [ "$USAGE" == "ON" ]; then
+	if [ "$gbIsInstalled_DNScrypt" == "NO" ]; then
+		echo
+		echo -e "${CYELLOW}DNScrypt-proxy is not installed!$CEND"
+		gfnQuestionGetString NO "Install DNScrypt-proxy? " gbToInstall_DNScrypt $Global_YES
+		gbToInstall_DNScrypt="`echo $gbToInstall_DNScrypt | tr '[:lower:]' '[:upper:]'`"
+
+		cmdMySQL 'MySB_db' "UPDATE services SET is_installed = '$(echo $gbToInstall_DNScrypt | sed "s/$Global_NO/0/g;" | sed "s/$Global_YES/1/g;")' WHERE serv_name='DNScrypt-proxy';"
+
+		if [ "$gbToInstall_DNScrypt" != "YES" ]; then
+			gfnEndingScript 0
+		fi
+	fi
+fi
+
+#### VARs
+gnDNScryptUpgrade=0
+
+if [ "$gsSwitch" == "CRON" ]; then
+	service dnscrypt-proxy full-update
+fi
+
+if [ "$gbToInstall_DNScrypt" == "YES" ]; then
+	# Check packages to install
+	Packages='ldnsutils libldns-dev rng-tools haveged libsodium18'
+	gfnPackageBundleInstall "$Packages"
+
+	# STOP services
+	pkill -f dnscrypt-proxy
+	rm -f /var/run/dnscrypt-proxy/*
+
+	# RNG-Tools
+	nNumLine=$(cat /etc/default/rng-tools | grep '#HRNGDEVICE=/dev/null' -n -m 1 | cut -d ':' -f 1)
+	(( nNumLine++ ))
+	sed -i ""$nNumLine"i\HRNGDEVICE=/dev/urandom" /etc/default/rng-tools
+	systemctl daemon-reload
+	gfnManageServices stop "rng-tools"
+	gfnManageServices start "rng-tools"
+
+	# Switch to bind
+	gfnSwitchDNS "bind"
+
+	# Upating clock
+	/usr/sbin/ntpdate -u 0.fr.pool.ntp.org
+
+	if [ "$gsSwitch" == "INSTALL" ]; then
+		#### Add dnscrypt user
+		if [ -z "`grep 'dnscrypt' /etc/passwd`" ]; then
+			useradd --system -d "/usr/local/share/dnscrypt-proxy" -c "DNScrypt-proxy user" -s /bin/nologin dnscrypt
+			install -o dnscrypt -m 750 -d "/usr/local/share/dnscrypt-proxy"
+		fi
+	fi
+
+	# LIBsodium
+	gfnGetRepoValues 'Libsodium' && gfnRepoManageByType
+	if [ $gnRepoUpgrade -eq 1 ] || [ "$gsSwitch" == "INSTALL" ]; then
+		gnDNScryptUpgrade=1
+		cd $gsRepoDir/ || exit 1
+		make clean
+		chmod -v +x autogen.sh
+		./autogen.sh
+		./configure --enable-opt --with-pthreads --with-gnu-ld
+		make -j$gsProcessors
+		make check
+		make install
+		ldconfig
+		# Disable the upgrade job
+		cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='Libsodium';" -v
+	fi
+
+	# Minisign
+	gfnGetRepoValues 'Minisign' && gfnRepoManageByType
+	if [ $gnRepoUpgrade -eq 1 ] || [ "$gsSwitch" == "INSTALL" ]; then
+		cd $gsRepoDir/ || exit 1
+		mkdir -v build
+		cd build
+		cmake ..
+		make
+		make install
+		# Disable the upgrade job
+		cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='Minisign';" -v
+	fi
+
+	# DNScrypt
+	gfnGetRepoValues 'DNScrypt-proxy' && gfnRepoManageByType
+	if [ $gnRepoUpgrade -eq 1 ] || [ $gnDNScryptUpgrade -eq 1 ] || [ "$gsSwitch" == "INSTALL" ]; then
+		cd $gsRepoDir/ || exit 1
+		make clean
+		chmod -v +x autogen.sh
+		./autogen.sh
+		./configure --with-gnu-ld --enable-ltdl-install --with-systemd
+		make -j$gsProcessors
+		make check
+		make install
+		# Disable the upgrade job
+		cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='DNScrypt-proxy';" -v
+
+		bDoFullUpdate=1
+	else
+		bDoFullUpdate=0
+	fi
+
+	#### DNScrypt-proxy - /etc/init.d/dnscrypt-proxy
+	install -v -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.dnscrypt-proxy.tmpl /etc/init.d/dnscrypt-proxy
+	systemctl daemon-reload
+
+	# Mark as installed
+	if gfnCheckCommand 0 dnscrypt-proxy; then
+		cmdMySQL 'MySB_db' "UPDATE services SET to_install='0',is_installed='1' WHERE serv_name='DNScrypt-proxy';" -v
+	fi
+
+	#### Logrotate
+	gfnLogRotate 'dnscrypt-proxy'
+
+	#### Copy some files
+	rm -fv /usr/local/etc/dnscrypt-proxy.conf
+	mkdir -pv /usr/local/share/dnscrypt-proxy
+	install -v -o root -g root -m 0644 $MySB_InstallDir/files/dnscrypt-resolvers/dnscrypt-resolvers.csv /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv
+	install -v -o root -g root -m 0644 $MySB_InstallDir/files/dnscrypt-resolvers/dnscrypt-resolvers.csv.minisig /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv.minisig
+	install -v -o root -g root -m 0644 $MySB_InstallDir/files/dnscrypt-resolvers/minisign.pub /usr/local/share/dnscrypt-proxy/minisign.pub
+	unix2dos /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv
+
+	#### Opening ports for PeerGuardian
+	if gfnCheckCommand 0 pgld; then
+		# Perform a small update to add resolvers in database for PeerGuardian
+		service dnscrypt-proxy update
+		cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='0' WHERE id_system='1';" -v
+		gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create'
+	fi
+	cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='1' WHERE id_system='1';" -v
+
+	[ "$gsSwitch" == "UPGRADE" ] && bDoFullUpdate=1
+
+	#### START services & Update resolvers infos in db
+	if [ $bDoFullUpdate -eq 1 ]; then
+		service dnscrypt-proxy full-update
+		sleep 5
+		if gfnCheckCommand 0 pgld; then
+			gfnManageServices stop "dnscrypt-proxy"
+			gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create'
+		else
+			gfnManageServices stop "dnscrypt-proxy"
+		fi
+	else
+		gfnManageServices stop "dnscrypt-proxy"
+	fi
+
+	#### Check if service is OK and running
+	if [ "$gsSwitch" != "UPGRADE" ]; then
+		#Wait a moment for DNScrypt to start
+		sleep 5
+		if ! gfnGetPid dnscrypt-proxy; then
+			service dnscrypt-proxy status | tee -a $MySB_InstallDir/temp/continue
+		fi
+	fi
+fi
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

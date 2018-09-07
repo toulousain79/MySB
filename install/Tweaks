@@ -1,0 +1,253 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#	 _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#	  _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#	   _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#		_\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#		 _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#		  _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### Console tweaks
+echo
+echo "########## Console tweaks"
+install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/bashrc.tmpl /root/.bashrc
+install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/profile.tmpl /root/.profile
+install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/bash_aliases.tmpl /root/.bash_aliases
+install -v -o root -g root -m 0644 /etc/skel/.bash_logout /root/.bash_logout
+if [ ! -f /root/.bash_profile ] || [ -z "`grep 'bash_completion' /root/.bash_profile`" ] || [ -z "`grep '.bashrc' /root/.bash_profile`" ]; then
+	(
+	cat <<'EOF'
+if [ -f /etc/bash_completion ]; then
+	. /etc/bash_completion
+fi
+if [ -f "$HOME/.bashrc" ]; then
+	. "$HOME/.bashrc"
+fi
+
+EOF
+	) | tee -a /root/.bash_profile
+fi
+
+#### permanently adding scripts to PATH to all users and root
+if [ -z "`grep "$MySB_InstallDir/bin" /etc/profile`" ]; then
+	echo
+	echo "########## /etc/profile"
+	echo "" >> /etc/profile
+	echo "# MySB" >> /etc/profile
+	echo "PATH=$PATH:$MySB_InstallDir/bin:/sbin" | tee -a /etc/profile
+fi
+
+#### Editors
+echo
+echo "########## Editors"
+install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/etc.vimrc.tmpl /etc/vim/vimrc
+install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/etc.nanorc.tmpl /etc/nanorc
+
+#### Motd
+echo
+echo "########## Motd"
+install -v -o root -g root -m 0755 $MySB_InstallDir/templates/tweaks/etc.rc.local.tmpl /etc/rc.local
+perl -pi -e "s/<MySB_Version>/$gsCurrentVersion/g" /etc/rc.local
+
+#### Change timezone
+echo
+echo "########## Timezone"
+if [ ! -z "$gsTimeZone" ]; then
+	if [ -f /etc/timezone ]; then rm -vf /etc/timezone; fi
+	echo "$gsTimeZone" | tee -a /etc/timezone
+	if [ -f /etc/adjtime ]; then
+		sed -i "s/UTC/LOCAL/g;" /etc/adjtime
+	fi
+	dpkg-reconfigure -f noninteractive tzdata
+fi
+
+#### Sysctl
+echo
+echo "########## Sysctl"
+install -v -o root -g root -m 0755 $MySB_InstallDir/templates/tweaks/etc.sysctl.conf.tmpl /etc/sysctl.conf
+
+#### Swappiness
+SWAP="`free -m | grep 'Swap' | awk '{ print $2 }'`"
+if [ "$gsMemory" -lt "2048" ] && [ "$SWAP" != "0" ]; then
+	echo
+	echo "########## Swappiness"
+	echo 80 | tee -a /proc/sys/vm/swappiness
+	if [ -z "`grep 'vm.swappiness' /etc/sysctl.conf`" == "" ]; then
+		echo "vm.swappiness = 80" | tee -a /etc/sysctl.conf
+	fi
+fi
+
+#### locale
+echo
+echo "########## Locale"
+locale > $MySB_InstallDir/files/locale
+cat /opt/MySB/files/locale
+
+#### /etc/hostname
+echo
+echo "########## /etc/hostname"
+rm -vf /etc/hostname
+echo "$gsHostNameFqdn" | tee -a /etc/hostname
+hostnamectl status
+
+# /etc/hosts
+echo
+echo "########## /etc/hosts"
+if [ -z $funcs_MySB_SecurityRules ]; then
+	source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_SecurityRules
+fi
+gfnCreateHostsFile
+cat /etc/hosts
+
+#### /etc/network/interfaces
+echo
+echo "########## Remove IPv6"
+# Remove IPv6
+/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6="1"
+/sbin/sysctl -w net.ipv6.conf.default.disable_ipv6="1"
+/sbin/sysctl -w net.ipv6.conf.lo.disable_ipv6="1"
+/sbin/sysctl -w net.ipv6.conf.eth0.disable_ipv6="1"
+sysctl -p
+if [ -f /etc/default/grub ]; then
+	source /etc/default/grub
+	if [ ! -z "$GRUB_CMDLINE_LINUX" ] && [ -z "`echo $GRUB_CMDLINE_LINUX | grep 'ipv6.disable=1'`" ]; then
+		sed -i "s/$GRUB_CMDLINE_LINUX/$GRUB_CMDLINE_LINUX ipv6.disable=1/g;" /etc/default/grub
+	else
+		perl -pi -e "s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"ipv6.disable=1\"/g" /etc/default/grub
+	fi
+	update-grub
+fi
+rm -fv /etc/pgl/ipv6.*
+
+# Add iptables-restore
+echo
+echo "########## Remove IPv6"
+cp -v /etc/network/interfaces /etc/network/interfaces.bckp
+if [ -z "`grep 'post-up iptables-restore < /etc/iptables.up.rules' /etc/network/interfaces`" ]; then
+	echo >> /etc/network/interfaces
+	nNumLine=$(grep -n "[[:space:]]*iface[[:space:]]*$gsPrimaryInet[[:space:]]*inet [[:space:]]*" /etc/network/interfaces | grep -v "#" | cut -d ':' -f 1)
+	(( nNumLine++ ))
+	sed -i "${nNumLine}i\		post-up iptables-restore < /etc/iptables.up.rules" /etc/network/interfaces
+fi
+
+#### NTP (disable IPv6)
+echo
+echo "########## NTP"
+install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/etc.ntp.conf.tmpl /etc/ntp.conf
+ServicesToRestart="${ServicesToRestart} ntp"
+
+#### Rsyslog
+echo
+echo "########## Rsyslog"
+install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/etc.rsyslog.conf.tmpl /etc/rsyslog.conf
+rm -vf /etc/rsyslog.d/iptables.conf
+[ ! -f /var/log/iptables.log ] && touch /var/log/iptables.log
+echo "if (\$msg contains '[MySB] ' or \$msg contains 'IN=') then /var/log/iptables.log" | tee -a /etc/rsyslog.d/iptables.conf
+echo "& stop" | tee -a /etc/rsyslog.d/iptables.conf
+gfnLogRotate 'iptables'
+ServicesToRestart="${ServicesToRestart} rsyslog"
+
+#### SSH Keygen
+echo
+echo "########## SSH Keygen"
+mkdir -pv /root/.ssh/
+[ ! -f /root/.ssh/id_rsa ] && ssh-keygen -q -t rsa -b 2048 -N "" -f /root/.ssh/id_rsa
+cat /root/.ssh/id_rsa
+
+#### AES-NI Crypto Acceleration
+echo
+echo "########## AES-NI Crypto Acceleration"
+if [ ! -z "`grep 'aes' /proc/cpuinfo`" ]; then
+	## load
+	modprobe aesni_intel
+
+	if [ ! -z "`lsmod | grep 'aes'`" ]; then
+		## make permanent
+		[ -z "`grep 'aesni_intel' /etc/modules`" ] && echo aesni_intel | tee -a /etc/modules
+		[ -z "`grep 'OPENSSL_ia32cap=~0x200000200000000' /etc/environment`" ] && echo "OPENSSL_ia32cap=~0x200000200000000" | tee -a /etc/environment
+	fi
+fi
+
+#### Force CPU governor to "performance"
+echo
+echo "########## Force CPU governor to 'performance'"
+install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/etc.default.cpufrequtils.tmpl /etc/default/cpufrequtils
+cpufreq-set -r -g performance
+if [ -f /proc/cpuinfo ]; then
+	echo
+	grep 'model name' /proc/cpuinfo | head -n 1
+	grep 'cpu MHz' /proc/cpuinfo
+fi
+
+#### Tweaks for Redis
+if [ -f /etc/default/grub ]; then
+	echo
+	echo "########## Tweaks for Redis"
+	source /etc/default/grub
+	if [ ! -z "$GRUB_CMDLINE_LINUX" ] && [ -z "`echo $GRUB_CMDLINE_LINUX | grep 'transparent_hugepage=never'`" ]; then
+		sed -i "s/$GRUB_CMDLINE_LINUX/$GRUB_CMDLINE_LINUX transparent_hugepage=never/g;" /etc/default/grub
+	else
+		perl -pi -e "s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"transparent_hugepage=never\"/g" /etc/default/grub
+	fi
+	update-grub
+	grep GRUB_CMDLINE_LINUX /etc/default/grub
+fi
+
+#### Turning off filesystem access times
+if [ -z "`grep 'noatime,nodiratime' /etc/fstab`" ]; then
+	echo
+	echo "########## Turning off filesystem access times"
+	perl -pi -e "s/errors=remount-ro/noatime,nodiratime,errors=remount-ro/g" /etc/fstab
+fi
+
+#### Cleaning
+echo
+echo "########## Cleaning"
+rm -rvf /var/log/exim4
+rm -rvf /var/log/news
+OldKernelList=$(dpkg --list | grep linux-image | awk '{ print $2 }' | sort -V |sed -n '/'$(uname -r)'/q;p')
+[ ! -z "$$OldKernelList" ] && apt-get -y --assume-yes purge $OldKernelList; update-grub
+
+#### Logrotate
+echo
+echo "########## Logrotate"
+gfnLogRotate 'mysb'
+
+#### /usr/sbin/policy-rc.d
+echo
+echo "########## Packages install without starting daemons"
+install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/usr.sbin.policy-rc.d.tmpl /usr/sbin/policy-rc.d
+
+#### Restart services
+echo
+echo "########## Restart services"
+gfnManageServices restart "$ServicesToRestart"
+
+#### Create init script for MySB_SecurityRules_Init
+echo
+echo "########## MySB_SecurityRules_Init"
+install -v -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.MySB_SecurityRules_Init.tmpl /etc/init.d/MySB_SecurityRules_Init
+systemctl daemon-reload
+systemctl enable MySB_SecurityRules_Init
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

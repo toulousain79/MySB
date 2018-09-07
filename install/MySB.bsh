@@ -1,0 +1,448 @@
+#!/bin/bash
+# -----------------------------------------
+if [ -f $(dirname $0)/../inc/includes_before ]; then source $(dirname $0)/../inc/includes_before; fi
+# -----------------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#	 _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#	  _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#	   _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#		_\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#		 _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#		  _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+if [ "$1" != "manual" ] || [ -z "$1" ]; then
+	if [ "`screen -ls | grep MySB`" == "" ]; then
+		echo ""
+		echo -e "$MySB_MustStartWith"
+		exit 1
+	fi
+fi
+
+#### Advertising
+sScreenId="`screen -ls | grep 'MySB_bsh' | grep 'Attached' | awk '{ print $1 }'`"
+
+echo
+echo -e "$Header_Install_0"
+echo
+
+echo
+echo -e "$MySB_LoseConnection" | sed "s/screen -x MySB_bsh/screen -x $sScreenId/g;"
+echo
+
+echo
+echo -e "$MySB_UserAdded"
+echo
+echo
+
+echo -e "$MySB_AllIsOk"
+echo
+gfnQuestionGetString NO "$Global_WantToContinue" CONTINUE $Global_YES
+CONTINUE="`echo $CONTINUE | tr '[:lower:]' '[:upper:]'`"
+if [ "$CONTINUE" == "$Global_NO" ]; then
+	echo -e "$Global_SeeYouLater"
+	echo
+	echo
+	gfnEndingScript 0
+else
+	#### Create MySB banner
+	if [ "$BANNER" == "ON" ]; then
+		gfnBannerGenerator
+	fi
+
+	#### Advertising
+	echo
+	echo -e "$Header_Install_0"
+	echo
+	echo
+	echo -e "$MySB_LoseConnection"
+	echo
+
+	REBOOT=NO
+fi
+
+#### Count steps
+CurrentSTEP=0
+TotalSTEP=$(cat $0 | grep 'CurrentSTEP++' | grep -v 'TotalSTEP' | wc -l)
+
+#
+########## PREPARE - BoF ##########
+#
+echo -e "$MySB_Title_Preparing"
+
+#### Sources List
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_SourcesDebian$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/SourcesList" 'INSTALL'
+gfnStatusSTD
+
+#### MySB_UpgradeSystem
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_UpgradePackages$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/bin/MySB_UpgradeSystem" 'INSTALL'
+gfnStatusSTD
+
+#### Packages
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_NeededPackages$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Packages" 'INSTALL'
+gfnStatusSTD
+
+#### SSH
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring SSH$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/SSH" 'INSTALL'
+gfnStatusSTD
+
+#### Getting information about OVH monitoring engine
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_ProviderInfos$CEND..."
+case "$gsServerProvider" in
+	'OVH'|'HETZNER')
+		gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Monitoring" 'INSTALL'
+		gfnStatusSTD
+	;;
+	*)	echo -e "$Global_NothingToDo";;
+esac
+
+#### Tweaks
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_Optimiszation$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Tweaks" 'INSTALL'
+gfnStatusSTD
+
+#### CPAN
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_CPAN$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/CPAN" 'INSTALL'
+gfnStatusSTD
+
+#### Quota
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_Quota$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Quota" 'INSTALL'
+gfnStatusSTD
+
+#### DownloadAll
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_DownloadAll$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/DownloadAll" 'INSTALL'
+gfnStatusSTD
+
+if [ -f $MySB_InstallDir/temp/continue ]; then
+	echo ""
+	echo -e "$MySB_Error_Download"
+	echo
+	cat $MySB_InstallDir/temp/continue
+	gfnEndingScript 1
+fi
+
+#### CA & Client Certificate
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_CertificateAuthority$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Certificates" 'CreateCACertificate' 'INSTALL'
+gfnStatusSTD
+
+#### PHP
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring PHP7$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/PHP" 'INSTALL'
+gfnStatusSTD
+
+#### Tools
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_Tools$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Tools" 'INSTALL'
+gfnStatusSTD
+
+#### Nginx
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring NginX$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Nginx" 'INSTALL'
+gfnStatusSTD
+
+#### Let's Encrypt
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_LetsEncrypt$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/LetsEncrypt" 'INSTALL'
+gfnStatusSTD
+
+#### VSFTP
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring VSFTPd$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/VSFTP" 'INSTALL'
+gfnStatusSTD
+
+#### Postfix
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Postfix$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Postfix" 'INSTALL'
+gfnStatusSTD
+
+#### Backup Manager
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Backup Manager$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/BackupManager" 'INSTALL'
+gfnStatusSTD
+
+#### Shell In a Box
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Shell In a Box$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/ShellInABox" 'INSTALL'
+gfnStatusSTD
+
+#### Bind
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring BIND$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Bind" 'INSTALL'
+gfnStatusSTD
+
+#### Docker
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Docker$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Docker" 'INSTALL'
+gfnStatusSTD
+
+if [ -f $MySB_InstallDir/temp/continue ]; then
+	echo ""
+	echo -e "$MySB_Error_Bind"
+	echo
+	cat $MySB_InstallDir/temp/continue
+	gfnEndingScript 1
+fi
+
+#
+########## PREPARE - EoF ##########
+#
+
+#
+########## SERVICES - BoF ##########
+#
+echo
+echo -e "$MySB_Title_InstallServices"
+
+#### rTorrent
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring rTorrent$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/rTorrent" 'INSTALL'
+gfnStatusSTD
+
+#### ruTorrent
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_ruTorrent$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/ruTorrent" 'INSTALL'
+gfnStatusSTD
+
+#### SeedboxManager
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Seedbox-Manager$CEND..."
+if [ "$gbToInstall_Manager" == "YES" ]; then
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/SeedboxManager" 'INSTALL'
+	gfnStatusSTD
+else
+	echo -e "$Global_NothingToDo"
+fi
+
+#### CakeboxLight
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring CakeBox-Light$CEND..."
+if [ "$gbToInstall_Cakebox" == "YES" ]; then
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/CakeboxLight" 'INSTALL'
+	gfnStatusSTD
+else
+	echo -e "$Global_NothingToDo"
+fi
+
+#### LoadAvg
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring LoadAvg$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/LoadAvg" 'INSTALL'
+gfnStatusSTD
+
+#### OpenVPN
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring OpenVPN$CEND..."
+if [ "$gbToInstall_OpenVPN" == "YES" ]; then
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/OpenVPN" 'server' 'INSTALL'
+	gfnStatusSTD
+else
+	echo -e "$Global_NothingToDo"
+fi
+
+#### Samba
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Samba$CEND..."
+if [ "$gbToInstall_OpenVPN" == "YES" ]; then
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Samba" 'INSTALL'
+	gfnStatusSTD
+else
+	echo -e "$Global_NothingToDo"
+fi
+
+#### NFS
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring NFS$CEND..."
+if [ "$gbToInstall_OpenVPN" == "YES" ]; then
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/NFS" 'INSTALL'
+	gfnStatusSTD
+else
+	echo -e "$Global_NothingToDo"
+fi
+
+#### Logwatch
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Logwatch$CEND..."
+if [ "$gbToInstall_LogWatch" == "YES" ]; then
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Logwatch" 'INSTALL'
+	gfnStatusSTD
+else
+	echo -e "$Global_NothingToDo"
+fi
+
+### PlexMedia
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring PlexMedia$CEND..."
+if [ "$gbToInstall_PlexMedia" == "YES" ]; then
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/PlexMedia" 'INSTALL'
+	gfnStatusSTD
+else
+	echo -e "$Global_NothingToDo"
+fi
+
+### NextCloud
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring NextCloud$CEND..."
+if [ "$gbToInstall_NextCloud" == "YES" ]; then
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/NextCloud" 'INSTALL'
+	gfnStatusSTD
+else
+	echo -e "$Global_NothingToDo"
+fi
+
+#### Webmin
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Webmin$CEND..."
+if [ "$gbToInstall_Webmin" == "YES" ]; then
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Webmin" 'INSTALL'
+	gfnStatusSTD
+else
+	echo -e "$Global_NothingToDo"
+fi
+
+#
+########## SERVICES - EoF ##########
+#
+
+#
+########## SECURITY - BoF ##########
+#
+echo
+echo -e "$MySB_Title_SecurityRules"
+
+#### RKHunter
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring RKhunter$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/RKHunter" 'INSTALL'
+gfnStatusSTD
+
+#### Fail2Ban
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Fail2Ban$CEND..."
+if [ "$gbToInstall_Fail2Ban" == "YES" ]; then
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Fail2Ban" 'INSTALL'
+	gfnStatusSTD
+else
+	echo -e "$Global_NothingToDo"
+fi
+
+#### BlockList / PeerGuardian
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_rTorrentBlocklist$CEND..."
+if [ "$gsMySB_PeerBlock" == "PeerGuardian" ] || [ "$gsMySB_PeerBlock" == "rTorrent" ]; then
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Blocklists" 'INSTALL'
+	gfnStatusSTD
+else
+	echo -e "$Global_NothingToDo"
+fi
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_PeerGuardian$CEND..."
+if [ "$gsMySB_PeerBlock" == "PeerGuardian" ]; then
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/PeerGuardian" 'INSTALL'
+	gfnStatusSTD
+else
+	echo -e "$Global_NothingToDo"
+fi
+
+#### DNScrypt-proxy 1/2
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring DNScrypt-proxy $LongTime$CEND..."
+if [ "$gbToInstall_DNScrypt" == "YES" ]; then
+	cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='1' WHERE id_system='1';"
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/DNScrypt" 'INSTALL'
+	gfnStatusSTD
+	cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='0' WHERE id_system='1';"
+	if [ -f $MySB_InstallDir/temp/continue ]; then
+		echo ""
+		echo -e "$MySB_Error_DNScrypt"
+		echo
+		cat $MySB_InstallDir/temp/continue
+		gfnEndingScript 1
+	fi
+else
+	echo -e "$Global_NothingToDo"
+fi
+
+#
+########## SECURITY - EoF ##########
+#
+
+#### MySB_CreateUser
+(( CurrentSTEP++ ))
+echo  -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_Step_MainUser \"$gsMainUserName\"$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/bin/MySB_CreateUser" "$gsMainUserName" 'INSTALL'
+gfnStatusSTD
+
+#### Create final security rules
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Global_FinalSecurityRules$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create' 'INSTALL'
+gfnStatusSTD
+
+#### Modify rights and owner for directories and files
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $Global_OwnerAndRights$CEND..."
+gfnManageDirAndFiles 'global'
+gfnStatusSTD
+
+#### Cron
+(( CurrentSTEP++ ))
+echo -e -n "${CBLUE}$CurrentSTEP/$TotalSTEP	- $MySB_InstallingConfiguring Cron$CEND..."
+gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Cron" 'INSTALL'
+gfnStatusSTD
+
+#### DNScrypt-proxy 2/2
+if [ "$gbToInstall_DNScrypt" == "YES" ]; then
+	cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='1' WHERE id_system='1';"
+fi
+
+#
+########## INSTALLATION - EoF ##########
+#
+
+# -----------------------------------------
+if [ -f $(dirname $0)/../inc/includes_after ]; then source $(dirname $0)/../inc/includes_after; fi
+# -----------------------------------------
+##################### LAST LINE ######################################

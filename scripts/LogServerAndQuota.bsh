@@ -1,0 +1,228 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#	 _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#	  _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#	   _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#		_\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#		 _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#		  _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### Functions
+CCZE_Treatment() {
+	local sLogFile sVarLogDir sWebLogDir sTwoLogFile sLignToDelete sOptions
+	sLogFile="$1"
+	sVarLogDir="$2"
+	sWebLogDir="$3"
+	sTwoLogFile="$4"
+	sLignToDelete="$5"
+
+	if [ ! -z "`echo $sLogFile | grep '.log'`" ]; then
+		# Log files with '.log' extension
+		HtmlFile="`echo $sLogFile | sed -e 's/.log/.html/g;'`"
+	else
+		# Log files without '.log' extension
+		HtmlFile="$sLogFile.html"
+	fi
+
+	log_daemon_msg "HTML Convert of $sLogFile"
+	# Remove olf HTML file
+	if [ -f $sWebLogDir/$HtmlFile ]; then rm $sWebLogDir/$HtmlFile; fi
+	if [ "$sTwoLogFile" == "YES" ]; then
+		if [ -e $sVarLogDir/$sLogFile.1 ] && [ -s $sVarLogDir/$sLogFile.1 ]; then
+			cat $sVarLogDir/$sLogFile.1 > /tmp/$sLogFile
+		fi
+		if [ -e $sVarLogDir/$sLogFile ] && [ -s $sVarLogDir/$sLogFile ]; then
+			cat $sVarLogDir/$sLogFile >> /tmp/$sLogFile
+		fi
+	else
+		if [ -e $sVarLogDir/$sLogFile ] && [ -s $sVarLogDir/$sLogFile ]; then
+			cp $sVarLogDir/$sLogFile /tmp/$sLogFile
+		fi
+	fi
+	if [ -e /tmp/$sLogFile ]; then
+		if [ ! -z "$sLignToDelete" ]; then
+			IFS=$';';
+			for Lign in $sLignToDelete; do
+				sed -i '/$Lign/d' /tmp/$sLogFile
+			done
+		fi
+		unset sLignToDelete IFS
+
+		case "$sLogFile" in
+			'syslog')			sOptions="-h -r -p syslog";;
+			'vsftpd.log')		sOptions="-h -r -p vsftpd";;
+			'mail.log')			sOptions="-h -r -p postfix";;
+			"$binPhpService")	sOptions="-h -r -p php";;
+			*)					sOptions="-h -r -p httpd";;
+		esac
+
+		ccze $sOptions -o scroll -o nolookups -o transparent -o cssfile="$MySB_InstallDir/web/public/themes/MySB/css/ccze.css" < /tmp/$sLogFile | sed -e '/DOCTYPE/d' -e '/html>/d' -e '/head>/d' -e '/<meta/d' -e '/<link/d' -e '/<title/d' -e '/body/d' > $sWebLogDir/$HtmlFile
+		rm -f /tmp/$sLogFile
+	fi
+	gfnStatusLSB
+}
+
+#### access.log
+CCZE_Treatment 'access.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### error.log
+CCZE_Treatment 'error.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### default-access.log
+CCZE_Treatment 'default-access.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### default-error.log
+CCZE_Treatment 'default-error.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### MySB-access.log
+CCZE_Treatment 'MySB-access.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### MySB-error.log
+CCZE_Treatment 'MySB-error.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES' 'logout'
+
+#### cakebox-access.log
+CCZE_Treatment 'cakebox-access.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### cakebox-error.log
+CCZE_Treatment 'cakebox-error.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### seedbox-manager-access.log
+CCZE_Treatment 'seedbox-manager-access.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### seedbox-manager-error/log
+CCZE_Treatment 'seedbox-manager-error.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### rutorrent-access.log
+CCZE_Treatment 'rutorrent-access.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES' 'plugins;getsettings.php;setsettings.php'
+
+#### rutorrent-error.log
+CCZE_Treatment 'rutorrent-error.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### fileshare-access.log
+CCZE_Treatment 'fileshare-access.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### fileshare-error.log
+CCZE_Treatment 'fileshare-error.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### ForceAddress-access.log
+CCZE_Treatment 'ForceAddress-access.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### ForceAddress-error.log
+CCZE_Treatment 'ForceAddress-error.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### loadavg-access.log
+CCZE_Treatment 'loadavg-access.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### loadavg-error.log
+CCZE_Treatment 'loadavg-error.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### NewUser-access.log
+CCZE_Treatment 'NewUser-access.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### NewUser-error.log
+CCZE_Treatment 'NewUser-error.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### stream-access.log
+CCZE_Treatment 'stream-access.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### stream-error.log
+CCZE_Treatment 'stream-error.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### view-access.log
+CCZE_Treatment 'view-access.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### view-error.log
+CCZE_Treatment 'view-error.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### UserInfoMail-access.log
+CCZE_Treatment 'UserInfoMail-access.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### UserInfoMail-error.log
+CCZE_Treatment 'UserInfoMail-error.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### rTorrent-access.log
+CCZE_Treatment 'rTorrent-access.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### rTorrent-error.log
+CCZE_Treatment 'rTorrent-error.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### plexmediaserver-access.log
+CCZE_Treatment 'plexmediaserver-access.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### plexmediaserver-error.log
+CCZE_Treatment 'plexmediaserver-error.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### tautulli-access.log
+CCZE_Treatment 'tautulli-access.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### tautulli-error.log
+CCZE_Treatment 'tautulli-error.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### shellinabox-access.log
+CCZE_Treatment 'shellinabox-access.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### shellinabox-error.log
+CCZE_Treatment 'shellinabox-error.log' '/var/log/nginx' "$MySB_InstallDir/web/logs/nginx" 'YES'
+
+#### vsftpd.log
+CCZE_Treatment 'vsftpd.log' '/var/log' "$MySB_InstallDir/web/logs/system" 'YES'
+
+#### iptables.log
+CCZE_Treatment 'iptables.log' '/var/log' "$MySB_InstallDir/web/logs/system" 'NO'
+
+#### Syslog
+#CCZE_Treatment 'syslog' '/var/log' "$MySB_InstallDir/web/logs/system" 'NO'
+
+#### Mail
+CCZE_Treatment 'mail.log' '/var/log' "$MySB_InstallDir/web/logs/system" 'YES'
+
+#### PHP7-FPM
+CCZE_Treatment '$binPhpService.log' '/var/log' "$MySB_InstallDir/web/logs/system" 'YES'
+
+#### nextcloud.log
+if [ "$gbIsInstalled_NextCloud" == "YES" ]; then
+	CCZE_Treatment 'nextcloud.log' '/home/nextcloud' "$MySB_InstallDir/web/logs/nginx" 'YES'
+fi
+
+#### PeerGuardian
+if [ "$gsMySB_PeerBlock" == "PeerGuardian" ]; then
+	CCZE_Treatment 'pglcmd.log' '/var/log/pgl' "$MySB_InstallDir/web/logs/security" 'NO'
+	CCZE_Treatment 'pgld.log' '/var/log/pgl' "$MySB_InstallDir/web/logs/security" 'NO'
+fi
+
+#### Fail2Ban
+if [ "$gbIsInstalled_Fail2Ban" == "YES" ]; then
+	CCZE_Treatment 'fail2ban.log' '/var/log' "$MySB_InstallDir/web/logs/security" 'YES'
+fi
+
+#### DNScrypt-proxy
+if [ "$gbIsInstalled_DNScrypt" == "YES" ]; then
+	CCZE_Treatment 'dnscrypt-proxy.log' '/var/log/dnscrypt-proxy' "$MySB_InstallDir/web/logs/security" 'YES'
+fi
+
+####################
+#### Force users quota
+source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
+gfnManageQuota
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

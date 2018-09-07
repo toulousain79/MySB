@@ -1,0 +1,172 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#	 _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#	  _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#	   _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#		_\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#		 _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#		  _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### STOP services
+gfnManageServices stop "$binPhpService redis-server"
+
+#### Redis
+install -v -o root -g root -m 0755 -d "/etc/redis"
+install -v -o root -g root -m 0777 $MySB_InstallDir/templates/php/etc.redis.redis.conf.tmpl /etc/redis/redis.conf
+
+#### Install packages
+case "$gsDebianRelease" in
+	'jessie')
+		sPeclModules="smbclient htscanner"
+		sDebModulesWithPecl="php5-geoip php5-imagick php5-redis"
+		gfnPackagesManage purge "$sDebModulesWithPecl"
+		gfnPackageBundleInstall "redis-server php5 php5-common php5-cli php5-fpm php-xml-rss php5-dev php-pear php5-curl php5-gd php5-gmp php5-imap php5-intl php5-json php5-mcrypt php5-mysql php5-readline php5-sqlite php5-xmlrpc $sDebModulesWithPecl"
+	;;
+	'stretch')
+		sPeclModules="smbclient"
+		sDebModulesWithPecl="php-geoip php-imagick php-redis"
+		# gfnPackagesManage purge "$sDebModulesWithPecl"
+		gfnPackageBundleInstall "redis-server php php-common php-cli php-fpm php-dev php-pear php-curl php-gd php-gmp php-imap php-intl php-json php-mcrypt php-mysql php-readline php-sqlite3 php-xmlrpc php-xml php-zip php-mbstring php-smbclient libgeoip-dev $sDebModulesWithPecl"
+		gfnPackagesManage purge "apache2"
+	;;
+esac
+
+#### STOP services
+gfnManageServices stop "$binPhpService redis-server"
+
+#### Redis
+install -v -o root -g root -m 0755 -d "/etc/redis"
+install -v -o redis -g redis -m 0640 $MySB_InstallDir/templates/php/etc.redis.redis.conf.tmpl /etc/redis/redis.conf
+
+#### Configuration files
+case "$gsDebianRelease" in
+	'jessie')
+		# /etc/php5/fpm/pool.d/www.conf
+		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php5.fpm.pool.d.www.conf.tmpl /etc/php5/fpm/pool.d/www.conf
+		# /etc/php5/fpm/php.ini
+		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php5.php.ini.tmpl /etc/php5/fpm/php.ini
+		# /etc/php5/cli/php.ini
+		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php5.php.ini.tmpl /etc/php5/cli/php.ini
+		perl -pi -e "s/disable_functions = /;disable_functions = /g" /etc/php5/cli/php.ini
+	;;
+	'stretch')
+		# /etc/php/7.0/fpm/pool.d/www.conf
+		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php.7.0.fpm.pool.d.www.conf.tmpl /etc/php/7.0/fpm/pool.d/www.conf
+		# /etc/php/7.0/fpm/php.ini
+		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php.7.0.php.ini.tmpl /etc/php/7.0/fpm/php.ini
+		# /etc/php/7.0/cli/php.ini
+		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/php/etc.php.7.0.php.ini.tmpl /etc/php/7.0/cli/php.ini
+		perl -pi -e "s/disable_functions = /;disable_functions = /g" /etc/php/7.0/cli/php.ini
+	;;
+esac
+
+#### Modules inventory
+sExtDir="/usr/lib/php/20151012"
+sExtList="`ls -A1 $sExtDir | cut -d "." -f 1`"
+sAllExtList="`echo $sAllExtList | xargs -n1 | sort -u | xargs | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+
+#### PEAR/PECL config
+update-ca-certificates --verbose --fresh &> /dev/null
+pear config-set auto_discover 1
+pear config-set php_ini $gsPhpDir/cli/php.ini
+pear config-set ext_dir $sExtDir
+pear update-channels
+pear upgrade --force pear/XML_Util
+pear upgrade --force
+
+#### Disable all modules
+for Ext in $sPeclModules; do
+	[ -f $gsPhpDir/mods-available/$Ext.ini ] && phpdismod $Ext
+	rm -fv $gsPhpDir/mods-available/$Ext.ini
+	[ ! -z "`pecl list | grep "$Ext"`" ] && pecl uninstall $Ext
+done
+if [ -d "${sExtDir}-zts" ]; then
+	sExtListZts="`ls -A1 ${sExtDir}-zts | cut -d "." -f 1`"
+	for Ext in $sExtListZts; do
+		[ -f $gsPhpDir/mods-available/$Ext.ini ] && phpdismod $Ext
+		rm -fv $gsPhpDir/mods-available/$Ext.ini
+	done
+	rm -rfv ${sExtDir}-zts
+fi
+for Ext in $sAllExtList; do
+	[ -f $sExtDir/$Ext.ini ] && phpdismod $Ext
+	rm -fv $gsPhpDir/mods-available/$Ext.ini
+done
+
+#### Enable all modules
+for Ext in $sAllExtList; do
+	case "$Ext" in
+		'opcache')
+			echo "zend_extension=opcache.so" > $gsPhpDir/mods-available/opcache.ini
+			[ -z "`php -m | grep 'opcache'`" ] && $binPhpEnmod opcache
+		;;
+		*)
+			echo "extension=$Ext.so" > $gsPhpDir/mods-available/$Ext.ini
+			[ -z "`php -m | grep "$Ext"`" ] && $binPhpEnmod $Ext
+		;;
+	esac
+done
+for Ext in $sPeclModules; do
+	case "$Ext" in
+		'smbclient')
+			gfnGetRepoValues 'libsmbclient-php' && gfnRepoManageByType
+			gfnRepoManageByType
+			cd $gsRepoDir/ || continue
+			phpize
+			./configure
+			make
+			make install
+			make test
+			echo "extension=smbclient.so" > $gsPhpDir/mods-available/smbclient.ini
+			$binPhpEnmod smbclient
+		;;
+		'htscanner')
+			pecl install htscanner
+			echo "extension=htscanner.so" > $gsPhpDir/mods-available/htscanner.ini
+			$binPhpEnmod htscanner
+			rm -fv $gsPhpDir/cli/conf.d/20-htscanner.ini
+		;;
+	esac
+done
+chmod 644 $sExtDir/*.so
+
+#### Check modules installation
+$binPhpFpm -i | grep 'htscanner'
+echo
+$binPhpFpm -i | grep 'smbclient'
+
+#### TMPFS
+sed -i '/TMPFS - PHP/d' /etc/fstab
+sed -i '/\/mnt\/tmpFS\/php/d' /etc/fstab
+echo "# TMPFS - PHP" >> /etc/fstab
+echo "tmpfs   /mnt/tmpFS/php tmpfs defaults,nosuid,noatime,mode=1777,size=32M 0 0" >> /etc/fstab
+[ ! -d /mnt/tmpFS/php ] && mkdir -pv /mnt/tmpFS/php
+[ -z "`df -H | grep '/mnt/tmpFS/php'`" ] && mount /mnt/tmpFS/php
+
+#### GeoIP update
+if gfnCheckCommand 0 geoipupdate; then geoipupdate; fi
+
+#### START services
+gfnManageServices start "redis-server $binPhpService nginx"
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

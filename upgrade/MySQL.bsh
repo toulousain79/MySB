@@ -1,0 +1,54 @@
+#### 1 - ALTER some tables - BoF
+# commands
+cmdMySQL 'MySB_db' "ALTER TABLE commands CHANGE priority priority SMALLINT(4) NOT NULL;" -v
+# repositories
+cmdMySQL 'MySB_db' "ALTER TABLE repositories CHANGE name name VARCHAR(64) NOT NULL;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE repositories CHANGE version version VARCHAR(32) NOT NULL;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE repositories CHANGE file file VARCHAR(64) NOT NULL;" -v
+# dnscrypt_config
+cmdMySQL 'MySB_db' "ALTER TABLE dnscrypt_config DROP COLUMN sig_key;" -v 2> /dev/null
+cmdMySQL 'MySB_db' "ALTER TABLE dnscrypt_config DROP COLUMN csv_url;" -v 2> /dev/null
+# system
+cmdMySQL 'MySB_db' "ALTER TABLE system ADD total_space_used BIGINT(32) NOT NULL DEFAULT '0' AFTER quota_default;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE system ADD rt_active TINYINT(1) NOT NULL DEFAULT '0' AFTER total_space_used;" -v
+# users
+cmdMySQL 'MySB_db' "ALTER TABLE users ADD quota_type VARCHAR(6) NOT NULL DEFAULT 'auto' AFTER account_type;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE users CHANGE rtorrent_version rtorrent_version VARCHAR(10) NOT NULL DEFAULT 'v0.9.6';" -v
+#### 1 - ALTER some tables - EoF
+
+#### 2 - Import Schema for new tables, triggers & constraints - BoF
+mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/mysql/Schema.sql
+mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/mysql/Triggers.sql
+#### 2 - Import Schema for new tables, triggers & constraints - EoF
+
+#### 3 - UPDATE some tables - BoF
+# blocklists
+cmdMySQL 'MySB_db' "DELETE FROM blocklists WHERE author='Nexus23';" -v
+cmdMySQL 'MySB_db' "UPDATE blocklists SET comments = 'Anti-p2p activity' WHERE pgl_list_name='abuse_zeus';" -v
+cmdMySQL 'MySB_db' "UPDATE blocklists SET comments = 'Anti-p2p activity' WHERE pgl_list_name='bluetack_level1';" -v
+cmdMySQL 'MySB_db' "UPDATE blocklists SET comments = 'Anti-p2p activity' WHERE pgl_list_name='tbg_primary-threats';" -v
+cmdMySQL 'MySB_db' "UPDATE blocklists SET comments = 'Anti-p2p activity suspected' WHERE pgl_list_name='tbg_business-isps';" -v
+cmdMySQL 'MySB_db' "UPDATE blocklists SET comments = 'Anti-p2p activity suspected' WHERE pgl_list_name='bluetack_range-test';" -v
+# dnscrypt_config
+cmdMySQL 'MySB_db' "UPDATE dnscrypt_config SET no_logs = 'yes', dnssec = 'yes' WHERE id_dnscrypt_config='1';" -v
+# lets_encrypt
+cmdMySQL 'MySB_db' "DELETE FROM lets_encrypt;" -v
+mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/mysql/Table_lets_encrypt.sql
+# providers_monitoring
+cmdMySQL 'MySB_db' "DELETE FROM providers_monitoring;" -v
+mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/mysql/Table_providers_monitoring.sql
+# repositories
+cmdMySQL 'MySB_db' "DELETE FROM repositories;" -v
+mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/mysql/Table_repositories.sql
+cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='NextCloud';" -v
+cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='XMLRPC';" -v
+cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='LibTorrent';" -v
+cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='rTorrent';" -v
+cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='ruTorrent';" -v
+cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='GeoIPupdate';" -v
+cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='Composer';" -v
+# services
+cmdMySQL 'MySB_db' "UPDATE services SET serv_name = 'PHP7-FPM' WHERE serv_name='PHP5-FPM';" -v
+cmdMySQL 'MySB_db' "UPDATE services SET bin = '/usr/local/bin/rtorrent', serv_name = 'rTorrent v0.9.7' WHERE serv_name='rTorrent v0.9.2';" -v
+cmdMySQL 'MySB_db' "UPDATE services SET bin = '/usr/bin/rtorrent' WHERE serv_name='rTorrent v0.9.6';" -v
+#### 3 - UPDATE some tables - EoF

@@ -1,0 +1,59 @@
+<?php
+// ----------------------------------
+//  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+//   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+//	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+//	 _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+//	  _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+//	   _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+//		_\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+//		 _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+//		  _\///______________\///___\////__________\///////////_____\/////////////_____
+//			By toulousain79 ---> https://github.com/toulousain79/
+//
+//#####################################################################
+//
+//	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+//	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+//	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+//	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+//
+//#################### FIRST LINE #####################################
+
+define('MainUser_UserAdd_Username', 'Username :');
+define('MainUser_UserAdd_UserEmail', 'User e-mail :');
+define('MainUser_UserAdd_ConfirmEmail', 'Confirm e-mail :');
+define('MainUser_UserAdd_AccountType', 'Account type :');
+define('MainUser_UserAdd_Quota', 'Quota (GB) :');
+define('MainUser_UserAdd_AddUser', 'Add this user');
+define('MainUser_UserAdd_VerifError', 'Error between the typed email and verification.');
+define('MainUser_UserAdd_QuotaMinValue', 'Please enter a value greater than or equal to 5.<br />Or leave the field empty.');
+define('MainUser_UserAdd_QuotaMinValueEdit', 'Please enter a value greater than or equal to 5 for quota.');
+define('MainUser_UserAdd_BadAddress', 'The given e-mail address is not valid !');
+define('MainUser_UserAdd_AlreadyUsed', 'Username already used !');
+define('MainUser_UserAdd_UserDontExist', 'Failed !<br /><br />User does not exist...');
+define('MainUser_UserAdd_Table_Username', 'Username');
+define('MainUser_UserAdd_Table_Email', 'E-mail');
+define('MainUser_UserAdd_Table_IsSftp', 'SFTP ?');
+define('MainUser_UserAdd_Table_SetQuota', 'Force quota (GB)');
+define('MainUser_UserAdd_Table_Quota', 'Used / Quota');
+define('MainUser_UserAdd_Table_Password', 'Password');
+define('MainUser_UserAdd_Table_AccountType', 'Account type');
+define('MainUser_UserAdd_Table_QuotaType', 'Quota type');
+define('MainUser_UserAdd_Table_Treasury', 'Treasury');
+define('MainUser_UserAdd_Table_Monthly', 'Monthly');
+define('MainUser_UserAdd_Table_CreatedAt', 'Creation date');
+define('MainUser_UserAdd_QuotaTypeManual', 'manual');
+define('MainUser_UserAdd_PasswordOK', 'Changed');
+define('MainUser_UserAdd_Comment_FreeSpace', 'Available space: %s<br />Real available space: %s');
+define('MainUser_UserAdd_Comment', 'A "<b>normal</b>" account will have all services.<br />
+A "<b>plex</b>" account will have no service. This type of account is recommended for users accessing Plex only.<br />
+Services such as ruTorrent, Cakebox, Seedbox Manager, OpenVPN and NextCloud will not be available.<br />
+A plex account does not reduce the disk quota of other users.<br />
+<br />
+For the <b>Quota</b>, leave the field blank for automatic management.<br />
+Otherwise, enter a numeric value in GB.');
+
+//#################### LAST LINE ######################################

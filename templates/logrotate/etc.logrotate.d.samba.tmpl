@@ -1,0 +1,40 @@
+/var/log/samba/log.smbd {
+	weekly
+	missingok
+	rotate 7
+	postrotate
+		[ ! -f /var/run/samba/smbd.pid ] || /etc/init.d/smbd reload > /dev/null
+	endscript
+	compress
+	delaycompress
+	notifempty
+}
+
+/var/log/samba/log.nmbd {
+	weekly
+	missingok
+	rotate 7
+	postrotate
+		[ ! -f /var/run/samba/nmbd.pid ] || kill -HUP `cat /var/run/samba/nmbd.pid`
+	endscript
+	compress
+	delaycompress
+	notifempty
+}
+
+/var/log/samba/log.samba {
+	weekly
+	missingok
+	rotate 7
+	postrotate
+		if [ -d /run/systemd/system ] && command systemctl >/dev/null 2>&1 && systemctl is-active --quiet samba-ad-dc; then
+			systemctl kill --kill-who all --signal=SIGHUP samba-ad-dc
+		elif [ -f /var/run/samba/samba.pid ]; then
+			# This only sends to main pid, See #803924
+			kill -HUP `cat /var/run/samba/samba.pid`
+		fi
+	endscript
+	compress
+	delaycompress
+	notifempty
+}

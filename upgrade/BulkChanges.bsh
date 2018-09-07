@@ -1,0 +1,276 @@
+#!/bin/bash
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_before
+# -----------------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#	 _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#	  _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#	   _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#		_\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#		 _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#		  _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+case "$1" in
+	"BEFORE")
+		####################################
+		#### To call for every upgrade - BoF
+		# Get new vars after MySQL.bsh script
+		source $MySB_InstallDir/inc/vars
+
+		# Create missing directories and change rights
+		gfnManageDirAndFiles 'global'
+
+		# Switching DNS
+		gfnSwitchDNS "bind"
+
+		# Forcing NTP update
+		ping -c4 0.fr.pool.ntp.org
+		/usr/sbin/ntpdate -u 0.fr.pool.ntp.org
+
+		# MySQL
+		[ -f /tmp/MySQL.bsh.log ] && cat /tmp/MySQL.bsh.log >> $MySB_InstallDir/logs/BulkChanges.bsh.log
+
+		# VARs & Functions
+		[ -z $funcs_Install ] && source $MySB_InstallDir/inc/funcs_by_script/funcs_Install
+		[ -z $funcs_SourcesList ] && source $MySB_InstallDir/inc/funcs_by_script/funcs_SourcesList
+
+		# Remove old banners
+		rm -fv $MySB_InstallDir/files/banner_*
+
+		# Force install for depends
+		source $MySB_InstallDir/inc/funcs_by_script/funcs_Install
+		gfnPackagesManage install
+		#### To call for every upgrade - EoF
+		####################################
+
+		#### MySB_file checkout
+		cd $MySB_Files/
+		git reset --hard
+		git clean -fd
+		git fetch --all
+		git stash
+		git checkout -b $gsCurrentVersion origin/$gsCurrentVersion
+		git pull origin $gsCurrentVersion
+
+		#### Jessie to Stretch upgrade
+		# Stop services
+		gfnManageServices 'stop' 'cron dnscrypt-proxy'
+
+		# /usr/sbin/policy-rc.d
+		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/usr.sbin.policy-rc.d.tmpl /usr/sbin/policy-rc.d
+
+		# MySQL to MariaDB
+		export DEBIAN_FRONTEND=noninteractive; apt-get -y --assume-yes -f -V -o Dpkg::Options::="--force-confnew" install mariadb-server
+		rm -vf /etc/mysql/conf.d/*.cnf
+		install -v -o root -g root -m 0600 $MySB_InstallDir/templates/mysql/etc.mysql.conf.d.my.cnf.tmpl /etc/mysql/my.cnf
+		gfnPackagesManage install
+
+		# NextCloud
+		if [ "$gbIsInstalled_NextCloud" == "YES" ]; then
+			su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --on"
+		fi
+
+		# Stop services
+		gfnManageServices 'stop' 'php5-fpm nginx fail2ban stunnel4 redis-server'
+
+		# PEAR
+		pear config-set ext_dir '/usr/lib/php/20151012'
+
+		# PageSpeed
+		[ ! -z "`mount -l | grep pagespeed`" ] && umount /mnt/tmpFS/pagespeed
+		sed -i '/# TMPFS - Nginx PageSpeed/d' /etc/fstab
+		sed -i '/\/mnt\/tmpFS\/pagespeed/d' /etc/fstab
+		gfnDeleteDirectory 1 "/mnt/tmpFS/pagespeed"
+
+		# PHP5
+		gfnPackagesManage purge "php5 php5-common php5-cli php5-fpm php-xml-rss php5-dev php-pear php5-curl php5-gd php5-gmp php5-imap php5-intl php5-json php5-mcrypt php5-mysql php5-readline php5-sqlite php5-xmlrpc php5-geoip php5-imagick php5-redis php-pear"
+		gfnDeleteDirectory 1 "/usr/share/php/.registry/.channel.pecl.php.net"
+		gfnDeleteDirectory 1 "/usr/share/doc/php5-common"
+		gfnDeleteDirectory 1 "/usr/lib/php5"
+		gfnDeleteDirectory 1 "/etc/php5"
+
+		# Remove packages
+		gfnPackagesManage purge "update-notifier-common python3.4 gnupg-curl libav-tools libhttp-daemon-ssl-perl aptitude rtorrent"
+
+		# GeoIP
+		install -v -o root -g root -m 0644 $MySB_InstallDir/templates/other/usr.local.etc.geoip.conf.tmpl /usr/local/etc/GeoIP.conf
+
+		# Stunnel
+		sed -i '/NO_SSLv2/d' /etc/stunnel/stunnel.conf
+
+		# Fail2ban
+		gfnManageServices 'stop' 'fail2ban'
+		gfnPackagesManage purge "fail2ban"
+		gfnDeleteDirectory 1 "/etc/fail2ban/"
+
+		# Redis
+		gfnPackagesManage purge "redis-server"
+		gfnDeleteDirectory 1 "/etc/redis/"
+		install -v -o root -g root -m 0755 -d "/etc/redis"
+		install -v -o root -g root -m 0777 $MySB_InstallDir/templates/php/etc.redis.redis.conf.tmpl /etc/redis/redis.conf
+
+		# NginX
+		gfnManageServices 'stop' 'nginx'
+		killall nginx
+		fuser -k 81/tcp
+		fuser -k $gsPort_HTTP/tcp
+		fuser -k $gsPort_MySB_HTTP/tcp
+		fuser -k $gsPort_MySB_HTTPS/tcp
+		mkdir -pv $MySB_InstallDir/temp/nginx
+		mv -v /etc/nginx/locations $MySB_InstallDir/temp/nginx/locations
+		mv -v /etc/nginx/proxy $MySB_InstallDir/temp/nginx/proxy
+		mv -v /etc/nginx/rpc $MySB_InstallDir/temp/nginx/rpc
+		mv -v /etc/nginx/sites-available $MySB_InstallDir/temp/nginx/sites_available
+		mv -v /etc/nginx/sites-enabled $MySB_InstallDir/temp/nginx/sites_enabled
+		mv -v /etc/nginx/upstream $MySB_InstallDir/temp/nginx/upstream
+		gfnPackagesManage purge "nginx-extras apache2-utils"
+		gfnDeleteDirectory 1 "/etc/nginx/"
+		rm -f /var/log/nginx/error.log
+		rm -f /var/log/nginx/*-error.log
+
+		# Upgrade
+		cmdMySQL 'MySB_db' "UPDATE system SET apt_update = 1, apt_date = '`date +%Y-%m-%d\ %H:%M:%S`' WHERE id_system='1';" -v
+		gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_UpgradeSystem" 'SCREEN'
+
+		# DNScrypt renew
+		if gfnCheckCommand 0 dnscrypt-proxy; then
+			cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='0' WHERE id_system='1';" -v
+			install -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.dnscrypt-proxy.tmpl /etc/init.d/dnscrypt-proxy
+			systemctl daemon-reload
+			systemctl disable dnscrypt-proxy
+		fi
+
+		# ruTorrent
+		sed -i '/\/bin\/bzip2/d' $gsRutorrentPluginsDir/filemanager/conf.php
+
+		# Quota
+		nFreeSpace=$(gfnQuotaSpaceAvailable)
+		cmdMySQL 'MySB_db' "UPDATE system SET quota_default='$nFreeSpace' WHERE id_system='1';" $sVerbose -v
+
+		# apt-mirror
+		gfnPackagesManage purge "apt-mirror"
+		rm -vf /etc/cron.d/apt-mirror
+		rm -vf /etc/apt/sources.list~
+		rm -vf /etc/apt/sources.list.d/*.list
+		gfnDeleteDirectory 1 "$MySB_InstallDir/files/apt_mirrors"
+
+		# Renting activation
+		if [ ! -z "$gsRentingTVA" ] &&
+			[ ! -z "$gsRentingModel" ] &&
+			[ "$gsRentingGlobalCost" != "0.00" ] &&
+			[ "$gsRentingCostTva" != "0.00" ]; then
+			cmdMySQL 'MySB_db' "UPDATE system SET rt_active='1' WHERE id_system='1';" $sVerbose -v
+		fi
+
+		# Cleaning
+		crontab -l > /tmp/crontab.tmp
+		sed -i '/rtorrent/d' /tmp/crontab.tmp
+		crontab /tmp/crontab.tmp
+		rm -f /tmp/crontab.tmp
+		rm -vf /usr/share/nano/conf.nanorc
+		rm -vf /usr/share/nano/ini.nanorc
+		rm -vf /usr/local/bin/rtorrent
+		rm -vf /usr/local/etc/dnscrypt-proxy.conf
+		rm -vf /var/log/samba/log.*
+		rm -vf $MySB_InstallDir/web/logs/system/iptables.html
+		rm -vf /etc/init.d/rtorrent-*
+		rm -vf /etc/logrotate.d/rtorrent_*
+		gfnDeleteDirectory 1 "/usr/share/doc/libtorrent14/"
+		gfnDeleteDirectory 1 "/usr/share/doc/rtorrent/"
+		gfnDeleteDirectory 1 "/usr/local/include/torrent/"
+		updatedb
+		for file in $(locate *libtorrent* *rtorrent* | grep -v -e "/home/" -e "/opt/MySB_files/" -e "/opt/MySB/" -e "/var/lib/mysql/"); do
+			rm -vf $file
+		done
+		ldconfig
+	;;
+	"AFTER")
+		####################################
+		#### To call for every upgrade - BoF
+		if gfnCheckCommand 0 ldconfig; then
+			log_daemon_msg "$IncAfter_ConfigureDynamicLinks"
+			/sbin/ldconfig
+			gfnStatusLSB
+		fi
+		#### Free cache server
+		## To free pagecache, dentries and inodes
+		sync; echo 3 > /proc/sys/vm/drop_caches
+		#### Upgrade in progress page + Start Cron service
+		gfnUpgradeInProgress "off"
+		# Create missing directories and change rights
+		gfnManageDirAndFiles 'global'
+
+		# STOP & START services
+		gfnManageServices stop "ntp stunnel4 postfix nginx $binPhpService redis-server dnscrypt-proxy webmin"
+		gfnManageServices start "ntp stunnel4 postfix smbd redis-server $binPhpService nginx dnscrypt-proxy webmin"
+
+		# Update version info
+		cmdMySQL 'MySB_db' "UPDATE system SET mysb_version = '$gsCurrentVersion' WHERE id_system='1';" -v
+
+		# Send mail for each user with new version
+		source $MySB_InstallDir/inc/vars
+		source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
+		gfnListCountUsers 'normal'
+		gsRutorrentDirEscaped="`echo $gsRutorrentDir | sed s,/,\\\\\\\\\\/,g`"
+		for seedUser in $gsUsersList; do
+			sRequestValues="`cmdMySQL 'MySB_db' "SELECT id_users,users_passwd FROM users WHERE users_ident = '$seedUser';" | sed 's/\t/|/g;'`"
+			UserId="`echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}'`"
+			UserPassword="`echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}'`"
+			# rTorrent init
+			install -v -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.rtorrent.tmpl /etc/init.d/rtorrent-$seedUser
+			perl -pi -e "s/<username>/$seedUser/g" /etc/init.d/rtorrent-$seedUser
+			systemctl daemon-reload
+			systemctl enable rtorrent-$seedUser
+			# rTorrent Config File
+			gfnCreateRtorrentConfigFile "$seedUser" 'force'
+
+			if [ "$UserId" == "$gnMainUserId" ] && [ ! -z "$UserPassword" ]; then
+				# Remove main user password from database
+				cmdMySQL 'MySB_db' "UPDATE users SET users_passwd = '' WHERE admin = '1';" -v
+				gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_ChangeUserPassword" "$seedUser" "$UserPassword" 'UPGRADE'
+			else
+				# Init password required
+				cmdMySQL 'MySB_db' "UPDATE users SET init_password = '1' WHERE users_ident = '$seedUser';" -v
+				Subject="$Upgrade_SubjectUpgraded $gsCurrentVersion"
+				gfnSendMail "$Subject" "$seedUser" "upgrade"
+			fi
+		done
+
+		#### Apply quota for users
+		gfnManageQuota '-v'
+
+		#### Check actuel quota
+		repquota -a
+
+		#### Cleaning
+		updatedb
+		for file in $(locate *.dpkg-old *.dpkg-new *.dpkg-dist *.dpkg-bak *.ucf-dist); do
+			if [ ! -z "$gbDevMode" ] && [ $gbDevMode -eq 1 ]; then
+				mv -vf $file $MySB_InstallDir/logs/TODEL/
+			else
+				rm -vf $file
+			fi
+		done
+		#### To call for every upgrade - EoF
+		####################################
+	;;
+esac
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

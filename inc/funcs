@@ -1,0 +1,987 @@
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#	 _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#	  _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#	   _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#		_\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#		 _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#		  _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+######################################################################
+funcs=1
+##################### FIRST LINE #####################################
+
+#### Include tools functions
+if [ -z "$funcs_sql" ] || [ $funcs_sql -eq 0 ]; then
+	source $MySB_InstallDir/inc/funcs_sql
+fi
+if [ -z "$funcs_tools" ] || [ $funcs_tools -eq 0 ]; then
+	source $MySB_InstallDir/inc/funcs_tools
+fi
+
+#### Banner
+gfnBannerGenerator() {
+	local nCountLine sLine
+
+	figlet MySB $gsCurrentVersion > $MySB_InstallDir/files/banner.tmp
+	echo "echo -e \"${CGREEN}############################################################$CEND" > $MySB_InstallDir/files/banner_$gsCurrentVersion
+
+	nCountLine=`wc -l $MySB_InstallDir/files/banner.tmp | awk '{ print $1 }'`
+	for (( lign=1; lign<=$nCountLine; lign++ )); do
+		sLine=`head -n $lign $MySB_InstallDir/files/banner.tmp | tail -n 1`
+		echo "${CGREEN}#$CEND	${CBLUE}$sLine$CEND" >> $MySB_InstallDir/files/banner_$gsCurrentVersion
+	done
+	rm -f $MySB_InstallDir/files/banner.tmp
+
+	echo "${CGREEN}#$CEND	${CYELLOW}https://github.com/toulousain79/MySB/$CEND" >> $MySB_InstallDir/files/banner_$gsCurrentVersion
+	echo "${CGREEN}#$CEND" >> $MySB_InstallDir/files/banner_$gsCurrentVersion
+	echo "${CGREEN}#$CEND	$Header_CurrentFile ${CRED}$0$CEND" >> $MySB_InstallDir/files/banner_$gsCurrentVersion
+	echo "${CGREEN}############################################################$CEND\"" >> $MySB_InstallDir/files/banner_$gsCurrentVersion
+	if [ -f $MySB_InstallDir/files/banner_$gsCurrentVersion ]; then
+		sed -i "s/,/ /g;" $MySB_InstallDir/files/banner_$gsCurrentVersion &> /dev/null
+		sed -i "s/\`/ /g;" $MySB_InstallDir/files/banner_$gsCurrentVersion &> /dev/null
+		clear
+		source $MySB_InstallDir/files/banner_$gsCurrentVersion
+	fi
+	echo
+}
+
+#### Send Mail
+gfnSendMail() {
+	local sSubject sUser sCase sInfo sAttach sUserMail sMailType bDoSendMail nIdMail
+	sSubject="$1"
+	sUser="$2"
+	sCase="$3"
+	sInfo="$4"
+	[ ! -z "$5" ] && sUserMail="$5" || sUserMail="`cmdMySQL 'MySB_db' "SELECT users_email FROM users_history WHERE users_ident='$sUser';"`"
+	sAttach=""
+	bDoSendMail=1
+
+	if [ ! -z "$sInfo" ]; then log_daemon_msg "$Funcs_SendMail_GenerateHTML [$sUser]"; fi
+
+	if ! gfnGetPid nginx; then
+		service nginx restart &> /dev/null
+	fi
+
+	#### Use case without MySQL needed:	new_files, new_version, upgrade, account_confirmed, ip_updated, pgl_check, main_account, tracker_found
+	#### Use case with MySQL needed:	   new_user, renting, account_created, delete_user
+	# Add mail to DB
+	if [ -z "$5" ]; then
+		case "$sCase" in
+			'new_user'|'renting'|'account_created'|'delete_user')
+				echo "in_porgress" >> /tmp/SendMails.lock
+				screen -dmS SendMails $MySB_InstallDir/scripts/SendMails.bsh CRON;
+				nIdMail="`cmdMySQL 'MySB_db' "SELECT id_mails FROM mails WHERE user='$sUser' AND use_case='$sCase';" 2> /dev/null`"
+				if [ -z "$nIdMail" ]; then
+					cmdMySQL 'MySB_db' "INSERT INTO mails (user,subject,use_case,info,mail_address) VALUES ('$sUser','$sSubject','$sCase','$sInfo','$sUserMail');"
+				fi
+				bDoSendMail=0
+			;;
+		esac
+	fi
+
+	# First account
+	if [ "$sCase" == "main_account" ]; then
+		sCase="account_created"
+	fi
+
+	# Send mail directly
+	if [ $bDoSendMail -eq 1 ]; then
+		case "$sCase" in
+			'new_files')
+				sMailType="plain"
+				sAttach="$MySB_InstallDir/temp/$sUser.txt"
+				fnUserNewFiles "/home/$sUser/rtorrent/complete/" > $sAttach
+				if [ ! -s $sAttach ]; then sAttach=""; fi
+			;;
+			'new_version')
+				sMailType="plain"
+				if [ -f $MySB_InstallDir/temp/changelog ]; then
+					sAttach="$MySB_InstallDir/temp/changelog"
+				fi
+				fnUserNewFiles "/home/$sUser/rtorrent/complete/" > $sAttach
+				if [ ! -s $sAttach ]; then sAttach=""; fi
+			;;
+			*)
+				curl --silent --retry 2 --user $gsMySB_User:$gsMySB_Password "http://127.0.0.1:$gsPort_MySB_HTTP/UserInfoMail?case=$sCase&user=$sUser" > $MySB_InstallDir/temp/$sUser.html
+				if [ -s $MySB_InstallDir/temp/$sUser.html ]; then
+					sAttach="$MySB_InstallDir/temp/$sUser.html"
+					sMailType="html"
+				else
+					sMailType="plain"
+				fi
+			;;
+		esac
+	fi
+
+	if [ ! -z "$sInfo" ]; then
+		gfnStatusLSB
+
+		log_daemon_msg "$Funcs_SendMail_SendingEmail [$sUser] ($sInfo)"
+	fi
+
+	if [ $bDoSendMail -eq 1 ]; then
+		if [ -z "$sAttach" ]; then
+			echo "" | mail -a "From: MySB <$gsMainUserEmail>" -a "MIME-Version: 1.0" -a "Content-Type: text/$sMailType" -s "$sSubject" $sUserMail
+		else
+			cat $sAttach | mail -a "From: MySB <$gsMainUserEmail>" -a "MIME-Version: 1.0" -a "Content-Type: text/$sMailType" -s "$sSubject" $sUserMail
+		fi
+		sleep 2
+
+		# Flush mail queue
+		if gfnCheckCommand 0 postfix && gfnGetPid postfix; then postfix flush; fi
+	fi
+
+	if [ ! -z "$sInfo" ]; then gfnStatusLSB; fi
+}
+
+#### Start/Stop services
+gfnManageServices() {
+	local sGlobalCmd sServices sFinalCmd nContinue sPglcmdLog List
+
+	sGlobalCmd="$1"
+	sServices="$2"
+	sServices="`echo $sServices | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+	if [ "$sGlobalCmd" == "restart" ]; then
+		sGlobalCmd="start"
+		sFinalCmd="restart"
+	else
+		sFinalCmd="reload"
+	fi
+
+	# Cleaning actual list of services
+	if [ ! -z "$sServices" ]; then
+		# Check if command exist
+		for Service in $sServices; do
+			if ! gfnCheckCommand 0 $Service; then
+				sServices="`echo $sServices | sed -e 's/$Service//g;'`"
+			fi
+		done
+		sServices="`echo $sServices | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+	fi
+
+	if [ ! -z "$sServices" ]; then
+		case "$LOGSTD" in
+			"STDOUT")
+				echo "---- "`date +"%T"` >> $MySB_InstallDir/logs/$gsScriptName.log
+			;;
+		esac
+
+		for Service in $sServices; do
+			case "$sGlobalCmd" in
+				"stop")
+					if gfnGetPid $Service; then
+						nContinue=1
+
+						case "$Service" in
+							"pglcmd")
+								nContinue=0
+								log_daemon_msg "$Funcs_Stopping PeerGuardian Linux" "pglcmd"
+								pglcmd stop > /dev/null
+								gfnStatusLSB
+							;;
+							"$binPhpService"|"stunnel4"|"vsftpd"|"fail2ban"|"nfs-kernel-server"|"tautulli"|"plexmediaserver"|rtorrent-*)
+								nContinue=0
+								log_daemon_msg "$Funcs_Stopping $Service"
+								service $Service stop > /dev/null
+								gfnStatusLSB
+							;;
+							"nginx")
+								nContinue=0
+								log_daemon_msg "$Funcs_Stopping $Service"
+								service $Service stop > /dev/null
+								if [ $? -gt 0 ]; then
+									fuser -k 81/tcp &> /dev/null
+									fuser -k $gsPort_HTTP/tcp &> /dev/null
+									fuser -k $gsPort_MySB_HTTP/tcp &> /dev/null
+									fuser -k $gsPort_MySB_HTTPS/tcp &> /dev/null
+									gfnStatusLSB 0
+								fi
+								if gfnGetPid $Service || [ ! -z "`ps ax | grep 'nginx' | grep '/usr/sbin/nginx' | grep -v 'grep'`" ]; then
+									gfnStatusLSB 1
+									log_daemon_msg "$Funcs_Killing $Service"
+									killall $Service
+									gfnStatusLSB
+								else
+									gfnStatusLSB 0
+								fi
+							;;
+						esac
+
+						if [ "$nContinue" == "1" ]; then
+							log_daemon_msg "$Funcs_Stopping $Service"
+							service $Service stop > /dev/null
+							gfnStatusLSB
+						fi
+					else
+						log_daemon_msg "$Funcs_AlreadyStopped" "$Service"
+						gfnStatusLSB 0
+					fi
+				;;
+				"start")
+					if [ "$Service" == "pglcmd" ]; then
+						if gfnCheckCommand 0 pglcmd; then
+							if [ -z $funcs_PeerGuardian ]; then
+								source $MySB_InstallDir/inc/funcs_by_script/funcs_PeerGuardian
+							fi
+
+							if gfnGetPid $Service; then
+								log_daemon_msg "$Funcs_Restarting PeerGuardian Linux"
+								pglcmd restart > /dev/null
+								if [ $? -gt 0 ]; then
+									gfnStatusLSB 1
+
+									log_daemon_msg "$Funcs_ForceStarting PeerGuardian Linux"
+									pglcmd force-restart > /dev/null
+								fi
+							else
+								log_daemon_msg "$Funcs_Starting PeerGuardian Linux"
+								pglcmd start > /dev/null
+							fi
+
+							if [ $? -gt 0 ]; then # if pgl don't start maybe its due to a list update
+								gfnStatusLSB 1
+
+								case "$LOGSTD" in
+									"STDOUT")
+										echo `date +"%T"`" --> The updated list of PGL may have failed." >> $MySB_InstallDir/logs/$gsScriptName.log
+										echo `date +"%T"`" --> Attempting to clean lists error." >> $MySB_InstallDir/logs/$gsScriptName.log
+									;;
+								esac
+
+								sPglcmdLog="`cat /var/log/pgl/pglcmd.log | grep failed | grep list.iblocklist.com | awk '{ print $6 }'`"
+								for List in $sPglcmdLog; do
+									case "$LOGSTD" in
+										"STDOUT")
+											echo `date +"%T"`" --> '$List' will be disabled." >> $MySB_InstallDir/logs/$gsScriptName.log
+										;;
+									esac
+
+									# Comment the list in '/etc/pgl/blocklists.list'
+									List=`echo $List | sed s,/,\\\\\\\\\\/,g`
+									sed -i "s/^$List/#$List/g" /etc/pgl/blocklists.list
+								done
+								log_daemon_msg "$Funcs_ForceStarting PeerGuardian Linux"
+								pglcmd restart > /dev/null
+
+								if [ $? -gt 0 ]; then # We have again a problem with PeerGuardian, test a force-restart
+									gfnStatusLSB 1
+
+									log_daemon_msg "$Funcs_ForceStarting PeerGuardian Linux"
+									pglcmd force-restart > /dev/null
+									if [ $? -gt 0 ]; then # Again ??
+										gfnStatusLSB 1
+										# We will use rTorrent Blocklist
+										gfnPeerGuardianFailed "rTorrent"
+									else
+										gfnStatusLSB 0
+										gfnPeerGuardianFailed "PeerGuardian"
+									fi
+								else
+									gfnStatusLSB 0
+									gfnPeerGuardianFailed "PeerGuardian"
+								fi
+							else
+								gfnStatusLSB 0
+								gfnPeerGuardianFailed "PeerGuardian"
+							fi
+						else
+							echo "The command 'pglcmd' is not yet available..."
+						fi
+					else
+						nContinue=1
+
+						case "$Service" in
+							"bind9")
+								nContinue=0
+								if gfnCheckCommand 0 $Service; then
+									if ! gfnGetPid $Service; then
+										log_daemon_msg "$Funcs_Starting $Service"
+										service $Service start > /dev/null
+									else
+										log_daemon_msg "$Funcs_Reloading $Service"
+										service $Service $sFinalCmd > /dev/null
+										if [ -z "`ps ax | grep 'named -f -u bind' | grep -v 'grep'`" ]; then
+											gfnStatusLSB 1
+											log_daemon_msg "$Funcs_Restarting $Service"
+											service $Service restart > /dev/null
+										fi
+									fi
+									gfnStatusLSB
+								fi
+							;;
+							"nginx")
+								nContinue=0
+								if gfnCheckCommand 0 $Service; then
+									if ! gfnGetPid $Service; then
+										log_daemon_msg "$Funcs_Starting $Service"
+										service $Service start > /dev/null
+									else
+										log_daemon_msg "$Funcs_Reloading $Service"
+										service $Service $sFinalCmd > /dev/null
+										if [ -z "`ps ax | grep 'nginx' | grep '/usr/sbin/nginx' | grep -v 'grep'`" ]; then
+											gfnStatusLSB 1
+											log_daemon_msg "$Funcs_Restarting $Service"
+											fuser -k 81/tcp &> /dev/null
+											fuser -k $gsPort_MySB_HTTP/tcp &> /dev/null
+											fuser -k $gsPort_MySB_HTTPS/tcp &> /dev/null
+											service $Service restart > /dev/null
+											if [ -z "`ps ax | grep 'nginx' | grep '/usr/sbin/nginx' | grep -v 'grep'`" ]; then
+												gfnStatusLSB 1
+												log_daemon_msg "$Funcs_Killing $Service"
+												service $Service stop > /dev/null
+												killall $Service
+												gfnStatusLSB
+												log_daemon_msg "$Funcs_Starting $Service"
+												service $Service start > /dev/null
+											fi
+										fi
+									fi
+									gfnStatusLSB
+								fi
+							;;
+							*)
+								nContinue=0
+								if gfnCheckCommand 0 $Service; then
+									if ! gfnGetPid $Service; then
+										log_daemon_msg "$Funcs_Starting $Service"
+										service $Service start > /dev/null
+									else
+										log_daemon_msg "$Funcs_Restarting $Service"
+										service $Service restart > /dev/null
+									fi
+									gfnStatusLSB
+								fi
+							;;
+						esac
+
+						if [ "$nContinue" == "1" ]; then
+							log_daemon_msg "$Funcs_Starting $Service"
+							service $Service $sFinalCmd > /dev/null
+							gfnStatusLSB
+
+							if [ $? -gt 0 ] && [ "$sFinalCmd" == "reload" ]; then
+								log_daemon_msg "$Funcs_Restarting $Service"
+								service $Service restart > /dev/null
+								gfnStatusLSB
+							fi
+						fi
+					fi
+				;;
+			esac
+		done
+
+		case "$LOGSTD" in
+			"STDOUT")
+				echo "---- "`date +"%T"` >> $MySB_InstallDir/logs/$gsScriptName.log
+			;;
+		esac
+	fi
+}
+
+#### Any questions ?
+gfnQuestionGetString() {
+	local ISPASSWORD="$1"
+	local LABEL="$2"
+	local RETURN="$3"
+	local DEFAULT="$4"
+	local NEWVAR1=a
+	local NEWVAR2=b
+	local YESYES=YESyes
+	local NONO=NOno
+	local YESNO="$YESYES$NONO"
+
+	while [ ! "$NEWVAR1" = "$NEWVAR2" ] || [ -z "$NEWVAR1" ]; do
+		if [ "$ISPASSWORD" == "YES" ]; then
+			echo -e -n "${CBLUE}$LABEL$CEND ${CGREEN}"
+			read NEWVAR1
+			echo -e -n "$CEND"
+		else
+			if [ -z "$DEFAULT" ]; then
+				echo -e -n "${CBLUE}$LABEL$CEND ${CGREEN}"
+				read NEWVAR1
+			else
+				echo -e -n "${CBLUE}$LABEL$CEND ${CYELLOW}$DEFAULT$CEND ${CGREEN}"
+				read NEWVAR1
+				if [ -z "$NEWVAR1" ]; then
+					NEWVAR1="$DEFAULT"
+				fi
+			fi
+			echo -e -n "$CEND"
+		fi
+		if [ -z "$NEWVAR1" ]; then
+			NEWVAR1=a
+			continue
+		fi
+
+		if [ ! -z "$DEFAULT" ]; then
+			if grep -q "$DEFAULT" <<< "$YESNO"; then
+				if grep -q "$NEWVAR1" <<< "$YESNO"; then
+					if grep -q "$NEWVAR1" <<< "$YESYES"; then
+						NEWVAR1=YES
+					else
+						NEWVAR1=NO
+					fi
+				else
+					NEWVAR1=a
+				fi
+			fi
+		fi
+
+		if [ "$NEWVAR1" == "$DEFAULT" ]; then
+			NEWVAR2="$NEWVAR1"
+		else
+			if [ "$ISPASSWORD" == "YES" ]; then
+				echo -e -n "${CRED}$Global_Again $CEND${CGREEN}"
+				read NEWVAR2
+				echo -e -n "$CEND"
+			else
+				echo -e -n "${CRED}$Global_Again $CEND${CGREEN}"
+				read NEWVAR2
+				echo -e -n "$CEND"
+			fi
+			if [ -z "$NEWVAR2" ]; then
+				NEWVAR2=b
+				continue
+			fi
+		fi
+
+		if [ ! -z "$DEFAULT" ]; then
+			if grep -q "$DEFAULT" <<< "$YESNO"; then
+				if grep -q "$NEWVAR2" <<< "$YESNO"; then
+					if grep -q "$NEWVAR2" <<< "$YESYES"; then
+						NEWVAR2=YES
+					else
+						NEWVAR2=NO
+					fi
+				else
+					NEWVAR2=a
+				fi
+			fi
+		fi
+	done
+	eval $RETURN=\$NEWVAR1
+}
+
+#### Script Invocation
+gfnScriptInvoke() {
+	local sMethod sScriptWished sScript sArguments sAllArgs sError
+
+	#### Use 'source' OR 'bash' OR 'screen' ?
+	sMethod="$1"
+
+	#### Script to invoke
+	sScriptWished="$2"
+	IFS=$'/'; i=0; for var in $sScriptWished; do (( i++ )); done; unset IFS
+	sScript="`echo $sScriptWished | cut -d '/' -f $i`"
+
+	#### Arguments
+	sArguments=""
+	sAllArgs=("$@")
+	for ((i=2; i < $#; i++)) {
+		sArguments="$sArguments ${sAllArgs[$i]}"
+	}
+	sArguments="`echo $sArguments | sed -e 's/^ //g;' | sed -e 's/^ //g;'`"
+
+	#### Start invovation
+	case "$sMethod" in
+		"source"|"bash")
+			#### Prepare our script
+			# vars & funcs
+			echo "source $MySB_InstallDir/inc/vars" > $MySB_InstallDir/temp/${gsScriptName}_${sScript}.invoked
+			if [ -f $MySB_InstallDir/inc/funcs_by_script/funcs_${sScript} ]; then
+				echo "source $MySB_InstallDir/inc/funcs_by_script/funcs_${sScript}" >> $MySB_InstallDir/temp/${gsScriptName}_${sScript}.invoked
+			fi
+			# copy it
+			cat $sScriptWished >> $MySB_InstallDir/temp/${gsScriptName}_${sScript}.invoked
+			# delete lign start with comments
+			sed -i '/^#/d' $MySB_InstallDir/temp/${gsScriptName}_${sScript}.invoked
+			#delete includes before and after (on top and bottom of every script)
+			sed -i '/includes_before/d' $MySB_InstallDir/temp/${gsScriptName}_${sScript}.invoked
+			sed -i '/includes_after/d' $MySB_InstallDir/temp/${gsScriptName}_${sScript}.invoked
+			# Language
+			gfnLoadLanguage "$sScript"
+
+			$sMethod $MySB_InstallDir/temp/${gsScriptName}_${sScript}.invoked $sArguments
+			[ $gbDevMode -eq 0 ] && rm -f $MySB_InstallDir/temp/${gsScriptName}_${sScript}.invoked
+		;;
+		"ScreenSTD"|"ScreenWAIT"|"InQueue")
+			screen -dmS ${gsScriptName}_${sScript} /bin/bash $sScriptWished $sArguments;
+			# Possibilities:
+			# 	ScreenSTD:	Waiting silently
+			# 	ScreenWAIT:	Waiting point to point
+			# 	InQueue:	No waiting...
+			case "$sMethod" in
+				"ScreenSTD")
+					gfnWaitingSTD ${gsScriptName}_${sScript}
+				;;
+				"ScreenWAIT")
+					while [ ! -z "`screen -ls | grep ${gsScriptName}_${sScript}`" ]; do
+						echo -n "."
+						sleep 1
+					done
+				;;
+			esac
+		;;
+	esac
+}
+
+#### Manage directories, files and rights
+gfnManageDirAndFiles() {
+	local sSwitch
+
+	case "$1" in
+		"global"|"user"|"no_user")	sSwitch="$1";;
+		*)							sSwitch="global";;
+	esac
+
+	if [ -z $funcs_MySB_CreateUser ] || [ $funcs_MySB_CreateUser -eq 0 ]; then
+		source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
+	fi
+
+	#### Create missing directories
+	if [ "$sSwitch" == "global" ] || [ "$sSwitch" == "no_user" ]; then
+		# TMPFS
+		if [ ! -d /mnt/tmpFS ]; then mkdir /mnt/tmpFS; fi
+		# Root Directories
+		if [ ! -d $MySB_InstallDir/db ]; then mkdir $MySB_InstallDir/db; fi
+		if [ ! -d $MySB_InstallDir/files ]; then mkdir $MySB_InstallDir/files; fi
+		if [ ! -d $MySB_InstallDir/logs/archives ]; then mkdir -p $MySB_InstallDir/logs/archives; fi
+		if [ ! -d $MySB_InstallDir/sources ]; then mkdir $MySB_InstallDir/sources; fi
+		if [ ! -d $MySB_InstallDir/ssl ]; then mkdir $MySB_InstallDir/ssl; fi
+		if [ ! -d $MySB_InstallDir/temp ]; then mkdir $MySB_InstallDir/temp; fi
+		if [ ! -d $MySB_InstallDir/web/apps ]; then mkdir -p $MySB_InstallDir/web/apps; fi
+		if [ ! -d $MySB_InstallDir/web/openvpn ]; then mkdir -p $MySB_InstallDir/web/openvpn; fi
+		# Log directories
+		if [ ! -d $MySB_InstallDir/web/logs ]; then mkdir $MySB_InstallDir/web/logs; fi
+		if [ ! -d $MySB_InstallDir/web/logs/bin ]; then mkdir $MySB_InstallDir/web/logs/bin; fi
+		if [ ! -d $MySB_InstallDir/web/logs/install ]; then mkdir $MySB_InstallDir/web/logs/install; fi
+		if [ ! -d $MySB_InstallDir/web/logs/nginx ]; then mkdir $MySB_InstallDir/web/logs/nginx; fi
+		if [ ! -d $MySB_InstallDir/web/logs/scripts ]; then mkdir $MySB_InstallDir/web/logs/scripts; fi
+		if [ ! -d $MySB_InstallDir/web/logs/security ]; then mkdir $MySB_InstallDir/web/logs/security; fi
+		if [ ! -d $MySB_InstallDir/web/logs/upgrade ]; then mkdir $MySB_InstallDir/web/logs/upgrade; fi
+		if [ ! -d $MySB_InstallDir/web/logs/system ]; then mkdir $MySB_InstallDir/web/logs/system; fi
+
+		#### Convert with dos2unix
+		dos2unix $MySB_InstallDir/* &> /dev/null
+		dos2unix $MySB_InstallDir/bin/* &> /dev/null
+		dos2unix $MySB_InstallDir/files/* &> /dev/null
+		dos2unix $MySB_InstallDir/inc/* &> /dev/null
+		dos2unix $MySB_InstallDir/install/* &> /dev/null
+		dos2unix $MySB_InstallDir/scripts/* &> /dev/null
+		dos2unix $MySB_InstallDir/templates/* &> /dev/null
+		dos2unix $MySB_InstallDir/upgrade/* &> /dev/null
+
+		#### Change rights
+		# $MySB_InstallDir/
+		chmod -R 0700 $MySB_InstallDir
+		chmod 0755 $MySB_InstallDir
+		chown -R root:root $MySB_InstallDir
+		# $MySB_InstallDir/db
+		chmod 0770 $MySB_InstallDir/db
+		chmod 0660 $MySB_InstallDir/db/* &> /dev/null
+		chown -R root:www-data $MySB_InstallDir/db
+		# $MySB_InstallDir/ssl
+		chmod 0644 $MySB_InstallDir/ssl/*.cert &> /dev/null
+		# $MySB_InstallDir/install
+		chmod -R 0755 $MySB_InstallDir/install
+		# $MySB_InstallDir/temp
+		chown root:www-data $MySB_InstallDir/temp
+		chmod 0760 $MySB_InstallDir/temp
+		# $MySB_InstallDir/web
+		chown -R root:www-data $MySB_InstallDir/web/*
+		chmod -R 0640 $MySB_InstallDir/web/*
+		find $MySB_InstallDir/web/* -type d -not -path "*ru*" -not -path "*openvpn*" -print0 | xargs -0 chmod 0750
+		chmod 0755 $MySB_InstallDir/web
+		chmod 0755 $MySB_InstallDir/web/apps
+		# Tautulli
+		if [ -d $MySB_InstallDir/web/apps/tt ] && [ ! -z "`grep 'tautulli' /etc/passwd`" ]; then
+			chown tautulli:nogroup -R $MySB_InstallDir/web/apps/tt
+		fi
+
+		# $MySB_InstallDir/web/openvpn
+		if [ -d $MySB_InstallDir/web/openvpn ]; then chmod 0770 $MySB_InstallDir/web/openvpn; fi
+		# /home/MySB_share
+		if [ -d /home/MySB_share ]; then
+			chown root:MySB_users /home/MySB_share
+			chmod 0770 /home/MySB_share
+		fi
+
+		# Config files
+		if [ -f /etc/MySB/config ]; then
+			chown root:root /etc/MySB/config
+			chmod 0640 /etc/MySB/config
+		fi
+		if [ -f /etc/MySB/config_db ]; then
+			chown root:root /etc/MySB/config_db
+			chmod 0640 /etc/MySB/config_db
+		fi
+		if [ -f /etc/MySB/config.php ]; then
+			chmod 0640 /etc/MySB/config.php
+			chown root:www-data /etc/MySB/config.php
+		fi
+
+		# Cakebox-Light
+		if [ -d  $gsCakeboxDir/config/ ]; then
+			chown root:www-data $gsCakeboxDir/config/*
+			chmod 0660 $gsCakeboxDir/config/*
+		fi
+
+		# LoadAvg
+		if [ ! -z "$gsLoadAvgDir" ]; then
+			if [ -f $gsLoadAvgDir/configure ]; then chmod 0640 $gsLoadAvgDir/configure; fi
+			if [ ! -d $gsLoadAvgDir/logs ] && [ -d $gsLoadAvgDir ]; then mkdir $gsLoadAvgDir/logs; fi
+			if [ -d $gsLoadAvgDir/logs ]; then chmod 0777 $gsLoadAvgDir/logs; fi
+		fi
+
+		# NextCloud
+		if [ ! -z "$gsNextCloudDir" ] && [ -d $gsNextCloudDir ]; then
+			if [ ! -d /home/nextcloud ]; then mkdir -p /home/nextcloud; fi
+			if [ ! -d /home/nextcloud/admin/files ]; then mkdir -p /home/nextcloud/admin/files; fi
+			if [ ! -d $gsNextCloudDir/assets ]; then mkdir -p $gsNextCloudDir/assets; fi
+			if [ ! -d $gsNextCloudDir/updater ]; then mkdir -p $gsNextCloudDir/updater; fi
+			if [ ! -d $gsNextCloudDir/apps2 ]; then mkdir -p $gsNextCloudDir/apps2; fi
+
+			if [ ! -f /home/nextcloud/.ocdata ]; then touch /home/nextcloud/.ocdata; fi
+			if [ ! -f /home/nextcloud/index.html ]; then touch /home/nextcloud/index.html; fi
+			if [ -f /home/nextcloud/mount.json ]; then chmod 0640 /home/nextcloud/mount.json; fi
+
+			find $gsNextCloudDir/ -type f -print0 | xargs -0 chmod 0640
+			find $gsNextCloudDir/ -type d -print0 | xargs -0 chmod 0750
+
+			[ -d $gsNextCloudDir ] && chown -R root:www-data $gsNextCloudDir
+			[ -d $gsNextCloudDir/apps/ ] && chown -R www-data:www-data $gsNextCloudDir/apps/
+			[ -d $gsNextCloudDir/apps2/ ] && chown -R www-data:www-data $gsNextCloudDir/apps2/
+			[ -d $gsNextCloudDir/config/ ] && chown -R www-data:www-data $gsNextCloudDir/config/
+			[ -d $gsNextCloudDir/themes/ ] && chown -R www-data:www-data $gsNextCloudDir/themes/
+			[ -d $gsNextCloudDir/updater/ ] && chown -R www-data:www-data $gsNextCloudDir/updater/
+			[ -d /home/nextcloud/ ] && chown -R www-data:www-data /home/nextcloud/
+
+			[ -f $gsNextCloudDir/occ ] && chmod 0750 $gsNextCloudDir/occ
+
+			if [ -f $gsNextCloudDir/.htaccess ]; then
+				chmod 0644 $gsNextCloudDir/.htaccess
+				chown root:www-data $gsNextCloudDir/.htaccess
+			fi
+			if [ -f /home/nextcloud/.htaccess ]; then
+				chmod 0644 /home/nextcloud/.htaccess
+				chown root:www-data /home/nextcloud/.htaccess
+			fi
+		fi
+
+		# ruTorrent Global Config
+		if [ ! -z "$gsRutorrentDir" ] && [ -d $gsRutorrentDir ]; then
+			fnRuTorrentGlobalConfigs
+		fi
+	fi
+
+	# Users
+	if [ "$sSwitch" != "no_user" ]; then
+		if [ "$gbIsReady_MySB_Db" == "YES" ]; then
+			gfnListCountUsers 'normal'
+			if [ ! -z "$gsUsersList" ]; then
+				for FnUser in $gsUsersList; do
+					if [ ! -z "`getent passwd $FnUser`" ]; then
+						# Home
+						gfnManageUserHomeDir "$FnUser"
+
+						# ruTorrent
+						if [ ! -z "$gsRutorrentDir" ] && [ -d $gsRutorrentPluginsDir ]; then
+							gfnRuTorrentUsersConfigs "$FnUser"
+						fi
+
+						# Seedbox-Manager
+						gfnManagerUsersConfigs "$FnUser"
+
+						# Cakebox-Light
+						gfnCakeboxUsersConfigs "$FnUser"
+					fi
+				done
+			fi
+		fi
+	fi
+
+	# ruTorrent
+	if [ "$sSwitch" == "global" ] || [ "$sSwitch" == "no_user" ]; then
+		if [ ! -z "$gsRutorrentDir" ] && [ -d $gsRutorrentDir ]; then
+			if [ -d $gsRutorrentDir ]; then chmod -R 0755 $gsRutorrentDir; fi
+			if [ -d $gsRutorrentDir ]; then chown -R www-data:www-data $gsRutorrentDir; fi
+			if [ -d $gsRutorrentDir/share ]; then
+				chmod -R 0777 $gsRutorrentDir/share
+				find $gsRutorrentDir/share/ -type f -print0 | xargs -0 chmod 0666
+			fi
+			if [ -d $gsRutorrentPluginsDir/fileupload/scripts/upload ]; then chmod 0775 $gsRutorrentPluginsDir/fileupload/scripts/upload; fi
+		fi
+	fi
+
+	# Seedbox-Manager
+	if [ "$sSwitch" == "global" ] || [ "$sSwitch" == "no_user" ]; then
+		if [ ! -z "$gsManagerDir" ] && [ -d $gsManagerDir ]; then
+			if [ -d $gsManagerDir ]; then chown -R www-data:www-data $gsManagerDir; fi
+			if [ -f $gsManagerDir/reboot-rtorrent ]; then
+				chown root:root $gsManagerDir/reboot-rtorrent
+				chmod 4755 $gsManagerDir/reboot-rtorrent
+			fi
+		fi
+	fi
+}
+
+#### ruTorrent Global config
+fnRuTorrentGlobalConfigs() {
+	local sPluginsList sPlugin bIsActive nNumLine tabState bVerbose
+
+	[ $gbDevMode -eq 1 ] && bVerbose=1 || bVerbose=0
+	[ -d $gsRutorrentPluginsDir ] && sPluginsList=$(ls -1r $gsRutorrentPluginsDir/) || return 0
+	tabState=(`cmdMySQL 'MySB_db' "SELECT name,active FROM repositories WHERE name LIKE 'ruTorrent Plugin%' ORDER BY name;" | sed 's/ruTorrent Plugin//g;' | sed 's/ //g;' | tr '[:upper:]' '[:lower:]' | sed 's/\t/|/g;'`)
+
+	if [ -f $gsRutorrentDir/conf/config.php ]; then
+		# Alter 'config.php' for general use
+		perl -pi -e "s/$topDirectory = '\/';/$topDirectory = '\/home';/g" $gsRutorrentDir/conf/config.php
+		sed -i "/\"php\"/s/'',/'\/usr\/bin\/php',/g" $gsRutorrentDir/conf/config.php
+		sed -i "/\"curl\"/s/'',/'\/usr\/bin\/curl',/g" $gsRutorrentDir/conf/config.php
+		sed -i "/\"gzip\"/s/'',/'\/bin\/gzip',/g" $gsRutorrentDir/conf/config.php
+		sed -i "/\"id\"/s/'',/'\/usr\/bin\/id',/g" $gsRutorrentDir/conf/config.php
+		sed -i "/\"stat\"/s/'',/'\/usr\/bin\/stat',/g" $gsRutorrentDir/conf/config.php
+	fi
+
+	for sPlugin in $sPluginsList; do
+		bIsActive=0
+
+		case "$sPlugin" in
+			'chat')
+				bIsActive="`echo ${tabState[0]} | awk '{split($0,a,"|"); print a[2]}'`"
+				[ "$bIsActive" -eq 0 ] && gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+			;;
+			'checksfv')
+				bIsActive="`echo ${tabState[1]} | awk '{split($0,a,"|"); print a[2]}'`"
+				if [ "$bIsActive" -eq 1 ]; then
+					if [ -f $gsRutorrentPluginsDir/$sPlugin/conf.php ]; then
+						perl -pi -e "s/'';/'\/usr\/bin\/cksfv';/g" $gsRutorrentPluginsDir/$sPlugin/conf.php
+					fi
+				else
+					gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+				fi
+			;;
+			'filemanager')
+				bIsActive="`echo ${tabState[2]} | awk '{split($0,a,"|"); print a[2]}'`"
+				if [ "$bIsActive" -eq 1 ]; then
+					if [ -f $gsRutorrentPluginsDir/$sPlugin/conf.php ]; then
+						sed -i "/'rar'/s/'';/'\/usr\/bin\/rar';/g" $gsRutorrentPluginsDir/$sPlugin/conf.php
+						sed -i "/'zip'/s/'';/'\/usr\/bin\/zip';/g" $gsRutorrentPluginsDir/$sPlugin/conf.php
+						sed -i "/'unzip'/s/'';/'\/usr\/bin\/unzip';/g" $gsRutorrentPluginsDir/$sPlugin/conf.php
+						sed -i "/'tar'/s/'';/'\/bin\/tar';/g" $gsRutorrentPluginsDir/$sPlugin/conf.php
+						if [ -z "`grep '/bin/bzip2' $gsRutorrentPluginsDir/$sPlugin/conf.php`" ]; then
+							nNumLine=$(cat $gsRutorrentPluginsDir/$sPlugin/conf.php | grep '\/bin\/tar' -n -m 1 | cut -d ':' -f 1)
+							(( nNumLine++ ))
+							sed -i "${nNumLine}i\$pathToExternals['bzip2'] = '\/bin\/bzip2';" $gsRutorrentPluginsDir/$sPlugin/conf.php
+						fi
+					fi
+				else
+					gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+				fi
+			;;
+			'fileshare')
+				bIsActive="`echo ${tabState[3]} | awk '{split($0,a,"|"); print a[2]}'`"
+				if [ "$bIsActive" -eq 1 ]; then
+					if [ -f $gsRutorrentPluginsDir/$sPlugin/conf.php ]; then
+						perl -pi -e "s/http:\/\/domain.tld\/noauthdir\/share.php/https:\/\/$gsHostNameFqdn:$gsPort_MySB_HTTPS\/fileshare/g" $gsRutorrentPluginsDir/$sPlugin/conf.php
+					fi
+				else
+					gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+				fi
+			;;
+			'fileupload')
+				bIsActive="`echo ${tabState[4]} | awk '{split($0,a,"|"); print a[2]}'`"
+				if [ "$bIsActive" -eq 1 ]; then
+					if [ -d $gsRutorrentPluginsDir/$sPlugin/scripts/upload ]; then
+						chmod 0775 $gsRutorrentPluginsDir/$sPlugin/scripts/upload;
+					fi
+				else
+					gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+					gfnDeleteDirectory $bVerbose "$gsRutorrentDir/conf/users/*/$sPlugin"
+				fi
+			;;
+			'instantsearch')
+				bIsActive="`echo ${tabState[5]} | awk '{split($0,a,"|"); print a[2]}'`"
+				if [ "$bIsActive" -eq 0 ]; then
+					gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+				fi
+			;;
+			'lbll-suite')
+				bIsActive="`echo ${tabState[6]} | awk '{split($0,a,"|"); print a[2]}'`"
+				[ "$bIsActive" -eq 0 ] && gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+			;;
+			'linkcakebox')
+				bIsActive="`echo ${tabState[7]} | awk '{split($0,a,"|"); print a[2]}'`"
+				if [ "$bIsActive" -eq 1 ]; then
+					if [ -f $gsRutorrentPluginsDir/$sPlugin/conf.php ]; then
+						nNumLine=$(cat $gsRutorrentPluginsDir/$sPlugin/conf.php | grep '$url =' -n -m 1 | cut -d ':' -f 1)
+						sed -i '/\$url =/d' $gsRutorrentPluginsDir/$sPlugin/conf.php
+						sed -i "${nNumLine}i\$url = 'https:\/\/$gsHostNameFqdn:$gsPort_MySB_HTTPS\/cb\/';" $gsRutorrentPluginsDir/$sPlugin/conf.php
+						perl -pi -e "s/\/torrents\//\/rtorrent\//g" $gsRutorrentPluginsDir/$sPlugin/conf.php
+					fi
+				else
+					gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+				fi
+			;;
+			'linkseedboxmanager')
+				bIsActive="`echo ${tabState[8]} | awk '{split($0,a,"|"); print a[2]}'`"
+				if [ "$bIsActive" -eq 1 ]; then
+					if [ -f $gsRutorrentPluginsDir/$sPlugin/conf.php ]; then
+						perl -pi -e "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$gsHostNameFqdn:$gsPort_MySB_HTTPS\/sm\//g" $gsRutorrentPluginsDir/$sPlugin/conf.php
+					fi
+				else
+					gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+				fi
+			;;
+			'logoff')
+				bIsActive="`echo ${tabState[9]} | awk '{split($0,a,"|"); print a[2]}'`"
+				if [ "$bIsActive" -eq 1 ]; then
+					if [ -f $gsRutorrentPluginsDir/$sPlugin/conf.php ]; then
+						perl -pi -e "s/scars,user1,user2//g" $gsRutorrentPluginsDir/$sPlugin/conf.php
+					fi
+				else
+					gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+				fi
+			;;
+			'markforrsync')
+				bIsActive="`echo ${tabState[10]} | awk '{split($0,a,"|"); print a[2]}'`"
+				[ "$bIsActive" -eq 0 ] && gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+			;;
+			'mediastream')
+				bIsActive="`echo ${tabState[11]} | awk '{split($0,a,"|"); print a[2]}'`"
+				if [ "$bIsActive" -eq 1 ]; then
+					if [ -f $gsRutorrentPluginsDir/$sPlugin/conf.php ]; then
+						perl -pi -e "s/http:\/\/mydomain.com\/stream\/view.php/https:\/\/$gsHostNameFqdn:$gsPort_MySB_HTTPS\/view/g" $gsRutorrentPluginsDir/$sPlugin/conf.php
+					fi
+				else
+					gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+				fi
+			;;
+			'mobile')
+				bIsActive="`echo ${tabState[12]} | awk '{split($0,a,"|"); print a[2]}'`"
+				[ "$bIsActive" -eq 0 ] && gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+			;;
+			'nfo')
+				bIsActive="`echo ${tabState[13]} | awk '{split($0,a,"|"); print a[2]}'`"
+				[ "$bIsActive" -eq 0 ] && gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+			;;
+			'pausewebui')
+				bIsActive="`echo ${tabState[14]} | awk '{split($0,a,"|"); print a[2]}'`"
+				[ "$bIsActive" -eq 0 ] && gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+			;;
+			'ratiocolor')
+				bIsActive="`echo ${tabState[15]} | awk '{split($0,a,"|"); print a[2]}'`"
+				[ "$bIsActive" -eq 0 ] && gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+			;;
+			'showip')
+				bIsActive="`echo ${tabState[16]} | awk '{split($0,a,"|"); print a[2]}'`"
+				[ "$bIsActive" -eq 0 ] && gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+			;;
+			'speedgraph')
+				bIsActive="`echo ${tabState[17]} | awk '{split($0,a,"|"); print a[2]}'`"
+				[ "$bIsActive" -eq 0 ] && gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+			;;
+			'stream')
+				bIsActive="`echo ${tabState[18]} | awk '{split($0,a,"|"); print a[2]}'`"
+				if [ ""$bIsActive"" -eq 1 ]; then
+					if [ -f $gsRutorrentPluginsDir/$sPlugin/config.php ]; then
+						nNumLine=$(sed -n "/\$username =/=" $gsRutorrentPluginsDir/$sPlugin/config.php)
+						if [ -z "$(sed -n "/\$username =/=" $gsRutorrentPluginsDir/$sPlugin/config.php)" ]; then
+							nNumLine=$(sed -n "/\$auth =/=" $gsRutorrentPluginsDir/$sPlugin/config.php)
+							sed -i "${nNumLine}i\$username = \$_SERVER['PHP_AUTH_USER'];" $gsRutorrentPluginsDir/$sPlugin/config.php
+						fi
+						nNumLine=$(sed -n "/\$password =/=" $gsRutorrentPluginsDir/$sPlugin/config.php)
+						if [ -z "$nNumLine" ]; then
+							nNumLine=$(sed -n "/\$auth =/=" $gsRutorrentPluginsDir/$sPlugin/config.php)
+							sed -i "${nNumLine}i\$password = \$_SERVER['PHP_AUTH_PW'];" $gsRutorrentPluginsDir/$sPlugin/config.php
+						fi
+						if [ -z "` cat $gsRutorrentPluginsDir/$sPlugin/config.php | grep '$auth = "$username:$password";'`" ]; then
+							nNumLine=$(sed -n "/\$auth =/=" $gsRutorrentPluginsDir/$sPlugin/config.php)
+							sed -i '/$auth =/d' $gsRutorrentPluginsDir/$sPlugin/config.php
+							nNumLine=$(( nNumLine+2 ))
+							sed -i "${nNumLine}i\$auth = \"\$username:\$password\";" $gsRutorrentPluginsDir/$sPlugin/config.php
+						fi
+						perl -pi -e "s/define\('USE_NGINX', false\);/define\('USE_NGINX', true\);/g" $gsRutorrentPluginsDir/$sPlugin/config.php
+						perl -pi -e "s/define\('SCHEME', 'http'\);/define\('SCHEME', 'https'\);/g" $gsRutorrentPluginsDir/$sPlugin/config.php
+					fi
+				else
+					gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+				fi
+			;;
+			'syncplugin')
+				bIsActive="`echo ${tabState[19]} | awk '{split($0,a,"|"); print a[2]}'`"
+				[ "$bIsActive" -eq 0 ] && gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+			;;
+			'diskspace')
+				install -o www-data -g www-data -m 0755 $MySB_InstallDir/templates/rutorrent/plugins.diskspace.action.php.tmpl $gsRutorrentPluginsDir/$sPlugin/action.php
+			;;
+			'cpuload')
+				if [ -f $gsRutorrentPluginsDir/$sPlugin/conf.php ]; then
+					perl -pi -e "s/$processorsCount = null;/$processorsCount = $gsProcessors;/g" $gsRutorrentPluginsDir/$sPlugin/conf.php
+				fi
+			;;
+			'create')
+				if [ -f $gsRutorrentPluginsDir/$sPlugin/conf.php ]; then
+					perl -pi -e "s/$useExternal = false;/$useExternal = 'buildtorrent';/g" $gsRutorrentPluginsDir/$sPlugin/conf.php
+					sed -i "/pathToCreatetorrent/s/'';/'\/usr\/bin\/buildtorrent';/g" $gsRutorrentPluginsDir/$sPlugin/conf.php
+				fi
+			;;
+			'geoip')
+				if [ -f $gsRutorrentPluginsDir/$sPlugin/conf.php ]; then
+					perl -pi -e "s/$dnsResolver = '8.8.8.8';/$dnsResolver = null;/g" $gsRutorrentPluginsDir/$sPlugin/conf.php
+				fi
+			;;
+			'mediainfo')
+				if [ -f $gsRutorrentPluginsDir/$sPlugin/conf.php ]; then
+					sed -i "/'mediainfo'/s/'';/'\/usr\/bin\/mediainfo';/g" $gsRutorrentPluginsDir/$sPlugin/conf.php
+					perl -pi -e "s/scars,user1,user2//g" $gsRutorrentPluginsDir/$sPlugin/conf.php
+				fi
+			;;
+			'screenshots')
+				if [ -f $gsRutorrentPluginsDir/$sPlugin/conf.php ]; then
+					sed -i "/'ffmpeg'/s/'';/'\/usr\/bin\/ffmpeg';/g" $gsRutorrentPluginsDir/$sPlugin/conf.php
+				fi
+			;;
+			'theme')
+				if [ -f $gsRutorrentPluginsDir/theme/conf.php ]; then
+					perl -pi -e "s/$defaultTheme = \"\";/$defaultTheme = \"Oblivion\";/g" $gsRutorrentPluginsDir/theme/conf.php
+				fi
+			;;
+			'unpack')
+				if [ -f $gsRutorrentPluginsDir/unpack/conf.php ]; then
+					sed -i "/'unzip'/s/'';/'\/usr\/bin\/unzip';/g" $gsRutorrentPluginsDir/unpack/conf.php
+					sed -i "/'unrar'/s/'';/'\/usr\/bin\/unrar';/g" $gsRutorrentPluginsDir/unpack/conf.php
+				fi
+			;;
+		esac
+	done
+}
+
+#### User directories listing for new files
+fnUserNewFiles() {
+	local sDir
+
+	for i in $(ls -1AFho $1 | grep ".*/$"); do
+		sDir=$1"$i"
+		if [[ -d $sDir ]]; then
+			cd $sDir
+			ls -1AFho | grep "`date +%b\ %d`" | awk '{ print $8 }'
+			fnUserNewFiles "$sDir"
+		fi
+	done
+}
+
+##################### LAST LINE ######################################

@@ -1,0 +1,5 @@
+alias ll='ls $LS_OPTIONS -l'
+alias l='ls $LS_OPTIONS -lA'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias s='ssh -l root'

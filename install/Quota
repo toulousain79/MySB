@@ -1,0 +1,102 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#	 _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#	  _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#	   _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#		_\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#		 _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#		  _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+case `getconf LONG_BIT` in
+	64)	sVFSV="vfsv1";;
+	*)	sVFSV="vfsv0";;
+esac
+
+#### Quota, add journaled quotas to the interested partition
+echo
+echo "########## /etc/fstab"
+cat /etc/fstab
+echo
+echo
+
+# Quota for Hetzner
+if [ "$gsServerProvider" == "HETZNER" ]; then
+	# /
+	echo
+	echo "########## HETZNER /"
+	sRootDir="`grep ' / ' /etc/fstab | sed '/^#/d'`"
+	sOptions="`echo $sRootDir | sed "s/defaults/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=$sVFSV/g;"`"
+	sRootDirEscaped="`echo $sOptions | sed s,/,\\\\\\\\\\/,g`"
+	nNumLine=$(cat /etc/fstab | grep ' / ' -n -m 1 | cut -d ':' -f 1)
+	sed -i ''$nNumLine'd' /etc/fstab
+	sed -i ""$nNumLine"i\<sRootDir>" /etc/fstab
+	echo "" >> /etc/fstab
+	perl -pi -e "s/<sRootDir>/$sRootDirEscaped/g" /etc/fstab
+	# /home
+	echo
+	echo "########## HETZNER /home"
+	sRootDir="`grep ' /home ' /etc/fstab`"
+	if [ ! -z "$sRootDir" ]; then
+		sOptions="`echo $sRootDir | sed "s/defaults/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=$sVFSV/g;"`"
+		sRootDirEscaped="`echo $sOptions | sed s,/,\\\\\\\\\\/,g`"
+		nNumLine=$(cat /etc/fstab | grep ' /home ' -n -m 1 | cut -d ':' -f 1)
+		sed -i ''$nNumLine'd' /etc/fstab
+		sed -i ""$nNumLine"i\<sRootDir>" /etc/fstab
+		echo "" >> /etc/fstab
+		perl -pi -e "s/<sRootDir>/$sRootDirEscaped/g" /etc/fstab
+	fi
+else
+	if [ ! -z "`grep 'noatime,nodiratime,errors=remount-ro' /etc/fstab`" ] && [ -z "`grep 'usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv' /etc/fstab | grep -v '/boot'`" ]; then
+		perl -pi -e "s/noatime,nodiratime,errors=remount-ro/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=$sVFSV/g" /etc/fstab
+		sed -i "/\/boot/s/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=$sVFSV/noatime,nodiratime,errors=remount-ro/g" /etc/fstab
+	fi
+fi
+# Delete empty lines
+echo
+echo "########## /etc/fstab"
+sed -i '/^$/d' /etc/fstab
+cat /etc/fstab
+
+# Create quota files
+echo
+[ ! -f /aquota.user ] && touch /aquota.user && chmod -v 600 /aquota.user
+[ ! -f /aquota.group ] && touch /aquota.group && chmod -v 600 /aquota.group
+
+#### Install packages
+gfnPackageBundleInstall 'quota quotatool'
+install -v -o root -g root -m 0644 $MySB_InstallDir/templates/other/etc.default.quota.tmpl /etc/default/quota
+install -v -o root -g root -m 0644 $MySB_InstallDir/templates/other/etc.warnquota.conf.tmpl /etc/warnquota.conf
+perl -pi -e "s/<main_user_mail>/$gsMainUserEmail/g" /etc/warnquota.conf
+perl -pi -e "s/<mail_subject>/$Quota_MailSubject/g" /etc/warnquota.conf
+perl -pi -e "s/<mail_message>/$Quota_MailMessage/g" /etc/warnquota.conf
+
+#### Check actuel quota
+modprobe quota_v1
+modprobe quota_v2
+mount -v -o remount /
+quotacheck -acguvmf
+quotaoff -a
+quotaon -avug
+repquota -a
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

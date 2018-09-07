@@ -1,0 +1,207 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#	 _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#	  _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#	   _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#		_\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#		 _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#		  _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### STOP services
+gfnManageServices stop "cron"
+gfnListCountUsers 'normal'
+for seedUser in $gsUsersList; do
+	systemctl status rtorrent-$seedUser &> /dev/null
+	if [ $? -eq 0 ]; then
+		systemctl stop rtorrent-$seedUser
+	fi
+done
+
+#### Remove old ruTorrent trackers
+case "$gsSwitch" in
+	UPGRADE)	cmdMySQL 'MySB_db' "DELETE FROM trackers_list WHERE origin='rutorrent' AND is_active='0';" -v;;
+esac
+
+#### Install some tools for plugins
+gfnPackageBundleInstall 'sox'
+
+#### ruTorrent + Official Plugins
+gfnGetRepoValues 'ruTorrent' && gfnRepoManageByType
+rm -vf $gsRepoDir/plugins/extsearch/engines/NNMClub.php
+
+#### Plugin Chat
+gfnGetRepoValues 'ruTorrent Plugin Chat' && gfnRepoManageByType
+
+#### Plugin Logoff
+gfnGetRepoValues 'ruTorrent Plugin Logoff' && gfnRepoManageByType
+
+#### Plugin tAdd-Labels
+gfnGetRepoValues 'ruTorrent Plugin LBLL-Suite' && gfnRepoManageByType
+
+#### Plugin NFO
+gfnGetRepoValues 'ruTorrent Plugin NFO' && gfnRepoManageByType
+if [ ! -f $gsRepoDir/lang/fr.js ]; then
+	cp -v $gsRepoDir/lang/en.js $gsRepoDir/lang/fr.js
+	perl -pi -e "s/NFO Viewer/Visionneuse NFO/g" $gsRepoDir/lang/fr.js
+	perl -pi -e "s/Could not open NFO/Impossible d'ouvrir le NFO/g" $gsRepoDir/lang/fr.js
+	perl -pi -e "s/ERROR/ERREUR/g" $gsRepoDir/lang/fr.js
+fi
+
+#### Plugin Check SFV
+gfnGetRepoValues 'ruTorrent Plugin Check SFV' && gfnRepoManageByType
+if [ -f $gsRepoDir/conf.php ]; then
+	perl -pi -e "s/'';/'\/usr\/bin\/cksfv';/g" $gsRepoDir/conf.php
+fi
+if [ ! -f $gsRepoDir/lang/fr.js ]; then
+	cp -v $gsRepoDir/lang/en.js $gsRepoDir/lang/fr.js
+	perl -pi -e "s/Check SFV/Vérification SFV/g" $gsRepoDir/lang/fr.js
+fi
+
+#### Plugin InstantSearch
+gfnGetRepoValues 'ruTorrent Plugin InstantSearch' && gfnRepoManageByType
+
+#### Plugin Show IP
+gfnGetRepoValues 'ruTorrent Plugin Show IP' && gfnRepoManageByType
+
+#### Plugin Speed Graph
+gfnGetRepoValues 'ruTorrent Plugin Speed Graph' && gfnRepoManageByType
+if [ ! -f $gsRepoDir/lang/fr.js ];then
+	cp -v $gsRepoDir/lang/en.js $gsRepoDir/lang/fr.js
+	perl -pi -e "s/Monitoring Time/Surveillance du temps/g" $gsRepoDir/lang/fr.js
+	perl -pi -e "s/Speed Graph/Graphique de vitesse/g" $gsRepoDir/lang/fr.js
+fi
+
+#### Plugin Ratiocolor
+gfnGetRepoValues 'ruTorrent Plugin RatioColor' && gfnRepoManageByType
+if [ -f $gsRepoDir/init.js ]; then
+	perl -pi -e "s/changeWhat = \"cell-background\";/changeWhat = \"font\";/g" $gsRepoDir/init.js
+fi
+
+#### Plugin Filemanager
+gfnGetRepoValues 'ruTorrent Plugin FileManager' && gfnRepoManageByType
+
+#### Plugin FileUpload
+gfnGetRepoValues 'ruTorrent Plugin FileUpload' && gfnRepoManageByType
+
+#### Plugin Fileshare
+gfnGetRepoValues 'ruTorrent Plugin FileShare' && gfnRepoManageByType
+if [ -f $gsRepoDir/conf.php ]; then
+	perl -pi -e "s/http:\/\/mydomain.com\/share.php/https:\/\/$gsHostNameFqdn:$gsPort_MySB_HTTPS\/fileshare.php/g" $gsRepoDir/conf.php
+fi
+
+#### Plugin Mediastream
+gfnGetRepoValues 'ruTorrent Plugin MediaStream' && gfnRepoManageByType
+if [ -f $gsRepoDir/conf.php ]; then
+	perl -pi -e "s/http:\/\/mydomain.com\/stream\/view.php/https:\/\/$gsHostNameFqdn:$gsPort_MySB_HTTPS\/view/g" $gsRepoDir/conf.php
+fi
+
+#### Plugin Stream
+gfnGetRepoValues 'ruTorrent Plugin Stream' && gfnRepoManageByType
+if [ -f $gsRepoDir/config.php ]; then
+	perl -pi -e "s/define\('USE_NGINX', false\);/define\('USE_NGINX', true\);/g" $gsRepoDir/config.php
+	perl -pi -e "s/define\('SCHEME', 'http'\);/define\('SCHEME', 'https'\);/g" $gsRepoDir/config.php
+fi
+
+#### Plugin Pause WebUI
+gfnGetRepoValues 'ruTorrent Plugin Pause WebUI' && gfnRepoManageByType
+
+#### Plugin Mobile
+gfnGetRepoValues 'ruTorrent Plugin Mobile' && gfnRepoManageByType
+
+#### Plugin Mark for Rsync
+gfnGetRepoValues 'ruTorrent Plugin Mark for Rsync' && gfnRepoManageByType
+
+#### Plugin Sync
+gfnGetRepoValues 'ruTorrent Plugin Sync' && gfnRepoManageByType
+
+#### Plugin Autodl-irssi
+#gfnGetRepoValues 'ruTorrent Plugin Autodl-irssi' && gfnRepoManageByType
+
+#### ruTorrent Theme Oblivion
+if [ -z "`grep 'for Oblivion' $gsRutorrentDir/css/style.css`" ]; then
+	echo
+	echo "########## ruTorrent Theme Oblivion"
+	echo
+	echo "" >> $gsRutorrentDir/css/style.css
+	echo "/* for Oblivion */" | tee -a $gsRutorrentDir/css/style.css
+	echo ".meter-value-start-color { background-color: #E05400 }" | tee -a $gsRutorrentDir/css/style.css
+	echo ".meter-value-end-color { background-color: #8FBC00 }" | tee -a $gsRutorrentDir/css/style.css
+	echo "::-webkit-scrollbar {width:12px;height:12px;padding:0px;margin:0px;}" | tee -a $gsRutorrentDir/css/style.css
+fi
+perl -pi -e "s/\$defaultTheme \= \"\"\;/\$defaultTheme \= \"Oblivion\"\;/g" $gsRutorrentPluginsDir/theme/conf.php
+#### ruTorrent Theme club-QuickBox
+gfnGetRepoValues 'ruTorrent Theme club-QuickBox' && gfnRepoManageByType
+#### ruTorrent Theme MaterialDesign
+gfnGetRepoValues 'ruTorrent Theme MaterialDesign' && gfnRepoManageByType
+
+#### ruTorrent favicons trackers
+echo
+echo "########## ruTorrent favicons trackers"
+echo
+TrackersFavicons="`ls -1r $MySB_InstallDir/files/trackers_favicons/`"
+for Favicons in $TrackersFavicons; do
+	if [ ! -f $gsRutorrentPluginsDir/tracklabels/trackers/$Favicons ]; then
+		cp -v $MySB_InstallDir/files/trackers_favicons/$Favicons $gsRutorrentPluginsDir/tracklabels/trackers/
+	fi
+done
+
+#### Plowshare
+gfnGetRepoValues 'Plowshare'
+if [ "$gsSwitch" == "REFRESH" ]; then
+	gfnDeleteDirectory 1 "$gsRepoDir"
+fi
+gfnRepoManageByType
+if [ $gnRepoUpgrade -eq 1 ] || [ "$gsSwitch" == "INSTALL" ]; then
+	cd $gsRepoDir || exit 1
+	make clean
+	make install
+	# Disable the upgrade job
+	cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='Plowshare';" -v
+fi
+
+#### Create directories & change rights
+echo
+log_daemon_msg "Change owners and rights for files and directories"
+gfnManageDirAndFiles 'global'
+gfnStatusLSB
+
+#### Get Tracker Certificates
+log_daemon_msg "Check and get all trackers certs"
+gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/scripts/GetTrackersCert.bsh" 'REFRESH'
+gfnStatusLSB
+
+#### START services
+if [ "$gsSwitch" != "UPGRADE" ]; then
+	gfnManageServices start "cron"
+
+	for seedUser in $gsUsersList; do
+		if [ -f /etc/init.d/rtorrent-$seedUser ]; then
+			systemctl status rtorrent-$seedUser &> /dev/null
+			if [ $? -gt 0 ]; then
+				systemctl restart rtorrent-$seedUser
+			fi
+		fi
+	done
+fi
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################
