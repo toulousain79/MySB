@@ -1,0 +1,257 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+#	TCP/UDP Ports: https://support.plex.tv/articles/201543147-what-network-ports-do-i-need-to-allow-through-my-firewall/
+######################################################################
+
+#### VARs
+sLocSwitch="$1"
+
+#### FUNCTIONs
+# Update repositories table
+fnUpdateRepositoriesTable() {
+	local sName sVersion sFile sUrl
+	sName="$1"
+
+	if [ ! -z "$sName" ]; then
+		sVersion="`grep "$sName" $MySB_InstallDir/templates/mysql/Table_repositories.sql | cut -d ',' -f 4 | cut -d "'" -f 2`"
+		sFile="`grep "$sName" $MySB_InstallDir/templates/mysql/Table_repositories.sql | cut -d ',' -f 6 | cut -d "'" -f 2`"
+		sUrl="`grep "$sName" $MySB_InstallDir/templates/mysql/Table_repositories.sql | cut -d ',' -f 7 | cut -d "'" -f 2`"
+
+		cmdMySQL 'MySB_db' "UPDATE repositories SET version = '$sVersion', file = '$sFile', url = '$sUrl' WHERE name='$sName';" -v
+	fi
+}
+
+# Install Plex DEB package
+fnInstallDebPackage() {
+	local sVersionInstalled sServices
+
+	# Loading repository informations
+	gfnGetRepoValues 'Plex Media Server'
+
+	if [ -z "$gsRepoVersion" ]; then
+		cmdMySQL 'MySB_db' "ALTER TABLE repositories CHANGE name name VARCHAR(64) NOT NULL;" -v
+		cmdMySQL 'MySB_db' "ALTER TABLE repositories CHANGE version version VARCHAR(32) NOT NULL;" -v
+		cmdMySQL 'MySB_db' "ALTER TABLE repositories CHANGE file file VARCHAR(64) NOT NULL;" -v
+		cmdMySQL 'MySB_db' "INSERT INTO repositories (type,dir,name,version,file,url,active) VALUES ('DEB','<InstallDir>_files','Plex Media Server','1.12.3.4973-215c28d86','plexmediaserver_1.12.3.4973-215c28d86_amd64.deb','https://downloads.plex.tv/plex-media-server/1.12.3.4973-215c28d86/plexmediaserver_1.12.3.4973-215c28d86_amd64.deb','1');"
+	else
+		# Update DB
+		fnUpdateRepositoriesTable 'Plex Media Server'
+	fi
+
+	# Loading repository informations
+	gfnGetRepoValues 'Plex Media Server'
+
+	# Change architecture if needed
+	case `getconf LONG_BIT` in
+		32) gsRepoFile="`echo $gsRepoFile | sed 's/amd64/i386/g;'`"
+			gsRepoURL="`echo $gsRepoURL | sed 's/amd64/i386/g;'`"
+		;;
+	esac
+
+	# Downloading the DEB file
+	gfnRepoManageByType
+
+	# Loading current installed version
+	sVersionInstalled="`dpkg -l plexmediaserver 2> /dev/null | grep 'plexmediaserver' | awk '{ print $3 }'`"
+	[ -z "$sVersionInstalled" ] && sVersionInstalled="Not installed"
+
+	# Install Plex if needed
+	echo "sVersionInstalled: $sVersionInstalled"
+	echo "gsRepoVersion: $gsRepoVersion"
+	if [ "$gsRepoVersion" != "$sVersionInstalled" ]; then
+		sServices="plexmediaserver"
+		[ "$gbIsInstalled_Tautulli" == "YES" ] && sServices="$sServices tautulli"
+
+		# Stop services
+		gfnManageServices stop "$sServices"
+
+		[ -f $gsRepoDir/$gsRepoFile ] && dpkg -i $gsRepoDir/$gsRepoFile
+		systemctl daemon-reload
+		systemctl enable plexmediaserver.service
+
+		# Start Tautulli service
+		gfnManageServices start "$sServices"
+
+		# Update DB
+		cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='Plex Media Server';" -v
+	else
+		echo "PlexMedia version $gsRepoVersion is already installed"
+	fi
+}
+
+# Install Tautulli
+fnInstallZipTautulli() {
+	local sRepoDirEscaped sVersionInstalled
+
+	# Update DB
+	fnUpdateRepositoriesTable 'Tautulli'
+	# Get Tautulli infos
+	gfnGetRepoValues 'Tautulli' && gfnRepoManageByType
+	sRepoDirEscaped="`echo $gsRepoDir | sed s,/,\\\\\\\\\\/,g`"
+
+	# Loading current installed version
+	if [ -f $gsRepoDir/release.lock ]; then
+		sVersionInstalled="`cat $gsRepoDir/release.lock`"
+	elif [ -f $gsRepoDir/plexpy/version.py ]; then
+		sVersionInstalled="`grep 'PLEXPY_RELEASE_VERSION' $gsRepoDir/plexpy/version.py | cut -d '=' -f 2| cut -d '"' -f 2`"
+	else
+		sVersionInstalled="Not installed"
+	fi
+
+	echo "sVersionInstalled: $sVersionInstalled"
+	echo "gsRepoVersion: v$gsRepoVersion"
+	if [ "$gbIsInstalled_Tautulli" == "NO" ] || [ "v$gsRepoVersion" != "$sVersionInstalled" ]; then
+		if [ ! -z $gsRepoDir ] && [ -d $gsRepoDir ]; then
+			[ "$gbIsInstalled_Tautulli" == "YES" ] && gfnManageServices stop "tautulli"
+
+			# Backup if needed
+			if [ "$sLocSwitch" == "CRON" ]; then
+				[ -f $gsRepoDir/config.ini ] && mv -v $gsRepoDir/config.ini $MySB_InstallDir/temp/tautulli_conf
+				[ -f $gsRepoDir/tautulli.db ] && mv -v $gsRepoDir/tautulli.db $MySB_InstallDir/temp/tautulli_db
+				[ -d $gsRepoDir/backups ] && mv -v $gsRepoDir/backups $MySB_InstallDir/temp/tautulli_backups
+				[ -d $gsRepoDir/logs ] && mv -v $gsRepoDir/logs $MySB_InstallDir/temp/tautulli_logs
+				[ -d $gsRepoDir/cache ] && mv -v $gsRepoDir/cache $MySB_InstallDir/temp/tautulli_cache
+			fi
+
+			# Update certificates for python
+			update-ca-certificates --fresh &> /dev/null
+
+			# Install PyOpenSSL for Python
+			pip install PyOpenSSL
+
+			# System user
+			if [ -z "`grep 'tautulli' /etc/passwd`" ]; then
+				adduser --system --no-create-home tautulli
+			fi
+
+			if [ -f $MySB_Files/$gsRepoFile ]; then
+				gfnDeleteDirectory 1 "$gsRepoDir"
+			fi
+			gfnRepoManageByType
+
+			# Restore if needed
+			if [ "$sLocSwitch" == "CRON" ]; then
+				[ -f $MySB_InstallDir/temp/tautulli_conf ] && mv -v $MySB_InstallDir/temp/tautulli_conf $gsRepoDir/config.ini
+				[ -f $MySB_InstallDir/temp/tautulli_db ] && mv -v $MySB_InstallDir/temp/tautulli_db $gsRepoDir/tautulli.db
+				[ -d $MySB_InstallDir/temp/tautulli_backups ] && mv -v $MySB_InstallDir/temp/tautulli_backups $gsRepoDir/backups
+				[ -d $MySB_InstallDir/temp/tautulli_logs ] && mv -v $MySB_InstallDir/temp/tautulli_logs $gsRepoDir/logs
+				[ -d $MySB_InstallDir/temp/tautulli_cache ] && mv -v $MySB_InstallDir/temp/tautulli_cache $gsRepoDir/cache
+			fi
+
+			# Directories
+			[ ! -d $gsRepoDir/backups ] && mkdir $gsRepoDir/backups
+			[ ! -d $gsRepoDir/logs ] && mkdir $gsRepoDir/logs
+			[ ! -d $gsRepoDir/cache ] && mkdir $gsRepoDir/cache
+
+			# /etc/default/tautulli
+			install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tautulli/etc.default.tautulli.tmpl /etc/default/tautulli
+			perl -pi -e "s/<gsRepoDir>/$sRepoDirEscaped/g" /etc/default/tautulli
+
+			# Config.ini
+			if [ ! -f $gsRepoDir/config.ini ]; then
+				install -v -o tautulli -g nogroup -m 0644 $MySB_InstallDir/templates/tautulli/config.ini.tmpl $gsRepoDir/config.ini
+				perl -pi -e "s/<gsMainUserName>/$gsMainUserName/g" $gsRepoDir/config.ini
+                perl -pi -e "s/<gsHostNameFqdn>/$gsHostNameFqdn/g" $gsRepoDir/config.ini
+				perl -pi -e "s/<gsRepoDir>/$sRepoDirEscaped/g" $gsRepoDir/config.ini
+				if [ ! -z "$gsMainUserPassword" ]; then
+				    nNumLine=$(grep 'http_password' -n -m 1 $gsRepoDir/config.ini | cut -d ':' -f 1)
+				    sed -i '/http_password/d' $gsRepoDir/config.ini
+				    sed -i ""$nNumLine"i\http_password = $gsMainUserPassword" $gsRepoDir/config.ini
+				fi
+
+				if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
+					perl -pi -e "s/<https_cert>/$gsInstallDirEscaped\/ssl\/cert.pem/g" $gsRepoDir/config.ini
+					perl -pi -e "s/<https_key>/$gsInstallDirEscaped\/ssl\/privkey.pem/g" $gsRepoDir/config.ini
+					perl -pi -e "s/<https_fullchain>/$gsInstallDirEscaped\/ssl\/fullchain.pem/g" $gsRepoDir/config.ini
+				else
+					perl -pi -e "s/<https_cert>/$gsInstallDirEscaped\/ssl\/mysb.cert/g" $gsRepoDir/config.ini
+					perl -pi -e "s/<https_key>/$gsInstallDirEscaped\/ssl\/mysb.key/g" $gsRepoDir/config.ini
+					perl -pi -e "s/<https_fullchain>/\"\"/g" $gsRepoDir/config.ini
+				fi
+			fi
+
+			# Directory rights
+			chown tautulli:nogroup -R $gsRepoDir
+
+			# Init script
+			install -v -o root -g root -m 0755 $gsRepoDir/init-scripts/init.ubuntu /etc/init.d/tautulli
+			update-rc.d tautulli defaults
+			systemctl daemon-reload
+			systemctl enable tautulli.service
+
+			# NginX
+			install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.locations.tautulli.conf.tmpl /etc/nginx/locations/Tautulli.conf
+			install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.proxy.tautulli.conf.tmpl /etc/nginx/proxy/Tautulli.conf
+			perl -pi -e "s/<MainUser>/$gsMainUserName/g" /etc/nginx/locations/Tautulli.conf
+
+			# START services
+			gfnManageServices start "plexmediaserver nginx tautulli"
+
+			# Force update users' table history
+			#sqlite3 -echo -cmd '.timeout 150000' $gsRepoDir/tautulli.db "UPDATE users SET do_notify='1', keep_history='1' WHERE 1;"
+
+			if [ -f $gsRepoDir/Tautulli.py ]; then
+				cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='Tautulli';" -v
+				# Disable the upgrade job
+				cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='Tautulli';" -v
+			fi
+		fi
+	else
+		echo "Tautulli version $gsRepoVersion is already installed"
+	fi
+}
+
+#### CRON UPGRADE
+if [ "$sLocSwitch" == "CRON" ] && [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
+	# Check for a new version / Install it
+	fnInstallDebPackage
+	if gfnCheckCommand 0 plexmediaserver; then
+		fnInstallZipTautulli
+	fi
+fi
+
+#### INSTALL
+if [ "$gbToInstall_PlexMedia" == "YES" ]; then
+	#### Install package
+	gfnPackageBundleInstall 'alsa-oss oss-compat libasound2-plugins'
+
+	#### Install DEB package
+	fnInstallDebPackage
+
+	#### NginX
+	install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.locations.plexmediaserver.conf.tmpl /etc/nginx/locations/PlexMediaServer.conf
+	install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.upstream.plexmediaserver.conf.tmpl /etc/nginx/upstream/PlexMediaServer.conf
+	install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.proxy.plexmediaserver.conf.tmpl /etc/nginx/proxy/PlexMediaServer.conf
+
+	if gfnCheckCommand 0 plexmediaserver; then
+		fnInstallZipTautulli
+	fi
+fi
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

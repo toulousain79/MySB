@@ -1,0 +1,49 @@
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### VARs
+get_base_path="$1"
+get_directory="$2"
+get_custom1="$3"
+get_name="$4"
+get_loaded_file="$5"
+UserName="<username>"
+Timestamp="`/bin/date +%Y%m%d%H%M%S`"
+
+#### Stop if needed
+if [ -z "`getent passwd $UserName`" ] || [ -z "$get_base_path" ] || [ -z "$get_directory" ] || [ -z "$get_name" ]; then
+	exit 0
+fi
+
+#### Execute PHP command (Mail notification + NextCloud CRON)
+curl --data "username=$UserName&get_base_path=$get_base_path&get_directory=$get_directory&get_custom1=$get_custom1&get_name=$get_name&get_loaded_file=$get_loaded_file" http://localhost:8888/rTorrent
+
+#### Execute user scripts
+UserScripts="`ls -A1 /home/$UserName/scripts/ | grep '.sh$'`"
+if [ ! -z "$UserScripts" ]; then
+	for Script in "$UserScripts"; do
+		/usr/bin/screen -dmS $UserName-$Timestamp /bin/bash /home/$UserName/scripts/$Script "$get_base_path" "$get_directory" "$get_custom1" "$get_name" "$get_loaded_file";
+	done
+fi
+
+##################### LAST LINE ######################################

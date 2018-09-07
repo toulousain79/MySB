@@ -1,0 +1,92 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### Switch (INSTALL/UPGRADE/INIT)
+if [ ! -z "$1" ]; then
+	gsSwitch="$1"
+fi
+
+if [ "$gbToInstall_PeerGuardian" == "YES" ]; then
+	#### Cleaning security rules
+	gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'clean'
+	if gfnCheckCommand 0 dnscrypt-proxy; then
+		gfnManageServices stop "dnscrypt-proxy"
+	fi
+
+	#### Install Packages
+	if ! gfnCheckCommand 0 pglcmd; then
+		gfnPackageBundleInstall 'pgld pglcmd pglgui'
+	fi
+
+	#### Create config files
+	cp -vf $MySB_InstallDir/templates/etc.pgl.pglcmd.conf.tmpl /etc/pgl/pglcmd.conf
+
+	# Create '/etc/pgl/pglcmd.conf'
+	gfnPeerGuardianPglcmdConf 0
+
+	# Create '/etc/pgl/allow.p2p'
+	gfnPeerGuardianAllowP2P 0
+
+	# Restart PeerGuardian with the params
+	pglcmd restart
+
+	# Create '/etc/pgl/blocklists.list'
+	if [ "$gsSwitch" != "UPGRADE" ]; then
+		gfnPeerGuardianBlocklistsList 0 "UpdateLists"
+	fi
+
+	# Create '/etc/pgl/blocklists.list'
+	gfnPeerGuardianBlocklistsList 0 "CreateFile"
+
+	#### Disable init, service will be started by MySB_SecurityRules
+	update-rc.d pgl remove -f
+
+	# Remove Ipv6
+	rm -fv /etc/pgl/ipv6.*
+
+	#### START services
+	gfnManageServices start "pglcmd"
+
+	#### Clean current log file
+	gfnLogRotate 'pglcmd'
+	gfnLogRotate 'pgld'
+
+	#### Check if service is OK and running
+	if gfnCheckCommand 0 pgld; then
+		cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='1' WHERE serv_name='PeerGuardian';" -v
+		gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create'
+	else
+		cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='PeerGuardian';" -v
+	fi
+
+	#### Check internet
+	ping -c5 github.com
+fi
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

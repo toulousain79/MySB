@@ -1,0 +1,155 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+echo
+echo -e "${CRED}All packages installed by MySB will be deleted within config files !$CEND"
+echo -e "${CRED}All files created after MySB install, will be erase too (users, ports,...) !$CEND"
+gfnQuestionGetString NO "Are you absolutely sure you want to continue? Type 'yes' to confirm it." CONTINUE $Global_NO
+if [ "$CONTINUE" == "$Global_NO" ]; then
+	echo -e "$Global_SeeYouLater"
+	echo
+	echo
+	gfnEndingScript 0
+fi
+
+echo -e -n "${CBLUE}Creating the list of packages to be deleted$CEND..."
+PackagesToRemove="`grep -rni --exclude="MySB_CleanAll.bsh" 'gfnPackagesManage install' $MySB_InstallDir | cut -d '"' -f 2`"
+gfnStatusSTD
+
+echo -e -n "${CBLUE}Creating the list of packages that must be kept$CEND..."
+PackagesToKeep="`grep -rni --exclude="MySB_CleanAll.bsh" 'TOOLS=' $MySB_InstallDir/install/MySB_Install.bsh | cut -d '"' -f 2`"
+gfnStatusSTD
+
+echo -e -n "${CBLUE}Creating the list of services that need to be stopped$CEND..."
+ServicesToStop="`grep -rni --exclude="MySB_CleanAll.bsh" 'gfnManageServices start' $MySB_InstallDir | cut -d '"' -f 2`"
+gfnStatusSTD
+
+#### Clean security rules
+gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'clean'
+
+#### STOP services
+ToStop=""
+for Service in $ServicesToStop; do
+	if [ "$Service" != '$ServicesToManage' ] && [ "$Service" != 'ssh' ]; then
+		if [ "`echo $ToStop | grep "$Service"`" == "" ]; then
+			ToStop="$ToStop $Service"
+		fi
+	fi
+done
+
+gfnManageServices stop "$ToStop"
+gfnListCountUsers 'normal'
+for seedUser in $gsUsersList; do
+	service rtorrent-$seedUser stop
+done
+
+#### Delete CRON
+gfnListCountUsers 'all'
+crontab -l > /tmp/crontab.tmp
+for seedUser in $gsUsersList; do
+	sed -i '/'$seedUser'/d' /tmp/crontab.tmp
+done
+sed -i '/MySB/d' /tmp/crontab.tmp
+sed -i '/BlocklistsRTorrent.bsh/d' /tmp/crontab.tmp
+sed -i '/dnscrypt-proxy/d' /tmp/crontab.tmp
+sed -i '/nfs-kernel-server/d' /tmp/crontab.tmp
+sed -i '/UpdateGeoIP.bsh/d' /tmp/crontab.tmp
+sed -i '/ntpdate/d' /tmp/crontab.tmp
+sed -i '/LogServer.bsh/d' /tmp/crontab.tmp
+sed -i '/DynamicAddressResolver.bsh/d' /tmp/crontab.tmp
+sed -i '/ldconfig/d' /tmp/crontab.tmp
+sed -i '/drop_caches/d' /tmp/crontab.tmp
+sed -i '/webmin\/package-updates/d' /tmp/crontab.tmp
+crontab /tmp/crontab.tmp
+rm -f /tmp/crontab.tmp
+
+#### Force nameserver
+sed -i '/nameserver/d' /etc/resolv.conf
+(
+cat <<'EOF'
+nameserver 208.67.220.220
+nameserver 8.8.8.8
+nameserver 4.2.2.1
+nameserver 208.67.222.222
+nameserver 8.8.4.4
+nameserver 4.2.2.2
+nameserver 4.2.2.3
+nameserver 4.2.2.4
+nameserver 4.2.2.5
+nameserver 4.2.2.6
+EOF
+) >> /etc/resolv.conf
+
+#### Remove system account for all users
+for seedUser in $gsUsersList; do
+	userdel --remove --force $seedUser &> /dev/null
+	if [ -d /home/$seedUser ]; then rm -rf /home/$seedUser; fi
+	if [ -d /var/run/screen/S-$seedUser ]; then rm -rf /var/run/screen/S-$seedUser; fi
+done
+
+#### Prepare list of packages
+ToKeep=""
+# To keep
+for Package in $PackagesToKeep; do
+	ToKeep="$ToKeep $Package"
+done
+
+# To remove
+ToRemove=""
+for Package in $PackagesToRemove; do
+	if [ "`dpkg -l | grep $Package`" != "" ]; then
+		ToRemove="$ToRemove $Package"
+	fi
+done
+
+# Exclude packages to keep from packages to remove
+for ToKeep in $ToKeep; do
+	PackagesToRemove="`echo $PackagesToRemove | sed 's/$ToKeep//g;'`"
+done
+
+gfnPackagesManage purge "$ToRemove"
+
+#### Delete files and directories
+rm -f /etc/init.d/rtorrent-*
+rm -f /etc/apt/sources.list.d/*
+if [ -f /etc/init.d/dnscrypt-proxy ]; then rm -f /etc/init.d/dnscrypt-proxy; fi
+if [ -f /var/log/dnscrypt-proxy.log ]; then rm -f /var/log/dnscrypt-proxy.log; fi
+if [ -f /var/log/vsftpd.log ]; then rm -f /var/log/vsftpd.log; fi
+if [ -d /run/dnscrypt-proxy ]; then rm -rf /run/dnscrypt-proxy; fi
+if [ -d /etc/stunnel ]; then rm -rf /etc/stunnel; fi
+if [ -d /usr/share/webmin ]; then rm -rf /usr/share/webmin; fi
+if [ -d /var/lib/pgl ]; then rm -rf /var/lib/pgl; fi
+if [ -d /var/log/pgl ]; then rm -rf /var/log/pgl; fi
+if [ -d /var/log/nginx ]; then rm -rf /var/log/nginx; fi
+if [ -d /var/log/openvpn ]; then rm -rf /var/log/openvpn; fi
+if [ -d /var/log/samba ]; then rm -rf /var/log/samba; fi
+if [ -d $MySB_InstallDir ]; then rm -rf $MySB_InstallDir; fi
+systemctl daemon-reload
+
+# -----------------------------------------
+if [ -f $(dirname $0)/../inc/includes_after ]; then source $(dirname $0)/../inc/includes_after; fi
+# -----------------------------------------
+##################### LAST LINE ######################################

@@ -1,0 +1,342 @@
+#!/bin/bash
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+### BEGIN INIT INFO
+# Provides:          rtorrent-<username>
+# Required-Start:    $local_fs $network $syslog $named $mysql
+# Required-Stop:     $local_fs $network $syslog $named
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start/stop rtorrent-<username> daemon
+### END INIT INFO
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+#### Includes
+source /etc/MySB/config
+source $MySB_InstallDir/inc/vars
+source /lib/lsb/init-functions
+
+## Username to run rtorrent under
+Username="<username>"
+if [ -z "`getent passwd $Username`" ]; then
+	echo "User $Username does not exist !"
+	exit 0
+fi
+
+## User home dir
+HomeDir="/home/$Username"
+
+## Absolute path to the rtorrent binary.
+rTorrentVersion="`cmdMySQL 'MySB_db' "SELECT rtorrent_version FROM users WHERE users_ident='$Username';"`"
+case "$rTorrentVersion" in
+	"v0.9.2")	rTorrentBin="/usr/bin/rtorrent";;
+	"v0.9.6")	rTorrentBin="/usr/local/bin/rtorrent";;
+	*)			rTorrentBin="/usr/bin/rtorrent";;
+esac
+
+## Absolute path to the screen binary.
+ScreenBin="/usr/bin/screen"
+
+## the full path to the filename where you store your rtorrent configuration
+ConfigFile="$HomeDir/.rtorrent.rc"
+
+## rTorrent session directory
+SessionDir="`cat $ConfigFile | grep "^[[:space:]]*session.path.set[[:space:]]*=" | sed "s/^[[:space:]]*session.path.set[[:space:]]*=[[:space:]]*//"`"
+
+## Command Infos
+CommandName="rtorrent-$Username"
+CommandDescription="rTorrent for $Username"
+
+## Absolute path to rtorrent's PID file.
+PidFile="/var/run/rtorrent-$Username.pid"
+
+## LOG
+LogFile="$HomeDir/logs/rTorrentInit.log"
+if ! [ -e $LogFile ]; then
+	touch $LogFile
+fi
+
+## Sync DB
+if [ ! -f $HomeDir/db/$Username.sq3 ]; then
+	cp $gsSync_DB $HomeDir/db/$Username.sq3
+	chmod -R 0770 $HomeDir/db
+	chown -R $FnUser:www-data $HomeDir/db
+fi
+
+## Create PID file for rTorrent
+CreatePidFile() {
+	sleep 2
+	if [ -e $SessionDir/rtorrent.lock ]; then
+		cat $SessionDir/rtorrent.lock | awk -F: '{print($2)}' | sed "s/[^0-9]//g" > $SessionDir/rtorrent.pid
+		echo "Create rTorrent PID file: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+	fi
+}
+
+## Delete rtorrent.lock
+DeleteLockFile() {
+    if [ -e $SessionDir/rtorrent.lock ]; then
+        rm -vf $SessionDir/rtorrent.lock >> $LogFile
+		echo "Delete rTorrent LOCK file: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+    fi
+    if [ -e $SessionDir/rtorrent.pid ]; then
+        rm -vf $SessionDir/rtorrent.pid >> $LogFile
+		echo "Delete rTorrent PID file: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+    fi
+}
+
+## Delete user PID file
+DeletePidFile() {
+    if [ -e $PidFile ]; then
+        rm -vf $PidFile >> $LogFile
+		echo "Delete screen PID file: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+    fi
+}
+
+## mount share dir for seedbox users
+MountShareDir() {
+	MOUNT="`mount -l 2> /dev/null | grep "$HomeDir/rtorrent/share"`"
+
+	case "$1" in
+		"mount")
+			if [ -z "$MOUNT" ]; then
+				umount $HomeDir/rtorrent/share > /dev/null 2>&1
+				mount --bind /home/MySB_share $HomeDir/rtorrent/share 2>> $LogFile
+			fi
+		;;
+		"umount")
+			if [ ! -z "$MOUNT" ]; then
+				umount $HomeDir/rtorrent/share 2>> $LogFile
+			fi
+		;;
+	esac
+}
+
+## mount torrents dir for seedbox users
+MountTorrentsDir() {
+	MOUNT="`mount -l 2> /dev/null | grep "$HomeDir/rtorrent/torrents"`"
+
+	case "$1" in
+		"mount")
+			if [ -z "$MOUNT" ] && [ -d $gsRutorrentDir/share/users/$Username/torrents ]; then
+				umount $HomeDir/rtorrent/torrents > /dev/null 2>&1
+				mount --bind $gsRutorrentDir/share/users/$Username/torrents $HomeDir/rtorrent/torrents 2>> $LogFile
+			fi
+		;;
+		"umount")
+			if [ ! -z "$MOUNT" ]; then
+				umount $HomeDir/rtorrent/torrents 2>> $LogFile
+			fi
+		;;
+	esac
+}
+
+#
+# Function that starts the daemon/service
+#
+DoStart() {
+	MountShareDir 'mount'
+	MountTorrentsDir 'mount'
+	source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
+	gfnCreateRtorrentConfigFile "$Username"
+
+	# Delete ghost screen pid file
+	if [ -e $PidFile ]; then
+		pidofproc -p $PidFile $ScreenBin &> /dev/null || rm -f $PidFile
+	fi
+
+	# Delete ghost rtorrent lock file
+	if [ -e $SessionDir/rtorrent.pid ]; then
+		pidofproc -p $SessionDir/rtorrent.pid $ScreenBin &> /dev/null || rm -f $SessionDir/rtorrent.pid $SessionDir/rtorrent.lock 2>> $LogFile
+	fi
+
+	# Return
+	#   0 if daemon has been started
+	#   1 if daemon was already running
+	#   2 if daemon could not be started
+	start-stop-daemon --start --quiet --background --make-pidfile --test \
+		--pidfile $PidFile\
+		--chuid $Username\
+		--exec $ScreenBin\
+		-- -DmUS $CommandName $rTorrentBin\
+		 2>> $LogFile || return 1
+
+	start-stop-daemon --start --quiet --background --make-pidfile \
+		--pidfile $PidFile\
+		--chuid $Username\
+		--exec $ScreenBin\
+		-- -DmUS $CommandName $rTorrentBin\
+		 2>> $LogFile || return 2
+}
+
+#
+# Function that stops the daemon/service
+#
+DoStop() {
+	MountShareDir 'umount'
+	MountTorrentsDir 'umount'
+
+	# Return
+	#   0 if daemon has been stopped
+	#   1 if daemon was already stopped
+	#   2 if daemon could not be stopped
+	#   other if a failure occurred
+	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PidFile --exec "$ScreenBin" 2>> $LogFile
+	RETVAL="$?"
+
+	sleep 1
+
+	case "$RETVAL" in
+		0|1)
+			DeleteLockFile
+			DeletePidFile
+		;;
+		2)
+			GhostProcess="`ps ax | grep "rtorrent-$Username" | grep -v 'grep' | awk '{ print $1 }'`"
+			if [ ! -z "$GhostProcess" ]; then
+				kill -9 $GhostProcess
+			fi
+			DeleteLockFile
+			DeletePidFile
+		;;
+	esac
+
+	return "$RETVAL"
+}
+
+#
+# Function that sends a SIGHUP to the daemon/service
+#
+DoReload() {
+	echo "RELOAD: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+	# Delete ghost screen pid file
+	if [ -e $PidFile ]; then
+		pidofproc -p $PidFile $ScreenBin &> /dev/null || rm -f $PidFile
+	fi
+
+	# Delete ghost rtorrent lock file
+	if [ -e $SessionDir/rtorrent.pid ]; then
+		pidofproc -p $SessionDir/rtorrent.pid $ScreenBin &> /dev/null || rm -f $SessionDir/rtorrent.pid $SessionDir/rtorrent.lock 2>> $LogFile
+	fi
+
+	start-stop-daemon --stop --signal HUP --quiet --pidfile $PidFile --exec "$ScreenBin" 2>> $LogFile
+	return $?
+}
+
+#
+# Function stop case
+#
+RestartStopCase() {
+	DoStart
+	case "$?" in
+		0)
+			echo "RESTART: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+			CreatePidFile
+			cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='$Username';"
+			log_end_msg 0
+		;;
+		1) # Old process is still running
+			echo "Could not be restarted, old process is still running: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+			CreatePidFile
+			log_end_msg 1
+		;;
+		*) # Failed to start
+			echo "Could not be restarted: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+			DeleteLockFile
+			DeletePidFile
+			log_end_msg 1
+		;;
+	esac
+}
+
+case "$1" in
+	start)
+		log_daemon_msg "Starting $CommandDescription" "$CommandName"
+		DoStart
+		case "$?" in
+			0)
+				echo "START: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+				CreatePidFile
+				cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='$Username';"
+				log_end_msg 0
+			;;
+			1)
+				echo "Already running: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+				CreatePidFile
+				log_end_msg 0
+			;;
+			2)
+				echo "Could not be started: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+				DeleteLockFile
+				DeletePidFile
+				log_end_msg 1
+			;;
+		esac
+	;;
+
+	stop)
+		log_daemon_msg "Stopping $CommandDescription" "$CommandName"
+		DoStop
+		case "$?" in
+			0)
+				echo "STOP: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+				log_end_msg 0
+			;;
+			1)
+				echo "Already stopped: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+				log_end_msg 0
+			;;
+			2)
+				echo "Could not be stopped, the process was killed: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $LogFile
+				log_end_msg 1
+			;;
+		esac
+	;;
+
+	restart)
+		log_daemon_msg "Restarting $CommandDescription" "$CommandName"
+		DoStop
+		case "$?" in
+			0)	RestartStopCase;;
+			1)	RestartStopCase;;
+		esac
+	;;
+
+	reload)
+		log_daemon_msg "Reloading $CommandDescription configuration" "$CommandName"
+		DoReload
+		log_end_msg $?
+	;;
+
+	status)
+		status_of_proc -p $PidFile "$ScreenBin" "$CommandName" && exit 0 || exit $?
+	;;
+
+	*)
+		echo "Usage: service rtorrent-$Username {start|stop|restart|reload|status}"
+		exit 3
+	;;
+esac
+
+exit 0

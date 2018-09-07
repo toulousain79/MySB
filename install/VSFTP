@@ -1,0 +1,76 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+#### Install packages
+gfnPackageBundleInstall 'vsftpd'
+
+#### STOP services
+gfnManageServices stop "vsftpd"
+
+####
+cmdProxy='command'
+command type -f 'sudo' &>'/dev/null' && cmdProxy='sudo'
+dataPath='/srv/ftp'
+ftpUser="ftp"
+ftpGroup="ftp"
+
+if [ -z "$(${cmdProxy} grep "^${ftpGroup}" '/etc/group')" ]; then
+	${cmdProxy} addgroup --system "${ftpGroup}"
+fi
+if [ -z "$(${cmdProxy} grep "^${ftpUser}" '/etc/passwd')" ]; then
+	${cmdProxy} adduser --system --shell '/bin/false' --home "${dataPath}" --ingroup "${ftpGroup}" "${ftpUser}"
+fi
+
+#### config file
+install -v -o root -g root -m 0644 $MySB_InstallDir/templates/etc.vsftpd.conf.tmpl /etc/vsftpd.conf
+perl -pi -e "s/<InstallDir>/$gsInstallDirEscaped/g" /etc/vsftpd.conf
+perl -pi -e "s/<Port_FTP>/$gsPort_FTP/g" /etc/vsftpd.conf
+perl -pi -e "s/<Port_FTP_Data>/$gsPort_FTP_Data/g" /etc/vsftpd.conf
+perl -pi -e "s/<gsSrvIpAddress>/$gsSrvIpAddress/g" /etc/vsftpd.conf
+
+#### Let's Encrypt certificate
+if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
+	perl -pi -e "s/^rsa_cert_file/#rsa_cert_file/g" /etc/vsftpd.conf
+	perl -pi -e "s/^rsa_private_key_file/#rsa_private_key_file/g" /etc/vsftpd.conf
+	nNumLine=$(cat /etc/vsftpd.conf | grep 'rsa_cert_file' -n -m 1 | cut -d ':' -f 1)
+	(( nNumLine++ ))
+	sed -i ""$nNumLine"i\rsa_cert_file=$MySB_InstallDir/ssl/cert.pem" /etc/vsftpd.conf
+	nNumLine=$(cat /etc/vsftpd.conf | grep 'rsa_private_key_file' -n -m 1 | cut -d ':' -f 1)
+	(( nNumLine++ ))
+	sed -i ""$nNumLine"i\rsa_private_key_file=$MySB_InstallDir/ssl/privkey.pem" /etc/vsftpd.conf
+fi
+
+if [ ! -f /etc/vsftpd.chroot_list ]; then
+	touch /etc/vsftpd.chroot_list
+fi
+
+#### START services
+gfnManageServices start "vsftpd"
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

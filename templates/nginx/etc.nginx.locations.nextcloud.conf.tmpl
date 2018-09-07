@@ -1,0 +1,101 @@
+		# ownCloud compatibility
+		location ^~/oc {
+			satisfy any;
+			allow all;
+			auth_basic off;
+			access_log /var/log/nginx/nextcloud-access.log;
+			error_log /var/log/nginx/nextcloud-error.log;
+			rewrite ^/nc(.*) https://$http_host/nc$1 permanent;
+		}
+		location ^~/owncloud {
+			satisfy any;
+			allow all;
+			auth_basic off;
+			access_log /var/log/nginx/nextcloud-access.log;
+			error_log /var/log/nginx/nextcloud-error.log;
+			rewrite ^/nc(.*) https://$http_host/nc$1 permanent;
+		}
+
+		location ^~ /nc {
+			root <MySB_InstallDir>/web/apps;
+			access_log /var/log/nginx/nextcloud-access.log;
+			error_log /var/log/nginx/nextcloud-error.log;
+
+			satisfy any;
+			allow all;
+			auth_basic off;
+
+			location ~ robots.txt {
+				allow all;
+				log_not_found off;
+				access_log off;
+			}
+
+			location ~ /.well-known/carddav {
+				return 301 $scheme://$host/remote.php/dav;
+			}
+			location ~ /.well-known/caldav {
+				return 301 $scheme://$host/remote.php/dav;
+			}
+
+			location ~ /.well-known/acme-challenge { }
+
+			# Enable gzip but do not remove ETag headers
+			# gzip on;
+			# gzip_vary on;
+			gzip_comp_level 4;
+			gzip_min_length 256;
+			# gzip_proxied expired no-cache no-store private no_last_modified no_etag auth;
+
+			# Uncomment if your server is build with the ngx_pagespeed module
+			# This module is currently not supported.
+			pagespeed off;
+
+			location /nc {
+				rewrite ^ /nc/index.php$uri;
+			}
+
+			location ~ ^/nc/(?:build|tests|config|lib|3rdparty|templates|data)/ {
+				deny all;
+			}
+			location ~ ^/nc/(?:\.|autotest|occ|issue|indie|db_|console) {
+				deny all;
+			}
+
+			location ~ ^/nc/(?:index|remote|public|cron|core/ajax/update|status|ocs/v[12]|updater/.+|ocs-provider/.+)\.php(?:$|/) {
+				include /etc/nginx/conf.d/php-ssl;
+				fastcgi_split_path_info ^(.+\.php)(/.*)$;
+				#Avoid sending the security headers twice
+				fastcgi_param front_controller_active false;
+				fastcgi_intercept_errors on;
+				fastcgi_request_buffering off;
+			}
+
+			location ~ ^/nc/(?:updater|ocs-provider)(?:$|/) {
+				try_files $uri $uri/ =404;
+				index index.php;
+			}
+
+			# Adding the cache control header for js and css files
+			# Make sure it is BELOW the PHP block
+			 location ~ \.(?:css|js|woff|svg|gif)$ {
+				try_files $uri /nc/index.php$uri$is_args$args;
+				add_header Cache-Control "public, max-age=15778463";
+				# Add headers to serve security related headers (It is intended to have those duplicated to the ones above)
+				# Before enabling Strict-Transport-Security headers please read into this topic first.
+				#add_header Strict-Transport-Security "max-age=15552000; includeSubDomains";
+				add_header X-Content-Type-Options nosniff;
+				add_header X-XSS-Protection "1; mode=block";
+				add_header X-Robots-Tag none;
+				add_header X-Download-Options noopen;
+				add_header X-Permitted-Cross-Domain-Policies none;
+				# Optional: Don't log access to assets
+				access_log off;
+			}
+
+			location ~* \.(?:png|html|ttf|ico|jpg|jpeg)$ {
+				try_files $uri /nc/index.php$uri$is_args$args;
+				# Optional: Don't log access to other assets
+				access_log off;
+			}
+		}

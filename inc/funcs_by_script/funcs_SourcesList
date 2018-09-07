@@ -1,0 +1,204 @@
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+######################################################################
+funcs_SourcesList=1
+##################### FIRST LINE #####################################
+
+#### VARs
+binCURL="curl -skLS --retry 3"
+
+#### Delete Bad Sources
+gfnDeleteBadSources() {
+	local sSourcesFile
+
+	if [ -z "$1" ]; then
+		sSourcesFile="/etc/apt/sources.list"
+	else
+		sSourcesFile="$1"
+	fi
+
+	# Delete bad sources
+	case "$gsDebianRelease" in
+		'jessie')
+			sed -i '/debian.bononia.it/d' $sSourcesFile
+			sed -i '/linorg.usp.br/d' $sSourcesFile
+			sed -i '/debs.pelotas.ifsul.edu.br/d' $sSourcesFile
+			sed -i '/debian.mirror.ac.za/d' $sSourcesFile
+			sed -i '/mirror.atomki.mta.hu/d' $sSourcesFile
+			sed -i '/debian.telecoms.bg/d' $sSourcesFile
+			sed -i '/mirrors.evowise.com/d' $sSourcesFile
+			sed -i '/mirrors.tecnoera.com/d' $sSourcesFile
+			sed -i '/ftp.nerim.net/d' $sSourcesFile
+			sed -i '/ftp.heikorichter.name/d' $sSourcesFile
+		;;
+		'stretch')
+			sed -i '/ftp.upcnet.ro/d' $sSourcesFile
+			sed -i '/dist1.800hosting.com/d' $sSourcesFile
+			sed -i '/debian.inhost.pro/d' $sSourcesFile
+			sed -i '/debian.mirror.digitalpacific.com.au/d' $sSourcesFile
+			sed -i '/ftp.th.debian.org/d' $sSourcesFile
+			sed -i '/ftp.debian.chuvsu.ru/d' $sSourcesFile
+			sed -i '/mirror.atomki.mta.hu/d' $sSourcesFile
+			sed -i '/mirror.debian.ikoula.com/d' $sSourcesFile
+			sed -i '/mirror.neolabs.kz/d' $sSourcesFile
+			sed -i '/debian.bononia.it/d' $sSourcesFile
+			sed -i '/mirrors.evowise.com/d' $sSourcesFile
+		;;
+	esac
+}
+
+#### Apt-Key Manage
+gfnAptKeyManage() {
+	local sKey="$1"
+
+	# DotDeb Renew key
+	if [ ! -z "`apt-key list | grep "$sKey"`" ]; then
+		apt-key adv --keyserver keys.gnupg.net --recv-keys $sKey
+	fi
+}
+
+#### APT-mirror (local mirror for PeerGuardian, Webmin, Plexmedia Server)
+gfnCreateLocalMirror() {
+	#### Delete unused directories
+	if [ -d /var/spool/apt-mirror ] && [ ! -d $MySB_InstallDir/files/apt_mirrors ]; then
+		mv /var/spool/apt-mirror $MySB_InstallDir/files/apt_mirrors
+	fi
+	#### mirror.list
+	if [ -f /etc/apt/mirror.list ]; then rm -f /etc/apt/mirror.list; fi
+	cp -vf $MySB_InstallDir/templates/etc.apt.mirror.list.tmpl $MySB_InstallDir/files/apt_mirrors/mirror.list
+	perl -pi -e "s/<MySB_InstallDir>/$gsInstallDirEscaped/g" $MySB_InstallDir/files/apt_mirrors/mirror.list
+	perl -pi -e "s/<Arch>/$Arch/g" $MySB_InstallDir/files/apt_mirrors/mirror.list
+	#### postmirror.sh & clean.sh
+	if [ ! -f $MySB_InstallDir/files/apt_mirrors/var/clean.sh ]; then
+		touch $MySB_InstallDir/files/apt_mirrors/var/clean.sh
+	fi
+	echo '#!/bin/sh' > $MySB_InstallDir/files/apt_mirrors/var/postmirror.sh
+	echo "$MySB_InstallDir/files/apt_mirrors/var/clean.sh" >> $MySB_InstallDir/files/apt_mirrors/var/postmirror.sh
+	chmod 0700 $MySB_InstallDir/files/apt_mirrors/var/*.sh
+	chown apt-mirror:apt-mirror $MySB_InstallDir/files/apt_mirrors/var/*.sh
+
+	#### Git LFS
+	# GPG Key
+	if [ ! -f /etc/apt/sources.list.d/webmin.list ]; then
+		if [ ! -f $MySB_InstallDir/files/repos_keys/git-lfs.key ]; then
+			$binCURL -o "$MySB_InstallDir/files/repos_keys/git-lfs.key" "https://packagecloud.io/github/git-lfs/gpgkey"
+		fi
+		if [ -f $MySB_InstallDir/files/repos_keys/git-lfs.key ]; then
+			apt-key add $MySB_InstallDir/files/repos_keys/git-lfs.key
+		fi
+	fi
+	# Local mirrors
+	echo "# Git LFS" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+	echo "deb https://packagecloud.io/github/git-lfs/debian/ ${gsDebianRelease} main" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+	echo "clean https://packagecloud.io/github/git-lfs/debian/" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+	# git-lfs.list (local)
+	echo "# Git LFS" > /etc/apt/sources.list.d/git-lfs.list
+	echo "deb file://$MySB_InstallDir/files/apt_mirrors/mirrors/packagecloud.io/github/git-lfs/debian/ ${gsDebianRelease} main" >> /etc/apt/sources.list.d/git-lfs.list
+
+	#### Peerguardian
+	if [ "$gbToInstall_PeerGuardian" == "YES" ] || [ "$gbIsInstalled_PeerGuardian" == "YES" ]; then
+		# GPG Key
+		if [ ! -f /etc/apt/sources.list.d/peerguardian.list ]; then
+			until gpg --keyserver keyserver.ubuntu.com --recv-keys C0145138; do
+				sleep 1
+			done
+			until gpg --export --armor C0145138 | apt-key add -; do
+				sleep 1
+			done
+		fi
+		# Local mirrors
+		echo "# PeerGuardian" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "deb http://moblock-deb.sourceforge.net/debian ${gsDebianRelease} main" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "clean http://moblock-deb.sourceforge.net/debian" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		# peerguardian.list (local)
+		echo "# PeerGuardian" > /etc/apt/sources.list.d/peerguardian.list
+		echo "deb file://$MySB_InstallDir/files/apt_mirrors/mirrors/moblock-deb.sourceforge.net/debian ${gsDebianRelease} main" >> /etc/apt/sources.list.d/peerguardian.list
+	fi
+
+	#### Webmin
+	if [ "$gbToInstall_Webmin" == "YES" ] || [ "$gbIsInstalled_Webmin" == "YES" ]; then
+		# GPG Key
+		if [ ! -f /etc/apt/sources.list.d/webmin.list ]; then
+			if [ ! -f $MySB_InstallDir/files/repos_keys/webmin.key ]; then
+				$binCURL -o "$MySB_InstallDir/files/repos_keys/webmin.key" "http://www.webmin.com/jcameron-key.asc"
+			fi
+			if [ -f $MySB_InstallDir/files/repos_keys/webmin.key ]; then
+				apt-key add $MySB_InstallDir/files/repos_keys/webmin.key
+			fi
+		fi
+		# Local mirrors
+		echo "# Webmin" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "deb http://download.webmin.com/download/repository sarge contrib" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		echo "clean http://download.webmin.com/download/repository" >> $MySB_InstallDir/files/apt_mirrors/mirror.list
+		# webmin.list (local)
+		echo "# Webmin" > /etc/apt/sources.list.d/webmin.list
+		echo "deb file://$MySB_InstallDir/files/apt_mirrors/mirrors/download.webmin.com/download/repository sarge contrib" >> /etc/apt/sources.list.d/webmin.list
+	fi
+
+	#### Download mirrors with 'apt-mirror'
+	chmod -R 0700 $MySB_InstallDir/files/apt_mirrors
+	chown -R apt-mirror:apt-mirror $MySB_InstallDir/files/apt_mirrors
+	apt-mirror $MySB_InstallDir/files/apt_mirrors/mirror.list
+}
+
+#### Basics Sources List
+gfnCreateBasicSourcesList() {
+	local sReposInFile sSourcesList sRepo
+
+	sReposInFile="`cat /etc/apt/sources.list | grep '^deb ' | grep -v 'security' | grep -v 'updates' | awk '{ print $2 }'`"
+	sReposInFile="$sReposInFile http://ftp.fr.debian.org/debian/ http://ftp2.fr.debian.org/debian/"
+	sSourcesList="/etc/apt/sources.list"
+
+	echo "# Basic Sources List" > $sSourcesList
+	for sRepo in $sReposInFile; do
+		if [ -z "`cat $sSourcesList | grep $sRepo`" ]; then
+			echo "" >> $sSourcesList
+			echo "# $sRepo" >> $sSourcesList
+			echo "deb $sRepo $gsDebianRelease main contrib non-free" >> $sSourcesList
+			echo "deb $sRepo $gsDebianRelease-updates main contrib non-free" >> $sSourcesList
+		fi
+	done
+
+	echo "" >> $sSourcesList
+	echo "# Security" >> $sSourcesList
+	echo "deb http://security.debian.org $gsDebianRelease/updates main contrib non-free" >> $sSourcesList
+
+	#### DotDeb (NginX, PHP, MySQL)
+	CreateDotDebRepo
+}
+
+#### DotDeb Mirrors
+CreateDotDebRepo() {
+	# Remove current lists
+	rm -f /etc/apt/sources.list.d/dotdeb*.list
+	# DotDeb
+	echo "# DotDeb" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "deb http://packages.dotdeb.org $gsDebianRelease all" | tee -a /etc/apt/sources.list.d/dotdeb.list
+	echo "deb http://dotdeb.thefox.com.fr $gsDebianRelease all" | tee -a /etc/apt/sources.list.d/dotdeb.list
+    echo "deb http://dotdeb.mirror.iphh.net $gsDebianRelease all" | tee -a /etc/apt/sources.list.d/dotdeb.list
+
+	# DotDeb GPG key
+	[ ! -f $MySB_InstallDir/files/repos_keys/dotdeb.key ] && $binCURL -o "$MySB_InstallDir/files/repos_keys/dotdeb.key" "http://www.dotdeb.org/dotdeb.gpg"
+	[ -f $MySB_InstallDir/files/repos_keys/dotdeb.key ] && apt-key add $MySB_InstallDir/files/repos_keys/dotdeb.key
+}
+
+##################### LAST LINE ######################################

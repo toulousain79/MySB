@@ -1,0 +1,306 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+# "BlocklistsRTorrent.bsh": 	DOUBLON / ADMIN
+# "GetTrackersCert.bsh": 		DOUBLON / ADMIN
+# "MySB_CreateUser": 			ADMIN / ARGS
+# "MySB_DeleteUser": 			ADMIN / ARGS
+# "MySB_ChangeUserPassword": 	DOUBLON / USER / ARGS
+# "MySB_SecurityRules": 		DOUBLON / USER
+# "Postfix": 					DOUBLON / ADMIN
+
+UserApplying="$1"
+LocSwitch="$2"
+
+DoApplyConfig() {
+	local sCommandsPriorities nMinPriority nMaxPriority nLastPriority sRequestValues
+
+	# 1 - Purger la base des entrées en double (command + user), uniquement l'entrée avec la priorité la plus haute sera conservée
+	User=$1
+
+	echo `/bin/date '+%H:%M:%S'` "- Creating order of execution for $UserApplying"
+	AllCommandsUser="`cmdMySQL 'MySB_db' "SELECT commands FROM commands WHERE user='$User';"`"
+	for CommandUser in $AllCommandsUser; do
+		case "$CommandUser" in
+			BlocklistsRTorrent.bsh|MySB_SecurityRules*|GetTrackersCert.bsh|MySB_ChangeUserPassword|Postfix|Options_MySB|Options_System|OpenVPN|Restart_rTorrent|ManageAddresses) # On peut supprimer les doublons
+				sCommandsPriorities="`cmdMySQL 'MySB_db' "SELECT min(priority), max(priority) FROM commands WHERE user='$User' AND commands='$CommandUser';" | sed 's/\t/|/g;'`"
+				nMinPriority="`echo $sCommandsPriorities | awk '{split($0,a,"|"); print a[1]}'`"
+				nMaxPriority="`echo $sCommandsPriorities | awk '{split($0,a,"|"); print a[2]}'`"
+				if [ $nMinPriority -ne $nMaxPriority ] && [ ! -z $nMinPriority ] && [ ! -z $nMaxPriority ]; then
+					while [ $nMinPriority -lt $nMaxPriority ]; do
+						# On supprime les premières commandes
+						echo -n "	--> " && echo "DELETE FROM commands WHERE user='$User' AND commands='$CommandUser' AND priority='$nMinPriority';"
+						cmdMySQL 'MySB_db' "DELETE FROM commands WHERE user='$User' AND commands='$CommandUser' AND priority='$nMinPriority';"
+						(( nMinPriority++ ))
+					done
+				fi
+			;;
+		esac
+	done
+
+	# 2 - En fonction de l'ensemble des commandes, on réorganise certaines.
+	# Par exemple, la commande 'MySB_SecurityRules' devra être exécutée une seule fois et en dernier
+	# On en garde qu'une seule tout utilisateur confondu et assigne une priorité maxi.
+	sCommandsPriorities="`cmdMySQL 'MySB_db' "SELECT min(priority), max(priority) FROM commands WHERE commands='MySB_SecurityRules' AND user='$User';" | sed 's/NULL/0/g;' | sed 's/\t/|/g;'`"
+	nMinPriority="`echo $sCommandsPriorities | awk '{split($0,a,"|"); print a[1]}'`"
+	nMaxPriority="`echo $sCommandsPriorities | awk '{split($0,a,"|"); print a[2]}'`"
+	if [ $nMinPriority -ne $nMaxPriority ] && [ ! -z $nMinPriority ] && [ ! -z $nMaxPriority ]; then
+		while [ $nMinPriority -lt $nMaxPriority ]; do
+			# On supprime les premières commandes
+			echo -n "	--> " && echo "DELETE FROM commands WHERE commands='MySB_SecurityRules' AND priority='$nMinPriority' AND user='$User';"
+			cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='MySB_SecurityRules' AND priority='$nMinPriority' AND user='$User';"
+			((  nMinPriority++ ))
+		done
+	fi
+
+	# Maintenant on prend la priorité globale maxi toute commandes confondues, puis on incrémente de 1 'MySB_SecurityRules'.
+	nLastPriority="`cmdMySQL 'MySB_db' "SELECT max(priority) FROM commands WHERE user='$User';"`"
+	(( nLastPriority++ ))
+	echo -n "	--> " && echo "UPDATE commands SET priority='$nLastPriority' WHERE commands='MySB_SecurityRules' AND user='$User';"
+	cmdMySQL 'MySB_db' "UPDATE commands SET priority='$nLastPriority' WHERE commands='MySB_SecurityRules' AND user='$User';"
+	# 3 - On peut maintenant exécuté les commandes une à une dans l'ordre ascendant des priorités.
+	AllCommands="`cmdMySQL 'MySB_db' "SELECT commands,priority FROM commands WHERE user='$User' ORDER BY priority ASC;" | sed 's/\t/|/g;'`"
+	for CommandLine in $AllCommands; do
+		Command="`echo $CommandLine | awk '{split($0,a,"|"); print a[1]}'`"
+		Priority="`echo $CommandLine | awk '{split($0,a,"|"); print a[2]}'`"
+
+		# Creating arguments listing
+		case "$Command" in
+			MySB_CreateUser|MySB_DeleteUser|MySB_ChangeUserPassword|OpenVPN|LogWatch|UserScript_StartSynchro|Options_System)
+				echo `/bin/date '+%H:%M:%S'` "- Getting arguments for $Command"
+				CommandArg="`cmdMySQL 'MySB_db' "SELECT args FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"`"
+			;;
+		esac
+
+		# Execute commands
+		echo `/bin/date '+%H:%M:%S'` "- Executing $Command for $UserApplying"
+		case "$Command" in
+			"MySB_CreateUser") # ($1 = user, $2 = sftp, $3 = sudo, $4 = email, $5 = account_type)
+				IFS='|' read -a array <<< "$CommandArg"
+				UserToCreate="${array[0]}"
+				UserSftp="${array[1]}"
+				UserSudo="${array[2]}"
+				UserMail="${array[3]}"
+				UserAccountType="${array[4]}"
+
+				gfnWaitingSTD MySB_CreateUser
+				screen -dmS MySB_CreateUser /bin/bash $MySB_InstallDir/bin/MySB_CreateUser "$UserToCreate" "$UserSftp" "$UserSudo" "$UserMail" "$UserAccountType" 'APPLYCONFIG';
+				gfnWaitingSTD MySB_CreateUser
+				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+			;;
+
+			"MySB_DeleteUser") # 1 args
+				UserToDelete="$CommandArg"
+
+				gfnWaitingSTD MySB_DeleteUser
+				screen -dmS MySB_DeleteUser /bin/bash $MySB_InstallDir/bin/MySB_DeleteUser "$UserToDelete" 'APPLYCONFIG';
+				gfnWaitingSTD MySB_DeleteUser
+				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+			;;
+
+			"MySB_ChangeUserPassword") # ($1 = username, $2 = userpass)
+				IFS='|' read -a array <<< "$CommandArg"
+				UserName="${array[0]}"
+				UserPass="${array[1]}"
+
+				gfnWaitingSTD MySB_ChangeUserPassword
+				screen -dmS MySB_ChangeUserPassword /bin/bash $MySB_InstallDir/bin/MySB_ChangeUserPassword "$UserName" "$UserPass" 'APPLYCONFIG';
+				gfnWaitingSTD MySB_ChangeUserPassword
+				gfnWaitingSTD MySB_SecurityRules
+				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--users' 'APPLYCONFIG';
+				gfnWaitingSTD MySB_SecurityRules
+				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+			;;
+
+			"BlocklistsRTorrent.bsh")
+				gfnWaitingSTD BlocklistsRTorrent
+				screen -dmS BlocklistsRTorrent /bin/bash $MySB_InstallDir/scripts/BlocklistsRTorrent.bsh 'APPLYCONFIG';
+				gfnWaitingSTD BlocklistsRTorrent
+				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+			;;
+
+			"Blocklists_PeerGuardian")
+				gfnWaitingSTD MySB_SecurityRules
+				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--blocklists' 'APPLYCONFIG';
+				gfnWaitingSTD MySB_SecurityRules
+				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+			;;
+
+			"ManageAddresses")
+				gfnWaitingSTD MySB_SecurityRules
+				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--users' 'APPLYCONFIG';
+				gfnWaitingSTD MySB_SecurityRules
+				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+			;;
+
+			"MySB_SecurityRules")
+				gfnWaitingSTD MySB_SecurityRules
+				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'create' 'APPLYCONFIG';
+				gfnWaitingSTD MySB_SecurityRules
+				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+			;;
+
+			"GetTrackersCert.bsh")
+				gfnWaitingSTD GetTrackersCert
+				screen -dmS GetTrackersCert /bin/bash $MySB_InstallDir/scripts/GetTrackersCert.bsh 'APPLYCONFIG';
+				gfnWaitingSTD GetTrackersCert
+
+				gfnWaitingSTD MySB_SecurityRules
+				screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--trackers' 'APPLYCONFIG';
+				gfnWaitingSTD MySB_SecurityRules
+				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+			;;
+
+			"Postfix")
+				gfnWaitingSTD Postfix
+				screen -dmS Postfix /bin/bash $MySB_InstallDir/install/Postfix 'APPLYCONFIG';
+				gfnWaitingSTD Postfix
+				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+			;;
+
+			"Options_MySB")
+				gfnWaitingSTD Options_MySB-$User
+				source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
+				gfnUserCrontab "$User"
+				gfnWaitingSTD Options_MySB-$User
+				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+			;;
+
+			"Restart_rTorrent")
+				gfnWaitingSTD rTorrent-$User
+				screen -dmS rTorrent-$User service rtorrent-$User restart &> /dev/null;
+				gfnWaitingSTD rTorrent-$User
+				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+			;;
+
+			"Options_System") # ($1 = OpenVPN:[0|1], $2 = LogWatch:[-1|0|1], $3 = DNScrypt:[-1|0|1], $4 = MySB_SecurityRules])
+				IFS='|' read -a array <<< "$CommandArg"
+				OpenVpnSwitch="${array[0]}"
+				LogwatchSwitch="${array[1]}"
+				DNScryptSwitch="${array[2]}"
+				SecurityRules="${array[3]}"
+
+				OpenVpnValue="`echo $OpenVpnSwitch | cut -d ":" -f 2`"
+				case "$OpenVpnValue" in
+					1)
+						gfnWaitingSTD OpenVPN
+						screen -dmS OpenVPN_Zip /bin/bash $MySB_InstallDir/install/OpenVPN refresh 'APPLYCONFIG';
+						gfnWaitingSTD OpenVPN
+					;;
+				esac
+
+				LogwatchValue="`echo $LogwatchSwitch | cut -d ":" -f 2`"
+				case "$LogwatchValue" in
+					0) if [ -f /etc/cron.daily/00logwatch ]; then rm /etc/cron.daily/00logwatch; fi;;
+					1) if [ ! -f /etc/cron.daily/00logwatch ]; then install -g root -o root -m 0755 $MySB_InstallDir/templates/logwatch/etc.cron.daily.00logwatch.tmpl /etc/cron.daily/00logwatch; fi;;
+				esac
+
+				DNScryptValue="`echo $DNScryptSwitch | cut -d ":" -f 2`"
+				case "$DNScryptValue" in
+					0|1)
+						case "$gbDnsCryptSwitch" in
+							"0")	DnsService='bind';;
+							"1")	DnsService='dnscrypt';;
+						esac
+						gfnWaitingSTD DNScrypt
+						screen -dmS DNScrypt gfnSwitchDNS "$DnsService";
+						gfnWaitingSTD DNScrypt
+					;;
+				esac
+
+				if [ ! -z "$SecurityRules" ]; then
+					gfnWaitingSTD MySB_SecurityRules
+					screen -dmS MySB_SecurityRules /bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'refresh' '--pglcmd' 'APPLYCONFIG';
+					gfnWaitingSTD MySB_SecurityRules
+				fi
+
+				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+			;;
+
+			"OpenVPN") # ($1 = username, $2 = userpass)
+				IFS='|' read -a array <<< "$CommandArg"
+				UserName="${array[0]}"
+				UserPass="${array[1]}"
+
+				gfnWaitingSTD OpenVPN_Zip
+				screen -dmS OpenVPN_Zip /bin/bash $MySB_InstallDir/install/OpenVPN zip "$UserName" "$UserPass" 'APPLYCONFIG';
+				gfnWaitingSTD OpenVPN_Zip
+				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+			;;
+
+			"UserScript_StartSynchro") # ($1 = script, $2 = mode)
+				IFS='|' read -a array <<< "$CommandArg"
+				UserScriptName="${array[0]}"
+				UserScriptMode="${array[1]}"
+
+				if [ -f /home/$User/scripts/$UserScriptName ]; then
+					case "$UserScriptMode" in
+						'DIRECT')	screen -dmS UserScript_StartSynchro su -s /bin/sh $User -c "/bin/bash /home/$User/scripts/$UserScriptName 'DIRECT' > /dev/null 2>&1";;
+						'CRON')		screen -dmS UserScript_StartSynchro su -s /bin/sh $User -c "/bin/bash /home/$User/scripts/$UserScriptName 'CRON' > /dev/null 2>&1";;
+					esac
+				fi
+				echo -n "	--> " && echo "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+				cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='$Command' AND user='$User' AND priority='$Priority';"
+			;;
+		esac
+	done
+}
+
+case "$LocSwitch" in
+	"DO_APPLY") # Execute by portal
+		screen -dmS ApplyConfig_$UserApplying /bin/bash $MySB_InstallDir/scripts/ApplyConfig.bsh "$UserApplying" 'SCREEN';
+		cmdMySQL 'MySB_db' "UPDATE commands SET reload='0' WHERE user='$UserApplying';"
+	;;
+	"SCREEN")
+		echo `/bin/date '+%H:%M:%S'` "- Waiting authorization"
+		while [ ! -z "`ps ax | grep 'ApplyConfig.bsh' | grep 'SCREEN'  | grep -v "$UserApplying" | grep -v 'grep'`" ]; do
+			sleep 1
+		done
+
+		if [ ! -z "$UserApplying" ]; then
+			echo `/bin/date '+%H:%M:%S'` "- Executing commands"
+			DoApplyConfig $UserApplying
+		fi
+	;;
+esac
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################

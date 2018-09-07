@@ -1,0 +1,174 @@
+#!/bin/bash
+# ----------------------------------
+source $(dirname $0)/../inc/includes_before
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#    _\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#     _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#      _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#       _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#        _\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#         _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#          _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
+
+log_daemon_msg "$DeleteGlobalBlocklist"
+if [ ! -d $MySB_InstallDir/files/blocklists ]; then
+	mkdir $MySB_InstallDir/files/blocklists
+else
+	rm -f $MySB_InstallDir/files/blocklists/* &> /dev/null
+fi
+gfnStatusLSB
+
+cmdMySQL 'MySB_db' "SELECT author, list_name, rtorrent_list FROM blocklists WHERE rtorrent_active = '1' AND rtorrent_list != '';" | sed 's/\t/|/g;' | while read ROW; do
+	Author="`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`"
+	Author="`echo $Author | sed 's/ /_/g;'`"
+	ListName="`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`"
+	ListNameToParse="$ListName"
+	ListName="`echo $ListName | sed 's/ /_/g;'`"
+	URL="`echo $ROW | awk '{split($0,a,"|"); print a[3]}'`"
+	FILE="$Author#$ListName"
+
+	if [ ! -z "$FILE" ] && [ ! -z "$URL" ]; then
+		log_daemon_msg "$DownloadSelectedList" "$Author - $ListName"
+		gfnCleanBlockList download "$FILE" "$URL" "$ListNameToParse" &> /dev/null
+
+		# complete global list
+		if [ -f $MySB_InstallDir/files/blocklists/$FILE.txt ]; then
+			cat $MySB_InstallDir/files/blocklists/$FILE.txt >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+		fi
+
+		# delete unused files
+		if [ -f $MySB_InstallDir/files/blocklists/$FILE.tmp ]; then
+			rm -f $MySB_InstallDir/files/blocklists/$FILE.tmp
+		fi
+		if [ -f $MySB_InstallDir/files/blocklists/$FILE.gz ]; then
+			rm -f $MySB_InstallDir/files/blocklists/$FILE.gz
+		fi
+		gfnStatusLSB
+	fi
+done
+
+# Default IP of TMG
+log_daemon_msg "$AddKnowTmgIP"
+echo "65.81.86.128/29" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "66.212.230.112/28" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "74.63.108.0/22" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "74.63.123.0/25" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "74.63.123.128/28" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "74.63.123.144/30" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "74.63.123.148/31" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "74.63.123.150/32" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "74.63.120.0/23" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "74.63.122.0/24" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "76.73.14.0/23" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "76.73.16.0/23" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "81.210.17.240/29" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "82.138.70.128/26" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "82.138.74.0/25" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "82.138.81.0/24" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "82.138.88.0/22" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "85.233.218.96/27" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "88.191.92.0/23" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "88.191.201.0/24" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "88.191.202.0/23" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "88.191.204.0/23" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "88.191.206.0/24" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "88.208.202.0/30" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "88.208.202.4/32" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "88.208.236.12/30" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "88.208.236.16/29" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "91.189.104.0/21" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "94.23.100.208/28" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "94.23.103.176/28" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "94.23.103.192/28" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "94.23.113.160/28" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "94.23.113.176/28" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "94.23.113.208/28" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "94.23.117.128/28" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "94.23.117.144/28" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "94.23.117.160/28" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "94.75.223.176/28" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "94.75.229.208/28" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "130.117.41.0/24" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "130.117.115.128/25" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "149.6.80.196/30" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "149.6.114.136/30" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "149.7.96.128/25" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "154.45.216.128/25" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "193.105.197.0/24" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "193.107.240.0/22" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "194.119.136.116/30" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "195.101.90.136/32" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "195.102.95.128/26" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "195.191.244.0/23" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "199.125.208.0/24" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "207.86.66.192/27" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "210.7.70.20/30" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "212.200.44.128/25" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "213.17.245.32/30" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+echo "218.103.89.88/29" >> $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+gfnStatusLSB
+
+# delete blank line
+log_daemon_msg "$DeleteLinesWithSpaces"
+gfnCleanBlockList del_spaces blocklist_rtorrent
+gfnStatusLSB
+
+# delete all RC
+log_daemon_msg "$DeleteRC"
+gfnCleanBlockList del_RC blocklist_rtorrent
+gfnStatusLSB
+
+# delete line not start with numeric
+log_daemon_msg "$DeleteLinesNotStartNumeric"
+gfnCleanBlockList not_numeric blocklist_rtorrent
+gfnStatusLSB
+
+# delete line without "/" (is not in CIDR format)
+log_daemon_msg "$DeleteLinesWithoutIpRange"
+gfnCleanBlockList not_iprange blocklist_rtorrent
+gfnStatusLSB
+
+# sort by alpha and delete double line
+log_daemon_msg "$DeleteDoubleLines"
+gfnCleanBlockList sort_uniq blocklist_rtorrent
+gfnStatusLSB
+
+if [ -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp ]; then
+	rm -vf $MySB_InstallDir/files/blocklists/blocklist_rtorrent.tmp
+fi
+
+gfnListCountUsers 'normal'
+for seedUser in $gsUsersList; do
+	if [ -d /home/$seedUser/ ]; then
+		log_daemon_msg "$CopyNewGlobalList $seedUser"
+		if [ -d /home/$seedUser/blocklist ]; then
+			rm -f /home/$seedUser/blocklist/*
+		else
+			mkdir /home/$seedUser/blocklist
+		fi
+		cp $MySB_InstallDir/files/blocklists/* /home/$seedUser/blocklist/
+		gfnManageUserHomeDir "$seedUser"
+		gfnStatusLSB
+	fi
+done
+
+# -----------------------------------------
+source $(dirname $0)/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################
