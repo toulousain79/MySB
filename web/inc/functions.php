@@ -566,15 +566,6 @@ function ManageUsersTrackers($Tracker, $IsActive) {
 	# 2/ Check 'given_hostname.domain.com'
 	$IPv4_Tab = array_merge($IPv4_Tab, GetDnsRecords($TrackerAddress));
 
-	# 3/ Check 'tracker.domain.com'
-	// if ( $TrackerAddress != "tracker.$TrackerDomain" ) {
-		// $Value = GetDnsRecords("tracker.$TrackerDomain");
-		// if ( count($Value) >= 1 ) {
-			// $IPv4_Tab = array_merge($IPv4_Tab, $Value);
-			// $TrackerAddress = "tracker.$TrackerDomain";
-		// }
-	// }
-
 	// IPv4 listing
 	$IPv4_Tab = array_unique($IPv4_Tab);
 
