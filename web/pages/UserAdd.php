@@ -29,6 +29,9 @@ global $MySB_DB, $CurrentUser;
 function Form($RealFreeSpace, $FreeSpace) {
 	global $MySB_DB;
 
+	// Is lock ?
+	$PortalIsItLocked = PortalIsItLocked();
+
 	echo '<form class="form_settings" method="post" action="">
 			<div align="center">
 				<input name="free_space" type="hidden" value="'.$RealFreeSpace.'"/>
@@ -59,9 +62,11 @@ function Form($RealFreeSpace, $FreeSpace) {
 						<td><input name="quota" type="number" style="width:100px; text-align:right;" /><p class="Comments">' . sprintf(MainUser_UserAdd_Comment_FreeSpace, $FreeSpace, $RealFreeSpace) . '</p></td>
 					</tr>
 				</table>
-				<div align="center"><p class="Comments">' . MainUser_UserAdd_Comment . '</p></div>
-				<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' .MainUser_UserAdd_AddUser. '"">
-			</div>
+				<div align="center"><p class="Comments">' . MainUser_UserAdd_Comment . '</p></div>';
+	if ($PortalIsItLocked === false) {
+		echo '<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' .MainUser_UserAdd_AddUser. '"">';
+	}
+	echo '</div>
 		</form>';
 }
 
@@ -118,6 +123,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$message = Global_CompleteAllFields;
 			}
 
+			PortalLockFile('MySB_CreateUser');
 			GenerateMessage('MySB_CreateUser', $type, $message, $args);
 			break;
 
@@ -181,6 +187,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					}
 				}
 
+				PortalLockFile('MySB_DeleteUser');
 				GenerateMessage('MySB_DeleteUser', $type, $message, $args);
 			}
 			break;
@@ -201,6 +208,9 @@ $RealFreeSpace = GetSizeName(($system_datas["quota_default"] - $system_datas["to
 Form($RealFreeSpace, $FreeSpace);
 
 if ( !empty($sUsersList) ) {
+
+	// Is lock ?
+	$PortalIsItLocked = PortalIsItLocked();
 ?>
 	<form class="form_settings" method="post" action="">
 		<div align="center" style="margin-top: 50px; margin-bottom: 20px;"><table style="border-spacing:1;">
@@ -339,7 +349,7 @@ if ( !empty($sUsersList) ) {
 	}
 ?>
 				<td>
-				<?php if ( $User["admin"] != '1' ) { ?>
+				<?php if ( ($User["admin"] != '1') && ($PortalIsItLocked === false) ) { ?>
 					<input class="submit" name="submit[<?php echo $User["users_ident"]; ?>]" type="submit" value="<?php echo Global_Delete; ?>" />
 				<?php } ?>
 				</td>
@@ -350,7 +360,7 @@ if ( !empty($sUsersList) ) {
 ?>
 			</table>
 
-		<?php if ( $IsMainUser ) { ?>
+		<?php if ( ($IsMainUser) && ($PortalIsItLocked === false) ) { ?>
 			<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">
 		<?php } ?>
 

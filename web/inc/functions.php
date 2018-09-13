@@ -711,7 +711,10 @@ function GenerateMessage($commands, $type, $message, $args) {
 					$MySB_DB->insert("commands", ["commands" => "$commands", "reload" => 1, "priority" => "$priority", "args" => "$args", "user" => "$CurrentUser"]);
 					$value = $MySB_DB->id();
 
-					echo '<script type="text/javascript">ApplyConfig("ToUpdate");</script>';
+					if ( $value >= 1 ) {
+						// Create a lock file if needed
+						echo '<script type="text/javascript">ApplyConfig("ToUpdate");</script>';
+					}
 
 					break;
 			}
@@ -741,6 +744,31 @@ function ReplacesAccentedCharacters($str, $encoding='utf-8') {
 	$str = preg_replace('#&[^;]+;#', '', $str);
 
 	return $str;
+}
+
+// Create lock file
+function PortalLockFile($command='') {
+	$LockFile = '/tmp/MySB_Portal.lock';
+
+	switch ($command) {
+		case 'MySB_CreateUser':
+		case 'MySB_DeleteUser':
+			touch($LockFile);
+			break;
+		default:
+			break;
+	}
+}
+
+// Is it locked ?
+function PortalIsItLocked() {
+	$is_lock = false;
+	$LockFile = '/tmp/MySB_Portal.lock';
+
+	if (is_file($LockFile)) {
+		$is_lock = true;
+	}
+	return $is_lock;
 }
 
 //#################### LAST LINE ######################################
