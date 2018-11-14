@@ -81,6 +81,25 @@ gfnGetRepoValues 'Seedbox-Manager'
 [[ -z $(grep 'Users $user, $pass, $host' $gsManagerDir/src/Seedbox/FileConfiguration.php) ]] && install -v -o www-data -g www-data -m 0640 $MySB_InstallDir/templates/manager/FileConfiguration.php.tmpl $gsManagerDir/src/Seedbox/FileConfiguration.php
 #### DownloadController.php
 [[ -z $(grep 'getPasswordUser' $gsManagerDir/src/Controller/DownloadController.php) ]] && install -v -o www-data -g root -m www-data -m 0640 $MySB_InstallDir/templates/manager/DownloadController.php.tmpl $gsManagerDir/src/Controller/DownloadController.php
+#### VSFTPd
+if [ -z $(grep 'ssl_enable=NO' /etc/vsftpd.conf) ]; then
+    install -v -o root -g root -m 0644 $MySB_InstallDir/templates/other/etc.vsftpd.conf.tmpl /etc/vsftpd.conf
+    perl -pi -e "s/<InstallDir>/$gsInstallDirEscaped/g" /etc/vsftpd.conf
+    perl -pi -e "s/<Port_FTP>/$gsPort_FTP/g" /etc/vsftpd.conf
+    perl -pi -e "s/<Port_FTP_Data>/$gsPort_FTP_Data/g" /etc/vsftpd.conf
+    perl -pi -e "s/<gsSrvIpAddress>/$gsSrvIpAddress/g" /etc/vsftpd.conf
+
+    if [ -f $MySB_InstallDir/ssl/fullchain.pem ]; then
+        perl -pi -e "s/^rsa_cert_file/#rsa_cert_file/g" /etc/vsftpd.conf
+        perl -pi -e "s/^rsa_private_key_file/#rsa_private_key_file/g" /etc/vsftpd.conf
+        nNumLine=$(cat /etc/vsftpd.conf | grep 'rsa_cert_file' -n -m 1 | cut -d ':' -f 1)
+        (( nNumLine++ ))
+        sed -i ""$nNumLine"i\rsa_cert_file=$MySB_InstallDir/ssl/cert.pem" /etc/vsftpd.conf
+        nNumLine=$(cat /etc/vsftpd.conf | grep 'rsa_private_key_file' -n -m 1 | cut -d ':' -f 1)
+        (( nNumLine++ ))
+        sed -i ""$nNumLine"i\rsa_private_key_file=$MySB_InstallDir/ssl/privkey.pem" /etc/vsftpd.conf
+    fi
+fi
 
 # -----------------------------------------
 source $(dirname $0)/../inc/includes_after
