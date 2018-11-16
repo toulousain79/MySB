@@ -111,11 +111,11 @@ define('User_UserInfo_Table_SrvIpBridge', 'IP du serveur BR');
 define('User_UserInfo_Comment_SrvIpBridge', 'IP du serveur N\'utilisant PAS la redirection du trafic (interface TAP).');
 // Samba share
 define('User_UserInfo_Table_SambaShare', 'Partage Samba');
-define('User_UserInfo_Comment_SambaShare', 'mount - [Destination_directory] -t cifs -o noatime,nodiratime,UNC=//[10.0.x.1]/%s,username=%s,password=[your_password]');
+define('User_UserInfo_Comment_SambaShare', 'mount -t cifs //[10.0.x.1]/%s [Destination_directory] -o noatime,nodiratime,username=%s,password=[your_password]');
 // NFS share
 define('User_UserInfo_Table_NfsShare', 'Partage NFS');
 define('User_UserInfo_Value_NfsShare', '/rtorrent');
-define('User_UserInfo_Comment_NfsShare', 'mount -t nfs [10.0.x.1]:/home/%s/rtorrent [Destination_directory] [-o vers=3,nolock]');
+define('User_UserInfo_Comment_NfsShare', 'mount -t nfs [10.0.x.1]:/home/%s/rtorrent [Destination_directory] [-o vers=[3|4],nolock]');
 
 //////////////////////
 // Links (Normal user)
