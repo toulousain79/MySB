@@ -115,7 +115,7 @@ define('User_UserInfo_Comment_SambaShare', 'mount -t cifs //[10.0.x.1]/%s [Desti
 // NFS share
 define('User_UserInfo_Table_NfsShare', 'NFS share');
 define('User_UserInfo_Value_NfsShare', '/rtorrent');
-define('User_UserInfo_Comment_NfsShare', 'mount -t nfs [10.0.x.1]:/home/%s/rtorrent [Destination_directory] [-o vers=[3|4],nolock]');
+define('User_UserInfo_Comment_NfsShare', 'mount -t nfs [10.0.x.1]:/home/%s [Destination_directory] [-o nolock]<br />mount -t nfs4 [10.0.x.1]:/export/%s [Destination_directory] [-o nolock]');
 
 //////////////////////
 // Links (Normal user)

@@ -114,6 +114,11 @@ gfnLoadingKernelModules () {
 
 	# the module for full irc connection tracking
 	# /sbin/modprobe ip_conntrack_irc &> /dev/null
+
+	# NFS module
+	if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
+		/sbin/modprobe nfs &> /dev/null
+	fi
 }
 
 gfnKernelParamConfig() {
@@ -468,32 +473,11 @@ gfnPopulatingUdpInboundChain() {
 	#iptables -A udp_inbound -p UDP -s 0/0 --source-port 53 -j ACCEPT
 
 	# Network File System (NFS) Server
-	# Please note that additional services must be configured in order to support an NFS Server through the firewall.
-	# Read the help in the generator or this site:
-	# http://www.lowth.com/LinWiz/nfs_help.html
 	case "$1" in
 		"create")
 			if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
-				# NFS Server - portmapper
-				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 111 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 111 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-				iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 111 -j DROP
-				iptables -A udp_inbound -p UDP -s 0/0 -i $gsPrimaryInet --destination-port 111 -j LOG --log-prefix "[MySB] Portmapper UDP IN: " -m comment --comment "Portmapper UDP IN"
-				# NFS Server - statd
-				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9400 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 9400 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-				# NFS Server - NFS daemon
-				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 2049 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 2049 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-				# NFS Server - lockd
-				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9401 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 9401 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-				# NFS Server - mountd
-				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9402 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 9402 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-				# NFS Server - quotad
-				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 9403 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
-				iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 9403 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i br0 -m multiport --ports 111,2049,32764:32769 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+				iptables -A udp_inbound -p UDP -s 0/0 -i tun+ -m multiport --ports 111,2049,32764:32769 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
 			fi
 		;;
 	esac
@@ -733,32 +717,11 @@ gfnPopulatingTcpInboundChain() {
 	esac
 
 	#### Network File System (NFS) Server
-	# Please note that additional services must be configured in order to support an NFS Server through the firewall.
-	# Read the help in the generator or this site:
-	# http://www.lowth.com/LinWiz/nfs_help.html
 	case "$1" in
 		"create")
 			if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
-				# NFS Server - portmapper
-				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 111 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 111 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-				iptables -A tcp_inbound -p TCP -s 0/0 -i $gsPrimaryInet --destination-port 111 -j DROP
-				iptables -A tcp_inbound -p TCP -s 0/0 -i $gsPrimaryInet --destination-port 111 -j LOG --log-prefix "[MySB] Portmapper TCP IN: " -m comment --comment "Portmapper TCP IN"
-				# NFS Server - statd
-				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9400 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 9400 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-				# NFS Server - NFS daemon
-				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 2049 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 2049 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-				# NFS Server - lockd
-				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9401 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 9401 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-				# NFS Server - mountd
-				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9402 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 9402 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-				# NFS Server - quotad
-				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port 9403 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port 9403 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 -m multiport --ports 111,2049,32764:32769 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ -m multiport --ports 111,2049,32764:32769 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
 			fi
 		;;
 	esac

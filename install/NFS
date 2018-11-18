@@ -22,14 +22,15 @@ source $(dirname $0)/../inc/includes_before
 #	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
+######################################################################
+# https://wiki.debian-fr.xyz/Partage_NFS
+# https://www.cyberciti.biz/faq/nfs4-server-debian-ubuntu-linux/
+# https://help.ubuntu.com/community/NFSv4Howto
 ##################### FIRST LINE #####################################
 
 if [ "$gbToInstall_NFS" == "YES" ]; then
 	#### install
-	if [ ! -f /etc/init.d/nfs-kernel-server ]; then
-		gfnPackagesManage purge "nfs-common rpcbind"
-		gfnPackageBundleInstall 'rpcbind nfs-common nfs-kernel-server'
-	fi
+	gfnPackageBundleInstall 'nfs-kernel-server'
 
 	#### STOP services
 	gfnManageServices stop "nfs-kernel-server"
@@ -38,9 +39,20 @@ if [ "$gbToInstall_NFS" == "YES" ]; then
 	perl -pi -e "s/^udp6/#udp6/g" /etc/netconfig
 	perl -pi -e "s/^tcp6/#tcp6/g" /etc/netconfig
 
-	#### RPCbind
-	install -v -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.rpcbind.tmpl /etc/init.d/rpcbind
-	systemctl daemon-reload
+	#### /export directory
+	[ ! -d /export ] && mkdir /export
+
+	#### nfs-common
+	install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nfs/etc.default.nfs-common.tmpl /etc/default/nfs-common
+
+	#### nfs-kernel-server
+	install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nfs/etc.default.nfs-kernel-server.tmpl /etc/default/nfs-kernel-server
+
+	#### /etc/default/quota
+	install -v -o root -g root -m 0644 $MySB_InstallDir/templates/other/etc.default.quota.tmpl /etc/default/quota
+
+	#### Sysctl
+	[[ -z $(grep '# NFS - BoF' /etc/sysctl.conf) ]] && cat $MySB_InstallDir/templates/sysctl/nfs.tmpl >> /etc/sysctl.conf; sysctl --system
 
 	if gfnCheckCommand 0 nfs-kernel-server; then
 		cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='NFS';" -v
