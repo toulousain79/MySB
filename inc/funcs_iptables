@@ -837,18 +837,23 @@ gfnProcessForwardChain() {
 
 	if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
 		# Accept TCP packets we want to forward from internal sources
+        iptables -A FORWARD -p TCP -i tun0 -j tcp_outbound
 		iptables -A FORWARD -p TCP -i tun1 -j tcp_outbound
 		iptables -A FORWARD -p TCP -i br0 -j tcp_outbound
 
 		# Accept UDP packets we want to forward from internal sources
+        iptables -A FORWARD -p UDP -i tun0 -j udp_outbound
 		iptables -A FORWARD -p UDP -i tun1 -j udp_outbound
 		iptables -A FORWARD -p UDP -i br0 -j udp_outbound
 
 		# If not blocked, accept any other packets from the internal interface
+        iptables -A FORWARD -p ALL -i tun0 -j ACCEPT
 		iptables -A FORWARD -p ALL -i tun1 -j ACCEPT
 		iptables -A FORWARD -p ALL -i br0 -j ACCEPT
 
+        iptables -A FORWARD -i tun0 -o $gsPrimaryInet -s 10.0.1.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN without redirect GW"
 		iptables -A FORWARD -i tun1 -o $gsPrimaryInet -s 10.0.0.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN with redirect GW"
+        iptables -A FORWARD -i br0 -o $gsPrimaryInet -s 10.0.2.0/24 -m conntrack --ctstate NEW -j ACCEPT -m comment --comment "OpenVPN bridged without GW"
 		iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "OpenVPN with redirect GW"
 	fi
 
