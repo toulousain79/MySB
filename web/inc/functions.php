@@ -493,7 +493,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
                     switch ($_SESSION['Language']) {
                         case 'fr':
                             $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-                            $link = 'https://mysb.gitbook.io/doc/v/v5.3_fr/securite/restriction-par-adresse-ips';
+                            $link = 'https://mysb.gitbook.io/doc/v/v5.3_fr/securite/restriction-par-adresse-ip';
                             echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
                             break;
                         default:
