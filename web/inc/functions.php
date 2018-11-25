@@ -329,8 +329,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					}
 					break;
-				case "Synchronization":
-				case "Synchronisation":
+				case "Labels & Synchros":
 					if ( $UserAccountType == 'normal' ) {
 						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					}
@@ -478,27 +477,31 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
                     }
 					break;
 				case "The trackers":
-                    switch ($_SESSION['Language']) {
-                        case 'fr':
-                            $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-                            $link = 'https://mysb.gitbook.io/doc/v/v5.3_fr/le-portail/les-trackers';
-                            echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
-                            break;
-                        default:
-                            echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
-                            break;
+                    if ( $UserAccountType == 'normal' ) {
+                        switch ($_SESSION['Language']) {
+                            case 'fr':
+                                $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
+                                $link = 'https://mysb.gitbook.io/doc/v/v5.3_fr/le-portail/les-trackers';
+                                echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
+                                break;
+                            default:
+                                echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+                                break;
+                        }
                     }
 					break;
 				case "IP restriction":
-                    switch ($_SESSION['Language']) {
-                        case 'fr':
-                            $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-                            $link = 'https://mysb.gitbook.io/doc/v/v5.3_fr/securite/restriction-par-adresse-ip';
-                            echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
-                            break;
-                        default:
-                            echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
-                            break;
+                    if ( $UserAccountType == 'normal' ) {
+                        switch ($_SESSION['Language']) {
+                            case 'fr':
+                                $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
+                                $link = 'https://mysb.gitbook.io/doc/v/v5.3_fr/securite/restriction-par-adresse-ips';
+                                echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
+                                break;
+                            default:
+                                echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+                                break;
+                        }
                     }
 					break;
 
