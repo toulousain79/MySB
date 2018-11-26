@@ -24,6 +24,8 @@ Une question simple, savez-vous qui se connecte à votre serveur ?
 
 [Description française de MySB](https://github.com/toulousain79/MySB/wiki/README-FR)
 
+[Documentation française](https://mysb.gitbook.io/doc/)
+
 ### Faire un don
 
 [![Faire un don](https://img.shields.io/badge/Donate-PayPal-green.svg?style=for-the-badge)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=26PKHX8PGHLWG)
