@@ -1,5 +1,9 @@
 ![toulousain79](web/public/themes/MySB/images/toulousain79_wiki.gif)
 
+![Licence](https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square)
+![Last commit](https://img.shields.io/github/last-commit/google/skia.svg?style=flat-square)
+![Discord](https://img.shields.io/discord/:469543542981656627.svg?style=flat-square)
+
 # English
 
 MySB (My SeedBox) is a multi-user seedbox for dedicated server under Debian 9 (Stretch) and could be renamed MySSB, My Secured SeedBox.
