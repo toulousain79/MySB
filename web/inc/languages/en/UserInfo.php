@@ -184,7 +184,7 @@ define('User_UserInfo_Comment_MySB_UpgradeMe', 'Enables migration to a new versi
 define('User_UserInfo_Comment_MySB_UpgradeSystem', 'Performs an update + upgrade + update-ca-certificates');
 define('User_UserInfo_Comment_MySB_UpdateTools', 'Check and execute an update for somme tools (Plex, Tautulli, Docker tools, ...)');
 define('User_UserInfo_Comment_MySB_GitHubRepoUpdate', 'Updates the repository of the current version of MySB. (CRON every days)');
-define('User_UserInfo_Comment_MySB_SecurityRules', '<pre>MySB_SecurityRules (new|clean)</pre>');
+define('User_UserInfo_Comment_MySB_SecurityRules', '<pre>MySB_SecurityRules (create|clean)</pre>');
 // Main scripts
 define('User_UserInfo_Table_MainScript', 'Main scripts');
 define('User_UserInfo_Comment_BlocklistsRTorrent', 'Use this for generate rTorrent blocklist. (CRON twice a day)');
