@@ -4,10 +4,7 @@
 </p>
 <p align="center">
      <a href="https://github.com/toulousain79/MySB/blob/v5.3/LICENCE.md">
-        <img src="https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square" /></a>
-    <a href="https://github.com/toulousain79/MySB/commits/v5.3">
-        <img src="https://img.shields.io/github/last-commit/google/skia.svg?style=flat-square"
-            alt="GitHub commits"></a>
+        <img src="https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square" /></a>   
 </p>
 
 # English
