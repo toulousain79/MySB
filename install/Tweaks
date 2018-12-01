@@ -133,13 +133,18 @@ rm -fv /etc/pgl/ipv6.*
 
 # Add iptables-restore
 echo
-echo "########## Remove IPv6"
-cp -v /etc/network/interfaces /etc/network/interfaces.bckp
-if [ -z "`grep 'post-up iptables-restore < /etc/iptables.up.rules' /etc/network/interfaces`" ]; then
-	echo >> /etc/network/interfaces
-	nNumLine=$(grep -n "[[:space:]]*iface[[:space:]]*$gsPrimaryInet[[:space:]]*inet [[:space:]]*" /etc/network/interfaces | grep -v "#" | cut -d ':' -f 1)
-	(( nNumLine++ ))
-	sed -i "${nNumLine}i\		post-up iptables-restore < /etc/iptables.up.rules" /etc/network/interfaces
+echo "########## Persistent iptables rules"
+if [ -f /etc/network/interfaces ]; then
+    cp -v /etc/network/interfaces /etc/network/interfaces.bckp
+    if [ -z "`grep 'post-up iptables-restore < ${gsIptablesRules}' /etc/network/interfaces`" ]; then
+        echo >> /etc/network/interfaces
+        nNumLine=$(grep -n "[[:space:]]*iface[[:space:]]*$gsPrimaryInet[[:space:]]*inet [[:space:]]*" /etc/network/interfaces | grep -v "#" | cut -d ':' -f 1)
+        (( nNumLine++ ))
+        sed -i "${nNumLine}i\		post-up iptables-restore < ${gsIptablesRules}" /etc/network/interfaces
+    fi
+elif [ -f /etc/systemd/network/50-default.network ]; then # OVH ?
+    gfnPackageBundleInstall "iptables-persistent"
+    systemctl enable netfilter-persistent
 fi
 
 #### NTP (disable IPv6)
