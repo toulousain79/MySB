@@ -24,60 +24,25 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-case `getconf LONG_BIT` in
-	64)	sVFSV="vfsv1";;
-	*)	sVFSV="vfsv0";;
-esac
-
 #### Quota, add journaled quotas to the interested partition
 echo
-echo "########## /etc/fstab"
+echo "########## /etc/fstab (before)"
 cat /etc/fstab
-echo
-echo
 
-# Quota for Hetzner
-if [ "$gsServerProvider" == "HETZNER" ]; then
-	# /
-	echo
-	echo "########## HETZNER /"
-	sRootDir="`grep ' / ' /etc/fstab | sed '/^#/d'`"
-	sOptions="`echo $sRootDir | sed "s/defaults/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=$sVFSV/g;"`"
-	sRootDirEscaped="`echo $sOptions | sed s,/,\\\\\\\\\\/,g`"
-	nNumLine=$(cat /etc/fstab | grep ' / ' -n -m 1 | cut -d ':' -f 1)
-	sed -i ''$nNumLine'd' /etc/fstab
-	sed -i ""$nNumLine"i\<sRootDir>" /etc/fstab
-	echo "" >> /etc/fstab
-	perl -pi -e "s/<sRootDir>/$sRootDirEscaped/g" /etc/fstab
-	# /home
-	echo
-	echo "########## HETZNER /home"
-	sRootDir="`grep ' /home ' /etc/fstab`"
-	if [ ! -z "$sRootDir" ]; then
-		sOptions="`echo $sRootDir | sed "s/defaults/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=$sVFSV/g;"`"
-		sRootDirEscaped="`echo $sOptions | sed s,/,\\\\\\\\\\/,g`"
-		nNumLine=$(cat /etc/fstab | grep ' /home ' -n -m 1 | cut -d ':' -f 1)
-		sed -i ''$nNumLine'd' /etc/fstab
-		sed -i ""$nNumLine"i\<sRootDir>" /etc/fstab
-		echo "" >> /etc/fstab
-		perl -pi -e "s/<sRootDir>/$sRootDirEscaped/g" /etc/fstab
-	fi
-else
-	if [ ! -z "`grep 'noatime,nodiratime,errors=remount-ro' /etc/fstab`" ] && [ -z "`grep 'usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv' /etc/fstab | grep -v '/boot'`" ]; then
-		perl -pi -e "s/noatime,nodiratime,errors=remount-ro/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=$sVFSV/g" /etc/fstab
-		sed -i "/\/boot/s/noatime,nodiratime,errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=$sVFSV/noatime,nodiratime,errors=remount-ro/g" /etc/fstab
-	fi
-fi
-# Delete empty lines
+gfnFstabGeneration 'add_quota'
+
 echo
-echo "########## /etc/fstab"
-sed -i '/^$/d' /etc/fstab
+echo "########## /etc/fstab (after)"
 cat /etc/fstab
 
 # Create quota files
 echo
 [ ! -f /aquota.user ] && touch /aquota.user && chmod -v 600 /aquota.user
 [ ! -f /aquota.group ] && touch /aquota.group && chmod -v 600 /aquota.group
+if [[ ! -z $(grep ' /home ' /etc/fstab) ]]; then
+    [ ! -f /home/aquota.user ] && touch /home/aquota.user && chmod -v 600 /home/aquota.user
+    [ ! -f /home/aquota.group ] && touch /home/aquota.group && chmod -v 600 /home/aquota.group
+fi
 
 #### Install packages
 gfnPackageBundleInstall 'quota quotatool'
@@ -91,6 +56,7 @@ perl -pi -e "s/<mail_message>/$Quota_MailMessage/g" /etc/warnquota.conf
 modprobe quota_v1
 modprobe quota_v2
 mount -v -o remount /
+[[ ! -z $(grep ' /home ' /etc/fstab) ]] && mount -v -o remount /home
 quotacheck -acguvmf
 quotaoff -a
 quotaon -avug

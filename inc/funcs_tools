@@ -659,4 +659,110 @@ gfnRepoManageByType() {
 	fi
 }
 
+#### FStab generation
+gfnFstabGeneration() {
+    local sSwitch sRootDir sBootEfiDir sBootDir sHomeDir sSwap nNumLine nColNum sVFSV sQuotaOpts
+    sSwitch="$1"
+
+    # Backup
+    [[ ! -f ${MySB_InstallDir}/file/fstab.origine ]] && cp -v /etc/fstab ${MySB_InstallDir}/file/fstab.origine
+    [[ ! -f /etc/fstab.tmpl ]] && cp -v /etc/fstab /etc/fstab.tmpl
+    cp -v /etc/fstab /etc/fstab.back
+    [[ -f /etc/fstab.tmpl ]] && cp -v /etc/fstab.tmpl /etc/fstab
+
+    # Remove all comments
+    sed -i '/^#/d' /etc/fstab
+    # Delete empty lines
+    sed -i '/^$/d' /etc/fstab
+
+    # Quota use
+    if [[ ${sSwitch} == 'add_quota' ]]; then
+        case `getconf LONG_BIT` in
+            64)	sVFSV="vfsv1";;
+            *)	sVFSV="vfsv0";;
+        esac
+        sQuotaOpts=",usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=$sVFSV"
+    fi
+
+    # /boot/efi
+    sBootEfiDir=$(grep ' /boot/efi ' /etc/fstab)
+    if [[ ! -z ${sBootEfiDir} ]]; then
+        nNumLine=$(grep ' /boot/efi ' -n -m 1 /etc/fstab | cut -d ':' -f 1)
+        nColNum=0
+        echo "# /boot/efi" >> /etc/fstab
+        for col in ${sBootEfiDir}; do
+            (( nColNum++ ))
+            case ${nColNum} in
+                1|2|3|4|5)  echo -n "${col} " >> /etc/fstab;;
+                6)          echo -e -n "${col}\n" >> /etc/fstab;;
+            esac
+        done
+        sed -i ''$nNumLine'd' /etc/fstab
+    fi
+
+    # /boot
+    sBootDir=$(grep ' /boot ' /etc/fstab)
+    if [[ ! -z ${sBootDir} ]]; then
+        nNumLine=$(grep ' /boot ' -n -m 1 /etc/fstab | cut -d ':' -f 1)
+        nColNum=0
+        echo "# /boot" >> /etc/fstab
+        for col in ${sBootDir}; do
+            (( nColNum++ ))
+            case ${nColNum} in
+                1|2|3|4|5)  echo -n "${col} " >> /etc/fstab;;
+                6)          echo -e -n "${col}\n" >> /etc/fstab;;
+            esac
+        done
+        sed -i ''$nNumLine'd' /etc/fstab
+    fi
+
+    # /
+    sRootDir=$(grep ' / ' /etc/fstab)
+    nNumLine=$(grep ' / ' -n -m 1 /etc/fstab | cut -d ':' -f 1)
+    nColNum=0
+    echo "# /" >> /etc/fstab
+    for col in ${sRootDir}; do
+        (( nColNum++ ))
+        case ${nColNum} in
+            1|2|3|5)    echo -n "${col} " >> /etc/fstab;;
+            4)          echo -n "defaults,errors=remount-ro,relatime,nodiratime${sQuotaOpts} " >> /etc/fstab;;
+            6)          echo -e -n "${col}\n" >> /etc/fstab;;
+        esac
+    done
+    sed -i ''$nNumLine'd' /etc/fstab
+
+    # /home
+    sHomeDir=$(grep ' /home ' /etc/fstab)
+    if [[ ! -z ${sHomeDir} ]]; then
+        nNumLine=$(grep ' /home ' -n -m 1 /etc/fstab | cut -d ':' -f 1)
+        nColNum=0
+        echo "# /home" >> /etc/fstab
+        for col in ${sHomeDir}; do
+            (( nColNum++ ))
+            case ${nColNum} in
+                1|2|3|5)    echo -n "${col} " >> /etc/fstab;;
+                4)          echo -n "defaults,errors=remount-ro,relatime,nodiratime${sQuotaOpts} " >> /etc/fstab;;
+                6)          echo -e -n "${col}\n" >> /etc/fstab;;
+            esac
+        done
+        sed -i ''$nNumLine'd' /etc/fstab
+    fi
+
+    # SWAP
+    sSwap=$(grep 'swap' /etc/fstab)
+    if [[ ! -z ${sSwap} ]]; then
+        nNumLine=$(grep 'swap' -n -m 1 /etc/fstab | cut -d ':' -f 1)
+        nColNum=0
+        echo "# SWAP" >> /etc/fstab
+        for col in ${sSwap}; do
+            (( nColNum++ ))
+            case ${nColNum} in
+                1|2|3|4|5)  echo -n "${col} " >> /etc/fstab;;
+                6)          echo -e -n "${col}\n" >> /etc/fstab;;
+            esac
+        done
+        sed -i ''$nNumLine'd' /etc/fstab
+    fi
+}
+
 ##################### LAST LINE ######################################
