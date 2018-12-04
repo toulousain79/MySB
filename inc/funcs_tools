@@ -711,12 +711,12 @@ gfnFstabGeneration() {
     while read line; do
         sPartition=$(echo $line | awk '{ print $2 }')
         case ${sPartition} in
-            '/')
+            '/'|'/home')
                 nColNum=0
-                nNumLine=$(grep '[[:space:]]/[[:space:]]' -n -m 1 /etc/fstab | cut -d ':' -f 1)
+                nNumLine=$(grep "[[:space:]]${sPartition}[[:space:]]" -n -m 1 /etc/fstab | cut -d ':' -f 1)
                 nColNum=0
-                echo "# /home" >> /etc/fstab
-                for col in ${line}; do
+                echo "# ${sPartition}" >> /etc/fstab
+                for col in $(grep "[[:space:]]${sPartition}[[:space:]]" /etc/fstab); do
                     (( nColNum++ ))
                     case ${nColNum} in
                         1|2|3|5)    echo -n "${col} " >> /etc/fstab;;
@@ -726,22 +726,7 @@ gfnFstabGeneration() {
                 done
                 sed -i ''$nNumLine'd' /etc/fstab
             ;;
-            '/home')
-                nColNum=0
-                nNumLine=$(grep '[[:space:]]/home[[:space:]]' -n -m 1 /etc/fstab | cut -d ':' -f 1)
-                nColNum=0
-                echo "# /home" >> /etc/fstab
-                for col in $(grep '[[:space:]]/home[[:space:]]' /etc/fstab); do
-                    (( nColNum++ ))
-                    case ${nColNum} in
-                        1|2|3|5)    echo -n "${col} " >> /etc/fstab;;
-                        4)          echo -n "defaults,errors=remount-ro,relatime,nodiratime${sQuotaOpts} " >> /etc/fstab;;
-                        6)          echo -e -n "${col}\n" >> /etc/fstab;;
-                    esac
-                done
-                sed -i ''$nNumLine'd' /etc/fstab
-            ;;
-            '/boot/efi'|'/boot'|'/proc'|'/sys'|'/dev/shm'|'/dev/pts'|*export*)
+            *)
                 nNumLine=$(grep "[[:space:]]${sPartition}[[:space:]]" -n -m 1 /etc/fstab | cut -d ':' -f 1)
                 nColNum=0
                 echo "# ${sPartition}" >> /etc/fstab
@@ -774,19 +759,7 @@ gfnFstabGeneration() {
                 [[ ! -d /mnt/tmpFS/php ]] && mkdir -pv /mnt/tmpFS/php
                 [[ -z $(df -H | grep '/mnt/tmpFS/php') ]] && mount /mnt/tmpFS/php
             ;;
-            *)
-                nNumLine=$(grep "[[:space:]]${sPartition}[[:space:]]" -n -m 1 /etc/fstab | cut -d ':' -f 1)
-                nColNum=0
-                echo "# ${sPartition}" >> /etc/fstab
-                for col in $(grep "[[:space:]]${sPartition}[[:space:]]" /etc/fstab); do
-                    (( nColNum++ ))
-                    case ${nColNum} in
-                        1|2|3|4|5)  echo -n "${col} " >> /etc/fstab;;
-                        6)          echo -e -n "${col}\n" >> /etc/fstab;;
-                    esac
-                done
-                sed -i ''$nNumLine'd' /etc/fstab
-            ;;
+
         esac
     done < /tmp/fstab.tmp
     [[ -f /tmp/fstab.swap ]] && cat /tmp/fstab.swap >> /etc/fstab
