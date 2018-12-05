@@ -667,8 +667,9 @@ gfnRepoManageByType() {
 
 #### FStab generation
 gfnFstabGeneration() {
-    local sSwitch sSwap nNumLine nColNum sVFSV sQuotaOpts
+    local sSwitch sSwap nNumLine nColNum sVFSV sQuotaOpts sDedicatedHome
     sSwitch="$1"
+    sDedicatedHome=$(grep "[[:space:]]/home[[:space:]]" /etc/fstab)
 
     # Backup
     [[ ! -f ${MySB_InstallDir}/files/fstab.origine ]] && cp -v /etc/fstab ${MySB_InstallDir}/files/fstab.origine
@@ -682,10 +683,9 @@ gfnFstabGeneration() {
     # Quota use
     if [[ ${sSwitch} == 'add_quota' ]]; then
         case `getconf LONG_BIT` in
-            64)    sVFSV="vfsv1";;
-            *)    sVFSV="vfsv0";;
+            64) sVFSV="vfsv1";;
+            *)  sVFSV="vfsv0";;
         esac
-        sQuotaOpts=",usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=$sVFSV"
     fi
 
     # SWAP
@@ -714,7 +714,11 @@ gfnFstabGeneration() {
             '/'|'/home')
                 nColNum=0
                 nNumLine=$(grep "[[:space:]]${sPartition}[[:space:]]" -n -m 1 /etc/fstab | cut -d ':' -f 1)
-                nColNum=0
+                if [[ ! -z ${sDedicatedHome} ]] && [[ ${sPartition} == '/' ]]; then
+                    sQuotaOpts=""
+                else
+                    sQuotaOpts=",usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=$sVFSV"
+                fi
                 echo "# ${sPartition}" >> /etc/fstab
                 for col in $(grep "[[:space:]]${sPartition}[[:space:]]" /etc/fstab); do
                     (( nColNum++ ))
@@ -739,26 +743,6 @@ gfnFstabGeneration() {
                 done
                 sed -i ''$nNumLine'd' /etc/fstab
             ;;
-            # '/mnt/tmpFS/mysql')
-                # sed -i '/TMPFS - MySQL/d' /etc/fstab
-                # sed -i '/\/mnt\/tmpFS\/mysql/d' /etc/fstab
-                # sed -i '/mysql/d' /etc/fstab
-                # echo "# TMPFS - MySQL" >> /etc/fstab
-                # echo "tmpfs /mnt/tmpFS/mysql tmpfs defaults,nosuid,noatime,mode=1777,size=32M 0 0" >> /etc/fstab
-                # if [ ! -d /mnt/tmpFS/mysql ]; then
-                # mkdir -pv /mnt/tmpFS/mysql
-                # chown -v mysql:mysql /mnt/tmpFS/mysql
-                # fi
-                # [[ -z $(df -H | grep '/mnt/tmpFS/mysql') ]] && mount /mnt/tmpFS/mysql
-            # ;;
-            # '/mnt/tmpFS/php')
-                # sed -i '/TMPFS - PHP/d' /etc/fstab
-                # sed -i '/\/mnt\/tmpFS\/php/d' /etc/fstab
-                # echo "# TMPFS - PHP" >> /etc/fstab
-                # echo "tmpfs /mnt/tmpFS/php tmpfs defaults,nosuid,noatime,mode=1777,size=32M 0 0" >> /etc/fstab
-                # [[ ! -d /mnt/tmpFS/php ]] && mkdir -pv /mnt/tmpFS/php
-                # [[ -z $(df -H | grep '/mnt/tmpFS/php') ]] && mount /mnt/tmpFS/php
-            # ;;
         esac
     done < /tmp/fstab.tmp
     [[ -f /tmp/fstab.swap ]] && cat /tmp/fstab.swap >> /etc/fstab

@@ -37,26 +37,26 @@ cat /etc/fstab
 
 # Create quota files
 echo
-[ ! -f /aquota.user ] && touch /aquota.user && chmod -v 600 /aquota.user
-[ ! -f /aquota.group ] && touch /aquota.group && chmod -v 600 /aquota.group
 if [[ ! -z $(grep '[[:space:]]/home[[:space:]]' /etc/fstab) ]]; then
-    [ ! -f /home/aquota.user ] && touch /home/aquota.user && chmod -v 600 /home/aquota.user
-    [ ! -f /home/aquota.group ] && touch /home/aquota.group && chmod -v 600 /home/aquota.group
+    [[ ! -f /home/aquota.user ]] && touch /home/aquota.user; chmod -v 600 /home/aquota.user
+    [[ ! -f /home/aquota.group ]] && touch /home/aquota.group; chmod -v 600 /home/aquota.group
+else
+    [[ ! -f /aquota.user ]] && touch /aquota.user; chmod -v 600 /aquota.user
+    [[ ! -f /aquota.group ]] && touch /aquota.group; chmod -v 600 /aquota.group
 fi
 
 #### Install packages
 gfnPackageBundleInstall 'quota quotatool'
-install -v -o root -g root -m 0644 $MySB_InstallDir/templates/other/etc.default.quota.tmpl /etc/default/quota
-install -v -o root -g root -m 0644 $MySB_InstallDir/templates/other/etc.warnquota.conf.tmpl /etc/warnquota.conf
-perl -pi -e "s/<main_user_mail>/$gsMainUserEmail/g" /etc/warnquota.conf
-perl -pi -e "s/<mail_subject>/$Quota_MailSubject/g" /etc/warnquota.conf
-perl -pi -e "s/<mail_message>/$Quota_MailMessage/g" /etc/warnquota.conf
+install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/other/etc.default.quota.tmpl /etc/default/quota
+install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/other/etc.warnquota.conf.tmpl /etc/warnquota.conf
+sed -i "s/<main_user_mail>/${gsMainUserEmail}/g;" /etc/warnquota.conf
+sed -i "s/<mail_subject>/${Quota_MailSubject}/g;" /etc/warnquota.conf
+sed -i "s/<mail_message>/${Quota_MailMessage}/g;" /etc/warnquota.conf
 
 #### Check actuel quota
 modprobe quota_v1
 modprobe quota_v2
-mount -v -o remount /
-[[ ! -z $(grep '[[:space:]]/home[[:space:]]' /etc/fstab) ]] && mount -v -o remount /home
+[[ ! -z $(grep '[[:space:]]/home[[:space:]]' /etc/fstab) ]] && mount -v -o remount /home || mount -v -o remount /
 quotacheck -acguvmf
 quotaoff -a
 quotaon -avug
