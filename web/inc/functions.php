@@ -338,54 +338,54 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 				// Services menu
 				case "ruTorrent":
 					if ( $UserAccountType == 'normal' ) {
-                        $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
+						$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
 						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="ru">'.$title.'</a>';
 					}
 					break;
 				case "Seedbox-Manager":
 					if ( ($ManagerIsInstalled == '1') && ($UserAccountType == 'normal') ) {
-                        $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
+						$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
 						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="sm">'.$title.'</a>';
 					}
 					break;
 				case "Cakebox-Light":
 					if ( ($CakeboxIsInstalled == '1') && ($UserAccountType == 'normal') ) {
-                        $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
+						$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
 						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="cb">'.$title.'</a>';
 					}
 					break;
 				case "NextCloud":
 					if ( ($NextCloudIsInstalled == '1') && ($UserAccountType == 'normal') ) {
-                        $link = 'https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/nc/';
-                        $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-                        echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
+						$link = 'https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/nc/';
+						$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
 					}
 					break;
 				case "Plex Media Server":
 					if ($PlexMediaIsInstalled == '1') {
-                        $link = 'https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/web';
-                        $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-                        echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
+						$link = 'https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/web';
+						$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
 					}
 					break;
 				case "Tautulli":
 					if ( ($TautulliIsInstalled == '1') && ($hidden == true) ) {
-                        $link = 'https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/tt/home';
-                        $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-                        echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
+						$link = 'https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/tt/home';
+						$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
 					}
 					break;
 				case "Shell In a Box":
 					if ($hidden == true) {
-                        $link = 'https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/sb';
-                        $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-                        echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
+						$link = 'https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/sb';
+						$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
 					}
 					break;
 				case "LoadAvg":
-                    $link = 'https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/la/public/';
-                    $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-                    echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
+					$link = 'https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/la/public/';
+					$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
+					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
 					break;
 
 				// Renting
@@ -431,78 +431,78 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					break;
 				case "Plex.tv":
 					if ($PlexMediaIsInstalled == '1') {
-                        $link = 'https://app.plex.tv/web/app';
-                        $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-                        echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
+						$link = 'https://app.plex.tv/web/app';
+						$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
 					}
 					break;
 
 				// Help menu
 				case "Help":
-                    $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-                    switch ($_SESSION['Language']) {
-                        case 'fr':
-                            $link = 'https://mysb.gitbook.io/doc/v/v5.3_fr/';
-                            break;
-                        default:
-                            $link = 'https://github.com/toulousain79/MySB/wiki';
-                            break;
-                    }
-                    echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
+					$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
+					switch ($_SESSION['Language']) {
+						case 'fr':
+							$link = 'https://mysb.gitbook.io/doc/v/v5.3_fr/';
+							break;
+						default:
+							$link = 'https://github.com/toulousain79/MySB/wiki';
+							break;
+					}
+					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
 					break;
 				case "Plex configure":
 					if ($PlexMediaIsInstalled == '1') {
-                        switch ($_SESSION['Language']) {
-                            case 'fr':
-                                $title = $menu->title_fr;
-                                $link = 'https://mysb.gitbook.io/doc/v/v5.3_fr/configuration/plex-media-server-and-tautulli';
-                                echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
-                                break;
-                            default:
-                                echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
-                                break;
-                        }
+						switch ($_SESSION['Language']) {
+							case 'fr':
+								$title = $menu->title_fr;
+								$link = 'https://mysb.gitbook.io/doc/v/v5.3_fr/configuration/plex-media-server-and-tautulli';
+								echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
+								break;
+							default:
+								echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+								break;
+						}
 					}
 					break;
 				case "The blocklists":
-                    switch ($_SESSION['Language']) {
-                        case 'fr':
-                            $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-                            $link = 'https://mysb.gitbook.io/doc/v/v5.3_fr/le-portail/les-listes-noires';
-                            echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
-                            break;
-                        default:
-                            echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
-                            break;
-                    }
+					switch ($_SESSION['Language']) {
+						case 'fr':
+							$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
+							$link = 'https://mysb.gitbook.io/doc/v/v5.3_fr/le-portail/les-listes-noires';
+							echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
+							break;
+						default:
+							echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+							break;
+					}
 					break;
 				case "The trackers":
-                    if ( $UserAccountType == 'normal' ) {
-                        switch ($_SESSION['Language']) {
-                            case 'fr':
-                                $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-                                $link = 'https://mysb.gitbook.io/doc/v/v5.3_fr/le-portail/les-trackers';
-                                echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
-                                break;
-                            default:
-                                echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
-                                break;
-                        }
-                    }
+					if ( $UserAccountType == 'normal' ) {
+						switch ($_SESSION['Language']) {
+							case 'fr':
+								$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
+								$link = 'https://mysb.gitbook.io/doc/v/v5.3_fr/le-portail/les-trackers';
+								echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
+								break;
+							default:
+								echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+								break;
+						}
+					}
 					break;
 				case "IP restriction":
-                    if ( $UserAccountType == 'normal' ) {
-                        switch ($_SESSION['Language']) {
-                            case 'fr':
-                                $title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-                                $link = 'https://mysb.gitbook.io/doc/v/v5.3_fr/securite/restriction-par-adresse-ips';
-                                echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
-                                break;
-                            default:
-                                echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
-                                break;
-                        }
-                    }
+					if ( $UserAccountType == 'normal' ) {
+						switch ($_SESSION['Language']) {
+							case 'fr':
+								$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
+								$link = 'https://mysb.gitbook.io/doc/v/v5.3_fr/securite/restriction-par-adresse-ips';
+								echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
+								break;
+							default:
+								echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
+								break;
+						}
+					}
 					break;
 
 				// Default

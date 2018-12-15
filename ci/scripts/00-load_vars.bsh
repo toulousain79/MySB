@@ -1,7 +1,5 @@
 #!/bin/bash
 # ----------------------------------
-source $(dirname $0)/../inc/includes_before
-# ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 #	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -23,46 +21,16 @@ source $(dirname $0)/../inc/includes_before
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
 ##################### FIRST LINE #####################################
+#### 0 - Base
+sPwd=$(pwd)
+nReturn=0
 
-#### Quota, add journaled quotas to the interested partition
-echo
-echo "########## /etc/fstab (before)"
-cat /etc/fstab
+#### 1 - Colors
+CEND="\033[0m"
+CRED="\033[1;31m"
+CGREEN="\033[1;32m"
+CYELLOW="\033[1;33m"
+CBLUE="\033[1;34m"
 
-gfnFstabGeneration 'add_quota'
-
-echo
-echo "########## /etc/fstab (after)"
-cat /etc/fstab
-
-# Create quota files
-echo
-if [[ ! -z $(grep '[[:space:]]/home[[:space:]]' /etc/fstab) ]]; then
-	[[ ! -f /home/aquota.user ]] && touch /home/aquota.user; chmod -v 600 /home/aquota.user
-	[[ ! -f /home/aquota.group ]] && touch /home/aquota.group; chmod -v 600 /home/aquota.group
-else
-	[[ ! -f /aquota.user ]] && touch /aquota.user; chmod -v 600 /aquota.user
-	[[ ! -f /aquota.group ]] && touch /aquota.group; chmod -v 600 /aquota.group
-fi
-
-#### Install packages
-gfnPackageBundleInstall 'quota quotatool'
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/other/etc.default.quota.tmpl /etc/default/quota
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/other/etc.warnquota.conf.tmpl /etc/warnquota.conf
-sed -i "s/<main_user_mail>/${gsMainUserEmail}/g;" /etc/warnquota.conf
-sed -i "s/<mail_subject>/${Quota_MailSubject}/g;" /etc/warnquota.conf
-sed -i "s/<mail_message>/${Quota_MailMessage}/g;" /etc/warnquota.conf
-
-#### Check actuel quota
-modprobe quota_v1
-modprobe quota_v2
-[[ ! -z $(grep '[[:space:]]/home[[:space:]]' /etc/fstab) ]] && mount -v -o remount /home || mount -v -o remount /
-quotacheck -acguvmf
-quotaoff -a
-quotaon -avug
-repquota -a
-
-# -----------------------------------------
-source $(dirname $0)/../inc/includes_after
-# -----------------------------------------
-##################### LAST LINE ######################################
+#### 2 - Versions
+sMySB_rev=$(cat $sPwd/version)
