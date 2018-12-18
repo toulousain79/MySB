@@ -48,7 +48,7 @@ INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`,
 ('ZIP', '<InstallDir>/web/wolf', 'Wolf CMS', '0.8.3.1', 0, 'wolf_v0.8.3.1.zip', 'https://github.com/toulousain79/MySB_files/raw/v5.3/wolf_v0.8.3.1.zip', 1, 0, ''),
 ('TARGZ', '<InstallDir>/web/apps/tt', 'Tautulli', '2.1.26', 0, 'Tautulli_v2.1.26.tar.gz', 'https://github.com/Tautulli/Tautulli/archive/v2.1.26.tar.gz', 1, 0, ''),
 ('GIT', '<InstallDir>/sources/libsmbclient-php', 'libsmbclient-php', '0.9.0', 0, 'libsmbclient-php_v0.9.0.zip', 'https://github.com/eduardok/libsmbclient-php.git', 1, 0, ''),
-('DEB', '<InstallDir>_files', 'Plex Media Server', '1.14.0.5470-9d51fdfaa', 0, 'plexmediaserver_1.14.0.5470-9d51fdfaa_amd64.deb', 'https://downloads.plex.tv/plex-media-server/1.14.0.5470-9d51fdfaa/plexmediaserver_1.14.0.5470-9d51fdfaa_amd64.deb', 1, 0, ''),
+('DEB', '<InstallDir>_files', 'Plex Media Server', '1.14.1.5488-cc260c476', 0, 'plexmediaserver_1.14.1.5488-cc260c476_amd64.deb', 'https://downloads.plex.tv/plex-media-server/1.14.1.5488-cc260c476/plexmediaserver_1.14.1.5488-cc260c476_amd64.deb', 1, 0, ''),
 ('CURL', '/usr/bin/docker-compose', 'Docker-Compose', '1.22.0', 0, 'docker-compose', 'https://github.com/docker/compose/releases/download/1.22.0/docker-compose-Linux-x86_64', 1, 0, ''),
 ('DEB', '<InstallDir>_files', 'Webmin', '1.890', 0, 'webmin_1.890_all.deb', 'http://prdownloads.sourceforge.net/webadmin/webmin_1.890_all.deb', 1, 0, '');
 

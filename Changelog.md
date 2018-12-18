@@ -10,7 +10,7 @@
 			- NextCloud v13.0.6
 			- Composer v1.7.2
 			- Tautulli v2.1.18
-			- PlexMedia v1.13.5.5332
+			- PlexMedia v1.14.1.5488
 			- Certbot-auto script v0.26.1
 			- Docker-Compose v1.22.0
 			- GeoIPupdate v3.1.0
