@@ -23,45 +23,105 @@
 funcs_Upgrade=1
 ##################### FIRST LINE #####################################
 
+#### Change hostname
+gfnChangeFQDN() {
+    local sNewFQDN nCheckFqdnResult
+
+    if [[ -z ${1} ]]; then
+		echo
+		echo -e "${Questions_Message_Hostname}"
+		gfnQuestionGetString NO "${Global_Questions_Hostname}" sNewFQDN "${sNewFQDN}"
+    else
+        sNewFQDN="${1}"
+    fi
+
+    while [ -z "${sNewFQDN}" ] || [ $(gfnCheckFQDN "${sNewFQDN}") -ne 0 ]; do
+        nCheckFqdnResult=$(gfnCheckFQDN "${sNewFQDN}")
+        case "${nCheckFqdnResult}" in
+            1)	echo -e "${Global_Questions_Message_Hostname_NoFqdn}";;
+            2)	echo -e "${Global_Questions_Message_Hostname_Fqdn_NotPublicIp}";;
+            3)	echo -e "${Global_Questions_Message_Hostname_Fqdn_NotLocalIp_0}"
+                echo -e "${Global_Questions_Message_Hostname_Fqdn_NotLocalIp_1}"
+            ;;
+        esac
+        [[ -z ${1} ]] && gfnQuestionGetString NO "${Global_Questions_Hostname}" sNewFQDN "${sNewFQDN}"
+    done
+
+    # Update DB
+    cmdMySQL 'MySB_db' "UPDATE system SET hostname='$gsHostNameFqdn' WHERE id_system='1';" -v
+
+    # /etc/hostname
+    rm -vf /etc/hostname
+    echo "${sNewFQDN}" | tee -a /etc/hostname
+
+    # SSH Key
+    mkdir -pv /root/.ssh/
+    [[ ! -f /root/.ssh/id_rsa ]] && ssh-keygen -q -t rsa -b 2048 -N "" -f /root/.ssh/id_rsa
+    cat /root/.ssh/id_rsa
+
+    # Let's Encrypt
+    if [[ "${gbIsInstalled_LetsEncrypt}" == "YES" ]] && [[ ! -f /etc/nginx/snippets/letsencrypt_${gsHostNameFqdn}.conf ]]; then
+        log_daemon_msg "${UpdateTools_LetsEncrypt}"
+        gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/LetsEncrypt" 'renew' 'CRON'
+        gfnStatusLSB
+    fi
+
+    # Certificates
+    # NginX
+    # VSFTPd
+    # Seedbox-Manager
+    # Cakebox-Light
+    # LoadAvg
+    # NextCloud
+    # ruTorrent
+    # Postfix
+    # PlexMedia
+    # OpenVPN
+    # MySB_SecurityRules
+
+    # Restart services
+    [[ ! -z "${sServicesToRestart}" ]] && gfnManageServices start "${sServicesToRestart}"
+}
+
 #### Upgrade in progress (web page)
 gfnUpgradeInProgress() {
 	local sRtorrentSessions sSession sServicesToStop sAllSessions
 	sServicesToStop="nginx cron"
 
-	case "$1" in
+	case "${1}" in
 		"on")
 			# Nextcloud
-			[ "$gbIsInstalled_NextCloud" == "YES" ] && su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --on" &> /dev/null
+			[[ "${gbIsInstalled_NextCloud}" == "YES" ]] && su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --on" &> /dev/null
 			# rTorrent sessions
-			sRtorrentSessions="`ls -1r /etc/init.d/rtorrent-* | cut -d '/' -f 4`"
-			for sSession in $sRtorrentSessions; do
-				[ -z "$sAllSessions" ] && sAllSessions="$sSession" || sAllSessions="${sAllSessions} $sSession"
+			sRtorrentSessions=$(ls -1r /etc/init.d/rtorrent-* | cut -d '/' -f 4)
+			for sSession in ${sRtorrentSessions}; do
+				[[ -z "${sAllSessions}" ] && sAllSessions="${sSession}" || sAllSessions="${sAllSessions} ${sSession}"
 			done
-			sServicesToStop="${sServicesToStop} $sAllSessions"
+			sServicesToStop="${sServicesToStop} ${sAllSessions}"
 			# Stopping some services like Plex or OpenVPN
-			[ "$gbIsInstalled_OpenVPN" == "YES" ] && sServicesToStop="${sServicesToStop} openvpn"
-			[ "$gbIsInstalled_PlexMedia" == "YES" ] && sServicesToStop="${sServicesToStop} plexmediaserver"
-			[ "$gbIsInstalled_Tautulli" == "YES" ] && sServicesToStop="${sServicesToStop} tautulli"
+			[[ "${gbIsInstalled_OpenVPN}" == "YES" ]] && sServicesToStop="${sServicesToStop} openvpn"
+			[[ "${gbIsInstalled_PlexMedia}" == "YES" ]] && sServicesToStop="${sServicesToStop} plexmediaserver"
+			[[ "${gbIsInstalled_Tautulli}" == "YES" ]] && sServicesToStop="${sServicesToStop} tautulli"
 			# Stop services
-			gfnManageServices 'stop' "$sServicesToStop"
+			gfnManageServices 'stop' "${sServicesToStop}"
 			# NginX
 			rm -f /etc/nginx/sites-enabled/WiP
 			rm -f /etc/nginx/sites-enabled/default
 			rm -f /etc/nginx/sites-enabled/cakebox
-			cp $MySB_InstallDir/templates/nginx/etc.nginx.site-enabled.WiP.tmpl /etc/nginx/sites-available/WiP
-			perl -pi -e "s/<InstallDir>/$gsInstallDirEscaped/g" /etc/nginx/sites-available/WiP
-			perl -pi -e "s/<PORT_HTTPS>/$gsPort_MySB_HTTPS/g" /etc/nginx/sites-available/WiP
-			perl -pi -e "s/<PORT_HTTP>/$gsPort_MySB_HTTP/g" /etc/nginx/sites-available/WiP
-			perl -pi -e "s/<server_name>/$gsHostNameFqdn/g" /etc/nginx/sites-available/WiP
-			[ ! -h /etc/nginx/sites-enabled/WiP ] && ln -s /etc/nginx/sites-available/WiP /etc/nginx/sites-enabled/WiP
+			cp ${MySB_InstallDir}/templates/nginx/etc.nginx.site-enabled.WiP.tmpl /etc/nginx/sites-available/WiP
+			perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /etc/nginx/sites-available/WiP
+			perl -pi -e "s/<PORT_HTTPS>/${gsPort_MySB_HTTPS}/g" /etc/nginx/sites-available/WiP
+			perl -pi -e "s/<PORT_HTTP>/${gsPort_MySB_HTTP}/g" /etc/nginx/sites-available/WiP
+			perl -pi -e "s/<server_name>/${gsHostNameFqdn}/g" /etc/nginx/sites-available/WiP
+			[[ ! -h /etc/nginx/sites-enabled/WiP ]] && ln -s /etc/nginx/sites-available/WiP /etc/nginx/sites-enabled/WiP
 			# Start services
 			gfnManageServices 'start' "nginx"
 		;;
 		"off")
 			gfnManageServices 'stop' "nginx"
 			rm -f /etc/nginx/sites-enabled/WiP
-			[ ! -h /etc/nginx/sites-enabled/default ] && ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
-			[ ! -h /etc/nginx/sites-enabled/cakebox ] && ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox
+			[[ ! -h /etc/nginx/sites-enabled/default ]] && ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+			[[ ! -h /etc/nginx/sites-enabled/cakebox ]] && ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox
 			gfnManageServices 'start' "nginx cron"
 		;;
 	esac
