@@ -1,6 +1,6 @@
 #!/bin/bash
 # ----------------------------------
-source $(dirname $0)/../inc/includes_before
+. $(dirname $0)/../inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -25,117 +25,117 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### VARs
-sLocSwitch="$1"
+sLocSwitch="${1}"
 
 #### PlexMedia & Tautulli update
-if [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
-	log_daemon_msg "$UpdateTools_Plex"
-	gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/PlexMedia" 'CRON'
+if [[ "${gbIsInstalled_PlexMedia}" == "YES" ]]; then
+	log_daemon_msg "${UpdateTools_Plex}"
+	gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/PlexMedia" 'CRON'
 	gfnStatusLSB
 fi
 
 #### Docker tools
-if gfnCheckCommand 0 docker; then
-	log_daemon_msg "$UpdateTools_DockerTools"
-	gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/Docker" 'CRON'
-	gfnStatusLSB
-fi
+# if gfnCheckCommand 0 docker; then
+	# log_daemon_msg "${UpdateTools_DockerTools}"
+	# gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/Docker" 'CRON'
+	# gfnStatusLSB
+# fi
 
 #### Webmin update
-if [ "$gbIsInstalled_Webmin" == "YES" ]; then
-	log_daemon_msg "$UpdateTools_Webmin"
-	gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/Webmin" 'CRON'
+if [[ "${gbIsInstalled_Webmin}" == "YES" ]]; then
+	log_daemon_msg "${UpdateTools_Webmin}"
+	gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/Webmin" 'CRON'
 	gfnStatusLSB
 fi
 
 #### CPAN modules
-# if [ ! -f /tmp/CPAN.lock ]; then
+# if [[ ! -f /tmp/CPAN.lock ]; then
 	# cpan -u
 	# rm -f /tmp/CPAN.lock
 # fi
 
 #### Correcting minor bugs
-# VARs
+## VARs
 sServicesToRestart=""
 gfnListCountUsers 'normal'
 source /opt/MySB/inc/funcs_by_script/funcs_Install
-# LogRotate
-[ -z $(grep 'notifempty' /etc/logrotate.d/mysql-server) ] && gfnLogRotate 'mysql-server'
-[ -z $(grep 'postrotate' /etc/logrotate.d/fail2ban) ] && gfnLogRotate 'fail2ban'
-for seedUser in $gsUsersList; do
-	if [ ! -f /etc/logrotate.d/rtorrent_${seedUser} ]; then
-		install -g root -o root -m 0644 $MySB_InstallDir/templates/logrotate/etc.logrotate.d.users.tmpl /etc/logrotate.d/rtorrent_${seedUser}
-		perl -pi -e "s/<username>/$seedUser/g" /etc/logrotate.d/rtorrent_${seedUser}
+## LogRotate
+[[ -z $(grep 'notifempty' /etc/logrotate.d/mysql-server) ]] && gfnLogRotate 'mysql-server'
+[[ -z $(grep 'postrotate' /etc/logrotate.d/fail2ban) ]] && gfnLogRotate 'fail2ban'
+for seedUser in ${gsUsersList}; do
+	if [[ ! -f /etc/logrotate.d/rtorrent_${seedUser} ]]; then
+		install -g root -o root -m 0644 ${MySB_InstallDir}/templates/logrotate/etc.logrotate.d.users.tmpl /etc/logrotate.d/rtorrent_${seedUser}
+		perl -pi -e "s/<username>/${seedUser}/g" /etc/logrotate.d/rtorrent_${seedUser}
 	fi
 done
-# CRON
+## CRON
 if [[ ! -z $(grep 'PlexMedia' /var/spool/cron/crontabs/root) ]]; then
 	crontab -l > /tmp/crontab.tmp
 	sed -i '/PlexMedia/d' /tmp/crontab.tmp
 	crontab /tmp/crontab.tmp
 	rm -f /tmp/crontab.tmp
 fi
-# Seedbox-Manager
-gfnGetRepoValues 'Seedbox-Manager'
-#### Utils.php
-[[ -z $(grep 'getPasswordUser' $gsManagerDir/src/Seedbox/Utils.php) ]] && install -v -o www-data -g www-data -m 0640 $MySB_InstallDir/templates/manager/Utils.php.tmpl $gsManagerDir/src/Seedbox/Utils.php
-#### FileConfiguration.php
-[[ -z $(grep 'Users $user, $pass, $host' $gsManagerDir/src/Seedbox/FileConfiguration.php) ]] && install -v -o www-data -g www-data -m 0640 $MySB_InstallDir/templates/manager/FileConfiguration.php.tmpl $gsManagerDir/src/Seedbox/FileConfiguration.php
-#### DownloadController.php
-[[ -z $(grep 'getPasswordUser' $gsManagerDir/src/Controller/DownloadController.php) ]] && install -v -o www-data -g root -m www-data -m 0640 $MySB_InstallDir/templates/manager/DownloadController.php.tmpl $gsManagerDir/src/Controller/DownloadController.php
-#### NFS
-if [ ! -d /export ] && [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
+## Seedbox-Manager
+# Utils.php
+if [[ -z $(grep 'getPasswordUser' ${gsManagerDir}/src/Seedbox/Utils.php) ]]; then
+    gfnGetRepoValues 'Seedbox-Manager'
+    install -v -o www-data -g www-data -m 0640 ${MySB_InstallDir}/templates/manager/Utils.php.tmpl ${gsManagerDir}/src/Seedbox/Utils.php
+fi
+# FileConfiguration.php
+[[ -z $(grep 'Users $user, $pass, $host' ${gsManagerDir}/src/Seedbox/FileConfiguration.php) ]] && install -v -o www-data -g www-data -m 0640 ${MySB_InstallDir}/templates/manager/FileConfiguration.php.tmpl ${gsManagerDir}/src/Seedbox/FileConfiguration.php
+# DownloadController.php
+[[ -z $(grep 'getPasswordUser' ${gsManagerDir}/src/Controller/DownloadController.php) ]] && install -v -o www-data -g root -m www-data -m 0640 ${MySB_InstallDir}/templates/manager/DownloadController.php.tmpl ${gsManagerDir}/src/Controller/DownloadController.php
+## NFS
+if [[ ! -d /export ]] && [[ "${gbIsInstalled_OpenVPN}" == "YES" ]]; then
 	# nfs-common
-	install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nfs/etc.default.nfs-common.tmpl /etc/default/nfs-common
+	install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/nfs/etc.default.nfs-common.tmpl /etc/default/nfs-common
 	# nfs-kernel-server
-	install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nfs/etc.default.nfs-kernel-server.tmpl /etc/default/nfs-kernel-server
+	install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/nfs/etc.default.nfs-kernel-server.tmpl /etc/default/nfs-kernel-server
 	# /etc/default/quota
-	install -v -o root -g root -m 0644 $MySB_InstallDir/templates/other/etc.default.quota.tmpl /etc/default/quota
+	install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/other/etc.default.quota.tmpl /etc/default/quota
 	# Sysctl
-	[[ -z $(grep '# NFS - BoF' /etc/sysctl.conf) ]] && cat $MySB_InstallDir/templates/sysctl/nfs.tmpl >> /etc/sysctl.conf; sysctl --system
+	[[ -z $(grep '# NFS - BoF' /etc/sysctl.conf) ]] && cat ${MySB_InstallDir}/templates/sysctl/nfs.tmpl >> /etc/sysctl.conf; sysctl --system
 	# Users exports
-	for seedUser in $gsUsersList; do
-		[ -f /etc/exports ] && sed -i '/'$seedUser'/d' /etc/exports
-		uid=`grep $seedUser /etc/passwd | awk -F: '{ print $3 }'`
-		guid=`grep MySB_users /etc/group | awk -F: '{ print $3 }'`
-		echo "# $seedUser" >> /etc/exports
-		echo "/home/$seedUser 10.0.0.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,crossmnt) 10.0.1.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,crossmnt) 10.0.2.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,crossmnt)" >> /etc/exports
-		echo "/export/$seedUser 10.0.0.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,crossmnt,nohide) 10.0.1.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,crossmnt,nohide) 10.0.2.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,crossmnt,nohide)" >> /etc/exports
-		[ ! -d /export/$seedUser ] && mkdir -p /export/$seedUser
-		[[ -z $(mount -l 2> /dev/null | grep /export/$seedUser) ]] && mount --bind /home/$seedUser /export/$seedUser
-		[[ -z $(grep "/export/$seedUser" /etc/fstab) ]] && echo -e "# /export/$seedUser\n/home/$seedUser /export/$seedUser none bind 0 0 " >> /etc/fstab
+	for seedUser in ${gsUsersList}; do
+		[[ -f /etc/exports ]] && sed -i '/'${seedUser}'/d' /etc/exports
+		uid=$(grep ${seedUser} /etc/passwd | awk -F: '{ print $3 }')
+		guid=$(grep MySB_users /etc/group | awk -F: '{ print $3 }')
+		echo "# ${seedUser}" >> /etc/exports
+		echo "/home/${seedUser} 10.0.0.0/24(ro,anonuid=${uid},async,anongid=${guid},insecure,no_subtree_check,crossmnt) 10.0.1.0/24(ro,anonuid=${uid},async,anongid=${guid},insecure,no_subtree_check,nohide,crossmnt) 10.0.2.0/24(ro,anonuid=${uid},async,anongid=${guid},insecure,no_subtree_check,nohide,crossmnt)" >> /etc/exports
+		echo "/export/${seedUser} 10.0.0.0/24(ro,anonuid=${uid},async,anongid=${guid},insecure,no_subtree_check,crossmnt,nohide) 10.0.1.0/24(ro,anonuid=${uid},async,anongid=${guid},insecure,no_subtree_check,nohide,crossmnt,nohide) 10.0.2.0/24(ro,anonuid=${uid},async,anongid=${guid},insecure,no_subtree_check,nohide,crossmnt,nohide)" >> /etc/exports
+		[[ ! -d /export/${seedUser} ]] && mkdir -p /export/${seedUser}
+		[[ -z $(mount -l 2> /dev/null | grep /export/${seedUser}) ]] && mount --bind /home/${seedUser} /export/${seedUser}
+		[[ -z $(grep "/export/${seedUser}" /etc/fstab) ]] && echo -e "# /export/${seedUser}\n/home/${seedUser} /export/${seedUser} none bind 0 0 " >> /etc/fstab
 	done
 	sServicesToRestart="${sServicesToRestart} nfs-kernel-server"
 fi
-#### IPtables rules files for SystemD
-if [ -f /etc/iptables.up.rules ]; then
+## IPtables rules files for SystemD
+if [[ -f /etc/iptables.up.rules ]]; then
 	gfnPackageBundleInstall "iptables-persistent"
 	systemctl enable netfilter-persistent
 	install -d /etc/iptables
 	sed -i '/post-up iptables-restore/d' /etc/network/interfaces
 	mv -v /etc/iptables.up.rules /etc/iptables/rules.v4
 fi
-#### IPtables RSyslog
+## IPtables RSyslog
 if [[ ! -z $(grep 'IN=' /etc/rsyslog.d/iptables.conf) ]]; then
 	echo "if (\$msg contains '[MySB] ') then /var/log/iptables.log" > /etc/rsyslog.d/iptables.conf
 	echo "& stop" >> /etc/rsyslog.d/iptables.conf
 fi
-#### Check usual commands
-sPackagesList=""
-[[ ! $(gfnCheckCommand 0 htpasswd) ]] && sPackagesList="$sPackagesList apache2-utils"
-[[ ! -z ${sPackagesList} ]] && gfnPackageBundleInstall "$sPackagesList"
-#### Quota
+## Check usual commands
+[[ ! $(gfnCheckCommand 0 htpasswd) ]] && sPackagesList="" || sPackagesList="apache2-utils"
+[[ ! -z ${sPackagesList} ]] && gfnPackageBundleInstall "${sPackagesList}"
+## Quota
 if [[ -z $(grep '@' /etc/warnquota.conf) ]]; then
 	install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/other/etc.warnquota.conf.tmpl /etc/warnquota.conf
 	sed -i "s/<main_user_mail>/${gsMainUserEmail}/g;" /etc/warnquota.conf
 	sed -i "s/<mail_subject>/${Quota_MailSubject}/g;" /etc/warnquota.conf
 	sed -i "s/<mail_message>/${Quota_MailMessage}/g;" /etc/warnquota.conf
 fi
-
-#### Let's Encrypt
-if [ "$gbIsInstalled_LetsEncrypt" == "YES" ]; then
-	log_daemon_msg "$UpdateTools_LetsEncrypt"
-	gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/LetsEncrypt" 'renew' 'CRON'
+## Let's Encrypt
+if [[ "${gbIsInstalled_LetsEncrypt}" == "YES" ]] && [[ ! -f /etc/nginx/snippets/letsencrypt_${gsHostNameFqdn}.conf ]]; then
+	log_daemon_msg "${UpdateTools_LetsEncrypt}"
+	gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/LetsEncrypt" 'renew' 'CRON'
 	gfnStatusLSB
 fi
 [[ -f ${MySB_InstallDir}/ssl/fullchain.pem ]] && rm -vf ${MySB_InstallDir}/ssl/fullchain.pem
@@ -159,12 +159,12 @@ if [[ -z $(grep 'ssl_certificate' /etc/nginx/nginx.conf) ]] || [[ -z $(grep 'log
 	sServicesToRestart="${sServicesToRestart} nginx"
 
 	# VSFTPd
-	nNumLine=$(cat /etc/vsftpd.conf | grep 'rsa_cert_file' -n -m 1 | cut -d ':' -f 1)
-	sed -i '/rsa_cert_file/d' /etc/vsftpd.conf
-	sed -i ""$nNumLine"i\/etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" /etc/vsftpd.conf
-	nNumLine=$(cat /etc/vsftpd.conf | grep 'rsa_private_key_file' -n -m 1 | cut -d ':' -f 1)
-	sed -i '/rsa_private_key_file/d' /etc/vsftpd.conf
-	sed -i ""$nNumLine"i\/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/vsftpd.conf
+    nNumLine=$(cat /etc/vsftpd.conf | grep 'rsa_cert_file' -n -m 1 | cut -d ':' -f 1)
+    sed -i '/rsa_cert_file/d' /etc/vsftpd.conf
+    sed -i ""${nNumLine}"i\rsa_cert_file=/etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" /etc/vsftpd.conf
+    nNumLine=$(cat /etc/vsftpd.conf | grep 'rsa_private_key_file' -n -m 1 | cut -d ':' -f 1)
+    sed -i '/rsa_private_key_file/d' /etc/vsftpd.conf
+    sed -i ""${nNumLine}"i\rsa_private_key_file=/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/vsftpd.conf
 	sServicesToRestart="${sServicesToRestart} vsftpd"
 
 	# Tautulli
@@ -175,17 +175,17 @@ if [[ -z $(grep 'ssl_certificate' /etc/nginx/nginx.conf) ]] || [[ -z $(grep 'log
 			sed -i '/https_cert/d' ${gsRepoDir}/config.ini
 			sed -i '/https_key/d' ${gsRepoDir}/config.ini
 			sed -i '/https_cert_chain/d' ${gsRepoDir}/config.ini
-			sed -i ""$nNumLine"i\https_cert = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" ${gsRepoDir}/config.ini
-			sed -i ""$nNumLine"i\https_cert_chain = /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" ${gsRepoDir}/config.ini
-			sed -i ""$nNumLine"i\https_key = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ${gsRepoDir}/config.ini
+			sed -i ""${nNumLine}"i\https_cert = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" ${gsRepoDir}/config.ini
+			sed -i ""${nNumLine}"i\https_cert_chain = /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" ${gsRepoDir}/config.ini
+			sed -i ""${nNumLine}"i\https_key = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ${gsRepoDir}/config.ini
 			sServicesToRestart="${sServicesToRestart} tautulli"
 		fi
 	fi
 fi
-#### Restart services
+## Restart services
 [[ ! -z "${sServicesToRestart}" ]] && gfnManageServices start "${sServicesToRestart}"
 
 # -----------------------------------------
-source $(dirname $0)/../inc/includes_after
+. $(dirname $0)/../inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################
