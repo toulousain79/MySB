@@ -1,3 +1,16 @@
+	Version v5.4
+		2018/09/07 (start at: 2018/09/07)
+			- Composer v1.8.0
+			- Minisign v0.8.3
+			- NextCloud v14.0.4
+			- GeoIPupdate v3.1.1
+			- Tautulli v2.1.26
+			- LibSmbClient v1.0.0
+			- Webmin v1.900
+			- Certbot-auto script v0.29.1
+			- Portal
+				* Medoo Framework v1.6.1
+
 	Version v5.3
 		2018/09/07 (start at: 2018/03/25)
 			- DNScrypt-proxy, review resolvers list

@@ -25,62 +25,62 @@ funcs_Upgrade=1
 
 #### Change hostname
 gfnChangeFQDN() {
-    local sNewFQDN nCheckFqdnResult
+	local sNewFQDN nCheckFqdnResult
 
-    if [[ -z ${1} ]]; then
+	if [[ -z ${1} ]]; then
 		echo
 		echo -e "${Questions_Message_Hostname}"
 		gfnQuestionGetString NO "${Global_Questions_Hostname}" sNewFQDN "${sNewFQDN}"
-    else
-        sNewFQDN="${1}"
-    fi
+	else
+		sNewFQDN="${1}"
+	fi
 
-    while [ -z "${sNewFQDN}" ] || [ $(gfnCheckFQDN "${sNewFQDN}") -ne 0 ]; do
-        nCheckFqdnResult=$(gfnCheckFQDN "${sNewFQDN}")
-        case "${nCheckFqdnResult}" in
-            1)	echo -e "${Global_Questions_Message_Hostname_NoFqdn}";;
-            2)	echo -e "${Global_Questions_Message_Hostname_Fqdn_NotPublicIp}";;
-            3)	echo -e "${Global_Questions_Message_Hostname_Fqdn_NotLocalIp_0}"
-                echo -e "${Global_Questions_Message_Hostname_Fqdn_NotLocalIp_1}"
-            ;;
-        esac
-        [[ -z ${1} ]] && gfnQuestionGetString NO "${Global_Questions_Hostname}" sNewFQDN "${sNewFQDN}"
-    done
+	while [ -z "${sNewFQDN}" ] || [ $(gfnCheckFQDN "${sNewFQDN}") -ne 0 ]; do
+		nCheckFqdnResult=$(gfnCheckFQDN "${sNewFQDN}")
+		case "${nCheckFqdnResult}" in
+			1)	echo -e "${Global_Questions_Message_Hostname_NoFqdn}";;
+			2)	echo -e "${Global_Questions_Message_Hostname_Fqdn_NotPublicIp}";;
+			3)	echo -e "${Global_Questions_Message_Hostname_Fqdn_NotLocalIp_0}"
+				echo -e "${Global_Questions_Message_Hostname_Fqdn_NotLocalIp_1}"
+			;;
+		esac
+		[[ -z ${1} ]] && gfnQuestionGetString NO "${Global_Questions_Hostname}" sNewFQDN "${sNewFQDN}"
+	done
 
-    # Update DB
-    cmdMySQL 'MySB_db' "UPDATE system SET hostname='$gsHostNameFqdn' WHERE id_system='1';" -v
+	# Update DB
+	cmdMySQL 'MySB_db' "UPDATE system SET hostname='$gsHostNameFqdn' WHERE id_system='1';" -v
 
-    # /etc/hostname
-    rm -vf /etc/hostname
-    echo "${sNewFQDN}" | tee -a /etc/hostname
+	# /etc/hostname
+	rm -vf /etc/hostname
+	echo "${sNewFQDN}" | tee -a /etc/hostname
 
-    # SSH Key
-    mkdir -pv /root/.ssh/
-    [[ ! -f /root/.ssh/id_rsa ]] && ssh-keygen -q -t rsa -b 2048 -N "" -f /root/.ssh/id_rsa
-    cat /root/.ssh/id_rsa
+	# SSH Key
+	mkdir -pv /root/.ssh/
+	[[ ! -f /root/.ssh/id_rsa ]] && ssh-keygen -q -t rsa -b 2048 -N "" -f /root/.ssh/id_rsa
+	cat /root/.ssh/id_rsa
 
-    # Let's Encrypt
-    if [[ "${gbIsInstalled_LetsEncrypt}" == "YES" ]] && [[ ! -f /etc/nginx/snippets/letsencrypt_${gsHostNameFqdn}.conf ]]; then
-        log_daemon_msg "${UpdateTools_LetsEncrypt}"
-        gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/LetsEncrypt" 'renew' 'CRON'
-        gfnStatusLSB
-    fi
+	# Let's Encrypt
+	if [[ "${gbIsInstalled_LetsEncrypt}" == "YES" ]] && [[ ! -f /etc/nginx/snippets/letsencrypt_${gsHostNameFqdn}.conf ]]; then
+		log_daemon_msg "${UpdateTools_LetsEncrypt}"
+		gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/LetsEncrypt" 'renew' 'CRON'
+		gfnStatusLSB
+	fi
 
-    # Certificates
-    # NginX
-    # VSFTPd
-    # Seedbox-Manager
-    # Cakebox-Light
-    # LoadAvg
-    # NextCloud
-    # ruTorrent
-    # Postfix
-    # PlexMedia
-    # OpenVPN
-    # MySB_SecurityRules
+	# Certificates
+	# NginX
+	# VSFTPd
+	# Seedbox-Manager
+	# Cakebox-Light
+	# LoadAvg
+	# NextCloud
+	# ruTorrent
+	# Postfix
+	# PlexMedia
+	# OpenVPN
+	# MySB_SecurityRules
 
-    # Restart services
-    [[ ! -z "${sServicesToRestart}" ]] && gfnManageServices start "${sServicesToRestart}"
+	# Restart services
+	[[ ! -z "${sServicesToRestart}" ]] && gfnManageServices start "${sServicesToRestart}"
 }
 
 #### Upgrade in progress (web page)
