@@ -1,4 +1,4 @@
-	Version v5.4
+	Version v99.99
 		2018/09/07 (start at: 2018/09/07)
 			- Composer v1.8.0
 			- Minisign v0.8.3

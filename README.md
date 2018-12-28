@@ -3,7 +3,7 @@
 		height="200">
 </p>
 <p align="center">
-	 <a href="https://github.com/toulousain79/MySB/blob/v5.4/LICENCE.md">
+	 <a href="https://github.com/toulousain79/MySB/blob/v99.99/LICENCE.md">
 		<img src="https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square" /></a>
 </p>
 
