@@ -220,12 +220,18 @@ gfnGenPassword() {
 
 #### Check if is a correct IP
 gfnValidateIP() {
-	local sValue
+    local  ip=$1
+    local  stat=1
 
-	if [ ! -z "$1" ]; then
-		sValue=`printf $1 | awk -F'.' 'NF==4 && $1>0 && $1!=127 && $1<256 && $2<256 && $3<256 && $4<256 && !/\.\./'`
-	fi
-	echo $sValue
+    if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        OIFS=$IFS
+        IFS='.'
+        ip=($ip)
+        IFS=$OIFS
+        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+        stat=$?
+    fi
+    return $stat
 }
 
 #### Check if FQDN
@@ -237,6 +243,10 @@ gfnCheckFQDN() {
 	# nReturn = 2: FQDN not coresponding to public IP address
 	# nReturn = 3: FQDN coresponding to public IP address but FQDN not corresponding to local IP address
 	nReturn=1
+
+    if [ $(host -N 0 "$sHostname" > /dev/null 2>&1) -eq 0 ]; then
+
+    fi
 
 	if [ "`host -N 0 "$sHostname" > /dev/null 2>&1; echo $?`" -eq 0 ]; then
 		sPingResult="`ping -q -c 1 "$sHostname" | head -n 1 | awk '{ print $3 }' | sed 's/(//g;' | sed 's/)//g;'`"
