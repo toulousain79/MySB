@@ -98,9 +98,8 @@ DisplaySurvey() {
 		else
 			sValue="$gsSrvIpAddress"
 		fi
-		while [ ! "$CHECK_SrvIpAddress" = "$gsSrvIpAddress" ] || [ -z "$gsSrvIpAddress" ]; do
+		while [ ! $(gfnValidateIP ${gsSrvIpAddress}) ] || [ -z "$gsSrvIpAddress" ]; do
 			gfnQuestionGetString NO "$Questions_BoxIpAddress" gsSrvIpAddress "$sValue"
-			CHECK_SrvIpAddress="`gfnValidateIP "$gsSrvIpAddress"`"
 		done
 		unset sValue
 
@@ -125,9 +124,8 @@ DisplaySurvey() {
 		else
 			sValue="$gsSrvIpAddressExt"
 		fi
-		while [ ! "$CHECK_SrvIpAddressExt" = "$gsSrvIpAddressExt" ] || [ -z "$gsSrvIpAddressExt" ]; do
+		while [ ! $(gfnValidateIP ${gsSrvIpAddressExt}) ] || [ -z "$gsSrvIpAddressExt" ]; do
 			gfnQuestionGetString NO "$Questions_BoxIpAddressExt" gsSrvIpAddressExt "$sValue"
-			CHECK_SrvIpAddressExt="`gfnValidateIP "$gsSrvIpAddressExt"`"
 		done
 		unset sValue
 
@@ -135,14 +133,11 @@ DisplaySurvey() {
 		echo
 		echo -e "$Questions_Message_Hostname"
 		gfnQuestionGetString NO "$Global_Questions_Hostname" gsHostNameFqdn "$gsHostNameFqdn"
-		while [ -z "$gsHostNameFqdn" ] || [ "`gfnCheckFQDN "$gsHostNameFqdn"`" -ne 0 ]; do
-			nCheckFqdnResult="`gfnCheckFQDN "$gsHostNameFqdn"`"
+		while [ -z "$gsHostNameFqdn" ] || [[ ! $(gfnCheckFQDN ${gsHostNameFqdn}) ]]; do
+			nCheckFqdnResult=$(gfnCheckFQDN ${gsHostNameFqdn})
 			case "$nCheckFqdnResult" in
 				1)	echo -e "$Global_Questions_Message_Hostname_NoFqdn";;
 				2)	echo -e "$Global_Questions_Message_Hostname_Fqdn_NotPublicIp";;
-				3)	echo -e "$Global_Questions_Message_Hostname_Fqdn_NotLocalIp_0"
-					echo -e "$Global_Questions_Message_Hostname_Fqdn_NotLocalIp_1"
-				;;
 			esac
 			gfnQuestionGetString NO "$Global_Questions_Hostname" gsHostNameFqdn "$gsHostNameFqdn"
 		done
@@ -446,19 +441,13 @@ DisplaySurvey() {
 				fi
 				bToInstall=1
 				gsOpenVPN_Proto=""
-				ValueOpenVPN_WithGW="$gsPort_OpenVPN_WithGW"
-				ValueOpenVPN_WithoutGW="$gsPort_OpenVPN_WithoutGW"
-				ValueOpenVPN_TAP_WithoutGW="$gsPort_OpenVPN_TAP_WithoutGW"
-				gfnQuestionGetString NO "$Questions_PortOpenvpnTUNwithGW" gsPort_OpenVPN_WithGW "$ValueOpenVPN_WithGW"
-				gfnQuestionGetString NO "$Questions_PortOpenvpnTUNwithoutGW" Port_OpenVPN_WithoutGW "$ValueOpenVPN_WithoutGW"
-				gfnQuestionGetString NO "$Questions_PortOpenvpnTAPwithoutGW" Port_OpenVPN_TAP_WithoutGW "$ValueOpenVPN_TAP_WithoutGW"
+				gfnQuestionGetString NO "$Questions_PortOpenvpnTUNwithGW" gsPort_OpenVPN_WithGW "$gsPort_OpenVPN_WithGW"
+				gfnQuestionGetString NO "$Questions_PortOpenvpnTUNwithoutGW" Port_OpenVPN_WithoutGW "$gsPort_OpenVPN_WithoutGW"
+				gfnQuestionGetString NO "$Questions_PortOpenvpnTAPwithoutGW" Port_OpenVPN_TAP_WithoutGW "$gsPort_OpenVPN_TAP_WithoutGW"
 				while [ ! "$gsOpenVPN_Proto" = "udp" ] && [ ! "$gsOpenVPN_Proto" = "tcp" ]; do
 					gfnQuestionGetString NO "$Questions_ProtoOpenVPN" gsOpenVPN_Proto "$sValueProto"
 					gsOpenVPN_Proto="`echo $gsOpenVPN_Proto | tr '[:upper:]' '[:lower:]'`"
 				done
-				gsPort_OpenVPN_WithGW=$ValueOpenVPN_WithGW
-				gsPort_OpenVPN_WithoutGW=$ValueOpenVPN_WithoutGW
-				gsPort_OpenVPN_TAP_WithoutGW=$ValueOpenVPN_TAP_WithoutGW
 
 				case "$gsOpenVPN_Proto" in
 					"tcp")
@@ -477,7 +466,7 @@ DisplaySurvey() {
 			fi
 			cmdMySQL 'MySB_db' "UPDATE services SET to_install='$bToInstall', used='1', $sTcpPortsList, $sUdpPortsList WHERE serv_name='OpenVPN';" -v >> $gsLogFile
 			cmdMySQL 'MySB_db' "UPDATE services SET to_install='$bToInstall', used='1' WHERE serv_name='Samba' OR serv_name='NFS';" -v >> $gsLogFile
-			unset sValue nLoop bToInstall ValueOpenVPN_WithGW ValueOpenVPN_WithoutGW ValueOpenVPN_TAP_WithoutGW sTcpPortsList sUdpPortsList
+			unset sValue nLoop bToInstall sTcpPortsList sUdpPortsList
 		fi
 	fi
 

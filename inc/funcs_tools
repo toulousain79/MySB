@@ -220,18 +220,19 @@ gfnGenPassword() {
 
 #### Check if is a correct IP
 gfnValidateIP() {
-    local  ip=$1
-    local  stat=1
+	local sIp sStat
+	sIp=${1}
+	sStat=1
 
-    if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-        OIFS=$IFS
-        IFS='.'
-        ip=($ip)
-        IFS=$OIFS
-        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
-        stat=$?
-    fi
-    return $stat
+	if [[ ${sIp} =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+		OIFS=$IFS
+		IFS='.'
+		ip=(${sIp})
+		IFS=$OIFS
+		[[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+		sStat=$?
+	fi
+	return ${sStat}
 }
 
 #### Check if FQDN
@@ -241,45 +242,14 @@ gfnCheckFQDN() {
 	# nReturn = 0: All is OK
 	# nReturn = 1: Is not a FQDN
 	# nReturn = 2: FQDN not coresponding to public IP address
-	# nReturn = 3: FQDN coresponding to public IP address but FQDN not corresponding to local IP address
 	nReturn=1
 
-    if [ $(host -N 0 "$sHostname" > /dev/null 2>&1) -eq 0 ]; then
-
-    fi
-
-	if [ "`host -N 0 "$sHostname" > /dev/null 2>&1; echo $?`" -eq 0 ]; then
-		sPingResult="`ping -q -c 1 "$sHostname" | head -n 1 | awk '{ print $3 }' | sed 's/(//g;' | sed 's/)//g;'`"
-		sDigResult="`dig +short $sHostname @resolver1.opendns.com @resolver2.opendns.com @resolver3.opendns.com`"
-
-		if [ "$gsSrvIpAddress" == "$gsSrvIpAddressExt" ]; then
-			#### Case Not behind a firewall (Public IP address)
-			if [ "$sDigResult" == "$gsSrvIpAddressExt" ]; then
-				nReturn=0	# All is OK
-			else
-				nReturn=2	# FQDN not coresponding to public IP address
-			fi
-		else
-			#### Case behind a firewall (Local IP address)
-			if [ "$sDigResult" == "$gsSrvIpAddressExt" ]; then
-				if [ "$sPingResult" == "$gsSrvIpAddress" ]; then
-					nReturn=0	# All is OK
-				else
-					nReturn=2	# FQDN not coresponding to public IP address
-				fi
-			else
-				if [ "$sPingResult" == "$gsSrvIpAddress" ]; then
-					nReturn=2	# FQDN not coresponding to public IP address
-				else
-					nReturn=3	# FQDN coresponding to public IP address but FQDN not corresponding to local IP address
-				fi
-			fi
-		fi
-	else
-		nReturn=1
+	if [[ $(host -N 0 ${sHostname} > /dev/null 2>&1) ]]; then
+		sDigResult=$(dig +short ${sHostname} @resolver1.opendns.com @resolver2.opendns.com @resolver3.opendns.com)
+		[[ "${sDigResult" == "${gsSrvIpAddressExt}" ]] && nReturn=0 || nReturn=2
 	fi
 
-	echo $nReturn
+	echo ${nReturn}
 }
 
 #### Check if mail syntax is good
