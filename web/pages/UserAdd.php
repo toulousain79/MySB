@@ -123,7 +123,6 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$message = Global_CompleteAllFields;
 			}
 
-			PortalLockFile('MySB_CreateUser');
 			GenerateMessage('MySB_CreateUser', $type, $message, $args);
 			break;
 
@@ -187,7 +186,6 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					}
 				}
 
-				PortalLockFile('MySB_DeleteUser');
 				GenerateMessage('MySB_DeleteUser', $type, $message, $args);
 			}
 			break;
