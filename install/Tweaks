@@ -79,13 +79,15 @@ if [ ! -z "$gsTimeZone" ]; then
 fi
 
 #### Swappiness
-SWAP="`free -m | grep 'Swap' | awk '{ print $2 }'`"
-if [ "$gsMemory" -lt "2048" ] && [ "$SWAP" != "0" ]; then
+if ([ "$gsMemory" -lt 2048 ] && [ $(free -m | grep 'Swap' | awk '{ print $2 }') -ne 0 ]); then
 	echo
 	echo "########## Swappiness"
 	echo 80 | tee -a /proc/sys/vm/swappiness
-	if [[ $(grep 'vm.swappiness' /etc/sysctl.conf) ]]; then
+	if [[ ! $(grep 'vm.swappiness' /etc/sysctl.conf) ]]; then
+		echo "" | tee -a /etc/sysctl.conf
+		echo "# Swappiness - BoF" | tee -a /etc/sysctl.conf
 		echo "vm.swappiness = 80" | tee -a /etc/sysctl.conf
+		echo "# Swappiness - EoF" | tee -a /etc/sysctl.conf
 	fi
 fi
 
