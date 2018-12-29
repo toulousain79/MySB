@@ -254,32 +254,30 @@ gfnCheckFQDN() {
 
 #### Check if mail syntax is good
 gfnValidateMail() {
-	local sRegex nDig nReg sAddress sMailDomain
-
+	local nDig nReg sAddress sMailDomain
 	sAddress="$1"
-	nDig=0
+	sMailDomain=$(echo ${sAddress} | awk 'BEGIN { FS = "@" } ; { print $2 }')
 	nReg=0
-	sMailDomain="`echo $sAddress | awk 'BEGIN { FS = "@" } ; { print $2 }'`"
-	sRegex="^[a-z0-9!#\$%&'*+/=?^_\`{|}~-]+(\.[a-z0-9!#$%&'*+/=?^_\`{|}~-]+)*@([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]*[a-z0-9])?\$"
+	nDig=0
+
+	# Regexp
+	fnCheckRegex() {
+		printf "* %-48s" "$1"
+		echo "$1" | egrep --quiet "^([A-Za-z]+[A-Za-z0-9]*((\.|\-|\_)?[A-Za-z]+[A-Za-z0-9]*){1,})@(([A-Za-z]+[A-Za-z0-9]*)+((\.|\-|\_)?([A-Za-z]+[A-Za-z0-9]*)+){1,})+\.([A-Za-z]{2,})+"
+		[ $? -eq 0 ] || nReg=1
+	}
 
 	# Domain Check
 	fnCheckDNS() {
-		echo $sMailDomain | awk 'BEGIN { FS = "@" } ; { print $2 }' | xargs dig $sMailDomain +noauthority +noadditional +nostats | grep "ANSWER: 0" 1>/dev/null || nDig=1
-	}
-
-	# Regexp
-	fnCheckReg() {
-		if [[ $sAddress =~ $sRegex ]]; then
-			nReg=1
-		fi
+		echo ${sMailDomain} | awk 'BEGIN { FS = "@" } ; { print $2 }' | xargs dig ${sMailDomain} +noauthority +noadditional +nostats | grep "ANSWER: 0" 1>/dev/null || nDig=1
 	}
 
 	# Execute
-	fnCheckReg
+	fnCheckRegex
 	fnCheckDNS
 
 	# Results
-	if [ $nReg -eq 1 ] && [ $nDig -eq 1 ]; then
+	if [ ${nReg} -eq 1 ] && [ ${nDig} -eq 1 ]; then
 		echo 1
 	else
 		echo 0
