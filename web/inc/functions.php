@@ -790,6 +790,7 @@ function GenerateMessage($commands, $type, $message, $args) {
 
 					if ( $value >= 1 ) {
 						// Create a lock file if needed
+                        PortalLockFile($commands);
 						echo '<script type="text/javascript">ApplyConfig("ToUpdate");</script>';
 					}
 
