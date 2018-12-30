@@ -29,8 +29,8 @@ sShellCheckOnlyRed="SC2154,SC2086,SC2046,SC1090,SC2006,SC2034,SC2004,SC2016,SC20
 echo && echo -e "${CBLUE}*** Check Syntax with shellcheck (no templates) ***${CEND}"
 
 for directory in $(find /builds/${CI_PROJECT_PATH}/ -mindepth 1 -type d -not -path "*web*" -not -path "*templates*" -not -path "*.git*" -not -path "*db*" -not -path "*files*" -not -path "*templates*" -print0 | sort -z | xargs -r0); do
-	for file in $(find ${directory}/ -type f -not -path "*web*" -not -path "*templates*" -not -path "*.git*" -not -path "*db*" -not -path "*files*" -not -path "*templates*" -print0 | sort -z | xargs -r0); do
-		shellcheck -s bash -e ${sShellCheckOnlyRed} ${file}
+	for file in $(find ${directory}/ -type f -not -path "*web*" -not -path "*templates*" -not -path "*.git*" -not -path "*db*" -not -path "*files*" -not -path "*templates*" \( ! -name "*.md" \) -print0 | sort -z | xargs -r0); do
+		export LC_ALL=C.UTF-8; shellcheck -s bash -e ${sShellCheckOnlyRed} ${file}
 		if [[ ${?} -ne 0 ]]; then
 			echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
 			nReturn=1
@@ -43,19 +43,19 @@ done
 echo && echo -e "${CBLUE}*** Check Syntax with shellcheck (only templates) ***${CEND}"
 
 for file in $(find /builds/${CI_PROJECT_PATH}/templates/ \( -name "*.init.d*" -or -name "*.sh.*" -or -name "*.bsh.*" \)); do
-    shellcheck -s bash -e ${sShellCheckOnlyRed} ${file}
-    if [[ ${?} -ne 0 ]]; then
-        echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
-        nReturn=1
-    else
-        echo -e "${CYELLOW}${file}:${CEND} ${CGREEN}Passed${CEND}"
-    fi
+	export LC_ALL=C.UTF-8; shellcheck -s bash -e ${sShellCheckOnlyRed} ${file}
+	if [[ ${?} -ne 0 ]]; then
+		echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
+		nReturn=1
+	else
+		echo -e "${CYELLOW}${file}:${CEND} ${CGREEN}Passed${CEND}"
+	fi
 done
 
 echo && echo -e "${CBLUE}*** Check BASH Syntax ***${CEND}"
 
-for directory in $(find /builds/${CI_PROJECT_PATH}/ -mindepth 1 -type d ${sFindExcluded} -print0 | sort -z | xargs -r0); do
-	for file in $(find ${directory}/ -type f -print0 | sort -z | xargs -r0); do
+for directory in $(find /builds/${CI_PROJECT_PATH}/ -mindepth 1 -type d -not -path "*web*" -not -path "*templates*" -not -path "*.git*" -not -path "*db*" -not -path "*files*" -not -path "*templates*" -print0 | sort -z | xargs -r0); do
+	for file in $(find ${directory}/ -type f -print0 -not -path "*web*" -not -path "*templates*" -not -path "*.git*" -not -path "*db*" -not -path "*files*" -not -path "*templates*" \( ! -name "*.md" \) | sort -z | xargs -r0); do
 		sed -i '/includes_before/d' ${file}
 		sed -i '/includes_after/d' ${file}
 		sed -i '/#!\/bin\/bash/d' ${file}
