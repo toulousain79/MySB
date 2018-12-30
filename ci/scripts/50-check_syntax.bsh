@@ -22,15 +22,15 @@
 #
 ##################### FIRST LINE #####################################
 
-echo && echo -e "${CBLUE}*** Check Syntax with shellcheck ***${CEND}"
-sOnlyRed="SC2154,SC2086,SC2046,SC1090,SC2006,SC2034,SC2004,SC2016,SC2002,SC2129,SC2059,SC2178,SC2027,SC1009,SC2164,SC1091,SC2119,SC2120,SC2143,SC2001,SC2045,SC1001,SC2094,SC2162,SC2012,SC2128,SC2126,SC2155,SC2063,SC2035,SC2009,SC2057,SC2010,SC2140,SC2116,SC2013,SC2115,SC2031,SC2030,SC2015,SC2062,SC2044"
+#### VARs
+sShellCheckOnlyRed="SC2154,SC2086,SC2046,SC1090,SC2006,SC2034,SC2004,SC2016,SC2002,SC2129,SC2059,SC2178,SC2027,SC1009,SC2164,SC1091,SC2119,SC2120,SC2143,SC2001,SC2045,SC1001,SC2094,SC2162,SC2012,SC2128,SC2126,SC2155,SC2063,SC2035,SC2009,SC2057,SC2010,SC2140,SC2116,SC2013,SC2115,SC2031,SC2030,SC2015,SC2062,SC2044"
 #SC2154
 
-shellcheck --version
-echo
-for directory in $(find /builds/${CI_PROJECT_PATH}/ -mindepth 1 -type d -not -path "*web*" -not -path "*templates*" -not -path "*.git*" -not -path "*db*" -not -path "*files*" -not -path "*templates*"); do
-	for file in $(find ${directory}/ -type f); do
-		shellcheck -s bash -x -e ${sOnlyRed} ${file}
+echo && echo -e "${CBLUE}*** Check Syntax with shellcheck (no templates) ***${CEND}"
+
+for directory in $(find /builds/${CI_PROJECT_PATH}/ -mindepth 1 -type d -not -path "*web*" -not -path "*templates*" -not -path "*.git*" -not -path "*db*" -not -path "*files*" -not -path "*templates*" -print0 | sort -z | xargs -r0); do
+	for file in $(find ${directory}/ -type f -not -path "*web*" -not -path "*templates*" -not -path "*.git*" -not -path "*db*" -not -path "*files*" -not -path "*templates*" \( ! -name "*.md" \) -print0 | sort -z | xargs -r0); do
+		export LC_ALL=C.UTF-8; shellcheck -s bash -e ${sShellCheckOnlyRed} ${file}
 		if [[ ${?} -ne 0 ]]; then
 			echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
 			nReturn=1
@@ -40,12 +40,22 @@ for directory in $(find /builds/${CI_PROJECT_PATH}/ -mindepth 1 -type d -not -pa
 	done
 done
 
+echo && echo -e "${CBLUE}*** Check Syntax with shellcheck (only templates) ***${CEND}"
+
+for file in $(find /builds/${CI_PROJECT_PATH}/templates/ \( -name "*.init.d*" -or -name "*.sh.*" -or -name "*.bsh.*" \)); do
+	export LC_ALL=C.UTF-8; shellcheck -s bash -e ${sShellCheckOnlyRed} ${file}
+	if [[ ${?} -ne 0 ]]; then
+		echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
+		nReturn=1
+	else
+		echo -e "${CYELLOW}${file}:${CEND} ${CGREEN}Passed${CEND}"
+	fi
+done
+
 echo && echo -e "${CBLUE}*** Check BASH Syntax ***${CEND}"
 
-bash --version
-echo
-for directory in $(find /builds/${CI_PROJECT_PATH}/ -mindepth 1 -type d -not -path "*web*" -not -path "*templates*" -not -path "*.git*" -not -path "*db*" -not -path "*files*" -not -path "*templates*"); do
-	for file in $(find ${directory}/ -type f); do
+for directory in $(find /builds/${CI_PROJECT_PATH}/ -mindepth 1 -type d -not -path "*web*" -not -path "*templates*" -not -path "*.git*" -not -path "*db*" -not -path "*files*" -not -path "*templates*" -print0 | sort -z | xargs -r0); do
+	for file in $(find ${directory}/ -type f -print0 -not -path "*web*" -not -path "*templates*" -not -path "*.git*" -not -path "*db*" -not -path "*files*" -not -path "*templates*" \( ! -name "*.md" \) | sort -z | xargs -r0); do
 		sed -i '/includes_before/d' ${file}
 		sed -i '/includes_after/d' ${file}
 		sed -i '/#!\/bin\/bash/d' ${file}
@@ -63,7 +73,7 @@ done
 
 echo && echo -e "${CBLUE}*** Check PHP Syntax ***${CEND}"
 
-for file in $(find /builds/${CI_PROJECT_PATH}/web/ -type f -name '*.php'); do
+for file in $(find /builds/${CI_PROJECT_PATH}/web/ -type f -name '*.php' -print0 | sort -z | xargs -r0); do
 	php -l ${file} &> /dev/null
 	if [[ ${?} -ne 0 ]]; then
 		echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
@@ -72,3 +82,5 @@ for file in $(find /builds/${CI_PROJECT_PATH}/web/ -type f -name '*.php'); do
 		echo -e "${CYELLOW}${file}:${CEND} ${CGREEN}Passed${CEND}"
 	fi
 done
+
+##################### LAST LINE ######################################
