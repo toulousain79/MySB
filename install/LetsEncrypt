@@ -95,15 +95,13 @@ fnUseOfCertificates() {
 
 		# Webmin
 		if [[ -f /etc/webmin/miniserv.pem ]]; then
-			if [ -f ${MySB_InstallDir}/ssl/fullchain.pem ]; then
-				cat ${MySB_InstallDir}/ssl/privkey.pem > /etc/webmin/miniserv.pem
-				cat ${MySB_InstallDir}/ssl/fullchain.pem >> /etc/webmin/miniserv.pem
-				sServicesToRestart="${sServicesToRestart} webmin"
-			fi
+			cat /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem > /etc/webmin/miniserv.pem
+			cat /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem >> /etc/webmin/miniserv.pem
+			sServicesToRestart="${sServicesToRestart} webmin"
 		fi
 
 		# VSFTPd
-		if [[ -f /etc/webmin/miniserv.pem ]]; then
+		if [[ -f /etc/vsftpd.conf ]]; then
 			nNumLine=$(cat /etc/vsftpd.conf | grep 'rsa_cert_file' -n -m 1 | cut -d ':' -f 1)
 			sed -i '/rsa_cert_file/d' /etc/vsftpd.conf
 			sed -i ""${nNumLine}"i\rsa_cert_file=/etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" /etc/vsftpd.conf
@@ -111,6 +109,27 @@ fnUseOfCertificates() {
 			sed -i '/rsa_private_key_file/d' /etc/vsftpd.conf
 			sed -i ""${nNumLine}"i\rsa_private_key_file=/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/vsftpd.conf
 			sServicesToRestart="${sServicesToRestart} vsftpd"
+		fi
+
+		# Postfix/Stunnel
+		if [[ -f /etc/stunnel/stunnel.conf ]]; then
+			nNumLine=$(cat /etc/stunnel/stunnel.conf | grep 'cert =' -n -m 1 | cut -d ':' -f 1)
+			sed -i '/cert =/d' /etc/stunnel/stunnel.conf
+			sed -i ""${nNumLine}"i\cert = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" /etc/stunnel/stunnel.conf
+			nNumLine=$(cat /etc/stunnel/stunnel.conf | grep 'key =' -n -m 1 | cut -d ':' -f 1)
+			sed -i '/key =/d' /etc/stunnel/stunnel.conf
+			sed -i ""${nNumLine}"i\key = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/stunnel/stunnel.conf
+
+			SMTP_Provider="`cmdMySQL 'MySB_db' "SELECT smtp_provider FROM smtp WHERE id_smtp='1';"`"
+			case "$SMTP_Provider" in
+				"FREE"|"YAHOO"|"OVH"|"GMAIL"|"ZOHO")	Smtp_Security=SSL;;
+				if [[ "${Smtp_Security}" == "TLS" ]]; then
+					postconf -e "smtp_tls_cert_file = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem"
+					postconf -e "smtp_tls_key_file = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem"
+				fi
+			esac
+
+			sServicesToRestart="${sServicesToRestart} stunnel4 postfix"
 		fi
 
 		# Tautulli

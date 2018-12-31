@@ -130,6 +130,14 @@ if [ "$SMTP_Provider" != "LOCAL" ]; then
 			install -v -g root -o root -m 0600 $MySB_InstallDir/templates/postfix/stunnel.conf.tmpl /etc/stunnel/stunnel.conf
 			perl -pi -e "s/<InstallDir>/$gsInstallDirEscaped/g" /etc/stunnel/stunnel.conf
 			perl -pi -e "s/<smtp_host>:<smtp_port>/$SMTP_Host:$SMTP_Port/g" /etc/stunnel/stunnel.conf
+			if [[ -f /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem ]] && [[ -f /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem ]]; then
+				nNumLine=$(cat /etc/stunnel/stunnel.conf | grep 'cert =' -n -m 1 | cut -d ':' -f 1)
+				sed -i '/cert =/d' /etc/stunnel/stunnel.conf
+				sed -i ""${nNumLine}"i\cert = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" /etc/stunnel/stunnel.conf
+				nNumLine=$(cat /etc/stunnel/stunnel.conf | grep 'key =' -n -m 1 | cut -d ':' -f 1)
+				sed -i '/key =/d' /etc/stunnel/stunnel.conf
+				sed -i ""${nNumLine}"i\key = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/stunnel/stunnel.conf
+			fi
 			perl -pi -e "s/ENABLED=0/ENABLED=1/g" /etc/default/stunnel4
 			echo "127.0.0.1:23000			  $SMTP_Username:$SMTP_Password" > /etc/postfix/sasl/sasl_passwd
 			postconf -e "relayhost = 127.0.0.1:23000"
@@ -154,10 +162,15 @@ if [ "$SMTP_Provider" != "LOCAL" ]; then
 			postconf -e "smtp_tls_scert_verifydepth = 5"
 			postconf -e "smtp_tls_enforce_peername = no"
 			postconf -e "smtp_tls_session_cache_database = btree:\${data_directory}/smtp_scache"
-			postconf -e "smtp_tls_cert_file = $MySB_InstallDir/ssl/mysb.cert"
-			postconf -e "smtp_tls_key_file = $MySB_InstallDir/ssl/mysb.key"
 			postconf -e "smtp_tls_policy_maps = hash:/etc/postfix/tls_policy"
 			postconf -e "smtp_tls_CAfile = $MySB_InstallDir/ssl/CA/certs/cacert.pem"
+			if [[ -f /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem ]] && [[ -f /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem ]]; then
+				postconf -e "smtp_tls_cert_file = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem"
+				postconf -e "smtp_tls_key_file = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem"
+			else
+				postconf -e "smtp_tls_cert_file = $MySB_InstallDir/ssl/mysb.cert"
+				postconf -e "smtp_tls_key_file = $MySB_InstallDir/ssl/mysb.key"
+			fi
 		;;
 	esac
 

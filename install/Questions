@@ -30,8 +30,9 @@ TYPE="$2"
 case "$TYPE" in
 	"INSTALL")
 		DisplayInfo=YES
-		DisplayUserInfo=YES
 		DisplayServerInfo=YES
+		DisplayServerInfoFirstInstall=YES
+		DisplayUserInfo=YES
 		DisplayServices=YES
 		DisplaySecurity=YES
 		gsServerProvider=""
@@ -39,14 +40,17 @@ case "$TYPE" in
 		gsPort_HTTP="8888"
 		RepeatSurvey=NO
 		gsLogFile="/tmp/MySB_Install.bsh.log"
+		bgChangeFQDN=YES
 	;;
 	"UPGRADE")
-		DisplayInfo=NO
+		DisplayInfo=YES
+		DisplayServerInfo=YES
+		DisplayServerInfoFirstInstall=NO
 		DisplayUserInfo=NO
-		DisplayServerInfo=NO
 		DisplayServices=YES
 		DisplaySecurity=YES
 		gsLogFile="$MySB_InstallDir/logs/MySB_Install.bsh.log"
+		bgChangeFQDN=NO
 
 		# Main User password (confirm it OR change it when you upgrade)
 		echo
@@ -82,79 +86,89 @@ DisplaySurvey() {
 			echo -e "$Questions_Category_ServerInfos"
 		fi
 
-		# Time Zone
-		echo
-		gfnQuestionGetString NO "$Questions_TimeZone" gsTimeZone "$gsTimeZone"
+		if [ "$DisplayServerInfoFirstInstall" == "YES" ]; then
+			# Time Zone
+			echo
+			gfnQuestionGetString NO "$Questions_TimeZone" gsTimeZone "$gsTimeZone"
 
-		# Primary Inet
-		echo
-		gfnQuestionGetString NO "$Questions_PrimaryNetwork" gsPrimaryInet "$gsPrimaryInet"
+			# Primary Inet
+			echo
+			gfnQuestionGetString NO "$Questions_PrimaryNetwork" gsPrimaryInet "$gsPrimaryInet"
 
-		# Box' local IP
-		echo
-		if [ "$RepeatSurvey" == "YES" ]; then
-			sValue="$gsSrvIpAddress"
-			gsSrvIpAddress=""
-		else
-			sValue="$gsSrvIpAddress"
-		fi
-		while [ ! "$CHECK_SrvIpAddress" = "$gsSrvIpAddress" ] || [ -z "$gsSrvIpAddress" ]; do
-			gfnQuestionGetString NO "$Questions_BoxIpAddress" gsSrvIpAddress "$sValue"
-			CHECK_SrvIpAddress=$(gfnValidateIP ${gsSrvIpAddress})
-		done
-		unset sValue
-
-		# Box' local IP (more than one local IP ?)
-		if [ ! -z "$gsSrvAdditionnalIpAddresses" ]; then
+			# Box' local IP
 			echo
 			if [ "$RepeatSurvey" == "YES" ]; then
-				sValue="$gsSrvAdditionnalIpAddresses"
-				gsSrvAdditionnalIpAddresses=""
+				sValue="$gsSrvIpAddress"
+				gsSrvIpAddress=""
 			else
-				sValue="$gsSrvAdditionnalIpAddresses"
+				sValue="$gsSrvIpAddress"
 			fi
-			gfnQuestionGetString NO "$Questions_BoxIpAddressAdditional" gsSrvAdditionnalIpAddresses "$sValue"
+			while [ ! "$CHECK_SrvIpAddress" = "$gsSrvIpAddress" ] || [ -z "$gsSrvIpAddress" ]; do
+				gfnQuestionGetString NO "$Questions_BoxIpAddress" gsSrvIpAddress "$sValue"
+				CHECK_SrvIpAddress=$(gfnValidateIP ${gsSrvIpAddress})
+			done
 			unset sValue
-		fi
 
-		# Box' external IP
-		echo
-		if [ "$RepeatSurvey" == "YES" ]; then
-			sValue="$gsSrvIpAddressExt"
-			gsSrvIpAddressExt=""
+			# Box' local IP (more than one local IP ?)
+			if [ ! -z "$gsSrvAdditionnalIpAddresses" ]; then
+				echo
+				if [ "$RepeatSurvey" == "YES" ]; then
+					sValue="$gsSrvAdditionnalIpAddresses"
+					gsSrvAdditionnalIpAddresses=""
+				else
+					sValue="$gsSrvAdditionnalIpAddresses"
+				fi
+				gfnQuestionGetString NO "$Questions_BoxIpAddressAdditional" gsSrvAdditionnalIpAddresses "$sValue"
+				unset sValue
+			fi
+
+			# Box' external IP
+			echo
+			if [ "$RepeatSurvey" == "YES" ]; then
+				sValue="$gsSrvIpAddressExt"
+				gsSrvIpAddressExt=""
+			else
+				sValue="$gsSrvIpAddressExt"
+			fi
+			while [ ! "$CHECK_SrvIpAddressExt" = "$gsSrvIpAddressExt" ] || [ -z "$gsSrvIpAddressExt" ]; do
+				gfnQuestionGetString NO "$Questions_BoxIpAddressExt" gsSrvIpAddressExt "$sValue"
+				CHECK_SrvIpAddressExt=$(gfnValidateIP "$gsSrvIpAddressExt")
+			done
+			unset sValue
 		else
-			sValue="$gsSrvIpAddressExt"
+			echo
+			echo -e "$Global_Questions_Message_Hostname_New"
+			gfnQuestionGetString NO "$Global_Questions_Hostname_New" bgChangeFQDN "$bgChangeFQDN"
 		fi
-		while [ ! "$CHECK_SrvIpAddressExt" = "$gsSrvIpAddressExt" ] || [ -z "$gsSrvIpAddressExt" ]; do
-			gfnQuestionGetString NO "$Questions_BoxIpAddressExt" gsSrvIpAddressExt "$sValue"
-			CHECK_SrvIpAddressExt=$(gfnValidateIP "$gsSrvIpAddressExt")
-		done
-		unset sValue
 
-		# Box' hostname
-		echo
-		echo -e "$Global_Questions_Message_Hostname"
-		gfnQuestionGetString NO "$Global_Questions_Hostname" gsHostNameFqdn "$gsHostNameFqdn"
-		while [ -z "$gsHostNameFqdn" ] || ( ! gfnCheckFQDN "${gsHostNameFqdn}" ); do
-			nCheckFqdnResult=$(gfnCheckFQDN ${gsHostNameFqdn})
-			case "$nCheckFqdnResult" in
-				1)	echo -e "$Global_Questions_Message_Hostname_NoFqdn";;
-				2)	echo -e "$Global_Questions_Message_Hostname_Fqdn_NotPublicIp";;
-			esac
+		# Box' hostname (FQDN)
+		if [ "$bgChangeFQDN" == "YES" ]; then
+			echo
+			echo -e "$Global_Questions_Message_Hostname"
 			gfnQuestionGetString NO "$Global_Questions_Hostname" gsHostNameFqdn "$gsHostNameFqdn"
-		done
+			while [ -z "$gsHostNameFqdn" ] || ( ! gfnCheckFQDN "${gsHostNameFqdn}" ); do
+				nCheckFqdnResult=$(gfnCheckFQDN ${gsHostNameFqdn})
+				case "$nCheckFqdnResult" in
+					1)	echo -e "$Global_Questions_Message_Hostname_NoFqdn";;
+					2)	echo -e "$Global_Questions_Message_Hostname_Fqdn_NotPublicIp";;
+				esac
+				gfnQuestionGetString NO "$Global_Questions_Hostname" gsHostNameFqdn "$gsHostNameFqdn"
+			done
+		fi
 
-		# NginX HTTPs port
-		echo
-		gfnQuestionGetString NO "$Questions_PortHTTPs" gsPort_MySB_HTTPS "$gsPort_MySB_HTTPS"
+		if [ "$DisplayServerInfoFirstInstall" == "YES" ]; then
+			# NginX HTTPs port
+			echo
+			gfnQuestionGetString NO "$Questions_PortHTTPs" gsPort_MySB_HTTPS "$gsPort_MySB_HTTPS"
 
-		# SSH port
-		echo
-		gfnQuestionGetString NO "$Questions_PortSSH" gsPort_SSH "$gsPort_SSH"
+			# SSH port
+			echo
+			gfnQuestionGetString NO "$Questions_PortSSH" gsPort_SSH "$gsPort_SSH"
 
-		# FTP port
-		echo
-		gfnQuestionGetString NO "$Questions_PortFTPs" gsPort_FTP "$gsPort_FTP"
+			# FTP port
+			echo
+			gfnQuestionGetString NO "$Questions_PortFTPs" gsPort_FTP "$gsPort_FTP"
+		fi
 	fi
 
 	#### MAIN USER INFO
@@ -417,7 +431,7 @@ DisplaySurvey() {
 		fi
 
 		# OpenVPN
-		if [ "$gbIsInstalled_OpenVPN" != "YES" ]; then
+		if [ "$gbIsInstalled_OpenVPN" != "YES" ] || ( [ "$gbIsInstalled_OpenVPN" == "YES" ] && [ "$bgChangeFQDN" == "YES" ] ); then
 			echo
 			nLoop=1
 			if [ "$RepeatSurvey" == "YES" ]; then

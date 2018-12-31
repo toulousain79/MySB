@@ -23,14 +23,22 @@
 funcs_Upgrade=1
 ##################### FIRST LINE #####################################
 
-#### Change hostname
+#### Change FQDN of Seedbox
+# Use cases:
+# 1/ Manual with command line: gfnChangeFQDN "new_fqdn"
+# 2/ Auto during an upgrade
 gfnChangeFQDN() {
-	local sNewFQDN nCheckFqdnResult
+	local sNewFQDN nCheckFqdnResult nCurrentSTEP nTotalSTEP sServicesToRestart nNumLine
+
+	sServicesToRestart=""
+	nCurrentSTEP=0
+	nTotalSTEP=$(cat $0 | grep 'CurrentSTEP++' | grep -v 'TotalSTEP' | wc -l)
+	gfnListCountUsers 'normal'
 
 	if [[ -z ${1} ]]; then
 		echo
 		echo -e "${Questions_Message_Hostname}"
-		gfnQuestionGetString NO "${Global_Questions_Hostname}" sNewFQDN "${sNewFQDN}"
+		gfnQuestionGetString NO "${Global_Questions_Hostname}" sNewFQDN "${gsHostNameFqdn}"
 	else
 		sNewFQDN="${1}"
 	fi
@@ -44,41 +52,181 @@ gfnChangeFQDN() {
 		[[ -z ${1} ]] && gfnQuestionGetString NO "${Global_Questions_Hostname}" sNewFQDN "${sNewFQDN}"
 	done
 
-	# Update DB
-	cmdMySQL 'MySB_db' "UPDATE system SET hostname='$gsHostNameFqdn' WHERE id_system='1';" -v
+	#### Update DB
+	log_daemon_msg "Update DB"
+	cmdMySQL 'MySB_db' "UPDATE system SET hostname='$sNewFQDN' WHERE id_system='1';" -v
+	gfnStatusLSB
 
-	# /etc/hostname
-	rm -vf /etc/hostname
-	echo "${sNewFQDN}" | tee -a /etc/hostname
+	#### /etc/hostname
+	log_daemon_msg "Update /etc/hostname"
+	hostnamectl set-hostname "$sNewFQDN"
+	gfnStatusLSB
 
-	# SSH Key
-	mkdir -pv /root/.ssh/
+	#### SSH Key
+	# root
+	log_daemon_msg "SSH Key for user [root]"
+	mv -v /root/.ssh/id_rsa /root/.ssh/id_rsa_${sNewFQDN}
+	mv -v /root/.ssh/id_rsa.pub /root/.ssh/id_rsa.pub_${sNewFQDN}
+	[[ ! -f /root/.ssh/id_rsa_${gsHostNameFqdn} ]] && mv -v /root/.ssh/id_rsa_${gsHostNameFqdn} /root/.ssh/id_rsa
+	[[ ! -f /root/.ssh/id_rsa.pub_${gsHostNameFqdn} ]] && mv -v /root/.ssh/id_rsa.pub_${gsHostNameFqdn} /root/.ssh/id_rsa.pub
 	[[ ! -f /root/.ssh/id_rsa ]] && ssh-keygen -q -t rsa -b 2048 -N "" -f /root/.ssh/id_rsa
-	cat /root/.ssh/id_rsa
+	gfnStatusLSB
+	# all normal users
+	for seedUser in $gsUsersList; do
+		log_daemon_msg "SSH Key for user [$seedUser]"
+		UserEmail=$(cmdMySQL 'MySB_db' "SELECT users_email FROM users WHERE users_ident = '$seedUser';")
+		mv -v /home/$seedUser/.ssh/id_rsa /home/$seedUser/.ssh/id_rsa_${sNewFQDN}
+		mv -v /home/$seedUser/.ssh/id_rsa.pub /home/$seedUser/.ssh/id_rsa.pub_${sNewFQDN}
+		[[ ! -f /home/$seedUser/.ssh/id_rsa_${gsHostNameFqdn} ]] && mv -v /home/$seedUser/.ssh/id_rsa_${gsHostNameFqdn} /home/$seedUser/.ssh/id_rsa
+		[[ ! -f /home/$seedUser/.ssh/id_rsa.pub_${gsHostNameFqdn} ]] && mv -v /home/$seedUser/.ssh/id_rsa.pub_${gsHostNameFqdn} /home/$seedUser/.ssh/id_rsa.pub
+		[[ ! -f /home/$seedUser/.ssh/id_rsa ]] && ssh-keygen -q -t rsa -b 2048 -N "" -f /home/$seedUser/.ssh/id_rsa -C "$UserEmail"
+		chown root:$seedUser /home/$seedUser/.ssh/*
+		chmod 0660 /home/$seedUser/.ssh/*
+		[[ ! -f /home/$seedUser/.ssh/authorized_keys ]] && touch /home/$seedUser/.ssh/authorized_keys
+		chown $seedUser:$seedUser $NewUserHomedir/.ssh/authorized_keys
+		chmod 0644 /home/$seedUser/.ssh/authorized_keys
+		gfnStatusLSB
+	done
 
-	# Let's Encrypt
-	if [[ "${gbIsInstalled_LetsEncrypt}" == "YES" ]] && [[ ! -f /etc/nginx/snippets/letsencrypt_${gsHostNameFqdn}.conf ]]; then
-		log_daemon_msg "${UpdateTools_LetsEncrypt}"
-		gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/LetsEncrypt" 'renew' 'CRON'
+	#### Certificates
+	log_daemon_msg "Create new self-signed certificate (please wait)"
+	gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/Certificates" 'CreateCACertificate' 'UPGRADE'
+	gfnStatusLSB
+
+	#### Let's Encrypt
+	if [[ "${gbIsInstalled_LetsEncrypt}" == "YES" ]] && [[ ! -f /etc/nginx/snippets/letsencrypt_${sNewFQDN}.conf ]]; then
+		log_daemon_msg "Create new Let's Encrypt certificate (please wait)"
+		gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/LetsEncrypt" 'UPGRADE'
 		gfnStatusLSB
 	fi
 
-	# Certificates
-	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Certificates" 'CreateCACertificate' 'UPGRADE'
+	#### NginX
+	log_daemon_msg "Reconfigure NginX (please wait)"
+	gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/Nginx" 'UPGRADE'
+	gfnStatusLSB
 
-	# NginX
-	# VSFTPd
-	# Seedbox-Manager
-	# Cakebox-Light
-	# LoadAvg
-	# NextCloud
-	# ruTorrent
-	# Postfix
-	# PlexMedia
-	# OpenVPN
-	# MySB_SecurityRules
+	#### Webmin
+	if [[ -f /etc/webmin/miniserv.pem ]]; then
+		log_daemon_msg "Reconfigure Webmin"
+		if [ -f /etc/letsencrypt/live/${sNewFQDN}/fullchain.pem ]; then
+			cat /etc/letsencrypt/live/${sNewFQDN}/privkey.pem > /etc/webmin/miniserv.pem
+			cat /etc/letsencrypt/live/${sNewFQDN}/fullchain.pem >> /etc/webmin/miniserv.pem
+		else
+			cat $MySB_InstallDir/ssl/mysb.cert > /etc/webmin/miniserv.pem
+			cat $MySB_InstallDir/ssl/mysb.key >> /etc/webmin/miniserv.pem
+		fi
+		sServicesToRestart="${sServicesToRestart} webmin"
+		gfnStatusLSB
+	fi
 
-	# Restart services
+	#### VSFTPd
+	if [[ -f /etc/vsftpd.conf ]]; then
+		log_daemon_msg "Reconfigure VSFTPd"
+		gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/VSFTP" 'UPGRADE'
+		gfnStatusLSB
+	fi
+
+	#### Postfix
+	log_daemon_msg "Reconfigure Postfix"
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Postfix" 'UPGRADE'
+	gfnStatusLSB
+
+	#### OpenVPN
+	if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
+		log_daemon_msg "Reconfigure OpenVPN server (please wait)"
+		gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/OpenVPN" 'server' 'UPGRADE'
+		gfnStatusLSB
+
+		for seedUser in $gsUsersList; do
+			log_daemon_msg "Reconfigure OpenVPN client for user [$seedUser]"
+			gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/OpenVPN" 'client' "$seedUser" 'UPGRADE'
+			gfnStatusLSB
+		done
+	else
+
+	#### Tautulli
+	gfnGetRepoValues 'Tautulli' &> /dev/null
+	if [[ -f ${gsRepoDir}/config.ini ]]; then
+		log_daemon_msg "Reconfigure Tautulli"
+		gfnManageServices stop "tautulli"
+		perl -pi -e "s/$gsHostNameFqdn/$sNewFQDN/g" $gsRepoDir/config.ini
+		nNumLine=$(cat ${gsRepoDir}/config.ini | grep 'https_cert' -n -m 1 | cut -d ':' -f 1)
+		sed -i '/https_cert/d' ${gsRepoDir}/config.ini
+		sed -i '/https_key/d' ${gsRepoDir}/config.ini
+		sed -i '/https_cert_chain/d' ${gsRepoDir}/config.ini
+		if ([ -f /etc/letsencrypt/live/${sNewFQDN}/fullchain.pem ] && [ -f /etc/letsencrypt/live/${sNewFQDN}/privkey.pem ]); then
+			perl -pi -e "s/<https_cert>/\/etc\/letsencrypt\/live\/${sNewFQDN}\/cert.pem/g" $gsRepoDir/config.ini
+			perl -pi -e "s/<https_key>/\/etc\/letsencrypt\/live\/${sNewFQDN}\/privkey.pem/g" $gsRepoDir/config.ini
+			perl -pi -e "s/<https_fullchain>/\/etc\/letsencrypt\/live\/${sNewFQDN}\/fullchain.pem/g" $gsRepoDir/config.ini
+		else
+			perl -pi -e "s/<https_cert>/$gsInstallDirEscaped\/ssl\/mysb.cert/g" $gsRepoDir/config.ini
+			perl -pi -e "s/<https_key>/$gsInstallDirEscaped\/ssl\/mysb.key/g" $gsRepoDir/config.ini
+			perl -pi -e "s/<https_fullchain>/\"\"/g" $gsRepoDir/config.ini
+		fi
+		sServicesToRestart="${sServicesToRestart} tautulli"
+		gfnStatusLSB
+	fi
+
+	#### Seedbox-Manager
+	if [ "$gbIsInstalled_Manager" == "YES" ]; then
+		log_daemon_msg "Reconfigure Seedbox-Manager"
+		gfnGetRepoValues 'ruTorrent Plugin Link Manager' &> /dev/null
+		gfnRepoManageByType
+		sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$sNewFQDN:$gsPort_MySB_HTTPS\/sm\//g;" $gsRepoDir/conf.php
+		gfnStatusLSB
+	fi
+
+	#### Cakebox-Light
+	if [ "$gbIsInstalled_Cakebox" == "YES" ]; then
+		log_daemon_msg "Reconfigure Cakebox-Light"
+		# ruTorrent Plugin Link Cakebox
+		gfnGetRepoValues 'ruTorrent Plugin Link Cakebox' &> /dev/null
+		gfnRepoManageByType
+		chown -vR www-data:www-data $gsRepoDir
+		sed -i "s/'http:\/\/'.\$host;/'https:\/\/$sNewFQDN:$gsPort_MySB_HTTPS\/cb\/';/g;" $gsRepoDir/conf.php
+		sed -i "s/torrents/rtorrent/g;" $gsRepoDir/conf.php
+		# NginX (alias with proxy)
+		sCakeboxDirEscaped=`echo $gsCakeboxDir | sed s,/,\\\\\\\\\\/,g`
+		[[ -h /etc/nginx/sites-enabled/cakebox ]] && rm -vf /etc/nginx/sites-enabled/cakebox
+		install -v -g root -o root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.site-enabled.cakebox.tmpl /etc/nginx/sites-available/cakebox
+		perl -pi -e "s/<server_name>/$sNewFQDN/g" /etc/nginx/sites-available/cakebox
+		perl -pi -e "s/<cakebox_rootdir>/$sCakeboxDirEscaped/g" /etc/nginx/sites-available/cakebox
+		[[ ! -h /etc/nginx/sites-enabled/cakebox ]] && ln -sv /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox
+		gfnStatusLSB
+	fi
+
+	#### LoadAvg
+	log_daemon_msg "Reconfigure Cakebox-Light"
+	gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/LoadAvg" 'UPGRADE'
+	gfnStatusLSB
+
+	#### ruTorrent plugins
+	log_daemon_msg "Reconfigure ruTorrent Plugins"
+	# Plugin Fileshare
+	gfnGetRepoValues 'ruTorrent Plugin FileShare' &> /dev/null
+	gfnRepoManageByType
+	[[ -f $gsRepoDir/conf.php ]] && perl -pi -e "s/http:\/\/mydomain.com\/share.php/https:\/\/$sNewFQDN:$gsPort_MySB_HTTPS\/fileshare.php/g" $gsRepoDir/conf.php
+	# Plugin Mediastream
+	gfnGetRepoValues 'ruTorrent Plugin MediaStream' &> /dev/null
+	gfnRepoManageByType
+	[[ -f $gsRepoDir/conf.php ]] && perl -pi -e "s/http:\/\/mydomain.com\/stream\/view.php/https:\/\/$sNewFQDN:$gsPort_MySB_HTTPS\/view/g" $gsRepoDir/conf.php
+	gfnStatusLSB
+
+	#### NextCloud
+	if [ -d $gsNextCloudDir ] && [ -f $gsNextCloudDir/config/config.php ]; then
+		log_daemon_msg "Reconfigure NextCloud"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --on"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set trusted_domains 1 --value=$sNewFQDN:$gsPort_MySB_HTTPS"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set lost_password_link --value=https://$sNewFQDN:$gsPort_MySB_HTTPS/?user/change-password.html"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set overwritehost --value=$sNewFQDN:$gsPort_MySB_HTTPS"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --off"
+		gfnStatusLSB
+	fi
+
+	#### Apply rights
+	gfnManageDirAndFiles 'global'
+
+	#### Restart services
 	[[ ! -z "${sServicesToRestart}" ]] && gfnManageServices start "${sServicesToRestart}"
 }
 
@@ -107,7 +255,7 @@ gfnUpgradeInProgress() {
 			rm -f /etc/nginx/sites-enabled/WiP
 			rm -f /etc/nginx/sites-enabled/default
 			rm -f /etc/nginx/sites-enabled/cakebox
-			cp ${MySB_InstallDir}/templates/nginx/etc.nginx.site-enabled.WiP.tmpl /etc/nginx/sites-available/WiP
+			install -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.site-enabled.WiP.tmpl /etc/nginx/sites-available/WiP
 			perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /etc/nginx/sites-available/WiP
 			perl -pi -e "s/<PORT_HTTPS>/${gsPort_MySB_HTTPS}/g" /etc/nginx/sites-available/WiP
 			perl -pi -e "s/<PORT_HTTP>/${gsPort_MySB_HTTP}/g" /etc/nginx/sites-available/WiP
