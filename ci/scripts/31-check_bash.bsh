@@ -22,8 +22,30 @@
 #
 ##################### FIRST LINE #####################################
 
+if [[ ! -z ${1} ]]; then
+	rm -rf /tmp/shellcheck_scan
+	if [[ -d "${1}" ]]; then
+		cp -al ${1} /tmp/shellcheck_scan
+		sDirToScan="${1}"
+	else
+		echo -e "${CYELLOW}${1} not a valid directory:${CEND} ${CRED}Failed${CEND}"
+		return
+	fi
+else
+	if [[ -f /.dockerenv ]]; then
+		if [[ ! -z "${CI_PROJECT_PATH}" ]]; then
+			sDirToScan="/builds/${CI_PROJECT_PATH}"
+		else
+			echo -e "${CYELLOW}Secret Variable \$CI_PROJECT_PATH:${CEND} ${CRED}Failed${CEND}"
+			return
+		fi
+	else
+		echo -e "${CYELLOW}You are not in 'project_validation' images:${CEND} ${CRED}Failed${CEND}"
+		return
+	fi
+fi
+
 #### VARs
-[[ ! -z ${1} ]] && sDirToScan="${1}" || sDirToScan="/builds/${CI_PROJECT_PATH}"
 sNoTemplates=$(find ${sDirToScan}/ -type f -not -path "*web*" -not -path "*templates*" -not -path "*.git*" -not -path "*db*" -not -path "*files*" -not -path "*templates*" -not -path "*sources*" -not -path "*temp*" -not -path "*logs*" -not -path "*ssl*" \( ! -name "*.md" \) -print0 | sort -z | xargs -r0)
 sTemplates=$(find ${sDirToScan}/templates/ \( -name "*.init.d*" -or -name "*.sh.*" -or -name "*.bsh.*" \))
 sFilesList="$sNoTemplates $sTemplates"
