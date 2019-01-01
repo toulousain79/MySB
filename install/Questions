@@ -50,7 +50,7 @@ case "$TYPE" in
 		DisplaySecurity=YES
 		gsLogFile="$MySB_InstallDir/logs/MySB_Install.bsh.log"
 		bgChangeFQDN=NO
-        gsSrvIpAddressExt="$(dig TXT +short o-o.myaddr.l.google.com @ns1.google.com @ns2.google.com @ns3.google.com @ns4.google.com | awk -F'"' '{ print $2}' 2> /dev/null)"
+		gsSrvIpAddressExt="$(dig TXT +short o-o.myaddr.l.google.com @ns1.google.com @ns2.google.com @ns3.google.com @ns4.google.com | awk -F'"' '{ print $2}' 2> /dev/null)"
 	;;
 esac
 
@@ -166,10 +166,10 @@ DisplaySurvey() {
 	fi
 
 	#### MAIN USER INFO
-    if [ "$DisplayInfo" == "YES" ]; then
-        echo
-        echo -e "$Questions_Category_MainUserInfos"
-    fi
+	if [ "$DisplayInfo" == "YES" ]; then
+		echo
+		echo -e "$Questions_Category_MainUserInfos"
+	fi
 
 	if [ "$DisplayUserInfo" == "YES" ]; then
 		# Main User name
@@ -184,29 +184,29 @@ DisplaySurvey() {
 			gfnQuestionGetString NO "$Questions_MainUserUsername" gsMainUserName "$sValue"
 		done
 		unset sValue
-    fi
+	fi
 
-    # Main User password
-    echo
-    if [ "$TYPE" == "UPGRADE" ]; then
+	# Main User password
+	echo
+	if [ "$TYPE" == "UPGRADE" ]; then
 		# Main User password (confirm it OR change it when you upgrade)
 		echo -e "$Upgrade_MainUserPasswordConfirm"
-    fi
-    if [ "$RepeatSurvey" == "YES" ]; then
-        sValue="$gsMainUserPassword"
-    else
-        sValue=""
-        gsMainUserPassword=""
-    fi
-    if [ -z "$gsMainUserPassword" ] || [ "$TYPE" == "UPGRADE" ] || [ "$RepeatSurvey" == "YES" ]; then
-        gfnQuestionGetString NO "$Questions_MainUserPassword" gsMainUserPassword "$sValue"
-    fi
-    if [ "$TYPE" == "UPGRADE" ]; then
+	fi
+	if [ "$RepeatSurvey" == "YES" ]; then
+		sValue="$gsMainUserPassword"
+	else
+		sValue=""
+		gsMainUserPassword=""
+	fi
+	if [ -z "$gsMainUserPassword" ] || [ "$TYPE" == "UPGRADE" ] || [ "$RepeatSurvey" == "YES" ]; then
+		gfnQuestionGetString NO "$Questions_MainUserPassword" gsMainUserPassword "$sValue"
+	fi
+	if [ "$TYPE" == "UPGRADE" ]; then
 		cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='$gsMainUserPassword' WHERE admin='1';"
-    fi
-    unset sValue
+	fi
+	unset sValue
 
-    if [ "$DisplayUserInfo" == "YES" ]; then
+	if [ "$DisplayUserInfo" == "YES" ]; then
 		# SMTP ?
 		echo
 		if [ -z "$gsSmtpProvider" ] || [ "$RepeatSurvey" == "YES" ]; then
@@ -433,7 +433,7 @@ DisplaySurvey() {
 		fi
 
 		# OpenVPN
-		if [ "$gbIsInstalled_OpenVPN" != "YES" ] || ( [ "$gbIsInstalled_OpenVPN" == "YES" ] && [ "$bgChangeFQDN" == "YES" ] ); then
+		if [ "$gbIsInstalled_OpenVPN" != "YES" ]; then
 			echo
 			nLoop=1
 			if [ "$RepeatSurvey" == "YES" ]; then
@@ -450,7 +450,9 @@ DisplaySurvey() {
 					;;
 				esac
 			done
+		fi
 
+		if [ "$gbToInstall_OpenVPN" == "YES" ] || [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
 			if [ "$gbToInstall_OpenVPN" == "$Global_YES" ]; then
 				if [ "$RepeatSurvey" == "YES" ]; then
 					sValueProto="$gsOpenVPN_Proto"
@@ -460,8 +462,8 @@ DisplaySurvey() {
 				bToInstall=1
 				gsOpenVPN_Proto=""
 				gfnQuestionGetString NO "$Questions_PortOpenvpnTUNwithGW" gsPort_OpenVPN_WithGW "$gsPort_OpenVPN_WithGW"
-				gfnQuestionGetString NO "$Questions_PortOpenvpnTUNwithoutGW" Port_OpenVPN_WithoutGW "$gsPort_OpenVPN_WithoutGW"
-				gfnQuestionGetString NO "$Questions_PortOpenvpnTAPwithoutGW" Port_OpenVPN_TAP_WithoutGW "$gsPort_OpenVPN_TAP_WithoutGW"
+				gfnQuestionGetString NO "$Questions_PortOpenvpnTUNwithoutGW" gsPort_OpenVPN_WithoutGW "$gsPort_OpenVPN_WithoutGW"
+				gfnQuestionGetString NO "$Questions_PortOpenvpnTAPwithoutGW" gsPort_OpenVPN_TAP_WithoutGW "$gsPort_OpenVPN_TAP_WithoutGW"
 				while [ ! "$gsOpenVPN_Proto" = "udp" ] && [ ! "$gsOpenVPN_Proto" = "tcp" ]; do
 					gfnQuestionGetString NO "$Questions_ProtoOpenVPN" gsOpenVPN_Proto "$sValueProto"
 					gsOpenVPN_Proto="`echo $gsOpenVPN_Proto | tr '[:upper:]' '[:lower:]'`"
@@ -731,24 +733,24 @@ DisplaySurvey() {
 		esac
 		unset sValue
 	fi
-    
-    #### Add answer to database
-    # 'system' table
-    if [ "$gsIpRestriction" == "$Global_YES" ]; then
-        sValue="1"
-    else
-        sValue="0"
-    fi
-    nFreeSpace=$(gfnQuotaSpaceAvailable)
-    cmdMySQL 'MySB_db' "UPDATE system SET hostname='$gsHostNameFqdn', ipv4='$gsSrvIpAddress', ipv4_ext='$gsSrvIpAddressExt', ipv4_additional='$gsSrvAdditionnalIpAddresses' , primary_inet='$gsPrimaryInet', timezone='$gsTimeZone', server_provider='$gsServerProvider', ip_restriction='$sValue', quota_default='$nFreeSpace' WHERE id_system='1';" -v >> $gsLogFile
-    
-    #### 'services' table
-    # HTTPs & HTTP
-    cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_MySB_HTTPS', port_tcp2='$gsPort_MySB_HTTP', port_tcp3='', ports_tcp_list='', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='NginX';" -v >> $gsLogFile
-    # SSH
-    cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_SSH', port_tcp2='$gsPort_MySB_HTTP', port_tcp3='', ports_tcp_list='', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='SSH';" -v >> $gsLogFile
-    # FTP
-    cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_FTP', port_tcp2='$gsPort_FTP_Data', port_tcp3='65000:65535', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='VSFTPd';" -v >> $gsLogFile
+
+	#### Add answer to database
+	# 'system' table
+	if [ "$gsIpRestriction" == "$Global_YES" ]; then
+		sValue="1"
+	else
+		sValue="0"
+	fi
+	nFreeSpace=$(gfnQuotaSpaceAvailable)
+	cmdMySQL 'MySB_db' "UPDATE system SET hostname='$gsHostNameFqdn', ipv4='$gsSrvIpAddress', ipv4_ext='$gsSrvIpAddressExt', ipv4_additional='$gsSrvAdditionnalIpAddresses' , primary_inet='$gsPrimaryInet', timezone='$gsTimeZone', server_provider='$gsServerProvider', ip_restriction='$sValue', quota_default='$nFreeSpace' WHERE id_system='1';" -v >> $gsLogFile
+
+	#### 'services' table
+	# HTTPs & HTTP
+	cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_MySB_HTTPS', port_tcp2='$gsPort_MySB_HTTP', port_tcp3='', ports_tcp_list='', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='NginX';" -v >> $gsLogFile
+	# SSH
+	cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_SSH', port_tcp2='$gsPort_MySB_HTTP', port_tcp3='', ports_tcp_list='', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='SSH';" -v >> $gsLogFile
+	# FTP
+	cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_FTP', port_tcp2='$gsPort_FTP_Data', port_tcp3='65000:65535', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='VSFTPd';" -v >> $gsLogFile
 
 	if [ "$TYPE" == "INSTALL" ]; then
 		# 'smtp' table

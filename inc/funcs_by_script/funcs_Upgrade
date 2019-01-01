@@ -30,40 +30,40 @@ funcs_Upgrade=1
 # 2/ Auto during an upgrade
 gfnChangeFQDN() {
 	local sNewFQDN nCheckFqdnResult sServicesToRestart nNumLine bVerbose
-    
-    [ -z "$gsHostNameFqdn" ] && return
-    
+
+	[ -z "$gsHostNameFqdn" ] && return
+
 	sServicesToRestart=""
 	gfnListCountUsers 'normal'
-    [[ -z "$gsHostNameFqdn" ]] && gsHostNameFqdn=$($binMySQL "SELECT hostname FROM system WHERE id_system='1';")
+	[[ -z "$gsHostNameFqdn" ]] && gsHostNameFqdn=$($binMySQL "SELECT hostname FROM system WHERE id_system='1';")
 
 	if [[ -z "${1}" ]]; then
-        echo
-        echo -e "$Global_Questions_Message_Hostname_New"
-        gfnQuestionGetString NO "$Global_Questions_Hostname_New" bgChangeFQDN "$Global_NO"
-        bgChangeFQDN="`echo $bgChangeFQDN | tr '[:lower:]' '[:upper:]'`"
+		echo
+		echo -e "$Global_Questions_Message_Hostname_New"
+		gfnQuestionGetString NO "$Global_Questions_Hostname_New" bgChangeFQDN "$Global_NO"
+		bgChangeFQDN="`echo $bgChangeFQDN | tr '[:lower:]' '[:upper:]'`"
 
 		if [ "$bgChangeFQDN" != "$Global_YES" ]; then
-            return
+			return
 		fi
 	else
-        bgChangeFQDN="$Global_YES"
+		bgChangeFQDN="$Global_YES"
 		sNewFQDN="${1}"
 	fi
-    
-    [[ "$bgChangeFQDN" != "$Global_YES" ]] && return
-    
-    echo
-    echo -e "$Global_Questions_Message_Hostname"
-    gfnQuestionGetString NO "$Global_Questions_Hostname" sNewFQDN "$gsHostNameFqdn"
-    while ([ -z "${sNewFQDN}" ] || [ $(gfnCheckFQDN "$sNewFQDN") -ne 0 ]); do
-        nCheckFqdnResult=$(gfnCheckFQDN "${sNewFQDN}")
-        case "${nCheckFqdnResult}" in
-            1)	echo -e "${Global_Questions_Message_Hostname_NoFqdn}";;
-            2)	echo -e "${Global_Questions_Message_Hostname_Fqdn_NotPublicIp}";;
-        esac
-        gfnQuestionGetString NO "${Global_Questions_Hostname}" sNewFQDN "${sNewFQDN}"
-    done
+
+	[[ "$bgChangeFQDN" != "$Global_YES" ]] && return
+
+	echo
+	echo -e "$Global_Questions_Message_Hostname"
+	gfnQuestionGetString NO "$Global_Questions_Hostname" sNewFQDN "$gsHostNameFqdn"
+	while ([ -z "${sNewFQDN}" ] || [ "$(gfnCheckFQDN "$sNewFQDN")" -ne 0 ]); do
+		nCheckFqdnResult="$(gfnCheckFQDN "${sNewFQDN}")"
+		case "${nCheckFqdnResult}" in
+			1)	echo -e "${Global_Questions_Message_Hostname_NoFqdn}";;
+			2)	echo -e "${Global_Questions_Message_Hostname_Fqdn_NotPublicIp}";;
+		esac
+		gfnQuestionGetString NO "${Global_Questions_Hostname}" sNewFQDN "${sNewFQDN}"
+	done
 
 	#### Update DB
 	log_daemon_msg "Update DB"
