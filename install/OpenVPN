@@ -75,24 +75,24 @@ CreateServer() {
 	gfnManageServices stop "openvpn"
 
 	#### Files and Directory
+	echo
+	echo "########## Files and Directory"
 	mkdir -pv /var/log/openvpn
 	mkdir -pv /etc/openvpn/clients
 	mkdir -pv /etc/openvpn/clients_config_dir
 	mkdir -pv $MySB_InstallDir/web/openvpn
 	[ ! -f /var/log/openvpn/openvpn.log ] && touch /var/log/openvpn/openvpn.log
 	[ ! -f /var/log/openvpn/openvpn-status.log ] && touch /var/log/openvpn/openvpn-status.log
-	make-cadir /etc/openvpn/easy-rsa
-	ln -sv /etc/openvpn/easy-rsa/openssl-1.0.0.cnf /etc/openvpn/easy-rsa/openssl.cnf
+	[[ ! -d /etc/openvpn/easy-rsa ]] && make-cadir /etc/openvpn/easy-rsa
+	[[ -h /etc/openvpn/easy-rsa/openssl.cnf ]] && rm -f /etc/openvpn/easy-rsa/openssl.cnf
+	[[ ! -h /etc/openvpn/easy-rsa/openssl.cnf ]] && ln -sv /etc/openvpn/easy-rsa/openssl-1.0.0.cnf /etc/openvpn/easy-rsa/openssl.cnf
 	mkdir -pv /etc/openvpn/easy-rsa/keys
-	touch /etc/openvpn/easy-rsa/keys/index.txt
-	touch /etc/openvpn/easy-rsa/keys/index.txt.attr
-	cat /etc/openvpn/easy-rsa/keys/index.txt
-	cat /etc/openvpn/easy-rsa/keys/index.txt.attr
-	echo
 
 	#### Initialize
+	echo
+	echo "########## Initialize"
 	cd /etc/openvpn/easy-rsa/
-	source ./vars
+	. ./vars
 	export KEY_SIZE=1024
 	export KEY_COUNTRY="US"
 	export KEY_PROVINCE="CA"
@@ -104,14 +104,20 @@ CreateServer() {
 	export KEY_OU="MySB OpenVPN Server"
 
 	#### Create server
+	echo
+	echo "########## Create server"
 	sed -i 's/KEY_ALTNAMES="\$KEY_CN"/KEY_ALTNAMES="DNS:\${KEY_CN}"/g' ./pkitool
 	./clean-all
+	[[ ! -f /etc/openvpn/easy-rsa/keys/index.txt ]] && touch /etc/openvpn/easy-rsa/keys/index.txt
+	[[ ! -f /etc/openvpn/easy-rsa/keys/index.txt.attr ]] && touch /etc/openvpn/easy-rsa/keys/index.txt.attr
 	./build-dh
 	./pkitool --initca
 	./pkitool --server $gsHostNameFqdn
 	/usr/sbin/openvpn --genkey --secret keys/ta.key
 
 	#### Move created files
+	echo
+	echo "########## Move created files"
 	cp -vf keys/dh1024.pem /etc/openvpn/$DH
 	cp -vf keys/ca.crt /etc/openvpn/$CACRT
 	cp -vf keys/ca.key /etc/openvpn/$CAKEY
@@ -119,6 +125,8 @@ CreateServer() {
 	mv -v keys/$CRT /etc/openvpn/
 	mv -v keys/$KEY /etc/openvpn/
 
+	echo
+	echo "########## Config files"
 	#### Config file Server TUN - With Redirect Gateway
 	# start with a clean config file for a new user
 	cp -vf $MySB_InstallDir/templates/openvpn/openvpn.server.conf.tmpl /etc/openvpn/Server_TUN_WithGW.conf

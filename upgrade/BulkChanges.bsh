@@ -56,9 +56,6 @@ case "$1" in
 		gfnPackagesManage install
 		#### To call for every upgrade - EoF
 		####################################
-
-		# Apply new ports
-		gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create'
 	;;
 	"AFTER")
 		####################################
@@ -75,8 +72,8 @@ case "$1" in
 		gfnManageDirAndFiles 'global'
 
 		# STOP & START services
-		gfnManageServices stop "ntp stunnel4 postfix nginx $binPhpService redis-server dnscrypt-proxy webmin"
-		gfnManageServices start "ntp stunnel4 postfix smbd redis-server $binPhpService nginx dnscrypt-proxy webmin"
+		gfnManageServices stop "ntp stunnel4 postfix smbd nginx $binPhpService redis-server webmin dnscrypt-proxy"
+		gfnManageServices start "dnscrypt-proxy ntp stunnel4 postfix smbd redis-server $binPhpService webmin nginx"
 
 		# Update version info
 		cmdMySQL 'MySB_db' "UPDATE system SET mysb_version = '$gsCurrentVersion' WHERE id_system='1';" -v
@@ -104,9 +101,10 @@ case "$1" in
 				gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_ChangeUserPassword" "$seedUser" "$UserPassword" 'UPGRADE'
 			else
 				# Init password required
-				cmdMySQL 'MySB_db' "UPDATE users SET init_password = '1' WHERE users_ident = '$seedUser';" -v
-				Subject="$Upgrade_SubjectUpgraded $gsCurrentVersion"
-				gfnSendMail "$Subject" "$seedUser" "upgrade"
+				echo "Uncomment lines below for send reset password mail to users"
+				# cmdMySQL 'MySB_db' "UPDATE users SET init_password = '1' WHERE users_ident = '$seedUser';" -v
+				# Subject="$Upgrade_SubjectUpgraded $gsCurrentVersion"
+				# gfnSendMail "$Subject" "$seedUser" "upgrade"
 			fi
 
 			# Change some rights

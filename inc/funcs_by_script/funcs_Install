@@ -40,18 +40,15 @@ gfnLogRotate() {
 gfnPackageBundleInstall() {
 	local sPackagesRequired sPackagesToInstall sOption
 
-	sPackagesRequired="$1"
+	sPackagesRequired="`echo $1 | xargs -n1 | sort -u | xargs | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 	sOption="$2" # can be 'reinstall' OR 'backports'
 
 	for sPackage in $sPackagesRequired; do
-		if ! gfnCheckCommand 0 $sPackage; then
-			sPackagesToInstall="$sPackagesToInstall $sPackage"
-		fi
 		if ! dpkg -s $sPackage &> /dev/null; then
 			sPackagesToInstall="$sPackagesToInstall $sPackage"
 		fi
 	done
-	sPackagesToInstall="`echo $sPackagesToInstall | xargs -n1 | sort -u | xargs | sed -e 's/^ //g;' | sed 's/\s+$//'`"
+
 	if [ ! -z "$sPackagesToInstall" ]; then
 		gfnPackagesManage install "$sPackagesToInstall" "$sOption"
 	else
@@ -61,22 +58,13 @@ gfnPackageBundleInstall() {
 	fi
 }
 
-#### Check if a package is installed
-fnCheckPackage() {
-	if [ ! -z "`dpkg-query -f '${binary:Package}\n' -W | grep "^$1$"`" ]; then
-		return 0
-	else
-		return 1
-	fi
-}
-
 #### apt-get
 gfnPackagesManage() {
 	local sQuery sPackageList sFinalList sOption sAptCmd sGlobalArgs sError sIgnore sMirrorsError sSystemValues
 	local nReturn nAptUpdate tDiff nLocalMirror tNow tVar1 tVar2 dAptDate
 
 	sQuery="$1"
-	sPackageList="`echo $2 | sed -e 's/^ //g;'`"
+	sPackageList="`echo $2 | xargs -n1 | sort -u | xargs | sed -e 's/^ //g;' | sed 's/\s+$//'`"
 	sOption="$3"
 	nReturn=0
 	nAptUpdate=0
@@ -218,9 +206,9 @@ gfnPackagesManage() {
 		;;
 		'purge')
 			sFinalList=""
-			for Package in $sPackageList; do
-				if fnCheckPackage $Package; then
-					sFinalList="${sFinalList} $Package"
+			for sPackage in $sPackageList; do
+				if dpkg -s $sPackage &> /dev/null; then
+					sFinalList="${sFinalList} $sPackage"
 				fi
 			done
 			sFinalList="`echo $sFinalList | sed -e 's/^ //g;'`"
