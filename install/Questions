@@ -51,12 +51,6 @@ case "$TYPE" in
 		DisplaySecurity=YES
 		gsLogFile="$MySB_InstallDir/logs/MySB_Install.bsh.log"
 		bgChangeFQDN=NO
-
-		# Main User password (confirm it OR change it when you upgrade)
-		echo
-		echo -e "$Upgrade_MainUserPasswordConfirm"
-		gfnQuestionGetString YES "$Questions_MainUserPassword" gsMainUserPassword
-		cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='$gsMainUserPassword' WHERE admin='1';"
 	;;
 esac
 
@@ -146,7 +140,7 @@ DisplaySurvey() {
 			echo
 			echo -e "$Global_Questions_Message_Hostname"
 			gfnQuestionGetString NO "$Global_Questions_Hostname" gsHostNameFqdn "$gsHostNameFqdn"
-			while [ -z "$gsHostNameFqdn" ] || ( ! gfnCheckFQDN "${gsHostNameFqdn}" ); do
+			while [ -z "$gsHostNameFqdn" ] || ( $(gfnCheckFQDN "${gsHostNameFqdn}") != 0 ); do
 				nCheckFqdnResult=$(gfnCheckFQDN ${gsHostNameFqdn})
 				case "$nCheckFqdnResult" in
 					1)	echo -e "$Global_Questions_Message_Hostname_NoFqdn";;
@@ -172,12 +166,12 @@ DisplaySurvey() {
 	fi
 
 	#### MAIN USER INFO
-	if [ "$DisplayUserInfo" == "YES" ]; then
-		if [ "$DisplayInfo" == "YES" ]; then
-			echo
-			echo -e "$Questions_Category_MainUserInfos"
-		fi
+    if [ "$DisplayInfo" == "YES" ]; then
+        echo
+        echo -e "$Questions_Category_MainUserInfos"
+    fi
 
+	if [ "$DisplayUserInfo" == "YES" ]; then
 		# Main User name
 		echo
 		if [ "$RepeatSurvey" == "YES" ]; then
@@ -190,21 +184,29 @@ DisplaySurvey() {
 			gfnQuestionGetString NO "$Questions_MainUserUsername" gsMainUserName "$sValue"
 		done
 		unset sValue
+    fi
 
-		# Main User password
-		echo
-		if [ "$RepeatSurvey" == "YES" ]; then
-			sValue="$gsMainUserPassword"
-		else
-			sValue=""
-			gsMainUserPassword=""
-		fi
+    # Main User password
+    echo
+    if [ "$TYPE" == "UPGRADE" ]; then
+		# Main User password (confirm it OR change it when you upgrade)
+		echo -e "$Upgrade_MainUserPasswordConfirm"
+    fi
+    if [ "$RepeatSurvey" == "YES" ]; then
+        sValue="$gsMainUserPassword"
+    else
+        sValue=""
+        gsMainUserPassword=""
+    fi
+    if [ -z "$gsMainUserPassword" ] || [ "$TYPE" == "UPGRADE" ] || [ "$RepeatSurvey" == "YES" ]; then
+        gfnQuestionGetString NO "$Questions_MainUserPassword" gsMainUserPassword "$sValue"
+    fi
+    if [ "$TYPE" == "UPGRADE" ]; then
+		cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='$gsMainUserPassword' WHERE admin='1';"
+    fi
+    unset sValue
 
-		if [ -z "$gsMainUserPassword" ] || [ "$TYPE" == "UPGRADE" ] || [ "$RepeatSurvey" == "YES" ]; then
-			gfnQuestionGetString NO "$Questions_MainUserPassword" gsMainUserPassword "$sValue"
-		fi
-		unset sValue
-
+    if [ "$DisplayUserInfo" == "YES" ]; then
 		# SMTP ?
 		echo
 		if [ -z "$gsSmtpProvider" ] || [ "$RepeatSurvey" == "YES" ]; then
@@ -253,7 +255,7 @@ DisplaySurvey() {
 
 	#### SERVICES
 	if [ "$DisplayServices" == "YES" ]; then
-		if [ "$DisplayInfo" == "YES" ]; then
+		if [ "$DisplayInfo" == "YES" ] && [ "$bgChangeFQDN" == "YES" ]; then
 			echo
 			echo -e "$Questions_Category_Services"
 		fi
