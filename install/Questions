@@ -37,7 +37,6 @@ case "$TYPE" in
 		DisplaySecurity=YES
 		gsServerProvider=""
 		gsSmtpProvider=""
-		gsPort_HTTP="8888"
 		RepeatSurvey=NO
 		gsLogFile="/tmp/MySB_Install.bsh.log"
 		bgChangeFQDN=YES
@@ -51,6 +50,7 @@ case "$TYPE" in
 		DisplaySecurity=YES
 		gsLogFile="$MySB_InstallDir/logs/MySB_Install.bsh.log"
 		bgChangeFQDN=NO
+        gsSrvIpAddressExt="$(dig TXT +short o-o.myaddr.l.google.com @ns1.google.com @ns2.google.com @ns3.google.com @ns4.google.com | awk -F'"' '{ print $2}' 2> /dev/null)"
 	;;
 esac
 
@@ -150,7 +150,7 @@ DisplaySurvey() {
 			done
 		fi
 
-		if [ "$DisplayServerInfoFirstInstall" == "YES" ]; then
+		#if [ "$DisplayServerInfoFirstInstall" == "YES" ]; then
 			# NginX HTTPs port
 			echo
 			gfnQuestionGetString NO "$Questions_PortHTTPs" gsPort_MySB_HTTPS "$gsPort_MySB_HTTPS"
@@ -162,7 +162,7 @@ DisplaySurvey() {
 			# FTP port
 			echo
 			gfnQuestionGetString NO "$Questions_PortFTPs" gsPort_FTP "$gsPort_FTP"
-		fi
+		#fi
 	fi
 
 	#### MAIN USER INFO
@@ -731,18 +731,26 @@ DisplaySurvey() {
 		esac
 		unset sValue
 	fi
+    
+    #### Add answer to database
+    # 'system' table
+    if [ "$gsIpRestriction" == "$Global_YES" ]; then
+        sValue="1"
+    else
+        sValue="0"
+    fi
+    nFreeSpace=$(gfnQuotaSpaceAvailable)
+    cmdMySQL 'MySB_db' "UPDATE system SET hostname='$gsHostNameFqdn', ipv4='$gsSrvIpAddress', ipv4_ext='$gsSrvIpAddressExt', ipv4_additional='$gsSrvAdditionnalIpAddresses' , primary_inet='$gsPrimaryInet', timezone='$gsTimeZone', server_provider='$gsServerProvider', ip_restriction='$sValue', quota_default='$nFreeSpace' WHERE id_system='1';" -v >> $gsLogFile
+    
+    #### 'services' table
+    # HTTPs & HTTP
+    cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_MySB_HTTPS', port_tcp2='$gsPort_MySB_HTTP', port_tcp3='', ports_tcp_list='', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='NginX';" -v >> $gsLogFile
+    # SSH
+    cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_SSH', port_tcp2='$gsPort_MySB_HTTP', port_tcp3='', ports_tcp_list='', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='SSH';" -v >> $gsLogFile
+    # FTP
+    cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_FTP', port_tcp2='$gsPort_FTP_Data', port_tcp3='65000:65535', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='VSFTPd';" -v >> $gsLogFile
 
 	if [ "$TYPE" == "INSTALL" ]; then
-		#### Add answer to database
-		# 'system' table
-		if [ "$gsIpRestriction" == "$Global_YES" ]; then
-			sValue="1"
-		else
-			sValue="0"
-		fi
-		nFreeSpace=$(gfnQuotaSpaceAvailable)
-		cmdMySQL 'MySB_db' "UPDATE system SET hostname='$gsHostNameFqdn', ipv4='$gsSrvIpAddress', ipv4_ext='$gsSrvIpAddressExt', ipv4_additional='$gsSrvAdditionnalIpAddresses' , primary_inet='$gsPrimaryInet', timezone='$gsTimeZone', server_provider='$gsServerProvider', ip_restriction='$sValue', quota_default='$nFreeSpace' WHERE id_system='1';" -v >> $gsLogFile
-
 		# 'smtp' table
 		cmdMySQL 'MySB_db' "UPDATE smtp SET smtp_provider='$gsSmtpProvider', smtp_username='$SMTP_Username', smtp_passwd='$SMTP_Password', smtp_email='$gsMainUserEmail' WHERE id_smtp='1';" -v >> $gsLogFile
 
@@ -761,14 +769,6 @@ DisplaySurvey() {
 			cmdMySQL 'MySB_db' "INSERT INTO users_addresses (id_users,ipv4,hostname,check_by,is_active,last_update) VALUES ('$gnMainUserId','$sIp','$sHostName','ipv4','1','`date +%Y-%m-%d\ %H:%M:%S`');" -v >> $gsLogFile
 		done
 		unset IFS sIp
-
-		#### 'services' table
-		# HTTPs & HTTP
-		cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_MySB_HTTPS', port_tcp2='$gsPort_MySB_HTTP', port_tcp3='', ports_tcp_list='', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='NginX';" -v >> $gsLogFile
-		# SSH
-		cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_SSH', port_tcp2='$gsPort_MySB_HTTP', port_tcp3='', ports_tcp_list='', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='SSH';" -v >> $gsLogFile
-		# FTP
-		cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='$gsPort_FTP', port_tcp2='$gsPort_FTP_Data', port_tcp3='65000:65535', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='VSFTPd';" -v >> $gsLogFile
 	fi
 
 	# Enable loop survey
