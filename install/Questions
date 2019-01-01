@@ -133,6 +133,7 @@ DisplaySurvey() {
 			echo
 			echo -e "$Global_Questions_Message_Hostname_New"
 			gfnQuestionGetString NO "$Global_Questions_Hostname_New" bgChangeFQDN "$bgChangeFQDN"
+			bgChangeFQDN="`echo $bgChangeFQDN | tr '[:lower:]' '[:upper:]'`"
 		fi
 
 		# Box' hostname (FQDN)
@@ -453,41 +454,39 @@ DisplaySurvey() {
 		fi
 
 		if [ "$gbToInstall_OpenVPN" == "YES" ] || [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
-			if [ "$gbToInstall_OpenVPN" == "$Global_YES" ]; then
-				if [ "$RepeatSurvey" == "YES" ]; then
-					sValueProto="$gsOpenVPN_Proto"
-				else
-					sValueProto="UDP"
-				fi
-				bToInstall=1
-				gsOpenVPN_Proto=""
-				gfnQuestionGetString NO "$Questions_PortOpenvpnTUNwithGW" gsPort_OpenVPN_WithGW "$gsPort_OpenVPN_WithGW"
-				gfnQuestionGetString NO "$Questions_PortOpenvpnTUNwithoutGW" gsPort_OpenVPN_WithoutGW "$gsPort_OpenVPN_WithoutGW"
-				gfnQuestionGetString NO "$Questions_PortOpenvpnTAPwithoutGW" gsPort_OpenVPN_TAP_WithoutGW "$gsPort_OpenVPN_TAP_WithoutGW"
-				while [ ! "$gsOpenVPN_Proto" = "udp" ] && [ ! "$gsOpenVPN_Proto" = "tcp" ]; do
-					gfnQuestionGetString NO "$Questions_ProtoOpenVPN" gsOpenVPN_Proto "$sValueProto"
-					gsOpenVPN_Proto="`echo $gsOpenVPN_Proto | tr '[:upper:]' '[:lower:]'`"
-				done
-
-				case "$gsOpenVPN_Proto" in
-					"tcp")
-						sUdpPortsList="port_udp1='', port_udp2='', port_udp3='', ports_udp_list=''"
-						sTcpPortsList="port_tcp1='$gsPort_OpenVPN_WithGW', port_tcp2='$gsPort_OpenVPN_WithoutGW', port_tcp3='$gsPort_OpenVPN_TAP_WithoutGW', ports_tcp_list=''"
-					;;
-					"udp")
-						sUdpPortsList="port_udp1='$gsPort_OpenVPN_WithGW', port_udp2='$gsPort_OpenVPN_WithoutGW', port_udp3='$gsPort_OpenVPN_TAP_WithoutGW', ports_udp_list=''"
-						sTcpPortsList="port_tcp1='', port_tcp2='', port_tcp3='', ports_tcp_list=''"
-					;;
-				esac
+			if [ "$RepeatSurvey" == "YES" ]; then
+				sValueProto="$gsOpenVPN_Proto"
 			else
-				bToInstall=0
-				sUdpPortsList="port_udp1='', port_udp2='', port_udp3='', ports_udp_list=''"
-				sTcpPortsList="port_tcp1='', port_tcp2='', port_tcp3='', ports_tcp_list=''"
+				sValueProto="UDP"
 			fi
-			cmdMySQL 'MySB_db' "UPDATE services SET to_install='$bToInstall', used='1', $sTcpPortsList, $sUdpPortsList WHERE serv_name='OpenVPN';" -v >> $gsLogFile
-			cmdMySQL 'MySB_db' "UPDATE services SET to_install='$bToInstall', used='1' WHERE serv_name='Samba' OR serv_name='NFS';" -v >> $gsLogFile
-			unset sValue nLoop bToInstall sTcpPortsList sUdpPortsList
+			bToInstall=1
+			gsOpenVPN_Proto=""
+			gfnQuestionGetString NO "$Questions_PortOpenvpnTUNwithGW" gsPort_OpenVPN_WithGW "$gsPort_OpenVPN_WithGW"
+			gfnQuestionGetString NO "$Questions_PortOpenvpnTUNwithoutGW" gsPort_OpenVPN_WithoutGW "$gsPort_OpenVPN_WithoutGW"
+			gfnQuestionGetString NO "$Questions_PortOpenvpnTAPwithoutGW" gsPort_OpenVPN_TAP_WithoutGW "$gsPort_OpenVPN_TAP_WithoutGW"
+			while [ ! "$gsOpenVPN_Proto" = "udp" ] && [ ! "$gsOpenVPN_Proto" = "tcp" ]; do
+				gfnQuestionGetString NO "$Questions_ProtoOpenVPN" gsOpenVPN_Proto "$sValueProto"
+				gsOpenVPN_Proto="`echo $gsOpenVPN_Proto | tr '[:upper:]' '[:lower:]'`"
+			done
+
+			case "$gsOpenVPN_Proto" in
+				"tcp")
+					sUdpPortsList="port_udp1='', port_udp2='', port_udp3='', ports_udp_list=''"
+					sTcpPortsList="port_tcp1='$gsPort_OpenVPN_WithGW', port_tcp2='$gsPort_OpenVPN_WithoutGW', port_tcp3='$gsPort_OpenVPN_TAP_WithoutGW', ports_tcp_list=''"
+				;;
+				"udp")
+					sUdpPortsList="port_udp1='$gsPort_OpenVPN_WithGW', port_udp2='$gsPort_OpenVPN_WithoutGW', port_udp3='$gsPort_OpenVPN_TAP_WithoutGW', ports_udp_list=''"
+					sTcpPortsList="port_tcp1='', port_tcp2='', port_tcp3='', ports_tcp_list=''"
+				;;
+			esac
+		else
+			bToInstall=0
+			sUdpPortsList="port_udp1='', port_udp2='', port_udp3='', ports_udp_list=''"
+			sTcpPortsList="port_tcp1='', port_tcp2='', port_tcp3='', ports_tcp_list=''"
 		fi
+		cmdMySQL 'MySB_db' "UPDATE services SET to_install='$bToInstall', used='1', $sTcpPortsList, $sUdpPortsList WHERE serv_name='OpenVPN';" -v >> $gsLogFile
+		cmdMySQL 'MySB_db' "UPDATE services SET to_install='$bToInstall', used='1' WHERE serv_name='Samba' OR serv_name='NFS';" -v >> $gsLogFile
+		unset sValue nLoop bToInstall sTcpPortsList sUdpPortsList
 	fi
 
 	#### SECURITY

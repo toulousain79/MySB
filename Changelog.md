@@ -2,7 +2,7 @@
 		2018/09/07 (start at: 2018/09/07)
 			- Composer v1.8.0
 			- Minisign v0.8.3
-			- NextCloud v14.0.4
+			- NextCloud v14.0.4 (prepare for v15)
 			- GeoIPupdate v3.1.1
 			- Tautulli v2.1.26
 			- LibSmbClient v1.0.0
