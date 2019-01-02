@@ -749,7 +749,7 @@ gfnDownloadCsvFile() {
 
 # Update resolvers list table
 gfnUpdateDatabase() {
-	local sListName sIfExist sValues sIpVersion nCount
+	local sListName sIfExist sValues sIpVersion nCount nHostResult nPingResult
 	local sName sFullName sDescription sLocation sCoordinates sUrl sVersion sDnsSec sNoLogs sNameCoin sResolverAddress sProviderName sPubKey sPubKeyTxt
 	local sFullNameOld sDescriptionOld sLocationOld sCoordinatesOld sUrlOld sVersionOld sDnsSecOld sNoLogsOld sNameCoinOld sResolverAddressOld sProviderNameOld sPubKeyOld sPubKeyTxtOld
 
@@ -835,38 +835,37 @@ gfnUpdateDatabase() {
 			sPubKeyOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[12]}'`"
 			sPubKeyTxtOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[13]}'`"
 
-			# if [ "$sIpVersion" == "ipv4" ]; then
-				# sIp="`echo $sResolverAddress | cut -d ":" -f 1`"
-				# host $sIp &> /dev/null
-				# if [ $? -ne 0 ]; then
-					# ping -c2 $sIp &> /dev/null
-					# if [ $? -ne 0 ]; then
-						# echo "$sName" >> /tmp/resolvers_dead.list
-					# fi
-				# fi
-			# fi
+			# Check it
+			sIp="`echo $sResolverAddress | awk -F ':' '{print $1}'`"
+			host -4 -W2 ${sIp} &> /dev/null
+			nHostResult="$?"
 
-			if [ ! -z "$sIfExist" ]; then
-				if 	[ "$sFullNameOld" != "$sFullName" ] \
-					|| [ "$sDescriptionOld" != "$sDescription" ] \
-					|| [ "$sLocationOld" != "$sLocation" ] \
-					|| [ "$sCoordinatesOld" != "$sCoordinates" ] \
-					|| [ "$sUrlOld" != "$sUrl" ] \
-					|| [ "$sVersionOld" != "$sVersion" ] \
-					|| [ "$sDnsSecOld" != "$sDnsSec" ] \
-					|| [ "$sNoLogsOld" != "$sNoLogs" ] \
-					|| [ "$sNameCoinOld" != "$sNameCoin" ] \
-					|| [ "$sResolverAddressOld" != "$sResolverAddress" ] \
-					|| [ "$sProviderNameOld" != "$sProviderName" ] \
-					|| [ "$sPubKeyOld" != "$sPubKey" ] \
-					|| [ "$sPubKeyTxtOld" != "$sPubKeyTxt" ]; then
+			ping -W2 -c1 ${sIp} &> /dev/null
+			nPingResult="$?"
 
-					gfnMessage "info" "log" "Resolver updated: '$sName'"
-					cmdMySQL 'MySB_db' "UPDATE dnscrypt_resolvers SET full_name='$sFullName', description='$sDescription', location='$sLocation', coordinates='$sCoordinates', url='$sUrl', version='$sVersion', dnssec='$sDnsSec', no_logs='$sNoLogs', namecoin='$sNameCoin', resolver_address='$sResolverAddress', provider_name='$sProviderName', provider_public_key='$sPubKey', provider_public_key_txt_record='$sPubKeyTxt', ip_version='$sIpVersion', certificate='0' WHERE name='$sName';"
+			if [[ "$nHostResult" -eq 0 ]] || [[ "$nPingResult" -eq 0 ]]; then
+				if [ ! -z "$sIfExist" ]; then
+					if 	[ "$sFullNameOld" != "$sFullName" ] \
+						|| [ "$sDescriptionOld" != "$sDescription" ] \
+						|| [ "$sLocationOld" != "$sLocation" ] \
+						|| [ "$sCoordinatesOld" != "$sCoordinates" ] \
+						|| [ "$sUrlOld" != "$sUrl" ] \
+						|| [ "$sVersionOld" != "$sVersion" ] \
+						|| [ "$sDnsSecOld" != "$sDnsSec" ] \
+						|| [ "$sNoLogsOld" != "$sNoLogs" ] \
+						|| [ "$sNameCoinOld" != "$sNameCoin" ] \
+						|| [ "$sResolverAddressOld" != "$sResolverAddress" ] \
+						|| [ "$sProviderNameOld" != "$sProviderName" ] \
+						|| [ "$sPubKeyOld" != "$sPubKey" ] \
+						|| [ "$sPubKeyTxtOld" != "$sPubKeyTxt" ]; then
+
+						gfnMessage "info" "log" "Resolver updated: '$sName'"
+						cmdMySQL 'MySB_db' "UPDATE dnscrypt_resolvers SET full_name='$sFullName', description='$sDescription', location='$sLocation', coordinates='$sCoordinates', url='$sUrl', version='$sVersion', dnssec='$sDnsSec', no_logs='$sNoLogs', namecoin='$sNameCoin', resolver_address='$sResolverAddress', provider_name='$sProviderName', provider_public_key='$sPubKey', provider_public_key_txt_record='$sPubKeyTxt', ip_version='$sIpVersion', certificate='0' WHERE name='$sName';"
+					fi
+				else
+					gfnMessage "info" "log" "Resolver added: '$sName'"
+					cmdMySQL 'MySB_db' "INSERT INTO dnscrypt_resolvers (full_name,description,location,coordinates,url,version,name,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record,ip_version) VALUES ('$sFullName','$sDescription','$sLocation','$sCoordinates','$sUrl','$sVersion','$sName','$sDnsSec','$sNoLogs','$sNameCoin','$sResolverAddress','$sProviderName','$sPubKey','$sPubKeyTxt','$sIpVersion');"
 				fi
-			else
-				gfnMessage "info" "log" "Resolver added: '$sName'"
-				cmdMySQL 'MySB_db' "INSERT INTO dnscrypt_resolvers (full_name,description,location,coordinates,url,version,name,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record,ip_version) VALUES ('$sFullName','$sDescription','$sLocation','$sCoordinates','$sUrl','$sVersion','$sName','$sDnsSec','$sNoLogs','$sNameCoin','$sResolverAddress','$sProviderName','$sPubKey','$sPubKeyTxt','$sIpVersion');"
 			fi
 		done
 	fi
