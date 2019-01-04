@@ -304,38 +304,53 @@ ZipClientFiles() {
 	chown -v root:www-data $MySB_InstallDir/web/openvpn/*.zip
 }
 
-RefreshProto() {
-	local sSearch
+RefreshProtoAndPorts() {
+	local sSearch bServiceRestart
 
 	#### Server files
-	ServiceRestart=0
+	bServiceRestart=0
 	if [ -f /etc/openvpn/Server_TUN_WithGW.conf ]; then
 		log_daemon_msg "Change protocol to $gsOpenVPN_Proto for \"Server_TUN_WithGW.conf\""
 		sSearch=$(cat /etc/openvpn/Server_TUN_WithGW.conf | grep "proto" | awk '{ print $2 }')
-		if [ "$sSearch" != "$gsOpenVPN_Proto" ]; then
-			ServiceRestart=1
-		fi
+		[ "$sSearch" != "$gsOpenVPN_Proto" ] && bServiceRestart=1
 		perl -pi -e "s/^proto $sSearch/proto $gsOpenVPN_Proto/g" /etc/openvpn/Server_TUN_WithGW.conf
+		unset sSearch
+		gfnStatusLSB
+
+		log_daemon_msg "Change port to $gsPort_OpenVPN_WithGW for \"Server_TUN_WithGW.conf\""
+		sSearch=$(cat /etc/openvpn/Server_TUN_WithGW.conf | grep "port" | awk '{ print $2 }')
+		[ "$sSearch" != "$gsPort_OpenVPN_WithGW" ] && bServiceRestart=1
+		perl -pi -e "s/^port $sSearch/port $gsPort_OpenVPN_WithGW/g" /etc/openvpn/Server_TUN_WithGW.conf
 		unset sSearch
 		gfnStatusLSB
 	fi
 	if [ -f /etc/openvpn/Server_TUN_WithoutGW.conf ]; then
 		log_daemon_msg "Change protocol to $gsOpenVPN_Proto for \"Server_TUN_WithoutGW.conf\""
 		sSearch=$(cat /etc/openvpn/Server_TUN_WithoutGW.conf | grep "proto" | awk '{ print $2 }')
-		if [ "$sSearch" != "$gsOpenVPN_Proto" ]; then
-			ServiceRestart=1
-		fi
+		[ "$sSearch" != "$gsOpenVPN_Proto" ] && bServiceRestart=1
 		perl -pi -e "s/^proto $sSearch/proto $gsOpenVPN_Proto/g" /etc/openvpn/Server_TUN_WithoutGW.conf
+		unset sSearch
+		gfnStatusLSB
+
+		log_daemon_msg "Change port to $gsPort_OpenVPN_WithoutGW for \"Server_TUN_WithoutGW.conf\""
+		sSearch=$(cat /etc/openvpn/Server_TUN_WithoutGW.conf | grep "port" | awk '{ print $2 }')
+		[ "$sSearch" != "$gsPort_OpenVPN_WithoutGW" ] && bServiceRestart=1
+		perl -pi -e "s/^port $sSearch/port $gsPort_OpenVPN_WithoutGW/g" /etc/openvpn/Server_TUN_WithoutGW.conf
 		unset sSearch
 		gfnStatusLSB
 	fi
 	if [ -f /etc/openvpn/Server_TAP_WithoutGW.conf ]; then
 		log_daemon_msg "Change protocol to $gsOpenVPN_Proto for \"Server_TAP_WithoutGW.conf\""
 		sSearch=$(cat /etc/openvpn/Server_TAP_WithoutGW.conf | grep "proto" | awk '{ print $2 }')
-		if [ "$sSearch" != "$gsOpenVPN_Proto" ]; then
-			ServiceRestart=1
-		fi
+		[ "$sSearch" != "$gsOpenVPN_Proto" ] && bServiceRestart=1
 		perl -pi -e "s/^proto $sSearch/proto $gsOpenVPN_Proto/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+		unset sSearch
+		gfnStatusLSB
+
+		log_daemon_msg "Change port to $gsPort_OpenVPN_TAP_WithoutGW for \"Server_TAP_WithoutGW.conf\""
+		sSearch=$(cat /etc/openvpn/Server_TAP_WithoutGW.conf | grep "port" | awk '{ print $2 }')
+		[ "$sSearch" != "$gsPort_OpenVPN_TAP_WithoutGW" ] && bServiceRestart=1
+		perl -pi -e "s/^port $sSearch/port $gsPort_OpenVPN_TAP_WithoutGW/g" /etc/openvpn/Server_TAP_WithoutGW.conf
 		unset sSearch
 		gfnStatusLSB
 	fi
@@ -350,11 +365,23 @@ RefreshProto() {
 			perl -pi -e "s/^proto $sSearch/proto $gsOpenVPN_Proto/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
 			unset sSearch
 			gfnStatusLSB
+
+			log_daemon_msg "Change port to $gsPort_OpenVPN_WithGW for \"${CLIENTNAME}_TUN_Single_WithGW.ovpn\""
+			sSearch=$(cat /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn | grep "port" | awk '{ print $2 }')
+			perl -pi -e "s/^port $sSearch/port $gsPort_OpenVPN_WithGW/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
+			unset sSearch
+			gfnStatusLSB
 		fi
 		if [ -f /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithoutGW.ovpn ]; then
 			log_daemon_msg "Change protocol to $gsOpenVPN_Proto for \"${CLIENTNAME}_TUN_Single_WithoutGW.ovpn\""
 			sSearch=$(cat /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithoutGW.ovpn | grep "proto" | awk '{ print $2 }')
 			perl -pi -e "s/^proto $sSearch/proto $gsOpenVPN_Proto/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithoutGW.ovpn
+			unset sSearch
+			gfnStatusLSB
+
+			log_daemon_msg "Change port to $gsPort_OpenVPN_WithoutGW for \"${CLIENTNAME}_TUN_Single_WithoutGW.ovpn\""
+			sSearch=$(cat /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithoutGW.ovpn | grep "port" | awk '{ print $2 }')
+			perl -pi -e "s/^port $sSearch/port $gsPort_OpenVPN_WithoutGW/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithoutGW.ovpn
 			unset sSearch
 			gfnStatusLSB
 		fi
@@ -364,6 +391,12 @@ RefreshProto() {
 			perl -pi -e "s/^proto $sSearch/proto $gsOpenVPN_Proto/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_WithGW.ovpn
 			unset sSearch
 			gfnStatusLSB
+
+			log_daemon_msg "Change port to $gsPort_OpenVPN_WithGW for \"${CLIENTNAME}_TUN_WithGW.ovpn\""
+			sSearch=$(cat /etc/openvpn/clients/${CLIENTNAME}_TUN_WithGW.ovpn | grep "port" | awk '{ print $2 }')
+			perl -pi -e "s/^port $sSearch/port $gsPort_OpenVPN_WithGW/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_WithGW.ovpn
+			unset sSearch
+			gfnStatusLSB
 		fi
 		if [ -f /etc/openvpn/clients/${CLIENTNAME}_TUN_WithoutGW.ovpn ]; then
 			log_daemon_msg "Change protocol to $gsOpenVPN_Proto for \"${CLIENTNAME}_TUN_WithoutGW.ovpn\""
@@ -371,11 +404,23 @@ RefreshProto() {
 			perl -pi -e "s/^proto $sSearch/proto $gsOpenVPN_Proto/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_WithoutGW.ovpn
 			unset sSearch
 			gfnStatusLSB
+
+			log_daemon_msg "Change port to $gsPort_OpenVPN_WithoutGW for \"${CLIENTNAME}_TUN_WithoutGW.ovpn\""
+			sSearch=$(cat /etc/openvpn/clients/${CLIENTNAME}_TUN_WithoutGW.ovpn | grep "port" | awk '{ print $2 }')
+			perl -pi -e "s/^port $sSearch/port $gsPort_OpenVPN_WithoutGW/g" /etc/openvpn/clients/${CLIENTNAME}_TUN_WithoutGW.ovpn
+			unset sSearch
+			gfnStatusLSB
 		fi
 		if [ -f /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithoutGW.ovpn ]; then
 			log_daemon_msg "Change protocol to $gsOpenVPN_Proto for \"${CLIENTNAME}_TAP_Single_WithoutGW.ovpn\""
 			sSearch=$(cat /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithoutGW.ovpn | grep "proto" | awk '{ print $2 }')
 			perl -pi -e "s/^proto $sSearch/proto $gsOpenVPN_Proto/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithoutGW.ovpn
+			unset sSearch
+			gfnStatusLSB
+
+			log_daemon_msg "Change port to $gsPort_OpenVPN_TAP_WithoutGW for \"${CLIENTNAME}_TAP_Single_WithoutGW.ovpn\""
+			sSearch=$(cat /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithoutGW.ovpn | grep "port" | awk '{ print $2 }')
+			perl -pi -e "s/^port $sSearch/port $gsPort_OpenVPN_TAP_WithoutGW/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithoutGW.ovpn
 			unset sSearch
 			gfnStatusLSB
 		fi
@@ -387,9 +432,7 @@ RefreshProto() {
 	done
 
 	#### START services
-	if [ "$ServiceRestart" -eq 1 ]; then
-		gfnManageServices start "openvpn"
-	fi
+	[ "$bServiceRestart" -eq 1 ] && gfnManageServices restart "openvpn"
 }
 
 DeleteUserFiles() {
@@ -441,7 +484,7 @@ case "$COMMAND" in
 	"refresh")
 		if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
 			#### Refresh Protocol
-			RefreshProto
+			RefreshProtoAndPorts
 		fi
 	;;
 	*)

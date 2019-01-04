@@ -256,7 +256,7 @@ DisplaySurvey() {
 
 	#### SERVICES
 	if [ "$DisplayServices" == "YES" ]; then
-		if [ "$DisplayInfo" == "YES" ] && [ "$bgChangeFQDN" == "$Global_YES" ]; then
+		if [ "$DisplayInfo" == "YES" ] || [ "$bgChangeFQDN" == "$Global_YES" ]; then
 			echo
 			echo -e "$Questions_Category_Services"
 		fi
@@ -461,6 +461,10 @@ DisplaySurvey() {
 			fi
 			bToInstall=1
 			gsOpenVPN_Proto=""
+			sTemp_gsPort_OpenVPN_WithGW="$gsPort_OpenVPN_WithGW"
+			sTemp_gsPort_OpenVPN_WithoutGW="$gsPort_OpenVPN_WithoutGW"
+			sTemp_gsPort_OpenVPN_TAP_WithoutGW="$gsPort_OpenVPN_TAP_WithoutGW"
+
 			gfnQuestionGetString NO "$Questions_PortOpenvpnTUNwithGW" gsPort_OpenVPN_WithGW "$gsPort_OpenVPN_WithGW"
 			gfnQuestionGetString NO "$Questions_PortOpenvpnTUNwithoutGW" gsPort_OpenVPN_WithoutGW "$gsPort_OpenVPN_WithoutGW"
 			gfnQuestionGetString NO "$Questions_PortOpenvpnTAPwithoutGW" gsPort_OpenVPN_TAP_WithoutGW "$gsPort_OpenVPN_TAP_WithoutGW"
@@ -468,6 +472,15 @@ DisplaySurvey() {
 				gfnQuestionGetString NO "$Questions_ProtoOpenVPN" gsOpenVPN_Proto "$sValueProto"
 				gsOpenVPN_Proto="`echo $gsOpenVPN_Proto | tr '[:upper:]' '[:lower:]'`"
 			done
+
+			if ([ "$gsOpenVPN_Proto" != "$sValueProto" ] \
+				|| [ "$sTemp_gsPort_OpenVPN_WithGW" != "$gsPort_OpenVPN_WithGW" ] \
+				|| [ "$sTemp_gsPort_OpenVPN_WithoutGW" != "$gsPort_OpenVPN_WithoutGW" ] \
+				|| [ "$sTemp_gsPort_OpenVPN_TAP_WithoutGW" != "$gsPort_OpenVPN_TAP_WithoutGW" ]); then
+
+				[ "$TYPE" == "UPGRADE" ] && bToInstall=2 # Refresh
+				[ "$bgChangeFQDN" == "$Global_YES" ] && bToInstall=1 # Force reinstall
+			fi
 
 			case "$gsOpenVPN_Proto" in
 				"tcp")
