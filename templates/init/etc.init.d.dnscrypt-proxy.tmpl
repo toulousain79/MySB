@@ -23,6 +23,7 @@
 ######################################################################
 #
 # Public Resolver List: https://dnscrypt.org/dnscrypt-resolvers.html
+# Progress Bar - https://github.com/fearside/ProgressBar/
 #
 # This init script was greatly inspired by DNSCrypt-Loader: https://github.com/GortCodex/DNSCrypt-Loader
 #
@@ -39,8 +40,9 @@
 ### END INIT INFO
 
 #### Includes
-source /etc/MySB/config || exit 0
-source $MySB_InstallDir/inc/vars || exit 0
+. /etc/MySB/config || exit 0
+# shellcheck source=/opt/MySB/inc/vars
+. "$MySB_InstallDir/inc/vars" || exit 0
 
 ######################################################################
 #
@@ -54,7 +56,7 @@ source $MySB_InstallDir/inc/vars || exit 0
 gsProxyName="dnscrypt-proxy" # bin name
 gsProxyDesc="DNScrypt-proxy" # description
 gsProxyDir="/usr/local/sbin" # bin name directory
-gsProxyApp="$gsProxyDir/$gsProxyName" # full path to bin name
+gsProxyBin="$gsProxyDir/$gsProxyName" # full path to bin name
 gsLogFile="/var/log/$gsProxyName.log" # log file
 gsPidDir="/var/run/$gsProxyName" # pid directory
 gsWorkDir="/usr/local/share/$gsProxyName" # default working directory
@@ -124,6 +126,31 @@ gsGUI="whiptail"
 # Service locked ?
 #------------------------------------------------------------
 gbLockStart="`cmdMySQL 'MySB_db' "SELECT dnscrypt FROM system WHERE id_system='1';"`"
+#------------------------------------------------------------
+# CSV file 'dnscrypt-resolvers.csv' compile
+#------------------------------------------------------------
+gsCplAllCsvUrls="https://raw.githubusercontent.com/toulousain79/MySB/v5.3/files/dnscrypt-resolvers/archives/20180529-1516.csv
+# https://raw.githubusercontent.com/dyne/dnscrypt-proxy/master/dnscrypt-resolvers.csv
+# https://gist.githubusercontent.com/legendtang/db7265c5f5f82c9aed70/raw/5fc8bbc6d0acf7a0da5f5be7f5b7b7e243ec8931/dnscrypt-resolvers.csv
+# https://raw.githubusercontent.com/cryptostorm/cstorm_deepDNS/master/dnscrypt-resolvers.csv
+# https://svn.dd-wrt.com/export/38136/src/router/dnscrypt/dnscrypt-resolvers.csv
+# https://git.telliq.com/gtu/packages/raw/d29bddd8093133aa1dfe42f35353d079b7d73f1e/net/dnscrypt-proxy/files/dnscrypt-resolvers.csv?inline=false"
+# DO NOT add the dead list others because of an empty first line !!!
+gsCplDeadResolversList="https://raw.githubusercontent.com/toulousain79/MySB/v5.3/files/dnscrypt-resolvers/dead-resolvers.csv"
+# Directories
+gsCplDestDir="/opt/DNScrypt-proxy"
+gsCplTmpDir="$gsCplDestDir/tmp"
+# Files name
+gsCplFinalCsv="${gsCplDestDir}/$gsCsvName"
+gsCplMinisignPubKey="${gsCplDestDir}/$gsPubKeyName"
+# CSV header
+gsCplFirstLine='Name,"Full name","Description","Location","Coordinates","URL","Version","DNSSEC validation","No logs","Namecoin","Resolver address","Provider name","Provider public key","Provider public key TXT record"'
+# Timing
+gdCplDate=$(date +%Y%m%d)
+gdCplTime=$(date +%H%M)
+gdCplDateFormated=$(date +%Y-%m-%d)
+gdCplTimeFormated=$(date +%H:%M)
+gsCplMessage="Released date: ${gdCplDateFormated}-${gdCplTimeFormated}"
 
 ######################################################################
 #
@@ -155,7 +182,7 @@ gfnCheckPrerequisites() {
 	sMode=''
 
 	# User privileges
-	if [ $(id -u) -ne 0 ]; then
+	if [ "$(id -u)" -ne 0 ]; then
 		sMode='con'
 		gsMess='\nYou need root privileges to run this script.\n'
 		nExit=1
@@ -198,7 +225,7 @@ gfnCheckPrerequisites() {
 
 # Check files and directories
 gfnCheckDirAndFiles() {
-	local nReturn sProxyPath sProxyDir sCsvFile sCsvDir
+	local nReturn sProxyPath sProxyDir sCsvFile
 
 	nReturn=0
 
@@ -234,9 +261,8 @@ gfnCheckDirAndFiles() {
 
 # Check resolvers certificate validity
 gfnCheckCertificateValidity() {
-	local sResolversList sType nCount sResolverGiven sListToRead sProxyParams nProxyTestMargin
+	local sResolversList sType nCount sResolverGiven sListToRead
 
-	nProxyTestMargin=720 # In minutes: 720 min = 12 hours = 0.5 days
 	sResolverGiven="$1"
 	sListToRead="$gsResolversList"
 	nCount=1
@@ -250,7 +276,7 @@ gfnCheckCertificateValidity() {
 
 		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nCount -e $gnCountResolver -t 'Checking certificate			:' -m "($nCount/$gnCountResolver	- $sResolver)"
 
-		eval "${gsProxyApp} -R ${sResolver} -t ${nProxyTestMargin} -u ${gsDeamonUser} -L ${gsCsvFile} -l ${gsTmpDir}/${sResolver}.log -m 7 >> ${gsTmpDir}/${sResolver}.log 2>&1"
+		eval "${gsProxyBin} -R ${sResolver} -t ${gnProxyTestMargin} -u ${gsDeamonUser} -L ${gsCsvFile} -l ${gsTmpDir}/${sResolver}.log -m 7 >> ${gsTmpDir}/${sResolver}.log 2>&1"
 		gnCertificate=$?
 
 		case "$gnCertificate" in
@@ -267,7 +293,7 @@ gfnCheckCertificateValidity() {
 				case "$gnCertificate" in
 					2)	gsMess="No valid certificates can be used";;
 					3)	gsMess="A timeout occurred";;
-					4)	gsMess="A currently valid certificate is going to expire before margin $nProxyTestMargin";;
+					4)	gsMess="A currently valid certificate is going to expire before margin $gnProxyTestMargin";;
 					*) # ???
 						sType='error'
 						gsMess="An unknow error occurred: $gnCertificate"
@@ -313,7 +339,7 @@ gfnCheckCertificateValidity() {
 #
 #------------------------------------------------------------
 gfnCheckDnsLeak() {
-	local sDNSIPFilter sHTMLTestPage sDnsOarcTestURL sLeakTest sIP
+	local sDNSIPFilter sHTMLTestPage sDnsOarcTestURL sLeakTest sIP aIP
 
 	sDNSIPFilter="(\\b\\name\\b\=.[[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}.)"
 	sHTMLTestPage="$gsTmpDir/dnscrypt-checkleak.html"
@@ -326,7 +352,7 @@ gfnCheckDnsLeak() {
 
 	if [ -f $sHTMLTestPage ]; then rm -f $sHTMLTestPage; fi
 
-	$binCURL $sDnsOarcTestURL -o $sHTMLTestPage
+	${binCURL} -o ${sHTMLTestPage} ${sDnsOarcTestURL}
 	if [ -f $sHTMLTestPage ]; then
 		sLeakTest=$(printf  "\n\n%-16s %s" " --- DNS Servers detected during DNS Leak Test ---"  " ")
 		gfnMessage 'notice' 'con' "$sLeakTest"
@@ -420,7 +446,7 @@ gfnCheckDnsSpeed() {
 
 # Command line arguments
 gfnCheckResolversWished() {
-	local sWhere fnGetResolvers sResolver
+	local sWhere sResolver
 
 	# Get resolvers list (from database)
 	fnGetResolvers() {
@@ -564,9 +590,6 @@ gfnGetStatusDetails() {
 		sMess+=$(printf  "\n%-16s %s" " No process" "found !" )
 	fi
 
-	sMess+=$(printf  "\n %s" )
-	sMess+=$(printf  "\n %s" )
-
 	gfnMessage 'notice' 'con' "$sMess"
 }
 
@@ -619,57 +642,76 @@ gfnUpdateResolvers() {
 
 # Download resolvers.csv from official source
 gfnDownloadCsvFile() {
-	local sCsvTemp sSigTemp sPubKeyTemp sType sMode sTitle nReturn nStep nTotalSteps
+	local sCsvTemp sSigTemp sPubKeyTemp sType sMode sTitle nReturn nStep nTotalSteps sCsvUrl nToExecute bShowMessages
 
-	sCsvTemp="$gsCsvFile.tmp"
-	sSigTemp="$gsSigFile.tmp"
-	sPubKeyTemp="$gsPubKeyFile.tmp"
-	sTitle='Getting the resolver list		:'
-	sType='notice'
-	sMode='log'
 	nReturn=0
 	nStep=0
-	nTotalSteps=11
+	sTitle='Getting the resolver list		:'
+	if [[ -z "$gsCplMinisignPass" ]]; then # Normal use
+		nToExecute=1
+		bShowMessages="$gbShowMessages"
+		sCsvUrl="$gsCsvUrl"
+		sCsvTemp="$gsCsvFile.tmp"
+		sSigTemp="$gsSigFile.tmp"
+		sPubKeyTemp="$gsPubKeyFile.tmp"
+
+		sType='notice'
+		sMode='log'
+		nTotalSteps=11
+	else # CSV compile use
+		nToExecute=0
+		bShowMessages=no
+		sCsvUrl="$1"
+		sCsvTemp="${gsCplTmpDir}/${gsCsvName}.tmp"
+		sSigTemp="${gsCplTmpDir}/${gsSigName}.tmp"
+		nTotalSteps=4
+	fi
 
 	# Step 1 - Remove old temp files
 	(( nStep++ ))
-	[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Removes temp files)"
+	[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Removes temp files)"
 	[ -f $sCsvTemp ] && rm -f $sCsvTemp
 	[ -f $sSigTemp ] && rm -f $sSigTemp
 	gfnMessage 'notice' 'log' "Remove temp files"
 
 	# Step 2 - HTTP Status: dnscrypt-resolvers.csv
 	(( nStep++ ))
-	[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - HTTP Status: '$gsCsvName')";
-	gfnHttpStatus "$gsCsvUrl" || nReturn=1
+	[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - HTTP Status: '$gsCsvName')";
+	gfnHttpStatus "$sCsvUrl" || nReturn=1
 
 	# Step 3 - HTTP Status: dnscrypt-resolvers.csv.minisig
-	(( nStep++ ))
-	[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - HTTP Status: '$gsSigName')"
-	gfnHttpStatus "$gsSigUrl" || nReturn=1
+	if [[ ${nToExecute} -eq 1 ]]; then
+		(( nStep++ ))
+		[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - HTTP Status: '$gsSigName')"
+		gfnHttpStatus "$gsSigUrl" || nReturn=1
+	fi
 
 	# Step 4 - HTTP Status: minisign.pub
-	(( nStep++ ))
-	[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - HTTP Status: '$gsPubKeyName')"
-	gfnHttpStatus "$gsPubKeyUrl" || nReturn=1
+	if [[ ${nToExecute} -eq 1 ]]; then
+		(( nStep++ ))
+		[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - HTTP Status: '$gsPubKeyName')"
+		gfnHttpStatus "$gsPubKeyUrl" || nReturn=1
+	fi
 
 	if [ $nReturn -eq 0 ]; then
 		# Step 5 - Download 'dnscrypt-resolvers.csv'
 		(( nStep++ ))
 		gfnMessage 'notice' 'log' "Download '$gsCsvName'"
-		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Downloads: '$gsCsvName')"
-		$binCURL -o $sCsvTemp $gsCsvUrl
+		[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Downloads: '$gsCsvName')"
+		${binCURL} -o ${sCsvTemp} ${sCsvUrl} 2> /dev/null
 
 		# Step 6 - Backup and update 'dnscrypt-resolvers.csv' in /usr/local/share/dnscrypt-proxy/
 		(( nStep++ ))
 		gfnMessage 'notice' 'log' "Move '$gsCsvName'"
-		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Moves: '$gsCsvName')"
+		[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Moves: '$gsCsvName')"
 		if [ -e "$sCsvTemp" ] && [ -s "$sCsvTemp" ]; then
-			if [ -e "$gsCsvFile" ]; then
-				mv -f $gsCsvFile $gsCsvFile.old
+			if [[ ${nToExecute} -eq 1 ]]; then
+				if [ -e "$gsCsvFile" ]; then
+					mv -f $gsCsvFile $gsCsvFile.old
+				fi
+				dos2unix $sCsvTemp &> /dev/null
+				mv -f $sCsvTemp $gsCsvFile
 			fi
-			dos2unix $sCsvTemp &> /dev/null
-			mv -f $sCsvTemp $gsCsvFile
 			gfnMessage 'info' 'log' "Successful download of the file '$gsCsvName'"
 		else
 			gfnMessage 'error' 'con' "Failed download of the file '$gsCsvName'"
@@ -677,53 +719,61 @@ gfnDownloadCsvFile() {
 		fi
 
 		# Step 7 - Download 'dnscrypt-resolvers.csv.minisig'
-		(( nStep++ ))
-		gfnMessage 'notice' 'log' "Download '$gsSigName'"
-		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Downloads: '$gsSigName')"
-		$binCURL -o $sSigTemp $gsSigUrl
+		if [[ ${nToExecute} -eq 1 ]]; then
+			(( nStep++ ))
+			gfnMessage 'notice' 'log' "Download '$gsSigName'"
+			[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Downloads: '$gsSigName')"
+			${binCURL} -o ${sSigTemp} ${gsSigUrl} 2> /dev/null
+		fi
 
 		# Step 8 - Backup and update 'dnscrypt-resolvers.csv.minisig' in /usr/local/share/dnscrypt-proxy/
-		(( nStep++ ))
-		gfnMessage 'notice' 'log' "Move '$gsSigName'"
-		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Moves: '$gsSigName')"
-		if [ -e "$sSigTemp" ] && [ -s "$sSigTemp" ]; then
-			if [ -e "$gsSigFile" ]; then
-				mv -f $gsSigFile $gsSigFile.old
+		if [[ ${nToExecute} -eq 1 ]]; then
+			(( nStep++ ))
+			gfnMessage 'notice' 'log' "Move '$gsSigName'"
+			[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Moves: '$gsSigName')"
+			if [ -e "$sSigTemp" ] && [ -s "$sSigTemp" ]; then
+				if [ -e "$gsSigFile" ]; then
+					mv -f $gsSigFile $gsSigFile.old
+				fi
+				mv -f $sSigTemp $gsSigFile
+				gfnMessage 'info' 'log' "Successful download of the file '$gsSigName'"
+			else
+				gfnMessage 'error' 'con' "Failed download of the file '$gsSigName'"
+				nReturn=1
 			fi
-			mv -f $sSigTemp $gsSigFile
-			gfnMessage 'info' 'log' "Successful download of the file '$gsSigName'"
-		else
-			gfnMessage 'error' 'con' "Failed download of the file '$gsSigName'"
-			nReturn=1
 		fi
 
 		# Step 9 - Download 'minisign.pub'
-		(( nStep++ ))
-		gfnMessage 'notice' 'log' "Download '$gsPubKeyName'"
-		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Downloads: '$gsPubKeyName')"
-		$binCURL -o $sPubKeyTemp $gsPubKeyUrl
-
-		# Step 10 - Backup and update 'minisign.pub' in /usr/local/share/dnscrypt-proxy/
-		(( nStep++ ))
-		gfnMessage 'notice' 'log' "Move '$gsPubKeyName'"
-		[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Moves: '$gsPubKeyName')"
-		if [ -e "$sPubKeyTemp" ] && [ -s "$sPubKeyTemp" ]; then
-			if [ -e "$gsPubKeyFile" ]; then
-				mv -f $gsPubKeyFile $gsPubKeyFile.old
-			fi
-			mv -f $sPubKeyTemp $gsPubKeyFile
-			gfnMessage 'info' 'log' "Successful download of the file '$gsPubKeyName'"
-		else
-			gfnMessage 'error' 'con' "Failed download of the file '$gsPubKeyName'"
-			nReturn=1
+		if [[ ${nToExecute} -eq 1 ]]; then
+			(( nStep++ ))
+			gfnMessage 'notice' 'log' "Download '$gsPubKeyName'"
+			[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Downloads: '$gsPubKeyName')"
+			${binCURL} -o ${sPubKeyTemp} ${gsPubKeyUrl} 2> /dev/null
 		fi
 
-		if [ $nReturn -eq 0 ]; then
+		# Step 10 - Backup and update 'minisign.pub' in /usr/local/share/dnscrypt-proxy/
+		if [[ ${nToExecute} -eq 1 ]]; then
+			(( nStep++ ))
+			gfnMessage 'notice' 'log' "Move '$gsPubKeyName'"
+			[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Moves: '$gsPubKeyName')"
+			if [ -e "$sPubKeyTemp" ] && [ -s "$sPubKeyTemp" ]; then
+				if [ -e "$gsPubKeyFile" ]; then
+					mv -f $gsPubKeyFile $gsPubKeyFile.old
+				fi
+				mv -f $sPubKeyTemp $gsPubKeyFile
+				gfnMessage 'info' 'log' "Successful download of the file '$gsPubKeyName'"
+			else
+				gfnMessage 'error' 'con' "Failed download of the file '$gsPubKeyName'"
+				nReturn=1
+			fi
+		fi
+
+		if [ ${nReturn} -eq 0 ] && [ ${nToExecute} -eq 1 ]; then
 			# Minisign check of 'dnscrypt-resolvers.csv'
 			# Step 11
 			(( nStep++ ))
 			gfnMessage 'notice' 'log' "Checks '$gsCsvName'"
-			[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Checks: '$gsCsvName')"
+			[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Checks: '$gsCsvName')"
 			if gfnCheckCommand 0 minisign; then
 				minisign -q -V -m "$gsCsvFile" -x "$gsSigFile" -p "$gsPubKeyFile"
 				if [ $? -ne 0 ]; then
@@ -744,6 +794,9 @@ gfnDownloadCsvFile() {
 
 			gfnMessage "$sType" "$sMode" "$gsMess"
 		fi
+
+		# Return for CSV compile
+		[ ${nToExecute} -eq 0 ] && return ${nReturn}
 	fi
 }
 
@@ -871,6 +924,221 @@ gfnUpdateDatabase() {
 	fi
 }
 
+# CSV files compile
+gfnCompileCsvFiles() {
+	local nCount nCountUrl nCountResolver nCountResolver nHostResult nPingResult nCertificate nDuplicate
+	local sCsvUrl sLine sResolverAddress sPort sValues sPort sIp sCsvFile sMess sResult
+
+	# Create needed directories
+	log_daemon_msg "Prepare environment"
+	[[ ! -d ${gsCplDestDir}/archives ]] && mkdir -p ${gsCplDestDir}/archives
+	[[ ! -d ${gsCplDestDir}/logs ]] && mkdir -p ${gsCplDestDir}/logs
+	[[ ! -d ${gsCplTmpDir} ]] && mkdir -p ${gsCplTmpDir}
+	# Cleaning
+	rm -f ${gsCplTmpDir}/*.csv
+	rm -f ${gsCplDestDir}/*.*
+	rm -f ${gsCplDestDir}/logs/*.*
+	rm -f $$gsCplFinalCsv*
+	# Count URLs
+	nCountUrl=0
+	for sCsvUrl in ${gsCsvUrl} ${gsCplAllCsvUrls} ${gsCplDeadResolversList}; do
+		(( nCountUrl++ ))
+	done
+	# Creating new files
+	echo "${gsCplFirstLine}" > ${gsCplTmpDir}/d_final.csv
+	echo "${gsCplFirstLine}" > ${gsCplTmpDir}/c_sorted.csv
+	gfnStatusLSB
+
+	# Stop current dnscrypt
+	log_daemon_msg "Stopping $gsProxyDesc in system"
+	gfnStop
+	gfnStatusLSB
+
+	#### Download all CSV files into only only
+	nCount=0
+	echo "${gsCplMessage}<br /><br />Original 'dnscrypt-resolvers.csv' files:<br />" > ${gsCplDestDir}/release.md
+	echo "--------------------" >> ${gsCplDestDir}/results.log
+	for sCsvUrl in ${gsCsvUrl} ${gsCplAllCsvUrls} ${gsCplDeadResolversList}; do
+		(( nCount++ ))
+		gfnProgressBar -s ${nCount} -e ${nCountUrl} -t 'Download all CSV files		:' -m "(${nCount}/${nCountUrl})"
+
+		gfnDownloadCsvFile "$sCsvUrl"
+		if [[ ${?} -ne 0 ]]; then
+			echo "BAD URL: ${sCsvUrl}" >> ${gsCplDestDir}/results.log
+			continue
+		else
+			echo "GOOD URL: ${sCsvUrl}" >> ${gsCplDestDir}/results.log
+		fi
+
+		# release.md
+		echo "$sCsvUrl <br />" >> ${gsCplDestDir}/release.md
+
+		if [ -f ${gsCplTmpDir}/${gsCsvName}.tmp ]; then
+			sed -i '/Name,/d' ${gsCplTmpDir}/${gsCsvName}.tmp
+			sed -i '/-ipv6/d' ${gsCplTmpDir}/${gsCsvName}.tmp
+			sed -i 's/, / /g;' ${gsCplTmpDir}/${gsCsvName}.tmp
+			sed -i "s/'/ /g;" ${gsCplTmpDir}/${gsCsvName}.tmp
+			sed -i 's/"//g;' ${gsCplTmpDir}/${gsCsvName}.tmp
+			sed -i 's/ /#/g;' ${gsCplTmpDir}/${gsCsvName}.tmp
+			cat ${gsCplTmpDir}/${gsCsvName}.tmp >> ${gsCplTmpDir}/a_downloaded.csv
+		fi
+	done
+	echo "--------------------" >> ${gsCplDestDir}/results.log
+	rm -f ${gsCplTmpDir}/${gsCsvName}.tmp
+
+	#### Compile
+	nCount=0
+	nCountResolver=$(csvtool -t ',' -u '|' cat ${gsCplTmpDir}/a_downloaded.csv | wc -l)
+	sValues=$(csvtool -t ',' -u '|' cat ${gsCplTmpDir}/a_downloaded.csv)
+	for sLine in ${sValues}; do
+		sName="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[1]}'`"
+		sDnsSec="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[8]}'`"
+		sNoLogs="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[9]}'`"
+		sNameCoin="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[10]}'`"
+		sResolverAddress="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[11]}'`"
+		sProviderName="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[12]}'`"
+		sPubKey="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[13]}'`"
+		sPubKeyTxt="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[14]}'`"
+
+		(( nCount++ ))
+		gfnProgressBar -s ${nCount} -e ${nCountResolver} -t 'Compile the CSV file		:' -m "(${nCount}/${nCountResolver}	- ${sName})"
+
+		sPort="$(echo ${sResolverAddress} | awk -F ':' '{print $2}')"
+		[[ -z "${sPort}" ]] && sResolverAddress="$sResolverAddress:443"
+
+		echo "${sName},,,,,,,${sDnsSec},${sNoLogs},${sNameCoin},${sResolverAddress},${sProviderName},${sPubKey},${sPubKeyTxt}" >> ${gsCplTmpDir}/b_compiled.csv
+	done
+
+	# Sort uniq
+	sed -i 's/#/ /g;' ${gsCplTmpDir}/a_downloaded.csv
+	sed -i 's/""//g;' ${gsCplTmpDir}/a_downloaded.csv
+	sort -u ${gsCplTmpDir}/b_compiled.csv >> ${gsCplTmpDir}/c_sorted.csv
+
+	#### Check resolvers
+	nDuplicate=0
+	nCount=0
+	nCountResolver=$(csvtool -t ',' -u '|' cat ${gsCplTmpDir}/c_sorted.csv | csvtool drop 1 - | wc -l)
+	sValues="$(csvtool -t ',' -u '|' cat ${gsCplTmpDir}/c_sorted.csv | csvtool drop 1 -)"
+	for sLine in ${sValues}; do
+		sName="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[1]}'`"
+		sFullName="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $2}' | tail -1)"
+		sDescription="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $3}' | tail -1)"
+		sLocation="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $4}' | tail -1)"
+		sCoordinates="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $5}' | tail -1)"
+		sUrl="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $6}' | tail -1)"
+		sVersion="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $7}' | tail -1)"
+		sDnsSec="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[8]}'`"
+		sNoLogs="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[9]}'`"
+		sNameCoin="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[10]}'`"
+		sResolverAddress="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[11]}'`"
+		sIp=$(echo ${sResolverAddress} | awk -F ':' '{print $1}')
+		sProviderName="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[12]}'`"
+		sPubKey="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[13]}'`"
+		sPubKeyTxt="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[14]}'`"
+		sCsvFile="${gsCplDestDir}/dead-resolvers.csv"
+
+		echo  >> ${gsCplDestDir}/results.log
+		echo "--------------------" >> ${gsCplDestDir}/results.log
+		echo "Name: ${sName}" >> ${gsCplDestDir}/results.log
+		echo "Full Name: ${sFullName}" >> ${gsCplDestDir}/results.log
+		echo "Description: ${sDescription}" >> ${gsCplDestDir}/results.log
+		echo "Location: ${sLocation}" >> ${gsCplDestDir}/results.log
+		echo "Coordinates: ${sCoordinates}" >> ${gsCplDestDir}/results.log
+		echo "URL: ${sUrl}" >> ${gsCplDestDir}/results.log
+		echo "Version: ${sVersion}" >> ${gsCplDestDir}/results.log
+		echo "DNS Sec: ${sDnsSec}" >> ${gsCplDestDir}/results.log
+		echo "No Logs: ${sNoLogs}" >> ${gsCplDestDir}/results.log
+		echo "NameCoin: ${sNameCoin}" >> ${gsCplDestDir}/results.log
+		echo "ResolverAddress: ${sResolverAddress}" >> ${gsCplDestDir}/results.log
+		echo "IP: ${sIp}" >> ${gsCplDestDir}/results.log
+		echo "ProviderName: ${sProviderName}" >> ${gsCplDestDir}/results.log
+		echo "PubKey: ${sPubKey}" >> ${gsCplDestDir}/results.log
+		echo "PubKeyTxt: ${sPubKeyTxt}" >> ${gsCplDestDir}/results.log
+		echo "--------------------" >> ${gsCplDestDir}/results.log
+
+		(( nCount++ ))
+		gfnProgressBar -s ${nCount} -e ${nCountResolver} -t 'Clean the CSV file		:' -m "(${nCount}/${nCountResolver}	- ${sName})"
+
+		# Check duplicated resolvers
+		echo "--> Duplicate result: $(grep "${sName}|" ${gsCplTmpDir}/c_sorted.csv | wc -l)" >> ${gsCplDestDir}/results.log
+		[[ -f "${gsCplTmpDir}/d_final.csv" ]] && nDuplicate="$(grep "${sName}," ${gsCplTmpDir}/d_final.csv | wc -l)"
+
+		# Host check
+		host -4 -W2 ${sIp} &> /dev/null
+		nHostResult="$?"
+		[[ "$nHostResult" -ne 0 ]] && sResult="Failed" || sResult="Done"
+		echo "--> Host result: $sResult" >> ${gsCplDestDir}/results.log
+
+		# Ping check
+		ping -W2 -c1 ${sIp} &> /dev/null
+		nPingResult="$?"
+		[[ "$nPingResult" -ne 0 ]] && sResult="Failed" || sResult="Done"
+		echo "--> Ping result: $sResult" >> ${gsCplDestDir}/results.log
+
+		rm -f ${gsCplDestDir}/logs/${sName}.log
+		eval "${gsProxyBin} -R ${sName} -t ${gnProxyTestMargin} -u ${gsDeamonUser} -L ${gsCplTmpDir}/c_sorted.csv -l ${gsCplDestDir}/logs/${sName}.log -m 7 >> ${gsCplDestDir}/logs/${sName}.log 2>&1"
+		nCertificate=$?
+
+		case "$nCertificate" in
+			0) #  a valid certificate can be used
+				sCsvFile="${gsCplTmpDir}/d_final.csv"; sMess="A valid certificate can be used"
+			;;
+			4) #  a valid certificate can be used
+				sCsvFile="${gsCplTmpDir}/d_final.csv"; sMess="A currently valid certificate is going to expire before margin $gnProxyTestMargin"
+			;;
+			2)  sMess="No valid certificates can be used";;
+			3)  sMess="A timeout occurred";;
+			*)  sMess="An unknow error occurred: $nCertificate";;
+		esac
+
+		echo "--> Certificate validity result: $sMess" >> ${gsCplDestDir}/results.log
+		if [ "$sCsvFile" == "${gsCplTmpDir}/d_final.csv" ]; then
+			[[ "$nDuplicate" -eq 1 ]] && sCsvFile="${gsCplTmpDir}/d_duplicated.csv"
+			echo "==> Resolver ADDED !" >> ${gsCplDestDir}/results.log
+		else
+			echo "==> Resolver REMOVED !" >> ${gsCplDestDir}/results.log
+		fi
+
+		# Check if DNS Security Extensions are supported
+		([[ "${sDnsSec}" == "yes" ]] && [[ -n "$(grep "does not support DNS Security Extensions" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sDnsSec="no" && echo "DNS Sec value changed: YES to NO" >> ${gsCplDestDir}/results.log
+		([[ "${sDnsSec}" == "no" ]] && [[ -n "$(grep "DNS Security Extensions are supported" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sDnsSec="yes" && echo "DNS Sec value changed: NO to YES" >> ${gsCplDestDir}/results.log
+		# Provider supposedly doesn't keep logs
+		([[ "${sNoLogs}" == "yes" ]] && [[ -z "$(grep "Provider supposedly doesn't keep logs" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sNoLogs="no" && echo "No Logs value changed: YES to NO" >> ${gsCplDestDir}/results.log
+		([[ "${sNoLogs}" == "no" ]] && [[ -n "$(grep "Provider supposedly doesn't keep logs" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sNoLogs="yes" && echo "No Logs value changed: NO to YES" >> ${gsCplDestDir}/results.log
+		# Check if Namecoin domains can be resolved
+		([[ "${sNameCoin}" == "yes" ]] && [[ -z "$(grep "Namecoin domains can be resolved" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sNameCoin="no" && echo "NameCoin value changed: NO to YES" >> ${gsCplDestDir}/results.log
+		([[ "${sNameCoin}" == "no" ]] && [[ -n "$(grep "Namecoin domains can be resolved" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sNameCoin="yes" && echo "NameCoin value changed: YES to NO" >> ${gsCplDestDir}/results.log
+
+		echo "--------------------" >> ${gsCplDestDir}/results.log
+
+		echo "${sName},\"${sFullName}\",\"${sDescription}\",\"${sLocation}\",\"${sCoordinates}\",${sUrl},${sVersion},${sDnsSec},${sNoLogs},${sNameCoin},${sResolverAddress},${sProviderName},${sPubKey},${sPubKeyTxt}" >> "$sCsvFile"
+	done
+	sed -i 's/""//g;' ${gsCplTmpDir}/d_final.csv
+	cp ${gsCplTmpDir}/d_final.csv ${gsCplFinalCsv}
+
+	# Start current dnscrypt
+	log_daemon_msg "Starting $gsProxyDesc in system"
+	gfnStart
+	gfnStatusLSB
+
+	# Creating a key pair
+	[ ! -f ~/.minisign/minisign.key ] && echo -e "$gsCplMinisignPass\\n$gsCplMinisignPass" | minisign -G -p ${gsCplMinisignPubKey}
+
+	# Signing a file
+	echo "$gsCplMinisignPass" | minisign -Sm ${gsCplFinalCsv} -t "MySB - DNScrypt Resolvers List - ${gdCplDateFormated}-${gdCplTimeFormated}"
+
+	# Verifying a file
+	minisign -Vm ${gsCplFinalCsv} -p ${gsCplMinisignPubKey} -x ${gsCplFinalCsv}.minisig -c "$gsCplMessage" -t "$gsCplMessage"
+	if [[ $? -ne 0 ]]; then
+		echo "Minisign verification failed !"
+		exit 1
+	fi
+
+	# Archives
+	cp -f ${gsCplFinalCsv} ${gsCplDestDir}/archives/${gdCplDate}-${gdCplTime}.csv
+	[ -f ${gsCplDestDir}/dead-resolvers.csv ] && cp -f ${gsCplDestDir}/dead-resolvers.csv ${gsCplDestDir}/archives/dead-resolvers.csv
+}
+
 # Function START
 gfnStart() {
 	local sPids nPid nRunning nCountProcess nCountResolver nResolverQty sType
@@ -908,7 +1176,8 @@ gfnStart() {
 
 			# Adapt PeerGuardian to authorize resolvers responses
 			if [ "$gbIsInstalled_PeerGuardian" == "YES" ]; then
-				[ -z $funcs_PeerGuardian ] && source $MySB_InstallDir/inc/funcs_by_script/funcs_PeerGuardian
+				# shellcheck source=/opt/MySB/inc/funcs_by_script/funcs_PeerGuardian
+				[ -z "$funcs_PeerGuardian" ] && source $MySB_InstallDir/inc/funcs_by_script/funcs_PeerGuardian
 				gfnPeerGuardianPglcmdConf 0
 				gfnPeerGuardianIptablesInsert 0
 				pglcmd restart &> /dev/null
@@ -944,7 +1213,7 @@ gfnStart() {
 						# Update DB
 						cmdMySQL 'MySB_db' "UPDATE dnscrypt_resolvers SET certificate='$gnCertificate', comments='$gsMess' WHERE name='$sResolver';"
 					else
-						let nCountProcess=${nRunning}+1
+						let "nCountProcess=${nRunning}+1"
 
 						$gsProxyName -R $sResolver -a 127.0.0.$nCountProcess:52 -p $gsPidDir/$sResolver.pid $gsProxyParams >> $gsLogFile 2>> $gsTmpDir/$sResolver.log
 						sleep 0.2
@@ -1117,13 +1386,13 @@ gfnSaveConfig() {
 
 	if [ -z "$1" ]; then
 		gsMess="Configuration saved:\n\n"
-		gsMess+="  Process qty		 : $nNumberOfDaemon\n"
-		gsMess+="  IP version		  : $gsIpVersion\n"
-		gsMess+="  Random			  : $gbRandomResolvers\n"
-		gsMess+="  No Logs			 : $gbOnlyNoLogs\n"
-		gsMess+="  DNSSec			  : $gbOnlyDNSSec\n"
-		gsMess+="  NameCoin			: $gbOnlyNameCoin\n"
-		gsMess+="  Available resolvers : $nCountResolver\n\n"
+		gsMess+="  Process qty		  : $nNumberOfDaemon\n"
+		gsMess+="  IP version		   : $gsIpVersion\n"
+		gsMess+="  Random			   : $gbRandomResolvers\n"
+		gsMess+="  No Logs			  : $gbOnlyNoLogs\n"
+		gsMess+="  DNSSec			   : $gbOnlyDNSSec\n"
+		gsMess+="  NameCoin			 : $gbOnlyNameCoin\n"
+		gsMess+="  Available resolvers  : $nCountResolver\n\n"
 		gfnMessage 'info' 'con' "$gsMess"
 	fi
 }
@@ -1597,6 +1866,7 @@ gfnCmdShowUsage() {
 
 # DNScrypt-proyx global paramters
 gsProxyParams="-d -u ${gsDeamonUser} -n 250 -m 6 -L $gsCsvFile -l $gsLogFile"
+gnProxyTestMargin=720 # In minutes: 720 min = 12 hours = 0.5 days
 
 # Bin CURL
 binCURL="curl -skLS --retry 3"
@@ -1604,14 +1874,14 @@ binCURL="curl -skLS --retry 3"
 # Colors - http://misc.flogisoft.com/bash/tip_colors_and_formatting
 gsN="\e[0m"			# normal
 gsU="\e[4m"			# underline
-gsB="\e[34m"		# blue
-gsBl="\e[94m"		# blue light
+# gsB="\e[34m"		# blue
+# gsBl="\e[94m"		# blue light
 gsY="\e[33m"		# yellow
-gsYl="\e[93m"		# yellow light
+#gsYl="\e[93m"		# yellow light
 gsG="\e[32m"		# green
-gsGl="\e[92m"		# green light
+#gsGl="\e[92m"		# green light
 gsR="\e[31m"		# red
-gsRl="\e[91m"		# red light
+#gsRl="\e[91m"		# red light
 
 # Default: we are in command line mode
 gbCommandLine=yes
@@ -1689,13 +1959,31 @@ if [ $# -ge 1 ]; then
 			'cron-check')
 				gfnCheckFromCron
 			;;
+			'csv-compile')
+				gsCplMinisignPass=""
+				trap gfnSigInt INT
+				OPTS=$(getopt --shell bash -l password:: -n "$gsProxyDesc CSV compile" -- "$@")
+				if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
+				eval set -- "$OPTS"
+				while true; do
+					case "$1" in
+						--password)
+							case "$2" in
+								'') gfnCmdShowUsageConfig; shift 2;;
+								*)  gsCplMinisignPass="$2"; gfnCompileCsvFiles; shift; exit 1;;
+							esac
+						;;
+						*)  break;;
+					esac
+				done
+			;;
 			# 'dns-leak')
 				# gfnCheckDnsLeak
 			# ;;
 			'config')
 				trap gfnSigInt INT
 				gbUpdateDb=no
-				OPTS=$(getopt --shell bash -l proc::,ipv::,dnssec::,nologs::,namecoin::,random:: -n "$gsProxyDesc init" -- "$@")
+				OPTS=$(getopt --shell bash -l proc::,ipv::,dnssec::,nologs::,namecoin::,random:: -n "$gsProxyDesc configuration" -- "$@")
 				if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
 				eval set -- "$OPTS"
 				while true; do
@@ -1752,18 +2040,6 @@ if [ $# -ge 1 ]; then
 							fi
 							break
 						;;
-						\?)
-							gbUpdateDb=no
-							gfnMessage 'error' 'con' "Unknown Option"
-							gfnCmdShowUsageConfig
-							exit 1
-						;;
-						:)
-							gbUpdateDb=no
-							gfnMessage 'error' 'con' "missing required parameter for Option $opt"
-							exit 1
-						;;
-						--)	shift; break;;
 					esac
 				done
 
