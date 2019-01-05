@@ -130,6 +130,7 @@ gbLockStart="`cmdMySQL 'MySB_db' "SELECT dnscrypt FROM system WHERE id_system='1
 # CSV file 'dnscrypt-resolvers.csv' compile
 #------------------------------------------------------------
 gsCplAllCsvUrls="https://raw.githubusercontent.com/toulousain79/MySB/v5.3/files/dnscrypt-resolvers/archives/20180529-1516.csv
+https://raw.githubusercontent.com/toulousain79/MySB/v5.3/files/dnscrypt-resolvers/archives/20190105-1509.csv
 https://raw.githubusercontent.com/dyne/dnscrypt-proxy/master/dnscrypt-resolvers.csv
 https://gist.githubusercontent.com/legendtang/db7265c5f5f82c9aed70/raw/5fc8bbc6d0acf7a0da5f5be7f5b7b7e243ec8931/dnscrypt-resolvers.csv
 https://raw.githubusercontent.com/cryptostorm/cstorm_deepDNS/master/dnscrypt-resolvers.csv
@@ -143,6 +144,7 @@ gsCplTmpDir="$gsCplDestDir/tmp"
 # Files name
 gsCplFinalCsv="${gsCplDestDir}/$gsCsvName"
 gsCplMinisignPubKey="${gsCplDestDir}/$gsPubKeyName"
+gsCplMinisignPrivKey="$(getent passwd "$(whoami)" | cut -d: -f6)/.minisign/minisign.key"
 # CSV header
 gsCplFirstLine='Name,"Full name","Description","Location","Coordinates","URL","Version","DNSSEC validation","No logs","Namecoin","Resolver address","Provider name","Provider public key","Provider public key TXT record"'
 # Timing
@@ -1075,7 +1077,7 @@ gfnCompileCsvFiles() {
 		[[ "$nPingResult" -ne 0 ]] && sResult="Failed" || sResult="Done"
 		echo "--> Ping result: $sResult" >> ${gsCplDestDir}/results.log
 
-        # Certificate check
+		# Certificate check
 		eval "${gsProxyBin} -R ${sName} -t ${gnProxyTestMargin} -u ${gsDeamonUser} -L ${gsCplTmpDir}/c_sorted.csv -l ${gsCplDestDir}/logs/${sName}.log -m 7 >> ${gsCplDestDir}/logs/${sName}.log 2>&1"
 		nCertificate=$?
 		case "$nCertificate" in
@@ -1112,8 +1114,9 @@ gfnCompileCsvFiles() {
 
 		echo "${sName},\"${sFullName}\",\"${sDescription}\",\"${sLocation}\",\"${sCoordinates}\",${sUrl},${sVersion},${sDnsSec},${sNoLogs},${sNameCoin},${sResolverAddress},${sProviderName},${sPubKey},${sPubKeyTxt}" >> "$sCsvFile"
 	done
+    sed -i 's/\s\+$//' results.log
 	sed -i 's/""//g;' ${gsCplTmpDir}/d_final.csv
-    sort -u ${gsCplTmpDir}/d_dead.csv >> ${gsCplDestDir}/dead-resolvers.csv
+	sort -u ${gsCplTmpDir}/d_dead.csv >> ${gsCplDestDir}/dead-resolvers.csv
 	cp ${gsCplTmpDir}/d_final.csv ${gsCplFinalCsv}
 
 	# Start current dnscrypt
@@ -1122,12 +1125,19 @@ gfnCompileCsvFiles() {
 	gfnStatusLSB
 
 	# Creating a key pair
-	[ ! -f ~/.minisign/minisign.key ] && echo -e "$gsCplMinisignPass\\n$gsCplMinisignPass" | minisign -G -p ${gsCplMinisignPubKey} -s ~/.minisign/minisign.key
+	if [ ! -f "${gsCplMinisignPrivKey}" ] || [ ! -f "${gsCplMinisignPubKey}" ]; then
+		echo -e "$gsCplMinisignPass\\n$gsCplMinisignPass" | minisign -G -p "${gsCplMinisignPubKey}" -s "${gsCplMinisignPrivKey}"
+	fi
 
-	# Signing a file
-	echo "$gsCplMinisignPass" | minisign -Sm ${gsCplFinalCsv} -t "MySB - DNScrypt Resolvers List - ${gdCplDateFormated}-${gdCplTimeFormated}" -s ~/.minisign/minisign.key
+	# Signing CSV file
+	if [ -f "${gsCplMinisignPubKey}" ] && [ -f "${gsCplMinisignPrivKey}" ]; then
+		echo "$gsCplMinisignPass" | minisign -Sm "${gsCplFinalCsv}" -t "MySB - DNScrypt Resolvers List - ${gdCplDateFormated}-${gdCplTimeFormated}" -s "${gsCplMinisignPrivKey}"
+	else
+		echo "Signing '${gsCplFinalCsv}' failed !"
+		exit 1
+	fi
 
-	# Verifying a file
+	# Verifying CSV file
 	minisign -Vm ${gsCplFinalCsv} -p ${gsCplMinisignPubKey} -x ${gsCplFinalCsv}.minisig -c "$gsCplMessage" -t "$gsCplMessage"
 	if [[ $? -ne 0 ]]; then
 		echo "Minisign verification failed !"
