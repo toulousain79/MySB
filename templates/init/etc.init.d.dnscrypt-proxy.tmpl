@@ -130,11 +130,11 @@ gbLockStart="`cmdMySQL 'MySB_db' "SELECT dnscrypt FROM system WHERE id_system='1
 # CSV file 'dnscrypt-resolvers.csv' compile
 #------------------------------------------------------------
 gsCplAllCsvUrls="https://raw.githubusercontent.com/toulousain79/MySB/v5.3/files/dnscrypt-resolvers/archives/20180529-1516.csv
-# https://raw.githubusercontent.com/dyne/dnscrypt-proxy/master/dnscrypt-resolvers.csv
-# https://gist.githubusercontent.com/legendtang/db7265c5f5f82c9aed70/raw/5fc8bbc6d0acf7a0da5f5be7f5b7b7e243ec8931/dnscrypt-resolvers.csv
-# https://raw.githubusercontent.com/cryptostorm/cstorm_deepDNS/master/dnscrypt-resolvers.csv
-# https://svn.dd-wrt.com/export/38136/src/router/dnscrypt/dnscrypt-resolvers.csv
-# https://git.telliq.com/gtu/packages/raw/d29bddd8093133aa1dfe42f35353d079b7d73f1e/net/dnscrypt-proxy/files/dnscrypt-resolvers.csv?inline=false"
+https://raw.githubusercontent.com/dyne/dnscrypt-proxy/master/dnscrypt-resolvers.csv
+https://gist.githubusercontent.com/legendtang/db7265c5f5f82c9aed70/raw/5fc8bbc6d0acf7a0da5f5be7f5b7b7e243ec8931/dnscrypt-resolvers.csv
+https://raw.githubusercontent.com/cryptostorm/cstorm_deepDNS/master/dnscrypt-resolvers.csv
+https://svn.dd-wrt.com/export/38136/src/router/dnscrypt/dnscrypt-resolvers.csv
+https://git.telliq.com/gtu/packages/raw/d29bddd8093133aa1dfe42f35353d079b7d73f1e/net/dnscrypt-proxy/files/dnscrypt-resolvers.csv?inline=false"
 # DO NOT add the dead list others because of an empty first line !!!
 gsCplDeadResolversList="https://raw.githubusercontent.com/toulousain79/MySB/v5.3/files/dnscrypt-resolvers/dead-resolvers.csv"
 # Directories
@@ -1035,7 +1035,7 @@ gfnCompileCsvFiles() {
 		sProviderName="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[12]}'`"
 		sPubKey="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[13]}'`"
 		sPubKeyTxt="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[14]}'`"
-		sCsvFile="${gsCplDestDir}/dead-resolvers.csv"
+		sCsvFile="${gsCplTmpDir}/d_dead.csv"
 
 		echo  >> ${gsCplDestDir}/results.log
 		echo "--------------------" >> ${gsCplDestDir}/results.log
@@ -1075,10 +1075,9 @@ gfnCompileCsvFiles() {
 		[[ "$nPingResult" -ne 0 ]] && sResult="Failed" || sResult="Done"
 		echo "--> Ping result: $sResult" >> ${gsCplDestDir}/results.log
 
-		rm -f ${gsCplDestDir}/logs/${sName}.log
+        # Certificate check
 		eval "${gsProxyBin} -R ${sName} -t ${gnProxyTestMargin} -u ${gsDeamonUser} -L ${gsCplTmpDir}/c_sorted.csv -l ${gsCplDestDir}/logs/${sName}.log -m 7 >> ${gsCplDestDir}/logs/${sName}.log 2>&1"
 		nCertificate=$?
-
 		case "$nCertificate" in
 			0) #  a valid certificate can be used
 				sCsvFile="${gsCplTmpDir}/d_final.csv"; sMess="A valid certificate can be used"
@@ -1091,6 +1090,16 @@ gfnCompileCsvFiles() {
 			*)  sMess="An unknow error occurred: $nCertificate";;
 		esac
 
+		# Check if DNS Security Extensions are supported
+		([[ "${sDnsSec}" == "yes" ]] && [[ -n "$(grep "does not support DNS Security Extensions" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sDnsSec="no" && echo "--> DNS Sec value changed: YES to NO" >> ${gsCplDestDir}/results.log
+		([[ "${sDnsSec}" == "no" ]] && [[ -n "$(grep "DNS Security Extensions are supported" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sDnsSec="yes" && echo "--> DNS Sec value changed: NO to YES" >> ${gsCplDestDir}/results.log
+		# Provider supposedly doesn't keep logs
+		([[ "${sNoLogs}" == "yes" ]] && [[ -z "$(grep "Provider supposedly doesn't keep logs" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sNoLogs="no" && echo "--> No Logs value changed: YES to NO" >> ${gsCplDestDir}/results.log
+		([[ "${sNoLogs}" == "no" ]] && [[ -n "$(grep "Provider supposedly doesn't keep logs" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sNoLogs="yes" && echo "--> No Logs value changed: NO to YES" >> ${gsCplDestDir}/results.log
+		# Check if Namecoin domains can be resolved
+		([[ "${sNameCoin}" == "yes" ]] && [[ -z "$(grep "Namecoin domains can be resolved" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sNameCoin="no" && echo "--> NameCoin value changed: NO to YES" >> ${gsCplDestDir}/results.log
+		([[ "${sNameCoin}" == "no" ]] && [[ -n "$(grep "Namecoin domains can be resolved" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sNameCoin="yes" && echo "--> NameCoin value changed: YES to NO" >> ${gsCplDestDir}/results.log
+
 		echo "--> Certificate validity result: $sMess" >> ${gsCplDestDir}/results.log
 		if [ "$sCsvFile" == "${gsCplTmpDir}/d_final.csv" ]; then
 			[[ "$nDuplicate" -eq 1 ]] && sCsvFile="${gsCplTmpDir}/d_duplicated.csv"
@@ -1099,21 +1108,12 @@ gfnCompileCsvFiles() {
 			echo "==> Resolver REMOVED !" >> ${gsCplDestDir}/results.log
 		fi
 
-		# Check if DNS Security Extensions are supported
-		([[ "${sDnsSec}" == "yes" ]] && [[ -n "$(grep "does not support DNS Security Extensions" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sDnsSec="no" && echo "DNS Sec value changed: YES to NO" >> ${gsCplDestDir}/results.log
-		([[ "${sDnsSec}" == "no" ]] && [[ -n "$(grep "DNS Security Extensions are supported" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sDnsSec="yes" && echo "DNS Sec value changed: NO to YES" >> ${gsCplDestDir}/results.log
-		# Provider supposedly doesn't keep logs
-		([[ "${sNoLogs}" == "yes" ]] && [[ -z "$(grep "Provider supposedly doesn't keep logs" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sNoLogs="no" && echo "No Logs value changed: YES to NO" >> ${gsCplDestDir}/results.log
-		([[ "${sNoLogs}" == "no" ]] && [[ -n "$(grep "Provider supposedly doesn't keep logs" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sNoLogs="yes" && echo "No Logs value changed: NO to YES" >> ${gsCplDestDir}/results.log
-		# Check if Namecoin domains can be resolved
-		([[ "${sNameCoin}" == "yes" ]] && [[ -z "$(grep "Namecoin domains can be resolved" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sNameCoin="no" && echo "NameCoin value changed: NO to YES" >> ${gsCplDestDir}/results.log
-		([[ "${sNameCoin}" == "no" ]] && [[ -n "$(grep "Namecoin domains can be resolved" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sNameCoin="yes" && echo "NameCoin value changed: YES to NO" >> ${gsCplDestDir}/results.log
-
 		echo "--------------------" >> ${gsCplDestDir}/results.log
 
 		echo "${sName},\"${sFullName}\",\"${sDescription}\",\"${sLocation}\",\"${sCoordinates}\",${sUrl},${sVersion},${sDnsSec},${sNoLogs},${sNameCoin},${sResolverAddress},${sProviderName},${sPubKey},${sPubKeyTxt}" >> "$sCsvFile"
 	done
 	sed -i 's/""//g;' ${gsCplTmpDir}/d_final.csv
+    sort -u ${gsCplTmpDir}/d_dead.csv >> ${gsCplDestDir}/dead-resolvers.csv
 	cp ${gsCplTmpDir}/d_final.csv ${gsCplFinalCsv}
 
 	# Start current dnscrypt
@@ -1122,10 +1122,10 @@ gfnCompileCsvFiles() {
 	gfnStatusLSB
 
 	# Creating a key pair
-	[ ! -f ~/.minisign/minisign.key ] && echo -e "$gsCplMinisignPass\\n$gsCplMinisignPass" | minisign -G -p ${gsCplMinisignPubKey}
+	[ ! -f ~/.minisign/minisign.key ] && echo -e "$gsCplMinisignPass\\n$gsCplMinisignPass" | minisign -G -p ${gsCplMinisignPubKey} -s ~/.minisign/minisign.key
 
 	# Signing a file
-	echo "$gsCplMinisignPass" | minisign -Sm ${gsCplFinalCsv} -t "MySB - DNScrypt Resolvers List - ${gdCplDateFormated}-${gdCplTimeFormated}"
+	echo "$gsCplMinisignPass" | minisign -Sm ${gsCplFinalCsv} -t "MySB - DNScrypt Resolvers List - ${gdCplDateFormated}-${gdCplTimeFormated}" -s ~/.minisign/minisign.key
 
 	# Verifying a file
 	minisign -Vm ${gsCplFinalCsv} -p ${gsCplMinisignPubKey} -x ${gsCplFinalCsv}.minisig -c "$gsCplMessage" -t "$gsCplMessage"

@@ -1,5 +1,6 @@
 	Version v99.99
 		2018/09/07 (start at: 2018/09/07)
+			- Shellcheck v0.6.0
 			- Composer v1.8.0
 			- Minisign v0.8.3
 			- NextCloud v14.0.4 (prepare for v15)

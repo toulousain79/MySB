@@ -50,7 +50,8 @@ INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`,
 ('GIT', '<InstallDir>/sources/libsmbclient-php', 'libsmbclient-php', '1.0.0', 0, 'libsmbclient-php_v1.0.0.zip', 'https://github.com/eduardok/libsmbclient-php.git', 1, 0, ''),
 ('DEB', '<InstallDir>_files', 'Plex Media Server', '1.14.1.5488-cc260c476', 0, 'plexmediaserver_1.14.1.5488-cc260c476_amd64.deb', 'https://downloads.plex.tv/plex-media-server/1.14.1.5488-cc260c476/plexmediaserver_1.14.1.5488-cc260c476_amd64.deb', 1, 0, ''),
 ('CURL', '/usr/bin/docker-compose', 'Docker-Compose', '1.22.0', 0, 'docker-compose', 'https://github.com/docker/compose/releases/download/1.22.0/docker-compose-Linux-x86_64', 1, 0, ''),
-('DEB', '<InstallDir>_files', 'Webmin', '1.900', 0, 'webmin_1.900_all.deb', 'https://sourceforge.net/projects/webadmin/files/webmin/1.900/webmin_1.900_all.deb/download', 1, 0, '');
+('DEB', '<InstallDir>_files', 'Webmin', '1.900', 0, 'webmin_1.900_all.deb', 'https://sourceforge.net/projects/webadmin/files/webmin/1.900/webmin_1.900_all.deb/download', 1, 0, ''),
+('TARXZ', '/usr/bin/shellcheck', 'Shellcheck', 'stable', 0, 'shellcheck-stable.linux.x86_64.tar.xz', 'https://storage.googleapis.com/shellcheck/shellcheck-stable.linux.x86_64.tar.xz', 1, 0, '');
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
