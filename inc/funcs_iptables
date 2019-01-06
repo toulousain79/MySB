@@ -732,8 +732,31 @@ gfnPopulatingTcpInboundChain() {
 	#### Let's Encrypt
 	case "$1" in
 		"letsencrypt")
-			nNumLine=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep '\-A tcp_inbound -p tcp -j RETURN' -n -m 1 | cut -d ':' -f 1)
-			sed -i ""$nNumLine"i\-A tcp_inbound -s 0/0 -i $gsPrimaryInet -p tcp -m tcp --dport 80 -m comment --comment \"Lets Encrypt HTTP\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
+			bLetsEncryptOpenPort="`cmdMySQL 'MySB_db' "SELECT letsencrypt_openport FROM system WHERE id_system='1';"`"
+			if [ "$bLetsEncryptOpenPort" -eq 1 ]; then
+				nNumLine=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep '\-A tcp_inbound -p tcp -j RETURN' -n -m 1 | cut -d ':' -f 1)
+				sed -i ""$nNumLine"i\-A tcp_inbound -s 0/0 -i $gsPrimaryInet -p tcp -m tcp --dport 80 -m comment --comment \"Lets Encrypt HTTP\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
+			else
+				sed -i '/Lets Encrypt HTTP/d' $MySB_InstallDir/temp/current-iptables-rules
+			fi
+			# bLetsEncryptOpenPort="`cmdMySQL 'MySB_db' "SELECT letsencrypt_openport FROM system WHERE id_system='1';"`"
+			# if [ "$gsIpRestriction" == "YES" ]; then
+				# Temp="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM lets_encrypt;"`"
+				# for IPv4 in $Temp; do
+					# LetsEncryptIPs="${LetsEncryptIPs} $IPv4/32"
+				# done
+			# else
+				# LetsEncryptIPs="0/0"
+			# fi
+			# LetsEncryptIPs="`echo $LetsEncryptIPs | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
+			# if [ "$bLetsEncryptOpenPort" -eq 1 ]; then
+				# nNumLine=$(cat $MySB_InstallDir/temp/current-iptables-rules | grep '\-A tcp_inbound -p tcp -j RETURN' -n -m 1 | cut -d ':' -f 1)
+				# for IPv4 in $LetsEncryptIPs; do
+					# sed -i ""$nNumLine"i\-A tcp_inbound -s $IPv4 -i $gsPrimaryInet -p tcp -m tcp --dport 80 -m comment --comment \"Lets Encrypt HTTP\" -j ACCEPT" $MySB_InstallDir/temp/current-iptables-rules
+				# done
+			# else
+				# sed -i '/Lets Encrypt HTTP/d' $MySB_InstallDir/temp/current-iptables-rules
+			# fi
 		;;
 	esac
 

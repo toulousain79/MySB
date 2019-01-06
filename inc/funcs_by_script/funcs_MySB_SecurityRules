@@ -42,6 +42,7 @@ gfnLoadingVars() {
 	ApplyConfigBind=NO
 	ApplyIptablesUsers=NO
 	ApplyIptablesLetsEncrypt=NO
+	ApplyRtorrentUsed=YES
 	LoadOnBoot=NO
 
 	# Check by arguments
@@ -80,22 +81,13 @@ gfnLoadingVars() {
 		refresh)
 			case "$RefreshSwitch" in
 				--letsencrypt)
-					unset LetsEncryptIPs Temp
-					LetsEncryptOpenPort="`cmdMySQL 'MySB_db' "SELECT letsencrypt_openport FROM system WHERE id_system='1';"`"
-					Temp="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM lets_encrypt;"`"
-					if [ "$gsIpRestriction" == "YES" ]; then
-						for ip in $Temp; do
-							LetsEncryptIPs="${LetsEncryptIPs} $ip/32"
-						done
-					else
-						LetsEncryptIPs="0/0"
-					fi
-					LetsEncryptIPs="`echo $LetsEncryptIPs | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
+					ApplyRtorrentUsed=NO
 					ApplyIptablesUsers=NO
 					ApplyIptablesLetsEncrypt=YES
 					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
 				;;
 				--users)
+					ApplyRtorrentUsed=NO
 					ApplyIptablesUsers=YES
 					ApplyConfigNginx="`gfnCheckCommand 1 nginx`"
 					ApplyConfigFail2Ban=$gbIsInstalled_Fail2Ban
@@ -106,10 +98,12 @@ gfnLoadingVars() {
 					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
 				;;
 				--blocklists)
+					ApplyRtorrentUsed=NO
 					ApplyConfigBind="`gfnCheckCommand 1 named`"
 					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
 				;;
 				--pglcmd)
+					ApplyRtorrentUsed=NO
 					ApplyIptablesUsers=YES
 					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
 				;;
@@ -227,32 +221,34 @@ gfnCreateServicesRules() {
 gfnRestartRtorrentSessions() {
 	local bToRestart bCreateAfterClean
 
-	case "$1" in
-		stop)
-			for FnUser in $gsUsersList; do
-				if [ -f /etc/init.d/rtorrent-$FnUser ]; then
-					rTorrentToStop="${rTorrentToStop} rtorrent-$FnUser"
-					bToRestart="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser';"`"
-					systemctl status rtorrent-$FnUser &> /dev/null
-					[ $? -eq 0 ] && bToRestart=1
-					cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='$bToRestart' WHERE users_ident='$FnUser';"
-				fi
-			done
-		;;
-		start)
-			for FnUser in $gsUsersList; do
-				systemctl status cron &> /dev/null
-				[ $? -eq 0 ] && bCreateAfterClean=1 || bCreateAfterClean="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser' AND is_active='1';"`"
+	if [ "$ApplyRtorrentUsed" == "YES" ]; then
+		case "$1" in
+			stop)
+				for FnUser in $gsUsersList; do
+					if [ -f /etc/init.d/rtorrent-$FnUser ]; then
+						rTorrentToStop="${rTorrentToStop} rtorrent-$FnUser"
+						bToRestart="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser';"`"
+						systemctl status rtorrent-$FnUser &> /dev/null
+						[ $? -eq 0 ] && bToRestart=1
+						cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='$bToRestart' WHERE users_ident='$FnUser';"
+					fi
+				done
+			;;
+			start)
+				for FnUser in $gsUsersList; do
+					systemctl status cron &> /dev/null
+					[ $? -eq 0 ] && bCreateAfterClean=1 || bCreateAfterClean="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser' AND is_active='1';"`"
 
-				if [ "$bCreateAfterClean" -eq 1 ] && [ -f /etc/init.d/rtorrent-$FnUser ]; then
-					bToRestart="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser';"`"
-					[ "$ModeSwitch" == "INIT" ] && bToRestart="`cmdMySQL 'MySB_db' "SELECT is_active FROM users WHERE users_ident='$FnUser';"`"
-					[ "$bToRestart" -eq 1 ] && rTorrentToStart="${rTorrentToStart} rtorrent-$FnUser"
-					cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='$FnUser';"
-				fi
-			done
-		;;
-	esac
+					if [ "$bCreateAfterClean" -eq 1 ] && [ -f /etc/init.d/rtorrent-$FnUser ]; then
+						bToRestart="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser';"`"
+						[ "$ModeSwitch" == "INIT" ] && bToRestart="`cmdMySQL 'MySB_db' "SELECT is_active FROM users WHERE users_ident='$FnUser';"`"
+						[ "$bToRestart" -eq 1 ] && rTorrentToStart="${rTorrentToStart} rtorrent-$FnUser"
+						cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='$FnUser';"
+					fi
+				done
+			;;
+		esac
+	fi
 }
 
 #### Crete '/etc/hosts' file
