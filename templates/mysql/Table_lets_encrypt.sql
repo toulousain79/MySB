@@ -8,16 +8,16 @@
 --
 
 INSERT INTO `lets_encrypt` (`addresses`, `ipv4`) VALUES
-('acme-v01.api.letsencrypt.org', '23.38.4.37'),
-('acme-v02.api.letsencrypt.org', '23.38.4.37'),
-('ocsp.root-x1.letsencrypt.org', '88.221.14.11'),
-('ocsp.int-x1.letsencrypt.org', '92.122.122.145'),
-('ocsp.int-x2.letsencrypt.org', '92.122.122.152'),
-('ocsp.int-x3.letsencrypt.org', '92.122.122.138'),
-('ocsp.int-x4.letsencrypt.org', '92.122.122.162'),
-('acme-staging.api.letsencrypt.org', '23.38.4.37'),
-('acme-staging-v02.api.letsencrypt.org', '23.38.4.37'),
-('ocsp.staging-x1.letsencrypt.org', '88.221.14.10');
+('acme-v01.api.letsencrypt.org', '104.123.22.170'),
+('acme-v02.api.letsencrypt.org', '104.123.22.170'),
+('ocsp.root-x1.letsencrypt.org', '95.100.252.24 95.100.252.27'),
+('ocsp.int-x1.letsencrypt.org', '95.100.252.35 95.100.252.43'),
+('ocsp.int-x2.letsencrypt.org', '95.100.252.8 95.100.252.26'),
+('ocsp.int-x3.letsencrypt.org', '95.100.252.9 95.100.252.49'),
+('ocsp.int-x4.letsencrypt.org', '95.100.252.16 95.100.252.10'),
+('acme-staging.api.letsencrypt.org', '104.123.22.170'),
+('acme-staging-v02.api.letsencrypt.org', '104.123.22.170'),
+('ocsp.staging-x1.letsencrypt.org', '95.100.252.64 95.100.252.58');
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

@@ -33,6 +33,8 @@ sServicesToRestart=""
 sDomainsList=()
 # List all domains
 [[ ! -f ${MySB_InstallDir}/ssl/letsencrypt_domains ]] && touch ${MySB_InstallDir}/ssl/letsencrypt_domains
+([ "$gsHostNameFqdn" != "$gsPreviousHostNameFqdn" ] && [ -z "$(grep "$gsPreviousHostNameFqdn" ${MySB_InstallDir}/ssl/letsencrypt_domains)" ]) && echo "$gsPreviousHostNameFqdn" >> ${MySB_InstallDir}/ssl/letsencrypt_domains
+
 sDomainsList+=("${gsHostNameFqdn}")
 for domain in $(cat ${MySB_InstallDir}/ssl/letsencrypt_domains); do
 	sDomainsList+=("${domain}")
@@ -47,6 +49,20 @@ case "${gsSwitch}" in
 		gfnPackageBundleInstall 'python-virtualenv python-dev gcc dialog libssl-dev libffi-dev libltdl-dev psutils python-augeas'
 	;;
 esac
+
+#### Renew Let's Encrypt servers IPs
+fnRenewServersIps() {
+	local sLetsEncryptServers sServer sIPv4
+
+	sLetsEncryptServers="$(cmdMySQL 'MySB_db' "SELECT addresses FROM lets_encrypt WHERE 1;")"
+	for sServer in $sLetsEncryptServers; do
+		sIPv4="$(nslookup $sServer | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
+		if [ ! -z "$sIPv4" ]; then
+			sIPv4="`echo $sIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
+			cmdMySQL 'MySB_db' "UPDATE lets_encrypt SET ipv4='$sIPv4' WHERE addresses='$sServer';" -v
+		fi
+	done
+}
 
 #### Function certificate end date next renewal
 fnNextRenewal() {
@@ -71,12 +87,12 @@ fnFirewalling() {
 	case "$1" in
 		'before')
 			cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_openport='1' WHERE id_system='1';" -v
-			gfnScriptInvoke 'source' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'refresh' '--letsencrypt'
+			gfnScriptInvoke 'source' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'refresh' '--letsencrypt' 'CRON'
 			echo
 		;;
 		'after')
 			cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_openport='0' WHERE id_system='1';" -v
-			gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'create' 'CRON'
+			gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'refresh' '--letsencrypt' 'CRON'
 			echo
 		;;
 	esac
@@ -164,6 +180,9 @@ sNewDomains=$(echo ${sNewDomains} | sed '/^ /d')
 if [[ ! -z ${sNewDomains} ]]; then
 	# Update certificates for python
 	update-ca-certificates --fresh &> /dev/null
+
+	# Renew Let's Encrypt servers IPs
+	fnRenewServersIps
 
 	# Firewall
 	fnFirewalling 'before'
