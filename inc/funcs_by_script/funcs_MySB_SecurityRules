@@ -43,6 +43,7 @@ gfnLoadingVars() {
 	ApplyConfigBind=NO
 	ApplyIptablesUsers=NO
 	ApplyIptablesLetsEncrypt=NO
+	ApplyRtorrentUsed=YES
 	LoadOnBoot=NO
 
 	# Check by arguments
@@ -81,12 +82,13 @@ gfnLoadingVars() {
 		refresh)
 			case "$RefreshSwitch" in
 				--letsencrypt)
+					ApplyRtorrentUsed=NO
 					ApplyIptablesUsers=NO
 					ApplyIptablesLetsEncrypt=$gbIsInstalled_LetsEncrypt
 					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
 				;;
 				--users)
-					ApplyIptablesUsers=YES
+					ApplyIptablesUsers=NO
 					ApplyConfigNginx="`gfnCheckCommand 1 nginx`"
 					ApplyConfigFail2Ban=$gbIsInstalled_Fail2Ban
 					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
@@ -96,10 +98,12 @@ gfnLoadingVars() {
 					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
 				;;
 				--blocklists)
+					ApplyIptablesUsers=NO
 					ApplyConfigBind="`gfnCheckCommand 1 named`"
 					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
 				;;
 				--pglcmd)
+					ApplyIptablesUsers=NO
 					ApplyIptablesUsers=YES
 					ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
 				;;
@@ -217,32 +221,34 @@ gfnCreateServicesRules() {
 gfnRestartRtorrentSessions() {
 	local bToRestart bCreateAfterClean
 
-	case "$1" in
-		stop)
-			for FnUser in $gsUsersList; do
-				if [ -f /etc/init.d/rtorrent-$FnUser ]; then
-					rTorrentToStop="${rTorrentToStop} rtorrent-$FnUser"
-					bToRestart="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser';"`"
-					systemctl status rtorrent-$FnUser &> /dev/null
-					[ $? -eq 0 ] && bToRestart=1
-					cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='$bToRestart' WHERE users_ident='$FnUser';"
-				fi
-			done
-		;;
-		start)
-			for FnUser in $gsUsersList; do
-				systemctl status cron &> /dev/null
-				[ $? -eq 0 ] && bCreateAfterClean=1 || bCreateAfterClean="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser' AND is_active='1';"`"
+	if [ "$ApplyRtorrentUsed" == "YES" ]; then
+		case "$1" in
+			stop)
+				for FnUser in $gsUsersList; do
+					if [ -f /etc/init.d/rtorrent-$FnUser ]; then
+						rTorrentToStop="${rTorrentToStop} rtorrent-$FnUser"
+						bToRestart="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser';"`"
+						systemctl status rtorrent-$FnUser &> /dev/null
+						[ $? -eq 0 ] && bToRestart=1
+						cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='$bToRestart' WHERE users_ident='$FnUser';"
+					fi
+				done
+			;;
+			start)
+				for FnUser in $gsUsersList; do
+					systemctl status cron &> /dev/null
+					[ $? -eq 0 ] && bCreateAfterClean=1 || bCreateAfterClean="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser' AND is_active='1';"`"
 
-				if [ "$bCreateAfterClean" -eq 1 ] && [ -f /etc/init.d/rtorrent-$FnUser ]; then
-					bToRestart="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser';"`"
-					[ "$ModeSwitch" == "INIT" ] && bToRestart="`cmdMySQL 'MySB_db' "SELECT is_active FROM users WHERE users_ident='$FnUser';"`"
-					[ "$bToRestart" -eq 1 ] && rTorrentToStart="${rTorrentToStart} rtorrent-$FnUser"
-					cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='$FnUser';"
-				fi
-			done
-		;;
-	esac
+					if [ "$bCreateAfterClean" -eq 1 ] && [ -f /etc/init.d/rtorrent-$FnUser ]; then
+						bToRestart="`cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser';"`"
+						[ "$ModeSwitch" == "INIT" ] && bToRestart="`cmdMySQL 'MySB_db' "SELECT is_active FROM users WHERE users_ident='$FnUser';"`"
+						[ "$bToRestart" -eq 1 ] && rTorrentToStart="${rTorrentToStart} rtorrent-$FnUser"
+						cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='$FnUser';"
+					fi
+				done
+			;;
+		esac
+	fi
 }
 
 #### Crete '/etc/hosts' file

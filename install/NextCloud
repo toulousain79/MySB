@@ -261,6 +261,7 @@ EOF
 		#### NextCloud upgrade
 		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ upgrade -v"
 		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --off"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ db:add-missing-indices"
 		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:repair"
 		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mimetype:update-db"
 		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mimetype:update-js"
@@ -378,6 +379,24 @@ EOF
 			fi
 			unset UserExist
 		done
+
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ integrity:check-core" > /tmp/nextcloud_check_integrity.log
+		if [ -f /tmp/nextcloud_check_integrity.log ]; then
+			cat /tmp/nextcloud_check_integrity.log
+			sed -i '/INVALID_HASH/d' /tmp/nextcloud_check_integrity.log
+			sed -i '/expected/d' /tmp/nextcloud_check_integrity.log
+			sed -i '/current/d' /tmp/nextcloud_check_integrity.log
+			while read sLine; do
+				sFile="${gsNextCloudDir}/$(echo $sLine | awk '{ print $2 }' | sed 's/://g;')"
+				if [ -f "$sFile" ]; then
+					sCharset="$(file -i "$sFile" | awk '{ print $3 }' | cut -d "=" -f 2 | tr [:lower:] [:upper:])"
+					iconv -f us-ascii -t utf-16 "$sFile" -o "${sFile}.tmp"
+					iconv -f utf-16le -t utf-8 "$sFile" -o "${sFile}.tmp"
+					[ -f "${sFile}.tmp" ] && rm -v "${sFile}.tmp"
+				fi
+			done < /tmp/nextcloud_check_integrity.log
+		fi
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ integrity:check-core"
 
 		cmdMySQL 'MySB_db' "UPDATE repositories SET on_boot = '0', script = '' WHERE name='NextCloud';" -v
 		# Disable the upgrade job

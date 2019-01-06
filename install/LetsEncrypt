@@ -52,15 +52,18 @@ esac
 
 #### Renew Let's Encrypt servers IPs
 fnRenewServersIps() {
-	local sLetsEncryptServers sServer sIPv4
+	local sLetsEncryptServers sServer sAllIPv4 sIPv4
 
-	sLetsEncryptServers="$(cmdMySQL 'MySB_db' "SELECT addresses FROM lets_encrypt WHERE 1;")"
+	sLetsEncryptServers="$(cmdMySQL 'MySB_db' "SELECT addresses FROM lets_encrypt WHERE 1;" | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq)"
 	for sServer in $sLetsEncryptServers; do
-		sIPv4="$(nslookup $sServer | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
-		if [ ! -z "$sIPv4" ]; then
-			sIPv4="`echo $sIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
-			cmdMySQL 'MySB_db' "UPDATE lets_encrypt SET ipv4='$sIPv4' WHERE addresses='$sServer';" -v
-		fi
+		cmdMySQL 'MySB_db' "DELETE FROM lets_encrypt WHERE addresses='$sServer';" -v
+		sAllIPv4="$(nslookup $sServer | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
+		sAllIPv4="`echo $sAllIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq`"
+		for sIPv4 in $sAllIPv4; do
+			if [ "$(gfnValidateIP ${sIPv4})" == "$sIPv4" ]; then
+				cmdMySQL 'MySB_db' "INSERT INTO lets_encrypt (addresses,ipv4) VALUES ('$sServer','$sIPv4');" -v
+			fi
+		done
 	done
 }
 
@@ -87,7 +90,7 @@ fnFirewalling() {
 	case "$1" in
 		'before')
 			cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_openport='1' WHERE id_system='1';" -v
-			gfnScriptInvoke 'source' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'refresh' '--letsencrypt' 'CRON'
+			gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'refresh' '--letsencrypt' 'CRON'
 			echo
 		;;
 		'after')

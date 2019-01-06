@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS `dnscrypt_resolvers` (
 CREATE TABLE IF NOT EXISTS `lets_encrypt` (
   `id_lets_encrypt` int(11) NOT NULL AUTO_INCREMENT,
   `addresses` varchar(128) NOT NULL,
-  `ipv4` varchar(64) NOT NULL,
+  `ipv4` varchar(15) NOT NULL,
   PRIMARY KEY (`id_lets_encrypt`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
