@@ -23,8 +23,6 @@ source $(dirname $0)/../inc/includes_before
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
 ##################### FIRST LINE #####################################
-# https://www.linode.com/docs/email/postfix/configure-postfix-to-send-mail-using-gmail-and-google-apps-on-debian-or-ubuntu/
-######################################################################
 
 #### VARs
 SmtpValues="`cmdMySQL 'MySB_db' "SELECT smtp_provider,smtp_username,smtp_passwd,smtp_host,smtp_port FROM smtp WHERE id_smtp='1';" | sed 's/\t/|/g;'`"
@@ -34,8 +32,6 @@ SMTP_Password="`echo $SmtpValues | awk '{split($0,a,"|"); print a[3]}'`"
 SMTP_Host="`echo $SmtpValues | awk '{split($0,a,"|"); print a[4]}'`"
 SMTP_Port="`echo $SmtpValues | awk '{split($0,a,"|"); print a[5]}'`"
 
-[[ -z "$SMTP_Password" ]] && echo "Password not defined, aborted..." && return
-
 #### Stunnel
 mkdir -pv /var/run/stunnel4
 
@@ -43,7 +39,7 @@ mkdir -pv /var/run/stunnel4
 gfnPackageBundleInstall 'postfix stunnel4 gnutls-bin libsasl2-modules'
 
 #### Stop services
-gfnManageServices stop "postfix stunnel4"
+gfnManageServices stop "stunnel4 postfix"
 
 if [ "$SMTP_Provider" != "LOCAL" ]; then
 	#### stunnel
@@ -143,7 +139,7 @@ if [ "$SMTP_Provider" != "LOCAL" ]; then
 				sed -i ""${nNumLine}"i\key = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/stunnel/stunnel.conf
 			fi
 			perl -pi -e "s/ENABLED=0/ENABLED=1/g" /etc/default/stunnel4
-			echo "127.0.0.1:23000			  $SMTP_Username:$SMTP_Password" > /etc/postfix/sasl/sasl_passwd
+			[[ -n "$SMTP_Password" ]] && echo "127.0.0.1:23000			  $SMTP_Username:$SMTP_Password" > /etc/postfix/sasl/sasl_passwd
 			postconf -e "relayhost = 127.0.0.1:23000"
 			postconf -e "smtp_sasl_auth_enable = yes"
 			postconf -e "smtp_sasl_security_options = noanonymous"
@@ -178,7 +174,7 @@ if [ "$SMTP_Provider" != "LOCAL" ]; then
 		;;
 	esac
 
-	postmap /etc/postfix/sasl/sasl_passwd
+	[[ -n "$SMTP_Password" ]] && postmap /etc/postfix/sasl/sasl_passwd
 	[[ -f /etc/postfix/sasl/sasl_passwd ]] && rm -vf /etc/postfix/sasl/sasl_passwd
 	[[ -f /etc/postfix/sasl/sasl_passwd.db ]] && chmod -v 0600 /etc/postfix/sasl/sasl_passwd.db
 
