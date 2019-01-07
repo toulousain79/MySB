@@ -113,54 +113,51 @@ fnUseOfCertificates() {
 
 		# Webmin
 		if [[ -f /etc/webmin/miniserv.pem ]]; then
-			cat /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem > /etc/webmin/miniserv.pem
-			cat /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem >> /etc/webmin/miniserv.pem
+			log_daemon_msg "Reconfigure Webmin"
+			if [ -f /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem ]; then
+				cat /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem > /etc/webmin/miniserv.pem
+				cat /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem >> /etc/webmin/miniserv.pem
+			else
+				cat $MySB_InstallDir/ssl/mysb.cert > /etc/webmin/miniserv.pem
+				cat $MySB_InstallDir/ssl/mysb.key >> /etc/webmin/miniserv.pem
+			fi
 			sServicesToRestart="${sServicesToRestart} webmin"
+			gfnStatusLSB
 		fi
 
 		# VSFTPd
 		if [[ -f /etc/vsftpd.conf ]]; then
-			nNumLine=$(cat /etc/vsftpd.conf | grep 'rsa_cert_file' -n -m 1 | cut -d ':' -f 1)
-			sed -i '/rsa_cert_file/d' /etc/vsftpd.conf
-			sed -i ""${nNumLine}"i\rsa_cert_file=/etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" /etc/vsftpd.conf
-			nNumLine=$(cat /etc/vsftpd.conf | grep 'rsa_private_key_file' -n -m 1 | cut -d ':' -f 1)
-			sed -i '/rsa_private_key_file/d' /etc/vsftpd.conf
-			sed -i ""${nNumLine}"i\rsa_private_key_file=/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/vsftpd.conf
-			sServicesToRestart="${sServicesToRestart} vsftpd"
+			gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/VSFTP" 'UPGRADE'
 		fi
 
 		# Postfix/Stunnel
 		if [[ -f /etc/stunnel/stunnel.conf ]]; then
-			nNumLine=$(cat /etc/stunnel/stunnel.conf | grep 'cert =' -n -m 1 | cut -d ':' -f 1)
-			sed -i '/cert =/d' /etc/stunnel/stunnel.conf
-			sed -i ""${nNumLine}"i\cert = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" /etc/stunnel/stunnel.conf
-			nNumLine=$(cat /etc/stunnel/stunnel.conf | grep 'key =' -n -m 1 | cut -d ':' -f 1)
-			sed -i '/key =/d' /etc/stunnel/stunnel.conf
-			sed -i ""${nNumLine}"i\key = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/stunnel/stunnel.conf
-
-			SMTP_Provider="`cmdMySQL 'MySB_db' "SELECT smtp_provider FROM smtp WHERE id_smtp='1';"`"
-			case "$SMTP_Provider" in
-				"FREE"|"YAHOO"|"OVH"|"GMAIL"|"ZOHO")	Smtp_Security=SSL;;
-				*)										Smtp_Security=NoSSL;;
-			esac
-			if [[ "${Smtp_Security}" == "TLS" ]]; then
-				postconf -e "smtp_tls_cert_file = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem"
-				postconf -e "smtp_tls_key_file = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem"
-			fi
-
-			sServicesToRestart="${sServicesToRestart} stunnel4 postfix"
+			gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/Postfix" 'UPGRADE'
 		fi
 
-		# Tautulli
+		#### Tautulli
 		gfnGetRepoValues 'Tautulli'
 		if [[ -f ${gsRepoDir}/config.ini ]]; then
+			gfnManageServices stop "tautulli"
+			nNumLine=$(cat ${gsRepoDir}/config.ini | grep 'pms_name' -n -m 1 | cut -d ':' -f 1)
+			sed -i '/pms_name/d' ${gsRepoDir}/config.ini
+			sed -i ""$nNumLine"i\pms_name = ${gsHostNameFqdn}" ${gsRepoDir}/config.ini
+			nNumLine=$(cat ${gsRepoDir}/config.ini | grep 'http_base_url' -n -m 1 | cut -d ':' -f 1)
+			sed -i '/http_base_url/d' ${gsRepoDir}/config.ini
+			sed -i ""$nNumLine"i\http_base_url = https://${gsHostNameFqdn}:$gsPort_MySB_HTTPS" ${gsRepoDir}/config.ini
 			nNumLine=$(cat ${gsRepoDir}/config.ini | grep 'https_cert' -n -m 1 | cut -d ':' -f 1)
 			sed -i '/https_cert/d' ${gsRepoDir}/config.ini
 			sed -i '/https_key/d' ${gsRepoDir}/config.ini
 			sed -i '/https_cert_chain/d' ${gsRepoDir}/config.ini
-			sed -i ""$nNumLine"i\https_cert = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" ${gsRepoDir}/config.ini
-			sed -i ""$nNumLine"i\https_cert_chain = /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" ${gsRepoDir}/config.ini
-			sed -i ""$nNumLine"i\https_key = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ${gsRepoDir}/config.ini
+			if ([ -f /etc/letsencrypt/live/${sNewFQDN}/fullchain.pem ] && [ -f /etc/letsencrypt/live/${sNewFQDN}/privkey.pem ]); then
+				sed -i ""$nNumLine"i\https_cert = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" ${gsRepoDir}/config.ini
+				sed -i ""$nNumLine"i\https_key = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ${gsRepoDir}/config.ini
+				sed -i ""$nNumLine"i\https_cert_chain = /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" ${gsRepoDir}/config.ini
+			else
+				sed -i ""$nNumLine"i\https_cert = $MySB_InstallDir/ssl/mysb.cert" ${gsRepoDir}/config.ini
+				sed -i ""$nNumLine"i\https_key = $MySB_InstallDir/ssl/mysb.key" ${gsRepoDir}/config.ini
+				sed -i ""$nNumLine"i\https_cert_chain = " ${gsRepoDir}/config.ini
+			fi
 			sServicesToRestart="${sServicesToRestart} tautulli"
 		fi
 	else

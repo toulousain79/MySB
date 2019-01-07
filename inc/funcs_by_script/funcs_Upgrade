@@ -29,11 +29,10 @@ funcs_Upgrade=1
 # 1/ Manual with command line: gfnChangeFQDN "new_fqdn"
 # 2/ Auto during an upgrade
 gfnChangeFQDN() {
-	local sNewFQDN nCheckFqdnResult sServicesToRestart nNumLine bVerbose
+	local sNewFQDN nCheckFqdnResult nNumLine bVerbose
 
 	[ -z "$gsHostNameFqdn" ] && return
 
-	sServicesToRestart=""
 	gfnListCountUsers 'normal'
 	[[ -z "$gsHostNameFqdn" ]] && gsHostNameFqdn="$($binMySQL "SELECT hostname FROM system WHERE id_system='1';")"
 
@@ -110,45 +109,19 @@ gfnChangeFQDN() {
 	#### Certificates
 	log_daemon_msg "Create new self-signed certificate (please wait)"
 	make-ssl-cert generate-default-snakeoil --force-overwrite
-	gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/Certificates" 'CreateCACertificate' 'UPGRADE'
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Certificates" 'CreateCACertificate' 'UPGRADE'
 	gfnStatusLSB
 
 	#### Let's Encrypt
 	if [[ "${gbIsInstalled_LetsEncrypt}" == "YES" ]] && [[ ! -f /etc/nginx/snippets/letsencrypt_${sNewFQDN}.conf ]]; then
 		log_daemon_msg "Create new Let's Encrypt certificate (please wait)"
-		gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/LetsEncrypt" 'UPGRADE'
+		gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/LetsEncrypt" 'UPGRADE'
 		gfnStatusLSB
 	fi
 
 	#### NginX
 	log_daemon_msg "Reconfigure NginX (please wait)"
-	gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/Nginx" 'UPGRADE'
-	gfnStatusLSB
-
-	#### Webmin
-	if [[ -f /etc/webmin/miniserv.pem ]]; then
-		log_daemon_msg "Reconfigure Webmin"
-		if [ -f /etc/letsencrypt/live/${sNewFQDN}/fullchain.pem ]; then
-			cat /etc/letsencrypt/live/${sNewFQDN}/privkey.pem > /etc/webmin/miniserv.pem
-			cat /etc/letsencrypt/live/${sNewFQDN}/fullchain.pem >> /etc/webmin/miniserv.pem
-		else
-			cat $MySB_InstallDir/ssl/mysb.cert > /etc/webmin/miniserv.pem
-			cat $MySB_InstallDir/ssl/mysb.key >> /etc/webmin/miniserv.pem
-		fi
-		sServicesToRestart="${sServicesToRestart} webmin"
-		gfnStatusLSB
-	fi
-
-	#### VSFTPd
-	if [[ -f /etc/vsftpd.conf ]]; then
-		log_daemon_msg "Reconfigure VSFTPd"
-		gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/VSFTP" 'UPGRADE'
-		gfnStatusLSB
-	fi
-
-	#### Postfix
-	log_daemon_msg "Reconfigure Postfix"
-	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Postfix" 'UPGRADE'
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Nginx" 'UPGRADE'
 	gfnStatusLSB
 
 	#### OpenVPN
@@ -159,32 +132,9 @@ gfnChangeFQDN() {
 
 		for seedUser in $gsUsersList; do
 			log_daemon_msg "Reconfigure OpenVPN client for user [$seedUser]"
-			gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/OpenVPN" 'client' "$seedUser" 'UPGRADE'
+			gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/OpenVPN" 'client' "$seedUser" 'UPGRADE'
 			gfnStatusLSB
 		done
-	fi
-
-	#### Tautulli
-	gfnGetRepoValues 'Tautulli' &> /dev/null
-	if [[ -f ${gsRepoDir}/config.ini ]]; then
-		log_daemon_msg "Reconfigure Tautulli"
-		gfnManageServices stop "tautulli"
-		perl -pi -e "s/$gsHostNameFqdn/$sNewFQDN/g" $gsRepoDir/config.ini
-		nNumLine=$(cat ${gsRepoDir}/config.ini | grep 'https_cert' -n -m 1 | cut -d ':' -f 1)
-		sed -i '/https_cert/d' ${gsRepoDir}/config.ini
-		sed -i '/https_key/d' ${gsRepoDir}/config.ini
-		sed -i '/https_cert_chain/d' ${gsRepoDir}/config.ini
-		if ([ -f /etc/letsencrypt/live/${sNewFQDN}/fullchain.pem ] && [ -f /etc/letsencrypt/live/${sNewFQDN}/privkey.pem ]); then
-			perl -pi -e "s/<https_cert>/\/etc\/letsencrypt\/live\/${sNewFQDN}\/cert.pem/g" $gsRepoDir/config.ini
-			perl -pi -e "s/<https_key>/\/etc\/letsencrypt\/live\/${sNewFQDN}\/privkey.pem/g" $gsRepoDir/config.ini
-			perl -pi -e "s/<https_fullchain>/\/etc\/letsencrypt\/live\/${sNewFQDN}\/fullchain.pem/g" $gsRepoDir/config.ini
-		else
-			perl -pi -e "s/<https_cert>/$gsInstallDirEscaped\/ssl\/mysb.cert/g" $gsRepoDir/config.ini
-			perl -pi -e "s/<https_key>/$gsInstallDirEscaped\/ssl\/mysb.key/g" $gsRepoDir/config.ini
-			perl -pi -e "s/<https_fullchain>/\"\"/g" $gsRepoDir/config.ini
-		fi
-		sServicesToRestart="${sServicesToRestart} tautulli"
-		gfnStatusLSB
 	fi
 
 	#### Seedbox-Manager
@@ -217,7 +167,7 @@ gfnChangeFQDN() {
 
 	#### LoadAvg
 	log_daemon_msg "Reconfigure Cakebox-Light"
-	gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/LoadAvg" 'UPGRADE'
+	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/LoadAvg" 'UPGRADE'
 	gfnStatusLSB
 
 	#### ruTorrent plugins
@@ -235,19 +185,16 @@ gfnChangeFQDN() {
 	#### NextCloud
 	if [ -d $gsNextCloudDir ] && [ -f $gsNextCloudDir/config/config.php ]; then
 		log_daemon_msg "Reconfigure NextCloud"
-		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --on"
-		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set trusted_domains 1 --value=$sNewFQDN:$gsPort_MySB_HTTPS"
-		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set lost_password_link --value=https://$sNewFQDN:$gsPort_MySB_HTTPS/?user/change-password.html"
-		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set overwritehost --value=$sNewFQDN:$gsPort_MySB_HTTPS"
-		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --off"
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --on" &> /dev/null
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set trusted_domains 1 --value=$sNewFQDN:$gsPort_MySB_HTTPS" &> /dev/null
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set lost_password_link --value=https://$sNewFQDN:$gsPort_MySB_HTTPS/?user/change-password.html" &> /dev/null
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set overwritehost --value=$sNewFQDN:$gsPort_MySB_HTTPS" &> /dev/null
+		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --off" &> /dev/null
 		gfnStatusLSB
 	fi
 
 	#### Apply rights
 	gfnManageDirAndFiles 'global'
-
-	#### Restart services
-	[[ ! -z "${sServicesToRestart}" ]] && gfnManageServices restart "${sServicesToRestart}"
 }
 
 #### Upgrade in progress (web page)
