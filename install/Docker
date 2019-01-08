@@ -41,28 +41,19 @@ fi
 
 #### Docker-Compose
 fnInstallDockerCompose() {
-	local sRepoDirEscaped sVersionInstalled
+	local sRepoDirEscaped sVersionInstalled sVersionLatest
 
 	# Update DB
 	gfnUpdateRepositoriesTable 'Docker-Compose'
-	# Get Docker-Compose infos
-	gfnGetRepoValues 'Docker-Compose'
 
-	# Loading current installed version
-	if gfnCheckCommand 0 docker-compose; then
-		chmod -v +x $gsRepoDir
-		sVersionInstalled=$($gsRepoDir version | awk '{ print $3 }' | head -n 1 | cut -d ',' -f 1)
-	else
-		sVersionInstalled="Not installed"
-	fi
+	# Versions check
+	sVersionInstalled="$(gfnCheckCommand 0 docker-compose && docker-compose --version | awk '{ print $3 }'  | cut -d ',' -f 1 || echo 'Not installed')"
+	sVersionLatest="$($binCURL $gsRepoURL | grep 'tag_name' | awk '{ print $2 }' | cut -d '"' -f 2)"
 
-	echo "sVersionInstalled: $sVersionInstalled"
-	echo "gsRepoVersion: v$gsRepoVersion"
-
-	if [ "v$gsRepoVersion" != "$sVersionInstalled" ]; then
+	if [ "$sVersionInstalled" != "$sVersionLatest" ]; then
 		gfnRepoManageByType
 		chmod -v +x $gsRepoDir
-		$gsRepoDir version
+		$gsRepoDir --version
 	fi
 }
 

@@ -40,14 +40,21 @@ fi
 
 #### Composer
 gfnGetRepoValues 'Composer'
-if ! gfnCheckCommand 0 composer || [ $gnRepoUpgrade -eq 1 ] || [ "$gsSwitch" == "INSTALL" ]; then
+sVersionInstalled="$(gfnCheckCommand 0 composer && composer --version | grep 'Composer version' | awk '{ print $3 }' || echo 'Not installed')"
+sVersionLatest="$($binCURL $gsRepoURL | grep 'tag_name' | awk '{ print $2 }' | cut -d '"' -f 2)"
+if [ "$sVersionInstalled" != "$sVersionLatest" ]; then
 	gfnRepoManageByType
+	chmod -v +x $gsRepoDir
+	$gsRepoDir --version | grep 'Composer version'
 fi
-chmod -v +x /usr/bin/composer
 composer self-update
 
 #### NodeJS
 gfnGetRepoValues 'NodeJS' && gfnRepoManageByType
+
+sVersionInstalled="$(gfnCheckCommand 0 composer && docker-compose --version | awk '{ print $3 }'  | cut -d ',' -f 1 || echo 'Not installed')"
+sVersionLatest="$($binCURL $gsRepoURL | grep 'tag_name' | awk '{ print $2 }' | cut -d '"' -f 2)"
+
 if [ $gnRepoUpgrade -eq 1 ] || [ "$gsSwitch" == "INSTALL" ]; then
 	cd $gsRepoDir
 	if [ -d out/ ]; then

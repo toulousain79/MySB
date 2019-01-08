@@ -1,7 +1,8 @@
 	Version v99.99
 		2018/09/07 (start at: 2018/09/07)
-			- Shellcheck v0.6.0
-			- Composer v1.8.0
+			- Docker-Compose latest
+			- Shellcheck stable
+			- Composer latest
 			- Minisign v0.8.3
 			- NextCloud v14.0.4 (prepare for v15)
 			- GeoIPupdate v3.1.1
@@ -11,6 +12,7 @@
 			- Certbot-auto script v0.29.1
 			- Portal
 				* Medoo Framework v1.6.1
+			- ruTorrent, get all labels from ruTorrent GitHub
 
 	Version v5.3
 		2018/09/07 (start at: 2018/03/25)
