@@ -26,56 +26,41 @@ source $(dirname $0)/../inc/includes_before
 #	TCP/UDP Ports: https://support.plex.tv/articles/201543147-what-network-ports-do-i-need-to-allow-through-my-firewall/
 ######################################################################
 
-#### VARs
-sLocSwitch="$1"
-
 #### FUNCTIONs
 # Install Plex DEB package
-fnInstallDebPackage() {
-	local sVersionInstalled sServices
-
-	# Loading repository informations
-	gfnGetRepoValues 'Plex Media Server'
-
-	if [ -z "$gsRepoVersion" ]; then
-		cmdMySQL 'MySB_db' "ALTER TABLE repositories CHANGE name name VARCHAR(64) NOT NULL;" -v
-		cmdMySQL 'MySB_db' "ALTER TABLE repositories CHANGE version version VARCHAR(32) NOT NULL;" -v
-		cmdMySQL 'MySB_db' "ALTER TABLE repositories CHANGE file file VARCHAR(64) NOT NULL;" -v
-		cmdMySQL 'MySB_db' "INSERT INTO repositories (type,dir,name,version,file,url,active) VALUES ('DEB','<InstallDir>_files','Plex Media Server','1.12.3.4973-215c28d86','plexmediaserver_1.12.3.4973-215c28d86_amd64.deb','https://downloads.plex.tv/plex-media-server/1.12.3.4973-215c28d86/plexmediaserver_1.12.3.4973-215c28d86_amd64.deb','1');"
-	else
-		# Update DB
-		gfnUpdateRepositoriesTable 'Plex Media Server'
-	fi
+function fnInstallDebPackage() {
+	local sVersionInstalled sServices sFilename
 
 	# Loading repository informations
 	gfnGetRepoValues 'Plex Media Server'
 
 	# Change architecture if needed
-	case `getconf LONG_BIT` in
-		32)
-			gsRepoFile="`echo $gsRepoFile | sed 's/amd64/i386/g;'`"
-			gsRepoURL="`echo $gsRepoURL | sed 's/amd64/i386/g;'`"
-		;;
+	case $(getconf LONG_BIT) in
+		32) gsRepoURL="$(echo ${gsRepoURL} | sed 's/x86_64/i686/g;')";;
 	esac
 
-	# Downloading the DEB file
-	gfnRepoManageByType
-
-	# Loading current installed version
-	sVersionInstalled="`dpkg -l plexmediaserver 2> /dev/null | grep 'plexmediaserver' | awk '{ print $3 }'`"
-	[ -z "$sVersionInstalled" ] && sVersionInstalled="Not installed"
+	# VARs
+	sFilename="$(gfnGetUriFilename "${gsRepoURL}")"
+	sVersionLatest="$(echo "${sFilename}" | cut -d '_' -f 2)"
+	sVersionInstalled="$(dpkg -l plexmediaserver 2> /dev/null | tail -n 1 | awk '{ print $3 }')"
 
 	# Install Plex if needed
 	echo "sVersionInstalled: $sVersionInstalled"
-	echo "gsRepoVersion: $gsRepoVersion"
-	if [ "$gsRepoVersion" != "$sVersionInstalled" ]; then
+	echo "sVersionLatest: $sVersionLatest"
+	if [ -z "$sVersionInstalled" ] || [ "$sVersionLatest" != "$sVersionInstalled" ]; then
+		# Services to stop
 		sServices="plexmediaserver"
 		[ "$gbIsInstalled_Tautulli" == "YES" ] && sServices="$sServices tautulli"
+
+		# Download DEB file
+		[ -f "${gsRepoDir}/${gsRepoFile}" ] && mv -v "${gsRepoDir}/${gsRepoFile}" "${gsRepoDir}/${gsRepoFile}.tmp"
+		gfnRepoManageByType
+		[ -f "${gsRepoDir}/${gsRepoFile}" ] && rm -fv "${gsRepoDir}/${gsRepoFile}.tmp"
 
 		# Stop services
 		gfnManageServices stop "$sServices"
 
-		[ -f $gsRepoDir/$gsRepoFile ] && dpkg -i $gsRepoDir/$gsRepoFile
+		[ -f "${gsRepoDir}/${gsRepoFile}" ] && dpkg -i "${gsRepoDir}/${gsRepoFile}"
 		systemctl daemon-reload
 		systemctl enable plexmediaserver
 
@@ -88,22 +73,20 @@ fnInstallDebPackage() {
 	# Update DB
 	cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='Plex Media Server';" -v
 	# Disable the upgrade job
-	cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='Plex Media Server';" -v
+	#cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='Plex Media Server';" -v
 }
 
 # Install Tautulli
-fnInstallZipTautulli() {
-	local sRepoDirEscaped sVersionInstalled
+function fnInstallZipTautulli() {
+	local sVersionLatest sRepoDirEscaped sVersionInstalled
 
-	# Update DB
-	gfnUpdateRepositoriesTable 'Tautulli'
 	# Get Tautulli infos
-	gfnGetRepoValues 'Tautulli' && gfnRepoManageByType
-	sRepoDirEscaped="`echo $gsRepoDir | sed s,/,\\\\\\\\\\/,g`"
+	gfnGetRepoValues 'Tautulli'
+	[[ $? -ne 0 ]] && return 1
 
-	# Python
-	[[ -z $( pip list --format=columns | grep 'pycryptodome') ]] && pip install PyCryptodome
-	[[ -z $( pip3 list --format=columns | grep 'pycryptodome') ]] && pip3 install PyCryptodome
+	# VARs
+	sVersionLatest="$($binCURL $gsRepoURL | grep 'tag_name' | awk '{ print $2 }' | cut -d '"' -f 2)"
+	sRepoDirEscaped="`echo $gsRepoDir | sed s,/,\\\\\\\\\\/,g`"
 
 	# Loading current installed version
 	if [ -f $gsRepoDir/release.lock ]; then
@@ -114,14 +97,24 @@ fnInstallZipTautulli() {
 		sVersionInstalled="Not installed"
 	fi
 
+	# Need upgrade or install ?
 	echo "sVersionInstalled: $sVersionInstalled"
-	echo "gsRepoVersion: v$gsRepoVersion"
-	if [ "$gbIsInstalled_Tautulli" == "NO" ] || [ "v$gsRepoVersion" != "$sVersionInstalled" ]; then
-		if [ ! -z $gsRepoDir ] && [ -d $gsRepoDir ]; then
+	echo "sVersionLatest: $sVersionLatest"
+	if [ "$gbIsInstalled_Tautulli" == "NO" ] || [ "$sVersionLatest" != "$sVersionInstalled" ]; then
+		# Python
+		[[ -z "$(pip list --format=columns | grep 'pycryptodome')" ]] && pip install PyCryptodome
+		[[ -z "$(pip3 list --format=columns | grep 'pycryptodome')" ]] && pip3 install PyCryptodome
+
+		# Get file
+		[ -f "${MySB_Files}/${gsRepoFile}" ] && mv -v "${MySB_Files}/${gsRepoFile}" "${MySB_Files}/${gsRepoFile}.tmp"
+		gfnRepoManageByType
+		[ -f "${MySB_Files}/${gsRepoFile}" ] && rm -fv "${MySB_Files}/${gsRepoFile}.tmp"
+
+		if [ -n "$gsRepoDir" ] && [ -d "$gsRepoDir" ]; then
 			[ "$gbIsInstalled_Tautulli" == "YES" ] && gfnManageServices stop "tautulli"
 
 			# Backup if needed
-			if [ "$sLocSwitch" == "CRON" ]; then
+			if [ "$gsSwitch" == "CRON" ]; then
 				[ -f $gsRepoDir/config.ini ] && mv -v $gsRepoDir/config.ini $MySB_InstallDir/temp/tautulli_conf
 				[ -f $gsRepoDir/tautulli.db ] && mv -v $gsRepoDir/tautulli.db $MySB_InstallDir/temp/tautulli_db
 				[ -d $gsRepoDir/backups ] && mv -v $gsRepoDir/backups $MySB_InstallDir/temp/tautulli_backups
@@ -130,17 +123,18 @@ fnInstallZipTautulli() {
 			fi
 
 			# System user
-			if [ -z "`grep 'tautulli' /etc/passwd`" ]; then
+			if [ -z "$(grep 'tautulli' /etc/passwd)" ]; then
 				adduser --system --no-create-home tautulli
 			fi
 
-			if [ -f $MySB_Files/$gsRepoFile ]; then
-				gfnDeleteDirectory 1 "$gsRepoDir"
-			fi
+			# Remove datas
+			([ -f "$MySB_Files/$gsRepoFile" ] && [ -d "$gsRepoDir" ]) && gfnDeleteDirectory 1 "$gsRepoDir"
+
+			# Extract datas
 			gfnRepoManageByType
 
 			# Restore if needed
-			if [ "$sLocSwitch" == "CRON" ]; then
+			if [ "$gsSwitch" == "CRON" ]; then
 				[ -f $MySB_InstallDir/temp/tautulli_conf ] && mv -v $MySB_InstallDir/temp/tautulli_conf $gsRepoDir/config.ini
 				[ -f $MySB_InstallDir/temp/tautulli_db ] && mv -v $MySB_InstallDir/temp/tautulli_db $gsRepoDir/tautulli.db
 				[ -d $MySB_InstallDir/temp/tautulli_backups ] && mv -v $MySB_InstallDir/temp/tautulli_backups $gsRepoDir/backups
@@ -211,12 +205,12 @@ fnInstallZipTautulli() {
 		# Update DB
 		cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='Tautulli';" -v
 		# Disable the upgrade job
-		cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='Tautulli';" -v
+		# cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='Tautulli';" -v
 	fi
 }
 
 #### CRON UPGRADE
-if [ "$sLocSwitch" == "CRON" ] && [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
+if [ "$gsSwitch" == "CRON" ] && [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
 	# Check for a new version / Install it
 	fnInstallDebPackage
 	if gfnCheckCommand 0 plexmediaserver; then

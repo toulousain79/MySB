@@ -35,7 +35,7 @@ systemctl daemon-reload
 systemctl enable docker
 
 #### Secure
-if [[ -z $(grep 'docker' <<< $(id ${gsMainUserName})) ]]; then
+if [[ -z "$(grep 'docker' <<< $(id ${gsMainUserName}))" ]]; then
 	usermod -aG docker ${gsMainUserName}
 fi
 
@@ -44,15 +44,17 @@ fnInstallDockerCompose() {
 	local sRepoDirEscaped sVersionInstalled sVersionLatest
 
 	gfnGetRepoValues 'Docker-Compose'
-    gfnRepoManageByType
-    chmod -v +x $gsRepoDir
 
 	# Versions check
 	sVersionInstalled="$(gfnCheckCommand 0 docker-compose && docker-compose --version | awk '{ print $3 }'  | cut -d ',' -f 1 || echo 'Not installed')"
-	sVersionLatest="$($binCURL $gsRepoURL | grep 'tag_name' | awk '{ print $2 }' | cut -d '"' -f 2)"
+	sVersionLatest="$($binCURL $gsRepoURL | jq -r .tag_name)"
 
+	echo "sVersionInstalled: $sVersionInstalled"
+	echo "sVersionLatest: $sVersionLatest"
 	if [ "$sVersionInstalled" != "$sVersionLatest" ]; then
+		[ -f "${MySB_Files}/${gsRepoFile}" ] && mv -v "${MySB_Files}/${gsRepoFile}" "${MySB_Files}/${gsRepoFile}.tmp"
 		gfnRepoManageByType
+		[ -f "${MySB_Files}/${gsRepoFile}" ] && rm -fv "${MySB_Files}/${gsRepoFile}.tmp"
 		chmod -v +x $gsRepoDir
 		$gsRepoDir --version
 	fi

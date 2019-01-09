@@ -1,12 +1,13 @@
 	Version v99.99
 		2018/09/07 (start at: 2018/09/07)
-			- Docker-Compose latest
-			- Shellcheck stable
-			- Composer latest
+			- Tautulli latest (auto)
+			- PlexMedia latest (auto)
+			- Docker-Compose latest (auto)
+			- Composer latest (auto)
+			- Shellcheck stable (auto)
 			- Minisign v0.8.3
 			- NextCloud v14.0.4 (prepare for v15)
 			- GeoIPupdate v3.1.1
-			- Tautulli v2.1.26
 			- LibSmbClient v1.0.0
 			- Webmin v1.900
 			- Certbot-auto script v0.29.1

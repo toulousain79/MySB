@@ -24,7 +24,29 @@
 funcs_tools=1
 ##################### FIRST LINE #####################################
 
-# Update repositories table
+#### Get filename to download from URI
+gfnGetUriFilename() {
+	local sHeader sFilename
+	[[ -z "$1" ]] && return 1
+
+	sHeader="$(curl -sI "$1" | tr -d '\r')"
+
+	sFilename="$(echo "$sHeader" | grep -o -E 'filename=.*$')"
+	if [[ -n "$sFilename" ]]; then
+		echo "${sFilename#filename=}"
+		return
+	fi
+
+	sFilename="$(echo "$sHeader" | grep -o -E 'location:.*$')"
+	if [[ -n "$sFilename" ]]; then
+		basename "${sFilename#location\:}"
+		return
+	fi
+
+	return 1
+}
+
+#### Update repositories table
 gfnUpdateRepositoriesTable() {
 	local sName sVersion sFile sUrl
 	sName="$1"
@@ -355,9 +377,9 @@ gfnDeleteDirectory() {
 	[ -z "$1" ] && nVerbose=1 || nVerbose="$1"
 	[ -z "$2" ] && echo "gfnDeleteDirectory failed, No directory givened !" || sDirectory="${2%/}"
 
-	if [ -d $sDirectory ] && [ "$sDirectory" != "$MySB_InstallDir" ]; then
+	if [ -d $sDirectory ]; then
 		case "$sDirectory" in
-			"$MySB_InstallDir"|"$MySB_InstallDir/temp"|"$MySB_InstallDir/files"|"/home"|"/"|"//")	echo "gfnDeleteDirectory avoided, directory '$sDirectory' not permited !";;
+			"$MySB_InstallDir"|"$MySB_Files"|"$MySB_InstallDir/temp"|"$MySB_InstallDir/files"|"/home"|"/"|"//")	echo "gfnDeleteDirectory avoided, directory '$sDirectory' not permited !";;
 			*)
 				rm -rf $sDirectory
 				if [ $? -eq 0 ] && [ $nVerbose -eq 1 ]; then
@@ -434,8 +456,29 @@ gfnGetRepoValues() {
 	echo "To upgrade : `echo $gnRepoUpgrade | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
 	echo "Type : $gsRepoType"
 	echo "Active : `echo $gnRepoActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	echo "URL : $gsRepoURL"
+	echo "Repo URL : $gsRepoURL"
+	case "$sRepoName" in
+		'Tautulli')
+			gsFileURL="$($binCURL $gsRepoURL | grep 'tarball_url' | awk '{ print $2 }' | cut -d '"' -f 2)"
+			echo "File URL : $gsFileURL"
+		;;
+		'Docker-Compose')
+			gsFileURL="$($binCURL $gsRepoURL | jq -r '.assets[] | select(.name == "docker-compose-Linux-x86_64").browser_download_url')"
+			echo "File URL : $gsFileURL"
+		;;
+		'Composer')
+			gsFileURL="$($binCURL $gsRepoURL | jq -r '.assets[] | select(.name == "composer.phar").browser_download_url')"
+			echo "File URL : $gsFileURL"
+		;;
+		*)  gsFileURL="";;
+	esac
 	echo
+	[ -z "$gsRepoDir" ] || \
+	[ -z "$gsRepoVersion" ] || \
+	[ -z "$gsRepoFile" ] || \
+	[ -z "$gnRepoUpgrade" ] || \
+	[ -z "$gnRepoActive" ] || \
+	[ -z "$gsRepoURL" ] && return 1 || return 0
 }
 
 #### Repository Manage by type
@@ -453,25 +496,8 @@ gfnRepoManageByType() {
 		gnError=0
 
 		case "$gsRepoType" in
-			'TARXZ')
-				if [ ! -f $MySB_Files/$gsRepoFile ]; then
-					$binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
-					gnError=$?
-				fi
-				if [ ! -d $gsRepoDir ] && [ $gnError -eq 0 ]; then
-					sSubDir="`tar --xz -tf $MySB_Files/$gsRepoFile | cut -d '/' -f 1 | uniq`"
-					if [ ! -d $MySB_InstallDir/temp/$sSubDir ]; then
-						tar --xz -xf $MySB_Files/$gsRepoFile -C $MySB_InstallDir/temp/
-						gnError=$?
-					fi
-					if [ -d $MySB_InstallDir/temp/$sSubDir ] && [ ! -d $gsRepoDir ]; then
-						mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
-						chown -R root:root $gsRepoDir
-						gnError=$?
-					fi
-				fi
-			;;
 			'TARGZ')
+				[ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
 				if [ ! -f $MySB_Files/$gsRepoFile ]; then
 					$binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
 					gnError=$?
@@ -581,6 +607,7 @@ gfnRepoManageByType() {
 				fi
 			;;
 			'CURL')
+				[ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
 				$binCURL $gsRepoURL -o $gsRepoDir
 				gnError=$?
 				if [ -f $MySB_Files/$gsRepoFile ]; then
@@ -618,7 +645,7 @@ gfnFstabGeneration() {
 	fi
 
 	# SWAP
-	sSwap=$(grep 'swap' /etc/fstab)
+	sSwap="$(grep 'swap' /etc/fstab)"
 	if [[ ! -z ${sSwap} ]]; then
 		grep 'swap' /etc/fstab > /tmp/swap.list
 		echo "# SWAP" > /tmp/fstab.swap
