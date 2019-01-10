@@ -419,6 +419,7 @@ gfnCleanBeforeUpgrade() {
 #### Get Values Repositories
 gfnGetRepoValues() {
 	local sValues sRepoName
+	unset gsRepoURL gnRepoActive gnRepoUpgrade gsRepoFile gsRepoVersion gsRepoDir gsFileURL gsVersionLatest gsVersionInstalled gsRepoType
 
 	if [ -z "$1" ]; then
 		return 1
@@ -435,22 +436,11 @@ gfnGetRepoValues() {
 	gsRepoURL="`echo $sValues | awk '{split($0,a,"|"); print a[6]}'`"
 	gnRepoActive="`echo $sValues | awk '{split($0,a,"|"); print a[7]}'`"
 
-	echo
-	echo "########## $sRepoName"
-	echo "Directory : $gsRepoDir"
-	echo "Version in DB : $gsRepoVersion"
-	echo "File : $MySB_Files/$gsRepoFile"
-	echo "To upgrade : `echo $gnRepoUpgrade | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	echo "Type : $gsRepoType"
-	echo "Active : `echo $gnRepoActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
-	echo "Repo URL : $gsRepoURL"
-
 	case "$sRepoName" in
 		'Plex Media Server')
-			gsRepoFile="$(gfnGetUriFilename "${gsRepoURL}")"
+			gsRepoFile="$(gfnGetUriFilename "${gsRepoURL}" || echo 'Not installed')"
 			gsVersionLatest="$(echo "${gsRepoFile}" | cut -d '_' -f 2)"
 			gsVersionInstalled="$(dpkg -l plexmediaserver 2> /dev/null | tail -n 1 | awk '{ print $3 }')"
-			gsFileURL="$($binCURL $gsRepoURL | grep 'tarball_url' | awk '{ print $2 }' | cut -d '"' -f 2)"
 		;;
 		'Tautulli')
 			if [ -f $gsRepoDir/release.lock ]; then
@@ -460,6 +450,7 @@ gfnGetRepoValues() {
 			else
 				gsVersionInstalled="Not installed"
 			fi
+			gsVersionLatest="$($binCURL $gsRepoURL | jq -r .tag_name)"
 			gsFileURL="$($binCURL $gsRepoURL | grep 'tarball_url' | awk '{ print $2 }' | cut -d '"' -f 2)"
 		;;
 		'Docker-Compose')
@@ -482,6 +473,15 @@ gfnGetRepoValues() {
 		*)  gsFileURL="";;
 	esac
 
+	echo
+	echo "########## $sRepoName"
+	echo "Directory : $gsRepoDir"
+	echo "Version in DB : $gsRepoVersion"
+	echo "File : $MySB_Files/$gsRepoFile"
+	echo "To upgrade : `echo $gnRepoUpgrade | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	echo "Type : $gsRepoType"
+	echo "Active : `echo $gnRepoActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
+	echo "Repo URL : $gsRepoURL"
 	[ -n "$gsVersionInstalled" ] && echo "Current version : $gsVersionInstalled"
 	[ -n "$gsVersionLatest" ] && echo "Latest version : $gsVersionLatest"
 	[ -n "$gsFileURL" ] && echo "File URL : $gsFileURL"
@@ -511,6 +511,7 @@ gfnRepoManageByType() {
 
 		case "$gsRepoType" in
 			# 'TARXZ')
+				# [ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
 				# if [ ! -f $MySB_Files/$gsRepoFile ]; then
 					# $binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
 					# gnError=$?
@@ -529,6 +530,7 @@ gfnRepoManageByType() {
 				# fi
 			# ;;
 			'TARGZ')
+				[ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
 				if [ ! -f $MySB_Files/$gsRepoFile ]; then
 					$binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
 					gnError=$?
@@ -620,6 +622,7 @@ gfnRepoManageByType() {
 				fi
 			;;
 			'ZIP')
+				[ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
 				if [ ! -f $MySB_Files/$gsRepoFile ]; then
 					$binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
 					gnError=$?

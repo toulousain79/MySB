@@ -62,6 +62,10 @@ gfnChangeFQDN() {
 			2)	echo -e "${Global_Questions_Message_Hostname_Fqdn_NotPublicIp}";;
 		esac
 		gfnQuestionGetString NO "${Global_Questions_Hostname}" sNewFQDN "${sNewFQDN}"
+		if [ "${sNewFQDN}" == "$gsHostNameFqdn" ]; then
+			echo "Same FQDN, aborted..."
+			exit 1
+		fi
 	done
 
 	#### Update DB
@@ -108,7 +112,6 @@ gfnChangeFQDN() {
 
 	#### Certificates
 	log_daemon_msg "Create new self-signed certificate (please wait)"
-	make-ssl-cert generate-default-snakeoil --force-overwrite
 	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Certificates" 'CreateCACertificate' 'UPGRADE'
 	gfnStatusLSB
 
@@ -127,7 +130,7 @@ gfnChangeFQDN() {
 	#### OpenVPN
 	if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
 		log_daemon_msg "Reconfigure OpenVPN server (please wait)"
-		gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/OpenVPN" 'server' 'UPGRADE'
+		gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/OpenVPN" 'server' 'UPGRADE' 'FORCE'
 		gfnStatusLSB
 
 		for seedUser in $gsUsersList; do
@@ -166,7 +169,7 @@ gfnChangeFQDN() {
 	fi
 
 	#### LoadAvg
-	log_daemon_msg "Reconfigure Cakebox-Light"
+	log_daemon_msg "Reconfigure LoadAvg"
 	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/LoadAvg" 'UPGRADE'
 	gfnStatusLSB
 

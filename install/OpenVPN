@@ -76,41 +76,46 @@ CreateServer() {
 	mkdir -pv /etc/openvpn/easy-rsa/keys
 
 	#### Initialize
-	echo
-	echo "########## Initialize"
-	cd /etc/openvpn/easy-rsa/
-	. ./vars
-	export KEY_SIZE=1024
-	export KEY_COUNTRY="US"
-	export KEY_PROVINCE="CA"
-	export KEY_CITY="SanFrancisco"
-	export KEY_ORG="Fort-Funston"
-	export KEY_EMAIL="MySB@$gsHostNameFqdn"
-	export KEY_CN="MySB OpenVPN Server"
-	export KEY_NAME="MySB OpenVPN Server"
-	export KEY_OU="MySB OpenVPN Server"
+	if [ ! -f "/etc/openvpn/$DH" ] && [ ! -f "/etc/openvpn/$CACRT" ] && \
+	[ ! -f "/etc/openvpn/$CAKEY" ] && [ ! -f "/etc/openvpn/$TAKEY" ] && \
+	[ ! -f "/etc/openvpn/$CRT" ] && [ ! -f "/etc/openvpn/$KEY" ]; then
 
-	#### Create server
-	echo
-	echo "########## Create server"
-	sed -i 's/KEY_ALTNAMES="\$KEY_CN"/KEY_ALTNAMES="DNS:\${KEY_CN}"/g' ./pkitool
-	./clean-all
-	[[ ! -f /etc/openvpn/easy-rsa/keys/index.txt ]] && touch /etc/openvpn/easy-rsa/keys/index.txt
-	[[ ! -f /etc/openvpn/easy-rsa/keys/index.txt.attr ]] && touch /etc/openvpn/easy-rsa/keys/index.txt.attr
-	./build-dh
-	./pkitool --initca
-	./pkitool --server $gsHostNameFqdn
-	/usr/sbin/openvpn --genkey --secret keys/ta.key
+		echo
+		echo "########## Initialize"
+		cd /etc/openvpn/easy-rsa/
+		. ./vars
+		export KEY_SIZE=1024
+		export KEY_COUNTRY="US"
+		export KEY_PROVINCE="CA"
+		export KEY_CITY="SanFrancisco"
+		export KEY_ORG="Fort-Funston"
+		export KEY_EMAIL="MySB@$gsHostNameFqdn"
+		export KEY_CN="MySB OpenVPN Server"
+		export KEY_NAME="MySB OpenVPN Server"
+		export KEY_OU="MySB OpenVPN Server"
 
-	#### Move created files
-	echo
-	echo "########## Move created files"
-	cp -vf keys/dh1024.pem /etc/openvpn/$DH
-	cp -vf keys/ca.crt /etc/openvpn/$CACRT
-	cp -vf keys/ca.key /etc/openvpn/$CAKEY
-	cp -vf keys/ta.key /etc/openvpn/$TAKEY
-	mv -v keys/$CRT /etc/openvpn/
-	mv -v keys/$KEY /etc/openvpn/
+		#### Create server
+		echo
+		echo "########## Create server"
+		sed -i 's/KEY_ALTNAMES="\$KEY_CN"/KEY_ALTNAMES="DNS:\${KEY_CN}"/g' ./pkitool
+		./clean-all
+		[[ ! -f /etc/openvpn/easy-rsa/keys/index.txt ]] && touch /etc/openvpn/easy-rsa/keys/index.txt
+		[[ ! -f /etc/openvpn/easy-rsa/keys/index.txt.attr ]] && touch /etc/openvpn/easy-rsa/keys/index.txt.attr
+		./build-dh
+		./pkitool --initca
+		./pkitool --server $gsHostNameFqdn
+		/usr/sbin/openvpn --genkey --secret keys/ta.key
+
+		#### Move created files
+		echo
+		echo "########## Move created files"
+		cp -vf keys/dh1024.pem /etc/openvpn/$DH
+		cp -vf keys/ca.crt /etc/openvpn/$CACRT
+		cp -vf keys/ca.key /etc/openvpn/$CAKEY
+		cp -vf keys/ta.key /etc/openvpn/$TAKEY
+		mv -v keys/$CRT /etc/openvpn/
+		mv -v keys/$KEY /etc/openvpn/
+	fi
 
 	echo
 	echo "########## Config files"
@@ -181,20 +186,28 @@ CreateServer() {
 
 CreateClient() {
 	#### Initialize
-	cd /etc/openvpn/easy-rsa/
-	. ./vars
-	export KEY_COUNTRY="US"
-	export KEY_PROVINCE="CA"
-	export KEY_CITY="SanFrancisco"
-	export KEY_ORG="Fort-Funston"
-	export KEY_EMAIL="MySB@$gsHostNameFqdn"
-	export KEY_CN="MySB OpenVPN Client - $USERNAME"
-	export KEY_NAME="MySB OpenVPN Client - $USERNAME"
-	export KEY_OU="MySB OpenVPN Client - $USERNAME"
+	if [ ! -f "/etc/openvpn/clients/$CLIENTNAME.crt" ] && [ ! -f "/etc/openvpn/clients/$CLIENTNAME.csr" ] && [ ! -f "/etc/openvpn/clients/$CLIENTNAME.key" ]; then
+		cd /etc/openvpn/easy-rsa/
+		. ./vars
+		export KEY_COUNTRY="US"
+		export KEY_PROVINCE="CA"
+		export KEY_CITY="SanFrancisco"
+		export KEY_ORG="Fort-Funston"
+		export KEY_EMAIL="MySB@$gsHostNameFqdn"
+		export KEY_CN="MySB OpenVPN Client - $USERNAME"
+		export KEY_NAME="MySB OpenVPN Client - $USERNAME"
+		export KEY_OU="MySB OpenVPN Client - $USERNAME"
 
-	#### Create client
-	./pkitool $CLIENTNAME
-	cd keys/
+		#### Create client certificate
+		./pkitool $CLIENTNAME
+		cd keys/
+
+		#### Move created files
+		mv -v $CLIENTNAME.crt /etc/openvpn/clients/
+		mv -v $CLIENTNAME.csr /etc/openvpn/clients/
+		mv -v $CLIENTNAME.key /etc/openvpn/clients/
+		chmod -v 400 /etc/openvpn/clients/*
+	fi
 
 	#### Configuration file with separate files - TUN - With Redirect Gateway
 	# start with a clean config file for a new user
@@ -234,10 +247,10 @@ CreateClient() {
 	cat /etc/openvpn/$CACRT >> /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
 	echo "</ca>" >> /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
 	echo "<cert>" >> /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
-	sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' $CLIENTNAME.crt >> /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
+	sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' /etc/openvpn/clients/$CLIENTNAME.crt >> /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
 	echo "</cert>" >> /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
 	echo "<key>" >> /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
-	cat $CLIENTNAME.key >> /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
+	cat /etc/openvpn/clients/$CLIENTNAME.key >> /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
 	echo "</key>" >> /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
 	echo "key-direction 1" >> /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
 	echo "<tls-auth>" >> /etc/openvpn/clients/${CLIENTNAME}_TUN_Single_WithGW.ovpn
@@ -253,12 +266,6 @@ CreateClient() {
 	sed -i "s/$gsPort_OpenVPN_WithGW/$gsPort_OpenVPN_TAP_WithoutGW/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithoutGW.ovpn
 	sed -i "s/dev tun/dev tap/g" /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithoutGW.ovpn
 	sed -i '/mtu-disc yes/d' /etc/openvpn/clients/${CLIENTNAME}_TAP_Single_WithoutGW.ovpn
-
-	#### Move created files
-	mv -v $CLIENTNAME.crt /etc/openvpn/clients/
-	mv -v $CLIENTNAME.csr /etc/openvpn/clients/
-	mv -v $CLIENTNAME.key /etc/openvpn/clients/
-	chmod -v 400 /etc/openvpn/clients/*
 
 	#### START services
 	gfnManageServices start "openvpn"
