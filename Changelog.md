@@ -9,8 +9,8 @@
 			- NextCloud v14.0.4 (prepare for v15)
 			- GeoIPupdate v3.1.1
 			- LibSmbClient v1.0.0
-			- Webmin v1.900
 			- Certbot-auto script v0.29.1
+			- Webmin, restore install via sources list
 			- Portal
 				* Medoo Framework v1.6.1
 			- ruTorrent, get all labels from ruTorrent GitHub

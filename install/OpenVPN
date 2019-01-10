@@ -45,19 +45,6 @@ NetTunWithoutRedirectGW="10.0.1"
 NetTapWithoutRedirectGW="10.0.2"
 
 CreateServer() {
-	if [ -f /etc/openvpn/$CACRT ] || [ "$USERPASSWORD" != "FORCE" ]; then
-		echo -e "${CYELLOW}OpenVPN certificate already exist. Do you want to create it again ?$CEND"
-		echo -e "${CYELLOW}I you create new certificate, you must create again certificates for all users.$CEND"
-		echo -e "${CYELLOW}Do you understand ?$CEND"
-		gfnQuestionGetString NO  "$Global_WantToContinue" CONTINUE NO
-		if [ "$CONTINUE" == "NO" ]; then
-			echo -e "$Global_SeeYouLater"
-			echo
-			echo
-			gfnEndingScript 0
-		fi
-	fi
-
 	#### Create Dev TUN
 	if [ "`ls -la /dev/net/tun > /dev/null && echo $?`" != "0" ]; then
 		[ ! -d /dev/net ] && mkdir -p /dev/net
@@ -187,7 +174,7 @@ CreateServer() {
 	fi
 
 	#### START services
-	if [ "$2" != "INSTALL" ]; then
+	if [ "$gsSwitch" != "INSTALL" ]; then
 		gfnManageServices start "openvpn"
 	fi
 }
@@ -452,7 +439,21 @@ DeleteUserFiles() {
 
 case "$COMMAND" in
 	"server")
-		if [ "$gbToInstall_OpenVPN" == "YES" ] || [ "$USERPASSWORD" == "FORCE" ]; then
+		if [ "$gbToInstall_OpenVPN" == "YES" ] || [ "$3" == "FORCE" ]; then
+
+			if [ -f /etc/openvpn/$CACRT ] && [ "$3" != "FORCE" ]; then
+				echo -e "${CYELLOW}OpenVPN certificate already exist. Do you want to create it again ?$CEND"
+				echo -e "${CYELLOW}I you create new certificate, you must create again certificates for all users.$CEND"
+				echo -e "${CYELLOW}Do you understand ?$CEND"
+				gfnQuestionGetString NO  "$Global_WantToContinue" CONTINUE NO
+				if [ "$CONTINUE" == "NO" ]; then
+					echo -e "$Global_SeeYouLater"
+					echo
+					echo
+					gfnEndingScript 0
+				fi
+			fi
+
 			#### Creating server config
 			CreateServer
 		fi

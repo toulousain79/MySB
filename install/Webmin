@@ -24,63 +24,9 @@ source $(dirname $0)/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-#### VARs
-sLocSwitch="$1"
-
-#### FUNCTIONs
-# Install DEB package
-fnInstallDebPackage() {
-	local sVersionInstalled sServices
-
-	# Loading repository informations
-	gfnGetRepoValues 'Webmin'
-
-	if [ -z "$gsRepoVersion" ]; then
-		cmdMySQL 'MySB_db' "INSERT INTO repositories (type,dir,name,version,file,url,active) VALUES ('DEB', '<InstallDir>_files', 'Webmin', '1.890', 'webmin_1.890_all.deb', 'http://prdownloads.sourceforge.net/webadmin/webmin_1.890_all.deb', 1);"
-	else
-		# Update DB
-		gfnUpdateRepositoriesTable 'Webmin'
-	fi
-
-	# Loading repository informations
-	gfnGetRepoValues 'Webmin'
-
-	# Downloading the DEB file
-	gfnRepoManageByType
-
-	# Loading current installed version
-	sVersionInstalled="`dpkg -l webmin 2> /dev/null | grep 'webmin' | awk '{ print $3 }'`"
-	[ -z "$sVersionInstalled" ] && sVersionInstalled="Not installed"
-
-	# Install Plex if needed
-	echo "sVersionInstalled: $sVersionInstalled"
-	echo "gsRepoVersion: $gsRepoVersion"
-	if [ "$gsRepoVersion" != "$sVersionInstalled" ]; then
-		# Stop services
-		gfnManageServices stop "webmin"
-
-		[ -f $gsRepoDir/$gsRepoFile ] && dpkg -i $gsRepoDir/$gsRepoFile
-		systemctl daemon-reload
-		systemctl enable webmin
-
-		# Start Tautulli service
-		gfnManageServices start "webmin"
-	else
-		echo "Webmin version $gsRepoVersion is already installed"
-	fi
-
-	# Update DB
-	cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='Webmin';" -v
-	# Disable the upgrade job
-	cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='Webmin';" -v
-}
-
 if [ "$gbToInstall_Webmin" == "YES" ]; then
 	#### Install package
-	gfnPackageBundleInstall 'libwrap0 libwrap0-dev libauthen-pam-perl libio-pty-perl libapt-pkg-perl apt-show-versions'
-
-	#### Install DEB package
-	fnInstallDebPackage
+	gfnPackageBundleInstall 'libwrap0 libwrap0-dev libauthen-pam-perl libio-pty-perl libapt-pkg-perl apt-show-versions webmin'
 
 	#### Create certificate
 	if [ -f /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem ]; then
@@ -130,12 +76,6 @@ if [ "$gbToInstall_Webmin" == "YES" ]; then
 
 	#### START services
 	gfnManageServices start "webmin"
-fi
-
-#### CRON UPGRADE
-if [ "$sLocSwitch" == "CRON" ] && [ "$gbIsInstalled_Webmin" == "YES" ]; then
-	# Check for a new version / Install it
-	fnInstallDebPackage
 fi
 
 # -----------------------------------------

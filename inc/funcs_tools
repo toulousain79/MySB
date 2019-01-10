@@ -46,20 +46,6 @@ gfnGetUriFilename() {
 	return 1
 }
 
-#### Update repositories table
-gfnUpdateRepositoriesTable() {
-	local sName sVersion sFile sUrl
-	sName="$1"
-
-	if [ ! -z "$sName" ]; then
-		sVersion="`grep "$sName" $MySB_InstallDir/templates/mysql/Table_repositories.sql | cut -d ',' -f 4 | cut -d "'" -f 2`"
-		sFile="`grep "$sName" $MySB_InstallDir/templates/mysql/Table_repositories.sql | cut -d ',' -f 6 | cut -d "'" -f 2`"
-		sUrl="`grep "$sName" $MySB_InstallDir/templates/mysql/Table_repositories.sql | cut -d ',' -f 7 | cut -d "'" -f 2`"
-
-		cmdMySQL 'MySB_db' "UPDATE repositories SET version = '$sVersion', file = '$sFile', url = '$sUrl' WHERE name='$sName';" -v
-	fi
-}
-
 #### Quota, space available
 gfnQuotaSpaceAvailable() {
 	local nFreeSpaceToKeep nFreeSpace
@@ -448,31 +434,59 @@ gfnGetRepoValues() {
 	gsRepoFile="`echo $sValues | awk '{split($0,a,"|"); print a[5]}'`"
 	gsRepoURL="`echo $sValues | awk '{split($0,a,"|"); print a[6]}'`"
 	gnRepoActive="`echo $sValues | awk '{split($0,a,"|"); print a[7]}'`"
+
 	echo
 	echo "########## $sRepoName"
 	echo "Directory : $gsRepoDir"
-	echo "Version : $gsRepoVersion"
+	echo "Version in DB : $gsRepoVersion"
 	echo "File : $MySB_Files/$gsRepoFile"
 	echo "To upgrade : `echo $gnRepoUpgrade | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
 	echo "Type : $gsRepoType"
 	echo "Active : `echo $gnRepoActive | sed 's/0/NO/g;' | sed 's/1/YES/g;'`"
 	echo "Repo URL : $gsRepoURL"
+
 	case "$sRepoName" in
-		'Tautulli')
+		'Plex Media Server')
+			gsRepoFile="$(gfnGetUriFilename "${gsRepoURL}")"
+			gsVersionLatest="$(echo "${gsRepoFile}" | cut -d '_' -f 2)"
+			gsVersionInstalled="$(dpkg -l plexmediaserver 2> /dev/null | tail -n 1 | awk '{ print $3 }')"
 			gsFileURL="$($binCURL $gsRepoURL | grep 'tarball_url' | awk '{ print $2 }' | cut -d '"' -f 2)"
-			echo "File URL : $gsFileURL"
+		;;
+		'Tautulli')
+			if [ -f $gsRepoDir/release.lock ]; then
+				gsVersionInstalled="`cat $gsRepoDir/release.lock`"
+			elif [ -f $gsRepoDir/plexpy/version.py ]; then
+				gsVersionInstalled="`grep 'PLEXPY_RELEASE_VERSION' $gsRepoDir/plexpy/version.py | cut -d '=' -f 2| cut -d '"' -f 2`"
+			else
+				gsVersionInstalled="Not installed"
+			fi
+			gsFileURL="$($binCURL $gsRepoURL | grep 'tarball_url' | awk '{ print $2 }' | cut -d '"' -f 2)"
 		;;
 		'Docker-Compose')
+			[ -f /usr/bin/docker-compose ] && chmod +x docker-compose;
+			gsVersionInstalled="$(gfnCheckCommand 0 docker-compose && docker-compose --version | awk '{ print $3 }'  | cut -d ',' -f 1 || echo 'Not installed')"
+			gsVersionLatest="$($binCURL $gsRepoURL | jq -r .tag_name)"
 			gsFileURL="$($binCURL $gsRepoURL | jq -r '.assets[] | select(.name == "docker-compose-Linux-x86_64").browser_download_url')"
-			echo "File URL : $gsFileURL"
 		;;
 		'Composer')
+			[ -f "$gsRepoDir" ] && chmod -v +x "$gsRepoDir"
+			gsVersionInstalled="$(gfnCheckCommand 0 composer && composer --version 2> /dev/null | grep 'Composer version' | awk '{ print $3 }' || echo 'Not installed')"
+			gsVersionLatest="$($binCURL $gsRepoURL | grep 'tag_name' | awk '{ print $2 }' | cut -d '"' -f 2)"
 			gsFileURL="$($binCURL $gsRepoURL | jq -r '.assets[] | select(.name == "composer.phar").browser_download_url')"
-			echo "File URL : $gsFileURL"
+		;;
+		'Shellcheck')
+			[ -f "$gsRepoDir" ] && chmod -v +x "$gsRepoDir"
+			gsVersionInstalled="$(gfnCheckCommand 0 shellcheck && shellcheck --version | grep 'version' | head -n 1 | awk '{ print $2 }' || echo 'Not installed')"
+			gsVersionLatest="$($binCURL 'https://api.github.com/repos/koalaman/shellcheck/tags' | grep 'name' | head -n 1 | awk '{ print $2 }' | cut -d '"' -f 2 | sed 's/v//g;')"
 		;;
 		*)  gsFileURL="";;
 	esac
+
+	[ -n "$gsVersionInstalled" ] && echo "Current version : $gsVersionInstalled"
+	[ -n "$gsVersionLatest" ] && echo "Latest version : $gsVersionLatest"
+	[ -n "$gsFileURL" ] && echo "File URL : $gsFileURL"
 	echo
+
 	[ -z "$gsRepoDir" ] || \
 	[ -z "$gsRepoVersion" ] || \
 	[ -z "$gsRepoFile" ] || \
@@ -496,8 +510,25 @@ gfnRepoManageByType() {
 		gnError=0
 
 		case "$gsRepoType" in
+			# 'TARXZ')
+				# if [ ! -f $MySB_Files/$gsRepoFile ]; then
+					# $binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
+					# gnError=$?
+				# fi
+				# if [ ! -d $gsRepoDir ] && [ $gnError -eq 0 ]; then
+					# sSubDir="`tar --xz -tf $MySB_Files/$gsRepoFile | cut -d '/' -f 1 | uniq`"
+					# if [ ! -d $MySB_InstallDir/temp/$sSubDir ]; then
+						# tar --xz -xf $MySB_Files/$gsRepoFile -C $MySB_InstallDir/temp/
+						# gnError=$?
+					# fi
+					# if [ -d $MySB_InstallDir/temp/$sSubDir ] && [ ! -d $gsRepoDir ]; then
+						# mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
+						# chown -R root:root $gsRepoDir
+						# gnError=$?
+					# fi
+				# fi
+			# ;;
 			'TARGZ')
-				[ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
 				if [ ! -f $MySB_Files/$gsRepoFile ]; then
 					$binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
 					gnError=$?

@@ -29,7 +29,7 @@ source $(dirname $0)/../inc/includes_before
 #### FUNCTIONs
 # Install Plex DEB package
 function fnInstallDebPackage() {
-	local sVersionInstalled sServices sFilename
+	local  sServices
 
 	# Loading repository informations
 	gfnGetRepoValues 'Plex Media Server'
@@ -39,15 +39,8 @@ function fnInstallDebPackage() {
 		32) gsRepoURL="$(echo ${gsRepoURL} | sed 's/x86_64/i686/g;')";;
 	esac
 
-	# VARs
-	sFilename="$(gfnGetUriFilename "${gsRepoURL}")"
-	sVersionLatest="$(echo "${sFilename}" | cut -d '_' -f 2)"
-	sVersionInstalled="$(dpkg -l plexmediaserver 2> /dev/null | tail -n 1 | awk '{ print $3 }')"
-
 	# Install Plex if needed
-	echo "sVersionInstalled: $sVersionInstalled"
-	echo "sVersionLatest: $sVersionLatest"
-	if [ -z "$sVersionInstalled" ] || [ "$sVersionLatest" != "$sVersionInstalled" ]; then
+	if [ -z "$gsVersionInstalled" ] || [ "$gsVersionLatest" != "$gsVersionInstalled" ]; then
 		# Services to stop
 		sServices="plexmediaserver"
 		[ "$gbIsInstalled_Tautulli" == "YES" ] && sServices="$sServices tautulli"
@@ -72,35 +65,21 @@ function fnInstallDebPackage() {
 
 	# Update DB
 	cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='Plex Media Server';" -v
-	# Disable the upgrade job
-	#cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='Plex Media Server';" -v
 }
 
 # Install Tautulli
 function fnInstallZipTautulli() {
-	local sVersionLatest sRepoDirEscaped sVersionInstalled
+	local sRepoDirEscaped
 
 	# Get Tautulli infos
 	gfnGetRepoValues 'Tautulli'
 	[[ $? -ne 0 ]] && return 1
 
 	# VARs
-	sVersionLatest="$($binCURL $gsRepoURL | grep 'tag_name' | awk '{ print $2 }' | cut -d '"' -f 2)"
 	sRepoDirEscaped="`echo $gsRepoDir | sed s,/,\\\\\\\\\\/,g`"
 
-	# Loading current installed version
-	if [ -f $gsRepoDir/release.lock ]; then
-		sVersionInstalled="`cat $gsRepoDir/release.lock`"
-	elif [ -f $gsRepoDir/plexpy/version.py ]; then
-		sVersionInstalled="`grep 'PLEXPY_RELEASE_VERSION' $gsRepoDir/plexpy/version.py | cut -d '=' -f 2| cut -d '"' -f 2`"
-	else
-		sVersionInstalled="Not installed"
-	fi
-
 	# Need upgrade or install ?
-	echo "sVersionInstalled: $sVersionInstalled"
-	echo "sVersionLatest: $sVersionLatest"
-	if [ "$gbIsInstalled_Tautulli" == "NO" ] || [ "$sVersionLatest" != "$sVersionInstalled" ]; then
+	if [ "$gbIsInstalled_Tautulli" == "NO" ] || [ "$gsVersionLatest" != "$gsVersionInstalled" ]; then
 		# Python
 		[[ -z "$(pip list --format=columns | grep 'pycryptodome')" ]] && pip install PyCryptodome
 		[[ -z "$(pip3 list --format=columns | grep 'pycryptodome')" ]] && pip3 install PyCryptodome
