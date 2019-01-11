@@ -22,33 +22,14 @@
 #
 ##################### FIRST LINE #####################################
 
-echo && echo -e "${CBLUE}*** Check GitLab CI Secret Variables ***${CEND}"
+# entirely wipe out all the Docker containers
+docker rm $(docker ps -a -q) 2> /dev/null
 
-# CI_PROJECT_PATH
-if [ -z "${CI_PROJECT_PATH}" ]; then
-	sValue="${CRED}Failed${CEND}"
-	nReturn=1
-else
-	sValue="${CGREEN}Passed${CEND}"
-fi
-echo -e "${CYELLOW}Secret Variable \$CI_PROJECT_PATH:${CEND} ${sValue}"
+# remove dangling images
+docker rmi $(docker images -f "dangling=true" -q) 2> /dev/null
 
-# HUB_USER
-if [ -z "${HUB_USER}" ]; then
-	sValue="${CRED}Failed${CEND}"
-	nReturn=1
-else
-	sValue="${CGREEN}Passed${CEND}"
-fi
-echo -e "${CYELLOW}Secret Variable \$HUB_USER:${CEND} ${sValue}"
+# Prune all...
+docker system prune -a --force
 
-# HUB_PASSWORD
-if [ -z "${HUB_PASSWORD}" ]; then
-	sValue="${CRED}Failed${CEND}"
-	nReturn=1
-else
-	sValue="${CGREEN}Passed${CEND}"
-fi
-echo -e "${CYELLOW}Secret Variable \$HUB_PASSWORD:${CEND} ${sValue}"
-
-##################### LAST LINE ######################################
+# Remove all volumes
+docker volume ls -qf dangling=true | xargs -r docker volume rm

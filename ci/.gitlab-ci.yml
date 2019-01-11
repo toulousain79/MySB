@@ -1,10 +1,11 @@
 ---
 stages:
     - check
+    - build_images
 
-# #### BUILD
-Building Docker Images:
-    image: registry.gitlab.com/toulousain79/mysb_dev/project_validation/project_validation:latest
+# #### Project check
+Project check:
+    image: registry.gitlab.com/toulousain79/mysb_dev/project_check/project_check:latest
     stage: check
     only:
       - web
@@ -16,3 +17,26 @@ Building Docker Images:
             for script in $(ls -A1 /builds/${CI_PROJECT_PATH}/ci/scripts/*.bsh); do
                 . ${script}
             done
+
+# #### BUILD
+Building Docker Images:
+    image: docker:dind
+    stage: build_images
+    when: manual
+    services:
+        - docker:dind
+    variables:
+        DOCKER_HOST: tcp://docker:2375
+        DOCKER_DRIVER: overlay2
+    before_script:
+        - apk add bash
+        - docker version
+        - echo $HUB_PASSWORD | docker login -u $HUB_USER --password-stdin
+        - echo $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin registry.gitlab.com
+    script:
+        - export ${CI_PROJECT_NAMESPACE}
+        - export ${CI_PROJECT_NAME}
+        - bash /builds/${CI_PROJECT_PATH}/docker/scripts/100-start_build.bsh
+    after_script:
+        - docker logout registry.gitlab.com
+        - docker logout

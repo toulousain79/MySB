@@ -22,33 +22,24 @@
 #
 ##################### FIRST LINE #####################################
 
-echo && echo -e "${CBLUE}*** Check GitLab CI Secret Variables ***${CEND}"
-
-# CI_PROJECT_PATH
-if [ -z "${CI_PROJECT_PATH}" ]; then
-	sValue="${CRED}Failed${CEND}"
-	nReturn=1
-else
-	sValue="${CGREEN}Passed${CEND}"
+#### Residual files
+type -P updatedb > /dev/null
+if [ ${?} -eq 0 ]; then
+	updatedb
+	for file in $(locate *.git* *.dpkg-old *.dpkg-new *.dpkg-dist *.dpkg-bak *.ucf-dist); do
+		rm -fv ${file}
+	done
 fi
-echo -e "${CYELLOW}Secret Variable \$CI_PROJECT_PATH:${CEND} ${sValue}"
 
-# HUB_USER
-if [ -z "${HUB_USER}" ]; then
-	sValue="${CRED}Failed${CEND}"
-	nReturn=1
-else
-	sValue="${CGREEN}Passed${CEND}"
-fi
-echo -e "${CYELLOW}Secret Variable \$HUB_USER:${CEND} ${sValue}"
-
-# HUB_PASSWORD
-if [ -z "${HUB_PASSWORD}" ]; then
-	sValue="${CRED}Failed${CEND}"
-	nReturn=1
-else
-	sValue="${CGREEN}Passed${CEND}"
-fi
-echo -e "${CYELLOW}Secret Variable \$HUB_PASSWORD:${CEND} ${sValue}"
-
-##################### LAST LINE ######################################
+#### Cleaning
+[[ ! -z "${PKG_TEMP}" ]] && apt-get remove --purge -y -q ${PKG_TEMP}
+apt-get remove --purge --auto-remove systemd --allow-remove-essential -y -q
+apt-get -y -q autoclean
+apt-get -y -q autoremove
+apt-get -y -q clean
+rm -rfv /var/lib/{cache,log}/*
+rm -rfv /var/lib/apt/lists/*
+rm -rfv /tmp/* /var/tmp/*
+rm -rfv /usr/share/doc/*
+rm -rfv /usr/share/man/*
+rm -fv /scripts/00-configure.bsh
