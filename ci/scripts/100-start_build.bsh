@@ -24,15 +24,15 @@
 # Use this script with a pipeline OR manualy.
 #
 #   1/  Auto generate images with a pipeline:
-#	   >   With a pipeline, you can edit secret 'IMG_TO_BUILD' variable to select images to build.
+#	   >   With a pipeline, you can edit 'IMG_TO_BUILD' secret variable to select images to build.
 #		   Leave blank this variable for auto detect images in ci/images/.
-#	   >   To exclude an image from auto listing, change folder name and add a _ (underscore) to the begining of name (ex: _webmin).
+#	   >   To exclude an image from auto listing, change folder name and add a _ (underscore) to the begining of name (ex: _php).
 #
 #   2/  Mmanualy generate images by command line:
 #	   >   Execute this script with the following parameters:
 #		   Params 1: Root dir of the project GitLab
 #		   Params 2: Images list with space separator.
-#		   Ex: bash 100-start_build.bsh /tmp/MySB "image1 image2"
+#		   Ex: bash 100-start_build.bsh /opt/MySB "image1 image2"
 ######################################################################
 
 #### VARs
@@ -43,8 +43,8 @@ CGREEN="\033[1;32m"
 CYELLOW="\033[1;33m"
 CBLUE="\033[1;34m"
 # GitLab
-[[ -z "${CI_PROJECT_NAMESPACE}" ]] && CI_PROJECT_NAMESPACE="${1}"
-[[ -z "${CI_PROJECT_NAME}" ]] && CI_PROJECT_NAME="${2}"
+[[ -z "${CI_PROJECT_NAMESPACE}" ]] && CI_PROJECT_NAMESPACE="toulousain79"
+[[ -z "${CI_PROJECT_NAME}" ]] && CI_PROJECT_NAME="MySB"
 [[ -z "${CI_COMMIT_REF_NAME}" ]] && CI_COMMIT_REF_NAME="v99.99"
 [[ -z "${CI_COMMIT_SHA}" ]] && CI_COMMIT_SHA="${CI_COMMIT_REF_NAME}"
 [[ -z "${CI_PROJECT_URL}" ]] && CI_PROJECT_URL="https://gitlab.com/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}"
@@ -85,15 +85,17 @@ for sImage in ${sImageList[@]}; do
 	[[ ! -d ${sGitLab_RootDir}/ci/images/${sImage}/ ]] && continue
 
 	#### TAGs GitLab registry
-	sTags="--tag ${sGitLab_Registry}/${sImage}/${sImage}:latest"
+	#sTags="--tag ${sGitLab_Registry}/${sImage}/${sImage}:latest"
+    sTags="--tag ${sImage}:latest"
 
-	#### TAGs Docker Hub registry (No Tags for bases images anc v99.99 branch)
+	#### TAGs Docker Hub registry (No Tags for bases images v99.99 branch)
 	if [[ ! ${sImage} = *"base"* ]] && [[ ! ${CI_COMMIT_REF_NAME} = "v99.99" ]]; then
-		sTags="${sTags} --tag ${CI_PROJECT_NAME}/${sImage}:${CI_COMMIT_REF_NAME} --tag ${CI_PROJECT_NAME}/${sImage}:latest"
+		#sTags="${sTags} --tag ${CI_PROJECT_NAME}/${sImage}:${CI_COMMIT_REF_NAME} --tag ${CI_PROJECT_NAME}/${sImage}:latest"
+        sTags="${sTags} --tag ${CI_PROJECT_NAME}/${sImage}:${CI_COMMIT_REF_NAME} --tag ${CI_PROJECT_NAME}/${sImage}:latest"
 	fi
 
 	#### Building
-	echo && echo -e "${CBLUE}*** Building${CEND} ${CYELLOW}$sFirstUpper${CEND} ${CBLUE}Docker image ***${CEND}"
+	echo && echo -e "${CBLUE}*** Building${CEND} ${CYELLOW}$sFirstUpper${CEND} ${CBLUE}Docker image ***${CEND}"    
 	docker build --compress --force-rm --rm \
 		--build-arg PROJECT_NAMESPACE=${CI_PROJECT_NAMESPACE} \
 		--build-arg PROJECT_NAME=${CI_PROJECT_NAME} \
