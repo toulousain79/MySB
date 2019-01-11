@@ -130,11 +130,28 @@ gfnChangeFQDN() {
 	#### OpenVPN
 	if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
 		log_daemon_msg "Reconfigure OpenVPN server (please wait)"
-		gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/OpenVPN" 'server' 'UPGRADE' 'FORCE'
+		cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='OpenVPN';"
+		# Backup
+		for sFile in $(echo /etc/openvpn/*${gsHostNameFqdn}*); do
+			[ -f "${sFile}" ] && mv "${sFile}" /etc/openvpn/backup/
+		done
+		# Restore
+		for sFile in $(echo /etc/openvpn/backup/*${sNewFQDN}*); do
+			[ -f "${sFile}" ] && mv "${sFile}" /etc/openvpn/
+		done
+		gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/OpenVPN" 'server' 'UPGRADE'
 		gfnStatusLSB
 
 		for seedUser in $gsUsersList; do
 			log_daemon_msg "Reconfigure OpenVPN client for user [$seedUser]"
+			# Backup
+			for sFile in $(echo /etc/openvpn/clients/*${gsHostNameFqdn}*); do
+				[ -f "${sFile}" ] && mv "${sFile}" /etc/openvpn/clients/backup/
+			done
+			# Restore
+			for sFile in $(echo /etc/openvpn/backup/*${sNewFQDN}*); do
+				[ -f "${sFile}" ] && mv "${sFile}" /etc/openvpn/clients/
+			done
 			gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/OpenVPN" 'client' "$seedUser" 'UPGRADE'
 			gfnStatusLSB
 		done
