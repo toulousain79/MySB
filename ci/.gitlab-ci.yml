@@ -3,25 +3,33 @@ stages:
     - check
     - build_images
 
-# #### Project check
-Project check:
+# #### TEMPLATES
+.tmpl_project_check: &tmpl_project_check
     image: ${CI_REGISTRY_IMAGE}/project_check/project_check:latest
-    stage: check
-    only:
-      refs:
-        - schedules
-        - merge_requests
-      variables:
-        - $CHECK == "True"
-    except:
-      variables:
-        - $BUILD == "True"
     script:
         # #### Check scripts
         - |
             for script in $(echo ${CI_PROJECT_DIR}/ci/scripts/*.bsh); do
                 . ${script}
             done
+
+# #### Project check (merge request)
+Project check:
+    stage: check
+    only:
+      refs:
+        - merge_requests
+    except:
+      - schedules
+    <<: *tmpl_project_check
+
+# #### Project check (scheduled)
+Project check:on-schedule:
+    stage: check
+    only:
+      refs:
+        - schedules
+    <<: *tmpl_project_check
 
 # #### BUILD
 Building Docker Images:on-schedule:
