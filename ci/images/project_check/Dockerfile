@@ -20,7 +20,7 @@
 #
 ######################################################################
 #### Arguments (outside of a build stage)
-ARG CI_PROJECT_PATH
+ARG REGISTRY_IMAGE
 
 ##### Base image
 FROM ${REGISTRY_IMAGE}/base-debian/base-debian:latest
