@@ -3,39 +3,24 @@ stages:
     - check
     - build_images
 
-# #### TEMPLATES
-.tmpl_project_check: &tmpl_project_check
-    image: ${CI_REGISTRY_IMAGE}/project_check/project_check:latest
-    script:
-        # #### Check scripts
-        - |
-            for script in $(echo ${CI_PROJECT_DIR}/ci/scripts/*.bsh); do
-                . ${script}
-            done
-
 # #### Project check (merge request)
 Project check:
+    image: ${CI_REGISTRY_IMAGE}/project_check/project_check:latest
     stage: check
     only:
       refs:
         - merge_requests
-    except:
-      - schedules
-    <<: *tmpl_project_check
-
-# #### Project check (scheduled)
-Project check:on-schedule:
-    stage: check
-    only:
-      refs:
         - schedules
       variables:
-        - $BUILD == "False"
         - $CHECK == "True"
-    <<: *tmpl_project_check
+    script:
+        - |
+            for script in $(echo ${CI_PROJECT_DIR}/ci/scripts/*.bsh); do
+                [ "${script}" != "100-start_build.bsh" -o "$script" != "999-docker_clean.bsh" ] && . ${script}
+            done
 
 # #### BUILD
-Building Docker Images:on-schedule:
+Building Docker Images:
     image: docker:dind
     stage: build_images
     only:
@@ -43,7 +28,6 @@ Building Docker Images:on-schedule:
         - schedules
       variables:
         - $BUILD == "True"
-        - $CHECK == "False"
     services:
         - docker:dind
     variables:
