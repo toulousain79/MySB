@@ -55,9 +55,7 @@ ENV PKG_BASE="php7.0-fpm dos2unix yamllint python3-pkg-resources pylint pylint3 
 COPY ./rootfs /tmp/rootfs
 
 #### Scripts
-RUN cp -rv /tmp/rootfs/* / \
-	&& chmod +x /tmp/rootfs/scripts/*.bsh \
-	&& chmod +x /usr/local/bin/*
+RUN cp -rv /tmp/rootfs/* /
 
 #### Install
 RUN apt-get update -o 'Acquire::Check-Valid-Until=false'
