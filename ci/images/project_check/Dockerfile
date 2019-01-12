@@ -23,7 +23,7 @@
 ARG CI_PROJECT_PATH
 
 ##### Base image
-FROM registry.gitlab.com/toulousain79/mysb/base-debian/base-debian:latest
+FROM ${REGISTRY_IMAGE}/base-debian/base-debian:latest
 
 #### Arguments (inside of a build stage)
 ARG PROJECT_NAMESPACE
