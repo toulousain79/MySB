@@ -20,8 +20,7 @@
 #
 ######################################################################
 #### Arguments (outside of a build stage)
-ARG PROJECT_NAMESPACE
-ARG PROJECT_NAME
+ARG CI_REGISTRY_IMAGE
 
 ##### Base image
 FROM ${CI_REGISTRY_IMAGE}/base-debian/base-debian:latest
