@@ -19,14 +19,12 @@
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
 ######################################################################
-# docker run -it --entrypoint bash --sysctl net.core.somaxconn=511 --sysctl vm.overcommit_memory=1 -e TZ=Europe/Paris registry.gitlab.com/toulousain79/mysb/php/php:latest
-##################### FIRST LINE #####################################
 #### Arguments (outside of a build stage)
 ARG PROJECT_NAMESPACE
 ARG PROJECT_NAME
 
 ##### Base image
-FROM registry.gitlab.com/${PROJECT_NAMESPACE}/${PROJECT_NAME}/base-debian/base-debian:latest
+FROM ${CI_REGISTRY_IMAGE}/base-debian/base-debian:latest
 
 #### Arguments (inside of a build stage)
 ARG PROJECT_NAMESPACE

@@ -42,15 +42,20 @@ CRED="\033[1;31m"
 CGREEN="\033[1;32m"
 CYELLOW="\033[1;33m"
 CBLUE="\033[1;34m"
-# GitLab
+# GitLab / Docker
 [[ -z "${CI_PROJECT_NAMESPACE}" ]] && CI_PROJECT_NAMESPACE="toulousain79"
 [[ -z "${CI_PROJECT_NAME}" ]] && CI_PROJECT_NAME="MySB"
-sProjectName="$(echo "${CI_PROJECT_NAME}" | tr '[:upper:]' '[:lower:]')"
+[[ -z "${CI_REGISTRY_IMAGE}" ]] && CI_REGISTRY_IMAGE="registry.gitlab.com/toulousain79/mysb"
 [[ -z "${CI_COMMIT_REF_NAME}" ]] && CI_COMMIT_REF_NAME="v99.99"
 [[ -z "${CI_COMMIT_SHA}" ]] && CI_COMMIT_SHA="${CI_COMMIT_REF_NAME}"
-[[ -z "${CI_PROJECT_URL}" ]] && CI_PROJECT_URL="https://gitlab.com/${CI_PROJECT_NAMESPACE}/${sProjectName}"
-[[ -d "/builds/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}" ]] && sGitLab_RootDir="/builds/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}" || sGitLab_RootDir="${1}"
-sGitLab_Registry="registry.gitlab.com/${CI_PROJECT_NAMESPACE}/${sProjectName}"
+[[ -z "${CI_COMMIT_SHA}" ]] && CI_COMMIT_SHA="${CI_COMMIT_REF_NAME}"
+[[ -z "${CI_PROJECT_URL}" ]] && CI_PROJECT_URL="https://gitlab.com/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}"
+[[ -z "${CI_PROJECT_DIR}" ]] && CI_PROJECT_DIR="${1}"
+[[ -d "${CI_PROJECT_DIR}" ]] && sGitLab_RootDir="${CI_PROJECT_DIR}" || sGitLab_RootDir="${1}"
+[[ -z "${CI_PROJECT_DIR}" ]] && return 1
+# Docker Hub
+sProjectName="$(echo "${CI_PROJECT_NAME}" | tr '[:upper:]' '[:lower:]')"
+
 # Images list
 sImageList=()
 if [ ! -z "$IMG_TO_BUILD" ] || [ ! -z "${2}" ]; then
@@ -62,19 +67,11 @@ if [ ! -z "$IMG_TO_BUILD" ] || [ ! -z "${2}" ]; then
 	done
 else
 	sImageList+=('base-debian' 'base-alpine')
-	for sImage in $(ls -l ${sGitLab_RootDir}/ci/images/ | egrep '^d' | awk '{print $9}' | grep -v 'base' | grep -v '^_' | grep -v 'STANDBY'); do
+	for sImage in $(ls -l ${CI_PROJECT_DIR}/ci/images/ | egrep '^d' | awk '{print $9}' | grep -v 'base' | grep -v '^_' | grep -v 'STANDBY'); do
 		sImageList+=("${sImage}")
 	done
 fi
 
-#### Check vars
-echo "CI_PROJECT_NAMESPACE: $CI_PROJECT_NAMESPACE"
-echo "CI_PROJECT_NAME: $CI_PROJECT_NAME"
-echo "sProjectName: $sProjectName"
-echo "CI_COMMIT_REF_NAME: $CI_COMMIT_REF_NAME"
-echo "CI_COMMIT_SHA: $CI_COMMIT_SHA"
-echo "CI_PROJECT_URL: $CI_PROJECT_URL"
-[[ -z "${sGitLab_RootDir}" ]] && return 1
 
 #### Execute all builds
 for sImage in ${sImageList[@]}; do
@@ -85,16 +82,15 @@ for sImage in ${sImageList[@]}; do
 	sArg=''
 
 	# Ignore if no directory image
-	[[ ! -d ${sGitLab_RootDir}/ci/images/${sImage}/ ]] && continue
+	[[ ! -d ${CI_PROJECT_DIR}/ci/images/${sImage}/ ]] && continue
 
 	#### TAGs GitLab registry
-	sTags="--tag ${sGitLab_Registry}/${sImage}/${sImage}:latest"
+	sTags="--tag ${CI_REGISTRY_IMAGE}/${sImage}/${sImage}:latest"
     #sTags="--tag ${sImage}:latest"
 
 	#### TAGs Docker Hub registry (No Tags for bases images v99.99 branch)
 	if [[ ! ${sImage} = *"base"* ]] && [[ ! ${CI_COMMIT_REF_NAME} = "v99.99" ]]; then
 		sTags="${sTags} --tag ${sProjectName}/${sImage}:${CI_COMMIT_REF_NAME} --tag ${sProjectName}/${sImage}:latest"
-        #sTags="${sTags} --tag ${sProjectName}/${sImage}:${CI_COMMIT_REF_NAME} --tag ${sProjectName}/${sImage}:latest"
 	fi
 
 	#### Building
@@ -108,14 +104,14 @@ for sImage in ${sImageList[@]}; do
 		--build-arg PROJECT_DESCRIPTION="MySB - $sFirstUpper Docker image" \
 		--build-arg PROJECT_URL=${CI_PROJECT_URL} \
 		${sTags} \
-		${sGitLab_RootDir}/ci/images/${sImage}/ && sResultMessage="${CGREEN}Succeeded${CEND}" || sResultMessage="${CRED}Failed${CEND}" nReturn=1
+		${CI_PROJECT_DIR}/ci/images/${sImage}/ && sResultMessage="${CGREEN}Succeeded${CEND}" || sResultMessage="${CRED}Failed${CEND}" nReturn=1
 	echo -e "${CYELLOW}Building $sFirstUpper image: ${CEND}$sResultMessage"
 	[[ ${nReturn} -ne 0 ]] && exit ${nReturn}
 
 	#### Push to GitLab Regsitry
 	if [ ${nReturn} -eq 0 ]; then
 		echo && echo -e "${CBLUE}*** Pushing${CEND} ${CYELLOW}$sFirstUpper latest${CEND} ${CBLUE}Docker image to GitLab Regsitry ***${CEND}"
-		docker push ${sGitLab_Registry}/${sImage}/${sImage}:latest && sResultMessage="${CGREEN}Succeeded${CEND}" || sResultMessage="${CRED}Failed${CEND}" nReturn=1
+		docker push ${CI_REGISTRY_IMAGE}/${sImage}/${sImage}:latest && sResultMessage="${CGREEN}Succeeded${CEND}" || sResultMessage="${CRED}Failed${CEND}" nReturn=1
 		echo -e "${CYELLOW}Pushing $sFirstUpper${CEND} ${CBLUE}latest${CEND} ${CYELLOW}image to GitLab registry: ${CEND}$sResultMessage"
 	fi
 
