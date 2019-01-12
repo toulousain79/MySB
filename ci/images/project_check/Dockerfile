@@ -20,10 +20,10 @@
 #
 ######################################################################
 #### Arguments (outside of a build stage)
-ARG CI_REGISTRY_IMAGE
+ARG CI_PROJECT_PATH
 
 ##### Base image
-FROM ${CI_REGISTRY_IMAGE}/base-debian/base-debian:latest
+FROM registry.gitlab.com/${CI_PROJECT_PATH}/base-debian/base-debian:latest
 
 #### Arguments (inside of a build stage)
 ARG PROJECT_NAMESPACE
