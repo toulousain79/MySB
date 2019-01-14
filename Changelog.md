@@ -1,5 +1,5 @@
-	Version v99.99
-		2018/09/07 (start at: 2018/09/07)
+	Version v5.4
+		2018/01/14 (start at: 2018/09/07)
 			- Tautulli latest (auto)
 			- PlexMedia latest (auto)
 			- Docker-Compose latest (auto)
