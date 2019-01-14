@@ -59,7 +59,7 @@ RUN cp -rv /tmp/rootfs/* /
 
 #### Install
 RUN apt-get update -o 'Acquire::Check-Valid-Until=false' \
-    && apt-get install -y --assume-yes -q -f -V -o Dpkg::Options::="--force-confold" --no-install-recommends ${PKG_BASE} ${PKG_TEMP}
+	&& apt-get install -y --assume-yes -q -f -V -o Dpkg::Options::="--force-confold" --no-install-recommends ${PKG_BASE} ${PKG_TEMP}
 
 #### Shellcheck
 RUN curl --retry 3 -k -L -S -o /tmp/shellcheck-stable.linux.x86_64.tar.xz https://storage.googleapis.com/shellcheck/shellcheck-stable.linux.x86_64.tar.xz \

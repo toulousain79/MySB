@@ -14,6 +14,8 @@
 			- Portal
 				* Medoo Framework v1.6.1
 			- ruTorrent, get all labels from ruTorrent GitHub
+			- Replace standards DNS from Google to Quad9
+			- Add continuous integration checks for GitLab
 
 	Version v5.3
 		2018/09/07 (start at: 2018/03/25)
