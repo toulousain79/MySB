@@ -19,7 +19,7 @@ A simple question, do you know who to connect to your server?
 
 ### Make a donation
 
-[![Faire un don](https://img.shields.io/badge/Donate-PayPal-green.svg?style=for-the-badge)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=26PKHX8PGHLWG)
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg?style=for-the-badge)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=W23FUB5NNXLR4)
 
 # Français
 
