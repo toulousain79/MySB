@@ -48,7 +48,7 @@ LABEL maintainer=${PROJECT_NAMESPACE} \
 	org.label-schema.changelog-url=${PROJECT_URL}'/blob/'${BUILD_VERSION}'/cd/docker/Changelog.md'
 
 #### Environment variables
-ENV PKG_BASE="php7.0-fpm dos2unix yamllint python3-pkg-resources pylint pylint3 xz-utils" \
+ENV PKG_BASE="php7.0-fpm dos2unix yamllint python3-pkg-resources pylint pylint3 xz-utils rsync" \
 	PKG_TEMP="curl openssl ca-certificates"
 
 #### Copy files
