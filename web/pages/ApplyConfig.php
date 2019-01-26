@@ -44,7 +44,7 @@ if ( IfApplyConfig() > 0 ) {
 	}
 
 	GenerateMessage('message_only', $type, $message, '');
-	header('Refresh: 4; URL='.$_SERVER['HTTP_REFERER'].'');
+	header('Refresh: 4; URL='.$_SESSION['referrer'].'');
 } else {
 	$type = 'information';
 	$message = ApplyConfig_NothingToApply;
