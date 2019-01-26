@@ -22,7 +22,16 @@
 //
 //#################### FIRST LINE #####################################
 
-# Sort array
+// Get the full URL of the current page
+function current_page_url() {
+    $page_url   = 'http';
+    if(isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on'){
+        $page_url .= 's';
+    }
+    return $page_url.'://'.$_SERVER['SERVER_NAME'].':'.$_SERVER['SERVER_PORT'].$_SERVER['REQUEST_URI'];
+}
+
+// Sort array
 function array_sort($array, $on, $order=SORT_ASC) {
 	$new_array = array();
 	$sortable_array = array();
@@ -789,8 +798,11 @@ function GenerateMessage($commands, $type, $message, $args) {
 					$value = $MySB_DB->id();
 
 					if ( $value >= 1 ) {
+						//Save current page as next page's referrer
+						$_SESSION['referrer'] = current_page_url();
 						// Create a lock file if needed
 						PortalLockFile($commands);
+
 						echo '<script type="text/javascript">ApplyConfig("ToUpdate");</script>';
 					}
 

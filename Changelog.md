@@ -13,6 +13,7 @@
 			- Webmin, restore install via sources list
 			- Portal
 				* Medoo Framework v1.6.1
+				* page referer bug _(patch)_
 			- ruTorrent, get all labels from ruTorrent GitHub
 			- Replace standards DNS from Google to Quad9
 			- Add continuous integration checks for GitLab
