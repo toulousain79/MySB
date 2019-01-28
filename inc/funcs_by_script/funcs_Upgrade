@@ -1,3 +1,4 @@
+#!/bin/bash
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -20,8 +21,9 @@
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
 ######################################################################
-([ -z "$vars" ] || [ "$vars" -ne 1 ]) && echo "Please load 'vars' file before..." && return
+{ [ -z "${vars:?}" ] || [ "$vars" -ne 1 ]; } && echo "Please load 'vars' file before..." && return
 funcs_Upgrade=1
+export funcs_Upgrade
 ##################### FIRST LINE #####################################
 
 #### Change FQDN of Seedbox
@@ -29,20 +31,20 @@ funcs_Upgrade=1
 # 1/ Manual with command line: gfnChangeFQDN "new_fqdn"
 # 2/ Auto during an upgrade
 gfnChangeFQDN() {
-	local sNewFQDN nCheckFqdnResult nNumLine bVerbose
+	local sNewFQDN nCheckFqdnResult
 
 	[ -z "$gsHostNameFqdn" ] && return
 
 	gfnListCountUsers 'normal'
-	[[ -z "$gsHostNameFqdn" ]] && gsHostNameFqdn="$($binMySQL "SELECT hostname FROM system WHERE id_system='1';")"
+	[[ -z "$gsHostNameFqdn" ]] && gsHostNameFqdn="$(${binMySQL:?} "SELECT hostname FROM system WHERE id_system='1';")"
 
 	if [[ -z "${1}" ]]; then
 		echo
-		echo -e "$Global_Questions_Message_Hostname_New"
-		gfnQuestionGetString NO "$Global_Questions_Hostname_New" bgChangeFQDN "$Global_NO"
-		bgChangeFQDN="`echo $bgChangeFQDN | tr '[:lower:]' '[:upper:]'`"
+		echo -e "${Global_Questions_Message_Hostname_New:?}"
+		gfnQuestionGetString NO "${Global_Questions_Hostname_New:?}" bgChangeFQDN "${Global_NO:?}"
+		bgChangeFQDN="$(echo "$bgChangeFQDN" | tr '[:lower:]' '[:upper:]')"
 
-		if [ "$bgChangeFQDN" != "$Global_YES" ]; then
+		if [ "$bgChangeFQDN" != "${Global_YES:?}" ]; then
 			return
 		fi
 	else
@@ -53,13 +55,13 @@ gfnChangeFQDN() {
 	[[ "$bgChangeFQDN" != "$Global_YES" ]] && return
 
 	echo
-	echo -e "$Global_Questions_Message_Hostname"
-	gfnQuestionGetString NO "$Global_Questions_Hostname" sNewFQDN "$gsHostNameFqdn"
-	while ([ -z "${sNewFQDN}" ] || [ "$(gfnCheckFQDN "$sNewFQDN")" -ne 0 ]); do
+	echo -e "${Global_Questions_Message_Hostname:?}"
+	gfnQuestionGetString NO "${Global_Questions_Hostname:?}" sNewFQDN "$gsHostNameFqdn"
+	while [ -z "${sNewFQDN}" ] || [ "$(gfnCheckFQDN "$sNewFQDN")" -ne 0 ]; do
 		nCheckFqdnResult="$(gfnCheckFQDN "${sNewFQDN}")"
 		case "${nCheckFqdnResult}" in
-			1)	echo -e "${Global_Questions_Message_Hostname_NoFqdn}";;
-			2)	echo -e "${Global_Questions_Message_Hostname_Fqdn_NotPublicIp}";;
+			1)	echo -e "${Global_Questions_Message_Hostname_NoFqdn:?}";;
+			2)	echo -e "${Global_Questions_Message_Hostname_Fqdn_NotPublicIp:?}";;
 		esac
 		gfnQuestionGetString NO "${Global_Questions_Hostname}" sNewFQDN "${sNewFQDN}"
 		if [ "${sNewFQDN}" == "$gsHostNameFqdn" ]; then
@@ -80,51 +82,52 @@ gfnChangeFQDN() {
 
 	#### /etc/hosts
 	log_daemon_msg "Update /etc/hosts"
-	[ -z $funcs_MySB_SecurityRules ] && . $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_SecurityRules
+	# shellcheck source=inc/funcs_by_script/funcs_MySB_SecurityRules
+	. "${MySB_InstallDir:?}"/inc/funcs_by_script/funcs_MySB_SecurityRules
 	gfnCreateHostsFile
 	gfnStatusLSB
 
 	#### SSH Key
 	# root
 	log_daemon_msg "SSH Key for user [root]"
-	[[ -f /root/.ssh/id_rsa ]] && mv /root/.ssh/id_rsa /root/.ssh/id_rsa_${gsHostNameFqdn}
-	[[ -f /root/.ssh/id_rsa.pub ]] && mv /root/.ssh/id_rsa.pub /root/.ssh/id_rsa.pub_${gsHostNameFqdn}
-	[[ ! -f /root/.ssh/id_rsa_${gsHostNameFqdn} ]] && mv /root/.ssh/id_rsa_${gsHostNameFqdn} /root/.ssh/id_rsa
-	[[ ! -f /root/.ssh/id_rsa.pub_${gsHostNameFqdn} ]] && mv /root/.ssh/id_rsa.pub_${gsHostNameFqdn} /root/.ssh/id_rsa.pub
+	[[ -f /root/.ssh/id_rsa ]] && mv /root/.ssh/id_rsa /root/.ssh/id_rsa_"${gsHostNameFqdn}"
+	[[ -f /root/.ssh/id_rsa.pub ]] && mv /root/.ssh/id_rsa.pub /root/.ssh/id_rsa.pub_"${gsHostNameFqdn}"
+	[[ ! -f /root/.ssh/id_rsa_"${gsHostNameFqdn}" ]] && mv /root/.ssh/id_rsa_"${gsHostNameFqdn}" /root/.ssh/id_rsa
+	[[ ! -f /root/.ssh/id_rsa.pub_"${gsHostNameFqdn}" ]] && mv /root/.ssh/id_rsa.pub_"${gsHostNameFqdn}" /root/.ssh/id_rsa.pub
 	[[ ! -f /root/.ssh/id_rsa ]] && ssh-keygen -q -t rsa -b 2048 -N "" -f /root/.ssh/id_rsa
 	gfnStatusLSB
 	# all normal users
 	for seedUser in $gsUsersList; do
 		log_daemon_msg "SSH Key for user [$seedUser]"
 		UserEmail=$(cmdMySQL 'MySB_db' "SELECT users_email FROM users WHERE users_ident = '$seedUser';")
-		[[ -f /home/$seedUser/.ssh/id_rsa ]] && mv /home/$seedUser/.ssh/id_rsa /home/$seedUser/.ssh/id_rsa_${gsHostNameFqdn}
-		[[ -f /home/$seedUser/.ssh/id_rsa.pub ]] && mv /home/$seedUser/.ssh/id_rsa.pub /home/$seedUser/.ssh/id_rsa.pub_${gsHostNameFqdn}
-		[[ ! -f /home/$seedUser/.ssh/id_rsa_${gsHostNameFqdn} ]] && mv /home/$seedUser/.ssh/id_rsa_${gsHostNameFqdn} /home/$seedUser/.ssh/id_rsa
-		[[ ! -f /home/$seedUser/.ssh/id_rsa.pub_${gsHostNameFqdn} ]] && mv /home/$seedUser/.ssh/id_rsa.pub_${gsHostNameFqdn} /home/$seedUser/.ssh/id_rsa.pub
-		[[ ! -f /home/$seedUser/.ssh/id_rsa ]] && ssh-keygen -q -t rsa -b 2048 -N "" -f /home/$seedUser/.ssh/id_rsa -C "$UserEmail"
-		chown root:$seedUser /home/$seedUser/.ssh/*
-		chmod 0660 /home/$seedUser/.ssh/*
-		[[ ! -f /home/$seedUser/.ssh/authorized_keys ]] && touch /home/$seedUser/.ssh/authorized_keys
-		chown $seedUser:$seedUser /home/$seedUser/.ssh/authorized_keys
-		chmod 0644 /home/$seedUser/.ssh/authorized_keys
+		[[ -f /home/"$seedUser"/.ssh/id_rsa ]] && mv /home/"$seedUser"/.ssh/id_rsa "/home/$seedUser/.ssh/id_rsa_${gsHostNameFqdn}"
+		[[ -f /home/"$seedUser"/.ssh/id_rsa.pub ]] && mv /home/"$seedUser"/.ssh/id_rsa.pub "/home/$seedUser/.ssh/id_rsa.pub_${gsHostNameFqdn}"
+		[[ ! -f /home/"$seedUser"/.ssh/id_rsa_"${gsHostNameFqdn}" ]] && mv "/home/$seedUser/.ssh/id_rsa_${gsHostNameFqdn}" /home/"$seedUser"/.ssh/id_rsa
+		[[ ! -f /home/"$seedUser"/.ssh/id_rsa.pub_"${gsHostNameFqdn}" ]] && mv "/home/$seedUser/.ssh/id_rsa.pub_${gsHostNameFqdn}" /home/"$seedUser"/.ssh/id_rsa.pub
+		[[ ! -f /home/"$seedUser"/.ssh/id_rsa ]] && ssh-keygen -q -t rsa -b 2048 -N "" -f /home/"$seedUser"/.ssh/id_rsa -C "$UserEmail"
+		chown root:"$seedUser" /home/"$seedUser"/.ssh/*
+		chmod 0660 /home/"$seedUser"/.ssh/*
+		[[ ! -f /home/"$seedUser"/.ssh/authorized_keys ]] && touch /home/"$seedUser"/.ssh/authorized_keys
+		chown "$seedUser":"$seedUser" /home/"$seedUser"/.ssh/authorized_keys
+		chmod 0644 /home/"$seedUser"/.ssh/authorized_keys
 		gfnStatusLSB
 	done
 
 	#### Certificates
 	log_daemon_msg "Create new self-signed certificate (please wait)"
-	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Certificates" 'CreateCACertificate' 'UPGRADE'
+	gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir:?}/install/Certificates" 'CreateCACertificate' 'UPGRADE'
 	gfnStatusLSB
 
 	#### Let's Encrypt
 	if [[ "${gbIsInstalled_LetsEncrypt}" == "YES" ]]; then
 		log_daemon_msg "Create new Let's Encrypt certificate (please wait)"
-		gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/LetsEncrypt" 'UPGRADE'
+		gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir:?}/install/LetsEncrypt" 'UPGRADE'
 		gfnStatusLSB
 	fi
 
 	#### NginX
 	log_daemon_msg "Reconfigure NginX (please wait)"
-	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/Nginx" 'UPGRADE'
+	gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir:?}/install/Nginx" 'UPGRADE'
 	gfnStatusLSB
 
 	#### OpenVPN
@@ -132,53 +135,54 @@ gfnChangeFQDN() {
 		log_daemon_msg "Reconfigure OpenVPN server (please wait)"
 		cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='OpenVPN';"
 		# Backup
-		for sFile in $(echo /etc/openvpn/*${gsHostNameFqdn}*); do
+		for sFile in $(echo /etc/openvpn/*"${gsHostNameFqdn}"*); do
 			[ -f "${sFile}" ] && mv "${sFile}" /etc/openvpn/backup/
 		done
 		# Restore
-		for sFile in $(echo /etc/openvpn/backup/*${sNewFQDN}*); do
+		for sFile in $(echo /etc/openvpn/backup/*"${sNewFQDN}"*); do
 			[ -f "${sFile}" ] && mv "${sFile}" /etc/openvpn/
 		done
-		gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/OpenVPN" 'server' 'UPGRADE'
+		gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir:?}/install/OpenVPN" 'server' 'UPGRADE'
 		gfnStatusLSB
 
 		for seedUser in $gsUsersList; do
 			log_daemon_msg "Reconfigure OpenVPN client for user [$seedUser]"
 			# Backup
-			for sFile in $(echo /etc/openvpn/clients/*${gsHostNameFqdn}*); do
+			for sFile in $(echo /etc/openvpn/clients/*"${gsHostNameFqdn}"*); do
 				[ -f "${sFile}" ] && mv "${sFile}" /etc/openvpn/clients/backup/
 			done
 			# Restore
-			for sFile in $(echo /etc/openvpn/backup/*${sNewFQDN}*); do
+			for sFile in $(echo /etc/openvpn/backup/*"${sNewFQDN}"*); do
 				[ -f "${sFile}" ] && mv "${sFile}" /etc/openvpn/clients/
 			done
-			gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/OpenVPN" 'client' "$seedUser" 'UPGRADE'
+			gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir:?}/install/OpenVPN" 'client' "$seedUser" 'UPGRADE'
 			gfnStatusLSB
 		done
 	fi
 
 	#### Seedbox-Manager
-	if [ "$gbIsInstalled_Manager" == "YES" ]; then
+	if [ "${gbIsInstalled_Manager:?}" == "YES" ]; then
 		log_daemon_msg "Reconfigure Seedbox-Manager"
 		gfnGetRepoValues 'ruTorrent Plugin Link Manager' &> /dev/null
 		gfnRepoManageByType
-		sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$sNewFQDN:$gsPort_MySB_HTTPS\/sm\//g;" $gsRepoDir/conf.php
+		sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$sNewFQDN:${gsPort_MySB_HTTPS:?}\/sm\//g;" "${gsRepoDir:?}"/conf.php
 		gfnStatusLSB
 	fi
 
 	#### Cakebox-Light
-	if [ "$gbIsInstalled_Cakebox" == "YES" ]; then
+	if [ "${gbIsInstalled_Cakebox:?}" == "YES" ]; then
 		log_daemon_msg "Reconfigure Cakebox-Light"
 		# ruTorrent Plugin Link Cakebox
 		gfnGetRepoValues 'ruTorrent Plugin Link Cakebox' &> /dev/null
 		gfnRepoManageByType
-		chown -R www-data:www-data $gsRepoDir
-		sed -i "s/'http:\/\/'.\$host;/'https:\/\/$sNewFQDN:$gsPort_MySB_HTTPS\/cb\/';/g;" $gsRepoDir/conf.php
-		sed -i "s/torrents/rtorrent/g;" $gsRepoDir/conf.php
+		chown -R www-data:www-data "${gsRepoDir:?}"
+		sed -i "s/'http:\/\/'.\$host;/'https:\/\/$sNewFQDN:$gsPort_MySB_HTTPS\/cb\/';/g;" "${gsRepoDir:?}"/conf.php
+		sed -i "s/torrents/rtorrent/g;" "${gsRepoDir:?}"/conf.php
 		# NginX (alias with proxy)
-		sCakeboxDirEscaped=`echo $gsCakeboxDir | sed s,/,\\\\\\\\\\/,g`
+		# shellcheck disable=SC2001
+		sCakeboxDirEscaped="$(echo "${gsCakeboxDir:?}" | sed s,/,\\\\\\\\\\/,g)"
 		[[ -h /etc/nginx/sites-enabled/cakebox ]] && rm -f /etc/nginx/sites-enabled/cakebox
-		install -g root -o root -m 0644 $MySB_InstallDir/templates/nginx/etc.nginx.site-enabled.cakebox.tmpl /etc/nginx/sites-available/cakebox
+		install -g root -o root -m 0644 "${MySB_InstallDir:?}"/templates/nginx/etc.nginx.site-enabled.cakebox.tmpl /etc/nginx/sites-available/cakebox
 		perl -pi -e "s/<server_name>/$sNewFQDN/g" /etc/nginx/sites-available/cakebox
 		perl -pi -e "s/<cakebox_rootdir>/$sCakeboxDirEscaped/g" /etc/nginx/sites-available/cakebox
 		[[ ! -h /etc/nginx/sites-enabled/cakebox ]] && ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox
@@ -187,7 +191,7 @@ gfnChangeFQDN() {
 
 	#### LoadAvg
 	log_daemon_msg "Reconfigure LoadAvg"
-	gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/LoadAvg" 'UPGRADE'
+	gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir:?}/install/LoadAvg" 'UPGRADE'
 	gfnStatusLSB
 
 	#### ruTorrent plugins
@@ -195,21 +199,21 @@ gfnChangeFQDN() {
 	# Plugin Fileshare
 	gfnGetRepoValues 'ruTorrent Plugin FileShare' &> /dev/null
 	gfnRepoManageByType
-	[[ -f $gsRepoDir/conf.php ]] && perl -pi -e "s/http:\/\/mydomain.com\/share.php/https:\/\/$sNewFQDN:$gsPort_MySB_HTTPS\/fileshare.php/g" $gsRepoDir/conf.php
+	[[ -f "${gsRepoDir:?}"/conf.php ]] && perl -pi -e "s/http:\/\/mydomain.com\/share.php/https:\/\/$sNewFQDN:$gsPort_MySB_HTTPS\/fileshare.php/g" "${gsRepoDir:?}"/conf.php
 	# Plugin Mediastream
 	gfnGetRepoValues 'ruTorrent Plugin MediaStream' &> /dev/null
 	gfnRepoManageByType
-	[[ -f $gsRepoDir/conf.php ]] && perl -pi -e "s/http:\/\/mydomain.com\/stream\/view.php/https:\/\/$sNewFQDN:$gsPort_MySB_HTTPS\/view/g" $gsRepoDir/conf.php
+	[[ -f "${gsRepoDir:?}"/conf.php ]] && perl -pi -e "s/http:\/\/mydomain.com\/stream\/view.php/https:\/\/$sNewFQDN:$gsPort_MySB_HTTPS\/view/g" "${gsRepoDir:?}"/conf.php
 	gfnStatusLSB
 
 	#### NextCloud
-	if [ -d $gsNextCloudDir ] && [ -f $gsNextCloudDir/config/config.php ]; then
+	if [ -d "${gsNextCloudDir:?}" ] && [ -f "${gsNextCloudDir:?}"/config/config.php ]; then
 		log_daemon_msg "Reconfigure NextCloud"
-		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --on" &> /dev/null
-		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set trusted_domains 1 --value=$sNewFQDN:$gsPort_MySB_HTTPS" &> /dev/null
-		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set lost_password_link --value=https://$sNewFQDN:$gsPort_MySB_HTTPS/?user/change-password.html" &> /dev/null
-		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set overwritehost --value=$sNewFQDN:$gsPort_MySB_HTTPS" &> /dev/null
-		su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --off" &> /dev/null
+		su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir:?}/occ maintenance:mode --on" &> /dev/null
+		su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir:?}/occ config:system:set trusted_domains 1 --value=$sNewFQDN:$gsPort_MySB_HTTPS" &> /dev/null
+		su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir:?}/occ config:system:set lost_password_link --value=https://$sNewFQDN:$gsPort_MySB_HTTPS/?user/change-password.html" &> /dev/null
+		su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir:?}/occ config:system:set overwritehost --value=$sNewFQDN:$gsPort_MySB_HTTPS" &> /dev/null
+		su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir:?}/occ maintenance:mode --off" &> /dev/null
 		gfnStatusLSB
 	fi
 
@@ -225,27 +229,27 @@ gfnUpgradeInProgress() {
 	case "${1}" in
 		"on")
 			# Nextcloud
-			[[ "${gbIsInstalled_NextCloud}" == "YES" ]] && su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --on" &> /dev/null
+			[[ "${gbIsInstalled_NextCloud:?}" == "YES" ]] && su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --on" &> /dev/null
 			# rTorrent sessions
-			sRtorrentSessions=$(ls -1r /etc/init.d/rtorrent-* | cut -d '/' -f 4)
+			sRtorrentSessions=$(find /etc/init.d/ -type f -name 'rtorrent-*' | cut -d '/' -f 4)
 			for sSession in ${sRtorrentSessions}; do
 				[[ -z "${sAllSessions}" ]] && sAllSessions="${sSession}" || sAllSessions="${sAllSessions} ${sSession}"
 			done
 			sServicesToStop="${sServicesToStop} ${sAllSessions}"
 			# Stopping some services like Plex or OpenVPN
-			[[ "${gbIsInstalled_OpenVPN}" == "YES" ]] && sServicesToStop="${sServicesToStop} openvpn"
-			[[ "${gbIsInstalled_PlexMedia}" == "YES" ]] && sServicesToStop="${sServicesToStop} plexmediaserver"
-			[[ "${gbIsInstalled_Tautulli}" == "YES" ]] && sServicesToStop="${sServicesToStop} tautulli"
+			[[ "${gbIsInstalled_OpenVPN:?}" == "YES" ]] && sServicesToStop="${sServicesToStop} openvpn"
+			[[ "${gbIsInstalled_PlexMedia:?}" == "YES" ]] && sServicesToStop="${sServicesToStop} plexmediaserver"
+			[[ "${gbIsInstalled_Tautulli:?}" == "YES" ]] && sServicesToStop="${sServicesToStop} tautulli"
 			# Stop services
 			gfnManageServices 'stop' "${sServicesToStop}"
 			# NginX
 			rm -f /etc/nginx/sites-enabled/WiP
 			rm -f /etc/nginx/sites-enabled/default
 			rm -f /etc/nginx/sites-enabled/cakebox
-			install -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.site-enabled.WiP.tmpl /etc/nginx/sites-available/WiP
-			perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /etc/nginx/sites-available/WiP
+			install -o root -g root -m 0600 "${MySB_InstallDir:?}"/templates/nginx/etc.nginx.site-enabled.WiP.tmpl /etc/nginx/sites-available/WiP
+			perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped:?}/g" /etc/nginx/sites-available/WiP
 			perl -pi -e "s/<gsPort_MySB_HTTPS>/${gsPort_MySB_HTTPS}/g" /etc/nginx/sites-available/WiP
-			perl -pi -e "s/<gsPort_System_HTTP>/${gsPort_System_HTTP}/g" /etc/nginx/sites-available/WiP
+			perl -pi -e "s/<gsPort_System_HTTP>/${gsPort_System_HTTP:?}/g" /etc/nginx/sites-available/WiP
 			perl -pi -e "s/<server_name>/${gsHostNameFqdn}/g" /etc/nginx/sites-available/WiP
 			[[ ! -h /etc/nginx/sites-enabled/WiP ]] && ln -s /etc/nginx/sites-available/WiP /etc/nginx/sites-enabled/WiP
 			# Start services
