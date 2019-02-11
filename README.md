@@ -3,10 +3,12 @@
 		height="200">
 </p>
 <p align="center">
-	 <a href="https://github.com/toulousain79/MySB/blob/v5.4/LICENCE.md">
-		<img src="https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square" /></a>
 	<img alt="v5.4 pipeline status" src="https://img.shields.io/gitlab/pipeline/toulousain79/MySB/v5.4.svg?label=v5.4%20pipeline%20status&style=plastic" />
-	<img alt="develop pipeline status" src=https://img.shields.io/gitlab/pipeline/toulousain79/MySB/develop.svg?label=develop%20pipeline%20status&style=plastic" />
+	<img alt="develop pipeline status" src="https://img.shields.io/gitlab/pipeline/toulousain79/MySB/develop.svg?label=develop%20pipeline%20status&style=plastic" />
+</p>
+<p align="center">
+	<a href="https://github.com/toulousain79/MySB/blob/v5.4/LICENCE.md">
+		<img src="https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square" /></a>
 </p>
 
 # English
