@@ -91,7 +91,8 @@ gfnPluginDiskspaceQuotaIncluded() {
 #### Quota
 gfnManageQuota() {
 	local sMessage sIfExist sUser sVerbose sUsersList
-	local nAvailableSpace nNextCloudSpace nSpaceByUser nTotalNormalManualUsers nTotalNormalAutoUsers nUserQuotaSystem nUserQuotaNextCloud nUserQuotaSystemBlocks
+	local nAvailableSpace nNextCloudSpace nSpaceByUser nTotalNormalManualUsers nTotalNormalAutoUsers nUserQuotaSystem nUserQuotaNextCloud
+	# local sDevice nBlocksSize nUserQuotaSystemBlocks
 	sMessage=""
 	sVerbose=""
 	nTotalNormalManualUsers=0
@@ -108,6 +109,10 @@ gfnManageQuota() {
 		fi
 	fi
 	nAvailableSpace="$(cmdMySQL 'MySB_db' "SELECT quota_default FROM system WHERE id_system='1';")"
+
+	# Get block size
+	# sDevice="$(df -T "/home/" | tail -n1 | awk '{print $1}')"
+	# nBlocksSize=$(blockdev --getbsz "${sDevice}")
 
 	# Update number of users
 	gfnListCountUsers 'active'
@@ -143,7 +148,8 @@ gfnManageQuota() {
 		fi
 
 		# Quota by user with manual quota
-		setquota -u -F $sVFSV "$sUser" $nUserQuotaSystemBlocks $nUserQuotaSystemBlocks 0 0 -a
+		# setquota -u -F $sVFSV "$sUser" $nUserQuotaSystemBlocks $nUserQuotaSystemBlocks 0 0 -a
+		setquota -u -F $sVFSV "$sUser" $nUserQuotaSystem $nUserQuotaSystem 0 0 -a
 
 		# NextCloud Quota
 		if [ "${gbIsInstalled_NextCloud:?}" == "YES" ]; then
@@ -170,7 +176,7 @@ gfnManageQuota() {
 	for sUser in ${sUsersList}; do
 		if [ -n "$sMessage" ]; then log_daemon_msg "$sMessage [$sUser]"; fi
 		nUserQuotaSystem=$nSpaceByUser
-		nUserQuotaSystemBlocks=$((nUserQuotaSystem * 2)) # Convert Kb to blocks
+		# nUserQuotaSystemBlocks=$((nUserQuotaSystem * 2)) # Convert Kb to blocks
 		nUserQuotaNextCloud=$nSpaceByUser
 		cmdMySQL 'MySB_db' "UPDATE users SET quota='$nUserQuotaSystem' WHERE users_ident='$sUser';" "$sVerbose"
 
@@ -181,7 +187,8 @@ gfnManageQuota() {
 		fi
 
 		# Quota by user with automatic quota
-		setquota -u -F $sVFSV "$sUser" $nUserQuotaSystemBlocks $nUserQuotaSystemBlocks 0 0 -a
+		# setquota -u -F $sVFSV "$sUser" $nUserQuotaSystemBlocks $nUserQuotaSystemBlocks 0 0 -a
+		setquota -u -F $sVFSV "$sUser" $nUserQuotaSystem $nUserQuotaSystem 0 0 -a
 
 		# NextCloud Quota
 		if [ "$gbIsInstalled_NextCloud" == "YES" ]; then
