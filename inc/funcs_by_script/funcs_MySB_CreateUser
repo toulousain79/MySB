@@ -71,8 +71,12 @@ gfnPluginDiskspaceQuotaIncluded() {
 
 	gfnListCountUsers 'normal'
 	for sUser in $gsUsersList; do
-		nTotal="$(cmdMySQL 'MySB_db' "SELECT quota FROM users WHERE users_ident='$sUser';")"
-		nFree="$(cmdMySQL 'MySB_db' "SELECT space_used FROM users WHERE users_ident='$sUser';")"
+		(grep -q '[[:space:]]/home[[:space:]]' /etc/fstab) && sPartition="/home" || sPartition="/"
+		nUserQuota=$(repquota -u ${sPartition} | grep ^$sUser)
+		nTotal=$(echo "$nUserQuota" | awk '{printf $4}')
+		nTotal=$(((nTotal * 1024) / 2))
+		nFree=$(echo "$nUserQuota" | awk '{printf ($4-$3)}')
+		nFree=$(((nFree * 1024) / 2))
 		{
 			echo "total:$nTotal"
 			echo "free:$nFree"
@@ -200,25 +204,6 @@ gfnManageQuota() {
 			fi
 		fi
 		if [ -n "$sMessage" ]; then gfnStatusLSB; fi
-
-		(grep -q '[[:space:]]/home[[:space:]]' /etc/fstab) && sPartition="/home" || sPartition="/"
-		nUserQuota=$(repquota -u ${sPartition} | grep ^$sUser)
-		nTotal=$(echo "$nUserQuota" | awk '{printf $4}')
-		nTotal=$(((nTotal * 1024) / 2))
-		nFree=$(echo "$nUserQuota" | awk '{printf ($4-$3)}')
-		nFree=$(((nFree * 1024) / 2))
-		{
-			echo "total:$nTotal"
-			echo "free:$nFree"
-		} >/home/"$sUser"/rtorrent/.session/quota.txt
-		if [ -f "$gsRutorrentDir/conf/users/$sUser/diskspace/conf.php" ]; then
-			nLess=$((((nTotal - 10) / 100) / 1024)) # must remain 10%
-			if [ -n "$nLess" ]; then
-				nNumLine=$(grep 'notifySpaceLimit' -n -m 1 "$gsRutorrentDir/conf/users/$sUser/diskspace/conf.php" | cut -d ':' -f 1)
-				sed -i '/notifySpaceLimit/d' "$gsRutorrentDir/conf/users/$sUser/diskspace/conf.php"
-				sed -i "${nNumLine}i\$notifySpaceLimit = $nLess;		// in Mb" "$gsRutorrentDir/conf/users/$sUser/diskspace/conf.php"
-			fi
-		fi
 	done
 
 	# ruTorrent Plugin Spacedisk quotas included
