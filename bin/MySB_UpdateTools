@@ -67,6 +67,14 @@ for seedUser in ${gsUsersList}; do
 	(! grep -q 'portchecker.co' "${gsRutorrentPluginsDir}"/check_port/action.php) && { cp -v "$MySB_InstallDir"/templates/rutorrent/plugins.check_port.action.php "${gsRutorrentPluginsDir}"/check_port/action.php; }
 	gfnManageServices restart "rtorrent-$seedUser"
 done
+## #54 Remove /home mounts for NFSv4
+for mount_dir in $(mount -l | grep '/export' | awk '{ print $3 }'); do
+	umount "${mount_dir}"
+done
+(grep -q '/export' /etc/fstab) && {
+	sed -i '/\/export/d' /etc/fstab
+	mount -a
+}
 
 # -----------------------------------------
 . $(dirname $0)/../inc/includes_after
