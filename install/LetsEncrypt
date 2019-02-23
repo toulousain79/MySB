@@ -68,7 +68,7 @@ fnRenewServersIps() {
 
 #### Function certificate end date next renewal
 fnNextRenewal() {
-    local dEndDate dRenewDay dRenewMonth sTarGz
+    local dEndDate sTarGz
 
     if [[ -f /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem ]]; then
         dEndDate=$(openssl x509 -in /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem -noout -dates | grep 'notAfter' | cut -d "=" -f 2)
@@ -84,7 +84,7 @@ fnNextRenewal() {
 
 #### Function for firewalling
 fnFirewalling() {
-    local sServerList sServer sIpList IPv4
+    local sServer
 
     case "$1" in
         'before')
@@ -141,22 +141,22 @@ fnUseOfCertificates() {
             gfnManageServices stop "tautulli"
             nNumLine=$(cat ${gsRepoDir}/config.ini | grep 'pms_name' -n -m 1 | cut -d ':' -f 1)
             sed -i '/pms_name/d' ${gsRepoDir}/config.ini
-            sed -i ""$nNumLine"i\pms_name = ${gsHostNameFqdn}" ${gsRepoDir}/config.ini
+            sed -i "${nNumLine}i\pms_name = ${gsHostNameFqdn}" ${gsRepoDir}/config.ini
             nNumLine=$(cat ${gsRepoDir}/config.ini | grep 'http_base_url' -n -m 1 | cut -d ':' -f 1)
             sed -i '/http_base_url/d' ${gsRepoDir}/config.ini
-            sed -i ""$nNumLine"i\http_base_url = https://${gsHostNameFqdn}:$gsPort_MySB_HTTPS" ${gsRepoDir}/config.ini
+            sed -i "${nNumLine}i\http_base_url = https://${gsHostNameFqdn}:$gsPort_MySB_HTTPS" ${gsRepoDir}/config.ini
             nNumLine=$(cat ${gsRepoDir}/config.ini | grep 'https_cert' -n -m 1 | cut -d ':' -f 1)
             sed -i '/https_cert/d' ${gsRepoDir}/config.ini
             sed -i '/https_key/d' ${gsRepoDir}/config.ini
             sed -i '/https_cert_chain/d' ${gsRepoDir}/config.ini
             if ([ -f /etc/letsencrypt/live/${sNewFQDN}/fullchain.pem ] && [ -f /etc/letsencrypt/live/${sNewFQDN}/privkey.pem ]); then
-                sed -i ""$nNumLine"i\https_cert = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" ${gsRepoDir}/config.ini
-                sed -i ""$nNumLine"i\https_key = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ${gsRepoDir}/config.ini
-                sed -i ""$nNumLine"i\https_cert_chain = /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" ${gsRepoDir}/config.ini
+                sed -i "${nNumLine}i\https_cert = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" ${gsRepoDir}/config.ini
+                sed -i "${nNumLine}i\https_key = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ${gsRepoDir}/config.ini
+                sed -i "${nNumLine}i\https_cert_chain = /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" ${gsRepoDir}/config.ini
             else
-                sed -i ""$nNumLine"i\https_cert = $MySB_InstallDir/ssl/mysb.cert" ${gsRepoDir}/config.ini
-                sed -i ""$nNumLine"i\https_key = $MySB_InstallDir/ssl/mysb.key" ${gsRepoDir}/config.ini
-                sed -i ""$nNumLine"i\https_cert_chain = " ${gsRepoDir}/config.ini
+                sed -i "${nNumLine}i\https_cert = $MySB_InstallDir/ssl/mysb.cert" ${gsRepoDir}/config.ini
+                sed -i "${nNumLine}i\https_key = $MySB_InstallDir/ssl/mysb.key" ${gsRepoDir}/config.ini
+                sed -i "${nNumLine}i\https_cert_chain = " ${gsRepoDir}/config.ini
             fi
             sServicesToRestart="${sServicesToRestart} tautulli"
         fi
@@ -205,7 +205,7 @@ if [[ -n ${sNewDomains}   ]]; then
 fi
 
 #### Renewal certificates
-if [[ "renew" =~ ^($*)$ ]] || [[ ${gsSwitch} == "UPGRADE"   ]]; then
+if [[ "renew" =~ ^($*)$ ]] || [[ ${gsSwitch} == "UPGRADE" ]]; then
     bContinue=0
 
     dEndDate=$(cmdMySQL 'MySB_db' "SELECT letsencrypt_date FROM system WHERE id_system='1';")
