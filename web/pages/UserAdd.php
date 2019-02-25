@@ -200,7 +200,7 @@ $Method = $system_datas["rt_method"];
 $PricePerUser = $system_datas["rt_price_per_users"];
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 $AllQuota = $MySB_DB->sum("users", "quota");
-$FreeSpace = GetSizeName(($system_datas["quota_default"] - $AllQuota).'KB');
+$FreeSpace = GetSizeName($AllQuota.'KB');
 $RealFreeSpace = GetSizeName(($system_datas["quota_default"] - $system_datas["total_space_used"]).'KB');
 
 Form($RealFreeSpace, $FreeSpace);
@@ -313,15 +313,22 @@ if ( !empty($sUsersList) ) {
 				<td>
 					<?php switch ($User["account_type"]) {
 						case 'normal':
-							$type = 'number';
 							$value = GetSizeName($User["quota"].'KB', false);
+							switch ($User["quota_type"]) {
+								case 'manual':
+									$type = 'type="number" min="0" step="1"';
+									break;
+								default:
+									$type = 'type="number" disabled';
+									break;
+							}
 							break;
 						default:
-							$type = 'hidden';
+							$type = 'type="hidden"';
 							$value = 0;
 							break;
 					} ?>
-					<input style="width:150px; text-align: right;" type="<?php echo $type; ?>" name="quota[]" value="<?php echo $value; ?>" />
+					<input style="width:150px; text-align: right;" <?php echo $type; ?> name="quota[]" value="<?php echo $value; ?>" />
 				</td>
 				<td style="text-align: right;">
 					<?php switch ($User["account_type"]) {
