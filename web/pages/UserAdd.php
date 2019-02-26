@@ -319,7 +319,7 @@ if ( !empty($sUsersList) ) {
 									$type = 'type="number" min="0" step="1"';
 									break;
 								default:
-									$type = 'type="number" disabled';
+									$type = 'type="number"';
 									break;
 							}
 							break;
