@@ -25,10 +25,10 @@
 ##################### FIRST LINE #####################################
 
 #### PlexMedia & Tautulli update
-if [[ "${gbIsInstalled_PlexMedia}" == "YES" ]]; then
-	log_daemon_msg "${UpdateTools_Plex}"
-	gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/PlexMedia" 'CRON'
-	gfnStatusLSB
+if [[ ${gbIsInstalled_PlexMedia} == "YES"   ]]; then
+    log_daemon_msg "${UpdateTools_Plex}"
+    gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/PlexMedia" 'CRON'
+    gfnStatusLSB
 fi
 
 #### Docker tools
@@ -55,25 +55,27 @@ fi
 ## Postfix Aliases
 gfnListCountUsers 'all'
 for seedUser in ${gsUsersList}; do
-	sUserMail="$(cmdMySQL 'MySB_db' "SELECT users_email FROM users_history WHERE users_ident='$seedUser';")"
-	(! grep -q "$seedUser" /etc/aliases) && {
-		echo "$seedUser: $sUserMail" >>/etc/aliases
-		newaliases
-	}
+    sUserMail="$(cmdMySQL 'MySB_db' "SELECT users_email FROM users_history WHERE users_ident='$seedUser';")"
+    (! grep -q "$seedUser" /etc/aliases) && {
+        echo "$seedUser: $sUserMail" >>/etc/aliases
+        newaliases
+    }
 done
 ## ruTorrent Plugin Check Port
 gfnListCountUsers 'normal'
 for seedUser in ${gsUsersList}; do
-	(! grep -q 'portchecker.co' "${gsRutorrentPluginsDir}"/check_port/action.php) && { cp -v "$MySB_InstallDir"/templates/rutorrent/plugins.check_port.action.php "${gsRutorrentPluginsDir}"/check_port/action.php; }
-	gfnManageServices restart "rtorrent-$seedUser"
+    if (! grep -q 'portchecker.co' "${gsRutorrentPluginsDir}"/check_port/action.php); then
+        cp -v "$MySB_InstallDir"/templates/rutorrent/plugins.check_port.action.php "${gsRutorrentPluginsDir}"/check_port/action.php
+        gfnManageServices restart "rtorrent-$seedUser"
+    fi
 done
 ## #54 Remove /home mounts for NFSv4
 for mount_dir in $(mount -l | grep '/export' | awk '{ print $3 }'); do
-	umount "${mount_dir}"
+    umount "${mount_dir}"
 done
 (grep -q '/export' /etc/fstab) && {
-	sed -i '/\/export/d' /etc/fstab
-	mount -a
+    sed -i '/\/export/d' /etc/fstab
+    mount -a
 }
 
 # -----------------------------------------
