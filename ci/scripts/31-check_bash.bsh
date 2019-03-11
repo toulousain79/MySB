@@ -23,62 +23,60 @@
 ##################### FIRST LINE #####################################
 
 if [ -z "$vars" ] || [ $vars -eq 0 ]; then
-	. $(dirname $0)/00-load_vars.bsh
+    . $(dirname $0)/00-load_vars.bsh
 fi
-if [[ ! -z ${1} ]]; then
-	rm -rf /tmp/shellcheck_scan
-	if [[ -d "${1}" ]]; then
-		cp -al ${1} /tmp/shellcheck_scan
-		sDirToScan="/tmp/shellcheck_scan"
-	else
-		echo -e "${CYELLOW}${1} not a valid directory:${CEND} ${CRED}Failed${CEND}"
-		exit
-	fi
+if [[ -n ${1}   ]]; then
+    rm -rf /tmp/shellcheck_scan
+    if [[ -d ${1} ]]; then
+        cp -al ${1} /tmp/shellcheck_scan
+        sDirToScan="/tmp/shellcheck_scan"
+    else
+        echo -e "${CYELLOW}${1} not a valid directory:${CEND} ${CRED}Failed${CEND}"
+        exit
+    fi
 else
-	if [[ -f /.dockerenv ]]; then
-		if [[ ! -z "${CI_PROJECT_PATH}" ]]; then
-			sDirToScan="/builds/${CI_PROJECT_PATH}"
-		else
-			echo -e "${CYELLOW}Secret Variable \$CI_PROJECT_PATH:${CEND} ${CRED}Failed${CEND}"
-			exit
-		fi
-	else
-		echo -e "${CYELLOW}You are not in 'project_validation' images:${CEND} ${CRED}Failed${CEND}"
-		exit
-	fi
+    if [[ -f /.dockerenv ]]; then
+        if [[ -n ${CI_PROJECT_PATH} ]]; then
+            sDirToScan="/builds/${CI_PROJECT_PATH}"
+        else
+            echo -e "${CYELLOW}Secret Variable \$CI_PROJECT_PATH:${CEND} ${CRED}Failed${CEND}"
+            exit
+        fi
+    else
+        echo -e "${CYELLOW}You are not in 'project_validation' images:${CEND} ${CRED}Failed${CEND}"
+        exit
+    fi
 fi
 
 sNoTemplates=$(find ${sDirToScan}/ -type f -not -path "*web*" -not -path "*templates*" -not -path "*.git*" -not -path "*db*" -not -path "*files*" -not -path "*templates*" -not -path "*sources*" -not -path "*temp*" -not -path "*logs*" -not -path "*ssl*" -not -path "*images*" \( ! -name "*.md" \) -print0 | sort -z | xargs -r0)
 sTemplates=$(find ${sDirToScan}/templates/ \( -name "*.init.d*" -or -name "*.sh.*" -or -name "*.bsh.*" \))
-sImages=$(find ${sDirToScan}/ci/images/*/rootfs/scripts \( -name "*.sh" -or -name "*.bsh" \))
-sFilesList="$sNoTemplates $sTemplates $sImages"
+sFilesList="$sNoTemplates $sTemplates"
 
 echo && echo -e "${CBLUE}*** Check Syntax with Shellcheck ***${CEND}"
 
 shellcheck -s bash -x -f tty -S error ${sFilesList}
 if [[ ${?} -ne 0 ]]; then
-	echo -e "${CYELLOW}Check Syntax with shellcheck:${CEND} ${CRED}Failed${CEND}"
-	nReturn=1
+    echo -e "${CYELLOW}Check Syntax with shellcheck:${CEND} ${CRED}Failed${CEND}"
+    nReturn=1
 else
-	echo -e "${CYELLOW}Check Syntax with shellcheck:${CEND} ${CGREEN}Passed${CEND}"
+    echo -e "${CYELLOW}Check Syntax with shellcheck:${CEND} ${CGREEN}Passed${CEND}"
 fi
-
 
 echo && echo -e "${CBLUE}*** Check BASH Syntax ***${CEND}"
 
 for file in ${sFilesList}; do
-	sed -i '/includes_before/d' ${file}
-	sed -i '/includes_after/d' ${file}
-	sed -i '/#!\/bin\/bash/d' ${file}
-	sed -i '1iset -n' ${file}
-	dos2unix ${file} &> /dev/null
-	bash ${file}
-	if [[ ${?} -ne 0 ]]; then
-		echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
-		nReturn=1
-	else
-		echo -e "${CYELLOW}${file}:${CEND} ${CGREEN}Passed${CEND}"
-	fi
+    sed -i '/includes_before/d' ${file}
+    sed -i '/includes_after/d' ${file}
+    sed -i '/#!\/bin\/bash/d' ${file}
+    sed -i '1iset -n' ${file}
+    dos2unix ${file} &>/dev/null
+    bash ${file}
+    if [[ ${?} -ne 0 ]]; then
+        echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
+        nReturn=1
+    else
+        echo -e "${CYELLOW}${file}:${CEND} ${CGREEN}Passed${CEND}"
+    fi
 done
 
 ##################### LAST LINE ######################################
