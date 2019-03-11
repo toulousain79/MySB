@@ -5,7 +5,7 @@ stages:
 
 # #### Project check (merge request)
 Project check:
-    image: ${CI_REGISTRY_IMAGE}/project_check/project_check:latest
+    image: registry.gitlab.com/toulousain79/mysb_images/project_check/project_check:v5.4
     stage: check
     only:
       refs:
@@ -19,28 +19,3 @@ Project check:
             for script in $(echo ${CI_PROJECT_DIR}/ci/scripts/[0-9][0-9]-*.bsh); do
                 . ${script}
             done
-
-# #### BUILD
-Building Docker Images:
-    image: docker:dind
-    stage: build_images
-    only:
-      refs:
-        - schedules
-      variables:
-        - $BUILD == "True"
-    services:
-        - docker:dind
-    variables:
-        DOCKER_HOST: tcp://docker:2375
-        DOCKER_DRIVER: overlay2
-    before_script:
-        - apk add bash
-        - docker version
-        - echo $HUB_PASSWORD | docker login -u $HUB_USER --password-stdin
-        - echo $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin registry.gitlab.com
-    script:
-        - bash ${CI_PROJECT_DIR}/ci/scripts/100-start_build.bsh
-    after_script:
-        - docker logout ${CI_REGISTRY}
-        - docker logout
