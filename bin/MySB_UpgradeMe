@@ -168,74 +168,82 @@ if [ $Continue -eq 0 ]; then
     echo
 
     # MySB
-    cd $MySB_InstallDir/
-
-    git fetch --all
-    if [ $? -gt 0 ]; then
+    cd "${MySB_InstallDir}"/ || exit
+    if (! git fetch --all); then
         Continue=6
-        Error="$UpgradeMe_Error_GitFetch"
+        Error="${UpgradeMe_Error_GitFetch[*]}"
     fi
-
     if [ $Continue -eq 0 ]; then
-        git stash
-        if [ $? -gt 0 ]; then
+        if (! git stash); then
             Continue=7
-            Error="$UpgradeMe_Error_GitPull"
+            Error="${UpgradeMe_Error_GitStash[*]}"
         fi
     fi
-
     if [ $Continue -eq 0 ]; then
-        git checkout -b $MySB_NewVersion origin/$MySB_NewVersion
-        if [ $? -gt 0 ]; then
-            Continue=8
-            UpgradeMe_Error_GitCheckout="$(echo $UpgradeMe_Error_GitCheckout | sed "s/#new_version#/$MySB_NewVersion/g;")"
+        for file in $(grep ' M ' <<<"$( git status -s)" | awk '{ print $2 }'); do
+            if (! git checkout -- "${file}"); then
+                Continue=8
+                Error="${UpgradeMe_Error_GitCheckoutRemove[*]} (${file})"
+            fi
+        done
+    fi
+    if [ $Continue -eq 0 ]; then
+        for file in $(grep ' M ' <<<"$( git status -s)" | awk '{ print $2 }'); do
+            if (! rm -v "${file}"); then
+                Continue=9
+                Error="${UpgradeMe_Error_Remove[*]} (${file})"
+            fi
+        done
+    fi
+    if [ $Continue -eq 0 ]; then
+        if (! git clean -f); then
+            Continue=10
+            Error="${UpgradeMe_Error_GitClean[*]}"
+        fi
+    fi
+    if [ $Continue -eq 0 ]; then
+        if (! git checkout -b "$MySB_NewVersion" origin/"$MySB_NewVersion"); then
+            Continue=11
+            UpgradeMe_Error_GitCheckout="${UpgradeMe_Error_GitCheckout[*]//#new_version#/$MySB_NewVersion}"
             Error="$UpgradeMe_Error_GitCheckout"
         fi
     fi
-
     if [ $Continue -eq 0 ]; then
-        git pull origin $MySB_NewVersion
-        if [ $? -gt 0 ]; then
-            Continue=9
-            Error="$UpgradeMe_Error_GitPull"
+        if (! git pull origin "$MySB_NewVersion"); then
+            Continue=12
+            Error="${UpgradeMe_Error_GitPull[*]}"
+            git stash pop
         else
             git stash clear
         fi
     fi
 
     # MySB_files
-    cd $MySB_Files/
+    cd "${MySB_Files}"/ || exit
     git reset --hard
     git clean -fd
-
-    git fetch --all
-    if [ $? -gt 0 ]; then
-        Continue=10
-        Error="$UpgradeMe_Error_GitFetch"
+    if (! git fetch --all); then
+        Continue=13
+        Error="${UpgradeMe_Error_GitFetch[*]}"
     fi
-
     if [ $Continue -eq 0 ]; then
-        git stash
-        if [ $? -gt 0 ]; then
-            Continue=11
-            Error="$UpgradeMe_Error_GitPull"
+        if (! git stash); then
+            Continue=14
+            Error="${UpgradeMe_Error_GitStash[*]}"
         fi
     fi
-
     if [ $Continue -eq 0 ]; then
-        git checkout -b $MySB_NewVersion origin/$MySB_NewVersion
-        if [ $? -gt 0 ]; then
-            Continue=12
-            UpgradeMe_Error_GitCheckout="$(echo $UpgradeMe_Error_GitCheckout | sed "s/#new_version#/$MySB_NewVersion/g;")"
+        if (! git checkout -b "$MySB_NewVersion" origin/"$MySB_NewVersion"); then
+            Continue=15
+            UpgradeMe_Error_GitCheckout="${UpgradeMe_Error_GitCheckout//#new_version#/$MySB_NewVersion}"
             Error="$UpgradeMe_Error_GitCheckout"
         fi
     fi
-
     if [ $Continue -eq 0 ]; then
-        git pull origin $MySB_NewVersion
-        if [ $? -gt 0 ]; then
-            Continue=13
-            Error="$UpgradeMe_Error_GitPull"
+        if (! git pull origin "$MySB_NewVersion"); then
+            Continue=16
+            Error="${UpgradeMe_Error_GitPull[*]}"
+            git stash pop
         else
             git stash clear
         fi
