@@ -68,17 +68,25 @@ fnRenewServersIps() {
 
 #### Function certificate end date next renewal
 fnNextRenewal() {
-    local dEndDate sTarGz
+    local dEndDate sTarGz sDomain aEndDate
 
-    if [[ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" ]]; then
-        dEndDate=$(openssl x509 -in /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem -noout -dates | grep 'notAfter' | cut -d "=" -f 2)
+    aEndDate=()
+    for domain in /etc/letsencrypt/live/*/cert.pem; do
+        sDomain="$(echo $domain | cut -d '/' -f 5)"
+        dEndDate=$(openssl x509 -in /etc/letsencrypt/live/${sDomain}/cert.pem -noout -dates | grep 'notAfter' | cut -d "=" -f 2)
         dEndDate=$(date -d "${dEndDate}" +%Y-%m-%d)
+        aEndDate+=("${dEndDate}")
+        unset sDomain
+    done
+    mapfile -t aEndDate < <(echo ${aEndDate[*]} | tr ' ' '\n' | sort | uniq)
+
+    if [ "${#aEndDate[@]}" -gt 0 ]; then
         # update DB
-        cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_date='${dEndDate}' WHERE id_system='1';" -v
+        cmdMySQL 'MySB_db' "UPDATE system SET letsencrypt_date='${#aEndDate[0]}' WHERE id_system='1';" -v
         # Backup certificates
-        sTarGz="${MySB_InstallDir}_backup/${gsHostNameFqdn}_${dEndDate}_letsencrypt.tar.gz"
-        mkdir -p ${MySB_InstallDir}_backup
-        [[ ! -f "${sTarGz}" ]] && tar zcvf "${sTarGz}" /etc/letsencrypt/
+        sTarGz="${MySB_InstallDir}_backup/letsencrypt_${dEndDate}.tar.gz"
+        mkdir -p "${MySB_InstallDir}_backup"
+        [[ ! -f ${sTarGz}   ]] && tar zcvf "${sTarGz}" /etc/letsencrypt/
     fi
 }
 
@@ -168,13 +176,13 @@ fnUseOfCertificates() {
 #### Check
 sNewDomains=""
 for sDomain in "${sDomainsList[@]}"; do
-    [[ -z "${sDomain}" ]] && continue
+    [[ -z ${sDomain}   ]] && continue
     [[ ! -f "/etc/letsencrypt/live/${sDomain}/fullchain.pem" ]] && sNewDomains="${sNewDomains} -d ${sDomain}"
 done
 sNewDomains=$(echo ${sNewDomains} | sed '/^ /d')
 
 #### Generate new certificates
-if [[ -n "${sNewDomains}" ]]; then
+if [[ -n ${sNewDomains}   ]]; then
     # Update certificates for python
     update-ca-certificates --fresh &>/dev/null
 
@@ -185,7 +193,7 @@ if [[ -n "${sNewDomains}" ]]; then
     fnFirewalling 'before'
 
     # Dev mode ?
-    [[ "${gbDevMode}" -eq 1 ]] && sCerbotParams="${sCerbotParams} --test-cert"
+    [[ ${gbDevMode} -eq 1   ]] && sCerbotParams="${sCerbotParams} --test-cert"
 
     cd ${MySB_Files}/ || exit
     chmod +x certbot-auto
@@ -205,25 +213,25 @@ if [[ -n "${sNewDomains}" ]]; then
 fi
 
 #### Renewal certificates
-if [[ "renew" =~ ^($*)$ ]] || [[ "${gsSwitch}" == "UPGRADE" ]]; then
+if [[ "renew" =~ ^($*)$ ]] || [[ ${gsSwitch} == "UPGRADE"   ]]; then
     bContinue=0
 
     dEndDate=$(cmdMySQL 'MySB_db' "SELECT letsencrypt_date FROM system WHERE id_system='1';")
-    if [[ "${dEndDate}" == "0000-00-00" ]]; then
+    if [[ ${dEndDate} == "0000-00-00"   ]]; then
         fnNextRenewal
         dEndDate=$(cmdMySQL 'MySB_db' "SELECT letsencrypt_date FROM system WHERE id_system='1';")
     fi
 
-    if [[ "${gsSwitch}" == "UPGRADE" ]]; then
+    if [[ ${gsSwitch} == "UPGRADE"   ]]; then
         bContinue=1
     else
-        [[ "${gbDevMode}" -eq 0 ]] && bContinue=1
+        [[ ${gbDevMode} -eq 0   ]] && bContinue=1
     fi
 
     # Debug
     echo "dEndDate: ${dEndDate}"
     echo "bContinue: ${bContinue}"
-    if [[ -n "${dEndDate}"  ]] && [[ "${bContinue}" -eq 1 ]]; then
+    if [[ -n ${dEndDate}    ]] && [[ ${bContinue} -eq 1   ]]; then
         dEndDate=$(date -d "${dEndDate}" +%Y%m%d)
         dNow=$(date +%Y%m%d)
         tDiff=$((($(date --date="${dEndDate}" +%s) - $(date --date="${dNow}" +%s)) / (60 * 60 * 24)))
@@ -264,7 +272,7 @@ fi
 [[ -d /opt/eff.org ]] && rm -rf /opt/eff.org
 
 #### Restart services
-[[ -n "${sServicesToRestart}" ]] && gfnManageServices start "${sServicesToRestart}"
+[[ -n ${sServicesToRestart}   ]] && gfnManageServices start "${sServicesToRestart}"
 
 # -----------------------------------------
 source "$(dirname "$0")"/../inc/includes_after
