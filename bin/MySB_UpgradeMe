@@ -107,6 +107,7 @@ if [ $Continue -eq 0 ]; then
     gfnUpgradeInProgress "on"
 
     #### Backup
+    clear
     echo -e "${CBLUE}${UpgradeMe_CreateBackup}$CEND"
     echo -e -n "${CRED}${Global_PleaseWait} $CEND"
     gfnCountDown 3
@@ -157,7 +158,7 @@ fi
 
 #### MySB GitHub merge
 if [ $Continue -eq 0 ]; then
-    echo
+    clear
     UpgradeMe_Merge="$(echo "$UpgradeMe_Merge" | sed "s/#current_version#/${gsCurrentVersion}/g;" | sed "s/#new_version#/${MySB_NewVersion}/g;")"
     echo -e "${CBLUE}$UpgradeMe_Merge$CEND"
     echo -e -n "${CRED}$Global_PleaseWait $CEND"
@@ -171,27 +172,31 @@ if [ $Continue -eq 0 ]; then
         Continue=5
         Error="${UpgradeMe_Error_GitFetch[*]}"
     fi
-
+    if [ $Continue -eq 0 ]; then
+        if (! git reset --hard origin/"${gsCurrentVersion}"); then
+            Continue=6
+            UpgradeMe_Error_GitReset="${UpgradeMe_Error_GitReset[*]//#new_version#/${gsCurrentVersion}}"
+            Error="${UpgradeMe_Error_GitReset}"
+        fi
+    fi
     if [ $Continue -eq 0 ]; then
         if (! git checkout -b "${MySB_NewVersion}" origin/"${MySB_NewVersion}"); then
-            Continue=6
+            Continue=7
             UpgradeMe_Error_GitCheckout="${UpgradeMe_Error_GitCheckout[*]//#new_version#/${MySB_NewVersion}}"
             Error="${UpgradeMe_Error_GitCheckout}"
         fi
     fi
-
     if [ $Continue -eq 0 ]; then
         if (! git pull origin "${MySB_NewVersion}"); then
-            Continue=7
+            Continue=8
             Error="${UpgradeMe_Error_GitPull[*]}"
         else
             git stash clear
         fi
     fi
-
     if [ $Continue -eq 0 ]; then
         if (! git reset --hard origin/"${MySB_NewVersion}"); then
-            Continue=8
+            Continue=9
             UpgradeMe_Error_GitReset="${UpgradeMe_Error_GitReset[*]//#new_version#/${MySB_NewVersion}}"
             Error="${UpgradeMe_Error_GitReset}"
         fi
@@ -201,30 +206,33 @@ if [ $Continue -eq 0 ]; then
     cd "${MySB_Files}"/ || exit
     git reset --hard
     git clean -fd
-
     if (! git fetch --all); then
-        Continue=9
+        Continue=10
         Error="${UpgradeMe_Error_GitFetch[*]}"
     fi
-
+    if [ $Continue -eq 0 ]; then
+        if (! git reset --hard origin/"${gsCurrentVersion}"); then
+            Continue=11
+            UpgradeMe_Error_GitReset="${UpgradeMe_Error_GitReset[*]//#new_version#/$gsCurrentVersion}"
+            Error="${UpgradeMe_Error_GitReset}"
+        fi
+    fi
     if [ $Continue -eq 0 ]; then
         if (! git checkout -b "${MySB_NewVersion}" origin/"${MySB_NewVersion}"); then
-            Continue=10
+            Continue=12
             UpgradeMe_Error_GitCheckout="${UpgradeMe_Error_GitCheckout//#new_version#/$MySB_NewVersion}"
             Error="$UpgradeMe_Error_GitCheckout"
         fi
     fi
-
     if [ $Continue -eq 0 ]; then
         if (! git pull origin "${MySB_NewVersion}"); then
-            Continue=11
+            Continue=13
             Error="${UpgradeMe_Error_GitPull[*]}"
         fi
     fi
-
     if [ $Continue -eq 0 ]; then
         if (! git reset --hard origin/"${MySB_NewVersion}"); then
-            Continue=12
+            Continue=14
             UpgradeMe_Error_GitReset="${UpgradeMe_Error_GitReset[*]//#new_version#/$MySB_NewVersion}"
             Error="${UpgradeMe_Error_GitReset}"
         fi
@@ -247,7 +255,7 @@ if [ $Continue -eq 0 ]; then
 
             screen -r MySB_Upgrade
         else
-            Continue=13
+            Continue=15
             Error="${UpgradeMe_Error_UpgradeSciptMissing} (${MySB_InstallDir}/upgrade/From_${gsCurrentVersion}-to-${MySB_NewVersion}.bsh)"
         fi
     fi
