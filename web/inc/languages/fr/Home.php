@@ -32,7 +32,7 @@ define('Home_MainUser', '
 		<li>Activation des listes noires pour rTorrent et/ou PeerGuardian <span class="Comments">(si install&eacute;)</span></li>
 		<li>Acc&egrave;s &agrave; <b>Tautulli</b> pour visualiser les statistiques de Plexmedia Server <span class="Comments">(si install&eacute;)</span></li>
 		<li>Acc&egrave;s &agrave; <b>Shell In a Box</b>, une console SSH via une page web</li>
-		<li><a href="?main-user/renting-infos.html">Gestion locative</a> <span class="Comments">(description, taxe et co&ucirc;t du serveur)</span>, et saisie des paiements de vos utilisateurs <span class="Comments">(Il est conseill&eacute; de param&eacute;trer AVANT d\'ajouter de nouveaux utilisateurs)</span></li>
+		<li>Gestion locative <span class="Comments">(description, taxe et co&ucirc;t du serveur)</span>, et saisie des paiements de vos utilisateurs <span class="Comments">(Il est conseill&eacute; de param&eacute;trer AVANT d\'ajouter de nouveaux utilisateurs)</span></li>
 		<li>Gestion SMTP</li>
 		<li>Gestion des utilisateurs</li>
 		<li>Visualisation des logs</li>
