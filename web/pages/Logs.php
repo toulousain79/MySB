@@ -51,7 +51,7 @@ $path = "./logs/";
 	function printFile($file, $path) {
 		$SudDirectory = preg_replace('/.\/logs\//', '', "$path");
 		$SudDirectory = preg_replace('/\//', '', "$SudDirectory");
-		echo "<li><a href=\"/?main-user/logs.html?dir=".$SudDirectory."&file=".$file."\">$file</a></li>";
+		echo "<li><a href=\"/?admin/logs.html?dir=".$SudDirectory."&file=".$file."\">$file</a></li>";
 	}
 
 	function printSubDir($dir, $path) {
