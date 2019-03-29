@@ -38,7 +38,7 @@ $MySB_Version = GetVersion();
 	<!-- Template CSS -->
 	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/screen.css" />
 	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/mysb.css" />
-<?php if ( strstr($_SERVER['REQUEST_URI'], '/?main-user/logs.html') ) { ?>
+<?php if ( strstr($_SERVER['REQUEST_URI'], '/?admin/logs.html') ) { ?>
 	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/ccze.css" />
 <?php } ?>
 	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/jQ-menu.css" />
@@ -166,7 +166,7 @@ $MySB_Version = GetVersion();
 		$('.top').click(function() {$('html, body').animate({scrollTop:0}, 'fast'); return false;});
 		});
 	</script>
-<?php if ( strstr($_SERVER['REQUEST_URI'], '/?main-user/logs.html') ) { ?>
+<?php if ( strstr($_SERVER['REQUEST_URI'], '/?admin/logs.html') ) { ?>
 	<!-- jQuery Color Plugin -->
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.color.js"></script>
 	<!-- Import The jQuery Script -->
