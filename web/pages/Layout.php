@@ -166,12 +166,24 @@ $MySB_Version = GetVersion();
 		$('.top').click(function() {$('html, body').animate({scrollTop:0}, 'fast'); return false;});
 		});
 	</script>
-<?php if ( strstr($_SERVER['REQUEST_URI'], '/?admin/logs.html') ) { ?>
-	<!-- jQuery Color Plugin -->
-	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.color.js"></script>
-	<!-- Import The jQuery Script -->
-	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jMenu.js"></script>
-<?php } ?>
+<?php
+	switch ($_SERVER['REQUEST_URI']) {
+		case '/?admin/logs.html*':
+			// jQuery Color Plugin
+			echo '	<script type="text/javascript" src="'. THEMES_PATH . 'MySB/js/jquery.color.js"></script>';
+			// Import The jQuery Script
+			echo '	<script type="text/javascript" src="'. THEMES_PATH . 'MySB/js/jMenu.js"></script>';
+			break;
+		case '/?blocklists/usual-blocklists.html':
+		case '/?user/synchronization.html':
+		case '/?user/manage-addresses.html':
+		case '/?renting/renting-options.html':
+		case '/?renting/renting-payments.html':
+		case '/?trackers/add-new-trackers.html':
+			echo '	<script type="text/javascript" src="'. THEMES_PATH . 'MySB/js/jquery-dynamically-adding-form-elements.js"></script>';
+			break;
+	}
+?>
 </body>
 
 </html>
