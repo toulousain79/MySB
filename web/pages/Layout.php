@@ -54,6 +54,19 @@ $MySB_Version = GetVersion();
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.create_message.js"></script>
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/waiting.js"></script>
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/mysb.js"></script>
+<?php
+	switch ($_SERVER['REQUEST_URI']) {
+		case '/?admin/smtp.html':
+			echo '	<script type="text/javascript" src="'. THEMES_PATH . 'MySB/js/smtp.js"></script>';
+			break;
+		case '/?admin/logs.html':
+			// jQuery Color Plugin
+			echo '	<script type="text/javascript" src="'. THEMES_PATH . 'MySB/js/jquery.color.js"></script>';
+			// Import The jQuery Script
+			echo '	<script type="text/javascript" src="'. THEMES_PATH . 'MySB/js/jMenu.js"></script>';
+			break;
+	}
+?>
 </head>
 
 <body>
