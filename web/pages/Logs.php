@@ -69,11 +69,11 @@ if ( isset($_GET['dir']) && isset($_GET['file']) ) {
 	include_once('./logs/'.$_GET['dir'].'/'.$_GET['file']);
 	echo $contenu;
 	echo '</div>';
-}
 
-// jQuery Color Plugin
-echo '	<script type="text/javascript" src="'. THEMES_PATH . 'MySB/js/jquery.color.js"></script>';
-// Import The jQuery Script
-echo '	<script type="text/javascript" src="'. THEMES_PATH . 'MySB/js/jMenu.js"></script>';
+	// jQuery Color Plugin
+	echo '	<script type="text/javascript" src="'. THEMES_PATH . 'MySB/js/jquery.color.js"></script>';
+	// Import The jQuery Script
+	echo '	<script type="text/javascript" src="'. THEMES_PATH . 'MySB/js/jMenu.js"></script>';
+}
 
 //#################### LAST LINE ######################################
