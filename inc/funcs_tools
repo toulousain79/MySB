@@ -27,701 +27,702 @@ funcs_tools=1
 
 #### Get filename to download from URI
 gfnGetUriFilename() {
-	local sHeader sFilename
-	[[ -z "$1" ]] && return 1
+    local sHeader sFilename
+    [[ -z $1 ]] && return 1
 
-	sHeader="$(curl -sI "$1" | tr -d '\r')"
+    sHeader="$(curl -sI "$1" | tr -d '\r')"
 
-	sFilename="$(echo "$sHeader" | grep -o -E 'filename=.*$')"
-	if [[ -n "$sFilename" ]]; then
-		echo "${sFilename#filename=}"
-		return
-	fi
+    sFilename="$(echo "$sHeader" | grep -o -E 'filename=.*$')"
+    if [[ -n $sFilename ]]; then
+        echo "${sFilename#filename=}"
+        return
+    fi
 
-	sFilename="$(echo "$sHeader" | grep -o -E 'location:.*$')"
-	if [[ -n "$sFilename" ]]; then
-		basename "${sFilename#location\:}"
-		return
-	fi
+    sFilename="$(echo "$sHeader" | grep -o -E 'location:.*$')"
+    if [[ -n $sFilename ]]; then
+        basename "${sFilename#location\:}"
+        return
+    fi
 
-	return 1
+    return 1
 }
 
 #### Quota, space available
 gfnQuotaSpaceAvailable() {
-	local nFreeSpaceToKeep nFreeSpace
+    local nFreeSpaceToKeep nFreeSpace
 
-	nFreeSpaceToKeep="$(echo "4" | awk '{ kb = $1 * 1024 * 1024 ; print kb }')" # Keep a minimum of 4Go of free space (Kb)
-	nFreeSpace="$(df --sync /home/ | awk '{ print $2 }' | tail -n 1)"           # (Kb)
-	nFreeSpace=$(($nFreeSpace - $nFreeSpaceToKeep))                             # (Kb)
+    nFreeSpaceToKeep="$(echo "4" | awk '{ kb = $1 * 1024 * 1024 ; print kb }')" # Keep a minimum of 4Go of free space (Kb)
+    nFreeSpace="$(df --sync /home/ | awk '{ print $2 }' | tail -n 1)"        # (Kb)
+    nFreeSpace=$((nFreeSpace - nFreeSpaceToKeep))                            # (Kb)
 
-	echo $nFreeSpace
+    echo $nFreeSpace
 }
 
 #### Quota, space used for each users
 gfnQuotaSpaceUsed() {
-	local sUser
-	local nUsersSpaceUsed nHomeSpace nNextCloudSpace nTotalSpaceUsed
-	nTotalSpaceUsed=0
+    local sUser
+    local nUsersSpaceUsed nHomeSpace nNextCloudSpace nTotalSpaceUsed
+    nTotalSpaceUsed=0
 
-	gfnListCountUsers 'normal'
-	for sUser in $gsUsersList; do
-		nUsersSpaceUsed=0
-		if [ -d /home/$sUser/ ]; then
-			nHomeSpace="$(du -s /home/$sUser/ | awk '{ print $1 }')" # (Kb)
-			nUsersSpaceUsed=$(($nUsersSpaceUsed + $nHomeSpace))
-		fi
-		if [ -d /home/nextcloud/$sUser/ ]; then
-			nNextCloudSpace="$(du -s /home/nextcloud/$sUser/ | awk '{ print $1 }')" # (Kb)
-			nUsersSpaceUsed=$(($nUsersSpaceUsed + $nNextCloudSpace))
-		fi
+    gfnListCountUsers 'normal'
+    for sUser in $gsUsersList; do
+        nUsersSpaceUsed=0
+        if [ -d /home/$sUser/ ]; then
+            nHomeSpace="$(du -s /home/$sUser/ | awk '{ print $1 }')" # (Kb)
+            nUsersSpaceUsed=$((nUsersSpaceUsed + nHomeSpace))
+        fi
+        if [ -d /home/nextcloud/$sUser/ ]; then
+            nNextCloudSpace="$(du -s /home/nextcloud/$sUser/ | awk '{ print $1 }')" # (Kb)
+            nUsersSpaceUsed=$((nUsersSpaceUsed + nNextCloudSpace))
+        fi
 
-		if [ $nTotalSpaceUsed -eq 0 ]; then
-			nTotalSpaceUsed=$nUsersSpaceUsed
-		else
-			nTotalSpaceUsed=$(($nTotalSpaceUsed + $nUsersSpaceUsed))
-		fi
-		cmdMySQL 'MySB_db' "UPDATE users SET space_used='$nUsersSpaceUsed' WHERE users_ident='$sUser';" $sVerbose
-	done
-	cmdMySQL 'MySB_db' "UPDATE system SET total_space_used='$nTotalSpaceUsed' WHERE id_system='1';" $sVerbose
+        if [ $nTotalSpaceUsed -eq 0 ]; then
+            nTotalSpaceUsed=$nUsersSpaceUsed
+        else
+            nTotalSpaceUsed=$((nTotalSpaceUsed + nUsersSpaceUsed))
+        fi
+        cmdMySQL 'MySB_db' "UPDATE users SET space_used='$nUsersSpaceUsed' WHERE users_ident='$sUser';" $sVerbose
+    done
+    cmdMySQL 'MySB_db' "UPDATE system SET total_space_used='$nTotalSpaceUsed' WHERE id_system='1';" $sVerbose
 }
 
 #### Statistics
 gfnStatistics() {
-	# No credentials are retained !
-	# The server IP is only used to know the country of the SeedBox.
-	# The IP address is not keeped on destination.
-	# No log is retained via the 'CustomLog /dev/null Combined' parameter.
-	local sMachineId sStatsAllowed sResult sCountry
+    # No credentials are retained !
+    # The server IP is only used to know the country of the SeedBox.
+    # The IP address is not keeped on destination.
+    # No log is retained via the 'CustomLog /dev/null Combined' parameter.
+    local sMachineId sStatsAllowed sResult sCountry
 
-	if [ -f /etc/machine-id ]; then
-		if [ "$(gfnCheckCommand 1 geoiplookup)" == "YES" ] && [ ! -z "$gsSrvIpAddressExt" ]; then
-			sCountry="$(geoiplookup $gsSrvIpAddressExt | awk '{ print $5 }')"
-			[ -z "$sCountry" ] && sCountry="unknown"
-		else
-			sCountry="unknown"
-		fi
+    if [ -f /etc/machine-id ]; then
+        if [ "$(gfnCheckCommand 1 geoiplookup)" == "YES" ] && [ ! -z "$gsSrvIpAddressExt" ]; then
+            sCountry="$(geoiplookup $gsSrvIpAddressExt | awk '{ print $5 }')"
+            [ -z "$sCountry" ] && sCountry="unknown"
+        else
+            sCountry="unknown"
+        fi
 
-		sMachineId="$(cat /etc/machine-id | sha256sum | awk '{ print $1 }')"
-		[ -f $MySB_InstallDir/statistics ] && sStatsAllowed="$(cat $MySB_InstallDir/statistics)" || sStatsAllowed=""
-		if [ ! -z "$sMachineId" ] && [ "$sStatsAllowed" != "no_stats" ]; then
-			[ -z "$sCountry" ] && sCountry="unknown"
-			sResult="$(curl --silent --retry 1 -A 'MySB' --data "version=$gsCurrentVersion&country=$sCountry&machine_id=$sMachineId" https://mysb.ddns.net/statistics/)"
-			[ ! -z "$(echo $sResult | grep 'Statistics updated at')" ] && echo "$sResult" >$MySB_InstallDir/statistics
-		fi
-	fi
+        sMachineId="$(cat /etc/machine-id | sha256sum | awk '{ print $1 }')"
+        [ -f $MySB_InstallDir/statistics ] && sStatsAllowed="$(cat $MySB_InstallDir/statistics)" || sStatsAllowed=""
+        if [ ! -z "$sMachineId" ] && [ "$sStatsAllowed" != "no_stats" ]; then
+            [ -z "$sCountry" ] && sCountry="unknown"
+            sResult="$(curl --silent --retry 1 -A 'MySB' --data "version=$gsCurrentVersion&country=$sCountry&machine_id=$sMachineId" https://mysb.ddns.net/statistics/)"
+            [ ! -z "$(echo $sResult | grep 'Statistics updated at')" ] && echo "$sResult" >$MySB_InstallDir/statistics
+        fi
+    fi
 }
 
 #### Count down
 gfnCountDown() {
-	for ((i = $1; i >= 0; i -= 1)); do
-		echo -n " $i"
-		sleep 1
-	done
-	echo
+    for ((i = $1; i >= 0; i -= 1)); do
+        echo -n " $i"
+        sleep 1
+    done
+    echo
 }
 
 #### Count & Create user listing
 gfnListCountUsers() {
-	local sWhere
+    local sWhere
 
-	case "$1" in
-	'all') sWhere="" ;;
-	'normal') sWhere="WHERE account_type='normal'" ;;
-	'plex') sWhere="WHERE account_type='plex'" ;;
-	'active') sWhere="WHERE is_active='1'" ;;
-	esac
-	gsUsersList="$(cmdMySQL 'MySB_db' "SELECT users_ident FROM users $sWhere;")"
-	gnTotalUsers="$(echo $gsUsersList | wc -w)"
+    case "$1" in
+        'all') sWhere="" ;;
+        'normal') sWhere="WHERE account_type='normal'" ;;
+        'plex') sWhere="WHERE account_type='plex'" ;;
+        'active') sWhere="WHERE is_active='1'" ;;
+    esac
+    gsUsersList="$(cmdMySQL 'MySB_db' "SELECT users_ident FROM users $sWhere;")"
+    gnTotalUsers="$(echo $gsUsersList | wc -w)"
 }
 
 #### Check if service is started
 gfnGetPid() {
-	local sPid=""
+    local sPid=""
 
-	case "$1" in
-	"$binPhpService") [ -f /run/php/php7.0-fpm.pid ] && sPid="$(cat /run/php/php7.0-fpm.pid)" ;;
-	"fail2ban") [ -f /var/run/fail2ban/fail2ban.pid ] && sPid="$(cat /var/run/fail2ban/fail2ban.pid)" ;;
-	"webmin") [ -f /var/webmin/miniserv.pid ] && sPid="$(cat /var/webmin/miniserv.pid)" ;;
-	"tautulli") [ -f /var/run/tautulli/tautulli.pid ] && sPid="$(cat /var/run/tautulli/tautulli.pid)" ;;
-	rtorrent-*) [ -f /var/run/$1.pid ] && sPid="$(cat /var/run/$1.pid)" ;;
-	"ssh") sPid="$(pidof sshd)" ;;
-	"pglcmd") sPid="$(pidof pgld)" ;;
-	"bind9") sPid="$(pidof named)" ;;
-	"mysql") sPid="$(pidof mysqld)" ;;
-	"postfix") sPid="$(pidof master)" ;;
-	*) sPid="$(pidof $1)" ;;
-	esac
+    case "$1" in
+        "$binPhpService") [ -f /run/php/php7.0-fpm.pid ] && sPid="$(cat /run/php/php7.0-fpm.pid)" ;;
+        "fail2ban") [ -f /var/run/fail2ban/fail2ban.pid ] && sPid="$(cat /var/run/fail2ban/fail2ban.pid)" ;;
+        "webmin") [ -f /var/webmin/miniserv.pid ] && sPid="$(cat /var/webmin/miniserv.pid)" ;;
+        "tautulli") [ -f /var/run/tautulli/tautulli.pid ] && sPid="$(cat /var/run/tautulli/tautulli.pid)" ;;
+        rtorrent-*) [ -f /var/run/$1.pid ] && sPid="$(cat /var/run/$1.pid)" ;;
+        "ssh") sPid="$(pidof sshd)" ;;
+        "pglcmd") sPid="$(pidof pgld)" ;;
+        "bind9") sPid="$(pidof named)" ;;
+        "mysql") sPid="$(pidof mysqld)" ;;
+        "postfix") sPid="$(pidof master)" ;;
+        *) sPid="$(pidof $1)" ;;
+    esac
 
-	if [ ! -z "$sPid" ]; then
-		return 0
-	else
-		return 1
-	fi
+    if [ ! -z "$sPid" ]; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 #### Check status for screen
 gfnStatusSTD() {
-	if [ $? -gt 0 ]; then
-		echo -e "$Global_Failed"
-		echo ""
-		echo -e "$Global_Error_StatusSTD"
-		gfnEndingScript 1
-	else
-		echo -e "$Global_Done"
-	fi
+    if [ $? -gt 0 ]; then
+        echo -e "$Global_Failed"
+        echo ""
+        echo -e "$Global_Error_StatusSTD"
+        gfnEndingScript 1
+    else
+        echo -e "$Global_Done"
+    fi
 }
 
 #### Check status for LSB
 gfnStatusLSB() {
-	if [ $? -gt 0 ]; then
-		if [ ! -z "$1" ]; then
-			if [ $1 -gt 0 ]; then
-				log_end_msg 1
-			else
-				log_end_msg 0
-			fi
-		else
-			log_end_msg 1
-		fi
-	else
-		log_end_msg 0
-	fi
+    if [ $? -gt 0 ]; then
+        if [ ! -z "$1" ]; then
+            if [ $1 -gt 0 ]; then
+                log_end_msg 1
+            else
+                log_end_msg 0
+            fi
+        else
+            log_end_msg 1
+        fi
+    else
+        log_end_msg 0
+    fi
 }
 
 #### Waiting standard
 gfnWaitingSTD() {
-	while [ ! -z "$(screen -ls | grep $1)" ]; do
-		sleep 1
-	done
+    while [ ! -z "$(screen -ls | grep $1)" ]; do
+        sleep 1
+    done
 }
 
 #### Password generator
 gfnGenPassword() {
-	local nLenght=$1
-	[ -z "$nLenght" ] && nLenght=16
-	tr -dc A-Za-z0-9_ </dev/urandom | head -c ${nLenght} | xargs
+    local nLenght=$1
+    [ -z "$nLenght" ] && nLenght=16
+    tr -dc A-Za-z0-9_ </dev/urandom | head -c ${nLenght} | xargs
 }
 
 #### Ending script
 gfnEndingScript() {
-	if [ ! -z "$2" ]; then
-		echo -e "$2"
-	fi
-	exit $1
+    if [ ! -z "$2" ]; then
+        echo -e "$2"
+    fi
+    exit $1
 }
 
 #### Check if a command/package exist
 gfnCheckCommand() {
-	type -P $2 >/dev/null
-	local nValue="$?"
+    type -P $2 >/dev/null
+    local nValue="$?"
 
-	if [ $nValue -gt 0 ]; then # Try WHEREIS, some tools does not have command but are present and can be started
-		case "$2" in
-		'tautulli' | rtorrent-*)
-			if [ -f /etc/init.d/$2 ]; then
-				case "$1" in
-				0) return 0 ;;
-				1) echo "YES" ;;
-				esac
-			fi
-			;;
-		*)
-			if [ -z "$(whereis $2 | awk '{ print $2 }')" ]; then
-				if dpkg -s $sPackage &>/dev/null; then # Try DPKG
-					case "$1" in
-					0) return 0 ;;
-					1) echo "YES" ;;
-					esac
-				else
-					case "$1" in
-					0) return 1 ;;
-					1) echo "NO" ;;
-					esac
-				fi
-			else
-				case "$1" in
-				0) return 0 ;;
-				1) echo "YES" ;;
-				esac
-			fi
-			;;
-		esac
-	else # Command/Package verified
-		case "$1" in
-		0) return $nValue ;;
-		1)
-			case "$nValue" in
-			0) echo "YES" ;;
-			*) echo "NO" ;;
-			esac
-			;;
-		esac
-	fi
+    if [ $nValue -gt 0 ]; then # Try WHEREIS, some tools does not have command but are present and can be started
+        case "$2" in
+            'tautulli' | rtorrent-*)
+                if [ -f /etc/init.d/$2 ]; then
+                    case "$1" in
+                        0) return 0 ;;
+                        1) echo "YES" ;;
+                    esac
+                fi
+                ;;
+            *)
+                if [ -z "$(whereis $2 | awk '{ print $2 }')" ]; then
+                    if dpkg -s $sPackage &>/dev/null; then # Try DPKG
+                        case "$1" in
+                            0) return 0 ;;
+                            1) echo "YES" ;;
+                        esac
+                    else
+                        case "$1" in
+                            0) return 1 ;;
+                            1) echo "NO" ;;
+                        esac
+                    fi
+                else
+                    case "$1" in
+                        0) return 0 ;;
+                        1) echo "YES" ;;
+                    esac
+                fi
+                ;;
+        esac
+    else # Command/Package verified
+        case "$1" in
+            0) return $nValue ;;
+            1)
+                case "$nValue" in
+                    0) echo "YES" ;;
+                    *) echo "NO" ;;
+                esac
+                ;;
+        esac
+    fi
 }
 
 #### Switch DNS (standard / DNScrypt-proxy)
 gfnSwitchDNS() {
-	local sCommand sBindForwarders sForwarders nNumberOfDemon
-	sCommand="$1"
-	nNumberOfDemon="$2"
-	[ -z "$nNumberOfDemon" ] && nNumberOfDemon=0
+    local sCommand sBindForwarders sForwarders nNumberOfDemon
+    sCommand="$1"
+    nNumberOfDemon="$2"
+    [ -z "$nNumberOfDemon" ] && nNumberOfDemon=0
 
-	case "$sCommand" in
-	'dnscrypt')
-		if gfnCheckCommand 0 dnscrypt-proxy && gfnCheckCommand 0 bind9 && [ $nNumberOfDemon -gt 0 ]; then
-			# resolv.conf
-			sed -i '/nameserver/d' /etc/resolv.conf
-			echo "nameserver 127.0.0.1" >>/etc/resolv.conf
-			# BIND with DNScrypt-proxy support
-			install -o root -g bind -m 0644 $MySB_InstallDir/templates/bind/etc.bind.named.conf.options.tmpl /etc/bind/named.conf.options
-			sed -i "s/<gsSrvIpAddress>/$gsSrvIpAddress/g;" /etc/bind/named.conf.options
-			for ((i = 1; i <= $nNumberOfDemon; i++)); do
-				sBindForwarders="$sBindForwarders 127.0.0.$i port 52;"
-			done
-			sBindForwarders="$(echo $sBindForwarders | sed -e 's/^ //g;' | sed 's/\s+$//')"
-			NumLign=$(sed -n "/#### MARKER - DoNotDelete ####/=" /etc/bind/named.conf.options)
-			((NumLign++))
-			sed -i "${NumLign}i\		// DNScrypt-proxy - BoF" /etc/bind/named.conf.options
-			((NumLign++))
-			sed -i "${NumLign}i\		forwarders { $sBindForwarders };" /etc/bind/named.conf.options
-			((NumLign++))
-			sed -i "${NumLign}i\		forward only;" /etc/bind/named.conf.options
-			((NumLign++))
-			sed -i "${NumLign}i\		version \"MySB Secured DNS server\";" /etc/bind/named.conf.options
-			((NumLign++))
-			sed -i "${NumLign}i\		// DNScrypt-proxy - EoF" /etc/bind/named.conf.options
-			# BIND delete DNScrypt-proxy support
-			if [ -z "$(crontab -l | grep 'dnscrypt-proxy cron-check')" ]; then
-				crontab -l >/tmp/crontab.tmp 2>/dev/null
-				echo "0 4 * * * service dnscrypt-proxy full-update > /dev/null 2>&1" >>/tmp/crontab.tmp
-				echo "*/5 * * * * service dnscrypt-proxy cron-check > /dev/null 2>&1" >>/tmp/crontab.tmp
-				crontab /tmp/crontab.tmp 2>/dev/null
-				rm -f /tmp/crontab.tmp >/dev/null 2>&1
-				if gfnGetPid cron; then systemctl reload cron >/dev/null 2>&1; fi
-				gfnMessage 'info' 'log' 'Crontab added'
-			fi
-			service bind9 restart &>/dev/null
-		fi
-		;;
-	'bind')
-		# resolv.conf
-		sed -i '/nameserver/d' /etc/resolv.conf
-		echo "nameserver 208.67.220.220" >>/etc/resolv.conf
-		echo "nameserver 9.9.9.9" >>/etc/resolv.conf
-		echo "nameserver 4.2.2.1" >>/etc/resolv.conf
-		echo "nameserver 208.67.222.222" >>/etc/resolv.conf
-		echo "nameserver 149.112.112.112" >>/etc/resolv.conf
-		echo "nameserver 4.2.2.2" >>/etc/resolv.conf
-		echo "nameserver 4.2.2.3" >>/etc/resolv.conf
-		echo "nameserver 4.2.2.4" >>/etc/resolv.conf
-		echo "nameserver 4.2.2.5" >>/etc/resolv.conf
-		echo "nameserver 4.2.2.6" >>/etc/resolv.conf
-		# BIND delete DNScrypt-proxy support
-		crontab -l >/tmp/crontab.tmp 2>/dev/null
-		sed -i "/dnscrypt-proxy/d" /tmp/crontab.tmp
-		crontab /tmp/crontab.tmp 2>/dev/null
-		rm -f /tmp/crontab.tmp
-		if gfnGetPid cron; then systemctl reload cron >/dev/null 2>&1; fi
-		if gfnCheckCommand 0 bind9; then
-			sed -i '/forwarders/d' /etc/bind/named.conf.options
-			sed -i '/forward only;/d' /etc/bind/named.conf.options
-			sed -i '/version/d' /etc/bind/named.conf.options
-			sed -i '/DNScrypt-proxy/d' /etc/bind/named.conf.options
-			service bind9 restart &>/dev/null
-		fi
-		;;
-	esac
+    case "$sCommand" in
+        'dnscrypt')
+            if gfnCheckCommand 0 dnscrypt-proxy && gfnCheckCommand 0 bind9 && [ $nNumberOfDemon -gt 0 ]; then
+                # resolv.conf
+                sed -i '/nameserver/d' /etc/resolv.conf
+                echo "nameserver 127.0.0.1" >>/etc/resolv.conf
+                # BIND with DNScrypt-proxy support
+                install -o root -g bind -m 0644 $MySB_InstallDir/templates/bind/etc.bind.named.conf.options.tmpl /etc/bind/named.conf.options
+                sed -i "s/<gsSrvIpAddress>/$gsSrvIpAddress/g;" /etc/bind/named.conf.options
+                for ((i = 1; i <= nNumberOfDemon; i++)); do
+                    sBindForwarders="$sBindForwarders 127.0.0.$i port 52;"
+                done
+                sBindForwarders="$(echo $sBindForwarders | sed -e 's/^ //g;' | sed 's/\s+$//')"
+                NumLign=$(sed -n "/#### MARKER - DoNotDelete ####/=" /etc/bind/named.conf.options)
+                ((NumLign++))
+                sed -i "${NumLign}i\		// DNScrypt-proxy - BoF" /etc/bind/named.conf.options
+                ((NumLign++))
+                sed -i "${NumLign}i\		forwarders { $sBindForwarders };" /etc/bind/named.conf.options
+                ((NumLign++))
+                sed -i "${NumLign}i\		forward only;" /etc/bind/named.conf.options
+                ((NumLign++))
+                sed -i "${NumLign}i\		version \"MySB Secured DNS server\";" /etc/bind/named.conf.options
+                ((NumLign++))
+                sed -i "${NumLign}i\		// DNScrypt-proxy - EoF" /etc/bind/named.conf.options
+                # BIND delete DNScrypt-proxy support
+                if [ -z "$(crontab -l | grep 'dnscrypt-proxy cron-check')" ]; then
+                    crontab -l >/tmp/crontab.tmp 2>/dev/null
+                    echo "0 4 * * * service dnscrypt-proxy full-update > /dev/null 2>&1" >>/tmp/crontab.tmp
+                    echo "*/5 * * * * service dnscrypt-proxy cron-check > /dev/null 2>&1" >>/tmp/crontab.tmp
+                    crontab /tmp/crontab.tmp 2>/dev/null
+                    rm -f /tmp/crontab.tmp >/dev/null 2>&1
+                    if gfnGetPid cron; then systemctl reload cron >/dev/null 2>&1; fi
+                    gfnMessage 'info' 'log' 'Crontab added'
+                fi
+                service bind9 restart &>/dev/null
+            fi
+            ;;
+        'bind')
+            # resolv.conf
+            sed -i '/nameserver/d' /etc/resolv.conf
+            echo "nameserver 208.67.220.220" >>/etc/resolv.conf
+            echo "nameserver 9.9.9.9" >>/etc/resolv.conf
+            echo "nameserver 4.2.2.1" >>/etc/resolv.conf
+            echo "nameserver 208.67.222.222" >>/etc/resolv.conf
+            echo "nameserver 149.112.112.112" >>/etc/resolv.conf
+            echo "nameserver 4.2.2.2" >>/etc/resolv.conf
+            echo "nameserver 4.2.2.3" >>/etc/resolv.conf
+            echo "nameserver 4.2.2.4" >>/etc/resolv.conf
+            echo "nameserver 4.2.2.5" >>/etc/resolv.conf
+            echo "nameserver 4.2.2.6" >>/etc/resolv.conf
+            # BIND delete DNScrypt-proxy support
+            crontab -l >/tmp/crontab.tmp 2>/dev/null
+            sed -i "/dnscrypt-proxy/d" /tmp/crontab.tmp
+            crontab /tmp/crontab.tmp 2>/dev/null
+            rm -f /tmp/crontab.tmp
+            if gfnGetPid cron; then systemctl reload cron >/dev/null 2>&1; fi
+            if gfnCheckCommand 0 bind9; then
+                sed -i '/forwarders/d' /etc/bind/named.conf.options
+                sed -i '/forward only;/d' /etc/bind/named.conf.options
+                sed -i '/version/d' /etc/bind/named.conf.options
+                sed -i '/DNScrypt-proxy/d' /etc/bind/named.conf.options
+                service bind9 restart &>/dev/null
+            fi
+            ;;
+    esac
 }
 
 #### Delete directory
 gfnDeleteDirectory() {
-	local nVerbose sDirectory
-	[ -z "$1" ] && nVerbose=1 || nVerbose="$1"
-	[ -z "$2" ] && echo "gfnDeleteDirectory failed, No directory givened !" || sDirectory="${2%/}"
+    local nVerbose sDirectory
+    [ -z "$1" ] && nVerbose=1 || nVerbose="$1"
+    [ -z "$2" ] && echo "gfnDeleteDirectory failed, No directory givened !" || sDirectory="${2%/}"
 
-	if [ -d $sDirectory ]; then
-		case "$sDirectory" in
-		"$MySB_InstallDir" | "$MySB_Files" | "$MySB_InstallDir/temp" | "$MySB_InstallDir/files" | "/home" | "/" | "//") echo "gfnDeleteDirectory avoided, directory '$sDirectory' not permited !" ;;
-		*)
-			rm -rf $sDirectory
-			if [ $? -eq 0 ] && [ $nVerbose -eq 1 ]; then
-				echo "« $sDirectory » deleted !"
-			fi
-			;;
-		esac
-	fi
+    if [ -d $sDirectory ]; then
+        case "$sDirectory" in
+            "$MySB_InstallDir" | "$MySB_Files" | "$MySB_InstallDir/temp" | "$MySB_InstallDir/files" | "/home" | "/" | "//") echo "gfnDeleteDirectory avoided, directory '$sDirectory' not permited !" ;;
+            *)
+                rm -rf $sDirectory
+                if [ $? -eq 0 ] && [ $nVerbose -eq 1 ]; then
+                    echo "« $sDirectory » deleted !"
+                fi
+                ;;
+        esac
+    fi
 }
 
 #### Cleaning MySB before compress
 gfnCleanBeforeUpgrade() {
-	# Clean 'sources' directory
-	clear
-	echo -e "${CBLUE}$UpgradeMe_DeleteTempFiles$CEND"
-	echo -e -n "${CRED}$Global_PleaseWait $CEND"
-	gfnCountDown 3
-	rm -vrf $MySB_InstallDir/sources/*
-	# Clean 'temp' directory
-	rm -vrf $MySB_InstallDir/temp/*
-	# Clean 'db' directory
-	if [ -d $MySB_InstallDir/db ]; then
-		rm -vrf $MySB_InstallDir/db/*.old
-		rm -vrf $MySB_InstallDir/db/*.dump.sql
-	fi
+    # Clean 'sources' directory
+    clear
+    echo -e "${CBLUE}$UpgradeMe_DeleteTempFiles$CEND"
+    echo -e -n "${CRED}$Global_PleaseWait $CEND"
+    gfnCountDown 3
+    rm -vrf $MySB_InstallDir/sources/*
+    # Clean 'temp' directory
+    rm -vrf $MySB_InstallDir/temp/*
+    # Clean 'db' directory
+    if [ -d $MySB_InstallDir/db ]; then
+        rm -vrf $MySB_InstallDir/db/*.old
+        rm -vrf $MySB_InstallDir/db/*.dump.sql
+    fi
 
-	# Clean '.git' directory
-	clear
-	echo -e "${CBLUE}$UpgradeMe_CleanGit$CEND"
-	echo -e -n "${CRED}$Global_PleaseWait $CEND"
-	gfnCountDown 3
-	cd $MySB_InstallDir/
-	git branch | grep -v "$gsCurrentVersion" | xargs git branch -D
-	git tag | grep -v "$gsCurrentVersion" | xargs git tag -d
-	git gc
-	git repack -Ad
-	git prune
-	git pull origin $gsCurrentVersion
+    # Clean '.git' directory
+    clear
+    echo -e "${CBLUE}$UpgradeMe_CleanGit$CEND"
+    echo -e -n "${CRED}$Global_PleaseWait $CEND"
+    gfnCountDown 3
+    cd $MySB_InstallDir/
+    git branch | grep -v "$gsCurrentVersion" | xargs git branch -D
+    git tag | grep -v "$gsCurrentVersion" | xargs git tag -d
+    git gc
+    git repack -Ad
+    git prune
+    git pull origin $gsCurrentVersion
 }
 
 #### Get Values Repositories
 gfnGetRepoValues() {
-	local sValues sRepoName
-	unset gsRepoURL gnRepoActive gnRepoUpgrade gsRepoFile gsRepoVersion gsRepoDir gsFileURL gsVersionLatest gsVersionInstalled gsRepoType
+    local sValues sRepoName
+    unset gsRepoURL gnRepoActive gnRepoUpgrade gsRepoFile gsRepoVersion gsRepoDir gsFileURL gsVersionLatest gsVersionInstalled gsRepoType
 
-	if [ -z "$1" ]; then
-		return 1
-	else
-		sRepoName="$1"
-	fi
+    if [ -z "$1" ]; then
+        return 1
+    else
+        sRepoName="$1"
+    fi
 
-	sValues="$(cmdMySQL 'MySB_db' "SELECT type,dir,version,upgrade,file,url,active FROM repositories WHERE name='$sRepoName';" | sed "s/<InstallDir>/$gsInstallDirEscaped/g;" | sed 's/\t/|/g;')"
-	gsRepoType="$(echo $sValues | awk '{split($0,a,"|"); print a[1]}')"
-	gsRepoDir="$(echo $sValues | awk '{split($0,a,"|"); print a[2]}')"
-	gsRepoVersion="$(echo $sValues | awk '{split($0,a,"|"); print a[3]}')"
-	gnRepoUpgrade="$(echo $sValues | awk '{split($0,a,"|"); print a[4]}')"
-	gsRepoFile="$(echo $sValues | awk '{split($0,a,"|"); print a[5]}')"
-	gsRepoURL="$(echo $sValues | awk '{split($0,a,"|"); print a[6]}')"
-	gnRepoActive="$(echo $sValues | awk '{split($0,a,"|"); print a[7]}')"
+    sValues="$(cmdMySQL 'MySB_db' "SELECT type,dir,version,upgrade,file,url,active FROM repositories WHERE name='$sRepoName';" | sed "s/<InstallDir>/$gsInstallDirEscaped/g;" | sed 's/\t/|/g;')"
+    gsRepoType="$(echo $sValues | awk '{split($0,a,"|"); print a[1]}')"
+    gsRepoDir="$(echo $sValues | awk '{split($0,a,"|"); print a[2]}')"
+    gsRepoVersion="$(echo $sValues | awk '{split($0,a,"|"); print a[3]}')"
+    gnRepoUpgrade="$(echo $sValues | awk '{split($0,a,"|"); print a[4]}')"
+    gsRepoFile="$(echo $sValues | awk '{split($0,a,"|"); print a[5]}')"
+    gsRepoURL="$(echo $sValues | awk '{split($0,a,"|"); print a[6]}')"
+    gnRepoActive="$(echo $sValues | awk '{split($0,a,"|"); print a[7]}')"
 
-	case "$sRepoName" in
-	'Plex Media Server')
-		gsRepoFile="$(gfnGetUriFilename "${gsRepoURL}" || echo 'Not installed')"
-		gsVersionLatest="$(echo "${gsRepoFile}" | cut -d '_' -f 2)"
-		gsVersionInstalled="$(dpkg -l plexmediaserver 2>/dev/null | tail -n 1 | awk '{ print $3 }')"
-		;;
-	'Tautulli')
-		if [ -f $gsRepoDir/release.lock ]; then
-			gsVersionInstalled="$(cat $gsRepoDir/release.lock)"
-		elif [ -f $gsRepoDir/plexpy/version.py ]; then
-			gsVersionInstalled="$(grep 'PLEXPY_RELEASE_VERSION' $gsRepoDir/plexpy/version.py | cut -d '=' -f 2 | cut -d '"' -f 2)"
-		else
-			gsVersionInstalled="Not installed"
-		fi
-		gsVersionLatest="$($binCURL $gsRepoURL | jq -r .tag_name)"
-		gsFileURL="$($binCURL $gsRepoURL | grep 'tarball_url' | awk '{ print $2 }' | cut -d '"' -f 2)"
-		;;
-	'Docker-Compose')
-		[ -f /usr/bin/docker-compose ] && chmod +x docker-compose
-		gsVersionInstalled="$(gfnCheckCommand 0 docker-compose && docker-compose --version | awk '{ print $3 }' | cut -d ',' -f 1 || echo 'Not installed')"
-		gsVersionLatest="$($binCURL $gsRepoURL | jq -r .tag_name)"
-		gsFileURL="$($binCURL $gsRepoURL | jq -r '.assets[] | select(.name == "docker-compose-Linux-x86_64").browser_download_url')"
-		;;
-	'Composer')
-		[ -f "$gsRepoDir" ] && chmod -v +x "$gsRepoDir"
-		gsVersionInstalled="$(gfnCheckCommand 0 composer && composer --version 2>/dev/null | grep 'Composer version' | awk '{ print $3 }' || echo 'Not installed')"
-		gsVersionLatest="$($binCURL $gsRepoURL | grep 'tag_name' | awk '{ print $2 }' | cut -d '"' -f 2)"
-		gsFileURL="$($binCURL $gsRepoURL | jq -r '.assets[] | select(.name == "composer.phar").browser_download_url')"
-		;;
-	'Shellcheck')
-		[ -f "$gsRepoDir" ] && chmod -v +x "$gsRepoDir"
-		gsVersionInstalled="$(gfnCheckCommand 0 shellcheck && shellcheck --version | grep 'version' | head -n 1 | awk '{ print $2 }' || echo 'Not installed')"
-		gsVersionLatest="$($binCURL 'https://api.github.com/repos/koalaman/shellcheck/tags' | grep 'name' | head -n 1 | awk '{ print $2 }' | cut -d '"' -f 2 | sed 's/v//g;')"
-		;;
-	*) gsFileURL="" ;;
-	esac
+    case "$sRepoName" in
+        'Plex Media Server')
+            gsRepoFile="$(gfnGetUriFilename "${gsRepoURL}" || echo 'Not installed')"
+            gsVersionLatest="$(echo "${gsRepoFile}" | cut -d '_' -f 2)"
+            gsVersionInstalled="$(dpkg -l plexmediaserver 2>/dev/null | tail -n 1 | awk '{ print $3 }')"
+            ;;
+        'Tautulli')
+            if [ -f $gsRepoDir/release.lock ]; then
+                gsVersionInstalled="$(cat $gsRepoDir/release.lock)"
+            elif [ -f $gsRepoDir/plexpy/version.py ]; then
+                gsVersionInstalled="$(grep 'PLEXPY_RELEASE_VERSION' $gsRepoDir/plexpy/version.py | cut -d '=' -f 2 | cut -d '"' -f 2)"
+            else
+                gsVersionInstalled="Not installed"
+            fi
+            gsVersionLatest="$($binCURL $gsRepoURL | jq -r .tag_name)"
+            gsFileURL="$($binCURL $gsRepoURL | grep 'tarball_url' | awk '{ print $2 }' | cut -d '"' -f 2)"
+            ;;
+        'Docker-Compose')
+            [ -f /usr/bin/docker-compose ] && chmod +x docker-compose
+            gsVersionInstalled="$(gfnCheckCommand 0 docker-compose && docker-compose --version | awk '{ print $3 }' | cut -d ',' -f 1 || echo 'Not installed')"
+            gsVersionLatest="$($binCURL $gsRepoURL | jq -r .tag_name)"
+            gsFileURL="$($binCURL $gsRepoURL | jq -r '.assets[] | select(.name == "docker-compose-Linux-x86_64").browser_download_url')"
+            ;;
+        'Composer')
+            [ -f "$gsRepoDir" ] && chmod -v +x "$gsRepoDir"
+            gsVersionInstalled="$(gfnCheckCommand 0 composer && composer --version 2>/dev/null | grep 'Composer version' | awk '{ print $3 }' || echo 'Not installed')"
+            gsVersionLatest="$($binCURL $gsRepoURL | grep 'tag_name' | awk '{ print $2 }' | cut -d '"' -f 2)"
+            gsFileURL="$($binCURL $gsRepoURL | jq -r '.assets[] | select(.name == "composer.phar").browser_download_url')"
+            ;;
+        'Shellcheck')
+            [ -f "$gsRepoDir" ] && chmod -v +x "$gsRepoDir"
+            gsVersionInstalled="$(gfnCheckCommand 0 shellcheck && shellcheck --version | grep 'version' | head -n 1 | awk '{ print $2 }' || echo 'Not installed')"
+            gsVersionLatest="$($binCURL 'https://api.github.com/repos/koalaman/shellcheck/tags' | grep 'name' | head -n 1 | awk '{ print $2 }' | cut -d '"' -f 2 | sed 's/v//g;')"
+            ;;
+        *) gsFileURL="" ;;
+    esac
 
-	echo
-	echo "########## $sRepoName"
-	echo "Directory : $gsRepoDir"
-	echo "Version in DB : $gsRepoVersion"
-	echo "File : $MySB_Files/$gsRepoFile"
-	echo "To upgrade : $(echo $gnRepoUpgrade | sed 's/0/NO/g;' | sed 's/1/YES/g;')"
-	echo "Type : $gsRepoType"
-	echo "Active : $(echo $gnRepoActive | sed 's/0/NO/g;' | sed 's/1/YES/g;')"
-	echo "Repo URL : $gsRepoURL"
-	[ -n "$gsVersionInstalled" ] && echo "Current version : $gsVersionInstalled"
-	[ -n "$gsVersionLatest" ] && echo "Latest version : $gsVersionLatest"
-	[ -n "$gsFileURL" ] && echo "File URL : $gsFileURL"
-	echo
+    echo
+    echo "########## $sRepoName"
+    echo "Directory : $gsRepoDir"
+    echo "Version in DB : $gsRepoVersion"
+    echo "File : $MySB_Files/$gsRepoFile"
+    echo "To upgrade : $(echo $gnRepoUpgrade | sed 's/0/NO/g;' | sed 's/1/YES/g;')"
+    echo "Type : $gsRepoType"
+    echo "Active : $(echo $gnRepoActive | sed 's/0/NO/g;' | sed 's/1/YES/g;')"
+    echo "Repo URL : $gsRepoURL"
+    [ -n "$gsVersionInstalled" ] && echo "Current version : $gsVersionInstalled"
+    [ -n "$gsVersionLatest" ] && echo "Latest version : $gsVersionLatest"
+    [ -n "$gsFileURL" ] && echo "File URL : $gsFileURL"
+    echo
 
-	[ -z "$gsRepoDir" ] ||
-		[ -z "$gsRepoVersion" ] ||
-		[ -z "$gsRepoFile" ] ||
-		[ -z "$gnRepoUpgrade" ] ||
-		[ -z "$gnRepoActive" ] ||
-		[ -z "$gsRepoURL" ] && return 1 || return 0
+    [ -z "$gsRepoDir" ] ||
+        [ -z "$gsRepoVersion" ] ||
+        [ -z "$gsRepoFile" ] ||
+        [ -z "$gnRepoUpgrade" ] ||
+        [ -z "$gnRepoActive" ] ||
+        [ -z "$gsRepoURL" ] && return 1 || return 0
 }
 
 #### Repository Manage by type
 gfnRepoManageByType() {
-	local sSubDir
+    local sSubDir
 
-	if [ -z "$gnRepoActive" ] || [ "$gnRepoActive" -eq 0 ]; then
-		return 1
-	fi
-	if [ "$gsSwitch" == "REFRESH" ] || [ $gnRepoActive -eq 0 ]; then
-		gfnDeleteDirectory 1 "$gsRepoDir"
-	fi
+    if [ -z "$gnRepoActive" ] || [ "$gnRepoActive" -eq 0 ]; then
+        return 1
+    fi
+    if [ "$gsSwitch" == "REFRESH" ] || [ $gnRepoActive -eq 0 ]; then
+        gfnDeleteDirectory 1 "$gsRepoDir"
+    fi
 
-	if [ $gnRepoActive -eq 1 ]; then
-		gnError=0
+    if [ $gnRepoActive -eq 1 ]; then
+        gnError=0
 
-		case "$gsRepoType" in
-		# 'TARXZ')
-		# 	[ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
-		# 	if [ ! -f $MySB_Files/$gsRepoFile ]; then
-		# 		$binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
-		# 		gnError=$?
-		# 	fi
-		# 	if [ ! -d $gsRepoDir ] && [ $gnError -eq 0 ]; then
-		# 		sSubDir="`tar --xz -tf $MySB_Files/$gsRepoFile | cut -d '/' -f 1 | uniq`"
-		# 		if [ ! -d $MySB_InstallDir/temp/$sSubDir ]; then
-		# 			tar --xz -xf $MySB_Files/$gsRepoFile -C $MySB_InstallDir/temp/
-		# 			gnError=$?
-		# 		fi
-		# 		if [ -d $MySB_InstallDir/temp/$sSubDir ] && [ ! -d $gsRepoDir ]; then
-		# 			mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
-		# 			chown -R root:root $gsRepoDir
-		# 			gnError=$?
-		# 		fi
-		# 	fi
-		# ;;
-		'TARGZ')
-			[ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
-			if [ ! -f $MySB_Files/$gsRepoFile ]; then
-				$binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
-				gnError=$?
-			fi
-			if [ ! -d $gsRepoDir ] && [ $gnError -eq 0 ]; then
-				sSubDir="$(tar -ztf $MySB_Files/$gsRepoFile | cut -d '/' -f 1 | uniq)"
-				if [ ! -d $MySB_InstallDir/temp/$sSubDir ]; then
-					tar -zxf $MySB_Files/$gsRepoFile -C $MySB_InstallDir/temp/
-					gnError=$?
-				fi
-				if [ -d $MySB_InstallDir/temp/$sSubDir ] && [ ! -d $gsRepoDir ]; then
-					mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
-					chown -R root:root $gsRepoDir
-					gnError=$?
-				fi
-			fi
-			;;
-		'WBM')
-			if [ ! -f $gsRepoDir/$gsRepoFile ]; then
-				$binCURL -o "$gsRepoDir/$gsRepoFile" "$gsRepoURL"
-				gnError=$?
-			fi
-			;;
-		'DEB')
-			if [ ! -f $gsRepoDir/$gsRepoFile ]; then
-				$binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
-				gnError=$?
-			fi
-			;;
-		'SVN')
-			if [ ! -d $gsRepoDir/.svn ]; then
-				# The GitHub project may have a ZIP archive.
-				if [ -f $MySB_Files/$gsRepoFile ]; then
-					sSubDir="$(unzip -l $MySB_Files/$gsRepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
-					if [ ! -d $MySB_InstallDir/temp/$sSubDir ]; then
-						unzip -q $MySB_Files/$gsRepoFile -d $MySB_InstallDir/temp/
-						gnError=$?
-						# If a package has 2 archives (*_2.zip)
-						if [ $gnError -eq 0 ] && [ -f $MySB_Files/$(echo $gsRepoFile | sed "s/.zip/_2.zip/g;") ]; then
-							unzip -q $MySB_Files/$(echo $gsRepoFile | sed "s/.zip/_2.zip/g;") -d $MySB_InstallDir/temp/
-							gnError=$?
-						fi
-					fi
-					if [ $gnError -eq 0 ] && [ -d $MySB_InstallDir/temp/$sSubDir ] && [ ! -d $gsRepoDir ]; then
-						mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
-						gnError=$?
-					fi
-				else
-					svn co --non-interactive --trust-server-cert $gsRepoURL $gsRepoDir
-					gnError=$?
-				fi
-			fi
-			;;
-		'GIT')
-			if [ -f $MySB_Files/$gsRepoFile ] && [ ! -d $gsRepoDir ]; then
-				sSubDir="$(unzip -l $MySB_Files/$gsRepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
-				if [ ! -d $MySB_InstallDir/temp/$sSubDir ]; then
-					unzip -q $MySB_Files/$gsRepoFile -d $MySB_InstallDir/temp/
-					gnError=$?
-					# If a package has 2 archives (*_2.zip)
-					if [ $gnError -eq 0 ] && [ -f $MySB_Files/$(echo $gsRepoFile | sed "s/.zip/_2.zip/g;") ]; then
-						unzip -q $MySB_Files/$(echo $gsRepoFile | sed "s/.zip/_2.zip/g;") -d $MySB_InstallDir/temp/
-						gnError=$?
-					fi
-				fi
-				if [ $gnError -eq 0 ] && [ -d $MySB_InstallDir/temp/$sSubDir ] && [ ! -d $gsRepoDir ]; then
-					mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
-					gnError=$?
-				fi
-				if [ $gnError -eq 0 ] && [ -d $gsRepoDir ] && [ "$gnRepoUpgrade" -eq 1 ]; then
-					cd $gsRepoDir/
-					case "$sRepoName" in
-					'Cakebox-Light')
-						git fetch --tags
-						git checkout -b $(git describe --tags $(git rev-list --tags --max-count=1))
-						gnError=$?
-						;;
-					*)
-						git stash
-						git pull
-						gnError=$?
-						git stash clear
-						;;
-					esac
-				fi
-			elif [ ! -f $MySB_Files/$gsRepoFile ] && [ ! -d $gsRepoDir ]; then
-				git clone $gsRepoURL $gsRepoDir
-				gnError=$?
-			fi
-			;;
-		'ZIP')
-			[ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
-			if [ ! -f $MySB_Files/$gsRepoFile ]; then
-				$binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
-				gnError=$?
-			fi
-			if [ ! -d $gsRepoDir ] && [ $gnError -eq 0 ]; then
-				sSubDir="$(unzip -l $MySB_Files/$gsRepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
-				if [ ! -d $MySB_InstallDir/temp/$sSubDir ]; then
-					unzip -q $MySB_Files/$gsRepoFile -d $MySB_InstallDir/temp/
-					gnError=$?
-				fi
-				if [ -d $MySB_InstallDir/temp/$sSubDir ] && [ ! -d $gsRepoDir ]; then
-					mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
-					chown -R root:root $gsRepoDir
-					gnError=$?
-				fi
-			fi
-			;;
-		'CURL')
-			[ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
-			$binCURL $gsRepoURL -o $gsRepoDir
-			gnError=$?
-			if [ -f $MySB_Files/$gsRepoFile ]; then
-				cp -v $MySB_Files/$gsRepoFile $gsRepoDir
-				gnError=$?
-			fi
-			;;
-		esac
+        case "$gsRepoType" in
+            # 'TARXZ')
+            # 	[ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
+            # 	if [ ! -f $MySB_Files/$gsRepoFile ]; then
+            # 		$binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
+            # 		gnError=$?
+            # 	fi
+            # 	if [ ! -d $gsRepoDir ] && [ $gnError -eq 0 ]; then
+            # 		sSubDir="`tar --xz -tf $MySB_Files/$gsRepoFile | cut -d '/' -f 1 | uniq`"
+            # 		if [ ! -d $MySB_InstallDir/temp/$sSubDir ]; then
+            # 			tar --xz -xf $MySB_Files/$gsRepoFile -C $MySB_InstallDir/temp/
+            # 			gnError=$?
+            # 		fi
+            # 		if [ -d $MySB_InstallDir/temp/$sSubDir ] && [ ! -d $gsRepoDir ]; then
+            # 			mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
+            # 			chown -R root:root $gsRepoDir
+            # 			gnError=$?
+            # 		fi
+            # 	fi
+            # ;;
+            'TARGZ')
+                [ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
+                if [ ! -f $MySB_Files/$gsRepoFile ]; then
+                    $binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
+                    gnError=$?
+                fi
+                if [ ! -d $gsRepoDir ] && [ $gnError -eq 0 ]; then
+                    sSubDir="$(tar -ztf $MySB_Files/$gsRepoFile | cut -d '/' -f 1 | uniq)"
+                    if [ ! -d $MySB_InstallDir/temp/$sSubDir ]; then
+                        tar -zxf $MySB_Files/$gsRepoFile -C $MySB_InstallDir/temp/
+                        gnError=$?
+                    fi
+                    if [ -d $MySB_InstallDir/temp/$sSubDir ] && [ ! -d $gsRepoDir ]; then
+                        mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
+                        chown -R root:root $gsRepoDir
+                        gnError=$?
+                    fi
+                fi
+                ;;
+            'WBM')
+                if [ ! -f $gsRepoDir/$gsRepoFile ]; then
+                    $binCURL -o "$gsRepoDir/$gsRepoFile" "$gsRepoURL"
+                    gnError=$?
+                fi
+                ;;
+            'DEB')
+                if [ ! -f $gsRepoDir/$gsRepoFile ]; then
+                    $binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
+                    gnError=$?
+                fi
+                ;;
+            'SVN')
+                if [ ! -d $gsRepoDir/.svn ]; then
+                    # The GitHub project may have a ZIP archive.
+                    if [ -f $MySB_Files/$gsRepoFile ]; then
+                        sSubDir="$(unzip -l $MySB_Files/$gsRepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
+                        if [ ! -d $MySB_InstallDir/temp/$sSubDir ]; then
+                            unzip -q $MySB_Files/$gsRepoFile -d $MySB_InstallDir/temp/
+                            gnError=$?
+                            # If a package has 2 archives (*_2.zip)
+                            if [ $gnError -eq 0 ] && [ -f $MySB_Files/$(echo $gsRepoFile | sed "s/.zip/_2.zip/g;") ]; then
+                                unzip -q $MySB_Files/$(echo $gsRepoFile | sed "s/.zip/_2.zip/g;") -d $MySB_InstallDir/temp/
+                                gnError=$?
+                            fi
+                        fi
+                        if [ $gnError -eq 0 ] && [ -d $MySB_InstallDir/temp/$sSubDir ] && [ ! -d $gsRepoDir ]; then
+                            mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
+                            gnError=$?
+                        fi
+                    else
+                        svn co --non-interactive --trust-server-cert $gsRepoURL $gsRepoDir
+                        gnError=$?
+                    fi
+                fi
+                ;;
+            'GIT')
+                if [ -f $MySB_Files/$gsRepoFile ] && [ ! -d $gsRepoDir ]; then
+                    sSubDir="$(unzip -l $MySB_Files/$gsRepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
+                    if [ ! -d $MySB_InstallDir/temp/$sSubDir ]; then
+                        unzip -q $MySB_Files/$gsRepoFile -d $MySB_InstallDir/temp/
+                        gnError=$?
+                        # If a package has 2 archives (*_2.zip)
+                        if [ $gnError -eq 0 ] && [ -f $MySB_Files/$(echo $gsRepoFile | sed "s/.zip/_2.zip/g;") ]; then
+                            unzip -q $MySB_Files/$(echo $gsRepoFile | sed "s/.zip/_2.zip/g;") -d $MySB_InstallDir/temp/
+                            gnError=$?
+                        fi
+                    fi
+                    if [ $gnError -eq 0 ] && [ -d $MySB_InstallDir/temp/$sSubDir ] && [ ! -d $gsRepoDir ]; then
+                        mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
+                        gnError=$?
+                    fi
+                    if [ $gnError -eq 0 ] && [ -d $gsRepoDir ] && [ "$gnRepoUpgrade" -eq 1 ]; then
+                        cd $gsRepoDir/
+                        case "$sRepoName" in
+                            'Cakebox-Light')
+                                git fetch --tags
+                                git checkout -b $(git describe --tags $(git rev-list --tags --max-count=1))
+                                gnError=$?
+                                ;;
+                            *)
+                                git stash
+                                git pull
+                                gnError=$?
+                                git stash clear
+                                ;;
+                        esac
+                    fi
+                elif [ ! -f $MySB_Files/$gsRepoFile ] && [ ! -d $gsRepoDir ]; then
+                    git clone $gsRepoURL $gsRepoDir
+                    gnError=$?
+                fi
+                ;;
+            'ZIP')
+                [ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
+                if [ ! -f $MySB_Files/$gsRepoFile ]; then
+                    $binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
+                    gnError=$?
+                fi
+                if [ ! -d $gsRepoDir ] && [ $gnError -eq 0 ]; then
+                    sSubDir="$(unzip -l $MySB_Files/$gsRepoFile | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
+                    if [ ! -d $MySB_InstallDir/temp/$sSubDir ]; then
+                        unzip -q $MySB_Files/$gsRepoFile -d $MySB_InstallDir/temp/
+                        gnError=$?
+                    fi
+                    if [ -d $MySB_InstallDir/temp/$sSubDir ] && [ ! -d $gsRepoDir ]; then
+                        mv -v $MySB_InstallDir/temp/$sSubDir $gsRepoDir
+                        chown -R root:root $gsRepoDir
+                        gnError=$?
+                    fi
+                fi
+                ;;
+            'CURL')
+                [ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
+                $binCURL $gsRepoURL -o $gsRepoDir
+                gnError=$?
+                if [ -f $MySB_Files/$gsRepoFile ]; then
+                    cp -v $MySB_Files/$gsRepoFile $gsRepoDir
+                    gnError=$?
+                fi
+                ;;
+        esac
 
-		[ -d $gsRepoDir ] && find $gsRepoDir/ -type f -print0 | xargs -0 dos2unix &>/dev/null
-	fi
+        [ -d $gsRepoDir ] && find $gsRepoDir/ -type f -print0 | xargs -0 dos2unix &>/dev/null
+    fi
 }
 
 #### FStab generation
 gfnFstabGeneration() {
-	local sSwitch sSwap nNumLine nColNum sVFSV sQuotaOpts sDedicatedHome
-	sSwitch="$1"
-	sDedicatedHome=$(grep "[[:space:]]/home[[:space:]]" /etc/fstab)
+    local sSwitch sSwap nNumLine nColNum sVFSV sQuotaOpts sDedicatedHome
+    sSwitch="$1"
+    sDedicatedHome=$(grep "[[:space:]]/home[[:space:]]" /etc/fstab)
 
-	# Backup
-	[[ ! -f ${MySB_InstallDir}/files/fstab.origine ]] && cp -v /etc/fstab ${MySB_InstallDir}/files/fstab.origine
-	cp -v /etc/fstab /etc/fstab.back
+    # Backup
+    [[ ! -f ${MySB_InstallDir}/files/fstab.origine ]] && cp -v /etc/fstab ${MySB_InstallDir}/files/fstab.origine
+    cp -v /etc/fstab /etc/fstab.back
 
-	# Remove all comments
-	sed -i '/^#/d' /etc/fstab
-	# Delete empty lines
-	sed -i '/^$/d' /etc/fstab
+    # Remove all comments
+    sed -i '/^#/d' /etc/fstab
+    # Delete empty lines
+    sed -i '/^$/d' /etc/fstab
 
-	# Quota use
-	if [[ ${sSwitch} == 'add_quota' ]]; then
-		case $(getconf LONG_BIT) in
-		64) sVFSV="vfsv1" ;;
-		*) sVFSV="vfsv0" ;;
-		esac
-	fi
+    # Quota use
+    if [[ ${sSwitch} == 'add_quota' ]]; then
+        case $(getconf LONG_BIT) in
+            64) sVFSV="vfsv1" ;;
+            *) sVFSV="vfsv0" ;;
+        esac
+    fi
 
-	# SWAP
-	sSwap="$(grep 'swap' /etc/fstab)"
-	if [[ ! -z ${sSwap} ]]; then
-		grep 'swap' /etc/fstab >/tmp/swap.list
-		echo "# SWAP" >/tmp/fstab.swap
-		while read line; do
-			nColNum=0
-			for col in ${line}; do
-				((nColNum++))
-				case ${nColNum} in
-				1 | 2 | 3 | 4 | 5) echo -n "${col} " >>/tmp/fstab.swap ;;
-				6) echo -e -n "${col}\n" >>/tmp/fstab.swap ;;
-				esac
-			done
-		done </tmp/swap.list
-		sed -i '/swap/d' /etc/fstab
-	fi
+    # SWAP
+    sSwap="$(grep 'swap' /etc/fstab)"
+    if [[ -n ${sSwap} ]]; then
+        grep 'swap' /etc/fstab >/tmp/swap.list
+        echo "# SWAP" >/tmp/fstab.swap
+        while read line; do
+            nColNum=0
+            for col in ${line}; do
+                ((nColNum++))
+                case ${nColNum} in
+                    1 | 2 | 3 | 4 | 5) echo -n "${col} " >>/tmp/fstab.swap ;;
+                    6) echo -e -n "${col}\n" >>/tmp/fstab.swap ;;
+                esac
+            done
+        done </tmp/swap.list
+        sed -i '/swap/d' /etc/fstab
+    fi
 
-	# All others
-	cat /etc/fstab >/tmp/fstab.tmp
-	while read line; do
-		sPartition=$(echo $line | awk '{ print $2 }')
-		case ${sPartition} in
-		'/' | '/home')
-			nColNum=0
-			nNumLine=$(grep "[[:space:]]${sPartition}[[:space:]]" -n -m 1 /etc/fstab | cut -d ':' -f 1)
-			if [[ ! -z ${sDedicatedHome} ]] && [[ ${sPartition} == '/' ]]; then
-				sQuotaOpts=""
-			else
-				sQuotaOpts=",usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=$sVFSV"
-			fi
-			echo "# ${sPartition}" >>/etc/fstab
-			for col in $(grep "[[:space:]]${sPartition}[[:space:]]" /etc/fstab); do
-				((nColNum++))
-				case ${nColNum} in
-				1 | 2 | 3 | 5) echo -n "${col} " >>/etc/fstab ;;
-				4) echo -n "defaults,errors=remount-ro,relatime,nodiratime${sQuotaOpts} " >>/etc/fstab ;;
-				6) echo -e -n "${col}\n" >>/etc/fstab ;;
-				esac
-			done
-			sed -i ''$nNumLine'd' /etc/fstab
-			;;
-		*)
-			nNumLine=$(grep "[[:space:]]${sPartition}[[:space:]]" -n -m 1 /etc/fstab | cut -d ':' -f 1)
-			nColNum=0
-			echo "# ${sPartition}" >>/etc/fstab
-			for col in $(grep "[[:space:]]${sPartition}[[:space:]]" /etc/fstab); do
-				((nColNum++))
-				case ${nColNum} in
-				1 | 2 | 3 | 4 | 5) echo -n "${col} " >>/etc/fstab ;;
-				6) echo -e -n "${col}\n" >>/etc/fstab ;;
-				esac
-			done
-			sed -i ''$nNumLine'd' /etc/fstab
-			;;
-		esac
-	done </tmp/fstab.tmp
-	[[ -f /tmp/fstab.swap ]] && cat /tmp/fstab.swap >>/etc/fstab
+    # All others
+    cat /etc/fstab >/tmp/fstab.tmp
+    while read line; do
+        sPartition=$(echo $line | awk '{ print $2 }')
+        case ${sPartition} in
+            '/' | '/home')
+                nColNum=0
+                nNumLine=$(grep "[[:space:]]${sPartition}[[:space:]]" -n -m 1 /etc/fstab | cut -d ':' -f 1)
+                if [[ -n ${sDedicatedHome} ]] && [[ ${sPartition} == '/' ]]; then
+                    sQuotaOpts=""
+                else
+                    sQuotaOpts=",usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=$sVFSV"
+                fi
+                echo "# ${sPartition}" >>/etc/fstab
+                for col in $(grep "[[:space:]]${sPartition}[[:space:]]" /etc/fstab); do
+                    ((nColNum++))
+                    case ${nColNum} in
+                        1 | 2 | 3 | 5) echo -n "${col} " >>/etc/fstab ;;
+                        4) echo -n "defaults,errors=remount-ro,relatime,nodiratime${sQuotaOpts} " >>/etc/fstab ;;
+                        6) echo -e -n "${col}\n" >>/etc/fstab ;;
+                    esac
+                done
+                sed -i ''$nNumLine'd' /etc/fstab
+                ;;
+            *)
+                nNumLine=$(grep "[[:space:]]${sPartition}[[:space:]]" -n -m 1 /etc/fstab | cut -d ':' -f 1)
+                nColNum=0
+                echo "# ${sPartition}" >>/etc/fstab
+                for col in $(grep "[[:space:]]${sPartition}[[:space:]]" /etc/fstab); do
+                    ((nColNum++))
+                    case ${nColNum} in
+                        1 | 2 | 3 | 4 | 5) echo -n "${col} " >>/etc/fstab ;;
+                        6) echo -e -n "${col}\n" >>/etc/fstab ;;
+                    esac
+                done
+                sed -i ''$nNumLine'd' /etc/fstab
+                ;;
+        esac
+    done </tmp/fstab.tmp
+    [[ -f /tmp/fstab.swap ]] && cat /tmp/fstab.swap >>/etc/fstab
 
-	# Validate
-	mount -a
-	[[ $? -ne 0 ]] && cp -vf /etc/fstab.back /etc/fstab
-	mount -a
+    # Validate
+    mount -a
+    [[ $? -ne 0 ]] && cp -vf /etc/fstab.back /etc/fstab
+    mount -a
 }
 
 #### CCZE HTML logs format
 gfnCczeHtmlLogFormat() {
-	local sOptions sInput sOutput
-	[ -n "$1" ] && sInput="$1" || return
-	[ -n "$2" ] && sOutput="$2" || return
-	[ -n "$3" ] && sOptions="$3" || sOptions=""
-	[ ! -f "${sInput}" ] && return
+    local sOptions sInput sOutput
+    [ -n "$1" ] && sInput="$1" || return
+    [ -n "$2" ] && sOutput="$2" || return
+    [ -n "$3" ] && sOptions="$3" || sOptions=""
+    [ ! -f "${sInput}" ] && return
 
-	ccze ${sOptions} -o scroll -o nolookups -o transparent -o cssfile="$MySB_InstallDir/web/public/themes/MySB/css/ccze.css" <"${sInput}" >"${sOutput}"
-	sed -i '1,8d' "${sOutput}"
-	sed -i '$d' "${sOutput}"
-	sed -i '$d' "${sOutput}"
+    ccze ${sOptions} -o scroll -o nolookups -o transparent -o cssfile="$MySB_InstallDir/web/public/themes/MySB/css/ccze.css" <"${sInput}" >"${sOutput}"
+    sed -i '1,8d' "${sOutput}"
+    sed -i '$d' "${sOutput}"
+    sed -i '$d' "${sOutput}"
+    [ ! -s "${sOutput}" ] && rm -f "${sOutput}"
 }
 
 ##################### LAST LINE ######################################
