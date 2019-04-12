@@ -113,7 +113,6 @@ $MySB_Version = GetVersion();
 
 		<div id="site_content">
 			<div class="content">
-				<div class="scrollmenu" align="center">
 <?php
 			if ( isset($_SESSION['page']) ) {
 				switch ($_SESSION['page']) {
@@ -135,7 +134,6 @@ $MySB_Version = GetVersion();
 				if ($this->hasContent('extended')) echo $this->content('extended');
 			}
 ?>
-				</div>
 			</div>
 			<div id="sidebar_container">
 				<?php echo $this->content('sidebar', true); ?>
