@@ -145,9 +145,9 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				} else {
 					$quota = 0;
 				}
-				if ( $quota > $free_space ) {
-					$quota = $free_space;
-				}
+				// if ( $quota > $free_space ) {
+				// 	$quota = $free_space;
+				// }
 				$quota = round($quota*(1024*1024),2);
 				$value = $MySB_DB->update("users", ["quota" => $quota, "quota_type" => $quota_type], ["users_ident" => $users_ident]);
 				$result = $result+$value;
