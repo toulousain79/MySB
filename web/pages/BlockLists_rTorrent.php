@@ -54,7 +54,7 @@ $BlockList = $MySB_DB->select("blocklists", "*", ["rtorrent_list[!]" => ""]);
 ?>
 
 <form class="form_settings" method="post" action="">
-	<div align="center">
+	<div align="center" id="scrollmenu">
 <?php if ( $IsMainUser ) { ?>
 		<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">
 <?php } ?>

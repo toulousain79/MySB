@@ -88,7 +88,7 @@ $TrackersList = $MySB_DB->select("trackers_list", ["id_trackers_list", "tracker"
 ?>
 
 <form class="form_settings" method="post" action="">
-	<div align="center">
+	<div align="center" id="scrollmenu">
 
 	<?php if ( $IsMainUser ) { ?>
 		<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">
