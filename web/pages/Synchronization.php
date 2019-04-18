@@ -552,6 +552,7 @@ if ( $DisplayIdent >= 1 ) {
 
 if ( $DisplayIdent >= 1 ) {
 ?>
+	<div id="scrollmenu">
 	<fieldset style="vertical-align: text-top;">
 	<legend><?php echo User_Synchronization_Title_Ident; ?></legend>
 		<table>
@@ -605,6 +606,7 @@ if ( $DisplayIdent >= 1 ) {
 		</table>
 		<div align="center"><p class="Comments"><?php echo User_Synchronization_SyncComment; ?></p></div>
 	</fieldset>
+	</div>
 
 <?php
 } // if ( $DisplayIdent >= 1 ) {
