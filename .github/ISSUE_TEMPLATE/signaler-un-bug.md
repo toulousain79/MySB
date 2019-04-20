@@ -11,7 +11,8 @@ assignees: toulousain79
 
 Une description claire et concise du problème que tu rencontres.
 
-**Reproduction du problème**
+## Reproduction du problème
+
 Étapes pour reproduire le problème:
 
 1. '...'
