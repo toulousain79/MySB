@@ -210,6 +210,7 @@ if ( !empty($sUsersList) ) {
 	// Is lock ?
 	$PortalIsItLocked = PortalIsItLocked();
 ?>
+	<div id="scrollmenu">
 	<form class="form_settings" method="post" action="">
 		<div align="center" style="margin-top: 50px; margin-bottom: 20px;"><table style="border-spacing:1;">
 			<input name="free_space" type="hidden" value="<?php echo $RealFreeSpace; ?>"/>
@@ -370,6 +371,7 @@ if ( !empty($sUsersList) ) {
 		<?php } ?>
 
 		</div>
+	</div>
 	</form>
 <?php
 //#################### LAST LINE ######################################
