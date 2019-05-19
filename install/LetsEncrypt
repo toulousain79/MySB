@@ -39,12 +39,13 @@ for domain in $(cat ${MySB_InstallDir}/ssl/letsencrypt_domains | sed '/#/d'); do
     sDomainsList+=("${domain}")
 done
 mapfile -t sDomainsList < <(echo ${sDomainsList[*]} | tr ' ' '\n' | sort | uniq)
-sCerbotParams="certonly --authenticator standalone --verbose --update-registration --no-eff-email --agree-tos --rsa-key-size 2048 --email ${gsMainUserEmail} --preferred-challenges=http"
+# sCerbotParams="certonly --authenticator standalone --verbose --update-registration --no-eff-email --agree-tos --rsa-key-size 2048 --email ${gsMainUserEmail} --preferred-challenges=http"
+sCerbotParams=("certonly" "--authenticator" "standalone" "--verbose" "--update-registration" "--no-eff-email" "--agree-tos" "--rsa-key-size" "2048" "--email" "${gsMainUserEmail}" "--preferred-challenges=http")
 
 #### INSTALL
 case "${gsSwitch}" in
     'INSTALL' | 'UPGRADE')
-        gfnPackagesManage install 'libaugeas0 augeas-lenses' 'backports'
+        gfnPackagesManage install 'libaugeas0 augeas-lenses certbot' 'backports'
         gfnPackageBundleInstall 'virtualenv python-virtualenv python-dev python3-pkg-resources python3-virtualenv gcc dialog libssl-dev libffi-dev libltdl-dev psutils python-augeas'
         ;;
 esac
@@ -193,11 +194,13 @@ if [[ -n ${sNewDomains} ]]; then
     fnFirewalling 'before'
 
     # Dev mode ?
-    [[ ${gbDevMode} -eq 1   ]] && sCerbotParams="${sCerbotParams} --test-cert"
+    # [[ ${gbDevMode} -eq 1   ]] && sCerbotParams="${sCerbotParams} --test-cert"
+    [[ ${gbDevMode} -eq 1 ]] && sCerbotParams=("${sCerbotParams[@]} --test-cert")
 
-    cd ${MySB_Files}/ || exit
-    chmod +x certbot-auto
-    ./certbot-auto ${sCerbotParams} ${sNewDomains} --pre-hook "service nginx stop" --post-hook "service nginx start"
+    # cd ${MySB_Files}/ || exit
+    # chmod +x certbot-auto
+    # ./certbot-auto ${sCerbotParams} ${sNewDomains} --pre-hook "service nginx stop" --post-hook "service nginx start"
+    certbot "${sCerbotParams[@]}" "${sNewDomains}" --pre-hook "service nginx stop" --post-hook "service nginx start"
 
     if [[ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" ]]; then
         # Certificate end date (-21 days)
@@ -246,9 +249,10 @@ if [[ "renew" =~ ^($*)$ ]] || [[ ${gsSwitch} == "UPGRADE" ]]; then
             # Firewall
             fnFirewalling 'before'
 
-            cd ${MySB_Files}/ || exit
-            chmod +x certbot-auto
-            ./certbot-auto renew --pre-hook "service nginx stop" --post-hook "service nginx start"
+            # cd ${MySB_Files}/ || exit
+            # chmod +x certbot-auto
+            # ./certbot-auto renew --pre-hook "service nginx stop" --post-hook "service nginx start"
+            certbot renew --pre-hook "service nginx stop" --post-hook "service nginx start"
             dNewEndDate=$(openssl x509 -in /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem -noout -dates | grep 'notAfter' | cut -d "=" -f 2)
             [[ ${dNewEndDate} != "${dEndDate}" ]] && fnNextRenewal
 
