@@ -105,6 +105,7 @@ ${CRED}############################################################$CEND"
     SomethingWrong="${CRED}Looks like something was wrong during the update, aborting !$CEND"
     UpgradingSystem="${CBLUE}Upgrading the system$CEND"
     NeededPackage="${CBLUE}Installing some needed packages$CEND... "
+    PurgeBind="${CBLUE}Deleting Bind9$CEND... "
     DirNotEmpty="${CYELLOW}The selected folder [$MySB_InstallDir] is not empty, choose another one:$CEND"
     DownloadingGithub="${CBLUE}Downloading files from GitHub into [$MySB_InstallDir]$CEND"
     Done="${CGREEN}Done !$CEND"
@@ -186,6 +187,7 @@ ${CRED}############################################################$CEND"
     SomethingWrong="${CRED}On dirait que quelque chose clochait au cours de la mise à jour, abandon!$CEND"
     UpgradingSystem="${CBLUE}Mise à niveau du système$CEND"
     NeededPackage="${CBLUE}Installation des paquets nécessaires$CEND... "
+    PurgeBind="${CBLUE}Suppression de Bind9$CEND... "
     DirNotEmpty="${CYELLOW}Le dossier sélectionné [$MySB_InstallDir] n'est pas vide, choisissez en un autre:$CEND"
     DownloadingGithub="${CBLUE}Téléchargement des fichiers provenant de GitHub dans [$MySB_InstallDir]$CEND"
     Done="${CGREEN}Fait !$CEND"
@@ -516,6 +518,15 @@ fnCountDown 3
 TOOLS="git-core dos2unix lsb-release screen ccze gnupg figlet mlocate dnsutils curl man-db geoip-bin" # DO NO RENAME 'TOOLS' VARIABLES !
 apt-get -y --assume-yes install $TOOLS
 [ $? -gt 0 ] && ExitOnError 1 "apt-get -y --assume-yes install $TOOLS"
+
+# If needed, remove Bind9 package
+if (dpkg -s bind9 &>/dev/null); then
+    BannerInstall
+    echo -e -n "$PurgeBind"
+    if (! apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' purge bind9); then
+        ExitOnError 1 "apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' purge bind9"
+    fi
+fi
 
 #### download files from Git
 BannerInstall
