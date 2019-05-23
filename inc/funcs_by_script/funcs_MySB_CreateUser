@@ -599,6 +599,16 @@ gfnCreateRtorrentConfigFile() {
 				perl -pi -e "s/#{1}schedule2=load_filter/schedule2=load_filter/g" $sHomeDir/.rtorrent.rc
 			fi
 
+			# pieces.memory.max.set
+			gfnListCountUsers 'normal'
+			for seedUser in ${gsUsersList}; do
+				# nPiecesMemoryMax=$((((gsMemory / gnTotalUsers) * 1024) * 1024))
+				nPiecesMemoryMax="$((gsMemory/5))M"
+				nNumLine=$(cat /home/${seedUser}/.rtorrent.rc | grep 'pieces.memory.max.set' -n -m 1 | cut -d ':' -f 1)
+				sed -i '/pieces.memory.max.set/d' /home/${seedUser}/.rtorrent.rc
+				sed -i "${nNumLine}i\pieces.memory.max.set = ${nPiecesMemoryMax};" /home/${seedUser}/.rtorrent.rc
+			done
+
 			case "$sFileSystemType" in
 			"ext4" | "xfs" | "btrfs") perl -pi -e "s/system.file_allocate.set = no/system.file_allocate.set = yes/g" $sHomeDir/.rtorrent.rc ;;
 			*) perl -pi -e "s/^system.file_allocate.set = yes/system.file_allocate.set = no/g" $sHomeDir/.rtorrent.rc ;;
