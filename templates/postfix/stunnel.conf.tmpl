@@ -1,21 +1,42 @@
-; Sample stunnel configuration file by Michal Trojnara 2002-2009
-; Some options used here may not be adequate for your particular configuration
-; Please make sure you understand them (especially the effect of the chroot j$
-; Certificate/key is needed in server mode and optional in client mode
-cert = <InstallDir>/ssl/mysb.cert
-key = <InstallDir>/ssl/mysb.key
+; Sample stunnel configuration file for Unix by Michal Trojnara 2002-2015
+; Some options used here may be inadequate for your particular configuration
+; This sample file does *not* represent stunnel.conf defaults
+; Please consult the manual for detailed description of available options
+
+; **************************************************************************
+; * Global options                                                         *
+; **************************************************************************
+
+; It is recommended to drop root privileges if stunnel is started by root
+setuid = stunnel4
+setgid = stunnel4
+
+; PID file is created inside the chroot jail (if enabled)
+pid = /run/stunnel4/stunnel.pid
+
+; Debugging stuff (may be useful for troubleshooting)
+foreground = no
+debug = info
+output = /var/log/stunnel4/stunnel.log
+
+; Enable FIPS 140-2 mode if needed for compliance
+;fips = yes
+
+; **************************************************************************
+; * Service defaults may also be specified in individual service sections  *
+; **************************************************************************
 
 ; Protocol version (all, SSLv2, SSLv3, TLSv1)
 sslVersion = TLSv1
 ;options = NO_SSLv2
 ;options = NO_SSLv3
 
-; Some security enhancements for UNIX systems - comment them out on Win32
-chroot = /var/lib/stunnel4/
-setuid = stunnel4
-setgid = stunnel4
-; PID is created inside the chroot jail
-pid = /stunnel4.pid
+; These options provide additional security at some performance degradation
+;options = SINGLE_ECDH_USE
+;options = SINGLE_DH_USE
+
+; Workaround for Eudora bug
+;options = DONT_INSERT_EMPTY_FRAGMENTS
 
 ; Some performance tunings
 socket = l:TCP_NODELAY=1
@@ -25,47 +46,32 @@ socket = l:SO_LINGER=1:30
 ;compression = zlib
 ;compression = deflate
 
-; Workaround for Eudora bug
-;options = DONT_INSERT_EMPTY_FRAGMENTS
+; **************************************************************************
+; * Include all configuration file fragments from the specified folder     *
+; **************************************************************************
 
-; Authentication stuff
-;verify = 2
+;include = /etc/stunnel/conf.d
 
-; Don't forget to c_rehash CApath
-; CApath is located inside chroot jail
-;CApath = /certs
+; **************************************************************************
+; * Service definitions (remove all services for inetd mode)               *
+; **************************************************************************
 
-; It's often easier to use CAfile
-CAfile = <InstallDir>/ssl/CA/certs/cacert.pem
+; ***************************************** Example TLS client mode services
 
-; Don't forget to c_rehash CRLpath
-; CRLpath is located inside chroot jail
-;CRLpath = /crls
+; The following examples use /etc/ssl/certs, which is the common location
+; of a hashed directory containing trusted CA certificates.  This is not
+; a hardcoded path of the stunnel package, as it is not related to the
+; stunnel configuration in /etc/stunnel/.
 
-; Alternatively you can use CRLfile
-;CRLfile = /etc/stunnel/crls.pem
-
-; Some debugging stuff useful for troubleshooting
-debug = 7
-output = stunnel.log
-
-; Use it for client mode
 client = yes
-foreground = no
+connect = <smtp_host>:<smtp_port>
+verifyChain = no
+CAfile = <InstallDir>/ssl/CA/certs/cacert.pem
+checkHost = <smtp_host>
+OCSPaia = yes
 
-; Service-level configuration
-;[pop3s]
-;accept = 995
-;connect = 110
-;[imaps]
-;accept = 993
-;connect = 143
 [ssmtp]
 accept = 23000
 connect = <smtp_host>:<smtp_port>
-;[https]
-;accept = 443
-;connect = 80
-
-TIMEOUTclose = 0
-; vim:ft=dosini
+cert = <InstallDir>/ssl/mysb.cert
+key = <InstallDir>/ssl/mysb.key
