@@ -89,6 +89,31 @@ if (! which certbot >/dev/null); then
     gfnPackagesManage install 'backports' "certbot"
 fi
 
+# Stunnel4 conf review
+(! grep -q 'OCSPaia' /etc/stunnel/stunnel.conf) && {
+    gfnManageServices stop "stunnel4 postfix"
+    SmtpValues="$(cmdMySQL 'MySB_db' "SELECT smtp_provider,smtp_host,smtp_port FROM smtp WHERE id_smtp='1';" | sed 's/\t/|/g;')"
+    SMTP_Provider="$(echo ${SmtpValues} | awk '{split($0,a,"|"); print a[1]}')"
+    SMTP_Host="$(echo ${SmtpValues} | awk '{split($0,a,"|"); print a[2]}')"
+    SMTP_Port="$(echo ${SmtpValues} | awk '{split($0,a,"|"); print a[3]}')"
+    if [ "${SMTP_Provider}" != "LOCAL" ]; then
+        install -v -g root -o root -m 0600 $MySB_InstallDir/templates/postfix/stunnel.conf.tmpl /etc/stunnel/stunnel.conf
+        perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /etc/stunnel/stunnel.conf
+        perl -pi -e "s/<smtp_host>/${SMTP_Host}/g" /etc/stunnel/stunnel.conf
+        perl -pi -e "s/<smtp_port>/${SMTP_Port}/g" /etc/stunnel/stunnel.conf
+        if [[ -f /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem ]] && [[ -f /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem ]]; then
+            nNumLine=$(cat /etc/stunnel/stunnel.conf | grep 'cert =' -n -m 1 | cut -d ':' -f 1)
+            sed -i '/cert =/d' /etc/stunnel/stunnel.conf
+            sed -i "${nNumLine}i\cert = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" /etc/stunnel/stunnel.conf
+            nNumLine=$(cat /etc/stunnel/stunnel.conf | grep 'key =' -n -m 1 | cut -d ':' -f 1)
+            sed -i '/key =/d' /etc/stunnel/stunnel.conf
+            sed -i "${nNumLine}i\key = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/stunnel/stunnel.conf
+        fi
+    fi
+    gfnManageServices stop "stunnel4"
+    gfnManageServices start "stunnel4 postfix"
+}
+
 # -----------------------------------------
 . $(dirname $0)/../inc/includes_after
 # -----------------------------------------
