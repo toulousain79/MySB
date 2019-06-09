@@ -91,7 +91,8 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					if ( ValidateEmail($email) != false ) {
 						if ( $email == $confirm_email ) {
 							if ($account_type == 'normal') {
-								if ( ($quota >= 5) || ($quota == 0) || ($quota == '') ) {
+								//if ( ($quota >= 5) || ($quota == 0) || ($quota == '') ) {
+								if ( ($quota == 0) || ($quota == '') ) {
 									if ( $quota > $free_space ) {
 										$quota = $free_space;
 									}
@@ -137,7 +138,8 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$quota = $_POST['quota'][$i];
 				if ($account_type == 'normal') {
 					$quota = filter_var($quota, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION | FILTER_FLAG_ALLOW_THOUSAND);
-					if (($quota_type == 'manual') && ($quota < 5)) {
+					//if (($quota_type == 'manual') && ($quota < 5)) {
+					if (($quota_type == 'manual') && ($quota < 0)) {
 						$type = 'warning';
 						GenerateMessage('Quota_Update', $type, MainUser_UserAdd_QuotaMinValueEdit, $args);
 						break;
@@ -317,10 +319,10 @@ if ( !empty($sUsersList) ) {
 							$value = GetSizeName($User["quota"].'KB', false);
 							switch ($User["quota_type"]) {
 								case 'manual':
-									$type = 'type="number" min="0" step="1"';
+									$type = 'type="number" min="0" step="any"';
 									break;
 								default:
-									$type = 'type="number"';
+									$type = 'type="number" min="0" step="any"';
 									break;
 							}
 							break;
