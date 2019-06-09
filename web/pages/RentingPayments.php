@@ -95,8 +95,6 @@ function Form() {
 		}
 	}
 	echo '</tr></table></div>';
-
-	echo '<script type="text/javascript" src="' . THEMES_PATH . 'MySB/js/jquery-dynamically-adding-form-elements.js"></script>';
 }
 
 if (isset($_POST['submit'])) {
