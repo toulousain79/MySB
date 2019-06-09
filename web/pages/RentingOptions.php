@@ -72,6 +72,7 @@ function Form() {
 	echo '<div align="center"><table><tr align="center">';
 	foreach($AllUsers as $User) {
 		$Rent_Options = $MySB_DB->select("tracking_rent_options", ["id_tracking_rent_options", "id_users", "amount", "description"], ["id_users" => $User["id_users"]]);
+		$OptionsPrice = 0;
 
 		if (!empty($Rent_Options)) {
 			echo '	<td style="margin:0; padding:5; border:0; outline:0; font-size:100%; vertical-align:top; background:transparent; display: inline-flex;">
@@ -117,8 +118,6 @@ function Form() {
 		}
 	}
 	echo '</tr></table></div>';
-
-	echo '<script type="text/javascript" src="' . THEMES_PATH . 'MySB/js/jquery-dynamically-adding-form-elements.js"></script>';
 }
 
 if (isset($_POST['submit'])) {
