@@ -290,9 +290,4 @@ foreach($TrackersList as $Tracker) {
 </form>
 <?php
 	}
-?>
-
-<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-dynamically-adding-form-elements.js"></script>
-
-<?php
 //#################### LAST LINE ######################################

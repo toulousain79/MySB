@@ -184,6 +184,7 @@ $MySB_Version = GetVersion();
 		case '/?blocklists/usual-blocklists.html':
 		case '/?user/synchronization.html':
 		case '/?user/manage-addresses.html':
+		case '/?user/options.html':
 		case '/?renting/renting-options.html':
 		case '/?renting/renting-payments.html':
 		case '/?trackers/add-new-trackers.html':

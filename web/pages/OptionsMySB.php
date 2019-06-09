@@ -196,7 +196,5 @@ if ( $users_datas['account_type'] == 'normal' ) {
 	</div>
 </form>
 
-<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-dynamically-adding-form-elements.js"></script>
-
 <?php
 //#################### LAST LINE ######################################
