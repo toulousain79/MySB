@@ -262,7 +262,5 @@ foreach($AddressesList as $Address) {
 	<p class="Comments"><?php echo User_ManageAddresses_InfoBottom; ?></p>
 </div>
 
-<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery-dynamically-adding-form-elements.js"></script>
-
 <?php
 //#################### LAST LINE ######################################
