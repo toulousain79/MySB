@@ -54,6 +54,6 @@ define('Layout_Medoo', 'Medoo');
 define('Layout_Bitcoin_Text', 'Faire un don en Bitcoins');
 
 define('Layout_Paypal_ID', '26PKHX8PGHLWG');
-define('Layout_Paypal_Text', 'PayPal The safer, easier way to pay online.');
+define('Layout_Paypal_Text', 'Faire un don avec PayPal');
 
 //#################### LAST LINE ######################################
