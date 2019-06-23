@@ -51,9 +51,9 @@ define('Layout_Wiki', 'MySB WiKi');
 define('Layout_Wolf', 'Wolf CMS');
 define('Layout_Medoo', 'Medoo');
 
-define('Layout_Bitcoin_Text', 'Faire un don en Bitcoins');
+define('Layout_Bitcoin_Text', 'Make a donation in Bitcoins');
 
 define('Layout_Paypal_ID', 'W23FUB5NNXLR4');
-define('Layout_Paypal_Text', 'PayPal The safer, easier way to pay online.');
+define('Layout_Paypal_Text', 'Make a donation with PayPal');
 
 //#################### LAST LINE ######################################
