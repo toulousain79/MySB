@@ -53,7 +53,7 @@ define('User_Synchronization_FileName', 'Nom');
 define('User_Synchronization_SynchroDirect', 'Directe');
 define('User_Synchronization_SynchroCron', 'Planifi&eacute;e');
 define('User_Synchronization_Comments', 'Commentaires');
-define('User_Synchronization_Title_Ident', '<b>3 - Informations de connexion pour les synchronisations distantes (directes et programmées)</b>');
+define('User_Synchronization_Title_Ident', '<b>3 - Informations de connexion pour les synchronisations distantes (directes programmées et manuelles)</b>');
 define('User_Synchronization_ModeSync', 'M&eacute;thode');
 define('User_Synchronization_ModeSync_FTP', 'FTP(s)');
 define('User_Synchronization_ModeSync_RSYNC', 'RSYNC');
@@ -76,5 +76,7 @@ define('User_Synchronization_Title_DownloadedFiles', 'Remettre un t&eacute;l&eac
 define('User_Synchronization_Files', 'Liste des t&eacute;l&eacute;chargements');
 define('User_Synchronization_AddFiles', 'Ajouter &agrave; la liste');
 define('User_Synchronization_AddFilesComment', 'Permet de remettre un t&eacute;l&eacute;chargement dans la liste des synchronisations.');
+// Tooltip
+define('User_Synchronization_TT_Documentation', '<a target="_blank" href="https://mysb.gitbook.io/doc/configuration/labels-and-synchros">Acc&eacute;der &agrave; la documentation</a>');
 
 //#################### LAST LINE ######################################

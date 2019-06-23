@@ -1,4 +1,5 @@
 #!/bin/bash
+# rev 5.5
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -41,27 +42,28 @@
 ### END INIT INFO
 
 #### Includes
+# shellcheck source=.etc/MySB/config
 source /etc/MySB/config
 
 case "$1" in
-	"start")
-		while [ -z "`systemctl status mysql | grep 'Active: active (running)'`" ]; do
-			sleep 1
-		done
-		#### We apply first MySB security rules (Iptables, NginX IP restriction, Fail2Ban, PeerGuardian, DNScrypt and Bind)
-		# All services not started will be start, also rTorrent sessions...
-		log_daemon_msg "Applying all MySB security rules"
-		/bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'create' 'INIT'
-		log_end_msg 0
-	;;
-	"stop")
-		log_daemon_msg "Stopping all MySB security rules"
-		/bin/bash $MySB_InstallDir/bin/MySB_SecurityRules 'clean' 'STOP'
-		log_end_msg 0
-	;;
-	*)
-		echo "Usage: $0 { start | stop }"
-	;;
+    "start")
+        while (grep -q 'Active: active (running)' < <(systemctl status mysql) ); do
+            sleep 1
+        done
+        #### We apply first MySB security rules (Iptables, NginX IP restriction, Fail2Ban, PeerGuardian, DNScrypt and Bind)
+        # All services not started will be start, also rTorrent sessions...
+        log_daemon_msg "Applying all MySB security rules"
+        /bin/bash "${MySB_InstallDir}/bin/MySB_SecurityRules" 'create' 'INIT'
+        log_end_msg 0
+        ;;
+    "stop")
+        log_daemon_msg "Stopping all MySB security rules"
+        /bin/bash "${MySB_InstallDir}/bin/MySB_SecurityRules" 'clean' 'STOP'
+        log_end_msg 0
+        ;;
+    *)
+        echo "Usage: $0 { start | stop }"
+        ;;
 esac
 
 exit 0

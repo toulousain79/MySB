@@ -1,6 +1,8 @@
 #!/bin/bash
+# rev 5.5
 # ----------------------------------
-source $(dirname $0)/../inc/includes_before
+# shellcheck source=inc/includes_before
+source "$(dirname "$0")"/../inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -17,40 +19,40 @@ source $(dirname $0)/../inc/includes_before
 
 if [ "$USAGE" == "ON" ]; then
     gfnListCountUsers 'all'
-    for seedUser in $gsUsersList; do
+    for seedUser in ${gsUsersList}; do
         LIST="$LIST|$seedUser"
     done
-    LIST="$(echo \($LIST\) | sed -e 's/(|/(/g;')"
+    LIST="$(echo \("$LIST"\) | sed -e 's/(|/(/g;')"
 
-    if [ ! -z "$LIST" ]; then
-        echo -e "${CBLUE}$CreateUser_Usage$CEND${CYELLOW}$LIST$CEND"
+    if [ -n "$LIST" ]; then
+        echo -e "${CBLUE}${CreateUser_Usage}$CEND${CYELLOW}$LIST$CEND"
     fi
 
     UserToCreate=""
-    while [ -z "$UserToCreate" ]; do
-        gfnQuestionGetString NO "$CreateUser_Username" UserToCreate
-        [ ! -z "$(echo "$LIST" | grep $UserToCreate)" ] && UserToCreate=""
+    while [ -z "${UserToCreate}" ]; do
+        gfnQuestionGetString NO "${CreateUser_Username}" UserToCreate
+        (grep -q "${UserToCreate}" <<<"$LIST") && UserToCreate=""
     done
 
     NewUserPassword="$(gfnGenPassword 8)"
-    [ -z "$NewUserPassword" ] && gfnQuestionGetString YES "$CreateUser_Password [$UserToCreate]: " NewUserPassword
+    [ -z "$NewUserPassword" ] && gfnQuestionGetString YES "${CreateUser_Password} [${UserToCreate}]: " NewUserPassword
 
-    # gfnQuestionGetString NO "$CreateUser_SFTP" UserSFTP $Global_YES
+    # gfnQuestionGetString NO "$CreateUser_SFTP" UserSFTP ${Global_YES}
     # UserSFTP="`echo $UserSFTP | tr '[:lower:]' '[:upper:]'`"
-    UserSFTP="$Global_YES"
-    UserSUDO="$Global_NO"
+    UserSFTP="${Global_YES}"
+    UserSUDO="${Global_NO}"
 
     while (! gfnValidateMail "$UserEmail"); do
-        gfnQuestionGetString NO "$CreateUser_Email" UserEmail
+        gfnQuestionGetString NO "${CreateUser_Email}" UserEmail
     done
 
     UserAccountType=""
     while [ "$UserAccountType" != "normal" ] && [ "$UserAccountType" != "plex" ]; do
-        gfnQuestionGetString NO "$CreateUser_AccountType" UserAccountType "normal"
+        gfnQuestionGetString NO "${CreateUser_AccountType}" UserAccountType "normal"
     done
 
-    UserSFTP="$(echo $UserSFTP | sed "s/$Global_YES/1/g;" | sed "s/$Global_NO/0/g;")"
-    UserSUDO="$(echo $UserSUDO | sed "s/$Global_YES/1/g;" | sed "s/$Global_NO/0/g;")"
+    UserSFTP="$(echo "$UserSFTP" | sed "s/${Global_YES}/1/g;" | sed "s/${Global_NO}/0/g;")"
+    UserSUDO="$(echo "$UserSUDO" | sed "s/${Global_YES}/1/g;" | sed "s/${Global_NO}/0/g;")"
     LocSwitch="MANUAL"
 else
     UserToCreate="$1"
@@ -59,8 +61,8 @@ else
         "INSTALL") # INSTALL ($1 = user, $2 = LocSwitch), user created by installation (main user)
             UserSFTP=1
             UserSUDO=0
-            UserEmail="$gsMainUserEmail"
-            NewUserPassword="$gsMainUserPassword"
+            UserEmail="${gsMainUserEmail}"
+            NewUserPassword="${gsMainUserPassword}"
             UserAccountType="normal"
             LocSwitch="$2"
             sCheckDuplicate=""
@@ -73,15 +75,15 @@ else
             Quota="$6" # (in Gb)
             LocSwitch="$7"
             NewUserPassword="$(gfnGenPassword 8)"
-            sCheckDuplicate="$(cmdMySQL 'MySB_db' "SELECT users_ident FROM users WHERE users_ident = '$UserToCreate';")"
+            sCheckDuplicate="$(cmdMySQL 'MySB_db' "SELECT users_ident FROM users WHERE users_ident = '${UserToCreate}';")"
             ;;
     esac
 fi
 
 if [ -z "$sCheckDuplicate" ]; then
     #### Users vars
-    NewUserHomedir="/home/$UserToCreate"
-    UPPERNEWUSER=$(echo $UserToCreate | tr '[:lower:]' '[:upper:]')
+    NewUserHomedir="/home/${UserToCreate}"
+    UPPERNEWUSER=$(echo "${UserToCreate}" | tr '[:lower:]' '[:upper:]')
     NEWRPC="/$UPPERNEWUSER"
     LastPort="$(cmdMySQL 'MySB_db' "SELECT max(rtorrent_port) FROM users;")"
     [ -z "$LastPort" ] && LastPort=51100
@@ -91,182 +93,205 @@ if [ -z "$sCheckDuplicate" ]; then
     rTorrentPort=$LastPort
 
     #### user infos
-    if [ "$UserToCreate" != "$gsMainUserName" ]; then
-        log_daemon_msg "$CreateUser_InsertInfoDB [$UserToCreate]"
-        if [ ! -z "$Quota" ] && [ "$Quota" -ne 0 ]; then
-            Quota="$(echo $Quota | awk '{ kb = $1 * 1024 * 1024 ; print kb }')" # (Gb to Kb)
+    if [ "${UserToCreate}" != "${gsMainUserName}" ]; then
+        log_daemon_msg "${CreateUser_InsertInfoDB} [${UserToCreate}]"
+        if [ -n "$Quota" ] && [ "$Quota" -ne 0 ]; then
+            Quota="$(echo "$Quota" | awk '{ kb = $1 * 1024 * 1024 ; print kb }')" # (Gb to Kb)
             QuotaType="manual"
         else
             Quota=0
             QuotaType="auto"
         fi
-        cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir,language,quota,account_type,quota_type) VALUES ('$UserToCreate','$UserEmail','$NewUserPassword','$NEWRPC','$UserSFTP','$UserSUDO','$ScgiPort','$rTorrentPort','$NewUserHomedir','$EnvLang','$Quota','$UserAccountType','$QuotaType');"
+        cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir,language,quota,account_type,quota_type) VALUES ('${UserToCreate}','$UserEmail','$NewUserPassword','$NEWRPC','$UserSFTP','$UserSUDO','$ScgiPort','$rTorrentPort','$NewUserHomedir','${EnvLang}','$Quota','$UserAccountType','$QuotaType');"
     else
         Quota=$(gfnQuotaSpaceAvailable)
-        log_daemon_msg "$CreateUser_UpdateInfoDB [$UserToCreate]"
-        cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='', rpc='$NEWRPC', scgi_port='$ScgiPort', rtorrent_port='$rTorrentPort', home_dir='$NewUserHomedir', quota='$Quota' WHERE users_ident='$UserToCreate';"
+        log_daemon_msg "${CreateUser_UpdateInfoDB} [${UserToCreate}]"
+        cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='', rpc='$NEWRPC', scgi_port='$ScgiPort', rtorrent_port='$rTorrentPort', home_dir='$NewUserHomedir', quota='$Quota' WHERE users_ident='${UserToCreate}';"
     fi
     gfnListCountUsers 'all'
     gfnStatusLSB
 
     #### create system user
-    log_daemon_msg "$CreateUser_SystemAccount [$UserToCreate]"
-    useradd -c "MySB user $UserToCreate" -d $NewUserHomedir -s /bin/bash $UserToCreate &>/dev/null
+    log_daemon_msg "${CreateUser_SystemAccount} [${UserToCreate}]"
+    if (! getent passwd "${UserToCreate}"); then
+        useradd -c "MySB user ${UserToCreate}" -d "$NewUserHomedir" -s /bin/bash "${UserToCreate}" &>/dev/null
+    else
+        usermod -c "MySB user ${UserToCreate}" -s /bin/bash "${UserToCreate}" &>/dev/null
+    fi
     gfnStatusLSB
 
     case "$UserAccountType" in
         'normal')
             #### create directories
-            log_daemon_msg "$CreateUser_ManageFilesDir [$UserToCreate]"
+            log_daemon_msg "${CreateUser_ManageFilesDir} [${UserToCreate}]"
             # Home
-            gfnManageUserHomeDir "$UserToCreate"
+            gfnManageUserHomeDir "${UserToCreate}"
             # ruTorrent
-            gfnRuTorrentUsersConfigs "$UserToCreate"
+            gfnRuTorrentUsersConfigs "${UserToCreate}"
             # Seedbox-Manager
-            gfnManagerUsersConfigs "$UserToCreate"
+            gfnManagerUsersConfigs "${UserToCreate}"
             # Cakebox-Light
-            gfnCakeboxUsersConfigs "$UserToCreate"
+            gfnCakeboxUsersConfigs "${UserToCreate}"
             gfnStatusLSB
 
             #### FTP
-            log_daemon_msg "$CreateUser_AllowUseFtp [$UserToCreate]"
-            echo "$UserToCreate" >>/etc/vsftpd.chroot_list
+            log_daemon_msg "${CreateUser_AllowUseFtp} [${UserToCreate}]"
+            echo "${UserToCreate}" >>/etc/vsftpd.chroot_list
             gfnStatusLSB
 
             #### Share
-            log_daemon_msg "$CreateUser_AllowShareDir [$UserToCreate]"
-            mount --bind /home/MySB_share $NewUserHomedir/rtorrent/share
+            log_daemon_msg "${CreateUser_AllowShareDir} [${UserToCreate}]"
+            mount --bind /home/MySB_share "$NewUserHomedir"/rtorrent/share
             gfnStatusLSB
 
             #### Torrents files location
-            log_daemon_msg "$CreateUser_TorrentDir [$UserToCreate]"
-            mount --bind $gsRutorrentDir/share/users/$UserToCreate/torrents $NewUserHomedir/rtorrent/torrents
+            log_daemon_msg "${CreateUser_TorrentDir} [${UserToCreate}]"
+            mount --bind "${gsRutorrentDir}"/share/users/"${UserToCreate}"/torrents "$NewUserHomedir"/rtorrent/torrents
             gfnStatusLSB
 
             #### add to groups
-            log_daemon_msg "$CreateUser_AssignGroup [$UserToCreate]"
-            [ -z "$(grep 'sudo' /etc/group)" ] && groupadd -f sudo
-            [ -z "$(grep 'sshdusers' /etc/group)" ] && groupadd -f sshdusers
-            [ -z "$(grep 'MySB_users' /etc/group)" ] && groupadd -f MySB_users
-            [ "$UserSUDO" == "YES" ] && usermod -a -G sudo $UserToCreate
-            [ "$UserSFTP" == "YES" ] && usermod -a -G sshdusers $UserToCreate
-            usermod -a -G MySB_users $UserToCreate
+            log_daemon_msg "${CreateUser_AssignGroup} [${UserToCreate}]"
+            (! grep -q 'sudo' /etc/group) && groupadd -f sudo
+            (! grep -q 'sshdusers' /etc/group) && groupadd -f sshdusers
+            (! grep -q 'MySB_users' /etc/group) && groupadd -f MySB_users
+            # [ "$UserSUDO" == "YES" ] && usermod -a -G sudo "${UserToCreate}"
+            [ "$UserSFTP" == "YES" ] && usermod -a -G sshdusers "${UserToCreate}"
+            usermod -a -G MySB_users "${UserToCreate}"
+            usermod -a -G sudo "${UserToCreate}"
+            {
+                echo "${UserToCreate} ALL= EXEC: NOPASSWD: /bin/cp -av /home/*/rtorrent/* /home/${UserToCreate}/rtorrent/complete/*"
+                echo "${UserToCreate} ALL= EXEC: NOPASSWD: /bin/cp -alv /home/*/rtorrent/* /home/${UserToCreate}/rtorrent/complete/*"
+                echo "${UserToCreate} ALL= EXEC: NOPASSWD: /bin/chown -Rv ${UserToCreate}\:${UserToCreate} /home/${UserToCreate}/rtorrent/complete/*"
+                echo "${UserToCreate} ALL= EXEC: NOPASSWD: /bin/chown -Rv ${UserToCreate}\:MySB_users /home/${UserToCreate}/rtorrent/complete/*"
+                echo "${UserToCreate} ALL= EXEC: NOPASSWD: /bin/bash /opt/MySB/scripts/GetTrackersCert.bsh USER ${UserToCreate}"
+                echo "${UserToCreate} ALL= EXEC: NOPASSWD: /bin/bash /home/${UserToCreate}/.rTorrent_tasks.sh*"
+            } >"/etc/sudoers.d/MySB_${UserToCreate}"
             gfnStatusLSB
 
             #### custumize profile
-            if [ ! -f $NewUserHomedir/.profile ]; then
-                log_daemon_msg "$CreateUser_CustomizeProfile [$UserToCreate]"
-                cp /etc/skel/.bashrc $NewUserHomedir
-                cp /etc/skel/.bash_logout $NewUserHomedir
-                cp /etc/skel/.profile $NewUserHomedir
-                chown $UserToCreate:$UserToCreate $NewUserHomedir/.bashrc
-                chown $UserToCreate:$UserToCreate $NewUserHomedir/.bash_logout
-                chown $UserToCreate:$UserToCreate $NewUserHomedir/.profile
-                perl -pi -e "s/#force_color_prompt=yes/force_color_prompt=yes/g" $NewUserHomedir/.bashrc
+            if [ ! -f "$NewUserHomedir"/.profile ]; then
+                log_daemon_msg "${CreateUser_CustomizeProfile} [${UserToCreate}]"
+                cp /etc/skel/.bashrc "$NewUserHomedir"
+                cp /etc/skel/.bash_logout "$NewUserHomedir"
+                cp /etc/skel/.profile "$NewUserHomedir"
+                chown "${UserToCreate}":"${UserToCreate}" "$NewUserHomedir"/.bashrc
+                chown "${UserToCreate}":"${UserToCreate}" "$NewUserHomedir"/.bash_logout
+                chown "${UserToCreate}":"${UserToCreate}" "$NewUserHomedir"/.profile
+                perl -pi -e "s/#force_color_prompt=yes/force_color_prompt=yes/g" "$NewUserHomedir"/.bashrc
                 gfnStatusLSB
             fi
 
             #### SSH Key
-            [ ! -f $NewUserHomedir/.ssh/id_rsa ] && ssh-keygen -q -t rsa -b 2048 -N "" -f $NewUserHomedir/.ssh/id_rsa -C "$UserEmail"
-            chown root:$UserToCreate $NewUserHomedir/.ssh/*
-            [ ! -f $NewUserHomedir/.ssh/authorized_keys ] && touch $NewUserHomedir/.ssh/authorized_keys
-            chown $UserToCreate:$UserToCreate $NewUserHomedir/.ssh/authorized_keys
-            chmod 0644 $NewUserHomedir/.ssh/authorized_keys
+            [ ! -f "$NewUserHomedir"/.ssh/id_rsa ] && ssh-keygen -q -t rsa -b 2048 -N "" -f "$NewUserHomedir"/.ssh/id_rsa -C "$UserEmail"
+            chown root:"${UserToCreate}" "$NewUserHomedir"/.ssh/*
+            [ ! -f "$NewUserHomedir"/.ssh/authorized_keys ] && touch "$NewUserHomedir"/.ssh/authorized_keys
+            chown "${UserToCreate}":"${UserToCreate}" "$NewUserHomedir"/.ssh/authorized_keys
+            chmod 0644 "$NewUserHomedir"/.ssh/authorized_keys
 
             # Logrotate
-            install -g root -o root -m 0644 $MySB_InstallDir/templates/logrotate/etc.logrotate.d.users.tmpl /etc/logrotate.d/rtorrent_${UserToCreate}
-            perl -pi -e "s/<username>/$UserToCreate/g" /etc/logrotate.d/rtorrent_${UserToCreate}
+            install -g root -o root -m 0644 "${MySB_InstallDir}"/templates/logrotate/etc.logrotate.d.users.tmpl /etc/logrotate.d/rtorrent_"${UserToCreate}"
+            perl -pi -e "s/<username>/${UserToCreate}/g" /etc/logrotate.d/rtorrent_"${UserToCreate}"
 
             #### rTorrent (.rtorrent.rc)
-            log_daemon_msg "$CreateUser_rTorrentfile [$UserToCreate]"
-            gfnCreateRtorrentConfigFile "$UserToCreate" 'force'
+            log_daemon_msg "${CreateUser_rTorrentfile} [${UserToCreate}]"
+            gfnCreateRtorrentConfigFile "${UserToCreate}" 'force'
             gfnStatusLSB
 
             #### NginX
-            log_daemon_msg "$CreateUser_RpcFile [$UserToCreate]"
-            install -g root -o root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.rpc.user.conf.tmpl /etc/nginx/rpc/$UserToCreate.conf
-            perl -pi -e "s/<scgi_port>/$ScgiPort/g" /etc/nginx/rpc/$UserToCreate.conf
-            perl -pi -e "s/<username>/$UserToCreate/g" /etc/nginx/rpc/$UserToCreate.conf
-            perl -pi -e "s/<USERNAME>/$UPPERNEWUSER/g" /etc/nginx/rpc/$UserToCreate.conf
+            log_daemon_msg "${CreateUser_RpcFile} [${UserToCreate}]"
+            install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.rpc.user.conf.tmpl /etc/nginx/rpc/"${UserToCreate}".conf
+            perl -pi -e "s/<scgi_port>/$ScgiPort/g" /etc/nginx/rpc/"${UserToCreate}".conf
+            perl -pi -e "s/<username>/${UserToCreate}/g" /etc/nginx/rpc/"${UserToCreate}".conf
+            perl -pi -e "s/<USERNAME>/$UPPERNEWUSER/g" /etc/nginx/rpc/"${UserToCreate}".conf
+            install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.rpc.user.local.tmpl /etc/nginx/rpc/"${UserToCreate}".local
+            perl -pi -e "s/<scgi_port>/$ScgiPort/g" /etc/nginx/rpc/"${UserToCreate}".local
+            perl -pi -e "s/<username>/${UserToCreate}/g" /etc/nginx/rpc/"${UserToCreate}".local
+            perl -pi -e "s/<USERNAME>/$UPPERNEWUSER/g" /etc/nginx/rpc/"${UserToCreate}".local
+            {
+                echo "upstream rtorrent-${UserToCreate} {"
+                echo "  server unix:/run/rtorrent/${UserToCreate}.sock;"
+                echo "}"
+            } >/etc/nginx/upstream/rtorrent-${UserToCreate}.conf
             gfnStatusLSB
 
             #### CakeBox
-            if [ "$gbIsInstalled_Cakebox" == "YES" ]; then
-                log_daemon_msg "$CreateUser_Cakebox [$UserToCreate]"
-                install -g root -o root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.rpc.user.cakebox.tmpl /etc/nginx/rpc/$UserToCreate.cakebox
-                perl -pi -e "s/<username>/$UserToCreate/g" /etc/nginx/rpc/$UserToCreate.cakebox
+            if [ "${gbIsInstalled_Cakebox}" == "YES" ]; then
+                log_daemon_msg "${CreateUser_Cakebox} [${UserToCreate}]"
+                install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.rpc.user.cakebox.tmpl /etc/nginx/rpc/"${UserToCreate}".cakebox
+                perl -pi -e "s/<username>/${UserToCreate}/g" /etc/nginx/rpc/"${UserToCreate}".cakebox
                 gfnStatusLSB
             fi
 
             #### NFS
-            if [ "$gbIsInstalled_NFS" == "YES" ]; then
-                log_daemon_msg "$CreateUser_NfsFile [$UserToCreate]"
-                sed -i '/'$UserToCreate'/d' /etc/exports
-                uid=$(grep $UserToCreate /etc/passwd | awk -F: '{ print $3 }')
+            if [ "${gbIsInstalled_NFS}" == "YES" ]; then
+                log_daemon_msg "${CreateUser_NfsFile} [${UserToCreate}]"
+                sed -i "/${UserToCreate}/d" /etc/exports
+                uid=$(grep "${UserToCreate}" /etc/passwd | awk -F: '{ print $3 }')
                 guid=$(grep MySB_users /etc/group | awk -F: '{ print $3 }')
-                [ ! -d /export/$UserToCreate ] && mkdir -p /export/$UserToCreate
-                # [[ -z $(grep "/export/$UserToCreate" /etc/fstab) ]] && echo -e "# /export/$UserToCreate\n/home/$UserToCreate /export/$UserToCreate none bind 0 0 " >>/etc/fstab
-                # [[ -z $(mount -l 2>/dev/null | grep /export/$UserToCreate) ]] && mount --bind /home/$UserToCreate /export/$UserToCreate
-                echo "# $UserToCreate" >>/etc/exports
-                echo "/home/$UserToCreate 10.0.0.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,crossmnt) 10.0.1.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,crossmnt) 10.0.2.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,crossmnt)" >>/etc/exports
-                echo "/export/$UserToCreate 10.0.0.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,crossmnt,nohide) 10.0.1.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,crossmnt,nohide) 10.0.2.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,crossmnt,nohide)" >>/etc/exports
+                [ ! -d /export/"${UserToCreate}" ] && mkdir -p /export/"${UserToCreate}"
+                # (! grep -q "/export/${UserToCreate}" /etc/fstab) && echo -e "# /export/${UserToCreate}\n/home/${UserToCreate} /export/${UserToCreate} none bind 0 0 " >>/etc/fstab
+                # (mount -l 2>/dev/null | grep -q /export/"${UserToCreate}") && mount --bind /home/"${UserToCreate}" /export/"${UserToCreate}"
+                {
+                    echo "# ${UserToCreate}"
+                    echo "/home/${UserToCreate} 10.0.0.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,crossmnt) 10.0.1.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,crossmnt) 10.0.2.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,crossmnt)"
+                    echo "/export/${UserToCreate} 10.0.0.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,crossmnt,nohide) 10.0.1.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,crossmnt,nohide) 10.0.2.0/24(ro,anonuid=$uid,async,anongid=$guid,insecure,no_subtree_check,nohide,crossmnt,nohide)"
+                } >>/etc/exports
                 gfnStatusLSB
             fi
 
             #### OpenVPN
-            if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
-                log_daemon_msg "$CreateUser_OpenVPN [$UserToCreate]"
-                gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/OpenVPN" 'client' "$UserToCreate" 'INSTALL'
+            if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
+                log_daemon_msg "${CreateUser_OpenVPN} [${UserToCreate}]"
+                gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/OpenVPN" 'client' "${UserToCreate}" 'INSTALL'
                 gfnStatusLSB
             fi
 
             #### NextCloud
-            if [ "$gbIsInstalled_NextCloud" == "YES" ]; then
-                UserExist="$(cmdMySQL 'NextCloud_db' "SELECT uid FROM nc_users WHERE uid='$UserToCreate';")"
+            if [ "${gbIsInstalled_NextCloud}" == "YES" ]; then
+                UserExist="$(cmdMySQL 'NextCloud_db' "SELECT uid FROM nc_users WHERE uid='${UserToCreate}';")"
 
                 if [ -z "$UserExist" ]; then
-                    log_daemon_msg "$CreateUser_NextCloud [$UserToCreate]"
-                    gfnNextCloudAccountManage 'create' "$UserToCreate" "$NewUserPassword"
+                    log_daemon_msg "${CreateUser_NextCloud} [${UserToCreate}]"
+                    gfnNextCloudAccountManage 'create' "${UserToCreate}" "$NewUserPassword"
                     gfnStatusLSB
                 else
-                    gfnNextCloudAccountManage 'edit' "$UserToCreate" "$NewUserPassword"
+                    gfnNextCloudAccountManage 'edit' "${UserToCreate}" "$NewUserPassword"
                 fi
                 if [ "$UserAccountType" == "normal" ]; then
-                    su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files:scan --path=\"/$UserToCreate/files/MySB_Home\" --quiet"
+                    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:scan --path=\"/${UserToCreate}/files/MySB_Home\" --quiet"
                 fi
             fi
 
             #### script init
-            log_daemon_msg "$CreateUser_rTorrentInit [$UserToCreate]"
-            install -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.rtorrent.tmpl /etc/init.d/rtorrent-$UserToCreate
-            perl -pi -e "s/<username>/$UserToCreate/g" /etc/init.d/rtorrent-$UserToCreate
+            log_daemon_msg "${CreateUser_rTorrentInit} [${UserToCreate}]"
+            install -o root -g root -m 0755 "${MySB_InstallDir}"/templates/init/etc.init.d.rtorrent.tmpl /etc/init.d/rtorrent-"${UserToCreate}"
+            perl -pi -e "s/<username>/${UserToCreate}/g" /etc/init.d/rtorrent-"${UserToCreate}"
             systemctl daemon-reload &>/dev/null
-            systemctl enable rtorrent-$UserToCreate &>/dev/null
+            systemctl enable rtorrent-"${UserToCreate}" &>/dev/null
             gfnStatusLSB
 
             #### cron
-            log_daemon_msg "$CreateUser_InitCron [$UserToCreate]"
+            log_daemon_msg "${CreateUser_InitCron} [${UserToCreate}]"
             crontab -l >/tmp/crontab.tmp
-            sed -i '/'$UserToCreate'/d' /tmp/crontab.tmp
-            echo "*/5 * * * * systemctl status rtorrent-$UserToCreate >/dev/null || systemctl restart rtorrent-$UserToCreate" >>/tmp/crontab.tmp
+            sed -i "/${UserToCreate}/d" /tmp/crontab.tmp
+            echo "*/5 * * * * systemctl status rtorrent-${UserToCreate} >/dev/null || systemctl restart rtorrent-${UserToCreate}" >>/tmp/crontab.tmp
             crontab /tmp/crontab.tmp
             rm -f /tmp/crontab.tmp
             gfnStatusLSB
 
             #### Postfix Alias
-            log_daemon_msg "Postfix alias [$UserToCreate]"
-            (! grep -q "$UserToCreate" /etc/aliases) && echo "$UserToCreate: $UserEmail" >>/etc/aliases
+            log_daemon_msg "Postfix alias [${UserToCreate}]"
+            (! grep -q "${UserToCreate}" /etc/aliases) && echo "${UserToCreate}: $UserEmail" >>/etc/aliases
             newaliases
             gfnStatusLSB
 
             #### Quota
-            gfnManageQuota "$CreateUser_Quota"
+            gfnManageQuota "${CreateUser_Quota}"
 
             #### rtorrent max memory / rTorrent Blocklist
             for seedUser in $gsUsersList; do
                 # rTorrent config 'pieces.memory.max.set'
-                log_daemon_msg "$CreateUser_PiecesMemory [$seedUser]"
-                # nPiecesMemoryMax=$((((gsMemory / gnTotalUsers) * 1024) * 1024))
+                log_daemon_msg "${CreateUser_PiecesMemory[*]} [$seedUser]"
                 nPiecesMemoryMax="$((gsMemory / 5))M"
                 nNumLine=$(cat /home/${seedUser}/.rtorrent.rc | grep 'pieces.memory.max.set' -n -m 1 | cut -d ':' -f 1)
                 sed -i '/pieces.memory.max.set/d' /home/${seedUser}/.rtorrent.rc
@@ -274,20 +299,19 @@ if [ -z "$sCheckDuplicate" ]; then
                 gfnStatusLSB
 
                 # rTorrent blocklist
-                if [ -f $MySB_InstallDir/files/blocklists/blocklist_rtorrent.txt ]; then
-                    log_daemon_msg "$CreateUser_Blocklists [$seedUser]"
-                    cp $MySB_InstallDir/files/blocklists/* $NewUserHomedir/blocklist/
+                if [ -f "${MySB_InstallDir}"/files/blocklists/blocklist_rtorrent.txt ]; then
+                    log_daemon_msg "${CreateUser_Blocklists} [$seedUser]"
+                    cp "${MySB_InstallDir}"/files/blocklists/* "$NewUserHomedir"/blocklist/
                     gfnStatusLSB
                 else
-                    log_daemon_msg "$CreateUser_NewBlocklists [$seedUser]"
-                    gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/scripts/BlocklistsRTorrent.bsh" 'REFRESH'
+                    log_daemon_msg "${CreateUser_NewBlocklists} [$seedUser]"
+                    gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/scripts/BlocklistsRTorrent.bsh" 'REFRESH'
                     gfnStatusLSB
                 fi
 
                 # rTorrent restart
-                systemctl status cron &>/dev/null
-                [ $? -eq 0 ] && bToRestart=1
-                if [ "$bToRestart" -eq 1 ] && [ -f /etc/init.d/rtorrent-$seedUser ]; then
+                (systemctl status cron &>/dev/null) && bToRestart=1
+                if [ "$bToRestart" -eq 1 ] && [ -f /etc/init.d/rtorrent-"$seedUser" ]; then
                     ServicesToRestart="${ServicesToRestart} rtorrent-$seedUser"
                     cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='$seedUser';"
                 fi
@@ -296,12 +320,12 @@ if [ -z "$sCheckDuplicate" ]; then
     esac
 
     #### Assign password
-    gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_ChangeUserPassword" "$UserToCreate" "$NewUserPassword" 'INSTALL'
+    gfnScriptInvoke 'source' "${MySB_InstallDir}/bin/MySB_ChangeUserPassword" "${UserToCreate}" "$NewUserPassword" 'INSTALL'
 
     #### Create new security rules
     if [ "$LocSwitch" != "INSTALL" ]; then
-        log_daemon_msg "$CreateUser_SecurituRules"
-        gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--users' "$LocSwitch"
+        log_daemon_msg "${CreateUser_SecurituRules}"
+        gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'refresh' '--users' "$LocSwitch"
         gfnStatusLSB
     fi
 
@@ -315,22 +339,23 @@ if [ -z "$sCheckDuplicate" ]; then
     gfnManageServices start "${ServicesToRestart}"
 
     #### renting
-    if [ ! -z "$gsRentingTVA" ] &&
-        [ ! -z "$gsRentingModel" ] &&
-        [ "$gsRentingGlobalCost" != "0.00" ] &&
-        [ "$gsRentingCostTva" != "0.00" ]; then
-        gfnMonthlyPayment "$UserToCreate"
+    if [ -n "${gsRentingTVA}" ] &&
+        [ -n "${gsRentingModel}" ] &&
+        [ "${gsRentingGlobalCost}" != "0.00" ] &&
+        [ "${gsRentingCostTva}" != "0.00" ]; then
+        gfnMonthlyPayment "${UserToCreate}"
     else
-        Subject="$CreateUser_SubjectAccountCreated [$UserToCreate]"
+        Subject="${CreateUser_SubjectAccountCreated} [${UserToCreate}]"
         [ "$LocSwitch" == "INSTALL" ] && Case="main_account" || Case="account_created"
-        Message="$CreateUser_MessageAccountCreated"
+        Message="${CreateUser_MessageAccountCreated}"
         gfnSendMail "$Subject" "${UserToCreate}" "$Case" "$Message"
     fi
 else
-    echo "User $UserToCreate already exist, aborting !"
+    echo "User ${UserToCreate} already exist, aborting !"
 fi
 
 # -----------------------------------------
-source $(dirname $0)/../inc/includes_after
+# shellcheck source=inc/includes_after
+source "$(dirname "$0")"/../inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

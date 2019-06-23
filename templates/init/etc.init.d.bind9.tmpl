@@ -24,24 +24,25 @@ test -f /etc/default/bind9 && . /etc/default/bind9
 
 test -x /usr/sbin/rndc || exit 0
 
+# shellcheck source=/dev/null
 . /lib/lsb/init-functions
 PIDFILE=/run/named/named.pid
 
 check_network() {
 	if [ -x /usr/bin/uname ] && [ "X$(/usr/bin/uname -o)" = XSolaris ]; then
-	IFCONFIG_OPTS="-au"
+		IFCONFIG_OPTS="-au"
 	else
-	IFCONFIG_OPTS=""
+		IFCONFIG_OPTS=""
 	fi
 	if [ -z "$(/sbin/ifconfig $IFCONFIG_OPTS)" ]; then
-	   #log_action_msg "No networks configured."
-	   return 1
+		#log_action_msg "No networks configured."
+		return 1
 	fi
 	return 0
 }
 
 case "$1" in
-	start)
+start)
 	log_daemon_msg "Starting domain name service..." "bind9"
 
 	modprobe capability >/dev/null 2>&1 || true
@@ -61,10 +62,12 @@ case "$1" in
 		log_end_msg 1
 	fi
 
-	if start-stop-daemon --start --oknodo --quiet --exec /usr/sbin/named \
-		--pidfile ${PIDFILE} -- $OPTIONS; then
-		if [ "X$RESOLVCONF" != "Xno" ] && [ -x /sbin/resolvconf ] ; then
-		echo "nameserver 127.0.0.1" | /sbin/resolvconf -a lo.named
+	if
+		start-stop-daemon --start --oknodo --quiet --exec /usr/sbin/named \
+		--pidfile ${PIDFILE} -- $OPTIONS
+	then
+		if [ "X$RESOLVCONF" != "Xno" ] && [ -x /sbin/resolvconf ]; then
+			echo "nameserver 127.0.0.1" | /sbin/resolvconf -a lo.named
 		fi
 		log_end_msg 0
 	else
@@ -72,45 +75,45 @@ case "$1" in
 	fi
 	;;
 
-	stop)
+stop)
 	log_daemon_msg "Stopping domain name service..." "bind9"
 	if ! check_network; then
 		log_action_msg "no networks configured"
 		log_end_msg 1
 	fi
 
-	if [ "X$RESOLVCONF" != "Xno" ] && [ -x /sbin/resolvconf ] ; then
+	if [ "X$RESOLVCONF" != "Xno" ] && [ -x /sbin/resolvconf ]; then
 		/sbin/resolvconf -d lo.named
 	fi
 	pid=$(/usr/sbin/rndc stop -p | awk '/^pid:/ {print $2}') || true
-	if [ -z "$pid" ]; then		# no pid found, so either not running, or error
+	if [ -z "$pid" ]; then # no pid found, so either not running, or error
 		pid=$(pgrep -f ^/usr/sbin/named) || true
 		start-stop-daemon --stop --oknodo --quiet --exec /usr/sbin/named \
-			--pidfile ${PIDFILE} -- $OPTIONS
+		--pidfile ${PIDFILE} -- $OPTIONS
 	fi
 	if [ -n "$pid" ]; then
 		sig=0
 		n=1
 		while kill -$sig $pid 2>/dev/null; do
-		if [ $n -eq 1 ]; then
-			echo "waiting for pid $pid to die" > /dev/null
-		fi
-		if [ $n -eq 11 ]; then
-			echo "giving up on pid $pid with kill -0; trying -9" > /dev/null
-			sig=9
-		fi
-		if [ $n -gt 20 ]; then
-			echo "giving up on pid $pid" > /dev/null
-			break
-		fi
-		n=$(($n+1))
-		sleep 1
+			if [ $n -eq 1 ]; then
+				echo "waiting for pid $pid to die" >/dev/null
+			fi
+			if [ $n -eq 11 ]; then
+				echo "giving up on pid $pid with kill -0; trying -9" >/dev/null
+				sig=9
+			fi
+			if [ $n -gt 20 ]; then
+				echo "giving up on pid $pid" >/dev/null
+				break
+			fi
+			n=$(($n + 1))
+			sleep 1
 		done
 	fi
 	log_end_msg 0
 	;;
 
-	reload|force-reload)
+reload | force-reload)
 	log_daemon_msg "Reloading domain name service..." "bind9"
 	if ! check_network; then
 		log_action_msg "no networks configured"
@@ -120,7 +123,7 @@ case "$1" in
 	/usr/sbin/rndc reload >/dev/null && log_end_msg 0 || log_end_msg 1
 	;;
 
-	restart)
+restart)
 	if ! check_network; then
 		log_action_msg "no networks configured"
 		exit 1
@@ -130,13 +133,13 @@ case "$1" in
 	$0 start
 	;;
 
-	status)
-		ret=0
+status)
+	ret=0
 	status_of_proc -p ${PIDFILE} /usr/sbin/named bind9 2>/dev/null || ret=$?
 	exit $ret
 	;;
 
-	*)
+*)
 	log_action_msg "Usage: /etc/init.d/bind9 {start|stop|reload|restart|force-reload|status}"
 	exit 1
 	;;

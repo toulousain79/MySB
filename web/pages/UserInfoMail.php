@@ -125,9 +125,9 @@ function PrintContent($user, $Case) {
 			$DisplayUserInfoDetail 	= true;
 			$DisplayLinks 			= true;
 			$DisplayRenting			= true;
-			$DisplayAllRenting	  = true;
+			$DisplayAllRenting		= true;
 			if ( $users_datas["admin"] == '1' ) {
-				$DisplayCommand			= true;
+				$DisplayCommand		= true;
 			}
 			break;
 		case 'new_user':
@@ -137,7 +137,7 @@ function PrintContent($user, $Case) {
 			$DisplayUserInfoDetail 	= false;
 			$DisplayLinks 			= false;
 			$DisplayRenting			= true;
-			$DisplayAllRenting	  = true;
+			$DisplayAllRenting		= true;
 			break;
 		case 'delete_user':
 			$DisplayGoTo 			= false;
@@ -146,7 +146,7 @@ function PrintContent($user, $Case) {
 			$DisplayUserInfoDetail 	= false;
 			$DisplayLinks 			= false;
 			$DisplayRenting			= true;
-			$DisplayAllRenting	  = false;
+			$DisplayAllRenting		= false;
 			break;
 		case 'account_confirmed':
 			$DisplayGoTo 			= true;
@@ -155,7 +155,7 @@ function PrintContent($user, $Case) {
 			$DisplayUserInfoDetail 	= true;
 			$DisplayLinks 			= true;
 			$DisplayRenting			= true;
-			$DisplayAllRenting	  = true;
+			$DisplayAllRenting		= true;
 			break;
 		case 'upgrade':
 			$DisplayGoTo 			= true;
@@ -164,7 +164,7 @@ function PrintContent($user, $Case) {
 			$DisplayUserInfoDetail 	= false;
 			$DisplayLinks 			= false;
 			$DisplayRenting			= true;
-			$DisplayAllRenting	  = true;
+			$DisplayAllRenting		= true;
 			if ( $users_datas["admin"] == '1' ) {
 				$DisplayCommand			= true;
 				$DisplayUserInfoDetail 	= true;
@@ -178,7 +178,7 @@ function PrintContent($user, $Case) {
 			$DisplayUserInfoDetail 	= false;
 			$DisplayLinks 			= false;
 			$DisplayRenting			= true;
-			$DisplayAllRenting	  = true;
+			$DisplayAllRenting		= true;
 			break;
 		case 'ip_updated':
 			$DisplayGoTo 			= true;
@@ -187,19 +187,19 @@ function PrintContent($user, $Case) {
 			$DisplayUserInfoDetail 	= false;
 			$DisplayLinks 			= false;
 			$DisplayRenting			= false;
-			$DisplayAllRenting	  = false;
+			$DisplayAllRenting		= false;
 			break;
 		case 'new_version':
 			$DisplayGoTo 			= false;
 			$DisplayCommand			= false;
 			if ( $users_datas["admin"] == '1' ) {
-				$DisplayCommand			= true;
+				$DisplayCommand		= true;
 			}
 			$DisplayUserInfo		= false;
 			$DisplayUserInfoDetail 	= false;
 			$DisplayLinks 			= false;
 			$DisplayRenting			= false;
-			$DisplayAllRenting	  = false;
+			$DisplayAllRenting		= false;
 			break;
 		case 'pgl_check':
 			$DisplayGoTo 			= false;
@@ -208,7 +208,7 @@ function PrintContent($user, $Case) {
 			$DisplayUserInfoDetail 	= false;
 			$DisplayLinks 			= false;
 			$DisplayRenting			= false;
-			$DisplayAllRenting	  = false;
+			$DisplayAllRenting		= false;
 			break;
 		default:
 			$DisplayGoTo 			= false;
@@ -217,7 +217,7 @@ function PrintContent($user, $Case) {
 			$DisplayUserInfoDetail 	= false;
 			$DisplayLinks 			= false;
 			$DisplayRenting			= false;
-			$DisplayAllRenting	  = false;
+			$DisplayAllRenting		= false;
 			break;
 	}
 
@@ -248,7 +248,7 @@ function PrintContent($user, $Case) {
 					break;
 			}
 			$UserPrice = $MySB_DB->sum("tracking_rent_options", "amount", ["id_users" => $UserID]);
-			$UserPrice = $RentingDatas["rt_price_per_users"] + $UserPrice;
+			$UserPrice = $RentingDatas["rt_price_per_users"] + intval($UserPrice);
 			$Treasury = $users_datas["treasury"];
 ?>
 			<!-- //////////////////////

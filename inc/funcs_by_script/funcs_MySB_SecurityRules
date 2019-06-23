@@ -1,4 +1,5 @@
 #!/bin/bash
+# rev 5.5
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -21,15 +22,17 @@
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
 ######################################################################
-([ -z "$vars" ] || [ "$vars" -ne 1 ]) && echo "Please load 'vars' file before..." && return
-funcs_MySB_SecurityRules=1
+{ [ -z "${vars}" ] || [ "${vars}" -ne 1 ]; } && {
+    echo "Please load 'vars' file before..."
+    return
+}
 ##################### FIRST LINE #####################################
 
 #### Loading vars
 gfnLoadingVars() {
     gfnListCountUsers 'normal' #($gsUsersList)
     AllUsersIPs="${gsSeedboxUsersIPs} ${gsMainUserIPs}"
-    AllUsersIPs="$(echo $AllUsersIPs | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq)"
+    AllUsersIPs="$(echo "$AllUsersIPs" | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq)"
     ServicesToRestart=""
     ServicesToStop=""
     rTorrentToStop=""
@@ -48,11 +51,10 @@ gfnLoadingVars() {
     LoadOnBoot=NO
 
     # Check by arguments
-    case "$ModeSwitch" in
+    case "${ModeSwitch}" in
         INSTALL | UPGRADE)
             LoadKernelModules=YES
             LoadKernelParameter=YES
-            ServicesToRestart=''
             ;;
         INIT)
             LoadKernelModules=YES
@@ -69,11 +71,11 @@ gfnLoadingVars() {
             ;;
     esac
 
-    case "$InitSwitch" in
+    case "${InitSwitch}" in
         create)
             ApplyConfigNginx="$(gfnCheckCommand 1 nginx)"
-            ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
-            ApplyConfigFail2Ban=$gbIsInstalled_Fail2Ban
+            ApplyConfigPeerGuardian=${gbIsInstalled_PeerGuardian}
+            ApplyConfigFail2Ban=${gbIsInstalled_Fail2Ban}
             ApplyConfigBind="$(gfnCheckCommand 1 named)"
             ;;
         clean)
@@ -81,12 +83,12 @@ gfnLoadingVars() {
             ApplyConfigBind="$(gfnCheckCommand 1 named)"
             ;;
         refresh)
-            case "$RefreshSwitch" in
+            case "${RefreshSwitch}" in
                 --letsencrypt)
                     ApplyRtorrentUsed=NO
                     ApplyIptablesUsers=NO
-                    ApplyIptablesLetsEncrypt=$gbIsInstalled_LetsEncrypt
-                    ApplyConfigPeerGuardian=$gbIsInstalled_PeerGuardian
+                    ApplyIptablesLetsEncrypt=${gbIsInstalled_LetsEncrypt}
+                    ApplyConfigPeerGuardian=${gbIsInstalled_PeerGuardian}
                     ;;
                 --users)
                     ApplyRtorrentUsed=NO
@@ -122,12 +124,14 @@ gfnLoadingVars() {
             ;;
     esac
 
+    export ApplyIptablesUsers ApplyIptablesLetsEncrypt LoadOnBoot LoadKernelParameter LoadKernelModules
+
     [ "$ApplyConfigBind" == "YES" ] && ServicesToRestart="${ServicesToRestart} bind9"
     [ "$ApplyConfigFail2Ban" == "YES" ] && ServicesToRestart="${ServicesToRestart} fail2ban"
     [ "$ApplyConfigPeerGuardian" == "YES" ] && ServicesToRestart="${ServicesToRestart} pglcmd"
     [ "$ApplyConfigNginx" == "YES" ] && ServicesToRestart="${ServicesToRestart} nginx"
     if gfnCheckCommand 0 dnscrypt-proxy; then
-        case "$gbDnsCryptSwitch" in
+        case "${gbDnsCryptSwitch}" in
             '0') ServicesToStop="${ServicesToStop} dnscrypt-proxy" ;;
             '1') ServicesToRestart="${ServicesToRestart} dnscrypt-proxy" ;;
         esac
@@ -137,8 +141,8 @@ gfnLoadingVars() {
 #### Create all rules for services (config files)
 gfnCreateServicesRules() {
     #### NginX
-    if [ "$ApplyConfigNginx" == "YES" ] && [ "$gsIpRestriction" == "YES" ]; then
-        log_daemon_msg "$SecurityRules_NginX_AllUsers"
+    if [ "$ApplyConfigNginx" == "YES" ] && [ "${gsIpRestriction}" == "YES" ]; then
+        log_daemon_msg "${SecurityRules_NginX_AllUsers}"
         echo "	# Users allowed IP" >/etc/nginx/conf.d/ip_restriction
         for IPv4 in $AllUsersIPs; do
             echo "	allow $IPv4;" >>/etc/nginx/conf.d/ip_restriction
@@ -151,11 +155,11 @@ gfnCreateServicesRules() {
     #### NginX
     if [ "$ApplyConfigNginx" == "YES" ]; then
         if [ "$gsIpRestriction" == "YES" ]; then
-            if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
+            if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
                 # OpenVPN local IP addresses
-                log_daemon_msg "$SecurityRules_NginX_OpenVPN"
+                log_daemon_msg "${SecurityRules_NginX_OpenVPN}"
                 echo "	# Restricted IP for OpenVPN users" >>/etc/nginx/conf.d/ip_restriction
-                for IPv4 in $gsVpnLocalIps; do
+                for IPv4 in ${gsVpnLocalIps}; do
                     echo "	allow $IPv4;" >>/etc/nginx/conf.d/ip_restriction
                 done
                 unset IPv4
@@ -163,7 +167,7 @@ gfnCreateServicesRules() {
             fi
 
             # Loopback
-            log_daemon_msg "$SecurityRules_NginX_Loopback"
+            log_daemon_msg "${SecurityRules_NginX_Loopback}"
             echo "	# Localhost" >>/etc/nginx/conf.d/ip_restriction
             echo "	allow 127.0.0.1;" >>/etc/nginx/conf.d/ip_restriction
             gfnStatusLSB
@@ -172,7 +176,7 @@ gfnCreateServicesRules() {
             echo "	# Deny all others" >>/etc/nginx/conf.d/ip_restriction
             echo "	deny all;" >>/etc/nginx/conf.d/ip_restriction
         else
-            log_daemon_msg "$SecurityRules_NginX_SatisfyAll"
+            log_daemon_msg "${SecurityRules_NginX_SatisfyAll}"
             echo "	# Allow any one" >>/etc/nginx/conf.d/ip_restriction
             echo "	satisfy all;" >/etc/nginx/conf.d/ip_restriction
             gfnStatusLSB
@@ -182,7 +186,7 @@ gfnCreateServicesRules() {
 
     #### BIND
     if [ "$ApplyConfigBind" == "YES" ]; then
-        log_daemon_msg "$SecurityRules_Bind_BlockOut"
+        log_daemon_msg "${SecurityRules_Bind_BlockOut}"
         echo "#### MySB - Blacklisted domains (ex: inactive trackers)" >/etc/bind/MySB.zones.blakclists
         AllTrackersDomain="$(cmdMySQL 'MySB_db' "SELECT tracker_domain FROM trackers_list WHERE is_active='0' AND to_check='0';")"
         for TrackerDomain in $AllTrackersDomain; do
@@ -191,7 +195,7 @@ gfnCreateServicesRules() {
         perl -pi -e "s/^#include \"\/etc\/bind\/MySB.zones.blakclists\";/include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
         gfnStatusLSB 0
 
-        log_daemon_msg "$SecurityRules_Bind_TrackersHosts"
+        log_daemon_msg "${SecurityRules_Bind_TrackersHosts[@]}"
         gfnCreateHostsFile
         gfnStatusLSB 0
     fi
@@ -199,7 +203,8 @@ gfnCreateServicesRules() {
 
     #### Fail2Ban
     if [ "$ApplyConfigFail2Ban" == "YES" ]; then
-        source $MySB_InstallDir/inc/funcs_by_script/funcs_Fail2Ban
+        # shellcheck source=inc/funcs_by_script/funcs_Fail2Ban
+        source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Fail2Ban
         gfnFail2BanJailLocal
         gfnFail2BanWhitheList 1
     fi
@@ -207,7 +212,8 @@ gfnCreateServicesRules() {
 
     #### PeerGuardian
     if [ "$ApplyConfigPeerGuardian" == "YES" ]; then
-        [ -z $funcs_PeerGuardian ] && source $MySB_InstallDir/inc/funcs_by_script/funcs_PeerGuardian
+        # shellcheck source=inc/funcs_by_script/funcs_PeerGuardian
+        [ -z "${funcs_PeerGuardian}" ] && source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_PeerGuardian
 
         # Create '/etc/pgl/pglcmd.conf'
         gfnPeerGuardianPglcmdConf 0
@@ -228,26 +234,28 @@ gfnRestartRtorrentSessions() {
     if [ "$ApplyRtorrentUsed" == "YES" ]; then
         case "$1" in
             stop)
-                for FnUser in $gsUsersList; do
-                    if [ -f /etc/init.d/rtorrent-$FnUser ]; then
-                        rTorrentToStop="${rTorrentToStop} rtorrent-$FnUser"
-                        bToRestart="$(cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser';")"
-                        systemctl status rtorrent-$FnUser &>/dev/null
-                        [ $? -eq 0 ] && bToRestart=1
-                        cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='$bToRestart' WHERE users_ident='$FnUser';"
+                for FnUser in ${gsUsersList}; do
+                    if [ -f /etc/init.d/rtorrent-"${FnUser}" ]; then
+                        rTorrentToStop="${rTorrentToStop} rtorrent-${FnUser}"
+                        bToRestart="$(cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='${FnUser}';")"
+                        (systemctl status rtorrent-"${FnUser}" &>/dev/null) && bToRestart=1
+                        cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='$bToRestart' WHERE users_ident='${FnUser}';"
                     fi
                 done
                 ;;
             start)
                 for FnUser in $gsUsersList; do
-                    systemctl status cron &>/dev/null
-                    [ $? -eq 0 ] && bCreateAfterClean=1 || bCreateAfterClean="$(cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser' AND is_active='1';")"
+                    if (systemctl status cron &>/dev/null); then
+                        bCreateAfterClean=1
+                    else
+                        bCreateAfterClean="$(cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='${FnUser}' AND is_active='1';")"
+                    fi
 
-                    if [ "$bCreateAfterClean" -eq 1 ] && [ -f /etc/init.d/rtorrent-$FnUser ]; then
-                        bToRestart="$(cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='$FnUser';")"
-                        [ "$ModeSwitch" == "INIT" ] && bToRestart="$(cmdMySQL 'MySB_db' "SELECT is_active FROM users WHERE users_ident='$FnUser';")"
-                        [ "$bToRestart" -eq 1 ] && rTorrentToStart="${rTorrentToStart} rtorrent-$FnUser"
-                        cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='$FnUser';"
+                    if [ "$bCreateAfterClean" -eq 1 ] && [ -f /etc/init.d/rtorrent-"${FnUser}" ]; then
+                        bToRestart="$(cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='${FnUser}';")"
+                        [ "$ModeSwitch" == "INIT" ] && bToRestart="$(cmdMySQL 'MySB_db' "SELECT is_active FROM users WHERE users_ident='${FnUser}';")"
+                        [ "$bToRestart" -eq 1 ] && rTorrentToStart="${rTorrentToStart} rtorrent-${FnUser}"
+                        cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='${FnUser}';"
                     fi
                 done
                 ;;
@@ -257,30 +265,30 @@ gfnRestartRtorrentSessions() {
 
 #### Crete '/etc/hosts' file
 gfnCreateHostsFile() {
-    local nIdTracker sTracker sTrackerDomain sTrackerIPv4 sIPv4 sLign sROW
+    local nIdTracker sTracker sTrackerDomain sTrackerIPv4 sIPv4 sLine sROW
 
     echo "127.0.0.1	 localhost.localdomain localhost" >/etc/hosts
-    echo "$gsSrvIpAddress   $gsHostNameFqdn $(hostname -s)" >>/etc/hosts
-    [[ $gsSrvIpAddress != "$gsSrvIpAddressExt" ]] && echo "$gsSrvIpAddressExt	 $gsHostNameFqdn" >>/etc/hosts
+    echo "${gsSrvIpAddress}   ${gsHostNameFqdn} $(hostname -s)" >>/etc/hosts
+    [[ $gsSrvIpAddress != "${gsSrvIpAddressExt}" ]] && echo "$gsSrvIpAddressExt	 $gsHostNameFqdn" >>/etc/hosts
     echo "" >>/etc/hosts
 
-    cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker,tracker_domain FROM trackers_list WHERE is_active='1';" | sed 's/\t/|/g;' | while read sROW; do
-        nIdTracker="$(echo $sROW | awk '{split($0,a,"|"); print a[1]}')"
-        sTracker="$(echo $sROW | awk '{split($0,a,"|"); print a[2]}')"
-        sTrackerDomain="$(echo $sROW | awk '{split($0,a,"|"); print a[3]}')"
+    cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker,tracker_domain FROM trackers_list WHERE is_active='1';" | sed 's/\t/|/g;' | while read -r sROW; do
+        nIdTracker="$(echo "$sROW" | awk '{split($0,a,"|"); print a[1]}')"
+        sTracker="$(echo "$sROW" | awk '{split($0,a,"|"); print a[2]}')"
+        sTrackerDomain="$(echo "$sROW" | awk '{split($0,a,"|"); print a[3]}')"
         sTrackerIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list='$nIdTracker';")"
 
-        if [ ! -z "$sTrackerIPv4" ]; then
-            if [ -z "$(grep 'Force trackers resolution' /etc/hosts)" ]; then
+        if [ -n "$sTrackerIPv4" ]; then
+            if (! grep -q 'Force trackers resolution' /etc/hosts); then
                 echo "#### MySB - Force trackers resolution (ex: DNS liar)" >>/etc/hosts
             fi
             if [ "$sTracker" == "$sTrackerDomain" ]; then
-                sLign="$sTrackerDomain"
+                sLine="$sTrackerDomain"
             else
-                sLign="$sTracker, $sTrackerDomain"
+                sLine="$sTracker, $sTrackerDomain"
             fi
             for sIPv4 in $sTrackerIPv4; do
-                echo "$sIPv4	   $sLign" >>/etc/hosts
+                echo "$sIPv4	   $sLine" >>/etc/hosts
             done
         fi
     done

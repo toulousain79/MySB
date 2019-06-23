@@ -43,12 +43,12 @@ if ( IfApplyConfig() > 0 ) {
 		echo '<script type="text/javascript">ApplyConfig("Updated");</script>';
 	}
 
-	GenerateMessage('message_only', $type, $message, '');
+	GenerateMessage('message_only', $type, $message);
 	header('Refresh: 4; URL='.$_SESSION['referrer'].'');
 } else {
 	$type = 'information';
 	$message = ApplyConfig_NothingToApply;
-	GenerateMessage('message_only', $type, $message, '');
+	GenerateMessage('message_only', $type, $message);
 	header('Refresh: 3; URL=/');
 }
 

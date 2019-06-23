@@ -64,7 +64,7 @@ function Form($RealFreeSpace, $FreeSpace) {
 				</table>
 				<div align="center"><p class="Comments">' . MainUser_UserAdd_Comment . '</p></div>';
 	if ($PortalIsItLocked === false) {
-		echo '<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' .MainUser_UserAdd_AddUser. '"">';
+		echo '<input class="submit" style="width:' . strlen(Global_SaveChanges)*10 . 'px; margin-top: 10px;" name="submit" type="submit" value="' .MainUser_UserAdd_AddUser. '">';
 	}
 	echo '</div>
 		</form>';
@@ -147,9 +147,9 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				} else {
 					$quota = 0;
 				}
-				// if ( $quota > $free_space ) {
-				// 	$quota = $free_space;
-				// }
+				if ( $quota > $free_space ) {
+					$quota = $free_space;
+				}
 				$quota = round($quota*(1024*1024),2);
 				$value = $MySB_DB->update("users", ["quota" => $quota, "quota_type" => $quota_type], ["users_ident" => $users_ident]);
 				$result = $result+$value;
@@ -212,10 +212,9 @@ if ( !empty($sUsersList) ) {
 	// Is lock ?
 	$PortalIsItLocked = PortalIsItLocked();
 ?>
-	<div id="scrollmenu">
+	<div style="margin-top: 10px; margin-bottom: 20px;" id="scrollmenu" align="center">
 	<form class="form_settings" method="post" action="">
-		<div align="center" style="margin-top: 50px; margin-bottom: 20px;"><table style="border-spacing:1;">
-			<input name="free_space" type="hidden" value="<?php echo $RealFreeSpace; ?>"/>
+		<table style="border-spacing:1;">
 			<tr>
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Username; ?></th>
 				<th style="text-align:center;"><?php echo MainUser_UserAdd_Table_Email; ?></th>
@@ -368,12 +367,11 @@ if ( !empty($sUsersList) ) {
 ?>
 			</table>
 
+			<input name="free_space" type="hidden" value="<?php echo $RealFreeSpace; ?>"/>
 		<?php if ( ($IsMainUser) && ($PortalIsItLocked === false) ) { ?>
 			<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">
 		<?php } ?>
-
-		</div>
-	</div>
 	</form>
+	</div>
 <?php
 //#################### LAST LINE ######################################

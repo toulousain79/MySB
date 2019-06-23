@@ -45,6 +45,9 @@ $MySB_Version = GetVersion();
 	<!-- Messages animated CSS -->
 	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/buttons.css" />
 	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/animate.css" />
+	<!-- Tooltipster -->
+	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/tooltipster.bundle.min.css" />
+	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/tooltipster-sideTip-mysb.min.css" />
 	<!-- jquery -->
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.min.js"></script>
 	<!-- modernizr enables HTML5 elements and feature detects -->
@@ -54,6 +57,9 @@ $MySB_Version = GetVersion();
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.create_message.js"></script>
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/waiting.js"></script>
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/mysb.js"></script>
+	<!-- Tooltipster -->
+	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/tooltipster.bundle.min.js"></script>
+
 <?php
 	switch ($_SERVER['REQUEST_URI']) {
 		case '/?admin/smtp.html':
@@ -64,6 +70,17 @@ $MySB_Version = GetVersion();
 			echo '	<script type="text/javascript" src="'. THEMES_PATH . 'MySB/js/jquery.color.js"></script>';
 			// Import The jQuery Script
 			echo '	<script type="text/javascript" src="'. THEMES_PATH . 'MySB/js/jMenu.js"></script>';
+			break;
+		case '/?user/synchronization.html':
+			// Tooltipster
+			echo "	<script>$(document).ready(function() { $('.tooltip').tooltipster({theme: 'tooltipster-mysb', side: 'right', interactive: true});});</script>";
+			break;
+		case '/?admin/system.html':
+			// Tooltipster
+			echo "	<script>$(document).ready(function() { $('.tooltip').tooltipster({theme: 'tooltipster-mysb', side: 'right', interactive: true});});</script>";
+			break;
+		default:
+			echo "	<script>$(document).ready(function() { $('.tooltip').tooltipster({theme: 'tooltipster-mysb', side: 'bottom'});});</script>";
 			break;
 	}
 ?>
@@ -114,7 +131,6 @@ $MySB_Version = GetVersion();
 		<div id="site_content">
 			<div class="content">
 <?php
-			if ( isset($_SESSION['page']) ) {
 				switch ($_SESSION['page']) {
 					case "ChangePassword":
 						require_once WEB_PAGES .'/ChangePassword.php';
@@ -129,17 +145,20 @@ $MySB_Version = GetVersion();
 						if ($this->hasContent('extended')) echo $this->content('extended');
 						break;
 				}
-			} else {
-				echo $this->content();
-				if ($this->hasContent('extended')) echo $this->content('extended');
-			}
 ?>
 			</div>
 			<div id="sidebar_container">
 				<?php echo $this->content('sidebar', true); ?>
 			</div>
 		</div>
+			<a target="_blank" href="https://www.blockchain.com/btc/payment_request?address=1HtuGsnSsGoUz7DmRbDLCFnRc41jYEY2FE"><img alt="<?php echo Layout_Bitcoin_Text; ?>" border="0" src="<?php echo THEMES_PATH . 'MySB/images/bitcoin.png'; ?>"></a>
 
+			<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank" style="display:inline;">
+				<input type="hidden" name="cmd" value="_s-xclick">
+				<input type="hidden" name="hosted_button_id" value="<?php echo Layout_Paypal_ID; ?>">
+				<input type="image" src="<?php echo THEMES_PATH . 'MySB/images/paypal.png'; ?>" border="0" name="submit" alt="<?php echo Layout_Paypal_Text; ?>">
+				<img alt="" border="0" src="<?php echo THEMES_PATH . 'MySB/images/pixel.gif'; ?>" width="1" height="1">
+			</form>
 		<div id="scroll">
 			<a title="Scroll to the top" class="top" href="#"><img src="<?php echo THEMES_PATH; ?>MySB/images/top.png" alt="top" /></a>
 		</div>
@@ -147,7 +166,7 @@ $MySB_Version = GetVersion();
 <?php
 		if ( !isset($_SESSION['page']) ) {
 			$IsCurrentPage = url_match('/') ? ' class="current"': '';
-			$hidden = (MainUser()) ? true : false;
+			$hidden = (MainUser($CurrentUser)) ? true : false;
 			$FooterNavBar = '<a ' . $IsCurrentPage . ' href="' . URL_PUBLIC . '">' . Global_Home . '</a>';
 			foreach($this->find('/')->children(null, array(), $hidden) as $menu):
 				if ( ($menu->title != "Apply configuration") && ($menu->title != "Services") ) {
@@ -158,15 +177,9 @@ $MySB_Version = GetVersion();
 			echo $FooterNavBar . '<br /><br />';
 		}
 ?>
-			<a target="_blank" href="https://github.com/toulousain79/MySB/" title="<?php echo Layout_OnGithub; ?>"><?php echo Layout_OnGithub; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/wiki" title="<?php echo Layout_Wiki; ?>"><?php echo Layout_Wiki; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/blob/<?php echo $MySB_Version; ?>/Changelog.md" title="Changelog <?php echo $MySB_Version; ?>">Changelog <?php echo $MySB_Version; ?></a><br />
-			<a target="_blank" href="http://www.css3templates.co.uk">Copyright &copy; CSS3_two</a> | <a target="_blank" href="http://www.wolfcms.org/" title="<?php echo Layout_Wolf; ?>"><?php echo Layout_Wolf; ?></a> | <a target="_blank" href="http://medoo.in/" title="<?php echo Layout_Medoo; ?>"><?php echo Layout_Medoo; ?></a>
-			<br />
-			<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank">
-				<input type="hidden" name="cmd" value="_s-xclick">
-				<input type="hidden" name="hosted_button_id" value="<?php echo Layout_Paypal_ID; ?>">
-				<input type="image" src="<?php echo THEMES_PATH . 'MySB/images/' . Layout_Paypal_IMG; ?>" border="0" name="submit" alt="<?php echo Layout_Paypal_Text; ?>">
-				<img alt="" border="0" src="<?php echo THEMES_PATH . 'MySB/images/pixel.gif'; ?>" width="1" height="1">
-			</form>
+			<a target="_blank" href="https://github.com/toulousain79/MySB/" title="<?php echo Layout_OnGithub; ?>"><?php echo Layout_OnGithub; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/wiki" title="<?php echo Layout_Wiki; ?>"><?php echo Layout_Wiki; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/blob/<?php echo $MySB_Version; ?>/Changelog.md" title="Changelog <?php echo $MySB_Version; ?>">Changelog <?php echo $MySB_Version; ?></a>
+			<br /><br />
+			<a target="_blank" href="http://www.css3templates.co.uk">Copyright &copy; CSS3_two</a> | <a target="_blank" href="https://github.com/wolfcms/wolfcms" title="<?php echo Layout_Wolf; ?>"><?php echo Layout_Wolf; ?></a> | <a target="_blank" href="http://medoo.in/" title="<?php echo Layout_Medoo; ?>"><?php echo Layout_Medoo; ?></a>
 		</footer>
 	</div>
 
@@ -179,6 +192,7 @@ $MySB_Version = GetVersion();
 		$('.top').click(function() {$('html, body').animate({scrollTop:0}, 'fast'); return false;});
 		});
 	</script>
+
 <?php
 	switch ($_SERVER['REQUEST_URI']) {
 		case '/?blocklists/usual-blocklists.html':

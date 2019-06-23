@@ -1,0 +1,108 @@
+#!/bin/bash
+# rev 5.5
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#	 _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#	  _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#	   _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#		_\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#		 _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#		  _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+# ARGs: $d.hash=,$d.base_path=,$d.directory=,$d.name=,$d.loaded_file=,$d.custom1=,$d.custom2=
+
+#### VARs
+sInfoHash="$1"
+get_base_path="$2"
+get_directory="$3"
+get_name="$4"
+get_loaded_file="$5"
+get_custom1="$6"
+get_custom2="$7"
+sUserName="$(whoami)"
+nCgiPort="<scgi_port>"
+dTimestamp=$(date +%Y%m%d-%H%M%S)
+sLogFile="/home/${sUserName}/logs/$(basename "$0").log"
+sSqlParams='--defaults-extra-file=/home/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N'
+
+#### Step 1 - Log header
+{
+    echo "################################################################################"
+    echo "Timestamp: ${dTimestamp}"
+    echo "UserName: ${sUserName}"
+    echo "Name: ${get_name}"
+    echo "Hash: ${sInfoHash}"
+    echo "Base_path: ${get_base_path}"
+    [ -n "${get_custom1}" ] && echo "Label: ${get_custom1}"
+    echo "Directory: ${get_directory}"
+    echo "Torrent loaded: ${get_loaded_file}"
+    echo "Torrent dir: ${get_custom2}"
+    echo "--------------"
+} >>"${sLogFile}"
+
+#### Stop if needed
+[ -z "$(getent passwd "${sUserName}")" ] && exit 1
+[ -z "${get_base_path}" ] && exit 1
+[ -z "${get_directory}" ] && exit 1
+[ -z "${get_name}" ] && exit 1
+
+#### Step 2 - Get torrent infos
+if [ -f "$get_custom2" ]; then
+    #sInfoHash="$(transmission-show "${get_custom2}" | grep 'Hash: ' | awk '{printf $2}')"
+    #sName="$(transmission-show "${get_custom2}" | grep 'Name: ' | awk '{printf $2}')"
+    sPrivacy="$(transmission-show "${get_custom2}" | grep 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
+
+    if [ -z "${sInfoHash}" ] || [ -z "${get_name}" ] || [ -z "${sPrivacy}" ]; then
+        {
+            echo "--------------------"
+            echo "Timestamp: $dTimestamp"
+            echo "Hash: ${sInfoHash}"
+            echo "Name: ${get_name}"
+            echo "Privacy: ${sPrivacy}"
+            echo "--------------------"
+        } >>"${sLogFile}"
+    else
+        nId="$(mysql ${sSqlParams} -e "SELECT id_torrents FROM torrents WHERE info_hash='${sInfoHash}' AND name='${get_name}';")"
+        if [ -z "${nId}" ]; then
+            mysql ${sSqlParams} -e "INSERT INTO torrents (info_hash,name,privacy,state,tree) VALUES ('${sInfoHash}', '${get_name}', '${sPrivacy}', 'completed', '${get_base_path}');" -v >>"${sLogFile}"
+        else
+            mysql ${sSqlParams} -e "UPDATE torrents SET state='completed', tree='${get_base_path}' WHERE info_hash='${sInfoHash}' AND tree='${get_base_path}'" -v >>"${sLogFile}"
+        fi
+    fi
+fi
+
+#### Step 3 - Execute PHP command (Mail notification)
+#curl --retry 3 --silent --show-error --data "username=${sUserName}&get_base_path=$get_base_path&get_directory=$get_directory&get_name=${get_name}&get_loaded_file=$get_loaded_file&get_custom1=$get_custom1&get_custom2=$get_custom2" http://localhost:8888/rTorrent 2>>"${sLogFile}"
+
+#### Step 4 - Update user quota
+sudo /bin/bash /home/"${sUserName}"/.rTorrent_tasks.sh 'quota'
+
+#### Step 5 - Save full session
+xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash} >>"${sLogFile}"
+
+#### Step 6 - Execute user scripts
+UserScripts=$(find "/home/${sUserName}/scripts/" -type f -name "*.sh")
+if [ -n "$UserScripts" ]; then
+    for Script in $UserScripts; do
+        /usr/bin/screen -dmS "${sUserName}-${dTimestamp}" /bin/bash "$Script" "$get_base_path" "$get_directory" "$get_custom1" "${get_name}" "$get_loaded_file"
+    done
+fi
+
+echo >>"${sLogFile}"
+sed -i '/^M/d' "${sLogFile}"
+
+##################### LAST LINE ######################################

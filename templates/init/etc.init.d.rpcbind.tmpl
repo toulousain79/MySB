@@ -18,57 +18,48 @@
 
 test -f /sbin/rpcbind || exit 0
 
+# shellcheck source=/dev/null
 . /lib/lsb/init-functions
 
 OPTIONS="-w -h 127.0.0.1 -h 10.0.2.1 -h 10.0.0.1 -h 10.0.1.1"
 STATEDIR=/run/rpcbind
 PIDFILE=/run/rpcbind.pid
 
-if [ -f /etc/default/rpcbind ]
-then
+if [ -f /etc/default/rpcbind ]; then
+	# shellcheck source=/dev/null
 	. /etc/default/rpcbind
-elif [ -f /etc/rpcbind.conf ]
-then
+elif [ -f /etc/rpcbind.conf ]; then
+	# shellcheck source=/dev/null
 	. /etc/rpcbind.conf
 fi
 
-start ()
-{
-	if [ ! -d $STATEDIR ] ; then
+start() {
+	if [ ! -d $STATEDIR ]; then
 		mkdir $STATEDIR
 	fi
-	if [ ! -O $STATEDIR ] ; then
+	if [ ! -O $STATEDIR ]; then
 		log_begin_msg "$STATEDIR not owned by root"
 		log_end_msg 1
 		exit 1
 	fi
 
-
-
-
-
-
-
-
 	[ -x /sbin/restorecon ] && /sbin/restorecon $STATEDIR
-	pid=$( pidofproc /sbin/rpcbind )
-	if [ -n "$pid" ]
-	then
+	pid=$(pidofproc /sbin/rpcbind)
+	if [ -n "$pid" ]; then
 		log_action_msg "Already running: rcpbind"
 		exit 0
 	fi
 	log_daemon_msg "Starting RPC port mapper daemon" "rpcbind"
 	start-stop-daemon --start --quiet --oknodo --exec /sbin/rpcbind -- "$@"
-	pid=$( pidofproc /sbin/rpcbind )
-	echo -n "$pid" >"$PIDFILE"
+	pid=$(pidofproc /sbin/rpcbind)
+	echo "$pid" >"$PIDFILE"
 	# /run/sendsigs.omit.d is created by /etc/init.d/mountkernfs.sh
 	ln -sf "$PIDFILE" /run/sendsigs.omit.d/rpcbind
 	log_end_msg $?
 
 }
 
-stop ()
-{
+stop() {
 	log_daemon_msg "Stopping RPC port mapper daemon" "rpcbind"
 	start-stop-daemon --stop --quiet --oknodo --exec /sbin/rpcbind
 	rm -f "$PIDFILE"
@@ -76,32 +67,32 @@ stop ()
 }
 
 case "$1" in
-	start)
-		if init_is_upstart; then
-			exit 1
-		fi
-		start $OPTIONS
-		;;
-	stop)
-		if init_is_upstart; then
-			exit 0
-		fi
-		stop
-		;;
-	restart|force-reload)
-		if init_is_upstart; then
-			exit 1
-		fi
-		stop
-		start $OPTIONS
-		;;
-	status)
-		status_of_proc /sbin/rpcbind rpcbind && exit 0 || exit $?
-		;;
-	*)
-		log_success_msg "Usage: /etc/init.d/rpcbind {start|stop|force-reload|restart|status}"
+start)
+	if init_is_upstart; then
 		exit 1
-		;;
+	fi
+	start $OPTIONS
+	;;
+stop)
+	if init_is_upstart; then
+		exit 0
+	fi
+	stop
+	;;
+restart | force-reload)
+	if init_is_upstart; then
+		exit 1
+	fi
+	stop
+	start $OPTIONS
+	;;
+status)
+	status_of_proc /sbin/rpcbind rpcbind && exit 0 || exit $?
+	;;
+*)
+	log_success_msg "Usage: /etc/init.d/rpcbind {start|stop|force-reload|restart|status}"
+	exit 1
+	;;
 esac
 
 exit 0

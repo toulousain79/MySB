@@ -1,6 +1,8 @@
 #!/bin/bash
+# rev 5.5
 # ----------------------------------
-source $(dirname $0)/../inc/includes_before
+# shellcheck source=inc/includes_before
+source "$(dirname "$0")/../inc/includes_before"
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -25,23 +27,24 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### Includes
-source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
+# shellcheck source=inc/funcs_by_script/funcs_MySB_CreateUser
+source "$MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser"
 
 if [ "$USAGE" == "ON" ]; then
     gfnListCountUsers 'all'
     LIST=""
-    for User in $gsUsersList; do
-        if [ "$User" != "$gsMainUserName" ]; then
+    for User in ${gsUsersList}; do
+        if [ "$User" != "${gsMainUserName}" ]; then
             LIST="$LIST|${CYELLOW}$User$CEND"
         fi
     done
 
-    if [ ! -z "$LIST" ]; then
-        LIST="$(echo \($LIST\) | sed -e 's/^ //g;' | sed -e 's/(|/(/g;')"
-        echo -e "$Global_AvailableUsers $LIST"
-        echo -e "$Global_CancelUserChoice"
+    if [ -n "$LIST" ]; then
+        LIST="$(echo \("$LIST"\) | sed -e 's/^ //g;' | sed -e 's/(|/(/g;')"
+        echo -e "${Global_AvailableUsers} $LIST"
+        echo -e "${Global_CancelUserChoice}"
     else
-        echo -e "$DeleteUser_NoUser $LIST"
+        echo -e "${DeleteUser_NoUser} $LIST"
         gfnEndingScript 0
     fi
 
@@ -49,12 +52,12 @@ if [ "$USAGE" == "ON" ]; then
     TEMP_UserToDelete=""
     while [ -z "$UserToDelete" ] ||
         [ "$UserToDelete" == "$gsMainUserName" ] ||
-        [ -z "$(echo $gsUsersList | grep $UserToDelete)" ]; do
+        (! echo "$gsUsersList" | grep -q $UserToDelete); do
 
-        gfnQuestionGetString NO "$DeleteUser_TypeUser" UserToDelete
+        gfnQuestionGetString NO "${DeleteUser_TypeUser}" UserToDelete
         TEMP_UserToDelete="$(echo $UserToDelete | tr '[:lower:]' '[:upper:]')"
 
-        if [ "$TEMP_UserToDelete" == "$Global_NO" ]; then
+        if [ "$TEMP_UserToDelete" == "${Global_NO}" ]; then
             gfnEndingScript 0
         fi
     done
@@ -62,82 +65,81 @@ else
     UserToDelete=$1
 fi
 
-if [ ! -z "$UserToDelete" ]; then
+if [ -n "$UserToDelete" ]; then
     #### renting
     gfnMonthlyPayment "$UserToDelete"
 
     #### STOP services
     sServicesToStop="cron"
-    [ -f /etc/init.d/rtorrent-$UserToDelete ] && sServicesToStop="$sServicesToStop rtorrent-$UserToDelete"
+    [ -f /etc/init.d/rtorrent-"$UserToDelete" ] && sServicesToStop="$sServicesToStop rtorrent-$UserToDelete"
     gfnManageServices stop "$sServicesToStop"
 
     #### crontab
-    log_daemon_msg "$DeleteUser_DeleteCron [$UserToDelete]"
+    log_daemon_msg "${DeleteUser_DeleteCron} [$UserToDelete]"
     crontab -l >/tmp/crontab.tmp
-    sed -i '/'$UserToDelete'/d' /tmp/crontab.tmp
+    sed -i "/$UserToDelete/d" /tmp/crontab.tmp
     crontab /tmp/crontab.tmp
     rm -f /tmp/crontab.tmp
     gfnStatusLSB
 
     #### FTP
-    log_daemon_msg "$DeleteUser_DeleteFTP [$UserToDelete]"
-    sed -i '/'$UserToDelete'/d' /etc/vsftpd.chroot_list
-    if [ ! -z "$(df -H 2>/dev/null | grep "/home/$UserToDelete/rtorrent/share")" ]; then
-        umount /home/$UserToDelete/rtorrent/share &>/dev/null
-    fi
-    if [ ! -z "$(df -H 2>/dev/null | grep "/home/$UserToDelete/rtorrent/torrents")" ]; then
-        umount /home/$UserToDelete/rtorrent/torrents &>/dev/null
-    fi
+    log_daemon_msg "${DeleteUser_DeleteFTP} [$UserToDelete]"
+    sed -i "/$UserToDelete/d" /etc/vsftpd.chroot_list
+    (df -H 2>/dev/null | grep -q "/home/$UserToDelete/rtorrent/share") && umount /home/"$UserToDelete"/rtorrent/share &>/dev/null
+    (df -H 2>/dev/null | grep -q "/home/$UserToDelete/rtorrent/torrents") && umount /home/"$UserToDelete"/rtorrent/torrents &>/dev/null
     gfnStatusLSB 0
 
     #### NFS
-    log_daemon_msg "$DeleteUser_DeleteNFS [$UserToDelete]"
-    [[ -n $(mount -l 2>/dev/null | grep /export/$UserToDelete) ]] && umount /export/$UserToDelete
-    [ -d /export/$UserToDelete ] && rmdir /export/$UserToDelete
-    [ -f /etc/exports ] && sed -i '/'$UserToDelete'/d' /etc/exports
-    sed -i '/'$UserToDelete'/d' /etc/fstab
+    log_daemon_msg "${DeleteUser_DeleteNFS} [$UserToDelete]"
+    (mount -l 2>/dev/null | grep -q /export/"$UserToDelete") && umount /export/"$UserToDelete"
+    [ -d /export/"$UserToDelete" ] && rmdir /export/"$UserToDelete"
+    [ -f /etc/exports ] && sed -i "/$UserToDelete/d" /etc/exports
+    sed -i "/$UserToDelete/d" /etc/fstab
     gfnStatusLSB
 
     #### Samba
-    if [ "$UserAccountType" == "normal" ]; then
-        log_daemon_msg "$DeleteUser_DeleteSamba [$UserToDelete]"
-        smbpasswd -x $UserToDelete &>/dev/null
+    if [ "${UserAccountType}" == "normal" ]; then
+        log_daemon_msg "${DeleteUser_DeleteSamba} [$UserToDelete]"
+        smbpasswd -x "$UserToDelete" &>/dev/null
         gfnStatusLSB
     fi
 
     #### NginX - remove current password from htpassword
-    log_daemon_msg "$DeleteUser_DeleteWebAccount [$UserToDelete]"
-    htpasswd -D /etc/nginx/passwd/MySB $UserToDelete &>/dev/null
-    rm -f /etc/nginx/passwd/MySB_$UserToDelete
+    log_daemon_msg "${DeleteUser_DeleteWebAccount} [$UserToDelete]"
+    htpasswd -D /etc/nginx/passwd/MySB "$UserToDelete" &>/dev/null
+    rm -f /etc/nginx/passwd/MySB_"${UserToDelete}"
     gfnStatusLSB
 
     #### NextCloud
     if [ "$gbIsInstalled_NextCloud" == "YES" ]; then
-        log_daemon_msg "$DeleteUser_DeleteNextCloudAccount [$UserToDelete]"
+        log_daemon_msg "${DeleteUser_DeleteNextCloudAccount} [$UserToDelete]"
         su -s /bin/sh www-data -c "/usr/bin/php  $gsNextCloudDir/occ user:delete $UserToDelete" &>/dev/null
         cmdMySQL 'NextCloud_db' "DELETE FROM nc_storages WHERE id='local::/home/$UserToDelete/';"
         cmdMySQL 'NextCloud_db' "DELETE FROM nc_preferences WHERE configkey='/Home_$UserToDelete';"
-        rm -rf /home/nextcloud/$UserToDelete
+        rm -rf /home/nextcloud/"$UserToDelete"
         gfnStatusLSB
     fi
 
     #### remove files
-    log_daemon_msg "$DeleteUser_RemoveFiles [$UserToDelete]"
+    log_daemon_msg "${DeleteUser_RemoveFiles} [$UserToDelete]"
     systemctl daemon-reload &>/dev/null
-    systemctl disable rtorrent-$UserToDelete &>/dev/null 2>&1
-    rm -f /etc/init.d/rtorrent-$UserToDelete
-    rm -f /etc/nginx/rpc/$UserToDelete.conf
-    rm -f /etc/nginx/rpc/$UserToDelete.cakebox
-    rm -f $MySB_InstallDir/web/openvpn/openvpn_$UserToDelete.zip
-    rm -f $gsCakeboxDir/config/$UserToDelete.php
-    rm -f /etc/logrotate.d/rtorrent_$UserToDelete
+    systemctl disable rtorrent-"$UserToDelete" &>/dev/null 2>&1
+    rm -f /etc/sudoers.d/"MySB_${UserToDelete}"
+    rm -f /etc/init.d/rtorrent-"$UserToDelete"
+    rm -f /etc/nginx/rpc/"$UserToDelete".conf
+    rm -f /etc/nginx/rpc/"$UserToDelete".local
+    rm -f /etc/nginx/rpc/"$UserToDelete".cakebox
+    rm -f /etc/nginx/upstream/rtorrent-"$UserToDelete".conf
+    rm -f "$MySB_InstallDir"/web/openvpn/openvpn_"$UserToDelete".zip
+    rm -f "$gsCakeboxDir"/config/"$UserToDelete".php
+    rm -f /etc/logrotate.d/rtorrent_"$UserToDelete"
     gfnDeleteDirectory 0 "$gsRutorrentDir/conf/users/$UserToDelete"
     gfnDeleteDirectory 0 "$gsRutorrentDir/share/users/$UserToDelete"
     gfnDeleteDirectory 0 "$gsManagerDir/conf/users/$UserToDelete"
     gfnStatusLSB
 
     #### Remove user from database
-    log_daemon_msg "$DeleteUser_RemoveFromDB"
+    log_daemon_msg "${DeleteUser_RemoveFromDB}"
     # Get user id
     nUserID="$(cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='$UserToDelete';")"
     # Delete all in tracking_rent_payments
@@ -153,8 +155,8 @@ if [ ! -z "$UserToDelete" ]; then
     gfnStatusLSB
 
     #### system user
-    log_daemon_msg "$DeleteUser_SystemAccount [$UserToDelete]"
-    userdel --remove --force $UserToDelete &>/dev/null
+    log_daemon_msg "${DeleteUser_SystemAccount} [$UserToDelete]"
+    userdel --remove --force "$UserToDelete" &>/dev/null
     gfnDeleteDirectory 0 "/home/$UserToDelete"
     gfnDeleteDirectory 0 "/var/run/screen/S-$UserToDelete"
     gfnStatusLSB
@@ -167,7 +169,7 @@ if [ ! -z "$UserToDelete" ]; then
 
     #### OpenVPN
     if [ "$gbIsInstalled_OpenVPN" == "YES" ] && [ "$UserAccountType" == "normal" ]; then
-        log_daemon_msg "$DeleteUser_RevokeOpenVPN [$UserToDelete]"
+        log_daemon_msg "${DeleteUser_RevokeOpenVPN} [$UserToDelete]"
         gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/OpenVPN" 'delete' "$UserToDelete" 'SCREEN'
         gfnStatusLSB
     fi
@@ -176,19 +178,19 @@ if [ ! -z "$UserToDelete" ]; then
     gfnListCountUsers 'normal'
     for User in $gsUsersList; do
         if [ "$User" != "$UserToDelete" ]; then
-            log_daemon_msg "$DeleteUser_PiecesMemory $User"
-            Line=$(sed -n '/pieces.memory.max.set/=' /home/$User/.rtorrent.rc)
-            sed -i ''$Line'd' /home/$User/.rtorrent.rc
-            sed -i ''$Line'i\#pieces.memory.max.set = '$((((gsMemory / gnTotalUsers) * 1024) * 1024))'\n' /home/$User/.rtorrent.rc
+            log_daemon_msg "${DeleteUser_PiecesMemory[*]} $User"
+            Line=$(sed -n '/pieces.memory.max.set/=' /home/"$User"/.rtorrent.rc)
+            sed -i "${Line}d" /home/"$User"/.rtorrent.rc
+            sed -i "${Line}i\#pieces.memory.max.set = '$((((gsMemory / gnTotalUsers) * 1024) * 1024))'\n" /home/"$User"/.rtorrent.rc
             gfnStatusLSB
         fi
     done
 
     #### Quota
-    gfnManageQuota "$DeleteUser_Quota"
+    gfnManageQuota "${DeleteUser_Quota}"
 
     #### Create new security rules
-    log_daemon_msg "$DeleteUser_SecurituRules"
+    log_daemon_msg "${DeleteUser_SecurituRules}"
     gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_SecurityRules" 'refresh' '--users' 'SCREEN'
     gfnStatusLSB
 
@@ -199,6 +201,7 @@ else
 fi
 
 # -----------------------------------------
-source $(dirname $0)/../inc/includes_after
+# shellcheck source=inc/includes_after
+source "$(dirname "$0")"/../inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

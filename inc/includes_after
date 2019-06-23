@@ -1,4 +1,5 @@
 #!/bin/bash
+# rev 5.5
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -24,62 +25,62 @@
 
 #### 1 - Includes
 if [ -f /etc/MySB/config ]; then
+    # shellcheck source=.etc/MySB/config
     source /etc/MySB/config
-    funcs=0
-    funcs_sql=0
-    funcs_tools=0
-    source $MySB_InstallDir/inc/vars
+    # shellcheck source=inc/vars
+    source ${MySB_InstallDir}/inc/vars
 else
     echo 'The config file "/etc/MySB/config" does not exist, aborting !'
     exit 1
 fi
 
 #### 2 - End Script
-if [ "$END" == "ON" ]; then
+# shellcheck disable=SC2153
+if [ "${END}" == "ON" ]; then
     echo "--------------------"
-    case "$gsScriptName" in
+    case "${gsScriptName}" in
         'MySB_Install.bsh' | From_*)
-            log_daemon_msg "$IncAfter_UpdateManDB"
+            log_daemon_msg "${IncAfter_UpdateManDB}"
             /usr/bin/mandb -q
             gfnStatusLSB
 
             if gfnCheckCommand 0 updatedb; then
-                log_daemon_msg "$IncAfter_UpdateSlocate"
+                log_daemon_msg "${IncAfter_UpdateSlocate}"
                 /usr/bin/updatedb
                 gfnStatusLSB
             fi
             ;;
     esac
     if gfnCheckCommand 0 ldconfig; then
-        log_daemon_msg "$IncAfter_ConfigureDynamicLinks"
+        log_daemon_msg "${IncAfter_ConfigureDynamicLinks}"
         /sbin/ldconfig
         gfnStatusLSB
     fi
-    log_daemon_msg "$IncAfter_CleaningCacheSystem"
+    log_daemon_msg "${IncAfter_CleaningCacheSystem}"
     #### Free cache server
     ## To free pagecache, dentries and inodes
     sync
-    echo    3 >/proc/sys/vm/drop_caches
+    echo 3 >/proc/sys/vm/drop_caches
     gfnStatusLSB
 fi
 
 #### 3 - Specify the log directory
 case "$gsDirName" in
-    "$MySB_InstallDir/bin") DirLog="$MySB_InstallDir/web/logs/bin" ;;
-    "$MySB_InstallDir/install") DirLog="$MySB_InstallDir/web/logs/install" ;;
-    "$MySB_InstallDir/scripts") DirLog="$MySB_InstallDir/web/logs/scripts" ;;
-    "$MySB_InstallDir/upgrade") DirLog="$MySB_InstallDir/web/logs/upgrade" ;;
-    *)    DirLog="$MySB_InstallDir/web/logs" ;;
+    "${MySB_InstallDir}/bin") DirLog="${MySB_InstallDir}/web/logs/bin" ;;
+    "${MySB_InstallDir}/install") DirLog="${MySB_InstallDir}/web/logs/install" ;;
+    "${MySB_InstallDir}/scripts") DirLog="${MySB_InstallDir}/web/logs/scripts" ;;
+    "${MySB_InstallDir}/upgrade") DirLog="${MySB_InstallDir}/web/logs/upgrade" ;;
+    *) DirLog="${MySB_InstallDir}/web/logs" ;;
 esac
 [ ! -d $DirLog ] && mkdir -p $DirLog
 
 #### 4 - Cleaning
-case "$gsScriptName" in
+case "${gsScriptName}" in
     "MySB_Install.bsh")
-        if [ "$0" != "$MySB_InstallDir/install/MySB_Install.bsh" ]; then
-            rm -vf $0 >>/tmp/$gsScriptName.log
-            [ -f ./dev ] && rm -vf ./dev >>/tmp/$gsScriptName.log
-            [ -f $MySB_InstallDir/dev ] && rm -vf $MySB_InstallDir/dev >>/tmp/$gsScriptName.log
+        if [ "$0" != "${MySB_InstallDir}/install/MySB_Install.bsh" ]; then
+            rm -vf "$0" >>/tmp/"${gsScriptName}".log
+            [ -f ./dev ] && rm -vf ./dev >>/tmp/"${gsScriptName}".log
+            [ -f ${MySB_InstallDir}/dev ] && rm -vf ${MySB_InstallDir}/dev >>/tmp/"${gsScriptName}".log
 
             #### Statistics
             # No credentials are retained !
@@ -88,27 +89,29 @@ case "$gsScriptName" in
             gfnStatistics
         fi
         TIMESTAMP=ON
-        DirLog="$MySB_InstallDir/web/logs/install"
-        if [ -f /tmp/$gsScriptName.log ]; then
-            mv /tmp/$gsScriptName.log $MySB_InstallDir/logs/$gsScriptName.log
+        DirLog="${MySB_InstallDir}/web/logs/install"
+        if [ -f /tmp/"${gsScriptName}".log ]; then
+            mv /tmp/"${gsScriptName}".log "${gsLogFile}"
         fi
         ;;
     "MySB_CreateUser")
-        if [ ! -z "$(screen -ls | grep MySB)" ]; then
+        if (screen -ls | grep -q 'MySB'); then
             # Create new MySB banner
             [ "$BANNER" == "ON" ] && gfnBannerGenerator
         fi
         ;;
     MySB_UpgradeMe) # Upgrade ?
         clear
-        #### Upgrade in progress page + Start Cron service
-        gfnUpgradeInProgress "off"
-
-        [ -f $MySB_InstallDir/dev ] && rm -vf $MySB_InstallDir/dev
-        echo -e "${CGREEN}$IncAfter_UpgradeFinished$CEND"
+        [ -f ${MySB_InstallDir}/dev ] && rm -vf ${MySB_InstallDir}/dev
+        echo -e "${CGREEN}${IncAfter_UpgradeFinished}$CEND"
         echo
+
         #### Engage a reboot after an upgrade
         REBOOT=YES
+        export REBOOT
+
+        #### Upgrade in progress page + Start Cron service
+        gfnUpgradeInProgress "off"
 
         #### Statistics
         # No credentials are retained !
@@ -120,41 +123,42 @@ esac
 
 #### 5 - STD Out/Err (after banner)
 if [ "$TIMESTAMP" == "ON" ]; then
-    echo "------------------------------------------------------------" >>$MySB_InstallDir/logs/$gsScriptName.log
-    case "$gsScriptName" in
-        MySB_CreateUser | MySB_ChangeUserPassword) echo "END Out/Err: "$(/bin/date '+%Y-%m-%d - %H:%M:%S') "-" $gsScriptName $1 >>$MySB_InstallDir/logs/$gsScriptName.log ;;
-        *)     echo "END Out/Err: "$(/bin/date '+%Y-%m-%d - %H:%M:%S') "-" $gsScriptName "$@" >>$MySB_InstallDir/logs/$gsScriptName.log ;;
+    echo "------------------------------------------------------------" >>"${gsLogFile}"
+    case "${gsScriptName}" in
+        MySB_CreateUser | MySB_ChangeUserPassword) echo "END Out/Err: $(/bin/date '+%Y-%m-%d - %H:%M:%S') - ${gsScriptName} $1" >>"${gsLogFile}" ;;
+        *) echo "END Out/Err: $(/bin/date '+%Y-%m-%d - %H:%M:%S') - ${gsScriptName} $*" >>"${gsLogFile}" ;;
     esac
-    echo "------------------------------------------------------------" >>$MySB_InstallDir/logs/$gsScriptName.log
+    echo "------------------------------------------------------------" >>"${gsLogFile}"
 fi
 
 #### 6 - Create ccze files (HTML)
-if [ -f $MySB_InstallDir/logs/$gsScriptName.log ]; then
-    gfnCczeHtmlLogFormat "$MySB_InstallDir/logs/${gsScriptName}.log" "$DirLog/${gsScriptName}-log.html"
+if [ -f "${gsLogFile}" ]; then
+    gfnCczeHtmlLogFormat "${gsLogFile}" "$DirLog/${gsScriptName}-log.html"
 fi
 
 #### 7 - Add in 'commands' table to prevent simultaneous calls
-if [ ! -z "$gsScriptName" ]; then
-    case "$gsScriptName" in
-        MySB_SecurityRules) sed -i '/'$$'/d' /tmp/MySB_SecurityRules.lock ;;
-        MySB_UpdateTools) sed -i '/'$$'/d' /tmp/MySB_UpdateTools.lock ;;
-    esac
-fi
+case "${gsScriptName}" in
+    MySB_SecurityRules | PeerGuardian.bsh | MySB_UpdateTools)
+        sed -i "/$$/d" "/tmp/${gsScriptName}.lock"
+        ;;
+esac
 
 #### 8 - Reboot after an install or an upgrade
 if [ "$REBOOT" == "YES" ]; then
     #### Flush mail queue
     if gfnCheckCommand 0 postfix && gfnGetPid postfix; then postfix flush; fi
+
     #### Update CA certificates
     update-ca-certificates --fresh &>/dev/null
 
     echo
-    echo -e "$IncAfter_Message_Last"
+    echo -e "${IncAfter_Message_Last[@]}"
     echo
-    echo -e -n "${CRED}$Global_ServerWillRestart$CEND"
+    echo -e -n "${CRED}${Global_ServerWillRestart}$CEND"
     gfnCountDown 30
 
     reboot
+    # systemctl --force --force reboot
 fi
 
 ##################### LAST LINE ######################################

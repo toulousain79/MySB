@@ -55,17 +55,29 @@ $MySB_DB = new medoo([
 	'server' => 'localhost',
 	'username' => MySQL_MysbUser,
 	'password' => MySQL_MysbPassword,
-	'charset' => 'utf8',
+	'charset' => 'utf8mb4',
+	'collation' => 'utf8mb4_general_ci',
 	'port' => 3306,
+	'prefix' => '',
+	'logging' => false,
+	'socket' => '/var/run/mysqld/mysqld.sock',
 	'option' => [
 		PDO::ATTR_CASE => PDO::CASE_NATURAL,
 		PDO::ATTR_ORACLE_NULLS => PDO::NULL_TO_STRING
+	],
+	'command' => [
+		'SET SQL_MODE=ANSI_QUOTES'
 	]
 ]);
 $Wolf_DB = new medoo([
 	'database_type' => 'sqlite',
 	'database_file' => Wolf_DB,
 	'database_name' => 'Wolf'
+]);
+$Blocklists_DB = new medoo([
+	'database_type' => 'sqlite',
+	'database_file' => Blocklists_DB,
+	'database_name' => 'Blocklists'
 ]);
 
 $NextCloudIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "NextCloud"]);
@@ -77,11 +89,18 @@ if ( $NextCloudIsInstalled == '1' ) {
 		'server' => 'localhost',
 		'username' => MySQL_MysbUser,
 		'password' => MySQL_MysbPassword,
-		'charset' => 'utf8',
+		'charset' => 'utf8mb4',
+		'collation' => 'utf8mb4_general_ci',
 		'port' => 3306,
+		'prefix' => '',
+		'logging' => false,
+		'socket' => '/var/run/mysqld/mysqld.sock',
 		'option' => [
 			PDO::ATTR_CASE => PDO::CASE_NATURAL,
 			PDO::ATTR_ORACLE_NULLS => PDO::NULL_TO_STRING
+		],
+		'command' => [
+			'SET SQL_MODE=ANSI_QUOTES'
 		]
 	]);
 }

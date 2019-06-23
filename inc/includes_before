@@ -1,3 +1,5 @@
+#!/bin/bash
+# rev 5.5
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -23,98 +25,103 @@
 
 #### 0 - Basic VARs
 if [ "$0" != "-bash" ]; then
-	ScriptName=$(basename $0)
-	IsScriptInstall="`echo $0 | grep '/install/'`"
+    ScriptName=$(basename "$0")
+    IsScriptInstall="$(echo "$0" | grep '/install/')"
 fi
 if [ -f /etc/MySB/config ]; then
-	source /etc/MySB/config
-	export PATH="/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/bin:/usr/local/sbin"
+    # shellcheck source=.etc/MySB/config
+    source /etc/MySB/config
+    export PATH="/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/bin:/usr/local/sbin"
 else
-	echo "The config file \"/etc/MySB/config\" does not exist, aborting !"
-	exit 1
+    echo 'The config file "/etc/MySB/config" does not exist, aborting !'
+    exit 1
 fi
 
 #### 1 - Includes all VARs & FUNCs
-source $MySB_InstallDir/inc/vars
-source $MySB_InstallDir/inc/switches
-if [ -z $funcs_Install ] && [ ! -z "$IsScriptInstall" ]; then
-	source $MySB_InstallDir/inc/funcs_by_script/funcs_Install
+# shellcheck source=inc/vars
+source "${MySB_InstallDir}"/inc/vars
+# shellcheck source=inc/switches
+source "${MySB_InstallDir}"/inc/switches
+if [ -n "$IsScriptInstall" ]; then
+    # shellcheck source=inc/funcs_by_script/funcs_Install
+    source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Install
 fi
-if [ -f $MySB_InstallDir/inc/funcs_by_script/funcs_$gsScriptName ]; then
-	source $MySB_InstallDir/inc/funcs_by_script/funcs_$gsScriptName
+if [ -f "${MySB_InstallDir}/inc/funcs_by_script/funcs_${gsScriptName}" ]; then
+    # shellcheck source=/dev/null
+    source "${MySB_InstallDir}/inc/funcs_by_script/funcs_${gsScriptName}"
 fi
-case "$gsScriptName" in
-	From_*|BulkChanges.bsh|MySB_UpgradeMe)
-		if [ -z $funcs_Install ]; then
-			source $MySB_InstallDir/inc/funcs_by_script/funcs_Install
-		fi
-		if [ -z $funcs_Upgrade ]; then
-			source $MySB_InstallDir/inc/funcs_by_script/funcs_Upgrade
-		fi
-	;;
+case "${gsScriptName}" in
+    From_* | BulkChanges.bsh | MySB_UpgradeMe)
+        # shellcheck source=/dev/null
+        source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Install
+        # shellcheck source=inc/funcs_by_script/funcs_Upgrade
+        source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Upgrade
+        ;;
 esac
 
 #### 2 - Check services again
-if [ "$gbIsInstalled_PlexMedia" == "YES" ]; then gbIsInstalled_PlexMedia="`gfnCheckCommand 1 plexmediaserver`"; fi
-if [ "$gbIsInstalled_Webmin" == "YES" ]; then gbIsInstalled_Webmin="`gfnCheckCommand 1 webmin`"; fi
-if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then gbIsInstalled_OpenVPN="`gfnCheckCommand 1 openvpn`"; fi
-if [ "$gbIsInstalled_Samba" == "YES" ]; then gbIsInstalled_Samba="`gfnCheckCommand 1 smbd`"; fi
-if [ "$gbIsInstalled_NFS" == "YES" ]; then gbIsInstalled_NFS="`gfnCheckCommand 1 nfs-kernel-server`"; fi
-if [ "$gbIsInstalled_LogWatch" == "YES" ]; then gbIsInstalled_LogWatch="`gfnCheckCommand 1 logwatch`"; fi
-if [ "$gbIsInstalled_Fail2Ban" == "YES" ]; then gbIsInstalled_Fail2Ban="`gfnCheckCommand 1 fail2ban`"; fi
-if [ "$gbIsInstalled_PeerGuardian" == "YES" ]; then gbIsInstalled_PeerGuardian="`gfnCheckCommand 1 pgld`"; fi
-if [ "$gbIsInstalled_DNScrypt" == "YES" ]; then gbIsInstalled_DNScrypt="`gfnCheckCommand 1 dnscrypt-proxy`"; fi
-if [ "$gbIsInstalled_NextCloud" == "YES" ]; then gbIsInstalled_NextCloud="`gfnCheckCommand 1 $gsNextCloudDir/occ`"; fi
-if [ "$gbIsInstalled_PlexMedia" == "YES" ]; then gbIsInstalled_PlexMedia="`gfnCheckCommand 1 plexmediaserver`"; fi
-if [ "$gbIsInstalled_Webmin" == "YES" ]; then gbIsInstalled_Webmin="`gfnCheckCommand 1 webmin`"; fi
+if [ "$gbIsInstalled_PlexMedia" == "YES" ]; then gbIsInstalled_PlexMedia="$(gfnCheckCommand 1 plexmediaserver)"; fi
+if [ "$gbIsInstalled_Webmin" == "YES" ]; then gbIsInstalled_Webmin="$(gfnCheckCommand 1 webmin)"; fi
+if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then gbIsInstalled_OpenVPN="$(gfnCheckCommand 1 openvpn)"; fi
+if [ "$gbIsInstalled_Samba" == "YES" ]; then gbIsInstalled_Samba="$(gfnCheckCommand 1 smbd)"; fi
+if [ "$gbIsInstalled_NFS" == "YES" ]; then gbIsInstalled_NFS="$(gfnCheckCommand 1 nfs-kernel-server)"; fi
+if [ "$gbIsInstalled_LogWatch" == "YES" ]; then gbIsInstalled_LogWatch="$(gfnCheckCommand 1 logwatch)"; fi
+if [ "$gbIsInstalled_Fail2Ban" == "YES" ]; then gbIsInstalled_Fail2Ban="$(gfnCheckCommand 1 fail2ban)"; fi
+if [ "$gbIsInstalled_PeerGuardian" == "YES" ]; then gbIsInstalled_PeerGuardian="$(gfnCheckCommand 1 pgld)"; fi
+if [ "$gbIsInstalled_DNScrypt" == "YES" ]; then gbIsInstalled_DNScrypt="$(gfnCheckCommand 1 dnscrypt-proxy)"; fi
+if [ "$gbIsInstalled_NextCloud" == "YES" ]; then gbIsInstalled_NextCloud="$(gfnCheckCommand 1 "$gsNextCloudDir"/occ)"; fi
+if [ "$gbIsInstalled_PlexMedia" == "YES" ]; then gbIsInstalled_PlexMedia="$(gfnCheckCommand 1 plexmediaserver)"; fi
+if [ "$gbIsInstalled_Webmin" == "YES" ]; then gbIsInstalled_Webmin="$(gfnCheckCommand 1 webmin)"; fi
 
 #### 3 - Create MySB banner
 if [ "$BANNER" == "ON" ]; then
-	sleep 0.5
-	clear
-	gfnBannerGenerator
+    sleep 0.5
+    clear
+    gfnBannerGenerator
 fi
 
 #### 4 - Actions by scripts
-case "$gsScriptName" in
-	From_*) # gfnLogRotate (Upgrade)
-		sScreenId="`screen -ls | grep 'MySB_Upgrade' | grep 'Attached' | awk '{ print $1 }'`"
-		echo
-		echo -e "$Upgrade_Banner" | sed "s/screen -x MySB_Upgrade/screen -x $sScreenId/g;"
-		echo
-		gfnLogRotate 'mysb' 1 &> /dev/null
-		gfnLogRotate 'iptables' 1 &> /dev/null
-	;;
-	MySB_SecurityRules)
-		# We will wait
-		if [ -s /tmp/MySB_SecurityRules.lock ]; then
-			log_daemon_msg "$Global_WaitingForTaskFinish"
-			while [ "`sed -n "/$$/=" /tmp/MySB_SecurityRules.lock`" -ne 1 ]; do
-				sleep 0.1
-			done
-			gfnStatusLSB
-		fi
-	;;
-	MySB_UpdateTools)
-		# We stop execution
-		if [ -s /tmp/MySB_UpdateTools.lock ] && [ "`sed -n "/$$/=" /tmp/MySB_UpdateTools.lock`" -ne 1 ]; then
-			echo "Already started !"
-			gfnEndingScript 0
-		fi
-	;;
+case "${gsScriptName}" in
+    From_*) # gfnLogRotate (Upgrade)
+        sScreenId="$(screen -ls | grep 'MySB_Upgrade' | grep 'Attached' | awk '{ print $1 }')"
+        echo
+        echo -e "${Upgrade_Banner}" | sed "s/screen -x MySB_Upgrade/screen -x $sScreenId/g;"
+        echo
+        gfnLogRotate 'mysb' 1 &>/dev/null
+        gfnLogRotate 'iptables' 1 &>/dev/null
+        ;;
+    MySB_SecurityRules | PeerGuardian.bsh)
+        # We will wait
+        if [ -s "/tmp/${gsScriptName}.lock" ]; then
+            log_daemon_msg "${Global_WaitingForTaskFinish}"
+            while [ "$(sed -n "/$$/=" /tmp/${gsScriptName}.lock)" -ne 1 ]; do
+                sleep 0.1
+            done
+            gfnStatusLSB
+        fi
+        ;;
+    MySB_UpdateTools)
+        # We stop execution
+        if [ -s /tmp/MySB_UpdateTools.lock ] && [ "$(sed -n "/$$/=" /tmp/MySB_UpdateTools.lock)" -ne 1 ]; then
+            echo "Already started !"
+            gfnEndingScript 0
+        fi
+        ;;
 esac
 
 #### 5 - STD Out/Err (after banner)
 if [ "$TIMESTAMP" == "ON" ]; then
-	echo "------------------------------------------------------------" >> $MySB_InstallDir/logs/$gsScriptName.log
-	case "$gsScriptName" in
-		MySB_CreateUser|MySB_ChangeUserPassword)	echo "START Out/Err: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` "-" $gsScriptName $1 >> $MySB_InstallDir/logs/$gsScriptName.log;;
-		*)											echo "START Out/Err: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` "-" $gsScriptName "$@" >> $MySB_InstallDir/logs/$gsScriptName.log;;
-	esac
-	echo "------------------------------------------------------------" >> $MySB_InstallDir/logs/$gsScriptName.log
+    echo "------------------------------------------------------------" >>"${gsLogFile}"
+    case "${gsScriptName}" in
+        MySB_CreateUser | MySB_ChangeUserPassword) echo "START Out/Err: $(/bin/date '+%Y-%m-%d - %H:%M:%S') - ${gsScriptName} $1" >>"${gsLogFile}" ;;
+        *)     echo "START Out/Err: $(/bin/date '+%Y-%m-%d - %H:%M:%S') - ${gsScriptName} $*" >>"${gsLogFile}" ;;
+    esac
+    echo "------------------------------------------------------------" >>"${gsLogFile}"
 fi
 if [ "$LOGSTD" == "STDOUT" ]; then
-	exec >> $MySB_InstallDir/logs/$gsScriptName.log 2>&1
+    exec >>"${gsLogFile}" 2>&1
 fi
+
+export ScriptName MySB_InstallDir gsScriptName
 
 ##################### LAST LINE ######################################

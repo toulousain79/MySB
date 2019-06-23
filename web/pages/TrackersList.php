@@ -84,11 +84,11 @@ if(isset($_POST)==true && empty($_POST)==false) {
 	GenerateMessage('GetTrackersCert.bsh', $type, $message);
 }
 
-$TrackersList = $MySB_DB->select("trackers_list", ["id_trackers_list", "tracker", "tracker_domain", "origin", "is_ssl", "is_active", "ping", "cert_expiration"], ["to_delete" => 0], ["ORDER" => "trackers_list.tracker_domain ASC"]);
+$TrackersList = $MySB_DB->select("trackers_list", ["id_trackers_list", "tracker", "tracker_domain", "tracker_proto", "tracker_port", "privacy", "is_ssl", "is_active", "cert_expiration"], ["to_delete" => 0], ["ORDER" => "trackers_list.tracker_domain ASC"]);
 ?>
 
+<div style="margin-top: 10px; margin-bottom: 20px;" id="scrollmenu" align="center">
 <form class="form_settings" method="post" action="">
-	<div align="center" id="scrollmenu">
 
 	<?php if ( $IsMainUser ) { ?>
 		<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">
@@ -98,11 +98,13 @@ $TrackersList = $MySB_DB->select("trackers_list", ["id_trackers_list", "tracker"
 			<tr>
 				<th style="text-align:center;"><?php echo User_TrackersList_Table_Domain; ?></th>
 				<th style="text-align:center;"><?php echo User_TrackersList_Table_Address; ?></th>
-				<th style="text-align:center;"><?php echo User_TrackersList_Table_Origin; ?></th>
+				<th style="text-align:center;"><?php echo User_TrackersList_Table_Privacy; ?></th>
 				<th style="text-align:center;"><?php echo User_TrackersList_Table_IPv4; ?></th>
+				<th style="text-align:center;"><?php echo User_TrackersList_Table_IsBanned; ?></th>
 				<th style="text-align:center;"><?php echo User_TrackersList_Table_PingResult; ?></th>
 				<th style="text-align:center;"><?php echo User_TrackersList_Table_IsSSL; ?></th>
 				<th style="text-align:center;"><?php echo User_TrackersList_Table_Expiration; ?></th>
+				<!-- <th style="text-align:center;"><?php echo User_TrackersList_Table_PglBlock; ?></th> -->
 				<th style="text-align:center;"><?php echo Global_IsActive; ?></th>
 <?php if ( $IsMainUser ) { ?>
 				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
@@ -110,23 +112,6 @@ $TrackersList = $MySB_DB->select("trackers_list", ["id_trackers_list", "tracker"
 			</tr>
 <?php
 foreach($TrackersList as $Tracker) {
-	switch ($Tracker["origin"]) {
-		case 'users':
-			if ( $IsMainUser ) {
-				$origin = '<td><input class="submit" name="submit['. $Tracker["id_trackers_list"] .']" type="submit" value="' . Global_Delete . '" /></td>';
-			} else {
-				$origin = '<td></td>';
-			}
-			break;
-		default:
-			if ( $IsMainUser ) {
-				$origin = '<td></td>';
-			} else {
-				$origin = '';
-			}
-			break;
-	}
-
 	switch ($Tracker["is_ssl"]) {
 		case '0':
 			$is_ssl = '	<select name="is_ssl[]" style="width:60px; background-color:#FEBABC;" disabled>
@@ -166,6 +151,42 @@ foreach($TrackersList as $Tracker) {
 			}
 			break;
 	}
+
+	switch ($Tracker["privacy"]) {
+		case 'public':
+			$privacy = '<select name="privacy[]" style="width:100px; background-color:#FEBABC;" disabled>
+							<option value="public" selected="selected">' .User_TrackersList_Table_PrivacyPublic. '</option>
+						</select>';
+			break;
+		default:
+			$privacy = '<select name="privacy[]" style="width:100px; background-color:#B3FEA5;" disabled>
+							<option value="private" selected="selected">' .User_TrackersList_Table_PrivacyPrivate. '</option>
+						</select>';
+			break;
+	}
+
+	$nCount=1;
+	$IPv4_List = $MySB_DB->select("trackers_list_ipv4", ["ipv4", "pgl_banned", "ping"], ["id_trackers_list" => $Tracker["id_trackers_list"]]);
+	foreach($IPv4_List as $IPv4) {
+		switch ($IPv4["pgl_banned"]) {
+			case '0':
+				$pgl_block = '	<select name="is_active[]" style="width:60px;" class="greenText" disabled>
+									<option value="0" selected="selected">' .Global_No. '</option>
+								</select>';
+				break;
+			default:
+				$pgl_block = '	<select name="is_active[]" style="width:60px;" class="redText" disabled>
+									<option value="1" selected="selected" class="redText">' .Global_Yes. '</option>
+								</select>';
+				break;
+		}
+
+		if ($nCount==1) {
+			if ( $IsMainUser ) {
+				$to_del = '<td><input class="submit" name="submit['. $Tracker["id_trackers_list"] .']" type="submit" value="' . Global_Delete . '" /></td>';
+			} else {
+				$to_del = '<td></td>';
+			}
 ?>
 			<tr>
 				<td>
@@ -174,37 +195,36 @@ foreach($TrackersList as $Tracker) {
 				</td>
 				<td>
 					<input style="width:180px;" type="hidden" name="tracker[]" value="<?php echo $Tracker["tracker"]; ?>" />
-					<?php echo $Tracker["tracker"]; ?>
+					<?php echo $Tracker["tracker_proto"].'://'.$Tracker["tracker"].':'.$Tracker["tracker_port"]; ?>
 				</td>
-				<td>
-					<input style="width:60px;" type="hidden" name="origin[]" value="<?php echo $Tracker["origin"]; ?>" />
-					<?php echo $Tracker["origin"]; ?>
-				</td>
-				<td>
-					<select style="width:150px;">
-<?php
-						$IPv4_List = $MySB_DB->select("trackers_list_ipv4", "ipv4", ["id_trackers_list" => $Tracker["id_trackers_list"]]);
-						foreach($IPv4_List as $IPv4) {
-							echo '<option>' .$IPv4. '</option>';
-						}
-?>
-					</select>
-				</td>
-				<td>
-					<?php echo $Tracker["ping"]; ?>
-				</td>
-				<td>
-					<?php echo $is_ssl; ?>
-				</td>
-				<td>
-					<?php echo $Tracker["cert_expiration"]; ?>
-				</td>
-				<td>
-					<?php echo $is_active; ?>
-				</td>
-					<?php echo $origin; ?>
+				<td><?php echo $privacy; ?></td>
+				<td><?php echo $IPv4["ipv4"]; ?></td>
+				<td style="text-align:center;"><?php echo $pgl_block; ?></td>
+				<td><?php echo $IPv4["ping"]; ?></td>
+				<td><?php echo $is_ssl; ?></td>
+				<td><?php echo $Tracker["cert_expiration"]; ?></td>
+				<td><?php echo $is_active; ?></td>
+				<?php echo $to_del; ?>
 			</tr>
 <?php
+		} else {
+?>
+			<tr>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td><?php echo $IPv4["ipv4"]; ?></td>
+				<td style="text-align:center;"><?php echo $pgl_block; ?></td>
+				<td><?php echo $IPv4["ping"]; ?></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+			</tr>
+<?php
+		}
+		$nCount++;
+	}
 } // foreach($TrackersList as $Tracker) {
 ?>
 
@@ -212,8 +232,8 @@ foreach($TrackersList as $Tracker) {
 		<?php if ( $IsMainUser ) { ?>
 			<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">
 		<?php } ?>
-	</div>
 </form>
+</div>
 
 <?php
 //#################### LAST LINE ######################################

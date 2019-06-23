@@ -1,6 +1,7 @@
 #!/bin/bash
 # ----------------------------------
-source $(dirname $0)/../inc/includes_before
+# shellcheck source=inc/includes_before
+source "$(dirname "$0")"/../inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -25,198 +26,199 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### file to allow the install to continue or not
-if [ -f $MySB_InstallDir/temp/continue ]; then
-	rm -vf $MySB_InstallDir/temp/continue
+if [ -f "${MySB_InstallDir}"/temp/continue ]; then
+    rm -vf "${MySB_InstallDir}"/temp/continue
 fi
 
 #### VARs
 RemovePluginCakebox=NO
 RemovePluginManager=NO
 
-#### Git LFS pull
-if [ ! -d $MySB_Files ]; then
-	git clone --progress -b $gsCurrentVersion https://github.com/toulousain79/MySB_files.git $MySB_Files
+#### Git pull
+if [ ! -d "${MySB_Files}" ]; then
+    git clone --progress -b "${gsCurrentVersion}" https://github.com/toulousain79/MySB_files.git "${MySB_Files}"
 else
-	cd $MySB_Files/
-	git fetch origin
-	git reset --hard origin/$gsCurrentVersion
-	git pull origin $gsCurrentVersion
+    cd "${MySB_Files}"/ || exit 1
+    git fetch origin
+    git reset --hard origin/"${gsCurrentVersion}"
+    git pull origin "${gsCurrentVersion}"
 fi
 
 #### Get all repos
-cmdMySQL 'MySB_db' "SELECT name FROM repositories WHERE 1;" | while read sRepoName; do \
-	# VARs
-	gnError=0
+cmdMySQL 'MySB_db' "SELECT name FROM repositories WHERE 1;" | while read sRepoName; do
+    # VARs
+    gnError=0
 
-	# Get repo infos
-	gfnGetRepoValues "$sRepoName"
+    # Get repo infos
+    gfnGetRepoValues "$sRepoName"
 
-	# Delete repo dir if inactive or continue the loop if variable is not defined
-	if [ -z "$gsRepoType" ] || [ -z "$gsRepoDir" ] || [ -z "$gsRepoVersion" ] || [ -z "$gnRepoUpgrade" ] || [ -z "$gsRepoFile" ] || [ -z "$gsRepoURL" ] || [ -z "$gnRepoActive" ]; then
-		echo "Missing some values, go to the next repo..."
-		continue
-	elif [ $gnRepoActive -eq 0 ]; then
-		gfnDeleteDirectory 1 "$gsRepoDir"
-	fi
+    # Delete repo dir if inactive or continue the loop if variable is not defined
+    if [ -z "$gsRepoType" ] || [ -z "$gsRepoDir" ] || [ -z "$gsRepoVersion" ] || [ -z "$gnRepoUpgrade" ] || [ -z "$gsRepoFile" ] || [ -z "$gsRepoURL" ] || [ -z "$gnRepoActive" ]; then
+        echo "Missing some values, go to the next repo..."
+        continue
+    elif [ "$gnRepoActive" -eq 0 ]; then
+        gfnDeleteDirectory 1 "$gsRepoDir"
+    fi
 
-	# Delete old repo file during an upgrade
-	if [ $gnRepoUpgrade -eq 1 ]; then
-		# Backup some config files or directory
-		case "$sRepoName" in
-			'NextCloud')
-				if [ -f $gsNextCloudDir/config/config.php ]; then
-					if gfnCheckCommand 0 php; then
-						su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --on"
-					fi
-					mv -v $gsNextCloudDir/config/config.php $MySB_InstallDir/temp/nextcloud_config.php
-				fi
-				if [ -d $gsNextCloudDir/apps2 ]; then
-					mv -v $gsNextCloudDir/apps2 $MySB_InstallDir/temp/nextcloud_apps2
-				fi
-				# Maybe need to launch a script on next reboot ?
-				cmdMySQL 'MySB_db' "UPDATE repositories SET on_boot='1', script='$MySB_InstallDir/install/NextCloud' WHERE name='$sRepoName';" -v
-			;;
-			'Seedbox-Manager')
-				if [ -d $gsManagerDir/conf ]; then
-					mv -v $gsManagerDir/conf $MySB_InstallDir/temp/sm_conf
-				fi
-			;;
-			'ruTorrent')
-				if [ -d $gsRutorrentDir/share/users ]; then
-					mv -v $gsRutorrentDir/share/users $MySB_InstallDir/temp/rutorrent_share_users
-				fi
-			;;
-			'Tautulli')
-				[ "$gbIsInstalled_Tautulli" == "YES" ] && gfnManageServices stop "tautulli"
-				[ -f $gsRepoDir/config.ini ] && mv -v $gsRepoDir/config.ini $MySB_InstallDir/temp/tautulli_conf
-				[ -f $gsRepoDir/tautulli.db ] && mv -v $gsRepoDir/tautulli.db $MySB_InstallDir/temp/tautulli_db
-				[ -d $gsRepoDir/backups ] && mv -v $gsRepoDir/backups $MySB_InstallDir/temp/tautulli_backups
-				[ -d $gsRepoDir/logs ] && mv -v $gsRepoDir/logs $MySB_InstallDir/temp/tautulli_logs
-				[ -d $gsRepoDir/cache ] && mv -v $gsRepoDir/cache $MySB_InstallDir/temp/tautulli_cache
-			;;
-		esac
+    # Delete old repo file during an upgrade
+    if [ "$gnRepoUpgrade" -eq 1 ]; then
+        # Backup some config files or directory
+        case "$sRepoName" in
+            'NextCloud')
+                if [ -f "$gsNextCloudDir"/config/config.php ]; then
+                    if gfnCheckCommand 0 php; then
+                        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --on"
+                    fi
+                    mv -v "$gsNextCloudDir"/config/config.php "${MySB_InstallDir}"/temp/nextcloud_config.php
+                fi
+                if [ -d "$gsNextCloudDir"/apps2 ]; then
+                    mv -v "$gsNextCloudDir"/apps2 "${MySB_InstallDir}"/temp/nextcloud_apps2
+                fi
+                # Maybe need to launch a script on next reboot ?
+                cmdMySQL 'MySB_db' "UPDATE repositories SET on_boot='1', script='${MySB_InstallDir}/install/NextCloud' WHERE name='$sRepoName';" -v
+                ;;
+            'Seedbox-Manager')
+                if [ -d "$gsManagerDir"/conf ]; then
+                    mv -v "$gsManagerDir"/conf "${MySB_InstallDir}"/temp/sm_conf
+                fi
+                ;;
+            'ruTorrent')
+                if [ -d "$gsRutorrentDir"/share/users ]; then
+                    mv -v "$gsRutorrentDir"/share/users "${MySB_InstallDir}"/temp/rutorrent_share_users
+                fi
+                ;;
+            'Tautulli')
+                [ "$gbIsInstalled_Tautulli" == "YES" ] && gfnManageServices stop "tautulli"
+                [ -f "$gsRepoDir"/config.ini ] && mv -v "$gsRepoDir"/config.ini "${MySB_InstallDir}"/temp/tautulli_conf
+                [ -f "$gsRepoDir"/tautulli.db ] && mv -v "$gsRepoDir"/tautulli.db "${MySB_InstallDir}"/temp/tautulli_db
+                [ -d "$gsRepoDir"/backups ] && mv -v "$gsRepoDir"/backups "${MySB_InstallDir}"/temp/tautulli_backups
+                [ -d "$gsRepoDir"/logs ] && mv -v "$gsRepoDir"/logs "${MySB_InstallDir}"/temp/tautulli_logs
+                [ -d "$gsRepoDir"/cache ] && mv -v "$gsRepoDir"/cache "${MySB_InstallDir}"/temp/tautulli_cache
+                ;;
+        esac
 
-		# We can delete repo dir ONLY IF repo file exist...
-		if [ -f $MySB_Files/$gsRepoFile ]; then
-			case "$gsRepoType" in
-				'CURL'|'WBM'|'DEB')	 continue;;
-				*)					  gfnDeleteDirectory 1 "$gsRepoDir";;
-			esac
-		fi
-	fi
+        # We can delete repo dir ONLY IF repo file exist...
+        if [ -f "${MySB_Files}/$gsRepoFile" ]; then
+            case "$gsRepoType" in
+                'CURL' | 'WBM' | 'DEB') continue ;;
+                *) gfnDeleteDirectory 1 "$gsRepoDir" ;;
+            esac
+        fi
+    fi
 
-	# Download all
-	case "$sRepoName" in
-		'Plex Media Server')
-			if [ "$gbToInstall_PlexMedia" == "YES" ] || [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
-				case `getconf LONG_BIT` in
-					32)
-						gsRepoFile="`echo $gsRepoFile | sed 's/amd64/i386/g;'`"
-						gsRepoURL="`echo $gsRepoURL | sed 's/amd64/i386/g;'`"
-					;;
-				esac
-				gfnRepoManageByType
-			fi
-		;;
-		'Tautulli')
-			if [ "$gbToInstall_PlexMedia" == "YES" ] || [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
-				gfnRepoManageByType
-			fi
-		;;
-		'ruTorrent Plugin Link Manager')
-			if [ "$gbToInstall_Manager" == "YES" ] || [ "$gbIsInstalled_Manager" == "YES" ]; then
-				gfnRepoManageByType
-			fi
-		;;
-		'ruTorrent Plugin Link Cakebox')
-			if [ "$gbToInstall_Cakebox" == "YES" ] || [ "$gbIsInstalled_Cakebox" == "YES" ]; then
-				gfnRepoManageByType
-			fi
-		;;
-		*)	gfnRepoManageByType;;
-	esac
+    # Download all
+    case "$sRepoName" in
+        'Plex Media Server')
+            if [ "$gbToInstall_PlexMedia" == "YES" ] || [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
+                case $(getconf LONG_BIT) in
+                    32)
+                        gsRepoFile="${gsRepoFile//amd64/i386}"
+                        gsRepoURL="${gsRepoURL//amd64/i386}"
+                        ;;
+                esac
+                gfnRepoManageByType
+            fi
+            ;;
+        'Tautulli')
+            if [ "$gbToInstall_PlexMedia" == "YES" ] || [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
+                gfnRepoManageByType
+            fi
+            ;;
+        'ruTorrent Plugin Link Manager')
+            if [ "$gbToInstall_Manager" == "YES" ] || [ "$gbIsInstalled_Manager" == "YES" ]; then
+                gfnRepoManageByType
+            fi
+            ;;
+        'ruTorrent Plugin Link Cakebox')
+            if [ "$gbToInstall_Cakebox" == "YES" ] || [ "$gbIsInstalled_Cakebox" == "YES" ]; then
+                gfnRepoManageByType
+            fi
+            ;;
+        *) gfnRepoManageByType ;;
+    esac
 
-	# Restore some config files or directory
-	case "$sRepoName" in
-		'NextCloud')
-			if [ -f $MySB_InstallDir/temp/nextcloud_config.php ]; then
-				mv -v $MySB_InstallDir/temp/nextcloud_config.php $gsNextCloudDir/config/config.php
-			fi
-			if [ -d $MySB_InstallDir/temp/nextcloud_apps2 ]; then
-				if [ -d $gsNextCloudDir/apps2 ]; then
-					rm -rfv $gsNextCloudDir/apps2
-				fi
-				mv -v $MySB_InstallDir/temp/nextcloud_apps2 $gsNextCloudDir/apps2
-			fi
-		;;
-		'Seedbox-Manager')
-			if [ -d $MySB_InstallDir/temp/sm_conf ]; then
-				if [ -d $gsManagerDir/conf ]; then
-					rm -rfv $gsManagerDir/conf
-				fi
-				mv -v $MySB_InstallDir/temp/sm_conf $gsManagerDir/conf
-			fi
-		;;
-		'ruTorrent')
-			if [ -d $MySB_InstallDir/temp/rutorrent_share_users ]; then
-				if [ -d $gsRutorrentDir/share/users ]; then
-					rm -rfv $gsRutorrentDir/share/users
-				fi
-				mv -v $MySB_InstallDir/temp/rutorrent_share_users $gsRutorrentDir/share/users
-			fi
-		;;
-		'Tautulli')
-			[ -f $MySB_InstallDir/temp/tautulli_conf ] && mv -v $MySB_InstallDir/temp/tautulli_conf $gsRepoDir/config.ini
-			[ -f $MySB_InstallDir/temp/tautulli_db ] && mv -v $MySB_InstallDir/temp/tautulli_db $gsRepoDir/tautulli.db
-			[ -d $MySB_InstallDir/temp/tautulli_backups ] && mv -v $MySB_InstallDir/temp/tautulli_backups $gsRepoDir/backups
-			[ -d $MySB_InstallDir/temp/tautulli_logs ] && mv -v $MySB_InstallDir/temp/tautulli_logs $gsRepoDir/logs
-			[ -d $MySB_InstallDir/temp/tautulli_cache ] && mv -v $MySB_InstallDir/temp/tautulli_cache $gsRepoDir/cache
-		;;
-	esac
+    # Restore some config files or directory
+    case "$sRepoName" in
+        'NextCloud')
+            if [ -f "${MySB_InstallDir}"/temp/nextcloud_config.php ]; then
+                mv -v "${MySB_InstallDir}"/temp/nextcloud_config.php "$gsNextCloudDir"/config/config.php
+            fi
+            if [ -d "${MySB_InstallDir}"/temp/nextcloud_apps2 ]; then
+                if [ -d "$gsNextCloudDir"/apps2 ]; then
+                    rm -rfv "$gsNextCloudDir"/apps2
+                fi
+                mv -v "${MySB_InstallDir}"/temp/nextcloud_apps2 "$gsNextCloudDir"/apps2
+            fi
+            ;;
+        'Seedbox-Manager')
+            if [ -d "${MySB_InstallDir}"/temp/sm_conf ]; then
+                if [ -d "$gsManagerDir"/conf ]; then
+                    rm -rfv "$gsManagerDir"/conf
+                fi
+                mv -v "${MySB_InstallDir}"/temp/sm_conf "$gsManagerDir"/conf
+            fi
+            ;;
+        'ruTorrent')
+            if [ -d "${MySB_InstallDir}"/temp/rutorrent_share_users ]; then
+                if [ -d "$gsRutorrentDir"/share/users ]; then
+                    rm -rfv "$gsRutorrentDir"/share/users
+                fi
+                mv -v "${MySB_InstallDir}"/temp/rutorrent_share_users "$gsRutorrentDir"/share/users
+            fi
+            ;;
+        'Tautulli')
+            [ -f "${MySB_InstallDir}"/temp/tautulli_conf ] && mv -v "${MySB_InstallDir}"/temp/tautulli_conf "$gsRepoDir"/config.ini
+            [ -f "${MySB_InstallDir}"/temp/tautulli_db ] && mv -v "${MySB_InstallDir}"/temp/tautulli_db "$gsRepoDir"/tautulli.db
+            [ -d "${MySB_InstallDir}"/temp/tautulli_backups ] && mv -v "${MySB_InstallDir}"/temp/tautulli_backups "$gsRepoDir"/backups
+            [ -d "${MySB_InstallDir}"/temp/tautulli_logs ] && mv -v "${MySB_InstallDir}"/temp/tautulli_logs "$gsRepoDir"/logs
+            [ -d "${MySB_InstallDir}"/temp/tautulli_cache ] && mv -v "${MySB_InstallDir}"/temp/tautulli_cache "$gsRepoDir"/cache
+            ;;
+    esac
 
-	# Switch on errors
-	if [ $gnError -gt 0 ]; then
-		case "$sRepoName" in
-			'Cakebox-Light')
-				RemovePluginCakebox=YES
-				cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='Cakebox-Light';" -v
-			;;
-			'Seedbox-Manager')
-				RemovePluginManager=YES
-				cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='Seedbox-Manager';" -v
-			;;
-			'Composer'|'NodeJS')
-				RemovePluginCakebox=YES
-				RemovePluginManager=YES
-				cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='Cakebox-Light';" -v
-				cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='Seedbox-Manager';" -v
-				echo "$gsRepoURL" >> $MySB_InstallDir/temp/continue
-			;;
-			'XMLRPC'|'LibTorrent'|'rTorrent'|'ruTorrent'|'ruTorrents Official Plugins')
-				echo "$gsRepoURL" >> $MySB_InstallDir/temp/continue
-			;;
-		esac
-	fi
+    # Switch on errors
+    if [ "$gnError" -gt 0 ]; then
+        case "$sRepoName" in
+            'Cakebox-Light')
+                RemovePluginCakebox=YES
+                cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='Cakebox-Light';" -v
+                ;;
+            'Seedbox-Manager')
+                RemovePluginManager=YES
+                cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='Seedbox-Manager';" -v
+                ;;
+            'Composer' | 'NodeJS')
+                RemovePluginCakebox=YES
+                RemovePluginManager=YES
+                cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='Cakebox-Light';" -v
+                cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='Seedbox-Manager';" -v
+                echo "$gsRepoURL" >>"${MySB_InstallDir}"/temp/continue
+                ;;
+            'XMLRPC' | 'LibTorrent' | 'rTorrent' | 'ruTorrent' | 'ruTorrents Official Plugins')
+                echo "$gsRepoURL" >>"${MySB_InstallDir}"/temp/continue
+                ;;
+        esac
+    fi
 done
 
 if [ "$RemovePluginCakebox" == "YES" ]; then
-	PluginDir="`cmdMySQL 'MySB_db' "SELECT dir FROM repositories WHERE name='ruTorrent Plugin Link Cakebox';"`"
-	echo
-	echo "########## Remove: ruTorrent Plugin Link Cakebox"
-	echo "Directory : "$PluginDir
-	echo
-	gfnDeleteDirectory 1 "$PluginDir"
+    PluginDir="$(cmdMySQL 'MySB_db' "SELECT dir FROM repositories WHERE name='ruTorrent Plugin Link Cakebox';")"
+    echo
+    echo "########## Remove: ruTorrent Plugin Link Cakebox"
+    echo "Directory : $PluginDir"
+    echo
+    gfnDeleteDirectory 1 "$PluginDir"
 fi
 if [ "$RemovePluginManager" == "YES" ]; then
-	PluginDir="`cmdMySQL 'MySB_db' "SELECT dir FROM repositories WHERE name='ruTorrent Plugin Link Manager';"`"
-	echo
-	echo "########## Remove: ruTorrent Plugin Link Manager"
-	echo "Directory : "$PluginDir
-	echo
-	gfnDeleteDirectory 1 "$PluginDir"
+    PluginDir="$(cmdMySQL 'MySB_db' "SELECT dir FROM repositories WHERE name='ruTorrent Plugin Link Manager';")"
+    echo
+    echo "########## Remove: ruTorrent Plugin Link Manager"
+    echo "Directory : $PluginDir"
+    echo
+    gfnDeleteDirectory 1 "$PluginDir"
 fi
 
 # -----------------------------------------
-source $(dirname $0)/../inc/includes_after
+# shellcheck source=inc/includes_after
+source "$(dirname "$0")"/../inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

@@ -1,4 +1,5 @@
 #!/bin/bash
+# rev 5.5
 # ----------------------------------
 # shellcheck source=inc/includes_before
 source "$(dirname "$0")"/../inc/includes_before
@@ -32,7 +33,7 @@ Error=""
 
 #### Updating clock
 echo -e -n "${CBLUE}${UpgradeMe_Clock}$CEND..."
-(ping -c3 0.fr.pool.ntp.org >/dev/null 2>&1) && gfnSwitchDNS "bind"
+(! ping -c3 0.fr.pool.ntp.org >/dev/null 2>&1) && gfnSwitchDNS "bind"
 
 if (/usr/sbin/ntpdate -u 0.pool.ntp.org 1.pool.ntp.org >/dev/null 2>&1); then
     echo -e "${Global_Done}"
@@ -150,6 +151,8 @@ if [ $Continue -eq 0 ]; then
     if (! backup-manager -v -c /etc/MySB/BM_MySB.conf); then
         Continue=4
         Error="UpgradeMe_Error_BackupFailed"
+    else
+        find "${MySB_InstallDir}_backup" -maxdepth 1 -type d -name "v*" -mtime +1 -exec rm -rfv {} \;
     fi
 
     [ "$gbDevMode" -eq 1 ] && backup-manager-tools add "${MySB_InstallDir}"
@@ -261,6 +264,9 @@ if [ $Continue -eq 0 ]; then
     fi
 fi
 
+#### Upgrade in progress page + Start Cron service
+gfnUpgradeInProgress "off"
+
 #### Upgrade finished
 clear
 if [ $Continue -ne 0 ]; then
@@ -268,8 +274,6 @@ if [ $Continue -ne 0 ]; then
     echo -e "${CRED}$Error$CEND"
     echo -e "${CRED}Code: $Continue$CEND"
     echo
-    #### Upgrade in progress page + Start Cron service
-    gfnUpgradeInProgress "off"
     gfnEndingScript 0
 fi
 

@@ -1,0 +1,73 @@
+#!/bin/bash
+# rev 5.5
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#	 _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#	  _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#	   _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#		_\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#		 _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#		  _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+# ARGS: $d.hash=,$d.name=,$d.directory=
+
+#### VARs
+sInfoHash="${1}"        # $d.hash=
+sName="${2}"            # $d.name=
+sDirectory="${3}"       # $d.directory=
+
+sUserName="$(whoami)"
+dTimestamp="$(date +%Y/%m/%d\ %H:%M:%S)"
+sLogFile="/home/${sUserName}/logs/$(basename "$0").log"
+sSqlParams='--defaults-extra-file=/home/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N'
+
+#### Functions
+fnReturn() {
+    {
+        echo "--------------------"
+        echo "Timestamp: ${dTimestamp}"
+        echo "Name: ${sName}"
+        echo "Hash: ${sInfoHash}"
+        echo "Directory: ${sDirectory}"
+        echo "--------------------"
+        echo ""
+    } >>"${sLogFile}"
+    return "${1}"
+}
+
+#### Do some checks before
+# Vars
+[ -z "${sInfoHash}" ] && fnReturn 1
+[ -z "${sName}" ] && fnReturn 1
+( [ -z "${sDirectory}" ] || [ ! -d "${sDirectory}" ] ) && fnReturn 1
+
+#### Step 1 - Log header
+{
+    echo "--------------------"
+    echo "Timestamp: ${dTimestamp}"
+    echo "Hash: ${sInfoHash}"
+    echo "Tree: ${sDirectory}/${sName}"
+    echo "--------------------"
+
+    mysql ${sSqlParams} -e "DELETE FROM torrents WHERE info_hash='${sInfoHash}' AND name='${sName}' AND tree='${sDirectory}/${sName}';" -v
+} >>"${sLogFile}"
+sed -i '/^M/d' "${sLogFile}"
+
+#### Step 2 - Update user quota
+sudo /bin/bash /home/"${sUserName}"/.rTorrent_tasks.sh 'quota'
+
+##################### LAST LINE ######################################

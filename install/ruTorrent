@@ -1,6 +1,7 @@
 #!/bin/bash
 # ----------------------------------
-source $(dirname $0)/../inc/includes_before
+# shellcheck source=inc/includes_before
+source "$(dirname "$0")"/../inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -28,23 +29,36 @@ source $(dirname $0)/../inc/includes_before
 gfnManageServices stop "cron"
 gfnListCountUsers 'normal'
 for seedUser in $gsUsersList; do
-	systemctl status rtorrent-$seedUser &> /dev/null
-	if [ $? -eq 0 ]; then
-		systemctl stop rtorrent-$seedUser
-	fi
+    systemctl status rtorrent-$seedUser &>/dev/null
+    if [ $? -eq 0 ]; then
+        systemctl stop rtorrent-$seedUser
+    fi
 done
 
 #### Remove old ruTorrent trackers
 case "$gsSwitch" in
-	UPGRADE)	cmdMySQL 'MySB_db' "DELETE FROM trackers_list WHERE origin='rutorrent' AND is_active='0';" -v;;
+    UPGRADE) cmdMySQL 'MySB_db' "DELETE FROM trackers_list WHERE origin='rutorrent' AND is_active='0';" -v ;;
 esac
 
 #### Install some tools for plugins
 gfnPackageBundleInstall 'sox'
 
 #### ruTorrent + Official Plugins
+# Backup conf
+if [ -d "${gsRutorrentDir}"/share/users ]; then
+    mv -v "${gsRutorrentDir}"/share/users "${MySB_InstallDir}"/temp/rutorrent_share_users
+fi
+# ruTorrent
 gfnGetRepoValues 'ruTorrent' && gfnRepoManageByType
-rm -vf $gsRepoDir/plugins/extsearch/engines/NNMClub.php
+rm -vf ${gsRepoDir}/plugins/extsearch/engines/NNMClub.php
+echo "${gsRepoVersion}" >${gsRutorrentDir}/version
+# Restore conf
+if [ -d "${MySB_InstallDir}"/temp/rutorrent_share_users ]; then
+    if [ -d "$gsRutorrentDir"/share/users ]; then
+        rm -rfv "$gsRutorrentDir"/share/users
+    fi
+    mv -v "${MySB_InstallDir}"/temp/rutorrent_share_users "$gsRutorrentDir"/share/users
+fi
 
 #### Plugin Chat
 gfnGetRepoValues 'ruTorrent Plugin Chat' && gfnRepoManageByType
@@ -57,21 +71,21 @@ gfnGetRepoValues 'ruTorrent Plugin LBLL-Suite' && gfnRepoManageByType
 
 #### Plugin NFO
 gfnGetRepoValues 'ruTorrent Plugin NFO' && gfnRepoManageByType
-if [ ! -f $gsRepoDir/lang/fr.js ]; then
-	cp -v $gsRepoDir/lang/en.js $gsRepoDir/lang/fr.js
-	perl -pi -e "s/NFO Viewer/Visionneuse NFO/g" $gsRepoDir/lang/fr.js
-	perl -pi -e "s/Could not open NFO/Impossible d'ouvrir le NFO/g" $gsRepoDir/lang/fr.js
-	perl -pi -e "s/ERROR/ERREUR/g" $gsRepoDir/lang/fr.js
+if [ ! -f ${gsRepoDir}/lang/fr.js ]; then
+    cp -v ${gsRepoDir}/lang/en.js ${gsRepoDir}/lang/fr.js
+    perl -pi -e "s/NFO Viewer/Visionneuse NFO/g" ${gsRepoDir}/lang/fr.js
+    perl -pi -e "s/Could not open NFO/Impossible d'ouvrir le NFO/g" ${gsRepoDir}/lang/fr.js
+    perl -pi -e "s/ERROR/ERREUR/g" ${gsRepoDir}/lang/fr.js
 fi
 
 #### Plugin Check SFV
 gfnGetRepoValues 'ruTorrent Plugin Check SFV' && gfnRepoManageByType
-if [ -f $gsRepoDir/conf.php ]; then
-	perl -pi -e "s/'';/'\/usr\/bin\/cksfv';/g" $gsRepoDir/conf.php
+if [ -f ${gsRepoDir}/conf.php ]; then
+    perl -pi -e "s/'';/'\/usr\/bin\/cksfv';/g" ${gsRepoDir}/conf.php
 fi
-if [ ! -f $gsRepoDir/lang/fr.js ]; then
-	cp -v $gsRepoDir/lang/en.js $gsRepoDir/lang/fr.js
-	perl -pi -e "s/Check SFV/Vérification SFV/g" $gsRepoDir/lang/fr.js
+if [ ! -f ${gsRepoDir}/lang/fr.js ]; then
+    cp -v ${gsRepoDir}/lang/en.js ${gsRepoDir}/lang/fr.js
+    perl -pi -e "s/Check SFV/Vérification SFV/g"                     ${gsRepoDir}/lang/fr.js
 fi
 
 #### Plugin InstantSearch
@@ -82,16 +96,16 @@ gfnGetRepoValues 'ruTorrent Plugin Show IP' && gfnRepoManageByType
 
 #### Plugin Speed Graph
 gfnGetRepoValues 'ruTorrent Plugin Speed Graph' && gfnRepoManageByType
-if [ ! -f $gsRepoDir/lang/fr.js ];then
-	cp -v $gsRepoDir/lang/en.js $gsRepoDir/lang/fr.js
-	perl -pi -e "s/Monitoring Time/Surveillance du temps/g" $gsRepoDir/lang/fr.js
-	perl -pi -e "s/Speed Graph/Graphique de vitesse/g" $gsRepoDir/lang/fr.js
+if [ ! -f ${gsRepoDir}/lang/fr.js ]; then
+    cp -v ${gsRepoDir}/lang/en.js ${gsRepoDir}/lang/fr.js
+    perl -pi -e "s/Monitoring Time/Surveillance du temps/g" ${gsRepoDir}/lang/fr.js
+    perl -pi -e "s/Speed Graph/Graphique de vitesse/g" ${gsRepoDir}/lang/fr.js
 fi
 
 #### Plugin Ratiocolor
 gfnGetRepoValues 'ruTorrent Plugin RatioColor' && gfnRepoManageByType
-if [ -f $gsRepoDir/init.js ]; then
-	perl -pi -e "s/changeWhat = \"cell-background\";/changeWhat = \"font\";/g" $gsRepoDir/init.js
+if [ -f ${gsRepoDir}/init.js ]; then
+    perl -pi -e 's/changeWhat = "cell-background";/changeWhat = "font";/g'  ${gsRepoDir}/init.js
 fi
 
 #### Plugin Filemanager
@@ -102,21 +116,21 @@ gfnGetRepoValues 'ruTorrent Plugin FileUpload' && gfnRepoManageByType
 
 #### Plugin Fileshare
 gfnGetRepoValues 'ruTorrent Plugin FileShare' && gfnRepoManageByType
-if [ -f $gsRepoDir/conf.php ]; then
-	perl -pi -e "s/http:\/\/mydomain.com\/share.php/https:\/\/$gsHostNameFqdn:$gsPort_MySB_HTTPS\/fileshare.php/g" $gsRepoDir/conf.php
+if [ -f ${gsRepoDir}/conf.php ]; then
+    perl -pi -e "s/http:\/\/mydomain.com\/share.php/https:\/\/$gsHostNameFqdn:$gsPort_MySB_HTTPS\/fileshare.php/g" ${gsRepoDir}/conf.php
 fi
 
 #### Plugin Mediastream
 gfnGetRepoValues 'ruTorrent Plugin MediaStream' && gfnRepoManageByType
-if [ -f $gsRepoDir/conf.php ]; then
-	perl -pi -e "s/http:\/\/mydomain.com\/stream\/view.php/https:\/\/$gsHostNameFqdn:$gsPort_MySB_HTTPS\/view/g" $gsRepoDir/conf.php
+if [ -f ${gsRepoDir}/conf.php ]; then
+    perl -pi -e "s/http:\/\/mydomain.com\/stream\/view.php/https:\/\/$gsHostNameFqdn:$gsPort_MySB_HTTPS\/view/g" ${gsRepoDir}/conf.php
 fi
 
 #### Plugin Stream
 gfnGetRepoValues 'ruTorrent Plugin Stream' && gfnRepoManageByType
-if [ -f $gsRepoDir/config.php ]; then
-	perl -pi -e "s/define\('USE_NGINX', false\);/define\('USE_NGINX', true\);/g" $gsRepoDir/config.php
-	perl -pi -e "s/define\('SCHEME', 'http'\);/define\('SCHEME', 'https'\);/g" $gsRepoDir/config.php
+if [ -f ${gsRepoDir}/config.php ]; then
+    perl -pi -e "s/define\('USE_NGINX', false\);/define\('USE_NGINX', true\);/g" ${gsRepoDir}/config.php
+    perl -pi -e "s/define\('SCHEME', 'http'\);/define\('SCHEME', 'https'\);/g" ${gsRepoDir}/config.php
 fi
 
 #### Plugin Pause WebUI
@@ -136,14 +150,14 @@ gfnGetRepoValues 'ruTorrent Plugin Sync' && gfnRepoManageByType
 
 #### ruTorrent Theme Oblivion
 if [ -z "$(grep 'for Oblivion' $gsRutorrentDir/css/style.css)" ]; then
-	echo
-	echo "########## ruTorrent Theme Oblivion"
-	echo
-	echo "" >> $gsRutorrentDir/css/style.css
-	echo "/* for Oblivion */" | tee -a $gsRutorrentDir/css/style.css
-	echo ".meter-value-start-color { background-color: #E05400 }" | tee -a $gsRutorrentDir/css/style.css
-	echo ".meter-value-end-color { background-color: #8FBC00 }" | tee -a $gsRutorrentDir/css/style.css
-	echo "::-webkit-scrollbar {width:12px;height:12px;padding:0px;margin:0px;}" | tee -a $gsRutorrentDir/css/style.css
+    echo
+    echo "########## ruTorrent Theme Oblivion"
+    echo
+    echo "" >>$gsRutorrentDir/css/style.css
+    echo "/* for Oblivion */" | tee -a $gsRutorrentDir/css/style.css
+    echo ".meter-value-start-color { background-color: #E05400 }" | tee -a $gsRutorrentDir/css/style.css
+    echo ".meter-value-end-color { background-color: #8FBC00 }" | tee -a $gsRutorrentDir/css/style.css
+    echo "::-webkit-scrollbar {width:12px;height:12px;padding:0px;margin:0px;}" | tee -a $gsRutorrentDir/css/style.css
 fi
 perl -pi -e "s/\$defaultTheme \= \"\"\;/\$defaultTheme \= \"Oblivion\"\;/g" $gsRutorrentPluginsDir/theme/conf.php
 
@@ -153,34 +167,18 @@ gfnGetRepoValues 'ruTorrent Theme club-QuickBox' && gfnRepoManageByType
 #### ruTorrent Theme MaterialDesign
 gfnGetRepoValues 'ruTorrent Theme MaterialDesign' && gfnRepoManageByType
 
-#### ruTorrent favicons trackers
-gfnGetRepoValues 'ruTorrent Dev'
-gfnRepoManageByType
-Labels="$(echo $gsRepoDir/plugins/tracklabels/labels/*)"
-for Favicons in $Labels; do
-	if [ ! -f "$gsRutorrentPluginsDir/tracklabels/labels/$Favicons" ]; then
-		cp -v "$Favicons" "$gsRutorrentPluginsDir/tracklabels/labels/"
-	fi
-done
-Trackers="$(echo $gsRepoDir/plugins/tracklabels/trackers/*)"
-for Favicons in $Trackers; do
-	if [ ! -f "$gsRutorrentPluginsDir/tracklabels/trackers/$Favicons" ]; then
-		cp -v "$Favicons" "$gsRutorrentPluginsDir/tracklabels/trackers/"
-	fi
-done
-
 #### Plowshare
 gfnGetRepoValues 'Plowshare'
 if [ "$gsSwitch" == "REFRESH" ]; then
-	gfnDeleteDirectory 1 "$gsRepoDir"
+    gfnDeleteDirectory 1 "${gsRepoDir}"
 fi
 gfnRepoManageByType
 if [ $gnRepoUpgrade -eq 1 ] || [ "$gsSwitch" == "INSTALL" ]; then
-	cd $gsRepoDir || exit 1
-	make clean
-	make install
-	# Disable the upgrade job
-	cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='Plowshare';" -v
+    cd ${gsRepoDir} || exit 1
+    make clean
+    make install
+    # Disable the upgrade job
+    cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='Plowshare';" -v
 fi
 
 #### Create directories & change rights
@@ -189,26 +187,22 @@ log_daemon_msg "Change owners and rights for files and directories"
 gfnManageDirAndFiles 'global'
 gfnStatusLSB
 
-#### Get Tracker Certificates
-log_daemon_msg "Check and get all trackers certs"
-gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/scripts/GetTrackersCert.bsh" 'REFRESH'
-gfnStatusLSB
-
 #### START services
 if [ "$gsSwitch" != "UPGRADE" ]; then
-	gfnManageServices start "cron"
+    gfnManageServices start "cron"
 
-	for seedUser in $gsUsersList; do
-		if [ -f /etc/init.d/rtorrent-$seedUser ]; then
-			systemctl status rtorrent-$seedUser &> /dev/null
-			if [ $? -gt 0 ]; then
-				systemctl restart rtorrent-$seedUser
-			fi
-		fi
-	done
+    for seedUser in $gsUsersList; do
+        if [ -f /etc/init.d/rtorrent-$seedUser ]; then
+            systemctl status rtorrent-$seedUser &>/dev/null
+            if [ $? -gt 0 ]; then
+                systemctl restart rtorrent-$seedUser
+            fi
+        fi
+    done
 fi
 
 # -----------------------------------------
-source $(dirname $0)/../inc/includes_after
+# shellcheck source=inc/includes_after
+source "$(dirname "$0")"/../inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

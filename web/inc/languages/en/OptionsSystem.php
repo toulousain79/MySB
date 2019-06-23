@@ -33,5 +33,17 @@ define('MainUser_OptionsSystem_Title_DNScrypt', 'DNScrypt-proxy');
 define('MainUser_OptionsSystem_Title_Logwatch', 'LogWatch');
 define('MainUser_OptionsSystem_Title_Renting', 'Renting');
 define('MainUser_OptionsSystem_Activate', 'Activation');
+define('MainUser_OptionsSystem_Title_Tracker', 'Trackers allowed');
+define('MainUser_OptionsSystem_TrackerType', 'Type');
+define('MainUser_OptionsSystem_TrackerMulti', 'Private & Public');
+define('MainUser_OptionsSystem_TrackerSingle', 'Private only');
+define('MainUser_OptionsSystem_TrackerBlock', 'Auto block annoncers ?');
+define('MainUser_OptionsSystem_Title_FilesRecycling', 'Downloads');
+define('MainUser_OptionsSystem_FilesRecycling', 'Recycling ?');
+define('MainUser_OptionsSystem_FilesRecycling_Copy', 'Simple copy');
+define('MainUser_OptionsSystem_FilesRecycling_HardLink', 'Hard link');
+// Tooltip
+define('User_Synchronization_TT_FilesRecycling', '<a target="_blank" href="https://mysb.gitbook.io/doc/configuration/options-systemes#recyclage-des-telechargements">Access the documentation</a>');
+define('User_Synchronization_TT_Tracker', '<a target="_blank" href="https://mysb.gitbook.io/doc/configuration/options-systemes#trackers-autorises">Access the documentation</a>');
 
 //#################### LAST LINE ######################################

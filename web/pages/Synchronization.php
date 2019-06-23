@@ -305,10 +305,6 @@ if (isset($_POST['submit'])) {
 	}
 
 	GenerateMessage($Command, $type, $message);
-
-	if( $RefreshPage >= 1 ) {
-		header('Refresh: 2; URL='.$_SERVER['HTTP_REFERER'].'');
-	}
 }
 
 // Get values from database
@@ -333,12 +329,19 @@ if($dir = opendir("/home/$CurrentUser/scripts")) {
 }
 ?>
 
-<form class="form_settings" method="post" action="">
+<form class="form_settings" method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
+
+<div class="tooltip_templates">
+    <span id="tooltip_content">
+        <?php echo User_Synchronization_TT_Documentation; ?>
+    </span>
+</div>
+
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
 	<br />
 	<fieldset style="vertical-align: text-top;">
-	<legend><?php echo User_Synchronization_Title_rTorrentConfig; ?></legend>
+	<legend><?php echo User_Synchronization_Title_rTorrentConfig; ?>&nbsp;<img class="tooltip" data-tooltip-content="#tooltip_content" style="cursor: help; vertical-align:middle; width:20px; height:20px;" alt="" border="0" src="<?php echo THEMES_PATH . 'MySB/images/help.png'; ?>"></legend>
 <?php
 if ( !empty($users_directories) ) {
 ?>
@@ -550,9 +553,8 @@ if ( $DisplayIdent >= 1 ) {
 			break;
 	}
 
-if ( $DisplayIdent >= 1 ) {
 ?>
-	<div id="scrollmenu">
+	<div id="scrollmenu" align="center">
 	<fieldset style="vertical-align: text-top;">
 	<legend><?php echo User_Synchronization_Title_Ident; ?></legend>
 		<table>
@@ -606,10 +608,8 @@ if ( $DisplayIdent >= 1 ) {
 		</table>
 		<div align="center"><p class="Comments"><?php echo User_Synchronization_SyncComment; ?></p></div>
 	</fieldset>
-	</div>
-
+    </div>
 <?php
-} // if ( $DisplayIdent >= 1 ) {
 if ( count($FilesInQueue) > 0 ) {
 ?>
 	<br />
@@ -677,13 +677,13 @@ if ( count($FilesInQueue) > 0 ) {
 		</table>
 <?php
 	if ( ($IdentSync['dst_dir'] != '') && ($IdentSync['dst_srv'] != '') && ($IdentSync['dst_port']) ) {
-		if ( ($users_scripts['script'] != '') && ($CountDirect >= 1) ) {
-			if ( ($DirectPid == '') ) {
+		if ( ($users_scripts['script'] != '') || ($CountDirect >= 1) ) {
+			if ( $DirectPid == '' ) {
 				echo '<input style="cursor: pointer; width:' . strlen(User_Synchronization_StartDirect)*10 . 'px; margin-top: 10px; margin-bottom: 10px;" name="start" type="submit" value="'.User_Synchronization_StartDirect.'" />';
 			}
 		}
-		if ( (count($users_crontab) > 0) && ($CountCron >= 1) ) {
-			if ( ($CronPid == '') ) {
+		if ( (count($users_crontab) > 0) || ($CountCron >= 1) ) {
+			if ( $CronPid == '' ) {
 				echo '&nbsp;&nbsp;';
 				echo '<input style="cursor: pointer; width:' . strlen(User_Synchronization_StartPlanned)*10 . 'px; margin-top: 10px; margin-bottom: 10px;" name="start" type="submit" value="'.User_Synchronization_StartPlanned.'" />';
 			}
@@ -694,46 +694,48 @@ if ( count($FilesInQueue) > 0 ) {
 <?php
 }
 
-$SelectOptions = array();
-foreach($users_directories as $Directory) {
-	if ($dir = opendir("/home/$CurrentUser/rtorrent/complete/".$Directory['sub_directory']."/")) {
-		$files = array();
-		while ($files[] = readdir($dir));
-		closedir($dir);
-		sort($files);
-		foreach ($files as $file) {
-			if($file != '.' && $file != '..' && $file != '') {
-				$SelectOptions[] = '<option value="' .$file. '|' .$Directory['sub_directory']. '">'. $Directory['sub_directory'] .'&nbsp;&nbsp;|&nbsp;&nbsp;'. $file . '</option>';
+if ( ($IdentSync['dst_dir'] != '') && ($IdentSync['dst_srv'] != '') && ($IdentSync['dst_port']) ) {
+	$SelectOptions = array();
+	foreach($users_directories as $Directory) {
+		if ($dir = opendir("/home/$CurrentUser/rtorrent/complete/".$Directory['sub_directory']."/")) {
+			$files = array();
+			while ($files[] = readdir($dir));
+			closedir($dir);
+			sort($files);
+			foreach ($files as $file) {
+				if($file != '.' && $file != '..' && $file != '') {
+					$SelectOptions[] = '<option value="' .$file. '|' .$Directory['sub_directory']. '">'. $Directory['sub_directory'] .'&nbsp;&nbsp;|&nbsp;&nbsp;'. $file . '</option>';
+				}
 			}
 		}
 	}
-}
 
-if ( !empty($SelectOptions) ) {
+	if ( !empty($SelectOptions) ) {
 ?>
-	<br />
-	<fieldset style="vertical-align: text-top;">
-	<legend><?php echo User_Synchronization_Title_DownloadedFiles; ?></legend>
-		<table style="width:100%">
-			<tr>
-				<th style="text-align:center;"><?php echo User_Synchronization_Files; ?></th>
-				<th style="text-align:center;"></th>
-			</tr>
-			<tr>
-				<td><div align="center"><select name="downloaded_files" style="width:100%; height: 28px;">
+		<br />
+		<fieldset style="vertical-align: text-top;">
+		<legend><?php echo User_Synchronization_Title_DownloadedFiles; ?></legend>
+			<table style="width:100%">
+				<tr>
+					<th style="text-align:center;"><?php echo User_Synchronization_Files; ?></th>
+					<th style="text-align:center;"></th>
+				</tr>
+				<tr>
+					<td><div align="center"><select name="downloaded_files" style="width:100%; height: 28px;">
 <?php
-			foreach($SelectOptions as $Option) {
-				echo $Option;
-			}
+				foreach($SelectOptions as $Option) {
+					echo $Option;
+				}
 ?>
-				</select></div></td>
-				<td><input class="submit" style="width:<?php echo strlen(User_Synchronization_AddFiles)*10; ?>px" name="add_file" type="submit" value="<?php echo User_Synchronization_AddFiles; ?>" /></td>
-			</tr>
-		</table>
-		<div align="center"><p class="Comments"><?php echo User_Synchronization_AddFilesComment; ?></p></div>
-	</fieldset>
+					</select></div></td>
+					<td><input class="submit" style="width:<?php echo strlen(User_Synchronization_AddFiles)*10; ?>px" name="add_file" type="submit" value="<?php echo User_Synchronization_AddFiles; ?>" /></td>
+				</tr>
+			</table>
+			<div align="center"><p class="Comments"><?php echo User_Synchronization_AddFilesComment; ?></p></div>
+		</fieldset>
 <?php
-} //if ( !empty($SelectOptions) ) {
+	} //if ( !empty($SelectOptions) ) {
+}
 ?>
 
 	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />

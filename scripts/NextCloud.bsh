@@ -1,6 +1,7 @@
 #!/bin/bash
 # ----------------------------------
-source $(dirname $0)/../inc/includes_before
+# shellcheck source=inc/includes_before
+source "$(dirname "$0")"/../inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -30,32 +31,33 @@ if [ "$gbIsInstalled_NextCloud" == "YES" ]; then
 	Mode="$1"
 	User="$2"
 	case "$Mode" in
-		'scan')
-			if [ ! -z "$User" ] && [ ! -z "`getent passwd $User`" ] && [ -z "`ps ax | grep "occ files:scan $User" | grep -v 'grep'`" ]; then
-				echo `/bin/date '+%Y-%m-%d - %H:%M:%S'`" --> Files scan for $User"
-				su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files:scan --path=\"/$User/files/MySB_Home\" --quiet"
-			else
-				IfCron="`cmdMySQL 'MySB_db' "SELECT nextcloud_cron FROM system WHERE id_system = '1';"`"
-				if [ -z "$IfCron" ]; then
-					cmdMySQL 'MySB_db' "UPDATE system SET nextcloud_cron = '0' WHERE id_system='1';"
-					IfCron=0
-				fi
-				if [ $IfCron -eq 1 ]; then
-					gfnListCountUsers 'normal'
-					for seedUser in $gsUsersList; do
-						if [ ! -z "`getent passwd $seedUser`" ] && [ -z "`ps ax | grep "occ files:scan" | grep -v 'grep'`" ]; then
-							echo `/bin/date '+%Y-%m-%d - %H:%M:%S'`" --> Files scan for $seedUser"
-							su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files:scan --path=\"/$seedUser/files/MySB_Home\" --quiet"
-						fi
-					done
-					cmdMySQL 'MySB_db' "UPDATE system SET nextcloud_cron = '0' WHERE id_system='1';"
-				fi
+	'scan')
+		if [ -n "$User" ] && [ -n "$(getent passwd $User)" ] && [ -z "$(ps ax | grep "occ files:scan $User" | grep -v 'grep')" ]; then
+			echo "$(/bin/date '+%Y-%m-%d - %H:%M:%S') --> Files scan for $User"
+			su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files:scan --path=\"/$User/files/MySB_Home\" --quiet"
+		else
+			IfCron="$(cmdMySQL 'MySB_db' "SELECT nextcloud_cron FROM system WHERE id_system = '1';")"
+			if [ -z "$IfCron" ]; then
+				cmdMySQL 'MySB_db' "UPDATE system SET nextcloud_cron = '0' WHERE id_system='1';"
+				IfCron=0
 			fi
+			if [ $IfCron -eq 1 ]; then
+				gfnListCountUsers 'normal'
+				for seedUser in $gsUsersList; do
+					if [ -n "$(getent passwd $seedUser)" ] && [ -z "$(ps ax | grep "occ files:scan" | grep -v 'grep')" ]; then
+						echo "$(/bin/date '+%Y-%m-%d - %H:%M:%S') --> Files scan for $seedUser"
+						su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files:scan --path=\"/$seedUser/files/MySB_Home\" --quiet"
+					fi
+				done
+				cmdMySQL 'MySB_db' "UPDATE system SET nextcloud_cron = '0' WHERE id_system='1';"
+			fi
+		fi
 		;;
 	esac
 fi
 
 # -----------------------------------------
-source $(dirname $0)/../inc/includes_after
+# shellcheck source=inc/includes_after
+source "$(dirname "$0")"/../inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

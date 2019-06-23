@@ -34,7 +34,7 @@ define('MainUser_DNScrypt_Title_Config', 'Configuration de DNScrypt-proxy');
 define('MainUser_DNScrypt_NoLogs', 'No Logs');
 define('MainUser_DNScrypt_DNSSec', 'DNS Sec');
 define('MainUser_DNScrypt_Namecoin', 'Namecoin');
-define('MainUser_DNScrypt_Daemon', 'Démons');
+define('MainUser_DNScrypt_Daemon', 'D&eacute;mons');
 define('MainUser_DNScrypt_Random', 'Al&eacute;atoire');
 
 //#################### LAST LINE ######################################

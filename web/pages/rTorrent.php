@@ -26,12 +26,23 @@ require_once '/etc/MySB/config.php';
 
 // VARs
 $Username = $_POST['username'];
-$get_base_path = $_POST['get_base_path'];
-$get_directory = $_POST['get_directory'];
-$get_custom1 = $_POST['get_custom1'];
-$get_name = $_POST['get_name'];
-$get_loaded_file = $_POST['get_loaded_file'];
 
+if (isset($_POST['get_base_path'])) { $get_base_path = $_POST['get_base_path']; }
+if (isset($_POST['get_directory'])) { $get_directory = $_POST['get_directory']; }
+if (isset($_POST['get_custom1'])) { $get_custom1 = $_POST['get_custom1']; }
+if (isset($_POST['get_name'])) { $get_name = $_POST['get_name']; }
+if (isset($_POST['get_loaded_file'])) { $get_loaded_file = $_POST['get_loaded_file']; }
+// Tracker not allowed
+if (isset($_POST['privacy'])) { $privacy = $_POST['privacy']; }
+if (isset($_POST['trackermodeallowed'])) { $trackermodeallowed = $_POST['trackermodeallowed']; }
+// New tracker added
+if (isset($_POST['tracker'])) { $tracker_address = $_POST['tracker']; }
+if (isset($_POST['tracker_domain'])) { $tracker_domain = $_POST['tracker_domain']; }
+if (isset($_POST['tracker_proto'])) { $tracker_proto = $_POST['tracker_proto']; } else { $tracker_proto = 'http'; }
+if (isset($_POST['tracker_port'])) { $tracker_port = $_POST['tracker_port']; } else { $tracker_port = '80'; }
+if (isset($_POST['tracker_uri'])) { $tracker_uri = $_POST['tracker_uri']; } else { $tracker_uri = '/'; }
+
+$MainUserEmail = $MySB_DB->get("users", "users_email", ["admin" => 1]);
 $users_datas = $MySB_DB->get("users", ["language", "rtorrent_notify", "users_email"], ["users_ident" => "$Username"]);
 $Language = $users_datas["language"];
 $rTorrentNotify = $users_datas["rtorrent_notify"];
@@ -56,25 +67,96 @@ if ( ($rTorrentNotify == '1') && (!empty($UserMail)) ) {
 			$Directory = "Directory : ";
 			$Torrent = "Torrent : ";
 	}
+
+	// Tracker not allowed
+	if ( isset($trackermodeallowed) ) {
+		switch ($Language) {
+			case 'fr':
+				$Subject = "MySB - Action non autorisée !";
+				$TrackerPrivacy = "Type:";
+				$TrackerPrivacyPrivate = "privés";
+				$TrackerPrivacyPublic = "publiques";
+				$TrackerAllowed = "Tracker autorisés:";
+				$TrackerAllowedPrivate = "privés seulement";
+				$TrackerAllowedPublic = "publiques & privés";
+				break;
+
+			default:
+				$Subject = "MySB - Action not allowed !";
+				$TrackerPrivacy = "Type:";
+				$TrackerPrivacyPrivate = "privates";
+				$TrackerPrivacyPublic = "publics";
+				$TrackerAllowed = "Tracker allowed:";
+				$TrackerAllowedPrivate = "privates only";
+				$TrackerAllowedPublic = "publics & privates";
+		}
+	} elseif ( isset($tracker_address) ) {
+		switch ($Language) {
+			case 'fr':
+				$Subject = "MySB - Nouvel annonceur ajouté !";
+				$TrackerAddress = "Adresse:";
+				$TrackerDomain = "Domaine:";
+				break;
+
+			default:
+				$Subject = "MySB - New annoncer added !";
+				$TrackerAddress = "Address:";
+				$TrackerDomain = "Domain:";
+		}
+	}
+
 	if ( isset($_POST['subject']) ) {
 		$Subject = $_POST['subject'];
 	}
 	if ( isset($_POST['content']) ) {
 		$Content = file_get_contents($_POST['content']);
 	} else {
-		$Content = "$Filename $get_name"."\r\n";
-		if ( $get_custom1 != '' ) {
+		if ( isset($get_name) && ( $get_name != '' ) ) {
+			$Content = "$Filename $get_name"."\r\n";
+		} else {
+			$Content = "";
+		}
+		if ( isset($get_custom1) && ( $get_custom1 != '' ) ) {
 			$Content .= "$Label $get_custom1"."\r\n";
 		}
-		$Content .= "$Directory $get_directory"."\r\n";
-		if ( $get_loaded_file != '' ) {
+		if ( isset($privacy) && ( $privacy != '' ) ) {
+			switch ($privacy) {
+				case 'private':
+					$privacy = "$TrackerPrivacyPrivate";
+					break;
+				default:
+					$privacy = "$TrackerPrivacyPublic";
+			}
+			$Content .= "$TrackerPrivacy $privacy"."\r\n";
+		}
+		if ( isset($trackermodeallowed) && ( $trackermodeallowed != '' ) ) {
+			switch ($trackermodeallowed) {
+				case 'private':
+					$trackermodeallowed = "$TrackerAllowedPrivate";
+					break;
+				default:
+					$trackermodeallowed = "$TrackerAllowedPublic";
+			}
+			$Content .= "$TrackerAllowed $trackermodeallowed"."\r\n";
+		}
+		if ( isset($get_directory) && ( $get_directory != '' ) ) {
+			$Content .= "$Directory $get_directory"."\r\n";
+		}
+		if ( isset($get_loaded_file) && ( $get_loaded_file != '' ) ) {
 			$Content .= "$Torrent $get_loaded_file"."\r\n";
 		}
+		if ( isset($tracker_address) && ( $tracker_address != '' ) ) {
+			// $Content .= "$TrackerAddress $tracker_proto"."://"."$tracker_address".":$tracker_port"."$tracker_uri"."\r\n";
+			$Content .= "$TrackerAddress $tracker_proto"."$tracker_address".":$tracker_port"."\r\n";
+		}
+		if ( isset($tracker_domain) && ( $tracker_domain != '' ) ) {
+			$Content .= "$TrackerDomain $tracker_domain"."\r\n";
+		}
 	}
-	$Headers  = "From: $UserMail"."\r\n";
-	$Headers .= "Reply-To: $UserMail"."\r\n";
+	$Headers  = "From: $MainUserEmail"."\r\n";
+	$Headers .= "Reply-To: $MainUserEmail"."\r\n";
 	$Headers .= 'MIME-Version: 1.0' . "\r\n";
-	$Headers .= 'Content-type: text/plain; charset=utf-8' . "\r\n";
+	$Headers .= 'Content-type:text/plain;charset=UTF-8' . "\r\n";
 
 	mail($UserMail, $Subject, $Content, $Headers);
 }
