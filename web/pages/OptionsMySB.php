@@ -29,7 +29,7 @@ require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__
 $users_datas = $MySB_DB->get("users", ["id_users", "rtorrent_version", "rtorrent_notify", "rtorrent_restart", "language", "account_type"], ["users_ident" => "$CurrentUser"]);
 $UserID = $users_datas['id_users'];
 $Command = 'message_only';
-$rTorrentVersionsList = array('v0.9.6');
+$rTorrentVersionsList = array('v0.9.6', 'v0.9.7');
 $RefreshPage = 0;
 $Change = 0;
 $type = 'information';
@@ -54,10 +54,12 @@ if (isset($_POST['submit'])) {
 				$rTorrentRestart_POST = 1;
 				$Command = 'Restart_rTorrent';
 				$Change++;
+				$RefreshPage++;
 			}
 			// Notifications ?
 			if ( $rTorrentNotify_POST != $rTorrentNotify_DB ) {
 				$Change++;
+				$RefreshPage++;
 			}
 
 			// Language
@@ -87,24 +89,15 @@ if (isset($_POST['submit'])) {
 	}
 
 	GenerateMessage($Command, $type, $message);
-
-	if( $RefreshPage >= 1 ) {
-		header('Refresh: 2; URL='.$_SERVER['HTTP_REFERER'].'');
-	}
 }
 
-// Get values from database
-$rtorrent_version = $users_datas['rtorrent_version'];
-if ($rTorrentRestart_POST == "1") {
-	$rtorrent_restart = '0';
-} else {
-	$rtorrent_restart = $users_datas['rtorrent_restart'];
-}
-$rtorrent_notify = $users_datas['rtorrent_notify'];
-$language = $users_datas['language'];
+$rtorrent_version = (isset($rTorrentVersion_POST)) ? $rTorrentVersion_POST : $users_datas['rtorrent_version'];
+$rtorrent_restart = (isset($rTorrentRestart_POST)) ? $rTorrentRestart_POST : $users_datas['rtorrent_restart'];
+$rtorrent_notify = (isset($rTorrentNotify_POST)) ? $rTorrentNotify_POST : $users_datas['rtorrent_notify'];
+$language = (isset($Language_POST)) ? $Language_POST : $users_datas['language'];
 ?>
 
-<form class="form_settings" method="post" action="">
+<form class="form_settings" method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
 <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 
 <?php
@@ -115,7 +108,7 @@ if ( $users_datas['account_type'] == 'normal' ) {
 
 	<table>
 		<tr>
-			<td><?php echo User_OptionsMySB_rTorrentVersion; ?></td>
+			<td class="tooltip" title="<?php echo User_OptionsMySB_TT_rTorrentVersion; ?>" style="cursor: help;"><?php echo User_OptionsMySB_rTorrentVersion; ?></td>
 			<td>
 				<select name="rTorrentVersion" style="width:80px; height: 28px;">';
 				<?php foreach($rTorrentVersionsList as $Version) {
@@ -127,7 +120,7 @@ if ( $users_datas['account_type'] == 'normal' ) {
 				} ?>
 				</select>
 			</td>
-			<td><?php echo User_OptionsMySB_rTorrentRestart; ?></td>
+			<td class="tooltip" title="<?php echo User_OptionsMySB_TT_rTorrentRestart; ?>" style="cursor: help;"><?php echo User_OptionsMySB_rTorrentRestart; ?></td>
 			<td>
 
 				<?php switch ($rtorrent_restart) {
@@ -144,7 +137,7 @@ if ( $users_datas['account_type'] == 'normal' ) {
 				} ?>
 				<select name="rTorrentRestart" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
 			</td>
-			<td><?php echo User_OptionsMySB_NotifyEmail; ?></td>
+			<td class="tooltip" title="<?php echo User_OptionsMySB_TT_NotifyEmail; ?>" style="cursor: help;"><?php echo User_OptionsMySB_NotifyEmail; ?></td>
 			<td>
 
 				<?php switch ($rtorrent_notify) {

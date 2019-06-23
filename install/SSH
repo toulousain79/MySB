@@ -1,6 +1,7 @@
 #!/bin/bash
 # ----------------------------------
-source $(dirname $0)/../inc/includes_before
+# shellcheck source=inc/includes_before
+source "$(dirname "$0")"/../inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -25,27 +26,82 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### Install packages
-PackagesToInstall="ssh openssh-server sshpass"
+PackagesToInstall=(ssh openssh-server sshpass)
+gfnPackagesManage 'install' 'backports' "${PackagesToInstall[@]}"
 
-if ! gfnCheckCommand 0 sshpass; then
-	PackagesToInstall="$PackagesToInstall"
+#### /etc/ssh/sshd_config
+# Port
+nNumLine=$(grep 'Port ' -n -m 1 /etc/ssh/sshd_config | cut -d ':' -f 1)
+sed -i '/Port /d' /etc/ssh/sshd_config
+sed -i "${nNumLine}i\Port ${gsPort_SSH}" /etc/ssh/sshd_config
+# AddressFamily
+nNumLine=$(grep 'AddressFamily ' -n -m 1 /etc/ssh/sshd_config | cut -d ':' -f 1)
+sed -i '/AddressFamily /d' /etc/ssh/sshd_config
+sed -i "${nNumLine}i\AddressFamily inet" /etc/ssh/sshd_config
+# ListenAddress
+nNumLine=$(grep 'ListenAddress ' -n -m 1 /etc/ssh/sshd_config | cut -d ':' -f 1)
+sed -i '/ListenAddress /d' /etc/ssh/sshd_config
+sed -i "${nNumLine}i\ListenAddress 0.0.0.0" /etc/ssh/sshd_config
+# Protocol
+nNumLine=$((nNumLine + 1))
+sed -i "${nNumLine}i\Protocol 2" /etc/ssh/sshd_config
+# HostKeys for protocol version 2
+sed -i "s/^#HostKey/HostKey/g;" /etc/ssh/sshd_config
+# UsePrivilegeSeparation
+nNumLine=$(grep 'UsePrivilegeSeparation ' -n -m 1 /etc/ssh/sshd_config | cut -d ':' -f 1)
+sed -i '/UsePrivilegeSeparation /d' /etc/ssh/sshd_config
+sed -i "${nNumLine}i\UsePrivilegeSeparation yes" /etc/ssh/sshd_config
+# SyslogFacility
+sed -i "s/^#SyslogFacility/SyslogFacility/g;" /etc/ssh/sshd_config
+# LogLevel
+sed -i "s/^#LogLevel/LogLevel/g;" /etc/ssh/sshd_config
+# LoginGraceTime
+sed -i "s/^#LoginGraceTime/LoginGraceTime/g;" /etc/ssh/sshd_config
+# StrictModes
+sed -i "s/^#StrictModes/StrictModes/g;" /etc/ssh/sshd_config
+# PubkeyAuthentication
+sed -i "s/^#PubkeyAuthentication/PubkeyAuthentication/g;" /etc/ssh/sshd_config
+# AuthorizedKeysFile
+sed -i "s/^#AuthorizedKeysFile/AuthorizedKeysFile/g;" /etc/ssh/sshd_config
+# PermitEmptyPasswords
+sed -i "s/^#PermitEmptyPasswords/PermitEmptyPasswords/g;" /etc/ssh/sshd_config
+# PrintLastLog
+sed -i "s/^#PrintLastLog/PrintLastLog/g;" /etc/ssh/sshd_config
+# UseDNS
+nNumLine=$(grep 'UseDNS ' -n -m 1 /etc/ssh/sshd_config | cut -d ':' -f 1)
+sed -i '/UseDNS /d' /etc/ssh/sshd_config
+sed -i "${nNumLine}i\UseDNS no" /etc/ssh/sshd_config
+# Subsystem
+nNumLine=$(grep 'Subsystem' -n -m 1 /etc/ssh/sshd_config | cut -d ':' -f 1)
+sed -i '/Subsystem/d' /etc/ssh/sshd_config
+sed -i "${nNumLine}i\Subsystem sftp internal-sftp -l ERROR -f AUTH" /etc/ssh/sshd_config
+# sed -i "${nNumLine}i\Subsystem sftp /usr/lib/openssh/sftp-server -l ERROR -f AUTH" /etc/ssh/sshd_config
+# MySB
+if (! grep '#### MySB - MARKER (DO NOT ADD PARAMS AFTER THIS BLOCK) ####' /etc/ssh/sshd_config); then
+    {
+        echo
+        echo "#### MySB - MARKER (DO NOT ADD PARAMS AFTER THIS BLOCK) ####"
+        echo "AllowGroups sshdusers MySB_users"
+        echo "Match Group MySB_users"
+        echo "	ForceCommand internal-sftp"
+        echo "	AllowTcpForwarding no"
+        echo "	X11Forwarding no"
+        echo "#### MySB - MARKER (DO NOT ADD PARAMS AFTER THIS BLOCK) ####"
+        echo
+    } >>/etc/ssh/sshd_config
 fi
-if [ ! -z "$PackagesToInstall" ]; then
-	gfnPackagesManage install "$PackagesToInstall" 'backports'
-fi
-
-install -v -o root -g root -m 0644 $MySB_InstallDir/templates/other/etc.ssh.sshd_config.tmpl /etc/ssh/sshd_config
-perl -pi -e "s/<port_ssh>/$gsPort_SSH/g" /etc/ssh/sshd_config
-rm -vf /etc/ssh/sshd_config.orig
 
 # Groups
-groupadd -f sudo
-grep 'sudo' /etc/group
-groupadd -f sshdusers
-grep 'sshdusers' /etc/group
-groupadd -f MySB_users
-grep 'MySB_users' /etc/group
-usermod -a -G sshdusers root
+(! grep -q 'sudo' /etc/group) && groupadd -f sudo
+(! grep -q 'sshdusers' /etc/group) && groupadd -f sshdusers
+(! grep -q 'MySB_users' /etc/group) && groupadd -f MySB_users
+
+# Users
+gfnListCountUsers
+gsUsersList="${gsUsersList} plex backup_rsync"
+for sUser in $(grep bash /etc/passwd | cut -f1 -d:); do
+    (! grep -q "${sUser}" <<<"${gsUsersList}") && usermod -a -G sshdusers "${sUser}"
+done
 
 mkdir -pv /usr/share/terminfo/l/
 cp /lib/terminfo/l/linux /usr/share/terminfo/l/
@@ -58,6 +114,7 @@ chmod -v 770 /home/MySB_share
 gfnManageServices start "ssh"
 
 # -----------------------------------------
-source $(dirname $0)/../inc/includes_after
+# shellcheck source=inc/includes_after
+source "$(dirname "$0")"/../inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

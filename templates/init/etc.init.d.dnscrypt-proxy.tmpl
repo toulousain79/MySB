@@ -1,4 +1,5 @@
 #!/bin/bash
+# rev 5.5
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -40,8 +41,9 @@
 ### END INIT INFO
 
 #### Includes
+# shellcheck source=.etc/MySB/config
 . /etc/MySB/config || exit 0
-# shellcheck source=/opt/MySB/inc/vars
+# shellcheck source=inc/vars
 . "$MySB_InstallDir/inc/vars" || exit 0
 
 ######################################################################
@@ -61,7 +63,7 @@ gsLogFile="/var/log/$gsProxyName.log" # log file
 gsPidDir="/var/run/$gsProxyName" # pid directory
 gsWorkDir="/usr/local/share/$gsProxyName" # default working directory
 gsTmpDir="/tmp/$gsProxyName" # temp directory
-gsRootUrl="https://raw.githubusercontent.com/toulousain79/MySB/v5.4/files/dnscrypt-resolvers" # Root URL for CSV, minisign and PUB files
+gsRootUrl="https://raw.githubusercontent.com/toulousain79/MySB/v99.99/files/dnscrypt-resolvers" # Root URL for CSV, minisign and PUB files
 #------------------------------------------------------------
 # Chroot user who executes dnscrypt-proxy, please change root user by unprivileged user to avoid security problems
 #------------------------------------------------------------
@@ -125,19 +127,24 @@ gsGUI="whiptail"
 #------------------------------------------------------------
 # Service locked ?
 #------------------------------------------------------------
-gbLockStart="`cmdMySQL 'MySB_db' "SELECT dnscrypt FROM system WHERE id_system='1';"`"
+gbLockStart="$(cmdMySQL 'MySB_db' "SELECT dnscrypt FROM system WHERE id_system='1';")"
 #------------------------------------------------------------
 # CSV file 'dnscrypt-resolvers.csv' compile
 #------------------------------------------------------------
-gsCplAllCsvUrls="https://raw.githubusercontent.com/toulousain79/MySB/v5.3/files/dnscrypt-resolvers/archives/20180529-1516.csv
-https://raw.githubusercontent.com/toulousain79/MySB/v5.3/files/dnscrypt-resolvers/archives/20190105-1509.csv
+gsCplAllCsvUrls="
+https://raw.githubusercontent.com/toulousain79/MySB/v5.2/files/dnscrypt-resolvers/dnscrypt-resolvers.csv
+https://raw.githubusercontent.com/toulousain79/MySB/v5.3/files/dnscrypt-resolvers/dnscrypt-resolvers.csv
+https://raw.githubusercontent.com/toulousain79/MySB/v5.3/files/dnscrypt-resolvers/archives/20180529-1516.csv
+https://raw.githubusercontent.com/toulousain79/MySB/v5.4/files/dnscrypt-resolvers/dnscrypt-resolvers.csv
+https://raw.githubusercontent.com/toulousain79/MySB/v5.4/files/dnscrypt-resolvers/archives/20190105-1509.csv
 https://raw.githubusercontent.com/dyne/dnscrypt-proxy/master/dnscrypt-resolvers.csv
 https://gist.githubusercontent.com/legendtang/db7265c5f5f82c9aed70/raw/5fc8bbc6d0acf7a0da5f5be7f5b7b7e243ec8931/dnscrypt-resolvers.csv
 https://raw.githubusercontent.com/cryptostorm/cstorm_deepDNS/master/dnscrypt-resolvers.csv
 https://svn.dd-wrt.com/export/38136/src/router/dnscrypt/dnscrypt-resolvers.csv
-https://git.telliq.com/gtu/packages/raw/d29bddd8093133aa1dfe42f35353d079b7d73f1e/net/dnscrypt-proxy/files/dnscrypt-resolvers.csv?inline=false"
+https://git.telliq.com/gtu/packages/raw/d29bddd8093133aa1dfe42f35353d079b7d73f1e/net/dnscrypt-proxy/files/dnscrypt-resolvers.csv?inline=false
+"
 # DO NOT add the dead list others because of an empty first line !!!
-gsCplDeadResolversList="https://raw.githubusercontent.com/toulousain79/MySB/v5.3/files/dnscrypt-resolvers/dead-resolvers.csv"
+gsCplDeadResolversList="https://raw.githubusercontent.com/toulousain79/MySB/v5.4/files/dnscrypt-resolvers/dead-resolvers.csv"
 # Directories
 gsCplDestDir="/opt/DNScrypt-proxy"
 gsCplTmpDir="$gsCplDestDir/tmp"
@@ -236,8 +243,8 @@ gfnCheckDirAndFiles() {
 	if [ ! -d $gsTmpDir ]; then mkdir $gsTmpDir && chown $gsDeamonUser:$gsDeamonUser $gsTmpDir; fi
 
 	# Path conflict?
-	sProxyPath="`which $gsProxyDir/$gsProxyName`"
-	sProxyDir="`dirname $sProxyPath`"
+	sProxyPath="$(which $gsProxyDir/$gsProxyName)"
+	sProxyDir="$(dirname $sProxyPath)"
 	if [ "$sProxyDir" != "$gsProxyDir" ]; then
 		gsMess="\nThe $sProxyPath path on this init script differs from $gsProxyDesc setup.\n"
 		gsMess+="Please change 'gsProxyDir' parameter to:\n"
@@ -269,7 +276,7 @@ gfnCheckCertificateValidity() {
 	sListToRead="$gsResolversList"
 	nCount=1
 
-	if [ ! -z "$sResolverGiven" ] && [ ! -z "`echo $gsResolversList | grep "$sResolverGiven"`" ]; then
+	if [ -n "$sResolverGiven" ] && [ -n "$(echo $gsResolversList | grep "$sResolverGiven")" ]; then
 		sListToRead="$sResolverGiven"
 	fi
 
@@ -314,8 +321,8 @@ gfnCheckCertificateValidity() {
 		gfnMessage "$sType" 'log' "$gsMess for: '$sResolver'"
 	done
 
-	gsResolversList="`echo $sResolversList | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-	gnCountResolver="`echo $gsResolversList | wc -w`"
+	gsResolversList="$(echo $sResolversList | sed -e 's/^ //g;' | sed 's/\s+$//')"
+	gnCountResolver="$(echo $gsResolversList | wc -w)"
 }
 
 #------------------------------------------------------------
@@ -380,8 +387,8 @@ gfnCheckDnsSpeed() {
 	sDigTarget="internic.net"	# Domain used to test resolver
 	nDigTries=2					# number of tries to resolve address
 	nDigTime=2					# time in seconds per try
-	sPidList="`ls -1tr $gsPidDir/`"
-	nProcess="`echo $sPidList | wc -w`"
+	sPidList="$(ls -1tr $gsPidDir/)"
+	nProcess="$(echo $sPidList | wc -w)"
 	nCount=0
 	tabAverage=()
 	sType='info'
@@ -392,17 +399,17 @@ gfnCheckDnsSpeed() {
 		sMode='log'
 	fi
 
-	if [ ! -z "$sPidList" ]; then
+	if [ -n "$sPidList" ]; then
 		gsMess="\n"
 
 		for sPidFile in $sPidList; do
 			(( nCount++ ))
-			sResolver="`echo $sPidFile | sed 's/.pid//g;'`"
-			sPids="`pidof $gsProxyName`"
-			if [ ! -z "$sPids" ]; then
+			sResolver="$(echo $sPidFile | sed 's/.pid//g;')"
+			sPids="$(pidof $gsProxyName)"
+			if [ -n "$sPids" ]; then
 				sProcess=$(ps -p "$sPids" -o args= | grep "$sResolver")
 				sProxyIP=$(echo $sProcess | awk '{print $5 = substr($5, 1, 100)}')
-				sIp="`echo $sProxyIP | cut -d ":" -f 1`"
+				sIp="$(echo $sProxyIP | cut -d ":" -f 1)"
 
 				[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nCount -e $nProcess -t 'Speed test				:' -m "($nCount/$nProcess	- $sResolver)"
 
@@ -464,14 +471,14 @@ gfnCheckResolversWished() {
 		else
 			sWhere="dnssec='$gbOnlyDNSSec' AND no_logs='$gbOnlyNoLogs' AND namecoin='$gbOnlyNameCoin' AND certificate='0' $sSearchByIpVersion ORDER BY speed"
 		fi
-		gsResolversList="`cmdMySQL 'MySB_db' "SELECT name FROM dnscrypt_resolvers WHERE $sWhere;"`"
-		gsResolversList="`echo $gsResolversList | sed -e 's/^ //g;' | sed 's/\s+$//'`"
-		[ "$gbRandomResolvers" == yes ] && gsResolversList="`echo $gsResolversList | sort -u | xargs -n1 | sort -R | xargs`"
-		gnCountResolver="`echo $gsResolversList | wc -w`"
+		gsResolversList="$(cmdMySQL 'MySB_db' "SELECT name FROM dnscrypt_resolvers WHERE $sWhere;")"
+		gsResolversList="$(echo $gsResolversList | sed -e 's/^ //g;' | sed 's/\s+$//')"
+		[ "$gbRandomResolvers" == yes ] && gsResolversList="$(echo $gsResolversList | sort -u | xargs -n1 | sort -R | xargs)"
+		gnCountResolver="$(echo $gsResolversList | wc -w)"
 	}
 	fnGetResolvers
 
-	if [ ! -z "$gsResolversList" ]; then
+	if [ -n "$gsResolversList" ]; then
 		for sResolver in $gsResolversList; do
 			gfnMessage 'info' 'log' "Added to whish list: $sResolver"
 		done
@@ -496,11 +503,11 @@ gfnCheckFromCron() {
 	local bRestart sPids sLookupResult
 	bRestart=0
 
-	sPids="`pidof $gsProxyName`"
+	sPids="$(pidof $gsProxyName)"
 	if [ -z "$sPids" ]; then
 		bRestart=1
 	else
-		sLookupResult="`nslookup github.com | grep 'Address:' | awk '{ print $2 }' | tail -n +2 | tail -n 1`"
+		sLookupResult="$(nslookup github.com | grep 'Address:' | awk '{ print $2 }' | tail -n +2 | tail -n 1)"
 		if [ -z "$sLookupResult" ]; then
 			bRestart=1
 		fi
@@ -511,9 +518,10 @@ gfnCheckFromCron() {
 
 # Show dnscrypt-proxy daemon status
 gfnGetStatusDetails() {
-	local sPids sMess sPidFiles nCount nCountInfos nPid sDateInit sTimeElap sProxyIP tabDnsInfo sResolverTest nSpeed
+	local sPids sMess sPidFiles nCount nPid sDateInit sTimeElap sProxyIP sResolverTest nSpeed
+	local aResolvers aPids aDateInit aDateElap aProxyIp aSpeeds
 
-	sPids="`pidof $gsProxyName`"
+	sPids="$(pidof "$gsProxyName")"
 	if [ -z "$sPids" ]; then
 		if [ $gbLockStart -eq 0 ]; then
 			gsMess="$gsProxyDesc disabled via the portal !\n"
@@ -537,48 +545,54 @@ gfnGetStatusDetails() {
 	sMess+=$(printf  "\n%-16s %s" " Random:" "$gbRandomResolvers" )
 	sMess+=$(printf  "\n%-16s %s" " IP Version:" "$gsIpVersion" )
 
-	declare -A tabDnsInfo
-	sPidFiles="`ls -1tr $gsPidDir/`"
-	if [ ! -z "$sPidFiles" ]; then
+	declare -A aResolvers
+	declare -A aPids
+	declare -A aDateInit
+	declare -A aDateElap
+	declare -A aProxyIp
+	declare -A aSpeeds
+
+
+	sPidFiles="$(ls -1tr $gsPidDir/)"
+	if [ -n "$sPidFiles" ]; then
 		for sFile in $sPidFiles; do
-			sResolver="`echo $sFile | sed 's/.pid//g;'`"
-			if [ ! -z "$sResolver" ]; then
-				sPids="`pidof $gsProxyName`"
-				if [ ! -z "$sPids" ]; then
+			sResolver="$(echo "$sFile" | sed 's/.pid//g;')"
+			if [ -n "$sResolver" ]; then
+				sPids="$(pidof "$gsProxyName")"
+				if [ -n "$sPids" ]; then
 					sProcess=$(ps -p "$sPids" -o pid= -o user= -o stime= -o etime= -o args= | grep "$sResolver")
-					nSpeed="`cmdMySQL 'MySB_db' "SELECT speed FROM dnscrypt_resolvers WHERE name='$sResolver';"`"
+					nSpeed="$(cmdMySQL 'MySB_db' "SELECT speed FROM dnscrypt_resolvers WHERE name='$sResolver';")"
 
-					if [ ! -z "$sProcess" ]; then
+					if [ -n "$sProcess" ]; then
 						# PID
-						nPid=$(		  echo $sProcess | awk '{print $1 = substr($1, 1, 100)}')
+						nPid="$(echo "$sProcess" | awk '{print $1 = substr($1, 1, 100)}')"
 						# Date start
-						sDateInit=$(	 echo $sProcess | awk '{print $3 = substr($3, 1, 100)}')
+						sDateInit="$(echo "$sProcess" | awk '{print $3 = substr($3, 1, 100)}')"
 						# Elsapsed time
-						sTimeElap=$(	 echo $sProcess | awk '{print $4 = substr($4, 1, 100)}')
+						sTimeElap="$(echo "$sProcess" | awk '{print $4 = substr($4, 1, 100)}')"
 						# Local Address
-						sProxyIP=$(	  echo $sProcess | awk '{print $9 = substr($9, 1, 100)}')
+						sProxyIP="$(echo "$sProcess" | awk '{print $9 = substr($9, 1, 100)}')"
 
-						nCount="`echo $sProxyIP | cut -d ':' -f 1 | cut -d '.' -f 4`"
-						nCountInfos=0
-						tabDnsInfo[$nCount $nCountInfos]="$sResolver"; (( nCountInfos++ ))
-						tabDnsInfo[$nCount $nCountInfos]="$nPid"; (( nCountInfos++ ))
-						tabDnsInfo[$nCount $nCountInfos]="$sDateInit"; (( nCountInfos++ ))
-						tabDnsInfo[$nCount $nCountInfos]="$sTimeElap"; (( nCountInfos++ ))
-						tabDnsInfo[$nCount $nCountInfos]="$sProxyIP"; (( nCountInfos++ ))
-						tabDnsInfo[$nCount $nCountInfos]="$nSpeed"
+						nCount="$(echo "$sProxyIP" | cut -d ':' -f 1 | cut -d '.' -f 4)"
+						aResolvers[${nCount}]="$sResolver"
+						aPids[${nCount}]="$nPid"
+						aDateInit[${nCount}]="$sDateInit"
+						aDateElap[${nCount}]="$sTimeElap"
+						aProxyIp[${nCount}]="$sProxyIP"
+						aSpeeds[${nCount}]="$nSpeed"
 					fi
 				fi
 			fi
 		done
 
 		# Gives ordered results (DNS 1, DNS 2, DNS 3,  DNS 4)
-		for (( i=1; i<=$nCount; i++ )); do
-			sResolver=${tabDnsInfo[$i 0]}
-			nPid=${tabDnsInfo[$i 1]}
-			sDateInit=${tabDnsInfo[$i 2]}
-			sTimeElap=${tabDnsInfo[$i 3]}
-			sProxyIP=${tabDnsInfo[$i 4]}
-			sResolverTest=${tabDnsInfo[$i 5]}
+		for (( i=1; i<=$gnNumberOfDaemon; i++ )); do
+			sResolver=${aResolvers[$i]}
+			nPid=${aPids[$i]}
+			sDateInit=${aDateInit[$i]}
+			sTimeElap=${aDateElap[$i]}
+			sProxyIP=${aProxyIp[$i]}
+			sResolverTest=${aSpeeds[$i]}
 
 			sMess+=$(printf  "\n\n%-16s %s" " --- DNS $i ---"  " " )
 			sMess+=$(printf  "\n%-16s %s" " Resolver name:" "$sResolver" )
@@ -588,6 +602,7 @@ gfnGetStatusDetails() {
 			sMess+=$(printf  "\n%-16s %s" " Execution time:" "$sTimeElap (Date days-hh:mm:ss)" )
 			sMess+=$(printf  "\n%-16s %s" " Resolver test:" "$sResolverTest msec" )
 		done
+		sMess+=$(printf "\n\r")
 	else
 		sMess+=$(printf  "\n%-16s %s" " No process" "found !" )
 	fi
@@ -649,7 +664,7 @@ gfnDownloadCsvFile() {
 	nReturn=0
 	nStep=0
 	sTitle='Getting the resolver list		:'
-	if [[ -z "$gsCplMinisignPass" ]]; then # Normal use
+	if [ -z "$gsCplMinisignPass" ]; then # Normal use
 		nToExecute=1
 		bShowMessages="$gbShowMessages"
 		sCsvUrl="$gsCsvUrl"
@@ -682,14 +697,14 @@ gfnDownloadCsvFile() {
 	gfnHttpStatus "$sCsvUrl" || nReturn=1
 
 	# Step 3 - HTTP Status: dnscrypt-resolvers.csv.minisig
-	if [[ ${nToExecute} -eq 1 ]]; then
+	if [ ${nToExecute} -eq 1 ]; then
 		(( nStep++ ))
 		[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - HTTP Status: '$gsSigName')"
 		gfnHttpStatus "$gsSigUrl" || nReturn=1
 	fi
 
 	# Step 4 - HTTP Status: minisign.pub
-	if [[ ${nToExecute} -eq 1 ]]; then
+	if [ ${nToExecute} -eq 1 ]; then
 		(( nStep++ ))
 		[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - HTTP Status: '$gsPubKeyName')"
 		gfnHttpStatus "$gsPubKeyUrl" || nReturn=1
@@ -707,12 +722,14 @@ gfnDownloadCsvFile() {
 		gfnMessage 'notice' 'log' "Move '$gsCsvName'"
 		[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Moves: '$gsCsvName')"
 		if [ -e "$sCsvTemp" ] && [ -s "$sCsvTemp" ]; then
-			if [[ ${nToExecute} -eq 1 ]]; then
+			if [ ${nToExecute} -eq 1 ]; then
 				if [ -e "$gsCsvFile" ]; then
 					mv -f $gsCsvFile $gsCsvFile.old
 				fi
 				dos2unix $sCsvTemp &> /dev/null
 				mv -f $sCsvTemp $gsCsvFile
+			else
+				mv "${sCsvTemp}" "${gsCplTmpDir}/temp.csv"
 			fi
 			gfnMessage 'info' 'log' "Successful download of the file '$gsCsvName'"
 		else
@@ -721,7 +738,7 @@ gfnDownloadCsvFile() {
 		fi
 
 		# Step 7 - Download 'dnscrypt-resolvers.csv.minisig'
-		if [[ ${nToExecute} -eq 1 ]]; then
+		if [ ${nToExecute} -eq 1 ]; then
 			(( nStep++ ))
 			gfnMessage 'notice' 'log' "Download '$gsSigName'"
 			[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Downloads: '$gsSigName')"
@@ -729,7 +746,7 @@ gfnDownloadCsvFile() {
 		fi
 
 		# Step 8 - Backup and update 'dnscrypt-resolvers.csv.minisig' in /usr/local/share/dnscrypt-proxy/
-		if [[ ${nToExecute} -eq 1 ]]; then
+		if [ ${nToExecute} -eq 1 ]; then
 			(( nStep++ ))
 			gfnMessage 'notice' 'log' "Move '$gsSigName'"
 			[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Moves: '$gsSigName')"
@@ -746,7 +763,7 @@ gfnDownloadCsvFile() {
 		fi
 
 		# Step 9 - Download 'minisign.pub'
-		if [[ ${nToExecute} -eq 1 ]]; then
+		if [ ${nToExecute} -eq 1 ]; then
 			(( nStep++ ))
 			gfnMessage 'notice' 'log' "Download '$gsPubKeyName'"
 			[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Downloads: '$gsPubKeyName')"
@@ -754,7 +771,7 @@ gfnDownloadCsvFile() {
 		fi
 
 		# Step 10 - Backup and update 'minisign.pub' in /usr/local/share/dnscrypt-proxy/
-		if [[ ${nToExecute} -eq 1 ]]; then
+		if [ ${nToExecute} -eq 1 ]; then
 			(( nStep++ ))
 			gfnMessage 'notice' 'log' "Move '$gsPubKeyName'"
 			[ "$bShowMessages" == yes ] && gfnProgressBar -s $nStep -e $nTotalSteps -t "$sTitle" -m "($nStep/$nTotalSteps - Moves: '$gsPubKeyName')"
@@ -832,13 +849,13 @@ gfnUpdateDatabase() {
 		# Before, we will delete old resolver does not exist in the new CSV file
 		gfnMessage 'notice' 'log' 'Cleaning of the database'
 		nCount=0
-		gnCountResolver="`cmdMySQL 'MySB_db' "SELECT count(name) FROM dnscrypt_resolvers;"`"
-		sListName="`cmdMySQL 'MySB_db' "SELECT name FROM dnscrypt_resolvers;"`"
-		if [ ! -z "$sListName" ]; then
+		gnCountResolver="$(cmdMySQL 'MySB_db' "SELECT count(name) FROM dnscrypt_resolvers;")"
+		sListName="$(cmdMySQL 'MySB_db' "SELECT name FROM dnscrypt_resolvers;")"
+		if [ -n "$sListName" ]; then
 			for sName in $sListName; do
 				(( nCount++ ))
 				[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nCount -e $gnCountResolver -t 'Cleaning the database			:' -m "($nCount/$gnCountResolver	- $sName)"
-				sIfExist="`cat $gsCsvFile | grep "$sName"`"
+				sIfExist="$(cat $gsCsvFile | grep "$sName")"
 				if [ -z "$sIfExist" ]; then
 					gfnMessage "info" "log" "Deleting from database: '$sName'"
 					cmdMySQL 'MySB_db' "DELETE FROM dnscrypt_resolvers WHERE name='$sName';"
@@ -849,24 +866,24 @@ gfnUpdateDatabase() {
 		# Get resolvers information from 'dnscrypt-resolvers.csv'
 		gfnMessage 'notice' 'log' 'Updating the database'
 		nCount=0
-		gnCountResolver="`csvtool -t ',' -u '|' cat $gsCsvFile | csvtool drop 1 - | wc -l`"
-		sValues="`csvtool -t ',' -u '|' cat $gsCsvFile | csvtool drop 1 - | sed "s/'//g;" | sed 's/"//g;' | sed 's/ /#/g;'`"
+		gnCountResolver="$(csvtool -t ',' -u '|' cat $gsCsvFile | csvtool drop 1 - | wc -l)"
+		sValues="$(csvtool -t ',' -u '|' cat $gsCsvFile | csvtool drop 1 - | sed "s/'//g;" | sed 's/"//g;' | sed 's/ /#/g;')"
 		for sLine in $sValues; do
-			sLine="`echo $sLine | sed 's/#/ /g;'`"
-			sName="`echo $sLine | awk '{split($0,a,\"|\"); print a[1]}'`"
-			sFullName="`echo $sLine | awk '{split($0,a,\"|\"); print a[2]}'`"
-			sDescription="`echo $sLine | awk '{split($0,a,\"|\"); print a[3]}'`"
-			sLocation="`echo $sLine | awk '{split($0,a,\"|\"); print a[4]}'`"
-			sCoordinates="`echo $sLine | awk '{split($0,a,\"|\"); print a[5]}'`"
-			sUrl="`echo $sLine | awk '{split($0,a,\"|\"); print a[6]}'`"
-			sVersion="`echo $sLine | awk '{split($0,a,\"|\"); print a[7]}'`"
-			sDnsSec="`echo $sLine | awk '{split($0,a,\"|\"); print a[8]}'`"
-			sNoLogs="`echo $sLine | awk '{split($0,a,\"|\"); print a[9]}'`"
-			sNameCoin="`echo $sLine | awk '{split($0,a,\"|\"); print a[10]}'`"
-			sResolverAddress="`echo $sLine | awk '{split($0,a,\"|\"); print a[11]}'`"
-			sProviderName="`echo $sLine | awk '{split($0,a,\"|\"); print a[12]}'`"
-			sPubKey="`echo $sLine | awk '{split($0,a,\"|\"); print a[13]}'`"
-			sPubKeyTxt="`echo $sLine | awk '{split($0,a,\"|\"); print a[14]}'`"
+			sLine="$(echo $sLine | sed 's/#/ /g;')"
+			sName="$(echo $sLine | awk '{split($0,a,"|"); print a[1]}')"
+			sFullName="$(echo $sLine | awk '{split($0,a,"|"); print a[2]}')"
+			sDescription="$(echo $sLine | awk '{split($0,a,"|"); print a[3]}')"
+			sLocation="$(echo $sLine | awk '{split($0,a,"|"); print a[4]}')"
+			sCoordinates="$(echo $sLine | awk '{split($0,a,"|"); print a[5]}')"
+			sUrl="$(echo $sLine | awk '{split($0,a,"|"); print a[6]}')"
+			sVersion="$(echo $sLine | awk '{split($0,a,"|"); print a[7]}')"
+			sDnsSec="$(echo $sLine | awk '{split($0,a,"|"); print a[8]}')"
+			sNoLogs="$(echo $sLine | awk '{split($0,a,"|"); print a[9]}')"
+			sNameCoin="$(echo $sLine | awk '{split($0,a,"|"); print a[10]}')"
+			sResolverAddress="$(echo $sLine | awk '{split($0,a,"|"); print a[11]}')"
+			sProviderName="$(echo $sLine | awk '{split($0,a,"|"); print a[12]}')"
+			sPubKey="$(echo $sLine | awk '{split($0,a,"|"); print a[13]}')"
+			sPubKeyTxt="$(echo $sLine | awk '{split($0,a,"|"); print a[14]}')"
 			case $sName in
 				*ipv6*)	sIpVersion='ipv6';;
 				*)		sIpVersion='ipv4';;
@@ -875,31 +892,31 @@ gfnUpdateDatabase() {
 			# Add or update new informations in DB
 			(( nCount++ ))
 			[ "$gbShowMessages" == yes ] && gfnProgressBar -s $nCount -e $gnCountResolver -t 'Updating the database			:' -m "($nCount/$gnCountResolver	- $sName)"
-			sIfExist="`cmdMySQL 'MySB_db' "SELECT full_name,description,location,coordinates,url,version,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record FROM dnscrypt_resolvers WHERE name='$sName';" | sed 's/\t/|/g;'`"
-			sFullNameOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[1]}'`"
-			sDescriptionOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[2]}'`"
-			sLocationOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[3]}'`"
-			sCoordinatesOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[4]}'`"
-			sUrlOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[5]}'`"
-			sVersionOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[6]}'`"
-			sDnsSecOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[7]}'`"
-			sNoLogsOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[8]}'`"
-			sNameCoinOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[9]}'`"
-			sResolverAddressOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[10]}'`"
-			sProviderNameOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[11]}'`"
-			sPubKeyOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[12]}'`"
-			sPubKeyTxtOld="`echo $sIfExist | awk '{split($0,a,"|"); print a[13]}'`"
+			sIfExist="$(cmdMySQL 'MySB_db' "SELECT full_name,description,location,coordinates,url,version,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record FROM dnscrypt_resolvers WHERE name='$sName';" | sed 's/\t/|/g;')"
+			sFullNameOld="$(echo $sIfExist | awk '{split($0,a,"|"); print a[1]}')"
+			sDescriptionOld="$(echo $sIfExist | awk '{split($0,a,"|"); print a[2]}')"
+			sLocationOld="$(echo $sIfExist | awk '{split($0,a,"|"); print a[3]}')"
+			sCoordinatesOld="$(echo $sIfExist | awk '{split($0,a,"|"); print a[4]}')"
+			sUrlOld="$(echo $sIfExist | awk '{split($0,a,"|"); print a[5]}')"
+			sVersionOld="$(echo $sIfExist | awk '{split($0,a,"|"); print a[6]}')"
+			sDnsSecOld="$(echo $sIfExist | awk '{split($0,a,"|"); print a[7]}')"
+			sNoLogsOld="$(echo $sIfExist | awk '{split($0,a,"|"); print a[8]}')"
+			sNameCoinOld="$(echo $sIfExist | awk '{split($0,a,"|"); print a[9]}')"
+			sResolverAddressOld="$(echo $sIfExist | awk '{split($0,a,"|"); print a[10]}')"
+			sProviderNameOld="$(echo $sIfExist | awk '{split($0,a,"|"); print a[11]}')"
+			sPubKeyOld="$(echo $sIfExist | awk '{split($0,a,"|"); print a[12]}')"
+			sPubKeyTxtOld="$(echo $sIfExist | awk '{split($0,a,"|"); print a[13]}')"
 
 			# Check it
-			# sIp="`echo $sResolverAddress | awk -F ':' '{print $1}'`"
+			# sIp="$(echo $sResolverAddress | awk -F ':' '{print $1}')"
 			# host -4 -W2 ${sIp} &> /dev/null
 			# nHostResult="$?"
 
 			# ping -W2 -c1 ${sIp} &> /dev/null
 			# nPingResult="$?"
 
-			if [[ "$nHostResult" -eq 0 ]] || [[ "$nPingResult" -eq 0 ]]; then
-				if [ ! -z "$sIfExist" ]; then
+			#if [ "$nHostResult" -eq 0 ] || [ "$nPingResult" -eq 0 ]; then
+				if [ -n "$sIfExist" ]; then
 					if 	[ "$sFullNameOld" != "$sFullName" ] \
 						|| [ "$sDescriptionOld" != "$sDescription" ] \
 						|| [ "$sLocationOld" != "$sLocation" ] \
@@ -921,26 +938,26 @@ gfnUpdateDatabase() {
 					gfnMessage "info" "log" "Resolver added: '$sName'"
 					cmdMySQL 'MySB_db' "INSERT INTO dnscrypt_resolvers (full_name,description,location,coordinates,url,version,name,dnssec,no_logs,namecoin,resolver_address,provider_name,provider_public_key,provider_public_key_txt_record,ip_version) VALUES ('$sFullName','$sDescription','$sLocation','$sCoordinates','$sUrl','$sVersion','$sName','$sDnsSec','$sNoLogs','$sNameCoin','$sResolverAddress','$sProviderName','$sPubKey','$sPubKeyTxt','$sIpVersion');"
 				fi
-			fi
+			#fi
 		done
 	fi
 }
 
 # CSV files compile
 gfnCompileCsvFiles() {
-	local nCount nCountUrl nCountResolver nCountResolver nHostResult nPingResult nCertificate nDuplicate
+    local nCountUrl nCount nHostResult nPingResult nCertificate nDuplicate
+	local nCountResolver nCountResolver nHostResult nPingResult nCertificate nDuplicate
 	local sCsvUrl sLine sResolverAddress sPort sValues sPort sIp sCsvFile sMess sResult
 
 	# Create needed directories
 	log_daemon_msg "Prepare environment"
-	[[ ! -d ${gsCplDestDir}/archives ]] && mkdir -p ${gsCplDestDir}/archives
-	[[ ! -d ${gsCplDestDir}/logs ]] && mkdir -p ${gsCplDestDir}/logs
-	[[ ! -d ${gsCplTmpDir} ]] && mkdir -p ${gsCplTmpDir}
+	mkdir -p ${gsCplDestDir}/archives
+	mkdir -p ${gsCplDestDir}/ReadyToUse
+	mkdir -p ${gsCplTmpDir}/logs/
 	# Cleaning
-	rm -f ${gsCplTmpDir}/*.csv
-	rm -f ${gsCplDestDir}/*.*
-	rm -f ${gsCplDestDir}/logs/*.*
-	rm -f $$gsCplFinalCsv*
+	rm -f ${gsCplTmpDir}/*.*
+	rm -f ${gsCplTmpDir}/logs/*
+	rm -f ${gsCplDestDir}/dnscrypt-resolvers.csv*
 	# Count URLs
 	nCountUrl=0
 	for sCsvUrl in ${gsCsvUrl} ${gsCplAllCsvUrls} ${gsCplDeadResolversList}; do
@@ -951,183 +968,230 @@ gfnCompileCsvFiles() {
 	echo "${gsCplFirstLine}" > ${gsCplTmpDir}/c_sorted.csv
 	gfnStatusLSB
 
+	# Creating a key pair
+	if [ ! -f "${gsCplMinisignPrivKey}" ] && [ -f "${gsCplMinisignPubKey}" ]; then
+		rm -f "${gsCplMinisignPubKey}"
+	fi
+	if [ ! -f "${gsCplMinisignPrivKey}" ] || [ ! -f "${gsCplMinisignPubKey}" ]; then
+		echo -e "$gsCplMinisignPass\\n$gsCplMinisignPass" | minisign -G -p "${gsCplMinisignPubKey}" -s "${gsCplMinisignPrivKey}" -f
+	fi
+
 	# Stop current dnscrypt
 	log_daemon_msg "Stopping $gsProxyDesc in system"
 	gfnStop
 	gfnStatusLSB
 
 	#### Download all CSV files into only only
+	# release.md
+	{
+		echo "${gsCplMessage}"
+		echo
+		echo "Original 'dnscrypt-resolvers.csv' files:"
+		echo
+	} > ${gsCplDestDir}/ReadyToUse/release.md
+
 	nCount=0
-	echo "${gsCplMessage}<br /><br />Original 'dnscrypt-resolvers.csv' files:<br />" > ${gsCplDestDir}/release.md
-	echo "--------------------" >> ${gsCplDestDir}/results.log
+	echo "--------------------" >> "${gsCplTmpDir}/results.log"
 	for sCsvUrl in ${gsCsvUrl} ${gsCplAllCsvUrls} ${gsCplDeadResolversList}; do
 		(( nCount++ ))
 		gfnProgressBar -s ${nCount} -e ${nCountUrl} -t 'Download all CSV files		:' -m "(${nCount}/${nCountUrl})"
-
-		gfnDownloadCsvFile "$sCsvUrl"
-		if [[ ${?} -ne 0 ]]; then
-			echo "BAD URL: ${sCsvUrl}" >> ${gsCplDestDir}/results.log
+		echo "--------------------" >>"${gsCplTmpDir}/results.log"
+		rm -f ${gsCplTmpDir}/temp.csv
+		if (! gfnDownloadCsvFile "$sCsvUrl"); then
+			echo "BAD URL: ${sCsvUrl}" >> "${gsCplTmpDir}/results.log"
 			continue
 		else
-			echo "GOOD URL: ${sCsvUrl}" >> ${gsCplDestDir}/results.log
+			echo "GOOD URL: ${sCsvUrl}" >> "${gsCplTmpDir}/results.log"
+			echo "- ${sCsvUrl}" >> ${gsCplDestDir}/ReadyToUse/release.md
 		fi
+		echo "--------------------" >>"${gsCplTmpDir}/results.log"
 
-		# release.md
-		echo "$sCsvUrl <br />" >> ${gsCplDestDir}/release.md
-
-		if [ -f ${gsCplTmpDir}/${gsCsvName}.tmp ]; then
-			sed -i '/Name,/d' ${gsCplTmpDir}/${gsCsvName}.tmp
-			sed -i '/-ipv6/d' ${gsCplTmpDir}/${gsCsvName}.tmp
-			sed -i 's/, / /g;' ${gsCplTmpDir}/${gsCsvName}.tmp
-			sed -i "s/'/ /g;" ${gsCplTmpDir}/${gsCsvName}.tmp
-			sed -i 's/"//g;' ${gsCplTmpDir}/${gsCsvName}.tmp
-			sed -i 's/ /#/g;' ${gsCplTmpDir}/${gsCsvName}.tmp
-			cat ${gsCplTmpDir}/${gsCsvName}.tmp >> ${gsCplTmpDir}/a_downloaded.csv
-		fi
+        if [ -f ${gsCplTmpDir}/temp.csv ]; then
+            sed -i '/Name,/d' ${gsCplTmpDir}/temp.csv
+            sed -i '/-ipv6/d' ${gsCplTmpDir}/temp.csv
+            sed -i 's/, / /g;' ${gsCplTmpDir}/temp.csv
+            sed -i "s/'/ /g;" ${gsCplTmpDir}/temp.csv
+            sed -i 's/"//g;' ${gsCplTmpDir}/temp.csv
+            sed -i 's/ /#/g;' ${gsCplTmpDir}/temp.csv
+            cat ${gsCplTmpDir}/temp.csv >>${gsCplTmpDir}/a_downloaded.csv
+        fi
 	done
-	echo "--------------------" >> ${gsCplDestDir}/results.log
-	rm -f ${gsCplTmpDir}/${gsCsvName}.tmp
+	echo "--------------------" >> "${gsCplTmpDir}/results.log"
+	rm -f ${gsCplTmpDir}/temp.csv
 
-	#### Compile
-	nCount=0
-	nCountResolver=$(csvtool -t ',' -u '|' cat ${gsCplTmpDir}/a_downloaded.csv | wc -l)
-	sValues=$(csvtool -t ',' -u '|' cat ${gsCplTmpDir}/a_downloaded.csv)
-	for sLine in ${sValues}; do
-		sName="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[1]}'`"
-		sDnsSec="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[8]}'`"
-		sNoLogs="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[9]}'`"
-		sNameCoin="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[10]}'`"
-		sResolverAddress="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[11]}'`"
-		sProviderName="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[12]}'`"
-		sPubKey="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[13]}'`"
-		sPubKeyTxt="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[14]}'`"
+    #### Compile
+    nCount=0
+    nCountResolver=$(csvtool -t ',' -u '|' cat ${gsCplTmpDir}/a_downloaded.csv | wc -l)
+    sValues=$(csvtool -t ',' -u '|' cat ${gsCplTmpDir}/a_downloaded.csv)
+    for sLine in ${sValues}; do
+        sName="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[1]}')"
+        sDnsSec="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[8]}')"
+        sNoLogs="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[9]}')"
+        sNameCoin="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[10]}')"
+        sResolverAddress="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[11]}')"
+        sProviderName="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[12]}')"
+        sPubKey="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[13]}')"
+        sPubKeyTxt="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[14]}')"
 
-		(( nCount++ ))
-		gfnProgressBar -s ${nCount} -e ${nCountResolver} -t 'Compile the CSV file		:' -m "(${nCount}/${nCountResolver}	- ${sName})"
+        sPort="$(echo ${sResolverAddress} | awk -F ':' '{print $2}')"
+        [ -z "${sPort}" ] && sResolverAddress="$sResolverAddress:443"
 
-		sPort="$(echo ${sResolverAddress} | awk -F ':' '{print $2}')"
-		[[ -z "${sPort}" ]] && sResolverAddress="$sResolverAddress:443"
+        echo "${sName},,,,,,,${sDnsSec},${sNoLogs},${sNameCoin},${sResolverAddress},${sProviderName},${sPubKey},${sPubKeyTxt}" >>${gsCplTmpDir}/b_compiled.csv
 
-		echo "${sName},,,,,,,${sDnsSec},${sNoLogs},${sNameCoin},${sResolverAddress},${sProviderName},${sPubKey},${sPubKeyTxt}" >> ${gsCplTmpDir}/b_compiled.csv
-	done
+        ((nCount++))
+        gfnProgressBar -s ${nCount} -e ${nCountResolver} -t 'Compile the CSV file		:' -m "(${nCount}/${nCountResolver}	- ${sName})"
+    done
 
-	# Sort uniq
-	sed -i 's/#/ /g;' ${gsCplTmpDir}/a_downloaded.csv
-	sed -i 's/""//g;' ${gsCplTmpDir}/a_downloaded.csv
-	sort -u ${gsCplTmpDir}/b_compiled.csv >> ${gsCplTmpDir}/c_sorted.csv
+    #### Sort uniq
+    sed -i 's/#/ /g;' ${gsCplTmpDir}/a_downloaded.csv
+    sed -i 's/""//g;' ${gsCplTmpDir}/a_downloaded.csv
+    sort -u ${gsCplTmpDir}/b_compiled.csv >>${gsCplTmpDir}/c_sorted.csv
 
-	#### Check resolvers
-	nDuplicate=0
-	nCount=0
-	nCountResolver=$(csvtool -t ',' -u '|' cat ${gsCplTmpDir}/c_sorted.csv | csvtool drop 1 - | wc -l)
-	sValues="$(csvtool -t ',' -u '|' cat ${gsCplTmpDir}/c_sorted.csv | csvtool drop 1 -)"
-	for sLine in ${sValues}; do
-		sName="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[1]}'`"
-		sFullName="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $2}' | tail -1)"
-		sDescription="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $3}' | tail -1)"
-		sLocation="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $4}' | tail -1)"
-		sCoordinates="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $5}' | tail -1)"
-		sUrl="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $6}' | tail -1)"
-		sVersion="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $7}' | tail -1)"
-		sDnsSec="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[8]}'`"
-		sNoLogs="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[9]}'`"
-		sNameCoin="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[10]}'`"
-		sResolverAddress="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[11]}'`"
-		sIp=$(echo ${sResolverAddress} | awk -F ':' '{print $1}')
-		sProviderName="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[12]}'`"
-		sPubKey="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[13]}'`"
-		sPubKeyTxt="`echo ${sLine} | awk '{split($0,a,\"|\"); print a[14]}'`"
-		sCsvFile="${gsCplTmpDir}/d_dead.csv"
+    #### Check resolvers
+    nDuplicate=0
+    nCount=0
+    nCountResolver=$(csvtool -t ',' -u '|' cat ${gsCplTmpDir}/c_sorted.csv | csvtool drop 1 - | wc -l)
+    sValuesSorted="$(csvtool -t ',' -u '|' cat ${gsCplTmpDir}/c_sorted.csv | csvtool drop 1 -)"
+    for sLine in ${sValuesSorted}; do
+        sName="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[1]}')"
+        sFullName="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $2}' | tail -1)"
+        sDescription="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $3}' | tail -1)"
+        sLocation="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $4}' | tail -1)"
+        sCoordinates="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $5}' | tail -1)"
+        sUrl="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $6}' | tail -1)"
+        sVersion="$(grep "${sName}," ${gsCplTmpDir}/a_downloaded.csv | awk -F ',' '{print $7}' | tail -1)"
+        sDnsSec="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[8]}')"
+        sNoLogs="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[9]}')"
+        sNameCoin="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[10]}')"
+        sResolverAddress="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[11]}')"
+        sIp=$(echo ${sResolverAddress} | awk -F ':' '{print $1}')
+        sProviderName="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[12]}')"
+        sPubKey="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[13]}')"
+        sPubKeyTxt="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[14]}')"
 
-		echo  >> ${gsCplDestDir}/results.log
-		echo "--------------------" >> ${gsCplDestDir}/results.log
-		echo "Name: ${sName}" >> ${gsCplDestDir}/results.log
-		echo "Full Name: ${sFullName}" >> ${gsCplDestDir}/results.log
-		echo "Description: ${sDescription}" >> ${gsCplDestDir}/results.log
-		echo "Location: ${sLocation}" >> ${gsCplDestDir}/results.log
-		echo "Coordinates: ${sCoordinates}" >> ${gsCplDestDir}/results.log
-		echo "URL: ${sUrl}" >> ${gsCplDestDir}/results.log
-		echo "Version: ${sVersion}" >> ${gsCplDestDir}/results.log
-		echo "DNS Sec: ${sDnsSec}" >> ${gsCplDestDir}/results.log
-		echo "No Logs: ${sNoLogs}" >> ${gsCplDestDir}/results.log
-		echo "NameCoin: ${sNameCoin}" >> ${gsCplDestDir}/results.log
-		echo "ResolverAddress: ${sResolverAddress}" >> ${gsCplDestDir}/results.log
-		echo "IP: ${sIp}" >> ${gsCplDestDir}/results.log
-		echo "ProviderName: ${sProviderName}" >> ${gsCplDestDir}/results.log
-		echo "PubKey: ${sPubKey}" >> ${gsCplDestDir}/results.log
-		echo "PubKeyTxt: ${sPubKeyTxt}" >> ${gsCplDestDir}/results.log
-		echo "--------------------" >> ${gsCplDestDir}/results.log
+		{
+			echo "---------- START: $(date +%Y-%m-%d) - $(date +%H:%M)----------"
+			echo "Name: ${sName}"
+			echo "Full Name: ${sFullName}"
+			echo "Description: ${sDescription}"
+			echo "Location: ${sLocation}"
+			echo "Coordinates: ${sCoordinates}"
+			echo "URL: ${sUrl}"
+			echo "Version: ${sVersion}"
+			echo "DNS Sec: ${sDnsSec}"
+			echo "No Logs: ${sNoLogs}"
+			echo "NameCoin: ${sNameCoin}"
+			echo "ResolverAddress: ${sResolverAddress}"
+			echo "IP: ${sIp}"
+			echo "ProviderName: ${sProviderName}"
+			echo "PubKey: ${sPubKey}"
+			echo "PubKeyTxt: ${sPubKeyTxt}"
+			echo "---------- END: $(date +%Y-%m-%d) - $(date +%H:%M)----------"
+		} >>"${gsCplTmpDir}/results.log"
 
-		(( nCount++ ))
-		gfnProgressBar -s ${nCount} -e ${nCountResolver} -t 'Clean the CSV file		:' -m "(${nCount}/${nCountResolver}	- ${sName})"
+        ((nCount++))
+        gfnProgressBar -s ${nCount} -e ${nCountResolver} -t 'Clean the CSV file		:' -m "(${nCount}/${nCountResolver}	- ${sName})"
 
-		# Check duplicated resolvers
-		echo "--> Duplicate result: $(grep "${sName}|" ${gsCplTmpDir}/c_sorted.csv | wc -l)" >> ${gsCplDestDir}/results.log
-		[[ -f "${gsCplTmpDir}/d_final.csv" ]] && nDuplicate="$(grep "${sName}," ${gsCplTmpDir}/d_final.csv | wc -l)"
+        # Check duplicated resolvers
+        echo "--> Duplicate result: $(grep "${sName}|" ${gsCplTmpDir}/c_sorted.csv | wc -l)" >>"${gsCplTmpDir}/results.log"
+        [ -f "${gsCplTmpDir}/d_final.csv" ] && nDuplicate="$(grep "${sName}," ${gsCplTmpDir}/d_final.csv | wc -l)"
 
-		# Host check
-		host -4 -W2 ${sIp} &> /dev/null
-		nHostResult="$?"
-		[[ "$nHostResult" -ne 0 ]] && sResult="Failed" || sResult="Done"
-		echo "--> Host result: $sResult" >> ${gsCplDestDir}/results.log
+        # Host check
+        host -4 -W2 ${sIp} &>/dev/null
+        nHostResult="$?"
+        [ $nHostResult -ne 0 ] && sResult="Failed" || sResult="Done"
+        echo "--> Host result: $sResult" >>"${gsCplTmpDir}/results.log"
 
-		# Ping check
-		ping -W2 -c1 ${sIp} &> /dev/null
-		nPingResult="$?"
-		[[ "$nPingResult" -ne 0 ]] && sResult="Failed" || sResult="Done"
-		echo "--> Ping result: $sResult" >> ${gsCplDestDir}/results.log
+        # Ping check
+        ping -W2 -c1 ${sIp} &>/dev/null
+        nPingResult="$?"
+        [ $nPingResult -ne 0 ] && sResult="Failed" || sResult="Done"
+        echo "--> Ping result: $sResult" >>"${gsCplTmpDir}/results.log"
 
-		# Certificate check
-		eval "${gsProxyBin} -R ${sName} -t ${gnProxyTestMargin} -u ${gsDeamonUser} -L ${gsCplTmpDir}/c_sorted.csv -l ${gsCplDestDir}/logs/${sName}.log -m 7 >> ${gsCplDestDir}/logs/${sName}.log 2>&1"
-		nCertificate=$?
-		case "$nCertificate" in
-			0) #  a valid certificate can be used
-				sCsvFile="${gsCplTmpDir}/d_final.csv"; sMess="A valid certificate can be used"
-			;;
-			4) #  a valid certificate can be used
-				sCsvFile="${gsCplTmpDir}/d_final.csv"; sMess="A currently valid certificate is going to expire before margin $gnProxyTestMargin"
-			;;
-			2)  sMess="No valid certificates can be used";;
-			3)  sMess="A timeout occurred";;
-			*)  sMess="An unknow error occurred: $nCertificate";;
-		esac
+        sCsvFile="${gsCplTmpDir}/dead-resolvers.csv"
+        #sStatus=''
+        #sMess='Ignored'
+        # if ([ "$nHostResult" -ne 0 ] && [ "$nPingResult" -ne 0 ]); then
+        # echo "--> Host result: Failed" >> "${gsCplTmpDir}/results.log"
+        # echo "--> Ping result: Failed" >> "${gsCplTmpDir}/results.log"
+        #echo "--> URL result: Ignored" >> "${gsCplTmpDir}/results.log"
+        # elif ([ "$nHostResult" -eq 0 ] && [ "$nPingResult" -eq 0 ]); then
+        # echo "--> Host result: Done" >> "${gsCplTmpDir}/results.log"
+        # echo "--> Ping result: Done" >> "${gsCplTmpDir}/results.log"
+        # sStatus='200'
+        # else
+        # [ "$nHostResult" -ne 0 ] && sResult="Failed" || sResult="Done"
+        # echo "--> Host result: $sResult" >> "${gsCplTmpDir}/results.log"
+        # [ "$nPingResult" -ne 0 ] && sResult="Failed" || sResult="Done"
+        # echo "--> Ping result: $sResult" >> "${gsCplTmpDir}/results.log"
 
-		# Check if DNS Security Extensions are supported
-		([[ "${sDnsSec}" == "yes" ]] && [[ -n "$(grep "does not support DNS Security Extensions" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sDnsSec="no" && echo "--> DNS Sec value changed: YES to NO" >> ${gsCplDestDir}/results.log
-		([[ "${sDnsSec}" == "no" ]] && [[ -n "$(grep "DNS Security Extensions are supported" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sDnsSec="yes" && echo "--> DNS Sec value changed: NO to YES" >> ${gsCplDestDir}/results.log
-		# Provider supposedly doesn't keep logs
-		([[ "${sNoLogs}" == "yes" ]] && [[ -z "$(grep "Provider supposedly doesn't keep logs" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sNoLogs="no" && echo "--> No Logs value changed: YES to NO" >> ${gsCplDestDir}/results.log
-		([[ "${sNoLogs}" == "no" ]] && [[ -n "$(grep "Provider supposedly doesn't keep logs" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sNoLogs="yes" && echo "--> No Logs value changed: NO to YES" >> ${gsCplDestDir}/results.log
-		# Check if Namecoin domains can be resolved
-		([[ "${sNameCoin}" == "yes" ]] && [[ -z "$(grep "Namecoin domains can be resolved" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sNameCoin="no" && echo "--> NameCoin value changed: NO to YES" >> ${gsCplDestDir}/results.log
-		([[ "${sNameCoin}" == "no" ]] && [[ -n "$(grep "Namecoin domains can be resolved" ${gsCplDestDir}/logs/${sName}.log)" ]]) && sNameCoin="yes" && echo "--> NameCoin value changed: YES to NO" >> ${gsCplDestDir}/results.log
+        # if [ -n "$sUrl" ]; then
+        # case "$(curl --retry 0 --silent --insecure --location --show-error --no-buffer --head --connect-timeout 5 ${sUrl} 2> /dev/null)" in
+        # *"200 OK"*)                 sStatus="200";;
+        # *"404 Not Found"*)          sStatus="404";;
+        # *"301 Moved Permanently"*)  sStatus="301";;
+        # *""*)                       sStatus="?";;
+        # esac
+        # if [ "$sStatus" != "200" ] && [ "$sStatus" != "301" ]; then
+        # echo "--> URL result: Failed ($sStatus)" >> "${gsCplTmpDir}/results.log"
+        # else
+        # echo "--> URL result: Done ($sStatus)" >> "${gsCplTmpDir}/results.log"
+        # fi
+        # else
+        # echo "--> URL result: No URL" >> "${gsCplTmpDir}/results.log"
+        # fi
+        #fi
 
-		echo "--> Certificate validity result: $sMess" >> ${gsCplDestDir}/results.log
-		if [ "$sCsvFile" == "${gsCplTmpDir}/d_final.csv" ]; then
-			[[ "$nDuplicate" -eq 1 ]] && sCsvFile="${gsCplTmpDir}/d_duplicated.csv"
-			echo "==> Resolver ADDED !" >> ${gsCplDestDir}/results.log
-		else
-			echo "==> Resolver REMOVED !" >> ${gsCplDestDir}/results.log
-		fi
+        #if [ "$sStatus" == "200" ] || [ "$sStatus" == "301" ]; then
+        rm -f ${gsCplTmpDir}/logs/${sName}.log
+        eval "${gsProxyBin} -R ${sName} -t ${gnProxyTestMargin} -u ${gsDeamonUser} -L ${gsCplTmpDir}/c_sorted.csv -l ${gsCplTmpDir}/logs/${sName}.log -m 7 >> ${gsCplTmpDir}/logs/${sName}.log 2>&1"
+        nCertificate=$?
 
-		echo "--------------------" >> ${gsCplDestDir}/results.log
+        case "$nCertificate" in
+            0)     #  a valid certificate can be used
+                sCsvFile="${gsCplTmpDir}/d_final.csv"
+                sMess="A valid certificate can be used"
+                ;;
+            4)     #  a valid certificate can be used
+                sCsvFile="${gsCplTmpDir}/d_final.csv"
+                sMess="A currently valid certificate is going to expire before margin $gnProxyTestMargin"
+                ;;
+            2)      sMess="No valid certificates can be used" ;;
+            3)      sMess="A timeout occurred" ;;
+            *)      sMess="An unknow error occurred: $nCertificate" ;;
+        esac
+        #fi
+		{
+			echo "--> Certificate validity result: $sMess"
+			if [ "$sCsvFile" == "${gsCplTmpDir}/d_final.csv" ]; then
+				[ $nDuplicate -eq 1 ] && sCsvFile="${gsCplTmpDir}/duplicated.csv"
+				echo "==> Resolver ADDED !"
+			else
+				echo "==> Resolver REMOVED !"
+			fi
+			echo "--------------------"
+			echo
+		} >>"${gsCplTmpDir}/results.log"
 
-		echo "${sName},\"${sFullName}\",\"${sDescription}\",\"${sLocation}\",\"${sCoordinates}\",${sUrl},${sVersion},${sDnsSec},${sNoLogs},${sNameCoin},${sResolverAddress},${sProviderName},${sPubKey},${sPubKeyTxt}" >> "$sCsvFile"
-	done
-	sed -i 's/\s\+$//' results.log
-	sed -i 's/""//g;' ${gsCplTmpDir}/d_final.csv
-	sort -u ${gsCplTmpDir}/d_dead.csv >> ${gsCplDestDir}/dead-resolvers.csv
-	cp ${gsCplTmpDir}/d_final.csv ${gsCplFinalCsv}
+        # Check if DNS Security Extensions are supported
+        ([ ${sDnsSec} == "yes" ] && [ -n "$(grep "does not support DNS Security Extensions" ${gsCplTmpDir}/logs/${sName}.log)" ]) && sDnsSec="no" && echo "sDnsSec change yes to no" >>"${gsCplTmpDir}/results.log"
+        ([ ${sDnsSec} == "no" ] && [ -n "$(grep "DNS Security Extensions are supported" ${gsCplTmpDir}/logs/${sName}.log)" ]) && sDnsSec="yes" && echo "sDnsSec change no to yes" >>"${gsCplTmpDir}/results.log"
+        # Provider supposedly doesn't keep logs
+        ([ ${sNoLogs} == "yes" ] && [ -z "$(grep "Provider supposedly doesn't keep logs" ${gsCplTmpDir}/logs/${sName}.log)" ]) && sNoLogs="no" && echo "sNoLogs change yes to no" >>"${gsCplTmpDir}/results.log"
+        ([ ${sNoLogs} == "no" ] && [ -n "$(grep "Provider supposedly doesn't keep logs" ${gsCplTmpDir}/logs/${sName}.log)" ]) && sNoLogs="yes" && echo "sNoLogs change no to yes" >>"${gsCplTmpDir}/results.log"
+        # Check if Namecoin domains can be resolved
+        ([ ${sNameCoin} == "yes" ] && [ -z "$(grep "Namecoin domains can be resolved" ${gsCplTmpDir}/logs/${sName}.log)" ]) && sNameCoin="no" && echo "sNameCoin change no to yes" >>"${gsCplTmpDir}/results.log"
+        ([ ${sNameCoin} == "no" ] && [ -n "$(grep "Namecoin domains can be resolved" ${gsCplTmpDir}/logs/${sName}.log)" ]) && sNameCoin="yes" && echo "sNameCoin change yes to no" >>"${gsCplTmpDir}/results.log"
+
+        echo "${sName},\"${sFullName}\",\"${sDescription}\",\"${sLocation}\",\"${sCoordinates}\",${sUrl},${sVersion},${sDnsSec},${sNoLogs},${sNameCoin},${sResolverAddress},${sProviderName},${sPubKey},${sPubKeyTxt}" >>"$sCsvFile"
+    done
+    sed -i 's/""//g;' "${gsCplTmpDir}/d_final.csv"
+    cp "${gsCplTmpDir}/d_final.csv" "${gsCplDestDir}/dnscrypt-resolvers.csv"
 
 	# Start current dnscrypt
 	log_daemon_msg "Starting $gsProxyDesc in system"
 	gfnStart
 	gfnStatusLSB
-
-	# Creating a key pair
-	if [ ! -f "${gsCplMinisignPrivKey}" ] || [ ! -f "${gsCplMinisignPubKey}" ]; then
-		echo -e "$gsCplMinisignPass\\n$gsCplMinisignPass" | minisign -G -p "${gsCplMinisignPubKey}" -s "${gsCplMinisignPrivKey}"
-	fi
 
 	# Signing CSV file
 	if [ -f "${gsCplMinisignPubKey}" ] && [ -f "${gsCplMinisignPrivKey}" ]; then
@@ -1138,15 +1202,20 @@ gfnCompileCsvFiles() {
 	fi
 
 	# Verifying CSV file
-	minisign -Vm ${gsCplFinalCsv} -p ${gsCplMinisignPubKey} -x ${gsCplFinalCsv}.minisig -c "$gsCplMessage" -t "$gsCplMessage"
-	if [[ $? -ne 0 ]]; then
+	if (! minisign -Vm "${gsCplFinalCsv}" -p "${gsCplMinisignPubKey}" -x "${gsCplFinalCsv}".minisig -c "$gsCplMessage" -t "$gsCplMessage"); then
 		echo "Minisign verification failed !"
 		exit 1
 	fi
 
-	# Archives
-	cp -f ${gsCplFinalCsv} ${gsCplDestDir}/archives/${gdCplDate}-${gdCplTime}.csv
-	[ -f ${gsCplDestDir}/dead-resolvers.csv ] && cp -f ${gsCplDestDir}/dead-resolvers.csv ${gsCplDestDir}/archives/dead-resolvers.csv
+	# Backup CSV file
+	cp -vf "${gsCplDestDir}/dnscrypt-resolvers.csv" "${gsCplDestDir}/archives/${gdCplDate}-${gdCplTime}.csv"
+
+	# Ready to use
+	[ -f "${gsCplDestDir}/dnscrypt-resolvers.csv" ] && mv -vf "${gsCplDestDir}/dnscrypt-resolvers.csv" "${gsCplDestDir}/ReadyToUse/dnscrypt-resolvers.csv"
+	[ -f "${gsCplDestDir}/dnscrypt-resolvers.csv.minisig" ] && mv -vf "${gsCplDestDir}/dnscrypt-resolvers.csv.minisig" "${gsCplDestDir}/ReadyToUse/dnscrypt-resolvers.csv.minisig"
+	[ -f "${gsCplDestDir}/minisign.pub" ] && cp -vf "${gsCplDestDir}/minisign.pub" "${gsCplDestDir}/ReadyToUse/minisign.pub"
+	[ -f "${gsCplTmpDir}/dead-resolvers.csv" ] && mv -vf "${gsCplTmpDir}/dead-resolvers.csv" "${gsCplDestDir}/ReadyToUse/dead-resolvers.csv"
+	[ -f "${gsCplTmpDir}/results.log" ] && mv -vf "${gsCplTmpDir}/results.log" "${gsCplDestDir}/ReadyToUse/results.log"
 }
 
 # Function START
@@ -1164,13 +1233,13 @@ gfnStart() {
 		gfnMessage 'info' 'con' "$gsProxyDesc disabled via the portal !"
 	else
 		# Stop others processes
-		sPids="`pidof $gsProxyName`"
-		if [ ! -z "$sPids" ]; then
-			nRunning="`echo $sPids | wc -w`"
+		sPids="$(pidof $gsProxyName)"
+		if [ -n "$sPids" ]; then
+			nRunning="$(echo $sPids | wc -w)"
 			gfnMessage 'info' 'log' "$gsProxyDesc is already running, processes: $nRunning"
 		else
 			# Update clock
-			/usr/sbin/ntpdate -u 0.fr.pool.ntp.org > /dev/null 2>&1
+			/usr/sbin/ntpdate -u 0.pool.ntp.org 1.pool.ntp.org > /dev/null 2>&1
 
 			# Get list of resolvers wished (gsResolversList)
 			gfnCheckResolversWished
@@ -1228,11 +1297,11 @@ gfnStart() {
 						$gsProxyName -R $sResolver -a 127.0.0.$nCountProcess:52 -p $gsPidDir/$sResolver.pid $gsProxyParams >> $gsLogFile 2>> $gsTmpDir/$sResolver.log
 						sleep 0.2
 
-						sPids="`pidof $gsProxyName`"
-						if [ ! -z "$sPids" ]; then
+						sPids="$(pidof $gsProxyName)"
+						if [ -n "$sPids" ]; then
 							nPid=$(ps -p "$sPids" -o pid= -o user= -o args= | grep "127.0.0.$nCountProcess:52" | awk '{print $1 = substr($1, 1, 100)}')
 						fi
-						if [ ! -z "$nPid" ]; then
+						if [ -n "$nPid" ]; then
 							# Start OK
 							sType='info'
 							gsMess="'$sResolver' is started completly"
@@ -1273,25 +1342,25 @@ gfnStop() {
 	local sType sPidList sPids sResolver nCount nCountResolvers
 
 	sType='info'
-	sPidList="`ls -1tr $gsPidDir/`"
+	sPidList="$(ls -1tr $gsPidDir/)"
 	sPids=''
 	nCount=0
 
 	if [ -z "$sPidList" ]; then
 		gsMess="$gsProxyDesc is not running !"
 	else
-		nCountResolvers="`echo $sPidList | wc -w`"
+		nCountResolvers="$(echo $sPidList | wc -w)"
 		for sPidFile in $sPidList; do
 			(( nCount++ ))
-			sResolver="`echo $sPidFile | sed 's/.pid//g;'`"
+			sResolver="$(echo $sPidFile | sed 's/.pid//g;')"
 			[ "$gbUpdate" == yes ] && gfnProgressBar -s $nCount -e $nCountResolvers -t "Stopping processes			:" -m "($nCount/$nCountResolvers	- $sResolver)"
 			start-stop-daemon --stop --quiet --oknodo --pidfile $gsPidDir/$sPidFile >> $gsLogFile 2>> $gsLogFile
 		done
 	fi
 
 	# Ghost processes ?
-	sPids="`pidof $gsProxyName`"
-	if [ ! -z "$sPids" ]; then
+	sPids="$(pidof $gsProxyName)"
+	if [ -n "$sPids" ]; then
 		pkill -f $gsProxyName >> $gsLogFile
 		sType='notice'
 		gsMess="\nForce kill for ghost processes !"
@@ -1310,8 +1379,8 @@ gfnVariableFormat() {
 	local sConfigValues sIpVersion nNumberOfDaemon bOnlyNoLogs bOnlyDNSSec bOnlyNameCoin bRandom nResolversDb
 
 	# Add resolvers to database
-	nResolversDb="`cmdMySQL 'MySB_db' "SELECT count(name) FROM dnscrypt_resolvers;"`"
-	if [ $nResolversDb -eq 0 ] && [ -z "`echo "$@" | grep 'update'`" ] && [ -z "`echo "$@" | grep 'full-update'`" ]; then
+	nResolversDb="$(cmdMySQL 'MySB_db' "SELECT count(name) FROM dnscrypt_resolvers;")"
+	if [ $nResolversDb -eq 0 ] && [ -z "$(echo "$@" | grep 'update')" ] && [ -z "$(echo "$@" | grep 'full-update')" ]; then
 		gsMess="\n"
 		gsMess+="${gsR}No DNS resolver found !${gsN}\n"
 		gsMess+="Try to update resolvers list with the following command:\n"
@@ -1321,13 +1390,13 @@ gfnVariableFormat() {
 	fi
 
 	# Get config from database
-	sConfigValues="`cmdMySQL 'MySB_db' "SELECT ip_version,processes_qty,no_logs,dnssec,namecoin,random FROM dnscrypt_config WHERE id_dnscrypt_config='1';" | sed 's/\t/|/g;'`"
-	sIpVersion="`echo $sConfigValues | awk '{split($0,a,"|"); print a[1]}'`"
-	nNumberOfDaemon="`echo $sConfigValues | awk '{split($0,a,"|"); print a[2]}'`"
-	bOnlyNoLogs="`echo $sConfigValues | awk '{split($0,a,"|"); print a[3]}'`"
-	bOnlyDNSSec="`echo $sConfigValues | awk '{split($0,a,"|"); print a[4]}'`"
-	bOnlyNameCoin="`echo $sConfigValues | awk '{split($0,a,"|"); print a[5]}'`"
-	bRandom="`echo $sConfigValues | awk '{split($0,a,"|"); print a[6]}'`"
+	sConfigValues="$(cmdMySQL 'MySB_db' "SELECT ip_version,processes_qty,no_logs,dnssec,namecoin,random FROM dnscrypt_config WHERE id_dnscrypt_config='1';" | sed 's/\t/|/g;')"
+	sIpVersion="$(echo $sConfigValues | awk '{split($0,a,"|"); print a[1]}')"
+	nNumberOfDaemon="$(echo $sConfigValues | awk '{split($0,a,"|"); print a[2]}')"
+	bOnlyNoLogs="$(echo $sConfigValues | awk '{split($0,a,"|"); print a[3]}')"
+	bOnlyDNSSec="$(echo $sConfigValues | awk '{split($0,a,"|"); print a[4]}')"
+	bOnlyNameCoin="$(echo $sConfigValues | awk '{split($0,a,"|"); print a[5]}')"
+	bRandom="$(echo $sConfigValues | awk '{split($0,a,"|"); print a[6]}')"
 
 	# Ip Version
 	case $sIpVersion in
@@ -1347,7 +1416,7 @@ gfnVariableFormat() {
 	esac
 	# -E, --ephemeral-keys,  Not enabled by default because it may be slow, especially on non-Intel CPUs.
 	# We activate it only if the remote server is logging activity.
-	if [ "$gbOnlyNoLogs" == no ] && [ -z "`echo $gsProxyParams | grep '\-E'`" ]; then
+	if [ "$gbOnlyNoLogs" == no ] && [ -z "$(echo $gsProxyParams | grep '\-E')" ]; then
 		gsProxyParams="$gsProxyParams -E"
 	fi
 	# DNSsec
@@ -1364,10 +1433,10 @@ gfnVariableFormat() {
 	esac
 
 	# Variable format
-	gbOnlyNoLogs="`echo $gbOnlyNoLogs | tr '[:upper:]' '[:lower:]'`"
-	gbOnlyDNSSec="`echo $gbOnlyDNSSec | tr '[:upper:]' '[:lower:]'`"
-	gbOnlyNameCoin="`echo $gbOnlyNameCoin | tr '[:upper:]' '[:lower:]'`"
-	gbRandomResolvers="`echo $gbRandomResolvers | tr '[:upper:]' '[:lower:]'`"
+	gbOnlyNoLogs="$(echo $gbOnlyNoLogs | tr '[:upper:]' '[:lower:]')"
+	gbOnlyDNSSec="$(echo $gbOnlyDNSSec | tr '[:upper:]' '[:lower:]')"
+	gbOnlyNameCoin="$(echo $gbOnlyNameCoin | tr '[:upper:]' '[:lower:]')"
+	gbRandomResolvers="$(echo $gbRandomResolvers | tr '[:upper:]' '[:lower:]')"
 	gsResolversList=''
 	gnCountResolver=0
 	gbUpdate=no
@@ -1383,12 +1452,12 @@ gfnSaveConfig() {
 		*)		sSearchByIpVersion=" AND ip_version='$gsIpVersion'";;
 	esac
 
-	nCountResolver="`cmdMySQL 'MySB_db' "SELECT count(name) FROM dnscrypt_resolvers WHERE dnssec='$gbOnlyDNSSec' AND no_logs='$gbOnlyNoLogs' AND namecoin='$gbOnlyNameCoin' $sSearchByIpVersion;"`"
+	nCountResolver="$(cmdMySQL 'MySB_db' "SELECT count(name) FROM dnscrypt_resolvers WHERE dnssec='$gbOnlyDNSSec' AND no_logs='$gbOnlyNoLogs' AND namecoin='$gbOnlyNameCoin' $sSearchByIpVersion;")"
 	if [ $nCountResolver -lt $gnNumberOfDaemon ]; then
 		nNumberOfDaemon=$nCountResolver
 	elif [ $nCountResolver -eq 0 ]; then
 		gbOnlyNameCoin=no
-		nCountResolver="`cmdMySQL 'MySB_db' "SELECT count(name) FROM dnscrypt_resolvers WHERE dnssec='$gbOnlyDNSSec' AND no_logs='$gbOnlyNoLogs' AND namecoin='$gbOnlyNameCoin' $sSearchByIpVersion;"`"
+		nCountResolver="$(cmdMySQL 'MySB_db' "SELECT count(name) FROM dnscrypt_resolvers WHERE dnssec='$gbOnlyDNSSec' AND no_logs='$gbOnlyNoLogs' AND namecoin='$gbOnlyNameCoin' $sSearchByIpVersion;")"
 	else
 		nNumberOfDaemon=$gnNumberOfDaemon
 	fi
@@ -1450,7 +1519,7 @@ gfnProgressBar() {
 	nWidth=40
 
 	# Get the options.
-	OPTS=`getopt --shell bash --options s:e:t:m:w: --name "Progress bar" -- "$@"`
+	OPTS=$(getopt --shell bash --options s:e:t:m:w: --name "Progress bar" -- "$@")
 	if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
 	eval set -- "$OPTS"
 	while true; do
@@ -1477,7 +1546,7 @@ gfnProgressBar() {
 	nLeft=$(printf "%${nLeft}s")
 
 	# To clean end line if a dynamic message is given
-	if [ ! -z "$sMessage" ]; then
+	if [ -n "$sMessage" ]; then
 		nPrevious=${gnLenght}
 		[ -z $nPrevious ] && nPrevious=$(echo "$sMessage" | wc -m)
 		gnLenght=$(echo "$sMessage" | wc -m)
@@ -1515,10 +1584,10 @@ gfnMessage() {
 	fnWriteToLogFile() {
 		local sType sLineStart SaveLang LANG sMess
 
-		sType="`echo $1 | tr '[:lower:]' '[:upper:]'`"
+		sType="$(echo $1 | tr '[:lower:]' '[:upper:]')"
 		sLineStart=''
-		SaveLang=$LANG
-		LANG=en_us_8859_1
+		SaveLang="$LANG"
+		LANG="en_us_8859_1"
 		sMess="$2"
 
 		case "$1" in
@@ -1528,19 +1597,19 @@ gfnMessage() {
 			'info')		sType="$sType";;
 		esac
 
-		sLineStart="`/bin/date '+%a %b %d %T %Y'` [$sType]";
+		sLineStart="$(/bin/date '+%a %b %d %T %Y') [$sType]"
 		while IFS=$'\n' read -ra sLogLine; do
 			for sLine in "${sLogLine[@]}"; do
 				echo -e "$sLineStart $sLine" >> $gsLogFile
 			done
 		done <<< "$sMess"
-		LANG=$SaveLang
+		LANG="$SaveLang"
 	}
 
 	case "$sMode" in
 		'con')
 			if [ "$gbCommandLine" == no ] && [ "$gbShowMessages" == yes ]; then
-				$gsGUI --title "`echo $sType | tr '[:lower:]' '[:upper:]'`" --msgbox "$sMess"  0 0
+				$gsGUI --title "$(echo $sType | tr '[:lower:]' '[:upper:]')" --msgbox "$sMess"  0 0
 			else
 				printf "$sMess"
 			fi
@@ -1762,17 +1831,17 @@ gfnMenuShowFilters() {
 	"NameCoin" "Check to show the resolvers that accept the NameCoin protocol." $gbOnlyNameCoin 3>&1 1>&2 2>&3)
 
 	if [ $? -eq 0 ]; then
-		if [ "`echo $sValue | grep 'NoLogs'`" ]; then
+		if [ "$(echo $sValue | grep 'NoLogs')" ]; then
 			gbOnlyNoLogs=yes
 		else
 			gbOnlyNoLogs=no
 		fi
-		if [ "`echo $sValue | grep 'DNSSec'`" ]; then
+		if [ "$(echo $sValue | grep 'DNSSec')" ]; then
 			gbOnlyDNSSec=yes
 		else
 			gbOnlyDNSSec=no
 		fi
-		if [ "`echo $sValue | grep 'NameCoin'`" ]; then
+		if [ "$(echo $sValue | grep 'NameCoin')" ]; then
 			gbOnlyNameCoin=yes
 		else
 			gbOnlyNameCoin=no
@@ -1942,10 +2011,10 @@ if [ $# -ge 1 ]; then
 			'status'|'status-details')
 				case "$Arg" in
 					status)
-						sPidFiles="`ls -1r $gsPidDir/`"
-						if [ ! -z "$sPidFiles" ]; then
+						sPidFiles="$(ls -1r $gsPidDir/)"
+						if [ -n "$sPidFiles" ]; then
 							for sFile in $sPidFiles; do
-								status_of_proc -p "$gsPidDir/$sFile" "$gsProxyName" "`echo $sFile | sed 's/.pid//g;'`" && log_end_msg
+								status_of_proc -p "$gsPidDir/$sFile" "$gsProxyName" "$(echo $sFile | sed 's/.pid//g;')" && log_end_msg
 							done
 						else
 							gfnMessage 'notice' 'con' "$gsProxyDesc is not running !"
@@ -1980,7 +2049,7 @@ if [ $# -ge 1 ]; then
 						--password)
 							case "$2" in
 								'') gfnCmdShowUsageConfig; shift 2;;
-								*)  gsCplMinisignPass="$2"; gfnCompileCsvFiles; shift; exit 1;;
+								*)  gsCplMinisignPass="$2"; gfnCompileCsvFiles; shift; exit 0;;
 							esac
 						;;
 						*)  break;;

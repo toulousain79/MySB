@@ -1,3 +1,5 @@
+#!/bin/bash
+# rev 5.5
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -20,22 +22,32 @@
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
 ######################################################################
-([ -z "$vars" ] || [ "$vars" -ne 1 ]) && echo "Please load 'vars' file..." && return
-funcs_sql=1
+{ [ -z "${vars}" ] || [ "${vars}" -ne 1 ]; } && {
+    echo "Please load 'vars' file before..."
+    return
+}
 ##################### FIRST LINE #####################################
 
 #### MySQL command
 cmdMySQL() {
-	local sDatabase sRequest
+    local sDatabase sRequest
 
-	if [ -z "$1" ] || [ -z "$2" ]; then
-		return 1
-	else
-		sDatabase="$1"
-		sRequest="$2"
-		sVerbose="$3"
-	fi
-	mysql --defaults-extra-file=/root/.config.cnf --database=$sDatabase -w --connect-timeout=10 -s -N -e "$sRequest" $sVerbose
+    if [ -z "$1" ] || [ -z "$2" ]; then
+        return 1
+    else
+        sDatabase="$1"
+        sRequest="$2"
+        sVerbose="$3"
+    fi
+
+    case "$sDatabase" in
+        "${gsblocklists_DB}")
+            [ -n "${sVerbose}" ] && sVerbose="-echo"
+            sqlite3 ${sVerbose} -cmd '.timeout 150000' "${sDatabase}" "${sRequest}"
+            ;;
+        *) mysql --defaults-extra-file=/root/.config.cnf --database="${sDatabase}" -w --connect-timeout=10 -s -N -e "${sRequest}" ${sVerbose} ;;
+    esac
+
 }
 
 ##################### LAST LINE ######################################

@@ -1,6 +1,7 @@
 #!/bin/bash
 # -----------------------------------------
-source $(dirname $0)/../inc/includes_before
+# shellcheck source=inc/includes_before
+source "$(dirname "$0")"/../inc/includes_before
 # -----------------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -25,130 +26,507 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 case "$1" in
-"BEFORE")
-	####################################
-	#### To call for every upgrade - BoF
-	# Get new vars after MySQL.bsh script
-	source $MySB_InstallDir/inc/vars
+    "BEFORE")
+        ####################################
+        #### To call for every upgrade - BoF
+        # Get new vars after MySQL.bsh script
+        # shellcheck source=inc/vars
+        source "${MySB_InstallDir}"/inc/vars
 
-	# Create missing directories and change rights
-	gfnManageDirAndFiles 'global'
+        # Create missing directories and change rights
+        gfnManageDirAndFiles 'global'
 
-	# Switching DNS
-	gfnSwitchDNS "bind"
+        # Switching DNS
+        gfnSwitchDNS "bind"
 
-	# Forcing NTP update
-	ping -c4 0.fr.pool.ntp.org
-	/usr/sbin/ntpdate -u 0.fr.pool.ntp.org
+        # Forcing NTP update
+        ping -c4 0.pool.ntp.org
+        /usr/sbin/ntpdate -u 0.pool.ntp.org 1.pool.ntp.org
 
-	# MySQL
-	[ -f /tmp/MySQL.bsh.log ] && cat /tmp/MySQL.bsh.log >>$MySB_InstallDir/logs/BulkChanges.bsh.log
+        # MySQL
+        [ -f /tmp/MySQL.bsh.log ] && cat /tmp/MySQL.bsh.log >>${MySB_InstallDir}/logs/BulkChanges.bsh.log
 
-	# VARs & Functions
-	[ -z $funcs_Install ] && source $MySB_InstallDir/inc/funcs_by_script/funcs_Install
-	[ -z $funcs_SourcesList ] && source $MySB_InstallDir/inc/funcs_by_script/funcs_SourcesList
+        # VARs & Functions
+        # shellcheck source=inc/funcs_by_script/funcs_Install
+        [ -z $funcs_Install ] && source ${MySB_InstallDir}/inc/funcs_by_script/funcs_Install
+        # shellcheck source=inc/funcs_by_script/funcs_SourcesList
+        [ -z $funcs_SourcesList ] && source ${MySB_InstallDir}/inc/funcs_by_script/funcs_SourcesList
 
-	# Remove old banners
-	rm -fv $MySB_InstallDir/files/banner_*
+        # Remove old banners
+        rm -fv ${MySB_InstallDir}/files/banner_*
 
-	# Force install for depends
-	source $MySB_InstallDir/inc/funcs_by_script/funcs_Install
-	gfnPackagesManage install
-	#### To call for every upgrade - EoF
-	####################################
+        # Force install for depends
+        # shellcheck source=inc/funcs_by_script/funcs_Install
+        source ${MySB_InstallDir}/inc/funcs_by_script/funcs_Install
+        gfnPackagesManage install
+        #### To call for every upgrade - EoF
+        ####################################
 
-	#### NFS
-	sed -i '/fs.nfs.nfs_callback_tcpport/d' /etc/sysctl.conf
-	sysctl --system
-	;;
-"AFTER" | "INIT")
-	####################################
-	#### To call for every upgrade - BoF
-	if gfnCheckCommand 0 ldconfig; then
-		log_daemon_msg "$IncAfter_ConfigureDynamicLinks"
-		/sbin/ldconfig
-		gfnStatusLSB
-	fi
-	#### Free cache server
-	## To free pagecache, dentries and inodes
-	sync
-	echo 3 >/proc/sys/vm/drop_caches
-	# Create missing directories and change rights
-	gfnManageDirAndFiles 'global'
+        #### NTP Cleaning
+        rm -fv /etc/ntp.conf
 
-	# STOP & START services
-	gfnManageServices stop "ntp postfix stunnel4 smbd nginx $binPhpService redis-server webmin dnscrypt-proxy"
-	gfnManageServices start "dnscrypt-proxy ntp stunnel4 postfix smbd redis-server $binPhpService webmin nginx"
+        #### rTorrent users cleaning
+        rm -fv /home/*/logs/*
 
-	# Update version info
-	cmdMySQL 'MySB_db' "UPDATE system SET mysb_version = '$gsCurrentVersion' WHERE id_system='1';" -v
+        #### NFS
+        sed -i '/fs.nfs.nfs_callback_tcpport/d' /etc/sysctl.conf
+        sysctl --system
 
-	# Send mail for each user with new version
-	source $MySB_InstallDir/inc/vars
-	source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
-	gfnListCountUsers 'normal'
-	gsRutorrentDirEscaped="$(echo $gsRutorrentDir | sed s,/,\\\\\/,g)"
-	for seedUser in $gsUsersList; do
-		sRequestValues="$(cmdMySQL 'MySB_db' "SELECT id_users,users_passwd FROM users WHERE users_ident = '$seedUser';" | sed 's/\t/|/g;')"
-		UserId="$(echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}')"
-		UserPassword="$(echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}')"
-		# rTorrent init
-		install -v -o root -g root -m 0755 $MySB_InstallDir/templates/init/etc.init.d.rtorrent.tmpl /etc/init.d/rtorrent-$seedUser
-		perl -pi -e "s/<username>/$seedUser/g" /etc/init.d/rtorrent-$seedUser
-		systemctl daemon-reload
-		systemctl enable rtorrent-$seedUser
-		# rTorrent Config File
-		gfnCreateRtorrentConfigFile "$seedUser" 'force'
+        #### SSH
+        if [ "${gsSwitch}" == "UPGRADE" ]; then
+            install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/other/etc.ssh.sshd_config.tmpl /etc/ssh/sshd_config
+        fi
 
-		if [ "$UserId" == "$gnMainUserId" ] && [ ! -z "$UserPassword" ]; then
-			# Remove main user password from database
-			cmdMySQL 'MySB_db' "UPDATE users SET users_passwd = '' WHERE admin = '1';" -v
-			gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_ChangeUserPassword" "$seedUser" "$UserPassword" 'UPGRADE'
-		else
-			# Init password required
-			echo "Uncomment lines below for send reset password mail to users"
-			# cmdMySQL 'MySB_db' "UPDATE users SET init_password = '1' WHERE users_ident = '$seedUser';" -v
-			# Subject="$Upgrade_SubjectUpgraded $gsCurrentVersion"
-			# gfnSendMail "$Subject" "$seedUser" "upgrade"
-		fi
+        #### Git LFS
+        rm -fv /etc/apt/sources.list.d/git-lfs.list
 
-		# Change some rights
-		chown -v $seedUser:$seedUser /home/$seedUser/.ssh/authorized_keys
-		chmod -v 0644 /home/$seedUser/.ssh/authorized_keys
+        #### init.d
+        rm -fv /etc/init.d/MySB_SecurityRules_Init
+        systemctl daemon-reload
 
-		#### OpenVPN - Create again clients configurations if needed
-		if [ "$(find /etc/openvpn/clients/ -maxdepth 1 -type f -name "${seedUser}*" 2>/dev/null | wc -l)" -eq 0 ]; then
-			gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir:?}/install/OpenVPN" 'client' "$seedUser" 'UPGRADE'
-		fi
-	done
+        #### GeoIP
+        rm -fv /usr/local/bin/geoipupdate
+        rm -fv /usr/local/share/man/man1/geoipupdate.1
+        rm -rfv /usr/local/share/GeoIP/
+        rm -rfv /usr/local/share/doc/geoipupdate
 
-	#### Apply quota for users
-	gfnManageQuota '-v'
+        #### Swappiness
+        if (grep -q 'vm.swappiness' /etc/sysctl.conf); then
+            sed -i '/Swappiness/d' /etc/sysctl.conf
+            sed -i '/swappiness/d' /etc/sysctl.conf
+        fi
 
-	#### Check actuel quota
-	repquota -a
+        #### MySQL
+        # shellcheck source=.etc/MySB/config_db
+        [ -f /etc/MySB/config_db ] && source /etc/MySB/config_db
+        MySQL_TorrentPassword="$(gfnGenPassword 16)"
+        mysql -u root -p"${MySQL_RootPassword}" --verbose <<-EOF
+            CREATE USER IF NOT EXISTS 'Torrent_user'@'localhost';
+            GRANT SELECT ON MySB_db.trackers_list TO 'Torrent_user'@'localhost' IDENTIFIED BY '$MySQL_TorrentPassword';
+            GRANT SELECT, INSERT, DELETE ON MySB_db.torrents TO 'Torrent_user'@'localhost' IDENTIFIED BY '$MySQL_TorrentPassword';
+            GRANT SELECT (id_system,public_tracker_allow,files_recycling) ON MySB_db.system TO 'Torrent_user'@'localhost' IDENTIFIED BY '$MySQL_TorrentPassword';
+            FLUSH PRIVILEGES;
+		EOF
+        echo "MySQL_TorrentPassword=\"$MySQL_TorrentPassword\"" >>/etc/MySB/config_db
+        # Create MySQL client config file for Torrent_user
+        {
+            echo "[client]"
+            echo "user = Torrent_user"
+            echo "password = $MySQL_TorrentPassword"
+            echo "socket = /var/run/mysqld/mysqld.sock"
+        } >/home/.config.cnf
+        chown -v :MySB_users /home/.config.cnf
+        chmod -v 0444 /home/.config.cnf
 
-	#### Cleaning
-	# updatedb
-	# for file in $(locate *.dpkg-old *.dpkg-new *.dpkg-dist *.dpkg-bak *.ucf-dist); do
-	# if [ ! -z "$gbDevMode" ] && [ $gbDevMode -eq 1 ]; then
-	# mv -vf $file $MySB_InstallDir/logs/TODEL/
-	# else
-	# rm -vf $file
-	# fi
-	# done
+        #### Web logs cleaning
+        rm -fv ${MySB_InstallDir}/web/logs/security/*
+        rm -fv ${MySB_InstallDir}/web/logs/nginx/*
+        rm -fv ${MySB_InstallDir}/web/logs/scripts/*
+        rm -fv ${MySB_InstallDir}/web/logs/system/*
+        rm -fv ${MySB_InstallDir}/web/logs/security/*
+        rm -fv ${MySB_InstallDir}/web/logs/bin/*
 
-	#### Flush mail queue
-	if gfnCheckCommand 0 postfix && gfnGetPid postfix; then postfix flush; fi
+        #### NextCloud Upgrade to 15.0.7
+        if [ "$gbToInstall_NextCloud" == "YES" ] || [ "$gbIsInstalled_NextCloud" == "YES" ]; then
+            cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='NextCloud';" -v
+            cmdMySQL 'MySB_db' "UPDATE repositories SET version='15.0.7', upgrade='1', file='nextcloud_v15.0.7.zip', url='https://download.nextcloud.com/server/releases/nextcloud-15.0.7.zip' WHERE name='NextCloud';" -v
+            gfnGetRepoValues 'NextCloud'
+            gfnRepoManageByType
+            gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/NextCloud" 'UPGRADE'
+            cmdMySQL 'MySB_db' "UPDATE repositories SET version='16.0.0', upgrade='1', file='nextcloud_v16.0.0.zip', url='https://download.nextcloud.com/server/releases/nextcloud-16.0.0.zip' WHERE name='NextCloud';" -v
+            source /etc/MySB/config_db
+            mysql -u root -p"${MySQL_RootPassword}" --verbose <<-EOF
+                CREATE DATABASE IF NOT EXISTS NextCloud_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+                ALTER DATABASE NextCloud_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+                GRANT ALL ON NextCloud_db.* to 'MySB_user'@'localhost' IDENTIFIED BY '$MySQL_MysbPassword';
+                FLUSH PRIVILEGES;
+			EOF
+            # su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set mysql.utf8mb4 --type boolean --value=true"
+            # su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:repair"
+            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --on"
+        fi
 
-	#### Upgrade in progress page + Start Cron service
-	gfnUpgradeInProgress "off"
-	#### To call for every upgrade - EoF
-	####################################
-	;;
+        #### Update sources now
+        gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/SourcesList" 'UPGRADE'
+
+        #### Stop some services
+        gfnManageServices stop "php7.0-fpm redis-server"
+
+        #### Purge PHP 7.0
+        PackagesList_ToPurge=("aria2" "libgeoip-dev")
+        for package in $(dpkg -l | grep ' php' | awk '{ print $2 }'); do
+            PackagesList_ToPurge+=("${package}")
+        done
+        gfnPackagesManage purge "${PackagesList_ToPurge[@]}"
+        gfnDeleteDirectory 1 "$gsPhpDir"
+        [ -f /var/log/php-fpm7.0.log ] && mv -fv /var/log/php-fpm7.0.log /var/log/php-fpm7.1.log
+        rm -fv /run/php/php-fpm7.0.pid
+
+        #### PHP7.1 Install
+        gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/PHP" 'UPGRADE'
+        ;;
+    "AFTER" | "INIT")
+        ####################################
+        #### To call for every upgrade - BoF
+        if gfnCheckCommand 0 ldconfig; then
+            log_daemon_msg "$IncAfter_ConfigureDynamicLinks"
+            /sbin/ldconfig
+            gfnStatusLSB
+        fi
+        #### Free cache server
+        ## To free pagecache, dentries and inodes
+        sync
+        echo 3 >/proc/sys/vm/drop_caches
+        # Create missing directories and change rights
+        gfnManageDirAndFiles 'global'
+
+        # STOP & START services
+        gfnManageServices stop "ntp postfix stunnel4 smbd nginx $binPhpService redis-server webmin dnscrypt-proxy"
+        gfnManageServices start "dnscrypt-proxy ntp stunnel4 postfix smbd redis-server $binPhpService webmin nginx"
+
+        # Update version info
+        cmdMySQL 'MySB_db' "UPDATE system SET mysb_version = '$gsCurrentVersion' WHERE id_system='1';" -v
+
+        # Create new security rules
+        gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'create' 'UPGRADE'
+
+        # Send mail for each user with new version
+        # shellcheck source=/dev/null
+        source ${MySB_InstallDir}/inc/vars
+        # shellcheck source=inc/funcs_by_script/funcs_MySB_CreateUser
+        source ${MySB_InstallDir}/inc/funcs_by_script/funcs_MySB_CreateUser
+        gfnListCountUsers 'normal'
+
+        echo
+        echo "################################################################################"
+        for sUser in $gsUsersList; do
+            echo
+            echo "########## ${sUser}"
+            sRequestValues="$(cmdMySQL 'MySB_db' "SELECT id_users,users_passwd FROM users WHERE users_ident = '${sUser}';" | sed 's/\t/|/g;')"
+            UserId="$(echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}')"
+            UserPassword="$(echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}')"
+            # rTorrent init
+            install -v -o root -g root -m 0755 ${MySB_InstallDir}/templates/init/etc.init.d.rtorrent.tmpl "/etc/init.d/rtorrent-${sUser}"
+            perl -pi -e "s/<username>/${sUser}/g" "/etc/init.d/rtorrent-${sUser}"
+            systemctl daemon-reload
+            systemctl enable rtorrent-"${sUser}"
+            # rTorrent Config File
+            gfnCreateRtorrentConfigFile "${sUser}" 'force'
+
+            if [ "$UserId" == "$gnMainUserId" ] && [ -n "$UserPassword" ]; then
+                # Remove main user password from database
+                cmdMySQL 'MySB_db' "UPDATE users SET users_passwd = '' WHERE admin = '1';" -v
+                gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/bin/MySB_ChangeUserPassword" "${sUser}" "$UserPassword" 'UPGRADE'
+                # else
+                # Init password required
+                # echo "Uncomment lines below for send reset password mail to users"
+                # cmdMySQL 'MySB_db' "UPDATE users SET init_password = '1' WHERE users_ident = '${sUser}';" -v
+                # Subject="$Upgrade_SubjectUpgraded $gsCurrentVersion"
+                # gfnSendMail "$Subject" "${sUser}" "upgrade"
+            fi
+
+            # Change some rights
+            chown -v ${sUser}:${sUser} /home/${sUser}/.ssh/authorized_keys
+            chmod -v 0644 /home/${sUser}/.ssh/authorized_keys
+
+            # OpenVPN - Create again clients configurations if needed
+            if [ "$(find /etc/openvpn/clients/ -maxdepth 1 -type f -name "${sUser}*" 2>/dev/null | wc -l)" -eq 0 ]; then
+                gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/OpenVPN" 'client' "${sUser}" 'UPGRADE'
+            fi
+
+            # Add users allowed commands to sudoers.d (used by rTorrent scripts)
+            {
+                echo "${sUser} ALL= EXEC: NOPASSWD: /bin/cp -av /home/*/rtorrent/* /home/${sUser}/rtorrent/complete/*"
+                echo "${sUser} ALL= EXEC: NOPASSWD: /bin/cp -alv /home/*/rtorrent/* /home/${sUser}/rtorrent/complete/*"
+                echo "${sUser} ALL= EXEC: NOPASSWD: /bin/chown -Rv ${sUser}\:${sUser} /home/${sUser}/rtorrent/complete/*"
+                echo "${sUser} ALL= EXEC: NOPASSWD: /bin/chown -Rv ${sUser}\:MySB_users /home/${sUser}/rtorrent/complete/*"
+                echo "${sUser} ALL= EXEC: NOPASSWD: /bin/bash /opt/MySB/scripts/GetTrackersCert.bsh USER ${sUser}"
+                echo "${sUser} ALL= EXEC: NOPASSWD: /bin/bash /home/${sUser}/.rTorrent_tasks.sh*"
+            } >"/etc/sudoers.d/MySB_${sUser}"
+
+            # NginX files
+            sPortSCGI="$(cmdMySQL 'MySB_db' "SELECT scgi_port FROM users WHERE users_ident='${sUser}';")"
+            sUserUpper="$(echo "${sUser}" | tr '[:lower:]' '[:upper:]')"
+
+            install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.rpc.user.conf.tmpl /etc/nginx/rpc/"${sUser}".conf
+            perl -pi -e "s/<scgi_port>/$sPortSCGI/g" /etc/nginx/rpc/"${sUser}".conf
+            perl -pi -e "s/<username>/${sUser}/g" /etc/nginx/rpc/"${sUser}".conf
+            perl -pi -e "s/<USERNAME>/${sUserUpper}/g" /etc/nginx/rpc/"${sUser}".conf
+            install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.rpc.user.local.tmpl /etc/nginx/rpc/"${sUser}".local
+            perl -pi -e "s/<scgi_port>/$sPortSCGI/g" /etc/nginx/rpc/"${sUser}".local
+            perl -pi -e "s/<username>/${sUser}/g" /etc/nginx/rpc/"${sUser}".local
+            perl -pi -e "s/<USERNAME>/${sUserUpper}/g" /etc/nginx/rpc/"${sUser}".local
+            {
+                echo "upstream rtorrent-${sUser} {"
+                echo "  server unix:/run/rtorrent/${sUser}.sock;"
+                echo "}"
+            } >/etc/nginx/upstream/rtorrent-${sUser}.conf
+
+            unset UserId UserPassword
+        done
+        echo "################################################################################"
+        echo
+
+        #### Apply quota for users
+        gfnManageQuota '-v'
+
+        #### Check actuel quota
+        repquota -a
+
+        #### Cleaning
+        rm -vf "${MySB_InstallDir}/web/logs/system/php5-fpm.html"
+        rm -rfv "${MySB_InstallDir}/temp/"{*,.*}
+        updatedb
+        for file in $(locate *.dpkg-old *.dpkg-new *.dpkg-dist *.dpkg-bak *.ucf-dist); do
+            if [ -n "$gbDevMode" ] && [ $gbDevMode -eq 1 ]; then
+                mv -vf $file ${MySB_InstallDir}/logs/TODEL/
+            else
+                rm -vf $file
+            fi
+        done
+
+        #### Disable maintenance mode
+        gfnUpgradeInProgress "off"
+
+        #### Flush mail queue
+        if gfnCheckCommand 0 postfix && gfnGetPid postfix; then postfix flush; fi
+        #### To call for every upgrade - EoF
+        ####################################
+
+        #### Add hash in DB for all torrent files
+        # 1/ Parcours des .torrent
+        #   a/ SI PAS actif ALORS on le supprime
+        #   b/ SI actif ALORS on le clean ET on le recharge
+
+        echo
+        echo "################################################################################"
+
+        # Clean all existing previous trackers
+        cmdMySQL 'MySB_db' "DELETE FROM trackers_list;" -v
+
+        gfnListCountUsers 'normal'
+        for sUser in ${gsUsersList}; do
+            echo
+
+            # Start rTorrent session
+            gfnManageServices start "rtorrent-${sUser}"
+
+            #### VARs
+            nCgiPort="$(cmdMySQL 'MySB_db' "SELECT scgi_port FROM users WHERE users_ident='${sUser}';")"
+            sDownloadList="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} download_list "")"
+            sDownloadList="$(echo "${sDownloadList}" | sed -e 's/,//g;' | sed -e "s/'//g;" | sed -e 's/\[//g;' | sed -e 's/\]//g;' | tr '[:upper:]' '[:lower:]')"
+
+            find /home/${sUser}/rtorrent/.session/ -name '*.torrent' -type f >/tmp/sessions
+            while IFS= read -r sTorrentLoaded; do
+                # Get torrent infos
+                sInfoHash="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Hash: ' | awk '{printf $2}')"
+                sName="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Name: ' | awk '{printf $2}')"
+                sPrivacy="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
+                xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash} >/dev/null
+
+                # Check if hash is in download list
+                (! grep -qi "${sInfoHash}" <<<"${sDownloadList}") && {
+                    rm -fv "/home/${sUser}/rtorrent/.session/${sInfoHash}"*
+                    continue
+                }
+
+                # Waiting after check hash
+                while [ "$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.get_hashing ${sInfoHash})" -ne 0 ]; do
+                    echo "Waiting after checking hash of ${sInfoHash}"
+                    sleep 1
+                done
+
+                sBasePath="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.base_path ${sInfoHash})"
+                sDirectory="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.directory ${sInfoHash})"
+                nLeftBytes="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.get_left_bytes ${sInfoHash})"
+                bState="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.state ${sInfoHash})"
+
+                echo
+                echo "--------------------"
+                echo "SCGI port: ${nCgiPort}"
+                echo "File: ${sTorrentLoaded}"
+                echo "Hash: ${sInfoHash}"
+                echo "Name: ${sName}"
+                echo "Privacy: ${sPrivacy}"
+                echo "Base path: ${sBasePath}"
+                echo "Directory: ${sDirectory}"
+                echo "Left bytes: ${nLeftBytes}"
+                echo "State: ${bState}"
+                echo "--------------------"
+
+                [ -z "${nCgiPort}" ] && continue
+                [ -z "${sInfoHash}" ] && continue
+                [ -z "${sName}" ] && continue
+                [ -z "${sPrivacy}" ] && continue
+                [ -z "${sBasePath}" ] && continue
+                ([ -z "${sTorrentLoaded}" ] || [ ! -f "${sTorrentLoaded}" ]) && continue
+                ([ -z "${sDirectory}" ] || [ ! -d "${sDirectory}" ]) && continue
+
+                #### Step 1 - List & count annoncers
+                declare -A aAnnoncers
+                aAnnoncersUdp=()
+                aAnnoncersIpv=()
+                aAnnoncersHttp=()
+                aAnnoncersHttps=()
+                nCountAnnoncers=0
+                nId=0
+                for sAnnoncer in $(transmission-show "${sTorrentLoaded}" | grep 'udp://\|http://\|https://' | grep -v 'Magnet URI' | grep -v 'Comment' | sed -e 's/ //g;'); do
+                    if (grep -q 'udp://' <<<"${sAnnoncer}"); then
+                        nEnable=1
+                        ((nCountAnnoncers++))
+                        aAnnoncersUdp+=("${sAnnoncer}")
+                        aAnnoncers[${nId}]="t${nId} ${nEnable}"
+                        echo "${sAnnoncer}"
+                        ((nId++))
+                        continue
+                    elif (grep -q 'ipv6' <<<"${sAnnoncer}"); then
+                        nEnable=0
+                        ((nCountAnnoncers++))
+                        aAnnoncersIpv+=("${sAnnoncer}")
+                        aAnnoncers[${nId}]="t${nId} ${nEnable}"
+                        echo "${sAnnoncer}"
+                        ((nId++))
+                        continue
+                    elif (grep -q 'http://' <<<"${sAnnoncer}"); then
+                        nEnable=1
+                        ((nCountAnnoncers++))
+                        aAnnoncersHttp+=("${sAnnoncer}")
+                        aAnnoncers[${nId}]="t${nId} ${nEnable}"
+                        echo "${sAnnoncer}"
+                        ((nId++))
+                        continue
+                    elif (grep -q 'https://' <<<"${sAnnoncer}"); then
+                        nEnable=1
+                        ((nCountAnnoncers++))
+                        aAnnoncersHttps+=("${sAnnoncer}")
+                        aAnnoncers[${nId}]="t${nId} ${nEnable}"
+                        echo "${sAnnoncer}"
+                        ((nId++))
+                        continue
+                    else
+                        ((nId++))
+                    fi
+                done
+                echo "There is ${nCountAnnoncers} annoncer(s) in ${sTorrentLoaded}"
+                echo "UDP: ${#aAnnoncersUdp[*]}"
+                echo "IPv6: ${#aAnnoncersIpv[*]}"
+                echo "HTTP: ${#aAnnoncersHttp[*]}"
+                echo "HTTPs: ${#aAnnoncersHttps[*]}"
+                echo "--------------"
+                if [ "${nCountAnnoncers}" -eq 0 ]; then
+                    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.stop ${sInfoHash}
+                    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.close ${sInfoHash}
+                else
+                    if [ "${nLeftBytes}" -eq 0 ]; then
+                        if [ -z "$(cmdMySQL 'MySB_db' "SELECT id_torrents FROM torrents WHERE info_hash='${sInfoHash}' AND name='${sName}' AND tree='${sBasePath}';")" ]; then
+                            cmdMySQL 'MySB_db' "INSERT INTO torrents (info_hash,name,privacy,state,tree) VALUES ('${sInfoHash}', '${sName}', '${sPrivacy}', 'completed', '${sBasePath}');" -v
+                        else
+                            cmdMySQL 'MySB_db' "UPDATE torrents SET state='completed' WHERE info_hash='${sInfoHash}' AND tree='${sBasePath}'" -v
+                        fi
+                    fi
+                fi
+
+                #### Step 2 - Disable UDP & IPv6 annoncers
+                bCleaned=0
+                for ((i = 0; i < ${#aAnnoncers[@]}; i++)); do
+                    bState="$(echo ${aAnnoncers[${i}]} | awk '{printf $2}')"
+                    if [ "${bState}" -eq 0 ]; then
+                        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${aAnnoncers[${i}]} >/dev/null
+                        bCleaned=1
+                    fi
+                done
+                if [ ${bCleaned} -eq 1 ]; then
+                    echo "Cleaning annoncers completed !"
+                    echo "--------------"
+                fi
+
+                #### Step 3 - Prepare annoncers (HTTP & HTTPs) list for GetTrackersCert.bsh script
+                bExecute=0
+                for sAnnoncer in "${aAnnoncersHttps[@]}" "${aAnnoncersHttp[@]}" "${aAnnoncersUdp[@]}"; do
+                    if [ -n "${sAnnoncer}" ]; then
+                        if (! grep -q "${sAnnoncer}" <<</home/.check_annoncers_${sUser}); then
+                            echo "${sAnnoncer}|${sPrivacy}" >>"/home/.check_annoncers_${sUser}"
+                            bExecute=1
+                        fi
+                    fi
+                done
+                [ "${bExecute}" -eq 1 ] && /bin/bash "${MySB_InstallDir}/scripts/GetTrackersCert.bsh" USER "${sUser}" &>/dev/null
+
+                if [ "${#aAnnoncersHttp[*]}" -gt 0 ] || [ "${#aAnnoncersHttps[*]}" -gt 0 ]; then
+                    #### Step 4 - Wait after annoncers check
+                    while [ -s "/home/.check_annoncers_${sUser}" ]; do
+                        echo "Waiting for '/home/.check_annoncers_${sUser}'"
+                        sleep 1
+                    done
+                    echo "--------------"
+
+                    #### Step 5 - Restore validated annoncers
+                    for ((i = 0; i < ${#aAnnoncers[@]}; i++)); do
+                        nId="$(echo ${aAnnoncers[${i}]} | awk '{printf $1}')"
+                        bState="$(echo ${aAnnoncers[${i}]} | awk '{printf $2}')"
+                        if [ "${bState}" -eq 1 ]; then
+                            sGetUrl="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.url ${sInfoHash}:${nId})"
+                            if [ -n "${sGetUrl}" ]; then
+                                echo "Checking: ${sGetUrl}"
+
+                                # extract the protocol
+                                sProto="$(echo "${sGetUrl}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')"
+                                echo "  Protocol: ${sProto}"
+                                # remove the protocol
+                                sURL=$(echo "${sGetUrl}" | sed -e s,${sProto},,g)
+                                echo "  URL: ${sURL}"
+                                # extract the user (if any)
+                                sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)"
+                                # extract the host and port
+                                sHostPort=$(echo "${sURL}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
+                                echo "  Host & Port: ${sHostPort}"
+                                # by request host without port
+                                sHost="$(echo "${sHostPort}" | sed -e 's,:.*,,g')"
+                                echo "  Host: ${sHost}"
+                                # by request - try to extract the port
+                                sPort="$(echo "${sHostPort}" | sed -e 's,^.*:,:,g' -e 's,.*:\([0-9]*\).*,\1,g' -e 's,[^0-9],,g')"
+                                case ${sPort#[-+]} in
+                                    *[!0-9]* | '')
+                                        case "${sProto//:\/\//}" in
+                                            'http' | 'udp') sPort=80 ;;
+                                            'https')        sPort=443 ;;
+                                        esac
+                                        ;;
+                                esac
+                                echo "  Port: ${sPort}"
+                                # extract the path (if any)
+                                sURI="$(echo "${sURL}" | grep '/' | cut -d/ -f2-)"
+                                echo "  URI: ${sURI}"
+
+                                # Get if activate
+                                bIsActive="$(cmdMySQL 'MySB_db' "SELECT is_active FROM trackers_list WHERE tracker='${sHost}' AND tracker_proto='${sProto//:\/\//}' AND tracker_port='${sPort}';")"
+                                bIsActive="${bIsActive:-1}"
+                                xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${nId} ${bIsActive} >/dev/null
+                                [ "${bIsActive}" -eq 1 ] && sResult="Enabled" || sResult="Disabled"
+                                echo "${sResult}: ${sGetUrl}"
+                            else
+                                echo "sGetUrl is empty !!!"
+                            fi
+                        fi
+                    done
+                    [ "${#aAnnoncers[@]}" -gt 0 ] && echo "--------------"
+                fi
+
+                #### Step 6 - Copy back torrent loaded & start it
+                [ "${nCountAnnoncers}" -gt 0 ] && sAction=("d.open") || sAction=("d.close")
+                xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} "${sAction[@]}" ${sInfoHash} >/dev/null
+                [ "${nCountAnnoncers}" -gt 0 ] && xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.start ${sInfoHash} >/dev/null
+                xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash} >/dev/null
+            done </tmp/sessions
+            rm /tmp/sessions
+
+            /bin/bash /home/"${sUser}"/.rTorrent_tasks.sh 'quota'
+        done
+        ;;
 esac
 
 # -----------------------------------------
-source $(dirname $0)/../inc/includes_after
+# shellcheck source=inc/includes_after
+source "$(dirname "$0")"/../inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

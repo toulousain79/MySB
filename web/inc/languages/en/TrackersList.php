@@ -25,10 +25,16 @@
 define('User_TrackersAdd_Btn_RemoveLastTracker', 'Failed !<br /><br />It was not possible to delete tracker.');
 define('User_TrackersList_Table_Domain', 'Domain');
 define('User_TrackersList_Table_Address', 'Address');
-define('User_TrackersList_Table_Origin', 'Origin');
+define('User_TrackersList_Table_Privacy', 'Privacy');
+define('User_TrackersList_Table_PrivacyPublic', 'Public');
+define('User_TrackersList_Table_PrivacyPrivate', 'Private');
+define('User_TrackersList_Table_Port', 'Port');
+define('User_TrackersList_Table_Proto', 'Protocol');
 define('User_TrackersList_Table_IPv4', 'IPv4');
+define('User_TrackersList_Table_IsBanned', 'IP banned by<br />PeerGuardian');
 define('User_TrackersList_Table_PingResult', 'Ping Result');
 define('User_TrackersList_Table_IsSSL', 'SSL ?');
 define('User_TrackersList_Table_Expiration', 'Certificate<br />Expiration');
+define('User_TrackersList_Table_PglBlock', 'Blocked by<br />PeerGuardian');
 
 //#################### LAST LINE ######################################

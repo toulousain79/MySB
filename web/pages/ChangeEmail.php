@@ -81,7 +81,7 @@ if ( isset($_POST['submit']) ) {
 		$message = Global_CompleteAllFields;
 	}
 
-	GenerateMessage('message_only', $type, $message, '');
+	GenerateMessage('message_only', $type, $message);
 }
 
 Form();

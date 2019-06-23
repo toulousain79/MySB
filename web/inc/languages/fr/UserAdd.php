@@ -29,8 +29,8 @@ define('MainUser_UserAdd_AccountType', 'Type de compte :');
 define('MainUser_UserAdd_Quota', 'Quota (GB) :');
 define('MainUser_UserAdd_AddUser', 'Ajouter cet utilisateur');
 define('MainUser_UserAdd_VerifError', 'Erreur entre l\'email saisie et la v&eacute;rification.');
-define('MainUser_UserAdd_QuotaMinValue', 'Veuillez saisir une valeur sup&eacute;rieur ou &eacute;gale &agrave; 5.<br />Ou laisser le champs vide.');
-define('MainUser_UserAdd_QuotaMinValueEdit', 'Veuillez saisir une valeur sup&eacute;rieur ou &eacute;gale &agrave; 5 pour le quota.');
+define('MainUser_UserAdd_QuotaMinValue', 'Veuillez saisir une valeur sup&eacute;rieur ou &eacute;gale à 5.<br />Ou laisser le champs vide.');
+define('MainUser_UserAdd_QuotaMinValueEdit', 'Veuillez saisir une valeur sup&eacute;rieur ou &eacute;gale à 5 pour le quota.');
 define('MainUser_UserAdd_BadAddress', 'L\'adresse e-mail indiqu&eacute;e n\'est pas valide !');
 define('MainUser_UserAdd_AlreadyUsed', 'Nom d\'utilisateur d&eacute;j&agrave; utilis&eacute; !');
 define('MainUser_UserAdd_UserDontExist', 'Echec !<br /><br />L\'utilisateur n\'existe pas ...');
@@ -47,7 +47,7 @@ define('MainUser_UserAdd_Table_Monthly', 'Mensualit&eacute;');
 define('MainUser_UserAdd_Table_CreatedAt', 'Date de<br />cr&eacute;ation');
 define('MainUser_UserAdd_QuotaTypeManual', 'manuel');
 define('MainUser_UserAdd_PasswordOK', 'Modifi&eacute;');
-define('MainUser_UserAdd_Comment_FreeSpace', 'Espace disponible: %s<br />Espace r&eacute;elle disponible: %s');
+define('MainUser_UserAdd_Comment_FreeSpace', 'Espace disponible: %s<br />Espace r&eacute;el disponible: %s');
 define('MainUser_UserAdd_Comment', 'Un compte "<b>normal</b>" disposera de tous les services.<br />
 Un compte "<b>plex</b>" ne disposera d\'aucun service. Ce type de compte est conseill&eacute; pour les utilisateurs acc&eacute;dant uniquement &agrave; Plex.<br />
 Les services tels que ruTorrent, Cakebox, Seedbox Manager, OpenVPN et NextCloud ne seront pas disponibles.<br />

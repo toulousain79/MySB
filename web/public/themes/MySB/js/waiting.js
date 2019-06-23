@@ -16,43 +16,40 @@
    modify this software provided this
    notice appears on all copies.
 */
-function ButtonClicked(origin)
-{
-	switch (origin) {
-		case 'config':
-			ElementButton = "ApplyConfigButton";
-			ElementReplace = "ApplyConfigButtonReplace";
-			break;
-		case 'page':
-			ElementButton = "PageSubmitButton";
-			ElementReplace = "PageButtonReplace";
-			break;
-	}
+function ButtonClicked(origin) {
+   switch (origin) {
+      case 'config':
+         ElementButton = "ApplyConfigButton";
+         ElementReplace = "ApplyConfigButtonReplace";
+         break;
+      default:
+         ElementButton = "PageSubmitButton";
+         ElementReplace = "PageButtonReplace";
+         break;
+   }
    document.getElementById(ElementButton).style.display = "none"; // to undisplay
    document.getElementById(ElementReplace).style.display = ""; // to display
    return true;
 }
 var FirstLoading = true;
-function RestoreSubmitButton(origin)
-{
-	switch (origin) {
-		case 'config':
-			ElementButton = "ApplyConfigButton";
-			ElementReplace = "ApplyConfigButtonReplace";
-			break;
-		case 'page':
-			ElementButton = "PageSubmitButton";
-			ElementReplace = "PageButtonReplace";
-			break;
-	}
+function RestoreSubmitButton(origin) {
+   switch (origin) {
+      case 'config':
+         ElementButton = "ApplyConfigButton";
+         ElementReplace = "ApplyConfigButtonReplace";
+         break;
+      default:
+         ElementButton = "PageSubmitButton";
+         ElementReplace = "PageButtonReplace";
+         break;
+   }
 
-   if( FirstLoading )
-   {
-	  FirstLoading = false;
-	  return;
+   if (FirstLoading) {
+      FirstLoading = false;
+      return;
    }
    document.getElementById(ElementButton).style.display = ""; // to display
    document.getElementById(ElementReplace).style.display = "none"; // to undisplay
 }
 // To disable restoring submit button, disable or delete next line.
-document.onfocus = RestoreSubmitButton;
+document.onfocus = RestoreSubmitButton();

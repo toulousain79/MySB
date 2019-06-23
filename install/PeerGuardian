@@ -1,6 +1,7 @@
 #!/bin/bash
 # ----------------------------------
-source $(dirname $0)/../inc/includes_before
+# shellcheck source=inc/includes_before
+source "$(dirname "$0")/../inc/includes_before"
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -33,69 +34,71 @@ source $(dirname $0)/../inc/includes_before
 ######################################################################
 
 #### Switch (INSTALL/UPGRADE/INIT)
-if [ ! -z "$1" ]; then
-	gsSwitch="$1"
+if [ -n "$1" ]; then
+    gsSwitch="$1"
 fi
 
-if [ "$gbToInstall_PeerGuardian" == "YES" ]; then
-	#### Cleaning security rules
-	gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'clean'
-	if gfnCheckCommand 0 dnscrypt-proxy; then
-		gfnManageServices stop "dnscrypt-proxy"
-	fi
+if [ "${gbToInstall_PeerGuardian}" == "YES" ]; then
+    #### Cleaning security rules
+    gfnScriptInvoke 'source' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'clean'
+    if gfnCheckCommand 0 dnscrypt-proxy; then
+        gfnManageServices stop "dnscrypt-proxy"
+    fi
 
-	#### Install Packages
-	if ! gfnCheckCommand 0 pglcmd; then
-		gfnPackageBundleInstall 'pgld pglcmd pglgui'
-	fi
+    #### Install Packages
+    if ! gfnCheckCommand 0 pglcmd; then
+        sPackages=(pgld pglcmd pglgui)
+        gfnPackageBundleInstall "${sPackages[@]}"
+    fi
 
-	#### Create config files
-	cp -vf $MySB_InstallDir/templates/other/etc.pgl.pglcmd.conf.tmpl /etc/pgl/pglcmd.conf
+    #### Create config files
+    cp -vf "${MySB_InstallDir}"/templates/other/etc.pgl.pglcmd.conf.tmpl /etc/pgl/pglcmd.conf
 
-	# Create '/etc/pgl/pglcmd.conf'
-	gfnPeerGuardianPglcmdConf 0
+    # Create '/etc/pgl/pglcmd.conf'
+    gfnPeerGuardianPglcmdConf 0
 
-	# Create '/etc/pgl/allow.p2p'
-	gfnPeerGuardianAllowP2P 0
+    # Create '/etc/pgl/allow.p2p'
+    gfnPeerGuardianAllowP2P 0
 
-	# Restart PeerGuardian with the params
-	pglcmd restart
+    # Remove Ipv6
+    rm -fv /etc/pgl/ipv6.*
 
-	# Create '/etc/pgl/blocklists.list'
-	if [ "$gsSwitch" != "UPGRADE" ]; then
-		gfnPeerGuardianBlocklistsList 0 "UpdateLists"
-	fi
+    # Restart PeerGuardian with the params
+    pglcmd restart
 
-	# Create '/etc/pgl/blocklists.list'
-	gfnPeerGuardianBlocklistsList 0 "CreateFile"
+    # Create '/etc/pgl/blocklists.list'
+    gfnPeerGuardianBlocklistsList 0 "CreateFile"
 
-	#### Disable init, service will be started by MySB_SecurityRules
-	systemctl daemon-reload
-	systemctl disable pgl
+    # Update activated list
+    if [ "$gsSwitch" != "UPGRADE" ]; then
+        gfnPeerGuardianBlocklistsList 0 "UpdateLists"
+    fi
 
-	# Remove Ipv6
-	rm -fv /etc/pgl/ipv6.*
+    #### Disable init, service will be started by MySB_SecurityRules
+    systemctl daemon-reload
+    systemctl disable pgl
 
-	#### START services
-	gfnManageServices start "pglcmd"
+    #### START services
+    gfnManageServices start "pglcmd"
 
-	#### Clean current log file
-	gfnLogRotate 'pglcmd'
-	gfnLogRotate 'pgld'
+    #### Clean current log file
+    gfnLogRotate 'pglcmd'
+    gfnLogRotate 'pgld'
 
-	#### Check if service is OK and running
-	if gfnCheckCommand 0 pgld; then
-		cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='1' WHERE serv_name='PeerGuardian';" -v
-		gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create'
-	else
-		cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='PeerGuardian';" -v
-	fi
+    #### Check if service is OK and running
+    if gfnCheckCommand 0 pgld; then
+        cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='1' WHERE serv_name='PeerGuardian';" -v
+        gfnScriptInvoke 'source' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'create'
+    else
+        cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='PeerGuardian';" -v
+    fi
 
-	#### Check internet
-	ping -c5 github.com
+    #### Check internet
+    ping -c5 github.com
 fi
 
 # -----------------------------------------
-source $(dirname $0)/../inc/includes_after
+# shellcheck source=inc/includes_after
+source "$(dirname "$0")/../inc/includes_after"
 # -----------------------------------------
 ##################### LAST LINE ######################################

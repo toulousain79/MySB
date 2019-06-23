@@ -53,7 +53,7 @@ define('User_Synchronization_FileName', 'Name');
 define('User_Synchronization_SynchroDirect', 'Direct');
 define('User_Synchronization_SynchroCron', 'Planned');
 define('User_Synchronization_Comments', 'Comments');
-define('User_Synchronization_Title_Ident', '<b>3 - Login informations for remote synchronizations (direct and programmed)</b>');
+define('User_Synchronization_Title_Ident', '<b>3 - Login informations for remote synchronizations (direct, programmed and manual)</b>');
 define('User_Synchronization_ModeSync', 'Method');
 define('User_Synchronization_ModeSync_FTP', 'FTP(s)');
 define('User_Synchronization_ModeSync_RSYNC', 'RSYNC');
@@ -76,5 +76,7 @@ define('User_Synchronization_Title_DownloadedFiles', 'Put a download in the wait
 define('User_Synchronization_Files', 'List of downloads');
 define('User_Synchronization_AddFiles', 'Add to list');
 define('User_Synchronization_AddFilesComment', 'Resets a download from the list of synchronizations.');
+// Tooltip
+define('User_Synchronization_TT_Documentation', '<a target="_blank" href="https://mysb.gitbook.io/doc/configuration/labels-and-synchros">Access the documentation</a>');
 
 //#################### LAST LINE ######################################

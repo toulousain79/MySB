@@ -1,6 +1,7 @@
 #!/bin/bash
 # ----------------------------------
-source $(dirname $0)/../inc/includes_before
+# shellcheck source=inc/includes_before
+source "$(dirname "$0")"/../inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -36,15 +37,15 @@ if [ "$CONTINUE" == "$Global_NO" ]; then
 fi
 
 echo -e -n "${CBLUE}Creating the list of packages to be deleted$CEND..."
-PackagesToRemove="`grep -rni --exclude="MySB_CleanAll.bsh" 'gfnPackagesManage install' $MySB_InstallDir | cut -d '"' -f 2`"
+PackagesToRemove="$(grep -rni --exclude="MySB_CleanAll.bsh" 'gfnPackagesManage install' $MySB_InstallDir | cut -d '"' -f 2)"
 gfnStatusSTD
 
 echo -e -n "${CBLUE}Creating the list of packages that must be kept$CEND..."
-PackagesToKeep="`grep -rni --exclude="MySB_CleanAll.bsh" 'TOOLS=' $MySB_InstallDir/install/MySB_Install.bsh | cut -d '"' -f 2`"
+PackagesToKeep="$(grep -rni --exclude="MySB_CleanAll.bsh" 'TOOLS=' "$MySB_InstallDir"/install/MySB_Install.bsh | awk -F'[(|)]' '{print $2}')"
 gfnStatusSTD
 
 echo -e -n "${CBLUE}Creating the list of services that need to be stopped$CEND..."
-ServicesToStop="`grep -rni --exclude="MySB_CleanAll.bsh" 'gfnManageServices start' $MySB_InstallDir | cut -d '"' -f 2`"
+ServicesToStop="$(grep -rni --exclude="MySB_CleanAll.bsh" 'gfnManageServices start' $MySB_InstallDir | cut -d '"' -f 2)"
 gfnStatusSTD
 
 #### Clean security rules
@@ -54,7 +55,7 @@ gfnScriptInvoke 'source' "$MySB_InstallDir/bin/MySB_SecurityRules" 'clean'
 ToStop=""
 for Service in $ServicesToStop; do
 	if [ "$Service" != '$ServicesToManage' ] && [ "$Service" != 'ssh' ]; then
-		if [ "`echo $ToStop | grep "$Service"`" == "" ]; then
+		if [ "$(echo $ToStop | grep "$Service")" == "" ]; then
 			ToStop="$ToStop $Service"
 		fi
 	fi
@@ -68,7 +69,7 @@ done
 
 #### Delete CRON
 gfnListCountUsers 'all'
-crontab -l > /tmp/crontab.tmp
+crontab -l >/tmp/crontab.tmp
 for seedUser in $gsUsersList; do
 	sed -i '/'$seedUser'/d' /tmp/crontab.tmp
 done
@@ -89,7 +90,7 @@ rm -f /tmp/crontab.tmp
 #### Force nameserver
 sed -i '/nameserver/d' /etc/resolv.conf
 (
-cat <<'EOF'
+	cat <<'EOF'
 nameserver 208.67.220.220
 nameserver 9.9.9.9
 nameserver 4.2.2.1
@@ -101,12 +102,12 @@ nameserver 4.2.2.4
 nameserver 4.2.2.5
 nameserver 4.2.2.6
 EOF
-) >> /etc/resolv.conf
+) >>/etc/resolv.conf
 
 #### Remove system account for all users
 for seedUser in $gsUsersList; do
-	userdel --remove --force $seedUser &> /dev/null
-	if [ -d /home/$seedUser ]; then rm -rf /home/$seedUser; fi
+	userdel --remove --force $seedUser &>/dev/null
+	if [ -d /home/$seedUser ]; then rm -rf /home/${seedUser:?}; fi
 	if [ -d /var/run/screen/S-$seedUser ]; then rm -rf /var/run/screen/S-$seedUser; fi
 done
 
@@ -120,14 +121,14 @@ done
 # To remove
 ToRemove=""
 for Package in $PackagesToRemove; do
-	if [ "`dpkg -l | grep $Package`" != "" ]; then
+	if [ "$(dpkg -l | grep $Package)" != "" ]; then
 		ToRemove="$ToRemove $Package"
 	fi
 done
 
 # Exclude packages to keep from packages to remove
 for ToKeep in $ToKeep; do
-	PackagesToRemove="`echo $PackagesToRemove | sed 's/$ToKeep//g;'`"
+	PackagesToRemove="$(echo $PackagesToRemove | sed 's/$ToKeep//g;')"
 done
 
 gfnPackagesManage purge "$ToRemove"
@@ -150,6 +151,7 @@ if [ -d $MySB_InstallDir ]; then rm -rf $MySB_InstallDir; fi
 systemctl daemon-reload
 
 # -----------------------------------------
-if [ -f $(dirname $0)/../inc/includes_after ]; then source $(dirname $0)/../inc/includes_after; fi
+# shellcheck source=inc/includes_after
+if [ -f "$(dirname "$0")"/../inc/includes_after ]; then source "$(dirname "$0")"/../inc/includes_after; fi
 # -----------------------------------------
 ##################### LAST LINE ######################################

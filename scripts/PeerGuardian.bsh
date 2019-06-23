@@ -1,6 +1,8 @@
 #!/bin/bash
+# rev 5.5
 # ----------------------------------
-source $(dirname $0)/../inc/includes_before
+# shellcheck source=inc/includes_before
+source "$(dirname "$0")"/../inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -26,31 +28,32 @@ source $(dirname $0)/../inc/includes_before
 
 LocSwitch="$1"
 
-if [ ! -z "$LocSwitch" ] && gfnCheckCommand 0 pglcmd; then
-	case "$LocSwitch" in
-		"update")
-			#### Force PeerGuardian List Update
-			pglcmd update > $MySB_InstallDir/temp/pglcmd_update.log
-
-			#### Get date time from file
-			cat $MySB_InstallDir/temp/pglcmd_update.log | grep 'last modified:' | sed 's/)/:00/g;' | while read Lign; do
-				ListName="`echo $Lign | awk '{ print $1 }'`"
-				DateHour="`echo $Lign | sed 's/modified:/#/g;' | cut -d "#" -f 2 | sed 's/^ //g;'`"
-				cmdMySQL 'MySB_db' "UPDATE blocklists SET peerguardian_lastupdate = '$DateHour' WHERE pgl_list_name = '$ListName';" -v
-			done
-		;;
-		"check")
-			if ! gfnGetPid pglcmd; then
-				gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/bin/MySB_SecurityRules" 'create' 'CRON'
-			fi
-			if ! gfnGetPid pglcmd; then
-				gfnSendMail "$Global_Subject_PeerGuardianCheck" "$gsMainUserName" "pgl_check" "PeerGuardian is dead !"
-			fi
-		;;
-	esac
+if [ -n "${LocSwitch}" ] && gfnCheckCommand 0 pglcmd; then
+    case "${LocSwitch}" in
+        "update")
+            # shellcheck source=/dev/null
+            source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_PeerGuardian
+            gfnPeerGuardianBlocklistsList 1 "UpdateLists"
+            ;;
+        "check")
+            if (! gfnGetPid pglcmd); then
+                echo "$(date +%Y/%m/%d\ %H:%M:%S) - Waiting 10 seconds..."
+                sleep 10
+            fi
+            if (! gfnGetPid pglcmd); then
+                echo "$(date +%Y/%m/%d\ %H:%M:%S) - Force creating of security rules !"
+                gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'create' 'CRON'
+            fi
+            if (! gfnGetPid pglcmd); then
+                echo "$(date +%Y/%m/%d\ %H:%M:%S) - PeerGuardian is dead, sending a mail !"
+                gfnSendMail "$Global_Subject_PeerGuardianCheck" "${gsMainUserName}" "pgl_check" "PeerGuardian is dead !"
+            fi
+            ;;
+    esac
 fi
 
 # -----------------------------------------
-source $(dirname $0)/../inc/includes_after
+# shellcheck source=inc/includes_after
+source "$(dirname "$0")"/../inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

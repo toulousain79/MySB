@@ -1,6 +1,7 @@
 #!/bin/bash
 # ----------------------------------
-source $(dirname $0)/../inc/includes_before
+# shellcheck source=inc/includes_before
+source "$(dirname "$0")"/../inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -25,60 +26,69 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### Install rTorrent v0.9.6
-gfnPackageBundleInstall 'rtorrent buildtorrent mktorrent mediainfo ffmpeg aria2'
+sPackages=(rtorrent buildtorrent mktorrent mediainfo ffmpeg transmission-cli automake libcppunit-dev libtool zlib1g-dev gawk libncursesw5-dev libxmlrpc-c++8-dev)
+gfnPackageBundleInstall "${sPackages[@]}"
 
 #### Install rTorrent v0.9.7
-# gnRTorrentUpgrade=0
+gnRTorrentUpgrade=0
 
 #### Install rTorrent
 # XMLRPC-C
 # gfnGetRepoValues 'XMLRPC' && gfnRepoManageByType
 # if [ $gnRepoUpgrade -eq 1 ] || [ "$gsSwitch" == "INSTALL" ]; then
-	# gnRTorrentUpgrade=1
-	# cd $gsRepoDir/
-	# if [ -f config.mk ] && [ -f common.mk ]; then
-		# make clean
-	# fi
-	# autoreconf
-	# ./configure --disable-abyss-server --disable-abyss-threads --disable-abyss-openssl --disable-cgi-server --disable-cplusplus --disable-libwww-client --disable-wininet-client
-	# make -j$gsProcessors
-	# make install
-	# Disable the upgrade job
-	# cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='XMLRPC';" -v
+#     gnRTorrentUpgrade=1
+#     cd ${gsRepoDir}/ || exit
+#     if [ -f config.mk ] && [ -f common.mk ]; then
+#         make clean
+#     fi
+#     autoreconf
+#     ./configure --disable-abyss-server --disable-abyss-threads --disable-abyss-openssl --disable-cgi-server --disable-cplusplus --disable-libwww-client --disable-wininet-client
+#     make -j${gsProcessors}
+#     make install
+#     cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='XMLRPC';" -v
 # fi
 
-# LIBtorrent
-# gfnGetRepoValues 'LibTorrent' && gfnRepoManageByType
-# if [ $gnRepoUpgrade -eq 1 ] || [ "$gsSwitch" == "INSTALL" ]; then
-	# gnRTorrentUpgrade=1
-	# cd $gsRepoDir/
-	# make clean
-	# ./autogen.sh
-	# ./configure --with-posix-fallocate
-	# make -j$gsProcessors
-	# make install
-	# ldconfig
-	# Disable the upgrade job
-	# cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='LibTorrent';" -v
-# fi
+#### LIBtorrent
+gfnGetRepoValues 'LibTorrent' && gfnRepoManageByType
+if [ $gnRepoUpgrade -eq 1 ] || [ "$gsSwitch" == "INSTALL" ]; then
+    gnRTorrentUpgrade=1
+    cd ${gsRepoDir}/ || exit
+    # git checkout v0.13.7
+    # git cherry-pick 7b29b6b
+    make clean
+    ./autogen.sh
+    ./configure --with-posix-fallocate --disable-debug
+    make -j${gsProcessors}
+    make install
+    ldconfig
+    cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='LibTorrent';" -v
+fi
 
-# rTorrent
-# gfnGetRepoValues 'rTorrent' && gfnRepoManageByType
-# if [ $gnRepoUpgrade -eq 1 ] || [ $gnRTorrentUpgrade -eq 1 ] || [ "$gsSwitch" == "INSTALL" ]; then
-	# cd $gsRepoDir/
-	# libtorrent_LIBS=/usr/local/lib/
-	# libtorrent_CFLAGS=/usr/local/lib/
-	# make clean
-	# ./autogen.sh
-	# ./configure --with-xmlrpc-c --with-ncurses
-	# make -j$gsProcessors
-	# make install
-	# ldconfig
-	# Disable the upgrade job
-	# cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='rTorrent';" -v
-# fi
+#### rTorrent
+gfnGetRepoValues 'rTorrent' && gfnRepoManageByType
+if [ $gnRepoUpgrade -eq 1 ] || [ $gnRTorrentUpgrade -eq 1 ] || [ "$gsSwitch" == "INSTALL" ]; then
+    cd ${gsRepoDir}/ || exit
+    # libtorrent_LIBS=/usr/local/lib/
+    # libtorrent_CFLAGS=/usr/local/lib/
+    # export libtorrent_LIBS libtorrent_CFLAGS
+    # git checkout v0.9.7
+    make clean
+    ./autogen.sh
+    ./configure --with-xmlrpc-c --with-ncurses --disable-debug
+    make -j${gsProcessors}
+    make install
+    ldconfig
+    cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='rTorrent';" -v
+fi
+
+#### Trackers check
+# /run/rtorrent
+install -v -o root -g MySB_users -m 0775 -d "/run/rtorrent"
+# xmlrpc2scgi.py
+install -v -o root -g root -m 0755 $MySB_InstallDir/templates/rtorrent/xmlrpc2scgi.py.tmpl /usr/local/bin/xmlrpc2scgi.py
 
 # -----------------------------------------
-source $(dirname $0)/../inc/includes_after
+# shellcheck source=inc/includes_after
+source "$(dirname "$0")"/../inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

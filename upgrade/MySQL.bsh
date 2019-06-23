@@ -1,27 +1,49 @@
-#### 1 - ALTER some tables - BoF
+#!/bin/bash
+# rev 5.5
 
+#### 1 - ALTER some tables - BoF
+# blocklists
+cmdMySQL 'MySB_db' "DROP TABLE blocklists;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE blocklists ADD update_id VARCHAR(256) DEFAULT '' AFTER list_id;" -v
+# system
+cmdMySQL 'MySB_db' "ALTER TABLE system ADD files_recycling TINYINT(1) NOT NULL DEFAULT '1' AFTER ip_restriction;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE system ADD public_tracker_allow VARCHAR(7) NOT NULL DEFAULT 'public' AFTER ipv4_additional;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE system ADD block_annoncers TINYINT(1) NOT NULL DEFAULT '1' AFTER public_tracker_allow;" -v
+# trackers_list
+cmdMySQL 'MySB_db' "ALTER TABLE trackers_list ADD tracker_proto VARCHAR(5) NOT NULL DEFAULT 'http' AFTER tracker;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE trackers_list ADD tracker_port SMALLINT(5) NOT NULL DEFAULT '80' AFTER tracker_domain;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE trackers_list ADD tracker_uri VARCHAR(32) NOT NULL DEFAULT '/' AFTER tracker_port;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE trackers_list ADD privacy VARCHAR(7) DEFAULT '' AFTER tracker_uri;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE trackers_list ADD is_dead TINYINT(1) NOT NULL DEFAULT '0' AFTER to_delete;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE trackers_list DROP COLUMN ping;" -v 2>/dev/null
+# trackers_list_ipv4
+cmdMySQL 'MySB_db' "ALTER TABLE trackers_list_ipv4 ADD pgl_banned TINYINT(1) NOT NULL DEFAULT '0' AFTER ipv4;" -v
+cmdMySQL 'MySB_db' "ALTER TABLE trackers_list_ipv4 ADD ping VARCHAR(64) NOT NULL DEFAULT '' AFTER pgl_banned;" -v
+# users
+cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_notify='1' WHERE account_type='normal';" -v
 #### 1 - ALTER some tables - EoF
 
 #### 2 - Import Schema for new tables, triggers & constraints - BoF
-mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/mysql/Schema.sql
-mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/mysql/Triggers.sql
+mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Schema.sql"
+mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Triggers.sql"
 #### 2 - Import Schema for new tables, triggers & constraints - EoF
 
 #### 3 - UPDATE some tables - BoF
+# blocklists
+cmdMySQL 'MySB_db' "DELETE FROM blocklists;" -v
+mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Table_blocklists.sql"
 # lets_encrypt
 cmdMySQL 'MySB_db' "DELETE FROM lets_encrypt;" -v
-mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/mysql/Table_lets_encrypt.sql
+mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Table_lets_encrypt.sql"
 # providers_monitoring
 cmdMySQL 'MySB_db' "DELETE FROM providers_monitoring;" -v
-mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/mysql/Table_providers_monitoring.sql
+mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Table_providers_monitoring.sql"
 # repositories
 cmdMySQL 'MySB_db' "DELETE FROM repositories;" -v
-mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose < $MySB_InstallDir/templates/mysql/Table_repositories.sql
+mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Table_repositories.sql"
 cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='NextCloud';" -v
-cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='GeoIPupdate';" -v
-cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='libsmbclient-php';" -v
-cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='Minisign';" -v
-# services
-cmdMySQL 'MySB_db' "UPDATE services SET port_tcp2 = '', port_tcp3 = '' WHERE serv_name='NginX';" -v
-cmdMySQL 'MySB_db' "UPDATE services SET port_tcp2 = '' WHERE serv_name='SSH';" -v
+cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='LibTorrent';" -v
+cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='rTorrent';" -v
+cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='Wolf CMS';" -v
+cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='ruTorrent';" -v
 #### 3 - UPDATE some tables - EoF

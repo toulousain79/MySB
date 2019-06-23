@@ -24,11 +24,11 @@
 
 // Get the full URL of the current page
 function current_page_url() {
-    $page_url   = 'http';
-    if(isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on'){
-        $page_url .= 's';
-    }
-    return $page_url.'://'.$_SERVER['SERVER_NAME'].':'.$_SERVER['SERVER_PORT'].$_SERVER['REQUEST_URI'];
+	$page_url   = 'http';
+	if(isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on'){
+		$page_url .= 's';
+	}
+	return $page_url.'://'.$_SERVER['SERVER_NAME'].':'.$_SERVER['SERVER_PORT'].$_SERVER['REQUEST_URI'];
 }
 
 // Sort array
@@ -70,7 +70,7 @@ function array_sort($array, $on, $order=SORT_ASC) {
 function GetSizeName($octet, $unit=true) {
 	switch (strtoupper(substr($octet,-2))) {
 		case 'KB':
-			$octet = $octet*1024;
+			$octet = intval($octet)*1024;
 			break;
 
 		default:
@@ -451,7 +451,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
 					switch ($_SESSION['Language']) {
 						case 'fr':
-							$link = 'https://mysb.gitbook.io/doc/v/v5.4_fr/';
+							$link = 'https://mysb.gitbook.io/doc/v/v99.99_fr/';
 							break;
 						default:
 							$link = 'https://github.com/toulousain79/MySB/wiki';
@@ -464,7 +464,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						switch ($_SESSION['Language']) {
 							case 'fr':
 								$title = $menu->title_fr;
-								$link = 'https://mysb.gitbook.io/doc/v/v5.4_fr/configuration/plex-media-server-and-tautulli';
+								$link = 'https://mysb.gitbook.io/doc/v/v99.99_fr/configuration/plex-media-server-and-tautulli';
 								echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
 								break;
 							default:
@@ -477,7 +477,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					switch ($_SESSION['Language']) {
 						case 'fr':
 							$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-							$link = 'https://mysb.gitbook.io/doc/v/v5.4_fr/mysb-en-detail/les-listes-noires';
+							$link = 'https://mysb.gitbook.io/doc/v/v99.99_fr/mysb-en-detail/les-listes-noires';
 							echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
 							break;
 						default:
@@ -490,7 +490,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						switch ($_SESSION['Language']) {
 							case 'fr':
 								$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-								$link = 'https://mysb.gitbook.io/doc/v/v5.4_fr/mysb-en-detail/les-trackers';
+								$link = 'https://mysb.gitbook.io/doc/v/v99.99_fr/mysb-en-detail/les-trackers';
 								echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
 								break;
 							default:
@@ -504,7 +504,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						switch ($_SESSION['Language']) {
 							case 'fr':
 								$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-								$link = 'https://mysb.gitbook.io/doc/v/v5.4_fr/securite/restriction-par-adresse-ip';
+								$link = 'https://mysb.gitbook.io/doc/v/v99.99_fr/securite/restriction-par-adresse-ip';
 								echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
 								break;
 							default:
@@ -516,9 +516,40 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 
 				// Default
 				case "Apply configuration":
-					$replace = '<div id="ApplyConfigButtonReplace" style="padding-top: 8px; padding-left: 10px; text-align:center; display:none; height: 24px;"><img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading..."></div>';
+					$CommandsDatas = $MySB_DB->select("commands", "commands", ["user" => "$CurrentUser"]);
+					$CommandsDatas = array_unique($CommandsDatas);
+					$to_display = '';
+					foreach($CommandsDatas as $command) {
+						switch ($command) {
+							case 'MySB_CreateUser':
+								$to_display .= 'Créer un utilisateur<br />';
+								break;
+							case 'MySB_DeleteUser':
+								$to_display .= 'Supprimer un utilisateur<br />';
+								break;
+							case 'MySB_ChangeUserPassword':
+								$to_display .= 'Modifier mon mot de passe<br />';
+								break;
+							case 'Blocklists_PeerGuardian':
+								$to_display .= 'Actualiser/Mettre à jour les listes de blocage<br />';
+								break;
+							case 'ManageAddresses':
+								$to_display .= 'Mettre à jour mes addresses<br />';
+								break;
+							case 'Postfix':
+								$to_display .= 'Mettre à jour les informations de messagerie<br />';
+								break;
+							case 'Restart_rTorrent':
+								$to_display .= 'Relancer ma session rTorrent<br />';
+								break;
+							default:
+								break;
+						}
+					}
+					if ( $to_display != '' ) { echo '<div class="tooltip_templates"><span id="tooltip_apply">'.$to_display.'</span></div>'; }
+					$replace = '<div class="tooltip" data-tooltip-content="#tooltip_apply"><div id="ApplyConfigButtonReplace" style="padding-top: 8px; padding-left: 10px; text-align:center; display:none; height: 24px;"><img src="'.THEMES_PATH.'MySB/images/ajax-loader.gif" alt="loading..."></div>';
 					$style = "id=\"ApplyConfigButtonState\" class=\"ApplyConfigButtonNothing\" onclick=\"ButtonClicked('config')\"";
-					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$replace.'<div id="ApplyConfigButton">'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr, $style).'</div>';
+					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$replace.'<div id="ApplyConfigButton">'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr, $style).'</div></div>';
 					break;
 				default:
 					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
@@ -768,7 +799,7 @@ function IfApplyConfig() {
 }
 
 // Generate message (success, error, information, ...)
-function GenerateMessage($commands, $type, $message, $args) {
+function GenerateMessage($commands, $type, $message, $args='') {
 	global $MySB_DB, $CurrentUser;
 
 	switch ($type) {

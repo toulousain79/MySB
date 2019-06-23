@@ -30,5 +30,9 @@ define('User_OptionsMySB_Title_Portal', 'MySB Portal');
 define('User_OptionsMySB_Language', 'Language');
 define('User_OptionsMySB_Lang_French', 'French');
 define('User_OptionsMySB_Lang_English', 'English');
+// Tooltip
+define('User_OptionsMySB_TT_rTorrentVersion', 'Select the rTorrent\'s version you want to use');
+define('User_OptionsMySB_TT_rTorrentRestart', 'Restart your rTorrent session');
+define('User_OptionsMySB_TT_NotifyEmail', 'Enable/disable sending emails by rTorrent');
 
 //#################### LAST LINE ######################################

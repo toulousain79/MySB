@@ -41,5 +41,8 @@ define('User_ManageAddresses_MessageRedirect', 'Succ&egrave;s !<br /><br />Vous 
 define('User_ManageAddresses_NotAccessPortal', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible pour vous donner un acc&egrave;s au portail MySB !');
 define('User_ManageAddresses_RememberCheck', 'Gardez en m&eacute;moire que vos addresses IP dynamiques seront v&eacute;rifi&eacute;es toutes les 5 minutes.');
 define('User_ManageAddresses_FailedDeleteAddress', 'Echec !<br /><br />Il n\'a pas &eacute;t&eacute; possible de supprimer l\'adresse.');
+// Tooltip
+define('User_ManageAddresses_TT_AddAddress', 'Saisissez les adresses IP ou les noms d\'h&ocirc;te qui seront autoris&eacute;s &agrave; acc&eacute;der &agrave; MySB<br />
+<a target="_blank" href="https://mysb.gitbook.io/doc/configuration/ajout-de-vos-adresses">Acc&eacute;der &agrave; la documentation</a>');
 
 //#################### LAST LINE ######################################

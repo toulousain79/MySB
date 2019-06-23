@@ -1,4 +1,5 @@
 #!/bin/bash
+# rev 5.5
 # -----------------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -23,7 +24,7 @@
 ##################### FIRST LINE #####################################
 
 ##################### VARS ###########################################
-gsCurrentVersion="v5.4"
+gsCurrentVersion="v99.99"
 MySB_InstallDir="/opt/MySB"
 for Arg in "$@"; do
     case "$Arg" in
@@ -103,18 +104,13 @@ ${CRED}############################################################$CEND"
     WhereToInstall="${CBLUE}Where do you want to install MySB ? (Hit enter for default choice) [$MySB_InstallDir]$CEND"
     UpdatingSource="${CBLUE}Updating Debian source lists$CEND... "
     SomethingWrong="${CRED}Looks like something was wrong during the update, aborting !$CEND"
-    UpgradingSystem="${CBLUE}Upgrading the system$CEND"
     NeededPackage="${CBLUE}Installing some needed packages$CEND... "
     PurgeBind="${CBLUE}Deleting Bind9$CEND... "
     DirNotEmpty="${CYELLOW}The selected folder [$MySB_InstallDir] is not empty, choose another one:$CEND"
     DownloadingGithub="${CBLUE}Downloading files from GitHub into [$MySB_InstallDir]$CEND"
     Done="${CGREEN}Done !$CEND"
-    Failed="${CRED}Failed !$CEND"
-    CantWriteConfig="${CRED}I can't write the config file \"/etc/MySB/config\", aborting !$CEND"
-    LoadingVar="${CBLUE}Loading variables and functions$CEND..."
     CreatingDir="${CBLUE}Creating directories$CEND..."
     CreatingMySQL_DB="${CBLUE}Creating MySQL databases$CEND..."
-    QStartInstall="How do you want to start the installation ? Type 'manual' or 'auto' ?"
     StartingScreen="${CBLUE}Starting SCREEN session...$CEND"
     PleaseWait="${CRED}Please wait $CEND"
     AlreadyExecuted="${CRED}MySB is already started with SCREEN, aborting !$CEND"
@@ -185,18 +181,13 @@ ${CRED}############################################################$CEND"
     WhereToInstall="${CBLUE}Où voulez-vous installer MySB ? (Appuyez sur Entrée pour le choix par défaut) [$MySB_InstallDir]$CEND"
     UpdatingSource="${CBLUE}Mise à jour des listes sources de Debian$CEND... "
     SomethingWrong="${CRED}On dirait que quelque chose clochait au cours de la mise à jour, abandon!$CEND"
-    UpgradingSystem="${CBLUE}Mise à niveau du système$CEND"
     NeededPackage="${CBLUE}Installation des paquets nécessaires$CEND... "
     PurgeBind="${CBLUE}Suppression de Bind9$CEND... "
     DirNotEmpty="${CYELLOW}Le dossier sélectionné [$MySB_InstallDir] n'est pas vide, choisissez en un autre:$CEND"
     DownloadingGithub="${CBLUE}Téléchargement des fichiers provenant de GitHub dans [$MySB_InstallDir]$CEND"
     Done="${CGREEN}Fait !$CEND"
-    Failed="${CRED}Echoué !$CEND"
-    CantWriteConfig="${CRED}Je ne peux pas écrire dans le fichier \"/etc/MySB/config\", abandon !$CEND"
-    LoadingVar="${CBLUE}Chargement des variables et fonctions$CEND..."
     CreatingDir="${CBLUE}Création des répertoires$CEND..."
     CreatingMySQL_DB="${CBLUE}Création des bases de données MySQL$CEND..."
-    QStartInstall="Comment voulez-vous lancer l'installation? Tapez 'manuel' ou 'auto'."
     StartingScreen="${CBLUE}Démarrage de la session SCREEN...$CEND"
     PleaseWait="${CRED}Merci de patienter $CEND"
     AlreadyExecuted="${CRED}L'installation de MySB est déjà exécutée avec SCREEN, abandon !$CEND"
@@ -206,16 +197,17 @@ ${CRED}############################################################$CEND"
 
 # To execute when this script will exited
 ExitOnError() {
-    if [ -f $MySB_InstallDir/inc/includes_after ]; then source $MySB_InstallDir/inc/includes_after; fi
+    # shellcheck source=inc/includes_after
+    if [ -f $MySB_InstallDir/inc/includes_after ]; then source "$MySB_InstallDir"/inc/includes_after; fi
     case "$1" in
         0)
             echo -e "$2"
-            exit        0
+            exit 0
             ;;
         *)
             echo -e "$SomethingWrong"
-            echo                     -e "$2"
-            exit                                   1
+            echo -e "$2"
+            exit 1
             ;;
     esac
 }
@@ -226,12 +218,12 @@ KernelReplace() {
     KernelFind="$(apt-cache search linux-image | grep -v 'rt-' | grep -v 'dummy' | grep -v 'dbg' | grep -v 'bpo' | grep -v 'grsec' | grep 'image' | awk '{ print $1 }' | grep '[.]' | head -n 1)"
 
     echo
-    if [ ! -z "$KernelFind" ]; then
+    if [ -n "$KernelFind" ]; then
         echo -e "$LatestKernel${CGREEN}$KernelFind$CEND"
         echo
         apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update
         apt-get -y --assume-yes -V -o Dpkg::Options::="--force-confold" upgrade
-        apt-get -y --assume-yes install $KernelFind
+        apt-get -y --assume-yes install "$KernelFind"
         if [ -f /etc/grub.d/06_OVHkerne ]; then
             mv /etc/grub.d/06_OVHkernel /etc/grub.d/99_OVHkernel
             update-grub
@@ -239,7 +231,7 @@ KernelReplace() {
         echo
         echo -e -n "$RebootBeforeInstall"
 
-        read Answer
+        read -r Answer
         case ${Answer:0:1} in
             y | Y | yes | YES | o | O | oui | OUI)
                 echo -e "$LetsGo"
@@ -252,7 +244,7 @@ KernelReplace() {
                 ;;
         esac
     else
-        echo -e "$LatestKernel${CRED}??$CEND"
+        echo -e "$LatestKernel${CRED}$CEND"
         echo -e "$KernelManualInstall"
         nContinue=1
     fi
@@ -294,11 +286,11 @@ SystemChecks() {
         sOS_Ver="$(lsb_release -rs | cut -d '.' -f 1)"
     else
         if [ -f /etc/lsb-release ]; then
-            sOS_Id="$(cat /etc/lsb-release | grep 'DISTRIB_ID' | cut -d '=' -f 2)"
-            sOS_Ver="$(cat /etc/lsb-release | grep 'DISTRIB_RELEASE' | cut -d '=' -f 2)"
+            sOS_Id="$(grep 'DISTRIB_ID' /etc/lsb-release | cut -d '=' -f 2)"
+            sOS_Ver="$(grep 'DISTRIB_RELEASE' /etc/issue.net | cut -d '=' -f 2)"
         elif [ -f /etc/issue.net ]; then
-            sOS_Id="$(cat /etc/issue.net | awk '{ print $1 }' | sed -e 's/^$//g;')"
-            sOS_Ver="$(cat /etc/issue.net | awk '{ print $3 }' | sed -e 's/^$//g;')"
+            sOS_Id="$(awk '{ print $1 }' </etc/issue.net | sed -e 's/^$//g;')"
+            sOS_Ver="$(awk '{ print $3 }' </etc/issue.net | sed -e 's/^$//g;')"
         fi
     fi
     sOS_Arch="$(dpkg --print-architecture)"
@@ -309,7 +301,7 @@ SystemChecks() {
     if [ "$sOS_Id" != "Debian" ]; then
         if [ -f /etc/debian_version ]; then
             echo -e "${CYELLOW}Distributor ID	: $CEND${CGREEN}$sOS_Id$CEND"
-            sOS_Ver="$(cat /etc/debian_version | cut -d '.' -f 1)"
+            sOS_Ver="$(cut -d '.' -f 1 </etc/debian_version)"
         else
             echo -e "${CYELLOW}Distributor ID	: $CEND${CRED}$sOS_Id$CEND"
             nContinue=1
@@ -326,7 +318,7 @@ SystemChecks() {
     esac
 
     #### Check kernel if is a PVE kernel
-    if [ ! -z "$sPVE_Kernel" ]; then
+    if [ -n "$sPVE_Kernel" ]; then
         nContinue=1
         echo -e "${CYELLOW}PVE kernel	: $CEND${CRED}$AnswerYES$CEND"
     else
@@ -342,8 +334,7 @@ SystemChecks() {
     fi
 
     #### Check internet access
-    ping -c4 github.com >>/tmp/$(basename $0).log
-    if [ $? -gt 0 ]; then
+    if (! ping -c4 github.com >>/tmp/"$(basename "$0")".log); then
         nContinue=1
         echo -e "${CYELLOW}Internet	: $CEND${CRED}$AnswerNO$CEND"
     else
@@ -351,7 +342,7 @@ SystemChecks() {
     fi
 
     #### Check kernel if is an Ubuntu kernel (DigiCube)
-    if [ ! -z "$sFlex_Kernel" ]; then
+    if [ -n "$sFlex_Kernel" ]; then
         nContinue=1
         echo -e "${CYELLOW}Ubuntu kernel	: $CEND${CRED}$AnswerYES$CEND"
     else
@@ -359,17 +350,17 @@ SystemChecks() {
     fi
 
     #### Check kernel if is an OVH kernel, replace the kernel if needed
-    if [ ! -z "$sOVH_Kernel" ]; then
+    if [ -n "$sOVH_Kernel" ]; then
         echo -e "${CYELLOW}OVH kernel	: $CEND${CRED}$AnswerYES$CEND"
     else
         echo -e "${CYELLOW}OVH kernel	: $CEND${CGREEN}$AnswerNO$CEND"
     fi
-    if [ ! -z "$sOVH_Kernel" ]; then
+    if [ -n "$sOVH_Kernel" ]; then
         sAnswer=""
         while [ -z "$sAnswer" ]; do
             clear
             echo -e -n "$CustomKernel"
-            read sAnswer
+            read -r sAnswer
             case ${sAnswer:0:1} in
                 y | Y | yes | YES | o | O | oui | OUI)
                     echo -e "$LetsGo"
@@ -391,14 +382,16 @@ SystemChecks() {
 
 # Start Log
 clear
-echo "------------------------------------------------------------" >/tmp/$(basename $0).log
-echo "START Err: "$(/bin/date '+%Y-%m-%d - %H:%M:%S') "-" $(basename $0) >>/tmp/$(basename $0).log
-echo "------------------------------------------------------------" >>/tmp/$(basename $0).log
-exec 2>>/tmp/$(basename $0).log
+{
+    echo "------------------------------------------------------------"
+    echo "START Err: $(/bin/date '+%Y-%m-%d - %H:%M:%S') - $(basename "$0")"
+    echo "------------------------------------------------------------"
+} >/tmp/"$(basename "$0")".log
+exec 2>>/tmp/"$(basename "$0")".log
 
 # Language select
 if [ -z "$EnvLang" ]; then
-    EnvLang="$(echo ${LANG:0:2})"
+    EnvLang="${LANG:0:2}"
 fi
 case "$EnvLang" in
     en) LoadEnglish ;;
@@ -417,7 +410,7 @@ SystemChecks
 
 # Check if ths script is already running with screen
 if type -P screen >/dev/null; then
-    if [ ! -z "$(screen -ls | grep MySB 2>/dev/null)" ]; then
+    if (screen -ls | grep -q 'MySB' 2>/dev/null); then
         ExitOnError 1 "$AlreadyExecuted"
     fi
 fi
@@ -437,27 +430,28 @@ while [ -z "$Answer" ]; do
     echo
     echo -e -n "$MessageIsReady"
 
-    read Answer
+    read -r Answer
     case ${Answer:0:1} in
         y | Y | yes | YES | o | O | oui | OUI)
             echo -e "$LetsGo"
             # Select destination directory
             echo
             echo -e -n "$WhereToInstall"
-            read MySB_InstallDir
+            read -r MySB_InstallDir
             if [ -z "$MySB_InstallDir" ]; then
                 MySB_InstallDir="/opt/MySB"
             fi
-            IfEmpty="$(ls -a $MySB_InstallDir 2>/dev/null | sed -e "/\.$/d" | wc -l)"
-            while [ -z "$MySB_InstallDir" ] || [ -d $MySB_InstallDir ] || [ $IfEmpty -gt 0 ]; do
+
+            [ -d $MySB_InstallDir ] && IfEmpty="$(find $MySB_InstallDir/ -maxdepth 1 | wc -l)" || IfEmpty=0
+            while [ -z "$MySB_InstallDir" ] || [ -d $MySB_InstallDir ] || [ "$IfEmpty" -gt 0 ]; do
                 echo -e -n "$DirNotEmpty"
-                read MySB_InstallDir
+                read -r MySB_InstallDir
                 if [ -z "$MySB_InstallDir" ]; then
                     MySB_InstallDir="/opt/MySB"
                 fi
 
                 if [ -d $MySB_InstallDir ]; then
-                    IfEmpty="$(ls -a $MySB_InstallDir 2>/dev/null | sed -e "/\.$/d" | wc -l)"
+                    IfEmpty="$(find $MySB_InstallDir/ -maxdepth 1 | wc -l)"
                 else
                     IfEmpty=0
                 fi
@@ -476,13 +470,15 @@ case "$EnvLang" in
     "en") gsLocale="en_US" ;;
 esac
 [ -z "${gsLocale}" ] && gsLocale="en_US"
-sed -i -e "s/# ${gsLocale}.UTF-8 UTF-8/${gsLocale}.UTF-8 UTF-8/" /etc/locale.gen
-dpkg-reconfigure -f noninteractive locales
-update-locale "LANG=${gsLocale}.UTF-8"
-locale-gen "${gsLocale}.UTF-8"
+sed -i '/^en_US/d' /etc/locale.gen
+sed -i '/^fr_FR/d' /etc/locale.gen
+echo "${gsLocale}.UTF-8 UTF-8" >>/etc/locale.gen
+dpkg-reconfigure -f noninteractive locales &>/dev/null
+update-locale "LANG=${gsLocale}.UTF-8" &>/dev/null
+locale-gen "${gsLocale}.UTF-8" &>/dev/null
 
 # First we disable IPv6
-sysctl -w net.ipv6.conf.all.disable_ipv6=1 >>/tmp/$(basename $0).log
+sysctl -w net.ipv6.conf.all.disable_ipv6=1 >>/tmp/"$(basename "$0")".log
 
 # Force public DNS (#66)
 sed -i '/nameserver/d' /etc/resolv.conf
@@ -501,29 +497,24 @@ echo "nameserver 4.2.2.6" >>/etc/resolv.conf
 BannerInstall
 echo -e -n "$UpdatingSource"
 fnCountDown 3
-apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update
-[ $? -gt 0 ] && ExitOnError 1 "apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update"
-
-# Next we do an upgrade
-# BannerInstall
-# echo -e -n "$UpgradingSystem"
-# fnCountDown 3
-# apt-get -y --assume-yes -V -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" upgrade
-# [ $? -gt 0 ] && ExitOnError 1 "apt-get -y --assume-yes -V -o Dpkg::Options::=\"--force-confnew\" upgrade"
+if (! apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update); then
+    ExitOnError 1 "apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update"
+fi
 
 # Now we can install required packages
 BannerInstall
 echo -e -n "$NeededPackage"
 fnCountDown 3
-TOOLS="git-core dos2unix lsb-release screen ccze gnupg figlet mlocate dnsutils curl man-db geoip-bin" # DO NO RENAME 'TOOLS' VARIABLES !
-apt-get -y --assume-yes install $TOOLS
-[ $? -gt 0 ] && ExitOnError 1 "apt-get -y --assume-yes install $TOOLS"
+TOOLS=(git-core dos2unix lsb-release screen ccze gnupg figlet mlocate dnsutils curl man-db geoip-bin) # DO NO RENAME 'TOOLS' VARIABLES !
+if (! apt-get -y --assume-yes install "${TOOLS[@]}"); then
+    ExitOnError 1 "apt-get -y --assume-yes install ${TOOLS[*]}"
+fi
 
-# If needed, remove Bind9 package
+# If needed, remove Bind9
 if (dpkg -s bind9 &>/dev/null); then
     BannerInstall
     echo -e -n "$PurgeBind"
-    if (! apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' purge bind9); then
+    if (! apt-get -y --assume-yes purge bind9); then
         ExitOnError 1 "apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' purge bind9"
     fi
 fi
@@ -531,16 +522,12 @@ fi
 #### download files from Git
 BannerInstall
 echo -e -n "$DownloadingGithub"
-screen -dmS MySB_GitClone git clone --progress -b $gsCurrentVersion https://github.com/toulousain79/MySB.git $MySB_InstallDir >>/tmp/$(basename $0).log
-while [ ! -z "$(screen -ls | grep 'MySB_GitClone')" ]; do
+screen -dmS MySB_GitClone git clone --progress -b "$gsCurrentVersion" https://github.com/toulousain79/MySB.git $MySB_InstallDir >>/tmp/"$(basename "$0")".log
+while (screen -ls | grep -q 'MySB_GitClone'); do
     echo -n "."
     sleep 1
 done
-if [ $? -eq 0 ]; then
-    echo -e "$Done"
-else
-    ExitOnError 1 "git clone --progress -b $gsCurrentVersion https://github.com/toulousain79/MySB.git $MySB_InstallDir"
-fi
+echo -e "$Done"
 
 # /etc/MySB/config
 if [ ! -d /etc/MySB/ ]; then mkdir /etc/MySB/; fi
@@ -550,7 +537,8 @@ echo "EnvLang=\"$EnvLang\"" >>/etc/MySB/config
 chmod 0640 /etc/MySB/config
 
 # load variables
-source $MySB_InstallDir/inc/vars
+# shellcheck source=inc/vars
+source "$MySB_InstallDir"/inc/vars
 
 # Create directories
 echo -e -n "$CreatingDir"
@@ -563,30 +551,34 @@ gfnScriptInvoke 'ScreenWAIT' "$MySB_InstallDir/install/MySQL" 'INSTALL'
 gfnStatusSTD
 
 # Update DB with usable values
-cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='$gsCurrentVersion' WHERE id_system='1';" -v >>/tmp/$(basename $0).log
-[ $? -gt 0 ] && ExitOnError 1 "UPDATE system SET mysb_version='$gsCurrentVersion' WHERE id_system='1';"
-cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,language,admin) VALUES ('MySB','MySB','$EnvLang','1');" -v >>/tmp/$(basename $0).log
-[ $? -gt 0 ] && ExitOnError 1 "INSERT INTO users (users_ident,users_email,language,admin) VALUES ('MySB','MySB','$EnvLang','1');"
-source $MySB_InstallDir/inc/vars
-[ $? -gt 0 ] && ExitOnError 1 "source $MySB_InstallDir/inc/vars"
+if (! cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='$gsCurrentVersion' WHERE id_system='1';" -v >>/tmp/"$(basename "$0")".log); then
+    ExitOnError 1 "UPDATE system SET mysb_version='$gsCurrentVersion' WHERE id_system='1';"
+fi
+if (! cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,language,admin) VALUES ('MySB','MySB','$EnvLang','1');" -v >>/tmp/"$(basename "$0")".log); then
+    ExitOnError 1 "INSERT INTO users (users_ident,users_email,language,admin) VALUES ('MySB','MySB','$EnvLang','1');"
+fi
+# shellcheck source=inc/vars
+source "$MySB_InstallDir"/inc/vars
 
 # Some questions
-/bin/bash $MySB_InstallDir/install/Questions $$ 'INSTALL'
+/bin/bash "$MySB_InstallDir"/install/Questions 'INSTALL'
 echo
 echo
 
 # Start install script
 echo -e "$StartingScreen"
-screen -wipe >>/tmp/$(basename $0).log
-screen -dmS MySB_bsh /bin/bash $MySB_InstallDir/install/MySB.bsh
+screen -wipe >>/tmp/"$(basename "$0")".log
+screen -dmS MySB_bsh /bin/bash "$MySB_InstallDir"/install/MySB.bsh
 echo -e -n "$PleaseWait"
 fnCountDown 5
 screen -r MySB_bsh
 
 #### Engage a reboot after an install
 REBOOT=YES
+export REBOOT
 
 # -----------------------------------------
-if [ -f $MySB_InstallDir/inc/includes_after ]; then source $MySB_InstallDir/inc/includes_after; fi
+# shellcheck source=inc/includes_after
+if [ -f "$MySB_InstallDir"/inc/includes_after ]; then source "$MySB_InstallDir"/inc/includes_after; fi
 # -----------------------------------------
 ##################### LAST LINE ######################################

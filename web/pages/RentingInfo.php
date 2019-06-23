@@ -39,30 +39,30 @@ $users_data = $MySB_DB->select("users", ["users_ident", "period_price", "period_
 $RefreshPage = 0;
 
 if (isset($_POST['submit'])) {
-	$Model = $_POST['model'];
-	$TVA = $_POST['tva'];
-	$GlobalCost = $_POST['global_cost'];
-	$Method = $_POST['method'];
+	$Model_POST = $_POST['model'];
+	$TVA_POST = $_POST['tva'];
+	$GlobalCost_POST = $_POST['global_cost'];
+	$Method_POST = $_POST['method'];
 	$nTotalUsers = CountingUsers();
 
-	$B = ($GlobalCost * $TVA) / 100;
-	$GlobalCostTva = $GlobalCost + $B;
-	$X = $GlobalCost / $nTotalUsers;
-	$Y = ($X * $TVA) / 100;
+	$B = ($GlobalCost_POST * $TVA_POST) / 100;
+	$GlobalCostTva_POST = $GlobalCost_POST + $B;
+	$X = $GlobalCost_POST / $nTotalUsers;
+	$Y = ($X * $TVA_POST) / 100;
 	$PricePerUsers = $X + $Y;
 
-	switch ($Method) {
+	switch ($Method_POST) {
 		case '1':
 			$PricePerUsers = round($PricePerUsers, 2);
-			$GlobalCostTva = round($GlobalCostTva, 2);
+			$GlobalCostTva_POST = round($GlobalCostTva_POST, 2);
 			break;
 		default:
 			$PricePerUsers = ceil($PricePerUsers);
-			$GlobalCostTva = ceil($GlobalCostTva);
+			$GlobalCostTva_POST = ceil($GlobalCostTva_POST);
 			break;
 	}
 
-	$result = $MySB_DB->update("system", ["rt_model" => "$Model", "rt_tva" => "$TVA", "rt_global_cost" => "$GlobalCost", "rt_cost_tva" => "$GlobalCostTva", "rt_nb_users" => "$nTotalUsers", "rt_price_per_users" => "$PricePerUsers", "rt_method" => "$Method"], ["id_system" => 1]);
+	$result = $MySB_DB->update("system", ["rt_model" => "$Model_POST", "rt_tva" => "$TVA_POST", "rt_global_cost" => "$GlobalCost_POST", "rt_cost_tva" => "$GlobalCostTva_POST", "rt_nb_users" => "$nTotalUsers", "rt_price_per_users" => "$PricePerUsers", "rt_method" => "$Method_POST"], ["id_system" => 1]);
 
 	if( $result >= 0 ) {
 		$RefreshPage++;
@@ -73,14 +73,16 @@ if (isset($_POST['submit'])) {
 	}
 
 	GenerateMessage('message_only', $type, $message);
-
-	if( $RefreshPage >= 1 ) {
-		header('Refresh: 2; URL='.$_SERVER['HTTP_REFERER'].'');
-	}
 }
 
+$Model = (isset($Model_POST)) ? $Model_POST : $Model;
+$TVA = (isset($TVA_POST)) ? $TVA_POST : $TVA;
+$GlobalCost = (isset($GlobalCost_POST)) ? $GlobalCost_POST : $GlobalCost;
+$Method = (isset($Method_POST)) ? $Method_POST : $Method;
+$GlobalCostTVA = (isset($GlobalCostTva_POST)) ? $GlobalCostTva_POST : $GlobalCostTVA;
+
 echo '<div align="center">
-		<form class="form_settings" method="post" action="">
+		<form class="form_settings" method="post" action="'. $_SERVER['REQUEST_URI'] .'">
 		<table border="0">
 			<tr>
 				<td>' . MainUser_Renting_Model . '</td>

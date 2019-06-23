@@ -1,6 +1,7 @@
 #!/bin/bash
 # ----------------------------------
-source $(dirname $0)/../inc/includes_before
+# shellcheck source=inc/includes_before
+source "$(dirname "$0")"/../inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -25,42 +26,43 @@ source $(dirname $0)/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### VARs
-SmtpValues="`cmdMySQL 'MySB_db' "SELECT smtp_provider,smtp_username,smtp_passwd,smtp_host,smtp_port FROM smtp WHERE id_smtp='1';" | sed 's/\t/|/g;'`"
-SMTP_Provider="`echo $SmtpValues | awk '{split($0,a,"|"); print a[1]}'`"
-SMTP_Username="`echo $SmtpValues | awk '{split($0,a,"|"); print a[2]}'`"
-SMTP_Password="`echo $SmtpValues | awk '{split($0,a,"|"); print a[3]}'`"
-SMTP_Host="`echo $SmtpValues | awk '{split($0,a,"|"); print a[4]}'`"
-SMTP_Port="`echo $SmtpValues | awk '{split($0,a,"|"); print a[5]}'`"
+SmtpValues="$(cmdMySQL 'MySB_db' "SELECT smtp_provider,smtp_username,smtp_passwd,smtp_host,smtp_port FROM smtp WHERE id_smtp='1';" | sed 's/\t/|/g;')"
+SMTP_Provider="$(echo "${SmtpValues}" | awk '{split($0,a,"|"); print a[1]}')"
+SMTP_Username="$(echo "${SmtpValues}" | awk '{split($0,a,"|"); print a[2]}')"
+SMTP_Password="$(echo "${SmtpValues}" | awk '{split($0,a,"|"); print a[3]}')"
+SMTP_Host="$(echo "${SmtpValues}" | awk '{split($0,a,"|"); print a[4]}')"
+SMTP_Port="$(echo "${SmtpValues}" | awk '{split($0,a,"|"); print a[5]}')"
 
 #### Stunnel
 mkdir -pv /var/run/stunnel4
 
 #### Install packages
-gfnPackageBundleInstall 'postfix stunnel4 gnutls-bin libsasl2-modules'
+sPackages=(postfix stunnel4 gnutls-bin libsasl2-modules)
+gfnPackageBundleInstall "${sPackages[@]}"
 
 #### Stop services
 gfnManageServices stop "stunnel4 postfix"
 
-if [ "$SMTP_Provider" != "LOCAL" ]; then
-	#### stunnel
-	if [ -f /var/log/stunnel4/stunnel.log ] && [ ! -h /var/log/stunnel4/stunnel.log ]; then
-		rm -vf /var/log/stunnel4/stunnel.log
-	fi
-	if [ ! -f /var/lib/stunnel4/stunnel.log ]; then
-		touch /var/lib/stunnel4/stunnel.log
-		chmod -v 640 /var/lib/stunnel4/stunnel.log
-		chown -v stunnel4:stunnel4 /var/lib/stunnel4/stunnel.log
-	fi
-	if [ ! -h /var/log/stunnel4/stunnel.log ]; then
-		ln -sv /var/lib/stunnel4/stunnel.log /var/log/stunnel4/stunnel.log
-	fi
+if [ "${SMTP_Provider}" != "LOCAL" ]; then
+    #### stunnel
+    if [ -f /var/log/stunnel4/stunnel.log ] && [ ! -h /var/log/stunnel4/stunnel.log ]; then
+        rm -vf /var/log/stunnel4/stunnel.log
+    fi
+    if [ ! -f /var/lib/stunnel4/stunnel.log ]; then
+        touch /var/lib/stunnel4/stunnel.log
+        chmod -v 640 /var/lib/stunnel4/stunnel.log
+        chown -v stunnel4:stunnel4 /var/lib/stunnel4/stunnel.log
+    fi
+    if [ ! -h /var/log/stunnel4/stunnel.log ]; then
+        ln -sv /var/lib/stunnel4/stunnel.log /var/log/stunnel4/stunnel.log
+    fi
 fi
 
 #### main.cf
-install -v -g root -o root -m 0644 $MySB_InstallDir/templates/postfix/main.conf.tmpl /etc/postfix/main.cf
-perl -pi -e "s/<hostname>/$gsHostNameFqdn/g" /etc/postfix/main.cf
+install -v -g root -o root -m 0644 "${MySB_InstallDir}"/templates/postfix/main.conf.tmpl /etc/postfix/main.cf
+perl -pi -e "s/<hostname>/${gsHostNameFqdn}/g" /etc/postfix/main.cf
 perl -pi -e "s/<domain>/$(hostname -d)/g" /etc/postfix/main.cf
-echo "$gsHostNameFqdn" > /etc/mailname
+echo "${gsHostNameFqdn}" >/etc/mailname
 
 #### Alias
 [ -f /etc/aliases ] && rm -vf /etc/aliases
@@ -78,7 +80,7 @@ echo "abuse: root" | tee -a /etc/aliases
 echo "noc: root" | tee -a /etc/aliases
 echo "security: root" | tee -a /etc/aliases
 echo "apt-mirror: root" | tee -a /etc/aliases
-echo "root: $gsMainUserEmail" | tee -a /etc/aliases
+echo "root: ${gsMainUserEmail}" | tee -a /etc/aliases
 newaliases
 
 SMTP_Host="localhost"
@@ -87,131 +89,132 @@ Smtp_Security="NOSSL"
 postconf -e "relayhost = "
 
 #### Only by choise of user
-if [ "$SMTP_Provider" != "LOCAL" ]; then
-	postconf -e "smtp_host_lookup = dns, native"
-	postconf -e "default_transport = smtp"
+if [ "${SMTP_Provider}" != "LOCAL" ]; then
+    postconf -e "smtp_host_lookup = dns, native"
+    postconf -e "default_transport = smtp"
 
-	# Correcting SSL vulnerability (poodle)
-	postconf -e 'smtpd_tls_mandatory_protocols=!SSLv1,!SSLv2,!SSLv3'
-	postconf -e 'smtpd_tls_protocols=!SSLv1,!SSLv2,!SSLv3'
-	postconf -e 'smtp_tls_protocols=!SSLv1,!SSLv2,!SSLv3'
+    # Correcting SSL vulnerability (poodle)
+    postconf -e 'smtpd_tls_mandatory_protocols=!SSLv1,!SSLv2,!SSLv3'
+    postconf -e 'smtpd_tls_protocols=!SSLv1,!SSLv2,!SSLv3'
+    postconf -e 'smtp_tls_protocols=!SSLv1,!SSLv2,!SSLv3'
 
-	case "$SMTP_Provider" in
-		"FREE")
-			SMTP_Host="smtp.free.fr"
-			SMTP_Port=465
-			Smtp_Security=SSL
-		;;
-		"YAHOO")
-			SMTP_Host="smtp.mail.yahoo.fr"
-			SMTP_Port=465
-			Smtp_Security=SSL
-		;;
-		"OVH")
-			SMTP_Host="ssl0.ovh.net"
-			SMTP_Port=465
-			Smtp_Security=SSL
-		;;
-		"GMAIL")
-			SMTP_Host="smtp.gmail.com"
-			SMTP_Port=465
-			Smtp_Security=SSL
-		;;
-		"ZOHO")
-			SMTP_Host="smtp.zoho.com"
-			SMTP_Port=465
-			Smtp_Security=SSL
-		;;
-	esac
+    case "${SMTP_Provider}" in
+        "FREE")
+            SMTP_Host="smtp.free.fr"
+            SMTP_Port=465
+            Smtp_Security=SSL
+            ;;
+        "YAHOO")
+            SMTP_Host="smtp.mail.yahoo.fr"
+            SMTP_Port=465
+            Smtp_Security=SSL
+            ;;
+        "OVH")
+            SMTP_Host="ssl0.ovh.net"
+            SMTP_Port=465
+            Smtp_Security=SSL
+            ;;
+        "GMAIL")
+            SMTP_Host="smtp.gmail.com"
+            SMTP_Port=465
+            Smtp_Security=SSL
+            ;;
+        "ZOHO")
+            SMTP_Host="smtp.zoho.com"
+            SMTP_Port=465
+            Smtp_Security=SSL
+            ;;
+    esac
 
-	case "$Smtp_Security" in
-		"SSL")
-			# stunnel.conf
-			install -v -g root -o root -m 0600 $MySB_InstallDir/templates/postfix/stunnel.conf.tmpl /etc/stunnel/stunnel.conf
-			perl -pi -e "s/<InstallDir>/$gsInstallDirEscaped/g" /etc/stunnel/stunnel.conf
-			perl -pi -e "s/<smtp_host>/${SMTP_Host}/g" /etc/stunnel/stunnel.conf
-			perl -pi -e "s/<smtp_port>/${SMTP_Port}/g" /etc/stunnel/stunnel.conf
-			if [[ -f /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem ]] && [[ -f /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem ]]; then
-				nNumLine=$(cat /etc/stunnel/stunnel.conf | grep 'cert =' -n -m 1 | cut -d ':' -f 1)
-				sed -i '/cert =/d' /etc/stunnel/stunnel.conf
-				sed -i "${nNumLine}i\cert = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" /etc/stunnel/stunnel.conf
-				nNumLine=$(cat /etc/stunnel/stunnel.conf | grep 'key =' -n -m 1 | cut -d ':' -f 1)
-				sed -i '/key =/d' /etc/stunnel/stunnel.conf
-				sed -i "${nNumLine}i\key = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/stunnel/stunnel.conf
-			fi
-			perl -pi -e "s/ENABLED=0/ENABLED=1/g" /etc/default/stunnel4
-			[[ -n "$SMTP_Password" ]] && echo "127.0.0.1:23000			  $SMTP_Username:$SMTP_Password" > /etc/postfix/sasl/sasl_passwd
-			postconf -e "relayhost = 127.0.0.1:23000"
-			postconf -e "smtp_sasl_auth_enable = yes"
-			postconf -e "smtp_sasl_security_options = noanonymous"
-			postconf -e "smtp_sasl_password_maps = hash:/etc/postfix/sasl/sasl_passwd"
-			postconf -e "smtp_sasl_mechanism_filter = plain"
-			postconf -e "smtp_tls_security_level = may"
-		;;
-		"TLS")
-			perl -pi -e "s/ENABLED=1/ENABLED=0/g" /etc/default/stunnel4
-			postconf -e "smtp_sasl_auth_enable = yes"
-			postconf -e "smtp_sasl_security_options = noanonymous"
-			postconf -e "smtp_sasl_password_maps = hash:/etc/postfix/sasl/sasl_passwd"
-			postconf -e "smtp_sasl_mechanism_filter = plain"
-			postconf -e "relayhost = $SMTP_Host:$SMTP_Port"
-			postconf -e "tls_random_source = dev:/dev/urandom"
-			postconf -e "smtp_use_tls = yes"
-			postconf -e "smtp_tls_note_starttls_offer = yes"
-			postconf -e "smtp_tls_security_level = may"
-			postconf -e "smtp_sasl_tls_security_options = noanonymous"
-			postconf -e "smtp_tls_scert_verifydepth = 5"
-			postconf -e "smtp_tls_enforce_peername = no"
-			postconf -e "smtp_tls_session_cache_database = btree:\${data_directory}/smtp_scache"
-			postconf -e "smtp_tls_policy_maps = hash:/etc/postfix/tls_policy"
-			postconf -e "smtp_tls_CAfile = $MySB_InstallDir/ssl/CA/certs/cacert.pem"
-			if [[ -f /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem ]] && [[ -f /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem ]]; then
-				postconf -e "smtp_tls_cert_file = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem"
-				postconf -e "smtp_tls_key_file = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem"
-			else
-				postconf -e "smtp_tls_cert_file = $MySB_InstallDir/ssl/mysb.cert"
-				postconf -e "smtp_tls_key_file = $MySB_InstallDir/ssl/mysb.key"
-			fi
-		;;
-	esac
+    case "$Smtp_Security" in
+        "SSL")
+            # stunnel.conf
+            install -v -g root -o root -m 0600 "${MySB_InstallDir}"/templates/postfix/stunnel.conf.tmpl /etc/stunnel/stunnel.conf
+            perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /etc/stunnel/stunnel.conf
+            perl -pi -e "s/<smtp_host>/${SMTP_Host}/g" /etc/stunnel/stunnel.conf
+            perl -pi -e "s/<smtp_port>/${SMTP_Port}/g" /etc/stunnel/stunnel.conf
+            if [[ -f /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem ]] && [[ -f /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem ]]; then
+                nNumLine=$(grep 'cert =' -n -m 1 /etc/stunnel/stunnel.conf | cut -d ':' -f 1)
+                sed -i '/cert =/d' /etc/stunnel/stunnel.conf
+                sed -i "${nNumLine}i\cert = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" /etc/stunnel/stunnel.conf
+                nNumLine=$(grep 'key =' -n -m 1 /etc/stunnel/stunnel.conf | cut -d ':' -f 1)
+                sed -i '/key =/d' /etc/stunnel/stunnel.conf
+                sed -i "${nNumLine}i\key = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/stunnel/stunnel.conf
+            fi
+            perl -pi -e "s/ENABLED=0/ENABLED=1/g" /etc/default/stunnel4
+            [[ -n ${SMTP_Password} ]] && echo "127.0.0.1:23000			  ${SMTP_Username}:${SMTP_Password}" >/etc/postfix/sasl/sasl_passwd
+            postconf -e "relayhost = 127.0.0.1:23000"
+            postconf -e "smtp_sasl_auth_enable = yes"
+            postconf -e "smtp_sasl_security_options = noanonymous"
+            postconf -e "smtp_sasl_password_maps = hash:/etc/postfix/sasl/sasl_passwd"
+            postconf -e "smtp_sasl_mechanism_filter = plain"
+            postconf -e "smtp_tls_security_level = may"
+            ;;
+        "TLS")
+            perl -pi -e "s/ENABLED=1/ENABLED=0/g" /etc/default/stunnel4
+            postconf -e "smtp_sasl_auth_enable = yes"
+            postconf -e "smtp_sasl_security_options = noanonymous"
+            postconf -e "smtp_sasl_password_maps = hash:/etc/postfix/sasl/sasl_passwd"
+            postconf -e "smtp_sasl_mechanism_filter = plain"
+            postconf -e "relayhost = ${SMTP_Host}:$SMTP_Port"
+            postconf -e "tls_random_source = dev:/dev/urandom"
+            postconf -e "smtp_use_tls = yes"
+            postconf -e "smtp_tls_note_starttls_offer = yes"
+            postconf -e "smtp_tls_security_level = may"
+            postconf -e "smtp_sasl_tls_security_options = noanonymous"
+            postconf -e "smtp_tls_scert_verifydepth = 5"
+            postconf -e "smtp_tls_enforce_peername = no"
+            postconf -e 'smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache'
+            postconf -e "smtp_tls_policy_maps = hash:/etc/postfix/tls_policy"
+            postconf -e "smtp_tls_CAfile = ${MySB_InstallDir}/ssl/CA/certs/cacert.pem"
+            if [[ -f /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem ]] && [[ -f /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem ]]; then
+                postconf -e "smtp_tls_cert_file = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem"
+                postconf -e "smtp_tls_key_file = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem"
+            else
+                postconf -e "smtp_tls_cert_file = ${MySB_InstallDir}/ssl/mysb.cert"
+                postconf -e "smtp_tls_key_file = ${MySB_InstallDir}/ssl/mysb.key"
+            fi
+            ;;
+    esac
 
-	[[ -n "$SMTP_Password" ]] && postmap /etc/postfix/sasl/sasl_passwd
-	[[ -f /etc/postfix/sasl/sasl_passwd ]] && rm -vf /etc/postfix/sasl/sasl_passwd
-	[[ -f /etc/postfix/sasl/sasl_passwd.db ]] && chmod -v 0600 /etc/postfix/sasl/sasl_passwd.db
+    [[ -n ${SMTP_Password} ]] && postmap /etc/postfix/sasl/sasl_passwd
+    [[ -f /etc/postfix/sasl/sasl_passwd ]] && rm -vf /etc/postfix/sasl/sasl_passwd
+    [[ -f /etc/postfix/sasl/sasl_passwd.db ]] && chmod -v 0600 /etc/postfix/sasl/sasl_passwd.db
 
-	#### START services
-	ServicesToRestart="stunnel4"
+    #### START services
+    ServicesToRestart="stunnel4"
 fi
 
 if gfnCheckCommand 0 postfix; then
-	cmdMySQL 'MySB_db' "UPDATE services SET is_installed='1' WHERE serv_name='Postfix';" -v
+    cmdMySQL 'MySB_db' "UPDATE services SET is_installed='1' WHERE serv_name='Postfix';" -v
 fi
 if gfnCheckCommand 0 stunnel4; then
-	cmdMySQL 'MySB_db' "UPDATE services SET is_installed='1' WHERE serv_name='Stunnel';" -v
+    cmdMySQL 'MySB_db' "UPDATE services SET is_installed='1' WHERE serv_name='Stunnel';" -v
 fi
-cmdMySQL 'MySB_db' "UPDATE smtp SET smtp_provider='$SMTP_Provider', smtp_username='$SMTP_Username', smtp_host='$SMTP_Host', smtp_port='$SMTP_Port', smtp_passwd='' WHERE id_smtp='1';" -v
+cmdMySQL 'MySB_db' "UPDATE smtp SET smtp_provider='${SMTP_Provider}', smtp_username='${SMTP_Username}', smtp_host='${SMTP_Host}', smtp_port='${SMTP_Port}', smtp_passwd='' WHERE id_smtp='1';" -v
 
 #### logrotate
 gfnLogRotate 'stunnel4'
 
 #### START services
 # if [ "$gbIsInstalled_DNScrypt" == "YES" ]; then
-	# ServicesToRestart="${ServicesToRestart} dnscrypt-proxy"
+# ServicesToRestart="${ServicesToRestart} dnscrypt-proxy"
 # fi
 ServicesToRestart="${ServicesToRestart} postfix"
 gfnManageServices start "$ServicesToRestart"
 
 #### Add some hosts in cache
-if [ "$gsSwitch" == "INSTALL" ] || [ "$gsSwitch" == "UPGRADE" ]; then
-	if [ "$SMTP_Provider" != "LOCAL" ]; then
-		ping -c5 $SMTP_Host
-	fi
+if [ "${gsSwitch}" == "INSTALL" ] || [ "${gsSwitch}" == "UPGRADE" ]; then
+    if [ "${SMTP_Provider}" != "LOCAL" ]; then
+        ping -c5 ${SMTP_Host}
+    fi
 fi
 
 #### Flush mail queue
 if gfnCheckCommand 0 postfix && gfnGetPid postfix; then postfix flush; fi
 
 # -----------------------------------------
-source $(dirname $0)/../inc/includes_after
+# shellcheck source=inc/includes_after
+source "$(dirname "$0")"/../inc/includes_after
 # -----------------------------------------
 ##################### LAST LINE ######################################

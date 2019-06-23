@@ -1,14 +1,30 @@
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
+-- MySQL dump 10.16  Distrib 10.1.38-MariaDB, for debian-linux-gnu (x86_64)
+--
+-- Host: localhost    Database: MySB_db
+-- ------------------------------------------------------
+-- Server version	10.1.38-MariaDB-0+deb9u1
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO,NO_KEY_OPTIONS,NO_TABLE_OPTIONS,NO_FIELD_OPTIONS' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Déclencheurs `system`
+-- Dumping data for table `system`
 --
-DROP TRIGGER IF EXISTS `PricePerUser`;
-DELIMITER //
-CREATE TRIGGER `PricePerUser` BEFORE UPDATE ON `system`
+
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DROP TRIGGER IF EXISTS PricePerUser;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`MySB_user`@`localhost`*/ /*!50003 TRIGGER `PricePerUser` BEFORE UPDATE ON `system`
  FOR EACH ROW BEGIN
 	SET NEW.rt_price_per_users = (NEW.rt_cost_tva / NEW.rt_nb_users);
 
@@ -31,16 +47,28 @@ CREATE TRIGGER `PricePerUser` BEFORE UPDATE ON `system`
 			END WHILE;
 		END IF;
 	END IF;
-END
-//
+END */;;
 DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
--- Déclencheurs `tracking_rent_history`
+-- Dumping data for table `tracking_rent_history`
 --
-DROP TRIGGER IF EXISTS `PeriodPrice_OnInsert`;
-DELIMITER //
-CREATE TRIGGER `PeriodPrice_OnInsert` BEFORE INSERT ON `tracking_rent_history`
+
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DROP TRIGGER IF EXISTS PeriodPrice_OnInsert;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`MySB_user`@`localhost`*/ /*!50003 TRIGGER `PeriodPrice_OnInsert` BEFORE INSERT ON `tracking_rent_history`
  FOR EACH ROW BEGIN
 	DECLARE NbDaysUsed INT(2) DEFAULT '00';
 	DECLARE PeriodCost DECIMAL(6,2) DEFAULT '0.00';
@@ -84,12 +112,23 @@ CREATE TRIGGER `PeriodPrice_OnInsert` BEFORE INSERT ON `tracking_rent_history`
 
 	UPDATE users SET period_price=NEW.period_price, period_days=(NEW.remain_days + NEW.old_remain_days), treasury=@Treasury WHERE id_users=NEW.id_users;
 	UPDATE tracking_rent_status SET nb_days_used=(NbDaysUsed+NEW.remain_days), period_cost=PeriodCost WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month;
-END
-//
+END */;;
 DELIMITER ;
-DROP TRIGGER IF EXISTS `PeriodPrice_OnUpdate`;
-DELIMITER //
-CREATE TRIGGER `PeriodPrice_OnUpdate` BEFORE UPDATE ON `tracking_rent_history`
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DROP TRIGGER IF EXISTS PeriodPrice_OnUpdate;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`MySB_user`@`localhost`*/ /*!50003 TRIGGER `PeriodPrice_OnUpdate` BEFORE UPDATE ON `tracking_rent_history`
  FOR EACH ROW BEGIN
 	DECLARE PeriodCost DECIMAL(6,2) DEFAULT '0.00';
 	DECLARE AlreadyPayed DECIMAL(6,2) DEFAULT '0.00';
@@ -127,16 +166,28 @@ CREATE TRIGGER `PeriodPrice_OnUpdate` BEFORE UPDATE ON `tracking_rent_history`
 
 	UPDATE users SET period_price=NEW.period_price, period_days=NEW.remain_days, treasury=@Treasury WHERE id_users=NEW.id_users;
 	UPDATE tracking_rent_status SET nb_days_used=(nb_days_used+(NEW.remain_days-OLD.remain_days)), period_cost=PeriodCost, already_payed=AlreadyPayed WHERE id_users=NEW.id_users AND year=NEW.year AND month=NEW.month;
-END
-//
+END */;;
 DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
--- Déclencheurs `tracking_rent_payments`
+-- Dumping data for table `tracking_rent_payments`
 --
-DROP TRIGGER IF EXISTS `TreasuryUpdate_OnInsert`;
-DELIMITER //
-CREATE TRIGGER `TreasuryUpdate_OnInsert` BEFORE INSERT ON `tracking_rent_payments`
+
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DROP TRIGGER IF EXISTS TreasuryUpdate_OnInsert;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`MySB_user`@`localhost`*/ /*!50003 TRIGGER `TreasuryUpdate_OnInsert` BEFORE INSERT ON `tracking_rent_payments`
  FOR EACH ROW BEGIN
 	DECLARE IdStatus INTEGER DEFAULT 0;
 	DECLARE PeriodCost DECIMAL(6,2) DEFAULT '0.00';
@@ -175,12 +226,23 @@ CREATE TRIGGER `TreasuryUpdate_OnInsert` BEFORE INSERT ON `tracking_rent_payment
 	SELECT sum(period_cost), sum(already_payed) INTO PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users!=@MainUserId AND already_payed!=period_cost;
 	SET @Treasury = AlreadyPayed-PeriodCost;
 	UPDATE users SET treasury=@Treasury WHERE id_users=@MainUserId;
- END
-//
+ END */;;
 DELIMITER ;
-DROP TRIGGER IF EXISTS `TreasuryUpdate_OnDelete`;
-DELIMITER //
-CREATE TRIGGER `TreasuryUpdate_OnDelete` BEFORE DELETE ON `tracking_rent_payments`
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DROP TRIGGER IF EXISTS TreasuryUpdate_OnDelete;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`MySB_user`@`localhost`*/ /*!50003 TRIGGER `TreasuryUpdate_OnDelete` BEFORE DELETE ON `tracking_rent_payments`
  FOR EACH ROW BEGIN
 	DECLARE IdStatus INTEGER DEFAULT 0;
 	DECLARE PeriodCost DECIMAL(6,2) DEFAULT '0.00';
@@ -217,16 +279,28 @@ CREATE TRIGGER `TreasuryUpdate_OnDelete` BEFORE DELETE ON `tracking_rent_payment
 	SELECT sum(period_cost), sum(already_payed) INTO PeriodCost, AlreadyPayed FROM tracking_rent_status WHERE id_users!=@MainUserId AND already_payed!=period_cost;
 	SET @Treasury = AlreadyPayed-PeriodCost;
 	UPDATE users SET treasury=@Treasury WHERE id_users=@MainUserId;
- END
-//
+ END */;;
 DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
--- Déclencheurs `tracking_rent_status`
+-- Dumping data for table `tracking_rent_status`
 --
-DROP TRIGGER IF EXISTS `NewStatus_OnInsert`;
-DELIMITER //
-CREATE TRIGGER `NewStatus_OnInsert` BEFORE INSERT ON `tracking_rent_status`
+
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DROP TRIGGER IF EXISTS NewStatus_OnInsert;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`MySB_user`@`localhost`*/ /*!50003 TRIGGER `NewStatus_OnInsert` BEFORE INSERT ON `tracking_rent_status`
  FOR EACH ROW BEGIN
 	IF (NEW.year = '0000') THEN
 		SET NEW.year = DATE_FORMAT(NOW(),'%Y');
@@ -235,36 +309,70 @@ CREATE TRIGGER `NewStatus_OnInsert` BEFORE INSERT ON `tracking_rent_status`
 		SET NEW.month = DATE_FORMAT(NOW(),'%m');
 	END IF;
 	SET NEW.date = CONCAT(NEW.year, NEW.month);
- END
-//
+ END */;;
 DELIMITER ;
-DROP TRIGGER IF EXISTS `NewStatus_OnUpdate`;
-DELIMITER //
-CREATE TRIGGER `NewStatus_OnUpdate` BEFORE UPDATE ON `tracking_rent_status`
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DROP TRIGGER IF EXISTS NewStatus_OnUpdate;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`MySB_user`@`localhost`*/ /*!50003 TRIGGER `NewStatus_OnUpdate` BEFORE UPDATE ON `tracking_rent_status`
  FOR EACH ROW BEGIN
 	SET NEW.date = CONCAT(NEW.year, NEW.month);
 	IF (NEW.already_payed = '9999.99') THEN
 		SET NEW.already_payed = NEW.period_cost;
 	END IF;
-END
-//
+END */;;
 DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
--- Déclencheurs `users`
+-- Table structure for table `users`
 --
-DROP TRIGGER IF EXISTS `AddUsersHistory_BeforeInsert`;
-DELIMITER //
-CREATE TRIGGER `AddUsersHistory_BeforeInsert` BEFORE INSERT ON `users`
+
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DROP TRIGGER IF EXISTS AddUsersHistory_BeforeInsert;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`MySB_user`@`localhost`*/ /*!50003 TRIGGER `AddUsersHistory_BeforeInsert` BEFORE INSERT ON `users`
  FOR EACH ROW BEGIN
 	SET NEW.created_at=DATE_FORMAT(NOW(),'%Y-%m-%d');
 	UPDATE system SET rt_nb_users=rt_nb_users+1 WHERE id_system=1;
-END
-//
+END */;;
 DELIMITER ;
-DROP TRIGGER IF EXISTS `AddUsersHistory_AfterInsert`;
-DELIMITER //
-CREATE TRIGGER `AddUsersHistory_AfterInsert` AFTER INSERT ON `users`
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DROP TRIGGER IF EXISTS AddUsersHistory_AfterInsert;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`MySB_user`@`localhost`*/ /*!50003 TRIGGER `AddUsersHistory_AfterInsert` AFTER INSERT ON `users`
  FOR EACH ROW BEGIN
 	DECLARE UserId INT(11) DEFAULT 0;
  	DECLARE UserIdent VARCHAR(32) DEFAULT '';
@@ -276,21 +384,23 @@ CREATE TRIGGER `AddUsersHistory_AfterInsert` AFTER INSERT ON `users`
 	ELSE
 		INSERT INTO users_history (id_users,users_ident,users_email,created_at) VALUES (NEW.id_users,NEW.users_ident,NEW.users_email,NEW.created_at);
 	END IF;
-END
-//
+END */;;
 DELIMITER ;
-DROP TRIGGER IF EXISTS `KeepUserHistory_BeforeDelete`;
--- DELIMITER //
--- CREATE TRIGGER `KeepUserHistory_BeforeDelete` BEFORE DELETE ON `users`
- -- FOR EACH ROW BEGIN
-	-- UPDATE system SET rt_nb_users=rt_nb_users-1 WHERE id_system=1;
-	-- UPDATE users_history SET deleted_at=DATE_FORMAT(NOW(),'%Y-%m-%d') WHERE id_users=OLD.id_users;
--- END
--- //
--- DELIMITER ;
-DROP TRIGGER IF EXISTS `UpdateUsersHistory_BeforeUpdate`;
-DELIMITER //
-CREATE TRIGGER `UpdateUsersHistory_BeforeUpdate` BEFORE UPDATE ON `users`
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DROP TRIGGER IF EXISTS UpdateUsersHistory_BeforeUpdate;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`MySB_user`@`localhost`*/ /*!50003 TRIGGER `UpdateUsersHistory_BeforeUpdate` BEFORE UPDATE ON `users`
  FOR EACH ROW BEGIN
 	IF (OLD.created_at = '0000-00-00') THEN
 		IF (NEW.created_at = '0000-00-00') THEN
@@ -300,10 +410,20 @@ CREATE TRIGGER `UpdateUsersHistory_BeforeUpdate` BEFORE UPDATE ON `users`
 	ELSE
 		UPDATE users_history SET users_email=NEW.users_email, created_at=NEW.created_at WHERE id_users=NEW.id_users;
 	END IF;
-END
-//
+END */;;
 DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+DROP TRIGGER IF EXISTS KeepUserHistory_BeforeDelete;
+
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2019-05-20 17:56:04

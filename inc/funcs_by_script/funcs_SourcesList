@@ -1,3 +1,5 @@
+#!/bin/bash
+# rev 5.5
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -20,157 +22,216 @@
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
 ######################################################################
-([ -z "$vars" ] || [ "$vars" -ne 1 ]) && echo "Please load 'vars' file before..." && return
-funcs_SourcesList=1
+{ [ -z "${vars}" ] || [ "${vars}" -ne 1 ]; } && {
+    echo "Please load 'vars' file before..."
+    return
+}
 ##################### FIRST LINE #####################################
 
-#### VARs
-binCURL="curl -skLS --retry 3"
-
 #### Delete Bad Sources
-gfnDeleteBadSources() {
-	local sSourcesFile
+# gfnDeleteBadSources() {
+# 	local sSourcesFile
 
-	if [ -z "$1" ]; then
-		sSourcesFile="/etc/apt/sources.list"
-	else
-		sSourcesFile="$1"
-	fi
+# 	if [ -z "$1" ]; then
+# 		sSourcesFile="/etc/apt/sources.list"
+# 	else
+# 		sSourcesFile="$1"
+# 	fi
 
-	# Delete bad sources
-	# sed -i '/ftp.nerim.net/d' $sSourcesFile
-	# sed -i '/ftp.upcnet.ro/d' $sSourcesFile
-	# sed -i '/dist1.800hosting.com/d' $sSourcesFile
-	# sed -i '/debian.inhost.pro/d' $sSourcesFile
-	# sed -i '/debian.mirror.digitalpacific.com.au/d' $sSourcesFile
-	# sed -i '/ftp.th.debian.org/d' $sSourcesFile
-	# sed -i '/ftp.debian.chuvsu.ru/d' $sSourcesFile
-	# sed -i '/mirror.atomki.mta.hu/d' $sSourcesFile
-	# sed -i '/mirror.debian.ikoula.com/d' $sSourcesFile
-	# sed -i '/mirror.neolabs.kz/d' $sSourcesFile
-	# sed -i '/debian.bononia.it/d' $sSourcesFile
-	# sed -i '/mirrors.evowise.com/d' $sSourcesFile
-	# sed -i '/ftp.heikorichter.name/d' $sSourcesFile
-}
+# Delete bad sources
+# sed -i '/ftp.nerim.net/d' $sSourcesFile
+# sed -i '/ftp.upcnet.ro/d' $sSourcesFile
+# sed -i '/dist1.800hosting.com/d' $sSourcesFile
+# sed -i '/debian.inhost.pro/d' $sSourcesFile
+# sed -i '/debian.mirror.digitalpacific.com.au/d' $sSourcesFile
+# sed -i '/ftp.th.debian.org/d' $sSourcesFile
+# sed -i '/ftp.debian.chuvsu.ru/d' $sSourcesFile
+# sed -i '/mirror.atomki.mta.hu/d' $sSourcesFile
+# sed -i '/mirror.debian.ikoula.com/d' $sSourcesFile
+# sed -i '/mirror.neolabs.kz/d' $sSourcesFile
+# sed -i '/debian.bononia.it/d' $sSourcesFile
+# sed -i '/mirrors.evowise.com/d' $sSourcesFile
+# sed -i '/ftp.heikorichter.name/d' $sSourcesFile
+# }
 
 #### Apt-Key Manage
-gfnAptKeyManage() {
-	local sKey="$1"
+# gfnAptKeyManage() {
+# 	local sKey="$1"
 
-	# DotDeb Renew key
-	if [ ! -z "`apt-key list | grep "$sKey"`" ]; then
-		apt-key adv --keyserver keys.gnupg.net --recv-keys $sKey
-	fi
-}
+# 	# DotDeb Renew key
+# 	if (apt-key list | grep -q "$sKey"); then
+# 		apt-key adv --keyserver keys.gnupg.net --recv-keys "$sKey"
+# 	fi
+# }
 
 #### APT-mirror (local mirror for PeerGuardian, Webmin, Plexmedia Server)
 gfnCreateLocalMirror() {
-	#### mirror.list
-	install -v -o root -g root -m 0644 $MySB_InstallDir/templates/apt/etc.apt.mirror.list.tmpl /etc/apt/mirror.list
-	perl -pi -e "s/<Arch>/$Arch/g" /etc/apt/mirror.list
+    local sArch
 
-	#### postmirror.sh & clean.sh
-	if [ ! -f /var/spool/apt-mirror/var/clean.sh ]; then
-		touch /var/spool/apt-mirror/var/clean.sh
-	fi
-	echo '#!/bin/sh' > /var/spool/apt-mirror/var/postmirror.sh
-	echo "/var/spool/apt-mirror/var/clean.sh" >> /var/spool/apt-mirror/var/postmirror.sh
-	chmod 0755 /var/spool/apt-mirror/var/*.sh
-	chown apt-mirror:apt-mirror /var/spool/apt-mirror/var/*.sh
+    case $(getconf LONG_BIT) in
+        64) sArch="amd64" ;;
+        *) sArch="i386" ;;
+    esac
 
- 	#### Git LFS
-	# GPG Key
-	$binCURL -o "/tmp/git-lfs.key" "https://packagecloud.io/github/git-lfs/gpgkey"
-	if [ -f /tmp/git-lfs.key ]; then
-		apt-key add /tmp/git-lfs.key
-	fi
-	# Local mirrors
-	echo "# Git LFS" >> /etc/apt/mirror.list
-	echo "deb https://packagecloud.io/github/git-lfs/debian/ ${gsDebianRelease} main" >> /etc/apt/mirror.list
-	echo "clean https://packagecloud.io/github/git-lfs/debian/" >> /etc/apt/mirror.list
-	# git-lfs.list (local)
-	echo "# Git LFS" > /etc/apt/sources.list.d/git-lfs.list
-	echo "deb file:///var/spool/apt-mirror/mirror/packagecloud.io/github/git-lfs/debian/ ${gsDebianRelease} main" >> /etc/apt/sources.list.d/git-lfs.list
+    #### mirror.list
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/apt/etc.apt.mirror.list.tmpl /etc/apt/mirror.list
+    perl -pi -e "s/<Arch>/${sArch}/g" /etc/apt/mirror.list
 
- 	#### Docker
-	# GPG Key
-	$binCURL -o "/tmp/docker.key" "https://download.docker.com/linux/debian/gpg"
-	if [ -f /tmp/docker.key ]; then
-		apt-key add /tmp/docker.key
-	fi
-	# Local mirrors
-	echo "# Docker" >> /etc/apt/mirror.list
-	echo "deb https://download.docker.com/linux/debian/ ${gsDebianRelease} stable" >> /etc/apt/mirror.list
-	echo "clean https://download.docker.com/linux/debian/" >> /etc/apt/mirror.list
-	# docker.list (local)
-	echo "# Docker" > /etc/apt/sources.list.d/docker.list
-	echo "deb file:///var/spool/apt-mirror/mirror/download.docker.com/linux/debian/ ${gsDebianRelease} stable" >> /etc/apt/sources.list.d/docker.list
+    #### postmirror.sh & clean.sh
+    if [ ! -f /var/spool/apt-mirror/var/clean.sh ]; then
+        touch /var/spool/apt-mirror/var/clean.sh
+    fi
+    {
+        echo '#!/bin/sh'
+        echo "# Sury repo - Remove unused PHP version"
+        echo "rm -rf /var/spool/apt-mirror/mirror/packages.sury.org/php/pool/main/p/php5.6/"
+        echo "rm -rf /var/spool/apt-mirror/mirror/packages.sury.org/php/pool/main/p/php7.0/"
+        echo "rm -rf /var/spool/apt-mirror/mirror/packages.sury.org/php/pool/main/p/php7.2/"
+        echo "rm -rf /var/spool/apt-mirror/mirror/packages.sury.org/php/pool/main/p/php7.3/"
+        echo "# Apt-Mirror - Clean script"
+        echo "/var/spool/apt-mirror/var/clean.sh"
+    } >/var/spool/apt-mirror/var/postmirror.sh
+    chmod 0755 /var/spool/apt-mirror/var/*.sh
+    chown apt-mirror:apt-mirror /var/spool/apt-mirror/var/*.sh
 
- 	#### Peerguardian
-	if [ "$gbToInstall_PeerGuardian" == "YES" ] || [ "$gbIsInstalled_PeerGuardian" == "YES" ]; then
-		# GPG Key
-		until gpg --keyserver keyserver.ubuntu.com --recv-keys C0145138; do
-			sleep 1
-		done
-		until gpg --export --armor C0145138 | apt-key add -; do
-			sleep 1
-		done
-		# Local mirrors
-		echo "# PeerGuardian" >> /etc/apt/mirror.list
-		echo "deb http://moblock-deb.sourceforge.net/debian/ ${gsDebianRelease} main" >> /etc/apt/mirror.list
-		echo "clean http://moblock-deb.sourceforge.net/debian/" >> /etc/apt/mirror.list
-		# peerguardian.list (local)
-		echo "# PeerGuardian" > /etc/apt/sources.list.d/peerguardian.list
-		echo "deb file:///var/spool/apt-mirror/mirror/moblock-deb.sourceforge.net/debian/ ${gsDebianRelease} main" >> /etc/apt/sources.list.d/peerguardian.list
-	fi
+    #### PHP 7.1 (Sury)
+    # GPG Key
+    $binCURL -o "/tmp/php.key" "https://packages.sury.org/php/apt.gpg"
+    if [ -f /tmp/php.key ]; then
+        apt-key add /tmp/php.key
+    fi
+    # Local mirrors
+    {
+        echo "# PHP7.1 (Sury)"
+        echo "deb [arch=${sArch}] https://packages.sury.org/php/ ${gsDebianRelease} main"
+        echo "clean https://packages.sury.org/php/"
+    } >>/etc/apt/mirror.list
+    # php.list (local)
+    {
+        echo "# PHP7.1 (Sury)"
+        echo "# https://github.com/oerdnj/deb.sury.org/wiki/Managing-Multiple-Versions"
+        echo "deb [arch=${sArch}] file:///var/spool/apt-mirror/mirror/packages.sury.org/php/ ${gsDebianRelease} main"
+    } >/etc/apt/sources.list.d/php.list
 
- 	#### Webmin
-	if [ "$gbToInstall_Webmin" == "YES" ] || [ "$gbIsInstalled_Webmin" == "YES" ]; then
-		# GPG Key
-		$binCURL -o "/tmp/jcameron-key.asc" "http://www.webmin.com/jcameron-key.asc"
-		if [ -f /tmp/jcameron-key.asc ]; then
-			apt-key add /tmp/jcameron-key.asc
-		fi
-		# Local mirrors
-		echo "# Webmin" >> /etc/apt/mirror.list
-		echo "deb http://download.webmin.com/download/repository/ sarge contrib" >> /etc/apt/mirror.list
-		echo "clean http://download.webmin.com/download/repository/" >> /etc/apt/mirror.list
-		echo "deb http://webmin.mirror.somersettechsolutions.co.uk/repository/ sarge contrib" >> /etc/apt/mirror.list
-		echo "clean http://webmin.mirror.somersettechsolutions.co.uk/repository/" >> /etc/apt/mirror.list
-		# webmin.list (local)
-		echo "# Webmin" > /etc/apt/sources.list.d/webmin.list
-		echo "deb file:///var/spool/apt-mirror/mirror/download.webmin.com/download/repository/ sarge contrib" >> /etc/apt/sources.list.d/webmin.list
-		echo "deb file:///var/spool/apt-mirror/mirror/webmin.mirror.somersettechsolutions.co.uk/repository/ sarge contrib" >> /etc/apt/sources.list.d/webmin.list
-	fi
+    #### Docker
+    # GPG Key
+    $binCURL -o "/tmp/docker.key" "https://download.docker.com/linux/debian/gpg"
+    if [ -f /tmp/docker.key ]; then
+        apt-key add /tmp/docker.key
+    fi
+    # Local mirrors
+    {
+        echo "# Docker"
+        echo "deb [arch=${sArch}] https://download.docker.com/linux/debian/ ${gsDebianRelease} stable"
+        echo "clean https://download.docker.com/linux/debian/"
+    } >>/etc/apt/mirror.list
+    # docker.list (local)
+    {
+        echo "# Docker"
+        echo "deb [arch=${sArch}] file:///var/spool/apt-mirror/mirror/download.docker.com/linux/debian/ ${gsDebianRelease} stable"
+    } >/etc/apt/sources.list.d/docker.list
 
- 	#### Download mirrors with 'apt-mirror'
-	echo
-	cat /etc/apt/mirror.list
-	echo
-	apt-mirror
+    #### MariaDB
+    # # GPG Key
+    # apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 0xF1656F24C74CD1D8
+    # # Local mirrors
+
+    # {
+    #     echo "# MariaDB 10.3"
+    #     echo "deb [arch=${sArch}] http://mariadb.mirrors.ovh.net/MariaDB/repo/10.3/debian/ ${gsDebianRelease} main"
+    #     echo "clean http://mariadb.mirrors.ovh.net/MariaDB/repo/10.3/debian/"
+    #     echo "deb [arch=${sArch}] http://mirror.zol.co.zw/mariadb/repo/10.3/debian/ ${gsDebianRelease} main"
+    #     echo "clean http://mirror.zol.co.zw/mariadb/repo/10.3/debian/"
+    # } >>/etc/apt/mirror.list
+    # # peerguardian.list (local)
+    # {
+    #     echo "# MariaDB 10.3"
+    #     echo "deb [arch=${sArch}] file:///var/spool/apt-mirror/mirror/mariadb.mirrors.ovh.net/MariaDB/repo/10.3/debian/ ${gsDebianRelease} main"
+    #     echo "deb [arch=${sArch}] file:///var/spool/apt-mirror/mirror/mirror.zol.co.zw/mariadb/repo/10.3/debian/ ${gsDebianRelease} main"
+    # } >/etc/apt/sources.list.d/mariadb.list
+
+    #### Peerguardian
+    if [ "${gbToInstall_PeerGuardian}" == "YES" ] || [ "${gbIsInstalled_PeerGuardian}" == "YES" ]; then
+        # GPG Key
+        until gpg --keyserver keyserver.ubuntu.com --recv-keys C0145138; do
+            sleep 1
+        done
+        until gpg --export --armor C0145138 | apt-key add -; do
+            sleep 1
+        done
+        # Local mirrors
+        {
+            echo "# PeerGuardian"
+            echo "deb [arch=${sArch}] http://moblock-deb.sourceforge.net/debian/ ${gsDebianRelease} main"
+            echo "clean http://moblock-deb.sourceforge.net/debian/"
+        } >>/etc/apt/mirror.list
+        # peerguardian.list (local)
+        {
+            echo "# PeerGuardian"
+            echo "deb [arch=${sArch}] file:///var/spool/apt-mirror/mirror/moblock-deb.sourceforge.net/debian/ ${gsDebianRelease} main"
+        } >/etc/apt/sources.list.d/peerguardian.list
+    fi
+
+    #### Webmin
+    if [ "${gbToInstall_Webmin}" == "YES" ] || [ "${gbIsInstalled_Webmin}" == "YES" ]; then
+        # GPG Key
+        $binCURL -o "/tmp/jcameron-key.asc" "http://www.webmin.com/jcameron-key.asc"
+        if [ -f /tmp/jcameron-key.asc ]; then
+            apt-key add /tmp/jcameron-key.asc
+        fi
+        # Local mirrors
+        {
+            echo "# Webmin"
+            echo "deb [arch=${sArch}] http://download.webmin.com/download/repository/ sarge contrib"
+            echo "clean http://download.webmin.com/download/repository/"
+            echo "deb [arch=${sArch}] http://webmin.mirror.somersettechsolutions.co.uk/repository/ sarge contrib"
+            echo "clean http://webmin.mirror.somersettechsolutions.co.uk/repository/"
+        } >>/etc/apt/mirror.list
+        # webmin.list (local)
+        {
+            echo "# Webmin"
+            echo "deb [arch=${sArch}] file:///var/spool/apt-mirror/mirror/download.webmin.com/download/repository/ sarge contrib"
+            echo "deb [arch=${sArch}] file:///var/spool/apt-mirror/mirror/webmin.mirror.somersettechsolutions.co.uk/repository/ sarge contrib"
+        } >/etc/apt/sources.list.d/webmin.list
+    fi
+
+    #### Download mirrors with 'apt-mirror'
+    echo
+    cat /etc/apt/mirror.list
+    echo
+    apt-mirror
 }
 
 #### Basics Sources List
 gfnCreateBasicSourcesList() {
-	local sReposInFile sSourcesList sRepo
+    local sReposInFile sSourcesList sRepo
 
-	sReposInFile="`cat /etc/apt/sources.list | grep '^deb ' | grep -v 'security' | grep -v 'updates' | awk '{ print $2 }'`"
-	sReposInFile="$sReposInFile http://ftp.fr.debian.org/debian/ http://ftp2.fr.debian.org/debian/"
-	sSourcesList="/etc/apt/sources.list"
+    sReposInFile="$(grep '^deb ' /etc/apt/sources.list | grep -v 'security' | grep -v 'updates' | awk '{ print $2 }')"
+    sReposInFile="${sReposInFile} http://ftp.fr.debian.org/debian/ http://ftp2.fr.debian.org/debian/"
+    sSourcesList="/etc/apt/sources.list"
 
-	echo "# Basic Sources List" > $sSourcesList
-	for sRepo in $sReposInFile; do
-		if [ -z "`cat $sSourcesList | grep $sRepo`" ]; then
-			echo "" >> $sSourcesList
-			echo "# $sRepo" >> $sSourcesList
-			echo "deb $sRepo $gsDebianRelease main contrib non-free" >> $sSourcesList
-			echo "deb $sRepo $gsDebianRelease-updates main contrib non-free" >> $sSourcesList
-		fi
-	done
+    case $(getconf LONG_BIT) in
+        64) sArch="amd64" ;;
+        *) sArch="i386" ;;
+    esac
 
-	echo "" >> $sSourcesList
-	echo "# Security" >> $sSourcesList
-	echo "deb http://security.debian.org $gsDebianRelease/updates main contrib non-free" >> $sSourcesList
+    echo "# Basic Sources List" >${sSourcesList}
+    for sRepo in ${sReposInFile}; do
+        if (! grep -q "${sRepo}" ${sSourcesList}); then
+            {
+                echo ""
+                echo "# ${sRepo}"
+                echo "deb [arch=${sArch}] ${sRepo} ${gsDebianRelease} main contrib non-free"
+                echo "deb [arch=${sArch}] ${sRepo} ${gsDebianRelease}-updates main contrib non-free"
+            } >>${sSourcesList}
+        fi
+    done
+
+    {
+        echo ""
+        echo "# Security"
+        echo "deb [arch=${sArch}] http://security.debian.org ${gsDebianRelease}/updates main contrib non-free"
+    } >>${sSourcesList}
 }
 
 ##################### LAST LINE ######################################

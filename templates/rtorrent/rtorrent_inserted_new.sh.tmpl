@@ -1,0 +1,352 @@
+#!/bin/bash
+# rev 5.5
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#	 _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#	  _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#	   _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#		_\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#		 _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#		  _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+# ARGS: $d.hash=,$d.name=,$d.directory=,$d.loaded_file=,$d.custom2=,$d.custom1=
+
+#### VARs
+sInfoHash="${1}"        # $d.hash=
+sName="${2}"            # $d.name=
+sDirectory="${3}"       # $d.directory=
+sTorrentLoaded="${4}"   # $d.loaded_file=
+sTorrentDir="${5}"      # $d.custom2=
+sLabel="${6}"           # $d.custom1=
+
+sUserName="$(whoami)"
+nCgiPort="<scgi_port>"
+dTimestamp="$(date +%Y/%m/%d\ %H:%M:%S)"
+sTorrentFile="${sTorrentDir}$(basename "${sTorrentLoaded}")"
+sLogFile="/home/${sUserName}/logs/$(basename "$0").log"
+sSqlParams='--defaults-extra-file=/home/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N'
+nContinue=0
+
+#### Do some checks before
+# Vars
+[ -z "${sInfoHash}" ] && fnExit 1
+[ -z "${sName}" ] && fnExit 1
+[ -z "${sDirectory}" ] && fnExit 1
+( [ -z "${sTorrentLoaded}" ] || [ ! -f "${sTorrentLoaded}" ] ) && fnExit 1
+( [ -z "${sTorrentDir}" ] || [ ! -d "${sTorrentDir}" ] ) && fnExit 1
+
+#### VARs
+sPrivacy="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
+sRequestValues="$(mysql ${sSqlParams} -e "SELECT public_tracker_allow,files_recycling FROM system WHERE id_system='1';" | sed 's/\t/|/g;')"
+sTrackerModeAllowed="$(echo "$sRequestValues" | awk '{split($0,a,"|"); print a[1]}')"
+sFilesRecycling="$(echo "$sRequestValues" | awk '{split($0,a,"|"); print a[2]}')"
+nContinue=0
+
+#### Functions
+fnExit() {
+    {
+        echo "---------- ERROR ----------"
+        echo "Timestamp: ${dTimestamp}"
+        echo "Name: ${sName}"
+        echo "Hash: ${sInfoHash}"
+        echo "Label: ${sLabel}"
+        echo "Directory: ${sDirectory}"
+        case "${sFilesRecycling}" in
+            0) sValue="Disabled" ;;
+            1) sValue="Simple copy" ;;
+            2) sValue="Hard link" ;;
+        esac
+        echo "File recycling: ${sValue}"
+        echo "Tracker privacy: ${sPrivacy}"
+        echo "Trackers allowed: ${sTrackerModeAllowed}"
+        echo "Torrent loaded: ${sTorrentLoaded}"
+        echo "Torrent dir: ${sTorrentDir}"
+        echo "Torrent file: ${sTorrentFile}"
+        echo "---------- ERROR ----------"
+        echo ""
+    } >>"${sLogFile}"
+    xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.erase ${sInfoHash} >>"${sLogFile}"
+    exit "${1}"
+}
+
+fnCopyFile() {
+    case "${sFilesRecycling}" in
+        0) # Disable
+            ;;
+        1) # Simple copy
+            sParams=("-av")
+            sOwners=("${sUserName}:${sUserName}")
+            ;;
+        2) # Hard link
+            sParams=("-alv")
+            sOwners=("${sUserName}:MySB_users")
+            ;;
+    esac
+
+    if (sudo cp "${sParams[@]}" "${sTree}" "${sDirectory}"/); then
+        sudo chown -Rv "${sOwners[@]}" "${sDirectory}/${sName}"
+        xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.open ${sInfoHash} >>"${sLogFile}"
+        xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.check_hash ${sInfoHash} >>"${sLogFile}"
+    fi
+}
+
+#### Step 1 - Log header
+{
+    echo "################################################################################"
+    echo "Timestamp: ${dTimestamp}"
+    echo "Name: ${sName}"
+    echo "Hash: ${sInfoHash}"
+    [ -n "${sLabel}" ] && echo "Label: ${sLabel}"
+    echo "Directory: ${sDirectory}"
+    case "${sFilesRecycling}" in
+        0) sValue="Disabled" ;;
+        1) sValue="Simple copy" ;;
+        2) sValue="Hard link" ;;
+    esac
+    echo "Tracker privacy: ${sPrivacy}"
+    echo "Trackers allowed: ${sTrackerModeAllowed}"
+    echo "Torrent loaded: ${sTorrentLoaded}"
+    echo "Torrent dir: ${sTorrentDir}"
+    echo "Torrent file: ${sTorrentFile}"
+    echo "--------------"
+} >>"${sLogFile}"
+
+#### Step 2 - Close torrent from rTorrent queue
+xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.stop ${sInfoHash} >>"${sLogFile}"
+xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.close ${sInfoHash} >>"${sLogFile}"
+
+#### Step 3 - Check if the tracker is allowed & annoncers cleaning
+case "${sTrackerModeAllowed}" in
+    "private") [ "${sPrivacy}" == "private" ] && nContinue=1 || nContinue=0 ;;
+    "public") nContinue=1 ;;
+    *) nContinue=0 ;;
+esac
+
+if [ "${nContinue}" -eq 1 ]; then
+    #### Step 4 - List & count annoncers
+    declare -A aAnnoncers
+    aAnnoncersUdp=()
+    aAnnoncersIpv=()
+    aAnnoncersHttp=()
+    aAnnoncersHttps=()
+    nCountAnnoncers=0
+    nId=0
+
+    for sAnnoncer in $(transmission-show "${sTorrentLoaded}" | grep 'udp://\|http://\|https://' | grep -v 'Magnet URI' | grep -v 'Comment' | sed -e 's/ //g;'); do
+        if (grep -q 'udp://' <<<"${sAnnoncer}"); then
+            nEnable=1
+            ((nCountAnnoncers++))
+            aAnnoncersUdp+=("${sAnnoncer}")
+            aAnnoncers[${nId}]="t${nId} ${nEnable}"
+            echo "${sAnnoncer}" >>"${sLogFile}"
+            ((nId++))
+            continue
+        elif (grep -q 'ipv6' <<<"${sAnnoncer}"); then
+            nEnable=0
+            ((nCountAnnoncers++))
+            aAnnoncersIpv+=("${sAnnoncer}")
+            aAnnoncers[${nId}]="t${nId} ${nEnable}"
+            echo "${sAnnoncer}" >>"${sLogFile}"
+            ((nId++))
+            continue
+        elif (grep -q 'http://' <<<"${sAnnoncer}"); then
+            nEnable=1
+            ((nCountAnnoncers++))
+            aAnnoncersHttp+=("${sAnnoncer}")
+            aAnnoncers[${nId}]="t${nId} ${nEnable}"
+            echo "${sAnnoncer}" >>"${sLogFile}"
+            ((nId++))
+            continue
+        elif (grep -q 'https://' <<<"${sAnnoncer}"); then
+            nEnable=1
+            ((nCountAnnoncers++))
+            aAnnoncersHttps+=("${sAnnoncer}")
+            aAnnoncers[${nId}]="t${nId} ${nEnable}"
+            echo "${sAnnoncer}" >>"${sLogFile}"
+            ((nId++))
+            continue
+        else
+            ((nId++))
+        fi
+    done
+    {
+        echo "There is ${nCountAnnoncers} annoncer(s) in ${sTorrentLoaded}"
+        echo "UDP: ${#aAnnoncersUdp[*]}"
+        echo "IPv6: ${#aAnnoncersIpv[*]}"
+        echo "HTTP: ${#aAnnoncersHttp[*]}"
+        echo "HTTPs: ${#aAnnoncersHttps[*]}"
+        echo "--------------"
+    } >>"${sLogFile}"
+    if [ "${nCountAnnoncers}" -eq 0 ]; then
+        xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.erase ${sInfoHash} >>"${sLogFile}"
+        exit 1
+    fi
+
+    #### Step 5 - Disable IPv6 annoncers
+    bCleaned=0
+    for ((i = 0; i < ${#aAnnoncers[@]}; i++)); do
+        bState="$(echo "${aAnnoncers[${i}]}" | awk '{printf $2}')"
+        if [ "${bState}" -eq 0 ]; then
+            xmlrpc2scgi.py scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${aAnnoncers[${i}]} >>"${sLogFile}"
+            bCleaned=1
+        fi
+    done
+    if [ ${bCleaned} -eq 1 ]; then
+        {
+            echo "Cleaning annoncers completed !"
+            echo "--------------"
+        } >>"${sLogFile}"
+    fi
+
+    #### Step 6 - Prepare annoncers (UDP, HTTP & HTTPs) list for GetTrackersCert.bsh script
+    bExecute=0
+    for sAnnoncer in "${aAnnoncersHttps[@]}" "${aAnnoncersHttp[@]}" "${aAnnoncersUdp[@]}"; do
+        if [ -n "${sAnnoncer}" ]; then
+            if (! grep -q "${sAnnoncer}" <<</home/.check_annoncers_${sUserName}); then
+                echo "${sAnnoncer}|${sPrivacy}" >>/home/.check_annoncers_${sUserName}
+                bExecute=1
+            fi
+        fi
+    done
+    [ "${bExecute}" -eq 1 ] && sudo /bin/bash "<MySB_InstallDir>/scripts/GetTrackersCert.bsh" USER "${sUserName}" &>/dev/null
+
+    #### Step 8 - Check if torrent already exist & copying duplicated files
+    if [ "${sFilesRecycling}" -gt 0 ]; then
+        for sTree in $(mysql ${sSqlParams} -e "SELECT tree FROM torrents WHERE info_hash='${sInfoHash}' AND name='${sName}' AND state='completed';"); do
+            if [ -n "${sTree}" ]; then
+                if [ -f "${sTree}" ] || [ -d "${sTree}" ]; then
+                    # Tree in DB is the same that real
+                    {
+                        fnCopyFile
+                        mysql ${sSqlParams} -e "INSERT INTO torrents (info_hash,name,privacy,state,tree) VALUES ('${sInfoHash}', '${sName}', '${sPrivacy}', 'completed', '${sDirectory}/${sName}');" -v
+                    } >>"${sLogFile}"
+                    sed -i '/^$/d' "${sLogFile}"
+                    break
+                else
+                    {
+                        # Not a validated file/directory, removing entry from database !
+                        echo "Not a validated file/directory, removing entry from database !"
+                        mysql ${sSqlParams} -e "DELETE FROM torrents WHERE info_hash='${sInfoHash}' AND name='${sName}' AND state='completed' AND tree='${sTree}';" -v
+                    } >>"${sLogFile}"
+                    sed -i '/^$/d' "${sLogFile}"
+                fi
+            else
+                # We search the file with find
+                sTree="$(find /home/*/rtorrent/ -name "${sName}" -print -quit)"
+                if [ -n "${sTree}" ]; then
+                    {
+                        fnCopyFile
+                        mysql ${sSqlParams} -e "INSERT INTO torrents (info_hash,name,privacy,state,tree) VALUES ('${sInfoHash}', '${sName}', '${sPrivacy}', 'completed', '${sDirectory}/${sName}');" -v
+                    } >>"${sLogFile}"
+                    sed -i '/^$/d' "${sLogFile}"
+                fi
+            fi
+        done
+    fi
+
+    if [ "${#aAnnoncersHttp[*]}" -gt 0 ] || [ "${#aAnnoncersHttps[*]}" -gt 0 ]; then
+        {
+            #### Step 9 - Wait after annoncers check
+            while [ -s /home/.check_annoncers_${sUserName} ]; do
+                echo "Waiting for '/home/.check_annoncers_${sUserName}'"
+                sleep 1
+            done
+            echo "--------------"
+        } >>"${sLogFile}"
+
+        #### Step 10 - Restore validated annoncers
+        for ((i = 0; i < ${#aAnnoncers[@]}; i++)); do
+            sId="$(echo ${aAnnoncers[${i}]} | awk '{printf $1}')"
+            bState="$(echo ${aAnnoncers[${i}]} | awk '{printf $2}')"
+            if [ "${bState}" -eq 1 ]; then
+                sGetUrl="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.url ${sInfoHash}:${sId})"
+                if [ -n "${sGetUrl}" ]; then
+                    echo "Checking: ${sGetUrl}" >>"${sLogFile}"
+
+                    # extract the protocol
+                    sProto="$(echo "${sGetUrl}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')"
+                    echo "  Protocol: ${sProto//:\/\//}"
+                    # remove the protocol
+                    sURL=$(echo "${sGetUrl}" | sed -e s,${sProto},,g)
+                    echo "  URL: ${sURL}"
+                    # extract the user (if any)
+                    sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)"
+                    # extract the host and port
+                    sHostPort=$(echo "${sURL}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
+                    echo "  Host & Port: ${sHostPort}"
+                    # by request host without port
+                    sHost="$(echo "${sHostPort}" | sed -e 's,:.*,,g')"
+                    echo "  Host: ${sHost}"
+                    # by request - try to extract the port
+                    sPort="$(echo "${sHostPort}" | sed -e 's,^.*:,:,g' -e 's,.*:\([0-9]*\).*,\1,g' -e 's,[^0-9],,g')"
+                    case ${sPort#[-+]} in
+                        *[!0-9]* | '')
+                            case "${sProto//:\/\//}" in
+                                'http' | 'udp') sPort=80 ;;
+                                'https')        sPort=443 ;;
+                            esac
+                            ;;
+                    esac
+                    echo "  Port: ${sPort}"
+                    # extract the path (if any)
+                    sURI="$(echo "${sURL}" | grep '/' | cut -d/ -f2-)"
+                    echo "  URI: ${sURI}"
+
+                    # Get if activate
+                    bIsActive="$(mysql ${sSqlParams} -e "SELECT is_active FROM trackers_list WHERE tracker='${sHost}' AND tracker_proto='${sProto//:\/\//}' AND tracker_port='${sPort}';")"
+                    bIsActive="${bIsActive:-1}"
+                    xmlrpc2scgi.py scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${sId} ${bIsActive} >>"${sLogFile}"
+                    [ "${bIsActive}" -eq 1 ] && sResult="Enabled" || sResult="Disabled"
+                    echo "${sResult}: ${sGetUrl}" >>"${sLogFile}"
+                else
+                    echo "sGetUrl is empty !!!" >>"${sLogFile}"
+                fi
+            fi
+        done
+        [ "${#aAnnoncers[@]}" -gt 0 ] && echo "--------------" >>"${sLogFile}"
+    fi
+
+    #### Step 11 - Copy back torrent loaded & start it
+    {
+        echo -n "Moving torrent: "
+        mv -v "${sTorrentLoaded}" "${sTorrentFile}"
+    } >>"${sLogFile}"
+    xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.open ${sInfoHash} >>"${sLogFile}"
+    xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} ${sTorrentFile} >>"${sLogFile}"
+    #### Change group of file
+    # shellcheck disable=SC2024
+    sudo chown -Rv "${sUserName}":"${sUserName}" "${sDirectory}/${sName}"
+
+    #### Start torrent
+    xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.start ${sInfoHash} >>"${sLogFile}"
+
+    #### Step 12 - Update user quota
+    sudo /bin/bash /home/"${sUserName}"/.rTorrent_tasks.sh 'quota'
+
+    exit 0
+fi
+
+if [ "${nContinue}" -eq 0 ]; then
+    #### Remove refused torrent file
+    rm -fv "${sTorrentFile}" >>"${sLogFile}"
+    #### Remove torrent from list
+    sudo /bin/bash /home/"${sUserName}"/.rTorrent_tasks.sh 'erase' ${nCgiPort} ${sInfoHash} &
+    #### Send mail to user
+    curl --retry 3 --silent --show-error --data "username=${sUserName}&get_name=${sName}&get_loaded_file=${sTorrentLoaded}&privacy=${sPrivacy}&trackermodeallowed=${sTrackerModeAllowed}" http://localhost:8888/rTorrent >>"${sLogFile}"
+fi
+
+##################### LAST LINE ######################################

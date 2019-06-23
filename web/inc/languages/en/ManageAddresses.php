@@ -41,5 +41,8 @@ define('User_ManageAddresses_MessageRedirect', 'Success !<br /><br />You will be
 define('User_ManageAddresses_NotAccessPortal', 'Failed !<br /><br />It was not possible to give you an access to MySB portal !');
 define('User_ManageAddresses_RememberCheck', 'Remember that your dynamic IP will be checked every 5 minutes.');
 define('User_ManageAddresses_FailedDeleteAddress', 'Failed !<br /><br />It was not possible to delete address.');
+// Tooltip
+define('User_ManageAddresses_TT_AddAddress', 'Enter the IP addresses or host names that will be allowed to access MySB<br />
+<a target="_blank" href="https://mysb.gitbook.io/doc/configuration/ajout-de-vos-adresses">Access the documentation</a>');
 
 //#################### LAST LINE ######################################

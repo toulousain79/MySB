@@ -79,7 +79,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$type = 'error';
 			}
 
-			GenerateMessage('ManageAddresses', $type, $message, '');
+			GenerateMessage('ManageAddresses', $type, $message);
 			break;
 		case Global_SaveChanges:
 			$count = count($_POST['input_id']);
@@ -88,7 +88,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			for($i=1; $i<=$count; $i++) {
 				$CleanIPv4 = preg_replace('/\s\s+/', '', $_POST['ipv4'][$i]);
 				$CleanHostname = preg_replace('/\s\s+/', '', $_POST['hostname'][$i]);
-				$value = $MySB_DB->update("users_addresses", [ "is_active" => $_POST['is_active'][$i], "last_update" => "$DateTime" ], [ "AND" => [ "ipv4" => "$CleanIPv4", "hostname" => "$CleanHostname" ]]);
+				$value = $MySB_DB->update("users_addresses", [ "is_active" => 1, "last_update" => "$DateTime" ], [ "AND" => [ "ipv4" => "$CleanIPv4", "hostname" => "$CleanHostname" ]]);
 				$result = $result+$value;
 			}
 
@@ -111,7 +111,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				if ( $result == 0 ) {
 					$type = 'success';
 					$message = User_ManageAddresses_MessageRedirect;
-					GenerateMessage('message_only', $type, $message, '');
+					GenerateMessage('message_only', $type, $message);
 					session_start();
 					unset($_SESSION['page']);
 					session_unset();
@@ -121,7 +121,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					echo User_ManageAddresses_NotAccessPortal;
 				}
 			} else {
-				GenerateMessage('ManageAddresses', $type, $message, '');
+				GenerateMessage('ManageAddresses', $type, $message);
 				GenerateMessage('message_only', 'information', User_ManageAddresses_RememberCheck);
 			}
 			break;
@@ -145,7 +145,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					$message = User_ManageAddresses_FailedDeleteAddress;
 				}
 
-				GenerateMessage('ManageAddresses', $type, $message, '');
+				GenerateMessage('ManageAddresses', $type, $message);
 			}
 			break;
 	}
@@ -169,15 +169,18 @@ $AddressesList = $MySB_DB->select("users_addresses", "*", ["id_users" => "$UserI
 
 	<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 		<form id="myForm" class="form_settings" method="post" action="">
+
+<div class="tooltip_templates">
+    <span id="tooltip_content">
+        <?php echo User_ManageAddresses_TT_AddAddress; ?>
+    </span>
+</div>
+
 			<fieldset>
-			<legend><?php echo User_ManageAddresses_TitleAdd; ?></legend>
+			<legend><?php echo User_ManageAddresses_TitleAdd; ?>&nbsp;<img class="tooltip" data-tooltip-content="#tooltip_content" style="cursor: help; vertical-align:middle; width:20px; height:20px;" alt="" border="0" src="<?php echo THEMES_PATH . 'MySB/images/help.png'; ?>"></legend>
 				<div id="input1" class="clonedInput">
 					<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
 					<?php echo User_ManageAddresses_TextAddress; ?>&nbsp;<input class="input_address" id="address" name="address[1]" type="text" required="required"  <?php echo $add_current_ip; ?> />
-					&nbsp;&nbsp;<?php echo Global_IsActive; ?>&nbsp;&nbsp;<select class="redText" id="is_active" name="is_active[1]" style="width:60px; cursor: pointer;" required="required" onchange="this.className=this.options[this.selectedIndex].className">
-										<option value="0" selected="selected" class="redText"><?php echo Global_No; ?></option>
-										<option value="1" class="greenText"><?php echo Global_Yes; ?></option>
-									</select>
 				</div>
 
 				<div style="margin-top: 10px; margin-bottom: 20px;">

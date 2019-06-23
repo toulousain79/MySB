@@ -1,4 +1,5 @@
 #!/bin/bash
+# rev 5.5
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -35,8 +36,11 @@
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
 #### Includes
+# shellcheck source=.etc/MySB/config
 source /etc/MySB/config || exit 0
-source $MySB_InstallDir/inc/vars || exit 0
+# shellcheck source=inc/vars
+source ${MySB_InstallDir}/inc/vars || exit 0
+# shellcheck source=/dev/null
 source /lib/lsb/init-functions || exit 0
 
 ######################################################################
@@ -48,28 +52,29 @@ source /lib/lsb/init-functions || exit 0
 #------------------------------------------------------------
 # rTorrent Infos
 #------------------------------------------------------------
-gsUsername="<username>" # Username to run rtorrent under
-gsHomeDir="/home/$gsUsername" # User home dir
-gsSessionDir="$gsHomeDir/rtorrent/.session" # rTorrent session directory
-gsPidFile="/var/run/rtorrent-$gsUsername.pid" # PID file
-gsLockFile="$gsSessionDir/rtorrent.lock" # Lock file
-gsBinName="rtorrent-$gsUsername"
-gsBinDesc="rTorrent for $gsUsername"
+gsUsername="<username>"        # Username to run rtorrent under
+gsHomeDir="/home/${gsUsername}"     # User home dir
+gsSessionDir="${gsHomeDir}/rtorrent/.session"   # rTorrent session directory
+gsPidFile="/run/rtorrent/${gsUsername}.pid" # PID file
+gsSockFile="/run/rtorrent/${gsUsername}.sock" # Sock file
+gsLockFile="$gsSessionDir/rtorrent.lock"   # Lock file
+gsBinName="rtorrent-${gsUsername}"
+gsBinDesc="rTorrent for ${gsUsername}"
 #------------------------------------------------------------
 # Binary
 #------------------------------------------------------------
- # rTorrent bin
-rTorrentVersion="`cmdMySQL 'MySB_db' "SELECT rtorrent_version FROM users WHERE users_ident='$gsUsername';"`"
+# rTorrent bin
+rTorrentVersion="$(cmdMySQL 'MySB_db' "SELECT rtorrent_version FROM users WHERE users_ident='${gsUsername}';")"
 case "$rTorrentVersion" in
-	"v0.9.6")	binRtorrent="/usr/bin/rtorrent";;
-	"v0.9.7")	binRtorrent="/usr/local/bin/rtorrent";;
-	*)			binRtorrent="/usr/bin/rtorrent";;
+    "v0.9.6") binRtorrent="/usr/bin/rtorrent" ;;
+    "v0.9.7") binRtorrent="/usr/local/bin/rtorrent" ;;
+    *) binRtorrent="/usr/bin/rtorrent" ;;
 esac
 binScreen="/usr/bin/screen" # Screen binary
 #------------------------------------------------------------
 # Log
 #------------------------------------------------------------
-gsLogFile="$gsHomeDir/logs/rTorrentInit.log"
+gsLogFile="${gsHomeDir}/logs/rTorrentInit.log"
 
 ######################################################################
 #
@@ -89,186 +94,191 @@ gsLogFile="$gsHomeDir/logs/rTorrentInit.log"
 
 ## Create PID file for rTorrent
 gfnCreatePidFile() {
-	sleep 1
-	if [ -e $gsLockFile ]; then
-		cat $gsLockFile | awk -F: '{print($2)}' | sed "s/[^0-9]//g" > $gsPidFile
-		echo "Create rTorrent PID file: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $gsLogFile
-	fi
+    sleep 1
+    if [ -e $gsLockFile ]; then
+        cat $gsLockFile | awk -F: '{print($2)}' | sed "s/[^0-9]//g" >${gsPidFile}
+        echo "Create rTorrent PID file: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>${gsLogFile}
+    fi
 }
 
 ## Delete PID file and rtorrent.lock
 gfnDeletePidLockFile() {
-	if [ -e $gsPidFile ]; then
-		pidofproc -p $gsPidFile $binScreen &> /dev/null || rm -f $gsPidFile $gsLockFile 2>> $gsLogFile
-	fi
-	rm -vf $gsLockFile >> $gsLogFile
-	echo "Delete rTorrent LOCK file: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $gsLogFile
-	rm -vf $gsPidFile >> $gsLogFile
-	echo "Delete rTorrent PID file: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $gsLogFile
+    if [ -e ${gsPidFile} ]; then
+        pidofproc -p ${gsPidFile} ${binScreen} &>/dev/null || rm -f ${gsPidFile} $gsLockFile 2>>${gsLogFile}
+    fi
+    (rm -vf $gsLockFile >>${gsLogFile}) && echo "Delete rTorrent LOCK file: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>${gsLogFile}
+    (rm -vf ${gsPidFile} >>${gsLogFile}) && echo "Delete rTorrent PID file: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>${gsLogFile}
+    (rm -vf $gsSockFile >>${gsLogFile}) && echo "Delete rTorrent Sock file: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>${gsLogFile}
 }
 
 ## mount share dir for seedbox users
 gfnMountShareDir() {
-	local sMountList
-	sMountList="`mount -l 2> /dev/null | grep "$gsHomeDir/rtorrent/share"`"
+    local sMountList
+    sMountList="$(mount -l 2>/dev/null | grep "${gsHomeDir}/rtorrent/share")"
 
-	case "$1" in
-		'mount')
-			if [ -z "$sMountList" ]; then
-				umount $gsHomeDir/rtorrent/share > /dev/null 2>&1
-				mount --bind /home/MySB_share $gsHomeDir/rtorrent/share 2>> $gsLogFile
-			fi
-		;;
-		'umount')
-			if [ ! -z "$sMountList" ]; then
-				umount $gsHomeDir/rtorrent/share 2>> $gsLogFile
-			fi
-		;;
-	esac
+    case "$1" in
+        'mount')
+            if [ -z "${sMountList}" ]; then
+                umount ${gsHomeDir}/rtorrent/share >/dev/null 2>&1
+                mount --bind /home/MySB_share ${gsHomeDir}/rtorrent/share 2>>${gsLogFile}
+            fi
+            ;;
+        'umount')
+            if [ -n "${sMountList}" ]; then
+                umount ${gsHomeDir}/rtorrent/share 2>>${gsLogFile}
+            fi
+            ;;
+    esac
 }
 
 ## mount torrents dir for seedbox users
 gfnMountTorrentsDir() {
-	local sMountList
-	sMountList="`mount -l 2> /dev/null | grep "$gsHomeDir/rtorrent/torrents"`"
+    local sMountList
+    sMountList="$(mount -l 2>/dev/null | grep "${gsHomeDir}/rtorrent/torrents")"
 
-	case "$1" in
-		'mount')
-			if [ -z "$sMountList" ] && [ -d $gsRutorrentDir/share/users/$gsUsername/torrents ]; then
-				umount $gsHomeDir/rtorrent/torrents > /dev/null 2>&1
-				mount --bind $gsRutorrentDir/share/users/$gsUsername/torrents $gsHomeDir/rtorrent/torrents 2>> $gsLogFile
-			fi
-		;;
-		'umount')
-			if [ ! -z "$sMountList" ]; then
-				umount $gsHomeDir/rtorrent/torrents 2>> $gsLogFile
-			fi
-		;;
-	esac
+    case "$1" in
+        'mount')
+            if [ -z "${sMountList}" ] && [ -d $gsRutorrentDir/share/users/${gsUsername}/torrents ]; then
+                umount ${gsHomeDir}/rtorrent/torrents >/dev/null 2>&1
+                mount --bind $gsRutorrentDir/share/users/${gsUsername}/torrents ${gsHomeDir}/rtorrent/torrents 2>>${gsLogFile}
+            fi
+            ;;
+        'umount')
+            if [ -n "${sMountList}" ]; then
+                umount ${gsHomeDir}/rtorrent/torrents 2>>${gsLogFile}
+            fi
+            ;;
+    esac
 }
 
 ## Add/Remove cronjob
 gfnDoCrontab() {
-	local sService
-	sService="rtorrent-$gsUsername"
+    local sService
+    sService="rtorrent-${gsUsername}"
 
-	if [ ! -z "$1" ]; then
-		crontab -l > /tmp/crontab.tmp
-		sed -i '/'$sService'/d' /tmp/crontab.tmp
-		case "$1" in
-			'add')  echo "*/5 * * * * systemctl status rtorrent-$gsUsername >/dev/null || systemctl restart rtorrent-$gsUsername" >> /tmp/crontab.tmp;;
-		esac
-		crontab /tmp/crontab.tmp
-		rm -f /tmp/crontab.tmp
-	fi
+    if [ -n "$1" ]; then
+        crontab -l >/tmp/crontab.tmp
+        sed -i "/${sService}/d" /tmp/crontab.tmp
+        case "$1" in
+            'add') echo "*/5 * * * * systemctl status ${sService} >/dev/null || systemctl restart ${sService}" >>/tmp/crontab.tmp ;;
+        esac
+        crontab /tmp/crontab.tmp
+        rm -f /tmp/crontab.tmp
+    fi
 }
 
 #
 # Function that starts the daemon/service
 #
 gfnDoStart() {
-	# Mount
-	gfnMountShareDir 'mount'
-	gfnMountTorrentsDir 'mount'
+    # /run/rtorrent
+    install -v -o root -g MySB_users -m 0775 -d "/run/rtorrent"
 
-	# Add crontab
-	gfnDoCrontab 'add'
+    # Mount
+    gfnMountShareDir 'mount'
+    gfnMountTorrentsDir 'mount'
 
-	# Create config file
-	source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_CreateUser
-	gfnCreateRtorrentConfigFile "$gsUsername"
-	# ruTorrent Plugin Spacedisk quotas included
-	gfnPluginDiskspaceQuotaIncluded
+    # Add crontab
+    gfnDoCrontab 'add'
 
-	# Delete ghost pid and lock file
-	gfnDeletePidLockFile
+    # Create config file
+    # shellcheck source=inc/funcs_by_script/funcs_MySB_CreateUser
+    source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_MySB_CreateUser
+    gfnCreateRtorrentConfigFile "${gsUsername}"
+    # ruTorrent Plugin Spacedisk quotas included
+    gfnPluginDiskspaceQuotaIncluded ""
 
-	# Return
-	#   0 if daemon has been started
-	#   1 if daemon was already running
-	#   2 if daemon could not be started
-	start-stop-daemon --start --quiet --background --make-pidfile --test \
-		--pidfile $gsPidFile\
-		--chuid $gsUsername\
-		--exec $binScreen\
-		-- -DmUS $gsBinName $binRtorrent\
-		 2>> $gsLogFile || return 1
+    # Delete ghost pid and lock file
+    gfnDeletePidLockFile
 
-	start-stop-daemon --start --quiet --background --make-pidfile \
-		--pidfile $gsPidFile\
-		--chuid $gsUsername\
-		--exec $binScreen\
-		-- -DmUS $gsBinName $binRtorrent\
-		 2>> $gsLogFile || return 2
+    # Return
+    #   0 if daemon has been started
+    #   1 if daemon was already running
+    #   2 if daemon could not be started
+    start-stop-daemon --start --quiet --background --make-pidfile --test \
+        --pidfile ${gsPidFile} \
+        --chuid ${gsUsername} \
+        --exec ${binScreen} \
+        -- -DmUS ${gsBinName} ${binRtorrent} \
+        2>>${gsLogFile} || return 1
+
+    start-stop-daemon --start --quiet --background --make-pidfile \
+        --pidfile ${gsPidFile} \
+        --chuid ${gsUsername} \
+        --exec ${binScreen} \
+        -- -DmUS ${gsBinName} ${binRtorrent} \
+        2>>${gsLogFile} || return 2
 }
 
 #
 # Function that stops the daemon/service
 #
 gfnDoStop() {
-	local nReturn sGhostProcess
+    local nReturn sGhostProcess
 
-	# Unmout
-	gfnMountShareDir 'umount'
-	gfnMountTorrentsDir 'umount'
+    # Unmout
+    gfnMountShareDir 'umount'
+    gfnMountTorrentsDir 'umount'
 
-	# Return
-	#   0 if daemon has been stopped
-	#   1 if daemon was already stopped
-	#   2 if daemon could not be stopped
-	#   other if a failure occurred
-	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $gsPidFile --exec $binScreen 2>> $gsLogFile
-	nReturn="$?"
+    # Return
+    #   0 if daemon has been stopped
+    #   1 if daemon was already stopped
+    #   2 if daemon could not be stopped
+    #   other if a failure occurred
+    start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile ${gsPidFile} --exec ${binScreen} 2>>${gsLogFile}
+    nReturn="$?"
 
-	sGhostProcess="`ps ax | grep "rtorrent-$gsUsername $binRtorrent" | grep -v 'grep' | awk '{ print $1 }'`"
-	[ ! -z "$sGhostProcess" ] && kill -9 $sGhostProcess
-	gfnDeletePidLockFile
+    sGhostProcess="$(ps ax | grep "rtorrent-${gsUsername} /usr/bin/rtorrent" | grep -v 'grep' | awk '{ print $1 }')"
+    [ -n "${sGhostProcess}" ] && kill -9 ${sGhostProcess}
+    sGhostProcess="$(ps ax | grep "rtorrent-${gsUsername} /usr/local/bin/rtorrent" | grep -v 'grep' | awk '{ print $1 }')"
+    [ -n "${sGhostProcess}" ] && kill -9 ${sGhostProcess}
+    gfnDeletePidLockFile
 
-	return "$nReturn"
+    return "${nReturn}"
 }
 
 #
 # Function that sends a SIGHUP to the daemon/service
 #
 gfnDoReload() {
-	echo "RELOAD: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $gsLogFile
-	# Delete ghost screen pid file
-	if [ -e $gsPidFile ]; then
-		pidofproc -p $gsPidFile $binScreen &> /dev/null || rm -f $gsPidFile
-	fi
+    echo "RELOAD: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>${gsLogFile}
+    # Delete ghost screen pid file
+    if [ -e ${gsPidFile} ]; then
+        pidofproc -p ${gsPidFile} ${binScreen} &>/dev/null || rm -f ${gsPidFile}
+    fi
 
-	# Delete ghost rtorrent lock file
-	if [ -e $gsPidFile ]; then
-		pidofproc -p $gsPidFile $binScreen &> /dev/null || rm -f $gsPidFile $gsLockFile 2>> $gsLogFile
-	fi
+    # Delete ghost rtorrent lock file
+    if [ -e ${gsPidFile} ]; then
+        pidofproc -p ${gsPidFile} ${binScreen} &>/dev/null || rm -f ${gsPidFile} $gsLockFile 2>>${gsLogFile}
+    fi
 
-	start-stop-daemon --stop --signal HUP --quiet --pidfile $gsPidFile --exec $binScreen 2>> $gsLogFile
-	return $?
+    start-stop-daemon --stop --signal HUP --quiet --pidfile ${gsPidFile} --exec ${binScreen} 2>>${gsLogFile}
+    return $?
 }
 
 #
 # Function stop case
 #
 gfnRestartStopCase() {
-	gfnDoStart
-	case "$?" in
-		0)
-			echo "RESTART: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $gsLogFile
-			gfnCreatePidFile
-			cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='$gsUsername';"
-			log_end_msg 0
-		;;
-		1) # Old process is still running
-			echo "Could not be restarted, old process is still running: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $gsLogFile
-			gfnCreatePidFile
-			log_end_msg 1
-		;;
-		*) # Failed to start
-			echo "Could not be restarted: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $gsLogFile
-			gfnDeletePidLockFile
-			log_end_msg 1
-		;;
-	esac
+    gfnDoStart
+    case "$?" in
+        0)
+            echo "RESTART: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>${gsLogFile}
+            gfnCreatePidFile
+            cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='${gsUsername}';"
+            log_end_msg 0
+            ;;
+        1) # Old process is still running
+            echo "Could not be restarted, old process is still running: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>${gsLogFile}
+            gfnCreatePidFile
+            log_end_msg 1
+            ;;
+        *) # Failed to start
+            echo "Could not be restarted: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>${gsLogFile}
+            gfnDeletePidLockFile
+            log_end_msg 1
+            ;;
+    esac
 }
 
 #------------------------------------------------------------
@@ -288,86 +298,86 @@ gfnRestartStopCase() {
 ######################################################################
 
 ## Check if user exist
-if [ -z "`getent passwd $gsUsername`" ]; then
-	echo "User $gsUsername does not exist !"
-	exit 0
+if [ -z "$(getent passwd "${gsUsername}")" ]; then
+    echo "User ${gsUsername} does not exist !"
+    exit 0
 fi
 
 ## Create log file
-if ! [ -e $gsLogFile ]; then
-	touch $gsLogFile
+if ! [ -e ${gsLogFile} ]; then
+    touch ${gsLogFile}
 fi
 
 ## Sync DB
-if [ ! -f $gsHomeDir/db/$gsUsername.sq3 ]; then
-	cp $gsSync_DB $gsHomeDir/db/$gsUsername.sq3
-	chmod -R 0770 $gsHomeDir/db
-	chown -R $FnUser:www-data $gsHomeDir/db
+if [ ! -f ${gsHomeDir}/db/${gsUsername}.sq3 ]; then
+    cp $gsSync_DB ${gsHomeDir}/db/${gsUsername}.sq3
+    chmod -R 0770 ${gsHomeDir}/db
+    chown -R $FnUser:www-data ${gsHomeDir}/db
 fi
 
 ## Options
 case "$1" in
-	'start')
-		log_daemon_msg "Starting $gsBinDesc" "$gsBinName"
-		gfnDoStart
-		case "$?" in
-			0)
-				echo "START: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $gsLogFile
-				gfnCreatePidFile
-				cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='$gsUsername';"
-				log_end_msg 0
-			;;
-			1)
-				echo "Already running: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $gsLogFile
-				gfnCreatePidFile
-				log_end_msg 0
-			;;
-			2)
-				echo "Could not be started: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $gsLogFile
-				gfnDeletePidLockFile
-				log_end_msg 1
-			;;
-		esac
-	;;
-	'stop')
-		log_daemon_msg "Stopping $gsBinDesc" "$gsBinName"
-		gfnDoCrontab 'remove'
-		gfnDoStop
-		case "$?" in
-			0)
-				echo "STOP: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $gsLogFile
-				log_end_msg 0
-			;;
-			1)
-				echo "Already stopped: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $gsLogFile
-				log_end_msg 0
-			;;
-			2)
-				echo "Could not be stopped, the process was killed: "`/bin/date '+%Y-%m-%d - %H:%M:%S'` >> $gsLogFile
-				log_end_msg 1
-			;;
-		esac
-	;;
-	'restart')
-		log_daemon_msg "Restarting $gsBinDesc" "$gsBinName"
-		gfnDoStop
-		case "$?" in
-			0)	gfnRestartStopCase;;
-			1)	gfnRestartStopCase;;
-		esac
-	;;
-	'reload')
-		log_daemon_msg "Reloading $gsBinDesc configuration" "$gsBinName"
-		gfnDoReload
-		log_end_msg $?
-	;;
-	'status')
-		status_of_proc -p $gsPidFile "$binScreen" "$gsBinName" && exit 0 || exit $?
-	;;
-	*)
-		echo "Usage: service rtorrent-$gsUsername {start|stop|restart|reload|status}"
-		exit 3
-	;;
+    'start')
+        log_daemon_msg "Starting ${gsBinDesc}" "${gsBinName}"
+        gfnDoStart
+        case "$?" in
+            0)
+                echo "START: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>${gsLogFile}
+                gfnCreatePidFile
+                cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='${gsUsername}';"
+                log_end_msg 0
+                ;;
+            1)
+                echo "Already running: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>${gsLogFile}
+                gfnCreatePidFile
+                log_end_msg 0
+                ;;
+            2)
+                echo "Could not be started: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>${gsLogFile}
+                gfnDeletePidLockFile
+                log_end_msg 1
+                ;;
+        esac
+        ;;
+    'stop')
+        log_daemon_msg "Stopping ${gsBinDesc}" "${gsBinName}"
+        gfnDoCrontab 'remove'
+        gfnDoStop
+        case "$?" in
+            0)
+                echo "STOP: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>${gsLogFile}
+                log_end_msg 0
+                ;;
+            1)
+                echo "Already stopped: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>${gsLogFile}
+                log_end_msg 0
+                ;;
+            2)
+                echo "Could not be stopped, the process was killed: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>${gsLogFile}
+                log_end_msg 1
+                ;;
+        esac
+        ;;
+    'restart')
+        log_daemon_msg "Restarting ${gsBinDesc}" "${gsBinName}"
+        gfnDoStop
+        case "$?" in
+            0) gfnRestartStopCase ;;
+            1) gfnRestartStopCase ;;
+        esac
+        ;;
+    'reload')
+        log_daemon_msg "Reloading ${gsBinDesc} configuration" "${gsBinName}"
+        gfnDoReload
+        log_end_msg $?
+        ;;
+    'status')
+        status_of_proc -p ${gsPidFile} "${binScreen}" "${gsBinName}" && exit 0 || exit $?
+        ;;
+    *)
+        echo "Usage: service rtorrent-${gsUsername} {start|stop|restart|reload|status}"
+        exit 3
+        ;;
 esac
 
 ######################################################################

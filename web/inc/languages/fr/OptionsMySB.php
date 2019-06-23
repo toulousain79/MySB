@@ -30,5 +30,9 @@ define('User_OptionsMySB_Title_Portal', 'Portail MySB');
 define('User_OptionsMySB_Language', 'Language');
 define('User_OptionsMySB_Lang_French', 'Fran&ccedil;ais');
 define('User_OptionsMySB_Lang_English', 'Anglais');
+// Tooltip
+define('User_OptionsMySB_TT_rTorrentVersion', 'S&eacute;lectionnez la version de rTorrent que vous souhaitez utiliser');
+define('User_OptionsMySB_TT_rTorrentRestart', 'Permet de red&eacute;marrer v&ocirc;tre session rTorrent');
+define('User_OptionsMySB_TT_NotifyEmail', 'Active/d&eacute;sactive l\'envoie d\'e-mails par rTorrent');
 
 //#################### LAST LINE ######################################
