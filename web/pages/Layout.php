@@ -172,7 +172,7 @@ $MySB_Version = GetVersion();
 ?>
 			<a target="_blank" href="https://github.com/toulousain79/MySB/" title="<?php echo Layout_OnGithub; ?>"><?php echo Layout_OnGithub; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/wiki" title="<?php echo Layout_Wiki; ?>"><?php echo Layout_Wiki; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/blob/<?php echo $MySB_Version; ?>/Changelog.md" title="Changelog <?php echo $MySB_Version; ?>">Changelog <?php echo $MySB_Version; ?></a>
 			<br />
-			<a target="_blank" href="http://www.css3templates.co.uk">Copyright &copy; CSS3_two</a> | <a target="_blank" href="https://github.com/wolfcms/wolfcms" title="<?php echo Layout_Wolf; ?>"><?php echo Layout_Wolf; ?></a> | <a target="_blank" href="http://medoo.in/" title="<?php echo Layout_Medoo; ?>"><?php echo Layout_Medoo; ?></a>
+			<a target="_blank" href="http://www.css3templates.co.uk">Copyright &copy; CSS3_two</a> | <a target="_blank" href="https://github.com/wolfcms/wolfcms" title="<?php echo Layout_Wolf; ?>"><?php echo Layout_Wolf; ?></a> | <a target="_blank" href="http://medoo.in/" title="<?php echo Layout_Medoo; ?>"><?php echo Layout_Medoo; ?></a> | <a target="_blank" href="https://my-netdata.io/" title="NetData">NetData</a>
 <br />
 			<a target="_blank" href="https://www.blockchain.com/btc/payment_request?address=1HtuGsnSsGoUz7DmRbDLCFnRc41jYEY2FE"><img class="tooltip" title="<?php echo Layout_Bitcoin_Text; ?>" alt="<?php echo Layout_Bitcoin_Text; ?>" width="30px" height="30px" border="0" src="<?php echo THEMES_PATH . 'MySB/images/bitcoin.png'; ?>"></a>
 
