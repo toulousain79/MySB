@@ -30,38 +30,41 @@ source "$(dirname "$0")"/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 if [ "$gbToInstall_NFS" == "YES" ]; then
-	#### install
-	gfnPackageBundleInstall 'nfs-kernel-server'
+    #### install
+    gfnPackageBundleInstall 'nfs-kernel-server'
 
-	#### STOP services
-	gfnManageServices stop "nfs-kernel-server"
+    #### STOP services
+    gfnManageServices stop "nfs-kernel-server"
 
-	#### Disable IPv6
-	perl -pi -e "s/^udp6/#udp6/g" /etc/netconfig
-	perl -pi -e "s/^tcp6/#tcp6/g" /etc/netconfig
+    #### Disable IPv6
+    perl -pi -e "s/^udp6/#udp6/g" /etc/netconfig
+    perl -pi -e "s/^tcp6/#tcp6/g" /etc/netconfig
 
-	#### /export directory
-	[ ! -d /export ] && mkdir /export
+    #### /export directory
+    [ ! -d /export ] && mkdir /export
 
-	#### nfs-common
-	install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nfs/etc.default.nfs-common.tmpl /etc/default/nfs-common
+    #### nfs-common
+    install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nfs/etc.default.nfs-common.tmpl /etc/default/nfs-common
 
-	#### nfs-kernel-server
-	install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nfs/etc.default.nfs-kernel-server.tmpl /etc/default/nfs-kernel-server
+    #### nfs-kernel-server
+    install -v -o root -g root -m 0644 $MySB_InstallDir/templates/nfs/etc.default.nfs-kernel-server.tmpl /etc/default/nfs-kernel-server
 
-	#### /etc/default/quota
-	install -v -o root -g root -m 0644 $MySB_InstallDir/templates/other/etc.default.quota.tmpl /etc/default/quota
+    #### /etc/default/quota
+    install -v -o root -g root -m 0644 $MySB_InstallDir/templates/other/etc.default.quota.tmpl /etc/default/quota
 
-	#### Sysctl
-	[[ -z $(grep '# NFS - BoF' /etc/sysctl.conf) ]] && cat $MySB_InstallDir/templates/sysctl/nfs.tmpl >>/etc/sysctl.conf
-	sysctl --system
+    #### Sysctl
+    {
+        echo "fs.nfs.nlm_tcpport=32768"
+        echo "fs.nfs.nlm_udpport=32768"
+    } >/etc/sysctl.d/999-nfs.conf
+    sysctl --system
 
-	if gfnCheckCommand 0 nfs-kernel-server; then
-		cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='NFS';" -v
-	fi
+    if gfnCheckCommand 0 nfs-kernel-server; then
+        cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='NFS';" -v
+    fi
 
-	#### START services
-	gfnManageServices start "nfs-kernel-server"
+    #### START services
+    gfnManageServices start "nfs-kernel-server"
 fi
 
 # -----------------------------------------

@@ -68,10 +68,6 @@ case "$1" in
         #### rTorrent users cleaning
         rm -fv /home/*/logs/*
 
-        #### NFS
-        sed -i '/fs.nfs.nfs_callback_tcpport/d' /etc/sysctl.conf
-        sysctl --system
-
         #### SSH
         if [ "${gsSwitch}" == "UPGRADE" ]; then
             install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/other/etc.ssh.sshd_config.tmpl /etc/ssh/sshd_config
@@ -89,12 +85,6 @@ case "$1" in
         rm -fv /usr/local/share/man/man1/geoipupdate.1
         rm -rfv /usr/local/share/GeoIP/
         rm -rfv /usr/local/share/doc/geoipupdate
-
-        #### Swappiness
-        if (grep -q 'vm.swappiness' /etc/sysctl.conf); then
-            sed -i '/Swappiness/d' /etc/sysctl.conf
-            sed -i '/swappiness/d' /etc/sysctl.conf
-        fi
 
         #### MySQL
         # shellcheck source=.etc/MySB/config_db
@@ -161,6 +151,31 @@ case "$1" in
         gfnDeleteDirectory 1 "$gsPhpDir"
         [ -f /var/log/php-fpm7.0.log ] && mv -fv /var/log/php-fpm7.0.log /var/log/php-fpm7.1.log
         rm -fv /run/php/php-fpm7.0.pid
+
+        #### /etc/sysctl.conf
+        # Swappiness
+        if (grep -q 'vm.swappiness' /etc/sysctl.conf); then
+            sed -i '/Swappiness/d' /etc/sysctl.conf
+            sed -i '/swappiness/d' /etc/sysctl.conf
+        fi
+        # NFS
+        sed -i '/# NFS/d' /etc/sysctl.conf
+        sed -i '/fs.nfs.nfs_callback_tcpport/d' /etc/sysctl.conf
+        sed -i '/fs.nfs.nlm_tcpport/d' /etc/sysctl.conf
+        sed -i '/fs.nfs.nlm_udpport/d' /etc/sysctl.conf
+        {
+            echo "fs.nfs.nlm_tcpport=32768"
+            echo "fs.nfs.nlm_udpport=32768"
+        } >/etc/sysctl.d/999-nfs.conf
+        # Redis
+        sed -i '/# Redis/d' /etc/sysctl.conf
+        sed -i '/net.core.somaxconn/d' /etc/sysctl.conf
+        sed -i '/vm.overcommit_memory/d' /etc/sysctl.conf
+        {
+            echo "net.core.somaxconn=1024"
+            echo "vm.overcommit_memory=1"
+        } >/etc/sysctl.d/999-redis.conf
+        sysctl --system
 
         #### PHP7.1 Install
         gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/PHP" 'UPGRADE'
