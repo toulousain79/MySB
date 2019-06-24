@@ -108,6 +108,7 @@ MySQL_MysbPassword="${MySQL_MysbPassword:-$(gfnGenPassword 16)}"
 MySQL_BackupManager="${MySQL_BackupManager:-$(gfnGenPassword 16)}"
 MySQL_TorrentPassword="${MySQL_TorrentPassword:-$(gfnGenPassword 16)}"
 
+#### MySQL Secure
 mysql -u root --verbose <<-EOF
 #UPDATE mysql.user set plugin='' where User='root';
 UPDATE mysql.user SET Password=PASSWORD('$MySQL_RootPassword') WHERE User='root';
@@ -128,9 +129,6 @@ GRANT ALL ON MySB_db.* to 'MySB_user'@'localhost' IDENTIFIED BY '$MySQL_MysbPass
 CREATE USER IF NOT EXISTS 'BM_user'@'localhost';
 GRANT SHOW DATABASES,SELECT,LOCK TABLES ON *.* TO 'BM_user'@'localhost' IDENTIFIED BY '$MySQL_BackupManager';
 CREATE USER IF NOT EXISTS 'Torrent_user'@'localhost';
-GRANT SELECT ON MySB_db.trackers_list TO 'Torrent_user'@'localhost' IDENTIFIED BY '$MySQL_TorrentPassword';
-GRANT SELECT, INSERT, DELETE ON MySB_db.torrents TO 'Torrent_user'@'localhost' IDENTIFIED BY '$MySQL_TorrentPassword';
-GRANT SELECT (id_system,public_tracker_allow,files_recycling) ON MySB_db.system TO 'Torrent_user'@'localhost' IDENTIFIED BY '$MySQL_TorrentPassword';
 FLUSH PRIVILEGES;
 EOF
 
@@ -142,7 +140,7 @@ if [ "${gbToInstall_NextCloud}" == "YES" ] || [ "${gbIsInstalled_NextCloud}" != 
 	EOF
 fi
 
-# Add MySQL password into MySB config files
+#### Add MySQL password into MySB config files
 {
     echo "MySQL_RootPassword=\"$MySQL_RootPassword\""
     echo "MySQL_DebianPassword=\"$MySQL_DebianPassword\""
@@ -151,14 +149,14 @@ fi
     echo "MySQL_TorrentPassword=\"$MySQL_TorrentPassword\""
 } >/etc/MySB/config_db
 
-# Create debian.cnf
+#### Create debian.cnf
 if [ -f /etc/mysql/debian.cnf ] && [ ! -f /etc/mysql/debian.cnf.back ]; then
     mv -v /etc/mysql/debian.cnf /etc/mysql/debian.cnf.back
 fi
 install -v -o root -g root -m 0600 "$MySB_InstallDir"/templates/mysql/etc.mysql.debian.cnf.tmpl /etc/mysql/debian.cnf
 perl -pi -e "s/<debian_pasword>/${MySQL_DebianPassword}/g" /etc/mysql/debian.cnf
 
-# Create MySQL client config file for MySB_user
+#### Create MySQL client config file for MySB_user
 {
     echo "[client]"
     echo "user = MySB_user"
@@ -167,7 +165,7 @@ perl -pi -e "s/<debian_pasword>/${MySQL_DebianPassword}/g" /etc/mysql/debian.cnf
 } >/root/.config.cnf
 chmod -v 0600 /root/.config.cnf
 
-# Create MySQL client config file for Torrent_user
+#### Create MySQL client config file for Torrent_user
 {
     echo "[client]"
     echo "user = Torrent_user"
@@ -177,7 +175,7 @@ chmod -v 0600 /root/.config.cnf
 chown -v root:MySB_users /home/.config.cnf
 chmod -v 0644 /home/.config.cnf
 
-# Create MySB database (ONLY during a new install, NOT during an upgrade)
+#### Create MySB database (ONLY during a new install, NOT during an upgrade)
 if [ "$gsSwitch" == "INSTALL" ]; then
     # MySQL Schema
     mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir"/templates/mysql/Schema.sql
@@ -193,6 +191,14 @@ if [ "$gsSwitch" == "INSTALL" ]; then
     mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir"/templates/mysql/Table_smtp.sql
     mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir"/templates/mysql/Table_system.sql
 fi
+
+#### MySQL Grant for users
+mysql -u root -p"${MySQL_RootPassword}" --verbose <<-EOF
+GRANT SELECT ON MySB_db.trackers_list TO 'Torrent_user'@'localhost' IDENTIFIED BY '$MySQL_TorrentPassword';
+GRANT SELECT, INSERT, DELETE ON MySB_db.torrents TO 'Torrent_user'@'localhost' IDENTIFIED BY '$MySQL_TorrentPassword';
+GRANT SELECT (id_system,public_tracker_allow,files_recycling) ON MySB_db.system TO 'Torrent_user'@'localhost' IDENTIFIED BY '$MySQL_TorrentPassword';
+FLUSH PRIVILEGES;
+EOF
 
 #### Webmin
 if [ "${gbIsInstalled_Webmin}" == "YES" ] && [ -f /etc/webmin/mysql/config ]; then
