@@ -33,7 +33,7 @@ install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/profile.tmp
 install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/bash_aliases.tmpl /root/.bash_aliases
 install -v -o root -g root -m 0644 /etc/skel/.bash_logout /root/.bash_logout
 if [ ! -f /root/.bash_profile ] || [ -z "$(grep 'bash_completion' /root/.bash_profile)" ] || [ -z "$(grep '.bashrc' /root/.bash_profile)" ]; then
-    (
+    (   
         cat <<'EOF'
 if [ -f /etc/bash_completion ]; then
 	. /etc/bash_completion
@@ -116,12 +116,16 @@ sysctl --system
 echo
 echo "########## Locale"
 [ -z "${gsLocale}" ] && gsLocale="en_US"
-sed -i '/^en_US/d' /etc/locale.gen
-sed -i '/^fr_FR/d' /etc/locale.gen
-echo "${gsLocale}.UTF-8 UTF-8" >>/etc/locale.gen
-dpkg-reconfigure -f noninteractive locales
-update-locale "LANG=${gsLocale}.UTF-8"
-locale-gen "${gsLocale}.UTF-8"
+sed -e '/^[ ]*#/d' /etc/locale.gen | while IFS= read -r sLine; do
+    [ -n "${sLine}" ] && sed -i "s/${sLine}/# ${sLine}/g;" /etc/locale.gen
+done
+sed -i "s/# ${gsLocale}.UTF-8 UTF-8/${gsLocale}.UTF-8 UTF-8/g;" /etc/locale.gen
+export LANGUAGE=${gsLocale}.UTF-8
+export LANG=${gsLocale}.UTF-8
+export LC_ALL=${gsLocale}.UTF-8
+update-locale "LANG=${gsLocale}.UTF-8" &>/dev/null
+locale-gen "${gsLocale}.UTF-8" &>/dev/null
+dpkg-reconfigure -f noninteractive locales &>/dev/null
 locale >$MySB_InstallDir/files/locale
 cat /opt/MySB/files/locale
 

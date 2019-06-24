@@ -470,15 +470,20 @@ case "$EnvLang" in
     "en") gsLocale="en_US" ;;
 esac
 [ -z "${gsLocale}" ] && gsLocale="en_US"
-sed -i '/^en_US/d' /etc/locale.gen
-sed -i '/^fr_FR/d' /etc/locale.gen
-echo "${gsLocale}.UTF-8 UTF-8" >>/etc/locale.gen
-dpkg-reconfigure -f noninteractive locales &>/dev/null
+sed -e '/^[ ]*#/d' /etc/locale.gen | while IFS= read -r sLine; do
+    [ -n "${sLine}" ] && sed -i "s/${sLine}/# ${sLine}/g;" /etc/locale.gen
+done
+sed -i "s/# ${gsLocale}.UTF-8 UTF-8/${gsLocale}.UTF-8 UTF-8/g;" /etc/locale.gen
+export LANGUAGE=${gsLocale}.UTF-8
+export LANG=${gsLocale}.UTF-8
+export LC_ALL=${gsLocale}.UTF-8
 update-locale "LANG=${gsLocale}.UTF-8" &>/dev/null
 locale-gen "${gsLocale}.UTF-8" &>/dev/null
-# AcceptEnv
+dpkg-reconfigure -f noninteractive locales &>/dev/null
+
+# SSH - AcceptEnv
 sed -i "s/^AcceptEnv/#AcceptEnv/g;" /etc/ssh/sshd_config
-# SendEnv
+# SSH - SendEnv
 nNumLine=$(grep 'SendEnv ' -n -m 1 /etc/ssh/ssh_config | cut -d ':' -f 1)
 sed -i '/SendEnv /d' /etc/ssh/ssh_config
 sed -i "${nNumLine}i\#   SendEnv LANG LC_*" /etc/ssh/ssh_config
