@@ -33,7 +33,7 @@ install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/profile.tmp
 install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/bash_aliases.tmpl /root/.bash_aliases
 install -v -o root -g root -m 0644 /etc/skel/.bash_logout /root/.bash_logout
 if [ ! -f /root/.bash_profile ] || [ -z "$(grep 'bash_completion' /root/.bash_profile)" ] || [ -z "$(grep '.bashrc' /root/.bash_profile)" ]; then
-    (   
+    (
         cat <<'EOF'
 if [ -f /etc/bash_completion ]; then
 	. /etc/bash_completion
@@ -82,17 +82,35 @@ if [ -n "$gsTimeZone" ]; then
 fi
 ServicesToRestart="${ServicesToRestart} systemd-timesyncd"
 
-#### Swappiness
+#### /etc/sysctl.conf
+# /etc/sysctl.d/999-swappiness.conf
 if ([ "$gsMemory" -lt 2048 ] && [ "$(free -m | grep 'Swap' | awk '{ print $2 }')" -ne 0 ]); then
     echo
-    echo "########## Swappiness"
+    echo "########## /etc/sysctl.d/999-swappiness.conf"
     {
-        echo vm.swappiness=10
-        echo vm.vfs_cache_pressure=50
-    } >/etc/sysctl.d/99-swappiness.conf
-    cat /etc/sysctl.d/99-swappiness.conf
-    sysctl -p /etc/sysctl.d/99-swappiness.conf
+        echo "vm.swappiness=10"
+        echo "vm.vfs_cache_pressure=50"
+    } >/etc/sysctl.d/999-swappiness.conf
 fi
+# /etc/sysctl.d/999-MySB.conf
+echo
+echo "########## /etc/sysctl.d/999-MySB.conf"
+{
+    if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
+        echo "net.ipv4.ip_forward=1"
+    fi
+    echo "net.ipv4.ip_dynaddr=0"
+    echo "net.ipv4.tcp_syncookies=1"
+    echo "net.ipv4.conf.all.rp_filter=1"
+    echo "net.ipv4.conf.all.proxy_arp=0"
+    echo "net.ipv4.icmp_echo_ignore_broadcasts=1"
+    echo "net.ipv4.conf.all.accept_source_route=0"
+    echo "net.ipv4.conf.all.accept_redirects=0"
+    echo "net.ipv4.conf.all.secure_redirects=1"
+    echo "net.ipv4.conf.all.log_martians=1"
+} >/etc/sysctl.d/999-MySB.conf
+# Print config
+sysctl --system
 
 #### locale
 echo
@@ -110,7 +128,7 @@ cat /opt/MySB/files/locale
 #### /etc/hostname
 echo
 echo "########## /etc/hostname"
-hostnamectl set-hostname "$gsHostNameFqdn"
+hostnamectl set-hostname "${gsHostNameFqdn}"
 hostnamectl status
 
 # /etc/hosts
@@ -126,7 +144,6 @@ cat /etc/hosts
 #### /etc/network/interfaces
 echo
 echo "########## Remove IPv6"
-sysctl -p
 if [ -f /etc/default/grub ]; then
     source /etc/default/grub
     if [ -n "$GRUB_CMDLINE_LINUX" ] && [ -z "$(echo $GRUB_CMDLINE_LINUX | grep 'ipv6.disable=1')" ]; then
