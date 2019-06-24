@@ -7,6 +7,7 @@
 - LibTorrent v0.13.7 _(1b94891)_
 - ruTorrent v3.9 _(7a3d807)_
 - PHP v7.1 _(Sury)_
+- NetData v1.15.0
 - Certbot-auto
   - rollback to v0.28.0 _(certbot Debian package)_
   - increase in the number of checks
