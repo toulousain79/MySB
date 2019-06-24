@@ -4,7 +4,6 @@ function DoApplyConfig() {
 		type: "POST",
 		url: '/?apply-configuration.html',
 		data: {},
-
 	});
 }
 
