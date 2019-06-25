@@ -40,7 +40,7 @@ define('Home_MainUser', '
 	</ul>
 	<p>Ainsi que les fonctions de bases :</p>
 	<ul style="margin-left: 100px">
-		<li>Acc&egrave;s &agrave; <b>ruTorrent</b>, <b>Cakebox</b>, <b>Seedbox Manager</b>, <b>Nextcloud</b> et <b>LoadAvg</b></li>
+		<li>Acc&egrave;s &agrave; <b>ruTorrent</b>, <b>Cakebox</b>, <b>Seedbox Manager</b>, <b>Nextcloud</b> et <b>NetData</b></li>
 		<li>Afficher les informations de votre compte</li>
 		<li>Changer votre mot de passe</li>
 		<li>Red&eacute;marrer ou changer la version de votre session rTorrent</li>
@@ -53,7 +53,7 @@ define('Home_NormalUser', '
 	<p></p>
 	<p>En tant qu\'utilisateur normal, vous diposez des fonctionnalit&eacute;s suivantes :</p>
 	<ul style="margin-left: 100px">
-		<li>Acc&egrave;s &agrave; <b>ruTorrent</b>, <b>Cakebox</b>, <b>Seedbox Manager</b>, <b>Nextcloud</b> et <b>LoadAvg</b></li>
+		<li>Acc&egrave;s &agrave; <b>ruTorrent</b>, <b>Cakebox</b>, <b>Seedbox Manager</b>, <b>Nextcloud</b> et <b>NetData</b></li>
 		<li>Afficher les informations de votre compte</li>
 		<li>Changer votre mot de passe</li>
 		<li>Red&eacute;mmarer ou changer la version de votre session rTorrent</li>
