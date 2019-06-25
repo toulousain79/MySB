@@ -52,11 +52,17 @@ install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/netdata/health_a
 perl -pi -e "s/<main_user_mail>/${gsMainUserEmail}/g" /etc/netdata/health_alarm_notify.conf
 
 #### NginX
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/nginx/etc.nginx.locations.netdata.conf.tmpl /etc/nginx/locations/NetData.conf
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/nginx/etc.nginx.proxy.netdata.conf.tmpl /etc/nginx/proxy/NetData.conf
+install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.locations.netdata.conf.tmpl /etc/nginx/locations/NetData.conf
+install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.proxy.netdata.conf.tmpl /etc/nginx/proxy/NetData.conf
+install -v -o root -g root -m 0600 $MySB_InstallDir/templates/nginx/etc.nginx.upstream.netdata.conf.tmpl /etc/nginx/upstream/NetData.conf
+
+#### /etc/netdata/netdata.conf
+nNumLine=$(grep 'bind to =' -n -m 1 /etc/netdata/netdata.conf | cut -d ':' -f 1)
+sed -i "${nNumLine}d" /etc/netdata/netdata.conf
+sed -i "${nNumLine}i\        bind to = unix:/tmp/netdata.sock" /etc/netdata/netdata.conf
 
 #### START services
-gfnManageServices start "nginx"
+gfnManageServices start "nginx netdata"
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after
