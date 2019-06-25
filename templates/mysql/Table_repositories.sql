@@ -65,7 +65,6 @@ INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`,
 ('DEB', '<InstallDir>_files', 'GeoIPupdate', 'latest', 0, 'geoipupdate_4.0.2_linux_amd64.deb', 'https://api.github.com/repos/maxmind/geoipupdate/releases/latest', 1, 0, ''),
 ('GIT', '<InstallDir>/web/apps/sm', 'Seedbox-Manager', '3.0.1', 0, 'seedbox-manager_v3.0.1.zip', 'https://github.com/Magicalex/seedbox-manager.git', 1, 0, ''),
 ('GIT', '<InstallDir>/web/apps/cb', 'Cakebox-Light', '1.8.6', 0, 'cakebox-light_v1.8.6.zip', 'https://github.com/Cakebox/Cakebox-light.git', 1, 0, ''),
-/* ('TARGZ', '<InstallDir>/web/apps/la', 'LoadAvg', '2.2', 0, 'loadavg_v2.2.tar.gz', 'http://www.loadavg.com/files/loadavg.tar.gz', 1, 0, ''), */
 ('TARGZ', '<InstallDir>/sources/netdata', 'NetData', '1.15.0', 0, 'netdata_v1.15.0.tar.gz', 'https://github.com/netdata/netdata/releases/download/v1.15.0/netdata-v1.15.0.tar.gz', 1, 0, ''),
 ('ZIP', '<InstallDir>/web/apps/nc', 'NextCloud', '16.0.1', 0, 'nextcloud_v16.0.1.zip', 'https://download.nextcloud.com/server/releases/nextcloud-16.0.1.zip', 1, 0, '');
 /*!40000 ALTER TABLE `repositories` ENABLE KEYS */;
