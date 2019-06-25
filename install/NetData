@@ -27,7 +27,7 @@ source "$(dirname "$0")"/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### Install package
-sPackages=(zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev iproute2 python python-dnspython python-ipaddress python-mysqldb lm-sensors netcat)
+sPackages=(zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev iproute2 python python-dnspython python-ipaddress python-mysqldb lm-sensors netcat nodejs)
 gfnPackageBundleInstall "${sPackages[@]}"
 
 #### KSM
@@ -42,10 +42,14 @@ fi
 gfnGetRepoValues 'NetData' && gfnRepoManageByType
 if [[ ${gnRepoUpgrade} -eq 1 ]] || [ "$gsSwitch" == "INSTALL" ]; then
     cd ${gsRepoDir}/ || exit 1
-    ./netdata-installer.sh --stable-channel --install /opt --dont-wait --enable-lto
+    ./netdata-installer.sh --stable-channel --dont-wait --enable-lto
     # Disable the upgrade job
     cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='NetData';" -v
 fi
+
+#### Notifications config
+install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/netdata/health_alarm_notify.conf.tmpl /etc/netdata/health_alarm_notify.conf
+perl -pi -e "s/<main_user_mail>/${gsMainUserEmail}/g" /etc/netdata/health_alarm_notify.conf
 
 #### NginX
 install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/nginx/etc.nginx.locations.netdata.conf.tmpl /etc/nginx/locations/NetData.conf
