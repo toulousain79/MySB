@@ -29,6 +29,59 @@ source "$(dirname "$0")/../inc/includes_before"
 # shellcheck source=inc/funcs_by_script/funcs_MySB_CreateUser
 . "${MySB_InstallDir}/inc/funcs_by_script/funcs_MySB_CreateUser"
 
+#### Clean the rTorrent blocklist
+gfnCleanBlockList() {
+	local sCommand sFile sUrl sListName sAuthor sLastUpdate
+
+	sCommand="$1"
+	sFile="$2"
+	sUrl="$3"
+	sListName="$4"
+	sAuthor="$(echo "$sFile" | cut -d '#' -f 1)"
+
+	case $sCommand in
+	'download')
+		if (curl -skLS --retry 3 -o "${MySB_InstallDir}/files/blocklists/$sFile.gz" "$sUrl"); then
+			gzip -dc "${MySB_InstallDir}/files/blocklists/$sFile.gz" | cut -d: -f2 >"${MySB_InstallDir}/files/blocklists/$sFile.txt"
+			sLastUpdate="$(date +%Y-%m-%d\ %H:%M:%S)"
+		else
+			sLastUpdate="failed"
+		fi
+		cmdMySQL 'MySB_db' "UPDATE blocklists SET rtorrent_lastupdate='$sLastUpdate' WHERE author='$sAuthor' AND list_name='$sListName';" -v
+		;;
+	'del_spaces')
+		sed -i '/\ /d' "${MySB_InstallDir}/files/blocklists/$sFile.tmp"
+		;;
+	'not_numeric')
+		sed -i '/^[0123456789]/!d' "${MySB_InstallDir}/files/blocklists/$sFile.tmp"
+		;;
+	'not_cidr')
+		sed -i '/\//!d' "${MySB_InstallDir}/files/blocklists/$sFile.tmp"
+		;;
+	'del_RC')
+		sed -i '/^M/d' "${MySB_InstallDir}/files/blocklists/$sFile.tmp"
+		;;
+	'is_ip')
+		while read -r line; do
+			START=$(echo "$line" | cut -d '-' -f 1)
+			END=$(echo "$line" | cut -d '-' -f 2)
+			RESULT_START=$(printf "%s" "$START" | grep -E '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
+			RESULT_END=$(printf "%s" "$END" | grep -E '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
+			if [ ! "$RESULT_START" = "$START" ] || [ ! "$RESULT_END" = "$END" ]; then
+				sed -i "/$line/!d" "${MySB_InstallDir}/files/blocklists/$sFile.txt.tmp"
+			fi
+		done <"${MySB_InstallDir}/files/blocklists/$sFile.txt"
+		mv "${MySB_InstallDir}/files/blocklists/$sFile.txt.tmp" "${MySB_InstallDir}/files/blocklists/$sFile.txt"
+		;;
+	'sort_uniq')
+		sort -g "${MySB_InstallDir}/files/blocklists/$sFile.tmp" | uniq >"${MySB_InstallDir}/files/blocklists/$sFile.txt"
+		if [ -f "${MySB_InstallDir}/files/blocklists/blocklist_rtorrent.tmp" ]; then
+			rm -f "${MySB_InstallDir}/files/blocklists/blocklist_rtorrent.tmp"
+		fi
+		;;
+	esac
+}
+
 log_daemon_msg "$DeleteGlobalBlocklist"
 if [ ! -d "${MySB_InstallDir}"/files/blocklists ]; then
     mkdir "${MySB_InstallDir}"/files/blocklists

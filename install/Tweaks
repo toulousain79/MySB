@@ -116,13 +116,9 @@ sysctl --system
 echo
 echo "########## Locale"
 [ -z "${gsLocale}" ] && gsLocale="en_US"
-# sed -e '/^[ ]*#/d' /etc/locale.gen | while IFS= read -r sLine; do
-#     [ -n "${sLine}" ] && sed -i "s/${sLine}/# ${sLine}/g;" /etc/locale.gen
-# done
 sed -i "s/# ${gsLocale}.UTF-8 UTF-8/${gsLocale}.UTF-8 UTF-8/g;" /etc/locale.gen
 export LANGUAGE=${gsLocale}.UTF-8
 export LANG=${gsLocale}.UTF-8
-# export LC_ALL=${gsLocale}.UTF-8
 update-locale "LANG=${gsLocale}.UTF-8" &>/dev/null
 locale-gen "${gsLocale}.UTF-8" &>/dev/null
 dpkg-reconfigure -f noninteractive locales &>/dev/null
@@ -237,8 +233,6 @@ cat /etc/fstab
 echo
 echo "########## SystemD"
 if [ -f /etc/default/grub ]; then
-    echo
-    echo "########## Replace Init with Systemd"
     source /etc/default/grub
     if [ -n "${GRUB_CMDLINE_LINUX_DEFAULT}" ] && (! grep -q 'init=/bin/systemd' <<<"${GRUB_CMDLINE_LINUX_DEFAULT}"); then
         sed -i "s/${GRUB_CMDLINE_LINUX_DEFAULT}/${GRUB_CMDLINE_LINUX_DEFAULT} init=\/bin\/systemd/g;" /etc/default/grub
@@ -257,6 +251,7 @@ if [ -f /etc/systemd/system.conf ]; then
     done
     sed -i "s/${sOldValue}/CPUAffinity=${aNewValues[*]}/g;" /etc/systemd/system.conf
     sed -i "s/^#CPUAffinity/SyslogFacility/g;" /etc/systemd/system.conf
+    grep CPUAffinity /etc/systemd/system.conf
 fi
 
 #### Cleaning
