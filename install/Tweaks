@@ -28,12 +28,13 @@ source "$(dirname "$0")"/../inc/includes_before
 #### Console tweaks
 echo
 echo "########## Console tweaks"
-install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/bashrc.tmpl /root/.bashrc
-install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/profile.tmpl /root/.profile
-install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/bash_aliases.tmpl /root/.bash_aliases
+install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/tweaks/bashrc.tmpl /root/.bashrc
+perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /root/.bashrc
+install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/tweaks/profile.tmpl /root/.profile
+install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/tweaks/bash_aliases.tmpl /root/.bash_aliases
 install -v -o root -g root -m 0644 /etc/skel/.bash_logout /root/.bash_logout
 if [ ! -f /root/.bash_profile ] || [ -z "$(grep 'bash_completion' /root/.bash_profile)" ] || [ -z "$(grep '.bashrc' /root/.bash_profile)" ]; then
-    (   
+    (
         cat <<'EOF'
 if [ -f /etc/bash_completion ]; then
 	. /etc/bash_completion
@@ -47,31 +48,31 @@ EOF
 fi
 
 #### permanently adding scripts to PATH to all users and root
-if [ -z "$(grep "$MySB_InstallDir/bin" /etc/profile)" ]; then
+if [ -z "$(grep "${MySB_InstallDir}/bin" /etc/profile)" ]; then
     echo
     echo "########## /etc/profile"
     echo "" >>/etc/profile
     echo "# MySB" >>/etc/profile
-    echo "PATH=$PATH:$MySB_InstallDir/bin:/sbin" | tee -a /etc/profile
+    echo "PATH=$PATH:${MySB_InstallDir}/bin:/sbin" | tee -a /etc/profile
 fi
 
 #### Editors
 echo
 echo "########## Editors"
-install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/etc.vimrc.tmpl /etc/vim/vimrc
-install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/etc.nanorc.tmpl /etc/nanorc
+install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/tweaks/etc.vimrc.tmpl /etc/vim/vimrc
+install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/tweaks/etc.nanorc.tmpl /etc/nanorc
 
 #### Motd
 echo
 echo "########## Motd"
-install -v -o root -g root -m 0755 $MySB_InstallDir/templates/tweaks/etc.rc.local.tmpl /etc/rc.local
+install -v -o root -g root -m 0755 ${MySB_InstallDir}/templates/tweaks/etc.rc.local.tmpl /etc/rc.local
 perl -pi -e "s/<MySB_Version>/$gsCurrentVersion/g" /etc/rc.local
 
 #### Change timezone
 echo
 echo "########## Timezone"
 if [ -n "$gsTimeZone" ]; then
-    install -v -o root -g root -m 0644 $MySB_InstallDir/templates/systemd/timesyncd.conf.tmpl /etc/systemd/timesyncd.conf
+    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/timesyncd.conf.tmpl /etc/systemd/timesyncd.conf
     timedatectl set-timezone "$gsTimeZone"
     timedatectl set-local-rtc 0
     timedatectl status
@@ -122,8 +123,8 @@ export LANG=${gsLocale}.UTF-8
 update-locale "LANG=${gsLocale}.UTF-8" &>/dev/null
 locale-gen "${gsLocale}.UTF-8" &>/dev/null
 dpkg-reconfigure -f noninteractive locales &>/dev/null
-locale >$MySB_InstallDir/files/locale
-cat /opt/MySB/files/locale
+locale >${MySB_InstallDir}/files/locale
+cat ${MySB_InstallDir}/files/locale
 
 #### /etc/hostname
 echo
@@ -136,7 +137,7 @@ echo
 echo "########## /etc/hosts"
 if [ -z $funcs_MySB_SecurityRules ]; then
     # shellcheck source=inc/funcs_by_script/funcs_MySB_SecurityRules
-    source $MySB_InstallDir/inc/funcs_by_script/funcs_MySB_SecurityRules
+    source ${MySB_InstallDir}/inc/funcs_by_script/funcs_MySB_SecurityRules
 fi
 gfnCreateHostsFile
 cat /etc/hosts
@@ -167,7 +168,7 @@ install -d /etc/iptables
 #### Rsyslog
 echo
 echo "########## Rsyslog"
-install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/etc.rsyslog.conf.tmpl /etc/rsyslog.conf
+install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/tweaks/etc.rsyslog.conf.tmpl /etc/rsyslog.conf
 rm -vf /etc/rsyslog.d/iptables.conf
 [ ! -f /var/log/iptables.log ] && touch /var/log/iptables.log
 echo "if (\$msg contains '[MySB] ') then /var/log/iptables.log" | tee -a /etc/rsyslog.d/iptables.conf
@@ -201,7 +202,7 @@ fi
 #### Force CPU governor to "performance"
 echo
 echo "########## Force CPU governor to 'performance'"
-install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/etc.default.cpufrequtils.tmpl /etc/default/cpufrequtils
+install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/tweaks/etc.default.cpufrequtils.tmpl /etc/default/cpufrequtils
 cpufreq-set -r -g performance
 if [ -f /proc/cpuinfo ]; then
     echo
@@ -271,7 +272,7 @@ gfnLogRotate 'mysb'
 #### /usr/sbin/policy-rc.d
 echo
 echo "########## Packages install without starting daemons"
-install -v -o root -g root -m 0644 $MySB_InstallDir/templates/tweaks/usr.sbin.policy-rc.d.tmpl /usr/sbin/policy-rc.d
+install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/tweaks/usr.sbin.policy-rc.d.tmpl /usr/sbin/policy-rc.d
 
 #### Restart services
 echo
@@ -281,7 +282,8 @@ gfnManageServices restart "$ServicesToRestart"
 #### Create init script for MySB_SecurityRules_Init
 echo
 echo "########## MySB_SecurityRules_Init"
-install -v -o root -g root -m 0755 $MySB_InstallDir/templates/systemd/MySB_SecurityRules_Init.service.tmpl /lib/systemd/system/MySB_SecurityRules_Init.service
+install -v -o root -g root -m 0755 ${MySB_InstallDir}/templates/systemd/MySB_SecurityRules_Init.service.tmpl /lib/systemd/system/MySB_SecurityRules_Init.service
+perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /lib/systemd/system/MySB_SecurityRules_Init.service
 systemctl enable MySB_SecurityRules_Init.service
 
 # -----------------------------------------
