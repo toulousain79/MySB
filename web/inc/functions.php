@@ -391,11 +391,6 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
 					}
 					break;
-				// case "LoadAvg":
-				// 	$link = 'https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/la/public/';
-				// 	$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-				// 	echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
-				// 	break;
 				case "NetData":
 					$link = 'https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/nd/';
 					$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
