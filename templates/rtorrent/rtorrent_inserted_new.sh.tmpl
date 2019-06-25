@@ -25,7 +25,7 @@
 
 # ARGS: $d.hash=,$d.name=,$d.directory=,$d.loaded_file=,$d.custom2=,$d.custom1=
 
-#### VARs
+#### VARs - From .rtorrent.rc config file
 sInfoHash="${1}"        # $d.hash=
 sName="${2}"            # $d.name=
 sDirectory="${3}"       # $d.directory=
@@ -33,30 +33,34 @@ sTorrentLoaded="${4}"   # $d.loaded_file=
 sTorrentDir="${5}"      # $d.custom2=
 sLabel="${6}"           # $d.custom1=
 
+#### VARs - Default sets
+nContinue=0
+nExit=0
 sUserName="$(whoami)"
 nCgiPort="<scgi_port>"
 dTimestamp="$(date +%Y/%m/%d\ %H:%M:%S)"
-sTorrentFile="${sTorrentDir}$(basename "${sTorrentLoaded}")"
 sLogFile="/home/${sUserName}/logs/$(basename "$0").log"
 sSqlParams='--defaults-extra-file=/home/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N'
-nContinue=0
-nExit=0
+if [ -z "${sTorrentLoaded}" ] && [ -n "${sTorrentDir}" ] && [ -f "${sTorrentDir}" ]; then  # Torrent file uploaded via ruTorrent
+    sTorrentLoaded="${sTorrentDir}"
+    sTorrentDir="$(dirname "${sTorrentLoaded}")"
+    [ -n "${sLabel}" ] && sTorrentDir="${sTorrentDir}/${sLabel}/"
+    [ "${sTorrentDir}" != "<MySB_InstallDir>/web/apps/ru/share/users/${sUserName}/torrents" ] && nExit=1
+fi
+sTorrentFile="${sTorrentDir}$(basename "${sTorrentLoaded}")"
 
 #### Do some checks before
-# Vars
 [ -z "${sInfoHash}" ] && nExit=1
 [ -z "${sName}" ] && nExit=1
 [ -z "${sDirectory}" ] && nExit=1
 ( [ -z "${sTorrentLoaded}" ] || [ ! -f "${sTorrentLoaded}" ] ) && nExit=1
 ( [ -z "${sTorrentDir}" ] || [ ! -d "${sTorrentDir}" ] ) && nExit=1
 
-#### VARs
-if [ "${nExit}" -eq 0 ]; then
-    sPrivacy="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
-    sRequestValues="$(mysql ${sSqlParams} -e "SELECT public_tracker_allow,files_recycling FROM system WHERE id_system='1';" | sed 's/\t/|/g;')"
-    sTrackerModeAllowed="$(echo "$sRequestValues" | awk '{split($0,a,"|"); print a[1]}')"
-    sFilesRecycling="$(echo "$sRequestValues" | awk '{split($0,a,"|"); print a[2]}')"
-fi
+#### VARs -
+[ -f "${sTorrentLoaded}" ] && sPrivacy="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
+sRequestValues="$(mysql ${sSqlParams} -e "SELECT public_tracker_allow,files_recycling FROM system WHERE id_system='1';" | sed 's/\t/|/g;')"
+sTrackerModeAllowed="$(echo "$sRequestValues" | awk '{split($0,a,"|"); print a[1]}')"
+sFilesRecycling="$(echo "$sRequestValues" | awk '{split($0,a,"|"); print a[2]}')"
 
 #### Functions
 fnCopyFile() {
