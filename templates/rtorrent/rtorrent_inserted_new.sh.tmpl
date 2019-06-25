@@ -41,21 +41,6 @@ sLogFile="/home/${sUserName}/logs/$(basename "$0").log"
 sSqlParams='--defaults-extra-file=/home/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N'
 nContinue=0
 
-#### Do some checks before
-# Vars
-[ -z "${sInfoHash}" ] && fnExit 1
-[ -z "${sName}" ] && fnExit 1
-[ -z "${sDirectory}" ] && fnExit 1
-( [ -z "${sTorrentLoaded}" ] || [ ! -f "${sTorrentLoaded}" ] ) && fnExit 1
-( [ -z "${sTorrentDir}" ] || [ ! -d "${sTorrentDir}" ] ) && fnExit 1
-
-#### VARs
-sPrivacy="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
-sRequestValues="$(mysql ${sSqlParams} -e "SELECT public_tracker_allow,files_recycling FROM system WHERE id_system='1';" | sed 's/\t/|/g;')"
-sTrackerModeAllowed="$(echo "$sRequestValues" | awk '{split($0,a,"|"); print a[1]}')"
-sFilesRecycling="$(echo "$sRequestValues" | awk '{split($0,a,"|"); print a[2]}')"
-nContinue=0
-
 #### Functions
 fnExit() {
     {
@@ -103,6 +88,21 @@ fnCopyFile() {
         xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.check_hash ${sInfoHash} >>"${sLogFile}"
     fi
 }
+
+#### Do some checks before
+# Vars
+[ -z "${sInfoHash}" ] && fnExit 1
+[ -z "${sName}" ] && fnExit 1
+[ -z "${sDirectory}" ] && fnExit 1
+( [ -z "${sTorrentLoaded}" ] || [ ! -f "${sTorrentLoaded}" ] ) && fnExit 1
+( [ -z "${sTorrentDir}" ] || [ ! -d "${sTorrentDir}" ] ) && fnExit 1
+
+#### VARs
+sPrivacy="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
+sRequestValues="$(mysql ${sSqlParams} -e "SELECT public_tracker_allow,files_recycling FROM system WHERE id_system='1';" | sed 's/\t/|/g;')"
+sTrackerModeAllowed="$(echo "$sRequestValues" | awk '{split($0,a,"|"); print a[1]}')"
+sFilesRecycling="$(echo "$sRequestValues" | awk '{split($0,a,"|"); print a[2]}')"
+nContinue=0
 
 #### Step 1 - Log header
 {

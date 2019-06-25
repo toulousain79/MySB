@@ -119,12 +119,18 @@ case "$1" in
 
         #### NextCloud Upgrade to 15.0.7
         if [ "$gbToInstall_NextCloud" == "YES" ] || [ "$gbIsInstalled_NextCloud" == "YES" ]; then
+            gfnGetRepoValues 'NextCloud'
+            sOldVersion="15.0.7"
+            sNewVersion="${gsRepoVersion}"
+            # Upgrade to 15x latest
             cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='NextCloud';" -v
-            cmdMySQL 'MySB_db' "UPDATE repositories SET version='15.0.7', upgrade='1', file='nextcloud_v15.0.7.zip', url='https://download.nextcloud.com/server/releases/nextcloud-15.0.7.zip' WHERE name='NextCloud';" -v
+            cmdMySQL 'MySB_db' "UPDATE repositories SET version='${sOldVersion}', upgrade='1', file='nextcloud_v${sOldVersion}.zip', url='https://download.nextcloud.com/server/releases/nextcloud-${sOldVersion}.zip' WHERE name='NextCloud';" -v
             gfnGetRepoValues 'NextCloud'
             gfnRepoManageByType
             gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/NextCloud" 'UPGRADE'
-            cmdMySQL 'MySB_db' "UPDATE repositories SET version='16.0.0', upgrade='1', file='nextcloud_v16.0.0.zip', url='https://download.nextcloud.com/server/releases/nextcloud-16.0.0.zip' WHERE name='NextCloud';" -v
+            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:get version"
+            # Upgrade to 16x latest
+            cmdMySQL 'MySB_db' "UPDATE repositories SET version='${sNewVersion}', upgrade='1', file='nextcloud_v${sNewVersion}.zip', url='https://download.nextcloud.com/server/releases/nextcloud-${sNewVersion}.zip' WHERE name='NextCloud';" -v
             source /etc/MySB/config_db
             mysql -u root -p"${MySQL_RootPassword}" --verbose <<-EOF
                 CREATE DATABASE IF NOT EXISTS NextCloud_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
@@ -135,6 +141,7 @@ case "$1" in
             # su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set mysql.utf8mb4 --type boolean --value=true"
             # su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:repair"
             su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --on"
+            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:get version"
         fi
 
         #### Update sources now
