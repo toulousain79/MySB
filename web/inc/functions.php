@@ -392,9 +392,11 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					}
 					break;
 				case "NetData":
-					$link = 'https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/nd/';
-					$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
+					if ($hidden == true) {
+						$link = 'https://' . $SystemDatas["hostname"] . ':' . $Port_HTTPs . '/nd/';
+						$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
+					}
 					break;
 
 				// Renting
@@ -407,7 +409,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 					break;
 				case "Payments":
-					if ( MainUser($CurrentUser) == false ) {
+					if ($hidden == false) {
 						if ( (isset($SystemDatas["rt_cost_tva"]) && ($SystemDatas["rt_cost_tva"] != 0.00)) && (isset($SystemDatas["rt_nb_users"])) && (isset($SystemDatas["rt_model"])) && (isset($SystemDatas["rt_method"])) ) {
 							echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'>'.$menu->link(($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr);
 						}
