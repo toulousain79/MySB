@@ -37,33 +37,36 @@ systemctl daemon-reload
 systemctl enable docker
 
 #### Secure
-if (! grep -q 'docker' <<< "$(id ${gsMainUserName})"); then
-	usermod -aG docker ${gsMainUserName}
+if (! grep -q 'docker' <<<"$( id ${gsMainUserName})"); then
+    usermod -aG docker ${gsMainUserName}
+fi
+if (! grep -q 'docker' <<<"$( id root)"); then
+    usermod -aG docker root
 fi
 
 #### Docker-Compose
 fnInstallDockerCompose() {
-	gfnGetRepoValues 'Docker-Compose'
+    gfnGetRepoValues 'Docker-Compose'
 
-	if [ "$gsVersionInstalled" != "$gsVersionLatest" ]; then
-		[ -f "${MySB_Files}/${gsRepoFile}" ] && mv -v "${MySB_Files}/${gsRepoFile}" "${MySB_Files}/${gsRepoFile}.tmp"
-		gfnRepoManageByType
-		[ -f "${MySB_Files}/${gsRepoFile}" ] && rm -fv "${MySB_Files}/${gsRepoFile}.tmp"
-		chmod -v +x $gsRepoDir
-		$gsRepoDir --version
-	fi
+    if [ "$gsVersionInstalled" != "$gsVersionLatest" ]; then
+        [ -f "${MySB_Files}/${gsRepoFile}" ] && mv -v "${MySB_Files}/${gsRepoFile}" "${MySB_Files}/${gsRepoFile}.tmp"
+        gfnRepoManageByType
+        [ -f "${MySB_Files}/${gsRepoFile}" ] && rm -fv "${MySB_Files}/${gsRepoFile}.tmp"
+        chmod -v +x $gsRepoDir
+        $gsRepoDir --version
+    fi
 }
 
 #### CRON UPGRADE
 if [ "$sLocSwitch" == "CRON" ]; then
-	# Check for a new version / Install it
-	if gfnCheckCommand 0 docker; then
-		fnInstallDockerCompose
-	fi
+    # Check for a new version / Install it
+    if gfnCheckCommand 0 docker; then
+        fnInstallDockerCompose
+    fi
 else
-	if gfnCheckCommand 0 docker; then
-		fnInstallDockerCompose
-	fi
+    if gfnCheckCommand 0 docker; then
+        fnInstallDockerCompose
+    fi
 fi
 
 #### Dry
@@ -71,9 +74,15 @@ echo
 echo "########## Dry"
 $binCURL https://moncho.github.io/dry/dryup.sh | sh
 if gfnCheckCommand 0 dry; then
-	chmod 0755 /usr/local/bin/dry
-	dry --version
+    chmod 0755 /usr/local/bin/dry
+    dry --version
 fi
+
+#### Network
+docker network ls
+docker network prune --force
+docker network create --driver=bridge --internal --subnet=172.28.0.0/24 --gateway=172.28.0.254 mysb_network
+docker network inspect mysb_network
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after
