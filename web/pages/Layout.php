@@ -195,14 +195,25 @@ $MySB_Version = GetVersion();
 			</form>
 			</div>
 
+<?php
+				switch ($_SESSION['page']) {
+					case "ChangePassword":
+					case "ManageAddresses":
+						break;
+					default:
+?>
 			<div style="position: absolute; width: 100%; padding: 10px 0 0 0; margin-left: auto; margin-right: auto;">
-				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.cpu&alarm=10min_cpu_usage&refresh=auto"></img>
-				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.ram&alarm=ram_in_use&refresh=auto"></img>
-				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.swap&alarm=used_swap&refresh=auto"></img>
-				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_1&refresh=auto"></img>
-				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_5&refresh=auto"></img>
-				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_15&refresh=auto"></img>
+				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.cpu&alarm=10min_cpu_usage&refresh=auto">
+				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.ram&alarm=ram_in_use&refresh=auto">
+				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.swap&alarm=used_swap&refresh=auto">
+				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_1&refresh=auto">
+				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_5&refresh=auto">
+				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_15&refresh=auto">
 			</div>
+<?php
+						break;
+				}
+?>
 		</footer>
 	</div>
 
