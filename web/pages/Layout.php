@@ -79,6 +79,17 @@ $MySB_Version = GetVersion();
 			// Tooltipster
 			echo "	<script>$(document).ready(function() { $('.tooltip').tooltipster({theme: 'tooltipster-mysb', side: 'right', interactive: true});});</script>";
 			break;
+		// case '/':
+		// 	// NetData
+		// 	echo "	<!-- NetData -->\n";
+		// 	echo "	<script>
+		// 		'use strict';
+		// 		var netdataServer = '".$_SERVER['SERVER_PROTOCOL'].'://'.$_SERVER['SERVER_NAME'].':'.$_SERVER['SERVER_PORT'].$_SERVER['REQUEST_URI']."nd';
+		// 		var netdataServerStatic = '".THEMES_PATH. "MySB/netdata';
+		// 		var netdataTheme = 'slate';
+		// 		</script>\n";
+		// 	echo "	<script type='text/javascript' src='".THEMES_PATH. "MySB/netdata/dashboard.js'></script>";
+		// 	break;
 		default:
 			echo "	<script>$(document).ready(function() { $('.tooltip').tooltipster({theme: 'tooltipster-mysb', side: 'bottom'});});</script>";
 			break;
@@ -109,7 +120,6 @@ $MySB_Version = GetVersion();
 <?php } ?>
 				</div>
 			</div>
-
 			<nav>
 				<div id="menu_container">
 <?php
@@ -173,15 +183,26 @@ $MySB_Version = GetVersion();
 			<a target="_blank" href="https://github.com/toulousain79/MySB/" title="<?php echo Layout_OnGithub; ?>"><?php echo Layout_OnGithub; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/wiki" title="<?php echo Layout_Wiki; ?>"><?php echo Layout_Wiki; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/blob/<?php echo $MySB_Version; ?>/Changelog.md" title="Changelog <?php echo $MySB_Version; ?>">Changelog <?php echo $MySB_Version; ?></a>
 			<br />
 			<a target="_blank" href="http://www.css3templates.co.uk">Copyright &copy; CSS3_two</a> | <a target="_blank" href="https://github.com/wolfcms/wolfcms" title="<?php echo Layout_Wolf; ?>"><?php echo Layout_Wolf; ?></a> | <a target="_blank" href="http://medoo.in/" title="<?php echo Layout_Medoo; ?>"><?php echo Layout_Medoo; ?></a> | <a target="_blank" href="https://my-netdata.io/" title="NetData">NetData</a>
-<br />
-			<a target="_blank" href="https://www.blockchain.com/btc/payment_request?address=1HtuGsnSsGoUz7DmRbDLCFnRc41jYEY2FE"><img class="tooltip" title="<?php echo Layout_Bitcoin_Text; ?>" alt="<?php echo Layout_Bitcoin_Text; ?>" width="30px" height="30px" border="0" src="<?php echo THEMES_PATH . 'MySB/images/bitcoin.png'; ?>"></a>
+			<br />
 
+			<div style="padding: 10px 0 0 0;">
+			<a target="_blank" href="https://www.blockchain.com/btc/payment_request?address=1HtuGsnSsGoUz7DmRbDLCFnRc41jYEY2FE"><img class="tooltip" title="<?php echo Layout_Bitcoin_Text; ?>" alt="<?php echo Layout_Bitcoin_Text; ?>" width="30px" height="30px" border="0" src="<?php echo THEMES_PATH . 'MySB/images/bitcoin.png'; ?>"></a>
 			<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank" style="display:inline;">
 				<input type="hidden" name="cmd" value="_s-xclick">
 				<input type="hidden" name="hosted_button_id" value="<?php echo Layout_Paypal_ID; ?>">
 				<input type="image" src="<?php echo THEMES_PATH . 'MySB/images/paypal.png'; ?>" width="30px" height="30px" border="0" name="submit" alt="<?php echo Layout_Paypal_Text; ?>" class="tooltip" title="<?php echo Layout_Paypal_Text; ?>">
 				<img alt="" border="0" src="<?php echo THEMES_PATH . 'MySB/images/pixel.gif'; ?>" width="1" height="1">
 			</form>
+			</div>
+
+			<div style="position: absolute; width: 100%; padding: 10px 0 0 0; margin-left: auto; margin-right: auto;">
+				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.cpu&alarm=10min_cpu_usage&refresh=auto"></img>
+				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.ram&alarm=ram_in_use&refresh=auto"></img>
+				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.swap&alarm=used_swap&refresh=auto"></img>
+				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_1&refresh=auto"></img>
+				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_5&refresh=auto"></img>
+				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_15&refresh=auto"></img>
+			</div>
 		</footer>
 	</div>
 
