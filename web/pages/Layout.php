@@ -23,6 +23,7 @@
 //#################### FIRST LINE #####################################
 
 #### VARs
+global $Hostname, $Port_HTTPs;
 $MySB_Version = GetVersion();
 
 ?>
@@ -203,12 +204,12 @@ $MySB_Version = GetVersion();
 					default:
 ?>
 			<div style="position: absolute; width: 100%; padding: 10px 0 0 0; margin-left: auto; margin-right: auto;">
-				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.cpu&alarm=10min_cpu_usage&refresh=auto">
-				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.ram&alarm=ram_in_use&refresh=auto">
-				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.swap&alarm=used_swap&refresh=auto">
-				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_1&refresh=auto">
-				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_5&refresh=auto">
-				<img class="netdata-badge" src="https://mysb-00.ddns.net:8189/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_15&refresh=auto">
+				<img class="netdata-badge" src="https://<?php echo $Hostname.':'.$Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.cpu&alarm=10min_cpu_usage&refresh=auto&value_color=grey:null|green<40|yellow<60|orange<80|red">
+				<img class="netdata-badge" src="https://<?php echo $Hostname.':'.$Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.ram&alarm=ram_in_use&refresh=auto&value_color=grey:null|green<40|yellow<60|orange<80|red">
+				<img class="netdata-badge" src="https://<?php echo $Hostname.':'.$Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.swap&alarm=used_swap&refresh=auto&value_color=grey:null|green<40|yellow<60|orange<80|red">
+				<img class="netdata-badge" src="https://<?php echo $Hostname.':'.$Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_1&refresh=auto&value_color=grey:null|green<1.00|yellow<3.00|orange<5.00|red">
+				<img class="netdata-badge" src="https://<?php echo $Hostname.':'.$Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_5&refresh=auto&value_color=grey:null|green<1.00|yellow<3.00|orange<5.00|red">
+				<img class="netdata-badge" src="https://<?php echo $Hostname.':'.$Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_15&refresh=auto&value_color=grey:null|green<1.00|yellow<3.00|orange<5.00|red">
 			</div>
 <?php
 						break;
