@@ -32,7 +32,7 @@ Continue=0
 Error=""
 
 #### Updating clock
-echo -e -n "${CBLUE}${UpgradeMe_Clock}$CEND..."
+echo -e -n "${CBLUE}${UpgradeMe_Clock}${CEND}..."
 (! ping -c3 0.fr.pool.ntp.org >/dev/null 2>&1) && gfnSwitchDNS "bind"
 
 if (/usr/sbin/ntpdate -u 0.pool.ntp.org 1.pool.ntp.org >/dev/null 2>&1); then
@@ -45,7 +45,7 @@ fi
 
 #### Check GitHub accessibility
 if [ $Continue -eq 0 ]; then
-    echo -e -n "${CBLUE}${UpgradeMe_GitHubAccess}$CEND..."
+    echo -e -n "${CBLUE}${UpgradeMe_GitHubAccess}${CEND}..."
     if (ping -c3 raw.githubusercontent.com >/dev/null 2>&1); then
         echo -e "${Global_Done}"
     else
@@ -57,7 +57,7 @@ fi
 
 #### Update actual repo
 if [ $Continue -eq 0 ]; then
-    echo -e -n "${CBLUE}${UpgradeMe_UpdateGithub}$CEND..."
+    echo -e -n "${CBLUE}${UpgradeMe_UpdateGithub}${CEND}..."
     gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/bin/MySB_GitHubRepoUpdate" 'REFRESH'
     gfnStatusSTD
 fi
@@ -88,9 +88,16 @@ if [ $Continue -eq 0 ]; then
                 echo
                 echo -e "$UpgradeMe_Msg_VersionAvailable"
                 echo
-                gfnQuestionGetString NO "${Global_WantToContinue[*]}" WantToContinue "${Global_NO}"
-                WantToContinue="$(echo "${WantToContinue}" | tr '[:lower:]' '[:upper:]')"
-                [ "${WantToContinue}" == "$Global_NO" ] && gfnEndingScript 0
+                if (grep -q '127.0.0.1' <<<"$(who | head -n 1)"); then
+                    echo
+                    echo -e "${CRED}${Global_CantContinue[*]}${CEND}"
+                    echo
+                    gfnEndingScript 0
+                else
+                    gfnQuestionGetString NO "${Global_WantToContinue[*]}" WantToContinue "${Global_NO}"
+                    WantToContinue="$(echo "${WantToContinue}" | tr '[:lower:]' '[:upper:]')"
+                    [ "${WantToContinue}" == "$Global_NO" ] && gfnEndingScript 0
+                fi
                 ;;
         esac
     else
@@ -109,8 +116,8 @@ if [ $Continue -eq 0 ]; then
 
     #### Backup
     clear
-    echo -e "${CBLUE}${UpgradeMe_CreateBackup}$CEND"
-    echo -e -n "${CRED}${Global_PleaseWait} $CEND"
+    echo -e "${CBLUE}${UpgradeMe_CreateBackup}${CEND}"
+    echo -e -n "${CRED}${Global_PleaseWait} ${CEND}"
     gfnCountDown 3
 
     # MySQL databases DUMP
@@ -163,8 +170,8 @@ fi
 if [ $Continue -eq 0 ]; then
     clear
     UpgradeMe_Merge="$(echo "$UpgradeMe_Merge" | sed "s/#current_version#/${gsCurrentVersion}/g;" | sed "s/#new_version#/${MySB_NewVersion}/g;")"
-    echo -e "${CBLUE}$UpgradeMe_Merge$CEND"
-    echo -e -n "${CRED}$Global_PleaseWait $CEND"
+    echo -e "${CBLUE}$UpgradeMe_Merge${CEND}"
+    echo -e -n "${CRED}$Global_PleaseWait ${CEND}"
     gfnCountDown 3
     echo
 
@@ -250,10 +257,10 @@ if [ $Continue -eq 0 ]; then
     if [ "${MySB_NewVersion}" == "$MySB_RepoVersion" ]; then
         if [ -f "${MySB_InstallDir}/upgrade/From_${gsCurrentVersion}-to-${MySB_NewVersion}.bsh" ]; then
             echo
-            echo -e "${CBLUE}${UpgradeMe_StartScreen}$CEND"
+            echo -e "${CBLUE}${UpgradeMe_StartScreen}${CEND}"
             screen -wipe &>/dev/null
             screen -dmS MySB_Upgrade /bin/bash "${MySB_InstallDir}/upgrade/From_${gsCurrentVersion}-to-${MySB_NewVersion}.bsh"
-            echo -e -n "${CRED}$Global_PleaseWait $CEND"
+            echo -e -n "${CRED}$Global_PleaseWait ${CEND}"
             gfnCountDown 10
 
             screen -r MySB_Upgrade
@@ -270,9 +277,9 @@ gfnUpgradeInProgress "off"
 #### Upgrade finished
 clear
 if [ $Continue -ne 0 ]; then
-    echo -e "${CRED}${UpgradeMe_ErrorOccured}$CEND"
-    echo -e "${CRED}$Error$CEND"
-    echo -e "${CRED}Code: $Continue$CEND"
+    echo -e "${CRED}${UpgradeMe_ErrorOccured}${CEND}"
+    echo -e "${CRED}$Error${CEND}"
+    echo -e "${CRED}Code: $Continue${CEND}"
     echo
     gfnEndingScript 0
 fi
