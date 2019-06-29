@@ -1,6 +1,6 @@
 # Changelog
 
-## v5.5 - 2019/xx/xx _(start at: 2019/01/26)_
+## v6.0 - 2019/06/29 _(start at: 2019/01/26)_
 
 - NextCloud v16.0.1
 - rTorrent v0.9.7 _(b26dc42)_
