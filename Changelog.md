@@ -16,7 +16,7 @@
   - page referer bug
   - users: correction of the display of available space
   - users: correction of manual quota capture by user
-- [Blocklists](https://mysb.gitbook.io/doc/v/v99.99_fr/mysb-en-detail/les-listes-noires#gestion-des-listes-via-le-portail)
+- [Blocklists](https://mysb.gitbook.io/doc/mysb-en-detail/les-listes-noires#gestion-des-listes-via-le-portail)
   - standardized management _(only one list for PeerGuardian and rTorrent)_
   - update lists _(add & remove some)_
   - add countries
@@ -47,9 +47,9 @@
 - #37 rTorrent
   - restore UDP connections
   - SSL config review
-  - Add [downloads recycling](https://mysb.gitbook.io/doc/v/v99.99_fr/configuration/options-systemes#recyclage-des-telechargements) _(simple copy, hard link)_
-  - Add [tracker type filtering](https://mysb.gitbook.io/doc/v/v99.99_fr/configuration/options-systemes#trackers-autorises) _(private only or public & private)_
-  - Add [annoncers filtering](https://mysb.gitbook.io/doc/v/v99.99_fr/configuration/options-systemes#auto-blocks-annonceurs) _(IPv6, blocklists)_
+  - Add [downloads recycling](https://mysb.gitbook.io/doc/configuration/options-systemes#recyclage-des-telechargements) _(simple copy, hard link)_
+  - Add [tracker type filtering](https://mysb.gitbook.io/doc/configuration/options-systemes#trackers-autorises) _(private only or public & private)_
+  - Add [annoncers filtering](https://mysb.gitbook.io/doc/configuration/options-systemes#auto-blocks-annonceurs) _(IPv6, blocklists)_
   - .rtorrent_inserted_new.sh _(before torrent is started)_
     - check of tracker type _(private or public)_
     - downloads recycling
