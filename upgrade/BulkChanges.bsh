@@ -344,7 +344,7 @@ case "$1" in
                 # Get torrent infos
                 sInfoHash="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Hash: ' | awk '{printf $2}')"
                 sName="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Name: ')"
-                sName="$(echo "${sName}" | sed -e 's/Name: //g;')"
+                sName="$(echo "${sName}" | sed -e 's/Name: //g;' | sed -e "s/'/\\\'/g;")"
                 sPrivacy="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
                 xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash} >/dev/null
 
@@ -495,9 +495,11 @@ case "$1" in
 
                                 # extract the protocol
                                 sProto="$(echo "${sGetUrl}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')"
-                                echo "  Protocol: ${sProto}"
+                                [ -z "${sProto}" ] && sProto="http://"
                                 # remove the protocol
                                 sURL=$(echo "${sGetUrl}" | sed -e s,${sProto},,g)
+                                sProto="${sProto//:\/\//}"
+                                echo "  Protocol: ${sProto}"
                                 echo "  URL: ${sURL}"
                                 # extract the user (if any)
                                 sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)"
@@ -511,7 +513,7 @@ case "$1" in
                                 sPort="$(echo "${sHostPort}" | sed -e 's,^.*:,:,g' -e 's,.*:\([0-9]*\).*,\1,g' -e 's,[^0-9],,g')"
                                 case ${sPort#[-+]} in
                                     *[!0-9]* | '')
-                                        case "${sProto//:\/\//}" in
+                                        case "${sProto}" in
                                             'http' | 'udp') sPort=80 ;;
                                             'https')        sPort=443 ;;
                                         esac
@@ -523,7 +525,7 @@ case "$1" in
                                 echo "  URI: ${sURI}"
 
                                 # Get if activate
-                                bIsActive="$(cmdMySQL 'MySB_db' "SELECT is_active FROM trackers_list WHERE tracker='${sHost}' AND tracker_proto='${sProto//:\/\//}' AND tracker_port='${sPort}';")"
+                                bIsActive="$(cmdMySQL 'MySB_db' "SELECT is_active FROM trackers_list WHERE tracker='${sHost}' AND tracker_proto='${sProto}' AND tracker_port='${sPort}';")"
                                 bIsActive="${bIsActive:-1}"
                                 xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${nId} ${bIsActive} >/dev/null
                                 [ "${bIsActive}" -eq 1 ] && sResult="Enabled" || sResult="Disabled"
