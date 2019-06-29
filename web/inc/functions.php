@@ -453,7 +453,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
 					switch ($_SESSION['Language']) {
 						case 'fr':
-							$link = 'https://mysb.gitbook.io/doc/v/v99.99_fr/';
+							$link = 'https://mysb.gitbook.io/doc/';
 							break;
 						default:
 							$link = 'https://github.com/toulousain79/MySB/wiki';
@@ -466,7 +466,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						switch ($_SESSION['Language']) {
 							case 'fr':
 								$title = $menu->title_fr;
-								$link = 'https://mysb.gitbook.io/doc/v/v99.99_fr/configuration/plex-media-server-and-tautulli';
+								$link = 'https://mysb.gitbook.io/doc/configuration/plex-media-server-and-tautulli';
 								echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
 								break;
 							default:
@@ -479,7 +479,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					switch ($_SESSION['Language']) {
 						case 'fr':
 							$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-							$link = 'https://mysb.gitbook.io/doc/v/v99.99_fr/mysb-en-detail/les-listes-noires';
+							$link = 'https://mysb.gitbook.io/doc/mysb-en-detail/les-listes-noires';
 							echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
 							break;
 						default:
@@ -492,7 +492,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						switch ($_SESSION['Language']) {
 							case 'fr':
 								$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-								$link = 'https://mysb.gitbook.io/doc/v/v99.99_fr/mysb-en-detail/les-trackers';
+								$link = 'https://mysb.gitbook.io/doc/mysb-en-detail/les-trackers';
 								echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
 								break;
 							default:
@@ -506,7 +506,7 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						switch ($_SESSION['Language']) {
 							case 'fr':
 								$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
-								$link = 'https://mysb.gitbook.io/doc/v/v99.99_fr/securite/restriction-par-adresse-ip';
+								$link = 'https://mysb.gitbook.io/doc/securite/restriction-par-adresse-ip';
 								echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
 								break;
 							default:
