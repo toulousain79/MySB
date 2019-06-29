@@ -46,7 +46,7 @@ gfnCheckAddedTorrents() {
         if [ -n "${sTracker}" ]; then
             gfnAddTracker "${sTracker}" "${sUser}"
             # YGG
-            (grep -q 'tracker.yggserver.net' <<<${sTracker} ) && gfnAddTracker "${sTracker//tracker.yggserver.net/tracker.ygg.is}"
+            # (grep -q 'tracker.yggserver.net' <<<${sTracker} ) && gfnAddTracker "${sTracker//tracker.yggserver.net/tracker.ygg.is}"
         fi
     done
 }
@@ -75,9 +75,10 @@ gfnAddTracker() {
         sTracker="${sTracker//|${sPrivacy}/}"
         # extract the protocol
         sProto="$(echo "${sTracker}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')"
-        [ -z "${sProto}" ] && sProto="http"
+        [ -z "${sProto}" ] && sProto="http://"
         # remove the protocol
         sURL=$(echo "${sTracker}" | sed -e s,${sProto},,g)
+        sProto="${sProto//:\/\//}"
         # extract the user (if any)
         sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)"
         # extract the host and port
@@ -88,7 +89,7 @@ gfnAddTracker() {
         sPort="$(echo "${sHostPort}" | sed -e 's,^.*:,:,g' -e 's,.*:\([0-9]*\).*,\1,g' -e 's,[^0-9],,g')"
         case ${sPort#[-+]} in
             *[!0-9]* | '')
-                case "${sProto//:\/\//}" in
+                case "${sProto}" in
                     'http' | 'udp') sPort=80 ;;
                     'https') sPort=443 ;;
                 esac
