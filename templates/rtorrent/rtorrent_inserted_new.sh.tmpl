@@ -34,6 +34,7 @@ sTorrentDir="${5}"      # $d.custom2=
 sLabel="${6}"           # $d.custom1=
 
 sName="$(echo "${sName}" | sed -e "s/'/\\\'/g;")"
+(grep -q "${sName}" <<<"${sTorrentDir}") && sFinalDirectory="${sTorrentDir}" || sFinalDirectory="${sDirectory}/${sName}"
 
 #### VARs - Default sets
 nContinue=0
@@ -44,11 +45,11 @@ dTimestamp="$(date +%Y/%m/%d\ %H:%M:%S)"
 sLogFile="/home/${sUserName}/logs/$(basename "$0").log"
 sSqlParams='--defaults-extra-file=/home/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N'
 
+echo "$@" >>"${sLogFile}"
 if [ -z "${sTorrentLoaded}" ] && [ -n "${sTorrentDir}" ] && [ -f "${sTorrentDir}" ]; then  # Torrent file uploaded via ruTorrent
     sTorrentLoaded="${sTorrentDir}"
     sTorrentDir="$(dirname "${sTorrentLoaded}")"
     [ -n "${sLabel}" ] && sTorrentDir="${sTorrentDir}/${sLabel}/"
-    [ "${sTorrentDir}" != "<MySB_InstallDir>/web/apps/ru/share/users/${sUserName}/torrents" ] && nExit=1
 fi
 sTorrentFile="${sTorrentDir}/$(basename "${sTorrentLoaded}")"
 
@@ -79,10 +80,10 @@ fnCopyFile() {
     esac
 
     if (sudo cp "${sParams[@]}" "${sTree}" "${sDirectory}"/); then
-        sudo chown -Rv "${sOwners[@]}" "${sDirectory}/${sName}"
+        sudo chown -Rv "${sOwners[@]}" "${sFinalDirectory}"
         xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.open ${sInfoHash} >>"${sLogFile}"
         xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.check_hash ${sInfoHash} >>"${sLogFile}"
-        mysql ${sSqlParams} -e "INSERT INTO torrents (info_hash,name,privacy,state,tree) VALUES ('${sInfoHash}', '${sName}', '${sPrivacy}', 'completed', '${sDirectory}/${sName}');" -v
+        mysql ${sSqlParams} -e "INSERT INTO torrents (info_hash,name,privacy,state,tree) VALUES ('${sInfoHash}', '${sName}', '${sPrivacy}', 'completed', '${sFinalDirectory}');" -v
     fi
 }
 
@@ -309,7 +310,7 @@ if [ "${nContinue}" -eq 1 ]; then
     xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} ${sTorrentFile} >>"${sLogFile}"
     #### Change group of file
     # shellcheck disable=SC2024
-    sudo chown -Rv "${sUserName}":"${sUserName}" "${sDirectory}/${sName}"
+    sudo chown -Rv "${sUserName}":"${sUserName}" "${sFinalDirectory}" >>"${sLogFile}"
 
     #### Step 11 - Start torrent
     xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.start ${sInfoHash} >>"${sLogFile}"
