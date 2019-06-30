@@ -72,13 +72,13 @@ if ( ($rTorrentNotify == '1') && (!empty($UserMail)) ) {
 	if ( isset($trackermodeallowed) ) {
 		switch ($Language) {
 			case 'fr':
-				$Subject = "MySB - Action non autorisée !";
+				$Subject = "MySB - Action non autoris&eacute;e !";
 				$TrackerPrivacy = "Type:";
-				$TrackerPrivacyPrivate = "privés";
+				$TrackerPrivacyPrivate = "priv&eacute;s";
 				$TrackerPrivacyPublic = "publiques";
-				$TrackerAllowed = "Tracker autorisés:";
-				$TrackerAllowedPrivate = "privés seulement";
-				$TrackerAllowedPublic = "publiques & privés";
+				$TrackerAllowed = "Tracker autoris&eacute;s:";
+				$TrackerAllowedPrivate = "priv&eacute;s seulement";
+				$TrackerAllowedPublic = "publiques & priv&eacute;s";
 				break;
 
 			default:
@@ -93,7 +93,7 @@ if ( ($rTorrentNotify == '1') && (!empty($UserMail)) ) {
 	} elseif ( isset($tracker_address) ) {
 		switch ($Language) {
 			case 'fr':
-				$Subject = "MySB - Nouvel annonceur ajouté !";
+				$Subject = "MySB - Nouvel annonceur ajout&eacute; !";
 				$TrackerAddress = "Adresse:";
 				$TrackerDomain = "Domaine:";
 				break;

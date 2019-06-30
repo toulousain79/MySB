@@ -161,7 +161,7 @@ define('User_UserInfo_Table_Renting', 'Location');
 define('User_UserInfo_Comment_Renting', 'G&eacute;rez vos informations de location.');
 // Trackers
 define('User_UserInfo_Table_Trackers', 'Liste des Trackers');
-define('User_UserInfo_Comment_Trackers', '<a href="?trackers/trackers-list.html">G&eacute;rer vos trackers ici.</a> Vous pouvez &eacute;galement <a href="?trackers/add-new-trackers.html">ajouter de nouveaux tracker ici</a>.');
+define('User_UserInfo_Comment_Trackers', '<a href="?trackers/trackers-list.html">G&eacute;rer vos trackers ici.</a>.');
 // Blocklists
 define('User_UserInfo_Table_Blocklists', 'Listes noires');
 define('User_UserInfo_Comment_Blocklists', 'G&eacute;rer les <a href="?blocklists/rtorrent-blocklists.html">listes noire pour rTorrent</a> ET les <a href="?blocklists/peerguardian-blocklists.html">listes noires pour PeerGuardian</a>.');
@@ -182,7 +182,7 @@ define('User_UserInfo_Comment_MySB_DeleteUser', ' ');
 define('User_UserInfo_Table_SeedboxManage', 'Gestion de la seedbox');
 define('User_UserInfo_Comment_MySB_UpgradeMe', 'Permet la migration vers une nouvelle version de MySB.');
 define('User_UserInfo_Comment_MySB_UpgradeSystem', 'Effectue un "update" + "upgrade" + "update-ca-certificates"');
-define('User_UserInfo_Comment_MySB_UpdateTools', 'Vérifie et lance la mise à jour de certains outils (Plex, Tautulli, Docker tools, ...)');
+define('User_UserInfo_Comment_MySB_UpdateTools', 'V&eacute;rifie et lance la mise &agrave; jour de certains outils (Plex, Tautulli, Docker tools, ...)');
 define('User_UserInfo_Comment_MySB_GitHubRepoUpdate', 'Mise &agrave; jour de la version actuelle MySB. (CRON tous les jours)');
 define('User_UserInfo_Comment_MySB_SecurityRules', '<pre>MySB_SecurityRules (create|clean)</pre>');
 // Main scripts
