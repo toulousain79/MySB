@@ -46,7 +46,7 @@ if (grep -q 'debian-sys-maint' /etc/mysql/debian.cnf); then
     source /etc/MySB/config_db
     mysql -u root -p"${MySQL_RootPassword}" --verbose mysql <"${MySB_InstallDir}"/templates/mysql/mysql_default.sql
     rm -fv /etc/MySB/config_db
-    unset MySQL_RootPassword MySQL_MysbPassword MySQL_BackupManager MySQL_TorrentPassword
+    unset MySQL_RootPassword
 fi
 
 #### STOP services
@@ -111,7 +111,7 @@ gfnManageServices 'start' 'mysql'
 [ -f /etc/MySB/config_db ] && source /etc/MySB/config_db
 
 #### MySQL Secure
-if [ -z "${MySQL_RootPassword}" ] && [ -z "${MySQL_MysbPassword}" ]; then
+if [ -z "${MySQL_RootPassword}" ]; then
     MySQL_RootPassword="${MySQL_RootPassword:-$(gfnGenPassword 32)}"
     MySQL_MysbPassword="${MySQL_MysbPassword:-$(gfnGenPassword 16)}"
     MySQL_BackupManager="${MySQL_BackupManager:-$(gfnGenPassword 16)}"
@@ -202,13 +202,14 @@ EOF
 
 #### NextCloud
 if [ "${gbToInstall_NextCloud}" == "YES" ] || [ "${gbIsInstalled_NextCloud}" != "INIT" ]; then
-    if [ ! -f /var/lib/mysql/NextCloud_db/db.opt ]; then
+    if [ -f /var/lib/mysql/NextCloud_db/db.opt ]; then
         mysql -u root -p"${MySQL_RootPassword}" --verbose <<-EOF
             ALTER DATABASE NextCloud_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
             GRANT ALL ON NextCloud_db.* to 'MySB_user'@'localhost' IDENTIFIED BY '${MySQL_MysbPassword}';
             FLUSH PRIVILEGES;
 		EOF
     fi
+    perl -pi -e "s/<db_password>/${MySQL_MysbPassword}/g" ${gsNextCloudDir}/config/config.php
 fi
 
 #### Webmin
