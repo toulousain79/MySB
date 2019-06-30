@@ -239,7 +239,7 @@ function printUser($user) {
 		echo '<td colspan="2"><a href="?main-user/logs.html"><span class="Comments">' . User_UserInfo_Comment_Logs . '</span></a></td></tr>';
 		// Renting infos
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Renting . '</th>';
-		echo '<td colspan="2"><a href="?main-user/renting-infos.html"><span class="Comments">' . User_UserInfo_Comment_Renting . '</span></a></td></tr>';
+		echo '<td colspan="2"><a href="?renting/renting-infos.html"><span class="Comments">' . User_UserInfo_Comment_Renting . '</span></a></td></tr>';
 		// Trackers
 		echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_Trackers . '</th>';
 		echo '<td colspan="2"><span class="Comments">' . sprintf(User_UserInfo_Comment_Trackers, $system_datas["hostname"], $Port_HTTPs, $system_datas["hostname"], $Port_HTTPs) . '</span></td></tr>';
