@@ -30,7 +30,7 @@ define('User_Synchronization_rTorrentConfig_Comment', 'Permet de g&eacute;rer de
 Exemple, ajoutez une cat&eacute;gorie "Films", et celle-ci sera cr&eacute;&eacute;e et g&eacute;r&eacute;e par rTorrent.<br />
 Un fichier torrent ajout&eacute; dans "watch\Films" lancera le t&eacute;l&eacute;chargement.<br />
 A la fin de celui-ci, les donn&eacute;es seront automatiquement d&eacute;plac&eacute;es dans "complete\Films".<br />
-Vous pouvez également préciser si les données d\'une catégorie doivent être synchronisées<br />par FTP ou RSYNC vers un support distant (ex: NAS).');
+Vous pouvez &eacute;galement pr&eacute;ciser si les donn&eacute;es d\'une cat&eacute;gorie doivent être synchronis&eacute;es<br />par FTP ou RSYNC vers un support distant (ex: NAS).');
 define('User_Synchronization_rTorrentConfig_Table_Title', 'Cat&eacute;gories</br>existantes');
 define('User_Synchronization_Title_Scripts', '<b>2 - Crontab / Scripts &agrave; utiliser</b>');
 define('User_Synchronization_Minutes', 'Minutes');
@@ -53,7 +53,7 @@ define('User_Synchronization_FileName', 'Nom');
 define('User_Synchronization_SynchroDirect', 'Directe');
 define('User_Synchronization_SynchroCron', 'Planifi&eacute;e');
 define('User_Synchronization_Comments', 'Commentaires');
-define('User_Synchronization_Title_Ident', '<b>3 - Informations de connexion pour les synchronisations distantes (directes programmées et manuelles)</b>');
+define('User_Synchronization_Title_Ident', '<b>3 - Informations de connexion pour les synchronisations distantes (directes programm&eacute;es et manuelles)</b>');
 define('User_Synchronization_ModeSync', 'M&eacute;thode');
 define('User_Synchronization_ModeSync_FTP', 'FTP(s)');
 define('User_Synchronization_ModeSync_RSYNC', 'RSYNC');

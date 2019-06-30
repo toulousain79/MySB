@@ -50,8 +50,8 @@ define('User_UserInfoMail_Comment_ForceIP', 'Force the addition of your current 
 // Trackers
 define('User_UserInfoMail_Comment_Trackers', '<a href="https://%s:%s/?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="https://%s:%s/?trackers/add-new-trackers.html">add new tracker here</a>.');
 // Blocklists
-define('User_UserInfoMail_Comment_Blocklists', 'You can manage <a href="https://%s:%s/?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a> AND <a href="https://%s:%s/?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a>.');
+define('User_UserInfoMail_Comment_Blocklists', 'You can manage <a href="https://%s:%s/?blocklists/usual-blocklists.html">Usual blocklists</a> AND <a href="https://%s:%s/?blocklists/countries-locklists.html">Countries blocklists</a>.');
 // DNScrypt-proxy
-define('User_UserInfoMail_Comment_DNScrypt', '<a href="https://%s:%s/?main-user/dnscrypt-proxy.html">Informations on resolvers used.</a>');
+define('User_UserInfoMail_Comment_DNScrypt', '<a href="https://%s:%s/?admin/dnscrypt-proxy.html">Informations on resolvers used.</a>');
 
 //#################### LAST LINE ######################################
