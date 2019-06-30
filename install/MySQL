@@ -41,6 +41,13 @@ if gfnCheckCommand 0 sqlite3; then
     fi
 fi
 
+# Restore mysql database
+if (grep -q 'debian-sys-maint' /etc/mysql/debian.cnf); then
+    source /etc/MySB/config_db
+    mysql -u root -p"${MySQL_RootPassword}" --verbose mysql <"${MySB_InstallDir}"/templates/mysql/mysql_default.sql
+    rm -fv /etc/MySB/config_db
+fi
+
 #### STOP services
 gfnManageServices 'stop' 'mysql'
 
@@ -48,11 +55,12 @@ gfnManageServices 'stop' 'mysql'
 gfnLogRotate 'mysql-server'
 
 #### Cleaning
-rm -vf /var/log/mysql.log
-rm -vf /var/log/mysql.err
+rm -vf /var/log/mysql.*
 rm -vf /var/log/mysql/error.log
+rm -vf /var/log/mysql/mysql.log
+rm -vf /var/log/mysql/mysql-slow.log
 
-if [ "$gsSwitch" != "UPGRADE" ]; then
+if [ "${gsSwitch}" != "UPGRADE" ]; then
     #### Temp directory in memory
     sed -i '/\/mnt\/tmpFS\/mysql/d' /etc/fstab
     echo "# /mnt/tmpFS/mysql" >>/etc/fstab
@@ -74,7 +82,7 @@ rm -vf /etc/mysql/mariadb.conf.d/*.cnf
 rm -vf /etc/alternatives/my.cnf
 
 # /etc/mysql/mariadb.cnf
-install -v -o root -g root -m 0644 "$MySB_InstallDir"/templates/mysql/etc.mysql.my.cnf.tmpl /etc/mysql/mariadb.cnf
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/mysql/etc.mysql.my.cnf.tmpl /etc/mysql/mariadb.cnf
 [ ! -h /etc/alternatives/my.cnf ] && ln -sv /etc/mysql/mariadb.cnf /etc/alternatives/my.cnf
 # /etc/mysql/my.cnf
 [ ! -h /etc/mysql/my.cnf ] && ln -sv /etc/alternatives/my.cnf /etc/mysql/my.cnf
@@ -88,11 +96,11 @@ echo "[mysql]" >/etc/mysql/conf.d/mysql.cnf
     echo "max_allowed_packet = 16M"
 } >/etc/mysql/conf.d/mysqldump.cnf
 # /etc/mysql/mariadb.conf.d
-install -v -o root -g root -m 0644 "$MySB_InstallDir"/templates/mysql/etc.mysql.mariadb.conf.d.50-client.cnf.tmpl /etc/mysql/mariadb.conf.d/50-client.cnf
-install -v -o root -g root -m 0644 "$MySB_InstallDir"/templates/mysql/etc.mysql.mariadb.conf.d.50-mysql-clients.cnf.tmpl /etc/mysql/mariadb.conf.d/50-mysql-clients.cnf
-install -v -o root -g root -m 0644 "$MySB_InstallDir"/templates/mysql/etc.mysql.mariadb.conf.d.50-mysqld_safe.cnf.tmpl /etc/mysql/mariadb.conf.d/50-mysqld_safe.cnf
-install -v -o root -g root -m 0644 "$MySB_InstallDir"/templates/mysql/etc.mysql.mariadb.conf.d.50-server.cnf.tmpl /etc/mysql/mariadb.conf.d/50-server.cnf
-install -v -o root -g root -m 0644 "$MySB_InstallDir"/templates/mysql/etc.mysql.mariadb.conf.d.99-MySB.cnf.tmpl /etc/mysql/mariadb.conf.d/99-MySB.cnf
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/mysql/etc.mysql.mariadb.conf.d.50-client.cnf.tmpl /etc/mysql/mariadb.conf.d/50-client.cnf
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/mysql/etc.mysql.mariadb.conf.d.50-mysql-clients.cnf.tmpl /etc/mysql/mariadb.conf.d/50-mysql-clients.cnf
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/mysql/etc.mysql.mariadb.conf.d.50-mysqld_safe.cnf.tmpl /etc/mysql/mariadb.conf.d/50-mysqld_safe.cnf
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/mysql/etc.mysql.mariadb.conf.d.50-server.cnf.tmpl /etc/mysql/mariadb.conf.d/50-server.cnf
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/mysql/etc.mysql.mariadb.conf.d.99-MySB.cnf.tmpl /etc/mysql/mariadb.conf.d/99-MySB.cnf
 
 #### START services
 gfnManageServices 'start' 'mysql'
@@ -102,119 +110,119 @@ gfnManageServices 'start' 'mysql'
 [ -f /etc/MySB/config_db ] && source /etc/MySB/config_db
 
 #### MySQL Secure
-MySQL_RootPassword="${MySQL_RootPassword:-$(gfnGenPassword 32)}"
-MySQL_DebianPassword="${MySQL_DebianPassword:-$(gfnGenPassword 32)}"
-MySQL_MysbPassword="${MySQL_MysbPassword:-$(gfnGenPassword 16)}"
-MySQL_BackupManager="${MySQL_BackupManager:-$(gfnGenPassword 16)}"
-MySQL_TorrentPassword="${MySQL_TorrentPassword:-$(gfnGenPassword 16)}"
+if [ -z "${MySQL_RootPassword}" ] && [ -z "${MySQL_MysbPassword}" ]; then
+    MySQL_RootPassword="${MySQL_RootPassword:-$(gfnGenPassword 32)}"
+    MySQL_MysbPassword="${MySQL_MysbPassword:-$(gfnGenPassword 16)}"
+    MySQL_BackupManager="${MySQL_BackupManager:-$(gfnGenPassword 16)}"
+    MySQL_TorrentPassword="${MySQL_TorrentPassword:-$(gfnGenPassword 16)}"
 
-#### MySQL Secure
-mysql -u root --verbose <<-EOF
-#UPDATE mysql.user set plugin='' where User='root';
-UPDATE mysql.user SET Password=PASSWORD('$MySQL_RootPassword') WHERE User='root';
-DELETE FROM mysql.user WHERE User='';
-DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost');
-DELETE FROM mysql.user WHERE User='BM_user' AND Host NOT IN ('localhost');
-DELETE FROM mysql.user WHERE User='MySB_user' AND Host NOT IN ('localhost');
-DELETE FROM mysql.user WHERE User='debian-sys-maint' AND Host NOT IN ('localhost');
-DELETE FROM mysql.db WHERE User='BM_user' AND Host NOT IN ('localhost');
-DELETE FROM mysql.db WHERE User='MySB_user' AND Host NOT IN ('localhost');
-DELETE FROM mysql.db WHERE User='debian-sys-maint' AND Host NOT IN ('localhost');
-DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%';
-CREATE DATABASE IF NOT EXISTS MySB_db;
-CREATE USER IF NOT EXISTS 'debian-sys-maint'@'localhost';
-GRANT ALL ON *.* TO 'debian-sys-maint'@'localhost' IDENTIFIED BY '${MySQL_DebianPassword}' WITH GRANT OPTION;
-CREATE USER IF NOT EXISTS 'MySB_user'@'localhost';
-GRANT ALL ON MySB_db.* to 'MySB_user'@'localhost' IDENTIFIED BY '$MySQL_MysbPassword';
-CREATE USER IF NOT EXISTS 'BM_user'@'localhost';
-GRANT SHOW DATABASES,SELECT,LOCK TABLES ON *.* TO 'BM_user'@'localhost' IDENTIFIED BY '$MySQL_BackupManager';
-CREATE USER IF NOT EXISTS 'Torrent_user'@'localhost';
-FLUSH PRIVILEGES;
-EOF
-
-if [ "${gbToInstall_NextCloud}" == "YES" ] || [ "${gbIsInstalled_NextCloud}" != "INIT" ]; then
-    mysql -u root -p"${MySQL_RootPassword}" --verbose <<-EOF
-        CREATE DATABASE IF NOT EXISTS NextCloud_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-        GRANT ALL ON NextCloud_db.* to 'MySB_user'@'localhost' IDENTIFIED BY '$MySQL_MysbPassword';
+    mysql -u root --verbose <<-EOF
+        UPDATE mysql.user SET Password=PASSWORD('${MySQL_RootPassword}') WHERE User='root';
+        DELETE FROM mysql.user WHERE User='';
+        DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost');
+        DELETE FROM mysql.user WHERE User='BM_user' AND Host NOT IN ('localhost');
+        DELETE FROM mysql.user WHERE User='MySB_user' AND Host NOT IN ('localhost');
+        DELETE FROM mysql.db WHERE User='BM_user' AND Host NOT IN ('localhost');
+        DELETE FROM mysql.db WHERE User='MySB_user' AND Host NOT IN ('localhost');
+        DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%';
+        CREATE DATABASE IF NOT EXISTS MySB_db;
+        CREATE USER IF NOT EXISTS 'MySB_user'@'localhost';
+        GRANT ALL ON MySB_db.* to 'MySB_user'@'localhost' IDENTIFIED BY '${MySQL_MysbPassword}';
+        CREATE USER IF NOT EXISTS 'BM_user'@'localhost';
+        GRANT SHOW DATABASES,SELECT,LOCK TABLES ON *.* TO 'BM_user'@'localhost' IDENTIFIED BY '${MySQL_BackupManager}';
+        CREATE USER IF NOT EXISTS 'Torrent_user'@'localhost';
         FLUSH PRIVILEGES;
 	EOF
-fi
 
-#### Add MySQL password into MySB config files
-{
-    echo "MySQL_RootPassword=\"$MySQL_RootPassword\""
-    echo "MySQL_DebianPassword=\"$MySQL_DebianPassword\""
-    echo "MySQL_MysbPassword=\"$MySQL_MysbPassword\""
-    echo "MySQL_BackupManager=\"$MySQL_BackupManager\""
-    echo "MySQL_TorrentPassword=\"$MySQL_TorrentPassword\""
-} >/etc/MySB/config_db
+    if [ "${gbToInstall_NextCloud}" == "YES" ] || [ "${gbIsInstalled_NextCloud}" != "INIT" ]; then
+        mysql -u root -p"${MySQL_RootPassword}" --verbose <<-EOF
+            CREATE DATABASE IF NOT EXISTS NextCloud_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+            GRANT ALL ON NextCloud_db.* to 'MySB_user'@'localhost' IDENTIFIED BY '${MySQL_MysbPassword}';
+            FLUSH PRIVILEGES;
+		EOF
+    fi
 
-#### Create debian.cnf
-if [ -f /etc/mysql/debian.cnf ] && [ ! -f /etc/mysql/debian.cnf.back ]; then
-    mv -v /etc/mysql/debian.cnf /etc/mysql/debian.cnf.back
-fi
-install -v -o root -g root -m 0600 "$MySB_InstallDir"/templates/mysql/etc.mysql.debian.cnf.tmpl /etc/mysql/debian.cnf
-perl -pi -e "s/<debian_pasword>/${MySQL_DebianPassword}/g" /etc/mysql/debian.cnf
+    #### Add MySQL password into MySB config files
+    {
+        echo "MySQL_RootPassword=\"${MySQL_RootPassword}\""
+        echo "MySQL_MysbPassword=\"${MySQL_MysbPassword}\""
+        echo "MySQL_BackupManager=\"${MySQL_BackupManager}\""
+        echo "MySQL_TorrentPassword=\"${MySQL_TorrentPassword}\""
+    } >/etc/MySB/config_db
 
-#### Create MySQL client config file for MySB_user
-{
-    echo "[client]"
-    echo "user = MySB_user"
-    echo "password = $MySQL_MysbPassword"
-    echo "socket = /var/run/mysqld/mysqld.sock"
-} >/root/.config.cnf
-chmod -v 0600 /root/.config.cnf
+    #### Create debian.cnf
+    if [ -f /etc/mysql/debian.cnf ] && [ ! -f /etc/mysql/debian.cnf.back ]; then
+        mv -v /etc/mysql/debian.cnf /etc/mysql/debian.cnf.back
+    fi
+    install -v -o root -g root -m 0400 "${MySB_InstallDir}"/templates/mysql/etc.mysql.debian.cnf.tmpl /etc/mysql/debian.cnf
 
-#### Create MySQL client config file for Torrent_user
-{
-    echo "[client]"
-    echo "user = Torrent_user"
-    echo "password = $MySQL_TorrentPassword"
-    echo "socket = /var/run/mysqld/mysqld.sock"
-} >/home/.config.cnf
-chown -v root:MySB_users /home/.config.cnf
-chmod -v 0644 /home/.config.cnf
+    #### Create MySQL client config file for MySB_user
+    {
+        echo "[client]"
+        echo "user = MySB_user"
+        echo "password = ${MySQL_MysbPassword}"
+        echo "socket = /var/run/mysqld/mysqld.sock"
+    } >/root/.config.cnf
+    chmod -v 0600 /root/.config.cnf
 
-#### Create MySB database (ONLY during a new install, NOT during an upgrade)
-if [ "$gsSwitch" == "INSTALL" ]; then
+    #### Create MySQL client config file for Torrent_user
+    {
+        echo "[client]"
+        echo "user = Torrent_user"
+        echo "password = ${MySQL_TorrentPassword}"
+        echo "socket = /var/run/mysqld/mysqld.sock"
+    } >/home/.config.cnf
+    chown -v root:MySB_users /home/.config.cnf
+    chmod -v 0644 /home/.config.cnf
+
+    #### Create scemas
     # MySQL Schema
-    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir"/templates/mysql/Schema.sql
+    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"${MySB_InstallDir}"/templates/mysql/Schema.sql
     # MySQL Triggers
-    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir"/templates/mysql/Triggers.sql
+    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"${MySB_InstallDir}"/templates/mysql/Triggers.sql
     # MySQL Tables
-    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir"/templates/mysql/Table_blocklists.sql
-    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir"/templates/mysql/Table_dnscrypt_config.sql
-    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir"/templates/mysql/Table_lets_encrypt.sql
-    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir"/templates/mysql/Table_providers_monitoring.sql
-    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir"/templates/mysql/Table_repositories.sql
-    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir"/templates/mysql/Table_services.sql
-    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir"/templates/mysql/Table_smtp.sql
-    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir"/templates/mysql/Table_system.sql
+    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"${MySB_InstallDir}"/templates/mysql/Table_blocklists.sql
+    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"${MySB_InstallDir}"/templates/mysql/Table_dnscrypt_config.sql
+    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"${MySB_InstallDir}"/templates/mysql/Table_lets_encrypt.sql
+    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"${MySB_InstallDir}"/templates/mysql/Table_providers_monitoring.sql
+    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"${MySB_InstallDir}"/templates/mysql/Table_repositories.sql
+    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"${MySB_InstallDir}"/templates/mysql/Table_services.sql
+    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"${MySB_InstallDir}"/templates/mysql/Table_smtp.sql
+    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"${MySB_InstallDir}"/templates/mysql/Table_system.sql
 fi
 
 #### MySQL Grant for users
 mysql -u root -p"${MySQL_RootPassword}" --verbose <<-EOF
-GRANT SELECT ON MySB_db.trackers_list TO 'Torrent_user'@'localhost' IDENTIFIED BY '$MySQL_TorrentPassword';
-GRANT SELECT, INSERT, DELETE ON MySB_db.torrents TO 'Torrent_user'@'localhost' IDENTIFIED BY '$MySQL_TorrentPassword';
-GRANT SELECT (id_system,public_tracker_allow,files_recycling) ON MySB_db.system TO 'Torrent_user'@'localhost' IDENTIFIED BY '$MySQL_TorrentPassword';
-FLUSH PRIVILEGES;
+    GRANT SELECT ON MySB_db.trackers_list TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
+    GRANT SELECT, INSERT, DELETE ON MySB_db.torrents TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
+    GRANT SELECT (id_system,public_tracker_allow,files_recycling) ON MySB_db.system TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
+    FLUSH PRIVILEGES;
 EOF
+
+#### NextCloud
+if [ "${gbToInstall_NextCloud}" == "YES" ] || [ "${gbIsInstalled_NextCloud}" != "INIT" ]; then
+    if [ ! -f /var/lib/mysql/NextCloud_db/db.opt ]; then
+        mysql -u root -p"${MySQL_RootPassword}" --verbose <<-EOF
+            ALTER DATABASE NextCloud_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+            GRANT ALL ON NextCloud_db.* to 'MySB_user'@'localhost' IDENTIFIED BY '${MySQL_MysbPassword}';
+            FLUSH PRIVILEGES;
+		EOF
+    fi
+fi
 
 #### Webmin
 if [ "${gbIsInstalled_Webmin}" == "YES" ] && [ -f /etc/webmin/mysql/config ]; then
     sed -i '/login=/d' /etc/webmin/mysql/config
     sed -i '/pass=/d' /etc/webmin/mysql/config
     echo "login=root" >>/etc/webmin/mysql/config
-    echo "pass=$MySQL_RootPassword" >>/etc/webmin/mysql/config
+    echo "pass=${MySQL_RootPassword}" >>/etc/webmin/mysql/config
 fi
 
 #### /etc/MySB/config.php
-if [ -n "$MySQL_MysbPassword" ]; then
-    cp -vf "$MySB_InstallDir"/templates/mysb/etc.mysb.config.php.tmpl /etc/MySB/config.php
+if [ -n "${MySQL_MysbPassword}" ]; then
+    cp -vf "${MySB_InstallDir}"/templates/mysb/etc.mysb.config.php.tmpl /etc/MySB/config.php
     perl -pi -e "s/<MySB_InstallDir>/${gsInstallDirEscaped}/g" /etc/MySB/config.php
-    if [ -n "$MySQL_MysbPassword" ]; then
-        perl -pi -e "s/<MySQL_MysbPassword>/$MySQL_MysbPassword/g" /etc/MySB/config.php
-    fi
+    perl -pi -e "s/<MySQL_MysbPassword>/${MySQL_MysbPassword}/g" /etc/MySB/config.php
 fi
 
 #### Restart service
@@ -226,16 +234,15 @@ echo "########## MariaDB config"
 mysql --print-defaults
 
 #### MySQL Tuner
-mysqltuner --skippassword --nocolor >"$MySB_InstallDir"/temp/mysqltuner.log
-cat "$MySB_InstallDir"/temp/mysqltuner.log
-if (grep -q 'Run OPTIMIZE TABLE' "$MySB_InstallDir"/temp/mysqltuner.log); then
-    mysqlcheck -u root -p$MySQL_RootPassword --auto-repair --optimize --all-databases
+mysqltuner --skippassword --nocolor >"${MySB_InstallDir}"/temp/mysqltuner.log
+cat "${MySB_InstallDir}"/temp/mysqltuner.log
+if (grep -q 'Run OPTIMIZE TABLE' "${MySB_InstallDir}"/temp/mysqltuner.log); then
+    mysqlcheck -u root -p${MySQL_RootPassword} --auto-repair --optimize --all-databases
 fi
-rm -vf "$MySB_InstallDir"/temp/mysqltuner.log
+rm -vf "${MySB_InstallDir}"/temp/mysqltuner.log
 
 #### Remove passwords from log
 perl -pi -e "s/${MySQL_RootPassword}/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/g" "${gsLogFile}"
-perl -pi -e "s/${MySQL_DebianPassword}/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/g" "${gsLogFile}"
 perl -pi -e "s/${MySQL_MysbPassword}/xxxxxxxxxxxxxxxx/g" "${gsLogFile}"
 perl -pi -e "s/${MySQL_BackupManager}/xxxxxxxxxxxxxxxx/g" "${gsLogFile}"
 perl -pi -e "s/${MySQL_TorrentPassword}/xxxxxxxxxxxxxxxx/g" "${gsLogFile}"
