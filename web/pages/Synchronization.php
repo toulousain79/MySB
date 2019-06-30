@@ -575,7 +575,7 @@ if ( $DisplayIdent >= 1 ) {
 				<td><input class="text_medium" name="sync_dstsrv[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['dst_srv']; ?>" /></td>
 				<td><input class="text_small" name="sync_dstport[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['dst_port']; ?>" /></td>
 				<td><input class="text_medium" name="sync_dstuser[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['dst_user']; ?>" /></td>
-				<td><input class="text_medium" name="sync_dstpass[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['dst_pass']; ?>" /></td>
+				<td><input class="text_medium" name="sync_dstpass[<?php echo $IdentSync['ident_id']; ?>]" type="password" value="<?php echo $IdentSync['dst_pass']; ?>" /></td>
 				<td><div align="center"><select name="sync_maxsync[<?php echo $IdentSync['ident_id']; ?>]" style="width:80px; height: 28px;">
 <?php
 				$MaxToSyncList = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10');
