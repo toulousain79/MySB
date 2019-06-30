@@ -561,7 +561,7 @@ function PrintContent($user, $Case) {
 		<!-- // Logs -->
 		<tr align="left">
 			<th width="15%" scope="row" id="BorderTopTitle"><?php echo User_UserInfo_Table_Logs; ?></th>
-			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/?main-user/logs.html"><span class="Comments"><?php echo User_UserInfo_Comment_Logs; ?></span></a></td>
+			<td colspan="2"><a href="https://<?php echo $Hostname;?>:<?php echo $Port_HTTPs;?>/?admin/logs.html"><span class="Comments"><?php echo User_UserInfo_Comment_Logs; ?></span></a></td>
 		</tr>
 		<!-- // Renting infos -->
 		<tr align="left">

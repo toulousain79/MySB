@@ -161,7 +161,7 @@ define('User_UserInfo_Table_Renting', 'Renting infos');
 define('User_UserInfo_Comment_Renting', 'Manage your renting informations.');
 // Trackers
 define('User_UserInfo_Table_Trackers', 'Trackers list');
-define('User_UserInfo_Comment_Trackers', '<a href="?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="?trackers/add-new-trackers.html">add new tracker here</a>.');
+define('User_UserInfo_Comment_Trackers', '<a href="?trackers/trackers-list.html">Manage your trackers here.</a>.');
 // Blocklists
 define('User_UserInfo_Table_Blocklists', 'Blocklists');
 define('User_UserInfo_Comment_Blocklists', 'You can manage <a href="?blocklists/rtorrent-blocklists.html">rTorrent blocklists</a> AND <a href="?blocklists/peerguardian-blocklists.html">PeerGuardian blocklists</a>.');
