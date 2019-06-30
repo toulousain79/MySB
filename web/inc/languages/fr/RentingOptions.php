@@ -27,10 +27,10 @@ define('MainUser_RentingOptions_Amount', 'Montant :');
 define('MainUser_RentingOptions_User', 'Utilisateur :');
 define('MainUser_RentingOptions_Description', 'Description :');
 define('MainUser_RentingOptions_AddOption', 'Ajouter une autre option');
-define('MainUser_RentingOptions_DelOption', 'Retirer la dernière option');
+define('MainUser_RentingOptions_DelOption', 'Retirer la derni&egrave;re option');
 define('MainUser_RentingOptions_SaveOptions', 'Enregistrer les options');
 define('MainUser_RentingOptions_TitleAmount', 'Prix de l\'option');
 define('MainUser_RentingOptions_TitleDescription', 'Description');
-define('MainUser_RentingOptions_TitleMonthly', 'Nouvelle mensualité');
+define('MainUser_RentingOptions_TitleMonthly', 'Nouvelle mensualit&eacute;');
 
 //#################### LAST LINE ######################################
