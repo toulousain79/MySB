@@ -194,13 +194,13 @@ gfnKernelParamConfig() {
 #### Create user chains to reduce the number of rules each packet must traverse.
 gfnCreatingUserChain() {
 	# Docker
-	if gfnCheckCommand 0 docker; then
-		iptables -N DOCKER -m comment --comment "Docker"
-		iptables -N DOCKER-ISOLATION-STAGE-1 -m comment --comment "Docker"
-		iptables -N DOCKER-ISOLATION-STAGE-2 -m comment --comment "Docker"
-		iptables -N DOCKER-USER -m comment --comment "Docker"
-		iptables -t nat -N DOCKER -m comment --comment "Docker"
-	fi
+	# if gfnCheckCommand 0 docker; then
+	# 	iptables -N DOCKER -m comment --comment "Docker"
+	# 	iptables -N DOCKER-ISOLATION-STAGE-1 -m comment --comment "Docker"
+	# 	iptables -N DOCKER-ISOLATION-STAGE-2 -m comment --comment "Docker"
+	# 	iptables -N DOCKER-USER -m comment --comment "Docker"
+	# 	iptables -t nat -N DOCKER -m comment --comment "Docker"
+	# fi
 	# Create a chain to filter INVALID packets
 	iptables -N bad_packets
 	# Create another chain to filter bad TCP packets
@@ -848,9 +848,9 @@ gfnProcessInputChain() {
 	fi
 
 	# Docker
-	if gfnCheckCommand 0 docker; then
-		iptables -A INPUT -i docker0 -j ACCEPT -m comment --comment "Docker"
-	fi
+	# if gfnCheckCommand 0 docker; then
+	# 	iptables -A INPUT -i docker0 -j ACCEPT -m comment --comment "Docker"
+	# fi
 
 	## Inbound Internet Packet Rules
 	# Accept Established Connections
@@ -884,14 +884,14 @@ gfnProcessForwardChain() {
 	iptables -A FORWARD -p ALL -j bad_packets
 
 	# Docker
-	if gfnCheckCommand 0 docker; then
-		iptables -A FORWARD -j DOCKER-USER -m comment --comment "Docker"
-		iptables -A FORWARD -j DOCKER-ISOLATION-STAGE-1 -m comment --comment "Docker"
-		iptables -A FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "Docker"
-		iptables -A FORWARD -o docker0 -j DOCKER -m comment --comment "Docker"
-		iptables -A FORWARD -i docker0 ! -o docker0 -j ACCEPT -m comment --comment "Docker"
-		iptables -A FORWARD -i docker0 -o docker0 -j ACCEPT -m comment --comment "Docker"
-	fi
+	# if gfnCheckCommand 0 docker; then
+	# 	iptables -A FORWARD -j DOCKER-USER -m comment --comment "Docker"
+	# 	iptables -A FORWARD -j DOCKER-ISOLATION-STAGE-1 -m comment --comment "Docker"
+	# 	iptables -A FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment "Docker"
+	# 	iptables -A FORWARD -o docker0 -j DOCKER -m comment --comment "Docker"
+	# 	iptables -A FORWARD -i docker0 ! -o docker0 -j ACCEPT -m comment --comment "Docker"
+	# 	iptables -A FORWARD -i docker0 -o docker0 -j ACCEPT -m comment --comment "Docker"
+	# fi
 
 	if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
 		# Accept TCP packets we want to forward from internal sources
@@ -943,10 +943,10 @@ gfnProcessOutputChain() {
 	fi
 
 	# Docker
-	if gfnCheckCommand 0 docker; then
-		iptables -A OUTPUT -p ALL -o docker0 -j ACCEPT -m comment --comment "Docker"
-		iptables -A OUTPUT -o docker0 -j ACCEPT -m comment --comment "Docker"
-	fi
+	# if gfnCheckCommand 0 docker; then
+	# 	iptables -A OUTPUT -p ALL -o docker0 -j ACCEPT -m comment --comment "Docker"
+	# 	iptables -A OUTPUT -o docker0 -j ACCEPT -m comment --comment "Docker"
+	# fi
 
 	# To internet
 	iptables -A OUTPUT -p ALL -o "${gsPrimaryInet}" -j ACCEPT
@@ -958,17 +958,18 @@ gfnProcessOutputChain() {
 #### Process NAT PRETROUTING chain
 gfnProcessNatPreroutingChain() {
 	# Docker
-	if gfnCheckCommand 0 docker; then
-		iptables -t nat -A PREROUTING -m addrtype --dst-type LOCAL -j DOCKER -m comment --comment "Docker"
-	fi
+	# if gfnCheckCommand 0 docker; then
+	# 	iptables -t nat -A PREROUTING -m addrtype --dst-type LOCAL -j DOCKER -m comment --comment "Docker"
+	# fi
+	return 0
 }
 
 #### Process NAT POSTROUTING chain
 gfnProcessNatPostroutingChain() {
 	# Docker
-	if gfnCheckCommand 0 docker; then
-		iptables -t nat -A POSTROUTING -s 172.17.0.0/16 ! -o docker0 -j MASQUERADE -m comment --comment "Docker"
-	fi
+	# if gfnCheckCommand 0 docker; then
+	# 	iptables -t nat -A POSTROUTING -s 172.17.0.0/16 ! -o docker0 -j MASQUERADE -m comment --comment "Docker"
+	# fi
 
 	iptables -t nat -A POSTROUTING -o "${gsPrimaryInet}" -j SNAT --to-source "${gsSrvIpAddress}"
 
@@ -980,65 +981,68 @@ gfnProcessNatPostroutingChain() {
 #### Process NAT OUTPUT chain
 gfnProcessNatOutputChain() {
 	# Docker
-	if gfnCheckCommand 0 docker; then
-		iptables -t nat -A OUTPUT ! -d 127.0.0.0/8 -m addrtype --dst-type LOCAL -j DOCKER -m comment --comment "Docker"
-	fi
+	# if gfnCheckCommand 0 docker; then
+	# 	iptables -t nat -A OUTPUT ! -d 127.0.0.0/8 -m addrtype --dst-type LOCAL -j DOCKER -m comment --comment "Docker"
+	# fi
+	return 0
 }
 
 #### Process NAT DOCKER chain
 gfnProcessNatDockerChain() {
-	local sContainerId sIpAddress sMap sPortExt sProtoExt sPortContainer
-	# local sPortsMap
+	# local sContainerId sIpAddress sMap sPortExt sProtoExt sPortContainer
+	# # local sPortsMap
 
-	if gfnCheckCommand 0 docker; then
-		iptables -t nat -A DOCKER -i docker0 -j RETURN -m comment --comment "Docker"
+	# if gfnCheckCommand 0 docker; then
+	# 	iptables -t nat -A DOCKER -i docker0 -j RETURN -m comment --comment "Docker"
 
-		for sContainerId in $(docker ps --quiet); do
-			sIpAddress=$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$sContainerId")
-			#sPortsMap=$(docker port "$sContainerId")
-			OIFS=$IFS
-			IFS=$'\n'
-			for sMap in $(docker port "$sContainerId"); do
-				sPortExt=$(echo "$sMap" | awk '{ print $1 }' | cut -d '/' -f 1)
-				sProtoExt=$(echo "$sMap" | cut -d '/' -f 2 | awk '{ print $1 }')
-				sPortContainer=$(echo "$sMap" | cut -d '/' -f 2 | awk '{ print $3 }' | cut -d ':' -f 2)
-				# Nat - POSTROUTING
-				iptables -t nat -A POSTROUTING -s "$sIpAddress"/32 -d "$sIpAddress"/32 -p "$sProtoExt" -m "$sProtoExt" --dport "$sPortExt" -j MASQUERADE -m comment --comment "Docker"
-				# Nat - DOCKER
-				iptables -t nat -A DOCKER ! -i docker0 -p "$sProtoExt" -m "$sProtoExt" --dport "$sPortContainer" -j DNAT --to-destination "$sIpAddress":"$sPortExt" -m comment --comment "Docker"
-			done
-			IFS=$OIFS
-			unset IFS OIFS
-		done
-	fi
+	# 	for sContainerId in $(docker ps --quiet); do
+	# 		sIpAddress=$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$sContainerId")
+	# 		#sPortsMap=$(docker port "$sContainerId")
+	# 		OIFS=$IFS
+	# 		IFS=$'\n'
+	# 		for sMap in $(docker port "$sContainerId"); do
+	# 			sPortExt=$(echo "$sMap" | awk '{ print $1 }' | cut -d '/' -f 1)
+	# 			sProtoExt=$(echo "$sMap" | cut -d '/' -f 2 | awk '{ print $1 }')
+	# 			sPortContainer=$(echo "$sMap" | cut -d '/' -f 2 | awk '{ print $3 }' | cut -d ':' -f 2)
+	# 			# Nat - POSTROUTING
+	# 			iptables -t nat -A POSTROUTING -s "$sIpAddress"/32 -d "$sIpAddress"/32 -p "$sProtoExt" -m "$sProtoExt" --dport "$sPortExt" -j MASQUERADE -m comment --comment "Docker"
+	# 			# Nat - DOCKER
+	# 			iptables -t nat -A DOCKER ! -i docker0 -p "$sProtoExt" -m "$sProtoExt" --dport "$sPortContainer" -j DNAT --to-destination "$sIpAddress":"$sPortExt" -m comment --comment "Docker"
+	# 		done
+	# 		IFS=$OIFS
+	# 		unset IFS OIFS
+	# 	done
+	# fi
+	return 0
 }
 
 #### Process DOCKER chains
 gfnProcessDockerChains() {
-	local sContainerId sIpAddress sMap sPortExt sProtoExt
-	# local sPortsMap
+	# local sContainerId sIpAddress sMap sPortExt sProtoExt
+	# # local sPortsMap
 
-	if gfnCheckCommand 0 docker; then
-		for sContainerId in $(docker ps --quiet); do
-			sIpAddress=$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$sContainerId")
-			#sPortsMap=$(docker port "$sContainerId")
+	# if gfnCheckCommand 0 docker; then
+	# 	for sContainerId in $(docker ps --quiet); do
+	# 		sIpAddress=$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$sContainerId")
+	# 		#sPortsMap=$(docker port "$sContainerId")
 
-			IFS=$'\n'
-			for sMap in $(docker port "$sContainerId"); do
-				sPortExt=$(echo "$sMap" | awk '{ print $1 }' | cut -d '/' -f 1)
-				sProtoExt=$(echo "$sMap" | cut -d '/' -f 2 | awk '{ print $1 }')
-				# Filter - DOCKER
-				iptables -A DOCKER -d "$sIpAddress"/32 ! -i docker0 -o docker0 -p "$sProtoExt" -m "$sProtoExt" --dport "$sPortExt" -j ACCEPT -m comment --comment "Docker"
-			done
-			unset IFS
-		done
+	# 		IFS=$'\n'
+	# 		for sMap in $(docker port "$sContainerId"); do
+	# 			sPortExt=$(echo "$sMap" | awk '{ print $1 }' | cut -d '/' -f 1)
+	# 			sProtoExt=$(echo "$sMap" | cut -d '/' -f 2 | awk '{ print $1 }')
+	# 			# Filter - DOCKER
+	# 			iptables -A DOCKER -d "$sIpAddress"/32 ! -i docker0 -o docker0 -p "$sProtoExt" -m "$sProtoExt" --dport "$sPortExt" -j ACCEPT -m comment --comment "Docker"
+	# 		done
+	# 		unset IFS
+	# 	done
 
-		iptables -A DOCKER-ISOLATION-STAGE-1 -i docker0 ! -o docker0 -j DOCKER-ISOLATION-STAGE-2 -m comment --comment "Docker"
-		iptables -A DOCKER-ISOLATION-STAGE-1 -j RETURN -m comment --comment "Docker"
-		iptables -A DOCKER-ISOLATION-STAGE-2 -o docker0 -j DROP -m comment --comment "Docker"
-		iptables -A DOCKER-ISOLATION-STAGE-2 -j RETURN -m comment --comment "Docker"
-		iptables -A DOCKER-USER -j RETURN -m comment --comment "Docker"
-	fi
+	# 	iptables -A DOCKER-ISOLATION-STAGE-1 -i docker0 ! -o docker0 -j DOCKER-ISOLATION-STAGE-2 -m comment --comment "Docker"
+	# 	iptables -A DOCKER-ISOLATION-STAGE-1 -j RETURN -m comment --comment "Docker"
+	# 	iptables -A DOCKER-ISOLATION-STAGE-2 -o docker0 -j DROP -m comment --comment "Docker"
+	# 	iptables -A DOCKER-ISOLATION-STAGE-2 -j RETURN -m comment --comment "Docker"
+	# 	iptables -A DOCKER-USER -j RETURN -m comment --comment "Docker"
+	# fi
+	return 0
 }
 
 ##################### LAST LINE ######################################

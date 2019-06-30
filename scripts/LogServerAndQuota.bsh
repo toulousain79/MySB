@@ -38,16 +38,14 @@ CCZE_Treatment() {
     install -o root -g www-data -m 0750 -d "${sWebLogDir}"
     if [ -n "$(echo "${sLogFile}" | grep '.log')" ]; then
         # Log files with '.log' extension
-        HtmlFile="$(echo "${sLogFile}" | sed -e 's/.log/.html/g;')"
+        HtmlFile="$(echo "${sLogFile}" | sed -e 's/.log/.html/g;' | sed -e 's/ /_/g;')"
     else
         # Log files without '.log' extension
-        HtmlFile="${sLogFile}.html"
+        HtmlFile="${sLogFile// /_}.html"
     fi
 
     log_daemon_msg "HTML Convert of ${sLogFile}"
-    # Remove olf HTML file
-    if [ -f "${sWebLogDir}/${HtmlFile}" ]; then rm "${sWebLogDir}/${HtmlFile}"; fi
-    if [ "$sTwoLogFile" == "YES" ]; then
+    if [ "${sTwoLogFile}" == "YES" ]; then
         if [ -e "${sVarLogDir}/${sLogFile}".1 ] && [ -s "${sVarLogDir}/${sLogFile}".1 ]; then
             cat "${sVarLogDir}/${sLogFile}".1 >"/tmp/${sLogFile}"
         fi
@@ -78,11 +76,14 @@ CCZE_Treatment() {
             *) sOptions="-h -r -p httpd" ;;
         esac
 
-        gfnCczeHtmlLogFormat "${MySB_InstallDir}/logs/${gsScriptName}.log" "${sWebLogDir}/${HtmlFile}" "${sOptions}"
+        gfnCczeHtmlLogFormat "/tmp/${sLogFile}" "${sWebLogDir}/${HtmlFile}" "${sOptions}"
         rm -f "/tmp/${sLogFile}"
     fi
     gfnStatusLSB
 }
+
+# Remove old HTML files
+rm "${MySB_InstallDir}"/web/logs/*/*.html
 
 #### access.log
 CCZE_Treatment 'access.log' '/var/log/nginx' "${MySB_InstallDir}/web/logs/nginx" 'YES'
@@ -236,7 +237,7 @@ if [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
     CCZE_Treatment 'Plex Media Scanner Deep Analysis.log' '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs/' "${MySB_InstallDir}/web/logs/plex" 'YES'
     CCZE_Treatment 'Plex Media Server.log' '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs/' "${MySB_InstallDir}/web/logs/plex" 'YES'
     CCZE_Treatment 'Plex Media Scanner.log' '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs/' "${MySB_InstallDir}/web/logs/plex" 'YES'
-    CCZE_Treatment 'com.plexapp.system.log' '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs/' "${MySB_InstallDir}/web/logs/plex" 'YES'
+    CCZE_Treatment 'com.plexapp.system.log' '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs/PMS Plugin Logs/' "${MySB_InstallDir}/web/logs/plex" 'YES'
 fi
 
 ####################
