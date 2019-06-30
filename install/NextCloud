@@ -71,35 +71,35 @@ if [ "$gbToInstall_NextCloud" == "YES" ] && [ "$gsSwitch" != "INIT" ]; then
     #### An upgrade ?
     if [ $gnRepoUpgrade -eq 1 ]; then
         if gfnCheckCommand 0 php; then
-            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --on"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --on"
         fi
         # Backup the config file if needed
-        if [ -f $gsNextCloudDir/config/config.php ]; then
-            mv -v $gsNextCloudDir/config/config.php $MySB_InstallDir/temp/nextcloud_config.php
+        if [ -f ${gsNextCloudDir}/config/config.php ]; then
+            mv -v ${gsNextCloudDir}/config/config.php $MySB_InstallDir/temp/nextcloud_config.php
         fi
-        if [ -d $gsNextCloudDir/apps2 ]; then
-            mv -v $gsNextCloudDir/apps2 $MySB_InstallDir/temp/nextcloud_apps2
+        if [ -d ${gsNextCloudDir}/apps2 ]; then
+            mv -v ${gsNextCloudDir}/apps2 $MySB_InstallDir/temp/nextcloud_apps2
         fi
         if [ -f $MySB_Files/$gsRepoFile ]; then
-            gfnDeleteDirectory 1 "$gsNextCloudDir"
+            gfnDeleteDirectory 1 "${gsNextCloudDir}"
         fi
         # Maybe need to launch a script on next reboot ?
         # Disable the upgrade job
         cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '0', on_boot = '1', script = '$0' WHERE name='NextCloud';" -v
     fi
 
-    if [ ! -d $gsNextCloudDir ]; then
+    if [ ! -d ${gsNextCloudDir} ]; then
         gfnRepoManageByType
     fi
     # Restore the old config file
     if [ -f $MySB_InstallDir/temp/nextcloud_config.php ]; then
-        mv -v $MySB_InstallDir/temp/nextcloud_config.php $gsNextCloudDir/config/config.php
+        mv -v $MySB_InstallDir/temp/nextcloud_config.php ${gsNextCloudDir}/config/config.php
     fi
     if [ -d $MySB_InstallDir/temp/nextcloud_apps2 ]; then
-        if [ -d $gsNextCloudDir/apps2 ]; then
-            rm -rfv $gsNextCloudDir/apps2
+        if [ -d ${gsNextCloudDir}/apps2 ]; then
+            rm -rfv ${gsNextCloudDir}/apps2
         fi
-        mv -v $MySB_InstallDir/temp/nextcloud_apps2 $gsNextCloudDir/apps2
+        mv -v $MySB_InstallDir/temp/nextcloud_apps2 ${gsNextCloudDir}/apps2
     fi
     # Create needed directories
     if [ ! -d $NextCloudDataDirectory ]; then
@@ -112,16 +112,17 @@ if [ "$gbToInstall_NextCloud" == "YES" ] && [ "$gsSwitch" != "INIT" ]; then
         chown www-data:www-data /home/admin
     fi
     # Clean some files and directories
-    if [ -f $gsNextCloudDir/config/config.sample.php ]; then
-        rm -fv $gsNextCloudDir/config/config.sample.php
+    if [ -f ${gsNextCloudDir}/config/config.sample.php ]; then
+        rm -fv ${gsNextCloudDir}/config/config.sample.php
     fi
 
     #### CRON
     crontab -u www-data -l >/tmp/crontab.tmp
     sed -i '/NextCloud/d' /tmp/crontab.tmp
-    echo "*/15  *  *  *  * php -f $gsNextCloudDir/cron.php > /dev/null 2>&1 # NextCloud" | tee -a /tmp/crontab.tmp
+    echo "*/15  *  *  *  * php -f ${gsNextCloudDir}/cron.php > /dev/null 2>&1 # NextCloud" | tee -a /tmp/crontab.tmp
     crontab -u www-data /tmp/crontab.tmp
     rm -f /tmp/crontab.tmp
+    su -s /bin/sh www-data -c "/usr/bin/php -f ${gsNextCloudDir}/cron.php > /dev/null 2>&1"
 
     #### Create directories & change rights
     gfnManageDirAndFiles 'global'
@@ -130,9 +131,9 @@ if [ "$gbToInstall_NextCloud" == "YES" ] && [ "$gsSwitch" != "INIT" ]; then
     gfnManageServices start "$binPhpService nginx"
 
     #### Database directory does not exist ? So we do the first install !
-    if [[ (! -f $gsNextCloudDir/config/config.php) || (! -s $gsNextCloudDir/config/config.php) ]] && [ "$(ls -la /var/lib/mysql/NextCloud_db/*.* | wc -l)" -le 1 ]; then
-        chown -R www-data:www-data $gsNextCloudDir/
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:install --database \"mysql\" --database-host \"localhost\" --database-name \"NextCloud_db\" --database-user \"MySB_user\" --database-pass \"$MySQL_MysbPassword\" --admin-user \"admin\" --admin-pass \"$MySQL_MysbPassword\" --database-table-prefix \"nc_\" --data-dir \"$NextCloudDataDirectory\" --no-interaction"
+    if [[ (! -f ${gsNextCloudDir}/config/config.php) || (! -s ${gsNextCloudDir}/config/config.php) ]] && [ "$(ls -la /var/lib/mysql/NextCloud_db/*.* | wc -l)" -le 1 ]; then
+        chown -R www-data:www-data ${gsNextCloudDir}/
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:install --database \"mysql\" --database-host \"localhost\" --database-name \"NextCloud_db\" --database-user \"MySB_user\" --database-pass \"$MySQL_MysbPassword\" --admin-user \"admin\" --admin-pass \"$MySQL_MysbPassword\" --database-table-prefix \"nc_\" --data-dir \"$NextCloudDataDirectory\" --no-interaction"
         # Maybe need to launch a script on next reboot ?
         cmdMySQL 'MySB_db' "UPDATE repositories SET on_boot = '1', script = '$0' WHERE name='NextCloud';" -v
     fi
@@ -213,9 +214,9 @@ if [ "$gbToInstall_NextCloud" == "YES" ] && [ "$gsSwitch" != "INIT" ]; then
         cmdMySQL 'NextCloud_db' "INSERT INTO nc_groups (gid) VALUES ('MySB_users');" -v
     fi
 
-    if gfnCheckCommand 0 $gsNextCloudDir/occ; then
+    if gfnCheckCommand 0 ${gsNextCloudDir}/occ; then
         # Upgrade
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ upgrade -v"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
 
         # NextCloud is installed
         cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='NextCloud';" -v
@@ -225,7 +226,7 @@ if [ "$gbToInstall_NextCloud" == "YES" ] && [ "$gsSwitch" != "INIT" ]; then
         # Force upgrade script on next boot if needed
         ScriptOnBoot="$(cmdMySQL 'MySB_db' "SELECT script FROM repositories WHERE on_boot = '1' AND name = 'NextCloud';")"
         if [ -z "$ScriptOnBoot" ]; then
-            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --off"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
         else
             cmdMySQL 'MySB_db' "UPDATE repositories SET on_boot = '1', script = '$0' WHERE name='NextCloud';" -v
         fi
@@ -238,7 +239,7 @@ if [ "$gbToInstall_NextCloud" == "YES" ] && [ "$gsSwitch" != "INIT" ]; then
     if [ "$gbToInstall_Fail2Ban" == "YES" ] || [ "$gbIsInstalled_Fail2Ban" == "YES" ] && [ -d /etc/fail2ban/filter.d ] && [ "$gsSwitch" != "INIT" ]; then
         install -v -g root -o root -m 0700 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.nextcloud.tmpl /etc/fail2ban/filter.d/nextcloud.conf
         if [ -z "$(grep '\[nextcloud\]' /etc/fail2ban/jail.local)" ]; then
-            (   
+            (
                 cat <<'EOF'
 
 [nextcloud]
@@ -264,7 +265,7 @@ if [ "$gbIsInstalled_NextCloud" == "YES" ] && [ "$gsSwitch" == "INIT" ]; then
         if [ -d /etc/fail2ban ]; then
             install -v -g root -o root -m 0700 $MySB_InstallDir/templates/fail2ban/etc.fail2ban.filter.d.nextcloud.tmpl /etc/fail2ban/filter.d/nextcloud.conf
             if [ -z "$(grep '\[nextcloud\]' /etc/fail2ban/jail.local)" ]; then
-                (   
+                (
                     cat <<'EOF'
 
 [nextcloud]
@@ -285,58 +286,58 @@ EOF
         MailDomain="$(echo $gsMainUserEmail | cut -d "@" -f 2)"
 
         #### NextCloud upgrade
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ upgrade -v"
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --off"
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:get version"
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ db:add-missing-indices"
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ db:convert-filecache-bigint --no-interaction"
-        Version="$(su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:get version" | cut -d "." -f 1)"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:add-missing-indices"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:convert-filecache-bigint --no-interaction"
+        Version="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version" | cut -d "." -f 1)"
         if [ "$Version" -ge "16" ]; then
-            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set mysql.utf8mb4 --type boolean --value=true"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mysql.utf8mb4 --type boolean --value=true"
         fi
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:repair"
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mimetype:update-db"
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mimetype:update-js"
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ app:enable files_external"
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ app:enable notifications"
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ background:cron"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mimetype:update-db"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mimetype:update-js"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable files_external"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable notifications"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ background:cron"
 
         #### Generating a new config file
-        if [ -d $gsNextCloudDir ] && [ -f $gsNextCloudDir/config/config.php ]; then
+        if [ -d ${gsNextCloudDir} ] && [ -f ${gsNextCloudDir}/config/config.php ]; then
             #### Check old config file
-            PasswordSalt="$(su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:get passwordsalt")"
+            PasswordSalt="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get passwordsalt")"
             echo "PasswordSalt: $PasswordSalt"
-            Secret="$(su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:get secret")"
+            Secret="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get secret")"
             echo "Secret: $Secret"
 
             #### New config file
             # Get the new version
-            Version="$(su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:get version")"
+            Version="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version")"
             cmdMySQL 'MySB_db' "UPDATE repositories SET version = '$Version' WHERE name='NextCloud';" -v
-            install -g www-data -o www-data -m 0640 $MySB_InstallDir/templates/nextcloud/nextcloud.config.php.tmpl $gsNextCloudDir/config/config.php
-            perl -pi -e "s/<version>/$Version/g" $gsNextCloudDir/config/config.php
+            install -g www-data -o www-data -m 0640 $MySB_InstallDir/templates/nextcloud/nextcloud.config.php.tmpl ${gsNextCloudDir}/config/config.php
+            perl -pi -e "s/<version>/$Version/g" ${gsNextCloudDir}/config/config.php
             source /etc/MySB/config_db
-            perl -pi -e "s/<db_password>/$MySQL_MysbPassword/g" $gsNextCloudDir/config/config.php
-            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set passwordsalt --value=$PasswordSalt"
-            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set trusted_domains 1 --value=$gsHostNameFqdn:$gsPort_MySB_HTTPS"
-            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set default_language --value=$EnvLang"
-            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set lost_password_link --value=https://$gsHostNameFqdn:$gsPort_MySB_HTTPS/?user/change-password.html"
-            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set mail_from_address --value=$MailFrom"
-            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set mail_domain --value=$MailDomain"
-            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set overwritehost --value=$gsHostNameFqdn:$gsPort_MySB_HTTPS"
-            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set overwrite.cli.url --value=https://localhost:$gsPort_MySB_HTTPS/nc"
-            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set logtimezone --value=$gsTimeZone"
-            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set secret --value=$Secret"
-            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set assetdirectory --value=$gsNextCloudDir"
-            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:set skeletondirectory --value=$gsNextCloudDir/core/skeleton"
+            perl -pi -e "s/<db_password>/$MySQL_MysbPassword/g" ${gsNextCloudDir}/config/config.php
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set passwordsalt --value=$PasswordSalt"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set trusted_domains 1 --value=$gsHostNameFqdn:$gsPort_MySB_HTTPS"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set default_language --value=$EnvLang"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set lost_password_link --value=https://$gsHostNameFqdn:$gsPort_MySB_HTTPS/?user/change-password.html"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_from_address --value=$MailFrom"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_domain --value=$MailDomain"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set overwritehost --value=$gsHostNameFqdn:$gsPort_MySB_HTTPS"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set overwrite.cli.url --value=https://localhost:$gsPort_MySB_HTTPS/nc"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set logtimezone --value=$gsTimeZone"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set secret --value=$Secret"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set assetdirectory --value=${gsNextCloudDir}"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set skeletondirectory --value=${gsNextCloudDir}/core/skeleton"
         fi
 
         #### Display 'config.php' for logs
-        cat $gsNextCloudDir/config/config.php
+        cat ${gsNextCloudDir}/config/config.php
 
         #### Backuping config file
-        if [ -f $gsNextCloudDir/config/config.php ]; then
-            cp -v $gsNextCloudDir/config/config.php $MySB_InstallDir/files/nextcloud_config.php
+        if [ -f ${gsNextCloudDir}/config/config.php ]; then
+            cp -v ${gsNextCloudDir}/config/config.php $MySB_InstallDir/files/nextcloud_config.php
         fi
 
         #### Updating database
@@ -348,20 +349,20 @@ EOF
         fi
 
         # nc_external_applicable
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:applicable --remove-all $IdStorage"
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:applicable --add-group MySB_users $IdStorage"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:applicable --remove-all $IdStorage"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:applicable --add-group MySB_users $IdStorage"
 
         # nc_external_config
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:config $IdStorage datadir '/home/\$user/'"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:config $IdStorage datadir '/home/\$user/'"
 
         # nc_external_options
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:option $IdStorage filesystem_check_changes 'true'"
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:option $IdStorage encrypt 'false'"
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:option $IdStorage previews 'true'"
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:option $IdStorage enable_sharing 'true'"
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:option $IdStorage encoding_compatibility 'false'"
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:verify $IdStorage"
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files_external:option $IdStorage encoding_compatibility 'false'"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option $IdStorage filesystem_check_changes 'true'"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option $IdStorage encrypt 'false'"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option $IdStorage previews 'true'"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option $IdStorage enable_sharing 'true'"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option $IdStorage encoding_compatibility 'false'"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:verify $IdStorage"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option $IdStorage encoding_compatibility 'false'"
 
         IfExist="$(cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_appconfig WHERE configkey='allow_user_mounting';")"
         if [ -z "$IfExist" ]; then
@@ -382,8 +383,8 @@ EOF
         fi
 
         #### Create all existing MySB users AND Scanning users' files
-        if [ -d $gsNextCloudDir/data ]; then
-            rm -rfv $gsNextCloudDir/data
+        if [ -d ${gsNextCloudDir}/data ]; then
+            rm -rfv ${gsNextCloudDir}/data
         fi
         for seedUser in $gsUsersList; do
             if [ ! -d $NextCloudDataDirectory/$seedUser ]; then
@@ -398,19 +399,19 @@ EOF
                 OC_PASS="$(gfnGenPassword 8)"
                 export OC_PASS
                 TimeStamp=$(date +%s)
-                su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ user:add --password-from-env --display-name=\"$seedUser\" --group=\"MySB_users\" $seedUser"
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:add --password-from-env --display-name=\"$seedUser\" --group=\"MySB_users\" $seedUser"
                 cmdMySQL 'NextCloud_db' "INSERT INTO nc_preferences (userid,appid,configkey,configvalue) VALUES ('admin','files_external','/Home_$seedUser','$TimeStamp');" -v
                 cmdMySQL 'NextCloud_db' "INSERT INTO nc_preferences (userid,appid,configkey,configvalue) VALUES ('$seedUser','core','lang','$EnvLang');" -v
                 cmdMySQL 'NextCloud_db' "INSERT INTO nc_preferences (userid,appid,configkey,configvalue) VALUES ('$seedUser','settings','email','$FnUserMail');" -v
                 cmdMySQL 'NextCloud_db' "INSERT INTO nc_storages (id) VALUES ('local::/home/$seedUser/');" -v
                 cmdMySQL 'MySB_db' "UPDATE users SET init_password = '1' WHERE users_ident='$seedUser';" -v
             else
-                su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files:scan --path=\"/$seedUser/files/MySB_Home\""
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:scan --path=\"/$seedUser/files/MySB_Home\""
             fi
             unset UserExist
         done
 
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ integrity:check-core" >/tmp/nextcloud_check_integrity.log
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ integrity:check-core" >/tmp/nextcloud_check_integrity.log
         if [ -f /tmp/nextcloud_check_integrity.log ]; then
             cat /tmp/nextcloud_check_integrity.log
             sed -i '/INVALID_HASH/d' /tmp/nextcloud_check_integrity.log
@@ -426,14 +427,14 @@ EOF
                 fi
             done </tmp/nextcloud_check_integrity.log
         fi
-        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ integrity:check-core"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ integrity:check-core"
 
         cmdMySQL 'MySB_db' "UPDATE repositories SET on_boot = '0', script = '' WHERE name='NextCloud';" -v
         # Disable the upgrade job
         cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='NextCloud';" -v
 
         # Scann all files
-        screen -dmS NextCloud_ScanAll su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ files:scan --all"
+        screen -dmS NextCloud_ScanAll su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:scan --all"
     fi
 fi
 
