@@ -22,6 +22,10 @@
 #
 ##################### FIRST LINE #####################################
 
+echo && echo -e "${CBLUE}*** Current branch ***${CEND}"
+
+echo ${CI_COMMIT_REF_NAME}
+
 echo && echo -e "${CBLUE}*** Check bash version ***${CEND}"
 
 bash --version
