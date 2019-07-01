@@ -164,10 +164,10 @@ define('User_UserInfo_Table_Trackers', 'Liste des Trackers');
 define('User_UserInfo_Comment_Trackers', '<a href="?trackers/trackers-list.html">G&eacute;rer vos trackers ici.</a>.');
 // Blocklists
 define('User_UserInfo_Table_Blocklists', 'Listes noires');
-define('User_UserInfo_Comment_Blocklists', 'G&eacute;rer les <a href="?blocklists/rtorrent-blocklists.html">listes noire pour rTorrent</a> ET les <a href="?blocklists/peerguardian-blocklists.html">listes noires pour PeerGuardian</a>.');
+define('User_UserInfo_Comment_Blocklists', 'G&eacute;rer les <a href="?blocklists/countries-locklists.html">listes noire par pays</a> ET les <a href="?blocklists/usual-blocklists.html">listes noires usuelles</a>.');
 // DNScrypt-proxy
 define('User_UserInfo_Table_DNScrypt', 'DNScrypt-proxy');
-define('User_UserInfo_Comment_DNScrypt', '<a href="?main-user/dnscrypt-proxy.html">Informations sur les serveurs utilis&eacute;s.</a>');
+define('User_UserInfo_Comment_DNScrypt', '<a href="?admin/dnscrypt-proxy.html">Informations sur les serveurs utilis&eacute;s.</a>');
 
 //////////////////////
 // SSH commands available

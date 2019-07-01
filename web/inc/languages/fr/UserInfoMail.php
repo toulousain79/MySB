@@ -50,7 +50,7 @@ define('User_UserInfoMail_Comment_ForceIP', 'Forcer l\'ajout de votre adresse IP
 // Trackers
 define('User_UserInfoMail_Comment_Trackers', '<a href="https://%s:%s/?trackers/trackers-list.html">G&eacute;rer vos trackers ici.</a> Vous pouvez &eacute;galement <a href="https://%s:%s/?trackers/add-new-trackers.html">ajouter vos trackers ici</a>.');
 // Blocklists
-define('User_UserInfoMail_Comment_Blocklists', 'G&eacute;rer les <a href="https://%s:%s/?blocklists/peerguardian-blocklists.html">listes noires usuelles</a> ET les <a href="https://%s:%s/?blocklists/countries-locklists.html">liste noire par pays</a>.');
+define('User_UserInfoMail_Comment_Blocklists', 'G&eacute;rer les <a href="https://%s:%s/?blocklists/usual-blocklists.html">listes noires usuelles</a> ET les <a href="https://%s:%s/?blocklists/countries-locklists.html">liste noire par pays</a>.');
 // DNScrypt-proxy
 define('User_UserInfoMail_Comment_DNScrypt', '<a href="https://%s:%s/?admin/dnscrypt-proxy.html">Informations sur les serveurs de r&eacute;solution de noms utilis&eacute;s.</a>');
 

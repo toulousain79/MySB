@@ -43,8 +43,8 @@ Lists for rTorrent will not be used except in two situations:
 <p>
 Although rTorrent can use block lists, only your rTorrent connections will be protected. The rest of your server will not be.
 	<ul>
-		<li><a href="?blocklists/rtorrent-blocklists.html">Liste de blocage rTorrent</a></li>
-		<li><a href="?blocklists/peerguardian-blocklists.html">Liste de blocage PeerGuardian</a></li>
+		<li><a href="?blocklists/usual-blocklists.html">Usual blocklists</a></li>
+		<li><a href="?blocklists/countries-locklists.html">Countries blocklists</a></li>
 	</ul>
 </p>
 ');
