@@ -34,7 +34,6 @@ sTorrentDir="${5}"      # $d.custom2=
 sLabel="${6}"           # $d.custom1=
 
 sName="$(echo "${sName}" | sed -e "s/'/\\\'/g;")"
-(grep -q "${sName}" <<<"${sTorrentDir}") && sFinalDirectory="${sTorrentDir}" || sFinalDirectory="${sDirectory}/${sName}"
 
 #### VARs - Default sets
 nContinue=0
@@ -45,13 +44,15 @@ dTimestamp="$(date +%Y/%m/%d\ %H:%M:%S)"
 sLogFile="/home/${sUserName}/logs/$(basename "$0").log"
 sSqlParams='--defaults-extra-file=/home/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N'
 
-echo "$@" >>"${sLogFile}"
-if [ -z "${sTorrentLoaded}" ] && [ -n "${sTorrentDir}" ] && [ -f "${sTorrentDir}" ]; then  # Torrent file uploaded via ruTorrent
+# Torrent file uploaded via ruTorrent ?
+if [ -z "${sTorrentLoaded}" ] && [ -n "${sTorrentDir}" ] && [ -f "${sTorrentDir}" ]; then
     sTorrentLoaded="${sTorrentDir}"
     sTorrentDir="$(dirname "${sTorrentLoaded}")"
     [ -n "${sLabel}" ] && sTorrentDir="${sTorrentDir}/${sLabel}/"
 fi
+
 sTorrentFile="${sTorrentDir}/$(basename "${sTorrentLoaded}")"
+(grep -q "${sName}" <<<"${sTorrentDir}") && sFinalDirectory="${sDirectory}" || sFinalDirectory="${sDirectory}/${sName}"
 
 #### Do some checks before
 [ -z "${sInfoHash}" ] && nExit=1
@@ -103,6 +104,7 @@ esac
     echo "Hash: ${sInfoHash}"
     echo "Label: ${sLabel}"
     echo "Directory: ${sDirectory}"
+    echo "Complete dest: ${sFinalDirectory}"
     case "${sFilesRecycling}" in
         0) sValue="Disabled" ;;
         1) sValue="Simple copy" ;;
@@ -303,8 +305,10 @@ if [ "${nContinue}" -eq 1 ]; then
 
     #### Step 10 - Copy back torrent loaded & start it
     {
-        echo -n "Moving torrent: "
-        mv -v "${sTorrentLoaded}" "${sTorrentFile}"
+        if [ "${sTorrentLoaded}" != "${sTorrentFile}" ]; then
+            echo -n "Moving torrent: "
+            mv -v "${sTorrentLoaded}" "${sTorrentFile}"
+        fi
     } >>"${sLogFile}"
     xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.open ${sInfoHash} >>"${sLogFile}"
     xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} ${sTorrentFile} >>"${sLogFile}"
