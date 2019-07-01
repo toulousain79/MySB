@@ -250,7 +250,7 @@ function printUser($user) {
 		$DNScryptDatas = $MySB_DB->get("services", ["is_installed"], ["serv_name" => "DNScrypt-proxy"]);
 		if ( $DNScryptDatas["is_installed"] == '1' ) {
 			echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Table_DNScrypt . '</th>';
-			echo '<td colspan="2"><a href="?main-user/dnscrypt-proxy.html"><span class="Comments">' . User_UserInfo_Comment_DNScrypt . '</span></a></td></tr>';
+			echo '<td colspan="2"><a href="?admin/dnscrypt-proxy.html"><span class="Comments">' . User_UserInfo_Comment_DNScrypt . '</span></a></td></tr>';
 		}
 	}
 
