@@ -41,6 +41,9 @@ NextCloudDataDirectory="/home/nextcloud"
 source /etc/MySB/config_db
 
 function fnBaseConfig() {
+    local bCreateExtMounts
+    bCreateExtMounts="${1}"
+
     #### Generating a new config file
     if [ -d "${gsNextCloudDir}" ] && [ -f "${gsNextCloudDir}"/config/config.php ] && gfnCheckCommand 0 "${gsNextCloudDir}"/occ; then
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
@@ -118,62 +121,53 @@ function fnBaseConfig() {
         # group:add
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ group:add MySB_users"
 
-        #### Clean actual external mounts (MySB_Home)
-        for nId in $(cmdMySQL 'NextCloud_db' "SELECT mount_id FROM nc_external_mounts WHERE mount_point='/MySB_Home';"); do
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:delete ${nId} --yes"
-        done
+        if [ "${bCreateExtMounts}" -eq 1 ]; then
+            #### Clean actual external mounts (MySB_Home)
+            for nId in $(cmdMySQL 'NextCloud_db' "SELECT mount_id FROM nc_external_mounts WHERE mount_point='/MySB_Home';"); do
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:delete ${nId} --yes"
+            done
 
-        #### Create all existing MySB users AND Scanning users' files
-        for seedUser in ${gsUsersList}; do
-            FnUserMail="$(cmdMySQL 'MySB_db' "SELECT users_email FROM users WHERE users_ident='${seedUser}';")"
+            #### Create all existing MySB users AND Scanning users' files
+            gfnListCountUsers 'normal'
+            for seedUser in ${gsUsersList}; do
+                FnUserMail="$(cmdMySQL 'MySB_db' "SELECT users_email FROM users WHERE users_ident='${seedUser}';")"
 
-            if [ ! -d "${NextCloudDataDirectory}"/"${seedUser}" ]; then
-                mkdir -v "${NextCloudDataDirectory}"/"${seedUser}"
-                chown -v www-data:www-data "${NextCloudDataDirectory}"/"${seedUser}"
-                chmod -v 0755 "${NextCloudDataDirectory}"/"${seedUser}"
-            fi
+                if [ ! -d "${NextCloudDataDirectory}"/"${seedUser}" ]; then
+                    mkdir -v "${NextCloudDataDirectory}"/"${seedUser}"
+                    chown -v www-data:www-data "${NextCloudDataDirectory}"/"${seedUser}"
+                    chmod -v 0755 "${NextCloudDataDirectory}"/"${seedUser}"
+                fi
 
-            if (! su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:info \"${seedUser}\""); then
+                if (! su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:info \"${seedUser}\""); then
+                    OC_PASS="$(cmdMySQL 'MySB_db' "SELECT users_passwd FROM users WHERE users_ident='${seedUser}';")"
+                    [ -z "${OC_PASS}" ] && OC_PASS="$(gfnGenPassword 8)"
+                    export OC_PASS
+                    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:add --password-from-env --display-name=\"${seedUser}\" --group=\"MySB_users\" \"${seedUser}\""
+                    cmdMySQL 'MySB_db' "UPDATE users SET init_password = '1' WHERE users_ident='${seedUser}';" -v
+                fi
 
-                OC_PASS="$(cmdMySQL 'MySB_db' "SELECT users_passwd FROM users WHERE users_ident='${seedUser}';")"
-                [ -z "${OC_PASS}" ] && OC_PASS="$(gfnGenPassword 8)"
-                export OC_PASS
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:add --password-from-env --display-name=\"${seedUser}\" --group=\"MySB_users\" \"${seedUser}\""
-                cmdMySQL 'MySB_db' "UPDATE users SET init_password = '1' WHERE users_ident='${seedUser}';" -v
-            fi
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" settings email \"${FnUserMail}\""
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" core lang \"${EnvLang}\""
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" core timezone ${gsTimeZone}"
 
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" settings email \"${FnUserMail}\""
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" core lang \"${EnvLang}\""
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" core timezone ${gsTimeZone}"
+                #### Create new external mount (MySB_Home)
+                IdStorage=$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:create MySB_Home local null::null" | awk '{ print $5 }')
+                if [ -n "${IdStorage}" ]; then
+                    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:applicable --add-user \"${seedUser}\" ${IdStorage}"
+                    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:config ${IdStorage} datadir '/home/${seedUser}/'"
+                    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} filesystem_check_changes 'true'"
+                    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encrypt 'false'"
+                    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} previews 'true'"
+                    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} enable_sharing 'true'"
+                    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encoding_compatibility 'false'"
+                    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:verify ${IdStorage}"
+                fi
 
-            #### Create new external mount (MySB_Home)
-            IdStorage=$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:create MySB_Home local null::null" | awk '{ print $5 }')
-            if [ -n "${IdStorage}" ]; then
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:applicable --add-user \"${seedUser}\" ${IdStorage}"
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:config ${IdStorage} datadir '/home/${seedUser}/'"
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} filesystem_check_changes 'true'"
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encrypt 'false'"
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} previews 'true'"
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} enable_sharing 'true'"
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encoding_compatibility 'false'"
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:verify ${IdStorage}"
-            fi
+                #### Force a scan
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:scan --path=\"/${seedUser}/files/MySB_Home\""
 
-            #### Force a scan
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:scan --path=\"/${seedUser}/files/MySB_Home\""
-
-            unset IdStorage FnUserMail OC_PASS
-        done
-
-        #### External mount (MySB_Home)
-        for nId in $(cmdMySQL 'NextCloud_db' "SELECT mount_id FROM nc_external_mounts WHERE mount_point='/MySB_Home';"); do
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:delete ${nId} --yes"
-        done
-
-        IdStorage=$(cmdMySQL 'NextCloud_db' "SELECT mount_id FROM nc_external_mounts WHERE mount_point='/MySB_Home';")
-        if [ -z "${IdStorage}" ]; then
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:create MySB_Home local null::null"
-            IdStorage=$(cmdMySQL 'NextCloud_db' "SELECT mount_id FROM nc_external_mounts WHERE mount_point='/MySB_Home';")
+                unset IdStorage FnUserMail OC_PASS
+            done
         fi
 
         #### Base
@@ -302,7 +296,7 @@ if [ "${gbToInstall_NextCloud}" == "YES" ] && [ "${sSwitch}" != "INIT" ]; then
 
     if gfnCheckCommand 0 "${gsNextCloudDir}"/occ; then
         # Upgrade
-        fnBaseConfig
+        fnBaseConfig 1
 
         # NextCloud is installed
         cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='NextCloud';" -v
@@ -364,7 +358,7 @@ EOF
 
     if [ "${OnBoot}" -eq 1 ]; then
         #### NextCloud upgrade
-        fnBaseConfig
+        fnBaseConfig 0
 
         #### Display 'config.php' for logs
         cat "${gsNextCloudDir}"/config/config.php
