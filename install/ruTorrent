@@ -29,14 +29,14 @@ source "$(dirname "$0")"/../inc/includes_before
 gfnManageServices stop "cron"
 gfnListCountUsers 'normal'
 for seedUser in $gsUsersList; do
-    systemctl status rtorrent-$seedUser &>/dev/null
+    systemctl status rtorrent-${seedUser} &>/dev/null
     if [ $? -eq 0 ]; then
-        systemctl stop rtorrent-$seedUser
+        systemctl stop rtorrent-${seedUser}
     fi
 done
 
 #### Remove old ruTorrent trackers
-case "$gsSwitch" in
+case "${gsSwitch}" in
     UPGRADE) cmdMySQL 'MySB_db' "DELETE FROM trackers_list WHERE origin='rutorrent' AND is_active='0';" -v ;;
 esac
 
@@ -93,7 +93,7 @@ if [ -f ${gsRepoDir}/conf.php ]; then
 fi
 if [ ! -f ${gsRepoDir}/lang/fr.js ]; then
     cp -v ${gsRepoDir}/lang/en.js ${gsRepoDir}/lang/fr.js
-    perl -pi -e "s/Check SFV/Vérification SFV/g"                                 ${gsRepoDir}/lang/fr.js
+    perl -pi -e "s/Check SFV/Vérification SFV/g"                                  ${gsRepoDir}/lang/fr.js
 fi
 
 #### Plugin InstantSearch
@@ -177,11 +177,11 @@ gfnGetRepoValues 'ruTorrent Theme MaterialDesign' && gfnRepoManageByType
 
 #### Plowshare
 gfnGetRepoValues 'Plowshare'
-if [ "$gsSwitch" == "REFRESH" ]; then
+if [ "${gsSwitch}" == "REFRESH" ]; then
     gfnDeleteDirectory 1 "${gsRepoDir}"
 fi
 gfnRepoManageByType
-if [ $gnRepoUpgrade -eq 1 ] || [ "$gsSwitch" == "INSTALL" ]; then
+if [ $gnRepoUpgrade -eq 1 ] || [ "${gsSwitch}" == "INSTALL" ]; then
     cd ${gsRepoDir} || exit 1
     make clean
     make install
@@ -196,15 +196,13 @@ gfnManageDirAndFiles 'global'
 gfnStatusLSB
 
 #### START services
-if [ "$gsSwitch" != "UPGRADE" ]; then
+if [ "${gsSwitch}" != "UPGRADE" ]; then
     gfnManageServices start "cron"
 
     for seedUser in $gsUsersList; do
-        if [ -f /etc/init.d/rtorrent-$seedUser ]; then
-            systemctl status rtorrent-$seedUser &>/dev/null
-            if [ $? -gt 0 ]; then
-                systemctl restart rtorrent-$seedUser
-            fi
+        if [ -f /etc/init.d/rtorrent-${seedUser} ]; then
+            gfnManageServices stop "rtorrent-${seedUser}"
+            gfnManageServices start "rtorrent-${seedUser}"
         fi
     done
 fi
