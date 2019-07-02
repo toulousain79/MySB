@@ -63,9 +63,35 @@ if (grep -q '$torrent->comment()' "${gsRutorrentDir}"/php/rtorrent.php); then
     done
 fi
 
+#### ruTorrent rollback to stable release
+[ -f "${gsRutorrentDir}"/version ] && sVersion="$(cat "${gsRutorrentDir}"/version)"
+[ -z "${sVersion}" ] && sVersion="$(cmdMySQL 'MySB_db' "SELECT version FROM repositories WHERE name='ruTorrent';")"
+if [ "${sVersion}" != "3.9" ]; then
+    cmdMySQL 'MySB_db' "DELETE FROM repositories;" -v
+    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Table_repositories.sql"
+    cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='ruTorrent';" -v
+    gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/ruTorrent" 'UPGRADE'
+    gfnListCountUsers 'normal'
+    for sUser in ${gsUsersList}; do
+        gfnManageServices stop "rtorrent-${sUser}"
+        gfnManageServices start "rtorrent-${sUser}"
+    done
+fi
+
 #### MySQL
 if (grep -q 'debian-sys-maint' /etc/mysql/debian.cnf); then
     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/MySQL" 'UPGRADE'
+fi
+
+#### NextCloud external mounts
+if [ -f /home/nextcloud/mount.json ]; then
+    cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='NextCloud';"
+    gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/NextCloud" 'UPGRADE'
+    gfnListCountUsers 'normal'
+    for sUser in ${gsUsersList}; do
+        gfnManageServices stop "rtorrent-${sUser}"
+        gfnManageServices start "rtorrent-${sUser}"
+    done
 fi
 
 # -----------------------------------------
