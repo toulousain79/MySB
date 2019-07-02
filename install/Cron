@@ -107,7 +107,7 @@ case "${gsSwitch}" in
         gfnListCountUsers 'normal'
         for seedUser in ${gsUsersList}; do
             sed -i "/${seedUser}/d" /tmp/crontab.tmp
-            echo "*/5 * * * * systemctl status rtorrent-${seedUser} >/dev/null || systemctl start rtorrent-${seedUser}" | tee -a /tmp/crontab.tmp
+            echo "*/5 * * * * ( (! service rtorrent-${seedUser} status >/dev/null) || (service rtorrent-${seedUser} status | grep -q '(exited)') ) && { service rtorrent-${seedUser} stop; service rtorrent-${seedUser} start; }" | tee -a /tmp/crontab.tmp
         done
         ;;
 esac
@@ -122,8 +122,7 @@ systemctl disable cron
 #### Add cron job check
 gfnListCountUsers "normal"
 nJobsQty="$(grep -c 'tee -a /tmp/crontab.tmp' ${MySB_InstallDir}/install/Cron)"
-# nJobsQty=$((nJobsQty - 2 + gnTotalUsers))
-nJobsQty=$((nJobsQty - 2))
+nJobsQty=$((nJobsQty - 2 + gnTotalUsers))
 {
     echo "# MySB - Check scheduled jobs"
     echo "*/5 * * * * root [ \"\$(crontab -l | wc -l)\" -lt ${nJobsQty} ] && { bash ${MySB_InstallDir}/install/Cron CRON; systemctl restart cron; }"
