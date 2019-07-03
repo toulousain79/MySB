@@ -47,12 +47,12 @@ sSqlParams='--defaults-extra-file=/home/.config.cnf --database=MySB_db -w --conn
 # Torrent file uploaded via ruTorrent ?
 if [ -z "${sTorrentLoaded}" ] && [ -n "${sTorrentDir}" ] && [ -f "${sTorrentDir}" ]; then
     sTorrentLoaded="${sTorrentDir}"
-    sTorrentDir="$(dirname "${sTorrentLoaded}")"
-    [ -n "${sLabel}" ] && sTorrentDir="${sTorrentDir}/${sLabel}/"
+    sTorrentDir="/home/${sUserName}/rtorrent/torrents/"
+    [ -n "${sLabel}" ] && sTorrentDir="${sTorrentDir%/}/${sLabel}/"
 fi
 
-sTorrentFile="${sTorrentDir}/$(basename "${sTorrentLoaded}")"
-(grep -q "${sName}" <<<"${sTorrentDir}") && sFinalDirectory="${sDirectory}" || sFinalDirectory="${sDirectory}/${sName}"
+sTorrentFile="${sTorrentDir%/}/$(basename "${sTorrentLoaded}")"
+(grep -q "${sName}" <<<"${sTorrentDir}") && sFinalDirectory="${sDirectory}" || sFinalDirectory="${sDirectory%/}/${sName}"
 
 #### Do some checks before
 [ -z "${sInfoHash}" ] && nExit=1
@@ -203,15 +203,26 @@ if [ "${nContinue}" -eq 1 ]; then
 
     #### Step 6 - Prepare annoncers (UDP, HTTP & HTTPs) list for GetTrackersCert.bsh script
     bExecute=0
+    sTempLocalFile="$(mktemp)"
     for sAnnoncer in "${aAnnoncersHttps[@]}" "${aAnnoncersHttp[@]}" "${aAnnoncersUdp[@]}"; do
         if [ -n "${sAnnoncer}" ]; then
-            if (! grep -q "${sAnnoncer}" <<</home/.check_annoncers_${sUserName}); then
-                echo "${sAnnoncer}|${sPrivacy}" >>/home/.check_annoncers_${sUserName}
+            sProto="$(echo "${sAnnoncer}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')"
+            [ -z "${sProto}" ] && sProto="http://"
+            # remove the protocol
+            sAnnoncer=$(echo "${sAnnoncer}" | sed -e s,${sProto},,g)
+            # extract the user (if any)
+            sUrlUser="$(echo "${sAnnoncer}" | grep @ | cut -d@ -f1)"
+            # extract the host and port
+            sAnnoncer=$(echo "${sAnnoncer}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
+            if (! grep -q "${sAnnoncer}" <<<${sTempLocalFile}); then
+                echo "${sAnnoncer}|${sPrivacy}" >>${sTempLocalFile}
                 bExecute=1
             fi
         fi
     done
-    [ "${bExecute}" -eq 1 ] && sudo /bin/bash "<MySB_InstallDir>/scripts/GetTrackersCert.bsh" USER "${sUserName}" &>/dev/null
+    sort ${sTempLocalFile} | uniq -u >>/home/.check_annoncers_${sUserName}
+    rm -f ${sTempLocalFile}
+    [ "${bExecute}" -eq 1 ] && sudo /bin/bash "<MySB_InstallDir>/scripts/GetTrackersCert.bsh" USER "${sUserName}" &
 
     #### Step 7 - Check if torrent already exist & copying duplicated files
     if [ "${sFilesRecycling}" -gt 0 ]; then
@@ -241,9 +252,28 @@ if [ "${nContinue}" -eq 1 ]; then
         done
     fi
 
+    #### Step 8 - Copy back torrent loaded & start it
+    {
+        if [ "${sTorrentLoaded}" != "${sTorrentFile}" ]; then
+            echo -n "Moving torrent: "
+            (! mv -fv "${sTorrentLoaded}" "${sTorrentFile}") && echo "'${sTorrentLoaded}' -> '${sTorrentFile}'"
+        fi
+    } >>"${sLogFile}"
+    xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.open ${sInfoHash} >>"${sLogFile}"
+    xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} ${sTorrentDir} >>"${sLogFile}"
+
+    #### Step 9 - Start torrent
+    xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.start ${sInfoHash} >>"${sLogFile}"
+
+    #### Step 10 - Save full session
+    xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash} >>"${sLogFile}"
+
+    #### Step 11 - Update user quota
+    sudo /bin/bash /home/"${sUserName}"/.rTorrent_tasks.sh 'quota'
+
     if [ "${#aAnnoncersHttp[*]}" -gt 0 ] || [ "${#aAnnoncersHttps[*]}" -gt 0 ]; then
         {
-            #### Step 8 - Wait after annoncers check
+            #### Step 12 - Wait after annoncers check
             while [ -s /home/.check_annoncers_${sUserName} ]; do
                 echo "Waiting for '/home/.check_annoncers_${sUserName}'"
                 sleep 1
@@ -251,7 +281,7 @@ if [ "${nContinue}" -eq 1 ]; then
             echo "--------------"
         } >>"${sLogFile}"
 
-        #### Step 9 - Restore validated annoncers
+        #### Step 13 - Restore validated annoncers
         for ((i = 0; i < ${#aAnnoncers[@]}; i++)); do
             sId="$(echo ${aAnnoncers[${i}]} | awk '{printf $1}')"
             bState="$(echo ${aAnnoncers[${i}]} | awk '{printf $2}')"
@@ -302,22 +332,6 @@ if [ "${nContinue}" -eq 1 ]; then
         done
         [ "${#aAnnoncers[@]}" -gt 0 ] && echo "--------------" >>"${sLogFile}"
     fi
-
-    #### Step 10 - Copy back torrent loaded & start it
-    {
-        if [ "${sTorrentLoaded}" != "${sTorrentFile}" ]; then
-            echo -n "Moving torrent: "
-            mv -v "${sTorrentLoaded}" "${sTorrentFile}"
-        fi
-    } >>"${sLogFile}"
-    xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.open ${sInfoHash} >>"${sLogFile}"
-    xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} ${sTorrentFile} >>"${sLogFile}"
-
-    #### Step 11 - Start torrent
-    xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.start ${sInfoHash} >>"${sLogFile}"
-
-    #### Step 12 - Update user quota
-    sudo /bin/bash /home/"${sUserName}"/.rTorrent_tasks.sh 'quota'
 
     exit 0
 fi
