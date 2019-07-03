@@ -48,14 +48,22 @@ function fnBaseConfig() {
     if [ -d "${gsNextCloudDir}" ] && [ -f "${gsNextCloudDir}"/config/config.php ] && gfnCheckCommand 0 "${gsNextCloudDir}"/occ; then
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
 
+        #### Base
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
+
         #### Check old config file
         Version="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version")"
+        # Version="$(grep "'version'" "${gsNextCloudDir}"/config/config.php | cut -d "'" -f 3)"
         echo "Version: ${Version}"
         InstanceId="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get instanceid")"
+        # InstanceId="$(grep "'instanceid'" "${gsNextCloudDir}"/config/config.php | cut -d "'" -f 3)"
         echo "Instance ID: ${InstanceId}"
         Secret="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get secret")"
+        # Secret="$(grep "'secret'" "${gsNextCloudDir}"/config/config.php | cut -d "'" -f 3)"
         echo "Secret: ${Secret}"
         PasswordSalt="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get passwordsalt")"
+        # PasswordSalt="$(grep "'passwordsalt'" "${gsNextCloudDir}"/config/config.php | cut -d "'" -f 3)"
         echo "PasswordSalt: ${PasswordSalt}"
 
         #### New config file
@@ -168,23 +176,23 @@ function fnBaseConfig() {
 
                 unset IdStorage FnUserMail OC_PASS
             done
+        else
+            #### Base
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:add-missing-indices"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:convert-filecache-bigint --no-interaction"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mimetype:update-db"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mimetype:update-js"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable files_external"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable notifications"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ background:cron"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ sharing:cleanup-remote-storages"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:cleanup"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
         fi
-
-        #### Base
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:add-missing-indices"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:convert-filecache-bigint --no-interaction"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mimetype:update-db"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mimetype:update-js"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable files_external"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable notifications"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ background:cron"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ sharing:cleanup-remote-storages"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:cleanup"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
     fi
 }
 
@@ -316,7 +324,7 @@ if [ "${gbToInstall_NextCloud}" == "YES" ] && [ "${sSwitch}" != "INIT" ]; then
     if [ "${gbToInstall_Fail2Ban}" == "YES" ] || [ "${gbIsInstalled_Fail2Ban}" == "YES" ] && [ -d /etc/fail2ban/filter.d ] && [ "${sSwitch}" != "INIT" ]; then
         install -v -g root -o root -m 0700 "${MySB_InstallDir}"/templates/fail2ban/etc.fail2ban.filter.d.nextcloud.tmpl /etc/fail2ban/filter.d/nextcloud.conf
         if [ -z "$(grep '\[nextcloud\]' /etc/fail2ban/jail.local)" ]; then
-            (   
+            (
                 cat <<'EOF'
 
 [nextcloud]
@@ -341,7 +349,7 @@ if [ "${gbIsInstalled_NextCloud}" == "YES" ] && [ "${sSwitch}" == "INIT" ]; then
         if [ -d /etc/fail2ban ]; then
             install -v -g root -o root -m 0700 "${MySB_InstallDir}"/templates/fail2ban/etc.fail2ban.filter.d.nextcloud.tmpl /etc/fail2ban/filter.d/nextcloud.conf
             if [ -z "$(grep '\[nextcloud\]' /etc/fail2ban/jail.local)" ]; then
-                (   
+                (
                     cat <<'EOF'
 
 [nextcloud]
