@@ -119,6 +119,20 @@ if (grep -q 'la/logger.php' <<<"$(crontab -l)") || (! grep -q '(exited)' <<<"$(c
     fi
 fi
 
+#### Purge SSDP package
+if (type -P minissdpd); then
+    # shellcheck source=/dev/null
+    source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Install
+    gfnPackagesManage purge "minissdpd"
+fi
+
+#### /lib/systemd/system/MySB_SecurityRules_Init.service permissions
+if [ "$(stat -c "%a" /lib/systemd/system/MySB_SecurityRules_Init.service)" == "755" ]; then
+    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/MySB_SecurityRules_Init.service.tmpl /lib/systemd/system/MySB_SecurityRules_Init.service
+    perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /lib/systemd/system/MySB_SecurityRules_Init.service
+    systemctl enable MySB_SecurityRules_Init.service
+fi
+
 # -----------------------------------------
 # shellcheck source=inc/includes_after
 . "$(dirname "$0")"/../inc/includes_after
