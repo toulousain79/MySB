@@ -151,29 +151,29 @@ gfnAddTracker() {
     local aTrackerIPv4
     local bAutoBlockAnnoncers
 
-    sTracker="$1"
+    sTracker="${1}"
     if [ -n "${2}" ] && [ -n "$(getent passwd "${2}")" ]; then
         sUser="${2}"
+        sLineToDelete="${sTracker}"
     fi
     # aDomainIPv4=()
     aTrackerIPv4=()
     bAutoBlockAnnoncers="$(cmdMySQL 'MySB_db' "SELECT block_annoncers FROM system WHERE id_system='1';")"
 
     if [ -n "${sTracker}" ]; then
-        # get tracker privacy
-        sPrivacy=$(echo "${sTracker}" | cut -d '|' -f 2)
-        # remove privacy
-        sTracker="${sTracker//|${sPrivacy}/}"
+        sTracker="$(echo "${sTracker}" | cut -d '|' -f 1)"
+        sPrivacy="$(echo "${sTracker}" | cut -d '|' -f 2)"
+        sInfoHash="$(echo "${sTracker}" | cut -d '|' -f 3)"
         # extract the protocol
         sProto="$(echo "${sTracker}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')"
         [ -z "${sProto}" ] && sProto="http://"
         # remove the protocol
-        sURL=$(echo "${sTracker}" | sed -e s,${sProto},,g)
+        sURL="$(echo "${sTracker}" | sed -e s,${sProto},,g)"
         sProto="${sProto//:\/\//}"
         # extract the user (if any)
         sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)"
         # extract the host and port
-        sHostPort=$(echo "${sURL}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
+        sHostPort="$(echo "${sURL}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)"
         # by request host without port
         sHost="$(echo "${sHostPort}" | sed -e 's,:.*,,g')"
         # by request - try to extract the port
@@ -316,8 +316,8 @@ gfnAddTracker() {
             fi
         fi
 
-        if [ -f "/home/.check_annoncers_${sUser}" ]; then
-            sed -i "/${sTracker}/d" "/home/.check_annoncers_${sUser}"
+        if [ -f "/home/.check_annoncers_${sUser}" ] && [ -n "${sLineToDelete}" ]; then
+            sed -i "/${sLineToDelete}/d" "/home/.check_annoncers_${sUser}"
         fi
     fi
 }
