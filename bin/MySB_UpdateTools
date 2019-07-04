@@ -53,6 +53,13 @@ fi
 # rm -f /tmp/CPAN.lock
 # fi
 
+#### Fix version in database
+if [ "$gsCurrentVersion" != "$(cat "${MySB_InstallDir}"/version)" ]; then
+    gsCurrentVersion="$(cat "${MySB_InstallDir}"/version)"
+    export gsCurrentVersion
+    cmdMySQL 'MySB_db' "UPDATE system SET version='$(cat "${MySB_InstallDir}"/version)' WHERE id_system='1';" -v
+fi
+
 #### ruTorrent hack for uploaded torrent
 if (grep -q '$torrent->comment()' "${gsRutorrentDir}"/php/rtorrent.php); then
     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/ruTorrent" 'UPGRADE'
@@ -95,6 +102,7 @@ if (! cmdMySQL 'MySB_db' "SELECT annoncers_check FROM system WHERE id_system='4'
     #### MySQL Grant for users
     source /etc/MySB/config_db
     mysql -u root -p"${MySQL_RootPassword}" --verbose <<-EOF
+        GRANT SELECT, INSERT, DELETE ON MySB_db.annoncers TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
         GRANT SELECT ON MySB_db.trackers_list TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
         GRANT SELECT, INSERT, DELETE ON MySB_db.torrents TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
         GRANT SELECT (id_system,public_tracker_allow,files_recycling,annoncers_udp,annoncers_check) ON MySB_db.system TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
