@@ -55,8 +55,8 @@ gfnBannerGenerator() {
     } >>"${MySB_InstallDir}/files/banner_${gsCurrentVersion}"
 
     if [ -f "${MySB_InstallDir}/files/banner_${gsCurrentVersion}" ]; then
-        sed -i "s/,/ /g;" "${MySB_InstallDir}/files/banner_${gsCurrentVersion}" &>/dev/null
-        sed -i 's/`/ /g;' "${MySB_InstallDir}/files/banner_${gsCurrentVersion}" &>/dev/null
+        sed -i "s/,/ /g;" "${MySB_InstallDir}/files/banner_${gsCurrentVersion}" >/dev/null 2>&1
+        sed -i 's/`/ /g;' "${MySB_InstallDir}/files/banner_${gsCurrentVersion}" >/dev/null 2>&1
         clear
         # shellcheck source=/dev/null
         source "${MySB_InstallDir}/files/banner_${gsCurrentVersion}"
@@ -78,10 +78,10 @@ gfnSendMail() {
     if [ -n "$sInfo" ]; then log_daemon_msg "${Funcs_SendMail_GenerateHTML} [${sUser}]"; fi
 
     if ! gfnGetPid nginx; then
-        service nginx restart &>/dev/null
+        service nginx restart >/dev/null 2>&1
     fi
 
-    #### Use case without MySQL needed:	new_version, account_confirmed, ip_updated, pgl_check, main_account, tracker_found, upgrade
+    #### Use case without MySQL needed:	new_version, account_confirmed, ip_updated, pgl_check, main_account, annoncers_added, upgrade
     #### Use case with MySQL needed:	new_user, renting, account_created, delete_user
     # Add mail to DB
     if [ -z "$5" ]; then
@@ -106,6 +106,15 @@ gfnSendMail() {
     # Send mail directly
     if [ $bDoSendMail -eq 1 ]; then
         case "$sCase" in
+            'annoncers_added')
+                sMailType="plain"
+                if [ -f /tmp/trackers_added.log ] && [ -s /tmp/trackers_added.log ]; then
+                    sAttach="/tmp/trackers_added.log"
+                else
+                    bDoSendMail=0
+                    rm -f /tmp/trackers_added.log
+                fi
+                ;;
             'new_version')
                 sMailType="plain"
                 if [ -f /tmp/changelog ]; then
@@ -200,11 +209,11 @@ gfnManageServices() {
                                 nContinue=0
                                 log_daemon_msg "$Funcs_Stopping $Service"
                                 if (! service "$Service" stop >/dev/null); then
-                                    fuser -k 81/tcp &>/dev/null
-                                    [[ -n ${gsPort_System_HTTP} ]] && fuser -k "$gsPort_System_HTTP"/tcp &>/dev/null
-                                    [[ -n ${gsPort_MySB_HTTPS} ]] && fuser -k "$gsPort_MySB_HTTPS"/tcp &>/dev/null
-                                    [[ -n ${gsPort_NginX_HTTP} ]] && fuser -k "$gsPort_NginX_HTTP"/tcp &>/dev/null
-                                    [[ -n ${gsPort_NginX_HTTPS} ]] && fuser -k "$gsPort_NginX_HTTPS"/tcp &>/dev/null
+                                    fuser -k 81/tcp >/dev/null 2>&1
+                                    [[ -n ${gsPort_System_HTTP} ]] && fuser -k "$gsPort_System_HTTP"/tcp >/dev/null 2>&1
+                                    [[ -n ${gsPort_MySB_HTTPS} ]] && fuser -k "$gsPort_MySB_HTTPS"/tcp >/dev/null 2>&1
+                                    [[ -n ${gsPort_NginX_HTTP} ]] && fuser -k "$gsPort_NginX_HTTP"/tcp >/dev/null 2>&1
+                                    [[ -n ${gsPort_NginX_HTTPS} ]] && fuser -k "$gsPort_NginX_HTTPS"/tcp >/dev/null 2>&1
                                     gfnStatusLSB 0
                                 fi
                                 if (gfnGetPid "$Service"); then
@@ -334,11 +343,11 @@ gfnManageServices() {
                                         if (! gfnGetPid "$Service"); then
                                             gfnStatusLSB 1
                                             log_daemon_msg "$Funcs_Restarting $Service"
-                                            fuser -k 81/tcp &>/dev/null
-                                            [[ -n $gsPort_System_HTTP ]] && fuser -k "$gsPort_System_HTTP"/tcp &>/dev/null
-                                            [[ -n $gsPort_MySB_HTTPS ]] && fuser -k "$gsPort_MySB_HTTPS"/tcp &>/dev/null
-                                            [[ -n $gsPort_NginX_HTTP ]] && fuser -k "$gsPort_NginX_HTTP"/tcp &>/dev/null
-                                            [[ -n $gsPort_NginX_HTTPS ]] && fuser -k "$gsPort_NginX_HTTPS"/tcp &>/dev/null
+                                            fuser -k 81/tcp >/dev/null 2>&1
+                                            [[ -n $gsPort_System_HTTP ]] && fuser -k "$gsPort_System_HTTP"/tcp >/dev/null 2>&1
+                                            [[ -n $gsPort_MySB_HTTPS ]] && fuser -k "$gsPort_MySB_HTTPS"/tcp >/dev/null 2>&1
+                                            [[ -n $gsPort_NginX_HTTP ]] && fuser -k "$gsPort_NginX_HTTP"/tcp >/dev/null 2>&1
+                                            [[ -n $gsPort_NginX_HTTPS ]] && fuser -k "$gsPort_NginX_HTTPS"/tcp >/dev/null 2>&1
                                             service "$Service" restart >/dev/null
                                             if (! gfnGetPid "$Service"); then
                                                 gfnStatusLSB 1
@@ -580,14 +589,14 @@ gfnManageDirAndFiles() {
         if [ ! -d "${MySB_InstallDir}"/web/logs/system ]; then mkdir "${MySB_InstallDir}"/web/logs/system; fi
 
         #### Convert with dos2unix
-        dos2unix "${MySB_InstallDir}"/* &>/dev/null
-        dos2unix "${MySB_InstallDir}"/bin/* &>/dev/null
-        dos2unix "${MySB_InstallDir}"/files/* &>/dev/null
-        dos2unix "${MySB_InstallDir}"/inc/* &>/dev/null
-        dos2unix "${MySB_InstallDir}"/install/* &>/dev/null
-        dos2unix "${MySB_InstallDir}"/scripts/* &>/dev/null
-        dos2unix "${MySB_InstallDir}"/templates/* &>/dev/null
-        dos2unix "${MySB_InstallDir}"/upgrade/* &>/dev/null
+        dos2unix "${MySB_InstallDir}"/* >/dev/null 2>&1
+        dos2unix "${MySB_InstallDir}"/bin/* >/dev/null 2>&1
+        dos2unix "${MySB_InstallDir}"/files/* >/dev/null 2>&1
+        dos2unix "${MySB_InstallDir}"/inc/* >/dev/null 2>&1
+        dos2unix "${MySB_InstallDir}"/install/* >/dev/null 2>&1
+        dos2unix "${MySB_InstallDir}"/scripts/* >/dev/null 2>&1
+        dos2unix "${MySB_InstallDir}"/templates/* >/dev/null 2>&1
+        dos2unix "${MySB_InstallDir}"/upgrade/* >/dev/null 2>&1
 
         #### Change rights
         # ${MySB_InstallDir}/
@@ -596,10 +605,10 @@ gfnManageDirAndFiles() {
         chown -R root:root "${MySB_InstallDir}"
         # ${MySB_InstallDir}/db
         chmod 0770 "${MySB_InstallDir}"/db
-        chmod 0660 "${MySB_InstallDir}"/db/* &>/dev/null
+        chmod 0660 "${MySB_InstallDir}"/db/* >/dev/null 2>&1
         chown -R root:www-data "${MySB_InstallDir}"/db
         # ${MySB_InstallDir}/ssl
-        chmod 0644 "${MySB_InstallDir}"/ssl/*.cert &>/dev/null
+        chmod 0644 "${MySB_InstallDir}"/ssl/*.cert >/dev/null 2>&1
         # ${MySB_InstallDir}/install
         chmod -R 0755 "${MySB_InstallDir}"/install
         # ${MySB_InstallDir}/temp

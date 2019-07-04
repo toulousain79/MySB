@@ -28,39 +28,114 @@
 }
 ##################### FIRST LINE #####################################
 
+#### Restore validated annoncers
+gfnAnnoncerActivate() {
+    local nCgiPort sInfoHash sId bIsActive
+
+    sRequestValues="$(cmdMySQL 'MySB_db' "SELECT scgi_port,info_hash,id FROM annoncers WHERE 1;" | sed 's/\t/|/g;')"
+    for sValue in ${sRequestValues}; do
+        nCgiPort="$(echo "${sValue}" | awk '{split($0,a,"|"); print a[1]}')"
+        sInfoHash="$(echo "${sValue}" | awk '{split($0,a,"|"); print a[2]}')"
+        sId="$(echo "${sValue}" | awk '{split($0,a,"|"); print a[3]}')"
+
+        sGetUrl="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.url ${sInfoHash}:${sId} >/dev/null 2>&1)"
+        if [ -n "${sGetUrl}" ]; then
+            echo "Checking: ${sGetUrl}"
+            sProto="$(echo "${sGetUrl}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')" # extract the protocol
+            echo "  Protocol: ${sProto//:\/\//}"
+            sURL=$(echo "${sGetUrl}" | sed -e s,${sProto},,g)
+            echo "  URL: ${sURL}"
+            sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)" # extract the user (if any)
+            sHostPort=$(echo "${sURL}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1) # extract the host and port
+            echo "  Host & Port: ${sHostPort}"
+            sHost="$(echo "${sHostPort}" | sed -e 's,:.*,,g')" # by request host without port
+            echo "  Host: ${sHost}"
+            sPort="$(echo "${sHostPort}" | sed -e 's,^.*:,:,g' -e 's,.*:\([0-9]*\).*,\1,g' -e 's,[^0-9],,g')" # by request - try to extract the port
+            case ${sPort#[-+]} in
+                *[!0-9]* | '')
+                    case "${sProto//:\/\//}" in
+                        'http' | 'udp') sPort=80 ;;
+                        'https')        sPort=443 ;;
+                    esac
+                    ;;
+            esac
+            echo "  Port: ${sPort}"
+            # extract the path (if any)
+            sURI="$(echo "${sURL}" | grep '/' | cut -d/ -f2-)"
+            echo "  URI: ${sURI}"
+
+            # Get if activate
+            bIsActive="$(mysql ${sSqlParams} -e "SELECT is_active FROM trackers_list WHERE tracker='${sHost}' AND tracker_proto='${sProto//:\/\//}' AND tracker_port='${sPort}';")"
+            bIsActive="${bIsActive:-1}"
+            xmlrpc2scgi.py scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${sId} ${bIsActive} >/dev/null 2>&1
+            [ "${bIsActive}" -eq 1 ] && sResult="Enabled" || sResult="Disabled"
+            echo "${sResult}: ${sGetUrl}"
+        else
+            echo "sGetUrl is empty !!!"
+        fi
+        cmdMySQL 'MySB_db' "DELETE FROM annoncers WHERE scgi_port='${nCgiPort}' AND info_hash='${sInfoHash}' AND id='${sId}';" -v
+    done
+}
+
 #### Check added torrents
 gfnCheckAddedTorrents() {
-    local sTracker sProto sPrivacy sTrackerList sUser
+    local sTracker sProto sPrivacy sUser
+    # local sTrackerList
     [ -n "${1}" ] && sUser="${1}" || return 1
-    sTrackerList=()
+    # sTrackerList=()
 
-    while read -r line; do
-        sTrackerList+=("${line}")
-    done <"/home/.check_annoncers_${sUser}"
+    # while read -r line; do
+    #     sTrackerList+=("${line}")
+    # done <"/home/.check_annoncers_${sUser}"
 
     # Uniq
-    mapfile -t sTrackerList < <(echo "${sTrackerList[*]}" | tr ' ' '\n' | sort | uniq)
+    # mapfile -t sTrackerList < <(echo "${sTrackerList[*]}" | tr ' ' '\n' | sort | uniq)
 
     # Add trackers
-    for sTracker in "${sTrackerList[@]}"; do
-        if [ -n "${sTracker}" ]; then
-            gfnAddTracker "${sTracker}" "${sUser}"
-            # YGG
-            # (grep -q 'tracker.yggserver.net' <<<${sTracker} ) && gfnAddTracker "${sTracker//tracker.yggserver.net/tracker.ygg.is}"
-        fi
+    while [ ! -s "/home/.check_annoncers_${sUser}" ]; do
+        while read -r sTracker; do
+            if [ -n "${sTracker}" ]; then
+                gfnAddTracker "${sTracker}" "${sUser}"
+                # YGG
+                # (grep -q 'tracker.yggserver.net' <<<${sTracker} ) && gfnAddTracker "${sTracker//tracker.yggserver.net/tracker.ygg.is}"
+                # Enable/Disable annoncers
+                gfnAnnoncerActivate
+            else
+                # Clean file
+                : >"/home/.check_annoncers_${sUser}"
+            fi
+        done <"/home/.check_annoncers_${sUser}"
     done
+
+    # Send mail to mainuser for annoncers added
+    gfnSendMail "${AnnoncersAddedMailSubject}" "${gsMainUserName}" "annoncers_added"
+
+    # for sTracker in "${sTrackerList[@]}"; do
+    #     if [ -n "${sTracker}" ]; then
+    #         gfnAddTracker "${sTracker}" "${sUser}"
+    #         # YGG
+    #         # (grep -q 'tracker.yggserver.net' <<<${sTracker} ) && gfnAddTracker "${sTracker//tracker.yggserver.net/tracker.ygg.is}"
+    #     fi
+    # done
     # Clean file
-    : >"/home/.check_annoncers_${sUser}"
+    # : >"/home/.check_annoncers_${sUser}"
 }
 
 #### Add new trackers
 gfnAddTracker() {
     local sPrivacy sTracker sPart1 sPart2 sPart3 sTrackerDomain sTrackerAddress sIfExist sTrackersListId sUser
     local sProto sURL sUrlUser sHostPort sHost sPort
+    local dAptDate tNow tVarX tVarY tDiff
     # local sURI
     #local aDomainIPv4 aTrackerIPv4
     local aTrackerIPv4
     local bAutoBlockAnnoncers
+
+    dAptDate=$(date -d "${dAptDate}" +"%Y-%m-%d %H")
+    tNow=$(date +%Y-%m-%d\ %H)
+    tVarX=$(date --date="${dAptDate}" +'%-H')
+    tVarY=$(date --date="${tNow}" +'%-H')
+    tDiff=$((tVarY - tVarX))
 
     sTracker="$1"
     if [ -n "${2}" ] && [ -n "$(getent passwd "${2}")" ]; then
@@ -103,12 +178,12 @@ gfnAddTracker() {
         sPart1="$(echo "${sHost}" | cut -d "." -f 1)"
         sPart2="$(echo "${sHost}" | cut -d "." -f 2)"
         sPart3="$(echo "${sHost}" | cut -d "." -f 3)"
-        if [ -z "$sPart3" ]; then
-            sTrackerDomain="$sPart1.$sPart2"
+        if [ -z "${sPart3}" ]; then
+            sTrackerDomain="${sPart1}.${sPart2}"
             sTrackerAddress="${sTrackerDomain}"
         else
-            sTrackerDomain="$sPart2.$sPart3"
-            sTrackerAddress="$sPart1.${sTrackerDomain}"
+            sTrackerDomain="${sPart2}.${sPart3}"
+            sTrackerAddress="${sPart1}.${sTrackerDomain}"
         fi
 
         # DEBUG
@@ -122,7 +197,7 @@ gfnAddTracker() {
         #     echo "sHost $sHost"
         #     echo "sPort $sPort"
         #     echo "sURI $sURI"
-        #     echo "sParts $sPart1 $sPart2 $sPart3"
+        #     echo "sParts ${sPart1} ${sPart2} ${sPart3}"
         #     echo "sTrackerDomain $sTrackerDomain"
         #     echo "sTrackerAddress $sTrackerAddress"
         #     echo
@@ -132,13 +207,14 @@ gfnAddTracker() {
         if [ -n "${sTrackerAddress}" ]; then
             mapfile -t aTrackerIPv4 < <(nslookup "${sTrackerAddress}" | grep 'Address:' | awk '{ print $2 }' | tail -n +2 | sed -e 's/^ //g;' | sed 's/\s+$//')
 
-            if [ "${#aTrackerIPv4[@]}" -gt 0 ]; then
+            if [ "${#aTrackerIPv4[@]}" -gt 0 ] && [ "${tDiff}" -gt 6 ]; then
                 # Add address if needed
                 sIfExist="$(cmdMySQL 'MySB_db' "SELECT id_trackers_list FROM trackers_list WHERE tracker='${sTrackerAddress}';")"
                 if [ -z "$sIfExist" ]; then
                     log_daemon_msg "${AddTrackerDomain} ${sTrackerAddress}:${sPort}"
                     cmdMySQL 'MySB_db' "INSERT INTO trackers_list (tracker,tracker_domain,tracker_proto,tracker_port,tracker_uri,privacy,is_active,to_check) VALUES ('${sTrackerAddress}','${sTrackerDomain}','${sProto}','${sPort}','','${sPrivacy}','1','1');"
-                    curl --retry 3 --silent --show-error --data "username=${gsMainUserName}&tracker=${sTrackerAddress}&tracker_domain=${sTrackerDomain}&tracker_proto=${sProto}&tracker_port=${sPort}" http://localhost:8888/rTorrent
+                    # curl --retry 3 --silent --show-error --data "username=${gsMainUserName}&tracker=${sTrackerAddress}&tracker_domain=${sTrackerDomain}&tracker_proto=${sProto}&tracker_port=${sPort}" http://localhost:8888/rTorrent
+                    echo "Annoncer: ${sPort%://}://${sTrackerAddress}:${sPort}" >>/tmp/trackers_added.log
                     gfnStatusLSB
                 else
                     log_daemon_msg "${UpdateTrackerDomain} ${sTrackerAddress}:${sPort}"
@@ -172,11 +248,13 @@ gfnAddTracker() {
                                 [ -s "/tmp/${gsScriptName}_pglcmd.log" ] && bToBlock=1 || bToBlock=0
                                 rm -f "/tmp/${gsScriptName}_pglcmd.log"
 
+                                sPingResult="$(ping -c2 -w3 "${IPv4}" | grep 'packets transmitted' | cut -d ',' -f 3)"
+
                                 sIfExist="$(cmdMySQL 'MySB_db' "SELECT id_trackers_list_ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list='${sTrackersListId}' AND ipv4='${IPv4}';")"
                                 if [ -z "$sIfExist" ]; then
-                                    cmdMySQL 'MySB_db' "INSERT INTO trackers_list_ipv4 (id_trackers_list,ipv4,pgl_banned) VALUES ('${sTrackersListId}','${IPv4}','${bToBlock}');"
+                                    cmdMySQL 'MySB_db' "INSERT INTO trackers_list_ipv4 (id_trackers_list,ipv4,pgl_banned,ping,last_check) VALUES ('${sTrackersListId}','${IPv4}','${bToBlock}','${sPingResult}','${dAptDate}');"
                                 else
-                                    cmdMySQL 'MySB_db' "UPDATE trackers_list_ipv4 SET pgl_banned='${bToBlock}' WHERE ipv4='${IPv4}' AND id_trackers_list='${sTrackersListId}';"
+                                    cmdMySQL 'MySB_db' "UPDATE trackers_list_ipv4 SET pgl_banned='${bToBlock}', ping='${sPingResult}' WHERE ipv4='${IPv4}', last_check='${dAptDate}' AND id_trackers_list='${sTrackersListId}';"
                                 fi
 
                                 bActive="$(cmdMySQL 'MySB_db' "SELECT is_active FROM trackers_list WHERE tracker='${sTrackerAddress}';")"

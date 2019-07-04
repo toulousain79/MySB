@@ -53,6 +53,13 @@ fi
 # rm -f /tmp/CPAN.lock
 # fi
 
+#### Fix version in database
+if [ "$gsCurrentVersion" != "$(cat "${MySB_InstallDir}"/version)" ]; then
+    gsCurrentVersion="$(cat "${MySB_InstallDir}"/version)"
+    export gsCurrentVersion
+    cmdMySQL 'MySB_db' "UPDATE system SET version='$(cat "${MySB_InstallDir}"/version)' WHERE id_system='1';" -v
+fi
+
 #### ruTorrent hack for uploaded torrent
 if (grep -q '$torrent->comment()' "${gsRutorrentDir}"/php/rtorrent.php); then
     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/ruTorrent" 'UPGRADE'
@@ -86,6 +93,21 @@ if [ -f /etc/mysql/debian.cnf ] && (grep -q 'debian-sys-maint' /etc/mysql/debian
 fi
 if [ ! -f /etc/mysql/debian.cnf ]; then
     install -v -o root -g root -m 0400 "${MySB_InstallDir}"/templates/mysql/etc.mysql.debian.cnf.tmpl /etc/mysql/debian.cnf
+fi
+if (! cmdMySQL 'MySB_db' "SELECT annoncers_check FROM system WHERE id_system='4';" >/dev/null 2>&1); then
+    cmdMySQL 'MySB_db' "ALTER TABLE system ADD annoncers_udp TINYINT(1) NOT NULL DEFAULT '0' AFTER block_annoncers;" -v
+    cmdMySQL 'MySB_db' "ALTER TABLE system ADD annoncers_check TINYINT(1) NOT NULL DEFAULT '1' AFTER annoncers_udp;" -v
+    cmdMySQL 'MySB_db' "ALTER TABLE trackers_list ADD last_check datetime NOT NULL DEFAULT '0000-00-00 00:00:00' AFTER cert_expiration;" -v
+    cmdMySQL 'MySB_db' "ALTER TABLE trackers_list ADD last_check datetime NOT NULL DEFAULT '0000-00-00 00:00:00' AFTER ping;" -v
+    #### MySQL Grant for users
+    source /etc/MySB/config_db
+    mysql -u root -p"${MySQL_RootPassword}" --verbose <<-EOF
+        GRANT SELECT, INSERT, DELETE ON MySB_db.annoncers TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
+        GRANT SELECT ON MySB_db.trackers_list TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
+        GRANT SELECT, INSERT, DELETE ON MySB_db.torrents TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
+        GRANT SELECT (id_system,public_tracker_allow,files_recycling,annoncers_udp,annoncers_check) ON MySB_db.system TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
+        FLUSH PRIVILEGES;
+	EOF
 fi
 
 #### NextCloud external mounts

@@ -22,6 +22,23 @@
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `annoncers`
+--
+
+/*!40101 SET @saved_cs_client	 = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `annoncers` (
+  `id_annoncers` int(11) NOT NULL AUTO_INCREMENT,
+  `scgi_port` varchar(5) NOT NULL,
+  `info_hash` varchar(64) NOT NULL,
+  `id` varchar(4) NOT NULL,
+  PRIMARY KEY (`id_annoncers`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `blocklists`
 --
 
@@ -325,6 +342,8 @@ CREATE TABLE IF NOT EXISTS `system` (
   `ipv4_additional` varchar(128) DEFAULT '',
   `public_tracker_allow` varchar(7) DEFAULT 'public',
   `block_annoncers` tinyint(1) NOT NULL DEFAULT '1',
+  `annoncers_udp` tinyint(1) NOT NULL DEFAULT '0',
+  `annoncers_check` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id_system`),
   UNIQUE KEY `mysb_version` (`mysb_version`,`mysb_user`,`mysb_password`,`hostname`,`ipv4`,`primary_inet`,`timezone`,`cert_password`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -371,6 +390,7 @@ CREATE TABLE IF NOT EXISTS `trackers_list` (
   `to_delete` tinyint(1) NOT NULL DEFAULT '0',
   `is_dead` tinyint(1) NOT NULL DEFAULT '0',
   `cert_expiration` date NOT NULL DEFAULT '0000-00-00',
+  `last_check` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`id_trackers_list`),
   UNIQUE KEY `tracker` (`tracker`,`tracker_domain`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
@@ -390,6 +410,7 @@ CREATE TABLE IF NOT EXISTS `trackers_list_ipv4` (
   `ipv4` varchar(15) NOT NULL,
   `pgl_banned` tinyint(1) NOT NULL DEFAULT '0',
   `ping` varchar(64) DEFAULT '',
+  `last_check` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`id_trackers_list_ipv4`),
   KEY `id_trackers_list` (`id_trackers_list`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;

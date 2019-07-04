@@ -30,7 +30,7 @@ $OpenVPNIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => 
 $DNScryptIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "DNScrypt-proxy"]);
 $LogwatchIsInstalled = $MySB_DB->get("services", "is_installed", ["serv_name" => "LogWatch"]);
 $IsMainUser = (MainUser($CurrentUser)) ? true : false;
-$system_datas = $MySB_DB->get("system", ["dnscrypt", "logwatch", "pgl_email_stats", "pgl_watchdog_email", "ip_restriction", "files_recycling", "rt_active", "public_tracker_allow", "block_annoncers"], ["id_system" => 1]);
+$system_datas = $MySB_DB->get("system", ["dnscrypt", "logwatch", "pgl_email_stats", "pgl_watchdog_email", "ip_restriction", "files_recycling", "rt_active", "public_tracker_allow", "block_annoncers", "annoncers_udp", "annoncers_check"], ["id_system" => 1]);
 
 // Get values from database
 $DNScrypt_db = $system_datas['dnscrypt'];
@@ -42,6 +42,8 @@ $FilesRecycling_db = $system_datas['files_recycling'];
 $Renting_db = $system_datas['rt_active'];
 $TrackerType_db = $system_datas['public_tracker_allow'];
 $TrackerBlock_db = $system_datas['block_annoncers'];
+$AnnoncersUdp_db = $system_datas['annoncers_udp'];
+$AnnoncersCheck_db = $system_datas['annoncers_check'];
 $OpenVPN_Proto_db =  $MySB_DB->get("services", "port_udp1", ["serv_name" => "OpenVPN"]);
 switch ($OpenVPN_Proto_db) {
 	case '':
@@ -69,6 +71,8 @@ if (isset($_POST['submit'])) {
 	$Renting_post = $_POST['Renting_post'];
 	$TrackerType_post = $_POST['TrackerType_post'];
 	$TrackerBlock_post = $_POST['TrackerBlock_post'];
+	$AnnoncersUdp_post = $_POST['AnnoncersUdp_post'];
+	$AnnoncersCheck_post = $_POST['AnnoncersCheck_post'];
 	$Command = 'message_only';
 	$type = 'information';
 	$message = Global_Success;
@@ -163,6 +167,22 @@ if (isset($_POST['submit'])) {
 		}
 	}
 
+	// 6 - Annoncers
+	if ( $AnnoncersCheck_db != $AnnoncersCheck_post ) {
+		$result = $MySB_DB->update("system", ["annoncers_check" => "$AnnoncersCheck_post"], ["id_system" => 1]);
+		if( $result >= 0 ) {
+			$NoChange = false;
+			$type = 'success';
+		}
+	}
+	if ( $AnnoncersUdp_db != $AnnoncersUdp_post ) {
+		$result = $MySB_DB->update("system", ["annoncers_udp" => "$AnnoncersUdp_post"], ["id_system" => 1]);
+		if( $result >= 0 ) {
+			$NoChange = false;
+			$type = 'success';
+		}
+	}
+
 	if ($NoChange) {
 		$message = Global_NoChange;
 	}
@@ -179,6 +199,8 @@ $FilesRecycling_db = (isset($FilesRecycling_post)) ? $FilesRecycling_post : $Fil
 $Renting_db = (isset($Renting_post)) ? $Renting_post : $Renting_db;
 $TrackerType_db = (isset($TrackerType_post)) ? $TrackerType_post : $TrackerType_db;
 $TrackerBlock_db = (isset($TrackerBlock_post)) ? $TrackerBlock_post : $TrackerBlock_db;
+$AnnoncersCheck_db = (isset($AnnoncersCheck_post)) ? $AnnoncersCheck_post : $AnnoncersCheck_db;
+$AnnoncersUdp_db = (isset($AnnoncersUdp_post)) ? $AnnoncersUdp_post : $AnnoncersUdp_db;
 $OpenVPN_Proto_db = (isset($OpenVPN_Proto_post)) ? $OpenVPN_Proto_post : $OpenVPN_Proto_db;
 ?>
 
@@ -274,91 +296,6 @@ $OpenVPN_Proto_db = (isset($OpenVPN_Proto_post)) ? $OpenVPN_Proto_post : $OpenVP
 	</table>
 	</fieldset>
 
-	<div class="tooltip_templates">
-		<span id="tooltip_filesrecycling">
-			<?php echo User_Synchronization_TT_FilesRecycling; ?>
-		</span>
-	</div>
-	<fieldset>
-	<legend><?php echo MainUser_OptionsSystem_Title_FilesRecycling; ?>&nbsp;<img class="tooltip" data-tooltip-content="#tooltip_filesrecycling" style="cursor: help; vertical-align:middle; width:20px; height:20px;" alt="" border="0" src="<?php echo THEMES_PATH . 'MySB/images/help.png'; ?>"></legend>
-	<table>
-		<tr>
-			<td><?php echo MainUser_OptionsSystem_FilesRecycling; ?></td>
-			<td>
-				<?php switch ($FilesRecycling_db) {
-					case '2':
-						$class = 'greenText';
-						$options = '<option selected="selected" value="2" class="greenText">' .MainUser_OptionsSystem_FilesRecycling_HardLink. '</option>';
-						$options .= '<option value="1" class="greenText">' .MainUser_OptionsSystem_FilesRecycling_Copy. '</option>';
-						$options .= '<option value="0" class="redText">' .Global_No. '</option>';
-						break;
-					case '1':
-						$class = 'greenText';
-						$options = '<option value="2" class="greenText">' .MainUser_OptionsSystem_FilesRecycling_HardLink. '</option>';
-						$options .= '<option selected="selected" value="1" class="greenText">' .MainUser_OptionsSystem_FilesRecycling_Copy. '</option>';
-						$options .= '<option value="0" class="redText">' .Global_No. '</option>';
-						break;
-					default:
-						$class = 'redText';
-						$options = '<option value="2" class="greenText">' .MainUser_OptionsSystem_FilesRecycling_HardLink. '</option>';
-						$options .= '<option value="1" class="greenText">' .MainUser_OptionsSystem_FilesRecycling_Copy. '</option>';
-						$options .= '<option selected="selected" value="0" class="redText">' .Global_No. '</option>';
-						break;
-				} ?>
-				<select name="FilesRecycling_post" style="width:120px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
-			</td>
-		</tr>
-	</table>
-	</fieldset>
-
-	<br />
-
-	<div class="tooltip_templates">
-		<span id="tooltip_tracker">
-			<?php echo User_Synchronization_TT_Tracker; ?>
-		</span>
-	</div>
-	<fieldset>
-	<legend><?php echo MainUser_OptionsSystem_Title_Tracker; ?>&nbsp;<img class="tooltip" data-tooltip-content="#tooltip_tracker" style="cursor: help; vertical-align:middle; width:20px; height:20px;" alt="" border="0" src="<?php echo THEMES_PATH . 'MySB/images/help.png'; ?>"></legend>
-	<table>
-		<tr>
-			<td><?php echo MainUser_OptionsSystem_TrackerType; ?></td>
-			<td>
-				<select name="TrackerType_post" style="width:160px; height: 28px;">
-				<?php switch ($TrackerType_db) {
-					case 'public':
-						echo '<option selected="selected" value="public">'. MainUser_OptionsSystem_TrackerMulti .'</option>';
-						echo '<option value="private">'. MainUser_OptionsSystem_TrackerSingle .'</option>';
-						break;
-					default:
-						echo '<option value="public">'. MainUser_OptionsSystem_TrackerMulti .'</option>';
-						echo '<option selected="selected" value="private">'. MainUser_OptionsSystem_TrackerSingle .'</option>';
-						break;
-				} ?>
-				</select>
-			</td>
-			<?php if ($PeerguardianIsInstalled == '1') { ?>
-				<td><?php echo MainUser_OptionsSystem_TrackerBlock; ?></td>
-				<td>
-				<?php switch ($TrackerBlock_db) {
-					case '1':
-						$class = 'greenText';
-						$options = '<option selected="selected" value="1" class="greenText">' .Global_Yes. '</option>';
-						$options .= '<option value="0" class="redText">' .Global_No. '</option>';
-						break;
-					default:
-						$class = 'redText';
-						$options = '<option value="1" class="greenText">' .Global_Yes. '</option>';
-						$options .= '<option selected="selected" value="0" class="redText">' .Global_No. '</option>';
-						break;
-				} ?>
-				<select name="TrackerBlock_post" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
-				</td>
-			<?php } ?>
-		</tr>
-	</table>
-	</fieldset>
-
 	<?php if ($OpenVPNIsInstalled == '1') { ?>
 	<fieldset>
 	<legend><?php echo MainUser_OptionsSystem_Title_OpenVPN; ?></legend>
@@ -435,6 +372,136 @@ $OpenVPN_Proto_db = (isset($OpenVPN_Proto_post)) ? $OpenVPN_Proto_post : $OpenVP
 	</table>
 	</fieldset>
 	<?php } ?>
+
+	<br />
+
+	<div class="tooltip_templates">
+		<span id="tooltip_tracker">
+			<?php echo User_Synchronization_TT_Tracker; ?>
+		</span>
+	</div>
+	<fieldset>
+	<legend><?php echo MainUser_OptionsSystem_Title_Tracker; ?>&nbsp;<img class="tooltip" data-tooltip-content="#tooltip_tracker" style="cursor: help; vertical-align:middle; width:20px; height:20px;" alt="" border="0" src="<?php echo THEMES_PATH . 'MySB/images/help.png'; ?>"></legend>
+	<table>
+		<tr>
+			<td><?php echo MainUser_OptionsSystem_TrackerType; ?></td>
+			<td>
+				<select name="TrackerType_post" style="width:160px; height: 28px;">
+				<?php switch ($TrackerType_db) {
+					case 'public':
+						echo '<option selected="selected" value="public">'. MainUser_OptionsSystem_TrackerMulti .'</option>';
+						echo '<option value="private">'. MainUser_OptionsSystem_TrackerSingle .'</option>';
+						break;
+					default:
+						echo '<option value="public">'. MainUser_OptionsSystem_TrackerMulti .'</option>';
+						echo '<option selected="selected" value="private">'. MainUser_OptionsSystem_TrackerSingle .'</option>';
+						break;
+				} ?>
+				</select>
+			</td>
+			<?php if ($PeerguardianIsInstalled == '1') { ?>
+				<td><?php echo MainUser_OptionsSystem_TrackerBlock; ?></td>
+				<td>
+				<?php switch ($TrackerBlock_db) {
+					case '1':
+						$class = 'greenText';
+						$options = '<option selected="selected" value="1" class="greenText">' .Global_Yes. '</option>';
+						$options .= '<option value="0" class="redText">' .Global_No. '</option>';
+						break;
+					default:
+						$class = 'redText';
+						$options = '<option value="1" class="greenText">' .Global_Yes. '</option>';
+						$options .= '<option selected="selected" value="0" class="redText">' .Global_No. '</option>';
+						break;
+				} ?>
+				<select name="TrackerBlock_post" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
+				</td>
+			<?php } ?>
+		</tr>
+	</table>
+	</fieldset>
+
+	<div class="tooltip_templates">
+		<span id="tooltip_annoncers">
+			<?php echo User_Synchronization_TT_Annoncers; ?>
+		</span>
+	</div>
+	<fieldset>
+	<legend><?php echo MainUser_OptionsSystem_Title_Annoncers; ?>&nbsp;<img class="tooltip" data-tooltip-content="#tooltip_annoncers" style="cursor: help; vertical-align:middle; width:20px; height:20px;" alt="" border="0" src="<?php echo THEMES_PATH . 'MySB/images/help.png'; ?>"></legend>
+	<table>
+		<tr>
+			<td><?php echo MainUser_OptionsSystem_AnnoncersCheck; ?></td>
+			<td>
+				<?php switch ($AnnoncersCheck_db) {
+					case '1':
+						$class = 'greenText';
+						$options = '<option selected="selected" value="1" class="greenText">' .Global_Yes. '</option>';
+						$options .= '<option value="0" class="redText">' .Global_No. '</option>';
+						break;
+					default:
+						$class = 'redText';
+						$options = '<option value="1" class="greenText">' .Global_Yes. '</option>';
+						$options .= '<option selected="selected" value="0" class="redText">' .Global_No. '</option>';
+						break;
+				} ?>
+				<select name="AnnoncersCheck_post" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
+			</td>
+			<td><?php echo MainUser_OptionsSystem_AnnoncersUdp; ?></td>
+			<td>
+			<?php switch ($AnnoncersUdp_db) {
+				case '1':
+					$class = 'greenText';
+					$options = '<option selected="selected" value="1" class="greenText">' .Global_Yes. '</option>';
+					$options .= '<option value="0" class="redText">' .Global_No. '</option>';
+					break;
+				default:
+					$class = 'redText';
+					$options = '<option value="1" class="greenText">' .Global_Yes. '</option>';
+					$options .= '<option selected="selected" value="0" class="redText">' .Global_No. '</option>';
+					break;
+			} ?>
+			<select name="AnnoncersUdp_post" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
+			</td>
+		</tr>
+	</table>
+	</fieldset>
+
+	<div class="tooltip_templates">
+		<span id="tooltip_filesrecycling">
+			<?php echo User_Synchronization_TT_FilesRecycling; ?>
+		</span>
+	</div>
+	<fieldset>
+	<legend><?php echo MainUser_OptionsSystem_Title_FilesRecycling; ?>&nbsp;<img class="tooltip" data-tooltip-content="#tooltip_filesrecycling" style="cursor: help; vertical-align:middle; width:20px; height:20px;" alt="" border="0" src="<?php echo THEMES_PATH . 'MySB/images/help.png'; ?>"></legend>
+	<table>
+		<tr>
+			<td><?php echo MainUser_OptionsSystem_FilesRecycling; ?></td>
+			<td>
+				<?php switch ($FilesRecycling_db) {
+					case '2':
+						$class = 'greenText';
+						$options = '<option selected="selected" value="2" class="greenText">' .MainUser_OptionsSystem_FilesRecycling_HardLink. '</option>';
+						$options .= '<option value="1" class="greenText">' .MainUser_OptionsSystem_FilesRecycling_Copy. '</option>';
+						$options .= '<option value="0" class="redText">' .Global_No. '</option>';
+						break;
+					case '1':
+						$class = 'greenText';
+						$options = '<option value="2" class="greenText">' .MainUser_OptionsSystem_FilesRecycling_HardLink. '</option>';
+						$options .= '<option selected="selected" value="1" class="greenText">' .MainUser_OptionsSystem_FilesRecycling_Copy. '</option>';
+						$options .= '<option value="0" class="redText">' .Global_No. '</option>';
+						break;
+					default:
+						$class = 'redText';
+						$options = '<option value="2" class="greenText">' .MainUser_OptionsSystem_FilesRecycling_HardLink. '</option>';
+						$options .= '<option value="1" class="greenText">' .MainUser_OptionsSystem_FilesRecycling_Copy. '</option>';
+						$options .= '<option selected="selected" value="0" class="redText">' .Global_No. '</option>';
+						break;
+				} ?>
+				<select name="FilesRecycling_post" style="width:120px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
+			</td>
+		</tr>
+	</table>
+	</fieldset>
 
 	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
 
