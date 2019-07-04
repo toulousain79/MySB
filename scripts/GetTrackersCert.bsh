@@ -61,7 +61,7 @@ esac
 if [ $DoDeleteTracker -eq 1 ]; then
     RemovedTrackersList="$(cmdMySQL 'MySB_db' "SELECT tracker_domain FROM trackers_list WHERE to_delete = '1';")"
     for RemovedTracker in $RemovedTrackersList; do
-        log_daemon_msg "$RemoveOfTracker $RemovedTracker"
+        log_daemon_msg "$DeleteTracker $RemovedTracker"
         rm -f ${MySB_InstallDir}/ssl/trackers/*$RemovedTracker.pem
         cmdMySQL 'MySB_db' "DELETE FROM trackers_list WHERE tracker_domain='$RemovedTracker';"
         gfnStatusLSB
@@ -111,7 +111,7 @@ systemctl reload bind9.service
 #### Create trackers listing
 
 # Check added torrents
-if [ $DoCheckAddedTorrents -eq 1 ]; then
+if [[ $DoCheckAddedTorrents -eq 1 ]]; then
     gfnCheckAddedTorrents "${sUser}"
 fi
 
@@ -148,6 +148,10 @@ for Tracker in ${TrackersList}; do
     sTrackerPort="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
     sExpirationDate="0000-00-00"
     sCheckPort="${sTrackerPort}"
+
+    dAptDate="$(cmdMySQL 'MySB_db' "SELECT last_check FROM trackers_list WHERE tracker='${Tracker}';")"
+    [ "${dAptDate}" == "0000-00-00 00:00:00" ] && dAptDate="$(date +%Y-%m-%d\ %H:%M:%S)"
+    [ -z "${dAptDate}" ] && dAptDate="$(date +%Y-%m-%d\ %H:%M:%S)"
     dAptDate=$(date -d "${dAptDate}" +"%Y-%m-%d %H")
     tNow=$(date +%Y-%m-%d\ %H)
     tVarX=$(date --date="${dAptDate}" +'%-H')
@@ -155,7 +159,7 @@ for Tracker in ${TrackersList}; do
     tDiff=$((tVarY - tVarX))
     bSsl=0
 
-    if [ "${tDiff}" -gt 12 ]; then
+    if [ "${tDiff}" -le 6 ]; then
         if [ ! -h /etc/ssl/certs/${Tracker}.pem ] || [ ! -f ${MySB_InstallDir}/ssl/trackers/${Tracker}.pem ]; then
             timeout 10 bash -c "openssl s_client -connect ${Tracker}:${sCheckPort} </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./${Tracker}.crt"
             if [ -s ./${Tracker}.crt ]; then
@@ -183,7 +187,7 @@ for Tracker in ${TrackersList}; do
         rm -f ./${Tracker}.crt
 
         # Update database
-        cmdMySQL 'MySB_db' "UPDATE trackers_list SET is_ssl='${bSsl}', cert_expiration='${sExpirationDate}', to_check='0', tracker_proto='${sTrackerProto}', tracker_port='${sTrackerPort}', last_check='${dAptDate}' WHERE tracker='${Tracker}';"
+        cmdMySQL 'MySB_db' "UPDATE trackers_list SET is_ssl='${bSsl}', cert_expiration='${sExpirationDate}', to_check='0', tracker_proto='${sTrackerProto}', tracker_port='${sTrackerPort}', last_check='$(date +%Y-%m-%d\ %H:%M:%S)' WHERE tracker='${Tracker}';"
     fi
 
     if [ "${gbIsInstalled_PeerGuardian}" == "YES" ] && [ -f /etc/pgl/allow.p2p ]; then
