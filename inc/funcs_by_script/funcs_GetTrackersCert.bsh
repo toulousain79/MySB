@@ -30,7 +30,8 @@
 
 #### Restore validated annoncers
 gfnAnnoncerActivate() {
-    local nCgiPort sInfoHash sId bIsActive
+    local nCgiPort sInfoHash sId bIsActive aValidatedTorrents
+    aValidatedTorrents=()
 
     sRequestValues="$(cmdMySQL 'MySB_db' "SELECT scgi_port,info_hash,id FROM annoncers WHERE 1;" | sed 's/\t/|/g;')"
     for sValue in ${sRequestValues}; do
@@ -68,7 +69,12 @@ gfnAnnoncerActivate() {
             bIsActive="$(mysql ${sSqlParams} -e "SELECT is_active FROM trackers_list WHERE tracker='${sHost}' AND tracker_proto='${sProto//:\/\//}' AND tracker_port='${sPort}';")"
             bIsActive="${bIsActive:-1}"
             xmlrpc2scgi.py scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${sId} ${bIsActive} >/dev/null 2>&1
-            [ "${bIsActive}" -eq 1 ] && sResult="Enabled" || sResult="Disabled"
+            if [ "${bIsActive}" -eq 1 ]; then
+                sResult="Enabled"
+                aValidatedTorrents=("${nCgiPort}|${sInfoHash}")
+            else
+                sResult="Disabled"
+            fi
             echo "${sResult}: ${sGetUrl}"
         else
             echo "sGetUrl is empty !!!"
@@ -76,11 +82,16 @@ gfnAnnoncerActivate() {
         cmdMySQL 'MySB_db' "DELETE FROM annoncers WHERE scgi_port='${nCgiPort}' AND info_hash='${sInfoHash}' AND id='${sId}';" -v
     done
 
-    #### Step 9 - Start torrent
-    # xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.start ${sInfoHash}
+    # Uniq
+    mapfile -t aValidatedTorrents < <(echo "${aValidatedTorrents[*]}" | tr ' ' '\n' | sort | uniq)
 
-    #### Step 10 - Save full session
-    xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash}
+    # Start validated torrents
+    for sTorrent in "${aValidatedTorrents[@]}"; do
+        nCgiPort="$(echo "${sTorrent}" | awk '{split($0,a,"|"); print a[1]}')"
+        sInfoHash="$(echo "${sValue}" | awk '{split($0,a,"|"); print a[2]}')"
+        xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.start ${sInfoHash}
+        xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash}
+    done
 }
 
 #### Check added torrents
