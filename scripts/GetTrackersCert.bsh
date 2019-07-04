@@ -134,8 +134,6 @@ for Tracker in ${TrackersList}; do
                     echo "The '${IPv4}' (${Tracker}) is banned by PeerGuardian !"
                 else
                     echo "${Tracker}:${IPv4}-255.255.255.255" >>/etc/pgl/allow.p2p
-                    sPingResult="$(ping -c2 -w3 "${IPv4}" | grep 'packets transmitted' | cut -d ',' -f 3)"
-                    cmdMySQL 'MySB_db' "UPDATE trackers_list_ipv4 SET ping='${sPingResult}'WHERE id_trackers_list='${TrackersID}';"
                 fi
             done
         else
@@ -149,44 +147,47 @@ for Tracker in ${TrackersList}; do
     sTrackerPort="$(echo "$sRequestValues" | awk '{split($0,a,"|"); print a[2]}')"
     sExpirationDate="0000-00-00"
     sCheckPort="${sTrackerPort}"
+    dAptDate=$(date -d "$dAptDate" +"%Y-%m-%d %H")
+    tNow=$(date +%Y-%m-%d\ %H)
+    tVarX=$(date --date="$dAptDate" +'%-H')
+    tVarY=$(date --date="$tNow" +'%-H')
+    tDiff=$((tVarY - tVarX))
     bSsl=0
 
-    # Try to get certificate for annoncers with HTTP
-    # if [ "${sTrackerProto}" == "http" ] && [ "${sTrackerPort}" == "80" ]; then
-    #     sCheckPort=443
-    # fi
-
-    if [ ! -h /etc/ssl/certs/${Tracker}.pem ] || [ ! -f ${MySB_InstallDir}/ssl/trackers/${Tracker}.pem ]; then
-        timeout 10 bash -c "openssl s_client -connect ${Tracker}:${sCheckPort} </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./${Tracker}.crt"
-        if [ -s ./${Tracker}.crt ]; then
-            openssl x509 -in ./${Tracker}.crt -out ./${Tracker}.der -outform DER
-            openssl x509 -in ./${Tracker}.der -inform DER -out ./${Tracker}.pem -outform PEM
-            if [ -s ./${Tracker}.pem ]; then
-                if [ -f /etc/ssl/certs/${Tracker}.pem ] || [ -h /etc/ssl/certs/${Tracker}.pem ]; then
-                    rm -f /etc/ssl/certs/${Tracker}.pem
+    if [ "${tDiff}" -gt 12 ]; then
+        if [ ! -h /etc/ssl/certs/${Tracker}.pem ] || [ ! -f ${MySB_InstallDir}/ssl/trackers/${Tracker}.pem ]; then
+            timeout 10 bash -c "openssl s_client -connect ${Tracker}:${sCheckPort} </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./${Tracker}.crt"
+            if [ -s ./${Tracker}.crt ]; then
+                openssl x509 -in ./${Tracker}.crt -out ./${Tracker}.der -outform DER
+                openssl x509 -in ./${Tracker}.der -inform DER -out ./${Tracker}.pem -outform PEM
+                if [ -s ./${Tracker}.pem ]; then
+                    if [ -f /etc/ssl/certs/${Tracker}.pem ] || [ -h /etc/ssl/certs/${Tracker}.pem ]; then
+                        rm -f /etc/ssl/certs/${Tracker}.pem
+                    fi
+                    ln -s ${MySB_InstallDir}/ssl/trackers/${Tracker}.pem /etc/ssl/certs/${Tracker}.pem
+                    # Extract certificate expiration date
+                    sExpirationDate="$(openssl x509 -enddate -noout -in ./${Tracker}.pem | cut -d "=" -f 2)"
+                    sExpirationDate="$(date -d "$sExpirationDate" '+%Y-%m-%d')"
+                    sExpirationDate="$(date --date "$sExpirationDate 2 days ago" '+%Y-%m-%d')"
+                    sTrackerPort="${sCheckPort}"
+                    sTrackerProto="https"
+                    bSsl=1
+                    DoRehash=1
+                else
+                    rm ./${Tracker}.pem
                 fi
-                ln -s ${MySB_InstallDir}/ssl/trackers/${Tracker}.pem /etc/ssl/certs/${Tracker}.pem
-                # Extract certificate expiration date
-                sExpirationDate="$(openssl x509 -enddate -noout -in ./${Tracker}.pem | cut -d "=" -f 2)"
-                sExpirationDate="$(date -d "$sExpirationDate" '+%Y-%m-%d')"
-                sExpirationDate="$(date --date "$sExpirationDate 2 days ago" '+%Y-%m-%d')"
-                sTrackerPort="${sCheckPort}"
-                sTrackerProto="https"
-                bSsl=1
-                DoRehash=1
-            else
-                rm ./${Tracker}.pem
+                rm -f ./${Tracker}.der
             fi
-            rm -f ./${Tracker}.der
         fi
+        rm -f ./${Tracker}.crt
+
+        # Update database
+        cmdMySQL 'MySB_db' "UPDATE trackers_list SET is_ssl='${bSsl}', cert_expiration='${sExpirationDate}', to_check='0', tracker_proto='${sTrackerProto}', tracker_port='${sTrackerPort}', last_check='${dAptDate}' WHERE tracker='${Tracker}';"
     fi
-    rm -f ./${Tracker}.crt
 
-    # Update database
-    cmdMySQL 'MySB_db' "UPDATE trackers_list SET is_ssl='${bSsl}', cert_expiration='${sExpirationDate}', to_check='0', tracker_proto='${sTrackerProto}', tracker_port='${sTrackerPort}' WHERE tracker='${Tracker}';"
-
-    if [ "$gbIsInstalled_PeerGuardian" == "YES" ] && [ -f /etc/pgl/allow.p2p ] && [[ $RemoveAfter -eq 1 ]]; then
-        sed -i "/${Tracker}/d" /etc/pgl/allow.p2p
+    if [ "$gbIsInstalled_PeerGuardian" == "YES" ] && [ -f /etc/pgl/allow.p2p ]; then
+        [[ $RemoveAfter -eq 1 ]] && sed -i "/${Tracker}/d" /etc/pgl/allow.p2p
+        pglcmd reload >/dev/null
     fi
     gfnStatusLSB
 done
