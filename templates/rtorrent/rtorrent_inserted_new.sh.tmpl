@@ -133,8 +133,8 @@ fnCopyFile() {
 
     if (sudo cp "${sParams[@]}" "${sTree}" "${sDirectory}"/); then
         sudo chown -Rv "${sOwners[@]}" "${sFinalDirectory}"
-        xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.open ${sInfoHash} >>"${sLogFile}"
-        xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.check_hash ${sInfoHash} >>"${sLogFile}"
+        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash} >>"${sLogFile}"
+        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.check_hash ${sInfoHash} >>"${sLogFile}"
         mysql ${sSqlParams} -e "INSERT INTO torrents (info_hash,name,privacy,state,tree) VALUES ('${sInfoHash}', '${sName}', '${sPrivacy}', 'completed', '${sFinalDirectory}');" -v
         xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep8} (${sMessFileRecyclingEnd})"
     fi
@@ -188,7 +188,7 @@ xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sSt
 #### Step 4 - Close torrent from rTorrent queue
 if [[ ${nExit} -eq 0 ]]; then
     xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep4}"
-    xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.stop ${sInfoHash} >>"${sLogFile}"
+    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.stop ${sInfoHash} >>"${sLogFile}"
 fi
 
 if [[ ${nContinue} -eq 1 ]]; then
@@ -246,8 +246,8 @@ if [[ ${nContinue} -eq 1 ]]; then
         echo "--------------"
     } >>"${sLogFile}"
     if [ "${nCountAnnoncers}" -eq 0 ]; then
-        xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.close ${sInfoHash} >>"${sLogFile}"
-        xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.erase ${sInfoHash} >>"${sLogFile}"
+        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.close ${sInfoHash} >>"${sLogFile}"
+        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.erase ${sInfoHash} >>"${sLogFile}"
         nContinue=0
     fi
 
@@ -259,10 +259,10 @@ if [[ ${nContinue} -eq 1 ]]; then
             nId="$(echo "${aAnnoncers[${i}]}" | awk '{printf $1}')"
             bState="$(echo "${aAnnoncers[${i}]}" | awk '{printf $2}')"
             if [ "${bState}" -eq 0 ]; then
-                xmlrpc2scgi.py scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${nId} >>"${sLogFile}"
+                xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${nId} ${bState} >>"${sLogFile}"
                 bCleaned=1
             else
-                [[ ${bAnnoncersCheck} -eq 1 ]] && mysql ${sSqlParams} -e "INSERT INTO annoncers (scgi_port,info_hash,id) VALUES ('${nCgiPort}', '${sInfoHash}', '${nId}');" -v
+                [[ ${bAnnoncersCheck} -eq 1 ]] && mysql ${sSqlParams} -e "INSERT INTO annoncers (scgi_port,info_hash,id,user) VALUES ('${nCgiPort}', '${sInfoHash}', '${nId}', '${sUserName}');" -v
             fi
         done
         if [ ${bCleaned} -eq 1 ]; then
@@ -302,6 +302,7 @@ if [[ ${nContinue} -eq 1 ]]; then
                 if (! grep -q "${sAnnoncer}" <<<${sTempLocalFile}); then
                     echo "${sAnnoncer}|${sPrivacy}" >>${sTempLocalFile}
                     bExecute=1
+                    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${nId} ${bState} >>"${sLogFile}"
                     xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep7} (${sAnnoncer})"
                 fi
             fi
@@ -367,9 +368,9 @@ if [[ ${nContinue} -eq 1 ]]; then
                 (! mv -fv "${sTorrentLoaded}" "${sTorrentFile}") && echo "'${sTorrentLoaded}' -> '${sTorrentFile}'"
             fi
         } >>"${sLogFile}"
-        xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.open ${sInfoHash} >>"${sLogFile}"
-        [[ ${bAnnoncersCheck} -eq 0 ]] && xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.start ${sInfoHash} >>"${sLogFile}"
-        [[ ${bAnnoncersCheck} -eq 0 ]] && xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash} >>"${sLogFile}"
+        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash} >>"${sLogFile}"
+        [[ ${bAnnoncersCheck} -eq 0 ]] && xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.start ${sInfoHash} >>"${sLogFile}"
+        [[ ${bAnnoncersCheck} -eq 0 ]] && xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash} >>"${sLogFile}"
 
         #### Step 10 - Quota update
         xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep10}"
