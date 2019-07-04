@@ -91,8 +91,8 @@ if(isset($_POST)==true && empty($_POST)==false) {
 					if ( ValidateEmail($email) != false ) {
 						if ( $email == $confirm_email ) {
 							if ($account_type == 'normal') {
-								//if ( ($quota >= 5) || ($quota == 0) || ($quota == '') ) {
-								if ( ($quota == 0) || ($quota == '') ) {
+								if ( ($quota >= 0) || ($quota == 0) || ($quota == '') ) {
+								// if ( ($quota == 0) || ($quota == '') ) {
 									if ( $quota > $free_space ) {
 										$quota = $free_space;
 									}
