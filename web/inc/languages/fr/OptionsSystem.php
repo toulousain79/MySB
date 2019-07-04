@@ -42,8 +42,12 @@ define('MainUser_OptionsSystem_Title_FilesRecycling', 'T&eacute;l&eacute;chargem
 define('MainUser_OptionsSystem_FilesRecycling', 'Recyclage ?');
 define('MainUser_OptionsSystem_FilesRecycling_Copy', 'Copie simple');
 define('MainUser_OptionsSystem_FilesRecycling_HardLink', 'Lien dur');
+define('MainUser_OptionsSystem_Title_Annoncers', 'Torrents');
+define('MainUser_OptionsSystem_AnnoncersCheck', 'Filtrer les torrents ?');
+define('MainUser_OptionsSystem_AnnoncersUdp', 'Prise en charge de l\'UDP ?');
 // Tooltip
 define('User_Synchronization_TT_FilesRecycling', '<a target="_blank" href="https://mysb.gitbook.io/doc/configuration/options-systemes#recyclage-des-telechargements">Acc&eacute;der &agrave; la documentation</a>');
 define('User_Synchronization_TT_Tracker', '<a target="_blank" href="https://mysb.gitbook.io/doc/configuration/options-systemes#trackers-autorises">Acc&eacute;der &agrave; la documentation</a>');
+define('User_Synchronization_TT_Annoncers', '<a target="_blank" href="https://mysb.gitbook.io/doc/configuration/options-systemes#torrents">Acc&eacute;der &agrave; la documentation</a>');
 
 //#################### LAST LINE ######################################
