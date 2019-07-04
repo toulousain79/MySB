@@ -63,9 +63,11 @@ sTorrentFile="${sTorrentDir%/}/$(basename "${sTorrentLoaded}")"
 
 #### VARs -
 [ -f "${sTorrentLoaded}" ] && sPrivacy="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
-sRequestValues="$(mysql ${sSqlParams} -e "SELECT public_tracker_allow,files_recycling FROM system WHERE id_system='1';" | sed 's/\t/|/g;')"
+sRequestValues="$(mysql ${sSqlParams} -e "SELECT public_tracker_allow,files_recycling,annoncers_udp,annoncers_check FROM system WHERE id_system='1';" | sed 's/\t/|/g;')"
 sTrackerModeAllowed="$(echo "$sRequestValues" | awk '{split($0,a,"|"); print a[1]}')"
 sFilesRecycling="$(echo "$sRequestValues" | awk '{split($0,a,"|"); print a[2]}')"
+bAnnoncersUdp="$(echo "$sRequestValues" | awk '{split($0,a,"|"); print a[3]}')"
+bAnnoncersCheck="$(echo "$sRequestValues" | awk '{split($0,a,"|"); print a[4]}')"
 
 #### Functions
 fnCopyFile() {
@@ -137,7 +139,7 @@ if [ "${nContinue}" -eq 1 ]; then
 
     for sAnnoncer in $(transmission-show "${sTorrentLoaded}" | grep 'udp://\|http://\|https://' | grep -v 'Magnet URI' | grep -v 'Comment' | sed -e 's/ //g;'); do
         if (grep -q 'udp://' <<<"${sAnnoncer}"); then
-            nEnable=1
+            [[ ${bAnnoncersUdp} -eq 1 ]] && nEnable=1 || nEnable=0
             ((nCountAnnoncers++))
             aAnnoncersUdp+=("${sAnnoncer}")
             aAnnoncers[${nId}]="t${nId} ${nEnable}"
@@ -202,27 +204,52 @@ if [ "${nContinue}" -eq 1 ]; then
     fi
 
     #### Step 6 - Prepare annoncers (UDP, HTTP & HTTPs) list for GetTrackersCert.bsh script
-    bExecute=0
-    sTempLocalFile="$(mktemp)"
-    for sAnnoncer in "${aAnnoncersHttps[@]}" "${aAnnoncersHttp[@]}" "${aAnnoncersUdp[@]}"; do
-        if [ -n "${sAnnoncer}" ]; then
-            sProto="$(echo "${sAnnoncer}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')"
-            [ -z "${sProto}" ] && sProto="http://"
-            # remove the protocol
-            sAnnoncer=$(echo "${sAnnoncer}" | sed -e s,${sProto},,g)
-            # extract the user (if any)
-            sUrlUser="$(echo "${sAnnoncer}" | grep @ | cut -d@ -f1)"
-            # extract the host and port
-            sAnnoncer=$(echo "${sAnnoncer}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
-            if (! grep -q "${sAnnoncer}" <<<${sTempLocalFile}); then
-                echo "${sAnnoncer}|${sPrivacy}" >>${sTempLocalFile}
-                bExecute=1
+    if [[ ${bAnnoncersCheck} -eq 1 ]]; then
+        bExecute=0
+        sTempLocalFile="$(mktemp)"
+        for sAnnoncer in "${aAnnoncersHttps[@]}"; do
+            if [ -n "${sAnnoncer}" ]; then
+                sProto="$(echo "${sAnnoncer}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')"
+                [ -z "${sProto}" ] && sProto="https://"
+                sAnnoncer=$(echo "${sAnnoncer}" | sed -e s,${sProto},,g)
+                sUrlUser="$(echo "${sAnnoncer}" | grep @ | cut -d@ -f1)"
+                sAnnoncer=$(echo "${sAnnoncer}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
+                if (! grep -q "${sAnnoncer}" <<<${sTempLocalFile}); then
+                    echo "${sAnnoncer}|${sPrivacy}" >>${sTempLocalFile}
+                    bExecute=1
+                fi
             fi
-        fi
-    done
-    sort ${sTempLocalFile} | uniq -u >>/home/.check_annoncers_${sUserName}
-    rm -f ${sTempLocalFile}
-    [ "${bExecute}" -eq 1 ] && sudo /bin/bash "<MySB_InstallDir>/scripts/GetTrackersCert.bsh" USER "${sUserName}" &
+        done
+        for sAnnoncer in "${aAnnoncersHttp[@]}"; do
+            if [ -n "${sAnnoncer}" ]; then
+                sProto="$(echo "${sAnnoncer}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')"
+                [ -z "${sProto}" ] && sProto="http://"
+                sAnnoncer=$(echo "${sAnnoncer}" | sed -e s,${sProto},,g)
+                sUrlUser="$(echo "${sAnnoncer}" | grep @ | cut -d@ -f1)"
+                sAnnoncer=$(echo "${sAnnoncer}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
+                if (! grep -q "${sAnnoncer}" <<<${sTempLocalFile}); then
+                    echo "${sAnnoncer}|${sPrivacy}" >>${sTempLocalFile}
+                    bExecute=1
+                fi
+            fi
+        done
+        for sAnnoncer in "${aAnnoncersUdp[@]}"; do
+            if [ -n "${sAnnoncer}" ]; then
+                sProto="$(echo "${sAnnoncer}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')"
+                [ -z "${sProto}" ] && sProto="udp://"
+                sAnnoncer=$(echo "${sAnnoncer}" | sed -e s,${sProto},,g)
+                sUrlUser="$(echo "${sAnnoncer}" | grep @ | cut -d@ -f1)"
+                sAnnoncer=$(echo "${sAnnoncer}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
+                if (! grep -q "${sAnnoncer}" <<<${sTempLocalFile}); then
+                    echo "${sAnnoncer}|${sPrivacy}" >>${sTempLocalFile}
+                    bExecute=1
+                fi
+            fi
+        done
+        sort ${sTempLocalFile} | uniq -u >>/home/.check_annoncers_${sUserName}
+        rm -f ${sTempLocalFile}
+        [ "${bExecute}" -eq 1 ] && sudo /bin/bash "<MySB_InstallDir>/scripts/GetTrackersCert.bsh" USER "${sUserName}" &
+    fi
 
     #### Step 7 - Check if torrent already exist & copying duplicated files
     if [ "${sFilesRecycling}" -gt 0 ]; then
@@ -271,66 +298,67 @@ if [ "${nContinue}" -eq 1 ]; then
     #### Step 11 - Update user quota
     sudo /bin/bash /home/"${sUserName}"/.rTorrent_tasks.sh 'quota'
 
-    if [ "${#aAnnoncersHttp[*]}" -gt 0 ] || [ "${#aAnnoncersHttps[*]}" -gt 0 ]; then
-        {
-            #### Step 12 - Wait after annoncers check
-            while [ -s /home/.check_annoncers_${sUserName} ]; do
-                echo "Waiting for '/home/.check_annoncers_${sUserName}'"
-                sleep 1
-            done
-            echo "--------------"
-        } >>"${sLogFile}"
+    if [[ ${bAnnoncersCheck} -eq 1 ]]; then
+        if [ "${#aAnnoncersHttp[*]}" -gt 0 ] || [ "${#aAnnoncersHttps[*]}" -gt 0 ] || [ "${#aAnnoncersUdp[*]}" -gt 0 ]; then
+            {
+                #### Step 12 - Wait after annoncers check
+                while [ -s /home/.check_annoncers_${sUserName} ]; do
+                    echo "Waiting for '/home/.check_annoncers_${sUserName}'"
+                    sleep 1
+                done
+                echo "--------------"
+            } >>"${sLogFile}"
 
-        #### Step 13 - Restore validated annoncers
-        for ((i = 0; i < ${#aAnnoncers[@]}; i++)); do
-            sId="$(echo ${aAnnoncers[${i}]} | awk '{printf $1}')"
-            bState="$(echo ${aAnnoncers[${i}]} | awk '{printf $2}')"
-            if [ "${bState}" -eq 1 ]; then
-                sGetUrl="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.url ${sInfoHash}:${sId})"
-                if [ -n "${sGetUrl}" ]; then
-                    echo "Checking: ${sGetUrl}" >>"${sLogFile}"
+            #### Step 13 - Restore validated annoncers
+            for ((i = 0; i < ${#aAnnoncers[@]}; i++)); do
+                sId="$(echo ${aAnnoncers[${i}]} | awk '{printf $1}')"
+                bState="$(echo ${aAnnoncers[${i}]} | awk '{printf $2}')"
+                if [ "${bState}" -eq 1 ]; then
+                    sGetUrl="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.url ${sInfoHash}:${sId})"
+                    if [ -n "${sGetUrl}" ]; then
+                        echo "Checking: ${sGetUrl}" >>"${sLogFile}"
+                        # extract the protocol
+                        sProto="$(echo "${sGetUrl}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')"
+                        echo "  Protocol: ${sProto//:\/\//}"
+                        # remove the protocol
+                        sURL=$(echo "${sGetUrl}" | sed -e s,${sProto},,g)
+                        echo "  URL: ${sURL}"
+                        # extract the user (if any)
+                        sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)"
+                        # extract the host and port
+                        sHostPort=$(echo "${sURL}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
+                        echo "  Host & Port: ${sHostPort}"
+                        # by request host without port
+                        sHost="$(echo "${sHostPort}" | sed -e 's,:.*,,g')"
+                        echo "  Host: ${sHost}"
+                        # by request - try to extract the port
+                        sPort="$(echo "${sHostPort}" | sed -e 's,^.*:,:,g' -e 's,.*:\([0-9]*\).*,\1,g' -e 's,[^0-9],,g')"
+                        case ${sPort#[-+]} in
+                            *[!0-9]* | '')
+                                case "${sProto//:\/\//}" in
+                                    'http' | 'udp') sPort=80 ;;
+                                    'https')        sPort=443 ;;
+                                esac
+                                ;;
+                        esac
+                        echo "  Port: ${sPort}"
+                        # extract the path (if any)
+                        sURI="$(echo "${sURL}" | grep '/' | cut -d/ -f2-)"
+                        echo "  URI: ${sURI}"
 
-                    # extract the protocol
-                    sProto="$(echo "${sGetUrl}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')"
-                    echo "  Protocol: ${sProto//:\/\//}"
-                    # remove the protocol
-                    sURL=$(echo "${sGetUrl}" | sed -e s,${sProto},,g)
-                    echo "  URL: ${sURL}"
-                    # extract the user (if any)
-                    sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)"
-                    # extract the host and port
-                    sHostPort=$(echo "${sURL}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
-                    echo "  Host & Port: ${sHostPort}"
-                    # by request host without port
-                    sHost="$(echo "${sHostPort}" | sed -e 's,:.*,,g')"
-                    echo "  Host: ${sHost}"
-                    # by request - try to extract the port
-                    sPort="$(echo "${sHostPort}" | sed -e 's,^.*:,:,g' -e 's,.*:\([0-9]*\).*,\1,g' -e 's,[^0-9],,g')"
-                    case ${sPort#[-+]} in
-                        *[!0-9]* | '')
-                            case "${sProto//:\/\//}" in
-                                'http' | 'udp') sPort=80 ;;
-                                'https')        sPort=443 ;;
-                            esac
-                            ;;
-                    esac
-                    echo "  Port: ${sPort}"
-                    # extract the path (if any)
-                    sURI="$(echo "${sURL}" | grep '/' | cut -d/ -f2-)"
-                    echo "  URI: ${sURI}"
-
-                    # Get if activate
-                    bIsActive="$(mysql ${sSqlParams} -e "SELECT is_active FROM trackers_list WHERE tracker='${sHost}' AND tracker_proto='${sProto//:\/\//}' AND tracker_port='${sPort}';")"
-                    bIsActive="${bIsActive:-1}"
-                    xmlrpc2scgi.py scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${sId} ${bIsActive} >>"${sLogFile}"
-                    [ "${bIsActive}" -eq 1 ] && sResult="Enabled" || sResult="Disabled"
-                    echo "${sResult}: ${sGetUrl}" >>"${sLogFile}"
-                else
-                    echo "sGetUrl is empty !!!" >>"${sLogFile}"
+                        # Get if activate
+                        bIsActive="$(mysql ${sSqlParams} -e "SELECT is_active FROM trackers_list WHERE tracker='${sHost}' AND tracker_proto='${sProto//:\/\//}' AND tracker_port='${sPort}';")"
+                        bIsActive="${bIsActive:-1}"
+                        xmlrpc2scgi.py scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${sId} ${bIsActive} >>"${sLogFile}"
+                        [ "${bIsActive}" -eq 1 ] && sResult="Enabled" || sResult="Disabled"
+                        echo "${sResult}: ${sGetUrl}" >>"${sLogFile}"
+                    else
+                        echo "sGetUrl is empty !!!" >>"${sLogFile}"
+                    fi
                 fi
-            fi
-        done
-        [ "${#aAnnoncers[@]}" -gt 0 ] && echo "--------------" >>"${sLogFile}"
+            done
+            [ "${#aAnnoncers[@]}" -gt 0 ] && echo "--------------" >>"${sLogFile}"
+        fi
     fi
 
     exit 0
