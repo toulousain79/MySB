@@ -41,7 +41,7 @@ nExit=0
 sUserName="$(whoami)"
 nCgiPort="<scgi_port>"
 dTimestamp="$(date +%Y/%m/%d\ %H:%M:%S)"
-sLogFile="/home/${sUserName}/logs/$(basename "$0").log"
+sLogFile="$(mktemp)"
 sSqlParams='--defaults-extra-file=/home/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N'
 
 # Torrent file uploaded via ruTorrent ?
@@ -96,7 +96,7 @@ case "${sTrackerModeAllowed}" in
     "public") nContinue=1 ;;
     *) nContinue=0 ;;
 esac
-[ "${nExit}" -eq 1 ] && nContinue=0
+[[ ${nExit} -eq 0 ]] && nContinue=0
 
 #### Step 2 - Log header
 {
@@ -122,12 +122,12 @@ esac
 } >>"${sLogFile}"
 
 #### Step 3 - Close torrent from rTorrent queue
-if [ "${nExit}" -eq 0 ]; then
+if [[ ${nExit} -eq 0 ]]; then
     xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.stop ${sInfoHash} >>"${sLogFile}"
     xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.close ${sInfoHash} >>"${sLogFile}"
 fi
 
-if [ "${nContinue}" -eq 1 ]; then
+if [[ ${nContinue} -eq 1 ]]; then
     #### Step 4 - List & count annoncers
     declare -A aAnnoncers
     aAnnoncersUdp=()
@@ -184,27 +184,32 @@ if [ "${nContinue}" -eq 1 ]; then
     } >>"${sLogFile}"
     if [ "${nCountAnnoncers}" -eq 0 ]; then
         xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.erase ${sInfoHash} >>"${sLogFile}"
-        exit 1
+        nContinue=0
     fi
 
     #### Step 5 - Disable IPv6 annoncers
-    bCleaned=0
-    for ((i = 0; i < ${#aAnnoncers[@]}; i++)); do
-        bState="$(echo "${aAnnoncers[${i}]}" | awk '{printf $2}')"
-        if [ "${bState}" -eq 0 ]; then
-            xmlrpc2scgi.py scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${aAnnoncers[${i}]} >>"${sLogFile}"
-            bCleaned=1
+    if [[ ${nContinue} -eq 1 ]]; then
+        bCleaned=0
+        for ((i = 0; i < ${#aAnnoncers[@]}; i++)); do
+            nId="$(echo "${aAnnoncers[${i}]}" | awk '{printf $1}')"
+            bState="$(echo "${aAnnoncers[${i}]}" | awk '{printf $2}')"
+            if [ "${bState}" -eq 0 ]; then
+                xmlrpc2scgi.py scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${nId} >>"${sLogFile}"
+                bCleaned=1
+            else
+                [[ ${bAnnoncersCheck} -eq 1 ]] && mysql ${sSqlParams} -e "INSERT INTO annoncers (scgi_port,info_hash,id) VALUES ('${nCgiPort}', '${sInfoHash}', '${nId}');" -v
+            fi
+        done
+        if [ ${bCleaned} -eq 1 ]; then
+            {
+                echo "Cleaning annoncers completed !"
+                echo "--------------"
+            } >>"${sLogFile}"
         fi
-    done
-    if [ ${bCleaned} -eq 1 ]; then
-        {
-            echo "Cleaning annoncers completed !"
-            echo "--------------"
-        } >>"${sLogFile}"
     fi
 
     #### Step 6 - Prepare annoncers (UDP, HTTP & HTTPs) list for GetTrackersCert.bsh script
-    if [[ ${bAnnoncersCheck} -eq 1 ]]; then
+    if [[ ${nContinue} -eq 1 ]] && [[ ${bAnnoncersCheck} -eq 1 ]]; then
         bExecute=0
         sTempLocalFile="$(mktemp)"
         for sAnnoncer in "${aAnnoncersHttps[@]}"; do
@@ -246,13 +251,15 @@ if [ "${nContinue}" -eq 1 ]; then
                 fi
             fi
         done
-        sort ${sTempLocalFile} | uniq -u >>/home/.check_annoncers_${sUserName}
+        sort ${sTempLocalFile} | uniq -u >>"/home/.check_annoncers_${sUserName}"
         rm -f ${sTempLocalFile}
-        [ "${bExecute}" -eq 1 ] && sudo /bin/bash "<MySB_InstallDir>/scripts/GetTrackersCert.bsh" USER "${sUserName}" &
+        if [ -s "/home/.check_annoncers_${sUserName}" ] && [ ! -f "/home/.check_annoncers_${sUserName}.lock" ] && [[ ${bExecute} -eq 1 ]]; then
+            sudo /bin/bash "<MySB_InstallDir>/scripts/GetTrackersCert.bsh" USER "${sUserName}" &
+        fi
     fi
 
     #### Step 7 - Check if torrent already exist & copying duplicated files
-    if [ "${sFilesRecycling}" -gt 0 ]; then
+    if [[ ${nContinue} -eq 1 ]] && [[ ${sFilesRecycling} -gt 0 ]]; then
         for sTree in $(mysql ${sSqlParams} -e "SELECT tree FROM torrents WHERE info_hash='${sInfoHash}' AND name='${sName}' AND state='completed';"); do
             if [ -n "${sTree}" ]; then
                 if [ -f "${sTree}" ] || [ -d "${sTree}" ]; then
@@ -280,92 +287,94 @@ if [ "${nContinue}" -eq 1 ]; then
     fi
 
     #### Step 8 - Copy back torrent loaded & start it
-    {
-        if [ "${sTorrentLoaded}" != "${sTorrentFile}" ]; then
-            echo -n "Moving torrent: "
-            (! mv -fv "${sTorrentLoaded}" "${sTorrentFile}") && echo "'${sTorrentLoaded}' -> '${sTorrentFile}'"
-        fi
-    } >>"${sLogFile}"
-    xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.open ${sInfoHash} >>"${sLogFile}"
-    xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} ${sTorrentDir} >>"${sLogFile}"
+    if [[ ${nContinue} -eq 1 ]]; then
+        {
+            if [ "${sTorrentLoaded}" != "${sTorrentFile}" ]; then
+                echo -n "Moving torrent: "
+                (! mv -fv "${sTorrentLoaded}" "${sTorrentFile}") && echo "'${sTorrentLoaded}' -> '${sTorrentFile}'"
+            fi
+        } >>"${sLogFile}"
+        xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.open ${sInfoHash} >>"${sLogFile}"
+        xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} ${sTorrentDir} >>"${sLogFile}"
 
-    #### Step 9 - Start torrent
-    xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.start ${sInfoHash} >>"${sLogFile}"
+        #### Step 9 - Start torrent
+        xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.start ${sInfoHash} >>"${sLogFile}"
 
-    #### Step 10 - Save full session
-    xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash} >>"${sLogFile}"
+        #### Step 10 - Save full session
+        xmlrpc2scgi.py scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash} >>"${sLogFile}"
 
-    #### Step 11 - Update user quota
-    sudo /bin/bash /home/"${sUserName}"/.rTorrent_tasks.sh 'quota'
-
-    if [[ ${bAnnoncersCheck} -eq 1 ]]; then
-        if [ "${#aAnnoncersHttp[*]}" -gt 0 ] || [ "${#aAnnoncersHttps[*]}" -gt 0 ] || [ "${#aAnnoncersUdp[*]}" -gt 0 ]; then
-            {
-                #### Step 12 - Wait after annoncers check
-                while [ -s /home/.check_annoncers_${sUserName} ]; do
-                    echo "Waiting for '/home/.check_annoncers_${sUserName}'"
-                    sleep 1
-                done
-                echo "--------------"
-            } >>"${sLogFile}"
-
-            #### Step 13 - Restore validated annoncers
-            for ((i = 0; i < ${#aAnnoncers[@]}; i++)); do
-                sId="$(echo ${aAnnoncers[${i}]} | awk '{printf $1}')"
-                bState="$(echo ${aAnnoncers[${i}]} | awk '{printf $2}')"
-                if [ "${bState}" -eq 1 ]; then
-                    sGetUrl="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.url ${sInfoHash}:${sId})"
-                    if [ -n "${sGetUrl}" ]; then
-                        echo "Checking: ${sGetUrl}" >>"${sLogFile}"
-                        # extract the protocol
-                        sProto="$(echo "${sGetUrl}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')"
-                        echo "  Protocol: ${sProto//:\/\//}"
-                        # remove the protocol
-                        sURL=$(echo "${sGetUrl}" | sed -e s,${sProto},,g)
-                        echo "  URL: ${sURL}"
-                        # extract the user (if any)
-                        sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)"
-                        # extract the host and port
-                        sHostPort=$(echo "${sURL}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
-                        echo "  Host & Port: ${sHostPort}"
-                        # by request host without port
-                        sHost="$(echo "${sHostPort}" | sed -e 's,:.*,,g')"
-                        echo "  Host: ${sHost}"
-                        # by request - try to extract the port
-                        sPort="$(echo "${sHostPort}" | sed -e 's,^.*:,:,g' -e 's,.*:\([0-9]*\).*,\1,g' -e 's,[^0-9],,g')"
-                        case ${sPort#[-+]} in
-                            *[!0-9]* | '')
-                                case "${sProto//:\/\//}" in
-                                    'http' | 'udp') sPort=80 ;;
-                                    'https')        sPort=443 ;;
-                                esac
-                                ;;
-                        esac
-                        echo "  Port: ${sPort}"
-                        # extract the path (if any)
-                        sURI="$(echo "${sURL}" | grep '/' | cut -d/ -f2-)"
-                        echo "  URI: ${sURI}"
-
-                        # Get if activate
-                        bIsActive="$(mysql ${sSqlParams} -e "SELECT is_active FROM trackers_list WHERE tracker='${sHost}' AND tracker_proto='${sProto//:\/\//}' AND tracker_port='${sPort}';")"
-                        bIsActive="${bIsActive:-1}"
-                        xmlrpc2scgi.py scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${sId} ${bIsActive} >>"${sLogFile}"
-                        [ "${bIsActive}" -eq 1 ] && sResult="Enabled" || sResult="Disabled"
-                        echo "${sResult}: ${sGetUrl}" >>"${sLogFile}"
-                    else
-                        echo "sGetUrl is empty !!!" >>"${sLogFile}"
-                    fi
-                fi
-            done
-            [ "${#aAnnoncers[@]}" -gt 0 ] && echo "--------------" >>"${sLogFile}"
-        fi
+        #### Step 11 - Update user quota
+        sudo /bin/bash /home/"${sUserName}"/.rTorrent_tasks.sh 'quota'
     fi
 
-    exit 0
+    # if [[ ${nContinue} -eq 1 ]] && [[ ${bAnnoncersCheck} -eq 1 ]]; then
+    #     if [ "${#aAnnoncersHttp[*]}" -gt 0 ] || [ "${#aAnnoncersHttps[*]}" -gt 0 ] || [ "${#aAnnoncersUdp[*]}" -gt 0 ]; then
+    #         # {
+    #         #     #### Step 12 - Wait after annoncers check
+    #         #     while [ -s /home/.check_annoncers_${sUserName} ]; do
+    #         #         echo "Waiting for '/home/.check_annoncers_${sUserName}'"
+    #         #         sleep 1
+    #         #     done
+    #         #     echo "--------------"
+    #         # } >>"${sLogFile}"
+
+    #         #### Step 13 - Restore validated annoncers
+    #         for ((i = 0; i < ${#aAnnoncers[@]}; i++)); do
+    #             sId="$(echo ${aAnnoncers[${i}]} | awk '{printf $1}')"
+    #             bState="$(echo ${aAnnoncers[${i}]} | awk '{printf $2}')"
+    #             if [ "${bState}" -eq 1 ]; then
+    #                 sGetUrl="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.url ${sInfoHash}:${sId})"
+    #                 if [ -n "${sGetUrl}" ]; then
+    #                     echo "Checking: ${sGetUrl}" >>"${sLogFile}"
+    #                     # extract the protocol
+    #                     sProto="$(echo "${sGetUrl}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')"
+    #                     echo "  Protocol: ${sProto//:\/\//}"
+    #                     # remove the protocol
+    #                     sURL=$(echo "${sGetUrl}" | sed -e s,${sProto},,g)
+    #                     echo "  URL: ${sURL}"
+    #                     # extract the user (if any)
+    #                     sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)"
+    #                     # extract the host and port
+    #                     sHostPort=$(echo "${sURL}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
+    #                     echo "  Host & Port: ${sHostPort}"
+    #                     # by request host without port
+    #                     sHost="$(echo "${sHostPort}" | sed -e 's,:.*,,g')"
+    #                     echo "  Host: ${sHost}"
+    #                     # by request - try to extract the port
+    #                     sPort="$(echo "${sHostPort}" | sed -e 's,^.*:,:,g' -e 's,.*:\([0-9]*\).*,\1,g' -e 's,[^0-9],,g')"
+    #                     case ${sPort#[-+]} in
+    #                         *[!0-9]* | '')
+    #                             case "${sProto//:\/\//}" in
+    #                                 'http' | 'udp') sPort=80 ;;
+    #                                 'https')        sPort=443 ;;
+    #                             esac
+    #                             ;;
+    #                     esac
+    #                     echo "  Port: ${sPort}"
+    #                     # extract the path (if any)
+    #                     sURI="$(echo "${sURL}" | grep '/' | cut -d/ -f2-)"
+    #                     echo "  URI: ${sURI}"
+
+    #                     # Get if activate
+    #                     bIsActive="$(mysql ${sSqlParams} -e "SELECT is_active FROM trackers_list WHERE tracker='${sHost}' AND tracker_proto='${sProto//:\/\//}' AND tracker_port='${sPort}';")"
+    #                     bIsActive="${bIsActive:-1}"
+    #                     # Force disable UDP
+    #                     [[ ${bAnnoncersUdp} -eq 0 ]] && bIsActive="-1"
+    #                     xmlrpc2scgi.py scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${sId} ${bIsActive} >>"${sLogFile}"
+    #                     [ "${bIsActive}" -eq 1 ] && sResult="Enabled" || sResult="Disabled"
+    #                     echo "${sResult}: ${sGetUrl}" >>"${sLogFile}"
+    #                 else
+    #                     echo "sGetUrl is empty !!!" >>"${sLogFile}"
+    #                 fi
+    #             fi
+    #         done
+    #         [ "${#aAnnoncers[@]}" -gt 0 ] && echo "--------------" >>"${sLogFile}"
+    #     fi
+    # fi
 fi
 
 #### On error OR torrent refused
-if [ "${nContinue}" -eq 0 ]; then
+if [[ ${nContinue} -eq 0 ]]; then
     #### Remove refused torrent file
     [ -n "${sTorrentFile}" ] && rm -fv "${sTorrentFile}" >>"${sLogFile}"
     #### Remove torrent from list
@@ -376,5 +385,7 @@ if [ "${nContinue}" -eq 0 ]; then
     #### Send mail to user
     curl --retry 3 --silent --show-error --data "username=${sUserName}&get_name=${sName}&get_loaded_file=${sTorrentLoaded}&privacy=${sPrivacy}&trackermodeallowed=${sTrackerModeAllowed}" http://localhost:8888/rTorrent >>"${sLogFile}"
 fi
+cat "${sLogFile}" >>"/home/${sUserName}/logs/$(basename "$0").log"
+rm -f "${sLogFile}"
 
 ##################### LAST LINE ######################################
