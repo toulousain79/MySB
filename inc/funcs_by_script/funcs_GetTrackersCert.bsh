@@ -57,10 +57,17 @@ gfnCheckAddedTorrents() {
 gfnAddTracker() {
     local sPrivacy sTracker sPart1 sPart2 sPart3 sTrackerDomain sTrackerAddress sIfExist sTrackersListId sUser
     local sProto sURL sUrlUser sHostPort sHost sPort
+    local dAptDate tNow tVarX tVarY tDiff
     # local sURI
     #local aDomainIPv4 aTrackerIPv4
     local aTrackerIPv4
     local bAutoBlockAnnoncers
+
+    dAptDate=$(date -d "$dAptDate" +"%Y-%m-%d %H")
+    tNow=$(date +%Y-%m-%d\ %H)
+    tVarX=$(date --date="$dAptDate" +'%-H')
+    tVarY=$(date --date="$tNow" +'%-H')
+    tDiff=$((tVarY - tVarX))
 
     sTracker="$1"
     if [ -n "${2}" ] && [ -n "$(getent passwd "${2}")" ]; then
@@ -132,7 +139,7 @@ gfnAddTracker() {
         if [ -n "${sTrackerAddress}" ]; then
             mapfile -t aTrackerIPv4 < <(nslookup "${sTrackerAddress}" | grep 'Address:' | awk '{ print $2 }' | tail -n +2 | sed -e 's/^ //g;' | sed 's/\s+$//')
 
-            if [ "${#aTrackerIPv4[@]}" -gt 0 ]; then
+            if [ "${#aTrackerIPv4[@]}" -gt 0 ] && [ "${tDiff}" -gt 6 ]; then
                 # Add address if needed
                 sIfExist="$(cmdMySQL 'MySB_db' "SELECT id_trackers_list FROM trackers_list WHERE tracker='${sTrackerAddress}';")"
                 if [ -z "$sIfExist" ]; then
@@ -172,11 +179,13 @@ gfnAddTracker() {
                                 [ -s "/tmp/${gsScriptName}_pglcmd.log" ] && bToBlock=1 || bToBlock=0
                                 rm -f "/tmp/${gsScriptName}_pglcmd.log"
 
+                                sPingResult="$(ping -c2 -w3 "${IPv4}" | grep 'packets transmitted' | cut -d ',' -f 3)"
+
                                 sIfExist="$(cmdMySQL 'MySB_db' "SELECT id_trackers_list_ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list='${sTrackersListId}' AND ipv4='${IPv4}';")"
                                 if [ -z "$sIfExist" ]; then
-                                    cmdMySQL 'MySB_db' "INSERT INTO trackers_list_ipv4 (id_trackers_list,ipv4,pgl_banned) VALUES ('${sTrackersListId}','${IPv4}','${bToBlock}');"
+                                    cmdMySQL 'MySB_db' "INSERT INTO trackers_list_ipv4 (id_trackers_list,ipv4,pgl_banned,ping,last_check) VALUES ('${sTrackersListId}','${IPv4}','${bToBlock}','${sPingResult}','${dAptDate}');"
                                 else
-                                    cmdMySQL 'MySB_db' "UPDATE trackers_list_ipv4 SET pgl_banned='${bToBlock}' WHERE ipv4='${IPv4}' AND id_trackers_list='${sTrackersListId}';"
+                                    cmdMySQL 'MySB_db' "UPDATE trackers_list_ipv4 SET pgl_banned='${bToBlock}', ping='${sPingResult}' WHERE ipv4='${IPv4}', last_check='${dAptDate}' AND id_trackers_list='${sTrackersListId}';"
                                 fi
 
                                 bActive="$(cmdMySQL 'MySB_db' "SELECT is_active FROM trackers_list WHERE tracker='${sTrackerAddress}';")"
