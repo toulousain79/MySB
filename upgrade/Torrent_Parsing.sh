@@ -17,7 +17,7 @@ for sUser in ${gsUsersList}; do
 
     #### VARs
     nCgiPort="$(cmdMySQL 'MySB_db' "SELECT scgi_port FROM users WHERE users_ident='${sUser}';")"
-    sDownloadList="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} download_list "")"
+    sDownloadList="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} download_list "" 2>/dev/null)"
     sDownloadList="$(echo "${sDownloadList}" | sed -e 's/,//g;' | sed -e "s/'//g;" | sed -e 's/\[//g;' | sed -e 's/\]//g;' | tr '[:upper:]' '[:lower:]')"
 
     find /home/${sUser}/rtorrent/.session/ -name '*.torrent' -type f >/tmp/sessions
@@ -27,7 +27,7 @@ for sUser in ${gsUsersList}; do
         sName="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Name: ')"
         sName="$(echo "${sName}" | sed -e 's/Name: //g;' | sed -e "s/'/\\\'/g;")"
         sPrivacy="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
-        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash} >/dev/null
+        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash} >/dev/null 2>&1
 
         # Check if hash is in download list
         (! grep -qi "${sInfoHash}" <<<"${sDownloadList}") && {
@@ -36,17 +36,17 @@ for sUser in ${gsUsersList}; do
         }
 
         # Waiting after check hash
-        while [ "$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.get_hashing ${sInfoHash})" -ne 0 ]; do
+        while [ "$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.get_hashing ${sInfoHash} 2>/dev/null)" -ne 0 ]; do
             echo "Waiting after checking hash of ${sInfoHash}"
             sleep 1
         done
 
-        sBasePath="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.base_path ${sInfoHash})"
+        sBasePath="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.base_path ${sInfoHash} 2>/dev/null)"
         sBasePath="$(echo "${sBasePath}" | sed -e "s/'/\\\'/g;")"
-        sDirectory="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.directory ${sInfoHash})"
+        sDirectory="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.directory ${sInfoHash} 2>/dev/null)"
         sDirectory="$(echo "${sDirectory}" | sed -e "s/'/\\\'/g;")"
-        nLeftBytes="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.get_left_bytes ${sInfoHash})"
-        bState="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.state ${sInfoHash})"
+        nLeftBytes="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.get_left_bytes ${sInfoHash} 2>/dev/null)"
+        bState="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.state ${sInfoHash} 2>/dev/null)"
 
         echo
         echo "--------------------"
@@ -121,8 +121,8 @@ for sUser in ${gsUsersList}; do
         echo "HTTPs: ${#aAnnoncersHttps[*]}"
         echo "--------------"
         if [ "${nCountAnnoncers}" -eq 0 ]; then
-            xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.stop ${sInfoHash}
-            xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.close ${sInfoHash}
+            xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.stop ${sInfoHash} >/dev/null 2>&1
+            xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.close ${sInfoHash} >/dev/null 2>&1
         else
             if [ "${nLeftBytes}" -eq 0 ]; then
                 if [ -z "$(cmdMySQL 'MySB_db' "SELECT id_torrents FROM torrents WHERE info_hash='${sInfoHash}' AND name='${sName}' AND tree='${sBasePath}';")" ]; then
@@ -138,7 +138,7 @@ for sUser in ${gsUsersList}; do
         for ((i = 0; i < ${#aAnnoncers[@]}; i++)); do
             bState="$(echo ${aAnnoncers[${i}]} | awk '{printf $2}')"
             if [ "${bState}" -eq 0 ]; then
-                xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${aAnnoncers[${i}]} >/dev/null
+                xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${aAnnoncers[${i}]} >/dev/null 2>&1
                 bCleaned=1
             fi
         done
@@ -172,8 +172,8 @@ for sUser in ${gsUsersList}; do
                 nId="$(echo ${aAnnoncers[${i}]} | awk '{printf $1}')"
                 bState="$(echo ${aAnnoncers[${i}]} | awk '{printf $2}')"
                 if [ "${bState}" -eq 1 ]; then
-                    sGetUrl="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.url ${sInfoHash}:${nId})"
-                    echo "sGetUrl: xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.url ${sInfoHash}:${nId}"
+                    sGetUrl="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.url ${sInfoHash}:${nId} 2>/dev/null)"
+                    echo "sGetUrl: xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.url ${sInfoHash}:${nId} 2>/dev/null"
                     if [ -n "${sGetUrl}" ]; then
                         echo "Checking: ${sGetUrl}"
 
@@ -211,7 +211,7 @@ for sUser in ${gsUsersList}; do
                         # Get if activate
                         bIsActive="$(cmdMySQL 'MySB_db' "SELECT is_active FROM trackers_list WHERE tracker='${sHost}' AND tracker_proto='${sProto}' AND tracker_port='${sPort}';")"
                         bIsActive="${bIsActive:-1}"
-                        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${nId} ${bIsActive} >/dev/null
+                        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${nId} ${bIsActive} >/dev/null 2>&1
                         [ "${bIsActive}" -eq 1 ] && sResult="Enabled" || sResult="Disabled"
                         echo "${sResult}: ${sGetUrl}"
                     else
@@ -224,9 +224,9 @@ for sUser in ${gsUsersList}; do
 
         #### Step 6 - Copy back torrent loaded & start it
         [ "${nCountAnnoncers}" -gt 0 ] && sAction=("d.open") || sAction=("d.close")
-        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} "${sAction[@]}" ${sInfoHash} >/dev/null
-        [ "${nCountAnnoncers}" -gt 0 ] && xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.start ${sInfoHash} >/dev/null
-        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash} >/dev/null
+        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} "${sAction[@]}" ${sInfoHash} >/dev/null 2>&1
+        [ "${nCountAnnoncers}" -gt 0 ] && xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.start ${sInfoHash} >/dev/null 2>&1
+        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash} >/dev/null 2>&1
     done </tmp/sessions
     rm /tmp/sessions
 
