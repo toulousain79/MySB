@@ -53,6 +53,11 @@ fi
 # rm -f /tmp/CPAN.lock
 # fi
 
+bRtorrentRestart=0
+
+#### rTorrent scripts (to leave for next version ;-)
+(grep -Rq 'rtorrent restart required' "${MySB_InstallDir}/templates/rtorrent/"*.tmpl) && bRtorrentRestart=1
+
 #### Fix version in database
 if [ "$gsCurrentVersion" != "$(cat "${MySB_InstallDir}"/version)" ]; then
     gsCurrentVersion="$(cat "${MySB_InstallDir}"/version)"
@@ -63,28 +68,19 @@ fi
 #### ruTorrent hack for uploaded torrent
 if (grep -q '$torrent->comment()' "${gsRutorrentDir}"/php/rtorrent.php); then
     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/ruTorrent" 'UPGRADE'
+    bRtorrentRestart=1
     gfnListCountUsers 'normal'
-    for sUser in ${gsUsersList}; do
-        gfnManageServices stop "rtorrent-${sUser}"
-        gfnManageServices start "rtorrent-${sUser}"
-    done
 fi
 
-#### ruTorrent rollback to stable release
-bAlreadyRestarded=0
+#### ruTorrent force version
 [ -f "${gsRutorrentDir}"/version ] && sVersion="$(cat "${gsRutorrentDir}"/version)"
 [ -z "${sVersion}" ] && sVersion="$(cmdMySQL 'MySB_db' "SELECT version FROM repositories WHERE name='ruTorrent';")"
-if [ "${sVersion}" != "3.9" ]; then
+if [ "${sVersion}" != "3.9_626ba3d" ]; then
     cmdMySQL 'MySB_db' "DELETE FROM repositories;" -v
     mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Table_repositories.sql"
     cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='ruTorrent';" -v
     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/ruTorrent" 'UPGRADE'
-    gfnListCountUsers 'normal'
-    for sUser in ${gsUsersList}; do
-        gfnManageServices stop "rtorrent-${sUser}"
-        gfnManageServices start "rtorrent-${sUser}"
-        bAlreadyRestarded=1
-    done
+    bRtorrentRestart=1
 fi
 
 #### MySQL
@@ -94,7 +90,7 @@ fi
 if [ ! -f /etc/mysql/debian.cnf ]; then
     install -v -o root -g root -m 0400 "${MySB_InstallDir}"/templates/mysql/etc.mysql.debian.cnf.tmpl /etc/mysql/debian.cnf
 fi
-if (! cmdMySQL 'MySB_db' "SELECT annoncers_check FROM system WHERE id_system='4';" >/dev/null 2>&1); then
+if (! cmdMySQL 'MySB_db' "SELECT annoncers_check FROM system WHERE id_system='1';" >/dev/null 2>&1); then
     mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Schema.sql"
     mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Triggers.sql"
     cmdMySQL 'MySB_db' "ALTER TABLE system ADD annoncers_udp TINYINT(1) NOT NULL DEFAULT '0' AFTER block_annoncers;" -v
@@ -119,14 +115,7 @@ fi
 if [ -f /home/nextcloud/mount.json ]; then
     cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='NextCloud';"
     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/NextCloud" 'UPGRADE'
-    if [ "${bAlreadyRestarded}" -eq 0 ]; then
-        gfnListCountUsers 'normal'
-        for sUser in ${gsUsersList}; do
-            gfnManageServices stop "rtorrent-${sUser}"
-            gfnManageServices start "rtorrent-${sUser}"
-            bAlreadyRestarded=1
-        done
-    fi
+    bRtorrentRestart=1
 fi
 
 #### Cron jobs
@@ -136,14 +125,7 @@ if (grep -q 'la/logger.php' <<<"$(crontab -l)") || (! grep -q '(exited)' <<<"$(c
     crontab /tmp/crontab.tmp
     rm -f /tmp/crontab.tmp
     gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/Cron" 'UPGRADE'
-    if [ "${bAlreadyRestarded}" -eq 0 ]; then
-        gfnListCountUsers 'normal'
-        for sUser in ${gsUsersList}; do
-            gfnManageServices stop "rtorrent-${sUser}"
-            gfnManageServices start "rtorrent-${sUser}"
-            bAlreadyRestarded=1
-        done
-    fi
+    bRtorrentRestart=1
 fi
 
 #### Purge SSDP package
@@ -158,6 +140,15 @@ if [ "$(stat -c "%a" /lib/systemd/system/MySB_SecurityRules_Init.service)" == "7
     install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/MySB_SecurityRules_Init.service.tmpl /lib/systemd/system/MySB_SecurityRules_Init.service
     perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /lib/systemd/system/MySB_SecurityRules_Init.service
     systemctl enable MySB_SecurityRules_Init.service
+fi
+
+#### rTorrent restart needed
+if [[ ${bRtorrentRestart} -eq 1 ]]; then
+    gfnListCountUsers 'normal'
+    for sUser in ${gsUsersList}; do
+        gfnManageServices stop "rtorrent-${sUser}"
+        gfnManageServices start "rtorrent-${sUser}"
+    done
 fi
 
 # -----------------------------------------
