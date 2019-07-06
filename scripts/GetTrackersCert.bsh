@@ -1,4 +1,5 @@
 #!/bin/bash
+# rev 6.0
 # ----------------------------------
 # shellcheck source=inc/includes_before
 source "$(dirname "$0")"/../inc/includes_before
@@ -59,22 +60,21 @@ esac
 
 #### Removing deleted trackers from the portal
 if [ $DoDeleteTracker -eq 1 ]; then
-    RemovedTrackersList="$(cmdMySQL 'MySB_db' "SELECT tracker_domain FROM trackers_list WHERE to_delete = '1';")"
-    for RemovedTracker in $RemovedTrackersList; do
-        log_daemon_msg "$DeleteTracker $RemovedTracker"
-        rm -f ${MySB_InstallDir}/ssl/trackers/*$RemovedTracker.pem
-        cmdMySQL 'MySB_db' "DELETE FROM trackers_list WHERE tracker_domain='$RemovedTracker';"
+    RemovedTrackersList="$(cmdMySQL 'MySB_db' "SELECT tracker FROM trackers_list WHERE to_delete = '1';")"
+    for RemovedTracker in ${RemovedTrackersList}; do
+        log_daemon_msg "${DeleteTracker} ${RemovedTracker}"
+        rm -f ${MySB_InstallDir}/ssl/trackers/*${RemovedTracker}.pem
+        cmdMySQL 'MySB_db' "DELETE FROM trackers_list WHERE tracker_domain='${RemovedTracker}';"
         gfnStatusLSB
     done
 fi
 
 #### Renew expirated certificates
 if [ $DoRenewCertificates -eq 1 ]; then
-    Today="$(date +%Y-%m-%d)"
-    ExpiratedTrackersList="$(cmdMySQL 'MySB_db' "SELECT tracker_domain FROM trackers_list WHERE cert_expiration <= '$Today' AND is_active = '1';")"
+    ExpiratedTrackersList="$(cmdMySQL 'MySB_db' "SELECT tracker_domain FROM trackers_list WHERE cert_expiration <= '$(date +%Y-%m-%d)' AND is_active = '1';")"
     for ExpiratedTracker in $ExpiratedTrackersList; do
         log_daemon_msg "$RenewCertificate $ExpiratedTracker"
-        rm -f ${MySB_InstallDir}/ssl/trackers/*$RemovedTracker.pem
+        rm -f ${MySB_InstallDir}/ssl/trackers/*${RemovedTracker}.pem
         cmdMySQL 'MySB_db' "UPDATE trackers_list SET is_ssl='0', to_check='1', cert_expiration='0000-00-00' WHERE tracker_domain = '$ExpiratedTracker';"
         gfnStatusLSB
     done
@@ -105,7 +105,6 @@ fi
 
 # Allow all trackers in BIND
 perl -pi -e "s/^include \"\/etc\/bind\/MySB.zones.blakclists\";/#include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
-# gfnManageServices start "bind9"
 systemctl reload bind9.service
 
 #### Create trackers listing
@@ -121,45 +120,47 @@ TrackersList="$(cmdMySQL 'MySB_db' "SELECT tracker FROM trackers_list WHERE to_c
 DoRehash=0
 
 for Tracker in ${TrackersList}; do
-    log_daemon_msg "${GetCertificateFor} ${Tracker}"
-    if [ "${gbIsInstalled_PeerGuardian}" == "YES" ] && [ -f /etc/pgl/allow.p2p ]; then
-        RemoveAfter=0
-        TrackersID="$(cmdMySQL 'MySB_db' "SELECT id_trackers_list FROM trackers_list WHERE tracker='${Tracker}';")"
-        sValues="$(cmdMySQL 'MySB_db' "SELECT ipv4,pgl_banned FROM trackers_list_ipv4 WHERE id_trackers_list='${TrackersID}';" | sed 's/\t/|/g;')"
-        sed -i "/${Tracker}/d" /etc/pgl/allow.p2p
-        if [ -n "${sValues}" ]; then
-            for sValue in ${sValues}; do
-                IPv4="$(echo "${sValue}" | awk '{split($0,a,"|"); print a[1]}')"
-                bIsBanned="$(echo "${sValue}" | awk '{split($0,a,"|"); print a[2]}')"
-                if [[ ${bAutoBlockAnnoncers} -eq 1 ]] && [[ ${bIsBanned} -eq 1 ]]; then
-                    echo "The '${IPv4}' (${Tracker}) is banned by PeerGuardian !"
-                else
-                    echo "${Tracker}:${IPv4}-255.255.255.255" >>/etc/pgl/allow.p2p
-                fi
-            done
-        else
-            RemoveAfter=1
-        fi
-    fi
-
-    cd ${MySB_InstallDir}/ssl/trackers/ || exit
-    sRequestValues="$(cmdMySQL 'MySB_db' "SELECT tracker_proto,tracker_port FROM trackers_list WHERE tracker='${Tracker}';" | sed 's/\t/|/g;')"
-    sTrackerProto="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[1]}')"
-    sTrackerPort="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
-    sExpirationDate="0000-00-00"
-    sCheckPort="${sTrackerPort}"
-
+    nBetweenUpdate=21600 # In seconds (6 hours)
     dAptDate="$(cmdMySQL 'MySB_db' "SELECT last_check FROM trackers_list WHERE tracker='${Tracker}';")"
-    [ "${dAptDate}" == "0000-00-00 00:00:00" ] && dAptDate="$(date +%Y-%m-%d\ %H:%M:%S)"
-    [ -z "${dAptDate}" ] && dAptDate="$(date +%Y-%m-%d\ %H:%M:%S)"
-    dAptDate=$(date -d "${dAptDate}" +"%Y-%m-%d %H")
-    tNow=$(date +%Y-%m-%d\ %H)
-    tVarX=$(date --date="${dAptDate}" +'%-H')
-    tVarY=$(date --date="${tNow}" +'%-H')
-    tDiff=$((tVarY - tVarX))
-    bSsl=0
+    ( [ "$dAptDate" == "0000-00-00 00:00:00" ] || [ -z "${dAptDate}" ] ) && {
+        dAptDate="$(date +%Y-%m-%d\ %H:%M:%S)"
+        tDiff=$((nBetweenUpdate + 1))
+    }
+    dAptDate=$(date '+%s' --date="${dAptDate}")
+    tNow=$(date '+%s' --date="$(date +%Y-%m-%d\ %H:%M:%S)")
+    [ -z "${tDiff}" ] && tDiff=$((tNow - dAptDate))
 
-    if [ "${tDiff}" -le 6 ]; then
+    if [[ ${tDiff} -gt ${nBetweenUpdate} ]]; then
+        log_daemon_msg "${GetCertificateFor} ${Tracker}"
+        if [ "${gbIsInstalled_PeerGuardian}" == "YES" ] && [ -f /etc/pgl/allow.p2p ]; then
+            RemoveAfter=0
+            TrackersID="$(cmdMySQL 'MySB_db' "SELECT id_trackers_list FROM trackers_list WHERE tracker='${Tracker}';")"
+            sValues="$(cmdMySQL 'MySB_db' "SELECT ipv4,pgl_banned FROM trackers_list_ipv4 WHERE id_trackers_list='${TrackersID}';" | sed 's/\t/|/g;')"
+            sed -i "/${Tracker}/d" /etc/pgl/allow.p2p
+            if [ -n "${sValues}" ]; then
+                for sValue in ${sValues}; do
+                    IPv4="$(echo "${sValue}" | awk '{split($0,a,"|"); print a[1]}')"
+                    bIsBanned="$(echo "${sValue}" | awk '{split($0,a,"|"); print a[2]}')"
+                    if [[ ${bAutoBlockAnnoncers} -eq 1 ]] && [[ ${bIsBanned} -eq 1 ]]; then
+                        echo "#${Tracker}:${IPv4}-255.255.255.255 (banned by PeerGuardian !)" >>/etc/pgl/allow.p2p
+                        RemoveAfter=1
+                    else
+                        echo "${Tracker}:${IPv4}-255.255.255.255" >>/etc/pgl/allow.p2p
+                    fi
+                done
+            else
+                RemoveAfter=1
+            fi
+        fi
+
+        cd ${MySB_InstallDir}/ssl/trackers/ || exit
+        sRequestValues="$(cmdMySQL 'MySB_db' "SELECT tracker_proto,tracker_port FROM trackers_list WHERE tracker='${Tracker}';" | sed 's/\t/|/g;')"
+        sTrackerProto="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[1]}')"
+        sTrackerPort="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
+        sExpirationDate="$(date +%Y-%m-%d)"
+        sCheckPort="${sTrackerPort}"
+        bSsl=0
+
         if [ ! -h /etc/ssl/certs/${Tracker}.pem ] || [ ! -f ${MySB_InstallDir}/ssl/trackers/${Tracker}.pem ]; then
             timeout 10 bash -c "openssl s_client -connect ${Tracker}:${sCheckPort} </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./${Tracker}.crt"
             if [ -s ./${Tracker}.crt ]; then
@@ -188,21 +189,28 @@ for Tracker in ${TrackersList}; do
 
         # Update database
         cmdMySQL 'MySB_db' "UPDATE trackers_list SET is_ssl='${bSsl}', cert_expiration='${sExpirationDate}', to_check='0', tracker_proto='${sTrackerProto}', tracker_port='${sTrackerPort}', last_check='$(date +%Y-%m-%d\ %H:%M:%S)' WHERE tracker='${Tracker}';"
-    fi
 
-    if [ "${gbIsInstalled_PeerGuardian}" == "YES" ] && [ -f /etc/pgl/allow.p2p ]; then
-        [[ $RemoveAfter -eq 1 ]] && sed -i "/${Tracker}/d" /etc/pgl/allow.p2p
-        pglcmd reload >/dev/null
+        if [ "${gbIsInstalled_PeerGuardian}" == "YES" ] && [ -f /etc/pgl/allow.p2p ]; then
+            [[ ${RemoveAfter} -eq 1 ]] && sed -i "/${Tracker}/d" /etc/pgl/allow.p2p
+            pglcmd reload >/dev/null
+        fi
+        gfnStatusLSB
     fi
-    gfnStatusLSB
+    unset nBetweenUpdate dAptDate tDiff tNow
 done
 
 # Block all inactive trackers in BIND
-perl -pi -e "s/^#include \"\/etc\/bind\/MySB.zones.blakclists\";/include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
-# ServicesToRestart="${ServicesToRestart} bind9"
+# shellcheck source=inc/funcs_by_script/funcs_MySB_SecurityRules
+. "${MySB_InstallDir}"/inc/funcs_by_script/funcs_MySB_SecurityRules
+log_daemon_msg "${Global_Bind_BlockOut[*]}"
+gfnGenerateBlacklistsZone
+gfnStatusLSB 0
 
-#### Restart services
-# gfnManageServices start "$ServicesToRestart"
+log_daemon_msg "${Global_Bind_TrackersHosts[*]}"
+gfnCreateHostsFile
+gfnStatusLSB 0
+
+#### Reload services
 systemctl reload bind9.service
 
 #### Create again certificates listing in system
@@ -214,7 +222,7 @@ if [ "$DoRehash" == 1 ]; then
 fi
 
 #### Unlock
-rm -f "/home/.check_annoncers_${sUser}.lock"
+rm -f "/tmp/.check_annoncers_${sUser}.lock"
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after

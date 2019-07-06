@@ -49,14 +49,14 @@
   - SSL config review
   - Add [downloads recycling](https://mysb.gitbook.io/doc/configuration/options-systemes#recyclage-des-telechargements) _(simple copy, hard link)_
   - Add [tracker type filtering](https://mysb.gitbook.io/doc/configuration/options-systemes#trackers-autorises) _(private only or public & private)_
-  - Add [annoncers filtering](https://mysb.gitbook.io/doc/configuration/options-systemes#auto-blocks-annonceurs) _(IPv6, blocklists)_
+  - Add [announcers filtering](https://mysb.gitbook.io/doc/configuration/options-systemes#auto-blocks-annonceurs) _(IPv6, blocklists)_
   - .rtorrent_inserted_new.sh _(before torrent is started)_
     - check of tracker type _(private or public)_
     - downloads recycling
     - add log file
     - disable all IPv6 announcers from torrent files _(IPv6 are banned from MySB)_
-    - prioritizes annoncers in HTTPs
-    - force for HTTPs possibilities for HTTP annoncers
+    - prioritizes announcers in HTTPs
+    - force for HTTPs possibilities for HTTP announcers
     - download recycling
   - .rtorrent_finished.sh
     - rename .rTorrent.bsh to rTorrent_finished.sh
