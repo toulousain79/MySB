@@ -30,7 +30,7 @@
 
 #### Restore validated annoncers
 gfnAnnoncerActivate() {
-    local nCgiPort sInfoHash sId sUser bIsActive aValidatedAnnouncers sRequestValues sValue sTorrent
+    local nCgiPort sInfoHash sId sUser bIsActive aValidatedAnnouncers sRequestValues sValue sTorrent isStart
     local sAnnoncersAllDisabled sAnnoncersLoadingOk nCountAnnoncers
     [ -n "${1}" ] && sUser="${1}" || return 1
     [ -n "${2}" ] && sInfoHash="${2}" || return 1
@@ -98,7 +98,9 @@ gfnAnnoncerActivate() {
         sInfoHash="$(echo "${sTorrent}" | awk '{split($0,a,"|"); print a[2]}')"
         # rTorrent progress message
         su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} \"${sAnnoncersLoadingOk}\" >/dev/null"
-        su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.start ${sInfoHash} >/dev/null"
+        isStart="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom5 ${sInfoHash} 2>/dev/null" | cut -d ':' -f 1)"
+        [ -z "${isStart}" ] && isStart=1
+        [ "${isStart}" -eq 1 ] && su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.start ${sInfoHash} >/dev/null"
         su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash} >/dev/null"
     done
     # Close unvalidated torrents
