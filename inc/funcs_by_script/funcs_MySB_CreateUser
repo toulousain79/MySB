@@ -1,5 +1,5 @@
 #!/bin/bash
-# rev 5.5
+# rev 6.0
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -624,94 +624,92 @@ gfnCreateRtorrentConfigFile() {
     chmod 0770 "${sHomeDir}"/scripts/*
     dos2unix "${sHomeDir}"/scripts/* &>/dev/null
 
-    if [ $bCreateNewFile -eq 1 ]; then
+    if [[ ${bCreateNewFile} -eq 1 ]]; then
         # .rtorrent.rc
         if [ -f "${sHomeDir}"/.rtorrent.rc ]; then
             mv "${sHomeDir}"/.rtorrent.rc "${sHomeDir}"/.rtorrent.rc.old
         fi
-        if [ ! -f "${sHomeDir}"/.rtorrent.rc ] && [ ! -s "${sHomeDir}"/.rtorrent.rc ]; then
-            install -o root -g "${sUser}" -m 0740 "${MySB_InstallDir}"/templates/rtorrent/rtorrent.rc.tmpl "${sHomeDir}"/.rtorrent.rc
-            perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" "${sHomeDir}"/.rtorrent.rc
-            # perl -pi -e "s/<bind_address>/${gsSrvIpAddressExt}/g" "${sHomeDir}"/.rtorrent.rc
-            perl -pi -e "s/<local_address>/${gsSrvIpAddress}/g" "${sHomeDir}"/.rtorrent.rc
-            perl -pi -e "s/<username>/${sUser}/g" "${sHomeDir}"/.rtorrent.rc
-            # perl -pi -e "s/<homedir>/\/home\/${sUser}/g" "${sHomeDir}"/.rtorrent.rc
-            perl -pi -e "s/<scgi_port>/$nPortSCGI/g" "${sHomeDir}"/.rtorrent.rc
-            perl -pi -e "s/<port_range>/$nPortRtorrent-$nPortRtorrent/g" "${sHomeDir}"/.rtorrent.rc
-            if [ "${gsMySB_PeerBlock}" == "rTorrent" ]; then
-                perl -pi -e "s/#{1}ipv4_filter.load/ipv4_filter.load/g" "${sHomeDir}"/.rtorrent.rc
-                perl -pi -e "s/#{1}print/print/g" "${sHomeDir}"/.rtorrent.rc
-                perl -pi -e "s/#{1}schedule2=load_filter/schedule2=load_filter/g" "${sHomeDir}"/.rtorrent.rc
-            fi
+        install -o root -g "${sUser}" -m 0740 "${MySB_InstallDir}"/templates/rtorrent/rtorrent.rc.tmpl "${sHomeDir}"/.rtorrent.rc
+        perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" "${sHomeDir}"/.rtorrent.rc
+        # perl -pi -e "s/<bind_address>/${gsSrvIpAddressExt}/g" "${sHomeDir}"/.rtorrent.rc
+        perl -pi -e "s/<local_address>/${gsSrvIpAddress}/g" "${sHomeDir}"/.rtorrent.rc
+        perl -pi -e "s/<username>/${sUser}/g" "${sHomeDir}"/.rtorrent.rc
+        # perl -pi -e "s/<homedir>/\/home\/${sUser}/g" "${sHomeDir}"/.rtorrent.rc
+        perl -pi -e "s/<scgi_port>/$nPortSCGI/g" "${sHomeDir}"/.rtorrent.rc
+        perl -pi -e "s/<port_range>/$nPortRtorrent-$nPortRtorrent/g" "${sHomeDir}"/.rtorrent.rc
+        if [ "${gsMySB_PeerBlock}" == "rTorrent" ]; then
+            perl -pi -e "s/#{1}ipv4_filter.load/ipv4_filter.load/g" "${sHomeDir}"/.rtorrent.rc
+            perl -pi -e "s/#{1}print/print/g" "${sHomeDir}"/.rtorrent.rc
+            perl -pi -e "s/#{1}schedule2=load_filter/schedule2=load_filter/g" "${sHomeDir}"/.rtorrent.rc
+        fi
 
-            # network.http.ssl_verify_host.set
-            rTorrentVersion="$(cmdMySQL 'MySB_db' "SELECT rtorrent_version FROM users WHERE users_ident='${sUser}';")"
-            case "$rTorrentVersion" in
-                "v0.9.6") sed -i '/network.http.ssl_verify_host.set/d' "${sHomeDir}"/.rtorrent.rc ;;
-            esac
+        # network.http.ssl_verify_host.set
+        rTorrentVersion="$(cmdMySQL 'MySB_db' "SELECT rtorrent_version FROM users WHERE users_ident='${sUser}';")"
+        case "$rTorrentVersion" in
+            "v0.9.6") sed -i '/network.http.ssl_verify_host.set/d' "${sHomeDir}"/.rtorrent.rc ;;
+        esac
 
-            # pieces.memory.max.set
-            gfnListCountUsers 'normal'
-            for seedUser in ${gsUsersList}; do
-                nPiecesMemoryMax="$((gsMemory / 5))M"
-                nNumLine=$(grep 'pieces.memory.max.set' -n -m 1 /home/${seedUser}/.rtorrent.rc | cut -d ':' -f 1)
-                sed -i '/pieces.memory.max.set/d' /home/${seedUser}/.rtorrent.rc
-                sed -i "${nNumLine}i\pieces.memory.max.set = ${nPiecesMemoryMax};" /home/${seedUser}/.rtorrent.rc
+        # pieces.memory.max.set
+        gfnListCountUsers 'normal'
+        for seedUser in ${gsUsersList}; do
+            nPiecesMemoryMax="$((gsMemory / 5))M"
+            nNumLine=$(grep 'pieces.memory.max.set' -n -m 1 /home/${seedUser}/.rtorrent.rc | cut -d ':' -f 1)
+            sed -i '/pieces.memory.max.set/d' /home/${seedUser}/.rtorrent.rc
+            sed -i "${nNumLine}i\pieces.memory.max.set = ${nPiecesMemoryMax};" /home/${seedUser}/.rtorrent.rc
+        done
+
+        case "$sFileSystemType" in
+            "ext4" | "xfs" | "btrfs") perl -pi -e "s/system.file.allocate.set = no/system.file.allocate.set = yes/g" "${sHomeDir}"/.rtorrent.rc ;;
+            *) perl -pi -e "s/^system.file.allocate.set = yes/system.file.allocate.set = no/g" "${sHomeDir}"/.rtorrent.rc ;;
+        esac
+
+        # Let's Encrypt certificate
+        # if [[ -f /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem ]]; then
+        #     nNumLine=$(grep 'network.http.cacert.set' -n -m 1 "${sHomeDir}"/.rtorrent.rc | cut -d ':' -f 1)
+        #     sed -i '/network.http.cacert.set/d' "${sHomeDir}"/.rtorrent.rc
+        #     sed -i "${nNumLine}i\network.http.cacert.set = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" "${sHomeDir}"/.rtorrent.rc
+        # fi
+
+        # Remove commented lines
+        sed -i '/^#/d' "${sHomeDir}"/.rtorrent.rc
+        # Delete empty lines
+        sed -i '/^$/d' "${sHomeDir}"/.rtorrent.rc
+
+        # Watch directories
+        if [ -n "$sDirectories" ]; then
+            nNumLine=$(sed -n "/watch_directory/=" "${sHomeDir}"/.rtorrent.rc)
+            nCount=0
+            sed -i '/watch_directory/d' "${sHomeDir}"/.rtorrent.rc
+            sed -i "${nNumLine}i\schedule2 = watch_directory_${nCount},5,5,\"load.normal=~\/rtorrent\/watch\/*.torrent,d.directory.set=~\/rtorrent\/complete\/,d.custom1.set=,d.custom2.set=~\/rtorrent\/torrents\/\"" "${sHomeDir}"/.rtorrent.rc
+            ((nNumLine++)) && ((nCount++))
+            for sDirectory in $sDirectories; do
+                sDirectory="$(echo "${sDirectory}" | awk '{split($0,a,"|"); print a[1]}')"
+                sed -i "${nNumLine}i\schedule2 = watch_directory_${nCount},5,5,\"load.normal=~\/rtorrent\/watch\/${sDirectory}\/*.torrent,d.directory.set=~\/rtorrent\/complete\/${sDirectory}\/,d.custom1.set=${sDirectory},d.custom2.set=~\/rtorrent\/torrents\/${sDirectory}\/\"" "${sHomeDir}"/.rtorrent.rc
+                ((nNumLine++)) && ((nCount++))
             done
 
-            case "$sFileSystemType" in
-                "ext4" | "xfs" | "btrfs") perl -pi -e "s/system.file.allocate.set = no/system.file.allocate.set = yes/g" "${sHomeDir}"/.rtorrent.rc ;;
-                *) perl -pi -e "s/^system.file.allocate.set = yes/system.file.allocate.set = no/g" "${sHomeDir}"/.rtorrent.rc ;;
-            esac
-
-            # Let's Encrypt certificate
-            # if [[ -f /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem ]]; then
-            #     nNumLine=$(grep 'network.http.cacert.set' -n -m 1 "${sHomeDir}"/.rtorrent.rc | cut -d ':' -f 1)
-            #     sed -i '/network.http.cacert.set/d' "${sHomeDir}"/.rtorrent.rc
-            #     sed -i "${nNumLine}i\network.http.cacert.set = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" "${sHomeDir}"/.rtorrent.rc
-            # fi
-
-            # Remove commented lines
-            sed -i '/^#/d' "${sHomeDir}"/.rtorrent.rc
-            # Delete empty lines
-            sed -i '/^$/d' "${sHomeDir}"/.rtorrent.rc
-
-            # Watch directories
-            if [ -n "$sDirectories" ]; then
-                nNumLine=$(sed -n "/watch_directory/=" "${sHomeDir}"/.rtorrent.rc)
-                nCount=0
-                sed -i '/watch_directory/d' "${sHomeDir}"/.rtorrent.rc
-                sed -i "${nNumLine}i\schedule2 = watch_directory_${nCount},5,5,\"load.normal=~\/rtorrent\/watch\/*.torrent,d.directory.set=~\/rtorrent\/complete\/,d.custom1.set=,d.custom2.set=~\/rtorrent\/torrents\/\"" "${sHomeDir}"/.rtorrent.rc
-                ((nNumLine++)) && ((nCount++))
-                for sDirectory in $sDirectories; do
-                    sDirectory="$(echo "${sDirectory}" | awk '{split($0,a,"|"); print a[1]}')"
-                    sed -i "${nNumLine}i\schedule2 = watch_directory_${nCount},5,5,\"load.normal=~\/rtorrent\/watch\/${sDirectory}\/*.torrent,d.directory.set=~\/rtorrent\/complete\/${sDirectory}\/,d.custom1.set=${sDirectory},d.custom2.set=~\/rtorrent\/torrents\/${sDirectory}\/\"" "${sHomeDir}"/.rtorrent.rc
-                    ((nNumLine++)) && ((nCount++))
-                done
-
-                # Disabling 'autotools' plugins
-                if [ -f "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini" ]; then
-                    nNumLine=$(sed -n "/\[autotools\]/=" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini")
-                    sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
-                    sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
-                    echo "[autotools]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
-                    echo "enabled = off" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
-                fi
-                if [ -f "${gsRutorrentDir}/share/users/${sUser}/settings/autotools.dat" ]; then
-                    mv "${gsRutorrentDir}/share/users/${sUser}/settings/autotools.dat" "${gsRutorrentDir}/share/users/${sUser}/settings/autotools.dat.bak"
-                fi
-            else
-                # Enabling 'autotools' plugins
-                if [ -f "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini" ]; then
-                    nNumLine=$(sed -n "/\[autotools\]/=" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini")
-                    sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
-                    sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
-                    echo "[autotools]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
-                    echo "enabled = user-defined" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
-                fi
-                if [ -f "${gsRutorrentDir}/share/users/${sUser}/settings/autotools.dat.bak" ]; then
-                    mv "${gsRutorrentDir}/share/users/${sUser}/settings/autotools.dat.bak" "${gsRutorrentDir}/share/users/${sUser}/settings/autotools.dat"
-                fi
+            # Disabling 'autotools' plugins
+            if [ -f "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini" ]; then
+                nNumLine=$(sed -n "/\[autotools\]/=" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini")
+                sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                echo "[autotools]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                echo "enabled = off" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+            fi
+            if [ -f "${gsRutorrentDir}/share/users/${sUser}/settings/autotools.dat" ]; then
+                mv "${gsRutorrentDir}/share/users/${sUser}/settings/autotools.dat" "${gsRutorrentDir}/share/users/${sUser}/settings/autotools.dat.bak"
+            fi
+        else
+            # Enabling 'autotools' plugins
+            if [ -f "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini" ]; then
+                nNumLine=$(sed -n "/\[autotools\]/=" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini")
+                sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                echo "[autotools]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                echo "enabled = user-defined" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+            fi
+            if [ -f "${gsRutorrentDir}/share/users/${sUser}/settings/autotools.dat.bak" ]; then
+                mv "${gsRutorrentDir}/share/users/${sUser}/settings/autotools.dat.bak" "${gsRutorrentDir}/share/users/${sUser}/settings/autotools.dat"
             fi
         fi
     fi
