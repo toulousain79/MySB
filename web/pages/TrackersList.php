@@ -84,7 +84,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 	GenerateMessage('GetTrackersCert.bsh', $type, $message);
 }
 
-$TrackersList = $MySB_DB->select("trackers_list", ["tracker", "tracker_domain", "tracker_proto", "tracker_port", "privacy", "is_ssl", "is_active", "cert_expiration"], ["to_delete" => 0],["ORDER" => ["name" => "ASC"]]);
+$TrackersList = $MySB_DB->select("trackers_list", ["id_trackers_list", "tracker", "tracker_domain", "tracker_proto", "tracker_port", "privacy", "is_ssl", "is_active", "cert_expiration"], ["to_delete" => 0],["ORDER" => ["name" => "ASC"]]);
 ?>
 
 <div style="margin-top: 10px; margin-bottom: 20px;" id="scrollmenu" align="center">

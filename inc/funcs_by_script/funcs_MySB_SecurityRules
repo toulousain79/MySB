@@ -187,16 +187,11 @@ gfnCreateServicesRules() {
 
     #### BIND
     if [ "$ApplyConfigBind" == "YES" ]; then
-        log_daemon_msg "${SecurityRules_Bind_BlockOut}"
-        echo "#### MySB - Blacklisted domains (ex: inactive trackers)" >/etc/bind/MySB.zones.blakclists
-        AllTrackersDomain="$(cmdMySQL 'MySB_db' "SELECT tracker_domain FROM trackers_list WHERE is_active='0' AND to_check='0';")"
-        for TrackerDomain in $AllTrackersDomain; do
-            echo "zone \"$TrackerDomain\" { type master; file \"/etc/bind/db.empty\"; };" >>/etc/bind/MySB.zones.blakclists
-        done
-        perl -pi -e "s/^#include \"\/etc\/bind\/MySB.zones.blakclists\";/include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
+        log_daemon_msg "${SecurityRules_Bind_BlockOut[*]}"
+        gfnGenerateBlacklistsZone
         gfnStatusLSB 0
 
-        log_daemon_msg "${SecurityRules_Bind_TrackersHosts[@]}"
+        log_daemon_msg "${SecurityRules_Bind_TrackersHosts[*]}"
         gfnCreateHostsFile
         gfnStatusLSB 0
     fi
@@ -264,32 +259,38 @@ gfnRestartRtorrentSessions() {
     fi
 }
 
-#### Crete '/etc/hosts' file
+#### Create '' file
+gfnGenerateBlacklistsZone() {
+    local sAllTrackers sTracker
+
+    echo "#### MySB - Blacklisted domains (ex: inactive trackers)" >/etc/bind/MySB.zones.blakclists
+    sAllTrackers="$(cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker FROM trackers_list WHERE is_active='0';")"
+    for sTracker in ${sAllTrackers}; do
+        echo "zone \"${sTracker}\" { type master; file \"/etc/bind/db.empty\"; };" >>/etc/bind/MySB.zones.blakclists
+    done
+    perl -pi -e "s/^#include \"\/etc\/bind\/MySB.zones.blakclists\";/include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
+}
+
+#### Create '/etc/hosts' file
 gfnCreateHostsFile() {
-    local nIdTracker sTracker sTrackerDomain sTrackerIPv4 sIPv4 sLine sROW
+    local nIdTracker sTracker sTrackerIPv4 sIPv4 sROW
 
     echo "127.0.0.1	 localhost.localdomain localhost" >/etc/hosts
     echo "${gsSrvIpAddress}   ${gsHostNameFqdn} $(hostname -s)" >>/etc/hosts
-    [[ $gsSrvIpAddress != "${gsSrvIpAddressExt}" ]] && echo "$gsSrvIpAddressExt	 $gsHostNameFqdn" >>/etc/hosts
+    [ "${gsSrvIpAddress}" != "${gsSrvIpAddressExt}" ] && echo "${gsSrvIpAddressExt}	 ${gsHostNameFqdn}" >>/etc/hosts
     echo "" >>/etc/hosts
 
-    cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker,tracker_domain FROM trackers_list WHERE is_active='1';" | sed 's/\t/|/g;' | while read -r sROW; do
+    cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker FROM trackers_list WHERE is_active='1';" | sed 's/\t/|/g;' | while read -r sROW; do
         nIdTracker="$(echo "$sROW" | awk '{split($0,a,"|"); print a[1]}')"
         sTracker="$(echo "$sROW" | awk '{split($0,a,"|"); print a[2]}')"
-        sTrackerDomain="$(echo "$sROW" | awk '{split($0,a,"|"); print a[3]}')"
-        sTrackerIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list='$nIdTracker';")"
+        sTrackerIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list='$nIdTracker' AND pgl_banned='0';")"
 
-        if [ -n "$sTrackerIPv4" ]; then
+        if [ -n "${sTrackerIPv4}" ]; then
             if (! grep -q 'Force trackers resolution' /etc/hosts); then
                 echo "#### MySB - Force trackers resolution (ex: DNS liar)" >>/etc/hosts
             fi
-            if [ "$sTracker" == "$sTrackerDomain" ]; then
-                sLine="$sTrackerDomain"
-            else
-                sLine="$sTracker, $sTrackerDomain"
-            fi
-            for sIPv4 in $sTrackerIPv4; do
-                echo "$sIPv4	   $sLine" >>/etc/hosts
+            for sIPv4 in ${sTrackerIPv4}; do
+                echo "${sIPv4}	   ${sTracker}" >>/etc/hosts
             done
         fi
     done
