@@ -1,5 +1,5 @@
 #!/bin/bash
-# rev 6.0
+# rev 0.2
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -64,7 +64,9 @@ gsBinDesc="rTorrent for ${gsUsername}"
 # Binary
 #------------------------------------------------------------
 # rTorrent bin
-rTorrentVersion="$(cmdMySQL 'MySB_db' "SELECT rtorrent_version FROM users WHERE users_ident='${gsUsername}';")"
+sRequest="$(cmdMySQL 'MySB_db' "SELECT rtorrent_version,scgi_port FROM users WHERE users_ident='${gsUsername}';" | sed 's/\t/|/g;')"
+rTorrentVersion="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[1]}')"
+sCgiPort="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[2]}')"
 case "$rTorrentVersion" in
     "v0.9.6") binRtorrent="/usr/bin/rtorrent" ;;
     "v0.9.7") binRtorrent="/usr/local/bin/rtorrent" ;;
@@ -75,6 +77,10 @@ binScreen="/usr/bin/screen" # Screen binary
 # Log
 #------------------------------------------------------------
 gsLogFile="${gsHomeDir}/logs/rTorrentInit.log"
+#------------------------------------------------------------
+# Announcer check
+#------------------------------------------------------------
+gsAnnouncersCheckFile="/home/.check_annoncers_${gsUsername}"
 
 ######################################################################
 #
@@ -180,6 +186,18 @@ gfnDoStart() {
 
     # Add crontab
     gfnDoCrontab 'add'
+
+    # Erase announcers check file
+    : >"${gsAnnouncersCheckFile}"
+
+    # Remove all temp log files
+    rm -f "/tmp/GetTrackersCert.bsh.${gsUsername}".*
+
+    # Kill all processes
+    for pid in $(ps faux | grep 'GetTrackersCert.bsh USER "${gsUsername}"' | grep -v 'grep' | awk '{ print $2; }'); do kill -9 $pid; done
+
+    # Remove all TCP socket
+    [ -n "${sCgiPort}" ] && fuser -k "${sCgiPort}"/tcp >/dev/null
 
     # Create config file
     # shellcheck source=inc/funcs_by_script/funcs_MySB_CreateUser
