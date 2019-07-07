@@ -1,5 +1,5 @@
 <?php
-// rev 0.1
+// rev 0.2
 
 require_once( 'util.php' );
 require_once( 'xmlrpc.php' );
@@ -94,18 +94,18 @@ class rTorrent
 
 	static public function sendMagnet($magnet, $isStart, $isAddPath, $directory, $label, $addition = null)
 	{
-	        $hpos = stripos($magnet,'xt=urn:btih:');
-	        if($hpos!==false)
-	        {
-	        	$hpos+=12;
-	        	$fpos = stripos($magnet,'&',$hpos);
-			if($fpos===false)
-				$fpos = strlen($magnet);
-			$hash = strtoupper(substr($magnet,$hpos,$fpos-$hpos));
-                        if(strlen($hash)==32)
-		        	$hash = base32decode($hash);
-	        	if(strlen($hash)==40)
-	        	{
+		$hpos = stripos($magnet,'xt=urn:btih:');
+		if($hpos!==false)
+		{
+			$hpos+=12;
+			$fpos = stripos($magnet,'&',$hpos);
+		if($fpos===false)
+			$fpos = strlen($magnet);
+		$hash = strtoupper(substr($magnet,$hpos,$fpos-$hpos));
+					if(strlen($hash)==32)
+				$hash = base32decode($hash);
+			if(strlen($hash)==40)
+			{
 				$req = new rXMLRPCRequest();
 				$cmd = new rXMLRPCCommand( $isStart ? 'load_start' : 'load' );
 				$cmd->addParameter($magnet);
@@ -126,6 +126,15 @@ class rTorrent
 				if(is_array($addition))
 					foreach($addition as $key=>$prm)
 						$cmd->addParameter($prm,'string');
+
+				// MySB - Send some params with d.set_custom5 - BoF
+				$isStart = $isStart ? '1' : '0';
+				$isAddPath = $isAddPath ? '1' : '0';
+				$saveTorrent = '0';
+				$isFast = '0';
+				$cmd->addParameter(getCmd("d.set_custom5=").$isStart.':'.$isAddPath.':'.$saveTorrent.':'.$isFast);
+				// MySB - Send some params with d.set_custom5 - Eof
+
 				$req->addCommand( $cmd );
 				if($req->success())
 					return($hash);

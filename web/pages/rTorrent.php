@@ -156,7 +156,7 @@ if ( ($rTorrentNotify == '1') && (!empty($UserMail)) ) {
 	$Headers  = "From: $MainUserEmail"."\r\n";
 	$Headers .= "Reply-To: $MainUserEmail"."\r\n";
 	$Headers .= 'MIME-Version: 1.0' . "\r\n";
-	$Headers .= 'Content-type:text/plain;charset=UTF-8' . "\r\n";
+	$Headers .= 'Content-type:text/html;charset=UTF-8' . "\r\n";
 
 	mail($UserMail, $Subject, $Content, $Headers);
 }
