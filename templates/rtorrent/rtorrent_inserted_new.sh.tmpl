@@ -47,7 +47,7 @@ nExit=0
 sUserName="$(whoami)"
 nCgiPort="<scgi_port>"
 dTimestamp="$(date +%Y/%m/%d\ %H:%M:%S)"
-sLogFile="$(mktemp /tmp/$0.XXXXXXXXXX)"
+sLogFile="$(mktemp /tmp/${sUserName}.XXXXXXXXXX)"
 sSqlParams='--defaults-extra-file=/home/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N'
 nTotalStep="$(grep -e '#### Step ' $0 | grep -v 'nTotalStep' | wc -l)"
 
@@ -207,7 +207,7 @@ xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sSt
 #### Step 4 - Close torrent from rTorrent queue
 if [[ ${nExit} -eq 0 ]]; then
     xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep4[*]}" 2>>"${sLogFile}"
-    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.stop ${sInfoHash} 2>>"${sLogFile}"
+    # xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.stop ${sInfoHash} 2>>"${sLogFile}"
 else
     xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sMessExit[*]}" 2>>"${sLogFile}"
     xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.stop ${sInfoHash} 2>>"${sLogFile}"
@@ -273,6 +273,7 @@ if [[ ${nContinue} -eq 1 ]]; then
         xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.erase ${sInfoHash} 2>>"${sLogFile}"
         nContinue=0
     fi
+    nCountAnnoncers=$((nCountAnnoncers - ${#aAnnoncersIpv[@]}))
     [[ ${bAnnoncersUdp} -eq 0 ]] && nCountAnnoncers=$((nCountAnnoncers - ${#aAnnoncersUdp[@]}))
 
     #### Step 6 - Activate all announcers & disable IPv6
@@ -310,7 +311,7 @@ if [[ ${nContinue} -eq 1 ]]; then
                 sUrlUser="$(echo "${sShortAnnouncer}" | grep @ | cut -d@ -f1)"
                 sShortAnnouncer=$(echo "${sShortAnnouncer}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
                 if (! grep -q "${sAnnoncer}" <<<${sTempLocalFile}); then
-                    echo "${sAnnoncer}|${sPrivacy}|${sInfoHash}|${sShortAnnouncer}|${nCountAnnoncers}|${nCgiPort}" >>${sTempLocalFile}
+                    echo "${nCountAnnoncers}|${sInfoHash}|${sPrivacy}|${nCgiPort}|${sShortAnnouncer}|${sAnnoncer}" >>${sTempLocalFile}
                     bExecute=1
                     xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep7[*]} (${sAnnoncer})" 2>>"${sLogFile}"
                 fi
@@ -324,7 +325,7 @@ if [[ ${nContinue} -eq 1 ]]; then
                 sUrlUser="$(echo "${sShortAnnouncer}" | grep @ | cut -d@ -f1)"
                 sShortAnnouncer=$(echo "${sShortAnnouncer}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
                 if (! grep -q "${sAnnoncer}" <<<${sTempLocalFile}); then
-                    echo "${sAnnoncer}|${sPrivacy}|${sInfoHash}|${sShortAnnouncer}|${nCountAnnoncers}|${nCgiPort}" >>${sTempLocalFile}
+                    echo "${nCountAnnoncers}|${sInfoHash}|${sPrivacy}|${nCgiPort}|${sShortAnnouncer}|${sAnnoncer}" >>${sTempLocalFile}
                     bExecute=1
                     xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${nId} ${bState} 2>>"${sLogFile}"
                     xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep7[*]} (${sAnnoncer})" 2>>"${sLogFile}"
@@ -340,7 +341,7 @@ if [[ ${nContinue} -eq 1 ]]; then
                     sUrlUser="$(echo "${sShortAnnouncer}" | grep @ | cut -d@ -f1)"
                     sShortAnnouncer=$(echo "${sShortAnnouncer}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
                     if (! grep -q "${sAnnoncer}" <<<${sTempLocalFile}); then
-                        echo "${sAnnoncer}|${sPrivacy}|${sInfoHash}|${sShortAnnouncer}|${nCountAnnoncers}|${nCgiPort}" >>${sTempLocalFile}
+                        echo "${nCountAnnoncers}|${sInfoHash}|${sPrivacy}|${nCgiPort}|${sShortAnnouncer}|${sAnnoncer}" >>${sTempLocalFile}
                         bExecute=1
                         xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep7[*]} (${sAnnoncer})" 2>>"${sLogFile}"
                     fi
@@ -351,8 +352,14 @@ if [[ ${nContinue} -eq 1 ]]; then
         rm -f ${sTempLocalFile}
 
         # Execute annoncers check if needed
+        # if [ -s "/home/.check_annoncers_${sUserName}" ] && [ ! -f "/tmp/.check_annoncers_${sUser}.lock" ] && [[ ${bExecute} -eq 1 ]]; then
+        #     sudo /bin/bash "<MySB_InstallDir>/scripts/GetTrackersCert.bsh" USER "${sUserName}" &
+        # fi
         if [ -s "/home/.check_annoncers_${sUserName}" ] && [[ ${bExecute} -eq 1 ]]; then
-            sudo /bin/bash "<MySB_InstallDir>/scripts/GetTrackersCert.bsh" USER "${sUserName}" &
+            if [ "$(ps ax | grep "sudo /bin/bash /opt/MySB/scripts/GetTrackersCert.bsh USER ${sUserName}" | grep -v 'grep' | wc -l)" -lt 2 ]; then
+                sudo /bin/bash "<MySB_InstallDir>/scripts/GetTrackersCert.bsh" USER "${sUserName}" &
+                sleep 2
+            fi
         fi
     fi
 
@@ -395,10 +402,7 @@ if [[ ${nContinue} -eq 1 ]]; then
             fi
         } >>"${sLogFile}"
         xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash} 2>>"${sLogFile}"
-        {
-            [[ ${bAnnoncersCheck} -eq 0 ]]
-            [[ ${isStart} -eq 1 ]]
-        } && xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.start ${sInfoHash}  2>>"${sLogFile}"
+        ( [[ ${bAnnoncersCheck} -eq 0 ]] && [[ ${isStart} -eq 1 ]] ) && xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.start ${sInfoHash}  2>>"${sLogFile}"
         [[ ${bAnnoncersCheck} -eq 0 ]] && xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash} 2>>"${sLogFile}"
 
         #### Step 10 - Quota update
@@ -412,10 +416,7 @@ if [[ ${nContinue} -eq 0 ]]; then
     #### Remove refused torrent file
     [ -n "${sTorrentFile}" ] && rm -fv "${sTorrentFile}" >>"${sLogFile}"
     #### Remove torrent from list
-    {
-        [ -n "${nCgiPort}" ]
-        [ -n "${sInfoHash}" ]
-    } && sudo /bin/bash /home/"${sUserName}"/.rTorrent_tasks.sh 'erase' ${nCgiPort} ${sInfoHash} &
+    ( [ -n "${nCgiPort}" ] && [ -n "${sInfoHash}" ] ) && sudo /bin/bash /home/"${sUserName}"/.rTorrent_tasks.sh 'erase' ${nCgiPort} ${sInfoHash} &
     #### Send mail to user
     curl --retry 3 --silent --show-error --data "username=${sUserName}&get_name=${sName}&get_loaded_file=${sTorrentLoaded}&privacy=${sPrivacy}&trackermodeallowed=${sTrackerModeAllowed}" http://localhost:8888/rTorrent >>"${sLogFile}"
 fi

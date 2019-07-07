@@ -129,23 +129,25 @@ if [ "$TIMESTAMP" == "ON" ]; then
         *) echo "END Out/Err: $(/bin/date '+%Y-%m-%d - %H:%M:%S') - ${gsScriptName} $*" >>"${gsLogFile}" ;;
     esac
     echo "------------------------------------------------------------" >>"${gsLogFile}"
-
-    case "${gsSwitch}" in
-        USER)
-            echo "${gsLogFile} ${MySB_InstallDir}/logs/${gsScriptName}.log" >>"${gsLogFile}"
-            cat "${gsLogFile}" >>"${MySB_InstallDir}/logs/${gsScriptName}.log"
-            # rm -f "${gsLogFile}"
-            [ "$(find /tmp/GetTrackersCert.bsh.*.* -type f 2>/dev/null | wc -l)" -eq 0 ] && sLogCcze="${MySB_InstallDir}/logs/${gsScriptName}.log" || unset sLogCcze
-            ;;
-        *)
-            sLogCcze="${gsLogFile}"
-            ;;
-    esac
 fi
 
 #### 6 - Create ccze files (HTML)
-if [ -f "${sLogCcze}" ]; then
-    [ -n "${sLogCcze}" ] && gfnCczeHtmlLogFormat "${sLogCcze}" "$DirLog/${gsScriptName}-log.html"
+case "${gsScriptName}" in
+    GetTrackersCert.bsh)
+        case "${gsSwitch}" in
+            USER)
+                #### Unlock
+                [ -n "${gsLockFile}" ] && rm -f "${gsLockFile}"
+                # Temp log file
+                cat "${gsLogFile}" >>"${MySB_InstallDir}/logs/${gsScriptName}.log"
+                rm -f "${gsLogFile}"
+                [ "$(find /tmp/GetTrackersCert.bsh.*.* -type f 2>/dev/null | wc -l)" -eq 0 ] && gsLogFile="${MySB_InstallDir}/logs/${gsScriptName}.log" || exit 0
+                ;;
+        esac
+        ;;
+esac
+if [ -f "${gsLogFile}" ]; then
+    [ -n "${gsLogFile}" ] && gfnCczeHtmlLogFormat "${sLogCcze}" "$DirLog/${gsScriptName}-log.html"
 fi
 
 #### 7 - Add in 'commands' table to prevent simultaneous calls
