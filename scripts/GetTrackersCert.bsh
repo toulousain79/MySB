@@ -68,18 +68,18 @@ if [ $DoDeleteTracker -eq 1 ]; then
     for RemovedTracker in ${RemovedTrackersList}; do
         log_daemon_msg "${DeleteTracker} ${RemovedTracker}"
         rm -f ${MySB_InstallDir}/ssl/trackers/*${RemovedTracker}.pem
-        cmdMySQL 'MySB_db' "DELETE FROM trackers_list WHERE tracker_domain='${RemovedTracker}';"
+        cmdMySQL 'MySB_db' "DELETE FROM trackers_list WHERE tracker='${RemovedTracker}';"
         gfnStatusLSB
     done
 fi
 
 #### Renew expirated certificates
 if [ $DoRenewCertificates -eq 1 ]; then
-    ExpiratedTrackersList="$(cmdMySQL 'MySB_db' "SELECT tracker_domain FROM trackers_list WHERE cert_expiration <= '$(date +%Y-%m-%d)' AND is_active = '1';")"
-    for ExpiratedTracker in $ExpiratedTrackersList; do
-        log_daemon_msg "$RenewCertificate $ExpiratedTracker"
+    ExpiratedTrackersList="$(cmdMySQL 'MySB_db' "SELECT tracker FROM trackers_list WHERE cert_expiration <= '$(date +%Y-%m-%d)' AND is_active = '1';")"
+    for ExpiratedTracker in ${ExpiratedTrackersList}; do
+        log_daemon_msg "$RenewCertificate ${ExpiratedTracker}"
         rm -f ${MySB_InstallDir}/ssl/trackers/*${RemovedTracker}.pem
-        cmdMySQL 'MySB_db' "UPDATE trackers_list SET is_ssl='0', to_check='1', cert_expiration='0000-00-00' WHERE tracker_domain = '$ExpiratedTracker';"
+        cmdMySQL 'MySB_db' "UPDATE trackers_list SET is_ssl='0', to_check='1', cert_expiration='0000-00-00' WHERE tracker = '${ExpiratedTracker}';"
         gfnStatusLSB
     done
 fi
