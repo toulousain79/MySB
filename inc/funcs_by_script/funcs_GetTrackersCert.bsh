@@ -86,6 +86,11 @@ gfnCheckAddedTorrents() {
                     bToClean=1
                 fi
 
+                # Clean file
+                if [[ ${bToClean} -eq 1 ]] && [ -f "/home/.check_annoncers_${sUser}" ] && [ -n "${sLineToDelete}" ]; then
+                    sed -i "/${sLineToDelete}/d" "/home/.check_annoncers_${sUser}"
+                fi
+
                 # Check if there are any entries for the current hash
                 if (! grep -q "${sInfoHash}" "/home/.check_annoncers_${sUser}"); then
                     # Enable/Disable annoncers
@@ -95,12 +100,6 @@ gfnCheckAddedTorrents() {
                 # Delete empty lines
                 sed -i '/^$/d' "/home/.check_annoncers_${sUser}"
             fi
-
-            # Clean file
-            if [[ ${bToClean} -eq 1 ]] && [ -f "/home/.check_annoncers_${sUser}" ] && [ -n "${sLineToDelete}" ]; then
-                sed -i "/${sLineToDelete}/d" "/home/.check_annoncers_${sUser}"
-            fi
-
         done <"/home/.check_annoncers_${sUser}"
     done
 
@@ -117,7 +116,9 @@ gfnAnnoncerActivate() {
     [ -n "${3}" ] && nFnCount="${3}" || return 1
     aFnValidated=()
     aFnUnvalidated=()
-
+    echo "sFnUser: ${sFnUser}"
+    echo "sFnInfoHash: ${sFnInfoHash}"
+    echo "nFnCount: ${nFnCount}"
     sFnRequest="$(cmdMySQL 'MySB_db' "SELECT scgi_port,id FROM annoncers WHERE user='${sFnUser}' AND info_hash='${sFnInfoHash}';" | sed 's/\t/|/g;')"
     for sFnValue in ${sFnRequest}; do
         nFnCgiPort="$(echo "${sFnValue}" | awk '{split($0,a,"|"); print a[1]}')"
@@ -159,22 +160,29 @@ gfnAnnoncerActivate() {
     done
 
     # Uniq
+    echo "aFnValidated: ${aFnValidated[*]}"
+    echo "aFnUnvalidated: ${aFnUnvalidated[*]}"
     [ "${#aFnValidated[*]}" -gt 0 ] && mapfile -t aFnValidated < <(echo "${aFnValidated[*]}" | tr ' ' '\n' | sort | uniq)
     [ "${#aFnUnvalidated[*]}" -gt 0 ] && mapfile -t aFnUnvalidated < <(echo "${aFnUnvalidated[*]}" | tr ' ' '\n' | sort | uniq)
 
     # Start validated torrents
+    echo "aFnValidated: ${aFnValidated[*]}"
+    echo "aFnUnvalidated: ${aFnUnvalidated[*]}"
     for sFnTorrent in "${aFnValidated[@]}"; do
         nFnCgiPort="$(echo "${sFnTorrent}" | awk '{split($0,a,"|"); print a[1]}')"
         sFnInfoHash="$(echo "${sFnTorrent}" | awk '{split($0,a,"|"); print a[2]}')"
+        echo "nFnCgiPort: $nFnCgiPort"
+        echo "sFnInfoHash: $sFnInfoHash"
 
         # rTorrent progress message
         su -s /bin/bash "${sFnUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nFnCgiPort} d.custom2.set ${sFnInfoHash} \"${sAnnoncersLoadingOk[*]}\" >/dev/null"
+
         # Start it if possible
         bFnIsStart="$(su -s /bin/bash "${sFnUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nFnCgiPort} d.custom5 ${sFnInfoHash} 2>/dev/null" | cut -d ':' -f 1)"
         [ -z "${bFnIsStart}" ] && bFnIsStart=1
         if [[ ${bFnIsStart} -eq 1 ]]; then
-            # su -s /bin/bash "${sFnUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nFnCgiPort} d.start ${sFnInfoHash} >/dev/null"
-            su -s /bin/bash "${sFnUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nFnCgiPort} d.open ${sFnInfoHash} >/dev/null"
+            su -s /bin/bash "${sFnUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nFnCgiPort} d.start ${sFnInfoHash} >/dev/null"
+            # su -s /bin/bash "${sFnUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nFnCgiPort} d.open ${sFnInfoHash} >/dev/null"
         else
             su -s /bin/bash "${sFnUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nFnCgiPort} d.open ${sFnInfoHash} >/dev/null"
         fi
@@ -186,8 +194,10 @@ gfnAnnoncerActivate() {
         if [[ ${#aFnUnvalidated[*]} -eq ${nFnCount} ]]; then
             nFnCgiPort="$(echo "${sFnTorrent}" | awk '{split($0,a,"|"); print a[1]}')"
             sFnInfoHash="$(echo "${sFnTorrent}" | awk '{split($0,a,"|"); print a[2]}')"
+
             # rTorrent progress message
             su -s /bin/bash "${sFnUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nFnCgiPort} d.custom2.set ${sFnInfoHash} \"${sAnnoncersAllDisabled[*]}\" >/dev/null"
+
             # We close torrent
             su -s /bin/bash "${sFnUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nFnCgiPort} d.close ${sFnInfoHash} >/dev/null"
         fi
