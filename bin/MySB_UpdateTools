@@ -56,7 +56,7 @@ fi
 bRtorrentRestart=0
 
 #### rTorrent scripts (to leave for next version ;-)
-(grep -Rq 'rev 0.2' "${MySB_InstallDir}/templates/rtorrent/"*.tmpl) && bRtorrentRestart=1
+(! grep -Rq 'rev 0.3' "${MySB_InstallDir}/templates/rtorrent/"*.tmpl) && bRtorrentRestart=1
 
 #### Fix version in database
 if [ "$gsCurrentVersion" != "$(cat "${MySB_InstallDir}"/version)" ]; then
@@ -77,7 +77,7 @@ if [ "${sVersion}" != "3.9_626ba3d" ]; then
 fi
 
 #### ruTorrent hack for uploaded torrent
-if (! grep -q 'rev 0.2' "${gsRutorrentDir}"/php/rtorrent.php); then
+if (! grep -q 'rev 0.3' "${gsRutorrentDir}"/php/rtorrent.php); then
     install -v -o www-data -g www-data -m 0755 "${MySB_InstallDir}"/templates/rutorrent/rtorrent.php.tmpl "${gsRutorrentDir}"/php/rtorrent.php
     bRtorrentRestart=1
 fi
@@ -146,6 +146,12 @@ if [[ ${bRtorrentRestart} -eq 1 ]]; then
     gfnListCountUsers 'normal'
     for sUser in ${gsUsersList}; do
         gfnManageServices stop "rtorrent-${sUser}"
+
+        install -o root -g root -m 0755 "${MySB_InstallDir}"/templates/init/etc.init.d.rtorrent.tmpl /etc/init.d/rtorrent-"${sUser}"
+        perl -pi -e "s/<username>/${sUser}/g" /etc/init.d/rtorrent-"${sUser}"
+        systemctl daemon-reload &>/dev/null
+        systemctl enable rtorrent-"${sUser}" &>/dev/null
+
         gfnManageServices start "rtorrent-${sUser}"
     done
 fi
