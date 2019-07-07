@@ -1,6 +1,5 @@
 #!/bin/bash
-# rev 6.0
-# rtorrent restart required
+# rev 0.2
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -37,6 +36,10 @@ sTorrentDir="${5}"      # $d.custom2=
 sLabel="${6}"           # $d.custom1=
 
 sName="$(echo "${sName}" | sed -e "s/'/\\\'/g;")"
+isStart=1
+# isAddPath=1
+# saveTorrent=1
+# isFast=0
 
 #### VARs - Default sets
 nContinue=0
@@ -44,7 +47,7 @@ nExit=0
 sUserName="$(whoami)"
 nCgiPort="<scgi_port>"
 dTimestamp="$(date +%Y/%m/%d\ %H:%M:%S)"
-sLogFile="$(mktemp)"
+sLogFile="$(mktemp /tmp/$0.XXXXXXXXXX)"
 sSqlParams='--defaults-extra-file=/home/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N'
 nTotalStep="$(grep -e '#### Step ' $0 | grep -v 'nTotalStep' | wc -l)"
 
@@ -56,13 +59,14 @@ if [ -z "${sTorrentLoaded}" ] && [ -n "${sTorrentDir}" ]; then
     }
     sTorrentDir="$(urldecode "${sTorrentDir}")"
     if [ -f "${sTorrentDir}" ]; then
-        sTorrentLoaded="${sTorrentDir}"
-        sTorrentDir="/home/${sUserName}/rtorrent/torrents/"
-        [ -n "${sLabel}" ] && sTorrentDir="${sTorrentDir%/}/${sLabel}/"
-        # isStart="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom5 ${sInfoHash} 2>/dev/null" | cut -d ':' -f 1)"
+        sLabel="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom5 ${sInfoHash} 2>/dev/null")"
+        isStart="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom5 ${sInfoHash} 2>/dev/null" | cut -d ':' -f 1)"
         # isAddPath="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom5 ${sInfoHash} 2>/dev/null" | cut -d ':' -f 2)"
         # saveTorrent="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom5 ${sInfoHash} 2>/dev/null" | cut -d ':' -f 3)"
         # isFast="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom5 ${sInfoHash} 2>/dev/null" | cut -d ':' -f 4)"
+        sTorrentLoaded="${sTorrentDir}"
+        sTorrentDir="/home/${sUserName}/rtorrent/torrents/"
+        [ -n "${sLabel}" ] && sTorrentDir="${sTorrentDir%/}/${sLabel}/"
     fi
 fi
 
@@ -71,10 +75,10 @@ sTorrentFile="${sTorrentDir%/}/$(basename "${sTorrentLoaded}")"
 
 #### Do some checks before
 [ -z "${sInfoHash}" ] && nExit=1
-[ -z "${sName}" ] && nExit=1
-[ -z "${sDirectory}" ] && nExit=1
-( [ -z "${sTorrentLoaded}" ] || [ ! -f "${sTorrentLoaded}" ] ) && nExit=1
-( [ -z "${sTorrentDir}" ] || [ ! -d "${sTorrentDir}" ] ) && nExit=1
+[ -z "${sName}" ] && nExit=2
+[ -z "${sDirectory}" ] && nExit=3
+( [ -z "${sTorrentLoaded}" ] || [ ! -f "${sTorrentLoaded}" ] ) && nExit=4
+( [ -z "${sTorrentDir}" ] || [ ! -d "${sTorrentDir}" ] ) && nExit=5
 
 #### VARs
 [ -f "${sTorrentLoaded}" ] && sPrivacy="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
@@ -87,52 +91,52 @@ bAnnoncersCheck="$(echo "$sRequestValues" | awk '{split($0,a,"|"); print a[4]}')
 #### Language
 case "${LANG:0:2}" in
     "fr")
-        sMessPrivacyPrivate="Priv&eacute;s seulement"
-        sMessPrivacyPublic="Priv&eacute;s &amp; Publiques"
-        sMessFileRecyclingFind="Recyclage possible, copie en cours..."
-        sMessFileRecyclingEnd="Recyclage possible, copie terminée..."
-        sMessExit="Arr&ecirc;t du chargement via MySB !"
-        sStep1="(1/${nTotalStep}) - Torrent charg&eacute; ! Proviens d&apos;un tracker ${sPrivacy}."
-        sStep2="(2/${nTotalStep}) - Trackers autoris&eacute;s..."
-        sStep3="(3/${nTotalStep}) - Journalisation des infos du torrent..."
-        sStep4="(4/${nTotalStep}) - Arr&ecirc;t temporaire du torrent pour v&eacute;rification des annonceurs..."
-        sStep5="(5/${nTotalStep}) - R&eacute;f&eacute;rencement des annonceurs (HTTP, HTTPs, UDP et IPv6)..."
-        sStep6="(6/${nTotalStep}) - D&eacute;sactivation des annonceurs IPv6..."
-        sStep7="(7/${nTotalStep}) - Pr&eacute;paration des annonceurs HTTP, HTTPs et UDP &agrave; &ecirc;tre v&eacute;rifi&eacute;s et ajout&eacute;s..."
+        sMessPrivacyPrivate=("Priv&eacute;s seulement")
+        sMessPrivacyPublic=("Priv&eacute;s &amp; Publiques")
+        sMessFileRecyclingFind=("Recyclage possible, copie en cours...")
+        sMessFileRecyclingEnd=("Recyclage possible, copie terminée...")
+        sMessExit=("Une erreur a &eacute;t&eacute; d&eacute;tect&eacute;e ! Arr&ecirc;t du chargement via MySB !")
+        sStep1=("(1/${nTotalStep}) - Torrent charg&eacute; ! Proviens d&apos;un tracker ${sPrivacy}.")
+        sStep2=("(2/${nTotalStep}) - Trackers autoris&eacute;s...")
+        sStep3=("(3/${nTotalStep}) - Journalisation des infos du torrent...")
+        sStep4=("(4/${nTotalStep}) - Arr&ecirc;t temporaire du torrent pour v&eacute;rification des annonceurs...")
+        sStep5=("(5/${nTotalStep}) - R&eacute;f&eacute;rencement des annonceurs (HTTP, HTTPs, UDP et IPv6)...")
+        sStep6=("(6/${nTotalStep}) - D&eacute;sactivation des annonceurs IPv6...")
+        sStep7=("(7/${nTotalStep}) - Pr&eacute;paration des annonceurs HTTP, HTTPs et UDP &agrave; &ecirc;tre v&eacute;rifi&eacute;s et ajout&eacute;s...")
         case "${sFilesRecycling}" in
-            1)  sMess="Copie simple" ;;
-            2)  sMess="Lien dur" ;;
+            1)  sMess=("Copie simple") ;;
+            2)  sMess=("Lien dur") ;;
         esac
-        sStep8="(8/${nTotalStep}) - Si activ&eacute;, utilisation du recyclage de fichiers (${sMess})..."
-        sStep9="(9/${nTotalStep}) - Sauvegarde du torrent et lancement du t&eacute;l&eacute;chargement..."
-        sStep10="(10/${nTotalStep}) - Mise &agrave; jour du quota termin&eacute; ! Lancement de la v&eacute;rification des annonceurs, merci de patienter un moment ;-)"
+        sStep8=("(8/${nTotalStep}) - Si activ&eacute;, utilisation du recyclage de fichiers (${sMess[*]})...")
+        sStep9=("(9/${nTotalStep}) - Sauvegarde du torrent et lancement du t&eacute;l&eacute;chargement...")
+        sStep10=("(10/${nTotalStep}) - Mise &agrave; jour du quota termin&eacute; ! Lancement de la v&eacute;rification des annonceurs, merci de patienter un moment ;-)")
         ;;
     "en")
-        sMessPrivacyPrivate="Privates only"
-        sMessPrivacyPublic="Privates &amp; Publics"
-        sMessFileRecyclingFind="Recycling possible, copy in progress..."
-        sMessFileRecyclingEnd="Recycling possible, copy completed..."
-        sMessExit="Stop loading via MySB !"
-        sStep1="(1/${nTotalStep}) - Torrent loaded ! Come from ${sPrivacy} tracker."
-        sStep2="(2/${nTotalStep}) - Verification of authorized trackers..."
-        sStep3="(3/${nTotalStep}) - Logging torrent info..."
-        sStep4="(4/${nTotalStep}) - Temporary torrent stop for annoncers check..."
-        sStep5="(5/${nTotalStep}) - Annoncers referencing (HTTP, HTTPs, UDP and IPv6)..."
-        sStep6="(6/${nTotalStep}) - Disabling IPv6 annoncers..."
-        sStep7="(7/${nTotalStep}) - Prepare for HTTP, HTTPs and UDP advertisers to be checked and added..."
+        sMessPrivacyPrivate=("Privates only")
+        sMessPrivacyPublic=("Privates &amp; Publics")
+        sMessFileRecyclingFind=("Recycling possible, copy in progress...")
+        sMessFileRecyclingEnd=("Recycling possible, copy completed...")
+        sMessExit=("Error occured ! Stop loading via MySB !")
+        sStep1=("(1/${nTotalStep}) - Torrent loaded ! Come from ${sPrivacy} tracker.")
+        sStep2=("(2/${nTotalStep}) - Verification of authorized trackers...")
+        sStep3=("(3/${nTotalStep}) - Logging torrent info...")
+        sStep4=("(4/${nTotalStep}) - Temporary torrent stop for annoncers check...")
+        sStep5=("(5/${nTotalStep}) - Annoncers referencing (HTTP, HTTPs, UDP and IPv6)...")
+        sStep6=("(6/${nTotalStep}) - Disabling IPv6 annoncers...")
+        sStep7=("(7/${nTotalStep}) - Prepare for HTTP, HTTPs and UDP advertisers to be checked and added...")
         case "${sFilesRecycling}" in
-            1)  sMess="Simple copy" ;;
-            2)  sMess="Hard link" ;;
+            1)  sMess=("Simple copy") ;;
+            2)  sMess=("Hard link") ;;
         esac
-        sStep8="(8/${nTotalStep}) - If enabled, use file recycling (${sMess})..."
-        sStep9="(9/${nTotalStep}) - Saving the torrent and launching the download..."
-        sStep10="(10/${nTotalStep}) - Quota update completed ! Launching the annoucers check, please wait a moment ;-)"
+        sStep8=("(8/${nTotalStep}) - If enabled, use file recycling (${sMess[*]})...")
+        sStep9=("(9/${nTotalStep}) - Saving the torrent and launching the download...")
+        sStep10=("(10/${nTotalStep}) - Quota update completed ! Launching the annoucers check, please wait a moment ;-)")
         ;;
 esac
 
 #### Functions - BoF
 fnCopyFile() {
-    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep8} (${sMessFileRecyclingFind})" 2>>"${sLogFile}"
+    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep8[*]} (${sMessFileRecyclingFind[*]})" 2>>"${sLogFile}"
 
     case "${sFilesRecycling}" in
         1) # Simple copy
@@ -150,31 +154,31 @@ fnCopyFile() {
         xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash} 2>>"${sLogFile}"
         xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.check_hash ${sInfoHash} 2>>"${sLogFile}"
         mysql ${sSqlParams} -e "INSERT INTO torrents (info_hash,name,privacy,state,tree) VALUES ('${sInfoHash}', '${sName}', '${sPrivacy}', 'completed', '${sFinalDirectory}');" -v
-        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep8} (${sMessFileRecyclingEnd})" 2>>"${sLogFile}"
+        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep8[*]} (${sMessFileRecyclingEnd[*]})" 2>>"${sLogFile}"
     fi
 }
 #### Functions - EoF
 
 #### Step 1 - Add progress messages to torrent
-xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep1}" 2>>"${sLogFile}"
+xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep1[*]}" 2>>"${sLogFile}"
 
 #### Step 2 - Check if the tracker is allowed & annoncers cleaning
 case "${sTrackerModeAllowed}" in
     "private")
-        [ "${sPrivacy}" == "private" ] && nContinue=1 || nContinue=0
-        sMess="${sMessPrivacyPrivate}"
+        # [ "${sPrivacy}" == "private" ] && nContinue=1 || nContinue=0
+        [ "${sPrivacy}" == "private" ] || nExit=6
+        sMess=("${sMessPrivacyPrivate[*]}")
         ;;
     "public")
-        nContinue=1
-        sMess="${sMessPrivacyPublic}"
+        sMess=("${sMessPrivacyPublic[*]}")
         ;;
-    *) nContinue=0 ;;
+    *) nExit=7 ;;
 esac
-xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep2} (${sMess})" 2>>"${sLogFile}"
-[[ ${nExit} -eq 1 ]] && nContinue=0
+xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep2[*]} (${sMess[*]})" 2>>"${sLogFile}"
+[[ ${nExit} -gt 0 ]] && nContinue=0 || nContinue=1
 
 #### Step 3 - Log header
-xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep3}" 2>>"${sLogFile}"
+xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep3[*]}" 2>>"${sLogFile}"
 {
     echo "################################################################################"
     echo "Timestamp: ${dTimestamp}"
@@ -196,22 +200,23 @@ xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sSt
     echo "Torrent loaded: ${sTorrentLoaded}"
     echo "Torrent dir: ${sTorrentDir}"
     echo "Torrent file: ${sTorrentFile}"
+    [[ ${nExit} -gt 0 ]] && echo "Error: ${nExit}" | sed 's/0/NO/g;' | sed 's/1/YES/g;'
     echo "--------------"
 } >>"${sLogFile}"
 
 #### Step 4 - Close torrent from rTorrent queue
 if [[ ${nExit} -eq 0 ]]; then
-    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep4}" 2>>"${sLogFile}"
+    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep4[*]}" 2>>"${sLogFile}"
     xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.stop ${sInfoHash} 2>>"${sLogFile}"
 else
-    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sMessExit}" 2>>"${sLogFile}"
+    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sMessExit[*]}" 2>>"${sLogFile}"
     xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.stop ${sInfoHash} 2>>"${sLogFile}"
     xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.close ${sInfoHash} 2>>"${sLogFile}"
 fi
 
 if [[ ${nContinue} -eq 1 ]]; then
     #### Step 5 - List & count annoncers
-    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep5}" 2>>"${sLogFile}"
+    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep5[*]}" 2>>"${sLogFile}"
 
     declare -A aAnnoncers
     aAnnoncersUdp=()
@@ -272,7 +277,7 @@ if [[ ${nContinue} -eq 1 ]]; then
 
     #### Step 6 - Activate all announcers & disable IPv6
     if [[ ${nContinue} -eq 1 ]]; then
-        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep6}" 2>>"${sLogFile}"
+        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep6[*]}" 2>>"${sLogFile}"
         bCleaned=0
         for ((i = 0; i < ${#aAnnoncers[@]}; i++)); do
             nId="$(echo "${aAnnoncers[${i}]}" | awk '{printf $1}')"
@@ -293,7 +298,7 @@ if [[ ${nContinue} -eq 1 ]]; then
     fi
 
     #### Step 7 - Prepare annoncers (UDP, HTTP & HTTPs) list for GetTrackersCert.bsh script
-    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep7}" 2>>"${sLogFile}"
+    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep7[*]}" 2>>"${sLogFile}"
     if [[ ${nContinue} -eq 1 ]] && [[ ${bAnnoncersCheck} -eq 1 ]]; then
         bExecute=0
         sTempLocalFile="$(mktemp)"
@@ -307,7 +312,7 @@ if [[ ${nContinue} -eq 1 ]]; then
                 if (! grep -q "${sAnnoncer}" <<<${sTempLocalFile}); then
                     echo "${sAnnoncer}|${sPrivacy}|${sInfoHash}|${sShortAnnouncer}|${nCountAnnoncers}|${nCgiPort}" >>${sTempLocalFile}
                     bExecute=1
-                    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep7} (${sAnnoncer})" 2>>"${sLogFile}"
+                    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep7[*]} (${sAnnoncer})" 2>>"${sLogFile}"
                 fi
             fi
         done
@@ -322,7 +327,7 @@ if [[ ${nContinue} -eq 1 ]]; then
                     echo "${sAnnoncer}|${sPrivacy}|${sInfoHash}|${sShortAnnouncer}|${nCountAnnoncers}|${nCgiPort}" >>${sTempLocalFile}
                     bExecute=1
                     xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${nId} ${bState} 2>>"${sLogFile}"
-                    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep7} (${sAnnoncer})" 2>>"${sLogFile}"
+                    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep7[*]} (${sAnnoncer})" 2>>"${sLogFile}"
                 fi
             fi
         done
@@ -337,7 +342,7 @@ if [[ ${nContinue} -eq 1 ]]; then
                     if (! grep -q "${sAnnoncer}" <<<${sTempLocalFile}); then
                         echo "${sAnnoncer}|${sPrivacy}|${sInfoHash}|${sShortAnnouncer}|${nCountAnnoncers}|${nCgiPort}" >>${sTempLocalFile}
                         bExecute=1
-                        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep7} (${sAnnoncer})" 2>>"${sLogFile}"
+                        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep7[*]} (${sAnnoncer})" 2>>"${sLogFile}"
                     fi
                 fi
             done
@@ -352,7 +357,7 @@ if [[ ${nContinue} -eq 1 ]]; then
     fi
 
     #### Step 8 - Check if torrent already exist & copying duplicated files
-    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep8}" 2>>"${sLogFile}"
+    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep8[*]}" 2>>"${sLogFile}"
     if [[ ${nContinue} -eq 1 ]] && [[ ${sFilesRecycling} -gt 0 ]]; then
         for sTree in $(mysql ${sSqlParams} -e "SELECT tree FROM torrents WHERE info_hash='${sInfoHash}' AND name='${sName}' AND state='completed';"); do
             if [ -n "${sTree}" ]; then
@@ -382,7 +387,7 @@ if [[ ${nContinue} -eq 1 ]]; then
 
     if [[ ${nContinue} -eq 1 ]]; then
         #### Step 9 - Copy back torrent loaded & start it
-        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep9}" 2>>"${sLogFile}"
+        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep9[*]}" 2>>"${sLogFile}"
         {
             if [ "${sTorrentLoaded}" != "${sTorrentFile}" ]; then
                 echo -n "Moving torrent: "
@@ -390,13 +395,15 @@ if [[ ${nContinue} -eq 1 ]]; then
             fi
         } >>"${sLogFile}"
         xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash} 2>>"${sLogFile}"
-        [[ ${bAnnoncersCheck} -eq 0 ]] && xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.start ${sInfoHash}  2>>"${sLogFile}"
+        {
+            [[ ${bAnnoncersCheck} -eq 0 ]]
+            [[ ${isStart} -eq 1 ]]
+        } && xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.start ${sInfoHash}  2>>"${sLogFile}"
         [[ ${bAnnoncersCheck} -eq 0 ]] && xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash} 2>>"${sLogFile}"
 
         #### Step 10 - Quota update
-        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep10}" 2>>"${sLogFile}"
+        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep10[*]}" 2>>"${sLogFile}"
         sudo /bin/bash /home/"${sUserName}"/.rTorrent_tasks.sh 'quota'
-        # xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sTorrentDir}" 2>>"${sLogFile}"
     fi
 fi
 

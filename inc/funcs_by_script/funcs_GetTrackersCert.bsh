@@ -30,24 +30,12 @@
 
 #### Restore validated annoncers
 gfnAnnoncerActivate() {
-    local nCgiPort sInfoHash sId sUser bIsActive aValidatedAnnouncers sRequestValues sValue sTorrent isStart
-    local sAnnoncersAllDisabled sAnnoncersLoadingOk nCountAnnoncers
+    local nCgiPort sInfoHash sId sUser bIsActive aValidatedAnnouncers sRequestValues sValue sTorrent isStart nCountAnnoncers
     [ -n "${1}" ] && sUser="${1}" || return 1
     [ -n "${2}" ] && sInfoHash="${2}" || return 1
     [ -n "${3}" ] && nCountAnnoncers="${3}" || return 1
     aValidatedAnnouncers=()
     aUnvalidatedAnnouncers=()
-
-    case "${LANG:0:2}" in
-        "fr")
-            sAnnoncersAllDisabled="Tous les annonceurs ont &eacute;t&eacute; d&eacute;sactiv&eacute;s et bloqu&eacute;s car refus&eacute;s !"
-            sAnnoncersLoadingOk="V&eacute;rification des annonceurs termin&eacute;e !"
-            ;;
-        "en")
-            sAnnoncersAllDisabled="All announcers have been disabled and blocked because rejected !"
-            sAnnoncersLoadingOk="Annoucers verification completed !"
-            ;;
-    esac
 
     sRequestValues="$(cmdMySQL 'MySB_db' "SELECT scgi_port,id FROM annoncers WHERE user='${sUser}' AND info_hash='${sInfoHash}';" | sed 's/\t/|/g;')"
     for sValue in ${sRequestValues}; do
@@ -97,10 +85,14 @@ gfnAnnoncerActivate() {
         nCgiPort="$(echo "${sTorrent}" | awk '{split($0,a,"|"); print a[1]}')"
         sInfoHash="$(echo "${sTorrent}" | awk '{split($0,a,"|"); print a[2]}')"
         # rTorrent progress message
-        su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} \"${sAnnoncersLoadingOk}\" >/dev/null"
+        su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} \"${sAnnoncersLoadingOk[*]}\" >/dev/null"
+        sleep 1
+        su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} \"${sAnnoncersLoadingOk[*]}\" >/dev/null"
+        # Start it if possible
         isStart="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom5 ${sInfoHash} 2>/dev/null" | cut -d ':' -f 1)"
         [ -z "${isStart}" ] && isStart=1
         [ "${isStart}" -eq 1 ] && su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.start ${sInfoHash} >/dev/null"
+        # Session saving
         su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash} >/dev/null"
     done
     # Close unvalidated torrents
@@ -108,24 +100,24 @@ gfnAnnoncerActivate() {
         if [[ ${#aUnvalidatedAnnouncers[*]} -eq ${nCountAnnoncers} ]]; then
             nCgiPort="$(echo "${sTorrent}" | awk '{split($0,a,"|"); print a[1]}')"
             sInfoHash="$(echo "${sTorrent}" | awk '{split($0,a,"|"); print a[2]}')"
-            su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.close ${sInfoHash} >/dev/null"
             # rTorrent progress message
-            su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} \"${sAnnoncersAllDisabled}\" >/dev/null"
+            su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} \"${sAnnoncersAllDisabled[*]}\" >/dev/null"
+            sleep 1
+            su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} \"${sAnnoncersAllDisabled[*]}\" >/dev/null"
+            # We close torrent
+            su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.close ${sInfoHash} >/dev/null"
         fi
     done
 }
 
 #### Check added torrents
 gfnCheckAddedTorrents() {
-    local sLine sProto sPrivacy sUser sAnnouncerCheck sInfoHash
+    local sLine sProto sPrivacy sUser sInfoHash
     local nCgiPort nTotalAnnouncers
     [ -n "${1}" ] && sUser="${1}" || return 1
     declare -A nCurrentCount
-
-    case "${LANG:0:2}" in
-        "fr")   sAnnouncerCheck="V&eacute;rification de l&apos;annonceur"    ;;
-        "en")   sAnnouncerCheck="Checking Announcer" ;;
-    esac
+    gsMailContentTemp="/tmp/trackers_added.${sUser}.log"
+    export gsMailContentTemp
 
     # Add trackers
     while [ -s "/home/.check_annoncers_${sUser}" ]; do
@@ -140,7 +132,7 @@ gfnCheckAddedTorrents() {
                 nCurrentCount["${sInfoHash}"]=$(("${nCurrentCount["${sInfoHash}"]}" + 1))
 
                 # rTorrent progress message
-                su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} \"${sAnnouncerCheck} (${nCurrentCount["${sInfoHash}"]}/${nTotalAnnouncers}): ${sTracker} (${sPrivacy})\" >/dev/null"
+                su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} \"${sAnnouncerCheck[*]} (${nCurrentCount["${sInfoHash}"]}/${nTotalAnnouncers}): ${sTracker} (${sPrivacy})\" >/dev/null"
                 # Try to add tracker & announcers
                 gfnAddTracker "${sLine}" "${sUser}"
                 # Enable/Disable annoncers
@@ -159,7 +151,7 @@ gfnCheckAddedTorrents() {
 #### Add new trackers
 gfnAddTracker() {
     local sPrivacy sTracker sPart1 sPart2 sPart3 sTrackerDomain sTrackerAddress sIfExist sTrackersListId sUser
-    local sProto sURL sUrlUser sHostPort sHost sPort
+    local sProto sURL sUrlUser sHostPort sHost sPort sPglcmlTemp
     local dAptDate tNow tDiff aTrackerIPv4 bAutoBlockAnnoncers
 
     sTracker="${1}"
@@ -241,7 +233,8 @@ gfnAddTracker() {
                 if [ -z "$sIfExist" ]; then
                     log_daemon_msg "${AddTrackerDomain} ${sTrackerAddress}:${sPort}"
                     cmdMySQL 'MySB_db' "INSERT INTO trackers_list (tracker,tracker_domain,tracker_proto,tracker_port,tracker_uri,privacy,is_active,to_check) VALUES ('${sTrackerAddress}','${sTrackerDomain}','${sProto}','${sPort}','','${sPrivacy}','1','1');"
-                    echo "${sProto%://}://${sTrackerAddress}:${sPort} (${sPrivacy})" >>/tmp/trackers_added.log
+                    # echo "${sProto%://}://${sTrackerAddress}:${sPort} (${sPrivacy})" >>/tmp/trackers_added.log
+                    echo "${sProto%://}://${sTrackerAddress}:${sPort} (${sPrivacy})" >>"/tmp/trackers_added.${sUser}.log"
                     gfnStatusLSB
                 else
                     log_daemon_msg "${UpdateTrackerDomain} ${sTrackerAddress}:${sPort}"
@@ -281,13 +274,14 @@ gfnAddTracker() {
                                 # PeerGuardian check blocked IP
                                 bToBlock=0
                                 if [ "${gbIsInstalled_PeerGuardian}" == "YES" ]; then
-                                    pglcmd search "${IPv4}" >"/tmp/${gsScriptName}_pglcmd.log"
-                                    sed -i "/${IPv4}/d" "/tmp/${gsScriptName}_pglcmd.log"
-                                    sed -i '/^$/d' "/tmp/${gsScriptName}_pglcmd.log"
-                                    sed -i "/If you don't want to block the above shown ranges/d" "/tmp/${gsScriptName}_pglcmd.log"
-                                    sed -i "/Or you may remove some of these lists from/d" "/tmp/${gsScriptName}_pglcmd.log"
-                                    [ -s "/tmp/${gsScriptName}_pglcmd.log" ] && bToBlock=1
-                                    rm -f "/tmp/${gsScriptName}_pglcmd.log"
+                                    sPglcmlTemp="$(mktemp /tmp/${gsScriptName}_pglcmd.XXXXXXXXXX)"
+                                    pglcmd search "${IPv4}" >"${sPglcmlTemp}"
+                                    sed -i "/${IPv4}/d" "${sPglcmlTemp}"
+                                    sed -i '/^$/d' "${sPglcmlTemp}"
+                                    sed -i "/If you don't want to block the above shown ranges/d" "${sPglcmlTemp}"
+                                    sed -i "/Or you may remove some of these lists from/d" "${sPglcmlTemp}"
+                                    [ -s "${sPglcmlTemp}" ] && bToBlock=1
+                                    rm -f "${sPglcmlTemp}"
                                 fi
 
                                 if [[ ${tDiff} -gt ${nBetweenUpdate} ]] || [[ ${bToBlock} -eq 1 ]] || [[ ${bForceUpdate} -eq 1 ]]; then
