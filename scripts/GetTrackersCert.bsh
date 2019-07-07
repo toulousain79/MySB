@@ -37,24 +37,28 @@ case "${gsSwitch}" in
         DoRenewCertificates=0
         DoCleanCertificates=1
         DoCheckAddedTorrents=0
+        DoGetCertificates=1
         ;;
     'CRON')
         DoDeleteTracker=0
         DoRenewCertificates=1
         DoCleanCertificates=1
         DoCheckAddedTorrents=0
+        DoGetCertificates=1
         ;;
     'USER')
         DoDeleteTracker=0
         DoRenewCertificates=0
         DoCleanCertificates=0
         DoCheckAddedTorrents=1
+        DoGetCertificates=0
         ;;
     *) # "REFRESH" or "INSTALL"
         DoDeleteTracker=0
         DoRenewCertificates=1
         DoCleanCertificates=1
         DoCheckAddedTorrents=0
+        DoGetCertificates=0
         ;;
 esac
 
@@ -115,89 +119,9 @@ if [[ $DoCheckAddedTorrents -eq 1 ]]; then
 fi
 
 #### Get certificates
-bAutoBlockAnnoncers="$(cmdMySQL 'MySB_db' "SELECT block_annoncers FROM system WHERE id_system='1';")"
-TrackersList="$(cmdMySQL 'MySB_db' "SELECT tracker FROM trackers_list WHERE to_check='1';")"
-DoRehash=0
-
-for Tracker in ${TrackersList}; do
-    nBetweenUpdate=21600 # In seconds (6 hours)
-    dAptDate="$(cmdMySQL 'MySB_db' "SELECT last_check FROM trackers_list WHERE tracker='${Tracker}';")"
-    ( [ "$dAptDate" == "0000-00-00 00:00:00" ] || [ -z "${dAptDate}" ] ) && {
-        dAptDate="$(date +%Y-%m-%d\ %H:%M:%S)"
-        tDiff=$((nBetweenUpdate + 1))
-    }
-    dAptDate=$(date '+%s' --date="${dAptDate}")
-    tNow=$(date '+%s' --date="$(date +%Y-%m-%d\ %H:%M:%S)")
-    [ -z "${tDiff}" ] && tDiff=$((tNow - dAptDate))
-
-    if [[ ${tDiff} -gt ${nBetweenUpdate} ]]; then
-        log_daemon_msg "${GetCertificateFor} ${Tracker}"
-        if [ "${gbIsInstalled_PeerGuardian}" == "YES" ] && [ -f /etc/pgl/allow.p2p ]; then
-            RemoveAfter=0
-            TrackersID="$(cmdMySQL 'MySB_db' "SELECT id_trackers_list FROM trackers_list WHERE tracker='${Tracker}';")"
-            sValues="$(cmdMySQL 'MySB_db' "SELECT ipv4,pgl_banned FROM trackers_list_ipv4 WHERE id_trackers_list='${TrackersID}';" | sed 's/\t/|/g;')"
-            sed -i "/${Tracker}/d" /etc/pgl/allow.p2p
-            if [ -n "${sValues}" ]; then
-                for sValue in ${sValues}; do
-                    IPv4="$(echo "${sValue}" | awk '{split($0,a,"|"); print a[1]}')"
-                    bIsBanned="$(echo "${sValue}" | awk '{split($0,a,"|"); print a[2]}')"
-                    if [[ ${bAutoBlockAnnoncers} -eq 1 ]] && [[ ${bIsBanned} -eq 1 ]]; then
-                        echo "#${Tracker}:${IPv4}-255.255.255.255 (banned by PeerGuardian !)" >>/etc/pgl/allow.p2p
-                        RemoveAfter=1
-                    else
-                        echo "${Tracker}:${IPv4}-255.255.255.255" >>/etc/pgl/allow.p2p
-                    fi
-                done
-            else
-                RemoveAfter=1
-            fi
-        fi
-
-        cd ${MySB_InstallDir}/ssl/trackers/ || exit
-        sRequestValues="$(cmdMySQL 'MySB_db' "SELECT tracker_proto,tracker_port FROM trackers_list WHERE tracker='${Tracker}';" | sed 's/\t/|/g;')"
-        sTrackerProto="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[1]}')"
-        sTrackerPort="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
-        sExpirationDate="$(date +%Y-%m-%d)"
-        sCheckPort="${sTrackerPort}"
-        bSsl=0
-
-        if [ ! -h /etc/ssl/certs/${Tracker}.pem ] || [ ! -f ${MySB_InstallDir}/ssl/trackers/${Tracker}.pem ]; then
-            timeout 10 bash -c "openssl s_client -connect ${Tracker}:${sCheckPort} </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./${Tracker}.crt"
-            if [ -s ./${Tracker}.crt ]; then
-                openssl x509 -in ./${Tracker}.crt -out ./${Tracker}.der -outform DER
-                openssl x509 -in ./${Tracker}.der -inform DER -out ./${Tracker}.pem -outform PEM
-                if [ -s ./${Tracker}.pem ]; then
-                    if [ -f /etc/ssl/certs/${Tracker}.pem ] || [ -h /etc/ssl/certs/${Tracker}.pem ]; then
-                        rm -f /etc/ssl/certs/${Tracker}.pem
-                    fi
-                    ln -s ${MySB_InstallDir}/ssl/trackers/${Tracker}.pem /etc/ssl/certs/${Tracker}.pem
-                    # Extract certificate expiration date
-                    sExpirationDate="$(openssl x509 -enddate -noout -in ./${Tracker}.pem | cut -d "=" -f 2)"
-                    sExpirationDate="$(date -d "$sExpirationDate" '+%Y-%m-%d')"
-                    sExpirationDate="$(date --date "$sExpirationDate 2 days ago" '+%Y-%m-%d')"
-                    sTrackerPort="${sCheckPort}"
-                    sTrackerProto="https"
-                    bSsl=1
-                    DoRehash=1
-                else
-                    rm ./${Tracker}.pem
-                fi
-                rm -f ./${Tracker}.der
-            fi
-        fi
-        rm -f ./${Tracker}.crt
-
-        # Update database
-        cmdMySQL 'MySB_db' "UPDATE trackers_list SET is_ssl='${bSsl}', cert_expiration='${sExpirationDate}', to_check='0', tracker_proto='${sTrackerProto}', tracker_port='${sTrackerPort}', last_check='$(date +%Y-%m-%d\ %H:%M:%S)' WHERE tracker='${Tracker}';"
-
-        if [ "${gbIsInstalled_PeerGuardian}" == "YES" ] && [ -f /etc/pgl/allow.p2p ]; then
-            [[ ${RemoveAfter} -eq 1 ]] && sed -i "/${Tracker}/d" /etc/pgl/allow.p2p
-            pglcmd reload >/dev/null
-        fi
-        gfnStatusLSB
-    fi
-    unset nBetweenUpdate dAptDate tDiff tNow
-done
+if [[ $DoGetCertificates -eq 1 ]]; then
+    gfnGetCertificates
+fi
 
 # Block all inactive trackers in BIND
 # shellcheck source=inc/funcs_by_script/funcs_MySB_SecurityRules
@@ -212,19 +136,6 @@ gfnStatusLSB 0
 
 #### Reload services
 systemctl reload bind9.service
-
-#### Create again certificates listing in system
-if [ "$DoRehash" == 1 ]; then
-    log_daemon_msg "$CertificateRehash"
-    c_rehash ${MySB_InstallDir}/ssl/trackers/ &>/dev/null
-    update-ca-certificates --fresh &>/dev/null
-    gfnStatusLSB
-fi
-
-#### Unlock
-# rm -f "/tmp/.check_annoncers_${sUser}.lock"
-cat "${gsLogFile}" >>"${MySB_InstallDir}/logs/${gsScriptName}.log"
-rm -f "${gsLogFile}"
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after
