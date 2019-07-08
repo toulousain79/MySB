@@ -4,6 +4,7 @@ variables:
 
 stages:
     - check_bugfix
+    - after_merge_success
     - check_master
 
 # #### Templates - BoF
@@ -23,17 +24,17 @@ check_bugfix:
       refs:
         - merge_requests
         - schedules
-    after_script:
-        - "curl -X POST -F token=${TRIGGER_TOKEN} -F ref=${VERSION} https://gitlab.com/api/v4/projects/8181679/trigger/pipeline"
     <<: *tmpl_check
+
+after_merge_success:
+    stage: after_merge_success
+    when: on_success
+    script:
+        - "curl -X POST -F token=${TRIGGER_TOKEN} -F ref=${VERSION} https://gitlab.com/api/v4/projects/8181679/trigger/pipeline"
 
 check_master:
     image: ${REGISTRY_IMAGES}:${VERSION}
     stage: check_master
     only:
         - triggers
-    when:
-        - on_success
-        - delayed
-    start_in: 20 seconds
     <<: *tmpl_check
