@@ -63,7 +63,7 @@ case "${gsSwitch}" in
 esac
 
 #### Removing deleted trackers from the portal
-if [ $DoDeleteTracker -eq 1 ]; then
+if [[ ${DoDeleteTracker} -eq 1 ]]; then
     RemovedTrackersList="$(cmdMySQL 'MySB_db' "SELECT tracker FROM trackers_list WHERE to_delete = '1';")"
     for RemovedTracker in ${RemovedTrackersList}; do
         log_daemon_msg "${DeleteTracker} ${RemovedTracker}"
@@ -74,68 +74,70 @@ if [ $DoDeleteTracker -eq 1 ]; then
 fi
 
 #### Renew expirated certificates
-if [ $DoRenewCertificates -eq 1 ]; then
+if [[ ${DoRenewCertificates} -eq 1 ]]; then
     ExpiratedTrackersList="$(cmdMySQL 'MySB_db' "SELECT tracker FROM trackers_list WHERE cert_expiration <= '$(date +%Y-%m-%d)' AND is_active = '1';")"
     for ExpiratedTracker in ${ExpiratedTrackersList}; do
-        log_daemon_msg "$RenewCertificate ${ExpiratedTracker}"
+        log_daemon_msg "${RenewCertificate} ${ExpiratedTracker}"
         rm -f ${MySB_InstallDir}/ssl/trackers/*${RemovedTracker}.pem
         cmdMySQL 'MySB_db' "UPDATE trackers_list SET is_ssl='0', to_check='1', cert_expiration='0000-00-00' WHERE tracker = '${ExpiratedTracker}';"
         gfnStatusLSB
     done
 fi
 
-#### Clean certificates with bad links
-if [ $DoCleanCertificates -eq 1 ]; then
+if [[ ${DoCleanCertificates} -eq 1 ]]; then
     #### Create again certificates listing in system
-    log_daemon_msg "$CertificateRehash"
+    log_daemon_msg "${CertificateRehash}"
     c_rehash ${MySB_InstallDir}/ssl/trackers/ &>/dev/null
     update-ca-certificates --fresh &>/dev/null
     gfnStatusLSB
 
-    log_daemon_msg "$CleanCertificatesBadLinks"
+    #### Clean certificates with bad links
+    log_daemon_msg "${CleanCertificatesBadLinks}"
     LIST_CERTS=$(ls -la /etc/ssl/certs/ | awk '{ print $9 }')
     for Cert in ${LIST_CERTS}; do
-        if [ "$Cert" != "" ] && [ "$Cert" != "." ] && [ "$Cert" != ".." ]; then
-            TARGET=$(ls -la /etc/ssl/certs/$Cert | awk '{ print $11 }')
-            if [ ! -f $TARGET ]; then
-                rm -f /etc/ssl/certs/$Cert &>/dev/null
+        if [ "${Cert}" != "" ] && [ "${Cert}" != "." ] && [ "${Cert}" != ".." ]; then
+            TARGET=$(ls -la "/etc/ssl/certs/${Cert}" | awk '{ print $11 }')
+            if [ ! -f "${TARGET}" ]; then
+                rm -f "/etc/ssl/certs/${Cert}" &>/dev/null
             fi
-            unset Cert TARGET
+            unset TARGET
         fi
     done
-    unset LIST_CERTS
+    unset LIST_CERTS Cert
     gfnStatusLSB
 fi
 
-# Allow all trackers in BIND
-perl -pi -e "s/^include \"\/etc\/bind\/MySB.zones.blakclists\";/#include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
-systemctl reload bind9.service
+if [[ ${DoCheckAddedTorrents} -eq 1 ]] || [[ ${DoGetCertificates} -eq 1 ]]; then
+    # Allow all trackers in BIND
+    perl -pi -e "s/^include \"\/etc\/bind\/MySB.zones.blakclists\";/#include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
+    systemctl reload bind9.service
+fi
 
-#### Create trackers listing
-
-# Check added torrents
-if [[ $DoCheckAddedTorrents -eq 1 ]]; then
-    gfnCheckAddedTorrents "${sUser}"
+#### Check added torrents
+if [[ ${DoCheckAddedTorrents} -eq 1 ]]; then
+    gfnCheckAddedTorrents "${sUser}" "${gsGivenHash}"
 fi
 
 #### Get certificates
-if [[ $DoGetCertificates -eq 1 ]]; then
+if [[ ${DoGetCertificates} -eq 1 ]]; then
     gfnGetCertificates
 fi
 
-# Block all inactive trackers in BIND
-# shellcheck source=inc/funcs_by_script/funcs_MySB_SecurityRules
-. "${MySB_InstallDir}"/inc/funcs_by_script/funcs_MySB_SecurityRules
-log_daemon_msg "${Global_Bind_BlockOut[*]}"
-gfnGenerateBlacklistsZone
-gfnStatusLSB 0
+if [[ ${DoCheckAddedTorrents} -eq 1 ]] || [[ ${DoGetCertificates} -eq 1 ]]; then
+    # Block all inactive trackers in BIND
+    # shellcheck source=inc/funcs_by_script/funcs_MySB_SecurityRules
+    . "${MySB_InstallDir}"/inc/funcs_by_script/funcs_MySB_SecurityRules
+    log_daemon_msg "${Global_Bind_BlockOut[*]}"
+    gfnGenerateBlacklistsZone
+    gfnStatusLSB 0
 
-log_daemon_msg "${Global_Bind_TrackersHosts[*]}"
-gfnCreateHostsFile
-gfnStatusLSB 0
+    log_daemon_msg "${Global_Bind_TrackersHosts[*]}"
+    gfnCreateHostsFile
+    gfnStatusLSB 0
 
-#### Reload services
-systemctl reload bind9.service
+    #### Reload services
+    systemctl reload bind9.service
+fi
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after
