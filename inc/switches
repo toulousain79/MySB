@@ -1,5 +1,5 @@
 #!/bin/bash
-# rev 5.5
+# rev 6.0
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -78,19 +78,6 @@ for Arg in "$@"; do
             END=OFF
             TIMESTAMP=ON
             gsSwitch="${Arg}"
-            #### Wait
-            # If username is not defined or /home/.check_annoncers is empty, so exit
-            ( [ -n "${2}" ] && [ -s "/home/.check_annoncers_${2}" ] && [ -n "$(getent passwd "${2}")" ] ) && sUser="${2}" || gfnEndingScript 0
-            # Create new lock file
-            gsLockFile="/tmp/.check_annoncers_${sUser}.lock"
-            while [ -f "${gsLockFile}" ]; do
-                sleep 1
-            done
-            touch "${gsLockFile}"
-            # Temp log file
-            gsLogFile="$(mktemp /tmp/${gsScriptName}.${sUser}.XXXXXXXXXX)"
-
-            export gsLockFile gsLogFile gsCurrentAnnouncersCheck
             break
             ;;
         *) gsSwitch="${Arg}" ;;
@@ -153,6 +140,27 @@ case "${gsScriptName}" in
         USAGE=ON
         TIMESTAMP=ON
         END=OFF
+        ;;
+    GetTrackersCert.bsh)
+        case "${gsSwitch}" in
+            USER)
+                #### Wait
+                # If username is not defined or /home/.check_annoncers_user is empty, so exit
+                ( [ -n "${2}" ] && [ -s "/home/.check_annoncers_${2}" ] && [ -n "$(getent passwd "${2}")" ] ) && sUser="${2}" || gfnEndingScript 0
+                ( [ -n "${3}" ] && [ -s "/home/.check_annoncers_${2}" ] && [ "${#3}" -ge 40 ] ) && gsGivenHash="${3}" || gfnEndingScript 0
+                # Create new lock file
+                # gsLockFile="/tmp/.check_annoncers_${sUser}.lock"
+                # while [ -f "${gsLockFile}" ]; do
+                #     sleep 1
+                # done
+                # touch "${gsLockFile}"
+                # Temp log file
+                gsLogFile="$(mktemp /tmp/${gsScriptName}.${sUser}.XXXXXXXXXX)"
+                gsMailContentTemp="$(mktemp /tmp/${gsScriptName}.${sUser}.mail.XXXXXXXXXX)"
+
+                export gsLockFile gsLogFile gsCurrentAnnouncersCheck gsGivenHash gsMailContentTemp
+                ;;
+        esac
         ;;
 esac
 
