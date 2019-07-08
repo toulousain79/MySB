@@ -23,20 +23,23 @@ for sUser in ${gsUsersList}; do
     #### VARs
     nCgiPort="$(cmdMySQL 'MySB_db' "SELECT scgi_port FROM users WHERE users_ident='${sUser}';")"
     sDownloadList="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} download_list "")"
-    sDownloadList="$(echo "${sDownloadList}" | sed -e 's/,//g;' | sed -e "s/'//g;" | sed -e 's/\[//g;' | sed -e 's/\]//g;' | tr '[:upper:]' '[:lower:]')"
+    sDownloadList="$(echo "${sDownloadList}" | sed -e "s/,//g;s/'//g;s/\[//g;s/\]//g;" | tr '[:upper:]' '[:lower:]')"
+    sTempSessionsFile="$(mktemp /tmp/${gsScriptName}.${sUser}.XXXXXXXXXX)"
 
-    find /home/${sUser}/rtorrent/.session/ -name '*.torrent' -type f >/tmp/sessions
-    while [ -s /tmp/sessions ]; do
+    find /home/${sUser}/rtorrent/.session/ -name '*.torrent' -type f >"${sTempSessionsFile}"
+    # Delete empty lines
+    sed -i '/^$/d' "${sTempSessionsFile}"
+    while [ -s "${sTempSessionsFile}" ]; do
         while IFS= read -r sTorrentLoaded; do
             # Functions
             function fnCleaning() {
-                sed -i "/${sTorrentLoaded}/d" /tmp/crontab.tmp
+                sed -i "/$(echo "${sInfoHash}" | tr '[:lower:]' '[:upper:]')/d" "${sTempSessionsFile}"
                 continue
             }
             # Get torrent infos
             sInfoHash="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Hash: ' | awk '{printf $2}')"
             sName="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Name: ')"
-            sName="$(echo "${sName}" | sed -e 's/Name: //g;' | sed -e "s/'/\\\'/g;")"
+            sName="$(echo "${sName}" | sed -e "s/Name: //g;s/'/\\\'/g;")"
             sPrivacy="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
             xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash} >/dev/null
 
@@ -212,9 +215,10 @@ for sUser in ${gsUsersList}; do
             [[ ${bAnnoncersCheck} -eq 0 ]] && xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash}
 
             # Remove hash from file list
-            sed -i "/${sTorrentLoaded}/d" /tmp/crontab.tmp
-        done </tmp/sessions
-        rm /tmp/sessions
+            sed -i "/$(echo "${sInfoHash}" | tr '[:lower:]' '[:upper:]')/d" "${sTempSessionsFile}"
+            # Delete empty lines
+            sed -i '/^$/d' "${sTempSessionsFile}"
+        done <"${sTempSessionsFile}"
 
         if [ -s "/home/.check_annoncers_${sUser}" ] && [[ ${bExecute} -eq 1 ]]; then
             if [ "$(ps ax | grep "sudo /bin/bash /opt/MySB/scripts/GetTrackersCert.bsh USER ${sUser}" | grep -v 'grep' | wc -l)" -lt 3 ]; then
@@ -222,7 +226,7 @@ for sUser in ${gsUsersList}; do
                 sleep 3
             fi
         fi
-
-        /bin/bash /home/"${sUser}"/.rTorrent_tasks.sh 'quota'
     done
+    rm "${sTempSessionsFile}"
+    /bin/bash /home/"${sUser}"/.rTorrent_tasks.sh 'quota'
 done
