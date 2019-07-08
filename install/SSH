@@ -105,10 +105,13 @@ fi
 (! grep -q 'MySB_users' /etc/group) && groupadd -f MySB_users
 
 # Users
-gfnListCountUsers
-gsUsersList="${gsUsersList} plex backup_rsync"
+gsUsersList="${gsUsersList} plex"
 for sUser in $(grep bash /etc/passwd | cut -f1 -d:); do
-    (! grep -q "${sUser}" <<<"${gsUsersList}") && usermod -a -G sshdusers "${sUser}"
+    (grep -q "${sUser}" <<<"${gsUsersList}") && {
+        usermod -a -G MySB_users "${sUser}"
+        deluser "${sUser}" sshdusers
+    }
+    [ "${sUser}" == "${gsMainUserName}" ] && usermod -a -G sshdusers "${sUser}"
 done
 
 mkdir -pv /usr/share/terminfo/l/

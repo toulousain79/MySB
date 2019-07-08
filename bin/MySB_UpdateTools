@@ -99,7 +99,7 @@ if (! cmdMySQL 'MySB_db' "SELECT annoncers_check FROM system WHERE id_system='1'
     cmdMySQL 'MySB_db' "ALTER TABLE system ADD annoncers_udp TINYINT(1) NOT NULL DEFAULT '0' AFTER block_annoncers;" -v
     cmdMySQL 'MySB_db' "ALTER TABLE system ADD annoncers_check TINYINT(1) NOT NULL DEFAULT '1' AFTER annoncers_udp;" -v
     cmdMySQL 'MySB_db' "ALTER TABLE trackers_list ADD last_check datetime NOT NULL DEFAULT '0000-00-00 00:00:00' AFTER cert_expiration;" -v
-    cmdMySQL 'MySB_db' "ALTER TABLE trackers_list ADD last_check datetime NOT NULL DEFAULT '0000-00-00 00:00:00' AFTER ping;" -v
+    cmdMySQL 'MySB_db' "ALTER TABLE trackers_list_ipv4 ADD last_check datetime NOT NULL DEFAULT '0000-00-00 00:00:00' AFTER ping;" -v
     #### MySQL Grant for users
     source /etc/MySB/config_db
     mysql -u root -p"${MySQL_RootPassword}" --verbose <<-EOF
@@ -156,7 +156,38 @@ if [[ ${bRtorrentRestart} -eq 1 ]]; then
         systemctl enable rtorrent-"${sUser}" &>/dev/null
 
         gfnManageServices start "rtorrent-${sUser}"
+
+        # Add users allowed commands to sudoers.d (used by rTorrent scripts)
+        {
+            echo "${sUser} ALL= EXEC: NOPASSWD: /bin/cp -av /home/*/rtorrent/* /home/${sUser}/rtorrent/complete/*"
+            echo "${sUser} ALL= EXEC: NOPASSWD: /bin/cp -alv /home/*/rtorrent/* /home/${sUser}/rtorrent/complete/*"
+            echo "${sUser} ALL= EXEC: NOPASSWD: /bin/chown -Rv ${sUser}\:${sUser} /home/${sUser}/rtorrent/complete/*"
+            echo "${sUser} ALL= EXEC: NOPASSWD: /bin/chown -Rv ${sUser}\:MySB_users /home/${sUser}/rtorrent/complete/*"
+            echo "${sUser} ALL= EXEC: NOPASSWD: /bin/bash ${MySB_InstallDir}/scripts/GetTrackersCert.bsh USER ${sUser} [A-Z0-9]*"
+            echo "${sUser} ALL= EXEC: NOPASSWD: /bin/bash /home/${sUser}/.rTorrent_tasks.sh*"
+        } >"/etc/sudoers.d/MySB_${sUser}"
     done
+    gfnManageServices stop "sudo"
+fi
+
+#### SSH
+for sUser in $(grep bash /etc/passwd | cut -f1 -d:); do
+    (grep -q "${sUser}" <<<"${gsUsersList//${gsMainUserName}/}") && {
+        deluser "${sUser}" sshdusers
+    }
+    [ "${sUser}" == "${gsMainUserName}" ] && usermod -a -G sshdusers "${sUser}"
+done
+
+#### Add export into /etc/MySB/config
+if (! grep -q 'export' /etc/MySB/config); then
+    if [ ! -d /etc/MySB/ ]; then mkdir /etc/MySB/; fi
+    {
+        echo "MySB_InstallDir=\"${MySB_InstallDir}\""
+        echo "MySB_Files=\"${MySB_InstallDir}_files\""
+        echo "EnvLang=\"$EnvLang\""
+        echo "export MySB_InstallDir MySB_Files EnvLang"
+    } >/etc/MySB/config
+    chmod 0640 /etc/MySB/config
 fi
 
 # -----------------------------------------
