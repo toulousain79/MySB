@@ -4,8 +4,8 @@ source /opt/MySB/inc/vars
 # shellcheck source=/dev/null
 source ${MySB_InstallDir}/inc/funcs_by_script/funcs_MySB_CreateUser
 
-cmdMySQL 'MySB_db' "DELETE FROM torrents;" -v
-cmdMySQL 'MySB_db' "DELETE FROM trackers_list;" -v
+# cmdMySQL 'MySB_db' "DELETE FROM torrents;" -v
+# cmdMySQL 'MySB_db' "DELETE FROM trackers_list;" -v
 
 sRequestValues="$(cmdMySQL 'MySB_db' "SELECT public_tracker_allow,annoncers_udp,annoncers_check FROM system WHERE id_system='1';" | sed 's/\t/|/g;')"
 sTrackerModeAllowed="$(echo "$sRequestValues" | awk '{split($0,a,"|"); print a[1]}')"
@@ -22,7 +22,7 @@ for sUser in ${gsUsersList}; do
 
     #### VARs
     nCgiPort="$(cmdMySQL 'MySB_db' "SELECT scgi_port FROM users WHERE users_ident='${sUser}';")"
-    sDownloadList="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} download_list "")"
+    sDownloadList="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} download_list \"\"")"
     sDownloadList="$(echo "${sDownloadList}" | sed -e "s/,//g;s/'//g;s/\[//g;s/\]//g;" | tr '[:upper:]' '[:lower:]')"
     sTempSessionsFile="$(mktemp /tmp/${gsScriptName}.${sUser}.XXXXXXXXXX)"
 
@@ -31,17 +31,18 @@ for sUser in ${gsUsersList}; do
     sed -i '/^$/d' "${sTempSessionsFile}"
     while [ -s "${sTempSessionsFile}" ]; do
         while IFS= read -r sTorrentLoaded; do
-            # Functions
-            function fnCleaning() {
-                sed -i "/$(echo "${sInfoHash}" | tr '[:lower:]' '[:upper:]')/d" "${sTempSessionsFile}"
-                continue
-            }
             # Get torrent infos
             sInfoHash="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Hash: ' | awk '{printf $2}')"
             sName="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Name: ')"
             sName="$(echo "${sName}" | sed -e "s/Name: //g;s/'/\\\'/g;")"
             sPrivacy="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
-            xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash} >/dev/null
+            su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash} >/dev/null"
+
+            # Functions
+            function fnCleaning() {
+                sed -i "/$(echo "${sInfoHash}" | tr '[:lower:]' '[:upper:]')/d" "${sTempSessionsFile}"
+                continue
+            }
 
             # Check if hash is in download list
             (! grep -qi "${sInfoHash}" <<<"${sDownloadList}") && {
@@ -50,14 +51,15 @@ for sUser in ${gsUsersList}; do
             }
 
             # Don't waiting after check hash, next
-            [ "$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.get_hashing ${sInfoHash})" -ne 0 ] && continue
+            [ "$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.get_hashing ${sInfoHash}")" -ne 0 ] && continue
 
             # Get vars
-            sBasePath="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.base_path ${sInfoHash})"
+            sBasePath="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.base_path ${sInfoHash}")"
             sBasePath="$(echo "${sBasePath}" | sed -e "s/'/\\\'/g;")"
-            sDirectory="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.directory ${sInfoHash})"
+            sDirectory="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.directory ${sInfoHash}")"
             sDirectory="$(echo "${sDirectory}" | sed -e "s/'/\\\'/g;")"
-            bState="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.state ${sInfoHash})"
+            nLeftBytes="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.get_left_bytes ${sInfoHash}")"
+            bState="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.state ${sInfoHash}")"
             sLabel="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom1 ${sInfoHash} 2>/dev/null")"
             isStart="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom5 ${sInfoHash} 2>/dev/null" | cut -d ':' -f 1)"
 
@@ -66,6 +68,7 @@ for sUser in ${gsUsersList}; do
             echo "Name: ${sName}"
             echo "Hash: ${sInfoHash}"
             echo "State: ${bState}"
+            echo "Left bytes: ${nLeftBytes}"
             echo "Base path: ${sBasePath}"
             echo "Directory: ${sDirectory}"
             [ -n "${sLabel}" ] && echo "sLabel: ${sLabel}"
@@ -137,12 +140,19 @@ for sUser in ${gsUsersList}; do
             echo "HTTPs: ${#aAnnoncersHttps[*]}"
             echo "--------------"
             if [ "${nCountAnnoncers}" -eq 0 ]; then
-                xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.stop ${sInfoHash}
-                xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.close ${sInfoHash}
+                su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.stop ${sInfoHash}"
+                su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.close ${sInfoHash}"
                 fnCleaning
             else
                 nCountAnnoncers=$((nCountAnnoncers - ${#aAnnoncersIpv[@]}))
                 [[ ${bAnnoncersUdp} -eq 0 ]] && nCountAnnoncers=$((nCountAnnoncers - ${#aAnnoncersUdp[@]}))
+                if [ "${nLeftBytes}" -eq 0 ]; then
+                    if [ -z "$(cmdMySQL 'MySB_db' "SELECT id_torrents FROM torrents WHERE info_hash='${sInfoHash}' AND name='${sName}' AND tree='${sBasePath}';")" ]; then
+                        cmdMySQL 'MySB_db' "INSERT INTO torrents (info_hash,name,privacy,state,tree) VALUES ('${sInfoHash}', '${sName}', '${sPrivacy}', 'completed', '${sBasePath}');" -v
+                    else
+                        cmdMySQL 'MySB_db' "UPDATE torrents SET state='completed' WHERE info_hash='${sInfoHash}' AND tree='${sBasePath}'" -v
+                    fi
+                fi
             fi
 
             #### Step 2 - Disable UDP & IPv6 annoncers
@@ -151,10 +161,10 @@ for sUser in ${gsUsersList}; do
                 nId="$(echo "${aAnnoncers[${i}]}" | awk '{printf $1}')"
                 bState="$(echo ${aAnnoncers[${i}]} | awk '{printf $2}')"
                 if [ "${bState}" -eq 0 ]; then
-                    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${aAnnoncers[${i}]} >/dev/null
+                    su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${aAnnoncers[${i}]} >/dev/null"
                     bCleaned=1
                 else
-                    [[ ${bAnnoncersCheck} -eq 1 ]] && mysql ${sSqlParams} -e "INSERT INTO annoncers (scgi_port,info_hash,id,user) VALUES ('${nCgiPort}', '${sInfoHash}', '${nId}', '${sUser}');" --verbose
+                    [[ ${bAnnoncersCheck} -eq 1 ]] && cmdMySQL 'MySB_db' "INSERT INTO annoncers (scgi_port,info_hash,id,user) VALUES ('${nCgiPort}', '${sInfoHash}', '${nId}', '${sUser}');" --verbose
                 fi
             done
             if [ ${bCleaned} -eq 1 ]; then
@@ -211,8 +221,8 @@ for sUser in ${gsUsersList}; do
                 rm -f ${sTempLocalFile}
             fi
 
-            ( [[ ${bAnnoncersCheck} -eq 0 ]] && [[ ${isStart} -eq 1 ]] ) && xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.start ${sInfoHash}
-            [[ ${bAnnoncersCheck} -eq 0 ]] && xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash}
+            ( [[ ${bAnnoncersCheck} -eq 0 ]] && [[ ${isStart} -eq 1 ]] ) && su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.start ${sInfoHash}"
+            [[ ${bAnnoncersCheck} -eq 0 ]] && su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash}"
 
             # Remove hash from file list
             sed -i "/$(echo "${sInfoHash}" | tr '[:lower:]' '[:upper:]')/d" "${sTempSessionsFile}"

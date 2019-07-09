@@ -190,6 +190,40 @@ if (! grep -q 'export' /etc/MySB/config); then
     chmod 0640 /etc/MySB/config
 fi
 
+#### NextCloud
+IfExist="$(cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_appconfig WHERE configkey='shareapi_enforce_links_password';" 2>/dev/null)"
+if [ -n "$IfExist" ]; then
+    cmdMySQL 'NextCloud_db' "DELETE FROM nc_appconfig WHERE configkey='shareapi_allow_mail_notification';" -v
+    cmdMySQL 'NextCloud_db' "DELETE FROM nc_appconfig WHERE configkey='shareapi_allow_public_notification';" -v
+    cmdMySQL 'NextCloud_db' "DELETE FROM nc_appconfig WHERE configkey='shareapi_default_expire_date';" -v
+    cmdMySQL 'NextCloud_db' "DELETE FROM nc_appconfig WHERE configkey='shareapi_enforce_links_password';" -v
+    cmdMySQL 'NextCloud_db' "DELETE FROM nc_appconfig WHERE configkey='shareapi_enforce_expire_date';" -v
+    cmdMySQL 'NextCloud_db' "DELETE FROM nc_appconfig WHERE configkey='allow_user_mounting';" -v
+    cmdMySQL 'NextCloud_db' "DELETE FROM nc_appconfig WHERE configkey='user_mounting_backends';" -v
+    cmdMySQL 'NextCloud_db' "DELETE FROM nc_appconfig WHERE appid='password_policy';" -v
+
+    source /etc/MySB/config_db
+    OC_PASS="${MySQL_MysbPassword}"
+    export OC_PASS
+    su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ user:resetpassword --password-from-env admin"
+fi
+
+#### NginX
+bNginxRestart=0
+(! grep -q 'rev 0.1' /etc/nginx/nginx.conf) && {
+    install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.nginx.conf.tmpl /etc/nginx/nginx.conf
+    perl -pi -e "s/worker_processes auto;/worker_processes $gsProcessors;/g" /etc/nginx/nginx.conf
+    bNginxRestart=1
+}
+if [ "$gbToInstall_NextCloud" == "YES" ] || [ "$gbIsInstalled_NextCloud" == "YES" ]; then
+    (! grep -q 'rev 0.1' /etc/nginx/locations/NextCloud.conf) && {
+        install -v -g root -o root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.locations.nextcloud.conf.tmpl /etc/nginx/locations/NextCloud.conf
+        perl -pi -e "s/<MySB_InstallDir>/$gsInstallDirEscaped/g" /etc/nginx/locations/NextCloud.conf
+        bNginxRestart=1
+    }
+fi
+[[ ${bNginxRestart} -eq 1 ]] && gfnManageServices restart "nginx"
+
 # -----------------------------------------
 # shellcheck source=inc/includes_after
 . "$(dirname "$0")"/../inc/includes_after

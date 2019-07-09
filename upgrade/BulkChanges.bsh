@@ -141,6 +141,15 @@ case "$1" in
             gfnRepoManageByType
             gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/upgrade/NextCloud_v15" 'UPGRADE'
             su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ config:system:get version"
+            #### NextCloud remove all old forced parameters
+            cmdMySQL 'NextCloud_db' "DELETE FROM nc_appconfig WHERE configkey='shareapi_allow_mail_notification';" -v
+            cmdMySQL 'NextCloud_db' "DELETE FROM nc_appconfig WHERE configkey='shareapi_allow_public_notification';" -v
+            cmdMySQL 'NextCloud_db' "DELETE FROM nc_appconfig WHERE configkey='shareapi_default_expire_date';" -v
+            cmdMySQL 'NextCloud_db' "DELETE FROM nc_appconfig WHERE configkey='shareapi_enforce_links_password';" -v
+            cmdMySQL 'NextCloud_db' "DELETE FROM nc_appconfig WHERE configkey='shareapi_enforce_expire_date';" -v
+            cmdMySQL 'NextCloud_db' "DELETE FROM nc_appconfig WHERE configkey='allow_user_mounting';" -v
+            cmdMySQL 'NextCloud_db' "DELETE FROM nc_appconfig WHERE configkey='user_mounting_backends';" -v
+            cmdMySQL 'NextCloud_db' "DELETE FROM nc_appconfig WHERE appid='password_policy';" -v
             # Upgrade to 16x latest
             cmdMySQL 'MySB_db' "UPDATE repositories SET version='${sNewVersion}', upgrade='1', file='nextcloud_v${sNewVersion}.zip', url='https://download.nextcloud.com/server/releases/nextcloud-${sNewVersion}.zip' WHERE name='NextCloud';" -v
             source /etc/MySB/config_db
@@ -333,7 +342,6 @@ case "$1" in
         # 1/ Parcours des .torrent
         #   a/ SI PAS actif ALORS on le supprime
         #   b/ SI actif ALORS on le clean ET on le recharge
-
         echo
         echo "################################################################################"
 
@@ -349,7 +357,7 @@ case "$1" in
 
             #### VARs
             nCgiPort="$(cmdMySQL 'MySB_db' "SELECT scgi_port FROM users WHERE users_ident='${sUser}';")"
-            sDownloadList="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} download_list "")"
+            sDownloadList="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} download_list \"\"")"
             sDownloadList="$(echo "${sDownloadList}" | sed -e "s/,//g;s/'//g;s/\[//g;s/\]//g;" | tr '[:upper:]' '[:lower:]')"
             sTempSessionsFile="$(mktemp /tmp/${gsScriptName}.${sUser}.XXXXXXXXXX)"
 
@@ -363,9 +371,7 @@ case "$1" in
                     sName="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Name: ')"
                     sName="$(echo "${sName}" | sed -e "s/Name: //g;s/'/\\\'/g;")"
                     sPrivacy="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
-                    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash} >/dev/null
-
-                    echo "sInfoHash: $(echo "${sInfoHash}" | tr '[:lower:]' '[:upper:]')"
+                    su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash} >/dev/null"
 
                     # Functions
                     function fnCleaning() {
@@ -383,12 +389,12 @@ case "$1" in
                     [ "$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.get_hashing ${sInfoHash})" -ne 0 ] && continue
 
                     # Get vars
-                    sBasePath="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.base_path ${sInfoHash})"
+                    sBasePath="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.base_path ${sInfoHash}")"
                     sBasePath="$(echo "${sBasePath}" | sed -e "s/'/\\\'/g;")"
-                    sDirectory="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.directory ${sInfoHash})"
+                    sDirectory="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.directory ${sInfoHash}")"
                     sDirectory="$(echo "${sDirectory}" | sed -e "s/'/\\\'/g;")"
-                    nLeftBytes="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.get_left_bytes ${sInfoHash})"
-                    bState="$(xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.state ${sInfoHash})"
+                    nLeftBytes="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.get_left_bytes ${sInfoHash}")"
+                    bState="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.state ${sInfoHash}")"
 
                     echo
                     echo "--------------------"
@@ -462,8 +468,8 @@ case "$1" in
                     echo "HTTPs: ${#aAnnoncersHttps[*]}"
                     echo "--------------"
                     if [ "${nCountAnnoncers}" -eq 0 ]; then
-                        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.stop ${sInfoHash}
-                        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.close ${sInfoHash}
+                        su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.stop ${sInfoHash}"
+                        su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.close ${sInfoHash}"
                         fnCleaning
                     else
                         if [ "${nLeftBytes}" -eq 0 ]; then
@@ -481,7 +487,7 @@ case "$1" in
                         nId="$(echo "${aAnnoncers[${i}]}" | awk '{printf $1}')"
                         bState="$(echo ${aAnnoncers[${i}]} | awk '{printf $2}')"
                         if [ "${bState}" -eq 0 ]; then
-                            xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${aAnnoncers[${i}]} >/dev/null
+                            su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${aAnnoncers[${i}]} >/dev/null"
                             bCleaned=1
                         else
                             cmdMySQL 'MySB_db' "INSERT INTO annoncers (scgi_port,info_hash,id,user) VALUES ('${nCgiPort}', '${sInfoHash}', '${nId}', '${sUser}');" -v
