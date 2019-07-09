@@ -221,10 +221,7 @@ for sUser in ${gsUsersList}; do
         done <"${sTempSessionsFile}"
 
         if [ -s "/home/.check_annoncers_${sUser}" ] && [[ ${bExecute} -eq 1 ]]; then
-            if [ "$(ps ax | grep "sudo /bin/bash /opt/MySB/scripts/GetTrackersCert.bsh USER ${sUser}" | grep -v 'grep' | wc -l)" -lt 3 ]; then
-                sudo /bin/bash "${MySB_InstallDir}/scripts/GetTrackersCert.bsh" USER "${sUser}" &
-                sleep 3
-            fi
+            sudo /bin/bash "${MySB_InstallDir}/scripts/GetTrackersCert.bsh" USER "${sUser}" "${sInfoHash}" &
         fi
     done
     rm "${sTempSessionsFile}"
