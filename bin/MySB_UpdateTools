@@ -59,7 +59,7 @@ gfnListCountUsers 'normal'
 #### rTorrent scripts (to leave for next version ;-)
 for sUser in ${gsUsersList}; do
     (! grep -q 'rev 0.5' "/etc/init.d/rtorrent-${sUser}") && bRtorrentRestart=1
-    (! grep -Rq 'rev 0.5' /home/${sUser}/.*.sh) && bRtorrentRestart=1
+    (! grep -Rq 'rev 0.6' /home/${sUser}/.*.sh) && bRtorrentRestart=1
 done
 
 #### Fix version in database
@@ -87,28 +87,35 @@ if (! grep -q 'rev 0.3' "${gsRutorrentDir}"/php/rtorrent.php); then
 fi
 
 #### MySQL
+mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Schema.sql"
+mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Triggers.sql"
+
+#### MySQL Grant for users
+source /etc/MySB/config_db
+mysql -u root -p"${MySQL_RootPassword}" --verbose <<-EOF
+    GRANT SELECT, INSERT, DELETE ON MySB_db.annoncers TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
+    GRANT SELECT ON MySB_db.trackers_list TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
+    GRANT SELECT, INSERT, DELETE ON MySB_db.torrents TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
+    GRANT SELECT (id_system,public_tracker_allow,files_recycling,annoncers_udp,annoncers_check) ON MySB_db.system TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
+    FLUSH PRIVILEGES;
+EOF
 if [ -f /etc/mysql/debian.cnf ] && (grep -q 'debian-sys-maint' /etc/mysql/debian.cnf); then
     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/MySQL" 'UPGRADE'
 fi
 if [ ! -f /etc/mysql/debian.cnf ]; then
     install -v -o root -g root -m 0400 "${MySB_InstallDir}"/templates/mysql/etc.mysql.debian.cnf.tmpl /etc/mysql/debian.cnf
 fi
-if (! cmdMySQL 'MySB_db' "SELECT annoncers_check FROM system WHERE id_system='1';" >/dev/null 2>&1); then
-    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Schema.sql"
-    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Triggers.sql"
-    cmdMySQL 'MySB_db' "ALTER TABLE system ADD annoncers_udp TINYINT(1) NOT NULL DEFAULT '0' AFTER block_annoncers;" -v
-    cmdMySQL 'MySB_db' "ALTER TABLE system ADD annoncers_check TINYINT(1) NOT NULL DEFAULT '1' AFTER annoncers_udp;" -v
-    cmdMySQL 'MySB_db' "ALTER TABLE trackers_list ADD last_check datetime NOT NULL DEFAULT '0000-00-00 00:00:00' AFTER cert_expiration;" -v
+if (! cmdMySQL 'MySB_db' "SELECT last_check FROM trackers_list_ipv4 WHERE 1;" >/dev/null 2>&1); then
     cmdMySQL 'MySB_db' "ALTER TABLE trackers_list_ipv4 ADD last_check datetime NOT NULL DEFAULT '0000-00-00 00:00:00' AFTER ping;" -v
-    #### MySQL Grant for users
-    source /etc/MySB/config_db
-    mysql -u root -p"${MySQL_RootPassword}" --verbose <<-EOF
-        GRANT SELECT, INSERT, DELETE ON MySB_db.annoncers TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
-        GRANT SELECT ON MySB_db.trackers_list TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
-        GRANT SELECT, INSERT, DELETE ON MySB_db.torrents TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
-        GRANT SELECT (id_system,public_tracker_allow,files_recycling,annoncers_udp,annoncers_check) ON MySB_db.system TO 'Torrent_user'@'localhost' IDENTIFIED BY '${MySQL_TorrentPassword}';
-        FLUSH PRIVILEGES;
-	EOF
+fi
+if (! cmdMySQL 'MySB_db' "SELECT last_check FROM trackers_list WHERE 1;" >/dev/null 2>&1); then
+    cmdMySQL 'MySB_db' "ALTER TABLE trackers_list ADD last_check datetime NOT NULL DEFAULT '0000-00-00 00:00:00' AFTER cert_expiration;" -v
+fi
+if (! cmdMySQL 'MySB_db' "SELECT annoncers_udp FROM system WHERE id_system='1';" >/dev/null 2>&1); then
+    cmdMySQL 'MySB_db' "ALTER TABLE system ADD annoncers_udp TINYINT(1) NOT NULL DEFAULT '0' AFTER block_annoncers;" -v
+fi
+if (! cmdMySQL 'MySB_db' "SELECT annoncers_check FROM system WHERE id_system='1';" >/dev/null 2>&1); then
+    cmdMySQL 'MySB_db' "ALTER TABLE system ADD annoncers_check TINYINT(1) NOT NULL DEFAULT '1' AFTER annoncers_udp;" -v
 fi
 if (! cmdMySQL 'MySB_db' "SELECT user FROM annoncers WHERE 1;" >/dev/null 2>&1); then
     cmdMySQL 'MySB_db' "ALTER TABLE annoncers ADD user VARCHAR(16) NOT NULL DEFAULT '' AFTER id;" -v
@@ -166,6 +173,9 @@ if [[ ${bRtorrentRestart} -eq 1 ]]; then
             echo "${sUser} ALL= EXEC: NOPASSWD: /bin/bash ${MySB_InstallDir}/scripts/GetTrackersCert.bsh USER ${sUser} [A-Z0-9]*"
             echo "${sUser} ALL= EXEC: NOPASSWD: /bin/bash /home/${sUser}/.rTorrent_tasks.sh*"
         } >"/etc/sudoers.d/MySB_${sUser}"
+
+        sqlite3 -cmd '.timeout 150000' "/home/${sUser}/db/${sUser}.sq3" "ALTER TABLE list ADD size_local INTEGER;" -v
+        sqlite3 -cmd '.timeout 150000' "/home/${sUser}/db/${sUser}.sq3" "ALTER TABLE list ADD size_remote INTEGER;" -v
     done
     gfnManageServices stop "sudo"
 fi
@@ -206,6 +216,13 @@ if [ -n "$IfExist" ]; then
     OC_PASS="${MySQL_MysbPassword}"
     export OC_PASS
     su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ user:resetpassword --password-from-env admin"
+fi
+if (! logrotate -f /etc/logrotate.d/nextcloud); then
+    rm -fv /var/log/nextcloud.log
+    touch /var/log/nextcloud.log
+    chown -v www-data:adm /var/log/nextcloud.log
+    chmod -v 0640 /var/log/nextcloud.log
+    gfnLogRotate 'nextcloud'
 fi
 
 #### NginX
