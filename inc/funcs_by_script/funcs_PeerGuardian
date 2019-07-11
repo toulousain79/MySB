@@ -232,13 +232,13 @@ gfnPeerGuardianBlocklistsList() {
         nPersonal=0
         nIBlockList=0
 
-        sIblocklistIdent="$(sqlite3 -cmd '.timeout 150000' "${MySB_InstallDir}/db/Blocklists.sq3" "SELECT username,pin FROM iblocklist_ident WHERE id='1';")"
+        sIblocklistIdent="$(sqlite3 -cmd '.timeout 150000' "${gsblocklists_DB}" "SELECT username,pin FROM iblocklist_ident WHERE id='1';")"
         sUsername="$(echo "${sIblocklistIdent}" | awk '{split($0,a,"|"); print a[1]}')"
         sPin="$(echo "${sIblocklistIdent}" | awk '{split($0,a,"|"); print a[2]}')"
 
-        sAllBlocklists="$(sqlite3 -cmd '.timeout 150000' "${MySB_InstallDir}/db/Blocklists.sq3" "SELECT list_url,update_id FROM blocklists WHERE list_url != '' AND enable = '1' ORDER BY list_url ASC;" | sed 's/\t/|/g;')"
+        sAllBlocklists="$(sqlite3 -cmd '.timeout 150000' "${gsblocklists_DB}" "SELECT list_url,update_id FROM blocklists WHERE list_url != '' AND enable = '1' ORDER BY list_url ASC;" | sed 's/\t/|/g;')"
         for sBlocklist in ${sAllBlocklists}; do
-            aAllBlocklists+=("${MySB_InstallDir}/db/Blocklists.sq3|${sBlocklist}")
+            aAllBlocklists+=("${gsblocklists_DB}|${sBlocklist}")
             ((nPersonal++))
         done
         sAllBlocklists="$(cmdMySQL 'MySB_db' "SELECT list_url,update_id,subscription FROM blocklists WHERE list_url != '' AND enable = '1'  ORDER BY list_url ASC;" | sed 's/\t/|/g;')"
@@ -270,13 +270,13 @@ gfnPeerGuardianBlocklistsList() {
                     cp /etc/pgl/blocklists.backup /etc/pgl/blocklists.list
                     sed -i '/^#/d' /etc/pgl/blocklists.list
                     sed -i '/^$/d' /etc/pgl/blocklists.list
-                    cmdMySQL '${MySB_InstallDir}/db/Blocklists.sq3' "UPDATE blocklists SET enable='0' WHERE 1;" ${bVerbose}
+                    cmdMySQL "${gsblocklists_DB}" "UPDATE blocklists SET enable='0' WHERE 1;" ${bVerbose}
                     cmdMySQL 'MySB_db' "UPDATE blocklists SET enable='0' WHERE 1;" ${bVerbose}
                     while read -r sLine; do
                         if [ -n "$(cmdMySQL 'MySB_db' "SELECT id_blocklists FROM blocklists WHERE list_url='${sLine}';")" ]; then
                             sDbToUpdate="MySB_db"
                         else
-                            sDbToUpdate="${MySB_InstallDir}/db/Blocklists.sq3"
+                            sDbToUpdate="${gsblocklists_DB}"
                         fi
                         cmdMySQL "${sDbToUpdate}" "UPDATE blocklists SET enable='1' WHERE list_url='${sLine}';" ${bVerbose}
                     done </etc/pgl/blocklists.list
@@ -344,7 +344,7 @@ gfnPeerGuardianBlocklistsList() {
                             if [ -n "$(cmdMySQL 'MySB_db' "SELECT id_blocklists FROM blocklists WHERE update_id='${sUpdateId}';")" ]; then
                                 sDbToUpdate="MySB_db"
                             else
-                                sDbToUpdate="${MySB_InstallDir}/db/Blocklists.sq3"
+                                sDbToUpdate="${gsblocklists_DB}"
                             fi
                             cmdMySQL "${sDbToUpdate}" "UPDATE blocklists SET lastupdate='${dDateHour}' WHERE update_id='${sUpdateId}';" ${bVerbose}
                         fi
@@ -395,7 +395,7 @@ gfnPeerGuardianBlocklistsList() {
             if [ -f /etc/pgl/pglcmd.conf ] && [ -f /etc/pgl/blocklists.list ]; then
                 # /etc/pgl/blocklists.list
                 [ "${bDisplay}" -eq 1 ] && log_daemon_msg "${Peerguardian_AddingSelectedBlocklist}"
-                (
+                (   
                     cat <<'EOF'
 # blocklists.list - lists the remote blocklists that pglcmd handles.
 
@@ -442,7 +442,7 @@ gfnPeerGuardianAllowP2P() {
     if [ -f /etc/pgl/pglcmd.conf ] && [ -f /etc/pgl/allow.p2p ]; then
         # /etc/pgl/allow.p2p
         if [ "$1" -eq 1 ]; then log_daemon_msg "${Peerguardian_PermissionSelectedTrackers}"; fi
-        (
+        (   
             cat <<'EOF'
 # allow.p2p - allow list for pglcmd
 #
