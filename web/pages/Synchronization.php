@@ -159,7 +159,7 @@ if (isset($_POST['submit'])) {
 						$Change++;
 					}
 				} else {
-					$result = $MySB_DB->update("users_scripts", ["id_users" => "$UserID", "sync_mode" => "direct", "script" => "$ScriptName"], ["id_users" => $UserID]);
+					$result = $MySB_DB->update("users_scripts", ["id_users" => "$UserID", "sync_mode" => "direct", "script" => "$ScriptName"], ["id_users" => "$UserID"]);
 					if( $result != 0 ) {
 						$Change++;
 					}
@@ -182,32 +182,35 @@ if (isset($_POST['submit'])) {
 			$count_del = count($_POST['delete_dir']);
 			for($i=0; $i<=$count_dir; $i++) {
 				$current_directory = preg_replace('/\s\s+/', '', $_POST['directory'][$i]);
-				$sync_mode = $_POST['sync_mode'][$i];
+				$sync_mode_post = $_POST['sync_mode'][$i];
+				$sync_mode_db = $MySB_DB->get("users_scripts", "sync_mode", ["AND" => ["id_users" => "$UserID", "sub_directory" => "$current_directory"]]);
 				$to_delete = 0;
 
 				for($j=0; $j<=$count_del; $j++) {
-					if ( ($_POST['delete_dir'][$j] == $current_directory) ) {
+					if ( isset($_POST['delete_dir'][$j]) ) {
 						$to_delete = 1;
 					}
 				}
 
-				$result = $MySB_DB->update("users_rtorrent_cfg", [
-																	"sync_mode" => $sync_mode,
-																	"to_delete" => $to_delete
-																], [
-																	"AND" => [
-																		"id_users" => $UserID,
-																		"sub_directory" => $current_directory
-																	]
-																]);
-				if ( $result > 0 ) {
-					$Change++;
-					if( $to_delete == 1 ) {
-						$RefreshPage++;
-						$rTorrentRestart_POST = 1;
-						$Command = 'Restart_rTorrent';
-					} else {
-						$Command = 'Options_MySB';
+				if ( ($sync_mode_post!=$sync_mode_db) || ($to_delete == 1) ) {
+					$result = $MySB_DB->update("users_rtorrent_cfg", [
+																		"sync_mode" => "$sync_mode_post",
+																		"to_delete" => "$to_delete"
+																	], [
+																		"AND" => [
+																			"id_users" => "$UserID",
+																			"sub_directory" => "$current_directory"
+																		]
+																	]);
+					if ( $result > 0 ) {
+						$Change++;
+						if( $to_delete == 1 ) {
+							$RefreshPage++;
+							$rTorrentRestart_POST = 1;
+							$Command = 'Restart_rTorrent';
+						} else {
+							$Command = 'Options_MySB';
+						}
 					}
 				}
 			}
