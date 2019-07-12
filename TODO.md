@@ -2,4 +2,4 @@
 
 ## SSH
 
-- <https://www.howtoforge.com/restricting-users-to-sftp-plus-setting-up-chrooted-ssh-sftp-debian-squeeze>
+- <https://www.prado.lt/restrict-ssh-user-access-to-certain-directory-using-chrooted-jail-on-debian-9>
