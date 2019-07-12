@@ -26,6 +26,9 @@ source "$(dirname "$0")"/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+#### VARs
+sWhereRequest=("cert_expiration <= '$(date +%Y-%m-%d)' AND is_active = '1'")
+
 #### Create dir
 if [ ! -d ${MySB_InstallDir}/ssl/trackers/ ]; then
     mkdir ${MySB_InstallDir}/ssl/trackers/
@@ -34,7 +37,12 @@ fi
 case "${gsSwitch}" in
     'APPLYCONFIG')
         DoDeleteTracker=1
-        [ "${2}" == "FORCE" ] && DoRenewCertificates=1 || DoRenewCertificates=0
+        if [ "${2}" == "FORCE" ]; then
+            DoRenewCertificates=1
+            sWhereRequest=("is_active = '1'")
+        else
+            DoRenewCertificates=0
+        fi
         DoCleanCertificates=1
         DoCheckAddedTorrents=0
         DoGetCertificates=1
@@ -75,11 +83,11 @@ fi
 
 #### Renew expirated certificates
 if [[ ${DoRenewCertificates} -eq 1 ]]; then
-    ExpiratedTrackersList="$(cmdMySQL 'MySB_db' "SELECT tracker FROM trackers_list WHERE cert_expiration <= '$(date +%Y-%m-%d)' AND is_active = '1';")"
+    ExpiratedTrackersList="$(cmdMySQL 'MySB_db' "SELECT tracker FROM trackers_list WHERE ${sWhereRequest[*]};")"
     for ExpiratedTracker in ${ExpiratedTrackersList}; do
         log_daemon_msg "${RenewCertificate} ${ExpiratedTracker}"
         rm -f ${MySB_InstallDir}/ssl/trackers/*${RemovedTracker}.pem
-        cmdMySQL 'MySB_db' "UPDATE trackers_list SET is_ssl='0', to_check='1', cert_expiration='$(date +%Y-%m-%d)' WHERE tracker = '${ExpiratedTracker}';"
+        cmdMySQL 'MySB_db' "UPDATE trackers_list SET is_ssl='0', to_check='1' WHERE tracker = '${ExpiratedTracker}';"
         gfnStatusLSB
     done
 fi
