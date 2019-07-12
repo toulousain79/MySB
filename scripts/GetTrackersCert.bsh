@@ -34,7 +34,7 @@ fi
 case "${gsSwitch}" in
     'APPLYCONFIG')
         DoDeleteTracker=1
-        DoRenewCertificates=0
+        [ "${2}" == "FORCE" ] && DoRenewCertificates=1 || DoRenewCertificates=0
         DoCleanCertificates=1
         DoCheckAddedTorrents=0
         DoGetCertificates=1
@@ -79,7 +79,7 @@ if [[ ${DoRenewCertificates} -eq 1 ]]; then
     for ExpiratedTracker in ${ExpiratedTrackersList}; do
         log_daemon_msg "${RenewCertificate} ${ExpiratedTracker}"
         rm -f ${MySB_InstallDir}/ssl/trackers/*${RemovedTracker}.pem
-        cmdMySQL 'MySB_db' "UPDATE trackers_list SET is_ssl='0', to_check='1', cert_expiration='0000-00-00' WHERE tracker = '${ExpiratedTracker}';"
+        cmdMySQL 'MySB_db' "UPDATE trackers_list SET is_ssl='0', to_check='1', cert_expiration='$(date +%Y-%m-%d)' WHERE tracker = '${ExpiratedTracker}';"
         gfnStatusLSB
     done
 fi
@@ -95,7 +95,7 @@ if [[ ${DoCleanCertificates} -eq 1 ]]; then
     log_daemon_msg "${CleanCertificatesBadLinks}"
     LIST_CERTS=$(ls -la /etc/ssl/certs/ | awk '{ print $9 }')
     for Cert in ${LIST_CERTS}; do
-        if [ "${Cert}" != "" ] && [ "${Cert}" != "." ] && [ "${Cert}" != ".." ]; then
+        if [ -n "${Cert}" ] && [ "${Cert}" != "." ] && [ "${Cert}" != ".." ]; then
             TARGET=$(ls -la "/etc/ssl/certs/${Cert}" | awk '{ print $11 }')
             if [ ! -f "${TARGET}" ]; then
                 rm -f "/etc/ssl/certs/${Cert}" &>/dev/null
@@ -120,7 +120,7 @@ fi
 
 #### Get certificates
 if [[ ${DoGetCertificates} -eq 1 ]]; then
-    gfnGetCertificates
+    gfnGetCertificates "${2}"
 fi
 
 if [[ ${DoCheckAddedTorrents} -eq 1 ]] || [[ ${DoGetCertificates} -eq 1 ]]; then

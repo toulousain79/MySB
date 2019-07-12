@@ -36,5 +36,6 @@ define('User_TrackersList_Table_PingResult', 'Ping Result');
 define('User_TrackersList_Table_IsSSL', 'SSL ?');
 define('User_TrackersList_Table_Expiration', 'Certificate<br />Expiration');
 define('User_TrackersList_Table_PglBlock', 'Blocked by<br />PeerGuardian');
+define('User_TrackersList_Table_ForceRenew', 'Force renewal of certificates');
 
 //#################### LAST LINE ######################################
