@@ -30,8 +30,28 @@ $IsMainUser = (MainUser($CurrentUser)) ? true : false;
 
 if(isset($_POST)==true && empty($_POST)==false) {
 	$success = true;
+	$args = '';
 
 	switch ($_POST['submit']) {
+		case User_TrackersList_Table_ForceRenew:
+			$value = $MySB_DB->update("trackers_list", ["to_check" => '1', "cert_expiration" => '0000-00-00'], ["is_active" => '1']);
+
+			if ( $value == 0 ) {
+				$success = false;
+			} else {
+				$success = true;
+				$args = 'FORCE';
+			}
+
+			if ( $success == true ) {
+				$type = 'success';
+			} else {
+				$type = 'error';
+				$message = Global_FailedUpdateMysbDB;
+			}
+
+			break;
+
 		case Global_SaveChanges:
 			for($i=0, $count = count($_POST['tracker_domain']);$i<$count;$i++) {
 				switch ($_POST['is_active'][$i]) {
@@ -81,7 +101,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			break;
 	}
 
-	GenerateMessage('GetTrackersCert.bsh', $type, $message);
+	GenerateMessage('GetTrackersCert.bsh', $type, $message, $args);
 }
 
 $TrackersList = $MySB_DB->select("trackers_list", ["id_trackers_list", "tracker", "tracker_domain", "tracker_proto", "tracker_port", "privacy", "is_ssl", "is_active", "cert_expiration"], ["to_delete" => 0],["ORDER" => ["name" => "ASC"]]);
@@ -89,6 +109,10 @@ $TrackersList = $MySB_DB->select("trackers_list", ["id_trackers_list", "tracker"
 
 <div style="margin-top: 10px; margin-bottom: 20px;" id="scrollmenu" align="center">
 <form class="form_settings" method="post" action="">
+
+	<?php if ( $IsMainUser ) { ?>
+		<input style="width:<?php echo strlen(User_TrackersList_Table_ForceRenew)*10; ?>px; margin-bottom: 10px; border-color: #47433F;" name="submit" type="submit" value="<?php echo User_TrackersList_Table_ForceRenew; ?>">
+	<?php } ?>
 
 	<?php if ( $IsMainUser ) { ?>
 		<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-bottom: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>">
