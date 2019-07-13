@@ -241,6 +241,13 @@ if [ "$gbToInstall_NextCloud" == "YES" ] || [ "$gbIsInstalled_NextCloud" == "YES
 fi
 [[ ${bNginxRestart} -eq 1 ]] && gfnManageServices restart "nginx"
 
+#### Certificates (#94)
+cmdMySQL 'MySB_db' "UPDATE trackers_list SET cert_expiration='${dExpirationDate}', to_check='1', last_check='0000-00-00' WHERE is_active='1';"
+nPriority="$(cmdMySQL 'MySB_db' "SELECT max(priority) FROM commands WHERE user='${gsMainUserName}' AND commands='GetTrackersCert.bsh';")"
+((nPriority++))
+cmdMySQL 'MySB_db' "INSERT commands SET commands='GetTrackersCert.bsh', reload='1', priority='${nPriority}', args='FORCE', user='${gsMainUserName}';"
+gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/scripts/GetTrackersCert.bsh" 'APPLYCONFIG'
+
 # -----------------------------------------
 # shellcheck source=inc/includes_after
 . "$(dirname "$0")"/../inc/includes_after
