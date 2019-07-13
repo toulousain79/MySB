@@ -118,6 +118,21 @@ if [ -z "$sCheckDuplicate" ]; then
     else
         usermod -c "MySB user ${UserToCreate}" -s /bin/bash "${UserToCreate}" &>/dev/null
     fi
+    if [ "${UserToCreate}" == "${gsMainUserName}" ]; then
+        #### Console tweaks
+        echo
+        echo "########## Console tweaks"
+        install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/tweaks/bashrc.tmpl /root/.bashrc
+        {
+            echo "PATH=/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/bin:/usr/local/sbin:${MySB_InstallDir}/bin:/sbin"
+            echo "export PATH"
+            echo
+        } >>/root/.bashrc
+        install -o "${UserToCreate}" -g "${UserToCreate}" -m 0644 "${MySB_InstallDir}"/templates/tweaks/profile.tmpl /root/.profile
+        install -o "${UserToCreate}" -g "${UserToCreate}" -m 0644 "${MySB_InstallDir}"/templates/tweaks/bash_aliases.tmpl /root/.bash_aliases
+        install -o "${UserToCreate}" -g "${UserToCreate}" -m 0644 "${MySB_InstallDir}"/templates/tweaks/bash_profile.tmpl /root/.bash_profile
+        install -o "${UserToCreate}" -g "${UserToCreate}" -m 0644 /etc/skel/.bash_logout /root/.bash_logout
+    fi
     gfnStatusLSB
 
     case "$UserAccountType" in
@@ -154,10 +169,9 @@ if [ -z "$sCheckDuplicate" ]; then
             (! grep -q 'sudo' /etc/group) && groupadd -f sudo
             (! grep -q 'sshdusers' /etc/group) && groupadd -f sshdusers
             (! grep -q 'MySB_users' /etc/group) && groupadd -f MySB_users
-            # [ "$UserSUDO" == "YES" ] && usermod -a -G sudo "${UserToCreate}"
-            [ "$UserSFTP" == "YES" ] && usermod -a -G sshdusers "${UserToCreate}"
             usermod -a -G MySB_users "${UserToCreate}"
             usermod -a -G sudo "${UserToCreate}"
+            [ "${UserToCreate}" == "${gsMainUserName}" ] && usermod -a -G sshdusers "${UserToCreate}"
             {
                 echo "${UserToCreate} ALL= EXEC: NOPASSWD: /bin/cp -av /home/*/rtorrent/* /home/${UserToCreate}/rtorrent/complete/*"
                 echo "${UserToCreate} ALL= EXEC: NOPASSWD: /bin/cp -alv /home/*/rtorrent/* /home/${UserToCreate}/rtorrent/complete/*"
