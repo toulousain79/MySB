@@ -242,11 +242,15 @@ fi
 [[ ${bNginxRestart} -eq 1 ]] && gfnManageServices restart "nginx"
 
 #### Certificates (#94)
-cmdMySQL 'MySB_db' "UPDATE trackers_list SET cert_expiration='${dExpirationDate}', to_check='1', last_check='0000-00-00' WHERE is_active='1';"
-nPriority="$(cmdMySQL 'MySB_db' "SELECT max(priority) FROM commands WHERE user='${gsMainUserName}' AND commands='GetTrackersCert.bsh';")"
-((nPriority++))
-cmdMySQL 'MySB_db' "INSERT commands SET commands='GetTrackersCert.bsh', reload='1', priority='${nPriority}', args='FORCE', user='${gsMainUserName}';"
-gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/scripts/GetTrackersCert.bsh" 'APPLYCONFIG'
+[ ! -f "${MySB_InstallDir}/ssl/trackers/force_renew" ] && echo "1" >"${MySB_InstallDir}/ssl/trackers/force_renew"
+if [ "$(cat "${MySB_InstallDir}/ssl/trackers/force_renew")" == "1" ]; then
+    echo "0" >"${MySB_InstallDir}/ssl/trackers/force_renew"
+    cmdMySQL 'MySB_db' "UPDATE trackers_list SET cert_expiration='${dExpirationDate}', to_check='1', last_check='0000-00-00' WHERE is_active='1';"
+    nPriority="$(cmdMySQL 'MySB_db' "SELECT max(priority) FROM commands WHERE user='${gsMainUserName}' AND commands='GetTrackersCert.bsh';")"
+    ((nPriority++))
+    cmdMySQL 'MySB_db' "INSERT commands SET commands='GetTrackersCert.bsh', reload='1', priority='${nPriority}', args='FORCE', user='${gsMainUserName}';"
+    gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/scripts/GetTrackersCert.bsh" 'APPLYCONFIG'
+fi
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after
