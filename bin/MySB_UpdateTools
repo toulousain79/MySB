@@ -285,6 +285,47 @@ if [ "$(cat "${MySB_InstallDir}/ssl/trackers/force_renew")" == "1" ]; then
     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/scripts/GetTrackersCert.bsh" 'APPLYCONFIG'
 fi
 
+#### Plex (#91)
+if [ -f '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml' ]; then
+    if (! grep -q 'FriendlyName="MySB"' '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml'); then
+        sNewPreferences=()
+        for sParam in $(cat "/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml"); do
+            case "$(echo "${sParam}" | cut -d '=' -f 1)" in
+                OldestPreviousVersion) sNewPreferences+=("${sParam}") ;;
+                MachineIdentifier) sNewPreferences+=("${sParam}") ;;
+                ProcessedMachineIdentifier) sNewPreferences+=("${sParam}") ;;
+                AnonymousMachineIdentifier) sNewPreferences+=("${sParam}") ;;
+                MetricsEpoch) sNewPreferences+=('MetricsEpoch="1"') ;;
+                AcceptedEULA) sNewPreferences+=('AcceptedEULA="1"') ;;
+                FriendlyName) sNewPreferences+=('FriendlyName="MySB"') ;;
+                PublishServerOnPlexOnlineKey) sNewPreferences+=('PublishServerOnPlexOnlineKey="1"') ;;
+                PlexOnlineToken) sNewPreferences+=("${sParam}") ;;
+                PlexOnlineUsername) sNewPreferences+=("${sParam}") ;;
+                PlexOnlineMail) sNewPreferences+=("${sParam}") ;;
+                PlexOnlineHome) sNewPreferences+=('PlexOnlineHome="1"') ;;
+                DlnaEnabled) sNewPreferences+=('DlnaEnabled="0"') ;;
+                CertificateVersion) sNewPreferences+=("${sParam}") ;;
+                PubSubServer) sNewPreferences+=("${sParam}") ;;
+                PubSubServerRegion) sNewPreferences+=("${sParam}") ;;
+                PubSubServerPing) sNewPreferences+=("${sParam}") ;;
+                FSEventLibraryPartialScanEnabled) sNewPreferences+=('FSEventLibraryPartialScanEnabled="1"') ;;
+                FSEventLibraryUpdatesEnabled) sNewPreferences+=('FSEventLibraryUpdatesEnabled="1"') ;;
+                ScheduledLibraryUpdateInterval) sNewPreferences+=('ScheduledLibraryUpdateInterval="1800"') ;;
+                ScheduledLibraryUpdatesEnabled) sNewPreferences+=('ScheduledLibraryUpdatesEnabled="1"') ;;
+                GdmEnabled) sNewPreferences+=('GdmEnabled="0"') ;;
+                PreferredNetworkInterface) sNewPreferences+=("PreferredNetworkInterface=\"${gsPrimaryInet}\"") ;;
+                secureConnections) sNewPreferences+=("${sParam}") ;;
+                DlnaReportTimeline) sNewPreferences+=('DlnaReportTimeline="0"') ;;
+                LanguageInCloud) sNewPreferences+=("${sParam}") ;;
+            esac
+        done
+        {
+            echo '<?xml version="1.0" encoding="utf-8"?>'
+            echo "<Preferences ${sNewPreferences[*]} />"
+        } >'/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml'
+    fi
+fi
+
 # -----------------------------------------
 # shellcheck source=inc/includes_after
 . "$(dirname "$0")"/../inc/includes_after

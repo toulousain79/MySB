@@ -56,21 +56,49 @@ function fnInstallDebPackage() {
         gfnManageServices stop "$sServices"
 
         if [ -f "${gsRepoDir}/${gsRepoFile}" ]; then
-            if (! dpkg -i "${gsRepoDir}/${gsRepoFile}"); then
-                apt clean
-                dpkg -i "${gsRepoDir}/${gsRepoFile}"
-            fi
+            (! dpkg -i "${gsRepoDir}/${gsRepoFile}") && dpkg -i "${gsRepoDir}/${gsRepoFile}"
             systemctl daemon-reload
             systemctl enable plexmediaserver
         fi
 
-        # if [ -f '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml' ]; then
-        #     if (grep -q 'PublishServerOnPlexOnlineKey' '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml'); then
-        #         perl -pi -e 's/PublishServerOnPlexOnlineKey="1"/PublishServerOnPlexOnlineKey="0"/g' '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml'
-        #     else
-        #         perl -pi -e 's/<Preferences/<Preferences PublishServerOnPlexOnlineKey="0"/g' '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml'
-        #     fi
-        # fi
+        # Preferences.xml
+        if [ -f '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml' ]; then
+            sNewPreferences=()
+            for sParam in $(cat "/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml"); do
+                case "$(echo "${sParam}" | cut -d '=' -f 1)" in
+                    OldestPreviousVersion) sNewPreferences+=("${sParam}") ;;
+                    MachineIdentifier) sNewPreferences+=("${sParam}") ;;
+                    ProcessedMachineIdentifier) sNewPreferences+=("${sParam}") ;;
+                    AnonymousMachineIdentifier) sNewPreferences+=("${sParam}") ;;
+                    MetricsEpoch) sNewPreferences+=('MetricsEpoch="1"') ;;
+                    AcceptedEULA) sNewPreferences+=('AcceptedEULA="1"') ;;
+                    FriendlyName) sNewPreferences+=('FriendlyName="MySB"') ;;
+                    PublishServerOnPlexOnlineKey) sNewPreferences+=('PublishServerOnPlexOnlineKey="1"') ;;
+                    PlexOnlineToken) sNewPreferences+=("${sParam}") ;;
+                    PlexOnlineUsername) sNewPreferences+=("${sParam}") ;;
+                    PlexOnlineMail) sNewPreferences+=("${sParam}") ;;
+                    PlexOnlineHome) sNewPreferences+=('PlexOnlineHome="1"') ;;
+                    DlnaEnabled) sNewPreferences+=('DlnaEnabled="0"') ;;
+                    CertificateVersion) sNewPreferences+=("${sParam}") ;;
+                    PubSubServer) sNewPreferences+=("${sParam}") ;;
+                    PubSubServerRegion) sNewPreferences+=("${sParam}") ;;
+                    PubSubServerPing) sNewPreferences+=("${sParam}") ;;
+                    FSEventLibraryPartialScanEnabled) sNewPreferences+=('FSEventLibraryPartialScanEnabled="1"') ;;
+                    FSEventLibraryUpdatesEnabled) sNewPreferences+=('FSEventLibraryUpdatesEnabled="1"') ;;
+                    ScheduledLibraryUpdateInterval) sNewPreferences+=('ScheduledLibraryUpdateInterval="1800"') ;;
+                    ScheduledLibraryUpdatesEnabled) sNewPreferences+=('ScheduledLibraryUpdatesEnabled="1"') ;;
+                    GdmEnabled) sNewPreferences+=('GdmEnabled="0"') ;;
+                    PreferredNetworkInterface) sNewPreferences+=("PreferredNetworkInterface=\"${gsPrimaryInet}\"") ;;
+                    secureConnections) sNewPreferences+=("${sParam}") ;;
+                    DlnaReportTimeline) sNewPreferences+=('DlnaReportTimeline="0"') ;;
+                    LanguageInCloud) sNewPreferences+=("${sParam}") ;;
+                esac
+            done
+            {
+                echo '<?xml version="1.0" encoding="utf-8"?>'
+                echo "<Preferences ${sNewPreferences[*]} />"
+            } >'/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml'
+        fi
         # Start services
         gfnManageServices start "$sServices"
     else
