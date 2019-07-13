@@ -424,38 +424,38 @@ gfnGetCertificates() {
             sRequestValues="$(cmdMySQL 'MySB_db' "SELECT tracker_proto,tracker_port FROM trackers_list WHERE tracker='${Tracker}';" | sed 's/\t/|/g;')"
             sTrackerProto="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[1]}')"
             sTrackerPort="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
-            dExpirationDate="$(date +%Y-%m-%d)"
+            dExpirationDate="0000-00-00"
             sCheckPort="${sTrackerPort}"
             bSsl=0
             bToCheck=0
 
-            if [ ! -h /etc/ssl/certs/"${Tracker}".pem ] || [ ! -f "${MySB_InstallDir}/ssl/trackers/${Tracker}.pem" ] || [ "${2}" == "FORCE" ]; then
-                timeout 10 bash -c "openssl s_client -connect ${Tracker}:${sCheckPort} </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./${Tracker}.crt"
-                if [ -s ./"${Tracker}".crt ]; then
-                    openssl x509 -in ./"${Tracker}".crt -out ./"${Tracker}".der -outform DER
-                    openssl x509 -in ./"${Tracker}".der -inform DER -out ./"${Tracker}".pem -outform PEM
-                    if [ -s ./"${Tracker}".pem ]; then
-                        if [ -f /etc/ssl/certs/"${Tracker}".pem ] || [ -h /etc/ssl/certs/"${Tracker}".pem ]; then
-                            rm -f /etc/ssl/certs/"${Tracker}".pem
-                        fi
-                        chmod 0644 "${MySB_InstallDir}/ssl/trackers/${Tracker}.pem"
-                        ln -s "${MySB_InstallDir}/ssl/trackers/${Tracker}.pem" /etc/ssl/certs/"${Tracker}".pem
-                        # Extract certificate expiration date
-                        dExpirationDate="$(openssl x509 -enddate -noout -in ./${Tracker}.pem | cut -d "=" -f 2)"
-                        dExpirationDate="$(date -d "$dExpirationDate" '+%Y-%m-%d')"
-                        dExpirationDate="$(date --date "$dExpirationDate 2 days ago" '+%Y-%m-%d')"
-                        sTrackerPort="${sCheckPort}"
-                        sTrackerProto="https"
-                        bSsl=1
-                        bDoRehash=1
-                    else
-                        rm ./"${Tracker}".pem
+            # if [ ! -h /etc/ssl/certs/"${Tracker}".pem ] || [ ! -f "${MySB_InstallDir}/ssl/trackers/${Tracker}.pem" ] || [ "${2}" == "FORCE" ]; then
+            timeout     10 bash -c "openssl s_client -connect ${Tracker}:${sCheckPort} </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./${Tracker}.crt"
+            if     [ -s ./"${Tracker}".crt ]; then
+                openssl     x509 -in ./"${Tracker}".crt -out ./"${Tracker}".der -outform DER
+                openssl     x509 -in ./"${Tracker}".der -inform DER -out ./"${Tracker}".pem -outform PEM
+                if     [ -s ./"${Tracker}".pem ]; then
+                    if     [ -f /etc/ssl/certs/"${Tracker}".pem ] || [ -h /etc/ssl/certs/"${Tracker}".pem ]; then
+                        rm     -f /etc/ssl/certs/"${Tracker}".pem
                     fi
-                    rm -f ./"${Tracker}".der
+                    chmod     0644 "${MySB_InstallDir}/ssl/trackers/${Tracker}.pem"
+                    ln     -s "${MySB_InstallDir}/ssl/trackers/${Tracker}.pem" /etc/ssl/certs/"${Tracker}".pem
+                    # Extract certificate expiration date
+                    dExpirationDate="$(    openssl x509 -enddate -noout -in ./${Tracker}.pem | cut -d "=" -f 2)"
+                    dExpirationDate="$(    date -d "$dExpirationDate" '+%Y-%m-%d')"
+                    dExpirationDate="$(    date --date "$dExpirationDate 2 days ago" '+%Y-%m-%d')"
+                    sTrackerPort="${sCheckPort}"
+                    sTrackerProto="https"
+                    bSsl=1
+                    bDoRehash=1
+                else
+                    rm     ./"${Tracker}".pem
                 fi
-            else
-                chmod 0644 "${MySB_InstallDir}/ssl/trackers/${Tracker}.pem"
+                rm     -f ./"${Tracker}".der
             fi
+            # else
+            #     chmod 0644 "${MySB_InstallDir}/ssl/trackers/${Tracker}.pem"
+            # fi
             rm -f ./"${Tracker}".crt
 
             # Update database
