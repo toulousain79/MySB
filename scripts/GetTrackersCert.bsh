@@ -27,7 +27,7 @@ source "$(dirname "$0")"/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### VARs
-sWhereRequest=("cert_expiration <= '$(date +%Y-%m-%d)' AND is_active = '1'")
+sWhereRequest=("cert_expiration <= '$(date +%Y-%m-%d)' AND is_active = '1' AND is_ssl = '1'")
 
 #### Create dir
 if [ ! -d ${MySB_InstallDir}/ssl/trackers/ ]; then
@@ -86,7 +86,7 @@ if [[ ${DoRenewCertificates} -eq 1 ]]; then
     ExpiratedTrackersList="$(cmdMySQL 'MySB_db' "SELECT tracker FROM trackers_list WHERE ${sWhereRequest[*]};")"
     for ExpiratedTracker in ${ExpiratedTrackersList}; do
         log_daemon_msg "${RenewCertificate} ${ExpiratedTracker}"
-        rm -f ${MySB_InstallDir}/ssl/trackers/*${RemovedTracker}.pem
+        # rm -f ${MySB_InstallDir}/ssl/trackers/*${RemovedTracker}.pem
         cmdMySQL 'MySB_db' "UPDATE trackers_list SET is_ssl='0', to_check='1' WHERE tracker = '${ExpiratedTracker}';"
         gfnStatusLSB
     done
@@ -106,7 +106,7 @@ if [[ ${DoCleanCertificates} -eq 1 ]]; then
         if [ -n "${Cert}" ] && [ "${Cert}" != "." ] && [ "${Cert}" != ".." ]; then
             TARGET=$(ls -la "/etc/ssl/certs/${Cert}" | awk '{ print $11 }')
             if [ ! -f "${TARGET}" ]; then
-                rm -f "/etc/ssl/certs/${Cert}" &>/dev/null
+                rm -fv "/etc/ssl/certs/${Cert}" &>/dev/null
             fi
             unset TARGET
         fi
