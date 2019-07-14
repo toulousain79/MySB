@@ -27,9 +27,8 @@ define('Home_MainUser', '
 	<p></p>
 	<p>En tant qu\'utilisateur principal, vous disposez de fonctionnalit&eacute;s suppl&eacute;mentaires, telles que:</p>
 	<ul style="margin-left: 100px">
-		<li>Activation des trackers</li>
-		<li>Ajout de nouveaux trackers</li>
-		<li>Activation des listes noires pour rTorrent et/ou PeerGuardian <span class="Comments">(si install&eacute;)</span></li>
+		<li>Gestion des trackers</li>
+		<li>Activation des listes noires usuelles et par pays via PeerGuardian <span class="Comments">(si install&eacute;)</span></li>
 		<li>Acc&egrave;s &agrave; <b>Tautulli</b> pour visualiser les statistiques de Plexmedia Server <span class="Comments">(si install&eacute;)</span></li>
 		<li>Acc&egrave;s &agrave; <b>Shell In a Box</b>, une console SSH via une page web</li>
 		<li>Gestion locative <span class="Comments">(description, taxe et co&ucirc;t du serveur)</span>, et saisie des paiements de vos utilisateurs <span class="Comments">(Il est conseill&eacute; de param&eacute;trer AVANT d\'ajouter de nouveaux utilisateurs)</span></li>

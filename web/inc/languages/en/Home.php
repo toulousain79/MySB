@@ -27,9 +27,8 @@ define('Home_MainUser', '
 	<p></p>
 	<p>As the main user you have additional features, such as:</p>
 	<ul style="margin-left: 100px">
-		<li>Activating trackers</li>
-		<li>Adding new trackers</li>
-		<li>Activating black lists for rTorrent and/or PeerGuardian <span class="Comments">(if installed)</span></li>
+		<li>Trackers usage</li>
+		<li>Activation of the usual and countries blacklists via PeerGuardian <span class="Comments">(if installed)</span></li>
 		<li>Access to <b>Tautulli</b> to view Plexmedia Server statistics <span class="Comments">(if installed)</span></li>
 		<li>Access to <b>Shell</b> In a Box, an SSH console via a web page</li>
 		<li>Rental management <span class="Comments">(description, tax and cost of the server)</span>, and input of your users\' payments <span class="Comments">(It is advisable to set BEFORE adding new users)</span></li>
