@@ -59,7 +59,7 @@ gfnListCountUsers 'normal'
 #### rTorrent scripts (to leave for next version ;-)
 for sUser in ${gsUsersList}; do
     (! grep -q 'rev 0.6' "/etc/init.d/rtorrent-${sUser}") && bRtorrentRestart=1
-    (! grep -Rq 'rev 0.6' /home/${sUser}/.*.sh) && bRtorrentRestart=1
+    (! grep -Rq 'rev 0.7' /home/${sUser}/.*.sh) && bRtorrentRestart=1
 done
 
 #### Fix version in database
@@ -157,6 +157,10 @@ if [[ ${bRtorrentRestart} -eq 1 ]]; then
     for sUser in ${gsUsersList}; do
         gfnManageServices stop "rtorrent-${sUser}"
 
+        # Logrotate
+        install -g root -o root -m 0644 "${MySB_InstallDir}"/templates/logrotate/etc.logrotate.d.users.tmpl /etc/logrotate.d/rtorrent_"${UserToCreate}"
+        perl -pi -e "s/<username>/${UserToCreate}/g" /etc/logrotate.d/rtorrent_"${UserToCreate}"
+        # init.d
         install -o root -g root -m 0755 "${MySB_InstallDir}"/templates/init/etc.init.d.rtorrent.tmpl /etc/init.d/rtorrent-"${sUser}"
         perl -pi -e "s/<username>/${sUser}/g" /etc/init.d/rtorrent-"${sUser}"
         systemctl daemon-reload &>/dev/null

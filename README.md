@@ -7,7 +7,7 @@
 
 # English
 
-MySB (My SeedBox) is a multi-user seedbox for dedicated server under Debian 9 _(Stretch)_ and could be renamed MySSB, My Secured SeedBox.
+MySB _(My SeedBox)_ is a multi-user seedbox for dedicated server under Debian 9 _(Stretch)_ and could be renamed MySSB, My Secured SeedBox.
 
 All of MySB's interest lies in security through block list management with PeerGuardian _(or rTorrent)_ for incoming requests, as well as encrypting DNS queries with DNScrypt-proxy for outbound requests.
 
@@ -23,7 +23,7 @@ A simple question, do you know who to connect to your server?
 
 # Français
 
-MySB (My SeedBox) est une seedbox multi-utilisateurs pour un serveur dédié sous Debian 9 _(Stretch)_ et pourrait être renommée MySSB, My Secured SeedBox.
+MySB _(My SeedBox)_ est une seedbox multi-utilisateurs pour un serveur dédié sous Debian 9 _(Stretch)_ et pourrait être renommée MySSB, My Secured SeedBox.
 
 Tout l'intérêt de MySB réside dans la sécurité via la gestion de listes de blocage d'IP avec PeerGuardian _(ou rTorrent)_ pour les requêtes entrantes, ainsi que le chiffrement des requêtes DNS grâce à DNScrypt-proxy pour les requêtes sortantes.
 
