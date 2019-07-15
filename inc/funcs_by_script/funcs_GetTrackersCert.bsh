@@ -430,28 +430,28 @@ gfnGetCertificates() {
             bToCheck=0
 
             # if [ ! -h /etc/ssl/certs/"${Tracker}".pem ] || [ ! -f "${MySB_InstallDir}/ssl/trackers/${Tracker}.pem" ] || [ "${2}" == "FORCE" ]; then
-            timeout     10 bash -c "openssl s_client -connect ${Tracker}:${sCheckPort} </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./${Tracker}.crt"
-            if     [ -s ./"${Tracker}".crt ]; then
-                openssl     x509 -in ./"${Tracker}".crt -out ./"${Tracker}".der -outform DER
-                openssl     x509 -in ./"${Tracker}".der -inform DER -out ./"${Tracker}".pem -outform PEM
-                if     [ -s ./"${Tracker}".pem ]; then
-                    if     [ -f /etc/ssl/certs/"${Tracker}".pem ] || [ -h /etc/ssl/certs/"${Tracker}".pem ]; then
-                        rm     -f /etc/ssl/certs/"${Tracker}".pem
+            timeout 10 bash -c "openssl s_client -connect ${Tracker}:${sCheckPort} </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' >> ./${Tracker}.crt"
+            if [ -s ./"${Tracker}".crt ]; then
+                openssl x509 -in ./"${Tracker}".crt -out ./"${Tracker}".der -outform DER
+                openssl x509 -in ./"${Tracker}".der -inform DER -out ./"${Tracker}".pem -outform PEM
+                if [ -s ./"${Tracker}".pem ]; then
+                    if [ -f /etc/ssl/certs/"${Tracker}".pem ] || [ -h /etc/ssl/certs/"${Tracker}".pem ]; then
+                        rm -f /etc/ssl/certs/"${Tracker}".pem
                     fi
-                    chmod     0644 "${MySB_InstallDir}/ssl/trackers/${Tracker}.pem"
-                    ln     -s "${MySB_InstallDir}/ssl/trackers/${Tracker}.pem" /etc/ssl/certs/"${Tracker}".pem
+                    chmod 0644 "${MySB_InstallDir}/ssl/trackers/${Tracker}.pem"
+                    ln -s "${MySB_InstallDir}/ssl/trackers/${Tracker}.pem" /etc/ssl/certs/"${Tracker}".pem
                     # Extract certificate expiration date
-                    dExpirationDate="$(    openssl x509 -enddate -noout -in ./${Tracker}.pem | cut -d "=" -f 2)"
-                    dExpirationDate="$(    date -d "$dExpirationDate" '+%Y-%m-%d')"
-                    dExpirationDate="$(    date --date "$dExpirationDate 2 days ago" '+%Y-%m-%d')"
+                    dExpirationDate="$(openssl x509 -enddate -noout -in ./${Tracker}.pem | cut -d "=" -f 2)"
+                    dExpirationDate="$(date -d "$dExpirationDate" '+%Y-%m-%d')"
+                    dExpirationDate="$(date --date "$dExpirationDate 2 days ago" '+%Y-%m-%d')"
                     sTrackerPort="${sCheckPort}"
                     sTrackerProto="https"
                     bSsl=1
                     bDoRehash=1
                 else
-                    rm     ./"${Tracker}".pem
+                    rm ./"${Tracker}".pem
                 fi
-                rm     -f ./"${Tracker}".der
+                rm -f ./"${Tracker}".der
             fi
             # else
             #     chmod 0644 "${MySB_InstallDir}/ssl/trackers/${Tracker}.pem"
@@ -478,6 +478,7 @@ gfnGetCertificates() {
     if [ "$bDoRehash" -eq 1 ]; then
         log_daemon_msg "$CertificateRehash"
         c_rehash ${MySB_InstallDir}/ssl/trackers/ &>/dev/null
+        c_rehash /etc/ssl/certs/ &>/dev/null
         update-ca-certificates --fresh &>/dev/null
         gfnStatusLSB
     fi
