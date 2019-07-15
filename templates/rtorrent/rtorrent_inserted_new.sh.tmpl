@@ -1,5 +1,5 @@
 #!/bin/bash
-# rev 0.5
+# rev 0.7
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -71,7 +71,7 @@ if [ -z "${sTorrentLoaded}" ] && [ -n "${sTorrentDir}" ]; then
 fi
 
 sTorrentFile="${sTorrentDir%/}/$(basename "${sTorrentLoaded}")"
-(grep -q "${sName}" <<<"${sTorrentDir}") && sFinalDirectory="${sDirectory}" || sFinalDirectory="${sDirectory%/}/${sName}"
+(grep -q "${sName}" <<<"${sDirectory}") && sFinalDirectory="${sDirectory}" || sFinalDirectory="${sDirectory%/}/${sName}"
 
 #### Do some checks before
 [ -z "${sInfoHash}" ] && nExit=1
@@ -136,7 +136,7 @@ esac
 
 #### Functions - BoF
 fnCopyFile() {
-    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep8[*]} (${sMessFileRecyclingFind[*]})" 2>>"${sLogFile}"
+    xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep8[*]} (${sMessFileRecyclingFind[*]})" >/dev/null 2>>"${sLogFile}"
 
     case "${sFilesRecycling}" in
         1) # Simple copy
@@ -151,10 +151,10 @@ fnCopyFile() {
 
     if (sudo cp "${sParams[@]}" "${sTree}" "${sDirectory}"/); then
         sudo chown -Rv "${sOwners[@]}" "${sFinalDirectory}"
-        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash} 2>>"${sLogFile}"
-        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.check_hash ${sInfoHash} 2>>"${sLogFile}"
+        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash} >/dev/null 2>>"${sLogFile}"
+        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.check_hash ${sInfoHash} >/dev/null 2>>"${sLogFile}"
         mysql ${sSqlParams} -e "INSERT INTO torrents (info_hash,name,privacy,state,tree) VALUES ('${sInfoHash}', '${sName}', '${sPrivacy}', 'completed', '${sFinalDirectory}');" -v
-        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep8[*]} (${sMessFileRecyclingEnd[*]})" 2>>"${sLogFile}"
+        xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep8[*]} (${sMessFileRecyclingEnd[*]})" >/dev/null 2>>"${sLogFile}"
     fi
 }
 #### Functions - EoF
@@ -226,7 +226,7 @@ if [[ ${nContinue} -eq 1 ]]; then
     nCountAnnoncers=0
     nId=0
 
-    for sAnnoncer in $(transmission-show "${sTorrentLoaded}" | grep 'udp://\|http://\|https://' | grep -v 'Magnet URI' | grep -v 'Comment' | sed -e 's/ //g;'); do
+    for sAnnoncer in $(transmission-show "${sTorrentLoaded}" | grep 'udp://\|http://\|https://' | grep -v 'Magnet URI\|Comment' | sed -e 's/ //g;'); do
         if (grep -q 'udp://' <<<"${sAnnoncer}"); then
             [[ ${bAnnoncersUdp} -eq 1 ]] && nEnable=1 || nEnable=0
             ((nCountAnnoncers++))
@@ -397,15 +397,6 @@ if [[ ${nContinue} -eq 1 ]]; then
     fi
 
     # Execute annoncers check if needed
-    # if [ -s "/home/.check_annoncers_${sUserName}" ] && [ ! -f "/tmp/.check_annoncers_${sUser}.lock" ] && [[ ${bExecute} -eq 1 ]]; then
-    #     sudo /bin/bash "<MySB_InstallDir>/scripts/GetTrackersCert.bsh" USER "${sUserName}" "${sInfoHash}" &
-    # fi
-    # if [ -s "/home/.check_annoncers_${sUserName}" ] && [[ ${bExecute} -eq 1 ]]; then
-    #     if [ "$(ps ax | grep "sudo /bin/bash /opt/MySB/scripts/GetTrackersCert.bsh USER ${sUserName}" | grep -v 'grep' | wc -l)" -lt 3 ]; then
-    #         sudo /bin/bash "<MySB_InstallDir>/scripts/GetTrackersCert.bsh" USER "${sUserName}" "${sInfoHash}" &
-    #         sleep 3
-    #     fi
-    # fi
     if [ -s "/home/.check_annoncers_${sUserName}" ] && [[ ${bExecute} -eq 1 ]]; then
         sudo /bin/bash "<MySB_InstallDir>/scripts/GetTrackersCert.bsh" USER "${sUserName}" "${sInfoHash}" &
     fi
