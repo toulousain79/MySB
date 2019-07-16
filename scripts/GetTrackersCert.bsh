@@ -43,28 +43,28 @@ case "${gsSwitch}" in
         else
             DoRenewCertificates=0
         fi
-        DoCleanCertificates=1
+        # DoCleanCertificates=1
         DoCheckAddedTorrents=0
         DoGetCertificates=1
         ;;
     'CRON')
         DoDeleteTracker=0
         DoRenewCertificates=1
-        DoCleanCertificates=1
+        # DoCleanCertificates=1
         DoCheckAddedTorrents=0
         DoGetCertificates=1
         ;;
     'USER')
         DoDeleteTracker=0
         DoRenewCertificates=0
-        DoCleanCertificates=0
+        # DoCleanCertificates=0
         DoCheckAddedTorrents=1
         DoGetCertificates=0
         ;;
     *) # "REFRESH" or "INSTALL"
         DoDeleteTracker=0
         DoRenewCertificates=1
-        DoCleanCertificates=1
+        # DoCleanCertificates=1
         DoCheckAddedTorrents=0
         DoGetCertificates=0
         ;;
@@ -83,38 +83,40 @@ fi
 
 #### Renew expirated certificates
 if [[ ${DoRenewCertificates} -eq 1 ]]; then
+    DoGetCertificates=0
     ExpiratedTrackersList="$(cmdMySQL 'MySB_db' "SELECT tracker FROM trackers_list WHERE ${sWhereRequest[*]};")"
     for ExpiratedTracker in ${ExpiratedTrackersList}; do
         log_daemon_msg "${RenewCertificate} ${ExpiratedTracker}"
         # rm -f ${MySB_InstallDir}/ssl/trackers/*${RemovedTracker}.pem
+        DoGetCertificates=1
         cmdMySQL 'MySB_db' "UPDATE trackers_list SET is_ssl='0', to_check='1' WHERE tracker = '${ExpiratedTracker}';"
         gfnStatusLSB
     done
 fi
 
-if [[ ${DoCleanCertificates} -eq 1 ]]; then
-    #### Create again certificates listing in system
-    log_daemon_msg "${CertificateRehash}"
-    c_rehash ${MySB_InstallDir}/ssl/trackers/ &>/dev/null
-    c_rehash /etc/ssl/certs/ &>/dev/null
-    update-ca-certificates --fresh &>/dev/null
-    gfnStatusLSB
+# if [[ ${DoCleanCertificates} -eq 1 ]]; then
+#     #### Create again certificates listing in system
+#     log_daemon_msg "${CertificateRehash}"
+#     c_rehash ${MySB_InstallDir}/ssl/trackers/ &>/dev/null
+#     c_rehash /etc/ssl/certs/ &>/dev/null
+#     update-ca-certificates --fresh &>/dev/null
+#     gfnStatusLSB
 
-    #### Clean certificates with bad links
-    log_daemon_msg "${CleanCertificatesBadLinks}"
-    LIST_CERTS=$(ls -la /etc/ssl/certs/ | awk '{ print $9 }')
-    for Cert in ${LIST_CERTS}; do
-        if [ -n "${Cert}" ] && [ "${Cert}" != "." ] && [ "${Cert}" != ".." ]; then
-            TARGET=$(ls -la "/etc/ssl/certs/${Cert}" | awk '{ print $11 }')
-            if [ ! -f "${TARGET}" ]; then
-                rm -fv "/etc/ssl/certs/${Cert}" &>/dev/null
-            fi
-            unset TARGET
-        fi
-    done
-    unset LIST_CERTS Cert
-    gfnStatusLSB
-fi
+#     #### Clean certificates with bad links
+#     log_daemon_msg "${CleanCertificatesBadLinks}"
+#     LIST_CERTS=$(ls -la /etc/ssl/certs/ | awk '{ print $9 }')
+#     for Cert in ${LIST_CERTS}; do
+#         if [ -n "${Cert}" ] && [ "${Cert}" != "." ] && [ "${Cert}" != ".." ]; then
+#             TARGET=$(ls -la "/etc/ssl/certs/${Cert}" | awk '{ print $11 }')
+#             if [ ! -f "${TARGET}" ]; then
+#                 rm -fv "/etc/ssl/certs/${Cert}"
+#             fi
+#             unset TARGET
+#         fi
+#     done
+#     unset LIST_CERTS Cert
+#     gfnStatusLSB
+# fi
 
 if [[ ${DoCheckAddedTorrents} -eq 1 ]] || [[ ${DoGetCertificates} -eq 1 ]]; then
     # Allow all trackers in BIND
