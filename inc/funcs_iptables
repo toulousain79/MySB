@@ -390,7 +390,7 @@ gfnPopulatingIcmpChain() {
 
 #### Populate UDP inbound chain
 gfnPopulatingUdpInboundChain() {
-	local nNumLine sOvhIpRtm
+	local nNumLine sOvhIpRtm bActiveUdp
 
 	# udp_inbound chain
 	# This chain describes the inbound UDP packets it will accept.
@@ -525,24 +525,29 @@ gfnPopulatingUdpInboundChain() {
 	esac
 
 	#### rTorrent
+	bActiveUdp="$(cmdMySQL 'MySB_db' "SELECT annoncers_udp FROM system WHERE id_system='1';")"
 	case "$1" in
 	"create")
-		for SeedboxUser in ${gsUsersList}; do
-			sValues="$(cmdMySQL 'MySB_db' "SELECT scgi_port,rtorrent_port FROM users WHERE users_ident='${SeedboxUser}';" | sed 's/\t/|/g;')"
-			rTorrentPortStart="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[1]}')"
-			rTorrentPortEnd="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[2]}')"
-			iptables -A udp_inbound -p UDP -s 0/0 --destination-port "${rTorrentPortStart}":"${rTorrentPortEnd}" -j ACCEPT -m comment --comment "rTorrent UDP for users"
-		done
+		if [ "${bActiveUdp}" -eq 1 ]; then
+			for SeedboxUser in ${gsUsersList}; do
+				sValues="$(cmdMySQL 'MySB_db' "SELECT scgi_port,rtorrent_port FROM users WHERE users_ident='${SeedboxUser}';" | sed 's/\t/|/g;')"
+				rTorrentPortStart="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[1]}')"
+				rTorrentPortEnd="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[2]}')"
+				iptables -A udp_inbound -p UDP -s 0/0 --destination-port "${rTorrentPortStart}":"${rTorrentPortEnd}" -j ACCEPT -m comment --comment "rTorrent UDP for users"
+			done
+		fi
 		;;
 	"refresh")
 		nNumLine=$(grep 'rTorrent UDP for users' -n -m 1 "${MySB_InstallDir}"/temp/current-iptables-rules | cut -d ':' -f 1)
 		sed -i '/rTorrent UDP for users/d' "${MySB_InstallDir}"/temp/current-iptables-rules
-		for SeedboxUser in ${gsUsersList}; do
-			sValues="$(cmdMySQL 'MySB_db' "SELECT scgi_port,rtorrent_port FROM users WHERE users_ident='${SeedboxUser}';" | sed 's/\t/|/g;')"
-			rTorrentPortStart="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[1]}')"
-			rTorrentPortEnd="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[2]}')"
-			sed -i "${nNumLine}i\-A udp_inbound -s 0/0 -p udp -m udp --dport ${rTorrentPortStart}:${rTorrentPortEnd} -m comment --comment \"rTorrent UDP for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
-		done
+		if [ "${bActiveUdp}" -eq 1 ]; then
+			for SeedboxUser in ${gsUsersList}; do
+				sValues="$(cmdMySQL 'MySB_db' "SELECT scgi_port,rtorrent_port FROM users WHERE users_ident='${SeedboxUser}';" | sed 's/\t/|/g;')"
+				rTorrentPortStart="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[1]}')"
+				rTorrentPortEnd="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[2]}')"
+				sed -i "${nNumLine}i\-A udp_inbound -s 0/0 -p udp -m udp --dport ${rTorrentPortStart}:${rTorrentPortEnd} -m comment --comment \"rTorrent UDP for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+			done
+		fi
 		;;
 	esac
 

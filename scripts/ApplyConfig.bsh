@@ -226,9 +226,10 @@ fnDoApplyConfig() {
                 OpenVpnSwitch="${array[0]}"
                 LogwatchSwitch="${array[1]}"
                 DNScryptSwitch="${array[2]}"
-                SecurityRules="${array[3]}"
+                UDP="${array[3]}"
+                SecurityRules="${array[4]}"
 
-                OpenVpnValue="$(echo ${OpenVpnSwitch} | cut -d ":" -f 2)"
+                OpenVpnValue="$(echo "${OpenVpnSwitch}" | cut -d ":" -f 2)"
                 case "${OpenVpnValue}" in
                     1)
                         gfnWaitingSTD OpenVPN
@@ -237,13 +238,13 @@ fnDoApplyConfig() {
                         ;;
                 esac
 
-                LogwatchValue="$(echo ${LogwatchSwitch} | cut -d ":" -f 2)"
-                case "$LogwatchValue" in
+                LogwatchValue="$(echo "${LogwatchSwitch}" | cut -d ":" -f 2)"
+                case "${LogwatchValue}" in
                     0) [ -f /etc/cron.daily/00logwatch ] && rm /etc/cron.daily/00logwatch ;;
                     1) [ ! -f /etc/cron.daily/00logwatch ] && install -g root -o root -m 0755 ${MySB_InstallDir}/templates/logwatch/etc.cron.daily.00logwatch.tmpl /etc/cron.daily/00logwatch ;;
                 esac
 
-                case "$(echo ${DNScryptSwitch} | cut -d ":" -f 2)" in
+                case "$(echo "${DNScryptSwitch}" | cut -d ":" -f 2)" in
                     0 | 1)
                         gfnManageServices stop "dnscrypt-proxy"
                         case "${gbDnsCryptSwitch}" in
@@ -257,6 +258,17 @@ fnDoApplyConfig() {
                     screen -dmS MySB_SecurityRules /bin/bash ${MySB_InstallDir}/bin/MySB_SecurityRules 'refresh' '--pglcmd' 'APPLYCONFIG'
                     gfnWaitingSTD MySB_SecurityRules
                 fi
+
+                case "$(echo "${UDP}" | cut -d ":" -f 2)" in
+                    0 | 1)
+                        gfnListCountUsers 'normal'
+                        for sUser in ${gsUsersList}; do
+                            gfnWaitingSTD rTorrent-${sUser}
+                            screen -dmS rTorrent-${sUser} /bin/bash /home/${sUser}/.rTorrent_tasks.sh restart &>/dev/null
+                            gfnWaitingSTD rTorrent-${sUser}
+                        done
+                        ;;
+                esac
 
                 echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"

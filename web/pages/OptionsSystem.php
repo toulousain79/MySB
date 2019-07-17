@@ -104,8 +104,8 @@ if (isset($_POST['submit'])) {
 	}
 
 	// 2 - Next, we apply new paramaters WITH (maybe) needed of create again MySB Security rules
-	if ( ($Renting_db != $Renting_post) || ($IP_Restriction_db != $IP_restriction_post) || ($PGL_EmailStats_db != $PGL_EmailStats_post) || ($PGL_WatchdogEmail_db != $PGL_EmailWD_post) || ($DNScrypt_db != $DNScrypt_post) || ($LogWatch_db != $LogWatch_post) ) {
-		$result = $MySB_DB->update("system", ["rt_active" => "$Renting_post", "ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats_post", "pgl_watchdog_email" => "$PGL_EmailWD_post", "dnscrypt" => "$DNScrypt_post", "logwatch" => "$LogWatch_post"], ["id_system" => 1]);
+	if ( ($Renting_db != $Renting_post) || ($IP_Restriction_db != $IP_restriction_post) || ($PGL_EmailStats_db != $PGL_EmailStats_post) || ($PGL_WatchdogEmail_db != $PGL_EmailWD_post) || ($DNScrypt_db != $DNScrypt_post) || ($LogWatch_db != $LogWatch_post) || ($AnnoncersUdp_db != $AnnoncersUdp_post) ) {
+		$result = $MySB_DB->update("system", ["rt_active" => "$Renting_post", "ip_restriction" => "$IP_restriction_post", "pgl_email_stats" => "$PGL_EmailStats_post", "pgl_watchdog_email" => "$PGL_EmailWD_post", "dnscrypt" => "$DNScrypt_post", "logwatch" => "$LogWatch_post", "annoncers_udp" => "$AnnoncersUdp_post"], ["id_system" => 1]);
 
 		if( $result >= 0 ) {
 			$NoChange = false;
@@ -115,7 +115,7 @@ if (isset($_POST['submit'])) {
 
 			// LogWatch: 0 disabled / 1 enabled / -1 no changes
 			if ( $LogWatch_db != $LogWatch_post ) {
-				$args .= "$args|LogWatch:$LogWatch_post";
+				$args = "$args|LogWatch:$LogWatch_post";
 			} else {
 				$args = "$args|LogWatch:-1";
 			}
@@ -125,7 +125,13 @@ if (isset($_POST['submit'])) {
 			} else {
 				$args = "$args|DNScrypt:-1";
 			}
-			if ( ($IP_Restriction_db != $IP_restriction_post) || ($PGL_EmailStats_db != $PGL_EmailStats_post) || ($PGL_WatchdogEmail_db != $PGL_EmailWD_post) ) {
+			// UDP: 0 disabled / 1 enabled / -1 no changes
+			if ( $AnnoncersUdp_db != $AnnoncersUdp_post ) {
+				$args = "$args|UDP:$AnnoncersUdp_post";
+			} else {
+				$args = "$args|UDP:-1";
+			}
+			if ( ($IP_Restriction_db != $IP_restriction_post) || ($PGL_EmailStats_db != $PGL_EmailStats_post) || ($PGL_WatchdogEmail_db != $PGL_EmailWD_post) || ($AnnoncersUdp_db != $AnnoncersUdp_post) ) {
 				$args = "$args|MySB_SecurityRules";
 			}
 		}
@@ -175,13 +181,13 @@ if (isset($_POST['submit'])) {
 			$type = 'success';
 		}
 	}
-	if ( $AnnoncersUdp_db != $AnnoncersUdp_post ) {
-		$result = $MySB_DB->update("system", ["annoncers_udp" => "$AnnoncersUdp_post"], ["id_system" => 1]);
-		if( $result >= 0 ) {
-			$NoChange = false;
-			$type = 'success';
-		}
-	}
+	// if ( $AnnoncersUdp_db != $AnnoncersUdp_post ) {
+	// 	$result = $MySB_DB->update("system", ["annoncers_udp" => "$AnnoncersUdp_post"], ["id_system" => 1]);
+	// 	if( $result >= 0 ) {
+	// 		$NoChange = false;
+	// 		$type = 'success';
+	// 	}
+	// }
 
 	if ($NoChange) {
 		$message = Global_NoChange;
