@@ -48,7 +48,6 @@
 ####################
 
 ## Bind listening socket and outgoing connections to this network interface address.
-#network.bind_address.set = rakshasa.no
 network.bind_address.set = <local_address>
 
 ## Set the address reported to the tracker.
@@ -58,7 +57,7 @@ network.local_address.set = <local_address>
 network.port_range.set = <port_range>
 
 ## Open the listening port at a random position in the port range.
-network.port_random.set = no
+network.port_random.set = 0
 
 ## Use a http proxy. Use an empty string to disable.
 network.http.proxy_address.set =
@@ -80,13 +79,14 @@ network.http.ssl_verify_host.set = 1
 #### a ceiling of handles reserved for rTorrent's internal needs!
 ## Number of sockets to simultaneously keep open.
 ## This value is set to 32 by default.
-network.http.max_open.set = 50
+## Maximum number of simultaneous HTTP request (used by announce or scrape requests) Default: `32` (`set_max_open_http`)
+#network.http.max_open.set = 32
 ## Number of files to simultaneously keep open.
 ## LibTorrent dynamically opens and closes files as necessary when mapping files to memory.
 ## Default is based on sysconf(_SC_OPEN_MAX).
 ## You probably only think you know what this option does, so don't touch it.
-network.max_open_files.set = 600
-network.max_open_sockets.set = 300
+#network.max_open_files.set = 600
+#network.max_open_sockets.set = 300
 
 ## XMLRPC
 network.xmlrpc.size_limit.set = 4M
@@ -96,28 +96,25 @@ network.scgi.open_port = 127.0.0.1:<scgi_port>
 #network.scgi.dont_route.set =
 
 ## HTTP
-network.http.dns_cache_timeout.set = 0
+network.http.dns_cache_timeout.set = 30
 
 ####################
 #### System
 ####################
 
-## Preallocate files; reduces defragmentation on filesystems.
-system.file.allocate.set = yes
+## Whether to allocate disk space for a new torrent. Default: `0`
+system.file.allocate.set = 1
 
-## Set the maximum size a file can have.
-## Disable by passing -1.
+## Set the maximum size a file can have. Disable by passing -1.
 system.file.max_size.set = -1
 
-## Split files in a torrent larger than size into seperate files.
-## Disable by passing -1.
+## Split files in a torrent larger than size into seperate files. Disable by passing -1.
 system.file.split_size.set = -1
 
-## Set the suffix used on split files.
-## Defaults to .part.
+## Set the suffix used on split files. Defaults to .part.
 #system.file.split_suffix.set = .part
 
-## Umask
+## Set the umask for this process, which is applied to all files created by the program.
 # r (read) = 4
 # w (write) = 2
 # x (execute) = 1
@@ -126,7 +123,8 @@ system.file.split_size.set = -1
 # system.umask.set = 0017
 
 ## Changes the working directory of the process using chdir.
-system.cwd.set = (directory.default)
+#system.cwd.set = (directory.default)
+system.cwd.set = <homedir>/rtorrent
 
 ####################
 #### Memory/Pieces
@@ -134,18 +132,21 @@ system.cwd.set = (directory.default)
 
 ## Perform hash check on torrents that have finished downloading.
 ## Check hash for finished torrents. Might be useful until the bug is fixed that causes lack of diskspace not to be properly reported.
-pieces.hash.on_completion.set = no
+pieces.hash.on_completion.set = 0
 
 ## Set the max amount of memory space used to mapping file chunks.
 ## This may also be set using ulimit -m where 3/4 will be allocated to file chunks.
 ## # nb does not refer to physical memory
 pieces.memory.max.set = 3500M
 
+## Always use MS_SYNC rather than MS_ASYNC when syncing chunks.
+## This may be nessesary in case of filesystem bugs like NFS in linux ~2.6.13.
+#pieces.sync.always_safe.set = 0
+
 # preload type 0 = Off, 1 = madvise, 2 = direct paging
 #pieces.preload.type.set = 1
 #pieces.preload.min_size.set = 262144
 #pieces.preload.min_rate.set = 5120
-#pieces.sync.always_safe.set = no
 #pieces.sync.timeout.set = 600
 #pieces.sync.timeout_safe.set = 900
 
@@ -167,25 +168,26 @@ directory.default.set = ~/rtorrent/complete
 ## An empty string will disable the session directory.
 session.path.set = ~/rtorrent/.session
 
-## Controls if the session torrent is saved when a torrent finishes.
-## By default on.
-session.on_completion.set = yes
+## Controls if the session torrent is saved when a torrent finishes. By default on.
+session.on_completion.set = 1
 
 ## Controls if a lock file is created in the session directory on startup.
-session.use_lock.set = yes
+session.use_lock.set = 1
 
 
 ####################
 #### Tracker
 ####################
 
-## Set the numwant field sent to the tracker, which indicates how many peers we want.
-## A negative value disables this feature.
+## Set to no to disable all tracker requests. Useful for disabling rtorrent with the schedule command.
+trackers.enable = 1
+
+# Set the numwant field sent to the tracker, which indicates how many peers we want. A negative value disables this feature. Default: `-1` (`tracker_numwant`)
 trackers.numwant.set = -1
 
 ## Use UDP trackers.
 ## Disable if you are behind a firewall, etc, that does not allow connections to UDP trackers.
-trackers.use_udp.set = no
+trackers.use_udp.set = 0
 
 
 ####################
@@ -221,7 +223,7 @@ protocol.encryption.set = require,require_RC4,allow_incoming,try_outgoing,enable
 #protocol.encryption.set = allow_incoming,try_outgoing,enable_retry,prefer_plaintext
 
 # Enable peer exchange (for torrents not marked private)
-protocol.pex.set = no
+protocol.pex.set = 0
 
 
 ####################
@@ -287,31 +289,29 @@ schedule2 = session_save,240,300,session_save=~/rtorrent/.session
 #### Throttle
 ####################
 
-## Set the maximum global upload and download rates.
-## Global upload and download rate in KiB. "0" for unlimited
-#throttle.global_up.max_rate.set_kb = 0
-#throttle.global_down.max_rate.set_kb = 0
+## Global upload and download rate in KiB, `0` for unlimited (`download_rate`, `upload_rate`)
+throttle.global_up.max_rate.set_kb = 0
+throttle.global_down.max_rate.set_kb = 0
 
-## Set the minimum and maximum number of peers to allow in each download.
-throttle.min_peers.normal.set = 20
-throttle.max_peers.normal.set = 60
+## Maximum number of simultaneous downloads and uploads slots (global slots!) (`max_downloads_global`, `max_uploads_global`) Disable by setting 0.
+throttle.max_uploads.global.set = 0
+throttle.max_downloads.global.set = 0
 
-## Set the minimum and maximum number of peers to allow while seeding, or -1 (default) to use max_peers.
+## Maximum and minimum number of peers to connect to per torrent while downloading (`min_peers`, `max_peers`) Default: `100` and `200` respectively
+throttle.min_peers.normal.set = 1
+throttle.max_peers.normal.set = 100
+
+## Same as above but for seeding completed torrents (seeds per torrent), `-1` for same as downloading (`min_peers_seed`, `max_peers_seed`) Default: `-1` for both
 throttle.min_peers.seed.set = -1
 throttle.max_peers.seed.set = -1
 
-## Set the maximum number of simultaneous uploads per download.
-throttle.max_uploads.set = 100
+## Maximum number of simultaneous downloads and uploads slots per torrent (`max_uploads`) Default: `50` for both
+throttle.max_downloads.set = 50
+throttle.max_uploads.set = 50
 
-## Change the divider used to calculate the max upload and download slots to use when the throttle is changed.
-## Disable by setting 0.
-#throttle.max_uploads.div.set = 1
-#throttle.max_downloads.div.set = 1
-
-## Max upload and download slots allowed.
-## Disable by setting 0.
-throttle.max_uploads.global.set = 0
-throttle.max_downloads.global.set = 0
+## Change the divider used to calculate the max upload and download slots to use when the throttle is changed. Disable by setting 0.
+throttle.max_uploads.div.set = 0
+throttle.max_downloads.div.set = 0
 
 
 ####################
@@ -369,6 +369,7 @@ log.open_file = "rtorrent", "~/logs/rtorrent.log"
 log.add_output = "info", "rtorrent"
 log.open_file = "tracker", "~/logs/tracker.log"
 log.add_output = "tracker_info", "tracker"
+#log.add_output = "tracker_debug", "tracker.log"
 log.open_file = "storage", "~/logs/storage.log"
 log.add_output = "storage_info", "storage"
 log.open_file = "peer", "~/logs/peer.log"
