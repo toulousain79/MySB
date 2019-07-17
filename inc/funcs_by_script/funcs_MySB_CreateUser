@@ -496,7 +496,7 @@ gfnUserCrontab() {
     # echo "# 1	-->	Execute scripts by crontab (*.cron)" >> "${sHomeDir}"/scripts/sync_mode
     # echo "# 2	-->	Execute scripts directly when a download is finished (*.sh)" >> "${sHomeDir}"/scripts/sync_mode
     sqlite3 -cmd '.timeout 150000' "$sSyncDB" "DELETE FROM categories;"
-    for sDirectory in $sDirectories; do
+    for sDirectory in ${sDirectories}; do
         sSubDirectory="$(echo "${sDirectory}" | awk '{split($0,a,"|"); print a[1]}')"
         sSyncMode="$(echo "${sDirectory}" | awk '{split($0,a,"|"); print a[2]}')"
         sqlite3 -cmd '.timeout 150000' "$sSyncDB" "INSERT INTO categories (name,sync_mode) VALUES ('${sSubDirectory}','$sSyncMode');"
@@ -535,7 +535,7 @@ gfnUserCrontab() {
 #### rTorrent Configuration file
 gfnCreateRtorrentConfigFile() {
     local sUser sUserValues sHomeDir sDirectories sSubDirectory sDirectory sFileSystemType
-    local bCanBeDeleted bCreateNewFile bToDelete
+    local bCanBeDeleted bCreateNewFile bToDelete bActiveUdp
     local nIdUser nPortSCGI nPortRtorrent nNumLine nCount nCountFiles
 
     [[ -n $1 ]] && sUser="$1" || return
@@ -555,8 +555,8 @@ gfnCreateRtorrentConfigFile() {
     fi
 
     # Sub-Directories
-    if [ -n "$sDirectories" ]; then
-        for sDirectory in $sDirectories; do
+    if [ -n "${sDirectories}" ]; then
+        for sDirectory in ${sDirectories}; do
             sSubDirectory="$(echo "${sDirectory}" | awk '{split($0,a,"|"); print a[1]}')"
             bCanBeDeleted="$(echo "${sDirectory}" | awk '{split($0,a,"|"); print a[2]}')"
             bToDelete="$(echo "${sDirectory}" | awk '{split($0,a,"|"); print a[3]}')"
@@ -647,6 +647,14 @@ gfnCreateRtorrentConfigFile() {
             perl -pi -e "s/#{1}schedule2=load_filter/schedule2=load_filter/g" "${sHomeDir}"/.rtorrent.rc
         fi
 
+        # UDP ?
+        bActiveUdp="$(cmdMySQL 'MySB_db' "SELECT annoncers_udp FROM system WHERE id_system='1';")"
+        if [ "${bActiveUdp}" -eq 1 ]; then
+            perl -pi -e "s/^trackers.use_udp.set = no/trackers.use_udp.set = yes/g" "${sHomeDir}"/.rtorrent.rc
+        else
+            perl -pi -e "s/^trackers.use_udp.set = yes/trackers.use_udp.set = no/g" "${sHomeDir}"/.rtorrent.rc
+        fi
+
         # network.http.ssl_verify_host.set
         rTorrentVersion="$(cmdMySQL 'MySB_db' "SELECT rtorrent_version FROM users WHERE users_ident='${sUser}';")"
         case "$rTorrentVersion" in
@@ -680,13 +688,13 @@ gfnCreateRtorrentConfigFile() {
         sed -i '/^$/d' "${sHomeDir}"/.rtorrent.rc
 
         # Watch directories
-        if [ -n "$sDirectories" ]; then
+        if [ -n "${sDirectories}" ]; then
             nNumLine=$(sed -n "/watch_directory/=" "${sHomeDir}"/.rtorrent.rc)
             nCount=0
             sed -i '/watch_directory/d' "${sHomeDir}"/.rtorrent.rc
             sed -i "${nNumLine}i\schedule2 = watch_directory_${nCount},5,5,\"load.normal=~\/rtorrent\/watch\/*.torrent,d.directory.set=~\/rtorrent\/complete\/,d.custom1.set=,d.custom2.set=~\/rtorrent\/torrents\/\"" "${sHomeDir}"/.rtorrent.rc
             ((nNumLine++)) && ((nCount++))
-            for sDirectory in $sDirectories; do
+            for sDirectory in ${sDirectories}; do
                 sDirectory="$(echo "${sDirectory}" | awk '{split($0,a,"|"); print a[1]}')"
                 sed -i "${nNumLine}i\schedule2 = watch_directory_${nCount},5,5,\"load.normal=~\/rtorrent\/watch\/${sDirectory}\/*.torrent,d.directory.set=~\/rtorrent\/complete\/${sDirectory}\/,d.custom1.set=${sDirectory},d.custom2.set=~\/rtorrent\/torrents\/${sDirectory}\/\"" "${sHomeDir}"/.rtorrent.rc
                 ((nNumLine++)) && ((nCount++))
