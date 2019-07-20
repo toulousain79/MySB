@@ -222,7 +222,7 @@ for sUser in ${gsUsersList}; do
             fi
 
             ( [[ ${bAnnoncersCheck} -eq 0 ]] && [[ ${isStart} -eq 1 ]] ) && su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.start ${sInfoHash}"
-            [[ ${bAnnoncersCheck} -eq 0 ]] && su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.save_full_session ${sInfoHash}"
+            [[ ${bAnnoncersCheck} -eq 0 ]] && su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} session.save ${sInfoHash}"
 
             # Remove hash from file list
             sed -i "/$(echo "${sInfoHash}" | tr '[:lower:]' '[:upper:]')/d" "${sTempSessionsFile}"
