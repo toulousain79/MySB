@@ -26,6 +26,7 @@ require_once '/etc/MySB/config.php';
 
 // VARs
 $Username = $_POST['username'];
+if (isset($_POST['type'])) { $type = $_POST['type']; }
 
 if (isset($_POST['get_base_path'])) { $get_base_path = $_POST['get_base_path']; }
 if (isset($_POST['get_directory'])) { $get_directory = $_POST['get_directory']; }
@@ -156,7 +157,15 @@ if ( ($rTorrentNotify == '1') && (!empty($UserMail)) ) {
 	$Headers  = "From: $MainUserEmail"."\r\n";
 	$Headers .= "Reply-To: $MainUserEmail"."\r\n";
 	$Headers .= 'MIME-Version: 1.0' . "\r\n";
-	$Headers .= 'Content-type:text/html;charset=UTF-8' . "\r\n";
+	switch ($type) {
+		case 'synchro':
+			$mail_type="plain";
+			break;
+		default:
+			$mail_type="html";
+	}
+	// $Headers .= 'Content-type:text/html;charset=UTF-8' . "\r\n";
+	$Headers .= 'Content-type:text/'.$mail_type.';charset=UTF-8' . "\r\n";
 
 	mail($UserMail, $Subject, $Content, $Headers);
 }
