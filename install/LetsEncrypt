@@ -57,11 +57,11 @@ esac
 fnRenewServersIps() {
     local sLetsEncryptServers sServer sAllIPv4 sIPv4
 
-    sLetsEncryptServers="$(cmdMySQL 'MySB_db' "SELECT addresses FROM lets_encrypt WHERE 1;" | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq)"
+    sLetsEncryptServers="$(cmdMySQL 'MySB_db' "SELECT addresses FROM lets_encrypt WHERE 1;" | sed -e 's/^ //g;s/\s+$//g;' | sort | uniq)"
     for sServer in $sLetsEncryptServers; do
         cmdMySQL 'MySB_db' "DELETE FROM lets_encrypt WHERE addresses='$sServer';" -v
         sAllIPv4="$(nslookup $sServer | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
-        sAllIPv4="$(echo $sAllIPv4 | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq)"
+        sAllIPv4="$(echo $sAllIPv4 | sed -e 's/^ //g;s/\s+$//g;' | sort | uniq)"
         for sIPv4 in $sAllIPv4; do
             if [ "$(gfnValidateIP ${sIPv4})" == "$sIPv4" ]; then
                 cmdMySQL 'MySB_db' "INSERT INTO lets_encrypt (addresses,ipv4) VALUES ('$sServer','$sIPv4');" -v
