@@ -50,14 +50,14 @@ gfnIblocklistXmlGenerate() {
         [ "${sLine}" == "</list>" ] && continue
 
         if (echo "${sLine}" | grep -q '<list>'); then
-            sListId="$(echo "${sLine}" | sed 's/<list>//g;' | sed 's/<\/list>//g;')"
+            sListId="$(echo "${sLine}" | sed 's/<list>//g;s/<\/list>//g;')"
             sUrlInfo="https://www.iblocklist.com/list?list=${sListId}"
             sUrlList="http://list.iblocklist.com/?list=${sListId}&fileformat=p2p&archiveformat=gz"
         fi
 
-        (echo "${sLine}" | grep -q '<name>') && sListName="$(echo "${sLine}" | sed 's/<name>//g;' | sed 's/<\/name>//g;')"
-        (echo "${sLine}" | grep -q '<author>') && sAuthor="$(echo "${sLine}" | sed 's/<author>//g;' | sed 's/<\/author>//g;')"
-        (echo "${sLine}" | grep -q '<subscription>') && sSubscription="$(echo "${sLine}" | sed 's/<subscription>//g;' | sed 's/<\/subscription>//g;')"
+        (echo "${sLine}" | grep -q '<name>') && sListName="$(echo "${sLine}" | sed 's/<name>//g;s/<\/name>//g;')"
+        (echo "${sLine}" | grep -q '<author>') && sAuthor="$(echo "${sLine}" | sed 's/<author>//g;s/<\/author>//g;')"
+        (echo "${sLine}" | grep -q '<subscription>') && sSubscription="$(echo "${sLine}" | sed 's/<subscription>//g;s/<\/subscription>//g;')"
         [ -n "${sAuthor}" ] && sNewLine[0]="${sAuthor}"
         if [ -n "${sListName}" ]; then
             sListNameLower="$(echo "${sListName}" | tr '[:upper:]' '[:lower:]')"
@@ -149,7 +149,7 @@ gfnIblocklistXmlGenerate() {
                         nHeaderCountries=0
                     } >>"${sP2pArtisanFile}"
                 fi
-                sFormatedName="$(echo "${sNewLine[1]// /_}" | sed 's/\.//g;' | sed 's/\\//g;' | sed "s/'/_/g;" | sed 's/[()]//g;')"
+                sFormatedName="$(echo "${sNewLine[1]// /_}" | sed 's/\.//g;s/\\//g;s/[()]//g;' | sed "s/'/_/g;")"
                 [ "$sSubscription" != "true" ] && echo "${sEnable}${sFormatedName} ${sNewLine[4]}" | tee -a "${sP2pArtisanFile}"
             else
                 echo "(\"${sNewLine[0]}\", \"${sNewLine[1]}\", \"${sNewLine[2]}\", \"${sNewLine[3]}\", \"${sNewLine[4]}\", \"${sNewLine[5]}\", ${sValues}, \"${nComment}\", \"0000-00-00 00:00:00\"),"
@@ -399,7 +399,7 @@ gfnPeerGuardianBlocklistsList() {
             if [ -f /etc/pgl/pglcmd.conf ] && [ -f /etc/pgl/blocklists.list ]; then
                 # /etc/pgl/blocklists.list
                 [ "${bDisplay}" -eq 1 ] && log_daemon_msg "${Peerguardian_AddingSelectedBlocklist}"
-                (   
+                (
                     cat <<'EOF'
 # blocklists.list - lists the remote blocklists that pglcmd handles.
 
@@ -446,7 +446,7 @@ gfnPeerGuardianAllowP2P() {
     if [ -f /etc/pgl/pglcmd.conf ] && [ -f /etc/pgl/allow.p2p ]; then
         # /etc/pgl/allow.p2p
         if [ "$1" -eq 1 ]; then log_daemon_msg "${Peerguardian_PermissionSelectedTrackers}"; fi
-        (   
+        (
             cat <<'EOF'
 # allow.p2p - allow list for pglcmd
 #
@@ -592,12 +592,12 @@ gfnPeerGuardianPglcmdConf() {
 
     if [ -f /etc/pgl/pglcmd.conf ]; then
         if [ "$1" -eq 1 ]; then log_daemon_msg "${Peerguardian_LoggingAndVerbosity}"; fi
-        sStatsMailTo="$(cmdMySQL 'MySB_db' "SELECT pgl_email_stats FROM system;" | sed 's/0//g;' | sed 's/1/root/g;')"
+        sStatsMailTo="$(cmdMySQL 'MySB_db' "SELECT pgl_email_stats FROM system;" | sed 's/0//g;s/1/root/g;')"
         sSearch="$(grep 'STATS_MAILTO=' /etc/pgl/pglcmd.conf)"
         perl -pi -e "s/$sSearch/STATS_MAILTO=\"$sStatsMailTo\"/g" /etc/pgl/pglcmd.conf
         unset sSearch
 
-        sWatchDogMailTo="$(cmdMySQL 'MySB_db' "SELECT pgl_watchdog_email FROM system;" | sed 's/0//g;' | sed 's/1/root/g;')"
+        sWatchDogMailTo="$(cmdMySQL 'MySB_db' "SELECT pgl_watchdog_email FROM system;" | sed 's/0//g;s/1/root/g;')"
         sSearch="$(grep 'WD_MAILTO=' /etc/pgl/pglcmd.conf)"
         perl -pi -e "s/$sSearch/WD_MAILTO=\"$sWatchDogMailTo\"/g" /etc/pgl/pglcmd.conf
         unset sSearch
@@ -719,10 +719,10 @@ gfnPeerGuardianNetworkPortsGenerator() {
         fi
     fi
 
-    WHITE_TCP_IN=$(echo "$WHITE_TCP_IN" | sed -e 's/^ //g;' | sed 's/\s+$//')
-    WHITE_UDP_IN=$(echo "$WHITE_UDP_IN" | sed -e 's/^ //g;' | sed 's/\s+$//')
-    WHITE_TCP_OUT=$(echo "$WHITE_TCP_OUT" | sed -e 's/^ //g;' | sed 's/\s+$//')
-    WHITE_UDP_OUT=$(echo "$WHITE_UDP_OUT" | sed -e 's/^ //g;' | sed 's/\s+$//')
+    WHITE_TCP_IN=$(echo "$WHITE_TCP_IN" | sed -e 's/^ //g;s/\s+$//g;')
+    WHITE_UDP_IN=$(echo "$WHITE_UDP_IN" | sed -e 's/^ //g;s/\s+$//g;')
+    WHITE_TCP_OUT=$(echo "$WHITE_TCP_OUT" | sed -e 's/^ //g;s/\s+$//g;')
+    WHITE_UDP_OUT=$(echo "$WHITE_UDP_OUT" | sed -e 's/^ //g;s/\s+$//g;')
     export WHITE_TCP_IN WHITE_UDP_IN WHITE_TCP_OUT WHITE_UDP_OUT
 }
 

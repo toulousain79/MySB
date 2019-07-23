@@ -81,6 +81,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 			GenerateMessage('ManageAddresses', $type, $message);
 			break;
+
 		case Global_SaveChanges:
 			$count = count($_POST['input_id']);
 			$DateTime = date("Y-m-d H:i:s");
@@ -88,7 +89,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			for($i=1; $i<=$count; $i++) {
 				$CleanIPv4 = preg_replace('/\s\s+/', '', $_POST['ipv4'][$i]);
 				$CleanHostname = preg_replace('/\s\s+/', '', $_POST['hostname'][$i]);
-				$value = $MySB_DB->update("users_addresses", [ "is_active" => 1, "last_update" => "$DateTime" ], [ "AND" => [ "ipv4" => "$CleanIPv4", "hostname" => "$CleanHostname" ]]);
+				$value = $MySB_DB->update("users_addresses", [ "is_active" => $_POST['is_active'][$i], "last_update" => "$DateTime" ], [ "AND" => [ "ipv4" => "$CleanIPv4", "hostname" => "$CleanHostname" ]]);
 				$result = $result+$value;
 			}
 
@@ -125,6 +126,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				GenerateMessage('message_only', 'information', User_ManageAddresses_RememberCheck);
 			}
 			break;
+
 		default: // Delete
 			if (isset($_POST['delete'])) {
 				$success = true;
