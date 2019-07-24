@@ -1,0 +1,318 @@
+#!/bin/bash
+# -----------------------------------------
+# shellcheck source=inc/includes_before
+source "$(dirname "$0")"/../inc/includes_before
+# -----------------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#	 _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#	  _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#	   _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#		_\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#		 _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#		  _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+# Autorisations d'accès bidirectionnel
+# 1/ ajouter l'adresse du nouveau serveur dans la liste des adresses autorisées sur l'ancien serveur
+# 2/ ajouter l'adresse de l'ancien serveur dans la liste des adresses autorisées sur le nouveau serveur
+# 3/ ajouter la clé publique de l'ancien serveur vers le nouveau
+# 4/ transfert des données
+# 5/ modifier l'adresse IP du FQDN par celle du nouveau serveur
+# 6/ changer le nom du nouveau serveur: https://mysb.gitbook.io/doc/support/faq#changer-le-nom-de-votre-serveur
+
+#### Must be root
+[[ $EUID -ne 0 ]] && {
+    echo -e "${CRED}${Migrate_MustBeRoot[*]}${CEND}"
+    echo
+}
+
+#### New server IP
+echo
+while [ "${CHECK_SrvIpAddressExt}" != "${gsNewServerIp}" ] || [ -z "${gsNewServerIp}" ]; do
+    gfnQuestionGetString NO "${Migrate_NewServerIp[*]}" gsNewServerIp
+    CHECK_SrvIpAddressExt=$(gfnValidateIP "${gsNewServerIp}")
+done
+
+#### New server SSH port
+echo
+gfnQuestionGetString NO "${Migrate_NewServerSshPort[*]}" gsNewServerSshPort "${gsPort_SSH}"
+
+#### Pub key check
+{
+    echo "# ${gsHostNameFqdn}"
+    cat /root/.ssh/id_rsa.pub
+    echo
+} >/tmp/remote_authorized_keys
+if (! sshpass -p "" scp -P "${gsNewServerSshPort}" /tmp/remote_authorized_keys root@${gsNewServerIp}:/tmp/remote_authorized_keys); then
+    echo
+    echo -e "${Migrate_CopyPubKey[*]}"
+    echo -e "${Migrate_BlankLine[*]}"
+    echo
+    gfnEndingScript 0
+fi
+
+#### Synchro type
+echo
+sChoices=('before' 'after' 'reset_passwd' 'rename')
+while (! grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); do
+    gfnQuestionGetString NO "${Migrate_SynchroType[*]}" gsSynchroType
+done
+
+#### Get remote config
+if (ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "grep 'MySB_InstallDir=' /etc/MySB/config" >/tmp/MySB_remote_config); then
+    perl -pi -e "s/MySB_InstallDir/MySB_RemoteDir/g" /tmp/MySB_remote_config
+    . /tmp/MySB_remote_config
+else
+    gfnEndingScript 0
+fi
+
+#### VARs
+sRsyncOptions=(-av --partial --append --progress --delete --delete-before)
+sSshOptions=(-p "${gsNewServerSshPort}" -c aes128-ctr -o "Compression=yes" -x -T)
+
+#### Users
+function fnSynchroUsers() {
+    local sRequestValues nUserQuota sUserAccountType sUserExist
+
+    sRequestValues="$(cmdMySQL 'MySB_db' "SELECT ip_restriction,files_recycling,pgl_email_stats,pgl_watchdog_email,logwatch,rt_active,rt_model,rt_tva,rt_global_cost,public_tracker_allow,block_annoncers,annoncers_udp,annoncers_check FROM system WHERE id_system='1';" | sed 's/\t/|/g;')"
+    bIpRestriction="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[1]}')"
+    bFileRecycling="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
+    bPglEmailStats="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[3]}')"
+    bPglWatchdogMail="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[4]}')"
+    bLogwatch="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[5]}')"
+    bRtActive="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[6]}')"
+    sRtModel="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[7]}')"
+    sRtTva="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[8]}')"
+    sRtGlobalCost="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[9]}')"
+    sPublicTrackerAllow="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[10]}')"
+    bBlockAnnouncers="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[11]}')"
+    bAnnouncersUdp="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[12]}')"
+    bAnnouncersCheck="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[13]}')"
+
+    ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE system SET ip_restriction='${bIpRestriction}', files_recycling='${bFileRecycling}' WHERE id_system='1';\" -v"
+    ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE system SET pgl_email_stats='${bPglEmailStats}', pgl_watchdog_email='${bPglWatchdogMail}', logwatch='${bLogwatch}' WHERE id_system='1';\" -v"
+    ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE system SET rt_active='${bRtActive}', rt_model='${sRtModel}', rt_tva='${sRtTva}', rt_global_cost='${sRtGlobalCost}' WHERE id_system='1';\" -v"
+    ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE system SET public_tracker_allow='${sPublicTrackerAllow}', block_annoncers='${bBlockAnnouncers}', annoncers_udp='${bAnnouncersUdp}', annoncers_check='${bAnnouncersCheck}' WHERE id_system='1';\" -v"
+
+    gfnListCountUsers 'normal'
+    for sUser in ${gsUsersList}; do
+        clear
+        echo -e "${Migrate_User[*]} ${CGREEN}${sUser}${CEND}"
+        sleep 2
+
+        # User infos
+        sRequestValues="$(cmdMySQL 'MySB_db' "SELECT quota,account_type FROM users WHERE users_ident='${sUser}';" | sed 's/\t/|/g;')"
+        nUserQuota="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[1]}')"
+        sUserAccountType="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
+
+        # Create users accounts if needed (with main user mail)
+        if [ "${sUser}" != "${gsMainUserName}" ]; then
+            sUserExist="$(ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "getent passwd ${sUser}")"
+            if [ -z "${sUserExist}" ]; then
+                ssh -p "${gsNewServerSshPort}" root@"${gsNewServerIp}" "bash ${MySB_RemoteDir}/bin/MySB_CreateUser \"${sUser}\" \"1\" \"0\" \"$sUserMail\" \"${gsMainUserEmail}\" \"${sUserAccountType}\" \"${nUserQuota}\" 'APPLYCONFIG'"
+            fi
+        fi
+        # /etc/nginx/passwd/users
+        scp -v -P "${gsNewServerSshPort}" "/etc/nginx/passwd/MySB_${sUser}" root@"${gsNewServerIp}:/etc/nginx/passwd/MySB_${sUser}"
+        # /home
+        time rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /home/"${sUser}"/ root@"${gsNewServerIp}":/home/"${sUser}"/
+    done
+}
+
+function fnResetPassword() {
+    gfnListCountUsers 'normal'
+    for sUser in ${gsUsersList}; do
+        # Init password required
+        cmdMySQL 'MySB_db' "UPDATE users SET init_password = '1' WHERE users_ident = '${sUser}';" -v
+        gfnSendMail "${Migrate_ResetUsersPassword[*]}" "${sUser}" "upgrade"
+    done
+}
+
+#### Synchro Plex
+function fnSynchroPlex() {
+    local sPreferencesFile
+
+    if [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
+        clear
+        echo -e "${Migrate_Plex[*]}"
+        sleep 2
+
+        ## Stop services (local & remote)
+        gfnManageServices stop "tautulli plexmediaserver"
+        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "service tautulli stop"
+        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "service plexmediaserver stop"
+
+        ## Synchro Plex datas
+        sPreferencesFile='/var/lib/plexmediaserver/Library/Application\ Support/Plex\ Media\ Server/Preferences.xml'
+        perl -pi -e 's/"MySB"/"MySB_old"/g' "${sPreferencesFile}"
+
+        # Remote Preferences.xml
+        scp -v -P "${gsNewServerSshPort}" root@"${gsNewServerIp}:${sPreferencesFile}" /tmp/plex_remote_preferences
+        perl -pi -e 's/"MySB"/"MySB_new"/g' /tmp/plex_remote_preferences
+        rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /var/lib/plexmediaserver/ root@"${gsNewServerIp}":/var/lib/plexmediaserver/
+        rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /usr/lib/plexmediaserver/ root@"${gsNewServerIp}":/usr/lib/plexmediaserver/
+        scp -v -P "${gsNewServerSshPort}" /tmp/plex_remote_preferences root@"${gsNewServerIp}:${sPreferencesFile}"
+
+        # Synchro Tautulli datas
+        scp -v -P "${gsNewServerSshPort}" "${MySB_InstallDir}"/web/apps/tt/tautulli.db root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/tt/tautulli.db
+
+        # Start services (local & remote)
+        if [ "${gsSynchroType}" == "after" ]; then
+            ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "service tautulli stop"
+            ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "service plexmediaserver stop"
+        else
+            gfnManageServices start "plexmediaserver tautulli"
+        fi
+    fi
+}
+
+#### Synchro NextCloud
+function fnSynchroNextCloud() {
+    clear
+    echo -e "${Migrate_NextCloud[*]}"
+    sleep 2
+    [ "${gbIsInstalled_NextCloud}" == "YES" ] && time rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /home/nextcloud/ root@"${gsNewServerIp}":/home/nextcloud/
+}
+
+#### Synchro Let's Encrypt
+function fnSynchroLetsEncrypt() {
+    clear
+    echo -e "${Migrate_LetsEncrypt[*]}"
+    sleep 2
+    rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /etc/letsencrypt/live/"${gsHostNameFqdn}" root@"${gsNewServerIp}":/etc/letsencrypt/live/
+}
+
+#### Synchro /opt/MySB/ssl/trackers/
+function fnSynchroTrackersCertificates() {
+    clear
+    echo -e "${Migrate_TrackersCert[*]}"
+    sleep 2
+    ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "mkdir -p ${MySB_RemoteDir}/ssl/trackers/"
+    rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" "${MySB_InstallDir}"/ssl/trackers/*.pem root@"${gsNewServerIp}":"${MySB_RemoteDir}"/ssl/trackers/
+}
+
+#### Synchro databases
+function fnDatabases() {
+    local sRequestValues
+
+    clear
+    echo -e "${Migrate_Databases[*]} ${CGREEN}${sUser}${CEND}"
+    sleep 2
+
+    # SQLite Blocklists.sq3
+    scp -v -P "${gsNewServerSshPort}" "${MySB_InstallDir}"/db/Blocklists.sq3 root@"${gsNewServerIp}":"${MySB_RemoteDir}"/db/Blocklists.sq3
+
+    # Dump NextCloud_db
+    [ "${gbIsInstalled_NextCloud}" == "YES" ] && mysqldump --defaults-extra-file=/root/.config.cnf --single-transaction NextCloud_db >/tmp/NextCloud_db.dump.sql
+    # Dump MySB_db
+    mysqldump --defaults-extra-file=/root/.config.cnf --single-transaction MySB_db \
+        users \
+        users_addresses \
+        users_crontab \
+        users_history \
+        users_rtorrent_cfg \
+        trackers_list \
+        trackers_list_ipv4 \
+        tracking_rent_history \
+        tracking_rent_otions \
+        tracking_rent_payments \
+        blocklists \
+        dnscrypt_config \
+        torrents \
+        users_scripts >/tmp/MySB_db.dump.sql
+
+    if (scp -v -P "${gsNewServerSshPort}" /tmp/*.dump.sql root@"${gsNewServerIp}":/tmp/); then
+        # MySB
+        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} 'mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N -e "TRUNCATE TABLE IF EXISTS users,users_addresses,users_crontab,users_history,users_rtorrent_cfg,users_scripts;" -v'
+        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} 'mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N -e "TRUNCATE TABLE IF EXISTS trackers_list,trackers_list_ipv4,tracking_rent_history,tracking_rent_otions,tracking_rent_payments;" -v'
+        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} 'mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N -e "TRUNCATE TABLE IF EXISTS blocklists,dnscrypt_config,torrents;" -v'
+        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} 'mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N --verbose </tmp/MySB_db.dump.sql'
+        # NextCloud
+        if [ "${gbIsInstalled_NextCloud}" == "YES" ]; then
+            ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} 'mysql --defaults-extra-file=/root/.config.cnf --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -Nse "show tables" NextCloud_db | while read table; do mysql -e "TRUNCATE TABLE $table" db_name; done'
+            ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} 'mysql --defaults-extra-file=/root/.config.cnf --database=NextCloud_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N --verbose </tmp/NextCloud_db.dump.sql'
+        fi
+    fi
+}
+
+#### /var/www/html/
+function fnVarWww() {
+    if [ -n "${gsPort_NginX_HTTP}" ] || [ -n "${gsPort_NginX_HTTPS}" ]; then
+        clear
+        echo -e "${Migrate_VarWww[*]}"
+        sleep 2
+
+        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE services SET port_tcp2='${gsPort_NginX_HTTP}', port_tcp3='${gsPort_NginX_HTTPS}' WHERE serv_name='NginX';\" -v"
+        rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /var/www/html/ root@"${gsNewServerIp}":/var/www/html/
+    fi
+}
+
+#### New server rename
+function fnRenameNewServer() {
+    clear
+    echo -e "${Migrate_NewServerRename[*]}"
+    echo -e "${Migrate_NewServerLinkToDoc[*]}"
+    echo
+}
+
+case "${gsSynchroType}" in
+    'before')
+        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "service cron stop"
+        fnSynchroPlex
+        fnSynchroTrackersCertificates
+        fnSynchroLetsEncrypt
+        fnSynchroNextCloud
+        fnVarWww
+        fnSynchroUsers
+        fnDatabases
+        touch "${MySB_InstallDir}"/files/migrate_before.lock
+        ;;
+    'after')
+        [ ! -f "${MySB_InstallDir}"/files/migrate_before.lock ] && {
+            echo
+            echo -e "${Migrate_ExecuteBefore[*]}"
+            echo
+            gfnEndingScript 0
+        }
+        gfnUpgradeInProgress "on"
+        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "service cron stop"
+        fnSynchroPlex
+        fnSynchroTrackersCertificates
+        fnSynchroLetsEncrypt
+        fnSynchroNextCloud
+        fnVarWww
+        fnSynchroUsers
+        fnDatabases
+        ;;
+    'rename')
+        fnRenameNewServer
+        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "
+            echo \"${gsNewServerIp} ${gsHostNameFqdn}\" >>/etc/hosts
+            . /opt/MySB/inc/vars
+            . /opt/MySB/inc/funcs_by_script/funcs_Upgrade
+            gfnChangeFQDN \"${gsHostNameFqdn}\"
+        "
+        ;;
+    'reset_passwd')
+        fnResetPassword
+        ;;
+esac
+
+# -----------------------------------------
+# shellcheck source=inc/includes_after
+source "$(dirname "$0")"/../inc/includes_after
+# -----------------------------------------
+##################### LAST LINE ######################################
