@@ -33,6 +33,8 @@ source "$(dirname "$0")"/../inc/includes_before
 # 5/ modifier l'adresse IP du FQDN par celle du nouveau serveur
 # 6/ changer le nom du nouveau serveur: https://mysb.gitbook.io/doc/support/faq#changer-le-nom-de-votre-serveur
 
+[ -n "${1}" ] && gsSynchroType="${1}"
+
 #### Must be root
 [[ $EUID -ne 0 ]] && {
     echo -e "${CRED}${Migrate_MustBeRoot[*]}${CEND}"
@@ -65,15 +67,19 @@ if (! sshpass -p "" scp -P "${gsNewServerSshPort}" /tmp/remote_authorized_keys r
 fi
 
 #### Synchro type
-echo
 sChoices=('before' 'after' 'reset_passwd' 'rename')
-while (! grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); do
+if (! grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
+    echo
     gfnQuestionGetString NO "${Migrate_SynchroType[*]}" gsSynchroType
-done
+    while (! grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); do
+        gfnQuestionGetString NO "${Migrate_SynchroType[*]}" gsSynchroType
+    done
+fi
 
 #### Get remote config
 if (ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "grep 'MySB_InstallDir=' /etc/MySB/config" >/tmp/MySB_remote_config); then
     perl -pi -e "s/MySB_InstallDir/MySB_RemoteDir/g" /tmp/MySB_remote_config
+    echo "export MySB_RemoteDir" >>/tmp/MySB_remote_config
     . /tmp/MySB_remote_config
 else
     gfnEndingScript 0
@@ -126,7 +132,7 @@ function fnSynchroUsers() {
             fi
         fi
         # /etc/nginx/passwd/users
-        scp -v -P "${gsNewServerSshPort}" "/etc/nginx/passwd/MySB_${sUser}" root@"${gsNewServerIp}:/etc/nginx/passwd/MySB_${sUser}"
+        scp -P "${gsNewServerSshPort}" "/etc/nginx/passwd/MySB_${sUser}" root@"${gsNewServerIp}:/etc/nginx/passwd/MySB_${sUser}"
         # /home
         time rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /home/"${sUser}"/ root@"${gsNewServerIp}":/home/"${sUser}"/
     done
@@ -151,30 +157,36 @@ function fnSynchroPlex() {
         sleep 2
 
         ## Stop services (local & remote)
-        gfnManageServices stop "tautulli plexmediaserver"
-        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "service tautulli stop"
-        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "service plexmediaserver stop"
+        [ "${gsSynchroType}" == "after" ] && gfnManageServices stop "cron tautulli plexmediaserver"
+        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "
+            service cron stop
+            service tautulli stop
+            service plexmediaserver stop
+        "
 
         ## Synchro Plex datas
         sPreferencesFile='/var/lib/plexmediaserver/Library/Application\ Support/Plex\ Media\ Server/Preferences.xml'
-        perl -pi -e 's/"MySB"/"MySB_old"/g' "${sPreferencesFile}"
+        [ "${gsSynchroType}" == "after" ] && perl -pi -e 's/"MySB"/"MySB_old"/g' "${sPreferencesFile}"
 
         # Remote Preferences.xml
-        scp -v -P "${gsNewServerSshPort}" root@"${gsNewServerIp}:${sPreferencesFile}" /tmp/plex_remote_preferences
+        scp -P "${gsNewServerSshPort}" root@"${gsNewServerIp}:${sPreferencesFile}" /tmp/plex_remote_preferences
         perl -pi -e 's/"MySB"/"MySB_new"/g' /tmp/plex_remote_preferences
         rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /var/lib/plexmediaserver/ root@"${gsNewServerIp}":/var/lib/plexmediaserver/
         rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /usr/lib/plexmediaserver/ root@"${gsNewServerIp}":/usr/lib/plexmediaserver/
-        scp -v -P "${gsNewServerSshPort}" /tmp/plex_remote_preferences root@"${gsNewServerIp}:${sPreferencesFile}"
+        scp -P "${gsNewServerSshPort}" /tmp/plex_remote_preferences root@"${gsNewServerIp}:${sPreferencesFile}"
 
         # Synchro Tautulli datas
-        scp -v -P "${gsNewServerSshPort}" "${MySB_InstallDir}"/web/apps/tt/tautulli.db root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/tt/tautulli.db
+        scp -P "${gsNewServerSshPort}" "${MySB_InstallDir}"/web/apps/tt/tautulli.db root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/tt/tautulli.db
 
         # Start services (local & remote)
         if [ "${gsSynchroType}" == "after" ]; then
-            ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "service tautulli stop"
-            ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "service plexmediaserver stop"
+            ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "
+                service plexmediaserver start
+                service tautulli start
+                service cron start
+            "
         else
-            gfnManageServices start "plexmediaserver tautulli"
+            [ "${gsSynchroType}" == "after" ] && gfnManageServices start "cron plexmediaserver tautulli"
         fi
     fi
 }
@@ -184,6 +196,7 @@ function fnSynchroNextCloud() {
     clear
     echo -e "${Migrate_NextCloud[*]}"
     sleep 2
+
     [ "${gbIsInstalled_NextCloud}" == "YES" ] && time rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /home/nextcloud/ root@"${gsNewServerIp}":/home/nextcloud/
 }
 
@@ -192,6 +205,7 @@ function fnSynchroLetsEncrypt() {
     clear
     echo -e "${Migrate_LetsEncrypt[*]}"
     sleep 2
+
     rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /etc/letsencrypt/live/"${gsHostNameFqdn}" root@"${gsNewServerIp}":/etc/letsencrypt/live/
 }
 
@@ -200,8 +214,14 @@ function fnSynchroTrackersCertificates() {
     clear
     echo -e "${Migrate_TrackersCert[*]}"
     sleep 2
+
     ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} "mkdir -p ${MySB_RemoteDir}/ssl/trackers/"
-    rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" "${MySB_InstallDir}"/ssl/trackers/*.pem root@"${gsNewServerIp}":"${MySB_RemoteDir}"/ssl/trackers/
+    scp -P "${gsNewServerSshPort}" "${MySB_InstallDir}"/ssl/trackers/*.pem root@"${gsNewServerIp}":"${MySB_RemoteDir}"/ssl/trackers/
+    ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} '
+        c_rehash ${MySB_RemoteDir}/ssl/trackers/
+        c_rehash /etc/ssl/certs/
+        update-ca-certificates --fresh
+    '
 }
 
 #### Synchro databases
@@ -213,7 +233,7 @@ function fnDatabases() {
     sleep 2
 
     # SQLite Blocklists.sq3
-    scp -v -P "${gsNewServerSshPort}" "${MySB_InstallDir}"/db/Blocklists.sq3 root@"${gsNewServerIp}":"${MySB_RemoteDir}"/db/Blocklists.sq3
+    scp -P "${gsNewServerSshPort}" "${MySB_InstallDir}"/db/Blocklists.sq3 root@"${gsNewServerIp}":"${MySB_RemoteDir}"/db/Blocklists.sq3
 
     # Dump NextCloud_db
     [ "${gbIsInstalled_NextCloud}" == "YES" ] && mysqldump --defaults-extra-file=/root/.config.cnf --single-transaction NextCloud_db >/tmp/NextCloud_db.dump.sql
@@ -227,23 +247,32 @@ function fnDatabases() {
         trackers_list \
         trackers_list_ipv4 \
         tracking_rent_history \
-        tracking_rent_otions \
+        tracking_rent_options \
         tracking_rent_payments \
         blocklists \
         dnscrypt_config \
         torrents \
         users_scripts >/tmp/MySB_db.dump.sql
 
-    if (scp -v -P "${gsNewServerSshPort}" /tmp/*.dump.sql root@"${gsNewServerIp}":/tmp/); then
+    if (scp -P "${gsNewServerSshPort}" /tmp/*.dump.sql root@"${gsNewServerIp}":/tmp/); then
         # MySB
-        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} 'mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N -e "TRUNCATE TABLE IF EXISTS users,users_addresses,users_crontab,users_history,users_rtorrent_cfg,users_scripts;" -v'
-        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} 'mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N -e "TRUNCATE TABLE IF EXISTS trackers_list,trackers_list_ipv4,tracking_rent_history,tracking_rent_otions,tracking_rent_payments;" -v'
-        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} 'mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N -e "TRUNCATE TABLE IF EXISTS blocklists,dnscrypt_config,torrents;" -v'
-        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} 'mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N --verbose </tmp/MySB_db.dump.sql'
+        ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} '
+            aTables=(users users_addresses users_crontab users_history users_rtorrent_cfg users_scripts )
+            for sTable in "${aTables[@]}"; do
+                mysql --verbose --defaults-extra-file=/root/.config.cnf --database=MySB_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N -e "TRUNCATE TABLE ${sTable};"
+            done
+            aTables=(trackers_list trackers_list_ipv4 tracking_rent_history tracking_rent_options tracking_rent_payments blocklists dnscrypt_config torrents)
+            for sTable in "${aTables[@]}"; do
+                mysql --verbose --defaults-extra-file=/root/.config.cnf --database=MySB_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N -e "TRUNCATE TABLE ${sTable};"
+            done
+            mysql --progress-reports --defaults-extra-file=/root/.config.cnf --database=MySB_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N </tmp/MySB_db.dump.sql
+        '
         # NextCloud
         if [ "${gbIsInstalled_NextCloud}" == "YES" ]; then
-            ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} 'mysql --defaults-extra-file=/root/.config.cnf --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -Nse "show tables" NextCloud_db | while read table; do mysql -e "TRUNCATE TABLE $table" db_name; done'
-            ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} 'mysql --defaults-extra-file=/root/.config.cnf --database=NextCloud_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N --verbose </tmp/NextCloud_db.dump.sql'
+            ssh -p "${gsNewServerSshPort}" root@${gsNewServerIp} '
+                mysql --defaults-extra-file=/root/.config.cnf --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -Nse "show tables" NextCloud_db | while read table; do mysql -v -e "TRUNCATE TABLE $table" NextCloud_db; done
+                mysql --progress-reports --defaults-extra-file=/root/.config.cnf --database=NextCloud_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N </tmp/NextCloud_db.dump.sql
+            '
         fi
     fi
 }
@@ -274,9 +303,9 @@ case "${gsSynchroType}" in
         fnSynchroPlex
         fnSynchroTrackersCertificates
         fnSynchroLetsEncrypt
-        fnSynchroNextCloud
         fnVarWww
-        fnSynchroUsers
+        fnSynchroNextCloud
+        # fnSynchroUsers
         fnDatabases
         touch "${MySB_InstallDir}"/files/migrate_before.lock
         ;;
@@ -292,8 +321,8 @@ case "${gsSynchroType}" in
         fnSynchroPlex
         fnSynchroTrackersCertificates
         fnSynchroLetsEncrypt
-        fnSynchroNextCloud
         fnVarWww
+        fnSynchroNextCloud
         fnSynchroUsers
         fnDatabases
         ;;
