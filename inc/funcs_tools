@@ -67,27 +67,31 @@ gfnQuotaSpaceUsed() {
     local sUser
     local nUsersSpaceUsed nHomeSpace nNextCloudSpace nTotalSpaceUsed
     nTotalSpaceUsed=0
+    sVerbose=""
+    if [ -n "$1" ] && [ "$1" == "-v" ]; then
+        sVerbose="$1"
+    fi
 
     gfnListCountUsers 'normal'
     for sUser in $gsUsersList; do
         nUsersSpaceUsed=0
-        if [ -d /home/"$sUser"/ ]; then
-            nHomeSpace="$(du -s /home/"$sUser"/ | awk '{ print $1 }')" # (Kb)
+        if [ -d /home/"${sUser}"/ ]; then
+            nHomeSpace="$(du -s /home/"${sUser}"/ | awk '{ print $1 }')" # (Kb)
             nUsersSpaceUsed=$((nUsersSpaceUsed + nHomeSpace))
         fi
-        if [ -d /home/nextcloud/"$sUser"/ ]; then
-            nNextCloudSpace="$(du -s /home/nextcloud/"$sUser"/ | awk '{ print $1 }')" # (Kb)
+        if [ -d /home/nextcloud/"${sUser}"/ ]; then
+            nNextCloudSpace="$(du -s /home/nextcloud/"${sUser}"/ | awk '{ print $1 }')" # (Kb)
             nUsersSpaceUsed=$((nUsersSpaceUsed + nNextCloudSpace))
         fi
 
-        if [ $nTotalSpaceUsed -eq 0 ]; then
-            nTotalSpaceUsed="$nUsersSpaceUsed"
+        if [[ ${nTotalSpaceUsed} -eq 0 ]]; then
+            nTotalSpaceUsed="${nUsersSpaceUsed}"
         else
             nTotalSpaceUsed=$((nTotalSpaceUsed + nUsersSpaceUsed))
         fi
-        cmdMySQL 'MySB_db' "UPDATE users SET space_used='$nUsersSpaceUsed' WHERE users_ident='$sUser';" "${sVerbose}"
+        cmdMySQL 'MySB_db' "UPDATE users SET space_used='${nUsersSpaceUsed}' WHERE users_ident='${sUser}';" "${sVerbose}"
     done
-    cmdMySQL 'MySB_db' "UPDATE system SET total_space_used='$nTotalSpaceUsed' WHERE id_system='1';" "${sVerbose}"
+    cmdMySQL 'MySB_db' "UPDATE system SET total_space_used='${nTotalSpaceUsed}' WHERE id_system='1';" "${sVerbose}"
 }
 
 #### Statistics
