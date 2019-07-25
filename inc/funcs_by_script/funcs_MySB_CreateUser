@@ -70,28 +70,28 @@ gfnNextCloudAccountManage() {
 #### ruTorrent Plugin Spacedisk NextCloud quotas included
 gfnPluginDiskspaceQuotaIncluded() {
     function fnCalculate() {
-        local sFnUser
+        local sFnUser sFnPartition nFnUserQuota nFnTotal nFnFree nFnLess nFnNumLine
         [ -n "${1}" ] && sFnUser="${1}" || return 1
 
-        # nTotal="$(cmdMySQL 'MySB_db' "SELECT quota FROM users WHERE users_ident='${sFnUser}';")"
-        # nFree="$(cmdMySQL 'MySB_db' "SELECT space_used FROM users WHERE users_ident='${sFnUser}';")"
-        (grep -q '[[:space:]]/home[[:space:]]' /etc/fstab) && sPartition="/home" || sPartition="/"
-        nUserQuota=$(repquota -u ${sPartition} | grep ^${sFnUser})
-        nTotal=$(echo "$nUserQuota" | awk '{printf $4}')
-        nTotal=$((nTotal * 1024))
-        nFree=$(echo "$nUserQuota" | awk '{printf ($4-$3)}')
-        nFree=$((nFree * 1024))
+        # nFnTotal="$(cmdMySQL 'MySB_db' "SELECT quota FROM users WHERE users_ident='${sFnUser}';")"
+        # nFnFree="$(cmdMySQL 'MySB_db' "SELECT space_used FROM users WHERE users_ident='${sFnUser}';")"
+        (grep -q '[[:space:]]/home[[:space:]]' /etc/fstab) && sFnPartition="/home" || sFnPartition="/"
+        nFnUserQuota=$(repquota -u ${sFnPartition} | grep ^${sFnUser})
+        nFnTotal=$(echo "${nFnUserQuota}" | awk '{printf $4}')
+        nFnTotal=$((nFnTotal * 1024))
+        nFnFree=$(echo "${nFnUserQuota}" | awk '{printf ($4-$3)}')
+        nFnFree=$((nFnFree * 1024))
         {
-            echo "total:$nTotal"
-            echo "free:$nFree"
+            echo "total:${nFnTotal}"
+            echo "free:${nFnFree}"
         } >/home/"${sFnUser}"/rtorrent/.session/quota.txt
         if [ -f "${gsRutorrentDir}/conf/users/${sFnUser}/diskspace/conf.php" ]; then
-            # nLess=$((((nTotal - 5) / 100) / 1024))     # must remain 5%
-            nLess=$(((nTotal - 5) / 100))     # must remain 5%
-            if [ -n "$nLess" ]; then
-                nNumLine=$(grep 'notifySpaceLimit' -n -m 1 "${gsRutorrentDir}/conf/users/${sFnUser}/diskspace/conf.php" | cut -d ':' -f 1)
+            # nFnLess=$((((nFnTotal - 5) / 100) / 1024))     # must remain 5%
+            nFnLess=$(((nFnTotal - 5) / 100))     # must remain 5%
+            if [ -n "${nFnLess}" ]; then
+                nFnNumLine=$(grep 'notifySpaceLimit' -n -m 1 "${gsRutorrentDir}/conf/users/${sFnUser}/diskspace/conf.php" | cut -d ':' -f 1)
                 sed -i '/notifySpaceLimit/d' "${gsRutorrentDir}/conf/users/${sFnUser}/diskspace/conf.php"
-                sed -i "${nNumLine}i\$notifySpaceLimit = $nLess;		// in Mb" "${gsRutorrentDir}/conf/users/${sFnUser}/diskspace/conf.php"
+                sed -i "${nFnNumLine}i\$notifySpaceLimit = ${nFnLess};		// in Mb" "${gsRutorrentDir}/conf/users/${sFnUser}/diskspace/conf.php"
             fi
         fi
     }
@@ -129,12 +129,12 @@ gfnManageQuota() {
 
     # Update number of users
     gfnListCountUsers 'active'
-    cmdMySQL 'MySB_db' "UPDATE system SET rt_nb_users='${gnTotalUsers}' WHERE id_system='1';" "$sVerbose"
+    cmdMySQL 'MySB_db' "UPDATE system SET rt_nb_users='${gnTotalUsers}' WHERE id_system='1';" "${sVerbose}"
 
     # Setting default quota (available space)
-    if [ -z "$nAvailableSpace" ] || [ "$nAvailableSpace" == 'NULL' ] || [ "$nAvailableSpace" -eq 0 ]; then
+    if [ -z "${nAvailableSpace}" ] || [ "${nAvailableSpace}" == 'NULL' ] || [ "${nAvailableSpace}" -eq 0 ]; then
         nAvailableSpace=$(gfnQuotaSpaceAvailable)
-        cmdMySQL 'MySB_db' "UPDATE system SET quota_default='$nAvailableSpace' WHERE id_system='1';" "$sVerbose"
+        cmdMySQL 'MySB_db' "UPDATE system SET quota_default='${nAvailableSpace}' WHERE id_system='1';" "${sVerbose}"
     fi
 
     # Calculate space used for each users
@@ -143,7 +143,7 @@ gfnManageQuota() {
     # Disable quota for Plex users
     sUsersList="$(cmdMySQL 'MySB_db' "SELECT users_ident FROM users WHERE quota_type='plex';")"
     for sUser in ${sUsersList}; do
-        cmdMySQL 'MySB_db' "UPDATE users SET quota='0' WHERE users_ident='${sUser}';" "$sVerbose"
+        cmdMySQL 'MySB_db' "UPDATE users SET quota='0' WHERE users_ident='${sUser}';" "${sVerbose}"
         setquota -u -F $sVFSV "${sUser}" 0 0 0 0 -a
     done
 
@@ -151,7 +151,7 @@ gfnManageQuota() {
     sUsersList="$(cmdMySQL 'MySB_db' "SELECT users_ident FROM users WHERE quota_type='manual' AND account_type='normal';")"
     for sUser in ${sUsersList}; do
         nUserQuotaSystem="$(cmdMySQL 'MySB_db' "SELECT quota FROM users WHERE users_ident='${sUser}';")"
-        nUserQuotaNextCloud=$nUserQuotaSystem
+        nUserQuotaNextCloud=${nUserQuotaSystem}
 
         # Deduction of space used by nextcloud (not included in linux quota)
         if [ -d /home/nextcloud/"${sUser}"/ ]; then
@@ -160,15 +160,15 @@ gfnManageQuota() {
         fi
 
         # Quota by user with manual quota
-        setquota -u -F $sVFSV "${sUser}" $nUserQuotaSystem $nUserQuotaSystem 0 0 -a
+        setquota -u -F $sVFSV "${sUser}" ${nUserQuotaSystem} ${nUserQuotaSystem} 0 0 -a
 
         # NextCloud Quota
         if [ "${gbIsInstalled_NextCloud}" == "YES" ]; then
             sIfExist="$(cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_preferences WHERE userid='${sUser}' AND configkey='quota';")"
-            if [ -z "$sIfExist" ]; then
-                cmdMySQL 'NextCloud_db' "INSERT INTO nc_preferences (userid,appid,configkey,configvalue) VALUES ('${sUser}','files','quota','$nUserQuotaNextCloud KB');" "$sVerbose"
+            if [ -z "${sIfExist}" ]; then
+                cmdMySQL 'NextCloud_db' "INSERT INTO nc_preferences (userid,appid,configkey,configvalue) VALUES ('${sUser}','files','quota','${nUserQuotaNextCloud} KB');" "${sVerbose}"
             else
-                cmdMySQL 'NextCloud_db' "UPDATE nc_preferences SET configvalue='$nUserQuotaNextCloud KB' WHERE userid='${sUser}' AND configkey='quota';" "$sVerbose"
+                cmdMySQL 'NextCloud_db' "UPDATE nc_preferences SET configvalue='${nUserQuotaNextCloud} KB' WHERE userid='${sUser}' AND configkey='quota';" "${sVerbose}"
             fi
         fi
 
@@ -179,16 +179,17 @@ gfnManageQuota() {
     # Setting quota and calculate space used for each users
     gfnListCountUsers 'normal'
     nTotalNormalAutoUsers=$((gnTotalUsers - nTotalNormalManualUsers))
-    [ "$nTotalNormalAutoUsers" -le 0 ] && nTotalNormalAutoUsers=${gnTotalUsers}
+    [ "${nTotalNormalAutoUsers}" -le 0 ] && nTotalNormalAutoUsers=${gnTotalUsers}
     nSpaceByUser=$((nAvailableSpace / nTotalNormalAutoUsers))
 
     # Check normal users with an auto quota
     sUsersList="$(cmdMySQL 'MySB_db' "SELECT users_ident FROM users WHERE quota_type='auto' AND account_type='normal';")"
     for sUser in ${sUsersList}; do
-        if [ -n "$sMessage" ]; then log_daemon_msg "$sMessage [${sUser}]"; fi
-        nUserQuotaSystem=$nSpaceByUser
-        nUserQuotaNextCloud=$nSpaceByUser
-        cmdMySQL 'MySB_db' "UPDATE users SET quota='$nUserQuotaSystem' WHERE users_ident='${sUser}';" "$sVerbose"
+        if [ -n "${sMessage}" ]; then log_daemon_msg "${sMessage} [${sUser}]"; fi
+
+        nUserQuotaSystem=${nSpaceByUser}
+        nUserQuotaNextCloud=${nSpaceByUser}
+        cmdMySQL 'MySB_db' "UPDATE users SET quota='${nUserQuotaSystem}' WHERE users_ident='${sUser}';" "${sVerbose}"
 
         # Deduction of space used by nextcloud
         if [ -d /home/nextcloud/"${sUser}"/ ]; then
@@ -197,18 +198,18 @@ gfnManageQuota() {
         fi
 
         # Quota by user with automatic quota
-        setquota -u -F $sVFSV "${sUser}" $nUserQuotaSystem $nUserQuotaSystem 0 0 -a
+        setquota -u -F $sVFSV "${sUser}" ${nUserQuotaSystem} ${nUserQuotaSystem} 0 0 -a
 
         # NextCloud Quota
         if [ "$gbIsInstalled_NextCloud" == "YES" ]; then
             sIfExist="$(cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_preferences WHERE userid='${sUser}' AND configkey='quota';")"
-            if [ -z "$sIfExist" ]; then
-                cmdMySQL 'NextCloud_db' "INSERT INTO nc_preferences (userid,appid,configkey,configvalue) VALUES ('${sUser}','files','quota','$nUserQuotaNextCloud KB');" "$sVerbose"
+            if [ -z "${sIfExist}" ]; then
+                cmdMySQL 'NextCloud_db' "INSERT INTO nc_preferences (userid,appid,configkey,configvalue) VALUES ('${sUser}','files','quota','${nUserQuotaNextCloud} KB');" "${sVerbose}"
             else
-                cmdMySQL 'NextCloud_db' "UPDATE nc_preferences SET configvalue='$nUserQuotaNextCloud KB' WHERE userid='${sUser}' AND configkey='quota';" "$sVerbose"
+                cmdMySQL 'NextCloud_db' "UPDATE nc_preferences SET configvalue='${nUserQuotaNextCloud} KB' WHERE userid='${sUser}' AND configkey='quota';" "${sVerbose}"
             fi
         fi
-        if [ -n "$sMessage" ]; then gfnStatusLSB; fi
+        if [ -n "${sMessage}" ]; then gfnStatusLSB; fi
     done
 
     # ruTorrent Plugin Sapcedisk quotas included
@@ -933,7 +934,7 @@ gfnMonthlyPayment() {
 
             if [ $nSendMail -eq 1 ]; then
                 # Send email for all users
-                gfnSendMail "$sMailSubject" "${SeedboxUser}" "$sCase" "$sMessage"
+                gfnSendMail "$sMailSubject" "${SeedboxUser}" "$sCase" "${sMessage}"
             fi
         done
 
