@@ -105,62 +105,97 @@ else
     gfnEndingScript 0
 fi
 
-#### Users
-function fnSynchroUsers() {
-    local sRequestValues nUserQuota sUserAccountType sUserExist
+#### Table system
+function fnUpdateSystemTable() {
+    local sRequestValues bIpRestriction bFileRecycling bPglEmailStats bPglWatchdogMail bLogwatch sPublicTrackerAllow bBlockAnnouncers bAnnouncersUdp bAnnouncersCheck
+    local nAvailableSpace bRtActive sRtModel sRtTva sRtGlobalCost sRtCostTva sRtNbUsers sRtPricePerUsers sRtMethod
 
-    sRequestValues="$(cmdMySQL 'MySB_db' "SELECT ip_restriction,files_recycling,pgl_email_stats,pgl_watchdog_email,logwatch,rt_active,rt_model,rt_tva,rt_global_cost,public_tracker_allow,block_annoncers,annoncers_udp,annoncers_check FROM system WHERE id_system='1';" | sed 's/\t/|/g;')"
+    sRequestValues="$(cmdMySQL 'MySB_db' "SELECT ip_restriction,files_recycling,pgl_email_stats,pgl_watchdog_email,logwatch,public_tracker_allow,block_annoncers,annoncers_udp,annoncers_check FROM system WHERE id_system='1';" | sed 's/\t/|/g;')"
     bIpRestriction="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[1]}')"
     bFileRecycling="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
     bPglEmailStats="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[3]}')"
     bPglWatchdogMail="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[4]}')"
     bLogwatch="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[5]}')"
-    bRtActive="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[6]}')"
-    sRtModel="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[7]}')"
-    sRtTva="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[8]}')"
-    sRtGlobalCost="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[9]}')"
-    sPublicTrackerAllow="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[10]}')"
-    bBlockAnnouncers="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[11]}')"
-    bAnnouncersUdp="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[12]}')"
-    bAnnouncersCheck="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[13]}')"
+    sPublicTrackerAllow="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[6]}')"
+    bBlockAnnouncers="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[7]}')"
+    bAnnouncersUdp="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[8]}')"
+    bAnnouncersCheck="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[9]}')"
 
-    ssh ${sSshOptions[*]} root@${gsNewServerIp} "mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE system SET ip_restriction='${bIpRestriction}', files_recycling='${bFileRecycling}' WHERE id_system='1';\" -v"
-    ssh ${sSshOptions[*]} root@${gsNewServerIp} "mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE system SET pgl_email_stats='${bPglEmailStats}', pgl_watchdog_email='${bPglWatchdogMail}', logwatch='${bLogwatch}' WHERE id_system='1';\" -v"
-    ssh ${sSshOptions[*]} root@${gsNewServerIp} "mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE system SET rt_active='${bRtActive}', rt_model='${sRtModel}', rt_tva='${sRtTva}', rt_global_cost='${sRtGlobalCost}' WHERE id_system='1';\" -v"
-    ssh ${sSshOptions[*]} root@${gsNewServerIp} "mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE system SET public_tracker_allow='${sPublicTrackerAllow}', block_annoncers='${bBlockAnnouncers}', annoncers_udp='${bAnnouncersUdp}', annoncers_check='${bAnnouncersCheck}' WHERE id_system='1';\" -v"
+    nAvailableSpace=$(gfnQuotaSpaceAvailable)
 
+    ssh ${sSshOptions[*]} root@${gsNewServerIp} "
+        mysql --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE system SET quota_default='${nAvailableSpace}', ip_restriction='${bIpRestriction}', files_recycling='${bFileRecycling}' WHERE id_system='1';\" -v
+        mysql --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE system SET pgl_email_stats='${bPglEmailStats}', pgl_watchdog_email='${bPglWatchdogMail}', logwatch='${bLogwatch}' WHERE id_system='1';\" -v
+        mysql --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE system SET public_tracker_allow='${sPublicTrackerAllow}', block_annoncers='${bBlockAnnouncers}', annoncers_udp='${bAnnouncersUdp}', annoncers_check='${bAnnouncersCheck}' WHERE id_system='1';\" -v
+    "
+
+    sRequestValues="$(cmdMySQL 'MySB_db' "SELECT rt_active,rt_model,rt_tva,rt_global_cost,rt_cost_tva,rt_nb_users,rt_price_per_users,rt_method FROM system WHERE id_system='1';" | sed 's/\t/|/g;')"
+    bRtActive="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[1]}')"
+    sRtModel="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
+    sRtTva="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[3]}')"
+    sRtGlobalCost="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[4]}')"
+    sRtCostTva="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[5]}')"
+    sRtNbUsers="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[6]}')"
+    sRtPricePerUsers="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[7]}')"
+    sRtMethod="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[8]}')"
+
+    ssh ${sSshOptions[*]} root@${gsNewServerIp} "
+        mysql --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE system SET rt_active='${bRtActive}', rt_model='${sRtModel}', rt_tva='${sRtTva}', rt_global_cost='${sRtGlobalCost}', rt_cost_tva='${sRtCostTva}', rt_nb_users='${sRtNbUsers}', rt_price_per_users='${sRtPricePerUsers}', rt_method='${sRtMethod}' WHERE id_system='1';\" -v
+        . ${MySB_RemoteDir}/inc/vars
+        . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_MySB_CreateUser
+        gfnQuotaSpaceUsed '-v'
+        gfnManageQuota '-v'
+    "
+}
+
+#### Users
+function fnCreateRemoteUsers() {
+    local sRequestValues nFnUserQuota sFnUserAccountType sUserExist sFnUsersList sFnUser sQuota
+
+    clear
+    gfnListCountUsers 'normal'
+    sFnUsersList="${gsUsersList}"
+    for sFnUser in ${sFnUsersList}; do
+        echo -e "${Migrate_CreateUser[*]} ${CGREEN}${sFnUser}${CEND}"
+        sleep 2
+
+        # User infos
+        sRequestValues="$(cmdMySQL 'MySB_db' "SELECT quota,account_type FROM users WHERE users_ident='${sFnUser}';" | sed 's/\t/|/g;')"
+        nFnUserQuota="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[1]}')"
+        sFnUserAccountType="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
+
+        # Create users accounts if needed (with main user mail)
+        if [ "${sFnUser}" != "${gsMainUserName}" ]; then
+            sUserExist="$(ssh ${sSshOptions[*]} root@${gsNewServerIp} "getent passwd ${sFnUser}")"
+            if [ -z "${sUserExist}" ]; then
+                sQuota="$(echo "${nFnUserQuota}" | awk '{ gb = $1 / 1024 / 1024 ; print gb }')" # KB to GB
+                sQuota="${sQuota//./,}"
+                ssh ${sSshOptions[*]} root@"${gsNewServerIp}" "
+                    bash ${MySB_RemoteDir}/bin/MySB_CreateUser \"${sFnUser}\" \"1\" \"0\" \"${gsMainUserEmail}\" \"${sFnUserAccountType}\" \"${sQuota}\" 'APPLYCONFIG'
+                "
+            fi
+        fi
+        ssh ${sSshOptions[*]} root@${gsNewServerIp} "
+            mysql --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE users SET quota='${nFnUserQuota}' WHERE users_ident='${sFnUser}';\" -v
+            . ${MySB_RemoteDir}/inc/vars
+            . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_MySB_CreateUser
+            gfnQuotaSpaceUsed '-v'
+            gfnManageQuota '-v'
+        "
+    done
+}
+
+function fnSynchroUsers() {
     gfnListCountUsers 'normal'
     for sUser in ${gsUsersList}; do
         clear
         echo -e "${Migrate_User[*]} ${CGREEN}${sUser}${CEND}"
         sleep 2
 
-        # Waiting after current synchro
-        while [ -f /tmp/users_synchro.lock ]; do
-            sleep 5
-        done
-
-        # Add lock file
-        touch /tmp/users_synchro.lock
-
-        # User infos
-        sRequestValues="$(cmdMySQL 'MySB_db' "SELECT quota,account_type FROM users WHERE users_ident='${sUser}';" | sed 's/\t/|/g;')"
-        nUserQuota="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[1]}')"
-        sUserAccountType="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
-
-        # Create users accounts if needed (with main user mail)
-        if [ "${sUser}" != "${gsMainUserName}" ]; then
-            sUserExist="$(ssh ${sSshOptions[*]} root@${gsNewServerIp} "getent passwd ${sUser}")"
-            if [ -z "${sUserExist}" ]; then
-                ssh ${sSshOptions[*]} root@"${gsNewServerIp}" "bash ${MySB_RemoteDir}/bin/MySB_CreateUser \"${sUser}\" \"1\" \"0\" \"${gsMainUserEmail}\" \"${sUserAccountType}\" \"${nUserQuota}\" 'APPLYCONFIG'"
-            fi
-        fi
         # /etc/nginx/passwd/users
         scp ${sScpOptions[*]} "/etc/nginx/passwd/MySB_${sUser}" root@"${gsNewServerIp}:/etc/nginx/passwd/MySB_${sUser}"
         # /home
         time rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /home/"${sUser}"/ root@"${gsNewServerIp}":/home/"${sUser}"/
-        # Remove lock file
-        rm -f /tmp/users_synchro.lock
     done
 }
 
@@ -185,7 +220,6 @@ function fnSynchroPlex() {
         ## Stop services (local & remote)
         [ "${gsSynchroType}" == "after" ] && gfnManageServices stop "cron tautulli plexmediaserver"
         ssh ${sSshOptions[*]} root@${gsNewServerIp} "
-            service cron stop
             service tautulli stop
             service plexmediaserver stop
         "
@@ -209,7 +243,6 @@ function fnSynchroPlex() {
             ssh ${sSshOptions[*]} root@${gsNewServerIp} "
                 service plexmediaserver start
                 service tautulli start
-                service cron start
             "
         else
             [ "${gsSynchroType}" == "after" ] && gfnManageServices start "cron plexmediaserver tautulli"
@@ -262,9 +295,9 @@ function fnDatabases() {
     scp ${sScpOptions[*]} "${MySB_InstallDir}"/db/Blocklists.sq3 root@"${gsNewServerIp}":"${MySB_RemoteDir}"/db/Blocklists.sq3
 
     # Dump NextCloud_db
-    [ "${gbIsInstalled_NextCloud}" == "YES" ] && mysqldump --defaults-extra-file=/root/.config.cnf --single-transaction NextCloud_db >/tmp/NextCloud_db.dump.sql
+    [ "${gbIsInstalled_NextCloud}" == "YES" ] && mysqldump --single-transaction NextCloud_db >/tmp/NextCloud_db.dump.sql
     # Dump MySB_db
-    mysqldump --defaults-extra-file=/root/.config.cnf --single-transaction MySB_db \
+    mysqldump --single-transaction MySB_db \
         users \
         users_addresses \
         users_crontab \
@@ -283,21 +316,23 @@ function fnDatabases() {
     if (scp ${sScpOptions[*]} /tmp/*.dump.sql root@"${gsNewServerIp}":/tmp/); then
         # MySB
         ssh ${sSshOptions[*]} root@${gsNewServerIp} '
-            aTables=(users users_addresses users_crontab users_history users_rtorrent_cfg users_scripts )
+            mysql --database=MySB_db -w --connect-timeout=10 -s -N -e "SET GLOBAL FOREIGN_KEY_CHECKS=0; SET @TRIGGER_CHECKS=0;" -v
+            aTables=(users users_addresses users_crontab users_history users_rtorrent_cfg users_scripts)
             for sTable in "${aTables[@]}"; do
-                mysql --verbose --defaults-extra-file=/root/.config.cnf --database=MySB_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N -e "TRUNCATE TABLE ${sTable};"
+                mysql --database=MySB_db -w --connect-timeout=10 -s -N -e "TRUNCATE TABLE ${sTable};" -v
             done
             aTables=(trackers_list trackers_list_ipv4 tracking_rent_history tracking_rent_options tracking_rent_payments blocklists dnscrypt_config torrents)
             for sTable in "${aTables[@]}"; do
-                mysql --verbose --defaults-extra-file=/root/.config.cnf --database=MySB_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N -e "TRUNCATE TABLE ${sTable};"
+                mysql --database=MySB_db -w --connect-timeout=10 -s -N -e "TRUNCATE TABLE ${sTable};" -v
             done
-            mysql --progress-reports --defaults-extra-file=/root/.config.cnf --database=MySB_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N </tmp/MySB_db.dump.sql
+            mysql --database=MySB_db -w --connect-timeout=10 -s -N </tmp/MySB_db.dump.sql
+            mysql --database=MySB_db -w --connect-timeout=10 -s -N -e "SET GLOBAL FOREIGN_KEY_CHECKS=1;; SET @TRIGGER_CHECKS=1;" -v
         '
         # NextCloud
         if [ "${gbIsInstalled_NextCloud}" == "YES" ]; then
             ssh ${sSshOptions[*]} root@${gsNewServerIp} '
-                mysql --defaults-extra-file=/root/.config.cnf --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -Nse "show tables" NextCloud_db | while read table; do mysql -v -e "TRUNCATE TABLE $table" NextCloud_db; done
-                mysql --progress-reports --defaults-extra-file=/root/.config.cnf --database=NextCloud_db --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" -w --connect-timeout=10 -s -N </tmp/NextCloud_db.dump.sql
+                mysql -Nse "show tables" NextCloud_db | while read table; do mysql -v -e "TRUNCATE TABLE $table;" NextCloud_db; done
+                mysql --database=NextCloud_db -w --connect-timeout=10 -s -N </tmp/NextCloud_db.dump.sql
             '
         fi
     fi
@@ -310,7 +345,7 @@ function fnVarWww() {
         echo -e "${Migrate_VarWww[*]}"
         sleep 2
 
-        ssh ${sSshOptions[*]} root@${gsNewServerIp} "mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE services SET port_tcp2='${gsPort_NginX_HTTP}', port_tcp3='${gsPort_NginX_HTTPS}' WHERE serv_name='NginX';\" -v"
+        ssh ${sSshOptions[*]} root@${gsNewServerIp} "mysql --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE services SET port_tcp2='${gsPort_NginX_HTTP}', port_tcp3='${gsPort_NginX_HTTPS}' WHERE serv_name='NginX';\" -v"
         rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /var/www/html/ root@"${gsNewServerIp}":/var/www/html/
     fi
 }
@@ -329,6 +364,13 @@ case "${gsSynchroType}" in
         ssh ${sSshOptions[*]} root@${gsNewServerIp} "
             . ${MySB_RemoteDir}/inc/vars
             . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_Upgrade
+            gfnUpgradeInProgress off
+        "
+        fnUpdateSystemTable
+        fnCreateRemoteUsers
+        ssh ${sSshOptions[*]} root@${gsNewServerIp} "
+            . ${MySB_RemoteDir}/inc/vars
+            . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_Upgrade
             gfnUpgradeInProgress on
         "
         fnSynchroPlex
@@ -337,7 +379,13 @@ case "${gsSynchroType}" in
         fnVarWww
         fnSynchroNextCloud
         fnSynchroUsers
-        # fnDatabases
+        fnDatabases
+        ssh ${sSshOptions[*]} root@${gsNewServerIp} "
+            . ${MySB_RemoteDir}/inc/vars
+            . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_Upgrade
+            . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_MySB_CreateUser
+            gfnManageQuota '-v'
+        "
         touch "${MySB_InstallDir}"/files/migrate_before.lock
         ;;
     'after')
@@ -353,6 +401,7 @@ case "${gsSynchroType}" in
             . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_Upgrade
             gfnUpgradeInProgress on
         "
+        fnUpdateSystemTable
         fnSynchroPlex
         fnSynchroTrackersCertificates
         fnSynchroLetsEncrypt
