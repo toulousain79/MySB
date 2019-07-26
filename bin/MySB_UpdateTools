@@ -79,7 +79,7 @@ fi
 [ -z "${sVersion}" ] && sVersion="$(cmdMySQL 'MySB_db' "SELECT version FROM repositories WHERE name='ruTorrent';")"
 if [ "${sVersion}" != "3.9_626ba3d" ]; then
     cmdMySQL 'MySB_db' "DELETE FROM repositories;" -v
-    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Table_repositories.sql"
+    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"${MySB_InstallDir}/templates/mysql/Table_repositories.sql"
     cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='ruTorrent';" -v
     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/ruTorrent" 'UPGRADE'
     bRtorrentRestart=1
@@ -92,8 +92,8 @@ if (! grep -q 'rev 0.3' "${gsRutorrentDir}"/php/rtorrent.php); then
 fi
 
 #### MySQL
-# mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Schema.sql"
-# mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Triggers.sql"
+# mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"${MySB_InstallDir}/templates/mysql/Schema.sql"
+# mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"${MySB_InstallDir}/templates/mysql/Triggers.sql"
 
 #### MySQL Grant for users
 # source /etc/MySB/config_db
@@ -139,8 +139,11 @@ if (grep -q 'la/logger.php' <<<"$(crontab -l)") || (! grep -q '.rTorrent_tasks.s
     sed -i '/logger.php/d' /tmp/crontab.tmp
     crontab /tmp/crontab.tmp
     rm -f /tmp/crontab.tmp
-    gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/Cron" 'UPGRADE'
+    gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/Cron" 'UPGRADE'
     bRtorrentRestart=1
+fi
+if [ -f /etc/cron.d/MySB_jobs_check ] && (! grep -q '(rev 0.1)' /etc/cron.d/MySB_jobs_check); then
+    gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/Cron" 'UPGRADE'
 fi
 
 #### Purge SSDP package
