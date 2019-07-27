@@ -85,7 +85,7 @@ if (! sshpass -p "" scp ${sScpOptions[*]} /tmp/remote_authorized_keys root@${gsN
 fi
 
 #### Synchro type
-sChoices=('check' 'before' 'after' 'reset_passwd' 'lock_old' 'unlock_old')
+sChoices=('check' 'before' 'after' 'reset_passwd' 'lock_old' 'unlock_old' 'force_rename')
 if (! grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
     echo
     gfnQuestionGetString NO "${Migration_SynchroType[*]}" gsSynchroType
@@ -379,7 +379,17 @@ function fnVarWww() {
 
 case "${gsSynchroType}" in
     'check') echo -e "${Migration_CheckOK[*]}" ;;
-    'before')
+    'before' | 'after')
+        if [ "${gsSynchroType}" == "after" ]; then
+            [ ! -f "${MySB_InstallDir}"/files/migrate_before.lock ] && {
+                echo
+                echo -e "${Migration_ExecuteBefore[*]}"
+                echo
+                gfnEndingScript 0
+            }
+            . ${MySB_InstallDir}/inc/funcs_by_script/funcs_Upgrade
+            gfnUpgradeInProgress "on"
+        fi
         ssh ${sSshOptions[*]} root@${gsNewServerIp} "
             . ${MySB_RemoteDir}/inc/vars
             . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_Upgrade
@@ -405,38 +415,11 @@ case "${gsSynchroType}" in
             . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_Upgrade
             . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_MySB_CreateUser
             gfnManageQuota '-v'
+            bash ${MySB_RemoteDir}/upgrade/Migration 'force_rename'
+            [ \"${gsSynchroType}\" == \"after\" ] && gfnUpgradeInProgress off
         "
         touch "${MySB_InstallDir}"/files/migrate_before.lock
         gfnSendMail "${Migration_SyncBeforeDone[*]}" "${gsMainUserName}" "migrate_begore"
-        ;;
-    'after')
-        [ ! -f "${MySB_InstallDir}"/files/migrate_before.lock ] && {
-            echo
-            echo -e "${Migration_ExecuteBefore[*]}"
-            echo
-            gfnEndingScript 0
-        }
-        gfnUpgradeInProgress "on"
-        ssh ${sSshOptions[*]} root@${gsNewServerIp} "
-            . ${MySB_RemoteDir}/inc/vars
-            . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_Upgrade
-            gfnUpgradeInProgress on
-        "
-        fnUpdateSystemTable
-        fnSynchroPlex
-        fnSynchroTrackersCertificates
-        fnSynchroLetsEncrypt
-        fnVarWww
-        fnWebApps
-        fnSynchroNextCloud
-        fnSynchroUsers
-        fnDatabases
-        ssh ${sSshOptions[*]} root@${gsNewServerIp} "
-            . ${MySB_RemoteDir}/inc/vars
-            . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_Upgrade
-            gfnUpgradeInProgress off
-            gfnChangeFQDN \"${gsHostNameFqdn}\"
-        "
         ;;
     'lock_old')
         . ${MySB_InstallDir}/inc/vars
@@ -447,6 +430,55 @@ case "${gsSynchroType}" in
         . ${MySB_InstallDir}/inc/vars
         . ${MySB_InstallDir}/inc/funcs_by_script/funcs_Upgrade
         gfnUpgradeInProgress off
+        ;;
+    'force_rename')
+        #### Seedbox-Manager
+        if [ "${gbIsInstalled_Manager}" == "YES" ]; then
+            log_daemon_msg "Reconfigure Seedbox-Manager"
+            gfnGetRepoValues 'ruTorrent Plugin Link Manager' &>/dev/null
+            gfnDeleteDirectory 0 "${gsRepoDir}"
+            gfnRepoManageByType
+            sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/${sNewFQDN}:${gsPort_MySB_HTTPS}\/sm\//g;" "${gsRepoDir}"/conf.php
+            gfnStatusLSB
+        fi
+
+        #### Cakebox-Light
+        if [ "${gbIsInstalled_Cakebox}" == "YES" ]; then
+            log_daemon_msg "Reconfigure Cakebox-Light"
+            # ruTorrent Plugin Link Cakebox
+            gfnGetRepoValues 'ruTorrent Plugin Link Cakebox' &>/dev/null
+            gfnDeleteDirectory 0 "${gsRepoDir}"
+            gfnRepoManageByType
+            chown -R www-data:www-data "${gsRepoDir}"
+            sed -i "s/'http:\/\/'.\$host;/'https:\/\/${sNewFQDN}:$gsPort_MySB_HTTPS\/cb\/';/g;" "${gsRepoDir}"/conf.php
+            sed -i "s/torrents/rtorrent/g;" "${gsRepoDir}"/conf.php
+            # NginX (alias with proxy)
+            # shellcheck disable=SC2001
+            sCakeboxDirEscaped="$(echo "${gsCakeboxDir}" | sed s,/,\\\\\\\/,g)"
+            [[ -L /etc/nginx/sites-enabled/cakebox ]] && rm -f /etc/nginx/sites-enabled/cakebox
+            install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.site-enabled.cakebox.tmpl /etc/nginx/sites-available/cakebox
+            # perl -pi -e "s/<server_name>/${sNewFQDN}/g" /etc/nginx/sites-available/cakebox
+            perl -pi -e "s/<cakebox_rootdir>/${sCakeboxDirEscaped}/g" /etc/nginx/sites-available/cakebox
+            [[ ! -L /etc/nginx/sites-enabled/cakebox ]] && ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox
+            gfnStatusLSB
+        fi
+
+        #### ruTorrent plugins
+        log_daemon_msg "Reconfigure ruTorrent Plugins"
+        # Plugin Fileshare
+        gfnGetRepoValues 'ruTorrent Plugin FileShare' &>/dev/null
+        gfnDeleteDirectory 0 "${gsRepoDir}"
+        gfnRepoManageByType
+        [[ -f "${gsRepoDir}"/conf.php ]] && perl -pi -e "s/http:\/\/mydomain.com\/share.php/https:\/\/${sNewFQDN}:$gsPort_MySB_HTTPS\/fileshare.php/g" "${gsRepoDir}"/conf.php
+        # Plugin Mediastream
+        gfnGetRepoValues 'ruTorrent Plugin MediaStream' &>/dev/null
+        gfnDeleteDirectory 0 "${gsRepoDir}"
+        gfnRepoManageByType
+        [[ -f "${gsRepoDir}"/conf.php ]] && perl -pi -e "s/http:\/\/mydomain.com\/stream\/view.php/https:\/\/${sNewFQDN}:$gsPort_MySB_HTTPS\/view/g" "${gsRepoDir}"/conf.php
+        gfnStatusLSB
+
+        #### Apply rights
+        gfnManageDirAndFiles 'global'
         ;;
     'reset_passwd')
         fnResetPassword
