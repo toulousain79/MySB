@@ -3,9 +3,9 @@
 ## v6.0 - 2019/06/29 _(start at: 2019/01/26)_
 
 - NextCloud v16.0.1
-- rTorrent v0.9.7 _(b26dc42)_
-- LibTorrent v0.13.7 _(1b94891)_
-- ruTorrent v3.9 _(626ba3d)_
+- rTorrent v0.9.8 _(6154d16)_
+- LibTorrent v0.13.8 _(6154d16)_
+- ruTorrent v3.9 _(ec8d8f1)_
 - PHP v7.1 _(Sury)_
 - NetData v1.15.0
 - Certbot-auto
