@@ -248,12 +248,17 @@ function fnSynchroPlex() {
         "
 
         ## Synchro Plex datas
-        sPreferencesFile='/var/lib/plexmediaserver/Library/Application\ Support/Plex\ Media\ Server/Preferences.xml'
+        sPreferencesFile='/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml'
         [ "${gsSynchroType}" == "after" ] && perl -pi -e 's/"MySB"/"MySB_old"/g' "${sPreferencesFile}"
 
         # Remote Preferences.xml
         scp ${sScpOptions[*]} root@"${gsNewServerIp}:${sPreferencesFile}" /tmp/plex_remote_preferences 2>>"${sLogFile}"
-        perl -pi -e 's/"MySB"/"MySB_new"/g' /tmp/plex_remote_preferences
+        if [ "${gsSynchroType}" == "after" ]; then
+            perl -pi -e 's/"MySB_new"/"MySB"/g' /tmp/plex_remote_preferences
+        else
+            perl -pi -e 's/"MySB"/"MySB_new"/g' /tmp/plex_remote_preferences
+        fi
+
         rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /var/lib/plexmediaserver/ root@"${gsNewServerIp}":/var/lib/plexmediaserver/
         rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /usr/lib/plexmediaserver/ root@"${gsNewServerIp}":/usr/lib/plexmediaserver/
         scp ${sScpOptions[*]} /tmp/plex_remote_preferences root@"${gsNewServerIp}:${sPreferencesFile}" 2>>"${sLogFile}"
@@ -268,7 +273,7 @@ function fnSynchroPlex() {
                 service tautulli start
             "
         else
-            [ "${gsSynchroType}" == "after" ] && gfnManageServices start "cron plexmediaserver tautulli"
+            gfnManageServices start "cron plexmediaserver tautulli"
         fi
     fi
 }
