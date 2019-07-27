@@ -233,7 +233,7 @@ function fnResetPassword() {
 
 #### Synchro Plex
 function fnSynchroPlex() {
-    local sPreferencesFile
+    local sPreferencesFile sRemotePrimaryInet
 
     if [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
         clear
@@ -249,19 +249,60 @@ function fnSynchroPlex() {
 
         ## Synchro Plex datas
         sPreferencesFile='/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml'
-        [ "${gsSynchroType}" == "after" ] && perl -pi -e 's/"MySB"/"MySB_old"/g' "${sPreferencesFile}"
+        # [ "${gsSynchroType}" == "after" ] && perl -pi -e 's/"MySB"/"MySB_old"/g' "${sPreferencesFile}"
 
         # Remote Preferences.xml
-        scp ${sScpOptions[*]} root@"${gsNewServerIp}:${sPreferencesFile}" /tmp/plex_remote_preferences 2>>"${sLogFile}"
-        if [ "${gsSynchroType}" == "after" ]; then
-            perl -pi -e 's/"MySB_new"/"MySB"/g' /tmp/plex_remote_preferences
-        else
-            perl -pi -e 's/"MySB"/"MySB_new"/g' /tmp/plex_remote_preferences
-        fi
+        # scp ${sScpOptions[*]} root@"${gsNewServerIp}:${sPreferencesFile}" /tmp/plex_remote_preferences 2>>"${sLogFile}"
+        # if [ "${gsSynchroType}" == "after" ]; then
+        #     perl -pi -e 's/"MySB_new"/"MySB"/g' /tmp/plex_remote_preferences
+        # else
+        #     perl -pi -e 's/"MySB"/"MySB_new"/g' /tmp/plex_remote_preferences
+        # fi
+
+        sRemotePrimaryInet="$(ssh ${sSshOptions[*]} root@${gsNewServerIp} "mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N -e \"SELECT primary_inet FROM system WHERE id_system='1';\"")"
+        perl -pi -e 's/\"\/>/\" \/>/g' "${sPreferencesFile}"
+        sNewPreferences=()
+        for sParam in $(cat "${sPreferencesFile}"); do
+            case "$(echo "${sParam}" | cut -d '=' -f 1)" in
+                'OldestPreviousVersion') sNewPreferences+=("${sParam}") ;;
+                'MachineIdentifier') sNewPreferences+=("${sParam}") ;;
+                'ProcessedMachineIdentifier') sNewPreferences+=("${sParam}") ;;
+                'AnonymousMachineIdentifier') sNewPreferences+=("${sParam}") ;;
+                'MetricsEpoch') sNewPreferences+=('MetricsEpoch="1"') ;;
+                'AcceptedEULA') sNewPreferences+=('AcceptedEULA="1"') ;;
+                'FriendlyName') sNewPreferences+=('FriendlyName="MySB"') ;;
+                'PublishServerOnPlexOnlineKey') sNewPreferences+=('PublishServerOnPlexOnlineKey="1"') ;;
+                'PlexOnlineToken') sNewPreferences+=("${sParam}") ;;
+                'PlexOnlineUsername') sNewPreferences+=("${sParam}") ;;
+                'PlexOnlineMail') sNewPreferences+=("${sParam}") ;;
+                'PlexOnlineHome') sNewPreferences+=('PlexOnlineHome="1"') ;;
+                'DlnaEnabled') sNewPreferences+=('DlnaEnabled="0"') ;;
+                'CertificateVersion') sNewPreferences+=("${sParam}") ;;
+                'PubSubServer') sNewPreferences+=("${sParam}") ;;
+                'PubSubServerRegion') sNewPreferences+=("${sParam}") ;;
+                'PubSubServerPing') sNewPreferences+=("${sParam}") ;;
+                'FSEventLibraryPartialScanEnabled') sNewPreferences+=('FSEventLibraryPartialScanEnabled="1"') ;;
+                'FSEventLibraryUpdatesEnabled') sNewPreferences+=('FSEventLibraryUpdatesEnabled="1"') ;;
+                'ScheduledLibraryUpdateInterval') sNewPreferences+=('ScheduledLibraryUpdateInterval="1800"') ;;
+                'ScheduledLibraryUpdatesEnabled') sNewPreferences+=('ScheduledLibraryUpdatesEnabled="1"') ;;
+                'GdmEnabled') sNewPreferences+=('GdmEnabled="0"') ;;
+                'PreferredNetworkInterface') sNewPreferences+=("PreferredNetworkInterface=\"${sRemotePrimaryInet}\"") ;;
+                'secureConnections') sNewPreferences+=("${sParam}") ;;
+                'DlnaReportTimeline') sNewPreferences+=('DlnaReportTimeline="0"') ;;
+                'LanguageInCloud') sNewPreferences+=("${sParam}") ;;
+                'GracenoteUser') sNewPreferences+=("${sParam}") ;;
+                'EnableIPv6') sNewPreferences+=('EnableIPv6="0"') ;;
+            esac
+        done
+        {
+            echo '<?xml version="1.0" encoding="utf-8"?>'
+            echo "<Preferences ${sNewPreferences[*]} />"
+        } >/tmp/plex_remote_preferences
+        chown plex:plex /tmp/plex_remote_preferences
 
         rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /var/lib/plexmediaserver/ root@"${gsNewServerIp}":/var/lib/plexmediaserver/
         rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /usr/lib/plexmediaserver/ root@"${gsNewServerIp}":/usr/lib/plexmediaserver/
-        scp ${sScpOptions[*]} /tmp/plex_remote_preferences root@"${gsNewServerIp}:${sPreferencesFile}" 2>>"${sLogFile}"
+        scp ${sScpOptions[*]} /tmp/plex_remote_preferences root@"${gsNewServerIp}:'${sPreferencesFile}'" 2>>"${sLogFile}"
 
         # Synchro Tautulli datas
         scp ${sScpOptions[*]} "${MySB_InstallDir}"/web/apps/tt/tautulli.db root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/tt/tautulli.db 2>>"${sLogFile}"
@@ -394,14 +435,15 @@ case "${gsSynchroType}" in
             }
             . ${MySB_InstallDir}/inc/funcs_by_script/funcs_Upgrade
             gfnUpgradeInProgress "on"
+        else
+            ssh ${sSshOptions[*]} root@${gsNewServerIp} "
+                . ${MySB_RemoteDir}/inc/vars
+                . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_Upgrade
+                gfnUpgradeInProgress off
+            "
         fi
-        ssh ${sSshOptions[*]} root@${gsNewServerIp} "
-            . ${MySB_RemoteDir}/inc/vars
-            . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_Upgrade
-            gfnUpgradeInProgress off
-        "
         fnUpdateSystemTable
-        fnCreateRemoteUsers
+        [ "${gsSynchroType}" == "before" ] && fnCreateRemoteUsers
         ssh ${sSshOptions[*]} root@${gsNewServerIp} "
             . ${MySB_RemoteDir}/inc/vars
             . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_Upgrade
@@ -420,11 +462,13 @@ case "${gsSynchroType}" in
             . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_Upgrade
             . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_MySB_CreateUser
             gfnManageQuota '-v'
-            bash ${MySB_RemoteDir}/upgrade/Migration 'force_rename'
+            bash ${MySB_RemoteDir}/upgrade/Migration.bsh 'force_rename'
             [ \"${gsSynchroType}\" == \"after\" ] && gfnUpgradeInProgress off
         "
-        touch "${MySB_InstallDir}"/files/migrate_before.lock
-        gfnSendMail "${Migration_SyncBeforeDone[*]}" "${gsMainUserName}" "migrate_begore"
+        if [ "${gsSynchroType}" == "before" ]; then
+            touch "${MySB_InstallDir}"/files/migrate_before.lock
+            gfnSendMail "${Migration_SyncBeforeDone[*]}" "${gsMainUserName}" "migrate_begore"
+        fi
         ;;
     'lock_old')
         . ${MySB_InstallDir}/inc/vars
