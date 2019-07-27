@@ -29,7 +29,7 @@ require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__
 $users_datas = $MySB_DB->get("users", ["id_users", "rtorrent_version", "rtorrent_notify", "rtorrent_restart", "language", "account_type"], ["users_ident" => "$CurrentUser"]);
 $UserID = $users_datas['id_users'];
 $Command = 'message_only';
-$rTorrentVersionsList = array('v0.9.6', 'v0.9.7');
+$rTorrentVersionsList = array('v0.9.6', 'v0.9.8');
 $RefreshPage = 0;
 $Change = 0;
 $type = 'information';

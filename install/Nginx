@@ -30,13 +30,13 @@ gsRutorrentDirEscaped="$(echo $gsRutorrentDir | sed s,/,\\\\\/,g)"
 gsRutorrentPluginsDirEscaped="$(echo $gsRutorrentPluginsDir | sed s,/,\\\\\/,g)"
 
 #### STOP services
-gfnManageServices stop "nginx $binPhpService"
+gfnManageServices stop "nginx ${binPhpService}"
 
 #### Install packages
 gfnPackageBundleInstall 'nginx-extras'
 
 #### STOP services
-gfnManageServices stop "nginx $binPhpService"
+gfnManageServices stop "nginx ${binPhpService}"
 
 #### Create directories & remove some files
 if [ ! -d /etc/nginx/sites-available ]; then mkdir -v /etc/nginx/sites-available; fi
@@ -90,24 +90,24 @@ chmod 0600 /etc/nginx/ssl_certificate
 install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.mime.types.tmpl /etc/nginx/mime.types
 install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.logs_format.tmpl /etc/nginx/logs_format
 install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.nginx.conf.tmpl /etc/nginx/nginx.conf
-perl -pi -e "s/worker_processes auto;/worker_processes $gsProcessors;/g" /etc/nginx/nginx.conf
+perl -pi -e "s/worker_processes auto;/worker_processes ${gsProcessors};/g" /etc/nginx/nginx.conf
 
 #### Default Server
 install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.site-enabled.default.tmpl /etc/nginx/sites-available/default
-perl -pi -e "s/<InstallDir>/$gsInstallDirEscaped/g" /etc/nginx/sites-available/default
-perl -pi -e "s/<gsPort_MySB_HTTPS>/$gsPort_MySB_HTTPS/g" /etc/nginx/sites-available/default
-perl -pi -e "s/<gsPort_System_HTTP>/$gsPort_System_HTTP/g" /etc/nginx/sites-available/default
-perl -pi -e "s/<server_name>/$gsHostNameFqdn/g" /etc/nginx/sites-available/default
-perl -pi -e "s/<rutorrent_dir>/$gsRutorrentDirEscaped/g" /etc/nginx/sites-available/default
-perl -pi -e "s/<plugins_dir>/$gsRutorrentPluginsDirEscaped/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<gsPort_MySB_HTTPS>/${gsPort_MySB_HTTPS}/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<gsPort_System_HTTP>/${gsPort_System_HTTP}/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<server_name>/${gsHostNameFqdn}/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<rutorrent_dir>/${gsRutorrentDirEscaped}/g" /etc/nginx/sites-available/default
+perl -pi -e "s/<plugins_dir>/${gsRutorrentPluginsDirEscaped}/g" /etc/nginx/sites-available/default
 
 #### Work in progress page
 install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.site-enabled.WiP.tmpl /etc/nginx/sites-available/WiP
 perl -pi -e "s/<php_sock>/${gsPhpSock}/g" /etc/nginx/sites-available/WiP
-perl -pi -e "s/<InstallDir>/$gsInstallDirEscaped/g" /etc/nginx/sites-available/WiP
-perl -pi -e "s/<gsPort_MySB_HTTPS>/$gsPort_MySB_HTTPS/g" /etc/nginx/sites-available/WiP
-perl -pi -e "s/<gsPort_System_HTTP>/$gsPort_System_HTTP/g" /etc/nginx/sites-available/WiP
-perl -pi -e "s/<server_name>/$gsHostNameFqdn/g" /etc/nginx/sites-available/WiP
+perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /etc/nginx/sites-available/WiP
+perl -pi -e "s/<gsPort_MySB_HTTPS>/${gsPort_MySB_HTTPS}/g" /etc/nginx/sites-available/WiP
+perl -pi -e "s/<gsPort_System_HTTP>/${gsPort_System_HTTP}/g" /etc/nginx/sites-available/WiP
+perl -pi -e "s/<server_name>/${gsHostNameFqdn}/g" /etc/nginx/sites-available/WiP
 
 #### PHP conf.d
 install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.conf.d.global_deny_access.tmpl /etc/nginx/conf.d/global_deny_access
@@ -129,8 +129,8 @@ gfnGetRepoValues 'Wolf CMS' && gfnRepoManageByType
 install -v -o root -g www-data -m 0640 ${MySB_InstallDir}/templates/mysb/wolf.config.php.tmpl ${MySB_InstallDir}/web/config.php
 install -v -o root -g www-data -m 0640 ${MySB_InstallDir}/templates/mysb/wolf.page.php.tmpl ${MySB_InstallDir}/web/wolf/app/models/Page.php
 AdminDir="$(gfnGenPassword 32)"
-perl -pi -e "s/<admin_dir>/$AdminDir/g" ${MySB_InstallDir}/web/config.php
-perl -pi -e "s/<gsTimeZone>/$gsTimeZoneEscaped/g" ${MySB_InstallDir}/web/config.php
+perl -pi -e "s/<admin_dir>/${AdminDir}/g" ${MySB_InstallDir}/web/config.php
+perl -pi -e "s/<gsTimeZone>/${gsTimeZoneEscaped}/g" ${MySB_InstallDir}/web/config.php
 
 #### Sudo
 rm -vf /etc/sudoers.d/MySB_nginx
@@ -143,21 +143,57 @@ addgroup www-data MySB_users
 # rm -f /var/log/nginx/error.log
 rm -f /var/log/nginx/*-error.log
 
-#### NextCloud
-if [ "$gbToInstall_NextCloud" == "YES" ] || [ "$gbIsInstalled_NextCloud" == "YES" ]; then
-    install -v -g root -o root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.locations.nextcloud.conf.tmpl /etc/nginx/locations/NextCloud.conf
-    perl -pi -e "s/<MySB_InstallDir>/$gsInstallDirEscaped/g" /etc/nginx/locations/NextCloud.conf
+#### Cakebox-light
+if [ "${gbToInstall_Cakebox}" == "YES" ] || [ "${gbIsInstalled_Cakebox}" == "YES" ]; then
+    if [ -h /etc/nginx/sites-enabled/cakebox ]; then rm -vf /etc/nginx/sites-enabled/cakebox; fi
+    install -v -g root -o root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.site-enabled.cakebox.tmpl /etc/nginx/sites-available/cakebox
+    perl -pi -e "s/<server_name>/${gsHostNameFqdn}/g" /etc/nginx/sites-available/cakebox
+    perl -pi -e "s/<cakebox_rootdir>/${sCakeboxDirEscaped}/g" /etc/nginx/sites-available/cakebox
+    if [ ! -h /etc/nginx/sites-enabled/cakebox ]; then ln -sv /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox; fi
+    install -v -g root -o root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.locations.cakebox.conf.tmpl /etc/nginx/locations/Cakebox-Light.conf
+    install -v -g root -o root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.proxy.cakebox.conf.tmpl /etc/nginx/proxy/Cakebox-Light.conf
+    gfnListCountUsers 'normal'
+    for seedUser in $gsUsersList; do
+        install -v -g root -o root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.rpc.user.cakebox.tmpl /etc/nginx/rpc/${seedUser}.cakebox
+        perl -pi -e "s/<username>/${seedUser}/g" /etc/nginx/rpc/${seedUser}.cakebox
+    done
 fi
 
-#### Tautulli
-if [ "$gbToInstall_PlexMedia" == "YES" ] || [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
+#### Seedbox-Manager
+if [ "${gbToInstall_Manager}" == "YES" ] || [ "${gbIsInstalled_Manager}" == "YES" ]; then
+    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/nginx/etc.nginx.locations.seedbox-manager.conf.tmpl /etc/nginx/locations/Seedbox-Manager.conf
+    perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /etc/nginx/locations/Seedbox-Manager.conf
+fi
+
+#### Netdata
+install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.locations.netdata.conf.tmpl /etc/nginx/locations/NetData.conf
+perl -pi -e "s/<MainUser>/${gsMainUserName}/g" /etc/nginx/locations/NetData.conf
+install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.proxy.netdata.conf.tmpl /etc/nginx/proxy/NetData.conf
+install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.upstream.netdata.conf.tmpl /etc/nginx/upstream/NetData.conf
+
+#### NextCloud
+if [ "${gbToInstall_NextCloud}" == "YES" ] || [ "${gbIsInstalled_NextCloud}" == "YES" ]; then
+    install -v -g root -o root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.locations.nextcloud.conf.tmpl /etc/nginx/locations/NextCloud.conf
+    perl -pi -e "s/<MySB_InstallDir>/${gsInstallDirEscaped}/g" /etc/nginx/locations/NextCloud.conf
+fi
+
+#### Plex & Tautulli
+if [ "${gbToInstall_PlexMedia}" == "YES" ] || [ "${gbIsInstalled_PlexMedia}" == "YES" ]; then
+    install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.locations.plexmediaserver.conf.tmpl /etc/nginx/locations/PlexMediaServer.conf
+    install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.upstream.plexmediaserver.conf.tmpl /etc/nginx/upstream/PlexMediaServer.conf
+    install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.proxy.plexmediaserver.conf.tmpl /etc/nginx/proxy/PlexMediaServer.conf
     install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.locations.tautulli.conf.tmpl /etc/nginx/locations/Tautulli.conf
     install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.proxy.tautulli.conf.tmpl /etc/nginx/proxy/Tautulli.conf
-    perl -pi -e "s/<MainUser>/$gsMainUserName/g" /etc/nginx/locations/Tautulli.conf
+    perl -pi -e "s/<MainUser>/${gsMainUserName}/g" /etc/nginx/locations/Tautulli.conf
 fi
 
+#### Shell In a Box
+install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.locations.shellinabox.conf.tmpl /etc/nginx/locations/ShellInABox.conf
+install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.proxy.shellinabox.conf.tmpl /etc/nginx/proxy/ShellInABox.conf
+perl -pi -e "s/<MainUser>/${gsMainUserName}/g" /etc/nginx/locations/ShellInABox.conf
+
 #### START services
-gfnManageServices start "$binPhpService nginx"
+gfnManageServices start "${binPhpService} nginx"
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after
