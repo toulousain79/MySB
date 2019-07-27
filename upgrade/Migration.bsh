@@ -55,6 +55,7 @@ echo
 
 #### VARs
 sLogFile="/tmp/migrate.log"
+sMySqlOptions=(--wait "--connect-timeout=10" --skip-column-names)
 sRsyncOptions=(-rlptgoDv4PHz --append --delete --delete-before)
 sSshOptions=(-p "${gsNewServerSshPort}" -c aes128-ctr -x -o "Compression=yes" -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -E "${sLogFile}")
 sScpOptions=(-P "${gsNewServerSshPort}" -o "Compression=yes" -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null")
@@ -75,7 +76,7 @@ fi
     cat /root/.ssh/id_rsa.pub
     echo
 } >/tmp/remote_authorized_keys
-if (! sshpass -p "" scp ${sScpOptions[*]} /tmp/remote_authorized_keys root@${gsNewServerIp}:/tmp/remote_authorized_keys); then
+if (! sshpass -p "" scp ${sScpOptions[*]} /tmp/remote_authorized_keys root@${gsNewServerIp}:/tmp/remote_authorized_keys 2>>"${sLogFile}"); then
     echo
     echo -e "${Migration_CopyPubKey[*]}"
     echo -e "${Migration_BlankLine[*]}"
@@ -121,9 +122,9 @@ function fnUpdateSystemTable() {
     nAvailableSpace=$(gfnQuotaSpaceAvailable)
 
     ssh ${sSshOptions[*]} root@${gsNewServerIp} "
-        mysql --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE system SET quota_default='${nAvailableSpace}', ip_restriction='${bIpRestriction}', files_recycling='${bFileRecycling}' WHERE id_system='1';\" -v
-        mysql --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE system SET pgl_email_stats='${bPglEmailStats}', pgl_watchdog_email='${bPglWatchdogMail}', logwatch='${bLogwatch}' WHERE id_system='1';\" -v
-        mysql --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE system SET public_tracker_allow='${sPublicTrackerAllow}', block_annoncers='${bBlockAnnouncers}', annoncers_udp='${bAnnouncersUdp}', annoncers_check='${bAnnouncersCheck}' WHERE id_system='1';\" -v
+        mysql --database=MySB_db ${sMySqlOptions[*]} -e \"UPDATE system SET quota_default='${nAvailableSpace}', ip_restriction='${bIpRestriction}', files_recycling='${bFileRecycling}' WHERE id_system='1';\" -v
+        mysql --database=MySB_db ${sMySqlOptions[*]} -e \"UPDATE system SET pgl_email_stats='${bPglEmailStats}', pgl_watchdog_email='${bPglWatchdogMail}', logwatch='${bLogwatch}' WHERE id_system='1';\" -v
+        mysql --database=MySB_db ${sMySqlOptions[*]} -e \"UPDATE system SET public_tracker_allow='${sPublicTrackerAllow}', block_annoncers='${bBlockAnnouncers}', annoncers_udp='${bAnnouncersUdp}', annoncers_check='${bAnnouncersCheck}' WHERE id_system='1';\" -v
     "
 
     sRequestValues="$(cmdMySQL 'MySB_db' "SELECT rt_active,rt_model,rt_tva,rt_global_cost,rt_cost_tva,rt_nb_users,rt_price_per_users,rt_method FROM system WHERE id_system='1';" | sed 's/\t/|/g;')"
@@ -137,7 +138,7 @@ function fnUpdateSystemTable() {
     sRtMethod="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[8]}')"
 
     ssh ${sSshOptions[*]} root@${gsNewServerIp} "
-        mysql --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE system SET rt_active='${bRtActive}', rt_model='${sRtModel}', rt_tva='${sRtTva}', rt_global_cost='${sRtGlobalCost}', rt_cost_tva='${sRtCostTva}', rt_nb_users='${sRtNbUsers}', rt_price_per_users='${sRtPricePerUsers}', rt_method='${sRtMethod}' WHERE id_system='1';\" -v
+        mysql --database=MySB_db ${sMySqlOptions[*]} -e \"UPDATE system SET rt_active='${bRtActive}', rt_model='${sRtModel}', rt_tva='${sRtTva}', rt_global_cost='${sRtGlobalCost}', rt_cost_tva='${sRtCostTva}', rt_nb_users='${sRtNbUsers}', rt_price_per_users='${sRtPricePerUsers}', rt_method='${sRtMethod}' WHERE id_system='1';\" -v
         . ${MySB_RemoteDir}/inc/vars
         . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_MySB_CreateUser
         gfnQuotaSpaceUsed '-v'
@@ -173,7 +174,7 @@ function fnCreateRemoteUsers() {
             fi
         fi
         ssh ${sSshOptions[*]} root@${gsNewServerIp} "
-            mysql --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE users SET quota='${nFnUserQuota}' WHERE users_ident='${sFnUser}';\" -v
+            mysql --database=MySB_db ${sMySqlOptions[*]} -e \"UPDATE users SET quota='${nFnUserQuota}' WHERE users_ident='${sFnUser}';\" -v
             . ${MySB_RemoteDir}/inc/vars
             . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_MySB_CreateUser
             gfnQuotaSpaceUsed '-v'
@@ -190,7 +191,7 @@ function fnSynchroUsers() {
         sleep 2
 
         # /etc/nginx/passwd/users
-        scp ${sScpOptions[*]} "/etc/nginx/passwd/MySB_${sUser}" root@"${gsNewServerIp}:/etc/nginx/passwd/MySB_${sUser}"
+        scp ${sScpOptions[*]} "/etc/nginx/passwd/MySB_${sUser}" root@"${gsNewServerIp}:/etc/nginx/passwd/MySB_${sUser}" 2>>"${sLogFile}"
         # /home
         time rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /home/"${sUser}"/ root@"${gsNewServerIp}":/home/"${sUser}"/
     done
@@ -199,12 +200,24 @@ function fnSynchroUsers() {
 function fnWebApps()  {
     local sResult
 
+    clear
     # Seedbox-Manager
     sResult="$(ssh ${sSshOptions[*]} root@${gsNewServerIp} "[ -d ${MySB_RemoteDir}/web/apps/sm/conf/users/ ] && echo 'ok'")"
     if [ -d "${MySB_InstallDir}"/web/apps/sm/conf/users/ ] && [ "${sResult}" == "ok" ]; then
+        echo -e "${Migration_WebApps[*]} ${CGREEN}Seedbox-Manager${CEND}"
+        sleep 2
         rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" "${MySB_InstallDir}"/web/apps/sm/conf/users/ root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/sm/conf/users/
     fi
+    # Cakebox-Light
+    sResult="$(ssh ${sSshOptions[*]} root@${gsNewServerIp} "[ -d ${MySB_RemoteDir}/web/apps/cb/config/ ] && echo 'ok'")"
+    if [ -d "${MySB_InstallDir}"/web/apps/cb/config/ ] && [ "${sResult}" == "ok" ]; then
+        echo -e "${Migration_WebApps[*]} ${CGREEN}Cakebox-Light${CEND}"
+        sleep 2
+        rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" "${MySB_InstallDir}"/web/apps/cb/config/ root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/cb/config/
+    fi
     # ruTorrent
+    echo -e "${Migration_WebApps[*]} ${CGREEN}ruTorrent${CEND}"
+    sleep 2
     rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" "${MySB_InstallDir}"/web/apps/ru/conf/users/ root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/ru/conf/users/
     rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" "${MySB_InstallDir}"/web/apps/ru/share/users/ root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/ru/share/users/
 }
@@ -239,14 +252,14 @@ function fnSynchroPlex() {
         [ "${gsSynchroType}" == "after" ] && perl -pi -e 's/"MySB"/"MySB_old"/g' "${sPreferencesFile}"
 
         # Remote Preferences.xml
-        scp ${sScpOptions[*]} root@"${gsNewServerIp}:${sPreferencesFile}" /tmp/plex_remote_preferences
+        scp ${sScpOptions[*]} root@"${gsNewServerIp}:${sPreferencesFile}" /tmp/plex_remote_preferences 2>>"${sLogFile}"
         perl -pi -e 's/"MySB"/"MySB_new"/g' /tmp/plex_remote_preferences
         rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /var/lib/plexmediaserver/ root@"${gsNewServerIp}":/var/lib/plexmediaserver/
         rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /usr/lib/plexmediaserver/ root@"${gsNewServerIp}":/usr/lib/plexmediaserver/
-        scp ${sScpOptions[*]} /tmp/plex_remote_preferences root@"${gsNewServerIp}:${sPreferencesFile}"
+        scp ${sScpOptions[*]} /tmp/plex_remote_preferences root@"${gsNewServerIp}:${sPreferencesFile}" 2>>"${sLogFile}"
 
         # Synchro Tautulli datas
-        scp ${sScpOptions[*]} "${MySB_InstallDir}"/web/apps/tt/tautulli.db root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/tt/tautulli.db
+        scp ${sScpOptions[*]} "${MySB_InstallDir}"/web/apps/tt/tautulli.db root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/tt/tautulli.db 2>>"${sLogFile}"
 
         # Start services (local & remote)
         if [ "${gsSynchroType}" == "after" ]; then
@@ -285,7 +298,7 @@ function fnSynchroTrackersCertificates() {
     sleep 2
 
     ssh ${sSshOptions[*]} root@${gsNewServerIp} "mkdir -p ${MySB_RemoteDir}/ssl/trackers/"
-    scp ${sScpOptions[*]} "${MySB_InstallDir}"/ssl/trackers/*.pem root@"${gsNewServerIp}":"${MySB_RemoteDir}"/ssl/trackers/
+    scp ${sScpOptions[*]} "${MySB_InstallDir}"/ssl/trackers/*.pem root@"${gsNewServerIp}":"${MySB_RemoteDir}"/ssl/trackers/ 2>>"${sLogFile}"
     ssh ${sSshOptions[*]} root@${gsNewServerIp} '
         c_rehash ${MySB_RemoteDir}/ssl/trackers/
         c_rehash /etc/ssl/certs/
@@ -295,19 +308,23 @@ function fnSynchroTrackersCertificates() {
 
 #### Synchro databases
 function fnDatabases() {
-    local sRequestValues
+    local sRequestValues nDbSize
 
     clear
     echo -e "${Migration_Databases[*]} ${CGREEN}${sUser}${CEND}"
     sleep 2
 
     # SQLite Blocklists.sq3
-    scp ${sScpOptions[*]} "${MySB_InstallDir}"/db/Blocklists.sq3 root@"${gsNewServerIp}":"${MySB_RemoteDir}"/db/Blocklists.sq3
+    scp ${sScpOptions[*]} "${MySB_InstallDir}"/db/Blocklists.sq3 root@"${gsNewServerIp}":"${MySB_RemoteDir}"/db/Blocklists.sq3 2>>"${sLogFile}"
 
     # Dump NextCloud_db
-    [ "${gbIsInstalled_NextCloud}" == "YES" ] && mysqldump --single-transaction NextCloud_db >/tmp/NextCloud_db.dump.sql
+    [ "${gbIsInstalled_NextCloud}" == "YES" ] && {
+        nDbSize=$(mysql --database=NextCloud_db ${sMySqlOptions[*]} --skip-column-names -e "SELECT ROUND(SUM(data_length) / 1024 / 1024, 0) FROM information_schema.TABLES WHERE table_schema='NextCloud_db';")
+        mysqldump --single-transaction --order-by-primary --compress NextCloud_db  | pv --progress --size "${nDbSize}"m >/tmp/NextCloud_db.dump.sql
+    }
     # Dump MySB_db
-    mysqldump --single-transaction MySB_db \
+    nDbSize=$(mysql --database=MySB_db ${sMySqlOptions[*]} --skip-column-names -e "SELECT ROUND(SUM(data_length) / 1024 / 1024, 0) FROM information_schema.TABLES WHERE table_schema='MySB_db';")
+    mysqldump --single-transaction --order-by-primary --compress MySB_db \
         users \
         users_addresses \
         users_crontab \
@@ -321,28 +338,28 @@ function fnDatabases() {
         blocklists \
         dnscrypt_config \
         torrents \
-        users_scripts >/tmp/MySB_db.dump.sql
+        users_scripts | pv --progress --size "${nDbSize}"m >/tmp/MySB_db.dump.sql
 
-    if (scp ${sScpOptions[*]} /tmp/*.dump.sql root@"${gsNewServerIp}":/tmp/); then
+    if (scp ${sScpOptions[*]} /tmp/*.dump.sql root@"${gsNewServerIp}":/tmp/ 2>>"${sLogFile}"); then
         # MySB
         ssh ${sSshOptions[*]} root@${gsNewServerIp} '
-            mysql --database=MySB_db -w --connect-timeout=10 -s -N -e "SET GLOBAL FOREIGN_KEY_CHECKS=0; SET @TRIGGER_CHECKS=0;" -v
+            mysql --database=MySB_db ${sMySqlOptions[*]} -e "SET GLOBAL FOREIGN_KEY_CHECKS=0; SET @TRIGGER_CHECKS=0;" -v
             aTables=(users users_addresses users_crontab users_history users_rtorrent_cfg users_scripts)
             for sTable in "${aTables[@]}"; do
-                mysql --database=MySB_db -w --connect-timeout=10 -s -N -e "TRUNCATE TABLE ${sTable};" -v
+                mysql --database=MySB_db ${sMySqlOptions[*]} -e "TRUNCATE TABLE ${sTable};" -v
             done
             aTables=(trackers_list trackers_list_ipv4 tracking_rent_history tracking_rent_options tracking_rent_payments blocklists dnscrypt_config torrents)
             for sTable in "${aTables[@]}"; do
-                mysql --database=MySB_db -w --connect-timeout=10 -s -N -e "TRUNCATE TABLE ${sTable};" -v
+                mysql --database=MySB_db ${sMySqlOptions[*]} -e "TRUNCATE TABLE ${sTable};" -v
             done
-            mysql --database=MySB_db -w --connect-timeout=10 -s -N </tmp/MySB_db.dump.sql
-            mysql --database=MySB_db -w --connect-timeout=10 -s -N -e "SET GLOBAL FOREIGN_KEY_CHECKS=1;; SET @TRIGGER_CHECKS=1;" -v
+            pv /tmp/MySB_db.dump.sql | mysql --database=MySB_db ${sMySqlOptions[*]}
+            mysql --database=MySB_db ${sMySqlOptions[*]} -e "SET GLOBAL FOREIGN_KEY_CHECKS=1;; SET @TRIGGER_CHECKS=1;" -v
         '
         # NextCloud
         if [ "${gbIsInstalled_NextCloud}" == "YES" ]; then
             ssh ${sSshOptions[*]} root@${gsNewServerIp} '
                 mysql -Nse "show tables" NextCloud_db | while read table; do mysql -v -e "TRUNCATE TABLE $table;" NextCloud_db; done
-                mysql --database=NextCloud_db -w --connect-timeout=10 -s -N </tmp/NextCloud_db.dump.sql
+                pv /tmp/NextCloud_db.dump.sql | mysql --database=NextCloud_db ${sMySqlOptions[*]}
             '
         fi
     fi
@@ -355,7 +372,7 @@ function fnVarWww() {
         echo -e "${Migration_VarWww[*]}"
         sleep 2
 
-        ssh ${sSshOptions[*]} root@${gsNewServerIp} "mysql --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE services SET port_tcp2='${gsPort_NginX_HTTP}', port_tcp3='${gsPort_NginX_HTTPS}' WHERE serv_name='NginX';\" -v"
+        ssh ${sSshOptions[*]} root@${gsNewServerIp} "mysql --database=MySB_db ${sMySqlOptions[*]} -e \"UPDATE services SET port_tcp2='${gsPort_NginX_HTTP}', port_tcp3='${gsPort_NginX_HTTPS}' WHERE serv_name='NginX';\" -v"
         rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /var/www/html/ root@"${gsNewServerIp}":/var/www/html/
     fi
 }
@@ -379,6 +396,7 @@ case "${gsSynchroType}" in
         fnSynchroTrackersCertificates
         fnSynchroLetsEncrypt
         fnVarWww
+        fnWebApps
         fnSynchroNextCloud
         fnSynchroUsers
         fnDatabases
@@ -409,6 +427,7 @@ case "${gsSynchroType}" in
         fnSynchroTrackersCertificates
         fnSynchroLetsEncrypt
         fnVarWww
+        fnWebApps
         fnSynchroNextCloud
         fnSynchroUsers
         fnDatabases
