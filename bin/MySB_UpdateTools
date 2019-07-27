@@ -74,17 +74,6 @@ if [ "$gsCurrentVersion" != "$(cat "${MySB_InstallDir}"/version)" ]; then
     cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='$(cat "${MySB_InstallDir}"/version)' WHERE id_system='1';" -v
 fi
 
-#### ruTorrent force version
-[ -f "${gsRutorrentDir}"/version ] && sVersion="$(cat "${gsRutorrentDir}"/version)"
-[ -z "${sVersion}" ] && sVersion="$(cmdMySQL 'MySB_db' "SELECT version FROM repositories WHERE name='ruTorrent';")"
-if [ "${sVersion}" != "3.9_626ba3d" ]; then
-    cmdMySQL 'MySB_db' "DELETE FROM repositories;" -v
-    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"${MySB_InstallDir}/templates/mysql/Table_repositories.sql"
-    cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='ruTorrent';" -v
-    gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/ruTorrent" 'UPGRADE'
-    bRtorrentRestart=1
-fi
-
 #### ruTorrent hack for uploaded torrent
 if (! grep -q 'rev 0.3' "${gsRutorrentDir}"/php/rtorrent.php); then
     install -v -o www-data -g www-data -m 0755 "${MySB_InstallDir}"/templates/rutorrent/rtorrent.php.tmpl "${gsRutorrentDir}"/php/rtorrent.php
