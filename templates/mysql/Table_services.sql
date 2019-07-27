@@ -44,7 +44,7 @@ INSERT INTO `services` (`id_services`, `serv_name`, `bin`, `port_tcp1`, `port_tc
 (20, 'BIND', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 0),
 (21, 'Stunnel', '', '', '', '', '', '', ' ', ' ', ' ', 0, 0, 0),
 (22, 'rTorrent v0.9.6', '/usr/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0, 0),
-(23, 'rTorrent v0.9.7', '/usr/local/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0, 0),
+(23, 'rTorrent v0.9.8', '/usr/local/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0, 0),
 (24, 'NextCloud', '', '', '', '', '', '', '', '', '', 0, 0, 1),
 (25, 'Lets Encrypt', '', '443', '', '', '', '', '', '', '', 0, 0, 1),
 (26, 'Tautulli', '', '', '', '', '', '', '', '', '', 0, 0, 1);

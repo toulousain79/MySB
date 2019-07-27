@@ -58,7 +58,7 @@ gfnListCountUsers 'normal'
 
 #### rTorrent scripts (to leave for next version ;-)
 for sUser in ${gsUsersList}; do
-    (! grep -q 'rev 0.6' "/etc/init.d/rtorrent-${sUser}") && bRtorrentRestart=1
+    (! grep -q 'rev 0.7' "/etc/init.d/rtorrent-${sUser}") && bRtorrentRestart=1
     (! grep -q 'rev 0.8' /home/${sUser}/.rTorrent_erased.sh) && bRtorrentRestart=1
     (! grep -q 'rev 0.8' /home/${sUser}/.rTorrent_finished.sh) && bRtorrentRestart=1
     (! grep -q 'rev 0.8' /home/${sUser}/.rTorrent_inserted_new.sh) && bRtorrentRestart=1
@@ -158,6 +158,23 @@ if [ "$(stat -c "%a" /lib/systemd/system/MySB_SecurityRules_Init.service)" == "7
     install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/MySB_SecurityRules_Init.service.tmpl /lib/systemd/system/MySB_SecurityRules_Init.service
     perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /lib/systemd/system/MySB_SecurityRules_Init.service
     systemctl enable MySB_SecurityRules_Init.service
+fi
+
+#### rTorrent rebuild from 0.9.7 (fake !) to 0.9.8 with new version ruTorrent
+sRtorrentBin="$(cmdMySQL 'MySB_db' "SELECT serv_name FROM services WHERE bin='/usr/local/bin/rtorrent';")"
+if [ "${sRtorrentBin}" == "rTorrent v0.9.7" ]; then
+    bRtorrentRestart=1
+    cmdMySQL 'MySB_db' "DELETE FROM repositories;" -v
+    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Table_repositories.sql"
+    cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='LibTorrent';" -v
+    cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='rTorrent';" -v
+    cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='ruTorrent';" -v
+
+    gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/rTorrent" 'UPGRADE'
+    gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/ruTorrent" 'UPGRADE'
+
+    cmdMySQL 'MySB_db' "UPDATE services SET serv_name='rTorrent v0.9.8' WHERE bin='/usr/local/bin/rtorrent';" -v
+    cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_version='v0.9.8' WHERE rtorrent_version='v0.9.7';" -v
 fi
 
 #### rTorrent restart needed
