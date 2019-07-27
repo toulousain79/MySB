@@ -41,49 +41,6 @@ echo
 echo -e "${Migration_LinkToDoc}"
 echo
 
-#### New server IP
-echo
-[ -n "${gsNewServerIp}" ] && CHECK_SrvIpAddressExt=$(gfnValidateIP "${gsNewServerIp}")
-while [ "${CHECK_SrvIpAddressExt}" != "${gsNewServerIp}" ] || [ -z "${gsNewServerIp}" ]; do
-    gfnQuestionGetString NO "${Migration_NewServerIp[*]}" gsNewServerIp
-    CHECK_SrvIpAddressExt=$(gfnValidateIP "${gsNewServerIp}")
-done
-
-#### New server SSH port
-echo
-[ -z "${gsNewServerSshPort}" ] && gfnQuestionGetString NO "${Migration_NewServerSshPort[*]}" gsNewServerSshPort "${gsPort_SSH}"
-
-#### VARs
-sLogFile="/tmp/migrate.log"
-sMySqlOptions=(--wait "--connect-timeout=10" --skip-column-names)
-sRsyncOptions=(-rlptgoDv4PHz --append --delete --delete-before)
-sSshOptions=(-p "${gsNewServerSshPort}" -c aes128-ctr -x -o "Compression=yes" -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -E "${sLogFile}")
-sScpOptions=(-P "${gsNewServerSshPort}" -o "Compression=yes" -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null")
-: >"${sLogFile}"
-
-#### Ping remote server
-if (! ping -c3 ${gsNewServerIp} >/dev/null); then
-    echo
-    echo -e "${Migration_AddServerAddressOld[*]}"
-    echo -e "${Migration_AddServerAddressNew[*]}" | sed "s/##gsNewServerIp##/${gsNewServerIp}/g;"
-    echo
-    gfnEndingScript 0
-fi
-
-#### SSH key
-{
-    echo "# ${gsHostNameFqdn}"
-    cat /root/.ssh/id_rsa.pub
-    echo
-} >/tmp/remote_authorized_keys
-if (! sshpass -p "" scp ${sScpOptions[*]} /tmp/remote_authorized_keys root@${gsNewServerIp}:/tmp/remote_authorized_keys 2>>"${sLogFile}"); then
-    echo
-    echo -e "${Migration_CopyPubKey[*]}"
-    echo -e "${Migration_BlankLine[*]}"
-    echo
-    gfnEndingScript 0
-fi
-
 #### Synchro type
 sChoices=('check' 'before' 'after' 'reset_passwd' 'lock_old' 'unlock_old' 'force_rename')
 if (! grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
@@ -94,13 +51,74 @@ if (! grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
     done
 fi
 
+#### New server IP
+sChoices=('check' 'before' 'after')
+if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
+    echo
+    [ -n "${gsNewServerIp}" ] && CHECK_SrvIpAddressExt=$(gfnValidateIP "${gsNewServerIp}")
+    while [ "${CHECK_SrvIpAddressExt}" != "${gsNewServerIp}" ] || [ -z "${gsNewServerIp}" ]; do
+        gfnQuestionGetString NO "${Migration_NewServerIp[*]}" gsNewServerIp
+        CHECK_SrvIpAddressExt=$(gfnValidateIP "${gsNewServerIp}")
+    done
+fi
+
+#### New server SSH port
+sChoices=('check' 'before' 'after')
+if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
+    echo
+    [ -z "${gsNewServerSshPort}" ] && gfnQuestionGetString NO "${Migration_NewServerSshPort[*]}" gsNewServerSshPort "${gsPort_SSH}"
+fi
+
+#### VARs
+sChoices=('check' 'before' 'after')
+if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
+    sLogFile="/tmp/migrate.log"
+    sMySqlOptions=(--wait "--connect-timeout=10" --skip-column-names)
+    sRsyncOptions=(-rlptgoDv4PHz --append --delete --delete-before)
+    sSshOptions=(-p "${gsNewServerSshPort}" -c aes128-ctr -x -o "Compression=yes" -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -E "${sLogFile}")
+    sScpOptions=(-P "${gsNewServerSshPort}" -o "Compression=yes" -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null")
+    : >"${sLogFile}"
+fi
+
+#### Ping remote server
+sChoices=('check' 'before' 'after')
+if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
+    if (! ping -c3 ${gsNewServerIp} >/dev/null); then
+        echo
+        echo -e "${Migration_AddServerAddressOld[*]}"
+        echo -e "${Migration_AddServerAddressNew[*]}" | sed "s/##gsNewServerIp##/${gsNewServerIp}/g;"
+        echo
+        gfnEndingScript 0
+    fi
+fi
+
+#### SSH key
+sChoices=('check' 'before' 'after')
+if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
+    {
+        echo "# ${gsHostNameFqdn}"
+        cat /root/.ssh/id_rsa.pub
+        echo
+    } >/tmp/remote_authorized_keys
+    if (! sshpass -p "" scp ${sScpOptions[*]} /tmp/remote_authorized_keys root@${gsNewServerIp}:/tmp/remote_authorized_keys 2>>"${sLogFile}"); then
+        echo
+        echo -e "${Migration_CopyPubKey[*]}"
+        echo -e "${Migration_BlankLine[*]}"
+        echo
+        gfnEndingScript 0
+    fi
+fi
+
 #### Get remote config
-if (ssh ${sSshOptions[*]} root@${gsNewServerIp} "grep 'MySB_InstallDir=' /etc/MySB/config" >/tmp/MySB_remote_config); then
-    perl -pi -e "s/MySB_InstallDir/MySB_RemoteDir/g" /tmp/MySB_remote_config
-    echo "export MySB_RemoteDir" >>/tmp/MySB_remote_config
-    . /tmp/MySB_remote_config
-else
-    gfnEndingScript 0
+sChoices=('check' 'before' 'after')
+if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
+    if (ssh ${sSshOptions[*]} root@${gsNewServerIp} "grep 'MySB_InstallDir=' /etc/MySB/config" >/tmp/MySB_remote_config); then
+        perl -pi -e "s/MySB_InstallDir/MySB_RemoteDir/g" /tmp/MySB_remote_config
+        echo "export MySB_RemoteDir" >>/tmp/MySB_remote_config
+        . /tmp/MySB_remote_config
+    else
+        gfnEndingScript 0
+    fi
 fi
 
 #### Table system
@@ -249,15 +267,6 @@ function fnSynchroPlex() {
 
         ## Synchro Plex datas
         sPreferencesFile='/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml'
-        # [ "${gsSynchroType}" == "after" ] && perl -pi -e 's/"MySB"/"MySB_old"/g' "${sPreferencesFile}"
-
-        # Remote Preferences.xml
-        # scp ${sScpOptions[*]} root@"${gsNewServerIp}:${sPreferencesFile}" /tmp/plex_remote_preferences 2>>"${sLogFile}"
-        # if [ "${gsSynchroType}" == "after" ]; then
-        #     perl -pi -e 's/"MySB_new"/"MySB"/g' /tmp/plex_remote_preferences
-        # else
-        #     perl -pi -e 's/"MySB"/"MySB_new"/g' /tmp/plex_remote_preferences
-        # fi
 
         sRemotePrimaryInet="$(ssh ${sSshOptions[*]} root@${gsNewServerIp} "mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N -e \"SELECT primary_inet FROM system WHERE id_system='1';\"")"
         perl -pi -e 's/\"\/>/\" \/>/g' "${sPreferencesFile}"
@@ -357,7 +366,7 @@ function fnDatabases() {
     local sRequestValues nDbSize
 
     clear
-    echo -e "${Migration_Databases[*]} ${CGREEN}${sUser}${CEND}"
+    echo -e "${Migration_Databases[*]}"
     sleep 2
 
     # SQLite Blocklists.sq3
@@ -456,7 +465,7 @@ case "${gsSynchroType}" in
         fnWebApps
         fnSynchroNextCloud
         fnSynchroUsers
-        fnDatabases
+        [ "${gsSynchroType}" == "after" ] && fnDatabases
         ssh ${sSshOptions[*]} root@${gsNewServerIp} "
             . ${MySB_RemoteDir}/inc/vars
             . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_Upgrade
@@ -535,10 +544,6 @@ case "${gsSynchroType}" in
         fnResetPassword
         ;;
 esac
-
-# Log
-sed -i '/Permanently added/d' "${sLogFile}"
-cat "${sLogFile}"
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after
