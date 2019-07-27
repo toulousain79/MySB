@@ -1,6 +1,8 @@
 #!/bin/bash
-# rev 6.0
-# ----------------------------------
+# -----------------------------------------
+# shellcheck source=inc/includes_before
+source "$(dirname "$0")"/../inc/includes_before
+# -----------------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 #	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -21,277 +23,520 @@
 #	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
-######################################################################
-{ [ -z "${vars}" ] || [ "${vars}" -ne 1 ]; } && {
-    echo "Please load 'vars' file before..."
-    return
-}
 ##################### FIRST LINE #####################################
 
-#### Change FQDN of Seedbox
-# Use cases:
-# 1/ Manual with command line: gfnChangeFQDN "new_fqdn"
-# 2/ Auto during an upgrade
-gfnChangeFQDN() {
-    local sNewFQDN nCheckFqdnResult
+#### VARs
+[ -n "${1}" ] && gsSynchroType="${1}"
+[ -n "${2}" ] && gsNewServerIp="${2}"
+[ -n "${3}" ] && gsNewServerSshPort="${3}"
 
-    gfnListCountUsers 'normal'
-    [ -z "${gsHostNameFqdn}" ] && gsHostNameFqdn="$(cmdMySQL 'MySB_db' "SELECT hostname FROM system WHERE id_system='1';")"
-
-    if [[ -z ${1} ]]; then
-        echo
-        echo -e "${Global_Questions_Message_Hostname_New}"
-        gfnQuestionGetString NO "${Global_Questions_Hostname_New}" bgChangeFQDN "${Global_NO}"
-        bgChangeFQDN="$(echo "${bgChangeFQDN}" | tr '[:lower:]' '[:upper:]')"
-
-        if [ "${bgChangeFQDN}" != "${Global_YES}" ]; then
-            return
-        fi
-    else
-        bgChangeFQDN="${Global_YES}"
-        sNewFQDN="${1}"
-    fi
-
-    [[ ${bgChangeFQDN} != "${Global_YES}" ]] && return
-
+#### Must be root
+[[ $EUID -ne 0 ]] && {
+    echo -e "${Migration_MustBeRoot[*]}"
     echo
-    echo -e "${Global_Questions_Message_Hostname}"
-    gfnQuestionGetString NO "${Global_Questions_Hostname}" sNewFQDN "${gsHostNameFqdn}"
-    while [ -z "${sNewFQDN}" ] || [ "$(gfnCheckFQDN "${sNewFQDN}")" -ne 0 ]; do
-        nCheckFqdnResult="$(gfnCheckFQDN "${sNewFQDN}")"
-        case "${nCheckFqdnResult}" in
-            1) echo -e "${Global_Questions_Message_Hostname_NoFqdn}" ;;
-            2) echo -e "${Global_Questions_Message_Hostname_Fqdn_NotPublicIp}" ;;
-        esac
-        gfnQuestionGetString NO "${Global_Questions_Hostname}" sNewFQDN "${sNewFQDN}"
-        if [ "${sNewFQDN}" == "${gsHostNameFqdn}" ]; then
-            echo "Same FQDN, aborted..."
-            exit 1
-        fi
-    done
-
-    #### Update DB
-    log_daemon_msg "Update DB"
-    cmdMySQL 'MySB_db' "UPDATE system SET hostname='${sNewFQDN}' WHERE id_system='1';"
-    gfnStatusLSB
-
-    #### /etc/hostname
-    log_daemon_msg "Update /etc/hostname"
-    hostnamectl set-hostname "${sNewFQDN}"
-    gfnStatusLSB
-
-    #### /etc/hosts
-    log_daemon_msg "Update /etc/hosts"
-    # shellcheck source=inc/funcs_by_script/funcs_MySB_SecurityRules
-    . "${MySB_InstallDir}"/inc/funcs_by_script/funcs_MySB_SecurityRules
-    gfnCreateHostsFile
-    gfnStatusLSB
-
-    #### SSH Key
-    # root
-    log_daemon_msg "SSH Key for user [root]"
-    [[ -f /root/.ssh/id_rsa ]] && mv /root/.ssh/id_rsa /root/.ssh/id_rsa_"${gsHostNameFqdn}"
-    [[ -f /root/.ssh/id_rsa.pub ]] && mv /root/.ssh/id_rsa.pub /root/.ssh/id_rsa.pub_"${gsHostNameFqdn}"
-    [[ ! -f /root/.ssh/id_rsa_"${gsHostNameFqdn}" ]] && mv /root/.ssh/id_rsa_"${gsHostNameFqdn}" /root/.ssh/id_rsa
-    [[ ! -f /root/.ssh/id_rsa.pub_"${gsHostNameFqdn}" ]] && mv /root/.ssh/id_rsa.pub_"${gsHostNameFqdn}" /root/.ssh/id_rsa.pub
-    [[ ! -f /root/.ssh/id_rsa ]] && ssh-keygen -q -t rsa -b 2048 -N "" -f /root/.ssh/id_rsa
-    gfnStatusLSB
-    # all normal users
-    for seedUser in $gsUsersList; do
-        log_daemon_msg "SSH Key for user [$seedUser]"
-        UserEmail=$(cmdMySQL 'MySB_db' "SELECT users_email FROM users WHERE users_ident = '$seedUser';")
-        [[ -f /home/"$seedUser"/.ssh/id_rsa ]] && mv /home/"$seedUser"/.ssh/id_rsa "/home/$seedUser/.ssh/id_rsa_${gsHostNameFqdn}"
-        [[ -f /home/"$seedUser"/.ssh/id_rsa.pub ]] && mv /home/"$seedUser"/.ssh/id_rsa.pub "/home/$seedUser/.ssh/id_rsa.pub_${gsHostNameFqdn}"
-        [[ ! -f /home/"$seedUser"/.ssh/id_rsa_"${gsHostNameFqdn}" ]] && mv "/home/$seedUser/.ssh/id_rsa_${gsHostNameFqdn}" /home/"$seedUser"/.ssh/id_rsa
-        [[ ! -f /home/"$seedUser"/.ssh/id_rsa.pub_"${gsHostNameFqdn}" ]] && mv "/home/$seedUser/.ssh/id_rsa.pub_${gsHostNameFqdn}" /home/"$seedUser"/.ssh/id_rsa.pub
-        [[ ! -f /home/"$seedUser"/.ssh/id_rsa ]] && ssh-keygen -q -t rsa -b 2048 -N "" -f /home/"$seedUser"/.ssh/id_rsa -C "$UserEmail"
-        chown root:"$seedUser" /home/"$seedUser"/.ssh/*
-        chmod 0660 /home/"$seedUser"/.ssh/*
-        [[ ! -f /home/"$seedUser"/.ssh/authorized_keys ]] && touch /home/"$seedUser"/.ssh/authorized_keys
-        chown "$seedUser":"$seedUser" /home/"$seedUser"/.ssh/authorized_keys
-        chmod 0644 /home/"$seedUser"/.ssh/authorized_keys
-        gfnStatusLSB
-    done
-
-    #### Certificates
-    log_daemon_msg "Create new self-signed certificate (please wait)"
-    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/Certificates" 'CreateCACertificate' 'UPGRADE'
-    gfnStatusLSB
-
-    #### Let's Encrypt
-    if [[ ${gbIsInstalled_LetsEncrypt} == "YES" ]]; then
-        log_daemon_msg "Create new Let's Encrypt certificate (please wait)"
-        gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/LetsEncrypt" 'UPGRADE'
-        gfnStatusLSB
-    fi
-
-    #### NginX
-    log_daemon_msg "Reconfigure NginX (please wait)"
-    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/Nginx" 'UPGRADE'
-    gfnStatusLSB
-
-    #### OpenVPN
-    if [ "$gbIsInstalled_OpenVPN" == "YES" ]; then
-        log_daemon_msg "Reconfigure OpenVPN server (please wait)"
-        cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='OpenVPN';"
-        # Backup
-        for sFile in $(echo /etc/openvpn/*"${gsHostNameFqdn}"*); do
-            [ -f "${sFile}" ] && mv "${sFile}" /etc/openvpn/backup/
-        done
-        # Restore
-        for sFile in $(echo /etc/openvpn/backup/*"${sNewFQDN}"*); do
-            [ -f "${sFile}" ] && mv "${sFile}" /etc/openvpn/
-        done
-        gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/OpenVPN" 'server' 'UPGRADE'
-        gfnStatusLSB
-
-        for seedUser in $gsUsersList; do
-            log_daemon_msg "Reconfigure OpenVPN client for user [$seedUser]"
-            # Backup
-            for sFile in $(echo /etc/openvpn/clients/*"${gsHostNameFqdn}"*); do
-                [ -f "${sFile}" ] && mv "${sFile}" /etc/openvpn/clients/backup/
-            done
-            # Restore
-            for sFile in $(echo /etc/openvpn/backup/*"${sNewFQDN}"*); do
-                [ -f "${sFile}" ] && mv "${sFile}" /etc/openvpn/clients/
-            done
-            gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/OpenVPN" 'client' "$seedUser" 'UPGRADE'
-            gfnStatusLSB
-        done
-    fi
-
-    #### Seedbox-Manager
-    if [ "${gbIsInstalled_Manager}" == "YES" ]; then
-        log_daemon_msg "Reconfigure Seedbox-Manager"
-        gfnGetRepoValues 'ruTorrent Plugin Link Manager' &>/dev/null
-        gfnDeleteDirectory 0 "${gsRepoDir}"
-        gfnRepoManageByType
-        sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/${sNewFQDN}:${gsPort_MySB_HTTPS}\/sm\//g;" "${gsRepoDir}"/conf.php
-        gfnStatusLSB
-    fi
-
-    #### Cakebox-Light
-    if [ "${gbIsInstalled_Cakebox}" == "YES" ]; then
-        log_daemon_msg "Reconfigure Cakebox-Light"
-        # ruTorrent Plugin Link Cakebox
-        gfnGetRepoValues 'ruTorrent Plugin Link Cakebox' &>/dev/null
-        gfnDeleteDirectory 0 "${gsRepoDir}"
-        gfnRepoManageByType
-        chown -R www-data:www-data "${gsRepoDir}"
-        sed -i "s/'http:\/\/'.\$host;/'https:\/\/${sNewFQDN}:${gsPort_MySB_HTTPS}\/cb\/';/g;" "${gsRepoDir}"/conf.php
-        sed -i "s/torrents/rtorrent/g;" "${gsRepoDir}"/conf.php
-        # NginX (alias with proxy)
-        # shellcheck disable=SC2001
-        sCakeboxDirEscaped="$(echo "${gsCakeboxDir}" | sed s,/,\\\\\\\/,g)"
-        [[ -L /etc/nginx/sites-enabled/cakebox ]] && rm -f /etc/nginx/sites-enabled/cakebox
-        install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.site-enabled.cakebox.tmpl /etc/nginx/sites-available/cakebox
-        # perl -pi -e "s/<server_name>/${sNewFQDN}/g" /etc/nginx/sites-available/cakebox
-        perl -pi -e "s/<cakebox_rootdir>/${sCakeboxDirEscaped}/g" /etc/nginx/sites-available/cakebox
-        [[ ! -L /etc/nginx/sites-enabled/cakebox ]] && ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox
-        gfnStatusLSB
-    fi
-
-    #### ruTorrent plugins
-    log_daemon_msg "Reconfigure ruTorrent Plugins"
-    # Plugin Fileshare
-    gfnGetRepoValues 'ruTorrent Plugin FileShare' &>/dev/null
-    gfnDeleteDirectory 0 "${gsRepoDir}"
-    gfnRepoManageByType
-    [[ -f "${gsRepoDir}"/conf.php ]] && perl -pi -e "s/http:\/\/mydomain.com\/share.php/https:\/\/${sNewFQDN}:${gsPort_MySB_HTTPS}\/fileshare.php/g" "${gsRepoDir}"/conf.php
-    # Plugin Mediastream
-    gfnGetRepoValues 'ruTorrent Plugin MediaStream' &>/dev/null
-    gfnDeleteDirectory 0 "${gsRepoDir}"
-    gfnRepoManageByType
-    [[ -f "${gsRepoDir}"/conf.php ]] && perl -pi -e "s/http:\/\/mydomain.com\/stream\/view.php/https:\/\/${sNewFQDN}:${gsPort_MySB_HTTPS}\/view/g" "${gsRepoDir}"/conf.php
-    gfnStatusLSB
-
-    #### NextCloud
-    if [ -d "${gsNextCloudDir}" ] && [ -f "${gsNextCloudDir}"/config/config.php ]; then
-        log_daemon_msg "Reconfigure NextCloud"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --on" &>/dev/null
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set trusted_domains 1 --value=${sNewFQDN}:${gsPort_MySB_HTTPS}" &>/dev/null
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set lost_password_link --value=https://${sNewFQDN}:${gsPort_MySB_HTTPS}/?user/change-password.html" &>/dev/null
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set overwritehost --value=${sNewFQDN}:${gsPort_MySB_HTTPS}" &>/dev/null
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off" &>/dev/null
-        gfnStatusLSB
-    fi
-
-    #### Apply rights
-    gfnManageDirAndFiles 'global'
 }
 
-#### Upgrade in progress (web page)
-gfnUpgradeInProgress() {
-    local sRtorrentSessions sSession sServicesToStop sServicesToStart sAllSessions
+#### Link to doc
+echo
+echo -e "${Migration_LinkToDoc}"
+echo
+
+#### New server IP
+echo
+[ -n "${gsNewServerIp}" ] && CHECK_SrvIpAddressExt=$(gfnValidateIP "${gsNewServerIp}")
+while [ "${CHECK_SrvIpAddressExt}" != "${gsNewServerIp}" ] || [ -z "${gsNewServerIp}" ]; do
+    gfnQuestionGetString NO "${Migration_NewServerIp[*]}" gsNewServerIp
+    CHECK_SrvIpAddressExt=$(gfnValidateIP "${gsNewServerIp}")
+done
+
+#### New server SSH port
+echo
+[ -z "${gsNewServerSshPort}" ] && gfnQuestionGetString NO "${Migration_NewServerSshPort[*]}" gsNewServerSshPort "${gsPort_SSH}"
+
+#### VARs
+sLogFile="/tmp/migrate.log"
+sMySqlOptions=(--wait "--connect-timeout=10" --skip-column-names)
+sRsyncOptions=(-rlptgoDv4PHz --append --delete --delete-before)
+sSshOptions=(-p "${gsNewServerSshPort}" -c aes128-ctr -x -o "Compression=yes" -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -E "${sLogFile}")
+sScpOptions=(-P "${gsNewServerSshPort}" -o "Compression=yes" -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null")
+: >"${sLogFile}"
+
+#### Ping remote server
+if (! ping -c3 ${gsNewServerIp} >/dev/null); then
+    echo
+    echo -e "${Migration_AddServerAddressOld[*]}"
+    echo -e "${Migration_AddServerAddressNew[*]}" | sed "s/##gsNewServerIp##/${gsNewServerIp}/g;"
+    echo
+    gfnEndingScript 0
+fi
+
+#### SSH key
+{
+    echo "# ${gsHostNameFqdn}"
+    cat /root/.ssh/id_rsa.pub
+    echo
+} >/tmp/remote_authorized_keys
+if (! sshpass -p "" scp ${sScpOptions[*]} /tmp/remote_authorized_keys root@${gsNewServerIp}:/tmp/remote_authorized_keys 2>>"${sLogFile}"); then
+    echo
+    echo -e "${Migration_CopyPubKey[*]}"
+    echo -e "${Migration_BlankLine[*]}"
+    echo
+    gfnEndingScript 0
+fi
+
+#### Synchro type
+sChoices=('check' 'before' 'after' 'reset_passwd' 'lock_old' 'unlock_old' 'force_rename')
+if (! grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
+    echo
+    gfnQuestionGetString NO "${Migration_SynchroType[*]}" gsSynchroType
+    while (! grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); do
+        gfnQuestionGetString NO "${Migration_SynchroType[*]}" gsSynchroType
+    done
+fi
+
+#### Get remote config
+if (ssh ${sSshOptions[*]} root@${gsNewServerIp} "grep 'MySB_InstallDir=' /etc/MySB/config" >/tmp/MySB_remote_config); then
+    perl -pi -e "s/MySB_InstallDir/MySB_RemoteDir/g" /tmp/MySB_remote_config
+    echo "export MySB_RemoteDir" >>/tmp/MySB_remote_config
+    . /tmp/MySB_remote_config
+else
+    gfnEndingScript 0
+fi
+
+#### Table system
+function fnUpdateSystemTable() {
+    local sRequestValues bIpRestriction bFileRecycling bPglEmailStats bPglWatchdogMail bLogwatch sPublicTrackerAllow bBlockAnnouncers bAnnouncersUdp bAnnouncersCheck
+    local nAvailableSpace bRtActive sRtModel sRtTva sRtGlobalCost sRtCostTva sRtNbUsers sRtPricePerUsers sRtMethod
+
+    sRequestValues="$(cmdMySQL 'MySB_db' "SELECT ip_restriction,files_recycling,pgl_email_stats,pgl_watchdog_email,logwatch,public_tracker_allow,block_annoncers,annoncers_udp,annoncers_check FROM system WHERE id_system='1';" | sed 's/\t/|/g;')"
+    bIpRestriction="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[1]}')"
+    bFileRecycling="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
+    bPglEmailStats="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[3]}')"
+    bPglWatchdogMail="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[4]}')"
+    bLogwatch="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[5]}')"
+    sPublicTrackerAllow="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[6]}')"
+    bBlockAnnouncers="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[7]}')"
+    bAnnouncersUdp="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[8]}')"
+    bAnnouncersCheck="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[9]}')"
+
+    nAvailableSpace=$(gfnQuotaSpaceAvailable)
+
+    ssh ${sSshOptions[*]} root@${gsNewServerIp} "
+        mysql --database=MySB_db ${sMySqlOptions[*]} -e \"UPDATE system SET quota_default='${nAvailableSpace}', ip_restriction='${bIpRestriction}', files_recycling='${bFileRecycling}' WHERE id_system='1';\" -v
+        mysql --database=MySB_db ${sMySqlOptions[*]} -e \"UPDATE system SET pgl_email_stats='${bPglEmailStats}', pgl_watchdog_email='${bPglWatchdogMail}', logwatch='${bLogwatch}' WHERE id_system='1';\" -v
+        mysql --database=MySB_db ${sMySqlOptions[*]} -e \"UPDATE system SET public_tracker_allow='${sPublicTrackerAllow}', block_annoncers='${bBlockAnnouncers}', annoncers_udp='${bAnnouncersUdp}', annoncers_check='${bAnnouncersCheck}' WHERE id_system='1';\" -v
+    "
+
+    sRequestValues="$(cmdMySQL 'MySB_db' "SELECT rt_active,rt_model,rt_tva,rt_global_cost,rt_cost_tva,rt_nb_users,rt_price_per_users,rt_method FROM system WHERE id_system='1';" | sed 's/\t/|/g;')"
+    bRtActive="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[1]}')"
+    sRtModel="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
+    sRtTva="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[3]}')"
+    sRtGlobalCost="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[4]}')"
+    sRtCostTva="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[5]}')"
+    sRtNbUsers="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[6]}')"
+    sRtPricePerUsers="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[7]}')"
+    sRtMethod="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[8]}')"
+
+    ssh ${sSshOptions[*]} root@${gsNewServerIp} "
+        mysql --database=MySB_db ${sMySqlOptions[*]} -e \"UPDATE system SET rt_active='${bRtActive}', rt_model='${sRtModel}', rt_tva='${sRtTva}', rt_global_cost='${sRtGlobalCost}', rt_cost_tva='${sRtCostTva}', rt_nb_users='${sRtNbUsers}', rt_price_per_users='${sRtPricePerUsers}', rt_method='${sRtMethod}' WHERE id_system='1';\" -v
+        . ${MySB_RemoteDir}/inc/vars
+        . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_MySB_CreateUser
+        gfnQuotaSpaceUsed '-v'
+        gfnManageQuota '-v'
+    "
+}
+
+#### Users
+function fnCreateRemoteUsers() {
+    local sRequestValues nFnUserQuota sFnUserAccountType sUserExist sFnUsersList sFnUser sQuota
+
+    clear
     gfnListCountUsers 'normal'
+    sFnUsersList="${gsUsersList}"
+    for sFnUser in ${sFnUsersList}; do
+        echo -e "${Migration_CreateUser[*]} ${CGREEN}${sFnUser}${CEND}"
+        sleep 2
 
-    case "${1}" in
-        "on")
-            sServicesToStop="nginx cron"
-            # Nextcloud
-            [[ ${gbIsInstalled_NextCloud} == "YES" ]] && su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --on" &>/dev/null
-            # Disable some Cron jobs
-            gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/Cron" 'STOP'
-            # rTorrent sessions
-            sRtorrentSessions=$(find /etc/init.d/ -type f -name 'rtorrent-*' | cut -d '/' -f 4)
-            for sSession in ${sRtorrentSessions}; do
-                [[ -z ${sAllSessions} ]] && sAllSessions="${sSession}" || sAllSessions="${sAllSessions} ${sSession}"
-            done
-            sServicesToStop="${sServicesToStop} ${sAllSessions}"
-            # sFTP & FTPs
-            sServicesToStop="${sServicesToStop} vsftpd"
-            for sUser in ${gsUsersList}; do
-                deluser "${sUser}" MySB_users
-            done
-            # Stopping some services like Plex or OpenVPN
-            [[ ${gbIsInstalled_OpenVPN} == "YES" ]] && sServicesToStop="${sServicesToStop} openvpn"
-            [[ ${gbIsInstalled_PlexMedia} == "YES" ]] && sServicesToStop="${sServicesToStop} plexmediaserver"
-            [[ ${gbIsInstalled_Tautulli} == "YES" ]] && sServicesToStop="${sServicesToStop} tautulli"
-            # Stop services
-            gfnManageServices 'stop' "${sServicesToStop}"
-            # NginX
-            rm -f /etc/nginx/sites-enabled/WiP
-            rm -f /etc/nginx/sites-enabled/default
-            rm -f /etc/nginx/sites-enabled/cakebox
-            install -o root -g root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.site-enabled.WiP.tmpl /etc/nginx/sites-available/WiP
-            perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /etc/nginx/sites-available/WiP
-            perl -pi -e "s/<gsPort_MySB_HTTPS>/${gsPort_MySB_HTTPS}/g" /etc/nginx/sites-available/WiP
-            perl -pi -e "s/<gsPort_System_HTTP>/${gsPort_System_HTTP}/g" /etc/nginx/sites-available/WiP
-            perl -pi -e "s/<server_name>/${gsHostNameFqdn}/g" /etc/nginx/sites-available/WiP
-            [[ ! -L /etc/nginx/sites-enabled/WiP ]] && ln -s /etc/nginx/sites-available/WiP /etc/nginx/sites-enabled/WiP
-            # Start services
-            gfnManageServices 'start' "nginx ssh"
-            ;;
-        "off")
-            # Nextcloud
-            [[ ${gbIsInstalled_NextCloud} == "YES" ]] && su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off" &>/dev/null
-            # Enable some Cron jobs
-            gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/Cron" 'INIT'
-            # rTorrent sessions
-            sRtorrentSessions=$(find /etc/init.d/ -type f -name 'rtorrent-*' | cut -d '/' -f 4)
-            for sSession in ${sRtorrentSessions}; do
-                [[ -z ${sAllSessions} ]] && sAllSessions="${sSession}" || sAllSessions="${sAllSessions} ${sSession}"
-            done
-            sServicesToStop="${sServicesToStop} ${sAllSessions}"
-            # sFTP & FTPs
-            sServicesToStop="${sServicesToStop} vsftpd"
-            for sUser in ${gsUsersList}; do
-                usermod -a -G MySB_users "${sUser}"
-            done
-            # Starting some services like Plex or OpenVPN
-            [[ ${gbIsInstalled_OpenVPN} == "YES" ]] && sServicesToStart="${sServicesToStart} openvpn"
-            [[ ${gbIsInstalled_PlexMedia} == "YES" ]] && sServicesToStart="${sServicesToStart} plexmediaserver"
-            [[ ${gbIsInstalled_Tautulli} == "YES" ]] && sServicesToStart="${sServicesToStart} tautulli"
-            # Stop services
-            gfnManageServices 'stop' "nginx ${binPhpService}"
-            # NginX
-            rm -f /etc/nginx/sites-enabled/WiP
-            [[ ! -L /etc/nginx/sites-enabled/default ]] && ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
-            [[ ! -L /etc/nginx/sites-enabled/cakebox ]] && ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox
-            # Start services
-            gfnManageServices 'start' "${binPhpService} nginx cron ssh ${sServicesToStart}"
-            ;;
-    esac
+        # User infos
+        sRequestValues="$(cmdMySQL 'MySB_db' "SELECT quota,account_type FROM users WHERE users_ident='${sFnUser}';" | sed 's/\t/|/g;')"
+        nFnUserQuota="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[1]}')"
+        sFnUserAccountType="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
+
+        # Create users accounts if needed (with main user mail)
+        if [ "${sFnUser}" != "${gsMainUserName}" ]; then
+            sUserExist="$(ssh ${sSshOptions[*]} root@${gsNewServerIp} "getent passwd ${sFnUser}")"
+            if [ -z "${sUserExist}" ]; then
+                sQuota="$(echo "${nFnUserQuota}" | awk '{ gb = $1 / 1024 / 1024 ; print gb }')" # KB to GB
+                sQuota="${sQuota//./,}"
+                ssh ${sSshOptions[*]} root@"${gsNewServerIp}" "
+                    bash ${MySB_RemoteDir}/bin/MySB_CreateUser \"${sFnUser}\" \"1\" \"0\" \"${gsMainUserEmail}\" \"${sFnUserAccountType}\" \"${sQuota}\" 'APPLYCONFIG'
+                "
+            fi
+        fi
+        ssh ${sSshOptions[*]} root@${gsNewServerIp} "
+            mysql --database=MySB_db ${sMySqlOptions[*]} -e \"UPDATE users SET quota='${nFnUserQuota}' WHERE users_ident='${sFnUser}';\" -v
+            . ${MySB_RemoteDir}/inc/vars
+            . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_MySB_CreateUser
+            gfnQuotaSpaceUsed '-v'
+            gfnManageQuota '-v'
+        "
+    done
 }
 
+function fnSynchroUsers() {
+    gfnListCountUsers 'normal'
+    for sUser in ${gsUsersList}; do
+        clear
+        echo -e "${Migration_User[*]} ${CGREEN}${sUser}${CEND}"
+        sleep 2
+
+        # /etc/nginx/passwd/users
+        scp ${sScpOptions[*]} "/etc/nginx/passwd/MySB_${sUser}" root@"${gsNewServerIp}:/etc/nginx/passwd/MySB_${sUser}" 2>>"${sLogFile}"
+        # /home
+        time rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /home/"${sUser}"/ root@"${gsNewServerIp}":/home/"${sUser}"/
+    done
+}
+
+function fnWebApps()  {
+    local sResult
+
+    clear
+    # Seedbox-Manager
+    sResult="$(ssh ${sSshOptions[*]} root@${gsNewServerIp} "[ -d ${MySB_RemoteDir}/web/apps/sm/conf/users/ ] && echo 'ok'")"
+    if [ -d "${MySB_InstallDir}"/web/apps/sm/conf/users/ ] && [ "${sResult}" == "ok" ]; then
+        echo -e "${Migration_WebApps[*]} ${CGREEN}Seedbox-Manager${CEND}"
+        sleep 2
+        rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" "${MySB_InstallDir}"/web/apps/sm/conf/users/ root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/sm/conf/users/
+    fi
+    # Cakebox-Light
+    sResult="$(ssh ${sSshOptions[*]} root@${gsNewServerIp} "[ -d ${MySB_RemoteDir}/web/apps/cb/config/ ] && echo 'ok'")"
+    if [ -d "${MySB_InstallDir}"/web/apps/cb/config/ ] && [ "${sResult}" == "ok" ]; then
+        echo -e "${Migration_WebApps[*]} ${CGREEN}Cakebox-Light${CEND}"
+        sleep 2
+        rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" "${MySB_InstallDir}"/web/apps/cb/config/ root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/cb/config/
+    fi
+    # ruTorrent
+    echo -e "${Migration_WebApps[*]} ${CGREEN}ruTorrent${CEND}"
+    sleep 2
+    rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" "${MySB_InstallDir}"/web/apps/ru/conf/users/ root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/ru/conf/users/
+    rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" "${MySB_InstallDir}"/web/apps/ru/share/users/ root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/ru/share/users/
+}
+
+function fnResetPassword() {
+    gfnListCountUsers 'normal'
+    for sUser in ${gsUsersList}; do
+        # Init password required
+        cmdMySQL 'MySB_db' "UPDATE users SET init_password='1' WHERE users_ident='${sUser}';" -v
+        gfnSendMail "${Migration_ResetUsersPassword[*]}" "${sUser}" "upgrade"
+    done
+}
+
+#### Synchro Plex
+function fnSynchroPlex() {
+    local sPreferencesFile sRemotePrimaryInet
+
+    if [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
+        clear
+        echo -e "${Migration_Plex[*]}"
+        sleep 2
+
+        ## Stop services (local & remote)
+        [ "${gsSynchroType}" == "after" ] && gfnManageServices stop "cron tautulli plexmediaserver"
+        ssh ${sSshOptions[*]} root@${gsNewServerIp} "
+            service tautulli stop
+            service plexmediaserver stop
+        "
+
+        ## Synchro Plex datas
+        sPreferencesFile='/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml'
+        # [ "${gsSynchroType}" == "after" ] && perl -pi -e 's/"MySB"/"MySB_old"/g' "${sPreferencesFile}"
+
+        # Remote Preferences.xml
+        # scp ${sScpOptions[*]} root@"${gsNewServerIp}:${sPreferencesFile}" /tmp/plex_remote_preferences 2>>"${sLogFile}"
+        # if [ "${gsSynchroType}" == "after" ]; then
+        #     perl -pi -e 's/"MySB_new"/"MySB"/g' /tmp/plex_remote_preferences
+        # else
+        #     perl -pi -e 's/"MySB"/"MySB_new"/g' /tmp/plex_remote_preferences
+        # fi
+
+        sRemotePrimaryInet="$(ssh ${sSshOptions[*]} root@${gsNewServerIp} "mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N -e \"SELECT primary_inet FROM system WHERE id_system='1';\"")"
+        perl -pi -e 's/\"\/>/\" \/>/g' "${sPreferencesFile}"
+        sNewPreferences=()
+        for sParam in $(cat "${sPreferencesFile}"); do
+            case "$(echo "${sParam}" | cut -d '=' -f 1)" in
+                'OldestPreviousVersion') sNewPreferences+=("${sParam}") ;;
+                'MachineIdentifier') sNewPreferences+=("${sParam}") ;;
+                'ProcessedMachineIdentifier') sNewPreferences+=("${sParam}") ;;
+                'AnonymousMachineIdentifier') sNewPreferences+=("${sParam}") ;;
+                'MetricsEpoch') sNewPreferences+=('MetricsEpoch="1"') ;;
+                'AcceptedEULA') sNewPreferences+=('AcceptedEULA="1"') ;;
+                'FriendlyName') sNewPreferences+=('FriendlyName="MySB"') ;;
+                'PublishServerOnPlexOnlineKey') sNewPreferences+=('PublishServerOnPlexOnlineKey="1"') ;;
+                'PlexOnlineToken') sNewPreferences+=("${sParam}") ;;
+                'PlexOnlineUsername') sNewPreferences+=("${sParam}") ;;
+                'PlexOnlineMail') sNewPreferences+=("${sParam}") ;;
+                'PlexOnlineHome') sNewPreferences+=('PlexOnlineHome="1"') ;;
+                'DlnaEnabled') sNewPreferences+=('DlnaEnabled="0"') ;;
+                'CertificateVersion') sNewPreferences+=("${sParam}") ;;
+                'PubSubServer') sNewPreferences+=("${sParam}") ;;
+                'PubSubServerRegion') sNewPreferences+=("${sParam}") ;;
+                'PubSubServerPing') sNewPreferences+=("${sParam}") ;;
+                'FSEventLibraryPartialScanEnabled') sNewPreferences+=('FSEventLibraryPartialScanEnabled="1"') ;;
+                'FSEventLibraryUpdatesEnabled') sNewPreferences+=('FSEventLibraryUpdatesEnabled="1"') ;;
+                'ScheduledLibraryUpdateInterval') sNewPreferences+=('ScheduledLibraryUpdateInterval="1800"') ;;
+                'ScheduledLibraryUpdatesEnabled') sNewPreferences+=('ScheduledLibraryUpdatesEnabled="1"') ;;
+                'GdmEnabled') sNewPreferences+=('GdmEnabled="0"') ;;
+                'PreferredNetworkInterface') sNewPreferences+=("PreferredNetworkInterface=\"${sRemotePrimaryInet}\"") ;;
+                'secureConnections') sNewPreferences+=("${sParam}") ;;
+                'DlnaReportTimeline') sNewPreferences+=('DlnaReportTimeline="0"') ;;
+                'LanguageInCloud') sNewPreferences+=("${sParam}") ;;
+                'GracenoteUser') sNewPreferences+=("${sParam}") ;;
+                'EnableIPv6') sNewPreferences+=('EnableIPv6="0"') ;;
+            esac
+        done
+        {
+            echo '<?xml version="1.0" encoding="utf-8"?>'
+            echo "<Preferences ${sNewPreferences[*]} />"
+        } >/tmp/plex_remote_preferences
+        chown plex:plex /tmp/plex_remote_preferences
+
+        rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /var/lib/plexmediaserver/ root@"${gsNewServerIp}":/var/lib/plexmediaserver/
+        rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /usr/lib/plexmediaserver/ root@"${gsNewServerIp}":/usr/lib/plexmediaserver/
+        scp ${sScpOptions[*]} /tmp/plex_remote_preferences root@"${gsNewServerIp}:'${sPreferencesFile}'" 2>>"${sLogFile}"
+
+        # Synchro Tautulli datas
+        scp ${sScpOptions[*]} "${MySB_InstallDir}"/web/apps/tt/tautulli.db root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/tt/tautulli.db 2>>"${sLogFile}"
+
+        # Start services (local & remote)
+        if [ "${gsSynchroType}" == "after" ]; then
+            ssh ${sSshOptions[*]} root@${gsNewServerIp} "
+                service plexmediaserver start
+                service tautulli start
+            "
+        else
+            gfnManageServices start "cron plexmediaserver tautulli"
+        fi
+    fi
+}
+
+#### Synchro NextCloud
+function fnSynchroNextCloud() {
+    clear
+    echo -e "${Migration_NextCloud[*]}"
+    sleep 2
+
+    [ "${gbIsInstalled_NextCloud}" == "YES" ] && time rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /home/nextcloud/ root@"${gsNewServerIp}":/home/nextcloud/
+}
+
+#### Synchro Let's Encrypt
+function fnSynchroLetsEncrypt() {
+    clear
+    echo -e "${Migration_LetsEncrypt[*]}"
+    sleep 2
+
+    rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /etc/letsencrypt/live/"${gsHostNameFqdn}" root@"${gsNewServerIp}":/etc/letsencrypt/live/
+}
+
+#### Synchro /opt/MySB/ssl/trackers/
+function fnSynchroTrackersCertificates() {
+    clear
+    echo -e "${Migration_TrackersCert[*]}"
+    sleep 2
+
+    ssh ${sSshOptions[*]} root@${gsNewServerIp} "mkdir -p ${MySB_RemoteDir}/ssl/trackers/"
+    scp ${sScpOptions[*]} "${MySB_InstallDir}"/ssl/trackers/*.pem root@"${gsNewServerIp}":"${MySB_RemoteDir}"/ssl/trackers/ 2>>"${sLogFile}"
+    ssh ${sSshOptions[*]} root@${gsNewServerIp} '
+        c_rehash ${MySB_RemoteDir}/ssl/trackers/
+        c_rehash /etc/ssl/certs/
+        update-ca-certificates --fresh
+    '
+}
+
+#### Synchro databases
+function fnDatabases() {
+    local sRequestValues nDbSize
+
+    clear
+    echo -e "${Migration_Databases[*]} ${CGREEN}${sUser}${CEND}"
+    sleep 2
+
+    # SQLite Blocklists.sq3
+    scp ${sScpOptions[*]} "${MySB_InstallDir}"/db/Blocklists.sq3 root@"${gsNewServerIp}":"${MySB_RemoteDir}"/db/Blocklists.sq3 2>>"${sLogFile}"
+
+    # Dump NextCloud_db
+    [ "${gbIsInstalled_NextCloud}" == "YES" ] && {
+        nDbSize=$(mysql --database=NextCloud_db ${sMySqlOptions[*]} --skip-column-names -e "SELECT ROUND(SUM(data_length) / 1024 / 1024, 0) FROM information_schema.TABLES WHERE table_schema='NextCloud_db';")
+        mysqldump --single-transaction --order-by-primary --compress NextCloud_db  | pv --progress --size "${nDbSize}"m >/tmp/NextCloud_db.dump.sql
+    }
+    # Dump MySB_db
+    nDbSize=$(mysql --database=MySB_db ${sMySqlOptions[*]} --skip-column-names -e "SELECT ROUND(SUM(data_length) / 1024 / 1024, 0) FROM information_schema.TABLES WHERE table_schema='MySB_db';")
+    mysqldump --single-transaction --order-by-primary --compress MySB_db \
+        users \
+        users_addresses \
+        users_crontab \
+        users_history \
+        users_rtorrent_cfg \
+        trackers_list \
+        trackers_list_ipv4 \
+        tracking_rent_history \
+        tracking_rent_options \
+        tracking_rent_payments \
+        blocklists \
+        dnscrypt_config \
+        torrents \
+        users_scripts | pv --progress --size "${nDbSize}"m >/tmp/MySB_db.dump.sql
+
+    if (scp ${sScpOptions[*]} /tmp/*.dump.sql root@"${gsNewServerIp}":/tmp/ 2>>"${sLogFile}"); then
+        # MySB
+        ssh ${sSshOptions[*]} root@${gsNewServerIp} '
+            mysql --database=MySB_db ${sMySqlOptions[*]} -e "SET GLOBAL FOREIGN_KEY_CHECKS=0; SET @TRIGGER_CHECKS=0;" -v
+            aTables=(users users_addresses users_crontab users_history users_rtorrent_cfg users_scripts)
+            for sTable in "${aTables[@]}"; do
+                mysql --database=MySB_db ${sMySqlOptions[*]} -e "TRUNCATE TABLE ${sTable};" -v
+            done
+            aTables=(trackers_list trackers_list_ipv4 tracking_rent_history tracking_rent_options tracking_rent_payments blocklists dnscrypt_config torrents)
+            for sTable in "${aTables[@]}"; do
+                mysql --database=MySB_db ${sMySqlOptions[*]} -e "TRUNCATE TABLE ${sTable};" -v
+            done
+            pv /tmp/MySB_db.dump.sql | mysql --database=MySB_db ${sMySqlOptions[*]}
+            mysql --database=MySB_db ${sMySqlOptions[*]} -e "SET GLOBAL FOREIGN_KEY_CHECKS=1;; SET @TRIGGER_CHECKS=1;" -v
+        '
+        # NextCloud
+        if [ "${gbIsInstalled_NextCloud}" == "YES" ]; then
+            ssh ${sSshOptions[*]} root@${gsNewServerIp} '
+                mysql -Nse "show tables" NextCloud_db | while read table; do mysql -v -e "TRUNCATE TABLE $table;" NextCloud_db; done
+                pv /tmp/NextCloud_db.dump.sql | mysql --database=NextCloud_db ${sMySqlOptions[*]}
+            '
+        fi
+    fi
+}
+
+#### /var/www/html/
+function fnVarWww() {
+    if [ -n "${gsPort_NginX_HTTP}" ] || [ -n "${gsPort_NginX_HTTPS}" ]; then
+        clear
+        echo -e "${Migration_VarWww[*]}"
+        sleep 2
+
+        ssh ${sSshOptions[*]} root@${gsNewServerIp} "mysql --database=MySB_db ${sMySqlOptions[*]} -e \"UPDATE services SET port_tcp2='${gsPort_NginX_HTTP}', port_tcp3='${gsPort_NginX_HTTPS}' WHERE serv_name='NginX';\" -v"
+        rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /var/www/html/ root@"${gsNewServerIp}":/var/www/html/
+    fi
+}
+
+case "${gsSynchroType}" in
+    'check') echo -e "${Migration_CheckOK[*]}" ;;
+    'before' | 'after')
+        if [ "${gsSynchroType}" == "after" ]; then
+            [ ! -f "${MySB_InstallDir}"/files/migrate_before.lock ] && {
+                echo
+                echo -e "${Migration_ExecuteBefore[*]}"
+                echo
+                gfnEndingScript 0
+            }
+            . ${MySB_InstallDir}/inc/funcs_by_script/funcs_Upgrade
+            gfnUpgradeInProgress "on"
+        fi
+        ssh ${sSshOptions[*]} root@${gsNewServerIp} "
+            . ${MySB_RemoteDir}/inc/vars
+            . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_Upgrade
+            gfnUpgradeInProgress off
+        "
+        # fnUpdateSystemTable
+        # fnCreateRemoteUsers
+        ssh ${sSshOptions[*]} root@${gsNewServerIp} "
+            . ${MySB_RemoteDir}/inc/vars
+            . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_Upgrade
+            gfnUpgradeInProgress on
+        "
+        fnSynchroPlex
+        # fnSynchroTrackersCertificates
+        # fnSynchroLetsEncrypt
+        # fnVarWww
+        # fnWebApps
+        # fnSynchroNextCloud
+        # fnSynchroUsers
+        # fnDatabases
+        ssh ${sSshOptions[*]} root@${gsNewServerIp} "
+            . ${MySB_RemoteDir}/inc/vars
+            . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_Upgrade
+            . ${MySB_RemoteDir}/inc/funcs_by_script/funcs_MySB_CreateUser
+            gfnManageQuota '-v'
+            bash ${MySB_RemoteDir}/upgrade/Migration.bsh 'force_rename'
+            [ \"${gsSynchroType}\" == \"after\" ] && gfnUpgradeInProgress off
+        "
+        touch "${MySB_InstallDir}"/files/migrate_before.lock
+        gfnSendMail "${Migration_SyncBeforeDone[*]}" "${gsMainUserName}" "migrate_begore"
+        ;;
+    'lock_old')
+        . ${MySB_InstallDir}/inc/vars
+        . ${MySB_InstallDir}/inc/funcs_by_script/funcs_Upgrade
+        gfnUpgradeInProgress on
+        ;;
+    'unlock_old')
+        . ${MySB_InstallDir}/inc/vars
+        . ${MySB_InstallDir}/inc/funcs_by_script/funcs_Upgrade
+        gfnUpgradeInProgress off
+        ;;
+    'force_rename')
+        #### Seedbox-Manager
+        if [ "${gbIsInstalled_Manager}" == "YES" ]; then
+            log_daemon_msg "Reconfigure Seedbox-Manager"
+            gfnGetRepoValues 'ruTorrent Plugin Link Manager' &>/dev/null
+            gfnDeleteDirectory 0 "${gsRepoDir}"
+            gfnRepoManageByType
+            sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/${sNewFQDN}:${gsPort_MySB_HTTPS}\/sm\//g;" "${gsRepoDir}"/conf.php
+            gfnStatusLSB
+        fi
+
+        #### Cakebox-Light
+        if [ "${gbIsInstalled_Cakebox}" == "YES" ]; then
+            log_daemon_msg "Reconfigure Cakebox-Light"
+            # ruTorrent Plugin Link Cakebox
+            gfnGetRepoValues 'ruTorrent Plugin Link Cakebox' &>/dev/null
+            gfnDeleteDirectory 0 "${gsRepoDir}"
+            gfnRepoManageByType
+            chown -R www-data:www-data "${gsRepoDir}"
+            sed -i "s/'http:\/\/'.\$host;/'https:\/\/${sNewFQDN}:$gsPort_MySB_HTTPS\/cb\/';/g;" "${gsRepoDir}"/conf.php
+            sed -i "s/torrents/rtorrent/g;" "${gsRepoDir}"/conf.php
+            # NginX (alias with proxy)
+            # shellcheck disable=SC2001
+            sCakeboxDirEscaped="$(echo "${gsCakeboxDir}" | sed s,/,\\\\\\\/,g)"
+            [[ -L /etc/nginx/sites-enabled/cakebox ]] && rm -f /etc/nginx/sites-enabled/cakebox
+            install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.site-enabled.cakebox.tmpl /etc/nginx/sites-available/cakebox
+            # perl -pi -e "s/<server_name>/${sNewFQDN}/g" /etc/nginx/sites-available/cakebox
+            perl -pi -e "s/<cakebox_rootdir>/${sCakeboxDirEscaped}/g" /etc/nginx/sites-available/cakebox
+            [[ ! -L /etc/nginx/sites-enabled/cakebox ]] && ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox
+            gfnStatusLSB
+        fi
+
+        #### ruTorrent plugins
+        log_daemon_msg "Reconfigure ruTorrent Plugins"
+        # Plugin Fileshare
+        gfnGetRepoValues 'ruTorrent Plugin FileShare' &>/dev/null
+        gfnDeleteDirectory 0 "${gsRepoDir}"
+        gfnRepoManageByType
+        [[ -f "${gsRepoDir}"/conf.php ]] && perl -pi -e "s/http:\/\/mydomain.com\/share.php/https:\/\/${sNewFQDN}:$gsPort_MySB_HTTPS\/fileshare.php/g" "${gsRepoDir}"/conf.php
+        # Plugin Mediastream
+        gfnGetRepoValues 'ruTorrent Plugin MediaStream' &>/dev/null
+        gfnDeleteDirectory 0 "${gsRepoDir}"
+        gfnRepoManageByType
+        [[ -f "${gsRepoDir}"/conf.php ]] && perl -pi -e "s/http:\/\/mydomain.com\/stream\/view.php/https:\/\/${sNewFQDN}:$gsPort_MySB_HTTPS\/view/g" "${gsRepoDir}"/conf.php
+        gfnStatusLSB
+
+        #### Apply rights
+        gfnManageDirAndFiles 'global'
+        ;;
+    'reset_passwd')
+        fnResetPassword
+        ;;
+esac
+
+# Log
+sed -i '/Permanently added/d' "${sLogFile}"
+cat "${sLogFile}"
+
+# -----------------------------------------
+# shellcheck source=inc/includes_after
+source "$(dirname "$0")"/../inc/includes_after
+# -----------------------------------------
 ##################### LAST LINE ######################################
