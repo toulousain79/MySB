@@ -222,11 +222,12 @@ gfnChangeFQDN() {
 
 #### Upgrade in progress (web page)
 gfnUpgradeInProgress() {
-    local sRtorrentSessions sSession sServicesToStop sAllSessions
-    sServicesToStop="nginx cron"
+    local sRtorrentSessions sSession sServicesToStop sServicesToStart sAllSessions
+    gfnListCountUsers 'all'
 
     case "${1}" in
         "on")
+            sServicesToStop="nginx cron"
             # Nextcloud
             [[ ${gbIsInstalled_NextCloud} == "YES" ]] && su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --on" &>/dev/null
             # Disable some Cron jobs
@@ -237,6 +238,11 @@ gfnUpgradeInProgress() {
                 [[ -z ${sAllSessions} ]] && sAllSessions="${sSession}" || sAllSessions="${sAllSessions} ${sSession}"
             done
             sServicesToStop="${sServicesToStop} ${sAllSessions}"
+            # sFTP & FTPs
+            sServicesToStop="${sServicesToStop} vsftpd"
+            for sUser in ${gsUsersList}; do
+                deluser "${sUser}" MySB_users
+            done
             # Stopping some services like Plex or OpenVPN
             [[ ${gbIsInstalled_OpenVPN} == "YES" ]] && sServicesToStop="${sServicesToStop} openvpn"
             [[ ${gbIsInstalled_PlexMedia} == "YES" ]] && sServicesToStop="${sServicesToStop} plexmediaserver"
@@ -254,17 +260,36 @@ gfnUpgradeInProgress() {
             perl -pi -e "s/<server_name>/${gsHostNameFqdn}/g" /etc/nginx/sites-available/WiP
             [[ ! -L /etc/nginx/sites-enabled/WiP ]] && ln -s /etc/nginx/sites-available/WiP /etc/nginx/sites-enabled/WiP
             # Start services
-            gfnManageServices 'start' "nginx"
+            gfnManageServices 'start' "nginx ssh"
             ;;
         "off")
             # Nextcloud
             [[ ${gbIsInstalled_NextCloud} == "YES" ]] && su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off" &>/dev/null
-            gfnManageServices 'stop' "nginx $binPhpService"
+            # Enable some Cron jobs
+            gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/Cron" 'INIT'
+            # rTorrent sessions
+            sRtorrentSessions=$(find /etc/init.d/ -type f -name 'rtorrent-*' | cut -d '/' -f 4)
+            for sSession in ${sRtorrentSessions}; do
+                [[ -z ${sAllSessions} ]] && sAllSessions="${sSession}" || sAllSessions="${sAllSessions} ${sSession}"
+            done
+            sServicesToStop="${sServicesToStop} ${sAllSessions}"
+            # sFTP & FTPs
+            sServicesToStop="${sServicesToStop} vsftpd"
+            for sUser in ${gsUsersList}; do
+                usermod -a -G MySB_users "${sUser}"
+            done
+            # Starting some services like Plex or OpenVPN
+            [[ ${gbIsInstalled_OpenVPN} == "YES" ]] && sServicesToStart="${sServicesToStart} openvpn"
+            [[ ${gbIsInstalled_PlexMedia} == "YES" ]] && sServicesToStart="${sServicesToStart} plexmediaserver"
+            [[ ${gbIsInstalled_Tautulli} == "YES" ]] && sServicesToStart="${sServicesToStart} tautulli"
+            # Stop services
+            gfnManageServices 'stop' "nginx ${binPhpService}"
+            # NginX
             rm -f /etc/nginx/sites-enabled/WiP
             [[ ! -L /etc/nginx/sites-enabled/default ]] && ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
             [[ ! -L /etc/nginx/sites-enabled/cakebox ]] && ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox
-            gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/Cron" 'INIT'
-            gfnManageServices 'start' "$binPhpService nginx cron"
+            # Start services
+            gfnManageServices 'start' "${binPhpService} nginx cron ssh ${sServicesToStart}"
             ;;
     esac
 }

@@ -25,16 +25,6 @@ source "$(dirname "$0")"/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-# Autorisations d'accès bidirectionnel
-# 1/ ajouter l'adresse du nouveau serveur dans la liste des adresses autorisées sur l'ancien serveur
-# 2/ ajouter l'adresse de l'ancien serveur dans la liste des adresses autorisées sur le nouveau serveur
-# 3/ ajouter la clé publique de l'ancien serveur vers le nouveau
-# 4/ transfert des données
-# 5/ modifier l'adresse IP du FQDN par celle du nouveau serveur
-# 6/ changer le nom du nouveau serveur: https://mysb.gitbook.io/doc/support/faq#changer-le-nom-de-votre-serveur
-
-# screen -dmS MySB_Migrate /bin/bash /opt/MySB/upgrade/Migrate.bsh before 5.9.50.70 8192
-
 #### VARs
 [ -n "${1}" ] && gsSynchroType="${1}"
 [ -n "${2}" ] && gsNewServerIp="${2}"
@@ -45,6 +35,11 @@ source "$(dirname "$0")"/../inc/includes_before
     echo -e "${Migrate_MustBeRoot[*]}"
     echo
 }
+
+#### Link to doc
+echo
+echo -e "${Migrate_LinkToDoc}"
+echo
 
 #### New server IP
 echo
@@ -87,7 +82,7 @@ if (! sshpass -p "" scp ${sScpOptions[*]} /tmp/remote_authorized_keys root@${gsN
 fi
 
 #### Synchro type
-sChoices=('check' 'before' 'after' 'reset_passwd')
+sChoices=('check' 'before' 'after' 'reset_passwd' 'lock_old' 'unlock_old')
 if (! grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
     echo
     gfnQuestionGetString NO "${Migrate_SynchroType[*]}" gsSynchroType
@@ -203,7 +198,7 @@ function fnResetPassword() {
     gfnListCountUsers 'normal'
     for sUser in ${gsUsersList}; do
         # Init password required
-        cmdMySQL 'MySB_db' "UPDATE users SET init_password = '1' WHERE users_ident = '${sUser}';" -v
+        cmdMySQL 'MySB_db' "UPDATE users SET init_password='1' WHERE users_ident='${sUser}';" -v
         gfnSendMail "${Migrate_ResetUsersPassword[*]}" "${sUser}" "upgrade"
     done
 }
@@ -408,6 +403,16 @@ case "${gsSynchroType}" in
             gfnUpgradeInProgress off
             gfnChangeFQDN \"${gsHostNameFqdn}\"
         "
+        ;;
+    'lock_old')
+        . ${MySB_InstallDir}/inc/vars
+        . ${MySB_InstallDir}/inc/funcs_by_script/funcs_Upgrade
+        gfnUpgradeInProgress on
+        ;;
+    'unlock_old')
+        . ${MySB_InstallDir}/inc/vars
+        . ${MySB_InstallDir}/inc/funcs_by_script/funcs_Upgrade
+        gfnUpgradeInProgress off
         ;;
     'reset_passwd')
         fnResetPassword
