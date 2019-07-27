@@ -32,37 +32,39 @@ source "$(dirname "$0")"/../inc/includes_before
 
 #### Must be root
 [[ $EUID -ne 0 ]] && {
-    echo -e "${Migrate_MustBeRoot[*]}"
+    echo -e "${Migration_MustBeRoot[*]}"
     echo
 }
 
 #### Link to doc
 echo
-echo -e "${Migrate_LinkToDoc}"
+echo -e "${Migration_LinkToDoc}"
 echo
 
 #### New server IP
 echo
 [ -n "${gsNewServerIp}" ] && CHECK_SrvIpAddressExt=$(gfnValidateIP "${gsNewServerIp}")
 while [ "${CHECK_SrvIpAddressExt}" != "${gsNewServerIp}" ] || [ -z "${gsNewServerIp}" ]; do
-    gfnQuestionGetString NO "${Migrate_NewServerIp[*]}" gsNewServerIp
+    gfnQuestionGetString NO "${Migration_NewServerIp[*]}" gsNewServerIp
     CHECK_SrvIpAddressExt=$(gfnValidateIP "${gsNewServerIp}")
 done
 
 #### New server SSH port
 echo
-[ -z "${gsNewServerSshPort}" ] && gfnQuestionGetString NO "${Migrate_NewServerSshPort[*]}" gsNewServerSshPort "${gsPort_SSH}"
+[ -z "${gsNewServerSshPort}" ] && gfnQuestionGetString NO "${Migration_NewServerSshPort[*]}" gsNewServerSshPort "${gsPort_SSH}"
 
 #### VARs
+sLogFile="/tmp/migrate.log"
 sRsyncOptions=(-rlptgoDv4PHz --append --delete --delete-before)
-sSshOptions=(-p "${gsNewServerSshPort}" -c aes128-ctr -x -o "Compression=yes" -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null")
+sSshOptions=(-p "${gsNewServerSshPort}" -c aes128-ctr -x -o "Compression=yes" -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -E "${sLogFile}")
 sScpOptions=(-P "${gsNewServerSshPort}" -o "Compression=yes" -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null")
+: >"${sLogFile}"
 
 #### Ping remote server
 if (! ping -c3 ${gsNewServerIp} >/dev/null); then
     echo
-    echo -e "${Migrate_AddServerAddressOld[*]}"
-    echo -e "${Migrate_AddServerAddressNew[*]}" | sed "s/##gsNewServerIp##/${gsNewServerIp}/g;"
+    echo -e "${Migration_AddServerAddressOld[*]}"
+    echo -e "${Migration_AddServerAddressNew[*]}" | sed "s/##gsNewServerIp##/${gsNewServerIp}/g;"
     echo
     gfnEndingScript 0
 fi
@@ -75,8 +77,8 @@ fi
 } >/tmp/remote_authorized_keys
 if (! sshpass -p "" scp ${sScpOptions[*]} /tmp/remote_authorized_keys root@${gsNewServerIp}:/tmp/remote_authorized_keys); then
     echo
-    echo -e "${Migrate_CopyPubKey[*]}"
-    echo -e "${Migrate_BlankLine[*]}"
+    echo -e "${Migration_CopyPubKey[*]}"
+    echo -e "${Migration_BlankLine[*]}"
     echo
     gfnEndingScript 0
 fi
@@ -85,9 +87,9 @@ fi
 sChoices=('check' 'before' 'after' 'reset_passwd' 'lock_old' 'unlock_old')
 if (! grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
     echo
-    gfnQuestionGetString NO "${Migrate_SynchroType[*]}" gsSynchroType
+    gfnQuestionGetString NO "${Migration_SynchroType[*]}" gsSynchroType
     while (! grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); do
-        gfnQuestionGetString NO "${Migrate_SynchroType[*]}" gsSynchroType
+        gfnQuestionGetString NO "${Migration_SynchroType[*]}" gsSynchroType
     done
 fi
 
@@ -151,7 +153,7 @@ function fnCreateRemoteUsers() {
     gfnListCountUsers 'normal'
     sFnUsersList="${gsUsersList}"
     for sFnUser in ${sFnUsersList}; do
-        echo -e "${Migrate_CreateUser[*]} ${CGREEN}${sFnUser}${CEND}"
+        echo -e "${Migration_CreateUser[*]} ${CGREEN}${sFnUser}${CEND}"
         sleep 2
 
         # User infos
@@ -184,7 +186,7 @@ function fnSynchroUsers() {
     gfnListCountUsers 'normal'
     for sUser in ${gsUsersList}; do
         clear
-        echo -e "${Migrate_User[*]} ${CGREEN}${sUser}${CEND}"
+        echo -e "${Migration_User[*]} ${CGREEN}${sUser}${CEND}"
         sleep 2
 
         # /etc/nginx/passwd/users
@@ -194,12 +196,25 @@ function fnSynchroUsers() {
     done
 }
 
+function fnWebApps()  {
+    local sResult
+
+    # Seedbox-Manager
+    sResult="$(ssh ${sSshOptions[*]} root@${gsNewServerIp} "[ -d ${MySB_RemoteDir}/web/apps/sm/conf/users/ ] && echo 'ok'")"
+    if [ -d "${MySB_InstallDir}"/web/apps/sm/conf/users/ ] && [ "${sResult}" == "ok" ]; then
+        rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" "${MySB_InstallDir}"/web/apps/sm/conf/users/ root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/sm/conf/users/
+    fi
+    # ruTorrent
+    rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" "${MySB_InstallDir}"/web/apps/ru/conf/users/ root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/ru/conf/users/
+    rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" "${MySB_InstallDir}"/web/apps/ru/share/users/ root@"${gsNewServerIp}":"${MySB_RemoteDir}"/web/apps/ru/share/users/
+}
+
 function fnResetPassword() {
     gfnListCountUsers 'normal'
     for sUser in ${gsUsersList}; do
         # Init password required
         cmdMySQL 'MySB_db' "UPDATE users SET init_password='1' WHERE users_ident='${sUser}';" -v
-        gfnSendMail "${Migrate_ResetUsersPassword[*]}" "${sUser}" "upgrade"
+        gfnSendMail "${Migration_ResetUsersPassword[*]}" "${sUser}" "upgrade"
     done
 }
 
@@ -209,7 +224,7 @@ function fnSynchroPlex() {
 
     if [ "$gbIsInstalled_PlexMedia" == "YES" ]; then
         clear
-        echo -e "${Migrate_Plex[*]}"
+        echo -e "${Migration_Plex[*]}"
         sleep 2
 
         ## Stop services (local & remote)
@@ -248,7 +263,7 @@ function fnSynchroPlex() {
 #### Synchro NextCloud
 function fnSynchroNextCloud() {
     clear
-    echo -e "${Migrate_NextCloud[*]}"
+    echo -e "${Migration_NextCloud[*]}"
     sleep 2
 
     [ "${gbIsInstalled_NextCloud}" == "YES" ] && time rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /home/nextcloud/ root@"${gsNewServerIp}":/home/nextcloud/
@@ -257,7 +272,7 @@ function fnSynchroNextCloud() {
 #### Synchro Let's Encrypt
 function fnSynchroLetsEncrypt() {
     clear
-    echo -e "${Migrate_LetsEncrypt[*]}"
+    echo -e "${Migration_LetsEncrypt[*]}"
     sleep 2
 
     rsync ${sRsyncOptions[*]} -e "ssh ${sSshOptions[*]}" /etc/letsencrypt/live/"${gsHostNameFqdn}" root@"${gsNewServerIp}":/etc/letsencrypt/live/
@@ -266,7 +281,7 @@ function fnSynchroLetsEncrypt() {
 #### Synchro /opt/MySB/ssl/trackers/
 function fnSynchroTrackersCertificates() {
     clear
-    echo -e "${Migrate_TrackersCert[*]}"
+    echo -e "${Migration_TrackersCert[*]}"
     sleep 2
 
     ssh ${sSshOptions[*]} root@${gsNewServerIp} "mkdir -p ${MySB_RemoteDir}/ssl/trackers/"
@@ -283,7 +298,7 @@ function fnDatabases() {
     local sRequestValues
 
     clear
-    echo -e "${Migrate_Databases[*]} ${CGREEN}${sUser}${CEND}"
+    echo -e "${Migration_Databases[*]} ${CGREEN}${sUser}${CEND}"
     sleep 2
 
     # SQLite Blocklists.sq3
@@ -337,7 +352,7 @@ function fnDatabases() {
 function fnVarWww() {
     if [ -n "${gsPort_NginX_HTTP}" ] || [ -n "${gsPort_NginX_HTTPS}" ]; then
         clear
-        echo -e "${Migrate_VarWww[*]}"
+        echo -e "${Migration_VarWww[*]}"
         sleep 2
 
         ssh ${sSshOptions[*]} root@${gsNewServerIp} "mysql --database=MySB_db -w --connect-timeout=10 -s -N -e \"UPDATE services SET port_tcp2='${gsPort_NginX_HTTP}', port_tcp3='${gsPort_NginX_HTTPS}' WHERE serv_name='NginX';\" -v"
@@ -346,7 +361,7 @@ function fnVarWww() {
 }
 
 case "${gsSynchroType}" in
-    'check') echo -e "${Migrate_CheckOK[*]}" ;;
+    'check') echo -e "${Migration_CheckOK[*]}" ;;
     'before')
         ssh ${sSshOptions[*]} root@${gsNewServerIp} "
             . ${MySB_RemoteDir}/inc/vars
@@ -374,12 +389,12 @@ case "${gsSynchroType}" in
             gfnManageQuota '-v'
         "
         touch "${MySB_InstallDir}"/files/migrate_before.lock
-        gfnSendMail "${Migrate_SyncBeforeDone[*]}" "${gsMainUserName}" "migrate_begore"
+        gfnSendMail "${Migration_SyncBeforeDone[*]}" "${gsMainUserName}" "migrate_begore"
         ;;
     'after')
         [ ! -f "${MySB_InstallDir}"/files/migrate_before.lock ] && {
             echo
-            echo -e "${Migrate_ExecuteBefore[*]}"
+            echo -e "${Migration_ExecuteBefore[*]}"
             echo
             gfnEndingScript 0
         }
