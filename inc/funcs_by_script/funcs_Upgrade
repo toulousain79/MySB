@@ -36,35 +36,35 @@ gfnChangeFQDN() {
     local sNewFQDN nCheckFqdnResult
 
     gfnListCountUsers 'normal'
-    [ -z "$gsHostNameFqdn" ] && gsHostNameFqdn="$(cmdMySQL 'MySB_db' "SELECT hostname FROM system WHERE id_system='1';")" || return
+    [ -z "${gsHostNameFqdn}" ] && gsHostNameFqdn="$(cmdMySQL 'MySB_db' "SELECT hostname FROM system WHERE id_system='1';")"
 
     if [[ -z ${1} ]]; then
         echo
         echo -e "${Global_Questions_Message_Hostname_New}"
         gfnQuestionGetString NO "${Global_Questions_Hostname_New}" bgChangeFQDN "${Global_NO}"
-        bgChangeFQDN="$(echo "$bgChangeFQDN" | tr '[:lower:]' '[:upper:]')"
+        bgChangeFQDN="$(echo "${bgChangeFQDN}" | tr '[:lower:]' '[:upper:]')"
 
-        if [ "$bgChangeFQDN" != "${Global_YES}" ]; then
+        if [ "${bgChangeFQDN}" != "${Global_YES}" ]; then
             return
         fi
     else
-        bgChangeFQDN="$Global_YES"
+        bgChangeFQDN="${Global_YES}"
         sNewFQDN="${1}"
     fi
 
-    [[ $bgChangeFQDN != "$Global_YES" ]] && return
+    [[ ${bgChangeFQDN} != "${Global_YES}" ]] && return
 
     echo
     echo -e "${Global_Questions_Message_Hostname}"
-    gfnQuestionGetString NO "${Global_Questions_Hostname}" sNewFQDN "$gsHostNameFqdn"
-    while [ -z "${sNewFQDN}" ] || [ "$(gfnCheckFQDN "$sNewFQDN")" -ne 0 ]; do
+    gfnQuestionGetString NO "${Global_Questions_Hostname}" sNewFQDN "${gsHostNameFqdn}"
+    while [ -z "${sNewFQDN}" ] || [ "$(gfnCheckFQDN "${sNewFQDN}")" -ne 0 ]; do
         nCheckFqdnResult="$(gfnCheckFQDN "${sNewFQDN}")"
         case "${nCheckFqdnResult}" in
             1) echo -e "${Global_Questions_Message_Hostname_NoFqdn}" ;;
             2) echo -e "${Global_Questions_Message_Hostname_Fqdn_NotPublicIp}" ;;
         esac
         gfnQuestionGetString NO "${Global_Questions_Hostname}" sNewFQDN "${sNewFQDN}"
-        if [ "${sNewFQDN}" == "$gsHostNameFqdn" ]; then
+        if [ "${sNewFQDN}" == "${gsHostNameFqdn}" ]; then
             echo "Same FQDN, aborted..."
             exit 1
         fi
@@ -72,12 +72,12 @@ gfnChangeFQDN() {
 
     #### Update DB
     log_daemon_msg "Update DB"
-    cmdMySQL 'MySB_db' "UPDATE system SET hostname='$sNewFQDN' WHERE id_system='1';"
+    cmdMySQL 'MySB_db' "UPDATE system SET hostname='${sNewFQDN}' WHERE id_system='1';"
     gfnStatusLSB
 
     #### /etc/hostname
     log_daemon_msg "Update /etc/hostname"
-    hostnamectl set-hostname "$sNewFQDN"
+    hostnamectl set-hostname "${sNewFQDN}"
     gfnStatusLSB
 
     #### /etc/hosts
@@ -166,7 +166,7 @@ gfnChangeFQDN() {
         gfnGetRepoValues 'ruTorrent Plugin Link Manager' &>/dev/null
         gfnDeleteDirectory 0 "${gsRepoDir}"
         gfnRepoManageByType
-        sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/$sNewFQDN:${gsPort_MySB_HTTPS}\/sm\//g;" "${gsRepoDir}"/conf.php
+        sed -i "s/http:\/\/seedbox-manager.ndd.tld/https:\/\/${sNewFQDN}:${gsPort_MySB_HTTPS}\/sm\//g;" "${gsRepoDir}"/conf.php
         gfnStatusLSB
     fi
 
@@ -178,14 +178,14 @@ gfnChangeFQDN() {
         gfnDeleteDirectory 0 "${gsRepoDir}"
         gfnRepoManageByType
         chown -R www-data:www-data "${gsRepoDir}"
-        sed -i "s/'http:\/\/'.\$host;/'https:\/\/$sNewFQDN:$gsPort_MySB_HTTPS\/cb\/';/g;" "${gsRepoDir}"/conf.php
+        sed -i "s/'http:\/\/'.\$host;/'https:\/\/${sNewFQDN}:${gsPort_MySB_HTTPS}\/cb\/';/g;" "${gsRepoDir}"/conf.php
         sed -i "s/torrents/rtorrent/g;" "${gsRepoDir}"/conf.php
         # NginX (alias with proxy)
         # shellcheck disable=SC2001
         sCakeboxDirEscaped="$(echo "${gsCakeboxDir}" | sed s,/,\\\\\\\/,g)"
         [[ -L /etc/nginx/sites-enabled/cakebox ]] && rm -f /etc/nginx/sites-enabled/cakebox
         install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.site-enabled.cakebox.tmpl /etc/nginx/sites-available/cakebox
-        # perl -pi -e "s/<server_name>/$sNewFQDN/g" /etc/nginx/sites-available/cakebox
+        # perl -pi -e "s/<server_name>/${sNewFQDN}/g" /etc/nginx/sites-available/cakebox
         perl -pi -e "s/<cakebox_rootdir>/${sCakeboxDirEscaped}/g" /etc/nginx/sites-available/cakebox
         [[ ! -L /etc/nginx/sites-enabled/cakebox ]] && ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox
         gfnStatusLSB
@@ -197,21 +197,21 @@ gfnChangeFQDN() {
     gfnGetRepoValues 'ruTorrent Plugin FileShare' &>/dev/null
     gfnDeleteDirectory 0 "${gsRepoDir}"
     gfnRepoManageByType
-    [[ -f "${gsRepoDir}"/conf.php ]] && perl -pi -e "s/http:\/\/mydomain.com\/share.php/https:\/\/$sNewFQDN:$gsPort_MySB_HTTPS\/fileshare.php/g" "${gsRepoDir}"/conf.php
+    [[ -f "${gsRepoDir}"/conf.php ]] && perl -pi -e "s/http:\/\/mydomain.com\/share.php/https:\/\/${sNewFQDN}:${gsPort_MySB_HTTPS}\/fileshare.php/g" "${gsRepoDir}"/conf.php
     # Plugin Mediastream
     gfnGetRepoValues 'ruTorrent Plugin MediaStream' &>/dev/null
     gfnDeleteDirectory 0 "${gsRepoDir}"
     gfnRepoManageByType
-    [[ -f "${gsRepoDir}"/conf.php ]] && perl -pi -e "s/http:\/\/mydomain.com\/stream\/view.php/https:\/\/$sNewFQDN:$gsPort_MySB_HTTPS\/view/g" "${gsRepoDir}"/conf.php
+    [[ -f "${gsRepoDir}"/conf.php ]] && perl -pi -e "s/http:\/\/mydomain.com\/stream\/view.php/https:\/\/${sNewFQDN}:${gsPort_MySB_HTTPS}\/view/g" "${gsRepoDir}"/conf.php
     gfnStatusLSB
 
     #### NextCloud
     if [ -d "${gsNextCloudDir}" ] && [ -f "${gsNextCloudDir}"/config/config.php ]; then
         log_daemon_msg "Reconfigure NextCloud"
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --on" &>/dev/null
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set trusted_domains 1 --value=$sNewFQDN:$gsPort_MySB_HTTPS" &>/dev/null
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set lost_password_link --value=https://$sNewFQDN:$gsPort_MySB_HTTPS/?user/change-password.html" &>/dev/null
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set overwritehost --value=$sNewFQDN:$gsPort_MySB_HTTPS" &>/dev/null
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set trusted_domains 1 --value=${sNewFQDN}:${gsPort_MySB_HTTPS}" &>/dev/null
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set lost_password_link --value=https://${sNewFQDN}:${gsPort_MySB_HTTPS}/?user/change-password.html" &>/dev/null
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set overwritehost --value=${sNewFQDN}:${gsPort_MySB_HTTPS}" &>/dev/null
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off" &>/dev/null
         gfnStatusLSB
     fi
