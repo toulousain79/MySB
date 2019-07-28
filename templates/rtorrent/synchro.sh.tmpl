@@ -1,13 +1,13 @@
 #!/bin/bash
-# rev 0.7
+# rev 0.8
 
 #### DO NOT MODIFY
 UserName="$(whoami)"
 ScriptName="$(basename "$0")"
-DataBase="$HOME/db/$UserName.sq3"
+DataBase="$HOME/db/${UserName}.sq3"
 FileLockDirect="$HOME/scripts/direct.lock"
 FileLockCron="$HOME/scripts/cron.lock"
-FileLog="$HOME/logs/$ScriptName.log"
+FileLog="$HOME/logs/${ScriptName}.log"
 RsyncCipher="aes128-ctr"
 PID="$$"
 get_base_path="$1"   # /home/user/rtorrent/complete/Apps/ubuntu-16.04.3-server-amd64.iso
@@ -17,32 +17,33 @@ get_name="$4"  # ubuntu-16.04.3-server-amd64.iso
 get_loaded_file="$5" # /home/user/rtorrent/watch/Apps/ubuntu-16.04.3-server-amd64.iso.torrent
 
 ## Destination
+sRequestValues="$(sqlite3 -cmd '.timeout 150000' "${DataBase}" "SELECT mode_sync,dst_dir,dst_srv,dst_port,dst_user,dst_pass,max_to_sync,create_subdir,MailObjectOK,MailObjectKO FROM ident WHERE ident_id = '1';")"
 # ftp OR rsync
-ModeSync="$(sqlite3 -cmd '.timeout 150000' "${DataBase}" "SELECT mode_sync FROM ident WHERE ident_id = '1';")"
+ModeSync="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[1]}')"
 # Destination directory, WITH starting './' and WITHOUT ending '/'. (ex: ./home/myuser)
-RemoteDir="$(sqlite3 -cmd '.timeout 150000' "${DataBase}" "SELECT dst_dir FROM ident WHERE ident_id = '1';")"
+RemoteDir="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
 # Hostname OR IP address of the destination. (ex: myserver.mydomain.com)
-RemoteSrv="$(sqlite3 -cmd '.timeout 150000' "${DataBase}" "SELECT dst_srv FROM ident WHERE ident_id = '1';")"
+RemoteSrv="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[3]}')"
 # Port (ex: 22)
-RemotePort="$(sqlite3 -cmd '.timeout 150000' "${DataBase}" "SELECT dst_port FROM ident WHERE ident_id = '1';")"
+RemotePort="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[4]}')"
 # Username
-RemoteUser="$(sqlite3 -cmd '.timeout 150000' "${DataBase}" "SELECT dst_user FROM ident WHERE ident_id = '1';")"
+RemoteUser="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[5]}')"
 # Password
-RemotePass="$(sqlite3 -cmd '.timeout 150000' "${DataBase}" "SELECT dst_pass FROM ident WHERE ident_id = '1';")"
+RemotePass="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[6]}')"
 # Max file to synchronize from 'FileList' per cronjob ? (0 for sync all)
-MaxToSync="$(sqlite3 -cmd '.timeout 150000' "${DataBase}" "SELECT max_to_sync FROM ident WHERE ident_id = '1';")"
+MaxToSync="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[7]}')"
 # 1: Create a subdirectory for alone files (needed by some scraper) | 0: Do not create subdirectory
-CreateSubDir="$(sqlite3 -cmd '.timeout 150000' "${DataBase}" "SELECT create_subdir FROM ident WHERE ident_id = '1';")"
+CreateSubDir="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[8]}')"
 # Notification (if enabled on MySB options page in portal)
-MailObjectOK="$(sqlite3 -cmd '.timeout 150000' "${DataBase}" "SELECT MailObjectOK FROM ident WHERE ident_id = '1';")"
-MailObjectKO="$(sqlite3 -cmd '.timeout 150000' "${DataBase}" "SELECT MailObjectKO FROM ident WHERE ident_id = '1';")"
+MailObjectOK="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[9]}')"
+MailObjectKO="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[10]}')"
 #### DO NOT MODIFY
 
 #### START BY: CRON (without args) or DIRECTLY (with args after a download) ?
 case "$1" in
     'CRON' | 'DIRECT') CronMode=1 ;;
     *)
-        if [ -z "$get_base_path" ] || [ -z "$get_directory" ] || [ -z "$get_custom1" ] || [ -z "$get_name" ] || [ -z "$get_loaded_file" ]; then
+        if [ -z "${get_base_path}" ] || [ -z "${get_directory}" ] || [ -z "${get_custom1}" ] || [ -z "${get_name}" ] || [ -z "${get_loaded_file}" ]; then
             CronMode=1
         else
             CronMode=0
@@ -56,15 +57,15 @@ if [ $CronMode -eq 0 ]; then
     # 0	-->	Do not start any script (no synchro)
     # 1	-->	Execute scripts by crontab
     # 2	-->	Execute scripts directly when a download is finished
-    CategoryList="$(sqlite3 -cmd '.timeout 150000' "${DataBase}" "SELECT sync_mode FROM categories WHERE name = '$get_custom1';")"
-    case "$CategoryList" in
+    CategoryList="$(sqlite3 -cmd '.timeout 150000' "${DataBase}" "SELECT sync_mode FROM categories WHERE name = '${get_custom1}';")"
+    case "${CategoryList}" in
         1) CategoryList="cron" ;;
         2) CategoryList="direct" ;;
         *) exit 0 ;;
     esac
 
     # Add entry to the list (cron OR direct)
-    sqlite3 -echo -cmd '.timeout 150000' "${DataBase}" "INSERT INTO list (list_category,is_active,get_base_path,get_directory,get_custom1,get_name,get_loaded_file) VALUES ('$CategoryList','1','$get_base_path','$get_directory','$get_custom1','$get_name','$get_loaded_file');"
+    sqlite3 -echo -cmd '.timeout 150000' "${DataBase}" "INSERT INTO list (list_category,is_active,get_base_path,get_directory,get_custom1,get_name,get_loaded_file) VALUES ('${CategoryList}','1','${get_base_path}','${get_directory}','${get_custom1}','${get_name}','${get_loaded_file}');"
 
     # We are in direct sync mode
     CategoryList="direct"
@@ -90,20 +91,20 @@ else
 fi
 
 #### LOCKED: If a lock file exists means that synchronization is already in progress. Same thing if the list is empty.
-InQueue="$(sqlite3 -cmd '.timeout 150000' "${DataBase}" "SELECT count(*) FROM list WHERE list_category = '$CategoryList' AND is_active = '1';")"
-if [ -e "$FileLock" ]; then # Check that the lock file has not been forgotten...
-    nPid="$(cat "$FileLock")"
-    case "$(ps -p "$nPid" &>/dev/null)" in
+InQueue="$(sqlite3 -cmd '.timeout 150000' "${DataBase}" "SELECT count(*) FROM list WHERE list_category = '${CategoryList}' AND is_active = '1';")"
+if [ -e "${FileLock}" ]; then # Check that the lock file has not been forgotten...
+    nPid="$(cat "${FileLock}")"
+    case "$(ps -p "${nPid}" &>/dev/null)" in
         0) exit 0 ;; # The script is still running, the lock file is legitimate. We can stop the script.
         *) # Otherwise, we remove it and continue running the script.
-            rm -f "$FileLock"
-            if [ -e "/tmp/$UserName-$ScriptName.log.$nPid" ]; then
-                rm -f "/tmp/$UserName-$ScriptName.log.$nPid"
+            rm -f "${FileLock}"
+            if [ -e "/tmp/${UserName}-${ScriptName}.log.${nPid}" ]; then
+                rm -f "/tmp/${UserName}-${ScriptName}.log.${nPid}"
             fi
             if [ "$InQueue" -eq 0 ]; then # The list is empty, there is nothing to do. So we stop the script.
                 exit 0
             else # Otherwise, we continue and create a new lock file.
-                echo $PID >"$FileLock"
+                echo $PID >"${FileLock}"
             fi
             ;;
     esac
@@ -111,7 +112,7 @@ else # No file locking, we continue.
     if [ "$InQueue" -eq 0 ]; then # The list is empty, there is nothing to do. So we stop the script.
         exit 0
     else # Otherwise, we continue and create a new lock file.
-        echo $PID >"$FileLock"
+        echo $PID >"${FileLock}"
     fi
 fi
 
@@ -133,8 +134,8 @@ fnListing() {
     sLocalSize=0
     sRemoteSize=1
     nError=0
-    sMailObject="$MailObjectOK"
-    nPid="$(cat "$FileLock")"
+    sMailObject="${MailObjectOK}"
+    nPid="$(cat "${FileLock}")"
 
     # Check if files exist
     FnCheck="$(file "${sGetBasePath}")"
@@ -142,19 +143,19 @@ fnListing() {
     if [ $? -ne 0 ]; then
         ModeSync="no_such_file_or_directory"
     else
-        Type="$(echo "$FnCheck" | cut -d ":" -f 2 | sed -e 's/^ //g;s/\s+$//g;')"
+        Type="$(echo "${FnCheck}" | cut -d ":" -f 2 | sed -e 's/^ //g;s/\s+$//g;')"
     fi
 
     # Need to create a subdirectory on destination ?
-    sDstDir="$RemoteDir/$sGetCustom1"
-    if [ -f "${sGetBasePath}" ] && [ "$CreateSubDir" -eq 1 ]; then
+    sDstDir="${RemoteDir}/${sGetCustom1}"
+    if [ -f "${sGetBasePath}" ] && [ "${CreateSubDir}" -eq 1 ]; then
         sSubDirectory="${sGetBasePath##*/}"
         sSubDirectory="${sSubDirectory%.[^.]*}"
-        sDstDir="$RemoteDir/$sGetCustom1/$sSubDirectory"
+        sDstDir="${RemoteDir}/${sGetCustom1}/${sSubDirectory}"
     fi
-    sDstDir="$(echo "$sDstDir" | sed -e 's/^ //g;' | sed 's/\s+$//')"
-    sDstDir="$(echo "$sDstDir" | sed "s/\[//g;s/\]//g;s/(//g;s/)//g;s/\ /./g;s/,/./g;s/'/./g;")"
-    sRemoteDestination="$(echo "$sDstDir/$sGetName" | sed "s/\[//g;s/\]//g;s/(//g;s/)//g;s/\ /./g;s/,/./g;s/'/./g;")"
+    sDstDir="$(echo "${sDstDir}" | sed -e 's/^ //g;' | sed 's/\s+$//')"
+    sDstDir="$(echo "${sDstDir}" | sed "s/\[//g;s/\]//g;s/(//g;s/)//g;s/\ /./g;s/,/./g;s/'/./g;")"
+    sRemoteDestination="$(echo "${sDstDir}/${sGetName}" | sed "s/\[//g;s/\]//g;s/(//g;s/)//g;s/\ /./g;s/,/./g;s/'/./g;")"
 
     # Check local file or directory size
     sLocalSize="$(du -hsb "${sGetBasePath}" | awk '{ print $1 }' | sed -e 's/,/./g;')"
@@ -163,32 +164,32 @@ fnListing() {
     echo "#### START ####"
     echo "Script:		$0"
     echo "From:		${sGetBasePath}"
-    echo "To:		$sDstDir/$sGetNameEscaped"
-    echo "Size:		$sLocalSize (local)"
-    echo "Category:	$sGetCustom1 ($CategoryList)"
+    echo "To:		${sDstDir}/${sGetNameEscaped}"
+    echo "Size:		${sLocalSize} (local)"
+    echo "Category:	${sGetCustom1} (${CategoryList})"
     echo "User:		${RemoteUser}"
     echo "Server:		${RemoteSrv}"
-    echo "Protocol:		$ModeSync"
-    echo "Date:		$dStartDate"
-    echo "Hour:		$dStartHour"
+    echo "Protocol:		${ModeSync}"
+    echo "Date:		${dStartDate}"
+    echo "Hour:		${dStartHour}"
     echo "--------------------"
     echo
 
-    sqlite3 -cmd '.timeout 150000' "${DataBase}" "UPDATE list SET comments='Start: $dStartDate - $dStartHour', pid='$nPid', size_local='${sLocalSize}', size_remote='0'  WHERE list_id = '$nListId';"
+    sqlite3 -cmd '.timeout 150000' "${DataBase}" "UPDATE list SET comments='Start: ${dStartDate} - ${dStartHour}', pid='${nPid}', size_local='${sLocalSize}', size_remote='0'  WHERE list_id = '${nListId}';"
 
-    case "$ModeSync" in
+    case "${ModeSync}" in
         'rsync')
             # Creating sub-directory on destination
-            sshpass -p "$RemotePass" ssh -p "$RemotePort" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${RemoteUser}@${RemoteSrv}" "mkdir -p \"$sDstDir\"" 2>/dev/null
+            sshpass -p "${RemotePass}" ssh -p "${RemotePort}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${RemoteUser}@${RemoteSrv}" "mkdir -p \"${sDstDir}\"" 2>/dev/null
 
             # Start synchronization with RSYNC
             for ((i = 3; i >= 1; i -= 1)); do
-                rsync -rtvyz --numeric-ids --partial --append --stats --timeout=10 -e "/usr/bin/sshpass -p$RemotePass ssh -p $RemotePort -c $RsyncCipher -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "${sGetBasePath}" "${RemoteUser}@${RemoteSrv}:$sDstDir/"
+                rsync -rtvyz --numeric-ids --partial --append --stats --timeout=10 -e "/usr/bin/sshpass -p${RemotePass} ssh -p ${RemotePort} -c $RsyncCipher -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "${sGetBasePath}" "${RemoteUser}@${RemoteSrv}:${sDstDir}/"
                 nError=$?
                 # Check remote file or directory size
-                sRemoteSize="$(sshpass -p "$RemotePass" ssh -p "$RemotePort" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${RemoteUser}"@"${RemoteSrv}" "du -hs \"$sRemoteDestination\"" 2>/dev/null)"
-                sRemoteSize="$(echo "$sRemoteSize" | awk '{ print $1 }')"
-                # if [ $sLocalSize -eq "$sRemoteSize" ]; then
+                sRemoteSize="$(sshpass -p "${RemotePass}" ssh -p "${RemotePort}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${RemoteUser}"@"${RemoteSrv}" "du -hs \"${sRemoteDestination}\"" 2>/dev/null)"
+                sRemoteSize="$(echo "${sRemoteSize}" | awk '{ print $1 }')"
+                # if [ ${sLocalSize} -eq "${sRemoteSize}" ]; then
                 # break
                 # fi
             done
@@ -198,22 +199,22 @@ fnListing() {
             for ((i = 3; i >= 1; i -= 1)); do
                 case "$Type" in
                     'directory')
-                        lftp -e "$LftpOptions mkdir -p \"$sDstDir\"; mirror -c -R \"${sGetBasePath}\" \"$sDstDir\"; bye" -u "${RemoteUser}","$RemotePass" "${RemoteSrv}" -p "$RemotePort"
+                        lftp -e "$LftpOptions mkdir -p \"${sDstDir}\"; mirror -c -R \"${sGetBasePath}\" \"${sDstDir}\"; bye" -u "${RemoteUser}","${RemotePass}" "${RemoteSrv}" -p "${RemotePort}"
                         nError=$?
                         # Check remote size
-                        sRemoteSize="$(lftp -e "$LftpOptions du -hs \"$sRemoteDestination\"; bye" -u "${RemoteUser}","$RemotePass" "${RemoteSrv}" -p "$RemotePort")"
+                        sRemoteSize="$(lftp -e "$LftpOptions du -hs \"${sRemoteDestination}\"; bye" -u "${RemoteUser}","${RemotePass}" "${RemoteSrv}" -p "${RemotePort}")"
                         ;;
                     *)
-                        lftp -e "$LftpOptions mkdir -p $sDstDir; put -c -O \"$sDstDir\" \"${sGetBasePath}\"; bye" -u "${RemoteUser}","$RemotePass" "${RemoteSrv}" -p "$RemotePort"
+                        lftp -e "$LftpOptions mkdir -p ${sDstDir}; put -c -O \"${sDstDir}\" \"${sGetBasePath}\"; bye" -u "${RemoteUser}","${RemotePass}" "${RemoteSrv}" -p "${RemotePort}"
                         nError=$?
                         # Check remote size
-                        sRemoteSize="$(lftp -e "$LftpOptions du -hs \"$sRemoteDestination\"; bye" -u "${RemoteUser}","$RemotePass" "${RemoteSrv}" -p "$RemotePort")"
+                        sRemoteSize="$(lftp -e "$LftpOptions du -hs \"${sRemoteDestination}\"; bye" -u "${RemoteUser}","${RemotePass}" "${RemoteSrv}" -p "${RemotePort}")"
                         ;;
                 esac
-                sRemoteSize="$(echo "$sRemoteSize" | awk '{ print $1 }')"
+                sRemoteSize="$(echo "${sRemoteSize}" | awk '{ print $1 }')"
             done
             ;;
-        'no_such_file_or_directory') echo "$FnCheck" ;;
+        'no_such_file_or_directory') echo "${FnCheck}" ;;
         *) return 1 ;;
     esac
 
@@ -221,64 +222,64 @@ fnListing() {
     FnEndDate="$(/bin/date +%Y/%m/%d)"
     FnEndHour="$(/bin/date +%H:%M:%S)"
     if [ $nError -eq 0 ]; then
-        # if [ $sLocalSize == $sRemoteSize ]; then
-        sqlite3 -cmd '.timeout 150000' "${DataBase}" "UPDATE list SET is_active = '0', to_del = '1', pid = '', comments = 'End: $FnEndDate - $FnEndHour' WHERE list_id = '$nListId';"
+        # if [ ${sLocalSize} == ${sRemoteSize} ]; then
+        sqlite3 -cmd '.timeout 150000' "${DataBase}" "UPDATE list SET is_active = '0', to_del = '1', pid = '', comments = 'End: ${FnEndDate} - ${FnEndHour}' WHERE list_id = '${nListId}';"
         # else
-        # sqlite3 -cmd '.timeout 150000' "${DataBase}" "UPDATE list SET is_active = '1', to_del = '0', pid = '', comments = 'Local size: $sLocalSize, Remote size: $sRemoteSize' WHERE list_id = '$nListId';"
+        # sqlite3 -cmd '.timeout 150000' "${DataBase}" "UPDATE list SET is_active = '1', to_del = '0', pid = '', comments = 'Local size: ${sLocalSize}, Remote size: ${sRemoteSize}' WHERE list_id = '${nListId}';"
         # fi
     else
-        sqlite3 -cmd '.timeout 150000' "${DataBase}" "UPDATE list SET is_active = '0', pid = '', comments = 'Error: $FnEndDate - $FnEndHour' WHERE list_id = '$nListId';"
-        sMailObject="$MailObjectKO"
+        sqlite3 -cmd '.timeout 150000' "${DataBase}" "UPDATE list SET is_active = '0', pid = '', comments = 'Error: ${FnEndDate} - ${FnEndHour}' WHERE list_id = '${nListId}';"
+        sMailObject="${MailObjectKO}"
     fi
 
     echo
     echo "--------------------"
-    echo "Size:		$sRemoteSize (remote)"
-    echo "Date:		$FnEndDate"
-    echo "Hour:		$FnEndHour"
+    echo "Size:		${sRemoteSize} (remote)"
+    echo "Date:		${FnEndDate}"
+    echo "Hour:		${FnEndHour}"
     echo "##### END #####"
 
     # E-mail notification
-    curl --data "type=synchro&username=$UserName&get_base_path=$get_base_path&get_directory=$get_directory&get_custom1=$get_custom1&get_name=$get_name&get_loaded_file=$get_loaded_file&subject=$sMailObject&content=$FileLogTemp" http://localhost:8888/rTorrent
+    curl --data "type=synchro&username=${UserName}&get_base_path=${get_base_path}&get_directory=${get_directory}&get_custom1=${get_custom1}&get_name=${get_name}&get_loaded_file=${get_loaded_file}&subject=${sMailObject}&content=${FileLogTemp}" http://localhost:8888/rTorrent
 }
 ############ FUNCTIONs - BoF ############
 
 #### EXECUTING: We read the list line by line.
-case "$MaxToSync" in
+case "${MaxToSync}" in
     0) MaxToSync="" ;;
-    *) MaxToSync="LIMIT $MaxToSync" ;;
+    *) MaxToSync="LIMIT ${MaxToSync}" ;;
 esac
 
-MyList="$(sqlite3 -cmd '.timeout 150000' "${DataBase}" "SELECT list_id,get_base_path,get_directory,get_custom1,get_name,get_loaded_file FROM list WHERE list_category = '$CategoryList' AND is_active = '1' AND to_del = '0' ORDER BY list_id ASC $MaxToSync;")"
+MyList="$(sqlite3 -cmd '.timeout 150000' "${DataBase}" "SELECT list_id,get_base_path,get_directory,get_custom1,get_name,get_loaded_file FROM list WHERE list_category = '${CategoryList}' AND is_active = '1' AND to_del = '0' ORDER BY list_id ASC ${MaxToSync};")"
 OIFS=$IFS
 IFS=$'\n'
-for ROW in $MyList; do
-    FileLogTemp="/tmp/$UserName-$ScriptName.log.$PID"
-    list_id="$(echo "$ROW" | awk '{split($0,a,"|"); print a[1]}')"
-    get_base_path="$(echo "$ROW" | awk '{split($0,a,"|"); print a[2]}')"
-    get_directory="$(echo "$ROW" | awk '{split($0,a,"|"); print a[3]}')"
-    get_custom1="$(echo "$ROW" | awk '{split($0,a,"|"); print a[4]}')"
-    get_name="$(echo "$ROW" | awk '{split($0,a,"|"); print a[5]}')"
-    get_loaded_file="$(echo "$ROW" | awk '{split($0,a,"|"); print a[6]}')"
+for ROW in ${MyList}; do
+    FileLogTemp="/tmp/${UserName}-${ScriptName}.log.$PID"
+    list_id="$(echo "${ROW}" | awk '{split($0,a,"|"); print a[1]}')"
+    get_base_path="$(echo "${ROW}" | awk '{split($0,a,"|"); print a[2]}')"
+    get_directory="$(echo "${ROW}" | awk '{split($0,a,"|"); print a[3]}')"
+    get_custom1="$(echo "${ROW}" | awk '{split($0,a,"|"); print a[4]}')"
+    get_name="$(echo "${ROW}" | awk '{split($0,a,"|"); print a[5]}')"
+    get_loaded_file="$(echo "${ROW}" | awk '{split($0,a,"|"); print a[6]}')"
 
-    if [ -n "$RemoteDir" ] &&
+    if [ -n "${RemoteDir}" ] &&
         [ -n "${RemoteSrv}" ] &&
-        [ -n "$RemotePort" ] &&
+        [ -n "${RemotePort}" ] &&
         [ -n "${RemoteUser}" ] &&
-        [ -n "$RemotePass" ] &&
-        [ -n "$MailObjectOK" ] &&
-        [ -n "$MailObjectKO" ]; then
+        [ -n "${RemotePass}" ] &&
+        [ -n "${MailObjectOK}" ] &&
+        [ -n "${MailObjectKO}" ]; then
 
         # Real process of synchronization
-        fnListing "$list_id" "$get_base_path" "$get_directory" "$get_custom1" "$get_name" "$get_loaded_file" >"$FileLogTemp"
+        fnListing "$list_id" "${get_base_path}" "${get_directory}" "${get_custom1}" "${get_name}" "${get_loaded_file}" >"${FileLogTemp}"
     else
         sqlite3 -cmd '.timeout 150000' "${DataBase}" "UPDATE list SET comments = 'Error: Missing login information', pid = '' WHERE list_id = '$list_id';"
     fi
 
     # Move log file content
-    if [ -f "$FileLogTemp" ]; then
-        cat "$FileLogTemp" >>"$FileLog"
-        rm -f "$FileLogTemp"
+    if [ -f "${FileLogTemp}" ]; then
+        cat "${FileLogTemp}" >>"${FileLog}"
+        rm -f "${FileLogTemp}"
     fi
 done
 IFS=$OIFS
@@ -288,6 +289,6 @@ unset IFS OIFS
 sqlite3 -cmd '.timeout 150000' "${DataBase}" "DELETE FROM list WHERE to_del = '1'"
 
 #### Removing the lock file
-if [ -e "$FileLock" ]; then
-    rm -f "$FileLock"
+if [ -e "${FileLock}" ]; then
+    rm -f "${FileLock}"
 fi
