@@ -1,5 +1,9 @@
 # Changelog
 
+## v6.1 - XXXX/XX/XX _(start at: 2019/07/28)_
+
+- NextCloud v16.0.3
+
 ## v6.0 - 2019/06/29 _(start at: 2019/01/26)_
 
 - NextCloud v16.0.1
