@@ -2,7 +2,10 @@
 
 ## v6.1 - XXXX/XX/XX _(start at: 2019/07/28)_
 
+- Debian migration from Stretch to Buster
 - NextCloud v16.0.3
+- NetData v1.16.0
+- PHP v7.3 _(Sury)_
 
 ## v6.0 - 2019/06/29 _(start at: 2019/01/26)_
 
