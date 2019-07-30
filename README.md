@@ -3,7 +3,7 @@
 
 <p align="center"><img src="https://img.shields.io/github/commit-activity/m/toulousain79/mysb.svg?label=Commit%20activity&logo=github&style=plastic" /> <img src="https://img.shields.io/github/last-commit/toulousain79/mysb.svg?label=Last%20commit&logo=github&style=plastic" /> <img src="https://img.shields.io/github/issues/toulousain79/mysb.svg?label=Issues&logo=github&style=plastic" /> <img src="https://img.shields.io/github/issues-closed/toulousain79/mysb.svg?label=Issues&logo=github&style=plastic" /> <img src="https://img.shields.io/discord/469543542981656627.svg?label=Discord&logo=discord&style=plastic" /></p>
 
-<p align="center"><a href="https://github.com/toulousain79/MySB/blob/!-develop-!/LICENCE.md"><img src="https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square" /></a></p>
+<p align="center"><a href="https://github.com/toulousain79/MySB/blob/#develop#/LICENCE.md"><img src="https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square" /></a></p>
 
 # English
 
