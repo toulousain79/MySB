@@ -40,8 +40,8 @@ sysctl --system
 #### Install packages
 sPeclModules="smbclient"
 sDebModulesWithPecl=""
-# gfnPackagesManage purge "$sDebModulesWithPecl"
-sPackages=(redis-server php7.1-common php7.1-cli php7.1-fpm php7.1-imagick php7.1-dev php7.1-curl php7.1-gd php7.1-gmp php7.1-imap php7.1-intl php7.1-json php7.1-mcrypt php7.1-mysql php7.1-readline php7.1-sqlite3 php7.1-xmlrpc php7.1-msgpack php7.1-geoip php7.1-redis php7.1-xml php7.1-zip php7.1-mbstring php7.1-smbclient php-pear libgeoip-dev "$sDebModulesWithPecl")
+# gfnPackagesManage purge "${sDebModulesWithPecl}"
+sPackages=(redis-server php-common php-cli php-fpm php-imagick php-dev php-curl php-gd php-gmp php-imap php-intl php-json php-mcrypt php-mysql php-readline php-sqlite3 php-xmlrpc php-msgpack php-geoip php-redis php-xml php-zip php-mbstring php-smbclient php-pear libgeoip-dev "${sDebModulesWithPecl}")
 gfnPackageBundleInstall "${sPackages[@]}"
 gfnPackagesManage purge "apache2"
 
@@ -58,18 +58,18 @@ install -v -o redis -g redis -m 0640 ${MySB_InstallDir}/templates/php/etc.redis.
 
 #### Configuration files
 # ${gsPhpDir}/fpm/php-fpm.conf
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/php/etc.php.7.1.fpm.php-fpm.conf.tmpl ${gsPhpDir}/fpm/php-fpm.conf
+install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/php/etc.php.7.3.fpm.php-fpm.conf.tmpl ${gsPhpDir}/fpm/php-fpm.conf
 # ${gsPhpDir}/fpm/pool.d/www.conf
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/php/etc.php.7.1.fpm.pool.d.www.conf.tmpl ${gsPhpDir}/fpm/pool.d/www.conf
+install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/php/etc.php.7.3.fpm.pool.d.www.conf.tmpl ${gsPhpDir}/fpm/pool.d/www.conf
 # ${gsPhpDir}/fpm/php.ini
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/php/etc.php.7.1.php.ini.tmpl ${gsPhpDir}/fpm/php.ini
+install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/php/etc.php.7.3.php.ini.tmpl ${gsPhpDir}/fpm/php.ini
 # ${gsPhpDir}/cli/php.ini
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/php/etc.php.7.1.php.ini.tmpl ${gsPhpDir}/cli/php.ini
+install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/php/etc.php.7.3.php.ini.tmpl ${gsPhpDir}/cli/php.ini
 perl -pi -e "s/disable_functions = /;disable_functions = /g" ${gsPhpDir}/cli/php.ini
 
 #### Modules inventory
 sExtDir="/usr/lib/php/20151012"
-sAllExtList="$(echo ${sAllExtList} | xargs -n1 | sort -u | xargs | sed -e 's/^ //g;' | sed 's/\s+$//')"
+sAllExtList="$(echo "${sAllExtList}" | xargs -n1 | sort -u | xargs | sed 's/^ //g;s/\s+$//g;')"
 
 #### PEAR/PECL config
 update-ca-certificates --verbose --fresh &>/dev/null
@@ -105,11 +105,11 @@ for Ext in ${sAllExtList}; do
     case "${Ext}" in
         'opcache')
             echo "zend_extension=opcache.so" >${gsPhpDir}/mods-available/opcache.ini
-            [ -z "$(php -m | grep 'opcache')" ] && $binPhpEnmod opcache
+            [ -z "$(php -m | grep 'opcache')" ] && ${binPhpEnmod} opcache
             ;;
         *)
             echo "extension=${Ext}.so" >${gsPhpDir}/mods-available/${Ext}.ini
-            [ -z "$(php -m | grep "${Ext}")" ] && $binPhpEnmod ${Ext}
+            [ -z "$(php -m | grep "${Ext}")" ] && ${binPhpEnmod} ${Ext}
             ;;
     esac
 done
@@ -125,12 +125,12 @@ for Ext in $sPeclModules; do
             make install
             make test
             echo "extension=smbclient.so" >${gsPhpDir}/mods-available/smbclient.ini
-            $binPhpEnmod smbclient
+            ${binPhpEnmod} smbclient
             ;;
         'htscanner')
             pecl install htscanner
             echo "extension=htscanner.so" >${gsPhpDir}/mods-available/htscanner.ini
-            $binPhpEnmod htscanner
+            ${binPhpEnmod} htscanner
             rm -fv ${gsPhpDir}/cli/conf.d/20-htscanner.ini
             ;;
     esac
@@ -158,7 +158,7 @@ gfnManageServices start "redis-server ${binPhpService} nginx"
 #### Composer
 gfnGetRepoValues 'Composer'
 gfnRepoManageByType
-if [ "$gsVersionInstalled" != "$gsVersionLatest" ]; then
+if [ "${gsVersionInstalled}" != "${gsVersionLatest}" ]; then
     gfnRepoManageByType
     chmod -v +x ${gsRepoDir}
     ${gsRepoDir} --version | grep 'Composer version'
