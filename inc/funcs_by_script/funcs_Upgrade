@@ -242,6 +242,7 @@ gfnUpgradeInProgress() {
             sServicesToStop="${sServicesToStop} vsftpd"
             for sUser in ${gsUsersList}; do
                 deluser "${sUser}" MySB_users
+                systemctl disable rtorrent-"${sUser}"
             done
             # Stopping some services like Plex or OpenVPN
             [[ ${gbIsInstalled_OpenVPN} == "YES" ]] && sServicesToStop="${sServicesToStop} openvpn"
@@ -249,6 +250,9 @@ gfnUpgradeInProgress() {
             [[ ${gbIsInstalled_Tautulli} == "YES" ]] && sServicesToStop="${sServicesToStop} tautulli"
             # Stop services
             gfnManageServices 'stop' "${sServicesToStop}"
+            # rTorrent init
+            rm -f /etc/init.d/rtorrent-*
+            systemctl daemon-reload
             # NginX
             rm -f /etc/nginx/sites-enabled/WiP
             rm -f /etc/nginx/sites-enabled/default
@@ -281,7 +285,12 @@ gfnUpgradeInProgress() {
             sServicesToStop="${sServicesToStop} vsftpd"
             for sUser in ${gsUsersList}; do
                 usermod -a -G MySB_users "${sUser}"
+                # rTorrent init
+                install -v -o root -g root -m 0755 ${MySB_InstallDir}/templates/init/etc.init.d.rtorrent.tmpl "/etc/init.d/rtorrent-${sUser}"
+                perl -pi -e "s/<username>/${sUser}/g" "/etc/init.d/rtorrent-${sUser}"
+                systemctl enable rtorrent-"${sUser}"
             done
+            systemctl daemon-reload
             # Starting some services like Plex or OpenVPN
             [[ ${gbIsInstalled_OpenVPN} == "YES" ]] && sServicesToStart="${sServicesToStart} openvpn"
             [[ ${gbIsInstalled_PlexMedia} == "YES" ]] && sServicesToStart="${sServicesToStart} plexmediaserver"
