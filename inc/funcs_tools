@@ -104,7 +104,7 @@ gfnStatistics() {
 
     if [ -f /etc/machine-id ]; then
         if [ "$(gfnCheckCommand 1 geoiplookup)" == "YES" ] && [ -n "${gsSrvIpAddressExt}" ]; then
-            sCountry="$(geoiplookup "$gsSrvIpAddressExt" | awk '{ print $5 }')"
+            sCountry="$(geoiplookup "${gsSrvIpAddressExt}" | awk '{ print $5 }')"
             [ -z "$sCountry" ] && sCountry="unknown"
         else
             sCountry="unknown"
@@ -382,8 +382,8 @@ gfnCleanBeforeUpgrade() {
 
     # Clean 'sources' directory
     clear
-    echo -e "${CBLUE}${UpgradeMe_DeleteTempFiles}$CEND"
-    echo -e -n "${CRED}${Global_PleaseWait} $CEND"
+    echo -e "${CBLUE}${UpgradeMe_DeleteTempFiles}${CEND}"
+    echo -e -n "${CRED}${Global_PleaseWait} ${CEND}"
     gfnCountDown 3
     rm -vrf "${MySB_InstallDir}"/sources/*
     # Clean 'temp' directory
@@ -396,8 +396,8 @@ gfnCleanBeforeUpgrade() {
 
     # Clean '.git' directory
     clear
-    echo -e "${CBLUE}${UpgradeMe_CleanGit}$CEND"
-    echo -e -n "${CRED}$Global_PleaseWait $CEND"
+    echo -e "${CBLUE}${UpgradeMe_CleanGit}${CEND}"
+    echo -e -n "${CRED}$Global_PleaseWait ${CEND}"
     gfnCountDown 3
     cd "${MySB_InstallDir}"/ || exit
     for branch in $(git branch | grep -v "${gsCurrentVersion}\|rev" | sed 's/ //g;s/*//g;'); do
@@ -431,13 +431,13 @@ gfnGetRepoValues() {
     fi
 
     sValues="$(cmdMySQL 'MySB_db' "SELECT type,dir,version,upgrade,file,url,active FROM repositories WHERE name='$gsRepoName';" | sed "s/<InstallDir>/${gsInstallDirEscaped}/g;" | sed 's/\t/|/g;')"
-    gsRepoType="$(echo "$sValues" | awk '{split($0,a,"|"); print a[1]}')"
-    gsRepoDir="$(echo "$sValues" | awk '{split($0,a,"|"); print a[2]}')"
-    gsRepoVersion="$(echo "$sValues" | awk '{split($0,a,"|"); print a[3]}')"
-    gnRepoUpgrade="$(echo "$sValues" | awk '{split($0,a,"|"); print a[4]}')"
-    gsRepoFile="$(echo "$sValues" | awk '{split($0,a,"|"); print a[5]}')"
-    gsRepoURL="$(echo "$sValues" | awk '{split($0,a,"|"); print a[6]}')"
-    gnRepoActive="$(echo "$sValues" | awk '{split($0,a,"|"); print a[7]}')"
+    gsRepoType="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[1]}')"
+    gsRepoDir="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[2]}')"
+    gsRepoVersion="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[3]}')"
+    gnRepoUpgrade="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[4]}')"
+    gsRepoFile="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[5]}')"
+    gsRepoURL="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[6]}')"
+    gnRepoActive="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[7]}')"
 
     case "$gsRepoName" in
         'Plex Media Server')
@@ -488,7 +488,7 @@ gfnGetRepoValues() {
     echo "########## $gsRepoName"
     echo "Directory : $gsRepoDir"
     echo "Version in DB : $gsRepoVersion"
-    echo "File : $MySB_Files/$gsRepoFile"
+    echo "File : ${MySB_Files}/$gsRepoFile"
     echo "To upgrade : $(echo "$gnRepoUpgrade" | sed 's/0/NO/g;s/1/YES/g;')"
     echo "Type : $gsRepoType"
     echo "Active : $(echo "$gnRepoActive" | sed 's/0/NO/g;s/1/YES/g;')"
@@ -523,14 +523,14 @@ gfnRepoManageByType() {
         case "$gsRepoType" in
             'TARXZ')
                 [ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
-                if [ ! -f "$MySB_Files/$gsRepoFile" ]; then
-                    $binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
+                if [ ! -f "${MySB_Files}/$gsRepoFile" ]; then
+                    $binCURL -o "${MySB_Files}/$gsRepoFile" "$gsRepoURL"
                     gnError=$?
                 fi
                 if [ ! -d "$gsRepoDir" ] && [ $gnError -eq 0 ]; then
-                    sSubDir="$(tar --xz -tf $MySB_Files/$gsRepoFile | cut -d '/' -f 1 | uniq)"
+                    sSubDir="$(tar --xz -tf ${MySB_Files}/$gsRepoFile | cut -d '/' -f 1 | uniq)"
                     if [ ! -d "${MySB_InstallDir}/temp/$sSubDir" ]; then
-                        tar --xz -xf "$MySB_Files/$gsRepoFile" -C "${MySB_InstallDir}/temp/"
+                        tar --xz -xf "${MySB_Files}/$gsRepoFile" -C "${MySB_InstallDir}/temp/"
                         gnError=$?
                     fi
                     if [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "$gsRepoDir" ]; then
@@ -542,14 +542,14 @@ gfnRepoManageByType() {
                 ;;
             'TARGZ')
                 [ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
-                if [ ! -f "$MySB_Files/$gsRepoFile" ]; then
-                    $binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
+                if [ ! -f "${MySB_Files}/$gsRepoFile" ]; then
+                    $binCURL -o "${MySB_Files}/$gsRepoFile" "$gsRepoURL"
                     gnError=$?
                 fi
                 if [ ! -d "$gsRepoDir" ] && [ $gnError -eq 0 ]; then
-                    sSubDir="$(tar -ztf "$MySB_Files/$gsRepoFile" | cut -d '/' -f 1 | uniq)"
+                    sSubDir="$(tar -ztf "${MySB_Files}/$gsRepoFile" | cut -d '/' -f 1 | uniq)"
                     if [ ! -d "${MySB_InstallDir}/temp/$sSubDir" ]; then
-                        tar -zxf "$MySB_Files/$gsRepoFile" -C "${MySB_InstallDir}"/temp/
+                        tar -zxf "${MySB_Files}/$gsRepoFile" -C "${MySB_InstallDir}"/temp/
                         gnError=$?
                     fi
                     if [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "$gsRepoDir" ]; then
@@ -568,21 +568,21 @@ gfnRepoManageByType() {
             'DEB')
                 [ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
                 if [ ! -f "$gsRepoDir/$gsRepoFile" ]; then
-                    $binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
+                    $binCURL -o "${MySB_Files}/$gsRepoFile" "$gsRepoURL"
                     gnError=$?
                 fi
                 ;;
             'SVN')
                 if [ ! -d "$gsRepoDir"/.svn ]; then
                     # The GitHub project may have a ZIP archive.
-                    if [ -f "$MySB_Files/$gsRepoFile" ]; then
-                        sSubDir="$(unzip -l "$MySB_Files/$gsRepoFile" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
+                    if [ -f "${MySB_Files}/$gsRepoFile" ]; then
+                        sSubDir="$(unzip -l "${MySB_Files}/$gsRepoFile" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
                         if [ ! -d "${MySB_InstallDir}/temp/$sSubDir" ]; then
-                            unzip -q "$MySB_Files/$gsRepoFile" -d "${MySB_InstallDir}"/temp/
+                            unzip -q "${MySB_Files}/$gsRepoFile" -d "${MySB_InstallDir}"/temp/
                             gnError=$?
                             # If a package has 2 archives (*_2.zip)
-                            if [ $gnError -eq 0 ] && [ -f "$MySB_Files/${gsRepoFile//.zip/_2.zip}" ]; then
-                                unzip -q "$MySB_Files/${gsRepoFile//.zip/_2.zip}" -d "${MySB_InstallDir}"/temp/
+                            if [ $gnError -eq 0 ] && [ -f "${MySB_Files}/${gsRepoFile//.zip/_2.zip}" ]; then
+                                unzip -q "${MySB_Files}/${gsRepoFile//.zip/_2.zip}" -d "${MySB_InstallDir}"/temp/
                                 gnError=$?
                             fi
                         fi
@@ -597,14 +597,14 @@ gfnRepoManageByType() {
                 fi
                 ;;
             'GIT')
-                if [ -f "$MySB_Files/$gsRepoFile" ] && [ ! -d "$gsRepoDir" ]; then
-                    sSubDir="$(unzip -l "$MySB_Files/$gsRepoFile" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
+                if [ -f "${MySB_Files}/$gsRepoFile" ] && [ ! -d "$gsRepoDir" ]; then
+                    sSubDir="$(unzip -l "${MySB_Files}/$gsRepoFile" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
                     if [ ! -d "${MySB_InstallDir}/temp/$sSubDir" ]; then
-                        unzip -q "$MySB_Files/$gsRepoFile" -d "${MySB_InstallDir}"/temp/
+                        unzip -q "${MySB_Files}/$gsRepoFile" -d "${MySB_InstallDir}"/temp/
                         gnError=$?
                         # If a package has 2 archives (*_2.zip)
-                        if [ $gnError -eq 0 ] && [ -f "$MySB_Files/${gsRepoFile//.zip/_2.zip}" ]; then
-                            unzip -q "$MySB_Files/${gsRepoFile//.zip/_2.zip}" -d "${MySB_InstallDir}"/temp/
+                        if [ $gnError -eq 0 ] && [ -f "${MySB_Files}/${gsRepoFile//.zip/_2.zip}" ]; then
+                            unzip -q "${MySB_Files}/${gsRepoFile//.zip/_2.zip}" -d "${MySB_InstallDir}"/temp/
                             gnError=$?
                         fi
                     fi
@@ -628,15 +628,15 @@ gfnRepoManageByType() {
                                 ;;
                         esac
                     fi
-                elif [ ! -f "$MySB_Files/$gsRepoFile" ] && [ ! -d "$gsRepoDir" ]; then
+                elif [ ! -f "${MySB_Files}/$gsRepoFile" ] && [ ! -d "$gsRepoDir" ]; then
                     git clone "$gsRepoURL" "$gsRepoDir"
                     gnError=$?
                 fi
                 ;;
             'ZIP')
                 [ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
-                if [ ! -f "$MySB_Files/$gsRepoFile" ]; then
-                    $binCURL -o "$MySB_Files/$gsRepoFile" "$gsRepoURL"
+                if [ ! -f "${MySB_Files}/$gsRepoFile" ]; then
+                    $binCURL -o "${MySB_Files}/$gsRepoFile" "$gsRepoURL"
                     gnError=$?
                 fi
                 case "$gsRepoName" in
@@ -645,9 +645,9 @@ gfnRepoManageByType() {
                         ;;
                 esac
                 if [ ! -d "$gsRepoDir" ] && [ $gnError -eq 0 ]; then
-                    sSubDir="$(unzip -l "$MySB_Files/$gsRepoFile" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
+                    sSubDir="$(unzip -l "${MySB_Files}/$gsRepoFile" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
                     if [ ! -d "${MySB_InstallDir}/temp/$sSubDir" ]; then
-                        unzip -q "$MySB_Files/$gsRepoFile" -d "${MySB_InstallDir}"/temp/
+                        unzip -q "${MySB_Files}/$gsRepoFile" -d "${MySB_InstallDir}"/temp/
                         gnError=$?
                     fi
                     if [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "$gsRepoDir" ]; then
@@ -661,8 +661,8 @@ gfnRepoManageByType() {
                 [ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
                 $binCURL "$gsRepoURL" -o "$gsRepoDir"
                 gnError=$?
-                if [ -f "$MySB_Files/$gsRepoFile" ]; then
-                    cp -v "$MySB_Files/$gsRepoFile" "$gsRepoDir"
+                if [ -f "${MySB_Files}/$gsRepoFile" ]; then
+                    cp -v "${MySB_Files}/$gsRepoFile" "$gsRepoDir"
                     gnError=$?
                 fi
                 ;;

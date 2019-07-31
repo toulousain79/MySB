@@ -213,7 +213,7 @@ gfnManageServices() {
                                 if (! service "$Service" stop >/dev/null); then
                                     fuser -k 81/tcp >/dev/null 2>&1
                                     [[ -n ${gsPort_System_HTTP} ]] && fuser -k "$gsPort_System_HTTP"/tcp >/dev/null 2>&1
-                                    [[ -n ${gsPort_MySB_HTTPS} ]] && fuser -k "$gsPort_MySB_HTTPS"/tcp >/dev/null 2>&1
+                                    [[ -n ${gsPort_MySB_HTTPS} ]] && fuser -k "${gsPort_MySB_HTTPS}"/tcp >/dev/null 2>&1
                                     [[ -n ${gsPort_NginX_HTTP} ]] && fuser -k "$gsPort_NginX_HTTP"/tcp >/dev/null 2>&1
                                     [[ -n ${gsPort_NginX_HTTPS} ]] && fuser -k "$gsPort_NginX_HTTPS"/tcp >/dev/null 2>&1
                                     gfnStatusLSB 0
@@ -347,7 +347,7 @@ gfnManageServices() {
                                             log_daemon_msg "$Funcs_Restarting $Service"
                                             fuser -k 81/tcp >/dev/null 2>&1
                                             [[ -n $gsPort_System_HTTP ]] && fuser -k "$gsPort_System_HTTP"/tcp >/dev/null 2>&1
-                                            [[ -n $gsPort_MySB_HTTPS ]] && fuser -k "$gsPort_MySB_HTTPS"/tcp >/dev/null 2>&1
+                                            [[ -n ${gsPort_MySB_HTTPS} ]] && fuser -k "${gsPort_MySB_HTTPS}"/tcp >/dev/null 2>&1
                                             [[ -n $gsPort_NginX_HTTP ]] && fuser -k "$gsPort_NginX_HTTP"/tcp >/dev/null 2>&1
                                             [[ -n $gsPort_NginX_HTTPS ]] && fuser -k "$gsPort_NginX_HTTPS"/tcp >/dev/null 2>&1
                                             service "$Service" restart >/dev/null
@@ -530,7 +530,7 @@ gfnScriptInvoke() {
             gfnLoadLanguage "$sScript"
 
             ${sMethod} "${MySB_InstallDir}/temp/${gsScriptName}_${sScript}.invoked" "${aArgs[@]}"
-            [ "$gbDevMode" -eq 0 ] && rm -f "${MySB_InstallDir}/temp/${gsScriptName}_${sScript}.invoked"
+            [ "${gbDevMode}" -eq 0 ] && rm -f "${MySB_InstallDir}/temp/${gsScriptName}_${sScript}.invoked"
             ;;
         "ScreenSTD" | "ScreenWAIT" | "InQueue")
             screen -dmS "${gsScriptName}_${sScript}" /bin/bash "$sScriptWished" "${aArgs[@]}"
@@ -691,7 +691,7 @@ gfnManageDirAndFiles() {
         fi
 
         # ruTorrent Global Config
-        if [ -n "$gsRutorrentDir" ] && [ -d "$gsRutorrentDir" ]; then
+        if [ -n "${gsRutorrentDir}" ] && [ -d "${gsRutorrentDir}" ]; then
             fnRuTorrentGlobalConfigs
         fi
     fi
@@ -724,12 +724,12 @@ gfnManageDirAndFiles() {
 
     # ruTorrent
     if [ "$sSwitch" == "global" ] || [ "$sSwitch" == "no_user" ]; then
-        if [ -n "$gsRutorrentDir" ] && [ -d "$gsRutorrentDir" ]; then
-            if [ -d "$gsRutorrentDir" ]; then chmod -R 0755 "$gsRutorrentDir"; fi
-            if [ -d "$gsRutorrentDir" ]; then chown -R www-data:www-data "$gsRutorrentDir"; fi
-            if [ -d "$gsRutorrentDir"/share ]; then
-                chmod -R 0777 "$gsRutorrentDir"/share
-                find "$gsRutorrentDir"/share/ -type f -print0 | xargs -0 chmod 0666
+        if [ -n "${gsRutorrentDir}" ] && [ -d "${gsRutorrentDir}" ]; then
+            if [ -d "${gsRutorrentDir}" ]; then chmod -R 0755 "${gsRutorrentDir}"; fi
+            if [ -d "${gsRutorrentDir}" ]; then chown -R www-data:www-data "${gsRutorrentDir}"; fi
+            if [ -d "${gsRutorrentDir}"/share ]; then
+                chmod -R 0777 "${gsRutorrentDir}"/share
+                find "${gsRutorrentDir}"/share/ -type f -print0 | xargs -0 chmod 0666
             fi
             if [ -d "$gsRutorrentPluginsDir"/fileupload/scripts/upload ]; then chmod 0775 "$gsRutorrentPluginsDir"/fileupload/scripts/upload; fi
         fi
@@ -751,18 +751,18 @@ gfnManageDirAndFiles() {
 fnRuTorrentGlobalConfigs() {
     local sPluginsList sPlugin bIsActive nNumLine tabState bVerbose
 
-    [ "$gbDevMode" -eq 1 ] && bVerbose=1 || bVerbose=0
+    [ "${gbDevMode}" -eq 1 ] && bVerbose=1 || bVerbose=0
     [ -d "$gsRutorrentPluginsDir" ] && sPluginsList=$(ls -1r "$gsRutorrentPluginsDir"/) || return 0
     mapfile -t tabState < <(cmdMySQL 'MySB_db' "SELECT name,active FROM repositories WHERE name LIKE 'ruTorrent Plugin%' ORDER BY name;" | sed 's/ruTorrent Plugin//g;s/ //g;s/\t/|/g;' | tr '[:upper:]' '[:lower:]')
 
-    if [ -f "$gsRutorrentDir"/conf/config.php ]; then
+    if [ -f "${gsRutorrentDir}"/conf/config.php ]; then
         # Alter 'config.php' for general use
-        perl -pi -e "s/\$topDirectory = '\/';/\$topDirectory = '\/home';/g" "$gsRutorrentDir"/conf/config.php
-        sed -i "/\"php\"/s/'',/'\/usr\/bin\/php',/g" "$gsRutorrentDir"/conf/config.php
-        sed -i "/\"curl\"/s/'',/'\/usr\/bin\/curl',/g" "$gsRutorrentDir"/conf/config.php
-        sed -i "/\"gzip\"/s/'',/'\/bin\/gzip',/g" "$gsRutorrentDir"/conf/config.php
-        sed -i "/\"id\"/s/'',/'\/usr\/bin\/id',/g" "$gsRutorrentDir"/conf/config.php
-        sed -i "/\"stat\"/s/'',/'\/usr\/bin\/stat',/g" "$gsRutorrentDir"/conf/config.php
+        perl -pi -e "s/\$topDirectory = '\/';/\$topDirectory = '\/home';/g" "${gsRutorrentDir}"/conf/config.php
+        sed -i "/\"php\"/s/'',/'\/usr\/bin\/php',/g" "${gsRutorrentDir}"/conf/config.php
+        sed -i "/\"curl\"/s/'',/'\/usr\/bin\/curl',/g" "${gsRutorrentDir}"/conf/config.php
+        sed -i "/\"gzip\"/s/'',/'\/bin\/gzip',/g" "${gsRutorrentDir}"/conf/config.php
+        sed -i "/\"id\"/s/'',/'\/usr\/bin\/id',/g" "${gsRutorrentDir}"/conf/config.php
+        sed -i "/\"stat\"/s/'',/'\/usr\/bin\/stat',/g" "${gsRutorrentDir}"/conf/config.php
     fi
 
     for sPlugin in $sPluginsList; do
@@ -806,7 +806,7 @@ fnRuTorrentGlobalConfigs() {
                 if [ "$bIsActive" -eq 1 ]; then
                     if [ -f "$gsRutorrentPluginsDir/$sPlugin/conf.php" ]; then
                         sed -i '/$downloadpath =/d' "$gsRutorrentPluginsDir/$sPlugin/conf.php"
-                        echo "\$downloadpath = 'https://${gsHostNameFqdn}:$gsPort_MySB_HTTPS/fileshare.php';" >>"$gsRutorrentPluginsDir/$sPlugin/conf.php"
+                        echo "\$downloadpath = 'https://${gsHostNameFqdn}:${gsPort_MySB_HTTPS}/fileshare.php';" >>"$gsRutorrentPluginsDir/$sPlugin/conf.php"
                     fi
                 else
                     gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
@@ -820,7 +820,7 @@ fnRuTorrentGlobalConfigs() {
                     fi
                 else
                     gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
-                    gfnDeleteDirectory $bVerbose "$gsRutorrentDir/conf/users/*/$sPlugin"
+                    gfnDeleteDirectory $bVerbose "${gsRutorrentDir}/conf/users/*/$sPlugin"
                 fi
                 ;;
             'instantsearch')
@@ -839,7 +839,7 @@ fnRuTorrentGlobalConfigs() {
                     if [ -f "$gsRutorrentPluginsDir/$sPlugin/conf.php" ]; then
                         nNumLine=$(grep '$url =' -n -m 1 "$gsRutorrentPluginsDir/$sPlugin/conf.php" | cut -d ':' -f 1)
                         sed -i '/$url =/d' "$gsRutorrentPluginsDir/$sPlugin/conf.php"
-                        sed -i "${nNumLine}i\$url = 'https:\/\/$gsHostNameFqdn:$gsPort_MySB_HTTPS\/cb\/';" "$gsRutorrentPluginsDir/$sPlugin/conf.php"
+                        sed -i "${nNumLine}i\$url = 'https:\/\/${gsHostNameFqdn}:${gsPort_MySB_HTTPS}\/cb\/';" "$gsRutorrentPluginsDir/$sPlugin/conf.php"
                         perl -pi -e "s/\/torrents\//\/rtorrent\//g" "$gsRutorrentPluginsDir/$sPlugin/conf.php"
                     fi
                 else
@@ -852,7 +852,7 @@ fnRuTorrentGlobalConfigs() {
                     if [ -f "$gsRutorrentPluginsDir/$sPlugin/conf.php" ]; then
                         nNumLine=$(grep '$url =' -n -m 1 "$gsRutorrentPluginsDir/$sPlugin/conf.php" | cut -d ':' -f 1)
                         sed -i '/$url =/d' "$gsRutorrentPluginsDir/$sPlugin/conf.php"
-                        sed -i "${nNumLine}i\$url = 'https:\/\/$gsHostNameFqdn:$gsPort_MySB_HTTPS\/sm\/';" "$gsRutorrentPluginsDir/$sPlugin/conf.php"
+                        sed -i "${nNumLine}i\$url = 'https:\/\/${gsHostNameFqdn}:${gsPort_MySB_HTTPS}\/sm\/';" "$gsRutorrentPluginsDir/$sPlugin/conf.php"
                     fi
                 else
                     gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
@@ -878,7 +878,7 @@ fnRuTorrentGlobalConfigs() {
                     if [ -f "$gsRutorrentPluginsDir/$sPlugin/conf.php" ]; then
                         nNumLine=$(grep '$streampath =' -n -m 1 "$gsRutorrentPluginsDir/$sPlugin/conf.php" | cut -d ':' -f 1)
                         sed -i '/$streampath =/d' "$gsRutorrentPluginsDir/$sPlugin/conf.php"
-                        sed -i "${nNumLine}i\$streampath = 'https://$gsHostNameFqdn:$gsPort_MySB_HTTPS/view';" "$gsRutorrentPluginsDir/$sPlugin/conf.php"
+                        sed -i "${nNumLine}i\$streampath = 'https://${gsHostNameFqdn}:${gsPort_MySB_HTTPS}/view';" "$gsRutorrentPluginsDir/$sPlugin/conf.php"
                     fi
                 else
                     gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"

@@ -916,7 +916,7 @@ gfnMonthlyPayment() {
                 #		==> Utilisation d'un trigger sur UPDATE pour calculer le prix de la période
                 #		- modification de 'tracking_rent_status'
                 cmdMySQL 'MySB_db' "UPDATE tracking_rent_history SET $sNewValues WHERE id_users='${nIdUser}' AND year='$dYear' AND month='$dMonth' ORDER BY id_tracking_rent_history DESC LIMIT 1;"
-                if [ "${nIdUser}" == "$gnMainUserId" ]; then
+                if [ "${nIdUser}" == "${gnMainUserId}" ]; then
                     cmdMySQL 'MySB_db' "UPDATE tracking_rent_status SET already_payed='9999.99' WHERE id_users='${nIdUser}' AND year='$dYear' AND month='$dMonth';"
                 fi
             fi
@@ -929,7 +929,7 @@ gfnMonthlyPayment() {
             if [ $nCreateNewPeriodPrice -eq 1 ]; then
                 # 3/ Ajout d'une nouvelle période prix (nouveau mois OU changement du nombre d'utilisateur)
                 cmdMySQL 'MySB_db' "INSERT INTO tracking_rent_history (id_users,monthly_price,nb_users,start_of_use,end_of_use) VALUES ('${nIdUser}','$gsRentingCostTva','$gnTotalUsers','$dStartOfUse','$dEndOfUse');"
-                if [ "${nIdUser}" == "$gnMainUserId" ]; then
+                if [ "${nIdUser}" == "${gnMainUserId}" ]; then
                     cmdMySQL 'MySB_db' "UPDATE tracking_rent_status SET already_payed='9999.99' WHERE id_users='${nIdUser}' AND year='$dYear' AND month='$dMonth';"
                 fi
             fi
@@ -941,11 +941,11 @@ gfnMonthlyPayment() {
         done
 
         # Update treasury for the main user
-        sRentStatusValues="$(cmdMySQL 'MySB_db' "SELECT sum(period_cost), sum(already_payed) FROM tracking_rent_status WHERE id_users!='$gnMainUserId' AND already_payed!=period_cost;" | sed 's/\t/|/g;')"
+        sRentStatusValues="$(cmdMySQL 'MySB_db' "SELECT sum(period_cost), sum(already_payed) FROM tracking_rent_status WHERE id_users!='${gnMainUserId}' AND already_payed!=period_cost;" | sed 's/\t/|/g;')"
         nSumPeriodCost="$(echo "$sRentStatusValues" | awk '{split($0,a,"|"); print a[1]}')"
         nSumAlreadyPayed="$(echo "$sRentStatusValues" | awk '{split($0,a,"|"); print a[2]}')"
         nUserTreasury=$(echo "($nSumAlreadyPayed - $nSumPeriodCost)" | bc)
-        cmdMySQL 'MySB_db' "UPDATE users SET treasury='$nUserTreasury' WHERE id_users='$gnMainUserId';"
+        cmdMySQL 'MySB_db' "UPDATE users SET treasury='$nUserTreasury' WHERE id_users='${gnMainUserId}';"
     fi
 }
 
