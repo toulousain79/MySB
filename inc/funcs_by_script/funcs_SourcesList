@@ -83,13 +83,35 @@ gfnCreateLocalMirror() {
     fi
     {
         echo '#!/bin/sh'
-        # echo "# Remove here some unused sources"
-        # echo "rm -rf /var/spool/apt-mirror/mirror/repo/php/pool/main/p/php5.6/"
+        echo "# Sury repo - Remove unused PHP version"
+        echo "rm -rf /var/spool/apt-mirror/mirror/packages.sury.org/php/pool/main/p/php5.6/"
+        echo "rm -rf /var/spool/apt-mirror/mirror/packages.sury.org/php/pool/main/p/php7.0/"
+        echo "rm -rf /var/spool/apt-mirror/mirror/packages.sury.org/php/pool/main/p/php7.1/"
+        echo "rm -rf /var/spool/apt-mirror/mirror/packages.sury.org/php/pool/main/p/php7.2/"
         echo "# Apt-Mirror - Clean script"
         echo "/var/spool/apt-mirror/var/clean.sh"
     } >/var/spool/apt-mirror/var/postmirror.sh
     chmod 0755 /var/spool/apt-mirror/var/*.sh
     chown apt-mirror:apt-mirror /var/spool/apt-mirror/var/*.sh
+
+    #### PHP 7.3 (Sury)
+    # GPG Key
+    $binCURL -o "/tmp/php.key" "https://packages.sury.org/php/apt.gpg"
+    if [ -f /tmp/php.key ]; then
+        apt-key add /tmp/php.key
+    fi
+    # Local mirrors
+    {
+        echo "# PHP 7.3 (Sury)"
+        echo "deb [arch=${sArch}] https://packages.sury.org/php/ ${gsDebianRelease} main"
+        echo "clean https://packages.sury.org/php/"
+    } >>/etc/apt/mirror.list
+    # php.list (local)
+    {
+        echo "# PHP 7.3 (Sury)"
+        echo "# https://github.com/oerdnj/deb.sury.org/wiki/Managing-Multiple-Versions"
+        echo "deb [arch=${sArch}] file:///var/spool/apt-mirror/mirror/packages.sury.org/php/ ${gsDebianRelease} main"
+    } >/etc/apt/sources.list.d/php.list
 
     #### Docker
     # GPG Key

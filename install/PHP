@@ -40,8 +40,8 @@ sysctl --system
 #### Install packages
 sPeclModules="smbclient"
 sDebModulesWithPecl=""
-# gfnPackagesManage purge "${sDebModulesWithPecl}"
-sPackages=(redis-server php-common php-cli php-fpm php-imagick php-dev php-curl php-gd php-gmp php-imap php-intl php-json php-mcrypt php-mysql php-readline php-sqlite3 php-xmlrpc php-msgpack php-geoip php-redis php-xml php-zip php-mbstring php-smbclient php-pear libgeoip-dev "${sDebModulesWithPecl}")
+# gfnPackagesManage purge "$sDebModulesWithPecl"
+sPackages=(redis-server php7.3-common php7.3-cli php7.3-fpm php7.3-imagick php7.3-dev php7.3-curl php7.3-gd php7.3-gmp php7.3-imap php7.3-intl php7.3-json php7.3-mcrypt php7.3-mysql php7.3-readline php7.3-sqlite3 php7.3-xmlrpc php7.3-msgpack php7.3-geoip php7.3-redis php7.3-xml php7.3-zip php7.3-mbstring php7.3-smbclient php-pear libgeoip-dev "${sDebModulesWithPecl}")
 gfnPackageBundleInstall "${sPackages[@]}"
 gfnPackagesManage purge "apache2"
 
@@ -69,7 +69,7 @@ perl -pi -e "s/disable_functions = /;disable_functions = /g" ${gsPhpDir}/cli/php
 
 #### Modules inventory
 sExtDir="/usr/lib/php/20151012"
-sAllExtList="$(echo "${sAllExtList}" | xargs -n1 | sort -u | xargs | sed 's/^ //g;s/\s+$//g;')"
+sAllExtList="$(echo "${sAllExtList}" | xargs -n1 | sort -u | xargs | sed -e 's/^ //g;s/\s+$//g;')"
 
 #### PEAR/PECL config
 update-ca-certificates --verbose --fresh &>/dev/null
@@ -82,7 +82,7 @@ pear upgrade --force pear/XML_Util
 pear upgrade --force
 
 #### Disable all modules
-for Ext in $sPeclModules; do
+for Ext in ${sPeclModules}; do
     [ -f ${gsPhpDir}/mods-available/${Ext}.ini ] && phpdismod ${Ext}
     rm -fv ${gsPhpDir}/mods-available/${Ext}.ini
     [ -n "$(pecl list | grep "${Ext}")" ] && pecl uninstall ${Ext}
@@ -105,15 +105,15 @@ for Ext in ${sAllExtList}; do
     case "${Ext}" in
         'opcache')
             echo "zend_extension=opcache.so" >${gsPhpDir}/mods-available/opcache.ini
-            [ -z "$(php -m | grep 'opcache')" ] && ${binPhpEnmod} opcache
+            [ -z "$(php -m | grep 'opcache')" ] && $binPhpEnmod opcache
             ;;
         *)
             echo "extension=${Ext}.so" >${gsPhpDir}/mods-available/${Ext}.ini
-            [ -z "$(php -m | grep "${Ext}")" ] && ${binPhpEnmod} ${Ext}
+            [ -z "$(php -m | grep "${Ext}")" ] && $binPhpEnmod ${Ext}
             ;;
     esac
 done
-for Ext in $sPeclModules; do
+for Ext in ${sPeclModules}; do
     case "${Ext}" in
         'smbclient')
             gfnGetRepoValues 'libsmbclient-php' && gfnRepoManageByType
@@ -125,12 +125,12 @@ for Ext in $sPeclModules; do
             make install
             make test
             echo "extension=smbclient.so" >${gsPhpDir}/mods-available/smbclient.ini
-            ${binPhpEnmod} smbclient
+            $binPhpEnmod smbclient
             ;;
         'htscanner')
             pecl install htscanner
             echo "extension=htscanner.so" >${gsPhpDir}/mods-available/htscanner.ini
-            ${binPhpEnmod} htscanner
+            $binPhpEnmod htscanner
             rm -fv ${gsPhpDir}/cli/conf.d/20-htscanner.ini
             ;;
     esac
