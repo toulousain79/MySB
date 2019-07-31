@@ -88,7 +88,7 @@ DisplaySurvey() {
 
             # Primary Inet
             echo
-            gfnQuestionGetString NO "$Questions_PrimaryNetwork" gsPrimaryInet "${gsHostNameFqdn}"
+            gfnQuestionGetString NO "$Questions_PrimaryNetwork" gsPrimaryInet "${gsPrimaryInet}"
 
             # Box' local IP
             echo
@@ -99,7 +99,7 @@ DisplaySurvey() {
                 sValue="${gsSrvIpAddress}"
             fi
             while [ ! "$CHECK_SrvIpAddress" = "${gsSrvIpAddress}" ] || [ -z "${gsSrvIpAddress}" ]; do
-                gfnQuestionGetString NO "$Questions_BoxIpAddress" gsSrvIpAddress "$sValue"
+                gfnQuestionGetString NO "$Questions_BoxIpAddress" gsSrvIpAddress "${sValue}"
                 CHECK_SrvIpAddress=$(gfnValidateIP "${gsSrvIpAddress}")
             done
             unset sValue
@@ -113,7 +113,7 @@ DisplaySurvey() {
                 else
                     sValue="$gsSrvAdditionnalIpAddresses"
                 fi
-                gfnQuestionGetString NO "$Questions_BoxIpAddressAdditional" gsSrvAdditionnalIpAddresses "$sValue"
+                gfnQuestionGetString NO "$Questions_BoxIpAddressAdditional" gsSrvAdditionnalIpAddresses "${sValue}"
                 unset sValue
             fi
 
@@ -126,7 +126,7 @@ DisplaySurvey() {
                 sValue="${gsSrvIpAddressExt}"
             fi
             while [ ! "$CHECK_SrvIpAddressExt" = "${gsSrvIpAddressExt}" ] || [ -z "${gsSrvIpAddressExt}" ]; do
-                gfnQuestionGetString NO "$Questions_BoxIpAddressExt" gsSrvIpAddressExt "$sValue"
+                gfnQuestionGetString NO "$Questions_BoxIpAddressExt" gsSrvIpAddressExt "${sValue}"
                 CHECK_SrvIpAddressExt=$(gfnValidateIP "${gsSrvIpAddressExt}")
             done
             unset sValue
@@ -190,7 +190,7 @@ DisplaySurvey() {
         gsMainUserName=""
 
         while [ -n "$(echo "${gsMainUserName}" | grep '@')" ] || [ -z "${gsMainUserName}" ] || [ "$(echo "${gsMainUserName}" | tr '[:upper:]' '[:lower:]')" == "admin" ] || [[ $str != "${str%[[:space:]]*}" ]]; do
-            gfnQuestionGetString NO "$Questions_MainUserUsername" gsMainUserName "$sValue"
+            gfnQuestionGetString NO "$Questions_MainUserUsername" gsMainUserName "${sValue}"
         done
         unset sValue
     fi
@@ -202,62 +202,62 @@ DisplaySurvey() {
         echo -e "$Upgrade_MainUserPasswordConfirm"
     fi
     if [ "$RepeatSurvey" == "YES" ]; then
-        sValue="$gsMainUserPassword"
+        sValue="${gsMainUserPassword}"
     else
         sValue=""
         gsMainUserPassword=""
     fi
-    if [ -z "$gsMainUserPassword" ] || [ "$TYPE" == "UPGRADE" ] || [ "$RepeatSurvey" == "YES" ]; then
-        gfnQuestionGetString NO "$Questions_MainUserPassword" gsMainUserPassword "$sValue"
+    if [ -z "${gsMainUserPassword}" ] || [ "$TYPE" == "UPGRADE" ] || [ "$RepeatSurvey" == "YES" ]; then
+        gfnQuestionGetString NO "$Questions_MainUserPassword" gsMainUserPassword "${sValue}"
     fi
     if [ "$TYPE" == "UPGRADE" ]; then
-        cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='$gsMainUserPassword' WHERE admin='1';"
+        cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='${gsMainUserPassword}' WHERE admin='1';"
     fi
     unset sValue
 
     if [ "$DisplayUserInfo" == "YES" ]; then
         # SMTP ?
         echo
-        if [ -z "$gsSmtpProvider" ] || [ "$RepeatSurvey" == "YES" ]; then
+        if [ -z "${gsSmtpProvider}" ] || [ "$RepeatSurvey" == "YES" ]; then
             echo -e "$Questions_Message_SMTP_0"
             nLoop=1
         else
             nLoop=0
         fi
         if [ "$RepeatSurvey" == "YES" ]; then
-            sValue="$gsSmtpProvider"
+            sValue="${gsSmtpProvider}"
         else
             sValue="LOCAL"
         fi
 
         while [ $nLoop -eq 1 ]; do
-            gfnQuestionGetString NO "$Questions_SMTP" gsSmtpProvider "$sValue"
-            gsSmtpProvider="$(echo $gsSmtpProvider | tr '[:lower:]' '[:upper:]')"
-            case "$gsSmtpProvider" in
+            gfnQuestionGetString NO "$Questions_SMTP" gsSmtpProvider "${sValue}"
+            gsSmtpProvider="$(echo "${gsSmtpProvider}" | tr '[:lower:]' '[:upper:]')"
+            case "${gsSmtpProvider}" in
                 'LOCAL' | 'FREE' | 'OVH' | 'GMAIL' | 'YAHOO' | 'ZOHO')
                     nLoop=0
                     ;;
             esac
         done
 
-        if [ "$gsSmtpProvider" != "LOCAL" ]; then
-            gfnQuestionGetString NO "$Questions_SMTP_Username" SMTP_Username "$SMTP_Username"
-            gfnQuestionGetString NO "$Questions_SMTP_Password" SMTP_Password "$SMTP_Password"
+        if [ "${gsSmtpProvider}" != "LOCAL" ]; then
+            gfnQuestionGetString NO "$Questions_SMTP_Username" SMTP_Username "${SMTP_Username}"
+            gfnQuestionGetString NO "$Questions_SMTP_Password" SMTP_Password "${SMTP_Password}"
         fi
         unset sValue nLoop
 
         # User e-mail
         echo
-        if [ "$gsSmtpProvider" != "LOCAL" ]; then
+        if [ "${gsSmtpProvider}" != "LOCAL" ]; then
             echo -e "$Questions_Message_SMTP_1"
         fi
         if [ "$RepeatSurvey" == "YES" ]; then
-            sValue="$gsMainUserEmail"
+            sValue="${gsMainUserEmail}"
         else
-            sValue="$SMTP_Username"
+            sValue="${SMTP_Username}"
         fi
-        while (! gfnValidateMail "$gsMainUserEmail") || [ -z "$gsMainUserEmail" ]; do
-            gfnQuestionGetString NO "$Questions_EmailAddress" gsMainUserEmail "$sValue"
+        while (! gfnValidateMail "${gsMainUserEmail}") || [ -z "${gsMainUserEmail}" ]; do
+            gfnQuestionGetString NO "$Questions_EmailAddress" gsMainUserEmail "${sValue}"
         done
         unset sValue
     fi
@@ -282,9 +282,9 @@ DisplaySurvey() {
         else
             sValue="${Global_None}"
         fi
-        sValue="$(echo $sValue | sed "s/^NO$/${Global_None}/g;")"
+        sValue="$(echo "${sValue}" | sed "s/^NO$/${Global_None}/g;")"
         while [ $nLoop -eq 1 ]; do
-            gfnQuestionGetString NO "$Questions_ServerProvider" gsServerProvider "$sValue"
+            gfnQuestionGetString NO "$Questions_ServerProvider" gsServerProvider "${sValue}"
             gsServerProvider="$(echo ${gsServerProvider} | tr '[:lower:]' '[:upper:]')"
             case "${gsServerProvider}" in
                 "${Global_None}" | 'OVH' | 'ONLINE' | 'DIGICUBE' | 'HETZNER')
@@ -304,7 +304,7 @@ DisplaySurvey() {
                 sValue="${Global_YES}"
             fi
             while [ $nLoop -eq 1 ]; do
-                gfnQuestionGetString NO "$Questions_InstallSeedboxManager" gbToInstall_Manager "$sValue"
+                gfnQuestionGetString NO "$Questions_InstallSeedboxManager" gbToInstall_Manager "${sValue}"
                 gbToInstall_Manager="$(echo ${gbToInstall_Manager} | tr '[:lower:]' '[:upper:]')"
                 case "${gbToInstall_Manager}" in
                     "${Global_NO}" | "${Global_YES}")
@@ -333,7 +333,7 @@ DisplaySurvey() {
                 sValue="${Global_YES}"
             fi
             while [ $nLoop -eq 1 ]; do
-                gfnQuestionGetString NO "$Questions_InstallCakeBox" gbToInstall_Cakebox "$sValue"
+                gfnQuestionGetString NO "$Questions_InstallCakeBox" gbToInstall_Cakebox "${sValue}"
                 gbToInstall_Cakebox="$(echo ${gbToInstall_Cakebox} | tr '[:lower:]' '[:upper:]')"
                 case "${gbToInstall_Cakebox}" in
                     "${Global_NO}" | "${Global_YES}")
@@ -362,7 +362,7 @@ DisplaySurvey() {
                 sValue="${Global_YES}"
             fi
             while [ $nLoop -eq 1 ]; do
-                gfnQuestionGetString NO "$Questions_InstallPlexMedia" gbToInstall_PlexMedia "$sValue"
+                gfnQuestionGetString NO "$Questions_InstallPlexMedia" gbToInstall_PlexMedia "${sValue}"
                 gbToInstall_PlexMedia="$(echo ${gbToInstall_PlexMedia} | tr '[:lower:]' '[:upper:]')"
                 case "${gbToInstall_PlexMedia}" in
                     "${Global_NO}" | "${Global_YES}")
@@ -390,7 +390,7 @@ DisplaySurvey() {
                 sValue="${Global_YES}"
             fi
             while [ $nLoop -eq 1 ]; do
-                gfnQuestionGetString NO "$Questions_InstallNextCloud" gbToInstall_NextCloud "$sValue"
+                gfnQuestionGetString NO "$Questions_InstallNextCloud" gbToInstall_NextCloud "${sValue}"
                 gbToInstall_NextCloud="$(echo ${gbToInstall_NextCloud} | tr '[:lower:]' '[:upper:]')"
                 case "${gbToInstall_NextCloud}" in
                     "${Global_NO}" | "${Global_YES}")
@@ -419,7 +419,7 @@ DisplaySurvey() {
                 sValue="${Global_YES}"
             fi
             while [ $nLoop -eq 1 ]; do
-                gfnQuestionGetString NO "$Questions_InstallWebmin" gbToInstall_Webmin "$sValue"
+                gfnQuestionGetString NO "$Questions_InstallWebmin" gbToInstall_Webmin "${sValue}"
                 gbToInstall_Webmin="$(echo ${gbToInstall_Webmin} | tr '[:lower:]' '[:upper:]')"
                 case "${gbToInstall_Webmin}" in
                     "${Global_NO}" | "${Global_YES}")
@@ -451,7 +451,7 @@ DisplaySurvey() {
                 sValue="${Global_YES}"
             fi
             while [ $nLoop -eq 1 ]; do
-                gfnQuestionGetString NO "$Questions_InstallOpenVPN" gbToInstall_OpenVPN "$sValue"
+                gfnQuestionGetString NO "$Questions_InstallOpenVPN" gbToInstall_OpenVPN "${sValue}"
                 gbToInstall_OpenVPN="$(echo ${gbToInstall_OpenVPN} | tr '[:lower:]' '[:upper:]')"
                 case "${gbToInstall_OpenVPN}" in
                     "${Global_NO}" | "${Global_YES}")
@@ -505,11 +505,11 @@ DisplaySurvey() {
             gfnQuestionGetString NO "$Questions_PortOpenvpnTUNwithoutGW" gsPort_OpenVPN_WithoutGW "${gsPort_OpenVPN_WithoutGW}"
             gfnQuestionGetString NO "$Questions_PortOpenvpnTAPwithoutGW" gsPort_OpenVPN_TAP_WithoutGW "${gsPort_OpenVPN_TAP_WithoutGW}"
             while [ ! "${gsOpenVPN_Proto}" = "udp" ] && [ ! "${gsOpenVPN_Proto}" = "tcp" ]; do
-                gfnQuestionGetString NO "${Questions_ProtoOpenVPN[@]}" gsOpenVPN_Proto "$sValueProto"
+                gfnQuestionGetString NO "${Questions_ProtoOpenVPN[@]}" gsOpenVPN_Proto "${sValueProto}"
                 gsOpenVPN_Proto="$(echo ${gsOpenVPN_Proto} | tr '[:upper:]' '[:lower:]')"
             done
 
-            if ([ "${gsOpenVPN_Proto}" != "$sValueProto" ] ||
+            if ([ "${gsOpenVPN_Proto}" != "${sValueProto}" ] ||
                 [ "$sTemp_gsPort_OpenVPN_WithGW" != "${gsPort_OpenVPN_WithGW}" ] ||
                 [ "$sTemp_gsPort_OpenVPN_WithoutGW" != "${gsPort_OpenVPN_WithoutGW}" ] ||
                 [ "$sTemp_gsPort_OpenVPN_TAP_WithoutGW" != "${gsPort_OpenVPN_TAP_WithoutGW}" ]); then
@@ -548,14 +548,14 @@ DisplaySurvey() {
         # Let's Encrypt
         if [ "${gsSrvIpAddress}" != "${gsSrvIpAddressExt}" ]; then
             echo
-            Questions_Message_LetsEncrypt="$(echo $Questions_Message_LetsEncrypt | sed "s/<gsSrvIpAddress>/${gsSrvIpAddress}/g;" | sed "s/<gsSrvIpAddressExt>/${gsSrvIpAddressExt}/g;")"
+            Questions_Message_LetsEncrypt="$(echo $Questions_Message_LetsEncrypt | sed "s/<gsSrvIpAddress>/${gsSrvIpAddress}/g;s/<gsSrvIpAddressExt>/${gsSrvIpAddressExt}/g;")"
             echo -e "$Questions_Message_LetsEncrypt"
             if [ "$RepeatSurvey" == "YES" ]; then
                 sValue="$gsHttpPortOpened"
             else
                 sValue="${Global_YES}"
             fi
-            gfnQuestionGetString NO "$Questions_HttpOpened" gsHttpPortOpened "$sValue"
+            gfnQuestionGetString NO "$Questions_HttpOpened" gsHttpPortOpened "${sValue}"
             gsHttpPortOpened="$(echo $gsHttpPortOpened | tr '[:lower:]' '[:upper:]')"
             unset sValue
         fi
@@ -568,7 +568,7 @@ DisplaySurvey() {
         else
             sValue="${Global_YES}"
         fi
-        gfnQuestionGetString NO "$Questions_UseIprestriction" gsIpRestriction "$sValue"
+        gfnQuestionGetString NO "$Questions_UseIprestriction" gsIpRestriction "${sValue}"
         gsIpRestriction="$(echo ${gsIpRestriction} | tr '[:lower:]' '[:upper:]')"
         unset sValue
 
@@ -581,11 +581,11 @@ DisplaySurvey() {
             # get actual main user ip addresses
             if [ "$TYPE" == "UPGRADE" ]; then
                 for sIp in $gsMainUserIPs; do
-                    sIp="$(echo $sIp | sed -e 's/^ //g;' | sed 's/\s+$//' | sed 's/\/32//g;')"
-                    if [ -z "$sValue" ]; then
-                        sValue="$sIp"
+                    sIp="$(echo "${sIp}" | sed 's/^ //g;s/\s+$//g;s/\/32//g;')"
+                    if [ -z "${sValue}" ]; then
+                        sValue="${sIp}"
                     else
-                        sValue="$sValue,$sIp"
+                        sValue="${sValue},${sIp}"
                     fi
                 done
                 unset sIp
@@ -598,33 +598,33 @@ DisplaySurvey() {
                     sTempIPs="$(who --ips | awk '{print $5}' | grep "^[0123456789]")"
                 fi
             fi
-            if [ -z "$(echo $sValue | grep "$sTempIPs")" ]; then
-                if [ -z "$sValue" ]; then
+            if [ -z "$(echo "${sValue}" | grep "$sTempIPs")" ]; then
+                if [ -z "${sValue}" ]; then
                     sValue="$sTempIPs"
                 else
-                    sValue="$sValue,$sTempIPs"
+                    sValue="${sValue},$sTempIPs"
                 fi
             fi
         fi
         # confirm it
-        while [ -z "$sCheckIp" ] || [ -z "$sValue" ]; do
-            gfnQuestionGetString NO "$Questions_AddAddresses" gsMainUserIPs "$sValue"
+        while [ -z "${sCheckIp}" ] || [ -z "${sValue}" ]; do
+            gfnQuestionGetString NO "$Questions_AddAddresses" gsMainUserIPs "${sValue}"
             OIFS=$IFS
             IFS=$','
-            for sIp in $sValue; do
-                sIp="$(echo $sIp | sed -e 's/^ //g;' | sed 's/\s+$//' | sed 's/\/32//g;')"
-                sTmp="$(gfnValidateIP "$sIp")"
-                if [ -n "$sTmp" ]; then
-                    if [ -z "$sCheckIp" ]; then
-                        sCheckIp="$sTmp"
+            for sIp in ${sValue}; do
+                sIp="$(echo "${sIp}" | sed 's/^ //g;s/\s+$//g;s/\/32//g;')"
+                sTmp="$(gfnValidateIP "${sIp}")"
+                if [ -n "${sTmp}" ]; then
+                    if [ -z "${sCheckIp}" ]; then
+                        sCheckIp="${sTmp}"
                     else
-                        sCheckIp="$sCheckIp,$sTmp"
+                        sCheckIp="${sCheckIp},${sTmp}"
                     fi
                 fi
             done
             IFS=$OIFS
-            sCheckIp="$(echo $sCheckIp | sed -e "s/\ /\,/g;" | sed -e "s/^$//g;")"
-            [ -n "$sCheckIp" ] && sValue="$sCheckIp"
+            sCheckIp="$(echo "${sCheckIp}" | sed "s/\ /\,/g;s/^$//g;")"
+            [ -n "${sCheckIp}" ] && sValue="${sCheckIp}"
             unset IFS sIp sTmp OIFS
         done
         unset sValue sTempIPs sCheckIp
@@ -639,7 +639,7 @@ DisplaySurvey() {
         #         sValue="${Global_YES}"
         #     fi
         #     while [ $nLoop -eq 1 ]; do
-        #         gfnQuestionGetString NO "$Questions_InstallLogwatch" gbToInstall_LogWatch "$sValue"
+        #         gfnQuestionGetString NO "$Questions_InstallLogwatch" gbToInstall_LogWatch "${sValue}"
         #         gbToInstall_LogWatch="$(echo $gbToInstall_LogWatch | tr '[:lower:]' '[:upper:]')"
         #         case "$gbToInstall_LogWatch" in
         #             "${Global_NO}" | "${Global_YES}")
@@ -668,7 +668,7 @@ DisplaySurvey() {
                 sValue="${Global_YES}"
             fi
             while [ $nLoop -eq 1 ]; do
-                gfnQuestionGetString NO "$Questions_InstallFail2Ban" gbToInstall_Fail2Ban "$sValue"
+                gfnQuestionGetString NO "$Questions_InstallFail2Ban" gbToInstall_Fail2Ban "${sValue}"
                 gbToInstall_Fail2Ban="$(echo $gbToInstall_Fail2Ban | tr '[:lower:]' '[:upper:]')"
                 case "$gbToInstall_Fail2Ban" in
                     "${Global_NO}" | "${Global_YES}")
@@ -696,7 +696,7 @@ DisplaySurvey() {
         #         sValue="${Global_YES}"
         #     fi
         #     while [ $nLoop -eq 1 ]; do
-        #         gfnQuestionGetString NO "$Questions_InstallDNScrypt" gbToInstall_DNScrypt "$sValue"
+        #         gfnQuestionGetString NO "$Questions_InstallDNScrypt" gbToInstall_DNScrypt "${sValue}"
         #         gbToInstall_DNScrypt="$(echo $gbToInstall_DNScrypt | tr '[:lower:]' '[:upper:]')"
         #         case "$gbToInstall_DNScrypt" in
         #             "${Global_NO}" | "${Global_YES}")
@@ -738,7 +738,7 @@ DisplaySurvey() {
         #     fi
 
         #     if [ "$RepeatSurvey" == "YES" ]; then
-        #         sValue="$sValue"
+        #         sValue="${sValue}"
         #     else
         #         sValue="PeerGuardian"
         #     fi
@@ -747,7 +747,7 @@ DisplaySurvey() {
         #         [ "$gsMySB_PeerBlock" != "PeerGuardian" ] &&
         #         [ "$gsMySB_PeerBlock" != "rTorrent" ]; do
 
-        #         gfnQuestionGetString NO "$sQuestion" gsMySB_PeerBlock "$sValue"
+        #         gfnQuestionGetString NO "$sQuestion" gsMySB_PeerBlock "${sValue}"
         #     done
 
         #     case "$gsMySB_PeerBlock" in
@@ -779,7 +779,7 @@ DisplaySurvey() {
         else
             sValue="${Global_YES}"
         fi
-        gfnQuestionGetString NO "$Questions_SendStatistics" gsStatistics "$sValue"
+        gfnQuestionGetString NO "$Questions_SendStatistics" gsStatistics "${sValue}"
         gsStatistics="$(echo $gsStatistics | tr '[:lower:]' '[:upper:]')"
 
         case "$gsStatistics" in
@@ -797,7 +797,7 @@ DisplaySurvey() {
         sValue="0"
     fi
     nFreeSpace=$(gfnQuotaSpaceAvailable)
-    cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='$(cat "${MySB_InstallDir}"/version)', hostname='${gsHostNameFqdn}', ipv4='${gsSrvIpAddress}', ipv4_ext='${gsSrvIpAddressExt}', ipv4_additional='$gsSrvAdditionnalIpAddresses' , primary_inet='${gsHostNameFqdn}', timezone='${gsTimeZone}', server_provider='${gsServerProvider}', ip_restriction='$sValue', quota_default='$nFreeSpace' WHERE id_system='1';" -v >>${sLogFile}
+    cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='$(cat "${MySB_InstallDir}"/version)', hostname='${gsHostNameFqdn}', ipv4='${gsSrvIpAddress}', ipv4_ext='${gsSrvIpAddressExt}', ipv4_additional='$gsSrvAdditionnalIpAddresses' , primary_inet='${gsPrimaryInet}', timezone='${gsTimeZone}', server_provider='${gsServerProvider}', ip_restriction='${sValue}', quota_default='$nFreeSpace' WHERE id_system='1';" -v >>${sLogFile}
 
     #### 'services' table
     # HTTPs & HTTP
@@ -809,21 +809,21 @@ DisplaySurvey() {
 
     if [ "$TYPE" == "INSTALL" ]; then
         # 'smtp' table
-        cmdMySQL 'MySB_db' "UPDATE smtp SET smtp_provider='$gsSmtpProvider', smtp_username='$SMTP_Username', smtp_passwd='$SMTP_Password', smtp_email='$gsMainUserEmail' WHERE id_smtp='1';" -v >>${sLogFile}
+        cmdMySQL 'MySB_db' "UPDATE smtp SET smtp_provider='${gsSmtpProvider}', smtp_username='${SMTP_Username}', smtp_passwd='${SMTP_Password}', smtp_email='${gsMainUserEmail}' WHERE id_smtp='1';" -v >>${sLogFile}
 
         # 'users' table (Main user)
-        cmdMySQL 'MySB_db' "UPDATE users SET users_ident='${gsMainUserName}', users_email='$gsMainUserEmail', sftp='1', sudo='1', admin='1' WHERE users_ident='MySB' OR admin='1';" -v >>${sLogFile}
-        cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='$gsMainUserPassword' WHERE users_ident='MySB' OR admin='1';" >>${sLogFile}
+        cmdMySQL 'MySB_db' "UPDATE users SET users_ident='${gsMainUserName}', users_email='${gsMainUserEmail}', sftp='1', sudo='1', admin='1' WHERE users_ident='MySB' OR admin='1';" -v >>${sLogFile}
+        cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='${gsMainUserPassword}' WHERE users_ident='MySB' OR admin='1';" >>${sLogFile}
         cmdMySQL 'MySB_db' "UPDATE users_history SET users_ident='${gsMainUserName}' WHERE users_ident='MySB';" -v >>${sLogFile}
-        sqlite3 -echo -cmd '.timeout 150000' $gsWolf_DB "UPDATE user SET name='${gsMainUserName}', email='$gsMainUserEmail', username='${gsMainUserName}' WHERE id='2';" >>${sLogFile}
+        sqlite3 -echo -cmd '.timeout 150000' $gsWolf_DB "UPDATE user SET name='${gsMainUserName}', email='${gsMainUserEmail}', username='${gsMainUserName}' WHERE id='2';" >>${sLogFile}
 
         # 'users_addresses' table
         gnMainUserId="$(cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='${gsMainUserName}';")"
         cmdMySQL 'MySB_db' "DELETE FROM users_addresses WHERE id_users='${gnMainUserId}';" -v >>${sLogFile}
         IFS=$','
         for sIp in $gsMainUserIPs; do
-            sHostName="$(nslookup $sIp | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
-            cmdMySQL 'MySB_db' "INSERT INTO users_addresses (id_users,ipv4,hostname,check_by,is_active,last_update) VALUES ('${gnMainUserId}','$sIp','$sHostName','ipv4','1','$(date +%Y-%m-%d\ %H:%M:%S)');" -v >>${sLogFile}
+            sHostName="$(nslookup "${sIp}" | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
+            cmdMySQL 'MySB_db' "INSERT INTO users_addresses (id_users,ipv4,hostname,check_by,is_active,last_update) VALUES ('${gnMainUserId}','${sIp}','${sHostName}','ipv4','1','$(date +%Y-%m-%d\ %H:%M:%S)');" -v >>${sLogFile}
         done
         unset IFS sIp
     fi
@@ -845,13 +845,13 @@ ConfirmSurvey() {
         fi
         echo -e "$Summary_Language" "${CGREEN}$EnvLang${CEND}"
         echo -e "$Summary_MainUser" "${CGREEN}${gsMainUserName}${CEND}"
-        echo -e "$Summary_MainUserPass" "${CGREEN}$gsMainUserPassword${CEND}"
-        echo -e "$Summary_SmtpProvider" "${CGREEN}$gsSmtpProvider${CEND}"
-        if [ "$gsSmtpProvider" != "LOCAL" ]; then
-            echo -e "$Summary_SmtpUsername" "${CGREEN}$SMTP_Username${CEND}"
-            echo -e "$Summary_SmtpPassword" "${CGREEN}$SMTP_Password${CEND}"
+        echo -e "$Summary_MainUserPass" "${CGREEN}${gsMainUserPassword}${CEND}"
+        echo -e "$Summary_SmtpProvider" "${CGREEN}${gsSmtpProvider}${CEND}"
+        if [ "${gsSmtpProvider}" != "LOCAL" ]; then
+            echo -e "$Summary_SmtpUsername" "${CGREEN}${SMTP_Username}${CEND}"
+            echo -e "$Summary_SmtpPassword" "${CGREEN}${SMTP_Password}${CEND}"
         fi
-        echo -e "$Summary_MainUserMail" "${CGREEN}$gsMainUserEmail${CEND}"
+        echo -e "$Summary_MainUserMail" "${CGREEN}${gsMainUserEmail}${CEND}"
     fi
 
     #### SERVER INFO
@@ -861,7 +861,7 @@ ConfirmSurvey() {
             echo -e "$Questions_Category_ServerInfos"
         fi
         echo -e "$Summary_TimeZone" "${CGREEN}${gsTimeZone}${CEND}"
-        echo -e "$Summary_PrimaryInet" "${CGREEN}${gsHostNameFqdn}${CEND}"
+        echo -e "$Summary_PrimaryInet" "${CGREEN}${gsPrimaryInet}${CEND}"
         echo -e "$Summary_SrvIpAddress" "${CGREEN}${gsSrvIpAddress}${CEND}"
         echo -e "$Summary_SrvIpAddressExt" "${CGREEN}${gsSrvIpAddressExt}${CEND}"
         echo -e "$Summary_gsHostNameFqdn" "${CGREEN}${gsHostNameFqdn}${CEND}"
