@@ -32,6 +32,12 @@ gfnManageServices stop "nginx ${binPhpService} redis-server"
 install -v -o root -g root -m 0755 -d "/etc/redis"
 sOldValue="$(grep '^bind ' /etc/redis/redis.conf)"
 sed -i "s/${sOldValue}/bind 127.0.0.1/g;" /etc/redis/redis.conf
+sOldValue="$(grep '^port 6379' /etc/redis/redis.conf)"
+sed -i "s/${sOldValue}/port 0/g;" /etc/redis/redis.conf
+sOldValue="$(grep '^# unixsocket' /etc/redis/redis.conf)"
+sed -i "s/^# unixsocket/unixsocket/g;" /etc/redis/redis.conf
+sed -i "s/^# unixsocket/unixsocket/g;" /etc/redis/redis.conf
+usermod -a -G redis www-data
 {
     echo "net.core.somaxconn=1024"
     echo "vm.overcommit_memory=1"
@@ -42,7 +48,7 @@ sysctl --system
 sPeclModules="smbclient"
 sDebModulesWithPecl=""
 # gfnPackagesManage purge "$sDebModulesWithPecl"
-sPackages=(redis-server php-common php-cli php-fpm php-imagick php-dev php-curl php-gd php-gmp php-imap php-intl php-json php-mysql php-readline php-sqlite3 php-xmlrpc php-msgpack php-geoip php-redis php-xml php-zip php-mbstring php-smbclient php-pear libgeoip-dev "${sDebModulesWithPecl}")
+sPackages=(redis-server dh-php php-common php-cli php-fpm php-imagick php-dev php-curl php-gd php-gmp php-imap php-intl php-json php-mysql php-readline php-sqlite3 php-xmlrpc php-msgpack php-geoip php-redis php-xml php-zip php-mbstring php-smbclient php-pear libgeoip-dev "${sDebModulesWithPecl}")
 gfnPackageBundleInstall "${sPackages[@]}"
 gfnPackagesManage purge "apache2"
 
@@ -55,7 +61,6 @@ gfnManageServices stop "nginx ${binPhpService} redis-server"
 
 #### Redis
 install -v -o root -g root -m 0755 -d "/etc/redis"
-install -v -o redis -g redis -m 0640 ${MySB_InstallDir}/templates/php/etc.redis.redis.conf.tmpl /etc/redis/redis.conf
 
 #### Configuration files
 # ${gsPhpDir}/fpm/php-fpm.conf
@@ -69,7 +74,7 @@ install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/php/etc.php.7.3.
 perl -pi -e "s/disable_functions = /;disable_functions = /g" ${gsPhpDir}/cli/php.ini
 
 #### Modules inventory
-sExtDir="/usr/lib/php/20151012"
+sExtDir="/usr/lib/php/20180731"
 sAllExtList="$(echo "${sAllExtList}" | xargs -n1 | sort -u | xargs | sed -e 's/^ //g;s/\s+$//g;')"
 
 #### PEAR/PECL config

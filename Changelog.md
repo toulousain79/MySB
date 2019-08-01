@@ -6,6 +6,7 @@
 - NextCloud v16.0.3
 - NetData v1.16.0
 - PHP v7.3
+- Redis unix socket for NextCloud
 
 ## v6.0 - 2019/06/29 _(start at: 2019/01/26)_
 
