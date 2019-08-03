@@ -87,6 +87,33 @@ case "${1}" in
         rm -vf /etc/apt/sources.list.d/*
         gfnDeleteDirectory 1 "/var/spool/apt-mirror"
         gfnDeleteDirectory 1 "${MySB_InstallDir}/files/apt_mirrors"
+
+        #### SourcesList
+        gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/SourcesList" 'UPGRADE' 'buster'
+
+        #### System upgrade
+        # shellcheck source=inc/funcs_by_script/funcs_Install
+        source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Install
+        gfnPackagesManage 'upgrade'
+        gfnPackagesManage 'dist-upgrade'
+
+        #### Debian upgrade - BoF
+        if [ "${gsSwitch}" == "UPGRADE" ]; then
+            update-alternatives --set iptables /usr/sbin/iptables-legacy
+            update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+            [ -z "${gsLocale}" ] && gsLocale="en_US"
+            sed -i "s/# ${gsLocale}.UTF-8 UTF-8/${gsLocale}.UTF-8 UTF-8/g;" /etc/locale.gen
+            export LANGUAGE=${LANG:0:2}
+            export LANG=${gsLocale}.UTF-8
+            sed -i '/LANGUAGE=/d' /etc/environment
+            echo "LANGUAGE=${LANG:0:2}" >>/etc/environment
+            update-locale "LANG=${gsLocale}.UTF-8" &>/dev/null
+            locale-gen "${gsLocale}.UTF-8" &>/dev/null
+            dpkg-reconfigure -f noninteractive locales &>/dev/null
+            locale >${MySB_InstallDir}/files/locale
+        fi
+        #### Debian upgrade - EoF
+
         ;;
 
     "AFTER" | "INIT")
