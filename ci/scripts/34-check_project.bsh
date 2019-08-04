@@ -59,14 +59,24 @@ fi
 sFilesListTmpl="$(find ${sDirToScan}/templates/ -type f -name "*.tmpl" -printf "%f\n" | sort -z | xargs -r0)"
 if [ -n "${sFilesListTmpl}" ]; then
     echo && echo -e "${CBLUE}*** Check for unused templates ***${CEND}"
-for sFile in ${sFilesListTmpl}; do
-    if (! grep -qR --exclude-dir=.git "${sFile}" "${sDirToScan}"/); then
-        echo -e "${CYELLOW}${sFile}:${CEND} ${CRED}Failed${CEND}"
-        nReturn=$((nReturn + 1))
-    else
-        echo -e "${CYELLOW}${sFile}:${CEND} ${CGREEN}Passed${CEND}"
-    fi
-done
+    for sFile in ${sFilesListTmpl}; do
+        if (grep -q 'etc.logrotate.d.' <<<"${sFile}"); then
+            sTring="$(echo "${sFile}" | cut -d '.' -f 4)"
+            if (! grep -qR --exclude-dir=.git "gfnLogRotate '${sTring}'" "${sDirToScan}"/); then
+                echo -e "${CYELLOW}${sDirToScan}/${sFile}:${CEND} ${CRED}Failed${CEND}"
+                nReturn=$((nReturn + 1))
+            else
+                echo -e "${CYELLOW}${sFile}:${CEND} ${CGREEN}Passed${CEND}"
+            fi
+        else
+            if (! grep -qR --exclude-dir=.git "${sFile}" "${sDirToScan}"/); then
+                echo -e "${CYELLOW}${sDirToScan}/${sFile}:${CEND} ${CRED}Failed${CEND}"
+                nReturn=$((nReturn + 1))
+            else
+                echo -e "${CYELLOW}${sFile}:${CEND} ${CGREEN}Passed${CEND}"
+            fi
+        fi
+    done
 fi
 
 # export nReturn
