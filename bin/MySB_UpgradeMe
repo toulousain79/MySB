@@ -101,9 +101,14 @@ if [[ ${Continue} -eq 0 ]]; then
                     echo
                     gfnEndingScript 0
                 else
+                    echo
+                    echo
+                    echo -e "${UpgradeMe_DebianUpgrade}"
+                    echo
+
                     gfnQuestionGetString NO "${Global_WantToContinue[*]}" WantToContinue "${Global_NO}"
                     WantToContinue="$(echo "${WantToContinue}" | tr '[:lower:]' '[:upper:]')"
-                    [ "${WantToContinue}" == "$Global_NO" ] && gfnEndingScript 0
+                    [ "${WantToContinue}" == "${Global_NO}" ] && gfnEndingScript 0
                 fi
                 ;;
         esac
@@ -272,6 +277,8 @@ if [[ ${Continue} -eq 0 ]]; then
         echo
 
         #### MySB_UpgradeSystem
+        clear
+        echo -e "${CBLUE}${Upgrade_UpgradeDebianRelease} (Stretch)${CEND}"
         # shellcheck source=inc/funcs_by_script/funcs_Install
         source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Install
         cmdMySQL 'MySB_db' "UPDATE system SET apt_update = 1, apt_date = '$(date +%Y-%m-%d\ %H:%M:%S)' WHERE id_system='1';" -v
@@ -279,6 +286,7 @@ if [[ ${Continue} -eq 0 ]]; then
         gfnPackagesManage 'dist-upgrade'
 
         # Purge PHP 7.1 from Sury
+        clear
         gfnPackagesManage purge "php-common php7.1-common php7.1-cli php7.1-fpm php7.1-imagick php7.1-dev php7.1-curl php7.1-gd php7.1-gmp php7.1-imap php7.1-intl php7.1-json php7.1-mcrypt php7.1-mysql php7.1-readline php7.1-sqlite3 php7.1-xmlrpc php7.1-msgpack php7.1-geoip php7.1-redis php7.1-xml php7.1-zip php7.1-mbstring php7.1-smbclient php-pear libgeoip-dev)"
         gfnDeleteDirectory 1 "/usr/share/php"
         gfnDeleteDirectory 1 "/usr/share/doc/php*"
@@ -286,6 +294,7 @@ if [[ ${Continue} -eq 0 ]]; then
         gfnDeleteDirectory 1 "/etc/php"
 
         # apt-mirror
+        clear
         gfnPackagesManage purge "apt-mirror"
         rm -vf /etc/cron.d/apt-mirror
         rm -vf /etc/apt/sources.list~
@@ -293,10 +302,13 @@ if [[ ${Continue} -eq 0 ]]; then
         gfnDeleteDirectory 1 "/var/spool/apt-mirror"
         gfnDeleteDirectory 1 "${MySB_InstallDir}/files/apt_mirrors"
 
-        echo -e -n "${CBLUE}${Upgrade_UpdateDebianSources}${CEND}..."
+        clear
+        echo -e "${CBLUE}${Upgrade_UpdateDebianSources}${CEND}"
         gfnScriptInvoke 'source' "${MySB_InstallDir}/install/SourcesList" 'UPGRADE' 'buster'
 
         #### System upgrade
+        clear
+        echo -e "${CBLUE}${Upgrade_UpgradeDebianRelease} (Buster)${CEND}"
         systemctl disable MySB_SecurityRules_Init.service
         rm -fv /lib/systemd/system/MySB_SecurityRules_Init.service
         # shellcheck source=inc/funcs_by_script/funcs_Install
