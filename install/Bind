@@ -42,11 +42,9 @@ install -v -o bind -g root -m 0774 $MySB_InstallDir/templates/bind/etc.bind.name
 
 #### /etc/bind/log.conf
 install -v -o bind -g root -m 0774 $MySB_InstallDir/templates/bind/etc.bind.log.conf.tmpl /etc/bind/log.conf
-if [ ! -d /var/log/bind ]; then
-    mkdir -v /var/log/bind
-    chown -vR bind:root /var/log/bind
-    chmod -v 0775 /var/log/bind
-fi
+mkdir -pv /var/log/bind
+chown -vR bind:root /var/log/bind
+chmod -v 0775 /var/log/bind
 
 #### /etc/bind/named.conf.options
 install -v -o bind -g root -m 0774 $MySB_InstallDir/templates/bind/etc.bind.named.conf.options.tmpl /etc/bind/named.conf.options
@@ -63,6 +61,16 @@ gfnLogRotate 'bind'
 #### Disable init
 systemctl daemon-reload
 systemctl disable bind9
+
+# Disable IPv6
+{
+    echo "# run resolvconf?"
+    echo "RESOLVCONF=no"
+    echo
+    echo "# startup options for the server"
+    echo "OPTIONS=\"-u bind -4\""
+    echo
+} >/etc/default/bind9
 
 #### Cleaning
 # rm -rfv /var/run/named/
