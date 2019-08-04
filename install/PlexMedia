@@ -29,6 +29,29 @@ source "$(dirname "$0")"/../inc/includes_before
 ######################################################################
 
 #### FUNCTIONs
+# Plex plugins
+function fnPlexPlugins() {
+    local sPlexDir sAbsoScanUrl sHamaRepo
+    sPlexDir='/var/lib/plexmediaserver/Library/Application Support/Plex Media Server'
+    sAbsoScanSeriesUrl='https://raw.githubusercontent.com/ZeroQI/Absolute-Series-Scanner/master/Scanners/Series/Absolute%20Series%20Scanner.py'
+    sAbsoScanMusicUrl='https://raw.githubusercontent.com/ZeroQI/Absolute-Series-Scanner/master/Scanners/Music/Absolute%20Music%20Scanner.py'
+    sHamaRepo="https://github.com/ZeroQI/Hama.bundle.git"
+
+    # Absolute Scanner
+    mkdir -p "${sPlexDir}"/Scanners/{Series,Music}
+    ${binCURL} "${sAbsoScanSeriesUrl}" -o "${sPlexDir}/Scanners/Series/Absolute Series Scanner.py"
+    ${binCURL} "${sAbsoScanMusicUrl}" -o "${sPlexDir}/Scanners/Music/Absolute Music Scanner.py"
+    chown -R plex:plex "${sPlexDir}/Scanners/"
+    chmod -R 775 "${sPlexDir}/Scanners/"
+
+    # Hama
+    [ ! -d "${sPlexDir}"/Plug-ins/Hama.bundle/ ] && git clone "${sHamaRepo}" "${sPlexDir}"/Plug-ins/Hama.bundle
+    cd "${sPlexDir}"/Plug-ins/Hama.bundle
+    git pull
+    chown -R plex:plex "${sPlexDir}"/Plug-ins/Hama.bundle/
+    chmod -R 775 "${sPlexDir}"/Plug-ins/Hama.bundle/
+}
+
 # Install Plex DEB package
 function fnInstallDebPackage() {
     local sServices
@@ -127,6 +150,10 @@ function fnInstallDebPackage() {
             done
             cat "${sPreferencesFile}"
         fi
+
+        # Plugins
+        fnPlexPlugins
+
         # Start services
         gfnManageServices start "$sServices"
     else

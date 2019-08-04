@@ -7,6 +7,9 @@
 - NetData v1.16.0
 - PHP v7.3
 - Redis unix socket for NextCloud
+- Plex, add plugins
+  - [Absolute Series/Music Scanner](https://github.com/ZeroQI/Absolute-Series-Scanner)
+  - [Hama](https://github.com/ZeroQI/Hama.bundle)
 
 ## v6.0 - 2019/06/29 _(start at: 2019/01/26)_
 
