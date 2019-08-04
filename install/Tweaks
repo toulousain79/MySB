@@ -25,6 +25,9 @@ source "$(dirname "$0")"/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+#### VARs
+bUpdateGrub=0
+
 #### Console tweaks
 echo
 echo "########## Console tweaks"
@@ -137,20 +140,6 @@ fi
 gfnCreateHostsFile
 cat /etc/hosts
 
-#### /etc/network/interfaces
-echo
-echo "########## Remove IPv6"
-if [ -f /etc/default/grub ]; then
-    source /etc/default/grub
-    if [ -n "$GRUB_CMDLINE_LINUX" ] && [ -z "$(echo $GRUB_CMDLINE_LINUX | grep 'ipv6.disable=1')" ]; then
-        sed -i "s/$GRUB_CMDLINE_LINUX/$GRUB_CMDLINE_LINUX ipv6.disable=1/g;" /etc/default/grub
-    else
-        perl -pi -e 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="ipv6.disable=1"/g' /etc/default/grub
-    fi
-    update-grub
-fi
-rm -fv /etc/pgl/ipv6.*
-
 #### iptables-legacy (nftables)
 # https://wiki.debian.org/nftables
 echo
@@ -214,42 +203,41 @@ if [ -f /proc/cpuinfo ]; then
     grep 'cpu MHz' /proc/cpuinfo
 fi
 
-#### Tweaks for Redis
-if [ -f /etc/default/grub ]; then
-    echo
-    echo "########## Tweaks for Redis"
-    source /etc/default/grub
-    if [ -n "$GRUB_CMDLINE_LINUX" ] && [ -z "$(echo $GRUB_CMDLINE_LINUX | grep 'transparent_hugepage=never')" ]; then
-        sed -i "s/$GRUB_CMDLINE_LINUX/$GRUB_CMDLINE_LINUX transparent_hugepage=never/g;" /etc/default/grub
-    else
-        perl -pi -e 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="transparent_hugepage=never"/g' /etc/default/grub
-    fi
-    update-grub
-    grep GRUB_CMDLINE_LINUX /etc/default/grub
-fi
-
-#### /etc/fstab
+#### Grub
+# Disable IPv6
 echo
-echo "########## /etc/fstab"
-gfnFstabGeneration
-cat /etc/fstab
-
-#### SystemD
+echo "########## Remove IPv6"
+echo "GRUB_CMDLINE_LINUX=\"\${GRUB_CMDLINE_LINUX} ipv6.disable=1\"" >/etc/default/grub.d/iv6.cfg
+bUpdateGrub=1
+rm -fv /etc/pgl/ipv6.*
+if [ -f /etc/default/grub ]; then
+    source /etc/default/grub
+    if (grep -q 'ipv6.disable=1' <<<"${GRUB_CMDLINE_LINUX}"); then
+        perl -pi -e 's/ipv6.disable=1//g' /etc/default/grub
+    fi
+fi
+# AppArmor
+echo
+echo "########## AppArmor"
+echo "GRUB_CMDLINE_LINUX_DEFAULT=\"\${GRUB_CMDLINE_LINUX_DEFAULT} apparmor=0\"" >/etc/default/grub.d/apparmor.cfg
+cat /etc/default/grub.d/apparmor.cfg
+# Tweaks for Redis
+echo
+echo "########## Tweaks for Redis"
+echo "GRUB_CMDLINE_LINUX_DEFAULT=\"\${GRUB_CMDLINE_LINUX_DEFAULT} transparent_hugepage=never\"" >/etc/default/grub.d/redis.cfg
+cat /etc/default/grub.d/redis.cfg
+# SystemD
 echo
 echo "########## SystemD"
-if [ -f /etc/default/grub ]; then
-    source /etc/default/grub
-    if [ -n "${GRUB_CMDLINE_LINUX_DEFAULT}" ] && (! grep -q 'init=/bin/systemd' <<<"${GRUB_CMDLINE_LINUX_DEFAULT}"); then
-        sed -i "s/${GRUB_CMDLINE_LINUX_DEFAULT}/${GRUB_CMDLINE_LINUX_DEFAULT} init=\/bin\/systemd/g;" /etc/default/grub
-    else
-        perl -pi -e 's/GRUB_CMDLINE_LINUX_DEFAULT=""/GRUB_CMDLINE_LINUX_DEFAULT="init=\/bin\/systemd"/g' /etc/default/grub
-    fi
-    update-grub
-    grep GRUB_CMDLINE_LINUX_DEFAULT /etc/default/grub
-fi
+echo "GRUB_CMDLINE_LINUX=\"\${GRUB_CMDLINE_LINUX} init=/bin/systemd\"" >/etc/default/grub.d/systemd.cfg
+cat /etc/default/grub.d/systemd.cfg
+# update-grub
+update-grub
+
+#### SystemD
 if [ -f /etc/systemd/system.conf ]; then
     # CPUAffinity
-    sOldValue="$(grep CPUAffinity /etc/systemd/system.conf)"
+    sOldValue="$(grep 'CPUAffinity' /etc/systemd/system.conf)"
     aNewValues=()
     sProcessors=$(grep -c 'processor' /proc/cpuinfo)
     for ((i = 1; i <= sProcessors; i++)); do
@@ -257,8 +245,14 @@ if [ -f /etc/systemd/system.conf ]; then
     done
     sed -i "s/${sOldValue}/CPUAffinity=${aNewValues[*]}/g;" /etc/systemd/system.conf
     sed -i "s/^#CPUAffinity/CPUAffinity/g;" /etc/systemd/system.conf
-    grep CPUAffinity /etc/systemd/system.conf
+    grep 'CPUAffinity' /etc/systemd/system.conf
 fi
+
+#### /etc/fstab
+echo
+echo "########## /etc/fstab"
+gfnFstabGeneration
+cat /etc/fstab
 
 #### Cleaning
 echo
