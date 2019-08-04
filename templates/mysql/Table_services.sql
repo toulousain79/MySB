@@ -47,7 +47,8 @@ INSERT INTO `services` (`id_services`, `serv_name`, `bin`, `port_tcp1`, `port_tc
 (23, 'rTorrent v0.9.8', '/usr/local/bin/rtorrent', '', '', '', '', '', '', '', '', 1, 0, 0),
 (24, 'NextCloud', '', '', '', '', '', '', '', '', '', 0, 0, 1),
 (25, 'Lets Encrypt', '', '443', '', '', '', '', '', '', '', 0, 0, 1),
-(26, 'Tautulli', '', '', '', '', '', '', '', '', '', 0, 0, 1);
+(26, 'Tautulli', '', '', '', '', '', '', '', '', '', 0, 0, 1),
+(27, 'Minio', '/usr/bin/minio', '9000', '', '', '', '', '', '', '', 0, 0, 1);
 /*!40000 ALTER TABLE `services` ENABLE KEYS */;
 UNLOCK TABLES;
 
