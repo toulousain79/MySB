@@ -430,7 +430,7 @@ gfnGetRepoValues() {
         gsRepoName="$1"
     fi
 
-    sValues="$(cmdMySQL 'MySB_db' "SELECT type,dir,version,upgrade,file,url,active FROM repositories WHERE name='$gsRepoName';" | sed "s/<InstallDir>/${gsInstallDirEscaped}/g;" | sed 's/\t/|/g;')"
+    sValues="$(cmdMySQL 'MySB_db' "SELECT type,dir,version,upgrade,file,url,active FROM repositories WHERE name='${gsRepoName}';" | sed "s/<InstallDir>/${gsInstallDirEscaped}/g;" | sed 's/\t/|/g;')"
     gsRepoType="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[1]}')"
     gsRepoDir="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[2]}')"
     gsRepoVersion="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[3]}')"
@@ -439,146 +439,158 @@ gfnGetRepoValues() {
     gsRepoURL="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[6]}')"
     gnRepoActive="$(echo "${sValues}" | awk '{split($0,a,"|"); print a[7]}')"
 
-    case "$gsRepoName" in
+    case "${gsRepoName}" in
         'Plex Media Server')
             gsRepoFile="$(gfnGetUriFilename "${gsRepoURL}" || echo 'Not installed')"
             gsVersionLatest="$(echo "${gsRepoFile}" | cut -d '_' -f 2)"
             gsVersionInstalled="$(dpkg -l plexmediaserver 2>/dev/null | tail -n 1 | awk '{ print $3 }')"
             ;;
         'Tautulli')
-            if [ -f "$gsRepoDir"/release.lock ]; then
-                gsVersionInstalled="$(cat "$gsRepoDir"/release.lock)"
-            elif [ -f "$gsRepoDir"/plexpy/version.py ]; then
-                gsVersionInstalled="$(grep 'PLEXPY_RELEASE_VERSION' "$gsRepoDir"/plexpy/version.py | cut -d '=' -f 2 | cut -d '"' -f 2)"
+            if [ -f "${gsRepoDir}"/release.lock ]; then
+                gsVersionInstalled="$(cat "${gsRepoDir}"/release.lock)"
+            elif [ -f "${gsRepoDir}"/plexpy/version.py ]; then
+                gsVersionInstalled="$(grep 'PLEXPY_RELEASE_VERSION' "${gsRepoDir}"/plexpy/version.py | cut -d '=' -f 2 | cut -d '"' -f 2)"
             else
                 gsVersionInstalled="Not installed"
             fi
-            gsVersionLatest="$(${binCURL} "$gsRepoURL" | jq -r .tag_name)"
-            gsFileURL="$($binCURL "$gsRepoURL" | grep 'tarball_url' | awk '{ print $2 }' | cut -d '"' -f 2)"
+            gsVersionLatest="$(${binCURL} "${gsRepoURL}" | jq -r .tag_name)"
+            gsFileURL="$(${binCURL} "${gsRepoURL}" | grep 'tarball_url' | awk '{ print $2 }' | cut -d '"' -f 2)"
             ;;
         'Docker-Compose')
             [ -f /usr/bin/docker-compose ] && chmod +x /usr/bin/docker-compose
             gsVersionInstalled="$(gfnCheckCommand 0 docker-compose && docker-compose --version | awk '{ print $3 }' | cut -d ',' -f 1 || echo 'Not installed')"
-            gsVersionLatest="$($binCURL "$gsRepoURL" | jq -r .tag_name)"
-            gsFileURL="$($binCURL "$gsRepoURL" | jq -r '.assets[] | select(.name == "docker-compose-Linux-x86_64").browser_download_url')"
+            gsVersionLatest="$(${binCURL} "${gsRepoURL}" | jq -r .tag_name)"
+            gsFileURL="$(${binCURL} "${gsRepoURL}" | jq -r '.assets[] | select(.name == "docker-compose-Linux-x86_64").browser_download_url')"
             ;;
         'Composer')
-            [ -f "$gsRepoDir" ] && chmod +x "$gsRepoDir"
+            [ -f "${gsRepoDir}" ] && chmod +x "${gsRepoDir}"
             gsVersionInstalled="$(gfnCheckCommand 0 composer && composer --version 2>/dev/null | grep 'Composer version' | awk '{ print $3 }' || echo 'Not installed')"
-            gsVersionLatest="$($binCURL "$gsRepoURL" | grep 'tag_name' | awk '{ print $2 }' | cut -d '"' -f 2)"
-            gsFileURL="$($binCURL "$gsRepoURL" | jq -r '.assets[] | select(.name == "composer.phar").browser_download_url')"
+            gsVersionLatest="$(${binCURL} "${gsRepoURL}" | grep 'tag_name' | awk '{ print $2 }' | cut -d '"' -f 2)"
+            gsFileURL="$(${binCURL} "${gsRepoURL}" | jq -r '.assets[] | select(.name == "composer.phar").browser_download_url')"
+            ;;
+        'Minio')
+            [ -f "${gsRepoDir}" ] && chmod +x "${gsRepoDir}"
+            gsVersionInstalled="$(gfnCheckCommand 0 minio && minio version 2>/dev/null | grep 'Version:' | awk '{ print $2 }' || echo 'Not installed')"
+            gsVersionLatest="$(${binCURL} "${gsRepoURL}" | grep 'tag_name' | awk '{ print $2 }' | cut -d '"' -f 2)"
+            gsFileURL="[ -n "{$gsFileURL}" ] && gsRepoURL="{$gsFileURL}""
+            ;;
+        'Goofys')
+            [ -f "${gsRepoDir}" ] && chmod +x "${gsRepoDir}"
+            gsVersionInstalled="$(gfnCheckCommand 0 goofys && goofys --version 2>/dev/null | awk '{ print $3 }' | cut -d '-' -f 1 || echo 'Not installed')"
+            gsVersionLatest="$(${binCURL} "${gsRepoURL}" | grep 'tag_name' | awk '{ print $2 }' | cut -d '"' -f 2)"
+            gsFileURL="$(${binCURL} "${gsRepoURL}" | jq -r '.assets[] | select(.name == "composer.phar").browser_download_url')"
             ;;
         'Shellcheck')
-            [ -f "$gsRepoDir" ] && chmod +x "$gsRepoDir"
+            [ -f "${gsRepoDir}" ] && chmod +x "${gsRepoDir}"
             gsVersionInstalled="$([ -f /usr/bin/shellcheck ] && shellcheck --version | grep 'version' | head -n 1 | awk '{ print $2 }' || echo 'Not installed')"
-            gsVersionLatest="$($binCURL 'https://api.github.com/repos/koalaman/shellcheck/tags' | grep 'name' | head -n 1 | awk '{ print $2 }' | cut -d '"' -f 2 | sed 's/v//g;')"
+            gsVersionLatest="$(${binCURL} 'https://api.github.com/repos/koalaman/shellcheck/tags' | grep 'name' | head -n 1 | awk '{ print $2 }' | cut -d '"' -f 2 | sed 's/v//g;')"
             ;;
         'GeoIPupdate')
-            # [ -f "$gsRepoDir" ] && chmod +x "$gsRepoDir"
+            # [ -f "${gsRepoDir}" ] && chmod +x "${gsRepoDir}"
             gsVersionInstalled="$([ -f /usr/bin/shellcheck ] && shellcheck --version | grep 'version' | head -n 1 | awk '{ print $2 }' || echo 'Not installed')"
             gfnCheckCommand 0 /usr/bin/geoipupdate && /usr/bin/geoipupdate --version &>/tmp/geoip.rev || echo 'Not installed' >/tmp/geoip.rev
             gsVersionInstalled="$(cat /tmp/geoip.rev | awk '{ print $2 }')"
-            gsVersionLatest="$($binCURL "$gsRepoURL" | jq -r .tag_name | sed 's/v//g;')"
-            gsFileURL="$($binCURL "$gsRepoURL" | jq --arg PLATFORM_ARCH "geoipupdate_${gsVersionLatest}_linux_amd64.deb" -r '.assets[] | select(.name | endswith($PLATFORM_ARCH)).browser_download_url')"
+            gsVersionLatest="$(${binCURL} "${gsRepoURL}" | jq -r .tag_name | sed 's/v//g;')"
+            gsFileURL="$(${binCURL} "${gsRepoURL}" | jq --arg PLATFORM_ARCH "geoipupdate_${gsVersionLatest}_linux_amd64.deb" -r '.assets[] | select(.name | endswith($PLATFORM_ARCH)).browser_download_url')"
             ;;
         *) gsFileURL="" ;;
     esac
 
     echo
-    echo "########## $gsRepoName"
-    echo "Directory : $gsRepoDir"
-    echo "Version in DB : $gsRepoVersion"
-    echo "File : ${MySB_Files}/$gsRepoFile"
-    echo "To upgrade : $(echo "$gnRepoUpgrade" | sed 's/0/NO/g;s/1/YES/g;')"
-    echo "Type : $gsRepoType"
-    echo "Active : $(echo "$gnRepoActive" | sed 's/0/NO/g;s/1/YES/g;')"
-    echo "Repo URL : $gsRepoURL"
-    [ -n "$gsVersionInstalled" ] && echo "Current version : $gsVersionInstalled"
-    [ -n "$gsVersionLatest" ] && echo "Latest version : $gsVersionLatest"
-    [ -n "$gsFileURL" ] && echo "File URL : $gsFileURL"
+    echo "########## ${gsRepoName}"
+    echo "Directory : ${gsRepoDir}"
+    echo "Version in DB : ${gsRepoVersion}"
+    echo "File : ${MySB_Files}/${gsRepoFile}"
+    echo "To upgrade : $(echo "${gnRepoUpgrade}" | sed 's/0/NO/g;s/1/YES/g;')"
+    echo "Type : ${gsRepoType}"
+    echo "Active : $(echo "${gnRepoActive}" | sed 's/0/NO/g;s/1/YES/g;')"
+    echo "Repo URL : ${gsRepoURL}"
+    [ -n "${gsVersionInstalled}" ] && echo "Current version : ${gsVersionInstalled}"
+    [ -n "${gsVersionLatest}" ] && echo "Latest version : ${gsVersionLatest}"
+    [ -n "{$gsFileURL}" ] && echo "File URL : $gsFileURL"
     echo
 
-    [ -z "$gsRepoDir" ] ||
-        [ -z "$gsRepoVersion" ] ||
-        [ -z "$gsRepoFile" ] ||
-        [ -z "$gnRepoUpgrade" ] ||
-        [ -z "$gnRepoActive" ] ||
-        [ -z "$gsRepoURL" ] && return 1 || return 0
+    [ -z "${gsRepoDir}" ] ||
+        [ -z "${gsRepoVersion}" ] ||
+        [ -z "${gsRepoFile}" ] ||
+        [ -z "${gnRepoUpgrade}" ] ||
+        [ -z "${gnRepoActive}" ] ||
+        [ -z "${gsRepoURL}" ] && return 1 || return 0
 }
 
 #### Repository Manage by type
 gfnRepoManageByType() {
     local sSubDir
 
-    if [ -z "$gnRepoActive" ] || [ "$gnRepoActive" -eq 0 ]; then
+    if [ -z "${gnRepoActive}" ] || [ "${gnRepoActive}" -eq 0 ]; then
         return 1
     fi
-    if [ "${gsSwitch}" == "REFRESH" ] || [ "$gnRepoActive" -eq 0 ]; then
-        gfnDeleteDirectory 1 "$gsRepoDir"
+    if [ "${gsSwitch}" == "REFRESH" ] || [ "${gnRepoActive}" -eq 0 ]; then
+        gfnDeleteDirectory 1 "${gsRepoDir}"
     fi
 
-    if [ "$gnRepoActive" -eq 1 ]; then
+    if [ "${gnRepoActive}" -eq 1 ]; then
         gnError=0
 
-        case "$gsRepoType" in
+        case "${gsRepoType}" in
             'TARXZ')
-                [ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
-                if [ ! -f "${MySB_Files}/$gsRepoFile" ]; then
-                    $binCURL -o "${MySB_Files}/$gsRepoFile" "$gsRepoURL"
+                [ -n "{$gsFileURL}" ] && gsRepoURL="{$gsFileURL}"
+                if [ ! -f "${MySB_Files}/${gsRepoFile}" ]; then
+                    ${binCURL} -o "${MySB_Files}/${gsRepoFile}" "${gsRepoURL}"
                     gnError=$?
                 fi
-                if [ ! -d "$gsRepoDir" ] && [ $gnError -eq 0 ]; then
-                    sSubDir="$(tar --xz -tf ${MySB_Files}/$gsRepoFile | cut -d '/' -f 1 | uniq)"
+                if [ ! -d "${gsRepoDir}" ] && [ $gnError -eq 0 ]; then
+                    sSubDir="$(tar --xz -tf ${MySB_Files}/${gsRepoFile} | cut -d '/' -f 1 | uniq)"
                     if [ ! -d "${MySB_InstallDir}/temp/$sSubDir" ]; then
-                        tar --xz -xf "${MySB_Files}/$gsRepoFile" -C "${MySB_InstallDir}/temp/"
+                        tar --xz -xf "${MySB_Files}/${gsRepoFile}" -C "${MySB_InstallDir}/temp/"
                         gnError=$?
                     fi
-                    if [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "$gsRepoDir" ]; then
-                        mv -v "${MySB_InstallDir}/temp/$sSubDir" "$gsRepoDir"
-                        chown -R root:root "$gsRepoDir"
+                    if [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "${gsRepoDir}" ]; then
+                        mv -v "${MySB_InstallDir}/temp/$sSubDir" "${gsRepoDir}"
+                        chown -R root:root "${gsRepoDir}"
                         gnError=$?
                     fi
                 fi
                 ;;
             'TARGZ')
-                [ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
-                if [ ! -f "${MySB_Files}/$gsRepoFile" ]; then
-                    $binCURL -o "${MySB_Files}/$gsRepoFile" "$gsRepoURL"
+                [ -n "{$gsFileURL}" ] && gsRepoURL="{$gsFileURL}"
+                if [ ! -f "${MySB_Files}/${gsRepoFile}" ]; then
+                    ${binCURL} -o "${MySB_Files}/${gsRepoFile}" "${gsRepoURL}"
                     gnError=$?
                 fi
-                if [ ! -d "$gsRepoDir" ] && [ $gnError -eq 0 ]; then
-                    sSubDir="$(tar -ztf "${MySB_Files}/$gsRepoFile" | cut -d '/' -f 1 | uniq)"
+                if [ ! -d "${gsRepoDir}" ] && [ $gnError -eq 0 ]; then
+                    sSubDir="$(tar -ztf "${MySB_Files}/${gsRepoFile}" | cut -d '/' -f 1 | uniq)"
                     if [ ! -d "${MySB_InstallDir}/temp/$sSubDir" ]; then
-                        tar -zxf "${MySB_Files}/$gsRepoFile" -C "${MySB_InstallDir}"/temp/
+                        tar -zxf "${MySB_Files}/${gsRepoFile}" -C "${MySB_InstallDir}"/temp/
                         gnError=$?
                     fi
-                    if [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "$gsRepoDir" ]; then
-                        mv -v "${MySB_InstallDir}/temp/$sSubDir" "$gsRepoDir"
-                        chown -R root:root "$gsRepoDir"
+                    if [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "${gsRepoDir}" ]; then
+                        mv -v "${MySB_InstallDir}/temp/$sSubDir" "${gsRepoDir}"
+                        chown -R root:root "${gsRepoDir}"
                         gnError=$?
                     fi
                 fi
                 ;;
             'WBM')
-                if [ ! -f "$gsRepoDir/$gsRepoFile" ]; then
-                    $binCURL -o "$gsRepoDir/$gsRepoFile" "$gsRepoURL"
+                if [ ! -f "${gsRepoDir}/${gsRepoFile}" ]; then
+                    ${binCURL} -o "${gsRepoDir}/${gsRepoFile}" "${gsRepoURL}"
                     gnError=$?
                 fi
                 ;;
             'DEB')
-                [ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
-                if [ ! -f "$gsRepoDir/$gsRepoFile" ]; then
-                    $binCURL -o "${MySB_Files}/$gsRepoFile" "$gsRepoURL"
+                [ -n "{$gsFileURL}" ] && gsRepoURL="{$gsFileURL}"
+                if [ ! -f "${gsRepoDir}/${gsRepoFile}" ]; then
+                    ${binCURL} -o "${MySB_Files}/${gsRepoFile}" "${gsRepoURL}"
                     gnError=$?
                 fi
                 ;;
             'SVN')
-                if [ ! -d "$gsRepoDir"/.svn ]; then
+                if [ ! -d "${gsRepoDir}"/.svn ]; then
                     # The GitHub project may have a ZIP archive.
-                    if [ -f "${MySB_Files}/$gsRepoFile" ]; then
-                        sSubDir="$(unzip -l "${MySB_Files}/$gsRepoFile" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
+                    if [ -f "${MySB_Files}/${gsRepoFile}" ]; then
+                        sSubDir="$(unzip -l "${MySB_Files}/${gsRepoFile}" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
                         if [ ! -d "${MySB_InstallDir}/temp/$sSubDir" ]; then
-                            unzip -q "${MySB_Files}/$gsRepoFile" -d "${MySB_InstallDir}"/temp/
+                            unzip -q "${MySB_Files}/${gsRepoFile}" -d "${MySB_InstallDir}"/temp/
                             gnError=$?
                             # If a package has 2 archives (*_2.zip)
                             if [ $gnError -eq 0 ] && [ -f "${MySB_Files}/${gsRepoFile//.zip/_2.zip}" ]; then
@@ -586,21 +598,21 @@ gfnRepoManageByType() {
                                 gnError=$?
                             fi
                         fi
-                        if [ $gnError -eq 0 ] && [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "$gsRepoDir" ]; then
-                            mv -v "${MySB_InstallDir}/temp/$sSubDir" "$gsRepoDir"
+                        if [ $gnError -eq 0 ] && [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "${gsRepoDir}" ]; then
+                            mv -v "${MySB_InstallDir}/temp/$sSubDir" "${gsRepoDir}"
                             gnError=$?
                         fi
                     else
-                        svn co --non-interactive --trust-server-cert "$gsRepoURL" "$gsRepoDir"
+                        svn co --non-interactive --trust-server-cert "${gsRepoURL}" "${gsRepoDir}"
                         gnError=$?
                     fi
                 fi
                 ;;
             'GIT')
-                if [ -f "${MySB_Files}/$gsRepoFile" ] && [ ! -d "$gsRepoDir" ]; then
-                    sSubDir="$(unzip -l "${MySB_Files}/$gsRepoFile" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
+                if [ -f "${MySB_Files}/${gsRepoFile}" ] && [ ! -d "${gsRepoDir}" ]; then
+                    sSubDir="$(unzip -l "${MySB_Files}/${gsRepoFile}" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
                     if [ ! -d "${MySB_InstallDir}/temp/$sSubDir" ]; then
-                        unzip -q "${MySB_Files}/$gsRepoFile" -d "${MySB_InstallDir}"/temp/
+                        unzip -q "${MySB_Files}/${gsRepoFile}" -d "${MySB_InstallDir}"/temp/
                         gnError=$?
                         # If a package has 2 archives (*_2.zip)
                         if [ $gnError -eq 0 ] && [ -f "${MySB_Files}/${gsRepoFile//.zip/_2.zip}" ]; then
@@ -608,13 +620,13 @@ gfnRepoManageByType() {
                             gnError=$?
                         fi
                     fi
-                    if [ $gnError -eq 0 ] && [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "$gsRepoDir" ]; then
-                        mv -v "${MySB_InstallDir}/temp/$sSubDir" "$gsRepoDir"
+                    if [ $gnError -eq 0 ] && [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "${gsRepoDir}" ]; then
+                        mv -v "${MySB_InstallDir}/temp/$sSubDir" "${gsRepoDir}"
                         gnError=$?
                     fi
-                    if [ $gnError -eq 0 ] && [ -d "$gsRepoDir" ] && [ "$gnRepoUpgrade" -eq 1 ]; then
-                        cd "$gsRepoDir"/ || exit
-                        case "$gsRepoName" in
+                    if [ $gnError -eq 0 ] && [ -d "${gsRepoDir}" ] && [ "${gnRepoUpgrade}" -eq 1 ]; then
+                        cd "${gsRepoDir}"/ || exit
+                        case "${gsRepoName}" in
                             'Cakebox-Light')
                                 git fetch --tags
                                 git checkout -b "$(git describe --tags "$(git rev-list --tags --max-count=1)")"
@@ -628,47 +640,47 @@ gfnRepoManageByType() {
                                 ;;
                         esac
                     fi
-                elif [ ! -f "${MySB_Files}/$gsRepoFile" ] && [ ! -d "$gsRepoDir" ]; then
-                    git clone "$gsRepoURL" "$gsRepoDir"
+                elif [ ! -f "${MySB_Files}/${gsRepoFile}" ] && [ ! -d "${gsRepoDir}" ]; then
+                    git clone "${gsRepoURL}" "${gsRepoDir}"
                     gnError=$?
                 fi
                 ;;
             'ZIP')
-                [ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
-                if [ ! -f "${MySB_Files}/$gsRepoFile" ]; then
-                    $binCURL -o "${MySB_Files}/$gsRepoFile" "$gsRepoURL"
+                [ -n "{$gsFileURL}" ] && gsRepoURL="{$gsFileURL}"
+                if [ ! -f "${MySB_Files}/${gsRepoFile}" ]; then
+                    ${binCURL} -o "${MySB_Files}/${gsRepoFile}" "${gsRepoURL}"
                     gnError=$?
                 fi
-                case "$gsRepoName" in
+                case "${gsRepoName}" in
                     'Wolf CMS' | 'ruTorrent')
-                        [ "$gnRepoUpgrade" -eq 1 ] && gfnDeleteDirectory 1 "$gsRepoDir"
+                        [ "${gnRepoUpgrade}" -eq 1 ] && gfnDeleteDirectory 1 "${gsRepoDir}"
                         ;;
                 esac
-                if [ ! -d "$gsRepoDir" ] && [ $gnError -eq 0 ]; then
-                    sSubDir="$(unzip -l "${MySB_Files}/$gsRepoFile" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
+                if [ ! -d "${gsRepoDir}" ] && [ $gnError -eq 0 ]; then
+                    sSubDir="$(unzip -l "${MySB_Files}/${gsRepoFile}" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
                     if [ ! -d "${MySB_InstallDir}/temp/$sSubDir" ]; then
-                        unzip -q "${MySB_Files}/$gsRepoFile" -d "${MySB_InstallDir}"/temp/
+                        unzip -q "${MySB_Files}/${gsRepoFile}" -d "${MySB_InstallDir}"/temp/
                         gnError=$?
                     fi
-                    if [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "$gsRepoDir" ]; then
-                        mv -v "${MySB_InstallDir}/temp/$sSubDir" "$gsRepoDir"
-                        chown -R root:root "$gsRepoDir"
+                    if [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "${gsRepoDir}" ]; then
+                        mv -v "${MySB_InstallDir}/temp/$sSubDir" "${gsRepoDir}"
+                        chown -R root:root "${gsRepoDir}"
                         gnError=$?
                     fi
                 fi
                 ;;
             'CURL')
-                [ -n "$gsFileURL" ] && gsRepoURL="$gsFileURL"
-                $binCURL "$gsRepoURL" -o "$gsRepoDir"
+                [ -n "{$gsFileURL}" ] && gsRepoURL="{$gsFileURL}"
+                ${binCURL} "${gsRepoURL}" -o "${gsRepoDir}"
                 gnError=$?
-                if [ -f "${MySB_Files}/$gsRepoFile" ]; then
-                    cp -v "${MySB_Files}/$gsRepoFile" "$gsRepoDir"
+                if [ -f "${MySB_Files}/${gsRepoFile}" ]; then
+                    cp -v "${MySB_Files}/${gsRepoFile}" "${gsRepoDir}"
                     gnError=$?
                 fi
                 ;;
         esac
 
-        [ -d "$gsRepoDir" ] && find "$gsRepoDir"/ -type f -print0 | xargs -0 dos2unix &>/dev/null
+        [ -d "${gsRepoDir}" ] && find "${gsRepoDir}"/ -type f -print0 | xargs -0 dos2unix &>/dev/null
     fi
 }
 
