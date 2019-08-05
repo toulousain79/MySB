@@ -223,8 +223,8 @@ gfnPopulatingBadChain() {
 	# Drop packets received on the external interface claiming a source of the local network
 	if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
 		for ip in ${gsVpnLocalIps}; do
-			iptables -A bad_packets -p ALL -i "${gsPrimaryInet}" -s "$ip" -j LOG --log-prefix "[MySB] Illegal source: " -m comment --comment "OpenVPN - Illegal source - $ip"
-			iptables -A bad_packets -p ALL -i "${gsPrimaryInet}" -s "$ip" -j DROP
+			iptables -A bad_packets -p ALL -i "${gsPrimaryInet}" -s "${ip}" -j LOG --log-prefix "[MySB] Illegal source: " -m comment --comment "OpenVPN - Illegal source - ${ip}"
+			iptables -A bad_packets -p ALL -i "${gsPrimaryInet}" -s "${ip}" -j DROP
 		done
 	fi
 
@@ -309,29 +309,29 @@ gfnPopulatingIcmpChain() {
 			"OVH")
 				sOvhIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider = 'OVH' AND ipv4 !='';")"
 				for IPv4 in $sOvhIPv4; do
-					iptables -A icmp_packets -p ICMP -s "$IPv4" --icmp-type 8 -j LOG --log-prefix "[MySB] Ping detected: " -m comment --comment "${gsServerProvider} monitoring"
-					iptables -A icmp_packets -p ICMP -s "$IPv4" --icmp-type 8 -j ACCEPT -m comment --comment "${gsServerProvider} monitoring"
+					iptables -A icmp_packets -p ICMP -s "${IPv4}" --icmp-type 8 -j LOG --log-prefix "[MySB] Ping detected: " -m comment --comment "${gsServerProvider} monitoring"
+					iptables -A icmp_packets -p ICMP -s "${IPv4}" --icmp-type 8 -j ACCEPT -m comment --comment "${gsServerProvider} monitoring"
 				done
 				;;
 			"ONLINE")
 				sOnlineIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider = 'ONLINE' AND ipv4 !='';")"
 				for IPv4 in $sOnlineIPv4; do
-					iptables -A icmp_packets -p ICMP -s "$IPv4" --icmp-type 8 -j LOG --log-prefix "[MySB] Ping detected: " -m comment --comment "${gsServerProvider} monitoring"
-					iptables -A icmp_packets -p ICMP -s "$IPv4" --icmp-type 8 -j ACCEPT -m comment --comment "${gsServerProvider} monitoring"
+					iptables -A icmp_packets -p ICMP -s "${IPv4}" --icmp-type 8 -j LOG --log-prefix "[MySB] Ping detected: " -m comment --comment "${gsServerProvider} monitoring"
+					iptables -A icmp_packets -p ICMP -s "${IPv4}" --icmp-type 8 -j ACCEPT -m comment --comment "${gsServerProvider} monitoring"
 				done
 				;;
 			"DIGICUBE")
 				sDigicubeIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider = 'DIGICUBE' AND ipv4 !='';")"
 				for IPv4 in $sDigicubeIPv4; do
-					iptables -A icmp_packets -p ICMP -s "$IPv4" --icmp-type 8 -j LOG --log-prefix "[MySB] Ping detected: " -m comment --comment "${gsServerProvider} monitoring"
-					iptables -A icmp_packets -p ICMP -s "$IPv4" --icmp-type 8 -j ACCEPT -m comment --comment "${gsServerProvider} monitoring"
+					iptables -A icmp_packets -p ICMP -s "${IPv4}" --icmp-type 8 -j LOG --log-prefix "[MySB] Ping detected: " -m comment --comment "${gsServerProvider} monitoring"
+					iptables -A icmp_packets -p ICMP -s "${IPv4}" --icmp-type 8 -j ACCEPT -m comment --comment "${gsServerProvider} monitoring"
 				done
 				;;
 			"HETZNER")
 				sHetznerIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider = 'HETZNER' AND ipv4 !='';")"
 				for IPv4 in $sHetznerIPv4; do
-					iptables -A icmp_packets -p ICMP -s "$IPv4" --icmp-type 8 -j LOG --log-prefix "[MySB] Ping detected: " -m comment --comment "${gsServerProvider} monitoring"
-					iptables -A icmp_packets -p ICMP -s "$IPv4" --icmp-type 8 -j ACCEPT -m comment --comment "${gsServerProvider} monitoring"
+					iptables -A icmp_packets -p ICMP -s "${IPv4}" --icmp-type 8 -j LOG --log-prefix "[MySB] Ping detected: " -m comment --comment "${gsServerProvider} monitoring"
+					iptables -A icmp_packets -p ICMP -s "${IPv4}" --icmp-type 8 -j ACCEPT -m comment --comment "${gsServerProvider} monitoring"
 				done
 				;;
 			esac
@@ -343,8 +343,8 @@ gfnPopulatingIcmpChain() {
 	case "$1" in
 	"create")
 		for ip in $AllUsersIPs; do
-			iptables -A icmp_packets -p ICMP -s "$ip" --icmp-type 8 -j LOG --log-prefix "[MySB] Ping detected: " -m comment --comment "Allow ICMP for users"
-			iptables -A icmp_packets -p ICMP -s "$ip" --icmp-type 8 -j ACCEPT -m comment --comment "Allow ICMP for users"
+			iptables -A icmp_packets -p ICMP -s "${ip}" --icmp-type 8 -j LOG --log-prefix "[MySB] Ping detected: " -m comment --comment "Allow ICMP for users"
+			iptables -A icmp_packets -p ICMP -s "${ip}" --icmp-type 8 -j ACCEPT -m comment --comment "Allow ICMP for users"
 		done
 		;;
 	"refresh")
@@ -352,9 +352,9 @@ gfnPopulatingIcmpChain() {
 		sed -i '/Allow ICMP for users/d' "${MySB_InstallDir}"/temp/current-iptables-rules
 		for ip in $AllUsersIPs; do
 			# ICMP
-			sed -i "${nNumLine}i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for users\" -j LOG --log-prefix \"[MySB] Ping detected:\"" "${MySB_InstallDir}"/temp/current-iptables-rules
+			sed -i "${nNumLine}i\-A icmp_packets -s ${ip} -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for users\" -j LOG --log-prefix \"[MySB] Ping detected:\"" "${MySB_InstallDir}"/temp/current-iptables-rules
 			((nNumLine++))
-			sed -i "${nNumLine}i\-A icmp_packets -s $ip -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+			sed -i "${nNumLine}i\-A icmp_packets -s ${ip} -p icmp -m icmp --icmp-type 8 -m comment --comment \"Allow ICMP for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
 			((nNumLine++))
 		done
 		;;
@@ -438,17 +438,17 @@ gfnPopulatingUdpInboundChain() {
 			iptables -A udp_inbound -p UDP -s 0/0 -i br0 --destination-port 123 -j LOG --log-prefix "[MySB] NTP request: " -m comment --comment "NTP over OpenVPN"
 		fi
 		for IPv4 in $AllUsersIPs; do
-			iptables -A udp_inbound -p UDP -s "$IPv4" --destination-port 123 -j LOG --log-prefix "[MySB] NTP request: " -m comment --comment "NTP for users"
-			iptables -A udp_inbound -p UDP -s "$IPv4" --destination-port 123 -j ACCEPT -m comment --comment "NTP for users"
+			iptables -A udp_inbound -p UDP -s "${IPv4}" --destination-port 123 -j LOG --log-prefix "[MySB] NTP request: " -m comment --comment "NTP for users"
+			iptables -A udp_inbound -p UDP -s "${IPv4}" --destination-port 123 -j ACCEPT -m comment --comment "NTP for users"
 		done
 		;;
 	"refresh")
 		nNumLine=$(grep 'NTP for users' -n -m 1 "${MySB_InstallDir}"/temp/current-iptables-rules | cut -d ':' -f 1)
 		sed -i '/NTP for users/d' "${MySB_InstallDir}"/temp/current-iptables-rules
 		for ip in $AllUsersIPs; do
-			sed -i "${nNumLine}i\-A udp_inbound -s $ip -p udp -m udp --dport 123 -m comment --comment \"NTP for users\" -j LOG --log-prefix \"[MySB] NTP request:\"" "${MySB_InstallDir}"/temp/current-iptables-rules
+			sed -i "${nNumLine}i\-A udp_inbound -s ${ip} -p udp -m udp --dport 123 -m comment --comment \"NTP for users\" -j LOG --log-prefix \"[MySB] NTP request:\"" "${MySB_InstallDir}"/temp/current-iptables-rules
 			((nNumLine++))
-			sed -i "${nNumLine}i\-A udp_inbound -s $ip -p udp -m udp --dport 123 -m comment --comment \"NTP for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+			sed -i "${nNumLine}i\-A udp_inbound -s ${ip} -p udp -m udp --dport 123 -m comment --comment \"NTP for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
 			((nNumLine++))
 		done
 		;;
@@ -604,13 +604,13 @@ gfnPopulatingTcpInboundChain() {
 
 		for ip in $AllUsersIPs; do
 			# SSHd
-			iptables -A tcp_inbound -p TCP -s "$ip" --destination-port "${gsPort_SSH}" -j ACCEPT -m comment --comment "SSH and SFTP for users"
+			iptables -A tcp_inbound -p TCP -s "${ip}" --destination-port "${gsPort_SSH}" -j ACCEPT -m comment --comment "SSH and SFTP for users"
 			# FTP Server (Control)
-			iptables -A tcp_inbound -p TCP -s "$ip" --destination-port "${gsPort_FTP}" -j ACCEPT -m comment --comment "FTP for users"
+			iptables -A tcp_inbound -p TCP -s "${ip}" --destination-port "${gsPort_FTP}" -j ACCEPT -m comment --comment "FTP for users"
 			# FTP Client (Data Port for non-PASV transfers)
-			iptables -A tcp_inbound -p TCP -s "$ip" --source-port "${gsPort_FTP_Data}" -j ACCEPT -m comment --comment "FTP Data for users"
+			iptables -A tcp_inbound -p TCP -s "${ip}" --source-port "${gsPort_FTP_Data}" -j ACCEPT -m comment --comment "FTP Data for users"
 			# Passive FTP
-			iptables -A tcp_inbound -p TCP -s "$ip" --destination-port "${gsPort_FTP_Passive}" -j ACCEPT -m comment --comment "FTP Passive for users"
+			iptables -A tcp_inbound -p TCP -s "${ip}" --destination-port "${gsPort_FTP_Passive}" -j ACCEPT -m comment --comment "FTP Passive for users"
 		done
 		;;
 	"refresh")
@@ -622,16 +622,16 @@ gfnPopulatingTcpInboundChain() {
 		for ip in $AllUsersIPs; do
 			# SSHd
 			((nNumLine++))
-			sed -i "${nNumLine}i\-A tcp_inbound -s $ip -p tcp -m tcp --dport ${gsPort_SSH} -m comment --comment \"SSH and SFTP for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+			sed -i "${nNumLine}i\-A tcp_inbound -s ${ip} -p tcp -m tcp --dport ${gsPort_SSH} -m comment --comment \"SSH and SFTP for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
 			# FTP Server (Control)
 			((nNumLine++))
-			sed -i "${nNumLine}i\-A tcp_inbound -s $ip -p tcp -m tcp --dport ${gsPort_FTP} -m comment --comment \"FTP for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+			sed -i "${nNumLine}i\-A tcp_inbound -s ${ip} -p tcp -m tcp --dport ${gsPort_FTP} -m comment --comment \"FTP for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
 			# FTP Client (Data Port for non-PASV transfers)
 			((nNumLine++))
-			sed -i "${nNumLine}i\-A tcp_inbound -s $ip -p tcp -m tcp --sport ${gsPort_FTP_Data} -m comment --comment \"FTP Data for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+			sed -i "${nNumLine}i\-A tcp_inbound -s ${ip} -p tcp -m tcp --sport ${gsPort_FTP_Data} -m comment --comment \"FTP Data for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
 			# Passive FTP
 			((nNumLine++))
-			sed -i "${nNumLine}i\-A tcp_inbound -s $ip -p tcp -m tcp --dport ${gsPort_FTP_Passive} -m comment --comment \"FTP Passive for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+			sed -i "${nNumLine}i\-A tcp_inbound -s ${ip} -p tcp -m tcp --dport ${gsPort_FTP_Passive} -m comment --comment \"FTP Passive for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
 		done
 		;;
 	esac
@@ -699,7 +699,7 @@ gfnPopulatingTcpInboundChain() {
 	"create")
 		if [ "${gbIsInstalled_Webmin}" == "YES" ]; then
 			for ip in ${gsMainUserIPs}; do
-				iptables -A tcp_inbound -p TCP -s "$ip" --destination-port "${gsPorts_Webmin}" -j ACCEPT -m comment --comment "Webmin for main user"
+				iptables -A tcp_inbound -p TCP -s "${ip}" --destination-port "${gsPorts_Webmin}" -j ACCEPT -m comment --comment "Webmin for main user"
 			done
 			if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
 				iptables -A tcp_inbound -p TCP -s 0/0 -i tun+ --destination-port "${gsPorts_Webmin}" -j ACCEPT -m comment --comment "Webmin over OpenVPN"
@@ -712,7 +712,7 @@ gfnPopulatingTcpInboundChain() {
 			nNumLine=$(grep 'Webmin for main user' -n -m 1 "${MySB_InstallDir}"/temp/current-iptables-rules | cut -d ':' -f 1)
 			sed -i '/Webmin for main user/d' "${MySB_InstallDir}"/temp/current-iptables-rules
 			for ip in ${gsMainUserIPs}; do
-				sed -i "${nNumLine}i\-A tcp_inbound -s $ip -p tcp -m tcp --dport ${gsPorts_Webmin} -m comment --comment \"Webmin for main user\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+				sed -i "${nNumLine}i\-A tcp_inbound -s ${ip} -p tcp -m tcp --dport ${gsPorts_Webmin} -m comment --comment \"Webmin for main user\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
 				((nNumLine++))
 			done
 		fi
@@ -723,13 +723,22 @@ gfnPopulatingTcpInboundChain() {
 	case "$1" in
 	"create")
 		if [ "${gbIsInstalled_PlexMedia}" == "YES" ]; then
-			iptables -A tcp_inbound -p TCP -s 0/0 -i "${gsPrimaryInet}" --destination-port "$gsPorts_PlexMedia" -j ACCEPT -m comment --comment "Plex Media Server"
+			iptables -A tcp_inbound -p TCP -s 0/0 -i "${gsPrimaryInet}" --destination-port "${gsPorts_PlexMedia}" -j ACCEPT -m comment --comment "Plex Media Server"
 			if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
-				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port "$gsPorts_PlexMedia" -j ACCEPT -m comment --comment "Plex Media Server"
-				for PlexTcpPort in $gsPorts_TCP_PlexMedia; do
-					iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port "$PlexTcpPort" -j ACCEPT -m comment --comment "Plex Media Server TCP"
+				iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port "${gsPorts_PlexMedia}" -j ACCEPT -m comment --comment "Plex Media Server"
+				for PlexTcpPort in ${gsPorts_TCP_PlexMedia}; do
+					iptables -A tcp_inbound -p TCP -s 0/0 -i br0 --destination-port "${PlexTcpPort}" -j ACCEPT -m comment --comment "Plex Media Server TCP"
 				done
 			fi
+		fi
+		;;
+	esac
+
+	#### Minio
+	case "$1" in
+	"create")
+		if [ "${gbIsInstalled_Minio}" == "YES" ]; then
+			iptables -A tcp_inbound -p TCP -s 0/0 -i "${gsPrimaryInet}" --destination-port "${gsPort_Minio}" -j ACCEPT -m comment --comment "Minio"
 		fi
 		;;
 	esac
@@ -780,7 +789,7 @@ gfnPopulatingTcpInboundChain() {
 		# if [ "${gsIpRestriction}" == "YES" ]; then
 		# Temp="`cmdMySQL 'MySB_db' "SELECT ipv4 FROM lets_encrypt;"`"
 		# for IPv4 in $Temp; do
-		# LetsEncryptIPs="${LetsEncryptIPs} $IPv4/32"
+		# LetsEncryptIPs="${LetsEncryptIPs} ${IPv4}/32"
 		# done
 		# else
 		# LetsEncryptIPs="0/0"
@@ -789,7 +798,7 @@ gfnPopulatingTcpInboundChain() {
 		# if [ "$bLetsEncryptOpenPort" -eq 1 ]; then
 		# nNumLine=$(cat "${MySB_InstallDir}"/temp/current-iptables-rules | grep '\-A tcp_inbound -p tcp -j RETURN' -n -m 1 | cut -d ':' -f 1)
 		# for IPv4 in $LetsEncryptIPs; do
-		# sed -i "${nNumLine}i\-A tcp_inbound -s $IPv4 -i ${gsPrimaryInet} -p tcp -m tcp --dport 80 -m comment --comment \"Lets Encrypt HTTP\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+		# sed -i "${nNumLine}i\-A tcp_inbound -s ${IPv4} -i ${gsPrimaryInet} -p tcp -m tcp --dport 80 -m comment --comment \"Lets Encrypt HTTP\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
 		# done
 		# else
 		# sed -i '/Lets Encrypt HTTP/d' "${MySB_InstallDir}"/temp/current-iptables-rules

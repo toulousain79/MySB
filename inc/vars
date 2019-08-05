@@ -364,6 +364,10 @@ if [ -n "${MySB_InstallDir}" ] && [ "${gbIsReady_MySB_Db}" == "YES" ]; then
                 gbToInstall_Tautulli="$(echo "${bToInstall}" | sed 's/0/NO/g;s/1/YES/g;')"
                 gbIsInstalled_Tautulli="$(echo "${bIsInstalled}" | sed 's/0/NO/g;s/1/YES/g;')"
                 ;;
+            27)
+                gbToInstall_Minio="$(echo "${bToInstall}" | sed 's/0/NO/g;s/1/YES/g;')"
+                gbIsInstalled_Minio="$(echo "${bIsInstalled}" | sed 's/0/NO/g;s/1/YES/g;')"
+                ;;
         esac
         unset nIdService bToInstall bIsInstalled
     done
@@ -372,6 +376,7 @@ if [ -n "${MySB_InstallDir}" ] && [ "${gbIsReady_MySB_Db}" == "YES" ]; then
     export gbIsInstalled_NFS gbIsInstalled_NextCloud gbIsInstalled_OpenVPN gbIsInstalled_PeerGuardian gbIsInstalled_PlexMedia gbIsInstalled_Webmin gbIsInstalled_Tautulli gbIsInstalled_Samba
     export gbToInstall_Tautulli gbToInstall_Blocklist gbToInstall_Cakebox gbToInstall_Fail2Ban gbToInstall_DNScrypt gbToInstall_LetsEncrypt gbToInstall_LogWatch gbToInstall_Manager
     export gbToInstall_NFS gbToInstall_NextCloud gbToInstall_OpenVPN gbToInstall_PeerGuardian gbToInstall_PlexMedia gbToInstall_Webmin gbToInstall_Tautulli gbToInstall_Samba
+    export gbToInstall_Minio gbIsInstalled_Minio
 
     case "${gbToInstall_PeerGuardian}" in
         "YES") gsMySB_PeerBlock="PeerGuardian" ;;
@@ -414,21 +419,24 @@ if [ -n "${MySB_InstallDir}" ] && [ "${gbIsReady_MySB_Db}" == "YES" ]; then
     fi
     unset sRequestValues
     export gsOpenVPN_Proto gsPort_OpenVPN_TAP_WithoutGW gsPort_OpenVPN_WithoutGW gsPort_OpenVPN_WithGW
-    ### ----- Services info
 
-    ### ----- White IP addresses
-    gsVpnLocalIps='10.0.0.0/24 10.0.1.0/24 10.0.2.0/24'
-    export gsVpnLocalIps
-    ### ----- White IP addresses
-
-    ### ----- Networks ports (Services ports)
+    # Plex Media Server
     sRequestValues="$(${binMySQL} "SELECT port_tcp1,ports_tcp_list,ports_udp_list FROM services WHERE serv_name='Plex Media Server';" | sed 's/\t/|/g;')"
     gsPorts_PlexMedia="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[1]}')"
     gsPorts_TCP_PlexMedia="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
     gsPorts_UDP_PlexMedia="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[3]}')"
     unset sRequestValues
     export gsPorts_PlexMedia gsPorts_TCP_PlexMedia gsPorts_UDP_PlexMedia
-    ### ----- Networks ports (Services ports)
+
+    # Minio
+    gsPort_Minio="$(${binMySQL} "SELECT port_tcp1 FROM services WHERE serv_name='Minio';")"
+    export gsPort_Minio
+    ### ----- Services info
+
+    ### ----- White IP addresses
+    gsVpnLocalIps='10.0.0.0/24 10.0.1.0/24 10.0.2.0/24'
+    export gsVpnLocalIps
+    ### ----- White IP addresses
 
     ### ----- Repositories infos
     gsRutorrentDir="$(${binMySQL} "SELECT dir FROM repositories WHERE name='ruTorrent';" | sed "s/<InstallDir>/$gsInstallDirEscaped/g;")"

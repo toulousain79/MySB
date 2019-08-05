@@ -28,8 +28,25 @@ source "$(dirname "$0")"/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### Systemd
-groupadd --system minio
-useradd -s /sbin/nologin --system -g minio minio
+(! grep -q 'minio' /etc/group) && groupadd --system minio
+(! grep -q 'minio' /etc/passwd) && useradd -s /sbin/nologin --system -g minio minio
+install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/minio.service.tmpl /lib/systemd/system/minio.service
+systemctl enable minio.service
+if [ ! -f /etc/default/minio ]; then
+    MINIO_ACCESS_KEY="$(gfnGenPassword 20) "
+    MINIO_SECRET_KEY="$(gfnGenPassword 40) "
+    {
+        echo "# Volume to be used for Minio server."
+        echo "MINIO_VOLUMES=\"/data\""
+        echo "# Use if you want to run Minio on a custom port."
+        echo "MINIO_OPTS=\"--address :9000\""
+        echo "# Access Key of the server."
+        echo "MINIO_ACCESS_KEY=\"${MINIO_ACCESS_KEY}\""
+        echo "# Secret key of the server."
+        echo "MINIO_SECRET_KEY=\"${MINIO_SECRET_KEY}\""
+    } >/etc/default/minio
+	(
+fi
 
 #### Minio
 fnInstallMinio() {
