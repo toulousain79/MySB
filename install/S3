@@ -25,6 +25,8 @@ source "$(dirname "$0")"/../inc/includes_before
 #
 ######################################################################
 # https://computingforgeeks.com/how-to-setup-s3-compatible-object-storage-server-with-minio/
+# https://www.digitalocean.com/community/tutorials/how-to-set-up-an-object-storage-server-using-minio-on-ubuntu-16-04
+# Multi NginX location for each bucket: https://forum.nginx.org/read.php?11,281903
 ##################### FIRST LINE #####################################
 
 #### Systemd
@@ -33,24 +35,47 @@ case "${gsSwitch}" in
         (! grep -q 'minio' /etc/group) && groupadd --system minio
         (! grep -q 'minio' /etc/passwd) && useradd -s /sbin/nologin --system -g minio minio
         install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/minio.service.tmpl /lib/systemd/system/minio.service
+        systemctl daemon-reload
         systemctl enable minio.service
+        install -d -v -o minio -g minio -m 0755 /etc/minio/certs
+        install -d -v -o minio -g minio -m 0755 /usr/local/share/minio
+        if [[ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ]] && [[ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" ]]; then
+            cp "/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/minio/certs/private.key
+            cp "/etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" /etc/minio/certs/public.crt
+        fi
      ;;
 esac
 
+[ -f /etc/default/minio ] && source /etc/default/minio
+MINIO_ACCESS_KEY="${MINIO_ACCESS_KEY:-$(gfnGenPassword 20)}"
+MINIO_SECRET_KEY="${MINIO_SECRET_KEY:-$(gfnGenPassword 40)}"
+
 #### /etc/default/minio
 if [ ! -f /etc/default/minio ]; then
-    MINIO_ACCESS_KEY="$(gfnGenPassword 20)"
-    MINIO_SECRET_KEY="$(gfnGenPassword 40)"
     {
         echo "# Volume to be used for Minio server."
-        echo "MINIO_VOLUMES=\"/data\""
+        echo "MINIO_VOLUMES=\"/usr/local/share/minio/\""
         echo "# Use if you want to run Minio on a custom port."
-        echo "MINIO_OPTS=\"--address :9000\""
+        echo "MINIO_OPTS=\"-C /etc/minio --address ${gsHostNameFqdn}:9000\""
         echo "# Access Key of the server."
         echo "MINIO_ACCESS_KEY=\"${MINIO_ACCESS_KEY}\""
         echo "# Secret key of the server."
         echo "MINIO_SECRET_KEY=\"${MINIO_SECRET_KEY}\""
     } >/etc/default/minio
+fi
+
+#### /etc/minio/config.json
+if [ ! -f /etc/minio/config.json ]; then
+cat <<EOF >/etc/minio/config.json
+{
+    "version": "19",
+    "credential": {
+        "accessKey": "${MINIO_ACCESS_KEY}",
+        "secretKey": "${MINIO_SECRET_KEY}"
+    },
+    "region": "us-east-1"
+}
+EOF
 fi
 
 #### Minio

@@ -134,8 +134,8 @@ fnUseOfCertificates() {
                 cat /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem >/etc/webmin/miniserv.pem
                 cat /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem >>/etc/webmin/miniserv.pem
             else
-                cat $MySB_InstallDir/ssl/mysb.cert >/etc/webmin/miniserv.pem
-                cat $MySB_InstallDir/ssl/mysb.key >>/etc/webmin/miniserv.pem
+                cat ${MySB_InstallDir}/ssl/mysb.cert >/etc/webmin/miniserv.pem
+                cat ${MySB_InstallDir}/ssl/mysb.key >>/etc/webmin/miniserv.pem
             fi
             sServicesToRestart="${sServicesToRestart} webmin"
             gfnStatusLSB
@@ -143,19 +143,19 @@ fnUseOfCertificates() {
 
         # VSFTPd
         if [[ -f /etc/vsftpd.conf ]]; then
-            gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/VSFTP" 'UPGRADE'
+            gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/VSFTP" 'UPGRADE'
         fi
 
         # Postfix/Stunnel
         if [[ -f /etc/stunnel/stunnel.conf ]]; then
-            gfnScriptInvoke 'ScreenSTD' "$MySB_InstallDir/install/Postfix" 'UPGRADE'
+            gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/Postfix" 'UPGRADE'
         fi
 
         #### Tautulli
         gfnGetRepoValues 'Tautulli'
         if [[ -f ${gsRepoDir}/config.ini ]]; then
             gfnManageServices stop "tautulli"
-            nNumLine=$(cat ${gsRepoDir}/config.ini | grep 'pms_name' -n -m 1 | cut -d ':' -f 1)
+            nNumLine=$(grep 'pms_name' -n -m 1 ${gsRepoDir}/config.ini | cut -d ':' -f 1)
             sed -i '/pms_name/d' ${gsRepoDir}/config.ini
             sed -i "${nNumLine}i\pms_name = ${gsHostNameFqdn}" ${gsRepoDir}/config.ini
             nNumLine=$(cat ${gsRepoDir}/config.ini | grep 'http_base_url' -n -m 1 | cut -d ':' -f 1)
@@ -165,16 +165,23 @@ fnUseOfCertificates() {
             sed -i '/https_cert/d' ${gsRepoDir}/config.ini
             sed -i '/https_key/d' ${gsRepoDir}/config.ini
             sed -i '/https_cert_chain/d' ${gsRepoDir}/config.ini
-            if ([ -f /etc/letsencrypt/live/${sNewFQDN}/fullchain.pem ] && [ -f /etc/letsencrypt/live/${sNewFQDN}/privkey.pem ]); then
+            if ([ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ]); then
                 sed -i "${nNumLine}i\https_cert = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" ${gsRepoDir}/config.ini
                 sed -i "${nNumLine}i\https_key = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ${gsRepoDir}/config.ini
                 sed -i "${nNumLine}i\https_cert_chain = /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" ${gsRepoDir}/config.ini
             else
-                sed -i "${nNumLine}i\https_cert = $MySB_InstallDir/ssl/mysb.cert" ${gsRepoDir}/config.ini
-                sed -i "${nNumLine}i\https_key = $MySB_InstallDir/ssl/mysb.key" ${gsRepoDir}/config.ini
+                sed -i "${nNumLine}i\https_cert = ${MySB_InstallDir}/ssl/mysb.cert" ${gsRepoDir}/config.ini
+                sed -i "${nNumLine}i\https_key = ${MySB_InstallDir}/ssl/mysb.key" ${gsRepoDir}/config.ini
                 sed -i "${nNumLine}i\https_cert_chain = " ${gsRepoDir}/config.ini
             fi
             sServicesToRestart="${sServicesToRestart} tautulli"
+        fi
+
+        #### Minio
+        if [[ -d /etc/minio/certs/ ]]; then
+            cp -f "/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/minio/certs/private.key
+            cp -f "/etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" /etc/minio/certs/public.crt
+            sServicesToRestart="${sServicesToRestart} minio"
         fi
     else
         rm -vf "/etc/nginx/snippets/letsencrypt_${gsHostNameFqdn}.conf"
