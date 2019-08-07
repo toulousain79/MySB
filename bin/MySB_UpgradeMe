@@ -174,7 +174,7 @@ if [[ ${Continue} -eq 0 ]]; then
         find "${MySB_InstallDir}_backup" -maxdepth 1 -type d -name "v*" -mtime +1 -exec rm -rfv {} \;
     fi
 
-    [ "$gbDevMode" -eq 1 ] && backup-manager-tools add "${MySB_InstallDir}"
+    [ "${gbDevMode}" -eq 1 ] && backup-manager-tools add "${MySB_InstallDir}"
     [ -d "${MySB_InstallDir}_backup/temp" ] && mv "${MySB_InstallDir}_backup/temp" "${MySB_InstallDir}_backup/${gsCurrentVersion}"
 fi
 
@@ -268,6 +268,7 @@ MySB_RepoVersion="$(cd "${MySB_InstallDir}"/ && git branch | grep '\*' | awk '{ 
 if [[ ${Continue} -eq 0 ]]; then
     if [ "${MySB_NewVersion}" == "${MySB_RepoVersion}" ]; then
         sPreviousVersion="${gsCurrentVersion}"
+        sUpgradeLogFile="/tmp/${gsScriptName}.log"
 
         #### Debian upgrade - BoF
         # Questions
@@ -281,53 +282,61 @@ if [[ ${Continue} -eq 0 ]]; then
         echo -e "${CBLUE}${Upgrade_UpgradeDebianRelease} (Stretch)${CEND}"
         # shellcheck source=inc/funcs_by_script/funcs_Install
         source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Install
-        cmdMySQL 'MySB_db' "UPDATE system SET apt_update = 1, apt_date = '$(date +%Y-%m-%d\ %H:%M:%S)' WHERE id_system='1';" -v
-        gfnPackagesManage 'upgrade'
-        gfnPackagesManage 'dist-upgrade'
+        {
+            cmdMySQL 'MySB_db' "UPDATE system SET apt_update = 1, apt_date = '$(date +%Y-%m-%d\ %H:%M:%S)' WHERE id_system='1';" -v
+            gfnPackagesManage 'upgrade'
+            gfnPackagesManage 'dist-upgrade'
+        } | tee -a "${sUpgradeLogFile}"
 
         # Purge PHP 7.1 from Sury
         clear
-        gfnPackagesManage purge "php-common php7.1-common php7.1-cli php7.1-fpm php7.1-imagick php7.1-dev php7.1-curl php7.1-gd php7.1-gmp php7.1-imap php7.1-intl php7.1-json php7.1-mcrypt php7.1-mysql php7.1-readline php7.1-sqlite3 php7.1-xmlrpc php7.1-msgpack php7.1-geoip php7.1-redis php7.1-xml php7.1-zip php7.1-mbstring php7.1-smbclient php-pear libgeoip-dev)"
-        gfnDeleteDirectory 1 "/usr/share/php"
-        gfnDeleteDirectory 1 "/usr/share/doc/php*"
-        gfnDeleteDirectory 1 "/usr/lib/php"
-        gfnDeleteDirectory 1 "/etc/php"
+        {
+            gfnPackagesManage purge "php-common php7.1-common php7.1-cli php7.1-fpm php7.1-imagick php7.1-dev php7.1-curl php7.1-gd php7.1-gmp php7.1-imap php7.1-intl php7.1-json php7.1-mcrypt php7.1-mysql php7.1-readline php7.1-sqlite3 php7.1-xmlrpc php7.1-msgpack php7.1-geoip php7.1-redis php7.1-xml php7.1-zip php7.1-mbstring php7.1-smbclient php-pear libgeoip-dev)"
+            gfnDeleteDirectory 1 "/usr/share/php"
+            gfnDeleteDirectory 1 "/usr/share/doc/php*"
+            gfnDeleteDirectory 1 "/usr/lib/php"
+            gfnDeleteDirectory 1 "/etc/php"
+        } | tee -a "${sUpgradeLogFile}"
 
         # apt-mirror
         clear
-        gfnPackagesManage purge "apt-mirror"
-        rm -vf /etc/cron.d/apt-mirror
-        rm -vf /etc/apt/sources.list~
-        rm -vf /etc/apt/sources.list.d/*
-        gfnDeleteDirectory 1 "/var/spool/apt-mirror"
-        gfnDeleteDirectory 1 "${MySB_InstallDir}/files/apt_mirrors"
+        {
+            gfnPackagesManage purge "apt-mirror"
+            rm -vf /etc/cron.d/apt-mirror
+            rm -vf /etc/apt/sources.list~
+            rm -vf /etc/apt/sources.list.d/*
+            gfnDeleteDirectory 1 "/var/spool/apt-mirror"
+            gfnDeleteDirectory 1 "${MySB_InstallDir}/files/apt_mirrors"
+        } | tee -a "${sUpgradeLogFile}"
 
         clear
         echo -e "${CBLUE}${Upgrade_UpdateDebianSources}${CEND}"
-        gfnScriptInvoke 'source' "${MySB_InstallDir}/install/SourcesList" 'UPGRADE' 'buster'
+        gfnScriptInvoke 'source' "${MySB_InstallDir}/install/SourcesList" 'UPGRADE' 'buster' | tee -a "${sUpgradeLogFile}"
 
         #### System upgrade
         clear
         echo -e "${CBLUE}${Upgrade_UpgradeDebianRelease} (Buster)${CEND}"
-        systemctl disable MySB_SecurityRules_Init.service
-        rm -fv /lib/systemd/system/MySB_SecurityRules_Init.service
-        # shellcheck source=inc/funcs_by_script/funcs_Install
-        source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Install
-        cmdMySQL 'MySB_db' "UPDATE system SET apt_update = 1, apt_date = '$(date +%Y-%m-%d\ %H:%M:%S)' WHERE id_system='1';" -v
-        gfnPackagesManage 'upgrade'
-        gfnPackagesManage 'dist-upgrade'
-        update-alternatives --set iptables /usr/sbin/iptables-legacy
-        update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
-        [ -z "${gsLocale}" ] && gsLocale="en_US"
-        sed -i "s/# ${gsLocale}.UTF-8 UTF-8/${gsLocale}.UTF-8 UTF-8/g;" /etc/locale.gen
-        export LANGUAGE=${LANG:0:2}
-        export LANG=${gsLocale}.UTF-8
-        sed -i '/LANGUAGE=/d' /etc/environment
-        echo "LANGUAGE=${LANG:0:2}" >>/etc/environment
-        update-locale "LANG=${gsLocale}.UTF-8" &>/dev/null
-        locale-gen "${gsLocale}.UTF-8" &>/dev/null
-        dpkg-reconfigure -f noninteractive locales &>/dev/null
-        locale >${MySB_InstallDir}/files/locale
+        {
+            systemctl disable MySB_SecurityRules_Init.service
+            rm -fv /lib/systemd/system/MySB_SecurityRules_Init.service
+            # shellcheck source=inc/funcs_by_script/funcs_Install
+            source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Install
+            cmdMySQL 'MySB_db' "UPDATE system SET apt_update = 1, apt_date = '$(date +%Y-%m-%d\ %H:%M:%S)' WHERE id_system='1';" -v
+            gfnPackagesManage 'upgrade'
+            gfnPackagesManage 'dist-upgrade'
+            update-alternatives --set iptables /usr/sbin/iptables-legacy
+            update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+            [ -z "${gsLocale}" ] && gsLocale="en_US"
+            sed -i "s/# ${gsLocale}.UTF-8 UTF-8/${gsLocale}.UTF-8 UTF-8/g;" /etc/locale.gen
+            export LANGUAGE=${LANG:0:2}
+            export LANG=${gsLocale}.UTF-8
+            sed -i '/LANGUAGE=/d' /etc/environment
+            echo "LANGUAGE=${LANG:0:2}" >>/etc/environment
+            update-locale "LANG=${gsLocale}.UTF-8" &>/dev/null
+            locale-gen "${gsLocale}.UTF-8" &>/dev/null
+            dpkg-reconfigure -f noninteractive locales &>/dev/null
+            locale >${MySB_InstallDir}/files/locale
+        } | tee -a "${sUpgradeLogFile}"
         #### Debian upgrade - EoF
 
         if [ -f "${MySB_InstallDir}/upgrade/From_${sPreviousVersion}-to-${MySB_NewVersion}.bsh" ]; then
