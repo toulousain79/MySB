@@ -6,17 +6,23 @@
 - NextCloud v16.0.3
 - NetData v1.16.0
 - PHP v7.3
+- Medoo v1.7.2
 - remove some init.d scripts
 - Plex, add plugins
   - [Absolute Series/Music Scanner](https://github.com/ZeroQI/Absolute-Series-Scanner)
   - [Hama](https://github.com/ZeroQI/Hama.bundle)
 - NextCloud Nginx location review
+- STunnel config review
 - NginX
   - force ssl_protocols to TLSv1.2 & TLSv1.3
   - add ssl_ecdh_curve, ssl_stapling
   - change ssl_ciphers
   - change add_header
   - add log_format
+- Portal
+  - use of MariaDB unix socket unstead of TCP
+- remove som packages
+  - sysbench
 
 ## v6.0 - 2019/06/29 _(start at: 2019/01/26)_
 
