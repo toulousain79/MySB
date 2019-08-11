@@ -580,14 +580,32 @@ DisplaySurvey() {
         else
             # get actual main user ip addresses
             if [ "$TYPE" == "UPGRADE" ]; then
-                for sIp in $gsMainUserIPs; do
-                    sIp="$(echo $sIp | sed -e 's/^ //g;' | sed 's/\s+$//' | sed 's/\/32//g;')"
-                    if [ -z "$sValue" ]; then
-                        sValue="$sIp"
-                    else
-                        sValue="$sValue,$sIp"
+                if [ "${gsIpRestriction}" != "$Global_YES" ]; then
+                    # get maybe a new one
+                    sTempIPs="$(echo $SSH_CLIENT | awk '{ print $1 }')"
+                    if [ -z "$sTempIPs" ]; then
+                        sTempIPs="$(who --ips | awk '{print $6}' | grep "^[0123456789]")"
+                        if [ -z "$sTempIPs" ]; then
+                            sTempIPs="$(who --ips | awk '{print $5}' | grep "^[0123456789]")"
+                        fi
                     fi
-                done
+                    if [ -z "$(echo $sValue | grep "$sTempIPs")" ]; then
+                        if [ -z "$sValue" ]; then
+                            sValue="$sTempIPs"
+                        else
+                            sValue="$sValue,$sTempIPs"
+                        fi
+                    fi
+                else
+                    for sIp in $gsMainUserIPs; do
+                        sIp="$(echo $sIp | sed -e 's/^ //g;' | sed 's/\s+$//' | sed 's/\/32//g;')"
+                        if [ -z "$sValue" ]; then
+                            sValue="$sIp"
+                        else
+                            sValue="$sValue,$sIp"
+                        fi
+                    done
+                fi
                 unset sIp
             fi
             # get maybe a new one
