@@ -526,6 +526,8 @@ echo -e -n "$UpdatingSource"
 fnCountDown 3
 if (! apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update); then
     ExitOnError 1 "apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update"
+else
+    echo -e "${Done}"
 fi
 
 # Now we can install required packages
@@ -535,6 +537,8 @@ fnCountDown 3
 TOOLS=(git-core lsb-release screen ccze gnupg figlet net-tools dnsutils curl geoip-bin) # DO NO RENAME 'TOOLS' VARIABLES !
 if (! apt-get -y --assume-yes install "${TOOLS[@]}"); then
     ExitOnError 1 "apt-get -y --assume-yes install ${TOOLS[*]}"
+else
+    echo -e "${Done}"
 fi
 
 # If needed, remove Bind9
@@ -543,6 +547,8 @@ if (dpkg -s bind9 &>/dev/null); then
     echo -e -n "$PurgeBind"
     if (! apt-get -y --assume-yes purge bind9); then
         ExitOnError 1 "apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' purge bind9"
+    else
+        echo -e "${Done}"
     fi
 fi
 
@@ -580,6 +586,9 @@ echo -e -n "$CreatingMySQL_DB"
 gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/MySQL" 'INSTALL'
 gfnStatusSTD
 
+#### Install Postfix
+screen -dmS Postfix /bin/bash "${MySB_InstallDir}"/install/Postfix 'PREINSTALL'
+
 # Update DB with usable values
 if (! cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='${gsCurrentVersion}' WHERE id_system='1';" -v >>/tmp/"$(basename "$0")".log); then
     ExitOnError 1 "UPDATE system SET mysb_version='${gsCurrentVersion}' WHERE id_system='1';"
@@ -587,6 +596,7 @@ fi
 if (! cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,language,admin) VALUES ('MySB','MySB','${EnvLang}','1');" -v >>/tmp/"$(basename "$0")".log); then
     ExitOnError 1 "INSERT INTO users (users_ident,users_email,language,admin) VALUES ('MySB','MySB','${EnvLang}','1');"
 fi
+
 # shellcheck source=inc/vars
 source "${MySB_InstallDir}"/inc/vars
 
