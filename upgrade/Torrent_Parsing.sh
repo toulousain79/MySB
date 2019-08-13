@@ -99,7 +99,7 @@ for sUser in ${gsUsersList}; do
             aAnnoncersHttps=()
             nCountAnnoncers=0
             nId=0
-            for sAnnoncer in $(transmission-show "${sTorrentLoaded}" | grep 'udp://\|http://\|https://' | grep -v 'Magnet URI' | grep -v 'Comment' | sed -e 's/ //g;'); do
+            for sAnnoncer in $(transmission-show "${sTorrentLoaded}" | grep 'udp://\|http://\|https://' | grep -v 'Magnet URI\|Comment' | sed -e 's/ //g;'); do
                 if (grep -q 'udp://' <<<"${sAnnoncer}"); then
                     [[ ${bAnnoncersUdp} -eq 1 ]] && nEnable=1 || nEnable=0
                     ((nCountAnnoncers++))
