@@ -197,17 +197,15 @@ if [ -n "${MySB_InstallDir}" ] && [ "${gbIsReady_MySB_Db}" == "YES" ]; then
     gsPort_SSH="$(${binMySQL} "SELECT port_tcp1 FROM services WHERE serv_name='SSH';")"
     export gsPort_SSH
 
-    [ -z "${gsHostNameFqdn}" ] && gsHostNameFqdn="$(hostname -f)"
-    export gsHostNameFqdn
+    [ -z "${gsHostNameFqdn}" ] && { gsHostNameFqdn="$(hostname -f)"; export gsHostNameFqdn; }
 
-    [ -z "${gsHostNameFqdn}" ] && gsPrimaryInet="$(ip route get 8.8.8.8 | grep 8.8.8.8 | awk '{ print $5 }')"
-    export gsPrimaryInet
+    [ -z "${gsHostNameFqdn}" ] && { gsPrimaryInet="$(ip route get 8.8.8.8 | grep 8.8.8.8 | awk '{ print $5 }')"; export gsPrimaryInet; }
 
     if [ -z "${gsSrvIpAddress}" ] || [ -z "${gsSrvIpAddressExt}" ]; then
         gsSrvIpAddressExt="$(dig TXT +short o-o.myaddr.l.google.com @ns1.google.com @ns2.google.com @ns3.google.com @ns4.google.com | awk -F'"' '{ print $2}' 2>/dev/null)"
 
         if [ -z "${gsSrvIpAddressExt}" ]; then
-            for sUrlCheck in $gsUrlCheckList; do
+            for sUrlCheck in ${gsUrlCheckList}; do
                 case "${sUrlCheck}" in
                     'checkip.dyndns.com') gsSrvIpAddressExt="$(curl --silent "${sUrlCheck}" | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')" ;;
                     *) gsSrvIpAddressExt="$(curl --silent "${sUrlCheck}")" ;;
@@ -240,10 +238,12 @@ if [ -n "${MySB_InstallDir}" ] && [ "${gbIsReady_MySB_Db}" == "YES" ]; then
         export gsSrvIpAddress gsSrvIpAddressExt
     fi
 
-    if [ -f /etc/timezone ] && [ -z "${gsTimeZone}" ]; then
-        gsTimeZone="$(cat /etc/timezone)"
-    else
-        gsTimeZone="Europe/Paris"
+    if [ -z "${gsTimeZone}" ]; then
+        if [ -f /etc/timezone ]; then
+            gsTimeZone="$(cat /etc/timezone)"
+        else
+            gsTimeZone="Europe/Paris"
+        fi
     fi
     export gsTimeZone
     ### ----- System info
