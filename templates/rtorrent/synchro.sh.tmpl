@@ -147,11 +147,11 @@ fnListing() {
     fi
 
     # Need to create a subdirectory on destination ?
-    sDstDir="${RemoteDir}/${sGetCustom1}"
+    sDstDir="${RemoteDir%/}/${sGetCustom1}"
     if [ -f "${sGetBasePath}" ] && [ "${CreateSubDir}" -eq 1 ]; then
         sSubDirectory="${sGetBasePath##*/}"
         sSubDirectory="${sSubDirectory%.[^.]*}"
-        sDstDir="${RemoteDir}/${sGetCustom1}/${sSubDirectory}"
+        sDstDir="${RemoteDir%/}/${sGetCustom1}/${sSubDirectory}"
     fi
     sDstDir="$(echo "${sDstDir}" | sed -e 's/^ //g;' | sed 's/\s+$//')"
     sDstDir="$(echo "${sDstDir}" | sed "s/\[//g;s/\]//g;s/(//g;s/)//g;s/\ /./g;s/,/./g;s/'/./g;")"
@@ -184,7 +184,7 @@ fnListing() {
 
             # Start synchronization with RSYNC
             for ((i = 3; i >= 1; i -= 1)); do
-                rsync -rtvyz --numeric-ids --partial --append --stats --timeout=10 -e "/usr/bin/sshpass -p${RemotePass} ssh -p ${RemotePort} -c $RsyncCipher -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "${sGetBasePath}" "${RemoteUser}@${RemoteSrv}:${sDstDir}/"
+                rsync -rtvyz --numeric-ids --partial --append --stats --timeout=10 -e "/usr/bin/sshpass -p${RemotePass} ssh -p ${RemotePort} -c ${RsyncCipher} -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "${sGetBasePath}" "${RemoteUser}@${RemoteSrv}:${sDstDir}/"
                 nError=$?
                 # Check remote file or directory size
                 sRemoteSize="$(sshpass -p "${RemotePass}" ssh -p "${RemotePort}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${RemoteUser}"@"${RemoteSrv}" "du -hs \"${sRemoteDestination}\"" 2>/dev/null)"
@@ -197,7 +197,7 @@ fnListing() {
         'ftp')
             LftpOptions="set ftp:ssl-protect-data true; set ssl:verify-certificate no; set net:max-retries 3; set net:reconnect-interval-base 5;"
             for ((i = 3; i >= 1; i -= 1)); do
-                case "$Type" in
+                case "${Type}" in
                     'directory')
                         lftp -e "$LftpOptions mkdir -p \"${sDstDir}\"; mirror -c -R \"${sGetBasePath}\" \"${sDstDir}\"; bye" -u "${RemoteUser}","${RemotePass}" "${RemoteSrv}" -p "${RemotePort}"
                         nError=$?
