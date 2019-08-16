@@ -22,7 +22,7 @@
 LOCK TABLES `repositories` WRITE;
 /*!40000 ALTER TABLE `repositories` DISABLE KEYS */;
 INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`, `url`, `active`, `on_boot`, `script`) VALUES
-('ZIP', '<InstallDir>/web/apps/ru', 'ruTorrent', '3.9_ec8d8f1', 1, 'ruTorrent_v3.9_ec8d8f1.zip', 'https://github.com/toulousain79/MySB_files/raw/v99.99/ruTorrent_v3.9_ec8d8f1.zip', 1, 0, ''),
+('ZIP', '<InstallDir>/web/apps/ru', 'ruTorrent', '3.9_d902688', 1, 'ruTorrent_v3.9_d902688.zip', 'https://github.com/toulousain79/MySB_files/raw/v99.99/ruTorrent_v3.9_d902688.zip', 1, 0, ''),
 ('TARGZ', '<InstallDir>/web/apps/ru/plugins/chat', 'ruTorrent Plugin Chat', '2.0', 0, 'chat_v2.0.tar.gz', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-chat/chat-2.0.tar.gz', 1, 0, ''),
 ('TARGZ', '<InstallDir>/web/apps/ru/plugins/logoff', 'ruTorrent Plugin Logoff', '1.3', 0, 'logoff_v1.3.tar.gz', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-logoff/logoff-1.3.tar.gz', 1, 0, ''),
 ('TARGZ', '<InstallDir>/web/apps/ru/plugins/lbll-suite', 'ruTorrent Plugin LBLL-Suite', '0.8.1', 0, 'lbll-suite_v0.8.1.tar.gz', 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rutorrent-tadd-labels/lbll-suite_0.8.1.tar.gz', 1, 0, ''),
@@ -61,7 +61,6 @@ INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`,
 ('WBM', '<InstallDir>_files', 'WBM Module OpenVPNadmin', '3.1', 0, 'openvpn_v3.1.wbm', 'http://www.openit.it/index.php/it/openvpnadmin/download?task=finish&cid=29&catid=7', 1, 0, ''),
 ('WBM', '<InstallDir>_files', 'WBM Module Nginx', '0.10', 0, 'nginx_v0.10.wbm', 'https://www.justindhoffman.com/sites/justindhoffman.com/files/nginx-0.10.wbm_.gz', 1, 0, ''),
 ('GIT', '<InstallDir>/sources/plowshare', 'Plowshare', '2.1.7', 0, 'Plowshare_v2.1.7.zip', 'https://github.com/mcrapet/plowshare.git', 1, 0, ''),
-('TARGZ', '<InstallDir>/sources/nodejs', 'NodeJS', '0.12.18', 0, 'node_v0.12.18.tar.gz', 'https://nodejs.org/dist/latest-v0.12.x/node-v0.12.18.tar.gz', 1, 0, ''),
 ('GIT', '<InstallDir>/sources/libsmbclient-php', 'libsmbclient-php', '1.0.0', 0, 'libsmbclient-php_v1.0.0.zip', 'https://github.com/eduardok/libsmbclient-php.git', 1, 0, ''),
 ('TARGZ', '<InstallDir>/sources/rkhunter', 'RKHunter', '1.4.6', 0, 'rkhunter_v1.4.6.tar.gz', 'https://github.com/toulousain79/MySB_files/raw/v99.99/rkhunter_v1.4.6.tar.gz', 1, 0, ''),
 ('DEB', '<InstallDir>_files', 'GeoIPupdate', 'latest', 0, 'geoipupdate_4.0.2_linux_amd64.deb', 'https://api.github.com/repos/maxmind/geoipupdate/releases/latest', 1, 0, ''),

@@ -7,6 +7,9 @@
 - NetData v1.16.0
 - PHP v7.3
 - Medoo v1.7.2
+- ruTorrent v3.9 _(d902688)_
+- NodeJS v0.18.x _(Debian package)_
+- Add Yarn package manager
 - remove some init.d scripts
 - Plex, add plugins
   - [Absolute Series/Music Scanner](https://github.com/ZeroQI/Absolute-Series-Scanner)
