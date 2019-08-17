@@ -25,7 +25,7 @@ source "$(dirname "$0")/../inc/includes_before"
 #
 ##################### FIRST LINE #####################################
 #
-# Usage:	OpenVPN${CEND} {server|client <username>|zip <username> <user_passwaord>}
+# Usage:	OpenVPN {server|client <username>|zip <username> <user_passwaord>}
 #
 ##################### FIRST LINE #####################################
 
@@ -38,9 +38,8 @@ TAKEY="ta_${gsHostNameFqdn}.key"
 CACRT="ca_${gsHostNameFqdn}.crt"
 CAKEY="ca_${gsHostNameFqdn}.key"
 CRT="${gsHostNameFqdn}.crt"
-# CSR="${gsHostNameFqdn}.csr"
 KEY="${gsHostNameFqdn}.key"
-DH="dh1024_${gsHostNameFqdn}.pem"
+DH="dh2048_${gsHostNameFqdn}.pem"
 NetTunWithRedirectGW="10.0.0"
 NetTunWithoutRedirectGW="10.0.1"
 NetTapWithoutRedirectGW="10.0.2"
@@ -75,52 +74,39 @@ CreateServer() {
 	[ ! -f /var/log/openvpn/openvpn.log ] && touch /var/log/openvpn/openvpn.log
 	[ ! -f /var/log/openvpn/openvpn-status.log ] && touch /var/log/openvpn/openvpn-status.log
 	[[ ! -d /etc/openvpn/easy-rsa ]] && make-cadir /etc/openvpn/easy-rsa
-	[[ -L /etc/openvpn/easy-rsa/openssl.cnf ]] && rm -f /etc/openvpn/easy-rsa/openssl.cnf
-	[[ ! -L /etc/openvpn/easy-rsa/openssl.cnf ]] && ln -sv /etc/openvpn/easy-rsa/openssl-1.0.0.cnf /etc/openvpn/easy-rsa/openssl.cnf
-	mkdir -pv /etc/openvpn/easy-rsa/keys
+	cp -vf "${MySB_InstallDir}"/templates/openvpn/easyrsa_vars.tmpl /etc/openvpn/easy-rsa/vars
+	sed -i "s/<servername>/${gsHostNameFqdn}/g;" /etc/openvpn/easy-rsa/vars
+	sed -i "s/<email_address>/${gsMainUserEmail}/g;" /etc/openvpn/easy-rsa/vars
+	cp -vf "${MySB_InstallDir}"/templates/openvpn/openssl-easyrsa.cnf.tmpl /etc/openvpn/easy-rsa/openssl-easyrsa.cnf
+	sed -i "s/<servername>/${gsHostNameFqdn}/g;" /etc/openvpn/easy-rsa/openssl-easyrsa.cnf
+	sed -i "s/<email_address>/${gsMainUserEmail}/g;" /etc/openvpn/easy-rsa/openssl-easyrsa.cnf
 
 	#### Initialize
-	if
-		[ ! -f "/etc/openvpn/${DH}" ] && [ ! -f "/etc/openvpn/${CACRT}" ] &&
+	if [ ! -f "/etc/openvpn/${DH}" ] && [ ! -f "/etc/openvpn/${CACRT}" ] &&
 			[ ! -f "/etc/openvpn/${CAKEY}" ] && [ ! -f "/etc/openvpn/${TAKEY}" ] &&
-			[ ! -f "/etc/openvpn/${CRT}" ] && [ ! -f "/etc/openvpn/${KEY}" ]
-	then
-
+			[ ! -f "/etc/openvpn/${CRT}" ] && [ ! -f "/etc/openvpn/${KEY}" ]; then
 		echo
 		echo "########## Initialize"
 		cd /etc/openvpn/easy-rsa/ || exit
-		. ./vars
-		export KEY_SIZE=1024
-		export KEY_COUNTRY="US"
-		export KEY_PROVINCE="CA"
-		export KEY_CITY="SanFrancisco"
-		export KEY_ORG="Fort-Funston"
-		export KEY_EMAIL="MySB@${gsHostNameFqdn}"
-		export KEY_CN="MySB OpenVPN Server"
-		export KEY_NAME="MySB OpenVPN Server"
-		export KEY_OU="MySB OpenVPN Server"
+		# Create the PKI, set up the CA and the server and client certificates
+		./easyrsa init-pki
+		./easyrsa gen-dh
+		./easyrsa gen-crl
 
 		#### Create server
 		echo
 		echo "########## Create server"
-		sed -i "s/KEY_ALTNAMES=\"\$KEY_CN\"/KEY_ALTNAMES=\"DNS:\${KEY_CN}\"/g" ./pkitool
-		./clean-all
-		[[ ! -f /etc/openvpn/easy-rsa/keys/index.txt ]] && touch /etc/openvpn/easy-rsa/keys/index.txt
-		[[ ! -f /etc/openvpn/easy-rsa/keys/index.txt.attr ]] && touch /etc/openvpn/easy-rsa/keys/index.txt.attr
-		./build-dh
-		./pkitool --initca
-		./pkitool --server "${gsHostNameFqdn}"
-		/usr/sbin/openvpn --genkey --secret keys/ta.key
+		./easyrsa --batch build-ca nopass
+		./easyrsa build-server-full "${gsHostNameFqdn}" server nopass
+		openvpn --genkey --secret ta.key
+		/usr/sbin/openvpn --genkey --secret pki/private/ta.key
 
 		#### Move created files
 		echo
 		echo "########## Move created files"
-		cp -vf keys/dh1024.pem /etc/openvpn/"${DH}"
-		cp -vf keys/ca.crt /etc/openvpn/"${CACRT}"
-		cp -vf keys/ca.key /etc/openvpn/"${CAKEY}"
-		cp -vf keys/ta.key /etc/openvpn/"${TAKEY}"
-		mv -v keys/"${CRT}" /etc/openvpn/
-		mv -v keys/"${KEY}" /etc/openvpn/
+		cd /etc/openvpn/ || exit
+		ln -s easy-rsa/pki/ca.crt easy-rsa/pki/private/ca.key easy-rsa/pki/issued/"${gsHostNameFqdn}".crt easy-rsa/pki/private/"${gsHostNameFqdn}".key .
+		ln easy-rsa/pki/dh.pem dh2048.pem
 	fi
 
 	echo
@@ -193,26 +179,13 @@ CreateServer() {
 CreateClient() {
 	#### Initialize
 	if [ ! -f "/etc/openvpn/clients/${CLIENTNAME}.crt" ] && [ ! -f "/etc/openvpn/clients/${CLIENTNAME}.csr" ] && [ ! -f "/etc/openvpn/clients/${CLIENTNAME}.key" ]; then
-		cd /etc/openvpn/easy-rsa/ || exit
-		. ./vars
-		export KEY_COUNTRY="US"
-		export KEY_PROVINCE="CA"
-		export KEY_CITY="SanFrancisco"
-		export KEY_ORG="Fort-Funston"
-		export KEY_EMAIL="MySB@${gsHostNameFqdn}"
-		export KEY_CN="MySB OpenVPN Client - ${USERNAME}"
-		export KEY_NAME="MySB OpenVPN Client - ${USERNAME}"
-		export KEY_OU="MySB OpenVPN Client - ${USERNAME}"
-
 		#### Create client certificate
-		./pkitool "${CLIENTNAME}"
-		cd keys/ || exit
+		cd /etc/openvpn/easy-rsa/ || exit
+		./easyrsa build-client-full "${CLIENTNAME}" nopass
 
 		#### Move created files
-		mv -v "${CLIENTNAME}".crt /etc/openvpn/clients/
-		mv -v "${CLIENTNAME}".csr /etc/openvpn/clients/
-		mv -v "${CLIENTNAME}".key /etc/openvpn/clients/
-		chmod -v 400 /etc/openvpn/clients/*
+		cd /etc/openvpn/ || exit
+		ln -s easy-rsa/pki/issued/"${CLIENTNAME}".crt easy-rsa/pki/private/"${CLIENTNAME}".key clients/
 	fi
 
 	#### Configuration file with separate files - TUN - With Redirect Gateway
@@ -434,15 +407,9 @@ RefreshProtoAndPorts() {
 }
 
 DeleteUserFiles() {
-	mv -v /etc/openvpn/clients/"${CLIENTNAME}".crt /etc/openvpn/easy-rsa/keys/
-	mv -v /etc/openvpn/clients/"${CLIENTNAME}".csr /etc/openvpn/easy-rsa/keys/
-	mv -v /etc/openvpn/clients/"${CLIENTNAME}".key /etc/openvpn/easy-rsa/keys/
-	chmod -v 0660 /etc/openvpn/easy-rsa/keys/"${CLIENTNAME}".*
-
 	cd /etc/openvpn/easy-rsa/ || exit
-	. ./vars
-	./revoke-full "${CLIENTNAME}"
-	rm -fv /etc/openvpn/easy-rsa/keys/"${CLIENTNAME}".*
+	echo yes | ./easyrsa revoke "${CLIENTNAME}"
+	./easyrsa gen-crl
 
 	#### START services
 	gfnManageServices start "openvpn"
