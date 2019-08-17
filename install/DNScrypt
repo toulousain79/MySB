@@ -43,96 +43,34 @@ if [ "${USAGE}" == "ON" ]; then
     fi
 fi
 
-#### VARs
-gnDNScryptUpgrade=0
-
-if [ "${gsSwitch}" == "CRON" ]; then
-    service dnscrypt-proxy full-update
-fi
 
 if [ "${gbToInstall_DNScrypt}" == "YES" ]; then
     # Check packages to install
-    sPackages=(libltdl-dev libldns-dev ldnsutils rng-tools haveged libsodium18)
+    sPackages=(dnscrypt-proxy)
     gfnPackageBundleInstall "${sPackages[@]}"
 
-    # STOP services
-    pkill -f dnscrypt-proxy
-    rm -f /var/run/dnscrypt-proxy/*
+    # Stop service
+    gfnManageServices stop "dnscrypt-proxy"
 
-    # RNG-Tools
-    nNumLine=$(cat /etc/default/rng-tools | grep '#HRNGDEVICE=/dev/null' -n -m 1 | cut -d ':' -f 1)
-    ((nNumLine++))
-    sed -i "${nNumLine}i\HRNGDEVICE=/dev/urandom" /etc/default/rng-tools
+    # Systemd
+    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/dnscrypt-proxy.service.tmpl /lib/systemd/system/dnscrypt-proxy.service
+    perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /lib/systemd/system/dnscrypt-proxy.service
     systemctl daemon-reload
-    gfnManageServices stop "rng-tools"
-    gfnManageServices start "rng-tools"
+    systemctl enable dnscrypt-proxy.service
+
+    # Config files
+    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/dnscrypt-proxy.toml.tmpl /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/whitelist.txt.tmpl /etc/dnscrypt-proxy/whitelist.txt
+    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/blacklist.txt.tmpl /etc/dnscrypt-proxy/blacklist.txt
+    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/ip-blacklist.txt.tmpl /etc/dnscrypt-proxy/ip-blacklist.txt
+    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/cloaking-rules.txt.tmpl /etc/dnscrypt-proxy/cloaking-rules.txt
+    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/forwarding-rules.txt.tmpl /etc/dnscrypt-proxy/forwarding-rules.txt
 
     # Switch to bind
     gfnSwitchDNS "bind"
 
     # Upating clock
     /usr/sbin/ntpdate -u 0.fr.pool.ntp.org
-
-    if [ "${gsSwitch}" == "INSTALL" ]; then
-        #### Add dnscrypt user
-        if [ -z "$(grep 'dnscrypt' /etc/passwd)" ]; then
-            useradd --system -d "/usr/local/share/dnscrypt-proxy" -c "DNScrypt-proxy user" -s /bin/nologin dnscrypt
-            install -o dnscrypt -m 750 -d "/usr/local/share/dnscrypt-proxy"
-        fi
-    fi
-
-    # LIBsodium
-    gfnGetRepoValues 'Libsodium' && gfnRepoManageByType
-    if [ $gnRepoUpgrade -eq 1 ] || [ "${gsSwitch}" == "INSTALL" ]; then
-        gnDNScryptUpgrade=1
-        cd $gsRepoDir/ || exit 1
-        make clean
-        chmod -v +x autogen.sh
-        ./autogen.sh
-        ./configure --enable-opt --with-pthreads --with-gnu-ld
-        make -j$gsProcessors
-        make check
-        make install
-        ldconfig
-        # Disable the upgrade job
-        cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='Libsodium';" -v
-    fi
-
-    # Minisign
-    gfnGetRepoValues 'Minisign' && gfnRepoManageByType
-    if [ $gnRepoUpgrade -eq 1 ] || [ "${gsSwitch}" == "INSTALL" ]; then
-        cd $gsRepoDir/ || exit 1
-        mkdir -v build
-        cd build || exit 1
-        cmake ..
-        make
-        make install
-        # Disable the upgrade job
-        cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='Minisign';" -v
-    fi
-
-    # DNScrypt
-    gfnGetRepoValues 'DNScrypt-proxy' && gfnRepoManageByType
-    if [ $gnRepoUpgrade -eq 1 ] || [ $gnDNScryptUpgrade -eq 1 ] || [ "${gsSwitch}" == "INSTALL" ]; then
-        cd $gsRepoDir/ || exit 1
-        make clean
-        chmod -v +x autogen.sh
-        ./autogen.sh
-        ./configure --with-gnu-ld --enable-ltdl-install --with-systemd
-        make -j$gsProcessors
-        make check
-        make install
-        # Disable the upgrade job
-        cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='DNScrypt-proxy';" -v
-
-        bDoFullUpdate=1
-    else
-        bDoFullUpdate=0
-    fi
-
-    #### DNScrypt-proxy - /etc/init.d/dnscrypt-proxy
-    install -v -o root -g root -m 0755 ${MySB_InstallDir}/templates/init/etc.init.d.dnscrypt-proxy.tmpl /etc/init.d/dnscrypt-proxy
-    systemctl daemon-reload
 
     # Mark as installed
     if gfnCheckCommand 0 dnscrypt-proxy; then
@@ -141,48 +79,6 @@ if [ "${gbToInstall_DNScrypt}" == "YES" ]; then
 
     #### Logrotate
     gfnLogRotate 'dnscrypt-proxy'
-
-    #### Copy some files
-    rm -fv /usr/local/etc/dnscrypt-proxy.conf
-    mkdir -pv /usr/local/share/dnscrypt-proxy
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/files/dnscrypt-resolvers/dnscrypt-resolvers.csv /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/files/dnscrypt-resolvers/dnscrypt-resolvers.csv.minisig /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv.minisig
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/files/dnscrypt-resolvers/minisign.pub /usr/local/share/dnscrypt-proxy/minisign.pub
-    unix2dos /usr/local/share/dnscrypt-proxy/dnscrypt-resolvers.csv
-
-    #### Opening ports for PeerGuardian
-    if gfnCheckCommand 0 pgld; then
-        # Perform a small update to add resolvers in database for PeerGuardian
-        service dnscrypt-proxy update
-        cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='0' WHERE id_system='1';" -v
-        gfnScriptInvoke 'source' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'create'
-    fi
-    cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='1' WHERE id_system='1';" -v
-
-    bDoFullUpdate=1
-
-    #### START services & Update resolvers infos in db
-    if [ $bDoFullUpdate -eq 1 ]; then
-        service dnscrypt-proxy full-update
-        sleep 5
-        if gfnCheckCommand 0 pgld; then
-            gfnManageServices stop "dnscrypt-proxy"
-            gfnScriptInvoke 'source' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'create'
-        else
-            gfnManageServices stop "dnscrypt-proxy"
-        fi
-    else
-        gfnManageServices stop "dnscrypt-proxy"
-    fi
-
-    #### Check if service is OK and running
-    if [ "${gsSwitch}" != "UPGRADE" ]; then
-        #Wait a moment for DNScrypt to start
-        sleep 5
-        if ! gfnGetPid dnscrypt-proxy; then
-            service dnscrypt-proxy status | tee -a ${MySB_InstallDir}/temp/continue
-        fi
-    fi
 fi
 
 #### Add some hosts in cache

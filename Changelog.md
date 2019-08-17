@@ -3,6 +3,7 @@
 ## v6.1 - XXXX/XX/XX _(start at: 2019/07/28)_
 
 - Debian migration from Stretch to Buster
+- DNScrypt-proxy v2
 - NextCloud v16.0.3
 - NetData v1.16.0
 - PHP v7.3

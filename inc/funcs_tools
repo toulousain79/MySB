@@ -286,7 +286,7 @@ gfnCheckCommand() {
 
 #### Switch DNS (standard / DNScrypt-proxy)
 gfnSwitchDNS() {
-    local sCommand sBindForwarders nNumberOfDemon
+    local sCommand nNumberOfDemon NumLign
     sCommand="$1"
     nNumberOfDemon="$2"
     [ -z "$nNumberOfDemon" ] && nNumberOfDemon=0
@@ -300,31 +300,17 @@ gfnSwitchDNS() {
                 # BIND with DNScrypt-proxy support
                 install -o bind -g root -m 0774 "${MySB_InstallDir}"/templates/bind/etc.bind.named.conf.options.tmpl /etc/bind/named.conf.options
                 sed -i "s/<gsSrvIpAddress>/${gsSrvIpAddress}/g;" /etc/bind/named.conf.options
-                for ((i = 1; i <= nNumberOfDemon; i++)); do
-                    sBindForwarders="$sBindForwarders 127.0.0.$i port 52;"
-                done
-                sBindForwarders="$(echo "$sBindForwarders" | sed -e 's/^ //g;s/\s+$//g;')"
                 NumLign=$(sed -n "/#### MARKER - DoNotDelete ####/=" /etc/bind/named.conf.options)
                 ((NumLign++))
                 sed -i "${NumLign}i\	// DNScrypt-proxy - BoF" /etc/bind/named.conf.options
                 ((NumLign++))
-                sed -i "${NumLign}i\	forwarders { $sBindForwarders };" /etc/bind/named.conf.options
+                sed -i "${NumLign}i\	forwarders { 127.0.0.1 port 52; };" /etc/bind/named.conf.options
                 ((NumLign++))
                 sed -i "${NumLign}i\	forward only;" /etc/bind/named.conf.options
                 ((NumLign++))
                 sed -i "${NumLign}i\	version \"MySB Secured DNS server\";" /etc/bind/named.conf.options
                 ((NumLign++))
                 sed -i "${NumLign}i\	// DNScrypt-proxy - EoF" /etc/bind/named.conf.options
-                # BIND delete DNScrypt-proxy support
-                if (! crontab -l | grep -q 'dnscrypt-proxy cron-check'); then
-                    crontab -l >/tmp/crontab.tmp 2>/dev/null
-                    echo "0 4 * * * service dnscrypt-proxy full-update > /dev/null 2>&1" >>/tmp/crontab.tmp
-                    echo "*/5 * * * * service dnscrypt-proxy cron-check > /dev/null 2>&1" >>/tmp/crontab.tmp
-                    crontab /tmp/crontab.tmp 2>/dev/null
-                    rm -f /tmp/crontab.tmp >/dev/null 2>&1
-                    if gfnGetPid cron; then systemctl reload cron >/dev/null 2>&1; fi
-                    gfnMessage 'info' 'log' 'Crontab added'
-                fi
                 service bind9 restart &>/dev/null
             fi
             ;;
@@ -342,11 +328,6 @@ gfnSwitchDNS() {
             echo "nameserver 4.2.2.5" >>/etc/resolv.conf
             echo "nameserver 4.2.2.6" >>/etc/resolv.conf
             # BIND delete DNScrypt-proxy support
-            crontab -l >/tmp/crontab.tmp 2>/dev/null
-            sed -i "/dnscrypt-proxy/d" /tmp/crontab.tmp
-            crontab /tmp/crontab.tmp 2>/dev/null
-            rm -f /tmp/crontab.tmp
-            if gfnGetPid cron; then systemctl reload cron >/dev/null 2>&1; fi
             if gfnCheckCommand 0 bind9; then
                 sed -i '/forwarders/d' /etc/bind/named.conf.options
                 sed -i '/forward only;/d' /etc/bind/named.conf.options
