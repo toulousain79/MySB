@@ -32,6 +32,7 @@ PackagesToInstall=(ssh openssh-server sshpass)
 gfnPackagesManage 'install' "${PackagesToInstall[@]}"
 
 #### /etc/ssh/sshd_config
+cp -a /etc/ssh/sshd_config /etc/ssh/sshd_config.original
 # Port
 nNumLine=$(grep 'Port ' -n -m 1 /etc/ssh/sshd_config | cut -d ':' -f 1)
 sed -i '/Port /d' /etc/ssh/sshd_config
@@ -49,10 +50,6 @@ nNumLine=$((nNumLine + 1))
 sed -i "${nNumLine}i\Protocol 2" /etc/ssh/sshd_config
 # HostKeys for protocol version 2
 sed -i "s/^#HostKey/HostKey/g;" /etc/ssh/sshd_config
-# UsePrivilegeSeparation
-nNumLine=$(grep 'UsePrivilegeSeparation ' -n -m 1 /etc/ssh/sshd_config | cut -d ':' -f 1)
-sed -i '/UsePrivilegeSeparation /d' /etc/ssh/sshd_config
-sed -i "${nNumLine}i\UsePrivilegeSeparation yes" /etc/ssh/sshd_config
 # SyslogFacility
 sed -i "s/^#SyslogFacility/SyslogFacility/g;" /etc/ssh/sshd_config
 # LogLevel
@@ -75,6 +72,15 @@ sed -i "s/^#ClientAliveInterval 0/#ClientAliveInterval 60/g;" /etc/ssh/sshd_conf
 nNumLine=$(grep 'UseDNS ' -n -m 1 /etc/ssh/sshd_config | cut -d ':' -f 1)
 sed -i '/UseDNS /d' /etc/ssh/sshd_config
 sed -i "${nNumLine}i\UseDNS no" /etc/ssh/sshd_config
+# UsePrivilegeSeparation
+if (! grep -q 'UsePrivilegeSeparation' /etc/ssh/sshd_config); then
+    nNumLine=((nNumLine + 1))
+    sed -i "${nNumLine}i\UsePrivilegeSeparation yes" /etc/ssh/sshd_config
+else
+    nNumLine=$(grep 'UsePrivilegeSeparation ' -n -m 1 /etc/ssh/sshd_config | cut -d ':' -f 1)
+    sed -i '/UsePrivilegeSeparation /d' /etc/ssh/sshd_config
+    sed -i "${nNumLine}i\UsePrivilegeSeparation yes" /etc/ssh/sshd_config
+fi
 # PrintMotd
 # nNumLine=$(grep 'PrintMotd ' -n -m 1 /etc/ssh/sshd_config | cut -d ':' -f 1)
 # sed -i '/PrintMotd /d' /etc/ssh/sshd_config

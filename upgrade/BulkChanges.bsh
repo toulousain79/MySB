@@ -69,14 +69,6 @@ case "${1}" in
         sed -i "s/^#ClientAliveInterval 0/ClientAliveInterval 60/g;" /etc/ssh/sshd_config
         service ssh reload
 
-        # AppArmor disabling
-        aAllPackages=(apparmor apparmor-utils apparmor-profiles apparmor-profiles-extra)
-        gfnPackagesManage install "${aAllPackages[@]}"
-        # aa-disable /usr/sbin/named
-        # aa-disable /usr/bin/man
-        # aa-disable /usr/sbin/haveged
-        # aa-disable /usr/sbin/tcpdump
-
         # Move binaries
         [ -f /usr/bin/docker-compose ] && mv -fv /usr/bin/docker-compose /usr/local/bin/docker-compose
         [ -f /usr/bin/composer ] && mv -fv /usr/bin/composer /usr/local/bin/composer
@@ -107,6 +99,13 @@ case "${1}" in
         rm -fv /etc/init.d/docker
         systemctl daemon-reload
         gfnDeleteDirectory 1 "/opt/containerd"
+
+        #### rTorrent 0.9.6 to 0.9.7
+        sRtorrentBin="$(cmdMySQL 'MySB_db' "SELECT serv_name FROM services WHERE bin='/usr/local/bin/rtorrent';")"
+        if [ "${sRtorrentBin}" == "rTorrent v0.9.6" ]; then
+            cmdMySQL 'MySB_db' "UPDATE services SET serv_name='rTorrent v0.9.7' WHERE bin='/usr/local/bin/rtorrent';" -v
+            cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_version='v0.9.7' WHERE rtorrent_version='v0.9.6';" -v
+        fi
         ;;
 
     "AFTER" | "INIT")
