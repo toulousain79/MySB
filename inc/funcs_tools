@@ -35,14 +35,14 @@ gfnGetUriFilename() {
 
     sHeader="$(curl -sI "$1" | tr -d '\r')"
 
-    sFilename="$(echo "$sHeader" | grep -o -i -E 'filename=.*$')"
-    if [[ -n $sFilename ]]; then
+    sFilename="$(echo "${sHeader}" | grep -o -i -E 'filename=.*$')"
+    if [[ -n ${sFilename} ]]; then
         echo "${sFilename#filename=}"
         return
     fi
 
-    sFilename="$(echo "$sHeader" | grep -o -i -E 'location:.*$')"
-    if [[ -n $sFilename ]]; then
+    sFilename="$(echo "${sHeader}" | grep -o -i -E 'location:.*$')"
+    if [[ -n ${sFilename} ]]; then
         basename "${sFilename#location\:}"
         return
     fi
@@ -73,7 +73,7 @@ gfnQuotaSpaceUsed() {
     fi
 
     gfnListCountUsers 'normal'
-    for sUser in $gsUsersList; do
+    for sUser in ${gsUsersList}; do
         nUsersSpaceUsed=0
         if [ -d /home/"${sUser}"/ ]; then
             nHomeSpace="$(du -s /home/"${sUser}"/ | awk '{ print $1 }')" # (Kb)
@@ -105,17 +105,17 @@ gfnStatistics() {
     if [ -f /etc/machine-id ]; then
         if [ "$(gfnCheckCommand 1 geoiplookup)" == "YES" ] && [ -n "${gsSrvIpAddressExt}" ]; then
             sCountry="$(geoiplookup "${gsSrvIpAddressExt}" | awk '{ print $5 }')"
-            [ -z "$sCountry" ] && sCountry="unknown"
+            [ -z "${sCountry}" ] && sCountry="unknown"
         else
             sCountry="unknown"
         fi
 
         sMachineId="$(sha256sum <<</etc/machine-id | awk '{ print $1 }')"
         [ -f "${MySB_InstallDir}"/statistics ] && sStatsAllowed="$(cat "${MySB_InstallDir}"/statistics)" || sStatsAllowed=""
-        if [ -n "$sMachineId" ] && [ "$sStatsAllowed" != "no_stats" ]; then
-            [ -z "$sCountry" ] && sCountry="unknown"
-            sResult="$(curl --silent --retry 1 -A 'MySB' --data "version=${gsCurrentVersion}&country=$sCountry&machine_id=$sMachineId" https://mysb.ddns.net/statistics/)"
-            (echo "$sResult" | grep -q 'Statistics updated at') && echo "$sResult" >"${MySB_InstallDir}"/statistics
+        if [ -n "${sMachineId}" ] && [ "${sStatsAllowed}" != "no_stats" ]; then
+            [ -z "${sCountry}" ] && sCountry="unknown"
+            sResult="$(curl --silent --retry 1 -A 'MySB' --data "version=${gsCurrentVersion}&country=${sCountry}&machine_id=${sMachineId}" https://mysb.ddns.net/statistics/)"
+            (echo "${sResult}" | grep -q 'Statistics updated at') && echo "${sResult}" >"${MySB_InstallDir}"/statistics
         fi
     fi
 }
@@ -140,7 +140,7 @@ gfnListCountUsers() {
         'active') sWhere="WHERE is_active='1'" ;;
     esac
     gsUsersList="$(cmdMySQL 'MySB_db' "SELECT users_ident FROM users $sWhere;")"
-    gnTotalUsers="$(echo "$gsUsersList" | wc -w)"
+    gnTotalUsers="$(echo "${gsUsersList}" | wc -w)"
 
     export gsUsersList gnTotalUsers
 }
@@ -179,7 +179,7 @@ gfnStatusSTD() {
     local sResult
     sResult="$?"
 
-    if [ "$sResult" -gt 0 ]; then
+    if [ "${sResult}" -gt 0 ]; then
         echo -e "${Global_Failed}"
         echo ""
         echo -e "${Global_Error_StatusSTD[@]}"
@@ -194,7 +194,7 @@ gfnStatusLSB() {
     local sResult
     sResult="$?"
 
-    if [ "$sResult" -gt 0 ]; then
+    if [ "${sResult}" -gt 0 ]; then
         if [ -n "$1" ]; then
             if [ "$1" -gt 0 ]; then
                 log_end_msg 1
@@ -322,16 +322,18 @@ gfnSwitchDNS() {
             # resolv.conf
             sed -i '/options edns0/d' /etc/resolv.conf
             sed -i '/nameserver/d' /etc/resolv.conf
-            echo "nameserver 9.9.9.9" >>/etc/resolv.conf
-            echo "nameserver 4.2.2.1" >>/etc/resolv.conf
-            echo "nameserver 4.2.2.2" >>/etc/resolv.conf
-            echo "nameserver 208.67.220.220" >>/etc/resolv.conf
-            echo "nameserver 208.67.222.222" >>/etc/resolv.conf
-            echo "nameserver 149.112.112.112" >>/etc/resolv.conf
-            echo "nameserver 4.2.2.3" >>/etc/resolv.conf
-            echo "nameserver 4.2.2.4" >>/etc/resolv.conf
-            echo "nameserver 4.2.2.5" >>/etc/resolv.conf
-            echo "nameserver 4.2.2.6" >>/etc/resolv.conf
+            {
+                echo "nameserver 9.9.9.9"
+                echo "nameserver 4.2.2.1"
+                echo "nameserver 4.2.2.2"
+                echo "nameserver 208.67.220.220"
+                echo "nameserver 208.67.222.222"
+                echo "nameserver 149.112.112.112"
+                echo "nameserver 4.2.2.3"
+                echo "nameserver 4.2.2.4"
+                echo "nameserver 4.2.2.5"
+                echo "nameserver 4.2.2.6"
+            } >>/etc/resolv.conf
             # BIND delete DNScrypt-proxy support
             if gfnCheckCommand 0 bind9; then
                 sed -i '/forwarders/d' /etc/bind/named.conf.options
@@ -470,7 +472,7 @@ gfnGetRepoValues() {
             [ -f "${gsRepoDir}" ] && chmod +x "${gsRepoDir}"
             gsVersionInstalled="$(gfnCheckCommand 0 dnscrypt-proxy && dnscrypt-proxy --version 2>/dev/null || echo 'Not installed')"
             gsVersionLatest="$(${binCURL} "${gsRepoURL}" | grep 'tag_name' | awk '{ print $2 }' | cut -d '"' -f 2)"
-            gsFileURL="$(${binCURL} "${gsRepoURL}" | jq -r '.assets[] | select(.name == "dnscrypt-proxy-linux_x86_64").browser_download_url')"
+            gsFileURL="$(${binCURL} "${gsRepoURL}" | jq -r '.assets[] | select(.name | contains("dnscrypt-proxy-linux_x86_64")).browser_download_url' | grep -v 'minisig')"
             ;;
         'Shellcheck')
             [ -f "${gsRepoDir}" ] && chmod +x "${gsRepoDir}"
@@ -533,12 +535,12 @@ gfnRepoManageByType() {
                 fi
                 if [ ! -d "${gsRepoDir}" ] && [ $gnError -eq 0 ]; then
                     sSubDir="$(tar --xz -tf ${MySB_Files}/${gsRepoFile} | cut -d '/' -f 1 | uniq)"
-                    if [ ! -d "${MySB_InstallDir}/temp/$sSubDir" ]; then
+                    if [ ! -d "${MySB_InstallDir}/temp/${sSubDir}" ]; then
                         tar --xz -xf "${MySB_Files}/${gsRepoFile}" -C "${MySB_InstallDir}/temp/"
                         gnError=$?
                     fi
-                    if [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "${gsRepoDir}" ]; then
-                        mv -v "${MySB_InstallDir}/temp/$sSubDir" "${gsRepoDir}"
+                    if [ -d "${MySB_InstallDir}/temp/${sSubDir}" ] && [ ! -d "${gsRepoDir}" ]; then
+                        mv -v "${MySB_InstallDir}/temp/${sSubDir}" "${gsRepoDir}"
                         chown -R root:root "${gsRepoDir}"
                         gnError=$?
                     fi
@@ -552,12 +554,12 @@ gfnRepoManageByType() {
                 fi
                 if [ ! -d "${gsRepoDir}" ] && [ $gnError -eq 0 ]; then
                     sSubDir="$(tar -ztf "${MySB_Files}/${gsRepoFile}" | cut -d '/' -f 1 | uniq)"
-                    if [ ! -d "${MySB_InstallDir}/temp/$sSubDir" ]; then
+                    if [ ! -d "${MySB_InstallDir}/temp/${sSubDir}" ]; then
                         tar -zxf "${MySB_Files}/${gsRepoFile}" -C "${MySB_InstallDir}"/temp/
                         gnError=$?
                     fi
-                    if [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "${gsRepoDir}" ]; then
-                        mv -v "${MySB_InstallDir}/temp/$sSubDir" "${gsRepoDir}"
+                    if [ -d "${MySB_InstallDir}/temp/${sSubDir}" ] && [ ! -d "${gsRepoDir}" ]; then
+                        mv -v "${MySB_InstallDir}/temp/${sSubDir}" "${gsRepoDir}"
                         chown -R root:root "${gsRepoDir}"
                         gnError=$?
                     fi
@@ -581,7 +583,7 @@ gfnRepoManageByType() {
                     # The GitHub project may have a ZIP archive.
                     if [ -f "${MySB_Files}/${gsRepoFile}" ]; then
                         sSubDir="$(unzip -l "${MySB_Files}/${gsRepoFile}" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
-                        if [ ! -d "${MySB_InstallDir}/temp/$sSubDir" ]; then
+                        if [ ! -d "${MySB_InstallDir}/temp/${sSubDir}" ]; then
                             unzip -q "${MySB_Files}/${gsRepoFile}" -d "${MySB_InstallDir}"/temp/
                             gnError=$?
                             # If a package has 2 archives (*_2.zip)
@@ -590,8 +592,8 @@ gfnRepoManageByType() {
                                 gnError=$?
                             fi
                         fi
-                        if [ $gnError -eq 0 ] && [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "${gsRepoDir}" ]; then
-                            mv -v "${MySB_InstallDir}/temp/$sSubDir" "${gsRepoDir}"
+                        if [ $gnError -eq 0 ] && [ -d "${MySB_InstallDir}/temp/${sSubDir}" ] && [ ! -d "${gsRepoDir}" ]; then
+                            mv -v "${MySB_InstallDir}/temp/${sSubDir}" "${gsRepoDir}"
                             gnError=$?
                         fi
                     else
@@ -603,7 +605,7 @@ gfnRepoManageByType() {
             'GIT')
                 if [ -f "${MySB_Files}/${gsRepoFile}" ] && [ ! -d "${gsRepoDir}" ]; then
                     sSubDir="$(unzip -l "${MySB_Files}/${gsRepoFile}" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
-                    if [ ! -d "${MySB_InstallDir}/temp/$sSubDir" ]; then
+                    if [ ! -d "${MySB_InstallDir}/temp/${sSubDir}" ]; then
                         unzip -q "${MySB_Files}/${gsRepoFile}" -d "${MySB_InstallDir}"/temp/
                         gnError=$?
                         # If a package has 2 archives (*_2.zip)
@@ -612,8 +614,8 @@ gfnRepoManageByType() {
                             gnError=$?
                         fi
                     fi
-                    if [ $gnError -eq 0 ] && [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "${gsRepoDir}" ]; then
-                        mv -v "${MySB_InstallDir}/temp/$sSubDir" "${gsRepoDir}"
+                    if [ $gnError -eq 0 ] && [ -d "${MySB_InstallDir}/temp/${sSubDir}" ] && [ ! -d "${gsRepoDir}" ]; then
+                        mv -v "${MySB_InstallDir}/temp/${sSubDir}" "${gsRepoDir}"
                         gnError=$?
                     fi
                     if [ $gnError -eq 0 ] && [ -d "${gsRepoDir}" ] && [ "${gnRepoUpgrade}" -eq 1 ]; then
@@ -650,12 +652,12 @@ gfnRepoManageByType() {
                 esac
                 if [ ! -d "${gsRepoDir}" ] && [ $gnError -eq 0 ]; then
                     sSubDir="$(unzip -l "${MySB_Files}/${gsRepoFile}" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
-                    if [ ! -d "${MySB_InstallDir}/temp/$sSubDir" ]; then
+                    if [ ! -d "${MySB_InstallDir}/temp/${sSubDir}" ]; then
                         unzip -q "${MySB_Files}/${gsRepoFile}" -d "${MySB_InstallDir}"/temp/
                         gnError=$?
                     fi
-                    if [ -d "${MySB_InstallDir}/temp/$sSubDir" ] && [ ! -d "${gsRepoDir}" ]; then
-                        mv -v "${MySB_InstallDir}/temp/$sSubDir" "${gsRepoDir}"
+                    if [ -d "${MySB_InstallDir}/temp/${sSubDir}" ] && [ ! -d "${gsRepoDir}" ]; then
+                        mv -v "${MySB_InstallDir}/temp/${sSubDir}" "${gsRepoDir}"
                         chown -R root:root "${gsRepoDir}"
                         gnError=$?
                     fi
