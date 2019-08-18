@@ -263,12 +263,14 @@ gfnRestartRtorrentSessions() {
 gfnGenerateBlacklistsZone() {
     local sAllTrackers sTracker
 
-    echo "#### MySB - Blacklisted domains (ex: inactive trackers)" >/etc/bind/MySB.zones.blakclists
+    echo "#### MySB - Blacklisted domains (ex: inactive trackers)" >/etc/bind/MySB.zones.blacklists
+    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/blacklist.txt.tmpl /etc/dnscrypt-proxy/blacklist.txt
     sAllTrackers="$(cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker FROM trackers_list WHERE is_active='0';")"
     for sTracker in ${sAllTrackers}; do
-        echo "zone \"${sTracker}\" { type master; file \"/etc/bind/db.empty\"; };" >>/etc/bind/MySB.zones.blakclists
+        echo "zone \"${sTracker}\" { type master; file \"/etc/bind/db.empty\"; };" >>/etc/bind/MySB.zones.blacklists
+        echo "${sTracker}" >>/etc/dnscrypt-proxy/blacklist.txt
     done
-    perl -pi -e "s/^#include \"\/etc\/bind\/MySB.zones.blakclists\";/include \"\/etc\/bind\/MySB.zones.blakclists\";/g" /etc/bind/named.conf.local
+    perl -pi -e "s/^#include \"\/etc\/bind\/MySB.zones.blacklists\";/include \"\/etc\/bind\/MySB.zones.blacklists\";/g" /etc/bind/named.conf.local
 }
 
 #### Create '/etc/hosts' file
@@ -288,9 +290,11 @@ gfnCreateHostsFile() {
         if [ -n "${sTrackerIPv4}" ]; then
             if (! grep -q 'Force trackers resolution' /etc/hosts); then
                 echo "#### MySB - Force trackers resolution (ex: DNS liar)" >>/etc/hosts
+                install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/whitelist.txt.tmpl /etc/dnscrypt-proxy/whitelist.txt
             fi
             for sIPv4 in ${sTrackerIPv4}; do
                 echo "${sIPv4}	   ${sTracker}" >>/etc/hosts
+                echo "${sTracker}" >>/etc/dnscrypt-proxy/whitelist.txt
             done
         fi
     done
