@@ -219,7 +219,7 @@ gfnWaitingSTD() {
 #### Password generator
 gfnGenPassword() {
     local nLenght=$1
-    [ -z "$nLenght" ] && nLenght=16
+    [ -z "${nLenght}" ] && nLenght=16
     tr -dc A-Za-z0-9_ </dev/urandom | head -c ${nLenght} | xargs
 }
 
@@ -289,14 +289,18 @@ gfnSwitchDNS() {
     local sCommand nNumberOfDemon NumLign
     sCommand="$1"
     nNumberOfDemon="$2"
-    [ -z "$nNumberOfDemon" ] && nNumberOfDemon=0
+    [ -z "${nNumberOfDemon}" ] && nNumberOfDemon=0
 
-    case "$sCommand" in
+    case "${sCommand}" in
         'dnscrypt')
-            if gfnCheckCommand 0 dnscrypt-proxy && gfnCheckCommand 0 bind9 && [ $nNumberOfDemon -gt 0 ]; then
+            if gfnCheckCommand 0 dnscrypt-proxy && gfnCheckCommand 0 bind9 && [ ${nNumberOfDemon} -gt 0 ]; then
                 # resolv.conf
                 sed -i '/nameserver/d' /etc/resolv.conf
-                echo "nameserver 127.0.0.1" >>/etc/resolv.conf
+                sed -i '/options edns0/d' /etc/resolv.conf
+                {
+                    echo "options edns0"
+                    echo "nameserver 127.0.0.1"
+                } >>/etc/resolv.conf
                 # BIND with DNScrypt-proxy support
                 install -o bind -g root -m 0774 "${MySB_InstallDir}"/templates/bind/etc.bind.named.conf.options.tmpl /etc/bind/named.conf.options
                 sed -i "s/<gsSrvIpAddress>/${gsSrvIpAddress}/g;" /etc/bind/named.conf.options
@@ -311,11 +315,12 @@ gfnSwitchDNS() {
                 sed -i "${NumLign}i\	version \"MySB Secured DNS server\";" /etc/bind/named.conf.options
                 ((NumLign++))
                 sed -i "${NumLign}i\	// DNScrypt-proxy - EoF" /etc/bind/named.conf.options
-                service bind9 restart &>/dev/null
+                systemctl restart bind9.service
             fi
             ;;
         'bind')
             # resolv.conf
+            sed -i '/options edns0/d' /etc/resolv.conf
             sed -i '/nameserver/d' /etc/resolv.conf
             echo "nameserver 9.9.9.9" >>/etc/resolv.conf
             echo "nameserver 4.2.2.1" >>/etc/resolv.conf
@@ -333,7 +338,7 @@ gfnSwitchDNS() {
                 sed -i '/forward only;/d' /etc/bind/named.conf.options
                 sed -i '/version/d' /etc/bind/named.conf.options
                 sed -i '/DNScrypt-proxy/d' /etc/bind/named.conf.options
-                service bind9 restart &>/dev/null
+                systemctl restart bind9.service
             fi
             ;;
     esac
@@ -345,12 +350,12 @@ gfnDeleteDirectory() {
     [ -z "$1" ] && nVerbose=1 || nVerbose="$1"
     [ -z "$2" ] && echo "gfnDeleteDirectory failed, No directory givened !" || sDirectory="${2%/}"
 
-    if [ -d "$sDirectory" ]; then
-        case "$sDirectory" in
-            "${MySB_InstallDir}" | "${MySB_Files}" | "${MySB_InstallDir}/temp" | "${MySB_InstallDir}/files" | "/home" | "/" | "//") echo "gfnDeleteDirectory avoided, directory '$sDirectory' not permited !" ;;
+    if [ -d "${sDirectory}" ]; then
+        case "${sDirectory}" in
+            "${MySB_InstallDir}" | "${MySB_Files}" | "${MySB_InstallDir}/temp" | "${MySB_InstallDir}/files" | "/home" | "/" | "//") echo "gfnDeleteDirectory avoided, directory '${sDirectory}' not permited !" ;;
             *)
-                if (rm -rf "$sDirectory") && [ "$nVerbose" -eq 1 ]; then
-                    echo "'$sDirectory' deleted !"
+                if (rm -rf "${sDirectory}") && [ "$nVerbose" -eq 1 ]; then
+                    echo "'${sDirectory}' deleted !"
                 fi
                 ;;
         esac
@@ -393,7 +398,7 @@ gfnCleanBeforeUpgrade() {
 
     # Clean files tracked by LFS
     [ -f "${MySB_InstallDir}"/.gitattributes ] && sLfsFilesType="$(grep 'filter=lfs' .gitattributes | awk '{ print $1 }')"
-    for sFileType in $sLfsFilesType; do
+    for sFileType in ${sLfsFilesType}; do
         rm -fv "${MySB_InstallDir}/$sFileType"
     done
     cd "${MySB_InstallDir}"/ || exit
@@ -460,6 +465,12 @@ gfnGetRepoValues() {
             gsVersionInstalled="$(gfnCheckCommand 0 goofys && goofys --version 2>/dev/null | awk '{ print $3 }' | cut -d '-' -f 1 || echo 'Not installed')"
             gsVersionLatest="$(${binCURL} "${gsRepoURL}" | grep 'tag_name' | awk '{ print $2 }' | cut -d '"' -f 2)"
             gsFileURL="$(${binCURL} "${gsRepoURL}" | jq -r '.assets[] | select(.name == "goofys").browser_download_url')"
+            ;;
+        'DNScrypt-proxy')
+            [ -f "${gsRepoDir}" ] && chmod +x "${gsRepoDir}"
+            gsVersionInstalled="$(gfnCheckCommand 0 dnscrypt-proxy && dnscrypt-proxy --version 2>/dev/null || echo 'Not installed')"
+            gsVersionLatest="$(${binCURL} "${gsRepoURL}" | grep 'tag_name' | awk '{ print $2 }' | cut -d '"' -f 2)"
+            gsFileURL="$(${binCURL} "${gsRepoURL}" | jq -r '.assets[] | select(.name == "dnscrypt-proxy-linux_x86_64").browser_download_url')"
             ;;
         'Shellcheck')
             [ -f "${gsRepoDir}" ] && chmod +x "${gsRepoDir}"

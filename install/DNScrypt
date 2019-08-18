@@ -43,20 +43,51 @@ if [ "${USAGE}" == "ON" ]; then
     fi
 fi
 
+function fnDownloadDnscrypt() {
+    #### Download archive
+    # Loading repository informations
+    gfnGetRepoValues 'DNScrypt-proxy'
 
-if [ "${gbToInstall_DNScrypt}" == "YES" ]; then
-    # Check packages to install
-    sPackages=(dnscrypt-proxy)
-    gfnPackageBundleInstall "${sPackages[@]}"
+    # Change architecture if needed
+    case $(getconf LONG_BIT) in
+        32) gsRepoURL="${gsRepoURL//x86_64/i386}" ;;
+    esac
 
-    # Stop service
+    # Download TARGZ file
+    [ -f "${gsRepoDir}/${gsRepoFile}" ] && mv -v "${gsRepoDir}/${gsRepoFile}" "${gsRepoDir}/${gsRepoFile}.tmp"
+    gfnRepoManageByType
+    [ -f "${gsRepoDir}/${gsRepoFile}" ] && rm -fv "${gsRepoDir}/${gsRepoFile}.tmp"
+
+    # Stop services
     gfnManageServices stop "dnscrypt-proxy"
 
-    # Systemd
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/dnscrypt-proxy.service.tmpl /lib/systemd/system/dnscrypt-proxy.service
-    perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /lib/systemd/system/dnscrypt-proxy.service
-    systemctl daemon-reload
-    systemctl enable dnscrypt-proxy.service
+    # Copy binary
+    if [ -f "${gsRepoDir}/${gsRepoFile}" ]; then
+        cp -v "${gsRepoDir}/dnscrypt-proxy" /usr/local/bin/dnscrypt-proxy
+        chmod +x /usr/local/bin/dnscrypt-proxy
+    fi
+
+    # Stop services
+    gfnManageServices start "dnscrypt-proxy"
+
+    # Remove temp folder
+    gfnDeleteDirectory 1 "${gsRepoDir}"
+}
+
+#### CRON UPGRADE
+if [ "${gsSwitch}" == "CRON" ] && [ "${gbIsInstalled_DNScrypt}" == "YES" ]; then
+    # Check for a new version / Install it
+    fnDownloadDnscrypt
+fi
+
+#### INSTALL
+if [ "${gbToInstall_DNScrypt}" == "YES" ]; then
+    # Create directories
+    install -d -v -o root -g root -m 0755 /etc/dnscrypt-proxy
+
+    # Config files
+    install -v -o root -g root -m 0755 ${MySB_InstallDir}/templates/dnscrypt/DNScrypt_tasks.sh.tmpl /etc/dnscrypt-proxy/DNScrypt_tasks.sh
+    perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /etc/dnscrypt-proxy/DNScrypt_tasks.sh
 
     # Config files
     install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/dnscrypt-proxy.toml.tmpl /etc/dnscrypt-proxy/dnscrypt-proxy.toml
@@ -66,30 +97,28 @@ if [ "${gbToInstall_DNScrypt}" == "YES" ]; then
     install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/cloaking-rules.txt.tmpl /etc/dnscrypt-proxy/cloaking-rules.txt
     install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/forwarding-rules.txt.tmpl /etc/dnscrypt-proxy/forwarding-rules.txt
 
-    # Switch to bind
-    gfnSwitchDNS "bind"
+    # Systemd
+    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/dnscrypt-proxy.service.tmpl /lib/systemd/system/dnscrypt-proxy.service
+    perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /lib/systemd/system/dnscrypt-proxy.service
+    systemctl enable dnscrypt-proxy.service
 
     # Upating clock
     /usr/sbin/ntpdate -u 0.fr.pool.ntp.org
+
+    # Switch to bind
+    gfnSwitchDNS "bind"
+
+    #### Logrotate
+    gfnLogRotate 'dnscrypt-proxy'
+
+    #### Download archive
+    fnDownloadDnscrypt
 
     # Mark as installed
     if gfnCheckCommand 0 dnscrypt-proxy; then
         cmdMySQL 'MySB_db' "UPDATE services SET to_install='0',is_installed='1' WHERE serv_name='DNScrypt-proxy';" -v
     fi
-
-    #### Logrotate
-    gfnLogRotate 'dnscrypt-proxy'
 fi
-
-#### Add some hosts in cache
-gfnManageServices restart "dnscrypt-proxy"
-ping -c4 github.com
-# ping -c4 plex.tv
-ping -c4 api.github.com
-sleep 10
-ping -c4 github.com
-# ping -c4 plex.tv
-ping -c4 api.github.com
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after

@@ -1,27 +1,30 @@
 [Unit]
 Description=DNSCrypt client proxy
 Documentation=https://github.com/jedisct1/dnscrypt-proxy/wiki
-Requires=dnscrypt-proxy.socket
-After=network.target
-Before=nss-lookup.target
-Wants=nss-lookup.target
+ConditionFileIsExecutable=/usr/local/bin/dnscrypt-proxy
+After=bind9.service
+Before=MySB_SecurityRules_Init.service
+Requires=networking.service bind9.service
+Wants=bind9.service
 
 [Install]
-Also=dnscrypt-proxy.socket
 WantedBy=multi-user.target
 
 [Service]
-NonBlocking=true
+StartLimitInterval=5
+StartLimitBurst=10
+WorkingDirectory=/etc/dnscrypt-proxy
+CacheDirectory=/etc/dnscrypt-proxy
+LogsDirectory=/var/log/dnscrypt-proxy
+RuntimeDirectory=/var/log/dnscrypt-proxy
 ExecStartPre=/bin/bash -c "source <InstallDir>/inc/vars; gfnSwitchDNS 'dnscrypt'"
-ExecStart=/usr/sbin/dnscrypt-proxy -config /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+ExecStart=/usr/local/bin/dnscrypt-proxy -config /etc/dnscrypt-proxy/dnscrypt-proxy.toml
 ExecStopPost=/bin/bash -c "source <InstallDir>/inc/vars; gfnSwitchDNS 'bind'"
+Restart=always
+RestartSec=120
+NonBlocking=true
 ProtectHome=true
 ProtectKernelModules=true
 ProtectKernelTunables=true
 ProtectControlGroups=true
 MemoryDenyWriteExecute=true
-
-User=_dnscrypt-proxy
-CacheDirectory=dnscrypt-proxy
-LogsDirectory=dnscrypt-proxy
-RuntimeDirectory=dnscrypt-proxy
