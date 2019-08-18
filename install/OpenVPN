@@ -46,430 +46,432 @@ NetTapWithoutRedirectGW="10.0.2"
 [ -d /etc/openvpn/client/ ] && rm -rf /etc/openvpn/client/
 
 CreateServer() {
-	#### Create Dev TUN
-	if [ "$(ls -la /dev/net/tun >/dev/null && echo $?)" != "0" ]; then
-		[ ! -d /dev/net ] && mkdir -p /dev/net
-		mknod /dev/net/tun c 10 200
-		chmod -v 600 /dev/net/tun
-		cat /dev/net/tun
-	fi
+    #### Create Dev TUN
+    if [ "$(ls -la /dev/net/tun >/dev/null && echo $?)" != "0" ]; then
+        [ ! -d /dev/net ] && mkdir -p /dev/net
+        mknod /dev/net/tun c 10 200
+        chmod -v 600 /dev/net/tun
+        cat /dev/net/tun
+    fi
 
-	#### install package
-	if ! gfnCheckCommand 0 openvpn; then
-		sPackages=(openvpn easy-rsa)
-		gfnPackageBundleInstall "${sPackages[@]}"
-	fi
+    #### install package
+    if ! gfnCheckCommand 0 openvpn; then
+        sPackages=(openvpn easy-rsa)
+        gfnPackageBundleInstall "${sPackages[@]}"
+    fi
 
-	#### STOP services
-	gfnManageServices stop "openvpn"
+    #### STOP services
+    gfnManageServices stop "openvpn"
 
-	#### Files and Directory
-	echo
-	echo "########## Files and Directories"
-	mkdir -pv /var/log/openvpn
-	mkdir -pv /etc/openvpn/server/backup
-	mkdir -pv /etc/openvpn/clients/backup
-	mkdir -pv /etc/openvpn/clients_config_dir
-	mkdir -pv "${MySB_InstallDir}"/web/openvpn
-	[ ! -f /var/log/openvpn/openvpn.log ] && touch /var/log/openvpn/openvpn.log
-	[ ! -f /var/log/openvpn/openvpn-status.log ] && touch /var/log/openvpn/openvpn-status.log
-	[[ ! -d /etc/openvpn/easy-rsa ]] && make-cadir /etc/openvpn/easy-rsa
-	cp -vf "${MySB_InstallDir}"/templates/openvpn/easyrsa_vars.tmpl /etc/openvpn/easy-rsa/vars
-	sed -i "s/<servername>/${gsHostNameFqdn}/g;" /etc/openvpn/easy-rsa/vars
-	sed -i "s/<email_address>/${gsMainUserEmail}/g;" /etc/openvpn/easy-rsa/vars
-	cp -vf "${MySB_InstallDir}"/templates/openvpn/openssl-easyrsa.cnf.tmpl /etc/openvpn/easy-rsa/openssl-easyrsa.cnf
-	sed -i "s/<servername>/${gsHostNameFqdn}/g;" /etc/openvpn/easy-rsa/openssl-easyrsa.cnf
-	sed -i "s/<email_address>/${gsMainUserEmail}/g;" /etc/openvpn/easy-rsa/openssl-easyrsa.cnf
+    #### Files and Directory
+    echo
+    echo "########## Files and Directories"
+    mkdir -pv /var/log/openvpn
+    mkdir -pv /etc/openvpn/server/backup
+    mkdir -pv /etc/openvpn/clients/backup
+    mkdir -pv /etc/openvpn/clients_config_dir
+    mkdir -pv "${MySB_InstallDir}"/web/openvpn
+    [ ! -f /var/log/openvpn/openvpn.log ] && touch /var/log/openvpn/openvpn.log
+    [ ! -f /var/log/openvpn/openvpn-status.log ] && touch /var/log/openvpn/openvpn-status.log
+    [[ ! -d /etc/openvpn/easy-rsa ]] && make-cadir /etc/openvpn/easy-rsa
+    cp -vf "${MySB_InstallDir}"/templates/openvpn/easyrsa_vars.tmpl /etc/openvpn/easy-rsa/vars
+    sed -i "s/<servername>/${gsHostNameFqdn}/g;" /etc/openvpn/easy-rsa/vars
+    sed -i "s/<email_address>/${gsMainUserEmail}/g;" /etc/openvpn/easy-rsa/vars
+    cp -vf "${MySB_InstallDir}"/templates/openvpn/openssl-easyrsa.cnf.tmpl /etc/openvpn/easy-rsa/openssl-easyrsa.cnf
+    sed -i "s/<servername>/${gsHostNameFqdn}/g;" /etc/openvpn/easy-rsa/openssl-easyrsa.cnf
+    sed -i "s/<email_address>/${gsMainUserEmail}/g;" /etc/openvpn/easy-rsa/openssl-easyrsa.cnf
 
-	#### Initialize
-	if [ ! -f "/etc/openvpn/${DH}" ] && [ ! -f "/etc/openvpn/${CACRT}" ] &&
-			[ ! -f "/etc/openvpn/${CAKEY}" ] && [ ! -f "/etc/openvpn/${TAKEY}" ] &&
-			[ ! -f "/etc/openvpn/${CRT}" ] && [ ! -f "/etc/openvpn/${KEY}" ]; then
-		echo
-		echo "########## Initialize"
-		cd /etc/openvpn/easy-rsa/ || exit
-		# Create the PKI, set up the CA and the server and client certificates
-		./easyrsa init-pki
+    #### Initialize
+    if [ ! -f "/etc/openvpn/${DH}" ] && [ ! -f "/etc/openvpn/${CACRT}" ] &&
+        [ ! -f "/etc/openvpn/${CAKEY}" ] && [ ! -f "/etc/openvpn/${TAKEY}" ] &&
+        [ ! -f "/etc/openvpn/${CRT}" ] && [ ! -f "/etc/openvpn/${KEY}" ]; then
+        echo
+        echo "########## Initialize"
+        cd /etc/openvpn/easy-rsa/ || exit
+        # Create the PKI, set up the CA and the server and client certificates
+        ./easyrsa init-pki
 
-		#### Create server
-		echo
-		echo "########## Create server"
-		./easyrsa --batch build-ca nopass
-		./easyrsa gen-dh
-		./easyrsa gen-crl
-		./easyrsa build-server-full "${gsHostNameFqdn}" server nopass
-		openvpn --genkey --secret ta.key
-		/usr/sbin/openvpn --genkey --secret pki/private/ta.key
+        #### Create server
+        echo
+        echo "########## Create server"
+        ./easyrsa --batch build-ca nopass
+        ./easyrsa gen-dh
+        ./easyrsa gen-crl
+        ./easyrsa build-server-full "${gsHostNameFqdn}" server nopass
+        /usr/sbin/openvpn --genkey --secret /etc/openvpn/"${TAKEY}"
 
-		#### Move created files
-		echo
-		echo "########## Move created files"
-		cd /etc/openvpn/ || exit
-		ln -s easy-rsa/pki/ca.crt easy-rsa/pki/private/ca.key easy-rsa/pki/issued/"${gsHostNameFqdn}".crt easy-rsa/pki/private/"${gsHostNameFqdn}".key .
-		ln easy-rsa/pki/dh.pem dh1024.pem
-	fi
+        #### Move created files
+        echo
+        echo "########## Move created files"
+        cd /etc/openvpn/ || exit
+        ln -sv easy-rsa/pki/ca.crt ./"${CACRT}"
+        ln -sv easy-rsa/pki/private/ca.key ./"${CAKEY}"
+        ln -sv easy-rsa/pki/issued/"${gsHostNameFqdn}".crt easy-rsa/pki/private/"${gsHostNameFqdn}".key .
+        ln -v easy-rsa/pki/dh.pem ./"${DH}"
+    fi
 
-	echo
-	echo "########## Config files"
-	#### Config file Server TUN - With Redirect Gateway
-	# start with a clean config file for a new user
-	cp -vf "${MySB_InstallDir}"/templates/openvpn/openvpn.server.conf.tmpl /etc/openvpn/Server_TUN_WithGW.conf
-	# adapt this file
-	sed -i "s/<PORT>/${gsPort_OpenVPN_WithGW}/g" /etc/openvpn/Server_TUN_WithGW.conf
-	sed -i "s/<PROTO>/${gsOpenVPN_Proto}/g" /etc/openvpn/Server_TUN_WithGW.conf
-	sed -i "s/<TAKEY>/${TAKEY}/g" /etc/openvpn/Server_TUN_WithGW.conf
-	sed -i "s/<CA>/${CACRT}/g" /etc/openvpn/Server_TUN_WithGW.conf
-	sed -i "s/<CERT>/${CRT}/g" /etc/openvpn/Server_TUN_WithGW.conf
-	sed -i "s/<KEY>/${KEY}/g" /etc/openvpn/Server_TUN_WithGW.conf
-	sed -i "s/<DH>/${DH}/g" /etc/openvpn/Server_TUN_WithGW.conf
-	# and clean it (delete comments, delete unused option, delete blank line)
-	sed -i '/#/d' /etc/openvpn/Server_TUN_WithGW.conf
-	sed -i '/^;/d' /etc/openvpn/Server_TUN_WithGW.conf
-	sed -i '/^$/d' /etc/openvpn/Server_TUN_WithGW.conf
+    echo
+    echo "########## Config files"
+    #### Config file Server TUN - With Redirect Gateway
+    # start with a clean config file for a new user
+    cp -vf "${MySB_InstallDir}"/templates/openvpn/openvpn.server.conf.tmpl /etc/openvpn/Server_TUN_WithGW.conf
+    # adapt this file
+    sed -i "s/<PORT>/${gsPort_OpenVPN_WithGW}/g" /etc/openvpn/Server_TUN_WithGW.conf
+    sed -i "s/<PROTO>/${gsOpenVPN_Proto}4/g" /etc/openvpn/Server_TUN_WithGW.conf
+    sed -i "s/<TAKEY>/${TAKEY}/g" /etc/openvpn/Server_TUN_WithGW.conf
+    sed -i "s/<CA>/${CACRT}/g" /etc/openvpn/Server_TUN_WithGW.conf
+    sed -i "s/<CERT>/${CRT}/g" /etc/openvpn/Server_TUN_WithGW.conf
+    sed -i "s/<KEY>/${KEY}/g" /etc/openvpn/Server_TUN_WithGW.conf
+    sed -i "s/<DH>/${DH}/g" /etc/openvpn/Server_TUN_WithGW.conf
+    # and clean it (delete comments, delete unused option, delete blank line)
+    sed -i '/#/d' /etc/openvpn/Server_TUN_WithGW.conf
+    sed -i '/^;/d' /etc/openvpn/Server_TUN_WithGW.conf
+    sed -i '/^$/d' /etc/openvpn/Server_TUN_WithGW.conf
 
-	#### Config file Server TUN - Without Redirect Gateway
-	cp -vf /etc/openvpn/Server_TUN_WithGW.conf /etc/openvpn/Server_TUN_WithoutGW.conf
-	sed -i "s/dev tun1/dev tun0/g" /etc/openvpn/Server_TUN_WithoutGW.conf
-	sed -i "s/${gsPort_OpenVPN_WithGW}/${gsPort_OpenVPN_WithoutGW}/g" /etc/openvpn/Server_TUN_WithoutGW.conf
-	sed -i "s/$NetTunWithRedirectGW/$NetTunWithoutRedirectGW/g" /etc/openvpn/Server_TUN_WithoutGW.conf
-	sed -i '/dhcp-option DNS/d' /etc/openvpn/Server_TUN_WithoutGW.conf
-	sed -i '/redirect-gateway/d' /etc/openvpn/Server_TUN_WithoutGW.conf
+    #### Config file Server TUN - Without Redirect Gateway
+    cp -vf /etc/openvpn/Server_TUN_WithGW.conf /etc/openvpn/Server_TUN_WithoutGW.conf
+    sed -i "s/dev tun1/dev tun0/g" /etc/openvpn/Server_TUN_WithoutGW.conf
+    sed -i "s/${gsPort_OpenVPN_WithGW}/${gsPort_OpenVPN_WithoutGW}/g" /etc/openvpn/Server_TUN_WithoutGW.conf
+    sed -i "s/$NetTunWithRedirectGW/$NetTunWithoutRedirectGW/g" /etc/openvpn/Server_TUN_WithoutGW.conf
+    sed -i '/dhcp-option DNS/d' /etc/openvpn/Server_TUN_WithoutGW.conf
+    sed -i '/redirect-gateway/d' /etc/openvpn/Server_TUN_WithoutGW.conf
 
-	#### TAP
-	# dummy interface
-	#echo "alias netdev-dummy0 dummy" | tee -a /etc/modprobe.d/aliases.conf
-	#modprobe dummy numdummies=0
-	#gfnScriptInvoke 'source' "${MySB_InstallDir}/scripts/OpenVPN-Bridge.bsh" 'start'
+    #### TAP
+    # dummy interface
+    #echo "alias netdev-dummy0 dummy" | tee -a /etc/modprobe.d/aliases.conf
+    #modprobe dummy numdummies=0
+    #gfnScriptInvoke 'source' "${MySB_InstallDir}/scripts/OpenVPN-Bridge.bsh" 'start'
 
-	#### Config file Server TAP - Without Redirect Gateway
-	cp -vf "${MySB_InstallDir}"/templates/openvpn/openvpn.server.conf.tmpl /etc/openvpn/Server_TAP_WithoutGW.conf
-	# adapt this file
-	sed -i '/server 10.0.0.0 255.255.255.0/d' /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i '/redirect-gateway/d' /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i "s/^;server-bridge/server-bridge/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i "s/^user nobody/;user nobody/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i "s/^group daemon/;group daemon/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i "s/^;up/up/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i "s/^;down/down/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i "s/<MySB_InstallDir>/${gsInstallDirEscaped}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i "s/<PORT>/${gsPort_OpenVPN_TAP_WithoutGW}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i "s/<PROTO>/${gsOpenVPN_Proto}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i "s/<TAKEY>/${TAKEY}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i "s/<CA>/${CACRT}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i "s/<CERT>/${CRT}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i "s/<KEY>/${KEY}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i "s/<DH>/${DH}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i "s/dev tun1/dev tap0/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i "s/$NetTunWithRedirectGW/$NetTapWithoutRedirectGW/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-	# and clean it (delete comments, delete unused option, delete blank line)
-	sed -i '/#/d' /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i '/^;/d' /etc/openvpn/Server_TAP_WithoutGW.conf
-	sed -i '/^$/d' /etc/openvpn/Server_TAP_WithoutGW.conf
+    #### Config file Server TAP - Without Redirect Gateway
+    cp -vf "${MySB_InstallDir}"/templates/openvpn/openvpn.server.conf.tmpl /etc/openvpn/Server_TAP_WithoutGW.conf
+    # adapt this file
+    sed -i '/server 10.0.0.0 255.255.255.0/d' /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i '/redirect-gateway/d' /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i "s/^;server-bridge/server-bridge/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i "s/^user nobody/;user nobody/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i "s/^group daemon/;group daemon/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i "s/^;up/up/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i "s/^;down/down/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i "s/<MySB_InstallDir>/${gsInstallDirEscaped}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i "s/<PORT>/${gsPort_OpenVPN_TAP_WithoutGW}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i "s/<PROTO>/${gsOpenVPN_Proto}4/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i "s/<TAKEY>/${TAKEY}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i "s/<CA>/${CACRT}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i "s/<CERT>/${CRT}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i "s/<KEY>/${KEY}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i "s/<DH>/${DH}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i "s/dev tun1/dev tap0/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i "s/$NetTunWithRedirectGW/$NetTapWithoutRedirectGW/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+    # and clean it (delete comments, delete unused option, delete blank line)
+    sed -i '/#/d' /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i '/^;/d' /etc/openvpn/Server_TAP_WithoutGW.conf
+    sed -i '/^$/d' /etc/openvpn/Server_TAP_WithoutGW.conf
 
-	if gfnCheckCommand 0 openvpn; then
-		cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='OpenVPN';" -v
-	fi
+    if gfnCheckCommand 0 openvpn; then
+        cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='OpenVPN';" -v
+    fi
 
-	#### START services
-	if [ "${gsSwitch}" != "INSTALL" ]; then
-		gfnManageServices start "openvpn"
-	fi
+    #### START services
+    if [ "${gsSwitch}" != "INSTALL" ]; then
+        gfnManageServices start "openvpn"
+    fi
 }
 
 CreateClient() {
-	#### Initialize
-	if [ ! -f "/etc/openvpn/clients/${CLIENTNAME}.crt" ] && [ ! -f "/etc/openvpn/clients/${CLIENTNAME}.csr" ] && [ ! -f "/etc/openvpn/clients/${CLIENTNAME}.key" ]; then
-		#### Create client certificate
-		cd /etc/openvpn/easy-rsa/ || exit
-		./easyrsa build-client-full "${CLIENTNAME}" nopass
+    #### Initialize
+    if [ ! -f "/etc/openvpn/clients/${CLIENTNAME}.crt" ] && [ ! -f "/etc/openvpn/clients/${CLIENTNAME}.csr" ] && [ ! -f "/etc/openvpn/clients/${CLIENTNAME}.key" ]; then
+        #### Create client certificate
+        cd /etc/openvpn/easy-rsa/ || exit
+        ./easyrsa build-client-full "${CLIENTNAME}" nopass
 
-		#### Move created files
-		cd /etc/openvpn/ || exit
-		ln -s easy-rsa/pki/issued/"${CLIENTNAME}".crt easy-rsa/pki/private/"${CLIENTNAME}".key clients/
-	fi
+        #### Move created files
+        cd /etc/openvpn/ || exit
+        ln -sv /etc/openvpn/easy-rsa/pki/issued/"${CLIENTNAME}".crt /etc/openvpn/clients/
+        ln -sv /etc/openvpn/easy-rsa/pki/private/"${CLIENTNAME}".key /etc/openvpn/clients/
+    fi
 
-	#### Configuration file with separate files - TUN - With Redirect Gateway
-	# start with a clean config file for a new user
-	cp -vf "${MySB_InstallDir}"/templates/openvpn/openvpn.client.conf.tmpl /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
-	# adapt this file
-	sed -i "s/<PROTO>/${gsOpenVPN_Proto}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
-	sed -i "s/<gsSrvIpAddress>/${gsSrvIpAddressExt}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
-	sed -i "s/<PORT>/${gsPort_OpenVPN_WithGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
-	sed -i "s/;ca ca.crt/ca ${CACRT}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
-	sed -i "s/;cert client.crt/cert ${CLIENTNAME}.crt/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
-	sed -i "s/;key client.key/key ${CLIENTNAME}.key/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
-	sed -i "s/;tls-auth ta.key 1/tls-auth ${TAKEY} 1/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
-	# and clean it (delete comments, delete unused option, delete blank line)
-	sed -i '/#/d' /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
-	sed -i '/^;/d' /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
-	sed -i '/^$/d' /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
+    #### Configuration file with separate files - TUN - With Redirect Gateway
+    # start with a clean config file for a new user
+    cp -vf "${MySB_InstallDir}"/templates/openvpn/openvpn.client.conf.tmpl /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
+    # adapt this file
+    sed -i "s/<PROTO>/${gsOpenVPN_Proto}4/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
+    sed -i "s/<gsSrvIpAddress>/${gsSrvIpAddressExt}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
+    sed -i "s/<PORT>/${gsPort_OpenVPN_WithGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
+    sed -i "s/;ca ca.crt/ca ${CACRT}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
+    sed -i "s/;cert client.crt/cert ${CLIENTNAME}.crt/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
+    sed -i "s/;key client.key/key ${CLIENTNAME}.key/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
+    sed -i "s/;tls-auth ta.key 1/tls-auth ${TAKEY} 1/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
+    # and clean it (delete comments, delete unused option, delete blank line)
+    sed -i '/#/d' /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
+    sed -i '/^;/d' /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
+    sed -i '/^$/d' /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
 
-	#### Configuration file with separate files - TUN - Without Redirect Gateway
-	cp -vf /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn
-	sed -i "s/${gsPort_OpenVPN_WithGW}/${gsPort_OpenVPN_WithoutGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn
-	sed -i "s/$NetTunWithRedirectGW/$NetTunWithoutRedirectGW/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn
+    #### Configuration file with separate files - TUN - Without Redirect Gateway
+    cp -vf /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn
+    sed -i "s/${gsPort_OpenVPN_WithGW}/${gsPort_OpenVPN_WithoutGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn
+    sed -i "s/$NetTunWithRedirectGW/$NetTunWithoutRedirectGW/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn
 
-	#### Single configuration file (all in one) - TUN - With Redirect Gateway
-	# start with a clean config file for a new user
-	cp -vf "${MySB_InstallDir}"/templates/openvpn/openvpn.client.conf.tmpl /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
-	# adapt this file
-	sed -i "s/<PROTO>/${gsOpenVPN_Proto}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
-	sed -i "s/<gsSrvIpAddress>/${gsSrvIpAddressExt}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
-	sed -i "s/<PORT>/${gsPort_OpenVPN_WithGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
-	# and clean it (delete comments, delete unused option, delete blank line)
-	sed -i '/#/d' /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
-	sed -i '/^;/d' /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
-	sed -i '/^$/d' /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
-	# add certificate info in file config
-	{
-		echo ""
-		echo "<ca>"
-		cat /etc/openvpn/"${CACRT}"
-		echo "</ca>"
-		echo "<cert>"
-		sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' /etc/openvpn/clients/"${CLIENTNAME}".crt
-		echo "</cert>"
-		echo "<key>"
-		cat /etc/openvpn/clients/"${CLIENTNAME}".key
-		echo "</key>"
-		echo "key-direction 1"
-		echo "<tls-auth>"
-		sed -n '/-----BEGIN OpenVPN Static key V1-----/,/-----END OpenVPN Static key V1-----/p' /etc/openvpn/"${TAKEY}"
-		echo "</tls-auth>"
-	} >>/etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
+    #### Single configuration file (all in one) - TUN - With Redirect Gateway
+    # start with a clean config file for a new user
+    cp -vf "${MySB_InstallDir}"/templates/openvpn/openvpn.client.conf.tmpl /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
+    # adapt this file
+    sed -i "s/<PROTO>/${gsOpenVPN_Proto}4/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
+    sed -i "s/<gsSrvIpAddress>/${gsSrvIpAddressExt}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
+    sed -i "s/<PORT>/${gsPort_OpenVPN_WithGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
+    # and clean it (delete comments, delete unused option, delete blank line)
+    sed -i '/#/d' /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
+    sed -i '/^;/d' /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
+    sed -i '/^$/d' /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
+    # add certificate info in file config
+    {
+        echo ""
+        echo "<ca>"
+        cat /etc/openvpn/"${CACRT}"
+        echo "</ca>"
+        echo "<cert>"
+        sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' /etc/openvpn/clients/"${CLIENTNAME}".crt
+        echo "</cert>"
+        echo "<key>"
+        cat /etc/openvpn/clients/"${CLIENTNAME}".key
+        echo "</key>"
+        echo "key-direction 1"
+        echo "<tls-auth>"
+        sed -n '/-----BEGIN OpenVPN Static key V1-----/,/-----END OpenVPN Static key V1-----/p' /etc/openvpn/"${TAKEY}"
+        echo "</tls-auth>"
+    } >>/etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
 
-	#### Single configuration file (all in one) - TUN - Without Redirect Gateway
-	cp -vf /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn
-	sed -i "s/${gsPort_OpenVPN_WithGW}/${gsPort_OpenVPN_WithoutGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn
+    #### Single configuration file (all in one) - TUN - Without Redirect Gateway
+    cp -vf /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn
+    sed -i "s/${gsPort_OpenVPN_WithGW}/${gsPort_OpenVPN_WithoutGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn
 
-	#### Single configuration file (all in one) - TAP - Without Redirect Gateway
-	cp -vf /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn
-	sed -i "s/${gsPort_OpenVPN_WithGW}/${gsPort_OpenVPN_TAP_WithoutGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn
-	sed -i "s/dev tun/dev tap/g" /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn
-	sed -i '/mtu-disc yes/d' /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn
+    #### Single configuration file (all in one) - TAP - Without Redirect Gateway
+    cp -vf /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn
+    sed -i "s/${gsPort_OpenVPN_WithGW}/${gsPort_OpenVPN_TAP_WithoutGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn
+    sed -i "s/dev tun/dev tap/g" /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn
+    sed -i '/mtu-disc yes/d' /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn
 
-	#### START services
-	gfnManageServices start "openvpn"
+    #### START services
+    gfnManageServices start "openvpn"
 }
 
 ZipClientFiles() {
-	CLIENTNAME="${USERNAME}_${gsHostNameFqdn}"
-	rm -vf "${MySB_InstallDir}/web/openvpn/openvpn_${USERNAME}.zip"
+    CLIENTNAME="${USERNAME}_${gsHostNameFqdn}"
+    rm -vf "${MySB_InstallDir}/web/openvpn/openvpn_${USERNAME}.zip"
 
-	perl -pi -e "s/^mtu-disc yes/;mtu-disc yes/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
-	perl -pi -e "s/^mtu-disc yes/;mtu-disc yes/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn
-	perl -pi -e "s/^mtu-disc yes/;mtu-disc yes/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
-	perl -pi -e "s/^mtu-disc yes/;mtu-disc yes/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn
-	perl -pi -e "s/^mtu-disc yes/;mtu-disc yes/g" /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn
+    perl -pi -e "s/^mtu-disc yes/;mtu-disc yes/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
+    perl -pi -e "s/^mtu-disc yes/;mtu-disc yes/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn
+    perl -pi -e "s/^mtu-disc yes/;mtu-disc yes/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
+    perl -pi -e "s/^mtu-disc yes/;mtu-disc yes/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn
+    perl -pi -e "s/^mtu-disc yes/;mtu-disc yes/g" /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn
 
-	zip -P "${USERPASSWORD}" -j "${MySB_InstallDir}/web/openvpn/openvpn_${USERNAME}.zip" \
-		/etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn \
-		/etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn \
-		/etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn \
-		/etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn \
-		/etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn \
-		/etc/openvpn/"${CACRT}" \
-		/etc/openvpn/clients/"${CLIENTNAME}".crt \
-		/etc/openvpn/clients/"${CLIENTNAME}".key \
-		/etc/openvpn/"${TAKEY}"
+    zip -P "${USERPASSWORD}" -j "${MySB_InstallDir}/web/openvpn/openvpn_${USERNAME}.zip" \
+        /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn \
+        /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn \
+        /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn \
+        /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn \
+        /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn \
+        /etc/openvpn/"${CACRT}" \
+        /etc/openvpn/clients/"${CLIENTNAME}".crt \
+        /etc/openvpn/clients/"${CLIENTNAME}".key \
+        /etc/openvpn/"${TAKEY}"
 
-	chmod -v 0660 "${MySB_InstallDir}"/web/openvpn/*.zip
-	chown -v root:www-data "${MySB_InstallDir}"/web/openvpn/*.zip
+    chmod -v 0660 "${MySB_InstallDir}"/web/openvpn/*.zip
+    chown -v root:www-data "${MySB_InstallDir}"/web/openvpn/*.zip
 }
 
 RefreshProtoAndPorts() {
-	local sSearch bServiceRestart
+    local sSearch bServiceRestart
 
-	#### Server files
-	bServiceRestart=0
-	if [ -f /etc/openvpn/Server_TUN_WithGW.conf ]; then
-		log_daemon_msg "Change protocol to ${gsOpenVPN_Proto} for \"Server_TUN_WithGW.conf\""
-		sSearch=$(grep "proto" /etc/openvpn/Server_TUN_WithGW.conf | awk '{ print $2 }')
-		[ "${sSearch}" != "${gsOpenVPN_Proto}" ] && bServiceRestart=1
-		perl -pi -e "s/^proto ${sSearch}/proto ${gsOpenVPN_Proto}/g" /etc/openvpn/Server_TUN_WithGW.conf
-		unset sSearch
-		gfnStatusLSB
+    #### Server files
+    bServiceRestart=0
+    if [ -f /etc/openvpn/Server_TUN_WithGW.conf ]; then
+        log_daemon_msg "Change protocol to ${gsOpenVPN_Proto} for \"Server_TUN_WithGW.conf\""
+        sSearch=$(grep "proto" /etc/openvpn/Server_TUN_WithGW.conf | awk '{ print $2 }')
+        [ "${sSearch}" != "${gsOpenVPN_Proto}" ] && bServiceRestart=1
+        perl -pi -e "s/^proto ${sSearch}/proto ${gsOpenVPN_Proto}4/g" /etc/openvpn/Server_TUN_WithGW.conf
+        unset sSearch
+        gfnStatusLSB
 
-		log_daemon_msg "Change port to ${gsPort_OpenVPN_WithGW} for \"Server_TUN_WithGW.conf\""
-		sSearch=$(grep "port" /etc/openvpn/Server_TUN_WithGW.conf | awk '{ print $2 }')
-		[ "${sSearch}" != "${gsPort_OpenVPN_WithGW}" ] && bServiceRestart=1
-		perl -pi -e "s/^port ${sSearch}/port ${gsPort_OpenVPN_WithGW}/g" /etc/openvpn/Server_TUN_WithGW.conf
-		unset sSearch
-		gfnStatusLSB
-	fi
-	if [ -f /etc/openvpn/Server_TUN_WithoutGW.conf ]; then
-		log_daemon_msg "Change protocol to ${gsOpenVPN_Proto} for \"Server_TUN_WithoutGW.conf\""
-		sSearch=$(grep "proto" /etc/openvpn/Server_TUN_WithoutGW.conf | awk '{ print $2 }')
-		[ "${sSearch}" != "${gsOpenVPN_Proto}" ] && bServiceRestart=1
-		perl -pi -e "s/^proto ${sSearch}/proto ${gsOpenVPN_Proto}/g" /etc/openvpn/Server_TUN_WithoutGW.conf
-		unset sSearch
-		gfnStatusLSB
+        log_daemon_msg "Change port to ${gsPort_OpenVPN_WithGW} for \"Server_TUN_WithGW.conf\""
+        sSearch=$(grep "port" /etc/openvpn/Server_TUN_WithGW.conf | awk '{ print $2 }')
+        [ "${sSearch}" != "${gsPort_OpenVPN_WithGW}" ] && bServiceRestart=1
+        perl -pi -e "s/^port ${sSearch}/port ${gsPort_OpenVPN_WithGW}/g" /etc/openvpn/Server_TUN_WithGW.conf
+        unset sSearch
+        gfnStatusLSB
+    fi
+    if [ -f /etc/openvpn/Server_TUN_WithoutGW.conf ]; then
+        log_daemon_msg "Change protocol to ${gsOpenVPN_Proto} for \"Server_TUN_WithoutGW.conf\""
+        sSearch=$(grep "proto" /etc/openvpn/Server_TUN_WithoutGW.conf | awk '{ print $2 }')
+        [ "${sSearch}" != "${gsOpenVPN_Proto}" ] && bServiceRestart=1
+        perl -pi -e "s/^proto ${sSearch}/proto ${gsOpenVPN_Proto}4/g" /etc/openvpn/Server_TUN_WithoutGW.conf
+        unset sSearch
+        gfnStatusLSB
 
-		log_daemon_msg "Change port to ${gsPort_OpenVPN_WithoutGW} for \"Server_TUN_WithoutGW.conf\""
-		sSearch=$(grep "port" /etc/openvpn/Server_TUN_WithoutGW.conf | awk '{ print $2 }')
-		[ "${sSearch}" != "${gsPort_OpenVPN_WithoutGW}" ] && bServiceRestart=1
-		perl -pi -e "s/^port ${sSearch}/port ${gsPort_OpenVPN_WithoutGW}/g" /etc/openvpn/Server_TUN_WithoutGW.conf
-		unset sSearch
-		gfnStatusLSB
-	fi
-	if [ -f /etc/openvpn/Server_TAP_WithoutGW.conf ]; then
-		log_daemon_msg "Change protocol to ${gsOpenVPN_Proto} for \"Server_TAP_WithoutGW.conf\""
-		sSearch=$(grep "proto" /etc/openvpn/Server_TAP_WithoutGW.conf | awk '{ print $2 }')
-		[ "${sSearch}" != "${gsOpenVPN_Proto}" ] && bServiceRestart=1
-		perl -pi -e "s/^proto ${sSearch}/proto ${gsOpenVPN_Proto}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-		unset sSearch
-		gfnStatusLSB
+        log_daemon_msg "Change port to ${gsPort_OpenVPN_WithoutGW} for \"Server_TUN_WithoutGW.conf\""
+        sSearch=$(grep "port" /etc/openvpn/Server_TUN_WithoutGW.conf | awk '{ print $2 }')
+        [ "${sSearch}" != "${gsPort_OpenVPN_WithoutGW}" ] && bServiceRestart=1
+        perl -pi -e "s/^port ${sSearch}/port ${gsPort_OpenVPN_WithoutGW}/g" /etc/openvpn/Server_TUN_WithoutGW.conf
+        unset sSearch
+        gfnStatusLSB
+    fi
+    if [ -f /etc/openvpn/Server_TAP_WithoutGW.conf ]; then
+        log_daemon_msg "Change protocol to ${gsOpenVPN_Proto} for \"Server_TAP_WithoutGW.conf\""
+        sSearch=$(grep "proto" /etc/openvpn/Server_TAP_WithoutGW.conf | awk '{ print $2 }')
+        [ "${sSearch}" != "${gsOpenVPN_Proto}" ] && bServiceRestart=1
+        perl -pi -e "s/^proto ${sSearch}/proto ${gsOpenVPN_Proto}4/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+        unset sSearch
+        gfnStatusLSB
 
-		log_daemon_msg "Change port to ${gsPort_OpenVPN_TAP_WithoutGW} for \"Server_TAP_WithoutGW.conf\""
-		sSearch=$(grep "port" /etc/openvpn/Server_TAP_WithoutGW.conf | awk '{ print $2 }')
-		[ "${sSearch}" != "${gsPort_OpenVPN_TAP_WithoutGW}" ] && bServiceRestart=1
-		perl -pi -e "s/^port ${sSearch}/port ${gsPort_OpenVPN_TAP_WithoutGW}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
-		unset sSearch
-		gfnStatusLSB
-	fi
+        log_daemon_msg "Change port to ${gsPort_OpenVPN_TAP_WithoutGW} for \"Server_TAP_WithoutGW.conf\""
+        sSearch=$(grep "port" /etc/openvpn/Server_TAP_WithoutGW.conf | awk '{ print $2 }')
+        [ "${sSearch}" != "${gsPort_OpenVPN_TAP_WithoutGW}" ] && bServiceRestart=1
+        perl -pi -e "s/^port ${sSearch}/port ${gsPort_OpenVPN_TAP_WithoutGW}/g" /etc/openvpn/Server_TAP_WithoutGW.conf
+        unset sSearch
+        gfnStatusLSB
+    fi
 
-	#### Clients files
-	gfnListCountUsers 'normal'
-	for SeedboxUser in ${gsUsersList}; do
-		CLIENTNAME="${SeedboxUser}_${gsHostNameFqdn}"
-		if [ -f /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn ]; then
-			log_daemon_msg "Change protocol to ${gsOpenVPN_Proto} for \"${CLIENTNAME}_TUN_Single_WithGW.ovpn\""
-			sSearch=$(grep "proto" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn | awk '{ print $2 }')
-			perl -pi -e "s/^proto ${sSearch}/proto ${gsOpenVPN_Proto}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
-			unset sSearch
-			gfnStatusLSB
+    #### Clients files
+    gfnListCountUsers 'normal'
+    for SeedboxUser in ${gsUsersList}; do
+        CLIENTNAME="${SeedboxUser}_${gsHostNameFqdn}"
+        if [ -f /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn ]; then
+            log_daemon_msg "Change protocol to ${gsOpenVPN_Proto} for \"${CLIENTNAME}_TUN_Single_WithGW.ovpn\""
+            sSearch=$(grep "proto" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn | awk '{ print $2 }')
+            perl -pi -e "s/^proto ${sSearch}/proto ${gsOpenVPN_Proto}4/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
+            unset sSearch
+            gfnStatusLSB
 
-			log_daemon_msg "Change port to ${gsPort_OpenVPN_WithGW} for \"${CLIENTNAME}_TUN_Single_WithGW.ovpn\""
-			sSearch=$(grep "port" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn | awk '{ print $2 }')
-			perl -pi -e "s/^port ${sSearch}/port ${gsPort_OpenVPN_WithGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
-			unset sSearch
-			gfnStatusLSB
-		fi
-		if [ -f /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn ]; then
-			log_daemon_msg "Change protocol to ${gsOpenVPN_Proto} for \"${CLIENTNAME}_TUN_Single_WithoutGW.ovpn\""
-			sSearch=$(grep "proto" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn | awk '{ print $2 }')
-			perl -pi -e "s/^proto ${sSearch}/proto ${gsOpenVPN_Proto}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn
-			unset sSearch
-			gfnStatusLSB
+            log_daemon_msg "Change port to ${gsPort_OpenVPN_WithGW} for \"${CLIENTNAME}_TUN_Single_WithGW.ovpn\""
+            sSearch=$(grep "port" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn | awk '{ print $2 }')
+            perl -pi -e "s/^port ${sSearch}/port ${gsPort_OpenVPN_WithGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithGW.ovpn
+            unset sSearch
+            gfnStatusLSB
+        fi
+        if [ -f /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn ]; then
+            log_daemon_msg "Change protocol to ${gsOpenVPN_Proto} for \"${CLIENTNAME}_TUN_Single_WithoutGW.ovpn\""
+            sSearch=$(grep "proto" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn | awk '{ print $2 }')
+            perl -pi -e "s/^proto ${sSearch}/proto ${gsOpenVPN_Proto}4/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn
+            unset sSearch
+            gfnStatusLSB
 
-			log_daemon_msg "Change port to ${gsPort_OpenVPN_WithoutGW} for \"${CLIENTNAME}_TUN_Single_WithoutGW.ovpn\""
-			sSearch=$(grep "port" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn | awk '{ print $2 }')
-			perl -pi -e "s/^port ${sSearch}/port ${gsPort_OpenVPN_WithoutGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn
-			unset sSearch
-			gfnStatusLSB
-		fi
-		if [ -f /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn ]; then
-			log_daemon_msg "Change protocol to ${gsOpenVPN_Proto} for \"${CLIENTNAME}_TUN_WithGW.ovpn\""
-			sSearch=$(grep "proto" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn | awk '{ print $2 }')
-			perl -pi -e "s/^proto ${sSearch}/proto ${gsOpenVPN_Proto}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
-			unset sSearch
-			gfnStatusLSB
+            log_daemon_msg "Change port to ${gsPort_OpenVPN_WithoutGW} for \"${CLIENTNAME}_TUN_Single_WithoutGW.ovpn\""
+            sSearch=$(grep "port" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn | awk '{ print $2 }')
+            perl -pi -e "s/^port ${sSearch}/port ${gsPort_OpenVPN_WithoutGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_Single_WithoutGW.ovpn
+            unset sSearch
+            gfnStatusLSB
+        fi
+        if [ -f /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn ]; then
+            log_daemon_msg "Change protocol to ${gsOpenVPN_Proto} for \"${CLIENTNAME}_TUN_WithGW.ovpn\""
+            sSearch=$(grep "proto" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn | awk '{ print $2 }')
+            perl -pi -e "s/^proto ${sSearch}/proto ${gsOpenVPN_Proto}4/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
+            unset sSearch
+            gfnStatusLSB
 
-			log_daemon_msg "Change port to ${gsPort_OpenVPN_WithGW} for \"${CLIENTNAME}_TUN_WithGW.ovpn\""
-			sSearch=$(grep "port" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn | awk '{ print $2 }')
-			perl -pi -e "s/^port ${sSearch}/port ${gsPort_OpenVPN_WithGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
-			unset sSearch
-			gfnStatusLSB
-		fi
-		if [ -f /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn ]; then
-			log_daemon_msg "Change protocol to ${gsOpenVPN_Proto} for \"${CLIENTNAME}_TUN_WithoutGW.ovpn\""
-			sSearch=$(grep "proto" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn | awk '{ print $2 }')
-			perl -pi -e "s/^proto ${sSearch}/proto ${gsOpenVPN_Proto}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn
-			unset sSearch
-			gfnStatusLSB
+            log_daemon_msg "Change port to ${gsPort_OpenVPN_WithGW} for \"${CLIENTNAME}_TUN_WithGW.ovpn\""
+            sSearch=$(grep "port" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn | awk '{ print $2 }')
+            perl -pi -e "s/^port ${sSearch}/port ${gsPort_OpenVPN_WithGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithGW.ovpn
+            unset sSearch
+            gfnStatusLSB
+        fi
+        if [ -f /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn ]; then
+            log_daemon_msg "Change protocol to ${gsOpenVPN_Proto} for \"${CLIENTNAME}_TUN_WithoutGW.ovpn\""
+            sSearch=$(grep "proto" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn | awk '{ print $2 }')
+            perl -pi -e "s/^proto ${sSearch}/proto ${gsOpenVPN_Proto}4/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn
+            unset sSearch
+            gfnStatusLSB
 
-			log_daemon_msg "Change port to ${gsPort_OpenVPN_WithoutGW} for \"${CLIENTNAME}_TUN_WithoutGW.ovpn\""
-			sSearch=$(grep "port" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn | awk '{ print $2 }')
-			perl -pi -e "s/^port ${sSearch}/port ${gsPort_OpenVPN_WithoutGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn
-			unset sSearch
-			gfnStatusLSB
-		fi
-		if [ -f /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn ]; then
-			log_daemon_msg "Change protocol to ${gsOpenVPN_Proto} for \"${CLIENTNAME}_TAP_Single_WithoutGW.ovpn\""
-			sSearch=$(grep "proto" /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn | awk '{ print $2 }')
-			perl -pi -e "s/^proto ${sSearch}/proto ${gsOpenVPN_Proto}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn
-			unset sSearch
-			gfnStatusLSB
+            log_daemon_msg "Change port to ${gsPort_OpenVPN_WithoutGW} for \"${CLIENTNAME}_TUN_WithoutGW.ovpn\""
+            sSearch=$(grep "port" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn | awk '{ print $2 }')
+            perl -pi -e "s/^port ${sSearch}/port ${gsPort_OpenVPN_WithoutGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TUN_WithoutGW.ovpn
+            unset sSearch
+            gfnStatusLSB
+        fi
+        if [ -f /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn ]; then
+            log_daemon_msg "Change protocol to ${gsOpenVPN_Proto} for \"${CLIENTNAME}_TAP_Single_WithoutGW.ovpn\""
+            sSearch=$(grep "proto" /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn | awk '{ print $2 }')
+            perl -pi -e "s/^proto ${sSearch}/proto ${gsOpenVPN_Proto}4/g" /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn
+            unset sSearch
+            gfnStatusLSB
 
-			log_daemon_msg "Change port to ${gsPort_OpenVPN_TAP_WithoutGW} for \"${CLIENTNAME}_TAP_Single_WithoutGW.ovpn\""
-			sSearch=$(grep "port" /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn | awk '{ print $2 }')
-			perl -pi -e "s/^port ${sSearch}/port ${gsPort_OpenVPN_TAP_WithoutGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn
-			unset sSearch
-			gfnStatusLSB
-		fi
-		unset CLIENTNAME
+            log_daemon_msg "Change port to ${gsPort_OpenVPN_TAP_WithoutGW} for \"${CLIENTNAME}_TAP_Single_WithoutGW.ovpn\""
+            sSearch=$(grep "port" /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn | awk '{ print $2 }')
+            perl -pi -e "s/^port ${sSearch}/port ${gsPort_OpenVPN_TAP_WithoutGW}/g" /etc/openvpn/clients/"${CLIENTNAME}"_TAP_Single_WithoutGW.ovpn
+            unset sSearch
+            gfnStatusLSB
+        fi
+        unset CLIENTNAME
 
-		rm -vf "${MySB_InstallDir}/web/openvpn/openvpn_$SeedboxUser.zip"
-	done
+        rm -vf "${MySB_InstallDir}/web/openvpn/openvpn_$SeedboxUser.zip"
+    done
 
-	#### START services
-	[ "${bServiceRestart}" -eq 1 ] && gfnManageServices restart "openvpn"
+    #### START services
+    [ "${bServiceRestart}" -eq 1 ] && gfnManageServices restart "openvpn"
 }
 
 DeleteUserFiles() {
-	cd /etc/openvpn/easy-rsa/ || exit
-	echo yes | ./easyrsa revoke "${CLIENTNAME}"
-	./easyrsa gen-crl
+    cd /etc/openvpn/easy-rsa/ || exit
+    echo yes | ./easyrsa revoke "${CLIENTNAME}"
+    ./easyrsa gen-crl
 
-	#### START services
-	gfnManageServices start "openvpn"
+    #### START services
+    gfnManageServices start "openvpn"
 }
 
 case "${COMMAND}" in
-"server")
-	if [ "${gbToInstall_OpenVPN}" == "YES" ]; then
-		if [ -f /etc/openvpn/"${CACRT}" ]; then
-			echo -e "${CYELLOW}OpenVPN certificate already exist. Do you want to create it again ?${CEND}"
-			echo -e "${CYELLOW}I you create new certificate, you must create again certificates for all users.${CEND}"
-			echo -e "${CYELLOW}Do you understand ?${CEND}"
-			gfnQuestionGetString NO "${Global_WantToContinue[@]}" CONTINUE NO
-			CONTINUE="$(echo "${CONTINUE}" | tr '[:lower:]' '[:upper:]')"
-			if [ "${CONTINUE}" == "NO" ]; then
-				echo -e "${Global_SeeYouLater}"
-				echo
-				echo
-				gfnEndingScript 0
-			fi
-		fi
+    "server")
+        if [ "${gbToInstall_OpenVPN}" == "YES" ]; then
+            if [ -f /etc/openvpn/"${CACRT}" ]; then
+                echo -e "${CYELLOW}OpenVPN certificate already exist. Do you want to create it again ?${CEND}"
+                echo -e "${CYELLOW}I you create new certificate, you must create again certificates for all users.${CEND}"
+                echo -e "${CYELLOW}Do you understand ?${CEND}"
+                gfnQuestionGetString NO "${Global_WantToContinue[@]}" CONTINUE NO
+                CONTINUE="$(echo "${CONTINUE}" | tr '[:lower:]' '[:upper:]')"
+                if [ "${CONTINUE}" == "NO" ]; then
+                    echo -e "${Global_SeeYouLater}"
+                    echo
+                    echo
+                    gfnEndingScript 0
+                fi
+            fi
 
-		#### Creating server config
-		CreateServer
-	fi
-	;;
-"client")
-	if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
-		#### Creating user config
-		if [ -n "${USERNAME}" ]; then
-			CreateClient
-		fi
-	fi
-	;;
-"zip")
-	if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
-		#### ZIP user config files
-		if [ -n "${USERNAME}" ] && [ -n "${USERPASSWORD}" ]; then
-			ZipClientFiles
-		fi
-	fi
-	;;
-"delete")
-	if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
-		#### Delete user files
-		if [ -n "${USERNAME}" ]; then
-			DeleteUserFiles
-		fi
-	fi
-	;;
-"refresh")
-	if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
-		#### Refresh Protocol
-		RefreshProtoAndPorts
-	fi
-	;;
-*)
-	echo -e "${CBLUE}Usage:${CEND}	${CYELLOW}bash $0${CEND} ${CGREEN}{server|client <username>|zip <username> <user_password>|refresh}${CEND}"
-	gfnEndingScript 0
-	;;
+            #### Creating server config
+            CreateServer
+        fi
+        ;;
+    "client")
+        if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
+            #### Creating user config
+            if [ -n "${USERNAME}" ]; then
+                CreateClient
+            fi
+        fi
+        ;;
+    "zip")
+        if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
+            #### ZIP user config files
+            if [ -n "${USERNAME}" ] && [ -n "${USERPASSWORD}" ]; then
+                ZipClientFiles
+            fi
+        fi
+        ;;
+    "delete")
+        if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
+            #### Delete user files
+            if [ -n "${USERNAME}" ]; then
+                DeleteUserFiles
+            fi
+        fi
+        ;;
+    "refresh")
+        if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
+            #### Refresh Protocol
+            RefreshProtoAndPorts
+        fi
+        ;;
+    *)
+        echo -e "${CBLUE}Usage:${CEND}	${CYELLOW}bash $0${CEND} ${CGREEN}{server|client <username>|zip <username> <user_password>|refresh}${CEND}"
+        gfnEndingScript 0
+        ;;
 esac
 
 # -----------------------------------------

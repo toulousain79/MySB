@@ -22,6 +22,11 @@
   - change ssl_ciphers
   - change add_header
   - add log_format
+- OpenVPN
+  - force IPv4
+  - 2048bits Diffie-Hellman key
+  - review config generation
+  - Samba force bind interfaces
 - Portal
   - use of MariaDB unix socket unstead of TCP
 - remove som packages
