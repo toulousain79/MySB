@@ -37,11 +37,15 @@ case "${gsSwitch}" in
         install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/minio.service.tmpl /lib/systemd/system/minio.service
         systemctl daemon-reload
         systemctl enable minio.service
+        install -d -v -o minio -g minio -m 0755 /etc/minio
         install -d -v -o minio -g minio -m 0755 /etc/minio/certs
         install -d -v -o minio -g minio -m 0755 /usr/local/share/minio
-        if [[ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ]] && [[ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" ]]; then
-            cp "/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/minio/certs/private.key
-            cp "/etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" /etc/minio/certs/public.crt
+        if [[ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ]] && [[ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" ]]; then
+            install -v -o minio -g minio -m 0644 "/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/minio/certs/private.key
+            install -v -o minio -g minio -m 0644 "/etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" /etc/minio/certs/public.crt
+        elif [[ -f "${MySB_InstallDir}/ssl/mysb.key" ]] && [[ -f "${MySB_InstallDir}/ssl/mysb.cert" ]]; then
+            install -v -o minio -g minio -m 0644 "${MySB_InstallDir}/ssl/mysb.key" /etc/minio/certs/private.key
+            install -v -o minio -g minio -m 0644 "${MySB_InstallDir}/ssl/mysb.cert" /etc/minio/certs/public.crt
         fi
      ;;
 esac
@@ -54,29 +58,16 @@ MINIO_SECRET_KEY="${MINIO_SECRET_KEY:-$(gfnGenPassword 40)}"
 if [ ! -f /etc/default/minio ]; then
     {
         echo "# Volume to be used for Minio server."
-        echo "MINIO_VOLUMES=\"/usr/local/share/minio/\""
+        echo "MINIO_VOLUMES=\"/home/\""
         echo "# Use if you want to run Minio on a custom port."
-        echo "MINIO_OPTS=\"--address ${gsHostNameFqdn}:9000\""
+        echo "MINIO_OPTS=\"-C /etc/minio --address ${gsHostNameFqdn}:9000\""
         echo "# Access Key of the server."
         echo "MINIO_ACCESS_KEY=\"${MINIO_ACCESS_KEY}\""
         echo "# Secret key of the server."
         echo "MINIO_SECRET_KEY=\"${MINIO_SECRET_KEY}\""
     } >/etc/default/minio
 fi
-
-#### /etc/minio/config.json
-if [ ! -f /etc/minio/config.json ]; then
-cat <<EOF >/etc/minio/config.json
-{
-    "version": "19",
-    "credential": {
-        "accessKey": "${MINIO_ACCESS_KEY}",
-        "secretKey": "${MINIO_SECRET_KEY}"
-    },
-    "region": "us-east-1"
-}
-EOF
-fi
+chown minio:minio /etc/default/minio
 
 #### Minio
 fnInstallMinio() {
@@ -88,6 +79,19 @@ fnInstallMinio() {
         [ -f "${MySB_Files}/${gsRepoFile}" ] && rm -fv "${MySB_Files}/${gsRepoFile}.tmp"
         chmod -v +x ${gsRepoDir}
         ${gsRepoDir} version
+    fi
+}
+
+#### Minio client
+fnInstallMinioClient() {
+    gfnGetRepoValues 'Minio Client'
+
+    if [ "${gsVersionInstalled}" != "${gsVersionLatest}" ]; then
+        [ -f "${MySB_Files}/${gsRepoFile}" ] && mv -v "${MySB_Files}/${gsRepoFile}" "${MySB_Files}/${gsRepoFile}.tmp"
+        gfnRepoManageByType
+        [ -f "${MySB_Files}/${gsRepoFile}" ] && rm -fv "${MySB_Files}/${gsRepoFile}.tmp"
+        chmod -v +x ${gsRepoDir}
+        ${gsRepoDir} --version
     fi
 }
 
@@ -104,8 +108,15 @@ fnInstallGoofys() {
     fi
 }
 
-fnInstallMinio
-fnInstallGoofys
+#### CRON UPGRADE
+if [ "${gsSwitch}" == "CRON" ] && [ "${gbIsInstalled_DNScrypt}" == "YES" ]; then
+    # Check for a new version / Install it
+    fnInstallMinio
+    fnInstallMinioClient
+    fnInstallGoofys
+fi
+
+# mc config host add <ALIAS> <YOUR-MINIO-ENDPOINT> <YOUR-ACCESS-KEY> <YOUR-SECRET-KEY>
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after
