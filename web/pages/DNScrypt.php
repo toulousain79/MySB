@@ -25,44 +25,50 @@
 global $MySB_DB;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
-$ConfigValues = $MySB_DB->get("dnscrypt_config", ["processes_qty", "no_logs", "dnssec", "namecoin", "random"], ["id_dnscrypt_config" => 1]);
-$DaemonQty_DB = $ConfigValues['processes_qty'];
-$NoLogs_DB = $ConfigValues['no_logs'];
-$DNSSec_DB = $ConfigValues['dnssec'];
-$Namecoin_DB = $ConfigValues['namecoin'];
-$Random_DB = $ConfigValues['random'];
-$DaemonQty_POST = $_POST['DaemonQty'];
+$ConfigValues = $MySB_DB->get("dnscrypt_config", ["require_nolog", "require_dnssec", "require_nofilter", "lb_strategy", "force_tcp", "ephemeral_keys"], ["id_dnscrypt_config" => 1]);
+$NoLogs_DB = $ConfigValues['require_nolog'];
+$DNSSec_DB = $ConfigValues['require_dnssec'];
+$NoFilter_DB = $ConfigValues['require_nofilter'];
+$LoadBalancing_DB = $ConfigValues['lb_strategy'];
+$ForceTcp_DB = $ConfigValues['force_tcp'];
+$EphemeralKeys_DB = $ConfigValues['ephemeral_keys'];
 $NoLogs_POST = $_POST['NoLogs'];
 $DNSSec_POST = $_POST['DNSSec'];
-$Namecoin_POST = $_POST['Namecoin'];
-$Random_POST = $_POST['Random'];
+$NoFilter_POST = $_POST['Namecoin'];
+$LoadBalancing_POST = $_POST['Lb_strategy'];
+$ForceTcp_POST = $_POST['force_tcp'];
+$EphemeralKeys_POST = $_POST['ephemeral_keys'];
 $Change = 0;
 $Command = 'message_only';
 $type = 'information';
 $message = Global_NoChange;
+$LoadBalancingList = array('p2', 'ph', 'fastest', 'random');
+
 
 if (isset($_POST['submit'])) {
     switch ($_POST['submit']) {
         case Global_SaveChanges:
-            $DaemonQty_DB = $ConfigValues['processes_qty'];
-            $NoLogs_DB = $ConfigValues['no_logs'];
-            $DNSSec_DB = $ConfigValues['dnssec'];
-            $Namecoin_DB = $ConfigValues['namecoin'];
-            $Random_DB = $ConfigValues['random'];
+            $NoLogs_DB = $ConfigValues['require_nolog'];
+            $DNSSec_DB = $ConfigValues['require_dnssec'];
+            $NoFilter_DB = $ConfigValues['require_nofilter'];
+            $LoadBalancing_DB = $ConfigValues['lb_strategy'];
+            $ForceTcp_DB = $ConfigValues['force_tcp'];
+            $EphemeralKeys_DB = $ConfigValues['ephemeral_keys'];
 
-            if (($NoLogs_POST != $NoLogs_DB) || ($DNSSec_POST != $DNSSec_DB) || ($Namecoin_POST != $Namecoin_DB) || ($DaemonQty_POST != $DaemonQty_DB) || ($Random_POST != $Random_DB)) {
+            if (($NoLogs_POST != $NoLogs_DB) || ($DNSSec_POST != $DNSSec_DB) || ($NoFilter_POST != $NoFilter_DB) || ($LoadBalancing_POST != $LoadBalancing_DB) || ($ForceTcp_POST != $ForceTcp_DB) || ($EphemeralKeys_POST != $EphemeralKeys_DB)) {
                 $Change++;
-                $Command = 'MySB_SecurityRules';
+                $Command = 'DNScrypt';
                 $type = 'success';
                 $NoLogs_DB = $NoLogs_POST;
                 $DNSSec_DB = $DNSSec_POST;
-                $Namecoin_DB = $Namecoin_POST;
-                $DaemonQty_DB = $DaemonQty_POST;
-                $Random_DB = $Random_POST;
+                $NoFilter_DB = $NoFilter_POST;
+                $LoadBalancing_DB = $LoadBalancing_POST;
+                $ForceTcp_DB = $ForceTcp_POST;
+                $EphemeralKeys_DB = $EphemeralKeys_POST;
             }
 
             if ($Change >= 1) {
-                $result = $MySB_DB->update("dnscrypt_config", ["processes_qty" => "$DaemonQty_POST", "no_logs" => "$NoLogs_POST", "dnssec" => "$DNSSec_POST", "namecoin" => "$Namecoin_POST", "random" => "$Random_POST"], ["id_dnscrypt_config" => 1]);
+                $result = $MySB_DB->update("dnscrypt_config", ["require_nolog" => "$NoLogs_POST", "require_dnssec" => "$DNSSec_POST", "require_nofilter" => "$NoFilter_POST", "lb_strategy" => "$LoadBalancing_POST", "force_tcp" => "$ForceTcp_POST", "ephemeral_keys" => "$EphemeralKeys_POST"], ["id_dnscrypt_config" => 1]);
 
                 if ($result >= 0) {
                     $type = 'success';
@@ -71,7 +77,7 @@ if (isset($_POST['submit'])) {
             }
             break;
         default:
-            $Command = 'MySB_SecurityRules';
+            $Command = 'DNScrypt';
             $type = 'success';
             break;
     }
@@ -79,7 +85,7 @@ if (isset($_POST['submit'])) {
     GenerateMessage($Command, $type, $message);
 }
 
-$ResolversList = $MySB_DB->select("dnscrypt_resolvers", ["name", "url", "dnssec", "no_logs", "namecoin", "resolver_address", "provider_name", "certificate", "pid", "speed"], ["ORDER" => ["name" => "ASC"]]);
+$ResolversList = $MySB_DB->select("dnscrypt_resolvers", ["name", "url", "require_dnssec", "require_nolog", "require_nofilter", "resolver_address", "provider_name", "certificate", "pid", "speed"], ["ORDER" => ["name" => "ASC"]]);
 $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forwarder[!]" => '', "pid[!]" => 0]]);
 ?>
 
@@ -93,15 +99,15 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
                     <td><?php echo MainUser_DNScrypt_NoLogs; ?></td>
                     <td>
                         <?php switch ($NoLogs_DB) {
-                            case 'yes':
+                            case 'true':
                                 $class = 'greenText';
-                                $options = '<option selected="selected" value="yes" class="greenText">' . Global_Yes . '</option>';
-                                $options .= '<option value="no" class="redText">' . Global_No . '</option>';
+                                $options = '<option selected="selected" value="true" class="greenText">' . Global_Yes . '</option>';
+                                $options .= '<option value="false" class="redText">' . Global_No . '</option>';
                                 break;
                             default:
                                 $class = 'redText';
-                                $options = '<option value="yes" class="greenText">' . Global_Yes . '</option>';
-                                $options .= '<option selected="selected" value="no" class="redText">' . Global_No . '</option>';
+                                $options = '<option value="true" class="greenText">' . Global_Yes . '</option>';
+                                $options .= '<option selected="selected" value="false" class="redText">' . Global_No . '</option>';
                                 break;
                         } ?>
                         <select name="NoLogs" style="width:60px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
@@ -109,51 +115,77 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
                     <td><?php echo MainUser_DNScrypt_DNSSec; ?></td>
                     <td>
                         <?php switch ($DNSSec_DB) {
-                            case 'yes':
+                            case 'true':
                                 $class = 'greenText';
-                                $options = '<option selected="selected" value="yes" class="greenText">' . Global_Yes . '</option>';
-                                $options .= '<option value="no" class="redText">' . Global_No . '</option>';
+                                $options = '<option selected="selected" value="true" class="greenText">' . Global_Yes . '</option>';
+                                $options .= '<option value="false" class="redText">' . Global_No . '</option>';
                                 break;
                             default:
                                 $class = 'redText';
-                                $options = '<option value="yes" class="greenText">' . Global_Yes . '</option>';
-                                $options .= '<option selected="selected" value="no" class="redText">' . Global_No . '</option>';
+                                $options = '<option value="true" class="greenText">' . Global_Yes . '</option>';
+                                $options .= '<option selected="selected" value="false" class="redText">' . Global_No . '</option>';
                                 break;
                         } ?>
                         <select name="DNSSec" style="width:60px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
                     </td>
-                    <td><?php echo MainUser_DNScrypt_Namecoin; ?></td>
+                    <td><?php echo MainUser_DNScrypt_NoFilter; ?></td>
                     <td>
-                        <?php switch ($Namecoin_DB) {
-                            case 'yes':
+                        <?php switch ($NoFilter_DB) {
+                            case 'true':
                                 $class = 'greenText';
-                                $options = '<option selected="selected" value="yes" class="greenText">' . Global_Yes . '</option>';
-                                $options .= '<option value="no" class="redText">' . Global_No . '</option>';
+                                $options = '<option selected="selected" value="true" class="greenText">' . Global_Yes . '</option>';
+                                $options .= '<option value="false" class="redText">' . Global_No . '</option>';
                                 break;
                             default:
                                 $class = 'redText';
-                                $options = '<option value="yes" class="greenText">' . Global_Yes . '</option>';
-                                $options .= '<option selected="selected" value="no" class="redText">' . Global_No . '</option>';
+                                $options = '<option value="true" class="greenText">' . Global_Yes . '</option>';
+                                $options .= '<option selected="selected" value="false" class="redText">' . Global_No . '</option>';
                                 break;
                         } ?>
                         <select name="Namecoin" style="width:60px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
                     </td>
-                    <td><?php echo MainUser_DNScrypt_Random; ?></td>
+                    <td><?php echo MainUser_DNScrypt_LoadBalancing; ?></td>
                     <td>
-
-                        <?php switch ($Random_DB) {
-                            case 'yes':
-                                $class = 'greenText';
-                                $options = '<option selected="selected" value="yes" class="greenText">' . Global_Yes . '</option>';
-                                $options .= '<option value="no" class="redText">' . Global_No . '</option>';
+                        <select name="Lb_strategy" style="width:80px; height: 28px;">';
+                        <?php foreach($LoadBalancingList as $Strategy) {
+                            if ($LoadBalancing_DB == $Strategy) {
+                                echo '<option selected="selected" value="' . $Strategy . '">' . $Strategy . '</option>';
+                            } else {
+                                echo '<option value="' . $Strategy . '">' . $Strategy . '</option>';
+                            }
+                        } ?>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td><?php echo MainUser_DNScrypt_ForceTcp; ?></td>
+                    <td>
+                        <?php
+                        switch ($ForceTcp_DB) {
+                            case 'true':
+                                $options = '<option selected="selected" value="true">' . Global_Yes . '</option>';
+                                $options .= '<option value="false">' . Global_No . '</option>';
                                 break;
                             default:
-                                $class = 'redText';
-                                $options = '<option value="yes" class="greenText">' . Global_Yes . '</option>';
-                                $options .= '<option selected="selected" value="no" class="redText">' . Global_No . '</option>';
+                                $options = '<option value="true">' . Global_Yes . '</option>';
+                                $options .= '<option selected="selected" value="false">' . Global_No . '</option>';
                                 break;
                         } ?>
-                        <select name="Random" style="width:60px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
+                        <select name="force_tcp" style="width:60px; height: 28px;" disabled><?php echo $options; ?></select>
+                    </td>
+                    <td><?php echo MainUser_DNScrypt_EphemeralKeys; ?></td>
+                    <td>
+                        <?php switch ($EphemeralKeys_DB) {
+                            case 'true':
+                                $options = '<option selected="selected" value="true">' . Global_Yes . '</option>';
+                                $options .= '<option value="false">' . Global_No . '</option>';
+                                break;
+                            default:
+                                $options = '<option value="true">' . Global_Yes . '</option>';
+                                $options .= '<option selected="selected" value="false">' . Global_No . '</option>';
+                                break;
+                        } ?>
+                        <select name="ephemeral_keys" style="width:60px; height: 28px;" disabled><?php echo $options; ?></select>
                     </td>
                 </tr>
             </table>
@@ -177,9 +209,9 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
             foreach ($ResolversList as $Resolver) {
                 $Name = $Resolver["name"];
                 $URL = $Resolver["url"];
-                $DnssecVal = $Resolver["dnssec"];
-                $NoLogs = $Resolver["no_logs"];
-                $Namecoin = $Resolver["namecoin"];
+                $DnssecVal = $Resolver["require_dnssec"];
+                $NoLogs = $Resolver["require_nolog"];
+                $Namecoin = $Resolver["require_nofilter"];
                 $ResolverAddress = $Resolver["resolver_address"];
                 $ProviderName = $Resolver["provider_name"];
                 $IsWished = $Resolver["is_wished"];
@@ -198,38 +230,38 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
 
                 if (!strpos($Name, 'ipv6')) {
                     switch ($DnssecVal) {
-                        case 'no':
+                        case 'false':
                             $DnssecVal = '<select name="DnssecVal[]" style="width:60px; background-color:#FEBABC;" disabled>
-									<option value="no" selected="selected">' . Global_No . '</option>
+									<option value="false" selected="selected">' . Global_No . '</option>
 								</select>';
                             break;
                         default:
                             $DnssecVal = '<select name="DnssecVal[]" style="width:60px; background-color:#B3FEA5;" disabled>
-									<option value="yes" selected="selected">' . Global_Yes . '</option>
+									<option value="true" selected="selected">' . Global_Yes . '</option>
 								</select>';
                             break;
                     }
                     switch ($NoLogs) {
-                        case 'no':
+                        case 'false':
                             $NoLogs = '<select name="NoLogs[]" style="width:60px; background-color:#FEBABC;" disabled>
-									<option value="no" selected="selected">' . Global_No . '</option>
+									<option value="false" selected="selected">' . Global_No . '</option>
 								</select>';
                             break;
                         default:
                             $NoLogs = '<select name="NoLogs[]" style="width:60px; background-color:#B3FEA5;" disabled>
-									<option value="yes" selected="selected">' . Global_Yes . '</option>
+									<option value="true" selected="selected">' . Global_Yes . '</option>
 								</select>';
                             break;
                     }
                     switch ($Namecoin) {
-                        case 'no':
+                        case 'false':
                             $Namecoin = '<select name="Namecoin[]" style="width:60px; background-color:#FEBABC;" disabled>
-									<option value="no" selected="selected">' . Global_No . '</option>
+									<option value="false" selected="selected">' . Global_No . '</option>
 								</select>';
                             break;
                         default:
                             $Namecoin = '<select name="Namecoin[]" style="width:60px; background-color:#B3FEA5;" disabled>
-									<option value="yes" selected="selected">' . Global_Yes . '</option>
+									<option value="true" selected="selected">' . Global_Yes . '</option>
 								</select>';
                             break;
                     }

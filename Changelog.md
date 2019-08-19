@@ -4,6 +4,7 @@
 
 - Debian migration from Stretch to Buster
 - DNScrypt-proxy v2 _(latest)_
+- Minio _(latest)_
 - NextCloud v16.0.3
 - NetData v1.16.0
 - PHP v7.3
@@ -29,8 +30,10 @@
   - Samba force bind interfaces
 - Portal
   - use of MariaDB unix socket unstead of TCP
-- remove som packages
-  - sysbench
+  - DNScrypt config review
+- cleaning
+  - remove some init.d scripts
+  - remove some packages
 
 ## v6.0 - 2019/06/29 _(start at: 2019/01/26)_
 

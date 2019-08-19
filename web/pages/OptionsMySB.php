@@ -50,20 +50,20 @@ if (isset($_POST['submit'])) {
 			$Language_DB = $users_datas['language'];
 
 			// Need to restart rTorrent ?
-			if ( ($rTorrentVersion_POST != $rTorrentVersion_DB) || ($rTorrentRestart_POST == "1") ) {
+			if (($rTorrentVersion_POST != $rTorrentVersion_DB) || ($rTorrentRestart_POST == "1")) {
 				$rTorrentRestart_POST = 1;
 				$Command = 'Restart_rTorrent';
 				$Change++;
 				$RefreshPage++;
 			}
 			// Notifications ?
-			if ( $rTorrentNotify_POST != $rTorrentNotify_DB ) {
+			if ($rTorrentNotify_POST != $rTorrentNotify_DB) {
 				$Change++;
 				$RefreshPage++;
 			}
 
 			// Language
-			if ( $Language_POST != $Language_DB ) {
+			if ($Language_POST != $Language_DB) {
 				$Change++;
 				$RefreshPage++;
 				// Change language of ruTorrent
@@ -79,10 +79,10 @@ if (isset($_POST['submit'])) {
 			break;
 	}
 
-	if( $Change >= 1 ) {
+	if ($Change >= 1) {
 		$result = $MySB_DB->update("users", ["rtorrent_version" => "$rTorrentVersion_POST", "rtorrent_restart" => "$rTorrentRestart_POST", "rtorrent_notify" => "$rTorrentNotify_POST", "language" => "$Language_POST"], ["users_ident" => "$CurrentUser"]);
 
-		if( $result >= 0 ) {
+		if ($result >= 0) {
 			$type = 'success';
 			unset($message);
 		}
@@ -98,93 +98,93 @@ $language = (isset($Language_POST)) ? $Language_POST : $users_datas['language'];
 ?>
 
 <form class="form_settings" method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
-<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
+	<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
 
-<?php
-if ( $users_datas['account_type'] == 'normal' ) {
-?>
-	<fieldset>
-	<legend><?php echo User_OptionsMySB_Title_rTorrent; ?></legend>
+		<?php
+		if ($users_datas['account_type'] == 'normal') {
+			?>
+		<fieldset>
+			<legend><?php echo User_OptionsMySB_Title_rTorrent; ?></legend>
 
-	<table>
-		<tr>
-			<td class="tooltip" title="<?php echo User_OptionsMySB_TT_rTorrentVersion; ?>" style="cursor: help;"><?php echo User_OptionsMySB_rTorrentVersion; ?></td>
-			<td>
-				<select name="rTorrentVersion" style="width:80px; height: 28px;">';
-				<?php foreach($rTorrentVersionsList as $Version) {
-					if ( $rtorrent_version == $Version) {
-						echo '<option selected="selected" value="' . $Version . '">' . $Version . '</option>';
-					} else {
-						echo '<option value="' . $Version . '">' . $Version . '</option>';
-					}
-				} ?>
-				</select>
-			</td>
-			<td class="tooltip" title="<?php echo User_OptionsMySB_TT_rTorrentRestart; ?>" style="cursor: help;"><?php echo User_OptionsMySB_rTorrentRestart; ?></td>
-			<td>
+			<table>
+				<tr>
+					<td class="tooltip" title="<?php echo User_OptionsMySB_TT_rTorrentVersion; ?>" style="cursor: help;"><?php echo User_OptionsMySB_rTorrentVersion; ?></td>
+					<td>
+						<select name="rTorrentVersion" style="width:80px; height: 28px;">';
+							<?php foreach ($rTorrentVersionsList as $Version) {
+									if ($rtorrent_version == $Version) {
+										echo '<option selected="selected" value="' . $Version . '">' . $Version . '</option>';
+									} else {
+										echo '<option value="' . $Version . '">' . $Version . '</option>';
+									}
+								} ?>
+						</select>
+					</td>
+					<td class="tooltip" title="<?php echo User_OptionsMySB_TT_rTorrentRestart; ?>" style="cursor: help;"><?php echo User_OptionsMySB_rTorrentRestart; ?></td>
+					<td>
 
-				<?php switch ($rtorrent_restart) {
-					case '1':
-						$class = 'greenText';
-						$options = '<option selected="selected" value="1" class="greenText">' .Global_Yes. '</option>';
-						$options .= '<option value="0" class="redText">' .Global_No. '</option>';
-						break;
-					default:
-						$class = 'redText';
-						$options = '<option value="1" class="greenText">' .Global_Yes. '</option>';
-						$options .= '<option selected="selected" value="0" class="redText">' .Global_No. '</option>';
-						break;
-				} ?>
-				<select name="rTorrentRestart" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
-			</td>
-			<td class="tooltip" title="<?php echo User_OptionsMySB_TT_NotifyEmail; ?>" style="cursor: help;"><?php echo User_OptionsMySB_NotifyEmail; ?></td>
-			<td>
+						<?php switch ($rtorrent_restart) {
+								case '1':
+									$class = 'greenText';
+									$options = '<option selected="selected" value="1" class="greenText">' . Global_Yes . '</option>';
+									$options .= '<option value="0" class="redText">' . Global_No . '</option>';
+									break;
+								default:
+									$class = 'redText';
+									$options = '<option value="1" class="greenText">' . Global_Yes . '</option>';
+									$options .= '<option selected="selected" value="0" class="redText">' . Global_No . '</option>';
+									break;
+							} ?>
+						<select name="rTorrentRestart" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
+					</td>
+					<td class="tooltip" title="<?php echo User_OptionsMySB_TT_NotifyEmail; ?>" style="cursor: help;"><?php echo User_OptionsMySB_NotifyEmail; ?></td>
+					<td>
 
-				<?php switch ($rtorrent_notify) {
-					case '1':
-						$class = 'greenText';
-						$options = '<option selected="selected" value="1" class="greenText">' .Global_Yes. '</option>';
-						$options .= '<option value="0" class="redText">' .Global_No. '</option>';
-						break;
-					default:
-						$class = 'redText';
-						$options = '<option value="1" class="greenText">' .Global_Yes. '</option>';
-						$options .= '<option selected="selected" value="0" class="redText">' .Global_No. '</option>';
-						break;
-				} ?>
-				<select name="rTorrentNotify" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
-			</td>
-		</tr>
-	</table>
-	</fieldset>
-<?php
-}
-?>
+						<?php switch ($rtorrent_notify) {
+								case '1':
+									$class = 'greenText';
+									$options = '<option selected="selected" value="1" class="greenText">' . Global_Yes . '</option>';
+									$options .= '<option value="0" class="redText">' . Global_No . '</option>';
+									break;
+								default:
+									$class = 'redText';
+									$options = '<option value="1" class="greenText">' . Global_Yes . '</option>';
+									$options .= '<option selected="selected" value="0" class="redText">' . Global_No . '</option>';
+									break;
+							} ?>
+						<select name="rTorrentNotify" style="width:80px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
+					</td>
+				</tr>
+			</table>
+		</fieldset>
+		<?php
+		}
+		?>
 
-	<fieldset>
-	<legend><?php echo User_OptionsMySB_Title_Portal; ?></legend>
-	<table>
-		<tr>
-			<td><?php echo User_OptionsMySB_Language; ?></td>
-			<td>
-				<select name="language" style="width:90px; height: 28px;">';
-				<?php switch ($language) {
-					case 'fr':
-						echo '<option selected="selected" value="fr">' .User_OptionsMySB_Lang_French. '</option>';
-						echo '<option value="en">' .User_OptionsMySB_Lang_English. '</option>';
-						break;
-					default:
-						echo '<option value="fr">' .User_OptionsMySB_Lang_French. '</option>';
-						echo '<option selected="selected" value="en">' .User_OptionsMySB_Lang_English. '</option>';
-						break;
-				} ?>
-				</select>
-			</td>
-		</tr>
-	</table>
-	</fieldset>
+		<fieldset>
+			<legend><?php echo User_OptionsMySB_Title_Portal; ?></legend>
+			<table>
+				<tr>
+					<td><?php echo User_OptionsMySB_Language; ?></td>
+					<td>
+						<select name="language" style="width:90px; height: 28px;">';
+							<?php switch ($language) {
+								case 'fr':
+									echo '<option selected="selected" value="fr">' . User_OptionsMySB_Lang_French . '</option>';
+									echo '<option value="en">' . User_OptionsMySB_Lang_English . '</option>';
+									break;
+								default:
+									echo '<option value="fr">' . User_OptionsMySB_Lang_French . '</option>';
+									echo '<option selected="selected" value="en">' . User_OptionsMySB_Lang_English . '</option>';
+									break;
+							} ?>
+						</select>
+					</td>
+				</tr>
+			</table>
+		</fieldset>
 
-	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
+		<input class="submit" style="width:<?php echo strlen(Global_SaveChanges) * 10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
 
 	</div>
 </form>

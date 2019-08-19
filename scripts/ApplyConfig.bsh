@@ -38,6 +38,7 @@ LocSwitch="$2"
 
 fnDoApplyConfig() {
     local sAllCommandsUser sCommandUser sCommandsPriorities sAllCommands sCommandLine sCommand sCommandArg
+    local sRequest sNoLogs sDnsSec sNoFilter sLbStrategy sForceTcp sEphemeralKeys sSearch
     local sUserToCreate sUserSftp sUserSudo sUserMail sUserAccountType sUserToDelete sUserName sUserPass sUserScriptName sUserScriptMode
     local nMinPriority nMaxPriority nLastPriority nPriority nQuota
 
@@ -177,6 +178,29 @@ fnDoApplyConfig() {
                 gfnWaitingSTD MySB_SecurityRules
                 screen -dmS MySB_SecurityRules /bin/bash ${MySB_InstallDir}/bin/MySB_SecurityRules 'create' 'APPLYCONFIG'
                 gfnWaitingSTD MySB_SecurityRules
+                echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
+                cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
+                ;;
+
+            "DNScrypt")
+                sRequest="$(cmdMySQL 'MySB_db' "SELECT require_nolog, require_dnssec, require_nofilter, lb_strategy, force_tcp, ephemeral_keys FROM dnscrypt_config WHERE id_dnscrypt_config='1';" | sed 's/\t/|/g;')"
+                sNoLogs="$(echo "$sRequest" | awk '{split($0,a,"|"); print a[1]}')"
+                sDnsSec="$(echo "$sRequest" | awk '{split($0,a,"|"); print a[2]}')"
+                sNoFilter="$(echo "$sRequest" | awk '{split($0,a,"|"); print a[3]}')"
+                sLbStrategy="$(echo "$sRequest" | awk '{split($0,a,"|"); print a[4]}')"
+                sForceTcp="$(echo "$sRequest" | awk '{split($0,a,"|"); print a[5]}')"
+                sEphemeralKeys="$(echo "$sRequest" | awk '{split($0,a,"|"); print a[6]}')"
+                sSearch="$(grep 'lb_strategy' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+                sed -i "s/^require_nolog = true/require_nolog = ${sNoLogs}/g;s/^require_nolog = false/require_nolog = ${sNoLogs}/g" /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+                sed -i "s/^require_dnssec = true/require_dnssec = ${sDnsSec}/g;s/^require_dnssec = false/require_dnssec = ${sDnsSec}/g" /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+                sed -i "s/^require_nofilter = true/require_nofilter = ${sNoFilter}/g;s/^require_nofilter = false/require_nofilter = ${sNoFilter}/g" /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+                sed -i "s/^force_tcp = true/force_tcp = ${sForceTcp}/g;s/^force_tcp = false/force_tcp = ${sForceTcp}/g" /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+                sed -i "s/^dnscrypt_ephemeral_keys = true/dnscrypt_ephemeral_keys = ${sEphemeralKeys}/g;s/^dnscrypt_ephemeral_keys = false/dnscrypt_ephemeral_keys = ${sEphemeralKeys}/g" /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+                sed -i "s/lb_strategy = ${sSearch}/lb_strategy = '${sLbStrategy}'/g;" /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+                systemctl restart dnscrypt-proxy.service
+                # gfnWaitingSTD DNScrypt
+                # screen -dmS DNScrypt /bin/bash ${MySB_InstallDir}/bin/MySB_SecurityRules 'create' 'APPLYCONFIG'
+                # gfnWaitingSTD DNScrypt
                 echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 ;;

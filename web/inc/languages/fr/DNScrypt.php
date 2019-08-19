@@ -29,9 +29,11 @@ define('MainUser_DNScrypt_Table_Filters', 'Pas de<br />filtrage');
 define('MainUser_DNScrypt_Table_Speed', 'Vitesse<br />(msec)');
 define('MainUser_DNScrypt_Restart', 'Red&eacute;marrer le service DNScrypt-proxy');
 define('MainUser_DNScrypt_Title_Config', 'Configuration de DNScrypt-proxy');
-define('MainUser_DNScrypt_NoLogs', 'No Logs');
-define('MainUser_DNScrypt_DNSSec', 'DNS Sec');
-define('MainUser_DNScrypt_Namecoin', 'Filtrage');
+define('MainUser_DNScrypt_NoLogs', 'Pas de Logs');
+define('MainUser_DNScrypt_DNSSec', 'DNSsec');
+define('MainUser_DNScrypt_NoFilter', 'Pas de Filtrage');
 define('MainUser_DNScrypt_LoadBalancing', 'Load-balancing');
+define('MainUser_DNScrypt_ForceTcp', 'Forcer le TCP');
+define('MainUser_DNScrypt_EphemeralKeys', 'Ephemeral Keys');
 
 //#################### LAST LINE ######################################

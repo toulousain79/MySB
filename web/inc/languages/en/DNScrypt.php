@@ -30,8 +30,10 @@ define('MainUser_DNScrypt_Table_Speed', 'Speed<br />(msec)');
 define('MainUser_DNScrypt_Restart', 'Restart DNScrypt-proxy service');
 define('MainUser_DNScrypt_Title_Config', 'DNScrypt-proxy configuration');
 define('MainUser_DNScrypt_NoLogs', 'No Logs');
-define('MainUser_DNScrypt_DNSSec', 'DNS Sec');
-define('MainUser_DNScrypt_Namecoin', 'Filter');
+define('MainUser_DNScrypt_DNSSec', 'DNSsec');
+define('MainUser_DNScrypt_NoFilter', 'No Filter');
 define('MainUser_DNScrypt_LoadBalancing', 'Load-balancing');
+define('MainUser_DNScrypt_ForceTcp', 'Force TCP');
+define('MainUser_DNScrypt_EphemeralKeys', 'Ephemeral Keys');
 
 //#################### LAST LINE ######################################
