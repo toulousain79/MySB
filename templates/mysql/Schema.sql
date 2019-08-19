@@ -85,6 +85,26 @@ CREATE TABLE IF NOT EXISTS `commands` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `dnscrypt_config`
+--
+
+/*!40101 SET @saved_cs_client	 = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `dnscrypt_config` (
+  `id_dnscrypt_config` int(11) NOT NULL DEFAULT '1',
+  `lb_strategy` varchar(7) NOT NULL DEFAULT 'p2',
+  `require_nolog` varchar(5) NOT NULL DEFAULT 'true',
+  `require_dnssec` varchar(5) NOT NULL DEFAULT 'true',
+  `require_nofilter` varchar(5) NOT NULL DEFAULT 'true',
+  `force_tcp` varchar(5) NOT NULL DEFAULT 'false',
+  `ephemeral_keys` varchar(5) NOT NULL DEFAULT 'false',
+  PRIMARY KEY (`id_dnscrypt_config`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 ;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `mails`
 --
 
