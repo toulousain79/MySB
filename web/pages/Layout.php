@@ -39,9 +39,9 @@ $MySB_Version = GetVersion();
 	<!-- Template CSS -->
 	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/screen.css" />
 	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/mysb.css" />
-<?php if ( strstr($_SERVER['REQUEST_URI'], '/?admin/logs.html') ) { ?>
+	<?php if (strstr($_SERVER['REQUEST_URI'], '/?admin/logs.html')) { ?>
 	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/ccze.css" />
-<?php } ?>
+	<?php } ?>
 	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/jQ-menu.css" />
 	<!-- Messages animated CSS -->
 	<link rel="stylesheet" type="text/css" href="<?php echo THEMES_PATH; ?>MySB/css/buttons.css" />
@@ -61,16 +61,16 @@ $MySB_Version = GetVersion();
 	<!-- Tooltipster -->
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/tooltipster.bundle.min.js"></script>
 
-<?php
+	<?php
 	switch ($_SERVER['REQUEST_URI']) {
 		case '/?admin/smtp.html':
-			echo '	<script type="text/javascript" src="'. THEMES_PATH . 'MySB/js/smtp.js"></script>';
+			echo '	<script type="text/javascript" src="' . THEMES_PATH . 'MySB/js/smtp.js"></script>';
 			break;
 		case '/?admin/logs.html':
 			// jQuery Color Plugin
-			echo '	<script type="text/javascript" src="'. THEMES_PATH . 'MySB/js/jquery.color.js"></script>';
+			echo '	<script type="text/javascript" src="' . THEMES_PATH . 'MySB/js/jquery.color.js"></script>';
 			// Import The jQuery Script
-			echo '	<script type="text/javascript" src="'. THEMES_PATH . 'MySB/js/jMenu.js"></script>';
+			echo '	<script type="text/javascript" src="' . THEMES_PATH . 'MySB/js/jMenu.js"></script>';
 			break;
 		case '/?user/synchronization.html':
 			// Tooltipster
@@ -80,22 +80,25 @@ $MySB_Version = GetVersion();
 			// Tooltipster
 			echo "	<script>$(document).ready(function() { $('.tooltip').tooltipster({theme: 'tooltipster-mysb', side: 'right', interactive: true});});</script>";
 			break;
-		// case '/':
-		// 	// NetData
-		// 	echo "	<!-- NetData -->\n";
-		// 	echo "	<script>
-		// 		'use strict';
-		// 		var netdataServer = '".$_SERVER['SERVER_PROTOCOL'].'://'.$_SERVER['SERVER_NAME'].':'.$_SERVER['SERVER_PORT'].$_SERVER['REQUEST_URI']."nd';
-		// 		var netdataServerStatic = '".THEMES_PATH. "MySB/netdata';
-		// 		var netdataTheme = 'slate';
-		// 		</script>\n";
-		// 	echo "	<script type='text/javascript' src='".THEMES_PATH. "MySB/netdata/dashboard.js'></script>";
-		// 	break;
+			// case '/':
+			// 	// NetData
+			// 	echo "	<!-- NetData -->\n";
+			// 	echo "	<script>
+			// 		'use strict';
+			// 		var netdataServer = '".$_SERVER['SERVER_PROTOCOL'].'://'.$_SERVER['SERVER_NAME'].':'.$_SERVER['SERVER_PORT'].$_SERVER['REQUEST_URI']."nd';
+			// 		var netdataServerStatic = '".THEMES_PATH. "MySB/netdata';
+			// 		var netdataTheme = 'slate';
+			// 		</script>\n";
+			// 	echo "	<script type='text/javascript' src='".THEMES_PATH. "MySB/netdata/dashboard.js'></script>";
+			// 	break;
+		case '/?admin/dnscrypt-proxy.html':
+			echo "	<script>$(document).ready(function() { $('.tooltip').tooltipster({theme: 'tooltipster-mysb', side: 'bottom', contentCloning: false});});</script>";
+			break;
 		default:
 			echo "	<script>$(document).ready(function() { $('.tooltip').tooltipster({theme: 'tooltipster-mysb', side: 'bottom'});});</script>";
 			break;
 	}
-?>
+	?>
 </head>
 
 <body>
@@ -105,33 +108,33 @@ $MySB_Version = GetVersion();
 				<div id="logo_text">
 					<!-- class="LogoFirstLine", allows you to change the colour of the text -->
 					<h1>
-<?php if ( !isset($_SESSION['page']) ) { ?>
+						<?php if (!isset($_SESSION['page'])) { ?>
 						<a href="<?php echo URL_PUBLIC; ?>">
-<?php } ?>
+							<?php } ?>
 							<span class="LogoFirstLine">MySB</span>
-<?php if ( !isset($_SESSION['page']) ) { ?>
+							<?php if (!isset($_SESSION['page'])) { ?>
 						</a>
-<?php } ?>
+						<?php } ?>
 					</h1>
 					<h2> <?php echo $MySB_Version; ?></h2>
 				</div>
 				<div id="logout">
-<?php if ( !isset($_SESSION['page']) ) { ?>
+					<?php if (!isset($_SESSION['page'])) { ?>
 					<a href="/Logout"><?php echo Layout_Logout; ?></a>
-<?php } ?>
+					<?php } ?>
 				</div>
 			</div>
 			<nav>
 				<div id="menu_container">
-<?php
-				$page = $this->find('/');
+					<?php
+					$page = $this->find('/');
 
-				if ( !isset($_SESSION['page']) ) {
-?>
+					if (!isset($_SESSION['page'])) {
+						?>
 					<ul class="sf-menu" id="nav">
 						<?php MenuDisplayChildren($page, $this, false); ?>
 					</ul>
-<?php } ?>
+					<?php } ?>
 					<div id="breadcrumb">
 						<?php echo ($_SESSION['Language'] == 'en') ? $this->breadcrumb() : $this->breadcrumb_fr(); ?>
 					</div>
@@ -141,10 +144,10 @@ $MySB_Version = GetVersion();
 
 		<div id="site_content">
 			<div class="content">
-<?php
+				<?php
 				switch ($_SESSION['page']) {
 					case "ChangePassword":
-						require_once WEB_PAGES .'/ChangePassword.php';
+						require_once WEB_PAGES . '/ChangePassword.php';
 						break;
 
 					case "ManageAddresses":
@@ -156,7 +159,7 @@ $MySB_Version = GetVersion();
 						if ($this->hasContent('extended')) echo $this->content('extended');
 						break;
 				}
-?>
+				?>
 			</div>
 			<div id="sidebar_container">
 				<?php echo $this->content('sidebar', true); ?>
@@ -167,54 +170,54 @@ $MySB_Version = GetVersion();
 			<a title="Scroll to the top" class="top" href="#"><img src="<?php echo THEMES_PATH; ?>MySB/images/top.png" alt="top" /></a>
 		</div>
 		<footer>
-<?php
-		if ( !isset($_SESSION['page']) ) {
-			$IsCurrentPage = url_match('/') ? ' class="current"': '';
-			$hidden = (MainUser($CurrentUser)) ? true : false;
-			$FooterNavBar = '<a ' . $IsCurrentPage . ' href="' . URL_PUBLIC . '">' . Global_Home . '</a>';
-			foreach($this->find('/')->children(null, array(), $hidden) as $menu):
-				if ( ($menu->title != "Apply configuration") && ($menu->title != "Services") ) {
-					$BottomMenu = ($_SESSION['Language'] == 'en') ? $menu->link($menu->title) : $menu->link($menu->title_fr);
-					$FooterNavBar .= ' | ' . $BottomMenu;
-				}
-			endforeach;
-			echo $FooterNavBar . '<br /><br />';
-		}
-?>
+			<?php
+			if (!isset($_SESSION['page'])) {
+				$IsCurrentPage = url_match('/') ? ' class="current"' : '';
+				$hidden = (MainUser($CurrentUser)) ? true : false;
+				$FooterNavBar = '<a ' . $IsCurrentPage . ' href="' . URL_PUBLIC . '">' . Global_Home . '</a>';
+				foreach ($this->find('/')->children(null, array(), $hidden) as $menu) :
+					if (($menu->title != "Apply configuration") && ($menu->title != "Services")) {
+						$BottomMenu = ($_SESSION['Language'] == 'en') ? $menu->link($menu->title) : $menu->link($menu->title_fr);
+						$FooterNavBar .= ' | ' . $BottomMenu;
+					}
+				endforeach;
+				echo $FooterNavBar . '<br /><br />';
+			}
+			?>
 			<a target="_blank" href="https://github.com/toulousain79/MySB/" title="<?php echo Layout_OnGithub; ?>"><?php echo Layout_OnGithub; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/wiki" title="<?php echo Layout_Wiki; ?>"><?php echo Layout_Wiki; ?></a> | <a target="_blank" href="https://github.com/toulousain79/MySB/blob/<?php echo $MySB_Version; ?>/Changelog.md" title="Changelog <?php echo $MySB_Version; ?>">Changelog <?php echo $MySB_Version; ?></a>
 			<br />
 			<a target="_blank" href="http://www.css3templates.co.uk">Copyright &copy; CSS3_two</a> | <a target="_blank" href="https://github.com/wolfcms/wolfcms" title="<?php echo Layout_Wolf; ?>"><?php echo Layout_Wolf; ?></a> | <a target="_blank" href="http://medoo.in/" title="<?php echo Layout_Medoo; ?>"><?php echo Layout_Medoo; ?></a> | <a target="_blank" href="https://my-netdata.io/" title="NetData">NetData</a>
 			<br />
 
 			<div style="padding: 10px 0 0 0;">
-			<a target="_blank" href="https://www.blockchain.com/btc/payment_request?address=1HtuGsnSsGoUz7DmRbDLCFnRc41jYEY2FE"><img class="tooltip" title="<?php echo Layout_Bitcoin_Text; ?>" alt="<?php echo Layout_Bitcoin_Text; ?>" width="30px" height="30px" border="0" src="<?php echo THEMES_PATH . 'MySB/images/bitcoin.png'; ?>"></a>
-			<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank" style="display:inline;">
-				<input type="hidden" name="cmd" value="_s-xclick">
-				<input type="hidden" name="hosted_button_id" value="<?php echo Layout_Paypal_ID; ?>">
-				<input type="image" src="<?php echo THEMES_PATH . 'MySB/images/paypal.png'; ?>" width="30px" height="30px" border="0" name="submit" alt="<?php echo Layout_Paypal_Text; ?>" class="tooltip" title="<?php echo Layout_Paypal_Text; ?>">
-				<img alt="" border="0" src="<?php echo THEMES_PATH . 'MySB/images/pixel.gif'; ?>" width="1" height="1">
-			</form>
+				<a target="_blank" href="https://www.blockchain.com/btc/payment_request?address=1HtuGsnSsGoUz7DmRbDLCFnRc41jYEY2FE"><img class="tooltip" title="<?php echo Layout_Bitcoin_Text; ?>" alt="<?php echo Layout_Bitcoin_Text; ?>" width="30px" height="30px" border="0" src="<?php echo THEMES_PATH . 'MySB/images/bitcoin.png'; ?>"></a>
+				<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank" style="display:inline;">
+					<input type="hidden" name="cmd" value="_s-xclick">
+					<input type="hidden" name="hosted_button_id" value="<?php echo Layout_Paypal_ID; ?>">
+					<input type="image" src="<?php echo THEMES_PATH . 'MySB/images/paypal.png'; ?>" width="30px" height="30px" border="0" name="submit" alt="<?php echo Layout_Paypal_Text; ?>" class="tooltip" title="<?php echo Layout_Paypal_Text; ?>">
+					<img alt="" border="0" src="<?php echo THEMES_PATH . 'MySB/images/pixel.gif'; ?>" width="1" height="1">
+				</form>
 			</div>
 
-<?php
-				switch ($_SESSION['page']) {
-					case "ChangePassword":
-					case "ManageAddresses":
-						break;
-					default:
-?>
+			<?php
+			switch ($_SESSION['page']) {
+				case "ChangePassword":
+				case "ManageAddresses":
+					break;
+				default:
+					?>
 			<div style="position: absolute; width: 100%; padding: 10px 0 0 0; margin-left: auto; margin-right: auto;">
-				<img class="netdata-badge" src="https://<?php echo $Hostname.':'.$Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.cpu&alarm=10min_cpu_usage&refresh=auto&value_color=grey:null|green<40|yellow<60|orange<80|red">
-				<img class="netdata-badge" src="https://<?php echo $Hostname.':'.$Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.ram&alarm=ram_in_use&refresh=auto&value_color=grey:null|green<40|yellow<60|orange<80|red">
-				<img class="netdata-badge" src="https://<?php echo $Hostname.':'.$Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.swap&alarm=used_swap&refresh=auto&value_color=grey:null|green<40|yellow<60|orange<80|red">
-				<img class="netdata-badge" src="https://<?php echo $Hostname.':'.$Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_1&refresh=auto&value_color=grey:null|green<1.00|yellow<3.00|orange<5.00|red">
-				<img class="netdata-badge" src="https://<?php echo $Hostname.':'.$Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_5&refresh=auto&value_color=grey:null|green<1.00|yellow<3.00|orange<5.00|red">
-				<img class="netdata-badge" src="https://<?php echo $Hostname.':'.$Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_15&refresh=auto&value_color=grey:null|green<1.00|yellow<3.00|orange<5.00|red">
+				<img class="netdata-badge" src="https://<?php echo $Hostname . ':' . $Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.cpu&alarm=10min_cpu_usage&refresh=auto&value_color=grey:null|green<40|yellow<60|orange<80|red">
+				<img class="netdata-badge" src="https://<?php echo $Hostname . ':' . $Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.ram&alarm=ram_in_use&refresh=auto&value_color=grey:null|green<40|yellow<60|orange<80|red">
+				<img class="netdata-badge" src="https://<?php echo $Hostname . ':' . $Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.swap&alarm=used_swap&refresh=auto&value_color=grey:null|green<40|yellow<60|orange<80|red">
+				<img class="netdata-badge" src="https://<?php echo $Hostname . ':' . $Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_1&refresh=auto&value_color=grey:null|green<1.00|yellow<3.00|orange<5.00|red">
+				<img class="netdata-badge" src="https://<?php echo $Hostname . ':' . $Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_5&refresh=auto&value_color=grey:null|green<1.00|yellow<3.00|orange<5.00|red">
+				<img class="netdata-badge" src="https://<?php echo $Hostname . ':' . $Port_HTTPs; ?>/nd/api/v1/badge.svg?chart=system.load&alarm=load_average_15&refresh=auto&value_color=grey:null|green<1.00|yellow<3.00|orange<5.00|red">
 			</div>
-<?php
-						break;
-				}
-?>
+			<?php
+				break;
+		}
+		?>
 		</footer>
 	</div>
 
@@ -223,12 +226,17 @@ $MySB_Version = GetVersion();
 	<script type="text/javascript" src="<?php echo THEMES_PATH; ?>MySB/js/jquery.sooperfish.js"></script>
 	<script type="text/javascript">
 		$(document).ready(function() {
-		$('ul.sf-menu').sooperfish();
-		$('.top').click(function() {$('html, body').animate({scrollTop:0}, 'fast'); return false;});
+			$('ul.sf-menu').sooperfish();
+			$('.top').click(function() {
+				$('html, body').animate({
+					scrollTop: 0
+				}, 'fast');
+				return false;
+			});
 		});
 	</script>
 
-<?php
+	<?php
 	switch ($_SERVER['REQUEST_URI']) {
 		case '/?blocklists/usual-blocklists.html':
 		case '/?user/synchronization.html':
@@ -237,10 +245,10 @@ $MySB_Version = GetVersion();
 		case '/?renting/renting-options.html':
 		case '/?renting/renting-payments.html':
 		case '/?trackers/add-new-trackers.html':
-			echo '	<script type="text/javascript" src="'. THEMES_PATH . 'MySB/js/jquery-dynamically-adding-form-elements.js"></script>';
+			echo '	<script type="text/javascript" src="' . THEMES_PATH . 'MySB/js/jquery-dynamically-adding-form-elements.js"></script>';
 			break;
 	}
-?>
+	?>
 </body>
 
 </html>

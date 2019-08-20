@@ -37,15 +37,15 @@ define('MainUser_DNScrypt_ForceTcp', 'Forcer le TCP');
 define('MainUser_DNScrypt_EphemeralKeys', 'Ephemeral Keys');
 define('MainUser_DNScrypt_TlsDisableTickets', 'Sessions TLS');
 
-define('Main_DNScrypt_TT_NoLogs', 'Le serveur ne doit pas enregistrer les requêtes des utilisateurs <i>(d&eacute;claratif)</i>');
+define('Main_DNScrypt_TT_NoLogs', 'Le serveur ne doit pas enregistrer les requ&ecirc;tes des utilisateurs <i>(d&eacute;claratif)</i>');
 define('Main_DNScrypt_TT_DNSSec', 'Le serveur doit prendre en charge les extensions de s&eacute;curit&eacute; DNS <i>(DNSSEC)</i>');
 define('Main_DNScrypt_TT_NoFilter', 'Le serveur ne doit pas imposer sa propre liste noire <i>(pour le contr&ocirc;le parental, blocage des publicit&eacute;s...)</i>');
 define('Main_DNScrypt_TT_LoadBalancing', 'Strat&eacute;gie d\'&eacute;quilibrage de charge:<br />
 <br />
-<b>fastest</b> <i>(toujours choisir le serveur le plus rapide de la liste)</i>
-<b>p2</b> (default) <i>(choisir au hasard entre les 2 meilleurs serveurs)</i>
-<b>ph</b> <i>(choisir au hasard entre la moitié des plus rapide de tous les serveurs)</i>
-<b>random</b> <i>(choisir un serveur quelconque de la liste)</i>');
+<li><b>fastest</b> <i>(toujours choisir le serveur le plus rapide de la liste)</i></li>
+<li><b>p2</b> (default) <i>(choisir au hasard entre les 2 meilleurs serveurs)</i></li>
+<li><b>ph</b> <i>(choisir au hasard entre la moiti&eacute; des plus rapide de tous les serveurs)</i></li>
+<li><b>random</b> <i>(choisir un serveur quelconque de la liste)</i></li>');
 define('Main_DNScrypt_TT_ForceTcp', 'Toujours utiliser le TCP pour se connecter aux serveurs en amont.<br />
 Cela peut &ecirc;tre utile si vous devez tout router par Tor.<br />
 Sinon, laissez ceci à <b>false</b>, car cela n\'am&eacute;liore pas la s&eacute;curit&eacute; <i>(dnscrypt-proxy va toujours tout chiffrer, m&ecirc;me en utilisant UDP)</i>, et ne peut qu’augmenter la latence.');

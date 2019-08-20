@@ -42,10 +42,10 @@ define('Main_DNScrypt_TT_DNSSec', 'Server must support DNS security extensions <
 define('Main_DNScrypt_TT_NoFilter', 'Server must not enforce its own blacklist <i>(for parental control, ads blocking...)</i>');
 define('Main_DNScrypt_TT_LoadBalancing', 'Load-balancing strategy:<br />
 <br />
-<b>fastest</b> <i>(always pick the fastest server in the list)</i>
-<b>p2</b> (default) <i>(randomly choose between the top 2 fastest servers)</i>
-<b>ph</b> <i>(randomly choose between the top fastest half of all servers)</i>
-<b>random</b> <i>(just pick any random server from the list)</i>');
+<li><b>fastest</b> <i>(always pick the fastest server in the list)</i></li>
+<li><b>p2</b> (default) <i>(randomly choose between the top 2 fastest servers)</i></li>
+<li><b>ph</b> <i>(randomly choose between the top fastest half of all servers)</i></li>
+<li><b>random</b> <i>(just pick any random server from the list)</i></li>');
 define('Main_DNScrypt_TT_ForceTcp', 'Always use TCP to connect to upstream servers.<br />
 This can be useful if you need to route everything through Tor.<br />
 Otherwise, leave this to `false`, as it doesn\'t improve security <i>(dnscrypt-proxy will always encrypt everything even using UDP)</i>, and can only increase latency.');

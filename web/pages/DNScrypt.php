@@ -108,7 +108,12 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
 
             <table>
                 <tr>
-                    <td class="tooltip" title="<?php echo Main_DNScrypt_TT_NoLogs; ?>" style="cursor: help;"><?php echo MainUser_DNScrypt_NoLogs; ?></td>
+                    <div class="tooltip_templates">
+                        <span id="tooltip_content_nologs">
+                            <?php echo Main_DNScrypt_TT_NoLogs; ?>
+                        </span>
+                    </div>
+                    <td class="tooltip" data-tooltip-content="#tooltip_content_nologs" style="cursor: help;"><?php echo MainUser_DNScrypt_NoLogs; ?></td>
                     <td>
                         <?php switch ($NoLogs_DB) {
                             case 'true':
@@ -124,7 +129,13 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
                         } ?>
                         <select name="NoLogs" style="width:60px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
                     </td>
-                    <td class="tooltip" title="<?php echo Main_DNScrypt_TT_DNSSec; ?>" style="cursor: help;"><?php echo MainUser_DNScrypt_DNSSec; ?></td>
+
+                    <div class="tooltip_templates">
+                        <span id="tooltip_content_dnssec">
+                            <?php echo Main_DNScrypt_TT_DNSSec; ?>
+                        </span>
+                    </div>
+                    <td class="tooltip" data-tooltip-content="#tooltip_content_dnssec" style="cursor: help;"><?php echo MainUser_DNScrypt_DNSSec; ?></td>
                     <td>
                         <?php switch ($DNSSec_DB) {
                             case 'true':
@@ -140,7 +151,13 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
                         } ?>
                         <select name="DNSSec" style="width:60px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
                     </td>
-                    <td class="tooltip" title="<?php echo Main_DNScrypt_TT_NoFilter; ?>" style="cursor: help;"><?php echo MainUser_DNScrypt_NoFilter; ?></td>
+
+                    <div class="tooltip_templates">
+                        <span id="tooltip_content_nofilter">
+                            <?php echo Main_DNScrypt_TT_NoFilter; ?>
+                        </span>
+                    </div>
+                    <td class="tooltip" data-tooltip-content="#tooltip_content_nofilter" style="cursor: help;"><?php echo MainUser_DNScrypt_NoFilter; ?></td>
                     <td>
                         <?php switch ($NoFilter_DB) {
                             case 'true':
@@ -156,7 +173,13 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
                         } ?>
                         <select name="Namecoin" style="width:60px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
                     </td>
-                    <td class="tooltip" title="<?php echo Main_DNScrypt_TT_LoadBalancing; ?>" style="cursor: help;"><?php echo MainUser_DNScrypt_LoadBalancing; ?></td>
+
+                    <div class="tooltip_templates">
+                        <span id="tooltip_content_lb">
+                            <?php echo Main_DNScrypt_TT_LoadBalancing; ?>
+                        </span>
+                    </div>
+                    <td class="tooltip" data-tooltip-content="#tooltip_content_lb" style="cursor: help;"><?php echo MainUser_DNScrypt_LoadBalancing; ?></td>
                     <td>
                         <select name="Lb_strategy" style="width:80px; height: 28px;">';
                             <?php foreach ($LoadBalancingList as $Strategy) {
@@ -170,7 +193,13 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
                     </td>
                 </tr>
                 <tr>
-                    <td class="tooltip" title="<?php echo Main_DNScrypt_TT_ForceTcp; ?>" style="cursor: help;"><?php echo MainUser_DNScrypt_ForceTcp; ?></td>
+
+                    <div class="tooltip_templates">
+                        <span id="tooltip_content_forcetcp">
+                            <?php echo Main_DNScrypt_TT_ForceTcp; ?>
+                        </span>
+                    </div>
+                    <td class="tooltip" data-tooltip-content="#tooltip_content_forcetcp" style="cursor: help;"><?php echo MainUser_DNScrypt_ForceTcp; ?></td>
                     <td>
                         <?php
                         switch ($ForceTcp_DB) {
@@ -185,7 +214,13 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
                         } ?>
                         <select name="force_tcp" style="width:60px; height: 28px;" disabled><?php echo $options; ?></select>
                     </td>
-                    <td class="tooltip" title="<?php echo Main_DNScrypt_TT_EphemeralKeys; ?>" style="cursor: help;"><?php echo MainUser_DNScrypt_EphemeralKeys; ?></td>
+
+                    <div class="tooltip_templates">
+                        <span id="tooltip_content_ephemeralkeys">
+                            <?php echo Main_DNScrypt_TT_EphemeralKeys; ?>
+                        </span>
+                    </div>
+                    <td class="tooltip" data-tooltip-content="#tooltip_content_ephemeralkeys" style="cursor: help;"><?php echo MainUser_DNScrypt_EphemeralKeys; ?></td>
                     <td>
                         <?php switch ($EphemeralKeys_DB) {
                             case 'true':
@@ -199,7 +234,13 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
                         } ?>
                         <select name="ephemeral_keys" style="width:60px; height: 28px;" disabled><?php echo $options; ?></select>
                     </td>
-                    <td class="tooltip" title="<?php echo Main_DNScrypt_TT_TlsDisableTickets; ?>" style="cursor: help;"><?php echo MainUser_DNScrypt_TlsDisableTickets; ?></td>
+
+                    <div class="tooltip_templates">
+                        <span id="tooltip_content_tlstickets">
+                            <?php echo Main_DNScrypt_TT_TlsDisableTickets; ?>
+                        </span>
+                    </div>
+                    <td class="tooltip" data-tooltip-content="#tooltip_content_tlstickets" style="cursor: help;"><?php echo MainUser_DNScrypt_TlsDisableTickets; ?></td>
                     <td>
                         <?php switch ($TlsDisableTickets_DB) {
                             case 'true':
