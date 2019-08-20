@@ -34,6 +34,7 @@
 - cleaning
   - remove some init.d scripts
   - remove some packages
+  - remove some templates
 
 ## v6.0 - 2019/06/29 _(start at: 2019/01/26)_
 

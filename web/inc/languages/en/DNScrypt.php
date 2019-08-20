@@ -35,5 +35,23 @@ define('MainUser_DNScrypt_NoFilter', 'No Filter');
 define('MainUser_DNScrypt_LoadBalancing', 'Load-balancing');
 define('MainUser_DNScrypt_ForceTcp', 'Force TCP');
 define('MainUser_DNScrypt_EphemeralKeys', 'Ephemeral Keys');
+define('MainUser_DNScrypt_TlsDisableTickets', 'TLS Disable Tickets');
+
+define('Main_DNScrypt_TT_NoLogs', 'Server must not log user queries <i>(declarative)</i>');
+define('Main_DNScrypt_TT_DNSSec', 'Server must support DNS security extensions <i>(DNSSEC)</i>');
+define('Main_DNScrypt_TT_NoFilter', 'Server must not enforce its own blacklist <i>(for parental control, ads blocking...)</i>');
+define('Main_DNScrypt_TT_LoadBalancing', 'Load-balancing strategy:<br />
+<br />
+<b>fastest</b> <i>(always pick the fastest server in the list)</i>
+<b>p2</b> (default) <i>(randomly choose between the top 2 fastest servers)</i>
+<b>ph</b> <i>(randomly choose between the top fastest half of all servers)</i>
+<b>random</b> <i>(just pick any random server from the list)</i>');
+define('Main_DNScrypt_TT_ForceTcp', 'Always use TCP to connect to upstream servers.<br />
+This can be useful if you need to route everything through Tor.<br />
+Otherwise, leave this to `false`, as it doesn\'t improve security <i>(dnscrypt-proxy will always encrypt everything even using UDP)</i>, and can only increase latency.');
+define('Main_DNScrypt_TT_EphemeralKeys', 'Create a new, unique key for every single DNS query.<br />
+This may improve privacy but can also have a significant impact on CPU usage.<br />
+Only enable if you don\'t have a lot of network load.');
+define('Main_DNScrypt_TT_TlsDisableTickets', 'DoH: Disable TLS session tickets <i>(increases privacy but also latency)</i>');
 
 //#################### LAST LINE ######################################

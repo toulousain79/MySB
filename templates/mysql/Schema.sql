@@ -98,6 +98,7 @@ CREATE TABLE IF NOT EXISTS `dnscrypt_config` (
   `require_nofilter` varchar(5) NOT NULL DEFAULT 'true',
   `force_tcp` varchar(5) NOT NULL DEFAULT 'false',
   `ephemeral_keys` varchar(5) NOT NULL DEFAULT 'false',
+  `tls_disable_session_tickets` varchar(5) NOT NULL DEFAULT 'true',
   PRIMARY KEY (`id_dnscrypt_config`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 ;
 /*!40101 SET character_set_client = @saved_cs_client */;

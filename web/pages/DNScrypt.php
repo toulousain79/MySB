@@ -25,19 +25,21 @@
 global $MySB_DB;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
-$ConfigValues = $MySB_DB->get("dnscrypt_config", ["require_nolog", "require_dnssec", "require_nofilter", "lb_strategy", "force_tcp", "ephemeral_keys"], ["id_dnscrypt_config" => 1]);
+$ConfigValues = $MySB_DB->get("dnscrypt_config", ["require_nolog", "require_dnssec", "require_nofilter", "lb_strategy", "force_tcp", "ephemeral_keys", "tls_disable_session_tickets"], ["id_dnscrypt_config" => 1]);
 $NoLogs_DB = $ConfigValues['require_nolog'];
 $DNSSec_DB = $ConfigValues['require_dnssec'];
 $NoFilter_DB = $ConfigValues['require_nofilter'];
 $LoadBalancing_DB = $ConfigValues['lb_strategy'];
 $ForceTcp_DB = $ConfigValues['force_tcp'];
 $EphemeralKeys_DB = $ConfigValues['ephemeral_keys'];
+$TlsDisableTickets_DB = $ConfigValues['tls_disable_session_tickets'];
 $NoLogs_POST = $_POST['NoLogs'];
 $DNSSec_POST = $_POST['DNSSec'];
 $NoFilter_POST = $_POST['Namecoin'];
 $LoadBalancing_POST = $_POST['Lb_strategy'];
 $ForceTcp_POST = $_POST['force_tcp'];
 $EphemeralKeys_POST = $_POST['ephemeral_keys'];
+$TlsDisableTickets_POST = $_POST['tls_disable_session_tickets'];
 $Change = 0;
 $Command = 'message_only';
 $type = 'information';
@@ -54,8 +56,9 @@ if (isset($_POST['submit'])) {
             $LoadBalancing_DB = $ConfigValues['lb_strategy'];
             $ForceTcp_DB = $ConfigValues['force_tcp'];
             $EphemeralKeys_DB = $ConfigValues['ephemeral_keys'];
+            $TlsDisableTickets_DB = $ConfigValues['tls_disable_session_tickets'];
 
-            if (($NoLogs_POST != $NoLogs_DB) || ($DNSSec_POST != $DNSSec_DB) || ($NoFilter_POST != $NoFilter_DB) || ($LoadBalancing_POST != $LoadBalancing_DB) || ($ForceTcp_POST != $ForceTcp_DB) || ($EphemeralKeys_POST != $EphemeralKeys_DB)) {
+            if (($NoLogs_POST != $NoLogs_DB) || ($DNSSec_POST != $DNSSec_DB) || ($NoFilter_POST != $NoFilter_DB) || ($LoadBalancing_POST != $LoadBalancing_DB) || ($ForceTcp_POST != $ForceTcp_DB) || ($EphemeralKeys_POST != $EphemeralKeys_DB) || ($TlsDisableTickets_POST != $TlsDisableTickets_DB)) {
                 $Change++;
                 $Command = 'DNScrypt';
                 $type = 'success';
@@ -65,10 +68,19 @@ if (isset($_POST['submit'])) {
                 $LoadBalancing_DB = $LoadBalancing_POST;
                 $ForceTcp_DB = $ForceTcp_POST;
                 $EphemeralKeys_DB = $EphemeralKeys_POST;
+                $TlsDisableTickets_DB = $TlsDisableTickets_POST;
             }
 
             if ($Change >= 1) {
-                $result = $MySB_DB->update("dnscrypt_config", ["require_nolog" => "$NoLogs_POST", "require_dnssec" => "$DNSSec_POST", "require_nofilter" => "$NoFilter_POST", "lb_strategy" => "$LoadBalancing_POST", "force_tcp" => "$ForceTcp_POST", "ephemeral_keys" => "$EphemeralKeys_POST"], ["id_dnscrypt_config" => 1]);
+                $result = $MySB_DB->update("dnscrypt_config", [
+                    "require_nolog" => "$NoLogs_POST",
+                    "require_dnssec" => "$DNSSec_POST",
+                    "require_nofilter" => "$NoFilter_POST",
+                    "lb_strategy" => "$LoadBalancing_POST",
+                    "force_tcp" => "$ForceTcp_POST",
+                    "ephemeral_keys" => "$EphemeralKeys_POST",
+                    "tls_disable_session_tickets" => "$TlsDisableTickets_POST"
+                ], ["id_dnscrypt_config" => 1]);
 
                 if ($result >= 0) {
                     $type = 'success';
@@ -96,7 +108,7 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
 
             <table>
                 <tr>
-                    <td><?php echo MainUser_DNScrypt_NoLogs; ?></td>
+                    <td class="tooltip" title="<?php echo Main_DNScrypt_TT_NoLogs; ?>" style="cursor: help;"><?php echo MainUser_DNScrypt_NoLogs; ?></td>
                     <td>
                         <?php switch ($NoLogs_DB) {
                             case 'true':
@@ -112,7 +124,7 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
                         } ?>
                         <select name="NoLogs" style="width:60px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
                     </td>
-                    <td><?php echo MainUser_DNScrypt_DNSSec; ?></td>
+                    <td class="tooltip" title="<?php echo Main_DNScrypt_TT_DNSSec; ?>" style="cursor: help;"><?php echo MainUser_DNScrypt_DNSSec; ?></td>
                     <td>
                         <?php switch ($DNSSec_DB) {
                             case 'true':
@@ -128,7 +140,7 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
                         } ?>
                         <select name="DNSSec" style="width:60px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
                     </td>
-                    <td><?php echo MainUser_DNScrypt_NoFilter; ?></td>
+                    <td class="tooltip" title="<?php echo Main_DNScrypt_TT_NoFilter; ?>" style="cursor: help;"><?php echo MainUser_DNScrypt_NoFilter; ?></td>
                     <td>
                         <?php switch ($NoFilter_DB) {
                             case 'true':
@@ -144,21 +156,21 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
                         } ?>
                         <select name="Namecoin" style="width:60px; height: 28px;" class="<?php echo $class; ?>" onchange="this.className=this.options[this.selectedIndex].className"><?php echo $options; ?></select>
                     </td>
-                    <td><?php echo MainUser_DNScrypt_LoadBalancing; ?></td>
+                    <td class="tooltip" title="<?php echo Main_DNScrypt_TT_LoadBalancing; ?>" style="cursor: help;"><?php echo MainUser_DNScrypt_LoadBalancing; ?></td>
                     <td>
                         <select name="Lb_strategy" style="width:80px; height: 28px;">';
-                        <?php foreach($LoadBalancingList as $Strategy) {
-                            if ($LoadBalancing_DB == $Strategy) {
-                                echo '<option selected="selected" value="' . $Strategy . '">' . $Strategy . '</option>';
-                            } else {
-                                echo '<option value="' . $Strategy . '">' . $Strategy . '</option>';
-                            }
-                        } ?>
+                            <?php foreach ($LoadBalancingList as $Strategy) {
+                                if ($LoadBalancing_DB == $Strategy) {
+                                    echo '<option selected="selected" value="' . $Strategy . '">' . $Strategy . '</option>';
+                                } else {
+                                    echo '<option value="' . $Strategy . '">' . $Strategy . '</option>';
+                                }
+                            } ?>
                         </select>
                     </td>
                 </tr>
                 <tr>
-                    <td><?php echo MainUser_DNScrypt_ForceTcp; ?></td>
+                    <td class="tooltip" title="<?php echo Main_DNScrypt_TT_ForceTcp; ?>" style="cursor: help;"><?php echo MainUser_DNScrypt_ForceTcp; ?></td>
                     <td>
                         <?php
                         switch ($ForceTcp_DB) {
@@ -173,7 +185,7 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
                         } ?>
                         <select name="force_tcp" style="width:60px; height: 28px;" disabled><?php echo $options; ?></select>
                     </td>
-                    <td><?php echo MainUser_DNScrypt_EphemeralKeys; ?></td>
+                    <td class="tooltip" title="<?php echo Main_DNScrypt_TT_EphemeralKeys; ?>" style="cursor: help;"><?php echo MainUser_DNScrypt_EphemeralKeys; ?></td>
                     <td>
                         <?php switch ($EphemeralKeys_DB) {
                             case 'true':
@@ -186,6 +198,20 @@ $SelectedResolver = $MySB_DB->get("dnscrypt_resolvers", "name", ["AND" => ["forw
                                 break;
                         } ?>
                         <select name="ephemeral_keys" style="width:60px; height: 28px;" disabled><?php echo $options; ?></select>
+                    </td>
+                    <td class="tooltip" title="<?php echo Main_DNScrypt_TT_TlsDisableTickets; ?>" style="cursor: help;"><?php echo MainUser_DNScrypt_TlsDisableTickets; ?></td>
+                    <td>
+                        <?php switch ($TlsDisableTickets_DB) {
+                            case 'true':
+                                $options = '<option selected="selected" value="true">' . Global_Yes . '</option>';
+                                $options .= '<option value="false">' . Global_No . '</option>';
+                                break;
+                            default:
+                                $options = '<option value="true">' . Global_Yes . '</option>';
+                                $options .= '<option selected="selected" value="false">' . Global_No . '</option>';
+                                break;
+                        } ?>
+                        <select name="tls_disable_session_tickets" style="width:60px; height: 28px;" disabled><?php echo $options; ?></select>
                     </td>
                 </tr>
             </table>
