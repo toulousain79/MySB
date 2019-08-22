@@ -9,7 +9,7 @@
 - NetData v1.16.0
 - PHP v7.3
 - Medoo v1.7.2
-- ruTorrent v3.9 _(d902688)_
+- ruTorrent v3.9 _(718087a)_
 - NodeJS v0.18.x _(Debian package)_
 - remove some init.d scripts
 - Plex, add plugins
