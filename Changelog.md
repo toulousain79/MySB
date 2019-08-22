@@ -35,6 +35,7 @@
   - remove some init.d scripts
   - remove some packages
   - remove some templates
+- moving the torrents folder to the root of the home folder for Minio buckets compatility
 
 ## v6.0 - 2019/06/29 _(start at: 2019/01/26)_
 
