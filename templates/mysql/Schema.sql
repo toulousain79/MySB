@@ -106,6 +106,22 @@ CREATE TABLE IF NOT EXISTS `dnscrypt_config` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `lets_encrypt`
+--
+
+/*!40101 SET @saved_cs_client	 = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `lets_encrypt` (
+  `id_lets_encrypt` int(11) NOT NULL AUTO_INCREMENT,
+  `addresses` varchar(128) NOT NULL,
+  `ipv4` varchar(15) NOT NULL,
+  PRIMARY KEY (`id_lets_encrypt`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `mails`
 --
 
