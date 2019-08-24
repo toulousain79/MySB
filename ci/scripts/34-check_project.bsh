@@ -92,17 +92,27 @@ if [ -n "${sFilesListTmpl}" ]; then
 fi
 
 # Templates files called
+echo && echo -e "${CBLUE}*** Check for missing  templates ***${CEND}"
 grep -rh --exclude-dir=ci '/templates/' "${sDirToScan}"/ | while read -r sLine; do
     for sColumn in ${sLine}; do
-        (grep -q '/templates/' <<<"${sColumn}") && {
-            sTemplate="$(echo "${sColumn}" | cut -d '/' -f 4)"
-            if (find "${sDirToScan}"/templates/ -type f -name "${sTemplate}"); then
-                echo -e "${CYELLOW}${sTemplate}:${CEND} ${CGREEN}Passed${CEND}"
-            else
-                echo -e "${CYELLOW}${sTemplate}:${CEND} ${CRED}Failed${CEND}"
-                nReturn=$((nReturn + 1))
-            fi
-        }
+        sColumn="$(echo "${sColumn}" | sed "s/\"//g;s/'//g;")"
+        if [ -n "${sColumn}" ]; then
+            case "${sColumn}" in
+                'etc.logrotate.d.${1}.tmpl') continue ;;
+                *)
+                    (grep -q '/templates/' <<<"${sColumn}") && {
+                        sTemplate="$(echo "${sColumn}" | cut -d '/' -f 4)"
+                        sFile="$(find "${sDirToScan}"/templates/ -type f -name "${sTemplate}")"
+                        if [ -n "${sFile}" ]; then
+                            echo -e "${CYELLOW}${sTemplate}:${CEND} ${CGREEN}Passed${CEND}"
+                        else
+                            echo -e "${CYELLOW}${sTemplate}:${CEND} ${CRED}Failed${CEND}"
+                            nReturn=$((nReturn + 1))
+                        fi
+                    }
+                    ;;
+            esac
+        fi
     done
 done
 
