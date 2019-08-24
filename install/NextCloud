@@ -46,14 +46,16 @@ function fnBaseConfig() {
 
     #### Generating a new config file
     if [ -d "${gsNextCloudDir}" ] && [ -f "${gsNextCloudDir}"/config/config.php ] && gfnCheckCommand 0 "${gsNextCloudDir}"/occ; then
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
+        if [[ ${gnRepoUpgrade} -eq 1 ]]; then
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
+        fi
 
         #### Base
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
 
         #### Check old config file
-        Version="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version")"
+        Version="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version" | tail -n 1)"
         # Version="$(grep "'version'" "${gsNextCloudDir}"/config/config.php | cut -d "'" -f 3)"
         echo "Version: ${Version}"
         InstanceId="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get instanceid")"
@@ -230,7 +232,7 @@ if [ "${gbToInstall_NextCloud}" == "YES" ] && [ "${sSwitch}" != "INIT" ]; then
     perl -pi -e "s/<MySB_InstallDir>/${gsInstallDirEscaped}/g" /etc/nginx/locations/NextCloud.conf
 
     #### An upgrade ?
-    if [ $gnRepoUpgrade -eq 1 ]; then
+    if [[ ${gnRepoUpgrade} -eq 1 ]]; then
         if gfnCheckCommand 0 php; then
             su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --on"
         fi
