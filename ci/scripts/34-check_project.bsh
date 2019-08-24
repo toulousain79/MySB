@@ -55,7 +55,7 @@ else
     fi
 fi
 
-# Templates files
+# Templates files used
 sFilesListTmpl="$(find ${sDirToScan}/templates/ -type f -name "*.tmpl" -printf "%f\n" | sort -z | xargs -r0)"
 if [ -n "${sFilesListTmpl}" ]; then
     echo && echo -e "${CBLUE}*** Check for unused templates ***${CEND}"
@@ -71,8 +71,8 @@ if [ -n "${sFilesListTmpl}" ]; then
                     fi
                     ;;
                 *)
-                    sTring="$(echo "${sFile}" | cut -d '.' -f 4)"
-                    if (! grep -qR --exclude-dir=.git "gfnLogRotate '${sTring}'" "${sDirToScan}"/); then
+                    sString="$(echo "${sFile}" | cut -d '.' -f 4)"
+                    if (! grep -qR --exclude-dir=.git "gfnLogRotate '${sString}'" "${sDirToScan}"/); then
                         echo -e "${CYELLOW}${sDirToScan}/${sFile}:${CEND} ${CRED}Failed${CEND}"
                         nReturn=$((nReturn + 1))
                     else
@@ -91,6 +91,20 @@ if [ -n "${sFilesListTmpl}" ]; then
     done
 fi
 
-# export nReturn
+# Templates files called
+grep -rh --exclude-dir=ci '/templates/' "${sDirToScan}"/ | while read -r sLine; do
+    for sColumn in ${sLine}; do
+        echo "sColumn ${sColumn}"
+        (grep -q '/templates/' <<<"${sColumn}") && {
+            sTemplate="$(echo "${sColumn}" | cut -d '/' -f 4)"
+            if (find "${sDirToScan}"/templates/ -type f -name "${sTemplate}"); then
+                echo -e "${CYELLOW}${sTemplate}:${CEND} ${CGREEN}Passed${CEND}"
+            else
+                echo -e "${CYELLOW}${sTemplate}:${CEND} ${CRED}Failed${CEND}"
+                nReturn=$((nReturn + 1))
+            fi
+        }
+    done
+done
 
 ##################### LAST LINE ######################################
