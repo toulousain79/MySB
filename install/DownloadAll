@@ -50,36 +50,36 @@ cmdMySQL 'MySB_db' "SELECT name FROM repositories WHERE 1;" | while read sRepoNa
     gnError=0
 
     # Get repo infos
-    gfnGetRepoValues "$sRepoName"
+    gfnGetRepoValues "${sRepoName}"
 
     # Delete repo dir if inactive or continue the loop if variable is not defined
-    if [ -z "$gsRepoType" ] || [ -z "$gsRepoDir" ] || [ -z "$gsRepoVersion" ] || [ -z "$gnRepoUpgrade" ] || [ -z "${gsRepoFile}" ] || [ -z "$gsRepoURL" ] || [ -z "$gnRepoActive" ]; then
+    if [ -z "${gsRepoType}" ] || [ -z "${gsRepoDir}" ] || [ -z "${gsRepoVersion}" ] || [ -z "${gnRepoUpgrade}" ] || [ -z "${gsRepoFile}" ] || [ -z "${gsRepoURL}" ] || [ -z "${gnRepoActive}" ]; then
         echo "Missing some values, go to the next repo..."
         continue
-    elif [ "$gnRepoActive" -eq 0 ]; then
-        gfnDeleteDirectory 1 "$gsRepoDir"
+    elif [ "${gnRepoActive}" -eq 0 ]; then
+        gfnDeleteDirectory 1 "${gsRepoDir}"
     fi
 
     # Delete old repo file during an upgrade
-    if [ "$gnRepoUpgrade" -eq 1 ]; then
+    if [ "${gnRepoUpgrade}" -eq 1 ]; then
         # Backup some config files or directory
-        case "$sRepoName" in
+        case "${sRepoName}" in
             'NextCloud')
-                if [ -f "$gsNextCloudDir"/config/config.php ]; then
+                if [ -f "${gsNextCloudDir}"/config/config.php ]; then
                     if gfnCheckCommand 0 php; then
-                        su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ maintenance:mode --on"
+                        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --on"
                     fi
-                    mv -v "$gsNextCloudDir"/config/config.php "${MySB_InstallDir}"/temp/nextcloud_config.php
+                    mv -v "${gsNextCloudDir}"/config/config.php "${MySB_InstallDir}"/temp/nextcloud_config.php
                 fi
-                if [ -d "$gsNextCloudDir"/apps2 ]; then
-                    mv -v "$gsNextCloudDir"/apps2 "${MySB_InstallDir}"/temp/nextcloud_apps2
+                if [ -d "${gsNextCloudDir}"/apps2 ]; then
+                    mv -v "${gsNextCloudDir}"/apps2 "${MySB_InstallDir}"/temp/nextcloud_apps2
                 fi
                 # Maybe need to launch a script on next reboot ?
-                cmdMySQL 'MySB_db' "UPDATE repositories SET on_boot='1', script='${MySB_InstallDir}/install/NextCloud' WHERE name='$sRepoName';" -v
+                cmdMySQL 'MySB_db' "UPDATE repositories SET on_boot='1', script='${MySB_InstallDir}/install/NextCloud' WHERE name='${sRepoName}';" -v
                 ;;
             'Seedbox-Manager')
-                if [ -d "$gsManagerDir"/conf ]; then
-                    mv -v "$gsManagerDir"/conf "${MySB_InstallDir}"/temp/sm_conf
+                if [ -d "${gsManagerDir}"/conf ]; then
+                    mv -v "${gsManagerDir}"/conf "${MySB_InstallDir}"/temp/sm_conf
                 fi
                 ;;
             'ruTorrent')
@@ -89,25 +89,25 @@ cmdMySQL 'MySB_db' "SELECT name FROM repositories WHERE 1;" | while read sRepoNa
                 ;;
             'Tautulli')
                 [ "${gbIsInstalled_Tautulli}" == "YES" ] && gfnManageServices stop "tautulli"
-                [ -f "$gsRepoDir"/config.ini ] && mv -v "$gsRepoDir"/config.ini "${MySB_InstallDir}"/temp/tautulli_conf
-                [ -f "$gsRepoDir"/tautulli.db ] && mv -v "$gsRepoDir"/tautulli.db "${MySB_InstallDir}"/temp/tautulli_db
-                [ -d "$gsRepoDir"/backups ] && mv -v "$gsRepoDir"/backups "${MySB_InstallDir}"/temp/tautulli_backups
-                [ -d "$gsRepoDir"/logs ] && mv -v "$gsRepoDir"/logs "${MySB_InstallDir}"/temp/tautulli_logs
-                [ -d "$gsRepoDir"/cache ] && mv -v "$gsRepoDir"/cache "${MySB_InstallDir}"/temp/tautulli_cache
+                [ -f "${gsRepoDir}"/config.ini ] && mv -v "${gsRepoDir}"/config.ini "${MySB_InstallDir}"/temp/tautulli_conf
+                [ -f "${gsRepoDir}"/tautulli.db ] && mv -v "${gsRepoDir}"/tautulli.db "${MySB_InstallDir}"/temp/tautulli_db
+                [ -d "${gsRepoDir}"/backups ] && mv -v "${gsRepoDir}"/backups "${MySB_InstallDir}"/temp/tautulli_backups
+                [ -d "${gsRepoDir}"/logs ] && mv -v "${gsRepoDir}"/logs "${MySB_InstallDir}"/temp/tautulli_logs
+                [ -d "${gsRepoDir}"/cache ] && mv -v "${gsRepoDir}"/cache "${MySB_InstallDir}"/temp/tautulli_cache
                 ;;
         esac
 
         # We can delete repo dir ONLY IF repo file exist...
         if [ -f "${MySB_Files}/${gsRepoFile}" ]; then
-            case "$gsRepoType" in
+            case "${gsRepoType}" in
                 'CURL' | 'WBM' | 'DEB') continue ;;
-                *) gfnDeleteDirectory 1 "$gsRepoDir" ;;
+                *) gfnDeleteDirectory 1 "${gsRepoDir}" ;;
             esac
         fi
     fi
 
     # Download all
-    case "$sRepoName" in
+    case "${sRepoName}" in
         'Plex Media Server')
             if [ "${gbToInstall_PlexMedia}" == "YES" ] || [ "${gbIsInstalled_PlexMedia}" == "YES" ]; then
                 case $(getconf LONG_BIT) in
@@ -138,24 +138,24 @@ cmdMySQL 'MySB_db' "SELECT name FROM repositories WHERE 1;" | while read sRepoNa
     esac
 
     # Restore some config files or directory
-    case "$sRepoName" in
+    case "${sRepoName}" in
         'NextCloud')
             if [ -f "${MySB_InstallDir}"/temp/nextcloud_config.php ]; then
-                mv -v "${MySB_InstallDir}"/temp/nextcloud_config.php "$gsNextCloudDir"/config/config.php
+                mv -v "${MySB_InstallDir}"/temp/nextcloud_config.php "${gsNextCloudDir}"/config/config.php
             fi
             if [ -d "${MySB_InstallDir}"/temp/nextcloud_apps2 ]; then
-                if [ -d "$gsNextCloudDir"/apps2 ]; then
-                    rm -rfv "$gsNextCloudDir"/apps2
+                if [ -d "${gsNextCloudDir}"/apps2 ]; then
+                    rm -rfv "${gsNextCloudDir}"/apps2
                 fi
-                mv -v "${MySB_InstallDir}"/temp/nextcloud_apps2 "$gsNextCloudDir"/apps2
+                mv -v "${MySB_InstallDir}"/temp/nextcloud_apps2 "${gsNextCloudDir}"/apps2
             fi
             ;;
         'Seedbox-Manager')
             if [ -d "${MySB_InstallDir}"/temp/sm_conf ]; then
-                if [ -d "$gsManagerDir"/conf ]; then
-                    rm -rfv "$gsManagerDir"/conf
+                if [ -d "${gsManagerDir}"/conf ]; then
+                    rm -rfv "${gsManagerDir}"/conf
                 fi
-                mv -v "${MySB_InstallDir}"/temp/sm_conf "$gsManagerDir"/conf
+                mv -v "${MySB_InstallDir}"/temp/sm_conf "${gsManagerDir}"/conf
             fi
             ;;
         'ruTorrent')
@@ -167,17 +167,17 @@ cmdMySQL 'MySB_db' "SELECT name FROM repositories WHERE 1;" | while read sRepoNa
             fi
             ;;
         'Tautulli')
-            [ -f "${MySB_InstallDir}"/temp/tautulli_conf ] && mv -v "${MySB_InstallDir}"/temp/tautulli_conf "$gsRepoDir"/config.ini
-            [ -f "${MySB_InstallDir}"/temp/tautulli_db ] && mv -v "${MySB_InstallDir}"/temp/tautulli_db "$gsRepoDir"/tautulli.db
-            [ -d "${MySB_InstallDir}"/temp/tautulli_backups ] && mv -v "${MySB_InstallDir}"/temp/tautulli_backups "$gsRepoDir"/backups
-            [ -d "${MySB_InstallDir}"/temp/tautulli_logs ] && mv -v "${MySB_InstallDir}"/temp/tautulli_logs "$gsRepoDir"/logs
-            [ -d "${MySB_InstallDir}"/temp/tautulli_cache ] && mv -v "${MySB_InstallDir}"/temp/tautulli_cache "$gsRepoDir"/cache
+            [ -f "${MySB_InstallDir}"/temp/tautulli_conf ] && mv -v "${MySB_InstallDir}"/temp/tautulli_conf "${gsRepoDir}"/config.ini
+            [ -f "${MySB_InstallDir}"/temp/tautulli_db ] && mv -v "${MySB_InstallDir}"/temp/tautulli_db "${gsRepoDir}"/tautulli.db
+            [ -d "${MySB_InstallDir}"/temp/tautulli_backups ] && mv -v "${MySB_InstallDir}"/temp/tautulli_backups "${gsRepoDir}"/backups
+            [ -d "${MySB_InstallDir}"/temp/tautulli_logs ] && mv -v "${MySB_InstallDir}"/temp/tautulli_logs "${gsRepoDir}"/logs
+            [ -d "${MySB_InstallDir}"/temp/tautulli_cache ] && mv -v "${MySB_InstallDir}"/temp/tautulli_cache "${gsRepoDir}"/cache
             ;;
     esac
 
     # Switch on errors
-    if [ "$gnError" -gt 0 ]; then
-        case "$sRepoName" in
+    if [ "${gnError}" -gt 0 ]; then
+        case "${sRepoName}" in
             'Cakebox-Light')
                 RemovePluginCakebox=YES
                 cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='Cakebox-Light';" -v
@@ -191,30 +191,30 @@ cmdMySQL 'MySB_db' "SELECT name FROM repositories WHERE 1;" | while read sRepoNa
                 RemovePluginManager=YES
                 cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='Cakebox-Light';" -v
                 cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='Seedbox-Manager';" -v
-                echo "$gsRepoURL" >>"${MySB_InstallDir}"/temp/continue
+                echo "${gsRepoURL}" >>"${MySB_InstallDir}"/temp/continue
                 ;;
             'XMLRPC' | 'LibTorrent' | 'rTorrent' | 'ruTorrent' | 'ruTorrents Official Plugins')
-                echo "$gsRepoURL" >>"${MySB_InstallDir}"/temp/continue
+                echo "${gsRepoURL}" >>"${MySB_InstallDir}"/temp/continue
                 ;;
         esac
     fi
 done
 
-if [ "$RemovePluginCakebox" == "YES" ]; then
+if [ "${RemovePluginCakebox}" == "YES" ]; then
     PluginDir="$(cmdMySQL 'MySB_db' "SELECT dir FROM repositories WHERE name='ruTorrent Plugin Link Cakebox';")"
     echo
     echo "########## Remove: ruTorrent Plugin Link Cakebox"
-    echo "Directory : $PluginDir"
+    echo "Directory : ${PluginDir}"
     echo
-    gfnDeleteDirectory 1 "$PluginDir"
+    gfnDeleteDirectory 1 "${PluginDir}"
 fi
-if [ "$RemovePluginManager" == "YES" ]; then
+if [ "${RemovePluginManager}" == "YES" ]; then
     PluginDir="$(cmdMySQL 'MySB_db' "SELECT dir FROM repositories WHERE name='ruTorrent Plugin Link Manager';")"
     echo
     echo "########## Remove: ruTorrent Plugin Link Manager"
-    echo "Directory : $PluginDir"
+    echo "Directory : ${PluginDir}"
     echo
-    gfnDeleteDirectory 1 "$PluginDir"
+    gfnDeleteDirectory 1 "${PluginDir}"
 fi
 
 # -----------------------------------------
