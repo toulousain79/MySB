@@ -264,11 +264,11 @@ gfnGenerateBlacklistsZone() {
     local sAllTrackers sTracker
 
     echo "#### MySB - Blacklisted domains (ex: inactive trackers)" >/etc/bind/MySB.zones.blacklists
-    install -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/blacklist.txt.tmpl /etc/dnscrypt-proxy/blacklist.txt
+    [ -d /etc/dnscrypt-proxy ] && install -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/blacklist.txt.tmpl /etc/dnscrypt-proxy/blacklist.txt
     sAllTrackers="$(cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker FROM trackers_list WHERE is_active='0';")"
     for sTracker in ${sAllTrackers}; do
         echo "zone \"${sTracker}\" { type master; file \"/etc/bind/db.empty\"; };" >>/etc/bind/MySB.zones.blacklists
-        echo "${sTracker}" >>/etc/dnscrypt-proxy/blacklist.txt
+        [ -f /etc/dnscrypt-proxy/blacklist.txt ] && echo "${sTracker}" >>/etc/dnscrypt-proxy/blacklist.txt
     done
     perl -pi -e "s/^#include \"\/etc\/bind\/MySB.zones.blacklists\";/include \"\/etc\/bind\/MySB.zones.blacklists\";/g" /etc/bind/named.conf.local
 }
