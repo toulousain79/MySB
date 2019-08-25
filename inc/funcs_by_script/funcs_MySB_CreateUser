@@ -352,7 +352,7 @@ gfnRuTorrentUsersConfigs() {
     local sPluginsList sUser sUserValues sPortSCGI sHomeDir sHomeDirEscaped sUserUpper sPlugin bIsActive bVerbose
 
     [ "${gbDevMode}" -eq 1 ] && bVerbose=1 || bVerbose=0
-    [ -d "${gsRutorrentPluginsDir}" ] && sPluginsList=$(ls -1r "$gsRutorrentPluginsDir"/) || return 0
+    [ -d "${gsRutorrentPluginsDir}" ] && sPluginsList=$(ls -1r "${gsRutorrentPluginsDir}"/) || return 0
     sUser="$1"
     sUserValues="$(cmdMySQL 'MySB_db' "SELECT scgi_port,home_dir FROM users WHERE users_ident='${sUser}';" | sed 's/\t/|/g;')"
     sPortSCGI="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[1]}')"
@@ -373,35 +373,35 @@ gfnRuTorrentUsersConfigs() {
     perl -pi -e "s/<topDirectory>/${sHomeDirEscaped}/g" "${gsRutorrentDir}/conf/users/${sUser}/config.php"
     perl -pi -e "s/<log_file>/${sHomeDirEscaped}\/logs\/rutorrent.log/g" "${gsRutorrentDir}/conf/users/${sUser}/config.php"
     perl -pi -e "s/<RPC>/${sUserUpper}/g" "${gsRutorrentDir}/conf/users/${sUser}/config.php"
-    perl -pi -e "s/<scgi_port>/$sPortSCGI/g" "${gsRutorrentDir}/conf/users/${sUser}/config.php"
+    perl -pi -e "s/<scgi_port>/${sPortSCGI}/g" "${gsRutorrentDir}/conf/users/${sUser}/config.php"
     perl -pi -e "s/<user>/${sUser}/g" "${gsRutorrentDir}/conf/users/${sUser}/config.php"
     # if [ -f "${gsRutorrentDir}"/conf/access.ini ]; then cp "${gsRutorrentDir}"/conf/access.ini "${gsRutorrentDir}/conf/users/${sUser}/access.ini"; fi
     install -o www-data -g www-data -m 0755 "${MySB_InstallDir}"/templates/rutorrent/access.ini.tmpl "${gsRutorrentDir}/conf/users/${sUser}/access.ini"
     install -o www-data -g www-data -m 0755 "${MySB_InstallDir}"/templates/rutorrent/plugins.ini.tmpl "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
     # chown :www-data "${sHomeDir}/logs/rutorrent.log"
 
-    for sPlugin in $sPluginsList; do
-        bIsActive="$(cmdMySQL 'MySB_db' "SELECT active FROM repositories WHERE dir LIKE '%/$sPlugin';")"
+    for sPlugin in ${sPluginsList}; do
+        bIsActive="$(cmdMySQL 'MySB_db' "SELECT active FROM repositories WHERE dir LIKE '%/${sPlugin}';")"
         [ -z "$bIsActive" ] && bIsActive=0
 
-        if [ -d "$gsRutorrentPluginsDir/$sPlugin" ]; then
-            if [ -f "$gsRutorrentPluginsDir/$sPlugin/conf.php" ] || [ -f "$gsRutorrentPluginsDir/$sPlugin/config.php" ]; then
-                case $sPlugin in
+        if [ -d "${gsRutorrentPluginsDir}/${sPlugin}" ]; then
+            if [ -f "${gsRutorrentPluginsDir}/${sPlugin}/conf.php" ] || [ -f "${gsRutorrentPluginsDir}/${sPlugin}/config.php" ]; then
+                case ${sPlugin} in
                     'linkseedboxmanager')
                         if [ $bIsActive -eq 0 ] && [ "${gbIsInstalled_Manager}" == "NO" ] && [ "${gbToInstall_Manager}" == "NO" ]; then
-                            gfnDeleteDirectory $bVerbose "${gsRutorrentDir}/conf/users/${sUser}/plugins/$sPlugin"
-                            gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+                            gfnDeleteDirectory ${bVerbose} "${gsRutorrentDir}/conf/users/${sUser}/plugins/${sPlugin}"
+                            gfnDeleteDirectory ${bVerbose} "${gsRutorrentPluginsDir}/${sPlugin}"
                         else
-                            echo "[$sPlugin]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                            echo "[${sPlugin}]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                             echo "enabled = user-defined" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                         fi
                         ;;
                     'linkcakebox')
                         if [ $bIsActive -eq 0 ] && [ "${gbIsInstalled_Cakebox}" == "NO" ] && [ "${gbToInstall_Cakebox}" == "NO" ]; then
-                            gfnDeleteDirectory $bVerbose "${gsRutorrentDir}/conf/users/${sUser}/plugins/$sPlugin"
-                            gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+                            gfnDeleteDirectory ${bVerbose} "${gsRutorrentDir}/conf/users/${sUser}/plugins/${sPlugin}"
+                            gfnDeleteDirectory ${bVerbose} "${gsRutorrentPluginsDir}/${sPlugin}"
                         else
-                            echo "[$sPlugin]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                            echo "[${sPlugin}]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                             echo "enabled = user-defined" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                         fi
                         ;;
@@ -410,46 +410,46 @@ gfnRuTorrentUsersConfigs() {
                             if [ ! -d "${gsRutorrentDir}/conf/users/${sUser}/fileupload/" ]; then
                                 mkdir -p "${gsRutorrentDir}/conf/users/${sUser}/fileupload/"
                             fi
-                            if [ -f "$gsRutorrentPluginsDir/fileupload/conf.php" ] && [ ! -f "${gsRutorrentDir}/conf/users/${sUser}/fileupload/conf.php" ]; then
-                                cp "$gsRutorrentPluginsDir/fileupload/conf.php" "${gsRutorrentDir}/conf/users/${sUser}/fileupload/conf.php"
+                            if [ -f "${gsRutorrentPluginsDir}/fileupload/conf.php" ] && [ ! -f "${gsRutorrentDir}/conf/users/${sUser}/fileupload/conf.php" ]; then
+                                cp "${gsRutorrentPluginsDir}/fileupload/conf.php" "${gsRutorrentDir}/conf/users/${sUser}/fileupload/conf.php"
                             fi
-                            echo "[$sPlugin]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                            echo "[${sPlugin}]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                             echo "enabled = user-defined" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                         else
-                            gfnDeleteDirectory $bVerbose "${gsRutorrentDir}/conf/users/${sUser}/plugins/$sPlugin"
-                            gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+                            gfnDeleteDirectory ${bVerbose} "${gsRutorrentDir}/conf/users/${sUser}/plugins/${sPlugin}"
+                            gfnDeleteDirectory ${bVerbose} "${gsRutorrentPluginsDir}/${sPlugin}"
                         fi
                         ;;
                     'fileshare')
                         if [ $bIsActive -eq 1 ]; then
-                            echo "[$sPlugin]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                            echo "[${sPlugin}]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                             echo "enabled = user-defined" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                         else
-                            gfnDeleteDirectory $bVerbose "${gsRutorrentDir}/conf/users/${sUser}/plugins/$sPlugin"
-                            gfnDeleteDirectory $bVerbose "$gsRutorrentPluginsDir/$sPlugin"
+                            gfnDeleteDirectory ${bVerbose} "${gsRutorrentDir}/conf/users/${sUser}/plugins/${sPlugin}"
+                            gfnDeleteDirectory ${bVerbose} "${gsRutorrentPluginsDir}/${sPlugin}"
                         fi
                         ;;
                     'diskspace')
-                        if [ ! -d "${gsRutorrentDir}/conf/users/${sUser}/$sPlugin" ]; then
-                            mkdir -p "${gsRutorrentDir}/conf/users/${sUser}/$sPlugin"
+                        if [ ! -d "${gsRutorrentDir}/conf/users/${sUser}/${sPlugin}" ]; then
+                            mkdir -p "${gsRutorrentDir}/conf/users/${sUser}/${sPlugin}"
                         fi
-                        if [ -f "$gsRutorrentPluginsDir/$sPlugin/conf.php" ] && [ ! -f "${gsRutorrentDir}/conf/users/${sUser}/$sPlugin/conf.php" ]; then
-                            cp "$gsRutorrentPluginsDir/$sPlugin/conf.php" "${gsRutorrentDir}/conf/users/${sUser}/$sPlugin/conf.php"
+                        if [ -f "${gsRutorrentPluginsDir}/${sPlugin}/conf.php" ] && [ ! -f "${gsRutorrentDir}/conf/users/${sUser}/${sPlugin}/conf.php" ]; then
+                            cp "${gsRutorrentPluginsDir}/${sPlugin}/conf.php" "${gsRutorrentDir}/conf/users/${sUser}/${sPlugin}/conf.php"
                         fi
-                        echo "[$sPlugin]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                        echo "[${sPlugin}]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                         echo "enabled = user-defined" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                         ;;
                     '_cloudflare')
-                        echo "[$sPlugin]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                        echo "[${sPlugin}]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                         echo "enabled = off" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                         ;;
                     *)
                         # 3) Enable it for each user
                         if [ $bIsActive -eq 1 ]; then
-                            echo "[$sPlugin]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                            echo "[${sPlugin}]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                             echo "enabled = user-defined" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                         else
-                            gfnDeleteDirectory $bVerbose "${gsRutorrentDir}/conf/users/${sUser}/plugins/$sPlugin"
+                            gfnDeleteDirectory ${bVerbose} "${gsRutorrentDir}/conf/users/${sUser}/plugins/${sPlugin}"
                         fi
                         ;;
                 esac
