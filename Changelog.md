@@ -11,6 +11,7 @@
 - Medoo v1.7.2
 - ruTorrent v3.9 _(718087a)_
 - NodeJS v0.18.x _(Debian package)_
+- Lynis _(latest)_
 - remove some init.d scripts
 - Plex, add plugins
   - [Absolute Series/Music Scanner](https://github.com/ZeroQI/Absolute-Series-Scanner)
@@ -36,6 +37,8 @@
   - remove some packages
   - remove some templates
 - moving the torrents folder to the root of the home folder for Minio buckets compatility
+- CPAN modules installed & updated with cron job
+- RKhunter config review
 
 ## v6.0 - 2019/06/29 _(start at: 2019/01/26)_
 

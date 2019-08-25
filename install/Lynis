@@ -25,71 +25,16 @@ source "$(dirname "$0")"/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-#### VARs
-sLocSwitch="$1"
+#### Install
+gfnGetRepoValues 'Lynis' && gfnRepoManageByType
 
-#### Purge packages
-sPackages=(docker docker-engine docker.io containerd runc)
-gfnPackagesManage purge "${sPackages[@]}"
+#### Config
+mkdir -p /etc/lynis
+install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/other/etc.lynis.default.prf.tmpl /etc/lynis/default.prf
+perl -pi -e "s/<inet>/${gsPrimaryInet}/g" /etc/rkhunter.conf
 
-#### Install packages
-sPackages=(docker-ce docker-ce-cli containerd.io python-backports.ssl-match-hostname python-cached-property python-docker python-dockerpty python-docopt python-functools32 python-jsonschema python-texttable python-websocket python-yaml)
-gfnPackageBundleInstall "${sPackages[@]}"
-
-#### Init script
-systemctl daemon-reload
-systemctl enable docker
-
-#### Secure
-if (! grep -q 'docker' <<<"$(id ${gsMainUserName})"); then
-    usermod -aG docker ${gsMainUserName}
-fi
-if (! grep -q 'docker' <<<"$(id root)"); then
-    usermod -aG docker root
-fi
-
-#### Docker-Compose
-fnInstallDockerCompose() {
-    gfnGetRepoValues 'Docker-Compose'
-
-    if [ "${gsVersionInstalled}" != "${gsVersionLatest}" ]; then
-        [ -f "${MySB_Files}/${gsRepoFile}" ] && mv -v "${MySB_Files}/${gsRepoFile}" "${MySB_Files}/${gsRepoFile}.tmp"
-        gfnRepoManageByType
-        [ -f "${MySB_Files}/${gsRepoFile}" ] && rm -fv "${MySB_Files}/${gsRepoFile}.tmp"
-        chmod -v +x $gsRepoDir
-        $gsRepoDir --version
-    fi
-}
-
-#### CRON UPGRADE
-if [ "${sLocSwitch}" == "CRON" ]; then
-    # Check for a new version / Install it
-    if gfnCheckCommand 0 docker; then
-        fnInstallDockerCompose
-    fi
-else
-    if gfnCheckCommand 0 docker; then
-        fnInstallDockerCompose
-    fi
-fi
-
-#### Dry
-echo
-echo "########## Dry"
-${binCURL} https://moncho.github.io/dry/dryup.sh | sh
-if gfnCheckCommand 0 dry; then
-    chmod 0755 /usr/local/bin/dry
-    dry --version
-fi
-
-#### Check
-docker info
-
-#### Network
-# docker network ls
-docker network prune --force
-# docker network create --driver=bridge --internal --subnet=172.29.0.0/24 --gateway=172.29.0.254 mysb_backend
-# docker network create --driver=bridge --subnet=172.28.0.0/24 --gateway=172.28.0.254 mysb_frontend
+#### Execute
+${gsRepoDir}/lynis audit system
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after
