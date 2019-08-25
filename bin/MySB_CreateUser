@@ -35,14 +35,14 @@ if [ "${USAGE}" == "ON" ]; then
     done
 
     NewUserPassword="$(gfnGenPassword 8)"
-    [ -z "$NewUserPassword" ] && gfnQuestionGetString YES "${CreateUser_Password} [${UserToCreate}]: " NewUserPassword
+    [ -z "${NewUserPassword}" ] && gfnQuestionGetString YES "${CreateUser_Password} [${UserToCreate}]: " NewUserPassword
 
     # gfnQuestionGetString NO "$CreateUser_SFTP" UserSFTP ${Global_YES}
-    # UserSFTP="`echo $UserSFTP | tr '[:lower:]' '[:upper:]'`"
+    # UserSFTP="`echo ${UserSFTP} | tr '[:lower:]' '[:upper:]'`"
     UserSFTP="${Global_YES}"
     UserSUDO="${Global_NO}"
 
-    while (! gfnValidateMail "$UserEmail"); do
+    while (! gfnValidateMail "${UserEmail}"); do
         gfnQuestionGetString NO "${CreateUser_Email}" UserEmail
     done
 
@@ -51,8 +51,8 @@ if [ "${USAGE}" == "ON" ]; then
         gfnQuestionGetString NO "${CreateUser_AccountType}" UserAccountType "normal"
     done
 
-    UserSFTP="$(echo "$UserSFTP" | sed "s/${Global_YES}/1/g;s/${Global_NO}/0/g;")"
-    UserSUDO="$(echo "$UserSUDO" | sed "s/${Global_YES}/1/g;s/${Global_NO}/0/g;")"
+    UserSFTP="$(echo "${UserSFTP}" | sed "s/${Global_YES}/1/g;s/${Global_NO}/0/g;")"
+    UserSUDO="$(echo "${UserSUDO}" | sed "s/${Global_YES}/1/g;s/${Global_NO}/0/g;")"
     LocSwitch="MANUAL"
 else
     UserToCreate="$1"
@@ -103,11 +103,11 @@ if [ -z "$sCheckDuplicate" ]; then
             Quota=0
             QuotaType="auto"
         fi
-        cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir,language,quota,account_type,quota_type) VALUES ('${UserToCreate}','$UserEmail','$NewUserPassword','$NEWRPC','$UserSFTP','$UserSUDO','$ScgiPort','$rTorrentPort','$NewUserHomedir','${EnvLang}','$Quota','$UserAccountType','$QuotaType');"
+        cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir,language,quota,account_type,quota_type) VALUES ('${UserToCreate}','${UserEmail}','${NewUserPassword}','${NEWRPC}','${UserSFTP}','${UserSUDO}','${ScgiPort}','${rTorrentPort}','${NewUserHomedir}','${EnvLang}','$Quota','$UserAccountType','$QuotaType');"
     else
         Quota=$(gfnQuotaSpaceAvailable)
         log_daemon_msg "${CreateUser_UpdateInfoDB} [${UserToCreate}]"
-        cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='', rpc='$NEWRPC', scgi_port='$ScgiPort', rtorrent_port='$rTorrentPort', home_dir='$NewUserHomedir', quota='$Quota' WHERE users_ident='${UserToCreate}';"
+        cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='', rpc='${NEWRPC}', scgi_port='${ScgiPort}', rtorrent_port='${rTorrentPort}', home_dir='${NewUserHomedir}', quota='$Quota' WHERE users_ident='${UserToCreate}';"
     fi
     gfnListCountUsers 'all'
     gfnStatusLSB
@@ -115,7 +115,7 @@ if [ -z "$sCheckDuplicate" ]; then
     #### create system user
     log_daemon_msg "${CreateUser_SystemAccount} [${UserToCreate}]"
     if (! getent passwd "${UserToCreate}"); then
-        useradd -c "MySB user ${UserToCreate}" -d "$NewUserHomedir" -s /bin/bash "${UserToCreate}" &>/dev/null
+        useradd -c "MySB user ${UserToCreate}" -d "${NewUserHomedir}" -s /bin/bash "${UserToCreate}" &>/dev/null
     else
         usermod -c "MySB user ${UserToCreate}" -s /bin/bash "${UserToCreate}" &>/dev/null
     fi
@@ -155,12 +155,12 @@ if [ -z "$sCheckDuplicate" ]; then
 
             #### Share
             log_daemon_msg "${CreateUser_AllowShareDir} [${UserToCreate}]"
-            mount --bind /home/MySB_share "$NewUserHomedir"/share
+            mount --bind /home/MySB_share "${NewUserHomedir}"/share
             gfnStatusLSB
 
             #### Torrents files location
             log_daemon_msg "${CreateUser_TorrentDir} [${UserToCreate}]"
-            mount --bind "${gsRutorrentDir}"/share/users/"${UserToCreate}"/torrents "$NewUserHomedir"/torrents
+            mount --bind "${gsRutorrentDir}"/share/users/"${UserToCreate}"/torrents "${NewUserHomedir}"/torrents
             gfnStatusLSB
 
             #### add to groups
@@ -183,24 +183,24 @@ if [ -z "$sCheckDuplicate" ]; then
             gfnStatusLSB
 
             #### custumize profile
-            if [ ! -f "$NewUserHomedir"/.profile ]; then
+            if [ ! -f "${NewUserHomedir}"/.profile ]; then
                 log_daemon_msg "${CreateUser_CustomizeProfile} [${UserToCreate}]"
-                cp /etc/skel/.bashrc "$NewUserHomedir"
-                cp /etc/skel/.bash_logout "$NewUserHomedir"
-                cp /etc/skel/.profile "$NewUserHomedir"
-                chown "${UserToCreate}":"${UserToCreate}" "$NewUserHomedir"/.bashrc
-                chown "${UserToCreate}":"${UserToCreate}" "$NewUserHomedir"/.bash_logout
-                chown "${UserToCreate}":"${UserToCreate}" "$NewUserHomedir"/.profile
-                perl -pi -e "s/#force_color_prompt=yes/force_color_prompt=yes/g" "$NewUserHomedir"/.bashrc
+                cp /etc/skel/.bashrc "${NewUserHomedir}"
+                cp /etc/skel/.bash_logout "${NewUserHomedir}"
+                cp /etc/skel/.profile "${NewUserHomedir}"
+                chown "${UserToCreate}":"${UserToCreate}" "${NewUserHomedir}"/.bashrc
+                chown "${UserToCreate}":"${UserToCreate}" "${NewUserHomedir}"/.bash_logout
+                chown "${UserToCreate}":"${UserToCreate}" "${NewUserHomedir}"/.profile
+                perl -pi -e "s/#force_color_prompt=yes/force_color_prompt=yes/g" "${NewUserHomedir}"/.bashrc
                 gfnStatusLSB
             fi
 
             #### SSH Key
-            [ ! -f "$NewUserHomedir"/.ssh/id_rsa ] && ssh-keygen -q -t rsa -b 2048 -N "" -f "$NewUserHomedir"/.ssh/id_rsa -C "$UserEmail"
-            chown root:"${UserToCreate}" "$NewUserHomedir"/.ssh/*
-            [ ! -f "$NewUserHomedir"/.ssh/authorized_keys ] && touch "$NewUserHomedir"/.ssh/authorized_keys
-            chown "${UserToCreate}":"${UserToCreate}" "$NewUserHomedir"/.ssh/authorized_keys
-            chmod 0644 "$NewUserHomedir"/.ssh/authorized_keys
+            [ ! -f "${NewUserHomedir}"/.ssh/id_rsa ] && ssh-keygen -q -t rsa -b 2048 -N "" -f "${NewUserHomedir}"/.ssh/id_rsa -C "${UserEmail}"
+            chown root:"${UserToCreate}" "${NewUserHomedir}"/.ssh/*
+            [ ! -f "${NewUserHomedir}"/.ssh/authorized_keys ] && touch "${NewUserHomedir}"/.ssh/authorized_keys
+            chown "${UserToCreate}":"${UserToCreate}" "${NewUserHomedir}"/.ssh/authorized_keys
+            chmod 0644 "${NewUserHomedir}"/.ssh/authorized_keys
 
             # Logrotate
             install -g root -o root -m 0644 "${MySB_InstallDir}"/templates/logrotate/etc.logrotate.d.users.tmpl /etc/logrotate.d/rtorrent_"${UserToCreate}"
@@ -214,11 +214,11 @@ if [ -z "$sCheckDuplicate" ]; then
             #### NginX
             log_daemon_msg "${CreateUser_RpcFile} [${UserToCreate}]"
             install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.rpc.user.conf.tmpl /etc/nginx/rpc/"${UserToCreate}".conf
-            perl -pi -e "s/<scgi_port>/$ScgiPort/g" /etc/nginx/rpc/"${UserToCreate}".conf
+            perl -pi -e "s/<scgi_port>/${ScgiPort}/g" /etc/nginx/rpc/"${UserToCreate}".conf
             perl -pi -e "s/<username>/${UserToCreate}/g" /etc/nginx/rpc/"${UserToCreate}".conf
             perl -pi -e "s/<USERNAME>/$UPPERNEWUSER/g" /etc/nginx/rpc/"${UserToCreate}".conf
             install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.rpc.user.local.tmpl /etc/nginx/rpc/"${UserToCreate}".local
-            perl -pi -e "s/<scgi_port>/$ScgiPort/g" /etc/nginx/rpc/"${UserToCreate}".local
+            perl -pi -e "s/<scgi_port>/${ScgiPort}/g" /etc/nginx/rpc/"${UserToCreate}".local
             perl -pi -e "s/<username>/${UserToCreate}/g" /etc/nginx/rpc/"${UserToCreate}".local
             perl -pi -e "s/<USERNAME>/$UPPERNEWUSER/g" /etc/nginx/rpc/"${UserToCreate}".local
             {
@@ -266,10 +266,10 @@ if [ -z "$sCheckDuplicate" ]; then
 
                 if [ -z "$UserExist" ]; then
                     log_daemon_msg "${CreateUser_NextCloud} [${UserToCreate}]"
-                    gfnNextCloudAccountManage 'create' "${UserToCreate}" "$NewUserPassword"
+                    gfnNextCloudAccountManage 'create' "${UserToCreate}" "${NewUserPassword}"
                     gfnStatusLSB
                 else
-                    gfnNextCloudAccountManage 'edit' "${UserToCreate}" "$NewUserPassword"
+                    gfnNextCloudAccountManage 'edit' "${UserToCreate}" "${NewUserPassword}"
                 fi
                 if [ "$UserAccountType" == "normal" ]; then
                     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:scan --path=\"/${UserToCreate}/files/MySB_Home\" --quiet"
@@ -295,7 +295,7 @@ if [ -z "$sCheckDuplicate" ]; then
 
             #### Postfix Alias
             log_daemon_msg "Postfix alias [${UserToCreate}]"
-            (! grep -q "${UserToCreate}" /etc/aliases) && echo "${UserToCreate}: $UserEmail" >>/etc/aliases
+            (! grep -q "${UserToCreate}" /etc/aliases) && echo "${UserToCreate}: ${UserEmail}" >>/etc/aliases
             newaliases
             gfnStatusLSB
 
@@ -315,7 +315,7 @@ if [ -z "$sCheckDuplicate" ]; then
                 # rTorrent blocklist
                 if [ -f "${MySB_InstallDir}"/files/blocklists/blocklist_rtorrent.txt ]; then
                     log_daemon_msg "${CreateUser_Blocklists} [$seedUser]"
-                    cp "${MySB_InstallDir}"/files/blocklists/* "$NewUserHomedir"/blocklist/
+                    cp "${MySB_InstallDir}"/files/blocklists/* "${NewUserHomedir}"/blocklist/
                     gfnStatusLSB
                 else
                     log_daemon_msg "${CreateUser_NewBlocklists} [$seedUser]"
@@ -334,7 +334,7 @@ if [ -z "$sCheckDuplicate" ]; then
     esac
 
     #### Assign password
-    gfnScriptInvoke 'source' "${MySB_InstallDir}/bin/MySB_ChangeUserPassword" "${UserToCreate}" "$NewUserPassword" 'INSTALL'
+    gfnScriptInvoke 'source' "${MySB_InstallDir}/bin/MySB_ChangeUserPassword" "${UserToCreate}" "${NewUserPassword}" 'INSTALL'
 
     #### Create new security rules
     if [ "$LocSwitch" != "INSTALL" ]; then

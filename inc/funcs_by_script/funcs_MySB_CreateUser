@@ -35,34 +35,19 @@ gfnNextCloudAccountManage() {
     sSwitch="$1"
     sUserAccount="$2"
     sPassword="$3"
-    OC_PASS="$sPassword"
-
+    OC_PASS="${sPassword}"
     export OC_PASS
 
-    case "$sSwitch" in
+    case "${sSwitch}" in
         'create')
             su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:add --password-from-env --display-name=\"${sUserAccount}\" --group=\"MySB_users\" ${sUserAccount}" &>/dev/null
-            IfExist="$(cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_preferences WHERE userid='${sUserAccount}' AND appid='core' AND configkey = 'lang';")"
-            if [ -z "$IfExist" ]; then
-                cmdMySQL 'NextCloud_db' "INSERT INTO nc_preferences (userid,appid,configkey,configvalue) VALUES ('${sUserAccount}','core','lang','${EnvLang}');"
-            else
-                cmdMySQL 'NextCloud_db' "UPDATE nc_preferences SET configvalue = '${EnvLang}' WHERE userid='${sUserAccount}' AND appid= 'core' AND configkey = 'lang';"
-            fi
-            IfExist="$(cmdMySQL 'NextCloud_db' "SELECT configvalue FROM nc_preferences WHERE userid='${sUserAccount}' AND appid='settings' AND configkey = 'email';")"
-            if [ -z "$IfExist" ]; then
-                cmdMySQL 'NextCloud_db' "INSERT INTO nc_preferences (userid,appid,configkey,configvalue) VALUES ('${sUserAccount}','settings','email','${sUserMail}');"
-            else
-                cmdMySQL 'NextCloud_db' "UPDATE nc_preferences SET configvalue = '${EnvLang}' WHERE userid='${sUserAccount}' AND appid= 'core' AND configkey = 'lang';"
-            fi
-            IfExist="$(cmdMySQL 'NextCloud_db' "SELECT id FROM nc_storages WHERE id='local::/home/${sUserAccount}/';")"
-            if [ -z "$IfExist" ]; then
-                cmdMySQL 'NextCloud_db' "INSERT INTO nc_storages (id) VALUES ('local::/home/${sUserAccount}/');"
-            else
-                cmdMySQL 'NextCloud_db' "UPDATE nc_storages SET id = 'local::/home/${sUserAccount}/' WHERE id='$IfExist';"
-            fi
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${sUserAccount}\" core lang \"${EnvLang}\""
+            sUserMail="$(${binMySQL} "SELECT users_email FROM users WHERE users_ident='${sUserAccount}';")"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${sUserAccount}\" settings email \"${sUserMail}\""
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${sUserAccount}\" core timezone ${gsTimeZone}"
             ;;
         'edit')
-            su -s /bin/sh www-data -c "/usr/bin/php $gsNextCloudDir/occ user:resetpassword --password-from-env ${sUserAccount}" &>/dev/null
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:resetpassword --password-from-env ${sUserAccount}" &>/dev/null
             ;;
     esac
 }
