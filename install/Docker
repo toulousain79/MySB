@@ -25,29 +25,6 @@ source "$(dirname "$0")"/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
-#### VARs
-sLocSwitch="$1"
-
-#### Purge packages
-sPackages=(docker docker-engine docker.io containerd runc)
-gfnPackagesManage purge "${sPackages[@]}"
-
-#### Install packages
-sPackages=(docker-ce docker-ce-cli containerd.io python-backports.ssl-match-hostname python-cached-property python-docker python-dockerpty python-docopt python-functools32 python-jsonschema python-texttable python-websocket python-yaml)
-gfnPackageBundleInstall "${sPackages[@]}"
-
-#### Init script
-systemctl daemon-reload
-systemctl enable docker
-
-#### Secure
-if (! grep -q 'docker' <<<"$(id ${gsMainUserName})"); then
-    usermod -aG docker ${gsMainUserName}
-fi
-if (! grep -q 'docker' <<<"$(id root)"); then
-    usermod -aG docker root
-fi
-
 #### Docker-Compose
 fnInstallDockerCompose() {
     gfnGetRepoValues 'Docker-Compose'
@@ -61,35 +38,55 @@ fnInstallDockerCompose() {
     fi
 }
 
-#### CRON UPGRADE
-if [ "${sLocSwitch}" == "CRON" ]; then
-    # Check for a new version / Install it
-    if gfnCheckCommand 0 docker; then
-        fnInstallDockerCompose
-    fi
-else
-    if gfnCheckCommand 0 docker; then
-        fnInstallDockerCompose
-    fi
-fi
-
 #### Dry
-echo
-echo "########## Dry"
-${binCURL} https://moncho.github.io/dry/dryup.sh | sh
-if gfnCheckCommand 0 dry; then
-    chmod 0755 /usr/local/bin/dry
-    dry --version
+fnInstallDry() {
+    gfnGetRepoValues 'Dry'
+
+    if [ "${gsVersionInstalled}" != "${gsVersionLatest}" ]; then
+        [ -f "${MySB_Files}/${gsRepoFile}" ] && mv -v "${MySB_Files}/${gsRepoFile}" "${MySB_Files}/${gsRepoFile}.tmp"
+        gfnRepoManageByType
+        [ -f "${MySB_Files}/${gsRepoFile}" ] && rm -fv "${MySB_Files}/${gsRepoFile}.tmp"
+        chmod -v +x $gsRepoDir
+        $gsRepoDir --version
+    fi
+}
+
+if [ "${gsSwitch}" != "CRON" ]; then
+    #### Purge packages
+    sPackages=(docker docker-engine docker.io containerd runc)
+    gfnPackagesManage purge "${sPackages[@]}"
+
+    #### Install packages
+    sPackages=(docker-ce docker-ce-cli containerd.io python-backports.ssl-match-hostname python-cached-property python-docker python-dockerpty python-docopt python-functools32 python-jsonschema python-texttable python-websocket python-yaml)
+    gfnPackageBundleInstall "${sPackages[@]}"
+
+    #### Init script
+    systemctl daemon-reload
+    systemctl enable docker
+
+    #### Secure
+    if (! grep -q 'docker' <<<"$(id ${gsMainUserName})"); then
+        usermod -aG docker ${gsMainUserName}
+    fi
+    if (! grep -q 'docker' <<<"$(id root)"); then
+        usermod -aG docker root
+    fi
+
+    #### Check
+    docker info
+
+    #### Network
+    # docker network ls
+    docker network prune --force
+    # docker network create --driver=bridge --internal --subnet=172.29.0.0/24 --gateway=172.29.0.254 mysb_backend
+    # docker network create --driver=bridge --subnet=172.28.0.0/24 --gateway=172.28.0.254 mysb_frontend
 fi
 
-#### Check
-docker info
-
-#### Network
-# docker network ls
-docker network prune --force
-# docker network create --driver=bridge --internal --subnet=172.29.0.0/24 --gateway=172.29.0.254 mysb_backend
-# docker network create --driver=bridge --subnet=172.28.0.0/24 --gateway=172.28.0.254 mysb_frontend
+#### Tools
+if gfnCheckCommand 0 docker; then
+    fnInstallDockerCompose
+    fnInstallDry
+fi
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after
