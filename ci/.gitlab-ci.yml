@@ -1,8 +1,10 @@
 ---
 stages:
-    - check_bugfix
-    - check_develop
-    - check_prod
+    - scheduled_check_develop
+    - scheduled_check_bugfix
+    - scheduled_check_master
+    - check_bugfix_before_merge
+    - check_master_after_merge
 
 # #### Templates - BoF
 .tmpl_check: &tmpl_check
@@ -14,9 +16,18 @@ stages:
             done
 # #### Templates - EoF
 
-# #### Project check (merge request, schedules & triggered)
-Develop:
-    stage: check_develop
+# #### Project check scheduled - BoF
+Scheduled Develop:
+    stage: scheduled_check_bugfix
+    only:
+      refs:
+        - schedules
+      variables:
+        - $RELEASE == "bugfix"
+    <<: *tmpl_check
+
+Scheduled Bugfix:
+    stage: scheduled_check_develop
     only:
       refs:
         - schedules
@@ -24,25 +35,28 @@ Develop:
         - $RELEASE == "develop"
     <<: *tmpl_check
 
+Scheduled Prod:
+    stage: scheduled_check_master
+    only:
+      refs:
+        - schedules
+      variables:
+        - $RELEASE == "prod"
+    <<: *tmpl_check
+# #### Project check scheduled - EoF
+
+# #### Project check merge request - BoF
 Bugfix:
-    stage: check_bugfix
+    stage: check_bugfix_before_merge
     only:
       refs:
         - merge_requests
-        - schedules
-      variables:
-        - $RELEASE == "bugfix"
     <<: *tmpl_check
 
 Prod:
-    stage: check_prod
-    only:
-      refs:
-        - merge_requests
-        - schedules
-        - triggers
-      variables:
-        - $RELEASE == "bugfix"
-        - $RELEASE == "prod"
-    when: on_success
+    stage: check_master_after_merge
     <<: *tmpl_check
+    only:
+        - master
+    when: on_success
+# #### Project check merge request - EoF
