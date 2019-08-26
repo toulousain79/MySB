@@ -40,7 +40,30 @@ MailDomain="$(echo "${gsMainUserEmail}" | cut -d "@" -f 2)"
 NextCloudDataDirectory="/home/nextcloud"
 source /etc/MySB/config_db
 
-function fnBaseConfig() {
+#### Functions
+# Base commands
+function fnBaseCommands() {
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:add-missing-indices"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:convert-filecache-bigint --no-interaction"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mimetype:update-db"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mimetype:update-js"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable files_external"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable notifications"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:update --all"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ background:cron"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ sharing:cleanup-remote-storages"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:cleanup"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
+}
+
+# Config
+function fnConfig() {
     local bCreateExtMounts
     bCreateExtMounts="${1}"
 
@@ -88,19 +111,8 @@ function fnBaseConfig() {
         sed -i '/<dbpassword>/d' "${gsNextCloudDir}"/config/config.php
         sed -i "${nNumLine}i\'dbpassword' => '${MySQL_MysbPassword}'," "${gsNextCloudDir}"/config/config.php
 
-        #### Base
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:add-missing-indices"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:convert-filecache-bigint --no-interaction"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mimetype:update-db"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mimetype:update-js"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable files_external"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable notifications"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:update --all"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ background:cron"
+        #### Base commands
+        fnBaseCommands
 
         #### Update DB
         cmdMySQL 'MySB_db' "UPDATE repositories SET version = '${Version}' WHERE name='NextCloud';" -v
@@ -180,21 +192,8 @@ function fnBaseConfig() {
                 unset IdStorage FnUserMail OC_PASS
             done
         else
-            #### Base
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:add-missing-indices"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:convert-filecache-bigint --no-interaction"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mimetype:update-db"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mimetype:update-js"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable files_external"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable notifications"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ background:cron"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ sharing:cleanup-remote-storages"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:cleanup"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
+            #### Base commands
+            fnBaseCommands
         fi
     fi
 }
@@ -306,7 +305,7 @@ if [ "${gbToInstall_NextCloud}" == "YES" ] && [ "${sSwitch}" != "INIT" ]; then
 
     if gfnCheckCommand 0 "${gsNextCloudDir}"/occ; then
         # Upgrade
-        fnBaseConfig 1
+        fnConfig 1
 
         # NextCloud is installed
         cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='NextCloud';" -v
@@ -368,7 +367,7 @@ EOF
 
     if [ "${OnBoot}" -eq 1 ]; then
         #### NextCloud upgrade
-        fnBaseConfig 0
+        fnConfig 0
 
         #### Display 'config.php' for logs
         cat "${gsNextCloudDir}"/config/config.php
