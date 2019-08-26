@@ -36,6 +36,7 @@ define('MainUser_DNScrypt_LoadBalancing', 'Load-balancing');
 define('MainUser_DNScrypt_ForceTcp', 'Forcer le TCP');
 define('MainUser_DNScrypt_EphemeralKeys', 'Ephemeral Keys');
 define('MainUser_DNScrypt_TlsDisableTickets', 'Sessions TLS');
+define('MainUser_DNScrypt_DohServer', 'Serveurs DOH');
 
 define('Main_DNScrypt_TT_NoLogs', 'Le serveur ne doit pas enregistrer les requ&ecirc;tes des utilisateurs <i>(d&eacute;claratif)</i>');
 define('Main_DNScrypt_TT_DNSSec', 'Le serveur doit prendre en charge les extensions de s&eacute;curit&eacute; DNS <i>(DNSSEC)</i>');
@@ -53,5 +54,6 @@ define('Main_DNScrypt_TT_EphemeralKeys', 'Cr&eacute;ez une nouvelle cl&eacute; u
 Cela peut am&eacute;liorer la confidentialit&eacute;, mais peut &eacute;galement avoir un impact significatif sur l\'utilisation du processeur.<br />
 Activez uniquement si vous n\'avez pas beaucoup de charge r&eacute;seau.');
 define('Main_DNScrypt_TT_TlsDisableTickets', 'DoH: D&eacute;sactiver les tickets de session TLS <i>(augmente la confidentialit&eacute; mais aussi la latence)</i>');
+define('Main_DNScrypt_TT_DohServers', 'DoH: Utiliser des serveurs impl&eacute;mentant le protocole DNS sur HTTPS');
 
 //#################### LAST LINE ######################################

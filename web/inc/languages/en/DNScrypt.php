@@ -36,6 +36,7 @@ define('MainUser_DNScrypt_LoadBalancing', 'Load-balancing');
 define('MainUser_DNScrypt_ForceTcp', 'Force TCP');
 define('MainUser_DNScrypt_EphemeralKeys', 'Ephemeral Keys');
 define('MainUser_DNScrypt_TlsDisableTickets', 'TLS Disable Tickets');
+define('MainUser_DNScrypt_DohServer', 'DOH Servers');
 
 define('Main_DNScrypt_TT_NoLogs', 'Server must not log user queries <i>(declarative)</i>');
 define('Main_DNScrypt_TT_DNSSec', 'Server must support DNS security extensions <i>(DNSSEC)</i>');
@@ -53,5 +54,6 @@ define('Main_DNScrypt_TT_EphemeralKeys', 'Create a new, unique key for every sin
 This may improve privacy but can also have a significant impact on CPU usage.<br />
 Only enable if you don\'t have a lot of network load.');
 define('Main_DNScrypt_TT_TlsDisableTickets', 'DoH: Disable TLS session tickets <i>(increases privacy but also latency)</i>');
+define('Main_DNScrypt_TT_DohServers', 'DoH: Use servers implementing the DNS-over-HTTPS protocol');
 
 //#################### LAST LINE ######################################

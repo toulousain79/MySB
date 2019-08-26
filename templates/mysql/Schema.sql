@@ -92,13 +92,15 @@ CREATE TABLE IF NOT EXISTS `commands` (
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE IF NOT EXISTS `dnscrypt_config` (
   `id_dnscrypt_config` int(11) NOT NULL DEFAULT '1',
+  `status` tinyint(1) NOT NULL DEFAULT '0',
   `lb_strategy` varchar(7) NOT NULL DEFAULT 'p2',
   `require_nolog` varchar(5) NOT NULL DEFAULT 'true',
   `require_dnssec` varchar(5) NOT NULL DEFAULT 'true',
   `require_nofilter` varchar(5) NOT NULL DEFAULT 'true',
   `force_tcp` varchar(5) NOT NULL DEFAULT 'false',
   `ephemeral_keys` varchar(5) NOT NULL DEFAULT 'false',
-  `tls_disable_session_tickets` varchar(5) NOT NULL DEFAULT 'true',
+  `doh_servers` varchar(5) NOT NULL DEFAULT 'true',
+  `tls_disable_session_tickets` varchar(5) NOT NULL DEFAULT 'false',
   PRIMARY KEY (`id_dnscrypt_config`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 ;
 /*!40101 SET character_set_client = @saved_cs_client */;
