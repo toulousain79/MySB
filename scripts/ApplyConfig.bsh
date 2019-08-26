@@ -183,7 +183,8 @@ fnDoApplyConfig() {
                 ;;
 
             "DNScrypt")
-                sRequest="$(cmdMySQL 'MySB_db' "SELECT require_nolog, require_dnssec, require_nofilter, lb_strategy, force_tcp, ephemeral_keys, tls_disable_session_tickets FROM dnscrypt_config WHERE id_dnscrypt_config='1';" | sed 's/\t/|/g;')"
+                cp -a /etc/dnscrypt-proxy/dnscrypt-proxy.toml /etc/dnscrypt-proxy/dnscrypt-proxy.toml.backup
+                sRequest="$(cmdMySQL 'MySB_db' "SELECT require_nolog, require_dnssec, require_nofilter, lb_strategy, force_tcp, ephemeral_keys, tls_disable_session_tickets, doh_servers FROM dnscrypt_config WHERE id_dnscrypt_config='1';" | sed 's/\t/|/g;')"
                 sNoLogs="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[1]}')"
                 sDnsSec="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[2]}')"
                 sNoFilter="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[3]}')"
@@ -191,6 +192,7 @@ fnDoApplyConfig() {
                 sForceTcp="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[5]}')"
                 sEphemeralKeys="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[6]}')"
                 sTlsDisableTickets="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[7]}')"
+                sDohServers="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[8]}')"
                 sSearch="$(grep 'lb_strategy' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
                 sed -i "s/^require_nolog = true/require_nolog = ${sNoLogs}/g;s/^require_nolog = false/require_nolog = ${sNoLogs}/g" /etc/dnscrypt-proxy/dnscrypt-proxy.toml
                 sed -i "s/^require_dnssec = true/require_dnssec = ${sDnsSec}/g;s/^require_dnssec = false/require_dnssec = ${sDnsSec}/g" /etc/dnscrypt-proxy/dnscrypt-proxy.toml
@@ -199,10 +201,20 @@ fnDoApplyConfig() {
                 sed -i "s/^dnscrypt_ephemeral_keys = true/dnscrypt_ephemeral_keys = ${sEphemeralKeys}/g;s/^dnscrypt_ephemeral_keys = false/dnscrypt_ephemeral_keys = ${sEphemeralKeys}/g" /etc/dnscrypt-proxy/dnscrypt-proxy.toml
                 sed -i "s/lb_strategy = ${sSearch}/lb_strategy = '${sLbStrategy}'/g;" /etc/dnscrypt-proxy/dnscrypt-proxy.toml
                 sed -i "s/^tls_disable_session_tickets = true/tls_disable_session_tickets = ${sTlsDisableTickets}/g;s/^tls_disable_session_tickets = false/tls_disable_session_tickets = ${sTlsDisableTickets}/g" /etc/dnscrypt-proxy/dnscrypt-proxy.toml
-                systemctl restart dnscrypt-proxy.service
-                # gfnWaitingSTD DNScrypt
-                # screen -dmS DNScrypt /bin/bash ${MySB_InstallDir}/bin/MySB_SecurityRules 'create' 'APPLYCONFIG'
-                # gfnWaitingSTD DNScrypt
+                sed -i "s/^doh_servers = true/doh_servers = ${sDohServers}/g;s/^doh_servers = false/doh_servers = ${sDohServers}/g" /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+                if (! systemctl restart dnscrypt-proxy.service); then
+                    cp -a /etc/dnscrypt-proxy/dnscrypt-proxy.toml.backup /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+                    systemctl restart dnscrypt-proxy.service
+                    sNoLogs="$(grep 'require_nolog' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+                    sDnsSec="$(grep 'require_dnssec' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+                    sNoFilter="$(grep 'require_nofilter' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+                    sLbStrategy="$(grep 'lb_strategy' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }' | sed "s/'//g;")"
+                    sForceTcp="$(grep 'force_tcp' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+                    sEphemeralKeys="$(grep 'ephemeral_keys' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+                    sTlsDisableTickets="$(grep 'tls_disable_session_tickets' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+                    sDohServers="$(grep 'doh_servers' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+                    cmdMySQL 'MySB_db' "UPDATE dnscrypt_config SET require_nolog='${sNoLogs}', require_dnssec='${sDnsSec}', require_nofilter='${sNoFilter}', lb_strategy='${sLbStrategy}', force_tcp='${sForceTcp}', ephemeral_keys='${sEphemeralKeys}', tls_disable_session_tickets='${sTlsDisableTickets}', doh_servers='${sDohServers}' WHERE id_dnscrypt_config='1';"
+                fi
                 echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 ;;

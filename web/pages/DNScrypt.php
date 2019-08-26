@@ -42,7 +42,6 @@ $ForceTcp_POST = $_POST['force_tcp'];
 $EphemeralKeys_POST = $_POST['ephemeral_keys'];
 $TlsDisableTickets_POST = $_POST['tls_disable_session_tickets'];
 $DohServers_POST = $_POST['doh_servers'];
-$Change = 0;
 $Command = 'message_only';
 $type = 'information';
 $message = Global_NoChange;
@@ -60,37 +59,33 @@ if (isset($_POST['submit'])) {
             $TlsDisableTickets_DB = $ConfigValues['tls_disable_session_tickets'];
             $DohServers_DB = $ConfigValues['doh_servers'];
 
-            if (($NoLogs_POST != $NoLogs_DB) || ($DNSSec_POST != $DNSSec_DB) || ($NoFilter_POST != $NoFilter_DB) || ($LoadBalancing_POST != $LoadBalancing_DB) || ($ForceTcp_POST != $ForceTcp_DB) || ($EphemeralKeys_POST != $EphemeralKeys_DB) || ($TlsDisableTickets_POST != $TlsDisableTickets_DB) || ($DohServers_POST != $DohServers_DB)) {
-                $Change++;
-                $Command = 'DNScrypt';
+            $Command = 'DNScrypt';
+            $type = 'success';
+            $NoLogs_DB = $NoLogs_POST;
+            $DNSSec_DB = $DNSSec_POST;
+            $NoFilter_DB = $NoFilter_POST;
+            $LoadBalancing_DB = $LoadBalancing_POST;
+            $ForceTcp_DB = $ForceTcp_POST;
+            $EphemeralKeys_DB = $EphemeralKeys_POST;
+            $TlsDisableTickets_DB = $TlsDisableTickets_POST;
+            $DohServers_DB = $DohServers_POST;
+
+            $result = $MySB_DB->update("dnscrypt_config", [
+                "require_nolog" => "$NoLogs_POST",
+                "require_dnssec" => "$DNSSec_POST",
+                "require_nofilter" => "$NoFilter_POST",
+                "lb_strategy" => "$LoadBalancing_POST",
+                "force_tcp" => "$ForceTcp_POST",
+                "ephemeral_keys" => "$EphemeralKeys_POST",
+                "tls_disable_session_tickets" => "$TlsDisableTickets_POST",
+                "doh_servers" => "$DohServers_POST"
+            ], ["id_dnscrypt_config" => 1]);
+
+            if ($result >= 0) {
                 $type = 'success';
-                $NoLogs_DB = $NoLogs_POST;
-                $DNSSec_DB = $DNSSec_POST;
-                $NoFilter_DB = $NoFilter_POST;
-                $LoadBalancing_DB = $LoadBalancing_POST;
-                $ForceTcp_DB = $ForceTcp_POST;
-                $EphemeralKeys_DB = $EphemeralKeys_POST;
-                $TlsDisableTickets_DB = $TlsDisableTickets_POST;
-                $DohServers_DB = $DohServers_POST;
+                unset($message);
             }
 
-            if ($Change >= 1) {
-                $result = $MySB_DB->update("dnscrypt_config", [
-                    "require_nolog" => "$NoLogs_POST",
-                    "require_dnssec" => "$DNSSec_POST",
-                    "require_nofilter" => "$NoFilter_POST",
-                    "lb_strategy" => "$LoadBalancing_POST",
-                    "force_tcp" => "$ForceTcp_POST",
-                    "ephemeral_keys" => "$EphemeralKeys_POST",
-                    "tls_disable_session_tickets" => "$TlsDisableTickets_POST",
-                    "doh_servers" => "$DohServers_POST"
-                ], ["id_dnscrypt_config" => 1]);
-
-                if ($result >= 0) {
-                    $type = 'success';
-                    unset($message);
-                }
-            }
             break;
         default:
             $Command = 'DNScrypt';
