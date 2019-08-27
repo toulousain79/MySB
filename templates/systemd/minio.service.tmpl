@@ -3,6 +3,7 @@ Description=MinIO
 Documentation=https://docs.min.io
 Wants=network-online.target
 After=network-online.target
+AssertPathExists=/etc/minio/
 AssertFileIsExecutable=/usr/local/bin/minio
 
 [Service]
@@ -11,9 +12,10 @@ User=minio
 Group=minio
 
 EnvironmentFile=/etc/default/minio
-ExecStartPre=/bin/bash -c "if [ -z \"${MINIO_VOLUMES}\" ]; then echo \"Variable MINIO_VOLUMES not set in /etc/default/minio\"; exit 1; fi"
-
-ExecStart=/usr/local/bin/minio server ${MINIO_OPTS} ${MINIO_VOLUMES}
+ExecStartPre=/bin/bash -c "if [ -z \"$MINIO_VOLUMES\" ]; then echo \"Variable MINIO_VOLUMES not set in /etc/default/minio\"; exit 1; fi"
+ExecStart=/usr/local/bin/minio server $MINIO_OPTS $MINIO_VOLUMES
+StandardOutput=journal
+StandardError=inherit
 
 # Let systemd restart this service always
 Restart=always
@@ -23,7 +25,10 @@ LimitNOFILE=65536
 
 # Disable timeout logic and wait until process is stopped
 TimeoutStopSec=infinity
+# SIGTERM signal is used to stop Minio
+KillSignal=SIGTERM
 SendSIGKILL=no
+SuccessExitStatus=0
 
 [Install]
 WantedBy=multi-user.target
