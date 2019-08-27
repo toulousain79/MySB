@@ -135,6 +135,8 @@ case "${1}" in
         gfnListCountUsers 'normal'
         for sUser in ${gsUsersList}; do
             gfnManageServices stop "rtorrent-${sUser}"
+            (mount -l 2>/dev/null | grep "/home/${sUser}/rtorrent/torrents") && umount -v "/home/${sUser}/rtorrent/torrents"
+            (mount -l 2>/dev/null | grep "/home/${sUser}/rtorrent/share") && umount -v "/home/${sUser}/rtorrent/share"
             [ -d /home/${sUser}/rtorrent/torrents ] && mv /home/${sUser}/rtorrent/torrents /home/${sUser}/torrents
             [ -d /home/${sUser}/rtorrent/share ] && mv /home/${sUser}/rtorrent/share /home/${sUser}/share
             gfnDeleteDirectory 1 "/home/${sUser}/rtorrent/config.d"
@@ -251,6 +253,11 @@ case "${1}" in
         repquota -a
 
         #### Cleaning
+        sed -i '/\/mnt\/tmpFS\/mysql/d' /etc/fstab
+        sed -i '/\/mnt\/tmpFS\/php/d' /etc/fstab
+        (df -H | grep -q '/mnt/tmpFS/mysql') && umount /mnt/tmpFS/mysql
+        (df -H | grep -q '/mnt/tmpFS/php') && umount /mnt/tmpFS/php
+        [ -d /mnt/tmpFS ] && rm -rfv /mnt/tmpFS
         gfnDeleteDirectory 1 "/var/spool/apt-mirror/mirror/packages.sury.org/"
         gfnDeleteDirectory 1 "/etc/php/7.2"
         rm -vf "${MySB_InstallDir}/web/logs/system/php5-fpm.html"
