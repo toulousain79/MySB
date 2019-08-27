@@ -33,13 +33,14 @@ source "$(dirname "$0")"/../inc/includes_before
 case "${gsSwitch}" in
     'INSTALL'|'UPGRADE')
         (! grep -q 'minio' /etc/group) && groupadd --system minio
-        (! grep -q 'minio' /etc/passwd) && useradd -s /sbin/nologin --system -g minio minio
+        (! grep -q 'minio' /etc/passwd) && useradd -c "Minio system user" -d /home/minio -s /sbin/nologin --system -g minio minio
         install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/minio.service.tmpl /lib/systemd/system/minio.service
         systemctl daemon-reload
         systemctl enable minio.service
         install -d -v -o minio -g minio -m 0755 /etc/minio
         install -d -v -o minio -g minio -m 0755 /etc/minio/certs
-        install -d -v -o minio -g minio -m 0755 /usr/local/share/minio
+        install -d -v -o minio -g minio -m 0755 /etc/minio/certs/CAs
+        install -d -v -o minio -g minio -m 0755 /home/minio/data
         if [[ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ]] && [[ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" ]]; then
             install -v -o minio -g minio -m 0644 "/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/minio/certs/private.key
             install -v -o minio -g minio -m 0644 "/etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" /etc/minio/certs/public.crt
@@ -55,18 +56,18 @@ MINIO_ACCESS_KEY="${MINIO_ACCESS_KEY:-$(gfnGenPassword 20)}"
 MINIO_SECRET_KEY="${MINIO_SECRET_KEY:-$(gfnGenPassword 40)}"
 
 #### /etc/default/minio
-if [ ! -f /etc/default/minio ]; then
+# if [ ! -f /etc/default/minio ]; then
     {
         echo "# Volume to be used for Minio server."
-        echo "MINIO_VOLUMES=\"/home/${gsMainUserName}/rtorrent\""
+        echo "MINIO_VOLUMES=\"/home/minio/data\""
         echo "# Use if you want to run Minio on a custom port."
-        echo "MINIO_OPTS=\"-C /etc/minio --address ${gsHostNameFqdn}:9000\""
+        echo "MINIO_OPTS=\"-C /etc/minio --address :9000 --address ${gsHostNameFqdn}:9000\""
         echo "# Access Key of the server."
         echo "MINIO_ACCESS_KEY=\"${MINIO_ACCESS_KEY}\""
         echo "# Secret key of the server."
         echo "MINIO_SECRET_KEY=\"${MINIO_SECRET_KEY}\""
     } >/etc/default/minio
-fi
+# fi
 chown minio:minio /etc/default/minio
 
 #### Minio
@@ -101,6 +102,9 @@ fnInstallMinioClient() {
     fi
     chmod -v +x ${gsRepoDir}
     ${gsRepoDir} --version
+
+    # Minio client host config (alias)
+    mc config host add MySB https://${gsHostNameFqdn}:9000 ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY} --api S3v4
 }
 
 #### Goofys
@@ -129,7 +133,18 @@ if gfnCheckCommand 0 /usr/local/bin/minio; then
     cmdMySQL 'MySB_db' "UPDATE services SET to_install='0',is_installed='1' WHERE serv_name='Minio';" -v
 fi
 
+# Create users buckets
+source ${MySB_InstallDir}/inc/funcs_by_script/funcs_MySB_CreateUser
+gfnListCountUsers 'normal'
+for sUser in ${gsUsersList}; do
+    gfnMinioUsersBuckets create "${sUser}"
+done
+
+
+
 # mc config host add <ALIAS> <YOUR-MINIO-ENDPOINT> <YOUR-ACCESS-KEY> <YOUR-SECRET-KEY>
+# mc policy set download play/mybucket/myphotos/2020/
+
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after

@@ -28,6 +28,59 @@
 }
 ##################### FIRST LINE #####################################
 
+#### Minio
+gfnMinioUsersBuckets() {
+    # gfnMinioUsersBuckets (create|edit|delete) user
+    # Policies: getonly, putonly, writeonly, readonly, readwrite
+    local sSwitch sUser sPass sBucket sPolicy
+    local aBucketList
+    sSwitch="${1}"
+    sUser="${2}"
+    sPass="${3}"
+    aBucketList=()
+    aBucketList["complete"]="readonly"
+    aBucketList["watch"]="readwrite"
+    aBucketList["torrents"]="readwrite"
+    [ -z "${sSwitch}" ] && return
+    [ -z "${sUser}" ] && return
+    [ "${gbIsInstalled_Minio}" == "YES" ] && return
+
+    case "${sSwitch}" in
+        'create')
+            for ((i = 0; i < ${#aBucketList[@]}; i++)); do
+                sBucket="$(echo "${aBucketList[${i}]}" | awk '{printf $1}')"
+                sPolicy="$(echo "${aBucketList[${i}]}" | awk '{printf $2}')"
+
+                # Bucket
+                if [ -d "/home/${sUser}/rtorrent/${sBucket}/" ] && [ -d "/home/minio/data/${sUser}_${sBucket}" ]; then
+                    [ ! -h "/home/minio/data/${sUser}_${sBucket}" ] && ln -s "/home/${sUser}/rtorrent/${sBucket}/" "/home/minio/data/${sUser}_${sBucket}"
+                fi
+
+                # Config
+                install -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/getonly.json.tmpl /tmp/getonly.json
+                sed -i "s/2012-10-17/$(/bin/date '+%Y-%m-%d - %H:%M:%S')/g;" /tmp/getonly.json
+                sed -i "s/bucketname/${sUser}_${sBucket}/g;" /tmp/getonly.json
+                mc admin policy add "${sUser}_${sBucket}" getonly /tmp/getonly.json
+
+                if [ -n "${sPass}" ]; then
+                    mc admin user add "${sUser}_${sBucket}" "${sUser}" "${sPass}"
+                    mc admin policy set "${sUser}_${sBucket}" "${sPolicy}" user="${sUser}"
+                    mc config host add "MySB-${sUser}" https://${gsHostNameFqdn}:9000 "${sUser}" "${sPass}" --api s3v4
+                fi
+
+                # Group
+                mc admin group add "${sUser}_${sBucket}" MySB_users "${sUser}"
+                mc admin policy set "${sUser}_${sBucket}" getonly group=MySB_users
+            done
+            ;;
+        'delete')
+            # rtorrent/complete
+            mc admin user remove "${sUser}_complete" "${sUser}"
+            [ -h "/home/minio/data/${sUser}_complete" ] && rm "/home/minio/data/${sUser}_complete"
+            ;;
+    esac
+}
+
 #### NextCloud account manage
 gfnNextCloudAccountManage() {
     local sSwitch sUserAccount sPassword sUserMail
@@ -230,8 +283,8 @@ gfnManageUserHomeDir() {
     [ ! -d /home/"${sUser}"/rtorrent/complete ] && mkdir /home/"${sUser}"/rtorrent/complete
     [ ! -d /home/"${sUser}"/rtorrent/.session ] && mkdir /home/"${sUser}"/rtorrent/.session
     # [ ! -d /home/"${sUser}"/rtorrent/config.d ] && mkdir /home/"${sUser}"/rtorrent/config.d
-    [ ! -d /home/"${sUser}"/torrents ] && mkdir /home/"${sUser}"/torrents
-    [ ! -d /home/"${sUser}"/share ] && mkdir /home/"${sUser}"/share
+    [ ! -d /home/"${sUser}"/rtorrent/torrents ] && mkdir /home/"${sUser}"/rtorrent/torrents
+    [ ! -d /home/"${sUser}"/rtorrent/share ] && mkdir /home/"${sUser}"/rtorrent/share
 
     #### Change rights and owners
     # /home/user
