@@ -137,21 +137,11 @@ fi
 
 #### Config
 if [ -f "${gsNextCloudDir}"/config/config.php ] && (gfnCheckCommand 0 "${gsNextCloudDir}"/occ); then
-    # Maybe it's an upgrade ?
-    if [[ ${gnRepoUpgrade} -eq 1 ]]; then
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:update --all"
-    fi
-
     # #### Check old config file
-    # Version="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version" | tail -n 1)"
-    Version="$(grep "'version'" "${gsNextCloudDir}"/config/config.php | cut -d "'" -f 3)"
-    # InstanceId="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get instanceid")"
-    InstanceId="$(grep "'instanceid'" "${gsNextCloudDir}"/config/config.php | cut -d "'" -f 3)"
-    # Secret="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get secret")"
-    Secret="$(grep "'secret'" "${gsNextCloudDir}"/config/config.php | cut -d "'" -f 3)"
-    # PasswordSalt="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get passwordsalt")"
-    PasswordSalt="$(grep "'passwordsalt'" "${gsNextCloudDir}"/config/config.php | cut -d "'" -f 3)"
+    Version="$(grep "'version'" "${gsNextCloudDir}"/config/config.php | tail -n 1 | cut -d "'" -f 4)"
+    InstanceId="$(grep "'instanceid'" "${gsNextCloudDir}"/config/config.php | tail -n 1 | cut -d "'" -f 4)"
+    Secret="$(grep "'secret'" "${gsNextCloudDir}"/config/config.php | tail -n 1 | cut -d "'" -f 4)"
+    PasswordSalt="$(grep "'passwordsalt'" "${gsNextCloudDir}"/config/config.php | tail -n 1 | cut -d "'" -f 4)"
 
     # New config file
     install -v -g www-data -o www-data -m 0640 "${MySB_InstallDir}"/templates/nextcloud/nextcloud.config.php.tmpl "${gsNextCloudDir}"/config/config.php
@@ -168,9 +158,16 @@ if [ -f "${gsNextCloudDir}"/config/config.php ] && (gfnCheckCommand 0 "${gsNextC
     nNumLine=$(grep '<dbpassword>' -n -m 1 "${gsNextCloudDir}"/config/config.php | cut -d ':' -f 1)
     sed -i '/<dbpassword>/d' "${gsNextCloudDir}"/config/config.php
     sed -i "${nNumLine}i\'dbpassword' => '${MySQL_MysbPassword}'," "${gsNextCloudDir}"/config/config.php
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
+
+    # Maybe it's an upgrade ?
+    if [[ ${gnRepoUpgrade} -eq 1 ]]; then
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
+    fi
 
     # config:system:set
+    echo && echo "# config:system:set"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set trusted_domains 0 --value=127.0.0.1"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set trusted_domains 1 --value=localhost"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set trusted_domains 2 --value=${gsHostNameFqdn}:${gsPort_MySB_HTTPS}"
@@ -192,7 +189,7 @@ if [ -f "${gsNextCloudDir}"/config/config.php ] && (gfnCheckCommand 0 "${gsNextC
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ group:add MySB_users"
     fi
 
-    # su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
+    echo && echo "# config:system:set"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:add-missing-indices"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:convert-filecache-bigint --no-interaction"
@@ -254,6 +251,9 @@ if [ -f "${gsNextCloudDir}"/config/config.php ] && (gfnCheckCommand 0 "${gsNextC
 
         unset IdStorage FnUserMail OC_PASS
     done
+
+    # Disable maintenance mode
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
 fi
 
 #### Logrotate
