@@ -66,16 +66,28 @@ perl -pi -e "s/<MySB_InstallDir>/${gsInstallDirEscaped}/g" /etc/nginx/locations/
 gfnManageServices start "${binPhpService} nginx"
 
 #### An upgrade ? Doing a backup
+# Maybe it's an upgrade ?
+if [[ ${gnRepoUpgrade} -eq 1 ]]; then
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --on"
+fi
 # Backup the config file if needed
 if [ -f "${gsNextCloudDir}"/config/config.php ]; then
-    mv -v "${gsNextCloudDir}"/config/config.php "${MySB_InstallDir}"/temp/nextcloud_config.php
+    cp -v "${gsNextCloudDir}"/config/config.php "${MySB_InstallDir}"/temp/nextcloud_config.php
 fi
 if [ -d "${gsNextCloudDir}"/apps2 ]; then
-    mv -v "${gsNextCloudDir}"/apps2 "${MySB_InstallDir}"/temp/nextcloud_apps2
+    cp -v "${gsNextCloudDir}"/apps2 "${MySB_InstallDir}"/temp/nextcloud_apps2
 fi
 if [ -f "${MySB_Files}/${gsRepoFile}" ]; then
     gfnDeleteDirectory 1 "${gsNextCloudDir}"
 fi
+
+#### Use NextCloud updater
+# if [[ ${gnRepoUpgrade} -eq 1 ]]; then
+#     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/updater/updater.phar --no-interaction"
+# else
+#     #### Extract new files
+#     gfnRepoManageByType
+# fi
 
 #### Extract new files
 gfnRepoManageByType
@@ -101,6 +113,7 @@ chown -R www-data:www-data /home/nextcloud
 
 #### Clean some files and directories
 rm -rfv "${gsNextCloudDir}"/data
+rm -rfv "${gsNextCloudDir}"/assets
 rm -fv "${gsNextCloudDir}"/config/config.sample.php
 if [ -f /home/nextcloud/nextcloud.log ]; then
     cat /home/nextcloud/nextcloud.log >>/var/log/nextcloud.log
@@ -127,16 +140,21 @@ if [ -f "${gsNextCloudDir}"/config/config.php ] && (gfnCheckCommand 0 "${gsNextC
     # Maybe it's an upgrade ?
     if [[ ${gnRepoUpgrade} -eq 1 ]]; then
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:update --all"
     fi
 
     # #### Check old config file
-    Version="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version" | tail -n 1)"
-    InstanceId="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get instanceid")"
-    Secret="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get secret")"
-    PasswordSalt="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get passwordsalt")"
+    # Version="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version" | tail -n 1)"
+    Version="$(grep "'version'" "${gsNextCloudDir}"/config/config.php | cut -d "'" -f 3)"
+    # InstanceId="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get instanceid")"
+    InstanceId="$(grep "'instanceid'" "${gsNextCloudDir}"/config/config.php | cut -d "'" -f 3)"
+    # Secret="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get secret")"
+    Secret="$(grep "'secret'" "${gsNextCloudDir}"/config/config.php | cut -d "'" -f 3)"
+    # PasswordSalt="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get passwordsalt")"
+    PasswordSalt="$(grep "'passwordsalt'" "${gsNextCloudDir}"/config/config.php | cut -d "'" -f 3)"
 
     # New config file
-    install -g www-data -o www-data -m 0640 "${MySB_InstallDir}"/templates/nextcloud/nextcloud.config.php.tmpl "${gsNextCloudDir}"/config/config.php
+    install -v -g www-data -o www-data -m 0640 "${MySB_InstallDir}"/templates/nextcloud/nextcloud.config.php.tmpl "${gsNextCloudDir}"/config/config.php
     perl -pi -e "s/<version>/${Version}/g" "${gsNextCloudDir}"/config/config.php
     nNumLine=$(grep '<instanceid>' -n -m 1 "${gsNextCloudDir}"/config/config.php | cut -d ':' -f 1)
     sed -i '/<instanceid>/d' "${gsNextCloudDir}"/config/config.php
