@@ -52,8 +52,8 @@ case "${gsSwitch}" in
 esac
 
 [ -f /etc/default/minio ] && source /etc/default/minio
-MINIO_ACCESS_KEY="${MINIO_ACCESS_KEY:-$(gfnGenPassword 20)}"
-MINIO_SECRET_KEY="${MINIO_SECRET_KEY:-$(gfnGenPassword 40)}"
+MINIO_ACCESS_KEY="${MINIO_ACCESS_KEY:-$(gfnGenPassword 16)}"
+MINIO_SECRET_KEY="${MINIO_SECRET_KEY:-$(gfnGenPassword 32)}"
 
 #### /etc/default/minio
 # if [ ! -f /etc/default/minio ]; then
@@ -66,6 +66,8 @@ MINIO_SECRET_KEY="${MINIO_SECRET_KEY:-$(gfnGenPassword 40)}"
         echo "MINIO_ACCESS_KEY=\"${MINIO_ACCESS_KEY}\""
         echo "# Secret key of the server."
         echo "MINIO_SECRET_KEY=\"${MINIO_SECRET_KEY}\""
+        echo "# Enable or disable access to web UI"
+        echo "MINIO_BROWSER=on"
     } >/etc/default/minio
 # fi
 chown minio:minio /etc/default/minio
@@ -104,7 +106,7 @@ fnInstallMinioClient() {
     ${gsRepoDir} --version
 
     # Minio client host config (alias)
-    mc config host add MySB https://${gsHostNameFqdn}:9000 ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY} --api S3v4
+    mc config host add mysb https://${gsHostNameFqdn}:9000 ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY} --api S3v4
 }
 
 #### Goofys
@@ -131,13 +133,11 @@ if gfnCheckCommand 0 /usr/local/bin/minio; then
 fi
 
 # Create users buckets
-source ${MySB_InstallDir}/inc/funcs_by_script/funcs_MySB_CreateUser
-gfnListCountUsers 'normal'
-for sUser in ${gsUsersList}; do
-    gfnMinioUsersBuckets create "${sUser}"
-done
-
-
+# source ${MySB_InstallDir}/inc/funcs_by_script/funcs_MySB_CreateUser
+# gfnListCountUsers 'normal'
+# for sUser in ${gsUsersList}; do
+#     gfnMinioUsersBuckets create "${sUser}"
+# done
 
 # mc config host add <ALIAS> <YOUR-MINIO-ENDPOINT> <YOUR-ACCESS-KEY> <YOUR-SECRET-KEY>
 # mc policy set download play/mybucket/myphotos/2020/

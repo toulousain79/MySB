@@ -4,7 +4,7 @@
 
 - Debian migration from Stretch to Buster
 - DNScrypt-proxy v2 _(latest)_
-- Minio _(latest)_
+- Minio _(latest)_ _(standby)_
 - NextCloud v16.0.4
 - NetData v1.16.0
 - PHP v7.3

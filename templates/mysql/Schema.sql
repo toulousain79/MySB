@@ -143,6 +143,26 @@ CREATE TABLE IF NOT EXISTS `mails` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `minio`
+--
+
+/*!40101 SET @saved_cs_client	 = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `minio` (
+  `id_minio` int(11) NOT NULL AUTO_INCREMENT,
+  `id_users` int(11) NOT NULL,
+  `access_key` varchar(16) NOT NULL,
+  `secret_key` varchar(32) NOT NULL,
+  `bucket` varchar(32) NOT NULL,
+  `mountpoint` varchar(256) NOT NULL,
+  PRIMARY KEY (`id_minio`),
+  KEY `id_users` (`id_users`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `port_forwarding`
 --
 
@@ -733,6 +753,19 @@ ALTER TABLE `users_scripts`
 
 ALTER TABLE `users_scripts`
   ADD CONSTRAINT `users_scripts_ibfk_1` FOREIGN KEY (`id_users`) REFERENCES `users` (`id_users`) ON DELETE CASCADE ON UPDATE CASCADE;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Contraintes pour la table `minio`
+--
+
+/*!40101 SET @saved_cs_client	 = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+ALTER TABLE `minio`
+  DROP FOREIGN KEY IF EXISTS `minio_ibfk_1`;
+
+ALTER TABLE `minio`
+  ADD CONSTRAINT `minio_ibfk_1` FOREIGN KEY (`id_users`) REFERENCES `users` (`id_users`) ON DELETE CASCADE ON UPDATE CASCADE;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

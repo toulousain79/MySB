@@ -31,12 +31,10 @@
 #### Minio
 gfnMinioUsersBuckets() {
     # gfnMinioUsersBuckets (create|edit|delete) user
-    # Policies: getonly, putonly, writeonly, readonly, readwrite
-    local sSwitch sUser sPass sBucket sPolicy
-    local aBucketList
+    # Policies: getonly, writeonly, readonly, readwrite
+    local sSwitch sUser sBucket sPolicy nIdUser aBucketList sSecretKey
     sSwitch="${1}"
     sUser="${2}"
-    sPass="${3}"
     aBucketList=()
     aBucketList["complete"]="readonly"
     aBucketList["watch"]="readwrite"
@@ -48,29 +46,40 @@ gfnMinioUsersBuckets() {
     case "${sSwitch}" in
         'create')
             for ((i = 0; i < ${#aBucketList[@]}; i++)); do
+                source /etc/MySB/config_db
                 sBucket="$(echo "${aBucketList[${i}]}" | awk '{printf $1}')"
                 sPolicy="$(echo "${aBucketList[${i}]}" | awk '{printf $2}')"
-
-                # Bucket
-                if [ -d "/home/${sUser}/rtorrent/${sBucket}/" ] && [ -d "/home/minio/data/${sUser}_${sBucket}" ]; then
-                    [ ! -h "/home/minio/data/${sUser}_${sBucket}" ] && ln -s "/home/${sUser}/rtorrent/${sBucket}/" "/home/minio/data/${sUser}_${sBucket}"
+                nIdUser="$(cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='${sUser}';")"
+                sSecretKey="$(cmdMySQL 'MySB_db' "SELECT secret_key FROM minio WHERE id_users='${nIdUser}';")"
+                if [ -z "${sSecretKey}" ]; then
+                    sSecretKey="$(gfnGenPassword 32)"
+                    cmdMySQL 'MySB_db' "INSERT INTO minio (id_users, access_key, secret_key) VALUES ('${nIdUser}', '${sUser}', '${sSecretKey}');"
                 fi
 
-                # Config
-                install -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/getonly.json.tmpl /tmp/getonly.json
-                sed -i "s/2012-10-17/$(/bin/date '+%Y-%m-%d - %H:%M:%S')/g;" /tmp/getonly.json
-                sed -i "s/bucketname/${sUser}_${sBucket}/g;" /tmp/getonly.json
-                mc admin policy add "${sUser}_${sBucket}" getonly /tmp/getonly.json
+                # Bucket
+                if [ -d "/home/${sUser}/rtorrent/${sBucket}/" ] && [ -d "/home/minio/data/${sUser}-${sBucket}" ]; then
+                    [ ! -h "/home/minio/data/${sUser}-${sBucket}" ] && ln -s "/home/${sUser}/rtorrent/${sBucket}/" "/home/minio/data/${sUser}-${sBucket}"
+                fi
 
-                if [ -n "${sPass}" ]; then
-                    mc admin user add "${sUser}_${sBucket}" "${sUser}" "${sPass}"
-                    mc admin policy set "${sUser}_${sBucket}" "${sPolicy}" user="${sUser}"
-                    mc config host add "MySB-${sUser}" https://${gsHostNameFqdn}:9000 "${sUser}" "${sPass}" --api s3v4
+                # Create a new user with canned policy
+                install -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/getonly.json.tmpl /tmp/getonly.json
+                # sed -i "s/2012-10-17/$(/bin/date '+%Y-%m-%d')/g;" /tmp/getonly.json
+                sed -i "s/bucketname/${sUser}-${sBucket}/g;" /tmp/getonly.json
+                mc admin policy add mysb readonly /tmp/getonly.json
+
+                if [ -n "${sSecretKey}" ] && [ -n "${sPolicy}" ]; then
+                    # Create a new user
+                    mc admin user add mysb "${sUser}" "${sSecretKey}"
+                    mc admin policy set mysb "${sPolicy}" user="${sUser}"
+                    mc config host add "mysb-${sUser}" https://${gsHostNameFqdn}:9000 "${sUser}" "${sSecretKey}" --api s3v4
                 fi
 
                 # Group
-                mc admin group add "${sUser}_${sBucket}" MySB_users "${sUser}"
-                mc admin policy set "${sUser}_${sBucket}" getonly group=MySB_users
+                mc admin group add mysb MySB_users "${sUser}"
+                mc admin policy set mysb getonly group=MySB_users
+
+                # Unset
+                unset MySQL_RootPassword MySQL_MysbPassword MySQL_BackupManager MySQL_TorrentPassword MySQL_Secret
             done
             ;;
         'delete')
