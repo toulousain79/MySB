@@ -1,6 +1,6 @@
 # Changelog
 
-## v6.1 - XXXX/XX/XX _(start at: 2019/07/28)_
+## v7.0 - XXXX/XX/XX _(start at: 2019/07/28)_
 
 - Debian migration from Stretch to Buster
 - DNScrypt-proxy v2 _(latest)_
@@ -12,15 +12,16 @@
 - ruTorrent v3.9 _(718087a)_
 - NodeJS v0.18.x _(Debian package)_
 - Lynis _(latest)_
-- remove some init.d scripts
 - Plex, add plugins
   - [Absolute Series/Music Scanner](https://github.com/ZeroQI/Absolute-Series-Scanner)
   - [Hama](https://github.com/ZeroQI/Hama.bundle)
-- NextCloud Nginx location review
-- STunnel config review
+- NextCloud
+  - Nginx location review
+  - revert token_auth_enforced to false
 - NginX
   - force ssl_protocols to TLSv1.2 & TLSv1.3
-  - add ssl_ecdh_curve, ssl_stapling
+  - add ssl_ecdh_curve
+  - ssl_stapling
   - change ssl_ciphers
   - change add_header
   - add log_format
@@ -32,11 +33,11 @@
 - Portal
   - use of MariaDB unix socket unstead of TCP
   - DNScrypt config review
+- STunnel config review
 - cleaning
   - remove some init.d scripts
   - remove some packages
   - remove some templates
-- moving the torrents folder to the root of the home folder for Minio buckets compatility
 - CPAN modules installed & updated with cron job
 - RKhunter config review
 - use of /dev/shm instead of /tmp/tmpFS
