@@ -124,8 +124,8 @@ EOF
 if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/config/config.php) ]] && [ "$(ls -la /var/lib/mysql/NextCloud_db/*.* | wc -l)" -le 1 ]; then
     chown -R www-data:www-data "${gsNextCloudDir}"/
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:install --database \"mysql\" --database-host \"localhost:/run/mysqld/mysqld.sock\" --database-name \"NextCloud_db\" --database-user \"MySB_user\" --database-pass \"${MySQL_MysbPassword}\" --admin-user \"admin\" --admin-email=\"${gsMainUserEmail}\" --admin-pass \"${MySQL_MysbPassword}\" --database-table-prefix \"nc_\" --data-dir \"/home/nextcloud\" --no-interaction"
-    perl -pi -e "s/${MySQL_MysbPassword}/****************/g" "${gsLogFile}"
 fi
+[ -f "${gsLogFile}" ] && perl -pi -e "s/${MySQL_MysbPassword}/****************/g" "${gsLogFile}"
 
 #### Config
 if [ -f "${gsNextCloudDir}"/config/config.php ] && (gfnCheckCommand 0 "${gsNextCloudDir}"/occ); then
@@ -154,6 +154,9 @@ if [ -f "${gsNextCloudDir}"/config/config.php ] && (gfnCheckCommand 0 "${gsNextC
     sed -i '/<dbpassword>/d' "${gsNextCloudDir}"/config/config.php
     sed -i "${nNumLine}i\'dbpassword' => '${MySQL_MysbPassword}'," "${gsNextCloudDir}"/config/config.php
 
+    # Force upgrade command to force an instanceid generation if needed
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
+
     # config:system:set
     echo && echo "# config:system:set"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
@@ -161,9 +164,9 @@ if [ -f "${gsNextCloudDir}"/config/config.php ] && (gfnCheckCommand 0 "${gsNextC
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set trusted_domains 1 --value=localhost"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set trusted_domains 2 --value=${gsHostNameFqdn}:${gsPort_MySB_HTTPS}"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set default_language --value=${EnvLang}"
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set force_language --value=false"
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set default_locale --value=${gsLocale}"
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set force_locale --value=${gsLocale}"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set force_language --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set default_locale --value=${EnvLang}"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set force_locale --type boolean --value=false"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set lost_password_link --value="
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_domain --value=$(echo "${gsMainUserEmail}" | cut -d "@" -f 2)"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_from_address --value=$(echo "${gsMainUserEmail}" | cut -d "@" -f 1)"
@@ -180,6 +183,7 @@ if [ -f "${gsNextCloudDir}"/config/config.php ] && (gfnCheckCommand 0 "${gsNextC
 
     # Maybe it's an upgrade ?
     if [[ ${gnRepoUpgrade} -eq 1 ]]; then
+        echo && echo "# upgrade required"
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --on"
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
