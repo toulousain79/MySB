@@ -39,7 +39,7 @@ gfnListCountUsers 'normal'
 gfnGetRepoValues 'NextCloud'
 
 #### STOP services
-gfnManageServices stop "${binPhpService} nginx"
+# gfnManageServices stop "${binPhpService} nginx"
 
 #### ${gsPhpDir}/fpm/php.ini
 perl -pi -e "s/post_max_size = 10M/post_max_size = 20G/g" ${gsPhpDir}/fpm/php.ini
@@ -63,7 +63,7 @@ install -v -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.ngin
 perl -pi -e "s/<MySB_InstallDir>/${gsInstallDirEscaped}/g" /etc/nginx/locations/NextCloud.conf
 
 #### START services
-gfnManageServices start "${binPhpService} nginx"
+gfnManageServices restart "${binPhpService} nginx"
 
 #### An upgrade ? Doing a backup
 # Maybe it's an upgrade ?
@@ -125,6 +125,8 @@ if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/
     chown -R www-data:www-data "${gsNextCloudDir}"/
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:install --database \"mysql\" --database-host \"localhost:/run/mysqld/mysqld.sock\" --database-name \"NextCloud_db\" --database-user \"MySB_user\" --database-pass \"${MySQL_MysbPassword}\" --admin-user \"admin\" --admin-email=\"${gsMainUserEmail}\" --admin-pass \"${MySQL_MysbPassword}\" --database-table-prefix \"nc_\" --data-dir \"/home/nextcloud\" --no-interaction"
     perl -pi -e "s/${MySQL_MysbPassword}/****************/g" "${gsLogFile}"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:update --all"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
 fi
 
 #### Config
@@ -215,7 +217,7 @@ if [ -f "${gsNextCloudDir}"/config/config.php ] && (gfnCheckCommand 0 "${gsNextC
             chmod -v 0755 /home/nextcloud/"${seedUser}"
         fi
 
-        if (! su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:info \"${seedUser}\""); then
+        if (! su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:info \"${seedUser}\"" >/dev/null); then
             OC_PASS="$(cmdMySQL 'MySB_db' "SELECT users_passwd FROM users WHERE users_ident='${seedUser}';")"
             [ -z "${OC_PASS}" ] && OC_PASS="$(gfnGenPassword 8)"
             export OC_PASS
@@ -245,9 +247,6 @@ if [ -f "${gsNextCloudDir}"/config/config.php ] && (gfnCheckCommand 0 "${gsNextC
 
         unset IdStorage FnUserMail OC_PASS
     done
-
-    # Disable maintenance mode
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
 fi
 
 #### Logrotate
@@ -307,10 +306,10 @@ cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHE
 #### CRON
 crontab -u www-data -l >/tmp/crontab.tmp
 sed -i '/NextCloud/d' /tmp/crontab.tmp
-echo "*/15  *  *  *  * php -f ${gsNextCloudDir}/cron.php > /dev/null 2>&1 # NextCloud" | tee -a /tmp/crontab.tmp
+echo "*/15  *  *  *  * php -f ${gsNextCloudDir}/cron.php >/dev/null 2>&1 # NextCloud" | tee -a /tmp/crontab.tmp
 crontab -u www-data /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
-su -s /bin/sh www-data -c "/usr/bin/php -f ${gsNextCloudDir}/cron.php > /dev/null 2>&1"
+su -s /bin/sh www-data -c "/usr/bin/php -f ${gsNextCloudDir}/cron.php >/dev/null 2>&1"
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after
