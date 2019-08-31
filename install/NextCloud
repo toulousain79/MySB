@@ -71,9 +71,6 @@ gfnManageServices restart "${binPhpService} nginx"
 # Maybe it's an upgrade ?
 if [[ ${gnRepoUpgrade} -eq 1 ]] && (gfnCheckCommand 0 "${gsNextCloudDir}"/occ); then
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
-    # app:disable
-    # su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:disable files_external"
-    # su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:disable notifications"
 fi
 # Backup the config file if needed
 if [ -f "${gsNextCloudDir}"/config/config.php ]; then
@@ -137,12 +134,16 @@ if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/
     #### Get needed values from config files
     # sVersion="$(grep "'version'" "${gsNextCloudDir}"/config/config.php | tail -n 1 | cut -d "'" -f 4)"
     sVersion="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version")"
+    echo "sVersion: $sVersion"
     # InstanceId="$(grep "'instanceid'" "${gsNextCloudDir}"/config/config.php | tail -n 1 | cut -d "'" -f 4)"
     sInstanceId="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get instanceid")"
+    echo "sInstanceId: $sInstanceId"
     # sSecret="$(grep "'secret'" "${gsNextCloudDir}"/config/config.php | tail -n 1 | cut -d "'" -f 4)"
     sSecret="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get secret")"
+    echo "sSecret: $sSecret"
     # sPasswordSalt="$(grep "'passwordsalt'" "${gsNextCloudDir}"/config/config.php | tail -n 1 | cut -d "'" -f 4)"
     sPasswordSalt="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get passwordsalt")"
+    echo "sPasswordSalt: $sPasswordSalt"
 
     #### Config file
     install -v -g www-data -o www-data -m 0640 "${MySB_InstallDir}"/templates/nextcloud/nextcloud.config.php.tmpl "${gsNextCloudDir}"/config/config.php
@@ -151,11 +152,11 @@ if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/
     # Set version
     perl -pi -e "s/<version>/${sVersion}/g" "${gsNextCloudDir}"/config/config.php
     # Set instance ID
-    perl -pi -e "s/<instanceid>/${sInstanceId}/g" "${gsNextCloudDir}"/config/config.php
+    # perl -pi -e "s/<instanceid>/${sInstanceId}/g" "${gsNextCloudDir}"/config/config.php
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set instanceid --value=${sInstanceId}"
     # Set secret
-    perl -pi -e "s/<secret>/${sSecret}/g" "${gsNextCloudDir}"/config/config.php
-    # Set db password
-    perl -pi -e "s/<dbpassword>/${MySQL_MysbPassword}/g" "${gsNextCloudDir}"/config/config.php
+    # perl -pi -e "s/<secret>/${sSecret}/g" "${gsNextCloudDir}"/config/config.php
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set secret --value=${sSecret}"
     # Set password salt
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set passwordsalt --value=${sPasswordSalt}"
 
@@ -177,19 +178,24 @@ if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set skeletondirectory --value="
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mysql.utf8mb4 --type boolean --value=true"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set token_auth_enforced --type boolean --value=false"
-
-    # config:app:set
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:app:set --update-only --value=no password_policy enabled"
 fi
 
 # Maybe it's an upgrade ?
-if [[ ${gnRepoUpgrade} -eq 1 ]]; then
-    echo && echo "# upgrade required"
-    # su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
-fi
+# if [[ ${gnRepoUpgrade} -eq 1 ]]; then
+echo     && echo "# upgrade required"
+su     -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
+su     -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
+su     -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
+su     -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
+# fi
+
+# maintenance
+echo && echo "# maintenance"
+su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mimetype:update-db"
+su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mimetype:update-js"
+su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:theme:update"
+su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:data-fingerprint"
+su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
 
 # app:enable
 echo && echo "# app:enable"
@@ -197,14 +203,8 @@ su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable files_e
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable notifications"
 
 # config:app:set
+echo && echo "# config:app:set"
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:app:set --update-only --value=no password_policy enabled"
-
-echo && echo "# maintenance"
-su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mimetype:update-db"
-su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mimetype:update-js"
-su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:theme:update"
-su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:data-fingerprint"
-su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
 
 # Users group
 if (! grep -q 'MySB_users' <<<"$(su -s /bin/sh www-data -c '/usr/bin/php ${gsNextCloudDir}/occ group:list')"); then
@@ -216,8 +216,8 @@ echo && echo "# configure"
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:add-missing-indices"
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:convert-filecache-bigint --no-interaction"
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ background:cron"
-# su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ sharing:cleanup-remote-storages"
-# su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:cleanup"
+su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ sharing:cleanup-remote-storages"
+su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:cleanup"
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
 
