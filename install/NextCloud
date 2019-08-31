@@ -69,9 +69,12 @@ gfnManageServices restart "${binPhpService} nginx"
 
 #### An upgrade ? Doing a backup
 # Maybe it's an upgrade ?
-# if [[ ${gnRepoUpgrade} -eq 1 ]] && (gfnCheckCommand 0 "${gsNextCloudDir}"/occ); then
-#     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --on"
-# fi
+if [[ ${gnRepoUpgrade} -eq 1 ]] && (gfnCheckCommand 0 "${gsNextCloudDir}"/occ); then
+    # su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --on"
+    # app:disable
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:disable files_external"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:disable notifications"
+fi
 # Backup the config file if needed
 if [ -f "${gsNextCloudDir}"/config/config.php ]; then
     mv -v "${gsNextCloudDir}"/config/config.php "${MySB_InstallDir}"/temp/nextcloud_config.php
@@ -177,18 +180,20 @@ if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/
 
     # config:app:set
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:app:set --update-only --value=no password_policy enabled"
-
-    # app:enable
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable files_external"
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable notifications"
 fi
 
 # Maybe it's an upgrade ?
 if [[ ${gnRepoUpgrade} -eq 1 ]]; then
     echo && echo "# upgrade required"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
 fi
+
+# app:enable
+echo && echo "# app:enable"
+su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable files_external"
+su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ app:enable notifications"
 
 echo && echo "# maintenance"
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
@@ -197,9 +202,11 @@ su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mimety
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:theme:update"
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:data-fingerprint"
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --off"
+su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
 
 # Users group
 if (! grep -q 'MySB_users' <<<"$(su -s /bin/sh www-data -c '/usr/bin/php ${gsNextCloudDir}/occ group:list')"); then
+    echo && echo "# roup:add"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ group:add MySB_users"
 fi
 
