@@ -3,6 +3,8 @@
 ## v7.0 - 2019/08/31 _(start at: 2019/07/28)_
 
 - Debian migration from Stretch to Buster
+- rTorrent v0.9.8 _(14d7121)_
+- LibTorrent v0.13.8 _(9bbbee6)_
 - DNScrypt-proxy v2 _(latest)_
 - Minio _(latest)_ _(standby)_
 - NextCloud v16.0.4
