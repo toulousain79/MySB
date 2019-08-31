@@ -75,7 +75,7 @@ if (isset($_POST['add_file'])) {
 										"get_directory" => "/home/$CurrentUser/rtorrent/complete/$addfile_sub_directory",
 										"get_custom1" => "$addfile_sub_directory",
 										"get_name" => "$downloaded_files",
-										"get_loaded_file" => "/home/$CurrentUser/rtorrent/watch/$addfile_sub_directory",
+										"get_loaded_file" => "/home/$CurrentUser/rtorrent/$addfile_sub_directory",
 										"to_del" => 0
 										]);
 	$result = $Sync_DB->id();
