@@ -1,6 +1,6 @@
 # Changelog
 
-## v7.0 - XXXX/XX/XX _(start at: 2019/07/28)_
+## v7.0 - 2019/0831 _(start at: 2019/07/28)_
 
 - Debian migration from Stretch to Buster
 - DNScrypt-proxy v2 _(latest)_
