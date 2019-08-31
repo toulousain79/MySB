@@ -268,7 +268,9 @@ gfnGenerateBlacklistsZone() {
     sAllTrackers="$(cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker FROM trackers_list WHERE is_active='0';")"
     for sTracker in ${sAllTrackers}; do
         echo "zone \"${sTracker}\" { type master; file \"/etc/bind/db.empty\"; };" >>/etc/bind/MySB.zones.blacklists
-        [ -f /etc/dnscrypt-proxy/blacklist.txt ] && echo "${sTracker}" >>/etc/dnscrypt-proxy/blacklist.txt
+        if [ -f /etc/dnscrypt-proxy/blacklist.txt ]; then
+            echo "${sTracker}" >>/etc/dnscrypt-proxy/blacklist.txt
+        fi
     done
     perl -pi -e "s/^#include \"\/etc\/bind\/MySB.zones.blacklists\";/include \"\/etc\/bind\/MySB.zones.blacklists\";/g" /etc/bind/named.conf.local
 }
@@ -294,7 +296,9 @@ gfnCreateHostsFile() {
             fi
             for sIPv4 in ${sTrackerIPv4}; do
                 echo "${sIPv4}	   ${sTracker}" >>/etc/hosts
-                [ -f /etc/dnscrypt-proxy/whitelist.txt ] && echo "${sTracker}" >>/etc/dnscrypt-proxy/whitelist.txt
+                if [ -f /etc/dnscrypt-proxy/whitelist.txt ]; then
+                    (! grep -q "${sTracker}" /etc/dnscrypt-proxy/whitelist.txt) && echo "${sTracker}" >>/etc/dnscrypt-proxy/whitelist.txt
+                fi
             done
         fi
     done
