@@ -201,6 +201,12 @@ gfnManageServices() {
                                 pglcmd stop >/dev/null
                                 gfnStatusLSB
                                 ;;
+                            "dnscrypt-proxy")
+                                nContinue=0
+                                log_daemon_msg "$Funcs_Stopping ${Service}"
+                                systemctl stop "${Service}".service >/dev/null
+                                gfnStatusLSB
+                                ;;
                             "${binPhpService}" | "stunnel4" | "vsftpd" | "fail2ban" | "nfs-kernel-server" | "tautulli" | "plexmediaserver" | rtorrent-*)
                                 nContinue=0
                                 log_daemon_msg "$Funcs_Stopping ${Service}"
@@ -315,6 +321,19 @@ gfnManageServices() {
                         nContinue=1
 
                         case "${Service}" in
+                            "dnscrypt-proxy")
+                                nContinue=0
+                                if gfnCheckCommand 0 "${Service}"; then
+                                    if ! gfnGetPid "${Service}"; then
+                                        log_daemon_msg "${Funcs_Starting} ${Service}"
+                                        service "${Service}" start >/dev/null
+                                    else
+                                        log_daemon_msg "${Funcs_Restarting} ${Service}"
+                                        service "${Service}" restart >/dev/null
+                                    fi
+                                    gfnStatusLSB
+                                fi
+                                ;;
                             "bind9")
                                 nContinue=0
                                 if gfnCheckCommand 0 "${Service}"; then

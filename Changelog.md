@@ -13,7 +13,6 @@
 - Medoo v1.7.2
 - ruTorrent v3.9 _(718087a)_
 - NodeJS v0.18.x _(Debian package)_
-- Lynis _(latest)_
 - Plex, add plugins
   - [Absolute Series/Music Scanner](https://github.com/ZeroQI/Absolute-Series-Scanner)
   - [Hama](https://github.com/ZeroQI/Hama.bundle)
