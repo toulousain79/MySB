@@ -209,6 +209,17 @@ if [ -f /proc/cpuinfo ]; then
     grep 'cpu MHz' /proc/cpuinfo
 fi
 
+#### Disable IPv6 inet config /etc/network/interfaces
+echo
+echo "########## Remove IPv6 from /etc/network/interfaces"
+cp -av /etc/network/interfaces /etc/network/interfaces.backup
+cp -av /etc/network/interfaces /tmp/interfaces
+perl -pi -e "s/^iface lo inet6 loopback/#iface lo inet6 loopback/g" /tmp/interfaces
+sed -n "/^iface ${gsPrimaryInet} inet6/,/^$/p;" /tmp/interfaces | while read -r sLine; do
+    perl -pi -e "s/${sLine}/#${sLine}/g" /tmp/interfaces
+done
+(/usr/sbin/ifup --no-act --interfaces=/tmp/interfaces "${gsPrimaryInet}") && cp -afv /tmp/interfaces /etc/network/interfaces
+
 #### Grub
 # Disable IPv6
 echo
