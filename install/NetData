@@ -63,6 +63,10 @@ gfnManageServices stop "netdata"
 install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/netdata/health_alarm_notify.conf.tmpl /etc/netdata/health_alarm_notify.conf
 perl -pi -e "s/<main_user_mail>/${gsMainUserEmail}/g" /etc/netdata/health_alarm_notify.conf
 
+#### Others
+install -v -o root -g netdata -m 0640 ${MySB_InstallDir}/templates/netdata/usr.lib.netdata.conf.d.python.d.mysql.conf.tmpl /usr/lib/netdata/conf.d/python.d/mysql.conf
+install -v -o root -g netdata -m 0640 ${MySB_InstallDir}/templates/netdata/usr.lib.netdata.conf.d.python.d.proxysql.conf.tmpl /usr/lib/netdata/conf.d/python.d/proxysql.conf
+
 # #### /etc/netdata/netdata.conf
 install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/netdata/netdata.conf.tmpl /etc/netdata/netdata.conf
 # ## [global]
@@ -111,6 +115,13 @@ install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.
 perl -pi -e "s/<MainUser>/${gsMainUserName}/g" /etc/nginx/locations/NetData.conf
 install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.proxy.netdata.conf.tmpl /etc/nginx/proxy/NetData.conf
 install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.upstream.netdata.conf.tmpl /etc/nginx/upstream/NetData.conf
+
+#### MySQL
+mysql -u root -p"${MySQL_RootPassword}" --verbose <<-EOF
+    CREATE USER IF NOT EXISTS 'netdata'@'localhost';
+    GRANT USAGE ON *.* to 'netdata'@'localhost' WITH GRANT OPTION;
+    FLUSH PRIVILEGES;
+EOF
 
 #### START services
 gfnManageServices start "nginx netdata"

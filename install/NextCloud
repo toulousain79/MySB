@@ -147,7 +147,13 @@ if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/
         if [ -z "${sVersion}" ] || [ -z "${sSecret}" ] || [ -z "${sPasswordSalt}" ]; then
             cmdMySQL 'MySB_db' "DROP DATABASE IF EXISTS NextCloud_db;" -v
             rm -fv "${gsNextCloudDir}"/config/config.php
-            fnCreateDatabase
+            if [[ ${i} -lt 3 ]]; then
+                fnCreateDatabase
+            else
+                cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='NextCloud';" -v
+                cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='0' WHERE serv_name='NextCloud';" -v
+                gfnEndingScript 1 "NextCloud install failed, aborting !"
+            fi
         else
             echo "${sResult}"
             break
