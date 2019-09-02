@@ -27,7 +27,7 @@ source "$(dirname "$0")"/../inc/includes_before
 
 TYPE="$1"
 
-case "$TYPE" in
+case "${TYPE}" in
     "INSTALL")
         DisplayInfo=YES
         DisplayServerInfo=YES
@@ -131,6 +131,7 @@ DisplaySurvey() {
             done
             unset sValue
         else
+            # UPGRADE
             echo
             echo -e "$Global_Questions_Message_Hostname_New"
             gfnQuestionGetString NO "$Global_Questions_Hostname_New" bgChangeFQDN "${bgChangeFQDN}"
@@ -143,7 +144,7 @@ DisplaySurvey() {
             echo -e "$Global_Questions_Message_Hostname"
             gsPreviousHostNameFqdn="${gsHostNameFqdn}"
             gfnQuestionGetString NO "$Global_Questions_Hostname" gsHostNameFqdn "${gsHostNameFqdn}"
-            while [ -z "${gsHostNameFqdn}" ] || [[ "$(gfnCheckFQDN "${gsHostNameFqdn}")" != 0 ]]; do
+            while [ -z "${gsHostNameFqdn}" ] || [[ "$(gfnCheckFQDN "${gsHostNameFqdn}")" -ne 0 ]]; do
                 nCheckFqdnResult="$(gfnCheckFQDN ${gsHostNameFqdn})"
                 case "$nCheckFqdnResult" in
                     1) echo -e "$Global_Questions_Message_Hostname_NoFqdn" ;;
@@ -152,10 +153,12 @@ DisplaySurvey() {
                 gfnQuestionGetString NO "$Global_Questions_Hostname" gsHostNameFqdn "${gsHostNameFqdn}"
             done
             # Add previous FQDN for Let's Encrypt renew
-            # if [ "$TYPE" == "INSTALL" ]; then
-            # 	[ ! -f "${MySB_InstallDir}/ssl/letsencrypt_domains" ] && touch "${MySB_InstallDir}/ssl/letsencrypt_domains"
-            # 	([ "${gsHostNameFqdn}" != "$gsPreviousHostNameFqdn" ] && [[ "$(gfnCheckFQDN "${gsPreviousHostNameFqdn}")" == 0 ]] && (! grep -q "$gsPreviousHostNameFqdn" "${MySB_InstallDir}/ssl/letsencrypt_domains")) && echo "$gsPreviousHostNameFqdn" >> "${MySB_InstallDir}/ssl/letsencrypt_domains"
-            # fi
+            if [ "${TYPE}" == "UPGRADE" ]; then
+                [ ! -f "${MySB_InstallDir}/ssl/letsencrypt_domains" ] && touch "${MySB_InstallDir}/ssl/letsencrypt_domains"
+                if ([ "${gsHostNameFqdn}" != "${gsPreviousHostNameFqdn}" ] && [[ "$(gfnCheckFQDN "${gsPreviousHostNameFqdn}")" -eq 0 ]] && (! grep -q "${gsPreviousHostNameFqdn}" "${MySB_InstallDir}/ssl/letsencrypt_domains")); then
+                    echo "${gsPreviousHostNameFqdn}" >>"${MySB_InstallDir}/ssl/letsencrypt_domains"
+                fi
+            fi
         fi
 
         #if [ "$DisplayServerInfoFirstInstall" == "YES" ]; then
@@ -197,7 +200,7 @@ DisplaySurvey() {
 
     # Main User password
     echo
-    if [ "$TYPE" == "UPGRADE" ]; then
+    if [ "${TYPE}" == "UPGRADE" ]; then
         # Main User password (confirm it OR change it when you upgrade)
         echo -e "$Upgrade_MainUserPasswordConfirm"
     fi
@@ -207,10 +210,10 @@ DisplaySurvey() {
         sValue=""
         gsMainUserPassword=""
     fi
-    if [ -z "${gsMainUserPassword}" ] || [ "$TYPE" == "UPGRADE" ] || [ "${RepeatSurvey}" == "YES" ]; then
+    if [ -z "${gsMainUserPassword}" ] || [ "${TYPE}" == "UPGRADE" ] || [ "${RepeatSurvey}" == "YES" ]; then
         gfnQuestionGetString NO "$Questions_MainUserPassword" gsMainUserPassword "${sValue}"
     fi
-    if [ "$TYPE" == "UPGRADE" ]; then
+    if [ "${TYPE}" == "UPGRADE" ]; then
         cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='${gsMainUserPassword}' WHERE admin='1';"
     fi
     unset sValue
@@ -500,7 +503,7 @@ DisplaySurvey() {
             sTemp_gsPort_OpenVPN_WithGW="${gsPort_OpenVPN_WithGW}"
             sTemp_gsPort_OpenVPN_WithoutGW="${gsPort_OpenVPN_WithoutGW}"
             sTemp_gsPort_OpenVPN_TAP_WithoutGW="${gsPort_OpenVPN_TAP_WithoutGW}"
-            [ "$TYPE" == "UPGRADE" ] && echo
+            [ "${TYPE}" == "UPGRADE" ] && echo
             gfnQuestionGetString NO "$Questions_PortOpenvpnTUNwithGW" gsPort_OpenVPN_WithGW "${gsPort_OpenVPN_WithGW}"
             gfnQuestionGetString NO "$Questions_PortOpenvpnTUNwithoutGW" gsPort_OpenVPN_WithoutGW "${gsPort_OpenVPN_WithoutGW}"
             gfnQuestionGetString NO "$Questions_PortOpenvpnTAPwithoutGW" gsPort_OpenVPN_TAP_WithoutGW "${gsPort_OpenVPN_TAP_WithoutGW}"
@@ -514,7 +517,7 @@ DisplaySurvey() {
                 [ "$sTemp_gsPort_OpenVPN_WithoutGW" != "${gsPort_OpenVPN_WithoutGW}" ] ||
                 [ "$sTemp_gsPort_OpenVPN_TAP_WithoutGW" != "${gsPort_OpenVPN_TAP_WithoutGW}" ]); then
 
-                [ "$TYPE" == "UPGRADE" ] && bToInstall=2 # Refresh
+                [ "${TYPE}" == "UPGRADE" ] && bToInstall=2 # Refresh
                 [ "${bgChangeFQDN}" == "${Global_YES}" ] && bToInstall=1 # Force reinstall
             fi
 
@@ -579,7 +582,7 @@ DisplaySurvey() {
             sValue="$gsMainUserIPs"
         else
             # get actual main user ip addresses
-            if [ "$TYPE" == "UPGRADE" ]; then
+            if [ "${TYPE}" == "UPGRADE" ]; then
                 if [ "${gsIpRestriction}" != "$Global_YES" ]; then
                     # get maybe a new one
                     sTempIPs="$(echo $SSH_CLIENT | awk '{ print $1 }')"
@@ -741,7 +744,7 @@ DisplaySurvey() {
         # else
         #     sValue=""
         # fi
-        # if [ "$TYPE" == "INSTALL" ]; then
+        # if [ "${TYPE}" == "INSTALL" ]; then
         #     gsMySB_PeerBlock=""
         # fi
         # if [ "${gsMySB_PeerBlock}" == "${Global_None}" ] || [ -z "${gsMySB_PeerBlock}" ]; then
@@ -825,7 +828,7 @@ DisplaySurvey() {
     # FTP
     cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='${gsPort_FTP}', port_tcp2='${gsPort_FTP_Data}', port_tcp3='65000:65535', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='VSFTPd';" -v >>${sLogFile}
 
-    if [ "$TYPE" == "INSTALL" ]; then
+    if [ "${TYPE}" == "INSTALL" ]; then
         # 'smtp' table
         cmdMySQL 'MySB_db' "UPDATE smtp SET smtp_provider='${gsSmtpProvider}', smtp_username='${SMTP_Username}', smtp_passwd='${SMTP_Password}', smtp_email='${gsMainUserEmail}' WHERE id_smtp='1';" -v >>${sLogFile}
 
@@ -951,7 +954,7 @@ while [ ! "$SurveyIsConfirmed" = "${Global_YES}" ]; do
     DisplaySurvey
 
     #### Summary
-    case "$TYPE" in
+    case "${TYPE}" in
         'INSTALL')
             FirstTime=0
             ConfirmSurvey

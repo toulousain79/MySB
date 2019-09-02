@@ -30,8 +30,7 @@
 
 #### Change FQDN of Seedbox
 # Use cases:
-# 1/ Manual with command line: gfnChangeFQDN "new_fqdn"
-# 2/ Auto during an upgrade
+# - Manual with command line: gfnChangeFQDN "new_fqdn"
 gfnChangeFQDN() {
     local sNewFQDN nCheckFqdnResult
 
@@ -97,19 +96,19 @@ gfnChangeFQDN() {
     [[ ! -f /root/.ssh/id_rsa ]] && ssh-keygen -q -t rsa -b 2048 -N "" -f /root/.ssh/id_rsa
     gfnStatusLSB
     # all normal users
-    for seedUser in $gsUsersList; do
-        log_daemon_msg "SSH Key for user [$seedUser]"
-        UserEmail=$(cmdMySQL 'MySB_db' "SELECT users_email FROM users WHERE users_ident = '$seedUser';")
-        [[ -f /home/"$seedUser"/.ssh/id_rsa ]] && mv /home/"$seedUser"/.ssh/id_rsa "/home/$seedUser/.ssh/id_rsa_${gsHostNameFqdn}"
-        [[ -f /home/"$seedUser"/.ssh/id_rsa.pub ]] && mv /home/"$seedUser"/.ssh/id_rsa.pub "/home/$seedUser/.ssh/id_rsa.pub_${gsHostNameFqdn}"
-        [[ ! -f /home/"$seedUser"/.ssh/id_rsa_"${gsHostNameFqdn}" ]] && mv "/home/$seedUser/.ssh/id_rsa_${gsHostNameFqdn}" /home/"$seedUser"/.ssh/id_rsa
-        [[ ! -f /home/"$seedUser"/.ssh/id_rsa.pub_"${gsHostNameFqdn}" ]] && mv "/home/$seedUser/.ssh/id_rsa.pub_${gsHostNameFqdn}" /home/"$seedUser"/.ssh/id_rsa.pub
-        [[ ! -f /home/"$seedUser"/.ssh/id_rsa ]] && ssh-keygen -q -t rsa -b 2048 -N "" -f /home/"$seedUser"/.ssh/id_rsa -C "$UserEmail"
-        chown root:"$seedUser" /home/"$seedUser"/.ssh/*
-        chmod 0660 /home/"$seedUser"/.ssh/*
-        [[ ! -f /home/"$seedUser"/.ssh/authorized_keys ]] && touch /home/"$seedUser"/.ssh/authorized_keys
-        chown "$seedUser":"$seedUser" /home/"$seedUser"/.ssh/authorized_keys
-        chmod 0644 /home/"$seedUser"/.ssh/authorized_keys
+    for seedUser in ${gsUsersList}; do
+        log_daemon_msg "SSH Key for user [${seedUser}]"
+        UserEmail=$(cmdMySQL 'MySB_db' "SELECT users_email FROM users WHERE users_ident = '${seedUser}';")
+        [[ -f /home/"${seedUser}"/.ssh/id_rsa ]] && mv /home/"${seedUser}"/.ssh/id_rsa "/home/${seedUser}/.ssh/id_rsa_${gsHostNameFqdn}"
+        [[ -f /home/"${seedUser}"/.ssh/id_rsa.pub ]] && mv /home/"${seedUser}"/.ssh/id_rsa.pub "/home/${seedUser}/.ssh/id_rsa.pub_${gsHostNameFqdn}"
+        [[ ! -f /home/"${seedUser}"/.ssh/id_rsa_"${gsHostNameFqdn}" ]] && mv "/home/${seedUser}/.ssh/id_rsa_${gsHostNameFqdn}" /home/"${seedUser}"/.ssh/id_rsa
+        [[ ! -f /home/"${seedUser}"/.ssh/id_rsa.pub_"${gsHostNameFqdn}" ]] && mv "/home/${seedUser}/.ssh/id_rsa.pub_${gsHostNameFqdn}" /home/"${seedUser}"/.ssh/id_rsa.pub
+        [[ ! -f /home/"${seedUser}"/.ssh/id_rsa ]] && ssh-keygen -q -t rsa -b 2048 -N "" -f /home/"${seedUser}"/.ssh/id_rsa -C "$UserEmail"
+        chown root:"${seedUser}" /home/"${seedUser}"/.ssh/*
+        chmod 0660 /home/"${seedUser}"/.ssh/*
+        [[ ! -f /home/"${seedUser}"/.ssh/authorized_keys ]] && touch /home/"${seedUser}"/.ssh/authorized_keys
+        chown "${seedUser}":"${seedUser}" /home/"${seedUser}"/.ssh/authorized_keys
+        chmod 0644 /home/"${seedUser}"/.ssh/authorized_keys
         gfnStatusLSB
     done
 
@@ -145,8 +144,8 @@ gfnChangeFQDN() {
         gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/OpenVPN" 'server' 'UPGRADE'
         gfnStatusLSB
 
-        for seedUser in $gsUsersList; do
-            log_daemon_msg "Reconfigure OpenVPN client for user [$seedUser]"
+        for seedUser in ${gsUsersList}; do
+            log_daemon_msg "Reconfigure OpenVPN client for user [${seedUser}]"
             # Backup
             for sFile in $(echo /etc/openvpn/clients/*"${gsHostNameFqdn}"*); do
                 [ -f "${sFile}" ] && mv "${sFile}" /etc/openvpn/clients/backup/
@@ -155,7 +154,7 @@ gfnChangeFQDN() {
             for sFile in $(echo /etc/openvpn/backup/*"${sNewFQDN}"*); do
                 [ -f "${sFile}" ] && mv "${sFile}" /etc/openvpn/clients/
             done
-            gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/OpenVPN" 'client' "$seedUser" 'UPGRADE'
+            gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/OpenVPN" 'client' "${seedUser}" 'UPGRADE'
             gfnStatusLSB
         done
     fi

@@ -40,6 +40,16 @@ gfnGetRepoValues 'NextCloud'
 sMailDomain="$(echo "${gsMainUserEmail}" | cut -d "@" -f 2)"
 sMailFromAddress="$(echo "${gsMainUserEmail}" | cut -d "@" -f 1)"
 
+#### Functions - BoF
+function fnCreateDatabase() {
+    mysql -u root -p"${MySQL_RootPassword}" --verbose <<-EOF
+        CREATE DATABASE IF NOT EXISTS NextCloud_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+        GRANT ALL ON NextCloud_db.* to 'MySB_user'@'localhost' IDENTIFIED BY '${MySQL_MysbPassword}';
+        FLUSH PRIVILEGES;
+	EOF
+}
+#### Functions - EoF
+
 #### STOP services
 # gfnManageServices stop "${binPhpService} nginx"
 
@@ -118,32 +128,45 @@ fi
 gfnManageDirAndFiles 'global'
 
 #### Database directory does not exist ? So we do the first install !
-mysql -u root -p"${MySQL_RootPassword}" --verbose <<-EOF
-    CREATE DATABASE IF NOT EXISTS NextCloud_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-    GRANT ALL ON NextCloud_db.* to 'MySB_user'@'localhost' IDENTIFIED BY '${MySQL_MysbPassword}';
-    FLUSH PRIVILEGES;
-EOF
+fnCreateDatabase
+
 if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/config/config.php) ]] && [ "$(ls -la /var/lib/mysql/NextCloud_db/*.* | wc -l)" -le 1 ]; then
-    # First install
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:install --database \"mysql\" --database-host \"localhost:/run/mysqld/mysqld.sock\" --database-name \"NextCloud_db\" --database-user \"MySB_user\" --database-pass \"${MySQL_MysbPassword}\" --admin-user \"admin\" --admin-email=\"${gsMainUserEmail}\" --admin-pass \"${MySQL_MysbPassword}\" --database-table-prefix \"nc_\" --data-dir \"/home/nextcloud\" --no-interaction"
+    for ((i = 1; i <= 3; i++)); do
+        echo "# First install ${i}/3"
+
+        # Do first install
+        sResult="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:install --database \"mysql\" --database-host \"localhost:/run/mysqld/mysqld.sock\" --database-name \"NextCloud_db\" --database-user \"MySB_user\" --database-pass \"${MySQL_MysbPassword}\" --admin-user \"admin\" --admin-email=\"${gsMainUserEmail}\" --admin-pass \"${MySQL_MysbPassword}\" --database-table-prefix \"nc_\" --data-dir \"/home/nextcloud\" --no-interaction")"
+
+        # Check config.php
+        sVersion="$(grep "'version'" "${gsNextCloudDir}"/config/config.php | tail -n 1 | cut -d "'" -f 4)"
+        sSecret="$(grep "'secret'" "${gsNextCloudDir}"/config/config.php | tail -n 1 | cut -d "'" -f 4)"
+        sPasswordSalt="$(grep "'passwordsalt'" "${gsNextCloudDir}"/config/config.php | tail -n 1 | cut -d "'" -f 4)"
+        echo "sVersion: ${sVersion}"
+        echo "sSecret: ${sSecret}"
+        echo "sPasswordSalt: ${sPasswordSalt}"
+        if [ -z "${sVersion}" ] || [ -z "${sSecret}" ] || [ -z "${sPasswordSalt}" ]; then
+            cmdMySQL 'MySB_db' "DROP DATABASE IF EXISTS NextCloud_db;" -v
+            rm -fv "${gsNextCloudDir}"/config/config.php
+            fnCreateDatabase
+        else
+            echo "${sResult}"
+            break
+        fi
+    done
 
     # Generate an instance ID
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
 
     #### Get needed values from config files
-    # sVersion="$(grep "'version'" "${gsNextCloudDir}"/config/config.php | tail -n 1 | cut -d "'" -f 4)"
     sVersion="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version")"
-    echo "sVersion: $sVersion"
-    # InstanceId="$(grep "'instanceid'" "${gsNextCloudDir}"/config/config.php | tail -n 1 | cut -d "'" -f 4)"
+    echo "sVersion: ${sVersion}"
     sInstanceId="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get instanceid")"
     echo "sInstanceId: $sInstanceId"
-    # sSecret="$(grep "'secret'" "${gsNextCloudDir}"/config/config.php | tail -n 1 | cut -d "'" -f 4)"
     sSecret="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get secret")"
-    echo "sSecret: $sSecret"
-    # sPasswordSalt="$(grep "'passwordsalt'" "${gsNextCloudDir}"/config/config.php | tail -n 1 | cut -d "'" -f 4)"
+    echo "sSecret: ${sSecret}"
     sPasswordSalt="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get passwordsalt")"
-    echo "sPasswordSalt: $sPasswordSalt"
+    echo "sPasswordSalt: ${sPasswordSalt}"
 
     #### Config file
     install -v -g www-data -o www-data -m 0640 "${MySB_InstallDir}"/templates/nextcloud/nextcloud.config.php.tmpl "${gsNextCloudDir}"/config/config.php
