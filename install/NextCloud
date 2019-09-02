@@ -131,8 +131,9 @@ gfnManageDirAndFiles 'global'
 fnCreateDatabase
 
 if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/config/config.php) ]] && [ "$(ls -la /var/lib/mysql/NextCloud_db/*.* | wc -l)" -le 1 ]; then
-    for ((i = 1; i <= 3; i++)); do
-        echo "# First install ${i}/3"
+    nLoop=4
+    for ((i = 1; i <= nLoop; i++)); do
+        echo "# First install ${i}/${nLoop}"
 
         # Do first install
         sResult="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:install --database \"mysql\" --database-host \"localhost:/run/mysqld/mysqld.sock\" --database-name \"NextCloud_db\" --database-user \"MySB_user\" --database-pass \"${MySQL_MysbPassword}\" --admin-user \"admin\" --admin-email=\"${gsMainUserEmail}\" --admin-pass \"${MySQL_MysbPassword}\" --database-table-prefix \"nc_\" --data-dir \"/home/nextcloud\" --no-interaction")"
@@ -147,7 +148,7 @@ if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/
         if [ -z "${sVersion}" ] || [ -z "${sSecret}" ] || [ -z "${sPasswordSalt}" ]; then
             cmdMySQL 'MySB_db' "DROP DATABASE IF EXISTS NextCloud_db;" -v
             rm -fv "${gsNextCloudDir}"/config/config.php
-            if [[ ${i} -lt 3 ]]; then
+            if [[ ${i} -lt ${nLoop} ]]; then
                 fnCreateDatabase
             else
                 cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='NextCloud';" -v
