@@ -5,13 +5,13 @@
 - Debian migration from Stretch to Buster
 - rTorrent v0.9.8 _(14d7121)_
 - LibTorrent v0.13.8 _(9bbbee6)_
+- ruTorrent v3.9 _(cfad7fc)_
 - DNScrypt-proxy v2 _(latest)_
-- Minio _(latest)_ _(standby)_
+- Minio _(latest)_ _(#96 standby)_
 - NextCloud v16.0.4
 - NetData v1.16.0
 - PHP v7.3
 - Medoo v1.7.2
-- ruTorrent v3.9 _(718087a)_
 - NodeJS v0.18.x _(Debian package)_
 - Plex, add plugins
   - [Absolute Series/Music Scanner](https://github.com/ZeroQI/Absolute-Series-Scanner)
