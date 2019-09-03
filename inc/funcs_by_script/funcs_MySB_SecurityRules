@@ -134,7 +134,7 @@ gfnLoadingVars() {
     if gfnCheckCommand 0 dnscrypt-proxy; then
         case "${gbDnsCryptSwitch}" in
             '0') ServicesToStop="${ServicesToStop} dnscrypt-proxy" ;;
-            '1') ServicesToRestart="${ServicesToRestart} dnscrypt-proxy" ;;
+            '1') [ "${gsSwitch}" != "UPGRADE" ] && ServicesToRestart="${ServicesToRestart} dnscrypt-proxy" ;;
         esac
     fi
 }
@@ -250,8 +250,11 @@ gfnRestartRtorrentSessions() {
                     if [ "${bCreateAfterClean}" -eq 1 ] && [ -f /etc/init.d/rtorrent-"${FnUser}" ]; then
                         bToRestart="$(cmdMySQL 'MySB_db' "SELECT rtorrent_restart FROM users WHERE users_ident='${FnUser}';")"
                         [ "${ModeSwitch}" == "INIT" ] && bToRestart="$(cmdMySQL 'MySB_db' "SELECT is_active FROM users WHERE users_ident='${FnUser}';")"
-                        [ "${bToRestart}" -eq 1 ] && rTorrentToStart="${rTorrentToStart} rtorrent-${FnUser}"
-                        cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='${FnUser}';"
+                        [ "${gsSwitch}" == "UPGRADE" ] && bToRestart=0
+                        if [ "${bToRestart}" -eq 1 ]; then
+                            rTorrentToStart="${rTorrentToStart} rtorrent-${FnUser}"
+                            cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='${FnUser}';"
+                        fi
                     fi
                 done
                 ;;
