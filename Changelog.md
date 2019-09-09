@@ -1,6 +1,6 @@
 # Changelog
 
-## v7.0 - 2019/08/31 _(start at: 2019/07/28)_
+## v7.0 - 2019/09/09 _(start at: 2019/07/28)_
 
 - Debian migration from Stretch to Buster
 - rTorrent v0.9.8 _(14d7121)_
