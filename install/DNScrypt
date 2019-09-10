@@ -53,25 +53,27 @@ function fnDownloadDnscrypt() {
         32) gsRepoURL="${gsRepoURL//x86_64/i386}" ;;
     esac
 
-    # Download TARGZ file
-    [ -f "${gsRepoDir}/${gsRepoFile}" ] && mv -v "${gsRepoDir}/${gsRepoFile}" "${gsRepoDir}/${gsRepoFile}.tmp"
-    gfnRepoManageByType
-    [ -f "${gsRepoDir}/${gsRepoFile}" ] && rm -fv "${gsRepoDir}/${gsRepoFile}.tmp"
+    if [ "${gsVersionLatest}" != "${gsVersionInstalled}" ]; then
+        # Download TARGZ file
+        [ -f "${MySB_Files}/${gsRepoFile}" ] && mv -v "${MySB_Files}/${gsRepoFile}" "${MySB_Files}/${gsRepoFile}.tmp"
+        # Remove temp folder
+        gfnDeleteDirectory 1 "${gsRepoDir}"
+        gfnRepoManageByType
+        [ -f "${MySB_Files}/${gsRepoFile}" ] && rm -fv "${MySB_Files}/${gsRepoFile}.tmp"
 
-    # Stop services
-    gfnManageServices stop "dnscrypt-proxy"
+        # Stop services
+        gfnManageServices stop "dnscrypt-proxy"
 
-    # Copy binary
-    if [ -f "${gsRepoDir}/dnscrypt-proxy" ]; then
-        cp -v "${gsRepoDir}/dnscrypt-proxy" /usr/local/bin/dnscrypt-proxy
-        chmod +x /usr/local/bin/dnscrypt-proxy
+        # Copy binary
+        if [ -f "${gsRepoDir}/dnscrypt-proxy" ]; then
+            cp -v "${gsRepoDir}/dnscrypt-proxy" /usr/local/bin/dnscrypt-proxy
+            chmod -v +x /usr/local/bin/dnscrypt-proxy
+            /usr/local/bin/dnscrypt-proxy --version
+        fi
+
+        # Stop services
+        gfnManageServices start "dnscrypt-proxy"
     fi
-
-    # Stop services
-    gfnManageServices start "dnscrypt-proxy"
-
-    # Remove temp folder
-    gfnDeleteDirectory 1 "${gsRepoDir}"
 }
 
 #### CRON UPGRADE
