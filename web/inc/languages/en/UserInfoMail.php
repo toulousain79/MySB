@@ -48,7 +48,7 @@ define('User_UserInfoMail_Comment_ForceIP', 'Force the addition of your current 
 // Links (Main user)
 //////////////////////
 // Trackers
-define('User_UserInfoMail_Comment_Trackers', '<a href="https://%s:%s/?trackers/trackers-list.html">Manage your trackers here.</a> You can also <a href="https://%s:%s/?trackers/add-new-trackers.html">add new tracker here</a>.');
+define('User_UserInfoMail_Comment_Trackers', '<a href="https://%s:%s/?trackers/trackers-list.html">Manage your trackers here</a>.');
 // Blocklists
 define('User_UserInfoMail_Comment_Blocklists', 'You can manage <a href="https://%s:%s/?blocklists/usual-blocklists.html">Usual blocklists</a> AND <a href="https://%s:%s/?blocklists/countries-locklists.html">Countries blocklists</a>.');
 // DNScrypt-proxy
