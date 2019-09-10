@@ -244,7 +244,6 @@ $MySB_Version = GetVersion();
 		case '/?user/options.html':
 		case '/?renting/renting-options.html':
 		case '/?renting/renting-payments.html':
-		case '/?trackers/add-new-trackers.html':
 			echo '	<script type="text/javascript" src="' . THEMES_PATH . 'MySB/js/jquery-dynamically-adding-form-elements.js"></script>';
 			break;
 	}

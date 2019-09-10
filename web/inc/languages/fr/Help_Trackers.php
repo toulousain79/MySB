@@ -28,7 +28,6 @@ define('Help_Trackers_MainUser', '
 		Les trackers pr&eacute;sents dans cette liste ne sont pas modifiables. Il est seulement possible de les activer ou de les d&eacute;sactiver.
 	</p>
 	<p>
-		Vous avez &eacute;galement la possibilit&eacute; d\'ajouter vos propres trackers sur <a href="?trackers/add-new-trackers.html">cette page</a>.<br />
 		Vos trackers seront &eacute;galement affich&eacute;s dans la liste globale disponible sur <a href="?trackers/trackers-list.html">cette page</a>.
 	</p>
 	<p>
