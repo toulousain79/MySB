@@ -28,7 +28,6 @@ define('Help_Trackers_MainUser', '
 		Trackers in this list are not deletable. It is only possible to enable or disable it.
 	</p>
 	<p>
-		You also have the option to add your own trackers <a href="?trackers/add-new-trackers.html">here</a>.<br />
 		Your trackers will also be displayed in the global list available <a href="?trackers/trackers-list.html">here</a>.
 	</p>
 	<p>
