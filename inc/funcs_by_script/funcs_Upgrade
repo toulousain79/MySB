@@ -225,7 +225,10 @@ gfnUpgradeInProgress() {
 
     case "${1}" in
         "on")
+            # Stop services
             sServicesToStop="nginx cron"
+            # Remove all cron jobs
+            gfnScriptInvoke 'source' "${MySB_InstallDir}/install/Cron" 'STOP'
             # Nextcloud
             [[ ${gbIsInstalled_NextCloud} == "YES" ]] && su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:mode --on" &>/dev/null
             # Disable some Cron jobs
@@ -267,6 +270,8 @@ gfnUpgradeInProgress() {
             done
             # Start services
             gfnManageServices 'start' "nginx ssh"
+            # Create lock file
+            touch /tmp/UpgradeInProgress.lock
             ;;
         "off")
             # Nextcloud
@@ -298,11 +303,15 @@ gfnUpgradeInProgress() {
             # NginX
             rm -f /etc/nginx/sites-enabled/WiP
             [[ ! -L /etc/nginx/sites-enabled/default ]] && ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
-            [[ ! -L /etc/nginx/sites-enabled/cakebox ]] && ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox
+            if [ "${gbToInstall_Cakebox}" == "YES" ] || [ "${gbIsInstalled_Cakebox}" == "YES" ]; then
+                [[ ! -L /etc/nginx/sites-enabled/cakebox ]] && ln -s /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox
+            fi
             sConfigs="$(ls -A1 /etc/nginx/locations/*.back 2>/dev/null)"
             for sConf in ${sConfigs}; do
                 mv ${sConf} ${sConf//.back/}
             done
+            # Restore cron jobs
+            gfnScriptInvoke 'source' "${MySB_InstallDir}/install/Cron" 'ENABLE'
             # Start services
             gfnManageServices 'start' "${binPhpService} nginx cron ssh ${sServicesToStart}"
             ;;

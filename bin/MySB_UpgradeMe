@@ -84,7 +84,7 @@ if [[ ${Continue} -eq 0 ]]; then
 
     # New version is greater than current version, so we can do an upgrade of MySB
     if [ -n "${MySB_CurrVersionDiff}" ] && [ -n "${MySB_NewVersionDiff}" ] && [ "${MySB_NewVersionDiff}" -gt "${MySB_CurrVersionDiff}" ]; then
-        case "$Type" in
+        case "${Type}" in
             "CRON")
                 ${binCURL} "https://raw.githubusercontent.com/toulousain79/MySB/${MySB_NewVersion}/Changelog.md" -o /tmp/changelog
                 gfnSendMail "MySB - ${UpgradeMe_NewVersion} (${MySB_NewVersion})" "${gsMainUserName}" "new_version" "${UpgradeMe_NewVersion}"
@@ -93,7 +93,7 @@ if [[ ${Continue} -eq 0 ]]; then
             *)
                 UpgradeMe_Msg_VersionAvailable="${UpgradeMe_Msg_VersionAvailable//#version#/${MySB_NewVersion}}"
                 echo
-                echo -e "$UpgradeMe_Msg_VersionAvailable"
+                echo -e "${UpgradeMe_Msg_VersionAvailable}"
                 echo
                 if (grep -q '127.0.0.1' <<<"$(who | head -n 1)"); then
                     echo
@@ -272,6 +272,10 @@ if [[ ${Continue} -eq 0 ]]; then
             gfnCountDown 10
 
             screen -r MySB_Upgrade
+
+            #### Engage a reboot after an upgrade
+            REBOOT=YES
+            export REBOOT
         else
             Continue=15
             Error="${UpgradeMe_Error_UpgradeSciptMissing} (${MySB_InstallDir}/upgrade/From_${sPreviousVersion}-to-${MySB_NewVersion}.bsh)"
@@ -280,9 +284,11 @@ if [[ ${Continue} -eq 0 ]]; then
 fi
 
 #### Upgrade in progress page + Start Cron service
-# shellcheck source=inc/vars
-source "${MySB_InstallDir}"/inc/vars
-gfnUpgradeInProgress "off"
+if [ -f /tmp/UpgradeInProgress.lock ]; then
+    # shellcheck source=inc/vars
+    source "${MySB_InstallDir}"/inc/vars
+    gfnUpgradeInProgress "off"
+fi
 
 #### Upgrade finished
 clear
