@@ -294,7 +294,7 @@ gfnPopulatingIcmpChain() {
 	# ICMP packets should fit in a Layer 2 frame, thus they should
 	# never be fragmented.  Fragmented ICMP packets are a typical sign
 	# of a denial of service attack.
-	case "$1" in
+	case "${1}" in
 	"create")
 		iptables -A icmp_packets --fragment -p ICMP -j LOG --log-prefix "[MySB] ICMP Fragment: " -m comment --comment "ICMP Fragment"
 		iptables -A icmp_packets --fragment -p ICMP -j DROP
@@ -302,7 +302,7 @@ gfnPopulatingIcmpChain() {
 	esac
 
 	#### Allow provider monitoring by ICMP
-	case "$1" in
+	case "${1}" in
 	"create")
 		if [ -n "${gsServerProvider}" ] && [ "${gsServerProvider}" != "NONE" ]; then
 			case "${gsServerProvider}" in
@@ -340,7 +340,7 @@ gfnPopulatingIcmpChain() {
 	esac
 
 	#### Allow ICMP for all users
-	case "$1" in
+	case "${1}" in
 	"create")
 		for ip in $AllUsersIPs; do
 			iptables -A icmp_packets -p ICMP -s "${ip}" --icmp-type 8 -j LOG --log-prefix "[MySB] Ping detected: " -m comment --comment "Allow ICMP for users"
@@ -361,7 +361,7 @@ gfnPopulatingIcmpChain() {
 	esac
 
 	#### Allow ICMP over VPN tunneling
-	case "$1" in
+	case "${1}" in
 	"create")
 		if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
 			iptables -A icmp_packets -p ICMP -s 0/0 -i tun+ --icmp-type 8 -j LOG --log-prefix "[MySB] Ping detected: " -m comment --comment "Allow ICMP over OpenVPN"
@@ -373,7 +373,7 @@ gfnPopulatingIcmpChain() {
 	esac
 
 	#### By default, however, drop pings without logging. Blaster and other worms have infected systems blasting pings.
-	case "$1" in
+	case "${1}" in
 	"create")
 		# Comment the line below if you want pings logged, but it will likely fill your logs.
 		iptables -A icmp_packets -p ICMP -s 0/0 --icmp-type 8 -j LOG --log-prefix "[MySB] Ping blocked: " -m comment --comment "Ping blocked"
@@ -408,7 +408,7 @@ gfnPopulatingUdpInboundChain() {
 	# I added these rules because some network connections, such as those via cable modems, tend to be filled with noise from unprotected Windows machines.
 	# These rules drop those packets quickly and without logging them.
 	# This prevents them from traversing the whole chain and keeps the log from getting cluttered with chatter from Windows systems.
-	case "$1" in
+	case "${1}" in
 	"create")
 		if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
 			# Samba
@@ -429,7 +429,7 @@ gfnPopulatingUdpInboundChain() {
 	esac
 
 	# Network Time Protocol (NTP) Server
-	case "$1" in
+	case "${1}" in
 	"create")
 		if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
 			iptables -A udp_inbound -p UDP -s 0/0 -i tun+ --destination-port 123 -j ACCEPT -m comment --comment "NTP over OpenVPN"
@@ -455,7 +455,7 @@ gfnPopulatingUdpInboundChain() {
 	esac
 
 	# Provider monitoring
-	case "$1" in
+	case "${1}" in
 	"create")
 		if [ -n "${gsServerProvider}" ] && [ "${gsServerProvider}" != "NONE" ]; then
 			case "${gsServerProvider}" in
@@ -482,7 +482,7 @@ gfnPopulatingUdpInboundChain() {
 	#iptables -A udp_inbound -p UDP -s 0/0 --source-port 53 -j ACCEPT
 
 	# Network File System (NFS) Server
-	case "$1" in
+	case "${1}" in
 	"create")
 		if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
 			iptables -A udp_inbound -p UDP -s 0/0 -i br0 -m multiport --ports 111,2049,32764:32769 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
@@ -492,7 +492,7 @@ gfnPopulatingUdpInboundChain() {
 	esac
 
 	#### OpenVPN
-	case "$1" in
+	case "${1}" in
 	"create")
 		if [ "${gbIsInstalled_OpenVPN}" == "YES" ] && [ "${gsOpenVPN_Proto}" == "udp" ]; then
 			iptables -A udp_inbound -p UDP -s 0/0 -i "${gsPrimaryInet}" --destination-port "${gsPort_OpenVPN_WithGW}" -j ACCEPT -m comment --comment "OpenVPN with GW for users"
@@ -514,7 +514,7 @@ gfnPopulatingUdpInboundChain() {
 	esac
 
 	#### PlexMedia Server
-	case "$1" in
+	case "${1}" in
 	"create")
 		if [ "${gbIsInstalled_OpenVPN}" == "YES" ] && [ "${gbIsInstalled_PlexMedia}" == "YES" ]; then
 			for PlexUdpPort in $gsPorts_UDP_PlexMedia; do
@@ -526,7 +526,7 @@ gfnPopulatingUdpInboundChain() {
 
 	#### rTorrent
 	bActiveUdp="$(cmdMySQL 'MySB_db' "SELECT annoncers_udp FROM system WHERE id_system='1';")"
-	case "$1" in
+	case "${1}" in
 	"create")
 		if [ "${bActiveUdp}" -eq 1 ]; then
 			for SeedboxUser in ${gsUsersList}; do
@@ -552,7 +552,7 @@ gfnPopulatingUdpInboundChain() {
 	esac
 
 	# Not matched, so return for logging
-	case "$1" in
+	case "${1}" in
 	"create")
 		#iptables -A udp_inbound -p UDP -j LOG --log-prefix "[MySB] Return UDP IN: " -m comment --comment "Return UDP IN"
 		iptables -A udp_inbound -p UDP -j RETURN
@@ -566,6 +566,16 @@ gfnPopulatingUdpOutboundChain() {
 	# This chain is used with a private network to prevent forwarding for UDP requests on specific protocols.
 	# Applied to the FORWARD rule from the internal network.
 	# Ends with an ACCEPT
+
+	if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
+		# Samba
+		iptables -A udp_outbound -p UDP -s 0/0 -i "${gsPrimaryInet}" --destination-port 135 -j DROP
+		iptables -A udp_outbound -p UDP -s 0/0 -i "${gsPrimaryInet}" --destination-port 135 -j LOG --log-prefix "[MySB] NetBIOS UDP OUT 135: " -m comment --comment "NetBIOS UDP OUT"
+		iptables -A udp_outbound -p UDP -s 0/0 -i "${gsPrimaryInet}" --destination-port 137:138 -j DROP
+		iptables -A udp_outbound -p UDP -s 0/0 -i "${gsPrimaryInet}" --destination-port 137:138 -j LOG --log-prefix "[MySB] NetBIOS UDP OUT 137:138: " -m comment --comment "NetBIOS UDP OUT"
+		iptables -A udp_outbound -p UDP -s 0/0 -i "${gsPrimaryInet}" --destination-port 445 -j DROP
+		iptables -A udp_outbound -p UDP -s 0/0 -i "${gsPrimaryInet}" --destination-port 445 -j LOG --log-prefix "[MySB] NetBIOS UDP OUT 445: " -m comment --comment "NetBIOS UDP OUT"
+	fi
 
 	# No match, so ACCEPT
 	#iptables -A udp_outbound -p UDP -s 0/0 -j LOG --log-prefix "[MySB] Accept UDP OUT: " -m comment --comment "Accept UDP OUT"
@@ -587,13 +597,13 @@ gfnPopulatingTcpInboundChain() {
 	# If you allow queries from the 'net, you also need to be aware that although
 	# DNS queries use UDP by default, a truncated UDP query can legally be submitted via TCP instead.
 	# You probably will never need it, but should be aware of the fact.
-	# case "$1" in
+	# case "${1}" in
 	# "create")
 	# iptables -A tcp_inbound -p TCP -s 0/0 --destination-port 53 -j ACCEPT
 	# ;;
 	# esac
 
-	case "$1" in
+	case "${1}" in
 	"create")
 		# HTTP
 		[ -n "${gsPort_NginX_HTTP}" ] && iptables -A tcp_inbound -p TCP -s 0/0 --destination-port "${gsPort_NginX_HTTP}" -j ACCEPT -m comment --comment "NginX - HTTP"
@@ -637,7 +647,7 @@ gfnPopulatingTcpInboundChain() {
 	esac
 
 	#### OpenVPN
-	case "$1" in
+	case "${1}" in
 	"create")
 		if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
 			if [ "${gsOpenVPN_Proto}" == "tcp" ]; then
@@ -695,7 +705,7 @@ gfnPopulatingTcpInboundChain() {
 	esac
 
 	#### Webmin
-	case "$1" in
+	case "${1}" in
 	"create")
 		if [ "${gbIsInstalled_Webmin}" == "YES" ]; then
 			for ip in ${gsMainUserIPs}; do
@@ -720,7 +730,7 @@ gfnPopulatingTcpInboundChain() {
 	esac
 
 	#### PlexMedia Server
-	case "$1" in
+	case "${1}" in
 	"create")
 		if [ "${gbIsInstalled_PlexMedia}" == "YES" ]; then
 			iptables -A tcp_inbound -p TCP -s 0/0 -i "${gsPrimaryInet}" --destination-port "${gsPorts_PlexMedia}" -j ACCEPT -m comment --comment "Plex Media Server"
@@ -735,7 +745,7 @@ gfnPopulatingTcpInboundChain() {
 	esac
 
 	#### Minio
-	case "$1" in
+	case "${1}" in
 	"create")
 		if (gfnCheckCommand 0 minio); then
 			iptables -A tcp_inbound -p TCP -s 0/0 -i "${gsPrimaryInet}" --destination-port "${gsPort_Minio}" -j ACCEPT -m comment --comment "Minio"
@@ -744,7 +754,7 @@ gfnPopulatingTcpInboundChain() {
 	esac
 
 	#### rTorrent
-	case "$1" in
+	case "${1}" in
 	"create")
 		for SeedboxUser in ${gsUsersList}; do
 			sValues="$(cmdMySQL 'MySB_db' "SELECT scgi_port,rtorrent_port FROM users WHERE users_ident='${SeedboxUser}';" | sed 's/\t/|/g;')"
@@ -766,7 +776,7 @@ gfnPopulatingTcpInboundChain() {
 	esac
 
 	#### Network File System (NFS) Server
-	case "$1" in
+	case "${1}" in
 	"create")
 		if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
 			iptables -A tcp_inbound -p TCP -s 0/0 -i br0 -m multiport --ports 111,2049,32764:32769 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
@@ -776,7 +786,7 @@ gfnPopulatingTcpInboundChain() {
 	esac
 
 	#### Let's Encrypt
-	case "$1" in
+	case "${1}" in
 	"letsencrypt")
 		bLetsEncryptOpenPort="$(cmdMySQL 'MySB_db' "SELECT letsencrypt_openport FROM system WHERE id_system='1';")"
 		if [ "$bLetsEncryptOpenPort" -eq 1 ]; then
@@ -789,7 +799,7 @@ gfnPopulatingTcpInboundChain() {
 	esac
 
 	#### Not matched, so return so it will be logged
-	case "$1" in
+	case "${1}" in
 	"create")
 		#iptables -A tcp_inbound -p TCP -j LOG --log-prefix "[MySB] Return TCP IN: " -m comment --comment "Return TCP IN"
 		iptables -A tcp_inbound -p TCP -j RETURN
@@ -803,6 +813,16 @@ gfnPopulatingTcpOutboundChain() {
 	# This chain is used with a private network to prevent forwarding for requests on specific protocols.
 	# Applied to the FORWARD rule from the internal network.
 	# Ends with an ACCEPT
+
+	if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
+		# Samba
+		iptables -A tcp_outbound -p UDP -s 0/0 -i "${gsPrimaryInet}" --destination-port 135 -j DROP
+		iptables -A tcp_outbound -p UDP -s 0/0 -i "${gsPrimaryInet}" --destination-port 135 -j LOG --log-prefix "[MySB] NetBIOS TCP OUT 135: " -m comment --comment "NetBIOS TCP OUT"
+		iptables -A tcp_outbound -p UDP -s 0/0 -i "${gsPrimaryInet}" --destination-port 137:138 -j DROP
+		iptables -A tcp_outbound -p UDP -s 0/0 -i "${gsPrimaryInet}" --destination-port 137:138 -j LOG --log-prefix "[MySB] NetBIOS TCP OUT 137:138: " -m comment --comment "NetBIOS TCP OUT"
+		iptables -A tcp_outbound -p UDP -s 0/0 -i "${gsPrimaryInet}" --destination-port 445 -j DROP
+		iptables -A tcp_outbound -p UDP -s 0/0 -i "${gsPrimaryInet}" --destination-port 445 -j LOG --log-prefix "[MySB] NetBIOS TCP OUT 445: " -m comment --comment "NetBIOS TCP OUT"
+	fi
 
 	# No match, so ACCEPT
 	#iptables -A tcp_outbound -p TCP -s 0/0 -j LOG --log-prefix "[MySB] Accept TCP OUT: " -m comment --comment "Accept TCP OUT"
