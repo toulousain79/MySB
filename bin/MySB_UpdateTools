@@ -57,9 +57,19 @@ fi
 bRtorrentRestart=0
 gfnListCountUsers 'normal'
 
+#### ruTorrent
+sVersionDB="$(cmdMySQL 'MySB_db' "SELECT version FROM repositories WHERE name='ruTorrent';")"
+sVersionInstalled="$(cat "${gsRutorrentDir}"/version)"
+if [ -n "${sVersionDB}" ] && [ "${sVersionDB}" != "${sVersionInstalled}" ]; then
+    cmdMySQL 'MySB_db' "DELETE FROM repositories;" -v
+    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"$MySB_InstallDir/templates/mysql/Table_repositories.sql"
+    cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '1' WHERE name='ruTorrent';" -v
+    gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/ruTorrent" 'UPGRADE'
+fi
+
 #### rTorrent scripts (to leave for next version ;-)
 for sUser in ${gsUsersList}; do
-    (! grep -q 'rev 0.7' "/etc/init.d/rtorrent-${sUser}") && bRtorrentRestart=1
+    (! grep -q 'rev 0.8' "/etc/init.d/rtorrent-${sUser}") && bRtorrentRestart=1
     (! grep -q 'rev 0.8' /home/${sUser}/.rTorrent_erased.sh) && bRtorrentRestart=1
     (! grep -q 'rev 0.8' /home/${sUser}/.rTorrent_finished.sh) && bRtorrentRestart=1
     (! grep -q 'rev 0.8' /home/${sUser}/.rTorrent_inserted_new.sh) && bRtorrentRestart=1
@@ -93,7 +103,7 @@ if [[ ${bRtorrentRestart} -eq 1 ]]; then
         } >"/etc/sudoers.d/MySB_${sUser}"
         chmod 0440 "/etc/sudoers.d/MySB_${sUser}"
     done
-    gfnManageServices stop "sudo"
+    # gfnManageServices stop "sudo"
 fi
 
 #### Samba Netbios name
@@ -108,6 +118,11 @@ fi
 #### Cron jobs
 if (! grep -q '# rev 0.2' ${MySB_InstallDir}/install/Cron); then
     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/Cron" 'UPGRADE'
+fi
+
+#### Bind
+if (! grep -q '\/\/include "\/etc\/bind\/log.conf";' /etc/bind/named.conf.local); then
+    install -v -o root -g bind -m 0774 ${MySB_InstallDir}/templates/bind/etc.bind.named.conf.local.tmpl /etc/bind/named.conf.local
 fi
 
 # -----------------------------------------
