@@ -219,6 +219,34 @@ sed -n "/^iface ${gsPrimaryInet} inet6/,/^$/p;" /tmp/interfaces | while read -r 
     perl -pi -e "s/${sLine}/#${sLine}/g" /tmp/interfaces
 done
 (/usr/sbin/ifup --no-act --interfaces=/tmp/interfaces "${gsPrimaryInet}") && cp -afv /tmp/interfaces /etc/network/interfaces
+# Hetzner new config to force IPv6 ?
+# https://wiki.hetzner.de/index.php/Network_configuration_using_systemd-networkd/en
+if [ -f /etc/systemd/network/10-mainif.network ]; then
+    # Address
+    for sMatch in $(grep '^Address=' /etc/systemd/network/10-mainif.network); do
+        nNumLine=$(grep "${sMatch}" -n -m 1 /etc/systemd/network/10-mainif.network | cut -d ':' -f 1)
+        sAddress="$(echo "${sMatch}" | cut -d '=' -f 2  | cut -d '/' -f 1)"
+        if [ -n "${sAddress}" ]; then
+            if [ "$(gfnValidateIP "${sAddress}")" != "${sAddress}" ]; then
+                sed -i "${nNumLine}d" /etc/systemd/network/10-mainif.network
+                sed -i "${nNumLine}i\#${sMatch}" /etc/systemd/network/10-mainif.network
+                # sed -i 's/^Address=/#Address=/g;' /etc/systemd/network/10-mainif.network
+            fi
+        fi
+    done
+    # Gateway
+    for sMatch in $(grep '^Gateway=' /etc/systemd/network/10-mainif.network); do
+        nNumLine=$(grep "${sMatch}" -n -m 1 /etc/systemd/network/10-mainif.network | cut -d ':' -f 1)
+        sGateway="$(echo "${sMatch}" | cut -d '=' -f 2  | cut -d '/' -f 1)"
+        if [ -n "${sGateway}" ]; then
+            if [ "$(gfnValidateIP "${sGateway}")" != "${sGateway}" ]; then
+                sed -i "${nNumLine}d" /etc/systemd/network/10-mainif.network
+                sed -i "${nNumLine}i\#${sMatch}" /etc/systemd/network/10-mainif.network
+                # sed -i 's/^Address=/#Address=/g;' /etc/systemd/network/10-mainif.network
+            fi
+        fi
+    done
+fi
 
 #### Grub
 # Disable IPv6
