@@ -35,34 +35,39 @@ gfnMinioUsersBuckets() {
     local sSwitch sUser sBucket sPolicy nIdUser aBucketList sSecretKey
     sSwitch="${1}"
     sUser="${2}"
-    aBucketList=()
-    aBucketList["complete"]="readonly"
-    aBucketList["watch"]="readwrite"
-    aBucketList["torrents"]="readwrite"
+    declare -A aBucketList
+    aBucketList+=([complete]="readonly" [watch]="readwrite" [torrents]="readwrite")
     [ -z "${sSwitch}" ] && return
     [ -z "${sUser}" ] && return
-    [ "${gbIsInstalled_Minio}" == "YES" ] && return
+    [ "${gbIsInstalled_Minio}" != "YES" ] && return
 
     case "${sSwitch}" in
         'create')
-            for ((i = 0; i < ${#aBucketList[@]}; i++)); do
-                source /etc/MySB/config_db
-                sBucket="$(echo "${aBucketList[${i}]}" | awk '{printf $1}')"
-                sPolicy="$(echo "${aBucketList[${i}]}" | awk '{printf $2}')"
+            source /etc/MySB/config_db
+            for sBucket in ${!aBucketList[*]}; do
+                sPolicy="$(echo "${aBucketList[$sBucket]}")"
                 nIdUser="$(cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='${sUser}';")"
-                sSecretKey="$(cmdMySQL 'MySB_db' "SELECT secret_key FROM minio WHERE id_users='${nIdUser}';")"
-                if [ -z "${sSecretKey}" ]; then
-                    sSecretKey="$(gfnGenPassword 32)"
-                    cmdMySQL 'MySB_db' "INSERT INTO minio (id_users, access_key, secret_key) VALUES ('${nIdUser}', '${sUser}', '${sSecretKey}');"
+
+                sUserValues="$(cmdMySQL 'MySB_db' "SELECT access_key,secret_key FROM minio WHERE id_users='${nIdUser}';" | sed 's/\t/|/g;')"
+                sAccessKey="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[1]}')"
+                sSecretKey="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[2]}')"
+                if [ -z "${sAccessKey}" ] && [ -z "${sSecretKey}" ]; then
+                    sAccessKey="${sAccessKey:-$(gfnGenPassword 16)}"
+                    sSecretKey="${sSecretKey:-$(gfnGenPassword 32)}"
+                    cmdMySQL 'MySB_db' "INSERT INTO minio (id_users, access_key, secret_key) VALUES ('${nIdUser}', '${sAccessKey}', '${sSecretKey}');"
+                elif [ -z "${sAccessKey}" ] || [ -z "${sSecretKey}" ]; then
+                    sAccessKey="${sAccessKey:-$(gfnGenPassword 16)}"
+                    sSecretKey="${sSecretKey:-$(gfnGenPassword 32)}"
+                    cmdMySQL 'MySB_db' "UPDATE minio SET access_key='${sAccessKey}',secret_key='${sSecretKey}' WHERE id_users='${nIdUser}';"
                 fi
 
                 # Bucket
-                if [ -d "/home/${sUser}/rtorrent/${sBucket}/" ] && [ -d "/home/minio/data/${sUser}-${sBucket}" ]; then
-                    [ ! -h "/home/minio/data/${sUser}-${sBucket}" ] && ln -s "/home/${sUser}/rtorrent/${sBucket}/" "/home/minio/data/${sUser}-${sBucket}"
+                if [ -d "/home/${sUser}/rtorrent/${sBucket}/" ]; then
+                    [ ! -h "/home/minio/data/${sUser}-${sBucket}" ] && ln -sv "/home/${sUser}/rtorrent/${sBucket}/" "/home/minio/data/${sUser}-${sBucket}"
                 fi
 
                 # Create a new user with canned policy
-                install -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/getonly.json.tmpl /tmp/getonly.json
+                install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/getonly.json.tmpl /tmp/getonly.json
                 # sed -i "s/2012-10-17/$(/bin/date '+%Y-%m-%d')/g;" /tmp/getonly.json
                 sed -i "s/bucketname/${sUser}-${sBucket}/g;" /tmp/getonly.json
                 mc admin policy add mysb readonly /tmp/getonly.json
@@ -81,6 +86,7 @@ gfnMinioUsersBuckets() {
                 # Unset
                 unset MySQL_RootPassword MySQL_MysbPassword MySQL_BackupManager MySQL_TorrentPassword MySQL_Secret
             done
+            rm -f /tmp/getonly.json
             ;;
         'delete')
             # rtorrent/complete
