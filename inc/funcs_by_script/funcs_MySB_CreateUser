@@ -43,9 +43,9 @@ gfnMinioUsersBuckets() {
 
     case "${sSwitch}" in
         'create')
-            source /etc/MySB/config_db
+            # source /etc/MySB/config_db
             for sBucket in ${!aBucketList[*]}; do
-                sPolicy="$(echo "${aBucketList[$sBucket]}")"
+                sPolicy="$(echo "${aBucketList[${sBucket}]}")"
                 nIdUser="$(cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='${sUser}';")"
 
                 sUserValues="$(cmdMySQL 'MySB_db' "SELECT access_key,secret_key FROM minio WHERE id_users='${nIdUser}';" | sed 's/\t/|/g;')"
@@ -74,14 +74,14 @@ gfnMinioUsersBuckets() {
 
                 if [ -n "${sSecretKey}" ] && [ -n "${sPolicy}" ]; then
                     # Create a new user
-                    mc admin user add mysb "${sUser}" "${sSecretKey}"
-                    mc admin policy set mysb "${sPolicy}" user="${sUser}"
-                    mc config host add "mysb-${sUser}" https://${gsHostNameFqdn}:9000 "${sUser}" "${sSecretKey}" --api s3v4
+                    mc admin user add mysb "${sAccessKey}" "${sSecretKey}"
+                    mc admin policy set mysb "${sPolicy}" user="${sAccessKey}"
+                    # mc config host add "mysb-${sUser}" https://${gsHostNameFqdn}:9000 "${sAccessKey}" "${sSecretKey}" --api s3v4
                 fi
 
                 # Group
-                mc admin group add mysb MySB_users "${sUser}"
-                mc admin policy set mysb getonly group=MySB_users
+                mc admin group add mysb MySB_users "${sAccessKey}"
+                # mc admin policy set mysb getonly group=MySB_users
 
                 # Unset
                 unset MySQL_RootPassword MySQL_MysbPassword MySQL_BackupManager MySQL_TorrentPassword MySQL_Secret
@@ -89,9 +89,14 @@ gfnMinioUsersBuckets() {
             rm -f /tmp/getonly.json
             ;;
         'delete')
-            # rtorrent/complete
-            mc admin user remove "${sUser}_complete" "${sUser}"
-            [ -h "/home/minio/data/${sUser}_complete" ] && rm "/home/minio/data/${sUser}_complete"
+            for sBucket in ${!aBucketList[*]}; do
+                nIdUser="$(cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='${sUser}';")"
+                sUserValues="$(cmdMySQL 'MySB_db' "SELECT access_key,secret_key FROM minio WHERE id_users='${nIdUser}';" | sed 's/\t/|/g;')"
+                sAccessKey="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[1]}')"
+                sSecretKey="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[2]}')"
+                mc admin user remove mysb "${sAccessKey}"
+                [ -h "/home/minio/data/${sUser}-${sBucket}" ] && rm "/home/minio/data/${sUser}-${sBucket}"
+            done
             ;;
     esac
 }
@@ -614,6 +619,8 @@ gfnCreateRtorrentConfigFile() {
             install -o "${sUser}" -g MySB_users -m 0755 -d "${sHomeDir}/rtorrent/complete/${sSubDirectory}/"
             install -o "${sUser}" -g MySB_users -m 0775 -d "${sHomeDir}/rtorrent/watch/${sSubDirectory}/"
             install -o "${sUser}" -g MySB_users -m 0755 -d "${sHomeDir}/rtorrent/torrents/${sSubDirectory}/"
+            echo "FORCE WATCH SYNC WITH SMARTPHONE CLIENT" >"${sHomeDir}/rtorrent/watch/${sSubDirectory}/.gitkeep"
+            chown www-data:www-data "${sHomeDir}/rtorrent/watch/${sSubDirectory}/.gitkeep"
 
             if [ -d "${sHomeDir}/rtorrent/complete/${sSubDirectory}/" ]; then
                 nCountFiles="$(find "${sHomeDir}/rtorrent/complete/${sSubDirectory}/" -maxdepth 1 -mindepth 1 | wc -l)"
@@ -626,9 +633,9 @@ gfnCreateRtorrentConfigFile() {
                 fi
             fi
 
-            case "$bCanBeDeleted" in
+            case "${bCanBeDeleted}" in
                 1) # New directory OR maybe to delete
-                    case "$bToDelete" in
+                    case "${bToDelete}" in
                         1)
                             rm -rf "${sHomeDir}/rtorrent/complete/${sSubDirectory}/"
                             rm -rf "${sHomeDir}/rtorrent/watch/${sSubDirectory}/"
@@ -689,8 +696,8 @@ gfnCreateRtorrentConfigFile() {
         perl -pi -e "s/<local_address>/${gsSrvIpAddress}/g" "${sHomeDir}"/.rtorrent.rc
         perl -pi -e "s/<username>/${sUser}/g" "${sHomeDir}"/.rtorrent.rc
         perl -pi -e "s/<homedir>/\/home\/${sUser}/g" "${sHomeDir}"/.rtorrent.rc
-        perl -pi -e "s/<scgi_port>/$nPortSCGI/g" "${sHomeDir}"/.rtorrent.rc
-        perl -pi -e "s/<port_range>/$nPortRtorrent-$nPortRtorrent/g" "${sHomeDir}"/.rtorrent.rc
+        perl -pi -e "s/<scgi_port>/${nPortSCGI}/g" "${sHomeDir}"/.rtorrent.rc
+        perl -pi -e "s/<port_range>/${nPortRtorrent}-${nPortRtorrent}/g" "${sHomeDir}"/.rtorrent.rc
         if [ "${gsMySB_PeerBlock}" == "rTorrent" ]; then
             perl -pi -e "s/#{1}ipv4_filter.load/ipv4_filter.load/g" "${sHomeDir}"/.rtorrent.rc
             perl -pi -e "s/#{1}print/print/g" "${sHomeDir}"/.rtorrent.rc
@@ -950,7 +957,7 @@ gfnMonthlyPayment() {
                     ;;
             esac
 
-            if [ $nUpdateCurrentPeriodPrice -eq 1 ]; then
+            if [ ${nUpdateCurrentPeriodPrice} -eq 1 ]; then
                 # 1/ Clôture du mois précédent OU d'une période suite à l'ajout d'un user dans:
                 #		- modification de 'tracking_rent_history' en modifiant le champs 'end_of_use' à la date du jour
                 #		==> Utilisation d'un trigger sur UPDATE pour calculer le prix de la période
@@ -961,12 +968,12 @@ gfnMonthlyPayment() {
                 fi
             fi
 
-            if [ $nNewMonth -eq 1 ]; then
+            if [ ${nNewMonth} -eq 1 ]; then
                 # 2/ Ajout du nouveau mois:
                 cmdMySQL 'MySB_db' "INSERT INTO tracking_rent_status (id_users) VALUES ('${nIdUser}');"
             fi
 
-            if [ $nCreateNewPeriodPrice -eq 1 ]; then
+            if [ ${nCreateNewPeriodPrice} -eq 1 ]; then
                 # 3/ Ajout d'une nouvelle période prix (nouveau mois OU changement du nombre d'utilisateur)
                 cmdMySQL 'MySB_db' "INSERT INTO tracking_rent_history (id_users,monthly_price,nb_users,start_of_use,end_of_use) VALUES ('${nIdUser}','$gsRentingCostTva','$gnTotalUsers','$dStartOfUse','$dEndOfUse');"
                 if [ "${nIdUser}" == "${gnMainUserId}" ]; then
@@ -974,7 +981,7 @@ gfnMonthlyPayment() {
                 fi
             fi
 
-            if [ $nSendMail -eq 1 ]; then
+            if [ ${nSendMail} -eq 1 ]; then
                 # Send email for all users
                 gfnSendMail "$sMailSubject" "${SeedboxUser}" "$sCase" "${sMessage}"
             fi
