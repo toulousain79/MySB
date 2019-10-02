@@ -153,8 +153,6 @@ CREATE TABLE IF NOT EXISTS `minio` (
   `id_users` int(11) NOT NULL,
   `access_key` varchar(16) NOT NULL,
   `secret_key` varchar(32) NOT NULL,
-  `bucket` varchar(32) NOT NULL,
-  `mountpoint` varchar(256) NOT NULL,
   PRIMARY KEY (`id_minio`),
   KEY `id_users` (`id_users`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;

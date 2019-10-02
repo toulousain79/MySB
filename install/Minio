@@ -50,6 +50,35 @@ case "${gsSwitch}" in
             install -v -o minio -g minio -m 0644 "${MySB_InstallDir}/ssl/mysb.key" /etc/minio/certs/private.key
             install -v -o minio -g minio -m 0644 "${MySB_InstallDir}/ssl/mysb.cert" /etc/minio/certs/public.crt
         fi
+
+        # Seedbox user
+        sUserValues="$(cmdMySQL 'MySB_db' "SELECT access_key,secret_key FROM minio WHERE id_users='999;" | sed 's/\t/|/g;')"
+        sAccessKey="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[1]}')"
+        sSecretKey="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[2]}')"
+        if [ -z "${sAccessKey}" ] && [ -z "${sSecretKey}" ]; then
+            sAccessKey="${sAccessKey:-$(gfnGenPassword 16)}"
+            sSecretKey="${sSecretKey:-$(gfnGenPassword 32)}"
+            cmdMySQL 'MySB_db' "INSERT INTO minio (id_users, access_key, secret_key) VALUES ('999', '${sAccessKey}', '${sSecretKey}');"
+        elif [ -z "${sAccessKey}" ] || [ -z "${sSecretKey}" ]; then
+            sAccessKey="${sAccessKey:-$(gfnGenPassword 16)}"
+            sSecretKey="${sSecretKey:-$(gfnGenPassword 32)}"
+            cmdMySQL 'MySB_db' "UPDATE minio SET access_key='${sAccessKey}',secret_key='${sSecretKey}' WHERE id_users='999';"
+        fi
+
+        # Create a new user with canned policy
+        install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/getonly.json.tmpl /tmp/getonly.json
+        # sed -i "s/2012-10-17/$(/bin/date '+%Y-%m-%d')/g;" /tmp/getonly.json
+        sed -i "s/bucketname/*-complete/g;" /tmp/getonly.json
+        mc admin policy add mysb readonly /tmp/getonly.json
+
+        if [ -n "${sSecretKey}" ] && [ -n "${sSecretKey}" ] && [ -n "${sPolicy}" ]; then
+            # Create a new user
+            mc admin user add mysb "${sAccessKey}" "${sSecretKey}"
+            mc admin policy set mysb "readonly" user="${sAccessKey}"
+        fi
+
+        # Group
+        mc admin group add mysb MySB_users "${sAccessKey}"
      ;;
 esac
 
