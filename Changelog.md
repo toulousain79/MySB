@@ -7,6 +7,10 @@
 - NextCloud v17.0.0
 - NetData v1.17.1
 - Medoo v1.7.3
+- SystemD
+  - Samba review to start after tunX start
+  - NFS review to start after tunX start
+- concurrent script locking review
 
 ## v7.0 - 2019/09/09 _(start at: 2019/07/28)_
 
