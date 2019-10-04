@@ -52,22 +52,21 @@ case "${gsSwitch}" in
         fi
 
         # Seedbox user
-        sUserValues="$(cmdMySQL 'MySB_db' "SELECT access_key,secret_key FROM minio WHERE id_users='999;" | sed 's/\t/|/g;')"
+        sUserValues="$(cmdMySQL 'MySB_db' "SELECT access_key,secret_key FROM minio WHERE id_users='${gnMainUserId} AND policy='*-complete';" | sed 's/\t/|/g;')"
         sAccessKey="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[1]}')"
         sSecretKey="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[2]}')"
         if [ -z "${sAccessKey}" ] && [ -z "${sSecretKey}" ]; then
             sAccessKey="${sAccessKey:-$(gfnGenPassword 16)}"
             sSecretKey="${sSecretKey:-$(gfnGenPassword 32)}"
-            cmdMySQL 'MySB_db' "INSERT INTO minio (id_users, access_key, secret_key) VALUES ('999', '${sAccessKey}', '${sSecretKey}');"
+            cmdMySQL 'MySB_db' "INSERT INTO minio (id_users, access_key, secret_key, policy) VALUES ('${gnMainUserId}', '${sAccessKey}', '${sSecretKey}', '*-complete');"
         elif [ -z "${sAccessKey}" ] || [ -z "${sSecretKey}" ]; then
             sAccessKey="${sAccessKey:-$(gfnGenPassword 16)}"
             sSecretKey="${sSecretKey:-$(gfnGenPassword 32)}"
-            cmdMySQL 'MySB_db' "UPDATE minio SET access_key='${sAccessKey}',secret_key='${sSecretKey}' WHERE id_users='999';"
+            cmdMySQL 'MySB_db' "UPDATE minio SET access_key='${sAccessKey}',secret_key='${sSecretKey}' WHERE id_users='${gnMainUserId}' AND policy='*-complete';"
         fi
 
         # Create a new user with canned policy
         install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/getonly.json.tmpl /tmp/getonly.json
-        # sed -i "s/2012-10-17/$(/bin/date '+%Y-%m-%d')/g;" /tmp/getonly.json
         sed -i "s/bucketname/*-complete/g;" /tmp/getonly.json
         mc admin policy add mysb readonly /tmp/getonly.json
 
