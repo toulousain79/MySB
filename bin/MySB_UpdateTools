@@ -132,7 +132,7 @@ if (grep -q 'LANGUAGE=' /etc/environment); then
 fi
 
 #### OpenVPN DH Key
-if [ ! -f "dh2048_${gsHostNameFqdn}.pem" ] && [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
+if [ ! -f "/etc/openvpn/dh2048_${gsHostNameFqdn}.pem" ] && [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
     cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='OpenVPN';"
     # Backup
     for sFile in $(echo /etc/openvpn/*"${gsHostNameFqdn}"*); do
@@ -144,17 +144,17 @@ if [ ! -f "dh2048_${gsHostNameFqdn}.pem" ] && [ "${gbIsInstalled_OpenVPN}" == "Y
     # Create new server certificates
     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/OpenVPN" 'server' 'UPGRADE'
 
+    # Backup
+    for sFile in $(echo /etc/openvpn/clients/*"${gsHostNameFqdn}"*); do
+        [ -f "${sFile}" ] && mv -v "${sFile}" /etc/openvpn/clients/backup/
+    done
+    # Clean all
+    rm -fv /etc/openvpn/clients/{*.crt,*.key,*.pem}
     for seedUser in ${gsUsersList}; do
         if [ ! -f "/etc/openvpn/easy-rsa/pki/reqs/${seedUser}_${gsHostNameFqdn}.req" ]; then
-            # Backup
-            for sFile in $(echo /etc/openvpn/clients/*"${gsHostNameFqdn}"*); do
-                [ -f "${sFile}" ] && mv -v "${sFile}" /etc/openvpn/clients/backup/
-            done
-            # Clean all
-            rm -fv /etc/openvpn/clients/${seedUser}_{*.crt,*.key,*.pem}
+            # Create new clients certificates
+            gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/OpenVPN" 'client' "${seedUser}" 'UPGRADE'
         fi
-        # Create new clients certificates
-        gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/OpenVPN" 'client' "${seedUser}" 'UPGRADE'
     done
 fi
 
