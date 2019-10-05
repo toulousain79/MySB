@@ -65,86 +65,6 @@ case "${1}" in
         #### To call for every upgrade - EoF
         ####################################
 
-        # SSH
-        sed -i "s/^#ClientAliveInterval 0/ClientAliveInterval 60/g;" /etc/ssh/sshd_config
-        service ssh reload
-
-        # Move binaries
-        [ -f /usr/bin/docker-compose ] && mv -fv /usr/bin/docker-compose /usr/local/bin/docker-compose
-        [ -f /usr/bin/composer ] && mv -fv /usr/bin/composer /usr/local/bin/composer
-        [ -f /usr/bin/goofys ] && mv -fv /usr/bin/goofys /usr/local/bin/goofys
-        [ -f /usr/bin/minio ] && mv -fv /usr/bin/minio /usr/local/bin/minio
-
-        # Grub
-        if [ -f /etc/default/grub ]; then
-            source /etc/default/grub
-            if (grep -q 'ipv6.disable=1' <<<"${GRUB_CMDLINE_LINUX}"); then
-                perl -pi -e 's/ipv6.disable=1//g' /etc/default/grub
-            fi
-            if (grep -q 'init=/bin/systemd' <<<"${GRUB_CMDLINE_LINUX_DEFAULT}"); then
-                perl -pi -e 's/init=\/bin\/systemd//g' /etc/default/grub
-            fi
-            if (grep -q 'transparent_hugepage=never' <<<"${GRUB_CMDLINE_LINUX}"); then
-                perl -pi -e 's/transparent_hugepage=never//g' /etc/default/grub
-            fi
-            update-grub
-        fi
-
-        # CLeaning
-        sPackages=(docker docker-engine docker.io containerd runc docker-ce docker-ce-cli containerd.io tcl8.5 manpages-fr libav-tools subversion libltdl-dev libldns-dev ldnsutils rng-tools haveged libsodium18 libsodium23 whiptail)
-        gfnPackagesManage purge "${sPackages[@]}"
-        rm -fv /etc/init.d/bind9
-        rm -fv /etc/init.d/rpcbind
-        rm -fv /etc/init.d/fail2ban
-        rm -fv /etc/init.d/docker
-        rm -fv /var/log/php-fpm7.1.log
-        rm -fv /var/log/php7.1-fpm.log
-        systemctl daemon-reload
-        gfnDeleteDirectory 1 "/opt/containerd"
-
-        #### rTorrent 0.9.6 to 0.9.7
-        sRtorrentBin="$(cmdMySQL 'MySB_db' "SELECT serv_name FROM services WHERE bin='/usr/local/bin/rtorrent';")"
-        if [ "${sRtorrentBin}" == "rTorrent v0.9.6" ]; then
-            cmdMySQL 'MySB_db' "UPDATE services SET serv_name='rTorrent v0.9.7' WHERE bin='/usr/local/bin/rtorrent';" -v
-            cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_version='v0.9.7' WHERE rtorrent_version='v0.9.6';" -v
-        fi
-
-        #### Tautulli
-        gfnManageServices stop "tautulli"
-        rm -fv /etc/init.d/tautulli
-        systemctl daemon-reload
-        cmdMySQL 'MySB_db' "UPDATE services SET to_install='1', is_installed='0' WHERE serv_name='Tautulli';" -v
-
-        #### DNScrypt-proxy v1 remove
-        gfnManageServices stop "dnscrypt-proxy"
-        userdel --remove --force "dnscrypt-proxy"
-        gfnDeleteDirectory 1 "${MySB_InstallDir}/files/dnscrypt-resolvers"
-        gfnDeleteDirectory 1 "/usr/local/lib/dnscrypt-proxy"
-        rm vf /usr/local/sbin/dnscrypt-proxy
-        rm vf /usr/local/bin/minisign
-        rm -vf /var/log/dnscrypt-proxy.*
-        rm -vf /etc/init.d/dnscrypt-proxy
-        rm -fv /etc/pgl/dnscrypt.*
-        systemctl daemon-reload
-        cmdMySQL 'MySB_db' "UPDATE services SET to_install='1',is_installed='0' WHERE serv_name='DNScrypt-proxy';" -v
-
-        #### Bind9
-        [ -f /etc/bind/MySB.zones.blakclists ] && mv -v /etc/bind/MySB.zones.blakclists /etc/bind/MySB.zones.blacklists
-
-        #### MySQL secret
-        source /etc/MySB/config_db
-        [ -z "${MySQL_Secret}" ] && echo "MySQL_Secret=\"$(gfnGenPassword 16)\"" >>/etc/MySB/config_db
-
-        #### Move rtorrent/torrents & rtorrent/share
-        # gfnListCountUsers 'normal'
-        # for sUser in ${gsUsersList}; do
-        #     gfnManageServices stop "rtorrent-${sUser}"
-        #     (mount -l 2>/dev/null | grep "/home/${sUser}/rtorrent/torrents") && umount -v "/home/${sUser}/rtorrent/torrents"
-        #     (mount -l 2>/dev/null | grep "/home/${sUser}/rtorrent/share") && umount -v "/home/${sUser}/rtorrent/share"
-        #     [ -d /home/${sUser}/rtorrent/torrents ] && mv /home/${sUser}/rtorrent/torrents /home/${sUser}/torrents
-        #     [ -d /home/${sUser}/rtorrent/share ] && mv /home/${sUser}/rtorrent/share /home/${sUser}/share
-        #     gfnDeleteDirectory 1 "/home/${sUser}/rtorrent/config.d"
-        # done
         ;;
 
     "AFTER" | "INIT")
@@ -247,7 +167,7 @@ case "${1}" in
             unset UserId UserPassword
 
             # Minio
-            # gfnMinioUsersBuckets create "${sUser}"
+            gfnMinioUsersBuckets create "${sUser}"
         done
         echo "################################################################################"
         echo
@@ -259,14 +179,6 @@ case "${1}" in
         repquota -a
 
         #### Cleaning
-        sed -i '/\/mnt\/tmpFS\/mysql/d' /etc/fstab
-        sed -i '/\/mnt\/tmpFS\/php/d' /etc/fstab
-        (df -H | grep -q '/mnt/tmpFS/mysql') && umount /mnt/tmpFS/mysql
-        (df -H | grep -q '/mnt/tmpFS/php') && umount /mnt/tmpFS/php
-        [ -d /mnt/tmpFS ] && rm -rfv /mnt/tmpFS
-        gfnDeleteDirectory 1 "/var/spool/apt-mirror/mirror/packages.sury.org/"
-        gfnDeleteDirectory 1 "/etc/php/7.2"
-        rm -vf "${MySB_InstallDir}/web/logs/system/php5-fpm.html"
         rm -rfv "${MySB_InstallDir}/temp/"{*,.*}
         updatedb
         for file in $(locate *.dpkg-old *.dpkg-new *.dpkg-dist *.dpkg-bak *.ucf-dist); do
