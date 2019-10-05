@@ -46,7 +46,7 @@ INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`,
 ('GIT', '<InstallDir>/web/apps/ru/plugins/theme/themes/club-QuickBox', 'ruTorrent Theme club-QuickBox', '0.1p', 0, 'club-QuickBox_v0.1p.zip', 'https://github.com/QuickBox/club-QuickBox.git', 1, 0, ''),
 ('GIT', '<InstallDir>/web/apps/ru/plugins/theme/themes/MaterialDesign', 'ruTorrent Theme MaterialDesign', '0.1', 0, 'MaterialDesign_v0.1.zip', 'https://github.com/Phlooo/ruTorrent-MaterialDesign.git', 1, 0, ''),
 ('ZIP', '<InstallDir>/sources/libtorrent', 'LibTorrent', '0.13.8_9bbbee6', 0, 'libtorrent_v0.13.8_9bbbee6.zip', 'https://github.com/toulousain79/MySB_files/raw/v99.99/libtorrent_v0.13.8_9bbbee6.zip', 1, 0, ''),
-('ZIP', '<InstallDir>/sources/rtorrent', 'rTorrent', '0.9.8_81500ad', 0, 'rtorrent_v0.9.8_81500ad.zip', 'https://github.com/toulousain79/MySB_files/raw/v99.99/rtorrent_v0.9.8_81500ad.zip', 1, 0, ''),
+('ZIP', '<InstallDir>/sources/rtorrent', 'rTorrent', '0.9.8_14d7121', 0, 'rtorrent_v0.9.8_14d7121.zip', 'https://github.com/toulousain79/MySB_files/raw/v99.99/rtorrent_v0.9.8_14d7121.zip', 1, 0, ''),
 ('ZIP', '<InstallDir>/web/wolf', 'Wolf CMS', '0.8.3.1', 1, 'wolf_v0.8.3.1.zip', 'https://github.com/toulousain79/MySB_files/raw/v99.99/wolf_v0.8.3.1.zip', 1, 0, ''),
 ('CURL', '/usr/local/bin/docker-compose', 'Docker-Compose', 'latest', 0, 'docker-compose-Linux-x86_64', 'https://api.github.com/repos/docker/compose/releases/latest', 1, 0, ''),
 ('CURL', '/usr/local/bin/dry', 'Dry', 'latest', 0, 'dry-linux-amd64', 'https://api.github.com/repos/moncho/dry/releases/latest', 1, 0, ''),
@@ -67,8 +67,8 @@ INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`,
 ('DEB', '<InstallDir>_files', 'GeoIPupdate', 'latest', 0, 'geoipupdate_4.0.2_linux_amd64.deb', 'https://api.github.com/repos/maxmind/geoipupdate/releases/latest', 1, 0, ''),
 ('GIT', '<InstallDir>/web/apps/sm', 'Seedbox-Manager', '3.0.1', 0, 'seedbox-manager_v3.0.1.zip', 'https://github.com/Magicalex/seedbox-manager.git', 1, 0, ''),
 ('GIT', '<InstallDir>/web/apps/cb', 'Cakebox-Light', '1.8.6', 0, 'cakebox-light_v1.8.6.zip', 'https://github.com/Cakebox/Cakebox-light.git', 1, 0, ''),
-('TARGZ', '<InstallDir>/sources/netdata', 'NetData', '1.17.1', 0, 'netdata_v1.17.1.tar.gz', 'https://github.com/netdata/netdata/releases/download/v1.17.1/netdata-v1.17.1.tar.gz', 1, 0, ''),
-('ZIP', '<InstallDir>/web/apps/nc', 'NextCloud', '17.0.0', 0, 'nextcloud_v17.0.0.zip', 'https://download.nextcloud.com/server/releases/nextcloud-17.0.0.zip', 1, 0, '');
+('TARGZ', '<InstallDir>/sources/netdata', 'NetData', '1.16.0', 0, 'netdata_v1.16.0.tar.gz', 'https://github.com/netdata/netdata/releases/download/v1.16.0/netdata-v1.16.0.tar.gz', 1, 0, ''),
+('ZIP', '<InstallDir>/web/apps/nc', 'NextCloud', '16.0.4', 0, 'nextcloud_v16.0.4.zip', 'https://download.nextcloud.com/server/releases/nextcloud-16.0.4.zip', 1, 0, '');
 /*!40000 ALTER TABLE `repositories` ENABLE KEYS */;
 UNLOCK TABLES;
 
