@@ -11,6 +11,7 @@
   - Samba review to start after tunX start
   - NFS review to start after tunX start
 - concurrent script locking review
+- RPC quota CPU burst
 
 ## v7.0 - 2019/09/09 _(start at: 2019/07/28)_
 
