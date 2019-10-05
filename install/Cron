@@ -1,5 +1,4 @@
 #!/bin/bash
-# rev 0.3
 # ----------------------------------
 # shellcheck source=inc/includes_before
 source "$(dirname "$0")"/../inc/includes_before
@@ -68,7 +67,7 @@ case "${1}" in
         # DNScrypt-proxy
         if gfnCheckCommand 0 dnscrypt-proxy; then
             echo "*/5 * * * * systemctl status dnscrypt-proxy >/dev/null || systemctl restart dnscrypt-proxy" | tee -a /tmp/crontab.tmp
-            echo "1 12 * * * systemctl restart dnscrypt-proxy" | tee -a /tmp/crontab.tmp
+            echo "1 12 * * * systemctl restart dnscrypt-proxy >/dev/null 2>&1" | tee -a /tmp/crontab.tmp
         fi
         # Plex Media Server
         if gfnCheckCommand 0 plexmediaserver; then
@@ -105,16 +104,19 @@ if [ "${gsSwitch}" != "STOP" ]; then
     nJobsQty="$(grep '| tee -a /tmp/crontab.tmp' ${MySB_InstallDir}/install/Cron | grep -v 'grep -c ' | wc -l)"
     # Users
     nJobsQty=$((nJobsQty - 1 + gnTotalUsers))
-    # PeerGuardian
-    [ "${gbIsInstalled_PeerGuardian}" != "YES" ] && nJobsQty=$((nJobsQty - 2))
-    # NextCloud
-    [ "${gbIsInstalled_NextCloud}" != "YES" ] && nJobsQty=$((nJobsQty - 1))
+    # CPAN
+    (! gfnCheckCommand 0 cpan) && nJobsQty=$((nJobsQty - 1))
+    # DNScrypt-proxy
+    (! gfnCheckCommand 0 dnscrypt-proxy) && nJobsQty=$((nJobsQty - 2))
     # Plex & Tautulli
     (! gfnCheckCommand 0 plexmediaserver) && nJobsQty=$((nJobsQty - 2))
-    # DNScrypt-proxy
-    (! gfnCheckCommand 0 dnscrypt-proxy) && nJobsQty=$((nJobsQty - 1))
+    # NextCloud
+    [ "${gbIsInstalled_NextCloud}" != "YES" ] && nJobsQty=$((nJobsQty - 1))
+    # PeerGuardian
+    [ "${gbIsInstalled_PeerGuardian}" != "YES" ] && nJobsQty=$((nJobsQty - 2))
+
     {
-        echo "# MySB - Check scheduled jobs (rev 0.3)"
+        echo "# MySB - Check scheduled jobs (rev 0.4)"
         echo "*/5 * * * * root [ \"\$(crontab -l | wc -l)\" -ne ${nJobsQty} ] && { bash ${MySB_InstallDir}/install/Cron CRON; systemctl reload cron; }"
     } >/etc/cron.d/MySB_jobs_check
 fi
