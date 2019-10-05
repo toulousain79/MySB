@@ -1,5 +1,18 @@
 # Changelog
 
+## v7.1 - xxxx/xx/xx _(start at: 2019/10/02)_
+
+- rTorrent v0.9.8 _(81500ad)_
+- ruTorrent v3.9 _(f5fa66f)_
+- NextCloud v17.0.0
+- NetData v1.17.1
+- Medoo v1.7.3
+- SystemD
+  - Samba review to start after tunX start
+  - NFS review to start after tunX start
+- concurrent script locking review
+- RPC quota CPU burst
+
 ## v7.0 - 2019/09/09 _(start at: 2019/07/28)_
 
 - Debian migration from Stretch to Buster

@@ -2,7 +2,7 @@
 /*!
  * Medoo database framework
  * https://medoo.in
- * Version 1.7.2
+ * Version 1.7.3
  *
  * Copyright 2019, Angel Lai
  * Released under the MIT license
@@ -1175,6 +1175,7 @@ class Medoo
 			if (count($columns_key) === 1 && is_array($columns[$columns_key[0]]))
 			{
 				$index_key = array_keys($columns)[0];
+				$data_key = preg_replace("/^[a-zA-Z0-9_]+\./i", "", $index_key);
 
 				$current_stack = [];
 
@@ -1182,13 +1183,15 @@ class Medoo
 				{
 					$this->dataMap($data, $columns[ $index_key ], $column_map, $current_stack, false, $result);
 
-					$index = $data[ $index_key ];
+					$index = $data[ $data_key ];
 
 					$result[ $index ] = $current_stack;
 				}
 			}
 			else
 			{
+				$current_stack = [];
+
 				$this->dataMap($data, $columns, $column_map, $current_stack, false, $result);
 
 				$result[] = $current_stack;
