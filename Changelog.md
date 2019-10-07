@@ -2,16 +2,22 @@
 
 ## v7.1 - xxxx/xx/xx _(start at: 2019/10/02)_
 
-- rTorrent v0.9.8 _(81500ad)_
+- rTorrent v0.9.8 _(8ac98c6)_
 - ruTorrent v3.9 _(f5fa66f)_
 - NextCloud v17.0.0
 - NetData v1.17.1
 - Medoo v1.7.3
+- Lynis v2.7.5
+- Composer v1.9.0
+- GeoIPupdate v4.0.6
+- Dry v0.10-beta.1
+- Goofys v0.21.0
 - SystemD
   - Samba review to start after tunX start
   - NFS review to start after tunX start
 - concurrent script locking review
 - RPC quota CPU burst
+- Rollback to manual download for some tools because of GitHub API Rate limit
 
 ## v7.0 - 2019/09/09 _(start at: 2019/07/28)_
 
