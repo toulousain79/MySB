@@ -12,12 +12,11 @@
 - GeoIPupdate v4.0.6
 - Dry v0.10-beta.1
 - Goofys v0.21.0
-- SystemD
-  - Samba review to start after tunX start
-  - NFS review to start after tunX start
+- SystemD review
 - concurrent script locking review
-- RPC quota CPU burst
 - Rollback to manual download for some tools because of GitHub API Rate limit
+- Bugs fix
+  - #101 RPC quota CPU burst
 
 ## v7.0 - 2019/09/09 _(start at: 2019/07/28)_
 
