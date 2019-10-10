@@ -1,5 +1,5 @@
 #!/bin/bash
-# rev 6.0
+# rev 7.1
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -190,14 +190,15 @@ gfnCreateBasicSourcesList() {
 
     sReposInFile="$(grep '^deb ' /etc/apt/sources.list | grep -v 'security\|updates' | awk '{ print $2 }')"
     sReposInFile="${sReposInFile} http://ftp.fr.debian.org/debian/ http://ftp2.fr.debian.org/debian/"
-    sSourcesList="/etc/apt/sources.list"
 
     case $(getconf LONG_BIT) in
         64) sArch="amd64" ;;
         *) sArch="i386" ;;
     esac
 
-    echo "# Basic Sources List" >${sSourcesList}
+    # Stable
+    sSourcesList="/etc/apt/sources.list"
+    echo "# Stable Sources List" >${sSourcesList}
     for sRepo in ${sReposInFile}; do
         if (! grep -q "${sRepo}" ${sSourcesList}); then
             {
@@ -208,11 +209,29 @@ gfnCreateBasicSourcesList() {
             } >>${sSourcesList}
         fi
     done
-
     {
         echo ""
         echo "# Security"
         echo "deb [arch=${sArch}] http://security.debian.org ${gsDebianRelease}/updates main contrib non-free"
+    } >>${sSourcesList}
+
+    # Testing
+    sSourcesList="/etc/apt/sources.list.d/testing.list"
+    echo "# Testing Sources List" >${sSourcesList}
+    for sRepo in ${sReposInFile}; do
+        if (! grep -q "${sRepo}" ${sSourcesList}); then
+            {
+                echo ""
+                echo "# ${sRepo}"
+                echo "deb [arch=${sArch}] ${sRepo} testing main contrib non-free"
+                echo "deb [arch=${sArch}] ${sRepo} testing-updates main contrib non-free"
+            } >>${sSourcesList}
+        fi
+    done
+    {
+        echo ""
+        echo "# Security"
+        echo "deb [arch=${sArch}] http://deb.debian.org/debian-security testing-security main contrib non-free"
     } >>${sSourcesList}
 }
 
