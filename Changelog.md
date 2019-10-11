@@ -5,7 +5,7 @@
 - rTorrent v0.9.8 _(8ac98c6)_
 - ruTorrent v3.9 _(f5fa66f)_
 - NextCloud v17.0.0
-- NetData v1.17.1
+- NetData v1.18.0
 - Medoo v1.7.3
 - Lynis v2.7.5
 - Composer v1.9.0
