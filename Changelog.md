@@ -17,6 +17,7 @@
 - Rollback to manual download for some tools because of GitHub API Rate limit
 - Bugs fix
   - #101 RPC quota CPU burst
+  - #102 systemd services reload _(Cron, DNScrypt)_
 
 ## v7.0 - 2019/09/09 _(start at: 2019/07/28)_
 
