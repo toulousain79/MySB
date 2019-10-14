@@ -165,6 +165,30 @@ if [ ! -f /etc/apt/sources.list.d/testing.list ]; then
     gfnPackagesManage install 'testing' "quota"
 fi
 
+#### #103
+bClean=0
+sVersionDB="$(cmdMySQL 'MySB_db' "SELECT active FROM repositories WHERE name='ruTorrent Plugin Mark for Rsync';")"
+if [[ ${sVersionDB} -eq 1 ]]; then
+    gfnDeleteDirectory 1 "${gsRutorrentPluginsDir}/for_rsync"
+    bClean=1
+fi
+sVersionDB="$(cmdMySQL 'MySB_db' "SELECT active FROM repositories WHERE name='ruTorrent Plugin Sync';")"
+if [[ ${sVersionDB} -eq 1 ]]; then
+    gfnDeleteDirectory 1 "${gsRutorrentPluginsDir}/sync"
+    bClean=1
+fi
+if [[ ${bClean} -eq 1 ]]; then
+    cmdMySQL 'MySB_db' "DELETE FROM repositories;" -v
+    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"${MySB_InstallDir}/templates/mysql/Table_repositories.sql"
+fi
+
+#### Remove Nginx stapling
+if (! grep -q '#ssl_stapling' /etc/nginx/nginx.conf); then
+    install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.nginx.conf.tmpl /etc/nginx/nginx.conf
+    perl -pi -e "s/worker_processes auto;/worker_processes ${gsProcessors};/g" /etc/nginx/nginx.conf
+    gfnManageServices restart "nginx"
+fi
+
 # -----------------------------------------
 # shellcheck source=inc/includes_after
 . "$(dirname "$0")"/../inc/includes_after
