@@ -182,6 +182,13 @@ if [[ ${bClean} -eq 1 ]]; then
     mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"${MySB_InstallDir}/templates/mysql/Table_repositories.sql"
 fi
 
+#### Remove Nginx stapling
+if (! grep -q '#ssl_stapling' /etc/nginx/nginx.conf); then
+    install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.nginx.conf.tmpl /etc/nginx/nginx.conf
+    perl -pi -e "s/worker_processes auto;/worker_processes ${gsProcessors};/g" /etc/nginx/nginx.conf
+    gfnManageServices restart "nginx"
+fi
+
 # -----------------------------------------
 # shellcheck source=inc/includes_after
 . "$(dirname "$0")"/../inc/includes_after
