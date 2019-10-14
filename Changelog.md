@@ -18,6 +18,8 @@
 - Bugs fix
   - #101 RPC quota CPU burst
   - #102 systemd services reload _(Cron, DNScrypt)_
+  - #103 Bad response from server _(remove some ruTorrent plugins)_
+  - remove NginX SSL stapling
 
 ## v7.0 - 2019/09/09 _(start at: 2019/07/28)_
 
