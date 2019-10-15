@@ -67,10 +67,10 @@ gfnMinioUsersBuckets() {
                 fi
 
                 # Create a new user with canned policy
-                install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/getonly.json.tmpl /tmp/getonly.json
-                # sed -i "s/2012-10-17/$(/bin/date '+%Y-%m-%d')/g;" /tmp/getonly.json
-                sed -i "s/bucketname/${sUser}-${sBucket}/g;" /tmp/getonly.json
-                mc admin policy add mysb readonly /tmp/getonly.json
+                install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/users.json.tmpl /tmp/users.json
+                # sed -i "s/2012-10-17/$(/bin/date '+%Y-%m-%d')/g;" /tmp/users.json
+                sed -i "s/bucketname/${sUser}-${sBucket}/g;" /tmp/users.json
+                mc admin policy add mysb readonly /tmp/users.json
 
                 if [ -n "${sSecretKey}" ] && [ -n "${sSecretKey}" ] && [ -n "${sPolicy}" ]; then
                     # Create a new user
@@ -80,13 +80,13 @@ gfnMinioUsersBuckets() {
                 fi
 
                 # Group
-                mc admin group add mysb MySB_users "${sAccessKey}"
+                # mc admin group add mysb MySB_users "${sAccessKey}"
                 # mc admin policy set mysb getonly group=MySB_users
 
                 # Unset
                 unset MySQL_RootPassword MySQL_MysbPassword MySQL_BackupManager MySQL_TorrentPassword MySQL_Secret
             done
-            rm -f /tmp/getonly.json
+            rm -f /tmp/users.json
 
             # Minio main user
             # gfnMinioUsersBuckets update "${gsMainUserName}"
@@ -116,9 +116,10 @@ gfnMinioUsersBuckets() {
             fi
 
             # Create a new user with canned policy
-            install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/getonly.json.tmpl /tmp/getonly.json
-            sed -i "s/bucketname/*-complete/g;" /tmp/getonly.json
-            mc admin policy add mysb readonly /tmp/getonly.json
+            install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/seedbox.json.tmpl /tmp/seedbox.json
+            # sed -i "s/bucketname/*-complete/g;" /tmp/seedbox.json
+            mc admin policy add mysb readonly /tmp/seedbox.json
+            rm -f /tmp/seedbox.json
 
             if [ -n "${sAccessKey}" ] && [ -n "${sSecretKey}" ]; then
                 # Create a new user
@@ -477,13 +478,13 @@ gfnRuTorrentUsersConfigs() {
 
     for sPlugin in ${sPluginsList}; do
         bIsActive="$(cmdMySQL 'MySB_db' "SELECT active FROM repositories WHERE dir LIKE '%/${sPlugin}';")"
-        [ -z "$bIsActive" ] && bIsActive=0
+        [ -z "${bIsActive}" ] && bIsActive=0
 
         if [ -d "${gsRutorrentPluginsDir}/${sPlugin}" ]; then
             if [ -f "${gsRutorrentPluginsDir}/${sPlugin}/conf.php" ] || [ -f "${gsRutorrentPluginsDir}/${sPlugin}/config.php" ]; then
                 case ${sPlugin} in
                     'linkseedboxmanager')
-                        if [ $bIsActive -eq 0 ] && [ "${gbIsInstalled_Manager}" == "NO" ] && [ "${gbToInstall_Manager}" == "NO" ]; then
+                        if [[ ${bIsActive} -eq 0 ]] && [ "${gbIsInstalled_Manager}" == "NO" ] && [ "${gbToInstall_Manager}" == "NO" ]; then
                             gfnDeleteDirectory ${bVerbose} "${gsRutorrentDir}/conf/users/${sUser}/plugins/${sPlugin}"
                             gfnDeleteDirectory ${bVerbose} "${gsRutorrentPluginsDir}/${sPlugin}"
                         else
@@ -492,7 +493,7 @@ gfnRuTorrentUsersConfigs() {
                         fi
                         ;;
                     'linkcakebox')
-                        if [ $bIsActive -eq 0 ] && [ "${gbIsInstalled_Cakebox}" == "NO" ] && [ "${gbToInstall_Cakebox}" == "NO" ]; then
+                        if [[ ${bIsActive} -eq 0 ]] && [ "${gbIsInstalled_Cakebox}" == "NO" ] && [ "${gbToInstall_Cakebox}" == "NO" ]; then
                             gfnDeleteDirectory ${bVerbose} "${gsRutorrentDir}/conf/users/${sUser}/plugins/${sPlugin}"
                             gfnDeleteDirectory ${bVerbose} "${gsRutorrentPluginsDir}/${sPlugin}"
                         else
@@ -501,7 +502,7 @@ gfnRuTorrentUsersConfigs() {
                         fi
                         ;;
                     'fileupload')
-                        if [ $bIsActive -eq 1 ]; then
+                        if [[ ${bIsActive} -eq 1 ]]; then
                             if [ ! -d "${gsRutorrentDir}/conf/users/${sUser}/fileupload/" ]; then
                                 mkdir -p "${gsRutorrentDir}/conf/users/${sUser}/fileupload/"
                             fi
@@ -516,7 +517,7 @@ gfnRuTorrentUsersConfigs() {
                         fi
                         ;;
                     'fileshare')
-                        if [ $bIsActive -eq 1 ]; then
+                        if [[ ${bIsActive} -eq 1 ]]; then
                             echo "[${sPlugin}]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                             echo "enabled = user-defined" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                         else
@@ -540,7 +541,7 @@ gfnRuTorrentUsersConfigs() {
                         ;;
                     *)
                         # 3) Enable it for each user
-                        if [ $bIsActive -eq 1 ]; then
+                        if [[ ${bIsActive} -eq 1 ]]; then
                             echo "[${sPlugin}]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                             echo "enabled = user-defined" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                         else
