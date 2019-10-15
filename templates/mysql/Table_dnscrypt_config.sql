@@ -21,7 +21,7 @@
 
 LOCK TABLES `dnscrypt_config` WRITE;
 /*!40000 ALTER TABLE `dnscrypt_config` DISABLE KEYS */;
-INSERT INTO `dnscrypt_config` VALUES (1,'0','ph','true','true','true','false','true','true','true');
+INSERT INTO `dnscrypt_config` VALUES (1,'0','p2','true','true','true','false','false','true','true');
 /*!40000 ALTER TABLE `dnscrypt_config` ENABLE KEYS */;
 UNLOCK TABLES;
 
