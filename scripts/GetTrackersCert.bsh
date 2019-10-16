@@ -121,7 +121,9 @@ fi
 if [[ ${DoCheckAddedTorrents} -eq 1 ]] || [[ ${DoGetCertificates} -eq 1 ]]; then
     # Allow all trackers in BIND
     perl -pi -e "s/^include \"\/etc\/bind\/MySB.zones.blacklists\";/#include \"\/etc\/bind\/MySB.zones.blacklists\";/g" /etc/bind/named.conf.local
-    systemctl reload bind9.service
+    [ -f /etc/dnscrypt-proxy/dnscrypt-proxy.toml ] && perl -pi -e "s/^  blacklist_file/  #blacklist_file/g" /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+    systemctl restart bind9.service
+    [[ ${gbDnsCryptSwitch} -eq 1 ]] && systemctl restart dnscrypt-proxy.service
 fi
 
 #### Check added torrents
@@ -147,8 +149,10 @@ if [[ ${DoCheckAddedTorrents} -eq 1 ]] || [[ ${DoGetCertificates} -eq 1 ]]; then
     gfnStatusLSB 0
 
     #### Reload services
-    systemctl reload bind9.service
-    gfnCheckCommand 0 /usr/local/bin/dnscrypt-proxy && systemctl restart dnscrypt-proxy.service
+    systemctl restart bind9.service
+    if (gfnCheckCommand 0 /usr/local/bin/dnscrypt-proxy) && [[ ${gbDnsCryptSwitch} -eq 1 ]]; then
+        systemctl restart dnscrypt-proxy.service
+    fi
 fi
 
 # -----------------------------------------
