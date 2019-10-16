@@ -78,7 +78,7 @@ gfnSendMail() {
     if [ -n "${sInfo}" ]; then log_daemon_msg "${Funcs_SendMail_GenerateHTML} [${sUser}]"; fi
 
     if ! gfnGetPid nginx; then
-        service nginx restart >/dev/null 2>&1
+        systemctl restart nginx.service >/dev/null 2>&1
     fi
 
     #### Use case without MySQL needed:	new_version, account_confirmed, ip_updated, pgl_check, main_account, announcers_added, upgrade, migrate_begore
@@ -211,13 +211,13 @@ gfnManageServices() {
                             "${binPhpService}" | "stunnel4" | "vsftpd" | "fail2ban" | "nfs-kernel-server" | "tautulli" | "plexmediaserver" | rtorrent-*)
                                 nContinue=0
                                 log_daemon_msg "$Funcs_Stopping ${Service}"
-                                service "${Service}" stop >/dev/null
+                                systemctl restart ${Service}.service
                                 gfnStatusLSB
                                 ;;
                             "nginx")
                                 nContinue=0
                                 log_daemon_msg "$Funcs_Stopping ${Service}"
-                                if (! service "${Service}" stop >/dev/null); then
+                                 if (! systemctl stop ${Service}.service >/dev/null); then
                                     fuser -k 81/tcp >/dev/null 2>&1
                                     [[ -n ${gsPort_System_HTTP} ]] && fuser -k "${gsPort_System_HTTP}"/tcp >/dev/null 2>&1
                                     [[ -n ${gsPort_MySB_HTTPS} ]] && fuser -k "${gsPort_MySB_HTTPS}"/tcp >/dev/null 2>&1
@@ -238,7 +238,7 @@ gfnManageServices() {
 
                         if [ "${nContinue}" == "1" ]; then
                             log_daemon_msg "$Funcs_Stopping ${Service}"
-                            service "${Service}" stop >/dev/null
+                            systemctl stop ${Service}.service >/dev/null
                             gfnStatusLSB
                         fi
                     else
@@ -327,10 +327,10 @@ gfnManageServices() {
                                 if gfnCheckCommand 0 "${Service}"; then
                                     if ! gfnGetPid "${Service}"; then
                                         log_daemon_msg "${Funcs_Starting} ${Service}"
-                                        service "${Service}" start >/dev/null
+                                        systemctl start ${Service}.service >/dev/null
                                     else
                                         log_daemon_msg "${Funcs_Restarting} ${Service}"
-                                        service "${Service}" restart >/dev/null
+                                        systemctl restart ${Service}.service >/dev/null
                                     fi
                                     gfnStatusLSB
                                 fi
@@ -340,14 +340,14 @@ gfnManageServices() {
                                 if gfnCheckCommand 0 "${Service}"; then
                                     if ! gfnGetPid "${Service}"; then
                                         log_daemon_msg "${Funcs_Starting} ${Service}"
-                                        service "${Service}" start >/dev/null
+                                        systemctl start ${Service}.service >/dev/null
                                     else
                                         log_daemon_msg "${Funcs_Reloading} ${Service}"
-                                        service "${Service}" ${sFinalCmd} >/dev/null
+                                        systemctl ${sFinalCmd} ${Service}.service >/dev/null
                                         if (! gfnGetPid "named"); then
                                             gfnStatusLSB 1
                                             log_daemon_msg "${Funcs_Restarting} ${Service}"
-                                            service "${Service}" restart >/dev/null
+                                            systemctl restart ${Service}.service >/dev/null
                                         fi
                                     fi
                                     gfnStatusLSB
@@ -358,10 +358,10 @@ gfnManageServices() {
                                 if gfnCheckCommand 0 "${Service}"; then
                                     if ! gfnGetPid "${Service}"; then
                                         log_daemon_msg "${Funcs_Starting} ${Service}"
-                                        service "${Service}" start >/dev/null
+                                        systemctl start ${Service}.service >/dev/null
                                     else
                                         log_daemon_msg "${Funcs_Reloading} ${Service}"
-                                        service "${Service}" ${sFinalCmd} >/dev/null
+                                        systemctl ${sFinalCmd} ${Service}.service >/dev/null
                                         if (! gfnGetPid "${Service}"); then
                                             gfnStatusLSB 1
                                             log_daemon_msg "${Funcs_Restarting} ${Service}"
@@ -370,15 +370,15 @@ gfnManageServices() {
                                             [[ -n ${gsPort_MySB_HTTPS} ]] && fuser -k "${gsPort_MySB_HTTPS}"/tcp >/dev/null 2>&1
                                             [[ -n ${gsPort_NginX_HTTP} ]] && fuser -k "${gsPort_NginX_HTTP}"/tcp >/dev/null 2>&1
                                             [[ -n ${gsPort_NginX_HTTPS} ]] && fuser -k "${gsPort_NginX_HTTPS}"/tcp >/dev/null 2>&1
-                                            service "${Service}" restart >/dev/null
+                                            systemctl restart ${Service}.service >/dev/null
                                             if (! gfnGetPid "${Service}"); then
                                                 gfnStatusLSB 1
                                                 log_daemon_msg "$Funcs_Killing ${Service}"
-                                                service "${Service}" stop >/dev/null
+                                                systemctl stop ${Service}.service >/dev/null
                                                 killall "${Service}"
                                                 gfnStatusLSB
                                                 log_daemon_msg "${Funcs_Starting} ${Service}"
-                                                service "${Service}" start >/dev/null
+                                                systemctl start ${Service}.service >/dev/null
                                             fi
                                         fi
                                     fi
@@ -390,10 +390,10 @@ gfnManageServices() {
                                 if gfnCheckCommand 0 "${Service}"; then
                                     if ! gfnGetPid "${Service}"; then
                                         log_daemon_msg "${Funcs_Starting} ${Service}"
-                                        service "${Service}" start >/dev/null
+                                        systemctl start ${Service}.service >/dev/null
                                     else
                                         log_daemon_msg "${Funcs_Restarting} ${Service}"
-                                        service "${Service}" restart >/dev/null
+                                        systemctl restart ${Service}.service >/dev/null
                                     fi
                                     gfnStatusLSB
                                 fi
@@ -403,14 +403,14 @@ gfnManageServices() {
                         if [ "${nContinue}" == "1" ]; then
                             nNext=0
                             log_daemon_msg "${Funcs_Starting} ${Service}"
-                            if (! service "${Service}" ${sFinalCmd} >/dev/null); then
+                            if (! systemctl ${sFinalCmd} ${Service}.service >/dev/null); then
                                 nNext=1
                             fi
                             gfnStatusLSB
 
                             if [ "${nNext}" -gt 0 ] && [ "${sFinalCmd}" == "reload" ]; then
                                 log_daemon_msg "${Funcs_Restarting} ${Service}"
-                                service "${Service}" restart >/dev/null
+                                systemctl restart ${Service}.service >/dev/null
                                 gfnStatusLSB
                             fi
                         fi
