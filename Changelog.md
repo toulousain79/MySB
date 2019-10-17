@@ -3,10 +3,10 @@
 ## v7.1 - xxxx/xx/xx _(start at: 2019/10/02)_
 
 - rTorrent v0.9.8 _(8ac98c6)_
-- ruTorrent v3.9 _(f5fa66f)_
+- ruTorrent v3.9 _(c517387)_
 - NextCloud v17.0.0
 - NetData v1.18.0
-- Medoo v1.7.3
+- Medoo v1.7.5
 - Lynis v2.7.5
 - Composer v1.9.0
 - GeoIPupdate v4.0.6
