@@ -474,7 +474,15 @@ gfnPopulatingUdpInboundChain() {
 	# DNS Server
 	# Configure the server to use port 53 as the source port for requests.
 	# Note, if you run a caching-only name server that only accepts queries from the private network or localhost, you can comment out this line.
-	# iptables -A udp_inbound -p UDP -s 0/0 --destination-port 53 -j ACCEPT
+	iptables -A udp_inbound -p UDP -s 0/0 i lo --destination-port 53 -j ACCEPT -m comment --comment "Bind"
+	case "${1}" in
+	"create")
+		if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
+			iptables -A udp_inbound -p UDP -s 0/0 i br0 --destination-port 53 -j ACCEPT -m comment --comment "Bind over OpenVPN"
+			iptables -A udp_inbound -p UDP -s 0/0 i tun+ --destination-port 53 -j ACCEPT -m comment --comment "Bind over OpenVPN"
+		fi
+		;;
+	esac
 
 	# If you don't query-source the server to port 53 and you have problems, uncomment this rule.
 	# It specifically allows responses to queries initiated to another server from a high UDP port.
@@ -485,8 +493,8 @@ gfnPopulatingUdpInboundChain() {
 	case "${1}" in
 	"create")
 		if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
-			iptables -A udp_inbound -p UDP -s 0/0 -i br0 -m multiport --ports 111,2049,32764:32769 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
-			iptables -A udp_inbound -p UDP -s 0/0 -i tun+ -m multiport --ports 111,2049,32764:32769 -j ACCEPT -m comment --comment "NFS TCP over OpenVPN"
+			iptables -A udp_inbound -p UDP -s 0/0 -i br0 -m multiport --ports 111,2049,32764:32769 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
+			iptables -A udp_inbound -p UDP -s 0/0 -i tun+ -m multiport --ports 111,2049,32764:32769 -j ACCEPT -m comment --comment "NFS UDP over OpenVPN"
 		fi
 		;;
 	esac
