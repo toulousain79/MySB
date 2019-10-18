@@ -32,20 +32,21 @@
 gfnMinioUsersBuckets() {
     # gfnMinioUsersBuckets (create|edit|delete) user
     # Policies: getonly, writeonly, readonly, readwrite
-    local sSwitch sUser sBucket sPolicy nIdUser aBucketList sSecretKey
+    local sSwitch sUser sBucket nIdUser aBucketList sSecretKey
     sSwitch="${1}"
     sUser="${2}"
     [ -z "${sSwitch}" ] && return
     [ -z "${sUser}" ] && return
     [ "${gbIsInstalled_Minio}" != "YES" ] && return
-    declare -A aBucketList
-    aBucketList+=([complete]="${sUser}-readonly" [watch]="${sUser}-readwrite" [torrents]="${sUser}-readwrite")
+    # declare -A aBucketList
+    # aBucketList+=([complete]="${sUser}-readonly" [watch]="${sUser}-readwrite" [torrents]="${sUser}-readwrite")
+    aBucketList=()
+    aBucketList+=('complete' 'watch' 'torrents')
 
     case "${sSwitch}" in
         'create')
             # source /etc/MySB/config_db
-            for sBucket in ${!aBucketList[*]}; do
-                sPolicy="$(echo "${aBucketList[${sBucket}]}")"
+            for sBucket in ${aBucketList[*]}; do
                 nIdUser="$(cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='${sUser}';")"
 
                 sUserValues="$(cmdMySQL 'MySB_db' "SELECT access_key,secret_key FROM minio WHERE id_users='${nIdUser}' AND policy='${sUser}-*';" | sed 's/\t/|/g;')"
@@ -67,16 +68,17 @@ gfnMinioUsersBuckets() {
                 fi
 
                 # Create a new user with canned policy
-                if [ -f "${MySB_InstallDir}/templates/minio/users_${sBucket}.json.tmpl" ] && [ -n "${sPolicy}" ]; then
+                if [ -f "${MySB_InstallDir}/templates/minio/users_${sBucket}.json.tmpl" ]; then
                     install -v -o root -g root -m 0644 "${MySB_InstallDir}/templates/minio/users_${sBucket}.json.tmpl" "/tmp/users_${sBucket}.json"
                     sed -i "s/<user>/${sUser}/g;" "/tmp/users_${sBucket}.json"
-                    mc admin policy add mysb "${sPolicy}" "/tmp/users_${sBucket}.json"
-                fi
+                    cat "/tmp/users_${sBucket}.json"
+                    mc admin policy add mysb "${sUser}-${sBucket}" "/tmp/users_${sBucket}.json"
 
-                if [ -n "${sSecretKey}" ] && [ -n "${sSecretKey}" ] && [ -n "${sPolicy}" ]; then
-                    # Create a new user
-                    mc admin user add mysb "${sAccessKey}" "${sSecretKey}"
-                    mc admin policy set mysb "${sPolicy}" user="${sAccessKey}"
+                    if [ -n "${sSecretKey}" ] && [ -n "${sSecretKey}" ]; then
+                        # Create a new user
+                        mc admin user add mysb "${sAccessKey}" "${sSecretKey}"
+                        mc admin policy set mysb "${sUser}-${sBucket}" user="${sAccessKey}"
+                    fi
                 fi
 
                 # Unset
@@ -113,13 +115,13 @@ gfnMinioUsersBuckets() {
 
             # Create a new user with canned policy
             install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/seedbox_complete.json.tmpl /tmp/seedbox_complete.json
-            mc admin policy add mysb seedbox_complete /tmp/seedbox_complete.json
+            mc admin policy add mysb seedbox-complete /tmp/seedbox_complete.json
             rm -f /tmp/seedbox_complete.json
 
             if [ -n "${sAccessKey}" ] && [ -n "${sSecretKey}" ]; then
                 # Create a new user
                 mc admin user add mysb "${sAccessKey}" "${sSecretKey}"
-                mc admin policy set mysb seedbox_complete user="${sAccessKey}"
+                mc admin policy set mysb seedbox-complete user="${sAccessKey}"
             fi
             ;;
     esac
