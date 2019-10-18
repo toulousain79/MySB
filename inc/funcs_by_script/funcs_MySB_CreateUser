@@ -35,11 +35,11 @@ gfnMinioUsersBuckets() {
     local sSwitch sUser sBucket sPolicy nIdUser aBucketList sSecretKey
     sSwitch="${1}"
     sUser="${2}"
-    declare -A aBucketList
-    aBucketList+=([complete]="readonly" [watch]="readwrite" [torrents]="readwrite")
     [ -z "${sSwitch}" ] && return
     [ -z "${sUser}" ] && return
     [ "${gbIsInstalled_Minio}" != "YES" ] && return
+    declare -A aBucketList
+    aBucketList+=([complete]="${sUser}-readonly" [watch]="${sUser}-readwrite" [torrents]="${sUser}-readwrite")
 
     case "${sSwitch}" in
         'create')
@@ -69,14 +69,14 @@ gfnMinioUsersBuckets() {
                 # Create a new user with canned policy
                 if [ -f "${MySB_InstallDir}/templates/minio/users_${sBucket}.json.tmpl" ] && [ -n "${sPolicy}" ]; then
                     install -v -o root -g root -m 0644 "${MySB_InstallDir}/templates/minio/users_${sBucket}.json.tmpl" "/tmp/users_${sBucket}.json"
-                    sed -i "s/bucketname/${sUser}-${sBucket}/g;" "/tmp/users_${sBucket}.json"
-                    mc admin policy add mysb "${sUser}_${sPolicy}" "/tmp/users_${sBucket}.json"
+                    sed -i "s/<user>/${sUser}/g;" "/tmp/users_${sBucket}.json"
+                    mc admin policy add mysb "${sPolicy}" "/tmp/users_${sBucket}.json"
                 fi
 
                 if [ -n "${sSecretKey}" ] && [ -n "${sSecretKey}" ] && [ -n "${sPolicy}" ]; then
                     # Create a new user
                     mc admin user add mysb "${sAccessKey}" "${sSecretKey}"
-                    mc admin policy set mysb "${sUser}_${sPolicy}" user="${sAccessKey}"
+                    mc admin policy set mysb "${sPolicy}" user="${sAccessKey}"
                 fi
 
                 # Unset
@@ -113,13 +113,13 @@ gfnMinioUsersBuckets() {
 
             # Create a new user with canned policy
             install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/seedbox_complete.json.tmpl /tmp/seedbox_complete.json
-            mc admin policy add mysb complete /tmp/seedbox_complete.json
+            mc admin policy add mysb seedbox_complete /tmp/seedbox_complete.json
             rm -f /tmp/seedbox_complete.json
 
             if [ -n "${sAccessKey}" ] && [ -n "${sSecretKey}" ]; then
                 # Create a new user
                 mc admin user add mysb "${sAccessKey}" "${sSecretKey}"
-                mc admin policy set mysb complete user="${sAccessKey}"
+                mc admin policy set mysb seedbox_complete user="${sAccessKey}"
             fi
             ;;
     esac
