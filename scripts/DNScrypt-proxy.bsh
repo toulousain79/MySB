@@ -1,4 +1,8 @@
 #!/bin/bash
+# rev 6.0
+# ----------------------------------
+# shellcheck source=inc/includes_before
+source "$(dirname "$0")"/../inc/includes_before
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -22,61 +26,17 @@
 #
 ##################### FIRST LINE #####################################
 
-#################################
-# Set up Ethernet bridge on Linux
-# Requires: bridge-utils
-#################################
+LocSwitch="$1"
 
-# Define Bridge Interface
-br="br0"
+if [ -n "${LocSwitch}" ] && gfnCheckCommand 0 pglcmd; then
+    case "${LocSwitch}" in
+        "restart") [[ ${gbDnsCryptSwitch} -eq 1 ]] && systemctl restart dnscrypt-proxy.service ;;
+        "check") [[ ${gbDnsCryptSwitch} -eq 1 ]] && (systemctl status dnscrypt-proxy.service >/dev/null || systemctl restart dnscrypt-proxy) ;;
+    esac
+fi
 
-# Define list of TAP interfaces to be bridged,
-# for example tap="tap0 tap1 tap2".
-tap="tap0"
-
-# Define physical ethernet interface to be bridged
-# with TAP interface(s) above.
-#eth="dummy0"
-eth_ip="10.0.2.1"
-eth_netmask="255.255.255.0"
-eth_broadcast="10.0.2.255"
-
-case "$1" in
-	start)
-		for t in $tap; do
-			openvpn --mktun --dev $t
-		done
-
-		brctl addbr $br
-		#brctl addif $br $eth
-
-		for t in $tap; do
-			brctl addif $br $t
-		done
-
-		for t in $tap; do
-			ifconfig $t 0.0.0.0 promisc up
-		done
-
-		#ifconfig $eth 0.0.0.0 promisc up
-
-		ifconfig $br $eth_ip netmask $eth_netmask broadcast $eth_broadcast
-	;;
-	stop)
-		ifconfig $br down
-		brctl delbr $br
-
-		for t in $tap; do
-			openvpn --rmtun --dev $t
-		done
-
-		#ifconfig $eth $eth_ip netmask $eth_netmask broadcast $eth_broadcast
-	;;
-	*)
-		echo "usage OpenVPN-Bridge.bsh {start|stop}"
-		exit 1
-	;;
-esac
-exit 0
-
+# -----------------------------------------
+# shellcheck source=inc/includes_after
+source "$(dirname "$0")"/../inc/includes_after
+# -----------------------------------------
 ##################### LAST LINE ######################################
