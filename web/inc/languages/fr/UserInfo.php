@@ -147,7 +147,7 @@ define('User_UserInfo_Title_NextCloud', 'NextCloud');
 define('User_UserInfo_Comment_NextCloud', 'Plateforme de services de stockage et partage de fichiers.');
 // Minio
 define('User_UserInfo_Title_Minio', 'Minio');
-define('User_UserInfo_Comment_Minio', 'Accéder à votre dossier rTorrent <b>complete</b> par l\'intermédiaire d\'un bucket S3 avec les identifiants suivants:');
+define('User_UserInfo_Comment_Minio', 'Acc&eacute;der &agrave; votre dossier rTorrent <b>complete</b> par l\'interm&eacute;diaire d\'un bucket S3 avec les identifiants suivants:');
 
 //////////////////////
 // Links (Main user)
