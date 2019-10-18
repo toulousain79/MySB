@@ -145,6 +145,9 @@ define('User_UserInfo_Comment_Cakebox', 'Play here your media.');
 // NextCloud
 define('User_UserInfo_Title_NextCloud', 'NextCloud');
 define('User_UserInfo_Comment_NextCloud', 'Access, Sync and Share Your Data.');
+// Minio
+define('User_UserInfo_Title_Minio', 'Minio');
+define('User_UserInfo_Comment_Minio', 'Access to you rTorrent <b>complete</b> directory from a S3 bucket in readonly whit following credentials:');
 
 //////////////////////
 // Links (Main user)

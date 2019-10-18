@@ -33,6 +33,10 @@ function printUser($user) {
 	$users_datas = $MySB_DB->get("users", ["id_users", "users_passwd", "admin", "users_email", "rpc", "sftp", "home_dir", "scgi_port", "rtorrent_port", "quota", "treasury", "account_type"], ["users_ident" => "$user"]);
 	$UserID = $users_datas["id_users"];
 	$UserPasswd = $users_datas["users_passwd"];
+	// Minio infos
+	$minio_datas = $MySB_DB->get("minio", ["access_key", "secret_key"], ["id_users" => "$UserID"]);
+	$access_key = $minio_datas["access_key"];
+	$secret_key = $minio_datas["secret_key"];
 	// Ports
 	$Port_SSH = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "SSH"]);
 	$Port_FTP = $MySB_DB->get("services", "port_tcp1", ["serv_name" => "VSFTPd"]);
@@ -219,6 +223,13 @@ function printUser($user) {
 		if ( $is_installed == '1' ) {
 			echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_NextCloud . '</th>';
 			echo '<td colspan="2"><a target="_blank" href="/nc"><span class="Comments">' . User_UserInfo_Comment_NextCloud . '</span></a></td></tr>';
+		}
+		// Minio
+		$is_installed = $MySB_DB->get("services", "is_installed", ["serv_name" => "Minio"]);
+		if ( $is_installed == '1' ) {
+			$Minio_URL='https://'.$system_datas["hostname"].':9000';
+			echo '<tr align="left"><th width="17%" scope="row">' . User_UserInfo_Title_Minio . '</th>';
+			echo '<td colspan="2"><span class="Comments">' . User_UserInfo_Comment_Minio . '<br/>URL: <a target="_blank" href="'.$Minio_URL.'">'.$Minio_URL.'</a><br/>Access key: <b>'.$access_key.'</b> / Secret key: <b>'.$secret_key.'</b></span></td></tr>';
 		}
 	}
 
