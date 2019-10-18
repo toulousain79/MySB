@@ -62,7 +62,7 @@ function fnDownloadDnscrypt() {
         gfnRepoManageByType
         [ -f "${MySB_Files}/${gsRepoFile}" ] && rm -fv "${MySB_Files}/${gsRepoFile}.tmp"
 
-        # Stop services
+        # Stop service
         gfnManageServices stop "dnscrypt-proxy"
 
         # Copy binary
@@ -72,7 +72,7 @@ function fnDownloadDnscrypt() {
             /usr/local/bin/dnscrypt-proxy --version
         fi
 
-        # Stop services
+        # Start service
         gfnManageServices start "dnscrypt-proxy"
     fi
 }
@@ -103,11 +103,11 @@ if [ "${gbToInstall_DNScrypt}" == "YES" ]; then
     systemctl disable dnscrypt-proxy.service
     systemctl restart dnscrypt-proxy.service
 
-    # Updating clock
-    /usr/sbin/ntpdate -u 0.fr.pool.ntp.org
-
     # Switch to bind
     gfnSwitchDNS "bind"
+
+    # Updating clock
+    /usr/sbin/ntpdate -u 0.fr.pool.ntp.org
 
     #### Download archive
     fnDownloadDnscrypt
@@ -120,11 +120,11 @@ fi
 
 case "${gsSwitch}" in
     INSTALL | UPGRADE)
+        gfnManageServices stop "dnscrypt-proxy"
         rm -fv /var/log/dnscrypt-proxy/dnscrypt-proxy.log
         gfnManageServices start "dnscrypt-proxy"
         sleep 10
         [ -f /var/log/dnscrypt-proxy/dnscrypt-proxy.log ] && cat /var/log/dnscrypt-proxy/dnscrypt-proxy.log
-        gfnManageServices stop "dnscrypt-proxy"
         ;;
 esac
 
