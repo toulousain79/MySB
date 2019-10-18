@@ -67,21 +67,17 @@ gfnMinioUsersBuckets() {
                 fi
 
                 # Create a new user with canned policy
-                install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/users.json.tmpl /tmp/users.json
-                # sed -i "s/2012-10-17/$(/bin/date '+%Y-%m-%d')/g;" /tmp/users.json
-                sed -i "s/bucketname/${sUser}-${sBucket}/g;" /tmp/users.json
-                mc admin policy add mysb readonly /tmp/users.json
+                if [ -f "${MySB_InstallDir}/templates/minio/users_${sBucket}.json.tmpl" ] && [ -n "${sPolicy}" ]; then
+                    install -v -o root -g root -m 0644 "${MySB_InstallDir}/templates/minio/users_${sBucket}.json.tmpl" "/tmp/users_${sBucket}.json"
+                    sed -i "s/bucketname/${sUser}-${sBucket}/g;" "/tmp/users_${sBucket}.json"
+                    mc admin policy add mysb "${sUser}_${sPolicy}" "/tmp/users_${sBucket}.json"
+                fi
 
                 if [ -n "${sSecretKey}" ] && [ -n "${sSecretKey}" ] && [ -n "${sPolicy}" ]; then
                     # Create a new user
                     mc admin user add mysb "${sAccessKey}" "${sSecretKey}"
-                    mc admin policy set mysb "${sPolicy}" user="${sAccessKey}"
-                    # mc config host add "mysb-${sUser}" https://${gsHostNameFqdn}:9000 "${sAccessKey}" "${sSecretKey}" --api s3v4
+                    mc admin policy set mysb "${sUser}_${sPolicy}" user="${sAccessKey}"
                 fi
-
-                # Group
-                # mc admin group add mysb MySB_users "${sAccessKey}"
-                # mc admin policy set mysb getonly group=MySB_users
 
                 # Unset
                 unset MySQL_RootPassword MySQL_MysbPassword MySQL_BackupManager MySQL_TorrentPassword MySQL_Secret
@@ -89,7 +85,7 @@ gfnMinioUsersBuckets() {
             rm -f /tmp/users.json
 
             # Minio main user
-            # gfnMinioUsersBuckets update "${gsMainUserName}"
+            gfnMinioUsersBuckets update "${gsMainUserName}"
             ;;
         'delete')
             for sBucket in ${!aBucketList[*]}; do
@@ -116,15 +112,14 @@ gfnMinioUsersBuckets() {
             fi
 
             # Create a new user with canned policy
-            install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/seedbox.json.tmpl /tmp/seedbox.json
-            # sed -i "s/bucketname/*-complete/g;" /tmp/seedbox.json
-            mc admin policy add mysb readonly /tmp/seedbox.json
-            rm -f /tmp/seedbox.json
+            install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/seedbox_complete.json.tmpl /tmp/seedbox_complete.json
+            mc admin policy add mysb complete /tmp/seedbox_complete.json
+            rm -f /tmp/seedbox_complete.json
 
             if [ -n "${sAccessKey}" ] && [ -n "${sSecretKey}" ]; then
                 # Create a new user
                 mc admin user add mysb "${sAccessKey}" "${sSecretKey}"
-                mc admin policy set mysb "readonly" user="${sAccessKey}"
+                mc admin policy set mysb complete user="${sAccessKey}"
             fi
             ;;
     esac
