@@ -193,11 +193,11 @@ case "${1}" in
             unset UserId UserPassword
 
             # Minio normal users
-            gfnMinioUsersBuckets create "${sUser}" '-v'
+            gfnMinioUsersBuckets create "${sUser}"
         done
 
         # Minio main user
-        gfnMinioUsersBuckets update "${gsMainUserName}" '-v'
+        gfnMinioUsersBuckets update "${gsMainUserName}"
         echo "################################################################################"
         echo
 
@@ -216,6 +216,31 @@ case "${1}" in
             else
                 rm -vf ${file}
             fi
+        done
+
+        # Add hash files for Minio
+        for sUser in ${gsUsersList}; do
+            echo
+            echo "########## ${sUser} - Create hash files for Minio"
+
+            # Start rTorrent session
+            gfnManageServices start "rtorrent-${sUser}"
+
+            # VARs
+            sTempSessionsFile="$(mktemp /tmp/${gsScriptName}.${sUser}.XXXXXXXXXX)"
+            find /home/${sUser}/rtorrent/.session/ -name '*.torrent' -type f >"${sTempSessionsFile}"
+            # Delete empty lines
+            sed -i '/^$/d' "${sTempSessionsFile}"
+            while [ -s "${sTempSessionsFile}" ]; do
+                while IFS= read -r sTorrentLoaded; do
+                    # Get torrent infos
+                    sInfoHash="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Hash: ' | awk '{printf $2}')"
+                    sName="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Name: ')"
+                    sName="$(echo "${sName}" | sed -e "s/Name: //g;s/'/\\\'/g;")"
+                    echo "${sName}" >/home/${sUser}/rtorrent/complete/${sInfoHash}
+                done <"${sTempSessionsFile}"
+            done
+            rm -f "${sTempSessionsFile}"
         done
 
         #### Disable maintenance mode
