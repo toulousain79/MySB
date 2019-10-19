@@ -5,24 +5,6 @@
 
 <p align="center"><a href="https://github.com/toulousain79/MySB/blob/v99.99/LICENCE.md"><img src="https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square" /></a></p>
 
-# Projet temporairement suspendu - Français
-
-MySB est temporairement suspendu suite à l'expiration de la clé GPG des sources de PeerGuardian...
-
-Le projet étant basé sur cet outil, l'installation sera compromise le temps que cette clé soit renouveller !
-
-Inutile de me contacter pour un quelconque support car MySB déconne !
-
-# Project temporarily suspended - English
-
-MySB is temporarily suspended following the expiration of the key GPG sources PeerGuardian ...
-
-Since the project is based on this tool, the installation will be compromised as long as this key is renewed !
-
-No need to contact me for any support because MySB jokes !
-
-<p align="center"><img src="web/public/themes/MySB/images/toulousain79.gif" height="200"></p>
-
 # English
 
 MySB _(My SeedBox)_ is a multi-user seedbox for dedicated server under Debian 10 _(Buster)_ and could be renamed MySSB, My Secured SeedBox.
