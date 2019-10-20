@@ -106,99 +106,28 @@ if [[ ${bRtorrentRestart} -eq 1 ]]; then
     # gfnManageServices stop "sudo"
 fi
 
-#### Samba Netbios name
-if [ -f /etc/samba/smb.conf ]; then
-    if (grep -q 'MySeedBox' /etc/samba/smb.conf) || (! grep -q 'interfaces = 127.0.0.1' /etc/samba/smb.conf); then
-        install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/other/etc.samba.smb.conf.tmpl /etc/samba/smb.conf
-        gfnManageServices restart "smbd"
-    fi
-fi
-
 #### Cron jobs
 if (! grep -q 'rev 0.6' /etc/cron.d/MySB_jobs_check); then
     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/Cron" 'UPGRADE'
 fi
 
-#### Bind
-if (! grep -q '\/\/include "\/etc\/bind\/log.conf";' /etc/bind/named.conf.local); then
-    install -v -o root -g bind -m 0774 ${MySB_InstallDir}/templates/bind/etc.bind.named.conf.local.tmpl /etc/bind/named.conf.local
-fi
-
-#### /etc/environment deprecated for LANGUAGE=fr
-if (grep -q 'LANGUAGE=' /etc/environment); then
-    sed -i '/LANGUAGE=/d' /etc/environment
-    update-locale "LANG=${gsLocale}.UTF-8" &>/dev/null
-    update-locale "LANGUAGE=${LANG:0:2}" &>/dev/null
-fi
-
-#### OpenVPN DH Key
-if [ ! -f "/etc/openvpn/dh2048_${gsHostNameFqdn}.pem" ] && [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
-    cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='OpenVPN';"
-    # Backup
-    for sFile in $(echo /etc/openvpn/*"${gsHostNameFqdn}"*); do
-        [ -f "${sFile}" ] && mv -v "${sFile}" /etc/openvpn/backup/
-    done
-    # Clean all
-    rm -fv /etc/openvpn/{*.crt,*.key,*.pem}
-    rm -rfv /etc/openvpn/easy-rsa
-    # Create new server certificates
-    gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/OpenVPN" 'server' 'UPGRADE'
-
-    # Backup
-    for sFile in $(echo /etc/openvpn/clients/*"${gsHostNameFqdn}"*); do
-        [ -f "${sFile}" ] && mv -v "${sFile}" /etc/openvpn/clients/backup/
-    done
-    # Clean all
-    rm -fv /etc/openvpn/clients/{*.crt,*.key,*.pem}
-    for seedUser in ${gsUsersList}; do
-        if [ ! -f "/etc/openvpn/easy-rsa/pki/reqs/${seedUser}_${gsHostNameFqdn}.req" ]; then
-            # Create new clients certificates
-            gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/OpenVPN" 'client' "${seedUser}" 'UPGRADE'
-        fi
-    done
-fi
-
-#### #101 Quota testing
-if [ ! -f /etc/apt/sources.list.d/testing.list ]; then
-    gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/SourcesList" 'CRON'
-    source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Install
-    gfnPackagesManage install 'testing' "quota"
-fi
-
-#### #103
-bClean=0
-sVersionDB="$(cmdMySQL 'MySB_db' "SELECT active FROM repositories WHERE name='ruTorrent Plugin Mark for Rsync';")"
-if [[ ${sVersionDB} -eq 1 ]]; then
-    gfnDeleteDirectory 1 "${gsRutorrentPluginsDir}/for_rsync"
-    bClean=1
-fi
-sVersionDB="$(cmdMySQL 'MySB_db' "SELECT active FROM repositories WHERE name='ruTorrent Plugin Sync';")"
-if [[ ${sVersionDB} -eq 1 ]]; then
-    gfnDeleteDirectory 1 "${gsRutorrentPluginsDir}/sync"
-    bClean=1
-fi
-sVersionDB="$(cmdMySQL 'MySB_db' "SELECT active FROM repositories WHERE name='ruTorrent Plugin FileUpload';")"
-if [[ ${sVersionDB} -eq 1 ]]; then
-    gfnDeleteDirectory 1 "${gsRutorrentPluginsDir}/fileupload"
-    bClean=1
-fi
-if [[ ${bClean} -eq 1 ]]; then
-    cmdMySQL 'MySB_db' "DELETE FROM repositories;" -v
-    mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db --verbose <"${MySB_InstallDir}/templates/mysql/Table_repositories.sql"
-fi
-
-#### Remove Nginx stapling
-if (! grep -q '#ssl_stapling' /etc/nginx/nginx.conf); then
-    install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.nginx.conf.tmpl /etc/nginx/nginx.conf
-    perl -pi -e "s/worker_processes auto;/worker_processes ${gsProcessors};/g" /etc/nginx/nginx.conf
-    gfnManageServices restart "nginx"
-fi
-
-#### #105 PeerGuardian sources list
-if [ -f /etc/apt/sources.list.d/peerguardian.list ]; then
-    rm -rfv /var/spool/apt-mirror/mirror/moblock-deb.sourceforge.net
-    rm -fv /etc/apt/sources.list.d/peerguardian.list
-    gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/SourcesList" 'CRON'
+#### NodeJS
+if [ -f /etc/apt/sources.list.d/nodejs.list ]; then
+    # Remove old NojeJS version
+    [ -z "${funcs_Install}" ] && source ${MySB_InstallDir}/inc/funcs_by_script/funcs_Install
+    gfnPackagesManage purge "nodejs"
+    # Remove NodeJS sources
+    rm -fv /etc/apt/sources.list.d/nodejs.list
+    [ -d /var/spool/apt-mirror/mirror/deb.nodesource.com/ ] && rm -rfv /var/spool/apt-mirror/mirror/deb.nodesource.com/
+    # Install NodeJs from deb
+    sPackages=("${MySB_Files}"/nodejs*.deb yarn)
+    gfnPackagesManage install "${sPackages[@]}"
+    # Reinstall Cakebox
+    if [ "${gbToInstall_Cakebox}" == "YES" ] || [ "${gbIsInstalled_Cakebox}" == "YES" ]; then
+        cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='CakeBox-Light';"
+        gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/CakeboxLight" 'UPGRADE'
+        gfnStatusSTD
+    fi
 fi
 
 # -----------------------------------------
