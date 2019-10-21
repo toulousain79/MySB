@@ -17,7 +17,9 @@
 - Rollback to manual download for some tools because of GitHub API Rate limit
 - Replace all service command by systemctl
 - Bind9 config review
-- PeerGuardian, use of DEB packages unstead of sources list
+- PeerGuardian
+  - use of DEB packages unstead of sources list
+  - add iptables block logs to iptables.log
 - Bugs fix
   - #101 RPC quota CPU burst
   - #102 systemd services reload _(Cron, DNScrypt)_
