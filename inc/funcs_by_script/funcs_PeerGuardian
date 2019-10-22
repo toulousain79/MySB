@@ -398,7 +398,7 @@ gfnPeerGuardianBlocklistsList() {
             if [ -f /etc/pgl/pglcmd.conf ] && [ -f /etc/pgl/blocklists.list ]; then
                 # /etc/pgl/blocklists.list
                 [ "${bDisplay}" -eq 1 ] && log_daemon_msg "${Peerguardian_AddingSelectedBlocklist}"
-                (   
+                (
                     cat <<'EOF'
 # blocklists.list - lists the remote blocklists that pglcmd handles.
 
@@ -445,7 +445,7 @@ gfnPeerGuardianAllowP2P() {
     if [ -f /etc/pgl/pglcmd.conf ] && [ -f /etc/pgl/allow.p2p ]; then
         # /etc/pgl/allow.p2p
         if [ "$1" -eq 1 ]; then log_daemon_msg "${Peerguardian_PermissionSelectedTrackers}"; fi
-        (   
+        (
             cat <<'EOF'
 # allow.p2p - allow list for pglcmd
 #
@@ -466,11 +466,11 @@ EOF
         #     echo "canyouseeme:${sIPv4}-255.255.255.255" >>/etc/pgl/allow.p2p
         # fi
 
-        # Allow all users
+        # Allowing resolvers
         gfnListCountUsers 'all'
-        if [ -n "$gsUsersList" ] && [ "${gsIpRestriction}" == "YES" ]; then
+        if [ -n "${gsUsersList}" ] && [ "${gsIpRestriction}" == "YES" ]; then
             echo "## Allow all MySB users" >>/etc/pgl/allow.p2p
-            for sUser in $gsUsersList; do
+            for sUser in ${gsUsersList}; do
                 nUserID="$(cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='${sUser}';")"
                 sUserIP="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM users_addresses WHERE id_users='${nUserID}';")"
                 for sIPv4 in ${sUserIP}; do
@@ -479,14 +479,28 @@ EOF
             done
         fi
 
-        echo "## Trackers enabled" >>/etc/pgl/allow.p2p
+        # Allowing users
+        gfnListCountUsers 'all'
+        if [ -n "${gsUsersList}" ] && [ "${gsIpRestriction}" == "YES" ]; then
+            echo "## Allow all MySB users" >>/etc/pgl/allow.p2p
+            for sUser in ${gsUsersList}; do
+                nUserID="$(cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='${sUser}';")"
+                sUserIP="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM users_addresses WHERE id_users='${nUserID}';")"
+                for sIPv4 in ${sUserIP}; do
+                    echo "${sUser}:${sIPv4}-255.255.255.255" >>/etc/pgl/allow.p2p
+                done
+            done
+        fi
+
+        # Allowing trackers
         sAllTrackers="$(cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker FROM trackers_list WHERE is_active='1';" | sed 's/\t/|/g;')"
-        for sTracker in $sAllTrackers; do
+        [ -n "${sAllTrackers}" ] && echo "## Trackers enabled" >>/etc/pgl/allow.p2p
+        for sTracker in ${sAllTrackers}; do
             nIdTracker="$(echo "${sTracker}" | awk '{split($0,a,"|"); print a[1]}')"
             sTrackerName="$(echo "${sTracker}" | awk '{split($0,a,"|"); print a[2]}')"
 
             sListIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list='${nIdTracker}';")"
-            for sIPv4 in $sListIPv4; do
+            for sIPv4 in ${sListIPv4}; do
                 echo "${sTrackerName}:${sIPv4}-255.255.255.255" >>/etc/pgl/allow.p2p
             done
         done
