@@ -3,7 +3,8 @@
 ## v7.1 - xxxx/xx/xx _(start at: 2019/10/02)_
 
 - rTorrent v0.9.8 _(8ac98c6)_
-- ruTorrent v3.9 _(c517387)_
+- libTorrent v0.9.8 _(3cec247)_
+- ruTorrent v3.9 _(cdb4cfe)_
 - NextCloud v17.0.0
 - NetData v1.18.1
 - Medoo v1.7.5
