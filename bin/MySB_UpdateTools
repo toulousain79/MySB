@@ -145,6 +145,21 @@ if (grep -q '^Requires' /lib/systemd/system/MySB_SecurityRules_Init.service); th
     systemctl enable dnscrypt-proxy.service
 fi
 
+#### PeerGuardian
+if (! grep -q 'CHAINS=' /etc/pgl/pglcmd.conf); then
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/other/etc.pgl.pglcmd.conf.tmpl /etc/pgl/pglcmd.conf
+    source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_PeerGuardian
+    gfnPeerGuardianPglcmdConf 0
+    gfnPeerGuardianAllowP2P 0
+    rm -fv /etc/pgl/ipv6.*
+    gfnPeerGuardianBlocklistsList 0 "CreateFile"
+    {
+        echo "if \$msg contains '[MySB]' or \$msg contains '[PeerGuardian]' then /var/log/iptables.log"
+        echo "& stop"
+    } >/etc/rsyslog.d/iptables.conf
+    gfnManageServices start "rsyslog pglcmd"
+fi
+
 # -----------------------------------------
 # shellcheck source=inc/includes_after
 . "$(dirname "$0")"/../inc/includes_after
