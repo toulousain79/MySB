@@ -20,6 +20,7 @@
 - PeerGuardian
   - use of DEB packages unstead of sources list
   - add iptables block logs to iptables.log
+  - improve global network connectivity errors
 - Bugs fix
   - #101 RPC quota CPU burst
   - #102 systemd services reload _(Cron, DNScrypt)_

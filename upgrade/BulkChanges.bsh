@@ -65,6 +65,18 @@ case "${1}" in
         #### To call for every upgrade - EoF
         ####################################
 
+        # PeerGuardian
+        rm -rfv /var/spool/apt-mirror/mirror/moblock-deb.sourceforge.net
+        rm -fv /etc/apt/sources.list.d/peerguardian.list
+        # shellcheck source=/dev/null
+        source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_PeerGuardian
+        install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/other/etc.pgl.pglcmd.conf.tmpl /etc/pgl/pglcmd.conf
+        gfnPeerGuardianPglcmdConf 0
+        gfnPeerGuardianAllowP2P 0
+        rm -fv /etc/pgl/ipv6.*
+        pglcmd restart
+        gfnPeerGuardianBlocklistsList 0 "CreateFile"
+
         # Renew security rules
         gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'create' "UPGRADE"
 
@@ -80,18 +92,6 @@ case "${1}" in
         cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='1' WHERE id_system='1';"
         gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/DNScrypt" 'UPGRADE'
         cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='${bPrevious}' WHERE id_system='1';"
-
-        # PeerGuardian
-        rm -rfv /var/spool/apt-mirror/mirror/moblock-deb.sourceforge.net
-        rm -fv /etc/apt/sources.list.d/peerguardian.list
-        # shellcheck source=/dev/null
-        source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_PeerGuardian
-        install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/other/etc.pgl.pglcmd.conf.tmpl /etc/pgl/pglcmd.conf
-        gfnPeerGuardianPglcmdConf 0
-        gfnPeerGuardianAllowP2P 0
-        rm -fv /etc/pgl/ipv6.*
-        pglcmd restart
-        gfnPeerGuardianBlocklistsList 0 "CreateFile"
 
         # Minio
         if (gfnCheckCommand 0 /usr/local/bin/minio) && [ -f /lib/systemd/system/minio.service ]; then
