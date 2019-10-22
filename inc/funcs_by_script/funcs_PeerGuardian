@@ -467,16 +467,23 @@ EOF
         # fi
 
         # Allowing resolvers
-        gfnListCountUsers 'all'
-        if [ -n "${gsUsersList}" ] && [ "${gsIpRestriction}" == "YES" ]; then
-            echo "## Allow all MySB users" >>/etc/pgl/allow.p2p
-            for sUser in ${gsUsersList}; do
-                nUserID="$(cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='${sUser}';")"
-                sUserIP="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM users_addresses WHERE id_users='${nUserID}';")"
-                for sIPv4 in ${sUserIP}; do
-                    echo "${sUser}:${sIPv4}-255.255.255.255" >>/etc/pgl/allow.p2p
-                done
+        if [ "${gbIsInstalled_DNScrypt}" == "YES" ]; then
+            for resolver in $(dnscrypt-proxy -list -config /etc/dnscrypt-proxy/dnscrypt-proxy.toml); do
+                echo ${resolver}
+                dig +short ${resolver}
             done
+
+            gfnListCountUsers 'all'
+            if [ -n "${gsUsersList}" ] && [ "${gsIpRestriction}" == "YES" ]; then
+                echo "## Allow all MySB users" >>/etc/pgl/allow.p2p
+                for sUser in ${gsUsersList}; do
+                    nUserID="$(cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='${sUser}';")"
+                    sUserIP="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM users_addresses WHERE id_users='${nUserID}';")"
+                    for sIPv4 in ${sUserIP}; do
+                        echo "${sUser}:${sIPv4}-255.255.255.255" >>/etc/pgl/allow.p2p
+                    done
+                done
+            fi
         fi
 
         # Allowing users
