@@ -160,6 +160,35 @@ if (! grep -q 'CHAINS=' /etc/pgl/pglcmd.conf); then
     gfnManageServices start "rsyslog pglcmd"
 fi
 
+#### NextCloud MySB_Home missing
+nMountsCount="$(cmdMySQL 'NextCloud_db' "SELECT mount_id FROM nc_external_mounts WHERE mount_point='/MySB_Home';" | wc -l)"
+if [[ ${gnTotalUsers} -ne ${nMountsCount} ]]; then
+    for nId in $(cmdMySQL 'NextCloud_db' "SELECT mount_id FROM nc_external_mounts WHERE mount_point='/MySB_Home';"); do
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:delete ${nId} --yes"
+    done
+
+    for seedUser in ${gsUsersList}; do
+        if [ ! -d /home/nextcloud/"${seedUser}" ]; then
+            mkdir -v /home/nextcloud/"${seedUser}"
+            chown -v www-data:www-data /home/nextcloud/"${seedUser}"
+            chmod -v 0755 /home/nextcloud/"${seedUser}"
+        fi
+
+        IdStorage=$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:create MySB_Home local null::null" | awk '{ print $5 }')
+        if [ -n "${IdStorage}" ]; then
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:applicable --add-user \"${seedUser}\" ${IdStorage}"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:config ${IdStorage} datadir '/home/${seedUser}/'"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encrypt 'false'"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} previews 'true'"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} enable_sharing 'true'"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encoding_compatibility 'false'"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:verify ${IdStorage}"
+        fi
+
+        unset IdStorage FnUserMail
+    done
+fi
+
 # -----------------------------------------
 # shellcheck source=inc/includes_after
 . "$(dirname "$0")"/../inc/includes_after

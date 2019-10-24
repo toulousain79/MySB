@@ -118,6 +118,18 @@ gfnNextCloudAccountManage() {
             sUserMail="$(${binMySQL} "SELECT users_email FROM users WHERE users_ident='${sUserAccount}';")"
             su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${sUserAccount}\" settings email \"${sUserMail}\""
             su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${sUserAccount}\" core timezone ${gsTimeZone}"
+            # Create new external mount (MySB_Home)
+            IdStorage=$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:create MySB_Home local null::null" | awk '{ print $5 }')
+            if [ -n "${IdStorage}" ]; then
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:applicable --add-user \"${seedUser}\" ${IdStorage}"
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:config ${IdStorage} datadir '/home/${seedUser}/'"
+                # su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} filesystem_check_changes 'false'"
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encrypt 'false'"
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} previews 'true'"
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} enable_sharing 'true'"
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encoding_compatibility 'false'"
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:verify ${IdStorage}"
+            fi
             ;;
         'edit')
             su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:resetpassword --password-from-env ${sUserAccount}" &>/dev/null
