@@ -346,18 +346,14 @@ gfnSwitchDNS() {
 
 #### Delete directory
 gfnDeleteDirectory() {
-    local nVerbose sDirectory
-    [ -z "${1}" ] && nVerbose=1 || nVerbose="${1}"
+    local sParams sDirectory
+    [ -z "${1}" ] && sParams='-rf' || sParams='-rfv'
     [ -z "${2}" ] && echo "gfnDeleteDirectory failed, No directory givened !" || sDirectory="${2%/}"
 
     if [ -d "${sDirectory}" ]; then
         case "${sDirectory}" in
             "${MySB_InstallDir}" | "${MySB_Files}" | "${MySB_InstallDir}/temp" | "${MySB_InstallDir}/files" | "/home" | "/" | "//") echo "gfnDeleteDirectory avoided, directory '${sDirectory}' not permited !" ;;
-            *)
-                if (rm -rf "${sDirectory}") && [ "$nVerbose" -eq 1 ]; then
-                    echo "'${sDirectory}' deleted !"
-                fi
-                ;;
+            *)  rm ${sParams} "${sDirectory}" ;;
         esac
     fi
 }
@@ -548,9 +544,6 @@ gfnRepoManageByType() {
     if [ -z "${gnRepoActive}" ] || [ "${gnRepoActive}" -eq 0 ]; then
         return 1
     fi
-    if [ "${gsSwitch}" == "REFRESH" ] || [ "${gnRepoActive}" -eq 0 ]; then
-        gfnDeleteDirectory 1 "${gsRepoDir}"
-    fi
 
     if [ "${gnRepoActive}" -eq 1 ]; then
         gnError=0
@@ -676,7 +669,9 @@ gfnRepoManageByType() {
                 fi
                 case "${gsRepoName}" in
                     'Wolf CMS' | 'ruTorrent')
-                        [ "${gnRepoUpgrade}" -eq 1 ] && gfnDeleteDirectory 1 "${gsRepoDir}"
+                        if [ -f "${MySB_Files}/${gsRepoFile}" ] || [ "${gnRepoUpgrade}" -eq 1 ]; then
+                            gfnDeleteDirectory 1 "${gsRepoDir}"
+                        fi
                         ;;
                 esac
                 if [ ! -d "${gsRepoDir}" ] && [[ ${gnError} -eq 0 ]]; then
