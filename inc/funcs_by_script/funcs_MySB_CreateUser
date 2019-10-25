@@ -34,30 +34,32 @@ gfnMinioUsersBuckets() {
     sSwitch="${1}"
     sUser="${2}"
     [ -z "${sSwitch}" ] && return
-    [ -z "${sUser}" ] && return
     [ "${gbIsInstalled_Minio}" != "YES" ] && return
+    gfnListCountUsers 'normal'
+    gsUsersList="${gsUsersList//${sUser}/}"
 
     case "${sSwitch}" in
         'create')
+            [ -z "${sUser}" ] && return
             sPolicy="${sUser}_complete"
             nIdUser="$(cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='${sUser}';")"
 
-            sUserValues="$(cmdMySQL 'MySB_db' "SELECT access_key,secret_key FROM minio WHERE id_users='${nIdUser}' AND policy='${sUser}-*';" | sed 's/\t/|/g;')"
+            sUserValues="$(cmdMySQL 'MySB_db' "SELECT access_key,secret_key FROM minio WHERE id_users='${nIdUser}' AND policy='${sUser}_*';" | sed 's/\t/|/g;')"
             sAccessKey="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[1]}')"
             sSecretKey="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[2]}')"
             if [ -z "${sAccessKey}" ] && [ -z "${sSecretKey}" ]; then
                 sAccessKey="${sAccessKey:-$(gfnGenPassword 16)}"
                 sSecretKey="${sSecretKey:-$(gfnGenPassword 32)}"
-                cmdMySQL 'MySB_db' "INSERT INTO minio (id_users, access_key, secret_key, policy) VALUES ('${nIdUser}', '${sAccessKey}', '${sSecretKey}', '${sUser}-*');"
+                cmdMySQL 'MySB_db' "INSERT INTO minio (id_users, access_key, secret_key, policy) VALUES ('${nIdUser}', '${sAccessKey}', '${sSecretKey}', '${sUser}_*');"
             elif [ -z "${sAccessKey}" ] || [ -z "${sSecretKey}" ]; then
                 sAccessKey="${sAccessKey:-$(gfnGenPassword 16)}"
                 sSecretKey="${sSecretKey:-$(gfnGenPassword 32)}"
-                cmdMySQL 'MySB_db' "UPDATE minio SET access_key='${sAccessKey}',secret_key='${sSecretKey}' WHERE id_users='${nIdUser}' AND policy='${sUser}-*';"
+                cmdMySQL 'MySB_db' "UPDATE minio SET access_key='${sAccessKey}',secret_key='${sSecretKey}' WHERE id_users='${nIdUser}' AND policy='${sUser}_*';"
             fi
 
             # Bucket
             if [ -d "/home/${sUser}/rtorrent/complete/" ]; then
-                [ ! -h "/home/minio/data/${sUser}-complete" ] && ln -s "/home/${sUser}/rtorrent/complete/" "/home/minio/data/${sUser}-complete"
+                [ ! -h "/home/minio/data/${sUser}_complete" ] && ln -s "/home/${sUser}/rtorrent/complete/" "/home/minio/data/${sUser}_complete"
             fi
 
             # Create a new user with canned policy
@@ -77,8 +79,10 @@ gfnMinioUsersBuckets() {
             unset MySQL_RootPassword MySQL_MysbPassword MySQL_BackupManager MySQL_TorrentPassword MySQL_Secret
             rm -f /tmp/users.json
 
-            # Minio main user
-            gfnMinioUsersBuckets update "${gsMainUserName}"
+            # Update others buckets policies
+
+            # Update minio users
+            gfnMinioUsersBuckets update
             ;;
         'delete')
             nIdUser="$(cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='${sUser}';")"
@@ -86,31 +90,40 @@ gfnMinioUsersBuckets() {
             sAccessKey="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[1]}')"
             sSecretKey="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[2]}')"
             mc admin user remove mysb "${sAccessKey}"
-            [ -h "/home/minio/data/${sUser}-complete" ] && rm "/home/minio/data/${sUser}-complete"
+            [ -h "/home/minio/data/${sUser}_complete" ] && rm "/home/minio/data/${sUser}_complete"
             ;;
         'update')
-            sUserValues="$(cmdMySQL 'MySB_db' "SELECT access_key,secret_key FROM minio WHERE id_users='${gnMainUserId}' AND policy='*-complete';" | sed 's/\t/|/g;')"
+            # Minio users
+            for sUser in ${gsUsersList}; do
+                if (grep -q "${sUser}_complete" <<<"$(mc admin policy list mysb)"); then
+                    mc admin policy remove mysb "${sUser}_complete"
+                    gfnMinioUsersBuckets create "${sUser}"
+                fi
+            done
+
+            # Minio seedbox user
+            sUserValues="$(cmdMySQL 'MySB_db' "SELECT access_key,secret_key FROM minio WHERE id_users='${gnMainUserId}' AND policy='*_complete';" | sed 's/\t/|/g;')"
             sAccessKey="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[1]}')"
             sSecretKey="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[2]}')"
             if [ -z "${sAccessKey}" ] && [ -z "${sSecretKey}" ]; then
                 sAccessKey="${sAccessKey:-$(gfnGenPassword 16)}"
                 sSecretKey="${sSecretKey:-$(gfnGenPassword 32)}"
-                cmdMySQL 'MySB_db' "INSERT INTO minio (id_users, access_key, secret_key, policy) VALUES ('${gnMainUserId}', '${sAccessKey}', '${sSecretKey}', '*-complete');"
+                cmdMySQL 'MySB_db' "INSERT INTO minio (id_users, access_key, secret_key, policy) VALUES ('${gnMainUserId}', '${sAccessKey}', '${sSecretKey}', '*_complete');"
             elif [ -z "${sAccessKey}" ] || [ -z "${sSecretKey}" ]; then
                 sAccessKey="${sAccessKey:-$(gfnGenPassword 16)}"
                 sSecretKey="${sSecretKey:-$(gfnGenPassword 32)}"
-                cmdMySQL 'MySB_db' "UPDATE minio SET access_key='${sAccessKey}',secret_key='${sSecretKey}' WHERE id_users='${gnMainUserId}' AND policy='*-complete';"
+                cmdMySQL 'MySB_db' "UPDATE minio SET access_key='${sAccessKey}',secret_key='${sSecretKey}' WHERE id_users='${gnMainUserId}' AND policy='*_complete';"
             fi
 
             # Create a new user with canned policy
             install -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/seedbox_complete.json.tmpl /tmp/seedbox_complete.json
-            mc admin policy add mysb seedbox-complete /tmp/seedbox_complete.json
+            mc admin policy add mysb seedbox_complete /tmp/seedbox_complete.json
             rm -f /tmp/seedbox_complete.json
 
             if [ -n "${sAccessKey}" ] && [ -n "${sSecretKey}" ]; then
                 # Create a new user
                 mc admin user add mysb "${sAccessKey}" "${sSecretKey}"
-                mc admin policy set mysb seedbox-complete user="${sAccessKey}"
+                mc admin policy set mysb seedbox_complete user="${sAccessKey}"
             fi
             rm -f /tmp/seedbox_complete.json
             ;;
