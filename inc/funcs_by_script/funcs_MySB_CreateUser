@@ -34,13 +34,12 @@ gfnMinioUsersBuckets() {
     sSwitch="${1}"
     sUser="${2}"
     [ -z "${sSwitch}" ] && return
+    [ -z "${sUser}" ] && return
     [ "${gbIsInstalled_Minio}" != "YES" ] && return
-    gfnListCountUsers 'normal'
-    gsUsersList="${gsUsersList//${sUser}/}"
 
     case "${sSwitch}" in
         'create')
-            [ -z "${sUser}" ] && return
+
             sPolicy="${sUser}_complete"
             nIdUser="$(cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='${sUser}';")"
 
@@ -80,9 +79,7 @@ gfnMinioUsersBuckets() {
             rm -f /tmp/users.json
 
             # Update others buckets policies
-
-            # Update minio users
-            gfnMinioUsersBuckets update
+            gfnMinioUsersBuckets update "${sUser}"
             ;;
         'delete')
             nIdUser="$(cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='${sUser}';")"
@@ -94,6 +91,8 @@ gfnMinioUsersBuckets() {
             ;;
         'update')
             # Minio users
+            gfnListCountUsers 'normal'
+            gsUsersList="${gsUsersList//${sUser}/}"
             for sUser in ${gsUsersList}; do
                 if (grep -q "${sUser}_complete" <<<"$(mc admin policy list mysb)"); then
                     mc admin policy remove mysb "${sUser}_complete"
