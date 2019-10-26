@@ -516,9 +516,9 @@ gfnPopulatingUdpInboundChain() {
 			sed -i '/OpenVPN with GW for users/d' "${MySB_InstallDir}"/temp/current-iptables-rules
 			sed -i '/OpenVPN without GW for users/d' "${MySB_InstallDir}"/temp/current-iptables-rules
 			sed -i '/OpenVPN bridged without GW for users/d' "${MySB_InstallDir}"/temp/current-iptables-rules
-			sed -i "${nNumLine}i\-A udp_inbound -s 0/0 -p udp -m udp --dport ${gsPort_OpenVPN_TAP_WithoutGW} -m comment --comment \"OpenVPN bridged without GW for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
-			sed -i "${nNumLine}i\-A udp_inbound -s 0/0 -p udp -m udp --dport ${gsPort_OpenVPN_WithoutGW} -m comment --comment \"OpenVPN without GW for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
-			sed -i "${nNumLine}i\-A udp_inbound -s 0/0 -p udp -m udp --dport ${gsPort_OpenVPN_WithGW} -m comment --comment \"OpenVPN with GW for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+			sed -i "${nNumLine}i\-A udp_inbound -s 0/0 -i ${gsPrimaryInet} -p udp -m udp --dport ${gsPort_OpenVPN_TAP_WithoutGW} -m comment --comment \"OpenVPN bridged without GW for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+			sed -i "${nNumLine}i\-A udp_inbound -s 0/0 -i ${gsPrimaryInet} -p udp -m udp --dport ${gsPort_OpenVPN_WithoutGW} -m comment --comment \"OpenVPN without GW for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+			sed -i "${nNumLine}i\-A udp_inbound -s 0/0 -i ${gsPrimaryInet} -p udp -m udp --dport ${gsPort_OpenVPN_WithGW} -m comment --comment \"OpenVPN with GW for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
 		fi
 		;;
 	esac
@@ -707,9 +707,9 @@ gfnPopulatingTcpInboundChain() {
 			sed -i '/OpenVPN with GW for users/d' "${MySB_InstallDir}"/temp/current-iptables-rules
 			sed -i '/OpenVPN without GW for users/d' "${MySB_InstallDir}"/temp/current-iptables-rules
 			sed -i '/OpenVPN bridged without GW for users/d' "${MySB_InstallDir}"/temp/current-iptables-rules
-			sed -i "${nNumLine}i\-A tcp_inbound -s 0/0 -p tcp -m tcp --dport ${gsPort_OpenVPN_TAP_WithoutGW} -m comment --comment \"OpenVPN bridged without GW for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
-			sed -i "${nNumLine}i\-A tcp_inbound -s 0/0 -p tcp -m tcp --dport ${gsPort_OpenVPN_WithoutGW} -m comment --comment \"OpenVPN without GW for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
-			sed -i "${nNumLine}i\-A tcp_inbound -s 0/0 -p tcp -m tcp --dport ${gsPort_OpenVPN_WithGW} -m comment --comment \"OpenVPN with GW for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+			sed -i "${nNumLine}i\-A tcp_inbound -s 0/0 -i ${gsPrimaryInet} -p tcp -m tcp --dport ${gsPort_OpenVPN_TAP_WithoutGW} -m comment --comment \"OpenVPN bridged without GW for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+			sed -i "${nNumLine}i\-A tcp_inbound -s 0/0 -i ${gsPrimaryInet} -p tcp -m tcp --dport ${gsPort_OpenVPN_WithoutGW} -m comment --comment \"OpenVPN without GW for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+			sed -i "${nNumLine}i\-A tcp_inbound -s 0/0 -i ${gsPrimaryInet} -p tcp -m tcp --dport ${gsPort_OpenVPN_WithGW} -m comment --comment \"OpenVPN with GW for users\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
 		fi
 		;;
 	esac
@@ -758,8 +758,17 @@ gfnPopulatingTcpInboundChain() {
 	case "${1}" in
 	"create")
 		if (gfnCheckCommand 0 minio); then
-			iptables -A tcp_inbound -p TCP -s 0/0 -i "${gsPrimaryInet}" --destination-port "${gsPort_Minio}" -j ACCEPT -m comment --comment "Minio"
+			for ip in ${AllUsersIPs}; do
+				iptables -A tcp_inbound -p TCP -s "${ip}" -i "${gsPrimaryInet}" --destination-port "${gsPort_Minio}" -j ACCEPT -m comment --comment "Minio"
+			done
 		fi
+		;;
+	"refresh")
+		nNumLine=$(grep 'comment --comment "Minio" -j ACCEPT' -n -m 1 "${MySB_InstallDir}"/temp/current-iptables-rules | cut -d ':' -f 1)
+		sed -i '/Minio/d' "${MySB_InstallDir}"/temp/current-iptables-rules
+		for ip in ${AllUsersIPs}; do
+			sed -i "${nNumLine}i\-A tcp_inbound -s ${ip} -i ${gsPrimaryInet} -p tcp -m tcp --dport ${gsPort_Minio} -m comment --comment \"Minio\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+		done
 		;;
 	esac
 
