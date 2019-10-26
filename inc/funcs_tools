@@ -420,7 +420,7 @@ gfnCleanBeforeUpgrade() {
 #### Get Values Repositories
 gfnGetRepoValues() {
     local sValues
-    unset gsRepoURL gnRepoActive gnRepoUpgrade gsRepoFile gsRepoVersion gsRepoDir gsFileURL gsVersionLatest gsVersionInstalled gsRepoType
+    unset gsRepoURL gnRepoActive gnRepoUpgrade gsRepoFile gsRepoVersion gsRepoDir gsFileURL gsVersionLatest gsVersionInstalled gsRepoType gbDownload gbExtract
 
     if [ -z "${1}" ]; then
         return 1
@@ -530,6 +530,18 @@ gfnGetRepoValues() {
     [ -n "${gsVersionInstalled}" ] && echo "Current version : ${gsVersionInstalled}"
     [ -n "${gsVersionLatest}" ] && echo "Latest version : ${gsVersionLatest}"
     [ -n "${gsFileURL}" ] && echo "File URL : ${gsFileURL}"
+    case "${gsScriptName}" in
+        'DownloadAll')
+            gbDownload=1
+            gbExtract=0
+            ;;
+        *)
+            gbDownload=1
+            gbExtract=1
+            ;;
+    esac
+    echo "To download : $(echo "${gbDownload}" | sed 's/0/NO/g;s/1/YES/g;')"
+    echo "To extract : $(echo "${gbExtract}" | sed 's/0/NO/g;s/1/YES/g;')"
     echo "Timestamp : $(date +"%T")"
     echo
 
@@ -543,24 +555,11 @@ gfnGetRepoValues() {
 
 #### Repository Manage by type
 gfnRepoManageByType() {
-    local sSubDir bDownload bExtract
+    local sSubDir
 
     if [ -z "${gnRepoActive}" ] || [ "${gnRepoActive}" -eq 0 ]; then
         return 1
     fi
-
-    case "${gsRepoName}" in
-        'DownloadAll')
-            bDownload=1
-            bExtract=0
-            ;;
-        *)
-            bDownload=1
-            bExtract=1
-            ;;
-    esac
-    echo "To download : $(echo "${bDownload}" | sed 's/0/NO/g;s/1/YES/g;')"
-    echo "To extract : $(echo "${bExtract}" | sed 's/0/NO/g;s/1/YES/g;')"
 
     if [ "${gnRepoActive}" -eq 1 ]; then
         gnError=0
@@ -568,13 +567,13 @@ gfnRepoManageByType() {
         case "${gsRepoType}" in
             'TARXZ')
                 [ -n "${gsFileURL}" ] && gsRepoURL="${gsFileURL}"
-                if [[ ${bDownload} -eq 1 ]]; then
+                if [[ ${gbDownload} -eq 1 ]]; then
                     if [ ! -f "${MySB_Files}/${gsRepoFile}" ] || [ "${gnRepoUpgrade}" -eq 1 ]; then
                         ${binCURL} -o "${MySB_Files}/${gsRepoFile}" "${gsRepoURL}"
                         gnError=$?
                     fi
                 fi
-                if [[ ${bExtract} -eq 1 ]]; then
+                if [[ ${gbExtract} -eq 1 ]]; then
                     if [ ! -d "${gsRepoDir}" ] && [[ ${gnError} -eq 0 ]]; then
                         sSubDir="$(tar --xz -tf ${MySB_Files}/${gsRepoFile} | cut -d '/' -f 1 | uniq)"
                         if [ ! -d "${MySB_InstallDir}/temp/${sSubDir}" ]; then
@@ -591,13 +590,13 @@ gfnRepoManageByType() {
                 ;;
             'TARGZ')
                 [ -n "${gsFileURL}" ] && gsRepoURL="${gsFileURL}"
-                if [[ ${bDownload} -eq 1 ]]; then
+                if [[ ${gbDownload} -eq 1 ]]; then
                     if [ ! -f "${MySB_Files}/${gsRepoFile}" ] || [ "${gnRepoUpgrade}" -eq 1 ]; then
                         ${binCURL} -o "${MySB_Files}/${gsRepoFile}" "${gsRepoURL}"
                         gnError=$?
                     fi
                 fi
-                if [[ ${bExtract} -eq 1 ]]; then
+                if [[ ${gbExtract} -eq 1 ]]; then
                     if [ ! -d "${gsRepoDir}" ] && [[ ${gnError} -eq 0 ]]; then
                         sSubDir="$(tar -ztf "${MySB_Files}/${gsRepoFile}" | cut -d '/' -f 1 | uniq)"
                         if [ ! -d "${MySB_InstallDir}/temp/${sSubDir}" ]; then
@@ -613,7 +612,7 @@ gfnRepoManageByType() {
                 fi
                 ;;
             'WBM')
-                if [[ ${bDownload} -eq 1 ]]; then
+                if [[ ${gbDownload} -eq 1 ]]; then
                     if [ ! -f "${gsRepoDir}/${gsRepoFile}" ] || [ "${gnRepoUpgrade}" -eq 1 ]; then
                         ${binCURL} -o "${gsRepoDir}/${gsRepoFile}" "${gsRepoURL}"
                         gnError=$?
@@ -622,7 +621,7 @@ gfnRepoManageByType() {
                 ;;
             'DEB')
                 [ -n "${gsFileURL}" ] && gsRepoURL="${gsFileURL}"
-                if [[ ${bDownload} -eq 1 ]]; then
+                if [[ ${gbDownload} -eq 1 ]]; then
                     if [ ! -f "${gsRepoDir}/${gsRepoFile}" ] || [ "${gnRepoUpgrade}" -eq 1 ]; then
                         ${binCURL} -o "${MySB_Files}/${gsRepoFile}" "${gsRepoURL}"
                         gnError=$?
@@ -692,13 +691,13 @@ gfnRepoManageByType() {
                 ;;
             'ZIP')
                 [ -n "${gsFileURL}" ] && gsRepoURL="${gsFileURL}"
-                if [[ ${bDownload} -eq 1 ]]; then
+                if [[ ${gbDownload} -eq 1 ]]; then
                     if [ ! -f "${MySB_Files}/${gsRepoFile}" ] || [ "${gnRepoUpgrade}" -eq 1 ]; then
                         ${binCURL} -o "${MySB_Files}/${gsRepoFile}" "${gsRepoURL}"
                         gnError=$?
                     fi
                 fi
-                if [[ ${bExtract} -eq 1 ]]; then
+                if [[ ${gbExtract} -eq 1 ]]; then
                     case "${gsRepoName}" in
                         'Wolf CMS' | 'ruTorrent')
                             if [ -f "${MySB_Files}/${gsRepoFile}" ] || [ "${gnRepoUpgrade}" -eq 1 ]; then
@@ -727,11 +726,11 @@ gfnRepoManageByType() {
                 ;;
             'CURL')
                 [ -n "${gsFileURL}" ] && gsRepoURL="${gsFileURL}"
-                if [[ ${bDownload} -eq 1 ]]; then
+                if [[ ${gbDownload} -eq 1 ]]; then
                     ${binCURL} "${gsRepoURL}" -o "${MySB_Files}/${gsRepoFile}"
                     gnError=$?
                 fi
-                if [[ ${bExtract} -eq 1 ]]; then
+                if [[ ${gbExtract} -eq 1 ]]; then
                     if [ -f "${MySB_Files}/${gsRepoFile}" ]; then
                         if (cp -v "${MySB_Files}/${gsRepoFile}" "${gsRepoDir}"); then
                             (grep -q '/usr/local/bin/' <<<"${gsRepoDir}") && chmod -v +x ${gsRepoDir}
@@ -743,7 +742,7 @@ gfnRepoManageByType() {
                 fi
                 ;;
         esac
-        unet bDownload bExtract
+        unset gbDownload gbExtract
 
         [ -d "${gsRepoDir}" ] && find "${gsRepoDir}"/ -type f -print0 | xargs -0 dos2unix &>/dev/null
     fi
