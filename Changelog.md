@@ -1,6 +1,6 @@
 # Changelog
 
-## v7.1 - xxxx/xx/xx _(start at: 2019/10/02)_
+## v7.1 - 2019/10/27 _(start at: 2019/10/02)_
 
 - rTorrent v0.9.8 _(8ac98c6)_
 - libTorrent v0.9.8 _(3cec247)_
