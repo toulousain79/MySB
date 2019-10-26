@@ -447,6 +447,8 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="'.$link.'">'.$title.'</a>';
 					}
 					break;
+				case "Buckets":
+					break;
 
 				// Help menu
 				case "Help":
