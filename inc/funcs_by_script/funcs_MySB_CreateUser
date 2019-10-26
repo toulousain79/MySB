@@ -29,16 +29,16 @@
 
 #### Minio
 gfnMinioUsersBuckets() {
-    local sSwitch sUser nIdUser sSecretKey
+    local sVerbose sSwitch sUser nIdUser sSecretKey sMode
     sSwitch="${1}"
     sUser="${2}"
+    sMode="${3}"
     [ -z "${sSwitch}" ] && return
     [ -z "${sUser}" ] && return
     [ "${gbIsInstalled_Minio}" != "YES" ] && return
 
     case "${sSwitch}" in
         'create')
-
             sPolicy="${sUser}_complete"
             nIdUser="$(cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='${sUser}';")"
 
@@ -62,7 +62,7 @@ gfnMinioUsersBuckets() {
 
             # Create a new user with canned policy
             if [ -f "${MySB_InstallDir}/templates/minio/users_complete.json.tmpl" ]; then
-                install -o root -g root -m 0644 "${MySB_InstallDir}/templates/minio/users_complete.json.tmpl" /tmp/users.json
+                install -v -o root -g root -m 0644 "${MySB_InstallDir}/templates/minio/users_complete.json.tmpl" /tmp/users.json
                 sed -i "s/<user>/${sUser}/g;" /tmp/users.json
                 mc admin policy add mysb "${sPolicy}" /tmp/users.json
 
@@ -78,7 +78,7 @@ gfnMinioUsersBuckets() {
             rm -f /tmp/users.json
 
             # Update others buckets policies
-            gfnMinioUsersBuckets update "${sUser}"
+            [ "${sMode}" != "recreate" ] && gfnMinioUsersBuckets update "${sUser}"
             ;;
         'delete')
             nIdUser="$(cmdMySQL 'MySB_db' "SELECT id_users FROM users WHERE users_ident='${sUser}';")"
@@ -95,7 +95,7 @@ gfnMinioUsersBuckets() {
             for sUser in ${gsUsersList}; do
                 if (grep -q "${sUser}_complete" <<<"$(mc admin policy list mysb)"); then
                     mc admin policy remove mysb "${sUser}_complete"
-                    gfnMinioUsersBuckets create "${sUser}"
+                    gfnMinioUsersBuckets create "${sUser}" 'recreate'
                 fi
             done
 
@@ -114,7 +114,7 @@ gfnMinioUsersBuckets() {
             fi
 
             # Create a new user with canned policy
-            install -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/seedbox_complete.json.tmpl /tmp/seedbox_complete.json
+            install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/seedbox_complete.json.tmpl /tmp/seedbox_complete.json
             mc admin policy add mysb seedbox_complete /tmp/seedbox_complete.json
             rm -f /tmp/seedbox_complete.json
 
@@ -148,14 +148,14 @@ gfnNextCloudAccountManage() {
             # Create new external mount (MySB_Home)
             IdStorage=$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:create MySB_Home local null::null" | awk '{ print $5 }')
             if [ -n "${IdStorage}" ]; then
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:applicable --add-user \"${seedUser}\" ${IdStorage}"
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:applicable --add-user \"${seedUser}\" ${IdStorage}" &>/dev/null
                 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:config ${IdStorage} datadir '/home/${seedUser}/'"
                 # su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} filesystem_check_changes 'false'"
                 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encrypt 'false'"
                 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} previews 'true'"
                 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} enable_sharing 'true'"
                 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encoding_compatibility 'false'"
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:verify ${IdStorage}"
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:verify ${IdStorage}" &>/dev/null
             fi
             ;;
         'edit')
