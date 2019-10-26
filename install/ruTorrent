@@ -50,7 +50,14 @@ if [ -d "${gsRutorrentDir}"/share/users ]; then
 fi
 # ruTorrent
 gfnGetRepoValues 'ruTorrent'
-[ "${gnRepoUpgrade}" -eq 1 ] && gfnDeleteDirectory 1 "${gsRutorrentDir}"
+sVersionDB="$(cmdMySQL 'MySB_db' "SELECT version FROM repositories WHERE name='ruTorrent';")"
+sVersionInstalled="$(cat "${gsRutorrentDir}"/version)"
+if [ "${sVersionDB}" != "${sVersionInstalled}" ] || [ "${gnRepoUpgrade}" -eq 1 ]; then
+    if [ -f "${MySB_Files}/${gsRepoFile}" ] || [ "${gnRepoUpgrade}" -eq 1 ]; then
+        gfnDeleteDirectory 1 "${gsRutorrentDir}"
+    fi
+fi
+
 gfnRepoManageByType
 rm -vf ${gsRepoDir}/htaccess-example
 rm -vf ${gsRepoDir}/plugins/extsearch/engines/NNMClub.php
@@ -62,7 +69,6 @@ if [ -d "${MySB_InstallDir}"/temp/rutorrent_share_users ]; then
     fi
     mv -v "${MySB_InstallDir}"/temp/rutorrent_share_users "${gsRutorrentDir}"/share/users
 fi
-cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '0' WHERE name='ruTorrent';" -v
 
 #### Hack
 install -v -o www-data -g www-data -m 0755 "${MySB_InstallDir}"/templates/rutorrent/rtorrent.php.tmpl "${gsRutorrentDir}"/php/rtorrent.php

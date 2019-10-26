@@ -543,7 +543,7 @@ gfnGetRepoValues() {
 
 #### Repository Manage by type
 gfnRepoManageByType() {
-    local sSubDir
+    local sSubDir bDownload bExtract
 
     if [ -z "${gnRepoActive}" ] || [ "${gnRepoActive}" -eq 0 ]; then
         return 1
@@ -559,6 +559,8 @@ gfnRepoManageByType() {
             bExtract=1
             ;;
     esac
+    echo "To download : $(echo "${bDownload}" | sed 's/0/NO/g;s/1/YES/g;')"
+    echo "To extract : $(echo "${bExtract}" | sed 's/0/NO/g;s/1/YES/g;')"
 
     if [ "${gnRepoActive}" -eq 1 ]; then
         gnError=0
@@ -715,6 +717,11 @@ gfnRepoManageByType() {
                             chown -R root:root "${gsRepoDir}"
                             gnError=$?
                         fi
+                        case "${gsRepoName}" in
+                            'ruTorrent')
+                                [[ ${gnError} -eq 0 ]] && cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade = '0' WHERE name='ruTorrent';" -v
+                                ;;
+                        esac
                     fi
                 fi
                 ;;
@@ -736,6 +743,7 @@ gfnRepoManageByType() {
                 fi
                 ;;
         esac
+        unet bDownload bExtract
 
         [ -d "${gsRepoDir}" ] && find "${gsRepoDir}"/ -type f -print0 | xargs -0 dos2unix &>/dev/null
     fi
