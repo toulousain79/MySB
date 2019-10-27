@@ -632,6 +632,31 @@ gfnRepoManageByType() {
                 if [ ! -d "${gsRepoDir}"/.svn ]; then
                     # The GitHub project may have a ZIP archive.
                     if [ -f "${MySB_Files}/${gsRepoFile}" ]; then
+                        if [[ ${gbExtract} -eq 1 ]]; then
+                            sSubDir="$(unzip -l "${MySB_Files}/${gsRepoFile}" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
+                            if [ ! -d "${MySB_InstallDir}/temp/${sSubDir}" ]; then
+                                unzip -q "${MySB_Files}/${gsRepoFile}" -d "${MySB_InstallDir}"/temp/
+                                gnError=$?
+                                # If a package has 2 archives (*_2.zip)
+                                if [[ ${gnError} -eq 0 ]] && [ -f "${MySB_Files}/${gsRepoFile//.zip/_2.zip}" ]; then
+                                    unzip -q "${MySB_Files}/${gsRepoFile//.zip/_2.zip}" -d "${MySB_InstallDir}"/temp/
+                                    gnError=$?
+                                fi
+                            fi
+                            if [[ ${gnError} -eq 0 ]] && [ -d "${MySB_InstallDir}/temp/${sSubDir}" ] && [ ! -d "${gsRepoDir}" ]; then
+                                mv -v "${MySB_InstallDir}/temp/${sSubDir}" "${gsRepoDir}"
+                                gnError=$?
+                            fi
+                        fi
+                    else
+                        svn co --non-interactive --trust-server-cert "${gsRepoURL}" "${gsRepoDir}"
+                        gnError=$?
+                    fi
+                fi
+                ;;
+            'GIT')
+                if [ -f "${MySB_Files}/${gsRepoFile}" ] && [ ! -d "${gsRepoDir}" ]; then
+                    if [[ ${gbExtract} -eq 1 ]]; then
                         sSubDir="$(unzip -l "${MySB_Files}/${gsRepoFile}" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
                         if [ ! -d "${MySB_InstallDir}/temp/${sSubDir}" ]; then
                             unzip -q "${MySB_Files}/${gsRepoFile}" -d "${MySB_InstallDir}"/temp/
@@ -646,43 +671,22 @@ gfnRepoManageByType() {
                             mv -v "${MySB_InstallDir}/temp/${sSubDir}" "${gsRepoDir}"
                             gnError=$?
                         fi
-                    else
-                        svn co --non-interactive --trust-server-cert "${gsRepoURL}" "${gsRepoDir}"
-                        gnError=$?
-                    fi
-                fi
-                ;;
-            'GIT')
-                if [ -f "${MySB_Files}/${gsRepoFile}" ] && [ ! -d "${gsRepoDir}" ]; then
-                    sSubDir="$(unzip -l "${MySB_Files}/${gsRepoFile}" | awk '{ print $4 }' | cut -d '/' -f 1 | uniq | sed '1,3d;$d')"
-                    if [ ! -d "${MySB_InstallDir}/temp/${sSubDir}" ]; then
-                        unzip -q "${MySB_Files}/${gsRepoFile}" -d "${MySB_InstallDir}"/temp/
-                        gnError=$?
-                        # If a package has 2 archives (*_2.zip)
-                        if [[ ${gnError} -eq 0 ]] && [ -f "${MySB_Files}/${gsRepoFile//.zip/_2.zip}" ]; then
-                            unzip -q "${MySB_Files}/${gsRepoFile//.zip/_2.zip}" -d "${MySB_InstallDir}"/temp/
-                            gnError=$?
+                        if [[ ${gnError} -eq 0 ]] && [ -d "${gsRepoDir}" ] && [ "${gnRepoUpgrade}" -eq 1 ]; then
+                            cd "${gsRepoDir}"/ || exit
+                            case "${gsRepoName}" in
+                                'Cakebox-Light')
+                                    git fetch --tags
+                                    git checkout -b "$(git describe --tags "$(git rev-list --tags --max-count=1)")"
+                                    gnError=$?
+                                    ;;
+                                *)
+                                    git stash
+                                    git pull
+                                    gnError=$?
+                                    git stash clear
+                                    ;;
+                            esac
                         fi
-                    fi
-                    if [[ ${gnError} -eq 0 ]] && [ -d "${MySB_InstallDir}/temp/${sSubDir}" ] && [ ! -d "${gsRepoDir}" ]; then
-                        mv -v "${MySB_InstallDir}/temp/${sSubDir}" "${gsRepoDir}"
-                        gnError=$?
-                    fi
-                    if [[ ${gnError} -eq 0 ]] && [ -d "${gsRepoDir}" ] && [ "${gnRepoUpgrade}" -eq 1 ]; then
-                        cd "${gsRepoDir}"/ || exit
-                        case "${gsRepoName}" in
-                            'Cakebox-Light')
-                                git fetch --tags
-                                git checkout -b "$(git describe --tags "$(git rev-list --tags --max-count=1)")"
-                                gnError=$?
-                                ;;
-                            *)
-                                git stash
-                                git pull
-                                gnError=$?
-                                git stash clear
-                                ;;
-                        esac
                     fi
                 elif [ ! -f "${MySB_Files}/${gsRepoFile}" ] && [ ! -d "${gsRepoDir}" ]; then
                     git clone "${gsRepoURL}" "${gsRepoDir}"
