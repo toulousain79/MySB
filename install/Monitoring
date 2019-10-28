@@ -45,7 +45,7 @@ case "${gsServerProvider}" in
         OvhHostnames="$(echo "${OvhHostnames}" | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq)"
 
         for Hostname in ${OvhHostnames}; do
-            IPv4="$(nslookup $Hostname | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
+            IPv4="$(nslookup -type=A ${Hostname} | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
             if [ -n "${IPv4}" ]; then
                 cmdMySQL 'MySB_db' "INSERT INTO providers_monitoring (provider,ipv4,hostname) VALUES ('OVH','${IPv4}/32','${HostName}');" -v
             fi
@@ -53,9 +53,9 @@ case "${gsServerProvider}" in
 
         OvhHostnames="$(cmdMySQL 'MySB_db' "SELECT hostname FROM providers_monitoring WHERE provider = 'OVH' and hostname != '';")"
         for Hostname in ${OvhHostnames}; do
-            IPv4="$(nslookup $Hostname | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
+            IPv4="$(nslookup -type=A ${Hostname} | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
             if [ -n "${IPv4}" ]; then
-                cmdMySQL 'MySB_db' "UPDATE providers_monitoring SET ipv4 = '${IPv4}/32' WHERE provider = 'OVH' AND hostname = '$Hostname';" -v
+                cmdMySQL 'MySB_db' "UPDATE providers_monitoring SET ipv4 = '${IPv4}/32' WHERE provider = 'OVH' AND hostname = '${Hostname}';" -v
             fi
         done
 
@@ -73,7 +73,7 @@ case "${gsServerProvider}" in
                 OvhRtmIp="${OvhRtmIp}.${Temp}"
             fi
         done
-        HostName="$(nslookup "${OvhRtmIp}" | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
+        HostName="$(nslookup -type=A "${OvhRtmIp}" | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
         cmdMySQL 'MySB_db' "INSERT INTO providers_monitoring (provider,ipv4,hostname) VALUES ('OVH','${OvhRtmIp}/32','${HostName}');" -v
 
         # SLA (IP.250)
@@ -90,7 +90,7 @@ case "${gsServerProvider}" in
                 OvhSlaIp="${OvhSlaIp}.${Temp}"
             fi
         done
-        HostName="$(nslookup "${OvhSlaIp}" | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
+        HostName="$(nslookup -type=A "${OvhSlaIp}" | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
         cmdMySQL 'MySB_db' "INSERT INTO providers_monitoring (provider,ipv4,hostname) VALUES ('OVH','${OvhSlaIp}/32','${HostName}');" -v
 
         # Server HG (IP.249)
@@ -107,7 +107,7 @@ case "${gsServerProvider}" in
                 OvhHgIp="${OvhHgIp}.${Temp}"
             fi
         done
-        HostName="$(nslookup "${OvhHgIp}" | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
+        HostName="$(nslookup -type=A "${OvhHgIp}" | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
         cmdMySQL 'MySB_db' "INSERT INTO providers_monitoring (provider,ipv4,hostname) VALUES ('OVH','${OvhHgIp}/32','${HostName}');" -v
         ;;
     'HETZNER')
@@ -119,7 +119,7 @@ case "${gsServerProvider}" in
         if [ -n "${sHetznerIPv4}" ]; then
             for sIPv4 in ${sHetznerIPv4}; do
                 # Get IP's hostname
-                HostName="$(nslookup ${sIPv4} | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
+                HostName="$(nslookup -type=A "${sIPv4}" | grep 'name =' | awk '{ print $4 }' | sed 's/.\{1\}$//g')"
                 cmdMySQL 'MySB_db' "INSERT INTO providers_monitoring (provider,ipv4,hostname) VALUES ('HETZNER','${sIPv4}/32','${HostName}');" -v
             done
         fi
