@@ -166,8 +166,8 @@ gfnPeerGuardianFailed() {
     gfnListCountUsers 'normal'
 
     for sUser in ${gsUsersList}; do
-        log_daemon_msg "${Funcs_PeerGuardianFailed_Switching} $1" "${sUser}"
-        case "$1" in
+        log_daemon_msg "${Funcs_PeerGuardianFailed_Switching} ${1}" "${sUser}"
+        case "${1}" in
             "rTorrent")
                 if [ ! -f "${MySB_InstallDir}"/files/blocklists/blocklist_rtorrent.txt ]; then
                     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/scripts/BlocklistsRTorrent.bsh" 'REFRESH'
@@ -217,14 +217,14 @@ gfnPeerGuardianFailed() {
 #### PeerGuardian Create blocklists.list
 gfnPeerGuardianBlocklistsList() {
     local sAllBlocklists sBlocklist sIblocklistIdent sUsername sPin bDisplay sMode
-    bDisplay="$1"
-    sMode="$2"
+    bDisplay="${1}"
+    sMode="${2}"
 
     function fnManageTypeLists() {
         local bDisplayFn bVerbose dDateHour aUpdateIdList nCount nPersonal nIBlockList
         local sModeFn sListFn sUpdateId sFailedList sCheckLog sLine sUpdateIdList sDbToUpdate
-        bDisplayFn="$1"
-        sModeFn="$2"
+        bDisplayFn="${1}"
+        sModeFn="${2}"
         bVerbose=""
         aAllBlocklists=()
         aUpdateIdList=()
@@ -444,7 +444,7 @@ gfnPeerGuardianAllowP2P() {
 
     if [ -f /etc/pgl/pglcmd.conf ] && [ -f /etc/pgl/allow.p2p ]; then
         # /etc/pgl/allow.p2p
-        if [ "$1" -eq 1 ]; then log_daemon_msg "${Peerguardian_PermissionSelectedTrackers}"; fi
+        if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_PermissionSelectedTrackers}"; fi
         (   
             cat <<'EOF'
 # allow.p2p - allow list for pglcmd
@@ -499,7 +499,7 @@ EOF
                 echo "${sTrackerName}:${sIPv4}-255.255.255.255" >>/etc/pgl/allow.p2p
             done
         done
-        if [ "$1" -eq 1 ]; then gfnStatusLSB; fi
+        if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
     fi
 }
 
@@ -508,35 +508,37 @@ gfnPeerGuardianIptablesInsert() {
     local sOvhIPv4 sOnlineIPv4 sDigicubeIPv4 sHetznerIPv4 sIPv4
 
     # Monitoring
-    if [ -n "${gsServerProvider}" ] && [ "${gsServerProvider}" != "${Global_NO}" ]; then
-        if [ "$1" -eq 1 ]; then log_daemon_msg "${Peerguardian_SupervisionRules} ${gsServerProvider}"; fi
-        echo "#!/bin/sh" >/etc/pgl/monitoring.insert.sh
-        echo >>/etc/pgl/monitoring.insert.sh
-        echo "# ${gsServerProvider} monitoring complementary rules" >>/etc/pgl/monitoring.insert.sh
+    if [ -n "${gsServerProvider}" ] && [ "${gsServerProvider}" != "${Global_None}" ]; then
+        if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_SupervisionRules} ${gsServerProvider}"; fi
+        {
+            echo '#!/bin/sh'
+            echo
+            echo "# ${gsServerProvider} monitoring complementary rules"
+        } >/etc/pgl/monitoring.insert.sh
         cat /etc/pgl/monitoring.insert.sh >/etc/pgl/monitoring.remove.sh
         case "${gsServerProvider}" in
             "OVH")
                 sOvhIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider='OVH';")"
-                for sIPv4 in $sOvhIPv4; do
+                for sIPv4 in ${sOvhIPv4}; do
                     echo "iptables -I pgl_in -p udp -s ${sIPv4} --destination-port 6100:6200 -j RETURN -m comment --comment \"${gsServerProvider} monitoring\"" >>/etc/pgl/monitoring.insert.sh
                     echo "iptables -I pgl_in -p icmp -s ${sIPv4} -j RETURN -m comment --comment \"${gsServerProvider} monitoring\"" >>/etc/pgl/monitoring.insert.sh
                 done
                 ;;
             "ONLINE")
                 sOnlineIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider='ONLINE';")"
-                for sIPv4 in $sOnlineIPv4; do
+                for sIPv4 in ${sOnlineIPv4}; do
                     echo "iptables -I pgl_in -p icmp -s ${sIPv4} -j RETURN -m comment --comment \"${gsServerProvider} monitoring\"" >>/etc/pgl/monitoring.insert.sh
                 done
                 ;;
             "DIGICUBE")
                 sDigicubeIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider='DIGICUBE';")"
-                for sIPv4 in $sDigicubeIPv4; do
+                for sIPv4 in ${sDigicubeIPv4}; do
                     echo "iptables -I pgl_in -p icmp -s ${sIPv4} -j RETURN -m comment --comment \"${gsServerProvider} monitoring\"" >>/etc/pgl/monitoring.insert.sh
                 done
                 ;;
             "HETZNER")
                 sHetznerIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider='HETZNER';")"
-                for sIPv4 in $sHetznerIPv4; do
+                for sIPv4 in ${sHetznerIPv4}; do
                     echo "iptables -I pgl_in -p icmp -s ${sIPv4} -j RETURN -m comment --comment \"${gsServerProvider} monitoring\"" >>/etc/pgl/monitoring.insert.sh
                 done
                 ;;
@@ -546,7 +548,7 @@ gfnPeerGuardianIptablesInsert() {
         cp /etc/pgl/monitoring.insert.sh /etc/pgl/monitoring.remove.sh
         sed -i '/monitoring.remove.sh/d' /etc/pgl/monitoring.remove.sh
         perl -pi -e "s/-I/-D/g" /etc/pgl/monitoring.remove.sh
-        if [ "$1" -eq 1 ]; then gfnStatusLSB; fi
+        if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
     else
         if [ -f /etc/pgl/monitoring.insert.sh ]; then rm -f /etc/pgl/monitoring.insert.sh; fi
         if [ -f /etc/pgl/monitoring.remove.sh ]; then rm -f /etc/pgl/monitoring.remove.sh; fi
@@ -558,7 +560,7 @@ gfnPeerGuardianPglcmdConf() {
     local sStatsMailTo sWatchDogMailTo sSearch sToAdd
 
     if [ -f /etc/pgl/pglcmd.conf ]; then
-        if [ "$1" -eq 1 ]; then log_daemon_msg "${Peerguardian_LoggingAndVerbosity}"; fi
+        if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_LoggingAndVerbosity}"; fi
         sStatsMailTo="$(cmdMySQL 'MySB_db' "SELECT pgl_email_stats FROM system;" | sed 's/0//g;s/1/root/g;')"
         sSearch="$(grep 'STATS_MAILTO=' /etc/pgl/pglcmd.conf)"
         perl -pi -e "s/${sSearch}/STATS_MAILTO=\"${sStatsMailTo}\"/g" /etc/pgl/pglcmd.conf
@@ -568,9 +570,9 @@ gfnPeerGuardianPglcmdConf() {
         sSearch="$(grep 'WD_MAILTO=' /etc/pgl/pglcmd.conf)"
         perl -pi -e "s/${sSearch}/WD_MAILTO=\"${sWatchDogMailTo}\"/g" /etc/pgl/pglcmd.conf
         unset sSearch
-        if [ "$1" -eq 1 ]; then gfnStatusLSB; fi
+        if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
 
-        if [ "$1" -eq 1 ]; then log_daemon_msg "${Peerguardian_AddingAllowedAddresses}"; fi
+        if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_AddingAllowedAddresses}"; fi
         sSearch="$(grep 'WHITE_IP_OUT=' /etc/pgl/pglcmd.conf)"
         sSearch="$(echo "${sSearch}" | sed s,/,\\\\\/,g)"
         if [ -n "${sSearch}" ]; then
@@ -620,7 +622,7 @@ gfnPeerGuardianPglcmdConf() {
         if [ -n "${gbDevMode}" ] && [ "${gbDevMode}" -eq 1 ]; then
             cat /etc/pgl/pglcmd.conf >>"${MySB_InstallDir}"/logs/PGLCMD/"${gsScriptName}"_PGLCMD.log
         fi
-        if [ "$1" -eq 1 ]; then gfnStatusLSB; fi
+        if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
     fi
 }
 
