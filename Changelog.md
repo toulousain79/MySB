@@ -1,10 +1,10 @@
 # Changelog
 
-## v7.1 - 2019/10/27 _(start at: 2019/10/02)_
+## v7.1 - 2019/10/29 _(start at: 2019/10/02)_
 
 - rTorrent v0.9.8 _(8ac98c6)_
 - libTorrent v0.9.8 _(3cec247)_
-- ruTorrent v3.9 _(cdb4cfe)_
+- ruTorrent v3.9 _(af9ca50)_
 - NextCloud v17.0.0
 - NetData v1.18.1
 - Medoo v1.7.5
@@ -18,6 +18,7 @@
 - Rollback to manual download for some tools because of GitHub API Rate limit
 - Replace all service command by systemctl
 - Bind9 config review
+- NetData, inbound_packets_dropped to silent & threshold review
 - PeerGuardian
   - use of DEB packages unstead of sources list
   - add iptables block logs to iptables.log
