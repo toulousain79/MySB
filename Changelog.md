@@ -1,6 +1,6 @@
 # Changelog
 
-## v7.1 - 2019/10/29 _(start at: 2019/10/02)_
+## v7.1 - 2019/10/30 _(start at: 2019/10/02)_
 
 - rTorrent v0.9.8 _(8ac98c6)_
 - libTorrent v0.9.8 _(3cec247)_
@@ -19,6 +19,7 @@
 - Replace all service command by systemctl
 - Bind9 config review
 - NetData, inbound_packets_dropped to silent & threshold review
+- rTorrent xmlrpc2scgi.py code review
 - PeerGuardian
   - use of DEB packages unstead of sources list
   - add iptables block logs to iptables.log

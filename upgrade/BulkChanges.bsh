@@ -260,15 +260,24 @@ case "${1}" in
             # VARs
             sTempSessionsFile="$(mktemp /tmp/${gsScriptName}.${sUser}.XXXXXXXXXX)"
             find /home/${sUser}/rtorrent/.session/ -name '*.torrent' -type f >"${sTempSessionsFile}"
+            nCgiPort="$(cmdMySQL 'MySB_db' "SELECT scgi_port FROM users WHERE users_ident='${sUser}';")"
+
             # Delete empty lines
             sed -i '/^$/d' "${sTempSessionsFile}"
             while [ -s "${sTempSessionsFile}" ]; do
                 while IFS= read -r sTorrentLoaded; do
                     # Get torrent infos
                     sInfoHash="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Hash: ' | awk '{printf $2}')"
-                    sName="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Name: ')"
-                    sName="$(echo "${sName}" | sed -e "s/Name: //g;s/'/\\\'/g;")"
-                    echo "${sName}" | tee -a "/home/${sUser}/rtorrent/complete/${sInfoHash}"
+                    sBasePath="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.base_path ${sInfoHash}")"
+                    # Open torrent if needed & close it again after
+                    if [ -z "${sBasePath}" ]; then
+                        su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash}" >/dev/null
+                        sBasePath="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.base_path ${sInfoHash}")"
+                        su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.close ${sInfoHash}" >/dev/null
+                    fi
+                    echo "${sBasePath//\/home\/${sUser}\/rtorrent\/complete\//}" | tee -a "/home/${sUser}/rtorrent/complete/$(echo "${sInfoHash}" | tr '[:lower:]' '[:upper:]')"
+                    # Remove hash from file list
+                    sed -i "/$(echo "${sInfoHash}" | tr '[:lower:]' '[:upper:]')/d" "${sTempSessionsFile}"
                 done <"${sTempSessionsFile}"
             done
             rm -f "${sTempSessionsFile}"
