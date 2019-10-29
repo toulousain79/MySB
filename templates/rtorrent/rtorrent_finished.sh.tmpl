@@ -23,7 +23,7 @@
 #
 ##################### FIRST LINE #####################################
 
-# ARGs: $d.hash=,$d.base_path=,$d.directory=,$d.name=,$d.loaded_file=,$d.custom1=,$d.custom3=
+# ARGs: $d.hash=,$d.base_path=,$d.directory=,$d.name=,$d.loaded_file=,$d.custom1=
 
 #### VARs
 sInfoHash="${1}"
@@ -32,13 +32,13 @@ get_directory="${3}"
 get_name="${4}"
 get_loaded_file="${5}"
 get_custom1="${6}"
-get_custom2="${7}"
 sUserName="$(whoami)"
 nCgiPort="51101"
 dTimestamp=$(date +%Y%m%d-%H%M%S)
 sScriptName="$(basename "$0")"
 sLogFile="/home/${sUserName}/logs/${sScriptName//.rTorrent/rTorrent}.log"
 sSqlParams='--defaults-extra-file=/home/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N'
+sTorrentFile="$(mysql ${sSqlParams} -e "SELECT torrent FROM torrents WHERE info_hash='${sInfoHash}' AND name='${get_name}';")"
 
 #### Step 1 - Log header
 {
@@ -51,7 +51,7 @@ sSqlParams='--defaults-extra-file=/home/.config.cnf --database=MySB_db -w --conn
     [ -n "${get_custom1}" ] && echo "Label: ${get_custom1}"
     echo "Directory: ${get_directory}"
     echo "Torrent loaded: ${get_loaded_file}"
-    echo "Torrent file: ${get_custom2}"
+    echo "Torrent file: ${sTorrentFile}"
     echo "--------------"
 } >>"${sLogFile}"
 
@@ -62,8 +62,8 @@ sSqlParams='--defaults-extra-file=/home/.config.cnf --database=MySB_db -w --conn
 [ -z "${get_name}" ] && exit 1
 
 #### Step 2 - Get torrent infos
-if [ -f "${get_custom2}" ]; then
-    sPrivacy="$(transmission-show "${get_custom2}" | grep 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
+if [ -f "${sTorrentFile}" ]; then
+    sPrivacy="$(transmission-show "${sTorrentFile}" | grep 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
 
     if [ -z "${sInfoHash}" ] || [ -z "${get_name}" ] || [ -z "${sPrivacy}" ]; then
         {
@@ -85,18 +85,21 @@ if [ -f "${get_custom2}" ]; then
 fi
 
 #### Step 3 - Execute PHP command (Mail notification)
-#curl --retry 3 --silent --show-error --data "username=${sUserName}&get_base_path=${get_base_path}&get_directory=${get_directory}&get_name=${get_name}&get_loaded_file=${get_loaded_file}&get_custom1=${get_custom1}&get_custom2=${get_custom2}" http://localhost:8888/rTorrent 2>>"${sLogFile}"
+#curl --retry 3 --silent --show-error --data "username=${sUserName}&get_base_path=${get_base_path}&get_directory=${get_directory}&get_name=${get_name}&get_loaded_file=${get_loaded_file}&get_custom1=${get_custom1}&get_custom2=${sTorrentFile}" http://localhost:8888/rTorrent 2>>"${sLogFile}"
 
 #### Step 4 - Update user quota
 sudo /bin/bash /home/"${sUserName}"/.rTorrent_tasks.sh 'quota'
 
-#### Step 5 - Save full session
+#### Step 5 - Restore custom2
+xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sTorrentFile}" 2>>"${sLogFile}"
+
+#### Step 6 - Save full session
 xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} session.save ${sInfoHash} 2>>"${sLogFile}"
 
-#### Step 6 - Minio
+#### Step 7 - Minio
 echo "${get_base_path}" >/home/${sUserName}/rtorrent/complete/${sInfoHash}
 
-#### Step 7 - Execute user scripts
+#### Step 8 - Execute user scripts
 UserScripts=$(find "/home/${sUserName}/scripts/" -type f -name "*.sh")
 if [ -n "${UserScripts}" ]; then
     for Script in ${UserScripts}; do
