@@ -147,8 +147,8 @@ for sUser in ${gsUsersList}; do
                 nCountAnnoncers=$((nCountAnnoncers - ${#aAnnoncersIpv[@]}))
                 [[ ${bAnnoncersUdp} -eq 0 ]] && nCountAnnoncers=$((nCountAnnoncers - ${#aAnnoncersUdp[@]}))
                 if [ "${nLeftBytes}" -eq 0 ]; then
-                    if [ -z "$(cmdMySQL 'MySB_db' "SELECT id_torrents FROM torrents WHERE info_hash='${sInfoHash}' AND name='${sName}' AND tree='${sBasePath}';")" ]; then
-                        cmdMySQL 'MySB_db' "INSERT INTO torrents (info_hash,name,privacy,state,tree) VALUES ('${sInfoHash}', '${sName}', '${sPrivacy}', 'completed', '${sBasePath}');" -v
+                    if [ -z "$(cmdMySQL 'MySB_db' "SELECT id_torrents FROM torrents WHERE info_hash='${sInfoHash}' AND name='${sName}' AND tree='${sBasePath}' AND users_ident='${sUser}';")" ]; then
+                        cmdMySQL 'MySB_db' "INSERT INTO torrents (info_hash,name,privacy,state,tree,users_ident) VALUES ('${sInfoHash}', '${sName}', '${sPrivacy}', 'completed', '${sBasePath}', '${sUser}');" -v
                     else
                         cmdMySQL 'MySB_db' "UPDATE torrents SET state='completed' WHERE info_hash='${sInfoHash}' AND tree='${sBasePath}'" -v
                     fi

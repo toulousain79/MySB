@@ -153,7 +153,7 @@ fnCopyFile() {
         sudo chown -Rv "${sOwners[@]}" "${sFinalDirectory}"
         xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash} >/dev/null 2>>"${sLogFile}"
         xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.check_hash ${sInfoHash} >/dev/null 2>>"${sLogFile}"
-        mysql ${sSqlParams} -e "INSERT INTO torrents (info_hash,name,privacy,state,tree) VALUES ('${sInfoHash}', '${sName}', '${sPrivacy}', 'completed', '${sFinalDirectory}');" -v
+        mysql ${sSqlParams} -e "INSERT INTO torrents (info_hash,name,privacy,state,tree,users_ident) VALUES ('${sInfoHash}', '${sName}', '${sPrivacy}', 'completed', '${sFinalDirectory}', '${sUserName}');" -v
         xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep8[*]} (${sMessFileRecyclingEnd[*]})" >/dev/null 2>>"${sLogFile}"
     fi
 }
@@ -162,9 +162,9 @@ fnCopyFile() {
 #### Step 1 - Add progress messages to torrent
 sValue="$(mysql ${sSqlParams} -e "SELECT name FROM torrents WHERE info_hash='${sInfoHash}';")"
 if [ -n "${sValue}" ]; then
-    mysql ${sSqlParams} -e "UPDATE torrents SET privacy='${sPrivacy}', state='loaded', tree='${sFinalDirectory}', torrent='${sTorrentLoaded}' WHERE info_hash='${sInfoHash}' AND name='${sName}'" -v
+    mysql ${sSqlParams} -e "UPDATE torrents SET privacy='${sPrivacy}', state='loaded', tree='${sFinalDirectory}', torrent='${sTorrentLoaded}' WHERE info_hash='${sInfoHash}' AND name='${sName}' AND users_ident='${sUserName}'" -v
 else
-    mysql ${sSqlParams} -e "INSERT INTO torrents (info_hash,name,privacy,state,tree,torrent) VALUES ('${sInfoHash}', '${sName}', '${sPrivacy}', 'loaded', '${sFinalDirectory}', '${sTorrentLoaded}');" -v
+    mysql ${sSqlParams} -e "INSERT INTO torrents (info_hash,name,privacy,state,tree,torrent,users_ident) VALUES ('${sInfoHash}', '${sName}', '${sPrivacy}', 'loaded', '${sFinalDirectory}', '${sTorrentLoaded}', '${sUserName}');" -v
 fi
 xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sStep1[*]}" 2>>"${sLogFile}"
 
@@ -386,7 +386,7 @@ if [[ ${nContinue} -eq 1 ]]; then
                     echo "Failed to copy back '${sTorrentLoaded}' to '${sTorrentFile}' !"
                 else
                     echo "'${sTorrentLoaded}' --> '${sTorrentFile}' !"
-                    mysql ${sSqlParams} -e "UPDATE torrents SET torrent='${sTorrentFile}' WHERE info_hash='${sInfoHash}' AND name='${sName}'" -v
+                    mysql ${sSqlParams} -e "UPDATE torrents SET torrent='${sTorrentFile}' WHERE info_hash='${sInfoHash}' AND name='${sName}' AND users_ident='${sUserName}'" -v
                 fi
             fi
         } >>"${sLogFile}"
