@@ -44,6 +44,7 @@ isStart=1
 #### VARs - Default sets
 nContinue=0
 nExit=0
+sParams=()
 sUserName="$(whoami)"
 nCgiPort="<scgi_port>"
 dTimestamp="$(date +%Y/%m/%d\ %H:%M:%S)"
@@ -401,7 +402,16 @@ if [[ ${nContinue} -eq 1 ]]; then
 
     # Execute annoncers check if needed
     if [ -s "/home/.check_annoncers_${sUserName}" ] && [[ ${bExecute} -eq 1 ]]; then
-        sudo /bin/bash "/opt/MySB/scripts/GetTrackersCert.bsh" USER "${sUserName}" "${sInfoHash}" &
+        [ "${#sParams}" -gt 0 ] && touch "/tmp/GetTrackersCert_${sUserName}_${sInfoHash}.lock"
+        sudo /bin/bash "/opt/MySB/scripts/GetTrackersCert.bsh" USER "${sUserName}" "${sInfoHash}" "${sParams[*]}" &
+    fi
+
+    # Force execute of finish script when a torrent recycling is present !
+    if [ -f "/tmp/GetTrackersCert_${sUserName}_${sInfoHash}.lock" ] && [ -n "${sTree}" ]; then
+        while [ -f "/tmp/GetTrackersCert_${sUserName}_${sInfoHash}.lock" ]; do
+            sleep 1
+        done
+        /bin/bash "/home/${sUserName}/.rTorrent_finished.sh" "${sInfoHash}" "${sTree}" "${sDirectory}" "${sName}" "${sTorrentLoaded}" "${sLabel}" &
     fi
 fi
 
