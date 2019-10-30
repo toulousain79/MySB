@@ -41,6 +41,14 @@ define('Global_CompleteAllFields', 'Merci de renseigner tous les champs.');
 define('Global_Success', 'Succ&egrave;s !');
 define('Global_SuccessAndApply', 'Succ&egrave;s !<br /><br />Merci de cliquer maintenant sur<br />\"Appliquer les modifications\".');
 
+define('Tooltip_Apply_CreateUser', 'Cr&eacute;er un utilisateur<br />');
+define('Tooltip_Apply_DeleteUser', 'Supprimer un utilisateur<br />');
+define('Tooltip_Apply_ChangePass', 'Modifier mon mot de passe<br />');
+define('Tooltip_Apply_Blocklists', 'Actualiser/Mettre &agrave; jour les listes de blocage<br />');
+define('Tooltip_Apply_UpdateAddresses', 'Mettre &agrave; jour mes adresses<br />');
+define('Tooltip_Apply_UpdateMail', 'Mettre &agrave; jour les informations de messagerie<br />');
+define('Tooltip_Apply_RestartRtorrent', 'Relancer ma session rTorrent<br />');
+
 define('OpenVPN_SrvIpGw', '10.0.0.1');
 define('OpenVPN_SrvIp', '10.0.1.1');
 define('OpenVPN_SrvIpBridge', '10.0.2.1');
