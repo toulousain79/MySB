@@ -38,7 +38,7 @@ dTimestamp=$(date +%Y%m%d-%H%M%S)
 sScriptName="$(basename "$0")"
 sLogFile="/home/${sUserName}/logs/${sScriptName//.rTorrent/rTorrent}.log"
 sSqlParams='--defaults-extra-file=/home/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N'
-sTorrentFile="$(mysql ${sSqlParams} -e "SELECT torrent FROM torrents WHERE info_hash='${sInfoHash}' AND name='${get_name}';")"
+sTorrentFile="$(mysql ${sSqlParams} -e "SELECT torrent FROM torrents WHERE info_hash='${sInfoHash}' AND name='${get_name}' AND users_ident='${sUserName}';")"
 
 #### Step 1 - Log header
 {
@@ -75,11 +75,11 @@ if [ -f "${sTorrentFile}" ]; then
             echo "--------------------"
         } >>"${sLogFile}"
     else
-        nId="$(mysql ${sSqlParams} -e "SELECT id_torrents FROM torrents WHERE info_hash='${sInfoHash}' AND name='${get_name}';")"
+        nId="$(mysql ${sSqlParams} -e "SELECT id_torrents FROM torrents WHERE info_hash='${sInfoHash}' AND name='${get_name}' AND users_ident='${sUserName}';")"
         if [ -z "${nId}" ]; then
-            mysql ${sSqlParams} -e "INSERT INTO torrents (info_hash,name,privacy,state,tree) VALUES ('${sInfoHash}', '${get_name}', '${sPrivacy}', 'completed', '${get_base_path}');" -v >>"${sLogFile}"
+            mysql ${sSqlParams} -e "INSERT INTO torrents (info_hash,name,privacy,state,tree,users_ident) VALUES ('${sInfoHash}', '${get_name}', '${sPrivacy}', 'completed', '${get_base_path}', '${sUserName}');" -v >>"${sLogFile}"
         else
-            mysql ${sSqlParams} -e "UPDATE torrents SET state='completed', tree='${get_base_path}' WHERE info_hash='${sInfoHash}' AND tree='${get_base_path}'" -v >>"${sLogFile}"
+            mysql ${sSqlParams} -e "UPDATE torrents SET state='completed', tree='${get_base_path}' WHERE info_hash='${sInfoHash}' AND tree='${get_base_path}' AND users_ident='${sUserName}'" -v >>"${sLogFile}"
         fi
     fi
 fi
