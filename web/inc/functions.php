@@ -345,6 +345,13 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					break;
 
 				// Services menu
+				case "Services":
+					if ( $UserAccountType == 'normal' ) {
+						$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
+						echo '<li'. (in_array($menu->slug, explode('/', $current->url)) ? ' class="current"': null).'><a target="_blank" href="ru">'.$title.'</a>';
+					}
+					break;
+
 				case "ruTorrent":
 					if ( $UserAccountType == 'normal' ) {
 						$title = ($_SESSION['Language'] == 'en') ? $menu->title : $menu->title_fr;
@@ -526,25 +533,25 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 					foreach($CommandsDatas as $command) {
 						switch ($command) {
 							case 'MySB_CreateUser':
-								$to_display .= 'Créer un utilisateur<br />';
+								$to_display .= Tooltip_Apply_CreateUser;
 								break;
 							case 'MySB_DeleteUser':
-								$to_display .= 'Supprimer un utilisateur<br />';
+								$to_display .= Tooltip_Apply_DeleteUser;
 								break;
 							case 'MySB_ChangeUserPassword':
-								$to_display .= 'Modifier mon mot de passe<br />';
+								$to_display .= Tooltip_Apply_ChangePass;
 								break;
 							case 'Blocklists_PeerGuardian':
-								$to_display .= 'Actualiser/Mettre à jour les listes de blocage<br />';
+								$to_display .= Tooltip_Apply_Blocklists;
 								break;
 							case 'ManageAddresses':
-								$to_display .= 'Mettre à jour mes addresses<br />';
+								$to_display .= Tooltip_Apply_UpdateAddresses;
 								break;
 							case 'Postfix':
-								$to_display .= 'Mettre à jour les informations de messagerie<br />';
+								$to_display .= Tooltip_Apply_UpdateMail;
 								break;
 							case 'Restart_rTorrent':
-								$to_display .= 'Relancer ma session rTorrent<br />';
+								$to_display .= Tooltip_Apply_RestartRtorrent;
 								break;
 							default:
 								break;
