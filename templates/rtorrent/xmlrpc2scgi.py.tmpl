@@ -1,53 +1,70 @@
 #!/usr/bin/env python2
 
 """
-# https://github.com/rakshasa/rtorrent-vagrant/blob/master/scripts/xmlrpc2scgi.py
+https://github.com/rakshasa/rtorrent-vagrant/blob/master/scripts/xmlrpc2scgi.py
 """
 
 import sys
 import cStringIO as StringIO
 import xmlrpclib
 import urllib
-import urlparse
+from urlparse import uses_netloc, urlsplit
 import socket
-import re
 
-from urlparse import uses_netloc
 uses_netloc.append('scgi')
 
 
 def do_scgi_xmlrpc_request(host, methodname, params=()):
+    """[summary]
+
+    Args:
+        host ([type]): [description]
+        methodname ([type]): [description]
+        params (tuple, optional): [description]. Defaults to ().
+
+    Returns:
+        [type]: [description]
+    """
     xmlreq = xmlrpclib.dumps(params, methodname)
     xmlresp = SCGIRequest(host).send(xmlreq)
     return xmlresp
 
 
 def do_scgi_xmlrpc_request_py(host, methodname, params=()):
+    """[summary]
+
+    Args:
+        host ([type]): [description]
+        methodname ([type]): [description]
+        params (tuple, optional): [description]. Defaults to ().
+
+    Returns:
+        [type]: [description]
+    """
     xmlresp = do_scgi_xmlrpc_request(host, methodname, params)
     return xmlrpclib.loads(xmlresp)[0][0]
 
 
 class SCGIRequest(object):
+    """[summary]
+
+    Args:
+        object ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
 
     def __init__(self, url):
         self.url = url
         self.resp_headers = []
 
     def __send(self, scgireq):
-        scheme, netloc, path, query, frag = urlparse.urlsplit(self.url)
-        host, port = urllib.splitport(netloc)
+        res = urlsplit(self.url)
+        host, port = urllib.splitport(res.netloc)
 
-        if netloc:
-            # sys.stderr.write("host:%s port:%s\n" % (host, port))
-
-            inet6_host = ''  # re.search( r'^\[(.*)\]$', host, re.M).group(1)
-
-            if len(inet6_host) > 0:
-                # sys.stderr.write("inet6_host:%s\n" % (inet6_host))
-                addrinfo = socket.getaddrinfo(
-                    inet6_host, port, socket.AF_INET6, socket.SOCK_STREAM)
-            else:
-                # sys.stderr.write("inet_host:%s\n" % (host))
+        if res.netloc:
+            if host:
                 addrinfo = socket.getaddrinfo(
                     host, port, socket.AF_INET, socket.SOCK_STREAM)
 
@@ -57,7 +74,7 @@ class SCGIRequest(object):
             sock.connect(addrinfo[0][4])
         else:
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            sock.connect(path)
+            sock.connect(res.path)
 
         sock.send(scgireq)
         recvdata = resp = sock.recv(1024)
@@ -85,21 +102,25 @@ class SCGIRequest(object):
         return '\x00'.join(['%s\x00%s' % t for t in headers])+'\x00'
 
     @staticmethod
-    def add_required_scgi_headers(data, headers=[]):
-        "Wrap data in an scgi request,\nsee spec at: http://python.ca/scgi/protocol.txt"
+    def add_required_scgi_headers(data, headers=None):
+        """Wrap data in an scgi request,
+        see spec at: http://python.ca/scgi/protocol.txt"""
+        if headers is None:
+            headers = []
+
         headers = SCGIRequest.make_headers(
             [('CONTENT_LENGTH', str(len(data))), ('SCGI', '1'), ] + headers)
         enc_headers = SCGIRequest.encode_netstring(headers)
         return enc_headers+data
 
     @staticmethod
-    def gen_headers(file):
+    def gen_headers(result):
         "Get header lines from scgi response"
-        line = file.readline().rstrip()
+        line = result.readline().rstrip()
 
         while line.strip():
             yield line
-            line = file.readline().rstrip()
+            line = result.readline().rstrip()
 
     @staticmethod
     def get_scgi_resp(resp):
@@ -115,21 +136,34 @@ class SCGIRequest(object):
 
 
 class RTorrentXMLRPCClient(object):
+    """[summary]
+
+    Args:
+        object ([type]): [description]
+
+    Raises:
+        Exception: [description]
+        Exception: [description]
+        Exception: [description]
+
+    Returns:
+        [type]: [description]
+    """
 
     def __init__(self, url, methodname=''):
         self.url = url
         self.methodname = methodname
 
     def __call__(self, *args):
-        scheme, netloc, path, query, frag = urlparse.urlsplit(self.url)
+        res = urlsplit(self.url)
         xmlreq = xmlrpclib.dumps(args, self.methodname)
 
-        if scheme == 'scgi':
+        if res.scheme == 'scgi':
             xmlresp = SCGIRequest(self.url).send(xmlreq)
             return xmlrpclib.loads(xmlresp)[0][0]
-        elif scheme == 'http':
+        elif res.scheme == 'http':
             raise Exception('Unsupported protocol')
-        elif scheme == '':
+        elif res.scheme == '':
             raise Exception('Unsupported protocol')
         else:
             raise Exception('Unsupported protocol')
@@ -163,9 +197,14 @@ def convert_params_to_native(params):
 
 
 def print_script(response):
-    if type(response) is int:
+    """[summary]
+
+    Args:
+        response ([type]): [description]
+    """
+    if isinstance(response, int):
         print response
-    elif type(response) is str:
+    elif isinstance(response, (str, unicode)):
         print response
     else:
         for line in response:
@@ -173,6 +212,15 @@ def print_script(response):
 
 
 def main(argv):
+    """[summary]
+
+    Args:
+        argv ([type]): [description]
+
+    Raises:
+        SystemExit: [description]
+        SystemExit: [description]
+    """
     if len(argv) < 1:
         print "No arguments."
         raise SystemExit, -1
@@ -204,5 +252,6 @@ def main(argv):
 if __name__ == "__main__":
     try:
         main(sys.argv[1:])
-    except xmlrpclib.Fault as e:
-        print "xmlrpclib.Fault({0}): {1}".format(e.faultCode, e.faultString)
+    except xmlrpclib.Fault as err:
+        print "xmlrpclib.Fault({0}): {1}".format(
+            err.faultCode, err.faultString)

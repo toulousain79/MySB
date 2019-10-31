@@ -264,18 +264,34 @@ case "${1}" in
 
             # Delete empty lines
             sed -i '/^$/d' "${sTempSessionsFile}"
+            # Parsing session file for update torrents table
             while [ -s "${sTempSessionsFile}" ]; do
                 while IFS= read -r sTorrentLoaded; do
                     # Get torrent infos
                     sInfoHash="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Hash: ' | awk '{printf $2}')"
+                    [ -z "${sInfoHash}" ] && continue
+                    sPrivacy="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
+                    sName="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Name: ')"
+                    sName="$(echo "${sName}" | sed -e "s/Name: //g;s/'/\\\'/g;")"
                     sBasePath="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.base_path ${sInfoHash}")"
+                    sBasePath="$(echo "${sBasePath}" | sed -e "s/'/\\\'/g;")"
+                    sBasePath="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.base_path ${sInfoHash}")"
+                    nLeftBytes="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.get_left_bytes ${sInfoHash}")"
                     # Open torrent if needed & close it again after
                     if [ -z "${sBasePath}" ]; then
                         su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash}" >/dev/null
                         sBasePath="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.base_path ${sInfoHash}")"
                         su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.close ${sInfoHash}" >/dev/null
                     fi
-                    echo "${sBasePath//\/home\/${sUser}\/rtorrent\/complete\//}" | tee -a "/home/${sUser}/rtorrent/complete/$(echo "${sInfoHash}" | tr '[:lower:]' '[:upper:]')"
+                    [ "${nLeftBytes}" -eq 0 ] && sStatus='completed' || sStatus='in_progress'
+
+                    nId="$(cmdMySQL 'MySB_db' "SELECT id_torrents FROM torrents WHERE info_hash='${sInfoHash}' AND name='${sName}' AND users_ident='${sUser}';")"
+                    if [ -z "${nId}" ]; then
+                        cmdMySQL 'MySB_db' "INSERT INTO torrents (info_hash,name,privacy,state,tree,users_ident) VALUES ('${sInfoHash}', '${sName}', '${sPrivacy}', '${sStatus}', '${sBasePath}', '${sUser}');" -v
+                    else
+                        cmdMySQL 'MySB_db' "UPDATE torrents SET state='${sStatus}', tree='${sBasePath}' WHERE info_hash='${sInfoHash}' AND users_ident='${sUser}';" -v
+                    fi
+
                     # Remove hash from file list
                     sed -i "/$(echo "${sInfoHash}" | tr '[:lower:]' '[:upper:]')/d" "${sTempSessionsFile}"
                 done <"${sTempSessionsFile}"
