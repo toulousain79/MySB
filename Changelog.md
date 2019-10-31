@@ -19,7 +19,9 @@
 - Replace all service command by systemctl
 - Bind9 config review
 - NetData, inbound_packets_dropped to silent & threshold review
-- rTorrent xmlrpc2scgi.py code review
+- rTorrent
+  - xmlrpc2scgi.py code review
+  - file recycling review
 - PeerGuardian
   - use of DEB packages unstead of sources list
   - add iptables block logs to iptables.log
