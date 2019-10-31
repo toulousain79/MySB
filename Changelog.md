@@ -1,6 +1,6 @@
 # Changelog
 
-## v7.1 - 2019/10/30 _(start at: 2019/10/02)_
+## v7.1 - 2019/11/01 _(start at: 2019/10/02)_
 
 - rTorrent v0.9.8 _(8ac98c6)_
 - libTorrent v0.9.8 _(3cec247)_
@@ -24,10 +24,14 @@
   - use of DEB packages unstead of sources list
   - add iptables block logs to iptables.log
   - improve global network connectivity errors
+- Minio
+  - #96 review
+  - #99 advanced features _(to be continue)_
 - Bugs fix
   - #101 RPC quota CPU burst
   - #102 systemd services reload _(Cron, DNScrypt)_
   - #103 Bad response from server _(remove some ruTorrent plugins)_
+  - #105 PeerGuardian expired GPG key
   - remove NginX SSL stapling
   - ruTorrent _task plugin
 
