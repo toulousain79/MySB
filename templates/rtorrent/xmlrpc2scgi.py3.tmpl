@@ -1,14 +1,13 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 """
-https://github.com/rakshasa/rtorrent-vagrant/blob/master/scripts/xmlrpc2scgi.py
+# https://github.com/rakshasa/rtorrent-vagrant/blob/master/scripts/xmlrpc2scgi.py
 """
 
 import sys
-import cStringIO as StringIO
-import xmlrpclib
-import urllib
-from urlparse import uses_netloc, urlsplit
+from io import StringIO
+import xmlrpc.client
+from urllib.parse import urlparse, splitport, uses_netloc
 import socket
 
 uses_netloc.append('scgi')
@@ -25,7 +24,7 @@ def do_scgi_xmlrpc_request(host, methodname, params=()):
     Returns:
         [type]: [description]
     """
-    xmlreq = xmlrpclib.dumps(params, methodname)
+    xmlreq = xmlrpc.client.dumps(params, methodname)
     xmlresp = SCGIRequest(host).send(xmlreq)
     return xmlresp
 
@@ -42,7 +41,7 @@ def do_scgi_xmlrpc_request_py(host, methodname, params=()):
         [type]: [description]
     """
     xmlresp = do_scgi_xmlrpc_request(host, methodname, params)
-    return xmlrpclib.loads(xmlresp)[0][0]
+    return xmlrpc.client.loads(xmlresp)[0][0]
 
 
 class SCGIRequest(object):
@@ -60,11 +59,16 @@ class SCGIRequest(object):
         self.resp_headers = []
 
     def __send(self, scgireq):
-        res = urlsplit(self.url)
-        host, port = urllib.splitport(res.netloc)
+        res = urlparse(self.url)
+        host, port = splitport(res.netloc)
 
         if res.netloc:
-            if host:
+            inet6_host = ''
+
+            if inet6_host:
+                addrinfo = socket.getaddrinfo(
+                    inet6_host, port, socket.AF_INET6, socket.SOCK_STREAM)
+            else:
                 addrinfo = socket.getaddrinfo(
                     host, port, socket.AF_INET, socket.SOCK_STREAM)
 
@@ -103,29 +107,25 @@ class SCGIRequest(object):
 
     @staticmethod
     def add_required_scgi_headers(data, headers=None):
-        """Wrap data in an scgi request,
-        see spec at: http://python.ca/scgi/protocol.txt"""
-        if headers is None:
-            headers = []
-
+        "Wrap data in an scgi request,\nsee spec at: http://python.ca/scgi/protocol.txt"
         headers = SCGIRequest.make_headers(
             [('CONTENT_LENGTH', str(len(data))), ('SCGI', '1'), ] + headers)
         enc_headers = SCGIRequest.encode_netstring(headers)
         return enc_headers+data
 
     @staticmethod
-    def gen_headers(result):
+    def gen_headers(file):
         "Get header lines from scgi response"
-        line = result.readline().rstrip()
+        line = file.readline().rstrip()
 
         while line.strip():
             yield line
-            line = result.readline().rstrip()
+            line = file.readline().rstrip()
 
     @staticmethod
     def get_scgi_resp(resp):
         "Get xmlrpc response from scgi response"
-        fresp = StringIO.StringIO(resp)
+        fresp = StringIO(resp)
         headers = []
 
         for line in SCGIRequest.gen_headers(fresp):
@@ -155,12 +155,12 @@ class RTorrentXMLRPCClient(object):
         self.methodname = methodname
 
     def __call__(self, *args):
-        res = urlsplit(self.url)
-        xmlreq = xmlrpclib.dumps(args, self.methodname)
+        res = urlparse(self.url)
+        xmlreq = xmlrpc.client.dumps(args, self.methodname)
 
         if res.scheme == 'scgi':
             xmlresp = SCGIRequest(self.url).send(xmlreq)
-            return xmlrpclib.loads(xmlresp)[0][0]
+            return xmlrpc.client.loads(xmlresp)[0][0]
         elif res.scheme == 'http':
             raise Exception('Unsupported protocol')
         elif res.scheme == '':
@@ -203,12 +203,12 @@ def print_script(response):
         response ([type]): [description]
     """
     if isinstance(response, int):
-        print response
-    elif isinstance(response, (str, unicode)):
-        print response
+        print(response)
+    elif isinstance(response, str):
+        print(response).encode('utf-8')
     else:
         for line in response:
-            print " ".join(map(unicode, line)).encode('utf-8')
+            print(" ".join(map(str, line)).encode('utf-8'))
 
 
 def main(argv):
@@ -216,42 +216,38 @@ def main(argv):
 
     Args:
         argv ([type]): [description]
-
-    Raises:
-        SystemExit: [description]
-        SystemExit: [description]
     """
     if len(argv) < 1:
-        print "No arguments."
-        raise SystemExit, -1
+        print("No arguments.")
+        exit(1)
 
     if len(argv[0]) and argv[0][0] == '-':
         output_arg = argv[0]
         argv.pop(0)
 
     if len(argv) < 2:
-        print "Too few arguments."
-        raise SystemExit, -1
+        print("Too few arguments.")
+        exit(1)
 
     host, methodname = argv[:2]
     respxml = do_scgi_xmlrpc_request(
         host, methodname, convert_params_to_native(argv[2:]))
-    result = xmlrpclib.loads(respxml)[0][0]
+    result = xmlrpc.client.loads(respxml)[0][0]
 
     if output_arg == '-p':
-        if isinstance(result, (str, unicode)):
-            print result.encode('utf-8')
+        if isinstance(result, str):
+            print(result.encode('utf-8'))
         else:
-            print result
+            print(result)
     elif output_arg == '-s':
         print_script(result)
     else:
-        print respxml
+        print(respxml)
 
 
 if __name__ == "__main__":
     try:
         main(sys.argv[1:])
-    except xmlrpclib.Fault as err:
-        print "xmlrpclib.Fault({0}): {1}".format(
-            err.faultCode, err.faultString)
+    except xmlrpc.client.Fault as err:
+        print("xmlrpc.client.Fault({0}): {1}".format(
+            err.faultCode, err.faultString))
