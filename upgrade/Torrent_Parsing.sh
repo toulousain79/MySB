@@ -58,7 +58,7 @@ for sUser in ${gsUsersList}; do
             sBasePath="$(echo "${sBasePath}" | sed -e "s/'/\\\'/g;")"
             sDirectory="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.directory ${sInfoHash}")"
             sDirectory="$(echo "${sDirectory}" | sed -e "s/'/\\\'/g;")"
-            nLeftBytes="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.get_left_bytes ${sInfoHash}")"
+            nLeftBytes="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.left_bytes ${sInfoHash}")"
             bState="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.state ${sInfoHash}")"
             sLabel="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom1 ${sInfoHash} 2>/dev/null")"
             isStart="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom5 ${sInfoHash} 2>/dev/null" | cut -d ':' -f 1)"
