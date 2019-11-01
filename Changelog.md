@@ -18,6 +18,7 @@
 - Rollback to manual download for some tools because of GitHub API Rate limit
 - Replace all service command by systemctl
 - Bind9 config review
+- DNScrypt config review _(slow restart with Bind9)_
 - NetData, inbound_packets_dropped to silent & threshold review
 - rTorrent
   - xmlrpc2scgi.py code review
