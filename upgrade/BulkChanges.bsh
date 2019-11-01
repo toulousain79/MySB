@@ -64,64 +64,6 @@ case "${1}" in
         gfnPackagesManage install
         #### To call for every upgrade - EoF
         ####################################
-
-        # PeerGuardian
-        rm -rfv /var/spool/apt-mirror/mirror/moblock-deb.sourceforge.net
-        rm -fv /etc/apt/sources.list.d/peerguardian.list
-        # shellcheck source=/dev/null
-        source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_PeerGuardian
-        install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/other/etc.pgl.pglcmd.conf.tmpl /etc/pgl/pglcmd.conf
-        gfnPeerGuardianPglcmdConf 0
-        gfnPeerGuardianAllowP2P 0
-        rm -fv /etc/pgl/ipv6.*
-        gfnPeerGuardianBlocklistsList 0 "CreateFile"
-        pglcmd restart
-
-        # Upgrade in progress page + Stop Cron service
-        # gfnUpgradeInProgress "on"
-
-        # Bind9
-        gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/Bind" 'UPGRADE'
-
-        # DNScrypt-proxy
-        bPrevious="$(cmdMySQL 'MySB_db' "SELECT dnscrypt FROM system WHERE id_system='1';")"
-        cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='DNScrypt-proxy';"
-        cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='1' WHERE id_system='1';"
-        gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/DNScrypt" 'UPGRADE'
-        cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='${bPrevious}' WHERE id_system='1';"
-
-        # Renew security rules
-        gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'create' "UPGRADE"
-
-        # Minio
-        if (gfnCheckCommand 0 /usr/local/bin/minio) && [ -f /lib/systemd/system/minio.service ]; then
-            gfnManageServices stop minio
-        fi
-        rm -fv /lib/systemd/system/minio.service
-        systemctl daemon-reload
-        cmdMySQL 'MySB_db' "DELETE FROM minio;" -v
-        userdel --remove --force minio
-        rm -fv /etc/default/minio
-        rm -rfv /etc/minio
-        rm -rfv /home/minio
-        rm -rfv /root/.mc
-
-        # Remove old binairies
-        rm -fv /usr/local/bin/npm
-        rm -fv /usr/local/bin/nodejs
-        rm -fv /usr/bin/shellcheck
-
-        # SystemD
-        install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/openvpn.service.tmpl /lib/systemd/system/openvpn.service
-        install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/nmbd.service.tmpl /lib/systemd/system/nmbd.service
-        install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/smbd.service.tmpl /lib/systemd/system/smbd.service
-        install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/rpcbind.service.tmpl /lib/systemd/system/rpcbind.service
-        systemctl disable nmbd.service
-        systemctl disable smbd.service
-        systemctl disable samba-ad-dc.service
-        systemctl disable rpcbind.service
-        systemctl disable nfs-kernel-server.service
-        systemctl daemon-reload
         ;;
 
     "AFTER" | "INIT")
@@ -247,70 +189,6 @@ case "${1}" in
             else
                 rm -vf ${file}
             fi
-        done
-
-        # Add hash files for Minio
-        for sUser in ${gsUsersList}; do
-            echo
-            echo "########## ${sUser} - Create hash files for Minio"
-
-            # Stop rTorrent session
-            gfnManageServices stop "rtorrent-${sUser}"
-
-            # Remove some things
-            rm -fv /home/${sUser}/logs/.rTorrent*.log
-            rm -rfv /home/${sUser}/torrents
-
-            # Start rTorrent session
-            gfnManageServices start "rtorrent-${sUser}"
-
-            # VARs
-            sTempSessionsFile="$(mktemp /tmp/${gsScriptName}.${sUser}.XXXXXXXXXX)"
-            find /home/${sUser}/rtorrent/.session/ -name '*.torrent' -type f >"${sTempSessionsFile}"
-            nCgiPort="$(cmdMySQL 'MySB_db' "SELECT scgi_port FROM users WHERE users_ident='${sUser}';")"
-
-            # Delete empty lines
-            sed -i '/^$/d' "${sTempSessionsFile}"
-            # Parsing session file for update torrents table
-            while [ -s "${sTempSessionsFile}" ]; do
-                while IFS= read -r sTorrentLoaded; do
-                    # Get torrent infos
-                    sInfoHash="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Hash: ' | awk '{printf $2}')"
-                    [ -z "${sInfoHash}" ] && continue
-                    sPrivacy="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Privacy: ' | awk '{printf $2}' | tr '[:upper:]' '[:lower:]')"
-                    sName="$(transmission-show "${sTorrentLoaded}" | grep -m 1 'Name: ')"
-                    sName="$(echo "${sName}" | sed -e "s/Name: //g;s/'/\\\'/g;")"
-                    sBasePath="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.base_path ${sInfoHash}")"
-                    sBasePath="$(echo "${sBasePath}" | sed -e "s/'/\\\'/g;")"
-                    sBasePath="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.base_path ${sInfoHash}")"
-                    nLeftBytes="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.left_bytes ${sInfoHash}")"
-                    # Open torrent if needed & close it again after
-                    if [ -z "${sBasePath}" ]; then
-                        su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.open ${sInfoHash}" >/dev/null
-                        sBasePath="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.base_path ${sInfoHash}")"
-                        su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.close ${sInfoHash}" >/dev/null
-                    fi
-                    [ "${nLeftBytes}" -eq 0 ] && sStatus='completed' || sStatus='inprogress'
-
-                    echo "sInfoHash: ${sInfoHash}"
-                    echo "nCgiPort: ${nCgiPort}"
-                    echo "sPrivacy: ${sPrivacy}"
-                    echo "sName: ${sName}"
-                    echo "sBasePath: ${sBasePath}"
-                    echo "nLeftBytes: ${nLeftBytes}"
-
-                    nId="$(cmdMySQL 'MySB_db' "SELECT id_torrents FROM torrents WHERE info_hash='${sInfoHash}' AND name='${sName}' AND users_ident='${sUser}';")"
-                    if [ -z "${nId}" ]; then
-                        cmdMySQL 'MySB_db' "INSERT INTO torrents (info_hash,name,privacy,state,tree,users_ident) VALUES ('${sInfoHash}', '${sName}', '${sPrivacy}', '${sStatus}', '${sBasePath}', '${sUser}');" -v
-                    else
-                        cmdMySQL 'MySB_db' "UPDATE torrents SET state='${sStatus}', tree='${sBasePath}' WHERE info_hash='${sInfoHash}' AND users_ident='${sUser}';" -v
-                    fi
-
-                    # Remove hash from file list
-                    sed -i "/$(echo "${sInfoHash}" | tr '[:lower:]' '[:upper:]')/d" "${sTempSessionsFile}"
-                done <"${sTempSessionsFile}"
-            done
-            rm -f "${sTempSessionsFile}"
         done
 
         #### Disable maintenance mode
