@@ -68,7 +68,7 @@ define('User_UserInfo_Value_CompleteDir', '/rtorrent/complete');
 define('User_UserInfo_Comment_CompleteDir', 'Les fichiers complets seront transf&eacute;r&eacute;s dans ce r&eacute;pertoire. Il est possible de le modifier via les Autotools de ruTorrent.');
 // Torrents dir
 define('User_UserInfo_Table_TorrentDir', 'R&eacute;p. Torrents');
-define('User_UserInfo_Value_TorrentDir', '/torrents');
+define('User_UserInfo_Value_TorrentDir', '/rtorrent/torrents');
 define('User_UserInfo_Comment_TorrentDir', 'Une copie de tous les torrents ajout&eacute;s directement via ruTorrent sont copi&eacute;s dans ce dossier.');
 // Watch dir
 define('User_UserInfo_Table_WatchDir', 'R&eacute;p. Watch');

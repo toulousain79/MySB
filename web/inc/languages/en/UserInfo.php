@@ -68,7 +68,7 @@ define('User_UserInfo_Value_CompleteDir', '/rtorrent/complete');
 define('User_UserInfo_Comment_CompleteDir', 'The completed files will be transferred to this directory. You can change it via Autotools of ruTorrent.');
 // Torrents dir
 define('User_UserInfo_Table_TorrentDir', 'Torrents dir');
-define('User_UserInfo_Value_TorrentDir', '/torrents');
+define('User_UserInfo_Value_TorrentDir', '/rtorrent/torrents');
 define('User_UserInfo_Comment_TorrentDir', 'A copy of all torrents added directly via ruTorrent are copied to this folder.');
 // Watch dir
 define('User_UserInfo_Table_WatchDir', 'Watch dir');
