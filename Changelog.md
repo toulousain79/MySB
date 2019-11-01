@@ -1,6 +1,6 @@
 # Changelog
 
-## v7.1 - 2019/11/01 _(start at: 2019/10/02)_
+## v7.1 - 2019/11/01 _(started at: 2019/10/02)_
 
 - rTorrent v0.9.8 _(8ac98c6)_
 - libTorrent v0.9.8 _(3cec247)_
@@ -38,7 +38,7 @@
   - remove NginX SSL stapling
   - ruTorrent _task plugin
 
-## v7.0 - 2019/09/09 _(start at: 2019/07/28)_
+## v7.0 - 2019/09/09 _(started at: 2019/07/28)_
 
 - Debian migration from Stretch to Buster
 - rTorrent v0.9.8 _(14d7121)_
@@ -81,7 +81,7 @@
 - RKhunter config review
 - use of /dev/shm instead of /tmp/tmpFS
 
-## v6.0 - 2019/06/29 _(start at: 2019/01/26)_
+## v6.0 - 2019/06/29 _(started at: 2019/01/26)_
 
 - NextCloud v16.0.1
 - rTorrent v0.9.8 _(6154d16)_
@@ -147,7 +147,7 @@
   - rTorrent_erased.sh _(when torrent is erased)_
     - remove torrent info from database
 
-## v5.4 - 2019/01/14 _(start at: 2018/09/07)_
+## v5.4 - 2019/01/14 _(started at: 2018/09/07)_
 
 - Tautulli latest _(auto)_
 - PlexMedia latest _(auto)_
@@ -167,7 +167,7 @@
 - Add continuous integration checks for GitLab
 - Add pipeline status badge
 
-## v5.3 - 2018/09/07 _(start at: 2018/03/25)_
+## v5.3 - 2018/09/07 _(started at: 2018/03/25)_
 
 - DNScrypt-proxy, review resolvers list
 - Let's Encrypt, review renew method
@@ -211,7 +211,7 @@
 - Rental
   - Add possibility to add aditional prices for options
 
-## v5.2 - 2018/03/24 _(start at: 2018/01/18)_
+## v5.2 - 2018/03/24 _(started at: 2018/01/18)_
 
 - NextCloud v13.0.1
 - Minisign v0.8.2
