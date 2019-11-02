@@ -437,11 +437,18 @@ gfnManagerUsersConfigs() {
         if [ ! -d "${gsManagerDir}/conf/users/${sUser}" ]; then mkdir -p "${gsManagerDir}/conf/users/${sUser}"; fi
         if [ ! -f "$gsManagerDir/conf/users/${sUser}/config.ini" ]; then
             install -o www-data -g www-data -m 0640 "${MySB_InstallDir}"/templates/manager/config.ini.tmpl "$gsManagerDir/conf/users/${sUser}/config.ini"
-            sed -i "s/<user_directory>/${sHomeDirEscaped}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
-            sed -i "s/<scgi_folder>/\/${sUserNameUpper}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
-            sed -i "s/port_ftp = 21/port_ftp = ${gsPort_FTP}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
-            sed -i "s/port_sftp = 22/port_sftp = ${gsPort_SSH}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
-            sed -i "s/<mail_address>/${gsMainUserEmail}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
+            # sed -i "s/<user_directory>/${sHomeDirEscaped}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
+            # sed -i "s/<scgi_folder>/\/${sUserNameUpper}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
+            # sed -i "s/port_ftp = 21/port_ftp = ${gsPort_FTP}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
+            # sed -i "s/port_sftp = 22/port_sftp = ${gsPort_SSH}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
+            # sed -i "s/<mail_address>/${gsMainUserEmail}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
+            sed -i \
+                -e "s/<user_directory>/${sHomeDirEscaped}/g;" \
+                -e "s/<scgi_folder>/\/${sUserNameUpper}/g;" \
+                -e "s/port_ftp = 21/port_ftp = ${gsPort_FTP}/g;" \
+                -e "s/port_sftp = 22/port_sftp = ${gsPort_SSH}/g;" \
+                -e "s/<mail_address>/${gsMainUserEmail}/g;" \
+                "$gsManagerDir/conf/users/${sUser}/config.ini"
             if [ "${gsMainUserName}" == "${sUser}" ]; then
                 sed -i "s/admin = no/admin = yes/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
             fi
@@ -746,31 +753,15 @@ gfnCreateRtorrentConfigFile() {
                 -e "s/#{1}schedule2=load_filter/schedule2=load_filter/g" \
                 "${sHomeDir}"/.rtorrent.rc
         fi
-        # perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" "${sHomeDir}"/.rtorrent.rc
-        # perl -pi -e "s/<bind_address>/${gsSrvIpAddress}/g" "${sHomeDir}"/.rtorrent.rc
-        # perl -pi -e "s/<local_address>/${gsSrvIpAddress}/g" "${sHomeDir}"/.rtorrent.rc
-        # perl -pi -e "s/<username>/${sUser}/g" "${sHomeDir}"/.rtorrent.rc
-        # perl -pi -e "s/<homedir>/\/home\/${sUser}/g" "${sHomeDir}"/.rtorrent.rc
-        # perl -pi -e "s/<scgi_port>/${nPortSCGI}/g" "${sHomeDir}"/.rtorrent.rc
-        # perl -pi -e "s/<port_range>/${nPortRtorrent}-${nPortRtorrent}/g" "${sHomeDir}"/.rtorrent.rc
-        # if [ "${gsMySB_PeerBlock}" == "rTorrent" ]; then
-        #     perl -pi -e "s/#{1}ipv4_filter.load/ipv4_filter.load/g" "${sHomeDir}"/.rtorrent.rc
-        #     perl -pi -e "s/#{1}print/print/g" "${sHomeDir}"/.rtorrent.rc
-        #     perl -pi -e "s/#{1}schedule2=load_filter/schedule2=load_filter/g" "${sHomeDir}"/.rtorrent.rc
-        # fi
 
         # UDP ?
         bActiveUdp="$(cmdMySQL 'MySB_db' "SELECT annoncers_udp FROM system WHERE id_system='1';")"
         if [ "${bActiveUdp}" -eq 1 ]; then
-            # perl -pi -e "s/^trackers.use_udp.set = no/trackers.use_udp.set = yes/g" "${sHomeDir}"/.rtorrent.rc
-            # perl -pi -e "s/^trackers.use_udp.set = 0/trackers.use_udp.set = 1/g" "${sHomeDir}"/.rtorrent.rc
             sed -i \
                 -e "s/^trackers.use_udp.set = no/trackers.use_udp.set = yes/g" \
                 -e "s/^trackers.use_udp.set = 0/trackers.use_udp.set = 1/g" \
                 "${sHomeDir}"/.rtorrent.rc
         else
-            # perl -pi -e "s/^trackers.use_udp.set = yes/trackers.use_udp.set = no/g" "${sHomeDir}"/.rtorrent.rc
-            # perl -pi -e "s/^trackers.use_udp.set = 1/trackers.use_udp.set = 0/g" "${sHomeDir}"/.rtorrent.rc
             sed -i \
                 -e "s/^trackers.use_udp.set = yes/trackers.use_udp.set = no/g" \
                 -e "s/^trackers.use_udp.set = 1/trackers.use_udp.set = 0/g" \
@@ -797,10 +788,8 @@ gfnCreateRtorrentConfigFile() {
             *) perl -pi -e "s/^system.file.allocate.set = yes/system.file.allocate.set = no/g" "${sHomeDir}"/.rtorrent.rc ;;
         esac
 
-        # Remove commented lines
-        sed -i '/^#/d' "${sHomeDir}"/.rtorrent.rc
-        # Delete empty lines
-        sed -i '/^$/d' "${sHomeDir}"/.rtorrent.rc
+        # Remove commented and empty lines
+        sed -i '/^#/d;/^$/d;' "${sHomeDir}"/.rtorrent.rc
 
         # Watch directories
         if [ -n "${sDirectories}" ]; then
@@ -819,7 +808,6 @@ gfnCreateRtorrentConfigFile() {
             if [ -f "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini" ]; then
                 nNumLine=$(sed -n "/\[autotools\]/=" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini")
                 sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
-                sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                 echo "[autotools]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                 echo "enabled = off" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
             fi
@@ -830,7 +818,6 @@ gfnCreateRtorrentConfigFile() {
             # Enabling 'autotools' plugins
             if [ -f "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini" ]; then
                 nNumLine=$(sed -n "/\[autotools\]/=" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini")
-                sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                 sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                 echo "[autotools]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                 echo "enabled = user-defined" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
