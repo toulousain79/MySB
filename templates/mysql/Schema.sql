@@ -354,6 +354,7 @@ CREATE TABLE IF NOT EXISTS `torrents` (
   `tree` varchar(1024) NOT NULL DEFAULT '',
   `torrent` varchar(2048) NOT NULL DEFAULT '',
   `users_ident` varchar(32) NOT NULL DEFAULT '',
+  `is_recycled` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_torrents`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 /*!40101 SET character_set_client = @saved_cs_client */;
