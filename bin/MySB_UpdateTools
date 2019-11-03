@@ -60,6 +60,7 @@ fi
 ####################
 
 bRtorrentRestart=0
+bSchemaUpgrade=0
 gfnListCountUsers 'normal'
 
 #### ruTorrent
@@ -78,7 +79,11 @@ for sUser in ${gsUsersList}; do
     (! grep -q 'rev 0.6' "/home/${sUser}/.rtorrent.rc") && bRtorrentRestart=1
     (! grep -q 'rev 0.10' "/home/${sUser}/.rTorrent_erased.sh") && bRtorrentRestart=1
     (! grep -q 'rev 0.10' "/home/${sUser}/.rTorrent_finished.sh") && bRtorrentRestart=1
-    (! grep -q 'rev 0.11' "/home/${sUser}/.rTorrent_inserted_new.sh") && bRtorrentRestart=1
+    if (! grep -q 'rev 0.11' "/home/${sUser}/.rTorrent_inserted_new.sh"); then
+        bRtorrentRestart=1
+        # To remove on next script version upgrade !
+        bSchemaUpgrade=1
+    fi
     (! grep -q 'rev 0.8' "/home/${sUser}/.rTorrent_tasks.sh") && bRtorrentRestart=1
     (! grep -q 'rev 0.9' "/home/${sUser}/scripts/synchro.sh") && bRtorrentRestart=1
 done
@@ -115,6 +120,12 @@ fi
 if (! grep -q 'rev 0.6' /etc/cron.d/MySB_jobs_check); then
     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/Cron" 'UPGRADE'
 fi
+
+####################
+if [[ ${bSchemaUpgrade} -eq 1 ]]; then
+    cmdMySQL 'MySB_db' "ALTER TABLE torrents ADD is_recycled TINYINT(1) NOT NULL DEFAULT '0' AFTER users_ident;" -v
+fi
+####################
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after
