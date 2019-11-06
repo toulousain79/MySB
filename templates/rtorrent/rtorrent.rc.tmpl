@@ -44,6 +44,33 @@
 ######################################################################
 
 ####################
+#### Method
+####################
+
+## Some additional values and commands
+method.insert = cfg.basedir,         private|const|string, (cat, "/home/<username>/rtorrent/")
+method.insert = cfg.config,          private|const|string, (cat, (cfg.basedir), "config.d/")
+method.insert = cfg.complete,        private|const|string, (cat,(cfg.basedir),"complete/")
+method.insert = cfg.session,         private|const|string, (cat,(cfg.basedir),".session/")
+#method.insert = cfg.watch,           private|const|string, (cat,(cfg.basedir),"watch/")
+method.insert = system.startup_time, value|const,          (system.time)
+method.insert = d.data_path, simple,\
+    "if=(d.is_multi_file),\
+        (cat, (d.directory), /),\
+        (cat, (d.directory), /, (d.name))"
+method.insert = d.session_file,      simple,                "cat=(session.path), (d.hash), .torrent"
+#method.insert = cfg.logfile,        private|const|string,  (cat,"/dev/stdout")
+#method.insert = cfg.dht_session,     private|const|string,  (cat,(cfg.basedir), ".dht_session/")
+
+# When a torrent is added, it executes ".rTorrent_inserted_new.sh".
+method.set_key = event.download.inserted_new,on_inserted_new0,"execute2={bash,~/.rTorrent_inserted_new.sh,$d.hash=,$d.name=,$d.directory=,$d.loaded_file=,$d.custom2=,$d.custom1=}"
+# When the torrent is finished, it executes ".rTorrent_finished.sh".
+method.set_key = event.download.finished,on_finished0,"execute2={bash,~/.rTorrent_finished.sh,$d.hash=,$d.base_path=,$d.directory=,$d.name=,$d.loaded_file=,$d.custom1=}"
+# When a torrent is erased, it executes ".rTorrent_erased.sh".
+method.set_key = event.download.erased,on_erase0,"execute2={bash,~/.rTorrent_erased.sh,$d.hash=,$d.name=,$d.directory=}"
+
+
+####################
 #### Network
 ####################
 
@@ -89,18 +116,25 @@ network.http.ssl_verify_host.set = 1
 #network.max_open_sockets.set = 300
 
 ## XMLRPC
-network.xmlrpc.size_limit.set = 4M
+#network.xmlrpc.size_limit.set = 4M
+network.xmlrpc.size_limit.set = 16M
 
-## SCGI
+## Control via XMLRPC sockets, local UNIX socket
+#network.scgi.open_local = (cat,(session.path),rpc.socket)
+
+## Control via XMLRPC sockets, inet socket
 network.scgi.open_port = 127.0.0.1:<scgi_port>
 #network.scgi.dont_route.set =
 
 ## HTTP
-network.http.dns_cache_timeout.set = 30
+network.http.dns_cache_timeout.set = 25
 
 ####################
 #### System
 ####################
+
+## Run the rTorrent process as a daemon in the background, mandatory for XMLRPC since rTorrent 0.9.7
+system.daemon.set = true
 
 ## Whether to allocate disk space for a new torrent. Default: `0`
 system.file.allocate.set = 1
@@ -123,8 +157,8 @@ system.file.split_size.set = -1
 # system.umask.set = 0017
 
 ## Changes the working directory of the process using chdir.
-#system.cwd.set = (directory.default)
-system.cwd.set = /home/<username>/rtorrent
+system.cwd.set = (directory.default)
+#system.cwd.set = /home/<username>/rtorrent
 
 ####################
 #### Memory/Pieces
@@ -137,7 +171,8 @@ pieces.hash.on_completion.set = 0
 ## Set the max amount of memory space used to mapping file chunks.
 ## This may also be set using ulimit -m where 3/4 will be allocated to file chunks.
 ## # nb does not refer to physical memory
-pieces.memory.max.set = 3500M
+#pieces.memory.max.set = 3500M
+pieces.memory.max.set = 512M
 
 ## Always use MS_SYNC rather than MS_ASYNC when syncing chunks.
 ## This may be nessesary in case of filesystem bugs like NFS in linux ~2.6.13.
@@ -156,7 +191,8 @@ pieces.memory.max.set = 3500M
 ####################
 
 ## Set the default download directory. Defaults to "./".
-directory.default.set = ~/rtorrent/complete
+#directory.default.set = ~/rtorrent/complete
+directory.default.set = (cat, (cfg.complete))
 
 
 ####################
@@ -166,13 +202,16 @@ directory.default.set = ~/rtorrent/complete
 ## Session management will be enabled and the torrent files for all open downloads will be stored in this directory.
 ## Only one instance of rtorrent should be used with each session directory, though at the moment no locking is done.
 ## An empty string will disable the session directory.
-session.path.set = ~/rtorrent/.session
+#session.path.set = ~/rtorrent/.session
+session.path.set =(cat, (cfg.session))
 
 ## Controls if the session torrent is saved when a torrent finishes. By default on.
 session.on_completion.set = 1
 
-## Controls if a lock file is created in the session directory on startup.
-session.use_lock.set = 1
+## There is no point in using lock file in a docker container since it will only
+## give you major headaches if the process dies unexpectedly.
+## Moreover, be sure to not use the same session volume with more than one container.
+session.use_lock.set = 0
 
 
 ####################
@@ -227,30 +266,6 @@ protocol.pex.set = 0
 
 
 ####################
-#### Method
-####################
-
-## Some additional values and commands
-method.insert = system.startup_time, value|const, (system.time)
-method.insert = d.data_path, simple, "if=(d.is_multi_file),(cat, (d.directory), /),(cat, (d.directory), /, (d.name))"
-method.insert = d.session_file, simple, "cat=(~/rtorrent/.session), (d.hash), .torrent"
-
-# When a torrent is added, it executes ".rTorrent_inserted_new.sh".
-method.set_key = event.download.inserted_new,on_inserted_new0,"execute2={bash,~/.rTorrent_inserted_new.sh,$d.hash=,$d.name=,$d.directory=,$d.loaded_file=,$d.custom2=,$d.custom1=}"
-# When the torrent is finished, it executes ".rTorrent_finished.sh".
-method.set_key = event.download.finished,on_finished0,"execute2={bash,~/.rTorrent_finished.sh,$d.hash=,$d.base_path=,$d.directory=,$d.name=,$d.loaded_file=,$d.custom1=}"
-# When a torrent is erased, it executes ".rTorrent_erased.sh".
-method.set_key = event.download.erased,on_erase0,"execute2={bash,~/.rTorrent_erased.sh,$d.hash=,$d.name=,$d.directory=}"
-
-# Include split config files from '~/rtorrent/config.d'
-# https://rtorrent-docs.readthedocs.io/en/latest/use-cases.html#drop-in-config
-#method.insert = cfg.drop_in, private|const|string, (cat, (cfg.basedir), "config.d/")
-#execute.nothrow = sh, -c, (cat,\
-#    "find ", (cfg.drop_in), " -name '*.rc' ",\
-#    "| sort | sed -re 's/^/import=/' > ", (cfg.drop_in), ".import")
-#try_import = (cat, (cfg.drop_in), ".import")
-
-####################
 #### DHT
 ####################
 
@@ -279,11 +294,12 @@ dht.mode.set = disable
 #
 ## Watch a directory for new torrents, and stop those that have been deleted
 schedule2 = watch_directory,5,5,"load.normal=~/rtorrent/watch/*.torrent,d.directory.set=~/rtorrent/complete/,d.custom1.set=,d.custom2.set=~/rtorrent/torrents/"
+
 ## Close torrents when diskspace is low.
-schedule2 = low_diskspace,5,60,close_low_diskspace=100M
+schedule2 = low_diskspace,5,60,close_low_diskspace=500M
 ## Periodically save session data
 #schedule2 = session_save, 1200, 3600, ((session.save))
-schedule2 = session_save,240,300,session_save=~/rtorrent/.session
+schedule2 = session_save,240,300,session_save=(cfg.session))
 
 
 ####################
@@ -375,14 +391,34 @@ log.add_output = "thread_info", "thread"
 log.open_file = "torrent", "~/logs/torrent.log"
 log.add_output = "torrent_info", "torrent"
 
+
+## Logging:
+##   Levels = critical error warn notice info debug
+#log.open_file = "log", (cfg.logfile)
+#log.add_output = "info", "log"
+#log.add_output = "torrent_info", "log"
+
 ####################
 #### Execution
 ####################
 
 # Init ruTorrent Plugins
 execute2 = {sh,-c,/usr/bin/php <InstallDir>/web/apps/ru/php/initplugins.php <username> &}
+# PID
+execute.nothrow = sh, -c, (cat, "echo >",\
+    (session.path), "rtorrent.pid", " ",(system.pid))
+# Config.d
+execute.nothrow = sh, -c, (cat,\
+    "find ", (cfg.config), " -name '*.rc' ",\
+    "| sort | sed -re 's/^/import=/' > ", (cfg.config), ".import")
+# DHT session
+#execute.throw = sh, -c, (cat, "mkdir -p " , (cfg.dht_session))
+# RPC Socket
+#execute.nothrow = chmod,770,(cat,(session.path),rpc.socket)
 
 ####################
 #### Imports
 ####################
-try_import = (cat, (cfg.drop_in), ".import")
+# Include split config files from '~/rtorrent/config.d'
+# https://rtorrent-docs.readthedocs.io/en/latest/use-cases.html#drop-in-config
+try_import = (cat, (cfg.config), ".import")
