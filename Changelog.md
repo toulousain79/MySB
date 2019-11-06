@@ -1,5 +1,12 @@
 # Changelog
 
+## v7.2 - xxxx/xx/xx _(started at: 2019/10/03)_
+
+- Plex, force allowedNetworks to 127.0.0.1
+- IPtables
+  - block output SSDP trafic
+  - block input Proxy-Gateway trafic
+
 ## v7.1 - 2019/11/01 _(started at: 2019/10/02)_
 
 - rTorrent v0.9.8 _(8ac98c6)_
