@@ -485,6 +485,7 @@ gfnRuTorrentUsersConfigs() {
     # conf
     if [ ! -d "${gsRutorrentDir}/conf/users/${sUser}/" ]; then mkdir -p "${gsRutorrentDir}/conf/users/${sUser}/"; fi
     install -o www-data -g www-data -m 0755 "${MySB_InstallDir}"/templates/rutorrent/config.php.tmpl "${gsRutorrentDir}/conf/users/${sUser}/config.php"
+    install -o www-data -g www-data -m 0755 "${MySB_InstallDir}"/templates/rutorrent/access-swap.sh.tmpl "${gsRutorrentDir}/conf/users/${sUser}/access-swap.sh"
     # perl -pi -e "s/<topDirectory>/${sHomeDirEscaped}/g" "${gsRutorrentDir}/conf/users/${sUser}/config.php"
     # perl -pi -e "s/<log_file>/${sHomeDirEscaped}\/logs\/rutorrent.log/g" "${gsRutorrentDir}/conf/users/${sUser}/config.php"
     # perl -pi -e "s/<RPC>/${sUserUpper}/g" "${gsRutorrentDir}/conf/users/${sUser}/config.php"
@@ -500,7 +501,8 @@ gfnRuTorrentUsersConfigs() {
     # if [ -f "${gsRutorrentDir}"/conf/access.ini ]; then cp "${gsRutorrentDir}"/conf/access.ini "${gsRutorrentDir}/conf/users/${sUser}/access.ini"; fi
     install -o www-data -g www-data -m 0755 "${MySB_InstallDir}"/templates/rutorrent/access.ini.tmpl "${gsRutorrentDir}/conf/users/${sUser}/access.ini"
     install -o www-data -g www-data -m 0755 "${MySB_InstallDir}"/templates/rutorrent/plugins.ini.tmpl "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
-    # chown :www-data "${sHomeDir}/logs/rutorrent.log"
+    touch "${sHomeDir}/logs/rutorrent.log"
+    chown :www-data "${sHomeDir}/logs/rutorrent.log"
 
     for sPlugin in ${sPluginsList}; do
         bIsActive="$(cmdMySQL 'MySB_db' "SELECT active FROM repositories WHERE dir LIKE '%/${sPlugin}';")"
@@ -562,8 +564,13 @@ gfnRuTorrentUsersConfigs() {
                         echo "enabled = user-defined" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                         ;;
                     '_cloudflare')
-                        echo "[${sPlugin}]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
-                        echo "enabled = off" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                        nNumLine=$(sed -n "/\[${sPlugin}\]/=" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini")
+                        if [[ ${nNumLine} -gt 0 ]]; then
+                            sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                            sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                            echo "[${sPlugin}]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                            echo "enabled = off" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                        fi
                         ;;
                     *)
                         # 3) Enable it for each user
@@ -826,6 +833,7 @@ gfnCreateRtorrentConfigFile() {
             if [ -f "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini" ]; then
                 nNumLine=$(sed -n "/\[autotools\]/=" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini")
                 sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
+                sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                 echo "[autotools]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                 echo "enabled = off" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
             fi
@@ -836,6 +844,7 @@ gfnCreateRtorrentConfigFile() {
             # Enabling 'autotools' plugins
             if [ -f "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini" ]; then
                 nNumLine=$(sed -n "/\[autotools\]/=" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini")
+                sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                 sed -i "${nNumLine}d" "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                 echo "[autotools]" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
                 echo "enabled = user-defined" >>"${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
