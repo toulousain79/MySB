@@ -178,12 +178,11 @@ gfnPeerGuardianFailed() {
                 fi
 
                 if [ -f /home/"${sUser}"/.rtorrent.rc ]; then
-                    # perl -pi -e "s/^#ipv4_filter.load/ipv4_filter.load/g" /home/"${sUser}"/.rtorrent.rc
-                    # perl -pi -e "s/^#print/print/g" /home/"${sUser}"/.rtorrent.rc
-                    sed -i \
-                        -e "s/^#ipv4_filter.load/ipv4_filter.load/g" \
-                        -e "s/^#print/print/g" \
-                        /home/"${sUser}"/.rtorrent.rc
+                    {
+                        echo 'ipv4_filter.load = (cat,(cfg.blocklistdir),"blocklist_rtorrent.txt"),unwanted'
+                        echo 'schedule2 = load_filter,0,24:00:00,"ipv4_filter.load = (cat,(cfg.blocklistdir),"blocklist_rtorrent.txt"),unwanted"'
+                        echo 'print = "IPv4 filter list size data:",(to_kb,(ipv4_filter.size_data))," kb."'
+                    } >/home/"${sUser}"/rtorrent/config.d/80-blocklist.rc
 
                     if (systemctl status rtorrent-"${sUser}" >/dev/null); then
                         gfnStatusLSB 0
@@ -198,12 +197,11 @@ gfnPeerGuardianFailed() {
             "PeerGuardian")
                 if [ -f /home/"${sUser}"/.rtorrent.rc ]; then
                     if (grep -q '^ipv4_filter.load' /home/"${sUser}"/.rtorrent.rc); then
-                        # perl -pi -e "s/^ipv4_filter.load/#ipv4_filter.load/g" /home/"${sUser}"/.rtorrent.rc
-                        # perl -pi -e "s/^print/#print/g" /home/"${sUser}"/.rtorrent.rc
-                        sed -i \
-                            -e "s/^ipv4_filter.load/#ipv4_filter.load/g" \
-                            -e "s/^print/#print/g" \
-                            /home/"${sUser}"/.rtorrent.rc
+                        {
+                            echo '#ipv4_filter.load = (cat,(cfg.blocklistdir),"blocklist_rtorrent.txt"),unwanted'
+                            echo '#schedule2 = load_filter,0,24:00:00,"ipv4_filter.load = (cat,(cfg.blocklistdir),"blocklist_rtorrent.txt"),unwanted"'
+                            echo '#print = "IPv4 filter list size data:",(to_kb,(ipv4_filter.size_data))," kb."'
+                        } >/home/"${sUser}"/rtorrent/config.d/80-blocklist.rc
 
                         if (systemctl status rtorrent-"${sUser}" >/dev/null); then
                             gfnStatusLSB 0
@@ -405,7 +403,7 @@ gfnPeerGuardianBlocklistsList() {
             if [ -f /etc/pgl/pglcmd.conf ] && [ -f /etc/pgl/blocklists.list ]; then
                 # /etc/pgl/blocklists.list
                 [ "${bDisplay}" -eq 1 ] && log_daemon_msg "${Peerguardian_AddingSelectedBlocklist}"
-                (   
+                (
                     cat <<'EOF'
 # blocklists.list - lists the remote blocklists that pglcmd handles.
 
@@ -452,7 +450,7 @@ gfnPeerGuardianAllowP2P() {
     if [ -f /etc/pgl/pglcmd.conf ] && [ -f /etc/pgl/allow.p2p ]; then
         # /etc/pgl/allow.p2p
         if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_PermissionSelectedTrackers}"; fi
-        (   
+        (
             cat <<'EOF'
 # allow.p2p - allow list for pglcmd
 #

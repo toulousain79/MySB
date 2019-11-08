@@ -6,6 +6,9 @@
 - IPtables
   - block output SSDP trafic
   - block input Proxy-Gateway trafic
+- Docker
+  - add Supervisor
+  - rTorrent image
 
 ## v7.1 - 2019/11/01 _(started at: 2019/10/02)_
 
