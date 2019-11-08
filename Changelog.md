@@ -7,7 +7,8 @@
   - block output SSDP trafic
   - block input Proxy-Gateway trafic
 - Docker
-  - add Supervisor
+  - add [Supervisor](http://supervisord.org/index.html)
+  - add [Composerize](https://github.com/magicmark/composerize)
   - rTorrent image
 
 ## v7.1 - 2019/11/01 _(started at: 2019/10/02)_

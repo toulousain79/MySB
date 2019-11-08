@@ -1,5 +1,5 @@
 #!/bin/bash
-# rev 1.0
+# rev 2.0
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -55,23 +55,27 @@ source /lib/lsb/init-functions || exit 0
 gsUsername="<username>"        # Username to run rtorrent under
 gsHomeDir="/home/${gsUsername}"     # User home dir
 gsSessionDir="${gsHomeDir}/rtorrent/.session"   # rTorrent session directory
-gsPidFile="/run/rtorrent/${gsUsername}.pid" # PID file
-gsSockFile="/run/rtorrent/${gsUsername}.sock" # Sock file
-gsLockFile="$gsSessionDir/rtorrent.lock"   # Lock file
+gsPidFile="${gsSessionDir}/${gsUsername}.pid" # PID file
 gsBinName="rtorrent-${gsUsername}"
 gsBinDesc="rTorrent for ${gsUsername}"
 #------------------------------------------------------------
 # Binary
 #------------------------------------------------------------
 # rTorrent bin
-sRequest="$(cmdMySQL 'MySB_db' "SELECT rtorrent_version,scgi_port FROM users WHERE users_ident='${gsUsername}';" | sed 's/\t/|/g;')"
+sRequest="$(cmdMySQL 'MySB_db' "SELECT rtorrent_version,scgi_port,rtorrent_port FROM users WHERE users_ident='${gsUsername}';" | sed 's/\t/|/g;')"
 rTorrentVersion="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[1]}')"
-sCgiPort="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[2]}')"
-case "$rTorrentVersion" in
+nPortCgi="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[2]}')"
+nPortRtorrent="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[3]}')"
+case "${rTorrentVersion}" in
     "v0.9.7") binRtorrent="/usr/bin/rtorrent" ;;
     "v0.9.8") binRtorrent="/usr/local/bin/rtorrent" ;;
     *) binRtorrent="/usr/bin/rtorrent" ;;
 esac
+bActiveUdp="$(cmdMySQL 'MySB_db' "SELECT annoncers_udp FROM system WHERE id_system='1';")"
+nUid=$(id "${gsUsername}" -u)
+bGuid=$(id "${gsUsername}" -g)
+bGuidMysbUsers=$(grep MySB_users /etc/group | awk -F: '{ print $3 }')
+
 binScreen="/usr/bin/screen" # Screen binary
 #------------------------------------------------------------
 # Log
@@ -94,23 +98,9 @@ gsLogFile="${gsHomeDir}/logs/rTorrentInit.log"
 # Functions - Begin
 #------------------------------------------------------------
 
-## Create PID file for rTorrent
-gfnCreatePidFile() {
-    sleep 1
-    if [ -e "${gsLockFile}" ]; then
-        cat "${gsLockFile}" | awk -F: '{print($2)}' | sed "s/[^0-9]//g" >"${gsPidFile}"
-        echo "Create rTorrent PID file: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>"${gsLogFile}"
-    fi
-}
-
 ## Delete PID file and rtorrent.lock
-gfnDeletePidLockFile() {
-    if [ -e "${gsPidFile}" ]; then
-        pidofproc -p "${gsPidFile}" ${binScreen} &>/dev/null || rm -f "${gsPidFile}" "${gsLockFile}" 2>>"${gsLogFile}"
-    fi
-    (rm -vf "${gsLockFile}" >>"${gsLogFile}") && echo "Delete rTorrent LOCK file: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>"${gsLogFile}"
+gfnDeletePidFile() {
     (rm -vf "${gsPidFile}" >>"${gsLogFile}") && echo "Delete rTorrent PID file: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>"${gsLogFile}"
-    (rm -vf "${gsSockFile}" >>"${gsLogFile}") && echo "Delete rTorrent Sock file: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>"${gsLogFile}"
 }
 
 ## mount share dir for seedbox users
@@ -155,10 +145,10 @@ gfnMountTorrentsDir() {
 
 ## Add/Remove cronjob
 gfnDoCrontab() {
-    if [ -n "$1" ]; then
+    if [ -n "${1}" ]; then
         crontab -l >/tmp/crontab.tmp
         sed -i "/${gsUsername}/d" /tmp/crontab.tmp
-        case "$1" in
+        case "${1}" in
             'add') echo "*/5 * * * * /bin/bash /home/${gsUsername}/.rTorrent_tasks.sh status" | tee -a /tmp/crontab.tmp ;;
         esac
         crontab /tmp/crontab.tmp
@@ -170,9 +160,6 @@ gfnDoCrontab() {
 # Function that starts the daemon/service
 #
 gfnDoStart() {
-    # /run/rtorrent
-    install -v -o root -g MySB_users -m 0775 -d "/run/rtorrent"
-
     # Mount
     gfnMountShareDir 'mount'
     gfnMountTorrentsDir 'mount'
@@ -185,10 +172,10 @@ gfnDoStart() {
     : >"/home/${gsUsername}/.check_annoncers"
 
     # Kill all processes
-    for pid in $(ps faux | grep 'GetTrackersCert.bsh USER "${gsUsername}"' | grep -v 'grep' | awk '{ print $2; }'); do kill -9 $pid; done
+    for pid in $(ps faux | grep 'GetTrackersCert.bsh USER "${gsUsername}"' | grep -v 'grep' | awk '{ print $2; }'); do kill -9 ${pid}; done
 
     # Remove all TCP socket
-    [ -n "${sCgiPort}" ] && fuser -k "${sCgiPort}"/tcp >/dev/null
+    [ -n "${nPortCgi}" ] && fuser -k "${nPortCgi}"/tcp >/dev/null
 
     # Create config file
     # shellcheck source=inc/funcs_by_script/funcs_MySB_CreateUser
@@ -198,25 +185,52 @@ gfnDoStart() {
     gfnPluginDiskspaceQuotaIncluded "${gsUsername}"
 
     # Delete ghost pid and lock file
-    gfnDeletePidLockFile
+    gfnDeletePidFile
 
-    # Return
-    #   0 if daemon has been started
-    #   1 if daemon was already running
-    #   2 if daemon could not be started
-    start-stop-daemon --start --quiet --background --make-pidfile --test \
-        --pidfile "${gsPidFile}" \
-        --chuid "${gsUsername}" \
-        --exec ${binScreen} \
-        -- -DmUS ${gsBinName} ${binRtorrent} \
-        2>>"${gsLogFile}" || return 1
+    # Composerize
+    cd "${MySB_InstallDir}"/docker || exit 1
+    [ -f docker-compose.yml ] && rm -f docker-compose.yml
+    aCompose=("docker" "run" "--env USERNAME=${gsUsername}" "--env PUID=${nUid}" "--env PGID=${bGuid}" "--env PGID_MySB_users=${bGuidMysbUsers}")
+    aCompose+=("--env PORT_CGI=${nPortCgi}" "--env PORT_RTORRENT=${nPortRtorrent}" "--env USE_UDP=${bActiveUdp}" "--env TZ=${gsTimeZone}")
+    aCompose+=("-p ${nPortCgi}:${nPortCgi}/tcp" "-p ${nPortRtorrent}:${nPortRtorrent}/tcp")
+    aCompose+=("-p 9001:9001/tcp")
+    [[ ${bActiveUdp} -eq 1 ]] && aCompose+=("-p ${nPortRtorrent}:${nPortRtorrent}/udp")
+    aCompose+=("-v /home:/home" "-v ${gsRutorrentDir}:${gsRutorrentDir}")
+    aCompose+=("-v /etc/localtime:/etc/localtime:ro" "-v /home/.config.cnf:/home/.config.cnf:ro")
+    aCompose+=("-v /var/run/mysqld/mysqld.sock:/var/run/mysqld/mysqld.sock")
+    aCompose+=("--restart unless-stopped" "--name rtorrent-${gsUsername}")
+    aCompose+=("registry.gitlab.com/toulousain79/mysb_images/rtorrent/rtorrent:dev")
 
-    start-stop-daemon --start --quiet --background --make-pidfile \
-        --pidfile "${gsPidFile}" \
-        --chuid "${gsUsername}" \
-        --exec ${binScreen} \
-        -- -DmUS ${gsBinName} ${binRtorrent} \
-        2>>"${gsLogFile}" || return 2
+    # composerize \
+    # docker run \
+    # --env TZ="${gsTimeZone}" \
+    # --env USERNAME="${gsUsername}" \
+    # --env PORT_RTORRENT=${nPortRtorrent} \
+    # --env PORT_CGI=${nPortCgi} \
+    # --env USE_UDP=${bActiveUdp} \
+    # --env PUID=${nUid} \
+    # --env PGID=${bGuid} \
+    # --env PGID_MySB_users=${bGuidMysbUsers} \
+    # -p 9001:9001/tcp \
+    # -p ${nPortRtorrent}:${nPortRtorrent}/tcp \
+    # -p ${nPortRtorrent}:${nPortRtorrent}/udp \
+    # -p ${nPortCgi}:${nPortCgi}/tcp \
+    # -v /home:/home \
+    # -v ${gsRutorrentDir}:${gsRutorrentDir} \
+    # -v /etc/localtime:/etc/localtime:ro \
+    # -v /home/.config.cnf:/home/.config.cnf:ro \
+    # -v /var/run/mysqld/mysqld.sock:/var/run/mysqld/mysqld.sock \
+    # --restart unless-stopped \
+    # --network frontend \
+    # --name rtorrent-${gsUsername} registry.gitlab.com/toulousain79/mysb_images/rtorrent/rtorrent:dev
+    composerize "${aCompose[@]}"
+
+    if [ -f docker-compose.yml ]; then
+        sed 's/3.3/3.7/g;' docker-compose.yml
+        mv -f docker-compose.yml "rtorrent-${gsUsername}.yml"
+    fi
+
+    docker-compose -f "rtorrent-${gsUsername}.yml" up -d && return 0 || return 1
 }
 
 #
@@ -229,21 +243,7 @@ gfnDoStop() {
     gfnMountShareDir 'umount'
     gfnMountTorrentsDir 'umount'
 
-    # Return
-    #   0 if daemon has been stopped
-    #   1 if daemon was already stopped
-    #   2 if daemon could not be stopped
-    #   other if a failure occurred
-    start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile "${gsPidFile}" --exec ${binScreen} 2>>"${gsLogFile}"
-    nReturn="$?"
-
-    sGhostProcess="$(ps ax | grep "rtorrent-${gsUsername} /usr/bin/rtorrent" | grep -v 'grep' | awk '{ print $1 }')"
-    [ -n "${sGhostProcess}" ] && kill -9 ${sGhostProcess}
-    sGhostProcess="$(ps ax | grep "rtorrent-${gsUsername} /usr/local/bin/rtorrent" | grep -v 'grep' | awk '{ print $1 }')"
-    [ -n "${sGhostProcess}" ] && kill -9 ${sGhostProcess}
-    gfnDeletePidLockFile
-
-    return "${nReturn}"
+    docker-compose -f "rtorrent-${gsUsername}.yml" down && return 0 || return 1
 }
 
 #
@@ -251,15 +251,6 @@ gfnDoStop() {
 #
 gfnDoReload() {
     echo "RELOAD: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>"${gsLogFile}"
-    # Delete ghost screen pid file
-    if [ -e "${gsPidFile}" ]; then
-        pidofproc -p "${gsPidFile}" "${binScreen}" &>/dev/null || rm -f "${gsPidFile}"
-    fi
-
-    # Delete ghost rtorrent lock file
-    if [ -e "${gsPidFile}" ]; then
-        pidofproc -p "${gsPidFile}" "${binScreen}" &>/dev/null || rm -f "${gsPidFile}" "${gsLockFile}" 2>>"${gsLogFile}"
-    fi
 
     start-stop-daemon --stop --signal HUP --quiet --pidfile "${gsPidFile}" --exec ${binScreen} 2>>"${gsLogFile}"
     return $?
@@ -269,22 +260,15 @@ gfnDoReload() {
 # Function stop case
 #
 gfnRestartStopCase() {
-    gfnDoStart
-    case "$?" in
+    case gfnDoStart in
         0)
             echo "RESTART: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>"${gsLogFile}"
-            gfnCreatePidFile
             cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='${gsUsername}';"
             log_end_msg 0
             ;;
-        1) # Old process is still running
-            echo "Could not be restarted, old process is still running: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>"${gsLogFile}"
-            gfnCreatePidFile
-            log_end_msg 1
-            ;;
         *) # Failed to start
             echo "Could not be restarted: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>"${gsLogFile}"
-            gfnDeletePidLockFile
+            gfnDeletePidFile
             log_end_msg 1
             ;;
     esac
@@ -332,18 +316,16 @@ case "$1" in
         case "$?" in
             0)
                 echo "START: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>"${gsLogFile}"
-                gfnCreatePidFile
                 cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='${gsUsername}';"
                 log_end_msg 0
                 ;;
             1)
                 echo "Already running: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>"${gsLogFile}"
-                gfnCreatePidFile
                 log_end_msg 0
                 ;;
             2)
                 echo "Could not be started: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>"${gsLogFile}"
-                gfnDeletePidLockFile
+                gfnDeletePidFile
                 log_end_msg 1
                 ;;
         esac
@@ -369,10 +351,9 @@ case "$1" in
         ;;
     'restart')
         log_daemon_msg "Restarting ${gsBinDesc}" "${gsBinName}"
-        gfnDoStop
-        case "$?" in
+        case gfnDoStop in
             0) gfnRestartStopCase ;;
-            1)
+            *)
                 gfnDoStop
                 gfnRestartStopCase
                 ;;
