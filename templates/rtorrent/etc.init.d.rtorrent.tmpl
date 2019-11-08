@@ -66,11 +66,6 @@ sRequest="$(cmdMySQL 'MySB_db' "SELECT rtorrent_version,scgi_port,rtorrent_port 
 rTorrentVersion="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[1]}')"
 nPortCgi="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[2]}')"
 nPortRtorrent="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[3]}')"
-case "${rTorrentVersion}" in
-    "v0.9.7") binRtorrent="/usr/bin/rtorrent" ;;
-    "v0.9.8") binRtorrent="/usr/local/bin/rtorrent" ;;
-    *) binRtorrent="/usr/bin/rtorrent" ;;
-esac
 bActiveUdp="$(cmdMySQL 'MySB_db' "SELECT annoncers_udp FROM system WHERE id_system='1';")"
 nUid=$(id "${gsUsername}" -u)
 bGuid=$(id "${gsUsername}" -g)
@@ -190,8 +185,8 @@ gfnDoStart() {
     [ -f docker-compose.yml ] && rm -f docker-compose.yml
     aCompose=("docker" "run" "--env USERNAME=${gsUsername}" "--env PUID=${nUid}" "--env PGID=${bGuid}" "--env PGID_MySB_users=${bGuidMysbUsers}")
     aCompose+=("--env PORT_CGI=${nPortCgi}" "--env PORT_RTORRENT=${nPortRtorrent}" "--env USE_UDP=${bActiveUdp}")
+    aCompose==("--env RUTORRENT_DIR=${gsRutorrentDir}" "--env RTORRENT_VERSION=${binRtorrent}")
     aCompose+=("-p ${nPortCgi}:${nPortCgi}/tcp" "-p ${nPortRtorrent}:${nPortRtorrent}/tcp")
-    aCompose+=("-p 9001:9001/tcp")
     [[ ${bActiveUdp} -eq 1 ]] && aCompose+=("-p ${nPortRtorrent}:${nPortRtorrent}/udp")
     aCompose+=("-v /home:/home" "-v ${gsRutorrentDir}:${gsRutorrentDir}")
     aCompose+=("-v /etc/localtime:/etc/localtime:ro" "-v /etc/timezone:/etc/timezone:ro" "-v /home/.config.cnf:/home/.config.cnf:ro")
@@ -199,29 +194,7 @@ gfnDoStart() {
     aCompose+=("--restart unless-stopped" "--name ${gsBinName}")
     aCompose+=("registry.gitlab.com/toulousain79/mysb_images/rtorrent/rtorrent:dev")
 
-    # composerize \
-    # docker run \
-    # --env TZ="${gsTimeZone}" \
-    # --env USERNAME="${gsUsername}" \
-    # --env PORT_RTORRENT=${nPortRtorrent} \
-    # --env PORT_CGI=${nPortCgi} \
-    # --env USE_UDP=${bActiveUdp} \
-    # --env PUID=${nUid} \
-    # --env PGID=${bGuid} \
-    # --env PGID_MySB_users=${bGuidMysbUsers} \
-    # -p 9001:9001/tcp \
-    # -p ${nPortRtorrent}:${nPortRtorrent}/tcp \
-    # -p ${nPortRtorrent}:${nPortRtorrent}/udp \
-    # -p ${nPortCgi}:${nPortCgi}/tcp \
-    # -v /home:/home \
-    # -v ${gsRutorrentDir}:${gsRutorrentDir} \
-    # -v /etc/localtime:/etc/localtime:ro \
-    # -v /home/.config.cnf:/home/.config.cnf:ro \
-    # -v /var/run/mysqld/mysqld.sock:/var/run/mysqld/mysqld.sock \
-    # --restart unless-stopped \
-    # --network frontend \
-    # --name ${gsBinName} registry.gitlab.com/toulousain79/mysb_images/rtorrent/rtorrent:dev
-    composerize "${aCompose[@]}"
+     composerize "${aCompose[@]}"
 
     if [ -f docker-compose.yml ]; then
         sed 's/3.3/3.7/g;' docker-compose.yml
@@ -235,7 +208,7 @@ gfnDoStart() {
 # Function that stops the daemon/service
 #
 gfnDoStop() {
-    local nReturn sGhostProcess
+    local sGhostProcess
 
     # Unmout
     gfnMountShareDir 'umount'
@@ -258,7 +231,8 @@ gfnDoReload() {
 # Function stop case
 #
 gfnRestartStopCase() {
-    case gfnDoStart in
+    gfnDoStart
+    case $? in
         0)
             echo "RESTART: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>"${gsLogFile}"
             cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='${gsUsername}';"
@@ -311,7 +285,7 @@ case "$1" in
     'start')
         log_daemon_msg "Starting ${gsBinDesc}" "${gsBinName}"
         gfnDoStart
-        case "$?" in
+        case $? in
             0)
                 echo "START: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>"${gsLogFile}"
                 cmdMySQL 'MySB_db' "UPDATE users SET rtorrent_restart='0' WHERE users_ident='${gsUsername}';"
@@ -328,7 +302,7 @@ case "$1" in
         log_daemon_msg "Stopping ${gsBinDesc}" "${gsBinName}"
         gfnDoCrontab 'remove'
         gfnDoStop
-        case "$?" in
+        case $? in
             0)
                 echo "STOP: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>"${gsLogFile}"
                 log_end_msg 0
@@ -341,7 +315,8 @@ case "$1" in
         ;;
     'restart')
         log_daemon_msg "Restarting ${gsBinDesc}" "${gsBinName}"
-        case gfnDoStop in
+        gfnDoStop
+        case $? in
             0) gfnRestartStopCase ;;
             *)
                 gfnDoStop
