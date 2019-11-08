@@ -388,10 +388,10 @@ gfnManageUserHomeDir() {
         chown root:"${sUser}" /home/"${sUser}"/.rTorrent_erased.sh
         chmod 0750 /home/"${sUser}"/.rTorrent_erased.sh
     fi
-    # /home/.check_annoncers_${sUser}
-    [ ! -f /home/.check_annoncers ] && touch /home/.check_annoncers_${sUser}
-    [ "$(stat --printf %U /home/.check_annoncers_${sUser}):$(stat --printf %G /home/.check_annoncers_${sUser})" != "root:MySB_users" ] && chown root:MySB_users /home/.check_annoncers_${sUser}
-    [ "$(stat --printf %a /home/.check_annoncers_${sUser})" -ne 666 ] && chmod 0666 /home/.check_annoncers_${sUser}
+    # /home/${sUser}/.check_annoncers
+    [ ! -f /home/${sUser}/.check_annoncers ] && touch /home/${sUser}/.check_annoncers
+    [ "$(stat --printf %U /home/${sUser}/.check_annoncers):$(stat --printf %G /home/${sUser}/.check_annoncers)" != "root:MySB_users" ] && chown root:MySB_users /home/${sUser}/.check_annoncers
+    [ "$(stat --printf %a /home/${sUser}/.check_annoncers)" -ne 666 ] && chmod 0666 /home/${sUser}/.check_annoncers
 
     # /home/user/db
     chmod -R 0770 /home/"${sUser}"/db
@@ -611,28 +611,28 @@ gfnUserCrontab() {
     # echo "# 0	-->	Do not start any script (no synchro)" >> "${sHomeDir}"/scripts/sync_mode
     # echo "# 1	-->	Execute scripts by crontab (*.cron)" >> "${sHomeDir}"/scripts/sync_mode
     # echo "# 2	-->	Execute scripts directly when a download is finished (*.sh)" >> "${sHomeDir}"/scripts/sync_mode
-    sqlite3 -cmd '.timeout 150000' "$sSyncDB" "DELETE FROM categories;"
+    sqlite3 -cmd '.timeout 150000' "${sSyncDB}" "DELETE FROM categories;"
     for sDirectory in ${sDirectories}; do
         sSubDirectory="$(echo "${sDirectory}" | awk '{split($0,a,"|"); print a[1]}')"
         sSyncMode="$(echo "${sDirectory}" | awk '{split($0,a,"|"); print a[2]}')"
-        sqlite3 -cmd '.timeout 150000' "$sSyncDB" "INSERT INTO categories (name,sync_mode) VALUES ('${sSubDirectory}','$sSyncMode');"
+        sqlite3 -cmd '.timeout 150000' "${sSyncDB}" "INSERT INTO categories (name,sync_mode) VALUES ('${sSubDirectory}','${sSyncMode}');"
     done
 
     if [ -f "${sHomeDir}"/scripts/crontab ]; then
         rm -f "${sHomeDir}"/scripts/crontab
     fi
-    if [ -n "$sCrontabValues" ]; then
-        for sCron in $sCrontabValues; do
-            nCronID="$(echo "$sCron" | awk '{split($0,a,"|"); print a[1]}')"
-            sCronMinutes="$(echo "$sCron" | awk '{split($0,a,"|"); print a[2]}')"
-            sCronHours="$(echo "$sCron" | awk '{split($0,a,"|"); print a[3]}')"
-            sCronDays="$(echo "$sCron" | awk '{split($0,a,"|"); print a[4]}')"
-            sCronMonths="$(echo "$sCron" | awk '{split($0,a,"|"); print a[5]}')"
-            sCronNumday="$(echo "$sCron" | awk '{split($0,a,"|"); print a[6]}')"
-            sCronCommand="$(echo "$sCron" | awk '{split($0,a,"|"); print a[7]}')"
+    if [ -n "${sCrontabValues}" ]; then
+        for sCron in ${sCrontabValues}; do
+            nCronID="$(echo "${sCron}" | awk '{split($0,a,"|"); print a[1]}')"
+            sCronMinutes="$(echo "${sCron}" | awk '{split($0,a,"|"); print a[2]}')"
+            sCronHours="$(echo "${sCron}" | awk '{split($0,a,"|"); print a[3]}')"
+            sCronDays="$(echo "${sCron}" | awk '{split($0,a,"|"); print a[4]}')"
+            sCronMonths="$(echo "${sCron}" | awk '{split($0,a,"|"); print a[5]}')"
+            sCronNumday="$(echo "${sCron}" | awk '{split($0,a,"|"); print a[6]}')"
+            sCronCommand="$(echo "${sCron}" | awk '{split($0,a,"|"); print a[7]}')"
             # Adding cron job only if script file is present
-            if [ -f "${sHomeDir}/scripts/$sCronCommand" ]; then
-                echo "$sCronMinutes $sCronHours $sCronDays $sCronMonths $sCronNumday /bin/bash ~/scripts/$sCronCommand > /dev/null 2>&1" >>"${sHomeDir}"/scripts/crontab
+            if [ -f "${sHomeDir}/scripts/${sCronCommand}" ]; then
+                echo "${sCronMinutes} ${sCronHours} ${sCronDays} ${sCronMonths} ${sCronNumday} /bin/bash ~/scripts/${sCronCommand} > /dev/null 2>&1" >>"${sHomeDir}"/scripts/crontab
             else
                 cmdMySQL 'MySB_db' "DELETE FROM users_crontab WHERE id_users_crontab='$nCronID' AND id_users='${nIdUser}';"
             fi

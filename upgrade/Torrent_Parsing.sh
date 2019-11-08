@@ -217,7 +217,7 @@ for sUser in ${gsUsersList}; do
                         fi
                     done
                 fi
-                sort ${sTempLocalFile} | uniq -u >>"/home/.check_annoncers_${sUser}"
+                sort ${sTempLocalFile} | uniq -u >>"/home/${sUser}/.check_annoncers"
                 rm -f ${sTempLocalFile}
             fi
 
@@ -230,7 +230,7 @@ for sUser in ${gsUsersList}; do
             sed -i '/^$/d' "${sTempSessionsFile}"
         done <"${sTempSessionsFile}"
 
-        if [ -s "/home/.check_annoncers_${sUser}" ] && [[ ${bExecute} -eq 1 ]]; then
+        if [ -s "/home/${sUser}/.check_annoncers" ] && [[ ${bExecute} -eq 1 ]]; then
             sudo /bin/bash "${MySB_InstallDir}/scripts/GetTrackersCert.bsh" USER "${sUser}" "${sInfoHash}" &
         fi
     done
