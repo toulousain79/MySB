@@ -96,14 +96,16 @@ if [ "${gsSwitch}" != "CRON" ]; then
     sPackages=(devscripts debhelper build-essential dh-make)
     gfnPackageBundleInstall "${sPackages[@]}"
     git clone https://github.com/spotify/docker-gc.git /tmp/docker-gc
-    cd /tmp/docker-gc && debuild -us -uc -b || continue
-    sFile="$(ls -A1 /tmp/docker-gc_*.deb 2>/dev/null)"
-    if [ -n "${sFile}" ]; then
-        dpkg -i "${sFile}"
-        {
-            echo "#!/bin/bash"
-            echo "/usr/sbin/docker-gc"
-        } >/etc/cron.daily/docker-gc
+    if cd /tmp/docker-gc; then
+        debuild -us -uc -b
+        sFile="$(ls -A1 /tmp/docker-gc_*.deb 2>/dev/null)"
+        if [ -n "${sFile}" ]; then
+            dpkg -i "${sFile}"
+            {
+                echo "#!/bin/bash"
+                echo "/usr/sbin/docker-gc"
+            } >/etc/cron.daily/docker-gc
+        fi
     fi
 fi
 
