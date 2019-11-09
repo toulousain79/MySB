@@ -761,29 +761,29 @@ gfnCreateRtorrentConfigFile() {
             mv "${sHomeDir}"/.rtorrent.rc "${sHomeDir}"/.rtorrent.rc.old
         fi
         install -o root -g "${sUser}" -m 0740 "${MySB_InstallDir}"/templates/rtorrent/rtorrent.rc.tmpl "${sHomeDir}"/.rtorrent.rc
-        sed -i \
-            -e "s/<InstallDir>/${gsInstallDirEscaped}/g" \
-            -e "s/<bind_address>/${gsSrvIpAddress}/g" \
-            -e "s/<local_address>/${gsSrvIpAddress}/g" \
-            -e "s/<username>/${sUser}/g" \
-            -e "s/<homedir>/\/home\/${sUser}/g" \
-            -e "s/<scgi_port>/${nPortSCGI}/g" \
-            -e "s/<port_range>/${nPortRtorrent}-${nPortRtorrent}/g" \
-            "${sHomeDir}"/.rtorrent.rc
+        # sed -i \
+        #     -e "s/<InstallDir>/${gsInstallDirEscaped}/g" \
+        #     -e "s/<bind_address>/${gsSrvIpAddress}/g" \
+        #     -e "s/<local_address>/${gsSrvIpAddress}/g" \
+        #     -e "s/<username>/${sUser}/g" \
+        #     -e "s/<homedir>/\/home\/${sUser}/g" \
+        #     -e "s/<scgi_port>/${nPortSCGI}/g" \
+        #     -e "s/<port_range>/${nPortRtorrent}-${nPortRtorrent}/g" \
+        #     "${sHomeDir}"/.rtorrent.rc
 
         # UDP ?
-        bActiveUdp="$(cmdMySQL 'MySB_db' "SELECT annoncers_udp FROM system WHERE id_system='1';")"
-        if [ "${bActiveUdp}" -eq 1 ]; then
-            sed -i \
-                -e "s/^trackers.use_udp.set = no/trackers.use_udp.set = yes/g" \
-                -e "s/^trackers.use_udp.set = 0/trackers.use_udp.set = 1/g" \
-                "${sHomeDir}"/.rtorrent.rc
-        else
-            sed -i \
-                -e "s/^trackers.use_udp.set = yes/trackers.use_udp.set = no/g" \
-                -e "s/^trackers.use_udp.set = 1/trackers.use_udp.set = 0/g" \
-                "${sHomeDir}"/.rtorrent.rc
-        fi
+        # bActiveUdp="$(cmdMySQL 'MySB_db' "SELECT annoncers_udp FROM system WHERE id_system='1';")"
+        # if [ "${bActiveUdp}" -eq 1 ]; then
+        #     sed -i \
+        #         -e "s/^trackers.use_udp.set = no/trackers.use_udp.set = yes/g" \
+        #         -e "s/^trackers.use_udp.set = 0/trackers.use_udp.set = 1/g" \
+        #         "${sHomeDir}"/.rtorrent.rc
+        # else
+        #     sed -i \
+        #         -e "s/^trackers.use_udp.set = yes/trackers.use_udp.set = no/g" \
+        #         -e "s/^trackers.use_udp.set = 1/trackers.use_udp.set = 0/g" \
+        #         "${sHomeDir}"/.rtorrent.rc
+        # fi
 
         # network.http.ssl_verify_host.set
         # rTorrentVersion="$(cmdMySQL 'MySB_db' "SELECT rtorrent_version FROM users WHERE users_ident='${sUser}';")"
@@ -800,13 +800,13 @@ gfnCreateRtorrentConfigFile() {
         #     sed -i "${nNumLine}i\pieces.memory.max.set = ${nPiecesMemoryMax};" /home/${seedUser}/.rtorrent.rc
         # done
 
-        case "${sFileSystemType}" in
-            "ext4" | "xfs" | "btrfs") perl -pi -e "s/system.file.allocate.set = no/system.file.allocate.set = yes/g" "${sHomeDir}"/.rtorrent.rc ;;
-            *) perl -pi -e "s/^system.file.allocate.set = yes/system.file.allocate.set = no/g" "${sHomeDir}"/.rtorrent.rc ;;
-        esac
+        # case "${sFileSystemType}" in
+        #     "ext4" | "xfs" | "btrfs") perl -pi -e "s/system.file.allocate.set = no/system.file.allocate.set = yes/g" "${sHomeDir}"/.rtorrent.rc ;;
+        #     *) perl -pi -e "s/^system.file.allocate.set = yes/system.file.allocate.set = no/g" "${sHomeDir}"/.rtorrent.rc ;;
+        # esac
 
         # Remove commented and empty lines
-        sed -i '/^#/d;/^$/d;' "${sHomeDir}"/.rtorrent.rc
+        # sed -i '/^#/d;/^$/d;' "${sHomeDir}"/.rtorrent.rc
 
         # Blocklists with rTorrent
         if [ "${gsMySB_PeerBlock}" == "rTorrent" ]; then
@@ -829,15 +829,25 @@ gfnCreateRtorrentConfigFile() {
 
         # Watch directories
         if [ -n "${sDirectories}" ]; then
-            nNumLine=$(sed -n "/watch_directory/=" "${sHomeDir}"/.rtorrent.rc)
+            # nNumLine=$(sed -n "/watch_directory/=" "${sHomeDir}"/.rtorrent.rc)
+            # nCount=0
+            # sed -i '/watch_directory/d' "${sHomeDir}"/.rtorrent.rc
+            # sed -i "${nNumLine}i\schedule2 = watch_directory_${nCount},5,5,\"load.normal=~\/rtorrent\/watch\/*.torrent,d.directory.set=~\/rtorrent\/complete\/,d.custom1.set=,d.custom2.set=~\/rtorrent\/torrents\/\"" "${sHomeDir}"/.rtorrent.rc
+            # ((nNumLine++)) && ((nCount++))
+            # for sDirectory in ${sDirectories}; do
+            #     sDirectory="$(echo "${sDirectory}" | awk '{split($0,a,"|"); print a[1]}')"
+            #     sed -i "${nNumLine}i\schedule2 = watch_directory_${nCount},5,5,\"load.normal=~\/rtorrent\/watch\/${sDirectory}\/*.torrent,d.directory.set=~\/rtorrent\/complete\/${sDirectory}\/,d.custom1.set=${sDirectory},d.custom2.set=~\/rtorrent\/torrents\/${sDirectory}\/\"" "${sHomeDir}"/.rtorrent.rc
+            #     ((nNumLine++)) && ((nCount++))
+            # done
             nCount=0
-            sed -i '/watch_directory/d' "${sHomeDir}"/.rtorrent.rc
-            sed -i "${nNumLine}i\schedule2 = watch_directory_${nCount},5,5,\"load.normal=~\/rtorrent\/watch\/*.torrent,d.directory.set=~\/rtorrent\/complete\/,d.custom1.set=,d.custom2.set=~\/rtorrent\/torrents\/\"" "${sHomeDir}"/.rtorrent.rc
-            ((nNumLine++)) && ((nCount++))
+            rm -f "${sHomeDir}"/rtorrent/config.d/80-watch.rc
             for sDirectory in ${sDirectories}; do
                 sDirectory="$(echo "${sDirectory}" | awk '{split($0,a,"|"); print a[1]}')"
-                sed -i "${nNumLine}i\schedule2 = watch_directory_${nCount},5,5,\"load.normal=~\/rtorrent\/watch\/${sDirectory}\/*.torrent,d.directory.set=~\/rtorrent\/complete\/${sDirectory}\/,d.custom1.set=${sDirectory},d.custom2.set=~\/rtorrent\/torrents\/${sDirectory}\/\"" "${sHomeDir}"/.rtorrent.rc
-                ((nNumLine++)) && ((nCount++))
+                {
+                    echo "# Watching ${sDirectory}"
+                    echo "schedule2 = watch_directory_${nCount},5,5,\"load.normal=~\/rtorrent\/watch\/${sDirectory}\/*.torrent,d.directory.set=~\/rtorrent\/complete\/${sDirectory}\/,d.custom1.set=${sDirectory},d.custom2.set=~\/rtorrent\/torrents\/${sDirectory}\/\""
+                } >>"${sHomeDir}"/rtorrent/config.d/80-watch.rc
+                ((nCount++))
             done
 
             # Disabling 'autotools' plugins

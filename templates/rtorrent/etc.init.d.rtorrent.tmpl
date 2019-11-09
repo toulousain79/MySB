@@ -182,7 +182,8 @@ gfnDoStart() {
 
     # Composerize
     cd "${MySB_InstallDir}"/docker || exit 1
-    [ -f docker-compose.yml ] && rm -f docker-compose.yml
+    rm -f docker-compose.yml
+    rm -f "${MySB_InstallDir}/docker/${gsBinName}.yml"
     aCompose=("docker" "run" "--env USERNAME=${gsUsername}" "--env PUID=${nUid}" "--env PGID=${bGuid}" "--env PGID_MySB_users=${bGuidMysbUsers}")
     aCompose+=("--env PORT_CGI=${nPortCgi}" "--env PORT_RTORRENT=${nPortRtorrent}" "--env USE_UDP=${bActiveUdp}")
     aCompose+=("--env RUTORRENT_DIR=${gsRutorrentDir}" "--env RTORRENT_VERSION=${rTorrentVersion}")
@@ -191,13 +192,13 @@ gfnDoStart() {
     aCompose+=("-v /home:/home" "-v ${gsRutorrentDir}:${gsRutorrentDir}")
     aCompose+=("-v /etc/localtime:/etc/localtime:ro" "-v /etc/timezone:/etc/timezone:ro" "-v /home/.config.cnf:/home/.config.cnf:ro")
     aCompose+=("-v /var/run/mysqld/mysqld.sock:/var/run/mysqld/mysqld.sock")
-    aCompose+=("--restart unless-stopped" "--name ${gsBinName}")
+    aCompose+=("--restart unless-stopped" "--name ${gsBinName}" "--network frontend")
     aCompose+=("registry.gitlab.com/toulousain79/mysb_images/rtorrent/rtorrent:dev")
 
-    composerize  "${aCompose[@]}" >"${gsBinName}.yml"
-    if [ -f "${gsBinName}.yml" ]; then
-        sed -i 's/3.3/3.7/g;' "${gsBinName}.yml"
-        docker-compose -f "${gsBinName}.yml" up -d && return 0 || return 1
+    composerize  "${aCompose[@]}" >"${MySB_InstallDir}/docker/${gsBinName}.yml"
+    if [ -f "${MySB_InstallDir}/docker/${gsBinName}.yml" ]; then
+        sed -i 's/3.3/3.7/g;' "${MySB_InstallDir}/docker/${gsBinName}.yml"
+        docker-compose -f "${MySB_InstallDir}/docker/${gsBinName}.yml" up -d && return 0 || return 1
     else
         return 1
     fi
@@ -211,8 +212,8 @@ gfnDoStop() {
     gfnMountShareDir 'umount'
     gfnMountTorrentsDir 'umount'
 
-    if [ -f "${gsBinName}.yml" ]; then
-        docker-compose -f "${gsBinName}.yml" down && return 0 || return 1
+    if [ -f "${MySB_InstallDir}/docker/${gsBinName}.yml" ]; then
+        docker-compose -f "${MySB_InstallDir}/docker/${gsBinName}.yml" down && return 0 || return 1
     else
         return 1
     fi

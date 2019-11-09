@@ -48,15 +48,34 @@ fi
 cmdMySQL 'MySB_db' "SELECT name FROM repositories WHERE 1;" | while read sRepoName; do
     # VARs
     gnError=0
+    bMissing=0
 
     # Get repo infos
     gfnGetRepoValues "${sRepoName}"
 
     # Delete repo dir if inactive or continue the loop if variable is not defined
-    if [ -z "${gsRepoType}" ] || [ -z "${gsRepoDir}" ] || [ -z "${gsRepoVersion}" ] || [ -z "${gnRepoUpgrade}" ] || [ -z "${gsRepoFile}" ] || [ -z "${gsRepoURL}" ] || [ -z "${gnRepoActive}" ]; then
+    case "${gsRepoType}" in
+        DOCKER)
+            [ -z "${gsRepoVersion}" ] && bMissing=1
+            [ -z "${gnRepoUpgrade}" ] && bMissing=1
+            [ -z "${gsRepoURL}" ] && bMissing=1
+            [ -z "${gnRepoActive}" ] && bMissing=1
+            ;;
+        ZIP | TARGZ | GIT | DEB | WBM | CURL)
+            [ -z "${gsRepoDir}" ] && bMissing=1
+            [ -z "${gsRepoFile}" ] && bMissing=1
+            [ -z "${gsRepoVersion}" ] && bMissing=1
+            [ -z "${gnRepoUpgrade}" ] && bMissing=1
+            [ -z "${gsRepoURL}" ] && bMissing=1
+            [ -z "${gnRepoActive}" ] && bMissing=1
+            ;;
+        *) bMissing=1 ;;
+    esac
+    [[ ${bMissing} -eq 1 ]] && {
         echo "Missing some values, go to the next repo..."
         continue
-    elif [ "${gnRepoActive}" -eq 0 ]; then
+    }
+    if [ "${gnRepoActive}" -eq 0 ]; then
         gfnDeleteDirectory 1 "${gsRepoDir}"
     fi
 
