@@ -51,6 +51,7 @@ INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`,
 ('CURL', '/usr/local/bin/docker-compose', 'Docker-Compose', 'latest', 0, 'docker-compose-Linux-x86_64', 'https://api.github.com/repos/docker/compose/releases/latest', 1, 0, ''),
 /* ('CURL', '/usr/local/bin/dry', 'Dry', 'latest', 0, 'dry-linux-amd64', 'https://api.github.com/repos/moncho/dry/releases/latest', 1, 0, ''), */
 ('CURL', '/usr/local/bin/dry', 'Dry', 'v0.10-beta.1', 0, 'dry-linux-amd64', 'https://github.com/moncho/dry/releases/download/v0.10-beta.1/dry-linux-amd64', 1, 0, ''),
+('CURL', '/usr/local/bin/ctop', 'CTop', '0.7.2', 0, 'ctop-0.7.2-linux-amd64', 'https://github.com/bcicen/ctop/releases/download/v0.7.2/ctop-0.7.2-linux-amd64', 1, 0, ''),
 /* ('CURL', '/usr/local/bin/composer', 'Composer', 'latest', 0, 'composer.phar', 'https://api.github.com/repos/composer/composer/releases/latest', 1, 0, ''), */
 ('CURL', '/usr/local/bin/composer', 'Composer', '1.9.0', 0, 'composer.phar', 'https://getcomposer.org/download/1.9.0/composer.phar', 1, 0, ''),
 ('CURL', '/usr/local/bin/minio', 'Minio', 'latest', 0, 'minio', 'https://api.github.com/repos/minio/minio/releases/latest', 1, 0, ''),
@@ -74,7 +75,9 @@ INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`,
 ('GIT', '<InstallDir>/web/apps/sm', 'Seedbox-Manager', '3.0.1', 0, 'seedbox-manager_v3.0.1.zip', 'https://github.com/Magicalex/seedbox-manager.git', 1, 0, ''),
 ('GIT', '<InstallDir>/web/apps/cb', 'Cakebox-Light', '1.8.6', 0, 'cakebox-light_v1.8.6.zip', 'https://github.com/Cakebox/Cakebox-light.git', 1, 0, ''),
 ('TARGZ', '<InstallDir>/sources/netdata', 'NetData', '1.18.1', 0, 'netdata_v1.18.1.tar.gz', 'https://github.com/netdata/netdata/releases/download/v1.18.1/netdata-v1.18.1.tar.gz', 1, 0, ''),
-('ZIP', '<InstallDir>/web/apps/nc', 'NextCloud', '17.0.0', 0, 'nextcloud_v17.0.0.zip', 'https://download.nextcloud.com/server/releases/nextcloud-17.0.0.zip', 1, 0, '');
+('ZIP', '<InstallDir>/web/apps/nc', 'NextCloud', '17.0.0', 0, 'nextcloud_v17.0.0.zip', 'https://download.nextcloud.com/server/releases/nextcloud-17.0.0.zip', 1, 0, ''),
+('DOCKER', '', 'rtorrent', '', 0, 'dev', 'registry.gitlab.com/toulousain79/mysb_images/rtorrent/rtorrent', 1, 0, ''),
+('DOCKER', '', 'watchtower', '', 0, 'latest', 'containrrr/watchtower', 1, 0, '');
 /*!40000 ALTER TABLE `repositories` ENABLE KEYS */;
 UNLOCK TABLES;
 

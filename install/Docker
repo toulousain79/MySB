@@ -64,7 +64,7 @@ if [ "${gsSwitch}" != "CRON" ]; then
     sPackages=(docker docker-engine docker.io containerd runc)
     gfnPackagesManage purge "${sPackages[@]}"
 
-    #### Install packages
+    #### Install Docker packages
     sPackages=(docker-ce docker-ce-cli containerd.io python-backports.ssl-match-hostname python-cached-property python-docker python-dockerpty python-docopt python-functools32 python-jsonschema python-texttable python-websocket python-yaml supervisor)
     gfnPackageBundleInstall "${sPackages[@]}"
 
@@ -91,6 +91,20 @@ if [ "${gsSwitch}" != "CRON" ]; then
     docker network create --driver=bridge --internal --subnet=172.29.0.0/24 --gateway=172.29.0.254 -o com.docker.network.bridge.name=br-backend backend
     docker network create --driver=bridge --subnet=172.28.0.0/24 --gateway=172.28.0.254 -o com.docker.network.bridge.name=br-frontend frontend
     docker network ls
+
+    #### Install Docker-gs
+    sPackages=(devscripts debhelper build-essential dh-make)
+    gfnPackageBundleInstall "${sPackages[@]}"
+    git clone https://github.com/spotify/docker-gc.git /tmp/docker-gc
+    cd /tmp/docker-gc && debuild -us -uc -b || continue
+    sFile="$(ls -A1 /tmp/docker-gc_*.deb 2>/dev/null)"
+    if [ -n "${sFile}" ]; then
+        dpkg -i "${sFile}"
+        {
+            echo "#!/bin/bash"
+            echo "/usr/sbin/docker-gc"
+        } >/etc/cron.daily/docker-gc
+    fi
 fi
 
 #### Tools
@@ -99,6 +113,9 @@ if gfnCheckCommand 0 docker; then
     fnInstallDry
     npm install composerize -g
 fi
+
+#### Compose files
+docker-compose -f "${MySB_InstallDir}"/docker/global.yml
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after

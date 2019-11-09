@@ -195,9 +195,12 @@ gfnDoStart() {
     aCompose+=("registry.gitlab.com/toulousain79/mysb_images/rtorrent/rtorrent:dev")
 
     composerize  "${aCompose[@]}" >"${gsBinName}.yml"
-    [ -f "${gsBinName}.yml" ] && sed -i 's/3.3/3.7/g;' "${gsBinName}.yml"
-
-    docker-compose -f "${gsBinName}.yml" up -d && return 0 || return 1
+    if [ -f "${gsBinName}.yml" ]; then
+        sed -i 's/3.3/3.7/g;' "${gsBinName}.yml"
+        docker-compose -f "${gsBinName}.yml" up -d && return 0 || return 1
+    else
+        return 1
+    fi
 }
 
 #
@@ -208,7 +211,11 @@ gfnDoStop() {
     gfnMountShareDir 'umount'
     gfnMountTorrentsDir 'umount'
 
-    docker-compose -f "${gsBinName}.yml" down && return 0 || return 1
+    if [ -f "${gsBinName}.yml" ]; then
+        docker-compose -f "${gsBinName}.yml" down && return 0 || return 1
+    else
+        return 1
+    fi
 }
 
 #
@@ -217,8 +224,12 @@ gfnDoStop() {
 gfnDoReload() {
     echo "RELOAD: $(/bin/date '+%Y-%m-%d - %H:%M:%S')" >>"${gsLogFile}"
 
-    supervisorctl -s unix:///home/${gsUsername}/supervisor.sock -u ${gsUsername} -p 123 restart rtorrent
-    return $?
+    if (type -P supervisorctl &>/dev/null); then
+        supervisorctl -s unix:///home/${gsUsername}/supervisor.sock -u ${gsUsername} -p 123 restart rtorrent &>/dev/null
+        return $?
+    else
+        return 1
+    fi
 }
 
 #
