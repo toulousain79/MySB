@@ -44,26 +44,29 @@ case "${1}" in
         /usr/sbin/ntpdate -u 0.pool.ntp.org 1.pool.ntp.org
 
         # Debian upgrade
-        [ -f /tmp/MySB_UpgradeMe.log ] && cat /tmp/MySB_UpgradeMe.log >>${MySB_InstallDir}/logs/BulkChanges.bsh.log
+        [ -f /tmp/MySB_UpgradeMe.log ] && cat /tmp/MySB_UpgradeMe.log >>"${MySB_InstallDir}"/logs/BulkChanges.bsh.log
 
         # MySQL
-        [ -f /tmp/MySQL.bsh.log ] && cat /tmp/MySQL.bsh.log >>${MySB_InstallDir}/logs/BulkChanges.bsh.log
+        [ -f /tmp/MySQL.bsh.log ] && cat /tmp/MySQL.bsh.log >>"${MySB_InstallDir}"/logs/BulkChanges.bsh.log
 
         # VARs & Functions
         # shellcheck source=inc/funcs_by_script/funcs_Install
-        [ -z "${funcs_Install}" ] && source ${MySB_InstallDir}/inc/funcs_by_script/funcs_Install
+        [ -z "${funcs_Install}" ] && source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Install
         # shellcheck source=inc/funcs_by_script/funcs_SourcesList
-        [ -z "${funcs_SourcesList}" ] && source ${MySB_InstallDir}/inc/funcs_by_script/funcs_SourcesList
+        [ -z "${funcs_SourcesList}" ] && source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_SourcesList
 
         # Remove old banners
-        rm -fv ${MySB_InstallDir}/files/banner_*
+        rm -fv "${MySB_InstallDir}"/files/banner_*
 
         # Force install for depends
         # shellcheck source=inc/funcs_by_script/funcs_Install
-        source ${MySB_InstallDir}/inc/funcs_by_script/funcs_Install
+        source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Install
         gfnPackagesManage install
         #### To call for every upgrade - EoF
         ####################################
+
+        #### MySB_users group rename
+        groupmod -n mysb_users MySB_users
 
         #### rTorrent cleaning
         aAllPackages=(rtorrent buildtorrent mktorrent mediainfo ffmpeg libcppunit-dev zlib1g-dev libncursesw5-dev libxmlrpc-c++8-dev)
@@ -97,9 +100,9 @@ case "${1}" in
 
         # Send mail for each user with new version
         # shellcheck source=/dev/null
-        source ${MySB_InstallDir}/inc/vars
+        source "${MySB_InstallDir}"/inc/vars
         # shellcheck source=inc/funcs_by_script/funcs_MySB_CreateUser
-        source ${MySB_InstallDir}/inc/funcs_by_script/funcs_MySB_CreateUser
+        source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_MySB_CreateUser
         gfnListCountUsers 'normal'
 
         echo
@@ -111,7 +114,7 @@ case "${1}" in
             UserId="$(echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}')"
             UserPassword="$(echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}')"
             # rTorrent init
-            install -v -o root -g root -m 0755 ${MySB_InstallDir}/templates/rtorrent/etc.init.d.rtorrent.tmpl "/etc/init.d/rtorrent-${sUser}"
+            install -v -o root -g root -m 0755 "${MySB_InstallDir}"/templates/rtorrent/etc.init.d.rtorrent.tmpl "/etc/init.d/rtorrent-${sUser}"
             perl -pi -e "s/<username>/${sUser}/g" "/etc/init.d/rtorrent-${sUser}"
             systemctl daemon-reload
             systemctl disable rtorrent-"${sUser}"
@@ -189,7 +192,7 @@ case "${1}" in
         updatedb
         for file in $(locate *.dpkg-old *.dpkg-new *.dpkg-dist *.dpkg-bak *.ucf-dist); do
             if [ -n "${gbDevMode}" ] && [ ${gbDevMode} -eq 1 ]; then
-                mv -vf ${file} ${MySB_InstallDir}/logs/TODEL/
+                mv -vf ${file} "${MySB_InstallDir}"/logs/TODEL/
             else
                 rm -vf ${file}
             fi
@@ -202,9 +205,6 @@ case "${1}" in
         if gfnCheckCommand 0 postfix && gfnGetPid postfix; then postfix flush; fi
         #### To call for every upgrade - EoF
         ####################################
-
-        # Remove MySB_users group
-        (grep -q 'MySB_users' /etc/group) && groupdel MySB_users
         ;;
 esac
 
