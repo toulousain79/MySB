@@ -52,9 +52,9 @@ source /lib/lsb/init-functions || exit 0
 #------------------------------------------------------------
 # rTorrent Infos
 #------------------------------------------------------------
-gsUsername="<username>"        # Username to run rtorrent under
-gsHomeDir="/home/${gsUsername}"     # User home dir
-gsSessionDir="${gsHomeDir}/rtorrent/.session"   # rTorrent session directory
+gsUsername="<username>"                       # Username to run rtorrent under
+gsHomeDir="/home/${gsUsername}"               # User home dir
+gsSessionDir="${gsHomeDir}/rtorrent/.session" # rTorrent session directory
 gsPidFile="${gsSessionDir}/${gsUsername}.pid" # PID file
 gsBinName="rtorrent-${gsUsername}"
 gsBinDesc="rTorrent for ${gsUsername}"
@@ -123,9 +123,9 @@ gfnMountTorrentsDir() {
 
     case "$1" in
         'mount')
-            if [ -z "${sMountList}" ] && [ -d ${gsRutorrentDir}/share/users/"${gsUsername}"/torrents ]; then
+            if [ -z "${sMountList}" ] && [ -d "${gsRutorrentDir}"/share/users/"${gsUsername}"/torrents ]; then
                 umount "${gsHomeDir}"/rtorrent/torrents >/dev/null 2>&1
-                mount --bind ${gsRutorrentDir}/share/users/"${gsUsername}"/torrents "${gsHomeDir}"/rtorrent/torrents 2>>"${gsLogFile}"
+                mount --bind "${gsRutorrentDir}"/share/users/"${gsUsername}"/torrents "${gsHomeDir}"/rtorrent/torrents 2>>"${gsLogFile}"
             fi
             ;;
         'umount')
@@ -165,7 +165,7 @@ gfnDoStart() {
     : >"/home/${gsUsername}/.check_annoncers"
 
     # Kill all processes
-    for pid in $(ps faux | grep 'GetTrackersCert.bsh USER "${gsUsername}"' | grep -v 'grep' | awk '{ print $2; }'); do kill -9 ${pid}; done
+    for pid in $(pgrep "GetTrackersCert.bsh USER \"${gsUsername}\"" | grep -v 'grep' | awk '{ print $2; }'); do kill -9 "${pid}"; done
 
     # Remove all TCP socket
     [ -n "${nPortCgi}" ] && fuser -k "${nPortCgi}"/tcp >/dev/null
@@ -184,6 +184,7 @@ gfnDoStart() {
     cd "${MySB_InstallDir}"/docker || exit 1
     rm -f docker-compose.yml
     rm -f "${MySB_InstallDir}/docker/${gsBinName}.yml"
+    gfnGetRepoValues 'rtorrent'
     aCompose=("docker" "run" "--env USERNAME=${gsUsername}" "--env PUID=${nUid}" "--env PGID=${bGuid}" "--env PGID_mysb_users=${bGuidMysbUsers}")
     aCompose+=("--env PORT_CGI=${nPortCgi}" "--env PORT_RTORRENT=${nPortRtorrent}" "--env USE_UDP=${bActiveUdp}")
     aCompose+=("--env RUTORRENT_DIR=${gsRutorrentDir}" "--env RTORRENT_VERSION=${rTorrentVersion}")
@@ -193,9 +194,9 @@ gfnDoStart() {
     aCompose+=("-v /etc/localtime:/etc/localtime:ro" "-v /etc/timezone:/etc/timezone:ro" "-v /home/.config.cnf:/home/.config.cnf:ro")
     aCompose+=("-v /var/run/mysqld/mysqld.sock:/var/run/mysqld/mysqld.sock")
     aCompose+=("--restart unless-stopped" "--name ${gsBinName}" "--network frontend")
-    aCompose+=("registry.gitlab.com/toulousain79/mysb_images/rtorrent/rtorrent:dev")
+    aCompose+=("registry.gitlab.com/toulousain79/mysb_images/rtorrent/rtorrent:${gsRepoVersion}")
 
-    composerize  "${aCompose[@]}" >"${MySB_InstallDir}/docker/${gsBinName}.yml"
+    composerize "${aCompose[@]}" >"${MySB_InstallDir}/docker/${gsBinName}.yml"
     if [ -f "${MySB_InstallDir}/docker/${gsBinName}.yml" ]; then
         sed -i 's/3.3/3.7/g;' "${MySB_InstallDir}/docker/${gsBinName}.yml"
         docker-compose -f "${MySB_InstallDir}/docker/${gsBinName}.yml" up -d && return 0 || return 1
@@ -283,7 +284,7 @@ fi
 if [ ! -f "${gsHomeDir}"/db/"${gsUsername}".sq3 ]; then
     cp "${MySB_InstallDir}/db/Sync.tmpl.sq3" "${gsHomeDir}"/db/"${gsUsername}".sq3
     chmod -R 0770 "${gsHomeDir}"/db
-    chown -R ${FnUser}:www-data "${gsHomeDir}"/db
+    chown -R "${FnUser}":www-data "${gsHomeDir}"/db
 fi
 
 ## Options
