@@ -53,10 +53,10 @@ gfnGetUriFilename() {
 gfnQuotaSpaceAvailable() {
     local nFreeSpaceToKeep nFreeSpace
 
-    nFreeSpace="$(df --sync /home/ | awk '{ print $2 }' | tail -n 1)"        # (Kb)
+    nFreeSpace="$(df --sync /home/ | awk '{ print $2 }' | tail -n 1)" # (Kb)
     # nFreeSpaceToKeep="$(echo "4" | awk '{ kb = $1 * 1024 * 1024 ; print kb }')" # Keep a minimum of 4Go of free space (Kb)
     nFreeSpaceToKeep="$((nFreeSpace * 10 / 100))"
-    nFreeSpace=$((nFreeSpace - nFreeSpaceToKeep))                            # (Kb)
+    nFreeSpace=$((nFreeSpace - nFreeSpaceToKeep)) # (Kb)
 
     echo $nFreeSpace
 }
@@ -151,7 +151,7 @@ gfnGetPid() {
     local sPid
 
     case "${1}" in
-        "${binPhpService}") [ -f /run/php/${binPhpFpm}.pid ] && sPid="$(cat /run/php/${binPhpFpm}.pid)" ;;
+        "${binPhpService}") [ -f /run/php/"${binPhpFpm}".pid ] && sPid="$(cat /run/php/"${binPhpFpm}".pid)" ;;
         "fail2ban") [ -f /var/run/fail2ban/fail2ban.pid ] && sPid="$(cat /var/run/fail2ban/fail2ban.pid)" ;;
         "webmin") [ -f /var/webmin/miniserv.pid ] && sPid="$(cat /var/webmin/miniserv.pid)" ;;
         "tautulli") [ -f /var/run/tautulli/tautulli.pid ] && sPid="$(cat /var/run/tautulli/tautulli.pid)" ;;
@@ -271,7 +271,8 @@ gfnCheckCommand() {
                 ;;
             *)
                 # if [ -z "$(whereis "${2}" | awk '{ print $2 }')" ]; then
-                if [ -z "$(whereis "${2}" | grep 'bin\|sbin')" ]; then
+                # if [ -z "$(whereis "${2}" | grep 'bin\|sbin')" ]; then
+                if (! grep -q 'bin\|sbin' <<<"$(whereis "${2}")"); then
                     if dpkg -s "${2}" &>/dev/null; then # Try DPKG
                         case "${1}" in
                             0) return 0 ;;
@@ -388,10 +389,10 @@ gfnCleanBeforeUpgrade() {
     # /opt/MySB
     cd "${MySB_InstallDir}"/ || exit
     for branch in $(git branch | grep -v "${gsCurrentVersion}\|rev" | sed 's/ //g;s/*//g;'); do
-        git branch -D ${branch}
+        git branch -D "${branch}"
     done
     for tag in $(git tag | grep -v "${gsCurrentVersion}\|rev" | sed 's/ //g;s/*//g;'); do
-        git tag -d ${tag}
+        git tag -d "${tag}"
     done
     git gc
     git repack -Ad
@@ -399,10 +400,10 @@ gfnCleanBeforeUpgrade() {
     # /opt/MySB_files
     cd "${MySB_Files}"/ || exit
     for branch in $(git branch | grep -v "${gsCurrentVersion}\|rev" | sed 's/ //g;s/*//g;'); do
-        git branch -D ${branch}
+        git branch -D "${branch}"
     done
     for tag in $(git tag | grep -v "${gsCurrentVersion}\|rev" | sed 's/ //g;s/*//g;'); do
-        git tag -d ${tag}
+        git tag -d "${tag}"
     done
     git gc
     git repack -Ad
@@ -509,7 +510,8 @@ gfnGetRepoValues() {
             ;;
         'GeoIPupdate')
             gfnCheckCommand 0 /usr/bin/geoipupdate && /usr/bin/geoipupdate --version &>/tmp/geoip.rev || echo 'Not installed' >/tmp/geoip.rev
-            gsVersionInstalled="$(cat /tmp/geoip.rev | awk '{ print $2 }')"
+            # gsVersionInstalled="$(cat /tmp/geoip.rev | awk '{ print $2 }')"
+            gsVersionInstalled="$(awk '{ print $2 }' <<<"$(cat /tmp/geoip.rev)")"
             # gsVersionLatest="$(${binCURL} "${gsRepoURL}" | jq -r .tag_name | sed 's/v//g;')"
             # gsFileURL="$(${binCURL} "${gsRepoURL}" | jq --arg PLATFORM_ARCH "geoipupdate_${gsVersionLatest}_linux_amd64.deb" -r '.assets[] | select(.name | endswith($PLATFORM_ARCH)).browser_download_url')"
             ;;
@@ -573,7 +575,7 @@ gfnRepoManageByType() {
                 fi
                 if [[ ${gbExtract} -eq 1 ]]; then
                     if [ ! -d "${gsRepoDir}" ] && [[ ${gnError} -eq 0 ]]; then
-                        sSubDir="$(tar --xz -tf ${MySB_Files}/${gsRepoFile} | cut -d '/' -f 1 | uniq)"
+                        sSubDir="$(tar --xz -tf "${MySB_Files}/${gsRepoFile}" | cut -d '/' -f 1 | uniq)"
                         if [ ! -d "${MySB_InstallDir}/temp/${sSubDir}" ]; then
                             tar --xz -xf "${MySB_Files}/${gsRepoFile}" -C "${MySB_InstallDir}/temp/"
                             gnError=$?
@@ -733,7 +735,7 @@ gfnRepoManageByType() {
                     gnError=$?
                     if [ -f "${MySB_Files}/${gsRepoFile}" ]; then
                         if (cp -v "${MySB_Files}/${gsRepoFile}" "${gsRepoDir}"); then
-                            (grep -q '/usr/local/bin/' <<<"${gsRepoDir}") && chmod -v +x ${gsRepoDir}
+                            (grep -q '/usr/local/bin/' <<<"${gsRepoDir}") && chmod -v +x "${gsRepoDir}"
                             gnError=0
                         else
                             gnError=1
@@ -852,7 +854,7 @@ gfnCczeHtmlLogFormat() {
     [ -n "${3}" ] && sOptions="${3}" || sOptions="-h -r"
     [ ! -f "${sInput}" ] && return
 
-    ccze ${sOptions} -o scroll -o nolookups -o transparent -o cssfile="${MySB_InstallDir}/web/public/themes/MySB/css/ccze.css" <"${sInput}" >"${sOutput}"
+    ccze "${sOptions}" -o scroll -o nolookups -o transparent -o cssfile="${MySB_InstallDir}/web/public/themes/MySB/css/ccze.css" <"${sInput}" >"${sOutput}"
     sed -i '1,8d' "${sOutput}"
     sed -i '$d' "${sOutput}"
     sed -i '$d' "${sOutput}"
