@@ -173,7 +173,7 @@ gfnPluginDiskspaceQuotaIncluded() {
         # nFnTotal="$(cmdMySQL 'MySB_db' "SELECT quota FROM users WHERE users_ident='${sFnUser}';")"
         # nFnFree="$(cmdMySQL 'MySB_db' "SELECT space_used FROM users WHERE users_ident='${sFnUser}';")"
         (grep -q '[[:space:]]/home[[:space:]]' /etc/fstab) && sFnPartition="/home" || sFnPartition="/"
-        nFnUserQuota=$(repquota -u ${sFnPartition} | grep ^"${sFnUser}")
+        nFnUserQuota=$(repquota -u ${sFnPartition} | grep ^${sFnUser})
         nFnTotal=$(echo "${nFnUserQuota}" | awk '{printf $4}')
         nFnTotal=$((nFnTotal * 1024))
         nFnFree=$(echo "${nFnUserQuota}" | awk '{printf ($4-$3)}')
@@ -389,9 +389,9 @@ gfnManageUserHomeDir() {
         chmod 0750 /home/"${sUser}"/.rTorrent_erased.sh
     fi
     # /home/.check_annoncers_${sUser}
-    [ ! -f /home/.check_annoncers ] && touch /home/.check_annoncers_"${sUser}"
-    [ "$(stat --printf %U /home/.check_annoncers_"${sUser}"):$(stat --printf %G /home/.check_annoncers_"${sUser}")" != "root:MySB_users" ] && chown root:MySB_users /home/.check_annoncers_"${sUser}"
-    [ "$(stat --printf %a /home/.check_annoncers_"${sUser}")" -ne 666 ] && chmod 0666 /home/.check_annoncers_"${sUser}"
+    [ ! -f /home/.check_annoncers ] && touch /home/.check_annoncers_${sUser}
+    [ "$(stat --printf %U /home/.check_annoncers_${sUser}):$(stat --printf %G /home/.check_annoncers_${sUser})" != "root:MySB_users" ] && chown root:MySB_users /home/.check_annoncers_${sUser}
+    [ "$(stat --printf %a /home/.check_annoncers_${sUser})" -ne 666 ] && chmod 0666 /home/.check_annoncers_${sUser}
 
     # /home/user/db
     chmod -R 0770 /home/"${sUser}"/db
@@ -435,19 +435,19 @@ gfnManagerUsersConfigs() {
         sUserNameUpper="$(echo "${sUser}" | tr '[:lower:]' '[:upper:]')"
 
         if [ ! -d "${gsManagerDir}/conf/users/${sUser}" ]; then mkdir -p "${gsManagerDir}/conf/users/${sUser}"; fi
-        if [ ! -f "${gsManagerDir}/conf/users/${sUser}/config.ini" ]; then
-            install -o www-data -g www-data -m 0640 "${MySB_InstallDir}"/templates/manager/config.ini.tmpl "${gsManagerDir}/conf/users/${sUser}/config.ini"
-            sed -i "s/<user_directory>/${sHomeDirEscaped}/g;" "${gsManagerDir}/conf/users/${sUser}/config.ini"
-            sed -i "s/<scgi_folder>/\/${sUserNameUpper}/g;" "${gsManagerDir}/conf/users/${sUser}/config.ini"
-            sed -i "s/port_ftp = 21/port_ftp = ${gsPort_FTP}/g;" "${gsManagerDir}/conf/users/${sUser}/config.ini"
-            sed -i "s/port_sftp = 22/port_sftp = ${gsPort_SSH}/g;" "${gsManagerDir}/conf/users/${sUser}/config.ini"
-            sed -i "s/<mail_address>/${gsMainUserEmail}/g;" "${gsManagerDir}/conf/users/${sUser}/config.ini"
+        if [ ! -f "$gsManagerDir/conf/users/${sUser}/config.ini" ]; then
+            install -o www-data -g www-data -m 0640 "${MySB_InstallDir}"/templates/manager/config.ini.tmpl "$gsManagerDir/conf/users/${sUser}/config.ini"
+            sed -i "s/<user_directory>/${sHomeDirEscaped}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
+            sed -i "s/<scgi_folder>/\/${sUserNameUpper}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
+            sed -i "s/port_ftp = 21/port_ftp = ${gsPort_FTP}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
+            sed -i "s/port_sftp = 22/port_sftp = ${gsPort_SSH}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
+            sed -i "s/<mail_address>/${gsMainUserEmail}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
             if [ "${gsMainUserName}" == "${sUser}" ]; then
-                sed -i "s/admin = no/admin = yes/g;" "${gsManagerDir}/conf/users/${sUser}/config.ini"
+                sed -i "s/admin = no/admin = yes/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
             fi
             case "${EnvLang}" in
-                "fr") perl -pi -e "s/<lang>/${EnvLang}/g" "${gsManagerDir}/conf/users/${sUser}/config.ini" ;;
-                "en") perl -pi -e "s/<lang>/${EnvLang}/g" "${gsManagerDir}/conf/users/${sUser}/config.ini" ;;
+                "fr") perl -pi -e "s/<lang>/${EnvLang}/g" "$gsManagerDir/conf/users/${sUser}/config.ini" ;;
+                "en") perl -pi -e "s/<lang>/${EnvLang}/g" "$gsManagerDir/conf/users/${sUser}/config.ini" ;;
             esac
         fi
     fi
@@ -582,7 +582,7 @@ gfnUserCrontab() {
     if [ ! -f "${sSyncDB}" ]; then
         cp "${MySB_InstallDir}/db/Sync.tmpl.sq3" "${sSyncDB}"
         chmod -R 0770 "${sHomeDir}"/db
-        chown -R "${FnUser}":www-data "${sHomeDir}"/db
+        chown -R $FnUser:www-data "${sHomeDir}"/db
     fi
 
     # echo "# Sync Mode for finished download" > "${sHomeDir}"/scripts/sync_mode
@@ -763,9 +763,9 @@ gfnCreateRtorrentConfigFile() {
         gfnListCountUsers 'normal'
         for seedUser in ${gsUsersList}; do
             nPiecesMemoryMax="$((gsMemory / 5))M"
-            nNumLine=$(grep 'pieces.memory.max.set' -n -m 1 /home/"${seedUser}"/.rtorrent.rc | cut -d ':' -f 1)
-            sed -i '/pieces.memory.max.set/d' /home/"${seedUser}"/.rtorrent.rc
-            sed -i "${nNumLine}i\pieces.memory.max.set = ${nPiecesMemoryMax};" /home/"${seedUser}"/.rtorrent.rc
+            nNumLine=$(grep 'pieces.memory.max.set' -n -m 1 /home/${seedUser}/.rtorrent.rc | cut -d ':' -f 1)
+            sed -i '/pieces.memory.max.set/d' /home/${seedUser}/.rtorrent.rc
+            sed -i "${nNumLine}i\pieces.memory.max.set = ${nPiecesMemoryMax};" /home/${seedUser}/.rtorrent.rc
         done
 
         case "${sFileSystemType}" in
