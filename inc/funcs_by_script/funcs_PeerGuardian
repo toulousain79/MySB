@@ -342,7 +342,8 @@ gfnPeerGuardianBlocklistsList() {
                 # 6/ Update time in database
                 if [ "${#aUpdateIdList[@]}" -gt 0 ]; then
                     nCount=0
-                    grep 'last modified:' "${MySB_InstallDir}/temp/pglcmd_update_new.log" | sed 's/)/:00/g;' | while read -r sLine; do
+
+                    while read -r sLine; do
                         dDateHour="$(echo "${sLine}" | sed 's/modified:/#/g;' | cut -d "#" -f 2 | sed 's/^ //g;')"
                         sUpdateId="$(echo "${sLine}" | awk '{ print $1 }')"
 
@@ -357,7 +358,24 @@ gfnPeerGuardianBlocklistsList() {
                             cmdMySQL "${sDbToUpdate}" "UPDATE blocklists SET lastupdate='${dDateHour}' WHERE update_id='${sUpdateId}';" ${bVerbose}
                         fi
                         ((nCount++))
-                    done
+                    done < <(grep 'last modified:' "${MySB_InstallDir}/temp/pglcmd_update_new.log" | sed 's/)/:00/g;')
+
+                    # grep 'last modified:' "${MySB_InstallDir}/temp/pglcmd_update_new.log" | sed 's/)/:00/g;' | while read -r sLine; do
+                    #     dDateHour="$(echo "${sLine}" | sed 's/modified:/#/g;' | cut -d "#" -f 2 | sed 's/^ //g;')"
+                    #     sUpdateId="$(echo "${sLine}" | awk '{ print $1 }')"
+
+                    #     if [ -n "${sLine}" ]; then
+                    #         [ "${bDisplayFn}" -eq 0 ] && bVerbose="" || bVerbose="-v"
+
+                    #         if [ -n "$(cmdMySQL 'MySB_db' "SELECT id_blocklists FROM blocklists WHERE update_id='${sUpdateId}';")" ]; then
+                    #             sDbToUpdate="MySB_db"
+                    #         else
+                    #             sDbToUpdate="${gsblocklists_DB}"
+                    #         fi
+                    #         cmdMySQL "${sDbToUpdate}" "UPDATE blocklists SET lastupdate='${dDateHour}' WHERE update_id='${sUpdateId}';" ${bVerbose}
+                    #     fi
+                    #     ((nCount++))
+                    # done
                 fi
 
                 # 7/ Check failed update
