@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -173,7 +173,7 @@ gfnPluginDiskspaceQuotaIncluded() {
         # nFnTotal="$(cmdMySQL 'MySB_db' "SELECT quota FROM users WHERE users_ident='${sFnUser}';")"
         # nFnFree="$(cmdMySQL 'MySB_db' "SELECT space_used FROM users WHERE users_ident='${sFnUser}';")"
         (grep -q '[[:space:]]/home[[:space:]]' /etc/fstab) && sFnPartition="/home" || sFnPartition="/"
-        nFnUserQuota=$(repquota -u ${sFnPartition} | grep ^${sFnUser})
+        nFnUserQuota=$(repquota -u ${sFnPartition} | grep ^"${sFnUser}")
         nFnTotal=$(echo "${nFnUserQuota}" | awk '{printf $4}')
         nFnTotal=$((nFnTotal * 1024))
         nFnFree=$(echo "${nFnUserQuota}" | awk '{printf ($4-$3)}')
@@ -184,7 +184,7 @@ gfnPluginDiskspaceQuotaIncluded() {
         } >/home/"${sFnUser}"/rtorrent/.session/quota.txt
         if [ -f "${gsRutorrentDir}/conf/users/${sFnUser}/diskspace/conf.php" ]; then
             # nFnLess=$((((nFnTotal - 5) / 100) / 1024))     # must remain 5%
-            nFnLess=$(((nFnTotal - 5) / 100))     # must remain 5%
+            nFnLess=$(((nFnTotal - 5) / 100)) # must remain 5%
             if [ -n "${nFnLess}" ]; then
                 nFnNumLine=$(grep 'notifySpaceLimit' -n -m 1 "${gsRutorrentDir}/conf/users/${sFnUser}/diskspace/conf.php" | cut -d ':' -f 1)
                 sed -i '/notifySpaceLimit/d' "${gsRutorrentDir}/conf/users/${sFnUser}/diskspace/conf.php"
@@ -213,7 +213,7 @@ gfnManageQuota() {
     nTotalNormalAutoUsers=0
     case $(getconf LONG_BIT) in
         64) sVFSV="vfsv1" ;;
-        *)  sVFSV="vfsv0" ;;
+        *) sVFSV="vfsv0" ;;
     esac
     if [ -n "$1" ]; then
         if [ "$1" == "-v" ]; then
@@ -389,9 +389,9 @@ gfnManageUserHomeDir() {
         chmod 0750 /home/"${sUser}"/.rTorrent_erased.sh
     fi
     # /home/${sUser}/.check_annoncers
-    [ ! -f /home/${sUser}/.check_annoncers ] && touch /home/${sUser}/.check_annoncers
-    [ "$(stat --printf %U /home/${sUser}/.check_annoncers):$(stat --printf %G /home/${sUser}/.check_annoncers)" != "root:mysb_users" ] && chown root:mysb_users /home/${sUser}/.check_annoncers
-    [ "$(stat --printf %a /home/${sUser}/.check_annoncers)" -ne 666 ] && chmod 0666 /home/${sUser}/.check_annoncers
+    [ ! -f /home/"${sUser}"/.check_annoncers ] && touch /home/"${sUser}"/.check_annoncers
+    [ "$(stat --printf %U /home/"${sUser}"/.check_annoncers):$(stat --printf %G /home/"${sUser}"/.check_annoncers)" != "root:mysb_users" ] && chown root:mysb_users /home/"${sUser}"/.check_annoncers
+    [ "$(stat --printf %a /home/"${sUser}"/.check_annoncers)" -ne 666 ] && chmod 0666 /home/"${sUser}"/.check_annoncers
 
     # /home/user/db
     chmod -R 0770 /home/"${sUser}"/db
@@ -479,8 +479,6 @@ gfnRuTorrentUsersConfigs() {
     if [ ! -f "${gsRutorrentDir}/share/users/${sUser}/settings/uisettings.json" ]; then
         install -o www-data -g www-data -m 0666 "${MySB_InstallDir}"/templates/rutorrent/uisettings.json.tmpl "${gsRutorrentDir}/share/users/${sUser}/settings/uisettings.json"
     fi
-    rm -rf ${gsRutorrentDir}/share/settings/
-    rm -rf ${gsRutorrentDir}/share/torrents/
 
     # conf
     if [ ! -d "${gsRutorrentDir}/conf/users/${sUser}/" ]; then mkdir -p "${gsRutorrentDir}/conf/users/${sUser}/"; fi
@@ -604,7 +602,7 @@ gfnUserCrontab() {
     if [ ! -f "${sSyncDB}" ]; then
         cp "${MySB_InstallDir}/db/Sync.tmpl.sq3" "${sSyncDB}"
         chmod -R 0770 "${sHomeDir}"/db
-        chown -R $FnUser:www-data "${sHomeDir}"/db
+        chown -R "${FnUser}":www-data "${sHomeDir}"/db
     fi
 
     # echo "# Sync Mode for finished download" > "${sHomeDir}"/scripts/sync_mode
