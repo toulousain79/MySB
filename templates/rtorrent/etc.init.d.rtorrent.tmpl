@@ -62,10 +62,11 @@ gsBinDesc="rTorrent for ${gsUsername}"
 # Binary
 #------------------------------------------------------------
 # rTorrent bin
-sRequest="$(cmdMySQL 'MySB_db' "SELECT rtorrent_version,scgi_port,rtorrent_port FROM users WHERE users_ident='${gsUsername}';" | sed 's/\t/|/g;')"
+sRequest="$(cmdMySQL 'MySB_db' "SELECT rtorrent_version,proxy_port,scgi_port,rtorrent_port FROM users WHERE users_ident='${gsUsername}';" | sed 's/\t/|/g;')"
 rTorrentVersion="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[1]}')"
-nPortCgi="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[2]}')"
-nPortRtorrent="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[3]}')"
+nProxyPort="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[2]}')"
+nPortCgi="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[3]}')"
+nPortRtorrent="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[4]}')"
 bActiveUdp="$(cmdMySQL 'MySB_db' "SELECT annoncers_udp FROM system WHERE id_system='1';")"
 nUid=$(id "${gsUsername}" -u)
 bGuid=$(id "${gsUsername}" -g)
@@ -186,16 +187,18 @@ gfnDoStart() {
     rm -f "${MySB_InstallDir}/docker/${gsBinName}.yml"
     gfnGetRepoValues 'rtorrent'
     aCompose=("docker" "run" "--env USERNAME=${gsUsername}" "--env PUID=${nUid}" "--env PGID=${bGuid}" "--env PGID_mysb_users=${bGuidMysbUsers}")
-    aCompose+=("--env PORT_CGI=${nPortCgi}" "--env PORT_RTORRENT=${nPortRtorrent}" "--env USE_UDP=${bActiveUdp}")
-    aCompose+=("--env RUTORRENT_DIR=${gsRutorrentDir}" "--env RTORRENT_VERSION=${rTorrentVersion}")
+    aCompose+=("--env PORT_CGI=${nPortCgi}" "--env PORT_RTORRENT=${nPortRtorrent}" "--env USE_UDP=${bActiveUdp}" "--env RTORRENT_VERSION=${rTorrentVersion}")
     aCompose+=("--env PORT_MYSB_HTTPS=${gsPort_NginX_HTTPS}" "--env HOSTNAME=${gsHostNameFqdn}")
-    aCompose+=("-p ${nPortCgi}:${nPortCgi}/tcp" "-p ${nPortRtorrent}:${nPortRtorrent}/tcp")
+    aCompose+=("-p ${nProxyPort}:8080/tcp" "-p ${nPortCgi}:${nPortCgi}/tcp" "-p ${nPortRtorrent}:${nPortRtorrent}/tcp")
     [[ ${bActiveUdp} -eq 1 ]] && aCompose+=("-p ${nPortRtorrent}:${nPortRtorrent}/udp")
-    aCompose+=("-v /home:/home" "-v ${gsRutorrentDir}:${gsRutorrentDir}")
+    aCompose+=("-v /home:/home")
     aCompose+=("-v /etc/localtime:/etc/localtime:ro" "-v /etc/timezone:/etc/timezone:ro" "-v /home/.config.cnf:/home/.config.cnf:ro")
     aCompose+=("-v /var/run/mysqld/mysqld.sock:/var/run/mysqld/mysqld.sock")
+    aCompose+=("-v ${gsRutorrentDir}/conf:/var/www/html/ru/conf")
+    aCompose+=("-v ${gsRutorrentDir}/share:/var/www/html/ru/share")
     aCompose+=("--restart unless-stopped" "--name ${gsBinName}" "--network frontend")
-    aCompose+=("registry.gitlab.com/toulousain79/mysb_images/rtorrent/rtorrent:${gsRepoVersion}")
+    [[ ${gbDevMode} -eq 1 ]] && gsRepoVersion="dev"
+    aCompose+=("registry.gitlab.com/toulousain79/mysb_images/rtorrent/rutorrent_rtorrent:${gsRepoVersion}")
 
     composerize "${aCompose[@]}" >"${MySB_InstallDir}/docker/${gsBinName}.yml"
     if [ -f "${MySB_InstallDir}/docker/${gsBinName}.yml" ]; then

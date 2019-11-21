@@ -86,11 +86,14 @@ if [ -z "$sCheckDuplicate" ]; then
     UPPERNEWUSER=$(echo "${UserToCreate}" | tr '[:lower:]' '[:upper:]')
     NEWRPC="/$UPPERNEWUSER"
     LastPort="$(cmdMySQL 'MySB_db' "SELECT max(rtorrent_port) FROM users;")"
-    [ -z "$LastPort" ] && LastPort=51100
+    [ -z "${LastPort}" ] && LastPort=51100
     ((LastPort++))
-    ScgiPort=$LastPort
+    ScgiPort=${LastPort}
     ((LastPort++))
-    rTorrentPort=$LastPort
+    rTorrentPort=${LastPort}
+    nProxyPort="$(cmdMySQL 'MySB_db' "SELECT max(proxy_port) FROM users;")"
+    [ -z "${nProxyPort}" ] && nProxyPort=8080
+    [[ ${nProxyPort} -gt 8080 ]] && ((nProxyPort++))
 
     #### user infos
     if [ "${UserToCreate}" != "${gsMainUserName}" ]; then
@@ -102,11 +105,11 @@ if [ -z "$sCheckDuplicate" ]; then
             Quota=0
             QuotaType="auto"
         fi
-        cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir,language,quota,account_type,quota_type) VALUES ('${UserToCreate}','${UserEmail}','${NewUserPassword}','${NEWRPC}','${UserSFTP}','${UserSUDO}','${ScgiPort}','${rTorrentPort}','${NewUserHomedir}','${EnvLang}','$Quota','${UserAccountType}','$QuotaType');"
+        cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,users_passwd,rpc,sftp,sudo,proxy_port,scgi_port,rtorrent_port,home_dir,language,quota,account_type,quota_type) VALUES ('${UserToCreate}','${UserEmail}','${NewUserPassword}','${NEWRPC}','${UserSFTP}','${UserSUDO}','${nProxyPort}','${ScgiPort}','${rTorrentPort}','${NewUserHomedir}','${EnvLang}','$Quota','${UserAccountType}','$QuotaType');"
     else
         Quota=$(gfnQuotaSpaceAvailable)
         log_daemon_msg "${CreateUser_UpdateInfoDB} [${UserToCreate}]"
-        cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='', rpc='${NEWRPC}', scgi_port='${ScgiPort}', rtorrent_port='${rTorrentPort}', home_dir='${NewUserHomedir}', quota='$Quota' WHERE users_ident='${UserToCreate}';"
+        cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='', rpc='${NEWRPC}', proxy_port='${nProxyPort}', scgi_port='${ScgiPort}', rtorrent_port='${rTorrentPort}', home_dir='${NewUserHomedir}', quota='$Quota' WHERE users_ident='${UserToCreate}';"
     fi
     gfnListCountUsers 'all'
     gfnStatusLSB
@@ -211,20 +214,28 @@ if [ -z "$sCheckDuplicate" ]; then
             gfnStatusLSB
 
             #### NginX
-            log_daemon_msg "${CreateUser_RpcFile} [${UserToCreate}]"
+            log_daemon_msg "${CreateUser_NginxFiles} [${UserToCreate}]"
+            install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.proxy.user.conf.tmpl /etc/nginx/proxy/rutorrent-"${UserToCreate}".conf
             install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.rpc.user.conf.tmpl /etc/nginx/rpc/"${UserToCreate}".conf
-            perl -pi -e "s/<scgi_port>/${ScgiPort}/g" /etc/nginx/rpc/"${UserToCreate}".conf
-            perl -pi -e "s/<username>/${UserToCreate}/g" /etc/nginx/rpc/"${UserToCreate}".conf
-            perl -pi -e "s/<USERNAME>/$UPPERNEWUSER/g" /etc/nginx/rpc/"${UserToCreate}".conf
             install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.rpc.user.local.tmpl /etc/nginx/rpc/"${UserToCreate}".local
-            perl -pi -e "s/<scgi_port>/${ScgiPort}/g" /etc/nginx/rpc/"${UserToCreate}".local
-            perl -pi -e "s/<username>/${UserToCreate}/g" /etc/nginx/rpc/"${UserToCreate}".local
-            perl -pi -e "s/<USERNAME>/$UPPERNEWUSER/g" /etc/nginx/rpc/"${UserToCreate}".local
+            perl -pi \
+                -e "s/<scgi_port>/${ScgiPort}/g" \
+                -e "s/<username>/${UserToCreate}/g" \
+                -e "s/<USERNAME>/$UPPERNEWUSER/g" \
+                /etc/nginx/rpc/"${UserToCreate}".local \
+                /etc/nginx/rpc/"${UserToCreate}".conf \
+                /etc/nginx/proxy/rutorrent-"${UserToCreate}".conf
+
             {
                 echo "upstream rtorrent-${UserToCreate} {"
                 echo "  server unix:/run/rtorrent/${UserToCreate}.sock;"
                 echo "}"
-            } >/etc/nginx/upstream/rtorrent-${UserToCreate}.conf
+            } >/etc/nginx/upstream/rtorrent-"${UserToCreate}".conf
+            {
+                echo "upstream ${UserToCreate} {"
+                echo "	server 127.0.0.1:${nProxyPort};"
+                echo "}"
+            } >/etc/nginx/upstream/rutorrent-"${UserToCreate}".conf
             gfnStatusLSB
 
             #### CakeBox

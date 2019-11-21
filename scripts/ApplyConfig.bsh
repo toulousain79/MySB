@@ -46,18 +46,18 @@ fnDoApplyConfig() {
     User=$1
 
     echo "$(/bin/date '+%H:%M:%S') - Creating order of execution for ${UserApplying}"
-    sAllCommandsUser="$(cmdMySQL 'MySB_db' "SELECT commands FROM commands WHERE user='$User';")"
+    sAllCommandsUser="$(cmdMySQL 'MySB_db' "SELECT commands FROM commands WHERE user='${User}';")"
     for sCommandUser in $sAllCommandsUser; do
         case "${sCommandUser}" in
             BlocklistsRTorrent.bsh | MySB_SecurityRules* | GetTrackersCert.bsh | MySB_ChangeUserPassword | Postfix | Options_MySB | Options_System | OpenVPN | Restart_rTorrent | ManageAddresses | UserScript_StartSynchro | Quota_Update) # On peut supprimer les doublons
-                sCommandsPriorities="$(cmdMySQL 'MySB_db' "SELECT min(priority), max(priority) FROM commands WHERE user='$User' AND commands='${sCommandUser}';" | sed 's/\t/|/g;')"
-                nMinPriority="$(echo $sCommandsPriorities | awk '{split($0,a,"|"); print a[1]}')"
-                nMaxPriority="$(echo $sCommandsPriorities | awk '{split($0,a,"|"); print a[2]}')"
-                if [ ${nMinPriority} -ne ${nMaxPriority} ] && [ -n "${nMinPriority}" ] && [ -n "${nMaxPriority}" ]; then
-                    while [ ${nMinPriority} -lt ${nMaxPriority} ]; do
+                sCommandsPriorities="$(cmdMySQL 'MySB_db' "SELECT min(priority), max(priority) FROM commands WHERE user='${User}' AND commands='${sCommandUser}';" | sed 's/\t/|/g;')"
+                nMinPriority="$(echo "${sCommandsPriorities}" | awk '{split($0,a,"|"); print a[1]}')"
+                nMaxPriority="$(echo "${sCommandsPriorities}" | awk '{split($0,a,"|"); print a[2]}')"
+                if [[ ${nMinPriority} -ne ${nMaxPriority} ]] && [ -n "${nMinPriority}" ] && [ -n "${nMaxPriority}" ]; then
+                    while [[ ${nMinPriority} -lt ${nMaxPriority} ]]; do
                         # On supprime les premières commandes
-                        echo -n "	--> " && echo "DELETE FROM commands WHERE user='$User' AND commands='${sCommandUser}' AND priority='${nMinPriority}';"
-                        cmdMySQL 'MySB_db' "DELETE FROM commands WHERE user='$User' AND commands='${sCommandUser}' AND priority='${nMinPriority}';"
+                        echo -n "	--> " && echo "DELETE FROM commands WHERE user='${User}' AND commands='${sCommandUser}' AND priority='${nMinPriority}';"
+                        cmdMySQL 'MySB_db' "DELETE FROM commands WHERE user='${User}' AND commands='${sCommandUser}' AND priority='${nMinPriority}';"
                         ((nMinPriority++))
                     done
                 fi
@@ -68,13 +68,13 @@ fnDoApplyConfig() {
     # 2 - En fonction de l'ensemble des commandes, on réorganise certaines.
     # Par exemple, la commande 'MySB_SecurityRules' devra être exécutée une seule fois et en dernier
     # On en garde qu'une seule tout utilisateur confondu et assigne une priorité maxi.
-    sCommandsPriorities="$(cmdMySQL 'MySB_db' "SELECT min(priority), max(priority) FROM commands WHERE commands='MySB_SecurityRules' AND user='$User';" | sed 's/NULL/0/g;s/\t/|/g;')"
-    nMinPriority="$(echo $sCommandsPriorities | awk '{split($0,a,"|"); print a[1]}')"
-    nMaxPriority="$(echo $sCommandsPriorities | awk '{split($0,a,"|"); print a[2]}')"
-    if [ ${nMinPriority} -ne ${nMaxPriority} ] && [ -n "${nMinPriority}" ] && [ -n "${nMaxPriority}" ]; then
-        while [ ${nMinPriority} -lt ${nMaxPriority} ]; do
+    sCommandsPriorities="$(cmdMySQL 'MySB_db' "SELECT min(priority), max(priority) FROM commands WHERE commands='MySB_SecurityRules' AND user='${User}';" | sed 's/NULL/0/g;s/\t/|/g;')"
+    nMinPriority="$(echo "${sCommandsPriorities}" | awk '{split($0,a,"|"); print a[1]}')"
+    nMaxPriority="$(echo "${sCommandsPriorities}" | awk '{split($0,a,"|"); print a[2]}')"
+    if [[ ${nMinPriority} -ne ${nMaxPriority} ]] && [ -n "${nMinPriority}" ] && [ -n "${nMaxPriority}" ]; then
+        while [[ ${nMinPriority} -lt ${nMaxPriority} ]]; do
             # On supprime les premières commandes
-            echo -n "	--> " && echo "DELETE FROM commands WHERE commands='MySB_SecurityRules' AND priority='${nMinPriority}' AND user='$User';"
+            echo -n "	--> " && echo "DELETE FROM commands WHERE commands='MySB_SecurityRules' AND priority='${nMinPriority}' AND user='${User}';"
             cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='MySB_SecurityRules' AND priority='${nMinPriority}' AND user='${User}';"
             ((nMinPriority++))
         done
@@ -88,8 +88,8 @@ fnDoApplyConfig() {
     # 3 - On peut maintenant exécuté les commandes une à une dans l'ordre ascendant des priorités.
     sAllCommands="$(cmdMySQL 'MySB_db' "SELECT commands,priority FROM commands WHERE user='${User}' ORDER BY priority ASC;" | sed 's/\t/|/g;')"
     for sCommandLine in $sAllCommands; do
-        sCommand="$(echo ${sCommandLine} | awk '{split($0,a,"|"); print a[1]}')"
-        nPriority="$(echo ${sCommandLine} | awk '{split($0,a,"|"); print a[2]}')"
+        sCommand="$(echo "${sCommandLine}" | awk '{split($0,a,"|"); print a[1]}')"
+        nPriority="$(echo "${sCommandLine}" | awk '{split($0,a,"|"); print a[2]}')"
 
         # Creating arguments listing
         case "${sCommand}" in
@@ -103,7 +103,7 @@ fnDoApplyConfig() {
         echo "$(/bin/date '+%H:%M:%S') - Executing ${sCommand} for ${UserApplying}"
         case "${sCommand}" in
             "MySB_CreateUser") # ($1 = user, $2 = sftp, $3 = sudo, $4 = email, $5 = account_type, $6 = quota Gb)
-                IFS='|' read -a array <<<"${sCommandArg}"
+                IFS='|' read -r -a array <<<"${sCommandArg}"
                 sUserToCreate="${array[0]}"
                 sUserSftp="${array[1]}"
                 sUserSudo="${array[2]}"
@@ -112,7 +112,7 @@ fnDoApplyConfig() {
                 nQuota="${array[5]}"
 
                 gfnWaitingSTD MySB_CreateUser
-                screen -dmS MySB_CreateUser /bin/bash ${MySB_InstallDir}/bin/MySB_CreateUser "$sUserToCreate" "$sUserSftp" "$sUserSudo" "$sUserMail" "$sUserAccountType" "$nQuota" 'APPLYCONFIG'
+                screen -dmS MySB_CreateUser /bin/bash "${MySB_InstallDir}"/bin/MySB_CreateUser "$sUserToCreate" "$sUserSftp" "$sUserSudo" "$sUserMail" "$sUserAccountType" "$nQuota" 'APPLYCONFIG'
                 gfnWaitingSTD MySB_CreateUser
                 rm -vf /tmp/MySB_Portal.lock
                 echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
@@ -123,7 +123,7 @@ fnDoApplyConfig() {
                 sUserToDelete="${sCommandArg}"
 
                 gfnWaitingSTD MySB_DeleteUser
-                screen -dmS MySB_DeleteUser /bin/bash ${MySB_InstallDir}/bin/MySB_DeleteUser "$sUserToDelete" 'APPLYCONFIG'
+                screen -dmS MySB_DeleteUser /bin/bash "${MySB_InstallDir}"/bin/MySB_DeleteUser "$sUserToDelete" 'APPLYCONFIG'
                 gfnWaitingSTD MySB_DeleteUser
                 rm -vf /tmp/MySB_Portal.lock
                 echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
@@ -131,15 +131,15 @@ fnDoApplyConfig() {
                 ;;
 
             "MySB_ChangeUserPassword") # ($1 = username, $2 = userpass)
-                IFS='|' read -a array <<<"${sCommandArg}"
+                IFS='|' read -r -a array <<<"${sCommandArg}"
                 sUserName="${array[0]}"
                 sUserPass="${array[1]}"
 
                 gfnWaitingSTD MySB_ChangeUserPassword
-                screen -dmS MySB_ChangeUserPassword /bin/bash ${MySB_InstallDir}/bin/MySB_ChangeUserPassword "${sUserName}" "${sUserPass}" 'APPLYCONFIG'
+                screen -dmS MySB_ChangeUserPassword /bin/bash "${MySB_InstallDir}"/bin/MySB_ChangeUserPassword "${sUserName}" "${sUserPass}" 'APPLYCONFIG'
                 gfnWaitingSTD MySB_ChangeUserPassword
                 gfnWaitingSTD MySB_SecurityRules
-                screen -dmS MySB_SecurityRules /bin/bash ${MySB_InstallDir}/bin/MySB_SecurityRules 'refresh' '--users' 'APPLYCONFIG'
+                screen -dmS MySB_SecurityRules /bin/bash "${MySB_InstallDir}"/bin/MySB_SecurityRules 'refresh' '--users' 'APPLYCONFIG'
                 gfnWaitingSTD MySB_SecurityRules
                 echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
@@ -147,7 +147,7 @@ fnDoApplyConfig() {
 
             "BlocklistsRTorrent.bsh")
                 gfnWaitingSTD BlocklistsRTorrent
-                screen -dmS BlocklistsRTorrent /bin/bash ${MySB_InstallDir}/scripts/BlocklistsRTorrent.bsh 'APPLYCONFIG'
+                screen -dmS BlocklistsRTorrent /bin/bash "${MySB_InstallDir}"/scripts/BlocklistsRTorrent.bsh 'APPLYCONFIG'
                 gfnWaitingSTD BlocklistsRTorrent
                 echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
@@ -156,11 +156,11 @@ fnDoApplyConfig() {
             "Blocklists_PeerGuardian")
                 # Refresh security rules
                 gfnWaitingSTD MySB_SecurityRules
-                screen -dmS MySB_SecurityRules /bin/bash ${MySB_InstallDir}/bin/MySB_SecurityRules 'refresh' '--blocklists' 'APPLYCONFIG'
+                screen -dmS MySB_SecurityRules /bin/bash "${MySB_InstallDir}"/bin/MySB_SecurityRules 'refresh' '--blocklists' 'APPLYCONFIG'
                 gfnWaitingSTD MySB_SecurityRules
                 # Update PGL lists
                 gfnWaitingSTD PeerGuardian
-                screen -dmS PeerGuardian /bin/bash ${MySB_InstallDir}/scripts/PeerGuardian.bsh 'update' 'APPLYCONFIG'
+                screen -dmS PeerGuardian /bin/bash "${MySB_InstallDir}"/scripts/PeerGuardian.bsh 'update' 'APPLYCONFIG'
                 gfnWaitingSTD PeerGuardian
                 echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
@@ -168,7 +168,7 @@ fnDoApplyConfig() {
 
             "ManageAddresses")
                 gfnWaitingSTD MySB_SecurityRules
-                screen -dmS MySB_SecurityRules /bin/bash ${MySB_InstallDir}/bin/MySB_SecurityRules 'refresh' '--users' 'APPLYCONFIG'
+                screen -dmS MySB_SecurityRules /bin/bash "${MySB_InstallDir}"/bin/MySB_SecurityRules 'refresh' '--users' 'APPLYCONFIG'
                 gfnWaitingSTD MySB_SecurityRules
                 echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
@@ -176,7 +176,7 @@ fnDoApplyConfig() {
 
             "MySB_SecurityRules")
                 gfnWaitingSTD MySB_SecurityRules
-                screen -dmS MySB_SecurityRules /bin/bash ${MySB_InstallDir}/bin/MySB_SecurityRules 'create' 'APPLYCONFIG'
+                screen -dmS MySB_SecurityRules /bin/bash "${MySB_InstallDir}"/bin/MySB_SecurityRules 'create' 'APPLYCONFIG'
                 gfnWaitingSTD MySB_SecurityRules
                 echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
@@ -223,11 +223,11 @@ fnDoApplyConfig() {
                 sArg="${sCommandArg}"
 
                 gfnWaitingSTD GetTrackersCert
-                screen -dmS GetTrackersCert /bin/bash ${MySB_InstallDir}/scripts/GetTrackersCert.bsh 'APPLYCONFIG' "${sArg}"
+                screen -dmS GetTrackersCert /bin/bash "${MySB_InstallDir}"/scripts/GetTrackersCert.bsh 'APPLYCONFIG' "${sArg}"
                 gfnWaitingSTD GetTrackersCert
 
                 gfnWaitingSTD MySB_SecurityRules
-                screen -dmS MySB_SecurityRules /bin/bash ${MySB_InstallDir}/bin/MySB_SecurityRules 'refresh' '--trackers' 'APPLYCONFIG'
+                screen -dmS MySB_SecurityRules /bin/bash "${MySB_InstallDir}"/bin/MySB_SecurityRules 'refresh' '--trackers' 'APPLYCONFIG'
                 gfnWaitingSTD MySB_SecurityRules
                 echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
@@ -235,32 +235,32 @@ fnDoApplyConfig() {
 
             "Postfix")
                 gfnWaitingSTD Postfix
-                screen -dmS Postfix /bin/bash ${MySB_InstallDir}/install/Postfix 'APPLYCONFIG'
+                screen -dmS Postfix /bin/bash "${MySB_InstallDir}"/install/Postfix 'APPLYCONFIG'
                 gfnWaitingSTD Postfix
                 echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 ;;
 
             "Options_MySB")
-                gfnWaitingSTD Options_MySB-${User}
+                gfnWaitingSTD Options_MySB-"${User}"
                 # shellcheck source=inc/funcs_by_script/funcs_MySB_CreateUser
-                source ${MySB_InstallDir}/inc/funcs_by_script/funcs_MySB_CreateUser
+                source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_MySB_CreateUser
                 gfnUserCrontab "${User}"
-                gfnWaitingSTD Options_MySB-${User}
+                gfnWaitingSTD Options_MySB-"${User}"
                 echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 ;;
 
             "Restart_rTorrent")
-                gfnWaitingSTD rTorrent-${User}
-                screen -dmS rTorrent-${User} /bin/bash /home/${User}/.rTorrent_tasks.sh restart &>/dev/null
-                gfnWaitingSTD rTorrent-${User}
+                gfnWaitingSTD rTorrent-"${User}"
+                screen -dmS rTorrent-"${User}" /bin/bash /home/"${User}"/.rTorrent_tasks.sh restart &>/dev/null
+                gfnWaitingSTD rTorrent-"${User}"
                 echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 ;;
 
             "Options_System") # ($1 = OpenVPN:[-1|0|1], $2 = LogWatch:[-1|0|1], $3 = DNScrypt:[-1|0|1], $4 = MySB_SecurityRules])
-                IFS='|' read -a array <<<"${sCommandArg}"
+                IFS='|' read -r -a array <<<"${sCommandArg}"
                 OpenVpnSwitch="${array[0]}"
                 LogwatchSwitch="${array[1]}"
                 DNScryptSwitch="${array[2]}"
@@ -271,7 +271,7 @@ fnDoApplyConfig() {
                 case "${OpenVpnValue}" in
                     1)
                         gfnWaitingSTD OpenVPN
-                        screen -dmS OpenVPN_Zip /bin/bash ${MySB_InstallDir}/install/OpenVPN refresh 'APPLYCONFIG'
+                        screen -dmS OpenVPN_Zip /bin/bash "${MySB_InstallDir}"/install/OpenVPN refresh 'APPLYCONFIG'
                         gfnWaitingSTD OpenVPN
                         ;;
                 esac
@@ -279,7 +279,7 @@ fnDoApplyConfig() {
                 LogwatchValue="$(echo "${LogwatchSwitch}" | cut -d ":" -f 2)"
                 case "${LogwatchValue}" in
                     0) [ -f /etc/cron.daily/00logwatch ] && rm /etc/cron.daily/00logwatch ;;
-                    1) [ ! -f /etc/cron.daily/00logwatch ] && install -g root -o root -m 0755 ${MySB_InstallDir}/templates/logwatch/etc.cron.daily.00logwatch.tmpl /etc/cron.daily/00logwatch ;;
+                    1) [ ! -f /etc/cron.daily/00logwatch ] && install -g root -o root -m 0755 "${MySB_InstallDir}"/templates/logwatch/etc.cron.daily.00logwatch.tmpl /etc/cron.daily/00logwatch ;;
                 esac
 
                 case "$(echo "${DNScryptSwitch}" | cut -d ":" -f 2)" in
@@ -295,7 +295,7 @@ fnDoApplyConfig() {
 
                 if [ -n "${SecurityRules}" ]; then
                     gfnWaitingSTD MySB_SecurityRules
-                    screen -dmS MySB_SecurityRules /bin/bash ${MySB_InstallDir}/bin/MySB_SecurityRules 'refresh' '--pglcmd' 'APPLYCONFIG'
+                    screen -dmS MySB_SecurityRules /bin/bash "${MySB_InstallDir}"/bin/MySB_SecurityRules 'refresh' '--pglcmd' 'APPLYCONFIG'
                     gfnWaitingSTD MySB_SecurityRules
                 fi
 
@@ -303,9 +303,9 @@ fnDoApplyConfig() {
                     0 | 1)
                         gfnListCountUsers 'normal'
                         for sUser in ${gsUsersList}; do
-                            gfnWaitingSTD rTorrent-${sUser}
-                            screen -dmS rTorrent-${sUser} /bin/bash /home/${sUser}/.rTorrent_tasks.sh restart &>/dev/null
-                            gfnWaitingSTD rTorrent-${sUser}
+                            gfnWaitingSTD rTorrent-"${sUser}"
+                            screen -dmS rTorrent-"${sUser}" /bin/bash /home/"${sUser}"/.rTorrent_tasks.sh restart &>/dev/null
+                            gfnWaitingSTD rTorrent-"${sUser}"
                         done
                         ;;
                 esac
@@ -315,26 +315,26 @@ fnDoApplyConfig() {
                 ;;
 
             "OpenVPN") # ($1 = username, $2 = userpass)
-                IFS='|' read -a array <<<"${sCommandArg}"
+                IFS='|' read -r -a array <<<"${sCommandArg}"
                 sUserName="${array[0]}"
                 sUserPass="${array[1]}"
 
                 gfnWaitingSTD OpenVPN_Zip
-                screen -dmS OpenVPN_Zip /bin/bash ${MySB_InstallDir}/install/OpenVPN zip "${sUserName}" "${sUserPass}" 'APPLYCONFIG'
+                screen -dmS OpenVPN_Zip /bin/bash "${MySB_InstallDir}"/install/OpenVPN zip "${sUserName}" "${sUserPass}" 'APPLYCONFIG'
                 gfnWaitingSTD OpenVPN_Zip
                 echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 ;;
 
             "UserScript_StartSynchro") # ($1 = script, $2 = mode)
-                IFS='|' read -a array <<<"${sCommandArg}"
+                IFS='|' read -r -a array <<<"${sCommandArg}"
                 sUserScriptName="${array[0]}"
                 sUserScriptMode="${array[1]}"
 
-                if [ -f /home/${User}/scripts/${sUserScriptName} ]; then
+                if [ -f /home/"${User}"/scripts/"${sUserScriptName}" ]; then
                     case "${sUserScriptMode}" in
-                        'DIRECT') screen -dmS UserScript_StartSynchro su -s /bin/sh ${User} -c "/bin/bash /home/${User}/scripts/${sUserScriptName} 'DIRECT' > /dev/null 2>&1" ;;
-                        'CRON') screen -dmS UserScript_StartSynchro su -s /bin/sh ${User} -c "/bin/bash /home/${User}/scripts/${sUserScriptName} 'CRON' > /dev/null 2>&1" ;;
+                        'DIRECT') screen -dmS UserScript_StartSynchro su -s /bin/sh "${User}" -c "/bin/bash /home/${User}/scripts/${sUserScriptName} 'DIRECT' > /dev/null 2>&1" ;;
+                        'CRON') screen -dmS UserScript_StartSynchro su -s /bin/sh "${User}" -c "/bin/bash /home/${User}/scripts/${sUserScriptName} 'CRON' > /dev/null 2>&1" ;;
                     esac
                 fi
                 echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
@@ -343,7 +343,7 @@ fnDoApplyConfig() {
 
             "Quota_Update")
                 # shellcheck source=inc/funcs_by_script/funcs_MySB_CreateUser
-                source ${MySB_InstallDir}/inc/funcs_by_script/funcs_MySB_CreateUser
+                source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_MySB_CreateUser
                 gfnManageQuota '-v'
                 echo -n "	--> " && echo "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
                 cmdMySQL 'MySB_db' "DELETE FROM commands WHERE commands='${sCommand}' AND user='${User}' AND priority='${nPriority}';"
@@ -354,18 +354,19 @@ fnDoApplyConfig() {
 
 case "$LocSwitch" in
     "DO_APPLY") # Execute by portal
-        screen -dmS ApplyConfig_${UserApplying} /bin/bash ${MySB_InstallDir}/scripts/ApplyConfig.bsh "${UserApplying}" 'SCREEN'
+        screen -dmS ApplyConfig_"${UserApplying}" /bin/bash "${MySB_InstallDir}"/scripts/ApplyConfig.bsh "${UserApplying}" 'SCREEN'
         cmdMySQL 'MySB_db' "UPDATE commands SET reload='0' WHERE user='${UserApplying}';"
         ;;
     "SCREEN")
         echo "$(/bin/date '+%H:%M:%S') - Waiting authorization"
-        while [ -n "$(ps ax | grep 'ApplyConfig.bsh' | grep 'SCREEN' | grep -v "${UserApplying}\|grep")" ]; do
+        # while [ -n "$(ps ax | grep 'ApplyConfig.bsh' | grep 'SCREEN' | grep -v "${UserApplying}\|grep")" ]; do
+        while [[ $(pgrep -c 'ApplyConfig.bsh') -ne 0 ]]; do
             sleep 1
         done
 
         if [ -n "${UserApplying}" ]; then
             echo "$(/bin/date '+%H:%M:%S') - Executing commands"
-            fnDoApplyConfig ${UserApplying}
+            fnDoApplyConfig "${UserApplying}"
         fi
         ;;
 esac

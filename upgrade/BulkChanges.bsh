@@ -110,9 +110,10 @@ case "${1}" in
         for sUser in ${gsUsersList}; do
             echo
             echo "########## ${sUser}"
-            sRequestValues="$(cmdMySQL 'MySB_db' "SELECT id_users,users_passwd FROM users WHERE users_ident = '${sUser}';" | sed 's/\t/|/g;')"
-            UserId="$(echo $sRequestValues | awk '{split($0,a,"|"); print a[1]}')"
-            UserPassword="$(echo $sRequestValues | awk '{split($0,a,"|"); print a[2]}')"
+            sRequestValues="$(cmdMySQL 'MySB_db' "SELECT id_users,users_passwd,proxy_port FROM users WHERE users_ident = '${sUser}';" | sed 's/\t/|/g;')"
+            UserId="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[1]}')"
+            UserPassword="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
+            nProxyPort="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[3]}')"
             # rTorrent init
             install -v -o root -g root -m 0755 "${MySB_InstallDir}"/templates/rtorrent/etc.init.d.rtorrent.tmpl "/etc/init.d/rtorrent-${sUser}"
             perl -pi -e "s/<username>/${sUser}/g" "/etc/init.d/rtorrent-${sUser}"
@@ -134,8 +135,8 @@ case "${1}" in
             fi
 
             # Change some rights
-            chown -v ${sUser}:${sUser} /home/${sUser}/.ssh/authorized_keys
-            chmod -v 0644 /home/${sUser}/.ssh/authorized_keys
+            chown -v "${sUser}":"${sUser}" /home/"${sUser}"/.ssh/authorized_keys
+            chmod -v 0644 /home/"${sUser}"/.ssh/authorized_keys
 
             # OpenVPN - Create again clients configurations if needed
             if [ "$(find /etc/openvpn/clients/ -maxdepth 1 -type f -name "${sUser}*" 2>/dev/null | wc -l)" -eq 0 ]; then
@@ -157,19 +158,27 @@ case "${1}" in
             sPortSCGI="$(cmdMySQL 'MySB_db' "SELECT scgi_port FROM users WHERE users_ident='${sUser}';")"
             sUserUpper="$(echo "${sUser}" | tr '[:lower:]' '[:upper:]')"
 
+            install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.proxy.user.conf.tmpl /etc/nginx/proxy/rutorrent-"${sUser}".conf
             install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.rpc.user.conf.tmpl /etc/nginx/rpc/"${sUser}".conf
-            perl -pi -e "s/<scgi_port>/${sPortSCGI}/g" /etc/nginx/rpc/"${sUser}".conf
-            perl -pi -e "s/<username>/${sUser}/g" /etc/nginx/rpc/"${sUser}".conf
-            perl -pi -e "s/<USERNAME>/${sUserUpper}/g" /etc/nginx/rpc/"${sUser}".conf
             install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.rpc.user.local.tmpl /etc/nginx/rpc/"${sUser}".local
-            perl -pi -e "s/<scgi_port>/${sPortSCGI}/g" /etc/nginx/rpc/"${sUser}".local
-            perl -pi -e "s/<username>/${sUser}/g" /etc/nginx/rpc/"${sUser}".local
-            perl -pi -e "s/<USERNAME>/${sUserUpper}/g" /etc/nginx/rpc/"${sUser}".local
+            perl -pi \
+                -e "s/<scgi_port>/${sPortSCGI}/g" \
+                -e "s/<username>/${sUser}/g" \
+                -e "s/<USERNAME>/${sUserUpper}/g" \
+                /etc/nginx/rpc/"${sUser}".conf \
+                /etc/nginx/rpc/"${sUser}".local
+
             {
                 echo "upstream rtorrent-${sUser} {"
                 echo "  server unix:/run/rtorrent/${sUser}.sock;"
                 echo "}"
-            } >/etc/nginx/upstream/rtorrent-${sUser}.conf
+            } >/etc/nginx/upstream/rtorrent-"${sUser}".conf
+            {
+                echo "upstream ${sUser} {"
+                echo "	server 127.0.0.1:${nProxyPort};"
+                echo "}"
+            } >/etc/nginx/upstream/rutorrent-"${sUser}".conf
+
             unset UserId UserPassword
 
             # Minio normal users
@@ -190,11 +199,11 @@ case "${1}" in
         #### Cleaning
         rm -rfv "${MySB_InstallDir}/temp/"{*,.*}
         updatedb
-        for file in $(locate *.dpkg-old *.dpkg-new *.dpkg-dist *.dpkg-bak *.ucf-dist); do
-            if [ -n "${gbDevMode}" ] && [ ${gbDevMode} -eq 1 ]; then
-                mv -vf ${file} "${MySB_InstallDir}"/logs/TODEL/
+        for file in $(locate "*.dpkg-old" "*.dpkg-new" "*.dpkg-dist" "*.dpkg-bak" "*.ucf-dist"); do
+            if [ -n "${gbDevMode}" ] && [[ ${gbDevMode} -eq 1 ]]; then
+                mv -vf "${file}" "${MySB_InstallDir}"/logs/TODEL/
             else
-                rm -vf ${file}
+                rm -vf "${file}"
             fi
         done
 
