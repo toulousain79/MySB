@@ -71,6 +71,15 @@ case "${1}" in
         #### rTorrent cleaning
         aAllPackages=(rtorrent buildtorrent mktorrent mediainfo ffmpeg libcppunit-dev zlib1g-dev libncursesw5-dev libxmlrpc-c++8-dev)
         gfnPackagesManage purge "${aAllPackages[@]}"
+
+        # ruTorrent proxy users port
+        nProxyPort="$(cmdMySQL 'MySB_db' "SELECT max(proxy_port) FROM users;")"
+        [ -z "${nProxyPort}" ] && nProxyPort=8080
+        gfnListCountUsers 'normal'
+        for sUser in ${gsUsersList}; do
+            cmdMySQL 'MySB_db' "UPDATE users SET proxy_port='${nProxyPort}' WHERE users_ident='${sUser}';" -v
+            ((nProxyPort++))
+        done
         ;;
 
     "AFTER" | "INIT")
@@ -110,10 +119,13 @@ case "${1}" in
         for sUser in ${gsUsersList}; do
             echo
             echo "########## ${sUser}"
-            sRequestValues="$(cmdMySQL 'MySB_db' "SELECT id_users,users_passwd,proxy_port FROM users WHERE users_ident = '${sUser}';" | sed 's/\t/|/g;')"
+            sRequestValues="$(cmdMySQL 'MySB_db' "SELECT id_users,users_passwd,proxy_port,scgi_port FROM users WHERE users_ident = '${sUser}';" | sed 's/\t/|/g;')"
             UserId="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[1]}')"
             UserPassword="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[2]}')"
             nProxyPort="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[3]}')"
+            sPortSCGI="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[4]}')"
+            sUserUpper="$(echo "${sUser}" | tr '[:lower:]' '[:upper:]')"
+
             # rTorrent init
             install -v -o root -g root -m 0755 "${MySB_InstallDir}"/templates/rtorrent/etc.init.d.rtorrent.tmpl "/etc/init.d/rtorrent-${sUser}"
             perl -pi -e "s/<username>/${sUser}/g" "/etc/init.d/rtorrent-${sUser}"
@@ -155,9 +167,6 @@ case "${1}" in
             chmod 0440 "/etc/sudoers.d/MySB_${sUser}"
 
             # NginX files
-            sPortSCGI="$(cmdMySQL 'MySB_db' "SELECT scgi_port FROM users WHERE users_ident='${sUser}';")"
-            sUserUpper="$(echo "${sUser}" | tr '[:lower:]' '[:upper:]')"
-
             install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.proxy.user.conf.tmpl /etc/nginx/proxy/rutorrent-"${sUser}".conf
             install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.rpc.user.conf.tmpl /etc/nginx/rpc/"${sUser}".conf
             install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.rpc.user.local.tmpl /etc/nginx/rpc/"${sUser}".local

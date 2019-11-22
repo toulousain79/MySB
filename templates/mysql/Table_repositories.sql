@@ -77,7 +77,7 @@ INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`,
 ('TARGZ', '<InstallDir>/sources/netdata', 'NetData', '1.18.1', 0, 'netdata_v1.18.1.tar.gz', 'https://github.com/netdata/netdata/releases/download/v1.18.1/netdata-v1.18.1.tar.gz', 1, 0, ''),
 ('ZIP', '<InstallDir>/web/apps/nc', 'NextCloud', '17.0.0', 0, 'nextcloud_v17.0.0.zip', 'https://download.nextcloud.com/server/releases/nextcloud-17.0.0.zip', 1, 0, ''),
 
-('DOCKER', '', 'rutorrent_rtorrent', 'dev', 0, '', 'registry.gitlab.com/toulousain79/mysb_images/rtorrent/rtorrent', 1, 0, ''),
+('DOCKER', '', 'rutorrent_rtorrent', 'dev', 0, '', 'registry.gitlab.com/toulousain79/mysb_images/rutorrent_rtorrent/rutorrent_rtorrent', 1, 0, ''),
 ('DOCKER', '', 'watchtower', 'latest', 0, '', 'containrrr/watchtower', 1, 0, '');
 /*!40000 ALTER TABLE `repositories` ENABLE KEYS */;
 UNLOCK TABLES;

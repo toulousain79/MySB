@@ -511,7 +511,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `sftp` tinyint(1) NOT NULL DEFAULT '1',
   `sudo` tinyint(1) NOT NULL DEFAULT '0',
   `admin` tinyint(1) NOT NULL DEFAULT '0',
-  `proxy_port` tinyint(4) DEFAULT '',
+  `proxy_port` varchar(5) DEFAULT '',
   `scgi_port` varchar(5) DEFAULT '',
   `rtorrent_port` varchar(5) DEFAULT '',
   `home_dir` varchar(128) DEFAULT '',
