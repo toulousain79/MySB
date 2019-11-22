@@ -22,16 +22,10 @@
 #
 ##################### FIRST LINE #####################################
 
-echo && echo -e "${CBLUE}*** Current branch ***${CEND}"
+nReturn=${nReturn}
 
-echo ${CI_COMMIT_REF_NAME}
+# echo && echo -e "${CBLUE}*** Check Docker ***${CEND}"
 
-echo && echo -e "${CBLUE}*** Check bash version ***${CEND}"
-
-bash --version
-
-echo && echo -e "${CBLUE}*** Check shellcheck version ***${CEND}"
-
-shellcheck --version
+export nReturn
 
 ##################### LAST LINE ######################################

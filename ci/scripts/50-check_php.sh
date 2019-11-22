@@ -22,10 +22,34 @@
 #
 ##################### FIRST LINE #####################################
 
-echo
-case "${nReturn}" in
-0) return "${nReturn}" ;;
-*) exit "${nReturn}" ;;
-esac
+nReturn=${nReturn}
+
+sFilesList="$(find "${sProjectDir}/templates/" -type f -name '*.php.tmpl' -print0 | sort -z | xargs -r0)"
+if [ -n "${sFilesList}" ]; then
+    echo && echo -e "${CBLUE}*** Check PHP templates syntax ***${CEND}"
+    for file in ${sFilesList}; do
+        if (! php -l "${file}" &>/dev/null); then
+            echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
+            nReturn=$((nReturn + 1))
+        else
+            echo -e "${CYELLOW}${file}:${CEND} ${CGREEN}Passed${CEND}"
+        fi
+    done
+fi
+
+sFilesList="$(find "${sProjectDir}/web/" -type f -name '*.php' -print0 | sort -z | xargs -r0)"
+if [ -n "${sFilesList}" ]; then
+    echo && echo -e "${CBLUE}*** Check PHP syntax ***${CEND}"
+    for file in ${sFilesList}; do
+        if (! php -l "${file}" &>/dev/null); then
+            echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
+            nReturn=$((nReturn + 1))
+        else
+            echo -e "${CYELLOW}${file}:${CEND} ${CGREEN}Passed${CEND}"
+        fi
+    done
+fi
+
+export nReturn
 
 ##################### LAST LINE ######################################
