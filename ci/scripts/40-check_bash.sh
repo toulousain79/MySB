@@ -22,32 +22,22 @@
 #
 ##################### FIRST LINE #####################################
 
-if [ -z "${vars}" ] || [ "$vars" -eq 0 ]; then
+if [ -z "${vars}" ] || [ "${vars}" -eq 0 ]; then
     # shellcheck source=ci/scripts/00-load_vars.bsh
-    source "$(dirname "$0")/00-load_vars.bsh"
-fi
-if [[ -n ${1} ]]; then
-    rm -rf /tmp/shellcheck_scan
-    if [[ -d ${1} ]]; then
-        rsync -av --exclude '.git' "${1}" /tmp/shellcheck_scan
-        sDirToScan="/tmp/shellcheck_scan"
-    else
-        echo -e "${CYELLOW}${1} not a valid directory:${CEND} ${CRED}Failed${CEND}"
-        exit
-    fi
+    source "$(dirname "$0")/00-libs.bsh"
 else
-    if [[ -f /.dockerenv ]]; then
-        if [[ -n ${CI_PROJECT_PATH} ]]; then
-            sDirToScan="/builds/${CI_PROJECT_PATH}"
-        else
-            echo -e "${CYELLOW}Secret Variable \$CI_PROJECT_PATH:${CEND} ${CRED}Failed${CEND}"
-            exit
-        fi
-    else
-        echo -e "${CYELLOW}You are not in 'project_validation' images:${CEND} ${CRED}Failed${CEND}"
-        exit
-    fi
+    nReturn=${nReturn}
 fi
+
+gfnCopyProject
+
+mkdir -p "${sDirToScan}"/.etc/MySB/
+{
+    echo "MySB_InstallDir=\"/opt/MySB\""
+    echo "MySB_Files=\"/opt/MySB_files\""
+    echo "EnvLang=\"fr\""
+    echo "export MySB_InstallDir MySB_Files EnvLang"
+} >"${sDirToScan}"/.etc/MySB/config
 
 sFilesListSh="$(grep -IRl "\(#\!/bin/\|shell\=\)sh" --exclude-dir ".git" --exclude-dir ".vscode" --exclude "funcs_*" "${sDirToScan}/")"
 if [ -n "${sFilesListSh}" ]; then
@@ -81,14 +71,11 @@ if [ -n "${sFuncsList}" ]; then
     for func in ${sFuncsList}; do
         [ "${func}" == "gfnIblocklistXmlGenerate" ] && continue
         nCount=$(grep -R "${func}" "${sDirToScan}/" | wc -l)
-        case "$nCount" in
+        case "${nCount}" in
             1)
                 echo -e "${CYELLOW}${func}:${CEND} ${CRED}Failed${CEND}"
                 nReturn=$((nReturn + 1))
                 ;;
-            # 2)
-            #     echo -e "${CYELLOW}${func}:${CEND} ${CGREEN}Use twice, can be optimized${CEND}"
-            #     ;;
             *)
                 echo -e "${CYELLOW}${func}:${CEND} ${CGREEN}Passed${CEND}"
                 ;;
@@ -112,7 +99,7 @@ if [ -n "${sFilesList}" ]; then
             echo -e "${CYELLOW}${file}:${CEND} ${CGREEN}Passed${CEND}"
         else
             echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
-            nReturn=1
+            nReturn=$((nReturn + 1))
         fi
     done
 fi

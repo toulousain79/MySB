@@ -22,17 +22,12 @@
 #
 ##################### FIRST LINE #####################################
 
-echo && echo -e "${CBLUE}*** Check GitLab CI Secret Variables ***${CEND}"
+nReturn=${nReturn}
 
-# CI_PROJECT_PATH
-if [ -z "${CI_PROJECT_PATH}" ]; then
-    sValue="${CRED}Failed${CEND}"
-    nReturn=$((nReturn + 1))
-else
-    sValue="${CGREEN}Passed${CEND}"
-fi
-echo -e "${CYELLOW}Secret Variable \$CI_PROJECT_PATH:${CEND} ${sValue}"
-
-export nReturn
+echo
+case "${nReturn}" in
+    0) return "${nReturn}" ;;
+    *) exit "${nReturn}" ;;
+esac
 
 ##################### LAST LINE ######################################

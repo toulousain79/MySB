@@ -22,4 +22,41 @@
 #
 ##################### FIRST LINE #####################################
 
+nReturn=${nReturn}
+
+echo && echo -e "${CBLUE}*** Check global variables ***${CEND}"
+
+# sProjectDir
+if [ -z "${sProjectDir}" ]; then
+    sValue="${CRED}Failed${CEND}"
+    nReturn=$((nReturn + 1))
+else
+    sValue="${CGREEN}${sProjectDir}${CEND}"
+fi
+echo -e "${CYELLOW}Secret Variable \$sProjectDir:${CEND} ${sValue}"
+
+# sDirToScan
+if [ -z "${sDirToScan}" ]; then
+    sValue="${CRED}Failed${CEND}"
+    nReturn=$((nReturn + 1))
+else
+    sValue="${CGREEN}${sDirToScan}${CEND}"
+fi
+echo -e "${CYELLOW}Secret Variable \$sDirToScan:${CEND} ${sValue}"
+
+# CI_PROJECT_PATH
+if [ -f /.dockerenv ]; then
+    echo && echo -e "${CBLUE}*** Check GitLab CI Secret Variables ***${CEND}"
+
+    if [ -z "${CI_PROJECT_PATH}" ]; then
+        sValue="${CRED}Failed${CEND}"
+        nReturn=$((nReturn + 1))
+    else
+        sValue="${CGREEN}${CI_PROJECT_PATH}${CEND}"
+    fi
+    echo -e "${CYELLOW}Secret Variable \$CI_PROJECT_PATH:${CEND} ${sValue}"
+fi
+
+export nReturn
+
 ##################### LAST LINE ######################################

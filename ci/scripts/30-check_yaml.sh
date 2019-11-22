@@ -22,19 +22,21 @@
 #
 ##################### FIRST LINE #####################################
 
-sFilesList="$(find /builds/"${CI_PROJECT_PATH}"/web/ -type f -name '*.php' -print0 | sort -z | xargs -r0)"
-if [ -n "${sFilesList}" ]; then
-	echo && echo -e "${CBLUE}*** Check PHP Syntax ***${CEND}"
+nReturn=${nReturn}
 
-	for file in ${sFilesList}; do
-		if (! php -l "${file}" &>/dev/null); then
-			echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
-			nReturn=$((nReturn + 1))
-		else
-			echo -e "${CYELLOW}${file}:${CEND} ${CGREEN}Passed${CEND}"
-		fi
-	done
-	export nReturn
+sFiles="$(find "${sProjectDir}/" -type f -name '*.yml' -print0 | sort -z | xargs -r0)"
+if [ -n "${sFiles}" ]; then
+    echo && echo -e "${CBLUE}*** Check YAML Syntax ***${CEND}"
+    for file in ${sFiles}; do
+        if (! yamllint -d "{extends: relaxed, rules: {line-length: {max: 120}}}" "${file}" &>/dev/null); then
+            echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
+            nReturn=$((nReturn + 1))
+        else
+            echo -e "${CYELLOW}${file}:${CEND} ${CGREEN}Passed${CEND}"
+        fi
+    done
 fi
+
+export nReturn
 
 ##################### LAST LINE ######################################

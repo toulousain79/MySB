@@ -28,35 +28,17 @@
 #   SI trouvé ET commenté ALORS WARNING
 #   SINON KO
 
-if [ -z "${vars}" ] || [ "$vars" -eq 0 ]; then
+if [ -z "${vars}" ] || [ "${vars}" -eq 0 ]; then
     # shellcheck source=ci/scripts/00-load_vars.bsh
-    source "$(dirname "$0")/00-load_vars.bsh"
-fi
-if [[ -n ${1}   ]]; then
-    rm -rf /tmp/shellcheck_scan
-    if [[ -d ${1} ]]; then
-        rsync -av --exclude '.git' "${1}" /tmp/shellcheck_scan
-        sDirToScan="/tmp/shellcheck_scan"
-    else
-        echo -e "${CYELLOW}${1} not a valid directory:${CEND} ${CRED}Failed${CEND}"
-        exit
-    fi
+    source "$(dirname "$0")/00-libs.bsh"
 else
-    if [[ -f /.dockerenv ]]; then
-        if [[ -n ${CI_PROJECT_PATH} ]]; then
-            sDirToScan="/builds/${CI_PROJECT_PATH}"
-        else
-            echo -e "${CYELLOW}Secret Variable \$CI_PROJECT_PATH:${CEND} ${CRED}Failed${CEND}"
-            exit
-        fi
-    else
-        echo -e "${CYELLOW}You are not in 'project_validation' images:${CEND} ${CRED}Failed${CEND}"
-        exit
-    fi
+    nReturn=${nReturn}
 fi
 
+gfnCopyProject
+
 # Templates files used
-sFilesListTmpl="$(find ${sDirToScan}/templates/ -type f -name "*.tmpl" -printf "%f\n" | sort -z | xargs -r0)"
+sFilesListTmpl="$(find "${sDirToScan}"/templates/ -type f -name "*.tmpl" -printf "%f\n" | sort -z | xargs -r0)"
 if [ -n "${sFilesListTmpl}" ]; then
     echo && echo -e "${CBLUE}*** Check for unused templates ***${CEND}"
     for sFile in ${sFilesListTmpl}; do
@@ -98,7 +80,7 @@ if [ -n "${sLine}" ]; then
     for sColumn in ${sLine}; do
         sColumn="$(echo "${sColumn}" | sed "s/\"//g;s/'//g;s/)//g;s/;//g;")"
         if [ -n "${sColumn}" ]; then
-            (grep -q 'etc.logrotate.d.${1}.tmpl' <<<"${sColumn}") && continue
+            (grep -q "etc.logrotate.d.\${1}.tmpl" <<<"${sColumn}") && continue
             (grep -q '/templates/' <<<"${sColumn}") && {
                 sTemplate="$(echo "${sColumn}" | cut -d '/' -f 4)"
                 if [ -n "${sTemplate}" ]; then

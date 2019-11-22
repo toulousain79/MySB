@@ -20,18 +20,33 @@
 #	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
+######################################################################
+vars=1
 ##################### FIRST LINE #####################################
 
-echo && echo -e "${CBLUE}*** Current branch ***${CEND}"
+#### 0 - Base
+sPwd=$(pwd)
+nReturn=0
+[ -n "${CI_PROJECT_PATH}" ] && sProjectDir="/builds/${CI_PROJECT_PATH}" || sProjectDir="$(pwd)"
+sDirToScan="/tmp/shellcheck_scan"
 
-echo ${CI_COMMIT_REF_NAME}
+#### 1 - Colors
+CEND="\033[0m"
+CRED="\033[1;31m"
+CGREEN="\033[1;32m"
+CYELLOW="\033[1;33m"
+CBLUE="\033[1;34m"
 
-echo && echo -e "${CBLUE}*** Check bash version ***${CEND}"
+#### 2 - Functions
+function gfnCopyProject() {
+    [ -d "${sDirToScan}" ] && rm -rf "${sDirToScan}"
 
-bash --version
+    if [ -n "${sProjectDir}" ] && [ -d "${sProjectDir}" ]; then
+        rsync -a --exclude '.git' "${sProjectDir}/" "${sDirToScan}/"
+    else
+        echo -e "${CYELLOW}You are not in 'project_validation' images:${CEND} ${CRED}Failed${CEND}"
+        exit 1
+    fi
+}
 
-echo && echo -e "${CBLUE}*** Check shellcheck version ***${CEND}"
-
-shellcheck --version
-
-##################### LAST LINE ######################################
+export vars sPwd nReturn sProjectDir sDirToScan CEND CRED CGREEN CYELLOW CBLUE
