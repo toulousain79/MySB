@@ -24,30 +24,71 @@
 
 nReturn=${nReturn}
 
-sFilesList="$(grep -IRl "\(#\!/usr/bin/env\) python3" --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" "${sDirToScan}/")"
-if [ -n "${sFilesList}" ]; then
-    echo && echo -e "${CBLUE}*** Check Python3 Syntax ***${CEND}"
-    for file in ${sFilesList}; do
-        if (! pylint3 --disable=len-as-condition,too-few-public-methods,consider-using-ternary "${file}"); then
-            echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
-            nReturn=$((nReturn + 1))
-        else
-            echo -e "${CYELLOW}${file}:${CEND} ${CGREEN}Passed${CEND}"
-        fi
-    done
+echo && echo -e "${CBLUE}*** Current branch ***${CEND}"
+if [ -n "${CI_COMMIT_REF_NAME}" ]; then
+    echo "${CI_COMMIT_REF_NAME}"
+else
+    git branch | grep "^* "
 fi
 
-sFilesList="$(grep -IRl "\(#\!/usr/bin/env\) python2" --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" "${sDirToScan}/")"
-if [ -n "${sFilesList}" ]; then
-    echo && echo -e "${CBLUE}*** Check Python2 Syntax ***${CEND}"
-    for file in ${sFilesList}; do
-        if (! pylint --disable=len-as-condition,too-few-public-methodsci check review,consider-using-ternary "${file}"); then
-            echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
-            nReturn=$((nReturn + 1))
-        else
-            echo -e "${CYELLOW}${file}:${CEND} ${CGREEN}Passed${CEND}"
-        fi
-    done
+echo && echo -e "${CBLUE}*** Check bash version ***${CEND}"
+if (! bash --version); then
+    echo -e "${CYELLOW}bash version:${CEND} ${CRED}Failed${CEND}"
+    nReturn=$((nReturn + 1))
+fi
+
+echo && echo -e "${CBLUE}*** Check shellcheck version ***${CEND}"
+if (! shellcheck --version); then
+    echo -e "${CYELLOW}shellcheck version:${CEND} ${CRED}Failed${CEND}"
+    nReturn=$((nReturn + 1))
+fi
+
+echo && echo -e "${CBLUE}*** Check shellcheck version ***${CEND}"
+if (! shellcheck --version); then
+    echo -e "${CYELLOW}shellcheck version:${CEND} ${CRED}Failed${CEND}"
+    nReturn=$((nReturn + 1))
+fi
+
+echo && echo -e "${CBLUE}*** Check dos2unix version ***${CEND}"
+if (! dos2unix --version); then
+    echo -e "${CYELLOW}dos2unix version:${CEND} ${CRED}Failed${CEND}"
+    nReturn=$((nReturn + 1))
+fi
+
+echo && echo -e "${CBLUE}*** Check xz version ***${CEND}"
+if (! xz --version); then
+    echo -e "${CYELLOW}xz version:${CEND} ${CRED}Failed${CEND}"
+    nReturn=$((nReturn + 1))
+fi
+
+echo && echo -e "${CBLUE}*** Check rsync version ***${CEND}"
+if (! rsync --version); then
+    echo -e "${CYELLOW}rsync version:${CEND} ${CRED}Failed${CEND}"
+    nReturn=$((nReturn + 1))
+fi
+
+echo && echo -e "${CBLUE}*** Check yamllint version ***${CEND}"
+if (! yamllint --version); then
+    echo -e "${CYELLOW}yamllint version:${CEND} ${CRED}Failed${CEND}"
+    nReturn=$((nReturn + 1))
+fi
+
+echo && echo -e "${CBLUE}*** Check php-fpm7.3 version ***${CEND}"
+if (! php-fpm7.3 --version); then
+    echo -e "${CYELLOW}php-fpm7.3 version:${CEND} ${CRED}Failed${CEND}"
+    nReturn=$((nReturn + 1))
+fi
+
+echo && echo -e "${CBLUE}*** Check pylint version ***${CEND}"
+if (! pylint --version); then
+    echo -e "${CYELLOW}pylint version:${CEND} ${CRED}Failed${CEND}"
+    nReturn=$((nReturn + 1))
+fi
+
+echo && echo -e "${CBLUE}*** Check pylint3 version ***${CEND}"
+if (! pylint3 --version); then
+    echo -e "${CYELLOW}pylint3 version:${CEND} ${CRED}Failed${CEND}"
+    nReturn=$((nReturn + 1))
 fi
 
 export nReturn
