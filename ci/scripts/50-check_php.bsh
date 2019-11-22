@@ -22,13 +22,13 @@
 #
 ##################### FIRST LINE #####################################
 
-sFilesList="$(grep -IRl "\(#\!/usr/bin/env\) python2" --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" "${sDirToScan}/")"
-if [ -n "${sFilesList}" ]; then
-    echo && echo -e "${CBLUE}*** Check Python2 Syntax ***${CEND}"
-    echo "nReturn ${nReturn}"
+nReturn=${nReturn}
 
+sFilesList="$(find "/builds/${sProjectDir}/web/" -type f -name '*.php' -print0 | sort -z | xargs -r0)"
+if [ -n "${sFilesList}" ]; then
+    echo && echo -e "${CBLUE}*** Check PHP Syntax ***${CEND}"
     for file in ${sFilesList}; do
-        if (! pylint --disable=len-as-condition,consider-using-ternary "${file}"); then
+        if (! php -l "${file}" &>/dev/null); then
             echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
             nReturn=$((nReturn + 1))
         else
@@ -37,24 +37,6 @@ if [ -n "${sFilesList}" ]; then
     done
 fi
 
-echo "nReturn ${nReturn}"
-
-sFilesList="$(grep -IRl "\(#\!/usr/bin/env\) python3" --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" "${sDirToScan}/")"
-if [ -n "${sFilesList}" ]; then
-    echo && echo -e "${CBLUE}*** Check Python3 Syntax ***${CEND}"
-    echo "nReturn ${nReturn}"
-
-    for file in ${sFilesList}; do
-        if (! pylint3 --disable=len-as-condition,too-few-public-methods,consider-using-ternary "${file}"); then
-            echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
-            nReturn=$((nReturn + 1))
-        else
-            echo -e "${CYELLOW}${file}:${CEND} ${CGREEN}Passed${CEND}"
-        fi
-    done
-fi
-
-echo "nReturn ${nReturn}"
 export nReturn
 
 ##################### LAST LINE ######################################
