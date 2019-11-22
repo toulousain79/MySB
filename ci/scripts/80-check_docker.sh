@@ -22,10 +22,10 @@
 #
 ##################### FIRST LINE #####################################
 
-echo
-case "${nReturn}" in
-0) return "${nReturn}" ;;
-*) exit "${nReturn}" ;;
-esac
+nReturn=${nReturn}
+
+# echo && echo -e "${CBLUE}*** Check Docker ***${CEND}"
+
+export nReturn
 
 ##################### LAST LINE ######################################

@@ -20,19 +20,23 @@
 #	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
-######################################################################
-vars=1
 ##################### FIRST LINE #####################################
 
-#### 0 - Base
-sPwd=$(pwd)
-nReturn=0
+nReturn=${nReturn}
 
-#### 1 - Colors
-CEND="\033[0m"
-CRED="\033[1;31m"
-CGREEN="\033[1;32m"
-CYELLOW="\033[1;33m"
-CBLUE="\033[1;34m"
+sFilesList="$(find "${sProjectDir}/web/" -type f -name '*.php' -print0 | sort -z | xargs -r0)"
+if [ -n "${sFilesList}" ]; then
+    echo && echo -e "${CBLUE}*** Check PHP syntax ***${CEND}"
+    for file in ${sFilesList}; do
+        if (! php -l "${file}" &>/dev/null); then
+            echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
+            nReturn=$((nReturn + 1))
+        else
+            echo -e "${CYELLOW}${file}:${CEND} ${CGREEN}Passed${CEND}"
+        fi
+    done
+fi
 
-export vars sPwd nReturn CEND CRED CGREEN CYELLOW CBLUE
+export nReturn
+
+##################### LAST LINE ######################################
