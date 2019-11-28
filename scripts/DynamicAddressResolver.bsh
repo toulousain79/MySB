@@ -34,7 +34,7 @@ ResolveAddresses() {
     if [ "${LOGSTD}" == "NO" ]; then log_daemon_msg "${CreatingListAllDynamicAddresses}"; fi
     sAllHostname="$(cmdMySQL 'MySB_db' "SELECT id_users_addresses,id_users,hostname FROM users_addresses WHERE is_active='1' AND check_by='hostname';" | sed 's/\t/|/g;')"
     nErrorCode=$?
-    if [ "${LOGSTD}" == "NO" ]; then gfnStatusLSB $nErrorCode; fi
+    if [ "${LOGSTD}" == "NO" ]; then gfnStatusLSB ${nErrorCode}; fi
 
     for sLine in ${sAllHostname}; do
         nIdUsersAddresses="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[1]}')"
@@ -44,15 +44,15 @@ ResolveAddresses() {
 
         if [ -n "${sHostname}" ] && [ -n "${nIdUsers}" ] && [ -n "${nIdUsersAddresses}" ]; then
             sListIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM users_addresses WHERE is_active='1' AND check_by='hostname' AND hostname='${sHostname}';")"
-            sIPv4="$(nslookup -type=A ${sHostname} | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
+            sIPv4="$(nslookup -type=A "${sHostname}" | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
 
-            if [ -n "${sIPv4}" ] && [ -z "$(echo "${sListIPv4}" | grep "${sIPv4}")" ]; then
+            if [ -n "${sIPv4}" ] && (! grep -q "${sIPv4}" <<<"${sListIPv4}"); then
                 if [ "${LOGSTD}" == "NO" ]; then log_daemon_msg "${UpdatingHostname} ${sHostname}"; fi
                 cmdMySQL 'MySB_db' "UPDATE users_addresses SET ipv4='${sIPv4}', last_update='$(date +%Y-%m-%d\ %H:%M:%S)' WHERE hostname='${sHostname}' AND id_users_addresses='${nIdUsersAddresses}';"
                 nErrorCode=$?
-                if [ "${LOGSTD}" == "NO" ]; then gfnStatusLSB $nErrorCode; fi
+                if [ "${LOGSTD}" == "NO" ]; then gfnStatusLSB ${nErrorCode}; fi
 
-                echo "$(/bin/date '+%Y-%m-%d - %H:%M:%S') --> UPDATE ${sHostname} WITH ${sIPv4} FOR ${sUserName}" >>${MySB_InstallDir}/logs/${gsScriptName}.log
+                echo "$(/bin/date '+%Y-%m-%d - %H:%M:%S') --> UPDATE ${sHostname} WITH ${sIPv4} FOR ${sUserName}" >>"${MySB_InstallDir}/logs/${gsScriptName}.log"
                 nReload=1
                 sAllIdUsers="${sAllIdUsers} ${nIdUsers}"
             fi
@@ -69,7 +69,7 @@ ResolveAddresses() {
         sAllIdUsers="$(echo "${sAllIdUsers}" | sed -e 's/^ //g;s/\s+$//g;' | xargs -n1 | sort -n -u | xargs)"
         for IdUser in ${sAllIdUsers}; do
             sUserName="$(cmdMySQL 'MySB_db' "SELECT users_ident FROM users WHERE id_users='${IdUser}';")"
-            if [ "${LOGSTD}" == "NO" ]; then log_daemon_msg "$SendingStatusTo '${sUserName}'"; fi
+            if [ "${LOGSTD}" == "NO" ]; then log_daemon_msg "${SendingStatusTo} '${sUserName}'"; fi
             gfnSendMail "${UpdatedAddressSubject}" "${sUserName}" "ip_updated"
             if [ "${LOGSTD}" == "NO" ]; then gfnStatusLSB; fi
         done
@@ -80,7 +80,7 @@ ResolveAddresses() {
 
 IfRunning="$(ps ax | grep 'DynamicAddressResolver.bsh' | grep -v 'grep' | awk '{ print $1 }')"
 if [ -n "${IfRunning}" ]; then
-    while [ -n "$(ps ax | grep 'DynamicAddressResolver.bsh ${IfRunning} CRON' | grep -v 'grep')" ]; do
+    while [ -n "$(ps ax | grep "DynamicAddressResolver.bsh ${IfRunning} CRON" | grep -v 'grep')" ]; do
         sleep 1
     done
 fi
