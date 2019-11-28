@@ -34,7 +34,7 @@ ResolveAddresses() {
     if [ "${LOGSTD}" == "NO" ]; then log_daemon_msg "${CreatingListAllDynamicAddresses}"; fi
     sAllHostname="$(cmdMySQL 'MySB_db' "SELECT id_users_addresses,id_users,hostname FROM users_addresses WHERE is_active='1' AND check_by='hostname';" | sed 's/\t/|/g;')"
     nErrorCode=$?
-    if [ "${LOGSTD}" == "NO" ]; then gfnStatusLSB $nErrorCode; fi
+    if [ "${LOGSTD}" == "NO" ]; then gfnStatusLSB ${nErrorCode}; fi
 
     for sLine in ${sAllHostname}; do
         nIdUsersAddresses="$(echo "${sLine}" | awk '{split($0,a,"|"); print a[1]}')"
@@ -50,7 +50,7 @@ ResolveAddresses() {
                 if [ "${LOGSTD}" == "NO" ]; then log_daemon_msg "${UpdatingHostname} ${sHostname}"; fi
                 cmdMySQL 'MySB_db' "UPDATE users_addresses SET ipv4='${sIPv4}', last_update='$(date +%Y-%m-%d\ %H:%M:%S)' WHERE hostname='${sHostname}' AND id_users_addresses='${nIdUsersAddresses}';"
                 nErrorCode=$?
-                if [ "${LOGSTD}" == "NO" ]; then gfnStatusLSB $nErrorCode; fi
+                if [ "${LOGSTD}" == "NO" ]; then gfnStatusLSB ${nErrorCode}; fi
 
                 echo "$(/bin/date '+%Y-%m-%d - %H:%M:%S') --> UPDATE ${sHostname} WITH ${sIPv4} FOR ${sUserName}" >>"${MySB_InstallDir}/logs/${gsScriptName}.log"
                 nReload=1
@@ -69,7 +69,7 @@ ResolveAddresses() {
         sAllIdUsers="$(echo "${sAllIdUsers}" | sed -e 's/^ //g;s/\s+$//g;' | xargs -n1 | sort -n -u | xargs)"
         for IdUser in ${sAllIdUsers}; do
             sUserName="$(cmdMySQL 'MySB_db' "SELECT users_ident FROM users WHERE id_users='${IdUser}';")"
-            if [ "${LOGSTD}" == "NO" ]; then log_daemon_msg "$SendingStatusTo '${sUserName}'"; fi
+            if [ "${LOGSTD}" == "NO" ]; then log_daemon_msg "${SendingStatusTo} '${sUserName}'"; fi
             gfnSendMail "${UpdatedAddressSubject}" "${sUserName}" "ip_updated"
             if [ "${LOGSTD}" == "NO" ]; then gfnStatusLSB; fi
         done
