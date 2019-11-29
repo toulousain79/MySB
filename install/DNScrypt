@@ -63,11 +63,12 @@ if [ "${gbToInstall_DNScrypt}" == "YES" ]; then
     install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/forwarding-rules.txt.tmpl /etc/dnscrypt-proxy/forwarding-rules.txt
 
     # Systemd
+    rm -fv /lib/systemd/system/dnscrypt-proxy-resolvconf.service
     install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/systemd/dnscrypt-proxy.service.tmpl /lib/systemd/system/dnscrypt-proxy.service
     perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /lib/systemd/system/dnscrypt-proxy.service
+    systemctl daemon-reload
     systemctl disable dnscrypt-proxy.service
     systemctl restart dnscrypt-proxy.service
-    systemctl daemon-reload
 
     # Switch to bind
     gfnSwitchDNS "bind"
@@ -76,7 +77,7 @@ if [ "${gbToInstall_DNScrypt}" == "YES" ]; then
     /usr/sbin/ntpdate -u 0.fr.pool.ntp.org
 
     # Mark as installed
-    if gfnCheckCommand 0 /usr/local/bin/dnscrypt-proxy; then
+    if gfnCheckCommand 0 /usr/sbin/dnscrypt-proxy; then
         cmdMySQL 'MySB_db' "UPDATE services SET to_install='0',is_installed='1' WHERE serv_name='DNScrypt-proxy';" -v
     fi
 fi
