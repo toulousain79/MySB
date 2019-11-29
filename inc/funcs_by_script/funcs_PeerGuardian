@@ -528,7 +528,29 @@ EOF
 
 #### PeerGuardian Create all needed iptables complementary rules
 gfnPeerGuardianIptablesInsert() {
-    local sOvhIPv4 sOnlineIPv4 sDigicubeIPv4 sHetznerIPv4 sIPv4
+    local sOvhIPv4 sOnlineIPv4 sDigicubeIPv4 sHetznerIPv4 sIPv4 nUID
+
+    # DNScrypt-proxy
+    if [ "${gbIsInstalled_DNScrypt}" == "YES" ]; then
+        if [ "${1}" -eq 1 ]; then log_daemon_msg "${DNScrypt_ResolversRules}"; fi
+        echo "#!/bin/sh" >/etc/pgl/dnscrypt.insert.sh
+        echo >>/etc/pgl/dnscrypt.insert.sh
+        echo "# DNScrypt-proxy resolvers complementary rules" >>/etc/pgl/dnscrypt.insert.sh
+        cat /etc/pgl/dnscrypt.insert.sh >/etc/pgl/dnscrypt.remove.sh
+
+        nUID="$(id -u _dnscrypt-proxy)"
+        [ -n "${nPid}" ] && iptables -A OUTPUT -j ACCEPT -m owner --uid-owner "${nUID}" -m comment --comment "OUTPUT DNScrypt-proxy"
+
+        echo >>/etc/pgl/dnscrypt.insert.sh
+        echo "#### Prepare REMOVE script named '/etc/pgl/dnscrypt.remove.sh'" >>/etc/pgl/dnscrypt.insert.sh
+        cp /etc/pgl/dnscrypt.insert.sh /etc/pgl/dnscrypt.remove.sh
+        sed -i '/dnscrypt.remove.sh/d' /etc/pgl/dnscrypt.remove.sh
+        perl -pi -e "s/-I/-D/g" /etc/pgl/dnscrypt.remove.sh
+        if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
+    else
+        if [ -f /etc/pgl/dnscrypt.insert.sh ]; then rm -f /etc/pgl/dnscrypt.insert.sh; fi
+        if [ -f /etc/pgl/dnscrypt.remove.sh ]; then rm -f /etc/pgl/dnscrypt.remove.sh; fi
+    fi
 
     # Monitoring
     if [ -n "${gsServerProvider}" ] && [ "${gsServerProvider}" != "${Global_None}" ]; then

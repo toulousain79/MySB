@@ -6,6 +6,9 @@
 - IPtables
   - block output SSDP trafic
   - block input Proxy-Gateway trafic
+- DNScrypt-proxy
+  - install via Debian package
+  - add PGL iptables rule to allow output by UID
 - Docker
   - add [Supervisor](http://supervisord.org/index.html)
   - add [Composerize](https://github.com/magicmark/composerize)

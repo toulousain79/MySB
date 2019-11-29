@@ -73,6 +73,14 @@ if [ -n "${UserToDelete}" ]; then
     [ -f /etc/init.d/rtorrent-"${UserToDelete}" ] && sServicesToStop="$sServicesToStop rtorrent-${UserToDelete}"
     gfnManageServices stop "$sServicesToStop"
 
+    #### Force umount
+    (mount -l | grep -q "/home/${UserToDelete}/share") && umount -v "/home/${UserToDelete}/share"
+    (mount -l | grep -q "/home/${UserToDelete}/share") && umount -vf "/home/${UserToDelete}/share"
+    (mount -l | grep -q "/home/${UserToDelete}/share") && umount -vl "/home/${UserToDelete}/share"
+    (mount -l | grep -q "/home/${UserToDelete}/rtorrent/torrents") && umount -v "/home/${UserToDelete}/rtorrent/torrents"
+    (mount -l | grep -q "/home/${UserToDelete}/rtorrent/torrents") && umount -vf "/home/${UserToDelete}/rtorrent/torrents"
+    (mount -l | grep -q "/home/${UserToDelete}/rtorrent/torrents") && umount -vl "/home/${UserToDelete}/rtorrent/torrents"
+
     #### crontab
     log_daemon_msg "${DeleteUser_DeleteCron} [${UserToDelete}]"
     crontab -l >/tmp/crontab.tmp
@@ -84,8 +92,6 @@ if [ -n "${UserToDelete}" ]; then
     #### FTP
     log_daemon_msg "${DeleteUser_DeleteFTP} [${UserToDelete}]"
     sed -i "/${UserToDelete}/d" /etc/vsftpd.chroot_list
-    (df -H 2>/dev/null | grep -q "/home/${UserToDelete}/share") && umount /home/"${UserToDelete}"/share &>/dev/null
-    (df -H 2>/dev/null | grep -q "/home/${UserToDelete}/rtorrent/torrents") && umount /home/"${UserToDelete}"/rtorrent/torrents &>/dev/null
     gfnStatusLSB 0
 
     #### NFS
