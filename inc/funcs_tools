@@ -151,7 +151,7 @@ gfnGetPid() {
     local sPid
 
     case "${1}" in
-        "${binPhpService}") [ -f /run/php/${binPhpFpm}.pid ] && sPid="$(cat /run/php/${binPhpFpm}.pid)" ;;
+        "${binPhpService}") [ -f /run/php/"${binPhpFpm}".pid ] && sPid="$(cat /run/php/"${binPhpFpm}".pid)" ;;
         "fail2ban") [ -f /var/run/fail2ban/fail2ban.pid ] && sPid="$(cat /var/run/fail2ban/fail2ban.pid)" ;;
         "webmin") [ -f /var/webmin/miniserv.pid ] && sPid="$(cat /var/webmin/miniserv.pid)" ;;
         "tautulli") [ -f /var/run/tautulli/tautulli.pid ] && sPid="$(cat /var/run/tautulli/tautulli.pid)" ;;
@@ -306,8 +306,12 @@ gfnCheckCommand() {
 
 #### Switch DNS (standard / DNScrypt-proxy)
 gfnSwitchDNS() {
-    local sCommand
+    local sCommand sDNS sValues
     sCommand="${1}"
+    sValues=()
+    for sDNS in "${gaDnsList[@]}"; do
+        sValues+=("${sDNS};")
+    done
 
     case "${sCommand}" in
         'dnscrypt')
@@ -323,7 +327,7 @@ gfnSwitchDNS() {
                     echo "nameserver 127.0.0.1"
                 } >>/etc/resolv.conf
                 # BIND with DNScrypt-proxy support
-                sed -i "s/84.200.69.80; 84.200.70.40; 1.1.1.1; 1.0.0.1;/127.0.0.1 port 52;/g;" /etc/bind/named.conf.options
+                sed -i "s/${sValues[*]}/127.0.0.1 port 52;/g;" /etc/bind/named.conf.options
                 /usr/sbin/rndc reload >/dev/null
             fi
             ;;
@@ -340,7 +344,7 @@ gfnSwitchDNS() {
             } >>/etc/resolv.conf
             # BIND delete DNScrypt-proxy support
             if gfnCheckCommand 0 bind9; then
-                sed -i "s/127.0.0.1 port 52;/84.200.69.80; 84.200.70.40; 1.1.1.1; 1.0.0.1;/g;" /etc/bind/named.conf.options
+                sed -i "s/127.0.0.1 port 52;/${sValues[*]}/g;" /etc/bind/named.conf.options
                 /usr/sbin/rndc reload >/dev/null
             fi
             ;;
@@ -392,10 +396,10 @@ gfnCleanBeforeUpgrade() {
     # /opt/MySB
     cd "${MySB_InstallDir}"/ || exit
     for branch in $(git branch | grep -v "${gsCurrentVersion}\|rev" | sed 's/ //g;s/*//g;'); do
-        git branch -D ${branch}
+        git branch -D "${branch}"
     done
     for tag in $(git tag | grep -v "${gsCurrentVersion}\|rev" | sed 's/ //g;s/*//g;'); do
-        git tag -d ${tag}
+        git tag -d "${tag}"
     done
     git gc
     git repack -Ad
@@ -403,10 +407,10 @@ gfnCleanBeforeUpgrade() {
     # /opt/MySB_files
     cd "${MySB_Files}"/ || exit
     for branch in $(git branch | grep -v "${gsCurrentVersion}\|rev" | sed 's/ //g;s/*//g;'); do
-        git branch -D ${branch}
+        git branch -D "${branch}"
     done
     for tag in $(git tag | grep -v "${gsCurrentVersion}\|rev" | sed 's/ //g;s/*//g;'); do
-        git tag -d ${tag}
+        git tag -d "${tag}"
     done
     git gc
     git repack -Ad
@@ -577,7 +581,7 @@ gfnRepoManageByType() {
                 fi
                 if [[ ${gbExtract} -eq 1 ]]; then
                     if [ ! -d "${gsRepoDir}" ] && [[ ${gnError} -eq 0 ]]; then
-                        sSubDir="$(tar --xz -tf ${MySB_Files}/${gsRepoFile} | cut -d '/' -f 1 | uniq)"
+                        sSubDir="$(tar --xz -tf "${MySB_Files}"/"${gsRepoFile}" | cut -d '/' -f 1 | uniq)"
                         if [ ! -d "${MySB_InstallDir}/temp/${sSubDir}" ]; then
                             tar --xz -xf "${MySB_Files}/${gsRepoFile}" -C "${MySB_InstallDir}/temp/"
                             gnError=$?
@@ -737,7 +741,7 @@ gfnRepoManageByType() {
                     gnError=$?
                     if [ -f "${MySB_Files}/${gsRepoFile}" ]; then
                         if (cp -v "${MySB_Files}/${gsRepoFile}" "${gsRepoDir}"); then
-                            (grep -q '/usr/local/bin/' <<<"${gsRepoDir}") && chmod -v +x ${gsRepoDir}
+                            (grep -q '/usr/local/bin/' <<<"${gsRepoDir}") && chmod -v +x "${gsRepoDir}"
                             gnError=0
                         else
                             gnError=1
@@ -857,10 +861,10 @@ gfnCczeHtmlLogFormat() {
     local sOptions sInput sOutput
     [ -n "${1}" ] && sInput="${1}" || return
     [ -n "${2}" ] && sOutput="$2" || return
-    [ -n "${3}" ] && sOptions="${3}" || sOptions="-h -r"
+    [ -n "${3}" ] && sOptions=("${3}") || sOptions=("-h" "-r")
     [ ! -f "${sInput}" ] && return
 
-    ccze ${sOptions} -o scroll -o nolookups -o transparent -o cssfile="${MySB_InstallDir}/web/public/themes/MySB/css/ccze.css" <"${sInput}" >"${sOutput}"
+    ccze "${sOptions[@]}" -o scroll -o nolookups -o transparent -o cssfile="${MySB_InstallDir}/web/public/themes/MySB/css/ccze.css" <"${sInput}" >"${sOutput}"
     # sed -i '1,8d' "${sOutput}"
     # sed -i '$d' "${sOutput}"
     sed -i -e '1,8d' -e '$d' "${sOutput}"

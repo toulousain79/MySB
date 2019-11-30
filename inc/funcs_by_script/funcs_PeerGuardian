@@ -482,21 +482,6 @@ gfnPeerGuardianAllowP2P() {
 EOF
         ) >/etc/pgl/allow.p2p
 
-        # Allow ruTorrent Check port plugin
-        # sIPv4="$(nslookup -type=A www.canyouseeme.org | grep 'Address:' | awk '{ print $2 }' | tail -n +2)"
-        # if [ -n "${sIPv4}" ]; then
-        #     echo "## Allow ruTorrent Check port plugin" >>/etc/pgl/allow.p2p
-        #     echo "canyouseeme:${sIPv4}-255.255.255.255" >>/etc/pgl/allow.p2p
-        # fi
-
-        # Allowing resolvers
-        # if [ "${gbIsInstalled_DNScrypt}" == "YES" ]; then
-        #     for resolver in $(dnscrypt-proxy -list -config /etc/dnscrypt-proxy/dnscrypt-proxy.toml); do
-        #         echo ${resolver}
-        #         dig +short ${resolver}
-        #     done
-        # fi
-
         # Allowing users
         gfnListCountUsers 'all'
         if [ -n "${gsUsersList}" ] && [ "${gsIpRestriction}" == "YES" ]; then
@@ -530,16 +515,21 @@ EOF
 gfnPeerGuardianIptablesInsert() {
     local sOvhIPv4 sOnlineIPv4 sDigicubeIPv4 sHetznerIPv4 sIPv4 nUID
 
-    # DNScrypt-proxy
+    #### DNScrypt-proxy
     if [ "${gbIsInstalled_DNScrypt}" == "YES" ]; then
-        if [ "${1}" -eq 1 ]; then log_daemon_msg "${DNScrypt_ResolversRules}"; fi
+        if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_DNScrypt_ResolversRules}"; fi
         echo "#!/bin/sh" >/etc/pgl/dnscrypt.insert.sh
         echo >>/etc/pgl/dnscrypt.insert.sh
         echo "# DNScrypt-proxy resolvers complementary rules" >>/etc/pgl/dnscrypt.insert.sh
         cat /etc/pgl/dnscrypt.insert.sh >/etc/pgl/dnscrypt.remove.sh
 
         nUID="$(id -u _dnscrypt-proxy)"
-        [ -n "${nPid}" ] && iptables -A OUTPUT -j ACCEPT -m owner --uid-owner "${nUID}" -m comment --comment "OUTPUT DNScrypt-proxy"
+        if [ -n "${nUID}" ]; then
+            {
+                echo "iptables -I pgl_out -p tcp -j ACCEPT -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT TCP DNScrypt-proxy\""
+                echo "iptables -I pgl_out -p udp -j ACCEPT -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT UDP DNScrypt-proxy\""
+            } >>/etc/pgl/dnscrypt.insert.sh
+        fi
 
         echo >>/etc/pgl/dnscrypt.insert.sh
         echo "#### Prepare REMOVE script named '/etc/pgl/dnscrypt.remove.sh'" >>/etc/pgl/dnscrypt.insert.sh
@@ -552,7 +542,7 @@ gfnPeerGuardianIptablesInsert() {
         if [ -f /etc/pgl/dnscrypt.remove.sh ]; then rm -f /etc/pgl/dnscrypt.remove.sh; fi
     fi
 
-    # Monitoring
+    #### Monitoring
     if [ -n "${gsServerProvider}" ] && [ "${gsServerProvider}" != "${Global_None}" ]; then
         if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_SupervisionRules} ${gsServerProvider}"; fi
         {
@@ -598,6 +588,73 @@ gfnPeerGuardianIptablesInsert() {
         if [ -f /etc/pgl/monitoring.insert.sh ]; then rm -f /etc/pgl/monitoring.insert.sh; fi
         if [ -f /etc/pgl/monitoring.remove.sh ]; then rm -f /etc/pgl/monitoring.remove.sh; fi
     fi
+
+    #### DNS
+    if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_PublicDNS}"; fi
+    echo "#!/bin/sh" >/etc/pgl/public_dns.insert.sh
+    echo >>/etc/pgl/public_dns.insert.sh
+    echo "# Publics DNS complementary rules" >>/etc/pgl/public_dns.insert.sh
+    cat /etc/pgl/public_dns.insert.sh >/etc/pgl/public_dns.remove.sh
+
+    for sDNS in "${gaDnsList[@]}"; do
+        {
+            echo "iptables -A pgl_in -p tcp -s ${sDNS} -i ${gsPrimaryInet} -j RETURN -m comment --comment \"INPUT TCP Publics DNS\""
+            echo "iptables -A pgl_in -p udp -s ${sDNS} -i ${gsPrimaryInet} -j RETURN -m comment --comment \"INPUT UDP Publics DNS\""
+            echo "iptables -A pgl_out -p tcp -d ${sDNS} -j ACCEPT -m comment --comment \"OUTPUT TCP Publics DNS\""
+            echo "iptables -A pgl_out -p udp -d ${sDNS} -j ACCEPT -m comment --comment \"OUTPUT UDP Publics DNS\""
+        } >>/etc/pgl/public_dns.insert.sh
+    done
+
+    echo >>/etc/pgl/public_dns.insert.sh
+    echo "#### Prepare REMOVE script named '/etc/pgl/public_dns.remove.sh'" >>/etc/pgl/public_dns.insert.sh
+    cp /etc/pgl/public_dns.insert.sh /etc/pgl/public_dns.remove.sh
+    sed -i '/public_dns.remove.sh/d' /etc/pgl/public_dns.remove.sh
+    perl -pi -e "s/-I/-D/g" /etc/pgl/public_dns.remove.sh
+    if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
+
+    #### ruTorrent plugins
+    if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_RutorrentPlugins}"; fi
+    echo "#!/bin/sh" >/etc/pgl/rutorrent.insert.sh
+    echo >>/etc/pgl/rutorrent.insert.sh
+    echo "# ruTorrent plugins complementary rules" >>/etc/pgl/rutorrent.insert.sh
+    cat /etc/pgl/rutorrent.insert.sh >/etc/pgl/rutorrent.remove.sh
+
+    # showip
+    grep 'file_get_contents' "${gsRutorrentPluginsDir}"/showip/init.php | awk '{ print $3 }' | cut -d '/' -f 3 | while read -r sFQDN; do
+        {
+            echo "iptables -A pgl_out -p tcp -d ${sFQDN} --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for ${sFQDN}\""
+            # echo "iptables -A pgl_out -p tcp -d ${sFQDN} --dport 443 -j ACCEPT -m comment --comment \"OUTPUT HTTPs for ${sFQDN}\""
+        } >>/etc/pgl/rutorrent.insert.sh
+    done
+
+    # loginmgr
+    grep -rh 'http://' "${gsRutorrentPluginsDir}"/loginmgr/accounts/ | awk '{ print $4 }' | cut -d '/' -f 3 | sed 's/";//g;' | while read -r sFQDN; do
+        {
+            echo "iptables -A pgl_out -p tcp -d ${sFQDN} --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for ${sFQDN}\""
+            # echo "iptables -A pgl_out -p tcp -d ${sFQDN} --dport 443 -j ACCEPT -m comment --comment \"OUTPUT HTTPs for ${sFQDN}\""
+        } >>/etc/pgl/rutorrent.insert.sh
+    done
+
+    # extsearch
+    grep -rh 'http://' "${gsRutorrentPluginsDir}"/extsearch/ | cut -d '/' -f 3 | sed "s/';//g;" | while read -r sFQDN; do
+        {
+            echo "iptables -A pgl_out -p tcp -d ${sFQDN} --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for ${sFQDN}\""
+            # echo "iptables -A pgl_out -p tcp -d ${sFQDN} --dport 443 -j ACCEPT -m comment --comment \"OUTPUT HTTPs for ${sFQDN}\""
+        } >>/etc/pgl/rutorrent.insert.sh
+    done
+
+    # mediastream
+    {
+        echo "iptables -A pgl_out -p tcp -d divx.com --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for divx.com\""
+        # echo "iptables -A pgl_out -p tcp -d divx.com --dport 443 -j ACCEPT -m comment --comment \"OUTPUT HTTPs for divx.com\""
+    } >>/etc/pgl/rutorrent.insert.sh
+
+    echo >>/etc/pgl/rutorrent.insert.sh
+    echo "#### Prepare REMOVE script named '/etc/pgl/rutorrent.remove.sh'" >>/etc/pgl/rutorrent.insert.sh
+    cp /etc/pgl/rutorrent.insert.sh /etc/pgl/rutorrent.remove.sh
+    sed -i '/rutorrent.remove.sh/d' /etc/pgl/rutorrent.remove.sh
+    perl -pi -e "s/-I/-D/g" /etc/pgl/rutorrent.remove.sh
+    if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
 }
 
 #### PeerGuardian Create pglcmd.conf
