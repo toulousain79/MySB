@@ -64,14 +64,14 @@ done
 gfnManageServices stop "$ToStop"
 gfnListCountUsers 'normal'
 for seedUser in ${gsUsersList}; do
-    systemctl stop rtorrent-$seedUser
+    systemctl stop rtorrent-"$seedUser"
 done
 
 #### Delete CRON
 gfnListCountUsers 'all'
 crontab -l >/tmp/crontab.tmp
 for seedUser in ${gsUsersList}; do
-    sed -i '/'$seedUser'/d' /tmp/crontab.tmp
+    sed -i "/$seedUser/d" /tmp/crontab.tmp
 done
 sed -i '/MySB/d' /tmp/crontab.tmp
 sed -i '/BlocklistsRTorrent.bsh/d' /tmp/crontab.tmp
@@ -90,17 +90,16 @@ rm -f /tmp/crontab.tmp
 #### Force nameserver
 sed -i '/nameserver/d' /etc/resolv.conf
 {
-    echo "nameserver 84.200.69.80"
-    echo "nameserver 84.200.70.40"
-    echo "nameserver 1.1.1.1"
-    echo "nameserver 1.0.0.1"
+    for sDNS in "${gaDnsList[@]}"; do
+        echo "nameserver ${sDNS}"
+    done
 } >>/etc/resolv.conf
 
 #### Remove system account for all users
 for seedUser in ${gsUsersList}; do
-    userdel --remove --force $seedUser &>/dev/null
-    if [ -d /home/$seedUser ]; then rm -rf /home/${seedUser:?}; fi
-    if [ -d /var/run/screen/S-$seedUser ]; then rm -rf /var/run/screen/S-$seedUser; fi
+    userdel --remove --force "$seedUser" &>/dev/null
+    if [ -d /home/"$seedUser" ]; then rm -rf /home/"${seedUser:?}"; fi
+    if [ -d /var/run/screen/S-"$seedUser" ]; then rm -rf /var/run/screen/S-"$seedUser"; fi
 done
 
 #### Prepare list of packages
