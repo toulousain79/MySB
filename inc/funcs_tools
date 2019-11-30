@@ -271,7 +271,8 @@ gfnCheckCommand() {
                 ;;
             *)
                 # if [ -z "$(whereis "${2}" | awk '{ print $2 }')" ]; then
-                if [ -z "$(whereis "${2}" | grep 'bin\|sbin')" ]; then
+                # if [ -z "$(whereis "${2}" | grep 'bin\|sbin')" ]; then
+                if (! grep -q 'bin\|sbin' <<<"$(whereis "${2}")"); then
                     if dpkg -s "${2}" &>/dev/null; then # Try DPKG
                         case "${1}" in
                             0) return 0 ;;
@@ -517,7 +518,7 @@ gfnGetRepoValues() {
             ;;
         'GeoIPupdate')
             gfnCheckCommand 0 /usr/bin/geoipupdate && /usr/bin/geoipupdate --version &>/tmp/geoip.rev || echo 'Not installed' >/tmp/geoip.rev
-            gsVersionInstalled="$(cat /tmp/geoip.rev | awk '{ print $2 }')"
+            gsVersionInstalled="$(awk '{ print $2 }' <<<"$(cat /tmp/geoip.rev)")"
             # gsVersionLatest="$(${binCURL} "${gsRepoURL}" | jq -r .tag_name | sed 's/v//g;')"
             # gsFileURL="$(${binCURL} "${gsRepoURL}" | jq --arg PLATFORM_ARCH "geoipupdate_${gsVersionLatest}_linux_amd64.deb" -r '.assets[] | select(.name | endswith($PLATFORM_ARCH)).browser_download_url')"
             ;;
@@ -824,7 +825,8 @@ gfnFstabGeneration() {
                     sQuotaOpts=",usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=${sVFSV}"
                 fi
                 echo "# ${sPartition}" >>/etc/fstab
-                for col in $(grep "[[:space:]]${sPartition}[[:space:]]" /etc/fstab); do
+                # for col in $(grep "[[:space:]]${sPartition}[[:space:]]" /etc/fstab); do
+                grep "[[:space:]]${sPartition}[[:space:]]" /etc/fstab | while read -r col; do
                     ((nColNum++))
                     case ${nColNum} in
                         1 | 2 | 3 | 5) echo -n "${col} " >>/etc/fstab ;;
@@ -838,7 +840,8 @@ gfnFstabGeneration() {
                 nNumLine=$(grep "[[:space:]]${sPartition}[[:space:]]" -n -m 1 /etc/fstab | cut -d ':' -f 1)
                 nColNum=0
                 echo "# ${sPartition}" >>/etc/fstab
-                for col in $(grep "[[:space:]]${sPartition}[[:space:]]" /etc/fstab); do
+                # for col in $(grep "[[:space:]]${sPartition}[[:space:]]" /etc/fstab); do
+                grep "[[:space:]]${sPartition}[[:space:]]" /etc/fstab | while read -r col; do
                     ((nColNum++))
                     case ${nColNum} in
                         1 | 2 | 3 | 4 | 5) echo -n "${col} " >>/etc/fstab ;;
@@ -869,6 +872,50 @@ gfnCczeHtmlLogFormat() {
     # sed -i '$d' "${sOutput}"
     sed -i -e '1,8d' -e '$d' "${sOutput}"
     [ ! -s "${sOutput}" ] && rm -f "${sOutput}"
+}
+
+#### DNScrypt-proxy
+gfnDnscryptProxyConfig() {
+    local sRequest sNoLogs sDnsSec sNoFilter sLbStrategy sForceTcp sEphemeralKeys sTlsDisableTickets sDohServers sSearch
+
+    if [ -f /etc/dnscrypt-proxy/dnscrypt-proxy.toml ]; then
+        cp -af /etc/dnscrypt-proxy/dnscrypt-proxy.toml /etc/dnscrypt-proxy/dnscrypt-proxy.toml.backup
+        sRequest="$(cmdMySQL 'MySB_db' "SELECT require_nolog, require_dnssec, require_nofilter, lb_strategy, force_tcp, ephemeral_keys, tls_disable_session_tickets, doh_servers FROM dnscrypt_config WHERE id_dnscrypt_config='1';" | sed 's/\t/|/g;')"
+        sNoLogs="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[1]}')"
+        sDnsSec="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[2]}')"
+        sNoFilter="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[3]}')"
+        sLbStrategy="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[4]}')"
+        sForceTcp="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[5]}')"
+        sEphemeralKeys="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[6]}')"
+        sTlsDisableTickets="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[7]}')"
+        sDohServers="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[8]}')"
+        sSearch="$(grep 'lb_strategy' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+
+        sed -i \
+            -e "s/^require_nolog = true/require_nolog = ${sNoLogs}/g;s/^require_nolog = false/require_nolog = ${sNoLogs}/g" \
+            -e "s/^require_dnssec = true/require_dnssec = ${sDnsSec}/g;s/^require_dnssec = false/require_dnssec = ${sDnsSec}/g" \
+            -e "s/^require_nofilter = true/require_nofilter = ${sNoFilter}/g;s/^require_nofilter = false/require_nofilter = ${sNoFilter}/g" \
+            -e "s/^force_tcp = true/force_tcp = ${sForceTcp}/g;s/^force_tcp = false/force_tcp = ${sForceTcp}/g" \
+            -e "s/^dnscrypt_ephemeral_keys = true/dnscrypt_ephemeral_keys = ${sEphemeralKeys}/g;s/^dnscrypt_ephemeral_keys = false/dnscrypt_ephemeral_keys = ${sEphemeralKeys}/g" \
+            -e "s/lb_strategy = ${sSearch}/lb_strategy = '${sLbStrategy}'/g;" \
+            -e "s/^tls_disable_session_tickets = true/tls_disable_session_tickets = ${sTlsDisableTickets}/g;s/^tls_disable_session_tickets = false/tls_disable_session_tickets = ${sTlsDisableTickets}/g" \
+            -e "s/^doh_servers = true/doh_servers = ${sDohServers}/g;s/^doh_servers = false/doh_servers = ${sDohServers}/g" \
+            /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+
+        if (! dnscrypt-proxy -config /etc/dnscrypt-proxy/dnscrypt-proxy.toml -check); then
+            cp -af /etc/dnscrypt-proxy/dnscrypt-proxy.toml.backup /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+            sNoLogs="$(grep 'require_nolog' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+            sDnsSec="$(grep 'require_dnssec' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+            sNoFilter="$(grep 'require_nofilter' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+            sLbStrategy="$(grep 'lb_strategy' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }' | sed "s/'//g;")"
+            sForceTcp="$(grep 'force_tcp' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+            sEphemeralKeys="$(grep 'ephemeral_keys' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+            sTlsDisableTickets="$(grep 'tls_disable_session_tickets' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+            sDohServers="$(grep 'doh_servers' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+            cmdMySQL 'MySB_db' "UPDATE dnscrypt_config SET require_nolog='${sNoLogs}', require_dnssec='${sDnsSec}', require_nofilter='${sNoFilter}', lb_strategy='${sLbStrategy}', force_tcp='${sForceTcp}', ephemeral_keys='${sEphemeralKeys}', tls_disable_session_tickets='${sTlsDisableTickets}', doh_servers='${sDohServers}' WHERE id_dnscrypt_config='1';"
+        fi
+        systemctl restart dnscrypt-proxy.service
+    fi
 }
 
 ##################### LAST LINE ######################################
