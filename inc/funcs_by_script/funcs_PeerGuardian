@@ -639,13 +639,34 @@ gfnPeerGuardianIptablesInsert() {
     done
 
     # mediastream
-    echo "iptables -I pgl_out -p tcp -d divx.com --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for plugin mediastream divx.com\"" >>/etc/pgl/rutorrent.insert.sh
+    echo "iptables -I pgl_out -p tcp -d go.divx.com --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for plugin mediastream go.divx.com\"" >>/etc/pgl/rutorrent.insert.sh
 
     echo >>/etc/pgl/rutorrent.insert.sh
 
     # remove
     cp /etc/pgl/rutorrent.insert.sh /etc/pgl/rutorrent.remove.sh
     perl -pi -e "s/-I/-D/g" /etc/pgl/rutorrent.remove.sh
+    if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
+
+    #### Needed domains
+    if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_NeededDomains}"; fi
+    # insert
+    {
+        echo "#!/bin/sh"
+        echo "# Needed domains complementary rules"
+    } >/etc/pgl/needed_domains.insert.sh
+
+    for sDomain in "${gaNeededDomains[@]}"; do
+        {
+            echo "iptables -I pgl_in -p tcp -s ${sDomain} -i ${gsPrimaryInet} -j RETURN -m comment --comment \"INPUT TCP Needed domain ${sDomain}\""
+            echo "iptables -I pgl_out -p tcp -d ${sDomain} -j ACCEPT -m comment --comment \"OUTPUT TCP Needed domain ${sDomain}\""
+        } >>/etc/pgl/needed_domains.insert.sh
+    done
+    echo >>/etc/pgl/needed_domains.insert.sh
+
+    # remove
+    cp /etc/pgl/needed_domains.insert.sh /etc/pgl/needed_domains.remove.sh
+    perl -pi -e "s/-I/-D/g" /etc/pgl/needed_domains.remove.sh
     if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
 }
 

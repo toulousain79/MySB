@@ -43,12 +43,6 @@ if (! shellcheck --version); then
     nReturn=$((nReturn + 1))
 fi
 
-echo && echo -e "${CBLUE}*** Check shellcheck version ***${CEND}"
-if (! shellcheck --version); then
-    echo -e "${CYELLOW}shellcheck version:${CEND} ${CRED}Failed${CEND}"
-    nReturn=$((nReturn + 1))
-fi
-
 echo && echo -e "${CBLUE}*** Check dos2unix version ***${CEND}"
 if (! dos2unix --version); then
     echo -e "${CYELLOW}dos2unix version:${CEND} ${CRED}Failed${CEND}"
