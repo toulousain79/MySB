@@ -62,6 +62,7 @@ INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`,
 ('TARXZ', '<InstallDir>_files', 'Shellcheck', '0.7.0', 0, 'shellcheck-v0.7.0.linux.x86_64.tar.xz', 'https://storage.googleapis.com/shellcheck/shellcheck-v0.7.0.linux.x86_64.tar.xz', 1, 0, ''),
 ('TARGZ', '<InstallDir>/web/apps/tt', 'Tautulli', 'latest', 0, 'Tautulli_latest.tar.gz', 'https://api.github.com/repos/Tautulli/Tautulli/releases/latest', 1, 0, ''),
 ('DEB', '<InstallDir>_files', 'Plex Media Server', 'latest', 0, 'plexmediaserver_latest.deb', 'https://plex.tv/downloads/latest/1?channel=8&build=linux-ubuntu-x86_64&distro=ubuntu', 1, 0, ''),
+('TARGZ', '<InstallDir>/sources/dnscrypt-proxy', 'DNScrypt-proxy', 'latest', 0, 'DNScrypt-proxy_latest.tar.gz', 'https://api.github.com/repos/jedisct1/dnscrypt-proxy/releases/latest', 1, 0, ''),
 /* ('TARGZ', '/opt/Lynis', 'Lynis', 'latest', 0, 'lynis_latest.tar.gz', 'https://api.github.com/repos/CISOfy/lynis/releases/latest', 1, 0, ''), */
 ('TARGZ', '/opt/Lynis', 'Lynis', '2.7.5', 0, 'lynis_v2.7.5.tar.gz', 'https://downloads.cisofy.com/lynis/lynis-2.7.5.tar.gz', 1, 0, ''),
 ('WBM', '<InstallDir>_files', 'WBM Module OpenVPNadmin', '3.1', 0, 'openvpn_v3.1.wbm', 'http://www.openit.it/index.php/it/openvpnadmin/download?task=finish&cid=29&catid=7', 1, 0, ''),
