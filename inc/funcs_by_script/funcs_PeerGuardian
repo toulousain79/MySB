@@ -518,11 +518,11 @@ gfnPeerGuardianIptablesInsert() {
     #### DNScrypt-proxy
     if [ "${gbIsInstalled_DNScrypt}" == "YES" ]; then
         if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_DNScrypt_ResolversRules}"; fi
+        # insert
         {
             echo "#!/bin/sh"
             echo "# DNScrypt-proxy resolvers complementary rules"
         } >/etc/pgl/dnscrypt.insert.sh
-        cat /etc/pgl/dnscrypt.insert.sh >/etc/pgl/dnscrypt.remove.sh
 
         nUID="$(id -u _dnscrypt-proxy)"
         if [ -n "${nUID}" ]; then
@@ -533,6 +533,8 @@ gfnPeerGuardianIptablesInsert() {
         fi
 
         echo >>/etc/pgl/dnscrypt.insert.sh
+
+        # remove
         cp /etc/pgl/dnscrypt.insert.sh /etc/pgl/dnscrypt.remove.sh
         perl -pi -e "s/-I/-D/g" /etc/pgl/dnscrypt.remove.sh
         if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
@@ -544,11 +546,12 @@ gfnPeerGuardianIptablesInsert() {
     #### Monitoring
     if [ -n "${gsServerProvider}" ] && [ "${gsServerProvider}" != "${Global_None}" ]; then
         if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_SupervisionRules} ${gsServerProvider}"; fi
+        # insert
         {
             echo '#!/bin/sh'
             echo "# ${gsServerProvider} monitoring complementary rules"
         } >/etc/pgl/monitoring.insert.sh
-        cat /etc/pgl/monitoring.insert.sh >/etc/pgl/monitoring.remove.sh
+
         case "${gsServerProvider}" in
             "OVH")
                 sOvhIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider='OVH';")"
@@ -578,8 +581,9 @@ gfnPeerGuardianIptablesInsert() {
                 done
                 ;;
         esac
-
         echo >>/etc/pgl/monitoring.insert.sh
+
+        # remove
         cp /etc/pgl/monitoring.insert.sh /etc/pgl/monitoring.remove.sh
         perl -pi -e "s/-I/-D/g" /etc/pgl/monitoring.remove.sh
         if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
@@ -590,57 +594,56 @@ gfnPeerGuardianIptablesInsert() {
 
     #### DNS
     if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_PublicDNS}"; fi
+    # insert
     {
         echo "#!/bin/sh"
         echo "# Publics DNS complementary rules"
     } >/etc/pgl/public_dns.insert.sh
-    cat /etc/pgl/public_dns.insert.sh >/etc/pgl/public_dns.remove.sh
 
     for sDNS in "${gaDnsList[@]}"; do
         {
-            echo "iptables -A pgl_in -p tcp -s ${sDNS} -i ${gsPrimaryInet} -j RETURN -m comment --comment \"INPUT TCP Publics DNS\""
-            echo "iptables -A pgl_in -p udp -s ${sDNS} -i ${gsPrimaryInet} -j RETURN -m comment --comment \"INPUT UDP Publics DNS\""
-            echo "iptables -A pgl_out -p tcp -d ${sDNS} -j ACCEPT -m comment --comment \"OUTPUT TCP Publics DNS\""
-            echo "iptables -A pgl_out -p udp -d ${sDNS} -j ACCEPT -m comment --comment \"OUTPUT UDP Publics DNS\""
+            echo "iptables -I pgl_in -p tcp -s ${sDNS} -i ${gsPrimaryInet} -j RETURN -m comment --comment \"INPUT TCP Publics DNS\""
+            echo "iptables -I pgl_in -p udp -s ${sDNS} -i ${gsPrimaryInet} -j RETURN -m comment --comment \"INPUT UDP Publics DNS\""
+            echo "iptables -I pgl_out -p tcp -d ${sDNS} -j ACCEPT -m comment --comment \"OUTPUT TCP Publics DNS\""
+            echo "iptables -I pgl_out -p udp -d ${sDNS} -j ACCEPT -m comment --comment \"OUTPUT UDP Publics DNS\""
         } >>/etc/pgl/public_dns.insert.sh
     done
+    echo >>/etc/pgl/public_dns.insert.sh
 
-    {
-        echo
-        echo "#### Prepare REMOVE script named '/etc/pgl/public_dns.remove.sh'"
-    } >>/etc/pgl/public_dns.insert.sh
+    # remove
     cp /etc/pgl/public_dns.insert.sh /etc/pgl/public_dns.remove.sh
-    sed -i '/public_dns.remove.sh/d' /etc/pgl/public_dns.remove.sh
     perl -pi -e "s/-I/-D/g" /etc/pgl/public_dns.remove.sh
     if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
 
     #### ruTorrent plugins
     if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_RutorrentPlugins}"; fi
+    # insert
     {
         echo "#!/bin/sh"
         echo "# ruTorrent plugins complementary rules"
     } >/etc/pgl/rutorrent.insert.sh
-    cat /etc/pgl/rutorrent.insert.sh >/etc/pgl/rutorrent.remove.sh
 
     # showip
     grep 'file_get_contents' "${gsRutorrentPluginsDir}"/showip/init.php | awk '{ print $3 }' | cut -d '/' -f 3 | while read -r sFQDN; do
-        echo "iptables -A pgl_out -p tcp -d ${sFQDN} --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for plugin showip ${sFQDN}\"" >>/etc/pgl/rutorrent.insert.sh
+        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for plugin showip ${sFQDN}\"" >>/etc/pgl/rutorrent.insert.sh
     done
 
     # loginmgr
     grep -rh 'http://' "${gsRutorrentPluginsDir}"/loginmgr/accounts/ | awk '{ print $4 }' | cut -d '/' -f 3 | sed 's/";//g;' | while read -r sFQDN; do
-        echo "iptables -A pgl_out -p tcp -d ${sFQDN} --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for plugin loginmgr ${sFQDN}\"" >>/etc/pgl/rutorrent.insert.sh
+        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for plugin loginmgr ${sFQDN}\"" >>/etc/pgl/rutorrent.insert.sh
     done
 
     # extsearch
     grep -rh 'http://' "${gsRutorrentPluginsDir}"/extsearch/ | cut -d '/' -f 3 | sed "s/';//g;" | while read -r sFQDN; do
-        echo "iptables -A pgl_out -p tcp -d ${sFQDN} --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for plugin extsearch ${sFQDN}\"" >>/etc/pgl/rutorrent.insert.sh
+        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for plugin extsearch ${sFQDN}\"" >>/etc/pgl/rutorrent.insert.sh
     done
 
     # mediastream
-    echo "iptables -A pgl_out -p tcp -d divx.com --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for plugin mediastream divx.com\"" >>/etc/pgl/rutorrent.insert.sh
+    echo "iptables -I pgl_out -p tcp -d divx.com --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for plugin mediastream divx.com\"" >>/etc/pgl/rutorrent.insert.sh
 
     echo >>/etc/pgl/rutorrent.insert.sh
+
+    # remove
     cp /etc/pgl/rutorrent.insert.sh /etc/pgl/rutorrent.remove.sh
     perl -pi -e "s/-I/-D/g" /etc/pgl/rutorrent.remove.sh
     if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
