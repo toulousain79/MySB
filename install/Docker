@@ -59,7 +59,24 @@ fnInstallDry() {
     fi
 }
 
-if [ "${gsSwitch}" != "CRON" ]; then
+#### Ctop
+fnInstallCtop() {
+    gfnGetRepoValues 'Ctop'
+
+    if [ "${gsVersionInstalled}" != "${gsVersionLatest}" ]; then
+        if [ -f "${MySB_Files}/${gsRepoFile}" ] && [ "${gsVersionLatest}" != "${gsVersionInstalled}" ]; then
+            mv -v "${MySB_Files}/${gsRepoFile}" "${MySB_Files}/${gsRepoFile}.tmp"
+        fi
+        gfnRepoManageByType
+        if [ -f "${MySB_Files}/${gsRepoFile}" ] && [ "${gsVersionLatest}" != "${gsVersionInstalled}" ]; then
+            rm -fv "${MySB_Files}/${gsRepoFile}.tmp"
+        fi
+        chmod -v +x "${gsRepoDir}"
+        ${gsRepoDir} --version
+    fi
+}
+
+if [ "${gsSwitch}" == "INSTALL" ] || [ "${gsSwitch}" == "UPGRADE" ]; then
     #### Purge packages
     sPackages=(docker docker-engine docker.io containerd runc)
     gfnPackagesManage purge "${sPackages[@]}"
@@ -107,12 +124,14 @@ if [ "${gsSwitch}" != "CRON" ]; then
             } >/etc/cron.daily/docker-gc
         fi
     fi
+    rm -rf /tmp/docker-gc
 fi
 
 #### Tools
 if gfnCheckCommand 0 docker; then
     fnInstallDockerCompose
     fnInstallDry
+    fnInstallCtop
     npm install composerize -g
 fi
 
