@@ -925,17 +925,24 @@ gfnDnscryptProxyConfig() {
 
 #### MD5 check
 gfnMd5Check() {
-    local sFile
+    local sFile sName nReturn sLine
+    nReturn=0
 
     [ -z "${1}" ] && return 1
-    [ ! -f "${MySB_InstallDir}"/files/md5sum.txt ] && return 1
+    [ ! -f "${gsCheckSumFile}" ] && return 1
     sFile="${1}"
+    sName="$(basename "${sFile}")"
+    sName="$(echo "${sName}" | tr '[:lower:]' '[:upper:]')"
 
-    if [ "$(grep "${sFile}" "${MySB_InstallDir}"/files/md5sum.txt)" == "$(md5sum "${sFile}")" ]; then
-        return 0
+    if [ -d "${MySB_InstallDir}"/templates/"${sName}"/ ]; then
+        find "${MySB_InstallDir}"/templates/"${sName}"/ -type f | while read -r sLine; do
+            [ "$(grep "${sLine}" "${gsCheckSumFile}")" != "$(md5sum "${sLine}")" ] && nReturn=1
+        done
     else
-        return 1
+        [ "$(grep "${sFile}" "${gsCheckSumFile}")" != "$(md5sum "${sFile}")" ] && nReturn=1
     fi
+
+    return "${nReturn}"
 }
 
 ##################### LAST LINE ######################################

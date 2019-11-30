@@ -30,76 +30,76 @@ if [ "${USAGE}" == "ON" ]; then
         if [ "${gbIsInstalled_Manager}" == "NO" ]; then
             echo
             echo -e "${CYELLOW}SeedBox-Manager is not installed!${CEND}"
-            gfnQuestionGetString NO "Install Seedbox-Manager? " gbToInstall_Manager ${gbToInstall_Manager}
+            gfnQuestionGetString NO "Install Seedbox-Manager? " gbToInstall_Manager "${gbToInstall_Manager}"
 
             if [ "${gbToInstall_Manager}" == "YES" ]; then
-                gfnQuestionGetString NO "Contact email for Seedbox-Manager: " gsMainUserEmail ${gsMainUserEmail}
+                gfnQuestionGetString NO "Contact email for Seedbox-Manager: " gsMainUserEmail "${gsMainUserEmail}"
             fi
 
-            cmdMySQL 'MySB_db' "UPDATE services SET to_install = '$(echo ${gbToInstall_Manager} | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name='Seedbox-Manager';" -v
+            cmdMySQL 'MySB_db' "UPDATE services SET to_install = '$(echo "${gbToInstall_Manager}" | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name='Seedbox-Manager';" -v
         fi
     fi
 fi
 
 if [ "${gbToInstall_Manager}" == "YES" ]; then
     #### NginX
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/nginx/etc.nginx.locations.seedbox-manager.conf.tmpl /etc/nginx/locations/Seedbox-Manager.conf
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/nginx/etc.nginx.locations.seedbox-manager.conf.tmpl /etc/nginx/locations/Seedbox-Manager.conf
     perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /etc/nginx/locations/Seedbox-Manager.conf
 
     #### Seedbox-Manager
     gfnGetRepoValues 'Seedbox-Manager'
     if [ "${gnRepoUpgrade}" -eq 1 ]; then
-        if [ -d ${gsManagerDir}/conf ]; then
-            mv -v ${gsManagerDir}/conf ${MySB_InstallDir}/temp/sm_conf
+        if [ -d "${gsManagerDir}"/conf ]; then
+            mv -v "${gsManagerDir}"/conf "${MySB_InstallDir}"/temp/sm_conf
         fi
         gfnDeleteDirectory 1 "${gsManagerDir}"
     fi
     gfnRepoManageByType
 
-    cd ${gsManagerDir}/ || exit
+    cd "${gsManagerDir}"/ || exit
     composer update
 
-    if [ -d ${MySB_InstallDir}/temp/sm_conf ]; then
-        mv -v ${MySB_InstallDir}/temp/sm_conf ${gsManagerDir}/conf
+    if [ -d "${MySB_InstallDir}"/temp/sm_conf ]; then
+        mv -v "${MySB_InstallDir}"/temp/sm_conf "${gsManagerDir}"/conf
     fi
 
     #### Edit reboot function
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/manager/kill_rtorrent.c.tmpl ${gsManagerDir}/source/kill_rtorrent.c
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/manager/kill_rtorrent.h.tmpl ${gsManagerDir}/source/kill_rtorrent.h
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/manager/start_rtorrent.c.tmpl ${gsManagerDir}/source/start_rtorrent.c
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/manager/main.c.tmpl ${gsManagerDir}/source/main.c
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/seedboxmanager/kill_rtorrent.c.tmpl "${gsManagerDir}"/source/kill_rtorrent.c
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/seedboxmanager/kill_rtorrent.h.tmpl "${gsManagerDir}"/source/kill_rtorrent.h
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/seedboxmanager/start_rtorrent.c.tmpl "${gsManagerDir}"/source/start_rtorrent.c
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/seedboxmanager/main.c.tmpl "${gsManagerDir}"/source/main.c
     #### Disable Irrsi
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/manager/index.twig.html.tmpl ${gsManagerDir}/view/index.twig.html
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/seedboxmanager/index.twig.html.tmpl "${gsManagerDir}"/view/index.twig.html
     #### Utils.php
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/manager/Utils.php.tmpl ${gsManagerDir}/src/Seedbox/Utils.php
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/seedboxmanager/Utils.php.tmpl "${gsManagerDir}"/src/Seedbox/Utils.php
     #### FileConfiguration.php
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/manager/FileConfiguration.php.tmpl ${gsManagerDir}/src/Seedbox/FileConfiguration.php
-    perl -pi -e "s/443/${gsPort_MySB_HTTPS}/g" ${gsManagerDir}/src/Seedbox/FileConfiguration.php
-    perl -pi -e "s/<ftp_port>/${gsPort_FTP}/g" ${gsManagerDir}/src/Seedbox/FileConfiguration.php
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/seedboxmanager/FileConfiguration.php.tmpl "${gsManagerDir}"/src/Seedbox/FileConfiguration.php
+    perl -pi -e "s/443/${gsPort_MySB_HTTPS}/g" "${gsManagerDir}"/src/Seedbox/FileConfiguration.php
+    perl -pi -e "s/<ftp_port>/${gsPort_FTP}/g" "${gsManagerDir}"/src/Seedbox/FileConfiguration.php
     #### DownloadController.php
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/manager/DownloadController.php.tmpl ${gsManagerDir}/src/Controller/DownloadController.php
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/seedboxmanager/DownloadController.php.tmpl "${gsManagerDir}"/src/Controller/DownloadController.php
 
     #### Install
     cd ./source/ || exit
     chmod -v +x install.sh && ./install.sh
 
     #### Language FR
-    perl -pi -e "s/Les accès FTP - SFTP - Transdroid/Les accès FTPs - sFTP - Transdroid/g"             "${gsManagerDir}/locale/core.fr.yml"
-    perl -pi -e "s/Serveur FTP et SFTP/Serveur FTPs et sFTP/g" ${gsManagerDir}/locale/core.fr.yml
-    perl -pi -e "s/ \(s\)FTP//g" ${gsManagerDir}/locale/core.fr.yml
-    perl -pi -e "s/ Port FTP/ Port FTPs/g" ${gsManagerDir}/locale/core.fr.yml
+    perl -pi -e "s/Les accès FTP - SFTP - Transdroid/Les accès FTPs - sFTP - Transdroid/g" "${gsManagerDir}/locale/core.fr.yml"
+    perl -pi -e "s/Serveur FTP et SFTP/Serveur FTPs et sFTP/g" "${gsManagerDir}"/locale/core.fr.yml
+    perl -pi -e "s/ \(s\)FTP//g" "${gsManagerDir}"/locale/core.fr.yml
+    perl -pi -e "s/ Port FTP/ Port FTPs/g" "${gsManagerDir}"/locale/core.fr.yml
     #### Language EN
-    perl -pi -e "s/FTP \/ SFTP \/ Transdroid - Access/FTPs \/ sFTP \/ Transdroid - Access/g" ${gsManagerDir}/locale/core.en.yml
-    perl -pi -e "s/FTP and SFTP Server/FTPs and sFTP Server/g" ${gsManagerDir}/locale/core.en.yml
-    perl -pi -e "s/ \(S\)FTP//g" ${gsManagerDir}/locale/core.en.yml
-    perl -pi -e "s/ FTP port/ FTPs port/g" ${gsManagerDir}/locale/core.en.yml
-    perl -pi -e "s/ SFTP port/ sFTP port/g" ${gsManagerDir}/locale/core.en.yml
+    perl -pi -e "s/FTP \/ SFTP \/ Transdroid - Access/FTPs \/ sFTP \/ Transdroid - Access/g" "${gsManagerDir}"/locale/core.en.yml
+    perl -pi -e "s/FTP and SFTP Server/FTPs and sFTP Server/g" "${gsManagerDir}"/locale/core.en.yml
+    perl -pi -e "s/ \(S\)FTP//g" "${gsManagerDir}"/locale/core.en.yml
+    perl -pi -e "s/ FTP port/ FTPs port/g" "${gsManagerDir}"/locale/core.en.yml
+    perl -pi -e "s/ SFTP port/ sFTP port/g" "${gsManagerDir}"/locale/core.en.yml
     #### Template
-    perl -pi -e "s/\(s\)ftp:\/\///g" ${gsManagerDir}/view/index.twig.html
-    perl -pi -e "s/https:\/\/filezilla.fr\//http:\/\/filezilla-project.org\//g" ${gsManagerDir}/view/index.twig.html
+    perl -pi -e "s/\(s\)ftp:\/\///g" "${gsManagerDir}"/view/index.twig.html
+    perl -pi -e "s/https:\/\/filezilla.fr\//http:\/\/filezilla-project.org\//g" "${gsManagerDir}"/view/index.twig.html
 
     #### Clean cache
-    rm -rfv ${gsManagerDir}/cache/*
+    rm -rfv "${gsManagerDir}"/cache/*
 
     #### ruTorrent Plugin Link Manager
     gfnGetRepoValues 'ruTorrent Plugin Link Manager' && gfnRepoManageByType
@@ -108,7 +108,7 @@ if [ "${gbToInstall_Manager}" == "YES" ]; then
     #### Create directories & change rights
     gfnManageDirAndFiles 'global'
 
-    if gfnCheckCommand 0 ${gsManagerDir}/reboot-rtorrent; then
+    if gfnCheckCommand 0 "${gsManagerDir}"/reboot-rtorrent; then
         cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='Seedbox-Manager';" -v
     fi
 

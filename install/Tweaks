@@ -28,15 +28,15 @@ source "$(dirname "$0")"/../inc/includes_before
 #### Console tweaks
 echo
 echo "########## Console tweaks"
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/tweaks/bashrc.tmpl /root/.bashrc
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/tweaks/bashrc.tmpl /root/.bashrc
 {
     echo "PATH=/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/bin:/usr/local/sbin:${MySB_InstallDir}/bin:/sbin"
     echo "export PATH"
     echo
 } >>/root/.bashrc
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/tweaks/profile.tmpl /root/.profile
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/tweaks/bash_aliases.tmpl /root/.bash_aliases
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/tweaks/bash_profile.tmpl /root/.bash_profile
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/tweaks/profile.tmpl /root/.profile
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/tweaks/bash_aliases.tmpl /root/.bash_aliases
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/tweaks/bash_profile.tmpl /root/.bash_profile
 install -v -o root -g root -m 0644 /etc/skel/.bash_logout /root/.bash_logout
 
 #### permanently adding scripts to PATH to all users and root
@@ -51,20 +51,20 @@ fi
 #### Editors
 echo
 echo "########## Editors"
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/tweaks/etc.vimrc.tmpl /etc/vim/vimrc
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/tweaks/etc.nanorc.tmpl /etc/nanorc
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/tweaks/etc.vimrc.tmpl /etc/vim/vimrc
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/tweaks/etc.nanorc.tmpl /etc/nanorc
 
 #### Motd
 echo
 echo "########## Motd"
-install -v -o root -g root -m 0755 ${MySB_InstallDir}/templates/tweaks/etc.rc.local.tmpl /etc/rc.local
+install -v -o root -g root -m 0755 "${MySB_InstallDir}"/templates/tweaks/etc.rc.local.tmpl /etc/rc.local
 perl -pi -e "s/<MySB_Version>/${gsCurrentVersion}/g" /etc/rc.local
 
 #### Change timezone
 echo
 echo "########## Timezone"
 if [ -n "${gsTimeZone}" ]; then
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/timesyncd.conf.tmpl /etc/systemd/timesyncd.conf
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/tweaks/timesyncd.conf.tmpl /etc/systemd/timesyncd.conf
     timedatectl set-timezone "${gsTimeZone}"
     timedatectl set-local-rtc 0
     timedatectl status
@@ -77,7 +77,7 @@ ServicesToRestart="${ServicesToRestart} systemd-timesyncd"
 
 #### /etc/sysctl.conf
 # /etc/sysctl.d/999-swappiness.conf
-if ([ "$gsMemory" -lt 2048 ] && [ "$(free -m | grep 'Swap' | awk '{ print $2 }')" -ne 0 ]); then
+if { [ "$gsMemory" -lt 2048 ] && [ "$(free -m | grep 'Swap' | awk '{ print $2 }')" -ne 0 ]; }; then
     echo
     echo "########## /etc/sysctl.d/999-swappiness.conf"
     {
@@ -126,8 +126,8 @@ update-locale "LANG=${gsLocale}.UTF-8" &>/dev/null
 update-locale "LANGUAGE=${LANG:0:2}" &>/dev/null
 locale-gen "${gsLocale}.UTF-8" &>/dev/null
 dpkg-reconfigure -f noninteractive locales &>/dev/null
-locale >${MySB_InstallDir}/files/locale
-cat ${MySB_InstallDir}/files/locale
+locale >"${MySB_InstallDir}"/files/locale
+cat "${MySB_InstallDir}"/files/locale
 cat /etc/default/locale
 
 #### /etc/hostname
@@ -139,9 +139,9 @@ hostnamectl status
 # /etc/hosts
 echo
 echo "########## /etc/hosts"
-if [ -z $funcs_MySB_SecurityRules ]; then
+if [ -z "$funcs_MySB_SecurityRules" ]; then
     # shellcheck source=inc/funcs_by_script/funcs_MySB_SecurityRules
-    source ${MySB_InstallDir}/inc/funcs_by_script/funcs_MySB_SecurityRules
+    source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_MySB_SecurityRules
 fi
 gfnCreateHostsFile
 cat /etc/hosts
@@ -167,7 +167,7 @@ install -d /etc/iptables
 #### Rsyslog
 echo
 echo "########## Rsyslog"
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/tweaks/etc.rsyslog.conf.tmpl /etc/rsyslog.conf
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/tweaks/etc.rsyslog.conf.tmpl /etc/rsyslog.conf
 rm -vf /etc/rsyslog.d/iptables.conf
 [ ! -f /var/log/iptables.log ] && touch /var/log/iptables.log
 echo "if \$msg contains '[MySB]' or \$msg contains '[PeerGuardian]' then /var/log/iptables.log" | tee -a /etc/rsyslog.d/iptables.conf
@@ -183,16 +183,16 @@ install -d -v -o root -g root -m 0700 /root/.ssh
 ls -lat /root/.ssh/id_rsa
 
 #### AES-NI Crypto Acceleration
-if [ -n "$(grep 'aes' /proc/cpuinfo)" ]; then
+if (grep -q 'aes' /proc/cpuinfo); then
     echo
     echo "########## AES-NI Crypto Acceleration"
     ## load
     modprobe aesni_intel
 
-    if [ -n "$(lsmod | grep 'aes')" ]; then
+    if (grep -q 'aes' <<<"$(lsmod)"); then
         ## make permanent
-        [ -z "$(grep 'aesni_intel' /etc/modules)" ] && echo aesni_intel | tee -a /etc/modules
-        [ -z "$(grep 'OPENSSL_ia32cap=~0x200000200000000' /etc/environment)" ] && echo "OPENSSL_ia32cap=~0x200000200000000" | tee -a /etc/environment
+        (! grep -q 'aesni_intel' /etc/modules) && echo aesni_intel | tee -a /etc/modules
+        (! grep -q 'OPENSSL_ia32cap=~0x200000200000000' /etc/environment) && echo "OPENSSL_ia32cap=~0x200000200000000" | tee -a /etc/environment
     fi
     cat /etc/modules
     cat /etc/environment
@@ -201,7 +201,7 @@ fi
 #### Force CPU governor to "performance"
 echo
 echo "########## Force CPU governor to 'performance'"
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/tweaks/etc.default.cpufrequtils.tmpl /etc/default/cpufrequtils
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/tweaks/etc.default.cpufrequtils.tmpl /etc/default/cpufrequtils
 cpufreq-set -r -g performance
 if [ -f /proc/cpuinfo ]; then
     echo
@@ -225,7 +225,7 @@ if [ -f /etc/systemd/network/10-mainif.network ]; then
     # Address
     for sMatch in $(grep '^Address=' /etc/systemd/network/10-mainif.network); do
         nNumLine=$(grep "${sMatch}" -n -m 1 /etc/systemd/network/10-mainif.network | cut -d ':' -f 1)
-        sAddress="$(echo "${sMatch}" | cut -d '=' -f 2  | cut -d '/' -f 1)"
+        sAddress="$(echo "${sMatch}" | cut -d '=' -f 2 | cut -d '/' -f 1)"
         if [ -n "${sAddress}" ]; then
             if [ "$(gfnValidateIP "${sAddress}")" != "${sAddress}" ]; then
                 sed -i "${nNumLine}d" /etc/systemd/network/10-mainif.network
@@ -236,7 +236,7 @@ if [ -f /etc/systemd/network/10-mainif.network ]; then
     # Gateway
     for sMatch in $(grep '^Gateway=' /etc/systemd/network/10-mainif.network); do
         nNumLine=$(grep "${sMatch}" -n -m 1 /etc/systemd/network/10-mainif.network | cut -d ':' -f 1)
-        sGateway="$(echo "${sMatch}" | cut -d '=' -f 2  | cut -d '/' -f 1)"
+        sGateway="$(echo "${sMatch}" | cut -d '=' -f 2 | cut -d '/' -f 1)"
         if [ -n "${sGateway}" ]; then
             if [ "$(gfnValidateIP "${sGateway}")" != "${sGateway}" ]; then
                 sed -i "${nNumLine}d" /etc/systemd/network/10-mainif.network
@@ -313,7 +313,7 @@ gfnLogRotate 'mysb'
 #### /usr/sbin/policy-rc.d
 echo
 echo "########## Packages install without starting daemons"
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/tweaks/usr.sbin.policy-rc.d.tmpl /usr/sbin/policy-rc.d
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/tweaks/usr.sbin.policy-rc.d.tmpl /usr/sbin/policy-rc.d
 
 #### Restart services
 echo
@@ -323,7 +323,7 @@ gfnManageServices restart "$ServicesToRestart"
 #### Create init script for MySB_SecurityRules_Init
 echo
 echo "########## MySB_SecurityRules_Init"
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/MySB_SecurityRules_Init.service.tmpl /lib/systemd/system/MySB_SecurityRules_Init.service
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/tweaks/MySB_SecurityRules_Init.service.tmpl /lib/systemd/system/MySB_SecurityRules_Init.service
 perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /lib/systemd/system/MySB_SecurityRules_Init.service
 systemctl daemon-reload
 systemctl enable MySB_SecurityRules_Init.service
