@@ -55,7 +55,7 @@ function fnPlexPlugins() {
 }
 
 # Install Plex DEB package
-function fnInstallDebPackage() {
+function fnInstallPlex() {
     local sServices
 
     # Loading repository informations
@@ -81,7 +81,9 @@ function fnInstallDebPackage() {
         gfnManageServices stop "${sServices}"
 
         if [ -f "${gsRepoDir}/${gsRepoFile}" ]; then
-            (! dpkg -i "${gsRepoDir}/${gsRepoFile}") && dpkg -i "${gsRepoDir}/${gsRepoFile}"
+            sPackages=(alsa-oss oss-compat libasound2-plugins "${gsRepoDir}/${gsRepoFile}")
+            gfnPackageBundleInstall "${sPackages[@]}"
+
             systemctl disable plexmediaserver
             systemctl daemon-reload
         fi
@@ -92,9 +94,10 @@ function fnInstallDebPackage() {
         # Preferences.xml
         sPreferencesFile='/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml'
         if [ -f "${sPreferencesFile}" ]; then
+            cat "${sPreferencesFile}"
             perl -pi -e 's/\"\/>/\" \/>/g' "${sPreferencesFile}"
             sNewPreferences=()
-            for sParam in $(cat "${sPreferencesFile}"); do
+            while read -r sParam; do
                 case "$(echo "${sParam}" | cut -d '=' -f 1)" in
                     'OldestPreviousVersion') sNewPreferences+=("${sParam}") ;;
                     'MachineIdentifier') sNewPreferences+=("${sParam}") ;;
@@ -124,9 +127,9 @@ function fnInstallDebPackage() {
                     'LanguageInCloud') sNewPreferences+=("${sParam}") ;;
                     'GracenoteUser') sNewPreferences+=("${sParam}") ;;
                     'EnableIPv6') sNewPreferences+=('EnableIPv6="0"') ;;
-                    'allowedNetworks') sNewPreferences+=('127.0.0.1/255.255.255.255') ;;
+                    'allowedNetworks') sNewPreferences+=('allowedNetworks="127.0.0.1\/255.255.255.255"') ;;
                 esac
-            done
+            done < <(cat "${sPreferencesFile}")
             {
                 echo '<?xml version="1.0" encoding="utf-8"?>'
                 echo "<Preferences ${sNewPreferences[*]} />"
@@ -148,7 +151,7 @@ function fnInstallDebPackage() {
                         'PreferredNetworkInterface') perl -pi -e "s/<Preferences/<Preferences PreferredNetworkInterface=\"${gsPrimaryInet}\"/g" "${sPreferencesFile}" ;;
                         'DlnaReportTimeline') perl -pi -e 's/<Preferences/<Preferences DlnaReportTimeline="0"/g' "${sPreferencesFile}" ;;
                         'EnableIPv6') perl -pi -e 's/<Preferences/<Preferences EnableIPv6="0"/g' "${sPreferencesFile}" ;;
-                        'allowedNetworks') perl -pi -e 's/<Preferences/<Preferences allowedNetworks="127.0.0.1/255.255.255.255"/g' "${sPreferencesFile}" ;;
+                        'allowedNetworks') perl -pi -e 's/<Preferences/<Preferences allowedNetworks="127.0.0.1\/255.255.255.255"/g' "${sPreferencesFile}" ;;
                     esac
                 }
             done
@@ -169,16 +172,15 @@ function fnInstallDebPackage() {
 }
 
 # Install Tautulli
-function fnInstallZipTautulli() {
+function fnInstallTautulli() {
     local sRepoDirEscaped
+
+    # Get Tautulli infos
+    gfnGetRepoValues 'Tautulli'
 
     # Install packages
     sPackages=(python python-setuptools tzdata)
     gfnPackageBundleInstall "${sPackages[@]}"
-
-    # Get Tautulli infos
-    gfnGetRepoValues 'Tautulli'
-    [[ $? -ne 0 ]] && return 1
 
     # VARs
     sRepoDirEscaped="$(echo "${gsRepoDir}" | sed s,/,\\\\\/,g)"
@@ -186,14 +188,16 @@ function fnInstallZipTautulli() {
     # Need upgrade or install ?
     if [ "${gbIsInstalled_Tautulli}" == "NO" ] || [ "${gsVersionLatest}" != "${gsVersionInstalled}" ]; then
         # Python
-        [[ -z "$(pip list --format=columns | grep 'pycryptodome')" ]] && pip install PyCryptodome
+        # [[ -z "$(pip list --format=columns | grep 'pycryptodome')" ]] && pip install PyCryptodome
+        (! grep -q 'pycryptodome' <<<"$(pip list --format=columns)") && pip install PyCryptodome
 
         # Get file & Extract datas
-        if [ -f "${MySB_Files}/${gsRepoFile}" ] && ([ "${gsVersionLatest}" != "${gsVersionInstalled}" ]); then
+        echo "${MySB_Files}/${gsRepoFile}" "${MySB_Files}/${gsRepoFile}.tmp"
+        if [ -f "${MySB_Files}/${gsRepoFile}" ] && [ "${gsVersionLatest}" != "${gsVersionInstalled}" ]; then
             mv -v "${MySB_Files}/${gsRepoFile}" "${MySB_Files}/${gsRepoFile}.tmp"
         fi
         gfnRepoManageByType
-        if [ -f "${MySB_Files}/${gsRepoFile}" ] && ([ "${gsVersionLatest}" != "${gsVersionInstalled}" ]); then
+        if [ -f "${MySB_Files}/${gsRepoFile}" ] && [ "${gsVersionLatest}" != "${gsVersionInstalled}" ]; then
             rm -fv "${MySB_Files}/${gsRepoFile}.tmp"
         fi
 
@@ -267,7 +271,7 @@ function fnInstallZipTautulli() {
             sed -i '/https_cert =/d' "${gsRepoDir}"/config.ini
             sed -i '/https_key =/d' "${gsRepoDir}"/config.ini
             sed -i '/https_cert_chain =/d' "${gsRepoDir}"/config.ini
-            if ([ -f /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem ] && [ -f /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem ]); then
+            if [ -f /etc/letsencrypt/live/"${gsHostNameFqdn}"/fullchain.pem ] && [ -f /etc/letsencrypt/live/"${gsHostNameFqdn}"/privkey.pem ]; then
                 sed -i "${nNumLine}i\https_cert = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" "${gsRepoDir}"/config.ini
                 sed -i "${nNumLine}i\https_key = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" "${gsRepoDir}"/config.ini
                 sed -i "${nNumLine}i\https_cert_chain = /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" "${gsRepoDir}"/config.ini
@@ -298,20 +302,16 @@ function fnInstallZipTautulli() {
 #### CRON UPGRADE
 if [ "${gsSwitch}" == "CRON" ] && [ "${gbIsInstalled_PlexMedia}" == "YES" ]; then
     # Check for a new version / Install it
-    fnInstallDebPackage
+    fnInstallPlex
     if gfnCheckCommand 0 plexmediaserver; then
-        fnInstallZipTautulli
+        fnInstallTautulli
     fi
 fi
 
 #### INSTALL
 if [ "${gbToInstall_PlexMedia}" == "YES" ]; then
-    #### Install package
-    sPackages=(alsa-oss oss-compat libasound2-plugins)
-    gfnPackageBundleInstall "${sPackages[@]}"
-
-    #### Install DEB package
-    fnInstallDebPackage
+    #### Install packages
+    fnInstallPlex
 
     #### NginX
     install -v -o root -g root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.locations.plexmediaserver.conf.tmpl /etc/nginx/locations/PlexMediaServer.conf
@@ -319,7 +319,7 @@ if [ "${gbToInstall_PlexMedia}" == "YES" ]; then
     install -v -o root -g root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.proxy.plexmediaserver.conf.tmpl /etc/nginx/proxy/PlexMediaServer.conf
 
     if gfnCheckCommand 0 plexmediaserver; then
-        fnInstallZipTautulli
+        fnInstallTautulli
     fi
 fi
 

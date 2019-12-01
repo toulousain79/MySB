@@ -221,7 +221,7 @@ gfnPeerGuardianFailed() {
 }
 
 #### PeerGuardian Create blocklists.list
-gfnPeerGuardianBlocklistsList() {
+gfnPeerGuardianGenerateBlocklists() {
     local sAllBlocklists sBlocklist sIblocklistIdent sUsername sPin bDisplay sMode
     bDisplay="${1}"
     sMode="${2}"
@@ -542,6 +542,7 @@ gfnPeerGuardianIptablesInsert() {
         if [ -f /etc/pgl/dnscrypt.insert.sh ]; then rm -f /etc/pgl/dnscrypt.insert.sh; fi
         if [ -f /etc/pgl/dnscrypt.remove.sh ]; then rm -f /etc/pgl/dnscrypt.remove.sh; fi
     fi
+    #### DNScrypt-proxy
 
     #### Monitoring
     if [ -n "${gsServerProvider}" ] && [ "${gsServerProvider}" != "${Global_None}" ]; then
@@ -591,6 +592,7 @@ gfnPeerGuardianIptablesInsert() {
         if [ -f /etc/pgl/monitoring.insert.sh ]; then rm -f /etc/pgl/monitoring.insert.sh; fi
         if [ -f /etc/pgl/monitoring.remove.sh ]; then rm -f /etc/pgl/monitoring.remove.sh; fi
     fi
+    #### Monitoring
 
     #### DNS
     if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_PublicDNS}"; fi
@@ -614,6 +616,7 @@ gfnPeerGuardianIptablesInsert() {
     cp /etc/pgl/public_dns.insert.sh /etc/pgl/public_dns.remove.sh
     perl -pi -e "s/-I/-D/g" /etc/pgl/public_dns.remove.sh
     if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
+    #### DNS
 
     #### ruTorrent plugins
     if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_RutorrentPlugins}"; fi
@@ -647,6 +650,7 @@ gfnPeerGuardianIptablesInsert() {
     cp /etc/pgl/rutorrent.insert.sh /etc/pgl/rutorrent.remove.sh
     perl -pi -e "s/-I/-D/g" /etc/pgl/rutorrent.remove.sh
     if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
+    #### ruTorrent plugins
 
     #### Others
     if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_Others}"; fi
@@ -668,12 +672,18 @@ gfnPeerGuardianIptablesInsert() {
     for sDomain in "${gaNeededDomains[@]}"; do
         echo "iptables -I pgl_out -p tcp -d ${sDomain} -j ACCEPT -m comment --comment \"OUTPUT TCP Needed domain ${sDomain}\"" >>/etc/pgl/others.insert.sh
     done
+
+    for sDomain in "${gaDebianRepos[@]}"; do
+        echo "iptables -I pgl_out -p tcp -d ${sDomain} -j ACCEPT -m comment --comment \"OUTPUT TCP Debian repos ${sDomain}\"" >>/etc/pgl/others.insert.sh
+    done
+
     echo >>/etc/pgl/others.insert.sh
 
     # remove
     cp /etc/pgl/others.insert.sh /etc/pgl/others.remove.sh
     perl -pi -e "s/-I/-D/g" /etc/pgl/others.remove.sh
     if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
+    #### Others
 }
 
 #### PeerGuardian Create pglcmd.conf
@@ -805,6 +815,21 @@ gfnPeerGuardianNetworkPortsGenerator() {
     WHITE_TCP_OUT=$(echo "${WHITE_TCP_OUT}" | sed -e 's/^ //g;s/\s+$//g;')
     WHITE_UDP_OUT=$(echo "$WHITE_UDP_OUT" | sed -e 's/^ //g;s/\s+$//g;')
     export WHITE_TCP_IN WHITE_UDP_IN WHITE_TCP_OUT WHITE_UDP_OUT
+}
+
+#### Network ports generator
+gfnPeerGuardianCreateBaseConfig() {
+    #### Create config files
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/peerguardian/etc.pgl.pglcmd.conf.tmpl /etc/pgl/pglcmd.conf
+
+    # Create '/etc/pgl/pglcmd.conf'
+    gfnPeerGuardianPglcmdConf 0
+
+    # Create '/etc/pgl/allow.p2p'
+    gfnPeerGuardianAllowP2P 0
+
+    # Create '/etc/pgl/*.insert.sh'
+    gfnPeerGuardianIptablesInsert 0
 }
 
 ##################### LAST LINE ######################################

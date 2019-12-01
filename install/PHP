@@ -68,15 +68,15 @@ gfnManageServices stop "nginx ${binPhpService} redis-server"
 install -v -o root -g root -m 0755 -d "/etc/redis"
 
 #### Configuration files
-# ${gsPhpDir}/fpm/php-fpm.conf
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/php/etc.php.7.3.fpm.php-fpm.conf.tmpl ${gsPhpDir}/fpm/php-fpm.conf
-# ${gsPhpDir}/fpm/pool.d/www.conf
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/php/etc.php.7.3.fpm.pool.d.www.conf.tmpl ${gsPhpDir}/fpm/pool.d/www.conf
-# ${gsPhpDir}/fpm/php.ini
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/php/etc.php.7.3.php.ini.tmpl ${gsPhpDir}/fpm/php.ini
-# ${gsPhpDir}/cli/php.ini
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/php/etc.php.7.3.php.ini.tmpl ${gsPhpDir}/cli/php.ini
-perl -pi -e "s/disable_functions = /;disable_functions = /g" ${gsPhpDir}/cli/php.ini
+# "${gsPhpDir}"/fpm/php-fpm.conf
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/php/etc.php.7.3.fpm.php-fpm.conf.tmpl "${gsPhpDir}"/fpm/php-fpm.conf
+# "${gsPhpDir}"/fpm/pool.d/www.conf
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/php/etc.php.7.3.fpm.pool.d.www.conf.tmpl "${gsPhpDir}"/fpm/pool.d/www.conf
+# "${gsPhpDir}"/fpm/php.ini
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/php/etc.php.7.3.php.ini.tmpl "${gsPhpDir}"/fpm/php.ini
+# "${gsPhpDir}"/cli/php.ini
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/php/etc.php.7.3.php.ini.tmpl "${gsPhpDir}"/cli/php.ini
+perl -pi -e "s/disable_functions = /;disable_functions = /g" "${gsPhpDir}"/cli/php.ini
 
 #### Modules inventory
 sExtDir="/usr/lib/php/20180731"
@@ -85,7 +85,7 @@ sAllExtList="$(echo "${sAllExtList}" | xargs -n1 | sort -u | xargs | sed -e 's/^
 #### PEAR/PECL config
 update-ca-certificates --verbose --fresh &>/dev/null
 pear config-set auto_discover 1
-pear config-set php_ini ${gsPhpDir}/cli/php.ini
+pear config-set php_ini "${gsPhpDir}"/cli/php.ini
 pear config-set ext_dir ${sExtDir}
 pear update-channels
 pear upgrade --force Console_GetoptPlus
@@ -94,56 +94,56 @@ pear upgrade --force
 
 #### Disable all modules
 for Ext in ${sPeclModules}; do
-    [ -f ${gsPhpDir}/mods-available/${Ext}.ini ] && phpdismod ${Ext}
-    rm -fv ${gsPhpDir}/mods-available/${Ext}.ini
-    [ -n "$(pecl list | grep "${Ext}")" ] && pecl uninstall ${Ext}
+    [ -f "${gsPhpDir}"/mods-available/"${Ext}".ini ] && phpdismod "${Ext}"
+    rm -fv "${gsPhpDir}"/mods-available/"${Ext}".ini
+    [ -n "$(pecl list | grep "${Ext}")" ] && pecl uninstall "${Ext}"
 done
 if [ -d "${sExtDir}-zts" ]; then
     sExtListZts="$(ls -A1 ${sExtDir}-zts | cut -d "." -f 1)"
     for Ext in ${sExtListZts}; do
-        [ -f ${gsPhpDir}/mods-available/${Ext}.ini ] && phpdismod ${Ext}
-        rm -fv ${gsPhpDir}/mods-available/${Ext}.ini
+        [ -f "${gsPhpDir}"/mods-available/"${Ext}".ini ] && phpdismod "${Ext}"
+        rm -fv "${gsPhpDir}"/mods-available/"${Ext}".ini
     done
-    rm -rfv ${sExtDir}-zts
+    gfnDeleteDirectory 1 ${sExtDir}-zts
 fi
 for Ext in ${sAllExtList}; do
-    [ -f ${sExtDir}/${Ext}.ini ] && phpdismod ${Ext}
-    rm -fv ${gsPhpDir}/mods-available/${Ext}.ini
+    [ -f ${sExtDir}/"${Ext}".ini ] && phpdismod "${Ext}"
+    rm -fv "${gsPhpDir}"/mods-available/"${Ext}".ini
 done
 
 #### Enable all modules
 for Ext in ${sAllExtList}; do
     case "${Ext}" in
         'opcache')
-            echo "zend_extension=opcache.so" >${gsPhpDir}/mods-available/opcache.ini
+            echo "zend_extension=opcache.so" >"${gsPhpDir}"/mods-available/opcache.ini
             [ -z "$(php -m | grep 'opcache')" ] && ${binPhpEnmod} opcache
             ;;
         *)
-            echo "extension=${Ext}.so" >${gsPhpDir}/mods-available/${Ext}.ini
-            [ -z "$(php -m | grep "${Ext}")" ] && ${binPhpEnmod} ${Ext}
+            echo "extension=${Ext}.so" >"${gsPhpDir}"/mods-available/"${Ext}".ini
+            [ -z "$(php -m | grep "${Ext}")" ] && ${binPhpEnmod} "${Ext}"
             ;;
     esac
 done
 for Ext in ${sPeclModules}; do
     case "${Ext}" in
         'smbclient')
-            gfnGetRepoValues 'libsmbclient-php' && gfnRepoManageByType
+            gfnGetRepoValues 'libsmbclient-php'
             gfnRepoManageByType
-            cd ${gsRepoDir}/ || continue
+            cd "${gsRepoDir}"/ || continue
             phpize
             ./configure
             make
             make install
             make test
-            echo "extension=smbclient.so" >${gsPhpDir}/mods-available/smbclient.ini
+            echo "extension=smbclient.so" >"${gsPhpDir}"/mods-available/smbclient.ini
             ${binPhpEnmod} smbclient
-            cd .. && rm -rf ${gsRepoDir:-/tmp/null}/
+            cd .. && gfnDeleteDirectory 0 "${gsRepoDir:-/tmp/null}"/
             ;;
         'htscanner')
             pecl install htscanner
-            echo "extension=htscanner.so" >${gsPhpDir}/mods-available/htscanner.ini
+            echo "extension=htscanner.so" >"${gsPhpDir}"/mods-available/htscanner.ini
             ${binPhpEnmod} htscanner
-            rm -fv ${gsPhpDir}/cli/conf.d/20-htscanner.ini
+            rm -fv "${gsPhpDir}"/cli/conf.d/20-htscanner.ini
             ;;
     esac
 done

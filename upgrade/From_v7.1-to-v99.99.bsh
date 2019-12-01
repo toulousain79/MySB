@@ -46,11 +46,76 @@ echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_PreUpgrade}${CEND}..
 gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/upgrade/BulkChanges.bsh" 'BEFORE' 'UPGRADE'
 gfnStatusSTD
 
+######################################################################
+
+#### Bind
+((CurrentSTEP++))
+echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_Bind}${CEND}..."
+if (! gfnMd5Check "${MySB_InstallDir}/install/Bind"); then
+    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/Bind" 'UPGRADE'
+    gfnStatusSTD
+else
+    echo -e "${Global_NothingToDo}"
+fi
+
+#### DownloadAll
+((CurrentSTEP++))
+echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_DownloadAll}${CEND}..."
+gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/DownloadAll" 'UPGRADE'
+gfnStatusSTD
+
 #### SourcesList
 ((CurrentSTEP++))
 echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_UpdateDebianSources}${CEND}..."
 gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/SourcesList" 'UPGRADE' 'buster'
 gfnStatusSTD
+
+#### Getting information about monitoring engines
+((CurrentSTEP++))
+echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_ProviderInfos}${CEND}..."
+case "${gsServerProvider}" in
+    'OVH' | 'HETZNER')
+        gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/Monitoring" 'UPGRADE'
+        gfnStatusSTD
+        ;;
+    *) echo -e "${Global_NothingToDo}" ;;
+esac
+
+#### Fail2Ban
+((CurrentSTEP++))
+echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_Fail2Ban}${CEND}..."
+if [ "${gbToInstall_Fail2Ban}" == "YES" ] || [ "${gbIsInstalled_Fail2Ban}" == "YES" ] || (! gfnMd5Check "${MySB_InstallDir}/install/Fail2Ban"); then
+    cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='Fail2Ban';"
+    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/Fail2Ban" 'UPGRADE'
+    gfnStatusSTD
+else
+    echo -e "${Global_NothingToDo}"
+fi
+
+#### PeerGuardian
+((CurrentSTEP++))
+echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_PeerGuardian}${CEND}..."
+if [ "${gsMySB_PeerBlock}" == "PeerGuardian" ] || (! gfnMd5Check "${MySB_InstallDir}/install/PeerGuardian"); then
+    cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='PeerGuardian';"
+    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/PeerGuardian" 'UPGRADE'
+    gfnStatusSTD
+else
+    echo -e "${Global_NothingToDo}"
+fi
+
+#### DNScrypt-proxy 1/2
+((CurrentSTEP++))
+echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_DNScrypt}${CEND}..."
+if [ "${gbToInstall_DNScrypt}" == "YES" ] || [ "${gbIsInstalled_DNScrypt}" == "YES" ] || (! gfnMd5Check "${MySB_InstallDir}/install/DNScrypt"); then
+    bPrevious="$(cmdMySQL 'MySB_db' "SELECT dnscrypt FROM system WHERE id_system='1';")"
+    cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='DNScrypt-proxy';"
+    cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='1' WHERE id_system='1';"
+    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/DNScrypt" 'UPGRADE'
+    cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='${bPrevious}' WHERE id_system='1';"
+    gfnStatusSTD
+else
+    echo -e "${Global_NothingToDo}"
+fi
 
 #### MySB_UpgradeSystem
 ((CurrentSTEP++))
@@ -78,38 +143,43 @@ else
     echo -e "${Global_NothingToDo}"
 fi
 
-#### CPAN
-# ((CurrentSTEP++))
-# echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_CPAN}${CEND}..."
-# gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/CPAN" 'UPGRADE'
-# gfnStatusSTD
-
-#### SSH
-((CurrentSTEP++))
-echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_SSH}${CEND}..."
-if (! gfnMd5Check "${MySB_InstallDir}/install/SSH"); then
-    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/SSH" 'UPGRADE'
-    gfnStatusSTD
-else
-    echo -e "${Global_NothingToDo}"
-fi
-
-#### Getting information about OVH monitoring engine
-((CurrentSTEP++))
-echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_ProviderInfos}${CEND}..."
-case "${gsServerProvider}" in
-    'OVH' | 'HETZNER')
-        gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/Monitoring" 'UPGRADE'
-        gfnStatusSTD
-        ;;
-    *) echo -e "${Global_NothingToDo}" ;;
-esac
+######################################################################
 
 #### Tweaks
 ((CurrentSTEP++))
 echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_Optimiszation}${CEND}..."
 if (! gfnMd5Check "${MySB_InstallDir}/install/Tweaks"); then
     gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/Tweaks" 'UPGRADE'
+    gfnStatusSTD
+else
+    echo -e "${Global_NothingToDo}"
+fi
+
+#### Tools
+((CurrentSTEP++))
+echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_Tools}${CEND}..."
+if (! gfnMd5Check "${MySB_InstallDir}/install/Tools"); then
+    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/Tools" 'UPGRADE'
+    gfnStatusSTD
+else
+    echo -e "${Global_NothingToDo}"
+fi
+
+#### Docker
+((CurrentSTEP++))
+echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_Docker}${CEND}..."
+if (! gfnMd5Check "${MySB_InstallDir}/install/Docker"); then
+    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/Docker" 'UPGRADE'
+    gfnStatusSTD
+else
+    echo -e "${Global_NothingToDo}"
+fi
+
+#### SSH
+((CurrentSTEP++))
+echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_SSH}${CEND}..."
+if (! gfnMd5Check "${MySB_InstallDir}/install/SSH"); then
+    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/SSH" 'UPGRADE'
     gfnStatusSTD
 else
     echo -e "${Global_NothingToDo}"
@@ -150,22 +220,6 @@ fi
 echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_NginX}${CEND}..."
 if (! gfnMd5Check "${MySB_InstallDir}/install/Nginx"); then
     gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/Nginx" 'UPGRADE'
-    gfnStatusSTD
-else
-    echo -e "${Global_NothingToDo}"
-fi
-
-#### DownloadAll
-((CurrentSTEP++))
-echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_DownloadAll}${CEND}..."
-gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/DownloadAll" 'UPGRADE'
-gfnStatusSTD
-
-#### Tools
-((CurrentSTEP++))
-echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_Tools}${CEND}..."
-if (! gfnMd5Check "${MySB_InstallDir}/install/Tools"); then
-    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/Tools" 'UPGRADE'
     gfnStatusSTD
 else
     echo -e "${Global_NothingToDo}"
@@ -212,6 +266,8 @@ else
     echo -e "${Global_NothingToDo}"
 fi
 
+######################################################################
+
 #### Shell In A Box
 ((CurrentSTEP++))
 echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_ShellInABox}${CEND}..."
@@ -221,94 +277,6 @@ if (! gfnMd5Check "${MySB_InstallDir}/install/ShellInABox"); then
 else
     echo -e "${Global_NothingToDo}"
 fi
-
-#### Bind
-((CurrentSTEP++))
-echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_Bind}${CEND}..."
-if (! gfnMd5Check "${MySB_InstallDir}/install/Bind"); then
-    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/Bind" 'UPGRADE'
-    gfnStatusSTD
-else
-    echo -e "${Global_NothingToDo}"
-fi
-
-#### Docker
-((CurrentSTEP++))
-echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_Docker}${CEND}..."
-if (! gfnMd5Check "${MySB_InstallDir}/install/Docker"); then
-    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/Docker" 'UPGRADE'
-    gfnStatusSTD
-else
-    echo -e "${Global_NothingToDo}"
-fi
-
-#
-########## SECURITY - BoF ##########
-#
-
-#### Fail2Ban
-((CurrentSTEP++))
-echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_Fail2Ban}${CEND}..."
-if [ "${gbToInstall_Fail2Ban}" == "YES" ] || [ "${gbIsInstalled_Fail2Ban}" == "YES" ] || (! gfnMd5Check "${MySB_InstallDir}/install/Fail2Ban"); then
-    cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='Fail2Ban';"
-    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/Fail2Ban" 'UPGRADE'
-    gfnStatusSTD
-else
-    echo -e "${Global_NothingToDo}"
-fi
-
-#### PeerGuardian
-((CurrentSTEP++))
-echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_PeerGuardian}${CEND}..."
-if [ "${gsMySB_PeerBlock}" == "PeerGuardian" ] || (! gfnMd5Check "${MySB_InstallDir}/install/PeerGuardian"); then
-    cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='PeerGuardian';"
-    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/PeerGuardian" 'UPGRADE'
-    gfnStatusSTD
-else
-    echo -e "${Global_NothingToDo}"
-fi
-
-#### DNScrypt-proxy 1/2
-# ((CurrentSTEP++))
-# echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_DNScrypt}${CEND}..."
-# if [ "${gbToInstall_DNScrypt}" == "YES" ] || [ "${gbIsInstalled_DNScrypt}" == "YES" ] || (! gfnMd5Check "${MySB_InstallDir}/install/DNScrypt"); then
-#     bPrevious="$(cmdMySQL 'MySB_db' "SELECT dnscrypt FROM system WHERE id_system='1';")"
-#     cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='DNScrypt-proxy';"
-#     cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='1' WHERE id_system='1';"
-#     gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/DNScrypt" 'UPGRADE'
-#     cmdMySQL 'MySB_db' "UPDATE system SET dnscrypt='${bPrevious}' WHERE id_system='1';"
-#     gfnStatusSTD
-# else
-#     echo -e "${Global_NothingToDo}"
-# fi
-
-#### RKHunter
-((CurrentSTEP++))
-echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_InstallingConfiguring} RKHunter${CEND}..."
-if (! gfnMd5Check "${MySB_InstallDir}/install/RKHunter"); then
-    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/RKHunter" 'UPGRADE'
-    gfnStatusSTD
-else
-    echo -e "${Global_NothingToDo}"
-fi
-
-#### Lynis
-# ((CurrentSTEP++))
-# echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_InstallingConfiguring} Lynis${CEND}..."
-# if (! gfnMd5Check "${MySB_InstallDir}/install/Lynis"); then
-#     gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/Lynis" 'UPGRADE'
-#     gfnStatusSTD
-# else
-#     echo -e "${Global_NothingToDo}"
-# fi
-
-#
-########## SECURITY - EoF ##########
-#
-
-#
-########## SERVICES - BoF ##########
-#
 
 #### rTorrent
 ((CurrentSTEP++))
@@ -464,22 +432,31 @@ else
     echo -e "${Global_NothingToDo}"
 fi
 
-#
-########## SERVICES - EoF ##########
-#
+#### RKHunter
+((CurrentSTEP++))
+echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_InstallingConfiguring} RKHunter${CEND}..."
+if (! gfnMd5Check "${MySB_InstallDir}/install/RKHunter"); then
+    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/RKHunter" 'UPGRADE'
+    gfnStatusSTD
+else
+    echo -e "${Global_NothingToDo}"
+fi
+
+#### Lynis
+((CurrentSTEP++))
+echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_InstallingConfiguring} Lynis${CEND}..."
+if (! gfnMd5Check "${MySB_InstallDir}/install/Lynis"); then
+    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/Lynis" 'UPGRADE'
+    gfnStatusSTD
+else
+    echo -e "${Global_NothingToDo}"
+fi
 
 ######################################################################
-
-#### Security rules
-# ((CurrentSTEP++))
-# echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Global_FinalSecurityRules}${CEND}..."
-# gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'create' 'UPGRADE'
-# gfnStatusSTD
 
 #### Bulk changes
 ((CurrentSTEP++))
 echo -e -n "${CBLUE}${CurrentSTEP}/${TotalSTEP}	- ${Upgrade_PostUpgrade}${CEND}..."
-# cmdMySQL 'MySB_db' "INSERT INTO repositories (type,dir,name,version,upgrade,file,url,active,on_boot,script) VALUES ('na','na','BulkChanges.bsh','na','0','na','na','1','1','${MySB_InstallDir}/upgrade/BulkChanges.bsh');"
 gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/upgrade/BulkChanges.bsh" 'AFTER' 'UPGRADE'
 gfnStatusSTD
 

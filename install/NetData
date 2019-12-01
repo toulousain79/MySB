@@ -47,29 +47,30 @@ if [ -f "/sys/kernel/mm/ksm/run" ]; then
 fi
 
 #### Install
-gfnGetRepoValues 'NetData' && gfnRepoManageByType
+gfnGetRepoValues 'NetData'
+gfnRepoManageByType
 if [[ ${gnRepoUpgrade} -eq 1 ]] || [ "${gsSwitch}" == "INSTALL" ]; then
-    cd ${gsRepoDir}/ || exit 1
+    cd "${gsRepoDir}"/ || exit 1
     ./netdata-installer.sh --stable-channel --dont-wait --enable-lto
     # Disable the upgrade job
     cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='NetData';" -v
-    cd .. && rm -rf ${gsRepoDir:-/tmp/null}/
+    cd .. && gfnDeleteDirectory 1 "${gsRepoDir:-/tmp/null}"/
 fi
 
 #### STOP services
 gfnManageServices stop "netdata"
 
 #### Notifications config
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/netdata/health_alarm_notify.conf.tmpl /etc/netdata/health_alarm_notify.conf
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/netdata/health_alarm_notify.conf.tmpl /etc/netdata/health_alarm_notify.conf
 perl -pi -e "s/<main_user_mail>/${gsMainUserEmail}/g" /etc/netdata/health_alarm_notify.conf
 
 #### Others
-install -v -o root -g netdata -m 0640 ${MySB_InstallDir}/templates/netdata/usr.lib.netdata.conf.d.python.d.mysql.conf.tmpl /usr/lib/netdata/conf.d/python.d/mysql.conf
-install -v -o root -g netdata -m 0640 ${MySB_InstallDir}/templates/netdata/usr.lib.netdata.conf.d.python.d.proxysql.conf.tmpl /usr/lib/netdata/conf.d/python.d/proxysql.conf
-install -v -o root -g netdata -m 0640 ${MySB_InstallDir}/templates/netdata/usr.lib.netdata.conf.d.health.d.net.conf.tmpl /usr/lib/netdata/conf.d/health.d/net.conf
+install -v -o root -g netdata -m 0640 "${MySB_InstallDir}"/templates/netdata/usr.lib.netdata.conf.d.python.d.mysql.conf.tmpl /usr/lib/netdata/conf.d/python.d/mysql.conf
+install -v -o root -g netdata -m 0640 "${MySB_InstallDir}"/templates/netdata/usr.lib.netdata.conf.d.python.d.proxysql.conf.tmpl /usr/lib/netdata/conf.d/python.d/proxysql.conf
+install -v -o root -g netdata -m 0640 "${MySB_InstallDir}"/templates/netdata/usr.lib.netdata.conf.d.health.d.net.conf.tmpl /usr/lib/netdata/conf.d/health.d/net.conf
 
 # #### /etc/netdata/netdata.conf
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/netdata/netdata.conf.tmpl /etc/netdata/netdata.conf
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/netdata/netdata.conf.tmpl /etc/netdata/netdata.conf
 # ## [global]
 perl -pi -e "s/<gsTimeZone>/${gsTimeZoneEscaped}/g" /etc/netdata/netdata.conf
 
@@ -112,10 +113,10 @@ perl -pi -e "s/<gsTimeZone>/${gsTimeZoneEscaped}/g" /etc/netdata/netdata.conf
 # sed -i "${nNumLine}i\        gzip compression level = 1" /etc/netdata/netdata.conf
 
 #### NginX
-install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.locations.netdata.conf.tmpl /etc/nginx/locations/NetData.conf
+install -v -o root -g root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.locations.netdata.conf.tmpl /etc/nginx/locations/NetData.conf
 perl -pi -e "s/<MainUser>/${gsMainUserName}/g" /etc/nginx/locations/NetData.conf
-install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.proxy.netdata.conf.tmpl /etc/nginx/proxy/NetData.conf
-install -v -o root -g root -m 0600 ${MySB_InstallDir}/templates/nginx/etc.nginx.upstream.netdata.conf.tmpl /etc/nginx/upstream/NetData.conf
+install -v -o root -g root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.proxy.netdata.conf.tmpl /etc/nginx/proxy/NetData.conf
+install -v -o root -g root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.upstream.netdata.conf.tmpl /etc/nginx/upstream/NetData.conf
 
 #### MySQL
 source /etc/MySB/config_db
