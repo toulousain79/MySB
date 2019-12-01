@@ -648,25 +648,31 @@ gfnPeerGuardianIptablesInsert() {
     perl -pi -e "s/-I/-D/g" /etc/pgl/rutorrent.remove.sh
     if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
 
-    #### Needed domains
-    if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_NeededDomains}"; fi
+    #### Others
+    if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_Others}"; fi
     # insert
     {
         echo "#!/bin/sh"
-        echo "# Needed domains complementary rules"
-    } >/etc/pgl/needed_domains.insert.sh
+        echo "# Others complementary rules"
+    } >/etc/pgl/others.insert.sh
+
+    # ICMP
+    echo "iptables -I pgl_out -p icmp -j RETURN -m comment --comment \"ICMP OUT\"" >>/etc/pgl/others.insert.sh
+
+    # Docker
+    {
+        echo "iptables -I pgl_out -p all -s 172.28.0.0/24 -j RETURN -m comment --comment \"Docker Frontend OUT\""
+        echo "iptables -I pgl_out -p all -s 172.29.0.0/24 -j RETURN -m comment --comment \"Docker Backend OUT\""
+    } >>/etc/pgl/others.insert.sh
 
     for sDomain in "${gaNeededDomains[@]}"; do
-        {
-            echo "iptables -I pgl_in -p tcp -s ${sDomain} -i ${gsPrimaryInet} -j RETURN -m comment --comment \"INPUT TCP Needed domain ${sDomain}\""
-            echo "iptables -I pgl_out -p tcp -d ${sDomain} -j ACCEPT -m comment --comment \"OUTPUT TCP Needed domain ${sDomain}\""
-        } >>/etc/pgl/needed_domains.insert.sh
+        echo "iptables -I pgl_out -p tcp -d ${sDomain} -j ACCEPT -m comment --comment \"OUTPUT TCP Needed domain ${sDomain}\"" >>/etc/pgl/others.insert.sh
     done
-    echo >>/etc/pgl/needed_domains.insert.sh
+    echo >>/etc/pgl/others.insert.sh
 
     # remove
-    cp /etc/pgl/needed_domains.insert.sh /etc/pgl/needed_domains.remove.sh
-    perl -pi -e "s/-I/-D/g" /etc/pgl/needed_domains.remove.sh
+    cp /etc/pgl/others.insert.sh /etc/pgl/others.remove.sh
+    perl -pi -e "s/-I/-D/g" /etc/pgl/others.remove.sh
     if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
 }
 

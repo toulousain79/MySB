@@ -59,7 +59,7 @@ if gfnCheckCommand 0 netselect-apt; then
     esac
 
     # Stable
-    netselect-apt -a ${sArch} -n -t 100 -o "${MySB_InstallDir}"/temp/sources.list stable >"${MySB_InstallDir}"/files/fastest_stable_mirrors
+    netselect-apt -a ${sArch} -n -t 10 -o "${MySB_InstallDir}"/temp/sources.list stable >"${MySB_InstallDir}"/files/fastest_stable_mirrors
     MirrorsList="$(grep 'http' "${MySB_InstallDir}"/files/fastest_stable_mirrors)"
     Count=1
 
@@ -110,7 +110,7 @@ if gfnCheckCommand 0 netselect-apt; then
     fi
 
     # Testing
-    netselect-apt -a ${sArch} -n -t 100 -o "${MySB_InstallDir}"/temp/sources.list testing >"${MySB_InstallDir}"/files/fastest_testing_mirrors
+    netselect-apt -a ${sArch} -n -t 10 -o "${MySB_InstallDir}"/temp/sources.list testing >"${MySB_InstallDir}"/files/fastest_testing_mirrors
     MirrorsList="$(grep 'http' "${MySB_InstallDir}"/files/fastest_testing_mirrors)"
     Count=1
 
@@ -194,6 +194,22 @@ fi
 #### Force apt-get update
 if [ "${gbIsReady_MySB_Db}" == "YES" ]; then
     cmdMySQL 'MySB_db' "UPDATE system SET apt_update = 1, apt_date = '$(date +%Y-%m-%d\ %H:%M:%S)' WHERE id_system='1';" -v
+fi
+
+#### PeerGuardian
+if [ "${gbIsInstalled_PeerGuardian}" == "YES" ]; then
+    export gaNeededDomains
+
+    if [ -z "$funcs_PeerGuardian" ]; then
+        # shellcheck source=inc/funcs_by_script/funcs_PeerGuardian
+        source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_PeerGuardian
+    fi
+
+    # Create '/etc/pgl/*.insert.sh'
+    gfnPeerGuardianIptablesInsert 0
+
+    # Restart PeerGuardian
+    gfnManageServices start pglcmd
 fi
 
 #### Show new /etc/apt/sources.list
