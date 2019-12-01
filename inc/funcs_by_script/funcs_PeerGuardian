@@ -512,6 +512,7 @@ EOF
 }
 
 #### PeerGuardian Create all needed iptables complementary rules
+# Example: /usr/share/doc/pgld/examples/iptables-custom-insert.sh
 gfnPeerGuardianIptablesInsert() {
     local sOvhIPv4 sOnlineIPv4 sDigicubeIPv4 sHetznerIPv4 sIPv4 nUID
 
@@ -527,8 +528,8 @@ gfnPeerGuardianIptablesInsert() {
         nUID="$(id -u _dnscrypt-proxy)"
         if [ -n "${nUID}" ]; then
             {
-                echo "iptables -I pgl_out -p tcp -j ACCEPT -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT TCP DNScrypt-proxy\""
-                echo "iptables -I pgl_out -p udp -j ACCEPT -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT UDP DNScrypt-proxy\""
+                echo "iptables -I pgl_out -p tcp -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT TCP DNScrypt-proxy\""
+                echo "iptables -I pgl_out -p udp -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT UDP DNScrypt-proxy\""
             } >>/etc/pgl/dnscrypt.insert.sh
         fi
 
@@ -604,10 +605,9 @@ gfnPeerGuardianIptablesInsert() {
 
     for sDNS in "${gaDnsList[@]}"; do
         {
-            echo "iptables -I pgl_in -p tcp -s ${sDNS} -i ${gsPrimaryInet} -j RETURN -m comment --comment \"INPUT TCP Publics DNS\""
-            echo "iptables -I pgl_in -p udp -s ${sDNS} -i ${gsPrimaryInet} -j RETURN -m comment --comment \"INPUT UDP Publics DNS\""
-            echo "iptables -I pgl_out -p tcp -d ${sDNS} -j ACCEPT -m comment --comment \"OUTPUT TCP Publics DNS\""
-            echo "iptables -I pgl_out -p udp -d ${sDNS} -j ACCEPT -m comment --comment \"OUTPUT UDP Publics DNS\""
+            echo "iptables -I pgl_out -p tcp -d ${sDNS} --dport domain-s -j RETURN -m comment --comment \"OUTPUT TCP Publics DNS\""
+            echo "iptables -I pgl_out -p tcp -d ${sDNS} --dport domain -j RETURN -m comment --comment \"OUTPUT UDP Publics DNS\""
+            echo "iptables -I pgl_out -p udp -d ${sDNS} --dport domain -j RETURN -m comment --comment \"OUTPUT UDP Publics DNS\""
         } >>/etc/pgl/public_dns.insert.sh
     done
     echo >>/etc/pgl/public_dns.insert.sh
@@ -628,21 +628,21 @@ gfnPeerGuardianIptablesInsert() {
 
     # showip
     grep 'file_get_contents' "${gsRutorrentPluginsDir}"/showip/init.php | awk '{ print $3 }' | cut -d '/' -f 3 | while read -r sFQDN; do
-        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for plugin showip ${sFQDN}\"" >>/etc/pgl/rutorrent.insert.sh
+        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j /usr/share/doc/pgld/examples/iptables-custom-insert.sh -m comment --comment \"OUTPUT HTTP for plugin showip ${sFQDN}\"" >>/etc/pgl/rutorrent.insert.sh
     done
 
     # loginmgr
     grep -rh 'http://' "${gsRutorrentPluginsDir}"/loginmgr/accounts/ | awk '{ print $4 }' | cut -d '/' -f 3 | sed 's/";//g;' | while read -r sFQDN; do
-        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for plugin loginmgr ${sFQDN}\"" >>/etc/pgl/rutorrent.insert.sh
+        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin loginmgr ${sFQDN}\"" >>/etc/pgl/rutorrent.insert.sh
     done
 
     # extsearch
     grep -rh 'http://' "${gsRutorrentPluginsDir}"/extsearch/ | cut -d '/' -f 3 | sed "s/';//g;" | while read -r sFQDN; do
-        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for plugin extsearch ${sFQDN}\"" >>/etc/pgl/rutorrent.insert.sh
+        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin extsearch ${sFQDN}\"" >>/etc/pgl/rutorrent.insert.sh
     done
 
     # mediastream
-    echo "iptables -I pgl_out -p tcp -d go.divx.com --dport 80 -j ACCEPT -m comment --comment \"OUTPUT HTTP for plugin mediastream go.divx.com\"" >>/etc/pgl/rutorrent.insert.sh
+    echo "iptables -I pgl_out -p tcp -d go.divx.com --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin mediastream go.divx.com\"" >>/etc/pgl/rutorrent.insert.sh
 
     echo >>/etc/pgl/rutorrent.insert.sh
 
@@ -655,27 +655,37 @@ gfnPeerGuardianIptablesInsert() {
     #### Others
     if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_Others}"; fi
     # insert
-    {
-        echo "#!/bin/sh"
-        echo "# Others complementary rules"
-    } >/etc/pgl/others.insert.sh
+    echo "#!/bin/sh" >/etc/pgl/others.insert.sh
 
     # ICMP
-    echo "iptables -I pgl_out -p icmp -j RETURN -m comment --comment \"ICMP OUT\"" >>/etc/pgl/others.insert.sh
-
-    # Docker
     {
-        echo "iptables -I pgl_out -p all -s 172.28.0.0/24 -j RETURN -m comment --comment \"Docker Frontend OUT\""
-        echo "iptables -I pgl_out -p all -s 172.29.0.0/24 -j RETURN -m comment --comment \"Docker Backend OUT\""
+        echo "# ICMP"
+        echo "iptables -I pgl_out -p icmp -j RETURN -m comment --comment \"ICMP OUT\""
     } >>/etc/pgl/others.insert.sh
 
-    for sDomain in "${gaNeededDomains[@]}"; do
-        echo "iptables -I pgl_out -p tcp -d ${sDomain} -j ACCEPT -m comment --comment \"OUTPUT TCP Needed domain ${sDomain}\"" >>/etc/pgl/others.insert.sh
-    done
+    # Postfix / Stunnel
+    nUID="$(id -u postfix)"
+    if [ -n "${nUID}" ]; then
+        echo "iptables -I pgl_out -p tcp -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT TCP Postfix\"" >>/etc/pgl/dnscrypt.insert.sh
+    fi
+    nUID="$(id -u stunnel4)"
+    if [ -n "${nUID}" ]; then
+        echo "iptables -I pgl_out -p tcp -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT TCP Stunnel\"" >>/etc/pgl/dnscrypt.insert.sh
+    fi
 
-    for sDomain in "${gaDebianRepos[@]}"; do
-        echo "iptables -I pgl_out -p tcp -d ${sDomain} -j ACCEPT -m comment --comment \"OUTPUT TCP Debian repos ${sDomain}\"" >>/etc/pgl/others.insert.sh
-    done
+    {
+        echo "# Needed domains"
+        for sDomain in "${gaNeededDomains[@]}"; do
+            echo "iptables -I pgl_out -p tcp -d ${sDomain} -j RETURN -m comment --comment \"OUTPUT TCP Needed domain ${sDomain}\""
+        done
+    } >>/etc/pgl/others.insert.sh
+
+    {
+        echo "# Debian repos "
+        for sDomain in "${gaDebianRepos[@]}"; do
+            echo "iptables -I pgl_out -p tcp -d ${sDomain} -j RETURN -m comment --comment \"OUTPUT TCP Debian repos ${sDomain}\""
+        done
+    } >>/etc/pgl/others.insert.sh
 
     echo >>/etc/pgl/others.insert.sh
 
@@ -707,28 +717,28 @@ gfnPeerGuardianPglcmdConf() {
         sSearch="$(grep 'WHITE_IP_OUT=' /etc/pgl/pglcmd.conf)"
         sSearch="$(echo "${sSearch}" | sed s,/,\\\\\/,g)"
         if [ -n "${sSearch}" ]; then
-            sToAdd=""
+            sToAdd=()
             if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
-                sToAdd="10.0.0.0\/24"
+                sToAdd+=("10.0.0.0\/24" "10.0.1.0\/24" "10.0.2.1\/24")
             fi
             if gfnCheckCommand 0 docker; then
-                [ -n "${sToAdd}" ] && sToAdd="${sToAdd} 172.17.0.0\/24" || sToAdd="172.17.0.0\/24"
+                sToAdd+=("172.17.0.0\/24" "172.28.0.0\/24" "172.29.0.0\/24")
             fi
-            perl -pi -e "s/${sSearch}/WHITE_IP_OUT=\"${sToAdd}\"/g" /etc/pgl/pglcmd.conf
+            perl -pi -e "s/${sSearch}/WHITE_IP_OUT=\"${sToAdd[*]}\"/g" /etc/pgl/pglcmd.conf
         fi
         unset sSearch
 
         sSearch=$(grep 'WHITE_IP_FWD=' /etc/pgl/pglcmd.conf)
         sSearch="$(echo "${sSearch}" | sed s,/,\\\\\/,g)"
         if [ -n "${sSearch}" ]; then
-            sToAdd=""
+            sToAdd=()
             if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
-                sToAdd="10.0.0.0\/24"
+                sToAdd+=("10.0.0.0\/24" "10.0.1.0\/24" "10.0.2.1\/24")
             fi
             if gfnCheckCommand 0 docker; then
-                [ -n "${sToAdd}" ] && sToAdd="${sToAdd} 172.17.0.0\/24" || sToAdd="172.17.0.0\/24"
+                sToAdd+=("172.17.0.0\/24" "172.28.0.0\/24" "172.29.0.0\/24")
             fi
-            perl -pi -e "s/${sSearch}/WHITE_IP_FWD=\"${sToAdd}\"/g" /etc/pgl/pglcmd.conf
+            perl -pi -e "s/${sSearch}/WHITE_IP_FWD=\"${sToAdd[*]}\"/g" /etc/pgl/pglcmd.conf
         fi
         unset sSearch
 
@@ -820,7 +830,7 @@ gfnPeerGuardianNetworkPortsGenerator() {
 #### Network ports generator
 gfnPeerGuardianCreateBaseConfig() {
     #### Create config files
-    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/peerguardian/etc.pgl.pglcmd.conf.tmpl /etc/pgl/pglcmd.conf
+    install -o root -g root -m 0644 "${MySB_InstallDir}"/templates/peerguardian/etc.pgl.pglcmd.conf.tmpl /etc/pgl/pglcmd.conf
 
     # Create '/etc/pgl/pglcmd.conf'
     gfnPeerGuardianPglcmdConf 0
