@@ -33,20 +33,19 @@ gfnFail2BanJailLocal() {
 
     install -g root -o root -m 0644 "${MySB_InstallDir}"/templates/fail2ban/etc.fail2ban.jail.local.tmpl /etc/fail2ban/jail.local
     if [ "${gbIsInstalled_NextCloud}" == "YES" ] || [ "${gbToInstall_NextCloud}" == "YES" ]; then
-        (   
-            cat <<'EOF'
-[nextcloud]
-enabled 	= true
-port 		= <Port_MySB_HTTPS>
-filter 		= nextcloud
-logpath 	= /var/log/nextcloud.log
-EOF
-        ) >>/etc/fail2ban/jail.local
+        {
+            echo ""
+            echo "[nextcloud]"
+            echo "enabled       = true"
+            echo "port          = ${gsPort_MySB_HTTPS}"
+            echo "filter        = nextcloud"
+            echo "logpath       = /var/log/nextcloud.log"
+        } >>/etc/fail2ban/jail.local
     fi
 
     NginX_Ports="${gsPort_MySB_HTTPS}"
-    [ -n "${gsPort_NginX_HTTP}" ] && NginX_Ports="$NginX_Ports,${gsPort_NginX_HTTP}"
-    [ -n "${gsPort_NginX_HTTPS}" ] && NginX_Ports="$NginX_Ports,${gsPort_NginX_HTTPS}"
+    [ -n "${gsPort_NginX_HTTP}" ] && NginX_Ports="${NginX_Ports},${gsPort_NginX_HTTP}"
+    [ -n "${gsPort_NginX_HTTPS}" ] && NginX_Ports="${NginX_Ports},${gsPort_NginX_HTTPS}"
 
     sed -i \
         -e "s/<Port_SSH>/${gsPort_SSH}/g;" \
@@ -59,20 +58,18 @@ EOF
 
 #### White List
 gfnFail2BanWhitheList() {
-    local sFail2banWhiteList sAllUsersIPs sIfExist sSearch nNumLine
+    local aFail2banWhiteList aAllUsersIPs sSearch nNumLine
 
     if [ -f /etc/fail2ban/jail.local ]; then
-        sFail2banWhiteList="127.0.0.1/32"
-        sAllUsersIPs="${gsSeedboxUsersIPs} ${gsMainUserIPs}"
-        sAllUsersIPs="${sAllUsersIPs//^ /}"
+        aFail2banWhiteList=("127.0.0.1/32")
+        aAllUsersIPs=("${gsSeedboxUsersIPs}" "${gsMainUserIPs}")
 
-        if [ "$1" -eq 1 ]; then log_daemon_msg "${SecurityRules_Fail2Ban_IgnoreList}"; fi
+        if [ "${1}" -eq 1 ]; then log_daemon_msg "${SecurityRules_Fail2Ban_IgnoreList}"; fi
         if [ "${gsIpRestriction}" == "YES" ]; then
             # All users IPs
-            for IPv4 in $sAllUsersIPs; do
-                sIfExist="$(echo "${sFail2banWhiteList}" | grep "$IPv4")"
-                if [ -z "$sIfExist" ]; then
-                    sFail2banWhiteList="${sFail2banWhiteList} ${IPv4}"
+            for IPv4 in "${aAllUsersIPs[@]}"; do
+                if (! grep -q "${IPv4}" <<<"${aFail2banWhiteList[@]}"); then
+                    aFail2banWhiteList+=("${IPv4}")
                 fi
             done
         fi
@@ -80,23 +77,31 @@ gfnFail2BanWhitheList() {
         # VPN local IPs
         if [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
             for IPv4 in ${gsVpnLocalIps}; do
-                sIfExist="$(echo "${sFail2banWhiteList}" | grep "$IPv4")"
-                if [ -z "$sIfExist" ]; then
-                    sFail2banWhiteList="${sFail2banWhiteList} ${IPv4}"
+                if (! grep -q "${IPv4}" <<<"${aFail2banWhiteList[@]}"); then
+                    aFail2banWhiteList+=("${IPv4}")
                 fi
             done
         fi
 
-        sFail2banWhiteList="$(echo "${sFail2banWhiteList}" | sed 's/^ //g;s,/,\\\/,g;')"
+        # Docker
+        if gfnCheckCommand 0 docker; then
+            for IPv4 in "172.28.0.0/24" "172.29.0.0/24"; do
+                if (! grep -q "${IPv4}" <<<"${aFail2banWhiteList[@]}"); then
+                    aFail2banWhiteList+=("${IPv4}")
+                fi
+            done
+        fi
+
+        mapfile -t aFail2banWhiteList < <(echo "${aFail2banWhiteList[*]}" | tr ' ' '\n' | sort | uniq | sed 's/^ //g;s,/,\\\/,g;')
         sSearch="$(grep 'ignoreip' /etc/fail2ban/jail.local | cut -d "=" -f 2 | sed 's/^ //g;s,/,\\\/,g;')"
-        if [ -n "$sSearch" ]; then
-            perl -pi -e "s/$sSearch/${sFail2banWhiteList}/g" /etc/fail2ban/jail.local
+        if [ -n "${sSearch}" ]; then
+            perl -pi -e "s/${sSearch}/${aFail2banWhiteList[*]}/g" /etc/fail2ban/jail.local
         else
             nNumLine=$(grep 'ignoreip' -n -m 1 /etc/fail2ban/jail.local | cut -d ':' -f 1)
             sed -i '/ignoreip/d' /etc/fail2ban/jail.local
-            sed -i "${nNumLine}i\ignoreip		= ${sFail2banWhiteList}" /etc/fail2ban/jail.local
+            sed -i "${nNumLine}i\ignoreip		= ${aFail2banWhiteList[*]}" /etc/fail2ban/jail.local
         fi
-        if [ "$1" -eq 1 ]; then gfnStatusLSB; fi
+        if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
     fi
 }
 
