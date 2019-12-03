@@ -39,19 +39,19 @@ fi
 gfnManageServices stop "bind9"
 
 #### /etc/bind/named.conf.local
-install -v -o bind -g root -m 0774 ${MySB_InstallDir}/templates/bind/etc.bind.named.conf.local.tmpl /etc/bind/named.conf.local
+install -v -o bind -g root -m 0774 "${MySB_InstallDir}"/templates/bind/etc.bind.named.conf.local.tmpl /etc/bind/named.conf.local
 
 #### /etc/bind/log.conf
-install -v -o bind -g root -m 0774 ${MySB_InstallDir}/templates/bind/etc.bind.log.conf.tmpl /etc/bind/log.conf
+install -v -o bind -g root -m 0774 "${MySB_InstallDir}"/templates/bind/etc.bind.log.conf.tmpl /etc/bind/log.conf
 install -d -v -o bind -g root -m 0775 /var/log/bind
-for sFile in $(grep 'file ' /etc/bind/log.conf  | awk '{ print $2 }'); do
+while read -r sFile; do
     touch "${sFile//\"/}"
-done
-chmod -v 0644 /var/log/bind/*.log
+done < <(grep 'file ' /etc/bind/log.conf | awk '{ print $2 }')
+chmod -v 0664 /var/log/bind/*.log
 chown -v bind:bind /var/log/bind/*.log
 
 #### /etc/bind/named.conf.options
-install -v -o bind -g root -m 0774 ${MySB_InstallDir}/templates/bind/etc.bind.named.conf.options.tmpl /etc/bind/named.conf.options
+install -v -o bind -g root -m 0774 "${MySB_InstallDir}"/templates/bind/etc.bind.named.conf.options.tmpl /etc/bind/named.conf.options
 sed -i "s/<gsSrvIpAddress>/${gsSrvIpAddress}/g;" /etc/bind/named.conf.options
 
 #### /etc/bind/MySB.zones.blacklists
@@ -85,7 +85,7 @@ ping -c3 github.com
 #### Check if service is OK and running
 if ! gfnGetPid bind9 || ! gfnCheckCommand 0 bind9; then
     cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '0' WHERE serv_name = 'BIND';" -v
-    systemctl status bind9 | tee -a ${MySB_InstallDir}/temp/continue
+    systemctl status bind9 | tee -a "${MySB_InstallDir}"/temp/continue
 else
     cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name = 'BIND';" -v
 fi
