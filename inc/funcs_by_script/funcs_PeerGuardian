@@ -595,7 +595,7 @@ gfnPeerGuardianIptablesInsert() {
     fi
     #### Monitoring
 
-    #### DNS
+    #### DNS / Bind
     if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_PublicDNS}"; fi
     # insert
     {
@@ -603,13 +603,17 @@ gfnPeerGuardianIptablesInsert() {
         echo "# Publics DNS complementary rules"
     } >/etc/pgl/public_dns.insert.sh
 
-    for sDNS in "${gaDnsList[@]}"; do
-        {
-            echo "iptables -I pgl_out -p tcp -d ${sDNS} --dport domain-s -j RETURN -m comment --comment \"OUTPUT TCP Publics DNS\""
-            echo "iptables -I pgl_out -p tcp -d ${sDNS} --dport domain -j RETURN -m comment --comment \"OUTPUT UDP Publics DNS\""
-            echo "iptables -I pgl_out -p udp -d ${sDNS} --dport domain -j RETURN -m comment --comment \"OUTPUT UDP Publics DNS\""
-        } >>/etc/pgl/public_dns.insert.sh
-    done
+    nUID="$(id -u bind)"
+    if [ -n "${nUID}" ]; then
+        for sDNS in "${gaDnsList[@]}"; do
+            {
+                echo "iptables -I pgl_out -p tcp -d ${sDNS} --dport domain-s -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT TCP Publics DNS\""
+                echo "iptables -I pgl_out -p tcp -d ${sDNS} --dport domain -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT UDP Publics DNS\""
+                echo "iptables -I pgl_out -p udp -d ${sDNS} --dport domain -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT UDP Publics DNS\""
+            } >>/etc/pgl/public_dns.insert.sh
+        done
+    fi
+
     echo >>/etc/pgl/public_dns.insert.sh
 
     # remove
