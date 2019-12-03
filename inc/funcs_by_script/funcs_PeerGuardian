@@ -514,186 +514,137 @@ EOF
 #### PeerGuardian Create all needed iptables complementary rules
 # Example: /usr/share/doc/pgld/examples/iptables-custom-insert.sh
 gfnPeerGuardianIptablesInsert() {
-    local sOvhIPv4 sOnlineIPv4 sDigicubeIPv4 sHetznerIPv4 sIPv4 nUID
+    local sOvhIPv4 sResults sIPv4 nUID
+
+    if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_CustomsRules}"; fi
+    # insert
+    echo "#!/bin/sh" >/etc/pgl/custom.insert.sh
+
+    #### ICMP
+    {
+        echo
+        echo "# ICMP"
+        echo "iptables -I pgl_out -p icmp -j RETURN -m comment --comment \"ICMP OUT\""
+    } >>/etc/pgl/others.insert.sh
+    #### ICMP
 
     #### DNScrypt-proxy
     if [ "${gbIsInstalled_DNScrypt}" == "YES" ]; then
-        if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_DNScrypt_ResolversRules}"; fi
-        # insert
-        {
-            echo "#!/bin/sh"
-            echo "# DNScrypt-proxy resolvers complementary rules"
-        } >/etc/pgl/dnscrypt.insert.sh
+        echo "# DNScrypt-proxy resolvers complementary rules" >>/etc/pgl/custom.insert.sh
 
         nUID="$(id -u _dnscrypt-proxy)"
         if [ -n "${nUID}" ]; then
             {
                 echo "iptables -I pgl_out -p tcp -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT TCP DNScrypt-proxy\""
                 echo "iptables -I pgl_out -p udp -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT UDP DNScrypt-proxy\""
-            } >>/etc/pgl/dnscrypt.insert.sh
+            } >>/etc/pgl/custom.insert.sh
         fi
-
-        echo >>/etc/pgl/dnscrypt.insert.sh
-
-        # remove
-        cp /etc/pgl/dnscrypt.insert.sh /etc/pgl/dnscrypt.remove.sh
-        perl -pi -e "s/-I/-D/g" /etc/pgl/dnscrypt.remove.sh
-        if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
-    else
-        if [ -f /etc/pgl/dnscrypt.insert.sh ]; then rm -f /etc/pgl/dnscrypt.insert.sh; fi
-        if [ -f /etc/pgl/dnscrypt.remove.sh ]; then rm -f /etc/pgl/dnscrypt.remove.sh; fi
     fi
     #### DNScrypt-proxy
 
+    #### DNS / Bind
+    nUID="$(id -u bind)"
+    if [ -n "${nUID}" ]; then
+        {
+            echo
+            echo "# Publics DNS complementary rules"
+        } >>/etc/pgl/custom.insert.sh
+        for sDNS in "${gaDnsList[@]}"; do
+            {
+                echo "iptables -I pgl_out -p tcp -d ${sDNS} -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT TCP Publics DNS\""
+                echo "iptables -I pgl_out -p udp -d ${sDNS} -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT UDP Publics DNS\""
+            } >>/etc/pgl/custom.insert.sh
+        done
+    fi
+    #### DNS / Bind
+
+    #### Stunnel
+    nUID="$(id -u stunnel4)"
+    if [ -n "${nUID}" ]; then
+        {
+            echo
+            echo "# Stunnel complementary rules"
+        } >>/etc/pgl/custom.insert.sh
+        echo "iptables -I pgl_out -p tcp -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT TCP Stunnel\"" >>/etc/pgl/custom.insert.sh
+    fi
+    #### Stunnel
+
+    #### Debian repos
+    {
+        echo
+        echo "# Debian repos"
+    } >>/etc/pgl/custom.insert.sh
+    for sDomain in "${gaDebianRepos[@]}"; do
+        echo "iptables -I pgl_out -p tcp -d ${sDomain} --dport 80 -j RETURN -m comment --comment \"OUTPUT TCP Debian repo ${sDomain}\"" >>/etc/pgl/custom.insert.sh
+    done
+    #### Debian repos
+
+    #### Needed domains
+    {
+        echo
+        echo "# Needed domains"
+    } >>/etc/pgl/custom.insert.sh
+    for sDomain in "${gaNeededDomains[@]}"; do
+        echo "iptables -I pgl_out -p tcp -d ${sDomain} -j RETURN -m comment --comment \"OUTPUT TCP Needed domain ${sDomain}\"" >>/etc/pgl/custom.insert.sh
+    done
+    #### Needed domains
+
     #### Monitoring
     if [ -n "${gsServerProvider}" ] && [ "${gsServerProvider}" != "${Global_None}" ]; then
-        if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_SupervisionRules} ${gsServerProvider}"; fi
         # insert
         {
-            echo '#!/bin/sh'
+            echo
             echo "# ${gsServerProvider} monitoring complementary rules"
-        } >/etc/pgl/monitoring.insert.sh
+        } >>/etc/pgl/custom.insert.sh
 
         case "${gsServerProvider}" in
-            "OVH")
+            OVH)
                 sOvhIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider='OVH';")"
                 for sIPv4 in ${sOvhIPv4}; do
                     {
                         echo "iptables -I pgl_in -p udp -s ${sIPv4} --destination-port 6100:6200 -j RETURN -m comment --comment \"${gsServerProvider} monitoring\""
                         echo "iptables -I pgl_in -p icmp -s ${sIPv4} -j RETURN -m comment --comment \"${gsServerProvider} monitoring\""
-                    } >>/etc/pgl/monitoring.insert.sh
+                    } >>/etc/pgl/custom.insert.sh
                 done
                 ;;
-            "ONLINE")
-                sOnlineIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider='ONLINE';")"
-                for sIPv4 in ${sOnlineIPv4}; do
-                    echo "iptables -I pgl_in -p icmp -s ${sIPv4} -j RETURN -m comment --comment \"${gsServerProvider} monitoring\"" >>/etc/pgl/monitoring.insert.sh
-                done
-                ;;
-            "DIGICUBE")
-                sDigicubeIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider='DIGICUBE';")"
-                for sIPv4 in ${sDigicubeIPv4}; do
-                    echo "iptables -I pgl_in -p icmp -s ${sIPv4} -j RETURN -m comment --comment \"${gsServerProvider} monitoring\"" >>/etc/pgl/monitoring.insert.sh
-                done
-                ;;
-            "HETZNER")
-                sHetznerIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider='HETZNER';")"
-                for sIPv4 in ${sHetznerIPv4}; do
-                    echo "iptables -I pgl_in -p icmp -s ${sIPv4} -j RETURN -m comment --comment \"${gsServerProvider} monitoring\"" >>/etc/pgl/monitoring.insert.sh
+            ONLINE | DIGICUBE | HETZNER)
+                sResults="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM providers_monitoring WHERE provider='${gsServerProvider}';")"
+                for sIPv4 in ${sResults}; do
+                    echo "iptables -I pgl_in -p icmp -s ${sIPv4} -j RETURN -m comment --comment \"${gsServerProvider} monitoring\"" >>/etc/pgl/custom.insert.sh
                 done
                 ;;
         esac
-        echo >>/etc/pgl/monitoring.insert.sh
-
-        # remove
-        cp /etc/pgl/monitoring.insert.sh /etc/pgl/monitoring.remove.sh
-        perl -pi -e "s/-I/-D/g" /etc/pgl/monitoring.remove.sh
-        if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
-    else
-        if [ -f /etc/pgl/monitoring.insert.sh ]; then rm -f /etc/pgl/monitoring.insert.sh; fi
-        if [ -f /etc/pgl/monitoring.remove.sh ]; then rm -f /etc/pgl/monitoring.remove.sh; fi
+        echo >>/etc/pgl/custom.insert.sh
     fi
     #### Monitoring
 
-    #### DNS / Bind
-    if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_PublicDNS}"; fi
-    # insert
-    {
-        echo "#!/bin/sh"
-        echo "# Publics DNS complementary rules"
-    } >/etc/pgl/public_dns.insert.sh
-
-    nUID="$(id -u bind)"
-    if [ -n "${nUID}" ]; then
-        for sDNS in "${gaDnsList[@]}"; do
-            {
-                echo "iptables -I pgl_out -p tcp -d ${sDNS} --dport domain-s -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT TCP Publics DNS\""
-                echo "iptables -I pgl_out -p tcp -d ${sDNS} --dport domain -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT UDP Publics DNS\""
-                echo "iptables -I pgl_out -p udp -d ${sDNS} --dport domain -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT UDP Publics DNS\""
-            } >>/etc/pgl/public_dns.insert.sh
-        done
-    fi
-
-    echo >>/etc/pgl/public_dns.insert.sh
-
-    # remove
-    cp /etc/pgl/public_dns.insert.sh /etc/pgl/public_dns.remove.sh
-    perl -pi -e "s/-I/-D/g" /etc/pgl/public_dns.remove.sh
-    if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
-    #### DNS
-
     #### ruTorrent plugins
-    if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_RutorrentPlugins}"; fi
-    # insert
     {
-        echo "#!/bin/sh"
+        echo
         echo "# ruTorrent plugins complementary rules"
-    } >/etc/pgl/rutorrent.insert.sh
-
+    } >>/etc/pgl/custom.insert.sh
     # showip
     grep 'file_get_contents' "${gsRutorrentPluginsDir}"/showip/init.php | awk '{ print $3 }' | cut -d '/' -f 3 | while read -r sFQDN; do
-        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j /usr/share/doc/pgld/examples/iptables-custom-insert.sh -m comment --comment \"OUTPUT HTTP for plugin showip ${sFQDN}\"" >>/etc/pgl/rutorrent.insert.sh
+        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin showip ${sFQDN}\"" >>/etc/pgl/custom.insert.sh
     done
-
     # loginmgr
     grep -rh 'http://' "${gsRutorrentPluginsDir}"/loginmgr/accounts/ | awk '{ print $4 }' | cut -d '/' -f 3 | sed 's/";//g;' | while read -r sFQDN; do
-        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin loginmgr ${sFQDN}\"" >>/etc/pgl/rutorrent.insert.sh
+        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin loginmgr ${sFQDN}\"" >>/etc/pgl/custom.insert.sh
     done
-
     # extsearch
     grep -rh 'http://' "${gsRutorrentPluginsDir}"/extsearch/ | cut -d '/' -f 3 | sed "s/';//g;" | while read -r sFQDN; do
-        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin extsearch ${sFQDN}\"" >>/etc/pgl/rutorrent.insert.sh
+        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin extsearch ${sFQDN}\"" >>/etc/pgl/custom.insert.sh
     done
-
     # mediastream
-    echo "iptables -I pgl_out -p tcp -d go.divx.com --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin mediastream go.divx.com\"" >>/etc/pgl/rutorrent.insert.sh
-
-    echo >>/etc/pgl/rutorrent.insert.sh
-
-    # remove
-    cp /etc/pgl/rutorrent.insert.sh /etc/pgl/rutorrent.remove.sh
-    perl -pi -e "s/-I/-D/g" /etc/pgl/rutorrent.remove.sh
-    if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
+    echo "iptables -I pgl_out -p tcp -d go.divx.com --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin mediastream go.divx.com\"" >>/etc/pgl/custom.insert.sh
     #### ruTorrent plugins
 
-    #### Others
-    if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_Others}"; fi
-    # insert
-    echo "#!/bin/sh" >/etc/pgl/others.insert.sh
-
-    # ICMP
-    {
-        echo "# ICMP"
-        echo "iptables -I pgl_out -p icmp -j RETURN -m comment --comment \"ICMP OUT\""
-    } >>/etc/pgl/others.insert.sh
-
-    # Postfix / Stunnel
-    nUID="$(id -u postfix)"
-    if [ -n "${nUID}" ]; then
-        echo "iptables -I pgl_out -p tcp -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT TCP Postfix\"" >>/etc/pgl/dnscrypt.insert.sh
-    fi
-    nUID="$(id -u stunnel4)"
-    if [ -n "${nUID}" ]; then
-        echo "iptables -I pgl_out -p tcp -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT TCP Stunnel\"" >>/etc/pgl/dnscrypt.insert.sh
-    fi
-
-    echo "# Needed domains" >>/etc/pgl/others.insert.sh
-    for sDomain in "${gaNeededDomains[@]}"; do
-        echo "iptables -I pgl_out -p tcp -d ${sDomain} -j RETURN -m comment --comment \"OUTPUT TCP Needed domain ${sDomain}\"" >>/etc/pgl/others.insert.sh
-    done
-
-    echo "# Debian repos" >>/etc/pgl/others.insert.sh
-    for sDomain in "${gaDebianRepos[@]}"; do
-        echo "iptables -I pgl_out -p tcp -d ${sDomain} -j RETURN -m comment --comment \"OUTPUT TCP Debian repos ${sDomain}\"" >>/etc/pgl/others.insert.sh
-    done
-
-    echo >>/etc/pgl/others.insert.sh
+    echo >>/etc/pgl/custom.insert.sh
 
     # remove
-    cp /etc/pgl/others.insert.sh /etc/pgl/others.remove.sh
-    perl -pi -e "s/-I/-D/g" /etc/pgl/others.remove.sh
+    cp /etc/pgl/custom.insert.sh /etc/pgl/custom.remove.sh
+    perl -pi -e "s/-I/-D/g" /etc/pgl/dnscrypt.remove.sh
     if [ "${1}" -eq 1 ]; then gfnStatusLSB; fi
-    #### Others
 }
 
 #### PeerGuardian Create pglcmd.conf
