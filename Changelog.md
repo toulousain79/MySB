@@ -6,16 +6,12 @@
 - IPtables
   - block output SSDP trafic
   - block input Proxy-Gateway trafic
+- PeerGuardian
+  - add custom rules
 - DNScrypt-proxy
-  - install via Debian package
+  - chroot to _dnscrypt-proxy user
   - add PGL iptables rule to allow output by UID
-- Docker
-  - add [Supervisor](http://supervisord.org/index.html)
-  - add [Composerize](https://github.com/magicmark/composerize)
-  - add [CTop](https://github.com/bcicen/ctop) v0.7.2
-  - add [docker-gc](https://github.com/spotify/docker-gc)
-  - add [containrrr/watchtower](https://github.com/containrrr/watchtower)
-  - rTorrent image
+- global fix
 
 ## v7.1 - 2019/11/01 _(started at: 2019/10/02)_
 
