@@ -68,6 +68,7 @@ else
             sCheckDuplicate=""
             ;;
         *) # APPLYCONFIG (user sftp sudo email LocSwitch), user created with the portal
+            echo "All args: $*"
             UserSFTP=$2
             UserSUDO=$3
             UserEmail="$4"
@@ -80,11 +81,13 @@ else
     esac
 fi
 
-if [ -z "$sCheckDuplicate" ]; then
+if [ -n "${sCheckDuplicate}" ]; then
+    echo "User ${UserToCreate} already exist, aborting !"
+else
     #### Users vars
     NewUserHomedir="/home/${UserToCreate}"
     UPPERNEWUSER=$(echo "${UserToCreate}" | tr '[:lower:]' '[:upper:]')
-    NEWRPC="/$UPPERNEWUSER"
+    NEWRPC="/${UPPERNEWUSER}"
     LastPort="$(cmdMySQL 'MySB_db' "SELECT max(rtorrent_port) FROM users;")"
     [ -z "${LastPort}" ] && LastPort=51100
     ((LastPort++))
@@ -221,7 +224,7 @@ if [ -z "$sCheckDuplicate" ]; then
             perl -pi \
                 -e "s/<scgi_port>/${ScgiPort}/g;" \
                 -e "s/<username>/${UserToCreate}/g;" \
-                -e "s/<USERNAME>/$UPPERNEWUSER/g;" \
+                -e "s/<USERNAME>/${UPPERNEWUSER}/g;" \
                 /etc/nginx/rpc/"${UserToCreate}".local \
                 /etc/nginx/rpc/"${UserToCreate}".conf \
                 /etc/nginx/proxy/rutorrent-"${UserToCreate}".conf
@@ -377,8 +380,6 @@ if [ -z "$sCheckDuplicate" ]; then
         Message="${CreateUser_MessageAccountCreated}"
         gfnSendMail "$Subject" "${UserToCreate}" "$Case" "$Message"
     fi
-else
-    echo "User ${UserToCreate} already exist, aborting !"
 fi
 
 # -----------------------------------------
