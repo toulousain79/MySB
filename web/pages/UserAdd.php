@@ -75,15 +75,19 @@ if(isset($_POST)==true && empty($_POST)==false) {
 
 	switch ($_POST['submit']) {
 		case MainUser_UserAdd_AddUser:
+			$patterns = array ('/\s\s+/', '/\s+/');
 			$username = $_POST['username'];
-			$email = $_POST['email'];
-			$confirm_email = $_POST['confirm_email'];
+			$username = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $username);
+			$username = preg_replace($patterns, '', $username); // remove spaces
+			$email = preg_replace('/\s\s+/', '', $_POST['email']);
+			$confirm_email = preg_replace('/\s\s+/', '', $_POST['confirm_email']);
 			$account_type = $_POST['account_type'];
 			$quota = filter_var($_POST['quota'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION | FILTER_FLAG_ALLOW_THOUSAND);
 			$free_space = filter_var($_POST['free_space'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION | FILTER_FLAG_ALLOW_THOUSAND);
 			$sftp = 1;
 			$sudo = 0;
 			$args = false;
+			$command = 'message_only';
 
 			if ( ($username != '') && ($email != '') && ($confirm_email != '') ) {
 				$IfExist = $MySB_DB->get("users", "users_email", ["users_ident" => "$username"]);
@@ -104,6 +108,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 								$quota = 0;
 							}
 							if ( $type != 'warning' ) {
+								$command = 'MySB_CreateUser';
 								$type = 'success';
 								$args = "$username|$sftp|$sudo|$email|$account_type|$quota";
 							}
@@ -124,7 +129,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 				$message = Global_CompleteAllFields;
 			}
 
-			GenerateMessage('MySB_CreateUser', $type, $message, $args);
+			GenerateMessage($command, $type, $message, $args);
 			break;
 
 		 case Global_SaveChanges:

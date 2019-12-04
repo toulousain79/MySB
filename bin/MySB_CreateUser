@@ -30,6 +30,7 @@ if [ "${USAGE}" == "ON" ]; then
     UserToCreate=""
     while [ -z "${UserToCreate}" ]; do
         gfnQuestionGetString NO "${CreateUser_Username}" UserToCreate
+        UserToCreate="$(echo "${UserToCreate// /}" | tr '[:upper:]' '[:lower:]')"
         (grep -q "${UserToCreate}" <<<"$LIST") && UserToCreate=""
     done
 
@@ -68,6 +69,7 @@ else
             sCheckDuplicate=""
             ;;
         *) # APPLYCONFIG (user sftp sudo email LocSwitch), user created with the portal
+            echo "All args: $*"
             UserSFTP=$2
             UserSUDO=$3
             UserEmail="$4"
@@ -80,7 +82,9 @@ else
     esac
 fi
 
-if [ -z "$sCheckDuplicate" ]; then
+if [ -n "$sCheckDuplicate" ]; then
+    echo "User ${UserToCreate} already exist, aborting !"
+else
     #### Users vars
     NewUserHomedir="/home/${UserToCreate}"
     UPPERNEWUSER=$(echo "${UserToCreate}" | tr '[:lower:]' '[:upper:]')
@@ -95,18 +99,18 @@ if [ -z "$sCheckDuplicate" ]; then
     #### user infos
     if [ "${UserToCreate}" != "${gsMainUserName}" ]; then
         log_daemon_msg "${CreateUser_InsertInfoDB} [${UserToCreate}]"
-        if [ -n "$Quota" ] && [ "$Quota" -ne 0 ]; then
-            Quota="$(echo "$Quota" | awk '{ kb = $1 * 1024 * 1024 ; print kb }')" # (Gb to Kb)
+        if [ -n "${Quota}" ] && [ "${Quota}" -ne 0 ]; then
+            Quota="$(echo "${Quota}" | awk '{ kb = $1 * 1024 * 1024 ; print kb }')" # (Gb to Kb)
             QuotaType="manual"
         else
             Quota=0
             QuotaType="auto"
         fi
-        cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir,language,quota,account_type,quota_type) VALUES ('${UserToCreate}','${UserEmail}','${NewUserPassword}','${NEWRPC}','${UserSFTP}','${UserSUDO}','${ScgiPort}','${rTorrentPort}','${NewUserHomedir}','${EnvLang}','$Quota','${UserAccountType}','$QuotaType');"
+        cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,users_passwd,rpc,sftp,sudo,scgi_port,rtorrent_port,home_dir,language,quota,account_type,quota_type) VALUES ('${UserToCreate}','${UserEmail}','${NewUserPassword}','${NEWRPC}','${UserSFTP}','${UserSUDO}','${ScgiPort}','${rTorrentPort}','${NewUserHomedir}','${EnvLang}','${Quota}','${UserAccountType}','${QuotaType}');"
     else
         Quota=$(gfnQuotaSpaceAvailable)
         log_daemon_msg "${CreateUser_UpdateInfoDB} [${UserToCreate}]"
-        cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='', rpc='${NEWRPC}', scgi_port='${ScgiPort}', rtorrent_port='${rTorrentPort}', home_dir='${NewUserHomedir}', quota='$Quota' WHERE users_ident='${UserToCreate}';"
+        cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='', rpc='${NEWRPC}', scgi_port='${ScgiPort}', rtorrent_port='${rTorrentPort}', home_dir='${NewUserHomedir}', quota='${Quota}' WHERE users_ident='${UserToCreate}';"
     fi
     gfnListCountUsers 'all'
     gfnStatusLSB
@@ -224,7 +228,7 @@ if [ -z "$sCheckDuplicate" ]; then
                 echo "upstream rtorrent-${UserToCreate} {"
                 echo "  server unix:/run/rtorrent/${UserToCreate}.sock;"
                 echo "}"
-            } >/etc/nginx/upstream/rtorrent-${UserToCreate}.conf
+            } >/etc/nginx/upstream/rtorrent-"${UserToCreate}".conf
             gfnStatusLSB
 
             #### CakeBox
@@ -290,7 +294,7 @@ if [ -z "$sCheckDuplicate" ]; then
             log_daemon_msg "${CreateUser_InitCron} [${UserToCreate}]"
             crontab -l >/tmp/crontab.tmp
             sed -i "/${UserToCreate}/d" /tmp/crontab.tmp
-            echo "*/5 * * * * /bin/bash /home/${seedUser}/.rTorrent_tasks.sh status" >>/tmp/crontab.tmp
+            echo "*/5 * * * * /bin/bash /home/${UserToCreate}/.rTorrent_tasks.sh status" >>/tmp/crontab.tmp
             crontab /tmp/crontab.tmp
             rm -f /tmp/crontab.tmp
             gfnStatusLSB
@@ -309,7 +313,7 @@ if [ -z "$sCheckDuplicate" ]; then
                 # rTorrent config 'pieces.memory.max.set'
                 log_daemon_msg "${CreateUser_PiecesMemory[*]} [$seedUser]"
                 nPiecesMemoryMax="$((gsMemory / 5))M"
-                nNumLine=$(grep 'pieces.memory.max.set' -n -m 1 /home/${seedUser}/.rtorrent.rc | cut -d ':' -f 1)
+                nNumLine=$(grep 'pieces.memory.max.set' -n -m 1 /home/"${seedUser}"/.rtorrent.rc | cut -d ':' -f 1)
                 sed -i '/pieces.memory.max.set/d' /home/"${seedUser}"/.rtorrent.rc
                 sed -i "${nNumLine}i\pieces.memory.max.set = ${nPiecesMemoryMax};" /home/"${seedUser}"/.rtorrent.rc
                 gfnStatusLSB
@@ -366,8 +370,6 @@ if [ -z "$sCheckDuplicate" ]; then
         Message="${CreateUser_MessageAccountCreated}"
         gfnSendMail "$Subject" "${UserToCreate}" "$Case" "$Message"
     fi
-else
-    echo "User ${UserToCreate} already exist, aborting !"
 fi
 
 # -----------------------------------------
