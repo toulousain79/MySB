@@ -31,70 +31,10 @@ source "$(dirname "$0")"/../inc/includes_before
 # https://docs.aws.amazon.com/fr_fr/AmazonS3/latest/dev/using-with-s3-actions.html
 ##################### FIRST LINE #####################################
 
-#### Minio
-fnInstallMinio() {
-    gfnGetRepoValues 'Minio'
-    if [ "${gsVersionInstalled}" != "${gsVersionLatest}" ]; then
-        if [ -f "${MySB_Files}/${gsRepoFile}" ] && [ "${gsVersionLatest}" != "${gsVersionInstalled}" ]; then
-            mv -v "${MySB_Files}/${gsRepoFile}" "${MySB_Files}/${gsRepoFile}.tmp"
-        fi
-        if (gfnCheckCommand 0 /usr/local/bin/minio) && [ -f /lib/systemd/system/minio.service ]; then
-            gfnManageServices stop minio
-        fi
-        gfnRepoManageByType
-        if [ -f "${MySB_Files}/${gsRepoFile}" ] && [ "${gsVersionLatest}" != "${gsVersionInstalled}" ]; then
-            rm -fv "${MySB_Files}/${gsRepoFile}.tmp"
-        fi
-        if (gfnCheckCommand 0 /usr/local/bin/minio) && [ -f /lib/systemd/system/minio.service ]; then
-            gfnManageServices start minio
-        fi
-    fi
-    chmod -v +x "${gsRepoDir}"
-    ${gsRepoDir} version
-}
-
-#### Minio client
-fnInstallMinioClient() {
-    gfnGetRepoValues 'Minio Client'
-    if [ "${gsVersionInstalled}" != "${gsVersionLatest}" ]; then
-        if [ -f "${MySB_Files}/${gsRepoFile}" ] && [ "${gsVersionLatest}" != "${gsVersionInstalled}" ]; then
-            mv -v "${MySB_Files}/${gsRepoFile}" "${MySB_Files}/${gsRepoFile}.tmp"
-        fi
-        gfnRepoManageByType
-        if [ -f "${MySB_Files}/${gsRepoFile}" ] && [ "${gsVersionLatest}" != "${gsVersionInstalled}" ]; then
-            rm -fv "${MySB_Files}/${gsRepoFile}.tmp"
-        fi
-    fi
-    chmod -v +x "${gsRepoDir}"
-    ${gsRepoDir} --version
-}
-
-#### Goofys
-fnInstallGoofys() {
-    local sPackages
-    # Install packages
-    sPackages=(fuse)
-    gfnPackageBundleInstall "${sPackages[@]}"
-
-    gfnGetRepoValues 'Goofys'
-    if [ "${gsVersionInstalled}" != "${gsVersionLatest}" ]; then
-        [ -f "${MySB_Files}/${gsRepoFile}" ] && mv -v "${MySB_Files}/${gsRepoFile}" "${MySB_Files}/${gsRepoFile}.tmp"
-        gfnRepoManageByType
-        [ -f "${MySB_Files}/${gsRepoFile}" ] && rm -fv "${MySB_Files}/${gsRepoFile}.tmp"
-    fi
-    chmod -v +x "${gsRepoDir}"
-    ${gsRepoDir} --version
-}
-
 #### Check for a new version / Install it
-fnInstallMinio
-fnInstallMinioClient
+gfnInstallMinio
+gfnInstallMinioClient
 fnInstallGoofys
-
-#### /etc/default/minio
-[ -f /etc/default/minio ] && source /etc/default/minio
-MINIO_ACCESS_KEY="${MINIO_ACCESS_KEY:-$(gfnGenPassword 16)}"
-MINIO_SECRET_KEY="${MINIO_SECRET_KEY:-$(gfnGenPassword 32)}"
 
 #### Config
 case "${gsSwitch}" in
@@ -105,19 +45,9 @@ case "${gsSwitch}" in
 
         (! grep -q 'minio' /etc/group) && groupadd --system minio
         (! grep -q 'minio' /etc/passwd) && useradd -d /home/minio -s /usr/sbin/nologin --system -g minio minio
-        {
-            echo "# Volume to be used for Minio server."
-            echo 'MINIO_VOLUMES="/home/minio/data"'
-            echo "# Use if you want to run Minio on a custom port."
-            echo "MINIO_OPTS=\"-C /etc/minio --address :9000 --address ${gsHostNameFqdn}:9000\""
-            echo "# Access Key of the server."
-            echo "MINIO_ACCESS_KEY=\"${MINIO_ACCESS_KEY}\""
-            echo "# Secret key of the server."
-            echo "MINIO_SECRET_KEY=\"${MINIO_SECRET_KEY}\""
-            echo "# Enable or disable access to web UI"
-            echo "MINIO_BROWSER=on"
-        } >/etc/default/minio
-        chown minio:minio /etc/default/minio
+
+        #### /etc/default/minio
+        gfnMinioEtcDefault
 
         install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/minio/minio.service.tmpl /lib/systemd/system/minio.service
         systemctl daemon-reload
@@ -126,20 +56,16 @@ case "${gsSwitch}" in
         install -d -v -o minio -g minio -m 0755 /etc/minio/certs
         install -d -v -o minio -g minio -m 0755 /etc/minio/certs/CAs
         install -d -v -o minio -g minio -m 0755 /home/minio/data
-        if [[ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ]] && [[ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" ]]; then
-            install -v -o minio -g minio -m 0644 "/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/minio/certs/private.key
-            install -v -o minio -g minio -m 0644 "/etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" /etc/minio/certs/public.crt
-        elif [[ -f "${MySB_InstallDir}/ssl/mysb.key" ]] && [[ -f "${MySB_InstallDir}/ssl/mysb.cert" ]]; then
-            install -v -o minio -g minio -m 0644 "${MySB_InstallDir}/ssl/mysb.key" /etc/minio/certs/private.key
-            install -v -o minio -g minio -m 0644 "${MySB_InstallDir}/ssl/mysb.cert" /etc/minio/certs/public.crt
-        fi
+
+        #### Certificate
+        gfnMinioCertificate
 
         if (gfnCheckCommand 0 /usr/local/bin/minio) && [ -f /lib/systemd/system/minio.service ]; then
             gfnManageServices start minio
         fi
 
         #### Minio client host config (alias)
-        mc config host add mysb https://"${gsHostNameFqdn}":9000 "${MINIO_ACCESS_KEY}" "${MINIO_SECRET_KEY}" --api S3v4
+        gfnMinioHostConfig
 
         # Seedbox user
         # shellcheck source=inc/funcs_by_script/funcs_MySB_CreateUser
