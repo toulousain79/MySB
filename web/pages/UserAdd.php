@@ -78,7 +78,7 @@ if(isset($_POST)==true && empty($_POST)==false) {
 			$patterns = array ('/\s\s+/', '/\s+/');
 			$username = $_POST['username'];
 			$username = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $username);
-			$username = preg_replace($patterns, ' ', $username); // remove spaces
+			$username = preg_replace($patterns, '', $username); // remove spaces
 			$email = preg_replace('/\s\s+/', '', $_POST['email']);
 			$confirm_email = preg_replace('/\s\s+/', '', $_POST['confirm_email']);
 			$account_type = $_POST['account_type'];
