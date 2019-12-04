@@ -1,9 +1,9 @@
 <p align="center"><img src="web/public/themes/MySB/images/toulousain79.gif" height="200"></p>
-<!-- <p align="center"><img alt="v99.99 pipeline status" src="https://img.shields.io/gitlab/pipeline/toulousain79/MySB/v99.99.svg?label=v99.99%20pipeline%20status&style=plastic" /> <img alt="develop pipeline status" src="https://img.shields.io/gitlab/pipeline/toulousain79/MySB/develop.svg?label=develop%20pipeline%20status&style=plastic" /></p> -->
+<!-- <p align="center"><img alt="v7.2 pipeline status" src="https://img.shields.io/gitlab/pipeline/toulousain79/MySB/v7.2.svg?label=v7.2%20pipeline%20status&style=plastic" /> <img alt="develop pipeline status" src="https://img.shields.io/gitlab/pipeline/toulousain79/MySB/develop.svg?label=develop%20pipeline%20status&style=plastic" /></p> -->
 
 <p align="center"><img src="https://img.shields.io/github/commit-activity/m/toulousain79/mysb.svg?label=Commit%20activity&logo=github&style=plastic" /> <img src="https://img.shields.io/github/last-commit/toulousain79/mysb.svg?label=Last%20commit&logo=github&style=plastic" /> <img src="https://img.shields.io/github/issues/toulousain79/mysb.svg?label=Issues&logo=github&style=plastic" /> <img src="https://img.shields.io/github/issues-closed/toulousain79/mysb.svg?label=Issues&logo=github&style=plastic" /> <img src="https://img.shields.io/discord/469543542981656627.svg?label=Discord&logo=discord&style=plastic" /></p>
 
-<p align="center"><a href="https://github.com/toulousain79/MySB/blob/v99.99/LICENCE.md"><img src="https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square" /></a></p>
+<p align="center"><a href="https://github.com/toulousain79/MySB/blob/v7.2/LICENCE.md"><img src="https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square" /></a></p>
 
 # English
 
