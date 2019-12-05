@@ -40,7 +40,7 @@ sDomainsList+=("${gsHostNameFqdn}")
 for sDomain in $(cat ${MySB_InstallDir}/ssl/letsencrypt_domains | sed '/#/d'); do
     sDomainsList+=("${sDomain}")
 done
-mapfile -t sDomainsList < <(echo ${sDomainsList[*]} | tr ' ' '\n' | sort | uniq)
+mapfile -t sDomainsList < <(echo "${sDomainsList[*]}" | tr ' ' '\n' | sort | uniq)
 sCerbotParams=("certonly" "--authenticator" "standalone" "--verbose" "--update-registration" "--no-eff-email" "--agree-tos" "--rsa-key-size" "2048" "--email" "${gsMainUserEmail}" "--preferred-challenges=http-01" "--staple-ocsp" "--auto-hsts")
 
 #### INSTALL
@@ -68,7 +68,7 @@ fnRenewServersIps() {
         sAllIPv4="$(nslookup -type=A "${sServer}" | grep 'Add' | grep -v '#' | awk -F: '{ print $2 }' | sed -e 's/^ //g;')"
         sAllIPv4="$(echo "${sAllIPv4}" | sed -e 's/^ //g;s/\s+$//g;' | sort | uniq)"
         for sIPv4 in ${sAllIPv4}; do
-            if [ "$(gfnValidateIP ${sIPv4})" == "${sIPv4}" ]; then
+            if [ "$(gfnValidateIP "${sIPv4}")" == "${sIPv4}" ]; then
                 cmdMySQL 'MySB_db' "INSERT INTO lets_encrypt (addresses,ipv4) VALUES ('${sServer}','${sIPv4}');" -v
             fi
         done
@@ -81,8 +81,8 @@ fnNextRenewal() {
 
     aEndDate=()
     for sDomain in /etc/letsencrypt/live/*/cert.pem; do
-        sDomain="$(echo ${sDomain} | cut -d '/' -f 5)"
-        dEndDate=$(openssl x509 -in /etc/letsencrypt/live/${sDomain}/cert.pem -noout -dates | grep 'notAfter' | cut -d "=" -f 2)
+        sDomain="$(echo "${sDomain}" | cut -d '/' -f 5)"
+        dEndDate=$(openssl x509 -in /etc/letsencrypt/live/"${sDomain}"/cert.pem -noout -dates | grep 'notAfter' | cut -d "=" -f 2)
         dEndDate=$(date -d "${dEndDate}" +%Y-%m-%d)
         aEndDate+=("${dEndDate}")
     done
@@ -94,7 +94,7 @@ fnNextRenewal() {
         # Backup certificates
         sTarGz="${MySB_InstallDir}_backup/letsencrypt_${dEndDate}.tar.gz"
         mkdir -p "${MySB_InstallDir}_backup"
-        if [ ! -f ${sTarGz} ]; then
+        if [ ! -f "${sTarGz}" ]; then
             if (tar zcvf "${sTarGz}" /etc/letsencrypt/); then
                 find "${MySB_InstallDir}_backup" -maxdepth 1 -type f -mtime +30 -name "*.tar.gz" -exec rm -vf {} \;
             fi
@@ -128,12 +128,12 @@ fnUseOfCertificates() {
         # Webmin
         if [[ -f /etc/webmin/miniserv.pem ]]; then
             log_daemon_msg "Reconfigure Webmin"
-            if [ -f /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem ]; then
-                cat /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem >/etc/webmin/miniserv.pem
-                cat /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem >>/etc/webmin/miniserv.pem
+            if [ -f /etc/letsencrypt/live/"${gsHostNameFqdn}"/fullchain.pem ]; then
+                cat /etc/letsencrypt/live/"${gsHostNameFqdn}"/privkey.pem >/etc/webmin/miniserv.pem
+                cat /etc/letsencrypt/live/"${gsHostNameFqdn}"/fullchain.pem >>/etc/webmin/miniserv.pem
             else
-                cat ${MySB_InstallDir}/ssl/mysb.cert >/etc/webmin/miniserv.pem
-                cat ${MySB_InstallDir}/ssl/mysb.key >>/etc/webmin/miniserv.pem
+                cat "${MySB_InstallDir}"/ssl/mysb.cert >/etc/webmin/miniserv.pem
+                cat "${MySB_InstallDir}"/ssl/mysb.key >>/etc/webmin/miniserv.pem
             fi
             sServicesToRestart="${sServicesToRestart} webmin"
             gfnStatusLSB
@@ -151,26 +151,26 @@ fnUseOfCertificates() {
 
         #### Tautulli
         gfnGetRepoValues 'Tautulli'
-        if [[ -f ${gsRepoDir}/config.ini ]]; then
+        if [ -f "${gsRepoDir}"/config.ini ]; then
             gfnManageServices stop "tautulli"
             nNumLine=$(grep 'pms_name' -n -m 1 ${gsRepoDir}/config.ini | cut -d ':' -f 1)
-            sed -i '/pms_name/d' ${gsRepoDir}/config.ini
-            sed -i "${nNumLine}i\pms_name = ${gsHostNameFqdn}" ${gsRepoDir}/config.ini
-            nNumLine=$(cat ${gsRepoDir}/config.ini | grep 'http_base_url' -n -m 1 | cut -d ':' -f 1)
-            sed -i '/http_base_url/d' ${gsRepoDir}/config.ini
-            sed -i "${nNumLine}i\http_base_url = https://${gsHostNameFqdn}:${gsPort_MySB_HTTPS}" ${gsRepoDir}/config.ini
-            nNumLine=$(cat ${gsRepoDir}/config.ini | grep 'https_cert' -n -m 1 | cut -d ':' -f 1)
-            sed -i '/https_cert/d' ${gsRepoDir}/config.ini
-            sed -i '/https_key/d' ${gsRepoDir}/config.ini
-            sed -i '/https_cert_chain/d' ${gsRepoDir}/config.ini
-            if ([ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ]); then
-                sed -i "${nNumLine}i\https_cert = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" ${gsRepoDir}/config.ini
-                sed -i "${nNumLine}i\https_key = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ${gsRepoDir}/config.ini
-                sed -i "${nNumLine}i\https_cert_chain = /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" ${gsRepoDir}/config.ini
+            sed -i '/pms_name/d' "${gsRepoDir}"/config.ini
+            sed -i "${nNumLine}i\pms_name = ${gsHostNameFqdn}" "${gsRepoDir}"/config.ini
+            nNumLine=$(cat "${gsRepoDir}"/config.ini | grep 'http_base_url' -n -m 1 | cut -d ':' -f 1)
+            sed -i '/http_base_url/d' "${gsRepoDir}"/config.ini
+            sed -i "${nNumLine}i\http_base_url = https://${gsHostNameFqdn}:${gsPort_MySB_HTTPS}" "${gsRepoDir}"/config.ini
+            nNumLine=$(cat "${gsRepoDir}"/config.ini | grep 'https_cert' -n -m 1 | cut -d ':' -f 1)
+            sed -i '/https_cert/d' "${gsRepoDir}"/config.ini
+            sed -i '/https_key/d' "${gsRepoDir}"/config.ini
+            sed -i '/https_cert_chain/d' "${gsRepoDir}"/config.ini
+            if [ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ]; then
+                sed -i "${nNumLine}i\https_cert = /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem" "${gsRepoDir}"/config.ini
+                sed -i "${nNumLine}i\https_key = /etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" "${gsRepoDir}"/config.ini
+                sed -i "${nNumLine}i\https_cert_chain = /etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" "${gsRepoDir}"/config.ini
             else
-                sed -i "${nNumLine}i\https_cert = ${MySB_InstallDir}/ssl/mysb.cert" ${gsRepoDir}/config.ini
-                sed -i "${nNumLine}i\https_key = ${MySB_InstallDir}/ssl/mysb.key" ${gsRepoDir}/config.ini
-                sed -i "${nNumLine}i\https_cert_chain = " ${gsRepoDir}/config.ini
+                sed -i "${nNumLine}i\https_cert = ${MySB_InstallDir}/ssl/mysb.cert" "${gsRepoDir}"/config.ini
+                sed -i "${nNumLine}i\https_key = ${MySB_InstallDir}/ssl/mysb.key" "${gsRepoDir}"/config.ini
+                sed -i "${nNumLine}i\https_cert_chain = " "${gsRepoDir}"/config.ini
             fi
             sServicesToRestart="${sServicesToRestart} tautulli"
         fi
@@ -248,7 +248,7 @@ if (grep -q 'renew' <<<"$@") || [[ ${gsSwitch} == "UPGRADE" ]]; then
             fnFirewalling 'before'
 
             certbot renew --pre-hook "service nginx stop" --post-hook "service nginx start"
-            dNewEndDate=$(openssl x509 -in /etc/letsencrypt/live/${gsHostNameFqdn}/cert.pem -noout -dates | grep 'notAfter' | cut -d "=" -f 2)
+            dNewEndDate=$(openssl x509 -in /etc/letsencrypt/live/"${gsHostNameFqdn}"/cert.pem -noout -dates | grep 'notAfter' | cut -d "=" -f 2)
             [[ ${dNewEndDate} != "${dEndDate}" ]] && fnNextRenewal
 
             # Firewall

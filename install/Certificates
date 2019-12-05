@@ -92,18 +92,18 @@ CreateServiceCertificate() {
 
     CERTPASS="$(cmdMySQL 'MySB_db' "SELECT cert_password FROM system WHERE id_system='1';")"
     Service="$1"
-    SUBJ="/C=FR/ST=FR/L=FR/O=MySB/CN=${gsHostNameFqdn}/emailAddress=admin@localhost/OU=$Service"
+    SUBJ="/C=FR/ST=FR/L=FR/O=MySB/CN=${gsHostNameFqdn}/emailAddress=admin@localhost/OU=${Service}"
 
     if [ "${gsSwitch}" == "UPGRADE" ]; then
         rm -vf "${MySB_InstallDir}"/ssl/*.key
     fi
-    if [ ! -f "${MySB_InstallDir}"/ssl/$Service.key ]; then
-        openssl genrsa 2048 | tee ./$Service.key
-        openssl req -new -x509 -nodes -key ./$Service.key -days 3650 -config ./MySB_caconfig.cnf -batch -subj $SUBJ | tee ./$Service.cert
-        openssl ca -batch -keyfile ./private/cakey.pem -passin pass:$CERTPASS -subj $SUBJ -out ./$SERVICENAME.pem -config ./MySB_caconfig.cnf -passin pass:$CERTPASS -ss_cert ./$Service.cert
-        chmod -v 600 ./$Service.*
-        mv -v ./$Service.* ../
-        chmod -v 644 ../$Service.cert
+    if [ ! -f "${MySB_InstallDir}"/ssl/"${Service}".key ]; then
+        openssl genrsa 2048 | tee ./"${Service}".key
+        openssl req -new -x509 -nodes -key ./"${Service}".key -days 3650 -config ./MySB_caconfig.cnf -batch -subj $SUBJ | tee ./"${Service}".cert
+        openssl ca -batch -keyfile ./private/cakey.pem -passin pass:$CERTPASS -subj $SUBJ -out ./${SERVICENAME}.pem -config ./MySB_caconfig.cnf -passin pass:$CERTPASS -ss_cert ./"${Service}".cert
+        chmod -v 600 ./"${Service}".*
+        mv -v ./"${Service}".* ../
+        chmod -v 644 ../"${Service}".cert
     fi
 }
 
@@ -117,14 +117,14 @@ case "$COMMAND" in
             echo "	include snippets/mysb_selfsigned.conf;" >/etc/nginx/ssl_certificate
         fi
         ;;
-    "CreateServiceCertificate")
-        if [ -n "$SERVICENAME" ]; then
-            CreateServiceCertificate '$SERVICENAME'
-        else
-            echo -e "${CBLUE}Usage:${CEND}	${CYELLOW}bash $0${CEND} ${CGREEN}{CreateCACertificate|CreateServiceCertificate <service_name>}${CEND}"
-            echo -e "${CBLUE}Give me the service name too please.${CEND}"
-        fi
-        ;;
+    # "CreateServiceCertificate")
+    #     if [ -n "${SERVICENAME}" ]; then
+    #         CreateServiceCertificate "${SERVICENAME}"
+    #     else
+    #         echo -e "${CBLUE}Usage:${CEND}	${CYELLOW}bash $0${CEND} ${CGREEN}{CreateCACertificate|CreateServiceCertificate <service_name>}${CEND}"
+    #         echo -e "${CBLUE}Give me the service name too please.${CEND}"
+    #     fi
+    #     ;;
     *)
         echo -e "${CBLUE}Usage:${CEND}	${CYELLOW}bash $0${CEND} ${CGREEN}{CreateCACertificate|CreateServiceCertificate <service_name>}${CEND}"
         gfnEndingScript 0

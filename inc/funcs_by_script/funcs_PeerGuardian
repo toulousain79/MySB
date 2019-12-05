@@ -517,8 +517,8 @@ gfnPeerGuardianIptablesInsert() {
     local sOvhIPv4 sResults sIPv4 nUID
 
     # Remove customs
-    rm -fv /etc/pgl/*.insert.sh
-    rm -fv /etc/pgl/*.remove.sh
+    rm -f /etc/pgl/*.insert.sh
+    rm -f /etc/pgl/*.remove.sh
 
     if [ "${1}" -eq 1 ]; then log_daemon_msg "${Peerguardian_CustomsRules}"; fi
     # insert
@@ -534,6 +534,7 @@ gfnPeerGuardianIptablesInsert() {
 
     #### DNScrypt-proxy
     if [ "${gbIsInstalled_DNScrypt}" == "YES" ]; then
+        echo
         echo "# DNScrypt-proxy resolvers complementary rules" >>/etc/pgl/custom.insert.sh
 
         nUID="$(id -u _dnscrypt-proxy)"
@@ -628,17 +629,23 @@ gfnPeerGuardianIptablesInsert() {
         echo "# ruTorrent plugins complementary rules"
     } >>/etc/pgl/custom.insert.sh
     # showip
-    grep 'file_get_contents' "${gsRutorrentPluginsDir}"/showip/init.php | awk '{ print $3 }' | cut -d '/' -f 3 | while read -r sFQDN; do
-        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin showip ${sFQDN}\"" >>/etc/pgl/custom.insert.sh
-    done
+    if [ -f "${gsRutorrentPluginsDir}"/showip/init.php ]; then
+        grep 'file_get_contents' "${gsRutorrentPluginsDir}"/showip/init.php | awk '{ print $3 }' | cut -d '/' -f 3 | while read -r sFQDN; do
+            echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin showip ${sFQDN}\"" >>/etc/pgl/custom.insert.sh
+        done
+    fi
     # loginmgr
-    grep -rh 'http://' "${gsRutorrentPluginsDir}"/loginmgr/accounts/ | awk '{ print $4 }' | cut -d '/' -f 3 | sed 's/";//g;' | while read -r sFQDN; do
-        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin loginmgr ${sFQDN}\"" >>/etc/pgl/custom.insert.sh
-    done
+    if [ -d "${gsRutorrentPluginsDir}"/loginmgr/accounts/ ]; then
+        grep -rh 'http://' "${gsRutorrentPluginsDir}"/loginmgr/accounts/ | awk '{ print $4 }' | cut -d '/' -f 3 | sed 's/";//g;' | while read -r sFQDN; do
+            echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin loginmgr ${sFQDN}\"" >>/etc/pgl/custom.insert.sh
+        done
+    fi
     # extsearch
-    grep -rh 'http://' "${gsRutorrentPluginsDir}"/extsearch/ | cut -d '/' -f 3 | sed "s/';//g;" | while read -r sFQDN; do
-        echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin extsearch ${sFQDN}\"" >>/etc/pgl/custom.insert.sh
-    done
+    if [ -d "${gsRutorrentPluginsDir}"/extsearch/ ]; then
+        grep -rh 'http://' "${gsRutorrentPluginsDir}"/extsearch/ | cut -d '/' -f 3 | sed "s/';//g;" | while read -r sFQDN; do
+            echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin extsearch ${sFQDN}\"" >>/etc/pgl/custom.insert.sh
+        done
+    fi
     # mediastream
     echo "iptables -I pgl_out -p tcp -d go.divx.com --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin mediastream go.divx.com\"" >>/etc/pgl/custom.insert.sh
     #### ruTorrent plugins
