@@ -1,5 +1,5 @@
 #!/bin/bash
-# rev 0.10
+# rev 0.12
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -37,8 +37,8 @@ nCgiPort="<scgi_port>"
 dTimestamp=$(date +%Y%m%d-%H%M%S)
 sScriptName="$(basename "$0")"
 sLogFile="/home/${sUserName}/logs/${sScriptName//.rTorrent/rTorrent}.log"
-sSqlParams='--defaults-extra-file=/home/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N'
-sTorrentFile="$(mysql ${sSqlParams} -e "SELECT torrent FROM torrents WHERE info_hash='${sInfoHash}' AND name='${get_name}' AND users_ident='${sUserName}';")"
+sSqlParams=('--defaults-extra-file=/home/.config.cnf' '--database=MySB_db' '-w' '--connect-timeout=10' '-s' '-N')
+sTorrentFile="$(mysql "${sSqlParams[@]}" -e "SELECT torrent FROM torrents WHERE info_hash='${sInfoHash}' AND name='${get_name}' AND users_ident='${sUserName}';")"
 
 #### Step 1 - Log header
 {
@@ -75,11 +75,11 @@ if [ -f "${sTorrentFile}" ]; then
             echo "--------------------"
         } >>"${sLogFile}"
     else
-        nId="$(mysql ${sSqlParams} -e "SELECT id_torrents FROM torrents WHERE info_hash='${sInfoHash}' AND name='${get_name}' AND users_ident='${sUserName}';")"
+        nId="$(mysql "${sSqlParams[@]}" -e "SELECT id_torrents FROM torrents WHERE info_hash='${sInfoHash}' AND name='${get_name}' AND users_ident='${sUserName}';")"
         if [ -z "${nId}" ]; then
-            mysql ${sSqlParams} -e "INSERT INTO torrents (info_hash,name,privacy,state,tree,users_ident) VALUES ('${sInfoHash}', '${get_name}', '${sPrivacy}', 'completed', '${get_base_path}', '${sUserName}');" -v >>"${sLogFile}"
+            mysql "${sSqlParams[@]}" -e "INSERT INTO torrents (info_hash,name,privacy,state,tree,users_ident) VALUES ('${sInfoHash}', '${get_name}', '${sPrivacy}', 'completed', '${get_base_path}', '${sUserName}');" -v >>"${sLogFile}"
         else
-            mysql ${sSqlParams} -e "UPDATE torrents SET state='completed', tree='${get_base_path}' WHERE info_hash='${sInfoHash}' AND tree='${get_base_path}' AND users_ident='${sUserName}';" -v >>"${sLogFile}"
+            mysql "${sSqlParams[@]}" -e "UPDATE torrents SET state='completed', tree='${get_base_path}' WHERE info_hash='${sInfoHash}' AND tree='${get_base_path}' AND users_ident='${sUserName}';" -v >>"${sLogFile}"
         fi
     fi
 fi
@@ -91,10 +91,10 @@ fi
 sudo /bin/bash /home/"${sUserName}"/.rTorrent_tasks.sh 'quota'
 
 #### Step 5 - Restore custom2
-xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set ${sInfoHash} "${sTorrentFile}" 2>>"${sLogFile}"
+xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set "${sInfoHash}" "${sTorrentFile}" 2>>"${sLogFile}"
 
 #### Step 6 - Save full session
-xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} session.save ${sInfoHash} 2>>"${sLogFile}"
+xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} session.save "${sInfoHash}" 2>>"${sLogFile}"
 
 #### Step 7 - Execute user scripts
 UserScripts=$(find "/home/${sUserName}/scripts/" -type f -name "*.sh")
