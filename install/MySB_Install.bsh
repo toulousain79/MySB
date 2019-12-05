@@ -124,6 +124,13 @@ ${CRED}############################################################${CEND}"
     AlreadyExecuted="${CRED}MySB is already started with SCREEN, aborting !${CEND}"
     AlreadyInstalled="${CRED}MySB is already installed, aborting!${CEND}"
     ToUpgradeUse="${CBLUE}To upgrade MySB, thank you to use the following command.${CEND}"
+
+    DoDebianUpgrade=("${CBLUE}You need to update Debian to version 10 (Buster) before you can install MySB.
+
+We can start the update to Debian 10 now.
+At the end of the update, your server will restart. You will need to restart the installation of MySB yourself.
+
+Do you want to start the update to Debian 10 now?${CEND}")
 }
 
 # French mesages
@@ -201,6 +208,13 @@ ${CRED}############################################################${CEND}"
     AlreadyExecuted="${CRED}L'installation de MySB est déjà exécutée avec SCREEN, abandon !${CEND}"
     AlreadyInstalled="${CRED}MySB est déjà installé, abandon!${CEND}"
     ToUpgradeUse="${CBLUE}Pour mettre à jour MySB, merci d'utiliser la commande suivante.${CEND}"
+
+    DoDebianUpgrade=("${CBLUE}Vous devez mettre à jour Debian en version 10 (Buster) avant de pouvoir installer MySB.
+
+Nous pouvons lancer la mise à jour vers Debian 10 maintenant.
+A la fin de la mise à jour, votre serveur redémarrera. Vous devrez alors relancer l'installation de MySB vous-même.
+
+Voulez-vous lancer la mise à jour vers Debian 10 maintenant ?${CEND}")
 }
 
 # To execute when this script will exited
@@ -229,14 +243,18 @@ KernelReplace() {
     if [ -n "${KernelFind}" ]; then
         echo -e "$LatestKernel${CGREEN}${KernelFind}${CEND}"
         echo
+        # Purge actual kernel
+        apt-get -y --assume-yes purge "linux-image-$(uname -r)"
+        update-grub
+        # Install needed keernel
         apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update
         apt-get -y --assume-yes -V -o Dpkg::Options::="--force-confold" upgrade
         apt-get -y --assume-yes install "${KernelFind}"
         if [ -f /etc/grub.d/06_OVHkernel ]; then
             mv /etc/grub.d/06_OVHkernel /etc/grub.d/99_OVHkernel
         fi
-        apt-get -y --assume-yes purge "linux-image-$(uname -r)"
         update-grub
+
         echo
         echo -e -n "$RebootBeforeInstall"
 
@@ -408,7 +426,28 @@ SystemChecks() {
         done
     fi
 
-    [ $nContinue -gt 0 ] && ExitOnError 1 "$OnlyForDebian"
+    if [ $nContinue -gt 0 ]; then
+        ExitOnError 1 "${OnlyForDebian}"
+
+        case "${sOS_Ver}" in
+            9)
+                echo -e "${DoDebianUpgrade[*]}"
+                read -r sAnswer
+                case ${sAnswer:0:1} in
+                    y | Y | yes | YES | o | O | oui | OUI)
+                        echo -e "${LetsGo}"
+                        fnCountDown 3
+                        cd /tmp/ || exit 1
+                        wget --no-check-certificate -N https://raw.githubusercontent.com/toulousain79/MySB/${gsCurrentVersion}/upgrade/Debian_Upgrade.bsh | bash
+                        ;;
+                    n | N | no | NO | non | NON)
+                        nContinue=1
+                        ;;
+                    *) unset sAnswer ;;
+                esac
+                ;;
+        esac
+    fi
 }
 
 ##################### INIT ###########################################

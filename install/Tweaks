@@ -223,7 +223,7 @@ done
 # https://wiki.hetzner.de/index.php/Network_configuration_using_systemd-networkd/en
 if [ -f /etc/systemd/network/10-mainif.network ]; then
     # Address
-    for sMatch in $(grep '^Address=' /etc/systemd/network/10-mainif.network); do
+    while read -r sMatch; do
         nNumLine=$(grep "${sMatch}" -n -m 1 /etc/systemd/network/10-mainif.network | cut -d ':' -f 1)
         sAddress="$(echo "${sMatch}" | cut -d '=' -f 2 | cut -d '/' -f 1)"
         if [ -n "${sAddress}" ]; then
@@ -232,9 +232,9 @@ if [ -f /etc/systemd/network/10-mainif.network ]; then
                 sed -i "${nNumLine}i\#${sMatch}" /etc/systemd/network/10-mainif.network
             fi
         fi
-    done
+    done < <(grep '^Address=' /etc/systemd/network/10-mainif.network)
     # Gateway
-    for sMatch in $(grep '^Gateway=' /etc/systemd/network/10-mainif.network); do
+    while read -r sMatch; do
         nNumLine=$(grep "${sMatch}" -n -m 1 /etc/systemd/network/10-mainif.network | cut -d ':' -f 1)
         sGateway="$(echo "${sMatch}" | cut -d '=' -f 2 | cut -d '/' -f 1)"
         if [ -n "${sGateway}" ]; then
@@ -243,14 +243,14 @@ if [ -f /etc/systemd/network/10-mainif.network ]; then
                 sed -i "${nNumLine}i\#${sMatch}" /etc/systemd/network/10-mainif.network
             fi
         fi
-    done
+    done < <(grep '^Gateway=' /etc/systemd/network/10-mainif.network)
 fi
 
 #### Grub
 # Disable IPv6
 echo
 echo "########## Remove IPv6"
-echo 'GRUB_CMDLINE_LINUX="${GRUB_CMDLINE_LINUX} ipv6.disable=1"' >/etc/default/grub.d/iv6.cfg
+echo "GRUB_CMDLINE_LINUX=\"\${GRUB_CMDLINE_LINUX} ipv6.disable=1\"" >/etc/default/grub.d/iv6.cfg
 rm -fv /etc/pgl/ipv6.*
 if [ -f /etc/default/grub ]; then
     source /etc/default/grub
@@ -261,17 +261,17 @@ fi
 # AppArmor
 echo
 echo "########## AppArmor"
-echo 'GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_CMDLINE_LINUX_DEFAULT} apparmor=0"' >/etc/default/grub.d/apparmor.cfg
+echo "GRUB_CMDLINE_LINUX_DEFAULT=\"\${GRUB_CMDLINE_LINUX_DEFAULT} apparmor=0\"" >/etc/default/grub.d/apparmor.cfg
 cat /etc/default/grub.d/apparmor.cfg
 # Tweaks for Redis
 echo
 echo "########## Tweaks for Redis"
-echo 'GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_CMDLINE_LINUX_DEFAULT} transparent_hugepage=never"' >/etc/default/grub.d/redis.cfg
+echo "GRUB_CMDLINE_LINUX_DEFAULT=\"\${GRUB_CMDLINE_LINUX_DEFAULT} transparent_hugepage=never\"" >/etc/default/grub.d/redis.cfg
 cat /etc/default/grub.d/redis.cfg
 # SystemD
 echo
 echo "########## SystemD"
-echo 'GRUB_CMDLINE_LINUX="${GRUB_CMDLINE_LINUX} init=/bin/systemd"' >/etc/default/grub.d/systemd.cfg
+echo "GRUB_CMDLINE_LINUX=\"\${GRUB_CMDLINE_LINUX} init=/bin/systemd\"" >/etc/default/grub.d/systemd.cfg
 cat /etc/default/grub.d/systemd.cfg
 update-grub
 
@@ -301,9 +301,14 @@ echo
 echo "########## Cleaning"
 gfnDeleteDirectory 1 /var/log/exim4
 gfnDeleteDirectory 1 /var/log/news
-OldKernelList=$(dpkg --list | grep linux-image | awk '{ print $2 }' | sort -V | sed -n "/$(uname -r)/q;p")
-[ -n "${OldKernelList}" ] && apt-get -y --assume-yes purge ${OldKernelList}
-update-grub
+aOldKernelList=()
+while read -r sOld; do
+    aOldKernelList+=("${sOld}")
+done < <(dpkg --list | grep linux-image | awk '{ print $2 }' | sort -V | sed -n "/$(uname -r)/q;p")
+if [ "${#aOldKernelList[@]}" -gt 0 ]; then
+    apt-get -y --assume-yes purge "${aOldKernelList[@]}"
+    update-grub
+fi
 
 #### Logrotate
 echo
