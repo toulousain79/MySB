@@ -23,7 +23,7 @@
 ##################### FIRST LINE #####################################
 
 if [ -z "${vars}" ] || [ "${vars}" -eq 0 ]; then
-    # shellcheck source=ci/scripts/00-load_vars.bsh
+    # shellcheck source=ci/check/00-load_vars.bsh
     source "$(dirname "$0")/00-libs.bsh"
 else
     nReturn=${nReturn}
