@@ -529,13 +529,13 @@ gfnPeerGuardianIptablesInsert() {
         echo "# ICMP"
         echo "iptables -I pgl_out -p icmp -j RETURN -m comment --comment \"ICMP OUT\""
     } >>/etc/pgl/custom.insert.sh
-    #### ICMP
 
     #### DNScrypt-proxy
     if [ "${gbIsInstalled_DNScrypt}" == "YES" ]; then
-        echo
-        echo "# DNScrypt-proxy resolvers complementary rules" >>/etc/pgl/custom.insert.sh
-
+        {
+            echo
+            echo "# DNScrypt-proxy"
+        } >>/etc/pgl/custom.insert.sh
         nUID="$(id -u _dnscrypt-proxy)"
         if [ -n "${nUID}" ]; then
             {
@@ -544,14 +544,13 @@ gfnPeerGuardianIptablesInsert() {
             } >>/etc/pgl/custom.insert.sh
         fi
     fi
-    #### DNScrypt-proxy
 
     #### DNS / Bind
     nUID="$(id -u bind)"
     if [ -n "${nUID}" ]; then
         {
             echo
-            echo "# Publics DNS complementary rules"
+            echo "# Publics DNS (Bind9)"
         } >>/etc/pgl/custom.insert.sh
         for sDNS in "${gaDnsList[@]}"; do
             {
@@ -560,28 +559,54 @@ gfnPeerGuardianIptablesInsert() {
             } >>/etc/pgl/custom.insert.sh
         done
     fi
-    #### DNS / Bind
 
     #### Stunnel
     nUID="$(id -u stunnel4)"
     if [ -n "${nUID}" ]; then
         {
             echo
-            echo "# Stunnel complementary rules"
+            echo "# Stunnel"
         } >>/etc/pgl/custom.insert.sh
         echo "iptables -I pgl_out -p tcp -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT TCP Stunnel\"" >>/etc/pgl/custom.insert.sh
     fi
-    #### Stunnel
 
     #### Debian repos
+    gaDebianRepos=(ftp.fr.debian.org ftp2.fr.debian.org security.debian.org)
+    if [ -f "${MySB_InstallDir}"/files/fastest_stable_mirrors ]; then
+        MirrorsList="$(grep 'http' "${MySB_InstallDir}"/files/fastest_stable_mirrors | sed -e 's/^ //g;s/\s+$//g;')"
+        for Mirror in ${MirrorsList}; do
+            sProto="$(echo "${Mirror}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')" # extract the protocol
+            sURL="${Mirror//${sProto}/}"
+            sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)"                    # extract the user (if any)
+            sHostPort=$(echo "${sURL}" | sed -e s,"${sUrlUser}"@,,g | cut -d/ -f1) # extract the host and port
+            sHost="${sHostPort//:*/}"                                              # by request host without port
+            gaDebianRepos+=("${sHost}")
+        done
+    fi
+    if [ -f "${MySB_InstallDir}"/files/fastest_testing_mirrors ]; then
+        MirrorsList="$(grep 'http' "${MySB_InstallDir}"/files/fastest_testing_mirrors | sed -e 's/^ //g;s/\s+$//g;')"
+        for Mirror in ${MirrorsList}; do
+            sProto="$(echo "${Mirror}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')" # extract the protocol
+            sURL="${Mirror//${sProto}/}"
+            sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)"                    # extract the user (if any)
+            sHostPort=$(echo "${sURL}" | sed -e s,"${sUrlUser}"@,,g | cut -d/ -f1) # extract the host and port
+            sHost="${sHostPort//:*/}"                                              # by request host without port
+            gaDebianRepos+=("${sHost}")
+        done
+    fi
+    if [ "${gbToInstall_Webmin}" == "YES" ] || [ "${gbIsInstalled_Webmin}" == "YES" ]; then
+        gaDebianRepos+=(download.webmin.com)
+    fi
+    if [ "${gsServerProvider}" == "HETZNER" ]; then
+        gaDebianRepos+=(mirror.hetzner.de)
+    fi
     {
         echo
         echo "# Debian repos"
     } >>/etc/pgl/custom.insert.sh
     for sDomain in "${gaDebianRepos[@]}"; do
-        echo "iptables -I pgl_out -p tcp -d ${sDomain} --dport 80 -j RETURN -m comment --comment \"OUTPUT TCP Debian repo ${sDomain}\"" >>/etc/pgl/custom.insert.sh
+        echo "iptables -I pgl_out -p tcp -d ${sDomain} --dport 80 -j RETURN -m comment --comment \"OUTPUT TCP Debian repo\"" >>/etc/pgl/custom.insert.sh
     done
-    #### Debian repos
 
     #### Needed domains
     {
@@ -589,16 +614,15 @@ gfnPeerGuardianIptablesInsert() {
         echo "# Needed domains"
     } >>/etc/pgl/custom.insert.sh
     for sDomain in "${gaNeededDomains[@]}"; do
-        echo "iptables -I pgl_out -p tcp -d ${sDomain} -j RETURN -m comment --comment \"OUTPUT TCP Needed domain ${sDomain}\"" >>/etc/pgl/custom.insert.sh
+        echo "iptables -I pgl_out -p tcp -d ${sDomain} -j RETURN -m comment --comment \"OUTPUT TCP Needed domain\"" >>/etc/pgl/custom.insert.sh
     done
-    #### Needed domains
 
     #### Monitoring
     if [ -n "${gsServerProvider}" ] && [ "${gsServerProvider}" != "${Global_None}" ]; then
         # insert
         {
             echo
-            echo "# ${gsServerProvider} monitoring complementary rules"
+            echo "# ${gsServerProvider} monitoring"
         } >>/etc/pgl/custom.insert.sh
 
         case "${gsServerProvider}" in
@@ -620,34 +644,32 @@ gfnPeerGuardianIptablesInsert() {
         esac
         echo >>/etc/pgl/custom.insert.sh
     fi
-    #### Monitoring
 
     #### ruTorrent plugins
     {
         echo
-        echo "# ruTorrent plugins complementary rules"
+        echo "# ruTorrent plugins"
     } >>/etc/pgl/custom.insert.sh
     # showip
     if [ -f "${gsRutorrentPluginsDir}"/showip/init.php ]; then
         grep 'file_get_contents' "${gsRutorrentPluginsDir}"/showip/init.php | awk '{ print $3 }' | cut -d '/' -f 3 | while read -r sFQDN; do
-            echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin showip ${sFQDN}\"" >>/etc/pgl/custom.insert.sh
+            echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin showip\"" >>/etc/pgl/custom.insert.sh
         done
     fi
     # loginmgr
     if [ -d "${gsRutorrentPluginsDir}"/loginmgr/accounts/ ]; then
         grep -rh 'http://' "${gsRutorrentPluginsDir}"/loginmgr/accounts/ | awk '{ print $4 }' | cut -d '/' -f 3 | sed 's/";//g;' | while read -r sFQDN; do
-            echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin loginmgr ${sFQDN}\"" >>/etc/pgl/custom.insert.sh
+            echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin loginmgr\"" >>/etc/pgl/custom.insert.sh
         done
     fi
     # extsearch
     if [ -d "${gsRutorrentPluginsDir}"/extsearch/ ]; then
         grep -rh 'http://' "${gsRutorrentPluginsDir}"/extsearch/ | cut -d '/' -f 3 | sed "s/';//g;" | while read -r sFQDN; do
-            echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin extsearch ${sFQDN}\"" >>/etc/pgl/custom.insert.sh
+            echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin extsearch\"" >>/etc/pgl/custom.insert.sh
         done
     fi
     # mediastream
-    echo "iptables -I pgl_out -p tcp -d go.divx.com --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin mediastream go.divx.com\"" >>/etc/pgl/custom.insert.sh
-    #### ruTorrent plugins
+    echo "iptables -I pgl_out -p tcp -d go.divx.com --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin mediastream\"" >>/etc/pgl/custom.insert.sh
 
     echo >>/etc/pgl/custom.insert.sh
 

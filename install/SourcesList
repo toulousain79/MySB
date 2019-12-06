@@ -60,7 +60,7 @@ if gfnCheckCommand 0 netselect-apt; then
 
     # Stable
     netselect-apt -a ${sArch} -n -t 10 -o "${MySB_InstallDir}"/temp/sources.list stable >"${MySB_InstallDir}"/files/fastest_stable_mirrors
-    MirrorsList="$(grep 'http' "${MySB_InstallDir}"/files/fastest_stable_mirrors)"
+    MirrorsList="$(grep 'http' "${MySB_InstallDir}"/files/fastest_stable_mirrors | sed -e 's/^ //g;s/\s+$//g;')"
     Count=1
 
     {
@@ -73,16 +73,6 @@ if gfnCheckCommand 0 netselect-apt; then
     else
         for Mirror in ${MirrorsList}; do
             if [[ ${Count} -le ${nMaxRepos} ]]; then
-                Mirror="$(echo "${Mirror}" | sed -e 's/^ //g;')"
-
-                sProto="$(echo "${Mirror}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')" # extract the protocol
-                sURL="${Mirror//${sProto}/}"
-                sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)"                    # extract the user (if any)
-                sHostPort=$(echo "${sURL}" | sed -e s,"${sUrlUser}"@,,g | cut -d/ -f1) # extract the host and port
-                sHost="$(echo "${sHostPort}" | sed -e 's,:.*,,g')"                     # by request host without port
-                gaDebianRepos+=("${sHost}")
-
-                # if [ -z "$(grep "${Mirror}" "${MySB_InstallDir}"/temp/sources.list)" ]; then
                 if (! grep -q "${Mirror}" "${MySB_InstallDir}"/temp/sources.list); then
                     ReleaseGPG="$($binCURL "${Mirror}"/dists/"${gsDebianRelease}"/Release.gpg)"
                     if [ -n "${ReleaseGPG}" ]; then
@@ -111,7 +101,7 @@ if gfnCheckCommand 0 netselect-apt; then
 
     # Testing
     netselect-apt -a ${sArch} -n -t 10 -o "${MySB_InstallDir}"/temp/sources.list testing >"${MySB_InstallDir}"/files/fastest_testing_mirrors
-    MirrorsList="$(grep 'http' "${MySB_InstallDir}"/files/fastest_testing_mirrors)"
+    MirrorsList="$(grep 'http' "${MySB_InstallDir}"/files/fastest_testing_mirrors | sed -e 's/^ //g;s/\s+$//g;')"
     Count=1
 
     {
@@ -124,15 +114,6 @@ if gfnCheckCommand 0 netselect-apt; then
     else
         for Mirror in ${MirrorsList}; do
             if [[ ${Count} -le ${nMaxRepos} ]]; then
-                Mirror="$(echo "${Mirror}" | sed -e 's/^ //g;')"
-                sProto="$(echo "${Mirror}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')" # extract the protocol
-                sURL="${Mirror//${sProto}/}"
-                sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)"                    # extract the user (if any)
-                sHostPort=$(echo "${sURL}" | sed -e s,"${sUrlUser}"@,,g | cut -d/ -f1) # extract the host and port
-                sHost="$(echo "${sHostPort}" | sed -e 's,:.*,,g')"                     # by request host without port
-                gaDebianRepos+=("${sHost}")
-
-                # if [ -z "$(grep "${Mirror}" "${MySB_InstallDir}"/temp/sources.list)" ]; then
                 if (! grep -q "${Mirror}" "${MySB_InstallDir}"/temp/sources.list); then
                     ReleaseGPG="$($binCURL "${Mirror}"/dists/"${gsDebianRelease}"/Release.gpg)"
                     if [ -n "${ReleaseGPG}" ]; then
@@ -165,7 +146,6 @@ fi
 
 if [ "${gsServerProvider}" == "HETZNER" ]; then
     # https://wiki.hetzner.de/index.php/Hetzner_Aptitude_Mirror
-    gaDebianRepos+=(mirror.hetzner.de)
 
     # Stable
     {
