@@ -372,22 +372,27 @@ gfnManageUserHomeDir() {
         chmod 0740 /home/"${sUser}"/.profile
     fi
     # Specifics scripts
-    if [ -f /home/"${sUser}"/.rTorrent_tasks.sh ]; then
-        chown root:root /home/"${sUser}"/.rTorrent_tasks.sh
-        chmod 0750 /home/"${sUser}"/.rTorrent_tasks.sh
-    fi
-    if [ -f /home/"${sUser}"/.rTorrent_inserted_new.sh ]; then
-        chown root:"${sUser}" /home/"${sUser}"/.rTorrent_inserted_new.sh
-        chmod 0750 /home/"${sUser}"/.rTorrent_inserted_new.sh
+    if [ -f /home/"${sUser}"/.rTorrent_erased.sh ]; then
+        chown root:"${sUser}" /home/"${sUser}"/.rTorrent_erased.sh
+        chmod 0750 /home/"${sUser}"/.rTorrent_erased.sh
     fi
     if [ -f /home/"${sUser}"/.rTorrent_finished.sh ]; then
         chown root:"${sUser}" /home/"${sUser}"/.rTorrent_finished.sh
         chmod 0750 /home/"${sUser}"/.rTorrent_finished.sh
     fi
-    if [ -f /home/"${sUser}"/.rTorrent_erased.sh ]; then
-        chown root:"${sUser}" /home/"${sUser}"/.rTorrent_erased.sh
-        chmod 0750 /home/"${sUser}"/.rTorrent_erased.sh
+    if [ -f /home/"${sUser}"/.rTorrent_inotify.sh ]; then
+        chown root:"${sUser}" /home/"${sUser}"/.rTorrent_inotify.sh
+        chmod 0750 /home/"${sUser}"/.rTorrent_inotify.sh
     fi
+    if [ -f /home/"${sUser}"/.rTorrent_inserted_new.sh ]; then
+        chown root:"${sUser}" /home/"${sUser}"/.rTorrent_inserted_new.sh
+        chmod 0750 /home/"${sUser}"/.rTorrent_inserted_new.sh
+    fi
+    if [ -f /home/"${sUser}"/.rTorrent_tasks.sh ]; then
+        chown root:root /home/"${sUser}"/.rTorrent_tasks.sh
+        chmod 0750 /home/"${sUser}"/.rTorrent_tasks.sh
+    fi
+
     # /home/${sUser}/.check_annoncers
     [ ! -f /home/"${sUser}"/.check_annoncers ] && touch /home/"${sUser}"/.check_annoncers
     [ "$(stat --printf %U /home/"${sUser}"/.check_annoncers):$(stat --printf %G /home/"${sUser}"/.check_annoncers)" != "root:mysb_users" ] && chown root:mysb_users /home/"${sUser}"/.check_annoncers
@@ -421,8 +426,8 @@ gfnManageUserHomeDir() {
     chown root:"${sUser}" /home/"${sUser}"/rtorrent/.session
     chmod 0771 /home/"${sUser}"/rtorrent/.session
     # /home/user/rtorrent/config.d
-    # chown root:"${sUser}" /home/"${sUser}"/rtorrent/config.d
-    # chmod 0771 /home/"${sUser}"/rtorrent/config.d
+    chown root:"${sUser}" /home/"${sUser}"/rtorrent/config.d
+    chmod 0771 /home/"${sUser}"/rtorrent/config.d
 }
 
 #### Seedbox-Manager Users Config
@@ -431,17 +436,13 @@ gfnManagerUsersConfigs() {
 
     if [ "${gbIsInstalled_Manager}" == "YES" ]; then
         sUser="$1"
-        sHomeDirEscaped="$(echo /home/"${sUser}" | sed s,/,\\\\\/,g)"
+        sHomeDir="/home/${sUser}"
+        sHomeDirEscaped="${sHomeDir//\//\\\/}"
         sUserNameUpper="$(echo "${sUser}" | tr '[:lower:]' '[:upper:]')"
 
         if [ ! -d "${gsManagerDir}/conf/users/${sUser}" ]; then mkdir -p "${gsManagerDir}/conf/users/${sUser}"; fi
         if [ ! -f "$gsManagerDir/conf/users/${sUser}/config.ini" ]; then
             install -o www-data -g www-data -m 0640 "${MySB_InstallDir}"/templates/seedboxmanager/config.ini.tmpl "$gsManagerDir/conf/users/${sUser}/config.ini"
-            # sed -i "s/<user_directory>/${sHomeDirEscaped}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
-            # sed -i "s/<scgi_folder>/\/${sUserNameUpper}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
-            # sed -i "s/port_ftp = 21/port_ftp = ${gsPort_FTP}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
-            # sed -i "s/port_sftp = 22/port_sftp = ${gsPort_SSH}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
-            # sed -i "s/<mail_address>/${gsMainUserEmail}/g;" "$gsManagerDir/conf/users/${sUser}/config.ini"
             sed -i \
                 -e "s/<user_directory>/${sHomeDirEscaped}/g;" \
                 -e "s/<scgi_folder>/\/${sUserNameUpper}/g;" \
@@ -470,7 +471,7 @@ gfnRuTorrentUsersConfigs() {
     sUserValues="$(cmdMySQL 'MySB_db' "SELECT scgi_port,home_dir FROM users WHERE users_ident='${sUser}';" | sed 's/\t/|/g;')"
     sPortSCGI="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[1]}')"
     sHomeDir="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[2]}')"
-    sHomeDirEscaped="$(echo "${sHomeDir}" | sed s,/,\\\\\/,g)"
+    sHomeDirEscaped="${sHomeDir//\//\\\/}"
     sUserUpper="$(echo "${sUser}" | tr '[:lower:]' '[:upper:]')"
 
     # share
@@ -483,11 +484,6 @@ gfnRuTorrentUsersConfigs() {
     # conf
     if [ ! -d "${gsRutorrentDir}/conf/users/${sUser}/" ]; then mkdir -p "${gsRutorrentDir}/conf/users/${sUser}/"; fi
     install -o www-data -g www-data -m 0755 "${MySB_InstallDir}"/templates/rutorrent/config.php.tmpl "${gsRutorrentDir}/conf/users/${sUser}/config.php"
-    # perl -pi -e "s/<topDirectory>/${sHomeDirEscaped}/g" "${gsRutorrentDir}/conf/users/${sUser}/config.php"
-    # perl -pi -e "s/<log_file>/${sHomeDirEscaped}\/logs\/rutorrent.log/g" "${gsRutorrentDir}/conf/users/${sUser}/config.php"
-    # perl -pi -e "s/<RPC>/${sUserUpper}/g" "${gsRutorrentDir}/conf/users/${sUser}/config.php"
-    # perl -pi -e "s/<scgi_port>/${sPortSCGI}/g" "${gsRutorrentDir}/conf/users/${sUser}/config.php"
-    # perl -pi -e "s/<user>/${sUser}/g" "${gsRutorrentDir}/conf/users/${sUser}/config.php"
     sed -i \
         -e "s/<topDirectory>/${sHomeDirEscaped}/g" \
         -e "s/<log_file>/${sHomeDirEscaped}\/logs\/rutorrent.log/g" \
@@ -495,7 +491,6 @@ gfnRuTorrentUsersConfigs() {
         -e "s/'<scgi_port>'/${sPortSCGI}/g" \
         -e "s/<user>/${sUser}/g" \
         "${gsRutorrentDir}/conf/users/${sUser}/config.php"
-    # if [ -f "${gsRutorrentDir}"/conf/access.ini ]; then cp "${gsRutorrentDir}"/conf/access.ini "${gsRutorrentDir}/conf/users/${sUser}/access.ini"; fi
     install -o www-data -g www-data -m 0755 "${MySB_InstallDir}"/templates/rutorrent/access.ini.tmpl "${gsRutorrentDir}/conf/users/${sUser}/access.ini"
     install -o www-data -g www-data -m 0755 "${MySB_InstallDir}"/templates/rutorrent/plugins.ini.tmpl "${gsRutorrentDir}/conf/users/${sUser}/plugins.ini"
     touch "${sHomeDir}/logs/rutorrent.log"
@@ -648,19 +643,16 @@ gfnUserCrontab() {
 
 #### rTorrent Configuration file
 gfnCreateRtorrentConfigFile() {
-    # local sUser sUserValues sHomeDir sDirectories sSubDirectory sDirectory sFileSystemType
-    # local bCanBeDeleted bCreateNewFile bToDelete bActiveUdp
-    # local nIdUser nPortSCGI nPortRtorrent nNumLine nCount nCountFiles
-    local sUser sUserValues sHomeDir sDirectories sSubDirectory sDirectory
-    local bCanBeDeleted bCreateNewFile bToDelete
-    local nIdUser nPortSCGI nNumLine nCount nCountFiles
+    local sUser sUserValues sHomeDir sDirectories sSubDirectory sDirectory sFileSystemType
+    local bCanBeDeleted bCreateNewFile bToDelete bActiveUdp
+    local nIdUser nPortSCGI nPortRtorrent nNumLine nCount nCountFiles
 
     [[ -n $1 ]] && sUser="$1" || return
-    # sFileSystemType="$(df -T "/home/" | awk '{print $2}' | tail -n1)"
+    sFileSystemType="$(df -T "/home/" | awk '{print $2}' | tail -n1)"
     sUserValues="$(cmdMySQL 'MySB_db' "SELECT id_users,scgi_port,rtorrent_port,home_dir FROM users WHERE users_ident='${sUser}';" | sed 's/\t/|/g;')"
     nIdUser="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[1]}')"
     nPortSCGI="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[2]}')"
-    # nPortRtorrent="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[3]}')"
+    nPortRtorrent="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[3]}')"
     sHomeDir="$(echo "${sUserValues}" | awk '{split($0,a,"|"); print a[4]}')"
     [[ -z ${sHomeDir} ]] && sHomeDir="/home/${sUser}"
     sDirectories="$(cmdMySQL 'MySB_db' "SELECT sub_directory,can_be_deleted,to_delete FROM users_rtorrent_cfg WHERE id_users='${nIdUser}';" | sed 's/\t/|/g;')"
@@ -796,7 +788,7 @@ gfnCreateRtorrentConfigFile() {
         gfnListCountUsers 'normal'
         for seedUser in ${gsUsersList}; do
             nPiecesMemoryMax="$((gsMemory / 5))M"
-            nNumLine=$(grep 'pieces.memory.max.set' -n -m 1 /home/${seedUser}/.rtorrent.rc | cut -d ':' -f 1)
+            nNumLine=$(grep 'pieces.memory.max.set' -n -m 1 /home/"${seedUser}"/.rtorrent.rc | cut -d ':' -f 1)
             sed -i '/pieces.memory.max.set/d' /home/"${seedUser}"/.rtorrent.rc
             sed -i "${nNumLine}i\pieces.memory.max.set = ${nPiecesMemoryMax};" /home/"${seedUser}"/.rtorrent.rc
         done
@@ -830,25 +822,18 @@ gfnCreateRtorrentConfigFile() {
 
         # Watch directories
         if [ -n "${sDirectories}" ]; then
-            # nNumLine=$(sed -n "/watch_directory/=" "${sHomeDir}"/.rtorrent.rc)
-            # nCount=0
-            # sed -i '/watch_directory/d' "${sHomeDir}"/.rtorrent.rc
-            # sed -i "${nNumLine}i\schedule2 = watch_directory_${nCount},5,5,\"load.normal=~\/rtorrent\/watch\/*.torrent,d.directory.set=~\/rtorrent\/complete\/,d.custom1.set=,d.custom2.set=~\/rtorrent\/torrents\/\"" "${sHomeDir}"/.rtorrent.rc
-            # ((nNumLine++)) && ((nCount++))
-            # for sDirectory in ${sDirectories}; do
-            #     sDirectory="$(echo "${sDirectory}" | awk '{split($0,a,"|"); print a[1]}')"
-            #     sed -i "${nNumLine}i\schedule2 = watch_directory_${nCount},5,5,\"load.normal=~\/rtorrent\/watch\/${sDirectory}\/*.torrent,d.directory.set=~\/rtorrent\/complete\/${sDirectory}\/,d.custom1.set=${sDirectory},d.custom2.set=~\/rtorrent\/torrents\/${sDirectory}\/\"" "${sHomeDir}"/.rtorrent.rc
-            #     ((nNumLine++)) && ((nCount++))
-            # done
             nCount=0
-            rm -f "${sHomeDir}"/rtorrent/config.d/80-watch.rc
+            {
+                echo "# Watching watch/"
+                echo "schedule2 = watch_directory_${nCount},5,5,\"load.normal=~\/rtorrent\/watch\/*.torrent,d.directory.set=~\/rtorrent\/complete\/,d.custom1.set=,d.custom2.set=~\/rtorrent\/torrents\/\""
+            } >"${sHomeDir}"/rtorrent/config.d/80-watch.rc
             for sDirectory in ${sDirectories}; do
+                ((nCount++))
                 sDirectory="$(echo "${sDirectory}" | awk '{split($0,a,"|"); print a[1]}')"
                 {
-                    echo "# Watching ${sDirectory}"
+                    echo "# Watching watch/${sDirectory}/"
                     echo "schedule2 = watch_directory_${nCount},5,5,\"load.normal=~\/rtorrent\/watch\/${sDirectory}\/*.torrent,d.directory.set=~\/rtorrent\/complete\/${sDirectory}\/,d.custom1.set=${sDirectory},d.custom2.set=~\/rtorrent\/torrents\/${sDirectory}\/\""
                 } >>"${sHomeDir}"/rtorrent/config.d/80-watch.rc
-                ((nCount++))
             done
 
             # Disabling 'autotools' plugins

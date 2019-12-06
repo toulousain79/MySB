@@ -43,17 +43,17 @@ echo
 
 #### Synchro type
 sChoices=('check' 'before' 'after' 'reset_passwd' 'lock_old' 'unlock_old' 'force_rename')
-if (! grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
+if (! grep -q "${gsSynchroType}" <<<"${sChoices[*]}"); then
     echo
     gfnQuestionGetString NO "${Migration_SynchroType[*]}" gsSynchroType
-    while (! grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); do
+    while (! grep -q "${gsSynchroType}" <<<"${sChoices[*]}"); do
         gfnQuestionGetString NO "${Migration_SynchroType[*]}" gsSynchroType
     done
 fi
 
 #### New server IP
 sChoices=('check' 'before' 'after')
-if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
+if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}"); then
     echo
     [ -n "${gsNewServerIp}" ] && CHECK_SrvIpAddressExt=$(gfnValidateIP "${gsNewServerIp}")
     while [ "${CHECK_SrvIpAddressExt}" != "${gsNewServerIp}" ] || [ -z "${gsNewServerIp}" ]; do
@@ -64,14 +64,14 @@ fi
 
 #### New server SSH port
 sChoices=('check' 'before' 'after')
-if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
+if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}"); then
     echo
     [ -z "${gsNewServerSshPort}" ] && gfnQuestionGetString NO "${Migration_NewServerSshPort[*]}" gsNewServerSshPort "${gsPort_SSH}"
 fi
 
 #### VARs
 sChoices=('check' 'before' 'after')
-if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
+if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}"); then
     sLogFile="/tmp/migrate.log"
     sMySqlOptions=(--wait "--connect-timeout=10" --skip-column-names)
     sRsyncOptions=(-rlptgoDv4PHz --append --delete --delete-before)
@@ -82,7 +82,7 @@ fi
 
 #### Ping remote server
 sChoices=('check' 'before' 'after')
-if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
+if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}"); then
     if (! ping -c3 ${gsNewServerIp} >/dev/null); then
         echo
         echo -e "${Migration_AddServerAddressOld[*]}"
@@ -94,7 +94,7 @@ fi
 
 #### SSH key
 sChoices=('check' 'before' 'after')
-if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
+if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}"); then
     {
         echo "# ${gsHostNameFqdn}"
         cat /root/.ssh/id_rsa.pub
@@ -111,7 +111,7 @@ fi
 
 #### Get remote config
 sChoices=('check' 'before' 'after')
-if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}" ); then
+if (grep -q "${gsSynchroType}" <<<"${sChoices[*]}"); then
     if (ssh ${sSshOptions[*]} root@${gsNewServerIp} "grep 'MySB_InstallDir=' /etc/MySB/config" >/tmp/MySB_remote_config); then
         perl -pi -e "s/MySB_InstallDir/MySB_RemoteDir/g" /tmp/MySB_remote_config
         echo "export MySB_RemoteDir" >>/tmp/MySB_remote_config
@@ -217,7 +217,7 @@ function fnSynchroUsers() {
     done
 }
 
-function fnWebApps()  {
+function fnWebApps() {
     local sResult
 
     clear
@@ -381,7 +381,7 @@ function fnDatabases() {
     # Dump NextCloud_db
     [ "${gbIsInstalled_NextCloud}" == "YES" ] && {
         nDbSize=$(mysql --database=NextCloud_db ${sMySqlOptions[*]} --skip-column-names -e "SELECT ROUND(SUM(data_length) / 1024 / 1024, 0) FROM information_schema.TABLES WHERE table_schema='NextCloud_db';")
-        mysqldump --single-transaction --order-by-primary --compress NextCloud_db  | pv --progress --size "${nDbSize}"m >/tmp/NextCloud_db.dump.sql
+        mysqldump --single-transaction --order-by-primary --compress NextCloud_db | pv --progress --size "${nDbSize}"m >/tmp/NextCloud_db.dump.sql
     }
     # Dump MySB_db
     nDbSize=$(mysql --database=MySB_db ${sMySqlOptions[*]} --skip-column-names -e "SELECT ROUND(SUM(data_length) / 1024 / 1024, 0) FROM information_schema.TABLES WHERE table_schema='MySB_db';")
@@ -448,7 +448,7 @@ case "${gsSynchroType}" in
                 echo
                 gfnEndingScript 0
             }
-            . ${MySB_InstallDir}/inc/funcs_by_script/funcs_Upgrade
+            . "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Upgrade
             gfnUpgradeInProgress "on"
         else
             ssh ${sSshOptions[*]} root@${gsNewServerIp} "
@@ -484,13 +484,13 @@ case "${gsSynchroType}" in
         fi
         ;;
     'lock_old')
-        . ${MySB_InstallDir}/inc/vars
-        . ${MySB_InstallDir}/inc/funcs_by_script/funcs_Upgrade
+        . "${MySB_InstallDir}"/inc/vars
+        . "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Upgrade
         gfnUpgradeInProgress on
         ;;
     'unlock_old')
-        . ${MySB_InstallDir}/inc/vars
-        . ${MySB_InstallDir}/inc/funcs_by_script/funcs_Upgrade
+        . "${MySB_InstallDir}"/inc/vars
+        . "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Upgrade
         gfnUpgradeInProgress off
         ;;
     'force_rename')
@@ -515,8 +515,7 @@ case "${gsSynchroType}" in
             sed -i "s/'http:\/\/'.\$host;/'https:\/\/${sNewFQDN}:${gsPort_MySB_HTTPS}\/cb\/';/g;" "${gsRepoDir}"/conf.php
             sed -i "s/torrents/rtorrent/g;" "${gsRepoDir}"/conf.php
             # NginX (alias with proxy)
-            # shellcheck disable=SC2001
-            sCakeboxDirEscaped="$(echo "${gsCakeboxDir}" | sed s,/,\\\\\\\/,g)"
+            sCakeboxDirEscaped="${sCakeboxDirEscaped//\//\\\/}"
             [[ -L /etc/nginx/sites-enabled/cakebox ]] && rm -f /etc/nginx/sites-enabled/cakebox
             install -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.site-enabled.cakebox.tmpl /etc/nginx/sites-available/cakebox
             # perl -pi -e "s/<server_name>/${sNewFQDN}/g" /etc/nginx/sites-available/cakebox
@@ -543,7 +542,7 @@ case "${gsSynchroType}" in
         gfnManageDirAndFiles 'global'
 
         #### Maintenance off
-        . ${MySB_InstallDir}/inc/funcs_by_script/funcs_Upgrade
+        . "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Upgrade
         gfnUpgradeInProgress off
         ;;
     'reset_passwd')
