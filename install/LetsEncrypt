@@ -37,9 +37,9 @@ sDomainsList=()
 [[ ! -f "${MySB_InstallDir}/ssl/letsencrypt_domains" ]] && touch "${MySB_InstallDir}/ssl/letsencrypt_domains"
 
 sDomainsList+=("${gsHostNameFqdn}")
-for sDomain in $(cat ${MySB_InstallDir}/ssl/letsencrypt_domains | sed '/#/d'); do
+while read -r sDomain; do
     sDomainsList+=("${sDomain}")
-done
+done < <(sed '/#/d' <"${MySB_InstallDir}"/ssl/letsencrypt_domains)
 mapfile -t sDomainsList < <(echo "${sDomainsList[*]}" | tr ' ' '\n' | sort | uniq)
 sCerbotParams=("certonly" "--authenticator" "standalone" "--verbose" "--update-registration" "--no-eff-email" "--agree-tos" "--rsa-key-size" "2048" "--email" "${gsMainUserEmail}" "--preferred-challenges=http-01" "--staple-ocsp" "--auto-hsts")
 
@@ -153,13 +153,13 @@ fnUseOfCertificates() {
         gfnGetRepoValues 'Tautulli'
         if [ -f "${gsRepoDir}"/config.ini ]; then
             gfnManageServices stop "tautulli"
-            nNumLine=$(grep 'pms_name' -n -m 1 ${gsRepoDir}/config.ini | cut -d ':' -f 1)
+            nNumLine=$(grep 'pms_name' -n -m 1 "${gsRepoDir}"/config.ini | cut -d ':' -f 1)
             sed -i '/pms_name/d' "${gsRepoDir}"/config.ini
             sed -i "${nNumLine}i\pms_name = ${gsHostNameFqdn}" "${gsRepoDir}"/config.ini
-            nNumLine=$(cat "${gsRepoDir}"/config.ini | grep 'http_base_url' -n -m 1 | cut -d ':' -f 1)
+            nNumLine=$(grep 'http_base_url' -n -m 1 "${gsRepoDir}"/config.ini | cut -d ':' -f 1)
             sed -i '/http_base_url/d' "${gsRepoDir}"/config.ini
             sed -i "${nNumLine}i\http_base_url = https://${gsHostNameFqdn}:${gsPort_MySB_HTTPS}" "${gsRepoDir}"/config.ini
-            nNumLine=$(cat "${gsRepoDir}"/config.ini | grep 'https_cert' -n -m 1 | cut -d ':' -f 1)
+            nNumLine=$(grep 'https_cert' -n -m 1 "${gsRepoDir}"/config.ini | cut -d ':' -f 1)
             sed -i '/https_cert/d' "${gsRepoDir}"/config.ini
             sed -i '/https_key/d' "${gsRepoDir}"/config.ini
             sed -i '/https_cert_chain/d' "${gsRepoDir}"/config.ini

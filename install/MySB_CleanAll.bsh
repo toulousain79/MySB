@@ -28,7 +28,7 @@ source "$(dirname "$0")"/../inc/includes_before
 echo
 echo -e "${CRED}All packages installed by MySB will be deleted within config files !${CEND}"
 echo -e "${CRED}All files created after MySB install, will be erase too (users, ports,...) !${CEND}"
-gfnQuestionGetString NO "Are you absolutely sure you want to continue? Type 'yes' to confirm it." CONTINUE ${Global_NO}
+gfnQuestionGetString NO "Are you absolutely sure you want to continue? Type 'yes' to confirm it." CONTINUE "${Global_NO}"
 if [ "$CONTINUE" == "${Global_NO}" ]; then
     echo -e "$Global_SeeYouLater"
     echo
@@ -37,7 +37,7 @@ if [ "$CONTINUE" == "${Global_NO}" ]; then
 fi
 
 echo -e -n "${CBLUE}Creating the list of packages to be deleted${CEND}..."
-PackagesToRemove="$(grep -rni --exclude="MySB_CleanAll.bsh" 'gfnPackagesManage install' ${MySB_InstallDir} | cut -d '"' -f 2)"
+PackagesToRemove="$(grep -rni --exclude="MySB_CleanAll.bsh" 'gfnPackagesManage install' "${MySB_InstallDir}" | cut -d '"' -f 2)"
 gfnStatusSTD
 
 echo -e -n "${CBLUE}Creating the list of packages that must be kept${CEND}..."
@@ -45,7 +45,7 @@ PackagesToKeep="$(grep -rni --exclude="MySB_CleanAll.bsh" 'TOOLS=' "${MySB_Insta
 gfnStatusSTD
 
 echo -e -n "${CBLUE}Creating the list of services that need to be stopped${CEND}..."
-ServicesToStop="$(grep -rni --exclude="MySB_CleanAll.bsh" 'gfnManageServices start' ${MySB_InstallDir} | cut -d '"' -f 2)"
+ServicesToStop="$(grep -rni --exclude="MySB_CleanAll.bsh" 'gfnManageServices start' "${MySB_InstallDir}" | cut -d '"' -f 2)"
 gfnStatusSTD
 
 #### Clean security rules
@@ -53,10 +53,10 @@ gfnScriptInvoke 'source' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'clean'
 
 #### STOP services
 ToStop=""
-for Service in $ServicesToStop; do
-    if [ "$Service" != '$ServicesToManage' ] && [ "$Service" != 'ssh' ]; then
-        if [ "$(echo $ToStop | grep "$Service")" == "" ]; then
-            ToStop="$ToStop $Service"
+for Service in ${ServicesToStop}; do
+    if [ "${Service}" != "${ServicesToManage}" ] && [ "${Service}" != 'ssh' ]; then
+        if [ "$(echo $ToStop | grep "${Service}")" == "" ]; then
+            ToStop="$ToStop ${Service}"
         fi
     fi
 done
@@ -105,21 +105,21 @@ done
 #### Prepare list of packages
 ToKeep=""
 # To keep
-for Package in $PackagesToKeep; do
-    ToKeep="$ToKeep $Package"
+for Package in ${PackagesToKeep}; do
+    ToKeep="${ToKeep} ${Package}"
 done
 
 # To remove
 ToRemove=""
-for Package in $PackagesToRemove; do
-    if [ "$(dpkg -l | grep $Package)" != "" ]; then
-        ToRemove="$ToRemove $Package"
+for Package in ${PackagesToRemove}; do
+    if [ "$(dpkg -l | grep "${Package}")" != "" ]; then
+        ToRemove="$ToRemove ${Package}"
     fi
 done
 
 # Exclude packages to keep from packages to remove
-for ToKeep in $ToKeep; do
-    PackagesToRemove="$(echo $PackagesToRemove | sed 's/$ToKeep//g;')"
+for ToKeep in ${ToKeep}; do
+    PackagesToRemove="${PackagesToRemove//${ToKeep}/}"
 done
 
 gfnPackagesManage purge "$ToRemove"
@@ -138,7 +138,7 @@ if [ -d /var/log/pgl ]; then rm -rf /var/log/pgl; fi
 if [ -d /var/log/nginx ]; then rm -rf /var/log/nginx; fi
 if [ -d /var/log/openvpn ]; then rm -rf /var/log/openvpn; fi
 if [ -d /var/log/samba ]; then rm -rf /var/log/samba; fi
-if [ -d ${MySB_InstallDir} ]; then rm -rf ${MySB_InstallDir}; fi
+if [ -d "${MySB_InstallDir}" ]; then rm -rf "${MySB_InstallDir}"; fi
 systemctl daemon-reload
 
 # -----------------------------------------

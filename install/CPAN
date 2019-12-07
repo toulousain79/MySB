@@ -37,86 +37,38 @@ fi
     chmod -v 0755 /root/.cpan/CPAN
 }
 
-#### Config
-install -v -o root -g root -m 0750 ${MySB_InstallDir}/templates/cpan/root.cpan.listmodules.pl.tmpl /root/.cpan/listmodules.pl
-install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/cpan/root.cpan.CPAN.MyConfig.pm.tmpl /root/.cpan/CPAN/MyCong.pm
+if [ "${gsSwitch}" != "CRON" ]; then
+    #### Config
+    install -v -o root -g root -m 0750 "${MySB_InstallDir}"/templates/cpan/root.cpan.listmodules.pl.tmpl /root/.cpan/listmodules.pl
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/cpan/root.cpan.CPAN.MyConfig.pm.tmpl /root/.cpan/CPAN/MyConfig.pm
 
-#### Modules updates
-if [ ! -f /tmp/CPAN.lock ]; then
-    touch /tmp/CPAN.lock
-    cpan -u
-    rm -f /tmp/CPAN.lock
+    #### Install
+    cpan -i -T CPAN::SQLite
+    cpan -i -T Log::Log4perl
+    cpan -i -T Term::ANSIColor
 fi
 
-#### Modules install
-# CPAN::SQLite
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^CPAN::SQLite$")" ] && cpan -i -T CPAN::SQLite
+if [ "${gsSwitch}" == "CRON" ] && [ ! -f /tmp/CPAN.lock ]; then
+    #### Modules install
+    aModules=('CPAN' 'YAML' 'Crypt::RIPEMD160' 'Digest::SHA' 'Digest::SHA1' 'Digest::SHA256' 'Digest::SHA::PurePerl' 'Digest::Whirlpool' 'LWP' 'HTTP::Daemon::SSL')
+    aModules+=('Convert::Bencode_XS' 'File::stat' 'Getopt::Long' 'Digest::MD5' 'URI' 'HTTP::Status' 'HTTP::Date' 'Socket' 'Carp' 'inc::latest')
+    touch /tmp/CPAN.lock
+    for sModule in "${aModules[@]}"; do
+        (! grep -q "^${sModule}$" <<<"$(perl /root/.cpan/listmodules.pl)") && cpan -i -T "${sModule}"
+    done
+    rm -f /tmp/CPAN.lock
 
-# Log::Log4perl
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^Log::Log4perl$")" ] && cpan -i -T Log::Log4perl
-
-# CPAN
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^CPAN$")" ] && cpan -i -T CPAN
-
-# YAML
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^YAML$")" ] && cpan -i -T YAML
-
-# Crypt::RIPEMD160
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^Crypt::RIPEMD160$")" ] && cpan -i -T Crypt::RIPEMD160
-
-# Digest::SHA
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^Digest::SHA$")" ] && cpan -i -T Digest::SHA
-
-# Digest::SHA1
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^Digest::SHA1$")" ] && cpan -i -T Digest::SHA1
-
-# Digest::SHA256
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^Digest::SHA256$")" ] && cpan -i -T Digest::SHA256
-
-# Digest::SHA::PurePerl
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^Digest::SHA::PurePerl$")" ] && cpan -i -T Digest::SHA::PurePerl
-
-# Digest::Whirlpool
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^Digest::Whirlpool$")" ] && cpan -i -T Digest::Whirlpool
-
-# LWP
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^LWP$")" ] && cpan -i -T LWP
-
-# HTTP::Daemon::SSL
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^HTTP::Daemon::SSL$")" ] && cpan -i -T HTTP::Daemon::SSL
-
-# Convert::Bencode_XS
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^Convert::Bencode_XS$")" ] && cpan -i -T Convert::Bencode_XS
-
-# File::stat
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^File::stat$")" ] && cpan -i -T File::stat
-
-# Getopt::Long
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^Getopt::Long$")" ] && cpan -i -T Getopt::Long
-
-# Digest::MD5
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^Digest::MD5$")" ] && cpan -i -T Digest::MD5
-
-# URI
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^URI$")" ] && cpan -i -T URI
-
-# HTTP::Status
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^HTTP::Status$")" ] && cpan -i -T HTTP::Status
-
-# HTTP::Date
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^HTTP::Date$")" ] && cpan -i -T HTTP::Date
-
-# Socket
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^Socket$")" ] && cpan -i -T Socket
-
-# Carp
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^Carp$")" ] && cpan -i -T Carp
-
-# inc::latest
-[ -z "$(perl /root/.cpan/listmodules.pl | grep "^inc::latest$")" ] && cpan -i -T inc::latest
+    #### Modules updates
+    if [ ! -f /tmp/CPAN.lock ]; then
+        touch /tmp/CPAN.lock
+        cpan -u
+        rm -f /tmp/CPAN.lock
+    fi
+fi
 
 #### Remove temp files
-rm -fv cpan_install_*.txt
+rm -fv /tmp/cpan_install_*.txt
+rm -f /tmp/CPAN.lock
 
 #### List all modules
 perl /root/.cpan/listmodules.pl

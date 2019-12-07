@@ -96,16 +96,16 @@ pear upgrade --force
 for Ext in ${sPeclModules}; do
     [ -f "${gsPhpDir}"/mods-available/"${Ext}".ini ] && phpdismod "${Ext}"
     rm -fv "${gsPhpDir}"/mods-available/"${Ext}".ini
-    [ -n "$(pecl list | grep "${Ext}")" ] && pecl uninstall "${Ext}"
+    (grep -q "${Ext}" <<<"$(pecl list)") && pecl uninstall "${Ext}"
 done
-if [ -d "${sExtDir}-zts" ]; then
-    sExtListZts="$(ls -A1 ${sExtDir}-zts | cut -d "." -f 1)"
-    for Ext in ${sExtListZts}; do
-        [ -f "${gsPhpDir}"/mods-available/"${Ext}".ini ] && phpdismod "${Ext}"
-        rm -fv "${gsPhpDir}"/mods-available/"${Ext}".ini
-    done
-    gfnDeleteDirectory 1 ${sExtDir}-zts
-fi
+# if [ -d "${sExtDir}-zts" ]; then
+#     sExtListZts="$(ls -A1 ${sExtDir}-zts | cut -d "." -f 1)"
+#     for Ext in ${sExtListZts}; do
+#         [ -f "${gsPhpDir}"/mods-available/"${Ext}".ini ] && phpdismod "${Ext}"
+#         rm -fv "${gsPhpDir}"/mods-available/"${Ext}".ini
+#     done
+#     gfnDeleteDirectory 1 ${sExtDir}-zts
+# fi
 for Ext in ${sAllExtList}; do
     [ -f ${sExtDir}/"${Ext}".ini ] && phpdismod "${Ext}"
     rm -fv "${gsPhpDir}"/mods-available/"${Ext}".ini
@@ -116,11 +116,11 @@ for Ext in ${sAllExtList}; do
     case "${Ext}" in
         'opcache')
             echo "zend_extension=opcache.so" >"${gsPhpDir}"/mods-available/opcache.ini
-            [ -z "$(php -m | grep 'opcache')" ] && ${binPhpEnmod} opcache
+            (! grep -q 'opcache' <<<"$(php -m)") && ${binPhpEnmod} opcache
             ;;
         *)
             echo "extension=${Ext}.so" >"${gsPhpDir}"/mods-available/"${Ext}".ini
-            [ -z "$(php -m | grep "${Ext}")" ] && ${binPhpEnmod} "${Ext}"
+            (! grep -q "${Ext}" <<<"$(php -m)") && ${binPhpEnmod} "${Ext}"
             ;;
     esac
 done

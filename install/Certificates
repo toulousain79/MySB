@@ -39,7 +39,7 @@ CreateCACertificate() {
             echo -e "${CYELLOW}CA certificate already exist. Do you want to create it again ?${CEND}"
             echo -e "${CYELLOW}If you create new CA, you must create again certificates for services.${CEND}"
             echo -e "${CYELLOW}Do you understand ?${CEND}"
-            gfnQuestionGetString NO "${Global_WantToContinue[@]}" CONTINUE ${Global_YES}
+            gfnQuestionGetString NO "${Global_WantToContinue[@]}" CONTINUE "${Global_YES}"
             if [ "$CONTINUE" == "${Global_NO}" ]; then
                 echo -e "$Global_SeeYouLater"
                 echo
@@ -50,7 +50,7 @@ CreateCACertificate() {
     fi
 
     CERTPASS="$(gfnGenPassword 16)"
-    cmdMySQL 'MySB_db' "UPDATE system SET cert_password = '$CERTPASS' WHERE id_system='1';" -v
+    cmdMySQL 'MySB_db' "UPDATE system SET cert_password = '${CERTPASS}' WHERE id_system='1';" -v
 
     # 1 - create needed files and directories
     gfnDeleteDirectory 0 "${MySB_InstallDir}/ssl/CA"
@@ -73,9 +73,9 @@ CreateCACertificate() {
     touch ./index.txt
     touch ./index.txt.attr
 
-    openssl req -new -x509 -extensions v3_ca -keyout ./private/cakey.pem -passout pass:$CERTPASS -out ./certs/cacert.pem -days 3650 -config ./MySB_caconfig.cnf
-    openssl req -new -nodes -out ./req.pem -passout pass:$CERTPASS -config ./MySB_caconfig.cnf
-    openssl ca -batch -out ./cert.pem -config ./MySB_caconfig.cnf -passin pass:$CERTPASS -infiles ./req.pem
+    openssl req -new -x509 -extensions v3_ca -keyout ./private/cakey.pem -passout pass:"${CERTPASS}" -out ./certs/cacert.pem -days 3650 -config ./MySB_caconfig.cnf
+    openssl req -new -nodes -out ./req.pem -passout pass:"${CERTPASS}" -config ./MySB_caconfig.cnf
+    openssl ca -batch -out ./cert.pem -config ./MySB_caconfig.cnf -passin pass:"${CERTPASS}" -infiles ./req.pem
     mv -v ./cert.pem ./tmp.pem
     openssl x509 -in ./tmp.pem -out ./cert.pem
     cat ./key.pem ./cert.pem >./key-cert.pem
@@ -99,8 +99,8 @@ CreateServiceCertificate() {
     fi
     if [ ! -f "${MySB_InstallDir}"/ssl/"${Service}".key ]; then
         openssl genrsa 2048 | tee ./"${Service}".key
-        openssl req -new -x509 -nodes -key ./"${Service}".key -days 3650 -config ./MySB_caconfig.cnf -batch -subj $SUBJ | tee ./"${Service}".cert
-        openssl ca -batch -keyfile ./private/cakey.pem -passin pass:$CERTPASS -subj $SUBJ -out ./${SERVICENAME}.pem -config ./MySB_caconfig.cnf -passin pass:$CERTPASS -ss_cert ./"${Service}".cert
+        openssl req -new -x509 -nodes -key ./"${Service}".key -days 3650 -config ./MySB_caconfig.cnf -batch -subj "${SUBJ}" | tee ./"${Service}".cert
+        openssl ca -batch -keyfile ./private/cakey.pem -passin pass:"${CERTPASS}" -subj "${SUBJ}" -out ./"${SERVICENAME}".pem -config ./MySB_caconfig.cnf -passin pass:"${CERTPASS}" -ss_cert ./"${Service}".cert
         chmod -v 600 ./"${Service}".*
         mv -v ./"${Service}".* ../
         chmod -v 644 ../"${Service}".cert

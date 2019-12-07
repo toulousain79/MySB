@@ -2,7 +2,7 @@
 
 source /opt/MySB/inc/vars
 # shellcheck source=/dev/null
-source ${MySB_InstallDir}/inc/funcs_by_script/funcs_MySB_CreateUser
+source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_MySB_CreateUser
 
 # cmdMySQL 'MySB_db' "DELETE FROM torrents;" -v
 # cmdMySQL 'MySB_db' "DELETE FROM trackers_list;" -v
@@ -24,9 +24,9 @@ for sUser in ${gsUsersList}; do
     nCgiPort="$(cmdMySQL 'MySB_db' "SELECT scgi_port FROM users WHERE users_ident='${sUser}';")"
     sDownloadList="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} download_list \"\"")"
     sDownloadList="$(echo "${sDownloadList}" | sed -e "s/,//g;s/'//g;s/\[//g;s/\]//g;" | tr '[:upper:]' '[:lower:]')"
-    sTempSessionsFile="$(mktemp /tmp/${gsScriptName}.${sUser}.XXXXXXXXXX)"
+    sTempSessionsFile="$(mktemp /tmp/"${gsScriptName}"."${sUser}".XXXXXXXXXX)"
 
-    find /home/${sUser}/rtorrent/.session/ -name '*.torrent' -type f >"${sTempSessionsFile}"
+    find /home/"${sUser}"/rtorrent/.session/ -name '*.torrent' -type f >"${sTempSessionsFile}"
     # Delete empty lines
     sed -i '/^$/d' "${sTempSessionsFile}"
     while [ -s "${sTempSessionsFile}" ]; do
@@ -55,9 +55,9 @@ for sUser in ${gsUsersList}; do
 
             # Get vars
             sBasePath="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.base_path ${sInfoHash}")"
-            sBasePath="$(echo "${sBasePath}" | sed -e "s/'/\\\'/g;")"
+            sBasePath="${sBasePath//\'/\\\'}"
             sDirectory="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.directory ${sInfoHash}")"
-            sDirectory="$(echo "${sDirectory}" | sed -e "s/'/\\\'/g;")"
+            sDirectory="${sDirectory//\'/\\\'}"
             nLeftBytes="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.left_bytes ${sInfoHash}")"
             bState="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.state ${sInfoHash}")"
             sLabel="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom1 ${sInfoHash} 2>/dev/null")"
@@ -85,8 +85,8 @@ for sUser in ${gsUsersList}; do
             [ -z "${sName}" ] && bClean=1
             [ -z "${sPrivacy}" ] && bClean=1
             [ -z "${sBasePath}" ] && bClean=1
-            ([ -z "${sTorrentLoaded}" ] || [ ! -f "${sTorrentLoaded}" ]) && bClean=1
-            ([ -z "${sDirectory}" ] || [ ! -d "${sDirectory}" ]) && bClean=1
+            { [ -z "${sTorrentLoaded}" ] || [ ! -f "${sTorrentLoaded}" ]; } && bClean=1
+            { [ -z "${sDirectory}" ] || [ ! -d "${sDirectory}" ]; } && bClean=1
 
             # Remove hash from file list
             [ "${bClean}" -eq 1 ] && fnCleaning
@@ -159,7 +159,7 @@ for sUser in ${gsUsersList}; do
             bCleaned=0
             for ((i = 0; i < ${#aAnnoncers[@]}; i++)); do
                 nId="$(echo "${aAnnoncers[${i}]}" | awk '{printf $1}')"
-                bState="$(echo ${aAnnoncers[${i}]} | awk '{printf $2}')"
+                bState="$(echo "${aAnnoncers[${i}]}" | awk '{printf $2}')"
                 if [ "${bState}" -eq 0 ]; then
                     su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} t.is_enabled.set ${sInfoHash}:${aAnnoncers[${i}]} >/dev/null"
                     bCleaned=1
@@ -180,11 +180,11 @@ for sUser in ${gsUsersList}; do
                     if [ -n "${sAnnoncer}" ]; then
                         sProto="$(echo "${sAnnoncer}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')"
                         [ -z "${sProto}" ] && sProto="https://"
-                        sShortAnnouncer=$(echo "${sAnnoncer}" | sed -e s,${sProto},,g)
+                        sShortAnnouncer="${sAnnoncer//${sProto}/}"
                         sUrlUser="$(echo "${sShortAnnouncer}" | grep @ | cut -d@ -f1)"
-                        sShortAnnouncer=$(echo "${sShortAnnouncer}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
-                        if (! grep -q "${sAnnoncer}" <<<${sTempLocalFile}); then
-                            echo "${nCountAnnoncers}|${sInfoHash}|${sPrivacy}|${nCgiPort}|${sShortAnnouncer}|${sAnnoncer}" >>${sTempLocalFile}
+                        sShortAnnouncer=$(echo "${sShortAnnouncer//${sUrlUser}@/}" | cut -d/ -f1)
+                        if (! grep -q "${sAnnoncer}" <<<"${sTempLocalFile}"); then
+                            echo "${nCountAnnoncers}|${sInfoHash}|${sPrivacy}|${nCgiPort}|${sShortAnnouncer}|${sAnnoncer}" >>"${sTempLocalFile}"
                             bExecute=1
                         fi
                     fi
@@ -193,11 +193,11 @@ for sUser in ${gsUsersList}; do
                     if [ -n "${sAnnoncer}" ]; then
                         sProto="$(echo "${sAnnoncer}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')"
                         [ -z "${sProto}" ] && sProto="http://"
-                        sShortAnnouncer=$(echo "${sAnnoncer}" | sed -e s,${sProto},,g)
+                        sShortAnnouncer="${sAnnoncer//${sProto}/}"
                         sUrlUser="$(echo "${sShortAnnouncer}" | grep @ | cut -d@ -f1)"
-                        sShortAnnouncer=$(echo "${sShortAnnouncer}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
-                        if (! grep -q "${sAnnoncer}" <<<${sTempLocalFile}); then
-                            echo "${nCountAnnoncers}|${sInfoHash}|${sPrivacy}|${nCgiPort}|${sShortAnnouncer}|${sAnnoncer}" >>${sTempLocalFile}
+                        sShortAnnouncer=$(echo "${sShortAnnouncer//${sUrlUser}@/}" | cut -d/ -f1)
+                        if (! grep -q "${sAnnoncer}" <<<"${sTempLocalFile}"); then
+                            echo "${nCountAnnoncers}|${sInfoHash}|${sPrivacy}|${nCgiPort}|${sShortAnnouncer}|${sAnnoncer}" >>"${sTempLocalFile}"
                             bExecute=1
                         fi
                     fi
@@ -207,21 +207,21 @@ for sUser in ${gsUsersList}; do
                         if [ -n "${sAnnoncer}" ]; then
                             sProto="$(echo "${sAnnoncer}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')"
                             [ -z "${sProto}" ] && sProto="udp://"
-                            sShortAnnouncer=$(echo "${sAnnoncer}" | sed -e s,${sProto},,g)
+                            sShortAnnouncer="${sAnnoncer//${sProto}/}"
                             sUrlUser="$(echo "${sShortAnnouncer}" | grep @ | cut -d@ -f1)"
-                            sShortAnnouncer=$(echo "${sShortAnnouncer}" | sed -e s,${sUrlUser}@,,g | cut -d/ -f1)
-                            if (! grep -q "${sAnnoncer}" <<<${sTempLocalFile}); then
-                                echo "${nCountAnnoncers}|${sInfoHash}|${sPrivacy}|${nCgiPort}|${sShortAnnouncer}|${sAnnoncer}" >>${sTempLocalFile}
+                            sShortAnnouncer=$(echo "${sShortAnnouncer//${sUrlUser}@/}" | cut -d/ -f1)
+                            if (! grep -q "${sAnnoncer}" <<<"${sTempLocalFile}"); then
+                                echo "${nCountAnnoncers}|${sInfoHash}|${sPrivacy}|${nCgiPort}|${sShortAnnouncer}|${sAnnoncer}" >>"${sTempLocalFile}"
                                 bExecute=1
                             fi
                         fi
                     done
                 fi
-                sort ${sTempLocalFile} | uniq -u >>"/home/${sUser}/.check_annoncers"
-                rm -f ${sTempLocalFile}
+                sort "${sTempLocalFile}" | uniq -u >>"/home/${sUser}/.check_annoncers"
+                rm -f "${sTempLocalFile}"
             fi
 
-            ( [[ ${bAnnoncersCheck} -eq 0 ]] && [[ ${isStart} -eq 1 ]] ) && su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.start ${sInfoHash}"
+            { [[ ${bAnnoncersCheck} -eq 0 ]] && [[ ${isStart} -eq 1 ]]; } && su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.start ${sInfoHash}"
             [[ ${bAnnoncersCheck} -eq 0 ]] && su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} session.save ${sInfoHash}"
 
             # Remove hash from file list

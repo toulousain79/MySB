@@ -26,14 +26,14 @@ source "$(dirname "$0")"/../inc/includes_before
 ##################### FIRST LINE #####################################
 
 #### Lock
-if [ -f /tmp/SendMails.lock ] && [ -n "$(grep 'waiting' /tmp/SendMails.lock)" ]; then
+if [ -f /tmp/SendMails.lock ] && (grep -q 'waiting' /tmp/SendMails.lock); then
     gfnEndingScript 0
 else
     echo "waiting" >>/tmp/SendMails.lock
 fi
 
 #### Wait
-if [ -f /tmp/SendMails.lock ] && [ -n "$(grep 'in_progress' /tmp/SendMails.lock)" ]; then
+if [ -f /tmp/SendMails.lock ] && (grep -q 'in_progress' /tmp/SendMails.lock); then
     while [ "$(sed -n "/in_progress/=" /tmp/SendMails.lock)" -ne 1 ]; do
         sleep 600 # 10 minutes
     done
@@ -48,7 +48,7 @@ fnGetMails() {
         *) sWhere="WHERE 1" ;;
     esac
 
-    cmdMySQL 'MySB_db' "SELECT user,subject,use_case,info,mail_address FROM mails ${sWhere};" | sed 's/\t/|/g;' | while read sROW; do
+    cmdMySQL 'MySB_db' "SELECT user,subject,use_case,info,mail_address FROM mails ${sWhere};" | sed 's/\t/|/g;' | while read -r sROW; do
         sUser="$(echo "${sROW}" | awk '{split($0,a,"|"); print a[1]}')"
         sSubject="$(echo "${sROW}" | awk '{split($0,a,"|"); print a[2]}')"
         sUseCase="$(echo "${sROW}" | awk '{split($0,a,"|"); print a[3]}')"
