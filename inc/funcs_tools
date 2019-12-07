@@ -880,20 +880,27 @@ gfnFstabGeneration() {
     (! mount -a) && cp -vf /etc/fstab.back /etc/fstab
     mount -a
 }
-
 #### CCZE HTML logs format
 gfnCczeHtmlLogFormat() {
     local sOptions sInput sOutput
+    sOptions="-h -r -o scroll -o nolookups -o transparent -o cssfile=${MySB_InstallDir}/web/public/themes/MySB/css/ccze.css"
+
     [ -n "${1}" ] && sInput="${1}" || return
     [ -n "${2}" ] && sOutput="$2" || return
-    [ -n "${3}" ] && sOptions="${3}" || sOptions=(-h -r)
+    [ -n "${3}" ] && sOptions="${sOptions} ${3}"
     [ ! -f "${sInput}" ] && return
-    sOptions=(-o scroll -o nolookups -o transparent)
 
-    ccze "${sOptions[@]}" -o cssfile="${MySB_InstallDir}/web/public/themes/MySB/css/ccze.css" <"${sInput}" >"${sOutput}"
-    # sed -i '1,8d' "${sOutput}"
-    # sed -i '$d' "${sOutput}"
-    sed -i -e '1,8d' -e '$d' "${sOutput}"
+    case "$(basename "${sInput}")" in
+        'syslog') sOptions="${sOptions} -p syslog" ;;
+        'vsftpd.log') sOptions="${sOptions} -p vsftpd" ;;
+        'mail.log') sOptions="${sOptions} -p postfix" ;;
+        "${binPhpService}") sOptions="${sOptions} -p php" ;;
+        *) sOptions="${sOptions} -p httpd" ;;
+    esac
+
+    # shellcheck disable=SC2086
+    ccze ${sOptions} <"${sInput}" >"${sOutput}"
+    [ -f "${sOutput}" ] && sed -i -e '1,8d' -e '$d' "${sOutput}"
     [ ! -s "${sOutput}" ] && rm -f "${sOutput}"
 }
 

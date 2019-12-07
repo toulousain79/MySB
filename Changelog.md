@@ -10,11 +10,12 @@
 - rTorrent v0.9.8 _(3798de0)_
 - libTorrent v0.9.8 _(b57ca61)_
 - Plex, force allowedNetworks to 127.0.0.1
+- ruTorrent, labels hack for uploaded torrents via UI
+- add Debian 9 to 10 upgrade script
 - IPtables
   - block output SSDP trafic
   - block input Proxy-Gateway trafic
-- PeerGuardian
-  - add custom rules
+- PeerGuardian, add custom rules
 - DNScrypt-proxy
   - chroot to _dnscrypt-proxy user
   - add PGL iptables rule to allow output by UID
