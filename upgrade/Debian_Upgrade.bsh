@@ -1,0 +1,76 @@
+#!/bin/bash
+# -----------------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#	 _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#	  _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#	   _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#		_\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#		 _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#		  _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+##################### FIRST LINE #####################################
+
+if [ -n "${1}" ]; then
+    case "${1}" in
+        "fr") gsLocale="fr_FR" ;;
+        "en") gsLocale="en_US" ;;
+    esac
+    [ -z "${gsLocale}" ] && gsLocale="en_US"
+    sed -i "s/# ${gsLocale}.UTF-8 UTF-8/${gsLocale}.UTF-8 UTF-8/g;" /etc/locale.gen
+    export LANGUAGE=${LANG:0:2}
+    export LANG=${gsLocale}.UTF-8
+    {
+        update-locale "LANG=${gsLocale}.UTF-8"
+        update-locale "LANGUAGE=${LANG:0:2}"
+        locale-gen "${gsLocale}.UTF-8"
+        dpkg-reconfigure -f noninteractive locales
+        cat /etc/default/locale
+    } >>/tmp/"$(basename "$0")".log
+    # SSH - AcceptEnv
+    sed -i "s/^AcceptEnv/#AcceptEnv/g;" /etc/ssh/sshd_config
+    # SSH - SendEnv
+    nNumLine=$(grep 'SendEnv ' -n -m 1 /etc/ssh/ssh_config | cut -d ':' -f 1)
+    sed -i '/SendEnv /d' /etc/ssh/ssh_config
+    sed -i "${nNumLine}i\#   SendEnv LANG LC_*" /etc/ssh/ssh_config
+    serverv ssh reload &>/dev/null
+fi
+
+export DEBIAN_FRONTEND=noninteractive
+
+# Upgrade Debian 9
+apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update
+apt-get -y --assume-yes -f -V -o Dpkg::Options::="--force-confold" install
+apt-get -y --assume-yes -f -V -o Dpkg::Options::="--force-confold" --fix-broken install
+apt-get -y --assume-yes --purge autoremove
+apt-get -y --assume-yes -f -V -o Dpkg::Options::="--force-confold" upgrade
+apt-get -y --assume-yes -f -V -o Dpkg::Options::="--force-confold" full-upgrade
+apt-get -y --assume-yes --purge autoremove
+
+# Update sources.list
+sed -i 's/stretch/buster/g' /etc/apt/sources.list
+while read -r sFile; do
+    sed -i 's/stretch/buster/g' "${sFile}"
+done < <(find /etc/apt/sources.list.d/ -type f -name "*.list")
+
+# To Debian 10
+apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update
+apt-get -y --assume-yes -f -V -o Dpkg::Options::="--force-confold" upgrade
+apt-get -y --assume-yes -f -V -o Dpkg::Options::="--force-confold" full-upgrade
+apt-get -y --assume-yes --purge autoremove
+
+# Reboot
+systemctl reboot
+
+##################### LAST LINE ######################################

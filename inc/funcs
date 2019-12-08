@@ -23,7 +23,7 @@
 ######################################################################
 { [ -z "${vars}" ] || [ "${vars}" -ne 1 ]; } && {
     echo "Please load 'vars' file before..."
-    return
+    exit 0
 }
 ##################### FIRST LINE #####################################
 
@@ -210,13 +210,13 @@ gfnManageServices() {
                             "${binPhpService}" | "stunnel4" | "vsftpd" | "fail2ban" | "nfs-kernel-server" | "tautulli" | "plexmediaserver" | rtorrent-*)
                                 nContinue=0
                                 log_daemon_msg "${Funcs_Stopping} ${Service}"
-                                systemctl restart ${Service}.service
+                                systemctl stop "${Service}".service
                                 gfnStatusLSB
                                 ;;
                             "nginx")
                                 nContinue=0
                                 log_daemon_msg "${Funcs_Stopping} ${Service}"
-                                if (! systemctl stop ${Service}.service >/dev/null); then
+                                if (! systemctl stop "${Service}".service >/dev/null); then
                                     fuser -k 81/tcp >/dev/null 2>&1
                                     [[ -n ${gsPort_System_HTTP} ]] && fuser -k "${gsPort_System_HTTP}"/tcp >/dev/null 2>&1
                                     [[ -n ${gsPort_MySB_HTTPS} ]] && fuser -k "${gsPort_MySB_HTTPS}"/tcp >/dev/null 2>&1
@@ -237,7 +237,7 @@ gfnManageServices() {
 
                         if [ "${nContinue}" == "1" ]; then
                             log_daemon_msg "${Funcs_Stopping} ${Service}"
-                            systemctl stop ${Service}.service >/dev/null
+                            systemctl stop "${Service}".service >/dev/null
                             gfnStatusLSB
                         fi
                     else
@@ -285,13 +285,14 @@ gfnManageServices() {
                                 for List in $sPglcmdLog; do
                                     case "${LOGSTD}" in
                                         "STDOUT")
-                                            echo "$(date +"%T") --> '$List' will be disabled." >>"${MySB_InstallDir}/logs/${gsScriptName}.log"
+                                            echo "$(date +"%T") --> '${List}' will be disabled." >>"${MySB_InstallDir}/logs/${gsScriptName}.log"
                                             ;;
                                     esac
 
                                     # Comment the list in '/etc/pgl/blocklists.list'
-                                    List=$(echo "$List" | sed s,/,\\\\\\\\\\/,g)
-                                    sed -i "s/^$List/#$List/g" /etc/pgl/blocklists.list
+                                    # List=$(echo "${List}" | sed s,/,\\\\\\\\\\/,g)
+                                    List="${List//\//\\\/}"
+                                    sed -i "s/^${List}/#${List}/g" /etc/pgl/blocklists.list
                                 done
                                 log_daemon_msg "$Funcs_ForceStarting PeerGuardian Linux"
                                 if (! pglcmd restart >/dev/null); then # We have again a problem with PeerGuardian, test a force-restart
@@ -326,10 +327,10 @@ gfnManageServices() {
                                 if gfnCheckCommand 0 "${Service}"; then
                                     if ! gfnGetPid "${Service}"; then
                                         log_daemon_msg "${Funcs_Starting} ${Service}"
-                                        systemctl start ${Service}.service >/dev/null
+                                        systemctl start "${Service}".service >/dev/null
                                     else
                                         log_daemon_msg "${Funcs_Restarting} ${Service}"
-                                        systemctl restart ${Service}.service >/dev/null
+                                        systemctl restart "${Service}".service >/dev/null
                                     fi
                                     gfnStatusLSB
                                 fi
@@ -339,14 +340,14 @@ gfnManageServices() {
                                 if gfnCheckCommand 0 "${Service}"; then
                                     if ! gfnGetPid "${Service}"; then
                                         log_daemon_msg "${Funcs_Starting} ${Service}"
-                                        systemctl start ${Service}.service >/dev/null
+                                        systemctl start "${Service}".service >/dev/null
                                     else
                                         log_daemon_msg "${Funcs_Reloading} ${Service}"
-                                        systemctl ${sFinalCmd} ${Service}.service >/dev/null
+                                        systemctl ${sFinalCmd} "${Service}".service >/dev/null
                                         if (! gfnGetPid "named"); then
                                             gfnStatusLSB 1
                                             log_daemon_msg "${Funcs_Restarting} ${Service}"
-                                            systemctl restart ${Service}.service >/dev/null
+                                            systemctl restart "${Service}".service >/dev/null
                                         fi
                                     fi
                                     gfnStatusLSB
@@ -357,10 +358,10 @@ gfnManageServices() {
                                 if gfnCheckCommand 0 "${Service}"; then
                                     if ! gfnGetPid "${Service}"; then
                                         log_daemon_msg "${Funcs_Starting} ${Service}"
-                                        systemctl start ${Service}.service >/dev/null
+                                        systemctl start "${Service}".service >/dev/null
                                     else
                                         log_daemon_msg "${Funcs_Reloading} ${Service}"
-                                        systemctl ${sFinalCmd} ${Service}.service >/dev/null
+                                        systemctl ${sFinalCmd} "${Service}".service >/dev/null
                                         if (! gfnGetPid "${Service}"); then
                                             gfnStatusLSB 1
                                             log_daemon_msg "${Funcs_Restarting} ${Service}"
@@ -369,15 +370,15 @@ gfnManageServices() {
                                             [[ -n ${gsPort_MySB_HTTPS} ]] && fuser -k "${gsPort_MySB_HTTPS}"/tcp >/dev/null 2>&1
                                             [[ -n ${gsPort_NginX_HTTP} ]] && fuser -k "${gsPort_NginX_HTTP}"/tcp >/dev/null 2>&1
                                             [[ -n ${gsPort_NginX_HTTPS} ]] && fuser -k "${gsPort_NginX_HTTPS}"/tcp >/dev/null 2>&1
-                                            systemctl restart ${Service}.service >/dev/null
+                                            systemctl restart "${Service}".service >/dev/null
                                             if (! gfnGetPid "${Service}"); then
                                                 gfnStatusLSB 1
                                                 log_daemon_msg "$Funcs_Killing ${Service}"
-                                                systemctl stop ${Service}.service >/dev/null
+                                                systemctl stop "${Service}".service >/dev/null
                                                 killall "${Service}"
                                                 gfnStatusLSB
                                                 log_daemon_msg "${Funcs_Starting} ${Service}"
-                                                systemctl start ${Service}.service >/dev/null
+                                                systemctl start "${Service}".service >/dev/null
                                             fi
                                         fi
                                     fi
@@ -389,10 +390,10 @@ gfnManageServices() {
                                 if gfnCheckCommand 0 "${Service}"; then
                                     if ! gfnGetPid "${Service}"; then
                                         log_daemon_msg "${Funcs_Starting} ${Service}"
-                                        systemctl start ${Service}.service >/dev/null
+                                        systemctl start "${Service}".service >/dev/null
                                     else
                                         log_daemon_msg "${Funcs_Restarting} ${Service}"
-                                        systemctl restart ${Service}.service >/dev/null
+                                        systemctl restart "${Service}".service >/dev/null
                                     fi
                                     gfnStatusLSB
                                 fi
@@ -402,14 +403,14 @@ gfnManageServices() {
                         if [ "${nContinue}" == "1" ]; then
                             nNext=0
                             log_daemon_msg "${Funcs_Starting} ${Service}"
-                            if (! systemctl ${sFinalCmd} ${Service}.service >/dev/null); then
+                            if (! systemctl ${sFinalCmd} "${Service}".service >/dev/null); then
                                 nNext=1
                             fi
                             gfnStatusLSB
 
                             if [ "${nNext}" -gt 0 ] && [ "${sFinalCmd}" == "reload" ]; then
                                 log_daemon_msg "${Funcs_Restarting} ${Service}"
-                                systemctl restart ${Service}.service >/dev/null
+                                systemctl restart "${Service}".service >/dev/null
                                 gfnStatusLSB
                             fi
                         fi
@@ -721,7 +722,7 @@ gfnManageDirAndFiles() {
                         gfnManageUserHomeDir "${FnUser}"
 
                         # ruTorrent
-                        if [ -n "${gsRutorrentDir}" ] && [ -d "${gsRutorrentPluginsDir}" ]; then
+                        if [ -n "${gsRutorrentPluginsDir}" ] && [ -d "${gsRutorrentPluginsDir}" ]; then
                             gfnRuTorrentUsersConfigs "${FnUser}"
                         fi
 
@@ -801,10 +802,19 @@ fnRuTorrentGlobalConfigs() {
                 bIsActive="$(echo "${tabState[2]}" | awk '{split($0,a,"|"); print a[2]}')"
                 if [ "${bIsActive}" -eq 1 ]; then
                     if [ -f "${gsRutorrentPluginsDir}/${sPlugin}/conf.php" ]; then
-                        sed -i "/'rar'/s/'';/'\/usr\/bin\/rar';/g" "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
-                        sed -i "/'zip'/s/'';/'\/usr\/bin\/zip';/g" "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
-                        sed -i "/'unzip'/s/'';/'\/usr\/bin\/unzip';/g" "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
-                        sed -i "/'tar'/s/'';/'\/bin\/tar';/g" "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
+                        # sed -i "/'rar'/s/'';/'\/usr\/bin\/rar';/g" "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
+                        # sed -i "/'zip'/s/'';/'\/usr\/bin\/zip';/g" "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
+                        # sed -i "/'unzip'/s/'';/'\/usr\/bin\/unzip';/g" "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
+                        # sed -i "/'tar'/s/'';/'\/bin\/tar';/g" "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
+                        sed -i \
+                            -e "s/'rar', //g" \
+                            -e 's,.*/usr/bin/rar.*,,g' \
+                            -e "/'zip'/s/'';/'\/usr\/bin\/zip';/g" \
+                            -e "/'unzip'/s/'';/'\/usr\/bin\/unzip';/g" \
+                            -e "/'tar'/s/'';/'\/bin\/tar';/g" \
+                            -e "/'bzip2'/s/'';/'\/usr\/bin\/bzip2';/g" \
+                            "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
+
                         if (! grep -q '/bin/bzip2' "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"); then
                             nNumLine=$(grep '\/bin\/tar' -n -m 1 "${gsRutorrentPluginsDir}/${sPlugin}/conf.php" | cut -d ':' -f 1)
                             ((nNumLine++))
@@ -819,7 +829,7 @@ fnRuTorrentGlobalConfigs() {
                 bIsActive="$(echo "${tabState[3]}" | awk '{split($0,a,"|"); print a[2]}')"
                 if [ "${bIsActive}" -eq 1 ]; then
                     if [ -f "${gsRutorrentPluginsDir}/${sPlugin}/conf.php" ]; then
-                        sed -i '/$downloadpath =/d' "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
+                        sed -i "/\$downloadpath =/d" "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
                         echo "\$downloadpath = 'https://${gsHostNameFqdn}:${gsPort_MySB_HTTPS}/fileshare.php';" >>"${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
                     fi
                 else
@@ -851,8 +861,9 @@ fnRuTorrentGlobalConfigs() {
                 bIsActive="$(echo "${tabState[7]}" | awk '{split($0,a,"|"); print a[2]}')"
                 if [ "${bIsActive}" -eq 1 ]; then
                     if [ -f "${gsRutorrentPluginsDir}/${sPlugin}/conf.php" ]; then
-                        nNumLine=$(grep '$url =' -n -m 1 "${gsRutorrentPluginsDir}/${sPlugin}/conf.php" | cut -d ':' -f 1)
-                        sed -i '/$url =/d' "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
+                        nNumLine=$(grep "\$url =" -n -m 1 "${gsRutorrentPluginsDir}/${sPlugin}/conf.php" | cut -d ':' -f 1)
+                        sed -i "/\$url =/d" "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
+                        sed -i "/\$host =/d" "${gsRutorrentPluginsDir}/${sPlugin}/init.php"
                         sed -i "${nNumLine}i\$url = 'https:\/\/${gsHostNameFqdn}:${gsPort_MySB_HTTPS}\/cb\/';" "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
                         perl -pi -e "s/\/torrents\//\/rtorrent\//g" "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
                     fi
@@ -864,8 +875,9 @@ fnRuTorrentGlobalConfigs() {
                 bIsActive="$(echo "${tabState[8]}" | awk '{split($0,a,"|"); print a[2]}')"
                 if [ "${bIsActive}" -eq 1 ]; then
                     if [ -f "${gsRutorrentPluginsDir}/${sPlugin}/conf.php" ]; then
-                        nNumLine=$(grep '$url =' -n -m 1 "${gsRutorrentPluginsDir}/${sPlugin}/conf.php" | cut -d ':' -f 1)
-                        sed -i '/$url =/d' "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
+                        nNumLine=$(grep "\$url =" -n -m 1 "${gsRutorrentPluginsDir}/${sPlugin}/conf.php" | cut -d ':' -f 1)
+                        sed -i "/\$url =/d" "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
+                        sed -i "/\$host =/d" "${gsRutorrentPluginsDir}/${sPlugin}/init.php"
                         sed -i "${nNumLine}i\$url = 'https:\/\/${gsHostNameFqdn}:${gsPort_MySB_HTTPS}\/sm\/';" "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
                     fi
                 else
@@ -890,8 +902,8 @@ fnRuTorrentGlobalConfigs() {
                 bIsActive="$(echo "${tabState[11]}" | awk '{split($0,a,"|"); print a[2]}')"
                 if [ "${bIsActive}" -eq 1 ]; then
                     if [ -f "${gsRutorrentPluginsDir}/${sPlugin}/conf.php" ]; then
-                        nNumLine=$(grep '$streampath =' -n -m 1 "${gsRutorrentPluginsDir}/${sPlugin}/conf.php" | cut -d ':' -f 1)
-                        sed -i '/$streampath =/d' "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
+                        nNumLine=$(grep "\$streampath =" -n -m 1 "${gsRutorrentPluginsDir}/${sPlugin}/conf.php" | cut -d ':' -f 1)
+                        sed -i "/\$streampath =/d" "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
                         sed -i "${nNumLine}i\$streampath = 'https://${gsHostNameFqdn}:${gsPort_MySB_HTTPS}/view';" "${gsRutorrentPluginsDir}/${sPlugin}/conf.php"
                     fi
                 else
@@ -926,19 +938,19 @@ fnRuTorrentGlobalConfigs() {
                 bIsActive="$(echo "${tabState[18]}" | awk '{split($0,a,"|"); print a[2]}')"
                 if [ "${bIsActive}" -eq 1 ]; then
                     if [ -f "${gsRutorrentPluginsDir}/${sPlugin}/config.php" ]; then
-                        nNumLine=$(sed -n '/$username =/=' "${gsRutorrentPluginsDir}/${sPlugin}/config.php")
+                        nNumLine=$(sed -n "/\$username =/=" "${gsRutorrentPluginsDir}/${sPlugin}/config.php")
                         if [ -z "${nNumLine}" ]; then
-                            nNumLine=$(sed -n '/$auth =/=' "${gsRutorrentPluginsDir}/${sPlugin}/config.php")
+                            nNumLine=$(sed -n "/\$auth =/=" "${gsRutorrentPluginsDir}/${sPlugin}/config.php")
                             sed -i "${nNumLine}i\$username = \$_SERVER['PHP_AUTH_USER'];" "${gsRutorrentPluginsDir}/${sPlugin}/config.php"
                         fi
-                        nNumLine=$(sed -n '/$password =/=' "${gsRutorrentPluginsDir}/${sPlugin}/config.php")
+                        nNumLine=$(sed -n "/\$password =/=" "${gsRutorrentPluginsDir}/${sPlugin}/config.php")
                         if [ -z "${nNumLine}" ]; then
-                            nNumLine=$(sed -n '/$auth =/=' "${gsRutorrentPluginsDir}/${sPlugin}/config.php")
+                            nNumLine=$(sed -n "/\$auth =/=" "${gsRutorrentPluginsDir}/${sPlugin}/config.php")
                             sed -i "${nNumLine}i\$password = \$_SERVER['PHP_AUTH_PW'];" "${gsRutorrentPluginsDir}/${sPlugin}/config.php"
                         fi
-                        if (! grep -q '$auth = "$username:$password";' "${gsRutorrentPluginsDir}/${sPlugin}/config.php"); then
-                            nNumLine=$(sed -n '/$auth =/=' "${gsRutorrentPluginsDir}/${sPlugin}/config.php")
-                            sed -i '/$auth =/d' "${gsRutorrentPluginsDir}/${sPlugin}/config.php"
+                        if (! grep -q "$auth = \"\$username:\$password\";" "${gsRutorrentPluginsDir}/${sPlugin}/config.php"); then
+                            nNumLine=$(sed -n "/\$auth =/=" "${gsRutorrentPluginsDir}/${sPlugin}/config.php")
+                            sed -i "/$auth =/d" "${gsRutorrentPluginsDir}/${sPlugin}/config.php"
                             nNumLine=$((nNumLine + 2))
                             sed -i "${nNumLine}i\$auth = \"\$username:\$password\";" "${gsRutorrentPluginsDir}/${sPlugin}/config.php"
                         fi
@@ -1005,15 +1017,19 @@ fnRuTorrentGlobalConfigs() {
 
 #### Check if FQDN
 gfnCheckFQDN() {
-    local sHostname nReturn sDigResult
+    local sHostname nReturn sDigResult aResolvers
     sHostname="$1"
     # nReturn = 0: All is OK
     # nReturn = 1: Is not a FQDN
     # nReturn = 2: FQDN not coresponding to public IP address
     nReturn=1
 
+    aResolvers=()
+    for sDNS in "${gaDnsList[@]}"; do
+        aResolvers+=("@${sDNS}")
+    done
     if (host -N 0 "${sHostname}" >/dev/null 2>&1); then
-        sDigResult=$(dig +short "${sHostname}" @resolver1.opendns.com @resolver2.opendns.com @resolver3.opendns.com)
+        sDigResult=$(dig +short "${sHostname}" "${aResolvers[@]}")
         [[ ${sDigResult} == "${gsSrvIpAddressExt}" ]] && nReturn=0 || nReturn=2
     fi
 

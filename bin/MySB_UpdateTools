@@ -92,6 +92,9 @@ for sUser in ${gsUsersList}; do
 done
 
 #### rTorrent restart needed
+if [[ ${bSchemaUpgrade} -eq 1 ]]; then
+    cmdMySQL 'MySB_db' "ALTER TABLE torrents ADD is_recycled TINYINT(1) NOT NULL DEFAULT '0' AFTER users_ident;" -v 2>/dev/null
+fi
 if [[ ${bRtorrentRestart} -eq 1 ]]; then
     for sUser in ${gsUsersList}; do
         gfnManageServices stop "rtorrent-${sUser}"
@@ -116,7 +119,6 @@ if [[ ${bRtorrentRestart} -eq 1 ]]; then
         } >"/etc/sudoers.d/MySB_${sUser}"
         chmod 0440 "/etc/sudoers.d/MySB_${sUser}"
     done
-    # gfnManageServices stop "sudo"
 fi
 
 #### Cron jobs
@@ -124,11 +126,22 @@ if (! grep -q 'rev 0.6' /etc/cron.d/MySB_jobs_check); then
     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/Cron" 'UPGRADE'
 fi
 
-####################
-if [[ ${bSchemaUpgrade} -eq 1 ]]; then
-    cmdMySQL 'MySB_db' "ALTER TABLE torrents ADD is_recycled TINYINT(1) NOT NULL DEFAULT '0' AFTER users_ident;" -v
+#### DNScrypt-proxy
+if (! grep -q '_dnscrypt-proxy' /etc/passwd); then
+    for sUser in ${gsUsersList}; do
+        gfnManageServices stop "rtorrent-${sUser}"
+    done
+    gfnManageServices stop "dnscrypt-proxy"
+    cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='DNScrypt-proxy';" -v
+    gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/DNScrypt" 'UPGRADE'
+    # Renew security rules
+    gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'create' "UPGRADE"
+    # Force start if needed
+    gfnManageServices start "dnscrypt-proxy"
+    for sUser in ${gsUsersList}; do
+        gfnManageServices start "rtorrent-${sUser}"
+    done
 fi
-####################
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after

@@ -226,7 +226,7 @@ case "${InitSwitch}" in
         log_daemon_msg "${SecurityRules_IPtables_NatOutput}"
         gfnProcessNatOutputChain
         gfnStatusLSB
-        #### IPtables - Process NAT DOCKER chain
+        #### IPtables - Process NAT OUTPUT chain
 
         #### IPtables - Process DOCKER's chains
         log_daemon_msg "${SecurityRules_IPtables_Docker}"
@@ -237,6 +237,12 @@ case "${InitSwitch}" in
         #### Services - Create all security rules for services
         gfnCreateServicesRules
         #### Services - Create all security rules for services
+
+        #### Bind hack
+        if [ "${ModeSwitch}" == "INIT" ]; then
+            (! grep -q '/etc/bind/log.conf' /etc/bind/named.conf.local) && echo "include \"/etc/bind/log.conf\";" >>/etc/bind/named.conf.local
+        fi
+        #### Bind hack
 
         #### Force users quota
         if [ "${ModeSwitch}" == "INIT" ]; then
@@ -253,6 +259,19 @@ case "${InitSwitch}" in
         #### START services
         gfnManageServices start "${ServicesToRestart} ${rTorrentToStart}"
         #### START services
+
+        #### IPtables - Moving some rules
+        nPglFwd="$(grep 'pgl_fwd' <<<"$(iptables -t filter -L FORWARD --line-numbers)" | awk '{ print $1 }')"
+        if [ -n "${nPglFwd}" ]; then
+            iptables -D FORWARD "${nPglFwd}"
+            nIndex=0
+            while read -r sLine; do
+                ((nIndex++))
+                (grep -q 'DO NOT REMOVE - USED for (pgl_fwd index number) iptables -A FORWARD' <<<"${sLine}") && break
+            done < <(grep 'iptables -A FORWARD' /opt/MySB/inc/funcs_iptables)
+            iptables -I FORWARD "${nIndex}" -m conntrack ! --ctstate RELATED,ESTABLISHED -m mark ! --mark 0x14 -j pgl_fwd
+        fi
+        #### IPtables - Moving some rules
 
         #### IPtables - SAVE Iptables Rules
         iptables-save >"${gsIptablesRules}"
@@ -340,7 +359,9 @@ case "${InitSwitch}" in
         if [ -n "${gbDevMode}" ] && [ "${gbDevMode}" -eq 1 ]; then
             cat "${MySB_InstallDir}"/temp/current-iptables-rules >>"${MySB_InstallDir}/logs/IPTABLES/${gsScriptName}_IPTABLES.log"
         fi
-        iptables-restore <"${MySB_InstallDir}"/temp/current-iptables-rules
+        if (! iptables-restore <"${MySB_InstallDir}"/temp/current-iptables-rules); then
+            cp "${MySB_InstallDir}"/temp/current-iptables-rules "${MySB_InstallDir}"/logs/restore_current-iptables-rules
+        fi
         gfnStatusLSB
         #### IPtables - RESTORE Iptables Rules
 
