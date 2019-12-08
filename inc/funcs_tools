@@ -23,7 +23,7 @@
 ######################################################################
 { [ -z "${vars}" ] || [ "${vars}" -ne 1 ]; } && {
     echo "Please load 'vars' file before..."
-    return
+    exit 0
 }
 ##################### FIRST LINE #####################################
 
@@ -151,7 +151,7 @@ gfnGetPid() {
     local sPid
 
     case "${1}" in
-        "${binPhpService}") [ -f /run/php/${binPhpFpm}.pid ] && sPid="$(cat /run/php/${binPhpFpm}.pid)" ;;
+        "${binPhpService}") [ -f /run/php/"${binPhpFpm}".pid ] && sPid="$(cat /run/php/"${binPhpFpm}".pid)" ;;
         "fail2ban") [ -f /var/run/fail2ban/fail2ban.pid ] && sPid="$(cat /var/run/fail2ban/fail2ban.pid)" ;;
         "webmin") [ -f /var/webmin/miniserv.pid ] && sPid="$(cat /var/webmin/miniserv.pid)" ;;
         "tautulli") [ -f /var/run/tautulli/tautulli.pid ] && sPid="$(cat /var/run/tautulli/tautulli.pid)" ;;
@@ -271,7 +271,8 @@ gfnCheckCommand() {
                 ;;
             *)
                 # if [ -z "$(whereis "${2}" | awk '{ print $2 }')" ]; then
-                if [ -z "$(whereis "${2}" | grep 'bin\|sbin')" ]; then
+                # if [ -z "$(whereis "${2}" | grep 'bin\|sbin')" ]; then
+                if (! grep -q 'bin\|sbin' <<<"$(whereis "${2}")"); then
                     if dpkg -s "${2}" &>/dev/null; then # Try DPKG
                         case "${1}" in
                             0) return 0 ;;
@@ -306,38 +307,46 @@ gfnCheckCommand() {
 
 #### Switch DNS (standard / DNScrypt-proxy)
 gfnSwitchDNS() {
-    local sCommand
+    local sCommand sDNS sValues
     sCommand="${1}"
+    sValues=()
+    for sDNS in "${gaDnsList[@]}"; do
+        sValues+=("${sDNS};")
+    done
 
     case "${sCommand}" in
         'dnscrypt')
             if gfnCheckCommand 0 dnscrypt-proxy && gfnCheckCommand 0 bind9; then
                 # resolv.conf
-                sed -i '/search/d' /etc/resolv.conf
-                sed -i '/nameserver/d' /etc/resolv.conf
-                sed -i '/options edns0/d' /etc/resolv.conf
+                sed -i \
+                    -e '/search/d' \
+                    -e '/nameserver/d' \
+                    -e '/options edns0/d' \
+                    /etc/resolv.conf
                 {
                     echo "options edns0"
                     echo "nameserver 127.0.0.1"
                 } >>/etc/resolv.conf
                 # BIND with DNScrypt-proxy support
-                sed -i "s/84.200.69.80; 84.200.70.40; 1.1.1.1; 1.0.0.1;/127.0.0.1 port 52;/g;" /etc/bind/named.conf.options
-                /usr/sbin/rndc reload
+                sed -i "s/${sValues[*]}/127.0.0.1 port 52;/g;" /etc/bind/named.conf.options
+                /usr/sbin/rndc reload >/dev/null
             fi
             ;;
         'bind')
             # resolv.conf
-            sed -i '/search/d' /etc/resolv.conf
-            sed -i '/options edns0/d' /etc/resolv.conf
-            sed -i '/nameserver/d' /etc/resolv.conf
+            sed -i \
+                -e '/search/d' \
+                -e '/nameserver/d' \
+                -e '/options edns0/d' \
+                /etc/resolv.conf
             {
                 echo "options edns0"
                 echo "nameserver 127.0.0.1"
             } >>/etc/resolv.conf
             # BIND delete DNScrypt-proxy support
             if gfnCheckCommand 0 bind9; then
-                sed -i "s/127.0.0.1 port 52;/84.200.69.80; 84.200.70.40; 1.1.1.1; 1.0.0.1;/g;" /etc/bind/named.conf.options
-                /usr/sbin/rndc reload
+                sed -i "s/127.0.0.1 port 52;/${sValues[*]}/g;" /etc/bind/named.conf.options
+                /usr/sbin/rndc reload >/dev/null
             fi
             ;;
     esac
@@ -346,8 +355,16 @@ gfnSwitchDNS() {
 #### Delete directory
 gfnDeleteDirectory() {
     local nVerbose sDirectory
-    [ -z "${1}" ] && nVerbose=1 || nVerbose="${1}"
-    [ -z "${2}" ] && echo "gfnDeleteDirectory failed, No directory givened !" || sDirectory="${2%/}"
+    if [ -z "${1}" ]; then
+        nVerbose=1
+    else
+        nVerbose="${1}"
+    fi
+    if [ -z "${2}" ]; then
+        echo "gfnDeleteDirectory failed, No directory givened !"
+    else
+        sDirectory="${2%/}"
+    fi
 
     if [ -d "${sDirectory}" ]; then
         case "${sDirectory}" in
@@ -388,10 +405,10 @@ gfnCleanBeforeUpgrade() {
     # /opt/MySB
     cd "${MySB_InstallDir}"/ || exit
     for branch in $(git branch | grep -v "${gsCurrentVersion}\|rev" | sed 's/ //g;s/*//g;'); do
-        git branch -D ${branch}
+        git branch -D "${branch}"
     done
     for tag in $(git tag | grep -v "${gsCurrentVersion}\|rev" | sed 's/ //g;s/*//g;'); do
-        git tag -d ${tag}
+        git tag -d "${tag}"
     done
     git gc
     git repack -Ad
@@ -399,10 +416,10 @@ gfnCleanBeforeUpgrade() {
     # /opt/MySB_files
     cd "${MySB_Files}"/ || exit
     for branch in $(git branch | grep -v "${gsCurrentVersion}\|rev" | sed 's/ //g;s/*//g;'); do
-        git branch -D ${branch}
+        git branch -D "${branch}"
     done
     for tag in $(git tag | grep -v "${gsCurrentVersion}\|rev" | sed 's/ //g;s/*//g;'); do
-        git tag -d ${tag}
+        git tag -d "${tag}"
     done
     git gc
     git repack -Ad
@@ -509,7 +526,7 @@ gfnGetRepoValues() {
             ;;
         'GeoIPupdate')
             gfnCheckCommand 0 /usr/bin/geoipupdate && /usr/bin/geoipupdate --version &>/tmp/geoip.rev || echo 'Not installed' >/tmp/geoip.rev
-            gsVersionInstalled="$(cat /tmp/geoip.rev | awk '{ print $2 }')"
+            gsVersionInstalled="$(awk '{ print $2 }' <<<"$(cat /tmp/geoip.rev)")"
             # gsVersionLatest="$(${binCURL} "${gsRepoURL}" | jq -r .tag_name | sed 's/v//g;')"
             # gsFileURL="$(${binCURL} "${gsRepoURL}" | jq --arg PLATFORM_ARCH "geoipupdate_${gsVersionLatest}_linux_amd64.deb" -r '.assets[] | select(.name | endswith($PLATFORM_ARCH)).browser_download_url')"
             ;;
@@ -573,7 +590,7 @@ gfnRepoManageByType() {
                 fi
                 if [[ ${gbExtract} -eq 1 ]]; then
                     if [ ! -d "${gsRepoDir}" ] && [[ ${gnError} -eq 0 ]]; then
-                        sSubDir="$(tar --xz -tf ${MySB_Files}/${gsRepoFile} | cut -d '/' -f 1 | uniq)"
+                        sSubDir="$(tar --xz -tf "${MySB_Files}"/"${gsRepoFile}" | cut -d '/' -f 1 | uniq)"
                         if [ ! -d "${MySB_InstallDir}/temp/${sSubDir}" ]; then
                             tar --xz -xf "${MySB_Files}/${gsRepoFile}" -C "${MySB_InstallDir}/temp/"
                             gnError=$?
@@ -733,7 +750,7 @@ gfnRepoManageByType() {
                     gnError=$?
                     if [ -f "${MySB_Files}/${gsRepoFile}" ]; then
                         if (cp -v "${MySB_Files}/${gsRepoFile}" "${gsRepoDir}"); then
-                            (grep -q '/usr/local/bin/' <<<"${gsRepoDir}") && chmod -v +x ${gsRepoDir}
+                            (grep -q '/usr/local/bin/' <<<"${gsRepoDir}") && chmod -v +x "${gsRepoDir}"
                             gnError=0
                         else
                             gnError=1
@@ -857,6 +874,50 @@ gfnCczeHtmlLogFormat() {
     sed -i '$d' "${sOutput}"
     sed -i '$d' "${sOutput}"
     [ ! -s "${sOutput}" ] && rm -f "${sOutput}"
+}
+
+#### DNScrypt-proxy
+gfnDnscryptProxyConfig() {
+    local sRequest sNoLogs sDnsSec sNoFilter sLbStrategy sForceTcp sEphemeralKeys sTlsDisableTickets sDohServers sSearch
+
+    if [ -f /etc/dnscrypt-proxy/dnscrypt-proxy.toml ]; then
+        cp -af /etc/dnscrypt-proxy/dnscrypt-proxy.toml /etc/dnscrypt-proxy/dnscrypt-proxy.toml.backup
+        sRequest="$(cmdMySQL 'MySB_db' "SELECT require_nolog, require_dnssec, require_nofilter, lb_strategy, force_tcp, ephemeral_keys, tls_disable_session_tickets, doh_servers FROM dnscrypt_config WHERE id_dnscrypt_config='1';" | sed 's/\t/|/g;')"
+        sNoLogs="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[1]}')"
+        sDnsSec="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[2]}')"
+        sNoFilter="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[3]}')"
+        sLbStrategy="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[4]}')"
+        sForceTcp="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[5]}')"
+        sEphemeralKeys="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[6]}')"
+        sTlsDisableTickets="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[7]}')"
+        sDohServers="$(echo "${sRequest}" | awk '{split($0,a,"|"); print a[8]}')"
+        sSearch="$(grep 'lb_strategy' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+
+        sed -i \
+            -e "s/^require_nolog = true/require_nolog = ${sNoLogs}/g;s/^require_nolog = false/require_nolog = ${sNoLogs}/g" \
+            -e "s/^require_dnssec = true/require_dnssec = ${sDnsSec}/g;s/^require_dnssec = false/require_dnssec = ${sDnsSec}/g" \
+            -e "s/^require_nofilter = true/require_nofilter = ${sNoFilter}/g;s/^require_nofilter = false/require_nofilter = ${sNoFilter}/g" \
+            -e "s/^force_tcp = true/force_tcp = ${sForceTcp}/g;s/^force_tcp = false/force_tcp = ${sForceTcp}/g" \
+            -e "s/^dnscrypt_ephemeral_keys = true/dnscrypt_ephemeral_keys = ${sEphemeralKeys}/g;s/^dnscrypt_ephemeral_keys = false/dnscrypt_ephemeral_keys = ${sEphemeralKeys}/g" \
+            -e "s/lb_strategy = ${sSearch}/lb_strategy = '${sLbStrategy}'/g;" \
+            -e "s/^tls_disable_session_tickets = true/tls_disable_session_tickets = ${sTlsDisableTickets}/g;s/^tls_disable_session_tickets = false/tls_disable_session_tickets = ${sTlsDisableTickets}/g" \
+            -e "s/^doh_servers = true/doh_servers = ${sDohServers}/g;s/^doh_servers = false/doh_servers = ${sDohServers}/g" \
+            /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+
+        if (! dnscrypt-proxy -config /etc/dnscrypt-proxy/dnscrypt-proxy.toml -check); then
+            cp -af /etc/dnscrypt-proxy/dnscrypt-proxy.toml.backup /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+            sNoLogs="$(grep 'require_nolog' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+            sDnsSec="$(grep 'require_dnssec' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+            sNoFilter="$(grep 'require_nofilter' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+            sLbStrategy="$(grep 'lb_strategy' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }' | sed "s/'//g;")"
+            sForceTcp="$(grep 'force_tcp' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+            sEphemeralKeys="$(grep 'ephemeral_keys' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+            sTlsDisableTickets="$(grep 'tls_disable_session_tickets' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+            sDohServers="$(grep 'doh_servers' /etc/dnscrypt-proxy/dnscrypt-proxy.toml | awk '{ print $3 }')"
+            cmdMySQL 'MySB_db' "UPDATE dnscrypt_config SET require_nolog='${sNoLogs}', require_dnssec='${sDnsSec}', require_nofilter='${sNoFilter}', lb_strategy='${sLbStrategy}', force_tcp='${sForceTcp}', ephemeral_keys='${sEphemeralKeys}', tls_disable_session_tickets='${sTlsDisableTickets}', doh_servers='${sDohServers}' WHERE id_dnscrypt_config='1';"
+        fi
+        systemctl restart dnscrypt-proxy.service
+    fi
 }
 
 ##################### LAST LINE ######################################
