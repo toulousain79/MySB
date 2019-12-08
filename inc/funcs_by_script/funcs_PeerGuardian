@@ -657,10 +657,17 @@ gfnPeerGuardianIptablesInsert() {
     fi
     # check_port
     if [ -f "${gsRutorrentPluginsDir}"/check_port/action.php ]; then
+        gfnListCountUsers 'normal'
         grep 'http' "${gsRutorrentPluginsDir}"/check_port/action.php | awk '{ print $1 }' | cut -d '/' -f 3 | while read -r sFQDN; do
-            echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin check_port\"" >>/etc/pgl/custom.insert.sh
+            {
+                echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin check_port\""
+                for sUser in ${gsUsersList}; do
+                    nRtorrentPort="$(cmdMySQL 'MySB_db' "SELECT rtorrent_port FROM users WHERE users_ident='${sUser}';")"
+                    [ -n "${nRtorrentPort}" ] && echo "iptables -I pgl_in -p tcp -s ${sFQDN} --dport ${nRtorrentPort} -j ACCEPT -m comment --comment \"INPUT TCP for plugin check_port\""
+                done
+            } >>/etc/pgl/custom.insert.sh
         done
-    fi    
+    fi
     # loginmgr
     if [ -d "${gsRutorrentPluginsDir}"/loginmgr/accounts/ ]; then
         grep -rh 'http://' "${gsRutorrentPluginsDir}"/loginmgr/accounts/ | awk '{ print $4 }' | cut -d '/' -f 3 | sed 's/";//g;' | while read -r sFQDN; do
