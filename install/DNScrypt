@@ -33,7 +33,7 @@ if [ "${USAGE}" == "ON" ]; then
     if [ "${gbIsInstalled_DNScrypt}" == "NO" ]; then
         echo
         echo -e "${CYELLOW}DNScrypt-proxy is not installed!${CEND}"
-        gfnQuestionGetString NO "Install DNScrypt-proxy? " gbToInstall_DNScrypt ${Global_YES}
+        gfnQuestionGetString NO "Install DNScrypt-proxy? " gbToInstall_DNScrypt "${Global_YES}"
         gbToInstall_DNScrypt="$(echo "${gbToInstall_DNScrypt}" | tr '[:lower:]' '[:upper:]')"
 
         cmdMySQL 'MySB_db' "UPDATE services SET is_installed = '$(echo "${gbToInstall_DNScrypt}" | sed "s/${Global_NO}/0/g;s/${Global_YES}/1/g;")' WHERE serv_name='DNScrypt-proxy';"
@@ -85,23 +85,13 @@ fi
 
 #### INSTALL
 if [ "${gbToInstall_DNScrypt}" == "YES" ]; then
+    # Create user
+    (! grep -q '_dnscrypt-proxy' /etc/passwd) && useradd -d /run/dnscrypt-proxy -s /usr/sbin/nologin --system _dnscrypt-proxy
+
     # Create directories
-    install -d -v -o root -g root -m 0755 /etc/dnscrypt-proxy
-
-    # Config files
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/dnscrypt-proxy.toml.tmpl /etc/dnscrypt-proxy/dnscrypt-proxy.toml
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/whitelist.txt.tmpl /etc/dnscrypt-proxy/whitelist.txt
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/blacklist.txt.tmpl /etc/dnscrypt-proxy/blacklist.txt
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/ip-blacklist.txt.tmpl /etc/dnscrypt-proxy/ip-blacklist.txt
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/cloaking-rules.txt.tmpl /etc/dnscrypt-proxy/cloaking-rules.txt
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/forwarding-rules.txt.tmpl /etc/dnscrypt-proxy/forwarding-rules.txt
-
-    # Systemd
-    install -v -o root -g root -m 0644 ${MySB_InstallDir}/templates/systemd/dnscrypt-proxy.service.tmpl /lib/systemd/system/dnscrypt-proxy.service
-    perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /lib/systemd/system/dnscrypt-proxy.service
-    systemctl disable dnscrypt-proxy.service
-    systemctl restart dnscrypt-proxy.service
-    systemctl daemon-reload
+    install -d -v -o _dnscrypt-proxy -g _dnscrypt-proxy -m 0755 /etc/dnscrypt-proxy
+    install -d -v -o _dnscrypt-proxy -g _dnscrypt-proxy -m 0755 /var/log/dnscrypt-proxy
+    install -d -v -o _dnscrypt-proxy -g _dnscrypt-proxy -m 0755 /run/dnscrypt-proxy
 
     # Switch to bind
     gfnSwitchDNS "bind"
@@ -111,6 +101,23 @@ if [ "${gbToInstall_DNScrypt}" == "YES" ]; then
 
     #### Download archive
     fnDownloadDnscrypt
+
+    # Config files
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/dnscrypt-proxy.toml.tmpl /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/whitelist.txt.tmpl /etc/dnscrypt-proxy/whitelist.txt
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/blacklist.txt.tmpl /etc/dnscrypt-proxy/blacklist.txt
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/ip-blacklist.txt.tmpl /etc/dnscrypt-proxy/ip-blacklist.txt
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/cloaking-rules.txt.tmpl /etc/dnscrypt-proxy/cloaking-rules.txt
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/forwarding-rules.txt.tmpl /etc/dnscrypt-proxy/forwarding-rules.txt
+
+    # Systemd
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/dnscrypt-proxy.service.tmpl /lib/systemd/system/dnscrypt-proxy.service
+    perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /lib/systemd/system/dnscrypt-proxy.service
+    systemctl daemon-reload
+    systemctl disable dnscrypt-proxy.service
+
+    # Resore DB config
+    gfnDnscryptProxyConfig
 
     # Mark as installed
     if gfnCheckCommand 0 /usr/local/bin/dnscrypt-proxy; then

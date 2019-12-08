@@ -39,10 +39,10 @@ if [ -f /root/.bash_aliases ]; then
     # shellcheck source=.root/.bash_aliases
     source /root/.bash_aliases
 fi
-if [ -n "${MySB_InstallDir}" ] && [ -f ${MySB_InstallDir}/inc/funcs ]; then
+if [ -n "${MySB_InstallDir}" ] && [ -f "${MySB_InstallDir}"/inc/funcs ]; then
     if [ -z "${funcs}" ] || [ "${funcs}" -eq 0 ]; then
         # shellcheck source=inc/funcs
-        source ${MySB_InstallDir}/inc/funcs
+        source "${MySB_InstallDir}"/inc/funcs
     fi
 else
     echo "Loading '${MySB_InstallDir}/inc/funcs' error !"
@@ -65,16 +65,19 @@ if [ "${0}" != "-bash" ]; then
     [ -z "${includes_after}" ] && gsLogFile="${MySB_InstallDir}/logs/${gsScriptName}.log"
     export gsScriptName gsDirName gsLogFile
 fi
-gsInstallDirEscaped="$(echo "${MySB_InstallDir}" | sed s,/,\\\\\/,g)"
-gsFilesDirEscaped="$(echo "${MySB_Files}" | sed s,/,\\\\\/,g)"
-# gsProcessors="$(grep -c 'processor' /proc/cpuinfo)"
+gsInstallDirEscaped="${MySB_InstallDir//\//\\\/}"
+gsFilesDirEscaped="${MySB_Files//\//\\\/}"
 gsProcessors="$(nproc)"
 gsMemory="$(free -m | grep 'Mem' | awk '{ print $2 }')"
 gsDebianRelease="$(lsb_release -cs)"
-gsUrlCheckList="ifconfig.ovh ipv4.icanhazip.com whatismyip.akamai.com checkip.dyndns.com"
+gsUrlCheckList=(whatismyip.akamai.com ipv4.icanhazip.com ifconfig.ovh checkip.dyndns.com ipecho.net/plain)
+gaDnsList=(84.200.69.80 84.200.70.40 1.1.1.1 1.0.0.1)
+gaNeededDomains=(github.com raw.githubusercontent.com api.github.com registry.gitlab.com hub.docker.com download.docker.com storage.googleapis.com)
+gaNeededDomains+=(getcomposer.org www.npmjs.com dl.minio.io download.nextcloud.com plex.tv)
+gsCheckSumFile="${MySB_InstallDir}/files/md5sum.txt"
 binCURL='curl --retry 3 --silent --insecure --location --show-error'
 binMySQL="mysql --defaults-extra-file=/root/.config.cnf --database=MySB_db -w --connect-timeout=10 -s -N -e"
-export gsInstallDirEscaped gsFilesDirEscaped gsProcessors gsMemory gsDebianRelease gsUrlCheckList binCURL binMySQL
+export gsInstallDirEscaped gsFilesDirEscaped gsProcessors gsMemory gsDebianRelease gsUrlCheckList gaDnsList gaNeededDomains gsCheckSumFile binCURL binMySQL
 # PHP
 if [ -f /etc/php/fpm/php-fpm.conf ]; then
     gsPhpDir="/etc/php"
@@ -156,7 +159,8 @@ if [ -n "${MySB_InstallDir}" ] && [ "${gbIsReady_MySB_Db}" == "YES" ]; then
     gsRentingCostTva="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[15]}')"
     ### ----- Renting infos
     gsSrvAdditionnalIpAddresses="$(echo "${sRequestValues}" | awk '{split($0,a,"|"); print a[16]}')"
-    gsTimeZoneEscaped="$(echo "${gsTimeZone}" | sed s,/,\\\\\/,g)"
+    gsTimeZoneEscaped="${gsTimeZone//\//\\\/}"
+
     unset sRequestValues
     export gsMySB_User gsMySB_Password gsServerProvider gsIpRestriction gbDnsCryptSwitch gsCurrentVersion
     export gsRentingModel gsRentingTVA gsRentingGlobalCost gsRentingCostTva gsSrvAdditionnalIpAddresses gsTimeZoneEscaped
@@ -195,7 +199,7 @@ if [ -n "${MySB_InstallDir}" ] && [ "${gbIsReady_MySB_Db}" == "YES" ]; then
         gsSrvIpAddressExt="$(dig TXT +short o-o.myaddr.l.google.com @ns1.google.com @ns2.google.com @ns3.google.com @ns4.google.com | awk -F'"' '{ print $2}' 2>/dev/null)"
 
         if [ -z "${gsSrvIpAddressExt}" ]; then
-            for sUrlCheck in ${gsUrlCheckList}; do
+            for sUrlCheck in "${gsUrlCheckList[@]}"; do
                 case "${sUrlCheck}" in
                     'checkip.dyndns.com') gsSrvIpAddressExt="$(curl --silent "${sUrlCheck}" | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')" ;;
                     *) gsSrvIpAddressExt="$(curl --silent "${sUrlCheck}")" ;;
@@ -556,7 +560,7 @@ if [ -n "${gbDevMode}" ] && [ ${gbDevMode} -eq 1 ] && [ -d "${MySB_InstallDir}/l
     #         rm -f "${MySB_InstallDir}"/logs/*/*
     #         ;;
     # esac
-    (   
+    (
         set -o posix
         set
     ) | grep -e '^gs' -e '^gb' -e '^gn' >"${MySB_InstallDir}/logs/VARs/${gsScriptName}_VARs.log"

@@ -23,7 +23,7 @@
 ######################################################################
 { [ -z "${vars}" ] || [ "${vars}" -ne 1 ]; } && {
     echo "Please load 'vars' file before..."
-    return
+    exit 0
 }
 ##################### FIRST LINE #####################################
 
@@ -135,8 +135,8 @@ gfnLoadingVars() {
         ServicesToStop="${ServicesToStop} nfs-kernel-server smbd openvpn"
     }
     if gfnCheckCommand 0 dnscrypt-proxy; then
-        ServicesToStop="${ServicesToStop} dnscrypt-proxy"
         case "${gbDnsCryptSwitch}" in
+            '0') ServicesToStop="${ServicesToStop} dnscrypt-proxy" ;;
             '1') [ "${gsSwitch}" != "UPGRADE" ] && ServicesToRestart="${ServicesToRestart} dnscrypt-proxy" ;;
         esac
     fi
@@ -214,14 +214,11 @@ gfnCreateServicesRules() {
         # shellcheck source=inc/funcs_by_script/funcs_PeerGuardian
         [ -z "${funcs_PeerGuardian}" ] && source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_PeerGuardian
 
-        # Create '/etc/pgl/pglcmd.conf'
-        gfnPeerGuardianPglcmdConf 0
-        # Create '/etc/pgl/allow.p2p'
-        gfnPeerGuardianAllowP2P 0
+        #### Generate base configs
+        gfnPeerGuardianCreateBaseConfig
+
         # Create '/etc/pgl/blocklists.list'
         gfnPeerGuardianBlocklistsList 0 "CreateFile"
-        # Create '/etc/pgl/*.insert.sh'
-        gfnPeerGuardianIptablesInsert 0
     fi
     #### PeerGuardian
 }
@@ -273,7 +270,7 @@ gfnGenerateBlacklistsZone() {
 
     echo "#### MySB - Blacklisted domains (ex: inactive trackers)" >/etc/bind/MySB.zones.blacklists
     if [ -d /etc/dnscrypt-proxy ] && [ ! -f /etc/dnscrypt-proxy/blacklist.txt ]; then
-        install -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/blacklist.txt.tmpl /etc/dnscrypt-proxy/blacklist.txt
+        install -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/blacklist.txt.tmpl /etc/dnscrypt-proxy/blacklist.txt
     fi
 
     # Remove all activated/deactivated trackers from DNScrypt-proxy blacklists file (>/etc/dnscrypt-proxy/blacklist.txt)
@@ -306,7 +303,7 @@ gfnCreateHostsFile() {
     echo "" >>/etc/hosts
 
     if [ -d /etc/dnscrypt-proxy ] && [ ! -f /etc/dnscrypt-proxy/whitelist.txt ]; then
-        install -o root -g root -m 0644 ${MySB_InstallDir}/templates/dnscrypt/whitelist.txt.tmpl /etc/dnscrypt-proxy/whitelist.txt
+        install -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/whitelist.txt.tmpl /etc/dnscrypt-proxy/whitelist.txt
     fi
 
     # Remove all activated/deactivated trackers from DNScrypt-proxy whitelist file (>/etc/dnscrypt-proxy/whitelist.txt)

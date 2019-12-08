@@ -64,7 +64,7 @@ Aborting !${CEND}"
     RebootBeforeInstall="${CBLUE}You need to reboot your server before install MySB.
 After the reboot, you can start again '$0'.${CEND}
 
-${CYELLOW}Do you want to reboot now ?${CEND}"
+${CYELLOW}Do you want to reboot now ? (yes/no)${CEND}"
 
     MessageIsReady="${CYELLOW}All is ok to start MySB installation.
 The following actions will be performed.
@@ -97,7 +97,7 @@ ${CYELLOW}You have 2 options:
 ${CBLUE}Type${CEND} ${CGREEN}YES${CEND} ${CBLUE}for try to install a standard Debian kernel.${CEND}
 ${CBLUE}Type${CEND} ${CGREEN}NO${CEND} ${CBLUE}for stop the script now and proceed to an new install yourself.${CEND}
 
-${CBLUE}What do you want to do ?${CEND}"
+${CBLUE}What do you want to do ? (yes/no)${CEND}"
 
     BannerAdvertising="${CRED}############################################################${CEND}
 ${CRED}#${CEND} ${CYELLOW}At the end of the installation, you will receive an email.${CEND}
@@ -124,6 +124,13 @@ ${CRED}############################################################${CEND}"
     AlreadyExecuted="${CRED}MySB is already started with SCREEN, aborting !${CEND}"
     AlreadyInstalled="${CRED}MySB is already installed, aborting!${CEND}"
     ToUpgradeUse="${CBLUE}To upgrade MySB, thank you to use the following command.${CEND}"
+
+    DoDebianUpgrade=("${CBLUE}You need to update Debian to version 10 (Buster) before you can install MySB.
+
+We can start the update to Debian 10 now.
+At the end of the update, your server will restart. You will need to restart the installation of MySB yourself.
+
+Do you want to start the update to Debian 10 now? (yes/no)${CEND}")
 }
 
 # French mesages
@@ -142,7 +149,7 @@ Abandon !${CEND}"
     RebootBeforeInstall="${CBLUE}Vous devez redémarrer votre serveur avant d'installer MySB.
 Après le redémarrage, vous pourrez exécuter '$0' à nouveau.${CEND}
 
-${CYELLOW}Voulez-vous redémarrer maintenant ?${CEND}"
+${CYELLOW}Voulez-vous redémarrer maintenant ? (oui/non)${CEND}"
 
     MessageIsReady="${CYELLOW}Tout est OK pour démarrer l'installation de MySB.
 Les actions suivantes vont être exécutées.
@@ -174,7 +181,7 @@ ${CYELLOW}Vous avez 2 possibilités:
 ${CBLUE}Tapez${CEND} ${CGREEN}OUI${CEND} ${CBLUE}pour essayer d'installer un noyau Debian standard.${CEND}
 ${CBLUE}Tapez${CEND} ${CGREEN}NON${CEND} ${CBLUE}pour arrêter le script maintenant et procéder à une nouvelle installation d'un kernel vous-même.${CEND}
 
-${CBLUE}Que voulez-vous faire?${CEND}"
+${CBLUE}Que voulez-vous faire? (oui/non)${CEND}"
 
     BannerAdvertising="${CRED}############################################################${CEND}
 ${CRED}#${CEND} ${CYELLOW}A la fin de l'installation, vous recevrez un e-mail.${CEND}
@@ -201,6 +208,13 @@ ${CRED}############################################################${CEND}"
     AlreadyExecuted="${CRED}L'installation de MySB est déjà exécutée avec SCREEN, abandon !${CEND}"
     AlreadyInstalled="${CRED}MySB est déjà installé, abandon!${CEND}"
     ToUpgradeUse="${CBLUE}Pour mettre à jour MySB, merci d'utiliser la commande suivante.${CEND}"
+
+    DoDebianUpgrade=("${CBLUE}Vous devez mettre à jour Debian en version 10 (Buster) avant de pouvoir installer MySB.
+
+Nous pouvons lancer la mise à jour vers Debian 10 maintenant.
+A la fin de la mise à jour, votre serveur redémarrera. Vous devrez alors relancer l'installation de MySB vous-même.
+
+Voulez-vous lancer la mise à jour vers Debian 10 maintenant ? (oui/non)${CEND}")
 }
 
 # To execute when this script will exited
@@ -229,14 +243,18 @@ KernelReplace() {
     if [ -n "${KernelFind}" ]; then
         echo -e "$LatestKernel${CGREEN}${KernelFind}${CEND}"
         echo
+        # Purge actual kernel
+        apt-get -y --assume-yes purge "linux-image-$(uname -r)"
+        update-grub
+        # Install needed keernel
         apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update
         apt-get -y --assume-yes -V -o Dpkg::Options::="--force-confold" upgrade
         apt-get -y --assume-yes install "${KernelFind}"
         if [ -f /etc/grub.d/06_OVHkernel ]; then
             mv /etc/grub.d/06_OVHkernel /etc/grub.d/99_OVHkernel
         fi
-        apt-get -y --assume-yes purge "linux-image-$(uname -r)"
         update-grub
+
         echo
         echo -e -n "$RebootBeforeInstall"
 
@@ -408,7 +426,29 @@ SystemChecks() {
         done
     fi
 
-    [ $nContinue -gt 0 ] && ExitOnError 1 "$OnlyForDebian"
+    if [[ $nContinue -gt 0 ]]; then
+        case "${sOS_Ver}" in
+            9)
+                echo
+                echo -e "${DoDebianUpgrade[*]}"
+                read -r sAnswer
+                case ${sAnswer:0:1} in
+                    y | Y | yes | YES | o | O | oui | OUI)
+                        echo -e "${LetsGo}"
+                        fnCountDown 3
+                        cd /tmp/ || exit 1
+                        wget --no-check-certificate -N https://raw.githubusercontent.com/toulousain79/MySB/${gsCurrentVersion}/upgrade/Debian_Upgrade.bsh "${EnvLang}"
+                        bash /tmp/Debian_Upgrade.bsh
+                        ;;
+                    n | N | no | NO | non | NON)
+                        ExitOnError 1 "${OnlyForDebian}"
+                        ;;
+                    *) unset sAnswer ;;
+                esac
+                ;;
+            *) ExitOnError 1 "${OnlyForDebian}" ;;
+        esac
+    fi
 }
 
 ##################### INIT ###########################################
@@ -498,6 +538,7 @@ while [ -z "${Answer}" ]; do
 done
 
 # Force locales
+# https://www.debian.org/doc/manuals/fr/debian-fr-howto/ch3.html
 case "${EnvLang}" in
     "fr") gsLocale="fr_FR" ;;
     "en") gsLocale="en_US" ;;
@@ -506,10 +547,13 @@ esac
 sed -i "s/# ${gsLocale}.UTF-8 UTF-8/${gsLocale}.UTF-8 UTF-8/g;" /etc/locale.gen
 export LANGUAGE=${LANG:0:2}
 export LANG=${gsLocale}.UTF-8
-update-locale "LANG=${gsLocale}.UTF-8" &>/dev/null
-update-locale "LANGUAGE=${LANG:0:2}" &>/dev/null
-locale-gen "${gsLocale}.UTF-8" &>/dev/null
-dpkg-reconfigure -f noninteractive locales &>/dev/null
+{
+    update-locale "LANG=${gsLocale}.UTF-8"
+    update-locale "LANGUAGE=${LANG:0:2}"
+    locale-gen "${gsLocale}.UTF-8"
+    dpkg-reconfigure -f noninteractive locales
+    cat /etc/default/locale
+} >>/tmp/"$(basename "$0")".log
 # SSH - AcceptEnv
 sed -i "s/^AcceptEnv/#AcceptEnv/g;" /etc/ssh/sshd_config
 # SSH - SendEnv
@@ -518,16 +562,13 @@ sed -i '/SendEnv /d' /etc/ssh/ssh_config
 sed -i "${nNumLine}i\#   SendEnv LANG LC_*" /etc/ssh/ssh_config
 serverv ssh reload &>/dev/null
 
-# First we disable IPv6
-sysctl -w net.ipv6.conf.all.disable_ipv6=1 >>/tmp/"$(basename "$0")".log
-
 # Force public DNS (#66)
+gaDnsList=(84.200.69.80 84.200.70.40 1.1.1.1 1.0.0.1)
 sed -i '/nameserver/d' /etc/resolv.conf
 {
-    echo "nameserver 84.200.69.80"
-    echo "nameserver 84.200.70.40"
-    echo "nameserver 1.1.1.1"
-    echo "nameserver 1.0.0.1"
+    for sDNS in "${gaDnsList[@]}"; do
+        echo "nameserver ${sDNS}"
+    done
 } >>/etc/resolv.conf
 
 # We do an update
@@ -548,6 +589,9 @@ if (! apt-get -y --assume-yes install "${TOOLS[@]}"); then
 else
     echo -e "${Done}"
 fi
+
+# First we disable IPv6
+sysctl -w net.ipv6.conf.all.disable_ipv6=1 >>/tmp/"$(basename "$0")".log
 
 # If needed, remove Bind9
 if (dpkg -s bind9 &>/dev/null); then
