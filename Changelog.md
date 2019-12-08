@@ -10,6 +10,7 @@
 - rTorrent v0.9.8 _(3798de0)_
 - libTorrent v0.9.8 _(b57ca61)_
 - Plex, force allowedNetworks to 127.0.0.1
+- rTorrent, minor review for some scripts
 - ruTorrent, labels hack for uploaded torrents via UI
 - add Debian 9 to 10 upgrade script
 - IPtables
