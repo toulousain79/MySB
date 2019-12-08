@@ -206,6 +206,8 @@ xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set "${sInfoHash}" "${s
     echo "Torrent loaded: ${sTorrentLoaded}"
     echo "Torrent dir: ${sTorrentDir}"
     echo "Torrent file: ${sTorrentFile}"
+    echo "Torrent to start: ${isStart}" | sed 's/0/NO/g;s/1/YES/g;'
+    echo "Torrent to save: ${saveTorrent}" | sed 's/0/NO/g;s/1/YES/g;'
     [[ ${nExit} -gt 0 ]] && echo "Error: ${nExit}" | sed 's/0/NO/g;s/1/YES/g;'
     echo "--------------"
 } >>"${sLogFile}"
@@ -319,7 +321,7 @@ if [[ ${nContinue} -eq 1 ]]; then
                 sShortAnnouncer="${sAnnoncer//${sProto}/}"
                 sUrlUser="$(echo "${sShortAnnouncer}" | grep @ | cut -d@ -f1)"
                 sShortAnnouncer=$(echo "${sShortAnnouncer//${sUrlUser}@/}" | cut -d/ -f1)
-                echo "${nCountAnnoncers}|${sInfoHash}|${sPrivacy}|${nCgiPort}|${sShortAnnouncer}|${sAnnoncer}" >>"/home/${sUserName}/.check_annoncers"
+                echo "${nCountAnnoncers}|${sInfoHash}|${sPrivacy}|${nCgiPort}|${sShortAnnouncer}|${sAnnoncer}" >>"/home/.check_annoncers_${sUserName}"
                 bExecute=1
                 xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set "${sInfoHash}" "${sStep7[*]} (${sAnnoncer})" 2>>"${sLogFile}"
             fi
@@ -331,7 +333,7 @@ if [[ ${nContinue} -eq 1 ]]; then
                 sShortAnnouncer="${sAnnoncer//${sProto}/}"
                 sUrlUser="$(echo "${sShortAnnouncer}" | grep @ | cut -d@ -f1)"
                 sShortAnnouncer=$(echo "${sShortAnnouncer//${sUrlUser}@/}" | cut -d/ -f1)
-                echo "${nCountAnnoncers}|${sInfoHash}|${sPrivacy}|${nCgiPort}|${sShortAnnouncer}|${sAnnoncer}" >>"/home/${sUserName}/.check_annoncers"
+                echo "${nCountAnnoncers}|${sInfoHash}|${sPrivacy}|${nCgiPort}|${sShortAnnouncer}|${sAnnoncer}" >>"/home/.check_annoncers_${sUserName}"
                 bExecute=1
                 xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set "${sInfoHash}" "${sStep7[*]} (${sAnnoncer})" 2>>"${sLogFile}"
             fi
@@ -344,7 +346,7 @@ if [[ ${nContinue} -eq 1 ]]; then
                     sShortAnnouncer="${sAnnoncer//${sProto}/}"
                     sUrlUser="$(echo "${sShortAnnouncer}" | grep @ | cut -d@ -f1)"
                     sShortAnnouncer=$(echo "${sShortAnnouncer//${sUrlUser}@/}" | cut -d/ -f1)
-                    echo "${nCountAnnoncers}|${sInfoHash}|${sPrivacy}|${nCgiPort}|${sShortAnnouncer}|${sAnnoncer}" >>"/home/${sUserName}/.check_annoncers"
+                    echo "${nCountAnnoncers}|${sInfoHash}|${sPrivacy}|${nCgiPort}|${sShortAnnouncer}|${sAnnoncer}" >>"/home/.check_annoncers_${sUserName}"
                     bExecute=1
                     xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set "${sInfoHash}" "${sStep7[*]} (${sAnnoncer})" 2>>"${sLogFile}"
                 fi
@@ -384,8 +386,8 @@ if [[ ${nContinue} -eq 1 ]]; then
     if [[ ${nContinue} -eq 1 ]]; then
         #### Step 9 - Copy back torrent loaded & start it
         if [[ ${saveTorrent} -eq 1 ]]; then
+            xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set "${sInfoHash}" "${sStep9[*]}" 2>>"${sLogFile}"
             {
-                xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} d.custom2.set "${sInfoHash}" "${sStep9[*]}"
                 if [ "${sTorrentLoaded}" != "${sTorrentFile}" ]; then
                     echo -n "Moving torrent: "
                     if (! mv -f "${sTorrentLoaded}" "${sTorrentFile}"); then
@@ -409,7 +411,7 @@ if [[ ${nContinue} -eq 1 ]]; then
     fi
 
     # Execute annoncers check if needed
-    if [ -s "/home/${sUserName}/.check_annoncers" ] && [[ ${bExecute} -eq 1 ]]; then
+    if [ -s "/home/.check_annoncers_${sUserName}" ] && [[ ${bExecute} -eq 1 ]]; then
         [ "${#sCpParams}" -gt 0 ] && touch "/tmp/GetTrackersCert_${sUserName}_${sInfoHash}.lock"
         sudo /bin/bash "/opt/MySB/scripts/GetTrackersCert.bsh" USER "${sUserName}" "${sInfoHash}" "${sCpParams[*]}" &
     fi
