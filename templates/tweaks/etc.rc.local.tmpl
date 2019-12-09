@@ -14,36 +14,37 @@
 MySB_Version="<MySB_Version>"
 MemoryTotal="$(free -g -h --si | grep 'Mem' | awk '{ print $2 }')o"
 SwapTotal="$(free -g -h --si | grep 'Swap' | awk '{ print $2 }')o"
-Processors="$(cat /proc/cpuinfo | grep 'processor' | wc -l)"
+Processors="$(nproc)"
 case $(getconf LONG_BIT) in
     64) Arch="amd64" ;;
     *) Arch="i386" ;;
 esac
 
-true >/etc/motd
-figlet MySB $MySB_Version >>/etc/motd
-echo "OS Version	: Debian $(cat /etc/debian_version) ($Arch)" >>/etc/motd
-echo "Processors	: ${Processors}" >>/etc/motd
-echo "Memory		: ${MemoryTotal}" >>/etc/motd
-echo "Swap		: ${SwapTotal}" >>/etc/motd
-if [ -f /root/.mdg ]; then
-    echo "Server	 : $(cat /root/.mdg 2>/dev/null)" >>/etc/motd
-fi
-echo "Hostname        : $(hostname)" >>/etc/motd
+{
+    figlet MySB $MySB_Version
+    echo "OS Version	: Debian $(cat /etc/debian_version) ($Arch)"
+    echo "Processors	: ${Processors}"
+    echo "Memory		: ${MemoryTotal}"
+    echo "Swap		: ${SwapTotal}"
+    if [ -f /root/.mdg ]; then
+        echo "Server	 : $(cat /root/.mdg 2>/dev/null)"
+    fi
+    echo "Hostname        : $(hostname)"
+    echo
+} >/etc/motd
+
 #
 # search interfaces that are connected
 #
-echo >>/etc/motd
-# sed -i "s/'/ /g;s/,/ /g;s/\`/ /g;" /etc/motd >/dev/null 2>&1
 sed -i "s/'/ /g;s/\`/ /g;" /etc/motd >/dev/null 2>&1
 
 for net_interface in $(ip link show | grep eth | grep UP | awk '{print $2}' | sed 's/://g'); do
     sLine=""
     # IPv4
-    IPV4="$(ip addr show ${net_interface} | grep 'inet ' | grep -Eo '\<[[:digit:]]{1,3}(\.[[:digit:]]{1,3}){3}\>' | head -1)"
+    IPV4="$(ip addr show "${net_interface}" | grep 'inet ' | grep -Eo '\<[[:digit:]]{1,3}(\.[[:digit:]]{1,3}){3}\>' | head -1)"
     [ -n "${IPV4}" ] && sLine="${net_interface} : ${IPV4}"
     # IPv6
-    for IPV6 in $(ip -6 addr show ${net_interface} | grep 'inet6' | awk '{print $2}'); do
+    for IPV6 in $(ip -6 addr show "${net_interface}" | grep 'inet6' | awk '{print $2}'); do
         if [ -n "${IPV6}" ]; then
             if (echo "${IPV6}" | grep -q '^fe80.'); then
                 sLine="${sLine}	| ${IPV6}"
@@ -56,7 +57,7 @@ echo >>/etc/motd
 
 # Disable TSO & GSO for all interfaces
 if (type ethtool >/dev/null); then
-    for inet in $(echo "$(ip link show)" | grep -E '^([1-9]]?)\:\ ([a-z]?)' | awk '{ print $2 }' | sed 's/://g;'); do
+    for inet in $(ip link show | grep -E '^([1-9]]?)\:\ ([a-z]?)' | awk '{ print $2 }' | sed 's/://g;'); do
         case "${inet}" in
             'lo' | tun* | tap*) continue ;;
             *)

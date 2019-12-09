@@ -32,9 +32,9 @@ source "${MySB_InstallDir}/inc/funcs_by_script/funcs_MySB_CreateUser"
 if [ "${USAGE}" == "ON" ]; then
     gfnListCountUsers 'all'
     LIST=""
-    for User in ${gsUsersList}; do
-        if [ "$User" != "${gsMainUserName}" ]; then
-            LIST="$LIST|${CYELLOW}$User${CEND}"
+    for sUser in ${gsUsersList}; do
+        if [ "${sUser}" != "${gsMainUserName}" ]; then
+            LIST="$LIST|${CYELLOW}${sUser}${CEND}"
         fi
     done
 
@@ -56,7 +56,7 @@ if [ "${USAGE}" == "ON" ]; then
         gfnQuestionGetString NO "${DeleteUser_TypeUser}" UserToDelete
         TEMP_UserToDelete="$(echo ${UserToDelete} | tr '[:lower:]' '[:upper:]')"
 
-        if [ "$TEMP_UserToDelete" == "${Global_NO}" ]; then
+        if [ "${TEMP_UserToDelete}" == "${Global_NO}" ]; then
             gfnEndingScript 0
         fi
     done
@@ -70,8 +70,8 @@ if [ -n "${UserToDelete}" ]; then
 
     #### STOP services
     sServicesToStop="cron"
-    [ -f /etc/init.d/rtorrent-"${UserToDelete}" ] && sServicesToStop="$sServicesToStop rtorrent-${UserToDelete}"
-    gfnManageServices stop "$sServicesToStop"
+    [ -f /etc/init.d/rtorrent-"${UserToDelete}" ] && sServicesToStop="${sServicesToStop} rtorrent-${UserToDelete}"
+    gfnManageServices stop "${sServicesToStop}"
 
     #### Force umount
     (mount -l | grep -q "/home/${UserToDelete}/share") && umount -v "/home/${UserToDelete}/share"
@@ -128,25 +128,6 @@ if [ -n "${UserToDelete}" ]; then
     gfnMinioUsersBuckets delete "${UserToDelete}" &>/dev/null
     gfnStatusLSB
 
-    #### remove files
-    log_daemon_msg "${DeleteUser_RemoveFiles} [${UserToDelete}]"
-    systemctl daemon-reload &>/dev/null
-    systemctl disable rtorrent-"${UserToDelete}" &>/dev/null 2>&1
-    rm -f /etc/sudoers.d/"MySB_${UserToDelete}"
-    rm -f /etc/init.d/rtorrent-"${UserToDelete}"
-    rm -f /etc/nginx/rpc/"${UserToDelete}".conf
-    rm -f /etc/nginx/rpc/"${UserToDelete}".local
-    rm -f /etc/nginx/rpc/"${UserToDelete}".cakebox
-    rm -f /etc/nginx/upstream/rtorrent-"${UserToDelete}".conf
-    rm -f "${MySB_InstallDir}"/web/openvpn/openvpn_"${UserToDelete}".zip
-    rm -f "$gsCakeboxDir"/config/"${UserToDelete}".php
-    rm -f /etc/logrotate.d/rtorrent_"${UserToDelete}"
-    rm -f /home/.check_annoncers_"${UserToDelete}"
-    gfnDeleteDirectory 0 "${gsRutorrentDir}/conf/users/${UserToDelete}"
-    gfnDeleteDirectory 0 "${gsRutorrentDir}/share/users/${UserToDelete}"
-    gfnDeleteDirectory 0 "$gsManagerDir/conf/users/${UserToDelete}"
-    gfnStatusLSB
-
     #### Remove user from database
     log_daemon_msg "${DeleteUser_RemoveFromDB}"
     # Get user id
@@ -184,16 +165,31 @@ if [ -n "${UserToDelete}" ]; then
     fi
 
     #### rtorrent max memory
-    # gfnListCountUsers 'normal'
-    # for User in ${gsUsersList}; do
-    #     if [ "$User" != "${UserToDelete}" ]; then
-    #         log_daemon_msg "${DeleteUser_PiecesMemory[*]} $User"
-    #         Line=$(sed -n '/pieces.memory.max.set/=' /home/"$User"/.rtorrent.rc)
-    #         sed -i "${Line}d" /home/"$User"/.rtorrent.rc
-    #         sed -i "${Line}i\#pieces.memory.max.set = '$((((gsMemory / gnTotalUsers) * 1024) * 1024))'\n" /home/"$User"/.rtorrent.rc
-    #         gfnStatusLSB
-    #     fi
-    # done
+    gfnListCountUsers 'normal'
+    for sUser in ${gsUsersList}; do
+        if [ "${sUser}" != "${UserToDelete}" ]; then
+            log_daemon_msg "${DeleteUser_PiecesMemory[*]} ${sUser}"
+            Line=$(sed -n '/pieces.memory.max.set/=' /home/"${sUser}"/.rtorrent.rc)
+            sed -i "${Line}d" /home/"${sUser}"/.rtorrent.rc
+            sed -i "${Line}i\#pieces.memory.max.set = '$((((gsMemory / gnTotalUsers) * 1024) * 1024))'\n" /home/"${sUser}"/.rtorrent.rc
+            gfnStatusLSB
+        fi
+    done
+
+    #### remove files
+    log_daemon_msg "${DeleteUser_RemoveFiles} [${UserToDelete}]"
+    systemctl daemon-reload &>/dev/null
+    systemctl disable rtorrent-"${UserToDelete}" &>/dev/null 2>&1
+    updatedb
+    locate "*${UserToDelete}*" >"${MySB_InstallDir}"/temp/removed_"${UserToDelete}".list
+    while read -r sLine; do
+        if [ -d "${sLine}" ]; then
+            gfnDeleteDirectory 0 "${sLine}"
+        elif [ -f "${sLine}" ]; then
+            rm -f "${sLine}"
+        fi
+    done <"${MySB_InstallDir}"/temp/removed_"${UserToDelete}".list
+    gfnStatusLSB
 
     #### Quota
     gfnManageQuota "${DeleteUser_Quota}"
