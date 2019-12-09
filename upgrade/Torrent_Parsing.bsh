@@ -25,10 +25,13 @@ for sUser in ${gsUsersList}; do
     sDownloadList="$(su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} download_list \"\"")"
     sDownloadList="$(echo "${sDownloadList}" | sed -e "s/,//g;s/'//g;s/\[//g;s/\]//g;" | tr '[:upper:]' '[:lower:]')"
     sTempSessionsFile="$(mktemp /tmp/"${gsScriptName}"."${sUser}".XXXXXXXXXX)"
+    sTempFile="$(mktemp /tmp/"${gsScriptName}"."${sUser}".XXXXXXXXXX)"
 
     find /home/"${sUser}"/rtorrent/.session/ -name '*.torrent' -type f >"${sTempSessionsFile}"
     # Delete empty lines
     sed -i '/^$/d' "${sTempSessionsFile}"
+    # Copy temp sessions file to a new temp file
+    cp -v "${sTempSessionsFile}" "${sTempFile}"
     while [ -s "${sTempSessionsFile}" ]; do
         while IFS= read -r sTorrentLoaded; do
             # Get torrent infos
@@ -40,7 +43,7 @@ for sUser in ${gsUsersList}; do
 
             # Functions
             function fnCleaning() {
-                sed -i "/$(echo "${sInfoHash}" | tr '[:lower:]' '[:upper:]')/d" "${sTempSessionsFile}"
+                sed -i "/$(echo "${sInfoHash}" | tr '[:lower:]' '[:upper:]')/d" "${sTempFile}"
                 continue
             }
 
@@ -225,10 +228,12 @@ for sUser in ${gsUsersList}; do
             [[ ${bAnnoncersCheck} -eq 0 ]] && su -s /bin/bash "${sUser}" -c "xmlrpc2scgi.py -p scgi://localhost:${nCgiPort} session.save ${sInfoHash}"
 
             # Remove hash from file list
-            sed -i "/$(echo "${sInfoHash}" | tr '[:lower:]' '[:upper:]')/d" "${sTempSessionsFile}"
+            sed -i "/$(echo "${sInfoHash}" | tr '[:lower:]' '[:upper:]')/d" "${sTempFile}"
             # Delete empty lines
-            sed -i '/^$/d' "${sTempSessionsFile}"
+            sed -i '/^$/d' "${sTempFile}"
         done <"${sTempSessionsFile}"
+        # Copy temp sessions file to a new temp file
+        mv -v "${sTempFile}" "${sTempSessionsFile}"
 
         if [ -s "/home/${sUser}/.check_annoncers" ] && [[ ${bExecute} -eq 1 ]]; then
             sudo /bin/bash "${MySB_InstallDir}/scripts/GetTrackersCert.bsh" USER "${sUser}" "${sInfoHash}" &
