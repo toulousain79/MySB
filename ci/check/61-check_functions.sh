@@ -65,11 +65,11 @@ if [ -n "${sFilesList}" ]; then
             done
 
             echo "nCount 67: ${nCount}"
-            ((nCount++))
+            nCount=$((nCount + 1))
             echo "l.65"
             sSwitch="${sColumns[${nCount}]}"
             echo "l.67"
-            ((nCount++))
+            nCount=$((nCount + 1))
             echo "l.69"
             sService="${sColumns[${nCount}]//.service/}"
             echo "l.71"
