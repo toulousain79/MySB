@@ -36,17 +36,6 @@ if [ "${CHECK_METHOD}" == "full" ]; then
 
     gfnCopyProject
 
-    #### 3 - Prepare
-    mkdir -p /etc/MySB
-    {
-        echo "MySB_InstallDir=\"${sDirToScan}\""
-        echo "MySB_Files=\"${sDirToScan}_files\""
-        echo "EnvLang=\"fr\""
-        echo "gsCurrentVersion=\"$(cat "${sProjectDir}"/version)\""
-        echo "export MySB_InstallDir MySB_Files EnvLang gsCurrentVersion"
-    } >/etc/MySB/config
-    . /etc/MySB/config
-
     #### Replace systemctl
     sFilesList="$(grep -IRl "systemctl " --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" --exclude-dir "lang" --exclude-dir "logrotate" --exclude-dir "web" "${sDirToScan}/")"
     if [ -n "${sFilesList}" ]; then
