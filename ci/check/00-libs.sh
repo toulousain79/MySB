@@ -55,7 +55,7 @@ mkdir -p /etc/MySB
     echo "MySB_InstallDir=\"${sProjectDir}\""
     echo "MySB_Files=\"/opt/MySB_files\""
     echo "EnvLang=\"fr\""
-    echo "gsCurrentVersion=\"v7.2\""
+    echo "gsCurrentVersion=\"$(cat "${sProjectDir}"/version)\""
     echo "export MySB_InstallDir MySB_Files EnvLang gsCurrentVersion"
 } >/etc/MySB/config
 . /etc/MySB/config
