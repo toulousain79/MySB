@@ -44,42 +44,6 @@ else
 fi
 echo -e "${CYELLOW}Secret Variable \$sDirToScan:${CEND} ${sValue}"
 
-# MySB_InstallDir
-if [ -z "${MySB_InstallDir}" ]; then
-    sValue="${CRED}Failed${CEND}"
-    nReturn=$((nReturn + 1))
-else
-    sValue="${CGREEN}${MySB_InstallDir}${CEND}"
-fi
-echo -e "${CYELLOW}Secret Variable \$MySB_InstallDir:${CEND} ${sValue}"
-
-# MySB_Files
-if [ -z "${MySB_Files}" ]; then
-    sValue="${CRED}Failed${CEND}"
-    nReturn=$((nReturn + 1))
-else
-    sValue="${CGREEN}${MySB_Files}${CEND}"
-fi
-echo -e "${CYELLOW}Secret Variable \$MySB_Files:${CEND} ${sValue}"
-
-# EnvLang
-if [ -z "${EnvLang}" ]; then
-    sValue="${CRED}Failed${CEND}"
-    nReturn=$((nReturn + 1))
-else
-    sValue="${CGREEN}${EnvLang}${CEND}"
-fi
-echo -e "${CYELLOW}Secret Variable \$EnvLang:${CEND} ${sValue}"
-
-# gsCurrentVersion
-if [ -z "${gsCurrentVersion}" ]; then
-    sValue="${CRED}Failed${CEND}"
-    nReturn=$((nReturn + 1))
-else
-    sValue="${CGREEN}${gsCurrentVersion}${CEND}"
-fi
-echo -e "${CYELLOW}Secret Variable \$gsCurrentVersion:${CEND} ${sValue}"
-
 if [ -f /.dockerenv ]; then
     echo && echo -e "${CBLUE}*** Check GitLab CI Secret Variables ***${CEND}"
 

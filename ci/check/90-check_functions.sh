@@ -36,8 +36,19 @@ if [ "${CHECK_METHOD}" == "full" ]; then
 
     gfnCopyProject
 
+    #### 3 - Prepare
+    mkdir -p /etc/MySB
+    {
+        echo "MySB_InstallDir=\"${sDirToScan}\""
+        echo "MySB_Files=\"${sDirToScan}_files\""
+        echo "EnvLang=\"fr\""
+        echo "gsCurrentVersion=\"$(cat "${sProjectDir}"/version)\""
+        echo "export MySB_InstallDir MySB_Files EnvLang gsCurrentVersion"
+    } >/etc/MySB/config
+    . /etc/MySB/config
+
     #### Replace systemctl
-    sFilesList="$(grep -IRl "systemctl " --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" --exclude-dir "lang" --exclude-dir "logrotate" --exclude-dir "web" "${MySB_InstallDir}/")"
+    sFilesList="$(grep -IRl "systemctl " --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" --exclude-dir "lang" --exclude-dir "logrotate" --exclude-dir "web" "${sDirToScan}/")"
     if [ -n "${sFilesList}" ]; then
         echo && echo -e "${CBLUE}*** Replace all systemctl commands ***${CEND}"
         for sFile in ${sFilesList}; do
@@ -119,17 +130,17 @@ if [ "${CHECK_METHOD}" == "full" ]; then
     #### Install packages (standard)
     echo && echo -e "${CBLUE}*** MySB - Install needed Debian packages ***${CEND}"
     # aAllPackages=()
-    # MySB_Install_Packages="$(grep -rni 'TOOLS=' "${MySB_InstallDir}"/install/MySB_Install.bsh | awk -F'[(|)]' '{print $2}')"
+    # MySB_Install_Packages="$(grep -rni 'TOOLS=' "${sDirToScan}"/install/MySB_Install.bsh | awk -F'[(|)]' '{print $2}')"
     # for sPackage in ${MySB_Install_Packages}; do
     #     aAllPackages+=("${sPackage}")
     # done
     # apt-get update
     # apt-get -y --assume-yes install "${aAllPackages[@]}"
-    bash "${MySB_InstallDir}/install/MySB_Install.bsh" 'fr'
+    bash "${sDirToScan}/install/MySB_Install.bsh" 'fr'
 
     #### Install MySQL
-    # echo && echo -e "${CBLUE}*** MySB - ${MySB_InstallDir}/install/MySQL ***${CEND}"
-    # bash "${MySB_InstallDir}/install/MySQL" 'INSTALL'
+    # echo && echo -e "${CBLUE}*** MySB - ${sDirToScan}/install/MySQL ***${CEND}"
+    # bash "${sDirToScan}/install/MySQL" 'INSTALL'
 
     # if (! cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='${gsCurrentVersion}' WHERE id_system='1';" -v); then
     #     nReturn=$((nReturn + 1))
@@ -141,7 +152,7 @@ if [ "${CHECK_METHOD}" == "full" ]; then
     #     nReturn=$((nReturn + 1))
     # fi
 
-    # sFilesListBash="$(grep -IRl "\(#\!/bin/\|shell\=\)bash" --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" "${MySB_InstallDir}/")"
+    # sFilesListBash="$(grep -IRl "\(#\!/bin/\|shell\=\)bash" --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" "${sDirToScan}/")"
     # sFilesList="${sFilesListSh} ${sFilesListBash}"
     # if [ -n "${sFilesList}" ]; then
     #     echo && echo -e "${CBLUE}*** Check scripts with 'set -n' ***${CEND}"
