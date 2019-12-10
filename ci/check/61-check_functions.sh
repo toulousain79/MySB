@@ -48,50 +48,32 @@ if [ -n "${sFilesList}" ]; then
 
             nCount=0
             for ((col = nCount; col <= ${#sColumns[@]}; col++)); do
-                echo "l.51"
                 (! grep -q '^systemctl' <<<"${sColumns[${col}]}") && continue
-                echo "l.53"
                 nCount=${col}
                 [[ ${nCount} -gt 0 ]] && break
             done
 
-            # ((nCount++))
-            # sSwitch="${sColumns[${nCount}]}"
-            # ((nCount++))
-            # sService="${sColumns[${nCount}]//.service/}"
+            ((nCount++))
+            sSwitch="${sColumns[${nCount}]}"
+            ((nCount++))
+            sService="${sColumns[${nCount}]//.service/}"
 
             if (grep -q 'daemon-reload' <<<"${sROW}"); then
                 # echo "${sFile}: systemctl daemon-reload --> #systemctl daemon-reload"
-                (! sed -i -e "s/systemctl daemon-reload/#systemctl daemon-reload/g" "${sFile}") && {
-                    /bin/true
-                    ((nRes++))
-                }
+                (! sed -i -e "s/systemctl daemon-reload/#systemctl daemon-reload/g" "${sFile}") && { /bin/true && ((nRes++)); }
             elif (grep -q 'systemctl reboot' <<<"${sROW}"); then
                 # echo "${sFile}: systemctl reboot --> #systemctl reboot"
-                (! sed -i -e "s/systemctl reboot/#systemctl reboot/g" "${sFile}") && {
-                    /bin/true
-                    ((nRes++))
-                }
+                (! sed -i -e "s/systemctl reboot/#systemctl reboot/g" "${sFile}") && { /bin/true && ((nRes++)); }
             elif (grep -q ' disable' <<<"${sROW}"); then
                 # echo "${sFile}: systemctl disable ${sService} --> update-rc.d ${sService} disable"
-                (! sed -i -e "s/systemctl disable ${sService}/update-rc.d ${sService} disable/g" "${sFile}") && {
-                    /bin/true
-                    ((nRes++))
-                }
+                (! sed -i -e "s/systemctl disable ${sService}/update-rc.d ${sService} disable/g" "${sFile}") && { /bin/true && ((nRes++)); }
             elif (grep -q ' enable' <<<"${sROW}"); then
                 # echo "${sFile}: systemctl enable ${sService} --> update-rc.d ${sService} enable"
-                (! sed -i -e "s/systemctl enable ${sService}/update-rc.d ${sService} enable/g" "${sFile}") && {
-                    /bin/true
-                    ((nRes++))
-                }
+                (! sed -i -e "s/systemctl enable ${sService}/update-rc.d ${sService} enable/g" "${sFile}") && { /bin/true && ((nRes++)); }
             else
                 # echo "${sFile}: systemctl ${sSwitch} ${sService} --> service ${sService} ${sSwitch}"
-                (! sed -i -e "s/systemctl ${sSwitch} ${sService}/service ${sService} ${sSwitch}/g" "${sFile}") && {
-                    /bin/true
-                    ((nRes++))
-                }
+                (! sed -i -e "s/systemctl ${sSwitch} ${sService}/service ${sService} ${sSwitch}/g" "${sFile}") && { /bin/true && ((nRes++)); }
             fi
-            echo "${sFile}: ${sROW}"
         done < <(grep 'systemctl ' "${sFile}")
 
         # shellcheck disable=SC2181
@@ -111,7 +93,7 @@ echo "nReturn: ${nReturn}"
 #### Install packages (standard)
 . /etc/MySB/config
 aAllPackages=()
-MySB_Install_Packages="$(grep -rni 'TOOLS=' "${MySB_InstallDir}"/install/MySB_Install.bsh | awk -F'[(|)]' '{print $2}')"
+MySB_Install_Packages="$(grep -rni 'TOOLS=' "${sDirToScan}"/install/MySB_Install.bsh | awk -F'[(|)]' '{print $2}')"
 for sPackage in ${MySB_Install_Packages}; do
     aAllPackages+=("${sPackage}")
 done
@@ -120,10 +102,10 @@ apt-get -y --assume-yes install "${aAllPackages[@]}"
 
 #### Load vars
 # shellcheck source=/dev/null
-. "${MySB_InstallDir}"/inc/vars
+. "${sDirToScan}"/inc/vars
 
 #### Install MySQL
-bash "${MySB_InstallDir}/install/MySQL" 'INSTALL'
+bash "${sDirToScan}/install/MySQL" 'INSTALL'
 if (! cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='${gsCurrentVersion}' WHERE id_system='1';" -v); then
     nReturn=$((nReturn + 1))
 fi
