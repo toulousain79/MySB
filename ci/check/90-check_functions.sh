@@ -118,7 +118,7 @@ if [ "${CHECK_METHOD}" == "full" ]; then
     [[ ${nReturn} -gt 0 ]] && exit "${nReturn}"
 
     #### Install packages (standard)
-    . /etc/MySB/config
+    echo && echo -e "${CBLUE}*** MySB - Install needed Debian packages ***${CEND}"
     aAllPackages=()
     MySB_Install_Packages="$(grep -rni 'TOOLS=' "${MySB_InstallDir}"/install/MySB_Install.bsh | awk -F'[(|)]' '{print $2}')"
     for sPackage in ${MySB_Install_Packages}; do
@@ -127,12 +127,10 @@ if [ "${CHECK_METHOD}" == "full" ]; then
     apt-get update
     apt-get -y --assume-yes install "${aAllPackages[@]}"
 
-    #### Load vars
-    # shellcheck source=/dev/null
-    . "${MySB_InstallDir}"/inc/vars
-
     #### Install MySQL
+    echo && echo -e "${CBLUE}*** MySB - ${MySB_InstallDir}/install/MySQL ***${CEND}"
     bash "${MySB_InstallDir}/install/MySQL" 'INSTALL'
+
     if (! cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='${gsCurrentVersion}' WHERE id_system='1';" -v); then
         nReturn=$((nReturn + 1))
     fi
