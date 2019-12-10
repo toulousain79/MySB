@@ -35,12 +35,13 @@ fi
 gfnCopyProject
 
 #### Replace systemctl
-sFilesList="$(grep -IRl "systemctl " --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" --exclude-dir "lang" --exclude-dir "logrotate" --exclude-dir "web" "${sDirToScan}/")"
+sFilesList="$(grep -IRl "systemctl " --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" --exclude-dir "lang" --exclude-dir "logrotate" --exclude-dir "web" "${MySB_InstallDir}/")"
 if [ -n "${sFilesList}" ]; then
     echo && echo -e "${CBLUE}*** Replace all systemctl commands ***${CEND}"
     for sFile in ${sFilesList}; do
         nRes=0
         while read -r sROW; do
+            ## DO NOT REMOVE FOLLOWING ELSE LOOP WILL FAILING !!!
             echo "${sROW}" >/dev/null
 
             sColumns=()
@@ -111,11 +112,11 @@ if [ -n "${sFilesList}" ]; then
     done
 fi
 
-sFilesList="$(grep -IRl "systemctl " --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" --exclude-dir "lang" --exclude-dir "logrotate" --exclude-dir "web" "${sDirToScan}/")"
+sFilesList="$(grep -IRl "systemctl " --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" --exclude-dir "lang" --exclude-dir "logrotate" --exclude-dir "web" "${MySB_InstallDir}/")"
 if [ -n "${sFilesList}" ]; then
     echo && echo -e "${CBLUE}*** Replace all systemctl commands ***${CEND}"
     for sFile in ${sFilesList}; do
-        grep 'systemctl' <<<"${sFile}"
+        grep 'service ' <<<"${sFile}"
     done
 fi
 
@@ -126,7 +127,7 @@ echo "nReturn: ${nReturn}"
 #### Install packages (standard)
 . /etc/MySB/config
 aAllPackages=()
-MySB_Install_Packages="$(grep -rni 'TOOLS=' "${sDirToScan}"/install/MySB_Install.bsh | awk -F'[(|)]' '{print $2}')"
+MySB_Install_Packages="$(grep -rni 'TOOLS=' "${MySB_InstallDir}"/install/MySB_Install.bsh | awk -F'[(|)]' '{print $2}')"
 for sPackage in ${MySB_Install_Packages}; do
     aAllPackages+=("${sPackage}")
 done
@@ -135,10 +136,10 @@ apt-get -y --assume-yes install "${aAllPackages[@]}"
 
 #### Load vars
 # shellcheck source=/dev/null
-. "${sDirToScan}"/inc/vars
+. "${MySB_InstallDir}"/inc/vars
 
 #### Install MySQL
-bash "${sDirToScan}/install/MySQL" 'INSTALL'
+bash "${MySB_InstallDir}/install/MySQL" 'INSTALL'
 if (! cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='${gsCurrentVersion}' WHERE id_system='1';" -v); then
     nReturn=$((nReturn + 1))
 fi
@@ -149,7 +150,7 @@ if (! cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='${gsMainUserPassword}' 
     nReturn=$((nReturn + 1))
 fi
 
-# sFilesListBash="$(grep -IRl "\(#\!/bin/\|shell\=\)bash" --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" "${sDirToScan}/")"
+# sFilesListBash="$(grep -IRl "\(#\!/bin/\|shell\=\)bash" --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" "${MySB_InstallDir}/")"
 # sFilesList="${sFilesListSh} ${sFilesListBash}"
 # if [ -n "${sFilesList}" ]; then
 #     echo && echo -e "${CBLUE}*** Check scripts with 'set -n' ***${CEND}"
