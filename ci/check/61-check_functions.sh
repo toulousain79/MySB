@@ -53,6 +53,13 @@ if [ -n "${sFilesList}" ]; then
                 [[ ${nCount} -gt 0 ]] && break
             done
 
+            ((nCount++))
+            sSwitch="${sColumns[${nCount}]}"
+            ((nCount++))
+            sService="${sColumns[${nCount}]//.service/}"
+
+            echo "${sROW}"
+
             if (grep -q 'daemon-reload' <<<"${sROW}"); then
                 # echo "${sFile}: systemctl daemon-reload --> #systemctl daemon-reload"
                 (! sed -i -e "s/systemctl daemon-reload/#systemctl daemon-reload/g" "${sFile}") && {
@@ -72,18 +79,12 @@ if [ -n "${sFilesList}" ]; then
                     ((nRes++))
                 }
             elif (grep -q ' enable' <<<"${sROW}"); then
-                ((nCount + 2))
-                sService="${sColumns[${nCount}]//.service/}"
                 # echo "${sFile}: systemctl enable ${sService} --> update-rc.d ${sService} enable"
                 (! sed -i -e "s/systemctl enable ${sService}/update-rc.d ${sService} enable/g" "${sFile}") && {
                     /bin/true
                     ((nRes++))
                 }
             else
-                ((nCount++))
-                sSwitch="${sColumns[${nCount}]}"
-                ((nCount++))
-                sService="${sColumns[${nCount}]//.service/}"
                 # echo "${sFile}: systemctl ${sSwitch} ${sService} --> service ${sService} ${sSwitch}"
                 (! sed -i -e "s/systemctl ${sSwitch} ${sService}/service ${sService} ${sSwitch}/g" "${sFile}") && {
                     /bin/true
