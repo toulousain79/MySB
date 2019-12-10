@@ -80,10 +80,10 @@ else
 fi
 echo -e "${CYELLOW}Secret Variable \$gsCurrentVersion:${CEND} ${sValue}"
 
-# CI_PROJECT_PATH
 if [ -f /.dockerenv ]; then
     echo && echo -e "${CBLUE}*** Check GitLab CI Secret Variables ***${CEND}"
 
+    # CI_PROJECT_PATH
     if [ -z "${CI_PROJECT_PATH}" ]; then
         sValue="${CRED}Failed${CEND}"
         nReturn=$((nReturn + 1))
@@ -91,6 +91,15 @@ if [ -f /.dockerenv ]; then
         sValue="${CGREEN}${CI_PROJECT_PATH}${CEND}"
     fi
     echo -e "${CYELLOW}Secret Variable \$CI_PROJECT_PATH:${CEND} ${sValue}"
+
+    # CHECK_METHOD
+    if [ -z "${CHECK_METHOD}" ]; then
+        sValue="${CRED}Failed${CEND}"
+        nReturn=$((nReturn + 1))
+    else
+        sValue="${CGREEN}${CHECK_METHOD}${CEND}"
+    fi
+    echo -e "${CYELLOW}Secret Variable \$CHECK_METHOD:${CEND} ${sValue}"
 fi
 
 export nReturn

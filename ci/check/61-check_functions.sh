@@ -23,149 +23,143 @@
 ##################### FIRST LINE #####################################
 
 nReturn=${nReturn}
-[[ ${nReturn} -gt 0 ]] && exit "${nReturn}"
 
-if [ -z "${vars}" ] || [ "${vars}" -eq 0 ]; then
-    # shellcheck source=ci/check/00-load_vars.bsh
-    source "$(dirname "$0")/00-libs.bsh"
-else
-    nReturn=${nReturn}
-fi
+if [ "${CHECK_METHOD}" == "full" ]; then
+    [[ ${nReturn} -gt 0 ]] && exit "${nReturn}"
 
-gfnCopyProject
+    if [ -z "${vars}" ] || [ "${vars}" -eq 0 ]; then
+        # shellcheck source=ci/check/00-load_vars.bsh
+        source "$(dirname "$0")/00-libs.bsh"
+    else
+        nReturn=${nReturn}
+    fi
 
-#### Replace systemctl
-sFilesList="$(grep -IRl "systemctl " --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" --exclude-dir "lang" --exclude-dir "logrotate" --exclude-dir "web" "${MySB_InstallDir}/")"
-if [ -n "${sFilesList}" ]; then
-    echo && echo -e "${CBLUE}*** Replace all systemctl commands ***${CEND}"
-    for sFile in ${sFilesList}; do
-        nRes=0
-        while read -r sROW; do
-            ## DO NOT REMOVE FOLLOWING ELSE LOOP WILL FAILING !!!
-            echo "${sROW}" >/dev/null
+    gfnCopyProject
 
-            sColumns=()
-            for sString in ${sROW}; do
-                sColumns+=("${sString}")
-            done
+    #### Replace systemctl
+    sFilesList="$(grep -IRl "systemctl " --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" --exclude-dir "lang" --exclude-dir "logrotate" --exclude-dir "web" "${MySB_InstallDir}/")"
+    if [ -n "${sFilesList}" ]; then
+        echo && echo -e "${CBLUE}*** Replace all systemctl commands ***${CEND}"
+        for sFile in ${sFilesList}; do
+            nRes=0
+            while read -r sROW; do
+                ## DO NOT REMOVE FOLLOWING ELSE LOOP WILL FAILING !!!
+                echo "${sROW}" >/dev/null
 
-            nCount=0
-            for ((col = nCount; col <= ${#sColumns[@]}; col++)); do
-                (! grep -q '^systemctl' <<<"${sColumns[${col}]}") && {
-                    /bin/true
-                    continue
-                }
+                sColumns=()
+                for sString in ${sROW}; do
+                    sColumns+=("${sString}")
+                done
 
-                nCount=${col}
+                nCount=0
+                for ((col = nCount; col <= ${#sColumns[@]}; col++)); do
+                    (! grep -q '^systemctl' <<<"${sColumns[${col}]}") && {
+                        /bin/true
+                        continue
+                    }
 
-                [[ ${nCount} -gt 0 ]] && {
-                    /bin/true
-                    break
-                }
-            done
+                    nCount=${col}
 
-            nCount=$((nCount + 1))
-            sSwitch="${sColumns[${nCount}]}"
-            nCount=$((nCount + 1))
-            sService="${sColumns[${nCount}]//.service/}"
+                    [[ ${nCount} -gt 0 ]] && {
+                        /bin/true
+                        break
+                    }
+                done
 
-            if (grep -q 'daemon-reload' <<<"${sROW}"); then
-                # echo "${sFile}: systemctl daemon-reload --> #systemctl daemon-reload"
-                (! sed -i -e "s/systemctl daemon-reload/#systemctl daemon-reload/g" "${sFile}") && {
-                    /bin/true
-                    ((nRes++))
-                }
-            elif (grep -q 'systemctl reboot' <<<"${sROW}"); then
-                # echo "${sFile}: systemctl reboot --> #systemctl reboot"
-                (! sed -i -e "s/systemctl reboot/#systemctl reboot/g" "${sFile}") && {
-                    /bin/true
-                    ((nRes++))
-                }
-            elif (grep -q ' disable' <<<"${sROW}"); then
-                # echo "${sFile}: systemctl disable ${sService} --> update-rc.d ${sService} disable"
-                (! sed -i -e "s/systemctl disable ${sService}/update-rc.d ${sService} disable/g" "${sFile}") && {
-                    /bin/true
-                    ((nRes++))
-                }
-            elif (grep -q ' enable' <<<"${sROW}"); then
-                # echo "${sFile}: systemctl enable ${sService} --> update-rc.d ${sService} enable"
-                (! sed -i -e "s/systemctl enable ${sService}/update-rc.d ${sService} enable/g" "${sFile}") && {
-                    /bin/true
-                    ((nRes++))
-                }
+                nCount=$((nCount + 1))
+                sSwitch="${sColumns[${nCount}]}"
+                nCount=$((nCount + 1))
+                sService="${sColumns[${nCount}]//.service/}"
+
+                if (grep -q 'daemon-reload' <<<"${sROW}"); then
+                    # echo "${sFile}: systemctl daemon-reload --> #systemctl daemon-reload"
+                    (! sed -i -e "s/systemctl daemon-reload/#systemctl daemon-reload/g" "${sFile}") && {
+                        /bin/true
+                        ((nRes++))
+                    }
+                elif (grep -q 'systemctl reboot' <<<"${sROW}"); then
+                    # echo "${sFile}: systemctl reboot --> #systemctl reboot"
+                    (! sed -i -e "s/systemctl reboot/#systemctl reboot/g" "${sFile}") && {
+                        /bin/true
+                        ((nRes++))
+                    }
+                elif (grep -q ' disable' <<<"${sROW}"); then
+                    # echo "${sFile}: systemctl disable ${sService} --> update-rc.d ${sService} disable"
+                    (! sed -i -e "s/systemctl disable ${sService}/update-rc.d ${sService} disable/g" "${sFile}") && {
+                        /bin/true
+                        ((nRes++))
+                    }
+                elif (grep -q ' enable' <<<"${sROW}"); then
+                    # echo "${sFile}: systemctl enable ${sService} --> update-rc.d ${sService} enable"
+                    (! sed -i -e "s/systemctl enable ${sService}/update-rc.d ${sService} enable/g" "${sFile}") && {
+                        /bin/true
+                        ((nRes++))
+                    }
+                else
+                    # echo "${sFile}: systemctl ${sSwitch} ${sService} --> service ${sService} ${sSwitch}"
+                    (! sed -i -e "s/systemctl ${sSwitch} ${sService}/service ${sService} ${sSwitch}/g" "${sFile}") && {
+                        /bin/true
+                        ((nRes++))
+                    }
+                fi
+            done < <(grep 'systemctl ' "${sFile}")
+
+            # shellcheck disable=SC2181
+            if [[ ${nRes} -eq 0 ]]; then
+                echo -e "${CYELLOW}${sFile}:${CEND} ${CGREEN}Passed${CEND}"
             else
-                # echo "${sFile}: systemctl ${sSwitch} ${sService} --> service ${sService} ${sSwitch}"
-                (! sed -i -e "s/systemctl ${sSwitch} ${sService}/service ${sService} ${sSwitch}/g" "${sFile}") && {
-                    /bin/true
-                    ((nRes++))
-                }
+                echo -e "${CYELLOW}${sFile}:${CEND} ${CRED}Failed${CEND}"
+                nReturn=$((nReturn + 1))
             fi
-        done < <(grep 'systemctl ' "${sFile}")
+        done
+    fi
 
-        # shellcheck disable=SC2181
-        if [[ ${nRes} -eq 0 ]]; then
-            echo -e "${CYELLOW}${sFile}:${CEND} ${CGREEN}Passed${CEND}"
-        else
-            echo -e "${CYELLOW}${sFile}:${CEND} ${CRED}Failed${CEND}"
-            nReturn=$((nReturn + 1))
-        fi
+    echo "nReturn: ${nReturn}"
+    [[ ${nReturn} -gt 0 ]] && exit "${nReturn}"
+
+    #### Install packages (standard)
+    . /etc/MySB/config
+    aAllPackages=()
+    MySB_Install_Packages="$(grep -rni 'TOOLS=' "${MySB_InstallDir}"/install/MySB_Install.bsh | awk -F'[(|)]' '{print $2}')"
+    for sPackage in ${MySB_Install_Packages}; do
+        aAllPackages+=("${sPackage}")
     done
+    apt-get update
+    apt-get -y --assume-yes install "${aAllPackages[@]}"
+
+    #### Load vars
+    # shellcheck source=/dev/null
+    . "${MySB_InstallDir}"/inc/vars
+
+    #### Install MySQL
+    bash "${MySB_InstallDir}/install/MySQL" 'INSTALL'
+    if (! cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='${gsCurrentVersion}' WHERE id_system='1';" -v); then
+        nReturn=$((nReturn + 1))
+    fi
+    if (! cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,language,admin) VALUES ('MySB','MySB','${EnvLang}','1');" -v); then
+        nReturn=$((nReturn + 1))
+    fi
+    if (! cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='${gsMainUserPassword}' WHERE admin='1';" -v); then
+        nReturn=$((nReturn + 1))
+    fi
+
+    # sFilesListBash="$(grep -IRl "\(#\!/bin/\|shell\=\)bash" --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" "${MySB_InstallDir}/")"
+    # sFilesList="${sFilesListSh} ${sFilesListBash}"
+    # if [ -n "${sFilesList}" ]; then
+    #     echo && echo -e "${CBLUE}*** Check scripts with 'set -n' ***${CEND}"
+    #     for file in ${sFilesList}; do
+    #         sed -i '/includes_before/d' "${file}"
+    #         sed -i '/includes_after/d' "${file}"
+
+    #         if (bash "${file}"); then
+    #             echo -e "${CYELLOW}${file}:${CEND} ${CGREEN}Passed${CEND}"
+    #         else
+    #             echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
+    #             nReturn=$((nReturn + 1))
+    #         fi
+    #     done
+    # fi
 fi
-
-sFilesList="$(grep -IRl "systemctl " --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" --exclude-dir "lang" --exclude-dir "logrotate" --exclude-dir "web" "${MySB_InstallDir}/")"
-if [ -n "${sFilesList}" ]; then
-    echo && echo -e "${CBLUE}*** Replace all systemctl commands ***${CEND}"
-    for sFile in ${sFilesList}; do
-        grep 'service ' <<<"${sFile}"
-    done
-fi
-
-nReturn=${nReturn}
-echo "nReturn: ${nReturn}"
-[[ ${nReturn} -gt 0 ]] && exit "${nReturn}"
-
-#### Install packages (standard)
-. /etc/MySB/config
-aAllPackages=()
-MySB_Install_Packages="$(grep -rni 'TOOLS=' "${MySB_InstallDir}"/install/MySB_Install.bsh | awk -F'[(|)]' '{print $2}')"
-for sPackage in ${MySB_Install_Packages}; do
-    aAllPackages+=("${sPackage}")
-done
-apt-get update
-apt-get -y --assume-yes install "${aAllPackages[@]}"
-
-#### Load vars
-# shellcheck source=/dev/null
-. "${MySB_InstallDir}"/inc/vars
-
-#### Install MySQL
-bash "${MySB_InstallDir}/install/MySQL" 'INSTALL'
-if (! cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='${gsCurrentVersion}' WHERE id_system='1';" -v); then
-    nReturn=$((nReturn + 1))
-fi
-if (! cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,language,admin) VALUES ('MySB','MySB','${EnvLang}','1');" -v); then
-    nReturn=$((nReturn + 1))
-fi
-if (! cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='${gsMainUserPassword}' WHERE admin='1';" -v); then
-    nReturn=$((nReturn + 1))
-fi
-
-# sFilesListBash="$(grep -IRl "\(#\!/bin/\|shell\=\)bash" --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" "${MySB_InstallDir}/")"
-# sFilesList="${sFilesListSh} ${sFilesListBash}"
-# if [ -n "${sFilesList}" ]; then
-#     echo && echo -e "${CBLUE}*** Check scripts with 'set -n' ***${CEND}"
-#     for file in ${sFilesList}; do
-#         sed -i '/includes_before/d' "${file}"
-#         sed -i '/includes_after/d' "${file}"
-
-#         if (bash "${file}"); then
-#             echo -e "${CYELLOW}${file}:${CEND} ${CGREEN}Passed${CEND}"
-#         else
-#             echo -e "${CYELLOW}${file}:${CEND} ${CRED}Failed${CEND}"
-#             nReturn=$((nReturn + 1))
-#         fi
-#     done
-# fi
 
 export nReturn
 
