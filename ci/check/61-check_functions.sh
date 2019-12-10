@@ -36,6 +36,7 @@ gfnCopyProject
 
 #### Replace systemctl
 sFilesList="$(grep -IRl "systemctl " --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" --exclude-dir "lang" --exclude-dir "logrotate" --exclude-dir "web" "${sDirToScan}/")"
+echo "${sFilesList}"
 if [ -n "${sFilesList}" ]; then
     echo && echo -e "${CBLUE}*** Replace all systemctl commands ***${CEND}"
     for sFile in ${sFilesList}; do
@@ -45,6 +46,8 @@ if [ -n "${sFilesList}" ]; then
             for sString in ${sROW}; do
                 sColumns+=("${sString}")
             done
+
+            echo "${sROW}"
 
             nCount=0
             for ((col = nCount; col <= ${#sColumns[@]}; col++)); do
@@ -57,8 +60,6 @@ if [ -n "${sFilesList}" ]; then
             sSwitch="${sColumns[${nCount}]}"
             ((nCount++))
             sService="${sColumns[${nCount}]//.service/}"
-
-            echo "${sROW}"
 
             if (grep -q 'daemon-reload' <<<"${sROW}"); then
                 # echo "${sFile}: systemctl daemon-reload --> #systemctl daemon-reload"
