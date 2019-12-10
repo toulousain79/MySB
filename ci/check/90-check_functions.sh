@@ -114,32 +114,32 @@ if [ "${CHECK_METHOD}" == "full" ]; then
         done
     fi
 
-    echo "nReturn: ${nReturn}"
     [[ ${nReturn} -gt 0 ]] && exit "${nReturn}"
 
     #### Install packages (standard)
     echo && echo -e "${CBLUE}*** MySB - Install needed Debian packages ***${CEND}"
-    aAllPackages=()
-    MySB_Install_Packages="$(grep -rni 'TOOLS=' "${MySB_InstallDir}"/install/MySB_Install.bsh | awk -F'[(|)]' '{print $2}')"
-    for sPackage in ${MySB_Install_Packages}; do
-        aAllPackages+=("${sPackage}")
-    done
-    apt-get update
-    apt-get -y --assume-yes install "${aAllPackages[@]}"
+    # aAllPackages=()
+    # MySB_Install_Packages="$(grep -rni 'TOOLS=' "${MySB_InstallDir}"/install/MySB_Install.bsh | awk -F'[(|)]' '{print $2}')"
+    # for sPackage in ${MySB_Install_Packages}; do
+    #     aAllPackages+=("${sPackage}")
+    # done
+    # apt-get update
+    # apt-get -y --assume-yes install "${aAllPackages[@]}"
+    bash "${MySB_InstallDir}/install/MySB_Install.bsh" 'fr'
 
     #### Install MySQL
-    echo && echo -e "${CBLUE}*** MySB - ${MySB_InstallDir}/install/MySQL ***${CEND}"
-    bash "${MySB_InstallDir}/install/MySQL" 'INSTALL'
+    # echo && echo -e "${CBLUE}*** MySB - ${MySB_InstallDir}/install/MySQL ***${CEND}"
+    # bash "${MySB_InstallDir}/install/MySQL" 'INSTALL'
 
-    if (! cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='${gsCurrentVersion}' WHERE id_system='1';" -v); then
-        nReturn=$((nReturn + 1))
-    fi
-    if (! cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,language,admin) VALUES ('MySB','MySB','${EnvLang}','1');" -v); then
-        nReturn=$((nReturn + 1))
-    fi
-    if (! cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='${gsMainUserPassword}' WHERE admin='1';" -v); then
-        nReturn=$((nReturn + 1))
-    fi
+    # if (! cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='${gsCurrentVersion}' WHERE id_system='1';" -v); then
+    #     nReturn=$((nReturn + 1))
+    # fi
+    # if (! cmdMySQL 'MySB_db' "INSERT INTO users (users_ident,users_email,language,admin) VALUES ('MySB','MySB','${EnvLang}','1');" -v); then
+    #     nReturn=$((nReturn + 1))
+    # fi
+    # if (! cmdMySQL 'MySB_db' "UPDATE users SET users_passwd='${gsMainUserPassword}' WHERE admin='1';" -v); then
+    #     nReturn=$((nReturn + 1))
+    # fi
 
     # sFilesListBash="$(grep -IRl "\(#\!/bin/\|shell\=\)bash" --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" "${MySB_InstallDir}/")"
     # sFilesList="${sFilesListSh} ${sFilesListBash}"

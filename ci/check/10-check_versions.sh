@@ -85,6 +85,12 @@ if (! pylint3 --version); then
     nReturn=$((nReturn + 1))
 fi
 
+echo && echo -e "${CBLUE}*** Check ping version ***${CEND}"
+if (! ping -V); then
+    echo -e "${CYELLOW}ping version:${CEND} ${CRED}Failed${CEND}"
+    nReturn=$((nReturn + 1))
+fi
+
 export nReturn
 
 ##################### LAST LINE ######################################
