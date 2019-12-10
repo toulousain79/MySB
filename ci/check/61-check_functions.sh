@@ -54,22 +54,21 @@ if [ -n "${sFilesList}" ]; then
                     /bin/true
                     continue
                 }
-
                 nCount=${col}
-                echo "${nCount}"
-
                 [[ ${nCount} -gt 0 ]] && {
                     /bin/true
                     break
                 }
             done
 
-            echo "${sROW}"
-
             ((nCount++))
+            echo "l.65"
             sSwitch="${sColumns[${nCount}]}"
+            echo "l.67"
             ((nCount++))
+            echo "l.69"
             sService="${sColumns[${nCount}]//.service/}"
+            echo "l.71"
 
             if (grep -q 'daemon-reload' <<<"${sROW}"); then
                 # echo "${sFile}: systemctl daemon-reload --> #systemctl daemon-reload"
