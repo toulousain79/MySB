@@ -46,6 +46,8 @@ if [ -n "${sFilesList}" ]; then
                 sColumns+=("${sString}")
             done
 
+            echo "${sROW}"
+
             nCount=0
             for ((col = nCount; col <= ${#sColumns[@]}; col++)); do
                 (! grep -q '^systemctl' <<<"${sColumns[${col}]}") && {
@@ -53,7 +55,10 @@ if [ -n "${sFilesList}" ]; then
                     continue
                 }
                 nCount=${col}
-                [[ ${nCount} -gt 0 ]] && break
+                [[ ${nCount} -gt 0 ]] && {
+                    /bin/true
+                    break
+                }
             done
 
             ((nCount++))
