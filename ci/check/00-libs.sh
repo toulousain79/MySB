@@ -53,7 +53,7 @@ function gfnCopyProject() {
 mkdir -p /etc/MySB
 {
     echo "MySB_InstallDir=\"${sProjectDir}\""
-    echo "MySB_Files=\"/opt/MySB_files\""
+    echo "MySB_Files=\"${sProjectDir}_files\""
     echo "EnvLang=\"fr\""
     echo "gsCurrentVersion=\"$(cat "${sProjectDir}"/version)\""
     echo "export MySB_InstallDir MySB_Files EnvLang gsCurrentVersion"
