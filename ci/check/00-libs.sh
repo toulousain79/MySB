@@ -58,5 +58,6 @@ mkdir -p /etc/MySB
     echo "gsCurrentVersion=\"v7.2\""
     echo "export MySB_InstallDir MySB_Files EnvLang gsCurrentVersion"
 } >/etc/MySB/config
+. /etc/MySB/config
 
 export vars sPwd nReturn sProjectDir sDirToScan CEND CRED CGREEN CYELLOW CBLUE

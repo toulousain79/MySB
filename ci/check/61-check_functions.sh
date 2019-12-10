@@ -86,6 +86,9 @@ if [ -n "${sFilesList}" ]; then
     done
 fi
 
+nReturn=${nReturn}
+[[ ${nReturn} -gt 0 ]] && exit "${nReturn}"
+
 #### Install packages (standard)
 . /etc/MySB/config
 aAllPackages=()
