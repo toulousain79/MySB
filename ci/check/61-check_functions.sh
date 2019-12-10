@@ -46,33 +46,23 @@ if [ -n "${sFilesList}" ]; then
                 sColumns+=("${sString}")
             done
 
-            echo "sROW 49: ${sROW}"
-
             nCount=0
             for ((col = nCount; col <= ${#sColumns[@]}; col++)); do
                 (! grep -q '^systemctl' <<<"${sColumns[${col}]}") && {
                     /bin/true
                     continue
                 }
-
                 nCount=${col}
-                echo "nCount 59: ${nCount}"
-
                 [[ ${nCount} -gt 0 ]] && {
                     /bin/true
                     break
                 }
             done
 
-            echo "nCount 67: ${nCount}"
             nCount=$((nCount + 1))
-            echo "l.65"
             sSwitch="${sColumns[${nCount}]}"
-            echo "l.67"
             nCount=$((nCount + 1))
-            echo "l.69"
             sService="${sColumns[${nCount}]//.service/}"
-            echo "l.71"
 
             if (grep -q 'daemon-reload' <<<"${sROW}"); then
                 # echo "${sFile}: systemctl daemon-reload --> #systemctl daemon-reload"
@@ -105,7 +95,6 @@ if [ -n "${sFilesList}" ]; then
                     ((nRes++))
                 }
             fi
-            echo "sROW 108: ${sROW}"
         done < <(grep 'systemctl ' "${sFile}")
 
         # shellcheck disable=SC2181
@@ -115,6 +104,13 @@ if [ -n "${sFilesList}" ]; then
             echo -e "${CYELLOW}${sFile}:${CEND} ${CRED}Failed${CEND}"
             nReturn=$((nReturn + 1))
         fi
+    done
+fi
+sFilesList="$(grep -IRl "systemctl " --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" --exclude-dir "lang" --exclude-dir "logrotate" --exclude-dir "web" "${sDirToScan}/")"
+if [ -n "${sFilesList}" ]; then
+    echo && echo -e "${CBLUE}*** Replace all systemctl commands ***${CEND}"
+    for sFile in ${sFilesList}; do
+        grep -q 'systemctl' <<<"${sFile}"
     done
 fi
 
