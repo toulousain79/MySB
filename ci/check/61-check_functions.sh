@@ -54,12 +54,17 @@ if [ -n "${sFilesList}" ]; then
                     /bin/true
                     continue
                 }
+
                 nCount=${col}
+                echo "${nCount}"
+
                 [[ ${nCount} -gt 0 ]] && {
                     /bin/true
                     break
                 }
             done
+
+            echo "${sROW}"
 
             ((nCount++))
             sSwitch="${sColumns[${nCount}]}"
