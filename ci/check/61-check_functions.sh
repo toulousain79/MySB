@@ -41,12 +41,12 @@ if [ -n "${sFilesList}" ]; then
     for sFile in ${sFilesList}; do
         nRes=0
         while read -r sROW; do
+            echo "${sROW}" >/dev/null
+
             sColumns=()
             for sString in ${sROW}; do
                 sColumns+=("${sString}")
             done
-
-            echo "sROW 49: ${sROW}"
 
             nCount=0
             for ((col = nCount; col <= ${#sColumns[@]}; col++)); do
@@ -99,7 +99,6 @@ if [ -n "${sFilesList}" ]; then
                     ((nRes++))
                 }
             fi
-            echo "sROW 108: ${sROW}"
         done < <(grep 'systemctl ' "${sFile}")
 
         # shellcheck disable=SC2181
@@ -116,7 +115,7 @@ sFilesList="$(grep -IRl "systemctl " --exclude-dir ".git" --exclude-dir ".vscode
 if [ -n "${sFilesList}" ]; then
     echo && echo -e "${CBLUE}*** Replace all systemctl commands ***${CEND}"
     for sFile in ${sFilesList}; do
-        grep -q 'systemctl' <<<"${sFile}"
+        grep 'systemctl' <<<"${sFile}"
     done
 fi
 
