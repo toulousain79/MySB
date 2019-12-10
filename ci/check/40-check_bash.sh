@@ -31,14 +31,6 @@ fi
 
 gfnCopyProject
 
-mkdir -p "${sDirToScan}"/.etc/MySB/
-{
-    echo "MySB_InstallDir=\"/opt/MySB\""
-    echo "MySB_Files=\"/opt/MySB_files\""
-    echo "EnvLang=\"fr\""
-    echo "export MySB_InstallDir MySB_Files EnvLang"
-} >"${sDirToScan}"/.etc/MySB/config
-
 sFilesListSh="$(grep -IRl "\(#\!/bin/\|shell\=\)sh" --exclude-dir ".git" --exclude-dir ".vscode" --exclude "funcs_*" "${sDirToScan}/")"
 if [ -n "${sFilesListSh}" ]; then
     echo && echo -e "${CBLUE}*** Check Syntax with Shellcheck (sh) ***${CEND}"

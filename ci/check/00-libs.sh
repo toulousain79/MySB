@@ -49,4 +49,14 @@ function gfnCopyProject() {
     fi
 }
 
+#### 3 - Prepare
+mkdir -p /etc/MySB
+{
+    echo "MySB_InstallDir=\"${sProjectDir}\""
+    echo "MySB_Files=\"/opt/MySB_files\""
+    echo "EnvLang=\"fr\""
+    echo "gsCurrentVersion=\"v7.2\""
+    echo "export MySB_InstallDir MySB_Files EnvLang gsCurrentVersion"
+} >/etc/MySB/config
+
 export vars sPwd nReturn sProjectDir sDirToScan CEND CRED CGREEN CYELLOW CBLUE

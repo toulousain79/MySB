@@ -37,30 +37,32 @@ source "${MySB_InstallDir}"/inc/funcs_tools
 gfnBannerGenerator() {
     local nCountLine sLine
 
-    figlet MySB "${gsCurrentVersion}" >"${MySB_InstallDir}"/files/banner.tmp
-    echo "echo -e \"${CGREEN}############################################################${CEND}" >"${MySB_InstallDir}/files/banner_${gsCurrentVersion}"
+    if [ ! -f "${MySB_InstallDir}/files/banner_${gsCurrentVersion}" ]; then
+        figlet MySB "${gsCurrentVersion}" >"${MySB_InstallDir}"/files/banner.tmp
+        echo "echo -e \"${CGREEN}############################################################${CEND}" >"${MySB_InstallDir}/files/banner_${gsCurrentVersion}"
 
-    nCountLine=$(wc -l "${MySB_InstallDir}"/files/banner.tmp | awk '{ print $1 }')
-    for ((line = 1; line <= nCountLine; line++)); do
-        sLine=$(head -n $line "${MySB_InstallDir}"/files/banner.tmp | tail -n 1)
-        echo "${CGREEN}#${CEND}	${CBLUE}$sLine${CEND}" >>"${MySB_InstallDir}/files/banner_${gsCurrentVersion}"
-    done
-    rm -f "${MySB_InstallDir}"/files/banner.tmp
-    {
-        echo "${CGREEN}#${CEND}	${CBLUE}GitHub: ${CEND}${CYELLOW}https://github.com/toulousain79/MySB/${CEND}"
-        echo "${CGREEN}#${CEND}	${CBLUE}Doc fr: ${CEND}${CYELLOW}https://mysb.gitbook.io/doc/${CEND}"
-        echo "${CGREEN}#${CEND}"
-        echo "${CGREEN}#${CEND}	${Header_CurrentFile} ${CRED}$0${CEND}"
-        echo "${CGREEN}############################################################${CEND}\""
-    } >>"${MySB_InstallDir}/files/banner_${gsCurrentVersion}"
+        nCountLine=$(wc -l "${MySB_InstallDir}"/files/banner.tmp | awk '{ print $1 }')
+        for ((line = 1; line <= nCountLine; line++)); do
+            sLine=$(head -n $line "${MySB_InstallDir}"/files/banner.tmp | tail -n 1)
+            echo "${CGREEN}#${CEND}	${CBLUE}${sLine}${CEND}" >>"${MySB_InstallDir}/files/banner_${gsCurrentVersion}"
+        done
+        rm -f "${MySB_InstallDir}"/files/banner.tmp
+        {
+            echo "${CGREEN}#${CEND}	${CBLUE}GitHub: ${CEND}${CYELLOW}https://github.com/toulousain79/MySB/${CEND}"
+            echo "${CGREEN}#${CEND}	${CBLUE}Doc fr: ${CEND}${CYELLOW}https://mysb.gitbook.io/doc/${CEND}"
+            echo "${CGREEN}#${CEND}"
+            echo "${CGREEN}#${CEND}	${Header_CurrentFile} ${CRED}$0${CEND}"
+            echo "${CGREEN}############################################################${CEND}\""
+        } >>"${MySB_InstallDir}/files/banner_${gsCurrentVersion}"
+        sed -i "s/'/ /g;s/,/ /g;s/\`/ /g;" "${MySB_InstallDir}/files/banner_${gsCurrentVersion}" >/dev/null 2>&1
+    fi
 
     if [ -f "${MySB_InstallDir}/files/banner_${gsCurrentVersion}" ]; then
-        sed -i "s/'/ /g;s/,/ /g;s/\`/ /g;" "${MySB_InstallDir}/files/banner_${gsCurrentVersion}" >/dev/null 2>&1
         clear
         # shellcheck source=/dev/null
-        source "${MySB_InstallDir}/files/banner_${gsCurrentVersion}"
+        . "${MySB_InstallDir}/files/banner_${gsCurrentVersion}"
+        echo
     fi
-    echo
 }
 
 #### Send Mail
@@ -429,15 +431,16 @@ gfnManageServices() {
 
 #### Any questions ?
 gfnQuestionGetString() {
-    local ISPASSWORD="$1"
-    local LABEL="$2"
-    local RETURN="$3"
-    local DEFAULT="$4"
-    local NEWVAR1=a
-    local NEWVAR2=b
-    local YESYES=YESyes
-    local NONO=NOno
-    local YESNO="${YESYES}${NONO}"
+    local ISPASSWORD LABEL RETURN DEFAULT NEWVAR1 NEWVAR2 YESYES NONO YESNO
+    ISPASSWORD="$1"
+    LABEL="$2"
+    RETURN="$3"
+    DEFAULT="$4"
+    NEWVAR1=a
+    NEWVAR2=b
+    YESYES=YESyes
+    NONO=NOno
+    YESNO="${YESYES}${NONO}"
 
     while [ ! "${NEWVAR1}" = "${NEWVAR2}" ] || [ -z "${NEWVAR1}" ]; do
         if [ "${ISPASSWORD}" == "YES" ]; then
