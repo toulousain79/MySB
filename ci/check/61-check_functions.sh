@@ -46,7 +46,7 @@ if [ -n "${sFilesList}" ]; then
                 sColumns+=("${sString}")
             done
 
-            echo "${sROW}"
+            echo "sROW 49: ${sROW}"
 
             nCount=0
             for ((col = nCount; col <= ${#sColumns[@]}; col++)); do
@@ -54,13 +54,17 @@ if [ -n "${sFilesList}" ]; then
                     /bin/true
                     continue
                 }
+
                 nCount=${col}
+                echo "nCount 59: ${nCount}"
+
                 [[ ${nCount} -gt 0 ]] && {
                     /bin/true
                     break
                 }
             done
 
+            echo "nCount 67: ${nCount}"
             ((nCount++))
             echo "l.65"
             sSwitch="${sColumns[${nCount}]}"
@@ -101,6 +105,7 @@ if [ -n "${sFilesList}" ]; then
                     ((nRes++))
                 }
             fi
+            echo "sROW 108: ${sROW}"
         done < <(grep 'systemctl ' "${sFile}")
 
         # shellcheck disable=SC2181
