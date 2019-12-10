@@ -23,7 +23,6 @@
 ##################### FIRST LINE #####################################
 
 nReturn=${nReturn}
-echo "nReturn: ${nReturn}"
 [[ ${nReturn} -gt 0 ]] && exit "${nReturn}"
 
 if [ -z "${vars}" ] || [ "${vars}" -eq 0 ]; then
@@ -37,7 +36,6 @@ gfnCopyProject
 
 #### Replace systemctl
 sFilesList="$(grep -IRl "systemctl " --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" --exclude-dir "lang" --exclude-dir "logrotate" --exclude-dir "web" "${sDirToScan}/")"
-echo "${sFilesList}"
 if [ -n "${sFilesList}" ]; then
     echo && echo -e "${CBLUE}*** Replace all systemctl commands ***${CEND}"
     for sFile in ${sFilesList}; do
@@ -50,7 +48,9 @@ if [ -n "${sFilesList}" ]; then
 
             nCount=0
             for ((col = nCount; col <= ${#sColumns[@]}; col++)); do
+                echo "l.51"
                 (! grep -q '^systemctl' <<<"${sColumns[${col}]}") && continue
+                echo "l.53"
                 nCount=${col}
                 [[ ${nCount} -gt 0 ]] && break
             done
@@ -89,6 +89,7 @@ if [ -n "${sFilesList}" ]; then
 fi
 
 nReturn=${nReturn}
+echo "nReturn: ${nReturn}"
 [[ ${nReturn} -gt 0 ]] && exit "${nReturn}"
 
 #### Install packages (standard)
