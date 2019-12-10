@@ -476,7 +476,7 @@ case "${EnvLang}" in
 esac
 
 # Banner
-BannerInstall
+[ ! -f /.dockerenv ] && BannerInstall
 
 # Some verifications
 SystemChecks
@@ -572,17 +572,17 @@ sed -i '/nameserver/d' /etc/resolv.conf
 } >>/etc/resolv.conf
 
 # We do an update
-BannerInstall
+[ ! -f /.dockerenv ] && BannerInstall
 echo -e -n "${UpdatingSource}"
-fnCountDown 3
+[ -f /.dockerenv ] && fnCountDown 3
 if (! apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update); then
     ExitOnError 1 "apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update"
 fi
 
 # Now we can install required packages
-BannerInstall
+[ ! -f /.dockerenv ] && BannerInstall
 echo -e -n "${NeededPackage}"
-fnCountDown 3
+[ -f /.dockerenv ] && fnCountDown 3
 TOOLS=(git-core lsb-release screen ccze gnupg figlet net-tools dnsutils curl geoip-bin procps) # DO NO RENAME 'TOOLS' VARIABLES !
 if (! apt-get -y --assume-yes install "${TOOLS[@]}"); then
     ExitOnError 1 "apt-get -y --assume-yes install ${TOOLS[*]}"
@@ -595,7 +595,7 @@ sysctl -w net.ipv6.conf.all.disable_ipv6=1 >>/tmp/"$(basename "$0")".log
 
 # If needed, remove Bind9
 if (dpkg -s bind9 &>/dev/null); then
-    BannerInstall
+    [ ! -f /.dockerenv ] && BannerInstall
     echo -e -n "${PurgeBind}"
     if (! apt-get -y --assume-yes purge bind9); then
         ExitOnError 1 "apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' purge bind9"
@@ -605,17 +605,19 @@ if (dpkg -s bind9 &>/dev/null); then
 fi
 
 #### download files from Git
-BannerInstall
-echo -e -n "${DownloadingGithub}"
-screen -dmS MySB_GitClone git clone --progress -b "${gsCurrentVersion}" https://github.com/toulousain79/MySB.git ${MySB_InstallDir} >>/tmp/"$(basename "$0")".log
-while (screen -ls | grep -q 'MySB_GitClone'); do
-    echo -n "."
-    sleep 1
-done
-echo -e "${Done}"
+if [ ! -f /.dockerenv ]; then
+    BannerInstall
+    echo -e -n "${DownloadingGithub}"
+    screen -dmS MySB_GitClone git clone --progress -b "${gsCurrentVersion}" https://github.com/toulousain79/MySB.git ${MySB_InstallDir} >>/tmp/"$(basename "$0")".log
+    while (screen -ls | grep -q 'MySB_GitClone'); do
+        echo -n "."
+        sleep 1
+    done
+    echo -e "${Done}"
+fi
 
 # /etc/MySB/config
-if [ ! -d /etc/MySB/ ]; then mkdir /etc/MySB/; fi
+if [ ! -f /.dockerenv ] && [ ! -d /etc/MySB/ ]; then mkdir /etc/MySB/; fi
 {
     echo "MySB_InstallDir=\"${MySB_InstallDir}\""
     echo "MySB_Files=\"${MySB_InstallDir}_files\""
@@ -634,9 +636,13 @@ gfnManageDirAndFiles 'global'
 echo -e "${Done}"
 
 #### Create databases
-echo -e -n "${CreatingMySQL_DB}"
-gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/MySQL" 'INSTALL'
-gfnStatusSTD
+if [ ! -f /.dockerenv ]; then
+    echo -e -n "${CreatingMySQL_DB}"
+    gfnScriptInvoke 'ScreenWAIT' "${MySB_InstallDir}/install/MySQL" 'INSTALL'
+    gfnStatusSTD
+else
+    bash "${MySB_InstallDir}/install/MySQL" 'INSTALL'
+fi
 
 # Update DB with usable values
 if (! cmdMySQL 'MySB_db' "UPDATE system SET mysb_version='${gsCurrentVersion}' WHERE id_system='1';" -v >>/tmp/"$(basename "$0")".log); then
