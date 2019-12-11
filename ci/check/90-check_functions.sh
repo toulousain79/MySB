@@ -127,10 +127,11 @@ case "${CHECK_METHOD}" in
             . "${sDirToScan}"/inc/vars
             for sFile in ${sFilesList}; do
                 # shellcheck source=/dev/null
+                echo "${sFile}"
                 if (. "${sFile}"); then
-                    echo -e "${CYELLOW}Sourcing: ${sFile}${CEND} ${CGREEN}Passed${CEND}"
+                    echo -e "${CYELLOW}Loading: ${sFile}${CEND} ${CGREEN}Passed${CEND}"
                 else
-                    echo -e "${CYELLOW}Sourcing: ${sFile}${CEND} ${CRED}Failed${CEND}"
+                    echo -e "${CYELLOW}Loading: ${sFile}${CEND} ${CRED}Failed${CEND}"
                     nReturn=$((nReturn + 1))
                 fi
             done
