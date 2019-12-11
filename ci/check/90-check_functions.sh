@@ -69,7 +69,8 @@ if [ "${CHECK_METHOD}" == "full" ]; then
                 nCount=$((nCount + 1))
                 sSwitch="${sColumns[${nCount}]}"
                 nCount=$((nCount + 1))
-                sService="${sColumns[${nCount}]//.service/}"
+                sService="${sColumns[${nCount}]}"
+                sService="${sService//.service/}"
 
                 if (grep -q 'daemon-reload' <<<"${sROW}"); then
                     # echo "${sFile}: systemctl daemon-reload --> #systemctl daemon-reload"
