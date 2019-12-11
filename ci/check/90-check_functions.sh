@@ -70,7 +70,7 @@ if [ "${CHECK_METHOD}" == "full" ]; then
                 sSwitch="${sColumns[${nCount}]}"
                 nCount=$((nCount + 1))
                 sService="${sColumns[${nCount}]}"
-                sService="${sService//.service/}"
+                sService="${sService}"
 
                 if (grep -q 'daemon-reload' <<<"${sROW}"); then
                     # echo "${sFile}: systemctl daemon-reload --> #systemctl daemon-reload"
@@ -85,20 +85,20 @@ if [ "${CHECK_METHOD}" == "full" ]; then
                         ((nRes++))
                     }
                 elif (grep -q ' disable' <<<"${sROW}"); then
-                    # echo "${sFile}: systemctl disable ${sService} --> update-rc.d ${sService} disable"
-                    (! sed -i -e "s/systemctl disable ${sService}/update-rc.d ${sService} disable/g" "${sFile}") && {
+                    # echo "${sFile}: systemctl disable ${sService} --> update-rc.d ${sService//.service/} disable"
+                    (! sed -i -e "s/systemctl disable ${sService}/update-rc.d ${sService//.service/} disable/g" "${sFile}") && {
                         /bin/true
                         ((nRes++))
                     }
                 elif (grep -q ' enable' <<<"${sROW}"); then
-                    # echo "${sFile}: systemctl enable ${sService} --> update-rc.d ${sService} enable"
-                    (! sed -i -e "s/systemctl enable ${sService}/update-rc.d ${sService} enable/g" "${sFile}") && {
+                    # echo "${sFile}: systemctl enable ${sService} --> update-rc.d ${sService//.service/} enable"
+                    (! sed -i -e "s/systemctl enable ${sService}/update-rc.d ${sService//.service/} enable/g" "${sFile}") && {
                         /bin/true
                         ((nRes++))
                     }
                 else
-                    # echo "${sFile}: systemctl ${sSwitch} ${sService} --> service ${sService} ${sSwitch}"
-                    (! sed -i -e "s/systemctl ${sSwitch} ${sService}/service ${sService} ${sSwitch}/g" "${sFile}") && {
+                    # echo "${sFile}: systemctl ${sSwitch} ${sService} --> service ${sService//.service/} ${sSwitch}"
+                    (! sed -i -e "s/systemctl ${sSwitch} ${sService}/service ${sService//.service/} ${sSwitch}/g" "${sFile}") && {
                         /bin/true
                         ((nRes++))
                     }

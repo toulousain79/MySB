@@ -206,7 +206,7 @@ gfnManageServices() {
                             "dnscrypt-proxy")
                                 nContinue=0
                                 log_daemon_msg "${Funcs_Stopping} ${Service}"
-                                systemctl stop "${Service}".service >/dev/null
+                                systemctl stop dnscrypt-proxy.service >/dev/null
                                 gfnStatusLSB
                                 ;;
                             "${binPhpService}" | "stunnel4" | "vsftpd" | "fail2ban" | "nfs-kernel-server" | "tautulli" | "plexmediaserver" | rtorrent-*)
@@ -217,8 +217,8 @@ gfnManageServices() {
                                 ;;
                             "nginx")
                                 nContinue=0
-                                log_daemon_msg "${Funcs_Stopping} ${Service}"
-                                if (! systemctl stop "${Service}".service >/dev/null); then
+                                log_daemon_msg "${Funcs_Stopping} nginx"
+                                if (! systemctl stop nginx.service >/dev/null); then
                                     fuser -k 81/tcp >/dev/null 2>&1
                                     [[ -n ${gsPort_System_HTTP} ]] && fuser -k "${gsPort_System_HTTP}"/tcp >/dev/null 2>&1
                                     [[ -n ${gsPort_MySB_HTTPS} ]] && fuser -k "${gsPort_MySB_HTTPS}"/tcp >/dev/null 2>&1
@@ -226,10 +226,10 @@ gfnManageServices() {
                                     [[ -n ${gsPort_NginX_HTTPS} ]] && fuser -k "${gsPort_NginX_HTTPS}"/tcp >/dev/null 2>&1
                                     gfnStatusLSB 0
                                 fi
-                                if (gfnGetPid "${Service}"); then
+                                if (gfnGetPid nginx); then
                                     gfnStatusLSB 1
-                                    log_daemon_msg "${Funcs_Killing} ${Service}"
-                                    killall "${Service}"
+                                    log_daemon_msg "${Funcs_Killing} nginx"
+                                    killall nginx
                                     gfnStatusLSB
                                 else
                                     gfnStatusLSB 0
@@ -237,7 +237,7 @@ gfnManageServices() {
                                 ;;
                         esac
 
-                        if [ "${nContinue}" == "1" ]; then
+                        if [[ ${nContinue} -eq 1 ]]; then
                             log_daemon_msg "${Funcs_Stopping} ${Service}"
                             systemctl stop "${Service}".service >/dev/null
                             gfnStatusLSB
@@ -256,7 +256,7 @@ gfnManageServices() {
                             fi
 
                             nNext=0
-                            if gfnGetPid "${Service}"; then
+                            if gfnGetPid pglcmd; then
                                 log_daemon_msg "${Funcs_Restarting} PeerGuardian Linux"
                                 if (! pglcmd restart >/dev/null); then
                                     gfnStatusLSB 1
@@ -273,7 +273,7 @@ gfnManageServices() {
                                 fi
                             fi
 
-                            if [ "${nNext}" -gt 0 ]; then # if pgl don't start maybe its due to a list update
+                            if [[ ${nNext} -gt 0 ]]; then # if pgl don't start maybe its due to a list update
                                 gfnStatusLSB 1
 
                                 case "${LOGSTD}" in
@@ -284,7 +284,7 @@ gfnManageServices() {
                                 esac
 
                                 sPglcmdLog="$(grep 'failed' /var/log/pgl/pglcmd.log | grep 'list.iblocklist.com' | awk '{ print $6 }')"
-                                for List in $sPglcmdLog; do
+                                for List in ${sPglcmdLog}; do
                                     case "${LOGSTD}" in
                                         "STDOUT")
                                             echo "$(date +"%T") --> '${List}' will be disabled." >>"${MySB_InstallDir}/logs/${gsScriptName}.log"
@@ -326,30 +326,30 @@ gfnManageServices() {
                         case "${Service}" in
                             "dnscrypt-proxy")
                                 nContinue=0
-                                if gfnCheckCommand 0 "${Service}"; then
-                                    if ! gfnGetPid "${Service}"; then
-                                        log_daemon_msg "${Funcs_Starting} ${Service}"
-                                        systemctl start "${Service}".service >/dev/null
+                                if gfnCheckCommand 0 dnscrypt-proxy; then
+                                    if ! gfnGetPid dnscrypt-proxy; then
+                                        log_daemon_msg "${Funcs_Starting} dnscrypt-proxy"
+                                        systemctl start dnscrypt-proxy.service >/dev/null
                                     else
-                                        log_daemon_msg "${Funcs_Restarting} ${Service}"
-                                        systemctl restart "${Service}".service >/dev/null
+                                        log_daemon_msg "${Funcs_Restarting} dnscrypt-proxy"
+                                        systemctl restart dnscrypt-proxy.service >/dev/null
                                     fi
                                     gfnStatusLSB
                                 fi
                                 ;;
                             "bind9")
                                 nContinue=0
-                                if gfnCheckCommand 0 "${Service}"; then
-                                    if ! gfnGetPid "${Service}"; then
-                                        log_daemon_msg "${Funcs_Starting} ${Service}"
-                                        systemctl start "${Service}".service >/dev/null
+                                if gfnCheckCommand 0 bind9; then
+                                    if ! gfnGetPid bind9; then
+                                        log_daemon_msg "${Funcs_Starting} bind9"
+                                        systemctl start bind9.service >/dev/null
                                     else
-                                        log_daemon_msg "${Funcs_Reloading} ${Service}"
-                                        systemctl ${sFinalCmd} "${Service}".service >/dev/null
+                                        log_daemon_msg "${Funcs_Reloading} bind9"
+                                        systemctl ${sFinalCmd} bind9.service >/dev/null
                                         if (! gfnGetPid "named"); then
                                             gfnStatusLSB 1
-                                            log_daemon_msg "${Funcs_Restarting} ${Service}"
-                                            systemctl restart "${Service}".service >/dev/null
+                                            log_daemon_msg "${Funcs_Restarting} bind9"
+                                            systemctl restart bind9.service >/dev/null
                                         fi
                                     fi
                                     gfnStatusLSB
@@ -357,30 +357,30 @@ gfnManageServices() {
                                 ;;
                             "nginx")
                                 nContinue=0
-                                if gfnCheckCommand 0 "${Service}"; then
-                                    if ! gfnGetPid "${Service}"; then
-                                        log_daemon_msg "${Funcs_Starting} ${Service}"
-                                        systemctl start "${Service}".service >/dev/null
+                                if gfnCheckCommand 0 nginx; then
+                                    if ! gfnGetPid nginx; then
+                                        log_daemon_msg "${Funcs_Starting} nginx"
+                                        systemctl start nginx.service >/dev/null
                                     else
-                                        log_daemon_msg "${Funcs_Reloading} ${Service}"
-                                        systemctl ${sFinalCmd} "${Service}".service >/dev/null
-                                        if (! gfnGetPid "${Service}"); then
+                                        log_daemon_msg "${Funcs_Reloading} nginx"
+                                        systemctl ${sFinalCmd} nginx.service >/dev/null
+                                        if (! gfnGetPid nginx); then
                                             gfnStatusLSB 1
-                                            log_daemon_msg "${Funcs_Restarting} ${Service}"
+                                            log_daemon_msg "${Funcs_Restarting} nginx"
                                             fuser -k 81/tcp >/dev/null 2>&1
                                             [[ -n ${gsPort_System_HTTP} ]] && fuser -k "${gsPort_System_HTTP}"/tcp >/dev/null 2>&1
                                             [[ -n ${gsPort_MySB_HTTPS} ]] && fuser -k "${gsPort_MySB_HTTPS}"/tcp >/dev/null 2>&1
                                             [[ -n ${gsPort_NginX_HTTP} ]] && fuser -k "${gsPort_NginX_HTTP}"/tcp >/dev/null 2>&1
                                             [[ -n ${gsPort_NginX_HTTPS} ]] && fuser -k "${gsPort_NginX_HTTPS}"/tcp >/dev/null 2>&1
-                                            systemctl restart "${Service}".service >/dev/null
-                                            if (! gfnGetPid "${Service}"); then
+                                            systemctl restart nginx.service >/dev/null
+                                            if (! gfnGetPid nginx); then
                                                 gfnStatusLSB 1
-                                                log_daemon_msg "$Funcs_Killing ${Service}"
-                                                systemctl stop "${Service}".service >/dev/null
-                                                killall "${Service}"
+                                                log_daemon_msg "$Funcs_Killing nginx"
+                                                systemctl stop nginx.service >/dev/null
+                                                killall nginx
                                                 gfnStatusLSB
-                                                log_daemon_msg "${Funcs_Starting} ${Service}"
-                                                systemctl start "${Service}".service >/dev/null
+                                                log_daemon_msg "${Funcs_Starting} nginx"
+                                                systemctl start nginx.service >/dev/null
                                             fi
                                         fi
                                     fi
@@ -402,7 +402,7 @@ gfnManageServices() {
                                 ;;
                         esac
 
-                        if [ "${nContinue}" == "1" ]; then
+                        if [[ ${nContinue} -eq 1 ]]; then
                             nNext=0
                             log_daemon_msg "${Funcs_Starting} ${Service}"
                             if (! systemctl ${sFinalCmd} "${Service}".service >/dev/null); then
@@ -410,7 +410,7 @@ gfnManageServices() {
                             fi
                             gfnStatusLSB
 
-                            if [ "${nNext}" -gt 0 ] && [ "${sFinalCmd}" == "reload" ]; then
+                            if [[ ${nNext} -gt 0 ]] && [ "${sFinalCmd}" == "reload" ]; then
                                 log_daemon_msg "${Funcs_Restarting} ${Service}"
                                 systemctl restart "${Service}".service >/dev/null
                                 gfnStatusLSB
