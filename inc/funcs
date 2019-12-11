@@ -556,7 +556,11 @@ gfnScriptInvoke() {
             [ "${gbDevMode}" -eq 0 ] && rm -f "${MySB_InstallDir}/temp/${gsScriptName}_${sScript}.invoked"
             ;;
         "ScreenSTD" | "ScreenWAIT" | "InQueue")
-            screen -dmS "${gsScriptName}_${sScript}" /bin/bash "${sScriptWished}" "${aArgs[@]}"
+            if [ ! -f /.dockerenv ]; then
+                screen -dmS "${gsScriptName}_${sScript}" /bin/bash "${sScriptWished}" "${aArgs[@]}"
+            else
+                /bin/bash "${sScriptWished}" "${aArgs[@]}"
+            fi
             # Possibilities:
             # 	ScreenSTD:	Waiting silently
             # 	ScreenWAIT:	Waiting point to point
@@ -566,10 +570,12 @@ gfnScriptInvoke() {
                     gfnWaitingSTD "${gsScriptName}_${sScript}"
                     ;;
                 "ScreenWAIT")
-                    while (screen -ls | grep -q "${gsScriptName}_${sScript}"); do
-                        echo -n "."
-                        sleep 1
-                    done
+                    if [ ! -f /.dockerenv ]; then
+                        while (screen -ls | grep -q "${gsScriptName}_${sScript}"); do
+                            echo -n "."
+                            sleep 1
+                        done
+                    fi
                     ;;
             esac
             ;;
@@ -1027,7 +1033,7 @@ fnRuTorrentGlobalConfigs() {
 }
 
 #### Check if FQDN
-gfnCheckFQDN() {
+gfnCheckServerFQDN() {
     local sHostname nReturn sDigResult aResolvers
     sHostname="$1"
     # nReturn = 0: All is OK
@@ -1084,6 +1090,14 @@ gfnValidateIP() {
         fi
     fi
     echo "${sValue}"
+}
+
+#### Installation step message
+gfnInstallStepMessage() {
+    local sMessage
+    [ -n "${1}" ] && sMessage="${1}"
+
+    [ ! -f /.dockerenv ] && echo -e -n "${sMessage}"
 }
 
 ##################### LAST LINE ######################################
