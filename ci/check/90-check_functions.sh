@@ -126,8 +126,8 @@ case "${CHECK_METHOD}" in
             # shellcheck source=/dev/null
             . "${sDirToScan}"/inc/vars
             for sFile in ${sFilesList}; do
-                # shellcheck source=/dev/null
                 echo "${sFile}"
+                # shellcheck source=/dev/null
                 if (. "${sFile}"); then
                     echo -e "${CYELLOW}Loading: ${sFile}${CEND} ${CGREEN}Passed${CEND}"
                 else
