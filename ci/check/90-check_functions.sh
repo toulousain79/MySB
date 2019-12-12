@@ -127,13 +127,15 @@ esac
 
 case "${CHECK_METHOD}" in
     'integ' | 'full' | 'install')
+        # shellcheck source=/dev/null
+        . /etc/MySB/config
         echo "MySB_InstallDir $MySB_InstallDir"
         echo "sDirToScan $sDirToScan"
-        sFilesList="$(find "${sDirToScan}"/inc/funcs_by_script/ -type f)"
+        sFilesList="$(find "${MySB_InstallDir}"/inc/funcs_by_script/ -type f)"
         if [ -n "${sFilesList}" ]; then
             echo && echo -e "${CBLUE}*** Validate some functions ***${CEND}"
             # shellcheck source=/dev/null
-            . "${sDirToScan}"/inc/vars
+            . "${MySB_InstallDir}"/inc/vars
             for sFile in ${sFilesList}; do
                 echo "${sFile}"
                 # shellcheck source=/dev/null
