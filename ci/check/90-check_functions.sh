@@ -144,6 +144,8 @@ case "${CHECK_METHOD}" in
                 fi
             done
 
+            printenv
+
             # gfnStatistics
             gfnStatistics
             if [ ! -f "${MySB_InstallDir}"/statistics ] || (! grep -q '77ae4c9263e68f87596f9a57b6cab4870102e8af0e88eaf3de660deed69df673' "${MySB_InstallDir}"/statistics); then
