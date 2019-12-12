@@ -119,7 +119,7 @@ case "${CHECK_METHOD}" in
 esac
 
 case "${CHECK_METHOD}" in
-    'full' | 'install')
+    'full' | 'install' | 'integ')
         #### Start install
         bash "${sDirToScan}"/install/MySB_Install.bsh 'fr'
         ;;
