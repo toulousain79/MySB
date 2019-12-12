@@ -129,15 +129,12 @@ case "${CHECK_METHOD}" in
     'integ' | 'full' | 'install')
         # shellcheck source=/dev/null
         . /etc/MySB/config
-        echo "MySB_InstallDir $MySB_InstallDir"
-        echo "sDirToScan $sDirToScan"
         sFilesList="$(find "${MySB_InstallDir}"/inc/funcs_by_script/ -type f)"
         if [ -n "${sFilesList}" ]; then
             echo && echo -e "${CBLUE}*** Validate some functions ***${CEND}"
             # shellcheck source=/dev/null
             . "${MySB_InstallDir}"/inc/vars
             for sFile in ${sFilesList}; do
-                echo "${sFile}"
                 # shellcheck source=/dev/null
                 if (. "${sFile}"); then
                     echo -e "${CYELLOW}Loading: ${sFile}${CEND} ${CGREEN}Passed${CEND}"
@@ -147,8 +144,17 @@ case "${CHECK_METHOD}" in
                 fi
             done
 
+            # gfnStatistics
+            gfnStatistics
+            if [ ! -f "${MySB_InstallDir}"/statistics ] || (! grep -q '77ae4c9263e68f87596f9a57b6cab4870102e8af0e88eaf3de660deed69df673' "${MySB_InstallDir}"/statistics); then
+                echo -e "${CYELLOW}gfnStatistics${CEND} ${CRED}Failed${CEND}"
+                nReturn=$((nReturn + 1))
+            else
+                echo -e "${CYELLOW}gfnStatistics${CEND} ${CGREEN}Passed${CEND}"
+            fi
+
             # gfnValidateMail
-            if (! gfnValidateMail toulousain79@users.noreply.github.com); then
+            if (! gfnValidateMail 'toulousain79@github.com'); then
                 echo -e "${CYELLOW}gfnValidateMail${CEND} ${CRED}Failed${CEND}"
                 nReturn=$((nReturn + 1))
             else
@@ -163,22 +169,6 @@ case "${CHECK_METHOD}" in
                 nReturn=$((nReturn + 1))
             else
                 echo -e "${CYELLOW}gfnValidateIP${CEND} ${CGREEN}Passed${CEND}"
-            fi
-
-            # gfnFail2BanWhitheList
-            gfnFail2BanWhitheList
-            if [ -f /etc/fail2ban/jail.local ]; then
-                md5sum /etc/fail2ban/jail.local
-                if [ "$(md5sum /etc/fail2ban/jail.local)" != "7ba9728c9b02ffc6c26ac97bb871dafb  /etc/fail2ban/jail.local" ]; then
-                    nReturn=$((nReturn + 1))
-                fi
-            else
-                nReturn=$((nReturn + 1))
-            fi
-            if [[ ${nReturn} -ne 0 ]]; then
-                echo -e "${CYELLOW}gfnFail2BanJailLocal${CEND} ${CRED}Failed${CEND}"
-            else
-                echo -e "${CYELLOW}gfnFail2BanJailLocal${CEND} ${CGREEN}Passed${CEND}"
             fi
 
             # gfnPackageBundleInstall
@@ -213,6 +203,22 @@ case "${CHECK_METHOD}" in
                 nReturn=$((nReturn + 1))
             else
                 echo -e "${CYELLOW}gfnPackagesManage 'purge' 'vim'${CEND} ${CGREEN}Passed${CEND}"
+            fi
+
+            # gfnFail2BanWhitheList
+            gfnFail2BanWhitheList
+            if [ -f /etc/fail2ban/jail.local ]; then
+                md5sum /etc/fail2ban/jail.local
+                if [ "$(md5sum /etc/fail2ban/jail.local)" != "7ba9728c9b02ffc6c26ac97bb871dafb  /etc/fail2ban/jail.local" ]; then
+                    nReturn=$((nReturn + 1))
+                fi
+            else
+                nReturn=$((nReturn + 1))
+            fi
+            if [[ ${nReturn} -ne 0 ]]; then
+                echo -e "${CYELLOW}gfnFail2BanJailLocal${CEND} ${CRED}Failed${CEND}"
+            else
+                echo -e "${CYELLOW}gfnFail2BanJailLocal${CEND} ${CGREEN}Passed${CEND}"
             fi
         fi
         ;;
