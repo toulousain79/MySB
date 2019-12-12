@@ -102,8 +102,6 @@ gfnStatistics() {
     # local sMachineId sStatsAllowed sResult sCountry
     local sMachineId sResult sCountry sMachineIdFile
 
-    [ -f /.dockerenv ] && echo "tests integ" >/etc/machine-id
-
     if [ -f /etc/machine-id ]; then
         sMachineIdFile="/etc/machine-id"
     elif [ -f /var/lib/dbus/machine-id ]; then
@@ -121,7 +119,11 @@ gfnStatistics() {
             sCountry="unknown"
         fi
 
-        sMachineId="$(sha256sum <<<"${sMachineIdFile}" | awk '{ print $1 }')"
+        if [ ! -f /.dockerenv ]; then
+            sMachineId="$(sha256sum <<<"${sMachineIdFile}" | awk '{ print $1 }')"
+        else
+            sMachineId="$(sha256sum <<<"tests integ" | awk '{ print $1 }')"
+        fi
         # [ -f "${MySB_InstallDir}"/statistics ] && sStatsAllowed="$(cat "${MySB_InstallDir}"/statistics)" || sStatsAllowed=""
         # if [ -n "${sMachineId}" ] && [ "${sStatsAllowed}" != "no_stats" ]; then
         if [ -n "${sMachineId}" ]; then
