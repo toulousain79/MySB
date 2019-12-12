@@ -164,8 +164,7 @@ case "${CHECK_METHOD}" in
 
             # shellcheck source=/dev/null
             if (. "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Fail2Ban); then
-                # gfnFail2BanWhitheList
-                gfnFail2BanWhitheList 0
+                gfnFail2BanWhitheList 1
                 if [ -f /etc/fail2ban/jail.local ]; then
                     md5sum /etc/fail2ban/jail.local
                     if [ "$(md5sum /etc/fail2ban/jail.local)" != "7ba9728c9b02ffc6c26ac97bb871dafb  /etc/fail2ban/jail.local" ]; then
