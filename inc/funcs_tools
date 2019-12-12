@@ -100,17 +100,26 @@ gfnStatistics() {
     # The IP address is not keeped on destination.
     # No log is retained via the 'CustomLog /dev/null Combined' parameter.
     # local sMachineId sStatsAllowed sResult sCountry
-    local sMachineId sResult sCountry
+    local sMachineId sResult sCountry sMachineIdFile
 
     if [ -f /etc/machine-id ]; then
-        if [ "$(gfnCheckCommand 1 geoiplookup)" == "YES" ] && [ -n "${gsSrvIpAddressExt}" ]; then
+        sMachineIdFile="/etc/machine-id"
+    elif [ -f /var/lib/dbus/machine-id ]; then
+        sMachineIdFile="/var/lib/dbus/machine-id"
+    else
+        dbus-uuidgen --ensure
+        sMachineIdFile="/etc/machine-id"
+    fi
+
+    if [ -f "${sMachineIdFile}" ]; then
+        if (gfnCheckCommand 0 geoiplookup) && [ -n "${gsSrvIpAddressExt}" ]; then
             sCountry="$(geoiplookup "${gsSrvIpAddressExt}" | awk '{ print $5 }')"
             [ -z "${sCountry}" ] && sCountry="unknown"
         else
             sCountry="unknown"
         fi
 
-        sMachineId="$(sha256sum <<</etc/machine-id | awk '{ print $1 }')"
+        sMachineId="$(sha256sum <<<"${sMachineIdFile}" | awk '{ print $1 }')"
         # [ -f "${MySB_InstallDir}"/statistics ] && sStatsAllowed="$(cat "${MySB_InstallDir}"/statistics)" || sStatsAllowed=""
         # if [ -n "${sMachineId}" ] && [ "${sStatsAllowed}" != "no_stats" ]; then
         if [ -n "${sMachineId}" ]; then
