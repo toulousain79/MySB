@@ -572,22 +572,26 @@ sed -i '/nameserver/d' /etc/resolv.conf
 } >>/etc/resolv.conf
 
 # We do an update
-[ ! -f /.dockerenv ] && BannerInstall
-echo -e -n "${UpdatingSource}"
-[ ! -f /.dockerenv ] && fnCountDown 3
+if [ ! -f /.dockerenv ]; then
+    BannerInstall
+    echo -e -n "${UpdatingSource}"
+    fnCountDown 3
+fi
 if (! apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update); then
     ExitOnError 1 "apt-get -y --assume-yes -o 'Acquire::Check-Valid-Until=false' update"
 fi
 
 # Now we can install required packages
-[ ! -f /.dockerenv ] && BannerInstall
-echo -e -n "${NeededPackage}"
-[ ! -f /.dockerenv ] && fnCountDown 3
+if [ ! -f /.dockerenv ]; then
+    BannerInstall
+    echo -e -n "${NeededPackage}"
+    fnCountDown 3
+fi
 TOOLS=(git-core lsb-release screen ccze gnupg figlet net-tools dnsutils curl geoip-bin procps) # DO NO RENAME 'TOOLS' VARIABLES !
 if (! apt-get -y --assume-yes install "${TOOLS[@]}"); then
     ExitOnError 1 "apt-get -y --assume-yes install ${TOOLS[*]}"
 else
-    echo -e "${Done}"
+    [ ! -f /.dockerenv ] && echo -e "${Done}"
 fi
 
 # First we disable IPv6
@@ -619,7 +623,7 @@ else
 fi
 
 # /etc/MySB/config
-[ ! -d /etc/MySB/ ] && mkdir /etc/MySB/
+mkdir -p /etc/MySB/
 {
     echo "MySB_InstallDir=\"${MySB_InstallDir}\""
     echo "MySB_Files=\"${MySB_InstallDir}_files\""
@@ -693,7 +697,11 @@ if [ -f /.dockerenv ]; then
     cmdMySQL 'MySB_db' "UPDATE users_history SET users_ident='${gsMainUserName}' WHERE users_ident='MySB';" -v
     sqlite3 -echo -cmd '.timeout 150000' "${gsWolf_DB}" "UPDATE user SET name='${gsMainUserName}', email='', username='' WHERE id='2';"
 
-    bash "${MySB_InstallDir}"/install/MySB.bsh
+    case "${CHECK_METHOD}" in
+        'full' | 'install')
+            bash "${MySB_InstallDir}"/install/MySB.bsh
+            ;;
+    esac
 else
     /bin/bash "${MySB_InstallDir}"/install/Questions 'INSTALL'
     echo

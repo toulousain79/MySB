@@ -119,6 +119,13 @@ case "${CHECK_METHOD}" in
 esac
 
 case "${CHECK_METHOD}" in
+    'full' | 'install')
+        #### Start install
+        bash "${sDirToScan}"/install/MySB_Install.bsh 'fr'
+        ;;
+esac
+
+case "${CHECK_METHOD}" in
     'integ' | 'full' | 'install')
         sFilesList="$(find "${sDirToScan}"/inc/funcs_by_script/ -type f)"
         if [ -n "${sFilesList}" ]; then
@@ -204,13 +211,6 @@ case "${CHECK_METHOD}" in
                 echo -e "${CYELLOW}gfnPackagesManage 'purge' 'vim'${CEND} ${CGREEN}Passed${CEND}"
             fi
         fi
-        ;;
-esac
-
-case "${CHECK_METHOD}" in
-    'full' | 'install')
-        #### Start install
-        bash "${sDirToScan}"/install/MySB_Install.bsh 'fr'
         ;;
 esac
 
