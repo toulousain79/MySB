@@ -127,6 +127,8 @@ esac
 
 case "${CHECK_METHOD}" in
     'integ' | 'full' | 'install')
+        echo "MySB_InstallDir $MySB_InstallDir"
+        echo "sDirToScan $sDirToScan"
         sFilesList="$(find "${sDirToScan}"/inc/funcs_by_script/ -type f)"
         if [ -n "${sFilesList}" ]; then
             echo && echo -e "${CBLUE}*** Validate some functions ***${CEND}"
