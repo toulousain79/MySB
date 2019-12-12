@@ -157,6 +157,7 @@ case "${CHECK_METHOD}" in
             # gfnFail2BanWhitheList
             gfnFail2BanWhitheList
             if [ -f /etc/fail2ban/jail.local ]; then
+                md5sum /etc/fail2ban/jail.local
                 if [ "$(md5sum /etc/fail2ban/jail.local)" != "7ba9728c9b02ffc6c26ac97bb871dafb  /etc/fail2ban/jail.local" ]; then
                     nReturn=$((nReturn + 1))
                 fi
@@ -169,6 +170,39 @@ case "${CHECK_METHOD}" in
                 echo -e "${CYELLOW}gfnFail2BanJailLocal${CEND} ${CGREEN}Passed${CEND}"
             fi
 
+            # gfnPackageBundleInstall
+            if [ "$(gfnPackageBundleInstall "dos2unix")" != "dos2unix is already installed !" ]; then
+                echo -e "${CYELLOW}gfnPackageBundleInstall${CEND} ${CRED}Failed${CEND}"
+                nReturn=$((nReturn + 1))
+            else
+                echo -e "${CYELLOW}gfnPackageBundleInstall${CEND} ${CGREEN}Passed${CEND}"
+            fi
+
+            # gfnPackagesManage
+            if (! gfnPackagesManage 'upgrade'); then
+                echo -e "${CYELLOW}gfnPackagesManage 'upgrade'${CEND} ${CRED}Failed${CEND}"
+                nReturn=$((nReturn + 1))
+            else
+                echo -e "${CYELLOW}gfnPackagesManage 'upgrade'${CEND} ${CGREEN}Passed${CEND}"
+            fi
+            if (! gfnPackagesManage 'dist-upgrade'); then
+                echo -e "${CYELLOW}gfnPackagesManage 'dist-upgrade'${CEND} ${CRED}Failed${CEND}"
+                nReturn=$((nReturn + 1))
+            else
+                echo -e "${CYELLOW}gfnPackagesManage 'dist-upgrade'${CEND} ${CGREEN}Passed${CEND}"
+            fi
+            if (! gfnPackagesManage 'install' 'vim'); then
+                echo -e "${CYELLOW}gfnPackagesManage 'install' 'vim'${CEND} ${CRED}Failed${CEND}"
+                nReturn=$((nReturn + 1))
+            else
+                echo -e "${CYELLOW}gfnPackagesManage 'install' 'vim'${CEND} ${CGREEN}Passed${CEND}"
+            fi
+            if (! gfnPackagesManage 'purge' 'vim'); then
+                echo -e "${CYELLOW}gfnPackagesManage 'purge' 'vim'${CEND} ${CRED}Failed${CEND}"
+                nReturn=$((nReturn + 1))
+            else
+                echo -e "${CYELLOW}gfnPackagesManage 'purge' 'vim'${CEND} ${CGREEN}Passed${CEND}"
+            fi
         fi
         ;;
 esac
