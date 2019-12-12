@@ -163,25 +163,25 @@ case "${CHECK_METHOD}" in
             fi
 
             # shellcheck source=/dev/null
-            if (. "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Fail2Ban); then
-                gfnFail2BanWhitheList 1
-                if [ -f /etc/fail2ban/jail.local ]; then
-                    md5sum /etc/fail2ban/jail.local
-                    if [ "$(md5sum /etc/fail2ban/jail.local)" != "7ba9728c9b02ffc6c26ac97bb871dafb  /etc/fail2ban/jail.local" ]; then
-                        nReturn=$((nReturn + 1))
-                    fi
-                else
-                    nReturn=$((nReturn + 1))
-                fi
-                if [[ ${nReturn} -ne 0 ]]; then
-                    echo -e "${CYELLOW}gfnFail2BanJailLocal${CEND} ${CRED}Failed${CEND}"
-                else
-                    echo -e "${CYELLOW}gfnFail2BanJailLocal${CEND} ${CGREEN}Passed${CEND}"
-                fi
-            else
-                echo -e "${CYELLOW}Loading: ${sFile}${CEND} ${CRED}Failed${CEND}"
-                nReturn=$((nReturn + 1))
-            fi
+            # if (. "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Fail2Ban); then
+            #     gfnFail2BanWhitheList 0
+            #     if [ -f /etc/fail2ban/jail.local ]; then
+            #         md5sum /etc/fail2ban/jail.local
+            #         if [ "$(md5sum /etc/fail2ban/jail.local)" != "7ba9728c9b02ffc6c26ac97bb871dafb  /etc/fail2ban/jail.local" ]; then
+            #             nReturn=$((nReturn + 1))
+            #         fi
+            #     else
+            #         nReturn=$((nReturn + 1))
+            #     fi
+            #     if [[ ${nReturn} -ne 0 ]]; then
+            #         echo -e "${CYELLOW}gfnFail2BanJailLocal${CEND} ${CRED}Failed${CEND}"
+            #     else
+            #         echo -e "${CYELLOW}gfnFail2BanJailLocal${CEND} ${CGREEN}Passed${CEND}"
+            #     fi
+            # else
+            #     echo -e "${CYELLOW}Loading: ${sFile}${CEND} ${CRED}Failed${CEND}"
+            #     nReturn=$((nReturn + 1))
+            # fi
 
             # shellcheck source=/dev/null
             if (. "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Install); then
