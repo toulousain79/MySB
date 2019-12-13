@@ -143,26 +143,23 @@ case "${CHECK_METHOD}" in
                 . "${MySB_InstallDir}"/ci/integ/global.sh
 
                 for sFile in ${sFilesList}; do
-                    if [ "${sFile}" != "/opt/MySB/inc/funcs_by_script/funcs_Minio" ]; then
-                        echo "${sFile}"
-                        # shellcheck source=/dev/null
-                        . "${sFile}"
+                    # if [ "${sFile}" != "/opt/MySB/inc/funcs_by_script/funcs_Minio" ]; then
+                    echo "${sFile}"
+                    # shellcheck source=/dev/null
+                    . "${sFile}"
 
-                        sIntegFile="${MySB_InstallDir}/ci/integ/$(basename "${sFile}").sh"
-                        sIntegFile="${sIntegFile//.bsh/}"
-                        if [ -f "${sIntegFile}" ]; then
-                            . "${sIntegFile}"
-                        fi
-                        echo
+                    sIntegFile="${MySB_InstallDir}/ci/integ/$(basename "${sFile}").sh"
+                    sIntegFile="${sIntegFile//.bsh/}"
+                    if [ -f "${sIntegFile}" ]; then
+                        . "${sIntegFile}"
                     fi
+                    echo
+                    # fi
                 done
-                echo "nReturn l.162 ${nReturn}"
             fi
         fi
         ;;
 esac
-
-echo "nReturn l.168 ${nReturn}"
 
 export nReturn
 

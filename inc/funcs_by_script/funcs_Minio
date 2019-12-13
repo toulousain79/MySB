@@ -35,6 +35,8 @@ MINIO_ACCESS_KEY="${MINIO_ACCESS_KEY:-$(gfnGenPassword 16)}"
 MINIO_SECRET_KEY="${MINIO_SECRET_KEY:-$(gfnGenPassword 32)}"
 export MINIO_ACCESS_KEY MINIO_SECRET_KEY
 
+echo "l.38"
+
 #### /etc/default/minio
 gfnMinioEtcDefault() {
     {
@@ -53,24 +55,26 @@ gfnMinioEtcDefault() {
         chown minio:minio /etc/default/minio
     fi
 }
-
+echo "l.58"
 #### Certificate
 gfnMinioCertificate() {
-    if [[ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ]] && [[ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" ]]; then
+    if [ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" ] && [ -f "/etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" ]; then
         install -v -o minio -g minio -m 0644 "/etc/letsencrypt/live/${gsHostNameFqdn}/privkey.pem" /etc/minio/certs/private.key
         install -v -o minio -g minio -m 0644 "/etc/letsencrypt/live/${gsHostNameFqdn}/fullchain.pem" /etc/minio/certs/public.crt
-    elif [[ -f "${MySB_InstallDir}/ssl/mysb.key" ]] && [[ -f "${MySB_InstallDir}/ssl/mysb.cert" ]]; then
+    elif [ -f "${MySB_InstallDir}/ssl/mysb.key" ] && [ -f "${MySB_InstallDir}/ssl/mysb.cert" ]; then
         install -v -o minio -g minio -m 0644 "${MySB_InstallDir}/ssl/mysb.key" /etc/minio/certs/private.key
         install -v -o minio -g minio -m 0644 "${MySB_InstallDir}/ssl/mysb.cert" /etc/minio/certs/public.crt
     fi
 }
-
+echo "l.69"
 #### Minio client host config (alias)
 gfnMinioHostConfig() {
-    mc config host list
-    mc config host add mysb https://"${gsHostNameFqdn}":9000 "${MINIO_ACCESS_KEY}" "${MINIO_SECRET_KEY}" --api S3v4
+    if (gfnCheckCommand 0 /usr/local/bin/mc); then
+        mc config host list
+        mc config host add mysb https://"${gsHostNameFqdn}":9000 "${MINIO_ACCESS_KEY}" "${MINIO_SECRET_KEY}" --api S3v4
+    fi
 }
-
+echo "l.77"
 #### Minio
 gfnInstallMinio() {
     gfnGetRepoValues 'Minio'
@@ -92,7 +96,7 @@ gfnInstallMinio() {
     chmod -v +x "${gsRepoDir}"
     ${gsRepoDir} version
 }
-
+echo "l.99"
 #### Minio client
 gfnInstallMinioClient() {
     gfnGetRepoValues 'Minio Client'
@@ -108,7 +112,7 @@ gfnInstallMinioClient() {
     chmod -v +x "${gsRepoDir}"
     ${gsRepoDir} --version
 }
-
+echo "l.115"
 #### Goofys
 fnInstallGoofys() {
     local sPackages
@@ -118,10 +122,16 @@ fnInstallGoofys() {
 
     gfnGetRepoValues 'Goofys'
     if [ "${gsVersionInstalled}" != "${gsVersionLatest}" ]; then
-        [ -f "${MySB_Files}/${gsRepoFile}" ] && mv -v "${MySB_Files}/${gsRepoFile}" "${MySB_Files}/${gsRepoFile}.tmp"
+        if [ -f "${MySB_Files}/${gsRepoFile}" ]; then
+            mv -v "${MySB_Files}/${gsRepoFile}" "${MySB_Files}/${gsRepoFile}.tmp"
+        fi
         gfnRepoManageByType
-        [ -f "${MySB_Files}/${gsRepoFile}" ] && rm -fv "${MySB_Files}/${gsRepoFile}.tmp"
+        if [ -f "${MySB_Files}/${gsRepoFile}" ]; then
+            rm -fv "${MySB_Files}/${gsRepoFile}.tmp"
+        fi
     fi
     chmod -v +x "${gsRepoDir}"
     ${gsRepoDir} --version
 }
+
+##################### LAST LINE ######################################
