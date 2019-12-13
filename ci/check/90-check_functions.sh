@@ -152,7 +152,9 @@ case "${CHECK_METHOD}" in
                         . "${sFile}"
 
                         sIntegFile="${MySB_InstallDir}/ci/integ/$(basename "${sFile}").sh"
+                        echo "l.155 ${sIntegFile}"
                         if [ -f "${sIntegFile}" ]; then
+                            echo "l.157 ${sIntegFile}"
                             if (! . "${sIntegFile}"); then
                                 echo -e "${CYELLOW}Loading ${sIntegFile}:${CEND} ${CRED}Failed${CEND}"
                                 nReturn=$((nReturn + 1))
