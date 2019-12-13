@@ -25,7 +25,7 @@
 nReturn=${nReturn}
 
 # gfnPackageBundleInstall
-if [ "$(gfnPackageBundleInstall "dos2unix")" != "dos2unix is already installed !" ]; then
+if [ "$(gfnPackageBundleInstall "dos2unix" &>/dev/null)" != "dos2unix is already installed !" ]; then
     echo -e "${CYELLOW}gfnPackageBundleInstall${CEND} ${CRED}Failed${CEND}"
     nReturn=$((nReturn + 1))
 else
@@ -33,25 +33,25 @@ else
 fi
 
 # gfnPackagesManage
-if (! gfnPackagesManage 'upgrade'); then
+if (! gfnPackagesManage 'upgrade' &>/dev/null); then
     echo -e "${CYELLOW}gfnPackagesManage 'upgrade'${CEND} ${CRED}Failed${CEND}"
     nReturn=$((nReturn + 1))
 else
     echo -e "${CYELLOW}gfnPackagesManage 'upgrade'${CEND} ${CGREEN}Passed${CEND}"
 fi
-if (! gfnPackagesManage 'dist-upgrade'); then
+if (! gfnPackagesManage 'dist-upgrade' &>/dev/null); then
     echo -e "${CYELLOW}gfnPackagesManage 'dist-upgrade'${CEND} ${CRED}Failed${CEND}"
     nReturn=$((nReturn + 1))
 else
     echo -e "${CYELLOW}gfnPackagesManage 'dist-upgrade'${CEND} ${CGREEN}Passed${CEND}"
 fi
-if (! gfnPackagesManage 'install' 'vim'); then
+if (! gfnPackagesManage 'install' 'vim' &>/dev/null); then
     echo -e "${CYELLOW}gfnPackagesManage 'install' 'vim'${CEND} ${CRED}Failed${CEND}"
     nReturn=$((nReturn + 1))
 else
     echo -e "${CYELLOW}gfnPackagesManage 'install' 'vim'${CEND} ${CGREEN}Passed${CEND}"
 fi
-if (! gfnPackagesManage 'purge' 'vim'); then
+if (! gfnPackagesManage 'purge' 'vim' &>/dev/null); then
     echo -e "${CYELLOW}gfnPackagesManage 'purge' 'vim'${CEND} ${CRED}Failed${CEND}"
     nReturn=$((nReturn + 1))
 else

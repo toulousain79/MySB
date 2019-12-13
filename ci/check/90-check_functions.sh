@@ -134,21 +134,25 @@ case "${CHECK_METHOD}" in
             echo && echo -e "${CBLUE}*** Validate some functions ***${CEND}"
             # shellcheck source=/dev/null
             . "${MySB_InstallDir}"/inc/vars
+            # shellcheck source=/dev/null
+            . "${MySB_InstallDir}"/ci/integ/global.sh
 
             for sFile in "${MySB_InstallDir}"/inc/funcs_by_script/*; do
+                echo
                 # shellcheck source=/dev/null
-                if (! source "${sFile}"); then
+                if (! . "${sFile}"); then
                     echo -e "${CYELLOW}Loading ${sFile}:${CEND} ${CRED}Failed${CEND}"
                     nReturn=$((nReturn + 1))
                 else
                     echo -e "${CYELLOW}Loading ${sFile}:${CEND} ${CGREEN}Passed${CEND}"
-                    source "${sFile}"
+                    . "${sFile}"
 
                     sIntegFile="${MySB_InstallDir}/ci/integ/$(basename "${sFile}").sh"
                     if [ -f "${sIntegFile}" ]; then
-                        source "${sIntegFile}"
+                        . "${sIntegFile}"
                     fi
                 fi
+                echo
             done
         fi
         ;;

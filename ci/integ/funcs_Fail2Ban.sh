@@ -27,17 +27,15 @@ nReturn=${nReturn}
 # gfnFail2BanWhitheList
 gfnFail2BanWhitheList 0
 if [ -f /etc/fail2ban/jail.local ]; then
-    md5sum /etc/fail2ban/jail.local
-    if [ "$(md5sum /etc/fail2ban/jail.local)" != "7ba9728c9b02ffc6c26ac97bb871dafb  /etc/fail2ban/jail.local" ]; then
+    if [ "$(md5sum /etc/fail2ban/jail.local)" != "41ab8248888ab1697d8d0456bbf8d139  /etc/fail2ban/jail.local" ]; then
+        echo -e "${CYELLOW}gfnFail2BanJailLocal, md5sum check${CEND} ${CRED}Failed${CEND}"
         nReturn=$((nReturn + 1))
+    else
+        echo -e "${CYELLOW}gfnFail2BanJailLocal${CEND} ${CGREEN}Passed${CEND}"
     fi
 else
+    echo -e "${CYELLOW}gfnFail2BanJailLocal, /etc/fail2ban/jail.local not founf !${CEND} ${CRED}Failed${CEND}"
     nReturn=$((nReturn + 1))
-fi
-if [[ ${nReturn} -ne 0 ]]; then
-    echo -e "${CYELLOW}gfnFail2BanJailLocal${CEND} ${CRED}Failed${CEND}"
-else
-    echo -e "${CYELLOW}gfnFail2BanJailLocal${CEND} ${CGREEN}Passed${CEND}"
 fi
 
 export nReturn
