@@ -24,6 +24,24 @@
 
 nReturn=${nReturn}
 
+MINIO_ACCESS_KEY="MINIO_ACCESS_KEY"
+MINIO_SECRET_KEY="MINIO_SECRET_KEY"
+export MINIO_ACCESS_KEY MINIO_SECRET_KEY
+
+# gfnMinioEtcDefault
+gfnMinioEtcDefault
+if [ -f /etc/default/minio ]; then
+    if [ "$(md5sum /etc/default/minio)" != "b2cd8d2a17af44bd0d52371b4af6e65b  /etc/default/minio" ]; then
+        echo -e "${CYELLOW}gfnMinioEtcDefault, md5sum check${CEND} ${CRED}Failed${CEND}"
+        nReturn=$((nReturn + 1))
+    else
+        echo -e "${CYELLOW}gfnMinioEtcDefault${CEND} ${CGREEN}Passed${CEND}"
+    fi
+else
+    echo -e "${CYELLOW}gfnMinioEtcDefault, /etc/default/minio not found !${CEND} ${CRED}Failed${CEND}"
+    nReturn=$((nReturn + 1))
+fi
+
 echo "nReturn funcs_Minio ${nReturn}"
 
 export nReturn

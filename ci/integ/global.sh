@@ -24,6 +24,10 @@
 
 nReturn=${nReturn}
 
+#### Integ VARs
+gsHostNameFqdn="wwww.github.com"
+export gsHostNameFqdn
+
 # gfnValidateMail
 if (! gfnValidateMail 'toulousain79@github.com'); then
     echo -e "${CYELLOW}gfnValidateMail${CEND} ${CRED}Failed${CEND}"
