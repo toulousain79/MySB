@@ -143,6 +143,7 @@ case "${CHECK_METHOD}" in
                 . "${MySB_InstallDir}"/ci/integ/global.sh
 
                 for sFile in ${sFilesList}; do
+                    echo "${sFile}"
                     sFileName="$(basename "${sFile}")"
                     echo "${sFileName}"
                     case "${sFileName}" in
