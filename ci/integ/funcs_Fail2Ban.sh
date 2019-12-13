@@ -34,7 +34,7 @@ if [ -f /etc/fail2ban/jail.local ]; then
         echo -e "${CYELLOW}gfnFail2BanJailLocal${CEND} ${CGREEN}Passed${CEND}"
     fi
 else
-    echo -e "${CYELLOW}gfnFail2BanJailLocal, /etc/fail2ban/jail.local not founf !${CEND} ${CRED}Failed${CEND}"
+    echo -e "${CYELLOW}gfnFail2BanJailLocal, /etc/fail2ban/jail.local not found !${CEND} ${CRED}Failed${CEND}"
     nReturn=$((nReturn + 1))
 fi
 
