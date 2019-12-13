@@ -143,7 +143,14 @@ case "${CHECK_METHOD}" in
                 . "${MySB_InstallDir}"/ci/integ/global.sh
 
                 for sFile in ${sFilesList}; do
-                    # if [ "${sFile}" != "/opt/MySB/inc/funcs_by_script/funcs_Minio" ]; then
+                    case "$(basename "${sFile}")" in
+                        'funcs_Minio')
+                            MINIO_ACCESS_KEY="MINIO_ACCESS_KEY"
+                            MINIO_SECRET_KEY="MINIO_SECRET_KEY"
+                            export MINIO_ACCESS_KEY MINIO_SECRET_KEY
+                            ;;
+                    esac
+
                     echo "${sFile}"
                     # shellcheck source=/dev/null
                     . "${sFile}"
@@ -154,7 +161,6 @@ case "${CHECK_METHOD}" in
                         . "${sIntegFile}"
                     fi
                     echo
-                    # fi
                 done
             fi
         fi

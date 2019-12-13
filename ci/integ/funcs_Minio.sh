@@ -24,10 +24,6 @@
 
 nReturn=${nReturn}
 
-MINIO_ACCESS_KEY="MINIO_ACCESS_KEY"
-MINIO_SECRET_KEY="MINIO_SECRET_KEY"
-export MINIO_ACCESS_KEY MINIO_SECRET_KEY
-
 # gfnMinioEtcDefault
 gfnMinioEtcDefault
 if [ -f /etc/default/minio ]; then
