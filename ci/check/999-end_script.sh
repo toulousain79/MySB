@@ -23,6 +23,7 @@
 ##################### FIRST LINE #####################################
 
 nReturn=${nReturn}
+echo "nReturn l.26 ${nReturn}"
 
 echo
 case "${nReturn}" in

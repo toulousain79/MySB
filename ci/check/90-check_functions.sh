@@ -157,6 +157,8 @@ case "${CHECK_METHOD}" in
         ;;
 esac
 
+echo "nReturn l.160 ${nReturn}"
+
 export nReturn
 
 ##################### LAST LINE ######################################
