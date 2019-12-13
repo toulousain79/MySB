@@ -143,7 +143,9 @@ case "${CHECK_METHOD}" in
                 . "${MySB_InstallDir}"/ci/integ/global.sh
 
                 for sFile in ${sFilesList}; do
-                    case "$(basename "${sFile}")" in
+                    sFileName="$(basename "${sFile}")"
+                    echo "${sFileName}"
+                    case "${sFileName}" in
                         'funcs_Minio')
                             MINIO_ACCESS_KEY="MINIO_ACCESS_KEY"
                             MINIO_SECRET_KEY="MINIO_SECRET_KEY"
