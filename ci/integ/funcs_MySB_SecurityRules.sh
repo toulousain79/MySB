@@ -24,8 +24,6 @@
 
 nReturn=${nReturn}
 
-echo "nReturn funcs_MySB_SecurityRules ${nReturn}"
-
 export nReturn
 
 ##################### LAST LINE ######################################

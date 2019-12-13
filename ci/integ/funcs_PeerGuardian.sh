@@ -24,8 +24,6 @@
 
 nReturn=${nReturn}
 
-echo "nReturn funcs_PeerGuardian ${nReturn}"
-
 export nReturn
 
 ##################### LAST LINE ######################################
