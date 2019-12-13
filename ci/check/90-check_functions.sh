@@ -134,98 +134,22 @@ case "${CHECK_METHOD}" in
             echo && echo -e "${CBLUE}*** Validate some functions ***${CEND}"
             # shellcheck source=/dev/null
             . "${MySB_InstallDir}"/inc/vars
-            # shellcheck source=/dev/null
-            . "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Fail2Ban
-            # shellcheck source=/dev/null
-            . "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Install
-            # shellcheck source=/dev/null
-            . "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Minio
-            # shellcheck source=/dev/null
-            . "${MySB_InstallDir}"/inc/funcs_by_script/funcs_MySB_CreateUser
-            # shellcheck source=/dev/null
-            . "${MySB_InstallDir}"/inc/funcs_by_script/funcs_MySB_SecurityRules
-            # shellcheck source=/dev/null
-            . "${MySB_InstallDir}"/inc/funcs_by_script/funcs_PeerGuardian
-            # shellcheck source=/dev/null
-            . "${MySB_InstallDir}"/inc/funcs_by_script/funcs_SourcesList
-            # shellcheck source=/dev/null
-            . "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Upgrade
 
-            # gfnValidateMail
-            if (! gfnValidateMail 'toulousain79@github.com'); then
-                echo -e "${CYELLOW}gfnValidateMail${CEND} ${CRED}Failed${CEND}"
-                nReturn=$((nReturn + 1))
-            else
-                echo -e "${CYELLOW}gfnValidateMail${CEND} ${CGREEN}Passed${CEND}"
-            fi
-
-            # gfnValidateIP
-            [ -z "$(gfnValidateIP 192.168.0.1)" ] && nReturn=$((nReturn + 1))
-            [ -n "$(gfnValidateIP 192.168.0.333)" ] && nReturn=$((nReturn + 1))
-            if [ -z "$(gfnValidateIP 192.168.0.1)" ] || [ -n "$(gfnValidateIP 192.168.0.333)" ]; then
-                echo -e "${CYELLOW}gfnValidateIP${CEND} ${CRED}Failed${CEND}"
-                nReturn=$((nReturn + 1))
-            else
-                echo -e "${CYELLOW}gfnValidateIP${CEND} ${CGREEN}Passed${CEND}"
-            fi
-
-            # gfnStatistics
-            gfnStatistics
-            if [ ! -f "${MySB_InstallDir}"/statistics ] || (! grep -q '77ae4c9263e68f87596f9a57b6cab4870102e8af0e88eaf3de660deed69df673' "${MySB_InstallDir}"/statistics); then
-                echo -e "${CYELLOW}gfnStatistics${CEND} ${CRED}Failed${CEND}"
-                nReturn=$((nReturn + 1))
-            else
-                echo -e "${CYELLOW}gfnStatistics${CEND} ${CGREEN}Passed${CEND}"
-            fi
-
-            gfnFail2BanWhitheList 0
-            if [ -f /etc/fail2ban/jail.local ]; then
-                md5sum /etc/fail2ban/jail.local
-                if [ "$(md5sum /etc/fail2ban/jail.local)" != "7ba9728c9b02ffc6c26ac97bb871dafb  /etc/fail2ban/jail.local" ]; then
+            for sFile in "${MySB_InstallDir}"/inc/funcs_by_script/*; do
+                # shellcheck source=/dev/null
+                if (! source "${sFile}"); then
+                    echo -e "${CYELLOW}Loading ${sFile}:${CEND} ${CRED}Failed${CEND}"
                     nReturn=$((nReturn + 1))
+                else
+                    echo -e "${CYELLOW}Loading ${sFile}:${CEND} ${CGREEN}Passed${CEND}"
+                    source "${sFile}"
+
+                    sIntegFile="${MySB_InstallDir}/ci/integ/$(basename "${sFile}").sh"
+                    if [ -f "${sIntegFile}" ]; then
+                        source "${sIntegFile}"
+                    fi
                 fi
-            else
-                nReturn=$((nReturn + 1))
-            fi
-            if [[ ${nReturn} -ne 0 ]]; then
-                echo -e "${CYELLOW}gfnFail2BanJailLocal${CEND} ${CRED}Failed${CEND}"
-            else
-                echo -e "${CYELLOW}gfnFail2BanJailLocal${CEND} ${CGREEN}Passed${CEND}"
-            fi
-
-            # gfnPackageBundleInstall
-            if [ "$(gfnPackageBundleInstall "dos2unix")" != "dos2unix is already installed !" ]; then
-                echo -e "${CYELLOW}gfnPackageBundleInstall${CEND} ${CRED}Failed${CEND}"
-                nReturn=$((nReturn + 1))
-            else
-                echo -e "${CYELLOW}gfnPackageBundleInstall${CEND} ${CGREEN}Passed${CEND}"
-            fi
-
-            # gfnPackagesManage
-            if (! gfnPackagesManage 'upgrade'); then
-                echo -e "${CYELLOW}gfnPackagesManage 'upgrade'${CEND} ${CRED}Failed${CEND}"
-                nReturn=$((nReturn + 1))
-            else
-                echo -e "${CYELLOW}gfnPackagesManage 'upgrade'${CEND} ${CGREEN}Passed${CEND}"
-            fi
-            if (! gfnPackagesManage 'dist-upgrade'); then
-                echo -e "${CYELLOW}gfnPackagesManage 'dist-upgrade'${CEND} ${CRED}Failed${CEND}"
-                nReturn=$((nReturn + 1))
-            else
-                echo -e "${CYELLOW}gfnPackagesManage 'dist-upgrade'${CEND} ${CGREEN}Passed${CEND}"
-            fi
-            if (! gfnPackagesManage 'install' 'vim'); then
-                echo -e "${CYELLOW}gfnPackagesManage 'install' 'vim'${CEND} ${CRED}Failed${CEND}"
-                nReturn=$((nReturn + 1))
-            else
-                echo -e "${CYELLOW}gfnPackagesManage 'install' 'vim'${CEND} ${CGREEN}Passed${CEND}"
-            fi
-            if (! gfnPackagesManage 'purge' 'vim'); then
-                echo -e "${CYELLOW}gfnPackagesManage 'purge' 'vim'${CEND} ${CRED}Failed${CEND}"
-                nReturn=$((nReturn + 1))
-            else
-                echo -e "${CYELLOW}gfnPackagesManage 'purge' 'vim'${CEND} ${CGREEN}Passed${CEND}"
-            fi
+            done
         fi
         ;;
 esac
