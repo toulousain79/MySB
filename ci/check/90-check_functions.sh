@@ -143,14 +143,12 @@ case "${CHECK_METHOD}" in
                 . "${MySB_InstallDir}"/ci/integ/global.sh
 
                 for sFile in ${sFilesList}; do
-                    echo
+                    echo "${sFile}"
                     # shellcheck source=/dev/null
                     if (! . "${sFile}"); then
                         echo -e "${CYELLOW}Loading ${sFile}:${CEND} ${CRED}Failed${CEND}"
                         nReturn=$((nReturn + 1))
                     else
-                        . "${sFile}"
-
                         sIntegFile="${MySB_InstallDir}/ci/integ/$(basename "${sFile}").sh"
                         sIntegFile="${sIntegFile//.bsh/}"
                         echo "l.155 ${sIntegFile}"
