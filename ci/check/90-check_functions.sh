@@ -142,7 +142,7 @@ case "${CHECK_METHOD}" in
                 # shellcheck source=/dev/null
                 . "${MySB_InstallDir}"/ci/integ/global.sh
 
-                for sFile in "${MySB_InstallDir}"/inc/funcs_by_script/*; do
+                for sFile in ${sFilesList}; do
                     echo
                     # shellcheck source=/dev/null
                     if (! . "${sFile}"); then
@@ -159,7 +159,6 @@ case "${CHECK_METHOD}" in
                             fi
                         fi
                     fi
-                    echo "nReturn l.160 ${nReturn}"
                     echo
                 done
                 echo "nReturn l.162 ${nReturn}"
