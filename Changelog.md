@@ -24,6 +24,7 @@
   - posix
   - shelcheck
   - some review
+  - PHP-FPM process manager review
 
 ## v7.1 - 2019/11/01 _(started at: 2019/10/02)_
 

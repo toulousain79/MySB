@@ -138,6 +138,8 @@ case "${CHECK_METHOD}" in
                 nReturn=$((nReturn + 1))
             else
                 # shellcheck source=/dev/null
+                . "${MySB_InstallDir}"/inc/vars
+                # shellcheck source=/dev/null
                 . "${MySB_InstallDir}"/ci/integ/global.sh
 
                 for sFile in "${MySB_InstallDir}"/inc/funcs_by_script/*; do
