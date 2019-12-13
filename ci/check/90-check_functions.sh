@@ -152,10 +152,7 @@ case "${CHECK_METHOD}" in
                     echo "l.155 ${sIntegFile}"
                     if [ -f "${sIntegFile}" ]; then
                         echo "l.157 ${sIntegFile}"
-                        if (! . "${sIntegFile}"); then
-                            echo -e "${CYELLOW}Loading ${sIntegFile}:${CEND} ${CRED}Failed${CEND}"
-                            nReturn=$((nReturn + 1))
-                        fi
+                        . "${sIntegFile}"
                     fi
                     echo
                 done
