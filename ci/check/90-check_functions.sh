@@ -133,31 +133,40 @@ case "${CHECK_METHOD}" in
         if [ -n "${sFilesList}" ]; then
             echo && echo -e "${CBLUE}*** Validate some functions ***${CEND}"
             # shellcheck source=/dev/null
-            . "${MySB_InstallDir}"/inc/vars
-            # shellcheck source=/dev/null
-            . "${MySB_InstallDir}"/ci/integ/global.sh
-
-            for sFile in "${MySB_InstallDir}"/inc/funcs_by_script/*; do
-                echo
+            if (! . "${MySB_InstallDir}"/inc/vars); then
+                echo -e "${CYELLOW}Loading ${MySB_InstallDir}/inc/vars:${CEND} ${CRED}Failed${CEND}"
+                nReturn=$((nReturn + 1))
+            else
                 # shellcheck source=/dev/null
-                if (! . "${sFile}"); then
-                    echo -e "${CYELLOW}Loading ${sFile}:${CEND} ${CRED}Failed${CEND}"
-                    nReturn=$((nReturn + 1))
-                else
-                    . "${sFile}"
+                . "${MySB_InstallDir}"/ci/integ/global.sh
 
-                    sIntegFile="${MySB_InstallDir}/ci/integ/$(basename "${sFile}").sh"
-                    if [ -f "${sIntegFile}" ]; then
-                        . "${sIntegFile}"
+                for sFile in "${MySB_InstallDir}"/inc/funcs_by_script/*; do
+                    echo
+                    # shellcheck source=/dev/null
+                    if (! . "${sFile}"); then
+                        echo -e "${CYELLOW}Loading ${sFile}:${CEND} ${CRED}Failed${CEND}"
+                        nReturn=$((nReturn + 1))
+                    else
+                        . "${sFile}"
+
+                        sIntegFile="${MySB_InstallDir}/ci/integ/$(basename "${sFile}").sh"
+                        if [ -f "${sIntegFile}" ]; then
+                            if (! . "${sIntegFile}"); then
+                                echo -e "${CYELLOW}Loading ${sIntegFile}:${CEND} ${CRED}Failed${CEND}"
+                                nReturn=$((nReturn + 1))
+                            fi
+                        fi
                     fi
-                fi
-                echo
-            done
+                    echo "nReturn l.160 ${nReturn}"
+                    echo
+                done
+                echo "nReturn l.162 ${nReturn}"
+            fi
         fi
         ;;
 esac
 
-echo "nReturn l.160 ${nReturn}"
+echo "nReturn l.168 ${nReturn}"
 
 export nReturn
 

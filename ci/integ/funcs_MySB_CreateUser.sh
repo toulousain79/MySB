@@ -24,6 +24,8 @@
 
 nReturn=${nReturn}
 
+echo "nReturn funcs_MySB_CreateUser ${nReturn}"
+
 export nReturn
 
 ##################### LAST LINE ######################################

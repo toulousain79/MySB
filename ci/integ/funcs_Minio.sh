@@ -24,6 +24,8 @@
 
 nReturn=${nReturn}
 
+echo "nReturn funcs_Minio ${nReturn}"
+
 export nReturn
 
 ##################### LAST LINE ######################################

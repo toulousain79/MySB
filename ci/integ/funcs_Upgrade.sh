@@ -24,6 +24,8 @@
 
 nReturn=${nReturn}
 
+echo "nReturn funcs_Upgrade ${nReturn}"
+
 export nReturn
 
 ##################### LAST LINE ######################################
