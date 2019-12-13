@@ -25,7 +25,7 @@
 nReturn=${nReturn}
 
 # gfnPackageBundleInstall
-if [ "$(gfnPackageBundleInstall "dos2unix" &>/dev/null)" != "dos2unix is already installed !" ]; then
+if [ "$(gfnPackageBundleInstall "dos2unix")" != "dos2unix is already installed !" ]; then
     echo -e "${CYELLOW}gfnPackageBundleInstall${CEND} ${CRED}Failed${CEND}"
     nReturn=$((nReturn + 1))
 else

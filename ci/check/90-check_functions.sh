@@ -144,7 +144,6 @@ case "${CHECK_METHOD}" in
                     echo -e "${CYELLOW}Loading ${sFile}:${CEND} ${CRED}Failed${CEND}"
                     nReturn=$((nReturn + 1))
                 else
-                    echo -e "${CYELLOW}Loading ${sFile}:${CEND} ${CGREEN}Passed${CEND}"
                     . "${sFile}"
 
                     sIntegFile="${MySB_InstallDir}/ci/integ/$(basename "${sFile}").sh"
