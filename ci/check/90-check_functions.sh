@@ -145,14 +145,14 @@ case "${CHECK_METHOD}" in
                 for sFile in ${sFilesList}; do
                     echo "${sFile}"
                     # shellcheck source=/dev/null
-                    cat "${sFile}"
+                    source "${sFile}"
 
                     sIntegFile="${MySB_InstallDir}/ci/integ/$(basename "${sFile}").sh"
                     sIntegFile="${sIntegFile//.bsh/}"
                     echo "l.155 ${sIntegFile}"
                     if [ -f "${sIntegFile}" ]; then
                         echo "l.157 ${sIntegFile}"
-                        cat "${sIntegFile}"
+                        source "${sIntegFile}"
                     fi
                     echo
                 done
