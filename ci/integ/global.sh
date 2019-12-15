@@ -57,7 +57,7 @@ fi
 
 # gfnGenPassword
 sPass="$(gfnGenPassword 16)"
-if [[ ${#sPass} -ne 16 ]]; then
+if [ ${#sPass} -ne 16 ]; then
     echo -e "${CYELLOW}gfnGenPassword${CEND} ${CRED}Failed${CEND}"
     nReturn=$((nReturn + 1))
 else
