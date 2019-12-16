@@ -38,8 +38,6 @@ else
     nReturn=$((nReturn + 1))
 fi
 
-echo "nReturn funcs_Minio ${nReturn}"
-
 export nReturn
 
 ##################### LAST LINE ######################################

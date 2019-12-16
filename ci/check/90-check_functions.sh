@@ -143,9 +143,7 @@ case "${CHECK_METHOD}" in
                 . "${MySB_InstallDir}"/ci/integ/global.sh
 
                 for sFile in ${sFilesList}; do
-                    echo "${sFile}"
                     sFileName="$(basename "${sFile}")"
-                    echo "${sFileName}"
                     case "${sFileName}" in
                         'funcs_Minio')
                             MINIO_ACCESS_KEY="MINIO_ACCESS_KEY"
@@ -154,7 +152,6 @@ case "${CHECK_METHOD}" in
                             ;;
                     esac
 
-                    echo "${sFile}"
                     # shellcheck source=/dev/null
                     . "${sFile}"
 
