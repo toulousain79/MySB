@@ -28,13 +28,13 @@ nReturn=${nReturn}
 gfnCreateBasicSourcesList
 if [ -f /etc/apt/sources.list ]; then
     if [ "$(md5sum /etc/apt/sources.list)" != "c8acb09ee352739f7400a231e9f2c13c  /etc/apt/sources.list" ]; then
-        echo -e "${CYELLOW}gfnFail2BanJailLocal, md5sum check${CEND} ${CRED}Failed${CEND}"
+        echo -e "${CYELLOW}gfnCreateBasicSourcesList, md5sum check${CEND} ${CRED}Failed${CEND}"
         nReturn=$((nReturn + 1))
     else
-        echo -e "${CYELLOW}gfnFail2BanJailLocal${CEND} ${CGREEN}Passed${CEND}"
+        echo -e "${CYELLOW}gfnCreateBasicSourcesList${CEND} ${CGREEN}Passed${CEND}"
     fi
 else
-    echo -e "${CYELLOW}gfnFail2BanJailLocal, /etc/apt/sources.list not found !${CEND} ${CRED}Failed${CEND}"
+    echo -e "${CYELLOW}gfnCreateBasicSourcesList, /etc/apt/sources.list not found !${CEND} ${CRED}Failed${CEND}"
     nReturn=$((nReturn + 1))
 fi
 
