@@ -1,5 +1,8 @@
 #!/bin/bash
 # ----------------------------------
+# shellcheck source=inc/includes_before
+source "$(dirname "$0")"/../inc/includes_before
+# ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 #	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,23 +25,21 @@
 #
 ##################### FIRST LINE #####################################
 
-nReturn=${nReturn}
+#### Install
+sPackages=(portsentry)
+gfnPackageBundleInstall "${sPackages[@]}"
 
-# gfnCreateBasicSourcesList
-gfnCreateBasicSourcesList
-if [ -f /etc/apt/sources.list ]; then
-    md5sum /etc/apt/sources.list
-    if [ "$(md5sum /etc/apt/sources.list)" != "41ab8248888ab1697d8d0456bbf8d139  /etc/apt/sources.list" ]; then
-        echo -e "${CYELLOW}gfnFail2BanJailLocal, md5sum check${CEND} ${CRED}Failed${CEND}"
-        nReturn=$((nReturn + 1))
-    else
-        echo -e "${CYELLOW}gfnFail2BanJailLocal${CEND} ${CGREEN}Passed${CEND}"
-    fi
-else
-    echo -e "${CYELLOW}gfnFail2BanJailLocal, /etc/apt/sources.list not found !${CEND} ${CRED}Failed${CEND}"
-    nReturn=$((nReturn + 1))
-fi
+#### /etc/default/portsentry
+sed -i \
+    -e 's/"tcp"/"atcp"/g;' \
+    -e 's/"udp"/"audp"/g;' \
+    /etc/default/portsentry
 
-export nReturn
+#### /etc/portsentry/portsentry.conf
+install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/portsentry/etc.portsentry.portsentry.conf.tmpl /etc/portsentry/portsentry.conf
 
+# -----------------------------------------
+# shellcheck source=inc/includes_after
+source "$(dirname "$0")"/../inc/includes_after
+# -----------------------------------------
 ##################### LAST LINE ######################################

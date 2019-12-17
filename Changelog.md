@@ -16,6 +16,7 @@
 - IPtables
   - block output SSDP trafic
   - block input Proxy-Gateway trafic
+  - disable died input packets logging
 - PeerGuardian, add custom rules
 - DNScrypt-proxy
   - chroot to _dnscrypt-proxy user
