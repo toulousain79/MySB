@@ -616,6 +616,7 @@ if ( $DisplayIdent >= 1 ) {
 if ( count($FilesInQueue) > 0 ) {
 ?>
 	<br />
+	<div id="scrollmenu" align="center">
 	<fieldset style="vertical-align: text-top;">
 	<legend><?php echo User_Synchronization_Title_FilesToSync; ?></legend>
 		<table>
@@ -694,6 +695,7 @@ if ( count($FilesInQueue) > 0 ) {
 	}
 ?>
 	</fieldset>
+	</div>
 <?php
 }
 
@@ -716,6 +718,7 @@ if ( ($IdentSync['dst_dir'] != '') && ($IdentSync['dst_srv'] != '') && ($IdentSy
 	if ( !empty($SelectOptions) ) {
 ?>
 		<br />
+		<div id="scrollmenu" align="center">
 		<fieldset style="vertical-align: text-top;">
 		<legend><?php echo User_Synchronization_Title_DownloadedFiles; ?></legend>
 			<table style="width:100%">
@@ -736,6 +739,7 @@ if ( ($IdentSync['dst_dir'] != '') && ($IdentSync['dst_srv'] != '') && ($IdentSy
 			</table>
 			<div align="center"><p class="Comments"><?php echo User_Synchronization_AddFilesComment; ?></p></div>
 		</fieldset>
+		</div>
 <?php
 	} //if ( !empty($SelectOptions) ) {
 }
