@@ -196,13 +196,14 @@ gfnAnnoncerActivate() {
 gfnAddTracker() {
     local sFnPrivacy sFnTracker sPart1 sPart2 sPart3 sFnTrackerDomain sFnTrackerAddress sIfExist sFnTrackersListId sUser sLine
     local sFnProto sFnURL sFnUrlUser sFnHostPort sFnHost sFnPort sPglcmlTemp bToCheck
-    local dDbDate tNow tDiff aTrackerIPv4 bAutoBlockAnnoncers
+    local dDbDate tNow tDiff aTemp aTrackerIPv4 bAutoBlockAnnoncers
 
     sLine="${1}"
     if [ -n "${2}" ] && [ -n "$(getent passwd "${2}")" ]; then
         sUser="${2}"
     fi
 
+    aTemp=()
     aTrackerIPv4=()
     bAutoBlockAnnoncers="$(cmdMySQL 'MySB_db' "SELECT block_annoncers FROM system WHERE id_system='1';")"
 
@@ -273,12 +274,17 @@ gfnAddTracker() {
             esac
 
             # Checking DNS
-            mapfile -t aTrackerIPv4 < <(nslookup -type=A github.com | grep 'Address:' | awk '{ print $2 }' | tail -n +2 | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq)
-            if [ "${#aTrackerIPv4[@]}" -eq 0 ]; then
-                gfnSwitchDNS "dnscrypt"
-                sleep 2
+            mapfile -t aTemp < <(nslookup -type=A github.com | grep 'Address:' | awk '{ print $2 }' | tail -n +2 | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq)
+            if [ "${#aTemp[@]}" -eq 0 ]; then
+                if [[ ${gbDnsCryptSwitch} -eq 1 ]]; then
+                    systemctl restart dnscrypt-proxy.service
+                    sleep 2
+                else
+                    systemctl restart bind9.service
+                fi
             fi
 
+            # Job
             mapfile -t aTrackerIPv4 < <(nslookup -type=A "${sFnTrackerAddress}" | grep 'Address:' | awk '{ print $2 }' | tail -n +2 | sed -e 's/^ //g;' | sed 's/\s+$//' | sort | uniq)
 
             if [ "${#aTrackerIPv4[@]}" -gt 0 ]; then
