@@ -70,7 +70,6 @@ INSERT INTO `repositories` (`type`, `dir`, `name`, `version`, `upgrade`, `file`,
 ('GIT', '<InstallDir>/sources/plowshare', 'Plowshare', '2.1.7', 0, 'Plowshare_v2.1.7.zip', 'https://github.com/mcrapet/plowshare.git', 1, 0, ''),
 ('GIT', '<InstallDir>/sources/libsmbclient-php', 'libsmbclient-php', '1.0.0', 0, 'libsmbclient-php_v1.0.0.zip', 'https://github.com/eduardok/libsmbclient-php.git', 1, 0, ''),
 ('TARGZ', '<InstallDir>/sources/rkhunter', 'RKHunter', '1.4.6', 0, 'rkhunter_v1.4.6.tar.gz', 'https://github.com/toulousain79/MySB_files/raw/v7.2/rkhunter_v1.4.6.tar.gz', 1, 0, ''),
-/* ('DEB', '<InstallDir>_files', 'GeoIPupdate', 'latest', 0, 'geoipupdate_4.0.2_linux_amd64.deb', 'https://api.github.com/repos/maxmind/geoipupdate/releases/latest', 1, 0, ''), */
 ('DEB', '<InstallDir>_files', 'GeoIPupdate', '4.1.5', 0, 'geoipupdate_4.1.5_linux_amd64.deb', 'https://github.com/maxmind/geoipupdate/releases/download/v4.1.5/geoipupdate_4.1.5_linux_amd64.deb', 1, 0, ''),
 ('GIT', '<InstallDir>/web/apps/sm', 'Seedbox-Manager', '3.0.1', 0, 'seedbox-manager_v3.0.1.zip', 'https://github.com/Magicalex/seedbox-manager.git', 1, 0, ''),
 ('GIT', '<InstallDir>/web/apps/cb', 'Cakebox-Light', '1.8.6', 0, 'cakebox-light_v1.8.6.zip', 'https://github.com/Cakebox/Cakebox-light.git', 1, 0, ''),
