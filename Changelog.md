@@ -2,13 +2,15 @@
 
 ## v7.2 - xxxx/xx/xx _(started at: 2019/10/03)_
 
-- NextCloud v17.0.1
+- NextCloud v18.0.0
 - NetData v1.19.0
 - GeoIPupdate v4.1.5
-- Medoo v1.7.6
-- ruTorrent v3.9 _(3c8bcbf)_
-- rTorrent v0.9.8 _(3798de0)_
-- libTorrent v0.9.8 _(b57ca61)_
+- Medoo v1.7.8
+- Composer v1.9.2
+- Goofys v0.23.1
+- ruTorrent v3.9 _(a21ee8b)_
+- rTorrent v0.9.8 _(7976576)_
+- libTorrent v0.9.8 _(c791ea3)_
 - Plex, force allowedNetworks to 127.0.0.1
 - rTorrent, minor review for some scripts
 - ruTorrent, labels hack for uploaded torrents via UI
