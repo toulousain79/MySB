@@ -34,7 +34,6 @@ CCZE_Treatment() {
     sTwoLogFile="$4"
     sLinesToDelete="$5"
 
-    install -o root -g www-data -m 0750 -d "${sWebLogDir}"
     # if [ -n "$(echo "${sLogFile}" | grep '.log')" ]; then
     if (grep -q '.log' <<<"${sLogFile}"); then
         # Log files with '.log' extension
@@ -68,6 +67,7 @@ CCZE_Treatment() {
         fi
         unset sLinesToDelete IFS OIFS
 
+        install -o root -g www-data -m 0750 -d "${sWebLogDir}"
         gfnCczeHtmlLogFormat "/tmp/${sLogFile}" "${sWebLogDir}/${HtmlFile}"
         rm -f "/tmp/${sLogFile}"
     fi
@@ -75,34 +75,28 @@ CCZE_Treatment() {
 }
 
 # Remove old HTML files
-rm -f "${MySB_InstallDir}"/web/logs/{system,security,nginx,plex}/*.html
+rm -rf "${MySB_InstallDir}"/web/logs/*
 
 #### Parse all logs
-aLogDirectories=('/var/log' '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs')
+aLogDirectories=("${MySB_InstallDir}/logs" '/var/log' '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs')
 for sDir in "${aLogDirectories[@]}"; do
     if [ -d "${sDir}" ]; then
         while read -r sLog; do
             if [ -s "${sLog}" ]; then
                 sDirName="$(dirname "${sLog}")"
                 sBaseName="$(basename "${sLog}")"
-                sAddPrevious="YES"
+                sAddPrevious="NO"
 
                 case "${sDirName}" in
-                    '/var/log/pgl')
-                        sDestinationDir="${MySB_InstallDir}/web/logs/security"
-                        sAddPrevious="NO"
-                        ;;
-                    '/var/log/dnscrypt-proxy')
-                        sDestinationDir="${MySB_InstallDir}/web/logs/security"
-                        ;;
-                    '/var/log/nginx')
-                        sDestinationDir="${MySB_InstallDir}/web/logs/nginx"
+                    "${MySB_InstallDir}/logs")
+                        sDestinationDir="${MySB_InstallDir}/web/logs/mysb"
+                        sAddPrevious="YES"
                         ;;
                     "/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs"*)
                         sDestinationDir="${MySB_InstallDir}/web/logs/plex"
                         ;;
                     *)
-                        sDestinationDir="${MySB_InstallDir}/web/logs/system"
+                        sDestinationDir="${MySB_InstallDir}/web/logs/${sDirName}"
                         ;;
                 esac
 
