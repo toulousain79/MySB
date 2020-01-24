@@ -131,6 +131,7 @@ We can start the update to Debian 10 now.
 At the end of the update, your server will restart. You will need to restart the installation of MySB yourself.
 
 Do you want to start the update to Debian 10 now? (yes/no)${CEND}")
+    DoDebianUpgradeNoRoot=("${CRED}You must be logged in as a ROOT to upgrade from Debian !${CEND}")
 }
 
 # French mesages
@@ -215,6 +216,7 @@ Nous pouvons lancer la mise à jour vers Debian 10 maintenant.
 A la fin de la mise à jour, votre serveur redémarrera. Vous devrez alors relancer l'installation de MySB vous-même.
 
 Voulez-vous lancer la mise à jour vers Debian 10 maintenant ? (oui/non)${CEND}")
+    DoDebianUpgradeNoRoot=("${CRED}Vous devez être connecté en tant que ROOT pour procéder à la mise à niveau de Debian !${CEND}")
 }
 
 # To execute when this script will exited
@@ -303,8 +305,9 @@ fnCountDown() {
 }
 
 SystemChecks() {
-    local nContinue sOS_Id sOS_Ver sOS_Arch sPVE_Kernel sOVH_Kernel sFlex_Kernel sAnswer sLVM sDocUrl
+    local nContinue nDebianUpgrade sOS_Id sOS_Ver sOS_Arch sPVE_Kernel sOVH_Kernel sFlex_Kernel sAnswer sLVM sDocUrl
     nContinue=0
+    nDebianUpgrade=0
     sDocUrl="https://app.gitbook.com/@mysb/s/doc/installation/pre-requis"
 
     #### Doc
@@ -344,6 +347,7 @@ SystemChecks() {
         *)
             echo -e "${CYELLOW}Release		: ${CEND}${CRED}${sOS_Ver}${CEND}"
             nContinue=1
+            nDebianUpgrade=1
             ;;
     esac
 
@@ -358,6 +362,7 @@ SystemChecks() {
     #### Must be root
     if [[ ${EUID} -ne 0 ]]; then
         nContinue=1
+        nDebianUpgrade=0
         echo -e "${CYELLOW}Root		: ${CEND}${CRED}${AnswerNO}${CEND}"
     else
         echo -e "${CYELLOW}Root		: ${CEND}${CGREEN}${AnswerYES}${CEND}"
@@ -426,25 +431,30 @@ SystemChecks() {
         done
     fi
 
-    if [[ $nContinue -gt 0 ]]; then
+    if [[ ${nContinue} -gt 0 ]]; then
         case "${sOS_Ver}" in
             9)
-                echo
-                echo -e "${DoDebianUpgrade[*]}"
-                read -r sAnswer
-                case ${sAnswer:0:1} in
-                    y | Y | yes | YES | o | O | oui | OUI)
-                        echo -e "${LetsGo}"
-                        fnCountDown 3
-                        cd /tmp/ || exit 1
-                        wget --no-check-certificate -N https://raw.githubusercontent.com/toulousain79/MySB/${gsCurrentVersion}/upgrade/Debian_Upgrade.bsh "${EnvLang}"
-                        bash /tmp/Debian_Upgrade.bsh
-                        ;;
-                    n | N | no | NO | non | NON)
-                        ExitOnError 1 "${OnlyForDebian}"
-                        ;;
-                    *) unset sAnswer ;;
-                esac
+                if [[ ${nDebianUpgrade} -gt 0 ]]; then
+                    echo
+                    echo -e "${DoDebianUpgrade[*]}"
+                    read -r sAnswer
+                    case ${sAnswer:0:1} in
+                        y | Y | yes | YES | o | O | oui | OUI)
+                            echo -e "${LetsGo}"
+                            fnCountDown 3
+                            cd /tmp/ || exit 1
+                            wget --no-check-certificate -N https://raw.githubusercontent.com/toulousain79/MySB/${gsCurrentVersion}/upgrade/Debian_Upgrade.bsh "${EnvLang}"
+                            bash /tmp/Debian_Upgrade.bsh
+                            ;;
+                        n | N | no | NO | non | NON)
+                            ExitOnError 1 "${OnlyForDebian}"
+                            ;;
+                        *) unset sAnswer ;;
+                    esac
+                else
+                    echo -e "${OnlyForDebian}"
+                    ExitOnError 1 "${DoDebianUpgradeNoRoot[*]}"
+                fi
                 ;;
             *) ExitOnError 1 "${OnlyForDebian}" ;;
         esac
