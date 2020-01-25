@@ -462,38 +462,6 @@ SystemChecks() {
     fi
 }
 
-# Force locales
-fnForceLocales() {
-    local nNumLine
-    # https://www.debian.org/doc/manuals/fr/debian-fr-howto/ch3.html
-
-    if (type -P /usr/sbin//usr/sbin/dpkg-reconfigure >/dev/null) && [[ ${gnLocalesForced} -eq 0 ]]; then
-        case "${EnvLang}" in
-            "fr") gsLocale="fr_FR" ;;
-            "en") gsLocale="en_US" ;;
-        esac
-        [ -z "${gsLocale}" ] && gsLocale="en_US"
-        sed -i "s/# ${gsLocale}.UTF-8 UTF-8/${gsLocale}.UTF-8 UTF-8/g;" /etc/locale.gen
-        export LANGUAGE=${LANG:0:2}
-        export LANG=${gsLocale}.UTF-8
-        {
-            /usr/sbin/update-locale "LANG=${gsLocale}.UTF-8"
-            /usr/sbin/update-locale "LANGUAGE=${LANG:0:2}"
-            locale-gen "${gsLocale}.UTF-8"
-            /usr/sbin/dpkg-reconfigure -f noninteractive locales
-            cat /etc/default/locale
-        } >>/tmp/"$(basename "$0")".log
-        # SSH - AcceptEnv
-        sed -i "s/^AcceptEnv/#AcceptEnv/g;" /etc/ssh/sshd_config
-        # SSH - SendEnv
-        nNumLine=$(grep 'SendEnv ' -n -m 1 /etc/ssh/ssh_config | cut -d ':' -f 1)
-        sed -i '/SendEnv /d' /etc/ssh/ssh_config
-        sed -i "${nNumLine}i\#   SendEnv LANG LC_*" /etc/ssh/ssh_config
-        systemctl reload sshd.service
-        gnLocalesForced=1
-    fi
-}
-
 ##################### INIT ###########################################
 
 # Start Log
@@ -581,7 +549,32 @@ while [ -z "${Answer}" ]; do
 done
 
 # Force locales
-fnForceLocales
+# https://www.debian.org/doc/manuals/fr/debian-fr-howto/ch3.html
+if (type -P /usr/sbin/dpkg-reconfigure >/dev/null) && [[ ${gnLocalesForced} -eq 0 ]]; then
+    case "${EnvLang}" in
+        "fr") gsLocale="fr_FR" ;;
+        "en") gsLocale="en_US" ;;
+    esac
+    [ -z "${gsLocale}" ] && gsLocale="en_US"
+    sed -i "s/# ${gsLocale}.UTF-8 UTF-8/${gsLocale}.UTF-8 UTF-8/g;" /etc/locale.gen
+    export LANG=${gsLocale}.UTF-8
+    export LANGUAGE=${LANG:0:2}
+    {
+        /usr/sbin/update-locale "LANG=${gsLocale}.UTF-8"
+        /usr/sbin/update-locale "LANGUAGE=${LANG:0:2}"
+        locale-gen "${gsLocale}.UTF-8"
+        /usr/sbin/dpkg-reconfigure -f noninteractive locales
+        cat /etc/default/locale
+    } >>/tmp/"$(basename "$0")".log
+    # SSH - AcceptEnv
+    sed -i "s/^AcceptEnv/#AcceptEnv/g;" /etc/ssh/sshd_config
+    # SSH - SendEnv
+    nNumLine=$(grep 'SendEnv ' -n -m 1 /etc/ssh/ssh_config | cut -d ':' -f 1)
+    sed -i '/SendEnv /d' /etc/ssh/ssh_config
+    sed -i "${nNumLine}i\#   SendEnv LANG LC_*" /etc/ssh/ssh_config
+    systemctl reload sshd.service
+    gnLocalesForced=1
+fi
 
 # Force public DNS (#66)
 gaDnsList=(84.200.69.80 84.200.70.40 1.1.1.1 1.0.0.1)
@@ -610,9 +603,6 @@ if (! apt-get -y --assume-yes install "${TOOLS[@]}"); then
 else
     echo -e "${Done}"
 fi
-
-# Force locales
-fnForceLocales
 
 # First we disable IPv6
 sysctl -w net.ipv6.conf.all.disable_ipv6=1 >>/tmp/"$(basename "$0")".log
