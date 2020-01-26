@@ -258,41 +258,43 @@ done
 
 #### Create all existing MySB users AND Scanning users' files
 for seedUser in ${gsUsersList}; do
-    FnUserMail="$(cmdMySQL 'MySB_db' "SELECT users_email FROM users WHERE users_ident='${seedUser}';")"
+    if (getent passwd "${seedUser}" >/dev/null); then
+        FnUserMail="$(cmdMySQL 'MySB_db' "SELECT users_email FROM users WHERE users_ident='${seedUser}';")"
 
-    if [ ! -d "${sDataDir}"/"${seedUser}" ]; then
-        mkdir -v "${sDataDir}"/"${seedUser}"
-        chown -v www-data:www-data "${sDataDir}"/"${seedUser}"
-        chmod -v 0755 "${sDataDir}"/"${seedUser}"
+        if [ ! -d "${sDataDir}"/"${seedUser}" ]; then
+            mkdir -v "${sDataDir}"/"${seedUser}"
+            chown -v www-data:www-data "${sDataDir}"/"${seedUser}"
+            chmod -v 0755 "${sDataDir}"/"${seedUser}"
+        fi
+
+        if (! su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:info \"${seedUser}\"" >/dev/null); then
+            OC_PASS="$(cmdMySQL 'MySB_db' "SELECT users_passwd FROM users WHERE users_ident='${seedUser}';")"
+            [ -z "${OC_PASS}" ] && OC_PASS="$(gfnGenPassword 8)"
+            export OC_PASS
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:add --password-from-env --display-name=\"${seedUser}\" --group=\"mysb_users\" \"${seedUser}\""
+            cmdMySQL 'MySB_db' "UPDATE users SET init_password = '1' WHERE users_ident='${seedUser}';" -v
+        fi
+
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" settings email \"${FnUserMail}\""
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" core lang \"${EnvLang}\""
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" core timezone ${gsTimeZone}"
+
+        #### Create new external mount (MySB_Home)
+        IdStorage=$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:create MySB_Home local null::null" | awk '{ print $5 }')
+        if [ -n "${IdStorage}" ]; then
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:applicable --add-user \"${seedUser}\" ${IdStorage}"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:config ${IdStorage} datadir '/home/${seedUser}/'"
+            # su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} filesystem_check_changes 'false'"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encrypt 'false'"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} previews 'true'"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} enable_sharing 'true'"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encoding_compatibility 'false'"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:verify ${IdStorage}"
+        fi
+
+        #### Force a scan
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:scan --path=\"/${seedUser}/files/MySB_Home\""
     fi
-
-    if (! su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:info \"${seedUser}\"" >/dev/null); then
-        OC_PASS="$(cmdMySQL 'MySB_db' "SELECT users_passwd FROM users WHERE users_ident='${seedUser}';")"
-        [ -z "${OC_PASS}" ] && OC_PASS="$(gfnGenPassword 8)"
-        export OC_PASS
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:add --password-from-env --display-name=\"${seedUser}\" --group=\"mysb_users\" \"${seedUser}\""
-        cmdMySQL 'MySB_db' "UPDATE users SET init_password = '1' WHERE users_ident='${seedUser}';" -v
-    fi
-
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" settings email \"${FnUserMail}\""
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" core lang \"${EnvLang}\""
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" core timezone ${gsTimeZone}"
-
-    #### Create new external mount (MySB_Home)
-    IdStorage=$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:create MySB_Home local null::null" | awk '{ print $5 }')
-    if [ -n "${IdStorage}" ]; then
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:applicable --add-user \"${seedUser}\" ${IdStorage}"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:config ${IdStorage} datadir '/home/${seedUser}/'"
-        # su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} filesystem_check_changes 'false'"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encrypt 'false'"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} previews 'true'"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} enable_sharing 'true'"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encoding_compatibility 'false'"
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:verify ${IdStorage}"
-    fi
-
-    #### Force a scan
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:scan --path=\"/${seedUser}/files/MySB_Home\""
 
     unset IdStorage FnUserMail OC_PASS
 done
