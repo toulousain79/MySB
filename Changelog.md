@@ -1,6 +1,6 @@
 # Changelog
 
-## v7.2 - xxxx/xx/xx _(started at: 2019/10/03)_
+## v7.2 - 2020/01/26 _(started at: 2019/10/03)_
 
 - NextCloud v18.0.0
 - NetData v1.19.0
