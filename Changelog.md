@@ -15,6 +15,7 @@
 - rTorrent, minor review for some scripts
 - ruTorrent, labels hack for uploaded torrents via UI
 - add Debian 9 to 10 upgrade script
+- NginX, use of /dev/shm for fastcgi_cache_path
 - IPtables
   - block output SSDP trafic
   - block input Proxy-Gateway trafic
