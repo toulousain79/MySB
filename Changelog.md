@@ -15,7 +15,8 @@
 - rTorrent, minor review for some scripts
 - ruTorrent, labels hack for uploaded torrents via UI
 - add Debian 9 to 10 upgrade script
-- NginX, use of /dev/shm for fastcgi_cache_path
+- NginX, use of /dev/shm as fastcgi_cache_path
+- Plex Media Server, use of /dev/shm as transcoder temp directory
 - IPtables
   - block output SSDP trafic
   - block input Proxy-Gateway trafic
