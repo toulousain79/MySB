@@ -5,6 +5,8 @@
 
 <p align="center"><a href="https://github.com/toulousain79/MySB/blob/v7.2/LICENCE.md"><img src="https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square" /></a></p>
 
+<p align="center"><img src="https://img.shields.io/badge/Stable-v7.2-green" /></p>
+
 # English
 
 MySB _(My SeedBox)_ is a multi-user seedbox for dedicated server under Debian 10 _(Buster)_ and could be renamed MySSB, My Secured SeedBox.
