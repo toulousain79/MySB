@@ -29,6 +29,7 @@ sPwd=$(pwd)
 nReturn=0
 [ -n "${CI_PROJECT_PATH}" ] && sProjectDir="/builds/${CI_PROJECT_PATH}" || sProjectDir="$(pwd)"
 sDirToScan="/tmp/shellcheck_scan"
+CHECK_METHOD="${CHECK_METHOD:-integ}"
 
 #### 1 - Colors
 CEND="\033[0m"
@@ -49,4 +50,4 @@ function gfnCopyProject() {
     fi
 }
 
-export vars sPwd nReturn sProjectDir sDirToScan CEND CRED CGREEN CYELLOW CBLUE
+export vars sPwd nReturn sProjectDir sDirToScan CEND CRED CGREEN CYELLOW CBLUE CHECK_METHOD
