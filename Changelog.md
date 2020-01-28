@@ -11,12 +11,13 @@
 - ruTorrent v3.9 _(a21ee8b)_
 - rTorrent v0.9.8 _(7976576)_
 - libTorrent v0.9.8 _(c791ea3)_
-- Plex, force allowedNetworks to 127.0.0.1
 - rTorrent, minor review for some scripts
 - ruTorrent, labels hack for uploaded torrents via UI
 - add Debian 9 to 10 upgrade script
 - NginX, use of /dev/shm as fastcgi_cache_path
-- Plex Media Server, use of /dev/shm as transcoder temp directory
+- Plex Media Server
+  - force allowedNetworks to 127.0.0.1
+  - use of /dev/shm as transcoder temp directory
 - IPtables
   - block output SSDP trafic
   - block input Proxy-Gateway trafic
